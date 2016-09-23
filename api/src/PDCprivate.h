@@ -15,7 +15,7 @@ typedef enum {
     PDC_DOUBLE       = 2,  /* double types                              */
     PDC_STRING       = 3,  /*character string types                     */
     PDC_COMPOUND     = 4,  /*compound types                             */
-    PDC_ENU          = 5,  /*enumeration types                          */   
+    PDC_ENUM         = 5,  /*enumeration types                          */   
     PDC_ARRAY        = 6,  /*Array types                                */
  
     NCLASSES         = 7   /*this must be last                          */
