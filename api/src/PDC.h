@@ -1,16 +1,19 @@
 #ifndef _PDC_H
 #define _PDC_H
 
+#include <stdint.h>
+#include <stdbool.h>
 #include "PDCprivate.h"
 
 typedef struct {
 } PDC_property;
 
 typedef struct {
+    pid_t pdc_id;
 } PDC_STRUCT;
 
 typedef struct {  
-    PDC_INT DPC_type;
+    PDC_int_t DPC_type;
     union {
 	PDC_CONT *CONT_CREATE;
 	PDC_OBJ *OBJ_CREATE;
@@ -18,7 +21,7 @@ typedef struct {
 } PDC_prop_type;
 
 typedef enum {
-    UNKNOW = -1,
+    UNKNOWN = -1,
     MEMORY,
     FLASH,
     FILESYSTEM,
@@ -69,8 +72,7 @@ typedef enum {
     PDC_Q_MATCH_GREATER_THAN  /* greater than */
 } PDC_query_op_t;
 
-enum ADIOS_CLAUSE_OP_MODE
-{
+typedef enum {
     PDC_QUERY_OP_AND = 0,
     PDC_QUERY_OP_OR  = 1
 } PDC_com_op_mode_t;
@@ -87,27 +89,27 @@ typedef enum {
 
 /* Functions in PDC.c */
 
-//////////////////
-// PDC function //
-//////////////////
+///////////////////
+// PDC functions //
+///////////////////
 
 /* Initialize the PDC layer
  * Param PDC_property [IN]: A PDC_property struct  
  * Return: PDC id 
  * */
-pid_t PDCinit(struct PDC_property);
+pid_t PDCinit(PDC_property prop);
 
 /* Create a type of PDC
  * Param PDC_STRUCT [IN]: A PDC_STRUCT struct
  * Return: PDC type id 
  * */
-pid_t PDCtype_create(struct PDC_STRUCT);
+pid_t PDCtype_create(PDC_STRUCT pdc_struct);
 
 /* Insert fields in PDC_STRUCT 
  * Param type_id [IN]: Type of PDC, returned by PDCtype_create(struct PDC_STRUCT) 
  * Param name [IN]: Variable name to insert to PDC_STRUCT
  * Param offset [IN]: Offset of the variable in PDC_STRUCT
- * Param var_type [IN]: Variable type (enum type), choosing from PDC_var_type, i.e. PDC_INT, PDC_FLOAT, etc 
+ * Param var_type [IN]: Variable type (enum type), choosing from PDC_var_type, i.e. PDC_int_t, PDC_float_t, etc 
  * Return: Non-negative on success/Negative on failure
  * */
 perr_t PDCtype_struct_field_insert(pid_t type_id, const char *name, uint64_t offset, PDC_var_type var_type);
@@ -117,7 +119,7 @@ perr_t PDCtype_struct_field_insert(pid_t type_id, const char *name, uint64_t off
  * Param nloci [OUT]: Number of loci of the PDC residing at
  * Return: Non-negative on success/Negative on failure
  * */
-perr_t PDCget_loci_count(pid_t pdc_id, pid_t &nloci);
+perr_t PDCget_loci_count(pid_t pdc_id, pid_t *nloci);
 
 /* Get PDC info in the locus
  * Param pdc_id [IN]: Id of the PDC
@@ -182,13 +184,13 @@ perr_t PDCcont_iter_next(cont_handle chandle);
  * Param info [OUT]: A PDC_cont_info_t struct
  * Return: Non-negative on success/Negative on failure
  * */
-perr_t PDCcont_iter_get_info(cont_handle chandle, PDC_cont_info_t &info);
+perr_t PDCcont_iter_get_info(cont_handle chandle, PDC_cont_info_t *info);
 
 /* Persist a transient container
  * Param cont_id [IN]: Id of the container, returned by PDCcont_open(pid_t pdc_id, const char *cont_name)
  * Return: Non-negative on success/Negative on failure
  * */
-perr_t PDCcont_persist(pid_t cont_id)
+perr_t PDCcont_persist(pid_t cont_id);
   
 /* Set container lifetime 
  * Param cont_create_prop [IN]: Id of container property, returned by PDCprop_create(PDC_CONT_CREATE)
@@ -229,11 +231,11 @@ perr_t PDCprop_set_obj_lifetime(pid_t obj_create_prop, PDC_lifetime obj_lifetime
  * Param dims [IN]: Size of each dimension
  * Return: Non-negative on success/Negative on failure
  * */
-perr_t PDCprop_set_obj_dims(pid_t obj_create_prop, PDC_INT ndim, uint64_t *dims);
+perr_t PDCprop_set_obj_dims(pid_t obj_create_prop, PDC_int_t ndim, uint64_t *dims);
 
 /* Set object type 
  * Param obj_create_prop [IN]: Id of object property, returned by PDCprop_create(PDC_OBJ_CREATE)
- * Param type [IN]: Object variable type (enum type), choosing from PDC_var_type, i.e. PDC_INT, PDC_FLOAT, etc
+ * Param type [IN]: Object variable type (enum type), choosing from PDC_var_type, i.e. PDC_int_t, PDC_float_t, etc
  * Return: Non-negative on success/Negative on failure
  * */
 perr_t PDCprop_set_obj_type(pid_t obj_create_prop, PDC_var_type type);
@@ -283,18 +285,16 @@ perr_t PDCobj_iter_next(obj_handle ohandle);
  * Param info [OUT]: A PDC_obj_info_t struct
  * Return: Non-negative on success/Negative on failure
  * */
-perr_t PDCobj_iter_get_info(obj_handle ohandle, PDC_obj_info_t &info);
+perr_t PDCobj_iter_get_info(obj_handle ohandle, PDC_obj_info_t *info);
 
 /* Query on object 
  * Param pdc_id [IN]: Id of PDC
- * Param var_name [IN]: Name of the variable used for query
- * Param match_op [IN]: A PDC_query_op_t struct
- * Param value [IN]: The desired value used to compared for var_name 
+ * Param query_type [IN]: A PDC_query_type_t struct
+ * Param query_op [IN]: A PDC_query_op_t struct
  * Return: Query id
  * */
-pid_t PDC_query_obj(pid_t pdc_id, const char *varName, PDC_query_op_t query_op, const char *value);
-//or
-pid_t PDC_query_create(PDC_query_type_t query_type, PDC_query_op_t query_op, ...);
+pid_t PDC_query_create(pid_t pdc_id, PDC_query_type_t query_type, PDC_query_op_t query_op, ...);
+//pid_t PDC_query_obj(pid_t pdc_id, const char *varName, PDC_query_op_t query_op, const char *value);
 
 /* Use result from  PDCquery_obj function
  * Param query1_id [IN]: Query id, returned by PDC_query_obj function
@@ -302,7 +302,7 @@ pid_t PDC_query_create(PDC_query_type_t query_type, PDC_query_op_t query_op, ...
  * Param query2_id [IN]: Query id, returned by PDC_query_obj function
  * Return: Query id
  * */
-pid_t PDC_query_combine(pid_t query1_id, PDC_com_op_mode_t combine_op, qid_t query2_id);
+pid_t PDC_query_combine(pid_t query1_id, PDC_com_op_mode_t combine_op, pid_t query2_id);
 
 /* View query result
  * Param view_id [IN]: Query id, returned by PDCquery_obj(pid_t pdc_id, PDC_match_op_t match_op, ...) 
