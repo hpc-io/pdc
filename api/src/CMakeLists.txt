@@ -4,10 +4,10 @@ set(PDC_HEADERS "")
 set(PDC_SOURCES "")
 
 set(PDC_HEADERS ${PDC_HEADERS}
-		PDC.h
-                PDCprivate.h)
+                pdc.h
+                pdc_private.h)
 
 set(PDC_SOURCES ${PDC_SOURCES}
-                PDC.c)
+                pdc.c)
 
 add_library(pdc STATIC ${PDC_HEADERS} ${PDC_SOURCES})
