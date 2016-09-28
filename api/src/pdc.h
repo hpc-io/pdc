@@ -12,18 +12,16 @@ typedef struct {
     pid_t pdc_id;
 } PDC_STRUCT;
 
-typedef struct {  
-    PDC_int_t DPC_type;
-    union {
-	PDC_CONT *CONT_CREATE;
-	PDC_OBJ *OBJ_CREATE;
-    } type_create;
+typedef enum {
+    PDC_CONT_CREATE,
+    PDC_OBJ_CREATE  
 } PDC_prop_type;
 
 typedef enum {
     UNKNOWN = -1,
     MEMORY,
     FLASH,
+    DISK,
     FILESYSTEM,
     TAPE
 } PDC_loci;
@@ -46,19 +44,21 @@ typedef enum {
 } PDC_lifetime;
 
 typedef struct {
+    char *name;
 } PDC_cont_info_t;
 
 typedef struct {
+    char *name;
 } PDC_obj_info_t;
 
 typedef struct {
 } PDC_loci_info_t;
 
 typedef struct {
+    PDC_major_type type;
 } PDC_transform;
 
 typedef struct {
-    char *obj_name;
     uint64_t offset;
     uint64_t storage_size;
     PDC_loci locus;
@@ -127,7 +127,7 @@ perr_t PDCget_loci_count(pid_t pdc_id, pid_t *nloci);
  * Param info [OUT]: A PDC_loci_info_t struct
  * Return: Non-negative on success/Negative on failure
  * */
-perr_t PDCget_loci_info(pid_t pdc_id, pid_t n, PDC_loci_info_t info);
+perr_t PDCget_loci_info(pid_t pdc_id, pid_t n, PDC_loci_info_t *info);
 
 /* Create PDC property 
  * Param type [IN]: PDC property creation type (enum type), PDC_CONT_CREATE or PDC_OBJ_CREATE
@@ -371,17 +371,17 @@ perr_t PDCobj_close(pid_t obj_id);
 
 /* Built-in transform 
  * Param obj_create_prop [IN]: Id of object property, returned by PDCprop_create(PDC_OBJ_CREATE)
- * Param locus [IN]: Object locus setup (enum type), choosing from PDC_loci, i.e. MEMORY, FILESYSTEM, TAPE, etc 
- * Param major [IN]: Matrix storage ordrers (enum type), ROW_major or COL_major
+ * Param locus [IN]: Object locus setup (enum type), choosing from PDC_loci, i.e. MEMORY, FLASH, FILESYSTEM, TAPE, etc 
+ * Param A [IN]: A PDC_transform struct 
  * Return: Non-negative on success/Negative on failure
  * */
-perr_t PDCprop_set_obj_loci_prop(pid_t obj_create_prop, PDC_loci locus, PDC_major_type major);
+perr_t PDCprop_set_obj_loci_prop(pid_t obj_create_prop, PDC_loci locus, PDC_transform A);
 
 /* User transform 
  * Param obj_create_prop [IN]: Id of object property, returned by PDCprop_create(PDC_OBJ_CREATE)
- * Param locus [IN]: Object source locus (enum type), choosing from PDC_loci, i.e. MEMORY, FILESYSTEM, TAPE, etc 
- * Param trans [IN]: A PDC_transform struct
- * Param dest_locus [IN]: Destination locus, choosing from PDC_loci, i.e. MEMORY, FILESYSTEM, TAPE, etc
+ * Param locus [IN]: Object source locus (enum type), choosing from PDC_loci, i.e. MEMORY, FLASH, FILESYSTEM, TAPE, etc 
+ * Param A [IN]: A PDC_transform struct
+ * Param dest_locus [IN]: Destination locus, choosing from PDC_loci, i.e. MEMORY, FLASH, FILESYSTEM, TAPE, etc
  * Return: Non-negative on success/Negative on failure
  * */
 perr_t PDCprop_set_obj_transform(pid_t obj_create_prop, PDC_loci pre_locus, PDC_transform A, PDC_loci dest_locus);

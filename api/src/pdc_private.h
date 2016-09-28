@@ -13,7 +13,7 @@ typedef enum {
     PDC_UNKNOWN      = -1, /*error                                      */
     PDC_INT          = 0,  /*integer types                              */
     PDC_FLOAT        = 1,  /*floating-point types                       */
-    PDC_DOUBLE       = 2,  /* double types                              */
+    PDC_DOUBLE       = 2,  /*double types                               */
     PDC_STRING       = 3,  /*character string types                     */
     PDC_COMPOUND     = 4,  /*compound types                             */
     PDC_ENUM         = 5,  /*enumeration types                          */   

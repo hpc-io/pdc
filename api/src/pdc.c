@@ -13,7 +13,7 @@ perr_t PDCtype_struct_field_insert(pid_t type_id, const char *name, uint64_t off
 perr_t PDCget_loci_count(pid_t pdc_id, pid_t *nloci) {
 }
 
-perr_t PDCget_loci_info(pid_t pdc_id, pid_t n, PDC_loci_info_t info) {
+perr_t PDCget_loci_info(pid_t pdc_id, pid_t n, PDC_loci_info_t *info) {
 }
 
 pid_t PDCprop_create(PDC_prop_type type) {
@@ -114,7 +114,7 @@ perr_t PDCobj_sync(pid_t obj_id) {
 perr_t PDCobj_close(pid_t obj_id) {
 }
 
-perr_t PDCprop_set_obj_loci_prop(pid_t obj_create_prop, PDC_loci locus, PDC_major_type major) {
+perr_t PDCprop_set_obj_loci_prop(pid_t obj_create_prop, PDC_loci locus, PDC_transform A) {
 }
 
 perr_t PDCprop_set_obj_transform(pid_t obj_create_prop, PDC_loci pre_locus, PDC_transform A, PDC_loci dest_locus) {
