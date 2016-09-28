@@ -22,14 +22,14 @@ int main(int argc, char ** argv){
 
     while(!PDCcont_iter_null(ch)) {
         PDC_cont_info_t *info;
-        PDCcont_iter_get_info(ch, info);
+        info = PDCcont_iter_get_info(ch);
 
         if(strcmp(info->name, "interesting")) {
             pid_t cont_id = PDCcont_open(pdc_id, "container name");
             oh = PDCobj_iter_start(cont_id);
             while(!PDCobj_iter_null(oh)) {
                 PDC_obj_info_t *info;
-                PDCobj_iter_get_info(oh, info);
+                info = PDCobj_iter_get_info(oh);
                 if(!strcmp(info->name, "intteresting")) {
                     pid_t obj_id = PDCobj_open(cont_id, "obj name");
                     PDCobj_close(obj_id);

@@ -37,7 +37,7 @@ bool PDCcont_iter_null(cont_handle chandle) {
 perr_t PDCcont_iter_next(cont_handle chandle) {
 }
 
-perr_t PDCcont_iter_get_info(cont_handle chandle, PDC_cont_info_t *info) {
+PDC_cont_info_t * PDCcont_iter_get_info(cont_handle chandle) {
 }
 
 // perr_t PDCcont_persist(pid_t cont_id){}
@@ -78,7 +78,7 @@ bool PDCobj_iter_null(obj_handle ohandle) {
 perr_t PDCobj_iter_next(obj_handle ohandle) {
 }
 
-perr_t PDCobj_iter_get_info(obj_handle ohandle, PDC_obj_info_t *info) {
+PDC_obj_info_t *  PDCobj_iter_get_info(obj_handle ohandle) {
 }
 
 pid_t PDC_query_create(pid_t pdc_id, PDC_query_type_t query_type, PDC_query_op_t query_op, ...) {

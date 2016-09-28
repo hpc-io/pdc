@@ -48,8 +48,20 @@ typedef struct {
 } PDC_cont_info_t;
 
 typedef struct {
+// public info
+    PDC_cont_info_t info;
+// private stuff
+} pdc_container_t;
+
+typedef struct {
     char *name;
 } PDC_obj_info_t;
+
+typedef struct {
+// public info
+    PDC_obj_info_t info;
+// private stuff
+} pdc_object_t;
 
 typedef struct {
 } PDC_loci_info_t;
@@ -181,10 +193,9 @@ perr_t PDCcont_iter_next(cont_handle chandle);
 
 /* Retrieve container information
  * Param chandle [IN]: A cont_handle struct, returned by PDCcont_iter_start(pid_t pdc_id)
- * Param info [OUT]: A PDC_cont_info_t struct
- * Return: Non-negative on success/Negative on failure
+ * Return: Pointer to a PDC_cont_info_t struct
  * */
-perr_t PDCcont_iter_get_info(cont_handle chandle, PDC_cont_info_t *info);
+PDC_cont_info_t * PDCcont_iter_get_info(cont_handle chandle);
 
 /* Persist a transient container
  * Param cont_id [IN]: Id of the container, returned by PDCcont_open(pid_t pdc_id, const char *cont_name)
@@ -282,10 +293,9 @@ perr_t PDCobj_iter_next(obj_handle ohandle);
 
 /* Get object information
  * Param ohandle [IN]: A obj_handle struct, returned by PDCobj_iter_start(pid_t cont_id)
- * Param info [OUT]: A PDC_obj_info_t struct
- * Return: Non-negative on success/Negative on failure
+ * Return: Pointer to a PDC_obj_info_t struct
  * */
-perr_t PDCobj_iter_get_info(obj_handle ohandle, PDC_obj_info_t *info);
+PDC_obj_info_t * PDCobj_iter_get_info(obj_handle ohandle);
 
 /* Query on object 
  * Param pdc_id [IN]: Id of PDC
