@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "pdc_private.h"
+#include "pdc_malloc.h"
+#include "pdc_error.h"
 
 typedef struct {
 } PDC_prop;
@@ -13,7 +15,7 @@ typedef struct {
 } PDC_STRUCT;
 
 typedef enum {
-    PDC_CONT_CREATE,
+    PDC_CONT_CREATE = 0,
     PDC_OBJ_CREATE  
 } PDC_prop_type;
 
@@ -121,10 +123,10 @@ pdcid_t PDCtype_create(PDC_STRUCT pdc_struct);
  * Param type_id [IN]: Type of PDC, returned by PDCtype_create(struct PDC_STRUCT) 
  * Param name [IN]: Variable name to insert to PDC_STRUCT
  * Param offset [IN]: Offset of the variable in PDC_STRUCT
- * Param var_type [IN]: Variable type (enum type), choosing from PDC_var_type, i.e. PDC_int_t, PDC_float_t, etc 
+ * Param var_type [IN]: Variable type (enum type), choosing from PDC_var_type_t, i.e. PDC_int_t, PDC_float_t, etc 
  * Return: Non-negative on success/Negative on failure
  * */
-perr_t PDCtype_struct_field_insert(pdcid_t type_id, const char *name, uint64_t offset, PDC_var_type var_type);
+perr_t PDCtype_struct_field_insert(pdcid_t type_id, const char *name, uint64_t offset, PDC_var_type_t var_type);
 
 /* get number of loci for a PDC
  * Param pdc_id [IN]: Id of the PDC
@@ -246,10 +248,10 @@ perr_t PDCprop_set_obj_dims(pdcid_t obj_create_prop, PDC_int_t ndim, uint64_t *d
 
 /* Set object type 
  * Param obj_create_prop [IN]: Id of object property, returned by PDCprop_create(PDC_OBJ_CREATE)
- * Param type [IN]: Object variable type (enum type), choosing from PDC_var_type, i.e. PDC_int_t, PDC_float_t, etc
+ * Param type [IN]: Object variable type (enum type), choosing from PDC_var_type_t, i.e. PDC_int_t, PDC_float_t, etc
  * Return: Non-negative on success/Negative on failure
  * */
-perr_t PDCprop_set_obj_type(pdcid_t obj_create_prop, PDC_var_type type);
+perr_t PDCprop_set_obj_type(pdcid_t obj_create_prop, PDC_var_type_t type);
 
 /* Set an object buffer 
  * Param obj_create_prop [IN]: Id of object property, returned by PDCprop_create(PDC_OBJ_CREATE)

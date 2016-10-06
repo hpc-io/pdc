@@ -1,9 +1,11 @@
 #ifndef _pdc_private_H
 #define _pdc_private_H 
+#include <stdint.h>
 
 typedef int 			    perr_t;
+typedef int64_t             pdcid_t;
 typedef unsigned long long 	psize_t;
-typedef unsigned long long	pid_t;     // int64_t in hdf
+typedef unsigned int        pbool_t;
 
 typedef int			        PDC_int_t;
 typedef float			    PDC_float_t;
@@ -20,11 +22,9 @@ typedef enum {
     PDC_ARRAY        = 6,  /*Array types                                */
  
     NCLASSES         = 7   /*this must be last                          */
-} PDC_var_type;
+} PDC_var_type_t;
 
-typedef struct {
-} PDC_CONT;
+#define SUCCEED    0
+#define FAIL    (-1)
 
-typedef struct {
-} PDC_OBJ;
-#endif /* pdc_private_H */
+#endif /* end of _pdc_private_H */
