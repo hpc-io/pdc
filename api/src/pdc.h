@@ -14,10 +14,6 @@ typedef struct {
     pdcid_t pdc_id;
 } PDC_STRUCT;
 
-typedef enum {
-    PDC_CONT_CREATE = 0,
-    PDC_OBJ_CREATE  
-} PDC_prop_type;
 
 typedef enum {
     UNKNOWN = -1,
@@ -101,6 +97,7 @@ typedef enum {
 } PDC_query_type_t;
 
 
+
 /* Functions in PDC.c */
 
 ///////////////////
@@ -142,18 +139,6 @@ perr_t PDCget_loci_count(pdcid_t pdc_id, pdcid_t *nloci);
  * Return: Non-negative on success/Negative on failure
  * */
 perr_t PDCget_loci_info(pdcid_t pdc_id, pdcid_t n, PDC_loci_info_t *info);
-
-/* Create PDC property 
- * Param type [IN]: PDC property creation type (enum type), PDC_CONT_CREATE or PDC_OBJ_CREATE
- * Return: PDC property id, 0 for container and 1 for object
- * */
-pdcid_t PDCprop_create(PDC_prop_type type);
-
-/* Close PDC property
- * Param prop_id [IN]: Id of the PDC property
- * Return: Non-negative on success/Negative on failure
- * */
-perr_t PDCprop_close(pdcid_t prop_id);
 
 
 /////////////////////////

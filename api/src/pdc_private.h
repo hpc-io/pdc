@@ -27,4 +27,13 @@ typedef enum {
 #define SUCCEED    0
 #define FAIL    (-1)
 
+#define PDCmemset(X,C,Z)     memset((void*)(X),C,Z)
+
+#define FUNC_ENTER(X) do {            \
+} while(0)
+
+#define FUNC_LEAVE(ret_value) do {              \
+        return(ret_value);                      \
+} while(0)
+
 #endif /* end of _pdc_private_H */

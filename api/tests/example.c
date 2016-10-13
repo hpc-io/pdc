@@ -1,11 +1,11 @@
 #include <stdio.h>
-//#include <stdlib.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "pdc.h"
 
 int main(int argc, char ** argv){
-    PDC_property prop;
+    PDC_prop prop;
     pid_t pdc_id, nloci = 0;
     cont_handle ch;
     obj_handle oh;

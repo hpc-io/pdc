@@ -1,29 +1,33 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <math.h>
+#include <string.h>
 #include "pdc.h"
+#include "pdc_private.h"
 #include "pdc_malloc.h"
 #include "pdc_interface.h"
+#include "pdc_prop_pkg.h"
+#include "pdc_prop.h"
 
-/* local struct */
 
 struct PDC_property {
     pdcid_t id;
 };
 
-struct PDC_cont_property {
-    pdcid_t id;
-};
-
-struct PDC_obj_property {
-    pdcid_t id;
-};
-
 struct PDC_container {
     const char *name;
-    pdcid_t id;
 };
 
+
+pdcid_t PDCinit(PDC_prop property) {
+    perr_t ret_value = SUCCEED;         /* Return value */
+
+    FUNC_ENTER(NULL);
+
+    if(PDC_prop_init() < 0)
+        PGOTO_ERROR(FAIL, "PDC property init error");
+done:
+    FUNC_LEAVE(ret_value);
+} /* end PDCinit() */
 
 pdcid_t PDCtype_create(PDC_STRUCT pdc_struct) {
 }
@@ -37,41 +41,18 @@ perr_t PDCget_loci_count(pdcid_t pdc_id, pdcid_t *nloci) {
 perr_t PDCget_loci_info(pdcid_t pdc_id, pdcid_t n, PDC_loci_info_t *info) {
 }
 
-
-pdcid_t PDCprop_create(PDC_prop_type type) {
-    pdcid_t ret_value = SUCCEED;
-    if (type == PDC_CONT_CREATE) {
-        struct PDC_cont_property *p = NULL;
-        p = PDC_MALLOC(struct PDC_cont_property);
-        if(!p)
-            PGOTO_ERROR(FAIL, "Error: memory allocation failed\n");
-        p->id = PDC_id_register(PDC_CONT_PROP, p, TRUE);   
-        ret_value = p->id;
-    }
-    if(type == PDC_OBJ_CREATE) {
-        struct PDC_obj_property *q = NULL;
-        q = PDC_MALLOC(struct PDC_obj_property);
-      if(!q)
-          PGOTO_ERROR(FAIL, "Error: memory allocation failed\n");
-        q->id = PDC_id_register(PDC_OBJ_PROP, q, TRUE);  
-        ret_value = q->id;
-    }
-done:
-    return ret_value;
-}
-
-perr_t PDCprop_close(pdcid_t prop_id) {
-}
-
 pdcid_t PDCcont_create(pdcid_t pdc_id, const char *cont_name, pdcid_t cont_create_prop) {
     pdcid_t ret_value = SUCCEED;
     struct PDC_container *p = NULL;
+
+    FUNC_ENTER(NULL);
+
     p = PDC_MALLOC(struct PDC_container);
     if(!p)
-        PGOTO_ERROR(FAIL,"Error: memory allocation failed\n");
+        PGOTO_ERROR(FAIL,"memory allocation failed\n");
     p->name = cont_name;
 done:
-    return ret_value;
+    FUNC_LEAVE(ret_value);
 }
 
 pdcid_t PDCcont_open(pdcid_t pdc_id, const char *cont_name) {
