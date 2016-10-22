@@ -1,15 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "pdc.h"
 #include "pdc_prop.h"
-
+#include "pdc.h"
 
 int main() {
     PDC_prop p;
-    PDCinit(p);
+    PDC_init(p);
 
-    // create an object
+    // create an object property
     PDC_prop_type type = PDC_OBJ_CREATE;
     pdcid_t create_prop1 = PDCprop_create(type);
     if(create_prop1 > 0) {
@@ -21,7 +20,7 @@ int main() {
     else {
         printf("Fail to create @ line %d\n", __LINE__);
     }
-    // create another object
+    // create another object property
     pdcid_t create_prop2 = PDCprop_create(type);
     if(create_prop2 > 0) {
         if(type == PDC_CONT_CREATE)
@@ -37,11 +36,13 @@ int main() {
         printf("Fail to close property @ line %d\n", __LINE__);
     else
         printf("successfully close property # %lld\n", create_prop1);
+        
     if(PDCprop_close(create_prop2)<0)
         printf("Fail to close property @ line %d\n", __LINE__);
     else
         printf("successfully close property # %lld\n", create_prop2);
 
+    // create a container property
     type = PDC_CONT_CREATE;
     pdcid_t create_prop = PDCprop_create(type);
     if(create_prop > 0) {
@@ -57,4 +58,9 @@ int main() {
        printf("Fail to close property @ line %d\n", __LINE__);
    else
        printf("successfully close property # %lld\n", create_prop);
+
+   if(PDC_close() < 0)
+       printf("fail to close PDC\n");
+   else
+       printf("PDC is closed\n");
 }

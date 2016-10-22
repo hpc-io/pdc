@@ -1,42 +1,12 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "pdc_interface.h"
-#include "pdc_id_pkg.h"
 #include "pdc_malloc.h"
-#include "pdc_linkedlist.h"
 
 
 /* Combine a Type number and an atom index into an atom */
 #define PDCID_MAKE(g,i)   ((((pdcid_t)(g) & TYPE_MASK) << ID_BITS) | ((pdcid_t)(i) & ID_MASK))
 
-/* Local typedefs */
-
-/* Atom information structure used */
-typedef struct PDC_id_info {
-    pdcid_t     id;             /* ID for this info                         */
-    unsigned    count;          /* ref. count for this atom                 */
-    const void  *obj_ptr;       /* pointer associated with the atom         */
-    PDC_LIST_ENTRY(PDC_id_info) entry;
-} PDC_id_info_t;
-
-/* ID type structure used */
-typedef struct {
-    const                       PDCID_class_t *cls;   /* Pointer to ID class                        */
-    unsigned                    init_count;           /* # of times this type has been initialized  */
-    unsigned                    id_count;             /* Current number of IDs held                 */
-    pdcid_t                     nextid;               /* ID to use for the next atom                */
-    PDC_LIST_HEAD(PDC_id_info)  ids;                  /* Head of list of IDs                        */
-} PDC_id_type_t;
-
-/* Variable to keep track of the number of types allocated.  Its value is the */
-/* next type ID to be handed out, so it is always one greater than the number */
-/* of types. */
-/* Starts at 1 instead of 0 because it makes trace output look nicer.  If more */
-/* types (or IDs within a type) are needed, adjust TYPE_BITS in pdc_id_pkg.h   */
-/* and/or increase size of pdcid_t */
-static PDC_type_t PDC_next_type = (PDC_type_t)PDC_NTYPES;
-
-static PDC_id_type_t *PDC_id_type_list_g[PDC_MAX_NUM_TYPES];
 
 /*--------------------- Local function prototypes ---------------------------*/
 static PDC_id_info_t *PDC__find_id(pdcid_t id);
@@ -82,7 +52,6 @@ done:
 perr_t PDC_register_type(const PDCID_class_t *cls){
     PDC_id_type_t *type_ptr = NULL;     /* Ptr to the atomic type */
     perr_t ret_value = SUCCEED;         /* Return value           */
-
     FUNC_ENTER(NULL);
 
     /* Sanity check */
@@ -111,14 +80,6 @@ perr_t PDC_register_type(const PDCID_class_t *cls){
     type_ptr->init_count++;
 
 done:
-    if(ret_value < 0) { /* Clean up on error */
-        if(type_ptr) {
-            if(&type_ptr->ids);            // need to work
-//                H5SL_close(type_ptr->ids);
-//            (void)H5FL_FREE(H5I_id_type_t, type_ptr);
-        } /* end if */
-    } /* end if */
-
     FUNC_LEAVE(ret_value);
 } /* end PDC_register_type() */
 
@@ -156,11 +117,11 @@ pdcid_t PDC_id_register(PDC_type_t type, const void *object) {
     /* Create the struct & it's ID */
     new_id = PDCID_MAKE(type, type_ptr->nextid);
     id_ptr->id = new_id;
-    id_ptr->count = 1;                /*initial reference count*/
+    id_ptr->count = ATOMIC_VAR_INIT(1);      /*initial reference count*/
     id_ptr->obj_ptr = object;
 
     /* Insert into the type */
-    PDC_LIST_INSERT_HEAD(&type_ptr->ids, id_ptr, entry);   // H5SL_insert(type_ptr->ids, id_ptr, &id_ptr->id)
+    PDC_LIST_INSERT_HEAD(&type_ptr->ids, id_ptr, entry);   
     type_ptr->id_count++;
     type_ptr->nextid++;
 
@@ -194,8 +155,10 @@ int PDC_dec_ref(pdcid_t id) {
      * count. If the reference count is more than one then decrement the
      * reference count without calling the free method.
      */
-    (id_ptr->count)--;
-    if(id_ptr->count == 0) {
+//    (id_ptr->count)--;
+//    if(id_ptr->count == 0) {
+    ret_value = atomic_fetch_sub(&(id_ptr->count), 1) - 1;
+    if(ret_value == 0) {
         PDC_id_type_t   *type_ptr;      /*ptr to the type   */
         
         /* Get the ID's type */
@@ -206,6 +169,7 @@ int PDC_dec_ref(pdcid_t id) {
                 PGOTO_ERROR(FAIL, "can't remove ID node");
             /* Remove the node from the type */
             PDC_LIST_REMOVE(id_ptr, entry);
+	    id_ptr = PDC_FREE(PDC_id_info_t, id_ptr);
             /* Decrement the number of IDs in the type */
             (type_ptr->id_count)--;
             ret_value = 0;
@@ -213,8 +177,61 @@ int PDC_dec_ref(pdcid_t id) {
         else
             ret_value = FAIL;
     }
-    else
-        ret_value = (int)id_ptr->count;
+//    else
+//        ret_value = (int)id_ptr->count;
 done:
     FUNC_LEAVE(ret_value);
 } /* end PDC_dec_ref() */
+
+int PDC_id_list_null(PDC_type_t type) {
+    perr_t ret_value = 0;   /* Return value */
+    PDC_id_type_t   *type_ptr;    /* Pointer to the type   */
+
+    FUNC_ENTER(NULL);
+
+    if(type <= PDC_BADID || type >= PDC_next_type)
+        PGOTO_ERROR(FAIL, "invalid type number");
+
+    type_ptr = PDC_id_type_list_g[type];
+    if(type_ptr->id_count != 0)
+        ret_value = type_ptr->id_count;
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_id_list_clear(PDC_type_t type) {
+    PDC_id_type_t   *type_ptr;    /* Pointer to the type   */
+    perr_t ret_value = SUCCEED;   /* Return value */
+
+    FUNC_ENTER(NULL);
+
+    type_ptr = PDC_id_type_list_g[type];
+
+    while(!PDC_LIST_IS_EMPTY(&type_ptr->ids)) {
+        PDC_id_info_t *id_ptr = (&type_ptr->ids)->head;
+        if(!type_ptr->cls->free_func || (type_ptr->cls->free_func)((void *)id_ptr->obj_ptr) >= 0) {
+            PDC_LIST_REMOVE(id_ptr, entry);
+            id_ptr = PDC_FREE(PDC_id_info_t, id_ptr);
+            (type_ptr->id_count)--;
+        }
+        else
+            ret_value = FAIL;
+    }
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+
+perr_t PDC_destroy_type(PDC_type_t type) {
+    PDC_id_type_t *type_ptr = NULL;     /* Ptr to the atomic type */
+    perr_t ret_value = SUCCEED;         /* Return value           */
+
+    FUNC_ENTER(NULL);
+
+    type_ptr = PDC_id_type_list_g[type];
+    if(type_ptr == NULL)
+        PGOTO_ERROR(FAIL, "type was not initialized correctly");
+    type_ptr = PDC_FREE(PDC_id_type_t, type_ptr);
+done:
+    FUNC_LEAVE(ret_value);
+}

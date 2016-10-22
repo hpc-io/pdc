@@ -5,29 +5,47 @@
 #include "pdc_private.h"
 #include "pdc_malloc.h"
 #include "pdc_interface.h"
-#include "pdc_prop_pkg.h"
+#include "pdc_pdc_pkg.h"
 #include "pdc_prop.h"
+#include "pdc_prop_pkg.h"
+#include "pdc_cont.h"
+#include "pdc_cont_pkg.h"
 
-
-struct PDC_property {
-    pdcid_t id;
-};
-
-struct PDC_container {
-    const char *name;
-};
-
-
-pdcid_t PDCinit(PDC_prop property) {
+pdcid_t PDC_init(PDC_prop property) {
     perr_t ret_value = SUCCEED;         /* Return value */
 
     FUNC_ENTER(NULL);
 
-    if(PDC_prop_init() < 0)
+    if(PDCpdc_init() < 0)
+        PGOTO_ERROR(FAIL, "PDC init error");
+    if(PDCprop_init() < 0)
         PGOTO_ERROR(FAIL, "PDC property init error");
+    if(PDCcont_init() < 0)
+        PGOTO_ERROR(FAIL, "PDC container init error");
 done:
     FUNC_LEAVE(ret_value);
-} /* end PDCinit() */
+} /* end of PDC_init() */
+
+perr_t PDC_close() {
+    perr_t ret_value = SUCCEED;         /* Return value */
+
+    FUNC_ENTER(NULL);
+
+    // check every list before closing
+    if(PDC_prop_cont_list_null() < 0)
+        PGOTO_ERROR(FAIL, "fail to close container property");
+    if(PDC_prop_obj_list_null() < 0)
+        PGOTO_ERROR(FAIL, "fail to close object property");
+
+    if(PDCpdc_end() < 0)
+        PGOTO_ERROR(FAIL, "fail to destroy pdc");
+    if(PDCprop_end() < 0)
+        PGOTO_ERROR(FAIL, "fail to destroy property");
+    if(PDCcont_end() < 0)
+        PGOTO_ERROR(FAIL, "fail to destroy container");
+done:
+    FUNC_LEAVE(ret_value);
+} /* end of PDC_close() */
 
 pdcid_t PDCtype_create(PDC_STRUCT pdc_struct) {
 }
@@ -39,20 +57,6 @@ perr_t PDCget_loci_count(pdcid_t pdc_id, pdcid_t *nloci) {
 }
 
 perr_t PDCget_loci_info(pdcid_t pdc_id, pdcid_t n, PDC_loci_info_t *info) {
-}
-
-pdcid_t PDCcont_create(pdcid_t pdc_id, const char *cont_name, pdcid_t cont_create_prop) {
-    pdcid_t ret_value = SUCCEED;
-    struct PDC_container *p = NULL;
-
-    FUNC_ENTER(NULL);
-
-    p = PDC_MALLOC(struct PDC_container);
-    if(!p)
-        PGOTO_ERROR(FAIL,"memory allocation failed\n");
-    p->name = cont_name;
-done:
-    FUNC_LEAVE(ret_value);
 }
 
 pdcid_t PDCcont_open(pdcid_t pdc_id, const char *cont_name) {
@@ -73,9 +77,6 @@ PDC_cont_info_t * PDCcont_iter_get_info(cont_handle chandle) {
 // perr_t PDCcont_persist(pdcid_t cont_id){}
 
 perr_t PDCprop_set_cont_lifetime(pdcid_t cont_create_prop, PDC_lifetime cont_lifetime) {
-}
-
-perr_t PDCcont_close(pdcid_t cont_id) {
 }
 
 pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop) {

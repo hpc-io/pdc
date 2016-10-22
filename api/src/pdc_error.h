@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include "pdc_public.h"
 #include "pdc_private.h"
 
 /*
