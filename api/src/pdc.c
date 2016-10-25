@@ -5,44 +5,58 @@
 #include "pdc_private.h"
 #include "pdc_malloc.h"
 #include "pdc_interface.h"
-#include "pdc_pdc_pkg.h"
-#include "pdc_prop.h"
-#include "pdc_prop_pkg.h"
-#include "pdc_cont.h"
-#include "pdc_cont_pkg.h"
 
-pdcid_t PDC_init(PDC_prop property) {
-    perr_t ret_value = SUCCEED;         /* Return value */
+static PDC_CLASS_t *PDC__class_create() {
+    PDC_CLASS_t *ret_value = NULL;         /* Return value */
 
     FUNC_ENTER(NULL);
 
-    if(PDCpdc_init() < 0)
-        PGOTO_ERROR(FAIL, "PDC init error");
-    if(PDCprop_init() < 0)
+    PDC_CLASS_t *pc;
+    if(NULL == (pc = PDC_CALLOC(PDC_CLASS_t)))
+        PGOTO_ERROR(NULL, "create pdc class: memory allocation failed"); 
+    ret_value = pc;
+done:
+    FUNC_LEAVE(ret_value);
+} /* end of PDC__create_class() */
+
+pdcid_t PDC_init(PDC_prop_t property) {
+    pdcid_t ret_value = SUCCEED;         /* Return value */
+
+    FUNC_ENTER(NULL);
+    PDC_CLASS_t *pc = PDC__class_create();
+    if(pc == NULL)
+	    PGOTO_ERROR(FAIL, "fail to allocate pdc type");
+
+    if(PDCprop_init(pc) < 0)
         PGOTO_ERROR(FAIL, "PDC property init error");
-    if(PDCcont_init() < 0)
+    if(PDCcont_init(pc) < 0)
         PGOTO_ERROR(FAIL, "PDC container init error");
+
+    // create pdc id
+    pdcid_t pdcid = (pdcid_t)pc;
+    ret_value = pdcid;
 done:
     FUNC_LEAVE(ret_value);
 } /* end of PDC_init() */
 
-perr_t PDC_close() {
+perr_t PDC_close(pdcid_t pdcid) {
     perr_t ret_value = SUCCEED;         /* Return value */
 
     FUNC_ENTER(NULL);
-
     // check every list before closing
-    if(PDC_prop_cont_list_null() < 0)
+    if(PDC_prop_cont_list_null(pdcid) < 0)
         PGOTO_ERROR(FAIL, "fail to close container property");
-    if(PDC_prop_obj_list_null() < 0)
+    if(PDC_prop_obj_list_null(pdcid) < 0)
         PGOTO_ERROR(FAIL, "fail to close object property");
 
-    if(PDCpdc_end() < 0)
-        PGOTO_ERROR(FAIL, "fail to destroy pdc");
-    if(PDCprop_end() < 0)
+    PDC_CLASS_t *pc = (PDC_CLASS_t *) pdcid;
+    if(pc == NULL)
+        PGOTO_ERROR(FAIL, "PDC init fails");
+    if(PDCprop_end(pdcid) < 0)
         PGOTO_ERROR(FAIL, "fail to destroy property");
-    if(PDCcont_end() < 0)
+    if(PDCcont_end(pdcid) < 0)
         PGOTO_ERROR(FAIL, "fail to destroy container");
+    pc = PDC_FREE(PDC_CLASS_t, pc);
 done:
     FUNC_LEAVE(ret_value);
 } /* end of PDC_close() */

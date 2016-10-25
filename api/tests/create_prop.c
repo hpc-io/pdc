@@ -1,16 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "pdc_prop.h"
 #include "pdc.h"
 
+
 int main() {
-    PDC_prop p;
-    PDC_init(p);
+    PDC_prop_t p;
+    pdcid_t pdc = PDC_init(p);
 
     // create an object property
     PDC_prop_type type = PDC_OBJ_CREATE;
-    pdcid_t create_prop1 = PDCprop_create(type);
+    pdcid_t create_prop1 = PDCprop_create(type, pdc);
     if(create_prop1 > 0) {
         if(type == PDC_CONT_CREATE)
             printf("Create a container, id is %lld\n", create_prop1);
@@ -21,7 +21,7 @@ int main() {
         printf("Fail to create @ line %d\n", __LINE__);
     }
     // create another object property
-    pdcid_t create_prop2 = PDCprop_create(type);
+    pdcid_t create_prop2 = PDCprop_create(type, pdc);
     if(create_prop2 > 0) {
         if(type == PDC_CONT_CREATE)
             printf("Create a container, id is %lld\n", create_prop2);
@@ -32,19 +32,18 @@ int main() {
         printf("Fail to create @ line %d\n", __LINE__);
     }
 
-    if(PDCprop_close(create_prop1)<0)
+    if(PDCprop_close(create_prop1, pdc)<0)
         printf("Fail to close property @ line %d\n", __LINE__);
     else
         printf("successfully close property # %lld\n", create_prop1);
-        
-    if(PDCprop_close(create_prop2)<0)
+    if(PDCprop_close(create_prop2, pdc)<0)
         printf("Fail to close property @ line %d\n", __LINE__);
     else
         printf("successfully close property # %lld\n", create_prop2);
 
     // create a container property
     type = PDC_CONT_CREATE;
-    pdcid_t create_prop = PDCprop_create(type);
+    pdcid_t create_prop = PDCprop_create(type, pdc);
     if(create_prop > 0) {
         if(type == PDC_CONT_CREATE)
             printf("Create a container, id is %lld\n", create_prop);
@@ -54,12 +53,12 @@ int main() {
     else
         printf("Fail to create @ line  %d!\n", __LINE__);
 
-   if(PDCprop_close(create_prop)<0)
+   if(PDCprop_close(create_prop, pdc)<0)
        printf("Fail to close property @ line %d\n", __LINE__);
    else
        printf("successfully close property # %lld\n", create_prop);
 
-   if(PDC_close() < 0)
+    if(PDC_close(pdc) < 0)
        printf("fail to close PDC\n");
    else
        printf("PDC is closed\n");

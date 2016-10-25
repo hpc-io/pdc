@@ -24,24 +24,23 @@ static const PDCID_class_t PDC_OBJ_PROP_CLS[1] = {{
     (PDC_free_t)PDCprop__obj_close      /* Callback routine for closing objects of this class */
 }};
 
-perr_t PDCprop_init() {
+perr_t PDCprop_init(PDC_CLASS_t *pc) {
     perr_t ret_value = SUCCEED;         /* Return value */
 
     FUNC_ENTER(NULL);
-
     /* Initialize the atom group for the container property IDs */
-    if(PDC_register_type(PDC_CONT_PROP_CLS) < 0)
+    if(PDC_register_type(PDC_CONT_PROP_CLS, pc) < 0)
         PGOTO_ERROR(FAIL, "unable to initialize container property interface");
 
     /* Initialize the atom group for the object property IDs */
-    if(PDC_register_type(PDC_OBJ_PROP_CLS) < 0)
+    if(PDC_register_type(PDC_OBJ_PROP_CLS, pc) < 0)
         PGOTO_ERROR(FAIL, "unable to initialize object property interface");
 
 done:
     FUNC_LEAVE(ret_value);
 } /* end PDCprop_init() */
 
-pdcid_t PDCprop_create(PDC_prop_type type) {
+pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdc) {
     pdcid_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
@@ -51,7 +50,7 @@ pdcid_t PDCprop_create(PDC_prop_type type) {
         p = PDC_MALLOC(PDC_cont_prop_t);
         if(!p)
             PGOTO_ERROR(FAIL, "PDC container property memory allocation failed\n");
-        pdcid_t new_id_c = PDC_id_register(PDC_CONT_PROP, p);
+        pdcid_t new_id_c = PDC_id_register(PDC_CONT_PROP, p, pdc);
         ret_value = new_id_c;
     }
     if(type == PDC_OBJ_CREATE) {
@@ -59,22 +58,21 @@ pdcid_t PDCprop_create(PDC_prop_type type) {
         q = PDC_MALLOC(PDC_obj_prop_t);
       if(!q)
           PGOTO_ERROR(FAIL, "PDC object property memory allocation failed\n");
-        pdcid_t new_id_o = PDC_id_register(PDC_OBJ_PROP, q);
+        pdcid_t new_id_o = PDC_id_register(PDC_OBJ_PROP, q, pdc);
         ret_value = new_id_o;
     }
 done:
     FUNC_LEAVE(ret_value);
 } /* end PDCprop_create() */
 
-perr_t PDC_prop_cont_list_null() {
+perr_t PDC_prop_cont_list_null(pdcid_t pdc) {
     perr_t ret_value = SUCCEED;   /* Return value */
 
     FUNC_ENTER(NULL);
-
     // list is not empty
-    if(PDC_id_list_null(PDC_CONT_PROP) > 0) {
-        printf("there is %d more element in the listi needs to be closed\n", PDC_id_list_null(PDC_CONT_PROP));
-        if(PDC_id_list_clear(PDC_CONT_PROP) < 0)
+    if(PDC_id_list_null(PDC_CONT_PROP, pdc) > 0) {
+        printf("there is %d more element in the list needs to be closed\n", PDC_id_list_null(PDC_CONT_PROP, pdc));
+        if(PDC_id_list_clear(PDC_CONT_PROP, pdc) < 0)
             PGOTO_ERROR(FAIL, "fail to clear container property list");
     }
 
@@ -82,15 +80,15 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_prop_obj_list_null() {
+perr_t PDC_prop_obj_list_null(pdcid_t pdc) {
     perr_t ret_value = SUCCEED;   /* Return value */
 
     FUNC_ENTER(NULL);
 
     // list is not empty
-    if(PDC_id_list_null(PDC_OBJ_PROP) > 0) {
-        printf("there is %d more element in the obj list needs to be closed\n", PDC_id_list_null(PDC_OBJ_PROP));
-        if(PDC_id_list_clear(PDC_OBJ_PROP) < 0)
+    if(PDC_id_list_null(PDC_OBJ_PROP, pdc) > 0) {
+        printf("there is %d more element in the obj list needs to be closed\n", PDC_id_list_null(PDC_OBJ_PROP, pdc));
+        if(PDC_id_list_clear(PDC_OBJ_PROP, pdc) < 0)
             PGOTO_ERROR(FAIL, "fail to clear obj property list");
     }
 done:
@@ -117,27 +115,27 @@ done:
     FUNC_LEAVE(ret_value);
 } /* end PDCprop__obj_close() */
 
-perr_t PDCprop_close(pdcid_t id) {
+perr_t PDCprop_close(pdcid_t id, pdcid_t pdc) {
     perr_t ret_value = SUCCEED;   /* Return value */
 
     FUNC_ENTER(NULL);
 
     /* When the reference count reaches zero the resources are freed */
-    if(PDC_dec_ref(id) < 0)
+    if(PDC_dec_ref(id, pdc) < 0)
         PGOTO_ERROR(FAIL, "property: problem of freeing id");
 done:
     FUNC_LEAVE(ret_value);
 } /* end PDCprop_close() */
 
-perr_t PDCprop_end() {
+perr_t PDCprop_end(pdcid_t pdc) {
     perr_t ret_value = SUCCEED;         /* Return value */
 
     FUNC_ENTER(NULL);
 
-    if(PDC_destroy_type(PDC_CONT_PROP) < 0)
+    if(PDC_destroy_type(PDC_CONT_PROP, pdc) < 0)
         PGOTO_ERROR(FAIL, "unable to destroy container property interface");
 
-    if(PDC_destroy_type(PDC_OBJ_PROP) < 0)
+    if(PDC_destroy_type(PDC_OBJ_PROP, pdc) < 0)
         PGOTO_ERROR(FAIL, "unable to destroy object property interface");
 
 done:

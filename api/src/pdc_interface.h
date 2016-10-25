@@ -72,7 +72,9 @@ typedef struct {
 /* and/or increase size of pdcid_t */
 static PDC_type_t PDC_next_type = (PDC_type_t)PDC_NTYPES;
 
-static PDC_id_type_t *PDC_id_type_list_g[PDC_MAX_NUM_TYPES];
+typedef struct PDC_CLASS_t {
+    PDC_id_type_t *PDC_id_type_list_g[PDC_MAX_NUM_TYPES];
+} PDC_CLASS_t;
 
 /*-------------------------------------------------------------------------
  * Function:    PDC_register_type
@@ -86,13 +88,13 @@ static PDC_id_type_t *PDC_id_type_list_g[PDC_MAX_NUM_TYPES];
  *
  *-------------------------------------------------------------------------
  */
-perr_t PDC_register_type(const PDCID_class_t *cls);
+perr_t PDC_register_type(const PDCID_class_t *cls, PDC_CLASS_t *pc);
 
 
 /*-------------------------------------------------------------------------
  * Function:    PDCid_register
  *
- * Purpose: Public interface to H5I_register.
+ * Purpose: Public interface to PDCid_register.
  *
  * Return:  Success:    New object id.
  *          Failure:    Negative
@@ -117,7 +119,7 @@ pdcid_t PDCid_register(PDC_type_t type, const void *object);
  *
  *-------------------------------------------------------------------------
  */
-pdcid_t PDC_id_register(PDC_type_t type, const void *object);
+pdcid_t PDC_id_register(PDC_type_t type, const void *object, pdcid_t pdc);
 
 /*-------------------------------------------------------------------------
  * Function:    PDC_dec_ref
@@ -134,7 +136,7 @@ pdcid_t PDC_id_register(PDC_type_t type, const void *object);
  *
  *-------------------------------------------------------------------------
  */
-int PDC_dec_ref(pdcid_t id);
+int PDC_dec_ref(pdcid_t id, pdcid_t pdc);
 
 /*-------------------------------------------------------------------------
  * Function:    PDC_id_list_null
@@ -147,7 +149,7 @@ int PDC_dec_ref(pdcid_t id);
  *
  * -------------------------------------------------------------------------
  */
-perr_t PDC_id_list_null(PDC_type_t type);
+perr_t PDC_id_list_null(PDC_type_t type, pdcid_t pdc);
 
 
 /*-------------------------------------------------------------------------
@@ -161,7 +163,7 @@ perr_t PDC_id_list_null(PDC_type_t type);
  *
  * -------------------------------------------------------------------------
  */
-perr_t PDC_id_list_clear(PDC_type_t type);
+perr_t PDC_id_list_clear(PDC_type_t type, pdcid_t pdc);
 
 /*-------------------------------------------------------------------------
  * Function:    PDC_destroy_type
@@ -174,6 +176,6 @@ perr_t PDC_id_list_clear(PDC_type_t type);
  *
  * -------------------------------------------------------------------------
  */
-perr_t PDC_destroy_type(PDC_type_t type);
+perr_t PDC_destroy_type(PDC_type_t type, pdcid_t pdc);
 
 #endif

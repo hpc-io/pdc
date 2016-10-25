@@ -9,7 +9,7 @@
 
 
 /*--------------------- Local function prototypes ---------------------------*/
-static PDC_id_info_t *PDC__find_id(pdcid_t id);
+static PDC_id_info_t *PDC__find_id(pdcid_t id, PDC_CLASS_t *pc);
 
 //static void *PDC__remove_common(PDC_id_type_t *type_ptr, pdcid_t id);
 
@@ -26,7 +26,7 @@ static PDC_id_info_t *PDC__find_id(pdcid_t id);
  *
  *-------------------------------------------------------------------------
  */
-static PDC_id_info_t *PDC__find_id(pdcid_t id) {
+static PDC_id_info_t *PDC__find_id(pdcid_t id, PDC_CLASS_t *pc) {
     PDC_type_t      type;               /*ID's type         */
     PDC_id_type_t   *type_ptr;          /*ptr to the type   */
     PDC_id_info_t   *ret_value = NULL;  /* Return value     */
@@ -38,7 +38,7 @@ static PDC_id_info_t *PDC__find_id(pdcid_t id) {
     if(type <= PDC_BADID || type >= PDC_next_type)
         PGOTO_DONE(NULL);
 
-    type_ptr = PDC_id_type_list_g[type];
+    type_ptr = (pc->PDC_id_type_list_g)[type];
     if(!type_ptr || type_ptr->init_count <= 0)
         PGOTO_DONE(NULL);
     
@@ -49,7 +49,7 @@ done:
 } /* end PDC__find_id() */
 
 
-perr_t PDC_register_type(const PDCID_class_t *cls){
+perr_t PDC_register_type(const PDCID_class_t *cls, PDC_CLASS_t *pc){
     PDC_id_type_t *type_ptr = NULL;     /* Ptr to the atomic type */
     perr_t ret_value = SUCCEED;         /* Return value           */
     FUNC_ENTER(NULL);
@@ -59,15 +59,15 @@ perr_t PDC_register_type(const PDCID_class_t *cls){
     assert(cls->type_id > 0 && cls->type_id < PDC_MAX_NUM_TYPES);
 
     /* Initialize the type */
-    if(NULL == PDC_id_type_list_g[cls->type_id]) {
+    if(NULL == (pc->PDC_id_type_list_g)[cls->type_id]) {
         /* Allocate the type information for new type */
         if(NULL == (type_ptr = (PDC_id_type_t *)PDC_CALLOC(PDC_id_type_t)))
             PGOTO_ERROR(FAIL, "ID type allocation failed");
-        PDC_id_type_list_g[cls->type_id] = type_ptr;
+        (pc->PDC_id_type_list_g)[cls->type_id] = type_ptr;
     }
     else {
         /* Get the pointer to the existing type */
-        type_ptr = PDC_id_type_list_g[cls->type_id];
+        type_ptr = (pc->PDC_id_type_list_g)[cls->type_id];
     }
     /* Initialize the ID type structure for new types */
     if(type_ptr->init_count == 0) {
@@ -83,9 +83,9 @@ done:
     FUNC_LEAVE(ret_value);
 } /* end PDC_register_type() */
 
-
+/*
 pdcid_t PDCid_register(PDC_type_t type, const void *object) {
-    pdcid_t ret_value = PDC_INVALID_ID;  /* Return value */
+    pdcid_t ret_value = PDC_INVALID_ID;  
 
     FUNC_ENTER(NULL);
 
@@ -94,10 +94,10 @@ pdcid_t PDCid_register(PDC_type_t type, const void *object) {
     ret_value = PDC_id_register(type, object);
 done:
     FUNC_LEAVE(ret_value);
-} /* end PDCid_register() */
+}*/ /* end PDCid_register() */
 
 
-pdcid_t PDC_id_register(PDC_type_t type, const void *object) {
+pdcid_t PDC_id_register(PDC_type_t type, const void *object, pdcid_t pdc) {
     PDC_id_type_t     *type_ptr;           /* ptr to the type               */
     PDC_id_info_t     *id_ptr;             /* ptr to the new ID information */
     pdcid_t           new_id;              /* new ID                        */
@@ -105,10 +105,11 @@ pdcid_t PDC_id_register(PDC_type_t type, const void *object) {
 
     FUNC_ENTER(NULL);
 
+    PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
     /* Check arguments */
     if(type <= PDC_BADID || type >= PDC_next_type)
         PGOTO_ERROR(FAIL, "invalid type number");
-    type_ptr = PDC_id_type_list_g[type];                 
+    type_ptr = (pc->PDC_id_type_list_g)[type];                 
     if(NULL == type_ptr || type_ptr->init_count <= 0)
         PGOTO_ERROR(FAIL, "invalid type");
     if(NULL == (id_ptr = PDC_MALLOC(PDC_id_info_t)))
@@ -134,7 +135,7 @@ done:
     FUNC_LEAVE(ret_value);
 } /* end PDC_id_register() */
 
-int PDC_dec_ref(pdcid_t id) {
+int PDC_dec_ref(pdcid_t id, pdcid_t pdc) {
     PDC_id_info_t *id_ptr;      /* Pointer to the new ID */
     int ret_value = 0;          /* Return value */
 
@@ -143,8 +144,9 @@ int PDC_dec_ref(pdcid_t id) {
     /* Sanity check */
     assert(id >= 0);
 
+    PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
     /* General lookup of the ID */
-    if(NULL == (id_ptr = PDC__find_id(id)))
+    if(NULL == (id_ptr = PDC__find_id(id, pc)))
         PGOTO_ERROR(FAIL, "can't locate ID");
 
     /*
@@ -162,7 +164,7 @@ int PDC_dec_ref(pdcid_t id) {
         PDC_id_type_t   *type_ptr;      /*ptr to the type   */
         
         /* Get the ID's type */
-        type_ptr = PDC_id_type_list_g[PDC_TYPE(id)];
+        type_ptr = (pc->PDC_id_type_list_g)[PDC_TYPE(id)];
         if(!type_ptr->cls->free_func || (type_ptr->cls->free_func)((void *)id_ptr->obj_ptr) >= 0) {
             /* check if list is empty before remove */
             if(PDC_LIST_IS_EMPTY(&type_ptr->ids))
@@ -183,7 +185,7 @@ done:
     FUNC_LEAVE(ret_value);
 } /* end PDC_dec_ref() */
 
-int PDC_id_list_null(PDC_type_t type) {
+int PDC_id_list_null(PDC_type_t type, pdcid_t pdc) {
     perr_t ret_value = 0;   /* Return value */
     PDC_id_type_t   *type_ptr;    /* Pointer to the type   */
 
@@ -192,20 +194,22 @@ int PDC_id_list_null(PDC_type_t type) {
     if(type <= PDC_BADID || type >= PDC_next_type)
         PGOTO_ERROR(FAIL, "invalid type number");
 
-    type_ptr = PDC_id_type_list_g[type];
+    PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
+    type_ptr = (pc->PDC_id_type_list_g)[type];
     if(type_ptr->id_count != 0)
         ret_value = type_ptr->id_count;
 done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_id_list_clear(PDC_type_t type) {
+perr_t PDC_id_list_clear(PDC_type_t type, pdcid_t pdc) {
     PDC_id_type_t   *type_ptr;    /* Pointer to the type   */
     perr_t ret_value = SUCCEED;   /* Return value */
 
     FUNC_ENTER(NULL);
 
-    type_ptr = PDC_id_type_list_g[type];
+    PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
+    type_ptr = (pc->PDC_id_type_list_g)[type];
 
     while(!PDC_LIST_IS_EMPTY(&type_ptr->ids)) {
         PDC_id_info_t *id_ptr = (&type_ptr->ids)->head;
@@ -222,13 +226,14 @@ done:
 }
 
 
-perr_t PDC_destroy_type(PDC_type_t type) {
+perr_t PDC_destroy_type(PDC_type_t type, pdcid_t pdc) {
     PDC_id_type_t *type_ptr = NULL;     /* Ptr to the atomic type */
     perr_t ret_value = SUCCEED;         /* Return value           */
 
     FUNC_ENTER(NULL);
 
-    type_ptr = PDC_id_type_list_g[type];
+    PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
+    type_ptr = (pc->PDC_id_type_list_g)[type];
     if(type_ptr == NULL)
         PGOTO_ERROR(FAIL, "type was not initialized correctly");
     type_ptr = PDC_FREE(PDC_id_type_t, type_ptr);

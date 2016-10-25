@@ -4,13 +4,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "pdc_public.h"
-#include "pdc_pdc.h"
-#include "pdc_private.h"
-#include "pdc_malloc.h"
 #include "pdc_error.h"
-
-typedef struct {
-} PDC_prop;
+#include "pdc_pkg.h"
+#include "pdc_prop.h"
+#include "pdc_prop_pkg.h"
+#include "pdc_cont.h"
+#include "pdc_cont_pkg.h"
 
 typedef struct {
     pdcid_t pdc_id;
@@ -97,7 +96,7 @@ typedef enum {
  * Param PDC_property [IN]: A PDC_property struct  
  * Return: PDC id 
  */
-pdcid_t PDC_init(PDC_prop property);
+pdcid_t PDC_init(PDC_prop_t property);
 
 /* Close the PDC layer
  * Return: Non-negative on success/Negative on failure

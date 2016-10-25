@@ -1,15 +1,5 @@
 #ifndef _pdc_private_H
 #define _pdc_private_H 
-#include <stdint.h>
-
-typedef int 			    perr_t;
-typedef int64_t             pdcid_t;
-typedef unsigned long long 	psize_t;
-typedef unsigned int        pbool_t;
-
-typedef int			        PDC_int_t;
-typedef float			    PDC_float_t;
-typedef double			    PDC_double_t;
 
 typedef enum {
     PDC_UNKNOWN      = -1, /*error                                      */
