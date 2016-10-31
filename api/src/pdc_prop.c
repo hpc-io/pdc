@@ -70,8 +70,9 @@ perr_t PDC_prop_cont_list_null(pdcid_t pdc) {
 
     FUNC_ENTER(NULL);
     // list is not empty
-    if(PDC_id_list_null(PDC_CONT_PROP, pdc) > 0) {
-        printf("there is %d more element in the list needs to be closed\n", PDC_id_list_null(PDC_CONT_PROP, pdc));
+    int nelemts = PDC_id_list_null(PDC_CONT_PROP, pdc);
+    if(nelemts > 0) {
+        printf("%d element(s) in the container property list will be automatically closed by PDC_close()\n", nelemts);
         if(PDC_id_list_clear(PDC_CONT_PROP, pdc) < 0)
             PGOTO_ERROR(FAIL, "fail to clear container property list");
     }
@@ -86,8 +87,9 @@ perr_t PDC_prop_obj_list_null(pdcid_t pdc) {
     FUNC_ENTER(NULL);
 
     // list is not empty
-    if(PDC_id_list_null(PDC_OBJ_PROP, pdc) > 0) {
-        printf("there is %d more element in the obj list needs to be closed\n", PDC_id_list_null(PDC_OBJ_PROP, pdc));
+    int nelemts = PDC_id_list_null(PDC_OBJ_PROP, pdc);
+    if(nelemts > 0) {
+        printf("%d element(s) in the container property list will be automatically closed by PDC_close()\n", nelemts);
         if(PDC_id_list_clear(PDC_OBJ_PROP, pdc) < 0)
             PGOTO_ERROR(FAIL, "fail to clear obj property list");
     }

@@ -26,7 +26,7 @@ static PDC_id_info_t *PDC__find_id(pdcid_t id, PDC_CLASS_t *pc);
  *
  *-------------------------------------------------------------------------
  */
-static PDC_id_info_t *PDC__find_id(pdcid_t id, PDC_CLASS_t *pc) {
+static PDC_id_info_t *PDC__find_id(pdcid_t idid, PDC_CLASS_t *pc) {
     PDC_type_t      type;               /*ID's type         */
     PDC_id_type_t   *type_ptr;          /*ptr to the type   */
     PDC_id_info_t   *ret_value = NULL;  /* Return value     */
@@ -34,7 +34,7 @@ static PDC_id_info_t *PDC__find_id(pdcid_t id, PDC_CLASS_t *pc) {
     FUNC_ENTER(NULL);
 
     /* Check arguments */
-    type = PDC_TYPE(id);
+    type = PDC_TYPE(idid);
     if(type <= PDC_BADID || type >= PDC_next_type)
         PGOTO_DONE(NULL);
 
@@ -43,7 +43,7 @@ static PDC_id_info_t *PDC__find_id(pdcid_t id, PDC_CLASS_t *pc) {
         PGOTO_DONE(NULL);
     
     /* Locate the ID node for the ID */
-    PDC_LIST_SEARCH(ret_value, &type_ptr->ids, entry, id, id);
+    PDC_LIST_SEARCH(ret_value, &type_ptr->ids, entry, id, idid);
 done:
     FUNC_LEAVE(ret_value);
 } /* end PDC__find_id() */
@@ -131,6 +131,7 @@ pdcid_t PDC_id_register(PDC_type_t type, const void *object, pdcid_t pdc) {
 
     /* Set return value */
     ret_value = new_id;
+ printf("ret_value = %lld\n", ret_value);
 done:
     FUNC_LEAVE(ret_value);
 } /* end PDC_id_register() */
@@ -149,14 +150,6 @@ int PDC_dec_ref(pdcid_t id, pdcid_t pdc) {
     if(NULL == (id_ptr = PDC__find_id(id, pc)))
         PGOTO_ERROR(FAIL, "can't locate ID");
 
-    /*
-     * If this is the last reference to the object then invoke the type's
-     * free method on the object. If the free method is undefined or
-     * successful then remove the object from the type; otherwise leave
-     * the object in the type without decrementing the reference
-     * count. If the reference count is more than one then decrement the
-     * reference count without calling the free method.
-     */
 //    (id_ptr->count)--;
 //    if(id_ptr->count == 0) {
     ret_value = atomic_fetch_sub(&(id_ptr->count), 1) - 1;
@@ -171,7 +164,7 @@ int PDC_dec_ref(pdcid_t id, pdcid_t pdc) {
                 PGOTO_ERROR(FAIL, "can't remove ID node");
             /* Remove the node from the type */
             PDC_LIST_REMOVE(id_ptr, entry);
-	    id_ptr = PDC_FREE(PDC_id_info_t, id_ptr);
+	        id_ptr = PDC_FREE(PDC_id_info_t, id_ptr);
             /* Decrement the number of IDs in the type */
             (type_ptr->id_count)--;
             ret_value = 0;
@@ -184,6 +177,47 @@ int PDC_dec_ref(pdcid_t id, pdcid_t pdc) {
 done:
     FUNC_LEAVE(ret_value);
 } /* end PDC_dec_ref() */
+
+pdcid_t PDC_find_byname(PDC_type_t type, const char *byname, pdcid_t pdc) {
+    PDC_id_info_t   *id_ptr = NULL;      /* Pointer to the ID     */
+    PDC_id_type_t   *type_ptr;           /* Pointer to the type   */
+    pdcid_t         ret_value = SUCCEED; /* return value          */ 
+    FUNC_ENTER(NULL);
+
+    if(type <= PDC_BADID || type >= PDC_next_type)
+        PGOTO_ERROR(FAIL, "invalid type number");
+
+    PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
+    type_ptr = (pc->PDC_id_type_list_g)[type];
+
+    /* Locate the ID node for the ID */
+    PDC_LIST_SEARCH_CONT_NAME(id_ptr, &type_ptr->ids, entry, obj_ptr, name, byname);
+    if(id_ptr == NULL)
+        PGOTO_ERROR(FAIL, "cannot find the name");
+    ret_value = id_ptr->id;
+done:
+    FUNC_LEAVE(ret_value);
+} /* end of PDC__find_byname() */
+
+int pdc_inc_ref(pdcid_t id, pdcid_t pdc) {
+    PDC_id_info_t *id_ptr;      /* Pointer to the ID */
+    int ret_value = 0;          /* Return value */
+
+    FUNC_ENTER(NULL);
+
+    /* Sanity check */
+    assert(id >= 0);
+
+    PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
+    /* General lookup of the ID */
+    if(NULL == (id_ptr = PDC__find_id(id, pc)))
+        PGOTO_ERROR(FAIL, "can't locate ID");
+
+    /* Set return value */
+    ret_value = atomic_fetch_add(&(id_ptr->count), 1) + 1;
+done:
+    FUNC_LEAVE(ret_value);
+} /* end of pdc_inc_ref() */
 
 int PDC_id_list_null(PDC_type_t type, pdcid_t pdc) {
     perr_t ret_value = 0;   /* Return value */
@@ -211,7 +245,7 @@ perr_t PDC_id_list_clear(PDC_type_t type, pdcid_t pdc) {
     PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
     type_ptr = (pc->PDC_id_type_list_g)[type];
 
-    while(!PDC_LIST_IS_EMPTY(&type_ptr->ids)) {
+    if(!PDC_LIST_IS_EMPTY(&type_ptr->ids)) {
         PDC_id_info_t *id_ptr = (&type_ptr->ids)->head;
         if(!type_ptr->cls->free_func || (type_ptr->cls->free_func)((void *)id_ptr->obj_ptr) >= 0) {
             PDC_LIST_REMOVE(id_ptr, entry);

@@ -1,9 +1,10 @@
+#include <string.h>
 #include "pdc_cont.h"
 #include "pdc_malloc.h"
 
 static perr_t PDCcont__close(PDC_cont_t *cp);
 
-/* PDC container property ID class */
+/* PDC container ID class */
 static const PDCID_class_t PDC_CONT_CLS[1] = {{
     PDC_CONT,                           /* ID class value */
     0,                                  /* Class flags */
@@ -24,6 +25,40 @@ done:
     FUNC_LEAVE(ret_value); 
 } /* end PDCcont_init() */
 
+pdcid_t PDCcont_create(pdcid_t pdc, const char *cont_name, pdcid_t cont_create_prop) {
+    pdcid_t ret_value = SUCCEED;
+    PDC_cont_t *p = NULL;
+
+    FUNC_ENTER(NULL);
+
+    p = PDC_MALLOC(PDC_cont_t);
+    if(!p)
+        PGOTO_ERROR(FAIL,"PDC container memory allocation failed\n");
+    p->name = strdup(cont_name);
+    p->pdc = pdc;
+    p->cont_prop = cont_create_prop;
+    pdcid_t new_id = PDC_id_register(PDC_CONT, p, pdc);
+    ret_value = new_id;
+done:
+    FUNC_LEAVE(ret_value);
+} /* end of PDCcont_create() */
+
+perr_t PDC_cont_list_null(pdcid_t pdc) {
+    perr_t ret_value = SUCCEED;   /* Return value */
+
+    FUNC_ENTER(NULL);
+    // list is not empty
+    int nelemts = PDC_id_list_null(PDC_CONT, pdc);
+    if(PDC_id_list_null(PDC_CONT, pdc) > 0) {
+        printf("%d element(s) in the container list will be automatically closed by PDC_close()\n", nelemts);
+        if(PDC_id_list_clear(PDC_CONT, pdc) < 0)
+            PGOTO_ERROR(FAIL, "fail to clear container list");
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 static perr_t PDCcont__close(PDC_cont_t *cp) {
     perr_t ret_value = SUCCEED;         /* Return value */
 
@@ -33,6 +68,18 @@ static perr_t PDCcont__close(PDC_cont_t *cp) {
 done:
     FUNC_LEAVE(ret_value);
 } /* end of PDCcont__close() */
+
+perr_t PDCcont_close(pdcid_t id, pdcid_t pdc) {
+    perr_t ret_value = SUCCEED;   /* Return value */
+
+    FUNC_ENTER(NULL);
+
+    /* When the reference count reaches zero the resources are freed */
+    if(PDC_dec_ref(id, pdc) < 0)
+        PGOTO_ERROR(FAIL, "container: problem of freeing id");
+done:
+    FUNC_LEAVE(ret_value);
+} /* end of PDCcont_close() */
 
 perr_t PDCcont_end(pdcid_t pdc) {
     perr_t ret_value = SUCCEED;         /* Return value */
@@ -44,3 +91,79 @@ perr_t PDCcont_end(pdcid_t pdc) {
 done:
     FUNC_LEAVE(ret_value);
 } /* end of PDCcont_end() */
+
+pdcid_t PDCcont_open(pdcid_t pdc_id, const char *cont_name) {
+    pdcid_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    // should wait for response from server 
+    // look up in the list for now
+    pdcid_t ret_value1;
+    ret_value1 = PDC_find_byname(PDC_CONT, cont_name, pdc_id);
+    if(ret_value1 <= 0)
+        PGOTO_ERROR(FAIL, "cannot locate container");
+    pdc_inc_ref(ret_value1, pdc_id);
+    ret_value = ret_value1;
+done:
+    FUNC_LEAVE(ret_value);
+} /* end of PDCcont_open() */
+
+cont_handle *PDCcont_iter_start(pdcid_t pdc_id) {
+    cont_handle *ret_value = NULL;
+    cont_handle *conthl = NULL;
+
+    FUNC_ENTER(NULL);
+
+    PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc_id;
+    if(NULL == (conthl = PDC_CALLOC(cont_handle)))                     //not freed
+        PGOTO_ERROR(NULL, "container iter memory allocation failed");
+    conthl->type_ptr = (pc->PDC_id_type_list_g)[PDC_CONT];
+    if(conthl->type_ptr == NULL) {
+        PGOTO_ERROR(NULL, "container list is empty");
+    }
+    conthl->pdc = pdc_id;
+    conthl->count = conthl->type_ptr->id_count;
+    conthl->current = (&(conthl->type_ptr)->ids)->head;
+    ret_value = conthl;
+done:
+    FUNC_LEAVE(ret_value);
+} /* end of PDCcont_iter_start() */
+
+pbool_t PDCcont_iter_null(cont_handle *chandle) {
+    pbool_t ret_value = FALSE;
+    
+    FUNC_ENTER(NULL);
+    
+    if(chandle->current == NULL)
+        ret_value = TRUE;
+done:
+    FUNC_LEAVE(ret_value); 
+} /* end of PDCcont_iter_null() */
+
+perr_t PDCcont_iter_next(cont_handle *chandle) {
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    if(chandle->current == NULL)
+        PGOTO_ERROR(FAIL, "no next container");
+    chandle->current = PDC_LIST_NEXT(chandle->current, entry); 
+done:
+    FUNC_LEAVE(ret_value);
+} /* end of PDCcont_iter_next() */
+
+PDC_cont_info_t *PDCcont_iter_get_info(cont_handle *chandle) {
+    PDC_cont_info_t *ret_value = NULL;
+    PDC_cont_info_t *info = NULL;
+
+    FUNC_ENTER(NULL);
+
+    info = PDC_MALLOC(PDC_cont_info_t);                                  //not freed
+    if(info == NULL)
+        PGOTO_ERROR(NULL, "PDC container info memory allocation failed");
+//    info->name = chandle->current->obj_ptr->name;   //////????????????????????
+    // more info will include
+done:
+    FUNC_LEAVE(ret_value);
+} /* end of PDCcont_iter_get_info() */

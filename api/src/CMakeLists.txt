@@ -13,8 +13,8 @@ set(PDC_HEADERS ${PDC_HEADERS}
                 pdc_linkedlist.h
                 pdc_prop.h
                 pdc_prop_pkg.h
-	    	    pdc_cont.h
-		        pdc_cont_pkg.h)
+                pdc_cont.h
+                pdc_cont_pkg.h)
 
 set(PDC_SOURCES ${PDC_SOURCES}
                 pdc.c
@@ -22,6 +22,6 @@ set(PDC_SOURCES ${PDC_SOURCES}
                 pdc_error.c
                 pdc_malloc.c
                 pdc_prop.c
-		        pdc_cont.c)
+                pdc_cont.c)
 
 add_library(pdc STATIC ${PDC_HEADERS} ${PDC_SOURCES})

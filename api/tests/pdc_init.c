@@ -6,9 +6,11 @@
 
 int main() {
     PDC_prop_t p;
+    // create a pdc
     pdcid_t pdc = PDC_init(p);
     printf("generated new pdc, id is %lld\n", pdc);
 
+    // close pdc
     if(PDC_close(pdc) < 0)
        printf("fail to close PDC\n");
     else

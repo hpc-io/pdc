@@ -3,6 +3,8 @@
 #ifndef _pdc_linkedlist_H
 #define _pdc_linkedlist_H
 
+#include "pdc_cont_pkg.h"
+
 #define PDC_LIST_HEAD_INITIALIZER(name)  { NULL }
 
 #define PDC_LIST_HEAD_INIT(struct_head_name, var_name)   \
@@ -62,5 +64,10 @@
     for ((var) = ((head_ptr)->head);                                  \
         (((var)->item != value) && (var));                             \
         (var) = ((var)->entry_field_name.next))
-#endif
 
+#define PDC_LIST_SEARCH_CONT_NAME(var, head_ptr, entry_field_name, member, n, name)  \
+    for ((var) = ((head_ptr)->head);                                  \
+        (strcmp(((PDC_cont_t *)((var)->member))->n, name) != 0 && (var));                             \
+        (var) = ((var)->entry_field_name.next))
+
+#endif

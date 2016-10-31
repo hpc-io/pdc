@@ -25,13 +25,12 @@ typedef perr_t (*PDC_free_t)(void*);
 
 typedef enum {
     PDC_BADID        = -1,  /* invalid Type                                */
-    PDC_PDC          = 1,   /* type ID for PDC                             */
-    PDC_PROPERTY     = 2,   /* type ID for PDC property                    */
-    PDC_CONT_PROP    = 3,   /* type ID for container property              */
-    PDC_OBJ_PROP     = 4,   /* type ID for object property                 */
-    PDC_CONT         = 5,   /* type ID for container                       */
-    PDC_OBJ          = 6,   /* type ID for object                          */
-    PDC_NTYPES       = 7    /* number of library types, MUST BE LAST!      */
+    PDC_PROPERTY     = 1,   /* type ID for PDC property                    */
+    PDC_CONT_PROP    = 2,   /* type ID for container property              */
+    PDC_OBJ_PROP     = 3,   /* type ID for object property                 */
+    PDC_CONT         = 4,   /* type ID for container                       */
+    PDC_OBJ          = 5,   /* type ID for object                          */
+    PDC_NTYPES       = 6    /* number of library types, MUST BE LAST!      */
 } PDC_type_t;
 
 typedef struct {
@@ -56,7 +55,7 @@ typedef struct PDC_id_info {
 } PDC_id_info_t;
 
 /* ID type structure used */
-typedef struct {
+typedef struct PDC_id_type{
     const                       PDCID_class_t *cls;   /* Pointer to ID class                        */
     unsigned                    init_count;           /* # of times this type has been initialized  */
     unsigned                    id_count;             /* Current number of IDs held                 */
@@ -177,5 +176,7 @@ perr_t PDC_id_list_clear(PDC_type_t type, pdcid_t pdc);
  * -------------------------------------------------------------------------
  */
 perr_t PDC_destroy_type(PDC_type_t type, pdcid_t pdc);
+
+pdcid_t PDC_find_byname(PDC_type_t type, const char *byname, pdcid_t pdc);
 
 #endif
