@@ -7,13 +7,6 @@ typedef struct PDC_cont_t {
     pdcid_t     cont_prop;
 }PDC_cont_t;
 
-typedef struct cont_handle {
-    struct PDC_id_type *type_ptr;
-    pdcid_t       pdc;
-    int           count;
-    struct PDC_id_info *current;
-} cont_handle;
-
 typedef struct PDC_cont_info_t {
     const char  *name;
 } PDC_cont_info_t;

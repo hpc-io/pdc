@@ -41,8 +41,8 @@ int main() {
     cont_handle *ch = PDCcont_iter_start(pdc);
 
     while(!PDCcont_iter_null(ch)) {
-        printf("iterate over container: id is %lld\n", ch->current->id);
-        PDCcont_iter_next(ch);
+        printf("iterate over container: id is %lld\n", ch->id);
+        ch = PDCcont_iter_next(ch);
     }
 
     // close cont1

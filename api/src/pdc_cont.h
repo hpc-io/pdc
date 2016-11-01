@@ -5,6 +5,8 @@
 #include "pdc_cont_pkg.h"
 #include "pdc_interface.h"
 
+typedef PDC_id_info_t cont_handle;
+
 /* PDC container initialization
  * Param pc [IN]: Pointer to PDC_CLASS_t struct
  * Return: Non-negative on success/Negative on failure
@@ -28,21 +30,21 @@ pdcid_t PDCcont_open(pdcid_t pdc_id, const char *cont_name);
 
 /* Iterate over containers within a PDC
  * Param pdc_id [IN]: Id of the PDC
- * Return: Container handle
+ * Return: Pointer to cont_handle struct
  */
 cont_handle *PDCcont_iter_start(pdcid_t pdc_id);
 
 /* Check if container handle is pointing to NULL 
- * Param chandle [IN]: A cont_handle struct, returned by PDCcont_iter_start(pdcid_t pdc_id)
+ * Param chandle [IN]: Pointer to cont_handle struct, returned by PDCcont_iter_start(pdcid_t pdc_id)
  * Return: 1 in case of success or 0 in case of failure
  */
 pbool_t PDCcont_iter_null(cont_handle *chandle);
 
 /* Iterate the next container within a PDC 
- * Param chandle [IN]: A cont_handle struct, returned by PDCcont_iter_start(pdcid_t pdc_id)
- * Return: Non-negative on success/Negative on failure
+ * Param chandle [IN]: Pointer to cont_handle struct, returned by PDCcont_iter_start(pdcid_t pdc_id)
+ * Return: Pointer to cont_handle struct
  */
-perr_t PDCcont_iter_next(cont_handle *chandle);
+cont_handle *PDCcont_iter_next(cont_handle *chandle);
 
 /* Retrieve container information
  * Param chandle [IN]: A cont_handle struct, returned by PDCcont_iter_start(pdcid_t pdc_id)

@@ -116,15 +116,10 @@ cont_handle *PDCcont_iter_start(pdcid_t pdc_id) {
     FUNC_ENTER(NULL);
 
     PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc_id;
-    if(NULL == (conthl = PDC_CALLOC(cont_handle)))                     //not freed
-        PGOTO_ERROR(NULL, "container iter memory allocation failed");
-    conthl->type_ptr = (pc->PDC_id_type_list_g)[PDC_CONT];
-    if(conthl->type_ptr == NULL) {
+    PDC_id_type_t *type_ptr  = (pc->PDC_id_type_list_g)[PDC_CONT];
+    if(type_ptr == NULL) 
         PGOTO_ERROR(NULL, "container list is empty");
-    }
-    conthl->pdc = pdc_id;
-    conthl->count = conthl->type_ptr->id_count;
-    conthl->current = (&(conthl->type_ptr)->ids)->head;
+    conthl = (&type_ptr->ids)->head;
     ret_value = conthl;
 done:
     FUNC_LEAVE(ret_value);
@@ -135,20 +130,22 @@ pbool_t PDCcont_iter_null(cont_handle *chandle) {
     
     FUNC_ENTER(NULL);
     
-    if(chandle->current == NULL)
+    if(chandle == NULL)
         ret_value = TRUE;
 done:
     FUNC_LEAVE(ret_value); 
 } /* end of PDCcont_iter_null() */
 
-perr_t PDCcont_iter_next(cont_handle *chandle) {
-    perr_t ret_value = SUCCEED;
+cont_handle *PDCcont_iter_next(cont_handle *chandle) {
+    cont_handle *ret_value = NULL;
+    cont_handle *next = NULL;
 
     FUNC_ENTER(NULL);
 
-    if(chandle->current == NULL)
-        PGOTO_ERROR(FAIL, "no next container");
-    chandle->current = PDC_LIST_NEXT(chandle->current, entry); 
+    if(chandle == NULL)
+        PGOTO_ERROR(NULL, "no next container");
+    next = PDC_LIST_NEXT(chandle, entry); 
+    ret_value = next;
 done:
     FUNC_LEAVE(ret_value);
 } /* end of PDCcont_iter_next() */
