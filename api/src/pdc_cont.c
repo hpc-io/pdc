@@ -2,7 +2,7 @@
 #include "pdc_cont.h"
 #include "pdc_malloc.h"
 
-static perr_t PDCcont__close(PDC_cont_t *cp);
+static perr_t PDCcont__close(PDC_cont_info_t *cp);
 
 /* PDC container ID class */
 static const PDCID_class_t PDC_CONT_CLS[1] = {{
@@ -27,16 +27,17 @@ done:
 
 pdcid_t PDCcont_create(pdcid_t pdc, const char *cont_name, pdcid_t cont_create_prop) {
     pdcid_t ret_value = SUCCEED;
-    PDC_cont_t *p = NULL;
+    PDC_cont_info_t *p = NULL;
 
     FUNC_ENTER(NULL);
 
-    p = PDC_MALLOC(PDC_cont_t);
+    p = PDC_MALLOC(PDC_cont_info_t);
     if(!p)
         PGOTO_ERROR(FAIL,"PDC container memory allocation failed\n");
     p->name = strdup(cont_name);
     p->pdc = pdc;
     p->cont_prop = cont_create_prop;
+    p->cont_life = PDC_PERSIST;
     pdcid_t new_id = PDC_id_register(PDC_CONT, p, pdc);
     ret_value = new_id;
 done:
@@ -59,12 +60,12 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-static perr_t PDCcont__close(PDC_cont_t *cp) {
+static perr_t PDCcont__close(PDC_cont_info_t *cp) {
     perr_t ret_value = SUCCEED;         /* Return value */
 
     FUNC_ENTER(NULL);
 
-    cp = PDC_FREE(PDC_cont_t, cp);
+    cp = PDC_FREE(PDC_cont_info_t, cp);
 done:
     FUNC_LEAVE(ret_value);
 } /* end of PDCcont__close() */
@@ -156,11 +157,11 @@ PDC_cont_info_t *PDCcont_iter_get_info(cont_handle *chandle) {
 
     FUNC_ENTER(NULL);
 
-    info = PDC_MALLOC(PDC_cont_info_t);                                  //not freed
+    info = (PDC_cont_info_t *)(chandle->obj_ptr);
     if(info == NULL)
         PGOTO_ERROR(NULL, "PDC container info memory allocation failed");
-//    info->name = chandle->current->obj_ptr->name;   //////????????????????????
-    // more info will include
+    
+    ret_value = info;
 done:
     FUNC_LEAVE(ret_value);
 } /* end of PDCcont_iter_get_info() */

@@ -131,7 +131,6 @@ pdcid_t PDC_id_register(PDC_type_t type, const void *object, pdcid_t pdc) {
 
     /* Set return value */
     ret_value = new_id;
- printf("ret_value = %lld\n", ret_value);
 done:
     FUNC_LEAVE(ret_value);
 } /* end PDC_id_register() */

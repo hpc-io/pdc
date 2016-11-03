@@ -1,6 +1,8 @@
 #ifndef _pdc_private_H
 #define _pdc_private_H 
 
+#include "stdint.h"
+
 typedef enum {
     PDC_UNKNOWN      = -1, /*error                                      */
     PDC_INT          = 0,  /*integer types                              */
@@ -13,6 +15,50 @@ typedef enum {
  
     NCLASSES         = 7   /*this must be last                          */
 } PDC_var_type_t;
+
+typedef enum {
+    UNKNOWN = -1,
+    MEMORY,
+    FLASH,
+    DISK,
+    FILESYSTEM,
+    TAPE
+} PDC_loci;
+
+typedef struct {
+    uint64_t offset;
+    uint64_t storage_size;
+    PDC_loci locus;
+} PDC_region;
+
+/* Query type */
+typedef enum {
+    PDC_Q_TYPE_DATA_ELEM,  /* selects data elements */
+    PDC_Q_TYPE_ATTR_VALUE, /* selects attribute values */
+    PDC_Q_TYPE_ATTR_NAME,  /* selects attributes */
+    PDC_Q_TYPE_LINK_NAME,  /* selects objects */
+    PDC_Q_TYPE_MISC        /* (for combine queries) selects misc objects */
+} PDC_query_type_t;
+
+/* Query match conditions */
+typedef enum {
+    PDC_Q_MATCH_EQUAL,        /* equal */
+    PDC_Q_MATCH_NOT_EQUAL,    /* not equal */
+    PDC_Q_MATCH_LESS_THAN,    /* less than */
+    PDC_Q_MATCH_GREATER_THAN  /* greater than */
+} PDC_query_op_t;
+
+typedef enum {
+    ROW_major,
+    COL_major
+} PDC_major_type;
+
+typedef struct {
+} PDC_loci_info_t;
+
+typedef struct {
+    PDC_major_type type;
+} PDC_transform;
 
 #define SUCCEED    0
 #define FAIL    (-1)

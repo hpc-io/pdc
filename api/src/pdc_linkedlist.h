@@ -67,7 +67,7 @@
 
 #define PDC_LIST_SEARCH_CONT_NAME(var, head_ptr, entry_field_name, member, n, name)  \
     for ((var) = ((head_ptr)->head);                                  \
-        (strcmp(((PDC_cont_t *)((var)->member))->n, name) != 0 && (var));                             \
+        (strcmp(((PDC_cont_info_t *)((var)->member))->n, name) != 0 && (var));                             \
         (var) = ((var)->entry_field_name.next))
 
 #endif
