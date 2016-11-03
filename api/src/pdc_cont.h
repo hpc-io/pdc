@@ -4,6 +4,7 @@
 #include "pdc_error.h"
 #include "pdc_cont_pkg.h"
 #include "pdc_interface.h"
+#include "pdc_life.h"
 
 typedef PDC_id_info_t cont_handle;
 

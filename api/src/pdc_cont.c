@@ -37,7 +37,7 @@ pdcid_t PDCcont_create(pdcid_t pdc, const char *cont_name, pdcid_t cont_create_p
     p->name = strdup(cont_name);
     p->pdc = pdc;
     p->cont_prop = cont_create_prop;
-    p->cont_life = PDC_PERSIST;
+//    p->cont_life = PDC_PERSIST;
     pdcid_t new_id = PDC_id_register(PDC_CONT, p, pdc);
     ret_value = new_id;
 done:

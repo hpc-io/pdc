@@ -50,6 +50,7 @@ pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdc) {
         p = PDC_MALLOC(PDC_cont_prop_t);
         if(!p)
             PGOTO_ERROR(FAIL, "PDC container property memory allocation failed\n");
+        p->cont_life = PDC_PERSIST;
         pdcid_t new_id_c = PDC_id_register(PDC_CONT_PROP, p, pdc);
         ret_value = new_id_c;
     }

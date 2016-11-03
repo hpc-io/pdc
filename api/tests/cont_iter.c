@@ -41,10 +41,14 @@ int main() {
     cont_handle *ch = PDCcont_iter_start(pdc);
 
     while(!PDCcont_iter_null(ch)) {
-        printf("iterate over container: id is %lld\n", ch->id);
+        PDC_cont_info_t *info = PDCcont_iter_get_info(ch);
+        printf("container name is: %s\n", info->name);
+        printf("container is in pdc %lld\n", info->pdc);
+        printf("container property id is %lld\n", info->cont_prop);
+        
         ch = PDCcont_iter_next(ch);
     }
-
+    
     // close cont1
     if(PDCcont_close(cont1, pdc) < 0)
         printf("fail to close container %lld\n", cont1);
