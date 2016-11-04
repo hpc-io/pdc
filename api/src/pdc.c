@@ -31,6 +31,8 @@ pdcid_t PDC_init(PDC_prop_t property) {
         PGOTO_ERROR(FAIL, "PDC property init error");
     if(PDCcont_init(pc) < 0)
         PGOTO_ERROR(FAIL, "PDC container init error");
+    if(PDCobj_init(pc) < 0)
+        PGOTO_ERROR(FAIL, "PDC object init error");
 
     // create pdc id
     pdcid_t pdcid = (pdcid_t)pc;
@@ -54,7 +56,10 @@ perr_t PDC_close(pdcid_t pdcid) {
     // container
     if(PDC_cont_list_null(pdcid) < 0)
         PGOTO_ERROR(FAIL, "fail to close container");
-
+    // object
+    if(PDC_obj_list_null(pdcid) < 0)
+        PGOTO_ERROR(FAIL, "fail to close object");
+    
     PDC_CLASS_t *pc = (PDC_CLASS_t *) pdcid;
     if(pc == NULL)
         PGOTO_ERROR(FAIL, "PDC init fails");
@@ -62,6 +67,8 @@ perr_t PDC_close(pdcid_t pdcid) {
         PGOTO_ERROR(FAIL, "fail to destroy property");
     if(PDCcont_end(pdcid) < 0)
         PGOTO_ERROR(FAIL, "fail to destroy container");
+    if(PDCobj_end(pdcid) < 0)
+        PGOTO_ERROR(FAIL, "fail to destroy object");
     pc = PDC_FREE(PDC_CLASS_t, pc);
 done:
     FUNC_LEAVE(ret_value);
@@ -77,11 +84,6 @@ perr_t PDCget_loci_count(pdcid_t pdc_id, pdcid_t *nloci) {
 }
 
 perr_t PDCget_loci_info(pdcid_t pdc_id, pdcid_t n, PDC_loci_info_t *info) {
-}
-
-// perr_t PDCcont_persist(pdcid_t cont_id){}
-
-perr_t PDCprop_set_cont_lifetime(pdcid_t cont_create_prop, PDC_lifetime cont_lifetime) {
 }
 
 pdcid_t PDC_query_create(pdcid_t pdc_id, PDC_query_type_t query_type, PDC_query_op_t query_op, ...) {
