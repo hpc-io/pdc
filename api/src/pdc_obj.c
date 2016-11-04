@@ -1,6 +1,8 @@
 #include "pdc_obj.h"
 #include "pdc_malloc.h"
 #include "pdc_prop_pkg.h"
+#include "pdc_client_server_common.h"
+#include "pdc_client_connect.h"
 
 static perr_t PDCobj__close(PDC_obj_info_t *op);
 
