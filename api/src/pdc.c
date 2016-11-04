@@ -6,6 +6,11 @@
 #include "pdc_malloc.h"
 #include "pdc_interface.h"
 
+//
+#include "mercury.h"
+#include "pdc_client_server_common.h"
+#include "pdc_client_connect.h"
+
 static PDC_CLASS_t *PDC__class_create() {
     PDC_CLASS_t *ret_value = NULL;         /* Return value */
 
@@ -33,6 +38,12 @@ pdcid_t PDC_init(PDC_prop_t property) {
         PGOTO_ERROR(FAIL, "PDC container init error");
     if(PDCobj_init(pc) < 0)
         PGOTO_ERROR(FAIL, "PDC object init error");
+
+    // METADATA Init: client server connection
+    pdc_server_info = NULL;
+    // get server address and fill in $pdc_server_info
+    PDC_Client_read_server_addr_from_file();
+    printf("PDC_init(): found %d servers\n", pdc_server_num_g);
 
     // create pdc id
     pdcid_t pdcid = (pdcid_t)pc;
@@ -70,6 +81,15 @@ perr_t PDC_close(pdcid_t pdcid) {
     if(PDCobj_end(pdcid) < 0)
         PGOTO_ERROR(FAIL, "fail to destroy object");
     pc = PDC_FREE(PDC_CLASS_t, pc);
+
+    // METADATA: [TODO] need to free PDC Server info
+    int i;
+    for (i = 0; i < pdc_server_num_g; i++) {
+        /* free(pdc_server_info->); */
+    }
+    if (pdc_server_info != NULL) 
+        free(pdc_server_info);
+
 done:
     FUNC_LEAVE(ret_value);
 } /* end of PDC_close() */
