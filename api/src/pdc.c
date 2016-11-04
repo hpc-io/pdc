@@ -47,6 +47,12 @@ pdcid_t PDC_init(PDC_prop_t property) {
     PDC_Client_read_server_addr_from_file();
     printf("PDC_init(): found %d servers\n", pdc_server_num_g);
 
+    // METADATA Init: client server connection
+    pdc_server_info = NULL;
+    // get server address and fill in $pdc_server_info
+    PDC_Client_read_server_addr_from_file();
+    printf("PDC_init(): found %d servers\n", pdc_server_num_g);
+
     // create pdc id
     pdcid_t pdcid = (pdcid_t)pc;
     ret_value = pdcid;

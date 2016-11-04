@@ -9,7 +9,6 @@
 // Thread
 hg_thread_pool_t *hg_test_thread_pool_g;
 
-
 uint64_t pdc_id_seq_g = 1000;
 // actual value for each server is set by PDC_Server_init()
 
