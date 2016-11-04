@@ -55,19 +55,21 @@ PDC_cont_info_t * PDCcont_iter_get_info(cont_handle *chandle);
 
 /* Persist a transient container
  * Param cont_id [IN]: Id of the container, returned by PDCcont_open(pdcid_t pdc_id, const char *cont_name)
+ * Param pdc_id [IN]: Id of the PDC
  * Return: Non-negative on success/Negative on failure
  */
-perr_t PDCcont_persist(pdcid_t cont_id);
+perr_t PDCcont_persist(pdcid_t cont_id, pdcid_t pdc_id);
 
 /* Set container lifetime 
  * Param cont_create_prop [IN]: Id of container property, returned by PDCprop_create(PDC_CONT_CREATE)
  * Param cont_lifetime [IN]: container lifetime (enum type), PDC_PERSIST or PDC_TRANSIENT
  * Return: Non-negative on success/Negative on failure
  */
-perr_t PDCprop_set_cont_lifetime(pdcid_t cont_create_prop, PDC_lifetime cont_lifetime);
+perr_t PDCprop_set_cont_lifetime(pdcid_t cont_create_prop, PDC_lifetime cont_lifetime, pdcid_t pdc_id);
 
 /* Close a container 
  * Param cont_id [IN]: Container id, returned by PDCcont_open(pdcid_t pdc_id, const char *cont_name)
+ * Param pdc_id [IN]: Id of the PDC
  * Return: Non-negative on success/Negative on failure
  */
 perr_t PDCcont_close(pdcid_t cont_id, pdcid_t pdc);

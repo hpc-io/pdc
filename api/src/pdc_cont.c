@@ -1,6 +1,7 @@
 #include <string.h>
 #include "pdc_cont.h"
 #include "pdc_malloc.h"
+#include "pdc_prop_pkg.h"
 
 static perr_t PDCcont__close(PDC_cont_info_t *cp);
 
@@ -165,3 +166,35 @@ PDC_cont_info_t *PDCcont_iter_get_info(cont_handle *chandle) {
 done:
     FUNC_LEAVE(ret_value);
 } /* end of PDCcont_iter_get_info() */
+
+perr_t PDCcont_persist(pdcid_t cont_id, pdcid_t pdc) {
+    perr_t ret_value = SUCCEED;         /* Return value */
+    
+    FUNC_ENTER(NULL);
+    
+    PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
+    PDC_id_info_t *info = PDC_find_id(cont_id, pc);
+    if(info == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate container ID");
+    pdcid_t propid = ((PDC_cont_info_t *)(info->obj_ptr))->cont_prop;
+    PDC_id_info_t *prop = PDC_find_id(propid, pc);
+    if(prop == NULL)
+        PGOTO_ERROR(FAIL, "cannot container property");
+    ((PDC_cont_prop_t *)(prop->obj_ptr))->cont_life = PDC_PERSIST;
+done:
+    FUNC_LEAVE(ret_value);
+} /* end of PDCcont_persist() */
+
+perr_t PDCprop_set_cont_lifetime(pdcid_t cont_prop, PDC_lifetime cont_lifetime, pdcid_t pdc) {
+    perr_t ret_value = SUCCEED;         /* Return value */
+    
+    FUNC_ENTER(NULL);
+    
+    PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
+    PDC_id_info_t *info = PDC_find_id(cont_prop, pc);
+    if(info == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate container property ID");
+    ((PDC_cont_prop_t *)(info->obj_ptr))->cont_life = cont_lifetime;
+done:
+    FUNC_LEAVE(ret_value);
+} /* end of PDCprop_set_cont_lifetime() */

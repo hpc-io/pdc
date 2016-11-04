@@ -8,25 +8,8 @@
 #define PDCID_MAKE(g,i)   ((((pdcid_t)(g) & TYPE_MASK) << ID_BITS) | ((pdcid_t)(i) & ID_MASK))
 
 
-/*--------------------- Local function prototypes ---------------------------*/
-static PDC_id_info_t *PDC__find_id(pdcid_t id, PDC_CLASS_t *pc);
 
-//static void *PDC__remove_common(PDC_id_type_t *type_ptr, pdcid_t id);
-
-
-/*-------------------------------------------------------------------------
- * Function:    PDC__find_id
- *
- * Purpose: Given an object ID find the info struct that describes the
- *          object.
- *
- * Return:  Success:    Ptr to the object's info struct.
- *
- *          Failure:    NULL
- *
- *-------------------------------------------------------------------------
- */
-static PDC_id_info_t *PDC__find_id(pdcid_t idid, PDC_CLASS_t *pc) {
+PDC_id_info_t *PDC_find_id(pdcid_t idid, PDC_CLASS_t *pc) {
     PDC_type_t      type;               /*ID's type         */
     PDC_id_type_t   *type_ptr;          /*ptr to the type   */
     PDC_id_info_t   *ret_value = NULL;  /* Return value     */
@@ -46,7 +29,7 @@ static PDC_id_info_t *PDC__find_id(pdcid_t idid, PDC_CLASS_t *pc) {
     PDC_LIST_SEARCH(ret_value, &type_ptr->ids, entry, id, idid);
 done:
     FUNC_LEAVE(ret_value);
-} /* end PDC__find_id() */
+} /* end PDC_find_id() */
 
 
 perr_t PDC_register_type(const PDCID_class_t *cls, PDC_CLASS_t *pc){
@@ -146,7 +129,7 @@ int PDC_dec_ref(pdcid_t id, pdcid_t pdc) {
 
     PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
     /* General lookup of the ID */
-    if(NULL == (id_ptr = PDC__find_id(id, pc)))
+    if(NULL == (id_ptr = PDC_find_id(id, pc)))
         PGOTO_ERROR(FAIL, "can't locate ID");
 
 //    (id_ptr->count)--;
@@ -209,7 +192,7 @@ int pdc_inc_ref(pdcid_t id, pdcid_t pdc) {
 
     PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
     /* General lookup of the ID */
-    if(NULL == (id_ptr = PDC__find_id(id, pc)))
+    if(NULL == (id_ptr = PDC_find_id(id, pc)))
         PGOTO_ERROR(FAIL, "can't locate ID");
 
     /* Set return value */

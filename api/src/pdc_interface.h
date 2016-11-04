@@ -177,6 +177,20 @@ perr_t PDC_id_list_clear(PDC_type_t type, pdcid_t pdc);
  */
 perr_t PDC_destroy_type(PDC_type_t type, pdcid_t pdc);
 
+/*-------------------------------------------------------------------------
+ * Function:    PDC_find_id
+ *
+ * Purpose: Given an object ID find the info struct that describes the
+ *          object.
+ *
+ * Return:  Success:    Ptr to the object's info struct.
+ *
+ *          Failure:    NULL
+ *
+ *-------------------------------------------------------------------------
+ */
+PDC_id_info_t *PDC_find_id(pdcid_t idid, PDC_CLASS_t *pc);
+
 pdcid_t PDC_find_byname(PDC_type_t type, const char *byname, pdcid_t pdc);
 
 #endif

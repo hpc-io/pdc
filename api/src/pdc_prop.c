@@ -144,3 +144,20 @@ perr_t PDCprop_end(pdcid_t pdc) {
 done:
     FUNC_LEAVE(ret_value);
 } /* end of PDCprop_end() */
+
+PDC_cont_prop_t *PDCcont_prop_get_info(pdcid_t cont_prop, pdcid_t pdc) {
+    PDC_cont_prop_t *ret_value = NULL;
+    PDC_cont_prop_t *info =  NULL;
+    
+    FUNC_ENTER(NULL);
+    
+    PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
+    PDC_id_info_t *prop = PDC_find_id(cont_prop, pc);
+    if(prop == NULL)
+        PGOTO_ERROR(NULL, "cannot locate container property");
+    
+    info = (PDC_cont_prop_t *)(prop->obj_ptr);
+    ret_value = info;
+done:
+    FUNC_LEAVE(ret_value);
+} /* end of PDCcont_prop_get_info() */

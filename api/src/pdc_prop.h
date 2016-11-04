@@ -13,15 +13,17 @@ perr_t PDCprop_init(PDC_CLASS_t *pc);
 
 /* Create PDC property 
  * Param type [IN]: PDC property creation type (enum type), PDC_CONT_CREATE or PDC_OBJ_CREATE
+ * Param pdc_id [IN]: Id of the PDC
  * Return: PDC property id, 0 for container and 1 for object
  */
-pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdc);
+pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdc_id);
 
 /* Close PDC property
  * Param prop_id [IN]: Id of the PDC property
+ * Param pdc_id [IN]: Id of the PDC
  * Return: Non-negative on success/Negative on failure
  */
-perr_t PDCprop_close(pdcid_t id, pdcid_t pdc);
+perr_t PDCprop_close(pdcid_t id, pdcid_t pdc_id);
 
 /* PDC container and object property finalize
  * Return: Non-negative on success/Negative on failure
@@ -39,5 +41,11 @@ perr_t PDC_prop_obj_list_null();
  * Return: SUCCEED if empty, or FAIL if not empty
  */
 perr_t PDC_prop_cont_list_null();
+
+/* Get container property infomation
+ * Param prop_id [IN]: Id of the PDC property
+ * Param pdc_id [IN]: Id of the PDC
+ */
+PDC_cont_prop_t *PDCcont_prop_get_info(pdcid_t prop_id, pdcid_t pdc_id);
 
 #endif
