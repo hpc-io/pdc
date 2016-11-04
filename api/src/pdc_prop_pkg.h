@@ -1,7 +1,7 @@
 #ifndef _pdc_prop_pkg_H
 #define _pdc_prop_pkg_H
 
-#include "PDC_life.h"
+#include "pdc_life.h"
 
 typedef enum {
     PDC_CONT_CREATE = 0,
