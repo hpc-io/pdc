@@ -15,5 +15,10 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     "MinSizeRel" "RelWithDebInfo")
 endif()
 
+find_package(mercury REQUIRED)
+if(mercury_FOUND)
+    include_directories(${MERCURY_INCLUDE_DIR})
+endif()
+
 add_subdirectory (src)
 add_subdirectory (tests)

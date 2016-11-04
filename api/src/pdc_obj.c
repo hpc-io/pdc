@@ -1,6 +1,9 @@
 #include "pdc_obj.h"
 #include "pdc_malloc.h"
 
+#include "pdc_client_server_common.h"
+#include "pdc_client_connect.h"
+
 static perr_t PDCobj__close(PDC_obj_t *op);
 
 /* PDC object ID class */
@@ -25,7 +28,17 @@ done:
 } /* end PDCobj_init() */
 
 pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop){
+    FUNC_ENTER(NULL);
 
+    pdcid_t obj_id;
+    int port = pdc_client_mpi_rank_g + 8000;
+    // TODO: hash obj_name to find server
+    int target_server_id = 0;
+    /* target_server = PDC_Client_get_server(obj_name); */
+    obj_id = PDC_Client_send_name_recv_id(target_server_id, port, obj_name);
+
+done:
+    FUNC_LEAVE(obj_id);
 }
 
 perr_t PDC_obj_list_null(pdcid_t pdc) {
