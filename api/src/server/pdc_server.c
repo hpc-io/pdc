@@ -19,7 +19,8 @@
 #include "mercury_thread.h"
 #include "mercury_thread_pool.h"
 #include "mercury_thread_mutex.h"
-hg_thread_pool_t *hg_test_thread_pool_g = NULL;
+
+hg_thread_pool_t *hg_test_thread_pool_g;
 
 void PDC_Server_print_version()
 {
@@ -190,7 +191,7 @@ perr_t PDC_Server_multithread_loop(hg_class_t *class, hg_context_t *context)
 
     hg_thread_t progress_thread;
     hg_thread_create(&progress_thread, hg_progress_thread, context);
-    hg_thread_create(&progress_thread, hg_progress_thread, context);
+    /* hg_thread_create(&progress_thread, hg_progress_thread, context); */
 
     hg_return_t ret = HG_SUCCESS;
     do {

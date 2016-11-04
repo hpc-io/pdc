@@ -2,6 +2,9 @@
 #include "mercury_macros.h"
 #include "mercury_proc_string.h"
 
+#include "mercury_thread_pool.h"
+#include "mercury_atomic.h"
+#include "mercury_thread_mutex.h"
 
 #ifndef PDC_CLIENT_SERVER_COMMON_H
 #define PDC_CLIENT_SERVER_COMMON_H
