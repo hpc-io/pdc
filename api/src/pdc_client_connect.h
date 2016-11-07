@@ -12,12 +12,13 @@ uint64_t PDC_Client_send_name_recv_id(int server_id, int port, const char *obj_n
 
 typedef struct pdc_server_info_t {
     char     addr_string[ADDR_MAX];
-    /* int  has_mercury_handle; */
-    /* hg_handle_t handle; */
+    int  has_mercury_handle;
+    hg_addr_t           addr;
+    hg_handle_t handle;
 } pdc_server_info_t;
 
 extern int pdc_server_num_g;
-extern pdc_server_info_t *pdc_server_info;
+extern pdc_server_info_t *pdc_server_info_g;
 
 extern uint64_t pdc_id_seq_g;
 
@@ -30,5 +31,6 @@ struct client_lookup_args {
     hg_addr_t           hg_target_addr;
     hg_const_string_t   obj_name;
     hg_uint64_t         obj_id;
+    int                 server_id;
 };
 #endif

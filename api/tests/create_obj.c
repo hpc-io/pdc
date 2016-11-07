@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
+#include <time.h>
+
 #include "pdc.h"
 
 int main() {
@@ -74,4 +77,6 @@ int main() {
        printf("fail to close PDC\n");
     else
        printf("PDC is closed\n");
+
+     return 0;
 }
