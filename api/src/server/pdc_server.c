@@ -184,7 +184,7 @@ perr_t PDC_Server_multithread_loop(hg_class_t *class, hg_context_t *context)
 
     perr_t ret_value;
 
-    const int n_thread = 2;
+    const int n_thread = 4;
     /* hg_thread_mutex_init(&hg_test_local_bulk_handle_mutex_g); */
     hg_thread_pool_init(n_thread, &hg_test_thread_pool_g);
     printf("# Starting server with %d threads...\n", n_thread);

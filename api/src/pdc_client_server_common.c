@@ -87,6 +87,7 @@ HG_TEST_RPC_CB(gen_obj_id, handle)
     HG_Respond(handle, NULL, NULL, &out);
     printf("Returned %llu\n", out.ret);
 
+    HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
     ret_value = HG_SUCCESS;
@@ -108,22 +109,3 @@ gen_obj_id_register(hg_class_t *hg_class)
 done:
     FUNC_LEAVE(ret_value);
 }
-
-/* static hg_thread_ret_t */ 
-/* gen_obj_id_cb_thread (void *arg) */ 
-/* { */ 
-/*     hg_handle_t handle = (hg_handle_t) arg; */ 
-/*     hg_thread_ret_t thread_ret = (hg_thread_ret_t) 0; */ 
-/*     gen_obj_id_cb_thread_cb(handle); */ 
-/*     return thread_ret; */ 
-/* } */ 
-
-/* hg_return_t */ 
-/* gen_obj_id_cb_cb(hg_handle_t handle) */ 
-/* { */ 
-/*     hg_return_t ret = HG_SUCCESS; */ 
-/*     hg_thread_pool_post(hg_test_thread_pool_g, gen_obj_id_cb_thread, handle); */ 
-/*     return ret; */ 
-/* } */
-
-
