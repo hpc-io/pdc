@@ -2,7 +2,8 @@ include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/tests)
 link_directories(${PROJECT_BINARY_DIR}/src)
 
-set(PROGRAMS pdc_init create_prop create_cont open_cont cont_life cont_iter create_obj client_server)
+set(PROGRAMS pdc_init create_prop create_cont open_cont cont_life cont_iter create_obj hash_table)
+#client_server 
 
 foreach(program ${PROGRAMS})
   add_executable(${program} ${program}.c)
