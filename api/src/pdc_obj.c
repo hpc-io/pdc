@@ -31,11 +31,7 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_
     FUNC_ENTER(NULL);
 
     pdcid_t obj_id;
-    int port = pdc_client_mpi_rank_g + 8000;
-    // TODO: hash obj_name to find server
-    int target_server_id = 0;
-    /* target_server = PDC_Client_get_server(obj_name); */
-    obj_id = PDC_Client_send_name_recv_id(target_server_id, port, obj_name);
+    obj_id = PDC_Client_send_name_recv_id(obj_name);
 
 done:
     FUNC_LEAVE(obj_id);

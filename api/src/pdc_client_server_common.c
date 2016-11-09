@@ -2,6 +2,7 @@
 #include "mercury_thread_pool.h"
 #include "mercury_atomic.h"
 #include "mercury_thread_mutex.h"
+#include "mercury_hash_table.h"
 
 #include "pdc_interface.h"
 #include "pdc_client_server_common.h"
@@ -56,7 +57,47 @@ done:
             return ret; \
         }
 
+#ifdef IS_PDC_SERVER
 
+/* HG_TEST_RPC_CB(insert_metadata_to_hash_table, handle) */
+hg_return_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
+{
+
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value;
+
+    /* printf("Got RPC request with name: %s\nHash=%d\n", in->obj_name, in->hash_value); */
+    /* printf("Full name check: %s\n", &in->obj_name[507]); */
+
+    hash_value_metadata_t *metadata = (hash_value_metadata_t*)malloc(sizeof(hash_value_metadata_t));
+
+    // Generate object id (uint64_t)
+    metadata->obj_id = PDCS_gen_obj_id();
+
+    // Fill $out structure for returning the generated obj_id to client
+    out->ret = metadata->obj_id;
+    /* printf("Generated obj_id=%llu\n", out->ret); */
+
+    int32_t *hash_key = (int32_t*)malloc(sizeof(int32_t));
+    *hash_key = in->hash_value;
+
+    if (metadata_hash_table_g != NULL) {
+        ret_value = hg_hash_table_insert(metadata_hash_table_g, hash_key, metadata);
+    }
+    else {
+        printf("metadata_hash_table_g not initilized!\n");
+        ret_value = HG_INVALID_PARAM;
+    }
+    fflush(stdout);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+#else
+
+hg_return_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out) {}
+#endif
 /*
  * The routine that sets up the routines that actually do the work.
  * This 'handle' parameter is the only value passed to this callback, but
@@ -76,15 +117,16 @@ HG_TEST_RPC_CB(gen_obj_id, handle)
     /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     gen_obj_id_in_t in;
+    gen_obj_id_out_t out;
+
     HG_Get_input(handle, &in);
-    /* printf("Got RPC request with name: %s\n", in.obj_name); */
-    /* printf("Full name check: %s\n", &in.obj_name[507]); */
+    
+    // Insert to hash table
+    insert_metadata_to_hash_table(&in, &out);
 
     // Generate an object id as return value
-    gen_obj_id_out_t out;
-    out.ret = PDCS_gen_obj_id();
+    /* out.ret = PDCS_gen_obj_id(); */
 
-    // TODO: add callback function to insert the object metadata to DB
     HG_Respond(handle, NULL, NULL, &out);
     /* printf("Returned %llu\n", out.ret); */
 
@@ -97,7 +139,9 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+
 HG_TEST_THREAD_CB(gen_obj_id)
+/* HG_TEST_THREAD_CB(insert_metadata_to_hash_table) */
 
 hg_id_t
 gen_obj_id_register(hg_class_t *hg_class)

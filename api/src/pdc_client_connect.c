@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* #define ENABLE_MPI 1 */
+#define ENABLE_MPI 1
 #ifdef ENABLE_MPI
     #include "mpi.h"
 #endif
@@ -21,10 +21,32 @@ int  pdc_client_mpi_size_g = 1;
 int  pdc_server_num_g;
 pdc_server_info_t *pdc_server_info_g = NULL;
 
+static int             mercury_has_init = 0;
 static hg_class_t     *send_class_g = NULL;
 static hg_context_t   *send_context_g = NULL;
-static int     work_todo_g = 0;
-static hg_id_t gen_obj_register_id_g;
+static int             work_todo_g = 0;
+static hg_id_t         gen_obj_register_id_g;
+
+
+static int pdc_hash_djb2(const char *pc) {
+        int hash = 5381, c;
+        while (c = *pc++)
+            hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+        if (hash < 0) 
+            hash *= -1;
+        
+        return hash;
+}
+
+static int pdc_hash_sdbm(const char *pc) {
+        int hash = 0, c;
+        while (c = (*pc++)) 
+                hash = c + (hash << 6) + (hash << 16) - hash;
+        if (hash < 0) 
+            hash *= -1;
+        return hash;
+}
+
 
 int PDC_Client_read_server_addr_from_file()
 {
@@ -116,6 +138,8 @@ client_lookup_cb(const struct hg_cb_info *callback_info)
     // Fill input structure
     gen_obj_id_in_t in;
     in.obj_name= client_lookup_args->obj_name;
+    in.hash_value = pdc_hash_djb2(client_lookup_args->obj_name);
+    /* printf("Hash(%s) = %d\n", client_lookup_args->obj_name, in.hash_value); */
 
     /* printf("Sending input to target\n"); */
     ret_value = HG_Forward(pdc_server_info_g[server_id].rpc_handle, client_rpc_cb, client_lookup_args, &in);
@@ -178,7 +202,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     /* printf("NA: %s\n", na_info_string); */
 
     /* Initialize Mercury with the desired network abstraction class */
-    printf("Using %s\n", na_info_string);
+    /* printf("Using %s\n", na_info_string); */
     *hg_class = HG_Init(na_info_string, NA_FALSE);
     if (*hg_class == NULL) {
         printf("Error with HG_Init()\n");
@@ -225,38 +249,25 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-
-static int pdc_hash_djb2(const char *pc) {
-        int hash = 5381, c;
-        while (c = *pc++)
-            hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
-        return hash;
-}
-
-static int pdc_hash_sdbm(const char *pc) {
-        int hash = 0, c;
-        while (c = (*pc++)) 
-                hash = c + (hash << 6) + (hash << 16) - hash;
-        return hash;
-}
-
 perr_t PDC_Client_init()
 {
     FUNC_ENTER(NULL);
 
     perr_t ret_value;
 
-    // METADATA Init: client server connection
     pdc_server_info_g = NULL;
 
     // get server address and fill in $pdc_server_info_g
     PDC_Client_read_server_addr_from_file();
-    printf("PDC_init(): found %d servers\n", pdc_server_num_g);
 
 #ifdef ENABLE_MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &pdc_client_mpi_rank_g);
-    printf("pdc_rank:%d\n", pdc_client_mpi_rank_g);
+    MPI_Comm_size(MPI_COMM_WORLD, &pdc_client_mpi_size_g);
 #endif
+    if (pdc_client_mpi_rank_g == 0) {
+        printf("==PDC_CLIENT: Found %d PDC Metadata servers, running with %d PDC clients\n", pdc_server_num_g ,pdc_client_mpi_size_g);
+    }
+    /* printf("pdc_rank:%d\n", pdc_client_mpi_rank_g); */
 
     ret_value = SUCCEED;
 
@@ -290,13 +301,25 @@ done:
 }
 
 // Send a name to server and receive an obj id
-uint64_t PDC_Client_send_name_recv_id(int server_id, int port, const char *obj_name)
+uint64_t PDC_Client_send_name_recv_id(const char *obj_name)
 {
 
     FUNC_ENTER(NULL);
 
     uint64_t ret_value;
     hg_return_t  hg_ret = 0;
+    int server_id = pdc_hash_djb2(obj_name) % pdc_server_num_g; 
+    int port      = pdc_client_mpi_rank_g + 8000; 
+
+    if (mercury_has_init == 0) {
+        // Init Mercury network connection
+        PDC_Client_mercury_init(&send_class_g, &send_context_g, port);
+        if (send_class_g == NULL || send_context_g == NULL) {
+            printf("Error with Mercury Init, exiting...\n");
+            exit(0);
+        }
+        mercury_has_init = 1;
+    }
 
     // Fill lookup args
     struct client_lookup_args lookup_args;
@@ -308,20 +331,15 @@ uint64_t PDC_Client_send_name_recv_id(int server_id, int port, const char *obj_n
     char *target_addr_string = pdc_server_info_g[server_id].addr_string;
     // Test
     if (pdc_server_info_g[server_id].rpc_handle_valid == 0) {
-
-        // Init Mercury network connection
-        PDC_Client_mercury_init(&send_class_g, &send_context_g, port);
-        if (send_class_g == NULL || send_context_g == NULL) {
-            printf("Error with Mercury Init, exiting...\n");
-            exit(0);
-        }
  
         hg_ret = HG_Addr_lookup(send_context_g, client_lookup_cb, &lookup_args, target_addr_string, HG_OP_ID_IGNORE);
     }
     else {
         // Fill input structure
         gen_obj_id_in_t in;
-        in.obj_name = obj_name;
+        in.obj_name   = obj_name;
+        in.hash_value = pdc_hash_djb2(obj_name);
+        /* printf("Hash(%s) = %d\n", obj_name, in.hash_value); */
 
         /* printf("Sending input to target\n"); */
         ret_value = HG_Forward(pdc_server_info_g[server_id].rpc_handle, client_rpc_cb, &lookup_args, &in);

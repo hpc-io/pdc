@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <sys/syscall.h>
 
-/* #define ENABLE_MPI 1 */
+#define ENABLE_MPI 1
 
 #ifdef ENABLE_MPI
     #include "mpi.h"
@@ -23,33 +23,33 @@
 // Mercury hash table
 #include "mercury_hash_table.h"
 
-hg_thread_pool_t *hg_test_thread_pool_g;
+hg_thread_pool_t *hg_test_thread_pool_g = NULL;
 
 // Hash table 
-hg_hash_table_t *metadata_hash_table_g;
+hg_hash_table_t *metadata_hash_table_g = NULL;
 
-static int
+static int32_t
 int_equal(hg_hash_table_key_t vlocation1, hg_hash_table_key_t vlocation2)
 {
-    return *((int *) vlocation1) == *((int *) vlocation2);
+    return *((int32_t *) vlocation1) == *((int32_t *) vlocation2);
 }
 
 static unsigned int
 int_hash(hg_hash_table_key_t vlocation)
 {
-    return *((unsigned int *) vlocation);
+    return *((unsigned int*) vlocation);
 }
 
 static void
 int_hash_key_free(hg_hash_table_key_t key)
 {
-    free((int *) key);
+    free((int32_t *) key);
 }
 
 static void
-int_hash_value_free(hg_hash_table_value_t value)
+metadata_hash_value_free(hg_hash_table_value_t value)
 {
-    free((int *) value);
+    free((hash_value_metadata_t *) value);
 }
 // ^ hash table
 
@@ -179,7 +179,13 @@ perr_t PDC_Server_init(int rank, int size, int port, hg_class_t **hg_class, hg_c
     // Hashtable
     // TODO: read previous data from storage
     metadata_hash_table_g = hg_hash_table_new(int_hash, int_equal);
-    hg_hash_table_register_free_functions(metadata_hash_table_g, int_hash_key_free, int_hash_value_free);
+    if (metadata_hash_table_g == NULL) {
+        printf("metadata_hash_table_g init error! Exit...\n");
+        exit(0);
+    }
+    /* else */
+    /*     printf("Hash table created!\n"); */
+    hg_hash_table_register_free_functions(metadata_hash_table_g, int_hash_key_free, metadata_hash_value_free);
 
 
     ret_value = SUCCEED;
@@ -187,12 +193,13 @@ perr_t PDC_Server_init(int rank, int size, int port, hg_class_t **hg_class, hg_c
 done:
     FUNC_LEAVE(ret_value);
 }
+
 perr_t PDC_Server_finalize()
 {
     FUNC_ENTER(NULL);
     perr_t ret_value = SUCCEED;
 
-    // TODO: put it at finalize function: free hash table
+    // Free hash table
     if(metadata_hash_table_g != NULL)
         hg_hash_table_free(metadata_hash_table_g);
 
@@ -224,8 +231,7 @@ hg_progress_thread(void *arg)
     return tret;
 }
 
-
-// TODO: multithread
+// Multithread Mercury
 perr_t PDC_Server_multithread_loop(hg_class_t *class, hg_context_t *context)
 {
     FUNC_ENTER(NULL);
@@ -260,6 +266,8 @@ perr_t PDC_Server_multithread_loop(hg_class_t *class, hg_context_t *context)
 done:
     FUNC_LEAVE(ret_value);
 }
+
+// No threading
 perr_t PDC_Server_loop(hg_class_t *hg_class, hg_context_t *hg_context)
 {
     FUNC_ENTER(NULL);
@@ -271,16 +279,12 @@ perr_t PDC_Server_loop(hg_class_t *hg_class, hg_context_t *hg_context)
     do {
         unsigned int actual_count = 0;
         do {
-            printf("Before Trigger()\n");
             hg_ret = HG_Trigger(hg_context, 0 /* timeout */, 1 /* max count */, &actual_count);
-            printf("Trigger()\n");
         } while ((hg_ret == HG_SUCCESS) && actual_count);
 
         /* Do not try to make progress anymore if we're done */
         /* if (all_work_done) break; */
-        printf("Before Progress()\n");
         hg_ret = HG_Progress(hg_context, HG_MAX_IDLE_TIME);
-        printf("Progress()\n");
 
         fflush(stdout);
     } while (hg_ret == HG_SUCCESS);
