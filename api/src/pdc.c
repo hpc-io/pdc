@@ -97,7 +97,7 @@ perr_t PDC_close(pdcid_t pdcid) {
         PGOTO_ERROR(FAIL, "fail to destroy object");
     pc = PDC_FREE(PDC_CLASS_t, pc);
 
-    // METADATA: [TODO] need to free PDC Server info
+    // Finalize METADATA
     PDC_Client_finalize();
 
 done:

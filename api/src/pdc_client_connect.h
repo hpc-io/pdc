@@ -8,7 +8,7 @@
 #define ADDR_MAX 64
 
 int PDC_Client_read_server_addr_from_file();
-uint64_t PDC_Client_send_name_recv_id(int server_id, int port, const char *obj_name);
+uint64_t PDC_Client_send_name_recv_id(const char *obj_name);
 perr_t PDC_Client_init();
 perr_t PDC_Client_finalize();
 
@@ -29,8 +29,8 @@ extern int pdc_client_mpi_rank_g;
 extern int pdc_client_mpi_size_g;
 
 struct client_lookup_args {
-    hg_const_string_t   obj_name;
-    hg_uint64_t         obj_id;
-    int                 server_id;
+    const char *obj_name;
+    uint64_t    obj_id;
+    int         server_id;
 };
 #endif

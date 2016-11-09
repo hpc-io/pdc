@@ -67,7 +67,11 @@ pdcid_t PDCobj_create(pdcid_t pdc, pdcid_t cont_id, const char *obj_name, pdcid_
     // will contact server to get ID
     PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
     pdcid_t new_id = PDC_id_register(PDC_OBJ, p, pdc);
-    ret_value = new_id;
+
+    pdcid_t obj_id;
+    obj_id = PDC_Client_send_name_recv_id(obj_name);
+
+    ret_value = obj_id;
 done:
     FUNC_LEAVE(ret_value);
 }

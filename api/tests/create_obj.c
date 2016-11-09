@@ -6,7 +6,6 @@
 
 #include "pdc.h"
 
-<<<<<<< HEAD
 int main() {
     PDC_prop_t p;
     // create a pdc
