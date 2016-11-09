@@ -15,12 +15,43 @@
 #include "pdc_client_connect.h"
 #include "pdc_client_server_common.h"
 
-// Multithread
+// Mercury multithread
 #include "mercury_thread.h"
 #include "mercury_thread_pool.h"
 #include "mercury_thread_mutex.h"
 
+// Mercury hash table
+#include "mercury_hash_table.h"
+
 hg_thread_pool_t *hg_test_thread_pool_g;
+
+// Hash table 
+hg_hash_table_t *metadata_hash_table_g;
+
+static int
+int_equal(hg_hash_table_key_t vlocation1, hg_hash_table_key_t vlocation2)
+{
+    return *((int *) vlocation1) == *((int *) vlocation2);
+}
+
+static unsigned int
+int_hash(hg_hash_table_key_t vlocation)
+{
+    return *((unsigned int *) vlocation);
+}
+
+static void
+int_hash_key_free(hg_hash_table_key_t key)
+{
+    free((int *) key);
+}
+
+static void
+int_hash_value_free(hg_hash_table_value_t value)
+{
+    free((int *) value);
+}
+// ^ hash table
 
 void PDC_Server_print_version()
 {
@@ -144,18 +175,36 @@ perr_t PDC_Server_init(int rank, int size, int port, hg_class_t **hg_class, hg_c
         free(all_addr_strings);
     }
     fflush(stdout);
+
+    // Hashtable
+    // TODO: read previous data from storage
+    metadata_hash_table_g = hg_hash_table_new(int_hash, int_equal);
+    hg_hash_table_register_free_functions(metadata_hash_table_g, int_hash_key_free, int_hash_value_free);
+
+
     ret_value = SUCCEED;
 
 done:
     FUNC_LEAVE(ret_value);
 }
+perr_t PDC_Server_finalize()
+{
+    FUNC_ENTER(NULL);
+    perr_t ret_value = SUCCEED;
 
+    // TODO: put it at finalize function: free hash table
+    if(metadata_hash_table_g != NULL)
+        hg_hash_table_free(metadata_hash_table_g);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
 static HG_THREAD_RETURN_TYPE
 hg_progress_thread(void *arg)
 {
     /* pthread_t tid = pthread_self(); */
     pid_t tid;
-    tid = syscall(SYS_gettid);
+    /* tid = syscall(SYS_gettid); */
 
     hg_context_t *context = (hg_context_t*)arg;
 
@@ -170,7 +219,6 @@ hg_progress_thread(void *arg)
         /* printf("thread [%d]\n", tid); */
     } while (ret == HG_SUCCESS || ret == HG_TIMEOUT);
 
-    printf("Exiting\n");
     hg_thread_exit(tret);
 
     return tret;

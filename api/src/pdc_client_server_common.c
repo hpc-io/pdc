@@ -76,7 +76,8 @@ HG_TEST_RPC_CB(gen_obj_id, handle)
     // Decode input
     gen_obj_id_in_t in;
     HG_Get_input(handle, &in);
-    printf("Got RPC request with name: %s\n", in.obj_name);
+    /* printf("Got RPC request with name: %s\n", in.obj_name); */
+    /* printf("Full name check: %s\n", &in.obj_name[507]); */
 
     // Generate an object id as return value
     gen_obj_id_out_t out;
@@ -84,7 +85,7 @@ HG_TEST_RPC_CB(gen_obj_id, handle)
 
     // TODO: add callback function to insert the object metadata to DB
     HG_Respond(handle, NULL, NULL, &out);
-    printf("Returned %llu\n", out.ret);
+    /* printf("Returned %llu\n", out.ret); */
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);

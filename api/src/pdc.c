@@ -1,16 +1,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "pdc.h"
 #include "pdc_private.h"
 #include "pdc_malloc.h"
 #include "pdc_interface.h"
 
 //
-#include "mpi.h"
 #include "mercury.h"
 #include "pdc_client_server_common.h"
 #include "pdc_client_connect.h"
+
 
 static PDC_CLASS_t *PDC__class_create() {
     PDC_CLASS_t *ret_value = NULL;         /* Return value */
@@ -31,6 +32,7 @@ pdcid_t PDC_init(PDC_prop_t property) {
     FUNC_ENTER(NULL);
     PDC_CLASS_t *pc = PDC__class_create();
     if(pc == NULL)
+
 	    PGOTO_ERROR(FAIL, "fail to allocate pdc type");
 
     if(PDCprop_init(pc) < 0)
@@ -48,15 +50,10 @@ pdcid_t PDC_init(PDC_prop_t property) {
     PDC_Client_read_server_addr_from_file();
     printf("PDC_init(): found %d servers\n", pdc_server_num_g);
 
-    // METADATA Init: client server connection
-    pdc_server_info_g = NULL;
-    // get server address and fill in $pdc_server_info_g
-    PDC_Client_read_server_addr_from_file();
-    printf("PDC_init(): found %d servers\n", pdc_server_num_g);
-#ifdef ENABLE_MPI
-    MPI_Comm_rank(MPI_COMM_WORLD, &pdc_client_mpi_rank_g);
-    printf("pdc_rank:%d\n", pdc_client_mpi_rank_g);
-#endif
+
+    // PDC Client Server connection init
+    PDC_Client_init();
+
 
     // create pdc id
     pdcid_t pdcid = (pdcid_t)pc;
@@ -101,12 +98,7 @@ perr_t PDC_close(pdcid_t pdcid) {
     pc = PDC_FREE(PDC_CLASS_t, pc);
 
     // METADATA: [TODO] need to free PDC Server info
-    int i;
-    for (i = 0; i < pdc_server_num_g; i++) {
-        /* free(pdc_server_info_g->); */
-    }
-    if (pdc_server_info_g != NULL) 
-        free(pdc_server_info_g);
+    PDC_Client_finalize();
 
 done:
     FUNC_LEAVE(ret_value);

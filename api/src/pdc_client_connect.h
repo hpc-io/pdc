@@ -9,12 +9,15 @@
 
 int PDC_Client_read_server_addr_from_file();
 uint64_t PDC_Client_send_name_recv_id(int server_id, int port, const char *obj_name);
+perr_t PDC_Client_init();
+perr_t PDC_Client_finalize();
 
 typedef struct pdc_server_info_t {
-    char     addr_string[ADDR_MAX];
-    int  has_mercury_handle;
-    hg_addr_t           addr;
-    hg_handle_t handle;
+    char            addr_string[ADDR_MAX];
+    int             addr_valid;
+    hg_addr_t       addr;
+    int             rpc_handle_valid;
+    hg_handle_t     rpc_handle;
 } pdc_server_info_t;
 
 extern int pdc_server_num_g;
@@ -26,9 +29,6 @@ extern int pdc_client_mpi_rank_g;
 extern int pdc_client_mpi_size_g;
 
 struct client_lookup_args {
-    hg_class_t          *hg_class;
-    hg_context_t        *hg_context;
-    hg_addr_t           hg_target_addr;
     hg_const_string_t   obj_name;
     hg_uint64_t         obj_id;
     int                 server_id;
