@@ -4,7 +4,7 @@
 #include <getopt.h>
 #include <time.h>
 
-#define ENABLE_MPI 1
+/* #define ENABLE_MPI 1 */
 
 #ifdef ENABLE_MPI
   #include "mpi.h"
@@ -88,12 +88,20 @@ int main(int argc, const char *argv[])
         sprintf(obj_name, "%s_%d", "Obj", i + rank * 100000);
         // Send the entire string, not just the first few characters.
         obj_name[strlen(obj_name)] = ' ';
+
         test_obj = PDCobj_create(pdc, obj_name, NULL);
         if (test_obj < 0) { 
             printf("Error getting an object id from server, exit...\n");
             exit(-1);
         }
 
+        // Print progress
+        int progress_factor = count < 10 ? 1 : 10;
+        if (rank == 0 && i > 0 && i % (count/progress_factor) == 0) {
+            printf("%d created\n", i * size);
+            fflush(stdout);
+        }
+        /* printf("[%d]:%d\n", rank, i); */
     }
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -102,9 +110,10 @@ int main(int argc, const char *argv[])
     gettimeofday(&ht_total_end, 0);
     ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
     ht_total_sec        = ht_total_elapsed / 1000000.0;
-    fflush(stdout);
-    if (rank == 0) 
-        printf("Total time for creating %d obj per processs with %d ranks: %.6f\n", count, size, ht_total_sec);
+    if (rank == 0) { 
+        printf("Time to create %d obj/rank with %d ranks: %.6f\n", count, size, ht_total_sec);
+        fflush(stdout);
+    }
 
 
     if(PDC_close(pdc) < 0)

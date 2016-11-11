@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <sys/syscall.h>
 
-#define ENABLE_MPI 1
+/* #define ENABLE_MPI 1 */
 
 #ifdef ENABLE_MPI
     #include "mpi.h"
@@ -72,7 +72,7 @@ perr_t PDC_Server_get_self_addr(hg_class_t* hg_class, char* self_addr_string)
     // Get self addr to tell client about 
     HG_Addr_self(hg_class, &self_addr);
     HG_Addr_to_string(hg_class, self_addr_string, &self_addr_string_size, self_addr);
-    /* HG_Addr_free(hg_class, self_addr); */
+    HG_Addr_free(hg_class, self_addr);
 
     ret_value = SUCCEED;
 
@@ -124,8 +124,14 @@ perr_t PDC_Server_init(int rank, int size, int port, hg_class_t **hg_class, hg_c
 
     char self_addr_string[PATH_MAX];
     char na_info_string[PATH_MAX];
-    sprintf(na_info_string, "cci+tcp://%d", port);
-    /* printf("na_info_string: %s\n", na_info_string); */
+    char hostname[1024];
+    memset(hostname, 0, 1024);
+    gethostname(hostname, 1023);
+    sprintf(na_info_string, "bmi+tcp://%s:%d", hostname, port);
+    /* sprintf(na_info_string, "cci+tcp://%s:%d", hostname, port); */
+    if (rank == 0) 
+        printf("\n==PDC_SERVER: using %.7s\n", na_info_string);
+    
     if (!na_info_string) {
         fprintf(stderr, HG_PORT_NAME " environment variable must be set, e.g.:\nMERCURY_PORT_NAME=\"tcp://127.0.0.1:22222\"\n");
         exit(0);
@@ -148,6 +154,7 @@ perr_t PDC_Server_init(int rank, int size, int port, hg_class_t **hg_class, hg_c
     // Get server address
     PDC_Server_get_self_addr(*hg_class, self_addr_string);
     /* printf("Server address is: %s\n", self_addr_string); */
+    /* fflush(stdout); */
 
     // Gather addresses
 #ifdef ENABLE_MPI
@@ -175,6 +182,22 @@ perr_t PDC_Server_init(int rank, int size, int port, hg_class_t **hg_class, hg_c
         free(all_addr_strings);
     }
     fflush(stdout);
+
+#ifdef ENABLE_MULTITHREAD
+    // Init threadpool
+    const int n_thread = 2;
+    /* hg_thread_mutex_init(&hg_test_local_bulk_handle_mutex_g); */
+    hg_thread_pool_init(n_thread, &hg_test_thread_pool_g);
+    if (rank == 0) {
+        printf("\n==PDC_SERVER: Starting server with %d threads...\n", n_thread);
+        fflush(stdout);
+    }
+#else
+    if (rank == 0) {
+        printf("==PDC_SERVER:Not using multi-thread!\n");
+        fflush(stdout);
+    }
+#endif
 
     // Hashtable
     // TODO: read previous data from storage
@@ -238,21 +261,15 @@ perr_t PDC_Server_multithread_loop(hg_class_t *class, hg_context_t *context)
 
     perr_t ret_value;
 
-    const int n_thread = 4;
-    /* hg_thread_mutex_init(&hg_test_local_bulk_handle_mutex_g); */
-    hg_thread_pool_init(n_thread, &hg_test_thread_pool_g);
-    printf("# Starting server with %d threads...\n", n_thread);
-
     hg_thread_t progress_thread;
     hg_thread_create(&progress_thread, hg_progress_thread, context);
-    /* hg_thread_create(&progress_thread, hg_progress_thread, context); */
 
     hg_return_t ret = HG_SUCCESS;
     do {
         /* if (hg_atomic_cas32(&hg_test_finalizing_count_g, 1, 1)) */
         /*     break; */
 
-        ret = HG_Trigger(context, HG_MAX_IDLE_TIME, 1, NULL);
+        ret = HG_Trigger(context, 0, 1, NULL);
     } while (ret == HG_SUCCESS || ret == HG_TIMEOUT);
 
     hg_thread_join(progress_thread);
@@ -279,14 +296,14 @@ perr_t PDC_Server_loop(hg_class_t *hg_class, hg_context_t *hg_context)
     do {
         unsigned int actual_count = 0;
         do {
-            hg_ret = HG_Trigger(hg_context, 0 /* timeout */, 1 /* max count */, &actual_count);
+            hg_ret = HG_Trigger(hg_context, 0/* timeout */, 1 /* max count */, &actual_count);
         } while ((hg_ret == HG_SUCCESS) && actual_count);
 
         /* Do not try to make progress anymore if we're done */
         /* if (all_work_done) break; */
         hg_ret = HG_Progress(hg_context, HG_MAX_IDLE_TIME);
 
-        fflush(stdout);
+        /* fflush(stdout); */
     } while (hg_ret == HG_SUCCESS);
 
     if (hg_ret == HG_SUCCESS) 
@@ -325,8 +342,11 @@ int main(int argc, char *argv[])
     // Register RPC
     gen_obj_id_register(hg_class);
 
-    /* PDC_Server_loop(hg_class, hg_context); */
+#ifdef ENABLE_MULTITHREAD
     PDC_Server_multithread_loop(hg_class, hg_context);
+#else
+    PDC_Server_loop(hg_class, hg_context);
+#endif
 
     // Finalize 
     HG_Context_destroy(hg_context);

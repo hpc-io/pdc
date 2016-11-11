@@ -5,7 +5,7 @@
 #define PDC_CLIENT_CONNECT_H
 
 #define pdc_server_cfg_name "./server.cfg"
-#define ADDR_MAX 64
+#define ADDR_MAX 128
 
 int PDC_Client_read_server_addr_from_file();
 uint64_t PDC_Client_send_name_recv_id(const char *obj_name);

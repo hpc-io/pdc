@@ -9,9 +9,10 @@
 
 // Thread
 hg_thread_pool_t *hg_test_thread_pool_g;
+hg_thread_mutex_t pdc_metadata_hash_table_mutex_g;
 
 
-uint64_t pdc_id_seq_g = 1000;
+uint64_t pdc_id_seq_g = 1000000;
 // actual value for each server is set by PDC_Server_init()
 
 uint64_t PDCS_gen_obj_id()
@@ -22,6 +23,8 @@ uint64_t PDCS_gen_obj_id()
 done:
     FUNC_LEAVE(ret_value);
 }
+
+#ifdef ENABLE_MULTITHREAD
 
 // Macros for multi-thread callback, grabbed from Mercury/Testing/mercury_rpc_cb.c
 #define HG_TEST_RPC_CB(func_name, handle) \
@@ -56,6 +59,13 @@ done:
             \
             return ret; \
         }
+#else
+#define HG_TEST_RPC_CB(func_name, handle) \
+        hg_return_t \
+        func_name ## _cb(hg_handle_t handle)
+#define HG_TEST_THREAD_CB(func_name)
+
+#endif // End of ENABLE_MULTITHREAD
 
 #ifdef IS_PDC_SERVER
 
@@ -83,7 +93,11 @@ hg_return_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t 
     *hash_key = in->hash_value;
 
     if (metadata_hash_table_g != NULL) {
+        hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
+
         ret_value = hg_hash_table_insert(metadata_hash_table_g, hash_key, metadata);
+
+        hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
     }
     else {
         printf("metadata_hash_table_g not initilized!\n");
