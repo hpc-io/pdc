@@ -321,6 +321,7 @@ uint64_t PDC_Client_send_name_recv_id(const char *obj_name)
     int port      = pdc_client_mpi_rank_g + 8000; 
 
     // Test
+    server_id = 0;
     /* server_id = pdc_client_mpi_rank_g / 20; */
     /* server_id = server_id % 2; */
 

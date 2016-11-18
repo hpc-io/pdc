@@ -102,6 +102,10 @@ int main(int argc, const char *argv[])
             fflush(stdout);
         }
         /* printf("[%d]:%d\n", rank, i); */
+        /* fflush(stdout); */
+/* #ifdef ENABLE_MPI */
+/*     MPI_Barrier(MPI_COMM_WORLD); */
+/* #endif */
     }
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
