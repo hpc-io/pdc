@@ -1,24 +1,31 @@
+
 Required libraries
 ======
 1. CCI (has some issues, so it is optional for now)
+```sh
     git clone https://github.com/CCI/cci
     ./configure
     make && make install
+```
 
 2. BMI 
+```sh
     git clone git://git.mcs.anl.gov/bmi && cd bmi
     # If you are building BMI on an OSX platform, then apply the following patch:
     # patch -p1 < patches/bmi-osx.patch
     ./prepare && ./configure --enable-shared --enable-bmi-only
     make && make install
+```
 
 3. Mercury 
+```sh
     git clone https://github.com/mercury-hpc/mercury
     git submodule update --init
     cd mercury-X
     mkdir build
     cd build
     ccmake .. (where ".." is the relative path to the mercury-X directory)
+```
 
 Type 'c' multiple times and choose suitable options. Recommended options are:
 
@@ -69,13 +76,15 @@ Once you exit the CMake configuration screen and are ready to build the targets,
 
 Testing
 ====
-On NERSC machines (e.g. Edison, Cori), do the following:
+On NERSC machines (e.g. Edison, Cori), do the following
+----
 * Job allocation (e.g. use 4 nodes)
 ```sh
     salloc -N 4 -p debug -t 00:30:00 --gres=craynetwork:2
 ```
 Run PDC create object test
-*  Run 4 server processes, each on one node in background:
+----
+* Run 4 server processes, each on one node in background:
 ```sh
         srun -N 4 -n 4 -c 2 --mem=2800 --gres=craynetwork:1 ./src/server/pdc_server.exe &
 ```
