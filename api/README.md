@@ -77,9 +77,9 @@ On NERSC machines (e.g. Edison, Cori), do the following:
     salloc -N 4 -p debug -t 00:30:00 --gres=craynetwork:2
 
 2. Run PDC create object test
-    ⋅⋅*  Run 4 server processes, each on one node in background:
+    *  Run 4 server processes, each on one node in background:
         srun -N 4 -n 4 -c 2 --mem=2800 --gres=craynetwork:1 ./src/server/pdc_server.exe &
 
-    ⋅⋅*  Run 64 client processes that concurrently create 1000 objects each sequentially:
+    *  Run 64 client processes that concurrently create 1000 objects each sequentially:
         srun -N 4 -n 64 -c 2 --mem=12840 --gres=craynetwork:1 ./tests/create_obj -r 1000
 
