@@ -43,9 +43,15 @@ perr_t PDC_prop_obj_list_null();
 perr_t PDC_prop_cont_list_null();
 
 /* Get container property infomation
- * Param prop_id [IN]: Id of the PDC property
+ * Param prop_id [IN]: Id of the container property
  * Param pdc_id [IN]: Id of the PDC
  */
 PDC_cont_prop_t *PDCcont_prop_get_info(pdcid_t prop_id, pdcid_t pdc_id);
+
+/* Get container property infomation
+ * Param prop_id [IN]: Id of the object property
+ * Param pdc_id [IN]: Id of the PDC
+ */
+PDC_obj_prop_t *PDCobj_prop_get_info(pdcid_t prop_id, pdcid_t pdc_id);
 
 #endif

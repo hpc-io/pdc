@@ -6,6 +6,8 @@
 #include "pdc_interface.h"
 #include "pdc_life.h"
 
+typedef PDC_id_info_t obj_handle;
+
 /* PDC object initialization
  * Param pc [IN]: Pointer to PDC_CLASS_t struct
  * Return: Non-negative on success/Negative on failure
@@ -13,19 +15,20 @@
 perr_t PDCobj_init(PDC_CLASS_t *pc);
 
 /* Create an object  
+ * Param pdc_id [IN]: Id of the pdc
  * Param cont_id [IN]: Id of the container
  * Param obj_name [IN]: Name of the object
  * Param obj_create_prop [IN]: Id of object property, returned by PDCprop_create(PDC_OBJ_CREATE)
  * Return: object id 
  */
-pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop);
+pdcid_t PDCobj_create(pdcid_t pdc_id, pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop);
 
 /* Set object lifetime 
  * Param obj_create_prop [IN]: Id of object property, returned by PDCprop_create(PDC_OBJ_CREATE)
  * Param obj_lifetime [IN]: Object lifetime (enum type), PDC_PERSIST or PDC_TRANSIENT
  * Return: Non-negative on success/Negative on failure
  */
-//perr_t PDCprop_set_obj_lifetime(pdcid_t obj_create_prop, PDC_lifetime obj_lifetime);
+perr_t PDCprop_set_obj_lifetime(pdcid_t obj_create_prop, PDC_lifetime obj_lifetime, pdcid_t pdc_id);
 
 /* Set object dimensions 
  * Param obj_create_prop [IN]: Id of object property, returned by PDCprop_create(PDC_OBJ_CREATE)
@@ -33,14 +36,14 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_
  * Param dims [IN]: Size of each dimension
  * Return: Non-negative on success/Negative on failure
  */
-perr_t PDCprop_set_obj_dims(pdcid_t obj_create_prop, PDC_int_t ndim, uint64_t *dims);
+perr_t PDCprop_set_obj_dims(pdcid_t obj_create_prop, PDC_int_t ndim, uint64_t *dims, pdcid_t pdc_id);
 
 /* Set object type 
  * Param obj_create_prop [IN]: Id of object property, returned by PDCprop_create(PDC_OBJ_CREATE)
  * Param type [IN]: Object variable type (enum type), choosing from PDC_var_type_t, i.e. PDC_int_t, PDC_float_t, etc
  * Return: Non-negative on success/Negative on failure
  */
-perr_t PDCprop_set_obj_type(pdcid_t obj_create_prop, PDC_var_type_t type);
+perr_t PDCprop_set_obj_type(pdcid_t obj_create_prop, PDC_var_type_t type, pdcid_t pdc);
 
 /* Set an object buffer 
  * Param obj_create_prop [IN]: Id of object property, returned by PDCprop_create(PDC_OBJ_CREATE)
@@ -62,31 +65,31 @@ perr_t PDCobj_buf_retrieve(pdcid_t obj_id, void **buf, PDC_region region);
  * Param obj_name [IN]: Name of the object
  * Return: Object id
  */
-pdcid_t PDCobj_open(pdcid_t cont_id, const char *obj_name);
+pdcid_t PDCobj_open(pdcid_t cont_id, const char *obj_name, pdcid_t pdc_id);
 
 /* Iterate over objects in a container
  * Param cont_id [IN]: Container id, returned by PDCobj_open(pdcid_t pdc_id, const char *cont_name)
- * Return: Object handle 
+ * Return: A pointer to object handle
  */
-obj_handle PDCobj_iter_start(pdcid_t cont_id);
+obj_handle *PDCobj_iter_start(pdcid_t cont_id, pdcid_t pdc_id);
 
 /* Check if object handle is pointing to NULL 
  * Param ohandle [IN]: A obj_handle struct, returned by PDCobj_iter_start(pdcid_t cont_id)
  * Return: 1 in case of success or 0 in case of failure
  */
-pbool_t PDCobj_iter_null(obj_handle ohandle);
+pbool_t PDCobj_iter_null(obj_handle *ohandle);
 
 /* Iterate the next object 
  * Param ohandle [IN]: A obj_handle struct, returned by PDCobj_iter_start(pdcid_t cont_id)
- * Return: Non-negative on success/Negative on failure
+ * Return: A pointer to object handle
  */
-perr_t PDCobj_iter_next(obj_handle ohandle);
+obj_handle *PDCobj_iter_next(obj_handle *ohandle, pdcid_t cont_id);
 
 /* Get object information
- * Param ohandle [IN]: A obj_handle struct, returned by PDCobj_iter_start(pdcid_t cont_id)
+ * Param ohandle [IN]: A pointer to obj_handle struct, returned by PDCobj_iter_start(pdcid_t cont_id)
  * Return: Pointer to a PDC_obj_info_t struct
  */
-PDC_obj_info_t * PDCobj_iter_get_info(obj_handle ohandle);
+PDC_obj_info_t * PDCobj_iter_get_info(obj_handle *ohandle);
 
 /* Query on object 
  * Param pdc_id [IN]: Id of PDC

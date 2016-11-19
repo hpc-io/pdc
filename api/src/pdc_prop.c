@@ -59,6 +59,9 @@ pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdc) {
         q = PDC_MALLOC(PDC_obj_prop_t);
       if(!q)
           PGOTO_ERROR(FAIL, "PDC object property memory allocation failed\n");
+        q->obj_life = PDC_TRANSIENT;
+        q->ndim = 0;
+        q->dims = NULL;
         pdcid_t new_id_o = PDC_id_register(PDC_OBJ_PROP, q, pdc);
         ret_value = new_id_o;
     }
@@ -113,6 +116,10 @@ static perr_t PDCprop__obj_close(PDC_obj_prop_t *cp) {
 
     FUNC_ENTER(NULL);
 
+    if(cp->dims != NULL) {
+        free(cp->dims);
+        cp->dims = NULL;
+    }
     cp = PDC_FREE(PDC_obj_prop_t, cp);
 done:
     FUNC_LEAVE(ret_value);
@@ -161,3 +168,20 @@ PDC_cont_prop_t *PDCcont_prop_get_info(pdcid_t cont_prop, pdcid_t pdc) {
 done:
     FUNC_LEAVE(ret_value);
 } /* end of PDCcont_prop_get_info() */
+
+PDC_obj_prop_t *PDCobj_prop_get_info(pdcid_t obj_prop, pdcid_t pdc) {
+    PDC_obj_prop_t *ret_value = NULL;
+    PDC_obj_prop_t *info =  NULL;
+    
+    FUNC_ENTER(NULL);
+    
+    PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
+    PDC_id_info_t *prop = PDC_find_id(obj_prop, pc);
+    if(prop == NULL)
+        PGOTO_ERROR(NULL, "cannot locate container property");
+    
+    info = (PDC_obj_prop_t *)(prop->obj_ptr);
+    ret_value = info;
+done:
+    FUNC_LEAVE(ret_value);
+} /* end of PDCobj_prop_get_info() */

@@ -14,6 +14,9 @@ typedef struct PDC_cont_prop_t {
 
 typedef struct PDC_obj_prop_t {
     PDC_lifetime    obj_life;
+    int             ndim;
+    uint64_t        *dims;
+    PDC_var_type_t  type;
 }PDC_obj_prop_t;
 
 #endif
