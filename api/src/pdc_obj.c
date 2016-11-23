@@ -221,10 +221,39 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDCprop_set_obj_buf(pdcid_t obj_create_prop, void *buf) {
+perr_t PDCprop_set_obj_buf(pdcid_t obj_prop, void *buf, pdcid_t pdc) {
+    perr_t ret_value = SUCCEED;         /* Return value */
+    
+    FUNC_ENTER(NULL);
+    
+    PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
+    PDC_id_info_t *info = PDC_find_id(obj_prop, pc);
+    if(info == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object property ID");
+    PDC_obj_prop_t *prop = (PDC_obj_prop_t *)(info->obj_ptr);
+    prop->buf = buf;
+done:
+    FUNC_LEAVE(ret_value);
 }
 
-perr_t PDCobj_buf_retrieve(pdcid_t obj_id, void **buf, PDC_region region) {
+void **PDCobj_buf_retrieve(pdcid_t obj_id, pdcid_t pdc) {
+    void ** ret_value = NULL;         /* Return value */
+    
+    FUNC_ENTER(NULL);
+    
+    PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
+    PDC_id_info_t *info = PDC_find_id(obj_id, pc);
+    if(info == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object ID");
+    PDC_obj_info_t *object = (PDC_obj_info_t *)(info->obj_ptr);
+    pdcid_t propid = object->obj_prop;
+    info = PDC_find_id(propid, pc);
+    if(info == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object property ID");
+    PDC_obj_prop_t *prop = (PDC_obj_prop_t *)(info->obj_ptr);
+    ret_value = &(prop->buf);
+done:
+    FUNC_LEAVE(ret_value);
 }
 
 obj_handle PDCview_iter_start(pdcid_t view_id) {

@@ -17,6 +17,7 @@ typedef struct PDC_obj_prop_t {
     int             ndim;
     uint64_t        *dims;
     PDC_var_type_t  type;
+    void            *buf;
 }PDC_obj_prop_t;
 
 #endif

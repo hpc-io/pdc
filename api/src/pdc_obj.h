@@ -43,22 +43,20 @@ perr_t PDCprop_set_obj_dims(pdcid_t obj_create_prop, PDC_int_t ndim, uint64_t *d
  * Param type [IN]: Object variable type (enum type), choosing from PDC_var_type_t, i.e. PDC_int_t, PDC_float_t, etc
  * Return: Non-negative on success/Negative on failure
  */
-perr_t PDCprop_set_obj_type(pdcid_t obj_create_prop, PDC_var_type_t type, pdcid_t pdc);
+perr_t PDCprop_set_obj_type(pdcid_t obj_create_prop, PDC_var_type_t type, pdcid_t pdc_id);
 
 /* Set an object buffer 
  * Param obj_create_prop [IN]: Id of object property, returned by PDCprop_create(PDC_OBJ_CREATE)
  * Param buf [IN]: Start point of object storage
  * Return: Non-negative on success/Negative on failure
  */
-perr_t PDCprop_set_obj_buf(pdcid_t obj_create_prop, void *buf);
+perr_t PDCprop_set_obj_buf(pdcid_t obj_create_prop, void *buf, pdcid_t pdc_id);
 
 /* Retrieve the buffer of an object 
  * Param obj_id [IN]: Id of the object
- * Param buf [IN]: Start point of object storage
- * Param region [IN]: A PDC_region struct
- * Return: Non-negative on success/Negative on failure
+ * Return: Address of object buffer
  */
-perr_t PDCobj_buf_retrieve(pdcid_t obj_id, void **buf, PDC_region region);
+void ** PDCobj_buf_retrieve(pdcid_t obj_id, pdcid_t pdc_id);
 
 /* Open an object within a container
  * Param cont_id [IN]: Id of the container
