@@ -1,3 +1,5 @@
+#include <time.h>
+
 #include "mercury.h"
 #include "mercury_macros.h"
 #include "mercury_proc_string.h"
@@ -12,9 +14,19 @@
 
 // For storing metadata
 typedef struct hash_value_metadata_t {
-    int obj_id;
-    char obj_name[PATH_MAX];
-    char obj_data_location[PATH_MAX];
+    /* char    obj_name[PATH_MAX]; */
+    /* char    app_name[PATH_MAX]; */
+    char    *obj_name;
+    char    *app_name;
+    int     user_id;
+    int     time_step;
+    // Above four are the unique identifier for objects
+
+    int     obj_id;
+    char    *obj_data_location;
+    /* char    obj_data_location[PATH_MAX]; */
+    time_t  create_time;
+    time_t  last_modified_time;
 
 } hash_value_metadata_t;
 
@@ -65,6 +77,7 @@ hg_proc_gen_obj_id_out_t(hg_proc_t proc, void *data)
 #endif
 
 hg_id_t gen_obj_id_register(hg_class_t *hg_class);
+inline int PDC_Server_metadata_cmp(hash_value_metadata_t *a, hash_value_metadata_t *b);
 
 extern hg_hash_table_t *metadata_hash_table_g;
 
