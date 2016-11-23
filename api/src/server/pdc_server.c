@@ -23,33 +23,59 @@
 // Mercury hash table
 #include "mercury_hash_table.h"
 
+// Global thread pool
 hg_thread_pool_t *hg_test_thread_pool_g = NULL;
 
-// Hash table 
+// Global hash table for storing metadata 
 hg_hash_table_t *metadata_hash_table_g = NULL;
 
 static int32_t
-int_equal(hg_hash_table_key_t vlocation1, hg_hash_table_key_t vlocation2)
+PDC_Server_metadata_int_equal(hg_hash_table_key_t vlocation1, hg_hash_table_key_t vlocation2)
 {
     return *((int32_t *) vlocation1) == *((int32_t *) vlocation2);
 }
 
 static unsigned int
-int_hash(hg_hash_table_key_t vlocation)
+PDC_Server_metadata_int_hash(hg_hash_table_key_t vlocation)
 {
     return *((unsigned int*) vlocation);
 }
 
 static void
-int_hash_key_free(hg_hash_table_key_t key)
+PDC_Server_metadata_PDC_Server_metadata_int_hash_key_free(hg_hash_table_key_t key)
 {
     free((int32_t *) key);
 }
 
 static void
-metadata_hash_value_free(hg_hash_table_value_t value)
+PDC_Server_metadata_hash_value_free(hg_hash_table_value_t value)
 {
-    free((hash_value_metadata_t *) value);
+    hash_value_metadata_t *tmp = (hash_value_metadata_t *) value;
+
+    if (tmp->app_name != NULL) 
+        free(tmp->app_name);
+
+    if (tmp->obj_name != NULL) 
+        free(tmp->obj_name);
+
+    if (tmp->obj_data_location != NULL) 
+        free(tmp->obj_data_location);
+
+    free(tmp);
+}
+
+inline void PDC_Server_metadata_init(hash_value_metadata_t* a)
+{
+    a->user_id              = -1;
+    a->time_step            = -1;
+    a->app_name             = NULL;
+    a->obj_name             = NULL;
+
+    a->obj_id               = -1;
+    a->obj_data_location    = NULL;
+    a->create_time          = 0;
+    a->last_modified_time   = 0;
+
 }
 // ^ hash table
 
@@ -201,14 +227,14 @@ perr_t PDC_Server_init(int rank, int size, int port, hg_class_t **hg_class, hg_c
 
     // Hashtable
     // TODO: read previous data from storage
-    metadata_hash_table_g = hg_hash_table_new(int_hash, int_equal);
+    metadata_hash_table_g = hg_hash_table_new(PDC_Server_metadata_int_hash, PDC_Server_metadata_int_equal);
     if (metadata_hash_table_g == NULL) {
         printf("metadata_hash_table_g init error! Exit...\n");
         exit(0);
     }
     /* else */
     /*     printf("Hash table created!\n"); */
-    hg_hash_table_register_free_functions(metadata_hash_table_g, int_hash_key_free, metadata_hash_value_free);
+    hg_hash_table_register_free_functions(metadata_hash_table_g, PDC_Server_metadata_PDC_Server_metadata_int_hash_key_free, PDC_Server_metadata_hash_value_free);
 
 
     ret_value = SUCCEED;

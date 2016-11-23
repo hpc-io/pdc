@@ -66,6 +66,29 @@ done:
 
 #endif // End of ENABLE_MULTITHREAD
 
+inline int PDC_Server_metadata_cmp(hash_value_metadata_t *a, hash_value_metadata_t *b)
+{
+    // UID
+    if (a->user_id >= 0 && b->user_id >= 0 && a->user_id != b->user_id) 
+        return -1;
+
+    // Timestep
+    if (a->time_step >= 0 && b->time_step >= 0 && a->time_step != b->time_step) 
+        return -1;
+
+    // Application name 
+    /* if (a->app_name[0] != '\0' && b->app_name[0] != '\0' && strcmp(a->app_name, b->app_name) != 0) */ 
+    if (a->app_name != NULL && b->app_name != NULL && strcmp(a->app_name, b->app_name) != 0) 
+        return -1;
+
+    // Object name
+    /* if (a->obj_name[0] != '\0' && b->obj_name[0] != '\0' && strcmp(a->obj_name, b->obj_name) != 0) */ 
+    if (a->obj_name != NULL && b->obj_name != NULL && strcmp(a->obj_name, b->obj_name) != 0) 
+        return -1;
+
+    return 0;
+}
+
 #ifdef IS_PDC_SERVER
 
 /* HG_TEST_RPC_CB(insert_metadata_to_hash_table, handle) */
@@ -81,8 +104,10 @@ hg_return_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t 
 
     hash_value_metadata_t *metadata = (hash_value_metadata_t*)malloc(sizeof(hash_value_metadata_t));
 
+    // Fill metadata structure
     // Generate object id (uint64_t)
     metadata->obj_id = PDCS_gen_obj_id();
+    strcpy(metadata->obj_name, in->obj_name);
 
     // Fill $out structure for returning the generated obj_id to client
     out->ret = metadata->obj_id;
@@ -91,7 +116,20 @@ hg_return_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t 
     int32_t *hash_key = (int32_t*)malloc(sizeof(int32_t));
     *hash_key = in->hash_value;
 
+    hash_value_metadata_t *lookup_value;
     if (metadata_hash_table_g != NULL) {
+        // lookup
+        lookup_value = hg_hash_table_lookup(metadata_hash_table_g, &hash_key);
+        // compare
+        if (lookup_value != NULL) {
+            if (PDC_Server_metadata_cmp(lookup_value, metadata) == 0) {
+                printf("Same metadata exisit in existing Metadata store!\n");
+                ret_value = -1;
+                goto done;
+            }
+        }
+
+
         hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
 
         ret_value = hg_hash_table_insert(metadata_hash_table_g, hash_key, metadata);
@@ -109,7 +147,7 @@ done:
 }
 #else
 
-hg_return_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out) {}
+hg_return_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out) {return 0;}
 #endif
 /*
  * The routine that sets up the routines that actually do the work.
