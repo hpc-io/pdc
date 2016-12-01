@@ -1,14 +1,14 @@
 
 Required libraries
 ======
-1. CCI (has some issues, so it is optional for now)
+1 CCI (has some issues, so it is optional for now)
 ```sh
     git clone https://github.com/CCI/cci
     ./configure
     make && make install
 ```
 
-2. BMI 
+2 BMI 
 ```sh
     git clone git://git.mcs.anl.gov/bmi && cd bmi
     # If you are building BMI on an OSX platform, then apply the following patch:
@@ -17,7 +17,17 @@ Required libraries
     make && make install
 ```
 
-3. Mercury 
+
+3 OpenPA
+```sh
+    wget https://trac.mpich.org/projects/openpa/attachment/wiki/Downloads/openpa-1.0.4.tar.gz
+    untar 
+    ./configure --enable-shared
+    make && make install
+
+```
+
+4 Mercury 
 ```sh
     git clone https://github.com/mercury-hpc/mercury
     git submodule update --init
@@ -35,9 +45,10 @@ Type 'c' multiple times and choose suitable options. Recommended options are:
     Boost_INCLUDE_DIR                /path/to/include/directory
     CMAKE_INSTALL_PREFIX             /path/to/install/directory
     MERCURY_ENABLE_PARALLEL_TESTING  ON
-    MERCURY_USE_BOOST_PP             ON/OFF (requires BOOST library)
+    MERCURY_USE_BOOST_PP             ON/OFF (ON requires BOOST library)
     MERCURY_USE_SYSTEM_MCHECKSUM     OFF
     MERCURY_USE_XDR                  OFF
+    MERCURY_USE_OPA                  ON
     NA_USE_BMI                       ON
     NA_USE_MPI                       OFF
     NA_USE_CCI                       OFF (OFF for now)
@@ -48,6 +59,7 @@ errors, type 'g' to generate makefiles. Once you exit the CMake
 configuration screen and are ready to build the targets, do:
 
     make
+
 
 Building
 ====
