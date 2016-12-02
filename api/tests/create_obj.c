@@ -85,9 +85,10 @@ int main(int argc, const char *argv[])
     gettimeofday(&ht_total_start, 0);
 
     for (i = 0; i < count; i++) {
-        sprintf(obj_name, "%s_%d", "Obj", i + rank * 100000);
-        // Send the entire string, not just the first few characters.
-        obj_name[strlen(obj_name)] = ' ';
+        sprintf(obj_name, "%s_%d", "Obj", i + rank * 10000000);
+        /* sprintf(obj_name, "%s", "Obj", i + rank * 10000000); */
+        // Force to send the entire string, not just the first few characters.
+        /* obj_name[strlen(obj_name)] = ' '; */
 
         test_obj = PDCobj_create(pdc, obj_name, NULL);
         if (test_obj < 0) { 

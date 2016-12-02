@@ -10,6 +10,7 @@
 #include "mercury.h"
 #include "mercury_request.h"
 #include "mercury_macros.h"
+#include "mercury_hash_table.h"
 
 #include "pdc_interface.h"
 #include "pdc_client_connect.h"
@@ -27,6 +28,9 @@ static hg_context_t   *send_context_g = NULL;
 static int             work_todo_g = 0;
 static hg_id_t         gen_obj_register_id_g;
 
+hg_hash_table_t       *obj_names_cache_g = NULL;
+
+static int            *debug_server_id_count = NULL;
 
 static int pdc_hash_djb2(const char *pc) {
         int hash = 5381, c;
@@ -47,6 +51,42 @@ static int pdc_hash_sdbm(const char *pc) {
         return hash;
 }
 
+static int
+PDC_Client_int_equal(hg_hash_table_key_t vlocation1, hg_hash_table_key_t vlocation2)
+{
+    return *((int *) vlocation1) == *((int *) vlocation2);
+}
+
+static unsigned int
+PDC_Client_int_hash(hg_hash_table_key_t vlocation)
+{
+    return *((unsigned int *) vlocation);
+}
+
+static void
+PDC_Client_int_hash_key_free(hg_hash_table_key_t key)
+{
+    free((int *) key);
+}
+
+static void
+PDC_Client_int_hash_value_free(hg_hash_table_value_t value)
+{
+    free((int *) value);
+}
+
+typedef struct hash_value_client_obj_name_t {
+    char obj_name[PATH_MAX];
+} hash_value_client_obj_name_t;
+
+static void
+metadata_hash_value_free(hg_hash_table_value_t value)
+{
+    free((hash_value_client_obj_name_t*) value);
+}
+
+
+// ^ Client hash table related functions
 
 int PDC_Client_read_server_addr_from_file()
 {
@@ -156,36 +196,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-static hg_return_t
-send_req_to_server(struct client_lookup_args *client_lookup_args, int server_id)
-{
-
-    FUNC_ENTER(NULL);
-
-    hg_return_t ret_value;
-
-    // Create HG handle if needed
-    int handle_valid = pdc_server_info_g[server_id].rpc_handle_valid;
-    if (handle_valid != 1) {
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_obj_register_id_g, &pdc_server_info_g[server_id].rpc_handle);
-        pdc_server_info_g[server_id].rpc_handle_valid = 1;
-    }
-
-    /* Fill input structure */
-    gen_obj_id_in_t in;
-    in.obj_name= client_lookup_args->obj_name;
-
-    /* printf("Sending input to target\n"); */
-    ret_value = HG_Forward(pdc_server_info_g[server_id].rpc_handle, client_rpc_cb, client_lookup_args, &in);
-    if (ret_value != HG_SUCCESS) {
-        fprintf(stderr, "client_lookup_cb(): Could not start HG_Forward()\n");
-        return EXIT_FAILURE;
-    }
-
-done:
-    FUNC_LEAVE(ret_value);
-}
-
 
 // Init Mercury class and context
 // Register gen_obj_id rpc
@@ -278,6 +288,19 @@ perr_t PDC_Client_init()
     /* printf("pdc_rank:%d\n", pdc_client_mpi_rank_g); */
     fflush(stdout);
 
+    // Init client hash table to cache created object names
+    obj_names_cache_g = hg_hash_table_new(PDC_Client_int_hash, PDC_Client_int_equal);
+    hg_hash_table_register_free_functions(obj_names_cache_g, PDC_Client_int_hash_key_free, PDC_Client_int_hash_value_free);
+
+
+    // Init debug info
+    if (pdc_server_num_g > 0) { 
+        debug_server_id_count = (int*)malloc(sizeof(int) * pdc_server_num_g);
+        memset(debug_server_id_count, 0, sizeof(int) * pdc_server_num_g);
+    }
+    else
+        printf("==PDC_CLIENT: Server number not properly initialized!\n");
+
     ret_value = SUCCEED;
 
 done:
@@ -289,6 +312,11 @@ perr_t PDC_Client_finalize()
     FUNC_ENTER(NULL);
 
     perr_t ret_value;
+
+    // Send close server request to all servers
+    if (pdc_client_mpi_rank_g == 0) 
+        PDC_Client_close_all_server();
+
 
     /* Finalize Mercury*/
     int i;
@@ -302,6 +330,35 @@ perr_t PDC_Client_finalize()
 
     if (pdc_server_info_g != NULL)
         free(pdc_server_info_g);
+
+    // Free client hash table
+    if (obj_names_cache_g != NULL) 
+        hg_hash_table_free(obj_names_cache_g);
+
+    // Output and free debug info
+#ifdef ENABLE_MPI
+
+    // Print local server connection count
+    /* for (i = 0; i < pdc_server_num_g; i++) */ 
+    /*     printf("%d, %d, %d\n", pdc_client_mpi_rank_g, i, debug_server_id_count[i]); */
+    /* fflush(stdout); */
+
+    int *all_server_count = (int*)malloc(sizeof(int)*pdc_server_num_g);
+    MPI_Reduce(debug_server_id_count, all_server_count, pdc_server_num_g, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    if (pdc_client_mpi_rank_g == 0) {
+        printf("==PDC_CLIENT: server connection count:\n");
+        for (i = 0; i < pdc_server_num_g; i++) 
+            printf("%d, %d\n", i, all_server_count[i]);
+    }
+    free(all_server_count);
+#else
+    for (i = 0; i < pdc_server_num_g; i++) {
+        printf("%d, %d\n", i, debug_server_id_count[i]);
+    }
+
+#endif
+    if (debug_server_id_count != NULL) 
+        free(debug_server_id_count);
 
     ret_value = SUCCEED;
 
@@ -317,11 +374,13 @@ uint64_t PDC_Client_send_name_recv_id(const char *obj_name)
 
     uint64_t ret_value;
     hg_return_t  hg_ret = 0;
-    int server_id = pdc_hash_djb2(obj_name) % pdc_server_num_g; 
+    int server_id;
     int port      = pdc_client_mpi_rank_g + 8000; 
 
+    // Compute server id
+    server_id = pdc_hash_djb2(obj_name) % pdc_server_num_g; 
     // Test
-    server_id = 0;
+    /* server_id = 0; */
     /* server_id = pdc_client_mpi_rank_g / 20; */
     /* server_id = server_id % 2; */
 
@@ -336,6 +395,8 @@ uint64_t PDC_Client_send_name_recv_id(const char *obj_name)
     
     /* printf("[%d]: target server %d\n", pdc_client_mpi_rank_g, server_id); */
     /* fflush(stdout); */
+
+    debug_server_id_count[server_id]++;
 
     if (mercury_has_init_g == 0) {
         // Init Mercury network connection
@@ -355,9 +416,10 @@ uint64_t PDC_Client_send_name_recv_id(const char *obj_name)
 
     // Initiate server lookup and send obj name in client_lookup_cb()
     char *target_addr_string = pdc_server_info_g[server_id].addr_string;
-    // Test
+
+    // Check if previous connection had been made and reuse handle 
     if (pdc_server_info_g[server_id].rpc_handle_valid != 1) {
- 
+        // This is the first connection to server $server_id
         hg_ret = HG_Addr_lookup(send_context_g, client_lookup_cb, &lookup_args, target_addr_string, HG_OP_ID_IGNORE);
     }
     else {
@@ -388,6 +450,73 @@ uint64_t PDC_Client_send_name_recv_id(const char *obj_name)
     /* fflush(stdout); */
 
        ret_value = lookup_args.obj_id;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_Client_close_all_server()
+{
+
+    FUNC_ENTER(NULL);
+
+    uint64_t ret_value;
+    hg_return_t  hg_ret = 0;
+    int server_id;
+    int port      = pdc_client_mpi_rank_g + 8000; 
+
+    if (mercury_has_init_g == 0) {
+        // Init Mercury network connection
+        PDC_Client_mercury_init(&send_class_g, &send_context_g, port);
+        if (send_class_g == NULL || send_context_g == NULL) {
+            printf("Error with Mercury Init, exiting...\n");
+            exit(0);
+        }
+        mercury_has_init_g = 1;
+    }
+
+    // Fill lookup args
+    struct client_lookup_args lookup_args;
+
+    int i;
+    for (i = 0; i < pdc_server_num_g; i++) {
+        server_id = i;
+
+        lookup_args.obj_name   = "==PDC Close Server";
+        lookup_args.obj_id     = -1;
+        lookup_args.server_id  = server_id;
+
+        // Initiate server lookup and send obj name in client_lookup_cb()
+        char *target_addr_string = pdc_server_info_g[server_id].addr_string;
+
+        // Check if previous connection had been made and reuse handle 
+        if (pdc_server_info_g[server_id].rpc_handle_valid != 1) {
+            // This is the first connection to server $server_id
+            hg_ret = HG_Addr_lookup(send_context_g, client_lookup_cb, &lookup_args, target_addr_string, HG_OP_ID_IGNORE);
+        }
+        else {
+            // Fill input structure
+            gen_obj_id_in_t in;
+            in.obj_name   = "==PDC Close Server";
+
+            /* printf("Sending input to target\n"); */
+            ret_value = HG_Forward(pdc_server_info_g[server_id].rpc_handle, client_rpc_cb, &lookup_args, &in);
+            if (ret_value != HG_SUCCESS) {
+                fprintf(stderr, "client_lookup_cb(): Could not start HG_Forward()\n");
+                return EXIT_FAILURE;
+            }
+        }
+
+
+    }
+
+    // Wait for response from server
+    work_todo_g += pdc_server_num_g;
+    PDC_Client_check_response(&send_context_g);
+
+    /* fflush(stdout); */
+
+    ret_value = lookup_args.obj_id;
 
 done:
     FUNC_LEAVE(ret_value);

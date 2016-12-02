@@ -8,27 +8,35 @@
 #include "mercury_atomic.h"
 #include "mercury_thread_mutex.h"
 #include "mercury_hash_table.h"
+#include "mercury_list.h"
 
 #ifndef PDC_CLIENT_SERVER_COMMON_H
 #define PDC_CLIENT_SERVER_COMMON_H
 
 // For storing metadata
-typedef struct hash_value_metadata_t {
-    /* char    obj_name[PATH_MAX]; */
-    /* char    app_name[PATH_MAX]; */
-    char    *obj_name;
-    char    *app_name;
+typedef struct pdc_metadata_t {
+    char    obj_name[PATH_MAX];
+    char    app_name[PATH_MAX];
+    /* char    *obj_name; */
+    /* char    *app_name; */
     int     user_id;
     int     time_step;
     // Above four are the unique identifier for objects
 
     int     obj_id;
-    char    *obj_data_location;
-    /* char    obj_data_location[PATH_MAX]; */
+    /* char    *obj_data_location; */
+    char    obj_data_location[PATH_MAX];
     time_t  create_time;
     time_t  last_modified_time;
 
-} hash_value_metadata_t;
+    // For hash table list
+    /* pdc_metadata_t *prev; */
+    /* pdc_metadata_t *next; */
+    /* HG_LIST_ENTRY(pdc_metadata_t) entry; */
+
+} pdc_metadata_t;
+
+/* HG_LIST_HEAD_DECL(my_head, my_entry); */
 
 
 #ifdef HG_HAS_BOOST
@@ -77,9 +85,10 @@ hg_proc_gen_obj_id_out_t(hg_proc_t proc, void *data)
 #endif
 
 hg_id_t gen_obj_id_register(hg_class_t *hg_class);
-inline int PDC_Server_metadata_cmp(hash_value_metadata_t *a, hash_value_metadata_t *b);
+int PDC_Server_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b);
 
 extern hg_hash_table_t *metadata_hash_table_g;
 
+extern hg_atomic_int32_t close_server_g;
 
 #endif /* PDC_CLIENT_SERVER_COMMON_H */
