@@ -45,6 +45,7 @@ metadata_hash_value_free(hg_hash_table_value_t value)
 
 /*---------------------------------------------------------------------------*/
 
+
 int
 main(int argc, char *argv[])
 {
@@ -120,6 +121,12 @@ main(int argc, char *argv[])
     else {
         printf("Object with lookup_key=%d not found!\n", lookup_key);
     }
+
+
+
+
+
+
     /* if (*value1 != *((int *)hg_hash_table_lookup(hash_table, key1))) { */
     /*     fprintf(stderr, "Error: values do not match\n"); */
     /*     ret = EXIT_FAILURE; */
@@ -147,6 +154,6 @@ main(int argc, char *argv[])
     /* } */
 
 done:
-    /* hg_hash_table_free(hash_table); */
+    hg_hash_table_free(hash_table);
     return ret;
 }

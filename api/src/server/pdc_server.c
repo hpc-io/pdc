@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/syscall.h>
 
 /* #define ENABLE_MPI 1 */
@@ -20,8 +21,9 @@
 #include "mercury_thread_pool.h"
 #include "mercury_thread_mutex.h"
 
-// Mercury hash table
+// Mercury hash table and list
 #include "mercury_hash_table.h"
+#include "mercury_list.h"
 
 // Global thread pool
 hg_thread_pool_t *hg_test_thread_pool_g = NULL;
@@ -50,32 +52,40 @@ PDC_Server_metadata_PDC_Server_metadata_int_hash_key_free(hg_hash_table_key_t ke
 static void
 PDC_Server_metadata_hash_value_free(hg_hash_table_value_t value)
 {
-    hash_value_metadata_t *tmp = (hash_value_metadata_t *) value;
+    pdc_metadata_t *tmp = (pdc_metadata_t *) value;
 
-    if (tmp->app_name != NULL) 
-        free(tmp->app_name);
+    /* if (tmp->app_name != NULL) */ 
+    /*     free(tmp->app_name); */
 
-    if (tmp->obj_name != NULL) 
-        free(tmp->obj_name);
+    /* if (tmp->obj_name != NULL) */ 
+    /*     free(tmp->obj_name); */
 
-    if (tmp->obj_data_location != NULL) 
-        free(tmp->obj_data_location);
+    /* if (tmp->obj_data_location != NULL) */ 
+    /*     free(tmp->obj_data_location); */
+
+    // free list
+
 
     free(tmp);
 }
 
-inline void PDC_Server_metadata_init(hash_value_metadata_t* a)
+inline void PDC_Server_metadata_init(pdc_metadata_t* a)
 {
     a->user_id              = -1;
     a->time_step            = -1;
-    a->app_name             = NULL;
-    a->obj_name             = NULL;
+    /* a->app_name             = NULL; */
+    /* a->obj_name             = NULL; */
+    a->app_name[0]         = 0;
+    a->obj_name[0]         = 0;
 
     a->obj_id               = -1;
-    a->obj_data_location    = NULL;
+    /* a->obj_data_location    = NULL; */
+    a->obj_data_location[0] = 0;
     a->create_time          = 0;
     a->last_modified_time   = 0;
 
+    /* a->prev                 = NULL; */
+    /* a->next                 = NULL; */
 }
 // ^ hash table
 
@@ -237,6 +247,10 @@ perr_t PDC_Server_init(int rank, int size, int port, hg_class_t **hg_class, hg_c
     hg_hash_table_register_free_functions(metadata_hash_table_g, PDC_Server_metadata_PDC_Server_metadata_int_hash_key_free, PDC_Server_metadata_hash_value_free);
 
 
+    // Initalize atomic variable to finalize server 
+    hg_atomic_set32(&close_server_g, 0);
+
+
     ret_value = SUCCEED;
 
 done:
@@ -268,8 +282,7 @@ hg_progress_thread(void *arg)
     hg_return_t ret = HG_SUCCESS;
 
     do {
-        /* if (hg_atomic_cas32(&hg_test_finalizing_count_g, 1, 1)) */
-        /*     break; */
+        if (hg_atomic_get32(&close_server_g)) break;
 
         ret = HG_Progress(context, 100);
         /* printf("thread [%d]\n", tid); */
@@ -292,8 +305,7 @@ perr_t PDC_Server_multithread_loop(hg_class_t *class, hg_context_t *context)
 
     hg_return_t ret = HG_SUCCESS;
     do {
-        /* if (hg_atomic_cas32(&hg_test_finalizing_count_g, 1, 1)) */
-        /*     break; */
+        if (hg_atomic_get32(&close_server_g)) break;
 
         ret = HG_Trigger(context, 0, 1, NULL);
     } while (ret == HG_SUCCESS || ret == HG_TIMEOUT);
@@ -326,7 +338,7 @@ perr_t PDC_Server_loop(hg_class_t *hg_class, hg_context_t *hg_context)
         } while ((hg_ret == HG_SUCCESS) && actual_count);
 
         /* Do not try to make progress anymore if we're done */
-        /* if (all_work_done) break; */
+        if (hg_atomic_get32(&close_server_g)) break;
         hg_ret = HG_Progress(hg_context, HG_MAX_IDLE_TIME);
 
         /* fflush(stdout); */
@@ -343,7 +355,7 @@ done:
 
 int main(int argc, char *argv[])
 {
-    int rank, size;
+    int rank = 0, size = 1;
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -375,6 +387,10 @@ int main(int argc, char *argv[])
 #endif
 
     // Finalize 
+    if (rank == 0) {
+        printf("==PDC_SERVER: exiting...\n");
+        /* printf("==PDC_SERVER: [%d] exiting...\n", rank); */
+    }
     HG_Context_destroy(hg_context);
     HG_Finalize(hg_class);
 

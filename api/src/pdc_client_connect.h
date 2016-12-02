@@ -11,6 +11,7 @@ int PDC_Client_read_server_addr_from_file();
 uint64_t PDC_Client_send_name_recv_id(const char *obj_name);
 perr_t PDC_Client_init();
 perr_t PDC_Client_finalize();
+perr_t PDC_Client_close_all_server();
 
 typedef struct pdc_server_info_t {
     char            addr_string[ADDR_MAX];
