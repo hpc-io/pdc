@@ -3,8 +3,9 @@ Required libraries
 ======
 1 CCI (has some issues, so it is optional for now)
 ```sh
-    git clone https://github.com/CCI/cci
-    ./configure
+    git clone https://github.com/CCI/cci && cd cci
+    ./autogen.pl
+    ./configure (on Cori add --without-verbs for successful make)
     make && make install
 ```
 
@@ -20,8 +21,8 @@ Required libraries
 
 3 OpenPA
 ```sh
-    wget https://trac.mpich.org/projects/openpa/attachment/wiki/Downloads/openpa-1.0.4.tar.gz
-    untar 
+    wget https://trac.mpich.org/projects/openpa/raw-attachment/wiki/Downloads/openpa-1.0.4.tar.gz
+    tar xzvf openpa-1.0.4.tar.gz && cd openpa-1.0.4 
     ./configure --enable-shared
     make && make install
 
@@ -29,9 +30,8 @@ Required libraries
 
 4 Mercury 
 ```sh
-    git clone https://github.com/mercury-hpc/mercury
+    git clone https://github.com/mercury-hpc/mercury && cd mercury
     git submodule update --init
-    cd mercury-X
     mkdir build
     cd build
     ccmake .. (where ".." is the relative path to the mercury-X directory)
@@ -52,6 +52,18 @@ Type 'c' multiple times and choose suitable options. Recommended options are:
     NA_USE_BMI                       ON
     NA_USE_MPI                       OFF
     NA_USE_CCI                       OFF (OFF for now)
+    
+    BMI_INCLUDE_DIR                  BMI_PATH/include
+    BMI_LIBRARY                      BMI_PATH/libbmi.so  
+
+    OPA_INCLUDE_DIR                  OPENPA_PATH/include
+    OPA_LIBRARY                      OPENPA_PATH/libopa.so
+    
+    CMAKE_C_FLAGS                    add -dynamic on NERSC machines if 
+    CMAKE_CXX_FLAGS                  there is error /usr/bin/ld: attempted 
+                                     static link of dynamic object 
+                                     `../bin/libmercury_hl.so.0.8.9' )
+
 
 Setting include directory and library paths may require you to toggle to
 the advanced mode by typing 't'. Once you are done and do not see any
@@ -59,7 +71,12 @@ errors, type 'g' to generate makefiles. Once you exit the CMake
 configuration screen and are ready to build the targets, do:
 
     make
+    
+To test Mercury is successfuly built, run
 
+    make test
+
+Look for Test  #1: mercury_rpc_bmi_tcp, Test  #2: mercury_bulk_bmi_tcp, etc.
 
 Building
 ====
@@ -72,7 +89,8 @@ Building
     cd build
     ccmake .. (where ".." is the relative path to the PDC directory)
 
-Type 'c' multiple times and choose suitable options, and toggle to advanced mode by typing 't'. Recommended options are:
+Similar to previous Mercury building process, type 'c' multiple times and choose 
+suitable options, and toggle to advanced mode by typing 't'. Recommended options are:
 
     BUILD_SHARED_LIBS                ON (or OFF if the library you link
                                      against requires static libraries)
