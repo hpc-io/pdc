@@ -221,7 +221,10 @@ perr_t PDC_Server_init(int rank, int size, int port, hg_class_t **hg_class, hg_c
 
 #ifdef ENABLE_MULTITHREAD
     // Init threadpool
-    const int n_thread = 2;
+    int n_thread = atoi(getenv("PDC_SERVER_NTHREAD"));
+    if (n_thread == 0) 
+        n_thread = 2;
+    /* const int n_thread = 8; */
     /* hg_thread_mutex_init(&hg_test_local_bulk_handle_mutex_g); */
     hg_thread_pool_init(n_thread, &hg_test_thread_pool_g);
     if (rank == 0) {
