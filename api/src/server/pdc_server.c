@@ -12,10 +12,6 @@
 #include "mercury.h"
 #include "mercury_macros.h"
 
-#include "pdc_interface.h"
-#include "pdc_client_connect.h"
-#include "pdc_client_server_common.h"
-
 // Mercury multithread
 #include "mercury_thread.h"
 #include "mercury_thread_pool.h"
@@ -24,6 +20,10 @@
 // Mercury hash table and list
 #include "mercury_hash_table.h"
 #include "mercury_list.h"
+
+#include "pdc_interface.h"
+/* #include "pdc_client_connect.h" */
+#include "pdc_client_server_common.h"
 
 // Global thread pool
 hg_thread_pool_t *hg_test_thread_pool_g = NULL;
