@@ -13,6 +13,11 @@
 #ifndef PDC_CLIENT_SERVER_COMMON_H
 #define PDC_CLIENT_SERVER_COMMON_H
 
+#define pdc_server_cfg_name "./server.cfg"
+#define ADDR_MAX 128
+
+extern uint64_t pdc_id_seq_g;
+
 // For storing metadata
 typedef struct pdc_metadata_t {
     char    obj_name[PATH_MAX];
@@ -62,7 +67,7 @@ hg_proc_gen_obj_id_in_t(hg_proc_t proc, void *data)
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
     }
-    ret = hg_proc_rpc_handle_t(proc, &struct_data->hash_value);
+    ret = hg_proc_uint32_t(proc, &struct_data->hash_value);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
     }
