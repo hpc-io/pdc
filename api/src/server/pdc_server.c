@@ -9,6 +9,8 @@
     #include "mpi.h"
 #endif
 
+#include "utlist.h"
+
 #include "mercury.h"
 #include "mercury_macros.h"
 
@@ -221,11 +223,13 @@ perr_t PDC_Server_init(int rank, int size, int port, hg_class_t **hg_class, hg_c
 
 #ifdef ENABLE_MULTITHREAD
     // Init threadpool
-    int n_thread = atoi(getenv("PDC_SERVER_NTHREAD"));
-    if (n_thread == 0) 
+    char *nthread_env = getenv("PDC_SERVER_NTHREAD"); 
+    int n_thread; 
+    if (nthread_env != NULL) 
+        n_thread = atoi(nthread_env);
+    
+    if (n_thread <= 1) 
         n_thread = 2;
-    /* const int n_thread = 8; */
-    /* hg_thread_mutex_init(&hg_test_local_bulk_handle_mutex_g); */
     hg_thread_pool_init(n_thread, &hg_test_thread_pool_g);
     if (rank == 0) {
         printf("\n==PDC_SERVER: Starting server with %d threads...\n", n_thread);

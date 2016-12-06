@@ -69,7 +69,7 @@ pdcid_t PDCobj_create(pdcid_t pdc, pdcid_t cont_id, const char *obj_name, pdcid_
     pdcid_t new_id = PDC_id_register(PDC_OBJ, p, pdc);
 
     pdcid_t obj_id;
-    obj_id = PDC_Client_send_name_recv_id(obj_name);
+    obj_id = PDC_Client_send_name_recv_id(obj_name, obj_create_prop);
 
     ret_value = obj_id;
 done:

@@ -91,6 +91,19 @@ inline int PDC_Server_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b)
     return 0;
 }
 
+void PDC_Server_print_metadata(pdc_metadata_t *a)
+{
+    printf("==PDC_Server: Metadata structure\n");
+    printf("  uid       = %u\n", a->user_id);
+    printf("  app_name  = %s\n", a->app_name);
+    printf("  obj_name  = %s\n", a->obj_name);
+    printf("  time_step = %u\n", a->time_step);
+    printf("  obj_id    = %u\n", a->obj_id);
+    printf("  tags      = %s\n", a->tags);
+    printf("================================\n\n");
+    fflush(stdout);
+}
+
 #ifdef IS_PDC_SERVER
 
 /* HG_TEST_RPC_CB(insert_metadata_to_hash_table, handle) */
@@ -106,10 +119,23 @@ hg_return_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t 
 
     pdc_metadata_t *metadata = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t));
     strcpy(metadata->obj_name, in->obj_name);
+    strcpy(metadata->app_name, in->app_name);
+
+    // TODO: Both server and client gets it and do security check
+    metadata->user_id        = in->user_id;                
+    metadata->time_step      = in->time_step;
+
+    /* obj_id; */
+    /* obj_data_location        = NULL; */
+    /* create_time              =; */
+    /* last_modified_time       =; */
+    strcpy(metadata->tags, in->tags);
+
+    /* PDC_Server_print_metadata(metadata); */
 
     int32_t *hash_key = (int32_t*)malloc(sizeof(int32_t));
     *hash_key = in->hash_value;
-
+ 
     pdc_metadata_t *lookup_value;
 
     // Obtain lock for hash table
