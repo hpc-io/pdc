@@ -20,11 +20,11 @@ extern uint64_t pdc_id_seq_g;
 
 // For storing metadata
 typedef struct pdc_metadata_t {
-    char    obj_name[PATH_MAX];
+    int     user_id;                // Both server and client gets it and do security check
     char    app_name[PATH_MAX];
-    /* char    *obj_name; */
+    char    obj_name[PATH_MAX];
     /* char    *app_name; */
-    int     user_id;
+    /* char    *obj_name; */
     int     time_step;
     // Above four are the unique identifier for objects
 
@@ -34,23 +34,26 @@ typedef struct pdc_metadata_t {
     time_t  create_time;
     time_t  last_modified_time;
 
+    char    tags[PATH_MAX];
+
     // For hash table list
-    /* pdc_metadata_t *prev; */
-    /* pdc_metadata_t *next; */
-    /* HG_LIST_ENTRY(pdc_metadata_t) entry; */
+    struct pdc_metadata_t *prev;
+    struct pdc_metadata_t *next;
 
 } pdc_metadata_t;
 
-/* HG_LIST_HEAD_DECL(my_head, my_entry); */
-
 
 #ifdef HG_HAS_BOOST
-MERCURY_GEN_PROC( gen_obj_id_in_t,  ((hg_const_string_t)(obj_name)) ((int32_t)(hash_value)) )
+MERCURY_GEN_PROC( gen_obj_id_in_t, ((uint32_t)(user_id)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((uint32_t)(time_step)) ((uint32_t)(hash_value)) ((hg_const_string_t)(tags)) )
 MERCURY_GEN_PROC( gen_obj_id_out_t, ((uint64_t)(ret)) )
 #else
 typedef struct {
-    hg_const_string_t   obj_name;
-    int32_t             hash_value;
+    uint32_t             user_id;
+    hg_const_string_t    app_name;
+    hg_const_string_t    obj_name;
+    uint32_t             time_step;
+    uint32_t             hash_value;
+    hg_const_string_t    tags;
 } gen_obj_id_in_t;
 
 typedef struct {
@@ -63,11 +66,27 @@ hg_proc_gen_obj_id_in_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     gen_obj_id_in_t *struct_data = (gen_obj_id_in_t*) data;
 
+    ret = hg_proc_uint32_t(proc, &struct_data->user_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->app_name);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
     ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
     }
+    ret = hg_proc_uint32_t(proc, &struct_data->time_step);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
     ret = hg_proc_uint32_t(proc, &struct_data->hash_value);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->tags);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
     }

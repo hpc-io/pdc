@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 /* #define ENABLE_MPI 1 */
 #ifdef ENABLE_MPI
@@ -32,8 +33,8 @@ hg_hash_table_t       *obj_names_cache_g = NULL;
 
 static int            *debug_server_id_count = NULL;
 
-static int pdc_hash_djb2(const char *pc) {
-        int hash = 5381, c;
+static uint32_t pdc_hash_djb2(const char *pc) {
+        uint32_t hash = 5381, c;
         while (c = *pc++)
             hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
         if (hash < 0) 
@@ -42,8 +43,8 @@ static int pdc_hash_djb2(const char *pc) {
         return hash;
 }
 
-static int pdc_hash_sdbm(const char *pc) {
-        int hash = 0, c;
+static uint32_t pdc_hash_sdbm(const char *pc) {
+        uint32_t hash = 0, c;
         while (c = (*pc++)) 
                 hash = c + (hash << 6) + (hash << 16) - hash;
         if (hash < 0) 
@@ -181,8 +182,12 @@ client_lookup_cb(const struct hg_cb_info *callback_info)
 
     // Fill input structure
     gen_obj_id_in_t in;
-    in.obj_name= client_lookup_args->obj_name;
-    in.hash_value = pdc_hash_djb2(client_lookup_args->obj_name);
+    in.obj_name   = client_lookup_args->obj_name;
+    in.hash_value = client_lookup_args->hash_value;
+    in.user_id    = client_lookup_args->user_id;
+    in.app_name   = client_lookup_args->app_name;
+    in.time_step  = client_lookup_args->time_step;
+    in.tags       = client_lookup_args->tags;
     /* printf("Hash(%s) = %d\n", client_lookup_args->obj_name, in.hash_value); */
 
     /* printf("Sending input to target\n"); */
@@ -195,7 +200,6 @@ client_lookup_cb(const struct hg_cb_info *callback_info)
 done:
     FUNC_LEAVE(ret_value);
 }
-
 
 // Init Mercury class and context
 // Register gen_obj_id rpc
@@ -367,18 +371,19 @@ done:
 }
 
 // Send a name to server and receive an obj id
-uint64_t PDC_Client_send_name_recv_id(const char *obj_name)
+uint64_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t property)
 {
 
     FUNC_ENTER(NULL);
 
-    uint64_t ret_value;
     hg_return_t  hg_ret = 0;
-    int server_id;
-    int port      = pdc_client_mpi_rank_g + 8000; 
+    uint64_t ret_value;
+    uint32_t server_id;
+    uint32_t port = pdc_client_mpi_rank_g + 8000; 
 
     // Compute server id
-    server_id = pdc_hash_djb2(obj_name) % pdc_server_num_g; 
+    uint32_t hash_name_value = pdc_hash_djb2(obj_name);
+    server_id = hash_name_value % pdc_server_num_g; 
     // Test
     /* server_id = 0; */
     /* server_id = pdc_client_mpi_rank_g / 20; */
@@ -408,11 +413,34 @@ uint64_t PDC_Client_send_name_recv_id(const char *obj_name)
         mercury_has_init_g = 1;
     }
 
-    // Fill lookup args
+
+    // TODO: this is temp solution to convert "Obj_%d" to name="Obj_" and time_step=%d 
+    int i, obj_name_len;
+    uint32_t tmp_time_step = 0;
+    obj_name_len = strlen(obj_name);
+    char *tmp_obj_name = (char*)malloc(sizeof(char) * (obj_name_len+1));
+    strcpy(tmp_obj_name, obj_name);
+    for (i = 0; i < obj_name_len; i++) {
+        if (isdigit(obj_name[i])) {
+            tmp_time_step = atoi(obj_name+i);
+            tmp_obj_name[i] = 0;
+        }
+    }
+
     struct client_lookup_args lookup_args;
-    lookup_args.obj_name   = obj_name;
-    lookup_args.obj_id     = -1;
-    lookup_args.server_id  = server_id;
+    // TODO: parse pdc prop structure once Kimmy adds these fields to PDC_obj_prop_t
+    lookup_args.user_id     = getuid();
+    lookup_args.app_name    = "test_app_name";
+    lookup_args.time_step   = tmp_time_step;
+    lookup_args.hash_value  = hash_name_value;
+    lookup_args.tags        = "tag0=11";
+
+    /* printf("==PDC_CLIENT: user_id=%u, time_step=%u\n", lookup_args.user_id, lookup_args.time_step); */
+
+    // TODO: change tmp_obj_name Fill lookup args
+    lookup_args.obj_name    = tmp_obj_name;
+    lookup_args.obj_id      = -1;
+    lookup_args.server_id   = server_id;
 
     // Initiate server lookup and send obj name in client_lookup_cb()
     char *target_addr_string = pdc_server_info_g[server_id].addr_string;
@@ -425,8 +453,12 @@ uint64_t PDC_Client_send_name_recv_id(const char *obj_name)
     else {
         // Fill input structure
         gen_obj_id_in_t in;
-        in.obj_name   = obj_name;
-        in.hash_value = pdc_hash_djb2(obj_name);
+        in.obj_name   = lookup_args.obj_name;
+        in.hash_value = lookup_args.hash_value;
+        in.user_id    = lookup_args.user_id;
+        in.app_name   = lookup_args.app_name;
+        in.time_step  = lookup_args.time_step;
+        in.tags       = lookup_args.tags;
         /* printf("Hash(%s) = %d\n", obj_name, in.hash_value); */
 
         /* printf("Sending input to target\n"); */

@@ -31,7 +31,7 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_
     FUNC_ENTER(NULL);
 
     pdcid_t obj_id;
-    obj_id = PDC_Client_send_name_recv_id(obj_name);
+    obj_id = PDC_Client_send_name_recv_id(obj_name, obj_create_prop);
 
 done:
     FUNC_LEAVE(obj_id);
