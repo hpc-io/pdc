@@ -381,8 +381,23 @@ uint64_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t property)
     uint32_t server_id;
     uint32_t port = pdc_client_mpi_rank_g + 8000; 
 
+    // TODO: this is temp solution to convert "Obj_%d" to name="Obj_" and time_step=%d 
+    //       will need to delete once Kimmy adds the pdc_prop related functions
+    int i, obj_name_len;
+    uint32_t tmp_time_step = 0;
+    obj_name_len = strlen(obj_name);
+    char *tmp_obj_name = (char*)malloc(sizeof(char) * (obj_name_len+1));
+    strcpy(tmp_obj_name, obj_name);
+    for (i = 0; i < obj_name_len; i++) {
+        if (isdigit(obj_name[i])) {
+            tmp_time_step = atoi(obj_name+i);
+            tmp_obj_name[i] = 0;
+            break;
+        }
+    }
+
     // Compute server id
-    uint32_t hash_name_value = pdc_hash_djb2(obj_name);
+    uint32_t hash_name_value = pdc_hash_djb2(tmp_obj_name);
     server_id = hash_name_value % pdc_server_num_g; 
     // Test
     /* server_id = 0; */
@@ -413,19 +428,6 @@ uint64_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t property)
         mercury_has_init_g = 1;
     }
 
-
-    // TODO: this is temp solution to convert "Obj_%d" to name="Obj_" and time_step=%d 
-    int i, obj_name_len;
-    uint32_t tmp_time_step = 0;
-    obj_name_len = strlen(obj_name);
-    char *tmp_obj_name = (char*)malloc(sizeof(char) * (obj_name_len+1));
-    strcpy(tmp_obj_name, obj_name);
-    for (i = 0; i < obj_name_len; i++) {
-        if (isdigit(obj_name[i])) {
-            tmp_time_step = atoi(obj_name+i);
-            tmp_obj_name[i] = 0;
-        }
-    }
 
     struct client_lookup_args lookup_args;
     // TODO: parse pdc prop structure once Kimmy adds these fields to PDC_obj_prop_t
