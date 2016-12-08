@@ -1,0 +1,3 @@
+[submodule "api/src/server/dablooms"]
+	path = api/src/server/dablooms
+	url = git@github.com:bitly/dablooms.git

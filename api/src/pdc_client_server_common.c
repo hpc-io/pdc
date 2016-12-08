@@ -1,3 +1,5 @@
+#include "server/utlist.h"
+
 #include "mercury.h"
 #include "mercury_thread_pool.h"
 #include "mercury_atomic.h"
@@ -6,24 +8,16 @@
 
 #include "pdc_interface.h"
 #include "pdc_client_server_common.h"
+#include "server/pdc_server.h"
 
 // Thread
 hg_thread_pool_t *hg_test_thread_pool_g;
-hg_thread_mutex_t pdc_metadata_hash_table_mutex_g;
+/* hg_thread_mutex_t pdc_metadata_hash_table_mutex_g; */
 
 hg_atomic_int32_t close_server_g;
 
 uint64_t pdc_id_seq_g = 1000000;
 // actual value for each server is set by PDC_Server_init()
-
-uint64_t PDCS_gen_obj_id()
-{
-    FUNC_ENTER(NULL);
-    uint64_t ret_value;
-    ret_value = pdc_id_seq_g++;
-done:
-    FUNC_LEAVE(ret_value);
-}
 
 #ifdef ENABLE_MULTITHREAD
 
@@ -70,22 +64,22 @@ done:
 
 inline int PDC_Server_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b)
 {
-    // UID
-    if (a->user_id >= 0 && b->user_id >= 0 && a->user_id != b->user_id) 
-        return -1;
-
     // Timestep
     if (a->time_step >= 0 && b->time_step >= 0 && a->time_step != b->time_step) 
-        return -1;
-
-    // Application name 
-    if (a->app_name[0] != '\0' && b->app_name[0] != '\0' && strcmp(a->app_name, b->app_name) != 0) 
-    /* if (a->app_name != NULL && b->app_name != NULL && strcmp(a->app_name, b->app_name) != 0) */ 
         return -1;
 
     // Object name
     if (a->obj_name[0] != '\0' && b->obj_name[0] != '\0' && strcmp(a->obj_name, b->obj_name) != 0) 
     /* if (a->obj_name != NULL && b->obj_name != NULL && strcmp(a->obj_name, b->obj_name) != 0) */ 
+        return -1;
+
+    // UID
+    if (a->user_id >= 0 && b->user_id >= 0 && a->user_id != b->user_id) 
+        return -1;
+
+    // Application name 
+    if (a->app_name[0] != '\0' && b->app_name[0] != '\0' && strcmp(a->app_name, b->app_name) != 0) 
+    /* if (a->app_name != NULL && b->app_name != NULL && strcmp(a->app_name, b->app_name) != 0) */ 
         return -1;
 
     return 0;
@@ -104,87 +98,11 @@ void PDC_Server_print_metadata(pdc_metadata_t *a)
     fflush(stdout);
 }
 
-#ifdef IS_PDC_SERVER
-
-/* HG_TEST_RPC_CB(insert_metadata_to_hash_table, handle) */
-hg_return_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
-{
-
-    FUNC_ENTER(NULL);
-
-    hg_return_t ret_value;
-
-    /* printf("Got RPC request with name: %s\nHash=%d\n", in->obj_name, in->hash_value); */
-    /* printf("Full name check: %s\n", &in->obj_name[507]); */
-
-    pdc_metadata_t *metadata = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t));
-    strcpy(metadata->obj_name, in->obj_name);
-    strcpy(metadata->app_name, in->app_name);
-
-    // TODO: Both server and client gets it and do security check
-    metadata->user_id        = in->user_id;                
-    metadata->time_step      = in->time_step;
-
-    /* obj_id; */
-    /* obj_data_location        = NULL; */
-    /* create_time              =; */
-    /* last_modified_time       =; */
-    strcpy(metadata->tags, in->tags);
-
-    /* PDC_Server_print_metadata(metadata); */
-
-    int32_t *hash_key = (int32_t*)malloc(sizeof(int32_t));
-    *hash_key = in->hash_value;
- 
-    pdc_metadata_t *lookup_value;
-
-    // Obtain lock for hash table
-    hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
-
-    if (metadata_hash_table_g != NULL) {
-        // lookup
-        /* printf("checking hash table with key=%d\n", *hash_key); */
-        lookup_value = hg_hash_table_lookup(metadata_hash_table_g, hash_key);
-        // compare
-        if (lookup_value != NULL) {
-            if (PDC_Server_metadata_cmp(lookup_value, metadata) == 0) {
-                printf("Same metadata exisit in current Metadata store!\n");
-                ret_value = -1;
-                out->ret = -1;
-                goto done;
-            }
-        }
-
-    }
-    else {
-        printf("metadata_hash_table_g not initilized!\n");
-        ret_value = -1;
-    }
-
-    // Fill metadata structure
-    // Generate object id (uint64_t)
-    metadata->obj_id = PDCS_gen_obj_id();
-
-
-    ret_value = hg_hash_table_insert(metadata_hash_table_g, hash_key, metadata);
-
-    // ^ Release hash table lock
-    hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
-
-    // Fill $out structure for returning the generated obj_id to client
-    out->ret = metadata->obj_id;
-    /* printf("Generated obj_id=%llu\n", out->ret); */
-
-
-    fflush(stdout);
-
-done:
-    FUNC_LEAVE(ret_value);
-}
-#else
-
-hg_return_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out) {return 0;}
+#ifndef IS_PDC_SERVER
+// Dummy function for client to compile, real function is used only by server and code is in pdc_server.c
+perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out) {return 0;}
 #endif
+
 /*
  * The routine that sets up the routines that actually do the work.
  * This 'handle' parameter is the only value passed to this callback, but
@@ -218,9 +136,6 @@ HG_TEST_RPC_CB(gen_obj_id, handle)
         // Insert to hash table
         ret = insert_metadata_to_hash_table(&in, &out);
     }
-
-    // Generate an object id as return value
-    /* out.ret = PDCS_gen_obj_id(); */
 
     HG_Respond(handle, NULL, NULL, &out);
     /* printf("Returned %llu\n", out.ret); */

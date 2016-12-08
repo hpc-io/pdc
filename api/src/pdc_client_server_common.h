@@ -10,6 +10,7 @@
 #include "mercury_hash_table.h"
 #include "mercury_list.h"
 
+
 #ifndef PDC_CLIENT_SERVER_COMMON_H
 #define PDC_CLIENT_SERVER_COMMON_H
 
@@ -39,6 +40,7 @@ typedef struct pdc_metadata_t {
     // For hash table list
     struct pdc_metadata_t *prev;
     struct pdc_metadata_t *next;
+    void *bloom;
 
 } pdc_metadata_t;
 
@@ -110,6 +112,7 @@ hg_proc_gen_obj_id_out_t(hg_proc_t proc, void *data)
 
 hg_id_t gen_obj_id_register(hg_class_t *hg_class);
 int PDC_Server_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b);
+void PDC_Server_print_metadata(pdc_metadata_t *a);
 
 extern hg_hash_table_t *metadata_hash_table_g;
 
