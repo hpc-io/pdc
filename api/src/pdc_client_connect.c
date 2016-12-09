@@ -97,9 +97,12 @@ int PDC_Client_read_server_addr_from_file()
     int i = 0;
     char  *p;
     FILE *na_config = NULL;
-    na_config = fopen(pdc_server_cfg_name, "r");
+    char config_fname[PATH_MAX];
+    sprintf(config_fname, "%s/%s", pdc_server_tmp_dir_g, pdc_server_cfg_name_g);
+    printf("config file:%s\n",config_fname);
+    na_config = fopen(config_fname, "r");
     if (!na_config) {
-        fprintf(stderr, "Could not open config file from default location: %s\n", pdc_server_cfg_name);
+        fprintf(stderr, "Could not open config file from default location: %s\n", pdc_server_cfg_name_g);
         exit(0);
     }
     char n_server_string[PATH_MAX];
@@ -117,7 +120,7 @@ int PDC_Client_read_server_addr_from_file()
     while (fgets(pdc_server_info_g[i].addr_string, ADDR_MAX, na_config)) {
         p = strrchr(pdc_server_info_g[i].addr_string, '\n');
         if (p != NULL) *p = '\0';
-        /* printf("%s", pdc_server_info_g[i]->addr_string); */
+        printf("%s", pdc_server_info_g[i].addr_string);
         i++;
     }
     fclose(na_config);

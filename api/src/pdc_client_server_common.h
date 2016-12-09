@@ -14,7 +14,9 @@
 #ifndef PDC_CLIENT_SERVER_COMMON_H
 #define PDC_CLIENT_SERVER_COMMON_H
 
-#define pdc_server_cfg_name "./server.cfg"
+#define pdc_server_cfg_name_g "server.cfg"
+#define pdc_server_tmp_dir_g  "./pdc_tmp"
+
 #define ADDR_MAX 128
 
 extern uint64_t pdc_id_seq_g;
