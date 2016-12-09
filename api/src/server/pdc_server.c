@@ -148,9 +148,11 @@ perr_t PDC_Server_write_addr_to_file(char** addr_strings, int n)
     perr_t ret_value;
 
     // write to file
-    FILE *na_config = fopen(pdc_server_cfg_name, "w+");
+    char config_fname[PATH_MAX];
+    sprintf(config_fname, "%s/%s", pdc_server_tmp_dir_g, pdc_server_cfg_name_g);
+    FILE *na_config = fopen(config_fname, "w+");
     if (!na_config) {
-        fprintf(stderr, "Could not open config file from: %s\n", pdc_server_cfg_name);
+        fprintf(stderr, "Could not open config file from: %s\n", config_fname);
         exit(0);
     }
     int i;
@@ -175,6 +177,10 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
 
     // set server id start
     pdc_id_seq_g = pdc_id_seq_g * (pdc_server_rank_g+1);
+
+    // Create server tmp dir
+    int status;
+    status = mkdir(pdc_server_tmp_dir_g, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
     int i;
     char *all_addr_strings_1d;
@@ -280,12 +286,6 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
 
     // Initalize atomic variable to finalize server 
     hg_atomic_set32(&close_server_g, 0);
-
-
-    // Create server tmp dir
-    int status;
-    pdc_server_tmp_dir = "./pdc_tmp";
-    status = mkdir(pdc_server_tmp_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
     // TODO: remove server tmp dir?
 
@@ -469,7 +469,7 @@ static perr_t PDC_Server_hash_table_list_init(pdc_metadata_t *metadata, int32_t 
     double error_rate = 0.05;
 
     char bloom_file[PATH_MAX];
-    sprintf(bloom_file, "%s/bloom.%d", pdc_server_tmp_dir, pdc_server_rank_g); 
+    sprintf(bloom_file, "%s/bloom.%d", pdc_server_tmp_dir_g, pdc_server_rank_g); 
 
     metadata->bloom = (BLOOM_TYPE_T*)BLOOM_NEW(capacity, error_rate, bloom_file);
     if (!metadata->bloom) {
@@ -631,6 +631,10 @@ int main(int argc, char *argv[])
 
     // Register RPC
     gen_obj_id_register(hg_class);
+
+    if (pdc_server_rank_g == 0)
+        printf("==PDC_SERVER: Server ready!\n");
+    fflush(stdout);
 
 #ifdef ENABLE_MULTITHREAD
     PDC_Server_multithread_loop(hg_class, hg_context);
