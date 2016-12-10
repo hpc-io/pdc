@@ -52,6 +52,8 @@ int main(int argc, const char *argv[])
         exit(-1);
     }
 
+    count /= size;
+
     if (rank == 0) 
         printf("Creating %d objects per MPI rank\n", count);
     fflush(stdout);
@@ -84,29 +86,32 @@ int main(int argc, const char *argv[])
 
     gettimeofday(&ht_total_start, 0);
 
+    char obj_prefix[4][10] = {"x", "y", "z", "energy"};
+
     for (i = 0; i < count; i++) {
-        sprintf(obj_name, "%s_%d", "Obj", i + rank * 10000000);
-        /* sprintf(obj_name, "%s", "Obj", i + rank * 10000000); */
+        sprintf(obj_name, "%s_%d", obj_prefix[i%4], i/4 + rank * 10000000);
+        /* sprintf(obj_name, "%s_%d", obj_prefix[0], i + rank * 10000000); */
+        /* sprintf(obj_name, "%s_%d", "Obj", i + rank * 10000000); */
         // Force to send the entire string, not just the first few characters.
         /* obj_name[strlen(obj_name)] = ' '; */
 
         test_obj = PDCobj_create(pdc, obj_name, NULL);
         if (test_obj < 0) { 
-            printf("Error getting an object id from server, exit...\n");
+            printf("Error getting an object id of %s from server, exit...\n", obj_name);
             exit(-1);
         }
 
         // Print progress
         int progress_factor = count < 10 ? 1 : 10;
         if (rank == 0 && i > 0 && i % (count/progress_factor) == 0) {
-            printf("%d created\n", i * size);
+            gettimeofday(&ht_total_end, 0);
+            ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+            ht_total_sec        = ht_total_elapsed / 1000000.0;
+
+            printf("%10d created ... %.2fs\n", i * size, ht_total_sec);
             fflush(stdout);
         }
-        /* printf("[%d]:%d\n", rank, i); */
-        /* fflush(stdout); */
-/* #ifdef ENABLE_MPI */
-/*     MPI_Barrier(MPI_COMM_WORLD); */
-/* #endif */
+
     }
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -120,11 +125,30 @@ int main(int argc, const char *argv[])
         fflush(stdout);
     }
 
+    /* // Check for duplicate insertion */
+    /* int dup_obj_id; */
+    /* sprintf(obj_name, "%s_%d", obj_prefix[0], rank * 10000000); */
+    /* dup_obj_id = PDCobj_create(pdc, obj_name, NULL); */
+    /* int all_dup_obj_id; */
+
+/* #ifdef ENABLE_MPI */
+    /* MPI_Reduce(&dup_obj_id, &all_dup_obj_id, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD); */  
+/* #else */
+    /* all_dup_obj_id = dup_obj_id; */
+/* #endif */
+
+    /* if (rank == 0) { */
+    /*     if (all_dup_obj_id>=0 ) */ 
+    /*         printf("Duplicate insertion test failed!\n"); */
+    /*     else */ 
+    /*         printf("Duplicate insertion test succeed!\n"); */
+    /* } */
+
 
     if(PDC_close(pdc) < 0)
        printf("fail to close PDC\n");
     /* else */
-       /* printf("PDC is closed\n"); */
+    /*    printf("PDC is closed\n"); */
 
 #ifdef ENABLE_MPI
      MPI_Finalize();
