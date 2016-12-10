@@ -99,7 +99,7 @@ int PDC_Client_read_server_addr_from_file()
     FILE *na_config = NULL;
     char config_fname[PATH_MAX];
     sprintf(config_fname, "%s/%s", pdc_server_tmp_dir_g, pdc_server_cfg_name_g);
-    printf("config file:%s\n",config_fname);
+    /* printf("config file:%s\n",config_fname); */
     na_config = fopen(config_fname, "r");
     if (!na_config) {
         fprintf(stderr, "Could not open config file from default location: %s\n", pdc_server_cfg_name_g);
@@ -120,7 +120,7 @@ int PDC_Client_read_server_addr_from_file()
     while (fgets(pdc_server_info_g[i].addr_string, ADDR_MAX, na_config)) {
         p = strrchr(pdc_server_info_g[i].addr_string, '\n');
         if (p != NULL) *p = '\0';
-        printf("%s", pdc_server_info_g[i].addr_string);
+        /* printf("%s", pdc_server_info_g[i].addr_string); */
         i++;
     }
     fclose(na_config);
@@ -325,7 +325,7 @@ perr_t PDC_Client_finalize()
         PDC_Client_close_all_server();
 
 
-    /* Finalize Mercury*/
+    // Finalize Mercury
     int i;
     for (i = 0; i < pdc_server_num_g; i++) {
         if (pdc_server_info_g[i].addr_valid) {
@@ -345,22 +345,22 @@ perr_t PDC_Client_finalize()
     // Output and free debug info
 #ifdef ENABLE_MPI
 
-    // Print local server connection count
-    /* for (i = 0; i < pdc_server_num_g; i++) */ 
-    /*     printf("%d, %d, %d\n", pdc_client_mpi_rank_g, i, debug_server_id_count[i]); */
-    /* fflush(stdout); */
+/*     // Print local server connection count */
+/*     for (i = 0; i < pdc_server_num_g; i++) */ 
+/*         printf("%d, %d, %d\n", pdc_client_mpi_rank_g, i, debug_server_id_count[i]); */
+/*     fflush(stdout); */
 
     int *all_server_count = (int*)malloc(sizeof(int)*pdc_server_num_g);
     MPI_Reduce(debug_server_id_count, all_server_count, pdc_server_num_g, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
     if (pdc_client_mpi_rank_g == 0) {
         printf("==PDC_CLIENT: server connection count:\n");
         for (i = 0; i < pdc_server_num_g; i++) 
-            printf("%d, %d\n", i, all_server_count[i]);
+            printf("  Server[%3d], %d\n", i, all_server_count[i]);
     }
     free(all_server_count);
 #else
     for (i = 0; i < pdc_server_num_g; i++) {
-        printf("%d, %d\n", i, debug_server_id_count[i]);
+        printf("  Server[%3d], %d\n", i, debug_server_id_count[i]);
     }
 
 #endif
@@ -372,52 +372,14 @@ perr_t PDC_Client_finalize()
 done:
     FUNC_LEAVE(ret_value);
 }
-
-// Send a name to server and receive an obj id
-uint64_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t property)
+uint64_t PDC_Client_send_name_to_server(const char *obj_name, int hash_name_value, pdcid_t property, int time_step, uint32_t server_id)
 {
-
     FUNC_ENTER(NULL);
 
-    hg_return_t  hg_ret = 0;
     uint64_t ret_value;
-    uint32_t server_id;
+    hg_return_t  hg_ret = 0;
+
     uint32_t port = pdc_client_mpi_rank_g + 8000; 
-
-    // TODO: this is temp solution to convert "Obj_%d" to name="Obj_" and time_step=%d 
-    //       will need to delete once Kimmy adds the pdc_prop related functions
-    int i, obj_name_len;
-    uint32_t tmp_time_step = 0;
-    obj_name_len = strlen(obj_name);
-    char *tmp_obj_name = (char*)malloc(sizeof(char) * (obj_name_len+1));
-    strcpy(tmp_obj_name, obj_name);
-    for (i = 0; i < obj_name_len; i++) {
-        if (isdigit(obj_name[i])) {
-            tmp_time_step = atoi(obj_name+i);
-            tmp_obj_name[i] = 0;
-            break;
-        }
-    }
-
-    // Compute server id
-    uint32_t hash_name_value = pdc_hash_djb2(tmp_obj_name);
-    server_id = hash_name_value % pdc_server_num_g; 
-    // Test
-    /* server_id = 0; */
-    /* server_id = pdc_client_mpi_rank_g / 20; */
-    /* server_id = server_id % 2; */
-
-    /* if (pdc_client_mpi_rank_g < 20) */ 
-    /*     server_id = 0; */
-    /* else if (pdc_client_mpi_rank_g < 40) */ 
-    /*     server_id = 1; */
-    /* else if (pdc_client_mpi_rank_g < 60) */ 
-    /*     server_id = 2; */
-    /* else if (pdc_client_mpi_rank_g < 80) */ 
-    /*     server_id = 3; */
-    
-    /* printf("[%d]: target server %d\n", pdc_client_mpi_rank_g, server_id); */
-    /* fflush(stdout); */
 
     debug_server_id_count[server_id]++;
 
@@ -436,16 +398,15 @@ uint64_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t property)
     // TODO: parse pdc prop structure once Kimmy adds these fields to PDC_obj_prop_t
     lookup_args.user_id     = getuid();
     lookup_args.app_name    = "test_app_name";
-    lookup_args.time_step   = tmp_time_step;
+    lookup_args.time_step   = time_step;
     lookup_args.hash_value  = hash_name_value;
     lookup_args.tags        = "tag0=11";
 
-    /* printf("==PDC_CLIENT: user_id=%u, time_step=%u\n", lookup_args.user_id, lookup_args.time_step); */
-
-    // TODO: change tmp_obj_name Fill lookup args
-    lookup_args.obj_name    = tmp_obj_name;
+    lookup_args.obj_name    = obj_name;
     lookup_args.obj_id      = -1;
     lookup_args.server_id   = server_id;
+
+    /* printf("==PDC_CLIENT: obj_name=%s, user_id=%u, time_step=%u\n", lookup_args.obj_name, lookup_args.user_id, lookup_args.time_step); */
 
     // Initiate server lookup and send obj name in client_lookup_cb()
     char *target_addr_string = pdc_server_info_g[server_id].addr_string;
@@ -479,14 +440,67 @@ uint64_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t property)
     PDC_Client_check_response(&send_context_g);
 
     // Now we have obj id stored in lookup_args.obj_id
-    if (lookup_args.obj_id == -1) {
-        printf("Error obtaining obj id from PDC server!\n");
-    }
+    /* if (lookup_args.obj_id == -1) { */
+    /*     printf("==PDC_CLIENT: Have not obtained valid obj id from PDC server!\n"); */
+    /* } */
 
     /* printf("Received obj_id=%llu\n", lookup_args.obj_id); */
     /* fflush(stdout); */
 
-       ret_value = lookup_args.obj_id;
+
+    ret_value = lookup_args.obj_id;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+// Send a name to server and receive an obj id
+uint64_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t property)
+{
+
+    FUNC_ENTER(NULL);
+
+    uint64_t ret_value;
+    uint32_t server_id;
+
+    // TODO: this is temp solution to convert "Obj_%d" to name="Obj_" and time_step=%d 
+    //       will need to delete once Kimmy adds the pdc_prop related functions
+    int i, obj_name_len;
+    uint32_t tmp_time_step = 0;
+    obj_name_len = strlen(obj_name);
+    char *tmp_obj_name = (char*)malloc(sizeof(char) * (obj_name_len+1));
+    strcpy(tmp_obj_name, obj_name);
+    for (i = 0; i < obj_name_len; i++) {
+        if (isdigit(obj_name[i])) {
+            tmp_time_step = atoi(obj_name+i);
+            /* printf("Converted [%s] = %d\n", obj_name, tmp_time_step); */
+            tmp_obj_name[i] = 0;
+            break;
+        }
+    }
+
+    // TODO: Compute server id
+    uint32_t hash_name_value = pdc_hash_djb2(tmp_obj_name);
+    server_id = (hash_name_value + tmp_time_step) % pdc_server_num_g; 
+
+    /* printf("Obj_name: %s, hash_value: %d, server_id:%d\n", tmp_obj_name, hash_name_value, server_id); */
+    // Test
+    /* server_id = 0; */
+    /* server_id = pdc_client_mpi_rank_g / 20; */
+    /* server_id = server_id % 2; */
+
+    /* if (pdc_client_mpi_rank_g < 20) */ 
+    /*     server_id = 0; */
+    /* else if (pdc_client_mpi_rank_g < 40) */ 
+    /*     server_id = 1; */
+    /* else if (pdc_client_mpi_rank_g < 60) */ 
+    /*     server_id = 2; */
+    /* else if (pdc_client_mpi_rank_g < 80) */ 
+    /*     server_id = 3; */
+    
+    /* printf("[%d]: target server %d\n", pdc_client_mpi_rank_g, server_id); */
+    /* fflush(stdout); */
+    ret_value = PDC_Client_send_name_to_server(tmp_obj_name, hash_name_value, property, tmp_time_step, server_id);
 
 done:
     FUNC_LEAVE(ret_value);
@@ -512,48 +526,19 @@ perr_t PDC_Client_close_all_server()
         mercury_has_init_g = 1;
     }
 
-    // Fill lookup args
-    struct client_lookup_args lookup_args;
-
     int i;
     for (i = 0; i < pdc_server_num_g; i++) {
         server_id = i;
 
-        lookup_args.obj_name   = "==PDC Close Server";
-        lookup_args.obj_id     = -1;
-        lookup_args.server_id  = server_id;
-
-        // Initiate server lookup and send obj name in client_lookup_cb()
-        char *target_addr_string = pdc_server_info_g[server_id].addr_string;
-
-        // Check if previous connection had been made and reuse handle 
-        if (pdc_server_info_g[server_id].rpc_handle_valid != 1) {
-            // This is the first connection to server $server_id
-            hg_ret = HG_Addr_lookup(send_context_g, client_lookup_cb, &lookup_args, target_addr_string, HG_OP_ID_IGNORE);
-        }
-        else {
-            // Fill input structure
-            gen_obj_id_in_t in;
-            in.obj_name   = "==PDC Close Server";
-
-            /* printf("Sending input to target\n"); */
-            ret_value = HG_Forward(pdc_server_info_g[server_id].rpc_handle, client_rpc_cb, &lookup_args, &in);
-            if (ret_value != HG_SUCCESS) {
-                fprintf(stderr, "client_lookup_cb(): Could not start HG_Forward()\n");
-                return EXIT_FAILURE;
-            }
-        }
-
-
+        /* printf("Closing server %d\n", server_id); */
+        /* fflush(stdout); */
+        ret_value = PDC_Client_send_name_to_server("==PDC Close Server", 0, NULL, 0, server_id);
     }
 
-    // Wait for response from server
-    work_todo_g += pdc_server_num_g;
-    PDC_Client_check_response(&send_context_g);
+    printf("All server closed\n");
+    fflush(stdout);
 
-    /* fflush(stdout); */
-
-    ret_value = lookup_args.obj_id;
+    ret_value = 0;
 
 done:
     FUNC_LEAVE(ret_value);

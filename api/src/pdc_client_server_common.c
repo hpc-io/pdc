@@ -64,30 +64,39 @@ uint64_t pdc_id_seq_g = 1000000;
 
 inline int PDC_Server_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b)
 {
+    int ret;
     // Timestep
-    if (a->time_step >= 0 && b->time_step >= 0 && a->time_step != b->time_step) 
-        return -1;
+    if (a->time_step >= 0 && b->time_step >= 0) {
+        ret = (a->time_step - b->time_step);
+    }
+    if (ret != 0 ) return ret;
 
     // Object name
-    if (a->obj_name[0] != '\0' && b->obj_name[0] != '\0' && strcmp(a->obj_name, b->obj_name) != 0) 
-    /* if (a->obj_name != NULL && b->obj_name != NULL && strcmp(a->obj_name, b->obj_name) != 0) */ 
-        return -1;
+    /* if (a->obj_name != NULL && b->obj_name != NULL) */ 
+    if (a->obj_name[0] != '\0' && b->obj_name[0] != '\0') {
+        ret = strcmp(a->obj_name, b->obj_name); 
+    }
+    if (ret != 0 ) return ret;
 
     // UID
-    if (a->user_id >= 0 && b->user_id >= 0 && a->user_id != b->user_id) 
-        return -1;
+    if (a->user_id >= 0 && b->user_id >= 0) {
+        ret = (a->user_id - b->user_id);
+    }
+    if (ret != 0 ) return ret;
 
     // Application name 
-    if (a->app_name[0] != '\0' && b->app_name[0] != '\0' && strcmp(a->app_name, b->app_name) != 0) 
-    /* if (a->app_name != NULL && b->app_name != NULL && strcmp(a->app_name, b->app_name) != 0) */ 
-        return -1;
+    /* if (a->app_name != NULL && b->app_name != NULL */ 
+    if (a->app_name[0] != '\0' && b->app_name[0] != '\0') {
+        ret = strcmp(a->app_name, b->app_name);
+    }
 
-    return 0;
+    return ret;
 }
 
 void PDC_Server_print_metadata(pdc_metadata_t *a)
 {
     printf("==PDC_Server: Metadata structure\n");
+    printf("================================\n\n");
     printf("  uid       = %u\n", a->user_id);
     printf("  app_name  = %s\n", a->app_name);
     printf("  obj_name  = %s\n", a->obj_name);

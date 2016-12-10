@@ -75,7 +75,7 @@ int main() {
     if(PDC_close(pdc) < 0)
        printf("fail to close PDC\n");
     /* else */
-       /* printf("PDC is closed\n"); */
+    /*    printf("PDC is closed\n"); */
 
      return 0;
 }

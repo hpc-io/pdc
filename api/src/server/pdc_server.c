@@ -46,6 +46,10 @@ hg_hash_table_t *metadata_hash_table_g = NULL;
 int pdc_server_rank_g = 0;
 int pdc_server_size_g = 1;
 
+// Debug var
+int n_bloom_total_g;
+int n_bloom_maybe_g;
+
 static int32_t
 PDC_Server_metadata_int_equal(hg_hash_table_key_t vlocation1, hg_hash_table_key_t vlocation2)
 {
@@ -69,11 +73,17 @@ PDC_Server_metadata_hash_value_free(hg_hash_table_value_t value)
 {
     pdc_metadata_t *elt, *tmp, *head;
 
-    head= (pdc_metadata_t *) value;
+    head = (pdc_metadata_t *) value;
+
+    // Free bloom filter
+    free_counting_bloom(head->bloom);
+
+    // Free metadata list
     DL_FOREACH_SAFE(head,elt,tmp) {
-      DL_DELETE(head,elt);
+      /* DL_DELETE(head,elt); */
       free(elt);
     }
+
 
     /* if (tmp->app_name != NULL) */ 
     /*     free(tmp->app_name); */
@@ -165,6 +175,83 @@ perr_t PDC_Server_write_addr_to_file(char** addr_strings, int n)
     ret_value = SUCCEED;
 
 done:
+    FUNC_LEAVE(ret_value);
+}
+
+static perr_t PDC_Server_metadata_duplicate_check()
+{
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value = SUCCEED;
+
+    hg_hash_table_iter_t hash_table_iter;
+    int n_entry, count = 0, dl_count;
+    int all_maybe, all_total, all_entry;
+
+    n_entry = hg_hash_table_num_entries(metadata_hash_table_g);
+
+    #ifdef ENABLE_MPI
+        MPI_Reduce(&n_bloom_maybe_g, &all_maybe, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&n_bloom_total_g, &all_total, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&n_entry,         &all_entry, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    #else
+        all_maybe = n_bloom_maybe_g;
+        all_total = n_bloom_total_g;
+        all_entry = n_entry;
+    #endif
+
+    if (pdc_server_rank_g == 0) {
+        printf("==PDC_SERVER: Bloom filter says maybe %d times out of %d\n", all_maybe, all_total);
+        printf("==PDC_SERVER: Metadata duplicate check with %d hash entries\n", all_entry);
+    }
+
+    fflush(stdout);
+
+    int has_dup_obj = 0;
+    int all_dup_obj = 0;
+    pdc_metadata_t *head, *elt, *elt_next;
+
+    hg_hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
+
+    while (n_entry != 0 && hg_hash_table_iter_has_more(&hash_table_iter)) {
+        head = hg_hash_table_iter_next(&hash_table_iter);
+        DL_COUNT(head, elt, dl_count);
+        if (pdc_server_rank_g == 0) {
+            printf("  Hash entry[%d], with %d items\n", count, dl_count);
+        }
+        DL_SORT(head, PDC_Server_metadata_cmp); 
+        // With sorted list, just compare each one with its next
+        DL_FOREACH(head, elt) {
+            elt_next = elt->next;
+            if (elt_next != NULL) {
+                if (PDC_Server_metadata_cmp(elt, elt_next) == 0) {
+                    PDC_Server_print_metadata(elt);
+                    has_dup_obj = 1;
+                    ret_value = FAIL;
+                    goto done;
+                }
+            }
+        }
+        count++;
+    }
+
+    fflush(stdout);
+
+done:
+    #ifdef ENABLE_MPI
+        MPI_Reduce(&has_dup_obj, &all_dup_obj, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    #else
+        all_dup_obj = has_dup_obj;
+    #endif
+    if (pdc_server_rank_g == 0) {
+        if (all_dup_obj > 0) {
+            printf("  ...Found duplicates!\n");
+        }
+        else {
+            printf("  ...No duplicates found!\n");
+        }
+    }
+ 
     FUNC_LEAVE(ret_value);
 }
 
@@ -301,6 +388,10 @@ perr_t PDC_Server_finalize()
     FUNC_ENTER(NULL);
     perr_t ret_value = SUCCEED;
 
+    // Debug: check duplicates
+    PDC_Server_metadata_duplicate_check();
+    fflush(stdout);
+
     // Free hash table
     if(metadata_hash_table_g != NULL)
         hg_hash_table_free(metadata_hash_table_g);
@@ -395,7 +486,6 @@ done:
 
 static inline void combine_obj_info_to_string(pdc_metadata_t *metadata, char *output)
 {
-    perr_t ret_value = SUCCEED;
     sprintf(output, "%d%s%s%d", metadata->user_id, metadata->app_name, metadata->obj_name, metadata->time_step);
 }
 
@@ -410,10 +500,11 @@ static int find_identical_metadata(pdc_metadata_t *mlist, pdc_metadata_t *a)
     BLOOM_TYPE_T *bloom = (BLOOM_TYPE_T*)mlist->bloom;
     char combined_string[PATH_MAX];
     combine_obj_info_to_string(a, combined_string);
-    /* printf("Combined string: %s\n", combined_string); */
+    /* printf("bloom_check: Combined string: %s\n", combined_string); */
 
     int bloom_check;
     bloom_check = BLOOM_CHECK(bloom, combined_string, strlen(combined_string));
+    n_bloom_total_g++;
     if (bloom_check == 0) {
         /* printf("Bloom filter: definitely not!\n"); */
         ret_value = 0;
@@ -421,6 +512,8 @@ static int find_identical_metadata(pdc_metadata_t *mlist, pdc_metadata_t *a)
     }
     else {
         // bloom filter says maybe, so need to check entire list
+        /* printf("Bloom filter: maybe!\n"); */
+        n_bloom_maybe_g++;
         pdc_metadata_t *elt;
         DL_FOREACH(mlist, elt) {
             if (PDC_Server_metadata_cmp(elt, a) == 0) {
@@ -441,6 +534,24 @@ static int find_identical_metadata(pdc_metadata_t *mlist, pdc_metadata_t *a)
 done:
     FUNC_LEAVE(ret_value);
 } 
+
+static perr_t bloom_add(pdc_metadata_t *metadata)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value;
+
+    char combined_string[PATH_MAX];
+
+    combine_obj_info_to_string(metadata, combined_string);
+    /* printf("bloom_add: Combined string: %s\n", combined_string); */
+
+    BLOOM_TYPE_T *bloom = (BLOOM_TYPE_T*)metadata->bloom;
+    ret_value = BLOOM_ADD(bloom, combined_string, strlen(combined_string));
+
+done:
+    FUNC_LEAVE(ret_value);
+}
 
 static perr_t PDC_Server_hash_table_list_init(pdc_metadata_t *metadata, int32_t *hash_key)
 {
@@ -465,36 +576,19 @@ static perr_t PDC_Server_hash_table_list_init(pdc_metadata_t *metadata, int32_t 
         goto done;
     }
 
+    // Init bloom filter
     int capacity = 500000;
     double error_rate = 0.05;
+    n_bloom_maybe_g = 0;
+    n_bloom_total_g = 0;
 
-    char bloom_file[PATH_MAX];
-    sprintf(bloom_file, "%s/bloom.%d", pdc_server_tmp_dir_g, pdc_server_rank_g); 
-
-    metadata->bloom = (BLOOM_TYPE_T*)BLOOM_NEW(capacity, error_rate, bloom_file);
+    metadata->bloom = (BLOOM_TYPE_T*)BLOOM_NEW(capacity, error_rate);
     if (!metadata->bloom) {
         fprintf(stderr, "ERROR: Could not create bloom filter\n");
         ret_value = -1;
         goto done;
     }
-
-done:
-    FUNC_LEAVE(ret_value);
-}
-
-static perr_t bloom_add(pdc_metadata_t *metadata)
-{
-    FUNC_ENTER(NULL);
-
-    perr_t ret_value;
-
-    char combined_string[PATH_MAX];
-
-    combine_obj_info_to_string(metadata, combined_string);
-    /* printf("Combined string: %s\n", combined_string); */
-
-    BLOOM_TYPE_T *bloom = (BLOOM_TYPE_T*)metadata->bloom;
-    ret_value = BLOOM_ADD(bloom, combined_string, strlen(combined_string));
+    bloom_add(metadata);
 
 done:
     FUNC_LEAVE(ret_value);
@@ -567,7 +661,7 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
                 // add to bloom filter
                 bloom_add(metadata);
                 // Currently $metadata is unique, insert to linked list
-                DL_APPEND(lookup_value, metadata);
+                DL_PREPEND(lookup_value, metadata);
             }
         
         }
@@ -643,12 +737,15 @@ int main(int argc, char *argv[])
 #endif
 
     // Finalize 
+    HG_Context_destroy(hg_context);
+    HG_Finalize(hg_class);
+
+    PDC_Server_finalize();
+
     if (pdc_server_rank_g == 0) {
         printf("==PDC_SERVER: exiting...\n");
         /* printf("==PDC_SERVER: [%d] exiting...\n", pdc_server_rank_g); */
     }
-    HG_Context_destroy(hg_context);
-    HG_Finalize(hg_class);
 
 done:
 #ifdef ENABLE_MPI
