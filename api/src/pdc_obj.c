@@ -4,12 +4,22 @@
 
 static perr_t PDCobj__close(PDC_obj_info_t *op);
 
+static perr_t PDCregion__close(PDC_region_info_t *op);
+
 /* PDC object ID class */
 static const PDCID_class_t PDC_OBJ_CLS[1] = {{
     PDC_OBJ,                            /* ID class value */
     0,                                  /* Class flags */
     0,                                  /* # of reserved IDs for class */
     (PDC_free_t)PDCobj__close           /* Callback routine for closing objects of this class */
+}};
+
+/* PDC region ID class */
+static const PDCID_class_t PDC_REGION_CLS[1] = {{
+    PDC_REGION,                         /* ID class value */
+    0,                                  /* Class flags */
+    0,                                  /* # of reserved IDs for class */
+    (PDC_free_t)PDCregion__close        /* Callback routine for closing regions of this class */
 }};
 
 perr_t PDCobj_init(PDC_CLASS_t *pc) {
@@ -24,6 +34,20 @@ perr_t PDCobj_init(PDC_CLASS_t *pc) {
 done:
     FUNC_LEAVE(ret_value);
 } /* end PDCobj_init() */
+
+perr_t PDCregion_init(PDC_CLASS_t *pc) {
+    perr_t ret_value = SUCCEED;         /* Return value */
+    
+    FUNC_ENTER(NULL);
+    
+    /* Initialize the atom group for the region IDs */
+    if(PDC_register_type(PDC_REGION_CLS, pc) < 0)
+        PGOTO_ERROR(FAIL, "unable to initialize region interface");
+    
+done:
+    FUNC_LEAVE(ret_value);
+} /* end PDCregion_init() */
+
 
 pdcid_t PDCobj_create(pdcid_t pdc, pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop){
     pdcid_t ret_value = SUCCEED;
@@ -62,12 +86,38 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDC_region_list_null(pdcid_t pdc) {
+    perr_t ret_value = SUCCEED;   /* Return value */
+    
+    FUNC_ENTER(NULL);
+    // list is not empty
+    int nelemts = PDC_id_list_null(PDC_REGION, pdc);
+    if(nelemts > 0) {
+        printf("%d element(s) in the region list will be automatically closed by PDC_close()\n", nelemts);
+        if(PDC_id_list_clear(PDC_REGION, pdc) < 0)
+            PGOTO_ERROR(FAIL, "fail to clear object list");
+    }
+    
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 perr_t PDCobj__close(PDC_obj_info_t *op) {
     perr_t ret_value = SUCCEED;         /* Return value */
     
     FUNC_ENTER(NULL);
     
     op = PDC_FREE(PDC_obj_info_t, op);
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDCregion__close(PDC_region_info_t *op) {
+    perr_t ret_value = SUCCEED;         /* Return value */
+    
+    FUNC_ENTER(NULL);
+    
+    op = PDC_FREE(PDC_region_info_t, op);
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -84,6 +134,18 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDCregion_close(pdcid_t region_id, pdcid_t pdc) {
+    perr_t ret_value = SUCCEED;   /* Return value */
+    
+    FUNC_ENTER(NULL);
+    
+    /* When the reference count reaches zero the resources are freed */
+    if(PDC_dec_ref(region_id, pdc) < 0)
+        PGOTO_ERROR(FAIL, "object: problem of freeing id");
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 perr_t PDCobj_end(pdcid_t pdc) {
     perr_t ret_value = SUCCEED;         /* Return value */
 
@@ -94,6 +156,17 @@ perr_t PDCobj_end(pdcid_t pdc) {
 done:
     FUNC_LEAVE(ret_value);
 } /* end of PDCobj_end() */
+
+perr_t PDCregion_end(pdcid_t pdc) {
+    perr_t ret_value = SUCCEED;         /* Return value */
+    
+    FUNC_ENTER(NULL);
+    
+    if(PDC_destroy_type(PDC_REGION, pdc) < 0)
+        PGOTO_ERROR(FAIL, "unable to destroy region interface");
+done:
+    FUNC_LEAVE(ret_value);
+} /* end of PDCregion_end() */
 
 pdcid_t PDCobj_open(pdcid_t cont_id, const char *obj_name, pdcid_t pdc) {
     pdcid_t ret_value = SUCCEED;
@@ -186,6 +259,62 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDCprop_set_obj_user_id(pdcid_t obj_prop, uint32_t user_id, pdcid_t pdc) {
+    perr_t ret_value = SUCCEED;         /* Return value */
+    
+    FUNC_ENTER(NULL);
+    
+    PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
+    PDC_id_info_t *info = PDC_find_id(obj_prop, pc);
+    if(info == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object property ID");
+    ((PDC_obj_prop_t *)(info->obj_ptr))->user_id = user_id;
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDCprop_set_obj_app_name(pdcid_t obj_prop, char *app_name, pdcid_t pdc) {
+    perr_t ret_value = SUCCEED;         /* Return value */
+    
+    FUNC_ENTER(NULL);
+    
+    PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
+    PDC_id_info_t *info = PDC_find_id(obj_prop, pc);
+    if(info == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object property ID");
+    ((PDC_obj_prop_t *)(info->obj_ptr))->app_name = strdup(app_name);
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDCprop_set_obj_time_step(pdcid_t obj_prop, uint32_t time_step, pdcid_t pdc) {
+    perr_t ret_value = SUCCEED;         /* Return value */
+    
+    FUNC_ENTER(NULL);
+    
+    PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
+    PDC_id_info_t *info = PDC_find_id(obj_prop, pc);
+    if(info == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object property ID");
+    ((PDC_obj_prop_t *)(info->obj_ptr))->time_step = time_step;
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDCprop_set_obj_tags(pdcid_t obj_prop, char *tags, pdcid_t pdc) {
+    perr_t ret_value = SUCCEED;         /* Return value */
+    
+    FUNC_ENTER(NULL);
+    
+    PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
+    PDC_id_info_t *info = PDC_find_id(obj_prop, pc);
+    if(info == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object property ID");
+    ((PDC_obj_prop_t *)(info->obj_ptr))->tags = strdup(tags);
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 perr_t PDCprop_set_obj_dims(pdcid_t obj_prop, PDC_int_t ndim, uint64_t *dims, pdcid_t pdc) {
     perr_t ret_value = SUCCEED;         /* Return value */
     
@@ -237,7 +366,7 @@ done:
 }
 
 void **PDCobj_buf_retrieve(pdcid_t obj_id, pdcid_t pdc) {
-    void ** ret_value = NULL;         /* Return value */
+    void **ret_value = NULL;         /* Return value */
     
     FUNC_ENTER(NULL);
     
@@ -251,18 +380,53 @@ void **PDCobj_buf_retrieve(pdcid_t obj_id, pdcid_t pdc) {
     if(info == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
     PDC_obj_prop_t *prop = (PDC_obj_prop_t *)(info->obj_ptr);
-    ret_value = &(prop->buf);
+    void **buffer = &(prop->buf);
+    ret_value = buffer;
 done:
     FUNC_LEAVE(ret_value);
 }
 
-obj_handle PDCview_iter_start(pdcid_t view_id) {
+pdcid_t PDC_define_region(uint64_t offset, uint64_t size, pdcid_t pdc_id) {
+    pdcid_t ret_value = SUCCEED;;         /* Return value */
+    PDC_region_info_t *p = NULL;
+    
+    FUNC_ENTER(NULL);
+    
+    p = PDC_MALLOC(PDC_region_info_t);
+    if(!p)
+        PGOTO_ERROR(FAIL,"PDC region memory allocation failed\n");
+    p->offset = offset;
+    p->size = size;
+    // data type?
+    pdcid_t new_id = PDC_id_register(PDC_REGION, p, pdc_id);
+    ret_value = new_id;
+done:
+    FUNC_LEAVE(ret_value);
 }
 
-perr_t PDCobj_buf_map(pdcid_t obj_id, void *buf, PDC_region region) {
+perr_t PDCobj_buf_map(pdcid_t obj_id, void *buf, pdcid_t region) {
 }
 
-perr_t PDCobj_map(pdcid_t a, PDC_region xregion, pdcid_t b, PDC_region yregion) {
+perr_t PDCobj_map(pdcid_t a, pdcid_t xregion, pdcid_t b, pdcid_t yregion, pdcid_t pdc_id) {
+    perr_t ret_value = SUCCEED;         /* Return value */
+    
+    FUNC_ENTER(NULL);
+    
+    PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc_id;
+    PDC_id_info_t *info = PDC_find_id(b, pc);
+    if(info == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object ID");
+    PDC_obj_info_t *object = (PDC_obj_info_t *)(info->obj_ptr);
+    object->mapping = a;
+    pdcid_t propid = object->obj_prop;
+    info = PDC_find_id(propid, pc);
+    if(info == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object property ID");
+    PDC_obj_prop_t *prop = (PDC_obj_prop_t *)(info->obj_ptr);
+//    yregion = xregion;
+    prop->region = yregion;
+done:
+    FUNC_LEAVE(ret_value);
 }
 
 perr_t PDCobj_unmap(pdcid_t obj_id) {
@@ -271,10 +435,10 @@ perr_t PDCobj_unmap(pdcid_t obj_id) {
 perr_t PDCobj_release(pdcid_t obj_id) {
 }
 
-perr_t PDCobj_update_region(pdcid_t obj_id, PDC_region region) {
+perr_t PDCobj_update_region(pdcid_t obj_id, pdcid_t region) {
 }
 
-perr_t PDCobj_invalidate_region(pdcid_t obj_id, PDC_region region) {
+perr_t PDCobj_invalidate_region(pdcid_t obj_id, pdcid_t region) {
 }
 
 perr_t PDCobj_sync(pdcid_t obj_id) {
@@ -286,3 +450,5 @@ perr_t PDCprop_set_obj_loci_prop(pdcid_t obj_create_prop, PDC_loci locus, PDC_tr
 perr_t PDCprop_set_obj_transform(pdcid_t obj_create_prop, PDC_loci pre_locus, PDC_transform A, PDC_loci dest_locus) {
 }
 
+obj_handle PDCview_iter_start(pdcid_t view_id) {
+}
