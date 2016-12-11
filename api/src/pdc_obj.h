@@ -14,6 +14,8 @@ typedef PDC_id_info_t obj_handle;
  */
 perr_t PDCobj_init(PDC_CLASS_t *pc);
 
+perr_t PDCregion_init(PDC_CLASS_t *pc);
+
 /* Create an object  
  * Param pdc_id [IN]: Id of the pdc
  * Param cont_id [IN]: Id of the container
@@ -28,7 +30,15 @@ pdcid_t PDCobj_create(pdcid_t pdc_id, pdcid_t cont_id, const char *obj_name, pdc
  * Param obj_lifetime [IN]: Object lifetime (enum type), PDC_PERSIST or PDC_TRANSIENT
  * Return: Non-negative on success/Negative on failure
  */
-perr_t PDCprop_set_obj_lifetime(pdcid_t obj_create_prop, PDC_lifetime obj_lifetime, pdcid_t pdc_id);
+perr_t PDCprop_set_obj_lifetime(pdcid_t obj_prop, PDC_lifetime obj_lifetime, pdcid_t pdc_id);
+
+perr_t PDCprop_set_obj_user_id(pdcid_t obj_prop, uint32_t user_id, pdcid_t pdc_id);
+
+perr_t PDCprop_set_obj_app_name(pdcid_t obj_prop, char *app_name, pdcid_t pdc_id);
+
+perr_t PDCprop_set_obj_time_step(pdcid_t obj_prop, uint32_t time_step, pdcid_t pdc_id);
+
+perr_t PDCprop_set_obj_tags(pdcid_t obj_prop, char *tags, pdcid_t pdc_id);
 
 /* Set object dimensions 
  * Param obj_create_prop [IN]: Id of object property, returned by PDCprop_create(PDC_OBJ_CREATE)
@@ -110,7 +120,7 @@ obj_handle PDCview_iter_start(pdcid_t view_id);
  * Param region [IN]: A PDC_region struct
  * Return: Non-negative on success/Negative on failure
  */
-perr_t PDCobj_buf_map(pdcid_t obj_id, void *buf, PDC_region region);
+perr_t PDCobj_buf_map(pdcid_t obj_id, void *buf, pdcid_t region);
 
 /* Map an object 
  * Param a [IN]: Id of the source object
@@ -119,7 +129,7 @@ perr_t PDCobj_buf_map(pdcid_t obj_id, void *buf, PDC_region region);
  * Param yregion [IN]: A PDC_region struct, region of the destination object
  * Return: Non-negative on success/Negative on failure
  */
-perr_t PDCobj_map(pdcid_t a, PDC_region xregion, pdcid_t b, PDC_region yregion);
+perr_t PDCobj_map(pdcid_t a, pdcid_t xregion, pdcid_t b, pdcid_t yregion, pdcid_t pdc_id);
 
 /* Diassociate memory object from PDC container objects 
  * Param obj_id [IN]: Id of the object
@@ -139,14 +149,14 @@ perr_t PDCobj_release(pdcid_t obj_id);
  * Param region [IN]: A PDC_region struct
  *  Return: Non-negative on success/Negative on failure
  */
-perr_t PDCobj_update_region(pdcid_t obj_id, PDC_region region);
+perr_t PDCobj_update_region(pdcid_t obj_id, pdcid_t region);
 
 /* Tell the PDC system that region in the memory is stale WRT to the container
  * Param obj_id [IN]: Id of the object
  * Param region [IN]: A PDC_region struct
  * Return: Non-negative on success/Negative on failure
  */
-perr_t PDCobj_invalidate_region(pdcid_t obj_id, PDC_region region);
+perr_t PDCobj_invalidate_region(pdcid_t obj_id, pdcid_t region);
 
 /* Object Syncranization. 
  * Param obj_id [IN]: Id of the object
@@ -160,6 +170,8 @@ perr_t PDCobj_sync(pdcid_t obj_id);
  * Return: Non-negative on success/Negative on failure
  */
 perr_t PDCobj_close(pdcid_t obj_id, pdcid_t pdc);
+
+perr_t PDCregion_close(pdcid_t region_id, pdcid_t pdc);
 
 /* Object transform functions */
 
@@ -180,5 +192,5 @@ perr_t PDCprop_set_obj_loci_prop(pdcid_t obj_create_prop, PDC_loci locus, PDC_tr
  */
 perr_t PDCprop_set_obj_transform(pdcid_t obj_create_prop, PDC_loci pre_locus, PDC_transform A, PDC_loci dest_locus);
 
-
+pdcid_t PDC_define_region(uint64_t offset, uint64_t size, pdcid_t pdc_id);
 #endif
