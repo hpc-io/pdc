@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <unistd.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
@@ -49,6 +50,11 @@ int pdc_server_size_g = 1;
 // Debug var
 int n_bloom_total_g;
 int n_bloom_maybe_g;
+double server_bloom_check_time_g = 0.0;
+double server_bloom_insert_time_g = 0.0;
+double server_insert_time_g      = 0.0;
+hg_thread_mutex_t pdc_time_mutex_g;
+hg_thread_mutex_t pdc_bloom_time_mutex_g;
 
 static int32_t
 PDC_Server_metadata_int_equal(hg_hash_table_key_t vlocation1, hg_hash_table_key_t vlocation2)
@@ -215,10 +221,10 @@ static perr_t PDC_Server_metadata_duplicate_check()
 
     while (n_entry != 0 && hg_hash_table_iter_has_more(&hash_table_iter)) {
         head = hg_hash_table_iter_next(&hash_table_iter);
-        DL_COUNT(head, elt, dl_count);
-        if (pdc_server_rank_g == 0) {
-            printf("  Hash entry[%d], with %d items\n", count, dl_count);
-        }
+        /* DL_COUNT(head, elt, dl_count); */
+        /* if (pdc_server_rank_g == 0) { */
+        /*     printf("  Hash entry[%d], with %d items\n", count, dl_count); */
+        /* } */
         DL_SORT(head, PDC_Server_metadata_cmp); 
         // With sorted list, just compare each one with its next
         DL_FOREACH(head, elt) {
@@ -374,9 +380,6 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     // Initalize atomic variable to finalize server 
     hg_atomic_set32(&close_server_g, 0);
 
-    // TODO: remove server tmp dir?
-
-
     ret_value = SUCCEED;
 
 done:
@@ -395,6 +398,26 @@ perr_t PDC_Server_finalize()
     // Free hash table
     if(metadata_hash_table_g != NULL)
         hg_hash_table_free(metadata_hash_table_g);
+
+#ifdef ENABLE_MPI
+    double all_bloom_check_time_max, all_bloom_check_time_min, all_insert_time_max, all_insert_time_min;
+    MPI_Reduce(&server_bloom_check_time_g, &all_bloom_check_time_max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&server_bloom_check_time_g, &all_bloom_check_time_min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&server_insert_time_g,      &all_insert_time_max,      1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&server_insert_time_g,      &all_insert_time_min,      1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+
+    if (pdc_server_rank_g == 0) {
+        printf("==PDC_SERVER: total bloom check time = %.6f, %.6f\n", all_bloom_check_time_min, all_bloom_check_time_max);
+        printf("==PDC_SERVER: total insert      time = %.6f, %.6f\n", all_insert_time_min, all_insert_time_max);
+        fflush(stdout);
+    }
+#else
+    printf("==PDC_SERVER: total bloom check time = %.6f\n", server_bloom_check_time_g);
+    printf("==PDC_SERVER: total insert      time = %.6f\n", server_insert_time_g);
+    fflush(stdout);
+#endif
+    // TODO: remove server tmp dir?
+
 
 done:
     FUNC_LEAVE(ret_value);
@@ -445,7 +468,7 @@ perr_t PDC_Server_multithread_loop(hg_class_t *class, hg_context_t *context)
 
     // Destory pool
     hg_thread_pool_destroy(hg_test_thread_pool_g);
-    /* hg_thread_mutex_destroy(&hg_test_local_bulk_handle_mutex_g); */
+    /* hg_thread_mutex_destroy(&close_server_g); */
 
     ret_value = SUCCEED;
 
@@ -502,8 +525,25 @@ static int find_identical_metadata(pdc_metadata_t *mlist, pdc_metadata_t *a)
     combine_obj_info_to_string(a, combined_string);
     /* printf("bloom_check: Combined string: %s\n", combined_string); */
 
+    // Timing
+    struct timeval  ht_total_start;
+    struct timeval  ht_total_end;
+    long long ht_total_elapsed;
+    double ht_total_sec;
+    gettimeofday(&ht_total_start, 0);
+
     int bloom_check;
     bloom_check = BLOOM_CHECK(bloom, combined_string, strlen(combined_string));
+
+    // Timing
+    gettimeofday(&ht_total_end, 0);
+    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+    ht_total_sec        = ht_total_elapsed / 1000000.0;
+
+    hg_thread_mutex_lock(&pdc_bloom_time_mutex_g);
+    server_bloom_check_time_g += ht_total_sec;
+    hg_thread_mutex_unlock(&pdc_bloom_time_mutex_g);
+
     n_bloom_total_g++;
     if (bloom_check == 0) {
         /* printf("Bloom filter: definitely not!\n"); */
@@ -577,7 +617,8 @@ static perr_t PDC_Server_hash_table_list_init(pdc_metadata_t *metadata, int32_t 
     }
 
     // Init bloom filter
-    int capacity = 500000;
+    int capacity = 100000;
+    /* int capacity = 500000; */
     double error_rate = 0.05;
     n_bloom_maybe_g = 0;
     n_bloom_total_g = 0;
@@ -600,6 +641,14 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     FUNC_ENTER(NULL);
 
     perr_t ret_value;
+
+    // Timing
+    struct timeval  ht_total_start;
+    struct timeval  ht_total_end;
+    long long ht_total_elapsed;
+    double ht_total_sec;
+
+    gettimeofday(&ht_total_start, 0);
 
     /* printf("Got RPC request with name: %s\tHash=%d\n", in->obj_name, in->hash_value); */
     /* printf("Full name check: %s\n", &in->obj_name[507]); */
@@ -669,9 +718,6 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
             // First entry for current hasy_key, init linked list, and insert to hash table
             /* printf("lookup_value is NULL!\n"); */
             PDC_Server_hash_table_list_init(metadata, hash_key);
-            /* pdc_metadata_t *head = NULL; */
-            /* DL_APPEND(head, metadata); */
-            /* ret_value = hg_hash_table_insert(metadata_hash_table_g, hash_key, metadata); */
         }
 
     }
@@ -693,6 +739,16 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
 
     // Debug print metadata info
     /* PDC_Server_print_metadata(metadata); */
+
+    // Timing
+    gettimeofday(&ht_total_end, 0);
+    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+    ht_total_sec        = ht_total_elapsed / 1000000.0;
+
+    hg_thread_mutex_lock(&pdc_time_mutex_g);
+    server_insert_time_g += ht_total_sec;
+    hg_thread_mutex_unlock(&pdc_time_mutex_g);
+    
 
 done:
     if (unlocked == 0)

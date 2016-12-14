@@ -17,11 +17,12 @@
 #include "pdc_client_connect.h"
 #include "pdc_client_server_common.h"
 
-int  pdc_client_mpi_rank_g = 0;
-int  pdc_client_mpi_size_g = 1;
+int                    pdc_client_mpi_rank_g = 0;
+int                    pdc_client_mpi_size_g = 1;
 
-int  pdc_server_num_g;
-pdc_server_info_t *pdc_server_info_g = NULL;
+int                    pdc_server_num_g;
+pdc_server_info_t     *pdc_server_info_g = NULL;
+int                    pdc_use_local_server_only_g = 0;
 
 static int             mercury_has_init_g = 0;
 static hg_class_t     *send_class_g = NULL;
@@ -308,6 +309,18 @@ perr_t PDC_Client_init()
     else
         printf("==PDC_CLIENT: Server number not properly initialized!\n");
 
+    char *tmp= NULL;
+    int   tmp_env;
+    tmp = getenv("PDC_USE_LOCAL_SERVER");
+    if (tmp != NULL) {
+        tmp_env = atoi(tmp);
+        if (tmp_env == 1) {
+            pdc_use_local_server_only_g = 1;
+            if(pdc_client_mpi_rank_g == 0)
+                printf("==PDC_CLIENT: Contact local server only!\n");
+        }
+    }
+
     ret_value = SUCCEED;
 
 done:
@@ -360,7 +373,7 @@ perr_t PDC_Client_finalize()
     free(all_server_count);
 #else
     for (i = 0; i < pdc_server_num_g; i++) {
-        printf("  Server[%3d], %d\n", i, debug_server_id_count[i]);
+        printf("  Server%3d, %d\n", i, debug_server_id_count[i]);
     }
 
 #endif
@@ -483,21 +496,13 @@ uint64_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t property)
     uint32_t hash_name_value = pdc_hash_djb2(tmp_obj_name);
     server_id = (hash_name_value + tmp_time_step) % pdc_server_num_g; 
 
-    /* printf("Obj_name: %s, hash_value: %d, server_id:%d\n", tmp_obj_name, hash_name_value, server_id); */
-    // Test
-    /* server_id = 0; */
-    /* server_id = pdc_client_mpi_rank_g / 20; */
-    /* server_id = server_id % 2; */
+    // Use local server only?
+    if (pdc_use_local_server_only_g == 1) {
+        server_id = pdc_client_mpi_rank_g % pdc_server_num_g;
+    }
 
-    /* if (pdc_client_mpi_rank_g < 20) */ 
-    /*     server_id = 0; */
-    /* else if (pdc_client_mpi_rank_g < 40) */ 
-    /*     server_id = 1; */
-    /* else if (pdc_client_mpi_rank_g < 60) */ 
-    /*     server_id = 2; */
-    /* else if (pdc_client_mpi_rank_g < 80) */ 
-    /*     server_id = 3; */
-    
+    /* printf("Obj_name: %s, hash_value: %d, server_id:%d\n", tmp_obj_name, hash_name_value, server_id); */
+   
     /* printf("[%d]: target server %d\n", pdc_client_mpi_rank_g, server_id); */
     /* fflush(stdout); */
     ret_value = PDC_Client_send_name_to_server(tmp_obj_name, hash_name_value, property, tmp_time_step, server_id);
