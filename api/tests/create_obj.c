@@ -12,6 +12,20 @@
 
 #include "pdc.h"
 
+static char *rand_string(char *str, size_t size)
+{
+    const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJK...";
+    if (size) {
+        --size;
+        for (size_t n = 0; n < size; n++) {
+            int key = rand() % (int) (sizeof(charset) - 1);
+            str[n] = charset[key];
+        }
+        str[size] = '\0';
+    }
+    return str;
+}
+
 void print_usage() {
     printf("Usage: srun -n ./creat_obj -r num_of_obj_per_rank\n");
 }
@@ -87,11 +101,29 @@ int main(int argc, const char *argv[])
     gettimeofday(&ht_total_start, 0);
 
     char obj_prefix[4][10] = {"x", "y", "z", "energy"};
+    char tmp_str[128];
+
+    int use_name = -1;
+    char *env_str = getenv("PDC_OBJ_NAME");
+    if (env_str != NULL) {
+        use_name = atoi(env_str);
+        if (rank == 0) {
+            printf("use_name=%d\n", use_name);
+        }
+    }
 
     for (i = 0; i < count; i++) {
-        sprintf(obj_name, "%s_%d", obj_prefix[i%4], i/4 + rank * 10000000);
-        /* sprintf(obj_name, "%s_%d", obj_prefix[0], i + rank * 10000000); */
-        /* sprintf(obj_name, "%s_%d", "Obj", i + rank * 10000000); */
+        if (use_name == -1) 
+            sprintf(obj_name, "%s_%d", rand_string(tmp_str, 8), i + rank * 10000000);
+        else if (use_name == 1) 
+            sprintf(obj_name, "%s_%d", obj_prefix[0], i + rank * 10000000);
+        else if (use_name == 4) 
+            sprintf(obj_name, "%s_%d", obj_prefix[i%4], i/4 + rank * 10000000);
+        else {
+            printf("Unsupported name choice\n");
+            goto done;
+        }
+
         // Force to send the entire string, not just the first few characters.
         /* obj_name[strlen(obj_name)] = ' '; */
 
@@ -144,6 +176,7 @@ int main(int argc, const char *argv[])
     /*         printf("Duplicate insertion test succeed!\n"); */
     /* } */
 
+done:
 
     if(PDC_close(pdc) < 0)
        printf("fail to close PDC\n");
