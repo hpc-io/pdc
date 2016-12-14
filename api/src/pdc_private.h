@@ -25,12 +25,6 @@ typedef enum {
     TAPE
 } PDC_loci;
 
-typedef struct {
-    uint64_t offset;
-    uint64_t storage_size;
-    PDC_loci locus;
-} PDC_region;
-
 /* Query type */
 typedef enum {
     PDC_Q_TYPE_DATA_ELEM,  /* selects data elements */

@@ -30,7 +30,8 @@ typedef enum {
     PDC_OBJ_PROP     = 3,   /* type ID for object property                 */
     PDC_CONT         = 4,   /* type ID for container                       */
     PDC_OBJ          = 5,   /* type ID for object                          */
-    PDC_NTYPES       = 6    /* number of library types, MUST BE LAST!      */
+    PDC_REGION       = 6,   /* type ID for region                          */
+    PDC_NTYPES       = 7    /* number of library types, MUST BE LAST!      */
 } PDC_type_t;
 
 typedef struct {

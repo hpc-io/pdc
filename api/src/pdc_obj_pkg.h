@@ -9,6 +9,13 @@ typedef struct PDC_obj_info_t {
     pdcid_t     pdc;
     pdcid_t     cont;
     pdcid_t     obj_prop;
+    pdcid_t     mapping;
 }PDC_obj_info_t;
+
+typedef struct {
+    uint64_t offset;
+    uint64_t size;
+//    PDC_loci locus;
+} PDC_region_info_t;
 
 #endif

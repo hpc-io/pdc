@@ -33,6 +33,8 @@ pdcid_t PDC_init(PDC_prop_t property) {
         PGOTO_ERROR(FAIL, "PDC container init error");
     if(PDCobj_init(pc) < 0)
         PGOTO_ERROR(FAIL, "PDC object init error");
+    if(PDCregion_init(pc) < 0)
+        PGOTO_ERROR(FAIL, "PDC object init error");
 
     // create pdc id
     pdcid_t pdcid = (pdcid_t)pc;
@@ -59,6 +61,9 @@ perr_t PDC_close(pdcid_t pdcid) {
     // object
     if(PDC_obj_list_null(pdcid) < 0)
         PGOTO_ERROR(FAIL, "fail to close object");
+    // region
+    if(PDC_region_list_null(pdcid) < 0)
+        PGOTO_ERROR(FAIL, "fail to close region");
     
     PDC_CLASS_t *pc = (PDC_CLASS_t *) pdcid;
     if(pc == NULL)
@@ -68,6 +73,8 @@ perr_t PDC_close(pdcid_t pdcid) {
     if(PDCcont_end(pdcid) < 0)
         PGOTO_ERROR(FAIL, "fail to destroy container");
     if(PDCobj_end(pdcid) < 0)
+        PGOTO_ERROR(FAIL, "fail to destroy object");
+    if(PDCregion_end(pdcid) < 0)
         PGOTO_ERROR(FAIL, "fail to destroy object");
     pc = PDC_FREE(PDC_CLASS_t, pc);
 done:
