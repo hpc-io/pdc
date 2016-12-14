@@ -83,7 +83,7 @@ perr_t PDC_obj_list_null(pdcid_t pdc) {
     // list is not empty
     int nelemts = PDC_id_list_null(PDC_OBJ, pdc);
     if(nelemts > 0) {
-        printf("%d element(s) in the object list will be automatically closed by PDC_close()\n", nelemts);
+        /* printf("%d element(s) in the object list will be automatically closed by PDC_close()\n", nelemts); */
         if(PDC_id_list_clear(PDC_OBJ, pdc) < 0)
             PGOTO_ERROR(FAIL, "fail to clear object list");
     }
@@ -99,7 +99,7 @@ perr_t PDC_region_list_null(pdcid_t pdc) {
     // list is not empty
     int nelemts = PDC_id_list_null(PDC_REGION, pdc);
     if(nelemts > 0) {
-        printf("%d element(s) in the region list will be automatically closed by PDC_close()\n", nelemts);
+        /* printf("%d element(s) in the region list will be automatically closed by PDC_close()\n", nelemts); */
         if(PDC_id_list_clear(PDC_REGION, pdc) < 0)
             PGOTO_ERROR(FAIL, "fail to clear object list");
     }

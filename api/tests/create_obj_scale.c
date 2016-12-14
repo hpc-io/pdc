@@ -87,31 +87,31 @@ int main(int argc, const char *argv[])
     PDC_prop_t p;
     // create a pdc
     pdcid_t pdc = PDC_init(p);
-    printf("create a new pdc, pdc id is: %lld\n", pdc);
+    /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
     pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
-    if(cont_prop > 0)
-        if (rank == 0) 
-            printf("Create a container property, id is %lld\n", cont_prop);
-    else
+    if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
+    /* else */
+    /*     if (rank == 0) */ 
+    /*         printf("Create a container property, id is %lld\n", cont_prop); */
 
     // create a container
     pdcid_t cont = PDCcont_create(pdc, "c1", cont_prop);
-    if(cont > 0)
-        if (rank == 0) 
-            printf("Create a container, id is %lld\n", cont);
-    else
+    if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
+    /* else */
+    /*     if (rank == 0) */ 
+    /*         printf("Create a container, id is %lld\n", cont); */
 
     // create an object property
     pdcid_t obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
-    if(obj_prop > 0)
-        if (rank == 0) 
-            printf("Create an object property, id is %lld\n", obj_prop);
-    else
+    if(obj_prop <= 0)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
+    /* else */
+    /*     if (rank == 0) */ 
+    /*         printf("Create an object property, id is %lld\n", obj_prop); */
 
     pdcid_t test_obj = -1;
 
@@ -209,16 +209,16 @@ done:
     // close a container
     if(PDCcont_close(cont, pdc) < 0)
         printf("fail to close container %lld\n", cont);
-    else
-        if (rank == 0) 
-            printf("successfully close container # %lld\n", cont);
+    /* else */
+    /*     if (rank == 0) */ 
+    /*         printf("successfully close container # %lld\n", cont); */
 
     // close a container property
     if(PDCprop_close(cont_prop, pdc) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
-    else
-        if (rank == 0) 
-            printf("successfully close container property # %lld\n", cont_prop);
+    /* else */
+    /*     if (rank == 0) */ 
+    /*         printf("successfully close container property # %lld\n", cont_prop); */
 
     if(PDC_close(pdc) < 0)
        printf("fail to close PDC\n");
