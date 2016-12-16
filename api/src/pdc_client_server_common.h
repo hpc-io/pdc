@@ -50,6 +50,8 @@ typedef struct pdc_metadata_t {
 #ifdef HG_HAS_BOOST
 MERCURY_GEN_PROC( gen_obj_id_in_t, ((uint32_t)(user_id)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((uint32_t)(time_step)) ((uint32_t)(hash_value)) ((hg_const_string_t)(tags)) )
 MERCURY_GEN_PROC( gen_obj_id_out_t, ((uint64_t)(ret)) )
+MERCURY_GEN_PROC( send_obj_name_marker_in_t, ((hg_const_string_t)(name)) )
+MERCURY_GEN_PROC( send_obj_name_marker_out_t, ((int32_t)(ret)) )
 #else
 typedef struct {
     uint32_t             user_id;
@@ -63,6 +65,15 @@ typedef struct {
 typedef struct {
     uint64_t ret;
 } gen_obj_id_out_t;
+
+typedef struct {
+    hg_const_string_t    name;
+} send_obj_name_marker_in_t;
+
+typedef struct {
+    int32_t ret;
+} send_obj_name_marker_out_t;
+
 
 static HG_INLINE hg_return_t
 hg_proc_gen_obj_id_in_t(hg_proc_t proc, void *data)
@@ -97,7 +108,6 @@ hg_proc_gen_obj_id_in_t(hg_proc_t proc, void *data)
     return ret;
 }
 
-
 static HG_INLINE hg_return_t
 hg_proc_gen_obj_id_out_t(hg_proc_t proc, void *data)
 {
@@ -110,14 +120,39 @@ hg_proc_gen_obj_id_out_t(hg_proc_t proc, void *data)
     }
     return ret;
 }
+
+static HG_INLINE hg_return_t
+hg_proc_send_obj_name_marker_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    send_obj_name_marker_in_t *struct_data = (send_obj_name_marker_in_t*) data;
+
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->name);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_send_obj_name_marker_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    send_obj_name_marker_out_t *struct_data = (send_obj_name_marker_out_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
 #endif
 
 hg_id_t gen_obj_id_register(hg_class_t *hg_class);
-int PDC_Server_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b);
-void PDC_Server_print_metadata(pdc_metadata_t *a);
+int     PDC_Server_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b);
+void    PDC_Server_print_metadata(pdc_metadata_t *a);
 
-extern hg_hash_table_t *metadata_hash_table_g;
-
-extern hg_atomic_int32_t close_server_g;
+extern hg_hash_table_t   *metadata_hash_table_g;
+extern hg_atomic_int32_t  close_server_g;
 
 #endif /* PDC_CLIENT_SERVER_COMMON_H */

@@ -158,38 +158,37 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/* HG_TEST_RPC_CB(close_server, handle) */
-/* { */
-/*     FUNC_ENTER(NULL); */
+HG_TEST_RPC_CB(send_obj_name_marker, handle)
+{
+    FUNC_ENTER(NULL);
 
-/*     hg_return_t ret_value; */
+    hg_return_t ret_value;
 
-/*     /1* Get input parameters sent on origin through on HG_Forward() *1/ */
-/*     // Decode input */
-/*     gen_obj_id_in_t in; */
-/*     gen_obj_id_out_t out; */
+    /* Get input parameters sent on origin through on HG_Forward() */
+    // Decode input
+    gen_obj_id_in_t in;
+    gen_obj_id_out_t out;
 
-/*     HG_Get_input(handle, &in); */
+    HG_Get_input(handle, &in);
     
-/*     close_server_g = 1; */
+    // Insert to object marker hash table
 
-/*     out.ret = 1; */
-/*     HG_Respond(handle, NULL, NULL, &out); */
-/*     /1* printf("Returned %llu\n", out.ret); *1/ */
+    out.ret = 1;
+    HG_Respond(handle, NULL, NULL, &out);
+    /* printf("Returned %llu\n", out.ret); */
 
-/*     HG_Free_input(handle, &in); */
-/*     HG_Destroy(handle); */
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
 
-/*     ret_value = HG_SUCCESS; */
+    ret_value = HG_SUCCESS;
 
-/* done: */
-/*     FUNC_LEAVE(ret_value); */
-/* } */
-
+done:
+    FUNC_LEAVE(ret_value);
+}
 
 
 HG_TEST_THREAD_CB(gen_obj_id)
-/* HG_TEST_THREAD_CB(close_server) */
+HG_TEST_THREAD_CB(send_obj_name_marker)
 /* HG_TEST_THREAD_CB(insert_metadata_to_hash_table) */
 
 hg_id_t
@@ -199,6 +198,7 @@ gen_obj_id_register(hg_class_t *hg_class)
 
     hg_id_t ret_value;
     ret_value = MERCURY_REGISTER(hg_class, "gen_obj_id", gen_obj_id_in_t, gen_obj_id_out_t, gen_obj_id_cb);
+    ret_value = MERCURY_REGISTER(hg_class, "send_obj_name_marker", send_obj_name_marker_in_t, send_obj_name_marker_out_t, send_obj_name_marker_cb);
     /* ret_value = MERCURY_REGISTER(hg_class, "close_server", gen_obj_id_in_t, gen_obj_id_out_t, close_server_cb); */
 
 done:
