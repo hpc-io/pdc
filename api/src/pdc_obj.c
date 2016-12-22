@@ -62,6 +62,7 @@ pdcid_t PDCobj_create(pdcid_t pdc, pdcid_t cont_id, const char *obj_name, pdcid_
     p->cont = cont_id;
     p->pdc = pdc;
     p->obj_prop = obj_create_prop;
+    p->mapping = 0;
     // will contact server to get ID
     PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
     pdcid_t new_id = PDC_id_register(PDC_OBJ, p, pdc);
@@ -386,7 +387,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-pdcid_t PDC_define_region(uint64_t offset, uint64_t size, pdcid_t pdc_id) {
+pdcid_t PDCregion_create(size_t ndims, uint64_t offset, uint64_t size, pdcid_t pdc_id) {
     pdcid_t ret_value = SUCCEED;;         /* Return value */
     PDC_region_info_t *p = NULL;
     
@@ -395,6 +396,7 @@ pdcid_t PDC_define_region(uint64_t offset, uint64_t size, pdcid_t pdc_id) {
     p = PDC_MALLOC(PDC_region_info_t);
     if(!p)
         PGOTO_ERROR(FAIL,"PDC region memory allocation failed\n");
+    p->ndim = ndims;
     p->offset = offset;
     p->size = size;
     // data type?
@@ -404,44 +406,136 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDCobj_buf_map(pdcid_t obj_id, void *buf, pdcid_t region) {
-}
-
-perr_t PDCobj_map(pdcid_t a, pdcid_t xregion, pdcid_t b, pdcid_t yregion, pdcid_t pdc_id) {
+perr_t PDCobj_map(pdcid_t from_obj, pdcid_t from_reg, pdcid_t to_obj, pdcid_t to_reg, pdcid_t pdc_id) {
     perr_t ret_value = SUCCEED;         /* Return value */
     
     FUNC_ENTER(NULL);
     
     PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc_id;
-    PDC_id_info_t *info = PDC_find_id(b, pc);
-    if(info == NULL)
+    PDC_id_info_t *info1 = PDC_find_id(from_obj, pc);
+    if(info1 == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object ID");
-    PDC_obj_info_t *object = (PDC_obj_info_t *)(info->obj_ptr);
-    object->mapping = a;
-    pdcid_t propid = object->obj_prop;
-    info = PDC_find_id(propid, pc);
-    if(info == NULL)
+    PDC_obj_info_t *object1 = (PDC_obj_info_t *)(info1->obj_ptr);
+    
+    PDC_id_info_t *info2 = PDC_find_id(to_obj, pc);
+    if(info2 == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object ID");
+    PDC_obj_info_t *object2 = (PDC_obj_info_t *)(info2->obj_ptr);
+    
+    // check if ndim matches between object and region, and from source object to target object
+    pdcid_t propid = object1->obj_prop;
+    info1 = PDC_find_id(propid, pc);
+    if(info1 == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
-    PDC_obj_prop_t *prop = (PDC_obj_prop_t *)(info->obj_ptr);
-//    yregion = xregion;
-    prop->region = yregion;
+    PDC_obj_prop_t *prop = (PDC_obj_prop_t *)(info1->obj_ptr);
+    
+    pdcid_t propid2 = object2->obj_prop;
+    info2 = PDC_find_id(propid2, pc);
+    if(info2 == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object property ID");
+    PDC_obj_prop_t *prop2 = (PDC_obj_prop_t *)(info2->obj_ptr);
+    
+    PDC_id_info_t *reginfo1 = PDC_find_id(from_reg, pc);
+    PDC_id_info_t *reginfo2 = PDC_find_id(to_reg, pc);
+    PDC_region_info_t *reg1 = (PDC_region_info_t *)(reginfo1->obj_ptr);
+    PDC_region_info_t *reg2 = (PDC_region_info_t *)(reginfo2->obj_ptr);
+
+    if(reg1->ndim != reg2->ndim || prop->ndim != reg1->ndim || prop2->ndim != reg2->ndim)
+        PGOTO_ERROR(FAIL, "cannot map between regions of different dimensions");
+    // start mapping
+    // state that there is mapping to other objects
+    object1->mapping = 1;
+    // Effectively calls server “subscribe” for updates for that region
+    // Callback called on region update
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDCobj_buf_map(pdcid_t obj_id, pdcid_t from_reg, void *buf, pdcid_t to_reg) {
+    perr_t ret_value = SUCCEED;         /* Return value */
+    
+    FUNC_ENTER(NULL);
+    
+    PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc_id;
+    PDC_id_info_t *info1 = PDC_find_id(from_obj, pc);
+    if(info1 == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object ID");
+    PDC_obj_info_t *object1 = (PDC_obj_info_t *)(info1->obj_ptr);
+    
+    // check if ndim matches between object and region, and from source object to target object
+    pdcid_t propid = object1->obj_prop;
+    info1 = PDC_find_id(propid, pc);
+    if(info1 == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object property ID");
+    PDC_obj_prop_t *prop = (PDC_obj_prop_t *)(info1->obj_ptr);
+    
+    PDC_id_info_t *reginfo1 = PDC_find_id(from_reg, pc);
+    PDC_id_info_t *reginfo2 = PDC_find_id(to_reg, pc);
+    PDC_region_info_t *reg1 = (PDC_region_info_t *)(reginfo1->obj_ptr);
+    PDC_region_info_t *reg2 = (PDC_region_info_t *)(reginfo2->obj_ptr);
+    
+    if(reg1->ndim != reg2->ndim || prop->ndim != reg1->ndim || prop2->ndim != reg2->ndim)
+        PGOTO_ERROR(FAIL, "cannot map between regions of different dimensions");
+    // start mapping
+    // state that there is mapping to other objects
+    object1->mapping = 1;
+    // Effectively calls server “subscribe” for updates for that region
+    // Callback called on region update
 done:
     FUNC_LEAVE(ret_value);
 }
 
 perr_t PDCobj_unmap(pdcid_t obj_id) {
+    // call to server
+    // no more updates / unsubscribed from service
 }
 
-perr_t PDCobj_release(pdcid_t obj_id) {
+PDC_obj_info_t *PDCobj_get_info(pdcid_t obj_id, pdcid_t pdc) {
+    PDC_obj_info_t *ret_value = NULL;
+    PDC_obj_info_t *info =  NULL;
+    
+    FUNC_ENTER(NULL);
+    
+    PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
+    PDC_id_info_t *obj = PDC_find_id(obj_id, pc);
+    if(obj == NULL)
+        PGOTO_ERROR(NULL, "cannot locate object");
+    
+    info = (PDC_obj_info_t *)(obj->obj_ptr);
+    ret_value = info;
+done:
+    FUNC_LEAVE(ret_value);
+} /* end of PDCobj_get_info() */
+
+perr_t PDCobj_release(pdcid_t obj_id, pdcid_t pdc_id) {
+    perr_t ret_value = SUCCEED;         /* Return value */
+    
+    FUNC_ENTER(NULL);
+    
+    PDC_id_info_t *info = PDC_find_id(obj_id, pc);
+    if(info == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object ID");
+    PDC_obj_info_t *object = (PDC_obj_info_t *)(info->obj_ptr);
+    pdcid_t propid = object->obj_prop;
+    info = PDC_find_id(propid, pc);
+    if(info == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object property ID");
+    PDC_obj_prop_t *prop = (PDC_obj_prop_t *)(info->obj_ptr);
+    prop->buf = NULL;
+done:
+    FUNC_LEAVE(ret_value);
 }
 
 perr_t PDCobj_update_region(pdcid_t obj_id, pdcid_t region) {
+    // call to the server
 }
 
 perr_t PDCobj_invalidate_region(pdcid_t obj_id, pdcid_t region) {
+    // call to the server
 }
 
 perr_t PDCobj_sync(pdcid_t obj_id) {
+    // call to the server
 }
 
 perr_t PDCprop_set_obj_loci_prop(pdcid_t obj_create_prop, PDC_loci locus, PDC_transform A) {

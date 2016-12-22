@@ -23,7 +23,7 @@ typedef struct PDC_obj_prop_t {
     uint32_t        time_step;
     char*           tags;              //placeholder, may change in the future
     void            *buf;
-    pdcid_t         *region;
+//    pdcid_t         *region;
 }PDC_obj_prop_t;
 
 #endif
