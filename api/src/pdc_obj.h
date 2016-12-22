@@ -114,22 +114,23 @@ pdcid_t PDC_query_create(pdcid_t pdc_id, PDC_query_type_t query_type, PDC_query_
  */
 obj_handle PDCview_iter_start(pdcid_t view_id);
 
-/* Map an application buffer to an object 
- * Param obj_id [IN]: Id of the object
+/* Map an application buffer to an object
  * Param buf [IN]: Start point of an application buffer
- * Param region [IN]: A PDC_region struct
+ * Param region [IN]: Id of the source region
+ * Param obj_id [IN]: Id of the target object
+ * Param region [IN]: Id of the target region
  * Return: Non-negative on success/Negative on failure
  */
-perr_t PDCobj_buf_map(pdcid_t obj_id, void *buf, pdcid_t region);
+perr_t PDCobj_buf_map(void *buf, pdcid_t from_reg, pdcid_t obj_id, pdcid_t to_reg, pdcid_t pdc_id);
 
 /* Map an object 
- * Param a [IN]: Id of the source object
- * Param xregion [IN]: A PDC_region struct, region of the source object
- * Param b [IN]: Id of the destination object
- * Param yregion [IN]: A PDC_region struct, region of the destination object
+ * Param from_obj [IN]: Id of the source object
+ * Param from_reg [IN]: Id of the source region
+ * Param from_obj [IN]: Id of the target object
+ * Param from_reg [IN]: Id of the target region
  * Return: Non-negative on success/Negative on failure
  */
-perr_t PDCobj_map(pdcid_t a, pdcid_t xregion, pdcid_t b, pdcid_t yregion, pdcid_t pdc_id);
+perr_t PDCobj_map(pdcid_t from_obj, pdcid_t from_reg, pdcid_t to_obj, pdcid_t to_reg, pdcid_t pdc_id);
 
 PDC_obj_info_t *PDCobj_get_info(pdcid_t obj_id, pdcid_t pdc);
 
@@ -143,7 +144,7 @@ perr_t PDCobj_unmap(pdcid_t obj_id);
  * Param obj_id [IN]: Id of the object
  * Return: Non-negative on success/Negative on failure
  */
-perr_t PDCobj_release(pdcid_t obj_id);
+perr_t PDCobj_release(pdcid_t obj_id, pdcid_t pdc_id);
 
 /* Update object in the region 
  * Tell the PDC system that the region in memory is updated WRT to the container

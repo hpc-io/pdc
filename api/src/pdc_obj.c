@@ -451,18 +451,18 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDCobj_buf_map(pdcid_t obj_id, pdcid_t from_reg, void *buf, pdcid_t to_reg) {
+perr_t PDCobj_buf_map(void *buf, pdcid_t from_reg, pdcid_t obj_id, pdcid_t to_reg, pdcid_t pdc_id) {
     perr_t ret_value = SUCCEED;         /* Return value */
     
     FUNC_ENTER(NULL);
     
     PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc_id;
-    PDC_id_info_t *info1 = PDC_find_id(from_obj, pc);
+    PDC_id_info_t *info1 = PDC_find_id(obj_id, pc);
     if(info1 == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object ID");
     PDC_obj_info_t *object1 = (PDC_obj_info_t *)(info1->obj_ptr);
     
-    // check if ndim matches between object and region, and from source object to target object
+    // check if ndim matches between object and region
     pdcid_t propid = object1->obj_prop;
     info1 = PDC_find_id(propid, pc);
     if(info1 == NULL)
@@ -474,7 +474,7 @@ perr_t PDCobj_buf_map(pdcid_t obj_id, pdcid_t from_reg, void *buf, pdcid_t to_re
     PDC_region_info_t *reg1 = (PDC_region_info_t *)(reginfo1->obj_ptr);
     PDC_region_info_t *reg2 = (PDC_region_info_t *)(reginfo2->obj_ptr);
     
-    if(reg1->ndim != reg2->ndim || prop->ndim != reg1->ndim || prop2->ndim != reg2->ndim)
+    if(reg1->ndim != reg2->ndim || prop->ndim != reg1->ndim || prop->ndim != reg2->ndim)
         PGOTO_ERROR(FAIL, "cannot map between regions of different dimensions");
     // start mapping
     // state that there is mapping to other objects
@@ -512,6 +512,7 @@ perr_t PDCobj_release(pdcid_t obj_id, pdcid_t pdc_id) {
     
     FUNC_ENTER(NULL);
     
+    PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc_id;
     PDC_id_info_t *info = PDC_find_id(obj_id, pc);
     if(info == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object ID");
