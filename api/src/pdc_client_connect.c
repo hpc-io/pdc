@@ -117,11 +117,16 @@ int PDC_Client_read_server_addr_from_file()
 
     // Allocate $pdc_server_info_g
     pdc_server_info_g = (pdc_server_info_t*)malloc(sizeof(pdc_server_info_t) * pdc_server_num_g);
-    /* for (i = 0; i < pdc_server_num_g; i++) { */
-        /* pdc_server_info_g[i].addr_valid = 0; */
-        /* pdc_server_info_g[i].rpc_handle_valid = 0; */
-    /* } */
+    // Fill in default values
+    for (i = 0; i < pdc_server_num_g; i++) {
+        pdc_server_info_g[i].addr_valid                 = 0;
+        pdc_server_info_g[i].rpc_handle_valid           = 0;
+        pdc_server_info_g[i].client_test_handle_valid   = 0;
+        pdc_server_info_g[i].close_server_handle_valid  = 0;
+        pdc_server_info_g[i].name_marker_handle_valid   = 0;
+    }
 
+    i = 0;
     while (fgets(pdc_server_info_g[i].addr_string, ADDR_MAX, na_config)) {
         p = strrchr(pdc_server_info_g[i].addr_string, '\n');
         if (p != NULL) *p = '\0';
@@ -207,6 +212,30 @@ done:
 // Callback function for  HG_Forward()
 // Gets executed after a call to HG_Trigger and the RPC has completed
 static hg_return_t
+close_server_cb(const struct hg_cb_info *callback_info)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value;
+
+    /* printf("Entered close_server_cb()"); */
+    struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
+    hg_handle_t handle = callback_info->info.forward.handle;
+
+    /* Get output from server*/
+    close_server_out_t output;
+    ret_value = HG_Get_output(handle, &output);
+    /* printf("Return value=%llu\n", output.ret); */
+
+    work_todo_g--;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+// Callback function for  HG_Forward()
+// Gets executed after a call to HG_Trigger and the RPC has completed
+static hg_return_t
 client_rpc_cb(const struct hg_cb_info *callback_info)
 {
     FUNC_ENTER(NULL);
@@ -224,50 +253,6 @@ client_rpc_cb(const struct hg_cb_info *callback_info)
     client_lookup_args->obj_id = output.ret;
 
     work_todo_g--;
-
-done:
-    FUNC_LEAVE(ret_value);
-}
-
-
-// Callback function for HG_Addr_lookup()
-// Start RPC connection
-static hg_return_t
-client_lookup_cb(const struct hg_cb_info *callback_info)
-{
-
-    FUNC_ENTER(NULL);
-
-    hg_return_t ret_value = HG_SUCCESS;
-
-    struct client_lookup_args *client_lookup_args = (struct client_lookup_args *) callback_info->arg;
-    int server_id = client_lookup_args->server_id;
-    pdc_server_info_g[server_id].addr = callback_info->info.lookup.addr;
-    pdc_server_info_g[server_id].addr_valid = 1;
-
-    // Create HG handle if needed
-    int handle_valid = pdc_server_info_g[server_id].rpc_handle_valid;
-    if (handle_valid != 1) {
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_obj_register_id_g, &pdc_server_info_g[server_id].rpc_handle);
-        pdc_server_info_g[server_id].rpc_handle_valid = 1;
-    }
-
-    // Fill input structure
-    gen_obj_id_in_t in;
-    in.obj_name   = client_lookup_args->obj_name;
-    in.hash_value = client_lookup_args->hash_value;
-    in.user_id    = client_lookup_args->user_id;
-    in.app_name   = client_lookup_args->app_name;
-    in.time_step  = client_lookup_args->time_step;
-    in.tags       = client_lookup_args->tags;
-    /* printf("Hash(%s) = %d\n", client_lookup_args->obj_name, in.hash_value); */
-
-    /* printf("Sending input to target\n"); */
-    ret_value = HG_Forward(pdc_server_info_g[server_id].rpc_handle, client_rpc_cb, client_lookup_args, &in);
-    if (ret_value != HG_SUCCESS) {
-        fprintf(stderr, "client_lookup_cb(): Could not start HG_Forward()\n");
-        return EXIT_FAILURE;
-    }
 
 done:
     FUNC_LEAVE(ret_value);
@@ -310,12 +295,13 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     client_test_connect_register_id_g  = client_test_connect_register(*hg_class);
     gen_obj_register_id_g              = gen_obj_id_register(*hg_class);
     close_server_register_id_g         = close_server_register(*hg_class);
-    /* send_obj_name_marker_register_id_g = send_obj_name_marker_register(*hg_class); */
+    send_obj_name_marker_register_id_g = send_obj_name_marker_register(*hg_class);
 
     // Lookup and fill the server info
-    struct client_lookup_args lookup_args;
     int i;
     hg_return_t hg_ret;
+    struct client_lookup_args lookup_args;
+
     for (i = 0; i < pdc_server_num_g; i++) {
         lookup_args.client_id = pdc_client_mpi_rank_g;
         lookup_args.server_id = i;
@@ -417,6 +403,19 @@ perr_t PDC_Client_init()
         }
     }
 
+
+    uint32_t port = pdc_client_mpi_rank_g + 8000; 
+    if (mercury_has_init_g == 0) {
+        // Init Mercury network connection
+        PDC_Client_mercury_init(&send_class_g, &send_context_g, port);
+        if (send_class_g == NULL || send_context_g == NULL) {
+            printf("Error with Mercury Init, exiting...\n");
+            exit(0);
+        }
+        mercury_has_init_g = 1;
+    }
+
+
     ret_value = SUCCEED;
 
 done:
@@ -489,72 +488,36 @@ uint64_t PDC_Client_send_name_to_server(const char *obj_name, int hash_name_valu
     uint64_t ret_value;
     hg_return_t  hg_ret = 0;
 
-    uint32_t port = pdc_client_mpi_rank_g + 8000; 
-
+    // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
-
-    if (mercury_has_init_g == 0) {
-        // Init Mercury network connection
-        PDC_Client_mercury_init(&send_class_g, &send_context_g, port);
-        if (send_class_g == NULL || send_context_g == NULL) {
-            printf("Error with Mercury Init, exiting...\n");
-            exit(0);
-        }
-        mercury_has_init_g = 1;
-    }
-
-
-    struct client_lookup_args lookup_args;
-    // TODO: parse pdc prop structure once Kimmy adds these fields to PDC_obj_prop_t
-    lookup_args.user_id     = getuid();
-    lookup_args.app_name    = "test_app_name";
-    lookup_args.time_step   = time_step;
-    lookup_args.hash_value  = hash_name_value;
-    lookup_args.tags        = "tag0=11";
-
-    lookup_args.obj_name    = obj_name;
-    lookup_args.obj_id      = -1;
-    lookup_args.server_id   = server_id;
 
     /* printf("==PDC_CLIENT: obj_name=%s, user_id=%u, time_step=%u\n", lookup_args.obj_name, lookup_args.user_id, lookup_args.time_step); */
 
-    // Initiate server lookup and send obj name in client_lookup_cb()
-    char *target_addr_string = pdc_server_info_g[server_id].addr_string;
+    // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
+    if (pdc_server_info_g[server_id].rpc_handle_valid != 1) {
+        /* printf("Addr: %s\n", pdc_server_info_g[server_id].addr); */
+        /* fflush(stdout); */
+        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_obj_register_id_g, &pdc_server_info_g[server_id].rpc_handle);
+        pdc_server_info_g[server_id].rpc_handle_valid = 1;
+    }
 
-    // Check if previous connection had been made and reuse handle 
-    /* if (pdc_server_info_g[server_id].rpc_handle_valid != 1) { */
-        // This is the first connection to server $server_id
-        /* hg_ret = HG_Addr_lookup(send_context_g, client_lookup_cb, &lookup_args, target_addr_string, HG_OP_ID_IGNORE); */
+    // Fill input structure
+    gen_obj_id_in_t in;
+    in.obj_name   = obj_name;
+    in.hash_value = hash_name_value;
+    in.user_id    = getuid();
+    in.app_name   = "test_app_name";
+    in.time_step  = time_step;
+    in.tags       = "test_tag0=11";
+    /* printf("Hash(%s) = %d\n", obj_name, in.hash_value); */
 
-        /* printf("==PDC_CLIENT: Error with client[%d]-server[%d] connection!\n", pdc_client_mpi_rank_g, server_id); */
-        /* goto done; */
-    /* } */
-    /* else { */
-
-        if (pdc_server_info_g[server_id].rpc_handle_valid != 1) {
-            /* printf("Addr: %s\n", pdc_server_info_g[server_id].addr); */
-            /* fflush(stdout); */
-            HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_obj_register_id_g, &pdc_server_info_g[server_id].rpc_handle);
-            pdc_server_info_g[server_id].rpc_handle_valid = 1;
-        }
-
-        // Fill input structure
-        gen_obj_id_in_t in;
-        in.obj_name   = lookup_args.obj_name;
-        in.hash_value = lookup_args.hash_value;
-        in.user_id    = lookup_args.user_id;
-        in.app_name   = lookup_args.app_name;
-        in.time_step  = lookup_args.time_step;
-        in.tags       = lookup_args.tags;
-        /* printf("Hash(%s) = %d\n", obj_name, in.hash_value); */
-
-        /* printf("Sending input to target\n"); */
-        ret_value = HG_Forward(pdc_server_info_g[server_id].rpc_handle, client_rpc_cb, &lookup_args, &in);
-        if (ret_value != HG_SUCCESS) {
-            fprintf(stderr, "PDC_Client_send_name_to_server(): Could not start HG_Forward()\n");
-            return EXIT_FAILURE;
-        }
-    /* } */
+    /* printf("Sending input to target\n"); */
+    struct client_lookup_args lookup_args;
+    ret_value = HG_Forward(pdc_server_info_g[server_id].rpc_handle, client_rpc_cb, &lookup_args, &in);
+    if (ret_value != HG_SUCCESS) {
+        fprintf(stderr, "PDC_Client_send_name_to_server(): Could not start HG_Forward()\n");
+        return EXIT_FAILURE;
+    }
 
     // Wait for response from server
     work_todo_g = 1;
@@ -747,7 +710,31 @@ perr_t PDC_Client_close_all_server()
 
         /* printf("Closing server %d\n", server_id); */
         /* fflush(stdout); */
-        ret_value = PDC_Client_send_name_to_server("==PDC Close Server", 0, NULL, 0, server_id);
+
+        // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
+        if (pdc_server_info_g[server_id].close_server_handle_valid != 1) {
+            /* printf("Addr: %s\n", pdc_server_info_g[server_id].addr); */
+            /* fflush(stdout); */
+            HG_Create(send_context_g, pdc_server_info_g[server_id].addr, close_server_register_id_g, &pdc_server_info_g[server_id].close_server_handle);
+            pdc_server_info_g[server_id].close_server_handle_valid= 1;
+        }
+
+        // Fill input structure
+        close_server_in_t in;
+        in.client_id = 0;
+
+        /* printf("Sending input to target\n"); */
+        struct client_lookup_args lookup_args;
+        ret_value = HG_Forward(pdc_server_info_g[server_id].close_server_handle, close_server_cb, &lookup_args, &in);
+        if (ret_value != HG_SUCCESS) {
+            fprintf(stderr, "PDC_Client_send_name_to_server(): Could not start HG_Forward()\n");
+            return EXIT_FAILURE;
+        }
+
+        // Wait for response from server
+        work_todo_g = 1;
+        PDC_Client_check_response(&send_context_g);
+
     }
 
     printf("All server closed\n");

@@ -23,6 +23,8 @@ typedef struct pdc_server_info_t {
     hg_handle_t     rpc_handle;
     int             client_test_handle_valid;
     hg_handle_t     client_test_handle;
+    int             close_server_handle_valid;
+    hg_handle_t     close_server_handle;
     int             name_marker_handle_valid;
     hg_handle_t     name_marker_handle;
 } pdc_server_info_t;
