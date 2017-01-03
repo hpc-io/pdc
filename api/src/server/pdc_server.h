@@ -14,5 +14,6 @@
 #define PDC_SERVER_H
 
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out);
+perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out);
 
 #endif /* PDC_SERVER_H */

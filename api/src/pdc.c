@@ -47,11 +47,6 @@ pdcid_t PDC_init(PDC_prop_t property) {
     // PDC Client Server connection init
     PDC_Client_init();
 
-
-    // PDC Client Server connection init
-    PDC_Client_init();
-
-
     // create pdc id
     pdcid_t pdcid = (pdcid_t)pc;
     ret_value = pdcid;

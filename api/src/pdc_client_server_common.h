@@ -52,6 +52,10 @@ MERCURY_GEN_PROC( gen_obj_id_in_t, ((uint32_t)(user_id)) ((hg_const_string_t)(ap
 MERCURY_GEN_PROC( gen_obj_id_out_t, ((uint64_t)(ret)) )
 MERCURY_GEN_PROC( send_obj_name_marker_in_t, ((hg_const_string_t)(name)) )
 MERCURY_GEN_PROC( send_obj_name_marker_out_t, ((int32_t)(ret)) )
+MERCURY_GEN_PROC( client_test_connect_in_t,  ((int32_t)(client_id)) )
+MERCURY_GEN_PROC( client_test_connect_out_t, ((int32_t)(ret))  )
+MERCURY_GEN_PROC( close_server_in_t,  ((int32_t)(client_id)) )
+MERCURY_GEN_PROC( close_server_out_t, ((int32_t)(ret))  )
 #else
 typedef struct {
     uint32_t             user_id;
@@ -73,6 +77,22 @@ typedef struct {
 typedef struct {
     int32_t ret;
 } send_obj_name_marker_out_t;
+
+typedef struct {
+    int32_t client_id;
+} client_test_connect_in_t;
+
+typedef struct {
+    int32_t ret;
+} client_test_connect_out_t;
+
+typedef struct {
+    int32_t client_id;
+} close_server_in_t;
+
+typedef struct {
+    int32_t ret;
+} close_server_out_t;
 
 
 static HG_INLINE hg_return_t
@@ -146,9 +166,63 @@ hg_proc_send_obj_name_marker_out_t(hg_proc_t proc, void *data)
     }
     return ret;
 }
+
+static HG_INLINE hg_return_t
+hg_proc_client_test_connect_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    client_test_connect_in_t *struct_data = (client_test_connect_in_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->client_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
+static HG_INLINE hg_return_t
+hg_proc_client_test_connect_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    client_test_connect_out_t *struct_data = (client_test_connect_out_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_close_server_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    close_server_in_t *struct_data = (close_server_in_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->client_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
+static HG_INLINE hg_return_t
+hg_proc_close_server_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    close_server_out_t *struct_data = (close_server_out_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
 #endif
 
 hg_id_t gen_obj_id_register(hg_class_t *hg_class);
+hg_id_t send_obj_name_marker_register(hg_class_t *hg_class);
+hg_id_t client_test_connect_register(hg_class_t *hg_class);
+hg_id_t close_server_register(hg_class_t *hg_class);
+
 int     PDC_Server_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b);
 void    PDC_Server_print_metadata(pdc_metadata_t *a);
 

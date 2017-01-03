@@ -12,7 +12,6 @@
 
 // Thread
 hg_thread_pool_t *hg_test_thread_pool_g;
-/* hg_thread_mutex_t pdc_metadata_hash_table_mutex_g; */
 
 hg_atomic_int32_t close_server_g;
 
@@ -110,6 +109,7 @@ void PDC_Server_print_metadata(pdc_metadata_t *a)
 #ifndef IS_PDC_SERVER
 // Dummy function for client to compile, real function is used only by server and code is in pdc_server.c
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out) {return 0;}
+perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out) {return 0;}
 #endif
 
 /*
@@ -147,7 +147,7 @@ HG_TEST_RPC_CB(gen_obj_id, handle)
     }
 
     HG_Respond(handle, NULL, NULL, &out);
-    /* printf("Returned %llu\n", out.ret); */
+    /* printf("==PDC_SERVER: gen_obj_id_cb(): returned %llu\n", out.ret); */
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
@@ -158,6 +158,37 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+/* static hg_return_t */
+/* client_test_connect_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(client_test_connect, handle)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value;
+
+    /* Get input parameters sent on origin through on HG_Forward() */
+    // Decode input
+    client_test_connect_in_t  in;
+    client_test_connect_out_t out;
+
+    HG_Get_input(handle, &in);
+    out.ret = in.client_id + 100000;
+
+    HG_Respond(handle, NULL, NULL, &out);
+    /* printf("==PDC_SERVER: client_test_connect(): Returned %llu\n", out.ret); */
+    fflush(stdout);
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    ret_value = HG_SUCCESS;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+/* static hg_return_t */
+// send_obj_name_marker_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(send_obj_name_marker, handle)
 {
     FUNC_ENTER(NULL);
@@ -172,10 +203,47 @@ HG_TEST_RPC_CB(send_obj_name_marker, handle)
     HG_Get_input(handle, &in);
     
     // Insert to object marker hash table
+    insert_obj_name_marker(&in, &out);
 
-    out.ret = 1;
+    /* out.ret = 1; */
     HG_Respond(handle, NULL, NULL, &out);
-    /* printf("Returned %llu\n", out.ret); */
+    printf("==PDC_SERVER: send_obj_name_marker() Returned %llu\n", out.ret);
+    fflush(stdout);
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    ret_value = HG_SUCCESS;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+
+
+/* static hg_return_t */
+// close_server_cb(hg_handle_t handle)
+HG_TEST_RPC_CB(close_server, handle)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value;
+
+    /* Get input parameters sent on origin through on HG_Forward() */
+    // Decode input
+    close_server_in_t  in;
+    close_server_out_t out;
+
+    HG_Get_input(handle, &in);
+    
+    /* out.ret = 1; */
+    HG_Respond(handle, NULL, NULL, &out);
+    printf("==PDC_SERVER: Close server request received\n");
+    fflush(stdout);
+
+    // Set close server marker
+    hg_atomic_set32(&close_server_g, 1);
+    out.ret = 1;
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
@@ -189,6 +257,8 @@ done:
 
 HG_TEST_THREAD_CB(gen_obj_id)
 HG_TEST_THREAD_CB(send_obj_name_marker)
+HG_TEST_THREAD_CB(client_test_connect)
+HG_TEST_THREAD_CB(close_server)
 /* HG_TEST_THREAD_CB(insert_metadata_to_hash_table) */
 
 hg_id_t
@@ -198,8 +268,43 @@ gen_obj_id_register(hg_class_t *hg_class)
 
     hg_id_t ret_value;
     ret_value = MERCURY_REGISTER(hg_class, "gen_obj_id", gen_obj_id_in_t, gen_obj_id_out_t, gen_obj_id_cb);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+hg_id_t
+client_test_connect_register(hg_class_t *hg_class)
+{
+    FUNC_ENTER(NULL);
+
+    hg_id_t ret_value;
+    ret_value = MERCURY_REGISTER(hg_class, "client_test_connect", client_test_connect_in_t, client_test_connect_out_t, client_test_connect_cb);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+hg_id_t
+send_obj_name_marker_register(hg_class_t *hg_class)
+{
+    FUNC_ENTER(NULL);
+
+    hg_id_t ret_value;
     ret_value = MERCURY_REGISTER(hg_class, "send_obj_name_marker", send_obj_name_marker_in_t, send_obj_name_marker_out_t, send_obj_name_marker_cb);
     /* ret_value = MERCURY_REGISTER(hg_class, "close_server", gen_obj_id_in_t, gen_obj_id_out_t, close_server_cb); */
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+hg_id_t
+close_server_register(hg_class_t *hg_class)
+{
+    FUNC_ENTER(NULL);
+
+    hg_id_t ret_value;
+    ret_value = MERCURY_REGISTER(hg_class, "close_server", close_server_in_t, close_server_out_t, close_server_cb);
 
 done:
     FUNC_LEAVE(ret_value);

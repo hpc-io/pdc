@@ -21,16 +21,20 @@ int                    pdc_client_mpi_rank_g = 0;
 int                    pdc_client_mpi_size_g = 1;
 
 int                    pdc_server_num_g;
-pdc_server_info_t     *pdc_server_info_g = NULL;
 int                    pdc_use_local_server_only_g = 0;
+pdc_server_info_t     *pdc_server_info_g = NULL;
 
 static int             mercury_has_init_g = 0;
 static hg_class_t     *send_class_g = NULL;
 static hg_context_t   *send_context_g = NULL;
 static int             work_todo_g = 0;
+static hg_id_t         client_test_connect_register_id_g;
 static hg_id_t         gen_obj_register_id_g;
+static hg_id_t         close_server_register_id_g;
+static hg_id_t         send_obj_name_marker_register_id_g;
 
-hg_hash_table_t       *obj_names_cache_g = NULL;
+hg_hash_table_t       *obj_names_cache_hash_table_g = NULL;
+hg_thread_mutex_t     pdc_client_name_cache_hash_table_mutex_g;
 
 static int            *debug_server_id_count = NULL;
 
@@ -140,6 +144,69 @@ done:
 // Callback function for  HG_Forward()
 // Gets executed after a call to HG_Trigger and the RPC has completed
 static hg_return_t
+client_test_connect_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value;
+
+    /* printf("Entered client_rpc_cb()"); */
+    struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
+    hg_handle_t handle = callback_info->info.forward.handle;
+
+    /* Get output from server*/
+    gen_obj_id_out_t output;
+    ret_value = HG_Get_output(handle, &output);
+    /* printf("Return value=%llu\n", output.ret); */
+    client_lookup_args->client_id = output.ret;
+
+    work_todo_g--;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+// Callback function for HG_Addr_lookup()
+// Start RPC connection
+static hg_return_t
+client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
+{
+
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value = HG_SUCCESS;
+
+    struct client_lookup_args *client_lookup_args = (struct client_lookup_args *) callback_info->arg;
+    int server_id = client_lookup_args->server_id;
+    /* printf("client_test_connect_lookup_cb(): server ID=%d\n", server_id); */
+    /* fflush(stdout); */
+    pdc_server_info_g[server_id].addr = callback_info->info.lookup.addr;
+    pdc_server_info_g[server_id].addr_valid = 1;
+
+    // Create HG handle if needed
+    if (pdc_server_info_g[server_id].client_test_handle_valid!= 1) {
+        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, client_test_connect_register_id_g, &pdc_server_info_g[server_id].client_test_handle);
+        pdc_server_info_g[server_id].client_test_handle_valid= 1;
+    }
+
+    // Fill input structure
+    client_test_connect_in_t in;
+    in.client_id = client_lookup_args->client_id;
+
+    /* printf("Sending input to target\n"); */
+    ret_value = HG_Forward(pdc_server_info_g[server_id].client_test_handle, client_test_connect_rpc_cb, client_lookup_args, &in);
+    if (ret_value != HG_SUCCESS) {
+        fprintf(stderr, "client_test_connect_lookup_cb(): Could not start HG_Forward()\n");
+        return EXIT_FAILURE;
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+// Callback function for  HG_Forward()
+// Gets executed after a call to HG_Trigger and the RPC has completed
+static hg_return_t
 client_rpc_cb(const struct hg_cb_info *callback_info)
 {
     FUNC_ENTER(NULL);
@@ -161,6 +228,7 @@ client_rpc_cb(const struct hg_cb_info *callback_info)
 done:
     FUNC_LEAVE(ret_value);
 }
+
 
 // Callback function for HG_Addr_lookup()
 // Start RPC connection
@@ -212,13 +280,13 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
 
     FUNC_ENTER(NULL);
 
-    perr_t ret_value;
+    perr_t ret_value = SUCCEED;
 
     char na_info_string[PATH_MAX];
     sprintf(na_info_string, "bmi+tcp://%d", port);
     /* sprintf(na_info_string, "cci+tcp://%d", port); */
     if (pdc_client_mpi_rank_g == 0) {
-        printf("==PDC_CLIENT: using %.7s\n\n", na_info_string);
+        printf("==PDC_CLIENT: using %.7s\n", na_info_string);
         fflush(stdout);
     }
     
@@ -239,9 +307,36 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     *hg_context = HG_Context_create(*hg_class);
 
     // Register RPC
-    gen_obj_register_id_g = gen_obj_id_register(*hg_class);
+    client_test_connect_register_id_g  = client_test_connect_register(*hg_class);
+    gen_obj_register_id_g              = gen_obj_id_register(*hg_class);
+    close_server_register_id_g         = close_server_register(*hg_class);
+    /* send_obj_name_marker_register_id_g = send_obj_name_marker_register(*hg_class); */
 
-    ret_value = 0;
+    // Lookup and fill the server info
+    struct client_lookup_args lookup_args;
+    int i;
+    hg_return_t hg_ret;
+    for (i = 0; i < pdc_server_num_g; i++) {
+        lookup_args.client_id = pdc_client_mpi_rank_g;
+        lookup_args.server_id = i;
+        char *target_addr_string = pdc_server_info_g[i].addr_string;
+        /* printf("==PDC_CLIENT: [%d] - Testing connection to server %d: %s\n", pdc_client_mpi_rank_g, i, target_addr_string); */
+        hg_ret = HG_Addr_lookup(send_context_g, client_test_connect_lookup_cb, &lookup_args, target_addr_string, HG_OP_ID_IGNORE);
+        if (hg_ret != HG_SUCCESS ) {
+            printf("==PDC_CLIENT: Connection to server FAILED!\n");
+            ret_value = FAIL;
+            goto done;
+        }
+        // Wait for response from server
+        work_todo_g = 1;
+        PDC_Client_check_response(&send_context_g);
+    }
+
+    if (pdc_client_mpi_rank_g == 0) {
+        printf("==PDC_CLIENT: Successfully established connection to %d PDC metadata server%s\n", pdc_server_num_g, pdc_client_mpi_size_g == 1 ? "": "s");
+        fflush(stdout);
+    }
+
 
 done:
     FUNC_LEAVE(ret_value);
@@ -297,8 +392,8 @@ perr_t PDC_Client_init()
     fflush(stdout);
 
     // Init client hash table to cache created object names
-    obj_names_cache_g = hg_hash_table_new(PDC_Client_int_hash, PDC_Client_int_equal);
-    hg_hash_table_register_free_functions(obj_names_cache_g, PDC_Client_int_hash_key_free, PDC_Client_int_hash_value_free);
+    obj_names_cache_hash_table_g = hg_hash_table_new(PDC_Client_int_hash, PDC_Client_int_equal);
+    hg_hash_table_register_free_functions(obj_names_cache_hash_table_g, PDC_Client_int_hash_key_free, PDC_Client_int_hash_value_free);
 
 
     // Init debug info
@@ -309,6 +404,7 @@ perr_t PDC_Client_init()
     else
         printf("==PDC_CLIENT: Server number not properly initialized!\n");
 
+    // Do we want local server mode?
     char *tmp= NULL;
     int   tmp_env;
     tmp = getenv("PDC_USE_LOCAL_SERVER");
@@ -352,8 +448,8 @@ perr_t PDC_Client_finalize()
         free(pdc_server_info_g);
 
     // Free client hash table
-    if (obj_names_cache_g != NULL) 
-        hg_hash_table_free(obj_names_cache_g);
+    if (obj_names_cache_hash_table_g != NULL) 
+        hg_hash_table_free(obj_names_cache_hash_table_g);
 
     // Output and free debug info
 #ifdef ENABLE_MPI
@@ -385,6 +481,7 @@ perr_t PDC_Client_finalize()
 done:
     FUNC_LEAVE(ret_value);
 }
+
 uint64_t PDC_Client_send_name_to_server(const char *obj_name, int hash_name_value, pdcid_t property, int time_step, uint32_t server_id)
 {
     FUNC_ENTER(NULL);
@@ -425,11 +522,22 @@ uint64_t PDC_Client_send_name_to_server(const char *obj_name, int hash_name_valu
     char *target_addr_string = pdc_server_info_g[server_id].addr_string;
 
     // Check if previous connection had been made and reuse handle 
-    if (pdc_server_info_g[server_id].rpc_handle_valid != 1) {
+    /* if (pdc_server_info_g[server_id].rpc_handle_valid != 1) { */
         // This is the first connection to server $server_id
-        hg_ret = HG_Addr_lookup(send_context_g, client_lookup_cb, &lookup_args, target_addr_string, HG_OP_ID_IGNORE);
-    }
-    else {
+        /* hg_ret = HG_Addr_lookup(send_context_g, client_lookup_cb, &lookup_args, target_addr_string, HG_OP_ID_IGNORE); */
+
+        /* printf("==PDC_CLIENT: Error with client[%d]-server[%d] connection!\n", pdc_client_mpi_rank_g, server_id); */
+        /* goto done; */
+    /* } */
+    /* else { */
+
+        if (pdc_server_info_g[server_id].rpc_handle_valid != 1) {
+            /* printf("Addr: %s\n", pdc_server_info_g[server_id].addr); */
+            /* fflush(stdout); */
+            HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_obj_register_id_g, &pdc_server_info_g[server_id].rpc_handle);
+            pdc_server_info_g[server_id].rpc_handle_valid = 1;
+        }
+
         // Fill input structure
         gen_obj_id_in_t in;
         in.obj_name   = lookup_args.obj_name;
@@ -443,10 +551,10 @@ uint64_t PDC_Client_send_name_to_server(const char *obj_name, int hash_name_valu
         /* printf("Sending input to target\n"); */
         ret_value = HG_Forward(pdc_server_info_g[server_id].rpc_handle, client_rpc_cb, &lookup_args, &in);
         if (ret_value != HG_SUCCESS) {
-            fprintf(stderr, "client_lookup_cb(): Could not start HG_Forward()\n");
+            fprintf(stderr, "PDC_Client_send_name_to_server(): Could not start HG_Forward()\n");
             return EXIT_FAILURE;
         }
-    }
+    /* } */
 
     // Wait for response from server
     work_todo_g = 1;
@@ -467,6 +575,68 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+/* perr_t PDC_Client_send_obj_name_mark(char *name, int server_id) */
+/* { */
+/*     FUNC_ENTER(NULL); */
+
+/*     perr_t ret_value = SUCCEED; */
+/*     hg_return_t  hg_ret = 0; */
+
+/*     int port = pdc_client_mpi_rank_g + 8000; */ 
+
+/*     debug_server_id_count[server_id]++; */
+
+/*     if (mercury_has_init_g == 0) { */
+/*         // Init Mercury network connection */
+/*         PDC_Client_mercury_init(&send_class_g, &send_context_g, port); */
+/*         if (send_class_g == NULL || send_context_g == NULL) { */
+/*             printf("Error with Mercury Init, exiting...\n"); */
+/*             exit(0); */
+/*         } */
+/*         mercury_has_init_g = 1; */
+/*     } */
+
+/*     struct client_lookup_args lookup_args; */
+/*     lookup_args.obj_name = name; */
+
+/*     // Initiate server lookup and send obj name in client_lookup_cb() */
+/*     char *target_addr_string = pdc_server_info_g[server_id].addr_string; */
+
+/*     // Check if previous connection had been made and reuse handle */ 
+/*     if (pdc_server_info_g[server_id].name_marker_handle_valid != 1) { */
+/*         // This is the first connection to server $server_id */
+/*         hg_ret = HG_Addr_lookup(send_context_g, client_lookup_cb, &lookup_args, target_addr_string, HG_OP_ID_IGNORE); */
+/*     } */
+/*     else { */
+/*         // Fill input structure */
+/*         send_obj_name_marker_in_t in; */
+/*         in.name   = lookup_args.obj_name; */
+/*         /1* printf("Hash(%s) = %d\n", obj_name, in.hash_value); *1/ */
+
+/*         /1* printf("Sending input to target\n"); *1/ */
+/*         ret_value = HG_Forward(pdc_server_info_g[server_id].name_marker_handle, client_rpc_cb, &lookup_args, &in); */
+/*         if (ret_value != HG_SUCCESS) { */
+/*             fprintf(stderr, "client_lookup_cb(): Could not start HG_Forward()\n"); */
+/*             return EXIT_FAILURE; */
+/*         } */
+/*     } */
+
+/*     // Wait for response from server */
+/*     work_todo_g = 1; */
+/*     PDC_Client_check_response(&send_context_g); */
+
+/*     // Now we have obj id stored in lookup_args.obj_id */
+/*     /1* if (lookup_args.obj_id == -1) { *1/ */
+/*     /1*     printf("==PDC_CLIENT: Have not obtained valid obj id from PDC server!\n"); *1/ */
+/*     /1* } *1/ */
+
+/*     /1* printf("Received obj_id=%llu\n", lookup_args.obj_id); *1/ */
+/*     /1* fflush(stdout); *1/ */
+
+/* done: */
+/*     FUNC_LEAVE(ret_value); */
+/* } */
+
 // Send a name to server and receive an obj id
 uint64_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t property)
 {
@@ -474,7 +644,8 @@ uint64_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t property)
     FUNC_ENTER(NULL);
 
     uint64_t ret_value;
-    uint32_t server_id;
+    uint32_t server_id, base_server_id;
+    char *name;
 
     // TODO: this is temp solution to convert "Obj_%d" to name="Obj_" and time_step=%d 
     //       will need to delete once Kimmy adds the pdc_prop related functions
@@ -492,20 +663,59 @@ uint64_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t property)
         }
     }
 
+    name = tmp_obj_name;
+
     // TODO: Compute server id
-    uint32_t hash_name_value = pdc_hash_djb2(tmp_obj_name);
-    server_id = (hash_name_value + tmp_time_step) % pdc_server_num_g; 
+    uint32_t hash_name_value = pdc_hash_djb2(name);
+    server_id       = (hash_name_value + tmp_time_step) % pdc_server_num_g; 
+    base_server_id  = hash_name_value % pdc_server_num_g;
 
     // Use local server only?
     if (pdc_use_local_server_only_g == 1) {
         server_id = pdc_client_mpi_rank_g % pdc_server_num_g;
     }
 
-    /* printf("Obj_name: %s, hash_value: %d, server_id:%d\n", tmp_obj_name, hash_name_value, server_id); */
-   
+    /* printf("Obj_name: %s, hash_value: %d, server_id:%d\n", name, hash_name_value, server_id); */
+
+    int32_t *hash_key = (int32_t *)malloc(sizeof(int32_t));
+    *hash_key = hash_name_value;
+
+    struct client_name_cache_t *lookup_value;
+    client_name_cache_t *elt;
+    client_name_cache_t *insert_value;
+
+    // Obtain lock for hash table
+    hg_thread_mutex_lock(&pdc_client_name_cache_hash_table_mutex_g);
+
+    // TODO: Is this the current object name's first appearance?
+    if (obj_names_cache_hash_table_g != NULL) {
+        /* printf("checking hash table with key=%d\n", *hash_key); */
+        lookup_value = hg_hash_table_lookup(obj_names_cache_hash_table_g, hash_key);
+        if (lookup_value != NULL) {
+            /* printf("==PDC_CLIENT: Current name exist in the name cache hash table\n"); */
+            // TODO: double check in case of hash collision
+        }
+        else {
+            // insert
+            /* printf("==PDC_CLIENT: Current name does NOT exist in the name cache hash table\n"); */
+            insert_value = (client_name_cache_t *)malloc(sizeof(client_name_cache_t));
+            strcpy(insert_value->name, name);
+            hg_hash_table_insert(obj_names_cache_hash_table_g, hash_key, insert_value);
+            /* PDC_Client_send_obj_name_mark(name, base_server_id); */
+        }
+
+    }
+    else {
+        hg_thread_mutex_unlock(&pdc_client_name_cache_hash_table_mutex_g);
+        printf("Error with obj_names_cache_hash_table_g, exiting...\n");
+        goto done;
+    }
+
+    hg_thread_mutex_unlock(&pdc_client_name_cache_hash_table_mutex_g);
+  
     /* printf("[%d]: target server %d\n", pdc_client_mpi_rank_g, server_id); */
     /* fflush(stdout); */
-    ret_value = PDC_Client_send_name_to_server(tmp_obj_name, hash_name_value, property, tmp_time_step, server_id);
+    ret_value = PDC_Client_send_name_to_server(name, hash_name_value, property, tmp_time_step, server_id);
 
 done:
     FUNC_LEAVE(ret_value);

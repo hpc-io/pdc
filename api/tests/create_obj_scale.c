@@ -131,8 +131,9 @@ int main(int argc, const char *argv[])
         use_name = atoi(env_str);
     }
 
+    char name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name", "INVALID!", "INVALID!", "Four Obj Names"}; 
     if (rank == 0) {
-        printf("use_name=%d\n", use_name);
+        printf("Using %s\n", name_mode[use_name+1]);
     }
 
 
@@ -160,6 +161,8 @@ int main(int argc, const char *argv[])
             printf("Error getting an object id of %s from server, exit...\n", obj_name);
             exit(-1);
         }
+        /* else */ 
+        /*     printf("%lld\n", test_obj); */
 
         // Print progress
         int progress_factor = count < 10 ? 1 : 10;

@@ -208,7 +208,7 @@ static perr_t PDC_Server_metadata_duplicate_check()
 
     if (pdc_server_rank_g == 0) {
         printf("==PDC_SERVER: Bloom filter says maybe %d times out of %d\n", all_maybe, all_total);
-        printf("==PDC_SERVER: Metadata duplicate check with %d hash entries\n", all_entry);
+        printf("==PDC_SERVER: Metadata duplicate check with %d hash entries ", all_entry);
     }
 
     fflush(stdout);
@@ -635,6 +635,21 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out) {
+    
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value = SUCCEED;
+    printf("==PDC_SERVER: Insert obj name marker\n");
+
+    // TODO
+
+
+done:
+    out->ret = 1;
+    FUNC_LEAVE(ret_value);
+}
+
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
 {
 
@@ -780,7 +795,9 @@ int main(int argc, char *argv[])
     }
 
     // Register RPC
+    client_test_connect_register(hg_class);
     gen_obj_id_register(hg_class);
+    close_server_register(hg_class);
 
     if (pdc_server_rank_g == 0)
         printf("==PDC_SERVER: Server ready!\n");
