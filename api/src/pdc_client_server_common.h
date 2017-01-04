@@ -50,7 +50,7 @@ typedef struct pdc_metadata_t {
 #ifdef HG_HAS_BOOST
 MERCURY_GEN_PROC( gen_obj_id_in_t, ((uint32_t)(user_id)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((uint32_t)(time_step)) ((uint32_t)(hash_value)) ((hg_const_string_t)(tags)) )
 MERCURY_GEN_PROC( gen_obj_id_out_t, ((uint64_t)(ret)) )
-MERCURY_GEN_PROC( send_obj_name_marker_in_t, ((hg_const_string_t)(name)) )
+MERCURY_GEN_PROC( send_obj_name_marker_in_t, ((hg_const_string_t)(obj_name)) ((uint32_t)(hash_value)) )
 MERCURY_GEN_PROC( send_obj_name_marker_out_t, ((int32_t)(ret)) )
 MERCURY_GEN_PROC( client_test_connect_in_t,  ((int32_t)(client_id)) )
 MERCURY_GEN_PROC( client_test_connect_out_t, ((int32_t)(ret))  )
@@ -71,7 +71,8 @@ typedef struct {
 } gen_obj_id_out_t;
 
 typedef struct {
-    hg_const_string_t    name;
+    hg_const_string_t    obj_name;
+    uint32_t             hash_value;
 } send_obj_name_marker_in_t;
 
 typedef struct {
@@ -148,6 +149,10 @@ hg_proc_send_obj_name_marker_in_t(hg_proc_t proc, void *data)
     send_obj_name_marker_in_t *struct_data = (send_obj_name_marker_in_t*) data;
 
     ret = hg_proc_hg_const_string_t(proc, &struct_data->name);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_uint32_t(proc, &struct_data->hash_value);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
     }

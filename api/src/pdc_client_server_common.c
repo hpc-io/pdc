@@ -200,7 +200,7 @@ HG_TEST_RPC_CB(send_obj_name_marker, handle)
 
     /* out.ret = 1; */
     HG_Respond(handle, NULL, NULL, &out);
-    printf("==PDC_SERVER: send_obj_name_marker() Returned %llu\n", out.ret);
+    /* printf("==PDC_SERVER: send_obj_name_marker() Returned %llu\n", out.ret); */
     fflush(stdout);
 
     HG_Free_input(handle, &in);
@@ -231,7 +231,7 @@ HG_TEST_RPC_CB(close_server, handle)
     
     /* out.ret = 1; */
     HG_Respond(handle, NULL, NULL, &out);
-    printf("==PDC_SERVER: Close server request received\n");
+    printf("\n\n==PDC_SERVER: Close server request received\n");
     fflush(stdout);
 
     // Set close server marker
