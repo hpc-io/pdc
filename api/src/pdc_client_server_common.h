@@ -14,10 +14,10 @@
 #ifndef PDC_CLIENT_SERVER_COMMON_H
 #define PDC_CLIENT_SERVER_COMMON_H
 
-#define pdc_server_cfg_name_g "server.cfg"
 #define pdc_server_tmp_dir_g  "./pdc_tmp"
+#define pdc_server_cfg_name_g "server.cfg"
 
-#define ADDR_MAX 128
+#define ADDR_MAX 64
 
 extern uint64_t pdc_id_seq_g;
 
@@ -26,13 +26,10 @@ typedef struct pdc_metadata_t {
     int     user_id;                // Both server and client gets it and do security check
     char    app_name[PATH_MAX];
     char    obj_name[PATH_MAX];
-    /* char    *app_name; */
-    /* char    *obj_name; */
     int     time_step;
     // Above four are the unique identifier for objects
 
     int     obj_id;
-    /* char    *obj_data_location; */
     char    obj_data_location[PATH_MAX];
     time_t  create_time;
     time_t  last_modified_time;
@@ -46,6 +43,19 @@ typedef struct pdc_metadata_t {
 
 } pdc_metadata_t;
 
+typedef struct pdc_metadata_query_result_t {
+    int         user_id;
+    const char  *app_name;
+    const char  *obj_name;
+    int         time_step;
+
+    uint64_t    obj_id;
+    const char  *data_location;
+    const char  *tags;
+    /* time_t      create_time; */
+    /* time_t      last_modified_time; */
+} pdc_metadata_query_result_t;
+
 
 #ifdef HG_HAS_BOOST
 MERCURY_GEN_PROC( gen_obj_id_in_t, ((uint32_t)(user_id)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((uint32_t)(time_step)) ((uint32_t)(hash_value)) ((hg_const_string_t)(tags)) )
@@ -56,7 +66,89 @@ MERCURY_GEN_PROC( client_test_connect_in_t,  ((int32_t)(client_id)) )
 MERCURY_GEN_PROC( client_test_connect_out_t, ((int32_t)(ret))  )
 MERCURY_GEN_PROC( close_server_in_t,  ((int32_t)(client_id)) )
 MERCURY_GEN_PROC( close_server_out_t, ((int32_t)(ret))  )
+
+MERCURY_GEN_STRUCT_PROC( pdc_metadata_query_result_t, ((int32_t)(user_id)) ((int32_t)(time_step)) ((uint64_t)(obj_id)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((hg_const_string_t)(data_location)) ((hg_const_string_t)(tags)) )
+MERCURY_GEN_PROC( metadata_query_in_t, ((hg_const_string_t)(obj_name)) ((uint32_t)(hash_value)) )
+MERCURY_GEN_PROC( metadata_query_out_t, ((pdc_metadata_query_result_t)(ret)) )
+
 #else
+typedef struct {
+    pdc_metadata_query_result_t ret;
+} metadata_query_out_t;
+
+typedef struct {
+    hg_const_string_t    obj_name;
+    uint32_t             hash_value;
+} metadata_query_in_t;
+
+static HG_INLINE hg_return_t
+metadata_query_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    metadata_query_in_t *struct_data = (metadata_query_in_t*) data;
+
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_uint32_t(proc, &struct_data->hash_value);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_pdc_metadata_query_result_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    pdc_metadata_query_result_t *struct_data = (pdc_metadata_query_result_t*) data;
+
+    ret = hg_proc_uint32_t(proc, &struct_data->user_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->app_name);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_uint32_t(proc, &struct_data->time_step);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->data_location);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->tags);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+metadata_query_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret = HG_SUCCESS;
+    metadata_query_out_t *struct_data = (metadata_query_out_t*) data;
+
+    ret = hg_proc_pdc_metadata_query_result_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
 typedef struct {
     uint32_t             user_id;
     hg_const_string_t    app_name;
@@ -69,6 +161,7 @@ typedef struct {
 typedef struct {
     uint64_t ret;
 } gen_obj_id_out_t;
+
 
 typedef struct {
     hg_const_string_t    obj_name;

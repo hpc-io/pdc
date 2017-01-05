@@ -201,7 +201,45 @@ HG_TEST_RPC_CB(send_obj_name_marker, handle)
     /* out.ret = 1; */
     HG_Respond(handle, NULL, NULL, &out);
     /* printf("==PDC_SERVER: send_obj_name_marker() Returned %llu\n", out.ret); */
-    fflush(stdout);
+    /* fflush(stdout); */
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    ret_value = HG_SUCCESS;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+
+/* static hg_return_t */
+/* metadata_query_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(metadata_query, handle)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value;
+
+    /* Get input parameters sent on origin through on HG_Forward() */
+    // Decode input
+    metadata_query_in_t  in;
+    metadata_query_out_t out;
+
+    // TODO check DHT for query result
+    HG_Get_input(handle, &in);
+    printf("Received query with name: %s, hash value: %llu\n", in.obj_name, in.hash_value);
+    out.ret.user_id         = 987654321;
+    out.ret.app_name        = "abc";
+    out.ret.obj_name        = "obj_name";
+    out.ret.time_step       = 123456;
+    out.ret.obj_id          = 1001;
+    out.ret.data_location   = "/test/location";
+    out.ret.tags            = "test_tag=12";
+
+    HG_Respond(handle, NULL, NULL, &out);
+    /* printf("==PDC_SERVER: metadata_query_cb(): Returned %llu\n", out.ret); */
+    /* fflush(stdout); */
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
@@ -251,6 +289,7 @@ done:
 HG_TEST_THREAD_CB(gen_obj_id)
 HG_TEST_THREAD_CB(send_obj_name_marker)
 HG_TEST_THREAD_CB(client_test_connect)
+HG_TEST_THREAD_CB(metadata_query)
 HG_TEST_THREAD_CB(close_server)
 
 hg_id_t
@@ -284,6 +323,18 @@ send_obj_name_marker_register(hg_class_t *hg_class)
 
     hg_id_t ret_value;
     ret_value = MERCURY_REGISTER(hg_class, "send_obj_name_marker", send_obj_name_marker_in_t, send_obj_name_marker_out_t, send_obj_name_marker_cb);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+hg_id_t
+metadata_query_register(hg_class_t *hg_class)
+{
+    FUNC_ENTER(NULL);
+
+    hg_id_t ret_value;
+    ret_value = MERCURY_REGISTER(hg_class, "metadata_query", metadata_query_in_t, metadata_query_out_t, metadata_query_cb);
 
 done:
     FUNC_LEAVE(ret_value);

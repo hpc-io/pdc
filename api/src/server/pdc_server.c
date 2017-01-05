@@ -912,6 +912,7 @@ int main(int argc, char *argv[])
     gen_obj_id_register(hg_class);
     close_server_register(hg_class);
     send_obj_name_marker_register(hg_class);
+    metadata_query_register(hg_class);
 
     if (pdc_server_rank_g == 0)
         printf("==PDC_SERVER: Server ready!\n\n\n");

@@ -27,6 +27,8 @@ typedef struct pdc_server_info_t {
     hg_handle_t     close_server_handle;
     int             name_marker_handle_valid;
     hg_handle_t     name_marker_handle;
+    int             metadata_query_handle_valid;
+    hg_handle_t     metadata_query_handle;
 } pdc_server_info_t;
 
 extern int pdc_server_num_g;
@@ -47,6 +49,10 @@ struct client_lookup_args {
     uint32_t             hash_value;
     const char          *tags;
 };
+
+typedef struct metadata_query_args_t {
+    pdc_metadata_t *data;
+} metadata_query_args_t;
 
 typedef struct client_name_cache_t {
     char                        name[ADDR_MAX];
