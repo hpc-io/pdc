@@ -58,10 +58,10 @@ double server_insert_time_g      = 0.0;
 hg_thread_mutex_t pdc_time_mutex_g;
 hg_thread_mutex_t pdc_bloom_time_mutex_g;
 
-static int32_t
+static uint32_t
 PDC_Server_metadata_int_equal(hg_hash_table_key_t vlocation1, hg_hash_table_key_t vlocation2)
 {
-    return *((int32_t *) vlocation1) == *((int32_t *) vlocation2);
+    return *((uint32_t *) vlocation1) == *((uint32_t *) vlocation2);
 }
 
 static unsigned int
@@ -73,7 +73,7 @@ PDC_Server_metadata_int_hash(hg_hash_table_key_t vlocation)
 static void
 PDC_Server_metadata_int_hash_key_free(hg_hash_table_key_t key)
 {
-    free((int32_t *) key);
+    free((uint32_t *) key);
 }
 
 static void
@@ -619,6 +619,67 @@ done:
     FUNC_LEAVE(ret_value);
 } 
 
+perr_t PDC_Server_search_with_name_hash(char *obj_name, uint32_t hash_key, pdc_metadata_t** out)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value;
+
+    pdc_metadata_t *lookup_value;
+
+    *out = NULL;
+
+    // Set up a metadata struct to query
+    pdc_metadata_t metadata;
+    strcpy(metadata.obj_name, obj_name);
+
+    // Obtain lock for hash table
+    /* int unlocked = 0; */
+    /* hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g); */
+
+    if (metadata_hash_table_g != NULL) {
+        // lookup
+        /* printf("checking hash table with key=%d\n", *hash_key); */
+        lookup_value = hg_hash_table_lookup(metadata_hash_table_g, &hash_key);
+
+        // Is this hash value exist in the Hash table?
+        if (lookup_value != NULL) {
+            printf("==PDC_SERVER: PDC_Server_search_with_name_hash(): lookup_value not NULL!\n");
+            // Check if there exist metadata identical to current one
+            /* if (find_identical_metadata(lookup_value, &metadata) == 1) { */
+            if (strcmp(lookup_value->obj_name, obj_name) == 0) {
+                // There is one identical to current query
+                // TODO: multiple objects satisfy current query
+                *out = lookup_value; 
+                printf("==PDC_SERVER: PDC_Server_search_with_name_hash(): Found exact match for query!\n");
+            }
+            else {
+                // Collision no such thing exist
+                *out = NULL;
+            }
+        
+        }
+        else {
+            // First entry for current hasy_key, init linked list, and insert to hash table
+            *out = NULL;
+            printf("==PDC_SERVER: Queried object with name [%s] not found!\n", obj_name);
+        }
+
+    }
+    else {
+        printf("metadata_hash_table_g not initilized!\n");
+        ret_value = -1;
+        goto done;
+    }
+
+    // ^ Release hash table lock
+    /* hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g); */
+    /* unlocked = 1; */
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 static perr_t bloom_add(pdc_metadata_t *metadata)
 {
     FUNC_ENTER(NULL);
@@ -637,7 +698,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-static perr_t PDC_Server_hash_table_list_init(pdc_metadata_t *metadata, int32_t *hash_key)
+static perr_t PDC_Server_hash_table_list_init(pdc_metadata_t *metadata, uint32_t *hash_key)
 {
     FUNC_ENTER(NULL);
 
@@ -690,7 +751,7 @@ perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marke
     printf("==PDC_SERVER: Insert obj name marker \"%s\"\n", in->obj_name);
 
     // TODO
-    int32_t *hash_key = (int32_t*)malloc(sizeof(int32_t));
+    uint32_t *hash_key = (uint32_t*)malloc(sizeof(uint32_t));
     if (hash_key == NULL) {
         printf("Cannnot allocate hash_key!\n");
         goto done;
@@ -800,7 +861,7 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     strcpy(metadata->tags, in->tags);
 
 
-    int32_t *hash_key = (int32_t*)malloc(sizeof(int32_t));
+    uint32_t *hash_key = (uint32_t*)malloc(sizeof(uint32_t));
     if (hash_key == NULL) {
         printf("Cannnot allocate hash_key!\n");
         goto done;

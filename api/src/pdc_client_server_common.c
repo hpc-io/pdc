@@ -110,6 +110,7 @@ void PDC_Server_print_metadata(pdc_metadata_t *a)
 // Dummy function for client to compile, real function is used only by server and code is in pdc_server.c
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out) {return 0;}
 perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out) {return 0;}
+perr_t PDC_Server_search_with_name_hash(char *obj_name, uint32_t hash_key, pdc_metadata_t** out) {return 0;}
 #endif
 
 /*
@@ -226,19 +227,24 @@ HG_TEST_RPC_CB(metadata_query, handle)
     metadata_query_in_t  in;
     metadata_query_out_t out;
 
+    pdc_metadata_t *query_result;
+
     // TODO check DHT for query result
     HG_Get_input(handle, &in);
-    printf("Received query with name: %s, hash value: %llu\n", in.obj_name, in.hash_value);
-    out.ret.user_id         = 987654321;
-    out.ret.app_name        = "abc";
-    out.ret.obj_name        = "obj_name";
-    out.ret.time_step       = 123456;
-    out.ret.obj_id          = 1001;
-    out.ret.data_location   = "/test/location";
-    out.ret.tags            = "test_tag=12";
+    /* printf("==PDC_CLIENT: Received query with name: %s, hash value: %u\n", in.obj_name, in.hash_value); */
+    PDC_Server_search_with_name_hash(in.obj_name, in.hash_value, &query_result);
+
+    out.ret.user_id        = query_result->user_id;
+    out.ret.obj_id         = query_result->obj_id;
+    out.ret.time_step      = query_result->time_step;
+    out.ret.obj_name       = query_result->obj_name;
+    out.ret.app_name       = query_result->app_name;
+    out.ret.tags           = query_result->tags;
+    // TODO add location info
+    out.ret.data_location  = "/test/location"; 
 
     HG_Respond(handle, NULL, NULL, &out);
-    /* printf("==PDC_SERVER: metadata_query_cb(): Returned %llu\n", out.ret); */
+    /* printf("==PDC_SERVER: metadata_query_cb(): Returned obj_name=%s, obj_id=%llu\n", out.ret.obj_name, out.ret.obj_id); */
     /* fflush(stdout); */
 
     HG_Free_input(handle, &in);
