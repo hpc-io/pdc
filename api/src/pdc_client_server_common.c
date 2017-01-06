@@ -255,22 +255,33 @@ HG_TEST_RPC_CB(metadata_query, handle)
     metadata_query_in_t  in;
     metadata_query_out_t out;
 
-    pdc_metadata_t *query_result;
+    pdc_metadata_t *query_result = NULL;
 
     // TODO check DHT for query result
     HG_Get_input(handle, &in);
     /* printf("==PDC_CLIENT: Received query with name: %s, hash value: %u\n", in.obj_name, in.hash_value); */
     PDC_Server_search_with_name_hash(in.obj_name, in.hash_value, &query_result);
 
-    out.ret.user_id        = query_result->user_id;
-    out.ret.obj_id         = query_result->obj_id;
-    out.ret.time_step      = query_result->time_step;
-    out.ret.obj_name       = query_result->obj_name;
-    out.ret.app_name       = query_result->app_name;
-    out.ret.tags           = query_result->tags;
-    // TODO add location info
-    out.ret.data_location  = "/test/location"; 
-
+    if (query_result != NULL) {
+        out.ret.user_id        = query_result->user_id;
+        out.ret.obj_id         = query_result->obj_id;
+        out.ret.time_step      = query_result->time_step;
+        out.ret.obj_name       = query_result->obj_name;
+        out.ret.app_name       = query_result->app_name;
+        out.ret.tags           = query_result->tags;
+        // TODO add location info
+        out.ret.data_location  = "/test/location"; 
+    }
+    else {
+        out.ret.user_id        = -1;
+        out.ret.obj_id         = 0;
+        out.ret.time_step      = -1;
+        out.ret.obj_name       = "invalid";
+        out.ret.app_name       = "invalid";
+        out.ret.tags           = "invalid";
+        // TODO add location info
+        out.ret.data_location  = "/test/location"; 
+    }
     HG_Respond(handle, NULL, NULL, &out);
     /* printf("==PDC_SERVER: metadata_query_cb(): Returned obj_name=%s, obj_id=%llu\n", out.ret.obj_name, out.ret.obj_id); */
     /* fflush(stdout); */
@@ -303,8 +314,8 @@ HG_TEST_RPC_CB(close_server, handle)
     
     /* out.ret = 1; */
     HG_Respond(handle, NULL, NULL, &out);
-    printf("\n\n==PDC_SERVER: Close server request received\n");
-    fflush(stdout);
+    /* printf("\n\n==PDC_SERVER: Close server request received\n"); */
+    /* fflush(stdout); */
 
     // Set close server marker
     hg_atomic_set32(&close_server_g, 1);

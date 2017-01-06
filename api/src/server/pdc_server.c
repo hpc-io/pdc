@@ -420,7 +420,7 @@ perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marke
     hg_return_t hg_ret;
 
 
-    printf("==PDC_SERVER: Insert obj name marker \"%s\"\n", in->obj_name);
+    printf("==PDC_SERVER: Insert obj name marker [%s]\n", in->obj_name);
 
     uint32_t *hash_key = (uint32_t*)malloc(sizeof(uint32_t));
     if (hash_key == NULL) {
@@ -454,6 +454,7 @@ perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marke
             // Check if there exist namemark identical to current one
             if (find_identical_namemark(lookup_value, namemark) == 1) {
                 // If find same one, do nothing
+                printf("==PDC_SERVER: marker exist for [%s]\n", namemark->obj_name);
                 ret_value = 0;
                 free(namemark);
             }
@@ -887,7 +888,9 @@ perr_t PDC_Server_checkpoint(char *filename)
 
     perr_t ret_value;
 
-    printf("\n\n==PDC_SERVER: Start checkpoint process [%s]\n", filename);
+    if (pdc_server_rank_g == 0) {
+        printf("\n\n==PDC_SERVER: Start checkpoint process [%s]\n", filename);
+    }
 
     FILE *file = fopen(filename, "w+");
     if (file==NULL) {fputs("==PDC_SERVER: PDC_Server_checkpoint() - Checkpoint file open error", stderr); return -1;}
@@ -1165,8 +1168,30 @@ int main(int argc, char *argv[])
     // TODO: instead of checkpoint at app finalize time, try checkpoint with a time countdown or # of objects
     char checkpoint_file[PATH_MAX];
     sprintf(checkpoint_file, "%s/%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.", pdc_server_rank_g);
+
+    // Timing
+    struct timeval  ht_total_start;
+    struct timeval  ht_total_end;
+    long long ht_total_elapsed;
+    double checkpoint_time, all_checkpoint_time;
+    gettimeofday(&ht_total_start, 0);
+
     PDC_Server_checkpoint(checkpoint_file);
 
+    // Timing
+    gettimeofday(&ht_total_end, 0);
+    ht_total_elapsed = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+    checkpoint_time = ht_total_elapsed / 1000000.0;
+
+#ifdef ENABLE_MPI
+    MPI_Reduce(&checkpoint_time, &all_checkpoint_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+#else
+    all_checkpoint_time = checkpoint_time;
+#endif
+
+    if (pdc_server_rank_g == 0) {
+        printf("==PDC_SERVER: total checkpoint  time = %.6f\n", all_checkpoint_time);
+    }
 
 
     PDC_Server_finalize();

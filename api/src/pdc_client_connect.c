@@ -36,7 +36,6 @@ static hg_id_t         send_obj_name_marker_register_id_g;
 static hg_id_t         metadata_query_register_id_g;
 
 hg_hash_table_t       *obj_names_cache_hash_table_g = NULL;
-hg_thread_mutex_t     pdc_client_name_cache_hash_table_mutex_g;
 
 static int            *debug_server_id_count = NULL;
 
@@ -713,7 +712,7 @@ uint64_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t property)
 
     name = tmp_obj_name;
 
-    // TODO: Compute server id
+    // Compute server id
     uint32_t hash_name_value = PDC_get_hash_by_name(name);
     server_id       = (hash_name_value + tmp_time_step) % pdc_server_num_g; 
     base_server_id  = get_server_id_by_hash_name(name);
@@ -731,9 +730,6 @@ uint64_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t property)
     struct client_name_cache_t *lookup_value;
     client_name_cache_t *elt;
     client_name_cache_t *insert_value;
-
-    // Obtain lock for hash table
-    hg_thread_mutex_lock(&pdc_client_name_cache_hash_table_mutex_g);
 
     // TODO: Is this the current object name's first appearance?
     if (obj_names_cache_hash_table_g != NULL) {
@@ -755,28 +751,26 @@ uint64_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t property)
 
     }
     else {
-        hg_thread_mutex_unlock(&pdc_client_name_cache_hash_table_mutex_g);
         printf("Error with obj_names_cache_hash_table_g, exiting...\n");
         goto done;
     }
 
-    hg_thread_mutex_unlock(&pdc_client_name_cache_hash_table_mutex_g);
-  
     /* printf("[%d]: target server %d\n", pdc_client_mpi_rank_g, server_id); */
     /* fflush(stdout); */
     ret_value = PDC_Client_send_name_to_server(name, hash_name_value, property, tmp_time_step, server_id);
 
 
     // DEBUG: query the object just created
-    pdc_metadata_t *res;
-    res = PDC_Client_query_metadata_with_name(name);
-
-    // DEBUG: print
-    printf("\n==PDC_CLIENT: Received metadata structure from server\n");
-    PDC_print_metadata(res);
-    printf("==PDC_CLIENT: End of received metadata\n\n");
-
-
+    /* printf("\n==PDC_CLIENT: Querying object with name [%s]\n", name); */
+    /* pdc_metadata_t *res; */
+    /* res = PDC_Client_query_metadata_with_name(name); */
+    /* if (res->obj_id == 0 && res->user_id == -1 && res->time_step == -1) { */
+    /*     printf("==PDC_CLIENT: Queried object [%s] does not exist!\n", name); */
+    /* } */
+    /* else { */
+    /*     PDC_print_metadata(res); */
+    /*     printf("==PDC_CLIENT: End of received metadata\n\n"); */
+    /* } */
 
 done:
     FUNC_LEAVE(ret_value);
