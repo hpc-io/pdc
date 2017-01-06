@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <ctype.h>
 
 /* #define ENABLE_MPI 1 */
 #ifdef ENABLE_MPI
@@ -39,27 +40,6 @@ hg_thread_mutex_t     pdc_client_name_cache_hash_table_mutex_g;
 
 static int            *debug_server_id_count = NULL;
 
-static uint32_t pdc_hash_djb2(const char *pc) 
-{
-        uint32_t hash = 5381, c;
-        while (c = *pc++)
-            hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
-        if (hash < 0) 
-            hash *= -1;
-        
-        return hash;
-}
-
-static uint32_t pdc_hash_sdbm(const char *pc) 
-{
-        uint32_t hash = 0, c;
-        while (c = (*pc++)) 
-                hash = c + (hash << 6) + (hash << 16) - hash;
-        if (hash < 0) 
-            hash *= -1;
-        return hash;
-}
-
 static inline int get_server_id_by_hash_all() 
 {
 
@@ -67,7 +47,7 @@ static inline int get_server_id_by_hash_all()
 
 static inline int get_server_id_by_hash_name(const char *name) 
 {
-    return (pdc_hash_djb2(name) % pdc_server_num_g);
+    return (PDC_get_hash_by_name(name) % pdc_server_num_g);
 }
 
 static int
@@ -295,6 +275,34 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+// Check if all work has been processed
+// Using global variable $mercury_work_todo_g
+perr_t PDC_Client_check_response(hg_context_t **hg_context)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value;
+
+    hg_return_t hg_ret;
+    do {
+        unsigned int actual_count = 0;
+        do {
+            hg_ret = HG_Trigger(*hg_context, 0/* timeout */, 1 /* max count */, &actual_count);
+        } while ((hg_ret == HG_SUCCESS) && actual_count);
+
+        /* printf("actual_count=%d\n",actual_count); */
+        /* Do not try to make progress anymore if we're done */
+        if (work_todo_g <= 0)  break;
+
+        hg_ret = HG_Progress(*hg_context, HG_MAX_IDLE_TIME);
+    } while (hg_ret == HG_SUCCESS);
+
+    ret_value = SUCCEED;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 // Init Mercury class and context
 // Register gen_obj_id rpc
 perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int port)
@@ -361,34 +369,6 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
         fflush(stdout);
     }
 
-
-done:
-    FUNC_LEAVE(ret_value);
-}
-
-// Check if all work has been processed
-// Using global variable $mercury_work_todo_g
-perr_t PDC_Client_check_response(hg_context_t **hg_context)
-{
-    FUNC_ENTER(NULL);
-
-    perr_t ret_value;
-
-    hg_return_t hg_ret;
-    do {
-        unsigned int actual_count = 0;
-        do {
-            hg_ret = HG_Trigger(*hg_context, 0/* timeout */, 1 /* max count */, &actual_count);
-        } while ((hg_ret == HG_SUCCESS) && actual_count);
-
-        /* printf("actual_count=%d\n",actual_count); */
-        /* Do not try to make progress anymore if we're done */
-        if (work_todo_g <= 0)  break;
-
-        hg_ret = HG_Progress(*hg_context, HG_MAX_IDLE_TIME);
-    } while (hg_ret == HG_SUCCESS);
-
-    ret_value = SUCCEED;
 
 done:
     FUNC_LEAVE(ret_value);
@@ -595,7 +575,7 @@ perr_t PDC_Client_send_obj_name_mark(const char *obj_name, uint32_t server_id)
     // Fill input structure
     send_obj_name_marker_in_t in;
     in.obj_name   = obj_name;
-    in.hash_value = pdc_hash_djb2(obj_name);
+    in.hash_value = PDC_get_hash_by_name(obj_name);
 
     /* printf("Sending input to target\n"); */
     struct client_lookup_args lookup_args;
@@ -679,7 +659,7 @@ pdc_metadata_t * PDC_Client_query_metadata_with_name(const char *obj_name)
     // Fill input structure
     metadata_query_in_t in;
     in.obj_name   = obj_name;
-    in.hash_value = pdc_hash_djb2(obj_name);
+    in.hash_value = PDC_get_hash_by_name(obj_name);
 
     /* printf("Sending input to target\n"); */
     metadata_query_args_t lookup_args;
@@ -691,7 +671,7 @@ pdc_metadata_t * PDC_Client_query_metadata_with_name(const char *obj_name)
     hg_ret = HG_Forward(pdc_server_info_g[server_id].metadata_query_handle, metadata_query_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "PDC_Client_query_metadata_with_name(): Could not start HG_Forward()\n");
-        return EXIT_FAILURE;
+        return NULL;
     }
 
     // Wait for response from server
@@ -734,7 +714,7 @@ uint64_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t property)
     name = tmp_obj_name;
 
     // TODO: Compute server id
-    uint32_t hash_name_value = pdc_hash_djb2(name);
+    uint32_t hash_name_value = PDC_get_hash_by_name(name);
     server_id       = (hash_name_value + tmp_time_step) % pdc_server_num_g; 
     base_server_id  = get_server_id_by_hash_name(name);
 
@@ -793,12 +773,7 @@ uint64_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t property)
 
     // DEBUG: print
     printf("\n==PDC_CLIENT: Received metadata structure from server\n");
-    printf("                user_id  = %d\n",   res->user_id);
-    printf("                obj_id   = %llu\n", res->obj_id);
-    printf("                obj_name = %s\n",   res->obj_name);
-    printf("                app_name = %s\n",   res->app_name);
-    printf("                timestep = %d\n",   res->time_step);
-    printf("                tags     = %s\n",   res->tags);
+    PDC_print_metadata(res);
     printf("==PDC_CLIENT: End of received metadata\n\n");
 
 

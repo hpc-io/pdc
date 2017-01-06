@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
@@ -60,7 +61,7 @@ double server_insert_time_g      = 0.0;
 hg_thread_mutex_t pdc_time_mutex_g;
 hg_thread_mutex_t pdc_bloom_time_mutex_g;
 
-static uint32_t
+static int 
 PDC_Server_metadata_int_equal(hg_hash_table_key_t vlocation1, hg_hash_table_key_t vlocation2)
 {
     return *((uint32_t *) vlocation1) == *((uint32_t *) vlocation2);
@@ -135,6 +136,97 @@ inline void PDC_Server_metadata_init(pdc_metadata_t* a)
     a->next                 = NULL;
 }
 // ^ hash table
+
+static inline void combine_obj_info_to_string(pdc_metadata_t *metadata, char *output)
+{
+    sprintf(output, "%d%s%s%d", metadata->user_id, metadata->app_name, metadata->obj_name, metadata->time_step);
+}
+
+static int find_identical_namemark(pdc_metadata_name_mark_t *mlist, pdc_metadata_name_mark_t *a)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value;
+
+    pdc_metadata_name_mark_t *elt;
+    DL_FOREACH(mlist, elt) {
+        if (strcmp(elt->obj_name, a->obj_name) == 0) {
+            /* printf("Identical namemark with name [%s] already exist in current Metadata store!\n", ); */
+            ret_value = 1;
+            goto done;
+        }
+    }
+
+    ret_value = 0;
+
+done:
+    FUNC_LEAVE(ret_value);
+} 
+
+
+static int find_identical_metadata(pdc_metadata_t *mlist, pdc_metadata_t *a)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value;
+
+    // Use bloom filter to quick check if current metadata is in the list
+
+    BLOOM_TYPE_T *bloom = (BLOOM_TYPE_T*)mlist->bloom;
+    char combined_string[PATH_MAX];
+    combine_obj_info_to_string(a, combined_string);
+    /* printf("bloom_check: Combined string: %s\n", combined_string); */
+
+    // Timing
+    struct timeval  ht_total_start;
+    struct timeval  ht_total_end;
+    long long ht_total_elapsed;
+    double ht_total_sec;
+    gettimeofday(&ht_total_start, 0);
+
+    int bloom_check;
+    bloom_check = BLOOM_CHECK(bloom, combined_string, strlen(combined_string));
+
+    // Timing
+    gettimeofday(&ht_total_end, 0);
+    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+    ht_total_sec        = ht_total_elapsed / 1000000.0;
+
+    hg_thread_mutex_lock(&pdc_bloom_time_mutex_g);
+    server_bloom_check_time_g += ht_total_sec;
+    hg_thread_mutex_unlock(&pdc_bloom_time_mutex_g);
+
+    n_bloom_total_g++;
+    if (bloom_check == 0) {
+        /* printf("Bloom filter: definitely not!\n"); */
+        ret_value = 0;
+        goto done;
+    }
+    else {
+        // bloom filter says maybe, so need to check entire list
+        /* printf("Bloom filter: maybe!\n"); */
+        n_bloom_maybe_g++;
+        pdc_metadata_t *elt;
+        DL_FOREACH(mlist, elt) {
+            if (PDC_metadata_cmp(elt, a) == 0) {
+                printf("Identical metadata already exist in current Metadata store!\n");
+                PDC_print_metadata(a);
+                ret_value = 1;
+                goto done;
+            }
+        }
+    }
+
+    /* int count; */
+    /* DL_COUNT(lookup_value, elt, count); */
+    /* printf("%d item(s) in list\n", count); */
+
+    ret_value = 0;
+
+done:
+    FUNC_LEAVE(ret_value);
+} 
+
 
 void PDC_Server_print_version()
 {
@@ -227,6 +319,299 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+static perr_t PDC_Server_add_to_bloom(pdc_metadata_t *metadata)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value;
+
+    char combined_string[PATH_MAX];
+
+    combine_obj_info_to_string(metadata, combined_string);
+    /* printf("==PDC_SERVER: PDC_Server_add_to_bloom(): Combined string: %s\n", combined_string); */
+
+    BLOOM_TYPE_T *bloom = (BLOOM_TYPE_T*)metadata->bloom;
+    if (bloom == NULL) {
+        printf("==PDC_SERVER: PDC_Server_add_to_bloom(): bloom pointer is NULL\n");
+        ret_value = FAIL;
+        goto done;
+    }
+    ret_value = BLOOM_ADD(bloom, combined_string, strlen(combined_string));
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+static perr_t PDC_Server_hash_table_list_insert(pdc_metadata_t *head, pdc_metadata_t *new)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t      ret_value = SUCCEED;
+
+    // Set the bloom filter pointer to all metadata list items so we don't need 
+    // to take care of it when head got deleted
+    new->bloom = head->bloom; 
+
+    // add to bloom filter
+    /* printf("Adding to bloom\n"); */
+    PDC_Server_add_to_bloom(new);
+
+    /* printf("Adding to linked list\n"); */
+    // Currently $metadata is unique, insert to linked list
+    DL_APPEND(head, new);
+
+    /* // Debug print */
+    /* int count; */
+    /* pdc_metadata_t *elt; */
+    /* DL_COUNT(head, elt, count); */
+    /* printf("Append one metadata, total=%d\n", count); */
+ 
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+static perr_t PDC_Server_hash_table_list_init(pdc_metadata_t *metadata, uint32_t *hash_key)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t      ret_value = 0;
+    hg_return_t ret;
+
+    /* printf("hash key=%d\n", *hash_key); */
+
+    // Init head of linked list
+    metadata->prev = metadata;                                                                   \
+    metadata->next = NULL;   
+
+    /* PDC_print_metadata(metadata); */
+
+    // Insert to hash table
+    ret = hg_hash_table_insert(metadata_hash_table_g, hash_key, metadata);
+    if (ret != 1) {
+        fprintf(stderr, "PDC_Server_hash_table_list_init(): Error with hash table insert!\n");
+        ret_value = -1;
+        goto done;
+    }
+
+    // Init bloom filter
+    int capacity = 100000;
+    /* int capacity = 500000; */
+    double error_rate = 0.05;
+    n_bloom_maybe_g = 0;
+    n_bloom_total_g = 0;
+
+    metadata->bloom = (BLOOM_TYPE_T*)BLOOM_NEW(capacity, error_rate);
+    if (!metadata->bloom) {
+        fprintf(stderr, "ERROR: Could not create bloom filter\n");
+        ret_value = -1;
+        goto done;
+    }
+    PDC_Server_add_to_bloom(metadata);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out) {
+    
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value = SUCCEED;
+    hg_return_t hg_ret;
+
+
+    printf("==PDC_SERVER: Insert obj name marker \"%s\"\n", in->obj_name);
+
+    uint32_t *hash_key = (uint32_t*)malloc(sizeof(uint32_t));
+    if (hash_key == NULL) {
+        printf("Cannnot allocate hash_key!\n");
+        goto done;
+    }
+
+    *hash_key = in->hash_value;
+
+    pdc_metadata_name_mark_t *namemark= (pdc_metadata_name_mark_t*)malloc(sizeof(pdc_metadata_name_mark_t));
+    if (namemark == NULL) {
+        printf("==PDC_SERVER: ERROR - Cannnot allocate pdc_metadata_name_mark_t!\n");
+        goto done;
+    }
+    strcpy(namemark->obj_name, in->obj_name);
+
+    pdc_metadata_name_mark_t *lookup_value;
+    pdc_metadata_name_mark_t *elt;
+
+    // Obtain lock for hash table
+    int unlocked = 0;
+    hg_thread_mutex_lock(&pdc_metadata_name_mark_hash_table_mutex_g);
+
+    if (metadata_name_mark_hash_table_g != NULL) {
+        // lookup
+        /* printf("checking hash table with key=%d\n", *hash_key); */
+        lookup_value = hg_hash_table_lookup(metadata_name_mark_hash_table_g, hash_key);
+
+        // Is this hash value exist in the Hash table?
+        if (lookup_value != NULL) {
+            // Check if there exist namemark identical to current one
+            if (find_identical_namemark(lookup_value, namemark) == 1) {
+                // If find same one, do nothing
+                ret_value = 0;
+                free(namemark);
+            }
+            else {
+                // Currently namemark is unique, insert to linked list
+                DL_PREPEND(lookup_value, namemark);
+            }
+        
+            /* free(hash_key); */
+        }
+        else {
+            /* printf("lookup_value is NULL!\n"); */
+            // First entry for current hasy_key, init linked list
+            namemark->prev = namemark;                                                                   \
+            namemark->next = NULL;   
+
+            // Insert to hash table
+            hg_ret = hg_hash_table_insert(metadata_name_mark_hash_table_g, hash_key, namemark);
+            if (hg_ret != 1) {
+                fprintf(stderr, "==PDC_SERVER: ERROR - insert_obj_name_marker() error with hash table insert!\n");
+                ret_value = -1;
+                goto done;
+            }
+        }
+    }
+    else {
+        printf("metadata_hash_table_g not initilized!\n");
+        ret_value = -1;
+        goto done;
+    }
+
+    // ^ Release hash table lock
+    hg_thread_mutex_unlock(&pdc_metadata_name_mark_hash_table_mutex_g);
+
+done:
+    out->ret = 1;
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
+{
+
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value;
+
+    // Timing
+    struct timeval  ht_total_start;
+    struct timeval  ht_total_end;
+    long long ht_total_elapsed;
+    double ht_total_sec;
+
+    gettimeofday(&ht_total_start, 0);
+
+    /* printf("Got RPC request with name: %s\tHash=%d\n", in->obj_name, in->hash_value); */
+    /* printf("Full name check: %s\n", &in->obj_name[507]); */
+
+    pdc_metadata_t *metadata = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t));
+    if (metadata == NULL) {
+        printf("Cannnot allocate pdc_metadata_t!\n");
+        goto done;
+    }
+    strcpy(metadata->obj_name, in->obj_name);
+    strcpy(metadata->app_name, in->app_name);
+
+    // TODO: Both server and client gets it and do security check
+    metadata->user_id        = in->user_id;
+    metadata->time_step      = in->time_step;
+
+    /* obj_id; */
+    /* obj_data_location        = NULL; */
+    /* create_time              =; */
+    /* last_modified_time       =; */
+    strcpy(metadata->tags, in->tags);
+
+
+    uint32_t *hash_key = (uint32_t*)malloc(sizeof(uint32_t));
+    if (hash_key == NULL) {
+        printf("Cannnot allocate hash_key!\n");
+        goto done;
+    }
+    *hash_key = in->hash_value;
+
+    pdc_metadata_t *lookup_value;
+    pdc_metadata_t *elt;
+
+    // Obtain lock for hash table
+    int unlocked = 0;
+    hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
+
+    if (metadata_hash_table_g != NULL) {
+        // lookup
+        /* printf("checking hash table with key=%d\n", *hash_key); */
+        lookup_value = hg_hash_table_lookup(metadata_hash_table_g, hash_key);
+
+        // Is this hash value exist in the Hash table?
+        if (lookup_value != NULL) {
+
+            // Set the bloom filter pointer to all metadata list items so we don't need 
+            // to take care of it when head got deleted
+            metadata->bloom = lookup_value->bloom; 
+            
+            /* printf("lookup_value not NULL!\n"); */
+            // Check if there exist metadata identical to current one
+            if (find_identical_metadata(lookup_value, metadata) == 1) {
+                ret_value = -1;
+                out->ret  = -1;
+                free(metadata);
+                goto done;
+            }
+            else {
+                PDC_Server_hash_table_list_insert(lookup_value, metadata);
+            }
+        
+        }
+        else {
+            // First entry for current hasy_key, init linked list, and insert to hash table
+            /* printf("lookup_value is NULL!\n"); */
+            PDC_Server_hash_table_list_init(metadata, hash_key);
+        }
+
+    }
+    else {
+        printf("metadata_hash_table_g not initilized!\n");
+        ret_value = -1;
+        goto done;
+    }
+
+    // ^ Release hash table lock
+    hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
+    unlocked = 1;
+
+    // Generate object id (uint64_t)
+    metadata->obj_id = PDC_Server_gen_obj_id();
+
+    // Fill $out structure for returning the generated obj_id to client
+    out->ret = metadata->obj_id;
+
+    // Debug print metadata info
+    /* PDC_print_metadata(metadata); */
+
+    // Timing
+    gettimeofday(&ht_total_end, 0);
+    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+    ht_total_sec        = ht_total_elapsed / 1000000.0;
+
+    hg_thread_mutex_lock(&pdc_time_mutex_g);
+    server_insert_time_g += ht_total_sec;
+    hg_thread_mutex_unlock(&pdc_time_mutex_g);
+    
+
+done:
+    if (unlocked == 0)
+        hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
+    FUNC_LEAVE(ret_value);
+}
+
+
 static perr_t PDC_Server_metadata_duplicate_check()
 {
     FUNC_ENTER(NULL);
@@ -268,13 +653,13 @@ static perr_t PDC_Server_metadata_duplicate_check()
         if (pdc_server_rank_g == 0) {
             printf("  Hash entry[%d], with %d items\n", count, dl_count);
         }
-        DL_SORT(head, PDC_Server_metadata_cmp); 
+        DL_SORT(head, PDC_metadata_cmp); 
         // With sorted list, just compare each one with its next
         DL_FOREACH(head, elt) {
             elt_next = elt->next;
             if (elt_next != NULL) {
-                if (PDC_Server_metadata_cmp(elt, elt_next) == 0) {
-                    PDC_Server_print_metadata(elt);
+                if (PDC_metadata_cmp(elt, elt_next) == 0) {
+                    PDC_print_metadata(elt);
                     has_dup_obj = 1;
                     ret_value = FAIL;
                     goto done;
@@ -304,7 +689,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context)
+perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context, int is_restart)
 {
     FUNC_ENTER(NULL);
     perr_t ret_value;
@@ -408,19 +793,19 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     }
 #endif
 
-    // Hashtable
-    // TODO: read previous data from storage
+    // TODO: support restart with different number of servers than previous run 
     char checkpoint_file[PATH_MAX];
-    sprintf(checkpoint_file, "%s/%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.", pdc_server_rank_g);
-    int is_restart;
-    is_restart = PDC_Server_restart(checkpoint_file);
-    if (is_restart != 1) {
+    if (is_restart == 1) {
+        sprintf(checkpoint_file, "%s/%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.", pdc_server_rank_g);
+        PDC_Server_restart(checkpoint_file);
+    }
+    else {
         // We are starting a brand new server
         if (is_hash_table_init != 1) {
+            // Hash table init
             PDC_Server_init_hash_table();
         }
     }
-
 
     // Initalize atomic variable to finalize server 
     hg_atomic_set32(&close_server_g, 0);
@@ -524,10 +909,13 @@ perr_t PDC_Server_checkpoint(char *filename)
         /* fflush(stdout); */
 
         fwrite(&count, sizeof(int), 1, file);
+        // TODO: find a way to get hash_key from hash table istead of calculating again.
+        uint32_t hash_key = PDC_get_hash_by_name(head->obj_name);
+        fwrite(&hash_key, sizeof(uint32_t), 1, file);
         // Iterate every metadata structure in current entry
         DL_FOREACH(head, elt) {
             /* printf("==PDC_SERVER: Writing one metadata...\n"); */
-            /* PDC_Server_print_metadata(elt); */
+            /* PDC_print_metadata(elt); */
             fwrite(elt, sizeof(pdc_metadata_t), 1, file);
         }
     }
@@ -546,10 +934,10 @@ perr_t PDC_Server_restart(char *filename)
     FUNC_ENTER(NULL);
 
     perr_t ret_value = 1;
-    int n_entry, count, i, j;
+    int n_entry, count, i, j, nobj = 0, all_nobj = 0;
 
     FILE *file = fopen(filename, "r");
-    if (file==NULL) {fputs("==PDC_SERVER: PDC_Server_restart() - Checkpoint file not available", stderr); return -1;}
+    if (file==NULL) {fputs("==PDC_SERVER: PDC_Server_restart() - Checkpoint file not available\n", stderr); return -1;}
 
     // init hash table
     PDC_Server_init_hash_table();
@@ -557,20 +945,47 @@ perr_t PDC_Server_restart(char *filename)
     /* printf("%d entries\n", n_entry); */
 
     pdc_metadata_t *entry, *elt;
+    uint32_t *hash_key;
     while (n_entry--) {
         fread(&count, sizeof(int), 1, file);
         /* printf("Count:%d\n", count); */
-        /* printf("==PDC_SERVER: Reading metadata...\n"); */
-        for (i = 0; i < count; i++) {
-            entry = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t));
-            fread(entry, sizeof(pdc_metadata_t), 1, file);
-            /* PDC_Server_print_metadata(entry); */
-            // TODO: reconstruct hash table
+
+        hash_key = (uint32_t *)malloc(sizeof(uint32_t));
+        fread(hash_key, sizeof(uint32_t), 1, file);
+        /* printf("Hash key is %u\n", *hash_key); */
+
+        // Reconstruct hash table
+        entry = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t) * count);
+        fread(entry, sizeof(pdc_metadata_t), count, file);
+        nobj += count;
+
+        // Debug print for loaded metadata from checkpoint file
+        /* for (i = 0; i < count; i++) { */
+        /*     elt = entry + i; */
+        /*     PDC_print_metadata(elt); */
+        /* } */
+
+        // Init hash table entry (w/ bloom) with first obj
+        PDC_Server_hash_table_list_init(entry, hash_key);
+
+        // Insert the rest objs to the linked list
+        for (i = 1; i < count; i++) {
+            elt = entry + i;
+            // Add to hash list and bloom filter
+            PDC_Server_hash_table_list_insert(entry, elt);
         }
     }
 
     fclose(file);
 
+#ifdef ENABLE_MPI
+    MPI_Reduce(&nobj, &all_nobj, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+#else
+    all_nobj = nobj;
+#endif 
+    if (pdc_server_rank_g == 0) {
+        printf("==PDC_SERVER: Server restarted from saved session, successfully loaded %d objects...\n", all_nobj);
+    }
     ret_value = SUCCEED;
 
 done:
@@ -637,97 +1052,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-static inline void combine_obj_info_to_string(pdc_metadata_t *metadata, char *output)
-{
-    sprintf(output, "%d%s%s%d", metadata->user_id, metadata->app_name, metadata->obj_name, metadata->time_step);
-}
-
-static int find_identical_namemark(pdc_metadata_name_mark_t *mlist, pdc_metadata_name_mark_t *a)
-{
-    FUNC_ENTER(NULL);
-
-    perr_t ret_value;
-
-    pdc_metadata_name_mark_t *elt;
-    DL_FOREACH(mlist, elt) {
-        if (strcmp(elt->obj_name, a->obj_name) == 0) {
-            /* printf("Identical namemark with name [%s] already exist in current Metadata store!\n", ); */
-            ret_value = 1;
-            goto done;
-        }
-    }
-
-    ret_value = 0;
-
-done:
-    FUNC_LEAVE(ret_value);
-} 
-
-
-static int find_identical_metadata(pdc_metadata_t *mlist, pdc_metadata_t *a)
-{
-    FUNC_ENTER(NULL);
-
-    perr_t ret_value;
-
-    // Use bloom filter to quick check if current metadata is in the list
-
-    BLOOM_TYPE_T *bloom = (BLOOM_TYPE_T*)mlist->bloom;
-    char combined_string[PATH_MAX];
-    combine_obj_info_to_string(a, combined_string);
-    /* printf("bloom_check: Combined string: %s\n", combined_string); */
-
-    // Timing
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
-    double ht_total_sec;
-    gettimeofday(&ht_total_start, 0);
-
-    int bloom_check;
-    bloom_check = BLOOM_CHECK(bloom, combined_string, strlen(combined_string));
-
-    // Timing
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
-    ht_total_sec        = ht_total_elapsed / 1000000.0;
-
-    hg_thread_mutex_lock(&pdc_bloom_time_mutex_g);
-    server_bloom_check_time_g += ht_total_sec;
-    hg_thread_mutex_unlock(&pdc_bloom_time_mutex_g);
-
-    n_bloom_total_g++;
-    if (bloom_check == 0) {
-        /* printf("Bloom filter: definitely not!\n"); */
-        ret_value = 0;
-        goto done;
-    }
-    else {
-        // bloom filter says maybe, so need to check entire list
-        /* printf("Bloom filter: maybe!\n"); */
-        n_bloom_maybe_g++;
-        pdc_metadata_t *elt;
-        DL_FOREACH(mlist, elt) {
-            if (PDC_Server_metadata_cmp(elt, a) == 0) {
-                printf("Identical metadata already exist in current Metadata store!\n");
-                PDC_Server_print_metadata(a);
-                ret_value = 1;
-                goto done;
-            }
-        }
-    }
-
-    /* int count; */
-    /* DL_COUNT(lookup_value, elt, count); */
-    /* printf("%d item(s) in list\n", count); */
-
-    ret_value = 0;
-
-done:
-    FUNC_LEAVE(ret_value);
-} 
-
-perr_t PDC_Server_search_with_name_hash(char *obj_name, uint32_t hash_key, pdc_metadata_t** out)
+perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key, pdc_metadata_t** out)
 {
     FUNC_ENTER(NULL);
 
@@ -788,275 +1113,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-static perr_t bloom_add(pdc_metadata_t *metadata)
-{
-    FUNC_ENTER(NULL);
-
-    perr_t ret_value;
-
-    char combined_string[PATH_MAX];
-
-    combine_obj_info_to_string(metadata, combined_string);
-    /* printf("bloom_add: Combined string: %s\n", combined_string); */
-
-    BLOOM_TYPE_T *bloom = (BLOOM_TYPE_T*)metadata->bloom;
-    ret_value = BLOOM_ADD(bloom, combined_string, strlen(combined_string));
-
-done:
-    FUNC_LEAVE(ret_value);
-}
-
-static perr_t PDC_Server_hash_table_list_init(pdc_metadata_t *metadata, uint32_t *hash_key)
-{
-    FUNC_ENTER(NULL);
-
-    perr_t      ret_value = 0;
-    hg_return_t ret;
-
-    /* printf("hash key=%d\n", *hash_key); */
-
-    // Init head of linked list
-    metadata->prev = metadata;                                                                   \
-    metadata->next = NULL;   
-
-    /* PDC_Server_print_metadata(metadata); */
-
-    // Insert to hash table
-    ret = hg_hash_table_insert(metadata_hash_table_g, hash_key, metadata);
-    if (ret != 1) {
-        fprintf(stderr, "PDC_Server_hash_table_list_init(): Error with hash table insert!\n");
-        ret_value = -1;
-        goto done;
-    }
-
-    // Init bloom filter
-    int capacity = 100000;
-    /* int capacity = 500000; */
-    double error_rate = 0.05;
-    n_bloom_maybe_g = 0;
-    n_bloom_total_g = 0;
-
-    metadata->bloom = (BLOOM_TYPE_T*)BLOOM_NEW(capacity, error_rate);
-    if (!metadata->bloom) {
-        fprintf(stderr, "ERROR: Could not create bloom filter\n");
-        ret_value = -1;
-        goto done;
-    }
-    bloom_add(metadata);
-
-done:
-    FUNC_LEAVE(ret_value);
-}
-
-perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out) {
-    
-    FUNC_ENTER(NULL);
-
-    perr_t ret_value = SUCCEED;
-    hg_return_t hg_ret;
-
-
-    printf("==PDC_SERVER: Insert obj name marker \"%s\"\n", in->obj_name);
-
-    // TODO
-    uint32_t *hash_key = (uint32_t*)malloc(sizeof(uint32_t));
-    if (hash_key == NULL) {
-        printf("Cannnot allocate hash_key!\n");
-        goto done;
-    }
-
-    *hash_key = in->hash_value;
-
-    pdc_metadata_name_mark_t *namemark= (pdc_metadata_name_mark_t*)malloc(sizeof(pdc_metadata_name_mark_t));
-    if (namemark == NULL) {
-        printf("==PDC_SERVER: ERROR - Cannnot allocate pdc_metadata_name_mark_t!\n");
-        goto done;
-    }
-    strcpy(namemark->obj_name, in->obj_name);
-
-    pdc_metadata_name_mark_t *lookup_value;
-    pdc_metadata_name_mark_t *elt;
-
-    // Obtain lock for hash table
-    int unlocked = 0;
-    hg_thread_mutex_lock(&pdc_metadata_name_mark_hash_table_mutex_g);
-
-    if (metadata_name_mark_hash_table_g != NULL) {
-        // lookup
-        /* printf("checking hash table with key=%d\n", *hash_key); */
-        lookup_value = hg_hash_table_lookup(metadata_name_mark_hash_table_g, hash_key);
-
-        // Is this hash value exist in the Hash table?
-        if (lookup_value != NULL) {
-            // Check if there exist namemark identical to current one
-            if (find_identical_namemark(lookup_value, namemark) == 1) {
-                ret_value = 0;
-                free(namemark);
-            }
-            else {
-                // Currently namemark is unique, insert to linked list
-                DL_PREPEND(lookup_value, namemark);
-            }
-        
-            /* free(hash_key); */
-        }
-        else {
-            /* printf("lookup_value is NULL!\n"); */
-            // First entry for current hasy_key, init linked list
-            namemark->prev = namemark;                                                                   \
-            namemark->next = NULL;   
-
-            // Insert to hash table
-            hg_ret = hg_hash_table_insert(metadata_name_mark_hash_table_g, hash_key, namemark);
-            if (hg_ret != 1) {
-                fprintf(stderr, "==PDC_SERVER: ERROR - insert_obj_name_marker() error with hash table insert!\n");
-                ret_value = -1;
-                goto done;
-            }
-
-        }
-
-    }
-    else {
-        printf("metadata_hash_table_g not initilized!\n");
-        ret_value = -1;
-        goto done;
-    }
-
-    // ^ Release hash table lock
-    hg_thread_mutex_unlock(&pdc_metadata_name_mark_hash_table_mutex_g);
-
-
-done:
-    out->ret = 1;
-    FUNC_LEAVE(ret_value);
-}
-
-perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
-{
-
-    FUNC_ENTER(NULL);
-
-    perr_t ret_value;
-
-    // Timing
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
-    double ht_total_sec;
-
-    gettimeofday(&ht_total_start, 0);
-
-    /* printf("Got RPC request with name: %s\tHash=%d\n", in->obj_name, in->hash_value); */
-    /* printf("Full name check: %s\n", &in->obj_name[507]); */
-
-    pdc_metadata_t *metadata = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t));
-    if (metadata == NULL) {
-        printf("Cannnot allocate pdc_metadata_t!\n");
-        goto done;
-    }
-    strcpy(metadata->obj_name, in->obj_name);
-    strcpy(metadata->app_name, in->app_name);
-
-    // TODO: Both server and client gets it and do security check
-    metadata->user_id        = in->user_id;
-    metadata->time_step      = in->time_step;
-
-    /* obj_id; */
-    /* obj_data_location        = NULL; */
-    /* create_time              =; */
-    /* last_modified_time       =; */
-    strcpy(metadata->tags, in->tags);
-
-
-    uint32_t *hash_key = (uint32_t*)malloc(sizeof(uint32_t));
-    if (hash_key == NULL) {
-        printf("Cannnot allocate hash_key!\n");
-        goto done;
-    }
-    *hash_key = in->hash_value;
-
-    pdc_metadata_t *lookup_value;
-    pdc_metadata_t *elt;
-
-    // Obtain lock for hash table
-    int unlocked = 0;
-    hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
-
-    if (metadata_hash_table_g != NULL) {
-        // lookup
-        /* printf("checking hash table with key=%d\n", *hash_key); */
-        lookup_value = hg_hash_table_lookup(metadata_hash_table_g, hash_key);
-
-        // Is this hash value exist in the Hash table?
-        if (lookup_value != NULL) {
-
-            // Set the bloom filter pointer to all metadata list items so we don't need 
-            // to take care of it when head got deleted
-            metadata->bloom = lookup_value->bloom; 
-            
-            /* printf("lookup_value not NULL!\n"); */
-            // Check if there exist metadata identical to current one
-            if (find_identical_metadata(lookup_value, metadata) == 1) {
-                ret_value = -1;
-                out->ret  = -1;
-                free(metadata);
-                goto done;
-            }
-            else {
-                // add to bloom filter
-                bloom_add(metadata);
-                // Currently $metadata is unique, insert to linked list
-                DL_APPEND(lookup_value, metadata);
-                /* int count; */
-                /* pdc_metadata_t *elt; */
-                /* DL_COUNT(lookup_value, elt, count); */
-                /* printf("Append one metadata, total=%d\n", count); */
-            }
-        
-        }
-        else {
-            // First entry for current hasy_key, init linked list, and insert to hash table
-            /* printf("lookup_value is NULL!\n"); */
-            PDC_Server_hash_table_list_init(metadata, hash_key);
-        }
-
-    }
-    else {
-        printf("metadata_hash_table_g not initilized!\n");
-        ret_value = -1;
-        goto done;
-    }
-
-    // ^ Release hash table lock
-    hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
-    unlocked = 1;
-
-    // Generate object id (uint64_t)
-    metadata->obj_id = PDC_Server_gen_obj_id();
-
-    // Fill $out structure for returning the generated obj_id to client
-    out->ret = metadata->obj_id;
-
-    // Debug print metadata info
-    /* PDC_Server_print_metadata(metadata); */
-
-    // Timing
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
-    ht_total_sec        = ht_total_elapsed / 1000000.0;
-
-    hg_thread_mutex_lock(&pdc_time_mutex_g);
-    server_insert_time_g += ht_total_sec;
-    hg_thread_mutex_unlock(&pdc_time_mutex_g);
-    
-
-done:
-    if (unlocked == 0)
-        hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
-    FUNC_LEAVE(ret_value);
-}
-
 int main(int argc, char *argv[])
 {
 #ifdef ENABLE_MPI
@@ -1071,10 +1127,15 @@ int main(int argc, char *argv[])
     hg_class_t *hg_class = NULL;
     hg_context_t *hg_context = NULL;
 
-    int port;
+    int port, is_restart = 0;
     port = pdc_server_rank_g + 6600;
     /* printf("rank=%d, port=%d\n", pdc_server_rank_g,port); */
-    PDC_Server_init(port, &hg_class, &hg_context);
+
+    if (argc > 1) {
+        if (strcmp(argv[1], "restart") == 0) 
+            is_restart = 1;
+    }
+    PDC_Server_init(port, &hg_class, &hg_context, is_restart);
     if (hg_class == NULL || hg_context == NULL) {
         printf("Error with Mercury init\n");
         goto done;

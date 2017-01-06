@@ -320,9 +320,12 @@ hg_id_t gen_obj_id_register(hg_class_t *hg_class);
 hg_id_t send_obj_name_marker_register(hg_class_t *hg_class);
 hg_id_t client_test_connect_register(hg_class_t *hg_class);
 hg_id_t close_server_register(hg_class_t *hg_class);
+hg_id_t metadata_query_register(hg_class_t *hg_class);
 
-int     PDC_Server_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b);
-void    PDC_Server_print_metadata(pdc_metadata_t *a);
+uint32_t PDC_get_hash_by_name(const char *name);
+int      PDC_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b);
+void     PDC_print_metadata(pdc_metadata_t *a);
+
 
 extern hg_hash_table_t   *metadata_hash_table_g;
 extern hg_atomic_int32_t  close_server_g;

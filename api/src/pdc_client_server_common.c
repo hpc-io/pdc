@@ -20,6 +20,9 @@ uint64_t pdc_id_seq_g = 1000000;
 
 #ifdef ENABLE_MULTITHREAD
 
+extern struct hg_thread_work *
+hg_core_get_thread_work(hg_handle_t handle);
+
 // Macros for multi-thread callback, grabbed from Mercury/Testing/mercury_rpc_cb.c
 #define HG_TEST_RPC_CB(func_name, handle) \
     static hg_return_t \
@@ -61,7 +64,33 @@ uint64_t pdc_id_seq_g = 1000000;
 
 #endif // End of ENABLE_MULTITHREAD
 
-inline int PDC_Server_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b)
+static uint32_t pdc_hash_djb2(const char *pc)
+{
+        uint32_t hash = 5381, c;
+        while (c = *pc++)
+            hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+        if (hash < 0)
+            hash *= -1;
+
+        return hash;
+}
+
+static uint32_t pdc_hash_sdbm(const char *pc)
+{
+        uint32_t hash = 0, c;
+        while (c = (*pc++))
+                hash = c + (hash << 6) + (hash << 16) - hash;
+        if (hash < 0)
+            hash *= -1;
+        return hash;
+}
+
+uint32_t PDC_get_hash_by_name(const char *name)
+{
+    return pdc_hash_djb2(name); 
+}
+
+inline int PDC_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b)
 {
     int ret;
     // Timestep
@@ -92,9 +121,8 @@ inline int PDC_Server_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b)
     return ret;
 }
 
-void PDC_Server_print_metadata(pdc_metadata_t *a)
+void PDC_print_metadata(pdc_metadata_t *a)
 {
-    printf("==PDC_Server: Metadata structure\n");
     printf("================================\n\n");
     printf("  uid       = %u\n", a->user_id);
     printf("  app_name  = %s\n", a->app_name);
@@ -110,7 +138,7 @@ void PDC_Server_print_metadata(pdc_metadata_t *a)
 // Dummy function for client to compile, real function is used only by server and code is in pdc_server.c
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out) {return 0;}
 perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out) {return 0;}
-perr_t PDC_Server_search_with_name_hash(char *obj_name, uint32_t hash_key, pdc_metadata_t** out) {return 0;}
+perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key, pdc_metadata_t** out) {return 0;}
 #endif
 
 /*
@@ -191,8 +219,8 @@ HG_TEST_RPC_CB(send_obj_name_marker, handle)
 
     /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
-    gen_obj_id_in_t in;
-    gen_obj_id_out_t out;
+    send_obj_name_marker_in_t  in;
+    send_obj_name_marker_out_t out;
 
     HG_Get_input(handle, &in);
     
