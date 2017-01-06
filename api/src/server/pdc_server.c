@@ -46,6 +46,8 @@ hg_thread_pool_t *hg_test_thread_pool_g = NULL;
 hg_hash_table_t *metadata_hash_table_g = NULL;
 hg_hash_table_t *metadata_name_mark_hash_table_g = NULL;
 
+int is_hash_table_init = 0;
+
 int pdc_server_rank_g = 0;
 int pdc_server_size_g = 1;
 
@@ -196,6 +198,35 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+static perr_t PDC_Server_init_hash_table()
+{
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value = SUCCEED;
+
+    metadata_hash_table_g = hg_hash_table_new(PDC_Server_metadata_int_hash, PDC_Server_metadata_int_equal);
+    if (metadata_hash_table_g == NULL) {
+        printf("==PDC_SERVER: metadata_hash_table_g init error! Exit...\n");
+        exit(-1);
+    }
+    hg_hash_table_register_free_functions(metadata_hash_table_g, PDC_Server_metadata_int_hash_key_free, PDC_Server_metadata_hash_value_free);
+
+    // Name marker hash table, reuse some functions from metadata_hash_table
+    metadata_name_mark_hash_table_g = hg_hash_table_new(PDC_Server_metadata_int_hash, PDC_Server_metadata_int_equal);
+    if (metadata_name_mark_hash_table_g == NULL) {
+        printf("==PDC_SERVER: metadata_name_mark_hash_table_g init error! Exit...\n");
+        exit(-1);
+    }
+    hg_hash_table_register_free_functions(metadata_name_mark_hash_table_g, PDC_Server_metadata_int_hash_key_free, PDC_Server_metadata_name_mark_hash_value_free);
+
+    is_hash_table_init = 1;
+
+    ret_value = SUCCEED;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 static perr_t PDC_Server_metadata_duplicate_check()
 {
     FUNC_ENTER(NULL);
@@ -233,10 +264,10 @@ static perr_t PDC_Server_metadata_duplicate_check()
 
     while (n_entry != 0 && hg_hash_table_iter_has_more(&hash_table_iter)) {
         head = hg_hash_table_iter_next(&hash_table_iter);
-        /* DL_COUNT(head, elt, dl_count); */
-        /* if (pdc_server_rank_g == 0) { */
-        /*     printf("  Hash entry[%d], with %d items\n", count, dl_count); */
-        /* } */
+        DL_COUNT(head, elt, dl_count);
+        if (pdc_server_rank_g == 0) {
+            printf("  Hash entry[%d], with %d items\n", count, dl_count);
+        }
         DL_SORT(head, PDC_Server_metadata_cmp); 
         // With sorted list, just compare each one with its next
         DL_FOREACH(head, elt) {
@@ -379,21 +410,16 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
 
     // Hashtable
     // TODO: read previous data from storage
-    metadata_hash_table_g = hg_hash_table_new(PDC_Server_metadata_int_hash, PDC_Server_metadata_int_equal);
-    if (metadata_hash_table_g == NULL) {
-        printf("==PDC_SERVER: metadata_hash_table_g init error! Exit...\n");
-        exit(-1);
+    char checkpoint_file[PATH_MAX];
+    sprintf(checkpoint_file, "%s/%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.", pdc_server_rank_g);
+    int is_restart;
+    is_restart = PDC_Server_restart(checkpoint_file);
+    if (is_restart != 1) {
+        // We are starting a brand new server
+        if (is_hash_table_init != 1) {
+            PDC_Server_init_hash_table();
+        }
     }
-    hg_hash_table_register_free_functions(metadata_hash_table_g, PDC_Server_metadata_int_hash_key_free, PDC_Server_metadata_hash_value_free);
-
-    // Name marker hash table, reuse some functions from metadata_hash_table
-    metadata_name_mark_hash_table_g = hg_hash_table_new(PDC_Server_metadata_int_hash, PDC_Server_metadata_int_equal);
-    if (metadata_name_mark_hash_table_g == NULL) {
-        printf("==PDC_SERVER: metadata_name_mark_hash_table_g init error! Exit...\n");
-        exit(-1);
-    }
-    hg_hash_table_register_free_functions(metadata_name_mark_hash_table_g, PDC_Server_metadata_int_hash_key_free, PDC_Server_metadata_name_mark_hash_value_free);
-
 
 
     // Initalize atomic variable to finalize server 
@@ -467,6 +493,88 @@ hg_progress_thread(void *arg)
     hg_thread_exit(tret);
 
     return tret;
+}
+
+// Backup in-memory DHT/Bloom to persist storage
+perr_t PDC_Server_checkpoint(char *filename)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value;
+
+    printf("\n\n==PDC_SERVER: Start checkpoint process [%s]\n", filename);
+
+    FILE *file = fopen(filename, "w+");
+    if (file==NULL) {fputs("==PDC_SERVER: PDC_Server_checkpoint() - Checkpoint file open error", stderr); return -1;}
+
+    // DHT 
+    pdc_metadata_t *head, *elt;
+    int count, n_entry;
+    n_entry = hg_hash_table_num_entries(metadata_hash_table_g);
+    /* printf("%d entries\n", n_entry); */
+    fwrite(&n_entry, sizeof(int), 1, file);
+
+    hg_hash_table_iter_t hash_table_iter;
+    hg_hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
+
+    while (n_entry != 0 && hg_hash_table_iter_has_more(&hash_table_iter)) {
+        head = hg_hash_table_iter_next(&hash_table_iter);
+        DL_COUNT(head, elt, count);
+        /* printf("count=%d\n", count); */
+        /* fflush(stdout); */
+
+        fwrite(&count, sizeof(int), 1, file);
+        // Iterate every metadata structure in current entry
+        DL_FOREACH(head, elt) {
+            /* printf("==PDC_SERVER: Writing one metadata...\n"); */
+            /* PDC_Server_print_metadata(elt); */
+            fwrite(elt, sizeof(pdc_metadata_t), 1, file);
+        }
+    }
+
+    fclose(file);
+
+    ret_value = SUCCEED;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+// Restart in-memory DHT/Bloom filters from persist storage
+perr_t PDC_Server_restart(char *filename)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value = 1;
+    int n_entry, count, i, j;
+
+    FILE *file = fopen(filename, "r");
+    if (file==NULL) {fputs("==PDC_SERVER: PDC_Server_restart() - Checkpoint file not available", stderr); return -1;}
+
+    // init hash table
+    PDC_Server_init_hash_table();
+    fread(&n_entry, sizeof(int), 1, file);
+    /* printf("%d entries\n", n_entry); */
+
+    pdc_metadata_t *entry, *elt;
+    while (n_entry--) {
+        fread(&count, sizeof(int), 1, file);
+        /* printf("Count:%d\n", count); */
+        /* printf("==PDC_SERVER: Reading metadata...\n"); */
+        for (i = 0; i < count; i++) {
+            entry = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t));
+            fread(entry, sizeof(pdc_metadata_t), 1, file);
+            /* PDC_Server_print_metadata(entry); */
+            // TODO: reconstruct hash table
+        }
+    }
+
+    fclose(file);
+
+    ret_value = SUCCEED;
+
+done:
+    FUNC_LEAVE(ret_value);
 }
 
 // Multithread Mercury
@@ -899,7 +1007,11 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
                 // add to bloom filter
                 bloom_add(metadata);
                 // Currently $metadata is unique, insert to linked list
-                DL_PREPEND(lookup_value, metadata);
+                DL_APPEND(lookup_value, metadata);
+                /* int count; */
+                /* pdc_metadata_t *elt; */
+                /* DL_COUNT(lookup_value, elt, count); */
+                /* printf("Append one metadata, total=%d\n", count); */
             }
         
         }
@@ -989,12 +1101,20 @@ int main(int argc, char *argv[])
     HG_Context_destroy(hg_context);
     HG_Finalize(hg_class);
 
-    PDC_Server_finalize();
+    // TODO: instead of checkpoint at app finalize time, try checkpoint with a time countdown or # of objects
+    char checkpoint_file[PATH_MAX];
+    sprintf(checkpoint_file, "%s/%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.", pdc_server_rank_g);
+    PDC_Server_checkpoint(checkpoint_file);
 
+
+
+    PDC_Server_finalize();
     if (pdc_server_rank_g == 0) {
         printf("==PDC_SERVER: exiting...\n");
         /* printf("==PDC_SERVER: [%d] exiting...\n", pdc_server_rank_g); */
     }
+
+
 
 done:
 #ifdef ENABLE_MPI

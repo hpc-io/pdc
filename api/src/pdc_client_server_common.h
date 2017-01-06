@@ -24,17 +24,17 @@ extern uint64_t pdc_id_seq_g;
 // For storing metadata
 typedef struct pdc_metadata_t {
     int     user_id;                // Both server and client gets it and do security check
-    char    app_name[PATH_MAX];
-    char    obj_name[PATH_MAX];
+    char    app_name[ADDR_MAX];
+    char    obj_name[ADDR_MAX];
     int     time_step;
     // Above four are the unique identifier for objects
 
     int     obj_id;
-    char    obj_data_location[PATH_MAX];
+    char    obj_data_location[128];
     time_t  create_time;
     time_t  last_modified_time;
 
-    char    tags[PATH_MAX];
+    char    tags[128];
 
     // For hash table list
     struct pdc_metadata_t *prev;
