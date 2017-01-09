@@ -520,12 +520,13 @@ uint64_t PDC_Client_send_name_to_server(const char *obj_name, int hash_name_valu
 
     // Fill input structure
     gen_obj_id_in_t in;
-    in.obj_name   = obj_name;
-    in.hash_value = hash_name_value;
-    in.user_id    = getuid();
-    in.app_name   = "test_app_name";
-    in.time_step  = time_step;
-    in.tags       = "test_tag0=11";
+    in.data.obj_name   = obj_name;
+    in.data.user_id    = getuid();
+    in.data.app_name   = "test_app_name";
+    in.data.time_step  = time_step;
+    in.data.tags       = "test_tag0=11";
+    in.data.data_location = "/path/to/file";
+    in.hash_value      = hash_name_value;
     /* printf("Hash(%s) = %d\n", obj_name, in.hash_value); */
 
     /* printf("Sending input to target\n"); */
@@ -637,11 +638,11 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-pdc_metadata_t * PDC_Client_query_metadata_with_name(const char *obj_name)
+perr_t PDC_Client_query_metadata_with_name(const char *obj_name, pdc_metadata_t **out)
 {
     FUNC_ENTER(NULL);
 
-    pdc_metadata_t *ret_value = NULL;
+    perr_t *ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
 
     int server_id = get_server_id_by_hash_name(obj_name);
@@ -677,7 +678,7 @@ pdc_metadata_t * PDC_Client_query_metadata_with_name(const char *obj_name)
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
 
-    ret_value = lookup_args.data;
+    *out = lookup_args.data;
 
 done:
     FUNC_LEAVE(ret_value);
@@ -731,17 +732,17 @@ uint64_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t property)
     client_name_cache_t *elt;
     client_name_cache_t *insert_value;
 
-    // TODO: Is this the current object name's first appearance?
+    // Is this the current object name's first appearance?
     if (obj_names_cache_hash_table_g != NULL) {
         /* printf("checking hash table with key=%d\n", *hash_key); */
         lookup_value = hg_hash_table_lookup(obj_names_cache_hash_table_g, hash_key);
         if (lookup_value != NULL) {
-            printf("==PDC_CLIENT: Current name exist in the name cache hash table\n");
+            /* printf("==PDC_CLIENT: Current name exist in the name cache hash table\n"); */
             // TODO: double check in case of hash collision
         }
         else {
             // insert
-            printf("==PDC_CLIENT: Current name does NOT exist in the name cache hash table\n");
+            /* printf("==PDC_CLIENT: Current name does NOT exist in the name cache hash table\n"); */
             insert_value = (client_name_cache_t *)malloc(sizeof(client_name_cache_t));
             strcpy(insert_value->name, name);
             hg_hash_table_insert(obj_names_cache_hash_table_g, hash_key, insert_value);
@@ -763,7 +764,7 @@ uint64_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t property)
     // DEBUG: query the object just created
     /* printf("\n==PDC_CLIENT: Querying object with name [%s]\n", name); */
     /* pdc_metadata_t *res; */
-    /* res = PDC_Client_query_metadata_with_name(name); */
+    /* PDC_Client_query_metadata_with_name(name, &res); */
     /* if (res->obj_id == 0 && res->user_id == -1 && res->time_step == -1) { */
     /*     printf("==PDC_CLIENT: Queried object [%s] does not exist!\n", name); */
     /* } */

@@ -420,7 +420,7 @@ perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marke
     hg_return_t hg_ret;
 
 
-    printf("==PDC_SERVER: Insert obj name marker [%s]\n", in->obj_name);
+    /* printf("==PDC_SERVER: Insert obj name marker [%s]\n", in->obj_name); */
 
     uint32_t *hash_key = (uint32_t*)malloc(sizeof(uint32_t));
     if (hash_key == NULL) {
@@ -454,7 +454,7 @@ perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marke
             // Check if there exist namemark identical to current one
             if (find_identical_namemark(lookup_value, namemark) == 1) {
                 // If find same one, do nothing
-                printf("==PDC_SERVER: marker exist for [%s]\n", namemark->obj_name);
+                /* printf("==PDC_SERVER: marker exist for [%s]\n", namemark->obj_name); */
                 ret_value = 0;
                 free(namemark);
             }
@@ -517,19 +517,17 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
         printf("Cannnot allocate pdc_metadata_t!\n");
         goto done;
     }
-    strcpy(metadata->obj_name, in->obj_name);
-    strcpy(metadata->app_name, in->app_name);
 
-    // TODO: Both server and client gets it and do security check
-    metadata->user_id        = in->user_id;
-    metadata->time_step      = in->time_step;
+    // TODO: [Future work] Both server and client gets it and do security check
+    metadata->user_id        = in->data.user_id;
+    metadata->time_step      = in->data.time_step;
+    strcpy(metadata->obj_name, in->data.obj_name);
+    strcpy(metadata->app_name, in->data.app_name);
+    strcpy(metadata->tags,     in->data.tags);
 
-    /* obj_id; */
-    /* obj_data_location        = NULL; */
+    /* strcpy(metadata->data_location, in->data.data_location); */
     /* create_time              =; */
     /* last_modified_time       =; */
-    strcpy(metadata->tags, in->tags);
-
 
     uint32_t *hash_key = (uint32_t*)malloc(sizeof(uint32_t));
     if (hash_key == NULL) {
@@ -650,10 +648,10 @@ static perr_t PDC_Server_metadata_duplicate_check()
 
     while (n_entry != 0 && hg_hash_table_iter_has_more(&hash_table_iter)) {
         head = hg_hash_table_iter_next(&hash_table_iter);
-        DL_COUNT(head, elt, dl_count);
-        if (pdc_server_rank_g == 0) {
-            printf("  Hash entry[%d], with %d items\n", count, dl_count);
-        }
+        /* DL_COUNT(head, elt, dl_count); */
+        /* if (pdc_server_rank_g == 0) { */
+        /*     printf("  Hash entry[%d], with %d items\n", count, dl_count); */
+        /* } */
         DL_SORT(head, PDC_metadata_cmp); 
         // With sorted list, just compare each one with its next
         DL_FOREACH(head, elt) {
@@ -798,7 +796,28 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     char checkpoint_file[PATH_MAX];
     if (is_restart == 1) {
         sprintf(checkpoint_file, "%s/%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.", pdc_server_rank_g);
+
+        // Timing
+        struct timeval  ht_total_start;
+        struct timeval  ht_total_end;
+        long long ht_total_elapsed;
+        double restart_time, all_restart_time;
+        gettimeofday(&ht_total_start, 0);
+
         PDC_Server_restart(checkpoint_file);
+
+        // Timing
+        gettimeofday(&ht_total_end, 0);
+        ht_total_elapsed = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+        restart_time = ht_total_elapsed / 1000000.0;
+
+#ifdef ENABLE_MPI
+        MPI_Reduce(&restart_time, &all_restart_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+#else
+        all_restart_time = restart_time;
+#endif
+        if (pdc_server_rank_g == 0) 
+            printf("==PDC_SERVER: total restart time = %.6f\n", all_restart_time);
     }
     else {
         // We are starting a brand new server
@@ -1080,14 +1099,14 @@ perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key,
 
         // Is this hash value exist in the Hash table?
         if (lookup_value != NULL) {
-            printf("==PDC_SERVER: PDC_Server_search_with_name_hash(): lookup_value not NULL!\n");
+            /* printf("==PDC_SERVER: PDC_Server_search_with_name_hash(): lookup_value not NULL!\n"); */
             // Check if there exist metadata identical to current one
             /* if (find_identical_metadata(lookup_value, &metadata) == 1) { */
             if (strcmp(lookup_value->obj_name, obj_name) == 0) {
                 // There is one identical to current query
                 // TODO: multiple objects satisfy current query
                 *out = lookup_value; 
-                printf("==PDC_SERVER: PDC_Server_search_with_name_hash(): Found exact match for query!\n");
+                /* printf("==PDC_SERVER: PDC_Server_search_with_name_hash(): Found exact match for query!\n"); */
             }
             else {
                 // Collision no such thing exist
@@ -1188,7 +1207,6 @@ int main(int argc, char *argv[])
 #else
     all_checkpoint_time = checkpoint_time;
 #endif
-
     if (pdc_server_rank_g == 0) {
         printf("==PDC_SERVER: total checkpoint  time = %.6f\n", all_checkpoint_time);
     }
