@@ -82,7 +82,7 @@ typedef struct {
 } metadata_query_in_t;
 
 static HG_INLINE hg_return_t
-metadata_query_in_t(hg_proc_t proc, void *data)
+hg_proc_metadata_query_in_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret;
     metadata_query_in_t *struct_data = (metadata_query_in_t*) data;
@@ -136,7 +136,7 @@ hg_proc_pdc_metadata_query_result_t(hg_proc_t proc, void *data)
 }
 
 static HG_INLINE hg_return_t
-metadata_query_out_t(hg_proc_t proc, void *data)
+hg_proc_metadata_query_out_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret = HG_SUCCESS;
     metadata_query_out_t *struct_data = (metadata_query_out_t*) data;
@@ -241,7 +241,7 @@ hg_proc_send_obj_name_marker_in_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     send_obj_name_marker_in_t *struct_data = (send_obj_name_marker_in_t*) data;
 
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->name);
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
     }
