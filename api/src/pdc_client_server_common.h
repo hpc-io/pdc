@@ -45,11 +45,10 @@ typedef struct pdc_metadata_t {
 
 typedef struct pdc_metadata_transfer_t {
     int         user_id;
+    int         time_step;
+    uint64_t    obj_id;
     const char  *app_name;
     const char  *obj_name;
-    int         time_step;
-
-    uint64_t    obj_id;
     const char  *data_location;
     const char  *tags;
     /* time_t      create_time; */

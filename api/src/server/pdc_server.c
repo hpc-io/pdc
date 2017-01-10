@@ -47,7 +47,8 @@ hg_thread_pool_t *hg_test_thread_pool_g = NULL;
 hg_hash_table_t *metadata_hash_table_g = NULL;
 hg_hash_table_t *metadata_name_mark_hash_table_g = NULL;
 
-int is_hash_table_init = 0;
+int is_hash_table_init_g = 0;
+int is_restart_g = 0;
 
 int pdc_server_rank_g = 0;
 int pdc_server_size_g = 1;
@@ -105,9 +106,14 @@ PDC_Server_metadata_hash_value_free(hg_hash_table_value_t value)
     free_counting_bloom(head->bloom);
 
     // Free metadata list
-    DL_FOREACH_SAFE(head,elt,tmp) {
-      /* DL_DELETE(head,elt); */
-      free(elt);
+    if (is_restart_g == 0) {
+        DL_FOREACH_SAFE(head,elt,tmp) {
+          /* DL_DELETE(head,elt); */
+          free(elt);
+        }
+    }
+    else {
+        free(head);
     }
 }
 
@@ -311,7 +317,7 @@ static perr_t PDC_Server_init_hash_table()
     }
     hg_hash_table_register_free_functions(metadata_name_mark_hash_table_g, PDC_Server_metadata_int_hash_key_free, PDC_Server_metadata_name_mark_hash_value_free);
 
-    is_hash_table_init = 1;
+    is_hash_table_init_g = 1;
 
     ret_value = SUCCEED;
 
@@ -688,7 +694,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context, int is_restart)
+perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context)
 {
     FUNC_ENTER(NULL);
     perr_t ret_value;
@@ -794,7 +800,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
 
     // TODO: support restart with different number of servers than previous run 
     char checkpoint_file[PATH_MAX];
-    if (is_restart == 1) {
+    if (is_restart_g == 1) {
         sprintf(checkpoint_file, "%s/%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.", pdc_server_rank_g);
 
         // Timing
@@ -821,7 +827,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     }
     else {
         // We are starting a brand new server
-        if (is_hash_table_init != 1) {
+        if (is_hash_table_init_g != 1) {
             // Hash table init
             PDC_Server_init_hash_table();
         }
@@ -1149,15 +1155,16 @@ int main(int argc, char *argv[])
     hg_class_t *hg_class = NULL;
     hg_context_t *hg_context = NULL;
 
-    int port, is_restart = 0;
+    int port;
+    is_restart_g = 0;
     port = pdc_server_rank_g + 6600;
     /* printf("rank=%d, port=%d\n", pdc_server_rank_g,port); */
 
     if (argc > 1) {
         if (strcmp(argv[1], "restart") == 0) 
-            is_restart = 1;
+            is_restart_g = 1;
     }
-    PDC_Server_init(port, &hg_class, &hg_context, is_restart);
+    PDC_Server_init(port, &hg_class, &hg_context);
     if (hg_class == NULL || hg_context == NULL) {
         printf("Error with Mercury init\n");
         goto done;
