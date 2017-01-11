@@ -120,7 +120,6 @@ int main(int argc, const char *argv[])
     long long ht_total_elapsed;
     double ht_total_sec;
 
-    gettimeofday(&ht_total_start, 0);
 
     char obj_prefix[4][10] = {"x", "y", "z", "energy"};
     char tmp_str[128];
@@ -140,6 +139,8 @@ int main(int argc, const char *argv[])
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
+
+    gettimeofday(&ht_total_start, 0);
 
     for (i = 0; i < count; i++) {
         if (use_name == -1) 
