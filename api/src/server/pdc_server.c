@@ -400,8 +400,8 @@ static perr_t PDC_Server_hash_table_list_init(pdc_metadata_t *metadata, uint32_t
     }
 
     // Init bloom filter
-    int capacity = 100000;
-    /* int capacity = 500000; */
+    /* int capacity = 100000; */
+    int capacity = 500000;
     double error_rate = 0.05;
     n_bloom_maybe_g = 0;
     n_bloom_total_g = 0;
@@ -1160,6 +1160,15 @@ int main(int argc, char *argv[])
     port = pdc_server_rank_g + 6600;
     /* printf("rank=%d, port=%d\n", pdc_server_rank_g,port); */
 
+    // Timing
+    struct timeval  start;
+    struct timeval  end;
+    long long elapsed;
+    double server_init_time, all_server_init_time;
+    gettimeofday(&start, 0);
+
+
+
     if (argc > 1) {
         if (strcmp(argv[1], "restart") == 0) 
             is_restart_g = 1;
@@ -1177,8 +1186,20 @@ int main(int argc, char *argv[])
     send_obj_name_marker_register(hg_class);
     metadata_query_register(hg_class);
 
-    if (pdc_server_rank_g == 0)
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
+    // Timing
+    gettimeofday(&end, 0);
+    elapsed = (end.tv_sec-start.tv_sec)*1000000LL + end.tv_usec-start.tv_usec;
+    server_init_time = elapsed / 1000000.0;
+
+
+    if (pdc_server_rank_g == 0) {
+        printf("==PDC_SERVER: total startup time = %.6f\n", server_init_time);
         printf("==PDC_SERVER: Server ready!\n\n\n");
+    }
     fflush(stdout);
 
 #ifdef ENABLE_MULTITHREAD
