@@ -23,11 +23,6 @@
 #include "mercury.h"
 #include "mercury_macros.h"
 
-// Mercury multithread
-#include "mercury_thread.h"
-#include "mercury_thread_pool.h"
-#include "mercury_thread_mutex.h"
-
 // Mercury hash table and list
 #include "mercury_hash_table.h"
 #include "mercury_list.h"
@@ -37,8 +32,17 @@
 #include "pdc_client_server_common.h"
 #include "pdc_server.h"
 
+#ifdef ENABLE_MULTITHREAD 
+// Mercury multithread
+#include "mercury_thread.h"
+#include "mercury_thread_pool.h"
+#include "mercury_thread_mutex.h"
+
 hg_thread_mutex_t pdc_metadata_hash_table_mutex_g;
 hg_thread_mutex_t pdc_metadata_name_mark_hash_table_mutex_g;
+hg_thread_mutex_t pdc_time_mutex_g;
+hg_thread_mutex_t pdc_bloom_time_mutex_g;
+#endif
 
 // Global thread pool
 hg_thread_pool_t *hg_test_thread_pool_g = NULL;
@@ -59,8 +63,6 @@ int n_bloom_maybe_g;
 double server_bloom_check_time_g = 0.0;
 double server_bloom_insert_time_g = 0.0;
 double server_insert_time_g      = 0.0;
-hg_thread_mutex_t pdc_time_mutex_g;
-hg_thread_mutex_t pdc_bloom_time_mutex_g;
 
 static int 
 PDC_Server_metadata_int_equal(hg_hash_table_key_t vlocation1, hg_hash_table_key_t vlocation2)
@@ -198,9 +200,13 @@ static int find_identical_metadata(pdc_metadata_t *mlist, pdc_metadata_t *a)
     ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
     ht_total_sec        = ht_total_elapsed / 1000000.0;
 
+#ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_lock(&pdc_bloom_time_mutex_g);
+#endif
     server_bloom_check_time_g += ht_total_sec;
+#ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_unlock(&pdc_bloom_time_mutex_g);
+#endif
 
     n_bloom_total_g++;
     if (bloom_check == 0) {
@@ -446,9 +452,11 @@ perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marke
     pdc_metadata_name_mark_t *lookup_value;
     pdc_metadata_name_mark_t *elt;
 
+#ifdef ENABLE_MULTITHREAD 
     // Obtain lock for hash table
     int unlocked = 0;
     hg_thread_mutex_lock(&pdc_metadata_name_mark_hash_table_mutex_g);
+#endif
 
     if (metadata_name_mark_hash_table_g != NULL) {
         // lookup
@@ -492,8 +500,10 @@ perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marke
         goto done;
     }
 
+#ifdef ENABLE_MULTITHREAD 
     // ^ Release hash table lock
     hg_thread_mutex_unlock(&pdc_metadata_name_mark_hash_table_mutex_g);
+#endif
 
 done:
     out->ret = 1;
@@ -545,9 +555,11 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     pdc_metadata_t *lookup_value;
     pdc_metadata_t *elt;
 
+#ifdef ENABLE_MULTITHREAD 
     // Obtain lock for hash table
     int unlocked = 0;
     hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
+#endif
 
     if (metadata_hash_table_g != NULL) {
         // lookup
@@ -587,9 +599,11 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
         goto done;
     }
 
+#ifdef ENABLE_MULTITHREAD 
     // ^ Release hash table lock
     hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
     unlocked = 1;
+#endif
 
     // Generate object id (uint64_t)
     metadata->obj_id = PDC_Server_gen_obj_id();
@@ -605,14 +619,20 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
     ht_total_sec        = ht_total_elapsed / 1000000.0;
 
+#ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_lock(&pdc_time_mutex_g);
+#endif
     server_insert_time_g += ht_total_sec;
+#ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_unlock(&pdc_time_mutex_g);
+#endif
     
 
 done:
+#ifdef ENABLE_MULTITHREAD 
     if (unlocked == 0)
         hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
+#endif
     FUNC_LEAVE(ret_value);
 }
 
@@ -784,7 +804,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     if (nthread_env != NULL) 
         n_thread = atoi(nthread_env);
     
-    if (n_thread <= 1) 
+    if (n_thread < 1) 
         n_thread = 2;
     hg_thread_pool_init(n_thread, &hg_test_thread_pool_g);
     if (pdc_server_rank_g == 0) {
@@ -793,7 +813,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     }
 #else
     if (pdc_server_rank_g == 0) {
-        printf("==PDC_SERVER:Not using multi-thread!\n");
+        printf("==PDC_SERVER: without multi-thread!\n");
         fflush(stdout);
     }
 #endif
@@ -1094,10 +1114,6 @@ perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key,
     pdc_metadata_t metadata;
     strcpy(metadata.obj_name, obj_name);
 
-    // Obtain lock for hash table
-    /* int unlocked = 0; */
-    /* hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g); */
-
     if (metadata_hash_table_g != NULL) {
         // lookup
         /* printf("checking hash table with key=%d\n", *hash_key); */
@@ -1132,10 +1148,6 @@ perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key,
         ret_value = -1;
         goto done;
     }
-
-    // ^ Release hash table lock
-    /* hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g); */
-    /* unlocked = 1; */
 
 done:
     FUNC_LEAVE(ret_value);
