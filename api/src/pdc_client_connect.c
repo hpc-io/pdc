@@ -95,17 +95,27 @@ int PDC_Client_read_server_addr_from_file()
     char  *p;
     FILE *na_config = NULL;
     char config_fname[PATH_MAX];
-    sprintf(config_fname, "%s/%s", pdc_server_tmp_dir_g, pdc_server_cfg_name_g);
-    /* printf("config file:%s\n",config_fname); */
-    na_config = fopen(config_fname, "r");
-    if (!na_config) {
-        fprintf(stderr, "Could not open config file from default location: %s\n", pdc_server_cfg_name_g);
-        exit(0);
+
+    if (pdc_client_mpi_rank_g == 0) {
+        sprintf(config_fname, "%s/%s", pdc_server_tmp_dir_g, pdc_server_cfg_name_g);
+        /* printf("config file:%s\n",config_fname); */
+        na_config = fopen(config_fname, "r");
+        if (!na_config) {
+            fprintf(stderr, "Could not open config file from default location: %s\n", pdc_server_cfg_name_g);
+            exit(0);
+        }
+        char n_server_string[PATH_MAX];
+        // Get the first line as $pdc_server_num_g
+        fgets(n_server_string, PATH_MAX, na_config);
+        pdc_server_num_g = atoi(n_server_string);
     }
-    char n_server_string[PATH_MAX];
-    // Get the first line as $pdc_server_num_g
-    fgets(n_server_string, PATH_MAX, na_config);
-    pdc_server_num_g = atoi(n_server_string);
+
+#ifdef ENABLE_MPI
+     MPI_Bcast(&pdc_server_num_g, 1, MPI_INT, 0, MPI_COMM_WORLD);
+     /* printf("[%d]: received server number %d\n", pdc_client_mpi_rank_g, pdc_server_num_g); */
+     /* fflush(stdout); */
+#endif
+
 
     // Allocate $pdc_server_info_g
     pdc_server_info_g = (pdc_server_info_t*)malloc(sizeof(pdc_server_info_t) * pdc_server_num_g);
@@ -119,18 +129,28 @@ int PDC_Client_read_server_addr_from_file()
     }
 
     i = 0;
-    while (fgets(pdc_server_info_g[i].addr_string, ADDR_MAX, na_config)) {
-        p = strrchr(pdc_server_info_g[i].addr_string, '\n');
-        if (p != NULL) *p = '\0';
-        /* printf("%s", pdc_server_info_g[i].addr_string); */
+    while (i < pdc_server_num_g) {
+        if (pdc_client_mpi_rank_g == 0) {
+            fgets(pdc_server_info_g[i].addr_string, ADDR_MAX, na_config);
+            p = strrchr(pdc_server_info_g[i].addr_string, '\n');
+            if (p != NULL) *p = '\0';
+            /* printf("Read from config file [%s]\n", pdc_server_info_g[i].addr_string); */
+            /* fflush(stdout); */
+        }
+
+        #ifdef ENABLE_MPI
+        MPI_Bcast(pdc_server_info_g[i].addr_string, ADDR_MAX, MPI_CHAR, 0, MPI_COMM_WORLD);
+        /* printf("[%d]: received server addr [%s]\n", pdc_client_mpi_rank_g, &pdc_server_info_g[i].addr_string); */
+        /* fflush(stdout); */
+        #endif
+        
         i++;
     }
-    fclose(na_config);
 
-    if (i != pdc_server_num_g) {
-        printf("Invalid number of servers in server.cfg\n");
-        exit(0);
+    if (pdc_client_mpi_rank_g == 0) {
+        fclose(na_config);
     }
+    /* exit(0); */
 
     ret_value = i;
 
@@ -381,13 +401,14 @@ perr_t PDC_Client_init()
 
     pdc_server_info_g = NULL;
 
-    // get server address and fill in $pdc_server_info_g
-    PDC_Client_read_server_addr_from_file();
-
 #ifdef ENABLE_MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &pdc_client_mpi_rank_g);
     MPI_Comm_size(MPI_COMM_WORLD, &pdc_client_mpi_size_g);
 #endif
+
+    // get server address and fill in $pdc_server_info_g
+    PDC_Client_read_server_addr_from_file();
+
     if (pdc_client_mpi_rank_g == 0) {
         printf("==PDC_CLIENT: Found %d PDC Metadata servers, running with %d PDC clients\n", pdc_server_num_g ,pdc_client_mpi_size_g);
     }
