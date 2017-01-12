@@ -74,16 +74,6 @@ int main(int argc, const char *argv[])
 
     int i;
     const int metadata_size = 512;
-    char obj_name[metadata_size];
-    for (i = 0; i < metadata_size; i++) {
-        obj_name[i] = ' ';
-    }
-    obj_name[metadata_size - 4] = 'T';
-    obj_name[metadata_size - 3] = 'a';
-    obj_name[metadata_size - 2] = 'n';
-    obj_name[metadata_size - 1] = 'g';
-    obj_name[metadata_size    ] = 0;
-
     PDC_prop_t p;
     // create a pdc
     pdcid_t pdc = PDC_init(p);
@@ -121,6 +111,10 @@ int main(int argc, const char *argv[])
     double ht_total_sec;
 
 
+    char **obj_name;
+    obj_name = (char **)malloc(count * sizeof(char*));
+
+
     char obj_prefix[4][10] = {"x", "y", "z", "energy"};
     char tmp_str[128];
 
@@ -136,28 +130,31 @@ int main(int argc, const char *argv[])
     }
 
 
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-
-    gettimeofday(&ht_total_start, 0);
-
     for (i = 0; i < count; i++) {
+        obj_name[i] = malloc(sizeof(char) * metadata_size);
         if (use_name == -1) 
-            sprintf(obj_name, "%s_%d", rand_string(tmp_str, 16), i + rank * 10000000);
+            sprintf(obj_name[i], "%s_%d", rand_string(tmp_str, 16), i + rank * 10000000);
         else if (use_name == 1) 
-            sprintf(obj_name, "%s_%d", obj_prefix[0], i + rank * 10000000);
+            sprintf(obj_name[i], "%s_%d", obj_prefix[0], i + rank * 10000000);
         else if (use_name == 4) 
-            sprintf(obj_name, "%s_%d", obj_prefix[i%4], i/4 + rank * 10000000);
+            sprintf(obj_name[i], "%s_%d", obj_prefix[i%4], i/4 + rank * 10000000);
         else {
             printf("Unsupported name choice\n");
             goto done;
         }
+    }
 
-        // Force to send the entire string, not just the first few characters.
-        /* obj_name[strlen(obj_name)] = ' '; */
 
-        test_obj = PDCobj_create(pdc, cont, obj_name, obj_prop);
+    #ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    #endif
+
+    gettimeofday(&ht_total_start, 0);
+
+    for (i = 0; i < count; i++) {
+
+        /* printf("Name: %s\n", obj_name[i]); */
+        test_obj = PDCobj_create(pdc, cont, obj_name[i], obj_prop);
         if (test_obj < 0) { 
             printf("Error getting an object id of %s from server, exit...\n", obj_name);
             exit(-1);
