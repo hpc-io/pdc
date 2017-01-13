@@ -74,15 +74,57 @@ MERCURY_GEN_PROC( close_server_out_t, ((int32_t)(ret))  )
 MERCURY_GEN_PROC( metadata_query_in_t, ((hg_const_string_t)(obj_name)) ((uint32_t)(hash_value)) )
 MERCURY_GEN_PROC( metadata_query_out_t, ((pdc_metadata_transfer_t)(ret)) )
 
+MERCURY_GEN_PROC( metadata_delete_in_t, ((uint64_t)(obj_id)) ((uint32_t)(hash_value)) )
+MERCURY_GEN_PROC( metadata_delete_out_t, ((int32_t)(ret)) )
+
 #else
+typedef struct {
+    hg_const_string_t    obj_name;
+    uint32_t             hash_value;
+} metadata_query_in_t;
+
 typedef struct {
     pdc_metadata_transfer_t ret;
 } metadata_query_out_t;
 
 typedef struct {
-    hg_const_string_t    obj_name;
+    uint64_t             obj_id;
     uint32_t             hash_value;
-} metadata_query_in_t;
+} metadata_delete_in_t;
+
+typedef struct {
+    int32_t            ret;
+} metadata_delete_out_t;
+
+static HG_INLINE hg_return_t
+hg_proc_metadata_delete_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    metadata_delete_in_t *struct_data = (metadata_delete_in_t*) data;
+
+    ret = hg_proc_hg_uint64_t(proc, &struct_data->obj_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_uint32_t(proc, &struct_data->hash_value);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_metadata_delete_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    metadata_delete_out_t *struct_data = (metadata_delete_out_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
 
 static HG_INLINE hg_return_t
 hg_proc_metadata_query_in_t(hg_proc_t proc, void *data)
@@ -286,6 +328,7 @@ hg_proc_close_server_in_t(hg_proc_t proc, void *data)
     }
     return ret;
 }
+
 static HG_INLINE hg_return_t
 hg_proc_close_server_out_t(hg_proc_t proc, void *data)
 {
@@ -305,6 +348,8 @@ hg_id_t send_obj_name_marker_register(hg_class_t *hg_class);
 hg_id_t client_test_connect_register(hg_class_t *hg_class);
 hg_id_t close_server_register(hg_class_t *hg_class);
 hg_id_t metadata_query_register(hg_class_t *hg_class);
+hg_id_t metadata_delete_register(hg_class_t *hg_class);
+
 
 uint32_t PDC_get_hash_by_name(const char *name);
 int      PDC_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b);

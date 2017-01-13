@@ -34,6 +34,7 @@ static hg_id_t         gen_obj_register_id_g;
 static hg_id_t         close_server_register_id_g;
 static hg_id_t         send_obj_name_marker_register_id_g;
 static hg_id_t         metadata_query_register_id_g;
+static hg_id_t         metadata_delete_register_id_g;
 
 hg_hash_table_t       *obj_names_cache_hash_table_g = NULL;
 
@@ -361,6 +362,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     close_server_register_id_g         = close_server_register(*hg_class);
     send_obj_name_marker_register_id_g = send_obj_name_marker_register(*hg_class);
     metadata_query_register_id_g       = metadata_query_register(*hg_class);
+    metadata_delete_register_id_g      = metadata_delete_register(*hg_class);
 
     // Lookup and fill the server info
     int i;
@@ -659,6 +661,78 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+
+// Callback function for  HG_Forward()
+// Gets executed after a call to HG_Trigger and the RPC has completed
+static hg_return_t
+metadata_delete_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value;
+
+    /* printf("Entered client_rpc_cb()"); */
+    struct client_lookup_args *client_lookup_args = (struct metadata_delete_args_t*) callback_info->arg;
+    hg_handle_t handle = callback_info->info.forward.handle;
+
+    /* Get output from server*/
+    metadata_delete_out_t output;
+    ret_value = HG_Get_output(handle, &output);
+    /* printf("Return value=%llu\n", output.ret); */
+    client_lookup_args->ret = output.ret;
+
+    work_todo_g--;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_Client_delete_metadata(pdc_metadata_t *target)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t *ret_value = SUCCEED;
+    hg_return_t  hg_ret = 0;
+
+    int hash_name_value = PDC_get_hash_by_name(target->obj_name);
+    int server_id = (hash_name_value + target->time_step) % pdc_server_num_g;
+
+    /* printf("==PDC_CLIENT: PDC_Client_delete_metadata() - hash(%s)=%d\n", target->obj_name, hash_name_value); */
+
+    // Debug statistics for counting number of messages sent to each server.
+    debug_server_id_count[server_id]++;
+
+    // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
+    if (pdc_server_info_g[server_id].metadata_delete_handle_valid != 1) {
+        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_delete_register_id_g, &pdc_server_info_g[server_id].metadata_delete_handle);
+        pdc_server_info_g[server_id].metadata_delete_handle_valid  = 1;
+    }
+
+    // Fill input structure
+    metadata_delete_in_t in;
+    in.obj_id     = target->obj_id;
+    in.hash_value = hash_name_value;
+
+    /* printf("Sending input to target\n"); */
+    struct client_lookup_args lookup_args;
+    hg_ret = HG_Forward(pdc_server_info_g[server_id].metadata_delete_handle, metadata_delete_rpc_cb, &lookup_args, &in);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "PDC_Client_delete_metadata_with_name(): Could not start HG_Forward()\n");
+        return NULL;
+    }
+
+    // Wait for response from server
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+    if (lookup_args.ret != 1) 
+        printf("PDC_CLIENT: delete NOT successful ... ret_value = %d\n", lookup_args.ret);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+
 perr_t PDC_Client_query_metadata_with_name(const char *obj_name, pdc_metadata_t **out)
 {
     FUNC_ENTER(NULL);
@@ -783,8 +857,24 @@ uint64_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t property)
 
 
     // DEBUG: query the object just created
+    /* perr_t op_res; */
     /* printf("\n==PDC_CLIENT: Querying object with name [%s]\n", name); */
     /* pdc_metadata_t *res; */
+    /* PDC_Client_query_metadata_with_name(name, &res); */
+    /* if (res->obj_id == 0 && res->user_id == -1 && res->time_step == -1) { */
+    /*     printf("==PDC_CLIENT: Queried object [%s] does not exist!\n", name); */
+    /* } */
+    /* else { */
+    /*     PDC_print_metadata(res); */
+    /*     printf("==PDC_CLIENT: End of received metadata\n\n"); */
+    /* } */
+
+    /* // DEBUG: delete the queried object */
+    /* printf("Deleting\n"); */
+    /* PDC_Client_delete_metadata(res); */
+
+    /* // DEBUG: query again */
+    /* printf("\n==PDC_CLIENT: Querying object with name [%s]\n", name); */
     /* PDC_Client_query_metadata_with_name(name, &res); */
     /* if (res->obj_id == 0 && res->user_id == -1 && res->time_step == -1) { */
     /*     printf("==PDC_CLIENT: Queried object [%s] does not exist!\n", name); */
