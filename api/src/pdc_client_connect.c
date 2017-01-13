@@ -469,8 +469,8 @@ perr_t PDC_Client_finalize()
     perr_t ret_value;
 
     // Send close server request to all servers
-    if (pdc_client_mpi_rank_g == 0) 
-        PDC_Client_close_all_server();
+    /* if (pdc_client_mpi_rank_g == 0) */ 
+    /*     PDC_Client_close_all_server(); */
 
 
     // Finalize Mercury
@@ -632,17 +632,21 @@ metadata_query_rpc_cb(const struct hg_cb_info *callback_info)
     /* Get output from server*/
     metadata_query_out_t output;
     ret_value = HG_Get_output(handle, &output);
-    /* printf("Return value=%llu\n", output.ret); */
-    /* client_lookup_args->data = &output.ret; */
 
+    if (output.ret.user_id == -1 && output.ret.obj_id == 0 && output.ret.time_step == -1) {
+        /* printf("===PDC_CLIENT: got empty search result!\n"); */
+        client_lookup_args->data = NULL;
+    }
+    else {
     
-    // Now copy the received metadata info
-    client_lookup_args->data->user_id        = output.ret.user_id;
-    client_lookup_args->data->obj_id         = output.ret.obj_id;
-    client_lookup_args->data->time_step      = output.ret.time_step;
-    strcpy(client_lookup_args->data->obj_name, output.ret.obj_name);
-    strcpy(client_lookup_args->data->app_name, output.ret.app_name);
-    strcpy(client_lookup_args->data->tags,     output.ret.tags);
+        // Now copy the received metadata info
+        client_lookup_args->data->user_id        = output.ret.user_id;
+        client_lookup_args->data->obj_id         = output.ret.obj_id;
+        client_lookup_args->data->time_step      = output.ret.time_step;
+        strcpy(client_lookup_args->data->obj_name, output.ret.obj_name);
+        strcpy(client_lookup_args->data->app_name, output.ret.app_name);
+        strcpy(client_lookup_args->data->tags,     output.ret.tags);
+    }
 
     /* // Debug print */
     /* printf("\n==PDC_CLIENT: Received metadata structure from server\n"); */
@@ -740,7 +744,29 @@ perr_t PDC_Client_query_metadata_with_name(const char *obj_name, pdc_metadata_t 
     perr_t *ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
 
-    int server_id = get_server_id_by_hash_name(obj_name);
+    char *name;
+    // TODO: this is temp solution to convert "Obj_%d" to name="Obj_" and time_step=%d 
+    //       will need to delete once Kimmy adds the pdc_prop related functions
+    int i, obj_name_len;
+    uint32_t tmp_time_step = 0;
+    obj_name_len = strlen(obj_name);
+    char *tmp_obj_name = (char*)malloc(sizeof(char) * (obj_name_len+1));
+    strcpy(tmp_obj_name, obj_name);
+    for (i = 0; i < obj_name_len; i++) {
+        if (isdigit(obj_name[i])) {
+            tmp_time_step = atoi(obj_name+i);
+            /* printf("Converted [%s] = %d\n", obj_name, tmp_time_step); */
+            tmp_obj_name[i] = 0;
+            break;
+        }
+    }
+
+    name = tmp_obj_name;
+
+    // Compute server id
+    uint32_t hash_name_value = PDC_get_hash_by_name(name);
+    int server_id            = (hash_name_value + tmp_time_step) % pdc_server_num_g; 
+
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
@@ -753,8 +779,8 @@ perr_t PDC_Client_query_metadata_with_name(const char *obj_name, pdc_metadata_t 
 
     // Fill input structure
     metadata_query_in_t in;
-    in.obj_name   = obj_name;
-    in.hash_value = PDC_get_hash_by_name(obj_name);
+    in.obj_name   = name;
+    in.hash_value = PDC_get_hash_by_name(name);
 
     /* printf("Sending input to target\n"); */
     metadata_query_args_t lookup_args;

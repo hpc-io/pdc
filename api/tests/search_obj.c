@@ -72,7 +72,7 @@ int main(int argc, const char *argv[])
     count /= size;
 
     if (rank == 0) 
-        printf("Querying %d objects per MPI rank\n", count);
+        printf("Searching %d objects per MPI rank\n", count);
     fflush(stdout);
 
     int i;
@@ -129,19 +129,16 @@ int main(int argc, const char *argv[])
     gettimeofday(&ht_total_start, 0);
 
     for (i = 0; i < count; i++) {
-        if (use_name == -1) 
-            sprintf(obj_name, "%s_", rand_string(tmp_str, 16));
-        else if (use_name == 1) 
-            sprintf(obj_name, "%s_", obj_prefix[0]);
-        else if (use_name == 4) 
-            sprintf(obj_name, "%s_", obj_prefix[i%4]);
+        if (use_name == -1)
+            sprintf(obj_name, "%s_%d", rand_string(tmp_str, 16), i + rank * 10000000);
+        else if (use_name == 1)
+            sprintf(obj_name, "%s_%d", obj_prefix[0], i + rank * 10000000);
+        else if (use_name == 4)
+            sprintf(obj_name, "%s_%d", obj_prefix[i%4], i/4 + rank * 10000000);
         else {
             printf("Unsupported name choice\n");
             goto done;
         }
-
-        // Force to send the entire string, not just the first few characters.
-        /* obj_name[strlen(obj_name)] = ' '; */
 
         pdc_metadata_t *res = NULL;
         PDC_Client_query_metadata_with_name(obj_name, &res);
@@ -151,7 +148,19 @@ int main(int argc, const char *argv[])
         /* else { */
         /*     printf("Got response from server.\n"); */
         /*     PDC_print_metadata(res); */
+        /*     fflush(stdout); */
         /* } */
+
+        // Print progress
+        int progress_factor = count < 20 ? 1 : 20;
+        if (rank == 0 && i > 0 && i % (count/progress_factor) == 0) {
+            gettimeofday(&ht_total_end, 0);
+            ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+            ht_total_sec        = ht_total_elapsed / 1000000.0;
+
+            printf("searched %10d ... %.2fs\n", i * size, ht_total_sec);
+            fflush(stdout);
+        }
     }
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);

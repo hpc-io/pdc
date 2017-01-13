@@ -9,6 +9,7 @@
 #endif
 
 #include "pdc.h"
+#include "pdc_client_connect.h"
 
 int main(int argc, const char *argv[])
 {
@@ -22,17 +23,12 @@ int main(int argc, const char *argv[])
     int i;
 
     PDC_prop_t p;
-    // create a pdc
     pdcid_t pdc = PDC_init(p);
-    
-    pdcid_t test_obj = -1;
 
-    test_obj = PDCobj_create(pdc, NULL, "Closing server request", NULL);
+    PDC_Client_close_all_server();
 
-done:
     if(PDC_close(pdc) < 0)
-       printf("fail to close PDC\n");
-
+        printf("fail to close PDC\n");
 #ifdef ENABLE_MPI
      MPI_Finalize();
 #endif

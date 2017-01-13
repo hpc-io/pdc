@@ -545,7 +545,7 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
 
     gettimeofday(&ht_total_start, 0);
 
-    printf("==PDC_SERVER: Got delete request: hash=%d, obj_id=%llu\n", in->hash_value, in->obj_id);
+    /* printf("==PDC_SERVER: Got delete request: hash=%d, obj_id=%llu\n", in->hash_value, in->obj_id); */
 
     uint32_t *hash_key = (uint32_t*)malloc(sizeof(uint32_t));
     if (hash_key == NULL) {
@@ -605,7 +605,7 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
        
         } // if lookup_value != NULL
         else {
-            printf("==PDC_SERVER: delete target not found!\n");
+            /* printf("==PDC_SERVER: delete target not found!\n"); */
             ret_value = -1;
             out->ret = -1;
         }
@@ -1259,7 +1259,7 @@ perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key,
 
         // Is this hash value exist in the Hash table?
         if (lookup_value != NULL) {
-            printf("==PDC_SERVER: PDC_Server_search_with_name_hash(): lookup_value not NULL!\n");
+            /* printf("==PDC_SERVER: PDC_Server_search_with_name_hash(): lookup_value not NULL!\n"); */
             // Check if there exist metadata identical to current one
             /* out = find_identical_metadata(lookup_value, &metadata); */
             *out = lookup_value;
@@ -1270,7 +1270,7 @@ perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key,
         else {
             // First entry for current hasy_key, init linked list, and insert to hash table
             *out = NULL;
-            printf("==PDC_SERVER: Queried object with name [%s] not found!\n", obj_name);
+            /* printf("==PDC_SERVER: Queried object with name [%s] not found!\n", obj_name); */
         }
 
     }
