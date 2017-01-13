@@ -196,7 +196,7 @@ static pdc_metadata_t * find_identical_metadata(pdc_metadata_t *mlist, pdc_metad
 {
     FUNC_ENTER(NULL);
 
-    pdc_metadata_t *ret_value;
+    pdc_metadata_t *ret_value = NULL;
 
     // Use bloom filter to quick check if current metadata is in the list
 
@@ -661,7 +661,7 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
 
     gettimeofday(&ht_total_start, 0);
 
-    /* printf("Got RPC request with name: %s\tHash=%d\n", in->obj_name, in->hash_value); */
+    /* printf("Got object creation request with name: %s\tHash=%d\n", in->data.obj_name, in->hash_value); */
     /* printf("Full name check: %s\n", &in->obj_name[507]); */
 
     pdc_metadata_t *metadata = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t));
@@ -677,6 +677,14 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     strcpy(metadata->app_name, in->data.app_name);
     strcpy(metadata->tags,     in->data.tags);
 
+    // DEBUG
+    int debug_flag = 0;
+    /* if (in->data.time_step >= 89808) { */
+    /*     debug_flag = 1; */
+    /*     /1* while (debug_flag) {;} *1/ */
+    /*     PDC_print_metadata(metadata); */
+    /* } */
+
     /* strcpy(metadata->data_location, in->data.data_location); */
     /* create_time              =; */
     /* last_modified_time       =; */
@@ -689,7 +697,7 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     *hash_key = in->hash_value;
 
     pdc_metadata_t *lookup_value;
-    pdc_metadata_t *elt;
+    pdc_metadata_t *elt, *found_identical;
 
 #ifdef ENABLE_MULTITHREAD 
     // Obtain lock for hash table
@@ -697,9 +705,11 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
 #endif
 
+    if (debug_flag == 1) 
+        printf("checking hash table with key=%d\n", *hash_key);
+
     if (metadata_hash_table_g != NULL) {
         // lookup
-        /* printf("checking hash table with key=%d\n", *hash_key); */
         lookup_value = hg_hash_table_lookup(metadata_hash_table_g, hash_key);
 
         // Is this hash value exist in the Hash table?
@@ -709,9 +719,16 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
             // to take care of it when head got deleted
             metadata->bloom = lookup_value->bloom; 
             
-            /* printf("lookup_value not NULL!\n"); */
+            if (debug_flag == 1) 
+                printf("lookup_value not NULL!\n");
             // Check if there exist metadata identical to current one
-            if (find_identical_metadata(lookup_value, metadata) != NULL) {
+            found_identical = find_identical_metadata(lookup_value, metadata);
+            if ( found_identical != NULL) {
+                if (debug_flag == 1) {
+                    printf("Found identical metadata!\n");
+                    PDC_print_metadata(metadata);
+                    PDC_print_metadata(found_identical);
+                }
                 ret_value = -1;
                 out->ret  = -1;
                 free(metadata);
@@ -724,7 +741,8 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
         }
         else {
             // First entry for current hasy_key, init linked list, and insert to hash table
-            /* printf("lookup_value is NULL!\n"); */
+            if (debug_flag == 1) 
+                printf("lookup_value is NULL!\n");
             PDC_Server_hash_table_list_init(metadata, hash_key);
         }
 

@@ -156,7 +156,7 @@ int main(int argc, const char *argv[])
         /* printf("Name: %s\n", obj_name[i]); */
         test_obj = PDCobj_create(pdc, cont, obj_name[i], obj_prop);
         if (test_obj < 0) { 
-            printf("Error getting an object id of %s from server, exit...\n", obj_name);
+            printf("Error getting an object id of %s from server, exit...\n", obj_name[i]);
             exit(-1);
         }
         /* else */ 
