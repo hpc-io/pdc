@@ -158,7 +158,7 @@ int main(int argc, const char *argv[])
             ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
             ht_total_sec        = ht_total_elapsed / 1000000.0;
 
-            printf("searched %10d ... %.2fs\n", i * size, ht_total_sec);
+            printf("searched %10d ... %.2f\n", i * size, ht_total_sec);
             fflush(stdout);
         }
     }

@@ -579,7 +579,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_send_obj_name_mark(const char *obj_name, uint32_t server_id)
+perr_t PDC_Client_send_obj_name_mark(const char *obj_name, int server_id)
 {
     FUNC_ENTER(NULL);
 
@@ -813,7 +813,7 @@ uint64_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t property)
     FUNC_ENTER(NULL);
 
     uint64_t ret_value;
-    uint32_t server_id, base_server_id;
+    int server_id, base_server_id;
     char *name;
 
     // TODO: this is temp solution to convert "Obj_%d" to name="Obj_" and time_step=%d 
@@ -840,9 +840,9 @@ uint64_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t property)
     base_server_id  = get_server_id_by_hash_name(name);
 
     // Use local server only?
-    if (pdc_use_local_server_only_g == 1) {
-        server_id = pdc_client_mpi_rank_g % pdc_server_num_g;
-    }
+    /* if (pdc_use_local_server_only_g == 1) { */
+    /*     server_id = pdc_client_mpi_rank_g % pdc_server_num_g; */
+    /* } */
 
     /* printf("Obj_name: %s, hash_value: %d, server_id:%d\n", name, hash_name_value, server_id); */
 
