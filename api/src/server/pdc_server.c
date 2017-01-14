@@ -13,6 +13,7 @@
 #define BLOOM_TYPE_T counting_bloom_t
 #define BLOOM_CHECK  counting_bloom_check
 #define BLOOM_ADD    counting_bloom_add
+#define BLOOM_REMOVE counting_bloom_remove
 
 #ifdef ENABLE_MPI
     #include "mpi.h"
@@ -64,6 +65,8 @@ double server_bloom_check_time_g  = 0.0;
 double server_bloom_insert_time_g = 0.0;
 double server_insert_time_g       = 0.0;
 double server_delete_time_g       = 0.0;
+double server_hash_insert_time_g  = 0.0;
+double server_bloom_init_time_g = 0.0;
 
 static int 
 PDC_Server_metadata_int_equal(hg_hash_table_key_t vlocation1, hg_hash_table_key_t vlocation2)
@@ -351,6 +354,29 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+static perr_t PDC_Server_remove_from_bloom(pdc_metadata_t *metadata)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value;
+
+    char combined_string[PATH_MAX];
+
+    combine_obj_info_to_string(metadata, combined_string);
+    /* printf("==PDC_SERVER: PDC_Server_add_to_bloom(): Combined string: %s\n", combined_string); */
+
+    BLOOM_TYPE_T *bloom = (BLOOM_TYPE_T*)metadata->bloom;
+    if (bloom == NULL) {
+        printf("==PDC_SERVER: PDC_Server_remove_from_bloom(): bloom pointer is NULL\n");
+        ret_value = FAIL;
+        goto done;
+    }
+    ret_value = BLOOM_REMOVE(bloom, combined_string, strlen(combined_string));
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 static perr_t PDC_Server_add_to_bloom(pdc_metadata_t *metadata)
 {
     FUNC_ENTER(NULL);
@@ -417,6 +443,13 @@ static perr_t PDC_Server_hash_table_list_init(pdc_metadata_t *metadata, uint32_t
 
     /* PDC_print_metadata(metadata); */
 
+    // Timing
+    struct timeval  ht_total_start;
+    struct timeval  ht_total_end;
+    long long ht_total_elapsed;
+    double ht_total_sec;
+    gettimeofday(&ht_total_start, 0);
+
     // Insert to hash table
     ret = hg_hash_table_insert(metadata_hash_table_g, hash_key, metadata);
     if (ret != 1) {
@@ -425,12 +458,23 @@ static perr_t PDC_Server_hash_table_list_init(pdc_metadata_t *metadata, uint32_t
         goto done;
     }
 
+    // Timing
+    gettimeofday(&ht_total_end, 0);
+    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+    ht_total_sec        = ht_total_elapsed / 1000000.0;
+
+    server_hash_insert_time_g += ht_total_sec;
+
+
     // Init bloom filter
     /* int capacity = 100000; */
     int capacity = 500000;
     double error_rate = 0.05;
     n_bloom_maybe_g = 0;
     n_bloom_total_g = 0;
+
+    // Timing
+    gettimeofday(&ht_total_start, 0);
 
     metadata->bloom = (BLOOM_TYPE_T*)BLOOM_NEW(capacity, error_rate);
     if (!metadata->bloom) {
@@ -439,6 +483,14 @@ static perr_t PDC_Server_hash_table_list_init(pdc_metadata_t *metadata, uint32_t
         goto done;
     }
     PDC_Server_add_to_bloom(metadata);
+
+    // Timing
+    gettimeofday(&ht_total_end, 0);
+    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+    ht_total_sec        = ht_total_elapsed / 1000000.0;
+
+    server_bloom_init_time_g += ht_total_sec;
+
 
 done:
     FUNC_LEAVE(ret_value);
@@ -578,6 +630,10 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
             target = find_identical_metadata_by_id(lookup_value, obj_id);
             if (target != NULL) {
                 /* printf("==PDC_SERVER: Found delete target!\n"); */
+
+                // Remove from bloom filter
+                PDC_Server_remove_from_bloom(target);
+                
                 // Check if target is the only item in this linked list
                 int curr_list_size;
                 DL_COUNT(lookup_value, elt, curr_list_size);
@@ -585,9 +641,14 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
                 // Remove from linked list
                 DL_DELETE(lookup_value, target);
                 /* printf("==PDC_SERVER: delete from DL!\n"); */
-                
+
                 if (curr_list_size == 1) {
+                    // Destroy bloom filter
+                    free_counting_bloom(target->bloom);
+
+                    // Remove from hash
                     hg_hash_table_remove(metadata_hash_table_g, hash_key);
+
                     /* printf("==PDC_SERVER: delete from hash table!\n"); */
                     // Free this item and delete hash table entry
                     /* if(is_restart_g != 1) { */
@@ -1032,23 +1093,39 @@ perr_t PDC_Server_finalize()
     if(metadata_name_mark_hash_table_g != NULL)
         hg_hash_table_free(metadata_name_mark_hash_table_g);
 
-#ifdef ENABLE_MPI
     double all_bloom_check_time_max, all_bloom_check_time_min, all_insert_time_max, all_insert_time_min;
-    MPI_Reduce(&server_bloom_check_time_g, &all_bloom_check_time_max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&server_bloom_check_time_g, &all_bloom_check_time_min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&server_insert_time_g,      &all_insert_time_max,      1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&server_insert_time_g,      &all_insert_time_min,      1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    double all_server_bloom_init_time_min,  all_server_bloom_init_time_max;
+    double all_server_bloom_insert_time_min,  all_server_bloom_insert_time_max;
+    double all_server_hash_insert_time_min, all_server_hash_insert_time_max;
 
+#ifdef ENABLE_MPI
+    MPI_Reduce(&server_bloom_check_time_g, &all_bloom_check_time_max,        1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&server_bloom_check_time_g, &all_bloom_check_time_min,        1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&server_insert_time_g,      &all_insert_time_max,             1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&server_insert_time_g,      &all_insert_time_min,             1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+
+    MPI_Reduce(&server_bloom_init_time_g,  &all_server_bloom_init_time_max,  1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&server_bloom_init_time_g,  &all_server_bloom_init_time_min,  1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&server_hash_insert_time_g, &all_server_hash_insert_time_max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&server_hash_insert_time_g, &all_server_hash_insert_time_min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+
+#else
+    all_bloom_check_time_min       = server_bloom_check_time_g;
+    all_bloom_check_time_max       = server_bloom_check_time_g;
+    all_insert_time_max            = server_insert_time_g;
+    all_insert_time_min            = server_insert_time_g;
+    all_server_bloom_init_time_min = server_bloom_init_time_g;
+    all_server_bloom_init_time_max = server_bloom_init_time_g;
+    all_hash_insert_time_max       = server_hash_insert_time_g;
+    all_hash_insert_time_min       = server_hash_insert_time_g;
+#endif
     if (pdc_server_rank_g == 0) {
         printf("==PDC_SERVER: total bloom check time = %.6f, %.6f\n", all_bloom_check_time_min, all_bloom_check_time_max);
         printf("==PDC_SERVER: total insert      time = %.6f, %.6f\n", all_insert_time_min, all_insert_time_max);
+        printf("==PDC_SERVER: total hash insert time = %.6f, %.6f\n", all_server_hash_insert_time_min, all_server_hash_insert_time_max);
+        printf("==PDC_SERVER: total bloom init  time = %.6f, %.6f\n", all_server_bloom_init_time_min, all_server_bloom_init_time_max);
         fflush(stdout);
     }
-#else
-    printf("==PDC_SERVER: total bloom check time = %.6f\n", server_bloom_check_time_g);
-    printf("==PDC_SERVER: total insert      time = %.6f\n", server_insert_time_g);
-    fflush(stdout);
-#endif
     // TODO: remove server tmp dir?
 
 
