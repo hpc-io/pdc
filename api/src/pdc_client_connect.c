@@ -868,7 +868,7 @@ uint64_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t property)
             strcpy(insert_value->name, name);
             hg_hash_table_insert(obj_names_cache_hash_table_g, hash_key, insert_value);
             // Send marker to base server
-            PDC_Client_send_obj_name_mark(name, base_server_id);
+            /* PDC_Client_send_obj_name_mark(name, base_server_id); */
         }
 
     }
