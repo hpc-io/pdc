@@ -999,11 +999,11 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
 #endif
     // Rank 0 write all addresses to one file
     if (pdc_server_rank_g == 0) {
-        printf("========================\n");
-        printf("Server address%s:\n", pdc_server_size_g ==1?"":"es");
-        for (i = 0; i < pdc_server_size_g; i++) 
-            printf("%s\n", all_addr_strings[i]);
-        printf("========================\n");
+        /* printf("========================\n"); */
+        /* printf("Server address%s:\n", pdc_server_size_g ==1?"":"es"); */
+        /* for (i = 0; i < pdc_server_size_g; i++) */ 
+        /*     printf("%s\n", all_addr_strings[i]); */
+        /* printf("========================\n"); */
         PDC_Server_write_addr_to_file(all_addr_strings, pdc_server_size_g);
 
         // Free
@@ -1110,14 +1110,14 @@ perr_t PDC_Server_finalize()
     MPI_Reduce(&server_hash_insert_time_g, &all_server_hash_insert_time_min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
 
 #else
-    all_bloom_check_time_min       = server_bloom_check_time_g;
-    all_bloom_check_time_max       = server_bloom_check_time_g;
-    all_insert_time_max            = server_insert_time_g;
-    all_insert_time_min            = server_insert_time_g;
-    all_server_bloom_init_time_min = server_bloom_init_time_g;
-    all_server_bloom_init_time_max = server_bloom_init_time_g;
-    all_hash_insert_time_max       = server_hash_insert_time_g;
-    all_hash_insert_time_min       = server_hash_insert_time_g;
+    all_bloom_check_time_min        = server_bloom_check_time_g;
+    all_bloom_check_time_max        = server_bloom_check_time_g;
+    all_insert_time_max             = server_insert_time_g;
+    all_insert_time_min             = server_insert_time_g;
+    all_server_bloom_init_time_min  = server_bloom_init_time_g;
+    all_server_bloom_init_time_max  = server_bloom_init_time_g;
+    all_server_hash_insert_time_max = server_hash_insert_time_g;
+    all_server_hash_insert_time_min = server_hash_insert_time_g;
 #endif
     if (pdc_server_rank_g == 0) {
         printf("==PDC_SERVER: total bloom check time = %.6f, %.6f\n", all_bloom_check_time_min, all_bloom_check_time_max);
