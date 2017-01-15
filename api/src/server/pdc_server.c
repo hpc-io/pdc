@@ -78,7 +78,7 @@ PDC_Server_metadata_int_equal(hg_hash_table_key_t vlocation1, hg_hash_table_key_
 static unsigned int
 PDC_Server_metadata_int_hash(hg_hash_table_key_t vlocation)
 {
-    return *((unsigned int*) vlocation);
+    return *((uint32_t *) vlocation);
 }
 
 static void
@@ -137,7 +137,7 @@ void PDC_Server_metadata_init(pdc_metadata_t* a)
     a->app_name[0]          = 0;
     a->obj_name[0]          = 0;
 
-    a->obj_id               = -1;
+    a->obj_id               = 0;
     a->obj_data_location[0] = 0;
     a->create_time          = 0;
     a->last_modified_time   = 0;
@@ -152,7 +152,8 @@ void PDC_Server_metadata_init(pdc_metadata_t* a)
 
 static inline void combine_obj_info_to_string(pdc_metadata_t *metadata, char *output)
 {
-    sprintf(output, "%d%s%s%d", metadata->user_id, metadata->app_name, metadata->obj_name, metadata->time_step);
+    /* sprintf(output, "%d%s%s%d", metadata->user_id, metadata->app_name, metadata->obj_name, metadata->time_step); */
+    sprintf(output, "%s%d", metadata->obj_name, metadata->time_step);
 }
 
 static int find_identical_namemark(pdc_metadata_name_mark_t *mlist, pdc_metadata_name_mark_t *a)
@@ -190,6 +191,7 @@ static pdc_metadata_t * find_identical_metadata_by_id(pdc_metadata_t *mlist, uin
             ret_value = elt;
             goto done;
         }
+        /* printf("DL checking ..\n"); */
     }
 
 done:
@@ -248,18 +250,19 @@ static pdc_metadata_t * find_identical_metadata(pdc_metadata_t *mlist, pdc_metad
         pdc_metadata_t *elt;
         DL_FOREACH(mlist, elt) {
             if (PDC_metadata_cmp(elt, a) == 0) {
-                printf("Identical metadata exist in Metadata store!\n");
-                PDC_print_metadata(a);
+                /* printf("Identical metadata exist in Metadata store!\n"); */
+                /* PDC_print_metadata(a); */
                 ret_value = elt;
+                goto done;
             }
         }
     }
 
+done:
     /* int count; */
     /* DL_COUNT(lookup_value, elt, count); */
     /* printf("%d item(s) in list\n", count); */
 
-done:
     FUNC_LEAVE(ret_value);
 } 
 
@@ -547,7 +550,7 @@ perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marke
             }
             else {
                 // Currently namemark is unique, insert to linked list
-                DL_PREPEND(lookup_value, namemark);
+                DL_APPEND(lookup_value, namemark);
             }
         
             /* free(hash_key); */
@@ -748,11 +751,13 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
                 /* printf("==PDC_SERVER: Found delete target!\n"); */
                 
                 // Check if target is the only item in this linked list
-                int curr_list_size;
-                DL_COUNT(lookup_value, elt, curr_list_size);
+                /* int curr_list_size; */
+                /* DL_COUNT(lookup_value, elt, curr_list_size); */
+
+                /* printf("==PDC_SERVER: count done\n"); */
 
                 // Remove from linked list
-                if (curr_list_size > 1) {
+                if (lookup_value->prev != NULL) {
                     // Remove from bloom filter
                     PDC_Server_remove_from_bloom(target);
 
@@ -765,9 +770,9 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
                     /* free_counting_bloom(target->bloom); */
 
                     // Remove from hash
+                    /* printf("==PDC_SERVER: delete from hash table!\n"); */
                     hg_hash_table_remove(metadata_hash_table_g, hash_key);
 
-                    /* printf("==PDC_SERVER: delete from hash table!\n"); */
                     // Free this item and delete hash table entry
                     /* if(is_restart_g != 1) { */
                     /*     free(target); */
@@ -778,13 +783,14 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
             } // if (lookup_value != NULL) 
             else {
                 // Object not found for deletion request
+                printf("==PDC_SERVER: delete target not found!\n");
                 ret_value = -1;
                 out->ret  = -1;
             }
        
         } // if lookup_value != NULL
         else {
-            /* printf("==PDC_SERVER: delete target not found!\n"); */
+            printf("==PDC_SERVER: delete target not found!\n");
             ret_value = -1;
             out->ret = -1;
         }
@@ -906,8 +912,8 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
             if ( found_identical != NULL) {
                 if (debug_flag == 1) {
                     printf("Found identical metadata!\n");
-                    PDC_print_metadata(metadata);
-                    PDC_print_metadata(found_identical);
+                    /* PDC_print_metadata(metadata); */
+                    /* PDC_print_metadata(found_identical); */
                 }
                 ret_value = -1;
                 out->ret  = -1;
@@ -1018,7 +1024,7 @@ static perr_t PDC_Server_metadata_duplicate_check()
             elt_next = elt->next;
             if (elt_next != NULL) {
                 if (PDC_metadata_cmp(elt, elt_next) == 0) {
-                    PDC_print_metadata(elt);
+                    /* PDC_print_metadata(elt); */
                     has_dup_obj = 1;
                     ret_value = FAIL;
                     goto done;
@@ -1464,7 +1470,29 @@ perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key,
     pdc_metadata_t metadata;
     PDC_Server_metadata_init(&metadata);
 
-    strcpy(metadata.obj_name, obj_name);
+    char *name;
+    // TODO: this is temp solution to convert "Obj_%d" to name="Obj_" and time_step=%d
+    //       will need to delete once Kimmy adds the pdc_prop related functions
+    int i, obj_name_len;
+    uint32_t tmp_time_step = 0;
+    obj_name_len = strlen(obj_name);
+    char *tmp_obj_name = (char*)malloc(sizeof(char) * (obj_name_len+1));
+    strcpy(tmp_obj_name, obj_name);
+    for (i = 0; i < obj_name_len; i++) {
+        if (isdigit(obj_name[i])) {
+            tmp_time_step = atoi(obj_name+i);
+            /* printf("Converted [%s] = %d\n", obj_name, tmp_time_step); */
+            tmp_obj_name[i] = 0;
+            break;
+        }
+    }
+
+    name = tmp_obj_name;
+
+    strcpy(metadata.obj_name, name);
+    metadata.time_step = tmp_time_step;
+
+    /* printf("==PDC_SERVER: search with name [%s], hash value %u\n", name, hash_key); */
 
     if (metadata_hash_table_g != NULL) {
         // lookup
@@ -1475,16 +1503,23 @@ perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key,
         if (lookup_value != NULL) {
             /* printf("==PDC_SERVER: PDC_Server_search_with_name_hash(): lookup_value not NULL!\n"); */
             // Check if there exist metadata identical to current one
-            /* out = find_identical_metadata(lookup_value, &metadata); */
-            *out = lookup_value;
-            /* if (out == NULL) { */
-            /*     printf("==PDC_SERVER: Queried object with name [%s] has no full match!\n", obj_name); */
-            /* } */
+            /* PDC_print_metadata(&metadata); */
+            *out = find_identical_metadata(lookup_value, &metadata);
+
+            if (*out == NULL) {
+                /* printf("==PDC_SERVER: Queried object with name [%s] has no full match!\n", obj_name); */
+                ret_value = -1;
+                goto done;
+            }
+            else {
+                /* printf("==PDC_SERVER: found in hash table \n"); */
+                /* PDC_print_metadata(*out); */
+            }
         }
         else {
             // First entry for current hasy_key, init linked list, and insert to hash table
             *out = NULL;
-            /* printf("==PDC_SERVER: Queried object with name [%s] not found!\n", obj_name); */
+            printf("==PDC_SERVER: Queried object with name [%s] not found!\n", obj_name);
         }
 
     }

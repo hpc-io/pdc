@@ -29,7 +29,7 @@ typedef struct pdc_metadata_t {
     int     time_step;
     // Above four are the unique identifier for objects
 
-    int     obj_id;
+    uint64_t obj_id;
     char    obj_data_location[128];
     time_t  create_time;
     time_t  last_modified_time;
@@ -400,6 +400,7 @@ hg_id_t client_test_connect_register(hg_class_t *hg_class);
 hg_id_t close_server_register(hg_class_t *hg_class);
 hg_id_t metadata_query_register(hg_class_t *hg_class);
 hg_id_t metadata_delete_register(hg_class_t *hg_class);
+hg_id_t metadata_update_register(hg_class_t *hg_class);
 
 
 uint32_t PDC_get_hash_by_name(const char *name);

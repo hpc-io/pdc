@@ -20,7 +20,7 @@ if(mercury_FOUND)
     include_directories(${MERCURY_INCLUDE_DIR})
 endif()
 
-#add_definitions(-DENABLE_MPI=1)
+add_definitions(-DENABLE_MPI=1)
 #add_definitions(-DENABLE_MULTITHREAD=1)
 
 add_subdirectory (src)

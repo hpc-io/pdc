@@ -48,7 +48,7 @@ extern int pdc_client_mpi_size_g;
 struct client_lookup_args {
     const char          *obj_name;
     uint64_t             obj_id;
-    int                  server_id;
+    uint32_t             server_id;
     int                  client_id;
     int                  ret;
 

@@ -92,30 +92,36 @@ uint32_t PDC_get_hash_by_name(const char *name)
 
 inline int PDC_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b)
 {
-    int ret;
+    int ret = 0;
     // Timestep
     if (a->time_step >= 0 && b->time_step >= 0) {
         ret = (a->time_step - b->time_step);
+        /* if (ret != 0) */ 
+        /*     printf("==PDC_SERVER: timestep not equal\n"); */
     }
     if (ret != 0 ) return ret;
 
     // Object name
-    /* if (a->obj_name != NULL && b->obj_name != NULL) */ 
     if (a->obj_name[0] != '\0' && b->obj_name[0] != '\0') {
         ret = strcmp(a->obj_name, b->obj_name); 
+        /* if (ret != 0) */ 
+        /*     printf("==PDC_SERVER: obj_name not equal\n"); */
     }
     if (ret != 0 ) return ret;
 
     // UID
     if (a->user_id >= 0 && b->user_id >= 0) {
         ret = (a->user_id - b->user_id);
+        /* if (ret != 0) */ 
+        /*     printf("==PDC_SERVER: uid not equal\n"); */
     }
     if (ret != 0 ) return ret;
 
     // Application name 
-    /* if (a->app_name != NULL && b->app_name != NULL */ 
     if (a->app_name[0] != '\0' && b->app_name[0] != '\0') {
         ret = strcmp(a->app_name, b->app_name);
+        /* if (ret != 0) */ 
+        /*     printf("==PDC_SERVER: app_name not equal\n"); */
     }
 
     return ret;
@@ -123,12 +129,15 @@ inline int PDC_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b)
 
 void PDC_print_metadata(pdc_metadata_t *a)
 {
+    if (a == NULL) {
+        printf("==Empty metadata structure\n");
+    }
     printf("================================\n\n");
-    printf("  uid       = %u\n", a->user_id);
+    printf("  uid       = %d\n", a->user_id);
     printf("  app_name  = %s\n", a->app_name);
     printf("  obj_name  = %s\n", a->obj_name);
-    printf("  time_step = %u\n", a->time_step);
-    printf("  obj_id    = %u\n", a->obj_id);
+    printf("  time_step = %d\n", a->time_step);
+    printf("  obj_id    = %llu\n", a->obj_id);
     printf("  tags      = %s\n", a->tags);
     printf("================================\n\n");
     fflush(stdout);
@@ -261,7 +270,7 @@ HG_TEST_RPC_CB(metadata_query, handle)
 
     // TODO check DHT for query result
     HG_Get_input(handle, &in);
-    /* printf("==PDC_CLIENT: Received query with name: %s, hash value: %u\n", in.obj_name, in.hash_value); */
+    /* printf("==PDC_SERVER: Received query with name: %s, hash value: %u\n", in.obj_name, in.hash_value); */
     PDC_Server_search_with_name_hash(in.obj_name, in.hash_value, &query_result);
 
     if (query_result != NULL) {
