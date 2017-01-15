@@ -162,6 +162,11 @@ hg_proc_metadata_update_in_t(hg_proc_t proc, void *data)
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
     }
+    ret = hg_proc_pdc_metadata_transfer_t(proc, &struct_data->new_metadata);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
     return ret;
 }
 
@@ -174,11 +179,6 @@ hg_proc_metadata_update_out_t(hg_proc_t proc, void *data)
     ret = hg_proc_int32_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
-    }
-    ret = hg_proc_pdc_metadata_transfer_t(proc, &struct_data->new_metadata);
-    if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
-        return ret;
     }
     return ret;
 }
