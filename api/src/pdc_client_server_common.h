@@ -77,7 +77,12 @@ MERCURY_GEN_PROC( metadata_query_out_t, ((pdc_metadata_transfer_t)(ret)) )
 MERCURY_GEN_PROC( metadata_delete_in_t, ((uint64_t)(obj_id)) ((uint32_t)(hash_value)) )
 MERCURY_GEN_PROC( metadata_delete_out_t, ((int32_t)(ret)) )
 
+MERCURY_GEN_PROC( metadata_update_in_t, ((uint64_t)(obj_id)) ((uint32_t)(hash_value)) ((pdc_metadata_transfer_t)(new_metadata)) )
+MERCURY_GEN_PROC( metadata_update_out_t, ((int32_t)(ret)) )
+
+
 #else
+
 typedef struct {
     hg_const_string_t    obj_name;
     uint32_t             hash_value;
@@ -88,6 +93,16 @@ typedef struct {
 } metadata_query_out_t;
 
 typedef struct {
+    uint64_t                obj_id;
+    uint32_t                hash_value;
+    pdc_metadata_transfer_t new_metadata;
+} metadata_update_in_t;
+
+typedef struct {
+    int32_t            ret;
+} metadata_update_out_t;
+
+typedef struct {
     uint64_t             obj_id;
     uint32_t             hash_value;
 } metadata_delete_in_t;
@@ -95,6 +110,79 @@ typedef struct {
 typedef struct {
     int32_t            ret;
 } metadata_delete_out_t;
+
+static HG_INLINE hg_return_t
+hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    pdc_metadata_transfer_t *struct_data = (pdc_metadata_transfer_t*) data;
+
+    ret = hg_proc_uint32_t(proc, &struct_data->user_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->app_name);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_uint32_t(proc, &struct_data->time_step);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->data_location);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->tags);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_metadata_update_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    metadata_update_in_t *struct_data = (metadata_update_in_t*) data;
+
+    ret = hg_proc_hg_uint64_t(proc, &struct_data->obj_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_uint32_t(proc, &struct_data->hash_value);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_metadata_update_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    metadata_update_out_t *struct_data = (metadata_update_out_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_pdc_metadata_transfer_t(proc, &struct_data->new_metadata);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
 
 static HG_INLINE hg_return_t
 hg_proc_metadata_delete_in_t(hg_proc_t proc, void *data)
@@ -137,43 +225,6 @@ hg_proc_metadata_query_in_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
     }
     ret = hg_proc_uint32_t(proc, &struct_data->hash_value);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-    }
-    return ret;
-}
-
-static HG_INLINE hg_return_t
-hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
-{
-    hg_return_t ret;
-    pdc_metadata_transfer_t *struct_data = (pdc_metadata_transfer_t*) data;
-
-    ret = hg_proc_uint32_t(proc, &struct_data->user_id);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-    }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->app_name);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-    }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-    }
-    ret = hg_proc_uint32_t(proc, &struct_data->time_step);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-    }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->data_location);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-    }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->tags);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
     }

@@ -58,15 +58,16 @@ int is_restart_g = 0;
 int pdc_server_rank_g = 0;
 int pdc_server_size_g = 1;
 
-// Debug var
+// Debug statistics var
 int n_bloom_total_g;
 int n_bloom_maybe_g;
 double server_bloom_check_time_g  = 0.0;
 double server_bloom_insert_time_g = 0.0;
 double server_insert_time_g       = 0.0;
 double server_delete_time_g       = 0.0;
+double server_update_time_g       = 0.0;
 double server_hash_insert_time_g  = 0.0;
-double server_bloom_init_time_g = 0.0;
+double server_bloom_init_time_g   = 0.0;
 
 static int 
 PDC_Server_metadata_int_equal(hg_hash_table_key_t vlocation1, hg_hash_table_key_t vlocation2)
@@ -582,6 +583,121 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out)
+{
+
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value;
+
+    // Timing
+    struct timeval  ht_total_start;
+    struct timeval  ht_total_end;
+    long long ht_total_elapsed;
+    double ht_total_sec;
+
+    gettimeofday(&ht_total_start, 0);
+
+    /* printf("==PDC_SERVER: Got update request: hash=%d, obj_id=%llu\n", in->hash_value, in->obj_id); */
+
+    uint32_t *hash_key = (uint32_t*)malloc(sizeof(uint32_t));
+    if (hash_key == NULL) {
+        printf("==PDC_SERVER: Cannnot allocate hash_key!\n");
+        goto done;
+    }
+    *hash_key = in->hash_value;
+    uint64_t obj_id = in->obj_id;
+
+    pdc_metadata_t *lookup_value;
+    pdc_metadata_t *elt;
+
+#ifdef ENABLE_MULTITHREAD 
+    // Obtain lock for hash table
+    int unlocked = 0;
+    hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
+#endif
+
+    if (metadata_hash_table_g != NULL) {
+        // lookup
+        /* printf("==PDC_SERVER: checking hash table with key=%d\n", *hash_key); */
+        lookup_value = hg_hash_table_lookup(metadata_hash_table_g, hash_key);
+
+        // Is this hash value exist in the Hash table?
+        if (lookup_value != NULL) {
+
+            /* printf("==PDC_SERVER: lookup_value not NULL!\n"); */
+            // Check if there exist metadata identical to current one
+            pdc_metadata_t *target;
+            target = find_identical_metadata_by_id(lookup_value, obj_id);
+            if (target != NULL) {
+                /* printf("==PDC_SERVER: Found update target!\n"); */
+
+                // Check and find valid update fields
+                // Currently user_id, obj_name are not supported to be updated in this way
+                // obj_name change is done through client with delete and add operation.
+                if (in->new_metadata.time_step != -1) 
+                    target->time_step = in->new_metadata.time_step;
+                if (in->new_metadata.app_name[0] != 0) 
+                    strcpy(target->app_name,      in->new_metadata.app_name);
+                if (in->new_metadata.data_location[0] != 0) 
+                    strcpy(target->obj_data_location, in->new_metadata.data_location);
+                if (in->new_metadata.tags[0] != 0) 
+                    strcpy(target->tags,          in->new_metadata.tags);
+
+                out->ret  = 1;
+
+            } // if (lookup_value != NULL) 
+            else {
+                // Object not found for deletion request
+                /* printf("==PDC_SERVER: update target not found!\n"); */
+                ret_value = -1;
+                out->ret  = -1;
+            }
+       
+        } // if lookup_value != NULL
+        else {
+            /* printf("==PDC_SERVER: update target not found!\n"); */
+            ret_value = -1;
+            out->ret = -1;
+        }
+
+    } // if (metadata_hash_table_g != NULL)
+    else {
+        printf("==PDC_SERVER: metadata_hash_table_g not initilized!\n");
+        ret_value = -1;
+        out->ret = -1;
+        goto done;
+    }
+
+#ifdef ENABLE_MULTITHREAD 
+    // ^ Release hash table lock
+    hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
+    unlocked = 1;
+#endif
+
+    // Timing
+    gettimeofday(&ht_total_end, 0);
+    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+    ht_total_sec        = ht_total_elapsed / 1000000.0;
+
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_lock(&pdc_time_mutex_g);
+#endif
+    server_update_time_g += ht_total_sec;
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_unlock(&pdc_time_mutex_g);
+#endif
+    
+
+done:
+#ifdef ENABLE_MULTITHREAD 
+    if (unlocked == 0)
+        hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
+#endif
+    FUNC_LEAVE(ret_value);
+} // end of delete_metadata_from_hash_table
+
+
 perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out)
 {
 
@@ -630,21 +746,23 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
             target = find_identical_metadata_by_id(lookup_value, obj_id);
             if (target != NULL) {
                 /* printf("==PDC_SERVER: Found delete target!\n"); */
-
-                // Remove from bloom filter
-                PDC_Server_remove_from_bloom(target);
                 
                 // Check if target is the only item in this linked list
                 int curr_list_size;
                 DL_COUNT(lookup_value, elt, curr_list_size);
 
                 // Remove from linked list
-                DL_DELETE(lookup_value, target);
-                /* printf("==PDC_SERVER: delete from DL!\n"); */
+                if (curr_list_size > 1) {
+                    // Remove from bloom filter
+                    PDC_Server_remove_from_bloom(target);
 
-                if (curr_list_size == 1) {
+                    // Remove from linked list
+                    DL_DELETE(lookup_value, target);
+                    /* printf("==PDC_SERVER: delete from DL!\n"); */
+                }
+                else {
                     // Destroy bloom filter
-                    free_counting_bloom(target->bloom);
+                    /* free_counting_bloom(target->bloom); */
 
                     // Remove from hash
                     hg_hash_table_remove(metadata_hash_table_g, hash_key);
@@ -675,6 +793,7 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
     else {
         printf("==PDC_SERVER: metadata_hash_table_g not initilized!\n");
         ret_value = -1;
+        out->ret = -1;
         goto done;
     }
 
@@ -1424,6 +1543,7 @@ int main(int argc, char *argv[])
     send_obj_name_marker_register(hg_class);
     metadata_query_register(hg_class);
     metadata_delete_register(hg_class);
+    metadata_update_register(hg_class);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
