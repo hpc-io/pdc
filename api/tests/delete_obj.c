@@ -149,11 +149,11 @@ int main(int argc, const char *argv[])
     gettimeofday(&ht_total_start, 0);
     for (i = 0; i < count; i++) {
         if (use_name == -1)
-            sprintf(obj_name, "%s_%d", rand_string(tmp_str, 16), i + rank * 10000000);
+            sprintf(obj_name, "%s_%d", rand_string(tmp_str, 16), i + rank * count);
         else if (use_name == 1)
-            sprintf(obj_name, "%s_%d", obj_prefix[0], i + rank * 10000000);
+            sprintf(obj_name, "%s_%d", obj_prefix[0], i + rank * count);
         else if (use_name == 4)
-            sprintf(obj_name, "%s_%d", obj_prefix[i%4], i/4 + rank * 10000000);
+            sprintf(obj_name, "%s_%d", obj_prefix[i%4], i/4 + rank * count);
         else {
             printf("Unsupported name choice\n");
             goto done;

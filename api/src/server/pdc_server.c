@@ -1298,7 +1298,7 @@ perr_t PDC_Server_checkpoint(char *filename)
 
     // DHT 
     pdc_metadata_t *head, *elt;
-    int count, n_entry;
+    int count, n_entry, checkpoint_count = 0;
     n_entry = hg_hash_table_num_entries(metadata_hash_table_g);
     /* printf("%d entries\n", n_entry); */
     fwrite(&n_entry, sizeof(int), 1, file);
@@ -1321,11 +1321,21 @@ perr_t PDC_Server_checkpoint(char *filename)
             /* printf("==PDC_SERVER: Writing one metadata...\n"); */
             /* PDC_print_metadata(elt); */
             fwrite(elt, sizeof(pdc_metadata_t), 1, file);
+            checkpoint_count++;
         }
     }
 
     fclose(file);
 
+    int all_checkpoint_count;
+#ifdef ENABLE_MPI
+    MPI_Reduce(&checkpoint_count, &all_checkpoint_count, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+#else
+    all_checkpoint_count = checkpoint_count;
+#endif
+    if (pdc_server_rank_g == 0) {
+        printf("==PDC_SERVER: checkpointed %d objects\n", all_checkpoint_count);
+    }
     ret_value = SUCCEED;
 
 done:
