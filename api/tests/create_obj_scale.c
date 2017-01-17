@@ -111,8 +111,7 @@ int main(int argc, const char *argv[])
     double ht_total_sec;
 
 
-    char **obj_name;
-    obj_name = (char **)malloc(count * sizeof(char*));
+    char obj_name[512];
 
 
     char obj_prefix[4][10] = {"x", "y", "z", "energy"};
@@ -129,20 +128,7 @@ int main(int argc, const char *argv[])
         printf("Using %s\n", name_mode[use_name+1]);
     }
 
-
-    for (i = 0; i < count; i++) {
-        obj_name[i] = malloc(sizeof(char) * metadata_size);
-        if (use_name == -1) 
-            sprintf(obj_name[i], "%s_%d", rand_string(tmp_str, 16), i + rank * count);
-        else if (use_name == 1) 
-            sprintf(obj_name[i], "%s_%d", obj_prefix[0], i + rank * count);
-        else if (use_name == 4) 
-            sprintf(obj_name[i], "%s_%d", obj_prefix[i%4], i/4 + rank * count);
-        else {
-            printf("Unsupported name choice\n");
-            goto done;
-        }
-    }
+    srand(rank+1);
 
 
     #ifdef ENABLE_MPI
@@ -153,10 +139,24 @@ int main(int argc, const char *argv[])
 
     for (i = 0; i < count; i++) {
 
-        /* printf("Name: %s\n", obj_name[i]); */
-        test_obj = PDCobj_create(pdc, cont, obj_name[i], obj_prop);
+        if (use_name == -1) 
+            sprintf(obj_name, "%s_%d", rand_string(tmp_str, 16), rank);
+            /* sprintf(obj_name[i], "%s_%d", rand_string(tmp_str, 16), i + rank * count); */
+        else if (use_name == 1) 
+            sprintf(obj_name, "%s_%d", obj_prefix[0], i + rank * count);
+        else if (use_name == 4) 
+            sprintf(obj_name, "%s_%d", obj_prefix[i%4], i/4 + rank * count);
+        else {
+            printf("Unsupported name choice\n");
+            goto done;
+        }
+
+        if (count < 4) {
+            printf("Proc %d Name: %s\n", rank, obj_name);
+        }
+        test_obj = PDCobj_create(pdc, cont, obj_name, obj_prop);
         if (test_obj < 0) { 
-            printf("Error getting an object id of %s from server, exit...\n", obj_name[i]);
+            printf("Error getting an object id of %s from server, exit...\n", obj_name);
             exit(-1);
         }
         /* else */ 

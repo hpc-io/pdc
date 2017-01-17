@@ -76,8 +76,6 @@ int main(int argc, const char *argv[])
     fflush(stdout);
 
     int i;
-    const int metadata_size = 512;
-    char obj_name[metadata_size];
 
     PDC_prop_t p;
     // create a pdc
@@ -116,34 +114,77 @@ int main(int argc, const char *argv[])
         use_name = atoi(env_str);
     }
 
+    srand(rank+1);
+
     char name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name", "INVALID!", "INVALID!", "Four Obj Names"}; 
     if (rank == 0) {
         printf("Using %s\n", name_mode[use_name+1]);
     }
 
+    const int metadata_size = 512;
+    char **obj_names = (char**)malloc(count * sizeof(char*));
+    for (i = 0; i < count; i++) {
+        obj_names[i] = (char*)malloc(128*sizeof(char));
+    }
+
+    char filename[128];
+    int n_entry;
+    sprintf(filename, "./pdc_tmp/metadata_checkpoint.%d", rank);
+    /* printf("file name: %s\n", filename); */
+    FILE *file = fopen(filename, "r");
+    if (file==NULL) {fputs("Checkpoint file not available\n", stderr); return -1;}
+
+    fread(&n_entry, sizeof(int), 1, file);
+    /* printf("%d entries\n", n_entry); */
+
+    pdc_metadata_t entry;
+    uint32_t *hash_key;
+    int j, read_count = 0;
+    while (n_entry--) {
+        fread(&count, sizeof(int), 1, file);
+        /* printf("Count:%d\n", count); */
+
+        hash_key = (uint32_t *)malloc(sizeof(uint32_t));
+        fread(hash_key, sizeof(uint32_t), 1, file);
+        /* printf("Hash key is %u\n", *hash_key); */
+
+        // read each metadata
+        for (j = 0; j < count; j++) {
+            fread(&entry, sizeof(pdc_metadata_t), 1, file);
+            sprintf(obj_names[read_count], "%s%d", entry.obj_name, entry.time_step); 
+            /* printf("Read name %s\n", obj_names[read_count]); */
+            read_count++;
+        }
+    }
+
+    fclose(file);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
+    count = read_count;
+
     gettimeofday(&ht_total_start, 0);
 
     for (i = 0; i < count; i++) {
-        if (use_name == -1)
-            sprintf(obj_name, "%s_%d", rand_string(tmp_str, 16), i + rank * count);
-        else if (use_name == 1)
-            sprintf(obj_name, "%s_%d", obj_prefix[0], i + rank * count);
-        else if (use_name == 4)
-            sprintf(obj_name, "%s_%d", obj_prefix[i%4], i/4 + rank * count);
-        else {
-            printf("Unsupported name choice\n");
-            goto done;
-        }
+        /* if (use_name == -1) */
+        /*     sprintf(obj_name, "%s_%d", rand_string(tmp_str, 16), rank); */
+        /* else if (use_name == 1) */
+        /*     sprintf(obj_name, "%s_%d", obj_prefix[0], i + rank * count); */
+        /* else if (use_name == 4) */
+        /*     sprintf(obj_name, "%s_%d", obj_prefix[i%4], i/4 + rank * count); */
+        /* else { */
+        /*     printf("Unsupported name choice\n"); */
+        /*     goto done; */
+        /* } */
 
         pdc_metadata_t *res = NULL;
-        PDC_Client_query_metadata_with_name(obj_name, &res);
+
+        /* printf("Proc %d search %s\n", rank, obj_name); */
+        PDC_Client_query_metadata_with_name(obj_names[i], &res);
         if (res == NULL) {
-            printf("No result found for current query with name [%s]\n", obj_name);
+            printf("No result found for current query with name [%s]\n", obj_names[i]);
         }
         /* else { */
         /*     printf("Got response from server.\n"); */
@@ -185,31 +226,22 @@ int main(int argc, const char *argv[])
     gettimeofday(&ht_total_start, 0);
 
     for (i = 0; i < count; i++) {
-        if (use_name == -1)
-            sprintf(obj_name, "%s_%d", rand_string(tmp_str, 16), i + rank * count);
-        else if (use_name == 1)
-            sprintf(obj_name, "%s_%d", obj_prefix[0], i + rank * count);
-        else if (use_name == 4)
-            sprintf(obj_name, "%s_%d", obj_prefix[i%4], i/4 + rank * count);
-        else {
-            printf("Unsupported name choice\n");
-            goto done;
-        }
+        /* if (use_name == -1) */
+        /*     sprintf(obj_name, "%s_%d", rand_string(tmp_str, 16), rank); */
+        /* else if (use_name == 1) */
+        /*     sprintf(obj_name, "%s_%d", obj_prefix[0], i + rank * count); */
+        /* else if (use_name == 4) */
+        /*     sprintf(obj_name, "%s_%d", obj_prefix[i%4], i/4 + rank * count); */
+        /* else { */
+        /*     printf("Unsupported name choice\n"); */
+        /*     goto done; */
+        /* } */
 
         pdc_metadata_t *res = NULL;
-        /* PDC_Client_query_metadata_with_name(obj_name, &res); */
-        /* if (res == NULL) { */
-        /*     printf("No result found for current query with name [%s]\n", obj_name); */
-        /* } */
-        /* else { */
-        /*     printf("Got response from server.\n"); */
-        /*     PDC_print_metadata(res); */
-        /*     fflush(stdout); */
-        /* } */
-
-        PDC_Client_query_metadata_partial(obj_name, &res);
+        /* printf("Proc %d search %s\n", rank, obj_names[i]); */
+        PDC_Client_query_metadata_partial(obj_names[i], &res);
         if (res == NULL) {
-            printf("No result found for current query with name [%s]\n", obj_name);
+            printf("No result found for current partial query with name [%s]\n", obj_names[i]);
         }
         /* else { */
         /*     printf("Got response from server.\n"); */

@@ -6,6 +6,7 @@
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <ctype.h>
 
 /* #define ENABLE_MPI 1 */
 
@@ -239,13 +240,15 @@ static pdc_metadata_t * find_identical_metadata(pdc_metadata_t *mlist, pdc_metad
 
     n_bloom_total_g++;
     if (bloom_check == 0) {
-        /* printf("Bloom filter: definitely not!\n"); */
+        /* printf("==PDC_SERVER[%d]: Bloom filter says definitely not %s!\n", pdc_server_rank_g, combined_string); */
+        /* fflush(stdout); */
         ret_value = NULL;
         goto done;
     }
     else {
         // bloom filter says maybe, so need to check entire list
-        /* printf("Bloom filter: maybe!\n"); */
+        /* printf("==PDC_SERVER[%d]: Bloom filter says maybe for %s!\n", pdc_server_rank_g, combined_string); */
+        /* fflush(stdout); */
         n_bloom_maybe_g++;
         pdc_metadata_t *elt;
         DL_FOREACH(mlist, elt) {
@@ -367,7 +370,7 @@ static perr_t PDC_Server_remove_from_bloom(pdc_metadata_t *metadata)
     char combined_string[PATH_MAX];
 
     combine_obj_info_to_string(metadata, combined_string);
-    /* printf("==PDC_SERVER: PDC_Server_add_to_bloom(): Combined string: %s\n", combined_string); */
+    /* printf("==PDC_SERVER: PDC_Server_remove_from_bloom(): Combined string: %s\n", combined_string); */
 
     BLOOM_TYPE_T *bloom = (BLOOM_TYPE_T*)metadata->bloom;
     if (bloom == NULL) {
@@ -390,12 +393,13 @@ static perr_t PDC_Server_add_to_bloom(pdc_metadata_t *metadata)
     char combined_string[PATH_MAX];
 
     combine_obj_info_to_string(metadata, combined_string);
-    /* printf("==PDC_SERVER: PDC_Server_add_to_bloom(): Combined string: %s\n", combined_string); */
+    /* printf("==PDC_SERVER[%d]: PDC_Server_add_to_bloom(): Combined string: %s\n", pdc_server_rank_g, combined_string); */
+    /* fflush(stdout); */
 
     BLOOM_TYPE_T *bloom = (BLOOM_TYPE_T*)metadata->bloom;
     if (bloom == NULL) {
-        printf("==PDC_SERVER: PDC_Server_add_to_bloom(): bloom pointer is NULL\n");
-        ret_value = FAIL;
+        /* printf("==PDC_SERVER: PDC_Server_add_to_bloom(): bloom pointer is NULL\n"); */
+        /* ret_value = FAIL; */
         goto done;
     }
     ret_value = BLOOM_ADD(bloom, combined_string, strlen(combined_string));
@@ -439,7 +443,7 @@ static perr_t PDC_Server_hash_table_list_init(pdc_metadata_t *metadata, uint32_t
     perr_t      ret_value = 0;
     hg_return_t ret;
 
-    /* printf("hash key=%d\n", *hash_key); */
+    /* printf("==PDC_SERVER[%d]: hash entry init for hash key [%u]\n", pdc_server_rank_g, *hash_key); */
 
     // Init head of linked list
     metadata->prev = metadata;                                                                   \
@@ -638,8 +642,8 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
                 // Check and find valid update fields
                 // Currently user_id, obj_name are not supported to be updated in this way
                 // obj_name change is done through client with delete and add operation.
-                if (in->new_metadata.time_step != -1) 
-                    target->time_step = in->new_metadata.time_step;
+                /* if (in->new_metadata.time_step != -1) */ 
+                /*     target->time_step = in->new_metadata.time_step; */
                 if (in->new_metadata.app_name[0] != 0) 
                     strcpy(target->app_name,      in->new_metadata.app_name);
                 if (in->new_metadata.data_location[0] != 0) 
@@ -716,7 +720,8 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
 
     gettimeofday(&ht_total_start, 0);
 
-    /* printf("==PDC_SERVER: Got delete request: hash=%d, obj_id=%llu\n", in->hash_value, in->obj_id); */
+    /* printf("==PDC_SERVER[%d]: Got delete request: hash=%d, obj_id=%llu\n", pdc_server_rank_g, in->hash_value, in->obj_id); */
+    /* fflush(stdout); */
 
     uint32_t *hash_key = (uint32_t*)malloc(sizeof(uint32_t));
     if (hash_key == NULL) {
@@ -751,13 +756,14 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
                 /* printf("==PDC_SERVER: Found delete target!\n"); */
                 
                 // Check if target is the only item in this linked list
-                /* int curr_list_size; */
-                /* DL_COUNT(lookup_value, elt, curr_list_size); */
+                int curr_list_size;
+                DL_COUNT(lookup_value, elt, curr_list_size);
 
-                /* printf("==PDC_SERVER: count done\n"); */
+                /* printf("==PDC_SERVER: still %d objects in current list\n", curr_list_size); */
 
                 // Remove from linked list
-                if (lookup_value->prev != NULL) {
+                if (curr_list_size > 1) {
+                /* if (lookup_value->prev != NULL) { */
                     // Remove from bloom filter
                     PDC_Server_remove_from_bloom(target);
 
@@ -824,6 +830,7 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
     
 
 done:
+    fflush(stdout);
 #ifdef ENABLE_MULTITHREAD 
     if (unlocked == 0)
         hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
@@ -973,6 +980,8 @@ done:
     if (unlocked == 0)
         hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
 #endif
+    /* printf("==PDC_SERVER[%d]: inserted name %s hash key %u to hash table\n", pdc_server_rank_g, in->data.obj_name, *hash_key); */
+    /* fflush(stdout); */
     FUNC_LEAVE(ret_value);
 } // end of insert_metadata_to_hash_table
 
@@ -1095,14 +1104,14 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     *hg_class = HG_Init(na_info_string, NA_TRUE);
     if (*hg_class == NULL) {
         printf("Error with HG_Init()\n");
-        return -1;
+        return FAIL;
     }
 
     // Create HG context 
     *hg_context = HG_Context_create(*hg_class);
     if (*hg_context == NULL) {
         printf("Error with HG_Context_create()\n");
-        return -1;
+        return FAIL;
     }
 
     // Get server address
@@ -1470,7 +1479,7 @@ perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key,
 {
     FUNC_ENTER(NULL);
 
-    perr_t ret_value;
+    perr_t ret_value = SUCCEED;
 
     pdc_metadata_t *lookup_value;
 
@@ -1502,7 +1511,8 @@ perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key,
     strcpy(metadata.obj_name, name);
     metadata.time_step = tmp_time_step;
 
-    /* printf("==PDC_SERVER: search with name [%s], hash value %u\n", name, hash_key); */
+    /* printf("==PDC_SERVER[%d]: search with name [%s], hash value %u\n", pdc_server_rank_g, name, hash_key); */
+    /* fflush(stdout); */
 
     if (metadata_hash_table_g != NULL) {
         // lookup
@@ -1517,19 +1527,22 @@ perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key,
             *out = find_identical_metadata(lookup_value, &metadata);
 
             if (*out == NULL) {
-                /* printf("==PDC_SERVER: Queried object with name [%s] has no full match!\n", obj_name); */
-                ret_value = -1;
+                /* printf("==PDC_SERVER[%d]: Queried object with name [%s] has no full match!\n", pdc_server_rank_g, obj_name); */
+                /* fflush(stdout); */
+                ret_value = FAIL;
                 goto done;
             }
-            else {
-                /* printf("==PDC_SERVER: found in hash table \n"); */
-                /* PDC_print_metadata(*out); */
-            }
+            /* else { */
+            /*     printf("==PDC_SERVER[%d]: name %s found in hash table \n", pdc_server_rank_g, name); */
+            /*     fflush(stdout); */
+            /*     /1* PDC_print_metadata(*out); *1/ */
+            /* } */
         }
         else {
             // First entry for current hasy_key, init linked list, and insert to hash table
             *out = NULL;
-            printf("==PDC_SERVER: Queried object with name [%s] not found!\n", obj_name);
+            /* printf("==PDC_SERVER[%d]: Queried name %s hash %u not found in hash table \n", pdc_server_rank_g, name, hash_key); */
+            /* fflush(stdout); */
         }
 
     }
@@ -1570,14 +1583,16 @@ int main(int argc, char *argv[])
     gettimeofday(&start, 0);
 
 
+    perr_t ret;
 
     if (argc > 1) {
         if (strcmp(argv[1], "restart") == 0) 
             is_restart_g = 1;
     }
-    PDC_Server_init(port, &hg_class, &hg_context);
-    if (hg_class == NULL || hg_context == NULL) {
-        printf("Error with Mercury init\n");
+    ret = PDC_Server_init(port, &hg_class, &hg_context);
+    if (ret != SUCCEED || hg_class == NULL || hg_context == NULL) {
+        printf("Error with Mercury init, exit...\n");
+        ret = FAIL;
         goto done;
     }
 
@@ -1644,15 +1659,13 @@ int main(int argc, char *argv[])
     }
 
 
+done:
     PDC_Server_finalize();
     if (pdc_server_rank_g == 0) {
         printf("==PDC_SERVER: exiting...\n");
         /* printf("==PDC_SERVER: [%d] exiting...\n", pdc_server_rank_g); */
     }
 
-
-
-done:
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
