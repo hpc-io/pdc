@@ -135,6 +135,29 @@ int bitmap_increment(bitmap_t *bitmap, unsigned int index, long offset)
     return 0;
 }
 
+// Changed to 8 bit counter
+/* int bitmap_increment(bitmap_t *bitmap, unsigned int index, long offset) */
+/* { */
+/*     long access = index / 2 + offset; */
+/*     uint16_t temp; */
+/*     uint16_t n = bitmap->array[access]; */
+/*     if (index % 2 != 0) { */
+/*         temp = (n & 0x00ff); */
+/*         n = (n & 0xff00) + ((n & 0x00ff) + 0x0001); */
+/*     } else { */
+/*         temp = (n & 0xff00) >> 8; */
+/*         n = (n & 0x00ff) + ((n & 0xff00) + 0x0100); */
+/*     } */
+    
+/*     if (temp == 0x00ff) { */
+/*         fprintf(stderr, "Error, 8 bit int Overflow\n"); */
+/*         return -1; */
+/*     } */
+    
+/*     bitmap->array[access] = n; */
+/*     return 0; */
+/* } */
+
 /* increments the four bit counter */
 int bitmap_decrement(bitmap_t *bitmap, unsigned int index, long offset)
 {
@@ -159,6 +182,31 @@ int bitmap_decrement(bitmap_t *bitmap, unsigned int index, long offset)
     return 0;
 }
 
+
+/* increments the four bit counter */
+/* int bitmap_decrement(bitmap_t *bitmap, unsigned int index, long offset) */
+/* { */
+/*     long access = index / 2 + offset; */
+/*     uint16_t temp; */
+/*     uint16_t n = bitmap->array[access]; */
+    
+/*     if (index % 2 != 0) { */
+/*         temp = (n & 0x00ff); */
+/*         n = (n & 0xff00) + ((n & 0x00ff) - 0x0001); */
+/*     } else { */
+/*         temp = (n & 0xff00) >> 8; */
+/*         n = (n & 0x00ff) + ((n & 0xff00) - 0x0100); */
+/*     } */
+    
+/*     if (temp == 0x0000) { */
+/*         fprintf(stderr, "Error, Decrementing zero\n"); */
+/*         return -1; */
+/*     } */
+    
+/*     bitmap->array[access] = n; */
+/*     return 0; */
+/* } */
+
 /* decrements the four bit counter */
 int bitmap_check(bitmap_t *bitmap, unsigned int index, long offset)
 {
@@ -169,6 +217,17 @@ int bitmap_check(bitmap_t *bitmap, unsigned int index, long offset)
         return bitmap->array[access] & 0xf0;
     }
 }
+
+/* decrements the four bit counter */
+/* int bitmap_check(bitmap_t *bitmap, unsigned int index, long offset) */
+/* { */
+/*     long access = index / 2 + offset; */
+/*     if (index % 2 != 0 ) { */
+/*         return bitmap->array[access] & 0x00ff; */
+/*     } else { */
+/*         return bitmap->array[access] & 0xff00; */
+/*     } */
+/* } */
 
 int bitmap_flush(bitmap_t *bitmap)
 {

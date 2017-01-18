@@ -20,6 +20,7 @@
 #define ADDR_MAX 64
 
 extern uint64_t pdc_id_seq_g;
+extern int pdc_server_rank_g;
 
 // For storing metadata
 typedef struct pdc_metadata_t {

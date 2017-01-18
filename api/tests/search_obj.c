@@ -139,25 +139,33 @@ int main(int argc, const char *argv[])
 
     pdc_metadata_t entry;
     uint32_t *hash_key;
-    int j, read_count = 0;
-    while (n_entry--) {
-        fread(&count, sizeof(int), 1, file);
-        /* printf("Count:%d\n", count); */
+    int j, read_count = 0, tmp_count;
+    while (n_entry>0) {
+        fread(&tmp_count, sizeof(int), 1, file);
+        /* printf("Count:%d\n", tmp_count); */
 
         hash_key = (uint32_t *)malloc(sizeof(uint32_t));
         fread(hash_key, sizeof(uint32_t), 1, file);
         /* printf("Hash key is %u\n", *hash_key); */
 
         // read each metadata
-        for (j = 0; j < count; j++) {
+        for (j = 0; j < tmp_count; j++) {
+             if (read_count >= count) {
+                 n_entry = 0;
+                 break;
+             }
             fread(&entry, sizeof(pdc_metadata_t), 1, file);
             sprintf(obj_names[read_count], "%s%d", entry.obj_name, entry.time_step); 
             /* printf("Read name %s\n", obj_names[read_count]); */
             read_count++;
+
         }
+        n_entry--;
     }
 
     fclose(file);
+    /* printf("Finished read\n"); */
+    /* fflush(stdout); */
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);

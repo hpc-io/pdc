@@ -402,7 +402,13 @@ static perr_t PDC_Server_add_to_bloom(pdc_metadata_t *metadata)
         /* ret_value = FAIL; */
         goto done;
     }
-    ret_value = BLOOM_ADD(bloom, combined_string, strlen(combined_string));
+
+    // Only add to bloom filter if it's definately not 
+    int bloom_check;
+    bloom_check = BLOOM_CHECK(bloom, combined_string, strlen(combined_string));
+    if (bloom_check == 0) {
+        ret_value = BLOOM_ADD(bloom, combined_string, strlen(combined_string));
+    }
 
 done:
     FUNC_LEAVE(ret_value);
@@ -642,8 +648,8 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
                 // Check and find valid update fields
                 // Currently user_id, obj_name are not supported to be updated in this way
                 // obj_name change is done through client with delete and add operation.
-                /* if (in->new_metadata.time_step != -1) */ 
-                /*     target->time_step = in->new_metadata.time_step; */
+                if (in->new_metadata.time_step != -1) 
+                    target->time_step = in->new_metadata.time_step;
                 if (in->new_metadata.app_name[0] != 0) 
                     strcpy(target->app_name,      in->new_metadata.app_name);
                 if (in->new_metadata.data_location[0] != 0) 
@@ -756,14 +762,13 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
                 /* printf("==PDC_SERVER: Found delete target!\n"); */
                 
                 // Check if target is the only item in this linked list
-                int curr_list_size;
-                DL_COUNT(lookup_value, elt, curr_list_size);
+                /* int curr_list_size; */
+                /* DL_COUNT(lookup_value, elt, curr_list_size); */
 
                 /* printf("==PDC_SERVER: still %d objects in current list\n", curr_list_size); */
 
-                // Remove from linked list
-                if (curr_list_size > 1) {
-                /* if (lookup_value->prev != NULL) { */
+                /* if (curr_list_size > 1) { */
+                if (lookup_value->next != NULL) {
                     // Remove from bloom filter
                     PDC_Server_remove_from_bloom(target);
 
@@ -830,7 +835,8 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
     
 
 done:
-    fflush(stdout);
+    /* printf("==PDC_SERVER[%d]: Finished delete request: hash=%u, obj_id=%llu\n", pdc_server_rank_g, in->hash_value, in->obj_id); */
+    /* fflush(stdout); */
 #ifdef ENABLE_MULTITHREAD 
     if (unlocked == 0)
         hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
@@ -1460,16 +1466,22 @@ perr_t PDC_Server_loop(hg_class_t *hg_class, hg_context_t *hg_context)
         } while ((hg_ret == HG_SUCCESS) && actual_count);
 
         /* Do not try to make progress anymore if we're done */
-        if (hg_atomic_get32(&close_server_g)) break;
+        if (hg_atomic_cas32(&close_server_g, 1, 1)) break;
+        /* if (hg_atomic_get32(&close_server_g)) { */
+        /*     /1* printf("\n==PDC_SERVER[%d]: Close server request received\n", pdc_server_rank_g); *1/ */
+            /* fflush(stdout); */
+        /*     ret_value = SUCCEED; */
+        /*     goto done; */
+        /* } */
         hg_ret = HG_Progress(hg_context, HG_MAX_IDLE_TIME);
 
-        /* fflush(stdout); */
     } while (hg_ret == HG_SUCCESS);
 
     if (hg_ret == HG_SUCCESS) 
         ret_value = SUCCEED;
     else
         ret_value = FAIL;
+
     
 done:
     FUNC_LEAVE(ret_value);

@@ -382,15 +382,17 @@ HG_TEST_RPC_CB(close_server, handle)
     close_server_out_t out;
 
     HG_Get_input(handle, &in);
-    
-    /* out.ret = 1; */
-    HG_Respond(handle, NULL, NULL, &out);
-    /* printf("\n\n==PDC_SERVER: Close server request received\n"); */
+    /* printf("\n==PDC_SERVER: Close server request received\n"); */
     /* fflush(stdout); */
 
     // Set close server marker
-    hg_atomic_set32(&close_server_g, 1);
+    while (hg_atomic_get32(&close_server_g) == 0 ) {
+        hg_atomic_set32(&close_server_g, 1);
+    }
+
     out.ret = 1;
+    HG_Respond(handle, NULL, NULL, &out);
+
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);

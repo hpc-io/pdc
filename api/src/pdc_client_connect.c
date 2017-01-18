@@ -1155,54 +1155,57 @@ perr_t PDC_Client_close_all_server()
     uint64_t ret_value;
     hg_return_t  hg_ret = 0;
     uint32_t server_id;
-    int port      = pdc_client_mpi_rank_g + 8000; 
+    int port      = pdc_client_mpi_rank_g + 8800; 
 
-    if (mercury_has_init_g == 0) {
-        // Init Mercury network connection
-        PDC_Client_mercury_init(&send_class_g, &send_context_g, port);
-        if (send_class_g == NULL || send_context_g == NULL) {
-            printf("Error with Mercury Init, exiting...\n");
-            exit(0);
+    if (pdc_client_mpi_rank_g == 0) {
+
+        if (mercury_has_init_g == 0) {
+            // Init Mercury network connection
+            PDC_Client_mercury_init(&send_class_g, &send_context_g, port);
+            if (send_class_g == NULL || send_context_g == NULL) {
+                printf("Error with Mercury Init, exiting...\n");
+                exit(0);
+            }
+            mercury_has_init_g = 1;
         }
-        mercury_has_init_g = 1;
-    }
 
-    int i;
-    for (i = 0; i < pdc_server_num_g; i++) {
-        server_id = i;
+        int i;
+        for (i = 0; i < pdc_server_num_g; i++) {
+            server_id = i;
 
-        /* printf("Closing server %d\n", server_id); */
-        /* fflush(stdout); */
-
-        // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
-        if (pdc_server_info_g[server_id].close_server_handle_valid != 1) {
-            /* printf("Addr: %s\n", pdc_server_info_g[server_id].addr); */
+            /* printf("Closing server %d\n", server_id); */
             /* fflush(stdout); */
-            HG_Create(send_context_g, pdc_server_info_g[server_id].addr, close_server_register_id_g, &pdc_server_info_g[server_id].close_server_handle);
-            pdc_server_info_g[server_id].close_server_handle_valid= 1;
-        }
 
-        // Fill input structure
-        close_server_in_t in;
-        in.client_id = 0;
+            // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
+            if (pdc_server_info_g[server_id].close_server_handle_valid != 1) {
+                /* printf("Addr: %s\n", pdc_server_info_g[server_id].addr); */
+                /* fflush(stdout); */
+                HG_Create(send_context_g, pdc_server_info_g[server_id].addr, close_server_register_id_g, &pdc_server_info_g[server_id].close_server_handle);
+                pdc_server_info_g[server_id].close_server_handle_valid= 1;
+            }
 
-        /* printf("Sending input to target\n"); */
-        struct client_lookup_args lookup_args;
-        ret_value = HG_Forward(pdc_server_info_g[server_id].close_server_handle, close_server_cb, &lookup_args, &in);
-        if (ret_value != HG_SUCCESS) {
-            fprintf(stderr, "PDC_Client_send_name_to_server(): Could not start HG_Forward()\n");
-            return EXIT_FAILURE;
+            // Fill input structure
+            close_server_in_t in;
+            in.client_id = 0;
+
+            /* printf("Sending input to target\n"); */
+            struct client_lookup_args lookup_args;
+            ret_value = HG_Forward(pdc_server_info_g[server_id].close_server_handle, close_server_cb, &lookup_args, &in);
+            if (ret_value != HG_SUCCESS) {
+                fprintf(stderr, "PDC_Client_send_name_to_server(): Could not start HG_Forward()\n");
+                return EXIT_FAILURE;
+            }
         }
 
         // Wait for response from server
-        work_todo_g = 1;
+        work_todo_g = pdc_server_num_g;
         PDC_Client_check_response(&send_context_g);
 
+
+        printf("\n\n\n==PDC_CLIENT: All server closed\n");
+        fflush(stdout);
+
     }
-
-    printf("\n\n\n==PDC_CLIENT: All server closed\n");
-    fflush(stdout);
-
     ret_value = 0;
 
 done:

@@ -140,28 +140,38 @@ int main(int argc, const char *argv[])
 
     pdc_metadata_t entry;
     uint32_t *hash_key;
-    int j, read_count = 0;
-    while (n_entry--) {
-        fread(&count, sizeof(int), 1, file);
-        /* printf("Count:%d\n", count); */
+    int j, read_count = 0, tmp_count;
+    while (n_entry > 0) {
+        fread(&tmp_count, sizeof(int), 1, file);
+        /* printf("Count:%d\n", tmp_count); */
 
         hash_key = (uint32_t *)malloc(sizeof(uint32_t));
         fread(hash_key, sizeof(uint32_t), 1, file);
         /* printf("Hash key is %u\n", *hash_key); */
 
-        // read each metadata
-        for (j = 0; j < count; j++) {
-            fread(&entry, sizeof(pdc_metadata_t), 1, file);
-            sprintf(obj_names[read_count], "%s%d", entry.obj_name, entry.time_step);
-            /* printf("Read name %s\n", obj_names[read_count]); */
-            read_count++;
-        }
-    }
+
+         // read each metadata
+         for (j = 0; j < tmp_count; j++) {
+              if (read_count >= count) {
+                  n_entry = 0;
+                  break;
+              }
+             fread(&entry, sizeof(pdc_metadata_t), 1, file);
+             sprintf(obj_names[read_count], "%s%d", entry.obj_name, entry.time_step);
+             /* printf("Proc %d: Read name %s\n", rank, obj_names[read_count]); */
+             read_count++;
+
+         }
+         n_entry--;
+     }
+
 
     fclose(file);
 
     count = read_count;
 
+    /* printf("Proc %d: deleting %d metadata\n", rank, count); */
+    /* fflush(stdout); */
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -195,23 +205,20 @@ int main(int argc, const char *argv[])
             /* fflush(stdout); */
 
  
-            /* printf("Deleting metadata\n"); */
+            /* printf("Proc %d: deleting metadata\n", rank); */
+            /* fflush(stdout); */
             ret = PDC_Client_delete_metadata(res);
             if (ret != SUCCEED) {
                 printf("Delete fail, exiting\n");
                 goto done;
             }
 
-            /* if (rank == 1 || rank ==2 || rank == 7) { */
-            /*     printf("Proc %d: querying deleted metadata with name [%s]\n", rank, obj_names[i]); */
+            /* PDC_Client_query_metadata_with_name(obj_names[i], &res); */
+            /* if (res != NULL) { */ 
+            /*     printf("ERROR: deleted metadata still exist\n"); */
+            /*     /1* PDC_print_metadata(res); *1/ */
             /*     fflush(stdout); */
             /* } */
-            PDC_Client_query_metadata_with_name(obj_names[i], &res);
-            if (res != NULL) { 
-                printf("ERROR: deleted metadata still exist\n");
-                /* PDC_print_metadata(res); */
-                fflush(stdout);
-            }
         }
 
         if (rank == 0) {
