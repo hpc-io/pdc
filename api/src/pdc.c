@@ -1,10 +1,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "pdc.h"
 #include "pdc_private.h"
 #include "pdc_malloc.h"
 #include "pdc_interface.h"
+
+//
+#include "mercury.h"
+#include "pdc_client_server_common.h"
+#include "pdc_client_connect.h"
+
 
 static PDC_CLASS_t *PDC__class_create() {
     PDC_CLASS_t *ret_value = NULL;         /* Return value */
@@ -25,6 +32,7 @@ pdcid_t PDC_init(PDC_prop_t property) {
     FUNC_ENTER(NULL);
     PDC_CLASS_t *pc = PDC__class_create();
     if(pc == NULL)
+
 	    PGOTO_ERROR(FAIL, "fail to allocate pdc type");
 
     if(PDCprop_init(pc) < 0)
@@ -35,6 +43,9 @@ pdcid_t PDC_init(PDC_prop_t property) {
         PGOTO_ERROR(FAIL, "PDC object init error");
     if(PDCregion_init(pc) < 0)
         PGOTO_ERROR(FAIL, "PDC object init error");
+
+    // PDC Client Server connection init
+    PDC_Client_init();
 
     // create pdc id
     pdcid_t pdcid = (pdcid_t)pc;
@@ -77,6 +88,10 @@ perr_t PDC_close(pdcid_t pdcid) {
     if(PDCregion_end(pdcid) < 0)
         PGOTO_ERROR(FAIL, "fail to destroy object");
     pc = PDC_FREE(PDC_CLASS_t, pc);
+
+    // Finalize METADATA
+    PDC_Client_finalize();
+
 done:
     FUNC_LEAVE(ret_value);
 } /* end of PDC_close() */

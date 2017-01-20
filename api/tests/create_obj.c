@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
+#include <time.h>
+
 #include "pdc.h"
 
 int main() {
@@ -62,7 +65,6 @@ int main() {
     else
         printf("successfully close container # %lld\n", cont);
     
-
     // close a container property
     if(PDCprop_close(cont_prop, pdc) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
@@ -72,6 +74,8 @@ int main() {
     // close pdc
     if(PDC_close(pdc) < 0)
        printf("fail to close PDC\n");
-    else
-       printf("PDC is closed\n");
+    /* else */
+    /*    printf("PDC is closed\n"); */
+
+     return 0;
 }

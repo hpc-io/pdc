@@ -16,7 +16,9 @@ set(PDC_HEADERS ${PDC_HEADERS}
                 pdc_cont.h
                 pdc_cont_pkg.h
 		pdc_obj.h
-		pdc_obj_pkg.h)
+		pdc_obj_pkg.h
+                pdc_client_connect.h
+                pdc_client_server_common.h)
 
 set(PDC_SOURCES ${PDC_SOURCES}
                 pdc.c
@@ -25,6 +27,12 @@ set(PDC_SOURCES ${PDC_SOURCES}
                 pdc_malloc.c
                 pdc_prop.c
                 pdc_cont.c
-		pdc_obj.c)
+		pdc_obj.c
+                pdc_client_connect.c
+                pdc_client_server_common.c)
 
 add_library(pdc STATIC ${PDC_HEADERS} ${PDC_SOURCES})
+
+target_link_libraries(pdc mercury)
+
+add_subdirectory (server)

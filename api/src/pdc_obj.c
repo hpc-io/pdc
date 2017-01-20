@@ -1,6 +1,8 @@
 #include "pdc_obj.h"
 #include "pdc_malloc.h"
 #include "pdc_prop_pkg.h"
+#include "pdc_client_server_common.h"
+#include "pdc_client_connect.h"
 
 static perr_t PDCobj__close(PDC_obj_info_t *op);
 
@@ -66,7 +68,11 @@ pdcid_t PDCobj_create(pdcid_t pdc, pdcid_t cont_id, const char *obj_name, pdcid_
     // will contact server to get ID
     PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
     pdcid_t new_id = PDC_id_register(PDC_OBJ, p, pdc);
-    ret_value = new_id;
+
+    pdcid_t obj_id;
+    obj_id = PDC_Client_send_name_recv_id(obj_name, obj_create_prop);
+
+    ret_value = obj_id;
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -78,7 +84,7 @@ perr_t PDC_obj_list_null(pdcid_t pdc) {
     // list is not empty
     int nelemts = PDC_id_list_null(PDC_OBJ, pdc);
     if(nelemts > 0) {
-        printf("%d element(s) in the object list will be automatically closed by PDC_close()\n", nelemts);
+        /* printf("%d element(s) in the object list will be automatically closed by PDC_close()\n", nelemts); */
         if(PDC_id_list_clear(PDC_OBJ, pdc) < 0)
             PGOTO_ERROR(FAIL, "fail to clear object list");
     }
@@ -94,7 +100,7 @@ perr_t PDC_region_list_null(pdcid_t pdc) {
     // list is not empty
     int nelemts = PDC_id_list_null(PDC_REGION, pdc);
     if(nelemts > 0) {
-        printf("%d element(s) in the region list will be automatically closed by PDC_close()\n", nelemts);
+        /* printf("%d element(s) in the region list will be automatically closed by PDC_close()\n", nelemts); */
         if(PDC_id_list_clear(PDC_REGION, pdc) < 0)
             PGOTO_ERROR(FAIL, "fail to clear object list");
     }
