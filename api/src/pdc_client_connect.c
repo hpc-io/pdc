@@ -41,6 +41,8 @@ hg_hash_table_t       *obj_names_cache_hash_table_g = NULL;
 
 static int            *debug_server_id_count = NULL;
 
+char pdc_client_tmp_dir_g[ADDR_MAX];
+
 static inline int get_server_id_by_hash_all() 
 {
 
@@ -99,7 +101,7 @@ int PDC_Client_read_server_addr_from_file()
     char config_fname[PATH_MAX];
 
     if (pdc_client_mpi_rank_g == 0) {
-        sprintf(config_fname, "%s/%s", pdc_server_tmp_dir_g, pdc_server_cfg_name_g);
+        sprintf(config_fname, "%s/%s", pdc_client_tmp_dir_g, pdc_server_cfg_name_g);
         /* printf("config file:%s\n",config_fname); */
         na_config = fopen(config_fname, "r");
         if (!na_config) {
@@ -409,6 +411,17 @@ perr_t PDC_Client_init()
     MPI_Comm_rank(MPI_COMM_WORLD, &pdc_client_mpi_rank_g);
     MPI_Comm_size(MPI_COMM_WORLD, &pdc_client_mpi_size_g);
 #endif
+
+    // Set up tmp dir
+    char *tmp_dir = getenv("PDC_TMPDIR");
+    if (tmp_dir == NULL)
+        strcpy(pdc_client_tmp_dir_g, "./pdc_tmp");
+    else
+        strcpy(pdc_client_tmp_dir_g, tmp_dir);
+
+    if (pdc_client_mpi_rank_g == 0) {
+        printf("==PDC_CLIENT[%d]: using %s as tmp dir \n", pdc_client_mpi_rank_g, pdc_client_tmp_dir_g);
+    }
 
     // get server address and fill in $pdc_server_info_g
     PDC_Client_read_server_addr_from_file();
@@ -729,7 +742,7 @@ perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
 {
     FUNC_ENTER(NULL);
 
-    perr_t *ret_value = SUCCEED;
+    perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
 
     int hash_name_value = PDC_get_hash_by_name(old->obj_name);
@@ -767,7 +780,7 @@ perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
     hg_ret = HG_Forward(pdc_server_info_g[server_id].metadata_update_handle, metadata_update_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "PDC_Client_update_metadata_with_name(): Could not start HG_Forward()\n");
-        return NULL;
+        return FAIL;
     }
 
     // Wait for response from server
@@ -849,7 +862,7 @@ perr_t PDC_Client_delete_metadata(pdc_metadata_t *target)
     hg_ret = HG_Forward(pdc_server_info_g[server_id].metadata_delete_handle, metadata_delete_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "PDC_Client_delete_metadata_with_name(): Could not start HG_Forward()\n");
-        return NULL;
+        return FAIL;
     }
 
     // Wait for response from server
@@ -872,7 +885,7 @@ perr_t PDC_Client_query_metadata_partial(const char *obj_name, pdc_metadata_t **
 {
     FUNC_ENTER(NULL);
 
-    perr_t *ret_value = SUCCEED;
+    perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
 
     char *name;
@@ -929,7 +942,7 @@ perr_t PDC_Client_query_metadata_partial(const char *obj_name, pdc_metadata_t **
         hg_ret = HG_Forward(pdc_server_info_g[server_id].metadata_query_handle, metadata_query_rpc_cb, lookup_args[server_id], &in);
         if (hg_ret != HG_SUCCESS) {
             fprintf(stderr, "PDC_Client_query_metadata_partial(): Could not start HG_Forward()\n");
-            return NULL;
+            return FAIL;
         }
 
     }
@@ -959,7 +972,7 @@ perr_t PDC_Client_query_metadata_with_name(const char *obj_name, pdc_metadata_t 
 {
     FUNC_ENTER(NULL);
 
-    perr_t *ret_value = SUCCEED;
+    perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
 
     /* printf("==PDC_CLIENT[%d]: search request name [%s]\n", pdc_client_mpi_rank_g, obj_name); */
@@ -1022,7 +1035,7 @@ perr_t PDC_Client_query_metadata_with_name(const char *obj_name, pdc_metadata_t 
     hg_ret = HG_Forward(pdc_server_info_g[server_id].metadata_query_handle, metadata_query_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "PDC_Client_query_metadata_with_name(): Could not start HG_Forward()\n");
-        return NULL;
+        return FAIL;
     }
 
     // Wait for response from server

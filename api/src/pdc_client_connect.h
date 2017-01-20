@@ -45,6 +45,8 @@ extern pdc_server_info_t *pdc_server_info_g;
 extern int pdc_client_mpi_rank_g;
 extern int pdc_client_mpi_size_g;
 
+extern char pdc_server_tmp_dir_g[ADDR_MAX];
+
 struct client_lookup_args {
     const char          *obj_name;
     uint64_t             obj_id;

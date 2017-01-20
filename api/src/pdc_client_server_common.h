@@ -14,10 +14,12 @@
 #ifndef PDC_CLIENT_SERVER_COMMON_H
 #define PDC_CLIENT_SERVER_COMMON_H
 
-#define pdc_server_tmp_dir_g  "./pdc_tmp"
+#define ADDR_MAX 64
+
+/* #define pdc_server_tmp_dir_g  "./pdc_tmp" */
+extern char pdc_server_tmp_dir_g[ADDR_MAX];
 #define pdc_server_cfg_name_g "server.cfg"
 
-#define ADDR_MAX 64
 
 extern uint64_t pdc_id_seq_g;
 extern int pdc_server_rank_g;
@@ -402,6 +404,8 @@ hg_id_t close_server_register(hg_class_t *hg_class);
 hg_id_t metadata_query_register(hg_class_t *hg_class);
 hg_id_t metadata_delete_register(hg_class_t *hg_class);
 hg_id_t metadata_update_register(hg_class_t *hg_class);
+perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out);
+perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out);
 
 
 uint32_t PDC_get_hash_by_name(const char *name);

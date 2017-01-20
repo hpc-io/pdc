@@ -13,6 +13,8 @@
 #ifndef PDC_SERVER_H
 #define PDC_SERVER_H
 
+#define CREATE_BLOOM_THRESHOLD 64
+
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out);
 perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out);
 perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key, pdc_metadata_t** out);
@@ -24,5 +26,11 @@ typedef struct pdc_metadata_name_mark_t {
     struct pdc_metadata_name_mark_t *next;
     struct pdc_metadata_name_mark_t *prev;
 } pdc_metadata_name_mark_t;
+
+typedef struct pdc_hash_table_entry_head {
+    int n_obj;
+    void *bloom;
+    pdc_metadata_t *metadata;
+} pdc_hash_table_entry_head;
 
 #endif /* PDC_SERVER_H */

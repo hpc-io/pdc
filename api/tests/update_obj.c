@@ -131,10 +131,17 @@ int main(int argc, const char *argv[])
     for (i = 0; i < count; i++) {
         obj_names[i] = (char*)malloc(128*sizeof(char));
     }
-
-    char filename[128];
+    char filename[128], pdc_server_tmp_dir_g[128];
     int n_entry;
-    sprintf(filename, "./pdc_tmp/metadata_checkpoint.%d", rank);
+    // Set up tmp dir
+    char *tmp_dir = getenv("PDC_TMPDIR");
+    if (tmp_dir == NULL)
+        strcpy(pdc_server_tmp_dir_g, "./pdc_tmp");
+    else
+        strcpy(pdc_server_tmp_dir_g, tmp_dir);
+
+    sprintf(filename, "%s/metadata_checkpoint.%d", pdc_server_tmp_dir_g, rank);
+
     /* printf("file name: %s\n", filename); */
     FILE *file = fopen(filename, "r");
     if (file==NULL) {fputs("Checkpoint file not available\n", stderr); return -1;}

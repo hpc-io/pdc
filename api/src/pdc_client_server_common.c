@@ -17,6 +17,7 @@ hg_atomic_int32_t close_server_g;
 
 uint64_t pdc_id_seq_g = 1000000;
 // actual value for each server is set by PDC_Server_init()
+//
 
 #ifdef ENABLE_MULTITHREAD
 
