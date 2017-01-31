@@ -69,6 +69,9 @@ int main(int argc, const char *argv[])
         exit(-1);
     }
 
+    if (rank == 0) {
+        printf("%d clients in total\n", size);
+    }
     count /= size;
 
     int i;
@@ -170,7 +173,7 @@ int main(int argc, const char *argv[])
     /* printf("Finished read\n"); */
     /* fflush(stdout); */
 
-    count = read_count;
+    /* count = read_count; */
 
     if (rank == 0) 
         printf("Searching %d objects per MPI rank\n", count);
@@ -185,21 +188,14 @@ int main(int argc, const char *argv[])
     gettimeofday(&ht_total_start, 0);
 
     for (i = 0; i < count; i++) {
-        /* if (use_name == -1) */
-        /*     sprintf(obj_name, "%s_%d", rand_string(tmp_str, 16), rank); */
-        /* else if (use_name == 1) */
-        /*     sprintf(obj_name, "%s_%d", obj_prefix[0], i + rank * count); */
-        /* else if (use_name == 4) */
-        /*     sprintf(obj_name, "%s_%d", obj_prefix[i%4], i/4 + rank * count); */
-        /* else { */
-        /*     printf("Unsupported name choice\n"); */
-        /*     goto done; */
-        /* } */
 
         pdc_metadata_t *res = NULL;
 
         /* printf("Proc %d search %s\n", rank, obj_name); */
-        PDC_Client_query_metadata_with_name(obj_names[i], &res);
+        /* PDC_Client_query_metadata_with_name(obj_names[i], &res); */
+        /* PDC_Client_query_metadata_with_name(obj_names[0], &res); */
+        int name_id = 0;
+        PDC_Client_query_metadata_partial(obj_names[name_id], &res);
         if (res == NULL) {
             printf("No result found for current query with name [%s]\n", obj_names[i]);
         }
@@ -209,17 +205,22 @@ int main(int argc, const char *argv[])
         /*     fflush(stdout); */
         /* } */
 
-        if (rank == 0) {
-            // Print progress
-            int progress_factor = count < 20 ? 1 : 20;
-            if (rank == 0 && i > 0 && i % (count/progress_factor) == 0) {
-                gettimeofday(&ht_total_end, 0);
-                ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
-                ht_total_sec        = ht_total_elapsed / 1000000.0;
+        // Print progress
+        int progress_factor = count < 20 ? 1 : 20;
+        if (i > 0 && i % (count/progress_factor) == 0) {
+            gettimeofday(&ht_total_end, 0);
+            ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+            ht_total_sec        = ht_total_elapsed / 1000000.0;
 
+            if (rank == 0) {
                 printf("searched %10d ... %.2f\n", i * size, ht_total_sec);
                 fflush(stdout);
             }
+
+#ifdef ENABLE_MPI
+            MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
         }
     }
 #ifdef ENABLE_MPI
@@ -230,64 +231,8 @@ int main(int argc, const char *argv[])
     ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
     ht_total_sec        = ht_total_elapsed / 1000000.0;
     if (rank == 0) { 
-        printf("Time to full query %d obj/rank with %d ranks: %.6f\n\n\n", count, size, ht_total_sec);
-        fflush(stdout);
-    }
-
-
-
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-
-    gettimeofday(&ht_total_start, 0);
-
-    for (i = 0; i < count; i++) {
-        /* if (use_name == -1) */
-        /*     sprintf(obj_name, "%s_%d", rand_string(tmp_str, 16), rank); */
-        /* else if (use_name == 1) */
-        /*     sprintf(obj_name, "%s_%d", obj_prefix[0], i + rank * count); */
-        /* else if (use_name == 4) */
-        /*     sprintf(obj_name, "%s_%d", obj_prefix[i%4], i/4 + rank * count); */
-        /* else { */
-        /*     printf("Unsupported name choice\n"); */
-        /*     goto done; */
-        /* } */
-
-        pdc_metadata_t *res = NULL;
-        /* printf("Proc %d search %s\n", rank, obj_names[i]); */
-        PDC_Client_query_metadata_partial(obj_names[i], &res);
-        if (res == NULL) {
-            printf("No result found for current partial query with name [%s]\n", obj_names[i]);
-        }
-        /* else { */
-        /*     printf("Got response from server.\n"); */
-        /*     PDC_print_metadata(res); */
-        /*     fflush(stdout); */
-        /* } */
-
-        if (rank == 0) {
-            // Print progress
-            int progress_factor = count < 20 ? 1 : 20;
-            if (rank == 0 && i > 0 && i % (count/progress_factor) == 0) {
-                gettimeofday(&ht_total_end, 0);
-                ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
-                ht_total_sec        = ht_total_elapsed / 1000000.0;
-
-                printf("searched %10d ... %.2f\n", i * size, ht_total_sec);
-                fflush(stdout);
-            }
-        }
-    }
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
-    ht_total_sec        = ht_total_elapsed / 1000000.0;
-    if (rank == 0) { 
-        printf("Time to partial query %d obj/rank with %d ranks: %.6f\n", count, size, ht_total_sec);
+        /* printf("Time to full query %d obj/rank with %d ranks: %.6f\n\n\n", count, size, ht_total_sec); */
+        printf("Time to partial query %d obj/rank with %d ranks: %.6f\n\n\n", count, size, ht_total_sec);
         fflush(stdout);
     }
 

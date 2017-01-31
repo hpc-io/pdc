@@ -77,7 +77,7 @@ MERCURY_GEN_PROC( close_server_out_t, ((int32_t)(ret))  )
 MERCURY_GEN_PROC( metadata_query_in_t, ((hg_const_string_t)(obj_name)) ((uint32_t)(hash_value)) )
 MERCURY_GEN_PROC( metadata_query_out_t, ((pdc_metadata_transfer_t)(ret)) )
 
-MERCURY_GEN_PROC( metadata_delete_in_t, ((uint64_t)(obj_id)) ((uint32_t)(hash_value)) )
+MERCURY_GEN_PROC( metadata_delete_in_t, ((hg_const_string_t)(obj_name)) ((int32_t)(time_step)) ((uint32_t)(hash_value)) )
 MERCURY_GEN_PROC( metadata_delete_out_t, ((int32_t)(ret)) )
 
 MERCURY_GEN_PROC( metadata_update_in_t, ((uint64_t)(obj_id)) ((uint32_t)(hash_value)) ((pdc_metadata_transfer_t)(new_metadata)) )
@@ -106,7 +106,8 @@ typedef struct {
 } metadata_update_out_t;
 
 typedef struct {
-    uint64_t             obj_id;
+    hg_const_string_t    obj_name;
+    int32_t              time_step;
     uint32_t             hash_value;
 } metadata_delete_in_t;
 
@@ -193,7 +194,11 @@ hg_proc_metadata_delete_in_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     metadata_delete_in_t *struct_data = (metadata_delete_in_t*) data;
 
-    ret = hg_proc_hg_uint64_t(proc, &struct_data->obj_id);
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->time_step);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
     }

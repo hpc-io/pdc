@@ -151,9 +151,9 @@ int main(int argc, const char *argv[])
             goto done;
         }
 
-        if (count < 4) {
-            printf("Proc %d Name: %s\n", rank, obj_name);
-        }
+        /* if (count < 4) { */
+        /*     printf("Proc %d Name: %s\n", rank, obj_name); */
+        /* } */
         test_obj = PDCobj_create(pdc, cont, obj_name, obj_prop);
         if (test_obj < 0) { 
             printf("Error getting an object id of %s from server, exit...\n", obj_name);
@@ -164,13 +164,17 @@ int main(int argc, const char *argv[])
 
         // Print progress
         int progress_factor = count < 10 ? 1 : 10;
-        if (rank == 0 && i > 0 && i % (count/progress_factor) == 0) {
+        if (i > 0 && i % (count/progress_factor) == 0) {
             gettimeofday(&ht_total_end, 0);
             ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
             ht_total_sec        = ht_total_elapsed / 1000000.0;
-
-            printf("%10d created ... %.2fs\n", i * size, ht_total_sec);
-            fflush(stdout);
+            if (rank == 0) {
+                printf("%10d created ... %.4f s\n", i * size, ht_total_sec);
+                fflush(stdout);
+            }
+            #ifdef ENABLE_MPI
+            MPI_Barrier(MPI_COMM_WORLD);
+            #endif
         }
 
     }

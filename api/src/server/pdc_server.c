@@ -71,6 +71,8 @@ double server_update_time_g       = 0.0;
 double server_hash_insert_time_g  = 0.0;
 double server_bloom_init_time_g   = 0.0;
 
+double total_mem_usage            = 0.0;
+
 static int 
 PDC_Server_metadata_int_equal(hg_hash_table_key_t vlocation1, hg_hash_table_key_t vlocation2)
 {
@@ -213,8 +215,12 @@ static pdc_metadata_t * find_identical_metadata(pdc_hash_table_entry_head *entry
 
     pdc_metadata_t *ret_value = NULL;
 
+/*     printf("==PDC_SERVER: quering with:\n"); */
+/*     PDC_print_metadata(a); */
+/*     fflush(stdout); */
+
     // Use bloom filter to quick check if current metadata is in the list
-    if (entry->bloom != NULL) {
+    if (entry->bloom != NULL && a->user_id != 0 && a->app_name[0] != 0) {
         /* printf("==PDC_SERVER: using bloom filter\n"); */
         /* fflush(stdout); */
 
@@ -223,6 +229,7 @@ static pdc_metadata_t * find_identical_metadata(pdc_hash_table_entry_head *entry
         char combined_string[PATH_MAX];
         combine_obj_info_to_string(a, combined_string);
         /* printf("bloom_check: Combined string: %s\n", combined_string); */
+        /* fflush(stdout); */
 
         // Timing
         struct timeval  ht_total_start;
@@ -247,8 +254,6 @@ static pdc_metadata_t * find_identical_metadata(pdc_hash_table_entry_head *entry
         hg_thread_mutex_unlock(&pdc_bloom_time_mutex_g);
 #endif
 
-        /* printf("==PDC_SERVER: quering with:\n"); */
-        /* PDC_print_metadata(a); */
 
         n_bloom_total_g++;
         if (bloom_check == 0) {
@@ -429,11 +434,11 @@ static perr_t PDC_Server_add_to_bloom(pdc_metadata_t *metadata, BLOOM_TYPE_T *bl
     /* fflush(stdout); */
 
     // Only add to bloom filter if it's definately not 
-    int bloom_check;
-    bloom_check = BLOOM_CHECK(bloom, combined_string, strlen(combined_string));
-    if (bloom_check == 0) {
+    /* int bloom_check; */
+    /* bloom_check = BLOOM_CHECK(bloom, combined_string, strlen(combined_string)); */
+    /* if (bloom_check == 0) { */
         ret_value = BLOOM_ADD(bloom, combined_string, strlen(combined_string));
-    }
+    /* } */
 
 done:
     FUNC_LEAVE(ret_value);
@@ -578,6 +583,7 @@ perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marke
         printf("Cannnot allocate hash_key!\n");
         goto done;
     }
+    total_mem_usage += sizeof(uint32_t);
 
     *hash_key = in->hash_value;
 
@@ -586,6 +592,7 @@ perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marke
         printf("==PDC_SERVER: ERROR - Cannnot allocate pdc_metadata_name_mark_t!\n");
         goto done;
     }
+    total_mem_usage += sizeof(pdc_metadata_name_mark_t);
     strcpy(namemark->obj_name, in->obj_name);
 
     pdc_metadata_name_mark_t *lookup_value;
@@ -671,6 +678,7 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
         printf("==PDC_SERVER: Cannnot allocate hash_key!\n");
         goto done;
     }
+    total_mem_usage += sizeof(uint32_t);
     *hash_key = in->hash_value;
     uint64_t obj_id = in->obj_id;
 
@@ -787,11 +795,19 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
         printf("==PDC_SERVER: Cannnot allocate hash_key!\n");
         goto done;
     }
+    total_mem_usage += sizeof(uint32_t);
     *hash_key = in->hash_value;
-    uint64_t obj_id = in->obj_id;
+    /* uint64_t obj_id = in->obj_id; */
 
     pdc_hash_table_entry_head *lookup_value;
     pdc_metadata_t *elt;
+    pdc_metadata_t metadata;
+    strcpy(metadata.obj_name, in->obj_name);
+    metadata.time_step = in->time_step;
+    metadata.app_name[0] = 0;
+    metadata.user_id = -1;
+    metadata.obj_id = 0;
+        
 
 #ifdef ENABLE_MULTITHREAD 
     // Obtain lock for hash table
@@ -810,7 +826,8 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
             /* printf("==PDC_SERVER: lookup_value not NULL!\n"); */
             // Check if there exist metadata identical to current one
             pdc_metadata_t *target;
-            target = find_identical_metadata_by_id(lookup_value->metadata, obj_id);
+            target = find_identical_metadata(lookup_value, &metadata);
+            /* target = find_identical_metadata(lookup_value->metadata, obj_id); */
             if (target != NULL) {
                 /* printf("==PDC_SERVER: Found delete target!\n"); */
                 
@@ -921,6 +938,7 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
         printf("Cannnot allocate pdc_metadata_t!\n");
         goto done;
     }
+    total_mem_usage += sizeof(pdc_metadata_t);
 
     // TODO: [Future work] Both server and client gets it and do security check
     metadata->user_id        = in->data.user_id;
@@ -947,6 +965,7 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
         printf("Cannnot allocate hash_key!\n");
         goto done;
     }
+    total_mem_usage += sizeof(uint32_t);
     *hash_key = in->hash_value;
 
     pdc_hash_table_entry_head *lookup_value;
@@ -971,6 +990,7 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
             if (debug_flag == 1) 
                 printf("lookup_value not NULL!\n");
             // Check if there exist metadata identical to current one
+            /* found_identical = NULL; */
             found_identical = find_identical_metadata(lookup_value, metadata);
             if ( found_identical != NULL) {
                 if (debug_flag == 1) {
@@ -999,6 +1019,7 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
             entry->bloom    = NULL;
             entry->metadata = NULL;
             entry->n_obj    = 0;
+            total_mem_usage += sizeof(pdc_hash_table_entry_head);
 
             PDC_Server_hash_table_list_init(entry, hash_key);
             PDC_Server_hash_table_list_insert(entry, metadata);
@@ -1149,6 +1170,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     if (pdc_server_rank_g == 0) {
         all_addr_strings_1d = (char* )malloc(sizeof(char ) * pdc_server_size_g * PATH_MAX);
         all_addr_strings    = (char**)malloc(sizeof(char*) * pdc_server_size_g );
+        total_mem_usage += (sizeof(char) + sizeof(char*));
     }
 
     char self_addr_string[PATH_MAX];
@@ -1324,6 +1346,7 @@ perr_t PDC_Server_finalize()
         printf("==PDC_SERVER: total insert      time = %.6f, %.6f\n", all_insert_time_min, all_insert_time_max);
         printf("==PDC_SERVER: total hash insert time = %.6f, %.6f\n", all_server_hash_insert_time_min, all_server_hash_insert_time_max);
         printf("==PDC_SERVER: total bloom init  time = %.6f, %.6f\n", all_server_bloom_init_time_min, all_server_bloom_init_time_max);
+        printf("==PDC_SERVER: total memory usage     = %.2f MB\n", total_mem_usage/1048576.0);
         fflush(stdout);
     }
     // TODO: remove server tmp dir?
@@ -1436,13 +1459,14 @@ perr_t PDC_Server_restart(char *filename)
     pdc_metadata_t *metadata, *elt;
     pdc_hash_table_entry_head *entry; 
     uint32_t *hash_key;
-    while (n_entry--) {
+    while (n_entry>0) {
         fread(&count, sizeof(int), 1, file);
         /* printf("Count:%d\n", count); */
 
         hash_key = (uint32_t *)malloc(sizeof(uint32_t));
         fread(hash_key, sizeof(uint32_t), 1, file);
         /* printf("Hash key is %u\n", *hash_key); */
+        total_mem_usage += sizeof(uint32_t);
 
         // Reconstruct hash table
         entry = (pdc_hash_table_entry_head*)malloc(sizeof(pdc_hash_table_entry_head));
@@ -1452,6 +1476,8 @@ perr_t PDC_Server_restart(char *filename)
         metadata = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t) * count);
         fread(metadata, sizeof(pdc_metadata_t), count, file);
         nobj += count;
+        total_mem_usage += sizeof(pdc_hash_table_entry_head);
+        total_mem_usage += (sizeof(pdc_metadata_t)*count);
 
         // Debug print for loaded metadata from checkpoint file
         /* for (i = 0; i < count; i++) { */
@@ -1462,16 +1488,15 @@ perr_t PDC_Server_restart(char *filename)
         // Init hash table metadata (w/ bloom) with first obj
         PDC_Server_hash_table_list_init(entry, hash_key);
 
-        entry->metadata = metadata;
-        entry->metadata->next = NULL;
-        entry->metadata->prev = metadata;
+        entry->metadata = NULL;
 
         // Insert the rest objs to the linked list
-        for (i = 1; i < count; i++) {
+        for (i = 0; i < count; i++) {
             elt = metadata + i;
             // Add to hash list and bloom filter
             PDC_Server_hash_table_list_insert(entry, elt);
         }
+        n_entry--;
 
         /* free(metadata); */
     }
@@ -1588,6 +1613,7 @@ perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key,
             break;
         }
     }
+    total_mem_usage += (sizeof(char) * (obj_name_len+1));
 
     name = tmp_obj_name;
 
@@ -1659,7 +1685,7 @@ int main(int argc, char *argv[])
 
     int port;
     is_restart_g = 0;
-    port = pdc_server_rank_g + 6600;
+    port = pdc_server_rank_g % 32 + 7000 ;
     /* printf("rank=%d, port=%d\n", pdc_server_rank_g,port); */
 
     // Set up tmp dir

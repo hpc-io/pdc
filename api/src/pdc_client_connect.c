@@ -459,7 +459,7 @@ perr_t PDC_Client_init()
     }
 
 
-    uint32_t port = pdc_client_mpi_rank_g + 8000; 
+    uint32_t port = pdc_client_mpi_rank_g % 32 + 8000; 
     if (mercury_has_init_g == 0) {
         // Init Mercury network connection
         PDC_Client_mercury_init(&send_class_g, &send_context_g, port);
@@ -506,27 +506,27 @@ perr_t PDC_Client_finalize()
         hg_hash_table_free(obj_names_cache_hash_table_g);
 
     // Output and free debug info
-#ifdef ENABLE_MPI
+/* #ifdef ENABLE_MPI */
 
-/*     // Print local server connection count */
-/*     for (i = 0; i < pdc_server_num_g; i++) */ 
-/*         printf("%d, %d, %d\n", pdc_client_mpi_rank_g, i, debug_server_id_count[i]); */
-/*     fflush(stdout); */
+/* /1*     // Print local server connection count *1/ */
+/* /1*     for (i = 0; i < pdc_server_num_g; i++) *1/ */ 
+/* /1*         printf("%d, %d, %d\n", pdc_client_mpi_rank_g, i, debug_server_id_count[i]); *1/ */
+/* /1*     fflush(stdout); *1/ */
 
-    int *all_server_count = (int*)malloc(sizeof(int)*pdc_server_num_g);
-    MPI_Reduce(debug_server_id_count, all_server_count, pdc_server_num_g, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-    if (pdc_client_mpi_rank_g == 0) {
-        printf("==PDC_CLIENT: server connection count:\n");
-        for (i = 0; i < pdc_server_num_g; i++) 
-            printf("  Server[%3d], %d\n", i, all_server_count[i]);
-    }
-    free(all_server_count);
-#else
-    for (i = 0; i < pdc_server_num_g; i++) {
-        printf("  Server%3d, %d\n", i, debug_server_id_count[i]);
-    }
+/*     int *all_server_count = (int*)malloc(sizeof(int)*pdc_server_num_g); */
+/*     MPI_Reduce(debug_server_id_count, all_server_count, pdc_server_num_g, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD); */
+/*     if (pdc_client_mpi_rank_g == 0 && all_server_count[0] != 0) { */
+/*         printf("==PDC_CLIENT: server connection count:\n"); */
+/*         for (i = 0; i < pdc_server_num_g; i++) */ 
+/*             printf("  Server[%3d], %d\n", i, all_server_count[i]); */
+/*     } */
+/*     free(all_server_count); */
+/* #else */
+/*     for (i = 0; i < pdc_server_num_g; i++) { */
+/*         printf("  Server%3d, %d\n", i, debug_server_id_count[i]); */
+/*     } */
 
-#endif
+/* #endif */
     if (debug_server_id_count != NULL) 
         free(debug_server_id_count);
 
@@ -794,7 +794,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_delete_metadata(pdc_metadata_t *target)
+perr_t PDC_Client_delete_metadata(char *delete_name)
 {
     FUNC_ENTER(NULL);
 
@@ -810,7 +810,7 @@ perr_t PDC_Client_delete_metadata(pdc_metadata_t *target)
     char *name;
     // TODO: this is temp solution to convert "Obj_%d" to name="Obj_" and time_step=%d 
     //       will need to delete once Kimmy adds the pdc_prop related functions
-    char *obj_name = target->obj_name;
+    char *obj_name = delete_name;
     int i, obj_name_len;
     uint32_t tmp_time_step = 0;
     obj_name_len = strlen(obj_name);
@@ -829,7 +829,7 @@ perr_t PDC_Client_delete_metadata(pdc_metadata_t *target)
 
 
     int hash_name_value = PDC_get_hash_by_name(name);
-    uint32_t server_id = (hash_name_value + target->time_step);
+    uint32_t server_id = (hash_name_value + tmp_time_step);
     server_id %= pdc_server_num_g;
 
     /* if (pdc_client_mpi_rank_g == 1) { */
@@ -854,7 +854,8 @@ perr_t PDC_Client_delete_metadata(pdc_metadata_t *target)
 
     // Fill input structure
     metadata_delete_in_t in;
-    in.obj_id     = target->obj_id;
+    in.obj_name = tmp_obj_name;
+    in.time_step = tmp_time_step;
     in.hash_value = hash_name_value;
 
     /* printf("Sending input to target\n"); */
@@ -1168,7 +1169,7 @@ perr_t PDC_Client_close_all_server()
     uint64_t ret_value;
     hg_return_t  hg_ret = 0;
     uint32_t server_id;
-    int port      = pdc_client_mpi_rank_g + 8800; 
+    int port      = pdc_client_mpi_rank_g % 32 + 8000; 
 
     if (pdc_client_mpi_rank_g == 0) {
 
