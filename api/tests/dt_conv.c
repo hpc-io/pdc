@@ -23,11 +23,11 @@ int main(int argc, const char *argv[])
     printf("generated new pdc, id is %lld\n", pdc);
 
     float a[10] = {1.1, 2.1, 3.1, 4.1, 5.1, 6.1, 7.1, 8.1, 9.1, 10.1};
-    int b[10];
-    pdc_type_conv(PDC_FLOAT, PDC_INT, a, b, 10, 1);
+    int b[5];
+    pdc_type_conv(PDC_FLOAT, PDC_INT, a, b, 5, 2);
     
     int i;
-    for(i = 0; i<10; i++)
+    for(i = 0; i<5; i++)
         printf("b[%d] is %d\n", i, b[i]);
     // close pdc
     if(PDC_close(pdc) < 0)

@@ -57,7 +57,7 @@ pdc__conv_f_i(float *src_data, int *des_data, size_t nelemt, size_t stride) {
     uint64_t addr;
     for(i = 0; i<nelemt; i++) {
         PDC_CONV_NOEX_CORE(src_data, des_data, float, int, INT_MIN, INT_MAX);
-        src_data+=i*stride;
+        src_data+=stride;
         des_data++;
     }
 }
