@@ -124,6 +124,7 @@ perr_t PDCregion__close(PDC_region_info_t *op) {
     
     FUNC_ENTER(NULL);
     
+    free(op->size);
     op = PDC_FREE(PDC_region_info_t, op);
 done:
     FUNC_LEAVE(ret_value);
@@ -393,8 +394,8 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-pdcid_t PDCregion_create(size_t ndims, uint64_t offset, uint64_t size, pdcid_t pdc_id) {
-    pdcid_t ret_value = SUCCEED;;         /* Return value */
+pdcid_t PDCregion_create(size_t ndims, uint64_t offset, uint64_t *size, pdcid_t pdc_id) {
+    pdcid_t ret_value = SUCCEED;         /* Return value */
     PDC_region_info_t *p = NULL;
     
     FUNC_ENTER(NULL);
@@ -404,7 +405,10 @@ pdcid_t PDCregion_create(size_t ndims, uint64_t offset, uint64_t size, pdcid_t p
         PGOTO_ERROR(FAIL,"PDC region memory allocation failed\n");
     p->ndim = ndims;
     p->offset = offset;
-    p->size = size;
+    p->size = (uint64_t *)malloc(ndims * sizeof(uint64_t));
+    int i = 0;
+    for(i=0; i<ndims; i++)
+        (p->size)[i] = size[i];
     // data type?
     pdcid_t new_id = PDC_id_register(PDC_REGION, p, pdc_id);
     ret_value = new_id;
@@ -417,6 +421,9 @@ perr_t PDCobj_map(pdcid_t from_obj, pdcid_t from_reg, pdcid_t to_obj, pdcid_t to
     
     FUNC_ENTER(NULL);
     
+    // PDC_CLASS_t defined in pdc_interface.h
+    // PDC_obj_info_t defined in pdc_obj_pkg.h
+    // PDC_region_info_t defined in pdc_obj_pkg.h
     PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc_id;
     PDC_id_info_t *info1 = PDC_find_id(from_obj, pc);
     if(info1 == NULL)

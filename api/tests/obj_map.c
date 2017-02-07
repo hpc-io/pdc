@@ -30,7 +30,7 @@ int main() {
     else
         printf("Fail to create object property @ line  %d!\n", __LINE__);
     // set object dims
-    int a[] = {9};
+    uint64_t a[] = {9};
     PDCprop_set_obj_dims(obj_prop, 1, a, pdc);
     
     // create first object
@@ -50,13 +50,16 @@ int main() {
     int myArray1[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
     int myArray2[9];
     int myArray3[9];
+    uint64_t size1[] = {sizeof(myArray1)/sizeof(int)};
+    uint64_t size2[] = {sizeof(myArray2)/sizeof(int)};
+    uint64_t size3[] = {sizeof(myArray3)/sizeof(int)};
     
     // create a region
-    pdcid_t r1 = PDCregion_create(1, myArray1, sizeof(myArray1), pdc);
+    pdcid_t r1 = PDCregion_create(1, (uint64_t)myArray1, size1, pdc);
     printf("first region id: %lld\n", r1);
-    pdcid_t r2 = PDCregion_create(1, myArray2, sizeof(myArray2), pdc);
+    pdcid_t r2 = PDCregion_create(1, (uint64_t)myArray2, size2, pdc);
     printf("second region id: %lld\n", r2);
-    pdcid_t r3 = PDCregion_create(1, myArray3, sizeof(myArray3), pdc);
+    pdcid_t r3 = PDCregion_create(1, (uint64_t)myArray3, size3, pdc);
     printf("third region id: %lld\n", r3);
     
     PDCobj_map(obj1, r1, obj2, r2, pdc);

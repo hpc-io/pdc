@@ -195,5 +195,5 @@ perr_t PDCprop_set_obj_loci_prop(pdcid_t obj_create_prop, PDC_loci locus, PDC_tr
  */
 perr_t PDCprop_set_obj_transform(pdcid_t obj_create_prop, PDC_loci pre_locus, PDC_transform A, PDC_loci dest_locus);
 
-pdcid_t PDCregion_create(size_t ndims, uint64_t offset, uint64_t size, pdcid_t pdc_id);
+pdcid_t PDCregion_create(size_t ndims, uint64_t offset, uint64_t *size, pdcid_t pdc_id);
 #endif
