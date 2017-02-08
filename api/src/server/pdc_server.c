@@ -769,7 +769,7 @@ done:
         hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
 #endif
     FUNC_LEAVE(ret_value);
-} // end of delete_metadata_from_hash_table
+} // end of update_metadata_from_hash_table
 
 
 perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out)
@@ -808,6 +808,7 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
     metadata.user_id = -1;
     metadata.obj_id = 0;
         
+    /* printf("==PDC_SERVER: delete request name:%s ts=%d hash=%u\n", in->obj_name, in->time_step, in->hash_value); */
 
 #ifdef ENABLE_MULTITHREAD 
     // Obtain lock for hash table
@@ -827,7 +828,6 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
             // Check if there exist metadata identical to current one
             pdc_metadata_t *target;
             target = find_identical_metadata(lookup_value, &metadata);
-            /* target = find_identical_metadata(lookup_value->metadata, obj_id); */
             if (target != NULL) {
                 /* printf("==PDC_SERVER: Found delete target!\n"); */
                 
@@ -1050,7 +1050,7 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     out->ret = metadata->obj_id;
 
     // Debug print metadata info
-    PDC_print_metadata(metadata);
+    /* PDC_print_metadata(metadata); */
 
     // Timing
     gettimeofday(&ht_total_end, 0);

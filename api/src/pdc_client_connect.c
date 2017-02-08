@@ -536,64 +536,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/* uint64_t PDC_Client_send_name_to_server(const char *obj_name, int hash_name_value, pdcid_t property, int time_step, uint32_t server_id) */
-/* { */
-/*     FUNC_ENTER(NULL); */
-
-/*     uint64_t ret_value; */
-/*     hg_return_t  hg_ret = 0; */
-
-/*     // Debug statistics for counting number of messages sent to each server. */
-/*     debug_server_id_count[server_id]++; */
-
-/*     /1* printf("==PDC_CLIENT: obj_name=%s, user_id=%u, time_step=%u\n", lookup_args.obj_name, lookup_args.user_id, lookup_args.time_step); *1/ */
-
-/*     // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb */ 
-/*     if (pdc_server_info_g[server_id].rpc_handle_valid != 1) { */
-/*         /1* printf("Addr: %s\n", pdc_server_info_g[server_id].addr); *1/ */
-/*         /1* fflush(stdout); *1/ */
-/*         HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_obj_register_id_g, &pdc_server_info_g[server_id].rpc_handle); */
-/*         pdc_server_info_g[server_id].rpc_handle_valid = 1; */
-/*     } */
-
-/*     // Fill input structure */
-/*     gen_obj_id_in_t in; */
-/*     in.data.obj_name   = obj_name; */
-/*     in.data.user_id    = getuid(); */
-/*     in.data.app_name   = "test_app_name"; */
-/*     in.data.time_step  = time_step; */
-/*     in.data.tags       = "test_tag0=11"; */
-/*     in.data.data_location = "/path/to/file"; */
-/*     in.hash_value      = hash_name_value; */
-/*     /1* printf("Hash(%s) = %d\n", obj_name, in.hash_value); *1/ */
-
-/*     /1* printf("Sending input to target\n"); *1/ */
-/*     struct client_lookup_args lookup_args; */
-/*     ret_value = HG_Forward(pdc_server_info_g[server_id].rpc_handle, client_rpc_cb, &lookup_args, &in); */
-/*     if (ret_value != HG_SUCCESS) { */
-/*         fprintf(stderr, "PDC_Client_send_name_to_server(): Could not start HG_Forward()\n"); */
-/*         return EXIT_FAILURE; */
-/*     } */
-
-/*     // Wait for response from server */
-/*     work_todo_g = 1; */
-/*     PDC_Client_check_response(&send_context_g); */
-
-/*     // Now we have obj id stored in lookup_args.obj_id */
-/*     /1* if (lookup_args.obj_id == -1) { *1/ */
-/*     /1*     printf("==PDC_CLIENT: Have not obtained valid obj id from PDC server!\n"); *1/ */
-/*     /1* } *1/ */
-
-/*     /1* printf("Received obj_id=%llu\n", lookup_args.obj_id); *1/ */
-/*     /1* fflush(stdout); *1/ */
-
-
-/*     ret_value = lookup_args.obj_id; */
-
-/* done: */
-/*     FUNC_LEAVE(ret_value); */
-/* } */
-
 /* perr_t PDC_Client_send_obj_name_mark(const char *obj_name, uint32_t server_id) */
 /* { */
 /*     FUNC_ENTER(NULL); */
@@ -794,43 +736,25 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_delete_metadata(char *delete_name)
+perr_t PDC_Client_delete_metadata(pdcid_t pdc, pdcid_t cont_id, char *delete_name, pdcid_t obj_delete_prop)
 {
     FUNC_ENTER(NULL);
 
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
 
-    /* if (pdc_client_mpi_rank_g == 1 || pdc_client_mpi_rank_g == 2 || pdc_client_mpi_rank_g == 7) { */
-    /*     PDC_print_metadata(target); */
-    /*     printf("==PDC_CLIENT[%d]: PDC_Client_delete_metadata()  %s\n", pdc_client_mpi_rank_g, target->obj_name); */
-    /*     fflush(stdout); */
-    /* } */
+    PDC_obj_prop_t *delete_prop = PDCobj_prop_get_info(obj_delete_prop, pdc);
 
-    char *name;
-    // TODO: this is temp solution to convert "Obj_%d" to name="Obj_" and time_step=%d 
-    //       will need to delete once Kimmy adds the pdc_prop related functions
-    char *obj_name = delete_name;
-    int i, obj_name_len;
-    uint32_t tmp_time_step = 0;
-    obj_name_len = strlen(obj_name);
-    char *tmp_obj_name = (char*)malloc(sizeof(char) * (obj_name_len+1));
-    strcpy(tmp_obj_name, obj_name);
-    for (i = 0; i < obj_name_len; i++) {
-        if (isdigit(obj_name[i])) {
-            tmp_time_step = atoi(obj_name+i);
-            /* printf("Converted [%s] = %d\n", obj_name, tmp_time_step); */
-            tmp_obj_name[i] = 0;
-            break;
-        }
-    }
+    // Fill input structure
+    metadata_delete_in_t in;
+    in.obj_name = delete_name;
+    in.time_step = delete_prop->time_step;
 
-    name = tmp_obj_name;
-
-
-    int hash_name_value = PDC_get_hash_by_name(name);
-    uint32_t server_id = (hash_name_value + tmp_time_step);
+    int hash_name_value = PDC_get_hash_by_name(delete_name);
+    uint32_t server_id = (hash_name_value + in.time_step);
     server_id %= pdc_server_num_g;
+
+    in.hash_value = hash_name_value;
 
     /* if (pdc_client_mpi_rank_g == 1) { */
     /*     printf("==PDC_CLIENT[%d]: PDC_Client_delete_metadata() - hash(%s)=%u, server_id %d\n", pdc_client_mpi_rank_g, target->obj_name, hash_name_value, server_id); */
@@ -851,13 +775,6 @@ perr_t PDC_Client_delete_metadata(char *delete_name)
         HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_delete_register_id_g, &pdc_server_info_g[server_id].metadata_delete_handle);
         pdc_server_info_g[server_id].metadata_delete_handle_valid  = 1;
     }
-
-    // Fill input structure
-    metadata_delete_in_t in;
-    in.obj_name = tmp_obj_name;
-    in.time_step = tmp_time_step;
-    in.hash_value = hash_name_value;
-
     /* printf("Sending input to target\n"); */
     struct client_lookup_args lookup_args;
     hg_ret = HG_Forward(pdc_server_info_g[server_id].metadata_delete_handle, metadata_delete_rpc_cb, &lookup_args, &in);

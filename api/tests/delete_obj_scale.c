@@ -17,7 +17,7 @@
 
 static char *rand_string(char *str, size_t size)
 {
-    const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJK...";
+    const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     if (size) {
         --size;
         for (size_t n = 0; n < size; n++) {
@@ -143,17 +143,26 @@ int main(int argc, const char *argv[])
 
     for (i = 0; i < count; i++) {
 
-        if (use_name == -1) 
-            sprintf(obj_name, "%s_%d", rand_string(tmp_str, 16), rank);
+        if (use_name == -1) {
+            sprintf(obj_name, "%s", rand_string(tmp_str, 16));
+            PDCprop_set_obj_time_step(obj_prop, rank, pdc);
             /* sprintf(obj_name[i], "%s_%d", rand_string(tmp_str, 16), i + rank * count); */
-        else if (use_name == 1) 
-            sprintf(obj_name, "%s_%d", obj_prefix[0], i + rank * count);
-        else if (use_name == 4) 
-            sprintf(obj_name, "%s_%d", obj_prefix[i%4], i/4 + rank * count);
+        }
+        else if (use_name == 1) {
+            sprintf(obj_name, "%s", obj_prefix[0]);
+            PDCprop_set_obj_time_step(obj_prop, i + rank * count, pdc);
+        }
+        else if (use_name == 4) {
+            sprintf(obj_name, "%s", obj_prefix[i%4]);
+            PDCprop_set_obj_time_step(obj_prop, i/4 + rank * count, pdc);
+        }
         else {
             printf("Unsupported name choice\n");
             goto done;
         }
+        PDCprop_set_obj_user_id( obj_prop, getuid(),    pdc);
+        PDCprop_set_obj_app_name(obj_prop, "test_app",  pdc);
+        PDCprop_set_obj_tags(    obj_prop, "tag0=1",    pdc);
 
         /* pdc_metadata_t *res = NULL; */
         /* PDC_Client_query_metadata_with_name(obj_name, &res); */
@@ -161,7 +170,7 @@ int main(int argc, const char *argv[])
         /*     printf("%d: Cannot find object [%s]\n", rank, obj_name); */
         /* } */
         /* else { */
-            ret = PDC_Client_delete_metadata(obj_name);
+            ret = PDC_Client_delete_metadata(pdc, cont, obj_name, obj_prop);
             if (ret != SUCCEED) {
                 printf("%d: Cannot delete object [%s]\n", rank, obj_name);
             }
