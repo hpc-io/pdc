@@ -151,7 +151,7 @@ void PDC_Server_metadata_init(pdc_metadata_t* a)
     a->obj_name[0]          = 0;
 
     a->obj_id               = 0;
-    a->obj_data_location[0] = 0;
+    a->data_location[0]     = 0;
     a->create_time          = 0;
     a->last_modified_time   = 0;
     a->tags[0]              = 0;
@@ -714,7 +714,7 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
                 if (in->new_metadata.app_name[0] != 0) 
                     strcpy(target->app_name,      in->new_metadata.app_name);
                 if (in->new_metadata.data_location[0] != 0) 
-                    strcpy(target->obj_data_location, in->new_metadata.data_location);
+                    strcpy(target->data_location, in->new_metadata.data_location);
                 if (in->new_metadata.tags[0] != 0) 
                     strcpy(target->tags,          in->new_metadata.tags);
 
@@ -943,9 +943,14 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     // TODO: [Future work] Both server and client gets it and do security check
     metadata->user_id        = in->data.user_id;
     metadata->time_step      = in->data.time_step;
-    strcpy(metadata->obj_name, in->data.obj_name);
-    strcpy(metadata->app_name, in->data.app_name);
-    strcpy(metadata->tags,     in->data.tags);
+    metadata->ndim           = in->data.ndim;
+    int i;
+    for (i = 0; i < metadata->ndim; i++) 
+        metadata->dims[i]    =      in->data.dims[i];
+    strcpy(metadata->obj_name,      in->data.obj_name);
+    strcpy(metadata->app_name,      in->data.app_name);
+    strcpy(metadata->tags,          in->data.tags);
+    strcpy(metadata->data_location, in->data.data_location);
 
     // DEBUG
     /* int debug_flag = 1; */
@@ -1045,7 +1050,7 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     out->ret = metadata->obj_id;
 
     // Debug print metadata info
-    /* PDC_print_metadata(metadata); */
+    PDC_print_metadata(metadata);
 
     // Timing
     gettimeofday(&ht_total_end, 0);

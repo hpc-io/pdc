@@ -15,6 +15,7 @@
 #define PDC_CLIENT_SERVER_COMMON_H
 
 #define ADDR_MAX 64
+#define DIM_MAX  16
 
 /* #define pdc_server_tmp_dir_g  "./pdc_tmp" */
 extern char pdc_server_tmp_dir_g[ADDR_MAX];
@@ -33,11 +34,14 @@ typedef struct pdc_metadata_t {
     // Above four are the unique identifier for objects
 
     uint64_t obj_id;
-    char    obj_data_location[128];
     time_t  create_time;
     time_t  last_modified_time;
 
+    int     ndim;
+    int     dims[DIM_MAX];
+
     char    tags[128];
+    char    data_location[ADDR_MAX];
 
     // For hash table list
     struct pdc_metadata_t *prev;
@@ -47,20 +51,25 @@ typedef struct pdc_metadata_t {
 } pdc_metadata_t;
 
 typedef struct pdc_metadata_transfer_t {
-    int         user_id;
-    int         time_step;
-    uint64_t    obj_id;
+    int32_t     user_id;
     const char  *app_name;
     const char  *obj_name;
-    const char  *data_location;
+    int32_t     time_step;
+
+    uint64_t    obj_id;
+
+    int32_t     ndim;
+    uint64_t    dims[DIM_MAX];
+
     const char  *tags;
+    const char  *data_location;
     /* time_t      create_time; */
     /* time_t      last_modified_time; */
 } pdc_metadata_transfer_t;
 
 
 #ifdef HG_HAS_BOOST
-MERCURY_GEN_STRUCT_PROC( pdc_metadata_transfer_t, ((int32_t)(user_id)) ((int32_t)(time_step)) ((uint64_t)(obj_id)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((hg_const_string_t)(data_location)) ((hg_const_string_t)(tags)) )
+MERCURY_GEN_STRUCT_PROC( pdc_metadata_transfer_t, ((int32_t)(user_id)) ((int32_t)(time_step)) ((uint64_t)(obj_id)) ((int32_t)(ndim)) ((uint64_t)(dims[DIM_MAX])) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((hg_const_string_t)(data_location)) ((hg_const_string_t)(tags)) )
 
 MERCURY_GEN_PROC( gen_obj_id_in_t, ((pdc_metadata_transfer_t)(data)) ((uint32_t)(hash_value)) )
 MERCURY_GEN_PROC( gen_obj_id_out_t, ((uint64_t)(ret)) )
@@ -133,7 +142,15 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
     }
+    ret = hg_proc_uint32_t(proc, &struct_data->ndim);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
     ret = hg_proc_uint32_t(proc, &struct_data->time_step);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->dims);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
     }

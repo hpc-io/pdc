@@ -10,7 +10,7 @@
 
 
 int PDC_Client_read_server_addr_from_file();
-uint64_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t property);
+uint64_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop);
 perr_t PDC_Client_query_metadata_with_name(const char *obj_name, pdc_metadata_t **out);
 perr_t PDC_Client_query_metadata_partial(const char *obj_name, pdc_metadata_t **out);
 perr_t PDC_Client_delete_metadata(char *delete_name);

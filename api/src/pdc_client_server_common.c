@@ -134,12 +134,13 @@ void PDC_print_metadata(pdc_metadata_t *a)
         printf("==Empty metadata structure\n");
     }
     printf("================================\n\n");
-    printf("  uid       = %d\n", a->user_id);
-    printf("  app_name  = %s\n", a->app_name);
-    printf("  obj_name  = %s\n", a->obj_name);
-    printf("  time_step = %d\n", a->time_step);
     printf("  obj_id    = %llu\n", a->obj_id);
-    printf("  tags      = %s\n", a->tags);
+    printf("  uid       = %d\n",   a->user_id);
+    printf("  app_name  = %s\n",   a->app_name);
+    printf("  obj_name  = %s\n",   a->obj_name);
+    printf("  time_step = %d\n",   a->time_step);
+    printf("  ndim      = %d\n",   a->ndim);
+    printf("  tags      = %s\n",   a->tags);
     printf("================================\n\n");
     fflush(stdout);
 }

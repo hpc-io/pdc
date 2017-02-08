@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <getopt.h>
 #include <time.h>
+#include <sys/time.h>
 
 /* #define ENABLE_MPI 1 */
 
@@ -14,7 +16,7 @@
 
 static char *rand_string(char *str, size_t size)
 {
-    const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJK...";
+    const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-";
     if (size) {
         --size;
         for (size_t n = 0; n < size; n++) {
@@ -103,6 +105,9 @@ int main(int argc, const char *argv[])
     /*     if (rank == 0) */ 
     /*         printf("Create an object property, id is %lld\n", obj_prop); */
 
+    uint64_t dims[3] = {100, 200, 700};
+    PDCprop_set_obj_dims(obj_prop, 3, dims, pdc);
+
     pdcid_t test_obj = -1;
 
     struct timeval  ht_total_start;
@@ -139,17 +144,26 @@ int main(int argc, const char *argv[])
 
     for (i = 0; i < count; i++) {
 
-        if (use_name == -1) 
-            sprintf(obj_name, "%s_%d", rand_string(tmp_str, 16), rank);
+        if (use_name == -1) {
+            sprintf(obj_name, "%s", rand_string(tmp_str, 16));
+            PDCprop_set_obj_time_step(obj_prop, rank, pdc);
             /* sprintf(obj_name[i], "%s_%d", rand_string(tmp_str, 16), i + rank * count); */
-        else if (use_name == 1) 
-            sprintf(obj_name, "%s_%d", obj_prefix[0], i + rank * count);
-        else if (use_name == 4) 
-            sprintf(obj_name, "%s_%d", obj_prefix[i%4], i/4 + rank * count);
+        }
+        else if (use_name == 1) {
+            sprintf(obj_name, "%s", obj_prefix[0]);
+            PDCprop_set_obj_time_step(obj_prop, i + rank * count, pdc);
+        }
+        else if (use_name == 4) {
+            sprintf(obj_name, "%s", obj_prefix[i%4]);
+            PDCprop_set_obj_time_step(obj_prop, i/4 + rank * count, pdc);
+        }
         else {
             printf("Unsupported name choice\n");
             goto done;
         }
+        PDCprop_set_obj_user_id( obj_prop, getuid(),    pdc);
+        PDCprop_set_obj_app_name(obj_prop, "test_app",  pdc);
+        PDCprop_set_obj_tags(    obj_prop, "tag0=1",    pdc);
 
         /* if (count < 4) { */
         /*     printf("Proc %d Name: %s\n", rank, obj_name); */

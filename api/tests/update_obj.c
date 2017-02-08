@@ -117,7 +117,7 @@ int main(int argc, const char *argv[])
     pdc_metadata_t new;
     new.time_step = -1;
     strcpy(new.app_name, "updated_app_name");
-    strcpy(new.obj_data_location, "updated_obj_data_location");
+    strcpy(new.data_location, "updated_obj_data_location");
     strcpy(new.tags, "updated_tags");
     srand(rank+1);
 
