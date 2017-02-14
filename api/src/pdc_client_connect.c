@@ -87,7 +87,6 @@ metadata_hash_value_free(hg_hash_table_value_t value)
     free((hash_value_client_obj_name_t*) value);
 }
 
-
 // ^ Client hash table related functions
 
 int PDC_Client_read_server_addr_from_file()
@@ -125,11 +124,13 @@ int PDC_Client_read_server_addr_from_file()
     pdc_server_info_g = (pdc_server_info_t*)malloc(sizeof(pdc_server_info_t) * pdc_server_num_g);
     // Fill in default values
     for (i = 0; i < pdc_server_num_g; i++) {
-        pdc_server_info_g[i].addr_valid                 = 0;
-        pdc_server_info_g[i].rpc_handle_valid           = 0;
-        pdc_server_info_g[i].client_test_handle_valid   = 0;
-        pdc_server_info_g[i].close_server_handle_valid  = 0;
-        pdc_server_info_g[i].name_marker_handle_valid   = 0;
+        pdc_server_info_g[i].addr_valid                   = 0;
+        pdc_server_info_g[i].rpc_handle_valid             = 0;
+        pdc_server_info_g[i].client_test_handle_valid     = 0;
+        pdc_server_info_g[i].close_server_handle_valid    = 0;
+        pdc_server_info_g[i].metadata_query_handle_valid  = 0;
+        pdc_server_info_g[i].metadata_delete_handle_valid = 0;
+        pdc_server_info_g[i].metadata_update_handle_valid = 0;
     }
 
     i = 0;
@@ -336,8 +337,8 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     perr_t ret_value = SUCCEED;
 
     char na_info_string[PATH_MAX];
-    sprintf(na_info_string, "bmi+tcp://%d", port);
-    /* sprintf(na_info_string, "cci+tcp://%d", port); */
+    /* sprintf(na_info_string, "bmi+tcp://%d", port); */
+    sprintf(na_info_string, "cci+tcp://%d", port);
     if (pdc_client_mpi_rank_g == 0) {
         printf("==PDC_CLIENT: using %.7s\n", na_info_string);
         fflush(stdout);

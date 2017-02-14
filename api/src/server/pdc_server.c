@@ -1183,8 +1183,8 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     char hostname[1024];
     memset(hostname, 0, 1024);
     gethostname(hostname, 1023);
-    sprintf(na_info_string, "bmi+tcp://%s:%d", hostname, port);
-    /* sprintf(na_info_string, "cci+tcp://%s:%d", hostname, port); */
+    /* sprintf(na_info_string, "bmi+tcp://%s:%d", hostname, port); */
+    sprintf(na_info_string, "cci+tcp://%s:%d", hostname, port);
     if (pdc_server_rank_g == 0) 
         printf("\n==PDC_SERVER: using %.7s\n", na_info_string);
     
