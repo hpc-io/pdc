@@ -124,7 +124,7 @@ Run PDC create object test
         srun -N 4 -n  4 -c 2 --gres=craynetwork:1 ./src/server/pdc_server.exe &
 ```
 
-* Run 64 client processes that concurrently create 1000 objects each sequentially:
+* Run 64 client processes that concurrently create 1000 objects in total:
 ```sh
         srun -N 4 -n 64 -c 2 --gres=craynetwork:1 ./tests/create_obj -r 1000
 ```
