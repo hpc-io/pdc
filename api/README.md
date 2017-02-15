@@ -121,10 +121,10 @@ Run PDC create object test
 
 * Run 4 server processes, each on one node in background:
 ```sh
-        srun -N 4 -n 4 -c 2 --mem=2800 --gres=craynetwork:1 ./src/server/pdc_server.exe &
+        srun -N 4 -n  4 -c 2 --gres=craynetwork:1 ./src/server/pdc_server.exe &
 ```
 
 * Run 64 client processes that concurrently create 1000 objects each sequentially:
 ```sh
-        srun -N 4 -n 64 -c 2 --mem=12840 --gres=craynetwork:1 ./tests/create_obj -r 1000
+        srun -N 4 -n 64 -c 2 --gres=craynetwork:1 ./tests/create_obj -r 1000
 ```
