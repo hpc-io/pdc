@@ -62,6 +62,7 @@ pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdc) {
         q->obj_life = PDC_TRANSIENT;
         q->ndim = 0;
         q->dims = NULL;
+	q->app_name = NULL;
         pdcid_t new_id_o = PDC_id_register(PDC_OBJ_PROP, q, pdc);
         ret_value = new_id_o;
     }
