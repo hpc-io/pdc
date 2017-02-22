@@ -178,7 +178,7 @@ PDC_obj_prop_t *PDCobj_prop_get_info(pdcid_t obj_prop, pdcid_t pdc) {
     PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
     PDC_id_info_t *prop = PDC_find_id(obj_prop, pc);
     if(prop == NULL)
-        PGOTO_ERROR(NULL, "cannot locate container property");
+        PGOTO_ERROR(NULL, "cannot locate object property");
     
     info = (PDC_obj_prop_t *)(prop->obj_ptr);
     ret_value = info;

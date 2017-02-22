@@ -12,6 +12,7 @@
 #include "pdc_cont_pkg.h"
 #include "pdc_obj.h"
 #include "pdc_obj_pkg.h"
+#include "pdc_dt_conv.h"
 
 typedef struct {
     pdcid_t pdc_id;

@@ -20,6 +20,8 @@ if(mercury_FOUND)
     include_directories(${MERCURY_INCLUDE_DIR})
 endif()
 
+find_library(BMI_LIB NAMES bmi PATHS /Users/kmu/Research/PDC/bmi/lib)
+
 add_definitions(-DENABLE_MPI=1)
 #add_definitions(-DENABLE_MULTITHREAD=1)
 

@@ -17,6 +17,7 @@ set(PDC_HEADERS ${PDC_HEADERS}
                 pdc_cont_pkg.h
 		pdc_obj.h
 		pdc_obj_pkg.h
+		pdc_dt_conv.h
                 pdc_client_connect.h
                 pdc_client_server_common.h)
 
@@ -28,6 +29,7 @@ set(PDC_SOURCES ${PDC_SOURCES}
                 pdc_prop.c
                 pdc_cont.c
 		pdc_obj.c
+		pdc_dt_conv.c
                 pdc_client_connect.c
                 pdc_client_server_common.c)
 
