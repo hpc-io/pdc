@@ -141,24 +141,30 @@ int main(int argc, const char *argv[])
 
     gettimeofday(&ht_total_start, 0);
 
+    int ts;
     for (i = 0; i < count; i++) {
 
-        if (use_name == -1) 
-            sprintf(obj_name, "%s_%d", rand_string(tmp_str, 16), rank);
-            /* sprintf(obj_name[i], "%s_%d", rand_string(tmp_str, 16), i + rank * count); */
-        else if (use_name == 1) 
-            sprintf(obj_name, "%s_%d", obj_prefix[0], i + rank * count);
-        else if (use_name == 4) 
-            sprintf(obj_name, "%s_%d", obj_prefix[i%4], i/4 + rank * count);
+        if (use_name == -1) {
+            sprintf(obj_name, "%s", rand_string(tmp_str, 16));
+            ts = rank;
+        }
+        else if (use_name == 1) {
+            sprintf(obj_name, "%s", obj_prefix[0]);
+            ts = i + rank * count;
+        }
+        else if (use_name == 4) {
+            sprintf(obj_name, "%s", obj_prefix[i%4]);
+            ts = i/4 + rank * count;
+        }
         else {
             printf("Unsupported name choice\n");
             goto done;
         }
 
         pdc_metadata_t *res = NULL;
-        PDC_Client_query_metadata_with_name(obj_name, &res);
+        PDC_Client_query_metadata_name_only(obj_name, &res);
         if (res == NULL) {
-            printf("%d: Cannot find object [%s]\n", rank, obj_name);
+            printf("%d: Cannot find object [%s] ts=%d\n", rank, obj_name, ts);
         }
 
         // Print progress

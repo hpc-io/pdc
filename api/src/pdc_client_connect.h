@@ -11,8 +11,8 @@
 
 int PDC_Client_read_server_addr_from_file();
 uint64_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop);
-perr_t PDC_Client_query_metadata_with_name(const char *obj_name, pdc_metadata_t **out);
-perr_t PDC_Client_query_metadata_partial(const char *obj_name, pdc_metadata_t **out);
+perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_step, pdc_metadata_t **out);
+perr_t PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t **out);
 perr_t PDC_Client_delete_metadata(pdcid_t pdc, pdcid_t cont_id, char *delete_name, pdcid_t obj_delete_prop);
 perr_t PDC_Client_delete_metadata_by_id(pdcid_t pdc, pdcid_t cont_id, uint64_t obj_id);
 perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new);

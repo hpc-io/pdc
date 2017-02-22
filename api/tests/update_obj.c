@@ -128,6 +128,7 @@ int main(int argc, const char *argv[])
 
     const int metadata_size = 512;
     char **obj_names = (char**)malloc(count * sizeof(char*));
+    int  *obj_ts     = (int*)  malloc(count * sizeof(int)  );
     for (i = 0; i < count; i++) {
         obj_names[i] = (char*)malloc(128*sizeof(char));
     }
@@ -168,7 +169,9 @@ int main(int argc, const char *argv[])
                   break;
               }
              fread(&entry, sizeof(pdc_metadata_t), 1, file);
-             sprintf(obj_names[read_count], "%s%d", entry.obj_name, entry.time_step);
+             sprintf(obj_names[read_count], "%s", entry.obj_name);
+             obj_ts[read_count] = entry.time_step;
+
              /* printf("Read name %s\n", obj_names[read_count]); */
              read_count++;
 
@@ -201,7 +204,7 @@ int main(int argc, const char *argv[])
 
         pdc_metadata_t *res = NULL;
         /* printf("Querying metadata with name [%s]\n", obj_names[i]); */
-        PDC_Client_query_metadata_with_name(obj_names[i], &res);
+        PDC_Client_query_metadata_name_timestep(obj_names[i], obj_ts[i], &res);
         if (res == NULL) {
             printf("No result found for current query with name [%s]\n", obj_names[i]);
         }

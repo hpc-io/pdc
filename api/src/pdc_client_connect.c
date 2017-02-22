@@ -603,7 +603,7 @@ metadata_query_rpc_cb(const struct hg_cb_info *callback_info)
         /* fflush(stdout); */
         client_lookup_args->data = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t));
         if (client_lookup_args->data == NULL) {
-            printf("==PDC_CLIENT: ERROR - PDC_Client_query_metadata_partial() cannnot allocate space for client_lookup_args->data \n");
+            printf("==PDC_CLIENT: ERROR - PDC_Client_query_metadata_name_only() cannnot allocate space for client_lookup_args->data \n");
         }
         // Now copy the received metadata info
         client_lookup_args->data->user_id        = output.ret.user_id;
@@ -884,50 +884,28 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_query_metadata_partial(const char *obj_name, pdc_metadata_t **out)
+// Search metadata using incomplete ID attributes 
+// Currently it's only using obj_name, and search from all servers
+perr_t PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t **out)
+/* perr_t PDC_Client_query_metadata(const char *obj_name, pdc_metadata_t **out) */
 {
     FUNC_ENTER(NULL);
 
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
 
-    char *name;
-    // TODO: this is temp solution to convert "Obj_%d" to name="Obj_" and time_step=%d 
-    //       will need to delete once Kimmy adds the pdc_prop related functions
-    int i, obj_name_len;
-    uint32_t tmp_time_step = 0;
-    obj_name_len = strlen(obj_name);
-    char *tmp_obj_name = (char*)malloc(sizeof(char) * (obj_name_len+1));
-    strcpy(tmp_obj_name, obj_name);
-    for (i = 0; i < obj_name_len; i++) {
-        if (isdigit(obj_name[i])) {
-            tmp_time_step = atoi(obj_name+i);
-            /* printf("Converted [%s] = %d\n", obj_name, tmp_time_step); */
-            tmp_obj_name[i] = 0;
-            break;
-        }
-    }
-
-    name = tmp_obj_name;
-
     // Fill input structure
     metadata_query_in_t in;
     in.obj_name   = obj_name;
-    in.hash_value = PDC_get_hash_by_name(name);
+    in.hash_value = PDC_get_hash_by_name(obj_name);
 
-    /* printf("==PDC_CLIENT: partial search name [%s], hash value %u\n", in.obj_name, in.hash_value); */
+    /* printf("==PDC_CLIENT: partial search obj_name [%s], hash value %u\n", in.obj_name, in.hash_value); */
 
     /* printf("Sending input to target\n"); */
     metadata_query_args_t **lookup_args;
     lookup_args = (metadata_query_args_t**)malloc(sizeof(metadata_query_args_t*) * pdc_server_num_g);
 
     // client_lookup_args->data is a pdc_metadata_t
-
-/*     // Compute server id */
-/*     uint32_t hash_name_value = PDC_get_hash_by_name(name); */
-/*     uint32_t server_id       = (hash_name_value + tmp_time_step); */
-/*     server_id %= pdc_server_num_g; */ 
-
 
     int server_id;
     for (server_id = 0; server_id < pdc_server_num_g; server_id++) {
@@ -944,7 +922,7 @@ perr_t PDC_Client_query_metadata_partial(const char *obj_name, pdc_metadata_t **
 
         hg_ret = HG_Forward(pdc_server_info_g[server_id].metadata_query_handle, metadata_query_rpc_cb, lookup_args[server_id], &in);
         if (hg_ret != HG_SUCCESS) {
-            fprintf(stderr, "PDC_Client_query_metadata_partial(): Could not start HG_Forward()\n");
+            fprintf(stderr, "PDC_Client_query_metadata_name_only(): Could not start HG_Forward()\n");
             return FAIL;
         }
 
@@ -954,7 +932,7 @@ perr_t PDC_Client_query_metadata_partial(const char *obj_name, pdc_metadata_t **
     work_todo_g = pdc_server_num_g;
     PDC_Client_check_response(&send_context_g);
 
-    int count = 0;
+    int i, count = 0;
     for (i = 0; i < pdc_server_num_g; i++) {
         if (lookup_args[i]->data != NULL) {
             *out = lookup_args[i]->data;
@@ -971,7 +949,7 @@ done:
 
 
 
-perr_t PDC_Client_query_metadata_with_name(const char *obj_name, pdc_metadata_t **out)
+perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_step, pdc_metadata_t **out)
 {
     FUNC_ENTER(NULL);
 
@@ -981,32 +959,11 @@ perr_t PDC_Client_query_metadata_with_name(const char *obj_name, pdc_metadata_t 
     /* printf("==PDC_CLIENT[%d]: search request name [%s]\n", pdc_client_mpi_rank_g, obj_name); */
     /* fflush(stdout); */
 
-    char *name;
-    // TODO: this is temp solution to convert "Obj_%d" to name="Obj_" and time_step=%d 
-    //       will need to delete once Kimmy adds the pdc_prop related functions
-    int i, obj_name_len;
-    uint32_t tmp_time_step = 0;
-    obj_name_len = strlen(obj_name);
-    char *tmp_obj_name = (char*)malloc(sizeof(char) * (obj_name_len+1));
-    strcpy(tmp_obj_name, obj_name);
-    for (i = 0; i < obj_name_len; i++) {
-        if (isdigit(obj_name[i])) {
-            tmp_time_step = atoi(obj_name+i);
-            /* printf("Converted [%s] = %d\n", obj_name, tmp_time_step); */
-            tmp_obj_name[i] = 0;
-            break;
-        }
-    }
-
-    name = tmp_obj_name;
-    /* printf("==PDC_CLIENT[%d]: processed request name [%s], ts %d\n", pdc_client_mpi_rank_g, tmp_obj_name, tmp_time_step); */
-    /* fflush(stdout); */
-
 
     // Compute server id
-    uint32_t hash_name_value = PDC_get_hash_by_name(tmp_obj_name);
-    /* uint32_t hash_name_value = PDC_get_hash_by_name(name); */
-    uint32_t  server_id            = (hash_name_value + tmp_time_step); 
+    uint32_t hash_name_value = PDC_get_hash_by_name(obj_name);
+    /* uint32_t hash_name_value = PDC_get_hash_by_name(obj_name); */
+    uint32_t  server_id            = (hash_name_value + time_step); 
     server_id %= pdc_server_num_g;
 
     /* printf("==PDC_CLIENT[%d]: processed request server id %u\n", pdc_client_mpi_rank_g, server_id); */
@@ -1024,9 +981,9 @@ perr_t PDC_Client_query_metadata_with_name(const char *obj_name, pdc_metadata_t 
     // Fill input structure
     metadata_query_in_t in;
     in.obj_name   = obj_name;
-    in.hash_value = PDC_get_hash_by_name(name);
+    in.hash_value = PDC_get_hash_by_name(obj_name);
 
-    /* printf("==PDC_CLIENT[%d]: search request name [%s], hash value %u, server id %u\n", pdc_client_mpi_rank_g, in.obj_name, in.hash_value, server_id); */
+    /* printf("==PDC_CLIENT[%d]: search request obj_name [%s], hash value %u, server id %u\n", pdc_client_mpi_rank_g, in.obj_name, in.hash_value, server_id); */
     /* fflush(stdout); */
     /* printf("Sending input to target\n"); */
     metadata_query_args_t lookup_args;
@@ -1069,11 +1026,21 @@ uint64_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *
     obj_life  = create_prop->obj_life;
     // Fill input structure
     gen_obj_id_in_t in;
+    if (obj_name == NULL) {
+        printf("Cannot create object with empty object name\n");
+        goto done;
+    }
     in.data.obj_name  = obj_name;
     in.data.time_step = create_prop->time_step;
     in.data.user_id   = create_prop->user_id;
-    in.data.tags      = create_prop->tags;
-    in.data.app_name  = create_prop->app_name;
+    if (create_prop->tags == NULL) 
+        in.data.tags      = " ";
+    else
+        in.data.tags      = create_prop->tags;
+    if (create_prop->app_name == NULL) 
+        in.data.app_name  = "Noname";
+    else
+        in.data.app_name  = create_prop->app_name;
     in.data.ndim      = create_prop->ndim;
     for (i = 0; i < create_prop->ndim; i++) 
         in.data.dims[i] = create_prop->dims[i];
@@ -1129,7 +1096,7 @@ uint64_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *
 
     /* printf("==PDC_CLIENT: [%d]: target server %d, name [%s], hash_value %u\n", pdc_client_mpi_rank_g, server_id, name, hash_name_value); */
     /* fflush(stdout); */
-    /* ret_value = PDC_Client_send_name_to_server(name, hash_name_value, property, tmp_time_step, server_id); */
+    /* ret_value = PDC_Client_send_name_to_server(name, hash_name_value, property, time_step, server_id); */
 
 
 
