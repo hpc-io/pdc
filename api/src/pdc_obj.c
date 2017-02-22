@@ -69,10 +69,10 @@ pdcid_t PDCobj_create(pdcid_t pdc, pdcid_t cont_id, const char *obj_name, pdcid_
     PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
     pdcid_t new_id = PDC_id_register(PDC_OBJ, p, pdc);
 
-    pdcid_t obj_id;
-    obj_id = PDC_Client_send_name_recv_id(pdc, cont_id, obj_name, obj_create_prop);
+    uint64_t meta_id;
+    meta_id = PDC_Client_send_name_recv_id(pdc, cont_id, obj_name, obj_create_prop);
 
-    ret_value = obj_id;
+    ret_value = new_id;
 done:
     FUNC_LEAVE(ret_value);
 }
