@@ -35,6 +35,7 @@ static hg_id_t         close_server_register_id_g;
 /* static hg_id_t         send_obj_name_marker_register_id_g; */
 static hg_id_t         metadata_query_register_id_g;
 static hg_id_t         metadata_delete_register_id_g;
+static hg_id_t         metadata_delete_by_id_register_id_g;
 static hg_id_t         metadata_update_register_id_g;
 
 /* hg_hash_table_t       *obj_names_cache_hash_table_g = NULL; */
@@ -337,8 +338,8 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     perr_t ret_value = SUCCEED;
 
     char na_info_string[PATH_MAX];
-    /* sprintf(na_info_string, "bmi+tcp://%d", port); */
-    sprintf(na_info_string, "cci+tcp://%d", port);
+    sprintf(na_info_string, "bmi+tcp://%d", port);
+    /* sprintf(na_info_string, "cci+tcp://%d", port); */
     if (pdc_client_mpi_rank_g == 0) {
         printf("==PDC_CLIENT: using %.7s\n", na_info_string);
         fflush(stdout);
@@ -361,13 +362,14 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     *hg_context = HG_Context_create(*hg_class);
 
     // Register RPC
-    client_test_connect_register_id_g  = client_test_connect_register(*hg_class);
-    gen_obj_register_id_g              = gen_obj_id_register(*hg_class);
-    close_server_register_id_g         = close_server_register(*hg_class);
-    /* send_obj_name_marker_register_id_g = send_obj_name_marker_register(*hg_class); */
-    metadata_query_register_id_g       = metadata_query_register(*hg_class);
-    metadata_delete_register_id_g      = metadata_delete_register(*hg_class);
-    metadata_update_register_id_g      = metadata_update_register(*hg_class);
+    client_test_connect_register_id_g   = client_test_connect_register(*hg_class);
+    gen_obj_register_id_g               = gen_obj_id_register(*hg_class);
+    close_server_register_id_g          = close_server_register(*hg_class);
+    /* send_obj_name_marker_register_id_g  = send_obj_name_marker_register(*hg_class); */
+    metadata_query_register_id_g        = metadata_query_register(*hg_class);
+    metadata_delete_register_id_g       = metadata_delete_register(*hg_class);
+    metadata_delete_by_id_register_id_g = metadata_delete_by_id_register(*hg_class);
+    metadata_update_register_id_g       = metadata_update_register(*hg_class);
 
     // Lookup and fill the server info
     int i;
@@ -485,8 +487,8 @@ perr_t PDC_Client_finalize()
     perr_t ret_value;
 
     // Send close server request to all servers
-    /* if (pdc_client_mpi_rank_g == 0) */ 
-    /*     PDC_Client_close_all_server(); */
+    if (pdc_client_mpi_rank_g == 0) 
+        PDC_Client_close_all_server();
 
 
     // Finalize Mercury
@@ -655,6 +657,30 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+static hg_return_t
+metadata_delete_by_id_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value;
+
+    /* printf("Entered client_rpc_cb()"); */
+    struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
+    hg_handle_t handle = callback_info->info.forward.handle;
+
+    /* Get output from server*/
+    metadata_delete_by_id_out_t output;
+    ret_value = HG_Get_output(handle, &output);
+    /* printf("Return value=%llu\n", output.ret); */
+    client_lookup_args->ret = output.ret;
+
+    work_todo_g--;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+
 
 // Callback function for  HG_Forward()
 // Gets executed after a call to HG_Trigger and the RPC has completed
@@ -736,6 +762,64 @@ perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
 done:
     FUNC_LEAVE(ret_value);
 }
+
+perr_t PDC_Client_delete_metadata_by_id(pdcid_t pdc, pdcid_t cont_id, uint64_t obj_id)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value = SUCCEED;
+    hg_return_t  hg_ret = 0;
+
+    // Fill input structure
+    metadata_delete_by_id_in_t in;
+    in.obj_id = obj_id;
+
+    uint32_t server_id = PDC_get_server_by_obj_id(obj_id, pdc_server_num_g);
+
+
+    /* if (pdc_client_mpi_rank_g == 1) { */
+    /*     printf("==PDC_CLIENT[%d]: PDC_Client_delete_by_id_metadata() server_id %d\n", pdc_client_mpi_rank_g, server_id); */
+    /*     fflush(stdout); */
+    /* } */
+
+    // Debug statistics for counting number of messages sent to each server.
+    if (server_id < 0 || server_id >= pdc_server_num_g) {
+        printf("Error with server id: %u\n", server_id);
+        fflush(stdout);
+        goto done;
+    }
+    else 
+        debug_server_id_count[server_id]++;
+
+    // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
+    if (pdc_server_info_g[server_id].metadata_delete_by_id_handle_valid != 1) {
+        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_delete_by_id_register_id_g, &pdc_server_info_g[server_id].metadata_delete_by_id_handle);
+        pdc_server_info_g[server_id].metadata_delete_by_id_handle_valid  = 1;
+    }
+    /* printf("Sending input to target\n"); */
+    struct client_lookup_args lookup_args;
+    hg_ret = HG_Forward(pdc_server_info_g[server_id].metadata_delete_by_id_handle, metadata_delete_by_id_rpc_cb, &lookup_args, &in);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "PDC_Client_delete_by_id_metadata_with_name(): Could not start HG_Forward()\n");
+        return FAIL;
+    }
+
+    // Wait for response from server
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+    /* if (pdc_client_mpi_rank_g == 1) { */
+    /*     printf("==PDC_CLIENT[%d]: PDC_Client_delete_by_id_metadata() got response from server %d\n", pdc_client_mpi_rank_g, lookup_args.ret); */
+    /*     fflush(stdout); */
+    /* } */
+
+    if (lookup_args.ret != 1) 
+        printf("PDC_CLIENT: delete_by_id NOT successful ... ret_value = %d\n", lookup_args.ret);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 
 perr_t PDC_Client_delete_metadata(pdcid_t pdc, pdcid_t cont_id, char *delete_name, pdcid_t obj_delete_prop)
 {

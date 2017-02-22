@@ -30,7 +30,7 @@ static char *rand_string(char *str, size_t size)
 }
 
 void print_usage() {
-    printf("Usage: srun -n ./creat_obj -r num_of_obj_per_rank\n");
+    printf("Usage: srun -n ./delete_obj -r total_objects_to_create_delete\n");
 }
 
 int main(int argc, const char *argv[])
@@ -75,7 +75,6 @@ int main(int argc, const char *argv[])
         printf("Delete %d objects per MPI rank\n", count);
     fflush(stdout);
 
-    int i;
 
     PDC_prop_t p;
     // create a pdc
@@ -97,13 +96,8 @@ int main(int argc, const char *argv[])
     if(obj_prop <= 0)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
 
-    pdcid_t test_obj = -1;
-
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
-    double ht_total_sec;
-
+    pdcid_t *create_obj_ids;
+    create_obj_ids = (pdcid_t*)malloc(sizeof(pdcid_t) * count);
 
     char obj_prefix[4][10] = {"x", "y", "z", "energy"};
     char tmp_str[128];
@@ -117,143 +111,80 @@ int main(int argc, const char *argv[])
     char name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name", "INVALID!", "INVALID!", "Four Obj Names"}; 
     if (rank == 0) {
         printf("Using %s\n", name_mode[use_name+1]);
-    }
-
-
-    perr_t ret;
-    srand (rank+1);
-
-    char **obj_names = (char**)malloc(count * sizeof(char*));
-    for (i = 0; i < count; i++) {
-        obj_names[i] = (char*)malloc(128*sizeof(char));
-    }
-
-        char filename[128], pdc_server_tmp_dir_g[128];
-    int n_entry;
-    // Set up tmp dir
-    char *tmp_dir = getenv("PDC_TMPDIR");
-    if (tmp_dir == NULL)
-        strcpy(pdc_server_tmp_dir_g, "./pdc_tmp");
-    else
-        strcpy(pdc_server_tmp_dir_g, tmp_dir);
-
-    sprintf(filename, "%s/metadata_checkpoint.%d", pdc_server_tmp_dir_g, rank);
-
-    /* printf("file name: %s\n", filename); */
-    FILE *file = fopen(filename, "r");
-    if (file==NULL) {fputs("Checkpoint file not available\n", stderr); return -1;}
-
-    fread(&n_entry, sizeof(int), 1, file);
-    /* printf("%d entries\n", n_entry); */
-
-    pdc_metadata_t entry;
-    uint32_t *hash_key;
-    int j, read_count = 0, tmp_count;
-    while (n_entry > 0) {
-        fread(&tmp_count, sizeof(int), 1, file);
-        /* printf("Count:%d\n", tmp_count); */
-
-        hash_key = (uint32_t *)malloc(sizeof(uint32_t));
-        fread(hash_key, sizeof(uint32_t), 1, file);
-        /* printf("Hash key is %u\n", *hash_key); */
-
-
-         // read each metadata
-         for (j = 0; j < tmp_count; j++) {
-              if (read_count >= count) {
-                  n_entry = 0;
-                  break;
-              }
-             fread(&entry, sizeof(pdc_metadata_t), 1, file);
-             sprintf(obj_names[read_count], "%s%d", entry.obj_name, entry.time_step);
-             /* printf("Proc %d: Read name %s\n", rank, obj_names[read_count]); */
-             read_count++;
-
-         }
-         n_entry--;
-     }
-
-
-    fclose(file);
-
-    count = read_count;
-
-    /* printf("Proc %d: deleting %d metadata\n", rank, count); */
-    /* fflush(stdout); */
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-    gettimeofday(&ht_total_start, 0);
-    for (i = 0; i < count; i++) {
-        /* if (use_name == -1) */
-        /*     sprintf(obj_name, "%s_%d", rand_string(tmp_str, 16), rank); */ 
-        /*     /1* sprintf(obj_name, "%s_%d", rand_string(tmp_str, 16), i + rank * count); *1/ */
-        /* else if (use_name == 1) */
-        /*     sprintf(obj_name, "%s_%d", obj_prefix[0], i + rank * count); */
-        /* else if (use_name == 4) */
-        /*     sprintf(obj_name, "%s_%d", obj_prefix[i%4], i/4 + rank * count); */
-        /* else { */
-        /*     printf("Unsupported name choice\n"); */
-        /*     goto done; */
-        /* } */
-
-        pdc_metadata_t *res = NULL;
-        /* printf("Proc %d: querying metadata with name [%s]\n", rank, obj_name); */
-
-        PDC_Client_query_metadata_with_name(obj_names[i], &res);
-        /* goto done; */
-
-        if (res == NULL) {
-            printf("No result found for current query with name [%s]\n", obj_names[i]);
-            fflush(stdout);
-        }
-        else {
-            /* printf("Got response from server.\n"); */
-            /* PDC_print_metadata(res); */
-            /* fflush(stdout); */
-
- 
-            /* printf("Proc %d: deleting metadata\n", rank); */
-            /* fflush(stdout); */
-            ret = PDC_Client_delete_metadata(res);
-            if (ret != SUCCEED) {
-                printf("Delete fail, exiting\n");
-                goto done;
-            }
-
-            /* PDC_Client_query_metadata_with_name(obj_names[i], &res); */
-            /* if (res != NULL) { */ 
-            /*     printf("ERROR: deleted metadata still exist\n"); */
-            /*     /1* PDC_print_metadata(res); *1/ */
-            /*     fflush(stdout); */
-            /* } */
-        }
-
-        if (rank == 0) {
-            // Print progress
-            int progress_factor = count < 20 ? 1 : 20;
-            if (rank == 0 && i > 0 && i % (count/progress_factor) == 0) {
-                gettimeofday(&ht_total_end, 0);
-                ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
-                ht_total_sec        = ht_total_elapsed / 1000000.0;
-
-                printf("deleted %10d ... %.2f\n", i * size, ht_total_sec);
-                fflush(stdout);
-            }
-        }
-    }
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
-    ht_total_sec        = ht_total_elapsed / 1000000.0;
-    if (rank == 0) { 
-        printf("Time to query and delete %d obj/rank with %d ranks: %.6f\n\n\n", count, size, ht_total_sec);
         fflush(stdout);
     }
 
+    char obj_name[32];
+    srand(rank+1);
+
+
+#ifdef ENABLE_MPI
+MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
+    // This test first creates a number of objects, then delete them one by one.
+    int i;
+    for (i = 0; i < count; i++) {
+
+        if (use_name == -1) {
+            sprintf(obj_name, "%s", rand_string(tmp_str, 16));
+            PDCprop_set_obj_time_step(obj_prop, rank, pdc);
+            /* sprintf(obj_name[i], "%s_%d", rand_string(tmp_str, 16), i + rank * count); */
+        }
+        else if (use_name == 1) {
+            sprintf(obj_name, "%s", obj_prefix[0]);
+            PDCprop_set_obj_time_step(obj_prop, i + rank * count, pdc);
+        }
+        else if (use_name == 4) {
+            sprintf(obj_name, "%s", obj_prefix[i%4]);
+            PDCprop_set_obj_time_step(obj_prop, i/4 + rank * count, pdc);
+        }
+        else {
+            printf("Unsupported name choice\n");
+            goto done;
+        }
+        PDCprop_set_obj_user_id( obj_prop, getuid(),    pdc);
+        PDCprop_set_obj_app_name(obj_prop, "obj_delete_test",  pdc);
+        PDCprop_set_obj_tags(    obj_prop, "tag0=1",    pdc);
+
+        // Create object
+        create_obj_ids[i] = PDCobj_create(pdc, cont, obj_name, obj_prop);
+        if (create_obj_ids[i] < 0 ) {
+            printf("Error getting an object id of %s from server, exit...\n", obj_name);
+            exit(-1);
+        }
+    }
+
+#ifdef ENABLE_MPI
+MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
+    // Delete and check if success
+    /* for (i = 0; i < count/2; i++) { */
+    for (i = 0; i < count; i++) {
+        /* printf("Proc %d: deleting metadata\n", rank); */
+        /* fflush(stdout); */
+        perr_t ret;
+        ret = PDC_Client_delete_metadata_by_id(pdc, cont, create_obj_ids[i]);
+        if (ret != SUCCEED) {
+            printf("Delete fail with process %d, exiting\n", rank);
+            goto done;
+        }
+
+        /* // Check by querying */
+        /* pdc_metadata_t *res = NULL; */
+        /* /1* printf("Proc %d: querying metadata with name [%s]\n", rank, obj_name); *1/ */
+        /* PDC_Client_query_metadata_with_name(obj_names[i], &res); */
+        /* if (res != NULL) { */
+        /*     printf("Deletion FAIL! Metadata of [%s] still exist in server\n", res->obj_names); */
+        /*     fflush(stdout); */
+        /* } */
+
+    }
+
+    if (rank == 0) {
+        printf("Delete test SUCCEED.\n");
+    }
 
 done:
     // close a container

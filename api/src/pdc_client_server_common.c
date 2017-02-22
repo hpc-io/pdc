@@ -15,7 +15,7 @@ hg_thread_pool_t *hg_test_thread_pool_g;
 
 hg_atomic_int32_t close_server_g;
 
-uint64_t pdc_id_seq_g = 1000000;
+uint64_t pdc_id_seq_g = PDC_SERVER_ID_INTERVEL;
 // actual value for each server is set by PDC_Server_init()
 //
 
@@ -64,6 +64,19 @@ hg_core_get_thread_work(hg_handle_t handle);
 #define HG_TEST_THREAD_CB(func_name)
 
 #endif // End of ENABLE_MULTITHREAD
+
+uint32_t PDC_get_server_by_obj_id(uint64_t obj_id, int n_server)
+{
+    FUNC_ENTER(NULL);
+
+    // TODO: need a smart way to deal with server number change
+    uint32_t ret_value;
+    ret_value  = (uint32_t)(obj_id / PDC_SERVER_ID_INTERVEL) - 1;
+    ret_value %= n_server;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
 
 static uint32_t pdc_hash_djb2(const char *pc)
 {
@@ -148,9 +161,10 @@ void PDC_print_metadata(pdc_metadata_t *a)
 #ifndef IS_PDC_SERVER
 // Dummy function for client to compile, real function is used only by server and code is in pdc_server.c
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out) {return SUCCEED;}
-perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out) {return SUCCEED;}
+/* perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out) {return SUCCEED;} */
 perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key, pdc_metadata_t** out) {return SUCCEED;}
 perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out) {return SUCCEED;}
+perr_t delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_id_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out) {return SUCCEED;}
 #endif
 
@@ -224,35 +238,35 @@ done:
 
 /* static hg_return_t */
 // send_obj_name_marker_cb(hg_handle_t handle)
-HG_TEST_RPC_CB(send_obj_name_marker, handle)
-{
-    FUNC_ENTER(NULL);
+/* HG_TEST_RPC_CB(send_obj_name_marker, handle) */
+/* { */
+/*     FUNC_ENTER(NULL); */
 
-    hg_return_t ret_value;
+/*     hg_return_t ret_value; */
 
-    /* Get input parameters sent on origin through on HG_Forward() */
-    // Decode input
-    send_obj_name_marker_in_t  in;
-    send_obj_name_marker_out_t out;
+/*     /1* Get input parameters sent on origin through on HG_Forward() *1/ */
+/*     // Decode input */
+/*     send_obj_name_marker_in_t  in; */
+/*     send_obj_name_marker_out_t out; */
 
-    HG_Get_input(handle, &in);
+/*     HG_Get_input(handle, &in); */
     
-    // Insert to object marker hash table
-    insert_obj_name_marker(&in, &out);
+/*     // Insert to object marker hash table */
+/*     insert_obj_name_marker(&in, &out); */
 
-    /* out.ret = 1; */
-    HG_Respond(handle, NULL, NULL, &out);
-    /* printf("==PDC_SERVER: send_obj_name_marker() Returned %llu\n", out.ret); */
-    /* fflush(stdout); */
+/*     /1* out.ret = 1; *1/ */
+/*     HG_Respond(handle, NULL, NULL, &out); */
+/*     /1* printf("==PDC_SERVER: send_obj_name_marker() Returned %llu\n", out.ret); *1/ */
+/*     /1* fflush(stdout); *1/ */
 
-    HG_Free_input(handle, &in);
-    HG_Destroy(handle);
+/*     HG_Free_input(handle, &in); */
+/*     HG_Destroy(handle); */
 
-    ret_value = HG_SUCCESS;
+/*     ret_value = HG_SUCCESS; */
 
-done:
-    FUNC_LEAVE(ret_value);
-}
+/* done: */
+/*     FUNC_LEAVE(ret_value); */
+/* } */
 
 
 /* static hg_return_t */
@@ -307,6 +321,38 @@ HG_TEST_RPC_CB(metadata_query, handle)
 done:
     FUNC_LEAVE(ret_value);
 }
+
+/* static hg_return_t */
+// metadata_delete_by_id_cb(hg_handle_t handle)
+HG_TEST_RPC_CB(metadata_delete_by_id, handle)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value;
+
+    /* Get input parameters sent on origin through on HG_Forward() */
+    // Decode input
+    metadata_delete_by_id_in_t  in;
+    metadata_delete_by_id_out_t out;
+
+    HG_Get_input(handle, &in);
+    /* printf("==PDC_SERVER: Got delete_by_id request: hash=%d, obj_id=%llu\n", in.hash_value, in.obj_id); */
+
+
+    delete_metadata_by_id(&in, &out);
+    
+    /* out.ret = 1; */
+    HG_Respond(handle, NULL, NULL, &out);
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    ret_value = HG_SUCCESS;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 
 /* static hg_return_t */
 // metadata_delete_cb(hg_handle_t handle)
@@ -407,10 +453,11 @@ done:
 
 
 HG_TEST_THREAD_CB(gen_obj_id)
-HG_TEST_THREAD_CB(send_obj_name_marker)
+/* HG_TEST_THREAD_CB(send_obj_name_marker) */
 HG_TEST_THREAD_CB(client_test_connect)
 HG_TEST_THREAD_CB(metadata_query)
 HG_TEST_THREAD_CB(metadata_delete)
+HG_TEST_THREAD_CB(metadata_delete_by_id)
 HG_TEST_THREAD_CB(metadata_update)
 HG_TEST_THREAD_CB(close_server)
 
@@ -438,17 +485,17 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-hg_id_t
-send_obj_name_marker_register(hg_class_t *hg_class)
-{
-    FUNC_ENTER(NULL);
+/* hg_id_t */
+/* send_obj_name_marker_register(hg_class_t *hg_class) */
+/* { */
+/*     FUNC_ENTER(NULL); */
 
-    hg_id_t ret_value;
-    ret_value = MERCURY_REGISTER(hg_class, "send_obj_name_marker", send_obj_name_marker_in_t, send_obj_name_marker_out_t, send_obj_name_marker_cb);
+/*     hg_id_t ret_value; */
+/*     ret_value = MERCURY_REGISTER(hg_class, "send_obj_name_marker", send_obj_name_marker_in_t, send_obj_name_marker_out_t, send_obj_name_marker_cb); */
 
-done:
-    FUNC_LEAVE(ret_value);
-}
+/* done: */
+/*     FUNC_LEAVE(ret_value); */
+/* } */
 
 hg_id_t
 metadata_query_register(hg_class_t *hg_class)
@@ -474,6 +521,17 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+hg_id_t
+metadata_delete_by_id_register(hg_class_t *hg_class)
+{
+    FUNC_ENTER(NULL);
+
+    hg_id_t ret_value;
+    ret_value = MERCURY_REGISTER(hg_class, "metadata_delete_by_id", metadata_delete_by_id_in_t, metadata_delete_by_id_out_t, metadata_delete_by_id_cb);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
 
 hg_id_t
 metadata_delete_register(hg_class_t *hg_class)

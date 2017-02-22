@@ -14,6 +14,7 @@ uint64_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *
 perr_t PDC_Client_query_metadata_with_name(const char *obj_name, pdc_metadata_t **out);
 perr_t PDC_Client_query_metadata_partial(const char *obj_name, pdc_metadata_t **out);
 perr_t PDC_Client_delete_metadata(pdcid_t pdc, pdcid_t cont_id, char *delete_name, pdcid_t obj_delete_prop);
+perr_t PDC_Client_delete_metadata_by_id(pdcid_t pdc, pdcid_t cont_id, uint64_t obj_id);
 perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new);
 perr_t PDC_Client_init();
 perr_t PDC_Client_finalize();
@@ -35,6 +36,8 @@ typedef struct pdc_server_info_t {
     hg_handle_t     metadata_query_handle;
     int             metadata_delete_handle_valid;
     hg_handle_t     metadata_delete_handle;
+    int             metadata_delete_by_id_handle_valid;
+    hg_handle_t     metadata_delete_by_id_handle;
     int             metadata_update_handle_valid;
     hg_handle_t     metadata_update_handle;
 } pdc_server_info_t;

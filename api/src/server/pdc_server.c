@@ -33,7 +33,7 @@
 #include "mercury_thread_mutex.h"
 
 hg_thread_mutex_t pdc_metadata_hash_table_mutex_g;
-hg_thread_mutex_t pdc_metadata_name_mark_hash_table_mutex_g;
+/* hg_thread_mutex_t pdc_metadata_name_mark_hash_table_mutex_g; */
 hg_thread_mutex_t pdc_time_mutex_g;
 hg_thread_mutex_t pdc_bloom_time_mutex_g;
 #endif
@@ -50,7 +50,7 @@ hg_thread_pool_t *hg_test_thread_pool_g = NULL;
 
 // Global hash table for storing metadata 
 hg_hash_table_t *metadata_hash_table_g = NULL;
-hg_hash_table_t *metadata_name_mark_hash_table_g = NULL;
+/* hg_hash_table_t *metadata_name_mark_hash_table_g = NULL; */
 
 int is_hash_table_init_g = 0;
 int is_restart_g = 0;
@@ -91,19 +91,19 @@ PDC_Server_metadata_int_hash_key_free(hg_hash_table_key_t key)
     free((uint32_t *) key);
 }
 
-static void
-PDC_Server_metadata_name_mark_hash_value_free(hg_hash_table_value_t value)
-{
-    pdc_metadata_name_mark_t *elt, *tmp, *head;
+/* static void */
+/* PDC_Server_metadata_name_mark_hash_value_free(hg_hash_table_value_t value) */
+/* { */
+/*     pdc_metadata_name_mark_t *elt, *tmp, *head; */
 
-    head = (pdc_metadata_name_mark_t *) value;
+/*     head = (pdc_metadata_name_mark_t *) value; */
 
-    // Free metadata list
-    DL_FOREACH_SAFE(head,elt,tmp) {
-      /* DL_DELETE(head,elt); */
-      free(elt);
-    }
-}
+/*     // Free metadata list */
+/*     DL_FOREACH_SAFE(head,elt,tmp) { */
+/*       /1* DL_DELETE(head,elt); *1/ */
+/*       free(elt); */
+/*     } */
+/* } */
 
 
 static void
@@ -128,20 +128,20 @@ PDC_Server_metadata_hash_value_free(hg_hash_table_value_t value)
           free(elt);
         }
     }
-    else {
+    /* else { */
         /* printf("freeing head->metadata\n"); */
         /* fflush(stdout); */
         /* if (head->metadata != NULL) { */
         /*     free(head->metadata); */
         /* } */
-    }
+    /* } */
 }
 
-inline void PDC_Server_metadata_name_mark_init(pdc_metadata_t* a)
-{
-    a->prev                 = NULL;
-    a->next                 = NULL;
-}
+/* inline void PDC_Server_metadata_name_mark_init(pdc_metadata_t* a) */
+/* { */
+/*     a->prev                 = NULL; */
+/*     a->next                 = NULL; */
+/* } */
 
 void PDC_Server_metadata_init(pdc_metadata_t* a)
 {
@@ -167,26 +167,26 @@ static inline void combine_obj_info_to_string(pdc_metadata_t *metadata, char *ou
     sprintf(output, "%s%d", metadata->obj_name, metadata->time_step);
 }
 
-static int find_identical_namemark(pdc_metadata_name_mark_t *mlist, pdc_metadata_name_mark_t *a)
-{
-    FUNC_ENTER(NULL);
+/* static int find_identical_namemark(pdc_metadata_name_mark_t *mlist, pdc_metadata_name_mark_t *a) */
+/* { */
+/*     FUNC_ENTER(NULL); */
 
-    perr_t ret_value;
+/*     perr_t ret_value; */
 
-    pdc_metadata_name_mark_t *elt;
-    DL_FOREACH(mlist, elt) {
-        if (strcmp(elt->obj_name, a->obj_name) == 0) {
-            /* printf("Identical namemark with name [%s] already exist in current Metadata store!\n", ); */
-            ret_value = 1;
-            goto done;
-        }
-    }
+/*     pdc_metadata_name_mark_t *elt; */
+/*     DL_FOREACH(mlist, elt) { */
+/*         if (strcmp(elt->obj_name, a->obj_name) == 0) { */
+/*             /1* printf("Identical namemark with name [%s] already exist in current Metadata store!\n", ); *1/ */
+/*             ret_value = 1; */
+/*             goto done; */
+/*         } */
+/*     } */
 
-    ret_value = 0;
+/*     ret_value = 0; */
 
-done:
-    FUNC_LEAVE(ret_value);
-} 
+/* done: */
+/*     FUNC_LEAVE(ret_value); */
+/* } */ 
 
 static pdc_metadata_t * find_identical_metadata_by_id(pdc_metadata_t *mlist, uint64_t obj_id) 
 {
@@ -379,13 +379,13 @@ static perr_t PDC_Server_init_hash_table()
     }
     hg_hash_table_register_free_functions(metadata_hash_table_g, PDC_Server_metadata_int_hash_key_free, PDC_Server_metadata_hash_value_free);
 
-    // Name marker hash table, reuse some functions from metadata_hash_table
-    metadata_name_mark_hash_table_g = hg_hash_table_new(PDC_Server_metadata_int_hash, PDC_Server_metadata_int_equal);
-    if (metadata_name_mark_hash_table_g == NULL) {
-        printf("==PDC_SERVER: metadata_name_mark_hash_table_g init error! Exit...\n");
-        exit(-1);
-    }
-    hg_hash_table_register_free_functions(metadata_name_mark_hash_table_g, PDC_Server_metadata_int_hash_key_free, PDC_Server_metadata_name_mark_hash_value_free);
+    /* // Name marker hash table, reuse some functions from metadata_hash_table */
+    /* metadata_name_mark_hash_table_g = hg_hash_table_new(PDC_Server_metadata_int_hash, PDC_Server_metadata_int_equal); */
+    /* if (metadata_name_mark_hash_table_g == NULL) { */
+    /*     printf("==PDC_SERVER: metadata_name_mark_hash_table_g init error! Exit...\n"); */
+    /*     exit(-1); */
+    /* } */
+    /* hg_hash_table_register_free_functions(metadata_name_mark_hash_table_g, PDC_Server_metadata_int_hash_key_free, PDC_Server_metadata_name_mark_hash_value_free); */
 
     is_hash_table_init_g = 1;
 
@@ -568,93 +568,93 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out) {
+/* perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out) { */
     
-    FUNC_ENTER(NULL);
+/*     FUNC_ENTER(NULL); */
 
-    perr_t ret_value = SUCCEED;
-    hg_return_t hg_ret;
+/*     perr_t ret_value = SUCCEED; */
+/*     hg_return_t hg_ret; */
 
 
-    /* printf("==PDC_SERVER: Insert obj name marker [%s]\n", in->obj_name); */
+/*     /1* printf("==PDC_SERVER: Insert obj name marker [%s]\n", in->obj_name); *1/ */
 
-    uint32_t *hash_key = (uint32_t*)malloc(sizeof(uint32_t));
-    if (hash_key == NULL) {
-        printf("Cannnot allocate hash_key!\n");
-        goto done;
-    }
-    total_mem_usage += sizeof(uint32_t);
+/*     uint32_t *hash_key = (uint32_t*)malloc(sizeof(uint32_t)); */
+/*     if (hash_key == NULL) { */
+/*         printf("Cannnot allocate hash_key!\n"); */
+/*         goto done; */
+/*     } */
+/*     total_mem_usage += sizeof(uint32_t); */
 
-    *hash_key = in->hash_value;
+/*     *hash_key = in->hash_value; */
 
-    pdc_metadata_name_mark_t *namemark= (pdc_metadata_name_mark_t*)malloc(sizeof(pdc_metadata_name_mark_t));
-    if (namemark == NULL) {
-        printf("==PDC_SERVER: ERROR - Cannnot allocate pdc_metadata_name_mark_t!\n");
-        goto done;
-    }
-    total_mem_usage += sizeof(pdc_metadata_name_mark_t);
-    strcpy(namemark->obj_name, in->obj_name);
+/*     pdc_metadata_name_mark_t *namemark= (pdc_metadata_name_mark_t*)malloc(sizeof(pdc_metadata_name_mark_t)); */
+/*     if (namemark == NULL) { */
+/*         printf("==PDC_SERVER: ERROR - Cannnot allocate pdc_metadata_name_mark_t!\n"); */
+/*         goto done; */
+/*     } */
+/*     total_mem_usage += sizeof(pdc_metadata_name_mark_t); */
+/*     strcpy(namemark->obj_name, in->obj_name); */
 
-    pdc_metadata_name_mark_t *lookup_value;
-    pdc_metadata_name_mark_t *elt;
+/*     pdc_metadata_name_mark_t *lookup_value; */
+/*     pdc_metadata_name_mark_t *elt; */
 
-#ifdef ENABLE_MULTITHREAD 
-    // Obtain lock for hash table
-    int unlocked = 0;
-    hg_thread_mutex_lock(&pdc_metadata_name_mark_hash_table_mutex_g);
-#endif
+/* #ifdef ENABLE_MULTITHREAD */ 
+/*     // Obtain lock for hash table */
+/*     int unlocked = 0; */
+/*     hg_thread_mutex_lock(&pdc_metadata_name_mark_hash_table_mutex_g); */
+/* #endif */
 
-    if (metadata_name_mark_hash_table_g != NULL) {
-        // lookup
-        /* printf("checking hash table with key=%d\n", *hash_key); */
-        lookup_value = hg_hash_table_lookup(metadata_name_mark_hash_table_g, hash_key);
+/*     if (metadata_name_mark_hash_table_g != NULL) { */
+/*         // lookup */
+/*         /1* printf("checking hash table with key=%d\n", *hash_key); *1/ */
+/*         lookup_value = hg_hash_table_lookup(metadata_name_mark_hash_table_g, hash_key); */
 
-        // Is this hash value exist in the Hash table?
-        if (lookup_value != NULL) {
-            // Check if there exist namemark identical to current one
-            if (find_identical_namemark(lookup_value, namemark) == 1) {
-                // If find same one, do nothing
-                /* printf("==PDC_SERVER: marker exist for [%s]\n", namemark->obj_name); */
-                ret_value = 0;
-                free(namemark);
-            }
-            else {
-                // Currently namemark is unique, insert to linked list
-                DL_APPEND(lookup_value, namemark);
-            }
+/*         // Is this hash value exist in the Hash table? */
+/*         if (lookup_value != NULL) { */
+/*             // Check if there exist namemark identical to current one */
+/*             if (find_identical_namemark(lookup_value, namemark) == 1) { */
+/*                 // If find same one, do nothing */
+/*                 /1* printf("==PDC_SERVER: marker exist for [%s]\n", namemark->obj_name); *1/ */
+/*                 ret_value = 0; */
+/*                 free(namemark); */
+/*             } */
+/*             else { */
+/*                 // Currently namemark is unique, insert to linked list */
+/*                 DL_APPEND(lookup_value, namemark); */
+/*             } */
         
-            /* free(hash_key); */
-        }
-        else {
-            /* printf("lookup_value is NULL!\n"); */
-            // First entry for current hasy_key, init linked list
-            namemark->prev = namemark;                                                                   \
-            namemark->next = NULL;   
+/*             /1* free(hash_key); *1/ */
+/*         } */
+/*         else { */
+/*             /1* printf("lookup_value is NULL!\n"); *1/ */
+/*             // First entry for current hasy_key, init linked list */
+/*             namemark->prev = namemark;                                                                   \ */
+/*             namemark->next = NULL; */   
 
-            // Insert to hash table
-            hg_ret = hg_hash_table_insert(metadata_name_mark_hash_table_g, hash_key, namemark);
-            if (hg_ret != 1) {
-                fprintf(stderr, "==PDC_SERVER: ERROR - insert_obj_name_marker() error with hash table insert!\n");
-                ret_value = -1;
-                goto done;
-            }
-        }
-    }
-    else {
-        printf("metadata_hash_table_g not initilized!\n");
-        ret_value = -1;
-        goto done;
-    }
+/*             // Insert to hash table */
+/*             hg_ret = hg_hash_table_insert(metadata_name_mark_hash_table_g, hash_key, namemark); */
+/*             if (hg_ret != 1) { */
+/*                 fprintf(stderr, "==PDC_SERVER: ERROR - insert_obj_name_marker() error with hash table insert!\n"); */
+/*                 ret_value = -1; */
+/*                 goto done; */
+/*             } */
+/*         } */
+/*     } */
+/*     else { */
+/*         printf("metadata_hash_table_g not initilized!\n"); */
+/*         ret_value = -1; */
+/*         goto done; */
+/*     } */
 
-#ifdef ENABLE_MULTITHREAD 
-    // ^ Release hash table lock
-    hg_thread_mutex_unlock(&pdc_metadata_name_mark_hash_table_mutex_g);
-#endif
+/* #ifdef ENABLE_MULTITHREAD */ 
+/*     // ^ Release hash table lock */
+/*     hg_thread_mutex_unlock(&pdc_metadata_name_mark_hash_table_mutex_g); */
+/* #endif */
 
-done:
-    out->ret = 1;
-    FUNC_LEAVE(ret_value);
-}
+/* done: */
+/*     out->ret = 1; */
+/*     FUNC_LEAVE(ret_value); */
+/* } */
 
 perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out)
 {
@@ -770,6 +770,125 @@ done:
 #endif
     FUNC_LEAVE(ret_value);
 } // end of update_metadata_from_hash_table
+
+
+perr_t delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_id_out_t *out)
+{
+
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value = FAIL;
+    out->ret = -1;
+
+    // Timing
+    struct timeval  ht_total_start;
+    struct timeval  ht_total_end;
+    long long ht_total_elapsed;
+    double ht_total_sec;
+
+    gettimeofday(&ht_total_start, 0);
+
+    /* printf("==PDC_SERVER[%d]: Got delete by id request: obj_id=%llu\n", pdc_server_rank_g, in->obj_id); */
+    /* fflush(stdout); */
+
+    uint64_t target_obj_id = in->obj_id;
+
+    pdc_metadata_t *elt;
+    hg_hash_table_iter_t hash_table_iter;
+
+    // TODO
+    pdc_metadata_t metadata;
+    metadata.obj_id = 0;
+        
+    /* printf("==PDC_SERVER: delete request name:%s ts=%d hash=%u\n", in->obj_name, in->time_step, in->hash_value); */
+
+#ifdef ENABLE_MULTITHREAD 
+    // Obtain lock for hash table
+    int unlocked = 0;
+    hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
+#endif
+
+    if (metadata_hash_table_g != NULL) {
+
+        // Since we only have the obj id, need to iterate the entire hash table
+        pdc_hash_table_entry_head *head; 
+
+        int n_entry = hg_hash_table_num_entries(metadata_hash_table_g);
+        hg_hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
+
+        while (n_entry != 0 && hg_hash_table_iter_has_more(&hash_table_iter)) {
+
+            head = hg_hash_table_iter_next(&hash_table_iter);
+            // Now iterate the list under this entry
+            DL_FOREACH(head->metadata, elt) {
+
+                if (elt->obj_id == target_obj_id) {
+                    // We found the delete target
+                    // Check if there are more objects in this list
+                    if (head->n_obj > 1) {
+                        // Remove from bloom filter
+                        if (head->bloom != NULL) {
+                            PDC_Server_remove_from_bloom(elt, head->bloom);
+                        }
+
+                        // Remove from linked list
+                        DL_DELETE(head->metadata, elt);
+                        head->n_obj--;
+                        /* printf("==PDC_SERVER: delete from DL!\n"); */
+                    }
+                    else {
+                        // This is the last item under the current entry, remove the hash entry 
+                        /* printf("==PDC_SERVER: delete from hash table!\n"); */
+                        uint32_t hash_key = PDC_get_hash_by_name(elt->obj_name);
+                        hg_hash_table_remove(metadata_hash_table_g, &hash_key);
+
+                        // Free this item and delete hash table entry
+                        /* if(is_restart_g != 1) { */
+                        /*     free(elt); */
+                        /* } */
+                    }
+                    out->ret  = 1;
+                    ret_value = SUCCEED;
+                }
+            } // DL_FOREACH
+        }  // while 
+    } // if (metadata_hash_table_g != NULL)
+    else {
+        printf("==PDC_SERVER: metadata_hash_table_g not initilized!\n");
+        ret_value = FAIL;
+        out->ret = -1;
+        goto done;
+    }
+
+#ifdef ENABLE_MULTITHREAD 
+    // ^ Release hash table lock
+    hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
+    unlocked = 1;
+#endif
+
+    // Timing
+    gettimeofday(&ht_total_end, 0);
+    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+    ht_total_sec        = ht_total_elapsed / 1000000.0;
+
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_lock(&pdc_time_mutex_g);
+#endif
+    server_delete_time_g += ht_total_sec;
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_unlock(&pdc_time_mutex_g);
+#endif
+    
+
+done:
+    /* printf("==PDC_SERVER[%d]: Finished delete by id request: obj_id=%llu\n", pdc_server_rank_g, in->obj_id); */
+    /* fflush(stdout); */
+#ifdef ENABLE_MULTITHREAD 
+    if (unlocked == 0)
+        hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
+#endif
+    FUNC_LEAVE(ret_value);
+} // end of delete_metadata_by_id
 
 
 perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out)
@@ -1183,8 +1302,8 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     char hostname[1024];
     memset(hostname, 0, 1024);
     gethostname(hostname, 1023);
-    /* sprintf(na_info_string, "bmi+tcp://%s:%d", hostname, port); */
-    sprintf(na_info_string, "cci+tcp://%s:%d", hostname, port);
+    sprintf(na_info_string, "bmi+tcp://%s:%d", hostname, port);
+    /* sprintf(na_info_string, "cci+tcp://%s:%d", hostname, port); */
     if (pdc_server_rank_g == 0) 
         printf("\n==PDC_SERVER: using %.7s\n", na_info_string);
     
@@ -1317,8 +1436,8 @@ perr_t PDC_Server_finalize()
     if(metadata_hash_table_g != NULL)
         hg_hash_table_free(metadata_hash_table_g);
 
-    if(metadata_name_mark_hash_table_g != NULL)
-        hg_hash_table_free(metadata_name_mark_hash_table_g);
+/*     if(metadata_name_mark_hash_table_g != NULL) */
+/*         hg_hash_table_free(metadata_name_mark_hash_table_g); */
 
     double all_bloom_check_time_max, all_bloom_check_time_min, all_insert_time_max, all_insert_time_min;
     double all_server_bloom_init_time_min,  all_server_bloom_init_time_max;
@@ -1731,9 +1850,10 @@ int main(int argc, char *argv[])
     client_test_connect_register(hg_class);
     gen_obj_id_register(hg_class);
     close_server_register(hg_class);
-    send_obj_name_marker_register(hg_class);
+    /* send_obj_name_marker_register(hg_class); */
     metadata_query_register(hg_class);
     metadata_delete_register(hg_class);
+    metadata_delete_by_id_register(hg_class);
     metadata_update_register(hg_class);
 
 #ifdef ENABLE_MPI
