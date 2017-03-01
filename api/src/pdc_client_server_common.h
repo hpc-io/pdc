@@ -68,6 +68,19 @@ typedef struct pdc_metadata_transfer_t {
     /* time_t      last_modified_time; */
 } pdc_metadata_transfer_t;
 
+// Similar structure PDC_region_info_t defined in pdc_obj_pkg.h
+// TODO: currently only support upto four dimensions
+typedef struct {
+    size_t ndim;
+    uint64_t start_0, start_1, start_2, start_3;
+    uint64_t count_0, count_1, count_2, count_3;
+    uint64_t stride_0, stride_1, stride_2, stride_3;
+} region_info_transfer_t;
+
+typedef enum {
+    PDC_LOCK_OP_OBTAIN  = 0,
+    PDC_LOCK_OP_RELEASE = 1
+} PDC_lock_op_t;
 
 #ifdef HG_HAS_BOOST
 MERCURY_GEN_STRUCT_PROC( pdc_metadata_transfer_t, ((int32_t)(user_id)) ((int32_t)(time_step)) ((uint64_t)(obj_id)) ((int32_t)(ndim)) ((uint64_t)(dims[DIM_MAX])) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((hg_const_string_t)(data_location)) ((hg_const_string_t)(tags)) )
@@ -75,8 +88,8 @@ MERCURY_GEN_STRUCT_PROC( pdc_metadata_transfer_t, ((int32_t)(user_id)) ((int32_t
 MERCURY_GEN_PROC( gen_obj_id_in_t, ((pdc_metadata_transfer_t)(data)) ((uint32_t)(hash_value)) )
 MERCURY_GEN_PROC( gen_obj_id_out_t, ((uint64_t)(ret)) )
 
-MERCURY_GEN_PROC( send_obj_name_marker_in_t, ((hg_const_string_t)(obj_name)) ((uint32_t)(hash_value)) )
-MERCURY_GEN_PROC( send_obj_name_marker_out_t, ((int32_t)(ret)) )
+/* MERCURY_GEN_PROC( send_obj_name_marker_in_t, ((hg_const_string_t)(obj_name)) ((uint32_t)(hash_value)) ) */
+/* MERCURY_GEN_PROC( send_obj_name_marker_out_t, ((int32_t)(ret)) ) */
 
 MERCURY_GEN_PROC( client_test_connect_in_t,  ((int32_t)(client_id)) )
 MERCURY_GEN_PROC( client_test_connect_out_t, ((int32_t)(ret))  )
@@ -96,6 +109,11 @@ MERCURY_GEN_PROC( metadata_delete_out_t, ((int32_t)(ret)) )
 MERCURY_GEN_PROC( metadata_update_in_t, ((uint64_t)(obj_id)) ((uint32_t)(hash_value)) ((pdc_metadata_transfer_t)(new_metadata)) )
 MERCURY_GEN_PROC( metadata_update_out_t, ((int32_t)(ret)) )
 
+    //TODO
+MERCURY_GEN_STRUCT_PROC( region_info_transfer_t, ((size_t)(ndim)) ((uint64_t)(start_0)) ((uint64_t)(start_1)) ((uint64_t)(start_2)) ((uint64_t)(start_3))  ((uint64_t)(count)) ((uint64_t)(count_1)) ((uint64_t)(count_2) ((uint64_t)(count_3) ((uint64_t)(stride_0) ((uint64_t)(stride_1) ((uint64_t)(stride_2) ((uint64_t)(stride_3) )
+
+MERCURY_GEN_PROC( region_lock_in_t, ((uint64_t)(obj_id)) ((int32_t)(lock_id)) ((region_info_transfer_t)(region)) )
+MERCURY_GEN_PROC( region_lock_out_t, ((int32_t)(ret)) )
 
 #else
 
@@ -125,6 +143,130 @@ typedef struct {
 typedef struct {
     int32_t            ret;
 } metadata_delete_by_id_out_t;
+
+// TODO
+
+typedef struct {
+    uint64_t                    obj_id;
+    int32_t                     lock_op;
+    region_info_transfer_t      region;
+} region_lock_in_t;
+
+typedef struct {
+    int32_t            ret;
+} region_lock_out_t;
+
+static HG_INLINE hg_return_t
+hg_proc_region_info_transfer_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    region_info_transfer_t *struct_data = (region_info_transfer_t*) data;
+
+    ret = hg_proc_hg_size_t(proc, &struct_data->ndim);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    
+    ret = hg_proc_uint64_t(proc, &struct_data->start_0);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->start_1);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->start_2);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->start_3);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_uint64_t(proc, &struct_data->count_0);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->count_1);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->count_2);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->count_3);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_uint64_t(proc, &struct_data->stride_0);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->stride_1);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->stride_2);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->stride_3);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_region_lock_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    region_lock_in_t *struct_data = (region_lock_in_t*) data;
+
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_uint32_t(proc, &struct_data->lock_op);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->region);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_region_lock_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    region_lock_out_t *struct_data = (region_lock_out_t*) data;
+
+    ret = hg_proc_uint32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
 
 
 typedef struct {
@@ -318,14 +460,14 @@ typedef struct {
 } gen_obj_id_out_t;
 
 
-typedef struct {
-    hg_const_string_t    obj_name;
-    uint32_t             hash_value;
-} send_obj_name_marker_in_t;
+/* typedef struct { */
+/*     hg_const_string_t    obj_name; */
+/*     uint32_t             hash_value; */
+/* } send_obj_name_marker_in_t; */
 
-typedef struct {
-    int32_t ret;
-} send_obj_name_marker_out_t;
+/* typedef struct { */
+/*     int32_t ret; */
+/* } send_obj_name_marker_out_t; */
 
 typedef struct {
     int32_t client_id;
@@ -375,35 +517,35 @@ hg_proc_gen_obj_id_out_t(hg_proc_t proc, void *data)
     return ret;
 }
 
-static HG_INLINE hg_return_t
-hg_proc_send_obj_name_marker_in_t(hg_proc_t proc, void *data)
-{
-    hg_return_t ret;
-    send_obj_name_marker_in_t *struct_data = (send_obj_name_marker_in_t*) data;
+/* static HG_INLINE hg_return_t */
+/* hg_proc_send_obj_name_marker_in_t(hg_proc_t proc, void *data) */
+/* { */
+/*     hg_return_t ret; */
+/*     send_obj_name_marker_in_t *struct_data = (send_obj_name_marker_in_t*) data; */
 
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-    }
-    ret = hg_proc_uint32_t(proc, &struct_data->hash_value);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-    }
-    return ret;
-}
+/*     ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name); */
+/*     if (ret != HG_SUCCESS) { */
+/* 	HG_LOG_ERROR("Proc error"); */
+/*     } */
+/*     ret = hg_proc_uint32_t(proc, &struct_data->hash_value); */
+/*     if (ret != HG_SUCCESS) { */
+/* 	HG_LOG_ERROR("Proc error"); */
+/*     } */
+/*     return ret; */
+/* } */
 
-static HG_INLINE hg_return_t
-hg_proc_send_obj_name_marker_out_t(hg_proc_t proc, void *data)
-{
-    hg_return_t ret;
-    send_obj_name_marker_out_t *struct_data = (send_obj_name_marker_out_t*) data;
+/* static HG_INLINE hg_return_t */
+/* hg_proc_send_obj_name_marker_out_t(hg_proc_t proc, void *data) */
+/* { */
+/*     hg_return_t ret; */
+/*     send_obj_name_marker_out_t *struct_data = (send_obj_name_marker_out_t*) data; */
 
-    ret = hg_proc_int32_t(proc, &struct_data->ret);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-    }
-    return ret;
-}
+/*     ret = hg_proc_int32_t(proc, &struct_data->ret); */
+/*     if (ret != HG_SUCCESS) { */
+/* 	HG_LOG_ERROR("Proc error"); */
+/*     } */
+/*     return ret; */
+/* } */
 
 static HG_INLINE hg_return_t
 hg_proc_client_test_connect_in_t(hg_proc_t proc, void *data)
@@ -417,6 +559,7 @@ hg_proc_client_test_connect_in_t(hg_proc_t proc, void *data)
     }
     return ret;
 }
+
 static HG_INLINE hg_return_t
 hg_proc_client_test_connect_out_t(hg_proc_t proc, void *data)
 {
@@ -465,6 +608,7 @@ hg_id_t metadata_query_register(hg_class_t *hg_class);
 hg_id_t metadata_delete_register(hg_class_t *hg_class);
 hg_id_t metadata_delete_by_id_register(hg_class_t *hg_class);
 hg_id_t metadata_update_register(hg_class_t *hg_class);
+hg_id_t region_lock_register(hg_class_t *hg_class);
 
 perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out);
 perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out);

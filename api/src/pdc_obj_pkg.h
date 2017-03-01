@@ -17,7 +17,7 @@ typedef struct PDC_obj_info_t {
 
 typedef struct {
     size_t ndim;
-    uint64_t offset;
+    uint64_t *offset;
     uint64_t *size;
 //    PDC_loci locus;
 } PDC_region_info_t;

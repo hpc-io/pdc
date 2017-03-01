@@ -166,6 +166,7 @@ perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key,
 perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out) {return SUCCEED;}
 perr_t delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_id_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out) {return SUCCEED;}
+perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out) {return SUCCEED;}
 #endif
 
 /*
@@ -451,6 +452,37 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+/* static hg_return_t */
+/* region_lock_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(region_lock, handle)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value;
+
+    /* Get input parameters sent on origin through on HG_Forward() */
+    // Decode input
+    region_lock_in_t in;
+    region_lock_out_t out;
+
+    HG_Get_input(handle, &in);
+    int ret;
+
+    // TODO
+    // Perform lock function
+    ret = PDC_Server_region_lock(&in, &out);
+
+    HG_Respond(handle, NULL, NULL, &out);
+    /* printf("==PDC_SERVER: gen_obj_id_cb(): returned %llu\n", out.ret); */
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    ret_value = HG_SUCCESS;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
 
 HG_TEST_THREAD_CB(gen_obj_id)
 /* HG_TEST_THREAD_CB(send_obj_name_marker) */
@@ -460,6 +492,7 @@ HG_TEST_THREAD_CB(metadata_delete)
 HG_TEST_THREAD_CB(metadata_delete_by_id)
 HG_TEST_THREAD_CB(metadata_update)
 HG_TEST_THREAD_CB(close_server)
+HG_TEST_THREAD_CB(region_lock)
 
 hg_id_t
 gen_obj_id_register(hg_class_t *hg_class)
@@ -556,3 +589,17 @@ close_server_register(hg_class_t *hg_class)
 done:
     FUNC_LEAVE(ret_value);
 }
+
+hg_id_t
+region_lock_register(hg_class_t *hg_class)
+{
+    FUNC_ENTER(NULL);
+
+    hg_id_t ret_value;
+    ret_value = MERCURY_REGISTER(hg_class, "region_lock", region_lock_in_t, region_lock_out_t, region_lock_cb);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+

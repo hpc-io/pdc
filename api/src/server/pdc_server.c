@@ -1707,6 +1707,24 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
+{
+    FUNC_ENTER(NULL);
+    perr_t ret_value;
+
+    // TODO
+    printf("==PDC_SERVER: received lock request,                                \
+            obj_id=%llu, op=%d, ndim=%d, start=%llu count=%llu stride=%d\n", 
+            in->obj_id, in->lock_op, in->region.ndim, 
+            in->region.start_0, in->region.count_0, in->region.stride_0);
+
+
+    out->ret = 1;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key, pdc_metadata_t** out)
 {
     FUNC_ENTER(NULL);
@@ -1855,6 +1873,7 @@ int main(int argc, char *argv[])
     metadata_delete_register(hg_class);
     metadata_delete_by_id_register(hg_class);
     metadata_update_register(hg_class);
+    region_lock_register(hg_class);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
