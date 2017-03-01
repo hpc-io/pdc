@@ -145,17 +145,23 @@ PDC_Server_metadata_hash_value_free(hg_hash_table_value_t value)
 
 void PDC_Server_metadata_init(pdc_metadata_t* a)
 {
-    a->user_id              = -1;
-    a->time_step            = -1;
+    int i;
+    a->user_id              = 0;
+    a->time_step            = 0;
     a->app_name[0]          = 0;
     a->obj_name[0]          = 0;
 
     a->obj_id               = 0;
-    a->data_location[0]     = 0;
+    a->ndim                 = 0;
+    for (i = 0; i < DIM_MAX; i++) 
+        a->dims[i] = 0;
+
     a->create_time          = 0;
     a->last_modified_time   = 0;
     a->tags[0]              = 0;
+    a->data_location[0]     = 0;
 
+    a->region_lock_head     = NULL;
     a->prev                 = NULL;
     a->next                 = NULL;
 }
@@ -188,21 +194,97 @@ static inline void combine_obj_info_to_string(pdc_metadata_t *metadata, char *ou
 /*     FUNC_LEAVE(ret_value); */
 /* } */ 
 
-static pdc_metadata_t * find_identical_metadata_by_id(pdc_metadata_t *mlist, uint64_t obj_id) 
+static pdc_metadata_t * find_metadata_by_id_and_hash_key(uint64_t obj_id, uint32_t hash_key) 
 {
+    FUNC_ENTER(NULL);
 
+    pdc_metadata_t *ret_value = NULL;
+    pdc_metadata_t *elt;
+    pdc_hash_table_entry_head *lookup_value = NULL;
+
+    // TODO
+    if (metadata_hash_table_g != NULL) {
+        lookup_value = hg_hash_table_lookup(metadata_hash_table_g, &hash_key);
+
+        if (lookup_value == NULL) {
+            ret_value = NULL;
+            goto done;
+        }
+
+        DL_FOREACH(lookup_value->metadata, elt) {
+            if (elt->obj_id == obj_id) {
+                ret_value = elt;
+                goto done;
+            }
+        }
+
+    }  // if (metadata_hash_table_g != NULL)
+    else {
+        printf("==PDC_SERVER: metadata_hash_table_g not initilized!\n");
+        ret_value = NULL;
+        goto done;
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+static pdc_metadata_t * find_metadata_by_id_from_list(pdc_metadata_t *mlist, uint64_t obj_id) 
+{
     FUNC_ENTER(NULL);
 
     pdc_metadata_t *ret_value, *elt;
 
     ret_value = NULL;
+    if (mlist == NULL) {
+        ret_value = NULL;
+        goto done;
+    }
 
     DL_FOREACH(mlist, elt) {
         if (elt->obj_id == obj_id) {
             ret_value = elt;
             goto done;
         }
-        /* printf("DL checking ..\n"); */
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+// Iterate through all metadata stored in the hash table 
+static pdc_metadata_t * find_metadata_by_id(uint64_t obj_id) 
+{
+    FUNC_ENTER(NULL);
+
+    pdc_metadata_t *ret_value;
+
+
+    if (metadata_hash_table_g != NULL) {
+
+        // Since we only have the obj id, need to iterate the entire hash table
+        pdc_hash_table_entry_head *head; 
+        pdc_metadata_t *elt;
+        hg_hash_table_iter_t hash_table_iter;
+
+        int n_entry = hg_hash_table_num_entries(metadata_hash_table_g);
+        hg_hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
+
+        while (n_entry != 0 && hg_hash_table_iter_has_more(&hash_table_iter)) {
+
+            head = hg_hash_table_iter_next(&hash_table_iter);
+            // Now iterate the list under this entry
+            DL_FOREACH(head->metadata, elt) {
+                if (elt->obj_id == obj_id) {
+                    return elt;
+                }
+            }
+        }
+    }  // if (metadata_hash_table_g != NULL)
+    else {
+        printf("==PDC_SERVER: metadata_hash_table_g not initilized!\n");
+        ret_value = NULL;
+        goto done;
     }
 
 done:
@@ -702,7 +784,7 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
             /* printf("==PDC_SERVER: lookup_value not NULL!\n"); */
             // Check if there exist metadata identical to current one
             pdc_metadata_t *target;
-            target = find_identical_metadata_by_id(lookup_value->metadata, obj_id);
+            target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
             if (target != NULL) {
                 /* printf("==PDC_SERVER: Found update target!\n"); */
 
@@ -1707,17 +1789,157 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+int is_region_overlap(region_list_t *a, region_list_t *b)
+{
+    FUNC_ENTER(NULL);
+    int ret_value = 1;
+
+    if (a == NULL || b == NULL) {
+        printf("==PDC_SERVER: is_region_identical() - passed NULL value!\n");
+        ret_value = -1;
+        goto done;
+    }
+
+    if (a->ndim != b->ndim) {
+        ret_value = -1;
+        goto done;
+    }
+
+    // TODO: real region overlap check
+    int i;
+    for (i = 0; i < a->ndim; i++) {
+        if (a->start[i] == b->start[i] && a->count[i] == b->count[i] && a->stride[i] == b->stride[i] ) {
+            ret_value = 1;
+            goto done;
+        }
+    }
+
+    ret_value = -1;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+
+int is_region_identical(region_list_t *a, region_list_t *b)
+{
+    FUNC_ENTER(NULL);
+    int ret_value = -1;
+
+
+    if (a == NULL || b == NULL) {
+        printf("==PDC_SERVER: is_region_identical() - passed NULL value!\n");
+        ret_value = -1;
+        goto done;
+    }
+
+    if (a->ndim != b->ndim) {
+        ret_value = -1;
+        goto done;
+    }
+
+    int i;
+    for (i = 0; i < a->ndim; i++) {
+        if (a->start[i] != b->start[i] || a->count[i] != b->count[i] || a->stride[i] != b->stride[i] ) {
+            ret_value = -1;
+            goto done;
+        }
+    }
+
+    ret_value = 1;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+
 perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
 {
     FUNC_ENTER(NULL);
     perr_t ret_value;
 
-    // TODO
-    printf("==PDC_SERVER: received lock request,                                \
-            obj_id=%llu, op=%d, ndim=%d, start=%llu count=%llu stride=%d\n", 
-            in->obj_id, in->lock_op, in->region.ndim, 
-            in->region.start_0, in->region.count_0, in->region.stride_0);
+    /* printf("==PDC_SERVER: received lock request,                                \ */
+    /*         obj_id=%llu, op=%d, ndim=%d, start=%llu count=%llu stride=%d\n", */ 
+    /*         in->obj_id, in->lock_op, in->region.ndim, */ 
+    /*         in->region.start_0, in->region.count_0, in->region.stride_0); */
 
+    uint64_t target_obj_id = in->obj_id;
+    int ndim = in->region.ndim;
+    int lock_op = in->lock_op;
+
+    // Convert transferred lock region to structure
+    region_list_t *request_region = (region_list_t *)malloc(sizeof(region_list_t));
+    request_region->ndim = ndim;
+
+    if (ndim >=1) {
+        request_region->start[0]  = in->region.start_0;
+        request_region->count[0]  = in->region.count_0;
+        request_region->stride[0] = in->region.stride_0;
+    }
+    if (ndim >=2) {
+        request_region->start[1]  = in->region.start_1;
+        request_region->count[1]  = in->region.count_1;
+        request_region->stride[1] = in->region.stride_1;
+    }
+    if (ndim >=3) {
+        request_region->start[2]  = in->region.start_2;
+        request_region->count[2]  = in->region.count_2;
+        request_region->stride[2] = in->region.stride_2;
+    }
+    if (ndim >=4) {
+        request_region->start[3]  = in->region.start_3;
+        request_region->count[3]  = in->region.count_3;
+        request_region->stride[3] = in->region.stride_3;
+    }
+    
+
+    // Locate target metadata structure
+    pdc_metadata_t *target_obj = find_metadata_by_id(target_obj_id);
+    if (target_obj == NULL) {
+        printf("==PDC_SERVER: PDC_Server_region_lock - requested object (id=%llu) does not exist\n", in->obj_id);
+        ret_value = -1;
+        out->ret = -1;
+        goto done;
+    }
+
+
+    region_list_t *elt, *tmp;
+    if (lock_op == PDC_LOCK_OP_OBTAIN) {
+        printf("==PDC_SERVER: obtaining lock ... ");
+        // Go through all existing locks to check for overlapping
+        DL_FOREACH(target_obj->region_lock_head, elt) {
+            if (is_region_overlap(elt, request_region) == 1) {
+                printf("rejected! (found overlapping regions)\n");
+                out->ret = -1;
+                goto done;
+            }
+        }
+        // No overlaps found
+        DL_APPEND(target_obj->region_lock_head, request_region);
+        out->ret = 1;
+        printf("granted\n");
+        goto done;
+    }
+    else if (lock_op == PDC_LOCK_OP_RELEASE) {
+        printf("==PDC_SERVER: releasing lock ... ");
+        // Find the lock region in the list and remove it
+        DL_FOREACH_SAFE(target_obj->region_lock_head, elt, tmp) {
+            if (is_region_identical(request_region, elt) == 1) {
+                // Found the requested region lock, remove from the linked list
+                DL_DELETE(target_obj->region_lock_head, elt);
+                out->ret = 1;
+                printf("released!\n");
+                goto done;
+            }
+        }
+        // Request release lock region not found
+        printf("requested release region/object does not exist\n");
+    }
+    else {
+        printf("==PDC_SERVER: lock opreation %d not supported!\n", in->lock_op);
+        out->ret = -1;
+        goto done;
+    }
 
     out->ret = 1;
 

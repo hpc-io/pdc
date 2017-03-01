@@ -1176,6 +1176,9 @@ uint64_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *
     region_info.size   = &count[0];
 
     PDC_Client_obtain_region_lock(pdc, cont_id, lookup_args.obj_id, &region_info);
+    PDC_Client_obtain_region_lock(pdc, cont_id, lookup_args.obj_id, &region_info);
+    PDC_Client_release_region_lock(pdc, cont_id, lookup_args.obj_id, &region_info);
+    PDC_Client_obtain_region_lock(pdc, cont_id, lookup_args.obj_id, &region_info);
 
 done:
     FUNC_LEAVE(ret_value);
@@ -1247,7 +1250,7 @@ done:
 }
 
 // General function for obtain/release region lock
-static perr_t PDC_Client_region_lock(pdcid_t pdc, pdcid_t cont_id, uint64_t meta_id, PDC_region_info_t *region_info, PDC_lock_op_t lock_op)
+static perr_t PDC_Client_region_lock(pdcid_t pdc, pdcid_t cont_id, uint64_t meta_id, PDC_region_info_t *region_info, int lock_op)
 {
     FUNC_ENTER(NULL);
     perr_t ret_value;
@@ -1256,10 +1259,9 @@ static perr_t PDC_Client_region_lock(pdcid_t pdc, pdcid_t cont_id, uint64_t meta
     // Compute server id
     uint32_t server_id;
 
-    // TODO
     server_id  = get_server_id_by_obj_id(meta_id);
-    printf("==PDC_CLIENT: lock going to server %u\n", server_id);
-    fflush(stdout);
+    /* printf("==PDC_CLIENT: lock going to server %u\n", server_id); */
+    /* fflush(stdout); */
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
@@ -1267,10 +1269,11 @@ static perr_t PDC_Client_region_lock(pdcid_t pdc, pdcid_t cont_id, uint64_t meta
     // Fill input structure
     region_lock_in_t in;
     in.obj_id = meta_id;
+    in.lock_op = lock_op;
 
     in.region.ndim   = region_info->ndim;
     size_t ndim = region_info->ndim;
-    printf("==PDC_CLINET: lock dim=%u\n", ndim);
+    /* printf("==PDC_CLINET: lock dim=%u\n", ndim); */
 
     if (ndim >= 5 || ndim <=0) {
         printf("Dimension %u is not supported\n", ndim);

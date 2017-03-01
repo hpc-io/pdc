@@ -22,9 +22,30 @@
 extern char pdc_server_tmp_dir_g[ADDR_MAX];
 #define pdc_server_cfg_name_g "server.cfg"
 
-
 extern uint64_t pdc_id_seq_g;
 extern int pdc_server_rank_g;
+
+#define    PDC_LOCK_OP_OBTAIN  0
+#define    PDC_LOCK_OP_RELEASE 1
+
+typedef struct region_list_t {
+    size_t ndim;
+    uint64_t start[DIM_MAX];
+    uint64_t count[DIM_MAX];
+    uint64_t stride[DIM_MAX];
+
+    struct region_list_t *prev;
+    struct region_list_t *next;
+} region_list_t;
+
+// Similar structure PDC_region_info_t defined in pdc_obj_pkg.h
+// TODO: currently only support upto four dimensions
+typedef struct {
+    size_t ndim;
+    uint64_t start_0, start_1, start_2, start_3;
+    uint64_t count_0, count_1, count_2, count_3;
+    uint64_t stride_0, stride_1, stride_2, stride_3;
+} region_info_transfer_t;
 
 // For storing metadata
 typedef struct pdc_metadata_t {
@@ -43,6 +64,9 @@ typedef struct pdc_metadata_t {
 
     char    tags[128];
     char    data_location[ADDR_MAX];
+
+    // For region lock
+    region_list_t *region_lock_head;
 
     // For hash table list
     struct pdc_metadata_t *prev;
@@ -68,19 +92,6 @@ typedef struct pdc_metadata_transfer_t {
     /* time_t      last_modified_time; */
 } pdc_metadata_transfer_t;
 
-// Similar structure PDC_region_info_t defined in pdc_obj_pkg.h
-// TODO: currently only support upto four dimensions
-typedef struct {
-    size_t ndim;
-    uint64_t start_0, start_1, start_2, start_3;
-    uint64_t count_0, count_1, count_2, count_3;
-    uint64_t stride_0, stride_1, stride_2, stride_3;
-} region_info_transfer_t;
-
-typedef enum {
-    PDC_LOCK_OP_OBTAIN  = 0,
-    PDC_LOCK_OP_RELEASE = 1
-} PDC_lock_op_t;
 
 #ifdef HG_HAS_BOOST
 MERCURY_GEN_STRUCT_PROC( pdc_metadata_transfer_t, ((int32_t)(user_id)) ((int32_t)(time_step)) ((uint64_t)(obj_id)) ((int32_t)(ndim)) ((uint64_t)(dims[DIM_MAX])) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((hg_const_string_t)(data_location)) ((hg_const_string_t)(tags)) )
@@ -109,10 +120,9 @@ MERCURY_GEN_PROC( metadata_delete_out_t, ((int32_t)(ret)) )
 MERCURY_GEN_PROC( metadata_update_in_t, ((uint64_t)(obj_id)) ((uint32_t)(hash_value)) ((pdc_metadata_transfer_t)(new_metadata)) )
 MERCURY_GEN_PROC( metadata_update_out_t, ((int32_t)(ret)) )
 
-    //TODO
-MERCURY_GEN_STRUCT_PROC( region_info_transfer_t, ((size_t)(ndim)) ((uint64_t)(start_0)) ((uint64_t)(start_1)) ((uint64_t)(start_2)) ((uint64_t)(start_3))  ((uint64_t)(count)) ((uint64_t)(count_1)) ((uint64_t)(count_2) ((uint64_t)(count_3) ((uint64_t)(stride_0) ((uint64_t)(stride_1) ((uint64_t)(stride_2) ((uint64_t)(stride_3) )
+MERCURY_GEN_STRUCT_PROC( region_info_transfer_t, ((hg_size_t)(ndim)) ((uint64_t)(start_0)) ((uint64_t)(start_1)) ((uint64_t)(start_2)) ((uint64_t)(start_3))  ((uint64_t)(count_0)) ((uint64_t)(count_1)) ((uint64_t)(count_2)) ((uint64_t)(count_3)) ((uint64_t)(stride_0)) ((uint64_t)(stride_1)) ((uint64_t)(stride_2)) ((uint64_t)(stride_3)) )
 
-MERCURY_GEN_PROC( region_lock_in_t, ((uint64_t)(obj_id)) ((int32_t)(lock_id)) ((region_info_transfer_t)(region)) )
+MERCURY_GEN_PROC( region_lock_in_t, ((uint64_t)(obj_id)) ((int32_t)(lock_op)) ((region_info_transfer_t)(region)) )
 MERCURY_GEN_PROC( region_lock_out_t, ((int32_t)(ret)) )
 
 #else
