@@ -1724,7 +1724,7 @@ done:
 }
 
 // Multithread Mercury
-perr_t PDC_Server_multithread_loop(hg_class_t *class, hg_context_t *context)
+static perr_t PDC_Server_multithread_loop(hg_class_t *class, hg_context_t *context)
 {
     FUNC_ENTER(NULL);
 
@@ -1753,7 +1753,7 @@ done:
 }
 
 // No threading
-perr_t PDC_Server_loop(hg_class_t *hg_class, hg_context_t *hg_context)
+static perr_t PDC_Server_loop(hg_class_t *hg_class, hg_context_t *hg_context)
 {
     FUNC_ENTER(NULL);
     perr_t ret_value;
@@ -1788,8 +1788,65 @@ perr_t PDC_Server_loop(hg_class_t *hg_class, hg_context_t *hg_context)
 done:
     FUNC_LEAVE(ret_value);
 }
+    /* For 1D boxes (intervals) we have: */
+    /* box1 = (xmin1, xmax1) */
+    /* box2 = (xmin2, xmax2) */
+    /* overlapping1D(box1,box2) = xmax1 >= xmin2 and xmax2 >= xmin1 */
+    /* For 2D boxes (rectangles) we have: */
 
-int is_region_overlap(region_list_t *a, region_list_t *b)
+    /* box1 = (x:(xmin1,xmax1),y:(ymin1,ymax1)) */
+    /* box2 = (x:(xmin2,xmax2),y:(ymin2,ymax2)) */
+    /* overlapping2D(box1,box2) = overlapping1D(box1.x, box2.x) and */ 
+    /*                            overlapping1D(box1.y, box2.y) */
+    /* For 3D boxes we have: */
+
+    /* box1 = (x:(xmin1,xmax1),y:(ymin1,ymax1),z:(zmin1,zmax1)) */
+    /* box2 = (x:(xmin2,xmax2),y:(ymin2,ymax2),z:(zmin2,zmax2)) */
+    /* overlapping3D(box1,box2) = overlapping1D(box1.x, box2.x) and */ 
+    /*                            overlapping1D(box1.y, box2.y) and */
+    /*                            overlapping1D(box1.z, box2.z) */
+ 
+static int is_overlap_1D(uint64_t xmin1, uint64_t xmax1, uint64_t xmin2, uint64_t xmax2)
+{
+    int ret_value = -1;
+
+    if (xmax1 >= xmin2 && xmax2 >= xmin1) {
+        ret_value = 1;
+    }
+
+    return ret_value;
+}
+
+static int is_overlap_2D(uint64_t xmin1, uint64_t xmax1, uint64_t ymin1, uint64_t ymax1, 
+                         uint64_t xmin2, uint64_t xmax2, uint64_t ymin2, uint64_t ymax2)
+{
+    int ret_value = -1;
+    /* if (is_overlap_1D(box1.x, box2.x) == 1 && is_overlap_1D(box1.y, box2.y) == 1) { */
+    if (is_overlap_1D(xmin1, xmax1, xmin2, xmax2 ) == 1 &&                              
+        is_overlap_1D(ymin1, ymax1, ymin2, ymax2) == 1) {
+        ret_value = 1;
+    }
+
+    return ret_value;
+}
+
+static int is_overlap_3D(uint64_t xmin1, uint64_t xmax1, uint64_t ymin1, uint64_t ymax1, uint64_t zmin1, uint64_t zmax1,
+                         uint64_t xmin2, uint64_t xmax2, uint64_t ymin2, uint64_t ymax2, uint64_t zmin2, uint64_t zmax2)
+{
+    int ret_value = -1;
+    /* if (is_overlap_1D(box1.x, box2.x) == 1 && is_overlap_1D(box1.y, box2.y) == 1) { */
+    if (is_overlap_1D(xmin1, xmax1, xmin2, xmax2) == 1 && 
+        is_overlap_1D(ymin1, ymax1, ymin2, ymax2) == 1 && 
+        is_overlap_1D(zmin1, zmax1, zmin2, zmax2) == 1 ) 
+    {
+        ret_value = 1;
+    }
+
+    return ret_value;
+}
+
+
+static int is_contiguous_region_overlap(region_list_t *a, region_list_t *b)
 {
     FUNC_ENTER(NULL);
     int ret_value = 1;
@@ -1800,32 +1857,69 @@ int is_region_overlap(region_list_t *a, region_list_t *b)
         goto done;
     }
 
-    if (a->ndim != b->ndim) {
+    if (a->ndim != b->ndim || a->ndim == 0 || b->ndim == 0) {
         ret_value = -1;
         goto done;
     }
 
-    // TODO: real region overlap check
-    int i;
-    for (i = 0; i < a->ndim; i++) {
-        if (a->start[i] == b->start[i] && a->count[i] == b->count[i] && a->stride[i] == b->stride[i] ) {
-            ret_value = 1;
-            goto done;
-        }
-    }
+    // TODO: stride is not supported yet
+   
+    uint64_t xmin1, xmin2, xmax1, xmax2;
+    uint64_t ymin1, ymin2, ymax1, ymax2;
+    uint64_t zmin1, zmin2, zmax1, zmax2;
+    uint64_t mmin1, mmin2, mmax1, mmax2;
 
-    ret_value = -1;
+    if (a->ndim >= 1) {
+        xmin1 = a->start[0];
+        xmax1 = a->start[0] + a->count[0] - 1;
+        xmin2 = b->start[0];
+        xmax2 = b->start[0] + b->count[0] - 1;
+        /* printf("xmin1, xmax1, xmin2, xmax2: %llu %llu %llu %llu\n", xmin1, xmax1, xmin2, xmax2); */
+    }
+    if (a->ndim >= 2) {
+        ymin1 = a->start[1];
+        ymax1 = a->start[1] + a->count[1] - 1;
+        ymin2 = b->start[1];
+        ymax2 = b->start[1] + b->count[1] - 1;
+        /* printf("ymin1, ymax1, ymin2, ymax2: %llu %llu %llu %llu\n", ymin1, ymax1, ymin2, ymax2); */
+    }
+    if (a->ndim >= 3) {
+        zmin1 = a->start[2];
+        zmax1 = a->start[2] + a->count[2] - 1;
+        zmin2 = b->start[2];
+        zmax2 = b->start[2] + b->count[2] - 1;
+        /* printf("zmin1, zmax1, zmin2, zmax2: %llu %llu %llu %llu\n", zmin1, zmax1, zmin2, zmax2); */
+    }
+    if (a->ndim >= 4) {
+        mmin1 = a->start[3];
+        mmax1 = a->start[3] + a->count[3] - 1;
+        mmin2 = b->start[3];
+        mmax2 = b->start[3] + b->count[3] - 1;
+    }
+ 
+    if (a->ndim == 1) {
+        ret_value = is_overlap_1D(xmin1, xmax1, xmin2, xmax2);
+    }
+    else if (a->ndim == 2) {
+        ret_value = is_overlap_2D(xmin1, xmax1, ymin1, ymax1, xmin2, xmax2, ymin2, ymax2);
+    }
+    else if (a->ndim == 3) {
+        ret_value = is_overlap_3D(xmin1, xmax1, ymin1, ymax1, zmin1, zmax2, xmin2, xmax2, ymin2, ymax2, zmin2, zmax2);
+    }
+    else if (a->ndim == 4) {
+        //TODO: support 4D
+        /* ret_value = is_overlap_4D(xmin1, xmax1, xmin2, xmax2); */
+    }
 
 done:
     FUNC_LEAVE(ret_value);
 }
 
 
-int is_region_identical(region_list_t *a, region_list_t *b)
+static int is_region_identical(region_list_t *a, region_list_t *b)
 {
     FUNC_ENTER(NULL);
     int ret_value = -1;
-
 
     if (a == NULL || b == NULL) {
         printf("==PDC_SERVER: is_region_identical() - passed NULL value!\n");
@@ -1907,8 +2001,9 @@ perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
     if (lock_op == PDC_LOCK_OP_OBTAIN) {
         printf("==PDC_SERVER: obtaining lock ... ");
         // Go through all existing locks to check for overlapping
+        // Note: currently only assumes contiguous region
         DL_FOREACH(target_obj->region_lock_head, elt) {
-            if (is_region_overlap(elt, request_region) == 1) {
+            if (is_contiguous_region_overlap(elt, request_region) == 1) {
                 printf("rejected! (found overlapping regions)\n");
                 out->ret = -1;
                 goto done;

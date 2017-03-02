@@ -1169,16 +1169,24 @@ uint64_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *
 
     // Test
     PDC_region_info_t region_info;
-    uint64_t start[3] = {11,22,33}; 
-    uint64_t count[3] = {100,200,300}; 
+    uint64_t start[3] = {10,10,10}; 
+    uint64_t count[3] = {10,10,10}; 
     region_info.ndim = 3;
     region_info.offset = &start[0];
     region_info.size   = &count[0];
 
+    PDC_region_info_t region_info1;
+    uint64_t start1[3] = {11,11,11}; 
+    uint64_t count1[3] = {5,5,5}; 
+    region_info1.ndim = 3;
+    region_info1.offset = &start1[0];
+    region_info1.size   = &count1[0];
+
+
     PDC_Client_obtain_region_lock(pdc, cont_id, lookup_args.obj_id, &region_info);
-    PDC_Client_obtain_region_lock(pdc, cont_id, lookup_args.obj_id, &region_info);
+    PDC_Client_obtain_region_lock(pdc, cont_id, lookup_args.obj_id, &region_info1);
     PDC_Client_release_region_lock(pdc, cont_id, lookup_args.obj_id, &region_info);
-    PDC_Client_obtain_region_lock(pdc, cont_id, lookup_args.obj_id, &region_info);
+    PDC_Client_obtain_region_lock(pdc, cont_id, lookup_args.obj_id, &region_info1);
 
 done:
     FUNC_LEAVE(ret_value);
