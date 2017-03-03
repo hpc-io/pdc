@@ -1340,7 +1340,7 @@ done:
 
 /* , uint64_t *block */
 perr_t PDC_Client_obtain_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_id, PDC_region_info_t *region_info, 
-                                    PDC_access_t access_type, PDC_lock_mode_t lock_mode, pbool_t *aquired)
+                                    PDC_access_t access_type, PDC_lock_mode_t lock_mode, pbool_t *obtained)
 {
     FUNC_ENTER(NULL);
     perr_t ret_value = FAIL;
