@@ -13,6 +13,7 @@ typedef struct PDC_obj_info_t {
     pdcid_t     cont;
     pdcid_t     obj_prop;
     bool        mapping;
+    pdcid_t     meta_id;
 }PDC_obj_info_t;
 
 typedef struct {

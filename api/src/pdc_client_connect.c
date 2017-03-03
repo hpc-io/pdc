@@ -1042,12 +1042,13 @@ done:
 }
 
 // Send a name to server and receive an obj id
-uint64_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop)
+perr_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop, pdcid_t *meta_id)
 {
 
     FUNC_ENTER(NULL);
 
-    uint64_t ret_value;
+    perr_t ret_value = FAIL;
+    hg_return_t hg_ret;
     uint32_t server_id, base_server_id;
     int i;
 
@@ -1146,8 +1147,8 @@ uint64_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *
 
     /* printf("Sending input to target\n"); */
     struct client_lookup_args lookup_args;
-    ret_value = HG_Forward(pdc_server_info_g[server_id].rpc_handle, client_rpc_cb, &lookup_args, &in);
-    if (ret_value != HG_SUCCESS) {
+    hg_ret = HG_Forward(pdc_server_info_g[server_id].rpc_handle, client_rpc_cb, &lookup_args, &in);
+    if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "PDC_Client_send_name_to_server(): Could not start HG_Forward()\n");
         return EXIT_FAILURE;
     }
@@ -1164,29 +1165,8 @@ uint64_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *
     /* printf("Received obj_id=%llu\n", lookup_args.obj_id); */
     /* fflush(stdout); */
 
-
-    ret_value = lookup_args.obj_id;
-
-    // Test
-    PDC_region_info_t region_info;
-    uint64_t start[3] = {10,10,10}; 
-    uint64_t count[3] = {10,10,10}; 
-    region_info.ndim = 3;
-    region_info.offset = &start[0];
-    region_info.size   = &count[0];
-
-    PDC_region_info_t region_info1;
-    uint64_t start1[3] = {11,11,11}; 
-    uint64_t count1[3] = {5,5,5}; 
-    region_info1.ndim = 3;
-    region_info1.offset = &start1[0];
-    region_info1.size   = &count1[0];
-
-
-    PDC_Client_obtain_region_lock(pdc, cont_id, lookup_args.obj_id, &region_info);
-    PDC_Client_obtain_region_lock(pdc, cont_id, lookup_args.obj_id, &region_info1);
-    PDC_Client_release_region_lock(pdc, cont_id, lookup_args.obj_id, &region_info);
-    PDC_Client_obtain_region_lock(pdc, cont_id, lookup_args.obj_id, &region_info1);
+    *meta_id = lookup_args.obj_id;
+    ret_value = SUCCEED;
 
 done:
     FUNC_LEAVE(ret_value);
@@ -1258,7 +1238,7 @@ done:
 }
 
 // General function for obtain/release region lock
-static perr_t PDC_Client_region_lock(pdcid_t pdc, pdcid_t cont_id, uint64_t meta_id, PDC_region_info_t *region_info, int lock_op)
+static perr_t PDC_Client_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_id, PDC_region_info_t *region_info, int lock_op, pbool_t *status)
 {
     FUNC_ENTER(NULL);
     perr_t ret_value;
@@ -1346,33 +1326,79 @@ static perr_t PDC_Client_region_lock(pdcid_t pdc, pdcid_t cont_id, uint64_t meta
 
     // Now the return value is stored in lookup_args.ret
     if (lookup_args.ret == 1) {
+        *status = TRUE;
         ret_value = SUCCEED;
     }
-    else
+    else {
+        *status = FALSE;
         ret_value = FAIL;
+    }
 
 done:
     FUNC_LEAVE(ret_value);
 }
 
 /* , uint64_t *block */
-perr_t PDC_Client_obtain_region_lock(pdcid_t pdc, pdcid_t cont_id, uint64_t meta_id, PDC_region_info_t *region_info)
+perr_t PDC_Client_obtain_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_id, PDC_region_info_t *region_info, 
+                                    PDC_access_t access_type, PDC_lock_mode_t lock_mode, pbool_t *aquired)
 {
     FUNC_ENTER(NULL);
+    perr_t ret_value = FAIL;
 
-    perr_t ret_value;
-    ret_value = PDC_Client_region_lock(pdc, cont_id, meta_id, region_info, PDC_LOCK_OP_OBTAIN);
+    /* printf("meta_id=%llu\n", meta_id); */
 
+    if (access_type == READ ) {
+        // TODO: currently does not perform local lock
+        ret_value = SUCCEED;
+        *aquired  = TRUE;
+        goto done;
+    }
+    else if (access_type == WRITE) {
+        
+        if (lock_mode == BLOCK) {
+            // TODO: currently the client would keep trying to send lock request
+            while (1) {
+                ret_value = PDC_Client_region_lock(pdc, cont_id, meta_id, region_info, PDC_LOCK_OP_OBTAIN, aquired);
+                if (*aquired == TRUE) {
+                    ret_value = SUCCEED;
+                    goto done;
+                }
+                printf("==PDC_CLIENT: cannot obtain lock an this moment, keep trying...\n");
+                fflush(stdout);
+                sleep(1);
+            }
+        }
+        else if (lock_mode == NOBLOCK) {
+            ret_value = PDC_Client_region_lock(pdc, cont_id, meta_id, region_info, PDC_LOCK_OP_OBTAIN, aquired);
+            goto done;
+        }
+        else {
+            printf("==PDC_CLIENT: PDC_Client_obtain_region_lock - unknown lock mode (can only be BLOCK or NOBLOCK)\n");
+            ret_value = FAIL;
+            goto done;
+        }
+    }
+    else {
+        printf("==PDC_CLIENT: PDC_Client_obtain_region_lock - unknown access type (can only be READ or WRITE)\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    ret_value = SUCCEED;
 done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_release_region_lock(pdcid_t pdc, pdcid_t cont_id, uint64_t meta_id, PDC_region_info_t *region_info)
+perr_t PDC_Client_release_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_id, PDC_region_info_t *region_info, pbool_t *released)
 {
     FUNC_ENTER(NULL);
 
-    perr_t ret_value;
-    ret_value = PDC_Client_region_lock(pdc, cont_id, meta_id, region_info, PDC_LOCK_OP_RELEASE);
+    perr_t ret_value = FAIL;
+
+    /* uint64_t meta_id; */
+    /* PDC_obj_info_t *obj_prop = PDCobj_get_info(obj_id, pdc); */
+    /* meta_id = obj_prop->meta_id; */
+    ret_value = PDC_Client_region_lock(pdc, cont_id, meta_id, region_info, PDC_LOCK_OP_RELEASE, released);
 
 done:
     FUNC_LEAVE(ret_value);

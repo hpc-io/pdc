@@ -1845,7 +1845,25 @@ static int is_overlap_3D(uint64_t xmin1, uint64_t xmax1, uint64_t ymin1, uint64_
     return ret_value;
 }
 
+static int is_overlap_4D(uint64_t xmin1, uint64_t xmax1, uint64_t ymin1, uint64_t ymax1, uint64_t zmin1, uint64_t zmax1,
+                         uint64_t mmin1, uint64_t mmax1,
+                         uint64_t xmin2, uint64_t xmax2, uint64_t ymin2, uint64_t ymax2, uint64_t zmin2, uint64_t zmax2,
+                         uint64_t mmin2, uint64_t mmax2 )
+{
+    int ret_value = -1;
+    /* if (is_overlap_1D(box1.x, box2.x) == 1 && is_overlap_1D(box1.y, box2.y) == 1) { */
+    if (is_overlap_1D(xmin1, xmax1, xmin2, xmax2) == 1 && 
+        is_overlap_1D(ymin1, ymax1, ymin2, ymax2) == 1 && 
+        is_overlap_1D(zmin1, zmax1, zmin2, zmax2) == 1 && 
+        is_overlap_1D(mmin1, mmax1, mmin2, mmax2) == 1 ) 
+    {
+        ret_value = 1;
+    }
 
+    return ret_value;
+}
+
+// TODO: stride is not supported yet
 static int is_contiguous_region_overlap(region_list_t *a, region_list_t *b)
 {
     FUNC_ENTER(NULL);
@@ -1857,13 +1875,12 @@ static int is_contiguous_region_overlap(region_list_t *a, region_list_t *b)
         goto done;
     }
 
-    if (a->ndim != b->ndim || a->ndim == 0 || b->ndim == 0) {
+    /* printf("==PDC_SERVER: is_contiguous_region_overlap adim=%d, bdim=%d\n", a->ndim, b->ndim); */
+    if (a->ndim != b->ndim || a->ndim <= 0 || b->ndim <= 0) {
         ret_value = -1;
         goto done;
     }
 
-    // TODO: stride is not supported yet
-   
     uint64_t xmin1, xmin2, xmax1, xmax2;
     uint64_t ymin1, ymin2, ymax1, ymax2;
     uint64_t zmin1, zmin2, zmax1, zmax2;
@@ -1907,8 +1924,7 @@ static int is_contiguous_region_overlap(region_list_t *a, region_list_t *b)
         ret_value = is_overlap_3D(xmin1, xmax1, ymin1, ymax1, zmin1, zmax2, xmin2, xmax2, ymin2, ymax2, zmin2, zmax2);
     }
     else if (a->ndim == 4) {
-        //TODO: support 4D
-        /* ret_value = is_overlap_4D(xmin1, xmax1, xmin2, xmax2); */
+        ret_value = is_overlap_4D(xmin1, xmax1, ymin1, ymax1, zmin1, zmax2, mmin1, mmax1, xmin2, xmax2, ymin2, ymax2, zmin2, zmax2, mmin2, mmax2);
     }
 
 done:
@@ -2039,6 +2055,7 @@ perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
     out->ret = 1;
 
 done:
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
