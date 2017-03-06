@@ -1350,7 +1350,7 @@ perr_t PDC_Client_obtain_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_
     if (access_type == READ ) {
         // TODO: currently does not perform local lock
         ret_value = SUCCEED;
-        *aquired  = TRUE;
+        *obtained  = TRUE;
         goto done;
     }
     else if (access_type == WRITE) {
@@ -1358,8 +1358,8 @@ perr_t PDC_Client_obtain_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_
         if (lock_mode == BLOCK) {
             // TODO: currently the client would keep trying to send lock request
             while (1) {
-                ret_value = PDC_Client_region_lock(pdc, cont_id, meta_id, region_info, PDC_LOCK_OP_OBTAIN, aquired);
-                if (*aquired == TRUE) {
+                ret_value = PDC_Client_region_lock(pdc, cont_id, meta_id, region_info, PDC_LOCK_OP_OBTAIN, obtained);
+                if (*obtained == TRUE) {
                     ret_value = SUCCEED;
                     goto done;
                 }
@@ -1369,7 +1369,7 @@ perr_t PDC_Client_obtain_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_
             }
         }
         else if (lock_mode == NOBLOCK) {
-            ret_value = PDC_Client_region_lock(pdc, cont_id, meta_id, region_info, PDC_LOCK_OP_OBTAIN, aquired);
+            ret_value = PDC_Client_region_lock(pdc, cont_id, meta_id, region_info, PDC_LOCK_OP_OBTAIN, obtained);
             goto done;
         }
         else {
