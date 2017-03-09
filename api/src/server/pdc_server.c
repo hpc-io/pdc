@@ -1764,6 +1764,7 @@ static perr_t PDC_Server_loop(hg_class_t *hg_class, hg_context_t *hg_context)
     do {
         unsigned int actual_count = 0;
         do {
+            /* hg_ret = HG_Trigger(hg_context, 1024/1* timeout *1/, 4096/1* max count *1/, &actual_count); */
             hg_ret = HG_Trigger(hg_context, 0/* timeout */, 1 /* max count */, &actual_count);
         } while ((hg_ret == HG_SUCCESS) && actual_count);
 
@@ -2015,12 +2016,12 @@ perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
 
     region_list_t *elt, *tmp;
     if (lock_op == PDC_LOCK_OP_OBTAIN) {
-        printf("==PDC_SERVER: obtaining lock ... ");
+        /* printf("==PDC_SERVER: obtaining lock ... "); */
         // Go through all existing locks to check for overlapping
         // Note: currently only assumes contiguous region
         DL_FOREACH(target_obj->region_lock_head, elt) {
             if (is_contiguous_region_overlap(elt, request_region) == 1) {
-                printf("rejected! (found overlapping regions)\n");
+                /* printf("rejected! (found overlapping regions)\n"); */
                 out->ret = -1;
                 goto done;
             }
@@ -2028,23 +2029,23 @@ perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
         // No overlaps found
         DL_APPEND(target_obj->region_lock_head, request_region);
         out->ret = 1;
-        printf("granted\n");
+        /* printf("granted\n"); */
         goto done;
     }
     else if (lock_op == PDC_LOCK_OP_RELEASE) {
-        printf("==PDC_SERVER: releasing lock ... ");
+        /* printf("==PDC_SERVER: releasing lock ... "); */
         // Find the lock region in the list and remove it
         DL_FOREACH_SAFE(target_obj->region_lock_head, elt, tmp) {
             if (is_region_identical(request_region, elt) == 1) {
                 // Found the requested region lock, remove from the linked list
                 DL_DELETE(target_obj->region_lock_head, elt);
                 out->ret = 1;
-                printf("released!\n");
+                /* printf("released!\n"); */
                 goto done;
             }
         }
         // Request release lock region not found
-        printf("requested release region/object does not exist\n");
+        /* printf("requested release region/object does not exist\n"); */
     }
     else {
         printf("==PDC_SERVER: lock opreation %d not supported!\n", in->lock_op);
@@ -2074,27 +2075,29 @@ perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key,
     PDC_Server_metadata_init(&metadata);
 
     char *name;
-    // TODO: this is temp solution to convert "Obj_%d" to name="Obj_" and time_step=%d
-    //       will need to delete once Kimmy adds the pdc_prop related functions
-    int i, obj_name_len;
-    uint32_t tmp_time_step = 0;
-    obj_name_len = strlen(obj_name);
-    char *tmp_obj_name = (char*)malloc(sizeof(char) * (obj_name_len+1));
-    strcpy(tmp_obj_name, obj_name);
-    for (i = 0; i < obj_name_len; i++) {
-        if (isdigit(obj_name[i])) {
-            tmp_time_step = atoi(obj_name+i);
-            /* printf("Converted [%s] = %d\n", obj_name, tmp_time_step); */
-            tmp_obj_name[i] = 0;
-            break;
-        }
-    }
-    total_mem_usage += (sizeof(char) * (obj_name_len+1));
+    /* // TODO: this is temp solution to convert "Obj_%d" to name="Obj_" and time_step=%d */
+    /* //       will need to delete once Kimmy adds the pdc_prop related functions */
+    /* int i, obj_name_len; */
+    /* uint32_t tmp_time_step = 0; */
+    /* obj_name_len = strlen(obj_name); */
+    /* char *tmp_obj_name = (char*)malloc(sizeof(char) * (obj_name_len+1)); */
+    /* strcpy(tmp_obj_name, obj_name); */
+    /* for (i = 0; i < obj_name_len; i++) { */
+    /*     if (isdigit(obj_name[i])) { */
+    /*         tmp_time_step = atoi(obj_name+i); */
+    /*         /1* printf("Converted [%s] = %d\n", obj_name, tmp_time_step); *1/ */
+    /*         tmp_obj_name[i] = 0; */
+    /*         break; */
+    /*     } */
+    /* } */
+    /* total_mem_usage += (sizeof(char) * (obj_name_len+1)); */
+    /* name = tmp_obj_name; */
 
-    name = tmp_obj_name;
+    name = obj_name;
 
     strcpy(metadata.obj_name, name);
-    metadata.time_step = tmp_time_step;
+    /* metadata.time_step = tmp_time_step; */
+    metadata.time_step = 0;
 
     /* printf("==PDC_SERVER[%d]: search with name [%s], hash value %u\n", pdc_server_rank_g, name, hash_key); */
     /* fflush(stdout); */

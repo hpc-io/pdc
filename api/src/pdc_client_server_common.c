@@ -288,6 +288,7 @@ HG_TEST_RPC_CB(metadata_query, handle)
     // TODO check DHT for query result
     HG_Get_input(handle, &in);
     /* printf("==PDC_SERVER: Received query with name: %s, hash value: %u\n", in.obj_name, in.hash_value); */
+    /* fflush(stdout); */
     PDC_Server_search_with_name_hash(in.obj_name, in.hash_value, &query_result);
 
     if (query_result != NULL) {

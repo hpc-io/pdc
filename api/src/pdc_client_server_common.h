@@ -92,6 +92,27 @@ typedef struct pdc_metadata_transfer_t {
     /* time_t      last_modified_time; */
 } pdc_metadata_transfer_t;
 
+typedef struct metadata_query_t {
+    int     user_id;                // Both server and client gets it and do security check
+    char    app_name[ADDR_MAX];
+    char    obj_name[ADDR_MAX];
+
+    int     time_step_from;
+    int     time_step_to;
+
+    int     ndim;
+
+    time_t  create_time_from;
+    time_t  create_time_to;
+    time_t  last_modified_time_from;
+    time_t  last_modified_time_to;
+
+    char    tags[128];
+} metadata_query_constraint_t;
+
+typedef struct metadata_query_transfer_t{
+    metadata_query_constraint_t query_constraint;
+} metadata_query_transfer_t;
 
 #ifdef HG_HAS_BOOST
 MERCURY_GEN_STRUCT_PROC( pdc_metadata_transfer_t, ((int32_t)(user_id)) ((int32_t)(time_step)) ((uint64_t)(obj_id)) ((int32_t)(ndim)) ((uint64_t)(dims[DIM_MAX])) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((hg_const_string_t)(data_location)) ((hg_const_string_t)(tags)) )
@@ -107,6 +128,10 @@ MERCURY_GEN_PROC( client_test_connect_out_t, ((int32_t)(ret))  )
 
 MERCURY_GEN_PROC( close_server_in_t,  ((int32_t)(client_id)) )
 MERCURY_GEN_PROC( close_server_out_t, ((int32_t)(ret))  )
+
+MERCURY_GEN_STRUCT_PROC( metadata_query_transfer_t, ((int32_t)(user_id)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((int32_t)(time_step_from)) ((int32_t)(time_step_to)) ((int32_t)(ndim)) ((int32_t)(create_time_from)) ((int32_t)(create_time_to)) ((int32_t)(last_modified_time_from)) ((int32_t)(last_modified_time_to)) ((hg_const_string_t)(tags)) )
+MERCURY_GEN_PROC( metadata_query_transfer_in_t, ((metadata_query_constraint_t)(query_constraint)) )
+MERCURY_GEN_PROC( metadata_query_transfer_out_t, ((int32_t)(ret)) )
 
 MERCURY_GEN_PROC( metadata_query_in_t, ((hg_const_string_t)(obj_name)) ((uint32_t)(hash_value)) )
 MERCURY_GEN_PROC( metadata_query_out_t, ((pdc_metadata_transfer_t)(ret)) )
@@ -153,8 +178,6 @@ typedef struct {
 typedef struct {
     int32_t            ret;
 } metadata_delete_by_id_out_t;
-
-// TODO
 
 typedef struct {
     uint64_t                    obj_id;
@@ -289,6 +312,110 @@ typedef struct {
     int32_t            ret;
 } metadata_delete_out_t;
 
+/* MERCURY_GEN_STRUCT_PROC( metadata_query_transfer_t, ((int32_t)(user_id)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((int32_t)(time_step_from)) ((int32_t)(time_step_to)) ((int32_t)(ndim)) ((int32_t)(create_time_from)) ((int32_t)(create_time_to)) ((int32_t)(last_modified_time_from)) ((int32_t)(last_modified_time_to)) ((hg_const_string_t)(tags)) ) */
+/* MERCURY_GEN_PROC( metadata_query_transfer_in_t, ((metadata_query_constraint_t)(query_constraint)) ) */
+/* MERCURY_GEN_PROC( metadata_query_transfer_out_t, ((int32_t)(ret)) ) */
+static HG_INLINE hg_return_t
+hg_proc_metadata_query_transfer_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    metadata_query_constraint_t *struct_data = (metadata_query_constraint_t*) data;
+
+    ret = hg_proc_uint32_t(proc, &struct_data->user_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->app_name);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->time_step_from);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->time_step_to);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint32_t(proc, &struct_data->ndim);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->create_time_from);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->create_time_to);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->last_modified_time_from);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->last_modified_time_to);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->tags);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+typedef struct {
+    metadata_query_constraint_t query_constraint;
+} metadata_query_transfer_in_t;
+
+typedef struct {
+    int32_t            ret;
+} metadata_query_transfer_out_t;
+
+static HG_INLINE hg_return_t
+hg_proc_metadata_query_transfer_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    metadata_query_transfer_in_t *struct_data = (metadata_query_transfer_in_t*) data;
+
+    ret = hg_proc_metadata_query_transfer_t(proc, &struct_data->query_constraint);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_metadata_query_transfer_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    metadata_query_transfer_out_t *struct_data = (metadata_query_transfer_out_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+
 static HG_INLINE hg_return_t
 hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
 {
@@ -307,11 +434,11 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
     }
-    ret = hg_proc_uint32_t(proc, &struct_data->ndim);
+    ret = hg_proc_int32_t(proc, &struct_data->time_step);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
     }
-    ret = hg_proc_uint32_t(proc, &struct_data->time_step);
+    ret = hg_proc_uint32_t(proc, &struct_data->ndim);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
     }
