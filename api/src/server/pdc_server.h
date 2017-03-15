@@ -15,6 +15,8 @@
 
 #define CREATE_BLOOM_THRESHOLD 64
 
+extern hg_class_t *hg_class_g;
+
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out);
 /* perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out); */
 perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out);

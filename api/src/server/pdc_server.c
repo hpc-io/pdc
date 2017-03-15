@@ -45,6 +45,9 @@ hg_thread_mutex_t pdc_bloom_time_mutex_g;
 #define BLOOM_REMOVE counting_bloom_remove
 #define BLOOM_FREE   free_counting_bloom
 
+hg_class_t *hg_class_g = NULL;
+hg_context_t *hg_context_g = NULL;
+
 // Global thread pool
 hg_thread_pool_t *hg_test_thread_pool_g = NULL;
 
@@ -1764,8 +1767,8 @@ static perr_t PDC_Server_loop(hg_class_t *hg_class, hg_context_t *hg_context)
     do {
         unsigned int actual_count = 0;
         do {
-            /* hg_ret = HG_Trigger(hg_context, 1024/1* timeout *1/, 4096/1* max count *1/, &actual_count); */
-            hg_ret = HG_Trigger(hg_context, 0/* timeout */, 1 /* max count */, &actual_count);
+            hg_ret = HG_Trigger(hg_context, 1024/* timeout */, 4096/* max count */, &actual_count);
+            /* hg_ret = HG_Trigger(hg_context, 0/1* timeout *1/, 1 /1* max count *1/, &actual_count); */
         } while ((hg_ret == HG_SUCCESS) && actual_count);
 
         /* Do not try to make progress anymore if we're done */
@@ -2159,8 +2162,8 @@ int main(int argc, char *argv[])
     pdc_server_size_g = 1;
 #endif
 
-    hg_class_t *hg_class = NULL;
-    hg_context_t *hg_context = NULL;
+    /* hg_class_t *hg_class = NULL; */
+    /* hg_context_t *hg_context = NULL; */
 
     int port;
     is_restart_g = 0;
@@ -2194,23 +2197,25 @@ int main(int argc, char *argv[])
         if (strcmp(argv[1], "restart") == 0) 
             is_restart_g = 1;
     }
-    ret = PDC_Server_init(port, &hg_class, &hg_context);
-    if (ret != SUCCEED || hg_class == NULL || hg_context == NULL) {
+    ret = PDC_Server_init(port, &hg_class_g, &hg_context_g);
+    if (ret != SUCCEED || hg_class_g == NULL || hg_context_g == NULL) {
         printf("Error with Mercury init, exit...\n");
         ret = FAIL;
         goto done;
     }
 
     // Register RPC
-    client_test_connect_register(hg_class);
-    gen_obj_id_register(hg_class);
-    close_server_register(hg_class);
-    /* send_obj_name_marker_register(hg_class); */
-    metadata_query_register(hg_class);
-    metadata_delete_register(hg_class);
-    metadata_delete_by_id_register(hg_class);
-    metadata_update_register(hg_class);
-    region_lock_register(hg_class);
+    client_test_connect_register(hg_class_g);
+    gen_obj_id_register(hg_class_g);
+    close_server_register(hg_class_g);
+    /* send_obj_name_marker_register(hg_class_g); */
+    metadata_query_register(hg_class_g);
+    metadata_delete_register(hg_class_g);
+    metadata_delete_by_id_register(hg_class_g);
+    metadata_update_register(hg_class_g);
+    region_lock_register(hg_class_g);
+    //bulk
+    client_send_recv_register(hg_class_g);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -2229,14 +2234,14 @@ int main(int argc, char *argv[])
     fflush(stdout);
 
 #ifdef ENABLE_MULTITHREAD
-    PDC_Server_multithread_loop(hg_class, hg_context);
+    PDC_Server_multithread_loop(hg_class_g, hg_context_g);
 #else
-    PDC_Server_loop(hg_class, hg_context);
+    PDC_Server_loop(hg_class_g, hg_context_g);
 #endif
 
     // Finalize 
-    HG_Context_destroy(hg_context);
-    HG_Finalize(hg_class);
+    HG_Context_destroy(hg_context_g);
+    HG_Finalize(hg_class_g);
 
     // TODO: instead of checkpoint at app finalize time, try checkpoint with a time countdown or # of objects
     char checkpoint_file[PATH_MAX];

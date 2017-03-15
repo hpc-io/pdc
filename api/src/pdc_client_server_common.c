@@ -167,6 +167,7 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
 perr_t delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_id_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out) {return SUCCEED;}
+hg_class_t *hg_class_g;
 #endif
 
 /*
@@ -484,6 +485,104 @@ HG_TEST_RPC_CB(region_lock, handle)
 done:
     FUNC_LEAVE(ret_value);
 }
+
+// Bulk
+/* static hg_return_t */
+/* client_send_recv_cb(hg_handle_t handle) */
+// Server execute
+HG_TEST_RPC_CB(client_send_recv, handle)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value;
+    hg_return_t hg_ret;
+
+
+    /* Get input parameters sent on origin through on HG_Forward() */
+    // Decode input
+    client_send_recv_in_t  in;
+    client_send_recv_out_t out;
+
+    HG_Get_input(handle, &in);
+    printf("==SERVER: client_send_recv(): received from %d in iter %d, sending back the bulk handle\n", in.client_id % 1000, in.client_id / 1000);
+    fflush(stdout);
+
+    out.ret = 2;
+
+    // bulk
+    // Create a bulk descriptor
+    hg_bulk_t bulk_handle = HG_BULK_NULL;
+
+    void  *buf_ptrs[3];
+    size_t buf_sizes[3];
+
+    // offset using uin32_t should be sufficient ~ 4G address
+
+    uint32_t *bulk_array_0;  // serves as a offset table
+    int *bulk_array_1;
+    char *bulk_array_2;
+    int bulk_xfer_cnt[3] = {3, 1024, 4096};
+    bulk_array_0 = (uint32_t*)malloc(sizeof(uint32_t) * bulk_xfer_cnt[0]);
+    bulk_array_1 = (int*)malloc(sizeof(int) * bulk_xfer_cnt[1]);
+    bulk_array_2 = (char*)malloc(sizeof(char) * bulk_xfer_cnt[2]);
+    int i;
+
+    for (i = 0; i < bulk_xfer_cnt[1]; i++)
+        bulk_array_1[i] = i + 1000000 * (in.client_id % 1000);
+    sprintf(bulk_array_2, "test char array 123");
+
+    buf_ptrs[0]  = bulk_array_0;
+    buf_ptrs[1]  = bulk_array_1;
+    buf_ptrs[2]  = bulk_array_2;
+    buf_sizes[0] = sizeof(int) * bulk_xfer_cnt[0];
+    buf_sizes[1] = sizeof(int) * bulk_xfer_cnt[1];
+    buf_sizes[2] = sizeof(char) * bulk_xfer_cnt[2];
+
+    // Prepare offset array
+    bulk_array_0[0] = 2;    // how many buffers in total
+    bulk_array_0[1] = buf_sizes[0];
+    bulk_array_0[2] = bulk_array_0[1] + buf_sizes[1];
+
+
+    // Create bulk handle
+    hg_ret = HG_Bulk_create(hg_class_g, 3, buf_ptrs, buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not create bulk data handle\n");
+        return EXIT_FAILURE;
+    }
+
+     // Fill bulk handle
+    out.bulk_handle = bulk_handle;
+
+    // Send bulk handle to client
+    printf("client_send_recv_cb(): Sending bulk handle to client\n");
+    fflush(stdout);
+    /* HG_Respond(handle, PDC_server_bulk_respond_cb, NULL, &out); */
+    HG_Respond(handle, NULL, NULL, &out);
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    ret_value = HG_SUCCESS;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+HG_TEST_THREAD_CB(client_send_recv)
+hg_id_t
+client_send_recv_register(hg_class_t *hg_class)
+{
+    FUNC_ENTER(NULL);
+
+    hg_id_t ret_value;
+    ret_value = MERCURY_REGISTER(hg_class, "client_send_recv", client_send_recv_in_t, client_send_recv_out_t, client_send_recv_cb);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+
 
 HG_TEST_THREAD_CB(gen_obj_id)
 /* HG_TEST_THREAD_CB(send_obj_name_marker) */
