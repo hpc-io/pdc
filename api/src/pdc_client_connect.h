@@ -42,8 +42,8 @@ typedef struct pdc_server_info_t {
     hg_handle_t     metadata_update_handle;
     int             region_lock_handle_valid;
     hg_handle_t     region_lock_handle;
-    int             client_send_recv_handle_valid;
-    hg_handle_t     client_send_recv_handle;
+    int             query_partial_handle_valid;
+    hg_handle_t     query_partial_handle;
 } pdc_server_info_t;
 
 extern pdc_server_info_t *pdc_server_info_g;

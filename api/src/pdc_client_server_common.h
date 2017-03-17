@@ -92,27 +92,26 @@ typedef struct pdc_metadata_transfer_t {
     /* time_t      last_modified_time; */
 } pdc_metadata_transfer_t;
 
-typedef struct metadata_query_t {
+typedef struct metadata_query_transfer_in_t{
+    int     is_list_all;
+
     int     user_id;                // Both server and client gets it and do security check
-    char    app_name[ADDR_MAX];
-    char    obj_name[ADDR_MAX];
+    char    *app_name;
+    char    *obj_name;
 
     int     time_step_from;
     int     time_step_to;
 
     int     ndim;
 
-    time_t  create_time_from;
-    time_t  create_time_to;
-    time_t  last_modified_time_from;
-    time_t  last_modified_time_to;
+    /* time_t  create_time_from; */
+    /* time_t  create_time_to; */
+    /* time_t  last_modified_time_from; */
+    /* time_t  last_modified_time_to; */
 
-    char    tags[128];
-} metadata_query_constraint_t;
+    char    *tags;
+} metadata_query_transfer_in_t;
 
-typedef struct metadata_query_transfer_t{
-    metadata_query_constraint_t query_constraint;
-} metadata_query_transfer_t;
 
 #ifdef HG_HAS_BOOST
 MERCURY_GEN_STRUCT_PROC( pdc_metadata_transfer_t, ((int32_t)(user_id)) ((int32_t)(time_step)) ((uint64_t)(obj_id)) ((int32_t)(ndim)) ((uint64_t)(dims[DIM_MAX])) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((hg_const_string_t)(data_location)) ((hg_const_string_t)(tags)) )
@@ -129,9 +128,9 @@ MERCURY_GEN_PROC( client_test_connect_out_t, ((int32_t)(ret))  )
 MERCURY_GEN_PROC( close_server_in_t,  ((int32_t)(client_id)) )
 MERCURY_GEN_PROC( close_server_out_t, ((int32_t)(ret))  )
 
-MERCURY_GEN_STRUCT_PROC( metadata_query_transfer_t, ((int32_t)(user_id)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((int32_t)(time_step_from)) ((int32_t)(time_step_to)) ((int32_t)(ndim)) ((int32_t)(create_time_from)) ((int32_t)(create_time_to)) ((int32_t)(last_modified_time_from)) ((int32_t)(last_modified_time_to)) ((hg_const_string_t)(tags)) )
-MERCURY_GEN_PROC( metadata_query_transfer_in_t, ((metadata_query_constraint_t)(query_constraint)) )
-MERCURY_GEN_PROC( metadata_query_transfer_out_t, ((int32_t)(ret)) )
+MERCURY_GEN_STRUCT_PROC( metadata_query_transfer_in_t, ((int32_t)(is_list_all)) ((int32_t)(user_id)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((int32_t)(time_step_from)) ((int32_t)(time_step_to)) ((int32_t)(ndim)) ((hg_const_string_t)(tags)) )
+/* MERCURY_GEN_STRUCT_PROC( metadata_query_transfer_in_t, ((int32_t)(user_id)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((int32_t)(time_step_from)) ((int32_t)(time_step_to)) ((int32_t)(ndim)) ((int32_t)(create_time_from)) ((int32_t)(create_time_to)) ((int32_t)(last_modified_time_from)) ((int32_t)(last_modified_time_to)) ((hg_const_string_t)(tags)) ) */
+MERCURY_GEN_PROC( metadata_query_transfer_out_t, ((hg_bulk_t)(bulk_handle)) ((int32_t)(ret)) )
 
 MERCURY_GEN_PROC( metadata_query_in_t, ((hg_const_string_t)(obj_name)) ((uint32_t)(hash_value)) )
 MERCURY_GEN_PROC( metadata_query_out_t, ((pdc_metadata_transfer_t)(ret)) )
@@ -316,16 +315,18 @@ typedef struct {
     int32_t            ret;
 } metadata_delete_out_t;
 
-/* MERCURY_GEN_STRUCT_PROC( metadata_query_transfer_t, ((int32_t)(user_id)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((int32_t)(time_step_from)) ((int32_t)(time_step_to)) ((int32_t)(ndim)) ((int32_t)(create_time_from)) ((int32_t)(create_time_to)) ((int32_t)(last_modified_time_from)) ((int32_t)(last_modified_time_to)) ((hg_const_string_t)(tags)) ) */
-/* MERCURY_GEN_PROC( metadata_query_transfer_in_t, ((metadata_query_constraint_t)(query_constraint)) ) */
-/* MERCURY_GEN_PROC( metadata_query_transfer_out_t, ((int32_t)(ret)) ) */
 static HG_INLINE hg_return_t
-hg_proc_metadata_query_transfer_t(hg_proc_t proc, void *data)
+hg_proc_metadata_query_transfer_in_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret;
-    metadata_query_constraint_t *struct_data = (metadata_query_constraint_t*) data;
+    metadata_query_transfer_in_t *struct_data = (metadata_query_transfer_in_t*) data;
 
-    ret = hg_proc_uint32_t(proc, &struct_data->user_id);
+    ret = hg_proc_int32_t(proc, &struct_data->is_list_all);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->user_id);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -355,26 +356,26 @@ hg_proc_metadata_query_transfer_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_int32_t(proc, &struct_data->create_time_from);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_int32_t(proc, &struct_data->create_time_to);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_int32_t(proc, &struct_data->last_modified_time_from);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_int32_t(proc, &struct_data->last_modified_time_to);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-        return ret;
-    }
+    /* ret = hg_proc_int32_t(proc, &struct_data->create_time_from); */
+    /* if (ret != HG_SUCCESS) { */
+	/* HG_LOG_ERROR("Proc error"); */
+    /*     return ret; */
+    /* } */
+    /* ret = hg_proc_int32_t(proc, &struct_data->create_time_to); */
+    /* if (ret != HG_SUCCESS) { */
+	/* HG_LOG_ERROR("Proc error"); */
+    /*     return ret; */
+    /* } */
+    /* ret = hg_proc_int32_t(proc, &struct_data->last_modified_time_from); */
+    /* if (ret != HG_SUCCESS) { */
+	/* HG_LOG_ERROR("Proc error"); */
+    /*     return ret; */
+    /* } */
+    /* ret = hg_proc_int32_t(proc, &struct_data->last_modified_time_to); */
+    /* if (ret != HG_SUCCESS) { */
+	/* HG_LOG_ERROR("Proc error"); */
+    /*     return ret; */
+    /* } */
     ret = hg_proc_hg_const_string_t(proc, &struct_data->tags);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
@@ -384,26 +385,9 @@ hg_proc_metadata_query_transfer_t(hg_proc_t proc, void *data)
 }
 
 typedef struct {
-    metadata_query_constraint_t query_constraint;
-} metadata_query_transfer_in_t;
-
-typedef struct {
-    int32_t            ret;
+    int32_t     ret;
+    hg_bulk_t   bulk_handle;
 } metadata_query_transfer_out_t;
-
-static HG_INLINE hg_return_t
-hg_proc_metadata_query_transfer_in_t(hg_proc_t proc, void *data)
-{
-    hg_return_t ret;
-    metadata_query_transfer_in_t *struct_data = (metadata_query_transfer_in_t*) data;
-
-    ret = hg_proc_metadata_query_transfer_t(proc, &struct_data->query_constraint);
-    if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    return ret;
-}
 
 static HG_INLINE hg_return_t
 hg_proc_metadata_query_transfer_out_t(hg_proc_t proc, void *data)
@@ -412,6 +396,11 @@ hg_proc_metadata_query_transfer_out_t(hg_proc_t proc, void *data)
     metadata_query_transfer_out_t *struct_data = (metadata_query_transfer_out_t*) data;
 
     ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_bulk_t(proc, &struct_data->bulk_handle);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -790,46 +779,6 @@ hg_proc_bulk_write_out_t(hg_proc_t proc, void *data)
 
 hg_id_t test_bulk_xfer_register(hg_class_t *hg_class);
 
-typedef struct {
-    int32_t client_id;
-} client_send_recv_in_t;
-
-typedef struct {
-    int32_t ret;
-    hg_bulk_t bulk_handle;
-} client_send_recv_out_t;
-
-static HG_INLINE hg_return_t
-hg_proc_client_send_recv_in_t(hg_proc_t proc, void *data)
-{
-    hg_return_t ret;
-    client_send_recv_in_t *struct_data = (client_send_recv_in_t*) data;
-
-    ret = hg_proc_int32_t(proc, &struct_data->client_id);
-    if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
-    }
-    return ret;
-}
-
-static HG_INLINE hg_return_t
-hg_proc_client_send_recv_out_t(hg_proc_t proc, void *data)
-{
-    hg_return_t ret;
-    client_send_recv_out_t *struct_data = (client_send_recv_out_t*) data;
-
-    ret = hg_proc_int32_t(proc, &struct_data->ret);
-    if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
-    }
-    ret = hg_proc_hg_bulk_t(proc, &struct_data->bulk_handle);
-    if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    return ret;
-}
-
 // End of bulk
 
 #endif
@@ -845,7 +794,8 @@ hg_id_t metadata_update_register(hg_class_t *hg_class);
 hg_id_t region_lock_register(hg_class_t *hg_class);
 
 //bulk
-hg_id_t client_send_recv_register(hg_class_g);
+hg_id_t query_partial_register(hg_class_t *hg_class);
+
 struct hg_test_bulk_args {
     int cnt;
     hg_handle_t handle;

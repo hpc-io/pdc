@@ -33,6 +33,7 @@ static int             mercury_has_init_g = 0;
 static hg_class_t     *send_class_g = NULL;
 static hg_context_t   *send_context_g = NULL;
 static int             work_todo_g = 0;
+
 static hg_id_t         client_test_connect_register_id_g;
 static hg_id_t         gen_obj_register_id_g;
 static hg_id_t         close_server_register_id_g;
@@ -44,7 +45,7 @@ static hg_id_t         metadata_update_register_id_g;
 static hg_id_t         region_lock_register_id_g;
 
 // bulk
-static hg_id_t         client_send_recv_register_id_g;
+static hg_id_t         query_partial_register_id_g;
 static int             bulk_todo_g = 0;
 hg_atomic_int32_t      bulk_transfer_done_g;
 
@@ -374,7 +375,7 @@ hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     hg_bulk_t local_bulk_handle = hg_cb_info->info.bulk.local_handle;
     hg_return_t ret = HG_SUCCESS;
 
-    bulk_write_out_t out_struct;
+    /* bulk_write_out_t out_struct; */
 
     int i, n_buf = 10;
     void *buf;
@@ -384,7 +385,7 @@ hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     if (hg_cb_info->ret == HG_CANCELED) {
         printf("HG_Bulk_transfer() was successfully canceled\n");
         /* Fill output structure */
-        out_struct.ret = 0;
+        /* out_struct.ret = 0; */
     } else if (hg_cb_info->ret != HG_SUCCESS) {
         HG_LOG_ERROR("Error in callback");
         ret = HG_PROTOCOL_ERROR;
@@ -397,15 +398,18 @@ hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
         HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, &buf, buf_sizes, &actual_cnt);
         printf("received bulk transfer, buf_sizes: %d %d, actual_cnt=%d\n", buf_sizes[0], buf_sizes[1], actual_cnt);
 
-        int *offsets = (int*)(buf);
-        int *buf_int = (int*)(buf + offsets[1]);
-        char *buf_char= (char*)(buf + offsets[2]);
-        printf(" 0: [%d, %d, %d, %d]\n", buf_int[0], buf_int[1], buf_int[2], buf_int[3]);
-        printf(" 1: %s\n", buf_char);
-        fflush(stdout);
+        uint32_t *count= (uint32_t*)(buf);
+        printf("n_meta=%u\n", *count);
+        pdc_metadata_t *meta_ptr;
+        meta_ptr = (pdc_metadata_t*)(buf + sizeof(uint32_t));
+        int i;
+        for (i = 0; i < *count; i++) {
+            PDC_print_metadata(meta_ptr);
+            meta_ptr++;
+        }
 
         /* Fill output structure */
-        out_struct.ret = 1;
+        /* out_struct.ret = 1; */
     }
 
     bulk_todo_g--;
@@ -466,8 +470,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-
-
 // Init Mercury class and context
 // Register gen_obj_id rpc
 perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int port)
@@ -513,7 +515,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     region_lock_register_id_g           = region_lock_register(*hg_class);
 
     // bulk
-    client_send_recv_register_id_g      = client_send_recv_register(*hg_class);
+    query_partial_register_id_g      = query_partial_register(*hg_class);
 
     // Lookup and fill the server info
     int i;
@@ -734,16 +736,13 @@ metadata_query_bulk_cb(const struct hg_cb_info *callback_info)
     hg_handle_t handle = callback_info->info.forward.handle;
 
     // Get output from server
-    client_send_recv_out_t output;
+    metadata_query_transfer_out_t output;
     ret_value = HG_Get_output(handle, &output);
 
     printf("==PDC_CLIENT: Received response from server with bulk handle, n_buf=%d\n", output.ret);
 
     // We have received the bulk handle from server (server uses hg_respond)
     // Use this to initiate a bulk transfer
-    /* printf("Return value=%llu\n", output.ret); */
-    /* client_lookup_args->client_id = output.ret; */
-
     hg_op_id_t hg_bulk_op_id;
     hg_bulk_t local_bulk_handle = HG_BULK_NULL;
     hg_bulk_t origin_bulk_handle = HG_BULK_NULL;
@@ -758,7 +757,6 @@ metadata_query_bulk_cb(const struct hg_cb_info *callback_info)
     bulk_args->handle = handle;
     bulk_args->nbytes = HG_Bulk_get_size(origin_bulk_handle);
 
-    // test
     /* Create a new bulk handle to read the data */
     /* HG_Bulk_create(hg_info->hg_class, n_buf, buf_ptr, buf_sizes, HG_BULK_READWRITE, &local_bulk_handle); */
     HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *) &bulk_args->nbytes, HG_BULK_READWRITE, &local_bulk_handle);
@@ -775,7 +773,6 @@ metadata_query_bulk_cb(const struct hg_cb_info *callback_info)
     // loop
     bulk_todo_g = 1;
     PDC_Client_check_bulk(send_class_g, send_context_g);
-    /* PDC_Client_check_response(send_context_g); */
 
 done:
     work_todo_g--;
@@ -785,7 +782,7 @@ done:
 }
 
 // bulk test 
-int PDC_client_list_all()
+int PDC_Client_list_all()
 {
     FUNC_ENTER(NULL);
 
@@ -794,23 +791,30 @@ int PDC_client_list_all()
 
     int server_id = 0;
 
-    // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb
-    if (pdc_server_info_g[server_id].client_send_recv_handle_valid != 1) {
-        hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, client_send_recv_register_id_g, &pdc_server_info_g[server_id].client_send_recv_handle);
-        pdc_server_info_g[server_id].client_send_recv_handle_valid= 1;
+    // We may have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb
+    if (pdc_server_info_g[server_id].query_partial_handle_valid != 1) {
+        hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, query_partial_register_id_g, &pdc_server_info_g[server_id].query_partial_handle);
+        pdc_server_info_g[server_id].query_partial_handle_valid= 1;
     }
 
     // Fill input structure
-    client_send_recv_in_t in;
-    in.client_id = pdc_client_mpi_rank_g; 
+    metadata_query_transfer_in_t in;
+    in.is_list_all = 1;
+    in.user_id = -1;
+    in.app_name = " ";
+    in.obj_name = " ";
+    in.time_step_from = -1;
+    in.time_step_to = -1;
+    in.ndim = -1;
+    in.tags = " ";
 
     /* printf("Sending input to target\n"); */
     struct hg_test_bulk_args lookup_args;
     // TODO need to modify lookup_args for storing results and give back to user
-    if (pdc_server_info_g[server_id].client_send_recv_handle == NULL) {
-        printf("==CLIENT[%d]: Error with send_recv_handle\n", pdc_client_mpi_rank_g);
+    if (pdc_server_info_g[server_id].query_partial_handle == NULL) {
+        printf("==CLIENT[%d]: Error with .query_partial_handle\n", pdc_client_mpi_rank_g);
     }
-    ret_value = HG_Forward(pdc_server_info_g[server_id].client_send_recv_handle, metadata_query_bulk_cb, &lookup_args, &in);
+    ret_value = HG_Forward(pdc_server_info_g[server_id].query_partial_handle, metadata_query_bulk_cb, &lookup_args, &in);
     if (ret_value != HG_SUCCESS) {
         fprintf(stderr, "PDC_client_list_all(): Could not start HG_Forward()\n");
         return EXIT_FAILURE;
@@ -829,6 +833,8 @@ int PDC_client_list_all()
     // Consider use a conditional wait signal
     while (1) {
         if (hg_atomic_get32(&bulk_transfer_done_g)) break;
+        /* printf("waiting for bulk transfer done\n"); */
+        /* fflush(stdout); */
     }
 
     printf("==CLIENT: results ready\n");
@@ -1456,6 +1462,13 @@ perr_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *ob
 
     *meta_id = lookup_args.obj_id;
     ret_value = SUCCEED;
+
+
+    // Test
+    /* PDC_Client_list_all(); */
+    /* printf("Finished bulk test\n"); */
+    /* fflush(stdout); */
+    
 
 done:
     FUNC_LEAVE(ret_value);
