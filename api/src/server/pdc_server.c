@@ -321,25 +321,33 @@ static pdc_metadata_t * find_identical_metadata(pdc_hash_table_entry_head *entry
         /* printf("bloom_check: Combined string: %s\n", combined_string); */
         /* fflush(stdout); */
 
+#ifdef ENABLE_TIMING
         // Timing
         struct timeval  ht_total_start;
         struct timeval  ht_total_end;
         long long ht_total_elapsed;
         double ht_total_sec;
         gettimeofday(&ht_total_start, 0);
+#endif
 
         int bloom_check;
         bloom_check = BLOOM_CHECK(bloom, combined_string, strlen(combined_string));
 
+#ifdef ENABLE_TIMING
         // Timing
         gettimeofday(&ht_total_end, 0);
         ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
         ht_total_sec        = ht_total_elapsed / 1000000.0;
+#endif
 
 #ifdef ENABLE_MULTITHREAD 
         hg_thread_mutex_lock(&pdc_bloom_time_mutex_g);
 #endif
+
+#ifdef ENABLE_TIMING 
         server_bloom_check_time_g += ht_total_sec;
+#endif
+
 #ifdef ENABLE_MULTITHREAD 
         hg_thread_mutex_unlock(&pdc_bloom_time_mutex_g);
 #endif
@@ -547,12 +555,14 @@ static perr_t PDC_Server_bloom_init(pdc_hash_table_entry_head *entry, BLOOM_TYPE
     n_bloom_maybe_g = 0;
     n_bloom_total_g = 0;
 
+#ifdef ENABLE_TIMING 
     // Timing
     struct timeval  ht_total_start;
     struct timeval  ht_total_end;
     long long ht_total_elapsed;
     double ht_total_sec;
     gettimeofday(&ht_total_start, 0);
+#endif
 
     entry->bloom = (BLOOM_TYPE_T*)BLOOM_NEW(capacity, error_rate);
     if (!entry->bloom) {
@@ -563,12 +573,14 @@ static perr_t PDC_Server_bloom_init(pdc_hash_table_entry_head *entry, BLOOM_TYPE
 
     /* PDC_Server_add_to_bloom(entry, bloom); */
 
+#ifdef ENABLE_TIMING 
     // Timing
     gettimeofday(&ht_total_end, 0);
     ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
     ht_total_sec        = ht_total_elapsed / 1000000.0;
 
     server_bloom_init_time_g += ht_total_sec;
+#endif
 
 done:
     FUNC_LEAVE(ret_value);
@@ -627,12 +639,14 @@ static perr_t PDC_Server_hash_table_list_init(pdc_hash_table_entry_head *entry, 
 /*     metadata->next = NULL; */   
 
 
+#ifdef ENABLE_TIMING 
     // Timing
     struct timeval  ht_total_start;
     struct timeval  ht_total_end;
     long long ht_total_elapsed;
     double ht_total_sec;
     gettimeofday(&ht_total_start, 0);
+#endif
 
     // Insert to hash table
     ret = hg_hash_table_insert(metadata_hash_table_g, hash_key, entry);
@@ -645,12 +659,14 @@ static perr_t PDC_Server_hash_table_list_init(pdc_hash_table_entry_head *entry, 
     /* PDC_print_metadata(entry->metadata); */
     /* printf("entry n_obj=%d\n", entry->n_obj); */
 
+#ifdef ENABLE_TIMING 
     // Timing
     gettimeofday(&ht_total_end, 0);
     ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
     ht_total_sec        = ht_total_elapsed / 1000000.0;
 
     server_hash_insert_time_g += ht_total_sec;
+#endif
 
     /* PDC_Server_bloom_init(new, entry->bloom); */
 
@@ -753,6 +769,7 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
 
     perr_t ret_value;
 
+#ifdef ENABLE_TIMING 
     // Timing
     struct timeval  ht_total_start;
     struct timeval  ht_total_end;
@@ -760,6 +777,7 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
     double ht_total_sec;
 
     gettimeofday(&ht_total_start, 0);
+#endif
 
     /* printf("==PDC_SERVER: Got update request: hash=%d, obj_id=%llu\n", in->hash_value, in->obj_id); */
 
@@ -839,15 +857,21 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
     unlocked = 1;
 #endif
 
+#ifdef ENABLE_TIMING 
     // Timing
     gettimeofday(&ht_total_end, 0);
     ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
     ht_total_sec        = ht_total_elapsed / 1000000.0;
+#endif   
 
 #ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_lock(&pdc_time_mutex_g);
 #endif
+
+#ifdef ENABLE_TIMING 
     server_update_time_g += ht_total_sec;
+#endif
+
 #ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_unlock(&pdc_time_mutex_g);
 #endif
@@ -870,6 +894,7 @@ perr_t delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_
     perr_t ret_value = FAIL;
     out->ret = -1;
 
+#ifdef ENABLE_TIMING 
     // Timing
     struct timeval  ht_total_start;
     struct timeval  ht_total_end;
@@ -877,6 +902,8 @@ perr_t delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_
     double ht_total_sec;
 
     gettimeofday(&ht_total_start, 0);
+#endif
+
 
     /* printf("==PDC_SERVER[%d]: Got delete by id request: obj_id=%llu\n", pdc_server_rank_g, in->obj_id); */
     /* fflush(stdout); */
@@ -956,15 +983,21 @@ perr_t delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_
     unlocked = 1;
 #endif
 
+#ifdef ENABLE_TIMING 
     // Timing
     gettimeofday(&ht_total_end, 0);
     ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
     ht_total_sec        = ht_total_elapsed / 1000000.0;
+#endif
 
 #ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_lock(&pdc_time_mutex_g);
 #endif
+
+#ifdef ENABLE_TIMING 
     server_delete_time_g += ht_total_sec;
+#endif
+
 #ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_unlock(&pdc_time_mutex_g);
 #endif
@@ -998,6 +1031,7 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
 
     perr_t ret_value;
 
+#ifdef ENABLE_TIMING 
     // Timing
     struct timeval  ht_total_start;
     struct timeval  ht_total_end;
@@ -1005,6 +1039,7 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
     double ht_total_sec;
 
     gettimeofday(&ht_total_start, 0);
+#endif
 
     /* printf("==PDC_SERVER[%d]: Got delete request: hash=%d, obj_id=%llu\n", pdc_server_rank_g, in->hash_value, in->obj_id); */
     /* fflush(stdout); */
@@ -1109,15 +1144,21 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
     unlocked = 1;
 #endif
 
+#ifdef ENABLE_TIMING 
     // Timing
     gettimeofday(&ht_total_end, 0);
     ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
     ht_total_sec        = ht_total_elapsed / 1000000.0;
+#endif
 
 #ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_lock(&pdc_time_mutex_g);
 #endif
+
+#ifdef ENABLE_TIMING 
     server_delete_time_g += ht_total_sec;
+#endif
+    
 #ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_unlock(&pdc_time_mutex_g);
 #endif
@@ -1150,6 +1191,7 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
 
     perr_t ret_value;
 
+#ifdef ENABLE_TIMING 
     // Timing
     struct timeval  ht_total_start;
     struct timeval  ht_total_end;
@@ -1157,6 +1199,7 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     double ht_total_sec;
 
     gettimeofday(&ht_total_start, 0);
+#endif
 
     /* printf("Got object creation request with name: %s\tHash=%d\n", in->data.obj_name, in->hash_value); */
     /* printf("Full name check: %s\n", &in->obj_name[507]); */
@@ -1290,15 +1333,21 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     // Debug print metadata info
     /* PDC_print_metadata(metadata); */
 
+#ifdef ENABLE_TIMING 
     // Timing
     gettimeofday(&ht_total_end, 0);
     ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
     ht_total_sec        = ht_total_elapsed / 1000000.0;
+#endif
 
 #ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_lock(&pdc_time_mutex_g);
 #endif
+
+#ifdef ENABLE_TIMING 
     server_insert_time_g += ht_total_sec;
+#endif
+
 #ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_unlock(&pdc_time_mutex_g);
 #endif
@@ -1503,27 +1552,31 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     if (is_restart_g == 1) {
         sprintf(checkpoint_file, "%s/%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.", pdc_server_rank_g);
 
+#ifdef ENABLE_TIMING 
         // Timing
         struct timeval  ht_total_start;
         struct timeval  ht_total_end;
         long long ht_total_elapsed;
         double restart_time, all_restart_time;
         gettimeofday(&ht_total_start, 0);
+#endif
 
         PDC_Server_restart(checkpoint_file);
 
+#ifdef ENABLE_TIMING 
         // Timing
         gettimeofday(&ht_total_end, 0);
         ht_total_elapsed = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
         restart_time = ht_total_elapsed / 1000000.0;
 
-#ifdef ENABLE_MPI
+    #ifdef ENABLE_MPI
         MPI_Reduce(&restart_time, &all_restart_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-#else
+    #else
         all_restart_time = restart_time;
-#endif
+    #endif
         if (pdc_server_rank_g == 0) 
             printf("==PDC_SERVER: total restart time = %.6f\n", all_restart_time);
+#endif
     }
     else {
         // We are starting a brand new server
@@ -1551,8 +1604,8 @@ perr_t PDC_Server_finalize()
     perr_t ret_value = SUCCEED;
 
     // Debug: check duplicates
-    PDC_Server_metadata_duplicate_check();
-    fflush(stdout);
+    /* PDC_Server_metadata_duplicate_check(); */
+    /* fflush(stdout); */
 
     // Free hash table
     if(metadata_hash_table_g != NULL)
@@ -1560,13 +1613,14 @@ perr_t PDC_Server_finalize()
 
 /*     if(metadata_name_mark_hash_table_g != NULL) */
 /*         hg_hash_table_free(metadata_name_mark_hash_table_g); */
+#ifdef ENABLE_TIMING 
 
     double all_bloom_check_time_max, all_bloom_check_time_min, all_insert_time_max, all_insert_time_min;
     double all_server_bloom_init_time_min,  all_server_bloom_init_time_max;
     double all_server_bloom_insert_time_min,  all_server_bloom_insert_time_max;
     double all_server_hash_insert_time_min, all_server_hash_insert_time_max;
 
-#ifdef ENABLE_MPI
+    #ifdef ENABLE_MPI
     MPI_Reduce(&server_bloom_check_time_g, &all_bloom_check_time_max,        1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     MPI_Reduce(&server_bloom_check_time_g, &all_bloom_check_time_min,        1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
     MPI_Reduce(&server_insert_time_g,      &all_insert_time_max,             1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
@@ -1577,7 +1631,7 @@ perr_t PDC_Server_finalize()
     MPI_Reduce(&server_hash_insert_time_g, &all_server_hash_insert_time_max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     MPI_Reduce(&server_hash_insert_time_g, &all_server_hash_insert_time_min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
 
-#else
+    #else
     all_bloom_check_time_min        = server_bloom_check_time_g;
     all_bloom_check_time_max        = server_bloom_check_time_g;
     all_insert_time_max             = server_insert_time_g;
@@ -1586,7 +1640,7 @@ perr_t PDC_Server_finalize()
     all_server_bloom_init_time_max  = server_bloom_init_time_g;
     all_server_hash_insert_time_max = server_hash_insert_time_g;
     all_server_hash_insert_time_min = server_hash_insert_time_g;
-#endif
+    #endif
     if (pdc_server_rank_g == 0) {
         printf("==PDC_SERVER: total bloom check time = %.6f, %.6f\n", all_bloom_check_time_min, all_bloom_check_time_max);
         printf("==PDC_SERVER: total insert      time = %.6f, %.6f\n", all_insert_time_min, all_insert_time_max);
@@ -1597,6 +1651,7 @@ perr_t PDC_Server_finalize()
     }
     // TODO: remove server tmp dir?
 
+#endif
 
 done:
     FUNC_LEAVE(ret_value);
@@ -1829,23 +1884,24 @@ static perr_t PDC_Server_loop(hg_class_t *hg_class, hg_context_t *hg_context)
 done:
     FUNC_LEAVE(ret_value);
 }
-    /* For 1D boxes (intervals) we have: */
-    /* box1 = (xmin1, xmax1) */
-    /* box2 = (xmin2, xmax2) */
-    /* overlapping1D(box1,box2) = xmax1 >= xmin2 and xmax2 >= xmin1 */
-    /* For 2D boxes (rectangles) we have: */
 
-    /* box1 = (x:(xmin1,xmax1),y:(ymin1,ymax1)) */
-    /* box2 = (x:(xmin2,xmax2),y:(ymin2,ymax2)) */
-    /* overlapping2D(box1,box2) = overlapping1D(box1.x, box2.x) and */ 
-    /*                            overlapping1D(box1.y, box2.y) */
-    /* For 3D boxes we have: */
+/* For 1D boxes (intervals) we have: */
+/* box1 = (xmin1, xmax1) */
+/* box2 = (xmin2, xmax2) */
+/* overlapping1D(box1,box2) = xmax1 >= xmin2 and xmax2 >= xmin1 */
 
-    /* box1 = (x:(xmin1,xmax1),y:(ymin1,ymax1),z:(zmin1,zmax1)) */
-    /* box2 = (x:(xmin2,xmax2),y:(ymin2,ymax2),z:(zmin2,zmax2)) */
-    /* overlapping3D(box1,box2) = overlapping1D(box1.x, box2.x) and */ 
-    /*                            overlapping1D(box1.y, box2.y) and */
-    /*                            overlapping1D(box1.z, box2.z) */
+/* For 2D boxes (rectangles) we have: */
+/* box1 = (x:(xmin1,xmax1),y:(ymin1,ymax1)) */
+/* box2 = (x:(xmin2,xmax2),y:(ymin2,ymax2)) */
+/* overlapping2D(box1,box2) = overlapping1D(box1.x, box2.x) and */ 
+/*                            overlapping1D(box1.y, box2.y) */
+
+/* For 3D boxes we have: */
+/* box1 = (x:(xmin1,xmax1),y:(ymin1,ymax1),z:(zmin1,zmax1)) */
+/* box2 = (x:(xmin2,xmax2),y:(ymin2,ymax2),z:(zmin2,zmax2)) */
+/* overlapping3D(box1,box2) = overlapping1D(box1.x, box2.x) and */ 
+/*                            overlapping1D(box1.y, box2.y) and */
+/*                            overlapping1D(box1.z, box2.z) */
  
 static int is_overlap_1D(uint64_t xmin1, uint64_t xmax1, uint64_t xmin2, uint64_t xmax2)
 {
@@ -2155,14 +2211,15 @@ perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uin
     }  // if (metadata_hash_table_g != NULL)
     else {
         printf("==PDC_SERVER: metadata_hash_table_g not initilized!\n");
-        ret_value = NULL;
+        ret_value = FAIL;
         goto done;
     }
 
 
 
 
-    /* printf("PDC_SERVER: Received partial query, user_id=%d, ndim=%d\n", in->user_id, in->ndim); */
+    printf("PDC_SERVER: Received partial query, user_id=%d, ndim=%d\n", in->user_id, in->ndim);
+    fflush(stdout);
 
 
 /*     pdc_metadata_t *meta_0, *meta_1; */
@@ -2317,12 +2374,14 @@ int main(int argc, char *argv[])
 
 
 
+#ifdef ENABLE_TIMING 
     // Timing
     struct timeval  start;
     struct timeval  end;
     long long elapsed;
     double server_init_time, all_server_init_time;
     gettimeofday(&start, 0);
+#endif
 
 
     perr_t ret;
@@ -2355,14 +2414,18 @@ int main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
+#ifdef ENABLE_TIMING 
     // Timing
     gettimeofday(&end, 0);
     elapsed = (end.tv_sec-start.tv_sec)*1000000LL + end.tv_usec-start.tv_usec;
     server_init_time = elapsed / 1000000.0;
+#endif
 
 
     if (pdc_server_rank_g == 0) {
+#ifdef ENABLE_TIMING 
         printf("==PDC_SERVER: total startup time = %.6f\n", server_init_time);
+#endif
         printf("==PDC_SERVER: Server ready!\n\n\n");
     }
     fflush(stdout);
@@ -2373,37 +2436,49 @@ int main(int argc, char *argv[])
     PDC_Server_loop(hg_class_g, hg_context_g);
 #endif
 
+    /* if (pdc_server_rank_g == 0) { */
+    /*     printf("==PDC_SERVER: Work done, finalizing\n"); */
+    /*     fflush(stdout); */
+    /* } */
+
     // Finalize 
     HG_Context_destroy(hg_context_g);
     HG_Finalize(hg_class_g);
 
+#ifdef ENABLE_CHECKPOINT
     // TODO: instead of checkpoint at app finalize time, try checkpoint with a time countdown or # of objects
     char checkpoint_file[PATH_MAX];
     sprintf(checkpoint_file, "%s/%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.", pdc_server_rank_g);
 
+    #ifdef ENABLE_TIMING 
     // Timing
     struct timeval  ht_total_start;
     struct timeval  ht_total_end;
     long long ht_total_elapsed;
     double checkpoint_time, all_checkpoint_time;
     gettimeofday(&ht_total_start, 0);
+    #endif
 
     PDC_Server_checkpoint(checkpoint_file);
 
+    #ifdef ENABLE_TIMING 
     // Timing
     gettimeofday(&ht_total_end, 0);
     ht_total_elapsed = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
     checkpoint_time = ht_total_elapsed / 1000000.0;
 
-#ifdef ENABLE_MPI
+        #ifdef ENABLE_MPI
     MPI_Reduce(&checkpoint_time, &all_checkpoint_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-#else
+        #else
     all_checkpoint_time = checkpoint_time;
-#endif
+        #endif
+
     if (pdc_server_rank_g == 0) {
         printf("==PDC_SERVER: total checkpoint  time = %.6f\n", all_checkpoint_time);
     }
 
+    #endif
+#endif
 
 done:
     PDC_Server_finalize();

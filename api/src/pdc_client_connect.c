@@ -1463,13 +1463,6 @@ perr_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *ob
     *meta_id = lookup_args.obj_id;
     ret_value = SUCCEED;
 
-
-    // Test
-    /* PDC_Client_list_all(); */
-    /* printf("Finished bulk test\n"); */
-    /* fflush(stdout); */
-    
-
 done:
     FUNC_LEAVE(ret_value);
 }
