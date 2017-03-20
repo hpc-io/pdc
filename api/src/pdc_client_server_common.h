@@ -96,8 +96,8 @@ typedef struct metadata_query_transfer_in_t{
     int     is_list_all;
 
     int     user_id;                // Both server and client gets it and do security check
-    char    *app_name;
-    char    *obj_name;
+    const char    *app_name;
+    const char    *obj_name;
 
     int     time_step_from;
     int     time_step_to;
@@ -109,7 +109,7 @@ typedef struct metadata_query_transfer_in_t{
     /* time_t  last_modified_time_from; */
     /* time_t  last_modified_time_to; */
 
-    char    *tags;
+    const char    *tags;
 } metadata_query_transfer_in_t;
 
 
@@ -802,6 +802,8 @@ struct hg_test_bulk_args {
     size_t nbytes;
     hg_atomic_int32_t completed_transfers;
     size_t ret;
+    pdc_metadata_t **meta_arr;
+    int             *n_meta;
 };
 
 perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out);

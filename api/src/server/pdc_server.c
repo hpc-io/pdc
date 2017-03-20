@@ -2156,10 +2156,54 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+static int is_metadata_satisfy_constraint(pdc_metadata_t *metadata, metadata_query_transfer_in_t *constraints)
+{
+    FUNC_ENTER(NULL);
+    int ret_value = 1;
+
+    /* int     user_id; */
+    /* char    *app_name; */
+    /* char    *obj_name; */
+    /* int     time_step_from; */
+    /* int     time_step_to; */
+    /* int     ndim; */
+    /* char    *tags; */
+    if (constraints->user_id > 0 && constraints->user_id != metadata->user_id) {
+        ret_value = -1;
+        goto done;
+    }
+    if (strcmp(constraints->app_name, " ") != 0 && strcmp(metadata->app_name, constraints->app_name) != 0) {
+        ret_value = -1;
+        goto done;
+    }
+    if (strcmp(constraints->obj_name, " ") != 0 && strcmp(metadata->obj_name, constraints->obj_name) != 0) {
+        ret_value = -1;
+        goto done;
+    }
+    if (constraints->time_step_from > 0 && constraints->time_step_to > 0 && 
+        (metadata->time_step < constraints->time_step_from || metadata->time_step > constraints->time_step_to)
+       ) {
+        ret_value = -1;
+        goto done;
+    }
+    if (constraints->ndim > 0 && metadata->ndim != constraints->ndim ) {
+        ret_value = -1;
+        goto done;
+    }
+    // TODO: Currently only supports searching with one tag
+    if (strcmp(constraints->tags, " ") != 0 && strstr(metadata->tags, constraints->tags) == NULL) {
+        ret_value = -1;
+        goto done;
+    }
+
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs)
 {
     FUNC_ENTER(NULL);
-
     perr_t ret_value = FAIL;
 
     int i;
@@ -2174,39 +2218,37 @@ perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uin
         (*buf_ptrs)[i] = (void*)malloc(sizeof(void*));
     }
     // TODO: free buf_ptrs
+    
+    pdc_hash_table_entry_head *head; 
+    pdc_metadata_t *elt;
+    hg_hash_table_iter_t hash_table_iter;
+    int n_entry;
 
-
+    // (*buf_ptrs)[iter=0] stores the total number of matched metadata
     int iter = 1;
     if (metadata_hash_table_g != NULL) {
 
-        if (in->is_list_all == 1) {
-            // List all objects, no need to check other constraints
-            pdc_hash_table_entry_head *head; 
-            pdc_metadata_t *elt;
-            hg_hash_table_iter_t hash_table_iter;
+        n_entry = hg_hash_table_num_entries(metadata_hash_table_g);
+        hg_hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
 
-            int n_entry = hg_hash_table_num_entries(metadata_hash_table_g);
-            hg_hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
 
-            while (n_entry != 0 && hg_hash_table_iter_has_more(&hash_table_iter)) {
-
-                head = hg_hash_table_iter_next(&hash_table_iter);
-                // Now iterate the list under this entry
-                DL_FOREACH(head->metadata, elt) {
+        while (n_entry != 0 && hg_hash_table_iter_has_more(&hash_table_iter)) {
+            head = hg_hash_table_iter_next(&hash_table_iter);
+            DL_FOREACH(head->metadata, elt) {
+                // List all objects, no need to check other constraints
+                if (in->is_list_all == 1) {
+                    (*buf_ptrs)[iter++] = elt;
+                }
+                // check if current metadata matches search constraint
+                else if (is_metadata_satisfy_constraint(elt, in) == 1) {
                     (*buf_ptrs)[iter++] = elt;
                 }
             }
-
-            *n_meta = iter - 1;
-            (*buf_ptrs)[0] = n_meta;
-            printf("Total returned results: %d\n", *n_meta);
         }
-        else {
-            // Need to check the query constraint
-            printf("Query with constraints not ready yet!\n");
+        *n_meta = iter - 1;
+        (*buf_ptrs)[0] = n_meta;
 
-        }
-
+        /* printf("PDC_SERVER: Total matching results: %d\n", *n_meta); */
 
     }  // if (metadata_hash_table_g != NULL)
     else {
@@ -2215,38 +2257,9 @@ perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uin
         goto done;
     }
 
+    /* printf("PDC_SERVER: Received partial query, user_id=%d, ndim=%d\n", in->user_id, in->ndim); */
+    /* fflush(stdout); */
 
-
-
-    printf("PDC_SERVER: Received partial query, user_id=%d, ndim=%d\n", in->user_id, in->ndim);
-    fflush(stdout);
-
-
-/*     pdc_metadata_t *meta_0, *meta_1; */
-
-/*     meta_0 = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t)); */    
-/*     meta_1 = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t)); */    
-
-/*     meta_0->obj_id = 12345; */
-/*     meta_1->obj_id = 54321; */
-/*     meta_0->ndim = 2; */
-/*     meta_1->ndim = 3; */
-/*     strcpy(meta_0->app_name, "test_app_0"); */
-/*     strcpy(meta_1->app_name, "test_app_1"); */
-/*     strcpy(meta_0->obj_name, "obj0"); */
-/*     strcpy(meta_1->obj_name, "obj1"); */
-/*     strcpy(meta_0->tags, "tags0"); */
-/*     strcpy(meta_1->tags, "tags1"); */
-    /* // Test */
-    /* uint32_t n_buf = 20; */
-
-
-    // Search with the constraint
-
-
-
-    /* (*buf_ptrs)[1] = meta_0; */
-    /* (*buf_ptrs)[2] = meta_1; */
 
     ret_value = SUCCEED;
 
@@ -2268,25 +2281,7 @@ perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key,
     pdc_metadata_t metadata;
     PDC_Server_metadata_init(&metadata);
 
-    char *name;
-    /* // TODO: this is temp solution to convert "Obj_%d" to name="Obj_" and time_step=%d */
-    /* //       will need to delete once Kimmy adds the pdc_prop related functions */
-    /* int i, obj_name_len; */
-    /* uint32_t tmp_time_step = 0; */
-    /* obj_name_len = strlen(obj_name); */
-    /* char *tmp_obj_name = (char*)malloc(sizeof(char) * (obj_name_len+1)); */
-    /* strcpy(tmp_obj_name, obj_name); */
-    /* for (i = 0; i < obj_name_len; i++) { */
-    /*     if (isdigit(obj_name[i])) { */
-    /*         tmp_time_step = atoi(obj_name+i); */
-    /*         /1* printf("Converted [%s] = %d\n", obj_name, tmp_time_step); *1/ */
-    /*         tmp_obj_name[i] = 0; */
-    /*         break; */
-    /*     } */
-    /* } */
-    /* total_mem_usage_g += (sizeof(char) * (obj_name_len+1)); */
-    /* name = tmp_obj_name; */
-
+    const char *name;
     name = obj_name;
 
     strcpy(metadata.obj_name, name);

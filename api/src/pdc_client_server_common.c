@@ -146,7 +146,7 @@ void PDC_print_metadata(pdc_metadata_t *a)
     if (a == NULL) {
         printf("==Empty metadata structure\n");
     }
-    printf("================================\n\n");
+    printf("================================\n");
     printf("  obj_id    = %llu\n", a->obj_id);
     printf("  uid       = %d\n",   a->user_id);
     printf("  app_name  = %s\n",   a->app_name);
@@ -556,8 +556,8 @@ HG_TEST_RPC_CB(query_partial, handle)
     out.ret = 0;
 
     // Send bulk handle to client
-    printf("query_partial_cb(): Sending bulk handle to client\n");
-    fflush(stdout);
+    /* printf("query_partial_cb(): Sending bulk handle to client\n"); */
+    /* fflush(stdout); */
     /* HG_Respond(handle, PDC_server_bulk_respond_cb, NULL, &out); */
     ret_value = HG_Respond(handle, NULL, NULL, &out);
 

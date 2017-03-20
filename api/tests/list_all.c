@@ -147,7 +147,7 @@ int main(int argc, const char *argv[])
 
         if (use_name == -1) {
             sprintf(obj_name, "%s", rand_string(tmp_str, 16));
-            PDCprop_set_obj_time_step(obj_prop, rank, pdc);
+            PDCprop_set_obj_time_step(obj_prop, i, pdc);
             /* sprintf(obj_name[i], "%s_%d", rand_string(tmp_str, 16), i + rank * count); */
         }
         else if (use_name == 1) {
@@ -205,10 +205,24 @@ int main(int argc, const char *argv[])
         fflush(stdout);
     }
 
-    PDC_Client_list_all();
+    pdc_metadata_t **out;
+    int n_obj;
+    printf("Listing all objects\n");
+    PDC_Client_list_all(&n_obj, out);
+    printf("Received %d metadata objects\n", n_obj);
+
+    PDCprop_set_obj_tags(obj_prop, "tag1=2",    pdc);
+    PDCprop_set_obj_time_step(obj_prop, 0, pdc);
     test_obj = PDCobj_create(pdc, cont, "test_obj_name0", obj_prop);
     test_obj = PDCobj_create(pdc, cont, "test_obj_name1", obj_prop);
-    PDC_Client_list_all();
+    printf("Searching for objects with tag1=2\n");
+    PDC_partial_query(0, -1, NULL, NULL, -1, -1, -1, "tag1=2", &n_obj, out);
+    printf("Received %d metadata objects\n", n_obj);
+
+    printf("Searching for objects with timestep from 2 to 4\n");
+    PDC_partial_query(0, -1, NULL, NULL, 2, 4, -1, NULL, &n_obj, out);
+    printf("Received %d metadata objects\n", n_obj);
+    
 
     /* // Check for duplicate insertion */
     /* int dup_obj_id; */
