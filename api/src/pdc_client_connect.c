@@ -1577,6 +1577,13 @@ static perr_t PDC_Client_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_
     uint32_t server_id;
 
     server_id  = get_server_id_by_obj_id(meta_id);
+
+    // Delay test
+    srand(pdc_client_mpi_rank_g);
+    int delay = rand() % 1000;
+    usleep(delay);
+
+
     /* printf("==PDC_CLIENT: lock going to server %u\n", server_id); */
     /* fflush(stdout); */
 
