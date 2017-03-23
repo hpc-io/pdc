@@ -1580,7 +1580,7 @@ static perr_t PDC_Client_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_
 
     // Delay test
     srand(pdc_client_mpi_rank_g);
-    int delay = rand() % 1000;
+    int delay = rand() % 500;
     usleep(delay);
 
 

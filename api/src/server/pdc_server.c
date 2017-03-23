@@ -1859,8 +1859,8 @@ static perr_t PDC_Server_loop(hg_class_t *hg_class, hg_context_t *hg_context)
     do {
         unsigned int actual_count = 0;
         do {
-            hg_ret = HG_Trigger(hg_context, 1024/* timeout */, 4096/* max count */, &actual_count);
-            /* hg_ret = HG_Trigger(hg_context, 0/1* timeout *1/, 1 /1* max count *1/, &actual_count); */
+            /* hg_ret = HG_Trigger(hg_context, 1024/1* timeout *1/, 4096/1* max count *1/, &actual_count); */
+            hg_ret = HG_Trigger(hg_context, 0/* timeout */, 1 /* max count */, &actual_count);
         } while ((hg_ret == HG_SUCCESS) && actual_count);
 
         /* Do not try to make progress anymore if we're done */
