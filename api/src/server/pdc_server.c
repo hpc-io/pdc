@@ -2209,10 +2209,8 @@ perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uin
     int i;
     uint32_t n_buf;
 
-    // n_buf = n_metadata_g + 2 because: 
-    //    +1 for n_meta 
-    //    +1 for potential padding array
-    n_buf = n_metadata_g + 2;
+    // n_buf = n_metadata_g + 1 for potential padding array
+    n_buf = n_metadata_g + 1;
     *buf_ptrs = (void**)malloc(n_buf * sizeof(void*));
     for (i = 0; i < n_buf; i++) {
         (*buf_ptrs)[i] = (void*)malloc(sizeof(void*));
@@ -2224,8 +2222,7 @@ perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uin
     hg_hash_table_iter_t hash_table_iter;
     int n_entry;
 
-    // (*buf_ptrs)[iter=0] stores the total number of matched metadata
-    int iter = 1;
+    uint32_t iter = 0;
     if (metadata_hash_table_g != NULL) {
 
         n_entry = hg_hash_table_num_entries(metadata_hash_table_g);
@@ -2245,10 +2242,9 @@ perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uin
                 }
             }
         }
-        *n_meta = iter - 1;
-        (*buf_ptrs)[0] = n_meta;
+        *n_meta = iter;
 
-        /* printf("PDC_SERVER: Total matching results: %d\n", *n_meta); */
+        printf("PDC_Server_get_partial_query_result: Total matching results: %d\n", *n_meta);
 
     }  // if (metadata_hash_table_g != NULL)
     else {
@@ -2256,10 +2252,6 @@ perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uin
         ret_value = FAIL;
         goto done;
     }
-
-    /* printf("PDC_SERVER: Received partial query, user_id=%d, ndim=%d\n", in->user_id, in->ndim); */
-    /* fflush(stdout); */
-
 
     ret_value = SUCCEED;
 

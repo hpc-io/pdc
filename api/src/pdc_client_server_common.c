@@ -506,7 +506,7 @@ HG_TEST_RPC_CB(query_partial, handle)
 
     HG_Get_input(handle, &in);
 
-    out.ret = 2222;
+    out.ret = -1;
 
     // bulk
     // Create a bulk descriptor
@@ -522,27 +522,37 @@ HG_TEST_RPC_CB(query_partial, handle)
 
     PDC_Server_get_partial_query_result(&in, n_meta, &buf_ptrs);
 
-    /* printf("n_meta=%u\n", buf_ptrs[0]); */
+    printf("query_partial_cb: n_meta=%u\n", *n_meta);
 
-    n_buf = *n_meta + 1;
+    // No result found
+    if (*n_meta == 0) {
+        out.bulk_handle = HG_BULK_NULL;
+        out.ret = 0;
+        printf("No objects returned for the query\n");
+        ret_value = HG_Respond(handle, NULL, NULL, &out);
+        goto done;
+    }
 
-    buf_sizes = (size_t*)malloc(n_buf * sizeof(size_t));
-    buf_sizes[0] = sizeof(uint32_t);
+    n_buf = *n_meta;
+
+    buf_sizes = (size_t*)malloc( (n_buf+1) * sizeof(size_t));
     for (i = 0; i < *n_meta; i++) {
-        buf_sizes[i+1] = sizeof(pdc_metadata_t);
+        buf_sizes[i] = sizeof(pdc_metadata_t);
     }
-    // TODO: n_meta, free buf_sizes
+    // TODO: free buf_sizes
 
 
-    // Note: it seems Mercury bulk transfer has issues is the total transfer size is less
-    //       than 3862 bytes, so need to add some padding data if less data is transferred
-    if (*n_meta < 9) {
-        uint32_t padding_size = (9 - *n_meta) * sizeof(pdc_metadata_t);
-        padding = (char*)malloc(sizeof(char) * padding_size);
-        buf_ptrs[*n_meta+1] = padding;
-        buf_sizes[*n_meta+1] = sizeof(char) * padding_size;
-        n_buf++;
-    }
+    // Note: it seems Mercury bulk transfer has issues if the total transfer size is less
+    //       than 3862 bytes in Eager Bulk mode, so need to add some padding data 
+    /* if (*n_meta < 11) { */
+    /*     uint32_t padding_size; */
+    /*     /1* padding_size = (10 - *n_meta) * sizeof(pdc_metadata_t); *1/ */
+    /*     padding_size = 1048576; */
+    /*     padding = (char*)malloc(padding_size); */
+    /*     buf_ptrs[*n_meta] = padding; */
+    /*     buf_sizes[*n_meta] = padding_size; */
+    /*     n_buf++; */
+    /* } */
 
     // Create bulk handle
     hg_ret = HG_Bulk_create(hg_class_g, n_buf, buf_ptrs, buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
@@ -551,9 +561,9 @@ HG_TEST_RPC_CB(query_partial, handle)
         return EXIT_FAILURE;
     }
 
-     // Fill bulk handle
+    // Fill bulk handle and return number of metadata that satisfy the query 
     out.bulk_handle = bulk_handle;
-    out.ret = 0;
+    out.ret = *n_meta;
 
     // Send bulk handle to client
     /* printf("query_partial_cb(): Sending bulk handle to client\n"); */
@@ -561,10 +571,11 @@ HG_TEST_RPC_CB(query_partial, handle)
     /* HG_Respond(handle, PDC_server_bulk_respond_cb, NULL, &out); */
     ret_value = HG_Respond(handle, NULL, NULL, &out);
 
+
+done:
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
-done:
     FUNC_LEAVE(ret_value);
 }
 

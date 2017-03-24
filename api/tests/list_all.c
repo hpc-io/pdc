@@ -178,19 +178,19 @@ int main(int argc, const char *argv[])
         /*     printf("%lld\n", test_obj); */
 
         // Print progress
-        int progress_factor = count < 10 ? 1 : 10;
-        if (i > 0 && i % (count/progress_factor) == 0) {
-            gettimeofday(&ht_total_end, 0);
-            ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
-            ht_total_sec        = ht_total_elapsed / 1000000.0;
-            if (rank == 0) {
-                printf("%10d created ... %.4f s\n", i * size, ht_total_sec);
-                fflush(stdout);
-            }
-            #ifdef ENABLE_MPI
-            MPI_Barrier(MPI_COMM_WORLD);
-            #endif
-        }
+        /* int progress_factor = count < 10 ? 1 : 10; */
+        /* if (i > 0 && i % (count/progress_factor) == 0) { */
+        /*     gettimeofday(&ht_total_end, 0); */
+        /*     ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec; */
+        /*     ht_total_sec        = ht_total_elapsed / 1000000.0; */
+        /*     if (rank == 0) { */
+        /*         printf("%10d created ... %.4f s\n", i * size, ht_total_sec); */
+        /*         fflush(stdout); */
+        /*     } */
+        /*     #ifdef ENABLE_MPI */
+        /*     MPI_Barrier(MPI_COMM_WORLD); */
+        /*     #endif */
+        /* } */
 
     }
 #ifdef ENABLE_MPI
@@ -211,37 +211,18 @@ int main(int argc, const char *argv[])
     PDC_Client_list_all(&n_obj, out);
     printf("Received %d metadata objects\n", n_obj);
 
-    PDCprop_set_obj_tags(obj_prop, "tag1=2",    pdc);
-    PDCprop_set_obj_time_step(obj_prop, 0, pdc);
-    test_obj = PDCobj_create(pdc, cont, "test_obj_name0", obj_prop);
-    test_obj = PDCobj_create(pdc, cont, "test_obj_name1", obj_prop);
-    printf("Searching for objects with tag1=2\n");
-    PDC_partial_query(0, -1, NULL, NULL, -1, -1, -1, "tag1=2", &n_obj, out);
-    printf("Received %d metadata objects\n", n_obj);
+    /* PDCprop_set_obj_tags(obj_prop, "tag1=2",    pdc); */
+    /* PDCprop_set_obj_time_step(obj_prop, 0, pdc); */
+    /* test_obj = PDCobj_create(pdc, cont, "test_obj_name0", obj_prop); */
+    /* test_obj = PDCobj_create(pdc, cont, "test_obj_name1", obj_prop); */
+    /* printf("Searching for objects with tag1=2\n"); */
+    /* PDC_partial_query(0, -1, NULL, NULL, -1, -1, -1, "tag1=2", &n_obj, out); */
+    /* printf("Received %d metadata objects\n", n_obj); */
 
-    printf("Searching for objects with timestep from 2 to 4\n");
-    PDC_partial_query(0, -1, NULL, NULL, 2, 4, -1, NULL, &n_obj, out);
-    printf("Received %d metadata objects\n", n_obj);
+    /* printf("Searching for objects with timestep from 2 to 4\n"); */
+    /* PDC_partial_query(0, -1, NULL, NULL, 2, 4, -1, NULL, &n_obj, out); */
+    /* printf("Received %d metadata objects\n", n_obj); */
     
-
-    /* // Check for duplicate insertion */
-    /* int dup_obj_id; */
-    /* sprintf(obj_name, "%s_%d", obj_prefix[0], rank * 10000000); */
-    /* dup_obj_id = PDCobj_create(pdc, obj_name, NULL); */
-    /* int all_dup_obj_id; */
-
-/* #ifdef ENABLE_MPI */
-    /* MPI_Reduce(&dup_obj_id, &all_dup_obj_id, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD); */  
-/* #else */
-    /* all_dup_obj_id = dup_obj_id; */
-/* #endif */
-
-    /* if (rank == 0) { */
-    /*     if (all_dup_obj_id>=0 ) */ 
-    /*         printf("Duplicate insertion test failed!\n"); */
-    /*     else */ 
-    /*         printf("Duplicate insertion test succeed!\n"); */
-    /* } */
 
 done:
 
