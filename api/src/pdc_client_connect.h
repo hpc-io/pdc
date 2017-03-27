@@ -74,9 +74,9 @@ typedef struct client_name_cache_t {
 
 int PDC_Client_read_server_addr_from_file();
 perr_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop, pdcid_t *meta_id);
-perr_t PDC_Client_list_all(int *n_res, pdc_metadata_t **out);
+perr_t PDC_Client_list_all(int *n_res, pdc_metadata_t ***out);
 perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, const char* obj_name, int time_step_from, 
-                         int time_step_to, int ndim, const char* tags, int *n_res, pdc_metadata_t **out);
+                         int time_step_to, int ndim, const char* tags, int *n_res, pdc_metadata_t ***out);
 perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_step, pdc_metadata_t **out);
 perr_t PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t **out);
 perr_t PDC_Client_delete_metadata(pdcid_t pdc, pdcid_t cont_id, char *delete_name, pdcid_t obj_delete_prop);

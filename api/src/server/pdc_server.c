@@ -2244,7 +2244,7 @@ perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uin
         }
         *n_meta = iter;
 
-        printf("PDC_Server_get_partial_query_result: Total matching results: %d\n", *n_meta);
+        /* printf("PDC_Server_get_partial_query_result: Total matching results: %d\n", *n_meta); */
 
     }  // if (metadata_hash_table_g != NULL)
     else {

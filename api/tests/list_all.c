@@ -14,6 +14,7 @@
 
 #include "pdc.h"
 #include "pdc_client_connect.h"
+#include "pdc_client_server_common.h"
 
 static char *rand_string(char *str, size_t size)
 {
@@ -208,20 +209,30 @@ int main(int argc, const char *argv[])
     pdc_metadata_t **out;
     int n_obj;
     printf("Listing all objects\n");
-    PDC_Client_list_all(&n_obj, out);
+    PDC_Client_list_all(&n_obj, &out);
     printf("Received %d metadata objects\n", n_obj);
 
-    /* PDCprop_set_obj_tags(obj_prop, "tag1=2",    pdc); */
-    /* PDCprop_set_obj_time_step(obj_prop, 0, pdc); */
-    /* test_obj = PDCobj_create(pdc, cont, "test_obj_name0", obj_prop); */
-    /* test_obj = PDCobj_create(pdc, cont, "test_obj_name1", obj_prop); */
-    /* printf("Searching for objects with tag1=2\n"); */
-    /* PDC_partial_query(0, -1, NULL, NULL, -1, -1, -1, "tag1=2", &n_obj, out); */
-    /* printf("Received %d metadata objects\n", n_obj); */
+    for (i = 0; i < n_obj; i++) {
+        PDC_print_metadata(out[i]);
+    }
 
-    /* printf("Searching for objects with timestep from 2 to 4\n"); */
-    /* PDC_partial_query(0, -1, NULL, NULL, 2, 4, -1, NULL, &n_obj, out); */
-    /* printf("Received %d metadata objects\n", n_obj); */
+    PDCprop_set_obj_tags(obj_prop, "tag1=2",    pdc);
+    PDCprop_set_obj_time_step(obj_prop, 0, pdc);
+    test_obj = PDCobj_create(pdc, cont, "test_obj_name0", obj_prop);
+    test_obj = PDCobj_create(pdc, cont, "test_obj_name1", obj_prop);
+    printf("Searching for objects with tag1=2\n");
+    PDC_partial_query(0, -1, NULL, NULL, -1, -1, -1, "tag1=2", &n_obj, &out);
+    printf("Received %d metadata objects\n", n_obj);
+    for (i = 0; i < n_obj; i++) {
+        PDC_print_metadata(out[i]);
+    }
+
+    printf("Searching for objects with timestep from 2 to 4\n");
+    PDC_partial_query(0, -1, NULL, NULL, 2, 4, -1, NULL, &n_obj, &out);
+    printf("Received %d metadata objects\n", n_obj);
+    for (i = 0; i < n_obj; i++) {
+        PDC_print_metadata(out[i]);
+    }
     
 
 done:

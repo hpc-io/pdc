@@ -515,17 +515,16 @@ HG_TEST_RPC_CB(query_partial, handle)
     int i;
     void  **buf_ptrs;
     size_t *buf_sizes;
-    char  *padding;
 
-    uint32_t *n_meta, n_buf;
-    n_meta = (uint32_t*)malloc(sizeof(uint32_t));
+    uint32_t *n_meta_ptr, n_buf;
+    n_meta_ptr = (uint32_t*)malloc(sizeof(uint32_t));
 
-    PDC_Server_get_partial_query_result(&in, n_meta, &buf_ptrs);
+    PDC_Server_get_partial_query_result(&in, n_meta_ptr, &buf_ptrs);
 
-    printf("query_partial_cb: n_meta=%u\n", *n_meta);
+    /* printf("query_partial_cb: n_meta=%u\n", *n_meta_ptr); */
 
     // No result found
-    if (*n_meta == 0) {
+    if (*n_meta_ptr == 0) {
         out.bulk_handle = HG_BULK_NULL;
         out.ret = 0;
         printf("No objects returned for the query\n");
@@ -533,26 +532,40 @@ HG_TEST_RPC_CB(query_partial, handle)
         goto done;
     }
 
-    n_buf = *n_meta;
+    n_buf = *n_meta_ptr;
 
     buf_sizes = (size_t*)malloc( (n_buf+1) * sizeof(size_t));
-    for (i = 0; i < *n_meta; i++) {
+    for (i = 0; i < *n_meta_ptr; i++) {
         buf_sizes[i] = sizeof(pdc_metadata_t);
     }
     // TODO: free buf_sizes
 
-
     // Note: it seems Mercury bulk transfer has issues if the total transfer size is less
     //       than 3862 bytes in Eager Bulk mode, so need to add some padding data 
-    /* if (*n_meta < 11) { */
-    /*     uint32_t padding_size; */
-    /*     /1* padding_size = (10 - *n_meta) * sizeof(pdc_metadata_t); *1/ */
-    /*     padding_size = 1048576; */
-    /*     padding = (char*)malloc(padding_size); */
-    /*     buf_ptrs[*n_meta] = padding; */
-    /*     buf_sizes[*n_meta] = padding_size; */
+    /* pdc_metadata_t *padding; */
+    /* if (*n_meta_ptr < 11) { */
+    /*     size_t padding_size; */
+    /*     /1* padding_size = (10 - *n_meta_ptr) * sizeof(pdc_metadata_t); *1/ */
+    /*     padding_size = 5000 * sizeof(pdc_metadata_t); */
+    /*     padding = malloc(padding_size); */
+    /*     memcpy(padding, buf_ptrs[0], sizeof(pdc_metadata_t)); */
+    /*     buf_ptrs[*n_meta_ptr] = padding; */
+    /*     buf_sizes[*n_meta_ptr] = padding_size; */
     /*     n_buf++; */
     /* } */
+
+    // Fix when Mercury output in HG_Respond gets too large and cannot be transfered
+    // hg_set_output(): Output size exceeds NA expected message size
+    pdc_metadata_t *large_serial_meta_buf;
+    if (*n_meta_ptr > 80) {
+        large_serial_meta_buf = (pdc_metadata_t*)malloc( sizeof(pdc_metadata_t) * (*n_meta_ptr) );
+        for (i = 0; i < *n_meta_ptr; i++) {
+            memcpy(&large_serial_meta_buf[i], buf_ptrs[i], sizeof(pdc_metadata_t) );
+        }
+        buf_ptrs[0]  = large_serial_meta_buf;
+        buf_sizes[0] = sizeof(pdc_metadata_t) * (*n_meta_ptr);
+        n_buf = 1;
+    }
 
     // Create bulk handle
     hg_ret = HG_Bulk_create(hg_class_g, n_buf, buf_ptrs, buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
@@ -563,7 +576,7 @@ HG_TEST_RPC_CB(query_partial, handle)
 
     // Fill bulk handle and return number of metadata that satisfy the query 
     out.bulk_handle = bulk_handle;
-    out.ret = *n_meta;
+    out.ret = *n_meta_ptr;
 
     // Send bulk handle to client
     /* printf("query_partial_cb(): Sending bulk handle to client\n"); */

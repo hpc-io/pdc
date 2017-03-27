@@ -398,8 +398,8 @@ hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
         size_t buf_sizes[2] = {0,0};
         uint32_t actual_cnt;
         HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, &buf, buf_sizes, &actual_cnt);
-        printf("received bulk transfer, buf_sizes: %d %d, actual_cnt=%d\n", buf_sizes[0], buf_sizes[1], actual_cnt);
-        fflush(stdout);
+        /* printf("received bulk transfer, buf_sizes: %d %d, actual_cnt=%d\n", buf_sizes[0], buf_sizes[1], actual_cnt); */
+        /* fflush(stdout); */
 
         pdc_metadata_t *meta_ptr;
         meta_ptr = (pdc_metadata_t*)(buf);
@@ -742,9 +742,10 @@ metadata_query_bulk_cb(const struct hg_cb_info *callback_info)
     ret_value = HG_Get_output(handle, &output);
 
     /* printf("==PDC_CLIENT: Received response from server with bulk handle, n_buf=%d\n", output.ret); */
+    uint32_t n_meta = output.ret;
     client_lookup_args->n_meta = (uint32_t*)malloc(sizeof(uint32_t));
-    *(client_lookup_args->n_meta) = output.ret;
-    if (output.ret == 0) {
+    *(client_lookup_args->n_meta) = n_meta;
+    if (n_meta == 0) {
         client_lookup_args->meta_arr = NULL;
         goto done;
     }
@@ -766,8 +767,14 @@ metadata_query_bulk_cb(const struct hg_cb_info *callback_info)
     bulk_args->nbytes = HG_Bulk_get_size(origin_bulk_handle);
     bulk_args->n_meta = client_lookup_args->n_meta;
 
+    /* printf("nbytes=%u\n", bulk_args->nbytes); */
+    fflush(stdout);
+
+    void *recv_meta;
+    recv_meta = (void *)malloc(sizeof(pdc_metadata_t) * n_meta);
+
     /* Create a new bulk handle to read the data */
-    HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *) &bulk_args->nbytes, HG_BULK_READWRITE, &local_bulk_handle);
+    HG_Bulk_create(hg_info->hg_class, 1, &recv_meta, (hg_size_t *) &bulk_args->nbytes, HG_BULK_READWRITE, &local_bulk_handle);
 
     /* Pull bulk data */
     hg_ret = HG_Bulk_transfer(hg_info->context, hg_test_bulk_transfer_cb,
@@ -794,7 +801,7 @@ done:
 }
 
 // bulk test 
-perr_t PDC_Client_list_all(int *n_res, pdc_metadata_t **out)
+perr_t PDC_Client_list_all(int *n_res, pdc_metadata_t ***out)
 {
     FUNC_ENTER(NULL);
     perr_t ret_value;
@@ -806,7 +813,7 @@ done:
 }
 
 perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, const char* obj_name, int time_step_from, 
-                         int time_step_to, int ndim, const char* tags, int *n_res, pdc_metadata_t **out)
+                         int time_step_to, int ndim, const char* tags, int *n_res, pdc_metadata_t ***out)
 {
     FUNC_ENTER(NULL);
 
@@ -878,11 +885,11 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
     
     int i;
     *n_res = *lookup_args.n_meta;
-    out = lookup_args.meta_arr;
-    printf("Going to print %u metadata.\n", *(lookup_args.n_meta));
-    for (i = 0; i < *n_res; i++) {
-        PDC_print_metadata(lookup_args.meta_arr[i]);
-    }
+    *out = lookup_args.meta_arr;
+    /* printf("Going to print %u metadata.\n", *(lookup_args.n_meta)); */
+    /* for (i = 0; i < *n_res; i++) { */
+    /*     PDC_print_metadata(lookup_args.meta_arr[i]); */
+    /* } */
 
     // TODO: need to be careful when freeing the lookup_args, as it include the results returned to user
 
