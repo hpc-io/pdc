@@ -161,10 +161,9 @@ MERCURY_GEN_PROC( metadata_delete_out_t, ((int32_t)(ret)) )
 MERCURY_GEN_PROC( metadata_update_in_t, ((uint64_t)(obj_id)) ((uint32_t)(hash_value)) ((pdc_metadata_transfer_t)(new_metadata)) )
 MERCURY_GEN_PROC( metadata_update_out_t, ((int32_t)(ret)) )
 
-<<<<<<< HEAD
 MERCURY_GEN_PROC( gen_reg_map_notification_in_t, ((uint64_t)(from_obj_id)) ((uint64_t)(from_region_id)) ((uint64_t)(to_obj_id)) ((uint64_t)(to_region_id)) )
 MERCURY_GEN_PROC( gen_reg_map_notification_out_t, ((int32_t)(ret)) ) 
-=======
+
 MERCURY_GEN_STRUCT_PROC( region_info_transfer_t, ((hg_size_t)(ndim)) ((uint64_t)(start_0)) ((uint64_t)(start_1)) ((uint64_t)(start_2)) ((uint64_t)(start_3))  ((uint64_t)(count_0)) ((uint64_t)(count_1)) ((uint64_t)(count_2)) ((uint64_t)(count_3)) ((uint64_t)(stride_0)) ((uint64_t)(stride_1)) ((uint64_t)(stride_2)) ((uint64_t)(stride_3)) )
 
 MERCURY_GEN_PROC( region_lock_in_t, ((uint64_t)(obj_id)) ((int32_t)(lock_op)) ((region_info_transfer_t)(region)) )
@@ -174,7 +173,6 @@ MERCURY_GEN_PROC( region_lock_out_t, ((int32_t)(ret)) )
 MERCURY_GEN_PROC(bulk_write_in_t,  ((hg_int32_t)(cnt)) ((hg_bulk_t)(bulk_handle)))
 MERCURY_GEN_PROC(bulk_write_out_t, ((hg_uint64_t)(ret)) )
 
->>>>>>> Metadata
 #else
 
 typedef struct {
