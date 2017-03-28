@@ -38,6 +38,7 @@ static hg_id_t         metadata_delete_register_id_g;
 static hg_id_t         metadata_delete_by_id_register_id_g;
 static hg_id_t         metadata_update_register_id_g;
 
+static hg_id_t	       gen_reg_map_notification_register_id_g;
 /* hg_hash_table_t       *obj_names_cache_hash_table_g = NULL; */
 
 static int            *debug_server_id_count = NULL;
@@ -125,13 +126,14 @@ int PDC_Client_read_server_addr_from_file()
     pdc_server_info_g = (pdc_server_info_t*)malloc(sizeof(pdc_server_info_t) * pdc_server_num_g);
     // Fill in default values
     for (i = 0; i < pdc_server_num_g; i++) {
-        pdc_server_info_g[i].addr_valid                   = 0;
-        pdc_server_info_g[i].rpc_handle_valid             = 0;
-        pdc_server_info_g[i].client_test_handle_valid     = 0;
-        pdc_server_info_g[i].close_server_handle_valid    = 0;
-        pdc_server_info_g[i].metadata_query_handle_valid  = 0;
-        pdc_server_info_g[i].metadata_delete_handle_valid = 0;
-        pdc_server_info_g[i].metadata_update_handle_valid = 0;
+        pdc_server_info_g[i].addr_valid                  	 = 0;
+        pdc_server_info_g[i].rpc_handle_valid            	 = 0;
+        pdc_server_info_g[i].client_test_handle_valid    	 = 0;
+        pdc_server_info_g[i].close_server_handle_valid   	 = 0;
+        pdc_server_info_g[i].metadata_query_handle_valid 	 = 0;
+        pdc_server_info_g[i].metadata_delete_handle_valid 	 = 0;
+        pdc_server_info_g[i].metadata_update_handle_valid 	 = 0;
+		pdc_server_info_g[i].client_send_region_handle_valid = 0;
     }
 
     i = 0;
@@ -173,7 +175,7 @@ client_test_connect_rpc_cb(const struct hg_cb_info *callback_info)
 
     hg_return_t ret_value;
 
-    /* printf("Entered client_rpc_cb()"); */
+    /* printf("Entered client_test_connect_rpc_cb()"); */
     struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
     hg_handle_t handle = callback_info->info.forward.handle;
 
@@ -184,6 +186,30 @@ client_test_connect_rpc_cb(const struct hg_cb_info *callback_info)
     client_lookup_args->client_id = output.ret;
 
     work_todo_g--;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+// Callback function for  HG_Forward()
+// Gets executed after a call to HG_Trigger and the RPC has completed
+static hg_return_t
+client_send_region_map_rpc_cb(const struct hg_cb_info *callback_info)
+{
+	FUNC_ENTER(NULL);
+    hg_return_t ret_value;
+
+    /* printf("Entered client_send_region_map_rpc_cb"); */
+	struct region_map_args *region_map_args = (struct region_map_args*) callback_info->arg;
+	hg_handle_t handle = callback_info->info.forward.handle;
+
+	gen_reg_map_notification_out_t output;
+	ret_value = HG_Get_output(handle, &output);
+	/* printf("Return value=%d\n", output.ret); */
+
+	region_map_args->ret = output.ret;
+
+	work_todo_g--;
 
 done:
     FUNC_LEAVE(ret_value);
@@ -338,7 +364,11 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     perr_t ret_value = SUCCEED;
 
     char na_info_string[PATH_MAX];
-    sprintf(na_info_string, "bmi+tcp://%d", port);
+    char hostname[1024];
+    memset(hostname, 0, 1024);
+    gethostname(hostname, 1023);
+    sprintf(na_info_string, "bmi+tcp://%s:%d", hostname, port);
+    /* sprintf(na_info_string, "bmi+tcp://%d", port); */
     /* sprintf(na_info_string, "cci+tcp://%d", port); */
     if (pdc_client_mpi_rank_g == 0) {
         printf("==PDC_CLIENT: using %.7s\n", na_info_string);
@@ -352,7 +382,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
 
     /* Initialize Mercury with the desired network abstraction class */
     /* printf("Using %s\n", na_info_string); */
-    *hg_class = HG_Init(na_info_string, NA_FALSE);
+    *hg_class = HG_Init(na_info_string, HG_TRUE);
     if (*hg_class == NULL) {
         printf("Error with HG_Init()\n");
         goto done;
@@ -370,6 +400,9 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     metadata_delete_register_id_g       = metadata_delete_register(*hg_class);
     metadata_delete_by_id_register_id_g = metadata_delete_by_id_register(*hg_class);
     metadata_update_register_id_g       = metadata_update_register(*hg_class);
+
+    // 
+    gen_reg_map_notification_register_id_g	= gen_reg_map_notification_register(*hg_class);
 
     // Lookup and fill the server info
     int i;
@@ -1207,3 +1240,50 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDC_Client_send_region_map(pdcid_t from_obj_id, pdcid_t from_region_id, pdcid_t to_obj_id, pdcid_t to_region_id)
+{
+	FUNC_ENTER(NULL);
+	perr_t ret_value = SUCCEED;
+	hg_return_t  hg_ret = 0;
+
+	// Fill input structure
+	gen_reg_map_notification_in_t in;
+	in.from_obj_id = from_obj_id;
+	in.from_region_id = from_region_id;
+	in.to_obj_id = to_obj_id;
+	in.to_region_id = to_region_id;
+	uint32_t server_id = PDC_get_server_by_obj_id(from_obj_id, pdc_server_num_g);
+
+	// Debug statistics for counting number of messages sent to each server.
+    debug_server_id_count[server_id]++;
+
+	// We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
+	if (pdc_server_info_g[server_id].client_send_region_handle_valid!= 1) {
+        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_reg_map_notification_register_id_g, &pdc_server_info_g[server_id].client_send_region_handle);
+        pdc_server_info_g[server_id].client_send_region_handle_valid  = 1;
+    }
+
+	/* printf("Sending input to target\n"); */
+	struct region_map_args map_args;
+	hg_ret = HG_Forward(pdc_server_info_g[server_id].client_send_region_handle, client_send_region_map_rpc_cb, &map_args, &in);	
+	if (hg_ret != HG_SUCCESS) {
+        PGOTO_ERROR(FAIL, "PDC_Client_send_region_map(): Could not start HG_Forward()\n");
+    }
+
+	// Wait for response from server
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+	/* if (pdc_client_mpi_rank_g == 1) { */
+    /*     printf("==PDC_CLIENT[%d]: PDC_Client_send_region() got response from server %d\n", pdc_client_mpi_rank_g, lookup_args.ret); */
+    /*     fflush(stdout); */
+    /* } */
+
+	if (map_args.ret != 1) 
+//        printf("PDC_CLIENT: object mapping NOT successful ... ret_value = %d\n", map_args.ret);
+		PGOTO_ERROR(FAIL,"PDC_CLIENT: object mapping failed...\n");
+	else
+		printf("PDC_CLIENT: object mapping successful\n");
+done:
+    FUNC_LEAVE(ret_value);
+}

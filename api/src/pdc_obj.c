@@ -420,46 +420,13 @@ perr_t PDCobj_map(pdcid_t from_obj, pdcid_t from_reg, pdcid_t to_obj, pdcid_t to
     perr_t ret_value = SUCCEED;         /* Return value */
     
     FUNC_ENTER(NULL);
-    
+	ret_value = PDC_Client_send_region_map(from_obj, from_reg, to_obj, to_reg); 
     // PDC_CLASS_t defined in pdc_interface.h
     // PDC_obj_info_t defined in pdc_obj_pkg.h
     // PDC_region_info_t defined in pdc_obj_pkg.h
-    PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc_id;
-    PDC_id_info_t *info1 = PDC_find_id(from_obj, pc);
-    if(info1 == NULL)
-        PGOTO_ERROR(FAIL, "cannot locate object ID");
-    PDC_obj_info_t *object1 = (PDC_obj_info_t *)(info1->obj_ptr);
-    
-    PDC_id_info_t *info2 = PDC_find_id(to_obj, pc);
-    if(info2 == NULL)
-        PGOTO_ERROR(FAIL, "cannot locate object ID");
-    PDC_obj_info_t *object2 = (PDC_obj_info_t *)(info2->obj_ptr);
-    
-    // check if ndim matches between object and region, and from source object to target object
-    pdcid_t propid = object1->obj_prop;
-    info1 = PDC_find_id(propid, pc);
-    if(info1 == NULL)
-        PGOTO_ERROR(FAIL, "cannot locate object property ID");
-    PDC_obj_prop_t *prop = (PDC_obj_prop_t *)(info1->obj_ptr);
-    
-    pdcid_t propid2 = object2->obj_prop;
-    info2 = PDC_find_id(propid2, pc);
-    if(info2 == NULL)
-        PGOTO_ERROR(FAIL, "cannot locate object property ID");
-    PDC_obj_prop_t *prop2 = (PDC_obj_prop_t *)(info2->obj_ptr);
-    
-    PDC_id_info_t *reginfo1 = PDC_find_id(from_reg, pc);
-    PDC_id_info_t *reginfo2 = PDC_find_id(to_reg, pc);
-    PDC_region_info_t *reg1 = (PDC_region_info_t *)(reginfo1->obj_ptr);
-    PDC_region_info_t *reg2 = (PDC_region_info_t *)(reginfo2->obj_ptr);
-
-    if(reg1->ndim != reg2->ndim || prop->ndim != reg1->ndim || prop2->ndim != reg2->ndim)
-        PGOTO_ERROR(FAIL, "cannot map between regions of different dimensions");
     // start mapping
     // state that there is mapping to other objects
-    object1->mapping = 1;
-    // Effectively calls server “subscribe” for updates for that region
-    // Callback called on region update
+//    object1->mapping = 1;
 done:
     FUNC_LEAVE(ret_value);
 }

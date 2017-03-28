@@ -1,5 +1,6 @@
 #include <time.h>
 
+#include "pdc_linkedlist.h"
 #include "mercury.h"
 #include "mercury_macros.h"
 #include "mercury_proc_string.h"
@@ -51,6 +52,22 @@ typedef struct pdc_metadata_t {
 
 } pdc_metadata_t;
 
+typedef struct PDC_mapping_info {
+    pdcid_t     					 tgt_obj_id;           /* target of object id */
+	pdcid_t                          tgt_reg_id;           /* target of region id */
+    PDC_LIST_ENTRY(PDC_mapping_info) entry;
+} PDC_mapping_info_t;
+
+typedef struct PDC_mapping {
+// if keeping the struct of origin of region is needed?
+	unsigned						 mapping_count;        /* count the number of mapping of this region */
+	pdcid_t                          obj_id;               /* origin of object id */
+    pdcid_t                          reg_id;			   /* origin of region id */
+    PDC_LIST_HEAD(PDC_mapping_info)  ids;                  /* Head of list of IDs */
+} PDC_mapping_t;
+
+PDC_mapping_t **PDC_mapping_id;
+
 typedef struct pdc_metadata_transfer_t {
     int32_t     user_id;
     const char  *app_name;
@@ -96,7 +113,8 @@ MERCURY_GEN_PROC( metadata_delete_out_t, ((int32_t)(ret)) )
 MERCURY_GEN_PROC( metadata_update_in_t, ((uint64_t)(obj_id)) ((uint32_t)(hash_value)) ((pdc_metadata_transfer_t)(new_metadata)) )
 MERCURY_GEN_PROC( metadata_update_out_t, ((int32_t)(ret)) )
 
-
+MERCURY_GEN_PROC( gen_reg_map_notification_in_t, ((uint64_t)(from_obj_id)) ((uint64_t)(from_region_id)) ((uint64_t)(to_obj_id)) ((uint64_t)(to_region_id)) )
+MERCURY_GEN_PROC( gen_reg_map_notification_out_t, ((int32_t)(ret)) ) 
 #else
 
 typedef struct {
@@ -343,6 +361,16 @@ typedef struct {
     int32_t ret;
 } close_server_out_t;
 
+typedef struct {
+	uint64_t from_obj_id;
+    uint64_t from_region_id;
+	uint64_t to_obj_id;
+	uint64_t to_region_id;
+} gen_reg_map_notification_in_t;
+
+typedef struct {
+    int32_t ret;
+} gen_reg_map_notification_out_t;
 
 static HG_INLINE hg_return_t
 hg_proc_gen_obj_id_in_t(hg_proc_t proc, void *data)
@@ -455,6 +483,16 @@ hg_proc_close_server_out_t(hg_proc_t proc, void *data)
     }
     return ret;
 }
+
+static HG_INLINE hg_return_t
+hg_proc_gen_reg_map_notification_in_t(hg_proc_t proc, void *data)
+{
+}
+
+static HG_INLINE hg_return_t
+hg_proc_gen_reg_map_notification_out_t(hg_proc_t proc, void *data)
+{
+}
 #endif
 
 hg_id_t gen_obj_id_register(hg_class_t *hg_class);
@@ -465,6 +503,8 @@ hg_id_t metadata_query_register(hg_class_t *hg_class);
 hg_id_t metadata_delete_register(hg_class_t *hg_class);
 hg_id_t metadata_delete_by_id_register(hg_class_t *hg_class);
 hg_id_t metadata_update_register(hg_class_t *hg_class);
+
+hg_id_t gen_reg_map_notification_register(hg_class_t *hg_class);
 
 perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out);
 perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out);

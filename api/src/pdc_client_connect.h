@@ -16,6 +16,7 @@ perr_t PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t 
 perr_t PDC_Client_delete_metadata(pdcid_t pdc, pdcid_t cont_id, char *delete_name, pdcid_t obj_delete_prop);
 perr_t PDC_Client_delete_metadata_by_id(pdcid_t pdc, pdcid_t cont_id, uint64_t obj_id);
 perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new);
+perr_t PDC_Client_send_region_map(pdcid_t from_obj_id, pdcid_t from_region_id, pdcid_t to_obj_id, pdcid_t to_region_id);
 perr_t PDC_Client_init();
 perr_t PDC_Client_finalize();
 perr_t PDC_Client_close_all_server();
@@ -40,6 +41,8 @@ typedef struct pdc_server_info_t {
     hg_handle_t     metadata_delete_by_id_handle;
     int             metadata_update_handle_valid;
     hg_handle_t     metadata_update_handle;
+	int				client_send_region_handle_valid;
+	hg_handle_t		client_send_region_handle;
 } pdc_server_info_t;
 
 extern int pdc_server_num_g;
@@ -73,4 +76,8 @@ typedef struct client_name_cache_t {
     struct client_name_cache_t *prev;
     struct client_name_cache_t *next;
 } client_name_cache_t;
+
+struct region_map_args {
+	int         ret;
+};
 #endif

@@ -7,6 +7,7 @@
 #include "mercury_hash_table.h"
 
 #include "pdc_interface.h"
+#include "pdc_malloc.h"
 #include "pdc_client_server_common.h"
 #include "server/pdc_server.h"
 
@@ -451,6 +452,141 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+/* static hg_return_t */
+// gen_reg_map_notification_cb(hg_handle_t handle)
+HG_TEST_RPC_CB(gen_reg_map_notification, handle)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value;
+
+	// Decode input
+	gen_reg_map_notification_in_t in;
+	gen_reg_map_notification_out_t out;
+
+	HG_Get_input(handle, &in);
+	struct hg_info *info = HG_Get_info(handle);
+//	hg_addr_t new_addr;
+//	HG_Addr_dup(info->hg_class, info->addr, &new_addr);
+
+
+	PDC_mapping_t *map_ptr = NULL;
+	PDC_mapping_info_t *m_info_ptr = NULL;
+	int m_success = 0;
+
+	if(PDC_mapping_id == NULL) {
+//		TODO: free space later
+//		printf("==PDC SERVER: pdc region mapping list is currently null. \n");
+		if(NULL == (PDC_mapping_id = (PDC_mapping_t **)malloc(sizeof(PDC_mapping_t *)))) {
+            m_success = 1;
+            printf("==PDC_SERVER: Failed to allocate region mapping list\n");
+        }
+        if(NULL == (map_ptr = (PDC_mapping_t *)malloc(sizeof(PDC_mapping_t)))) {
+			m_success = 1;
+			printf("==PDC_SERVER: Failed to allocate map_ptr\n");
+		}
+		if(NULL == (m_info_ptr = (PDC_mapping_info_t *)malloc(sizeof(PDC_mapping_info_t)))) {
+			m_success = 1;
+			printf("==PDC_SERVER: Failed to allocate m_info_ptr \n");
+		}
+		PDC_mapping_id[0] = map_ptr;
+		PDC_LIST_INIT(&map_ptr->ids);
+		pdc_num_reg = ATOMIC_VAR_INIT(1);  
+		map_ptr->mapping_count = ATOMIC_VAR_INIT(1);
+		map_ptr->obj_id = in.from_obj_id;
+		map_ptr->reg_id = in.from_region_id;
+		m_info_ptr->tgt_obj_id = in.to_obj_id;
+		m_info_ptr->tgt_reg_id = in.to_region_id;
+		PDC_LIST_INSERT_HEAD(&map_ptr->ids, m_info_ptr, entry);
+//		printf("PDC SERVER: # of mapping region is %u\n", pdc_num_reg);
+	}
+	else {
+//		printf("==PDC SERVER: pdc region mapping list is NOT null. \n");
+		int found = 0;
+//		printf("==PDC SERVER: # of mapping region is %u\n", pdc_num_reg);
+		unsigned i = 0;
+		for(i=0; i<pdc_num_reg; i++) {
+			// found the origin region, which was mapped before
+			if(PDC_mapping_id[i]->reg_id == in.from_region_id) {			
+				found = 1;
+//				printf("==PDC SERVER: region %lld mapped before\n", in.from_region_id);
+				PDC_mapping_info_t *tmp_ptr = NULL;
+				// search the list of origin region
+				PDC_mapping_t *tmp_mapping = PDC_mapping_id[i];
+//				printf("==PDC SERVER: search list\n");
+//				printf("origion = %lld\n", tmp_mapping->reg_id);
+//              PDC_LIST_SEARCH(tmp_ptr, &tmp_mapping->ids, entry, tgt_reg_id, in.to_region_id); // not working
+//				tmp_ptr = (&tmp_mapping->ids)->head;
+				PDC_LIST_GET_FIRST(tmp_ptr, &tmp_mapping->ids);
+				while(tmp_ptr!=NULL && tmp_ptr->tgt_reg_id!=in.to_region_id) {
+//					printf("tgt region in list is %lld\n", tmp_ptr->tgt_reg_id);
+//					printf("tgt region is %lld\n", in.to_region_id);
+					PDC_LIST_TO_NEXT(tmp_ptr, entry);
+				}
+/*
+				if(tmp_ptr == NULL)
+					printf("reach the end of list\n");
+				else
+					printf("tgt region is %lld\n", tmp_ptr->tgt_reg_id);		
+*/
+				// target region not found, new mapping will be inserted to the list
+				if(tmp_ptr == NULL) {
+					if(NULL == (tmp_ptr = (PDC_mapping_info_t *)malloc(sizeof(PDC_mapping_info_t)))) {
+			            m_success = 1;
+            			printf("==PDC_SERVER: Failed to allocate tmp_ptr \n");
+        			}
+					atomic_fetch_add(&(PDC_mapping_id[i]->mapping_count), 1);
+//					printf("==PDC SERVER: create new mapping, mapping_count = % u\n", PDC_mapping_id[i]->mapping_count);
+					tmp_ptr->tgt_obj_id = in.to_obj_id;
+	      			tmp_ptr->tgt_reg_id = in.to_region_id;
+        			PDC_LIST_INSERT_HEAD(&PDC_mapping_id[i]->ids, tmp_ptr, entry);
+				}
+				else {// same mapping stored in server already
+					m_success = 1;
+					printf("==PDC SERVER ERROR: mapping from %lld to %lld already exists\n", in.from_region_id, in.to_region_id);
+				}
+			}
+		} // end of for loop	
+		if(found == 0) {
+//			printf("==PDC SERVER: new mapping\n");
+			if(NULL == (map_ptr = (PDC_mapping_t *)malloc(sizeof(PDC_mapping_t)))) {
+            	m_success = 1;
+            	printf("==PDC_SERVER: Failed to allocate map_ptr\n");
+        	}
+        	if(NULL == (m_info_ptr = (PDC_mapping_info_t *)malloc(sizeof(PDC_mapping_info_t)))) {
+            	m_success = 1;
+            	printf("==PDC_SERVER: Failed to allocate m_info_ptr \n");
+        	}
+			atomic_fetch_add(&pdc_num_reg, 1);
+			printf("PDC SERVER: # of mapping region is %u\n", pdc_num_reg);
+			PDC_mapping_id = (PDC_mapping_t **)realloc(PDC_mapping_id, pdc_num_reg*sizeof(PDC_mapping_t *));
+        	PDC_mapping_id[pdc_num_reg-1] = map_ptr;
+        	PDC_LIST_INIT(&map_ptr->ids);
+        	map_ptr->mapping_count = ATOMIC_VAR_INIT(1);
+        	map_ptr->obj_id = in.from_obj_id;
+        	map_ptr->reg_id = in.from_region_id;
+        	m_info_ptr->tgt_obj_id = in.to_obj_id;
+        	m_info_ptr->tgt_reg_id = in.to_region_id;
+        	PDC_LIST_INSERT_HEAD(&map_ptr->ids, m_info_ptr, entry);
+		}
+	}	
+	// mapping success
+	if(m_success == 0) { 
+		out.ret = 1;
+		HG_Respond(handle, NULL, NULL, &out);
+	}
+	else {
+		out.ret = 0;
+		HG_Respond(handle, NULL, NULL, &out);
+	}
+
+	HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+	ret_value = HG_SUCCESS;
+done:
+    FUNC_LEAVE(ret_value);
+}
 
 HG_TEST_THREAD_CB(gen_obj_id)
 /* HG_TEST_THREAD_CB(send_obj_name_marker) */
@@ -460,6 +596,7 @@ HG_TEST_THREAD_CB(metadata_delete)
 HG_TEST_THREAD_CB(metadata_delete_by_id)
 HG_TEST_THREAD_CB(metadata_update)
 HG_TEST_THREAD_CB(close_server)
+HG_TEST_THREAD_CB(gen_reg_map_notification)
 
 hg_id_t
 gen_obj_id_register(hg_class_t *hg_class)
@@ -552,6 +689,18 @@ close_server_register(hg_class_t *hg_class)
 
     hg_id_t ret_value;
     ret_value = MERCURY_REGISTER(hg_class, "close_server", close_server_in_t, close_server_out_t, close_server_cb);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+hg_id_t
+gen_reg_map_notification_register(hg_class_t *hg_class)
+{
+    FUNC_ENTER(NULL);
+
+    hg_id_t ret_value;
+    ret_value = MERCURY_REGISTER(hg_class, "gen_reg_map_notification", gen_reg_map_notification_in_t, gen_reg_map_notification_out_t, gen_reg_map_notification_cb);
 
 done:
     FUNC_LEAVE(ret_value);

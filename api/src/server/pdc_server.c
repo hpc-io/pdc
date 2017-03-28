@@ -59,6 +59,7 @@ int pdc_server_rank_g = 0;
 int pdc_server_size_g = 1;
 
 char pdc_server_tmp_dir_g[ADDR_MAX];
+PDC_mapping_t **PDC_mapping_id;
 
 // Debug statistics var
 int n_bloom_total_g;
@@ -1417,6 +1418,8 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     // Initalize atomic variable to finalize server 
     hg_atomic_set32(&close_server_g, 0);
 
+	PDC_mapping_id = NULL;
+
     ret_value = SUCCEED;
 
 done:
@@ -1855,6 +1858,8 @@ int main(int argc, char *argv[])
     metadata_delete_register(hg_class);
     metadata_delete_by_id_register(hg_class);
     metadata_update_register(hg_class);
+
+    gen_reg_map_notification_register(hg_class);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);

@@ -36,8 +36,14 @@
 #define PDC_LIST_FIRST(head_ptr)             \
     ((head_ptr)->head)
 
+#define PDC_LIST_GET_FIRST(var, head_ptr)             \
+    (var = (head_ptr)->head)
+
 #define PDC_LIST_NEXT(entry_ptr, entry_field_name)   \
     ((entry_ptr)->entry_field_name.next)
+
+#define PDC_LIST_TO_NEXT(entry_ptr, entry_field_name)   \
+    ((entry_ptr) = (entry_ptr)->entry_field_name.next)
 
 #define PDC_LIST_INSERT_HEAD(head_ptr, entry_ptr, entry_field_name) do {     \
     if (((entry_ptr)->entry_field_name.next = (head_ptr)->head) != NULL)    \

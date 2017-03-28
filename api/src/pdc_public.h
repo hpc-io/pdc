@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 typedef int                         perr_t;
-typedef int64_t                     pdcid_t;
+typedef uint64_t                    pdcid_t;
 typedef unsigned long long          psize_t;
 typedef unsigned int                pbool_t;
 
