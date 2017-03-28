@@ -117,7 +117,7 @@ int main(int argc, const char *argv[])
     double ht_total_sec;
 
 
-    char obj_name1[512];
+	char obj_name1[512];
 	char obj_name2[512];
 	char obj_name3[512];
 

@@ -1590,7 +1590,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     // Initalize atomic variable to finalize server 
     hg_atomic_set32(&close_server_g, 0);
 
-    PDC_mapping_id = NULL;
+	PDC_mapping_id = NULL;
     n_metadata_g = 0;
 
 

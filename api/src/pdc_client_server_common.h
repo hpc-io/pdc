@@ -637,7 +637,7 @@ typedef struct {
 
 typedef struct {
 	uint64_t from_obj_id;
-    uint64_t from_region_id;
+	uint64_t from_region_id;
 	uint64_t to_obj_id;
 	uint64_t to_region_id;
 } gen_reg_map_notification_in_t;
