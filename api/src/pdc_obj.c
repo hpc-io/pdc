@@ -69,8 +69,8 @@ pdcid_t PDCobj_create(pdcid_t pdc, pdcid_t cont_id, const char *obj_name, pdcid_
     PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
     pdcid_t new_id = PDC_id_register(PDC_OBJ, p, pdc);
 
-    uint64_t meta_id;
-    meta_id = PDC_Client_send_name_recv_id(pdc, cont_id, obj_name, obj_create_prop);
+    perr_t ret;
+    ret = PDC_Client_send_name_recv_id(pdc, cont_id, obj_name, obj_create_prop, &(p->meta_id));
 
     ret_value = new_id;
 done:

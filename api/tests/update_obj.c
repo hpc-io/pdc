@@ -30,7 +30,7 @@ static char *rand_string(char *str, size_t size)
 }
 
 void print_usage() {
-    printf("Usage: srun -n ./creat_obj -r num_of_obj_per_rank\n");
+    printf("Usage: srun -n ./update_obj -r num_of_obj_per_rank\n");
 }
 
 int main(int argc, const char *argv[])

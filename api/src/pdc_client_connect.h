@@ -3,14 +3,20 @@
 
 #include "pdc.h"
 #include "pdc_prop.h"
+#include "pdc_obj_pkg.h"
 #include "pdc_client_server_common.h"
 
 #ifndef PDC_CLIENT_CONNECT_H
 #define PDC_CLIENT_CONNECT_H
 
+extern int pdc_server_num_g;
+
+extern int pdc_client_mpi_rank_g;
+extern int pdc_client_mpi_size_g;
+
+extern char pdc_server_tmp_dir_g[ADDR_MAX];
 
 int PDC_Client_read_server_addr_from_file();
-uint64_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop);
 perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_step, pdc_metadata_t **out);
 perr_t PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t **out);
 perr_t PDC_Client_delete_metadata(pdcid_t pdc, pdcid_t cont_id, char *delete_name, pdcid_t obj_delete_prop);
@@ -20,6 +26,9 @@ perr_t PDC_Client_send_region_map(pdcid_t from_obj_id, pdcid_t from_region_id, p
 perr_t PDC_Client_init();
 perr_t PDC_Client_finalize();
 perr_t PDC_Client_close_all_server();
+
+typedef enum PDC_access_t { READ=0, WRITE=1 } PDC_access_t;
+typedef enum PDC_lock_mode_t { BLOCK=0, NOBLOCK=1 } PDC_lock_mode_t;
 
 typedef struct pdc_server_info_t {
     char            addr_string[ADDR_MAX];
@@ -31,8 +40,8 @@ typedef struct pdc_server_info_t {
     hg_handle_t     client_test_handle;
     int             close_server_handle_valid;
     hg_handle_t     close_server_handle;
-    int             name_marker_handle_valid;
-    hg_handle_t     name_marker_handle;
+    /* int             name_marker_handle_valid; */
+    /* hg_handle_t     name_marker_handle; */
     int             metadata_query_handle_valid;
     hg_handle_t     metadata_query_handle;
     int             metadata_delete_handle_valid;
@@ -41,17 +50,15 @@ typedef struct pdc_server_info_t {
     hg_handle_t     metadata_delete_by_id_handle;
     int             metadata_update_handle_valid;
     hg_handle_t     metadata_update_handle;
-	int				client_send_region_handle_valid;
-	hg_handle_t		client_send_region_handle;
+    int	            client_send_region_handle_valid;
+    hg_handle_t     client_send_region_handle;
+    int             region_lock_handle_valid;
+    hg_handle_t     region_lock_handle;
+    int             query_partial_handle_valid;
+    hg_handle_t     query_partial_handle;
 } pdc_server_info_t;
 
-extern int pdc_server_num_g;
 extern pdc_server_info_t *pdc_server_info_g;
-
-extern int pdc_client_mpi_rank_g;
-extern int pdc_client_mpi_size_g;
-
-extern char pdc_server_tmp_dir_g[ADDR_MAX];
 
 struct client_lookup_args {
     const char          *obj_name;
@@ -80,4 +87,23 @@ typedef struct client_name_cache_t {
 struct region_map_args {
 	int         ret;
 };
+
+int PDC_Client_read_server_addr_from_file();
+perr_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop, pdcid_t *meta_id);
+perr_t PDC_Client_list_all(int *n_res, pdc_metadata_t ***out);
+perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, const char* obj_name, int time_step_from, 
+                         int time_step_to, int ndim, const char* tags, int *n_res, pdc_metadata_t ***out);
+perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_step, pdc_metadata_t **out);
+perr_t PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t **out);
+perr_t PDC_Client_delete_metadata(pdcid_t pdc, pdcid_t cont_id, char *delete_name, pdcid_t obj_delete_prop);
+perr_t PDC_Client_delete_metadata_by_id(pdcid_t pdc, pdcid_t cont_id, uint64_t obj_id);
+perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new);
+perr_t PDC_Client_obtain_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_id, PDC_region_info_t *region_info, 
+                                     PDC_access_t access_type, PDC_lock_mode_t lock_mode, pbool_t *obtained);
+perr_t PDC_Client_release_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_id, PDC_region_info_t *region_info, pbool_t *released);
+perr_t PDC_Client_init();
+perr_t PDC_Client_finalize();
+perr_t PDC_Client_close_all_server();
+
+
 #endif
