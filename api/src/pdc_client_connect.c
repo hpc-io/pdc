@@ -216,20 +216,20 @@ done:
 static hg_return_t
 client_send_region_map_rpc_cb(const struct hg_cb_info *callback_info)
 {
-	FUNC_ENTER(NULL);
+    FUNC_ENTER(NULL);
     hg_return_t ret_value;
 
     /* printf("Entered client_send_region_map_rpc_cb"); */
-	struct region_map_args *region_map_args = (struct region_map_args*) callback_info->arg;
-	hg_handle_t handle = callback_info->info.forward.handle;
+    struct region_map_args *region_map_args = (struct region_map_args*) callback_info->arg;
+    hg_handle_t handle = callback_info->info.forward.handle;
 
-	gen_reg_map_notification_out_t output;
-	ret_value = HG_Get_output(handle, &output);
-	/* printf("Return value=%d\n", output.ret); */
+    gen_reg_map_notification_out_t output;
+    ret_value = HG_Get_output(handle, &output);
+    /* printf("Return value=%d\n", output.ret); */
 
-	region_map_args->ret = output.ret;
+    region_map_args->ret = output.ret;
 
-	work_todo_g--;
+    work_todo_g--;
 
 done:
     FUNC_LEAVE(ret_value);
@@ -1567,35 +1567,35 @@ done:
 
 perr_t PDC_Client_send_region_map(pdcid_t from_obj_id, pdcid_t from_region_id, pdcid_t to_obj_id, pdcid_t to_region_id)
 {
-	FUNC_ENTER(NULL);
-	perr_t ret_value = SUCCEED;
-	hg_return_t  hg_ret = 0;
+    FUNC_ENTER(NULL);
+    perr_t ret_value = SUCCEED;
+    hg_return_t  hg_ret = 0;
 
-	// Fill input structure
-	gen_reg_map_notification_in_t in;
-	in.from_obj_id = from_obj_id;
-	in.from_region_id = from_region_id;
-	in.to_obj_id = to_obj_id;
-	in.to_region_id = to_region_id;
-	uint32_t server_id = PDC_get_server_by_obj_id(from_obj_id, pdc_server_num_g);
+    // Fill input structure
+    gen_reg_map_notification_in_t in;
+    in.from_obj_id = from_obj_id;
+    in.from_region_id = from_region_id;
+    in.to_obj_id = to_obj_id;
+    in.to_region_id = to_region_id;
+    uint32_t server_id = PDC_get_server_by_obj_id(from_obj_id, pdc_server_num_g);
 
-	// Debug statistics for counting number of messages sent to each server.
+    // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
-	// We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
-	if (pdc_server_info_g[server_id].client_send_region_handle_valid!= 1) {
+    // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
+    if (pdc_server_info_g[server_id].client_send_region_handle_valid!= 1) {
         HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_reg_map_notification_register_id_g, &pdc_server_info_g[server_id].client_send_region_handle);
         pdc_server_info_g[server_id].client_send_region_handle_valid  = 1;
     }
 
-	/* printf("Sending input to target\n"); */
-	struct region_map_args map_args;
-	hg_ret = HG_Forward(pdc_server_info_g[server_id].client_send_region_handle, client_send_region_map_rpc_cb, &map_args, &in);	
-	if (hg_ret != HG_SUCCESS) {
+    /* printf("Sending input to target\n"); */
+    struct region_map_args map_args;
+    hg_ret = HG_Forward(pdc_server_info_g[server_id].client_send_region_handle, client_send_region_map_rpc_cb, &map_args, &in);	
+    if (hg_ret != HG_SUCCESS) {
         PGOTO_ERROR(FAIL, "PDC_Client_send_region_map(): Could not start HG_Forward()\n");
     }
 
-	// Wait for response from server
+    // Wait for response from server
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
 
@@ -1604,11 +1604,11 @@ perr_t PDC_Client_send_region_map(pdcid_t from_obj_id, pdcid_t from_region_id, p
     /*     fflush(stdout); */
     /* } */
 
-	if (map_args.ret != 1) 
+    if (map_args.ret != 1) 
 //        printf("PDC_CLIENT: object mapping NOT successful ... ret_value = %d\n", map_args.ret);
 		PGOTO_ERROR(FAIL,"PDC_CLIENT: object mapping failed...\n");
 	else
-		printf("PDC_CLIENT: object mapping successful\n");
+        printf("PDC_CLIENT: object mapping successful\n");
 done:
      FUNC_LEAVE(ret_value);
 }
