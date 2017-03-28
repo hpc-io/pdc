@@ -53,17 +53,17 @@ typedef struct pdc_metadata_t {
 } pdc_metadata_t;
 
 typedef struct PDC_mapping_info {
-    pdcid_t     					 tgt_obj_id;           /* target of object id */
+	pdcid_t     					 tgt_obj_id;           /* target of object id */
 	pdcid_t                          tgt_reg_id;           /* target of region id */
-    PDC_LIST_ENTRY(PDC_mapping_info) entry;
+	PDC_LIST_ENTRY(PDC_mapping_info) entry;
 } PDC_mapping_info_t;
 
 typedef struct PDC_mapping {
 // if keeping the struct of origin of region is needed?
 	unsigned						 mapping_count;        /* count the number of mapping of this region */
 	pdcid_t                          obj_id;               /* origin of object id */
-    pdcid_t                          reg_id;			   /* origin of region id */
-    PDC_LIST_HEAD(PDC_mapping_info)  ids;                  /* Head of list of IDs */
+	pdcid_t                          reg_id;			   /* origin of region id */
+	PDC_LIST_HEAD(PDC_mapping_info)  ids;				   /* Head of list of IDs */
 } PDC_mapping_t;
 
 PDC_mapping_t **PDC_mapping_id;
