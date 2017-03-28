@@ -147,7 +147,7 @@ void PDC_print_metadata(pdc_metadata_t *a)
     if (a == NULL) {
         printf("==Empty metadata structure\n");
     }
-    printf("================================\n\n");
+    printf("================================\n");
     printf("  obj_id    = %llu\n", a->obj_id);
     printf("  uid       = %d\n",   a->user_id);
     printf("  app_name  = %s\n",   a->app_name);
@@ -167,6 +167,9 @@ perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key,
 perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out) {return SUCCEED;}
 perr_t delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_id_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out) {return SUCCEED;}
+perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out) {return SUCCEED;}
+perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs) {return SUCCEED;}
+hg_class_t *hg_class_g;
 #endif
 
 /*
@@ -288,6 +291,7 @@ HG_TEST_RPC_CB(metadata_query, handle)
     // TODO check DHT for query result
     HG_Get_input(handle, &in);
     /* printf("==PDC_SERVER: Received query with name: %s, hash value: %u\n", in.obj_name, in.hash_value); */
+    /* fflush(stdout); */
     PDC_Server_search_with_name_hash(in.obj_name, in.hash_value, &query_result);
 
     if (query_result != NULL) {
@@ -452,6 +456,36 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+HG_TEST_RPC_CB(region_lock, handle)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value;
+
+    /* Get input parameters sent on origin through on HG_Forward() */
+    // Decode input
+    region_lock_in_t in;
+    region_lock_out_t out;
+
+    HG_Get_input(handle, &in);
+    int ret;
+
+    // TODO
+    // Perform lock function
+    ret = PDC_Server_region_lock(&in, &out);
+
+    HG_Respond(handle, NULL, NULL, &out);
+    /* printf("==PDC_SERVER: gen_obj_id_cb(): returned %llu\n", out.ret); */
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    ret_value = HG_SUCCESS;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 /* static hg_return_t */
 // gen_reg_map_notification_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(gen_reg_map_notification, handle)
@@ -588,6 +622,116 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+
+// Bulk
+/* static hg_return_t */
+/* query_partial_cb(hg_handle_t handle) */
+// Server execute
+HG_TEST_RPC_CB(query_partial, handle)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value;
+    hg_return_t hg_ret;
+
+
+    /* Get input parameters sent on origin through on HG_Forward() */
+    // Decode input
+    metadata_query_transfer_in_t in;
+    metadata_query_transfer_out_t out;
+
+    HG_Get_input(handle, &in);
+
+    out.ret = -1;
+
+    // bulk
+    // Create a bulk descriptor
+    hg_bulk_t bulk_handle = HG_BULK_NULL;
+
+    int i;
+    void  **buf_ptrs;
+    size_t *buf_sizes;
+
+    uint32_t *n_meta_ptr, n_buf;
+    n_meta_ptr = (uint32_t*)malloc(sizeof(uint32_t));
+
+    PDC_Server_get_partial_query_result(&in, n_meta_ptr, &buf_ptrs);
+
+    /* printf("query_partial_cb: n_meta=%u\n", *n_meta_ptr); */
+
+    // No result found
+    if (*n_meta_ptr == 0) {
+        out.bulk_handle = HG_BULK_NULL;
+        out.ret = 0;
+        printf("No objects returned for the query\n");
+        ret_value = HG_Respond(handle, NULL, NULL, &out);
+        goto done;
+    }
+
+    n_buf = *n_meta_ptr;
+
+    buf_sizes = (size_t*)malloc( (n_buf+1) * sizeof(size_t));
+    for (i = 0; i < *n_meta_ptr; i++) {
+        buf_sizes[i] = sizeof(pdc_metadata_t);
+    }
+    // TODO: free buf_sizes
+
+    // Note: it seems Mercury bulk transfer has issues if the total transfer size is less
+    //       than 3862 bytes in Eager Bulk mode, so need to add some padding data 
+    /* pdc_metadata_t *padding; */
+    /* if (*n_meta_ptr < 11) { */
+    /*     size_t padding_size; */
+    /*     /1* padding_size = (10 - *n_meta_ptr) * sizeof(pdc_metadata_t); *1/ */
+    /*     padding_size = 5000 * sizeof(pdc_metadata_t); */
+    /*     padding = malloc(padding_size); */
+    /*     memcpy(padding, buf_ptrs[0], sizeof(pdc_metadata_t)); */
+    /*     buf_ptrs[*n_meta_ptr] = padding; */
+    /*     buf_sizes[*n_meta_ptr] = padding_size; */
+    /*     n_buf++; */
+    /* } */
+
+    // Fix when Mercury output in HG_Respond gets too large and cannot be transfered
+    // hg_set_output(): Output size exceeds NA expected message size
+    pdc_metadata_t *large_serial_meta_buf;
+    if (*n_meta_ptr > 80) {
+        large_serial_meta_buf = (pdc_metadata_t*)malloc( sizeof(pdc_metadata_t) * (*n_meta_ptr) );
+        for (i = 0; i < *n_meta_ptr; i++) {
+            memcpy(&large_serial_meta_buf[i], buf_ptrs[i], sizeof(pdc_metadata_t) );
+        }
+        buf_ptrs[0]  = large_serial_meta_buf;
+        buf_sizes[0] = sizeof(pdc_metadata_t) * (*n_meta_ptr);
+        n_buf = 1;
+    }
+
+    // Create bulk handle
+    hg_ret = HG_Bulk_create(hg_class_g, n_buf, buf_ptrs, buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not create bulk data handle\n");
+        return EXIT_FAILURE;
+    }
+
+    // Fill bulk handle and return number of metadata that satisfy the query 
+    out.bulk_handle = bulk_handle;
+    out.ret = *n_meta_ptr;
+
+    // Send bulk handle to client
+    /* printf("query_partial_cb(): Sending bulk handle to client\n"); */
+    /* fflush(stdout); */
+    /* HG_Respond(handle, PDC_server_bulk_respond_cb, NULL, &out); */
+    ret_value = HG_Respond(handle, NULL, NULL, &out);
+
+
+done:
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
+
+
+
+
 HG_TEST_THREAD_CB(gen_obj_id)
 /* HG_TEST_THREAD_CB(send_obj_name_marker) */
 HG_TEST_THREAD_CB(client_test_connect)
@@ -597,6 +741,8 @@ HG_TEST_THREAD_CB(metadata_delete_by_id)
 HG_TEST_THREAD_CB(metadata_update)
 HG_TEST_THREAD_CB(close_server)
 HG_TEST_THREAD_CB(gen_reg_map_notification)
+HG_TEST_THREAD_CB(region_lock)
+HG_TEST_THREAD_CB(query_partial)
 
 hg_id_t
 gen_obj_id_register(hg_class_t *hg_class)
@@ -701,6 +847,33 @@ gen_reg_map_notification_register(hg_class_t *hg_class)
 
     hg_id_t ret_value;
     ret_value = MERCURY_REGISTER(hg_class, "gen_reg_map_notification", gen_reg_map_notification_in_t, gen_reg_map_notification_out_t, gen_reg_map_notification_cb);
+
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+
+hg_id_t
+region_lock_register(hg_class_t *hg_class)
+{
+    FUNC_ENTER(NULL);
+
+    hg_id_t ret_value;
+    ret_value = MERCURY_REGISTER(hg_class, "region_lock", region_lock_in_t, region_lock_out_t, region_lock_cb);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+
+hg_id_t
+query_partial_register(hg_class_t *hg_class)
+{
+    FUNC_ENTER(NULL);
+
+    hg_id_t ret_value;
+    ret_value = MERCURY_REGISTER(hg_class, "query_partial", metadata_query_transfer_in_t, metadata_query_transfer_out_t, query_partial_cb);
 
 done:
     FUNC_LEAVE(ret_value);
