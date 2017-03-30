@@ -1592,7 +1592,7 @@ perr_t PDC_Client_send_region_map(pdcid_t from_obj_id, pdcid_t from_region_id, p
     struct region_map_args map_args;
     hg_ret = HG_Forward(pdc_server_info_g[server_id].client_send_region_handle, client_send_region_map_rpc_cb, &map_args, &in);	
     if (hg_ret != HG_SUCCESS) {
-        PGOTO_ERROR(FAIL, "PDC_Client_send_region_map(): Could not start HG_Forward()\n");
+        PGOTO_ERROR(FAIL, "PDC_Client_send_region_map(): Could not start HG_Forward()");
     }
 
     // Wait for response from server
@@ -1606,7 +1606,7 @@ perr_t PDC_Client_send_region_map(pdcid_t from_obj_id, pdcid_t from_region_id, p
 
     if (map_args.ret != 1) 
 //        printf("PDC_CLIENT: object mapping NOT successful ... ret_value = %d\n", map_args.ret);
-        PGOTO_ERROR(FAIL,"PDC_CLIENT: object mapping failed...\n");
+        PGOTO_ERROR(FAIL,"PDC_CLIENT: object mapping failed...");
     else
         printf("PDC_CLIENT: object mapping successful\n");
 done:

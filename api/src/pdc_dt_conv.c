@@ -31,8 +31,10 @@ pdc_find_conv_func(PDC_var_type_t src_id, PDC_var_type_t des_id) {
     
     if(src_id == PDC_FLOAT && des_id == PDC_INT)
         ret_value = pdc__conv_f_i;
+    if(src_id == PDC_DOUBLE && des_id == PDC_INT)
+        ret_value = pdc__conv_db_i;
     else
-        PGOTO_ERROR(FAIL, "no matching type convert function");
+        PGOTO_ERROR(NULL, "no matching type convert function");
 done:
     FUNC_LEAVE(ret_value);
 }

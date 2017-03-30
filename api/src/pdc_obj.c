@@ -525,5 +525,5 @@ perr_t PDCprop_set_obj_loci_prop(pdcid_t obj_create_prop, PDC_loci locus, PDC_tr
 perr_t PDCprop_set_obj_transform(pdcid_t obj_create_prop, PDC_loci pre_locus, PDC_transform A, PDC_loci dest_locus) {
 }
 
-obj_handle PDCview_iter_start(pdcid_t view_id) {
+obj_handle *PDCview_iter_start(pdcid_t view_id) {
 }
