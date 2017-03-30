@@ -76,76 +76,102 @@ typedef struct PDC_CLASS_t {
     PDC_id_type_t *PDC_id_type_list_g[PDC_MAX_NUM_TYPES];
 } PDC_CLASS_t;
 
-/* Creates a new type of ID's to give out.
+/**
+ * Creates a new type of ID's to give out.
  * The class is initialized or its reference count is incremented
  * (if it is already initialized).
- * \param cls [IN] Pointer to PDCID_class_t struct
- * \param pc [IN] Pointer to PDC_CLASS_t struct
+
+ * \param cls [IN]              Pointer to PDCID_class_t struct
+ * \param pc [IN]               Pointer to PDC_CLASS_t struct
+ *
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_register_type(const PDCID_class_t *cls, PDC_CLASS_t *pc);
 
-/*
-/* Public interface to PDCid_register.
- * \param type [IN] A enum type PDC_type_t, e.g. PDC_CONT, PDC_OBJ
- * \param object [IN] Pointer to an object storage
+/**
+ * Public interface to PDCid_register.
+ *
+ * \param type [IN]             A enum type PDC_type_t, e.g. PDC_CONT, PDC_OBJ
+ * \param object [IN]           Pointer to an object storage
+ *
  * \return Type id on success/Negative on failure
  */
 /*
 pdcid_t PDCid_register(PDC_type_t type, const void *object);
 */
 
-/* Registers an OBJECT in a TYPE and returns an ID for it.
+/**
+ * Registers an OBJECT in a TYPE and returns an ID for it.
  * This routine does not check for uniqueness of the objects,
  * if you register an object twice, you will get two different
  * IDs for it.
- * \param type [IN] A enum type PDC_type_t, e.g. PDC_CONT, PDC_OBJ
- * \param object [IN] Pointer to an object storage
- * \param pdc_id [IN] Id of the PDC
+ *
+ * \param type [IN]             A enum type PDC_type_t, e.g. PDC_CONT, PDC_OBJ
+ * \param object [IN]           Pointer to an object storage
+ * \param pdc_id [IN]           Id of the PDC
+ *
  * \return Type id on success/Negative on failure
  */
 pdcid_t PDC_id_register(PDC_type_t type, const void *object, pdcid_t pdc_id);
 
-/* Decrements the number of references outstanding for an ID.
- * \param id [IN] Id of type to decrease
- * \param pdc_id [IN] Id of the PDC
+/**
+ * Decrements the number of references outstanding for an ID.
+ *
+ * \param id [IN]               Id of type to decrease
+ * \param pdc_id [IN]           Id of the PDC
+ *
  * \return New reference count on success/Negative on failure
  */
 int PDC_dec_ref(pdcid_t id, pdcid_t pdc_id);
 
-/*  Check if PDC_type_t id list is empty
- * \param type [IN] A enum type PDC_type_t, e.g. PDC_CONT, PDC_OBJ
- * \param pdc_id [IN] Id of the PDC
+/**
+ *  Check if PDC_type_t id list is empty
+ *
+ * \param type [IN]             A enum type PDC_type_t, e.g. PDC_CONT, PDC_OBJ
+ * \param pdc_id [IN]           Id of the PDC
+ *
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_id_list_null(PDC_type_t type, pdcid_t pdc_id);
 
 
-/* Clear the list of a PDC_type_t type
- * \param type [IN] A enum type PDC_type_t, e.g. PDC_CONT, PDC_OBJ
- * \param pdc_id [IN] Id of the PDC
+/**
+ * Clear the list of a PDC_type_t type
+ *
+ * \param type [IN]             A enum type PDC_type_t, e.g. PDC_CONT, PDC_OBJ
+ * \param pdc_id [IN]           Id of the PDC
+ *
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_id_list_clear(PDC_type_t type, pdcid_t pdc_id);
 
-/* To destroy ID types
- * \param type [IN] A enum type PDC_type_t, e.g. PDC_CONT, PDC_OBJ
- * \param pdc_id [IN] Id of the PDC
+/**
+ * To destroy ID types
+ *
+ * \param type [IN]             A enum type PDC_type_t, e.g. PDC_CONT, PDC_OBJ
+ * \param pdc_id [IN]           Id of the PDC
+ *
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_destroy_type(PDC_type_t type, pdcid_t pdc_id);
 
-/* Given an object ID find the info struct that describes the object
- * \param idid [IN] Id to look up
- * \param pc [IN] Pointer to PDC_CLASS_t struct
+/**
+ * Given an object ID find the info struct that describes the object
+ *
+ * \param idid [IN]             Id to look up
+ * \param pc [IN]               Pointer to PDC_CLASS_t struct
+ *
  * \return Pointer to the object's info struct on success/Null on failure
  */
 PDC_id_info_t *PDC_find_id(pdcid_t idid, PDC_CLASS_t *pc);
 
-/* Given an object ID find the info struct that describes the object
- * \param type [IN] A enum type PDC_type_t, e.g. PDC_CONT, PDC_OBJ
- * \param byname [IN] Name to look up
- * \param pdc_id [IN] Id of the PDC
+/**
+ * Given an object ID find the info struct that describes the object
+ *
+ * \param type [IN]             A enum type PDC_type_t, e.g. PDC_CONT, PDC_OBJ
+ * \param byname [IN]           Name of the object to look up
+ * \param pdc_id [IN]           Id of the PDC
+ *
  * \return Id of the object on success/Negative on failure
  */
 pdcid_t PDC_find_byname(PDC_type_t type, const char *byname, pdcid_t pdc_id);
