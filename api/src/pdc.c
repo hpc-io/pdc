@@ -111,6 +111,6 @@ perr_t PDCget_loci_info(pdcid_t pdc_id, pdcid_t n, PDC_loci_info_t *info) {
 pdcid_t PDC_query_create(pdcid_t pdc_id, PDC_query_type_t query_type, PDC_query_op_t query_op, ...) {
 }
 
-pdcid_t PDC_query_combine(pdcid_t query1_id, PDC_com_op_mode_t combine_op, pdcid_t query2_id) {
+pdcid_t PDC_query_combine(pdcid_t query1_id, PDC_com_mode_t combine_op, pdcid_t query2_id) {
 }
 

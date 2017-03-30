@@ -21,7 +21,7 @@ typedef struct {
 typedef enum {
     PDC_QUERY_OP_AND = 0,
     PDC_QUERY_OP_OR  = 1
-} PDC_com_op_mode_t;
+} PDC_com_mode_t;
 
 
 ///////////////////
