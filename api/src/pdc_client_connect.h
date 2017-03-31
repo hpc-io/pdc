@@ -169,8 +169,8 @@ perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new);
 /**
  * Client request for object mapping
  *
- * \param from_obj_id [IN]      The origion object id
- * \param from_region_id [IN]   The origion region id
+ * \param from_obj_id [IN]      The origin object id
+ * \param from_region_id [IN]   The origin region id
  * \param to_obj_id [IN]        The target object id
  * \param to_region_id [IN]     The target region id
  *

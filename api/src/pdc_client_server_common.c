@@ -547,7 +547,7 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
 //              search the list of origin region
                 PDC_mapping_t *tmp_mapping = PDC_mapping_id[i];
 //              printf("==PDC SERVER: search list\n");
-//              printf("origion = %lld\n", tmp_mapping->reg_id);
+//              printf("origin = %lld\n", tmp_mapping->reg_id);
 //              PDC_LIST_SEARCH(tmp_ptr, &tmp_mapping->ids, entry, tgt_reg_id, in.to_region_id); // not working
 //              tmp_ptr = (&tmp_mapping->ids)->head;
                 PDC_LIST_GET_FIRST(tmp_ptr, &tmp_mapping->ids);
