@@ -544,16 +544,16 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
                 found = 1;
 //              printf("==PDC SERVER: region %lld mapped before\n", in.from_region_id);
                 PDC_mapping_info_t *tmp_ptr = NULL;
-				// search the list of origin region
+//              search the list of origin region
                 PDC_mapping_t *tmp_mapping = PDC_mapping_id[i];
-//				printf("==PDC SERVER: search list\n");
-//				printf("origion = %lld\n", tmp_mapping->reg_id);
+//              printf("==PDC SERVER: search list\n");
+//              printf("origion = %lld\n", tmp_mapping->reg_id);
 //              PDC_LIST_SEARCH(tmp_ptr, &tmp_mapping->ids, entry, tgt_reg_id, in.to_region_id); // not working
-//				tmp_ptr = (&tmp_mapping->ids)->head;
+//              tmp_ptr = (&tmp_mapping->ids)->head;
                 PDC_LIST_GET_FIRST(tmp_ptr, &tmp_mapping->ids);
                 while(tmp_ptr!=NULL && tmp_ptr->tgt_reg_id!=in.to_region_id) {
-//					printf("tgt region in list is %lld\n", tmp_ptr->tgt_reg_id);
-//					printf("tgt region is %lld\n", in.to_region_id);
+//                  printf("tgt region in list is %lld\n", tmp_ptr->tgt_reg_id);
+//                  printf("tgt region is %lld\n", in.to_region_id);
                     PDC_LIST_TO_NEXT(tmp_ptr, entry);
                 }
 /*
