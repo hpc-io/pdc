@@ -65,7 +65,7 @@ pdc__conv_f_i(float *src_data, int *des_data, size_t nelemt, size_t stride) {
 }
 
 perr_t
-pdc__conv_db_i(float *src_data, int *des_data, size_t nelemt, size_t stride) {
+pdc__conv_db_i(double *src_data, int *des_data, size_t nelemt, size_t stride) {
     perr_t ret_value = SUCCEED;         /* Return value */
 
     FUNC_ENTER(NULL);
