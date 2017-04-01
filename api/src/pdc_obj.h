@@ -30,13 +30,13 @@ perr_t PDCregion_init(PDC_CLASS_t *pc);
  * Create a region
  *
  * \param ndims [IN]            Number of dimensions
- * \param offset [IN]           Offset of the region
+ * \param offset [IN]           Offset of each dimension
  * \param size [IN]             Size of each dimension
  * \param pdc_id [IN]           Id of the pdc
  *
  * \return Object id on success/Negative on failure
  */
-pdcid_t PDCregion_create(size_t ndims, uint64_t offset, uint64_t *size, pdcid_t pdc_id);
+pdcid_t PDCregion_create(size_t ndims, uint64_t *offset, uint64_t *size, pdcid_t pdc_id);
 
 /**
  * Create an object 
