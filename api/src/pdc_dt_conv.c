@@ -63,3 +63,18 @@ pdc__conv_f_i(float *src_data, int *des_data, size_t nelemt, size_t stride) {
         des_data++;
     }
 }
+
+perr_t
+pdc__conv_db_i(float *src_data, int *des_data, size_t nelemt, size_t stride) {
+    perr_t ret_value = SUCCEED;         /* Return value */
+
+    FUNC_ENTER(NULL);
+
+    size_t i;
+    uint64_t addr;
+    for(i = 0; i<nelemt; i++) {
+        PDC_CONV_NOEX_CORE(src_data, des_data, double, int, INT_MIN, INT_MAX);
+        src_data+=stride;
+        des_data++;
+    }
+}
