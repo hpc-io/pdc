@@ -125,7 +125,7 @@ inline int PDC_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b)
     if (ret != 0 ) return ret;
 
     // UID
-    if (a->user_id >= 0 && b->user_id >= 0) {
+    if (a->user_id > 0 && b->user_id > 0) {
         ret = (a->user_id - b->user_id);
         /* if (ret != 0) */ 
         /*     printf("==PDC_SERVER: uid not equal\n"); */

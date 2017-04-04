@@ -2280,6 +2280,7 @@ perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key,
 
     strcpy(metadata.obj_name, name);
     /* metadata.time_step = tmp_time_step; */
+    // TODO: currently PDC_Client_query_metadata_name_timestep is not taking timestep for querying 
     metadata.time_step = 0;
 
     /* printf("==PDC_SERVER[%d]: search with name [%s], hash value %u\n", pdc_server_rank_g, name, hash_key); */
