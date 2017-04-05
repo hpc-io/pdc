@@ -23,7 +23,7 @@ endif()
 include_directories(${PDC_EXT_INCLUDE_DEPENDENCIES})
 
 
-set(PROGRAMS h5boss_import)
+set(PROGRAMS h5boss_import h5boss_pdc_query)
 
 foreach(program ${PROGRAMS})
   add_executable(${program}.exe ${program}.c)
