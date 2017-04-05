@@ -151,6 +151,10 @@ int main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
+    PDCprop_set_obj_user_id( obj_prop, getuid(),    pdc);
+    PDCprop_set_obj_app_name(obj_prop, "H5BOSS",  pdc);
+    PDCprop_set_obj_tags(    obj_prop, "tag0=1",    pdc);
+
     gettimeofday(&ht_total_start, 0);
 
     for (i = 0; i < my_count; i++) {
