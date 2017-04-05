@@ -976,6 +976,7 @@ metadata_query_rpc_cb(const struct hg_cb_info *callback_info)
         strcpy(client_lookup_args->data->obj_name, output.ret.obj_name);
         strcpy(client_lookup_args->data->app_name, output.ret.app_name);
         strcpy(client_lookup_args->data->tags,     output.ret.tags);
+        strcpy(client_lookup_args->data->data_location,     output.ret.data_location);
     }
 
     /* // Debug print */
@@ -1404,8 +1405,11 @@ perr_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *ob
     in.data.ndim      = create_prop->ndim;
     for (i = 0; i < create_prop->ndim; i++) 
         in.data.dims[i] = create_prop->dims[i];
-    // TODO: use real data location
-    in.data.data_location = "/path/to/file";
+
+    if (create_prop->data_loc == NULL) 
+        in.data.data_location = " ";
+    else 
+        in.data.data_location = create_prop->data_loc;
 
     uint32_t hash_name_value = PDC_get_hash_by_name(obj_name);
     in.hash_value      = hash_name_value;

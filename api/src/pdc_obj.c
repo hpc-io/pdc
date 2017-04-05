@@ -309,6 +309,20 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDCprop_set_obj_data_loc(pdcid_t obj_prop, char *loc, pdcid_t pdc) {
+    perr_t ret_value = SUCCEED;         /* Return value */
+    
+    FUNC_ENTER(NULL);
+    
+    PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
+    PDC_id_info_t *info = PDC_find_id(obj_prop, pc);
+    if(info == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object property ID");
+    ((PDC_obj_prop_t *)(info->obj_ptr))->data_loc = strdup(loc);
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 perr_t PDCprop_set_obj_tags(pdcid_t obj_prop, char *tags, pdcid_t pdc) {
     perr_t ret_value = SUCCEED;         /* Return value */
     

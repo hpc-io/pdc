@@ -152,6 +152,7 @@ void PDC_print_metadata(pdc_metadata_t *a)
     printf("  uid       = %d\n",   a->user_id);
     printf("  app_name  = %s\n",   a->app_name);
     printf("  obj_name  = %s\n",   a->obj_name);
+    printf("  obj_loc   = %s\n",   a->data_location);
     printf("  time_step = %d\n",   a->time_step);
     printf("  ndim      = %d\n",   a->ndim);
     printf("  tags      = %s\n",   a->tags);
@@ -301,19 +302,20 @@ HG_TEST_RPC_CB(metadata_query, handle)
         out.ret.obj_name       = query_result->obj_name;
         out.ret.app_name       = query_result->app_name;
         out.ret.tags           = query_result->tags;
-        // TODO add location info
-        out.ret.data_location  = "/test/location"; 
+        out.ret.data_location  = query_result->data_location; 
     }
     else {
         out.ret.user_id        = -1;
         out.ret.obj_id         = 0;
         out.ret.time_step      = -1;
-        out.ret.obj_name       = "invalid";
-        out.ret.app_name       = "invalid";
-        out.ret.tags           = "invalid";
-        // TODO add location info
-        out.ret.data_location  = "/test/location"; 
+        out.ret.obj_name       = "N/A";
+        out.ret.app_name       = "N/A";
+        out.ret.tags           = "N/A";
+        out.ret.data_location  = "N/A"; 
     }
+
+    /* printf("out.ret.data_location: %s\n", out.ret.data_location); */
+
     HG_Respond(handle, NULL, NULL, &out);
     /* printf("==PDC_SERVER: metadata_query_cb(): Returned obj_name=%s, obj_id=%llu\n", out.ret.obj_name, out.ret.obj_id); */
     /* fflush(stdout); */

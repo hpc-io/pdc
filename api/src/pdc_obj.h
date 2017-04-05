@@ -75,6 +75,18 @@ perr_t PDCprop_set_obj_lifetime(pdcid_t obj_prop, PDC_lifetime obj_lifetime, pdc
 perr_t PDCprop_set_obj_user_id(pdcid_t obj_prop, uint32_t user_id, pdcid_t pdc_id);
 
 /**
+ * Set object data location 
+ *
+ * \param obj_prop [IN]         Id of object property, returned by PDCprop_create(PDC_OBJ_CREATE)
+ * \param app_name [IN]         Data location path 
+ * \param pdc_id [IN]           Id of the pdc
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCprop_set_obj_data_loc(pdcid_t obj_prop, char *app_name, pdcid_t pdc_id);
+
+
+/**
  * Set object application name
  *
  * \param obj_prop [IN]         Id of object property, returned by PDCprop_create(PDC_OBJ_CREATE)
