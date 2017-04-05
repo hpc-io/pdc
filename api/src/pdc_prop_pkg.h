@@ -22,6 +22,7 @@ struct PDC_obj_prop {
     char*           app_name;
     uint32_t        time_step;
     char*           tags;              //placeholder, may change in the future
+    char*           data_loc;
     void            *buf;
 //  pdcid_t         region;
 };

@@ -1251,15 +1251,9 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     metadata->region_lock_head = NULL;
     metadata->region_map_head  = NULL;
     // DEBUG
-    /* int debug_flag = 1; */
     int debug_flag = 0;
-    /* if (in->data.time_step >= 89808) { */
-    /*     debug_flag = 1; */
-    /*     /1* while (debug_flag) {;} *1/ */
-    /*     PDC_print_metadata(metadata); */
-    /* } */
+    /* PDC_print_metadata(metadata); */
 
-    /* strcpy(metadata->data_location, in->data.data_location); */
     /* create_time              =; */
     /* last_modified_time       =; */
 
@@ -2363,6 +2357,8 @@ perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key,
         ret_value = -1;
         goto done;
     }
+
+    /* PDC_print_metadata(*out); */
 
 done:
     FUNC_LEAVE(ret_value);

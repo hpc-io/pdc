@@ -86,11 +86,11 @@ typedef struct pdc_metadata_t {
     time_t  create_time;
     time_t  last_modified_time;
 
-    int     ndim;
-    int     dims[DIM_MAX];
-
     char    tags[128];
     char    data_location[ADDR_MAX];
+
+    int     ndim;
+    int     dims[DIM_MAX];
 
     // For region lock
     region_list_t *region_lock_head;
@@ -471,38 +471,47 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
     ret = hg_proc_uint32_t(proc, &struct_data->user_id);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
+        return ret;
     }
     ret = hg_proc_hg_const_string_t(proc, &struct_data->app_name);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
+        return ret;
     }
     ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
+        return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->time_step);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
+        return ret;
     }
     ret = hg_proc_uint32_t(proc, &struct_data->ndim);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
+        return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->dims);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
+        return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
+        return ret;
     }
     ret = hg_proc_hg_const_string_t(proc, &struct_data->data_location);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
+        return ret;
     }
     ret = hg_proc_hg_const_string_t(proc, &struct_data->tags);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
+        return ret;
     }
     return ret;
 }

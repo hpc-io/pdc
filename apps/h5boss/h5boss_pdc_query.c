@@ -62,7 +62,7 @@ int main(int argc, char **argv)
 
         i = 0;
         while (EOF != fscanf(pm_file, "%d %d %d", &plate[i], &mjd[i], &fiber[i])) {
-            printf("%d, %d, %d\n", plate[i], mjd[i], fiber[i]);
+            /* printf("%d, %d, %d\n", plate[i], mjd[i], fiber[i]); */
             i++;
         }
 
@@ -150,11 +150,6 @@ int main(int argc, char **argv)
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-
-
-    PDCprop_set_obj_user_id( obj_prop, getuid(),    pdc);
-    PDCprop_set_obj_app_name(obj_prop, "H5BOSS",  pdc);
-    PDCprop_set_obj_tags(    obj_prop, "tag0=1",    pdc);
 
     gettimeofday(&ht_total_start, 0);
 

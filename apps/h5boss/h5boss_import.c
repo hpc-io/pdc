@@ -146,6 +146,8 @@ int main(int argc, char **argv)
 
     int n_fiber = 1000;
     for (i = 0; i < my_count; i++) {
+        sprintf(data_loc, "/global/cscratch1/sd/jialin.old/h5boss/%d-%d.hdf5", plate_ptr[i], mjd_ptr[i]);
+        PDCprop_set_obj_data_loc(obj_prop, data_loc, pdc);
 
         // Everyone has 1000 fibers
         for (j = 1; j <= n_fiber; j++) {
