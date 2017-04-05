@@ -6,7 +6,7 @@
 #include <time.h>
 #include <sys/time.h>
 
-#define ENABLE_MPI 1
+/* #define ENABLE_MPI 1 */
 
 #ifdef ENABLE_MPI
 #include "mpi.h"
@@ -16,7 +16,7 @@
 
 
 void print_usage() {
-    printf("Usage: srun -n ./import_h5boss -f /path/to/pm_list.txt\n");
+    printf("Usage: srun -n ./import_h5boss /path/to/pm_list.txt\n");
 }
 
 int main(int argc, char **argv)
@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 
     // Rank 0 read from pm file
     if (rank == 0) {
-        printf("Reading form %s\n", pm_filename);
+        printf("Reading from %s\n", pm_filename);
         FILE *pm_file = fopen(pm_filename, "r");
 
         if (NULL == pm_file) {
@@ -148,7 +148,7 @@ int main(int argc, char **argv)
     for (i = 0; i < my_count; i++) {
 
         // Everyone has 1000 fibers
-        for (j = 0; j < n_fiber; j++) {
+        for (j = 1; j <= n_fiber; j++) {
 
             sprintf(obj_name, "%d-%d-%d", plate_ptr[i], mjd_ptr[i], j);
             /* printf("%d: creating %d-%d-%d\n", rank, plate_ptr[i], mjd_ptr[i], j); */
