@@ -7,7 +7,6 @@
 #include "mercury_hash_table.h"
 
 #include "pdc_interface.h"
-#include "pdc_malloc.h"
 #include "pdc_client_server_common.h"
 #include "server/pdc_server.h"
 
@@ -499,10 +498,10 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
     gen_reg_map_notification_out_t out;
 
     HG_Get_input(handle, &in);
-    struct hg_info *info = HG_Get_info(handle);
+//  struct hg_info *info = HG_Get_info(handle);
 //  hg_addr_t new_addr;
 //  HG_Addr_dup(info->hg_class, info->addr, &new_addr);
-
+    
     PDC_mapping_t *map_ptr = NULL;
     PDC_mapping_info_t *m_info_ptr = NULL;
     int m_success = 0;
@@ -526,10 +525,13 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
         PDC_LIST_INIT(&map_ptr->ids);
         pdc_num_reg = ATOMIC_VAR_INIT(1);
         map_ptr->mapping_count = ATOMIC_VAR_INIT(1);
-        map_ptr->obj_id = in.from_obj_id;
-        map_ptr->reg_id = in.from_region_id;
-        m_info_ptr->tgt_obj_id = in.to_obj_id;
-        m_info_ptr->tgt_reg_id = in.to_region_id;
+        map_ptr->local_obj_id = in.local_obj_id;
+        map_ptr->local_reg_id = in.local_reg_id;
+        map_ptr->local_ndim = in.ndim;
+        m_info_ptr->remote_obj_id = in.remote_obj_id;
+        m_info_ptr->remote_reg_id = in.remote_reg_id;
+        m_info_ptr->remote_ndim = in.ndim;
+        m_info_ptr->bulk_handle = in.bulk_handle;
         PDC_LIST_INSERT_HEAD(&map_ptr->ids, m_info_ptr, entry);
 //      printf("PDC SERVER: # of mapping region is %u\n", pdc_num_reg);
     }
@@ -540,7 +542,7 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
         unsigned i = 0;
         for(i=0; i<pdc_num_reg; i++) {
             // found the origin region, which was mapped before
-            if(PDC_mapping_id[i]->reg_id == in.from_region_id) {
+            if(PDC_mapping_id[i]->local_obj_id == in.local_obj_id && PDC_mapping_id[i]->local_reg_id==in.local_reg_id) {
                 found = 1;
 //              printf("==PDC SERVER: region %lld mapped before\n", in.from_region_id);
                 PDC_mapping_info_t *tmp_ptr = NULL;
@@ -551,9 +553,9 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
 //              PDC_LIST_SEARCH(tmp_ptr, &tmp_mapping->ids, entry, tgt_reg_id, in.to_region_id); // not working
 //              tmp_ptr = (&tmp_mapping->ids)->head;
                 PDC_LIST_GET_FIRST(tmp_ptr, &tmp_mapping->ids);
-                while(tmp_ptr!=NULL && tmp_ptr->tgt_reg_id!=in.to_region_id) {
-//                  printf("tgt region in list is %lld\n", tmp_ptr->tgt_reg_id);
-//                  printf("tgt region is %lld\n", in.to_region_id);
+                while(tmp_ptr!=NULL && tmp_ptr->remote_reg_id!=in.remote_reg_id) {
+//                  printf("tgt region in list is %lld\n", tmp_ptr->remote_reg_id);
+//                  printf("tgt region is %lld\n", in.remote_reg_id);
                     PDC_LIST_TO_NEXT(tmp_ptr, entry);
                 }
 /*
@@ -570,13 +572,15 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
                     }
                     atomic_fetch_add(&(PDC_mapping_id[i]->mapping_count), 1);
 //                  printf("==PDC SERVER: create new mapping, mapping_count = % u\n", PDC_mapping_id[i]->mapping_count);
-                    tmp_ptr->tgt_obj_id = in.to_obj_id;
-                    tmp_ptr->tgt_reg_id = in.to_region_id;
+                    tmp_ptr->remote_obj_id = in.remote_obj_id;
+                    tmp_ptr->remote_reg_id = in.remote_reg_id;
+                    tmp_ptr->remote_ndim = in.ndim;
+                    tmp_ptr->bulk_handle = in.bulk_handle;
                     PDC_LIST_INSERT_HEAD(&PDC_mapping_id[i]->ids, tmp_ptr, entry);
                 }
                 else {// same mapping stored in server already
                     m_success = 1;
-                    printf("==PDC SERVER ERROR: mapping from %lld to %lld already exists\n", in.from_region_id, in.to_region_id);
+                    printf("==PDC SERVER ERROR: mapping from %lld to %lld already exists\n", in.local_reg_id, in.remote_reg_id);
                 }
             }
         } // end of for loop
@@ -596,13 +600,17 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
             PDC_mapping_id[pdc_num_reg-1] = map_ptr;
             PDC_LIST_INIT(&map_ptr->ids);
             map_ptr->mapping_count = ATOMIC_VAR_INIT(1);
-            map_ptr->obj_id = in.from_obj_id;
-            map_ptr->reg_id = in.from_region_id;
-            m_info_ptr->tgt_obj_id = in.to_obj_id;
-            m_info_ptr->tgt_reg_id = in.to_region_id;
+            map_ptr->local_obj_id = in.local_obj_id;
+            map_ptr->local_reg_id = in.local_reg_id;
+            map_ptr->local_ndim = in.ndim;
+            m_info_ptr->remote_obj_id = in.remote_obj_id;
+            m_info_ptr->remote_reg_id = in.remote_reg_id;
+            m_info_ptr->remote_ndim = in.ndim;
+            m_info_ptr->bulk_handle = in.bulk_handle;
             PDC_LIST_INSERT_HEAD(&map_ptr->ids, m_info_ptr, entry);
         }
     }
+    
     // mapping success
     if(m_success == 0) {
         out.ret = 1;

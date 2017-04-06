@@ -176,7 +176,7 @@ perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_send_region_map(pdcid_t from_obj_id, pdcid_t from_region_id, pdcid_t to_obj_id, pdcid_t to_region_id);
+perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *local_offset, uint64_t *remote_offset, uint64_t *size, PDC_var_type_t local_type, PDC_var_type_t remote_type, void *local_data);
 
 /**
  * Request of PDC client to get region lock

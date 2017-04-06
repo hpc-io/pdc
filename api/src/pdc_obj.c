@@ -418,17 +418,54 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDCobj_map(pdcid_t from_obj, pdcid_t from_reg, pdcid_t to_obj, pdcid_t to_reg, pdcid_t pdc_id) {
+perr_t PDCobj_map(pdcid_t local_obj, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg, pdcid_t pdc_id) {
     perr_t ret_value = SUCCEED;         /* Return value */
     
     FUNC_ENTER(NULL);
-	ret_value = PDC_Client_send_region_map(from_obj, from_reg, to_obj, to_reg); 
+    
     // PDC_CLASS_t defined in pdc_interface.h
     // PDC_obj_info_t defined in pdc_obj_pkg.h
     // PDC_region_info_t defined in pdc_obj_pkg.h
+    
+    PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc_id;
+    
+    PDC_id_info_t *objinfo1 = NULL;
+    objinfo1 = PDC_find_id(local_obj, pc);
+    if(objinfo1 == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object ID");
+    PDC_obj_info_t *obj1 = (PDC_obj_info_t *)(objinfo1->obj_ptr);
+    pdcid_t propid1 = obj1->obj_prop;
+    PDC_id_info_t *propinfo1 = PDC_find_id(propid1, pc);
+    PDC_obj_prop_t *prop1 = (PDC_obj_prop_t *)(propinfo1->obj_ptr);
+    PDC_var_type_t local_type = prop1->type;
+    void *local_data = prop1->buf;
+    
+    PDC_id_info_t *objinfo2 = NULL;
+    objinfo2 = PDC_find_id(remote_obj, pc);
+    if(objinfo2 == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object ID");
+    PDC_obj_info_t *obj2 = (PDC_obj_info_t *)(objinfo2->obj_ptr);
+    pdcid_t propid2 = obj2->obj_prop;
+    PDC_id_info_t *propinfo2 = PDC_find_id(propid2, pc);
+    PDC_obj_prop_t *prop2 = (PDC_obj_prop_t *)(propinfo2->obj_ptr);
+    PDC_var_type_t remote_type = prop2->type;
+    void *remote_data = prop2->buf;
+    
+    PDC_id_info_t *reginfo1 = PDC_find_id(local_reg, pc);
+    PDC_id_info_t *reginfo2 = PDC_find_id(remote_reg, pc);
+    PDC_region_info_t *reg1 = (PDC_region_info_t *)(reginfo1->obj_ptr);
+    PDC_region_info_t *reg2 = (PDC_region_info_t *)(reginfo2->obj_ptr);
+    // TODO: assume ndim is the same
+    size_t ndim = reg1->ndim;
+    
+    //TODO: assume type is the same
     // start mapping
-    // state that there is mapping to other objects
-//    object1->mapping = 1;
+	ret_value = PDC_Client_send_region_map(local_obj, local_reg, remote_obj, remote_reg, ndim, reg1->offset, reg2->offset, reg1->size, local_type, remote_type, local_data);
+    
+    if(ret_value == SUCCEED) {
+        // state in origin obj that there is mapping
+        obj1->mapping = 1;
+    }
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -456,8 +493,8 @@ perr_t PDCobj_buf_map(void *buf, pdcid_t from_reg, pdcid_t obj_id, pdcid_t to_re
     PDC_region_info_t *reg1 = (PDC_region_info_t *)(reginfo1->obj_ptr);
     PDC_region_info_t *reg2 = (PDC_region_info_t *)(reginfo2->obj_ptr);
     
-    if(reg1->ndim != reg2->ndim || prop->ndim != reg1->ndim || prop->ndim != reg2->ndim)
-        PGOTO_ERROR(FAIL, "cannot map between regions of different dimensions");
+//    if(reg1->ndim != reg2->ndim || prop->ndim != reg1->ndim || prop->ndim != reg2->ndim)
+//        PGOTO_ERROR(FAIL, "cannot map between regions of different dimensions");
     // start mapping
     // state that there is mapping to other objects
     object1->mapping = 1;

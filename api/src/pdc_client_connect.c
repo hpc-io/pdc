@@ -1565,7 +1565,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_send_region_map(pdcid_t from_obj_id, pdcid_t from_region_id, pdcid_t to_obj_id, pdcid_t to_region_id)
+perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *local_offset, uint64_t *remote_offset, uint64_t *size, PDC_var_type_t local_type, PDC_var_type_t remote_type, void *local_data)
 {
     FUNC_ENTER(NULL);
     perr_t ret_value = SUCCEED;
@@ -1573,11 +1573,33 @@ perr_t PDC_Client_send_region_map(pdcid_t from_obj_id, pdcid_t from_region_id, p
 
     // Fill input structure
     gen_reg_map_notification_in_t in;
-    in.from_obj_id = from_obj_id;
-    in.from_region_id = from_region_id;
-    in.to_obj_id = to_obj_id;
-    in.to_region_id = to_region_id;
-    uint32_t server_id = PDC_get_server_by_obj_id(from_obj_id, pdc_server_num_g);
+    in.local_obj_id = local_obj_id;
+    in.local_reg_id = local_region_id;
+    in.remote_obj_id = remote_obj_id;
+    in.remote_reg_id = remote_region_id;
+    in.local_type = local_type;
+    in.remote_type = remote_type;
+    in.ndim = ndim;
+    
+    // Create a bulk descriptor
+    hg_bulk_t bulk_handle = HG_BULK_NULL;
+    
+    uint64_t *buf_sizes;
+    
+    buf_sizes = (uint64_t *)malloc(ndim * sizeof(uint64_t));
+    uint32_t i;
+    for(i=0; i<ndim; i++) {
+        if(local_type == PDC_DOUBLE)
+            buf_sizes[i] = size[i]*sizeof(double);
+        else if(local_type == PDC_FLOAT)
+        buf_sizes[i] = size[i]*sizeof(float);
+        else if(local_type == PDC_INT)
+            buf_sizes[i] = size[i]*sizeof(int);
+        else
+            PGOTO_ERROR(FAIL, "local data type is not supported yet");
+    }
+
+    uint32_t server_id = PDC_get_server_by_obj_id(local_obj_id, pdc_server_num_g);
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
@@ -1586,6 +1608,14 @@ perr_t PDC_Client_send_region_map(pdcid_t from_obj_id, pdcid_t from_region_id, p
     if (pdc_server_info_g[server_id].client_send_region_handle_valid!= 1) {
         HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_reg_map_notification_register_id_g, &pdc_server_info_g[server_id].client_send_region_handle);
         pdc_server_info_g[server_id].client_send_region_handle_valid  = 1;
+    }
+    
+    hg_class_t *hg_class = HG_Context_get_class(send_context_g);
+    // Create bulk handle
+    hg_ret = HG_Bulk_create(hg_class, ndim, &local_data, buf_sizes, HG_BULK_READWRITE, &bulk_handle);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not create bulk data handle\n");
+        return EXIT_FAILURE;
     }
 
     /* printf("Sending input to target\n"); */

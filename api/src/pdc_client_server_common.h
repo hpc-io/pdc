@@ -1,6 +1,7 @@
 #include <time.h>
 
 #include "pdc_linkedlist.h"
+#include "pdc_private.h"
 #include "mercury.h"
 #include "mercury_macros.h"
 #include "mercury_proc_string.h"
@@ -77,17 +78,20 @@ typedef struct pdc_metadata_t {
 } pdc_metadata_t;
 
 typedef struct PDC_mapping_info {
-	pdcid_t                          tgt_obj_id;           /* target of object id */
-	pdcid_t                          tgt_reg_id;           /* target of region id */
-	PDC_LIST_ENTRY(PDC_mapping_info) entry;
+    pdcid_t                          remote_obj_id;         /* target of object id */
+    pdcid_t                          remote_reg_id;         /* target of region id */
+    hg_bulk_t                        bulk_handle;
+    size_t                           remote_ndim;
+    PDC_LIST_ENTRY(PDC_mapping_info) entry;
 } PDC_mapping_info_t;
 
 typedef struct PDC_mapping {
 // if keeping the struct of origin of region is needed?
-	unsigned                         mapping_count;        /* count the number of mapping of this region */
-	pdcid_t                          obj_id;               /* origin of object id */
-	pdcid_t                          reg_id;               /* origin of region id */
-	PDC_LIST_HEAD(PDC_mapping_info)  ids;                  /* Head of list of IDs */
+    pdc_cnt_t                        mapping_count;        /* count the number of mapping of this region */
+    pdcid_t                          local_obj_id;         /* origin of object id */
+    pdcid_t                          local_reg_id;         /* origin of region id */
+    size_t                           local_ndim;
+    PDC_LIST_HEAD(PDC_mapping_info)  ids;                  /* Head of list of IDs */
 } PDC_mapping_t;
 
 PDC_mapping_t **PDC_mapping_id;
@@ -161,7 +165,7 @@ MERCURY_GEN_PROC( metadata_delete_out_t, ((int32_t)(ret)) )
 MERCURY_GEN_PROC( metadata_update_in_t, ((uint64_t)(obj_id)) ((uint32_t)(hash_value)) ((pdc_metadata_transfer_t)(new_metadata)) )
 MERCURY_GEN_PROC( metadata_update_out_t, ((int32_t)(ret)) )
 
-MERCURY_GEN_PROC( gen_reg_map_notification_in_t, ((uint64_t)(from_obj_id)) ((uint64_t)(from_region_id)) ((uint64_t)(to_obj_id)) ((uint64_t)(to_region_id)) )
+MERCURY_GEN_PROC( gen_reg_map_notification_in_t, ((uint64_t)(local_obj_id)) ((uint64_t)(local_reg_id)) ((uint64_t)(remote_obj_id)) ((uint64_t)(remote_reg_id)) ((PDC_var_type_t)(local_type)) ((PDC_var_type_t)(remote_type)) ((hg_size_t)(ndim)) ((hg_bulk_t)(bulk_handle)) )
 MERCURY_GEN_PROC( gen_reg_map_notification_out_t, ((int32_t)(ret)) ) 
 
 MERCURY_GEN_STRUCT_PROC( region_info_transfer_t, ((hg_size_t)(ndim)) ((uint64_t)(start_0)) ((uint64_t)(start_1)) ((uint64_t)(start_2)) ((uint64_t)(start_3))  ((uint64_t)(count_0)) ((uint64_t)(count_1)) ((uint64_t)(count_2)) ((uint64_t)(count_3)) ((uint64_t)(stride_0)) ((uint64_t)(stride_1)) ((uint64_t)(stride_2)) ((uint64_t)(stride_3)) )
@@ -636,10 +640,14 @@ typedef struct {
 } close_server_out_t;
 
 typedef struct {
-	uint64_t from_obj_id;
-	uint64_t from_region_id;
-	uint64_t to_obj_id;
-	uint64_t to_region_id;
+    uint64_t        local_obj_id;
+    uint64_t        local_reg_id;
+    uint64_t        remote_obj_id;
+    uint64_t        remote_reg_id;
+    PDC_var_type_t  local_type;
+    PDC_var_type_t  remote_type;
+    size_t          ndim;
+    hg_bulk_t       bulk_handle;
 } gen_reg_map_notification_in_t;
 
 typedef struct {

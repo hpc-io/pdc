@@ -15,7 +15,7 @@
 
 #define CREATE_BLOOM_THRESHOLD 64
 
-static unsigned pdc_num_reg;
+static pdc_cnt_t pdc_num_reg;
 extern hg_class_t *hg_class_g;
 
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out);

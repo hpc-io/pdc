@@ -12,8 +12,6 @@
 
 #define PDCID_IS_LIB_TYPE(type) (type > 0 && type < PDC_NTYPES)
 
-typedef _Atomic unsigned int pdc_cnt_t;
-
 /*
  * Function for freeing objects. This function will be called with an object
  * ID type number and a pointer to the object. The function should free the
