@@ -17,6 +17,7 @@ set(PROGRAMS
   obj_life
   obj_dim
   obj_buf
+  obj_map
   create_obj_scale
   close_server
   update_obj
