@@ -28,10 +28,6 @@ static char *rand_string(char *str, size_t size)
     return str;
 }
 
-void print_usage() {
-    printf("Usage: srun -n ./creat_obj -r num_of_obj_per_rank\n");
-}
-
 int main(int argc, const char *argv[])
 {
     int rank = 0, size = 1;
@@ -42,39 +38,6 @@ int main(int argc, const char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-/*
-    int count = -1;
-    char c;
-    while ((c = getopt (argc, argv, "r:")) != -1)
-        switch (c)
-        {
-         case 'r':
-           count = atoi(optarg);
-           break;
-         case '?':
-           if (optopt == 'r')
-             fprintf (stderr, "Option -%c requires an argument.\n", optopt);
-           else if (isprint (optopt))
-             fprintf (stderr, "Unknown option `-%c'.\n", optopt);
-           else
-             fprintf (stderr, "Unknown option character `\\x%x'.\n", optopt);
-           return 1;
-         default:
-           print_usage();
-           exit(-1);
-        }
-
-    if (count == -1) {
-        print_usage();
-        exit(-1);
-    }
-
-    count /= size;
-
-    if (rank == 0) 
-        printf("Creating %d objects per MPI rank\n", count);
-    fflush(stdout);
-*/
     int i;
     const int metadata_size = 512;
     PDC_prop_t p;
@@ -102,19 +65,11 @@ int main(int argc, const char *argv[])
     pdcid_t obj_prop1 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
     pdcid_t obj_prop2 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
     pdcid_t obj_prop3 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
-//    if(obj_prop1 <= 0)
-//        printf("Fail to create object property @ line  %d!\n", __LINE__);
-    /* else */
-    /*     if (rank == 0) */ 
-    /*         printf("Create an object property, id is %lld\n", obj_prop); */
-
-    pdcid_t test_obj = -1;
 
     struct timeval  ht_total_start;
     struct timeval  ht_total_end;
     long long ht_total_elapsed;
     double ht_total_sec;
-
 
     char obj_name1[512];
     char obj_name2[512];
