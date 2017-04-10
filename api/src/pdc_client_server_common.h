@@ -1,5 +1,7 @@
-#include <time.h>
+#ifndef PDC_CLIENT_SERVER_COMMON_H
+#define PDC_CLIENT_SERVER_COMMON_H
 
+#include <time.h>
 #include "pdc_linkedlist.h"
 #include "mercury.h"
 #include "mercury_macros.h"
@@ -12,8 +14,6 @@
 #include "mercury_list.h"
 
 
-#ifndef PDC_CLIENT_SERVER_COMMON_H
-#define PDC_CLIENT_SERVER_COMMON_H
 
 #define ADDR_MAX 64
 #define DIM_MAX  16

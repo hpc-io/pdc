@@ -6,7 +6,7 @@
 #include <time.h>
 #include <sys/time.h>
 
-/* #define ENABLE_MPI 1 */
+#define ENABLE_MPI 1
 
 #ifdef ENABLE_MPI
 #include "mpi.h"
@@ -137,8 +137,12 @@ int main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
+    if (rank == 0) {
+        printf("Starting to import h5boss metadata...\n");
+    }
 
     PDCprop_set_obj_user_id( obj_prop, getuid(),    pdc);
+    PDCprop_set_obj_time_step( obj_prop, 0,    pdc);
     PDCprop_set_obj_app_name(obj_prop, "H5BOSS",  pdc);
     PDCprop_set_obj_tags(    obj_prop, "tag0=1",    pdc);
 
@@ -149,32 +153,30 @@ int main(int argc, char **argv)
         sprintf(data_loc, "/global/cscratch1/sd/jialin.old/h5boss/%d-%d.hdf5", plate_ptr[i], mjd_ptr[i]);
         PDCprop_set_obj_data_loc(obj_prop, data_loc, pdc);
 
+        /* printf("%d: creating %d-%d\n", rank, plate_ptr[i], mjd_ptr[i]); */
         // Everyone has 1000 fibers
         for (j = 1; j <= n_fiber; j++) {
 
             sprintf(obj_name, "%d-%d-%d", plate_ptr[i], mjd_ptr[i], j);
-            /* printf("%d: creating %d-%d-%d\n", rank, plate_ptr[i], mjd_ptr[i], j); */
 
             test_obj = PDCobj_create(pdc, cont, obj_name, obj_prop);
             if (test_obj < 0) {
                 printf("Error getting an object id of %s from server, exit...\n", obj_name);
                 exit(-1);
             }
-
-
         }
 
         // Print progress
-        int progress_factor = count < 10 ? 1 : 10;
-        if (i > 0 && i % (count/progress_factor) == 0) {
-            gettimeofday(&ht_total_end, 0);
-            ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
-            ht_total_sec        = ht_total_elapsed / 1000000.0;
-            if (rank == 0) {
-                printf("%10d created ... %.4f s\n", i * size * j, ht_total_sec);
-                fflush(stdout);
-            }
-        }
+        /* int progress_factor = my_count < 10 ? 1 : 10; */
+        /* if (i > 0 && i % (my_count/progress_factor) == 0) { */
+        /*     gettimeofday(&ht_total_end, 0); */
+        /*     ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec; */
+        /*     ht_total_sec        = ht_total_elapsed / 1000000.0; */
+        /*     if (rank == 0) { */
+        /*         printf("%10d created ... %.4f s\n", i * size * j, ht_total_sec); */
+        /*         fflush(stdout); */
+        /*     } */
+        /* } */
 
     }
 #ifdef ENABLE_MPI

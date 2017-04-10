@@ -675,8 +675,8 @@ perr_t PDC_Client_finalize()
     perr_t ret_value;
 
     // Send close server request to all servers
-    if (pdc_client_mpi_rank_g == 0) 
-        PDC_Client_close_all_server();
+    /* if (pdc_client_mpi_rank_g == 0) */ 
+    /*     PDC_Client_close_all_server(); */
 
 
     // Finalize Mercury

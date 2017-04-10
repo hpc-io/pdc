@@ -20,11 +20,12 @@ if(mercury_FOUND)
 endif()
 
 include_directories(${PDC_EXT_INCLUDE_DEPENDENCIES})
+include_directories(${CMAKE_INSTALL_PREFIX}/skiplist/include/)
 
 #------------------------------------------------------------------------------
 # Options
 #------------------------------------------------------------------------------
-#add_definitions(-DENABLE_MPI=1)
+add_definitions(-DENABLE_MPI=1)
 #add_definitions(-DENABLE_TIMING=1)
 add_definitions(-DENABLE_CHECKPOINT=1)
 #add_definitions(-DENABLE_MULTITHREAD=1)
