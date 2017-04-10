@@ -1,25 +1,22 @@
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dablooms)
-#
+
 #include(ExternalProject)
 #
 #ExternalProject_Add(project_skiplist
 #  DOWNLOAD_DIR "${CMAKE_CURRENT_BINARY_DIR}/skiplist"
-#  URL https://svwh.dl.sourceforge.net/project/myskl/myskl/0.2.1/myskl-0.2.1.src.tar.gz 
-#  UPDATE_COMMAND ""
-#  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/skiplist
+#  GIT_REPOSITORY git@github.com:houjun/myskl.git
 #  BUILD_IN_SOURCE 1
-#  CONFIGURE_COMMAND  ./configure --enable-thread-safety-full --prefix=${CMAKE_CURRENT_BINARY_DIR}/build 
+#  CONFIGURE_COMMAND  ./configure --enable-thread-safety-full --prefix=${CMAKE_INSTALL_PREFIX}/skiplist/
+#  UPDATE_COMMAND     ""
 #  BUILD_COMMAND      make
 #  INSTALL_COMMAND    make install 
 #)
 #
-#ExternalProject_Get_Property(project_skiplist install_dir)
-#
-#include_directories(${install_dir}/include/)
-#
+#include_directories(${CMAKE_INSTALL_PREFIX}/skiplist/include/)
 #add_library(skiplist SHARED IMPORTED)
-#set_property(TARGET skiplist PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/build/lib/libmyskl.so)
+#
+#set_property(TARGET skiplist PROPERTY IMPORTED_LOCATION ${CMAKE_INSTALL_PREFIX}/skiplist/lib/libmyskl.so)
 #
 #add_dependencies(skiplist project_skiplist)
 

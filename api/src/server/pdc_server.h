@@ -1,3 +1,6 @@
+#ifndef PDC_SERVER_H
+#define PDC_SERVER_H
+
 #include <time.h>
 
 #include "mercury.h"
@@ -10,8 +13,6 @@
 #include "mercury_hash_table.h"
 #include "mercury_list.h"
 
-#ifndef PDC_SERVER_H
-#define PDC_SERVER_H
 
 #define CREATE_BLOOM_THRESHOLD 64
 
@@ -27,11 +28,11 @@ perr_t PDC_Server_restart(char *filename);
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs);
 pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id);
 
-typedef struct pdc_metadata_name_mark_t {
-    char obj_name[ADDR_MAX];
-    struct pdc_metadata_name_mark_t *next;
-    struct pdc_metadata_name_mark_t *prev;
-} pdc_metadata_name_mark_t;
+/* typedef struct pdc_metadata_name_mark_t { */
+/*     char obj_name[ADDR_MAX]; */
+/*     struct pdc_metadata_name_mark_t *next; */
+/*     struct pdc_metadata_name_mark_t *prev; */
+/* } pdc_metadata_name_mark_t; */
 
 typedef struct pdc_hash_table_entry_head {
     int n_obj;

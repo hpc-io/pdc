@@ -13,6 +13,7 @@
 #endif
 #include "utlist.h"
 #include "dablooms.h"
+/* #include "myskl.h" */
 
 #include "mercury.h"
 #include "mercury_macros.h"
@@ -2363,6 +2364,47 @@ perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key,
 done:
     FUNC_LEAVE(ret_value);
 }
+
+/* void dstnode ( MySKL_n n ) */
+/* { */
+/*     pdc_metadata_t *item = MySKLgetEntry ( n, pdc_metadata_t, node ); */
+/*     free(item); */
+/* } */
+
+/* int test_skl(int maxlev) */
+/* { */
+/*     MySKL_e err; */
+/*     MySKL_t l; */
+/*     MySKL_i it1; */
+/*     MySKL_n n; */
+
+/*     pdc_metadata_t *item1 = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t)); */
+/*     pdc_metadata_t *item2 = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t)); */
+/*     pdc_metadata_t *item3 = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t)); */
+/*     item1->obj_id = 1; */
+/*     item2->obj_id = 2; */
+/*     item3->obj_id = 3; */
+
+/*     l = MySKLinit( maxlev, PDC_metadata_cmp, dstnode, &err ); */
+/*     if ( err == MYSKL_STATUS_OK ) { */
+/*         printf("Inserting data to skl\n"); */
+/*         MySKLinsertAD( l, &(item1->node) ); */
+/*         MySKLinsertAD( l, &(item2->node) ); */
+/*         MySKLinsertAD( l, &(item3->node) ); */
+
+/*         MySKLsetIterator ( l, &it1, NULL ); */
+/*         while ( ( n = MySKLgetNextNode ( &it1, 1 ) ) ) { */
+/*             printf("%llu", MySKLgetEntry( n, LN_s, node )->obj_id); */
+/*         } */
+
+/*         MySKLdestroyIterator( &it1 ); */
+
+/*         /1* MySKLdeleteNF( l, &tofound.node, NULL ); *1/ */
+/*     } */
+/*     else printf ( "Error with skiplist init!"); */
+
+/*     return 0; */
+/* } */
 
 int main(int argc, char *argv[])
 {

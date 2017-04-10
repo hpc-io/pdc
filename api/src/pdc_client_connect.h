@@ -1,3 +1,6 @@
+#ifndef PDC_CLIENT_CONNECT_H
+#define PDC_CLIENT_CONNECT_H
+
 #include "mercury.h"
 #include "mercury_proc_string.h"
 
@@ -6,8 +9,6 @@
 #include "pdc_obj_pkg.h"
 #include "pdc_client_server_common.h"
 
-#ifndef PDC_CLIENT_CONNECT_H
-#define PDC_CLIENT_CONNECT_H
 
 extern int pdc_server_num_g;
 
