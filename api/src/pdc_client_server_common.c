@@ -455,47 +455,155 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//enter this function, transfer is done
+static hg_return_t
+region_lock_bulk_transfer_cb (const struct hg_cb_info *hg_cb_info)
+{
+    FUNC_ENTER(NULL);
+    
+    perr_t ret_value = SUCCEED;
+    hg_return_t hg_ret = HG_SUCCESS;
+    int ret;
+    region_lock_out_t out;
+    
+    struct lock_bulk_args *bulk_args = (struct lock_bulk_args *)hg_cb_info->arg;
+    hg_bulk_t local_bulk_handle = hg_cb_info->info.bulk.local_handle;
+    
+    if (hg_cb_info->ret == HG_CANCELED) {
+        printf("HG_Bulk_transfer() was successfully canceled\n");
+    } else if (hg_cb_info->ret != HG_SUCCESS) {
+        printf("Error in region_lock_bulk_transfer_cb()");
+        hg_ret = HG_PROTOCOL_ERROR;
+        goto done;
+    }
+    
+    // TODO
+    // Perform lock function
+    ret = PDC_Server_region_lock(bulk_args->in, &out);
+    
+    HG_Respond(bulk_args->handle, NULL, NULL, &out);
+    /* printf("==PDC_SERVER: gen_obj_id_cb(): returned %llu\n", out.ret); */
+    
+    HG_Free_input(bulk_args->handle, bulk_args->in);
+
+done:
+    HG_Destroy(bulk_args->handle);
+    free(bulk_args);
+    
+    FUNC_LEAVE(ret_value);
+}
+
 HG_TEST_RPC_CB(region_lock, handle)
 {
     FUNC_ENTER(NULL);
 
-    hg_return_t ret_value;
+    hg_return_t ret_value = HG_SUCCESS;
 
+    struct lock_bulk_args *bulk_args = NULL;
+    bulk_args = (struct lock_bulk_args *) malloc(sizeof(struct lock_bulk_args));
+    /* Keep handle to pass to callback */
+    bulk_args->handle = handle;
+    
+    hg_op_id_t hg_bulk_op_id;
+    
+    struct hg_info *hg_info = NULL;
+    /* Get info from handle */
+    hg_info = HG_Get_info(handle);
+    
     /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     region_lock_in_t in;
-    region_lock_out_t out;
-
+    
     HG_Get_input(handle, &in);
+    bulk_args->in = &in;
+    
     int ret;
 
-    // TODO
-    // Perform lock function
-    ret = PDC_Server_region_lock(&in, &out);
+    if(in.lock_op == PDC_LOCK_OP_OBTAIN) {
+        // TODO
+        // Perform lock function
+        region_lock_out_t out;
 
-    HG_Respond(handle, NULL, NULL, &out);
-    /* printf("==PDC_SERVER: gen_obj_id_cb(): returned %llu\n", out.ret); */
+        ret = PDC_Server_region_lock(&in, &out);
+        
+        HG_Respond(handle, NULL, NULL, &out);
+        /* printf("==PDC_SERVER: gen_obj_id_cb(): returned %llu\n", out.ret); */
+        
+        HG_Free_input(handle, &in);
+        HG_Destroy(handle);
+        
+        ret_value = HG_SUCCESS;
+        
+        goto done;
+    }
+    
+    // if the mode is release
+    // do data transfer here
+    unsigned i = 0;
+    int found = 0;
+    for(i=0; i<pdc_num_reg; i++) {
+        // found the origin region, which was mapped before
+        if(PDC_mapping_id[i]->local_obj_id == in.obj_id && PDC_mapping_id[i]->local_reg_id==in.local_reg_id) {
+            found = 1;
+            // find the mapping region list
+            hg_bulk_t origin_bulk_handle = HG_BULK_NULL;
+            hg_bulk_t local_bulk_handle = HG_BULK_NULL;
+            hg_return_t ret = HG_SUCCESS;
+            PDC_mapping_t *tmp_mapping = PDC_mapping_id[i];
+            PDC_mapping_info_t *mapping_info = NULL;
+            
+            origin_bulk_handle = tmp_mapping->bulk_handle;
 
-    HG_Free_input(handle, &in);
-    HG_Destroy(handle);
-
-    ret_value = HG_SUCCESS;
+            hg_size_t   data_size = HG_Bulk_get_size(origin_bulk_handle);
+            printf("data size is %lld\n", data_size);
+            
+            hg_return_t hg_ret;
+            
+            // start data copy from client to server
+            
+            // allocate contiguous space in the server for data copy or RDMA later
+            void *buf_ptrs;
+            if(tmp_mapping->local_data_type == PDC_DOUBLE)
+                buf_ptrs = (void *)malloc(data_size * sizeof(double));
+            else if(tmp_mapping->local_data_type == PDC_FLOAT)
+                buf_ptrs = (void *)malloc(data_size * sizeof(float));
+            else if(tmp_mapping->local_data_type == PDC_INT)
+                buf_ptrs = (void *)malloc(data_size * sizeof(int));
+            else
+                PGOTO_ERROR(FAIL, "local data type is not supported yet");
+            
+            /* Create a new block handle to read the data */
+            hg_ret = HG_Bulk_create(hg_info->hg_class, 1, buf_ptrs, data_size, HG_BULK_READWRITE, &local_bulk_handle);
+            if (hg_ret != HG_SUCCESS) {
+                PGOTO_ERROR(FAIL, "Could not create bulk data handle\n");
+            }
+            
+            /* Pull bulk data */
+            hg_ret = HG_Bulk_transfer(hg_info->context, region_lock_bulk_transfer_cb, bulk_args, HG_BULK_PULL, hg_info->addr, origin_bulk_handle, 0, local_bulk_handle, 0, data_size, &hg_bulk_op_id);
+            if (hg_ret != HG_SUCCESS) 
+                PGOTO_ERROR(FAIL, "Could not read bulk data\n");
+            //offset 0, size is total size, call back to client means data transfer id done and release the unlock
+            // send notification to remote regions to start data movement
+        }
+    }
+    if(found == 0)
+        printf("Could not find local region in server\n");
 
 done:
     FUNC_LEAVE(ret_value);
 }
 
 /* static hg_return_t */
-// gen_reg_map_notification_cb(hg_handle_t handle)
-HG_TEST_RPC_CB(gen_reg_map_notification, handle)
+// region_map_cb(hg_handle_t handle)
+HG_TEST_RPC_CB(region_map, handle)
 {
     FUNC_ENTER(NULL);
 
     hg_return_t ret_value;
 
     // Decode input
-    gen_reg_map_notification_in_t in;
-    gen_reg_map_notification_out_t out;
+    reg_map_in_t in;
+    reg_map_out_t out;
 
     HG_Get_input(handle, &in);
 //  struct hg_info *info = HG_Get_info(handle);
@@ -528,10 +636,13 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
         map_ptr->local_obj_id = in.local_obj_id;
         map_ptr->local_reg_id = in.local_reg_id;
         map_ptr->local_ndim = in.ndim;
+        map_ptr->bulk_handle = in.bulk_handle;
+        map_ptr->local_data_type = in.local_type;
         m_info_ptr->remote_obj_id = in.remote_obj_id;
         m_info_ptr->remote_reg_id = in.remote_reg_id;
         m_info_ptr->remote_ndim = in.ndim;
-        m_info_ptr->bulk_handle = in.bulk_handle;
+        m_info_ptr->remote_data_type = in.remote_type;
+        
         PDC_LIST_INSERT_HEAD(&map_ptr->ids, m_info_ptr, entry);
 //      printf("PDC SERVER: # of mapping region is %u\n", pdc_num_reg);
     }
@@ -575,7 +686,6 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
                     tmp_ptr->remote_obj_id = in.remote_obj_id;
                     tmp_ptr->remote_reg_id = in.remote_reg_id;
                     tmp_ptr->remote_ndim = in.ndim;
-                    tmp_ptr->bulk_handle = in.bulk_handle;
                     PDC_LIST_INSERT_HEAD(&PDC_mapping_id[i]->ids, tmp_ptr, entry);
                 }
                 else {// same mapping stored in server already
@@ -603,10 +713,10 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
             map_ptr->local_obj_id = in.local_obj_id;
             map_ptr->local_reg_id = in.local_reg_id;
             map_ptr->local_ndim = in.ndim;
+            map_ptr->bulk_handle = in.bulk_handle;
             m_info_ptr->remote_obj_id = in.remote_obj_id;
             m_info_ptr->remote_reg_id = in.remote_reg_id;
             m_info_ptr->remote_ndim = in.ndim;
-            m_info_ptr->bulk_handle = in.bulk_handle;
             PDC_LIST_INSERT_HEAD(&map_ptr->ids, m_info_ptr, entry);
         }
     }
@@ -629,6 +739,44 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+/* static hg_return_t */
+// region_update_cb(hg_handle_t handle)
+/*
+HG_TEST_RPC_CB(region_update, handle)
+{
+    FUNC_ENTER(NULL);
+    
+    hg_return_t ret_value = HG_SUCCESS;
+    
+    // Decode input
+    reg_update_in_t in;
+    reg_update_out_t out;
+    
+    ret_value = HG_Get_input(handle, &in);
+    if (ret_value != HG_SUCCESS)
+        PGOTO_ERROR(FAIL, "Could not get input");
+    
+    unsigned i = 0;
+    int found = 0;
+    for(i=0; i<pdc_num_reg; i++) {
+        // found the origin region, which was mapped before
+        if(PDC_mapping_id[i]->local_obj_id == in.local_obj_id && PDC_mapping_id[i]->local_reg_id==in.local_reg_id) {
+            found = 1;
+            // find the mapping region list
+            hg_bulk_t origin_bulk_handle = HG_BULK_NULL;
+            hg_bulk_t local_bulk_handle = HG_BULK_NULL;
+            struct hg_test_bulk_args *bulk_args = NULL;
+            hg_return_t ret = HG_SUCCESS;
+            PDC_mapping_t *tmp_mapping = PDC_mapping_id[i];
+            PDC_mapping_info_t *mapping_info = NULL;
+            PDC_LIST_GET_FIRST(mapping_info, &tmp_mapping->ids);
+            origin_bulk_handle = mapping_info->bulk_handle;
+        }
+    }
+done:
+    FUNC_LEAVE(ret_value);
+}
+*/
 
 // Bulk
 /* static hg_return_t */
@@ -747,7 +895,7 @@ HG_TEST_THREAD_CB(metadata_delete)
 HG_TEST_THREAD_CB(metadata_delete_by_id)
 HG_TEST_THREAD_CB(metadata_update)
 HG_TEST_THREAD_CB(close_server)
-HG_TEST_THREAD_CB(gen_reg_map_notification)
+HG_TEST_THREAD_CB(region_map)
 HG_TEST_THREAD_CB(region_lock)
 HG_TEST_THREAD_CB(query_partial)
 
@@ -848,18 +996,32 @@ done:
 }
 
 hg_id_t
-gen_reg_map_notification_register(hg_class_t *hg_class)
+region_map_register(hg_class_t *hg_class)
 {
     FUNC_ENTER(NULL);
 
     hg_id_t ret_value;
-    ret_value = MERCURY_REGISTER(hg_class, "gen_reg_map_notification", gen_reg_map_notification_in_t, gen_reg_map_notification_out_t, gen_reg_map_notification_cb);
+    ret_value = MERCURY_REGISTER(hg_class, "region_map", reg_map_in_t, reg_map_out_t, region_map_cb);
 
 
 done:
     FUNC_LEAVE(ret_value);
 }
 
+/*
+hg_id_t
+region_update_register(hg_class_t *hg_class)
+{
+    FUNC_ENTER(NULL);
+    
+    hg_id_t ret_value;
+    ret_value = MERCURY_REGISTER(hg_class, "region_update", reg_update_in_t, reg_update_out_t, region_update_cb);
+    
+    
+done:
+    FUNC_LEAVE(ret_value);
+}
+*/
 
 hg_id_t
 region_lock_register(hg_class_t *hg_class)

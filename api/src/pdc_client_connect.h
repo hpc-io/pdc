@@ -39,10 +39,12 @@ typedef struct pdc_server_info_t {
     hg_handle_t     metadata_delete_by_id_handle;
     int             metadata_update_handle_valid;
     hg_handle_t     metadata_update_handle;
-    int	            client_send_region_handle_valid;
-    hg_handle_t     client_send_region_handle;
+    int             region_map_handle_valid;
+    hg_handle_t     region_map_handle;
     int             region_lock_handle_valid;
     hg_handle_t     region_lock_handle;
+//    int             region_update_handle_valid;
+//    hg_handle_t     region_update_handle;
     int             query_partial_handle_valid;
     hg_handle_t     query_partial_handle;
 } pdc_server_info_t;
@@ -76,6 +78,12 @@ typedef struct client_name_cache_t {
 struct region_map_args {
 	int         ret;
 };
+
+/*
+struct region_update_args {
+    int         ret;
+};
+*/
 
 /**
  * Request from client to get address of the server
