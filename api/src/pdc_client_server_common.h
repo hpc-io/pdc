@@ -220,11 +220,6 @@ typedef struct {
     region_info_transfer_t      region;
 } region_lock_in_t;
 
-struct lock_bulk_args {
-    hg_handle_t handle;
-    region_lock_in_t *in;
-};
-
 typedef struct {
     int32_t            ret;
 } region_lock_out_t;
@@ -898,6 +893,11 @@ struct hg_test_bulk_args {
     size_t ret;
     pdc_metadata_t **meta_arr;
     int             *n_meta;
+};
+
+struct lock_bulk_args {
+    hg_handle_t handle;
+    region_lock_in_t *in;
 };
 
 perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out);
