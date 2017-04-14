@@ -757,27 +757,27 @@ perr_t PDC_Client_finalize()
     /* if (obj_names_cache_hash_table_g != NULL) */ 
     /*     hg_hash_table_free(obj_names_cache_hash_table_g); */
 
-/* #ifdef ENABLE_MPI */
+#ifdef ENABLE_MPI
 
-/* /1*     // Print local server connection count *1/ */
-/* /1*     for (i = 0; i < pdc_server_num_g; i++) *1/ */ 
-/* /1*         printf("%d, %d, %d\n", pdc_client_mpi_rank_g, i, debug_server_id_count[i]); *1/ */
-/* /1*     fflush(stdout); *1/ */
+/*     // Print local server connection count */
+/*     for (i = 0; i < pdc_server_num_g; i++) */ 
+/*         printf("%d, %d, %d\n", pdc_client_mpi_rank_g, i, debug_server_id_count[i]); */
+/*     fflush(stdout); */
 
-/*     int *all_server_count = (int*)malloc(sizeof(int)*pdc_server_num_g); */
-/*     MPI_Reduce(debug_server_id_count, all_server_count, pdc_server_num_g, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD); */
-/*     if (pdc_client_mpi_rank_g == 0 && all_server_count[0] != 0) { */
-/*         printf("==PDC_CLIENT: server connection count:\n"); */
-/*         for (i = 0; i < pdc_server_num_g; i++) */ 
-/*             printf("  Server[%3d], %d\n", i, all_server_count[i]); */
-/*     } */
-/*     free(all_server_count); */
-/* #else */
-/*     for (i = 0; i < pdc_server_num_g; i++) { */
-/*         printf("  Server%3d, %d\n", i, debug_server_id_count[i]); */
-/*     } */
+    int *all_server_count = (int*)malloc(sizeof(int)*pdc_server_num_g);
+    MPI_Reduce(debug_server_id_count, all_server_count, pdc_server_num_g, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    if (pdc_client_mpi_rank_g == 0 && all_server_count[0] != 0) {
+        printf("==PDC_CLIENT: server connection count:\n");
+        for (i = 0; i < pdc_server_num_g; i++) 
+            printf("  Server[%3d], %d\n", i, all_server_count[i]);
+    }
+    free(all_server_count);
+#else
+    for (i = 0; i < pdc_server_num_g; i++) {
+        printf("  Server%3d, %d\n", i, debug_server_id_count[i]);
+    }
 
-/* #endif */
+#endif
     // free debug info
     if (debug_server_id_count != NULL) 
         free(debug_server_id_count);
@@ -1142,7 +1142,7 @@ perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
     server_id = (hash_name_value + old->time_step);
     server_id %= pdc_server_num_g;
 
-    /* printf("==PDC_CLIENT: PDC_Client_update_metadata() - hash(%s)=%d\n", old->obj_name, hash_name_value); */
+    /* printf("==PDC_CLIENT: PDC_Client_update_metadata() - hash(%s)=%u\n", old->obj_name, hash_name_value); */
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
@@ -1161,10 +1161,19 @@ perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
         in.new_metadata.user_id         = -1;
         in.new_metadata.obj_id          = 0;
         in.new_metadata.time_step       = -1;
-        in.new_metadata.data_location   = new->data_location;
-        in.new_metadata.app_name        = new->app_name;
-        in.new_metadata.tags            = new->tags;
         in.new_metadata.obj_name        = old->obj_name;
+        if (new->data_location == NULL ||new->data_location[0] == 0) 
+            in.new_metadata.data_location   = " ";
+        else
+            in.new_metadata.data_location   = new->data_location;
+        if (new->app_name == NULL ||new->app_name[0] == 0) 
+            in.new_metadata.app_name        = " ";
+        else 
+            in.new_metadata.app_name        = new->app_name;
+        if (new->tags == NULL || new->tags[0] == 0 ) 
+            in.new_metadata.tags            = " ";
+        else 
+            in.new_metadata.tags            = new->tags;
     }
 
     /* printf("Sending input to target\n"); */
