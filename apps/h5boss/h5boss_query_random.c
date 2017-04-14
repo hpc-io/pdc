@@ -166,6 +166,8 @@ int main(int argc, char **argv)
 
     pdc_metadata_t *res = NULL;
     char new_tag[64];
+
+    pdc_metadata_t *res = NULL;
     pdc_metadata_t a;
     a.user_id              = 0;
     a.time_step            = 0;
@@ -180,6 +182,9 @@ int main(int argc, char **argv)
     sprintf(&a.app_name[0], "%s", "New App Name");
     sprintf(&a.tags[0], "select%d", n_query);
     sprintf(&new_tag[0], "select%d", n_query);
+    /* sprintf(&a.app_name[0], "%s", "New App Name"); */
+
+    srand(rank); 
 
     gettimeofday(&ht_total_start, 0);
 
@@ -261,7 +266,6 @@ int main(int argc, char **argv)
         fflush(stdout);
     }
 
-
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -279,8 +283,6 @@ int main(int argc, char **argv)
     if (rank == 0) {
         printf("Time to retrieve %10d metadata objects with %3d ranks: %.6f\n", total_actual_query_cnt, size, ht_query_sec);
         printf("Time to update   %10d metadata objects with %3d ranks: %.6f\n", total_actual_query_cnt, size, ht_update_sec);
-        printf("Total time: %.6f\n", ht_total_sec);
-        fflush(stdout);
     }
 
 
@@ -331,6 +333,18 @@ int main(int argc, char **argv)
         /* for (i = 0; i < n_res; i++) { */
         /*     PDC_print_metadata(res_arr[i]); */
         /* } */
+    int n_res;
+    pdc_metadata_t **res_arr;
+    if (rank == 0) {
+        gettimeofday(&ht_query_tag_start, 0);
+
+        PDC_partial_query(0 , -1, NULL, NULL, -1, -1, -1, a.tags, &n_res, &res_arr);
+
+        gettimeofday(&ht_query_tag_end, 0);
+        ht_query_tag_sec += ( (ht_query_tag_end.tv_sec-ht_query_tag_start.tv_sec)*1000000LL + 
+                          ht_query_tag_end.tv_usec-ht_query_tag_start.tv_usec ) / 1000000.0;
+        printf("Received %d metadata objects with query tag: %s\n, time: %.6f", n_res, a.tags, ht_query_tag_sec);
+    }
 
 done:
     if(PDCcont_close(cont, pdc) < 0)
