@@ -918,18 +918,9 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
     perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
     int server_id = 0;
-    metadata_query_transfer_in_t in;
-    struct hg_test_bulk_args lookup_args;
-    
-    FUNC_ENTER(NULL);
-
-    // We may have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb
-    if (pdc_server_info_g[server_id].query_partial_handle_valid != 1) {
-        hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, query_partial_register_id_g, &pdc_server_info_g[server_id].query_partial_handle);
-        pdc_server_info_g[server_id].query_partial_handle_valid= 1;
-    }
 
     // Fill input structure
+    metadata_query_transfer_in_t in;
     in.is_list_all = is_list_all;
     in.user_id = -1;
     in.app_name = " ";
@@ -952,38 +943,64 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
             in.tags = tags;
     }
 
-    /* printf("Sending input to target\n"); */
-    if (pdc_server_info_g[server_id].query_partial_handle == NULL) {
-        printf("==CLIENT[%d]: Error with query_partial_handle\n", pdc_client_mpi_rank_g);
+    *out = NULL;
+    *n_res = 0;
+    int n_recv = 0;
+    int i, server_id = 0;
+    size_t out_size;
+    for (server_id = 0; server_id < pdc_server_num_g; server_id++) {
+
+        // We may have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb
+        if (pdc_server_info_g[server_id].query_partial_handle_valid != 1) {
+            hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, query_partial_register_id_g, &pdc_server_info_g[server_id].query_partial_handle);
+            pdc_server_info_g[server_id].query_partial_handle_valid= 1;
+        }
+
+        /* printf("Sending input to target\n"); */
+        struct hg_test_bulk_args lookup_args;
+        if (pdc_server_info_g[server_id].query_partial_handle == NULL) {
+            printf("==CLIENT[%d]: Error with query_partial_handle\n", pdc_client_mpi_rank_g);
+        }
+        hg_ret = HG_Forward(pdc_server_info_g[server_id].query_partial_handle, metadata_query_bulk_cb, &lookup_args, &in);
+        if (hg_ret!= HG_SUCCESS) {
+            fprintf(stderr, "PDC_client_list_all(): Could not start HG_Forward()\n");
+            return EXIT_FAILURE;
+        }
+
+        hg_atomic_set32(&bulk_transfer_done_g, 0);
+
+        // Wait for response from server
+        work_todo_g = 1;
+        PDC_Client_check_response(&send_context_g);
+
+        if ( *(lookup_args.n_meta) == 0) 
+            continue;
+        
+        // We do not have the results ready yet, need to wait.
+        while (1) {
+            if (hg_atomic_get32(&bulk_transfer_done_g)) break;
+            /* printf("waiting for bulk transfer done\n"); */
+            /* fflush(stdout); */
+        }
+
+        if (*out == NULL) {
+            out_size = sizeof(pdc_metadata_t*) * (*(lookup_args.n_meta));
+            *out = (pdc_metadata_t**)malloc( out_size );
+        }
+        else {
+            out_size += sizeof(pdc_metadata_t*) * (*(lookup_args.n_meta));
+            *out = (pdc_metadata_t**)realloc( *out, out_size );
+        }
+
+        *n_res += (*lookup_args.n_meta);
+        for (i = 0; i < *lookup_args.n_meta; i++) {
+            (*out)[n_recv] = lookup_args.meta_arr[i];
+            n_recv++;
+        }
+        /* printf("Received %u metadata from server %d\n", *lookup_args.n_meta, server_id); */
     }
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].query_partial_handle, metadata_query_bulk_cb, &lookup_args, &in);
-    if (hg_ret!= HG_SUCCESS) {
-        fprintf(stderr, "PDC_client_list_all(): Could not start HG_Forward()\n");
-        return EXIT_FAILURE;
-    }
 
-    hg_atomic_set32(&bulk_transfer_done_g, 0);
-
-    // Wait for response from server
-    work_todo_g = 1;
-    PDC_Client_check_response(&send_context_g);
-
-    if ( *(lookup_args.n_meta) == 0) {
-        *n_res = 0;
-        out = NULL;
-        goto done;
-    }
-
-    // We do not have the results ready yet, need to wait.
-    while (1) {
-        if (hg_atomic_get32(&bulk_transfer_done_g)) break;
-        /* printf("waiting for bulk transfer done\n"); */
-        /* fflush(stdout); */
-    }
-
-    *n_res = *lookup_args.n_meta;
-    *out = lookup_args.meta_arr;
-    /* printf("Going to print %u metadata.\n", *(lookup_args.n_meta)); */
+    /* printf("Received %u metadata.\n", *(lookup_args.n_meta)); */
     /* for (i = 0; i < *n_res; i++) { */
     /*     PDC_print_metadata(lookup_args.meta_arr[i]); */
     /* } */
