@@ -64,7 +64,6 @@ pdcid_t PDCobj_create(pdcid_t pdc, pdcid_t cont_id, const char *obj_name, pdcid_
     p->cont = cont_id;
     p->pdc = pdc;
     p->obj_prop = obj_create_prop;
-    p->mapping = 0;
     // will contact server to get ID
     PDC_CLASS_t *pc = (PDC_CLASS_t *)pdc;
     pdcid_t new_id = PDC_id_register(PDC_OBJ, p, pdc);
@@ -406,6 +405,8 @@ pdcid_t PDCregion_create(size_t ndims, uint64_t *offset, uint64_t *size, pdcid_t
     p->ndim = ndims;
     p->offset = (uint64_t *)malloc(ndims * sizeof(uint64_t));
     p->size = (uint64_t *)malloc(ndims * sizeof(uint64_t));
+    p->mapping = 0;
+    p->local_id = 0;
     int i = 0;
     for(i=0; i<ndims; i++) {
         (p->offset)[i] = offset[i];
@@ -464,7 +465,7 @@ perr_t PDCobj_map(pdcid_t local_obj, pdcid_t local_reg, pdcid_t remote_obj, pdci
     
     if(ret_value == SUCCEED) {
         // state in origin obj that there is mapping
-        obj1->mapping = 1;
+        reg1->mapping = 1;
     }
 done:
     FUNC_LEAVE(ret_value);
@@ -497,7 +498,7 @@ perr_t PDCobj_buf_map(void *buf, pdcid_t from_reg, pdcid_t obj_id, pdcid_t to_re
 //        PGOTO_ERROR(FAIL, "cannot map between regions of different dimensions");
     // start mapping
     // state that there is mapping to other objects
-    object1->mapping = 1;
+    reg1->mapping = 1;
     // Effectively calls server “subscribe” for updates for that region
     // Callback called on region update
 done:
