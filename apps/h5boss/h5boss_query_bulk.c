@@ -13,10 +13,12 @@
 #endif
 
 #include "pdc.h"
+#include "pdc_client_server_common.h"
+#include "pdc_client_connect.h"
 
 
 void print_usage() {
-    printf("Usage: srun -n ./import_h5boss /path/to/pm_list.txt\n");
+    printf("Usage: srun -n ./h5boss_query_random /path/to/pm_list.txt n_query\n");
 }
 
 int main(int argc, char **argv)
@@ -31,10 +33,15 @@ int main(int argc, char **argv)
 
     const char *pm_filename = argv[1];
 
-    if (pm_filename == NULL) {
+    if (argc < 3 || pm_filename == NULL) {
         print_usage();
         exit(-1);
     }
+
+    int n_query, my_query;
+    n_query = atoi(argv[2]);
+
+    n_query /= 1000;
 
     int i, j, count, my_count;
     int plate[3000], mjd[3000];
@@ -63,6 +70,7 @@ int main(int argc, char **argv)
 
     
 
+    my_query  = n_query;
     my_count  = count;
     plate_ptr = plate;
     mjd_ptr   = mjd;
@@ -79,10 +87,13 @@ int main(int argc, char **argv)
 
     // Distribute work evenly
     my_count = count / size;
+    my_query = n_query/ size;
 
     // Last rank may have extra work
-    if (rank == size - 1) 
+    if (rank == size - 1) {
         my_count += count % size;
+        my_query += n_query % size;
+    }
 
     int *sendcount = (int*)malloc(sizeof(int)* size);
     int *displs = (int*)malloc(sizeof(int)* size);
@@ -102,7 +113,7 @@ int main(int argc, char **argv)
     free(sendcount);
 #endif 
 
-    /* printf("mycount = %d\n", my_count); */
+    /* printf("%d: myquery = %d\n", rank, my_query); */
 
 
     PDC_prop_t p;
@@ -138,32 +149,29 @@ int main(int argc, char **argv)
 #endif
 
     if (rank == 0) {
-        printf("Starting to import h5boss metadata...\n");
+        printf("Starting to query...\n");
     }
-
-    PDCprop_set_obj_user_id( obj_prop, getuid(),    pdc);
-    PDCprop_set_obj_time_step( obj_prop, 0,    pdc);
-    PDCprop_set_obj_app_name(obj_prop, "H5BOSS",  pdc);
-    PDCprop_set_obj_tags(    obj_prop, "tag0=1",    pdc);
 
     gettimeofday(&ht_total_start, 0);
 
     int n_fiber = 1000;
-    for (i = 0; i < my_count; i++) {
-        sprintf(data_loc, "/global/cscratch1/sd/jialin.old/h5boss/%d-%d.hdf5", plate_ptr[i], mjd_ptr[i]);
-        PDCprop_set_obj_data_loc(obj_prop, data_loc, pdc);
+    for (i = 0; i < my_query; i++) {
 
-        /* printf("%d: creating %d-%d\n", rank, plate_ptr[i], mjd_ptr[i]); */
         // Everyone has 1000 fibers
         for (j = 1; j <= n_fiber; j++) {
 
             sprintf(obj_name, "%d-%d-%d", plate_ptr[i], mjd_ptr[i], j);
+            /* printf("%d: querying %s\n", rank, obj_name); */
 
-            test_obj = PDCobj_create(pdc, cont, obj_name, obj_prop);
-            if (test_obj < 0) {
-                printf("Error getting an object id of %s from server, exit...\n", obj_name);
+            pdc_metadata_t *res = NULL;
+            PDC_Client_query_metadata_name_timestep(obj_name, 0, &res);
+            if (res == NULL) {
+                printf("%d: No result found for current query with name [%s]\n", rank, obj_name);
                 exit(-1);
             }
+            /* else { */
+            /*     PDC_print_metadata(res); */
+            /* } */
         }
 
         // Print progress
@@ -179,6 +187,7 @@ int main(int argc, char **argv)
         /* } */
 
     }
+    fflush(stdout);
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -187,7 +196,7 @@ int main(int argc, char **argv)
     ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
     ht_total_sec        = ht_total_elapsed / 1000000.0;
     if (rank == 0) {
-        printf("Time to create %d obj with %d ranks: %.6f\n", count*1000, size, ht_total_sec);
+        printf("Time to query %d obj with %d ranks: %.6f\n", n_query*1000, size, ht_total_sec);
         fflush(stdout);
     }
 

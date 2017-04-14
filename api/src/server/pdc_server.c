@@ -781,7 +781,7 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
     gettimeofday(&ht_total_start, 0);
 #endif
 
-    /* printf("==PDC_SERVER: Got update request: hash=%d, obj_id=%llu\n", in->hash_value, in->obj_id); */
+    /* printf("==PDC_SERVER: Got update request: hash=%u, obj_id=%llu\n", in->hash_value, in->obj_id); */
 
     uint32_t *hash_key = (uint32_t*)malloc(sizeof(uint32_t));
     if (hash_key == NULL) {
@@ -815,18 +815,27 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
             target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
             if (target != NULL) {
                 /* printf("==PDC_SERVER: Found update target!\n"); */
+                /* printf("Received update info:\n"); */
+                /* PDC_print_metadata(&in->new_metadata); */
 
                 // Check and find valid update fields
                 // Currently user_id, obj_name are not supported to be updated in this way
                 // obj_name change is done through client with delete and add operation.
                 if (in->new_metadata.time_step != -1) 
                     target->time_step = in->new_metadata.time_step;
-                if (in->new_metadata.app_name[0] != 0) 
+                if (in->new_metadata.app_name[0] != 0 && 
+                        !(in->new_metadata.app_name[0] == ' ' && in->new_metadata.app_name[1] == 0)) 
                     strcpy(target->app_name,      in->new_metadata.app_name);
-                if (in->new_metadata.data_location[0] != 0) 
+                if (in->new_metadata.data_location[0] != 0 && 
+                        !(in->new_metadata.data_location[0] == ' ' && in->new_metadata.data_location[1] == 0)) 
                     strcpy(target->data_location, in->new_metadata.data_location);
-                if (in->new_metadata.tags[0] != 0) 
-                    strcpy(target->tags,          in->new_metadata.tags);
+                if (in->new_metadata.tags[0] != 0 &&
+                        !(in->new_metadata.tags[0] == ' ' && in->new_metadata.tags[1] == 0)) {
+                    // add a ',' to separate different tags
+                    target->tags[strlen(target->tags)] = ',';
+                    target->tags[strlen(target->tags)+1] = 0;
+                    strcat(target->tags, in->new_metadata.tags);
+                }
 
                 out->ret  = 1;
 
@@ -884,6 +893,7 @@ done:
     if (unlocked == 0)
         hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
 #endif
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 } // end of update_metadata_from_hash_table
 

@@ -574,6 +574,7 @@ hg_proc_metadata_delete_out_t(hg_proc_t proc, void *data)
     ret = hg_proc_int32_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
+        return ret;
     }
     return ret;
 }
