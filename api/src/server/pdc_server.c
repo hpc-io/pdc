@@ -2399,7 +2399,7 @@ int main(int argc, char *argv[])
     //bulk
     query_partial_register(hg_class_g);
 
-    region_map_register(hg_class_g);
+    gen_reg_map_notification_register(hg_class_g);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
