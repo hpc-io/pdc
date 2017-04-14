@@ -184,8 +184,6 @@ int main(int argc, char **argv)
     sprintf(&new_tag[0], "select%d", n_query);
     /* sprintf(&a.app_name[0], "%s", "New App Name"); */
 
-    srand(rank); 
-
     gettimeofday(&ht_total_start, 0);
 
     int n_fiber = 1000;
@@ -196,7 +194,6 @@ int main(int argc, char **argv)
     for (i = 0; i < my_query; i++) {
 
             sprintf(obj_name, "%d-%d-%d", plate_ptr[pm_idx], mjd_ptr[pm_idx], fiber_idx);
-
             fiber_idx++;
             if (fiber_idx > n_fiber) {
                 pm_idx++;
@@ -343,7 +340,10 @@ int main(int argc, char **argv)
         gettimeofday(&ht_query_tag_end, 0);
         ht_query_tag_sec += ( (ht_query_tag_end.tv_sec-ht_query_tag_start.tv_sec)*1000000LL + 
                           ht_query_tag_end.tv_usec-ht_query_tag_start.tv_usec ) / 1000000.0;
-        printf("Received %d metadata objects with query tag: %s\n, time: %.6f", n_res, a.tags, ht_query_tag_sec);
+        printf("Received %d metadata objects with query tag: %s, time: %.6f\n", n_res, a.tags, ht_query_tag_sec);
+        /* for (i = 0; i < n_res; i++) { */
+        /*     PDC_print_metadata(res_arr[i]); */
+        /* } */
     }
 
 done:

@@ -911,7 +911,6 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
 {
     perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
-    int server_id = 0;
 
     // Fill input structure
     metadata_query_transfer_in_t in;
@@ -1016,7 +1015,6 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
         /* printf("Received %u metadata from server %d\n", *lookup_args.n_meta, server_id); */
     } // for server_id
 
-    /* printf("Received %u metadata.\n", *(lookup_args.n_meta)); */
     /* for (i = 0; i < *n_res; i++) { */
     /*     PDC_print_metadata(lookup_args.meta_arr[i]); */
     /* } */
