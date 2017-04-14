@@ -176,17 +176,25 @@ int main(int argc, char **argv)
     /* sprintf(&a.app_name[0], "%s", "New App Name"); */
     sprintf(&a.tags[0], "select%d", n_query);
 
-    srand(rank); 
-
     gettimeofday(&ht_total_start, 0);
 
     int n_fiber = 1000;
+    int pm_idx = (count / size ) * rank;
+    int fiber_idx = 1;
 
     for (i = 0; i < my_query; i++) {
-        int r = rand() % count;
-        int f = rand() % n_fiber + 1;
 
-            sprintf(obj_name, "%d-%d-%d", plate_ptr[r], mjd_ptr[r], f);
+            sprintf(obj_name, "%d-%d-%d", plate_ptr[pm_idx], mjd_ptr[pm_idx], fiber_idx);
+            fiber_idx++;
+            if (fiber_idx > n_fiber) {
+                pm_idx++;
+                fiber_idx = 1;
+            }
+
+            if (pm_idx >= (count/size ) * (rank+1)) {
+                printf("Too many queried objects...\n");
+                break;
+            }
             /* printf("%d: querying %s\n", rank, obj_name); */
 
             gettimeofday(&ht_query_start, 0);
@@ -261,7 +269,10 @@ int main(int argc, char **argv)
         gettimeofday(&ht_query_tag_end, 0);
         ht_query_tag_sec += ( (ht_query_tag_end.tv_sec-ht_query_tag_start.tv_sec)*1000000LL + 
                           ht_query_tag_end.tv_usec-ht_query_tag_start.tv_usec ) / 1000000.0;
-        printf("Received %d metadata objects with query tag: %s\n, time: %.6f", n_res, a.tags, ht_query_tag_sec);
+        printf("Received %d metadata objects with query tag: %s, time: %.6f\n", n_res, a.tags, ht_query_tag_sec);
+        /* for (i = 0; i < n_res; i++) { */
+        /*     PDC_print_metadata(res_arr[i]); */
+        /* } */
     }
 
 done:

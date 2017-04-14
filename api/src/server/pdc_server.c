@@ -832,9 +832,12 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
                 if (in->new_metadata.tags[0] != 0 &&
                         !(in->new_metadata.tags[0] == ' ' && in->new_metadata.tags[1] == 0)) {
                     // add a ',' to separate different tags
-                    target->tags[strlen(target->tags)] = ',';
+                    /* printf("Previous tags: %s\n", target->tags); */
+                    /* printf("Adding tags: %s\n", in->new_metadata.tags); */
                     target->tags[strlen(target->tags)+1] = 0;
+                    target->tags[strlen(target->tags)] = ',';
                     strcat(target->tags, in->new_metadata.tags);
+                    /* printf("Final tags: %s\n", target->tags); */
                 }
 
                 out->ret  = 1;
