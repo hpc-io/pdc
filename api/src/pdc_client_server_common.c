@@ -168,6 +168,7 @@ perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key,
 perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out) {return SUCCEED;}
 perr_t delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_id_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out) {return SUCCEED;}
+perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs) {return SUCCEED;}
 hg_class_t *hg_class_g;
@@ -391,6 +392,38 @@ HG_TEST_RPC_CB(metadata_delete, handle)
 done:
     FUNC_LEAVE(ret_value);
 }
+
+/* static hg_return_t */
+// metadata_add_tag_cb(hg_handle_t handle)
+HG_TEST_RPC_CB(metadata_add_tag, handle)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value;
+
+    /* Get input parameters sent on origin through on HG_Forward() */
+    // Decode input
+    metadata_add_tag_in_t  in;
+    metadata_add_tag_out_t out;
+
+    HG_Get_input(handle, &in);
+    /* printf("==PDC_SERVER: Got add_tag request: hash=%d, obj_id=%llu\n", in.hash_value, in.obj_id); */
+
+
+    PDC_Server_add_tag_metadata(&in, &out);
+    
+    /* out.ret = 1; */
+    HG_Respond(handle, NULL, NULL, &out);
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    ret_value = HG_SUCCESS;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 
 /* static hg_return_t */
 // metadata_update_cb(hg_handle_t handle)
@@ -792,6 +825,19 @@ metadata_query_register(hg_class_t *hg_class)
 done:
     FUNC_LEAVE(ret_value);
 }
+
+hg_id_t
+metadata_add_tag_register(hg_class_t *hg_class)
+{
+    FUNC_ENTER(NULL);
+
+    hg_id_t ret_value;
+    ret_value = MERCURY_REGISTER(hg_class, "metadata_add_tag", metadata_add_tag_in_t, metadata_add_tag_out_t, metadata_add_tag_cb);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 
 hg_id_t
 metadata_update_register(hg_class_t *hg_class)

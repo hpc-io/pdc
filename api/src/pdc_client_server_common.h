@@ -158,6 +158,9 @@ MERCURY_GEN_PROC( metadata_delete_by_id_out_t, ((int32_t)(ret)) )
 MERCURY_GEN_PROC( metadata_delete_in_t, ((hg_const_string_t)(obj_name)) ((int32_t)(time_step)) ((uint32_t)(hash_value)) )
 MERCURY_GEN_PROC( metadata_delete_out_t, ((int32_t)(ret)) )
 
+MERCURY_GEN_PROC( metadata_add_tag_in_t, ((uint64_t)(obj_id)) ((uint32_t)(hash_value)) ((hg_const_string_t)(new_tag)) )
+MERCURY_GEN_PROC( metadata_add_tag_out_t, ((int32_t)(ret)) )
+
 MERCURY_GEN_PROC( metadata_update_in_t, ((uint64_t)(obj_id)) ((uint32_t)(hash_value)) ((pdc_metadata_transfer_t)(new_metadata)) )
 MERCURY_GEN_PROC( metadata_update_out_t, ((int32_t)(ret)) )
 
@@ -183,6 +186,17 @@ typedef struct {
 typedef struct {
     pdc_metadata_transfer_t ret;
 } metadata_query_out_t;
+
+typedef struct {
+    uint64_t                obj_id;
+    uint32_t                hash_value;
+    hg_const_string_t       new_tag;
+} metadata_add_tag_in_t;
+
+typedef struct {
+    int32_t            ret;
+} metadata_add_tag_out_t;
+
 
 typedef struct {
     uint64_t                obj_id;
@@ -482,6 +496,42 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
     }
     return ret;
 }
+
+static HG_INLINE hg_return_t
+hg_proc_metadata_add_tag_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    metadata_add_tag_in_t *struct_data = (metadata_add_tag_in_t*) data;
+
+    ret = hg_proc_hg_uint64_t(proc, &struct_data->obj_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_uint32_t(proc, &struct_data->hash_value);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->new_tag);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_metadata_add_tag_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    metadata_add_tag_out_t *struct_data = (metadata_add_tag_out_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
+
 
 static HG_INLINE hg_return_t
 hg_proc_metadata_update_in_t(hg_proc_t proc, void *data)
@@ -834,13 +884,14 @@ hg_id_t test_bulk_xfer_register(hg_class_t *hg_class);
 #endif
 
 hg_id_t gen_obj_id_register(hg_class_t *hg_class);
-hg_id_t send_obj_name_marker_register(hg_class_t *hg_class);
+/* hg_id_t send_obj_name_marker_register(hg_class_t *hg_class); */
 hg_id_t client_test_connect_register(hg_class_t *hg_class);
 hg_id_t close_server_register(hg_class_t *hg_class);
 hg_id_t metadata_query_register(hg_class_t *hg_class);
 hg_id_t metadata_delete_register(hg_class_t *hg_class);
 hg_id_t metadata_delete_by_id_register(hg_class_t *hg_class);
 hg_id_t metadata_update_register(hg_class_t *hg_class);
+hg_id_t metadata_add_tag_register(hg_class_t *hg_class);
 hg_id_t region_lock_register(hg_class_t *hg_class);
 
 //bulk
@@ -860,6 +911,7 @@ hg_id_t gen_reg_map_notification_register(hg_class_t *hg_class);
 
 perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out);
 perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out);
+perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *out);
 
 uint32_t PDC_get_server_by_obj_id(uint64_t obj_id, int n_server);
 uint32_t PDC_get_hash_by_name(const char *name);

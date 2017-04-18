@@ -764,6 +764,136 @@ done:
 /*     FUNC_LEAVE(ret_value); */
 /* } */
 
+perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *out)
+{
+
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value;
+
+#ifdef ENABLE_TIMING 
+    // Timing
+    struct timeval  ht_total_start;
+    struct timeval  ht_total_end;
+    long long ht_total_elapsed;
+    double ht_total_sec;
+
+    gettimeofday(&ht_total_start, 0);
+#endif
+
+    /* printf("==PDC_SERVER: Got add_tag request: hash=%u, obj_id=%llu\n", in->hash_value, in->obj_id); */
+
+    uint32_t *hash_key = (uint32_t*)malloc(sizeof(uint32_t));
+    if (hash_key == NULL) {
+        printf("==PDC_SERVER: Cannnot allocate hash_key!\n");
+        goto done;
+    }
+    total_mem_usage_g += sizeof(uint32_t);
+    *hash_key = in->hash_value;
+    uint64_t obj_id = in->obj_id;
+
+    pdc_hash_table_entry_head *lookup_value;
+    pdc_metadata_t *elt;
+
+#ifdef ENABLE_MULTITHREAD 
+    // Obtain lock for hash table
+    int unlocked = 0;
+    hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
+#endif
+
+    if (metadata_hash_table_g != NULL) {
+        // lookup
+        /* printf("==PDC_SERVER: checking hash table with key=%d\n", *hash_key); */
+        lookup_value = hg_hash_table_lookup(metadata_hash_table_g, hash_key);
+
+        // Is this hash value exist in the Hash table?
+        if (lookup_value != NULL) {
+
+            /* printf("==PDC_SERVER: lookup_value not NULL!\n"); */
+            // Check if there exist metadata identical to current one
+            pdc_metadata_t *target;
+            target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
+            if (target != NULL) {
+                /* printf("==PDC_SERVER: Found add_tag target!\n"); */
+                /* printf("Received add_tag info:\n"); */
+                /* PDC_print_metadata(&in->new_metadata); */
+
+                // Check and find valid add_tag fields
+                // Currently user_id, obj_name are not supported to be updated in this way
+                // obj_name change is done through client with delete and add operation.
+                if (in->new_tag != NULL && in->new_tag[0] != 0 &&
+                        !(in->new_tag[0] == ' ' && in->new_tag[1] == 0)) {
+                    // add a ',' to separate different tags
+                    /* printf("Previous tags: %s\n", target->tags); */
+                    /* printf("Adding tags: %s\n", in->new_metadata.tags); */
+                    target->tags[strlen(target->tags)+1] = 0;
+                    target->tags[strlen(target->tags)] = ',';
+                    strcat(target->tags, in->new_tag);
+                    /* printf("Final tags: %s\n", target->tags); */
+                }
+
+                out->ret  = 1;
+
+            } // if (lookup_value != NULL) 
+            else {
+                // Object not found for deletion request
+                /* printf("==PDC_SERVER: add tag target not found!\n"); */
+                ret_value = -1;
+                out->ret  = -1;
+            }
+       
+        } // if lookup_value != NULL
+        else {
+            /* printf("==PDC_SERVER: add tag target not found!\n"); */
+            ret_value = -1;
+            out->ret = -1;
+        }
+
+    } // if (metadata_hash_table_g != NULL)
+    else {
+        printf("==PDC_SERVER: metadata_hash_table_g not initilized!\n");
+        ret_value = -1;
+        out->ret = -1;
+        goto done;
+    }
+
+#ifdef ENABLE_MULTITHREAD 
+    // ^ Release hash table lock
+    hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
+    unlocked = 1;
+#endif
+
+#ifdef ENABLE_TIMING 
+    // Timing
+    gettimeofday(&ht_total_end, 0);
+    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+    ht_total_sec        = ht_total_elapsed / 1000000.0;
+#endif   
+
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_lock(&pdc_time_mutex_g);
+#endif
+
+#ifdef ENABLE_TIMING 
+    server_update_time_g += ht_total_sec;
+#endif
+
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_unlock(&pdc_time_mutex_g);
+#endif
+    
+
+done:
+#ifdef ENABLE_MULTITHREAD 
+    if (unlocked == 0)
+        hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
+#endif
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} // end of add_tag_metadata_from_hash_table
+
+
+
 perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out)
 {
 
@@ -2447,6 +2577,7 @@ int main(int argc, char *argv[])
     metadata_delete_register(hg_class_g);
     metadata_delete_by_id_register(hg_class_g);
     metadata_update_register(hg_class_g);
+    metadata_add_tag_register(hg_class_g);
     region_lock_register(hg_class_g);
     //bulk
     query_partial_register(hg_class_g);
