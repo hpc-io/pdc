@@ -946,9 +946,31 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
     *out = NULL;
     *n_res = 0;
     int n_recv = 0;
-    int i, server_id = 0;
+    int i, server_id = 0, my_server_start, my_server_end, my_server_count;
     size_t out_size;
-    for (server_id = 0; server_id < pdc_server_num_g; server_id++) {
+
+    if (pdc_server_num_g > pdc_client_mpi_size_g) {
+        /* printf("less clients than server\n"); */
+        my_server_count = pdc_server_num_g / pdc_client_mpi_size_g;
+        my_server_start = pdc_client_mpi_rank_g * my_server_count;
+        my_server_end = my_server_start + my_server_count;
+        if (pdc_client_mpi_rank_g == pdc_client_mpi_size_g - 1) {
+            my_server_end += pdc_server_num_g % pdc_client_mpi_size_g;
+        }
+    }
+    else {
+        /* printf("more clients than server\n"); */
+        my_server_start = pdc_client_mpi_rank_g;
+        my_server_end   = my_server_start + 1;
+        if (pdc_client_mpi_rank_g >= pdc_server_num_g) {
+            my_server_end = -1;
+        }
+    }
+
+    /* printf("%d: start: %d, end: %d\n", pdc_client_mpi_rank_g, my_server_start, my_server_end); */
+    /* fflush(stdout); */
+
+    for (server_id = my_server_start; server_id < my_server_end; server_id++) {
 
         // We may have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb
         if (pdc_server_info_g[server_id].query_partial_handle_valid != 1) {
@@ -998,7 +1020,7 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
             n_recv++;
         }
         /* printf("Received %u metadata from server %d\n", *lookup_args.n_meta, server_id); */
-    }
+    } // for server_id
 
     /* printf("Received %u metadata.\n", *(lookup_args.n_meta)); */
     /* for (i = 0; i < *n_res; i++) { */
