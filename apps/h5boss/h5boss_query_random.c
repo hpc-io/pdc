@@ -253,27 +253,41 @@ int main(int argc, char **argv)
     ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
     ht_total_sec        = ht_total_elapsed / 1000000.0;
     if (rank == 0) {
-        printf("Time to retrieve %d metadata objects with %d ranks: %.6f\n", n_query, size, ht_query_sec);
-        printf("Time to update   %d metadata objects with %d ranks: %.6f\n", n_query, size, ht_update_sec);
+        printf("Time to retrieve %10d metadata objects with %3d ranks: %.6f\n", n_query, size, ht_query_sec);
+        printf("Time to update   %10d metadata objects with %3d ranks: %.6f\n", n_query, size, ht_update_sec);
         printf("Total time: %.6f\n", ht_total_sec);
         fflush(stdout);
     }
 
-    int n_res;
+    int n_res, total_n_res;
     pdc_metadata_t **res_arr;
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    gettimeofday(&ht_query_tag_start, 0);
+
+    PDC_partial_query(0 , -1, NULL, NULL, -1, -1, -1, a.tags, &n_res, &res_arr);
+
+    gettimeofday(&ht_query_tag_end, 0);
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    ht_query_tag_sec += ( (ht_query_tag_end.tv_sec-ht_query_tag_start.tv_sec)*1000000LL + 
+                      ht_query_tag_end.tv_usec-ht_query_tag_start.tv_usec ) / 1000000.0;
+#ifdef ENABLE_MPI
+    /* printf("%d: Received %5d metadata objects with tag: %s\n", rank, n_res, a.tags); */
+    MPI_Reduce(&n_res, &total_n_res, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
     if (rank == 0) {
-        gettimeofday(&ht_query_tag_start, 0);
+        printf("Time to query %10d metadata objects with tag [%15s]: %.6f\n", total_n_res, a.tags, ht_query_tag_sec);
+    }
+#else
+    printf("Time to query %10d metadata objects with tag [%15s]: %.6f\n", n_res, a.tags, ht_query_tag_sec);
+#endif
 
-        PDC_partial_query(0 , -1, NULL, NULL, -1, -1, -1, a.tags, &n_res, &res_arr);
-
-        gettimeofday(&ht_query_tag_end, 0);
-        ht_query_tag_sec += ( (ht_query_tag_end.tv_sec-ht_query_tag_start.tv_sec)*1000000LL + 
-                          ht_query_tag_end.tv_usec-ht_query_tag_start.tv_usec ) / 1000000.0;
-        printf("Received %d metadata objects with query tag: %s, time: %.6f\n", n_res, a.tags, ht_query_tag_sec);
         /* for (i = 0; i < n_res; i++) { */
         /*     PDC_print_metadata(res_arr[i]); */
         /* } */
-    }
 
 done:
     if(PDCcont_close(cont, pdc) < 0)
