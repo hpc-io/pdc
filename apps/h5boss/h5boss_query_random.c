@@ -276,10 +276,11 @@ int main(int argc, char **argv)
 /* #ifdef ENABLE_MPI */
 /*     MPI_Reduce(&my_actual_query_cnt, &total_actual_query_cnt, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD); */
 /* #endif */
-
     if (rank == 0) {
         printf("Time to retrieve %10d metadata objects with %3d ranks: %.6f\n", total_actual_query_cnt, size, ht_query_sec);
         printf("Time to update   %10d metadata objects with %3d ranks: %.6f\n", total_actual_query_cnt, size, ht_update_sec);
+        printf("Total time: %.6f\n", ht_total_sec);
+        fflush(stdout);
     }
 
 
@@ -355,6 +356,23 @@ int main(int argc, char **argv)
 #else
     printf("Time to query %10d metadata objects with tag [%15s]: %.6f\n", n_res, a.tags, ht_query_tag_sec);
 #endif
+
+
+    // Check correctness (queried results should contain the tag specified)
+    int is_tag_check_ok = 1;
+    for (i = 0; i < n_res; i++) {
+        if (strstr(res_arr[i]->tags, a.tags) == NULL) {
+            printf("Error with queried results:\n");
+            PDC_print_metadata(res_arr[i]);
+            is_tag_check_ok = -1;
+        }
+            /* PDC_print_metadata(res_arr[i]); */
+    }
+    if (is_tag_check_ok == 1) {
+        if (rank == 0) {
+            printf("Tag search correctness check ... OK!\n");
+        }
+    }
 
         /* for (i = 0; i < n_res; i++) { */
         /*     PDC_print_metadata(res_arr[i]); */
