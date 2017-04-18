@@ -35,6 +35,8 @@ typedef struct pdc_server_info_t {
     hg_handle_t     metadata_delete_handle;
     int             metadata_delete_by_id_handle_valid;
     hg_handle_t     metadata_delete_by_id_handle;
+    int             metadata_add_tag_handle_valid;
+    hg_handle_t     metadata_add_tag_handle;
     int             metadata_update_handle_valid;
     hg_handle_t     metadata_update_handle;
     int	            client_send_region_map_handle_valid;
@@ -165,6 +167,17 @@ perr_t PDC_Client_delete_metadata(pdcid_t pdc_id, pdcid_t cont_id, char *delete_
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_Client_delete_metadata_by_id(pdcid_t pdc_id, pdcid_t cont_id, uint64_t obj_id);
+
+/**
+ * Request of PDC client to add a tag to metadata
+ *
+ * \param old [IN]              Pointer to pdc_metadata_t struct storing old infomation
+ * \param new_tag [IN]          Pointer to a string storing new tag to be added
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_add_tag_metadata(pdc_metadata_t *old, const char *new);
+
 
 /**
  * Request of PDC client to update metadata

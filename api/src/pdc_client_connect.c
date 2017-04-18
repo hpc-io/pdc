@@ -42,6 +42,7 @@ static hg_id_t         metadata_query_register_id_g;
 static hg_id_t         metadata_delete_register_id_g;
 static hg_id_t         metadata_delete_by_id_register_id_g;
 static hg_id_t         metadata_update_register_id_g;
+static hg_id_t         metadata_add_tag_register_id_g;
 static hg_id_t         region_lock_register_id_g;
 
 // bulk
@@ -619,6 +620,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     metadata_delete_register_id_g       = metadata_delete_register(*hg_class);
     metadata_delete_by_id_register_id_g = metadata_delete_by_id_register(*hg_class);
     metadata_update_register_id_g       = metadata_update_register(*hg_class);
+    metadata_add_tag_register_id_g      = metadata_add_tag_register(*hg_class);
     region_lock_register_id_g           = region_lock_register(*hg_class);
 
     // bulk
@@ -764,14 +766,14 @@ perr_t PDC_Client_finalize()
 /*         printf("%d, %d, %d\n", pdc_client_mpi_rank_g, i, debug_server_id_count[i]); */
 /*     fflush(stdout); */
 
-    int *all_server_count = (int*)malloc(sizeof(int)*pdc_server_num_g);
-    MPI_Reduce(debug_server_id_count, all_server_count, pdc_server_num_g, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-    if (pdc_client_mpi_rank_g == 0 && all_server_count[0] != 0) {
-        printf("==PDC_CLIENT: server connection count:\n");
-        for (i = 0; i < pdc_server_num_g; i++) 
-            printf("  Server[%3d], %d\n", i, all_server_count[i]);
-    }
-    free(all_server_count);
+    /* int *all_server_count = (int*)malloc(sizeof(int)*pdc_server_num_g); */
+    /* MPI_Reduce(debug_server_id_count, all_server_count, pdc_server_num_g, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD); */
+    /* if (pdc_client_mpi_rank_g == 0 && all_server_count[0] != 0) { */
+    /*     printf("==PDC_CLIENT: server connection count:\n"); */
+    /*     for (i = 0; i < pdc_server_num_g; i++) */ 
+    /*         printf("  Server[%3d], %d\n", i, all_server_count[i]); */
+    /* } */
+    /* free(all_server_count); */
 #else
     for (i = 0; i < pdc_server_num_g; i++) {
         printf("  Server%3d, %d\n", i, debug_server_id_count[i]);
@@ -1139,6 +1141,85 @@ metadata_delete_by_id_rpc_cb(const struct hg_cb_info *callback_info)
 
     FUNC_LEAVE(ret_value);
 }
+
+static hg_return_t
+metadata_add_tag_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value;
+
+    /* printf("Entered client_rpc_cb()"); */
+    struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
+    hg_handle_t handle = callback_info->info.forward.handle;
+
+    /* Get output from server*/
+    metadata_add_tag_out_t output;
+    ret_value = HG_Get_output(handle, &output);
+    /* printf("Return value=%llu\n", output.ret); */
+    client_lookup_args->ret = output.ret;
+
+    work_todo_g--;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_Client_add_tag(pdc_metadata_t *old, const char *tag)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value = SUCCEED;
+    hg_return_t  hg_ret = 0;
+
+    int hash_name_value = PDC_get_hash_by_name(old->obj_name);
+    uint32_t server_id = (hash_name_value + old->time_step);
+    server_id %= pdc_server_num_g;
+
+    /* printf("==PDC_CLIENT: PDC_Client_add_tag_metadata() - hash(%s)=%u\n", old->obj_name, hash_name_value); */
+
+    // Debug statistics for counting number of messages sent to each server.
+    debug_server_id_count[server_id]++;
+
+    // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
+    if (pdc_server_info_g[server_id].metadata_add_tag_handle_valid != 1) {
+        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_add_tag_register_id_g, &pdc_server_info_g[server_id].metadata_add_tag_handle);
+        pdc_server_info_g[server_id].metadata_add_tag_handle_valid  = 1;
+    }
+
+    // Fill input structure
+    metadata_add_tag_in_t in;
+    in.obj_id     = old->obj_id;
+    in.hash_value = hash_name_value;
+
+    if (tag != NULL && tag[0] != 0) {
+        in.new_tag            = tag;
+    }
+    else {
+        printf("PDC_Client_add_tag(): invalid tag content!\n");
+        goto done;
+    }
+
+
+    /* printf("Sending input to target\n"); */
+    struct client_lookup_args lookup_args;
+    hg_ret = HG_Forward(pdc_server_info_g[server_id].metadata_add_tag_handle, metadata_add_tag_rpc_cb, &lookup_args, &in);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "PDC_Client_add_tag_metadata_with_name(): Could not start HG_Forward()\n");
+        return FAIL;
+    }
+
+    // Wait for response from server
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+    if (lookup_args.ret != 1) 
+        printf("PDC_CLIENT: add tag NOT successful ... ret_value = %d\n", lookup_args.ret);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 
 // Callback function for  HG_Forward()
 // Gets executed after a call to HG_Trigger and the RPC has completed
