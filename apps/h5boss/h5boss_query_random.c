@@ -166,8 +166,6 @@ int main(int argc, char **argv)
 
     pdc_metadata_t *res = NULL;
     char new_tag[64];
-
-    pdc_metadata_t *res = NULL;
     pdc_metadata_t a;
     a.user_id              = 0;
     a.time_step            = 0;
@@ -182,7 +180,6 @@ int main(int argc, char **argv)
     sprintf(&a.app_name[0], "%s", "New App Name");
     sprintf(&a.tags[0], "select%d", n_query);
     sprintf(&new_tag[0], "select%d", n_query);
-    /* sprintf(&a.app_name[0], "%s", "New App Name"); */
 
     gettimeofday(&ht_total_start, 0);
 
@@ -194,6 +191,7 @@ int main(int argc, char **argv)
     for (i = 0; i < my_query; i++) {
 
             sprintf(obj_name, "%d-%d-%d", plate_ptr[pm_idx], mjd_ptr[pm_idx], fiber_idx);
+
             fiber_idx++;
             if (fiber_idx > n_fiber) {
                 pm_idx++;
@@ -276,6 +274,7 @@ int main(int argc, char **argv)
 /* #ifdef ENABLE_MPI */
 /*     MPI_Reduce(&my_actual_query_cnt, &total_actual_query_cnt, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD); */
 /* #endif */
+
     if (rank == 0) {
         printf("Time to retrieve %10d metadata objects with %3d ranks: %.6f\n", total_actual_query_cnt, size, ht_query_sec);
         printf("Time to update   %10d metadata objects with %3d ranks: %.6f\n", total_actual_query_cnt, size, ht_update_sec);
@@ -316,52 +315,6 @@ int main(int argc, char **argv)
     int is_tag_check_ok = 1;
     for (i = 0; i < n_res; i++) {
         if (strstr(res_arr[i]->tags, new_tag) == NULL) {
-            printf("Error with queried results:\n");
-            PDC_print_metadata(res_arr[i]);
-            is_tag_check_ok = -1;
-        }
-            /* PDC_print_metadata(res_arr[i]); */
-    }
-    if (is_tag_check_ok == 1) {
-        if (rank == 0) {
-            printf("Tag search correctness check ... OK!\n");
-        }
-    }
-
-        /* for (i = 0; i < n_res; i++) { */
-        /*     PDC_print_metadata(res_arr[i]); */
-        /* } */
-    int n_res;
-    pdc_metadata_t **res_arr;
-
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-    gettimeofday(&ht_query_tag_start, 0);
-
-    PDC_partial_query(0 , -1, NULL, NULL, -1, -1, -1, a.tags, &n_res, &res_arr);
-
-    gettimeofday(&ht_query_tag_end, 0);
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-    ht_query_tag_sec += ( (ht_query_tag_end.tv_sec-ht_query_tag_start.tv_sec)*1000000LL + 
-                      ht_query_tag_end.tv_usec-ht_query_tag_start.tv_usec ) / 1000000.0;
-#ifdef ENABLE_MPI
-    /* printf("%d: Received %5d metadata objects with tag: %s\n", rank, n_res, a.tags); */
-    MPI_Reduce(&n_res, &total_n_res, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-    if (rank == 0) {
-        printf("Time to query %10d metadata objects with tag [%15s]: %.6f\n", total_n_res, a.tags, ht_query_tag_sec);
-    }
-#else
-    printf("Time to query %10d metadata objects with tag [%15s]: %.6f\n", n_res, a.tags, ht_query_tag_sec);
-#endif
-
-
-    // Check correctness (queried results should contain the tag specified)
-    int is_tag_check_ok = 1;
-    for (i = 0; i < n_res; i++) {
-        if (strstr(res_arr[i]->tags, a.tags) == NULL) {
             printf("Error with queried results:\n");
             PDC_print_metadata(res_arr[i]);
             is_tag_check_ok = -1;

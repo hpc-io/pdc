@@ -132,11 +132,6 @@ int main(int argc, char **argv)
     long long ht_total_elapsed;
     double ht_total_sec;
 
-
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-
     if (rank == 0) {
         printf("Starting to import h5boss metadata...\n");
     }
