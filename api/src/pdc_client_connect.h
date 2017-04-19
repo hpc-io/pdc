@@ -167,7 +167,7 @@ perr_t PDC_Client_delete_metadata_by_id(pdcid_t pdc_id, pdcid_t cont_id, uint64_
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_add_tag_metadata(pdc_metadata_t *old, const char *new);
+perr_t PDC_Client_add_tag(pdc_metadata_t *old, const char *new_tag);
 
 
 /**

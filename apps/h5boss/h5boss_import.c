@@ -132,11 +132,6 @@ int main(int argc, char **argv)
     long long ht_total_elapsed;
     double ht_total_sec;
 
-
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-
     if (rank == 0) {
         printf("Starting to import h5boss metadata...\n");
     }
@@ -145,6 +140,10 @@ int main(int argc, char **argv)
     PDCprop_set_obj_time_step( obj_prop, 0,    pdc);
     PDCprop_set_obj_app_name(obj_prop, "H5BOSS",  pdc);
     PDCprop_set_obj_tags(    obj_prop, "tag0=1",    pdc);
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
     gettimeofday(&ht_total_start, 0);
 

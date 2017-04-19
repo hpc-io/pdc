@@ -154,6 +154,7 @@ int PDC_Client_read_server_addr_from_file()
         pdc_server_info_g[i].metadata_query_handle_valid         = 0;
         pdc_server_info_g[i].metadata_delete_handle_valid        = 0;
         pdc_server_info_g[i].metadata_update_handle_valid        = 0;
+        pdc_server_info_g[i].metadata_add_tag_handle_valid        = 0;
         pdc_server_info_g[i].region_lock_handle_valid            = 0;
     }
 
@@ -1142,6 +1143,7 @@ perr_t PDC_Client_add_tag(pdc_metadata_t *old, const char *tag)
     }
     else {
         printf("PDC_Client_add_tag(): invalid tag content!\n");
+        fflush(stdout);
         goto done;
     }
 
