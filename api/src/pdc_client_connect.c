@@ -141,24 +141,23 @@ int PDC_Client_read_server_addr_from_file()
     pdc_server_info_g = (pdc_server_info_t*)malloc(sizeof(pdc_server_info_t) * pdc_server_num_g);
     // Fill in default values
     for (i = 0; i < pdc_server_num_g; i++) {
-        pdc_server_info_g[i].addr_valid                              = 0;
-        pdc_server_info_g[i].rpc_handle_valid                        = 0;
-        pdc_server_info_g[i].client_test_handle_valid    	         = 0;
-        pdc_server_info_g[i].close_server_handle_valid   	         = 0;
-        pdc_server_info_g[i].metadata_query_handle_valid 	         = 0;
-        pdc_server_info_g[i].metadata_delete_handle_valid 	         = 0;
-        pdc_server_info_g[i].metadata_update_handle_valid 	         = 0;
-        pdc_server_info_g[i].client_send_region_map_handle_valid     = 0;
-        pdc_server_info_g[i].client_send_region_unmap_handle_valid   = 0;
-        pdc_server_info_g[i].client_send_object_unmap_handle_valid   = 0;
-        pdc_server_info_g[i].addr_valid                              = 0;
-        pdc_server_info_g[i].rpc_handle_valid                        = 0;
-        pdc_server_info_g[i].client_test_handle_valid                = 0;
-        pdc_server_info_g[i].close_server_handle_valid               = 0;
-        pdc_server_info_g[i].metadata_query_handle_valid             = 0;
-        pdc_server_info_g[i].metadata_delete_handle_valid            = 0;
-        pdc_server_info_g[i].metadata_update_handle_valid            = 0;
-        pdc_server_info_g[i].region_lock_handle_valid                = 0;
+        pdc_server_info_g[i].addr_valid                  	 = 0;
+        pdc_server_info_g[i].rpc_handle_valid            	 = 0;
+        pdc_server_info_g[i].client_test_handle_valid    	 = 0;
+        pdc_server_info_g[i].close_server_handle_valid   	 = 0;
+        pdc_server_info_g[i].metadata_query_handle_valid 	 = 0;
+        pdc_server_info_g[i].metadata_delete_handle_valid 	 = 0;
+        pdc_server_info_g[i].metadata_update_handle_valid 	 = 0;
+        pdc_server_info_g[i].client_send_region_handle_valid     = 0;
+        pdc_server_info_g[i].addr_valid                          = 0;
+        pdc_server_info_g[i].rpc_handle_valid                    = 0;
+        pdc_server_info_g[i].client_test_handle_valid            = 0;
+        pdc_server_info_g[i].close_server_handle_valid           = 0;
+        pdc_server_info_g[i].metadata_query_handle_valid         = 0;
+        pdc_server_info_g[i].metadata_delete_handle_valid        = 0;
+        pdc_server_info_g[i].metadata_update_handle_valid        = 0;
+        pdc_server_info_g[i].metadata_add_tag_handle_valid        = 0;
+        pdc_server_info_g[i].region_lock_handle_valid            = 0;
     }
 
     i = 0;
@@ -1197,6 +1196,7 @@ perr_t PDC_Client_add_tag(pdc_metadata_t *old, const char *tag)
     }
     else {
         printf("PDC_Client_add_tag(): invalid tag content!\n");
+        fflush(stdout);
         goto done;
     }
 

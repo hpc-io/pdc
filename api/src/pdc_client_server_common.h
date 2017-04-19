@@ -539,10 +539,12 @@ hg_proc_metadata_add_tag_in_t(hg_proc_t proc, void *data)
     ret = hg_proc_hg_uint64_t(proc, &struct_data->obj_id);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
+        return ret;
     }
     ret = hg_proc_uint32_t(proc, &struct_data->hash_value);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
+        return ret;
     }
     ret = hg_proc_hg_const_string_t(proc, &struct_data->new_tag);
     if (ret != HG_SUCCESS) {
@@ -575,10 +577,12 @@ hg_proc_metadata_update_in_t(hg_proc_t proc, void *data)
     ret = hg_proc_hg_uint64_t(proc, &struct_data->obj_id);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
+        return ret;
     }
     ret = hg_proc_uint32_t(proc, &struct_data->hash_value);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
+        return ret;
     }
     ret = hg_proc_pdc_metadata_transfer_t(proc, &struct_data->new_metadata);
     if (ret != HG_SUCCESS) {
@@ -597,6 +601,7 @@ hg_proc_metadata_update_out_t(hg_proc_t proc, void *data)
     ret = hg_proc_int32_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
+        return ret;
     }
     return ret;
 }
