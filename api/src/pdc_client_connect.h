@@ -39,8 +39,12 @@ typedef struct pdc_server_info_t {
     hg_handle_t     metadata_delete_by_id_handle;
     int             metadata_update_handle_valid;
     hg_handle_t     metadata_update_handle;
-    int	            client_send_region_handle_valid;
-    hg_handle_t     client_send_region_handle;
+    int	            client_send_region_map_handle_valid;
+    hg_handle_t     client_send_region_map_handle;
+    int             client_send_region_unmap_handle_valid;
+    hg_handle_t     client_send_region_unmap_handle;
+    int             client_send_object_unmap_handle_valid;
+    hg_handle_t     client_send_object_unmap_handle;
     int             region_lock_handle_valid;
     hg_handle_t     region_lock_handle;
     int             query_partial_handle_valid;
@@ -75,6 +79,14 @@ typedef struct client_name_cache_t {
 
 struct region_map_args {
 	int         ret;
+};
+
+struct region_unmap_args {
+    int         ret;
+};
+
+struct object_unmap_args {
+    int         ret;
 };
 
 /**
@@ -169,14 +181,24 @@ perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new);
 /**
  * Client request for object mapping
  *
- * \param from_obj_id [IN]      The origin object id
- * \param from_region_id [IN]   The origin region id
- * \param to_obj_id [IN]        The target object id
- * \param to_region_id [IN]     The target region id
+ * \param local_obj_id [IN]     The origin object id
+ * \param local_region_id [IN]  The origin region id
+ * \param remote_obj_id [IN]    The target object id
+ * \param remote_region_id [IN] The target region id
  *
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *local_offset, uint64_t *remote_offset, uint64_t *size, PDC_var_type_t local_type, PDC_var_type_t remote_type, void *local_data);
+
+/**
+ * Client request for object mapping
+ *
+ * \param local_obj_id [IN]      The origin object id
+ * \param pdc_id [IN]            The pdc id
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id, pdcid_t pdc_id);
 
 /**
  * Request of PDC client to get region lock
@@ -200,11 +222,12 @@ perr_t PDC_Client_obtain_region_lock(pdcid_t pdc_id, pdcid_t cont_id, pdcid_t me
  * \param cont_id [IN]          Id of the container
  * \param obj_id [IN]           Id of the metadata
  * \param region_info [IN]      Pointer to PDC_region_info_t struct
+ * \param access_type [IN]      Access type (enum)
  * \param released [OUT]        Lock released or not
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_release_region_lock(pdcid_t pdc_id, pdcid_t cont_id, pdcid_t meta_id, PDC_region_info_t *region_info, pbool_t *released);
+perr_t PDC_Client_release_region_lock(pdcid_t pdc_id, pdcid_t cont_id, pdcid_t meta_id, PDC_region_info_t *region_info, PDC_access_t access_type, pbool_t *released);
 
 /**
  * PDC client initialization

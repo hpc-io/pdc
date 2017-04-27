@@ -13,7 +13,7 @@
 #include "pdc_obj.h"
 #include "pdc_obj_pkg.h"
 #include "pdc_dt_conv.h"
-
+#include "pdc_client_connect.h"
 typedef struct {
     pdcid_t pdc_id;
 } PDC_STRUCT;

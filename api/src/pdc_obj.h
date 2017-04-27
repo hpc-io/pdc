@@ -265,13 +265,25 @@ perr_t PDCobj_map(pdcid_t from_obj, pdcid_t from_reg, pdcid_t to_obj, pdcid_t to
 PDC_obj_info_t *PDCobj_get_info(pdcid_t obj_id, pdcid_t pdc_id);
 
 /**
+ * Get object information
+ *
+ * \param reg_id [IN]           Id of the region
+ * \param obj_id [IN]           Id of the object
+ * \param pdc_id [IN]           Id of PDC
+ *
+ * \return Pointer to PDC_obj_info_t struct on success/Null on failure
+ */
+PDC_region_info_t *PDCregion_get_info(pdcid_t reg_id, pdcid_t obj_id, pdcid_t pdc_id);
+
+/**
  * Diassociate memory object from PDC container objects 
  *
  * \param obj_id [IN]           Id of the object
+ * \param pdc_id [IN]           Id of PDC
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCobj_unmap(pdcid_t obj_id);
+perr_t PDCobj_unmap(pdcid_t obj_id, pdcid_t pdc_id);
 
 /**
  * Release memory buffers from one memory object 

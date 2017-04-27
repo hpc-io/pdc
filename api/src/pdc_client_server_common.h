@@ -80,7 +80,7 @@ typedef struct pdc_metadata_t {
 typedef struct PDC_mapping_info {
     pdcid_t                          remote_obj_id;         /* target of object id */
     pdcid_t                          remote_reg_id;         /* target of region id */
-    hg_bulk_t                        bulk_handle;
+//    hg_bulk_t                        bulk_handle;
     size_t                           remote_ndim;
     PDC_LIST_ENTRY(PDC_mapping_info) entry;
 } PDC_mapping_info_t;
@@ -91,6 +91,9 @@ typedef struct PDC_mapping {
     pdcid_t                          local_obj_id;         /* origin of object id */
     pdcid_t                          local_reg_id;         /* origin of region id */
     size_t                           local_ndim;
+    hg_addr_t                        local_addr;
+    hg_bulk_t                        bulk_handle;
+    PDC_var_type_t                   local_data_type;
     PDC_LIST_HEAD(PDC_mapping_info)  ids;                  /* Head of list of IDs */
 } PDC_mapping_t;
 
@@ -165,12 +168,18 @@ MERCURY_GEN_PROC( metadata_delete_out_t, ((int32_t)(ret)) )
 MERCURY_GEN_PROC( metadata_update_in_t, ((uint64_t)(obj_id)) ((uint32_t)(hash_value)) ((pdc_metadata_transfer_t)(new_metadata)) )
 MERCURY_GEN_PROC( metadata_update_out_t, ((int32_t)(ret)) )
 
+MERCURY_GEN_PROC( gen_obj_unmap_notification_in_t, ((uint64_t)(local_obj_id)) ((uint64_t)(pdc_id)) )
+MERCURY_GEN_PROC( gen_obj_unmap_notification_out_t, ((int32_t)(ret)) )
+
+MERCURY_GEN_PROC( gen_reg_unmap_notification_in_t, ((uint64_t)(local_obj_id)) ((uint64_t)(local_reg_id)) ((uint64_t)(pdc_id)) )
+MERCURY_GEN_PROC( gen_reg_unmap_notification_out_t, ((int32_t)(ret)) )
+
 MERCURY_GEN_PROC( gen_reg_map_notification_in_t, ((uint64_t)(local_obj_id)) ((uint64_t)(local_reg_id)) ((uint64_t)(remote_obj_id)) ((uint64_t)(remote_reg_id)) ((uint8_t)(local_type)) ((uint8_t)(remote_type)) ((uint32_t)(ndim)) ((hg_bulk_t)(bulk_handle)) )
 MERCURY_GEN_PROC( gen_reg_map_notification_out_t, ((int32_t)(ret)) ) 
 
 MERCURY_GEN_STRUCT_PROC( region_info_transfer_t, ((hg_size_t)(ndim)) ((uint64_t)(start_0)) ((uint64_t)(start_1)) ((uint64_t)(start_2)) ((uint64_t)(start_3))  ((uint64_t)(count_0)) ((uint64_t)(count_1)) ((uint64_t)(count_2)) ((uint64_t)(count_3)) ((uint64_t)(stride_0)) ((uint64_t)(stride_1)) ((uint64_t)(stride_2)) ((uint64_t)(stride_3)) )
 
-MERCURY_GEN_PROC( region_lock_in_t, ((uint64_t)(obj_id)) ((int32_t)(lock_op)) ((region_info_transfer_t)(region)) )
+MERCURY_GEN_PROC( region_lock_in_t, ((uint64_t)(obj_id)) ((int32_t)(lock_op)) ((int8_t)(access_type)) ((uint64_t)(local_reg_id)) ((region_info_transfer_t)(region)) ((int32_t)(mapping)) )
 MERCURY_GEN_PROC( region_lock_out_t, ((int32_t)(ret)) )
 
 // Bulk
@@ -209,7 +218,10 @@ typedef struct {
 typedef struct {
     uint64_t                    obj_id;
     int32_t                     lock_op;
+    PDC_access_t                access_type;
+    pdcid_t                     local_reg_id;
     region_info_transfer_t      region;
+    bool                        mapping;
 } region_lock_in_t;
 
 typedef struct {
@@ -307,10 +319,22 @@ hg_proc_region_lock_in_t(hg_proc_t proc, void *data)
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
     }
+    ret = hg_proc_uint8_t(proc, &struct_data->access_type);
+    if (ret != HG_SUCCESS) {
+    HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->local_id);
+    if (ret != HG_SUCCESS) {
+    HG_LOG_ERROR("Proc error");
+    }
     ret = hg_proc_region_info_transfer_t(proc, &struct_data->region);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
+    }
+    ret = hg_proc_uint32_t(proc, &struct_data->mapping);
+    if (ret != HG_SUCCESS) {
+    HG_LOG_ERROR("Proc error");
     }
     return ret;
 }
@@ -654,6 +678,29 @@ typedef struct {
     int32_t ret;
 } gen_reg_map_notification_out_t;
 
+typedef struct {
+    uint64_t        local_obj_id;
+    uint64_t        local_reg_id;
+    uint64_t        pdc_id;
+} gen_reg_unmap_notification_in_t
+
+typedef struct {
+    int32_t ret;
+} gen_reg_unmap_notification_out_t;
+
+typedef struct {
+    int32_t ret;
+} gen_reg_map_notification_out_t;
+
+typedef struct {
+    uint64_t        local_obj_id;
+    uint64_t        pdc_id;
+} gen_obj_unmap_notification_in_t
+
+typedef struct {
+    int32_t ret;
+} gen_obj_unmap_notification_out_t;
+
 static HG_INLINE hg_return_t
 hg_proc_gen_obj_id_in_t(hg_proc_t proc, void *data)
 {
@@ -816,14 +863,136 @@ hg_proc_bulk_write_out_t(hg_proc_t proc, void *data)
 }
 // End of bulk
 
+
 static HG_INLINE hg_return_t
 hg_proc_gen_reg_map_notification_in_t(hg_proc_t proc, void *data)
 {
+    hg_return_t ret;
+    gen_reg_map_notification_in_t *struct_data = (gen_reg_map_notification_in_t *) data;
+
+    ret = hg_proc_uint64_t(proc, &struct_data->local_obj_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->local_reg_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->remote_obj_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->remote_reg_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint8_t(proc, &struct_data->local_type);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint8_t(proc, &struct_data->remote_type);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint32_t(proc, &struct_data->ndim);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_bulk_t(proc, &struct_data->bulk_handle);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
 }
 
 static HG_INLINE hg_return_t
 hg_proc_gen_reg_map_notification_out_t(hg_proc_t proc, void *data)
 {
+    hg_return_t ret;
+    gen_reg_map_notification_out_t *struct_data = (gen_reg_map_notification_out_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_gen_reg_unmap_notification_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    gen_reg_unmap_notification_in_t *struct_data = (gen_reg_unmap_notification_in_t *) data;
+
+    ret = hg_proc_uint64_t(proc, &struct_data->local_obj_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->local_reg_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->pdc_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_gen_reg_unmap_notification_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    gen_reg_unmap_notification_out_t *struct_data = (gen_reg_unmap_notification_out_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+    HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_gen_obj_unmap_notification_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    gen_obj_unmap_notification_in_t *struct_data = (gen_obj_unmap_notification_in_t *) data;
+
+    ret = hg_proc_uint64_t(proc, &struct_data->local_obj_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->pdc_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_gen_obj_unmap_notification_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    gen_obj_unmap_notification_out_t *struct_data = (gen_obj_unmap_notification_out_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+    HG_LOG_ERROR("Proc error");
+    }
+    return ret;
 }
 
 hg_id_t test_bulk_xfer_register(hg_class_t *hg_class);
@@ -852,6 +1021,12 @@ struct hg_test_bulk_args {
     size_t ret;
     pdc_metadata_t **meta_arr;
     int             *n_meta;
+};
+
+struct lock_bulk_args {
+    hg_handle_t handle;
+    region_lock_in_t in;
+//    hg_handle_t local_bulk_handle;
 };
 
 hg_id_t gen_reg_map_notification_register(hg_class_t *hg_class);

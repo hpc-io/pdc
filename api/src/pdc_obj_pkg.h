@@ -13,14 +13,15 @@ typedef struct PDC_obj_info_t {
     pdcid_t     cont;
     pdcid_t     obj_prop;
     pdcid_t     meta_id;
+    bool        mapping;
 }PDC_obj_info_t;
 
 typedef struct {
-    size_t     ndim;
-    uint64_t  *offset;
-    uint64_t  *size;
-    pdcid_t    local_id;
-    bool       mapping;
+    size_t      ndim;
+    uint64_t   *offset;
+    uint64_t   *size;
+    pdcid_t     local_id;
+    bool        mapping;
 //    PDC_loci locus;
 } PDC_region_info_t;
 

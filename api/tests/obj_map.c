@@ -91,12 +91,6 @@ int main(int argc, const char *argv[])
 
     srand(rank+1);
 
-    #ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-    #endif
-
-    gettimeofday(&ht_total_start, 0);
-
 	int myArray1[3][3] = { {1, 2, 3}, {4, 5, 6}, {7, 8, 9} };
     int myArray2[3][3];
 	int myArray3[3][3];
@@ -152,10 +146,6 @@ int main(int argc, const char *argv[])
         exit(-1);
     }
 
-    #ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-    #endif
-
 	uint64_t offset[2] = {0, 0};
     // create a region
     pdcid_t r1 = PDCregion_create(2, offset, dims, pdc_id);
@@ -164,6 +154,12 @@ int main(int argc, const char *argv[])
 //    printf("second region id: %lld\n", r2);
 	pdcid_t r3 = PDCregion_create(2, offset, dims, pdc_id);
 //    printf("second region id: %lld\n", r3);
+
+    #ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    #endif
+
+    gettimeofday(&ht_total_start, 0);
 
 	PDCobj_map(obj1, r1, obj2, r2, pdc_id);
 	PDCobj_map(obj1, r1, obj3, r3, pdc_id);
