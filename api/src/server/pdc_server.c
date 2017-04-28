@@ -261,6 +261,16 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+pdc_metadata_t * pdc_find_metadata_by_id(uint64_t obj_id)
+{
+    FUNC_ENTER(NULL);
+    
+    pdc_metadata_t *ret_value = find_metadata_by_id(obj_id);
+    
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 // Iterate through all metadata stored in the hash table 
 static pdc_metadata_t * find_metadata_by_id(uint64_t obj_id)
 {
@@ -2060,6 +2070,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+/*
 perr_t PDC_Server_region_map(gen_reg_map_notification_in_t *in, gen_reg_map_notification_out_t *out, struct hg_info *info)
 {
     FUNC_ENTER(NULL);
@@ -2129,6 +2140,7 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
+*/
 
 perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
 {

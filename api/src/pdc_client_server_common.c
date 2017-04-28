@@ -532,9 +532,9 @@ HG_TEST_RPC_CB(region_lock, handle)
         bulk_args->handle = handle;
         bulk_args->in = in;
         
-        pdc_metadata_t *target_obj = find_metadata_by_id(in.obj_id);
+        pdc_metadata_t *target_obj = pdc_find_metadata_by_id(in.obj_id);
         if (target_obj == NULL) {
-            printf("==PDC_SERVER: PDC_Server_region_map - requested object (id=%llu) does not exist\n", in.obj_id);
+            printf("==PDC_SERVER: PDC_Server_region_lock - requested object (id=%llu) does not exist\n", in.obj_id);
             out.ret = 0;
             goto done;
         }
@@ -654,9 +654,9 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
 
     HG_Get_input(handle, &in);
     struct hg_info *info = HG_Get_info(handle);
-    PDC_Server_region_map(&in, &out, info);
-/*
-    pdc_metadata_t *target_obj = find_metadata_by_id(in.local_obj_id);
+//    PDC_Server_region_map(&in, &out, info);
+
+    pdc_metadata_t *target_obj = pdc_find_metadata_by_id(in.local_obj_id);
     if (target_obj == NULL) {
         printf("==PDC_SERVER: PDC_Server_region_map - requested object (id=%llu) does not exist\n", in.local_obj_id);
         out.ret = 0;
@@ -716,7 +716,7 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
         LL_APPEND(target_obj->region_map_head, map_ptr);
         out.ret = 0;
     }
-*/
+
 done:
     HG_Respond(handle, NULL, NULL, &out);
 
