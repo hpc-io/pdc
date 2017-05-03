@@ -221,7 +221,7 @@ static hg_return_t
 client_send_object_unmap_rpc_cb(const struct hg_cb_info *callback_info)
 {
     FUNC_ENTER(NULL);
-    hg_return_t ret_value;
+    hg_return_t ret_value = HG_SUCCESS;;
 
     /* printf("Entered client_send_object_unmap_rpc_cb"); */
     struct object_unmap_args *object_unmap_args = (struct object_unmap_args*) callback_info->arg;
@@ -245,9 +245,9 @@ static hg_return_t
 client_send_region_map_rpc_cb(const struct hg_cb_info *callback_info)
 {
     FUNC_ENTER(NULL);
-    hg_return_t ret_value;
+    hg_return_t ret_value = HG_SUCCESS;
 
-    /* printf("Entered client_send_region_map_rpc_cb"); */
+     printf("Entered client_send_region_map_rpc_cb()\n"); 
     struct region_map_args *region_map_args = (struct region_map_args*) callback_info->arg;
     hg_handle_t handle = callback_info->info.forward.handle;
 
@@ -258,7 +258,7 @@ client_send_region_map_rpc_cb(const struct hg_cb_info *callback_info)
     region_map_args->ret = output.ret;
 
     work_todo_g--;
-
+printf("return from client_send_region_map_rpc_cb()\n");
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -1629,6 +1629,7 @@ done:
 
 perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *local_offset, uint64_t *remote_offset, uint64_t *size, PDC_var_type_t local_type, PDC_var_type_t remote_type, void *local_data)
 {
+printf("enter PDC_Client_send_region_map()\n");
     FUNC_ENTER(NULL);
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;

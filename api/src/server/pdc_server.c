@@ -261,19 +261,10 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-pdc_metadata_t * pdc_find_metadata_by_id(uint64_t obj_id)
-{
-    FUNC_ENTER(NULL);
-    
-    pdc_metadata_t *ret_value = find_metadata_by_id(obj_id);
-    
-done:
-    FUNC_LEAVE(ret_value);
-}
-
 // Iterate through all metadata stored in the hash table 
 static pdc_metadata_t * find_metadata_by_id(uint64_t obj_id)
 {
+printf("enter find_metadata_by_id()\n");
     FUNC_ENTER(NULL);
 
     pdc_metadata_t *ret_value;
@@ -2142,8 +2133,25 @@ done:
 }
 */
 
+pdc_metadata_t * PDC_Server_get_obj_metadata(pdcid_t obj_id)
+{
+printf("enter PDC_Server_get_obj_metadata()\n");
+    FUNC_ENTER(NULL);
+    pdc_metadata_t *ret_value = NULL;
+    ret_value = find_metadata_by_id(obj_id);
+
+if(ret_value->region_lock_head != NULL)
+	printf("PDC_Server_get_obj_metadata, lock list is not NULL\n");
+if(ret_value->region_map_head != NULL) 
+	printf("PDC_Server_get_obj_metadata, map list is not NULL\n");
+fflush(stdout);
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
 {
+printf("enter PDC_Server_region_lock()\n");
     FUNC_ENTER(NULL);
     perr_t ret_value;
 
@@ -2191,13 +2199,16 @@ perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
         goto done;
     }
 
-
     region_list_t *elt, *tmp;
     if (lock_op == PDC_LOCK_OP_OBTAIN) {
         /* printf("==PDC_SERVER: obtaining lock ... "); */
         // Go through all existing locks to check for overlapping
         // Note: currently only assumes contiguous region
+printf("obtain lock\n");
+fflush(stdout);
         DL_FOREACH(target_obj->region_lock_head, elt) {
+printf("go through lock list\n");
+fflush(stdout);
             if (is_contiguous_region_overlap(elt, request_region) == 1) {
                 /* printf("rejected! (found overlapping regions)\n"); */
                 out->ret = -1;
@@ -2206,14 +2217,18 @@ perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
         }
         // No overlaps found
         DL_APPEND(target_obj->region_lock_head, request_region);
+printf("append lock list\n");
         out->ret = 1;
         /* printf("granted\n"); */
         goto done;
     }
     else if (lock_op == PDC_LOCK_OP_RELEASE) {
+printf("release lock\n");
         /* printf("==PDC_SERVER: releasing lock ... "); */
         // Find the lock region in the list and remove it
         DL_FOREACH_SAFE(target_obj->region_lock_head, elt, tmp) {
+printf("go through lock list\n");
+fflush(stdout);
             if (is_region_identical(request_region, elt) == 1) {
                 // Found the requested region lock, remove from the linked list
                 DL_DELETE(target_obj->region_lock_head, elt);

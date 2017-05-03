@@ -169,6 +169,7 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
 perr_t delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_id_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out) {return SUCCEED;}
+pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id) {return NULL;}
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs) {return SUCCEED;}
 hg_class_t *hg_class_g;
 #endif
@@ -494,6 +495,7 @@ done:
 
 HG_TEST_RPC_CB(region_lock, handle)
 {
+printf("call HG_TEST_RPC_CB(region_lock)\n");
     FUNC_ENTER(NULL);
 
     hg_return_t ret_value = HG_SUCCESS;
@@ -507,7 +509,7 @@ HG_TEST_RPC_CB(region_lock, handle)
     HG_Get_input(handle, &in);
 
     if(in.access_type==READ || in.lock_op==PDC_LOCK_OP_OBTAIN || in.mapping==0) {
-//        printf("READ or PDC_LOCK_OP_OBTAIN  or no mapping callback or no mapping\n\n\n");
+        printf("READ or PDC_LOCK_OP_OBTAIN  or no mapping callback or no mapping\n\n\n");
         // TODO
         // Perform lock function
         perr_t ret = PDC_Server_region_lock(&in, &out);
@@ -520,7 +522,6 @@ HG_TEST_RPC_CB(region_lock, handle)
     }
     // do data tranfer if it is write lock release. Respond to client in callback after data transfer is done
     else {
-//        printf("release with mapping\n\n\n");
         hg_op_id_t hg_bulk_op_id;
         struct hg_info *hg_info = NULL;
         /* Get info from handle */
@@ -532,17 +533,16 @@ HG_TEST_RPC_CB(region_lock, handle)
         bulk_args->handle = handle;
         bulk_args->in = in;
         
-        pdc_metadata_t *target_obj = pdc_find_metadata_by_id(in.obj_id);
+        pdc_metadata_t *target_obj = PDC_Server_get_obj_metadata(in.obj_id); ///////////////////////////////////////////////////////
         if (target_obj == NULL) {
             printf("==PDC_SERVER: PDC_Server_region_lock - requested object (id=%llu) does not exist\n", in.obj_id);
             out.ret = 0;
             goto done;
         }
-        
         int found = 0;
         if(target_obj->region_map_head != NULL) {
             region_map_t *elt;
-            DL_FOREACH(target_obj->region_lock_head, elt) {
+            DL_FOREACH(target_obj->region_map_head, elt) {
                 // find the mapping region list
                 if(elt->local_obj_id == in.obj_id && elt->local_reg_id==in.local_reg_id) {
                     found = 1;
@@ -587,6 +587,7 @@ HG_TEST_RPC_CB(region_lock, handle)
             printf("==PDC SERVER ERROR: Could not find local region %lld in server\n", in.local_reg_id);
             fflush(stdout);
         }
+//        free(target_obj);
     }
 done:
     FUNC_LEAVE(ret_value);
@@ -644,8 +645,8 @@ HG_TEST_RPC_CB(gen_reg_unmap_notification, handle)
 // gen_reg_map_notification_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(gen_reg_map_notification, handle)
 {
+printf("enter obj map callback\n");
     FUNC_ENTER(NULL);
-
     hg_return_t ret_value = HG_SUCCESS;;
 
     // Decode input
@@ -656,7 +657,14 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
     struct hg_info *info = HG_Get_info(handle);
 //    PDC_Server_region_map(&in, &out, info);
 
-    pdc_metadata_t *target_obj = pdc_find_metadata_by_id(in.local_obj_id);
+    pdc_metadata_t *target_obj = PDC_Server_get_obj_metadata(in.local_obj_id);
+printf("id is %lld\n", in.local_obj_id);
+printf("id is %lld\n", target_obj->obj_id);
+printf("dim is %d\n", target_obj->ndim);
+printf("user id is %d\n", target_obj->user_id);
+printf("time step is %d\n", target_obj->time_step);
+fflush(stdout);
+
     if (target_obj == NULL) {
         printf("==PDC_SERVER: PDC_Server_region_map - requested object (id=%llu) does not exist\n", in.local_obj_id);
         out.ret = 0;
@@ -664,12 +672,19 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
     }
     
     int found = 0;
-    if(target_obj->region_map_head != NULL) {
+//    if(target_obj->region_map_head != NULL) {
+//printf("map list not null\n");
+//fflush(stdout);
         region_map_t *elt;
-        DL_FOREACH(target_obj->region_lock_head, elt) {
+//        target_obj->region_map_head = NULL;
+        DL_FOREACH(target_obj->region_map_head, elt) {
+printf("go through map list\n");
+fflush(stdout);
             if(in.local_obj_id==elt->local_obj_id && in.local_reg_id==elt->local_reg_id) {
                 found = 1;
-                region_map_t *map_ptr = target_obj->region_lock_head;
+printf("found 1\n");
+fflush(stdout);
+                region_map_t *map_ptr = target_obj->region_map_head;
                 PDC_mapping_info_t *tmp_ptr;
                 PDC_LIST_GET_FIRST(tmp_ptr, &map_ptr->ids);
                 while(tmp_ptr!=NULL && (tmp_ptr->remote_reg_id!=in.remote_reg_id || tmp_ptr->remote_obj_id!=in.remote_obj_id)) {
@@ -677,6 +692,8 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
                     printf("tgt region is %lld\n", in.remote_reg_id);
                     PDC_LIST_TO_NEXT(tmp_ptr, entry);
                 }
+printf("after while\n");
+fflush(stdout);
                 if(tmp_ptr!=NULL) {
                     printf("==PDC SERVER ERROR: mapping from obj %lld (region %lld) to obj %lld (reg %lld) already exists\n", in.local_obj_id, in.local_reg_id, in.remote_obj_id, in.remote_reg_id);
                     out.ret = 0;
@@ -689,12 +706,14 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
                     m_info_ptr->remote_ndim = in.ndim;
                     PDC_LIST_INSERT_HEAD(&map_ptr->ids, m_info_ptr, entry);
                     atomic_fetch_add(&(map_ptr->mapping_count), 1);
-                    out.ret = 0;
+                    out.ret = 1;
                 }
             }
         }
-    }
+//    }
     if(found == 0) {
+printf("map server callback, not found region in map list\n");
+fflush(stdout);
         region_map_t *map_ptr = (region_map_t *)malloc(sizeof(region_map_t));
         PDC_LIST_INIT(&map_ptr->ids);
         map_ptr->mapping_count = ATOMIC_VAR_INIT(1);
@@ -712,17 +731,20 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
         m_info_ptr->remote_reg_id = in.remote_reg_id;
         m_info_ptr->remote_ndim = in.ndim;
         PDC_LIST_INSERT_HEAD(&map_ptr->ids, m_info_ptr, entry);
-        
-        LL_APPEND(target_obj->region_map_head, map_ptr);
-        out.ret = 0;
+ printf("append list\n");
+fflush(stdout); 
+        DL_APPEND(target_obj->region_map_head, map_ptr);
+        out.ret = 1;
+printf("return success\n");
+fflush(stdout);
     }
 
-done:
+    free(target_obj);
     HG_Respond(handle, NULL, NULL, &out);
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
-
+done:
     FUNC_LEAVE(ret_value);
 }
 

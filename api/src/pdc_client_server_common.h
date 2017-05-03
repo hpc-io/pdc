@@ -70,6 +70,7 @@ typedef struct region_map_t {
     hg_bulk_t                        bulk_handle;
     PDC_var_type_t                   local_data_type;
     PDC_LIST_HEAD(PDC_mapping_info)  ids;                  /* Head of list of IDs */
+    struct region_map_t              *prev;
     struct region_map_t              *next;
 } region_map_t;
 
