@@ -684,7 +684,7 @@ typedef struct {
     uint64_t        local_obj_id;
     uint64_t        local_reg_id;
     uint64_t        pdc_id;
-} gen_reg_unmap_notification_in_t
+} gen_reg_unmap_notification_in_t;
 
 typedef struct {
     int32_t ret;
