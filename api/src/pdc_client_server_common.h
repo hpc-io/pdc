@@ -27,9 +27,6 @@ extern char pdc_server_tmp_dir_g[ADDR_MAX];
 extern uint64_t pdc_id_seq_g;
 extern int pdc_server_rank_g;
 
-typedef enum PDC_access_t { READ=0, WRITE=1 } PDC_access_t;
-typedef enum PDC_lock_mode_t { BLOCK=0, NOBLOCK=1 } PDC_lock_mode_t;
-
 #define    PDC_LOCK_OP_OBTAIN  0
 #define    PDC_LOCK_OP_RELEASE 1
 
@@ -43,19 +40,9 @@ typedef struct region_list_t {
     struct region_list_t *next;
 } region_list_t;
 
-// Similar structure PDC_region_info_t defined in pdc_obj_pkg.h
-// TODO: currently only support upto four dimensions
-typedef struct {
-    size_t ndim;
-    uint64_t start_0, start_1, start_2, start_3;
-    uint64_t count_0, count_1, count_2, count_3;
-    uint64_t stride_0, stride_1, stride_2, stride_3;
-} region_info_transfer_t;
-
 typedef struct PDC_mapping_info {
     pdcid_t                          remote_obj_id;         /* target of object id */
     pdcid_t                          remote_reg_id;         /* target of region id */
-//    hg_bulk_t                        bulk_handle;
     size_t                           remote_ndim;
     PDC_LIST_ENTRY(PDC_mapping_info) entry;
 } PDC_mapping_info_t;
@@ -70,11 +57,19 @@ typedef struct region_map_t {
     hg_bulk_t                        bulk_handle;
     PDC_var_type_t                   local_data_type;
     PDC_LIST_HEAD(PDC_mapping_info)  ids;                  /* Head of list of IDs */
-    struct region_map_t              *prev;
-    struct region_map_t              *next;
+    
+    struct region_map_t             *prev;
+    struct region_map_t             *next;
 } region_map_t;
 
-// PDC_mapping_t **PDC_mapping_id;
+// Similar structure PDC_region_info_t defined in pdc_obj_pkg.h
+// TODO: currently only support upto four dimensions
+typedef struct {
+    size_t ndim;
+    uint64_t start_0, start_1, start_2, start_3;
+    uint64_t count_0, count_1, count_2, count_3;
+    uint64_t stride_0, stride_1, stride_2, stride_3;
+} region_info_transfer_t;
 
 // For storing metadata
 typedef struct pdc_metadata_t {
@@ -83,27 +78,27 @@ typedef struct pdc_metadata_t {
     char    obj_name[ADDR_MAX];
     int     time_step;
     // Above four are the unique identifier for objects
-    
+
     uint64_t obj_id;
     time_t  create_time;
     time_t  last_modified_time;
-    
+
     int     ndim;
     int     dims[DIM_MAX];
-    
+
     char    tags[128];
     char    data_location[ADDR_MAX];
-    
+
     // For region lock
     region_list_t *region_lock_head;
     // For region map
     region_map_t *region_map_head;
-    
+
     // For hash table list
     struct pdc_metadata_t *prev;
     struct pdc_metadata_t *next;
     void *bloom;
-    
+
 } pdc_metadata_t;
 
 typedef struct pdc_metadata_transfer_t {
@@ -330,7 +325,7 @@ hg_proc_region_lock_in_t(hg_proc_t proc, void *data)
     if (ret != HG_SUCCESS) {
     HG_LOG_ERROR("Proc error");
     }
-    ret = hg_proc_uint64_t(proc, &struct_data->local_reg_id);
+    ret = hg_proc_uint64_t(proc, &struct_data->local_id);
     if (ret != HG_SUCCESS) {
     HG_LOG_ERROR("Proc error");
     }
@@ -689,16 +684,20 @@ typedef struct {
     uint64_t        local_obj_id;
     uint64_t        local_reg_id;
     uint64_t        pdc_id;
-} gen_reg_unmap_notification_in_t;
+} gen_reg_unmap_notification_in_t
 
 typedef struct {
     int32_t ret;
 } gen_reg_unmap_notification_out_t;
 
 typedef struct {
+    int32_t ret;
+} gen_reg_map_notification_out_t;
+
+typedef struct {
     uint64_t        local_obj_id;
     uint64_t        pdc_id;
-} gen_obj_unmap_notification_in_t;
+} gen_obj_unmap_notification_in_t
 
 typedef struct {
     int32_t ret;

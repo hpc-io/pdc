@@ -26,7 +26,6 @@ perr_t PDC_Server_checkpoint(char *filename);
 perr_t PDC_Server_restart(char *filename);
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs);
 pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id);
-//perr_t PDC_Server_region_map(gen_reg_map_notification_in_t *in, gen_reg_map_notification_out_t *out, struct hg_info *info);
 
 typedef struct pdc_metadata_name_mark_t {
     char obj_name[ADDR_MAX];

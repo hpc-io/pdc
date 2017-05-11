@@ -164,7 +164,7 @@ int main(int argc, const char *argv[])
 
 	PDCobj_map(obj1, r1, obj2, r2, pdc_id);
 	PDCobj_map(obj1, r1, obj3, r3, pdc_id);
-//	PDCobj_map(obj2, r2, obj3, r3, pdc_id);
+    PDCreg_unmap(obj1, r1, pdc_id);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);

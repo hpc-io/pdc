@@ -16,6 +16,9 @@ extern int pdc_client_mpi_size_g;
 
 extern char pdc_server_tmp_dir_g[ADDR_MAX];
 
+typedef enum PDC_access_t { READ=0, WRITE=1 } PDC_access_t;
+typedef enum PDC_lock_mode_t { BLOCK=0, NOBLOCK=1 } PDC_lock_mode_t;
+
 typedef struct pdc_server_info_t {
     char            addr_string[ADDR_MAX];
     int             addr_valid;
@@ -185,10 +188,9 @@ perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *local_offset, uint64_t *remote_offset, uint64_t *size, PDC_var_type_t local_type, PDC_var_type_t remote_type, void *local_data);
-
+perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *dims, uint64_t *local_offset, uint64_t *size, PDC_var_type_t local_type, void *local_data, uint64_t *remote_offset, PDC_var_type_t remote_type);
 /**
- * Client request for object mapping
+ * Client request for object unmapping
  *
  * \param local_obj_id [IN]      The origin object id
  * \param pdc_id [IN]            The pdc id
@@ -196,6 +198,17 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id, pdcid_t pdc_id);
+
+/**
+ * Client request for object unmapping
+ *
+ * \param local_obj_id [IN]      The origin object id
+ * \param local_obj_id [IN]      The origin region id
+ * \param pdc_id [IN]            The pdc id
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, pdcid_t pdc_id);
 
 /**
  * Request of PDC client to get region lock

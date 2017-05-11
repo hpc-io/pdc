@@ -179,6 +179,7 @@ int main(int argc, const char *argv[])
     gettimeofday(&start_time, 0);
       
     region = &region_info_no_overlap;
+    region->mapping = 0;
     PDC_Client_obtain_region_lock(pdc, cont, meta_id, region, WRITE, NOBLOCK, &lock_status);
     if (lock_status != TRUE) 
         printf("[%d] Failed to obtain lock for region (%d,%d,%d) (%d,%d,%d) ... error\n", rank, 

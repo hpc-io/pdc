@@ -203,7 +203,7 @@ static inline void combine_obj_info_to_string(pdc_metadata_t *metadata, char *ou
 /*     FUNC_LEAVE(ret_value); */
 /* } */ 
 
-static pdc_metadata_t * find_metadata_by_id_and_hash_key(uint64_t obj_id, uint32_t hash_key)
+static pdc_metadata_t * find_metadata_by_id_and_hash_key(uint64_t obj_id, uint32_t hash_key) 
 {
     FUNC_ENTER(NULL);
 
@@ -262,9 +262,8 @@ done:
 }
 
 // Iterate through all metadata stored in the hash table 
-static pdc_metadata_t * find_metadata_by_id(uint64_t obj_id)
+static pdc_metadata_t * find_metadata_by_id(uint64_t obj_id) 
 {
-printf("enter find_metadata_by_id()\n");
     FUNC_ENTER(NULL);
 
     pdc_metadata_t *ret_value;
@@ -296,6 +295,17 @@ printf("enter find_metadata_by_id()\n");
         ret_value = NULL;
         goto done;
     }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id)
+{
+    FUNC_ENTER(NULL);
+
+    pdc_metadata_t *ret_value = NULL;
+    ret_value = find_metadata_by_id(obj_id);
 
 done:
     FUNC_LEAVE(ret_value);
@@ -2061,102 +2071,14 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
-perr_t PDC_Server_region_map(gen_reg_map_notification_in_t *in, gen_reg_map_notification_out_t *out, struct hg_info *info)
-{
-    FUNC_ENTER(NULL);
-    perr_t ret_value;
-    
-    pdc_metadata_t *target_obj = find_metadata_by_id(in->local_obj_id);
-    if (target_obj == NULL) {
-        printf("==PDC_SERVER: PDC_Server_region_map - requested object (id=%llu) does not exist\n", in->local_obj_id);
-        out->ret = 0;
-        goto done;
-    }
-    
-    int found = 0;
-    if(target_obj->region_map_head != NULL) {
-        region_map_t *elt;
-        DL_FOREACH(target_obj->region_lock_head, elt) {
-            if(in->local_obj_id==elt->local_obj_id && in->local_reg_id==elt->local_reg_id) {
-                found = 1;
-                region_map_t *map_ptr = target_obj->region_lock_head;
-                PDC_mapping_info_t *tmp_ptr;
-                PDC_LIST_GET_FIRST(tmp_ptr, &map_ptr->ids);
-                while(tmp_ptr!=NULL && (tmp_ptr->remote_reg_id!=in->remote_reg_id || tmp_ptr->remote_obj_id!=in->remote_obj_id)) {
-                    printf("tgt region in list is %lld\n", tmp_ptr->remote_reg_id);
-                    printf("tgt region is %lld\n", in->remote_reg_id);
-                    PDC_LIST_TO_NEXT(tmp_ptr, entry);
-                }
-                if(tmp_ptr!=NULL) {
-                    printf("==PDC SERVER ERROR: mapping from obj %lld (region %lld) to obj %lld (reg %lld) already exists\n", in->local_obj_id, in->local_reg_id, in->remote_obj_id, in->remote_reg_id);
-                    out->ret = 0;
-                    goto done;
-                }
-                else {
-                    PDC_mapping_info_t *m_info_ptr = (PDC_mapping_info_t *)malloc(sizeof(PDC_mapping_info_t));
-                    m_info_ptr->remote_obj_id = in->remote_obj_id;
-                    m_info_ptr->remote_reg_id = in->remote_reg_id;
-                    m_info_ptr->remote_ndim = in->ndim;
-                    PDC_LIST_INSERT_HEAD(&map_ptr->ids, m_info_ptr, entry);
-                    atomic_fetch_add(&(map_ptr->mapping_count), 1);
-                    out->ret = 0;
-                }
-            }
-        }
-    }
-    if(found == 0) {
-        region_map_t *map_ptr = (region_map_t *)malloc(sizeof(region_map_t));
-        PDC_LIST_INIT(&map_ptr->ids);
-        map_ptr->mapping_count = ATOMIC_VAR_INIT(1);
-        map_ptr->local_obj_id = in->local_obj_id;
-        map_ptr->local_reg_id = in->local_reg_id;
-        map_ptr->local_ndim = in->ndim;
-        HG_Bulk_ref_incr(in->bulk_handle);
-        map_ptr->local_data_type = in->local_type;
-//        struct hg_info *info = HG_Get_info(handle);
-        HG_Addr_dup(info->hg_class, info->addr, &(map_ptr->local_addr));
-        map_ptr->bulk_handle = in->bulk_handle;
-        
-        PDC_mapping_info_t *m_info_ptr = (PDC_mapping_info_t *)malloc(sizeof(PDC_mapping_info_t));
-        m_info_ptr->remote_obj_id = in->remote_obj_id;
-        m_info_ptr->remote_reg_id = in->remote_reg_id;
-        m_info_ptr->remote_ndim = in->ndim;
-        PDC_LIST_INSERT_HEAD(&map_ptr->ids, m_info_ptr, entry);
-        
-        LL_APPEND(target_obj->region_map_head, map_ptr);
-        out->ret = 0;
-    }
-done:
-    fflush(stdout);
-    FUNC_LEAVE(ret_value);
-}
-*/
-
-pdc_metadata_t * PDC_Server_get_obj_metadata(pdcid_t obj_id)
-{
-printf("enter PDC_Server_get_obj_metadata()\n");
-    FUNC_ENTER(NULL);
-    pdc_metadata_t *ret_value = NULL;
-    ret_value = find_metadata_by_id(obj_id);
-
-if(ret_value->region_lock_head != NULL)
-	printf("PDC_Server_get_obj_metadata, lock list is not NULL\n");
-if(ret_value->region_map_head != NULL) 
-	printf("PDC_Server_get_obj_metadata, map list is not NULL\n");
-fflush(stdout);
-done:
-    FUNC_LEAVE(ret_value);
-}
 
 perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
 {
-printf("enter PDC_Server_region_lock()\n");
     FUNC_ENTER(NULL);
     perr_t ret_value;
 
     /* printf("==PDC_SERVER: received lock request,                                \ */
-    /*         obj_id=%llu, op=%d, ndim=%d, start=%llu count=%llu stride=%d\n", */
+    /*         obj_id=%llu, op=%d, ndim=%d, start=%llu count=%llu stride=%d\n", */ 
     /*         in->obj_id, in->lock_op, in->region.ndim, */ 
     /*         in->region.start_0, in->region.count_0, in->region.stride_0); */
 
@@ -2199,16 +2121,13 @@ printf("enter PDC_Server_region_lock()\n");
         goto done;
     }
 
+
     region_list_t *elt, *tmp;
     if (lock_op == PDC_LOCK_OP_OBTAIN) {
         /* printf("==PDC_SERVER: obtaining lock ... "); */
         // Go through all existing locks to check for overlapping
         // Note: currently only assumes contiguous region
-printf("obtain lock\n");
-fflush(stdout);
         DL_FOREACH(target_obj->region_lock_head, elt) {
-printf("go through lock list\n");
-fflush(stdout);
             if (is_contiguous_region_overlap(elt, request_region) == 1) {
                 /* printf("rejected! (found overlapping regions)\n"); */
                 out->ret = -1;
@@ -2217,18 +2136,14 @@ fflush(stdout);
         }
         // No overlaps found
         DL_APPEND(target_obj->region_lock_head, request_region);
-printf("append lock list\n");
         out->ret = 1;
         /* printf("granted\n"); */
         goto done;
     }
     else if (lock_op == PDC_LOCK_OP_RELEASE) {
-printf("release lock\n");
         /* printf("==PDC_SERVER: releasing lock ... "); */
         // Find the lock region in the list and remove it
         DL_FOREACH_SAFE(target_obj->region_lock_head, elt, tmp) {
-printf("go through lock list\n");
-fflush(stdout);
             if (is_region_identical(request_region, elt) == 1) {
                 // Found the requested region lock, remove from the linked list
                 DL_DELETE(target_obj->region_lock_head, elt);

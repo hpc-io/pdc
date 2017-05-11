@@ -49,9 +49,9 @@ int main(int argc, const char *argv[])
     char obj_name2[512];
     char obj_name3[512];
 
-	int myArray1[9] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-    int myArray2[9];
-	int myArray3[9];
+	int myArray1[4][4] = { {1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}, {13, 14, 15, 16}};
+    int myArray2[4][4];
+	int myArray3[4][4];
 
 //	char srank[10];
 //	sprintf(srank, "%d", rank);
@@ -59,7 +59,7 @@ int main(int argc, const char *argv[])
 //	sprintf(obj_name2, "%s%s", rand_string(tmp_str, 16), srank);
 //	sprintf(obj_name3, "%s%s", rand_string(tmp_str, 16), srank);
 
-	uint64_t dims[1] = {9};
+	uint64_t dims[2] = {4,4};
     PDCprop_set_obj_dims(obj_prop1, 2, dims, pdc_id);
     PDCprop_set_obj_dims(obj_prop2, 2, dims, pdc_id);
     PDCprop_set_obj_dims(obj_prop3, 2, dims, pdc_id);
@@ -103,13 +103,14 @@ int main(int argc, const char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
     #endif
 
-	uint64_t offset[1] = {0};
+	uint64_t offset[2] = {1, 2};
+    uint64_t rdims[2] = {3, 2};
     // create a region
-    pdcid_t r1 = PDCregion_create(1, offset, dims, pdc_id);
+    pdcid_t r1 = PDCregion_create(2, offset, rdims, pdc_id);
 //    printf("first region id: %lld\n", r1);
-    pdcid_t r2 = PDCregion_create(1, offset, dims, pdc_id);
+    pdcid_t r2 = PDCregion_create(2, offset, rdims, pdc_id);
 //    printf("second region id: %lld\n", r2);
-	pdcid_t r3 = PDCregion_create(1, offset, dims, pdc_id);
+	pdcid_t r3 = PDCregion_create(2, offset, rdims, pdc_id);
 //    printf("second region id: %lld\n", r3);
 
     // Timing
@@ -119,16 +120,19 @@ int main(int argc, const char *argv[])
     double total_lock_overhead;
 
 	PDCobj_map(obj1, r1, obj2, r2, pdc_id);
-//	PDCobj_map(obj1, r1, obj3, r3, pdc_id);
+//	PDCobj_map(obj2, r2, obj3, r3, pdc_id);
+//    PDCreg_unmap(obj1, r1, pdc_id);
 //	PDCobj_map(obj2, r2, obj3, r3, pdc_id);
 
     PDC_region_info_t *region = PDCregion_get_info(r1, obj1, pdc_id);
 
     pbool_t lock_status;
 
-    //    PDC_obj_info_t *info = PDCobj_get_info(obj1, pdc_id);
+    PDC_obj_info_t *info = PDCobj_get_info(obj1, pdc_id);
+    pdcid_t meta_id = info->meta_id;
 //    printf("meta id is %lld\n", info->meta_id);
 
+/*
     // Query and get meta id
     pdc_metadata_t *metadata = NULL;
     pdcid_t meta_id;
@@ -140,7 +144,7 @@ int main(int argc, const char *argv[])
         printf("Previously created object test_obj1 by rank 0 not found!\n");
         goto done;
     }
-
+*/
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif

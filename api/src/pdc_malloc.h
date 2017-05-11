@@ -7,6 +7,8 @@ void * PDC_malloc(size_t size);
 
 void * PDC_calloc(size_t size);
 
+void * PDC_free(void *mem);
+
 #define PDC_MALLOC(t) (t *)PDC_malloc(sizeof(t))
 #define PDC_CALLOC(t) (t *)PDC_calloc(sizeof(t))
 
