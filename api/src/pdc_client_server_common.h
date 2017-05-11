@@ -30,6 +30,9 @@ extern int pdc_server_rank_g;
 #define    PDC_LOCK_OP_OBTAIN  0
 #define    PDC_LOCK_OP_RELEASE 1
 
+typedef enum PDC_access_t { READ=0, WRITE=1 } PDC_access_t;
+typedef enum PDC_lock_mode_t { BLOCK=0, NOBLOCK=1 } PDC_lock_mode_t;
+
 typedef struct region_list_t {
     size_t ndim;
     uint64_t start[DIM_MAX];
@@ -223,7 +226,7 @@ typedef struct {
     PDC_access_t                access_type;
     pdcid_t                     local_reg_id;
     region_info_transfer_t      region;
-    bool                        mapping;
+    pbool_t                     mapping;
 } region_lock_in_t;
 
 typedef struct {
@@ -325,7 +328,7 @@ hg_proc_region_lock_in_t(hg_proc_t proc, void *data)
     if (ret != HG_SUCCESS) {
     HG_LOG_ERROR("Proc error");
     }
-    ret = hg_proc_uint64_t(proc, &struct_data->local_id);
+    ret = hg_proc_uint64_t(proc, &struct_data->local_reg_id);
     if (ret != HG_SUCCESS) {
     HG_LOG_ERROR("Proc error");
     }
@@ -691,13 +694,9 @@ typedef struct {
 } gen_reg_unmap_notification_out_t;
 
 typedef struct {
-    int32_t ret;
-} gen_reg_map_notification_out_t;
-
-typedef struct {
     uint64_t        local_obj_id;
     uint64_t        pdc_id;
-} gen_obj_unmap_notification_in_t
+} gen_obj_unmap_notification_in_t;
 
 typedef struct {
     int32_t ret;

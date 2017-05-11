@@ -16,9 +16,6 @@ extern int pdc_client_mpi_size_g;
 
 extern char pdc_server_tmp_dir_g[ADDR_MAX];
 
-typedef enum PDC_access_t { READ=0, WRITE=1 } PDC_access_t;
-typedef enum PDC_lock_mode_t { BLOCK=0, NOBLOCK=1 } PDC_lock_mode_t;
-
 typedef struct pdc_server_info_t {
     char            addr_string[ADDR_MAX];
     int             addr_valid;
