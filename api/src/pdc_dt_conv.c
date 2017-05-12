@@ -24,7 +24,8 @@ else                                                                      \
 *(D) = (DT)(*(S));
 
 pdc_conv_t
-pdc_find_conv_func(PDC_var_type_t src_id, PDC_var_type_t des_id) {
+pdc_find_conv_func(PDC_var_type_t src_id, PDC_var_type_t des_id)
+{
     pdc_conv_t ret_value;         /* Return value */
     
     FUNC_ENTER(NULL);
@@ -35,6 +36,7 @@ pdc_find_conv_func(PDC_var_type_t src_id, PDC_var_type_t des_id) {
         ret_value = pdc__conv_db_i;
     else
         PGOTO_ERROR(NULL, "no matching type convert function");
+    
 done:
     FUNC_LEAVE(ret_value);
 }

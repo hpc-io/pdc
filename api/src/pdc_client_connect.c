@@ -195,9 +195,9 @@ done:
 static hg_return_t
 client_test_connect_rpc_cb(const struct hg_cb_info *callback_info)
 {
+    hg_return_t ret_value = HG_SUCCESS;
+    
     FUNC_ENTER(NULL);
-
-    hg_return_t ret_value;
 
     /* printf("Entered client_test_connect_rpc_cb()"); */
     struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
@@ -220,14 +220,17 @@ done:
 static hg_return_t
 client_send_object_unmap_rpc_cb(const struct hg_cb_info *callback_info)
 {
+    hg_return_t ret_value = HG_SUCCESS;
+    hg_handle_t handle;
+    struct object_unmap_args *object_unmap_args;
+    gen_obj_unmap_notification_out_t output;
+    
     FUNC_ENTER(NULL);
-    hg_return_t ret_value;
 
     /* printf("Entered client_send_object_unmap_rpc_cb"); */
-    struct object_unmap_args *object_unmap_args = (struct object_unmap_args*) callback_info->arg;
-    hg_handle_t handle = callback_info->info.forward.handle;
+    object_unmap_args = (struct object_unmap_args*) callback_info->arg;
+    handle = callback_info->info.forward.handle;
 
-    gen_obj_unmap_notification_out_t output;
     ret_value = HG_Get_output(handle, &output);
     /* printf("Return value=%d\n", output.ret); */
 
@@ -244,14 +247,17 @@ done:
 static hg_return_t
 client_send_region_unmap_rpc_cb(const struct hg_cb_info *callback_info)
 {
+    hg_return_t ret_value = HG_SUCCESS;
+    hg_handle_t handle;
+    struct region_unmap_args *region_unmap_args;
+    gen_reg_unmap_notification_out_t output;
+    
     FUNC_ENTER(NULL);
-    hg_return_t ret_value;
 
     /* printf("Entered client_send_region_unmap_rpc_cb"); */
-    struct region_unmap_args *region_unmap_args = (struct region_unmap_args*) callback_info->arg;
-    hg_handle_t handle = callback_info->info.forward.handle;
+    region_unmap_args = (struct region_unmap_args*) callback_info->arg;
+    handle = callback_info->info.forward.handle;
 
-    gen_reg_unmap_notification_out_t output;
     ret_value = HG_Get_output(handle, &output);
     /* printf("Return value=%d\n", output.ret); */
 
@@ -268,14 +274,17 @@ done:
 static hg_return_t
 client_send_region_map_rpc_cb(const struct hg_cb_info *callback_info)
 {
+    hg_return_t ret_value = HG_SUCCESS;
+    hg_handle_t handle;
+    struct region_map_args *region_map_args;
+    gen_reg_map_notification_out_t output;
+    
     FUNC_ENTER(NULL);
-    hg_return_t ret_value;
 
     /* printf("Entered client_send_region_map_rpc_cb"); */
-    struct region_map_args *region_map_args = (struct region_map_args*) callback_info->arg;
-    hg_handle_t handle = callback_info->info.forward.handle;
+    region_map_args = (struct region_map_args*) callback_info->arg;
+    handle = callback_info->info.forward.handle;
 
-    gen_reg_map_notification_out_t output;
     ret_value = HG_Get_output(handle, &output);
     /* printf("Return value=%d\n", output.ret); */
 
@@ -292,13 +301,15 @@ done:
 static hg_return_t
 client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
 {
-
+    hg_return_t ret_value = HG_SUCCESS;
+    uint32_t server_id;
+    struct client_lookup_args *client_lookup_args;
+    client_test_connect_in_t in;
+    
     FUNC_ENTER(NULL);
 
-    hg_return_t ret_value = HG_SUCCESS;
-
-    struct client_lookup_args *client_lookup_args = (struct client_lookup_args *) callback_info->arg;
-    uint32_t server_id = client_lookup_args->server_id;
+    client_lookup_args = (struct client_lookup_args *) callback_info->arg;
+    server_id = client_lookup_args->server_id;
     /* printf("client_test_connect_lookup_cb(): server ID=%d\n", server_id); */
     /* fflush(stdout); */
     pdc_server_info_g[server_id].addr = callback_info->info.lookup.addr;
@@ -311,7 +322,6 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
     }
 
     // Fill input structure
-    client_test_connect_in_t in;
     in.client_id = client_lookup_args->client_id;
 
     /* printf("Sending input to target\n"); */
@@ -330,16 +340,18 @@ done:
 static hg_return_t
 close_server_cb(const struct hg_cb_info *callback_info)
 {
+    hg_return_t ret_value = HG_SUCCESS;
+    hg_handle_t handle;
+    close_server_out_t output;
+    struct client_lookup_args *client_lookup_args;
+    
     FUNC_ENTER(NULL);
 
-    hg_return_t ret_value;
-
     /* printf("Entered close_server_cb()"); */
-    struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
-    hg_handle_t handle = callback_info->info.forward.handle;
+    client_lookup_args = (struct client_lookup_args*) callback_info->arg;
+    handle = callback_info->info.forward.handle;
 
     /* Get output from server*/
-    close_server_out_t output;
     ret_value = HG_Get_output(handle, &output);
     /* printf("Return value=%llu\n", output.ret); */
 
@@ -378,16 +390,18 @@ done:
 static hg_return_t
 client_rpc_cb(const struct hg_cb_info *callback_info)
 {
+    hg_return_t ret_value = HG_SUCCESS;
+    hg_handle_t handle;
+    struct client_lookup_args *client_lookup_args;
+    gen_obj_id_out_t output;
+    
     FUNC_ENTER(NULL);
 
-    hg_return_t ret_value;
-
     /* printf("Entered client_rpc_cb()"); */
-    struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
-    hg_handle_t handle = callback_info->info.forward.handle;
+    client_lookup_args = (struct client_lookup_args*) callback_info->arg;
+    handle = callback_info->info.forward.handle;
 
     /* Get output from server*/
-    gen_obj_id_out_t output;
     ret_value = HG_Get_output(handle, &output);
     /* printf("Return value=%llu\n", output.ret); */
     client_lookup_args->obj_id = output.ret;
@@ -402,16 +416,18 @@ done:
 static hg_return_t
 client_region_lock_rpc_cb(const struct hg_cb_info *callback_info)
 {
+    hg_return_t ret_value = HG_SUCCESS;
+    hg_handle_t handle;
+    struct client_lookup_args *client_lookup_args;
+    region_lock_out_t output;
+    
     FUNC_ENTER(NULL);
 
-    hg_return_t ret_value;
-
     /* printf("Entered client_region_lock_rpc_cb\n"); */
-    struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
-    hg_handle_t handle = callback_info->info.forward.handle;
+    client_lookup_args = (struct client_lookup_args*) callback_info->arg;
+    handle = callback_info->info.forward.handle;
 
     /* Get output from server*/
-    region_lock_out_t output;
     ret_value = HG_Get_output(handle, &output);
     /* printf("Return value=%llu\n", output.ret); */
 
@@ -427,13 +443,14 @@ done:
 // Using global variable $mercury_work_todo_g
 perr_t PDC_Client_check_response(hg_context_t **hg_context)
 {
+    perr_t ret_value;
+    hg_return_t hg_ret;
+    unsigned int actual_count;
+    
     FUNC_ENTER(NULL);
 
-    perr_t ret_value;
-
-    hg_return_t hg_ret;
     do {
-        unsigned int actual_count = 0;
+        actual_count = 0;
         do {
             hg_ret = HG_Trigger(*hg_context, 0/* timeout */, 1 /* max count */, &actual_count);
         } while ((hg_ret == HG_SUCCESS) && actual_count);
@@ -456,13 +473,21 @@ done:
 static hg_return_t
 hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
 {
-    struct hg_test_bulk_args *bulk_args = (struct hg_test_bulk_args *)hg_cb_info->arg;
-    hg_bulk_t local_bulk_handle = hg_cb_info->info.bulk.local_handle;
     hg_return_t ret = HG_SUCCESS;
-
+    struct hg_test_bulk_args *bulk_args;
+    hg_bulk_t local_bulk_handle;
     /* bulk_write_out_t out_struct; */
     int i;
     void *buf = NULL;
+    uint32_t n_meta;
+    size_t buf_sizes[2] = {0,0};
+    uint32_t actual_cnt;
+    pdc_metadata_t *meta_ptr;
+    
+    FUNC_ENTER(NULL);
+    
+    bulk_args = (struct hg_test_bulk_args *)hg_cb_info->arg;
+    local_bulk_handle = hg_cb_info->info.bulk.local_handle;
 
     if (hg_cb_info->ret == HG_CANCELED) {
         printf("HG_Bulk_transfer() was successfully canceled\n");
@@ -476,17 +501,13 @@ hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
 
     /* printf("hg_test_bulk_transfer_cb: n_meta=%u\n", *bulk_args->n_meta); */
     /* fflush(stdout); */
-    uint32_t n_meta;
     n_meta = *bulk_args->n_meta;
 
     if (hg_cb_info->ret == HG_SUCCESS) {
-        size_t buf_sizes[2] = {0,0};
-        uint32_t actual_cnt;
         HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, &buf, buf_sizes, &actual_cnt);
         /* printf("received bulk transfer, buf_sizes: %d %d, actual_cnt=%d\n", buf_sizes[0], buf_sizes[1], actual_cnt); */
         /* fflush(stdout); */
 
-        pdc_metadata_t *meta_ptr;
         meta_ptr = (pdc_metadata_t*)(buf);
         bulk_args->meta_arr = (pdc_metadata_t**)malloc(sizeof(pdc_metadata_t*) * n_meta);
         for (i = 0; i < n_meta; i++) {
@@ -530,14 +551,15 @@ done:
 // No need to have multi-threading
 int PDC_Client_check_bulk(hg_class_t *hg_class, hg_context_t *hg_context)
 {
-    FUNC_ENTER(NULL);
     int ret_value;
-
     hg_return_t hg_ret;
+    unsigned int actual_count;
+    
+    FUNC_ENTER(NULL);
 
     /* Poke progress engine and check for events */
     do {
-        unsigned int actual_count = 0;
+        actual_count = 0;
         do {
             hg_ret = HG_Trigger(hg_context, 0/* timeout */, 1 /* max count */, &actual_count);
         } while ((hg_ret == HG_SUCCESS) && actual_count);
@@ -561,13 +583,16 @@ done:
 // Register gen_obj_id rpc
 perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int port)
 {
-
-    FUNC_ENTER(NULL);
-
     perr_t ret_value = SUCCEED;
-
     char na_info_string[PATH_MAX];
     char hostname[1024];
+    int i;
+    hg_return_t hg_ret;
+    struct client_lookup_args lookup_args;
+    char *target_addr_string;
+    
+    FUNC_ENTER(NULL);
+
     memset(hostname, 0, 1024);
     gethostname(hostname, 1023);
     sprintf(na_info_string, "bmi+tcp://%s:%d", hostname, port);
@@ -614,14 +639,10 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     gen_obj_unmap_notification_register_id_g  = gen_obj_unmap_notification_register(*hg_class);
 
     // Lookup and fill the server info
-    int i;
-    hg_return_t hg_ret;
-    struct client_lookup_args lookup_args;
-
     for (i = 0; i < pdc_server_num_g; i++) {
         lookup_args.client_id = pdc_client_mpi_rank_g;
         lookup_args.server_id = i;
-        char *target_addr_string = pdc_server_info_g[i].addr_string;
+        target_addr_string = pdc_server_info_g[i].addr_string;
         /* printf("==PDC_CLIENT: [%d] - Testing connection to server %d: %s\n", pdc_client_mpi_rank_g, i, target_addr_string); */
         hg_ret = HG_Addr_lookup(send_context_g, client_test_connect_lookup_cb, &lookup_args, target_addr_string, HG_OP_ID_IGNORE);
         if (hg_ret != HG_SUCCESS ) {
@@ -639,18 +660,20 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
         fflush(stdout);
     }
 
-
 done:
     FUNC_LEAVE(ret_value);
 }
 
 perr_t PDC_Client_init()
 {
-    FUNC_ENTER(NULL);
-
-    perr_t ret_value;
-
+    perr_t ret_value = SUCCEED;;
     pdc_server_info_g = NULL;
+    char *tmp_dir;
+    char *tmp= NULL;
+    int   tmp_env;
+    uint32_t port;
+    
+    FUNC_ENTER(NULL);
 
 #ifdef ENABLE_MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &pdc_client_mpi_rank_g);
@@ -658,7 +681,7 @@ perr_t PDC_Client_init()
 #endif
 
     // Set up tmp dir
-    char *tmp_dir = getenv("PDC_TMPDIR");
+    tmp_dir = getenv("PDC_TMPDIR");
     if (tmp_dir == NULL)
         strcpy(pdc_client_tmp_dir_g, "./pdc_tmp");
     else
@@ -691,8 +714,6 @@ perr_t PDC_Client_init()
         printf("==PDC_CLIENT: Server number not properly initialized!\n");
 
     // Do we want local server mode?
-    char *tmp= NULL;
-    int   tmp_env;
     tmp = getenv("PDC_USE_LOCAL_SERVER");
     if (tmp != NULL) {
         tmp_env = atoi(tmp);
@@ -703,8 +724,7 @@ perr_t PDC_Client_init()
         }
     }
 
-
-    uint32_t port = pdc_client_mpi_rank_g % 32 + 8000; 
+    port = pdc_client_mpi_rank_g % 32 + 8000;
     if (mercury_has_init_g == 0) {
         // Init Mercury network connection
         PDC_Client_mercury_init(&send_class_g, &send_context_g, port);
@@ -715,18 +735,16 @@ perr_t PDC_Client_init()
         mercury_has_init_g = 1;
     }
 
-
-    ret_value = SUCCEED;
-
 done:
     FUNC_LEAVE(ret_value);
 }
 
 perr_t PDC_Client_finalize()
 {
+    perr_t ret_value = SUCCEED;;
+    int i;
+    
     FUNC_ENTER(NULL);
-
-    perr_t ret_value;
 
     // Send close server request to all servers
     if (pdc_client_mpi_rank_g == 0) 
@@ -734,7 +752,6 @@ perr_t PDC_Client_finalize()
 
 
     // Finalize Mercury
-    int i;
     for (i = 0; i < pdc_server_num_g; i++) {
         if (pdc_server_info_g[i].addr_valid) {
             HG_Addr_free(send_class_g, pdc_server_info_g[i].addr);
@@ -774,8 +791,6 @@ perr_t PDC_Client_finalize()
     // free debug info
     if (debug_server_id_count != NULL) 
         free(debug_server_id_count);
-
-    ret_value = SUCCEED;
 
 done:
     FUNC_LEAVE(ret_value);
@@ -822,21 +837,30 @@ done:
 static hg_return_t
 metadata_query_bulk_cb(const struct hg_cb_info *callback_info)
 {
-    FUNC_ENTER(NULL);
-
     hg_return_t ret_value;
     hg_return_t hg_ret;
+    struct hg_test_bulk_args *client_lookup_args;
+    hg_handle_t handle;
+    metadata_query_transfer_out_t output;
+    uint32_t n_meta;
+    hg_op_id_t hg_bulk_op_id;
+    hg_bulk_t local_bulk_handle = HG_BULK_NULL;
+    hg_bulk_t origin_bulk_handle = HG_BULK_NULL;
+    struct hg_info *hg_info = NULL;
+    struct hg_test_bulk_args *bulk_args;
+    void *recv_meta;
+    
+    FUNC_ENTER(NULL);
 
     /* printf("Entered client_rpc_cb()"); */
-    struct hg_test_bulk_args *client_lookup_args = (struct hg_test_bulk_args*) callback_info->arg;
-    hg_handle_t handle = callback_info->info.forward.handle;
+    client_lookup_args = (struct hg_test_bulk_args*) callback_info->arg;
+    handle = callback_info->info.forward.handle;
 
     // Get output from server
-    metadata_query_transfer_out_t output;
     ret_value = HG_Get_output(handle, &output);
 
     /* printf("==PDC_CLIENT: Received response from server with bulk handle, n_buf=%d\n", output.ret); */
-    uint32_t n_meta = output.ret;
+    n_meta = output.ret;
     client_lookup_args->n_meta = (uint32_t*)malloc(sizeof(uint32_t));
     *(client_lookup_args->n_meta) = n_meta;
     if (n_meta == 0) {
@@ -846,24 +870,17 @@ metadata_query_bulk_cb(const struct hg_cb_info *callback_info)
 
     // We have received the bulk handle from server (server uses hg_respond)
     // Use this to initiate a bulk transfer
-    hg_op_id_t hg_bulk_op_id;
-    hg_bulk_t local_bulk_handle = HG_BULK_NULL;
-    hg_bulk_t origin_bulk_handle = HG_BULK_NULL;
-    struct hg_info *hg_info = NULL;
-
 
     origin_bulk_handle = output.bulk_handle;
     hg_info = HG_Get_info(handle);
 
-    struct hg_test_bulk_args *bulk_args = (struct hg_test_bulk_args *) malloc(sizeof(struct hg_test_bulk_args));
+    bulk_args = (struct hg_test_bulk_args *) malloc(sizeof(struct hg_test_bulk_args));
 
     bulk_args->handle = handle;
     bulk_args->nbytes = HG_Bulk_get_size(origin_bulk_handle);
     bulk_args->n_meta = client_lookup_args->n_meta;
 
     /* printf("nbytes=%u\n", bulk_args->nbytes); */
-
-    void *recv_meta;
     recv_meta = (void *)malloc(sizeof(pdc_metadata_t) * n_meta);
 
     /* Create a new bulk handle to read the data */
@@ -896,9 +913,10 @@ done:
 // bulk test 
 perr_t PDC_Client_list_all(int *n_res, pdc_metadata_t ***out)
 {
-    FUNC_ENTER(NULL);
     perr_t ret_value;
 
+    FUNC_ENTER(NULL);
+    
     ret_value = PDC_partial_query(1, -1, NULL, NULL, -1, -1, -1, NULL, n_res, out);
 
 done:
@@ -908,12 +926,13 @@ done:
 perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, const char* obj_name, int time_step_from, 
                          int time_step_to, int ndim, const char* tags, int *n_res, pdc_metadata_t ***out)
 {
-    FUNC_ENTER(NULL);
-
-    perr_t ret_value;
+    perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
-
     int server_id = 0;
+    metadata_query_transfer_in_t in;
+    struct hg_test_bulk_args lookup_args;
+    
+    FUNC_ENTER(NULL);
 
     // We may have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb
     if (pdc_server_info_g[server_id].query_partial_handle_valid != 1) {
@@ -922,7 +941,6 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
     }
 
     // Fill input structure
-    metadata_query_transfer_in_t in;
     in.is_list_all = is_list_all;
     in.user_id = -1;
     in.app_name = " ";
@@ -946,7 +964,6 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
     }
 
     /* printf("Sending input to target\n"); */
-    struct hg_test_bulk_args lookup_args;
     if (pdc_server_info_g[server_id].query_partial_handle == NULL) {
         printf("==CLIENT[%d]: Error with query_partial_handle\n", pdc_client_mpi_rank_g);
     }
@@ -975,8 +992,6 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
         /* fflush(stdout); */
     }
 
-    
-    int i;
     *n_res = *lookup_args.n_meta;
     *out = lookup_args.meta_arr;
     /* printf("Going to print %u metadata.\n", *(lookup_args.n_meta)); */
@@ -985,9 +1000,6 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
     /* } */
 
     // TODO: need to be careful when freeing the lookup_args, as it include the results returned to user
-
-    ret_value = SUCCEED;
-
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -998,16 +1010,18 @@ done:
 static hg_return_t
 metadata_query_rpc_cb(const struct hg_cb_info *callback_info)
 {
+    hg_return_t ret_value;
+    metadata_query_args_t *client_lookup_args;
+    hg_handle_t handle;
+    metadata_query_out_t output;
+    
     FUNC_ENTER(NULL);
 
-    hg_return_t ret_value;
-
     /* printf("Entered client_rpc_cb()"); */
-    metadata_query_args_t *client_lookup_args = (struct metadata_query_args_t*) callback_info->arg;
-    hg_handle_t handle = callback_info->info.forward.handle;
+    client_lookup_args = (struct metadata_query_args_t*) callback_info->arg;
+    handle = callback_info->info.forward.handle;
 
     /* Get output from server*/
-    metadata_query_out_t output;
     ret_value = HG_Get_output(handle, &output);
 
     if (output.ret.user_id == -1 && output.ret.obj_id == 0 && output.ret.time_step == -1) {
@@ -1041,7 +1055,6 @@ metadata_query_rpc_cb(const struct hg_cb_info *callback_info)
     /* printf("                tags     = %s\n",   client_lookup_args->data->tags); */
     /* printf("==PDC_CLIENT: End of received metadata\n\n"); */
 
-
     work_todo_g--;
 
 done:
@@ -1054,16 +1067,18 @@ done:
 static hg_return_t
 metadata_delete_rpc_cb(const struct hg_cb_info *callback_info)
 {
+    hg_return_t ret_value;
+    struct client_lookup_args *client_lookup_args;
+    hg_handle_t handle;
+    metadata_delete_out_t output;
+    
     FUNC_ENTER(NULL);
 
-    hg_return_t ret_value;
-
     /* printf("Entered client_rpc_cb()"); */
-    struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
-    hg_handle_t handle = callback_info->info.forward.handle;
+    client_lookup_args = (struct client_lookup_args*) callback_info->arg;
+    handle = callback_info->info.forward.handle;
 
     /* Get output from server*/
-    metadata_delete_out_t output;
     ret_value = HG_Get_output(handle, &output);
     /* printf("Return value=%llu\n", output.ret); */
     client_lookup_args->ret = output.ret;
@@ -1077,16 +1092,18 @@ done:
 static hg_return_t
 metadata_delete_by_id_rpc_cb(const struct hg_cb_info *callback_info)
 {
+    hg_return_t ret_value;
+    struct client_lookup_args *client_lookup_args;
+    hg_handle_t handle;
+    metadata_delete_by_id_out_t output;
+    
     FUNC_ENTER(NULL);
 
-    hg_return_t ret_value;
-
     /* printf("Entered client_rpc_cb()"); */
-    struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
-    hg_handle_t handle = callback_info->info.forward.handle;
+    client_lookup_args = (struct client_lookup_args*) callback_info->arg;
+    handle = callback_info->info.forward.handle;
 
     /* Get output from server*/
-    metadata_delete_by_id_out_t output;
     ret_value = HG_Get_output(handle, &output);
     /* printf("Return value=%llu\n", output.ret); */
     client_lookup_args->ret = output.ret;
@@ -1102,16 +1119,18 @@ done:
 static hg_return_t
 metadata_update_rpc_cb(const struct hg_cb_info *callback_info)
 {
+    hg_return_t ret_value;
+    struct client_lookup_args *client_lookup_args;
+    hg_handle_t handle;
+    metadata_update_out_t output;
+    
     FUNC_ENTER(NULL);
 
-    hg_return_t ret_value;
-
     /* printf("Entered client_rpc_cb()"); */
-    struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
-    hg_handle_t handle = callback_info->info.forward.handle;
+    client_lookup_args = (struct client_lookup_args*) callback_info->arg;
+    handle = callback_info->info.forward.handle;
 
     /* Get output from server*/
-    metadata_update_out_t output;
     ret_value = HG_Get_output(handle, &output);
     /* printf("Return value=%llu\n", output.ret); */
     client_lookup_args->ret = output.ret;
@@ -1124,13 +1143,17 @@ done:
 
 perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
 {
-    FUNC_ENTER(NULL);
-
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
+    int hash_name_value;
+    uint32_t server_id;
+    metadata_update_in_t in;
+    struct client_lookup_args lookup_args;
+    
+    FUNC_ENTER(NULL);
 
-    int hash_name_value = PDC_get_hash_by_name(old->obj_name);
-    uint32_t server_id = (hash_name_value + old->time_step);
+    hash_name_value = PDC_get_hash_by_name(old->obj_name);
+    server_id = (hash_name_value + old->time_step);
     server_id %= pdc_server_num_g;
 
     /* printf("==PDC_CLIENT: PDC_Client_update_metadata() - hash(%s)=%d\n", old->obj_name, hash_name_value); */
@@ -1145,7 +1168,6 @@ perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
     }
 
     // Fill input structure
-    metadata_update_in_t in;
     in.obj_id     = old->obj_id;
     in.hash_value = hash_name_value;
 
@@ -1160,7 +1182,6 @@ perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
     }
 
     /* printf("Sending input to target\n"); */
-    struct client_lookup_args lookup_args;
     hg_ret = HG_Forward(pdc_server_info_g[server_id].metadata_update_handle, metadata_update_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "PDC_Client_update_metadata_with_name(): Could not start HG_Forward()\n");
@@ -1180,17 +1201,17 @@ done:
 
 perr_t PDC_Client_delete_metadata_by_id(pdcid_t pdc, pdcid_t cont_id, uint64_t obj_id)
 {
-    FUNC_ENTER(NULL);
-
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
-
     // Fill input structure
     metadata_delete_by_id_in_t in;
+    uint32_t server_id;
+    struct client_lookup_args lookup_args;
+    
+    FUNC_ENTER(NULL);
+    
     in.obj_id = obj_id;
-
-    uint32_t server_id = PDC_get_server_by_obj_id(obj_id, pdc_server_num_g);
-
+    server_id = PDC_get_server_by_obj_id(obj_id, pdc_server_num_g);
 
     /* if (pdc_client_mpi_rank_g == 1) { */
     /*     printf("==PDC_CLIENT[%d]: PDC_Client_delete_by_id_metadata() server_id %d\n", pdc_client_mpi_rank_g, server_id); */
@@ -1212,7 +1233,6 @@ perr_t PDC_Client_delete_metadata_by_id(pdcid_t pdc, pdcid_t cont_id, uint64_t o
         pdc_server_info_g[server_id].metadata_delete_by_id_handle_valid  = 1;
     }
     /* printf("Sending input to target\n"); */
-    struct client_lookup_args lookup_args;
     hg_ret = HG_Forward(pdc_server_info_g[server_id].metadata_delete_by_id_handle, metadata_delete_by_id_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "PDC_Client_delete_by_id_metadata_with_name(): Could not start HG_Forward()\n");
@@ -1238,20 +1258,23 @@ done:
 
 perr_t PDC_Client_delete_metadata(pdcid_t pdc, pdcid_t cont_id, char *delete_name, pdcid_t obj_delete_prop)
 {
-    FUNC_ENTER(NULL);
-
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
-
-    PDC_obj_prop_t *delete_prop = PDCobj_prop_get_info(obj_delete_prop, pdc);
-
-    // Fill input structure
+    PDC_obj_prop_t *delete_prop;
     metadata_delete_in_t in;
+    int hash_name_value;
+    uint32_t server_id;
+    struct client_lookup_args lookup_args;
+    
+    FUNC_ENTER(NULL);
+
+    delete_prop = PDCobj_prop_get_info(obj_delete_prop, pdc);
+    // Fill input structure
     in.obj_name = delete_name;
     in.time_step = delete_prop->time_step;
 
-    int hash_name_value = PDC_get_hash_by_name(delete_name);
-    uint32_t server_id = (hash_name_value + in.time_step);
+    hash_name_value = PDC_get_hash_by_name(delete_name);
+    server_id = (hash_name_value + in.time_step);
     server_id %= pdc_server_num_g;
 
     in.hash_value = hash_name_value;
@@ -1276,7 +1299,6 @@ perr_t PDC_Client_delete_metadata(pdcid_t pdc, pdcid_t cont_id, char *delete_nam
         pdc_server_info_g[server_id].metadata_delete_handle_valid  = 1;
     }
     /* printf("Sending input to target\n"); */
-    struct client_lookup_args lookup_args;
     hg_ret = HG_Forward(pdc_server_info_g[server_id].metadata_delete_handle, metadata_delete_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "PDC_Client_delete_metadata_with_name(): Could not start HG_Forward()\n");
@@ -1304,25 +1326,26 @@ done:
 perr_t PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t **out)
 /* perr_t PDC_Client_query_metadata(const char *obj_name, pdc_metadata_t **out) */
 {
-    FUNC_ENTER(NULL);
-
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
+    metadata_query_in_t in;
+    metadata_query_args_t **lookup_args;
+    int server_id;
+    int i, count = 0;
+    
+    FUNC_ENTER(NULL);
 
     // Fill input structure
-    metadata_query_in_t in;
     in.obj_name   = obj_name;
     in.hash_value = PDC_get_hash_by_name(obj_name);
 
     /* printf("==PDC_CLIENT: partial search obj_name [%s], hash value %u\n", in.obj_name, in.hash_value); */
 
     /* printf("Sending input to target\n"); */
-    metadata_query_args_t **lookup_args;
     lookup_args = (metadata_query_args_t**)malloc(sizeof(metadata_query_args_t*) * pdc_server_num_g);
 
     // client_lookup_args->data is a pdc_metadata_t
 
-    int server_id;
     for (server_id = 0; server_id < pdc_server_num_g; server_id++) {
         lookup_args[server_id] = (metadata_query_args_t*)malloc(sizeof(metadata_query_args_t));
 
@@ -1347,14 +1370,12 @@ perr_t PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t 
     work_todo_g = pdc_server_num_g;
     PDC_Client_check_response(&send_context_g);
 
-    int i, count = 0;
     for (i = 0; i < pdc_server_num_g; i++) {
         if (lookup_args[i]->data != NULL) {
             *out = lookup_args[i]->data;
             count++;
         }
     }
-
     /* printf("==PDC_CLIENT: Found %d metadata with search\n", count); */
 
     // TODO lookup_args[i] are not freed
@@ -1364,19 +1385,23 @@ done:
 
 perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_step, pdc_metadata_t **out)
 {
-    FUNC_ENTER(NULL);
-
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
+    uint32_t hash_name_value;
+    uint32_t  server_id;
+    metadata_query_in_t in;
+    metadata_query_args_t lookup_args;
+    
+    FUNC_ENTER(NULL);
 
     /* printf("==PDC_CLIENT[%d]: search request name [%s]\n", pdc_client_mpi_rank_g, obj_name); */
     /* fflush(stdout); */
 
 
     // Compute server id
-    uint32_t hash_name_value = PDC_get_hash_by_name(obj_name);
+    hash_name_value = PDC_get_hash_by_name(obj_name);
     /* uint32_t hash_name_value = PDC_get_hash_by_name(obj_name); */
-    uint32_t  server_id            = (hash_name_value + time_step); 
+    server_id = (hash_name_value + time_step);
     server_id %= pdc_server_num_g;
 
     /* printf("==PDC_CLIENT[%d]: processed request server id %u\n", pdc_client_mpi_rank_g, server_id); */
@@ -1392,14 +1417,12 @@ perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_st
     }
 
     // Fill input structure
-    metadata_query_in_t in;
     in.obj_name   = obj_name;
     in.hash_value = PDC_get_hash_by_name(obj_name);
 
     /* printf("==PDC_CLIENT[%d]: search request obj_name [%s], hash value %u, server id %u\n", pdc_client_mpi_rank_g, in.obj_name, in.hash_value, server_id); */
     /* fflush(stdout); */
     /* printf("Sending input to target\n"); */
-    metadata_query_args_t lookup_args;
     // client_lookup_args->data is a pdc_metadata_t
     lookup_args.data = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t));
     if (lookup_args.data == NULL) {
@@ -1425,20 +1448,22 @@ done:
 // Send a name to server and receive an obj id
 perr_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop, pdcid_t *meta_id)
 {
-
-    FUNC_ENTER(NULL);
-
     perr_t ret_value = FAIL;
     hg_return_t hg_ret;
     uint32_t server_id, base_server_id;
     int i;
-
     PDC_lifetime obj_life;
-
-    PDC_obj_prop_t *create_prop = PDCobj_prop_get_info(obj_create_prop, pdc);
+    PDC_obj_prop_t *create_prop;
+    gen_obj_id_in_t in;
+    uint32_t hash_name_value;
+    struct client_lookup_args lookup_args;
+    
+    FUNC_ENTER(NULL);
+    
+    create_prop = PDCobj_prop_get_info(obj_create_prop, pdc);
     obj_life  = create_prop->obj_life;
     // Fill input structure
-    gen_obj_id_in_t in;
+    
     if (obj_name == NULL) {
         printf("Cannot create object with empty object name\n");
         goto done;
@@ -1460,7 +1485,7 @@ perr_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *ob
     // TODO: use real data location
     in.data.data_location = "/path/to/file";
 
-    uint32_t hash_name_value = PDC_get_hash_by_name(obj_name);
+    hash_name_value = PDC_get_hash_by_name(obj_name);
     in.hash_value      = hash_name_value;
     /* printf("Hash(%s) = %d\n", obj_name, in.hash_value); */
 
@@ -1527,7 +1552,6 @@ perr_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *ob
     }
 
     /* printf("Sending input to target\n"); */
-    struct client_lookup_args lookup_args;
     hg_ret = HG_Forward(pdc_server_info_g[server_id].rpc_handle, client_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "PDC_Client_send_name_to_server(): Could not start HG_Forward()\n");
@@ -1555,16 +1579,18 @@ done:
 
 perr_t PDC_Client_close_all_server()
 {
-
-    FUNC_ENTER(NULL);
-
     uint64_t ret_value;
     hg_return_t  hg_ret = 0;
     uint32_t server_id;
-    int port      = pdc_client_mpi_rank_g % 32 + 8000; 
+    int port, i;
+    close_server_in_t in;
+    struct client_lookup_args lookup_args;
+    
+    FUNC_ENTER(NULL);
+
+    port = pdc_client_mpi_rank_g % 32 + 8000;
 
     if (pdc_client_mpi_rank_g == 0) {
-
         if (mercury_has_init_g == 0) {
             // Init Mercury network connection
             PDC_Client_mercury_init(&send_class_g, &send_context_g, port);
@@ -1574,11 +1600,8 @@ perr_t PDC_Client_close_all_server()
             }
             mercury_has_init_g = 1;
         }
-
-        int i;
         for (i = 0; i < pdc_server_num_g; i++) {
             server_id = i;
-
             /* printf("Closing server %d\n", server_id); */
             /* fflush(stdout); */
 
@@ -1591,11 +1614,9 @@ perr_t PDC_Client_close_all_server()
             }
 
             // Fill input structure
-            close_server_in_t in;
             in.client_id = 0;
 
             /* printf("Sending input to target\n"); */
-            struct client_lookup_args lookup_args;
             ret_value = HG_Forward(pdc_server_info_g[server_id].close_server_handle, close_server_cb, &lookup_args, &in);
             if (ret_value != HG_SUCCESS) {
                 fprintf(stderr, "PDC_Client_close_all_server(): Could not start HG_Forward()\n");
@@ -1607,10 +1628,8 @@ perr_t PDC_Client_close_all_server()
         work_todo_g = pdc_server_num_g;
         PDC_Client_check_response(&send_context_g);
 
-
         printf("\n\n\n==PDC_CLIENT: All server closed\n");
         fflush(stdout);
-
     }
     ret_value = 0;
 
@@ -1620,19 +1639,23 @@ done:
 
 perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id, pdcid_t pdc_id)
 {
-    FUNC_ENTER(NULL);
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = HG_SUCCESS;
-  
-    // Fill input structure
     gen_obj_unmap_notification_in_t in;
+    hg_bulk_t bulk_handle;
+    uint32_t server_id;
+    struct object_unmap_args unmap_args;
+    
+    FUNC_ENTER(NULL);
+    
+    // Fill input structure
     in.local_obj_id = local_obj_id;
     in.pdc_id = pdc_id;
 
     // Create a bulk descriptor
-    hg_bulk_t bulk_handle = HG_BULK_NULL;
+    bulk_handle = HG_BULK_NULL;
 
-    uint32_t server_id = PDC_get_server_by_obj_id(local_obj_id, pdc_server_num_g);
+    server_id = PDC_get_server_by_obj_id(local_obj_id, pdc_server_num_g);
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
@@ -1642,7 +1665,7 @@ perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id, pdcid_t pdc_id)
         HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_obj_unmap_notification_register_id_g, &pdc_server_info_g[server_id].client_send_object_unmap_handle);
         pdc_server_info_g[server_id].client_send_object_unmap_handle_valid  = 1;
     }
-    struct object_unmap_args unmap_args;
+
     hg_ret = HG_Forward(pdc_server_info_g[server_id].client_send_object_unmap_handle, client_send_object_unmap_rpc_cb, &unmap_args, &in);
     if (hg_ret != HG_SUCCESS) {
         PGOTO_ERROR(FAIL, "PDC_Client_send_object_unmap(): Could not start HG_Forward()");
@@ -1654,26 +1677,31 @@ perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id, pdcid_t pdc_id)
 
     if (unmap_args.ret != 1)
         PGOTO_ERROR(FAIL,"PDC_CLIENT: object unmapping failed...");
+    
 done:
     FUNC_LEAVE(ret_value);
 }
 
 perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, pdcid_t pdc_id)
 {
-    FUNC_ENTER(NULL);
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = HG_SUCCESS;
-
-    // Fill input structure
     gen_reg_unmap_notification_in_t in;
+    hg_bulk_t bulk_handle;
+    uint32_t server_id;
+    struct region_unmap_args unmap_args;
+    
+    FUNC_ENTER(NULL);
+    
+    // Fill input structure
     in.local_obj_id = local_obj_id;
     in.local_reg_id = local_reg_id;
     in.pdc_id = pdc_id;
 
     // Create a bulk descriptor
-    hg_bulk_t bulk_handle = HG_BULK_NULL;
+    bulk_handle = HG_BULK_NULL;
 
-    uint32_t server_id = PDC_get_server_by_obj_id(local_obj_id, pdc_server_num_g);
+    server_id = PDC_get_server_by_obj_id(local_obj_id, pdc_server_num_g);
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
@@ -1683,7 +1711,7 @@ perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, 
         HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_reg_unmap_notification_register_id_g, &pdc_server_info_g[server_id].client_send_region_unmap_handle);
         pdc_server_info_g[server_id].client_send_region_unmap_handle_valid  = 1;
     }
-    struct region_unmap_args unmap_args;
+
     hg_ret = HG_Forward(pdc_server_info_g[server_id].client_send_region_unmap_handle, client_send_region_unmap_rpc_cb, &unmap_args, &in);
     if (hg_ret != HG_SUCCESS) {
         PGOTO_ERROR(FAIL, "PDC_Client_send_region_unmap(): Could not start HG_Forward()");
@@ -1695,18 +1723,29 @@ perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, 
 
     if (unmap_args.ret != 1)
         PGOTO_ERROR(FAIL,"PDC_CLIENT: region unmapping failed...");
+    
 done:
     FUNC_LEAVE(ret_value);
 }
 
 perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *dims, uint64_t *local_offset, uint64_t *size, PDC_var_type_t local_type, void *local_data, uint64_t *remote_offset, PDC_var_type_t remote_type)
 {
-    FUNC_ENTER(NULL);
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = HG_SUCCESS;
-
-    // Fill input structure
     gen_reg_map_notification_in_t in;
+    uint32_t server_id;
+    hg_class_t *hg_class;
+    hg_uint32_t i, j;
+    hg_uint32_t count;
+    void      **data_ptrs;
+    hg_size_t  *data_size;
+    size_t      unit;
+    struct region_map_args map_args;
+    hg_bulk_t bulk_handle = HG_BULK_NULL;
+    
+    FUNC_ENTER(NULL);
+    
+    // Fill input structure
     in.local_obj_id = local_obj_id;
     in.local_reg_id = local_region_id;
     in.remote_obj_id = remote_obj_id;
@@ -1714,20 +1753,13 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
     in.local_type = local_type;
     in.remote_type = remote_type;
     in.ndim = ndim;
-    // Create a bulk descriptor
-    hg_bulk_t bulk_handle = HG_BULK_NULL;
     
-    uint32_t server_id = PDC_get_server_by_obj_id(local_obj_id, pdc_server_num_g);
+    server_id = PDC_get_server_by_obj_id(local_obj_id, pdc_server_num_g);
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
     
-    hg_class_t *hg_class = HG_Context_get_class(send_context_g);
+    hg_class = HG_Context_get_class(send_context_g);
 
-    hg_uint32_t i, j;
-    hg_uint32_t count;
-    void      **data_ptrs;
-    hg_size_t  *data_size;
-    size_t      unit;
     if(local_type == PDC_DOUBLE)
         unit = sizeof(double);
     else if(local_type == PDC_FLOAT) 
@@ -1793,7 +1825,6 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
     in.bulk_handle = bulk_handle;
 
     /* printf("Sending input to target\n"); */
-    struct region_map_args map_args;
     hg_ret = HG_Forward(pdc_server_info_g[server_id].client_send_region_map_handle, client_send_region_map_rpc_cb, &map_args, &in);	
     if (hg_ret != HG_SUCCESS) {
         PGOTO_ERROR(FAIL, "PDC_Client_send_region_map(): Could not start HG_Forward()");
@@ -1820,13 +1851,15 @@ done:
 // General function for obtain/release region lock
 static perr_t PDC_Client_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_id, PDC_region_info_t *region_info, PDC_access_t access_type, int lock_op, pbool_t *status)
 {
-    FUNC_ENTER(NULL);
     perr_t ret_value;
     hg_return_t hg_ret;
-
-    // Compute server id
     uint32_t server_id;
-
+    region_lock_in_t in;
+    struct client_lookup_args lookup_args;
+    
+    FUNC_ENTER(NULL);
+    
+    // Compute server id
     server_id  = get_server_id_by_obj_id(meta_id);
 
     // Delay test
@@ -1842,7 +1875,6 @@ static perr_t PDC_Client_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_
     debug_server_id_count[server_id]++;
 
     // Fill input structure
-    region_lock_in_t in;
     in.obj_id = meta_id;
     in.lock_op = lock_op;
     in.access_type = access_type;
@@ -1887,7 +1919,7 @@ static perr_t PDC_Client_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_
         pdc_server_info_g[server_id].region_lock_handle_valid = 1;
     }
     /* printf("Sending input to target\n"); */
-    struct client_lookup_args lookup_args;
+
     hg_ret = HG_Forward(pdc_server_info_g[server_id].region_lock_handle, client_region_lock_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "PDC_Client_send_name_to_server(): Could not start HG_Forward()\n");
@@ -1928,8 +1960,9 @@ done:
 perr_t PDC_Client_obtain_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_id, PDC_region_info_t *region_info, 
                                     PDC_access_t access_type, PDC_lock_mode_t lock_mode, pbool_t *obtained)
 {
-    FUNC_ENTER(NULL);
     perr_t ret_value = FAIL;
+    
+    FUNC_ENTER(NULL);
 
     /* printf("meta_id=%llu\n", meta_id); */
 
@@ -1977,9 +2010,9 @@ done:
 
 perr_t PDC_Client_release_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_id, PDC_region_info_t *region_info, PDC_access_t access_type, pbool_t *released)
 {
-    FUNC_ENTER(NULL);
-
     perr_t ret_value = FAIL;
+    
+    FUNC_ENTER(NULL);
 
     /* uint64_t meta_id; */
     /* PDC_obj_info_t *obj_prop = PDCobj_get_info(obj_id, pdc); */
