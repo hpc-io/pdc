@@ -78,7 +78,7 @@ int main(int argc, const char *argv[])
 
     int i;
     const int metadata_size = 512;
-    PDC_prop_t p;
+    struct PDC_prop p;
     // create a pdc
     pdcid_t pdc = PDC_init(p);
     /* printf("create a new pdc, pdc id is: %lld\n", pdc); */

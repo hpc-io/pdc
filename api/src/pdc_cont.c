@@ -3,7 +3,7 @@
 #include "pdc_malloc.h"
 #include "pdc_prop_pkg.h"
 
-static perr_t PDCcont__close(PDC_cont_info_t *cp);
+static perr_t PDCcont__close(struct PDC_cont_info *cp);
 
 /* PDC container ID class */
 static const PDCID_class_t PDC_CONT_CLS[1] = {{
@@ -30,12 +30,12 @@ done:
 pdcid_t PDCcont_create(pdcid_t pdc, const char *cont_name, pdcid_t cont_create_prop)
 {
     pdcid_t ret_value = SUCCEED;
-    PDC_cont_info_t *p = NULL;
+    struct PDC_cont_info *p = NULL;
     pdcid_t new_id;
 
     FUNC_ENTER(NULL);
 
-    p = PDC_MALLOC(PDC_cont_info_t);
+    p = PDC_MALLOC(struct PDC_cont_info);
     if(!p)
         PGOTO_ERROR(FAIL,"PDC container memory allocation failed\n");
     p->name = strdup(cont_name);
@@ -67,13 +67,13 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-static perr_t PDCcont__close(PDC_cont_info_t *cp)
+static perr_t PDCcont__close(struct PDC_cont_info *cp)
 {
     perr_t ret_value = SUCCEED;         /* Return value */
 
     FUNC_ENTER(NULL);
 
-    cp = PDC_FREE(PDC_cont_info_t, cp);
+    cp = PDC_FREE(struct PDC_cont_info, cp);
 done:
     FUNC_LEAVE(ret_value);
 } /* end of PDCcont__close() */
@@ -87,6 +87,7 @@ perr_t PDCcont_close(pdcid_t id, pdcid_t pdc)
     /* When the reference count reaches zero the resources are freed */
     if(PDC_dec_ref(id, pdc) < 0)
         PGOTO_ERROR(FAIL, "container: problem of freeing id");
+    
 done:
     FUNC_LEAVE(ret_value);
 } /* end of PDCcont_close() */
@@ -172,14 +173,14 @@ done:
     FUNC_LEAVE(ret_value);
 } /* end of PDCcont_iter_next() */
 
-PDC_cont_info_t *PDCcont_iter_get_info(cont_handle *chandle)
+struct PDC_cont_info *PDCcont_iter_get_info(cont_handle *chandle)
 {
-    PDC_cont_info_t *ret_value = NULL;
-    PDC_cont_info_t *info = NULL;
+    struct PDC_cont_info *ret_value = NULL;
+    struct PDC_cont_info *info = NULL;
 
     FUNC_ENTER(NULL);
 
-    info = (PDC_cont_info_t *)(chandle->obj_ptr);
+    info = (struct PDC_cont_info *)(chandle->obj_ptr);
     if(info == NULL)
         PGOTO_ERROR(NULL, "PDC container info memory allocation failed");
     
@@ -203,11 +204,11 @@ perr_t PDCcont_persist(pdcid_t cont_id, pdcid_t pdc)
     info = PDC_find_id(cont_id, pc);
     if(info == NULL)
         PGOTO_ERROR(FAIL, "cannot locate container ID");
-    propid = ((PDC_cont_info_t *)(info->obj_ptr))->cont_prop;
+    propid = ((struct PDC_cont_info *)(info->obj_ptr))->cont_prop;
     prop = PDC_find_id(propid, pc);
     if(prop == NULL)
         PGOTO_ERROR(FAIL, "cannot container property");
-    ((PDC_cont_prop_t *)(prop->obj_ptr))->cont_life = PDC_PERSIST;
+    ((struct PDC_cont_prop *)(prop->obj_ptr))->cont_life = PDC_PERSIST;
     
 done:
     FUNC_LEAVE(ret_value);
@@ -225,7 +226,7 @@ perr_t PDCprop_set_cont_lifetime(pdcid_t cont_prop, PDC_lifetime cont_lifetime, 
     info = PDC_find_id(cont_prop, pc);
     if(info == NULL)
         PGOTO_ERROR(FAIL, "cannot locate container property ID");
-    ((PDC_cont_prop_t *)(info->obj_ptr))->cont_life = cont_lifetime;
+    ((struct PDC_cont_prop *)(info->obj_ptr))->cont_life = cont_lifetime;
     
 done:
     FUNC_LEAVE(ret_value);

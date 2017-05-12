@@ -4,7 +4,7 @@
 #include "pdc.h"
 
 int main() {
-    PDC_prop_t p;
+    struct PDC_prop p;
     // create a pdc
     pdcid_t pdc = PDC_init(p);
     printf("create a new pdc, pdc id is: %lld\n", pdc);
@@ -33,7 +33,7 @@ int main() {
     // set object dimension
     uint64_t d[3] = {10, 20, 30};
     PDCprop_set_obj_dims(obj_prop, 3, d, pdc);
-    PDC_obj_prop_t *op = PDCobj_prop_get_info(obj_prop, pdc);
+    struct PDC_obj_prop *op = PDCobj_prop_get_info(obj_prop, pdc);
     printf("# of dim = %d\n", op->ndim);
     int i;
     for(i=0; i<op->ndim; i++) {

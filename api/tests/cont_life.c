@@ -4,7 +4,7 @@
 #include "pdc.h"
 
 int main() {
-    PDC_prop_t p;
+    struct PDC_prop p;
     // create a pdc
     pdcid_t pdc = PDC_init(p);
     printf("create a new pdc, pdc id is: %lld\n", pdc);
@@ -17,7 +17,7 @@ int main() {
         printf("Fail to create container property @ line  %d!\n", __LINE__);
     
     // print default container lifetime (persistent)
-    PDC_cont_prop_t *prop = PDCcont_prop_get_info(create_prop, pdc);
+    struct PDC_cont_prop *prop = PDCcont_prop_get_info(create_prop, pdc);
     if(prop->cont_life == PDC_PERSIST)
         printf("container property (id: %lld) default lifetime is persistent\n", create_prop);
     else

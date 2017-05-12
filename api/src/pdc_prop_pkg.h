@@ -9,11 +9,11 @@ typedef enum {
     PDC_OBJ_CREATE
 } PDC_prop_type;
 
-typedef struct PDC_cont_prop_t {
+struct PDC_cont_prop {
     PDC_lifetime    cont_life;
-}PDC_cont_prop_t;
+};
 
-typedef struct PDC_obj_prop_t {
+struct PDC_obj_prop {
     PDC_lifetime    obj_life;
     int             ndim;
     uint64_t        *dims;
@@ -23,7 +23,7 @@ typedef struct PDC_obj_prop_t {
     uint32_t        time_step;
     char*           tags;              //placeholder, may change in the future
     void            *buf;
-//    pdcid_t         *region;
-}PDC_obj_prop_t;
+//  pdcid_t         region;
+};
 
 #endif

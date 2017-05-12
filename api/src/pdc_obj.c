@@ -4,9 +4,9 @@
 #include "pdc_client_server_common.h"
 #include "pdc_client_connect.h"
 
-static perr_t PDCobj__close(PDC_obj_info_t *op);
+static perr_t PDCobj__close(struct PDC_obj_info *op);
 
-static perr_t PDCregion__close(PDC_region_info_t *op);
+static perr_t PDCregion__close(struct PDC_region_info *op);
 
 /* PDC object ID class */
 static const PDCID_class_t PDC_OBJ_CLS[1] = {{
@@ -56,13 +56,13 @@ done:
 pdcid_t PDCobj_create(pdcid_t pdc, pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop)
 {
     pdcid_t ret_value = SUCCEED;
-    PDC_obj_info_t *p = NULL;
+    struct PDC_obj_info *p = NULL;
     PDC_CLASS_t *pc;
     perr_t ret;
     
     FUNC_ENTER(NULL);
     
-    p = PDC_MALLOC(PDC_obj_info_t);
+    p = PDC_MALLOC(struct PDC_obj_info);
     if(!p)
         PGOTO_ERROR(FAIL,"PDC object memory allocation failed\n");
     p->name = strdup(obj_name);
@@ -119,26 +119,26 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDCobj__close(PDC_obj_info_t *op)
+perr_t PDCobj__close(struct PDC_obj_info *op)
 {
     perr_t ret_value = SUCCEED;         /* Return value */
     
     FUNC_ENTER(NULL);
     
-    op = PDC_FREE(PDC_obj_info_t, op);
+    op = PDC_FREE(struct PDC_obj_info, op);
     
 done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDCregion__close(PDC_region_info_t *op)
+perr_t PDCregion__close(struct PDC_region_info *op)
 {
     perr_t ret_value = SUCCEED;         /* Return value */
     
     FUNC_ENTER(NULL);
     
     free(op->size);
-    op = PDC_FREE(PDC_region_info_t, op);
+    op = PDC_FREE(struct PDC_region_info, op);
     
 done:
     FUNC_LEAVE(ret_value);
@@ -231,7 +231,7 @@ obj_handle *PDCobj_iter_start(pdcid_t cont_id, pdcid_t pdc_id)
     if(type_ptr == NULL)
         PGOTO_ERROR(NULL, "object list is empty");
     objhl = (&type_ptr->ids)->head;
-    while(objhl!=NULL && ((PDC_obj_info_t *)(objhl->obj_ptr))->cont!=cont_id) {
+    while(objhl!=NULL && ((struct PDC_obj_info *)(objhl->obj_ptr))->cont!=cont_id) {
         objhl = PDC_LIST_NEXT(objhl, entry);
     }
     ret_value = objhl;
@@ -263,7 +263,7 @@ obj_handle *PDCobj_iter_next(obj_handle *ohandle, pdcid_t cont_id)
     if(ohandle == NULL)
         PGOTO_ERROR(NULL, "no next object");
     next = PDC_LIST_NEXT(ohandle, entry);
-    while(next!=NULL && ((PDC_obj_info_t *)(next->obj_ptr))->cont!= cont_id) {
+    while(next!=NULL && ((struct PDC_obj_info *)(next->obj_ptr))->cont!= cont_id) {
         next = PDC_LIST_NEXT(ohandle, entry);
     }
     ret_value = next;
@@ -272,13 +272,13 @@ done:
     FUNC_LEAVE(ret_value);
 } /* end of PDCobj_iter_next() */
 
-PDC_obj_info_t *PDCobj_iter_get_info(obj_handle *ohandle)
+struct PDC_obj_info *PDCobj_iter_get_info(obj_handle *ohandle)
 {
-    PDC_obj_info_t *ret_value = NULL;
-    PDC_obj_info_t *info = NULL;
+    struct PDC_obj_info *ret_value = NULL;
+    struct PDC_obj_info *info = NULL;
     
     FUNC_ENTER(NULL);
-    info = (PDC_obj_info_t *)(ohandle->obj_ptr);
+    info = (struct PDC_obj_info *)(ohandle->obj_ptr);
     if(info == NULL)
         PGOTO_ERROR(NULL, "PDC container info memory allocation failed");
     
@@ -299,7 +299,7 @@ perr_t PDCprop_set_obj_lifetime(pdcid_t obj_prop, PDC_lifetime obj_lifetime, pdc
     info = PDC_find_id(obj_prop, pc);
     if(info == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
-    ((PDC_obj_prop_t *)(info->obj_ptr))->obj_life = obj_lifetime;
+    ((struct PDC_obj_prop *)(info->obj_ptr))->obj_life = obj_lifetime;
     
 done:
     FUNC_LEAVE(ret_value);
@@ -317,7 +317,7 @@ perr_t PDCprop_set_obj_user_id(pdcid_t obj_prop, uint32_t user_id, pdcid_t pdc)
     info = PDC_find_id(obj_prop, pc);
     if(info == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
-    ((PDC_obj_prop_t *)(info->obj_ptr))->user_id = user_id;
+    ((struct PDC_obj_prop *)(info->obj_ptr))->user_id = user_id;
     
 done:
     FUNC_LEAVE(ret_value);
@@ -335,7 +335,7 @@ perr_t PDCprop_set_obj_app_name(pdcid_t obj_prop, char *app_name, pdcid_t pdc)
     info = PDC_find_id(obj_prop, pc);
     if(info == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
-    ((PDC_obj_prop_t *)(info->obj_ptr))->app_name = strdup(app_name);
+    ((struct PDC_obj_prop *)(info->obj_ptr))->app_name = strdup(app_name);
     
 done:
     FUNC_LEAVE(ret_value);
@@ -353,7 +353,7 @@ perr_t PDCprop_set_obj_time_step(pdcid_t obj_prop, uint32_t time_step, pdcid_t p
     info = PDC_find_id(obj_prop, pc);
     if(info == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
-    ((PDC_obj_prop_t *)(info->obj_ptr))->time_step = time_step;
+    ((struct PDC_obj_prop *)(info->obj_ptr))->time_step = time_step;
     
 done:
     FUNC_LEAVE(ret_value);
@@ -371,7 +371,7 @@ perr_t PDCprop_set_obj_tags(pdcid_t obj_prop, char *tags, pdcid_t pdc)
     info = PDC_find_id(obj_prop, pc);
     if(info == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
-    ((PDC_obj_prop_t *)(info->obj_ptr))->tags = strdup(tags);
+    ((struct PDC_obj_prop *)(info->obj_ptr))->tags = strdup(tags);
     
 done:
     FUNC_LEAVE(ret_value);
@@ -382,7 +382,7 @@ perr_t PDCprop_set_obj_dims(pdcid_t obj_prop, PDC_int_t ndim, uint64_t *dims, pd
     perr_t ret_value = SUCCEED;         /* Return value */
     PDC_CLASS_t *pc;
     PDC_id_info_t *info;
-    PDC_obj_prop_t *prop;
+    struct PDC_obj_prop *prop;
     
     FUNC_ENTER(NULL);
     
@@ -390,7 +390,7 @@ perr_t PDCprop_set_obj_dims(pdcid_t obj_prop, PDC_int_t ndim, uint64_t *dims, pd
     info = PDC_find_id(obj_prop, pc);
     if(info == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
-    prop = (PDC_obj_prop_t *)(info->obj_ptr);
+    prop = (struct PDC_obj_prop *)(info->obj_ptr);
     prop->ndim = ndim;
     prop->dims = (uint64_t *)malloc(ndim * sizeof(uint64_t));
     
@@ -407,7 +407,7 @@ perr_t PDCprop_set_obj_type(pdcid_t obj_prop, PDC_var_type_t type, pdcid_t pdc)
     perr_t ret_value = SUCCEED;         /* Return value */
     PDC_CLASS_t *pc;
     PDC_id_info_t *info;
-    PDC_obj_prop_t *prop;
+    struct PDC_obj_prop *prop;
     
     FUNC_ENTER(NULL);
     
@@ -415,7 +415,7 @@ perr_t PDCprop_set_obj_type(pdcid_t obj_prop, PDC_var_type_t type, pdcid_t pdc)
     info = PDC_find_id(obj_prop, pc);
     if(info == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
-    prop = (PDC_obj_prop_t *)(info->obj_ptr);
+    prop = (struct PDC_obj_prop *)(info->obj_ptr);
     prop->type = type;
     
 done:
@@ -427,7 +427,7 @@ perr_t PDCprop_set_obj_buf(pdcid_t obj_prop, void *buf, pdcid_t pdc)
     perr_t ret_value = SUCCEED;         /* Return value */
     PDC_CLASS_t *pc;
     PDC_id_info_t *info;
-    PDC_obj_prop_t *prop;
+    struct PDC_obj_prop *prop;
     
     FUNC_ENTER(NULL);
     
@@ -435,7 +435,7 @@ perr_t PDCprop_set_obj_buf(pdcid_t obj_prop, void *buf, pdcid_t pdc)
     info = PDC_find_id(obj_prop, pc);
     if(info == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
-    prop = (PDC_obj_prop_t *)(info->obj_ptr);
+    prop = (struct PDC_obj_prop *)(info->obj_ptr);
     prop->buf = buf;
     
 done:
@@ -447,9 +447,9 @@ void **PDCobj_buf_retrieve(pdcid_t obj_id, pdcid_t pdc)
     void **ret_value = NULL;         /* Return value */
     PDC_CLASS_t *pc;
     PDC_id_info_t *info;
-    PDC_obj_info_t *object;
+    struct PDC_obj_info *object;
     pdcid_t propid;
-    PDC_obj_prop_t *prop;
+    struct PDC_obj_prop *prop;
     
     FUNC_ENTER(NULL);
     
@@ -457,12 +457,12 @@ void **PDCobj_buf_retrieve(pdcid_t obj_id, pdcid_t pdc)
     info = PDC_find_id(obj_id, pc);
     if(info == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object ID");
-    object = (PDC_obj_info_t *)(info->obj_ptr);
+    object = (struct PDC_obj_info *)(info->obj_ptr);
     propid = object->obj_prop;
     info = PDC_find_id(propid, pc);
     if(info == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
-    prop = (PDC_obj_prop_t *)(info->obj_ptr);
+    prop = (struct PDC_obj_prop *)(info->obj_ptr);
     void **buffer = &(prop->buf);
     ret_value = buffer;
     
@@ -473,12 +473,12 @@ done:
 pdcid_t PDCregion_create(size_t ndims, uint64_t *offset, uint64_t *size, pdcid_t pdc_id)
 {
     pdcid_t ret_value = SUCCEED;         /* Return value */
-    PDC_region_info_t *p = NULL;
+    struct PDC_region_info *p = NULL;
     pdcid_t new_id;
     
     FUNC_ENTER(NULL);
     
-    p = PDC_MALLOC(PDC_region_info_t);
+    p = PDC_MALLOC(struct PDC_region_info);
     if(!p)
         PGOTO_ERROR(FAIL,"PDC region memory allocation failed\n");
     p->ndim = ndims;
@@ -506,15 +506,15 @@ perr_t PDCobj_map(pdcid_t local_obj, pdcid_t local_reg, pdcid_t remote_obj, pdci
     int i;
     PDC_CLASS_t *pc;
     PDC_id_info_t *objinfo1 = NULL, *objinfo2 = NULL;
-    PDC_obj_info_t *obj1, *obj2;
+    struct PDC_obj_info *obj1, *obj2;
     pdcid_t local_meta_id, remote_meta_id;
     pdcid_t propid1, propid2;
     PDC_id_info_t *propinfo1, *propinfo2;
-    PDC_obj_prop_t *prop1, *prop2;
+    struct PDC_obj_prop *prop1, *prop2;
     PDC_var_type_t local_type, remote_type;
     void *local_data, *remote_data;
     PDC_id_info_t *reginfo1, *reginfo2;
-    PDC_region_info_t *reg1, *reg2;
+    struct PDC_region_info *reg1, *reg2;
     size_t ndim;
     
     FUNC_ENTER(NULL);
@@ -528,16 +528,16 @@ perr_t PDCobj_map(pdcid_t local_obj, pdcid_t local_reg, pdcid_t remote_obj, pdci
     objinfo1 = PDC_find_id(local_obj, pc);
     if(objinfo1 == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object ID");
-    obj1 = (PDC_obj_info_t *)(objinfo1->obj_ptr);
+    obj1 = (struct PDC_obj_info *)(objinfo1->obj_ptr);
     local_meta_id = obj1->meta_id;
     propid1 = obj1->obj_prop;
     propinfo1 = PDC_find_id(propid1, pc);
-    prop1 = (PDC_obj_prop_t *)(propinfo1->obj_ptr);
+    prop1 = (struct PDC_obj_prop *)(propinfo1->obj_ptr);
     local_type = prop1->type;
     local_data = prop1->buf;
 
     reginfo1 = PDC_find_id(local_reg, pc);
-    reg1 = (PDC_region_info_t *)(reginfo1->obj_ptr);
+    reg1 = (struct PDC_region_info *)(reginfo1->obj_ptr);
     if(prop1->ndim != reg1->ndim)
         PGOTO_ERROR(FAIL, "local object dimension and region dimension does not match");
     for(i=0; i<prop1->ndim; i++) 
@@ -547,16 +547,16 @@ perr_t PDCobj_map(pdcid_t local_obj, pdcid_t local_reg, pdcid_t remote_obj, pdci
     objinfo2 = PDC_find_id(remote_obj, pc);
     if(objinfo2 == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object ID");
-    obj2 = (PDC_obj_info_t *)(objinfo2->obj_ptr);
+    obj2 = (struct PDC_obj_info *)(objinfo2->obj_ptr);
     remote_meta_id = obj2->meta_id;
     propid2 = obj2->obj_prop;
     propinfo2 = PDC_find_id(propid2, pc);
-    prop2 = (PDC_obj_prop_t *)(propinfo2->obj_ptr);
+    prop2 = (struct PDC_obj_prop *)(propinfo2->obj_ptr);
     remote_type = prop2->type;
     remote_data = prop2->buf;
   
     reginfo2 = PDC_find_id(remote_reg, pc);
-    reg2 = (PDC_region_info_t *)(reginfo2->obj_ptr);
+    reg2 = (struct PDC_region_info *)(reginfo2->obj_ptr);
     if(prop2->ndim != reg2->ndim)
         PGOTO_ERROR(FAIL, "remote object dimension and region dimension does not match");
     for(i=0; i<prop2->ndim; i++)
@@ -588,9 +588,10 @@ perr_t PDCobj_buf_map(void *buf, pdcid_t from_reg, pdcid_t obj_id, pdcid_t to_re
     PDC_CLASS_t *pc;
     PDC_id_info_t *info1;
     pdcid_t propid;
-    PDC_obj_prop_t *prop;
+    struct PDC_obj_prop *prop;
     PDC_id_info_t *reginfo1, *reginfo2;
-    PDC_region_info_t *reg1, *reg2;
+    struct PDC_region_info *reg1, *reg2;
+    struct PDC_obj_info *object1;
     
     FUNC_ENTER(NULL);
     
@@ -598,19 +599,19 @@ perr_t PDCobj_buf_map(void *buf, pdcid_t from_reg, pdcid_t obj_id, pdcid_t to_re
     info1 = PDC_find_id(obj_id, pc);
     if(info1 == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object ID");
-    PDC_obj_info_t *object1 = (PDC_obj_info_t *)(info1->obj_ptr);
+    object1 = (struct PDC_obj_info *)(info1->obj_ptr);
     
     // check if ndim matches between object and region
     propid = object1->obj_prop;
     info1 = PDC_find_id(propid, pc);
     if(info1 == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
-    prop = (PDC_obj_prop_t *)(info1->obj_ptr);
+    prop = (struct PDC_obj_prop *)(info1->obj_ptr);
     
     reginfo1 = PDC_find_id(from_reg, pc);
     reginfo2 = PDC_find_id(to_reg, pc);
-    reg1 = (PDC_region_info_t *)(reginfo1->obj_ptr);
-    reg2 = (PDC_region_info_t *)(reginfo2->obj_ptr);
+    reg1 = (struct PDC_region_info *)(reginfo1->obj_ptr);
+    reg2 = (struct PDC_region_info *)(reginfo2->obj_ptr);
     
     // start mapping
     // state that there is mapping to other objects
@@ -626,7 +627,7 @@ perr_t PDCobj_unmap(pdcid_t obj_id, pdcid_t pdc_id)
     perr_t ret_value = SUCCEED;         /* Return value */
     PDC_CLASS_t *pc;
     PDC_id_info_t *info1;
-    PDC_obj_info_t *object1;
+    struct PDC_obj_info *object1;
 
     FUNC_ENTER(NULL);
 
@@ -634,7 +635,7 @@ perr_t PDCobj_unmap(pdcid_t obj_id, pdcid_t pdc_id)
     info1 = PDC_find_id(obj_id, pc);
     if(info1 == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object ID");
-    object1 = (PDC_obj_info_t *)(info1->obj_ptr);
+    object1 = (struct PDC_obj_info *)(info1->obj_ptr);
     ret_value = PDC_Client_send_object_unmap(object1->meta_id, pdc_id);
 //    object1->mapping = 0;
     
@@ -647,8 +648,8 @@ perr_t PDCreg_unmap(pdcid_t obj_id, pdcid_t reg_id, pdcid_t pdc_id)
     perr_t ret_value = SUCCEED;         /* Return value */
     PDC_CLASS_t *pc;
     PDC_id_info_t *info1;
-    PDC_obj_info_t *object1;
-    PDC_region_info_t *reginfo;
+    struct PDC_obj_info *object1;
+    struct PDC_region_info *reginfo;
     
     FUNC_ENTER(NULL);
 
@@ -656,7 +657,7 @@ perr_t PDCreg_unmap(pdcid_t obj_id, pdcid_t reg_id, pdcid_t pdc_id)
     info1 = PDC_find_id(obj_id, pc);
     if(info1 == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object ID");
-    object1 = (PDC_obj_info_t *)(info1->obj_ptr);
+    object1 = (struct PDC_obj_info *)(info1->obj_ptr);
     ret_value = PDC_Client_send_region_unmap(object1->meta_id, reg_id, pdc_id);
     if(ret_value == SUCCEED) {
         PDC_dec_ref(obj_id, pdc_id);
@@ -669,10 +670,10 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-PDC_obj_info_t *PDCobj_get_info(pdcid_t obj_id, pdcid_t pdc)
+struct PDC_obj_info *PDCobj_get_info(pdcid_t obj_id, pdcid_t pdc)
 {
-    PDC_obj_info_t *ret_value = NULL;
-    PDC_obj_info_t *info =  NULL;
+    struct PDC_obj_info *ret_value = NULL;
+    struct PDC_obj_info *info =  NULL;
     PDC_CLASS_t *pc;
     PDC_id_info_t *obj;
     
@@ -683,17 +684,17 @@ PDC_obj_info_t *PDCobj_get_info(pdcid_t obj_id, pdcid_t pdc)
     if(obj == NULL)
         PGOTO_ERROR(NULL, "cannot locate object");
     
-    info = (PDC_obj_info_t *)(obj->obj_ptr);
+    info = (struct PDC_obj_info *)(obj->obj_ptr);
     ret_value = info;
     
 done:
     FUNC_LEAVE(ret_value);
 } /* end of PDCobj_get_info() */
 
-PDC_region_info_t *PDCregion_get_info(pdcid_t reg_id, pdcid_t obj_id, pdcid_t pdc_id)
+struct PDC_region_info *PDCregion_get_info(pdcid_t reg_id, pdcid_t obj_id, pdcid_t pdc_id)
 {
-    PDC_obj_info_t *ret_value = NULL;
-    PDC_region_info_t *info =  NULL;
+    struct PDC_obj_info *ret_value = NULL;
+    struct PDC_region_info *info =  NULL;
     PDC_CLASS_t *pc;
     PDC_id_info_t *region;
 
@@ -704,7 +705,7 @@ PDC_region_info_t *PDCregion_get_info(pdcid_t reg_id, pdcid_t obj_id, pdcid_t pd
     if(region == NULL)
         PGOTO_ERROR(NULL, "cannot locate region");
 
-    info = (PDC_region_info_t *)(region->obj_ptr);
+    info = (struct PDC_region_info *)(region->obj_ptr);
     ret_value = info;
     
 done:
@@ -716,9 +717,9 @@ perr_t PDCobj_release(pdcid_t obj_id, pdcid_t pdc_id)
     perr_t ret_value = SUCCEED;         /* Return value */
     PDC_CLASS_t *pc;
     PDC_id_info_t *info;
-    PDC_obj_info_t *object;
+    struct PDC_obj_info *object;
     pdcid_t propid;
-    PDC_obj_prop_t *prop;
+    struct PDC_obj_prop *prop;
     
     FUNC_ENTER(NULL);
     
@@ -726,12 +727,12 @@ perr_t PDCobj_release(pdcid_t obj_id, pdcid_t pdc_id)
     info = PDC_find_id(obj_id, pc);
     if(info == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object ID");
-    object = (PDC_obj_info_t *)(info->obj_ptr);
+    object = (struct PDC_obj_info *)(info->obj_ptr);
     propid = object->obj_prop;
     info = PDC_find_id(propid, pc);
     if(info == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
-    prop = (PDC_obj_prop_t *)(info->obj_ptr);
+    prop = (struct PDC_obj_prop *)(info->obj_ptr);
     prop->buf = NULL;
     
 done:

@@ -76,7 +76,7 @@ int main(int argc, const char *argv[])
     fflush(stdout);
 
 
-    PDC_prop_t p;
+    struct PDC_prop p;
     // create a pdc
     pdcid_t pdc = PDC_init(p);
     /* printf("create a new pdc, pdc id is: %lld\n", pdc); */

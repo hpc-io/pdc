@@ -1260,7 +1260,7 @@ perr_t PDC_Client_delete_metadata(pdcid_t pdc, pdcid_t cont_id, char *delete_nam
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
-    PDC_obj_prop_t *delete_prop;
+    struct PDC_obj_prop *delete_prop;
     metadata_delete_in_t in;
     int hash_name_value;
     uint32_t server_id;
@@ -1453,7 +1453,7 @@ perr_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *ob
     uint32_t server_id, base_server_id;
     int i;
     PDC_lifetime obj_life;
-    PDC_obj_prop_t *create_prop;
+    struct PDC_obj_prop *create_prop;
     gen_obj_id_in_t in;
     uint32_t hash_name_value;
     struct client_lookup_args lookup_args;
@@ -1471,6 +1471,7 @@ perr_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *ob
     in.data.obj_name  = obj_name;
     in.data.time_step = create_prop->time_step;
     in.data.user_id   = create_prop->user_id;
+    
     if (create_prop->tags == NULL) 
         in.data.tags      = " ";
     else
@@ -1849,7 +1850,7 @@ done:
 }
 
 // General function for obtain/release region lock
-static perr_t PDC_Client_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_id, PDC_region_info_t *region_info, PDC_access_t access_type, int lock_op, pbool_t *status)
+static perr_t PDC_Client_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, int lock_op, pbool_t *status)
 {
     perr_t ret_value;
     hg_return_t hg_ret;
@@ -1957,7 +1958,7 @@ done:
 }
 
 /* , uint64_t *block */
-perr_t PDC_Client_obtain_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_id, PDC_region_info_t *region_info, 
+perr_t PDC_Client_obtain_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_id, struct PDC_region_info *region_info,
                                     PDC_access_t access_type, PDC_lock_mode_t lock_mode, pbool_t *obtained)
 {
     perr_t ret_value = FAIL;
@@ -2008,7 +2009,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_release_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_id, PDC_region_info_t *region_info, PDC_access_t access_type, pbool_t *released)
+perr_t PDC_Client_release_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, pbool_t *released)
 {
     perr_t ret_value = FAIL;
     

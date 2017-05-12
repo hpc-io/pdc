@@ -4,7 +4,7 @@
 #include "pdc.h"
 
 int main() {
-    PDC_prop_t p;
+    struct PDC_prop p;
     // create a pdc
     pdcid_t pdc = PDC_init(p);
     printf("create a new pdc, pdc id is: %lld\n", pdc);
@@ -41,7 +41,7 @@ int main() {
     cont_handle *ch = PDCcont_iter_start(pdc);
 
     while(!PDCcont_iter_null(ch)) {
-        PDC_cont_info_t *info = PDCcont_iter_get_info(ch);
+        struct PDC_cont_info *info = PDCcont_iter_get_info(ch);
         printf("container name is: %s\n", info->name);
         printf("container is in pdc %lld\n", info->pdc);
         printf("container property id is %lld\n", info->cont_prop);

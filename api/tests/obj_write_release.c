@@ -26,7 +26,7 @@ int main(int argc, const char *argv[])
 
     int i;
     const int metadata_size = 512;
-    PDC_prop_t p;
+    struct PDC_prop p;
     // create a pdc
     pdcid_t pdc_id = PDC_init(p);
 
@@ -124,11 +124,11 @@ int main(int argc, const char *argv[])
 //    PDCreg_unmap(obj1, r1, pdc_id);
 //	PDCobj_map(obj2, r2, obj3, r3, pdc_id);
 
-    PDC_region_info_t *region = PDCregion_get_info(r1, obj1, pdc_id);
+    struct PDC_region_info *region = PDCregion_get_info(r1, obj1, pdc_id);
 
     pbool_t lock_status;
 
-    PDC_obj_info_t *info = PDCobj_get_info(obj1, pdc_id);
+    struct PDC_obj_info *info = PDCobj_get_info(obj1, pdc_id);
     pdcid_t meta_id = info->meta_id;
 //    printf("meta id is %lld\n", info->meta_id);
 

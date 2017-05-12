@@ -73,9 +73,9 @@ cont_handle *PDCcont_iter_next(cont_handle *chandle);
  * \param chandle [IN]          A cont_handle struct, returned by
  *                              PDCcont_iter_start(pdcid_t pdc_id)
  *
- * \return Pointer to a PDC_cont_info_t struct/NULL on failure
+ * \return Pointer to a PDC_cont_info struct/NULL on failure
  */
-PDC_cont_info_t * PDCcont_iter_get_info(cont_handle *chandle);
+struct PDC_cont_info * PDCcont_iter_get_info(cont_handle *chandle);
 
 /**
  * Persist a transient container

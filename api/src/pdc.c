@@ -28,7 +28,7 @@ done:
     FUNC_LEAVE(ret_value);
 } /* end of PDC__create_class() */
 
-pdcid_t PDC_init(PDC_prop_t property)
+pdcid_t PDC_init(struct PDC_prop property)
 {
     pdcid_t ret_value = SUCCEED;         /* Return value */
     PDC_CLASS_t *pc;

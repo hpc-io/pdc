@@ -19,7 +19,7 @@ int main(int argc, const char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    PDC_prop_t p;
+    struct PDC_prop p;
     // create a pdc
     pdcid_t pdc = PDC_init(p);
     /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
@@ -43,7 +43,7 @@ int main(int argc, const char *argv[])
     uint64_t d[3] = {10, 20, 30};
     PDCprop_set_obj_dims(obj_prop, 3, d, pdc);
     PDCprop_set_obj_time_step(obj_prop, 0, pdc); 
-    PDC_obj_prop_t *op = PDCobj_prop_get_info(obj_prop, pdc);
+    struct PDC_obj_prop *op = PDCobj_prop_get_info(obj_prop, pdc);
     /* printf("# of dim = %d\n", op->ndim); */
     /* int i; */
     /* for(i=0; i<op->ndim; i++) { */
@@ -63,22 +63,22 @@ int main(int argc, const char *argv[])
     }
  
     // Lock Test
-    PDC_region_info_t *region;
-    PDC_region_info_t region_info;
+    struct PDC_region_info *region;
+    struct PDC_region_info region_info;
     uint64_t start[3] = {10,10,10};
     uint64_t count[3] = {10,10,10};
     region_info.ndim = 3;
     region_info.offset = &start[0];
     region_info.size   = &count[0];
 
-    PDC_region_info_t region_info1;
+    struct PDC_region_info region_info1;
     uint64_t start1[3] = {11,11,11};
     uint64_t count1[3] = {5,5,5};
     region_info1.ndim = 3;
     region_info1.offset = &start1[0];
     region_info1.size   = &count1[0];
 
-    PDC_region_info_t region_info_no_overlap;
+    struct PDC_region_info region_info_no_overlap;
     uint64_t start_no_overlap[3] = {1,1,1};
     uint64_t count_no_overlap[3] = {1,1,1};
     int i;

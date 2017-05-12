@@ -22,7 +22,7 @@ int main(int argc, const char *argv[])
 #endif
     int i;
 
-    PDC_prop_t p;
+    struct PDC_prop p;
     pdcid_t pdc = PDC_init(p);
 
     PDC_Client_close_all_server();

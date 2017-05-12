@@ -1,8 +1,8 @@
 #ifndef _pdc_pkg_H
 #define _pdc_pkg_H
 
-typedef struct PDC_prop_t {
+struct PDC_prop {
     char *name;
-}PDC_prop_t;
+};
 
 #endif

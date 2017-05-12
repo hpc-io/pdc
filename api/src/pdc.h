@@ -35,7 +35,7 @@ typedef enum {
  *
  * \return PDC id on success/Negative on failure
  */
-pdcid_t PDC_init(PDC_prop_t property);
+pdcid_t PDC_init(struct PDC_prop property);
 
 /**
  * Close the PDC layer

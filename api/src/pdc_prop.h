@@ -65,9 +65,9 @@ perr_t PDC_prop_cont_list_null();
  * \param prop_id [IN]          Id of the property
  * \param pdc_id [IN]           Id of the PDC
  *
- * \return Pointer to PDC_cont_prop_t struct/Null on failure
+ * \return Pointer to PDC_cont_prop struct/Null on failure
  */
-PDC_cont_prop_t *PDCcont_prop_get_info(pdcid_t prop_id, pdcid_t pdc_id);
+struct PDC_cont_prop *PDCcont_prop_get_info(pdcid_t prop_id, pdcid_t pdc_id);
 
 /**
  * Get object property infomation
@@ -75,8 +75,8 @@ PDC_cont_prop_t *PDCcont_prop_get_info(pdcid_t prop_id, pdcid_t pdc_id);
  * \param prop_id [IN]          Id of the object property
  * \param pdc_id [IN]           Id of the PDC
  *
- * \return Pointer to PDC_obj_prop_t struct/Null on failure
+ * \return Pointer to PDC_obj_prop struct/Null on failure
  */
-PDC_obj_prop_t *PDCobj_prop_get_info(pdcid_t prop_id, pdcid_t pdc_id);
+struct PDC_obj_prop *PDCobj_prop_get_info(pdcid_t prop_id, pdcid_t pdc_id);
 
 #endif

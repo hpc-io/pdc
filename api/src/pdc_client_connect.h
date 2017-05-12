@@ -213,14 +213,14 @@ perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, 
  * \param pdc_id [IN]           Id of the PDC
  * \param cont_id [IN]          Id of the container
  * \param obj_id [IN]           Id of the metadata
- * \param region_info [IN]      Pointer to PDC_region_info_t struct
+ * \param region_info [IN]      Pointer to PDC_region_info struct
  * \param access_type [IN]      Access type (enum)
  * \param lock_mode [IN]        Lock mode
  * \param obtained [OUT]        Lock granted or not
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_obtain_region_lock(pdcid_t pdc_id, pdcid_t cont_id, pdcid_t meta_id, PDC_region_info_t *region_info, PDC_access_t access_type, PDC_lock_mode_t lock_mode, pbool_t *obtained);
+perr_t PDC_Client_obtain_region_lock(pdcid_t pdc_id, pdcid_t cont_id, pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_lock_mode_t lock_mode, pbool_t *obtained);
 
 /**
  * Request of PDC client to get region lock
@@ -228,13 +228,13 @@ perr_t PDC_Client_obtain_region_lock(pdcid_t pdc_id, pdcid_t cont_id, pdcid_t me
  * \param pdc_id [IN]           Id of the PDC
  * \param cont_id [IN]          Id of the container
  * \param obj_id [IN]           Id of the metadata
- * \param region_info [IN]      Pointer to PDC_region_info_t struct
+ * \param region_info [IN]      Pointer to PDC_region_info struct
  * \param access_type [IN]      Access type (enum)
  * \param released [OUT]        Lock released or not
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_release_region_lock(pdcid_t pdc_id, pdcid_t cont_id, pdcid_t meta_id, PDC_region_info_t *region_info, PDC_access_t access_type, pbool_t *released);
+perr_t PDC_Client_release_region_lock(pdcid_t pdc_id, pdcid_t cont_id, pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, pbool_t *released);
 
 /**
  * PDC client initialization

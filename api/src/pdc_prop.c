@@ -4,9 +4,9 @@
 #include "pdc_malloc.h"
 #include "pdc_prop_pkg.h"
 
-static perr_t PDCprop__cont_close(PDC_cont_prop_t *cp);
+static perr_t PDCprop__cont_close(struct PDC_cont_prop *cp);
 
-static perr_t PDCprop__obj_close(PDC_obj_prop_t *cp);
+static perr_t PDCprop__obj_close(struct PDC_obj_prop *cp);
 
 /* PDC container property ID class */
 static const PDCID_class_t PDC_CONT_PROP_CLS[1] = {{
@@ -44,14 +44,14 @@ done:
 pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdc)
 {
     pdcid_t ret_value = SUCCEED;
-    PDC_cont_prop_t *p;
-    PDC_obj_prop_t *q;
+    struct PDC_cont_prop *p;
+    struct PDC_obj_prop *q;
     
     FUNC_ENTER(NULL);
 
     if (type == PDC_CONT_CREATE) {
         p = NULL;
-        p = PDC_MALLOC(PDC_cont_prop_t);
+        p = PDC_MALLOC(struct PDC_cont_prop);
         if(!p)
             PGOTO_ERROR(FAIL, "PDC container property memory allocation failed\n");
         p->cont_life = PDC_PERSIST;
@@ -60,7 +60,7 @@ pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdc)
     }
     if(type == PDC_OBJ_CREATE) {
         q = NULL;
-        q = PDC_MALLOC(PDC_obj_prop_t);
+        q = PDC_MALLOC(struct PDC_obj_prop);
       if(!q)
           PGOTO_ERROR(FAIL, "PDC object property memory allocation failed\n");
         q->obj_life = PDC_TRANSIENT;
@@ -116,19 +116,19 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-static perr_t PDCprop__cont_close(PDC_cont_prop_t *cp)
+static perr_t PDCprop__cont_close(struct PDC_cont_prop *cp)
 {
     perr_t ret_value = SUCCEED;         /* Return value */
 
     FUNC_ENTER(NULL);
 
-    cp = PDC_FREE(PDC_cont_prop_t, cp);
+    cp = PDC_FREE(struct PDC_cont_prop, cp);
     
 done:
     FUNC_LEAVE(ret_value);
 } /* end PDCprop__cont_close() */
 
-static perr_t PDCprop__obj_close(PDC_obj_prop_t *cp)
+static perr_t PDCprop__obj_close(struct PDC_obj_prop *cp)
 {
     perr_t ret_value = SUCCEED;         /* Return value */
 
@@ -138,7 +138,7 @@ static perr_t PDCprop__obj_close(PDC_obj_prop_t *cp)
         free(cp->dims);
         cp->dims = NULL;
     }
-    cp = PDC_FREE(PDC_obj_prop_t, cp);
+    cp = PDC_FREE(struct PDC_obj_prop, cp);
     
 done:
     FUNC_LEAVE(ret_value);
@@ -174,10 +174,10 @@ done:
     FUNC_LEAVE(ret_value);
 } /* end of PDCprop_end() */
 
-PDC_cont_prop_t *PDCcont_prop_get_info(pdcid_t cont_prop, pdcid_t pdc)
+struct PDC_cont_prop *PDCcont_prop_get_info(pdcid_t cont_prop, pdcid_t pdc)
 {
-    PDC_cont_prop_t *ret_value = NULL;
-    PDC_cont_prop_t *info =  NULL;
+    struct PDC_cont_prop *ret_value = NULL;
+    struct PDC_cont_prop *info =  NULL;
     PDC_CLASS_t *pc;
     PDC_id_info_t *prop;
     
@@ -188,17 +188,17 @@ PDC_cont_prop_t *PDCcont_prop_get_info(pdcid_t cont_prop, pdcid_t pdc)
     if(prop == NULL)
         PGOTO_ERROR(NULL, "cannot locate container property");
     
-    info = (PDC_cont_prop_t *)(prop->obj_ptr);
+    info = (struct PDC_cont_prop *)(prop->obj_ptr);
     ret_value = info;
     
 done:
     FUNC_LEAVE(ret_value);
 } /* end of PDCcont_prop_get_info() */
 
-PDC_obj_prop_t *PDCobj_prop_get_info(pdcid_t obj_prop, pdcid_t pdc)
+struct PDC_obj_prop *PDCobj_prop_get_info(pdcid_t obj_prop, pdcid_t pdc)
 {
-    PDC_obj_prop_t *ret_value = NULL;
-    PDC_obj_prop_t *info =  NULL;
+    struct PDC_obj_prop *ret_value = NULL;
+    struct PDC_obj_prop *info =  NULL;
     PDC_CLASS_t *pc;
     PDC_id_info_t *prop;
     
@@ -209,7 +209,7 @@ PDC_obj_prop_t *PDCobj_prop_get_info(pdcid_t obj_prop, pdcid_t pdc)
     if(prop == NULL)
         PGOTO_ERROR(NULL, "cannot locate object property");
     
-    info = (PDC_obj_prop_t *)(prop->obj_ptr);
+    info = (struct PDC_obj_prop *)(prop->obj_ptr);
     ret_value = info;
     
 done:

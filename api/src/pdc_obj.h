@@ -202,9 +202,9 @@ obj_handle *PDCobj_iter_next(obj_handle *ohandle, pdcid_t cont_id);
  * \param ohandle [IN]          A pointer to obj_handle struct, 
  *                              returned by PDCobj_iter_start(pdcid_t cont_id)
  *
- * \return Pointer to a PDC_obj_info_t struct on success/Negative on failure
+ * \return Pointer to a PDC_obj_info struct on success/Negative on failure
  */
-PDC_obj_info_t * PDCobj_iter_get_info(obj_handle *ohandle);
+struct PDC_obj_info * PDCobj_iter_get_info(obj_handle *ohandle);
 
 /**
  * Query on object 
@@ -262,7 +262,7 @@ perr_t PDCobj_map(pdcid_t from_obj, pdcid_t from_reg, pdcid_t to_obj, pdcid_t to
  *
  * \return Pointer to PDC_obj_info_t struct on success/Null on failure
  */
-PDC_obj_info_t *PDCobj_get_info(pdcid_t obj_id, pdcid_t pdc_id);
+struct PDC_obj_info *PDCobj_get_info(pdcid_t obj_id, pdcid_t pdc_id);
 
 /**
  * Get object information
@@ -273,7 +273,7 @@ PDC_obj_info_t *PDCobj_get_info(pdcid_t obj_id, pdcid_t pdc_id);
  *
  * \return Pointer to PDC_obj_info_t struct on success/Null on failure
  */
-PDC_region_info_t *PDCregion_get_info(pdcid_t reg_id, pdcid_t obj_id, pdcid_t pdc_id);
+struct PDC_region_info *PDCregion_get_info(pdcid_t reg_id, pdcid_t obj_id, pdcid_t pdc_id);
 
 /**
  * Unmap all regions within the object 
