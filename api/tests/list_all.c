@@ -37,6 +37,25 @@ void print_usage() {
 int main(int argc, const char *argv[])
 {
     int rank = 0, size = 1;
+    int i;
+    struct PDC_prop p;
+    pdcid_t pdc, cont_prop, cont, obj_prop;
+    int count = -1;
+    char c;
+    struct timeval  ht_total_start;
+    struct timeval  ht_total_end;
+    long long ht_total_elapsed;
+    double ht_total_sec;
+    char obj_name[512];
+    char obj_prefix[4][10] = {"x", "y", "z", "energy"};
+    char tmp_str[128];
+    int use_name = -1;
+    uint64_t dims[3] = {100, 200, 700};
+    pdcid_t test_obj = -1;
+    char *env_str;
+    char name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name", "INVALID!", "INVALID!", "Four Obj Names"};
+    pdc_metadata_t **out;
+    int n_obj;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -44,8 +63,6 @@ int main(int argc, const char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    int count = -1;
-    char c;
     while ((c = getopt (argc, argv, "r:")) != -1)
         switch (c)
         {
@@ -76,15 +93,12 @@ int main(int argc, const char *argv[])
         printf("Creating %d objects per MPI rank\n", count);
     fflush(stdout);
 
-    int i;
-    const int metadata_size = 512;
-    struct PDC_prop p;
     // create a pdc
-    pdcid_t pdc = PDC_init(p);
+    pdc = PDC_init(p);
     /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
-    pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
+    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
     /* else */
@@ -92,7 +106,7 @@ int main(int argc, const char *argv[])
     /*         printf("Create a container property, id is %lld\n", cont_prop); */
 
     // create a container
-    pdcid_t cont = PDCcont_create(pdc, "c1", cont_prop);
+    cont = PDCcont_create(pdc, "c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
     /* else */
@@ -100,43 +114,25 @@ int main(int argc, const char *argv[])
     /*         printf("Create a container, id is %lld\n", cont); */
 
     // create an object property
-    pdcid_t obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
+    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if(obj_prop <= 0)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
     /* else */
     /*     if (rank == 0) */ 
     /*         printf("Create an object property, id is %lld\n", obj_prop); */
 
-    uint64_t dims[3] = {100, 200, 700};
     PDCprop_set_obj_dims(obj_prop, 3, dims, pdc);
 
-    pdcid_t test_obj = -1;
-
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
-    double ht_total_sec;
-
-
-    char obj_name[512];
-
-
-    char obj_prefix[4][10] = {"x", "y", "z", "energy"};
-    char tmp_str[128];
-
-    int use_name = -1;
-    char *env_str = getenv("PDC_OBJ_NAME");
+    env_str = getenv("PDC_OBJ_NAME");
     if (env_str != NULL) {
         use_name = atoi(env_str);
     }
 
-    char name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name", "INVALID!", "INVALID!", "Four Obj Names"}; 
     if (rank == 0) {
         printf("Using %s\n", name_mode[use_name+1]);
     }
 
     srand(rank+1);
-
 
     #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -145,7 +141,6 @@ int main(int argc, const char *argv[])
     gettimeofday(&ht_total_start, 0);
 
     for (i = 0; i < count; i++) {
-
         if (use_name == -1) {
             sprintf(obj_name, "%s", rand_string(tmp_str, 16));
             PDCprop_set_obj_time_step(obj_prop, i, pdc);
@@ -206,8 +201,6 @@ int main(int argc, const char *argv[])
         fflush(stdout);
     }
 
-    pdc_metadata_t **out;
-    int n_obj;
     printf("Listing all objects\n");
     PDC_Client_list_all(&n_obj, &out);
     printf("Received %d metadata objects\n", n_obj);
@@ -236,7 +229,6 @@ int main(int argc, const char *argv[])
     
 
 done:
-
     // close a container
     if(PDCcont_close(cont, pdc) < 0)
         printf("fail to close container %lld\n", cont);

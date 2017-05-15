@@ -5,42 +5,45 @@
 
 int main() {
     struct PDC_prop p;
+    pdcid_t pdc, cont_prop, cont, obj_prop, obj1;
+    int myArray[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    void **rbuf;
+    
     // create a pdc
-    pdcid_t pdc = PDC_init(p);
+    pdc = PDC_init(p);
     printf("create a new pdc, pdc id is: %lld\n", pdc);
 
     // create a container property
-    pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
+    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if(cont_prop > 0)
         printf("Create a container property, id is %lld\n", cont_prop);
     else
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     // create a container
-    pdcid_t cont = PDCcont_create(pdc, "c1", cont_prop);
+    cont = PDCcont_create(pdc, "c1", cont_prop);
     if(cont > 0)
         printf("Create a container, id is %lld\n", cont);
     else
         printf("Fail to create container @ line  %d!\n", __LINE__);
     
     // create an object property
-    pdcid_t obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
+    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if(obj_prop > 0)
         printf("Create an object property, id is %lld\n", obj_prop);
     else
         printf("Fail to create object property @ line  %d!\n", __LINE__);
     
     // create object
-    pdcid_t obj1 = PDCobj_create(pdc, cont, "o1", obj_prop);
+    obj1 = PDCobj_create(pdc, cont, "o1", obj_prop);
     if(obj1 > 0)
         printf("Create an object, id is %lld\n", obj1);
     else
         printf("Fail to create object @ line  %d!\n", __LINE__);
     
     // set and retrieve the object buffer
-    int myArray[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
     PDCprop_set_obj_buf(obj_prop, myArray, pdc);
-    void **rbuf = PDCobj_buf_retrieve(obj1, pdc);
+    rbuf = PDCobj_buf_retrieve(obj1, pdc);
     printf("first number to retrieve is: %d\n", *((int *)*rbuf));
     
     // close object

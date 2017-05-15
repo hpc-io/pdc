@@ -5,40 +5,43 @@
 
 int main() {
     struct PDC_prop p;
+    pdcid_t pdc, cont_prop, cont, obj_prop, obj1;
+    struct PDC_obj_prop *op;
+    
     // create a pdc
-    pdcid_t pdc = PDC_init(p);
+    pdc = PDC_init(p);
     printf("create a new pdc, pdc id is: %lld\n", pdc);
 
     // create a container property
-    pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
+    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if(cont_prop > 0)
         printf("Create a container property, id is %lld\n", cont_prop);
     else
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     // create a container
-    pdcid_t cont = PDCcont_create(pdc, "c1", cont_prop);
+    cont = PDCcont_create(pdc, "c1", cont_prop);
     if(cont > 0)
         printf("Create a container, id is %lld\n", cont);
     else
         printf("Fail to create container @ line  %d!\n", __LINE__);
     
     // create an object property
-    pdcid_t obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
+    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if(obj_prop > 0)
         printf("Create an object property, id is %lld\n", obj_prop);
     else
         printf("Fail to create object property @ line  %d!\n", __LINE__);
     
     // print default object lifetime (transient)
-    struct PDC_obj_prop *op = PDCobj_prop_get_info(obj_prop, pdc);
+    op = PDCobj_prop_get_info(obj_prop, pdc);
     if(op->obj_life == PDC_PERSIST)
         printf("object property (id: %lld) default lifetime is persistent\n", obj_prop);
     else
         printf("object property (id: %lld) default lifetime is transient\n", obj_prop);
     
     // create first object
-    pdcid_t obj1 = PDCobj_create(pdc, cont, "o1", obj_prop);
+    obj1 = PDCobj_create(pdc, cont, "o1", obj_prop);
     if(obj1 > 0)
         printf("Create an object, id is %lld\n", obj1);
     else

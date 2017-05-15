@@ -35,16 +35,25 @@ void print_usage() {
 
 int main(int argc, const char *argv[])
 {
-    int rank = 0, size = 1;
-
+    int rank = 0, size = 1, i;
+    int count = -1;
+    char c;
+    struct PDC_prop p;
+    pdcid_t pdc, cont_prop, cont, obj_prop;
+    pdcid_t *create_obj_ids;
+    int use_name = -1;
+    char obj_prefix[4][10] = {"x", "y", "z", "energy"};
+    char tmp_str[128];
+    char *env_str;
+    char name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name", "INVALID!", "INVALID!", "Four Obj Names"};
+    char obj_name[32];
+    
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    int count = -1;
-    char c;
     while ((c = getopt (argc, argv, "r:")) != -1)
         switch (c)
         {
@@ -75,46 +84,37 @@ int main(int argc, const char *argv[])
         printf("Delete %d objects per MPI rank\n", count);
     fflush(stdout);
 
-
-    struct PDC_prop p;
     // create a pdc
-    pdcid_t pdc = PDC_init(p);
+    pdc = PDC_init(p);
     /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
-    pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
+    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     // create a container
-    pdcid_t cont = PDCcont_create(pdc, "c1", cont_prop);
+    cont = PDCcont_create(pdc, "c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
     // create an object property
-    pdcid_t obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
+    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if(obj_prop <= 0)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
 
-    pdcid_t *create_obj_ids;
     create_obj_ids = (pdcid_t*)malloc(sizeof(pdcid_t) * count);
 
-    char obj_prefix[4][10] = {"x", "y", "z", "energy"};
-    char tmp_str[128];
-
-    int use_name = -1;
-    char *env_str = getenv("PDC_OBJ_NAME");
+    env_str = getenv("PDC_OBJ_NAME");
     if (env_str != NULL) {
         use_name = atoi(env_str);
     }
 
-    char name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name", "INVALID!", "INVALID!", "Four Obj Names"}; 
     if (rank == 0) {
         printf("Using %s\n", name_mode[use_name+1]);
         fflush(stdout);
     }
 
-    char obj_name[32];
     srand(rank+1);
 
 
@@ -123,7 +123,6 @@ MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
     // This test first creates a number of objects, then delete them one by one.
-    int i;
     for (i = 0; i < count; i++) {
 
         if (use_name == -1) {
@@ -170,7 +169,6 @@ MPI_Barrier(MPI_COMM_WORLD);
             printf("Delete fail with process %d, exiting\n", rank);
             goto done;
         }
-
         /* // Check by querying */
         /* pdc_metadata_t *res = NULL; */
         /* /1* printf("Proc %d: querying metadata with name [%s]\n", rank, obj_name); *1/ */
@@ -179,9 +177,7 @@ MPI_Barrier(MPI_COMM_WORLD);
         /*     printf("Deletion FAIL! Metadata of [%s] still exist in server\n", res->obj_names); */
         /*     fflush(stdout); */
         /* } */
-
     }
-
     if (rank == 0) {
         printf("Delete test SUCCEED.\n");
     }

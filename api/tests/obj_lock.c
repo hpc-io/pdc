@@ -12,38 +12,64 @@
 
 int main(int argc, const char *argv[])
 {
-    int rank = 0, size = 1;
+    int rank = 0, size = 1, i;
+    struct PDC_prop p;
+    pdcid_t pdc, cont_prop, cont, obj_prop, obj1;
+    uint64_t d[3] = {10, 20, 30};
+    char obj_name[64];
+    pbool_t lock_status;
+    struct PDC_obj_prop *op;
+    
+    struct PDC_region_info *region;
+    struct PDC_region_info region_info;
+    uint64_t start[3] = {10,10,10};
+    uint64_t count[3] = {10,10,10};
+    
+    struct PDC_region_info region_info1;
+    uint64_t start1[3] = {11,11,11};
+    uint64_t count1[3] = {5,5,5};
+    
+    struct PDC_region_info region_info_no_overlap;
+    uint64_t start_no_overlap[3] = {1,1,1};
+    uint64_t count_no_overlap[3] = {1,1,1};
+    
+    struct timeval  start_time;
+    struct timeval  end;
+    long long elapsed;
+    double total_lock_overhead;
+    
+    pdc_metadata_t *metadata = NULL;
+    pdcid_t meta_id;
+    
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    struct PDC_prop p;
     // create a pdc
-    pdcid_t pdc = PDC_init(p);
+    pdc = PDC_init(p);
     /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
-    pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
+    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     // create a container
-    pdcid_t cont = PDCcont_create(pdc, "c1", cont_prop);
+    cont = PDCcont_create(pdc, "c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
     
     // create an object property
-    pdcid_t obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
+    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if(obj_prop <= 0)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
     
     // set object dimension
-    uint64_t d[3] = {10, 20, 30};
     PDCprop_set_obj_dims(obj_prop, 3, d, pdc);
     PDCprop_set_obj_time_step(obj_prop, 0, pdc); 
-    struct PDC_obj_prop *op = PDCobj_prop_get_info(obj_prop, pdc);
+    op = PDCobj_prop_get_info(obj_prop, pdc);
     /* printf("# of dim = %d\n", op->ndim); */
     /* int i; */
     /* for(i=0; i<op->ndim; i++) { */
@@ -51,8 +77,6 @@ int main(int argc, const char *argv[])
     /* } */
  
     // Only rank 0 create a object
-    char obj_name[64];
-    pdcid_t obj1;
     if (rank == 0) {
         sprintf(obj_name, "test_obj");
         obj1 = PDCobj_create(pdc, cont, obj_name, obj_prop);
@@ -63,25 +87,14 @@ int main(int argc, const char *argv[])
     }
  
     // Lock Test
-    struct PDC_region_info *region;
-    struct PDC_region_info region_info;
-    uint64_t start[3] = {10,10,10};
-    uint64_t count[3] = {10,10,10};
     region_info.ndim = 3;
     region_info.offset = &start[0];
     region_info.size   = &count[0];
 
-    struct PDC_region_info region_info1;
-    uint64_t start1[3] = {11,11,11};
-    uint64_t count1[3] = {5,5,5};
     region_info1.ndim = 3;
     region_info1.offset = &start1[0];
     region_info1.size   = &count1[0];
 
-    struct PDC_region_info region_info_no_overlap;
-    uint64_t start_no_overlap[3] = {1,1,1};
-    uint64_t count_no_overlap[3] = {1,1,1};
-    int i;
     for (i = 0; i < 3; i++) {
         start_no_overlap[i] *= rank;
     }
@@ -94,8 +107,6 @@ int main(int argc, const char *argv[])
 #endif
 
     // Query and get meta id
-    pdc_metadata_t *metadata = NULL;
-    pdcid_t meta_id;
     PDC_Client_query_metadata_name_timestep("test_obj", 0, &metadata);
     if (metadata != NULL) {
         meta_id = metadata->obj_id;
@@ -105,7 +116,6 @@ int main(int argc, const char *argv[])
         goto done;
     }
 
-    pbool_t lock_status;
     /* // Obtain a read lock for region 0 */
     /* PDC_Client_obtain_region_lock(pdc, cont, meta_id, &region_info, READ, BLOCK, &lock_status); */
     /* if (lock_status == TRUE) */ 
@@ -119,7 +129,6 @@ int main(int argc, const char *argv[])
 /*     if (rank != 0) */ 
 /*         sleep(7); */
 /* #endif */
-
 
     // Obtain a write lock for region 0
     /* PDC_Client_obtain_region_lock(pdc, cont, meta_id, &region_info, WRITE, BLOCK, &lock_status); */
@@ -167,12 +176,6 @@ int main(int argc, const char *argv[])
     /*     printf("[%d] Failed to release a lock for region (10,10,10) - (20,20,20) ... error\n", rank); */
     /* fflush(stdout); */
 
-    // Timing
-    struct timeval  start_time;
-    struct timeval  end;
-    long long elapsed;
-    double total_lock_overhead;
-
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -182,7 +185,7 @@ int main(int argc, const char *argv[])
     region->mapping = 0;
     PDC_Client_obtain_region_lock(pdc, cont, meta_id, region, WRITE, NOBLOCK, &lock_status);
     if (lock_status != TRUE) 
-        printf("[%d] Failed to obtain lock for region (%d,%d,%d) (%d,%d,%d) ... error\n", rank, 
+        printf("[%d] Failed to obtain lock for region (%lld,%lld,%lld) (%lld,%lld,%lld) ... error\n", rank,
                 region->offset[0], region->offset[1], region->offset[2], region->size[0], region->size[1], region->size[2]);
 
 #ifdef ENABLE_MPI
@@ -219,7 +222,6 @@ int main(int argc, const char *argv[])
     if (rank == 0) {
         printf("Total lock release overhead: %.6f\n", total_lock_overhead);
     }
-
       
     // close object
     if (rank == 0) {

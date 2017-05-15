@@ -24,7 +24,7 @@ else                                                                      \
 *(D) = (DT)(*(S));
 
 pdc_conv_t
-pdc_find_conv_func(PDC_var_type_t src_id, PDC_var_type_t des_id)
+pdc_find_conv_func(PDC_var_type_t src_id, PDC_var_type_t des_id, size_t nelemt, size_t stride)
 {
     pdc_conv_t ret_value;         /* Return value */
     
@@ -42,41 +42,49 @@ done:
 }
 
 perr_t
-pdc_type_conv(PDC_var_type_t src_id, PDC_var_type_t des_id, void *src_data, void *des_data, size_t nelemt, size_t stride) {
+pdc_type_conv(PDC_var_type_t src_id, PDC_var_type_t des_id, void *src_data, void *des_data, size_t nelemt, size_t stride)
+{
     perr_t ret_value = SUCCEED;         /* Return value */
     
     FUNC_ENTER(NULL);
     
-    pdc_conv_t func = pdc_find_conv_func(src_id, des_id);
+    pdc_conv_t func = pdc_find_conv_func(src_id, des_id, nelemt, stride);
     (*func)(src_data, des_data, nelemt, stride);
+    
+    FUNC_LEAVE(ret_value);
 }
 
 perr_t
-pdc__conv_f_i(float *src_data, int *des_data, size_t nelemt, size_t stride) {
+pdc__conv_f_i(float *src_data, int *des_data, size_t nelemt, size_t stride)
+{
     perr_t ret_value = SUCCEED;         /* Return value */
-
+    size_t i;
+    
     FUNC_ENTER(NULL);
     
-    size_t i;
-    uint64_t addr;
     for(i = 0; i<nelemt; i++) {
         PDC_CONV_NOEX_CORE(src_data, des_data, float, int, INT_MIN, INT_MAX);
         src_data+=stride;
         des_data++;
     }
+    
+    FUNC_LEAVE(ret_value);
 }
 
 perr_t
-pdc__conv_db_i(double *src_data, int *des_data, size_t nelemt, size_t stride) {
+pdc__conv_db_i(double *src_data, int *des_data, size_t nelemt, size_t stride)
+{
     perr_t ret_value = SUCCEED;         /* Return value */
+    int i;
 
     FUNC_ENTER(NULL);
 
-    size_t i;
-    uint64_t addr;
+    
     for(i = 0; i<nelemt; i++) {
         PDC_CONV_NOEX_CORE(src_data, des_data, double, int, INT_MIN, INT_MAX);
         src_data+=stride;
         des_data++;
     }
+    
+    FUNC_LEAVE(ret_value);
 }

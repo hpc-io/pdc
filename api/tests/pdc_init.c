@@ -6,8 +6,10 @@
 
 int main() {
     struct PDC_prop p;
+    pdcid_t pdc;
+    
     // create a pdc
-    pdcid_t pdc = PDC_init(p);
+    pdc = PDC_init(p);
     printf("generated new pdc, id is %lld\n", pdc);
 
     // close pdc

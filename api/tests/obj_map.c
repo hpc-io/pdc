@@ -31,6 +31,28 @@ static char *rand_string(char *str, size_t size)
 int main(int argc, const char *argv[])
 {
     int rank = 0, size = 1;
+    pdcid_t pdc_id, cont_prop, cont_id;
+    pdcid_t obj_prop1, obj_prop2, obj_prop3;
+    pdcid_t obj1, obj2, obj3;
+    pdcid_t r1, r2, r3;
+    struct PDC_prop p;
+    struct timeval  ht_total_start;
+    struct timeval  ht_total_end;
+    long long ht_total_elapsed;
+    double ht_total_sec;
+    int use_name = -1;
+    char srank[10];
+    char obj_name1[512];
+    char obj_name2[512];
+    char obj_name3[512];
+    char tmp_str[128];
+    int myArray1[3][3] = { {1, 2, 3}, {4, 5, 6}, {7, 8, 9} };
+    int myArray2[3][3];
+    int myArray3[3][3];
+    uint64_t offset[2] = {1, 1};
+    uint64_t rdims[2] = {2, 2};
+    char *env_str = getenv("PDC_OBJ_NAME");
+    char name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name", "INVALID!", "INVALID!", "Four Obj Names"};
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -38,15 +60,12 @@ int main(int argc, const char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    int i;
-    const int metadata_size = 512;
-    struct PDC_prop p;
     // create a pdc
-    pdcid_t pdc_id = PDC_init(p);
+    pdc_id = PDC_init(p);
     /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
-    pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
+    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
     if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
     /* else */
@@ -54,7 +73,7 @@ int main(int argc, const char *argv[])
     /*         printf("Create a container property, id is %lld\n", cont_prop); */
 
     // create a container
-    pdcid_t cont_id = PDCcont_create(pdc_id, "c1", cont_prop);
+    cont_id = PDCcont_create(pdc_id, "c1", cont_prop);
     if(cont_id <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
     /* else */
@@ -62,40 +81,20 @@ int main(int argc, const char *argv[])
     /*         printf("Create a container, id is %lld\n", cont_id); */
 
     // create an object property
-    pdcid_t obj_prop1 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
-    pdcid_t obj_prop2 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
-    pdcid_t obj_prop3 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
+    obj_prop1 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
+    obj_prop2 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
+    obj_prop3 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
 
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
-    double ht_total_sec;
-
-    char obj_name1[512];
-    char obj_name2[512];
-    char obj_name3[512];
-
-    char obj_prefix[4][10] = {"x", "y", "z", "energy"};
-    char tmp_str[128];
-
-    int use_name = -1;
-    char *env_str = getenv("PDC_OBJ_NAME");
     if (env_str != NULL) {
         use_name = atoi(env_str);
     }
 
-    char name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name", "INVALID!", "INVALID!", "Four Obj Names"}; 
     if (rank == 0) {
         printf("Using %s\n", name_mode[use_name+1]);
     }
 
     srand(rank+1);
 
-	int myArray1[3][3] = { {1, 2, 3}, {4, 5, 6}, {7, 8, 9} };
-    int myArray2[3][3];
-	int myArray3[3][3];
-
-	char srank[10];
 	sprintf(srank, "%d", rank);
 	sprintf(obj_name1, "%s%s", rand_string(tmp_str, 16), srank);
 	sprintf(obj_name2, "%s%s", rand_string(tmp_str, 16), srank);
@@ -128,32 +127,30 @@ int main(int argc, const char *argv[])
     PDCprop_set_obj_app_name(obj_prop3, "test_app",  pdc_id);
     PDCprop_set_obj_tags(    obj_prop3, "tag0=1",    pdc_id);
 
-    pdcid_t obj1 = PDCobj_create(pdc_id, cont_id, obj_name1, obj_prop1);
+    obj1 = PDCobj_create(pdc_id, cont_id, obj_name1, obj_prop1);
     if (obj1 < 0) { 
         printf("Error getting an object id of %s from server, exit...\n", obj_name1);
         exit(-1);
     }
 
-	pdcid_t obj2 = PDCobj_create(pdc_id, cont_id, obj_name2, obj_prop2);
+    obj2 = PDCobj_create(pdc_id, cont_id, obj_name2, obj_prop2);
     if (obj2 < 0) {    
         printf("Error getting an object id of %s from server, exit...\n", obj_name2);
         exit(-1);
     }
 
-	pdcid_t obj3 = PDCobj_create(pdc_id, cont_id, obj_name3, obj_prop3);
+    obj3 = PDCobj_create(pdc_id, cont_id, obj_name3, obj_prop3);
     if (obj3 < 0) {
         printf("Error getting an object id of %s from server, exit...\n", obj_name3);
         exit(-1);
     }
 
-	uint64_t offset[2] = {1, 1};
-    uint64_t rdims[2] = {2, 2};
     // create a region
-    pdcid_t r1 = PDCregion_create(2, offset, rdims, pdc_id);
+    r1 = PDCregion_create(2, offset, rdims, pdc_id);
 //    printf("first region id: %lld\n", r1);
-    pdcid_t r2 = PDCregion_create(2, offset, rdims, pdc_id);
+    r2 = PDCregion_create(2, offset, rdims, pdc_id);
 //    printf("second region id: %lld\n", r2);
-	pdcid_t r3 = PDCregion_create(2, offset, rdims, pdc_id);
+    r3 = PDCregion_create(2, offset, rdims, pdc_id);
 //    printf("second region id: %lld\n", r3);
 
     #ifdef ENABLE_MPI
@@ -199,7 +196,6 @@ int main(int argc, const char *argv[])
     /* } */
 
 done:
-
     // close a container
     if(PDCcont_close(cont_id, pdc_id) < 0)
         printf("fail to close container %lld\n", cont_id);

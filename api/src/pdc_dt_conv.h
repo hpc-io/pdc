@@ -11,10 +11,12 @@ typedef perr_t (*pdc_conv_t) (void *src_data, void *des_data, size_t nelemt, siz
  *
  * \param src_id [IN]           Id of source variable type
  * \param des_id [IN]           Id of target variable type
+ * \param nelemt [IN]           Number of elements to convert
+ * \param stride [IN]           Stride between each element to convert
  *
  * \return convert function on success/NULL on failure
  */
-pdc_conv_t pdc_find_conv_func(PDC_var_type_t src_id, PDC_var_type_t des_id);
+pdc_conv_t pdc_find_conv_func(PDC_var_type_t src_id, PDC_var_type_t des_id, size_t nelemt, size_t stride);
 
 /**
  * Type conversion function

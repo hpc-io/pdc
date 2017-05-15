@@ -35,7 +35,21 @@ void print_usage() {
 
 int main(int argc, const char *argv[])
 {
-    int rank = 0, size = 1;
+    int rank = 0, size = 1, count = -1, i;
+    perr_t ret;
+    char c;
+    pdcid_t test_obj = -1;
+    struct timeval  ht_total_start;
+    struct timeval  ht_total_end;
+    long long ht_total_elapsed;
+    double ht_total_sec;
+    char obj_name[512];
+    const int metadata_size = 512;
+    struct PDC_prop p;
+    char obj_prefix[4][10] = {"x", "y", "z", "energy"};
+    char tmp_str[128];
+    int use_name = -1;
+    int progress_factor;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -43,9 +57,6 @@ int main(int argc, const char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    perr_t ret;
-    int count = -1;
-    char c;
     while ((c = getopt (argc, argv, "r:")) != -1)
         switch (c)
         {
@@ -76,9 +87,6 @@ int main(int argc, const char *argv[])
         printf("Creating %d objects per MPI rank\n", count);
     fflush(stdout);
 
-    int i;
-    const int metadata_size = 512;
-    struct PDC_prop p;
     // create a pdc
     pdcid_t pdc = PDC_init(p);
     /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
@@ -107,21 +115,6 @@ int main(int argc, const char *argv[])
     /*     if (rank == 0) */ 
     /*         printf("Create an object property, id is %lld\n", obj_prop); */
 
-    pdcid_t test_obj = -1;
-
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
-    double ht_total_sec;
-
-
-    char obj_name[512];
-
-
-    char obj_prefix[4][10] = {"x", "y", "z", "energy"};
-    char tmp_str[128];
-
-    int use_name = -1;
     char *env_str = getenv("PDC_OBJ_NAME");
     if (env_str != NULL) {
         use_name = atoi(env_str);
@@ -133,7 +126,6 @@ int main(int argc, const char *argv[])
     }
 
     srand(rank+1);
-
 
     #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -177,7 +169,7 @@ int main(int argc, const char *argv[])
         /* } */
 
         // Print progress
-        int progress_factor = count < 10 ? 1 : 10;
+        progress_factor = count < 10 ? 1 : 10;
         if (rank == 0 && i > 0 && i % (count/progress_factor) == 0) {
             gettimeofday(&ht_total_end, 0);
             ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;

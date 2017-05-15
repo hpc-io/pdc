@@ -5,8 +5,9 @@
 
 int main() {
     struct PDC_prop p;
+    pdcid_t pdc, cont_prop, cont;
     // create a pdc
-    pdcid_t pdc = PDC_init(p);
+    pdc = PDC_init(p);
     printf("create a new pdc, pdc id is: %lld\n", pdc);
 
     // create a container property
@@ -24,7 +25,7 @@ int main() {
         printf("container property (id: %lld) default lifetime is transient\n", create_prop);
     
     // create a container
-    pdcid_t cont = PDCcont_create(pdc, "c1", create_prop);
+    cont = PDCcont_create(pdc, "c1", create_prop);
     if(cont > 0)
         printf("Create a container, id is %lld\n", cont);
     else

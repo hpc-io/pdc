@@ -6,12 +6,15 @@
 
 int main() {
     struct PDC_prop p;
+    pdcid_t pdc, create_prop1, create_prop2, create_prop;
+    PDC_prop_type type;
+    
     // create a pdc
-    pdcid_t pdc = PDC_init(p);
+    pdc = PDC_init(p);
 
     // create an object property
-    PDC_prop_type type = PDC_OBJ_CREATE;
-    pdcid_t create_prop1 = PDCprop_create(type, pdc);
+    type = PDC_OBJ_CREATE;
+    create_prop1 = PDCprop_create(type, pdc);
     if(create_prop1 > 0) {
         if(type == PDC_CONT_CREATE)
             printf("Create a container property, id is %lld\n", create_prop1);
@@ -22,7 +25,7 @@ int main() {
         printf("Fail to create @ line %d\n", __LINE__);
     }
     // create another object property
-    pdcid_t create_prop2 = PDCprop_create(type, pdc);
+    create_prop2 = PDCprop_create(type, pdc);
     if(create_prop2 > 0) {
         if(type == PDC_CONT_CREATE)
             printf("Create a container property, id is %lld\n", create_prop2);
@@ -44,7 +47,7 @@ int main() {
 
     // create a container property
     type = PDC_CONT_CREATE;
-    pdcid_t create_prop = PDCprop_create(type, pdc);
+    create_prop = PDCprop_create(type, pdc);
     if(create_prop > 0) {
         if(type == PDC_CONT_CREATE)
             printf("Create a container property, id is %lld\n", create_prop);

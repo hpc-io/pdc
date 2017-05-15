@@ -36,6 +36,27 @@ void print_usage() {
 int main(int argc, const char *argv[])
 {
     int rank = 0, size = 1;
+    int count = -1;
+    char c;
+    int i;
+    struct PDC_prop p;
+    pdcid_t pdc, cont_prop, cont, obj_prop;
+    struct timeval  ht_total_start;
+    struct timeval  ht_total_end;
+    long long ht_total_elapsed;
+    double ht_total_sec;
+    int use_name = -1;
+    char *env_str;
+    pdc_metadata_t new;
+    char **obj_names;
+    int  *obj_ts;
+    char filename[128], pdc_server_tmp_dir_g[128];
+    int n_entry;
+    pdc_metadata_t entry;
+    uint32_t *hash_key;
+    int j, read_count = 0, tmp_count;
+    pdc_metadata_t *res = NULL;
+    int progress_factor;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -43,8 +64,6 @@ int main(int argc, const char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    int count = -1;
-    char c;
     while ((c = getopt (argc, argv, "r:")) != -1)
         switch (c)
         {
@@ -75,46 +94,30 @@ int main(int argc, const char *argv[])
         printf("Update/Delete %d objects per MPI rank\n", count);
     fflush(stdout);
 
-    int i;
-
-    struct PDC_prop p;
     // create a pdc
-    pdcid_t pdc = PDC_init(p);
+    pdc = PDC_init(p);
     /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
-    pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
+    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     // create a container
-    pdcid_t cont = PDCcont_create(pdc, "c1", cont_prop);
+    cont = PDCcont_create(pdc, "c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
     // create an object property
-    pdcid_t obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
+    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if(obj_prop <= 0)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
 
-    pdcid_t test_obj = -1;
-
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
-    double ht_total_sec;
-
-
-    char obj_prefix[4][10] = {"x", "y", "z", "energy"};
-    char tmp_str[128];
-
-    int use_name = -1;
-    char *env_str = getenv("PDC_OBJ_NAME");
+    env_str = getenv("PDC_OBJ_NAME");
     if (env_str != NULL) {
         use_name = atoi(env_str);
     }
 
-    pdc_metadata_t new;
     new.time_step = -1;
     strcpy(new.app_name, "updated_app_name");
     strcpy(new.data_location, "updated_obj_data_location");
@@ -126,14 +129,12 @@ int main(int argc, const char *argv[])
         printf("Using %s\n", name_mode[use_name+1]);
     }
 
-    const int metadata_size = 512;
-    char **obj_names = (char**)malloc(count * sizeof(char*));
-    int  *obj_ts     = (int*)  malloc(count * sizeof(int)  );
+    obj_names = (char**)malloc(count * sizeof(char*));
+    obj_ts    = (int*)  malloc(count * sizeof(int)  );
     for (i = 0; i < count; i++) {
         obj_names[i] = (char*)malloc(128*sizeof(char));
     }
-    char filename[128], pdc_server_tmp_dir_g[128];
-    int n_entry;
+    
     // Set up tmp dir
     char *tmp_dir = getenv("PDC_TMPDIR");
     if (tmp_dir == NULL)
@@ -150,9 +151,6 @@ int main(int argc, const char *argv[])
     fread(&n_entry, sizeof(int), 1, file);
     /* printf("%d entries\n", n_entry); */
 
-    pdc_metadata_t entry;
-    uint32_t *hash_key;
-    int j, read_count = 0, tmp_count;
     while (n_entry > 0) {
         fread(&tmp_count, sizeof(int), 1, file);
         /* printf("Count:%d\n", tmp_count); */
@@ -179,11 +177,9 @@ int main(int argc, const char *argv[])
          n_entry--;
      }
 
-
     fclose(file);
 
     count = read_count;
-
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -202,7 +198,6 @@ int main(int argc, const char *argv[])
         /*     goto done; */
         /* } */
 
-        pdc_metadata_t *res = NULL;
         /* printf("Querying metadata with name [%s]\n", obj_names[i]); */
         PDC_Client_query_metadata_name_timestep(obj_names[i], obj_ts[i], &res);
         if (res == NULL) {
@@ -227,7 +222,7 @@ int main(int argc, const char *argv[])
 
         if (rank == 0) {
             // Print progress
-            int progress_factor = count < 20 ? 1 : 20;
+            progress_factor = count < 20 ? 1 : 20;
             if (rank == 0 && i > 0 && i % (count/progress_factor) == 0) {
                 gettimeofday(&ht_total_end, 0);
                 ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;

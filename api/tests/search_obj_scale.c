@@ -36,6 +36,21 @@ void print_usage() {
 int main(int argc, const char *argv[])
 {
     int rank = 0, size = 1;
+    int i;
+    int use_name = -1;
+    int ts;
+    struct PDC_prop p;
+    pdcid_t pdc, cont_prop, cont, obj_prop;
+    struct timeval  ht_total_start;
+    struct timeval  ht_total_end;
+    long long ht_total_elapsed;
+    double ht_total_sec;
+    char obj_name[512];
+    char obj_prefix[4][10] = {"x", "y", "z", "energy"};
+    char tmp_str[128];
+    char *env_str;
+    pdc_metadata_t *res = NULL;
+    int progress_factor;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -76,15 +91,12 @@ int main(int argc, const char *argv[])
         printf("Creating %d objects per MPI rank\n", count);
     fflush(stdout);
 
-    int i;
-    const int metadata_size = 512;
-    struct PDC_prop p;
     // create a pdc
-    pdcid_t pdc = PDC_init(p);
+    pdc = PDC_init(p);
     /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
-    pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
+    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
     /* else */
@@ -92,7 +104,7 @@ int main(int argc, const char *argv[])
     /*         printf("Create a container property, id is %lld\n", cont_prop); */
 
     // create a container
-    pdcid_t cont = PDCcont_create(pdc, "c1", cont_prop);
+    cont = PDCcont_create(pdc, "c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
     /* else */
@@ -100,29 +112,14 @@ int main(int argc, const char *argv[])
     /*         printf("Create a container, id is %lld\n", cont); */
 
     // create an object property
-    pdcid_t obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
+    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if(obj_prop <= 0)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
     /* else */
     /*     if (rank == 0) */ 
     /*         printf("Create an object property, id is %lld\n", obj_prop); */
 
-    pdcid_t test_obj = -1;
-
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
-    double ht_total_sec;
-
-
-    char obj_name[512];
-
-
-    char obj_prefix[4][10] = {"x", "y", "z", "energy"};
-    char tmp_str[128];
-
-    int use_name = -1;
-    char *env_str = getenv("PDC_OBJ_NAME");
+    env_str = getenv("PDC_OBJ_NAME");
     if (env_str != NULL) {
         use_name = atoi(env_str);
     }
@@ -141,9 +138,7 @@ int main(int argc, const char *argv[])
 
     gettimeofday(&ht_total_start, 0);
 
-    int ts;
     for (i = 0; i < count; i++) {
-
         if (use_name == -1) {
             sprintf(obj_name, "%s", rand_string(tmp_str, 16));
             ts = rank;
@@ -161,14 +156,13 @@ int main(int argc, const char *argv[])
             goto done;
         }
 
-        pdc_metadata_t *res = NULL;
         PDC_Client_query_metadata_name_only(obj_name, &res);
         if (res == NULL) {
             printf("%d: Cannot find object [%s] ts=%d\n", rank, obj_name, ts);
         }
 
         // Print progress
-        int progress_factor = count < 10 ? 1 : 10;
+        progress_factor = count < 10 ? 1 : 10;
         if (rank == 0 && i > 0 && i % (count/progress_factor) == 0) {
             gettimeofday(&ht_total_end, 0);
             ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
