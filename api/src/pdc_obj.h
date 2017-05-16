@@ -5,6 +5,7 @@
 #include "pdc_error.h"
 #include "pdc_interface.h"
 #include "pdc_life.h"
+#include "pdc_client_connect.h"
 
 typedef PDC_id_info_t obj_handle;
 
@@ -295,6 +296,33 @@ perr_t PDCobj_unmap(pdcid_t obj_id, pdcid_t pdc_id);
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDCreg_unmap(pdcid_t obj_id, pdcid_t reg_id, pdcid_t pdc_id);
+
+/**
+ * Obtain the region lock
+ *
+ * \param pdc_id [IN]           Id of PDC
+ * \param cont_id [IN]          Id of container
+ * \param obj_id [IN]           Id of the object
+ * \param reg_id [IN]           Id of the region
+ * \param access_type [IN]      Region access type: READ or WRITE
+ * \param lock_mode [IN]        Lock mode of the region: BLOCK or NOBLOCK
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCreg_obtain_lock(pdcid_t pdc_id, pdcid_t cont_id, pdcid_t obj_id, pdcid_t reg_id, PDC_access_t access_type, PDC_lock_mode_t lock_mode);
+
+/**
+ * Release the region lock
+ *
+ * \param pdc_id [IN]           Id of PDC
+ * \param cont_id [IN]          Id of container
+ * \param obj_id [IN]           Id of the object
+ * \param reg_id [IN]           Id of the region
+ * \param access_type [IN]      Region access type
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCreg_release_lock(pdcid_t pdc_id, pdcid_t cont_id, pdcid_t obj_id, pdcid_t reg_id, PDC_access_t access_type);
 
 /**
  * Release memory buffers from one memory object 

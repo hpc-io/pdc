@@ -2,7 +2,6 @@
 #include "pdc_malloc.h"
 #include "pdc_prop_pkg.h"
 #include "pdc_client_server_common.h"
-#include "pdc_client_connect.h"
 
 static perr_t PDCobj__close(struct PDC_obj_info *op);
 
@@ -733,5 +732,43 @@ perr_t PDCobj_release(pdcid_t obj_id, pdcid_t pdc_id)
     prop->buf = NULL;
     
 done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDCreg_obtain_lock(pdcid_t pdc_id, pdcid_t cont_id, pdcid_t obj_id, pdcid_t reg_id, PDC_access_t access_type, PDC_lock_mode_t lock_mode)
+{
+    perr_t ret_value = SUCCEED;         /* Return value */
+    pdcid_t meta_id;
+    struct PDC_obj_info *object_info;
+    struct PDC_region_info *region_info;
+    pbool_t *obtained = NULL;
+    
+    FUNC_ENTER(NULL);
+    
+    object_info = PDCobj_get_info(obj_id, pdc_id);
+    meta_id = object_info->meta_id;
+    region_info = PDCregion_get_info(reg_id, obj_id, pdc_id);
+    
+    ret_value = PDC_Client_obtain_region_lock(pdc_id, cont_id, meta_id, region_info, access_type, lock_mode, obtained);
+    
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDCreg_release_lock(pdcid_t pdc_id, pdcid_t cont_id, pdcid_t obj_id, pdcid_t reg_id, PDC_access_t access_type)
+{
+    perr_t ret_value = SUCCEED;         /* Return value */
+    pbool_t *released = NULL;
+    pdcid_t meta_id;
+    struct PDC_obj_info *object_info;
+    struct PDC_region_info *region_info;
+    
+    FUNC_ENTER(NULL);
+    
+    object_info = PDCobj_get_info(obj_id, pdc_id);
+    meta_id = object_info->meta_id;
+    region_info = PDCregion_get_info(reg_id, obj_id, pdc_id);
+    
+    ret_value = PDC_Client_release_region_lock(pdc_id, cont_id, meta_id, region_info, access_type, released);
+    
     FUNC_LEAVE(ret_value);
 }

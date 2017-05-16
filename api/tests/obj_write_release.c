@@ -3,7 +3,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <getopt.h>
-#include <time.h>
 #include <sys/time.h>
 
 /* #define ENABLE_MPI 1 */
@@ -17,6 +16,7 @@
 int main(int argc, const char *argv[])
 {
     int rank = 0, size = 1;
+    perr_t ret;
     struct PDC_prop p;
     pdcid_t pdc_id, cont_prop, cont_id, obj_prop1, obj_prop2, obj_prop3;
     pdcid_t obj1, obj2, obj3, r1, r2, r3, meta_id;
@@ -37,9 +37,7 @@ int main(int argc, const char *argv[])
     long long elapsed;
     double total_lock_overhead;
     
-    struct PDC_region_info *region;
-    struct PDC_obj_info *info;
-    pbool_t lock_status;
+//    pbool_t lock_status;
     
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -123,10 +121,10 @@ int main(int argc, const char *argv[])
 //    PDCreg_unmap(obj1, r1, pdc_id);
 //	PDCobj_map(obj2, r2, obj3, r3, pdc_id);
 
-    region = PDCregion_get_info(r1, obj1, pdc_id);
+//    region = PDCregion_get_info(r1, obj1, pdc_id);
 
-    info = PDCobj_get_info(obj1, pdc_id);
-    meta_id = info->meta_id;
+//    info = PDCobj_get_info(obj1, pdc_id);
+//    meta_id = info->meta_id;
 //    printf("meta id is %lld\n", info->meta_id);
 
 /*
@@ -147,8 +145,8 @@ int main(int argc, const char *argv[])
 #endif
     gettimeofday(&start_time, 0);
 
-    PDC_Client_obtain_region_lock(pdc_id, cont_id, meta_id, region, WRITE, NOBLOCK, &lock_status);
-    if (lock_status != TRUE)
+    ret = PDCreg_obtain_lock(pdc_id, cont_id, obj1, r1, WRITE, NOBLOCK);
+    if (ret != SUCCEED)
         printf("Failed to obtain lock for region\n");
 
 #ifdef ENABLE_MPI
@@ -168,8 +166,8 @@ int main(int argc, const char *argv[])
 #endif
     gettimeofday(&start_time, 0);
 
-    PDC_Client_release_region_lock(pdc_id, cont_id, meta_id, region, WRITE, &lock_status);
-    if (lock_status != TRUE)
+    ret = PDCreg_release_lock(pdc_id, cont_id, obj1, r1, WRITE);
+    if (ret != SUCCEED)
         printf("Failed to release lock for region\n");
 
 #ifdef ENABLE_MPI
@@ -183,8 +181,9 @@ int main(int argc, const char *argv[])
     if (rank == 0) {
         printf("Total lock release overhead: %.6f\n", total_lock_overhead);
     }
+    
+    PDCreg_unmap(obj1, r1, pdc_id);
 
-done:
     // close a container
     if(PDCcont_close(cont_id, pdc_id) < 0)
         printf("fail to close container %lld\n", cont_id);

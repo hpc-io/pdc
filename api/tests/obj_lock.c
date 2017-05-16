@@ -39,7 +39,9 @@ int main(int argc, const char *argv[])
     double total_lock_overhead;
     
     pdc_metadata_t *metadata = NULL;
-    pdcid_t meta_id;
+//    pdcid_t meta_id;
+    pdcid_t reg;
+    perr_t ret;
     
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -107,6 +109,7 @@ int main(int argc, const char *argv[])
 #endif
 
     // Query and get meta id
+/*
     PDC_Client_query_metadata_name_timestep("test_obj", 0, &metadata);
     if (metadata != NULL) {
         meta_id = metadata->obj_id;
@@ -115,7 +118,7 @@ int main(int argc, const char *argv[])
         printf("Previously created object by rank 0 not found!\n");
         goto done;
     }
-
+*/
     /* // Obtain a read lock for region 0 */
     /* PDC_Client_obtain_region_lock(pdc, cont, meta_id, &region_info, READ, BLOCK, &lock_status); */
     /* if (lock_status == TRUE) */ 
@@ -181,10 +184,13 @@ int main(int argc, const char *argv[])
 #endif
     gettimeofday(&start_time, 0);
       
-    region = &region_info_no_overlap;
-    region->mapping = 0;
-    PDC_Client_obtain_region_lock(pdc, cont, meta_id, region, WRITE, NOBLOCK, &lock_status);
-    if (lock_status != TRUE) 
+//    region = &region_info_no_overlap;
+//    region->mapping = 0;
+    
+    reg = PDCregion_create(region_info_no_overlap.ndim, start_no_overlap, count_no_overlap, pdc);
+    PDCreg_obtain_lock(pdc, cont, obj1, region, WRITE, NOBLOCK);
+    
+    if (ret != SUCCEED)
         printf("[%d] Failed to obtain lock for region (%lld,%lld,%lld) (%lld,%lld,%lld) ... error\n", rank,
                 region->offset[0], region->offset[1], region->offset[2], region->size[0], region->size[1], region->size[2]);
 
@@ -205,9 +211,10 @@ int main(int argc, const char *argv[])
 #endif
     gettimeofday(&start_time, 0);
       
-    region = &region_info_no_overlap;
-    PDC_Client_release_region_lock(pdc, cont, meta_id, region, WRITE, &lock_status);
-    if (lock_status != TRUE) 
+//    region = &region_info_no_overlap;
+//    PDC_Client_release_region_lock(pdc, cont, meta_id, region, WRITE, &lock_status);
+    ret = PDCreg_release_lock(pdc, cont, obj1, reg, WRITE);
+    if (ret != SUCCEED)
         printf("[%d] Failed to release lock for region (%d,%d,%d) (%d,%d,%d) ... error\n", rank, 
                 region->offset[0], region->offset[1], region->offset[2], region->size[0], region->size[1], region->size[2]);
 
