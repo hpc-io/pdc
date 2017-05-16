@@ -211,7 +211,6 @@ client_test_connect_rpc_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -238,7 +237,6 @@ client_send_object_unmap_rpc_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -265,7 +263,6 @@ client_send_region_unmap_rpc_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -292,7 +289,6 @@ client_send_region_map_rpc_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -331,7 +327,6 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
         return EXIT_FAILURE;
     }
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -357,7 +352,6 @@ close_server_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -408,7 +402,6 @@ client_rpc_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -435,7 +428,6 @@ client_region_lock_rpc_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -464,7 +456,6 @@ perr_t PDC_Client_check_response(hg_context_t **hg_context)
 
     ret_value = SUCCEED;
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -575,7 +566,7 @@ int PDC_Client_check_bulk(hg_class_t *hg_class, hg_context_t *hg_context)
         ret_value = SUCCEED;
     else
         ret_value = FAIL;
-done:
+
     FUNC_LEAVE(ret_value);
 }
 
@@ -735,7 +726,6 @@ perr_t PDC_Client_init()
         mercury_has_init_g = 1;
     }
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -919,7 +909,6 @@ perr_t PDC_Client_list_all(int *n_res, pdc_metadata_t ***out)
     
     ret_value = PDC_partial_query(1, -1, NULL, NULL, -1, -1, -1, NULL, n_res, out);
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -1057,7 +1046,6 @@ metadata_query_rpc_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -1085,7 +1073,6 @@ metadata_delete_rpc_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -1110,7 +1097,6 @@ metadata_delete_by_id_rpc_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -1137,7 +1123,6 @@ metadata_update_rpc_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -1195,7 +1180,6 @@ perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
     if (lookup_args.ret != 1) 
         printf("PDC_CLIENT: update NOT successful ... ret_value = %d\n", lookup_args.ret);
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -1379,7 +1363,7 @@ perr_t PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t 
     /* printf("==PDC_CLIENT: Found %d metadata with search\n", count); */
 
     // TODO lookup_args[i] are not freed
-done:
+
     FUNC_LEAVE(ret_value);
 }
 
@@ -1441,7 +1425,6 @@ perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_st
     /* printf("==PDC_CLIENT[%d]: received query result name [%s], hash value %u\n", pdc_client_mpi_rank_g, in.obj_name, in.hash_value); */
     *out = lookup_args.data;
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -1634,7 +1617,6 @@ perr_t PDC_Client_close_all_server()
     }
     ret_value = 0;
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -2016,10 +1998,9 @@ perr_t PDC_Client_release_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta
     FUNC_ENTER(NULL);
 
     /* uint64_t meta_id; */
-    /* PDC_obj_info_t *obj_prop = PDCobj_get_info(obj_id, pdc); */
+    /* PDC_obj_info *obj_prop = PDCobj_get_info(obj_id, pdc); */
     /* meta_id = obj_prop->meta_id; */
     ret_value = PDC_Client_region_lock(pdc, cont_id, meta_id, region_info, access_type, PDC_LOCK_OP_RELEASE, released);
 
-done:
     FUNC_LEAVE(ret_value);
 }

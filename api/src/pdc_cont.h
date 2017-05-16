@@ -115,8 +115,19 @@ perr_t PDCcont_close(pdcid_t cont_id, pdcid_t pdc);
 /**
  * PDC container finalize
  *
+ * \param pdc_id [IN]           Id of the PDC
+ *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCcont_end();
+perr_t PDCcont_end(pdcid_t pdc_id);
+
+/**
+ * Check if container list is empty
+ *
+ * \param pdc_id [IN]           Id of the PDC
+ *
+ * \return SUCCEED if empty/FAIL if not empty
+ */
+perr_t PDC_cont_list_null(pdcid_t pdc_id);
 
 #endif /* end _pdc_cont_H */

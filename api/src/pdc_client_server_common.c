@@ -78,7 +78,6 @@ uint32_t PDC_get_server_by_obj_id(uint64_t obj_id, int n_server)
     ret_value  = (uint32_t)(obj_id / PDC_SERVER_ID_INTERVEL) - 1;
     ret_value %= n_server;
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -96,6 +95,7 @@ static uint32_t pdc_hash_djb2(const char *pc)
     return hash;
 }
 
+/*
 static uint32_t pdc_hash_sdbm(const char *pc)
 {
     uint32_t hash = 0, c;
@@ -108,6 +108,7 @@ static uint32_t pdc_hash_sdbm(const char *pc)
         hash *= -1;
     return hash;
 }
+ */
 
 uint32_t PDC_get_hash_by_name(const char *name)
 {
@@ -200,6 +201,7 @@ hg_class_t *hg_class_g;
 HG_TEST_RPC_CB(gen_obj_id, handle)
 {
     hg_return_t ret_value = HG_SUCCESS;
+    
     FUNC_ENTER(NULL);
 
     /* Get input parameters sent on origin through on HG_Forward() */
@@ -219,7 +221,6 @@ HG_TEST_RPC_CB(gen_obj_id, handle)
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -245,7 +246,6 @@ HG_TEST_RPC_CB(client_test_connect, handle)
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -329,7 +329,6 @@ HG_TEST_RPC_CB(metadata_query, handle)
 //    HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -356,7 +355,6 @@ HG_TEST_RPC_CB(metadata_delete_by_id, handle)
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -384,7 +382,6 @@ HG_TEST_RPC_CB(metadata_delete, handle)
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -411,7 +408,6 @@ HG_TEST_RPC_CB(metadata_update, handle)
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -443,7 +439,6 @@ HG_TEST_RPC_CB(close_server, handle)
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -478,9 +473,10 @@ region_lock_bulk_transfer_cb (const struct hg_cb_info *hg_cb_info)
 
     HG_Free_input(bulk_args->handle, &(bulk_args->in));
     HG_Bulk_free(local_bulk_handle);
-done:
+
     HG_Destroy(bulk_args->handle);
     free(bulk_args);
+    
     return ret;
 }
 
@@ -659,6 +655,7 @@ HG_TEST_RPC_CB(gen_reg_unmap_notification, handle)
             out.ret = 1;
         }
     }
+    
 done:
     HG_Respond(handle, NULL, NULL, &out);
     HG_Free_input(handle, &in);
@@ -910,7 +907,6 @@ metadata_query_register(hg_class_t *hg_class)
 
     ret_value = MERCURY_REGISTER(hg_class, "metadata_query", metadata_query_in_t, metadata_query_out_t, metadata_query_cb);
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -923,7 +919,6 @@ metadata_update_register(hg_class_t *hg_class)
 
     ret_value = MERCURY_REGISTER(hg_class, "metadata_update", metadata_update_in_t, metadata_update_out_t, metadata_update_cb);
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -936,7 +931,6 @@ metadata_delete_by_id_register(hg_class_t *hg_class)
 
     ret_value = MERCURY_REGISTER(hg_class, "metadata_delete_by_id", metadata_delete_by_id_in_t, metadata_delete_by_id_out_t, metadata_delete_by_id_cb);
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -949,7 +943,6 @@ metadata_delete_register(hg_class_t *hg_class)
 
     ret_value = MERCURY_REGISTER(hg_class, "metadata_delete", metadata_delete_in_t, metadata_delete_out_t, metadata_delete_cb);
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -962,7 +955,6 @@ close_server_register(hg_class_t *hg_class)
 
     ret_value = MERCURY_REGISTER(hg_class, "close_server", close_server_in_t, close_server_out_t, close_server_cb);
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -975,7 +967,6 @@ gen_reg_map_notification_register(hg_class_t *hg_class)
 
     ret_value = MERCURY_REGISTER(hg_class, "gen_reg_map_notification", gen_reg_map_notification_in_t, gen_reg_map_notification_out_t, gen_reg_map_notification_cb);
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -988,7 +979,6 @@ gen_reg_unmap_notification_register(hg_class_t *hg_class)
 
     ret_value = MERCURY_REGISTER(hg_class, "gen_reg_unmap_notification", gen_reg_unmap_notification_in_t, gen_reg_unmap_notification_out_t, gen_reg_unmap_notification_cb);
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -1001,7 +991,6 @@ gen_obj_unmap_notification_register(hg_class_t *hg_class)
 
     ret_value = MERCURY_REGISTER(hg_class, "gen_obj_unmap_notification", gen_obj_unmap_notification_in_t, gen_obj_unmap_notification_out_t, gen_obj_unmap_notification_cb);
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -1014,7 +1003,6 @@ region_lock_register(hg_class_t *hg_class)
 
     ret_value = MERCURY_REGISTER(hg_class, "region_lock", region_lock_in_t, region_lock_out_t, region_lock_cb);
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -1028,6 +1016,5 @@ query_partial_register(hg_class_t *hg_class)
 
     ret_value = MERCURY_REGISTER(hg_class, "query_partial", metadata_query_transfer_in_t, metadata_query_transfer_out_t, query_partial_cb);
 
-done:
     FUNC_LEAVE(ret_value);
 }

@@ -113,7 +113,17 @@ pdcid_t PDCid_register(PDC_type_t type, const void *object);
 pdcid_t PDC_id_register(PDC_type_t type, const void *object, pdcid_t pdc_id);
 
 /**
- * Decrements the number of references outstanding for an ID.
+ * Increment the number of references outstanding for an ID.
+ *
+ * \param id [IN]               Id of type to decrease
+ * \param pdc_id [IN]           Id of the PDC
+ *
+ * \return New reference count on success/Negative on failure
+ */
+int PDC_inc_ref(pdcid_t id, pdcid_t pdc_id);
+
+/**
+ * Decrement the number of references outstanding for an ID.
  *
  * \param id [IN]               Id of type to decrease
  * \param pdc_id [IN]           Id of the PDC

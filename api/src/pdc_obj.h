@@ -260,7 +260,7 @@ perr_t PDCobj_map(pdcid_t from_obj, pdcid_t from_reg, pdcid_t to_obj, pdcid_t to
  * \param obj_id [IN]           Id of the object
  * \param pdc_id [IN]           Id of PDC
  *
- * \return Pointer to PDC_obj_info_t struct on success/Null on failure
+ * \return Pointer to PDC_obj_info struct on success/Null on failure
  */
 struct PDC_obj_info *PDCobj_get_info(pdcid_t obj_id, pdcid_t pdc_id);
 
@@ -271,7 +271,7 @@ struct PDC_obj_info *PDCobj_get_info(pdcid_t obj_id, pdcid_t pdc_id);
  * \param obj_id [IN]           Id of the object
  * \param pdc_id [IN]           Id of PDC
  *
- * \return Pointer to PDC_obj_info_t struct on success/Null on failure
+ * \return Pointer to PDC_obj_info struct on success/Null on failure
  */
 struct PDC_region_info *PDCregion_get_info(pdcid_t reg_id, pdcid_t obj_id, pdcid_t pdc_id);
 
@@ -356,6 +356,24 @@ perr_t PDCobj_close(pdcid_t obj_id, pdcid_t pdc_id);
  */
 perr_t PDCregion_close(pdcid_t region_id, pdcid_t pdc);
 
+/**
+ * PDC object finalize
+ *
+ * \param pdc_id [IN]           Id of the PDC
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCobj_end(pdcid_t pdc_id);
+
+/**
+ * PDC region finalize
+ *
+ * \param pdc_id [IN]           Id of the PDC
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCregion_end(pdcid_t pdc_id);
+
 /* Object transform functions */
 
 /**
@@ -385,5 +403,25 @@ perr_t PDCprop_set_obj_loci_prop(pdcid_t obj_prop, PDC_loci locus, PDC_transform
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDCprop_set_obj_transform(pdcid_t obj_create_prop, PDC_loci pre_locus, PDC_transform A, PDC_loci dest_locus);
+
+/* private functions */
+
+/**
+ * Check if object list is empty
+ *
+ * \param pdc_id [IN]           Id of the PDC
+ *
+ * \return SUCCEED if empty/FAIL if not empty
+ */
+perr_t PDC_obj_list_null(pdcid_t pdc_id);
+
+/**
+ * Check if region list is empty
+ *
+ * \param pdc_id [IN]           Id of the PDC
+ *
+ * \return SUCCEED if empty/FAIL if not empty
+ */
+perr_t PDC_region_list_null(pdcid_t pdc_id);
 
 #endif

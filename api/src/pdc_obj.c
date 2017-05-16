@@ -127,7 +127,6 @@ perr_t PDCobj__close(struct PDC_obj_info *op)
     
     op = PDC_FREE(struct PDC_obj_info, op);
     
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -140,7 +139,6 @@ perr_t PDCregion__close(struct PDC_region_info *op)
     free(op->size);
     op = PDC_FREE(struct PDC_region_info, op);
     
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -201,17 +199,17 @@ done:
 pdcid_t PDCobj_open(pdcid_t cont_id, const char *obj_name, pdcid_t pdc)
 {
     pdcid_t ret_value = SUCCEED;
-    pdcid_t ret_value1;
+    pdcid_t obj_id;
     
     FUNC_ENTER(NULL);
     
     // should wait for response from server
     // look up in the list for now
-    ret_value1 = PDC_find_byname(PDC_OBJ, obj_name, pdc);
-    if(ret_value1 <= 0)
+    obj_id = PDC_find_byname(PDC_OBJ, obj_name, pdc);
+    if(obj_id <= 0)
         PGOTO_ERROR(FAIL, "cannot locate object");
-    pdc_inc_ref(ret_value1, pdc);
-    ret_value = ret_value1;
+    pdc_inc_ref(obj_id, pdc);
+    ret_value = obj_id;
     
 done:
     FUNC_LEAVE(ret_value);
@@ -249,7 +247,6 @@ pbool_t PDCobj_iter_null(obj_handle *ohandle)
     if(ohandle == NULL)
         ret_value = TRUE;
     
-done:
     FUNC_LEAVE(ret_value);
 } /* end of PDCobj_iter_null() */
 
@@ -520,8 +517,8 @@ perr_t PDCobj_map(pdcid_t local_obj, pdcid_t local_reg, pdcid_t remote_obj, pdci
     FUNC_ENTER(NULL);
     
     // PDC_CLASS_t defined in pdc_interface.h
-    // PDC_obj_info_t defined in pdc_obj_pkg.h
-    // PDC_region_info_t defined in pdc_obj_pkg.h
+    // PDC_obj_info defined in pdc_obj_pkg.h
+    // PDC_region_info defined in pdc_obj_pkg.h
     
     pc = (PDC_CLASS_t *)pdc_id;
     
@@ -693,7 +690,7 @@ done:
 
 struct PDC_region_info *PDCregion_get_info(pdcid_t reg_id, pdcid_t obj_id, pdcid_t pdc_id)
 {
-    struct PDC_obj_info *ret_value = NULL;
+    struct PDC_region_info *ret_value = NULL;
     struct PDC_region_info *info =  NULL;
     PDC_CLASS_t *pc;
     PDC_id_info_t *region;
@@ -737,31 +734,4 @@ perr_t PDCobj_release(pdcid_t obj_id, pdcid_t pdc_id)
     
 done:
     FUNC_LEAVE(ret_value);
-}
-
-perr_t PDCobj_update_region(pdcid_t obj_id, pdcid_t region)
-{
-    // call to the server
-}
-
-perr_t PDCobj_invalidate_region(pdcid_t obj_id, pdcid_t region)
-{
-    // call to the server
-}
-
-perr_t PDCobj_sync(pdcid_t obj_id)
-{
-    // call to the server
-}
-
-perr_t PDCprop_set_obj_loci_prop(pdcid_t obj_create_prop, PDC_loci locus, PDC_transform A)
-{
-}
-
-perr_t PDCprop_set_obj_transform(pdcid_t obj_create_prop, PDC_loci pre_locus, PDC_transform A, PDC_loci dest_locus)
-{
-}
-
-obj_handle *PDCview_iter_start(pdcid_t view_id)
-{
 }

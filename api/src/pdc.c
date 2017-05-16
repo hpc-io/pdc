@@ -103,28 +103,3 @@ perr_t PDC_close(pdcid_t pdcid)
 done:
     FUNC_LEAVE(ret_value);
 } /* end of PDC_close() */
-
-pdcid_t PDCtype_create(PDC_STRUCT pdc_struct)
-{
-}
-
-perr_t PDCtype_struct_field_insert(pdcid_t type_id, const char *name, uint64_t offset, PDC_var_type_t var_type)
-{
-}
-
-perr_t PDCget_loci_count(pdcid_t pdc_id, pdcid_t *nloci)
-{
-}
-
-perr_t PDCget_loci_info(pdcid_t pdc_id, pdcid_t n, PDC_loci_info_t *info)
-{
-}
-
-pdcid_t PDC_query_create(pdcid_t pdc_id, PDC_query_type_t query_type, PDC_query_op_t query_op, ...)
-{
-}
-
-pdcid_t PDC_query_combine(pdcid_t query1_id, PDC_com_mode_t combine_op, pdcid_t query2_id)
-{
-}
-

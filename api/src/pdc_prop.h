@@ -39,25 +39,31 @@ perr_t PDCprop_close(pdcid_t id, pdcid_t pdc_id);
 /**
  * PDC container and object property finalize
  *
+ * \param pdc_id [IN]           Id of the PDC
+ *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCprop_end();
+perr_t PDCprop_end(pdcid_t pdc_id);
 
 /* private functions */
 
 /**
  * Check if object property list is empty
  *
+ * \param pdc_id [IN]           Id of the PDC
+ *
  * \return SUCCEED if empty/FAIL if not empty
  */
-perr_t PDC_prop_obj_list_null();
+perr_t PDC_prop_obj_list_null(pdcid_t pdc_id);
 
 /**
  * Check if container property list is empty
  *
+ * \param pdc_id [IN]           Id of the PDC
+ *
  * \return SUCCEED if empty/FAIL if not empty
  */
-perr_t PDC_prop_cont_list_null();
+perr_t PDC_prop_cont_list_null(pdcid_t pdc_id);
 
 /**
  * Get container property infomation

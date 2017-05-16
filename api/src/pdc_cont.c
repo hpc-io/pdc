@@ -2,6 +2,7 @@
 #include "pdc_cont.h"
 #include "pdc_malloc.h"
 #include "pdc_prop_pkg.h"
+#include "pdc_interface.h"
 
 static perr_t PDCcont__close(struct PDC_cont_info *cp);
 
@@ -74,7 +75,7 @@ static perr_t PDCcont__close(struct PDC_cont_info *cp)
     FUNC_ENTER(NULL);
 
     cp = PDC_FREE(struct PDC_cont_info, cp);
-done:
+    
     FUNC_LEAVE(ret_value);
 } /* end of PDCcont__close() */
 
@@ -108,17 +109,17 @@ done:
 pdcid_t PDCcont_open(pdcid_t pdc_id, const char *cont_name)
 {
     pdcid_t ret_value = SUCCEED;
+    pdcid_t cont_id;
 
     FUNC_ENTER(NULL);
 
     // should wait for response from server 
     // look up in the list for now
-    pdcid_t ret_value1;
-    ret_value1 = PDC_find_byname(PDC_CONT, cont_name, pdc_id);
-    if(ret_value1 <= 0)
+    cont_id = PDC_find_byname(PDC_CONT, cont_name, pdc_id);
+    if(cont_id <= 0)
         PGOTO_ERROR(FAIL, "cannot locate container");
-    pdc_inc_ref(ret_value1, pdc_id);
-    ret_value = ret_value1;
+    pdc_inc_ref(cont_id, pdc_id);
+    ret_value = cont_id;
     
 done:
     FUNC_LEAVE(ret_value);

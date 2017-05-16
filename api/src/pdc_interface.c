@@ -254,7 +254,7 @@ perr_t PDC_id_list_clear(PDC_type_t type, pdcid_t pdc)
         else
             ret_value = FAIL;
     }
-done:
+
     FUNC_LEAVE(ret_value);
 }
 
