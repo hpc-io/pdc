@@ -6,7 +6,7 @@
 #include "pdc_interface.h"
 #include "pdc_life.h"
 
-typedef PDC_id_info_t cont_handle;
+typedef struct PDC_id_info cont_handle;
 
 /**
  * PDC container initialization

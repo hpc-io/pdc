@@ -219,7 +219,7 @@ obj_handle *PDCobj_iter_start(pdcid_t cont_id, pdcid_t pdc_id)
     obj_handle *ret_value = NULL;
     obj_handle *objhl = NULL;
     PDC_CLASS_t *pc;
-    PDC_id_type_t *type_ptr;
+    struct PDC_id_type *type_ptr;
     
     FUNC_ENTER(NULL);
     
@@ -287,7 +287,7 @@ perr_t PDCprop_set_obj_lifetime(pdcid_t obj_prop, PDC_lifetime obj_lifetime, pdc
 {
     perr_t ret_value = SUCCEED;         /* Return value */
     PDC_CLASS_t *pc;
-    PDC_id_info_t *info;
+    struct PDC_id_info *info;
     
     FUNC_ENTER(NULL);
     
@@ -305,7 +305,7 @@ perr_t PDCprop_set_obj_user_id(pdcid_t obj_prop, uint32_t user_id, pdcid_t pdc)
 {
     perr_t ret_value = SUCCEED;         /* Return value */
     PDC_CLASS_t *pc;
-    PDC_id_info_t *info;
+    struct PDC_id_info *info;
     
     FUNC_ENTER(NULL);
     
@@ -323,7 +323,7 @@ perr_t PDCprop_set_obj_app_name(pdcid_t obj_prop, char *app_name, pdcid_t pdc)
 {
     perr_t ret_value = SUCCEED;         /* Return value */
     PDC_CLASS_t *pc;
-    PDC_id_info_t *info;
+    struct PDC_id_info *info;
     
     FUNC_ENTER(NULL);
     
@@ -341,7 +341,7 @@ perr_t PDCprop_set_obj_time_step(pdcid_t obj_prop, uint32_t time_step, pdcid_t p
 {
     perr_t ret_value = SUCCEED;         /* Return value */
     PDC_CLASS_t *pc;
-    PDC_id_info_t *info;
+    struct PDC_id_info *info;
     
     FUNC_ENTER(NULL);
     
@@ -359,7 +359,7 @@ perr_t PDCprop_set_obj_tags(pdcid_t obj_prop, char *tags, pdcid_t pdc)
 {
     perr_t ret_value = SUCCEED;         /* Return value */
     PDC_CLASS_t *pc;
-    PDC_id_info_t *info;
+    struct PDC_id_info *info;
     
     FUNC_ENTER(NULL);
     
@@ -377,7 +377,7 @@ perr_t PDCprop_set_obj_dims(pdcid_t obj_prop, PDC_int_t ndim, uint64_t *dims, pd
 {
     perr_t ret_value = SUCCEED;         /* Return value */
     PDC_CLASS_t *pc;
-    PDC_id_info_t *info;
+    struct PDC_id_info *info;
     struct PDC_obj_prop *prop;
     
     FUNC_ENTER(NULL);
@@ -402,7 +402,7 @@ perr_t PDCprop_set_obj_type(pdcid_t obj_prop, PDC_var_type_t type, pdcid_t pdc)
 {
     perr_t ret_value = SUCCEED;         /* Return value */
     PDC_CLASS_t *pc;
-    PDC_id_info_t *info;
+    struct PDC_id_info *info;
     struct PDC_obj_prop *prop;
     
     FUNC_ENTER(NULL);
@@ -422,7 +422,7 @@ perr_t PDCprop_set_obj_buf(pdcid_t obj_prop, void *buf, pdcid_t pdc)
 {
     perr_t ret_value = SUCCEED;         /* Return value */
     PDC_CLASS_t *pc;
-    PDC_id_info_t *info;
+    struct PDC_id_info *info;
     struct PDC_obj_prop *prop;
     
     FUNC_ENTER(NULL);
@@ -442,7 +442,7 @@ void **PDCobj_buf_retrieve(pdcid_t obj_id, pdcid_t pdc)
 {
     void **ret_value = NULL;         /* Return value */
     PDC_CLASS_t *pc;
-    PDC_id_info_t *info;
+    struct PDC_id_info *info;
     struct PDC_obj_info *object;
     pdcid_t propid;
     struct PDC_obj_prop *prop;
@@ -501,15 +501,15 @@ perr_t PDCobj_map(pdcid_t local_obj, pdcid_t local_reg, pdcid_t remote_obj, pdci
     perr_t ret_value = SUCCEED;         /* Return value */
     int i;
     PDC_CLASS_t *pc;
-    PDC_id_info_t *objinfo1 = NULL, *objinfo2 = NULL;
+    struct PDC_id_info *objinfo1 = NULL, *objinfo2 = NULL;
     struct PDC_obj_info *obj1, *obj2;
     pdcid_t local_meta_id, remote_meta_id;
     pdcid_t propid1, propid2;
-    PDC_id_info_t *propinfo1, *propinfo2;
+    struct PDC_id_info *propinfo1, *propinfo2;
     struct PDC_obj_prop *prop1, *prop2;
     PDC_var_type_t local_type, remote_type;
     void *local_data, *remote_data;
-    PDC_id_info_t *reginfo1, *reginfo2;
+    struct PDC_id_info *reginfo1, *reginfo2;
     struct PDC_region_info *reg1, *reg2;
     size_t ndim;
     
@@ -582,10 +582,10 @@ perr_t PDCobj_buf_map(void *buf, pdcid_t from_reg, pdcid_t obj_id, pdcid_t to_re
 {
     perr_t ret_value = SUCCEED;         /* Return value */
     PDC_CLASS_t *pc;
-    PDC_id_info_t *info1;
+    struct PDC_id_info *info1;
     pdcid_t propid;
     struct PDC_obj_prop *prop;
-    PDC_id_info_t *reginfo1, *reginfo2;
+    struct PDC_id_info *reginfo1, *reginfo2;
     struct PDC_region_info *reg1, *reg2;
     struct PDC_obj_info *object1;
     
@@ -622,7 +622,7 @@ perr_t PDCobj_unmap(pdcid_t obj_id, pdcid_t pdc_id)
 {
     perr_t ret_value = SUCCEED;         /* Return value */
     PDC_CLASS_t *pc;
-    PDC_id_info_t *info1;
+    struct PDC_id_info *info1;
     struct PDC_obj_info *object1;
 
     FUNC_ENTER(NULL);
@@ -643,7 +643,7 @@ perr_t PDCreg_unmap(pdcid_t obj_id, pdcid_t reg_id, pdcid_t pdc_id)
 {
     perr_t ret_value = SUCCEED;         /* Return value */
     PDC_CLASS_t *pc;
-    PDC_id_info_t *info1;
+    struct PDC_id_info *info1;
     struct PDC_obj_info *object1;
     struct PDC_region_info *reginfo;
     
@@ -671,7 +671,7 @@ struct PDC_obj_info *PDCobj_get_info(pdcid_t obj_id, pdcid_t pdc)
     struct PDC_obj_info *ret_value = NULL;
     struct PDC_obj_info *info =  NULL;
     PDC_CLASS_t *pc;
-    PDC_id_info_t *obj;
+    struct PDC_id_info *obj;
     
     FUNC_ENTER(NULL);
     
@@ -692,7 +692,7 @@ struct PDC_region_info *PDCregion_get_info(pdcid_t reg_id, pdcid_t obj_id, pdcid
     struct PDC_region_info *ret_value = NULL;
     struct PDC_region_info *info =  NULL;
     PDC_CLASS_t *pc;
-    PDC_id_info_t *region;
+    struct PDC_id_info *region;
 
     FUNC_ENTER(NULL);
 
@@ -712,7 +712,7 @@ perr_t PDCobj_release(pdcid_t obj_id, pdcid_t pdc_id)
 {
     perr_t ret_value = SUCCEED;         /* Return value */
     PDC_CLASS_t *pc;
-    PDC_id_info_t *info;
+    struct PDC_id_info *info;
     struct PDC_obj_info *object;
     pdcid_t propid;
     struct PDC_obj_prop *prop;

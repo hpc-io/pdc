@@ -6,11 +6,11 @@
 /* Combine a Type number and an atom index into an atom */
 #define PDCID_MAKE(g,i)   ((((pdcid_t)(g) & TYPE_MASK) << ID_BITS) | ((pdcid_t)(i) & ID_MASK))
 
-PDC_id_info_t *PDC_find_id(pdcid_t idid, PDC_CLASS_t *pc)
+struct PDC_id_info *PDC_find_id(pdcid_t idid, PDC_CLASS_t *pc)
 {
     PDC_type_t      type;               /*ID's type         */
-    PDC_id_type_t   *type_ptr;          /*ptr to the type   */
-    PDC_id_info_t   *ret_value = NULL;  /* Return value     */
+    struct PDC_id_type   *type_ptr;          /*ptr to the type   */
+    struct PDC_id_info   *ret_value = NULL;  /* Return value     */
 
     FUNC_ENTER(NULL);
 
@@ -33,8 +33,8 @@ done:
 
 perr_t PDC_register_type(const PDCID_class_t *cls, PDC_CLASS_t *pc)
 {
-    PDC_id_type_t *type_ptr = NULL;     /* Ptr to the atomic type */
-    perr_t ret_value = SUCCEED;         /* Return value           */
+    struct PDC_id_type *type_ptr = NULL;     /* Ptr to the atomic type */
+    perr_t ret_value = SUCCEED;              /* Return value           */
     
     FUNC_ENTER(NULL);
 
@@ -45,7 +45,7 @@ perr_t PDC_register_type(const PDCID_class_t *cls, PDC_CLASS_t *pc)
     /* Initialize the type */
     if(NULL == (pc->PDC_id_type_list_g)[cls->type_id]) {
         /* Allocate the type information for new type */
-        if(NULL == (type_ptr = (PDC_id_type_t *)PDC_CALLOC(PDC_id_type_t)))
+        if(NULL == (type_ptr = (struct PDC_id_type *)PDC_CALLOC(struct PDC_id_type)))
             PGOTO_ERROR(FAIL, "ID type allocation failed");
         (pc->PDC_id_type_list_g)[cls->type_id] = type_ptr;
     }
@@ -83,11 +83,11 @@ done:
 
 pdcid_t PDC_id_register(PDC_type_t type, const void *object, pdcid_t pdc)
 {
-    PDC_id_type_t     *type_ptr;           /* ptr to the type               */
-    PDC_id_info_t     *id_ptr;             /* ptr to the new ID information */
-    pdcid_t           new_id;              /* new ID                        */
-    pdcid_t           ret_value = SUCCEED; /* return value                  */
-    PDC_CLASS_t       *pc;
+    struct PDC_id_type   *type_ptr;           /* ptr to the type               */
+    struct PDC_id_info   *id_ptr;             /* ptr to the new ID information */
+    pdcid_t              new_id;              /* new ID                        */
+    pdcid_t              ret_value = SUCCEED; /* return value                  */
+    PDC_CLASS_t          *pc;
     FUNC_ENTER(NULL);
 
     pc = (PDC_CLASS_t *)pdc;
@@ -97,7 +97,7 @@ pdcid_t PDC_id_register(PDC_type_t type, const void *object, pdcid_t pdc)
     type_ptr = (pc->PDC_id_type_list_g)[type];                 
     if(NULL == type_ptr || type_ptr->init_count <= 0)
         PGOTO_ERROR(FAIL, "invalid type");
-    if(NULL == (id_ptr = PDC_MALLOC(PDC_id_info_t)))
+    if(NULL == (id_ptr = PDC_MALLOC(struct PDC_id_info)))
         PGOTO_ERROR(FAIL, "memory allocation failed");
 
     /* Create the struct & it's ID */
@@ -123,8 +123,8 @@ done:
 
 int PDC_dec_ref(pdcid_t id, pdcid_t pdc)
 {
-    int ret_value = 0;          /* Return value */
-    PDC_id_info_t *id_ptr;      /* Pointer to the new ID */
+    int ret_value = 0;               /* Return value */
+    struct PDC_id_info *id_ptr;      /* Pointer to the new ID */
     PDC_CLASS_t *pc;
     
     FUNC_ENTER(NULL);
@@ -141,7 +141,7 @@ int PDC_dec_ref(pdcid_t id, pdcid_t pdc)
 //    if(id_ptr->count == 0) {
     ret_value = atomic_fetch_sub(&(id_ptr->count), 1) - 1;
     if(ret_value == 0) {
-        PDC_id_type_t   *type_ptr;      /*ptr to the type   */
+        struct PDC_id_type   *type_ptr;      /*ptr to the type   */
         
         /* Get the ID's type */
         type_ptr = (pc->PDC_id_type_list_g)[PDC_TYPE(id)];
@@ -151,7 +151,7 @@ int PDC_dec_ref(pdcid_t id, pdcid_t pdc)
                 PGOTO_ERROR(FAIL, "can't remove ID node");
             /* Remove the node from the type */
             PDC_LIST_REMOVE(id_ptr, entry);
-	        id_ptr = PDC_FREE(PDC_id_info_t, id_ptr);
+	        id_ptr = PDC_FREE(struct PDC_id_info, id_ptr);
             /* Decrement the number of IDs in the type */
             (type_ptr->id_count)--;
             ret_value = 0;
@@ -167,10 +167,10 @@ done:
 
 pdcid_t PDC_find_byname(PDC_type_t type, const char *byname, pdcid_t pdc)
 {
-    pdcid_t         ret_value = SUCCEED; /* return value          */
-    PDC_id_info_t   *id_ptr = NULL;      /* Pointer to the ID     */
-    PDC_id_type_t   *type_ptr;           /* Pointer to the type   */
-    PDC_CLASS_t     *pc;
+    pdcid_t              ret_value = SUCCEED; /* return value          */
+    struct PDC_id_info   *id_ptr = NULL;      /* Pointer to the ID     */
+    struct PDC_id_type   *type_ptr;           /* Pointer to the type   */
+    PDC_CLASS_t          *pc;
     
     FUNC_ENTER(NULL);
 
@@ -192,8 +192,8 @@ done:
 
 int pdc_inc_ref(pdcid_t id, pdcid_t pdc)
 {
-    int ret_value = 0;          /* Return value */
-    PDC_id_info_t *id_ptr;      /* Pointer to the ID */
+    int ret_value = 0;               /* Return value */
+    struct PDC_id_info *id_ptr;      /* Pointer to the ID */
     PDC_CLASS_t *pc;
     
     FUNC_ENTER(NULL);
@@ -215,8 +215,8 @@ done:
 
 int PDC_id_list_null(PDC_type_t type, pdcid_t pdc)
 {
-    perr_t ret_value = 0;   /* Return value */
-    PDC_id_type_t   *type_ptr;    /* Pointer to the type   */
+    perr_t ret_value = 0;              /* Return value */
+    struct PDC_id_type   *type_ptr;    /* Pointer to the type   */
     PDC_CLASS_t *pc;
     
     FUNC_ENTER(NULL);
@@ -235,8 +235,8 @@ done:
 
 perr_t PDC_id_list_clear(PDC_type_t type, pdcid_t pdc)
 {
-    perr_t ret_value = SUCCEED;   /* Return value */
-    PDC_id_type_t   *type_ptr;    /* Pointer to the type   */
+    perr_t ret_value = SUCCEED;        /* Return value */
+    struct PDC_id_type   *type_ptr;    /* Pointer to the type   */
     PDC_CLASS_t *pc;
     
     FUNC_ENTER(NULL);
@@ -245,10 +245,10 @@ perr_t PDC_id_list_clear(PDC_type_t type, pdcid_t pdc)
     type_ptr = (pc->PDC_id_type_list_g)[type];
 
     if(!PDC_LIST_IS_EMPTY(&type_ptr->ids)) {
-        PDC_id_info_t *id_ptr = (&type_ptr->ids)->head;
+        struct PDC_id_info *id_ptr = (&type_ptr->ids)->head;
         if(!type_ptr->cls->free_func || (type_ptr->cls->free_func)((void *)id_ptr->obj_ptr) >= 0) {
             PDC_LIST_REMOVE(id_ptr, entry);
-            id_ptr = PDC_FREE(PDC_id_info_t, id_ptr);
+            id_ptr = PDC_FREE(struct PDC_id_info, id_ptr);
             (type_ptr->id_count)--;
         }
         else
@@ -261,8 +261,8 @@ perr_t PDC_id_list_clear(PDC_type_t type, pdcid_t pdc)
 
 perr_t PDC_destroy_type(PDC_type_t type, pdcid_t pdc)
 {
-    perr_t ret_value = SUCCEED;         /* Return value           */
-    PDC_id_type_t *type_ptr = NULL;     /* Ptr to the atomic type */
+    perr_t ret_value = SUCCEED;              /* Return value           */
+    struct PDC_id_type *type_ptr = NULL;     /* Ptr to the atomic type */
     PDC_CLASS_t *pc;
     
     FUNC_ENTER(NULL);
@@ -271,7 +271,7 @@ perr_t PDC_destroy_type(PDC_type_t type, pdcid_t pdc)
     type_ptr = (pc->PDC_id_type_list_g)[type];
     if(type_ptr == NULL)
         PGOTO_ERROR(FAIL, "type was not initialized correctly");
-    type_ptr = PDC_FREE(PDC_id_type_t, type_ptr);
+    type_ptr = PDC_FREE(struct PDC_id_type, type_ptr);
     
 done:
     FUNC_LEAVE(ret_value);

@@ -46,21 +46,21 @@ typedef struct {
 } PDCID_class_t;
 
 /* Atom information structure used */
-typedef struct PDC_id_info {
+struct PDC_id_info {
     pdcid_t     id;             /* ID for this info                         */
     pdc_cnt_t   count;          /* ref. count for this atom                 */
     const void  *obj_ptr;       /* pointer associated with the atom         */
     PDC_LIST_ENTRY(PDC_id_info) entry;
-} PDC_id_info_t;
+};
 
 /* ID type structure used */
-typedef struct PDC_id_type{
+struct PDC_id_type {
     const                       PDCID_class_t *cls;   /* Pointer to ID class                        */
     unsigned                    init_count;           /* # of times this type has been initialized  */
     unsigned                    id_count;             /* Current number of IDs held                 */
     pdcid_t                     nextid;               /* ID to use for the next atom                */
     PDC_LIST_HEAD(PDC_id_info)  ids;                  /* Head of list of IDs                        */
-} PDC_id_type_t;
+};
 
 /* Variable to keep track of the number of types allocated.  Its value is the
  * next type ID to be handed out, so it is always one greater than the number
@@ -71,7 +71,7 @@ typedef struct PDC_id_type{
 static PDC_type_t PDC_next_type = (PDC_type_t)PDC_NTYPES;
 
 typedef struct PDC_CLASS_t {
-    PDC_id_type_t *PDC_id_type_list_g[PDC_MAX_NUM_TYPES];
+    struct PDC_id_type *PDC_id_type_list_g[PDC_MAX_NUM_TYPES];
 } PDC_CLASS_t;
 
 /**
@@ -171,7 +171,7 @@ perr_t PDC_destroy_type(PDC_type_t type, pdcid_t pdc_id);
  *
  * \return Pointer to the object's info struct on success/Null on failure
  */
-PDC_id_info_t *PDC_find_id(pdcid_t idid, PDC_CLASS_t *pc);
+struct PDC_id_info *PDC_find_id(pdcid_t idid, PDC_CLASS_t *pc);
 
 /**
  * Given an object ID find the info struct that describes the object

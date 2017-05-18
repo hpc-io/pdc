@@ -130,7 +130,7 @@ cont_handle *PDCcont_iter_start(pdcid_t pdc_id)
     cont_handle *ret_value = NULL;
     cont_handle *conthl = NULL;
     PDC_CLASS_t *pc;
-    PDC_id_type_t *type_ptr;
+    struct PDC_id_type *type_ptr;
 
     FUNC_ENTER(NULL);
 
@@ -154,7 +154,6 @@ pbool_t PDCcont_iter_null(cont_handle *chandle)
     if(chandle == NULL)
         ret_value = TRUE;
     
-done:
     FUNC_LEAVE(ret_value); 
 } /* end of PDCcont_iter_null() */
 
@@ -195,9 +194,9 @@ perr_t PDCcont_persist(pdcid_t cont_id, pdcid_t pdc)
 {
     perr_t ret_value = SUCCEED;         /* Return value */
     PDC_CLASS_t *pc;
-    PDC_id_info_t *info;
     pdcid_t propid;
-    PDC_id_info_t *prop;
+    struct PDC_id_info *info;
+    struct PDC_id_info *prop;
     
     FUNC_ENTER(NULL);
     
@@ -219,7 +218,7 @@ perr_t PDCprop_set_cont_lifetime(pdcid_t cont_prop, PDC_lifetime cont_lifetime, 
 {
     perr_t ret_value = SUCCEED;         /* Return value */
     PDC_CLASS_t *pc;
-    PDC_id_info_t *info;
+    struct PDC_id_info *info;
     
     FUNC_ENTER(NULL);
     

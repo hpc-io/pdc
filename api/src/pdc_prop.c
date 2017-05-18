@@ -124,7 +124,6 @@ static perr_t PDCprop__cont_close(struct PDC_cont_prop *cp)
 
     cp = PDC_FREE(struct PDC_cont_prop, cp);
     
-done:
     FUNC_LEAVE(ret_value);
 } /* end PDCprop__cont_close() */
 
@@ -140,7 +139,6 @@ static perr_t PDCprop__obj_close(struct PDC_obj_prop *cp)
     }
     cp = PDC_FREE(struct PDC_obj_prop, cp);
     
-done:
     FUNC_LEAVE(ret_value);
 } /* end PDCprop__obj_close() */
 
@@ -179,7 +177,7 @@ struct PDC_cont_prop *PDCcont_prop_get_info(pdcid_t cont_prop, pdcid_t pdc)
     struct PDC_cont_prop *ret_value = NULL;
     struct PDC_cont_prop *info =  NULL;
     PDC_CLASS_t *pc;
-    PDC_id_info_t *prop;
+    struct PDC_id_info *prop;
     
     FUNC_ENTER(NULL);
     
@@ -200,7 +198,7 @@ struct PDC_obj_prop *PDCobj_prop_get_info(pdcid_t obj_prop, pdcid_t pdc)
     struct PDC_obj_prop *ret_value = NULL;
     struct PDC_obj_prop *info =  NULL;
     PDC_CLASS_t *pc;
-    PDC_id_info_t *prop;
+    struct PDC_id_info *prop;
     
     FUNC_ENTER(NULL);
     

@@ -7,7 +7,7 @@
 #include "pdc_life.h"
 #include "pdc_client_connect.h"
 
-typedef PDC_id_info_t obj_handle;
+typedef struct PDC_id_info obj_handle;
 
 /**
  * PDC object initialization
