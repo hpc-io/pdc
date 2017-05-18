@@ -157,14 +157,15 @@ int main(int argc, const char *argv[])
     r3 = PDCregion_create(2, offset, rdims, pdc_id);
 //    printf("second region id: %lld\n", r3);
 
-    #ifdef ENABLE_MPI
+	PDCobj_map(obj1, r1, obj2, r2, pdc_id);
+	PDCobj_map(obj1, r1, obj3, r3, pdc_id);
+
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
-    #endif
+#endif
 
     gettimeofday(&ht_total_start, 0);
 
-	PDCobj_map(obj1, r1, obj2, r2, pdc_id);
-	PDCobj_map(obj1, r1, obj3, r3, pdc_id);
     PDCreg_unmap(obj1, r1, pdc_id);
 
 #ifdef ENABLE_MPI
@@ -176,7 +177,7 @@ int main(int argc, const char *argv[])
     ht_total_sec        = ht_total_elapsed / 1000000.0;
     if (rank == 0) { 
 //        printf("Time to create %d obj/rank with %d ranks: %.6f\n", count, size, ht_total_sec);
-		printf("Time to create obj %.6f\n",  ht_total_sec);
+		printf("Time to unmap a region: %.6f\n",  ht_total_sec);
         fflush(stdout);
     }
 

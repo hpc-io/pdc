@@ -750,7 +750,7 @@ perr_t PDCreg_obtain_lock(pdcid_t pdc_id, pdcid_t cont_id, pdcid_t obj_id, pdcid
     region_info = PDCregion_get_info(reg_id, obj_id, pdc_id);
     
     ret_value = PDC_Client_obtain_region_lock(pdc_id, cont_id, meta_id, region_info, access_type, lock_mode, &obtained);
-   printf("obtained addr is %lld\n", &obtained); 
+
     FUNC_LEAVE(ret_value);
 }
 

@@ -160,7 +160,7 @@ int main(int argc, const char *argv[])
     gettimeofday(&ht_total_start, 0);
 
 	PDCobj_map(obj1, r1, obj2, r2, pdc_id);
-	PDCobj_map(obj1, r1, obj3, r3, pdc_id);
+//	PDCobj_map(obj1, r1, obj3, r3, pdc_id);
 //	PDCobj_map(obj2, r2, obj3, r3, pdc_id);
 
 #ifdef ENABLE_MPI
@@ -171,8 +171,7 @@ int main(int argc, const char *argv[])
     ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
     ht_total_sec        = ht_total_elapsed / 1000000.0;
     if (rank == 0) { 
-//        printf("Time to create %d obj/rank with %d ranks: %.6f\n", count, size, ht_total_sec);
-		printf("Time to create obj %.6f\n",  ht_total_sec);
+		printf("Time to map obj %.6f\n",  ht_total_sec);
         fflush(stdout);
     }
 

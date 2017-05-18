@@ -158,7 +158,7 @@ int main(int argc, const char *argv[])
     total_lock_overhead = elapsed / 1000000.0;
 
     if (rank == 0) {
-        printf("Total lock overhead        : %.6f\n", total_lock_overhead);
+        printf("Total lock obtain overhead:  %.6f\n", total_lock_overhead);
     }
 
 #ifdef ENABLE_MPI
