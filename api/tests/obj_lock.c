@@ -186,9 +186,9 @@ int main(int argc, const char *argv[])
       
 //    region = &region_info_no_overlap;
 //    region->mapping = 0;
-    
+//    PDC_Client_obtain_region_lock(pdc, cont, meta_id, region, WRITE, NOBLOCK, &lock_status); 
     reg = PDCregion_create(region_info_no_overlap.ndim, start_no_overlap, count_no_overlap, pdc);
-    PDCreg_obtain_lock(pdc, cont, obj1, region, WRITE, NOBLOCK);
+    PDCreg_obtain_lock(pdc, cont, obj1, reg, WRITE, NOBLOCK);
     
     if (ret != SUCCEED)
         printf("[%d] Failed to obtain lock for region (%lld,%lld,%lld) (%lld,%lld,%lld) ... error\n", rank,

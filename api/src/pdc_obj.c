@@ -741,7 +741,7 @@ perr_t PDCreg_obtain_lock(pdcid_t pdc_id, pdcid_t cont_id, pdcid_t obj_id, pdcid
     pdcid_t meta_id;
     struct PDC_obj_info *object_info;
     struct PDC_region_info *region_info;
-    pbool_t *obtained = NULL;
+    pbool_t obtained;
     
     FUNC_ENTER(NULL);
     
@@ -749,15 +749,15 @@ perr_t PDCreg_obtain_lock(pdcid_t pdc_id, pdcid_t cont_id, pdcid_t obj_id, pdcid
     meta_id = object_info->meta_id;
     region_info = PDCregion_get_info(reg_id, obj_id, pdc_id);
     
-    ret_value = PDC_Client_obtain_region_lock(pdc_id, cont_id, meta_id, region_info, access_type, lock_mode, obtained);
-    
+    ret_value = PDC_Client_obtain_region_lock(pdc_id, cont_id, meta_id, region_info, access_type, lock_mode, &obtained);
+   printf("obtained addr is %lld\n", &obtained); 
     FUNC_LEAVE(ret_value);
 }
 
 perr_t PDCreg_release_lock(pdcid_t pdc_id, pdcid_t cont_id, pdcid_t obj_id, pdcid_t reg_id, PDC_access_t access_type)
 {
     perr_t ret_value = SUCCEED;         /* Return value */
-    pbool_t *released = NULL;
+    pbool_t released;
     pdcid_t meta_id;
     struct PDC_obj_info *object_info;
     struct PDC_region_info *region_info;
@@ -768,7 +768,7 @@ perr_t PDCreg_release_lock(pdcid_t pdc_id, pdcid_t cont_id, pdcid_t obj_id, pdci
     meta_id = object_info->meta_id;
     region_info = PDCregion_get_info(reg_id, obj_id, pdc_id);
     
-    ret_value = PDC_Client_release_region_lock(pdc_id, cont_id, meta_id, region_info, access_type, released);
+    ret_value = PDC_Client_release_region_lock(pdc_id, cont_id, meta_id, region_info, access_type, &released);
     
     FUNC_LEAVE(ret_value);
 }
