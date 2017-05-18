@@ -1248,7 +1248,8 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     strcpy(metadata->app_name,      in->data.app_name);
     strcpy(metadata->tags,          in->data.tags);
     strcpy(metadata->data_location, in->data.data_location);
-
+    metadata->region_lock_head = NULL;
+    metadata->region_map_head  = NULL;
     // DEBUG
     /* int debug_flag = 1; */
     int debug_flag = 0;
