@@ -7,12 +7,14 @@
 static perr_t PDCcont__close(struct PDC_cont_info *cp);
 
 /* PDC container ID class */
+/*
 static const PDCID_class_t PDC_CONT_CLS[1] = {{
-    PDC_CONT,                           /* ID class value */
-    0,                                  /* Class flags */
-    0,                                  /* # of reserved IDs for class */
-    (PDC_free_t)PDCcont__close          /* Callback routine for closing objects of this class */
+    PDC_CONT,
+    0,
+    0,
+    (PDC_free_t)PDCcont__close
 }};
+ */
 
 perr_t PDCcont_init(PDC_CLASS_t *pc)
 {
@@ -21,7 +23,7 @@ perr_t PDCcont_init(PDC_CLASS_t *pc)
     FUNC_ENTER(NULL);
 
     /* Initialize the atom group for the container IDs */
-    if(PDC_register_type(PDC_CONT_CLS, pc) < 0)
+    if(PDC_register_type(PDC_CONT, (PDC_free_t)PDCcont__close, pc) < 0)
         PGOTO_ERROR(FAIL, "unable to initialize container interface");
 
 done:

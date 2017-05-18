@@ -8,20 +8,23 @@ static perr_t PDCobj__close(struct PDC_obj_info *op);
 static perr_t PDCregion__close(struct PDC_region_info *op);
 
 /* PDC object ID class */
+/*
 static const PDCID_class_t PDC_OBJ_CLS[1] = {{
-    PDC_OBJ,                            /* ID class value */
-    0,                                  /* Class flags */
-    0,                                  /* # of reserved IDs for class */
-    (PDC_free_t)PDCobj__close           /* Callback routine for closing objects of this class */
+    PDC_OBJ,
+    0,
+    0,
+    (PDC_free_t)PDCobj__close
 }};
-
+*/
 /* PDC region ID class */
+/*
 static const PDCID_class_t PDC_REGION_CLS[1] = {{
-    PDC_REGION,                         /* ID class value */
-    0,                                  /* Class flags */
-    0,                                  /* # of reserved IDs for class */
-    (PDC_free_t)PDCregion__close        /* Callback routine for closing regions of this class */
+    PDC_REGION,
+    0,
+    0,
+    (PDC_free_t)PDCregion__close        
 }};
+*/
 
 perr_t PDCobj_init(PDC_CLASS_t *pc)
 {
@@ -30,7 +33,7 @@ perr_t PDCobj_init(PDC_CLASS_t *pc)
     FUNC_ENTER(NULL);
 
     /* Initialize the atom group for the object IDs */
-    if(PDC_register_type(PDC_OBJ_CLS, pc) < 0)
+    if(PDC_register_type(PDC_OBJ, (PDC_free_t)PDCobj__close, pc) < 0)
         PGOTO_ERROR(FAIL, "unable to initialize object interface");
 
 done:
@@ -44,7 +47,7 @@ perr_t PDCregion_init(PDC_CLASS_t *pc)
     FUNC_ENTER(NULL);
     
     /* Initialize the atom group for the region IDs */
-    if(PDC_register_type(PDC_REGION_CLS, pc) < 0)
+    if(PDC_register_type(PDC_REGION, (PDC_free_t)PDCregion__close, pc) < 0)
         PGOTO_ERROR(FAIL, "unable to initialize region interface");
     
 done:

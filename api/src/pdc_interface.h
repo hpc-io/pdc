@@ -32,18 +32,14 @@ typedef enum {
     PDC_NTYPES       = 7    /* number of library types, MUST BE LAST!      */
 } PDC_type_t;
 
+/*
 typedef struct {
-    PDC_type_t type_id;         /* Class ID for the type */
-    unsigned flags;             /* Class behavior flags  */
-    unsigned reserved;          /* Number of reserved IDs for this type */
-                                /* [A specific number of type entries may be
-                                 * reserved to enable "constant" values to be
-                                 * handed out which are valid IDs in the type,
-                                 * but which do not map to any data structures
-                                 * and are not allocated dynamically later.]
-                                 */
-    PDC_free_t free_func;       /* Free function for object's of this type */
+    PDC_type_t type_id;
+    unsigned flags;
+    unsigned reserved;
+    PDC_free_t free_func;
 } PDCID_class_t;
+*/
 
 /* Atom information structure used */
 struct PDC_id_info {
@@ -55,7 +51,9 @@ struct PDC_id_info {
 
 /* ID type structure used */
 struct PDC_id_type {
-    const                       PDCID_class_t *cls;   /* Pointer to ID class                        */
+    PDC_free_t                  free_func;            /* Free function for object's of this type */
+    PDC_type_t                  type_id;              /* Class ID for the type */
+//    const                       PDCID_class_t *cls;   /* Pointer to ID class                        */
     unsigned                    init_count;           /* # of times this type has been initialized  */
     unsigned                    id_count;             /* Current number of IDs held                 */
     pdcid_t                     nextid;               /* ID to use for the next atom                */
@@ -79,12 +77,13 @@ typedef struct PDC_CLASS_t {
  * The class is initialized or its reference count is incremented
  * (if it is already initialized).
 
- * \param cls [IN]              Pointer to PDCID_class_t struct
+ * \param type_id [IN]          Type ID
+ * \param free_func             free type function
  * \param pc [IN]               Pointer to PDC_CLASS_t struct
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_register_type(const PDCID_class_t *cls, PDC_CLASS_t *pc);
+perr_t PDC_register_type(PDC_type_t type_id, PDC_free_t free_func, PDC_CLASS_t *pc);
 
 /**
  * Public interface to PDCid_register.

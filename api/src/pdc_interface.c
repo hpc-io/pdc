@@ -31,7 +31,7 @@ done:
 } /* end PDC_find_id() */
 
 
-perr_t PDC_register_type(const PDCID_class_t *cls, PDC_CLASS_t *pc)
+perr_t PDC_register_type(PDC_type_t type_id, PDC_free_t free_func, PDC_CLASS_t *pc)
 {
     struct PDC_id_type *type_ptr = NULL;     /* Ptr to the atomic type */
     perr_t ret_value = SUCCEED;              /* Return value           */
@@ -39,25 +39,25 @@ perr_t PDC_register_type(const PDCID_class_t *cls, PDC_CLASS_t *pc)
     FUNC_ENTER(NULL);
 
     /* Sanity check */
-    assert(cls);
-    assert(cls->type_id > 0 && cls->type_id < PDC_MAX_NUM_TYPES);
+    assert(type_id > 0 && type_id < PDC_MAX_NUM_TYPES);
 
     /* Initialize the type */
-    if(NULL == (pc->PDC_id_type_list_g)[cls->type_id]) {
+    if(NULL == (pc->PDC_id_type_list_g)[type_id]) {
         /* Allocate the type information for new type */
         if(NULL == (type_ptr = (struct PDC_id_type *)PDC_CALLOC(struct PDC_id_type)))
             PGOTO_ERROR(FAIL, "ID type allocation failed");
-        (pc->PDC_id_type_list_g)[cls->type_id] = type_ptr;
+        (pc->PDC_id_type_list_g)[type_id] = type_ptr;
     }
     else {
         /* Get the pointer to the existing type */
-        type_ptr = (pc->PDC_id_type_list_g)[cls->type_id];
+        type_ptr = (pc->PDC_id_type_list_g)[type_id];
     }
     /* Initialize the ID type structure for new types */
     if(type_ptr->init_count == 0) {
-        type_ptr->cls = cls;
+        type_ptr->type_id = type_id;
+        type_ptr->free_func = free_func;
         type_ptr->id_count = 0;
-        type_ptr->nextid = cls->reserved;
+        type_ptr->nextid = 0;
         PDC_LIST_INIT(&type_ptr->ids);
     }
     /* Increment the count of the times this type has been initialized */
@@ -145,7 +145,7 @@ int PDC_dec_ref(pdcid_t id, pdcid_t pdc)
         
         /* Get the ID's type */
         type_ptr = (pc->PDC_id_type_list_g)[PDC_TYPE(id)];
-        if(!type_ptr->cls->free_func || (type_ptr->cls->free_func)((void *)id_ptr->obj_ptr) >= 0) {
+        if(!type_ptr->free_func || (type_ptr->free_func)((void *)id_ptr->obj_ptr) >= 0) {
             /* check if list is empty before remove */
             if(PDC_LIST_IS_EMPTY(&type_ptr->ids))
                 PGOTO_ERROR(FAIL, "can't remove ID node");
@@ -246,7 +246,7 @@ perr_t PDC_id_list_clear(PDC_type_t type, pdcid_t pdc)
 
     if(!PDC_LIST_IS_EMPTY(&type_ptr->ids)) {
         struct PDC_id_info *id_ptr = (&type_ptr->ids)->head;
-        if(!type_ptr->cls->free_func || (type_ptr->cls->free_func)((void *)id_ptr->obj_ptr) >= 0) {
+        if(!type_ptr->free_func || (type_ptr->free_func)((void *)id_ptr->obj_ptr) >= 0) {
             PDC_LIST_REMOVE(id_ptr, entry);
             id_ptr = PDC_FREE(struct PDC_id_info, id_ptr);
             (type_ptr->id_count)--;

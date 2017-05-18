@@ -9,20 +9,23 @@ static perr_t PDCprop__cont_close(struct PDC_cont_prop *cp);
 static perr_t PDCprop__obj_close(struct PDC_obj_prop *cp);
 
 /* PDC container property ID class */
+/*
 static const PDCID_class_t PDC_CONT_PROP_CLS[1] = {{
-    PDC_CONT_PROP,                      /* ID class value */
-    0,                                  /* Class flags */
-    0,                                  /* # of reserved IDs for class */
-    (PDC_free_t)PDCprop__cont_close     /* Callback routine for closing objects of this class */
+    PDC_CONT_PROP,
+    0,
+    0,
+    (PDC_free_t)PDCprop__cont_close
 }};
-
+*/
 /* PDC object property ID class */
+/*
 static const PDCID_class_t PDC_OBJ_PROP_CLS[1] = {{
-    PDC_OBJ_PROP,                       /* ID class value */
-    0,                                  /* Class flags */
-    0,                                  /* # of reserved IDs for class */
-    (PDC_free_t)PDCprop__obj_close      /* Callback routine for closing objects of this class */
+    PDC_OBJ_PROP,
+    0,
+    0,
+    (PDC_free_t)PDCprop__obj_close
 }};
+*/
 
 perr_t PDCprop_init(PDC_CLASS_t *pc)
 {
@@ -30,11 +33,11 @@ perr_t PDCprop_init(PDC_CLASS_t *pc)
 
     FUNC_ENTER(NULL);
     /* Initialize the atom group for the container property IDs */
-    if(PDC_register_type(PDC_CONT_PROP_CLS, pc) < 0)
+    if(PDC_register_type(PDC_CONT_PROP, (PDC_free_t)PDCprop__cont_close, pc) < 0)
         PGOTO_ERROR(FAIL, "unable to initialize container property interface");
 
     /* Initialize the atom group for the object property IDs */
-    if(PDC_register_type(PDC_OBJ_PROP_CLS, pc) < 0)
+    if(PDC_register_type(PDC_OBJ_PROP, (PDC_free_t)PDCprop__obj_close, pc) < 0)
         PGOTO_ERROR(FAIL, "unable to initialize object property interface");
 
 done:
