@@ -6,6 +6,7 @@
 #include "pdc_interface.h"
 #include "pdc_life.h"
 #include "pdc_client_connect.h"
+#include "pdc_client_server_common.h"
 
 typedef struct PDC_id_info obj_handle;
 
