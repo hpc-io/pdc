@@ -169,6 +169,8 @@ perr_t PDC_close(pdcid_t pdcid)
     
     PDCclass_close(pdcid);
     
+    PDCclass_end();
+    
     pdc_id_list_g = PDC_FREE(struct pdc_id_list, pdc_id_list_g);
 
     // Finalize METADATA
