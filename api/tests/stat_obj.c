@@ -237,7 +237,7 @@ int main(int argc, const char *argv[])
     if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
 
-    if(PDC_close() < 0)
+    if(PDC_close(pdc) < 0)
        printf("fail to close PDC\n");
 
 #ifdef ENABLE_MPI

@@ -41,9 +41,11 @@ pdcid_t PDC_init(const char *pdc_name);
 /**
  * Close the PDC layer
  *
+ * \param pdc_id [IN]          ID of the PDC
+ *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_close();
+perr_t PDC_close(pdcid_t pdcid);
 
 /**
  * Create a type of PDC

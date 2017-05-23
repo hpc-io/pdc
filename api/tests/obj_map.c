@@ -207,7 +207,7 @@ int main(int argc, const char *argv[])
     /*     if (rank == 0) */ 
     /*         printf("successfully close container property # %lld\n", cont_prop); */
 
-    if(PDC_close() < 0)
+    if(PDC_close(pdc_id) < 0)
        printf("fail to close PDC\n");
     /* else */
     /*    printf("PDC is closed\n"); */

@@ -36,7 +36,7 @@ int main() {
         printf("successfully close container property # %lld\n", create_prop);
 
     // close pdc
-    if(PDC_close() < 0)
+    if(PDC_close(pdc) < 0)
        printf("fail to close PDC\n");
     else
        printf("PDC is closed\n");
