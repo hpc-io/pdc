@@ -1240,7 +1240,7 @@ done:
 }
 
 
-perr_t PDC_Client_delete_metadata(pdcid_t pdc, pdcid_t cont_id, char *delete_name, pdcid_t obj_delete_prop)
+perr_t PDC_Client_delete_metadata(char *delete_name, pdcid_t obj_delete_prop)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
@@ -1252,7 +1252,7 @@ perr_t PDC_Client_delete_metadata(pdcid_t pdc, pdcid_t cont_id, char *delete_nam
     
     FUNC_ENTER(NULL);
 
-    delete_prop = PDCobj_prop_get_info(obj_delete_prop, pdc);
+    delete_prop = PDCobj_prop_get_info(obj_delete_prop);
     // Fill input structure
     in.obj_name = delete_name;
     in.time_step = delete_prop->time_step;
@@ -1429,7 +1429,7 @@ perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_st
 }
 
 // Send a name to server and receive an obj id
-perr_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop, pdcid_t *meta_id)
+perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_prop, pdcid_t *meta_id)
 {
     perr_t ret_value = FAIL;
     hg_return_t hg_ret;
@@ -1443,7 +1443,7 @@ perr_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *ob
     
     FUNC_ENTER(NULL);
     
-    create_prop = PDCobj_prop_get_info(obj_create_prop, pdc);
+    create_prop = PDCobj_prop_get_info(obj_create_prop);
     obj_life  = create_prop->obj_life;
     // Fill input structure
     
@@ -1620,7 +1620,7 @@ perr_t PDC_Client_close_all_server()
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id, pdcid_t pdc_id)
+perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = HG_SUCCESS;
@@ -1633,7 +1633,6 @@ perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id, pdcid_t pdc_id)
     
     // Fill input structure
     in.local_obj_id = local_obj_id;
-    in.pdc_id = pdc_id;
 
     // Create a bulk descriptor
     bulk_handle = HG_BULK_NULL;
@@ -1665,7 +1664,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, pdcid_t pdc_id)
+perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = HG_SUCCESS;
@@ -1679,7 +1678,6 @@ perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, 
     // Fill input structure
     in.local_obj_id = local_obj_id;
     in.local_reg_id = local_reg_id;
-    in.pdc_id = pdc_id;
 
     // Create a bulk descriptor
     bulk_handle = HG_BULK_NULL;
@@ -1832,7 +1830,7 @@ done:
 }
 
 // General function for obtain/release region lock
-static perr_t PDC_Client_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, int lock_op, pbool_t *status)
+static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, int lock_op, pbool_t *status)
 {
     perr_t ret_value;
     hg_return_t hg_ret;
@@ -1940,7 +1938,7 @@ done:
 }
 
 /* , uint64_t *block */
-perr_t PDC_Client_obtain_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_id, struct PDC_region_info *region_info,
+perr_t PDC_Client_obtain_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info,
                                     PDC_access_t access_type, PDC_lock_mode_t lock_mode, pbool_t *obtained)
 {
     perr_t ret_value = FAIL;
@@ -1960,7 +1958,7 @@ perr_t PDC_Client_obtain_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_
         if (lock_mode == BLOCK) {
             // TODO: currently the client would keep trying to send lock request
             while (1) {
-                ret_value = PDC_Client_region_lock(pdc, cont_id, meta_id, region_info, WRITE, PDC_LOCK_OP_OBTAIN, obtained);
+                ret_value = PDC_Client_region_lock(meta_id, region_info, WRITE, PDC_LOCK_OP_OBTAIN, obtained);
                 if (*obtained == TRUE) {
                     ret_value = SUCCEED;
                     goto done;
@@ -1971,7 +1969,7 @@ perr_t PDC_Client_obtain_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_
             }
         }
         else if (lock_mode == NOBLOCK) {
-            ret_value = PDC_Client_region_lock(pdc, cont_id, meta_id, region_info, WRITE, PDC_LOCK_OP_OBTAIN, obtained);
+            ret_value = PDC_Client_region_lock(meta_id, region_info, WRITE, PDC_LOCK_OP_OBTAIN, obtained);
             goto done;
         }
         else {
@@ -1987,11 +1985,12 @@ perr_t PDC_Client_obtain_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_
     }
 
     ret_value = SUCCEED;
+    
 done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_release_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, pbool_t *released)
+perr_t PDC_Client_release_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, pbool_t *released)
 {
     perr_t ret_value = FAIL;
     
@@ -2000,7 +1999,7 @@ perr_t PDC_Client_release_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta
     /* uint64_t meta_id; */
     /* PDC_obj_info *obj_prop = PDCobj_get_info(obj_id, pdc); */
     /* meta_id = obj_prop->meta_id; */
-    ret_value = PDC_Client_region_lock(pdc, cont_id, meta_id, region_info, access_type, PDC_LOCK_OP_RELEASE, released);
+    ret_value = PDC_Client_region_lock(meta_id, region_info, access_type, PDC_LOCK_OP_RELEASE, released);
 
     FUNC_LEAVE(ret_value);
 }

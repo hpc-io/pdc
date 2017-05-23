@@ -38,7 +38,6 @@ int main(int argc, const char *argv[])
     int rank = 0, size = 1, i;
     int count = -1;
     char c;
-    struct PDC_prop p;
     pdcid_t pdc, cont_prop, cont, obj_prop;
     pdcid_t *create_obj_ids;
     int use_name = -1;
@@ -85,7 +84,7 @@ int main(int argc, const char *argv[])
     fflush(stdout);
 
     // create a pdc
-    pdc = PDC_init(p);
+    pdc = PDC_init("pdc");
     /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
@@ -94,7 +93,7 @@ int main(int argc, const char *argv[])
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     // create a container
-    cont = PDCcont_create(pdc, "c1", cont_prop);
+    cont = PDCcont_create("c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
@@ -127,27 +126,27 @@ MPI_Barrier(MPI_COMM_WORLD);
 
         if (use_name == -1) {
             sprintf(obj_name, "%s", rand_string(tmp_str, 16));
-            PDCprop_set_obj_time_step(obj_prop, rank, pdc);
+            PDCprop_set_obj_time_step(obj_prop, rank);
             /* sprintf(obj_name[i], "%s_%d", rand_string(tmp_str, 16), i + rank * count); */
         }
         else if (use_name == 1) {
             sprintf(obj_name, "%s", obj_prefix[0]);
-            PDCprop_set_obj_time_step(obj_prop, i + rank * count, pdc);
+            PDCprop_set_obj_time_step(obj_prop, i + rank * count);
         }
         else if (use_name == 4) {
             sprintf(obj_name, "%s", obj_prefix[i%4]);
-            PDCprop_set_obj_time_step(obj_prop, i/4 + rank * count, pdc);
+            PDCprop_set_obj_time_step(obj_prop, i/4 + rank * count);
         }
         else {
             printf("Unsupported name choice\n");
             goto done;
         }
-        PDCprop_set_obj_user_id( obj_prop, getuid(),    pdc);
-        PDCprop_set_obj_app_name(obj_prop, "obj_delete_test",  pdc);
-        PDCprop_set_obj_tags(    obj_prop, "tag0=1",    pdc);
+        PDCprop_set_obj_user_id( obj_prop, getuid()    );
+        PDCprop_set_obj_app_name(obj_prop, "obj_delete_test");
+        PDCprop_set_obj_tags(    obj_prop, "tag0=1");
 
         // Create object
-        create_obj_ids[i] = PDCobj_create(pdc, cont, obj_name, obj_prop);
+        create_obj_ids[i] = PDCobj_create(cont, obj_name, obj_prop);
         if (create_obj_ids[i] < 0 ) {
             printf("Error getting an object id of %s from server, exit...\n", obj_name);
             exit(-1);
@@ -184,14 +183,14 @@ MPI_Barrier(MPI_COMM_WORLD);
 
 done:
     // close a container
-    if(PDCcont_close(cont, pdc) < 0)
+    if(PDCcont_close(cont) < 0)
         printf("fail to close container %lld\n", cont);
 
     // close a container property
-    if(PDCprop_close(cont_prop, pdc) < 0)
+    if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
 
-    if(PDC_close(pdc) < 0)
+    if(PDC_close() < 0)
        printf("fail to close PDC\n");
 
 #ifdef ENABLE_MPI

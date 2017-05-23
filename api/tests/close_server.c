@@ -13,8 +13,7 @@
 
 int main(int argc, const char *argv[])
 {
-    int rank = 0, size = 1, i;
-    struct PDC_prop p;
+    int rank = 0, size = 1;
     pdcid_t pdc;
 
 #ifdef ENABLE_MPI
@@ -23,7 +22,7 @@ int main(int argc, const char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
     
-    pdc = PDC_init(p);
+    pdc = PDC_init("pdc");
 
     PDC_Client_close_all_server();
 

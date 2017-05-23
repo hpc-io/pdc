@@ -38,7 +38,6 @@ int main(int argc, const char *argv[])
 {
     int rank = 0, size = 1;
     int i;
-    struct PDC_prop p;
     pdcid_t pdc, cont_prop, cont, obj_prop;
     int count = -1;
     char c;
@@ -94,7 +93,7 @@ int main(int argc, const char *argv[])
     fflush(stdout);
 
     // create a pdc
-    pdc = PDC_init(p);
+    pdc = PDC_init("pdc");
     /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
@@ -106,7 +105,7 @@ int main(int argc, const char *argv[])
     /*         printf("Create a container property, id is %lld\n", cont_prop); */
 
     // create a container
-    cont = PDCcont_create(pdc, "c1", cont_prop);
+    cont = PDCcont_create("c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
     /* else */
@@ -121,7 +120,7 @@ int main(int argc, const char *argv[])
     /*     if (rank == 0) */ 
     /*         printf("Create an object property, id is %lld\n", obj_prop); */
 
-    PDCprop_set_obj_dims(obj_prop, 3, dims, pdc);
+    PDCprop_set_obj_dims(obj_prop, 3, dims);
 
     env_str = getenv("PDC_OBJ_NAME");
     if (env_str != NULL) {
@@ -143,29 +142,29 @@ int main(int argc, const char *argv[])
     for (i = 0; i < count; i++) {
         if (use_name == -1) {
             sprintf(obj_name, "%s", rand_string(tmp_str, 16));
-            PDCprop_set_obj_time_step(obj_prop, i, pdc);
+            PDCprop_set_obj_time_step(obj_prop, i);
             /* sprintf(obj_name[i], "%s_%d", rand_string(tmp_str, 16), i + rank * count); */
         }
         else if (use_name == 1) {
             sprintf(obj_name, "%s", obj_prefix[0]);
-            PDCprop_set_obj_time_step(obj_prop, i + rank * count, pdc);
+            PDCprop_set_obj_time_step(obj_prop, i + rank * count);
         }
         else if (use_name == 4) {
             sprintf(obj_name, "%s", obj_prefix[i%4]);
-            PDCprop_set_obj_time_step(obj_prop, i/4 + rank * count, pdc);
+            PDCprop_set_obj_time_step(obj_prop, i/4 + rank * count);
         }
         else {
             printf("Unsupported name choice\n");
             goto done;
         }
-        PDCprop_set_obj_user_id( obj_prop, getuid(),    pdc);
-        PDCprop_set_obj_app_name(obj_prop, "test_app",  pdc);
-        PDCprop_set_obj_tags(    obj_prop, "tag0=1",    pdc);
+        PDCprop_set_obj_user_id( obj_prop, getuid()    );
+        PDCprop_set_obj_app_name(obj_prop, "test_app"  );
+        PDCprop_set_obj_tags(    obj_prop, "tag0=1"    );
 
         /* if (count < 4) { */
         /*     printf("Proc %d Name: %s\n", rank, obj_name); */
         /* } */
-        test_obj = PDCobj_create(pdc, cont, obj_name, obj_prop);
+        test_obj = PDCobj_create(cont, obj_name, obj_prop);
         if (test_obj < 0) { 
             printf("Error getting an object id of %s from server, exit...\n", obj_name);
             exit(-1);
@@ -209,10 +208,10 @@ int main(int argc, const char *argv[])
         PDC_print_metadata(out[i]);
     }
 
-    PDCprop_set_obj_tags(obj_prop, "tag1=2",    pdc);
-    PDCprop_set_obj_time_step(obj_prop, 0, pdc);
-    test_obj = PDCobj_create(pdc, cont, "test_obj_name0", obj_prop);
-    test_obj = PDCobj_create(pdc, cont, "test_obj_name1", obj_prop);
+    PDCprop_set_obj_tags(obj_prop, "tag1=2"    );
+    PDCprop_set_obj_time_step(obj_prop, 0);
+    test_obj = PDCobj_create(cont, "test_obj_name0", obj_prop);
+    test_obj = PDCobj_create(cont, "test_obj_name1", obj_prop);
     printf("Searching for objects with tag1=2\n");
     PDC_partial_query(0, -1, NULL, NULL, -1, -1, -1, "tag1=2", &n_obj, &out);
     printf("Received %d metadata objects\n", n_obj);
@@ -230,20 +229,20 @@ int main(int argc, const char *argv[])
 
 done:
     // close a container
-    if(PDCcont_close(cont, pdc) < 0)
+    if(PDCcont_close(cont) < 0)
         printf("fail to close container %lld\n", cont);
     /* else */
     /*     if (rank == 0) */ 
     /*         printf("successfully close container # %lld\n", cont); */
 
     // close a container property
-    if(PDCprop_close(cont_prop, pdc) < 0)
+    if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
     /* else */
     /*     if (rank == 0) */ 
     /*         printf("successfully close container property # %lld\n", cont_prop); */
 
-    if(PDC_close(pdc) < 0)
+    if(PDC_close() < 0)
        printf("fail to close PDC\n");
     /* else */
     /*    printf("PDC is closed\n"); */

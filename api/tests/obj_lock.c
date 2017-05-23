@@ -13,11 +13,9 @@
 int main(int argc, const char *argv[])
 {
     int rank = 0, size = 1, i;
-    struct PDC_prop p;
     pdcid_t pdc, cont_prop, cont, obj_prop, obj1;
     uint64_t d[3] = {10, 20, 30};
     char obj_name[64];
-    pbool_t lock_status;
     struct PDC_obj_prop *op;
     
     struct PDC_region_info *region;
@@ -38,8 +36,6 @@ int main(int argc, const char *argv[])
     long long elapsed;
     double total_lock_overhead;
     
-    pdc_metadata_t *metadata = NULL;
-//    pdcid_t meta_id;
     pdcid_t reg;
     perr_t ret;
     
@@ -50,7 +46,7 @@ int main(int argc, const char *argv[])
 #endif
 
     // create a pdc
-    pdc = PDC_init(p);
+    pdc = PDC_init("pdc");
     /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
@@ -59,7 +55,7 @@ int main(int argc, const char *argv[])
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     // create a container
-    cont = PDCcont_create(pdc, "c1", cont_prop);
+    cont = PDCcont_create("c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
     
@@ -69,9 +65,9 @@ int main(int argc, const char *argv[])
         printf("Fail to create object property @ line  %d!\n", __LINE__);
     
     // set object dimension
-    PDCprop_set_obj_dims(obj_prop, 3, d, pdc);
-    PDCprop_set_obj_time_step(obj_prop, 0, pdc); 
-    op = PDCobj_prop_get_info(obj_prop, pdc);
+    PDCprop_set_obj_dims(obj_prop, 3, d);
+    PDCprop_set_obj_time_step(obj_prop, 0);
+    op = PDCobj_prop_get_info(obj_prop);
     /* printf("# of dim = %d\n", op->ndim); */
     /* int i; */
     /* for(i=0; i<op->ndim; i++) { */
@@ -81,7 +77,7 @@ int main(int argc, const char *argv[])
     // Only rank 0 create a object
     if (rank == 0) {
         sprintf(obj_name, "test_obj");
-        obj1 = PDCobj_create(pdc, cont, obj_name, obj_prop);
+        obj1 = PDCobj_create(cont, obj_name, obj_prop);
         if(obj1 <= 0)
             printf("Fail to create object @ line  %d!\n", __LINE__);
         /* else */
@@ -187,8 +183,8 @@ int main(int argc, const char *argv[])
 //    region = &region_info_no_overlap;
 //    region->mapping = 0;
 //    PDC_Client_obtain_region_lock(pdc, cont, meta_id, region, WRITE, NOBLOCK, &lock_status); 
-    reg = PDCregion_create(region_info_no_overlap.ndim, start_no_overlap, count_no_overlap, pdc);
-    PDCreg_obtain_lock(pdc, cont, obj1, reg, WRITE, NOBLOCK);
+    reg = PDCregion_create(region_info_no_overlap.ndim, start_no_overlap, count_no_overlap);
+    PDCreg_obtain_lock(obj1, reg, WRITE, NOBLOCK);
     
     if (ret != SUCCEED)
         printf("[%d] Failed to obtain lock for region (%lld,%lld,%lld) (%lld,%lld,%lld) ... error\n", rank,
@@ -213,7 +209,7 @@ int main(int argc, const char *argv[])
       
 //    region = &region_info_no_overlap;
 //    PDC_Client_release_region_lock(pdc, cont, meta_id, region, WRITE, &lock_status);
-    ret = PDCreg_release_lock(pdc, cont, obj1, reg, WRITE);
+    ret = PDCreg_release_lock(obj1, reg, WRITE);
     if (ret != SUCCEED)
         printf("[%d] Failed to release lock for region (%d,%d,%d) (%d,%d,%d) ... error\n", rank, 
                 region->offset[0], region->offset[1], region->offset[2], region->size[0], region->size[1], region->size[2]);
@@ -232,25 +228,25 @@ int main(int argc, const char *argv[])
       
     // close object
     if (rank == 0) {
-        if(PDCobj_close(obj1, pdc) < 0)
+        if(PDCobj_close(obj1) < 0)
             printf("fail to close object %lld\n", obj1);
     }
     
     // close object property
-    if(PDCprop_close(obj_prop, pdc) < 0)
+    if(PDCprop_close(obj_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
        
     // close a container
-    if(PDCcont_close(cont, pdc) < 0)
+    if(PDCcont_close(cont) < 0)
         printf("fail to close container %lld\n", cont);
     
 
     // close a container property
-    if(PDCprop_close(cont_prop, pdc) < 0)
+    if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
 
     // close pdc
-    if(PDC_close(pdc) < 0)
+    if(PDC_close() < 0)
        printf("fail to close PDC\n");
 
 done:

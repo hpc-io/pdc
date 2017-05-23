@@ -96,15 +96,13 @@ int PDC_Client_read_server_addr_from_file();
 /**
  * Client request of an obj id by sending object name
  *
- * \param pdc_id [IN]           Id of the PDC
- * \param cont_id [IN]          Id of the container
  * \param obj_name [IN]         Name of the object
  * \param obj_create_prop [IN]  Id of the object property
  * \param meta_id [IN]          Pointer to medadata id
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_send_name_recv_id(pdcid_t pdc_id, pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop, pdcid_t *meta_id);
+perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_prop, pdcid_t *meta_id);
 
 /**
  * Listing all objects on the client
@@ -145,14 +143,12 @@ perr_t PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t 
 /**
  * Request of PDC client to delete metadata by object name
  *
- * \param pdc_id [IN]           Id of the PDC
- * \param cont_id [IN]          Id of the container
  * \param delete_name [IN]      Name to delete
  * \param obj_delete_prop [IN]  Id of the associated property
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_delete_metadata(pdcid_t pdc_id, pdcid_t cont_id, char *delete_name, pdcid_t obj_delete_prop);
+perr_t PDC_Client_delete_metadata(char *delete_name, pdcid_t obj_delete_prop);
 
 /**
  * Request of PDC client to delete metadata by object id
@@ -194,24 +190,21 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id, pdcid_t pdc_id);
+perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id);
 
 /**
  * Client request for object unmapping
  *
  * \param local_obj_id [IN]      The origin object id
  * \param local_obj_id [IN]      The origin region id
- * \param pdc_id [IN]            The pdc id
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, pdcid_t pdc_id);
+perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id);
 
 /**
  * Request of PDC client to get region lock
  *
- * \param pdc_id [IN]           Id of the PDC
- * \param cont_id [IN]          Id of the container
  * \param obj_id [IN]           Id of the metadata
  * \param region_info [IN]      Pointer to PDC_region_info struct
  * \param access_type [IN]      Access type (enum)
@@ -220,13 +213,11 @@ perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, 
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_obtain_region_lock(pdcid_t pdc_id, pdcid_t cont_id, pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_lock_mode_t lock_mode, pbool_t *obtained);
+perr_t PDC_Client_obtain_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_lock_mode_t lock_mode, pbool_t *obtained);
 
 /**
  * Request of PDC client to get region lock
  *
- * \param pdc_id [IN]           Id of the PDC
- * \param cont_id [IN]          Id of the container
  * \param obj_id [IN]           Id of the metadata
  * \param region_info [IN]      Pointer to PDC_region_info struct
  * \param access_type [IN]      Access type (enum)
@@ -234,7 +225,7 @@ perr_t PDC_Client_obtain_region_lock(pdcid_t pdc_id, pdcid_t cont_id, pdcid_t me
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_release_region_lock(pdcid_t pdc_id, pdcid_t cont_id, pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, pbool_t *released);
+perr_t PDC_Client_release_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, pbool_t *released);
 
 /**
  * PDC client initialization

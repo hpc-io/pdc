@@ -50,13 +50,18 @@ int
 main(int argc, char *argv[])
 {
     hg_hash_table_t *hash_table = NULL;
-    hg_hash_table_iter_t hash_table_iter;
 
     int *key1, *key2;
+    hash_value_metadata_t *value1, *value2;
+    const int num = 100;
+    int *keys[num];
+    int i;
+    hash_value_metadata_t *values[num];
+    hash_value_metadata_t *lookup_value = NULL;
+    int lookup_key;
+    
     /* int *value1, *value2; */
     int ret = EXIT_SUCCESS;
-
-    hash_value_metadata_t *value1, *value2;
 
     (void) argc;
     (void) argv;
@@ -78,12 +83,7 @@ main(int argc, char *argv[])
 
     value1->obj_id = 10;
     value2->obj_id = 20;
-
-    const int num = 100;
-    int *keys[num];
-    hash_value_metadata_t *values[num];
     
-    int i;
     for (i = 0; i < num; i++) {
         /* printf("Iter[%d]\n", i); */
         keys[i]   = (int*)malloc(sizeof(int)); 
@@ -100,8 +100,7 @@ main(int argc, char *argv[])
 
     printf("Entries: %d\n", hg_hash_table_num_entries(hash_table));
 
-    int lookup_key = *key2;
-    hash_value_metadata_t *lookup_value = NULL;
+    lookup_key = *key2;
     lookup_value = hg_hash_table_lookup(hash_table, &lookup_key);
     if (lookup_value != NULL) {
         printf("Found in hash table with obj_id=%d, obj_name=%s, test=%s\n", lookup_value->obj_id, lookup_value->obj_name, lookup_value->test);
@@ -121,11 +120,6 @@ main(int argc, char *argv[])
     else {
         printf("Object with lookup_key=%d not found!\n", lookup_key);
     }
-
-
-
-
-
 
     /* if (*value1 != *((int *)hg_hash_table_lookup(hash_table, key1))) { */
     /*     fprintf(stderr, "Error: values do not match\n"); */

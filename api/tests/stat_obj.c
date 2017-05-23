@@ -39,9 +39,7 @@ int main(int argc, const char *argv[])
     int count = -1;
     char c;
     int i;
-    struct PDC_prop p;
     pdcid_t pdc, cont_prop, cont, obj_prop;
-    pdcid_t test_obj = -1;
     int use_name = -1;
     
     struct timeval  ht_total_start;
@@ -97,7 +95,7 @@ int main(int argc, const char *argv[])
     count /= size;
 
     // create a pdc
-    pdc = PDC_init(p);
+    pdc = PDC_init("pdc");
     /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
@@ -106,7 +104,7 @@ int main(int argc, const char *argv[])
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     // create a container
-    cont = PDCcont_create(pdc, "c1", cont_prop);
+    cont = PDCcont_create("c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
@@ -231,16 +229,15 @@ int main(int argc, const char *argv[])
         fflush(stdout);
     }
 
-done:
     // close a container
-    if(PDCcont_close(cont, pdc) < 0)
+    if(PDCcont_close(cont) < 0)
         printf("fail to close container %lld\n", cont);
 
     // close a container property
-    if(PDCprop_close(cont_prop, pdc) < 0)
+    if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
 
-    if(PDC_close(pdc) < 0)
+    if(PDC_close() < 0)
        printf("fail to close PDC\n");
 
 #ifdef ENABLE_MPI

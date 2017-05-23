@@ -39,7 +39,6 @@ int main(int argc, const char *argv[])
     int i;
     int use_name = -1;
     int ts;
-    struct PDC_prop p;
     pdcid_t pdc, cont_prop, cont, obj_prop;
     struct timeval  ht_total_start;
     struct timeval  ht_total_end;
@@ -92,7 +91,7 @@ int main(int argc, const char *argv[])
     fflush(stdout);
 
     // create a pdc
-    pdc = PDC_init(p);
+    pdc = PDC_init("pdc");
     /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
@@ -104,7 +103,7 @@ int main(int argc, const char *argv[])
     /*         printf("Create a container property, id is %lld\n", cont_prop); */
 
     // create a container
-    cont = PDCcont_create(pdc, "c1", cont_prop);
+    cont = PDCcont_create("c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
     /* else */
@@ -207,20 +206,20 @@ int main(int argc, const char *argv[])
 done:
 
     // close a container
-    if(PDCcont_close(cont, pdc) < 0)
+    if(PDCcont_close(cont) < 0)
         printf("fail to close container %lld\n", cont);
     /* else */
     /*     if (rank == 0) */ 
     /*         printf("successfully close container # %lld\n", cont); */
 
     // close a container property
-    if(PDCprop_close(cont_prop, pdc) < 0)
+    if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
     /* else */
     /*     if (rank == 0) */ 
     /*         printf("successfully close container property # %lld\n", cont_prop); */
 
-    if(PDC_close(pdc) < 0)
+    if(PDC_close() < 0)
        printf("fail to close PDC\n");
     /* else */
     /*    printf("PDC is closed\n"); */

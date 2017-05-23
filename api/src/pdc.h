@@ -32,11 +32,11 @@ typedef enum {
 /**
  * Initialize the PDC layer
  *
- * \param PDC_property [IN]     A PDC_property struct
+ * \param pdc_name [IN]         Name of the PDC
  *
  * \return PDC id on success/Negative on failure
  */
-pdcid_t PDC_init(struct PDC_prop property);
+pdcid_t PDC_init(const char *pdc_name);
 
 /**
  * Close the PDC layer

@@ -11,42 +11,36 @@ typedef struct PDC_id_info cont_handle;
 /**
  * PDC container initialization
  *
- * \param pc [IN]               Pointer to PDC_CLASS_t struct
- *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCcont_init(PDC_CLASS_t *pc);
+perr_t PDCcont_init();
 
 /**
  * Create a container
  *
- * \param pdc_id [IN]           Id of the PDC
  * \param cont_name [IN]        Name of the container
  * \param cont_create_prop [IN] Id of container property
  *                              returned by PDCprop_create(PDC_CONT_CREATE)
  *
  * \return Container id on success/Negative on failure
  */
-pdcid_t PDCcont_create(pdcid_t pdc_id, const char *cont_name, pdcid_t cont_create_prop);
+pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_create_prop);
 
 /**
  * Open a container
  *
- * \param pdc_id [IN]           Id of the PDC
  * \param cont_name [IN]        Name of the container
  *
  * \return Container id on success/Negative on failure
  */
-pdcid_t PDCcont_open(pdcid_t pdc_id, const char *cont_name);
+pdcid_t PDCcont_open(const char *cont_name);
 
 /**
  * Iterate over containers within a PDC
  *
- * \param pdc_id [IN]           Id of the PDC
- *
  * \return Pointer to cont_handle struct/NULL on failure
  */
-cont_handle *PDCcont_iter_start(pdcid_t pdc_id);
+cont_handle *PDCcont_iter_start();
 
 /**
  * Check if container handle is pointing to NULL
@@ -82,11 +76,10 @@ struct PDC_cont_info * PDCcont_iter_get_info(cont_handle *chandle);
  *
  * \param cont_id [IN]          Id of the container, returned by
  *                              PDCcont_open(pdcid_t pdc_id, const char *cont_name)
- * \param pdc_id [IN]           Id of the PDC
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCcont_persist(pdcid_t cont_id, pdcid_t pdc_id);
+perr_t PDCcont_persist(pdcid_t cont_id);
 
 /**
  * Set container lifetime
@@ -95,31 +88,27 @@ perr_t PDCcont_persist(pdcid_t cont_id, pdcid_t pdc_id);
  *                              PDCprop_create(PDC_CONT_CREATE)
  * \param cont_lifetime [IN]    container lifetime (enum type), PDC_PERSIST or
  *                              PDC_TRANSIENT
- * \param pdc_id [IN]           Id of the PDC
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCprop_set_cont_lifetime(pdcid_t cont_create_prop, PDC_lifetime cont_lifetime, pdcid_t pdc_id);
+perr_t PDCprop_set_cont_lifetime(pdcid_t cont_create_prop, PDC_lifetime cont_lifetime);
 
 /**
  * Close a container
  *
  * \param cont_id [IN]          Container id, returned by
  *                              PDCcont_open(pdcid_t pdc_id, const char *cont_name)
- * \param pdc_id [IN]           Id of the PDC
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCcont_close(pdcid_t cont_id, pdcid_t pdc);
+perr_t PDCcont_close(pdcid_t cont_id);
 
 /**
  * PDC container finalize
  *
- * \param pdc_id [IN]           Id of the PDC
- *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCcont_end(pdcid_t pdc_id);
+perr_t PDCcont_end();
 
 /**
  * Check if container list is empty
@@ -128,6 +117,6 @@ perr_t PDCcont_end(pdcid_t pdc_id);
  *
  * \return SUCCEED if empty/FAIL if not empty
  */
-perr_t PDC_cont_list_null(pdcid_t pdc_id);
+perr_t PDC_cont_list_null();
 
 #endif /* end _pdc_cont_H */

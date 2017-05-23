@@ -17,16 +17,14 @@ int main(int argc, const char *argv[])
 {
     int rank = 0, size = 1;
     perr_t ret;
-    struct PDC_prop p;
     pdcid_t pdc_id, cont_prop, cont_id, obj_prop1, obj_prop2, obj_prop3;
-    pdcid_t obj1, obj2, obj3, r1, r2, r3, meta_id;
+    pdcid_t obj1, obj2, obj3, r1, r2, r3;
     uint64_t dims[2] = {4,4};
     uint64_t offset[2] = {1, 2};
     uint64_t rdims[2] = {3, 2};
     char obj_name1[512];
     char obj_name2[512];
     char obj_name3[512];
-    char obj_name[64];
     
     int myArray1[4][4] = {{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}, {13, 14, 15, 16}};
     int myArray2[4][4];
@@ -46,7 +44,7 @@ int main(int argc, const char *argv[])
 #endif
 
     // create a pdc
-    pdc_id = PDC_init(p);
+    pdc_id = PDC_init("pdc");
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
@@ -54,7 +52,7 @@ int main(int argc, const char *argv[])
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     // create a container
-    cont_id = PDCcont_create(pdc_id, "c1", cont_prop);
+    cont_id = PDCcont_create("c1", cont_prop);
     if(cont_id <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
@@ -69,61 +67,61 @@ int main(int argc, const char *argv[])
 //	sprintf(obj_name2, "%s%s", rand_string(tmp_str, 16), srank);
 //	sprintf(obj_name3, "%s%s", rand_string(tmp_str, 16), srank);
 
-    PDCprop_set_obj_dims(obj_prop1, 2, dims, pdc_id);
-    PDCprop_set_obj_dims(obj_prop2, 2, dims, pdc_id);
-    PDCprop_set_obj_dims(obj_prop3, 2, dims, pdc_id);
+    PDCprop_set_obj_dims(obj_prop1, 2, dims);
+    PDCprop_set_obj_dims(obj_prop2, 2, dims);
+    PDCprop_set_obj_dims(obj_prop3, 2, dims);
 
-    PDCprop_set_obj_type(obj_prop1, PDC_INT, pdc_id);
-    PDCprop_set_obj_type(obj_prop2, PDC_INT, pdc_id);
-    PDCprop_set_obj_type(obj_prop3, PDC_INT, pdc_id);
+    PDCprop_set_obj_type(obj_prop1, PDC_INT);
+    PDCprop_set_obj_type(obj_prop2, PDC_INT);
+    PDCprop_set_obj_type(obj_prop3, PDC_INT);
 
-    PDCprop_set_obj_buf(obj_prop1, &myArray1[0], pdc_id);
-    PDCprop_set_obj_time_step(obj_prop1, 0, pdc_id);
-    PDCprop_set_obj_user_id( obj_prop1, getuid(),    pdc_id);
-    PDCprop_set_obj_app_name(obj_prop1, "test_app",  pdc_id);
-    PDCprop_set_obj_tags(    obj_prop1, "tag0=1",    pdc_id);
+    PDCprop_set_obj_buf(obj_prop1, &myArray1[0]     );
+    PDCprop_set_obj_time_step(obj_prop1, 0          );
+    PDCprop_set_obj_user_id( obj_prop1, getuid()    );
+    PDCprop_set_obj_app_name(obj_prop1, "test_app"  );
+    PDCprop_set_obj_tags(    obj_prop1, "tag0=1"    );
 
-	PDCprop_set_obj_buf(obj_prop2, &myArray2[0], pdc_id);
-    PDCprop_set_obj_time_step(obj_prop2, 0, pdc_id);
-    PDCprop_set_obj_user_id( obj_prop2, getuid(),    pdc_id);
-    PDCprop_set_obj_app_name(obj_prop2, "test_app",  pdc_id);
-    PDCprop_set_obj_tags(    obj_prop2, "tag0=1",    pdc_id);
+	PDCprop_set_obj_buf(obj_prop2, &myArray2[0]     );
+    PDCprop_set_obj_time_step(obj_prop2, 0          );
+    PDCprop_set_obj_user_id( obj_prop2, getuid()    );
+    PDCprop_set_obj_app_name(obj_prop2, "test_app"  );
+    PDCprop_set_obj_tags(    obj_prop2, "tag0=1"    );
 
-	PDCprop_set_obj_buf(obj_prop3, &myArray3[0], pdc_id);
-    PDCprop_set_obj_time_step(obj_prop3, 0, pdc_id);
-    PDCprop_set_obj_user_id( obj_prop3, getuid(),    pdc_id);
-    PDCprop_set_obj_app_name(obj_prop3, "test_app",  pdc_id);
-    PDCprop_set_obj_tags(    obj_prop3, "tag0=1",    pdc_id);
+	PDCprop_set_obj_buf(obj_prop3, &myArray3[0]     );
+    PDCprop_set_obj_time_step(obj_prop3, 0          );
+    PDCprop_set_obj_user_id( obj_prop3, getuid()    );
+    PDCprop_set_obj_app_name(obj_prop3, "test_app"  );
+    PDCprop_set_obj_tags(    obj_prop3, "tag0=1"    );
 
     // Only rank 0 create a object
     if (rank == 0) {
         sprintf(obj_name1, "test_obj1");
         sprintf(obj_name2, "test_obj2");
         sprintf(obj_name3, "test_obj3");
-        obj1 = PDCobj_create(pdc_id, cont_id, obj_name1, obj_prop1);
-        obj2 = PDCobj_create(pdc_id, cont_id, obj_name2, obj_prop2);
-        obj3 = PDCobj_create(pdc_id, cont_id, obj_name3, obj_prop3);
+        obj1 = PDCobj_create(cont_id, obj_name1, obj_prop1);
+        obj2 = PDCobj_create(cont_id, obj_name2, obj_prop2);
+        obj3 = PDCobj_create(cont_id, obj_name3, obj_prop3);
     }
     #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     #endif
 
     // create a region
-    r1 = PDCregion_create(2, offset, rdims, pdc_id);
+    r1 = PDCregion_create(2, offset, rdims);
 //    printf("first region id: %lld\n", r1);
-    r2 = PDCregion_create(2, offset, rdims, pdc_id);
+    r2 = PDCregion_create(2, offset, rdims);
 //    printf("second region id: %lld\n", r2);
-    r3 = PDCregion_create(2, offset, rdims, pdc_id);
+    r3 = PDCregion_create(2, offset, rdims);
 //    printf("second region id: %lld\n", r3);
 
-	PDCobj_map(obj1, r1, obj2, r2, pdc_id);
-//	PDCobj_map(obj2, r2, obj3, r3, pdc_id);
-//    PDCreg_unmap(obj1, r1, pdc_id);
-//	PDCobj_map(obj2, r2, obj3, r3, pdc_id);
+	PDCobj_map(obj1, r1, obj2, r2);
+//	PDCobj_map(obj2, r2, obj3, r3);
+//    PDCreg_unmap(obj1, r1);
+//	PDCobj_map(obj2, r2, obj3, r3);
 
-//    region = PDCregion_get_info(r1, obj1, pdc_id);
+//    region = PDCregion_get_info(r1, obj1);
 
-//    info = PDCobj_get_info(obj1, pdc_id);
+//    info = PDCobj_get_info(obj1);
 //    meta_id = info->meta_id;
 //    printf("meta id is %lld\n", info->meta_id);
 
@@ -145,7 +143,7 @@ int main(int argc, const char *argv[])
 #endif
     gettimeofday(&start_time, 0);
 
-    ret = PDCreg_obtain_lock(pdc_id, cont_id, obj1, r1, WRITE, NOBLOCK);
+    ret = PDCreg_obtain_lock(obj1, r1, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region\n");
 
@@ -166,7 +164,7 @@ int main(int argc, const char *argv[])
 #endif
     gettimeofday(&start_time, 0);
 
-    ret = PDCreg_release_lock(pdc_id, cont_id, obj1, r1, WRITE);
+    ret = PDCreg_release_lock(obj1, r1, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region\n");
 
@@ -182,23 +180,23 @@ int main(int argc, const char *argv[])
         printf("Total lock release overhead: %.6f\n", total_lock_overhead);
     }
     
-    PDCreg_unmap(obj1, r1, pdc_id);
+    PDCreg_unmap(obj1, r1);
 
     // close a container
-    if(PDCcont_close(cont_id, pdc_id) < 0)
+    if(PDCcont_close(cont_id) < 0)
         printf("fail to close container %lld\n", cont_id);
     /* else */
     /*     if (rank == 0) */ 
     /*         printf("successfully close container # %lld\n", cont); */
 
     // close a container property
-    if(PDCprop_close(cont_prop, pdc_id) < 0)
+    if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
     /* else */
     /*     if (rank == 0) */ 
     /*         printf("successfully close container property # %lld\n", cont_prop); */
 
-    if(PDC_close(pdc_id) < 0)
+    if(PDC_close() < 0)
        printf("fail to close PDC\n");
     /* else */
     /*    printf("PDC is closed\n"); */

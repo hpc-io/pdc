@@ -17,9 +17,8 @@ int main(int argc, const char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
     
-    PDC_prop_t p;
     // create a pdc
-    pdcid_t pdc = PDC_init(p);
+    pdcid_t pdc = PDC_init("pdc");
     printf("generated new pdc, id is %lld\n", pdc);
 
     float a[10] = {1.1, 2.1, 3.1, 4.1, 5.1, 6.1, 7.1, 8.1, 9.1, 10.1};
