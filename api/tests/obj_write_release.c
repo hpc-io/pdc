@@ -119,12 +119,6 @@ int main(int argc, const char *argv[])
 //    PDCreg_unmap(obj1, r1);
 //	PDCobj_map(obj2, r2, obj3, r3);
 
-//    region = PDCregion_get_info(r1, obj1);
-
-//    info = PDCobj_get_info(obj1);
-//    meta_id = info->meta_id;
-//    printf("meta id is %lld\n", info->meta_id);
-
 /*
     // Query and get meta id
     pdc_metadata_t *metadata = NULL;

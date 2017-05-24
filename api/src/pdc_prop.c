@@ -49,6 +49,7 @@ pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdcid)
     pdcid_t ret_value = SUCCEED;
     struct PDC_cont_prop *p;
     struct PDC_obj_prop *q;
+    struct PDC_id_info *id_info;
     
     FUNC_ENTER(NULL);
 
@@ -60,7 +61,7 @@ pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdcid)
         p->cont_life = PDC_PERSIST;
         pdcid_t new_id_c = PDC_id_register(PDC_CONT_PROP, p);
         p->cont_prop_id = new_id_c;
-        struct PDC_id_info *id_info = PDC_find_id(pdcid);
+        id_info = PDC_find_id(pdcid);
         p->pdc = (struct PDC_class *)(id_info->obj_ptr);
         ret_value = new_id_c;
     }
@@ -78,7 +79,7 @@ pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdcid)
         q->buf = NULL;
         pdcid_t new_id_o = PDC_id_register(PDC_OBJ_PROP, q);
         q->obj_prop_id = new_id_o;
-        struct PDC_id_info *id_info = PDC_find_id(pdcid);
+        id_info = PDC_find_id(pdcid);
         q->pdc = (struct PDC_class *)(id_info->obj_ptr);
         ret_value = new_id_o;
     }

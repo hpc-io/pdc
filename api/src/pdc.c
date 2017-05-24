@@ -57,7 +57,7 @@ static pdcid_t PDCclass_create(const char *pdc_name)
 
     p->name = strdup(pdc_name);
     pdcid = PDC_id_register(PDC_CLASS, p);
-    p->pdcid = pdcid;
+    p->local_id = pdcid;
     ret_value = pdcid;
     
 done:

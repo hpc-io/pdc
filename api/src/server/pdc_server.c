@@ -644,7 +644,6 @@ static perr_t PDC_Server_hash_table_list_insert(pdc_hash_table_entry_head *head,
     /* DL_COUNT(head, elt, count); */
     /* printf("Append one metadata, total=%d\n", count); */
  
-done:
     FUNC_LEAVE(ret_value);
 }
 

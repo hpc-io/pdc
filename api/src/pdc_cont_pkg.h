@@ -3,9 +3,9 @@
 
 
 struct PDC_cont_info {
-    const char              *name;
-    struct PDC_class        *pdc;
-    struct PDC_cont_prop    *cont_prop;
+    const char             *name;
+    pdcid_t                local_id;
+    struct PDC_cont_prop   *cont_pt;
 };
 
 

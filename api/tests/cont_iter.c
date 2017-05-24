@@ -46,7 +46,7 @@ int main() {
         struct PDC_cont_info *info = PDCcont_iter_get_info(ch);
         printf("container name is: %s\n", info->name);
 //        printf("container is in pdc %lld\n", info->pdc);
-        printf("container property id is %lld\n", info->cont_prop);
+        printf("container property id is %lld\n", info->cont_pt->cont_prop_id);
         
         ch = PDCcont_iter_next(ch);
     }

@@ -30,7 +30,7 @@ done:
     FUNC_LEAVE(ret_value); 
 } /* end PDCcont_init() */
 
-pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_create_prop)
+pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_prop_id)
 {
     pdcid_t ret_value = SUCCEED;
     struct PDC_cont_info *p = NULL;
@@ -42,9 +42,12 @@ pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_create_prop)
     if(!p)
         PGOTO_ERROR(FAIL,"PDC container memory allocation failed\n");
     p->name = strdup(cont_name);
-    p->cont_prop = cont_create_prop;
+    
+    struct PDC_id_info *id_info = PDC_find_id(cont_prop_id);
+    p->cont_pt = (struct PDC_cont_prop *)(id_info->obj_ptr);
     
     new_id = PDC_id_register(PDC_CONT, p);
+    p->local_id = new_id;
     ret_value = new_id;
     
 done:
@@ -192,20 +195,15 @@ done:
 perr_t PDCcont_persist(pdcid_t cont_id)
 {
     perr_t ret_value = SUCCEED;         /* Return value */
-    pdcid_t propid;
     struct PDC_id_info *info;
-    struct PDC_id_info *prop;
     
     FUNC_ENTER(NULL);
     
     info = PDC_find_id(cont_id);
     if(info == NULL)
         PGOTO_ERROR(FAIL, "cannot locate container ID");
-    propid = ((struct PDC_cont_info *)(info->obj_ptr))->cont_prop;
-    prop = PDC_find_id(propid);
-    if(prop == NULL)
-        PGOTO_ERROR(FAIL, "cannot container property");
-    ((struct PDC_cont_prop *)(prop->obj_ptr))->cont_life = PDC_PERSIST;
+
+    ((struct PDC_cont_info *)info->obj_ptr)->cont_pt->cont_life = PDC_PERSIST;
     
 done:
     FUNC_LEAVE(ret_value);

@@ -3,7 +3,7 @@
 
 struct PDC_class {
     char        *name;
-    pdcid_t     pdcid;
+    pdcid_t     local_id;
 };
 
 #endif

@@ -243,7 +243,7 @@ perr_t PDCobj_map(pdcid_t from_obj, pdcid_t from_reg, pdcid_t to_obj, pdcid_t to
  *
  * \return Pointer to PDC_obj_info struct on success/Null on failure
  */
-struct PDC_obj_info *PDCobj_get_info(pdcid_t obj_id);
+//struct PDC_obj_info *PDCobj_get_info(pdcid_t obj_id);
 
 /**
  * Get object information
@@ -253,7 +253,7 @@ struct PDC_obj_info *PDCobj_get_info(pdcid_t obj_id);
  *
  * \return Pointer to PDC_obj_info struct on success/Null on failure
  */
-struct PDC_region_info *PDCregion_get_info(pdcid_t reg_id, pdcid_t obj_id);
+//struct PDC_region_info *PDCregion_get_info(pdcid_t reg_id);
 
 /**
  * Unmap all regions within the object 

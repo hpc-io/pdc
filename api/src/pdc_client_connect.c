@@ -836,7 +836,7 @@ metadata_query_bulk_cb(const struct hg_cb_info *callback_info)
     hg_op_id_t hg_bulk_op_id;
     hg_bulk_t local_bulk_handle = HG_BULK_NULL;
     hg_bulk_t origin_bulk_handle = HG_BULK_NULL;
-    struct hg_info *hg_info = NULL;
+    const struct hg_info *hg_info = NULL;
     struct hg_test_bulk_args *bulk_args;
     void *recv_meta;
     
