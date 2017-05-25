@@ -585,7 +585,6 @@ hg_proc_metadata_add_tag_out_t(hg_proc_t proc, void *data)
     return ret;
 }
 
-
 static HG_INLINE hg_return_t
 hg_proc_metadata_update_in_t(hg_proc_t proc, void *data)
 {

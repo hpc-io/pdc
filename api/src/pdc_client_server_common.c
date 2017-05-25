@@ -578,7 +578,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-
 /* static hg_return_t */
 // metadata_update_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(metadata_update, handle)

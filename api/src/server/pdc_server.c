@@ -919,8 +919,6 @@ done:
     FUNC_LEAVE(ret_value);
 } // end of add_tag_metadata_from_hash_table
 
-
-
 perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out)
 {
     perr_t ret_value;

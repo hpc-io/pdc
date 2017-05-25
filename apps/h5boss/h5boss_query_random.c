@@ -261,6 +261,7 @@ int main(int argc, char **argv)
         fflush(stdout);
     }
 
+
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif

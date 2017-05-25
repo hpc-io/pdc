@@ -1022,6 +1022,7 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
     } // for server_id
 
     
+    /* printf("Received %u metadata.\n", *(lookup_args.n_meta)); */
     /* for (i = 0; i < *n_res; i++) { */
     /*     PDC_print_metadata(lookup_args.meta_arr[i]); */
     /* } */
@@ -1137,6 +1138,9 @@ metadata_delete_by_id_rpc_cb(const struct hg_cb_info *callback_info)
     FUNC_LEAVE(ret_value);
 }
 
+
+// Callback function for  HG_Forward()
+// Gets executed after a call to HG_Trigger and the RPC has completed
 static hg_return_t
 metadata_add_tag_rpc_cb(const struct hg_cb_info *callback_info)
 {

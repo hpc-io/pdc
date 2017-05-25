@@ -165,7 +165,6 @@ int main(int argc, char **argv)
             }
         }
 
-
         // Print progress
         /* int progress_factor = my_count < 10 ? 1 : 10; */
         /* if (i > 0 && i % (my_count/progress_factor) == 0) { */
