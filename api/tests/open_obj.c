@@ -47,20 +47,20 @@ int main() {
         printf("Fail to create object @ line  %d!\n", __LINE__);
     
     // open first object twice
-    open11 = PDCobj_open("o1", pdc);
+    open11 = PDCobj_open(cont, "o1");
     if(open11 < 0)
         printf("Fail to open object o1\n");
     else
         printf("Open object o1, id is %lld\n", open11);
     
-    open12 = PDCobj_open("o1", pdc);
+    open12 = PDCobj_open(cont, "o1");
     if(open12 < 0)
         printf("Fail to open object o1\n");
     else
         printf("Open object o1, id is %lld\n", open12);
     
     // open second object once
-    open21 = PDCobj_open("o2", pdc);
+    open21 = PDCobj_open(cont, "o2");
     if(open21 < 0)
         printf("Fail to open object o2\n");
     else

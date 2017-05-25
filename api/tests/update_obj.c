@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
-#include <time.h>
+#include <sys/time.h>
+#include <ctype.h>
 
 /* #define ENABLE_MPI 1 */
 
@@ -14,7 +15,7 @@
 #include "pdc_client_connect.h"
 #include "pdc_client_server_common.h"
 
-
+/*
 static char *rand_string(char *str, size_t size)
 {
     const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJK...";
@@ -28,6 +29,7 @@ static char *rand_string(char *str, size_t size)
     }
     return str;
 }
+*/
 
 void print_usage() {
     printf("Usage: srun -n ./update_obj -r num_of_obj_per_rank\n");

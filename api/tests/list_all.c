@@ -5,6 +5,7 @@
 #include <getopt.h>
 #include <time.h>
 #include <sys/time.h>
+#include <ctype.h>
 
 /* #define ENABLE_MPI 1 */
 
