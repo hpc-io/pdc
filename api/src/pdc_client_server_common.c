@@ -161,6 +161,7 @@ void PDC_print_metadata(pdc_metadata_t *a)
     
     if (a == NULL) {
         printf("==Empty metadata structure\n");
+        return;
     }
     printf("================================\n");
     printf("  obj_id    = %llu\n", a->obj_id);
@@ -175,6 +176,158 @@ void PDC_print_metadata(pdc_metadata_t *a)
     fflush(stdout);
 }
 
+
+void PDC_print_region_list(region_list_t *a)
+{
+    FUNC_ENTER(NULL);
+    
+    if (a == NULL) {
+        printf("==Empty region_list_t structure\n");
+        return;
+    }
+    int i;
+    printf("================================\n");
+    printf("  ndim      = %d\n",   a->ndim);
+    printf("start count\n");
+    /* printf("start stride count\n"); */
+    for (i = 0; i < a->ndim; i++) {
+        printf("%5d %5d\n", a->start[i], a->count[i]);
+        /* printf("%5d %6d %5d\n", a->start[i], a->stride[i], a->count[i]); */
+    }
+    printf("================================\n\n");
+    fflush(stdout);
+}
+
+perr_t pdc_region_transfer_t_to_list_t(region_info_transfer_t *transfer, region_list_t *region)
+{
+    if (NULL==region || NULL==transfer ) {
+        printf("    pdc_region_info_t_to_region_list_t(): NULL input!\n");
+        return FAIL;
+    }
+
+    int i;
+    region->ndim            = transfer->ndim  ;
+    region->start[0]        = transfer->start_0;
+    region->start[1]        = transfer->start_1;
+    region->start[2]        = transfer->start_2;
+    region->start[3]        = transfer->start_3;
+                              
+    region->count[0]        = transfer->count_0;
+    region->count[1]        = transfer->count_1;
+    region->count[2]        = transfer->count_2;
+    region->count[3]        = transfer->count_3;
+
+    region->stride[0]       = transfer->stride_0;
+    region->stride[1]       = transfer->stride_1;
+    region->stride[2]       = transfer->stride_2;
+    region->stride[3]       = transfer->stride_3;
+
+    return SUCCEED;
+}
+
+perr_t pdc_region_info_t_to_transfer(struct PDC_region_info *region, region_info_transfer_t *transfer)
+{
+    if (NULL==region || NULL==transfer ) {
+        printf("    pdc_region_info_t_to_region_list_t(): NULL input!\n");
+        return FAIL;
+    }
+
+    int i;
+    transfer->ndim           = region->ndim    ;
+    transfer->start_0        = region->offset[0];
+    transfer->start_1        = region->offset[1];
+    transfer->start_2        = region->offset[2];
+    transfer->start_3        = region->offset[3];
+
+    transfer->count_0        = region->size[0];
+    transfer->count_1        = region->size[1];
+    transfer->count_2        = region->size[2];
+    transfer->count_3        = region->size[3];
+
+    transfer->stride_0       = 0;
+    transfer->stride_1       = 0;
+    transfer->stride_2       = 0;
+    transfer->stride_3       = 0;
+
+    return SUCCEED;
+}
+
+
+perr_t pdc_region_list_t_to_transfer(region_list_t *region, region_info_transfer_t *transfer)
+{
+    if (NULL==region || NULL==transfer ) {
+        printf("    pdc_region_info_t_to_region_list_t(): NULL input!\n");
+        return FAIL;
+    }
+
+    int i;
+    transfer->ndim          = region->ndim    ;
+    transfer->start_0        = region->start[0];
+    transfer->start_1        = region->start[1];
+    transfer->start_2        = region->start[2];
+    transfer->start_3        = region->start[3];
+
+    transfer->count_0        = region->count[0];
+    transfer->count_1        = region->count[1];
+    transfer->count_2        = region->count[2];
+    transfer->count_3        = region->count[3];
+
+    transfer->stride_0       = region->stride[0];
+    transfer->stride_1       = region->stride[1];
+    transfer->stride_2       = region->stride[2];
+    transfer->stride_3       = region->stride[3];
+
+    return SUCCEED;
+}
+
+
+// Fill the structure of pdc_metadata_transfer_t with pdc_metadata_t
+perr_t pdc_metadata_t_to_transfer_t(pdc_metadata_t *meta, pdc_metadata_transfer_t *transfer)
+{
+    if (NULL==meta || NULL==transfer) {
+        printf("    pdc_metadata_t_to_transfer_t(): NULL input!\n");
+        return FAIL;
+    }
+    transfer->user_id       = meta->user_id      ;
+    transfer->app_name      = meta->app_name     ;
+    transfer->obj_name      = meta->obj_name     ;
+    transfer->time_step     = meta->time_step    ;
+    transfer->obj_id        = meta->obj_id       ;
+    transfer->ndim          = meta->ndim         ;
+    transfer->dims0         = meta->dims[0]      ;
+    transfer->dims1         = meta->dims[1]      ;
+    transfer->dims2         = meta->dims[2]      ;
+    transfer->dims3         = meta->dims[3]      ;
+    transfer->tags          = meta->tags         ;
+    transfer->data_location = meta->data_location;
+
+    return SUCCEED;
+}
+
+perr_t pdc_transfer_t_to_metadata_t(pdc_metadata_transfer_t *transfer, pdc_metadata_t *meta)
+{
+    if (NULL==meta || NULL==transfer) {
+        printf("    pdc_transfer_t_to_metadata_t(): NULL input!\n");
+        return FAIL;
+    }
+    meta->user_id       = transfer->user_id      ;
+    meta->obj_id        = transfer->obj_id       ;
+    meta->time_step     = transfer->time_step    ;
+    meta->ndim          = transfer->ndim         ;
+    meta->dims[0]       = transfer->dims0        ;
+    meta->dims[1]       = transfer->dims1        ;
+    meta->dims[2]       = transfer->dims2        ;
+    meta->dims[3]       = transfer->dims3        ;
+
+    strcpy(meta->app_name, transfer->app_name);
+    strcpy(meta->obj_name, transfer->obj_name);
+    strcpy(meta->tags, transfer->tags);
+    strcpy(meta->data_location, transfer->data_location);
+
+    return SUCCEED;
+}
+
+
 #ifndef IS_PDC_SERVER
 // Dummy function for client to compile, real function is used only by server and code is in pdc_server.c
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out) {return SUCCEED;}
@@ -188,6 +341,12 @@ perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out) {ret
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs) {return SUCCEED;}
 pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id) {return NULL;}
 hg_class_t *hg_class_g;
+
+/* 
+ * Data server related
+ */
+perr_t PDC_Server_data_read(data_server_read_in_t *in, data_server_read_out_t *out) {return SUCCEED;}
+
 #endif
 
 /*
@@ -1054,7 +1213,6 @@ region_lock_register(hg_class_t *hg_class)
     FUNC_LEAVE(ret_value);
 }
 
-
 hg_id_t
 query_partial_register(hg_class_t *hg_class)
 {
@@ -1066,3 +1224,52 @@ query_partial_register(hg_class_t *hg_class)
 
     FUNC_LEAVE(ret_value);
 }
+
+/*
+ * Data server related
+ */
+
+/* static hg_return_t */
+// data_server_read_cb(hg_handle_t handle)
+HG_TEST_RPC_CB(data_server_read, handle)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value;
+
+    /* Get input parameters sent on origin through on HG_Forward() */
+    // Decode input
+    data_server_read_in_t  in;
+    data_server_read_out_t out;
+
+    HG_Get_input(handle, &in);
+    printf("==PDC_SERVER: Got data server read request from client %d\n", in.client_id);
+
+    out.ret = PDC_Server_data_read(&in, &out);
+
+    HG_Respond(handle, NULL, NULL, &out);
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    ret_value = HG_SUCCESS;
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+HG_TEST_THREAD_CB(data_server_read)
+
+hg_id_t
+data_server_read_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+
+    ret_value = MERCURY_REGISTER(hg_class, "data_server_read", data_server_read_in_t, data_server_read_out_t, data_server_read_cb);
+
+    FUNC_LEAVE(ret_value);
+}
+

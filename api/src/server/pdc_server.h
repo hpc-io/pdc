@@ -13,6 +13,7 @@
 #include "mercury_hash_table.h"
 #include "mercury_list.h"
 
+#include "pdc_client_server_common.h"
 
 #define CREATE_BLOOM_THRESHOLD 64
 
@@ -27,7 +28,6 @@ perr_t PDC_Server_checkpoint(char *filename);
 perr_t PDC_Server_restart(char *filename);
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs);
 pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id);
-
 /* typedef struct pdc_metadata_name_mark_t { */
 /*     char obj_name[ADDR_MAX]; */
 /*     struct pdc_metadata_name_mark_t *next; */
@@ -39,5 +39,27 @@ typedef struct pdc_hash_table_entry_head {
     void *bloom;
     pdc_metadata_t *metadata;
 } pdc_hash_table_entry_head;
+
+/* 
+ * Data server related
+ */
+
+typedef struct pdc_data_server_io_list_t {
+    uint64_t obj_id;
+    char  path[PATH_MAX];
+    int   total;
+    int   count;
+    int   ndim;
+    int   dims[DIM_MAX];
+    uint64_t total_size;
+    region_list_t *region_list_head;
+
+    struct pdc_data_server_io_list_t *prev;
+    struct pdc_data_server_io_list_t *next;
+} pdc_data_server_io_list_t;
+
+
+perr_t PDC_Server_data_read(data_server_read_in_t *in, data_server_read_out_t *out);
+
 
 #endif /* PDC_SERVER_H */

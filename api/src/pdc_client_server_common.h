@@ -15,6 +15,7 @@
 #include "mercury_list.h"
 
 
+#include "pdc_obj_pkg.h"
 
 #define ADDR_MAX 64
 #define DIM_MAX  16
@@ -113,7 +114,7 @@ typedef struct pdc_metadata_transfer_t {
     uint64_t    obj_id;
 
     int32_t     ndim;
-    uint64_t    dims[DIM_MAX];
+    int32_t     dims0, dims1, dims2, dims3;
 
     const char  *tags;
     const char  *data_location;
@@ -143,7 +144,7 @@ typedef struct metadata_query_transfer_in_t{
 
 
 #ifdef HG_HAS_BOOST
-MERCURY_GEN_STRUCT_PROC( pdc_metadata_transfer_t, ((int32_t)(user_id)) ((int32_t)(time_step)) ((uint64_t)(obj_id)) ((int32_t)(ndim)) ((uint64_t)(dims[DIM_MAX])) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((hg_const_string_t)(data_location)) ((hg_const_string_t)(tags)) )
+MERCURY_GEN_STRUCT_PROC( pdc_metadata_transfer_t, ((int32_t)(user_id)) ((int32_t)(time_step)) ((uint64_t)(obj_id)) ((int32_t)(ndim)) ((int32_t)(dims0)) ((int32_t)(dims1)) ((int32_t)(dims2)) ((int32_t)(dims3)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((hg_const_string_t)(data_location)) ((hg_const_string_t)(tags)) )
 
 MERCURY_GEN_PROC( gen_obj_id_in_t, ((pdc_metadata_transfer_t)(data)) ((uint32_t)(hash_value)) )
 MERCURY_GEN_PROC( gen_obj_id_out_t, ((uint64_t)(ret)) )
@@ -193,6 +194,9 @@ MERCURY_GEN_PROC( region_lock_out_t, ((int32_t)(ret)) )
 // Bulk
 MERCURY_GEN_PROC(bulk_write_in_t,  ((hg_int32_t)(cnt)) ((hg_bulk_t)(bulk_handle)))
 MERCURY_GEN_PROC(bulk_write_out_t, ((hg_uint64_t)(ret)) )
+
+MERCURY_GEN_PROC(data_server_read_in_t, ((int32_t)(client_id)) ((int32_t)(nclient)) ((pdc_metadata_transfer_t)(meta)) ((region_info_transfer_t)(region)))
+MERCURY_GEN_PROC(data_server_read_out_t, ((int32_t)(ret)) )
 
 #else
 
@@ -371,7 +375,6 @@ hg_proc_region_lock_out_t(hg_proc_t proc, void *data)
     return ret;
 }
 
-
 typedef struct {
     hg_const_string_t    obj_name;
     int32_t              time_step;
@@ -507,7 +510,22 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_uint64_t(proc, &struct_data->dims);
+    ret = hg_proc_int32_t(proc, &struct_data->dims0);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->dims1);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->dims2);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->dims3);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -1106,9 +1124,80 @@ uint32_t PDC_get_server_by_obj_id(uint64_t obj_id, int n_server);
 uint32_t PDC_get_hash_by_name(const char *name);
 int      PDC_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b);
 void     PDC_print_metadata(pdc_metadata_t *a);
+void PDC_print_region_list(region_list_t *a);
+
+perr_t pdc_metadata_t_to_transfer_t(pdc_metadata_t *meta, pdc_metadata_transfer_t *transfer);
+perr_t pdc_transfer_t_to_metadata_t(pdc_metadata_transfer_t *transfer, pdc_metadata_t *meta);
+
+perr_t pdc_region_transfer_t_to_list_t(region_info_transfer_t *transfer, region_list_t *region);
+perr_t pdc_region_list_t_to_transfer(region_list_t *region, region_info_transfer_t *transfer);
+
+perr_t pdc_region_info_t_to_transfer(struct PDC_region_info *region, region_info_transfer_t *transfer);
 
 
 extern hg_hash_table_t   *metadata_hash_table_g;
 extern hg_atomic_int32_t  close_server_g;
+
+
+/*
+ * Data Server related
+ */
+
+
+/* MERCURY_GEN_PROC(data_server_read_in_t,  ((int32_t)(nclient)) ((hg_uint64_t)(meta_id)) ((region_info_transfer_t)(region))) */
+/* MERCURY_GEN_PROC(data_server_read_out_t, ((int32_t)(ret)) ) */
+typedef struct {
+    int32_t                     client_id;
+    int32_t                     nclient;
+    pdc_metadata_transfer_t     meta;
+    region_info_transfer_t      region;
+} data_server_read_in_t;
+
+typedef struct {
+    int32_t            ret;
+} data_server_read_out_t;
+
+static HG_INLINE hg_return_t
+hg_proc_data_server_read_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    data_server_read_in_t *struct_data = (data_server_read_in_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->client_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->nclient);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_pdc_metadata_transfer_t(proc, &struct_data->meta);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->region);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_data_server_read_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    data_server_read_out_t *struct_data = (data_server_read_out_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
+
 
 #endif /* PDC_CLIENT_SERVER_COMMON_H */

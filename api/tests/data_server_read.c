@@ -56,7 +56,7 @@ int main(int argc, const char *argv[])
     struct timeval  ht_total_end;
     long long ht_total_elapsed;
     double ht_total_sec;
-    sprintf(obj_name, "/homes/test/");
+    sprintf(obj_name, "/global/cscratch1/sd/houhun/test.h5");
 
     int dims[3]={100,200,300};
     PDCprop_set_obj_dims(obj_prop, 2, dims, pdc);

@@ -49,6 +49,9 @@ typedef struct pdc_server_info_t {
     hg_handle_t     region_lock_handle;
     int             query_partial_handle_valid;
     hg_handle_t     query_partial_handle;
+    // Data server related
+    int             data_server_read_handle_valid;
+    hg_handle_t     data_server_read_handle;
 } pdc_server_info_t;
 
 extern pdc_server_info_t *pdc_server_info_g;
@@ -270,5 +273,26 @@ perr_t PDC_Client_finalize();
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_Client_close_all_server();
+
+
+
+
+/*
+ * Data Server related
+ */
+
+/**
+ * Client request server to read a region of an object
+ *
+ * \param server_id [IN]         Target local data server ID
+ * \param n_client [IN]          Number of clients that send to read request to one data server
+ * \param meta [IN]              Metadata 
+ * \param region [IN]            Region
+ * \param buf[IN]                User buffer to store the read 
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *meta, struct PDC_region_info *region, void *buf);
+
 
 #endif

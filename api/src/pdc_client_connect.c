@@ -44,6 +44,8 @@ static hg_id_t         metadata_delete_by_id_register_id_g;
 static hg_id_t         metadata_update_register_id_g;
 static hg_id_t         metadata_add_tag_register_id_g;
 static hg_id_t         region_lock_register_id_g;
+static hg_id_t         data_server_read_register_id_g;
+static hg_id_t         data_server_write_register_id_g;
 
 // bulk
 static hg_id_t         query_partial_register_id_g;
@@ -151,6 +153,8 @@ int PDC_Client_read_server_addr_from_file()
         pdc_server_info_g[i].metadata_update_handle_valid        = 0;
         pdc_server_info_g[i].metadata_add_tag_handle_valid       = 0;
         pdc_server_info_g[i].region_lock_handle_valid            = 0;
+        pdc_server_info_g[i].data_server_read_handle_valid       = 0;
+        /* pdc_server_info_g[i].data_server_write_handle_valid      = 0; */
     }
 
     i = 0;
@@ -614,6 +618,8 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     metadata_update_register_id_g       = metadata_update_register(*hg_class);
     metadata_add_tag_register_id_g      = metadata_add_tag_register(*hg_class);
     region_lock_register_id_g           = region_lock_register(*hg_class);
+    data_server_read_register_id_g      = data_server_read_register(*hg_class);
+    /* data_server_write_register_id_g     = data_server_write_register(*hg_class); */
 
     // bulk
     query_partial_register_id_g               = query_partial_register(*hg_class);
@@ -1024,8 +1030,6 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
 done:
     FUNC_LEAVE(ret_value);
 }
-
-
 
 // Gets executed after a receving queried metadata from server
 static hg_return_t
@@ -1586,8 +1590,10 @@ perr_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *ob
     else
         in.data.app_name  = create_prop->app_name;
     in.data.ndim      = create_prop->ndim;
-    for (i = 0; i < create_prop->ndim; i++) 
-        in.data.dims[i] = create_prop->dims[i];
+    in.data.dims0 = create_prop->dims[0];
+    in.data.dims1 = create_prop->dims[1];
+    in.data.dims2 = create_prop->dims[2];
+    in.data.dims3 = create_prop->dims[3];
 
     if (create_prop->data_loc == NULL) 
         in.data.data_location = " ";
@@ -2127,5 +2133,88 @@ perr_t PDC_Client_release_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta
     /* meta_id = obj_prop->meta_id; */
     ret_value = PDC_Client_region_lock(pdc, cont_id, meta_id, region_info, access_type, PDC_LOCK_OP_RELEASE, released);
 
+    FUNC_LEAVE(ret_value);
+}
+
+/*
+ * Data server related 
+ */
+
+// Callback function for  HG_Forward()
+// Gets executed after a call to HG_Trigger and the RPC has completed
+static hg_return_t
+data_server_read_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    
+    FUNC_ENTER(NULL);
+
+    /* printf("Entered client_test_connect_rpc_cb()"); */
+    struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
+    hg_handle_t handle = callback_info->info.forward.handle;
+
+    /* Get output from server*/
+    data_server_read_out_t output;
+    ret_value = HG_Get_output(handle, &output);
+    /* printf("Return value=%llu\n", output.ret); */
+    client_lookup_args->ret = output.ret;
+
+    work_todo_g--;
+
+    FUNC_LEAVE(ret_value);
+}
+
+
+perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *meta, struct PDC_region_info *region, void *buf)
+{
+    perr_t ret_value = FAIL;
+    hg_return_t hg_ret;
+    struct client_lookup_args lookup_args;
+    data_server_read_in_t in;
+    
+    FUNC_ENTER(NULL);
+
+    if (server_id < 0 || server_id >= pdc_server_num_g) {
+        printf("PDC_CLIENT: PDC_Client_data_server_read - invalid server id\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    // Dummy value fill
+    in.client_id         = pdc_client_mpi_rank_g;
+    in.nclient           = n_client;
+    pdc_metadata_t_to_transfer_t(meta, &in.meta);
+    pdc_region_info_t_to_transfer(region, &in.region);
+
+    printf("PDC_CLIENT: sending data server read request to server %d\n", server_id);
+
+    // We may have already filled in the pdc_server_info_g[server_id].addr in previous calls
+    if (pdc_server_info_g[server_id].data_server_read_handle_valid != 1) {
+        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, data_server_read_register_id_g, &pdc_server_info_g[server_id].data_server_read_handle);
+        pdc_server_info_g[server_id].data_server_read_handle_valid = 1;
+    }
+    /* printf("Sending input to target\n"); */
+
+    hg_ret = HG_Forward(pdc_server_info_g[server_id].data_server_read_handle, data_server_read_rpc_cb, &lookup_args, &in);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "PDC_Client_data_server_read(): Could not start HG_Forward()\n");
+        return EXIT_FAILURE;
+    }
+
+    // Wait for response from server
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+    if (lookup_args.ret == 0) {
+        ret_value = SUCCEED;
+        printf("PDC_CLIENT: PDC_Client_data_server_read - received confirmation from server\n");
+    }
+    else {
+        ret_value = FAIL;
+        printf("PDC_CLIENT: PDC_Client_data_server_read - ERROR from server\n");
+    }
+
+
+done:
     FUNC_LEAVE(ret_value);
 }

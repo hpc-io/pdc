@@ -29,7 +29,9 @@ set(PROGRAMS
   delete_obj
   delete_obj_scale
   search_obj_scale
-  obj_lock list_all
+  obj_lock 
+  list_all
+  data_server_read
   )
 
 foreach(program ${PROGRAMS})
@@ -40,4 +42,4 @@ endforeach(program)
 #------------------------------------------------------------------------------
 # Options
 #------------------------------------------------------------------------------
-add_definitions(-DENABLE_MPI=1)
+#add_definitions(-DENABLE_MPI=1)
