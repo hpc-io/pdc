@@ -34,7 +34,7 @@ void print_usage() {
     printf("Usage: srun -n ./creat_obj -r num_of_obj_per_rank\n");
 }
 
-int main(int argc, const char *argv[])
+int main(int argc, char **argv)
 {
     int rank = 0, size = 1;
     int count = -1;

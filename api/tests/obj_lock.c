@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
 
 #include "pdc.h"
 #include  "pdc_client_connect.h"
@@ -10,7 +11,7 @@
   #include "mpi.h"
 #endif
 
-int main(int argc, const char *argv[])
+int main(int argc, char **argv)
 {
     int rank = 0, size = 1, i;
     pdcid_t pdc, cont_prop, cont, obj_prop, obj1;
@@ -211,7 +212,7 @@ int main(int argc, const char *argv[])
 //    PDC_Client_release_region_lock(pdc, cont, meta_id, region, WRITE, &lock_status);
     ret = PDCreg_release_lock(obj1, reg, WRITE);
     if (ret != SUCCEED)
-        printf("[%d] Failed to release lock for region (%d,%d,%d) (%d,%d,%d) ... error\n", rank, 
+        printf("[%d] Failed to release lock for region (%lld,%lld,%lld) (%lld,%lld,%lld) ... error\n", rank, 
                 region->offset[0], region->offset[1], region->offset[2], region->size[0], region->size[1], region->size[2]);
 
 #ifdef ENABLE_MPI

@@ -34,7 +34,7 @@ void print_usage() {
     printf("Usage: srun -n ./delete_obj -r total_objects_to_create_delete\n");
 }
 
-int main(int argc, const char *argv[])
+int main(int argc, char **argv)
 {
     int rank = 0, size = 1, i;
     int count = -1;

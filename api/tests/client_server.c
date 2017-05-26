@@ -148,7 +148,7 @@ hg_return_t send_name_recv_id(struct client_lookup_args* client_lookup_args, cha
     return hg_ret;
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char **argv)
 {
     int rank, size;
 #ifdef ENABLE_MPI

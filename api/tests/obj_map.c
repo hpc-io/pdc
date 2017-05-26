@@ -28,7 +28,7 @@ static char *rand_string(char *str, size_t size)
     return str;
 }
 
-int main(int argc, const char *argv[])
+int main(int argc, char **argv)
 {
     int rank = 0, size = 1;
     pdcid_t pdc_id, cont_prop, cont_id;

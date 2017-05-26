@@ -13,7 +13,7 @@
 
 #include "pdc.h"
 
-int main(int argc, const char *argv[])
+int main(int argc, char **argv)
 {
     int rank = 0, size = 1;
     perr_t ret;
