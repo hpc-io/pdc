@@ -176,6 +176,23 @@ void PDC_print_metadata(pdc_metadata_t *a)
     fflush(stdout);
 }
 
+perr_t PDC_init_region_list(region_list_t *a)
+{
+    perr_t ret_value = SUCCEED;
+
+    a->ndim = 0;
+    a->data = NULL;
+    a->prev = NULL;
+    a->next = NULL;
+    a->is_data_ready = 0;
+
+    memset(a->start,  0, sizeof(uint64_t)*DIM_MAX);
+    memset(a->count,  0, sizeof(uint64_t)*DIM_MAX);
+    memset(a->stride, 0, sizeof(uint64_t)*DIM_MAX);
+    memset(a->client_ids, 0, sizeof(uint32_t)*PDC_SERVER_MAX_PROC_PER_NODE);
+
+    return ret_value;
+}
 
 void PDC_print_region_list(region_list_t *a)
 {
@@ -188,12 +205,22 @@ void PDC_print_region_list(region_list_t *a)
     int i;
     printf("================================\n");
     printf("  ndim      = %d\n",   a->ndim);
-    printf("start count\n");
+    printf("  start    count\n");
     /* printf("start stride count\n"); */
     for (i = 0; i < a->ndim; i++) {
-        printf("%5d %5d\n", a->start[i], a->count[i]);
+        printf("  %5d    %5d\n", a->start[i], a->count[i]);
         /* printf("%5d %6d %5d\n", a->start[i], a->stride[i], a->count[i]); */
     }
+    printf("  Client IDs: ");
+    i = 0;
+    while (1) {
+        printf("%u, ", a->client_ids[i]);
+        i++;
+        if (a->client_ids[i] == 0 ) 
+            break;
+    }
+    printf("\n");
+    
     printf("================================\n\n");
     fflush(stdout);
 }

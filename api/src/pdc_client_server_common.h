@@ -18,8 +18,9 @@
 #include "pdc_obj_pkg.h"
 
 #define ADDR_MAX 64
-#define DIM_MAX  16
+#define DIM_MAX  4
 #define PDC_SERVER_ID_INTERVEL 1000000
+#define PDC_SERVER_MAX_PROC_PER_NODE 64
 
 /* #define pdc_server_tmp_dir_g  "./pdc_tmp" */
 extern char pdc_server_tmp_dir_g[ADDR_MAX];
@@ -39,6 +40,9 @@ typedef struct region_list_t {
     uint64_t start[DIM_MAX];
     uint64_t count[DIM_MAX];
     uint64_t stride[DIM_MAX];
+    void     *data;
+    int      is_data_ready;
+    uint32_t client_ids[PDC_SERVER_MAX_PROC_PER_NODE];
 
     struct region_list_t *prev;
     struct region_list_t *next;

@@ -89,10 +89,11 @@ int main(int argc, const char *argv[])
     region.ndim = ndim;
     region.offset = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
     region.size = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
-    region.offset[0] = rank*10;
+    region.offset[0] = rank*2048;
+    /* region.offset[0] = rank*1024; */
     region.offset[1] = 0;
-    region.size[0] = 10;
-    region.size[1] = 10;
+    region.size[0] = 1024;
+    region.size[1] = 1024;
 
     PDC_Client_data_server_read(0, size, metadata, &region, buf);
 
