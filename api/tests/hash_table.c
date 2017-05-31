@@ -147,7 +147,6 @@ main(int argc, char *argv[])
     /*     goto done; */
     /* } */
 
-done:
     hg_hash_table_free(hash_table);
     return ret;
 }

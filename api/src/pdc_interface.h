@@ -11,6 +11,8 @@
 #define PDC_INVALID_ID         (-1)
 
 #define PDCID_IS_LIB_TYPE(type) (type > 0 && type < PDC_NTYPES)
+#define PDC_MUTEX_LOCK(this) hg_thread_mutex_lock(&(this).lock)
+#define PDC_MUTEX_UNLOCK(this) hg_thread_mutex_unlock(&(this).lock)
 
 /*
  * Function for freeing objects. This function will be called with an object

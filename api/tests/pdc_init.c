@@ -1,10 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef ENABLE_MPI
+#include "mpi.h"
+#endif
+
 #include "pdc.h"
 
 
-int main() {
+int main(int argc, char **argv) {
     pdcid_t pdc;
     
     // create a pdc
@@ -16,4 +21,9 @@ int main() {
        printf("fail to close PDC\n");
     else
        printf("PDC is closed\n");
+
+#ifdef ENABLE_MPI
+    MPI_Finalize();
+#endif
+    return 0;
 }

@@ -1,11 +1,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef ENABLE_MPI
+#include "mpi.h"
+#endif
+
 #include "pdc.h"
 
-int main() {
+int main(int argc, char **argv) 
+{
     pdcid_t pdc, cont_prop, cont;
     // create a pdc
+int rank = 0, size = 1;
+
+#ifdef ENABLE_MPI
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+#endif
     pdc = PDC_init("pdc");
     printf("create a new pdc, pdc id is: %lld\n", pdc);
 
@@ -63,4 +76,9 @@ int main() {
        printf("fail to close PDC\n");
     else
        printf("PDC is closed\n");
+   
+#ifdef ENABLE_MPI
+    MPI_Finalize();
+#endif
+    return 0;
 }

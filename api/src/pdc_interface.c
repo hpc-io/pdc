@@ -99,6 +99,7 @@ pdcid_t PDC_id_register(PDC_type_t type, const void *object)
         PGOTO_ERROR(FAIL, "memory allocation failed");
 
     /* Create the struct & it's ID */
+    PDC_MUTEX_LOCK(type_ptr->ids);
     new_id = PDCID_MAKE(type, type_ptr->nextid);
     id_ptr->id = new_id;
     id_ptr->count = ATOMIC_VAR_INIT(1);      /*initial reference count*/
@@ -108,6 +109,7 @@ pdcid_t PDC_id_register(PDC_type_t type, const void *object)
     PDC_LIST_INSERT_HEAD(&type_ptr->ids, id_ptr, entry);   
     type_ptr->id_count++;
     type_ptr->nextid++;
+    PDC_MUTEX_UNLOCK(type_ptr->ids);
 
     /* Sanity check for the 'nextid' getting too large and wrapping around. */
     assert(type_ptr->nextid <= ID_MASK);
@@ -145,12 +147,15 @@ int PDC_dec_ref(pdcid_t id)
             /* check if list is empty before remove */
             if(PDC_LIST_IS_EMPTY(&type_ptr->ids))
                 PGOTO_ERROR(FAIL, "can't remove ID node");
+
+            PDC_MUTEX_LOCK(type_ptr->ids);
             /* Remove the node from the type */
             PDC_LIST_REMOVE(id_ptr, entry);
-	        id_ptr = PDC_FREE(struct PDC_id_info, id_ptr);
+	    id_ptr = PDC_FREE(struct PDC_id_info, id_ptr);
             /* Decrement the number of IDs in the type */
             (type_ptr->id_count)--;
             ret_value = 0;
+            PDC_MUTEX_UNLOCK(type_ptr->ids);
         }
         else
             ret_value = FAIL;
@@ -235,9 +240,11 @@ perr_t PDC_id_list_clear(PDC_type_t type)
     if(!PDC_LIST_IS_EMPTY(&type_ptr->ids)) {
         struct PDC_id_info *id_ptr = (&type_ptr->ids)->head;
         if(!type_ptr->free_func || (type_ptr->free_func)((void *)id_ptr->obj_ptr) >= 0) {
+            PDC_MUTEX_LOCK(type_ptr->ids);
             PDC_LIST_REMOVE(id_ptr, entry);
             id_ptr = PDC_FREE(struct PDC_id_info, id_ptr);
             (type_ptr->id_count)--;
+            PDC_MUTEX_UNLOCK(type_ptr->ids);
         }
         else
             ret_value = FAIL;

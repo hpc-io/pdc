@@ -4,10 +4,21 @@
 #include <getopt.h>
 #include <time.h>
 
+#ifdef ENABLE_MPI
+#include "mpi.h"
+#endif
+
 #include "pdc.h"
 
-int main() {
+int main(int argc, char **argv) {
     pdcid_t pdc, cont_prop, cont, obj_prop, obj1, obj2;
+    int rank = 0, size = 1;
+
+#ifdef ENABLE_MPI
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+#endif
     // create a pdc
     pdc = PDC_init("pdc");
     printf("create a new pdc, pdc id is: %lld\n", pdc);
@@ -76,6 +87,10 @@ int main() {
        printf("fail to close PDC\n");
     /* else */
     /*    printf("PDC is closed\n"); */
+
+#ifdef ENABLE_MPI
+    MPI_Finalize();
+#endif
 
      return 0;
 }

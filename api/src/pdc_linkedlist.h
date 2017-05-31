@@ -3,6 +3,7 @@
 #ifndef _pdc_linkedlist_H
 #define _pdc_linkedlist_H
 
+#include "mercury_thread_mutex.h"
 #include "pdc_cont_pkg.h"
 
 #define PDC_LIST_HEAD_INITIALIZER(name)  { NULL }
@@ -10,24 +11,26 @@
 #define PDC_LIST_HEAD_INIT(struct_head_name, var_name)   \
     struct struct_head_name var_name = PDC_LIST_HEAD_INITIALIZER(var_name)
 
-#define PDC_LIST_HEAD_DECL(struct_head_name, struct_entry_name)  \
+#define PDC_LIST_HEAD_DECL(struct_head_name, struct_entry_name) \
     struct struct_head_name {                                   \
         struct struct_entry_name *head;                         \
     }
 
-#define PDC_LIST_HEAD(struct_entry_name)     \
+#define PDC_LIST_HEAD(struct_entry_name)    \
     struct {                                \
         struct struct_entry_name *head;     \
+        hg_thread_mutex_t lock;             \
     }
 
-#define PDC_LIST_ENTRY(struct_entry_name)    \
+#define PDC_LIST_ENTRY(struct_entry_name)   \
     struct {                                \
         struct struct_entry_name *next;     \
         struct struct_entry_name **prev;    \
     }
 
-#define PDC_LIST_INIT(head_ptr) do {         \
+#define PDC_LIST_INIT(head_ptr) do {        \
     (head_ptr)->head = NULL;                \
+    hg_thread_mutex_init(&(head_ptr)->lock);\
 } while (/*CONSTCOND*/0)
 
 #define PDC_LIST_IS_EMPTY(head_ptr)          \
