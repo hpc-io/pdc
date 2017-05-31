@@ -176,19 +176,51 @@ void PDC_print_metadata(pdc_metadata_t *a)
     fflush(stdout);
 }
 
+perr_t PDC_metadata_init(pdc_metadata_t *a)
+{
+    if (a == NULL) {
+        printf("Unable to init NULL pdc_metadata_t\n");
+        return FAIL;
+    }
+    a->user_id            = 0;
+    a->time_step          = -1;
+    a->obj_id             = 0;
+    a->create_time        = 0;
+    a->last_modified_time = 0;
+    a->ndim = 0;
+
+    memset(a->app_name,      0, sizeof(char)*ADDR_MAX);
+    memset(a->obj_name,      0, sizeof(char)*ADDR_MAX);
+    memset(a->tags,          0, sizeof(char)*TAG_LEN_MAX);
+    memset(a->data_location, 0, sizeof(char)*ADDR_MAX);
+    memset(a->dims,          0, sizeof(int32_t)*DIM_MAX);
+
+    a->region_lock_head = NULL;
+    a->region_map_head  = NULL;
+    a->prev  = NULL;
+    a->next  = NULL;
+    a->bloom = NULL;
+
+    return SUCCEED;
+}
+
+
 perr_t PDC_init_region_list(region_list_t *a)
 {
     perr_t ret_value = SUCCEED;
 
     a->ndim = 0;
-    a->data = NULL;
     a->prev = NULL;
     a->next = NULL;
     a->is_data_ready = 0;
+    a->data_size = 0;
+    a->shm_fd    = -1;
+    a->shm_base  = NULL;
 
-    memset(a->start,  0, sizeof(uint64_t)*DIM_MAX);
-    memset(a->count,  0, sizeof(uint64_t)*DIM_MAX);
-    memset(a->stride, 0, sizeof(uint64_t)*DIM_MAX);
+    memset(a->start,      0, sizeof(uint64_t)*DIM_MAX);
+    memset(a->count,      0, sizeof(uint64_t)*DIM_MAX);
+    memset(a->stride,     0, sizeof(uint64_t)*DIM_MAX);
+    memset(a->shm_addr,   0, sizeof(uint64_t)*ADDR_MAX);
     memset(a->client_ids, 0, sizeof(uint32_t)*PDC_SERVER_MAX_PROC_PER_NODE);
 
     return ret_value;
@@ -373,6 +405,7 @@ hg_class_t *hg_class_g;
  * Data server related
  */
 perr_t PDC_Server_data_read(data_server_read_in_t *in, data_server_read_out_t *out) {return SUCCEED;}
+perr_t PDC_Server_check_io(data_server_check_io_in_t *in, data_server_check_io_out_t *out) {return SUCCEED;}
 
 #endif
 
@@ -483,21 +516,23 @@ HG_TEST_RPC_CB(metadata_query, handle)
 
     /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
-
-    // TODO check DHT for query result
     HG_Get_input(handle, &in);
     /* printf("==PDC_SERVER: Received query with name: %s, hash value: %u\n", in.obj_name, in.hash_value); */
     /* fflush(stdout); */
+
+    // Do the work
     PDC_Server_search_with_name_hash(in.obj_name, in.hash_value, &query_result);
 
+    // Convert for transfer
     if (query_result != NULL) {
-        out.ret.user_id        = query_result->user_id;
-        out.ret.obj_id         = query_result->obj_id;
-        out.ret.time_step      = query_result->time_step;
-        out.ret.obj_name       = query_result->obj_name;
-        out.ret.app_name       = query_result->app_name;
-        out.ret.tags           = query_result->tags;
-        out.ret.data_location  = query_result->data_location; 
+        pdc_metadata_t_to_transfer_t(query_result, &out.ret);
+        /* out.ret.user_id        = query_result->user_id; */
+        /* out.ret.obj_id         = query_result->obj_id; */
+        /* out.ret.time_step      = query_result->time_step; */
+        /* out.ret.obj_name       = query_result->obj_name; */
+        /* out.ret.app_name       = query_result->app_name; */
+        /* out.ret.tags           = query_result->tags; */
+        /* out.ret.data_location  = query_result->data_location; */ 
     }
     else {
         out.ret.user_id        = -1;
@@ -1298,4 +1333,50 @@ data_server_read_register(hg_class_t *hg_class)
 
     FUNC_LEAVE(ret_value);
 }
+
+// data_server_check_io(hg_handle_t handle)
+HG_TEST_RPC_CB(data_server_check_io, handle)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value;
+
+    /* Get input parameters sent on origin through on HG_Forward() */
+    // Decode input
+    data_server_check_io_in_t  in;
+    data_server_check_io_out_t out;
+
+    HG_Get_input(handle, &in);
+    /* printf("==PDC_SERVER: Got data server check_io request from client %d\n", in.client_id); */
+
+    PDC_Server_check_io(&in, &out);
+
+    HG_Respond(handle, NULL, NULL, &out);
+    /* printf("==PDC_SERVER: server check_io returning ret=%d, shm_addr=%s\n", out.ret, out.shm_addr); */
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    ret_value = HG_SUCCESS;
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+
+HG_TEST_THREAD_CB(data_server_check_io)
+
+hg_id_t
+data_server_check_io_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+
+    ret_value = MERCURY_REGISTER(hg_class, "data_server_check_io", data_server_check_io_in_t, data_server_check_io_out_t, data_server_check_io_cb);
+
+    FUNC_LEAVE(ret_value);
+}
+
 

@@ -58,7 +58,7 @@ int main(int argc, const char *argv[])
     double ht_total_sec;
     sprintf(obj_name, "/global/cscratch1/sd/houhun/test.h5");
 
-    int dims[3]={100,200,300};
+    uint64_t dims[3]={100,200,300};
     PDCprop_set_obj_dims(obj_prop, 2, dims, pdc);
     PDCprop_set_obj_user_id( obj_prop, getuid(),    pdc);
     PDCprop_set_obj_time_step( obj_prop, 0,    pdc);
@@ -67,7 +67,7 @@ int main(int argc, const char *argv[])
     PDCprop_set_obj_data_loc(obj_prop, obj_name, pdc);
 
     struct PDC_region_info region;
-    void *buf = (void*)malloc(1024);;
+    void *buf = (void*)malloc(1024*1024);
 
     // Create a object
     test_obj = PDCobj_create(pdc, cont, "DataServerTestBin", obj_prop);
@@ -89,14 +89,22 @@ int main(int argc, const char *argv[])
     region.ndim = ndim;
     region.offset = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
     region.size = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
-    region.offset[0] = rank*2048;
+    region.offset[0] = rank*1024;
     /* region.offset[0] = rank*1024; */
     region.offset[1] = 0;
     region.size[0] = 1024;
     region.size[1] = 1024;
 
-    PDC_Client_data_server_read(0, size, metadata, &region, buf);
+    PDC_Client_data_server_read(0, size, metadata, &region);
 
+    if (rank == 0) {
+        printf("lookaround for 1s\n");
+    }
+    sleep(1);
+
+    int io_status = 0;
+    PDC_Client_data_server_io_check(0, rank, metadata, &region, &io_status, buf);
+    printf("io status = %d\n", io_status);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);

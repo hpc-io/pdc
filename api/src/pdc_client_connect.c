@@ -1,8 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <ctype.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/shm.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
 
 /* #define ENABLE_MPI 1 */
 #ifdef ENABLE_MPI
@@ -45,7 +49,8 @@ static hg_id_t         metadata_update_register_id_g;
 static hg_id_t         metadata_add_tag_register_id_g;
 static hg_id_t         region_lock_register_id_g;
 static hg_id_t         data_server_read_register_id_g;
-static hg_id_t         data_server_write_register_id_g;
+static hg_id_t         data_server_check_io_register_id_g;
+/* static hg_id_t         data_server_write_register_id_g; */
 
 // bulk
 static hg_id_t         query_partial_register_id_g;
@@ -97,7 +102,7 @@ PDC_Client_int_hash_value_free(hg_hash_table_value_t value)
 }
 
 typedef struct hash_value_client_obj_name_t {
-    char obj_name[PATH_MAX];
+    char obj_name[ADDR_MAX];
 } hash_value_client_obj_name_t;
 
 static void
@@ -116,7 +121,7 @@ int PDC_Client_read_server_addr_from_file()
     int i = 0;
     char  *p;
     FILE *na_config = NULL;
-    char config_fname[PATH_MAX];
+    char config_fname[ADDR_MAX];
 
     if (pdc_client_mpi_rank_g == 0) {
         sprintf(config_fname, "%s/%s", pdc_client_tmp_dir_g, pdc_server_cfg_name_g);
@@ -126,9 +131,9 @@ int PDC_Client_read_server_addr_from_file()
             fprintf(stderr, "Could not open config file from default location: %s\n", pdc_server_cfg_name_g);
             exit(0);
         }
-        char n_server_string[PATH_MAX];
+        char n_server_string[ADDR_MAX];
         // Get the first line as $pdc_server_num_g
-        fgets(n_server_string, PATH_MAX, na_config);
+        fgets(n_server_string, ADDR_MAX, na_config);
         pdc_server_num_g = atoi(n_server_string);
     }
 
@@ -154,6 +159,7 @@ int PDC_Client_read_server_addr_from_file()
         pdc_server_info_g[i].metadata_add_tag_handle_valid       = 0;
         pdc_server_info_g[i].region_lock_handle_valid            = 0;
         pdc_server_info_g[i].data_server_read_handle_valid       = 0;
+        pdc_server_info_g[i].data_server_check_io_handle_valid   = 0;
         /* pdc_server_info_g[i].data_server_write_handle_valid      = 0; */
     }
 
@@ -572,7 +578,7 @@ int PDC_Client_check_bulk(hg_class_t *hg_class, hg_context_t *hg_context)
 perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int port)
 {
     perr_t ret_value = SUCCEED;
-    char na_info_string[PATH_MAX];
+    char na_info_string[ADDR_MAX];
     char hostname[1024];
     int i;
     hg_return_t hg_ret;
@@ -619,6 +625,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     metadata_add_tag_register_id_g      = metadata_add_tag_register(*hg_class);
     region_lock_register_id_g           = region_lock_register(*hg_class);
     data_server_read_register_id_g      = data_server_read_register(*hg_class);
+    data_server_check_io_register_id_g  = data_server_check_io_register(*hg_class);
     /* data_server_write_register_id_g     = data_server_write_register(*hg_class); */
 
     // bulk
@@ -1062,25 +1069,11 @@ metadata_query_rpc_cb(const struct hg_cb_info *callback_info)
         if (client_lookup_args->data == NULL) {
             printf("==PDC_CLIENT: ERROR - PDC_Client_query_metadata_name_only() cannnot allocate space for client_lookup_args->data \n");
         }
-        // Now copy the received metadata info
-        client_lookup_args->data->user_id        = output.ret.user_id;
-        client_lookup_args->data->obj_id         = output.ret.obj_id;
-        client_lookup_args->data->time_step      = output.ret.time_step;
-        strcpy(client_lookup_args->data->obj_name, output.ret.obj_name);
-        strcpy(client_lookup_args->data->app_name, output.ret.app_name);
-        strcpy(client_lookup_args->data->tags,     output.ret.tags);
-        strcpy(client_lookup_args->data->data_location,     output.ret.data_location);
-    }
 
-    /* // Debug print */
-    /* printf("\n==PDC_CLIENT: Received metadata structure from server\n"); */
-    /* printf("                user_id  = %d\n",   client_lookup_args->data->user_id); */
-    /* printf("                obj_id   = %llu\n", client_lookup_args->data->obj_id); */
-    /* printf("                obj_name = %s\n",   client_lookup_args->data->obj_name); */
-    /* printf("                app_name = %s\n",   client_lookup_args->data->app_name); */
-    /* printf("                timestep = %d\n",   client_lookup_args->data->time_step); */
-    /* printf("                tags     = %s\n",   client_lookup_args->data->tags); */
-    /* printf("==PDC_CLIENT: End of received metadata\n\n"); */
+        // Now copy the received metadata info
+        PDC_metadata_init(client_lookup_args->data);
+        pdc_transfer_t_to_metadata_t(&output.ret, client_lookup_args->data);
+    }
 
     work_todo_g--;
 
@@ -2144,6 +2137,139 @@ perr_t PDC_Client_release_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta
  * Data server related 
  */
 
+static hg_return_t
+data_server_check_io_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    
+    FUNC_ENTER(NULL);
+
+    /* printf("Entered data_server_io_check_rpc_cb()"); */
+    struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
+    hg_handle_t handle = callback_info->info.forward.handle;
+
+    /* Get output from server*/
+    data_server_check_io_out_t output;
+    ret_value = HG_Get_output(handle, &output);
+    /* printf("==PDC_CLIENT: data_server_check_io ret=%d, addr=%s\n", output.ret, output.shm_addr); */
+    client_lookup_args->ret = output.ret;
+    client_lookup_args->ret_string = output.shm_addr;
+
+    work_todo_g--;
+
+    FUNC_LEAVE(ret_value);
+}
+
+
+perr_t PDC_Client_data_server_io_check(int server_id, int client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status, void* buf)
+{
+    perr_t ret_value = FAIL;
+    hg_return_t hg_ret;
+    struct client_lookup_args lookup_args;
+    data_server_check_io_in_t in;
+
+    int shm_fd;        // file descriptor, from shm_open()
+    char *shm_base;    // base address, from mmap()
+    char *shm_addr;
+
+   
+    FUNC_ENTER(NULL);
+
+    if (server_id < 0 || server_id >= pdc_server_num_g) {
+        printf("PDC_CLIENT: PDC_Client_data_server_io_check - invalid server id\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    // Dummy value fill
+    in.client_id         = pdc_client_mpi_rank_g;
+    in.nclient           = client_id;
+    pdc_metadata_t_to_transfer_t(meta, &in.meta);
+    pdc_region_info_t_to_transfer(region, &in.region);
+
+    uint64_t read_size = 1;
+    int i;
+    for (i = 0; i < region->ndim; i++) {
+        read_size *= region->size[i];
+    }
+
+    printf("PDC_CLIENT: checking io status with data server %d\n", server_id);
+
+    // We may have already filled in the pdc_server_info_g[server_id].addr in previous calls
+    if (pdc_server_info_g[server_id].data_server_check_io_handle_valid != 1) {
+        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, data_server_check_io_register_id_g, &pdc_server_info_g[server_id].data_server_check_io_handle);
+        pdc_server_info_g[server_id].data_server_check_io_handle_valid = 1;
+    }
+    /* printf("Sending input to target\n"); */
+
+    hg_ret = HG_Forward(pdc_server_info_g[server_id].data_server_check_io_handle, data_server_check_io_rpc_cb, &lookup_args, &in);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "PDC_Client_data_server_check_io(): Could not start HG_Forward()\n");
+        return EXIT_FAILURE;
+    }
+
+    // Wait for response from server
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+    *status = lookup_args.ret;
+    if (lookup_args.ret == 0) {
+        ret_value = SUCCEED;
+        printf("PDC_CLIENT: PDC_Client_data_server_check_io - IO request has not been fulfilled by server\n");
+        goto done;
+    }
+    else {
+        printf("PDC_CLIENT: PDC_Client_data_server_check_io - IO request done by server: shm_addr=%s\n", lookup_args.ret_string);
+        shm_addr = lookup_args.ret_string;
+
+        /* open the shared memory segment as if it was a file */
+        shm_fd = shm_open(shm_addr, O_RDONLY, 0666);
+        if (shm_fd == -1) {
+            printf("==PDC_CLIENT: Shared memory open failed [%s]!\n", shm_addr);
+            ret_value = FAIL;
+            goto done;
+        }
+
+        /* map the shared memory segment to the address space of the process */
+        shm_base = mmap(0, read_size, PROT_READ, MAP_SHARED, shm_fd, 0);
+        if (shm_base == MAP_FAILED) {
+            printf("==PDC_CLIENT: Map failed: %s\n", strerror(errno));
+            // close and unlink?
+            ret_value = FAIL;
+            goto close;
+        }
+
+        // Copy data
+        memcpy(buf, shm_base, read_size);
+
+        /* remove the mapped shared memory segment from the address space of the process */
+        if (munmap(shm_base, read_size) == -1) {
+            printf("==PDC_CLIENT: Unmap failed: %s\n", strerror(errno));
+            ret_value = FAIL;
+            goto done;
+        }
+
+    } // end of check io
+
+
+close:
+    /* close the shared memory segment as if it was a file */
+    if (close(shm_fd) == -1) {
+        printf("==PDC_CLIENT: Close failed!\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    /* remove the shared memory segment from the file system */
+    if (shm_unlink(shm_addr) == -1) {
+        ret_value = FAIL;
+        goto done;
+        printf("==PDC_CLIENT: Error removing %s\n", shm_addr);
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
 // Callback function for  HG_Forward()
 // Gets executed after a call to HG_Trigger and the RPC has completed
 static hg_return_t
@@ -2169,7 +2295,7 @@ data_server_read_rpc_cb(const struct hg_cb_info *callback_info)
 }
 
 
-perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *meta, struct PDC_region_info *region, void *buf)
+perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *meta, struct PDC_region_info *region)
 {
     perr_t ret_value = FAIL;
     hg_return_t hg_ret;

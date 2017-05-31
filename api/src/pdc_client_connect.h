@@ -52,6 +52,8 @@ typedef struct pdc_server_info_t {
     // Data server related
     int             data_server_read_handle_valid;
     hg_handle_t     data_server_read_handle;
+    int             data_server_check_io_handle_valid;
+    hg_handle_t     data_server_check_io_handle;
 } pdc_server_info_t;
 
 extern pdc_server_info_t *pdc_server_info_g;
@@ -62,6 +64,7 @@ struct client_lookup_args {
     uint32_t             server_id;
     int                  client_id;
     int                  ret;
+    char                *ret_string;
 
     uint32_t             user_id;
     const char          *app_name;
@@ -292,7 +295,19 @@ perr_t PDC_Client_close_all_server();
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *meta, struct PDC_region_info *region, void *buf);
+perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *meta, struct PDC_region_info *region); 
+
+/**
+ * Client request server to check IO status of a previous IO request
+ *
+ * \param server_id [IN]         Target local data server ID
+ * \param n_client [IN]          Client ID
+ * \param meta [IN]              Metadata 
+ * \param region [IN]            Region
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_data_server_io_check(int server_id, int client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status, void *buf);
 
 
 #endif

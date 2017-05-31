@@ -47,7 +47,7 @@ typedef struct pdc_hash_table_entry_head {
 
 typedef struct pdc_data_server_io_list_t {
     uint64_t obj_id;
-    char  path[PATH_MAX];
+    char  path[ADDR_MAX];
     int   total;
     int   count;
     int   ndim;
