@@ -119,7 +119,7 @@ int main(int argc, char **argv)
     printf("mycount = %d\n", my_count);
 
 
-    PDC_prop_t p;
+    struct PDC_prop p;
     pdcid_t pdc = PDC_init(p);
 
     pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);

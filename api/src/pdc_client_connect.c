@@ -2270,8 +2270,7 @@ close:
 done:
     FUNC_LEAVE(ret_value);
 }
-// Callback function for  HG_Forward()
-// Gets executed after a call to HG_Trigger and the RPC has completed
+
 static hg_return_t
 data_server_read_rpc_cb(const struct hg_cb_info *callback_info)
 {
@@ -2294,6 +2293,80 @@ data_server_read_rpc_cb(const struct hg_cb_info *callback_info)
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *meta, struct PDC_region_info *region)
+{
+    perr_t ret_value = FAIL;
+    hg_return_t hg_ret;
+    struct client_lookup_args lookup_args;
+    data_server_read_in_t in;
+    
+    FUNC_ENTER(NULL);
+
+    if (server_id < 0 || server_id >= pdc_server_num_g) {
+        printf("PDC_CLIENT: PDC_Client_data_server_read - invalid server id\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    // Dummy value fill
+    in.client_id         = pdc_client_mpi_rank_g;
+    in.nclient           = n_client;
+    pdc_metadata_t_to_transfer_t(meta, &in.meta);
+    pdc_region_info_t_to_transfer(region, &in.region);
+
+    printf("PDC_CLIENT: sending data server read request to server %d\n", server_id);
+
+    // We may have already filled in the pdc_server_info_g[server_id].addr in previous calls
+    if (pdc_server_info_g[server_id].data_server_read_handle_valid != 1) {
+        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, data_server_read_register_id_g, &pdc_server_info_g[server_id].data_server_read_handle);
+        pdc_server_info_g[server_id].data_server_read_handle_valid = 1;
+    }
+    /* printf("Sending input to target\n"); */
+
+    hg_ret = HG_Forward(pdc_server_info_g[server_id].data_server_read_handle, data_server_read_rpc_cb, &lookup_args, &in);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "PDC_Client_data_server_read(): Could not start HG_Forward()\n");
+        return EXIT_FAILURE;
+    }
+
+    // Wait for response from server
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+    if (lookup_args.ret == 0) {
+        ret_value = SUCCEED;
+        printf("PDC_CLIENT: PDC_Client_data_server_read - received confirmation from server\n");
+    }
+    else {
+        ret_value = FAIL;
+        printf("PDC_CLIENT: PDC_Client_data_server_read - ERROR from server\n");
+    }
+
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+static hg_return_t
+data_server_read_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    
+    FUNC_ENTER(NULL);
+
+    /* printf("Entered client_test_connect_rpc_cb()"); */
+    struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
+    hg_handle_t handle = callback_info->info.forward.handle;
+
+    /* Get output from server*/
+    data_server_read_out_t output;
+    ret_value = HG_Get_output(handle, &output);
+    /* printf("Return value=%llu\n", output.ret); */
+    client_lookup_args->ret = output.ret;
+
+    work_todo_g--;
+
+    FUNC_LEAVE(ret_value);
+}
 
 perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *meta, struct PDC_region_info *region)
 {
