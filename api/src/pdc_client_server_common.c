@@ -216,6 +216,7 @@ perr_t PDC_init_region_list(region_list_t *a)
     a->data_size = 0;
     a->shm_fd    = -1;
     a->shm_base  = NULL;
+    a->access_type = NA;
 
     memset(a->start,      0, sizeof(uint64_t)*DIM_MAX);
     memset(a->count,      0, sizeof(uint64_t)*DIM_MAX);
@@ -405,7 +406,8 @@ hg_class_t *hg_class_g;
  * Data server related
  */
 perr_t PDC_Server_data_read(data_server_read_in_t *in, data_server_read_out_t *out) {return SUCCEED;}
-perr_t PDC_Server_check_io(data_server_check_io_in_t *in, data_server_check_io_out_t *out) {return SUCCEED;}
+perr_t PDC_Server_data_write(data_server_write_in_t *in, data_server_write_out_t *out) {return SUCCEED;}
+perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_check_out_t *out) {return SUCCEED;}
 
 #endif
 
@@ -1290,6 +1292,7 @@ query_partial_register(hg_class_t *hg_class)
  * Data server related
  */
 
+// READ
 /* static hg_return_t */
 // data_server_read_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(data_server_read, handle)
@@ -1334,8 +1337,9 @@ data_server_read_register(hg_class_t *hg_class)
     FUNC_LEAVE(ret_value);
 }
 
-// data_server_check_io(hg_handle_t handle)
-HG_TEST_RPC_CB(data_server_check_io, handle)
+// WRITE
+// data_server_write_cb(hg_handle_t handle)
+HG_TEST_RPC_CB(data_server_write, handle)
 {
     FUNC_ENTER(NULL);
 
@@ -1343,16 +1347,15 @@ HG_TEST_RPC_CB(data_server_check_io, handle)
 
     /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
-    data_server_check_io_in_t  in;
-    data_server_check_io_out_t out;
+    data_server_write_in_t  in;
+    data_server_write_out_t out;
 
     HG_Get_input(handle, &in);
-    /* printf("==PDC_SERVER: Got data server check_io request from client %d\n", in.client_id); */
+    printf("==PDC_SERVER: Got data server write request from client %d\n", in.client_id);
 
-    PDC_Server_check_io(&in, &out);
+    out.ret = PDC_Server_data_write(&in, &out);
 
     HG_Respond(handle, NULL, NULL, &out);
-    /* printf("==PDC_SERVER: server check_io returning ret=%d, shm_addr=%s\n", out.ret, out.shm_addr); */
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
@@ -1364,17 +1367,61 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-
-HG_TEST_THREAD_CB(data_server_check_io)
+HG_TEST_THREAD_CB(data_server_write)
 
 hg_id_t
-data_server_check_io_register(hg_class_t *hg_class)
+data_server_write_register(hg_class_t *hg_class)
 {
     hg_id_t ret_value;
     
     FUNC_ENTER(NULL);
 
-    ret_value = MERCURY_REGISTER(hg_class, "data_server_check_io", data_server_check_io_in_t, data_server_check_io_out_t, data_server_check_io_cb);
+    ret_value = MERCURY_REGISTER(hg_class, "data_server_write", data_server_write_in_t, data_server_write_out_t, data_server_write_cb);
+
+    FUNC_LEAVE(ret_value);
+}
+
+// IO CHECK
+// data_server_read_check(hg_handle_t handle)
+HG_TEST_RPC_CB(data_server_read_check, handle)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value;
+
+    /* Get input parameters sent on origin through on HG_Forward() */
+    // Decode input
+    data_server_read_check_in_t  in;
+    data_server_read_check_out_t out;
+
+    HG_Get_input(handle, &in);
+    /* printf("==PDC_SERVER: Got data server read_check request from client %d\n", in.client_id); */
+
+    PDC_Server_read_check(&in, &out);
+
+    HG_Respond(handle, NULL, NULL, &out);
+    /* printf("==PDC_SERVER: server read_check returning ret=%d, shm_addr=%s\n", out.ret, out.shm_addr); */
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    ret_value = HG_SUCCESS;
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+HG_TEST_THREAD_CB(data_server_read_check)
+
+hg_id_t
+data_server_read_check_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+
+    ret_value = MERCURY_REGISTER(hg_class, "data_server_read_check", data_server_read_check_in_t, data_server_read_check_out_t, data_server_read_check_cb);
 
     FUNC_LEAVE(ret_value);
 }

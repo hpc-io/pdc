@@ -33,7 +33,7 @@ extern int pdc_server_rank_g;
 #define    PDC_LOCK_OP_OBTAIN  0
 #define    PDC_LOCK_OP_RELEASE 1
 
-typedef enum PDC_access_t { READ=0, WRITE=1 } PDC_access_t;
+typedef enum PDC_access_t { READ=0, WRITE=1, NA=2 } PDC_access_t;
 typedef enum PDC_lock_mode_t { BLOCK=0, NOBLOCK=1 } PDC_lock_mode_t;
 
 typedef struct region_list_t {
@@ -46,9 +46,10 @@ typedef struct region_list_t {
 
     uint64_t data_size;
     int      is_data_ready;
-    char     shm_addr[PATH_MAX];
+    char     shm_addr[ADDR_MAX];
     char     *shm_base;
     int      shm_fd;
+    PDC_access_t access_type;
 
     struct region_list_t *prev;
     struct region_list_t *next;
@@ -211,8 +212,11 @@ MERCURY_GEN_PROC(bulk_write_out_t, ((hg_uint64_t)(ret)) )
 MERCURY_GEN_PROC(data_server_read_in_t, ((int32_t)(client_id)) ((int32_t)(nclient)) ((pdc_metadata_transfer_t)(meta)) ((region_info_transfer_t)(region)))
 MERCURY_GEN_PROC(data_server_read_out_t, ((int32_t)(ret)) )
 
-MERCURY_GEN_PROC(data_server_check_io_in_t, ((int32_t)(client_id)) ((int32_t)(client_id)) ((pdc_metadata_transfer_t)(meta)) ((region_info_transfer_t)(region)))
-MERCURY_GEN_PROC(data_server_check_io_out_t, ((int32_t)(ret)) ((hg_const_string_t)(shm_addr)) )
+MERCURY_GEN_PROC(data_server_write_in_t, ((int32_t)(client_id)) ((int32_t)(nclient)) ((hg_const_string_t)(shm_addr)) ((pdc_metadata_transfer_t)(meta)) ((region_info_transfer_t)(region)))
+MERCURY_GEN_PROC(data_server_write_out_t, ((int32_t)(ret)) )
+
+MERCURY_GEN_PROC(data_server_read_check_in_t, ((int32_t)(client_id)) ((int32_t)(client_id)) ((pdc_metadata_transfer_t)(meta)) ((region_info_transfer_t)(region)))
+MERCURY_GEN_PROC(data_server_read_check_out_t, ((int32_t)(ret)) ((hg_const_string_t)(shm_addr)) )
 
 #else
 
@@ -1159,7 +1163,6 @@ extern hg_atomic_int32_t  close_server_g;
  * Data Server related
  */
 
-
 /* MERCURY_GEN_PROC(data_server_read_in_t,  ((int32_t)(nclient)) ((hg_uint64_t)(meta_id)) ((region_info_transfer_t)(region))) */
 /* MERCURY_GEN_PROC(data_server_read_out_t, ((int32_t)(ret)) ) */
 typedef struct {
@@ -1215,23 +1218,83 @@ hg_proc_data_server_read_out_t(hg_proc_t proc, void *data)
     return ret;
 }
 
+// Data server write
+typedef struct {
+    int32_t                     client_id;
+    int32_t                     nclient;
+    hg_const_string_t           shm_addr;
+    pdc_metadata_transfer_t     meta;
+    region_info_transfer_t      region;
+} data_server_write_in_t;
+
+typedef struct {
+    int32_t            ret;
+} data_server_write_out_t;
+
+static HG_INLINE hg_return_t
+hg_proc_data_server_write_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    data_server_write_in_t *struct_data = (data_server_write_in_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->client_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->nclient);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->shm_addr);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_pdc_metadata_transfer_t(proc, &struct_data->meta);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->region);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_data_server_write_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    data_server_write_out_t *struct_data = (data_server_write_out_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
+
 typedef struct {
     int32_t                     client_id;
     int32_t                     nclient;
     pdc_metadata_transfer_t     meta;
     region_info_transfer_t      region;
-} data_server_check_io_in_t;
+} data_server_read_check_in_t;
 
 typedef struct {
     int32_t            ret;
     hg_const_string_t  shm_addr;
-} data_server_check_io_out_t;
+} data_server_read_check_out_t;
 
 static HG_INLINE hg_return_t
-hg_proc_data_server_check_io_in_t(hg_proc_t proc, void *data)
+hg_proc_data_server_read_check_in_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret;
-    data_server_check_io_in_t *struct_data = (data_server_check_io_in_t*) data;
+    data_server_read_check_in_t *struct_data = (data_server_read_check_in_t*) data;
 
     ret = hg_proc_int32_t(proc, &struct_data->client_id);
     if (ret != HG_SUCCESS) {
@@ -1257,10 +1320,10 @@ hg_proc_data_server_check_io_in_t(hg_proc_t proc, void *data)
 }
 
 static HG_INLINE hg_return_t
-hg_proc_data_server_check_io_out_t(hg_proc_t proc, void *data)
+hg_proc_data_server_read_check_out_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret;
-    data_server_check_io_out_t *struct_data = (data_server_check_io_out_t*) data;
+    data_server_read_check_out_t *struct_data = (data_server_read_check_out_t*) data;
 
     ret = hg_proc_int32_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
@@ -1275,5 +1338,7 @@ hg_proc_data_server_check_io_out_t(hg_proc_t proc, void *data)
     return ret;
 }
 
+hg_id_t data_server_read_check_register(hg_class_t *hg_class);
+hg_id_t data_server_read_register(hg_class_t *hg_class);
 
 #endif /* PDC_CLIENT_SERVER_COMMON_H */

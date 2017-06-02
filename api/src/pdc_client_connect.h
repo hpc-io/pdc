@@ -52,8 +52,10 @@ typedef struct pdc_server_info_t {
     // Data server related
     int             data_server_read_handle_valid;
     hg_handle_t     data_server_read_handle;
-    int             data_server_check_io_handle_valid;
-    hg_handle_t     data_server_check_io_handle;
+    int             data_server_write_handle_valid;
+    hg_handle_t     data_server_write_handle;
+    int             data_server_read_check_handle_valid;
+    hg_handle_t     data_server_read_check_handle;
 } pdc_server_info_t;
 
 extern pdc_server_info_t *pdc_server_info_g;
@@ -285,7 +287,19 @@ perr_t PDC_Client_close_all_server();
  */
 
 /**
- * Client request server to read a region of an object
+ * Client request server to collectively read a region of an object
+ *
+ * \param server_id [IN]         Target local data server ID
+ * \param n_client [IN]          Number of clients that send to read request to one data server
+ * \param meta [IN]              Metadata 
+ * \param region [IN]            Region
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *meta, struct PDC_region_info *region); 
+
+/**
+ * Client request server to collectively write a region of an object
  *
  * \param server_id [IN]         Target local data server ID
  * \param n_client [IN]          Number of clients that send to read request to one data server
@@ -295,7 +309,8 @@ perr_t PDC_Client_close_all_server();
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *meta, struct PDC_region_info *region); 
+perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t *meta, struct PDC_region_info *region, void *buf); 
+
 
 /**
  * Client request server to check IO status of a previous IO request
@@ -304,10 +319,11 @@ perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *
  * \param n_client [IN]          Client ID
  * \param meta [IN]              Metadata 
  * \param region [IN]            Region
+ * \param buf[IN]                User buffer to store the read data
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_data_server_io_check(int server_id, int client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status, void *buf);
+perr_t PDC_Client_data_server_read_check(int server_id, int client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status, void *buf);
 
 
 #endif

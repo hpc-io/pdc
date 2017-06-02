@@ -2654,7 +2654,8 @@ int main(int argc, char *argv[])
 
     // Data server
     data_server_read_register(hg_class_g);
-    data_server_check_io_register(hg_class_g);
+    data_server_write_register(hg_class_g);
+    data_server_read_check_register(hg_class_g);
 
 
 #ifdef ENABLE_MPI
@@ -2740,6 +2741,10 @@ done:
     return 0;
 }
 
+
+/*
+ * Data Server related
+ */
 int region_list_cmp(region_list_t *a, region_list_t *b) 
 {
     if (a->ndim != b->ndim) {
@@ -2956,10 +2961,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Data Server related
- */
-perr_t PDC_Server_check_io(data_server_check_io_in_t *in, data_server_check_io_out_t *out)
+perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_check_out_t *out)
 {
     perr_t ret_value = FAIL;
     perr_t status    = FAIL;
@@ -3032,6 +3034,95 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDC_Server_data_write(data_server_write_in_t *in, data_server_write_out_t *out)
+{
+    perr_t ret_value = FAIL;
+    perr_t status    = FAIL;
+   
+    FUNC_ENTER(NULL);
+
+    int i;
+    pdc_metadata_t meta;
+    PDC_metadata_init(&meta);
+    pdc_transfer_t_to_metadata_t(&in->meta, &meta);
+
+    pdc_data_server_io_list_t *elt = NULL, *target = NULL;
+
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_lock(&io_list_mutex_g);
+#endif
+    // Iterate io list, find the IO list and region of current request
+    DL_FOREACH(pdc_data_server_io_list_head_g, elt) {
+        if (meta.obj_id == elt->obj_id) {
+            target = elt;
+            break;
+        }
+    }
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_unlock(&io_list_mutex_g);
+#endif
+
+    // If not found, create and insert one to the list
+    if (NULL == target) {
+
+        printf("==PDC_SERVER: No existing io request with same obj_id found!\n");
+        target = (pdc_data_server_io_list_t*)malloc(sizeof(pdc_data_server_io_list_t));
+        if (NULL == target) {
+            printf("==PDC_SERVER: ERROR allocating pdc_data_server_io_list_t!\n");
+            ret_value = FAIL;
+            goto done;
+        }
+        target->obj_id = meta.obj_id;
+        target->total  = in->nclient;
+        target->count  = 0;
+        target->ndim   = meta.ndim;
+        for (i = 0; i < meta.ndim; i++) 
+            target->dims[i] = meta.dims[i];
+        
+        target->total_size  = 0;
+
+        strcpy(target->path, meta.data_location);
+        target->region_list_head = NULL;
+
+        DL_APPEND(pdc_data_server_io_list_head_g, target);
+    }
+
+
+    // Insert current request to the region list
+    target->count++;
+    printf("==PDC_SERVER: received %d/%d data write requests of [%s]\n", target->count, target->total, meta.obj_name);
+
+    // insert current request region to it 
+    region_list_t *new_region = (region_list_t*)malloc(sizeof(region_list_t));
+    if (new_region == NULL) {
+        printf("==PDC_SERVER: ERROR allocating new_region!\n");
+        ret_value = FAIL;
+        goto done;
+    }
+    PDC_init_region_list(new_region);
+    new_region->client_ids[0] = in->client_id;
+
+    pdc_region_transfer_t_to_list_t(&(in->region), new_region);
+    // Calculate size
+    uint64_t tmp_total_size = 1;
+    for (i = 0; i < meta.ndim; i++) 
+        tmp_total_size *= new_region->count[i];
+    target->total_size += tmp_total_size;
+
+    DL_APPEND(target->region_list_head, new_region);
+
+    // Check if we have received all requests 
+    if (target->count >= target->total) {
+        printf("==PDC_SERVER: received all data requests, start writing data\n");
+
+    }
+
+    ret_value = SUCCEED;
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
 
 perr_t PDC_Server_data_read(data_server_read_in_t *in, data_server_read_out_t *out)
 {

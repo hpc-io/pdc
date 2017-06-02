@@ -103,7 +103,7 @@ int main(int argc, const char *argv[])
     sleep(1);
 
     int io_status = 0;
-    PDC_Client_data_server_io_check(0, rank, metadata, &region, &io_status, buf);
+    PDC_Client_data_server_read_check(0, rank, metadata, &region, &io_status, buf);
     printf("io status = %d\n", io_status);
 
 #ifdef ENABLE_MPI
