@@ -142,11 +142,11 @@ int PDC_Client_read_server_addr_from_file()
     for (i = 0; i < pdc_server_num_g; i++) {
         pdc_server_info_g[i].addr_valid                              = 0;
         pdc_server_info_g[i].rpc_handle_valid                        = 0;
-        pdc_server_info_g[i].client_test_handle_valid    	         = 0;
-        pdc_server_info_g[i].close_server_handle_valid   	         = 0;
-        pdc_server_info_g[i].metadata_query_handle_valid 	         = 0;
-        pdc_server_info_g[i].metadata_delete_handle_valid 	         = 0;
-        pdc_server_info_g[i].metadata_update_handle_valid 	         = 0;
+        pdc_server_info_g[i].client_test_handle_valid    	     = 0;
+        pdc_server_info_g[i].close_server_handle_valid   	     = 0;
+        pdc_server_info_g[i].metadata_query_handle_valid             = 0;
+        pdc_server_info_g[i].metadata_delete_handle_valid            = 0;
+        pdc_server_info_g[i].metadata_update_handle_valid            = 0;
         pdc_server_info_g[i].client_send_region_map_handle_valid     = 0;
         pdc_server_info_g[i].client_send_region_unmap_handle_valid   = 0;
         pdc_server_info_g[i].client_send_object_unmap_handle_valid   = 0;
@@ -611,21 +611,21 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     *hg_context = HG_Context_create(*hg_class);
 
     // Register RPC
-    client_test_connect_register_id_g   = client_test_connect_register(*hg_class);
-    gen_obj_register_id_g               = gen_obj_id_register(*hg_class);
-    close_server_register_id_g          = close_server_register(*hg_class);
-    /* send_obj_name_marker_register_id_g  = send_obj_name_marker_register(*hg_class); */
-    metadata_query_register_id_g        = metadata_query_register(*hg_class);
-    metadata_delete_register_id_g       = metadata_delete_register(*hg_class);
-    metadata_delete_by_id_register_id_g = metadata_delete_by_id_register(*hg_class);
-    metadata_update_register_id_g       = metadata_update_register(*hg_class);
-    region_lock_register_id_g           = region_lock_register(*hg_class);
+    client_test_connect_register_id_g         = client_test_connect_register(*hg_class);
+    gen_obj_register_id_g                     = gen_obj_id_register(*hg_class);
+    close_server_register_id_g                = close_server_register(*hg_class);
+    /* send_obj_name_marker_register_id_g     = send_obj_name_marker_register(*hg_class); */
+    metadata_query_register_id_g              = metadata_query_register(*hg_class);
+    metadata_delete_register_id_g             = metadata_delete_register(*hg_class);
+    metadata_delete_by_id_register_id_g       = metadata_delete_by_id_register(*hg_class);
+    metadata_update_register_id_g             = metadata_update_register(*hg_class);
+    region_lock_register_id_g                 = region_lock_register(*hg_class);
 
     // bulk
     query_partial_register_id_g               = query_partial_register(*hg_class);
 
     // 
-    gen_reg_map_notification_register_id_g 	  = gen_reg_map_notification_register(*hg_class);
+    gen_reg_map_notification_register_id_g    = gen_reg_map_notification_register(*hg_class);
     gen_reg_unmap_notification_register_id_g  = gen_reg_unmap_notification_register(*hg_class);
     gen_obj_unmap_notification_register_id_g  = gen_obj_unmap_notification_register(*hg_class);
 
@@ -1804,6 +1804,8 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
         return EXIT_FAILURE;
     }
     in.bulk_handle = bulk_handle;
+    free(data_ptrs);
+    free(data_size);
 
     /* printf("Sending input to target\n"); */
     hg_ret = HG_Forward(pdc_server_info_g[server_id].client_send_region_map_handle, client_send_region_map_rpc_cb, &map_args, &in);	
