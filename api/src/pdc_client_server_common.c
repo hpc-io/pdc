@@ -155,8 +155,28 @@ inline int PDC_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b)
     return ret;
 }
 
+void pdc_mkdir(const char *dir) 
+{
+    char tmp[ADDR_MAX];
+    char *p = NULL;
+    size_t len;
+
+    snprintf(tmp, sizeof(tmp),"%s",dir);
+    len = strlen(tmp);
+    if(tmp[len - 1] == '/')
+        tmp[len - 1] = 0;
+    for(p = tmp + 1; *p; p++)
+        if(*p == '/') {
+            *p = 0;
+            mkdir(tmp, S_IRWXU | S_IRWXG);
+            *p = '/';
+        }
+    mkdir(tmp, S_IRWXU | S_IRWXG);
+}
+
 void PDC_print_metadata(pdc_metadata_t *a)
 {
+    int i;
     FUNC_ENTER(NULL);
     
     if (a == NULL) {
@@ -170,9 +190,12 @@ void PDC_print_metadata(pdc_metadata_t *a)
     printf("  obj_name  = %s\n",   a->obj_name);
     printf("  obj_loc   = %s\n",   a->data_location);
     printf("  time_step = %d\n",   a->time_step);
-    printf("  ndim      = %d\n",   a->ndim);
     printf("  tags      = %s\n",   a->tags);
-    printf("================================\n\n");
+    printf("  ndim      = %d\n",   a->ndim);
+    printf("  dims = %llu",   a->dims[0]);
+    for (i = 1; i < a->ndim; i++) 
+        printf(", %llu",   a->dims[i]);
+    printf("\n================================\n\n");
     fflush(stdout);
 }
 
@@ -221,7 +244,7 @@ perr_t PDC_init_region_list(region_list_t *a)
     memset(a->start,      0, sizeof(uint64_t)*DIM_MAX);
     memset(a->count,      0, sizeof(uint64_t)*DIM_MAX);
     memset(a->stride,     0, sizeof(uint64_t)*DIM_MAX);
-    memset(a->shm_addr,   0, sizeof(uint64_t)*ADDR_MAX);
+    memset(a->shm_addr,   0, sizeof(char)*ADDR_MAX);
     memset(a->client_ids, 0, sizeof(uint32_t)*PDC_SERVER_MAX_PROC_PER_NODE);
 
     return ret_value;
@@ -1307,7 +1330,7 @@ HG_TEST_RPC_CB(data_server_read, handle)
     data_server_read_out_t out;
 
     HG_Get_input(handle, &in);
-    printf("==PDC_SERVER: Got data server read request from client %d\n", in.client_id);
+    /* printf("==PDC_SERVER: Got data server read request from client %d\n", in.client_id); */
 
     out.ret = PDC_Server_data_read(&in, &out);
 
@@ -1351,7 +1374,7 @@ HG_TEST_RPC_CB(data_server_write, handle)
     data_server_write_out_t out;
 
     HG_Get_input(handle, &in);
-    printf("==PDC_SERVER: Got data server write request from client %d\n", in.client_id);
+    /* printf("==PDC_SERVER: Got data server write request from client %d\n", in.client_id); */
 
     out.ret = PDC_Server_data_write(&in, &out);
 

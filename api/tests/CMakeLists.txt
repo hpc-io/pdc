@@ -4,8 +4,6 @@ include_directories(
   ${PDC_INCLUDES_BUILD_TIME}
 )
 
-add_definitions(-DENABLE_MPI=1)
-
 set(PROGRAMS
   pdc_init
   create_prop
@@ -32,6 +30,7 @@ set(PROGRAMS
   obj_lock 
   list_all
   data_server_read
+  data_server_write
   )
 
 foreach(program ${PROGRAMS})
@@ -42,4 +41,4 @@ endforeach(program)
 #------------------------------------------------------------------------------
 # Options
 #------------------------------------------------------------------------------
-#add_definitions(-DENABLE_MPI=1)
+add_definitions(-DENABLE_MPI=1)

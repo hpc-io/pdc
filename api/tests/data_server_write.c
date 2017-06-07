@@ -44,45 +44,72 @@ int main(int argc, const char *argv[])
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
-    pdcid_t test_obj = -1;
-    char obj_name[128];
+    // create an object property
+    pdcid_t obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
+    if(obj_prop <= 0)
+        printf("Fail to create object property @ line  %d!\n", __LINE__);
 
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
-    double ht_total_sec;
+    pdcid_t test_obj = -1;
+    const int my_data_size = 32;
+
+    uint64_t dims[3]={my_data_size,my_data_size*size};
+    PDCprop_set_obj_dims(obj_prop, 2, dims, pdc);
+    PDCprop_set_obj_user_id( obj_prop, getuid(),    pdc);
+    PDCprop_set_obj_time_step( obj_prop, 0,    pdc);
+    PDCprop_set_obj_app_name(obj_prop, "DataServerTest",  pdc);
+    PDCprop_set_obj_tags(    obj_prop, "tag0=1",    pdc);
 
     struct PDC_region_info region;
 
-    pdc_metadata_t *metadata;
-    PDC_Client_query_metadata_name_timestep( "DataServerTestBin", 0, &metadata);
-    // Debug print
-    /* if (rank == 1) { */
-    /*     PDC_print_metadata(metadata); */
-    /* } */
+    // Create a object with only rank 0
+    if (rank == 0) {
+        test_obj = PDCobj_create(pdc, cont, "DataServerTestBin", obj_prop);
+        if (test_obj < 0) {
+            printf("Error getting an object id of %s from server, exit...\n", "DataServerTestBin");
+            exit(-1);
+        }
+    }
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
+    // Query the created object
+    pdc_metadata_t *metadata;
+    PDC_Client_query_metadata_name_timestep( "DataServerTestBin", 0, &metadata);
+    /* if (rank == 1) { */
+    /*     PDC_print_metadata(metadata); */
+    /* } */
 
     int ndim = 2;
     region.ndim = ndim;
     region.offset = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
     region.size = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
     region.offset[0] = 0;
-    region.offset[1] = rank*(metadata->dims[1]/size);
-    region.size[0] = metadata->dims[0];
-    region.size[1] = metadata->dims[1]/size;
+    region.offset[1] = rank * my_data_size;
+    region.size[0] = my_data_size;
+    region.size[1] = my_data_size;
 
-    void *buf = (void*)malloc(region.size[0]*region.size[1] + 1);
+    char mydata[my_data_size][my_data_size];
+    int j;
+    for (i = 0; i < my_data_size; i++) {
+        for (j = 0; j < my_data_size; j++) {
+            mydata[i][j] = 'A' + rank;
+        }
+    }
 
-    /* printf("%d: reading start (%llu, %llu) count (%llu, %llu)\n", rank, region.offset[0], region.offset[1], */
-    /*         region.size[0], region.size[1]); */
+    struct timeval  ht_total_start;
+    struct timeval  ht_total_end;
+    long long ht_total_elapsed;
+    double ht_total_sec;
 
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
     gettimeofday(&ht_total_start, 0);
 
-    PDC_Client_data_server_read(0, size, metadata, &region);
+    /* printf("%d: writing to (%llu, %llu) of %llu bytes\n", rank, region.offset[0], region.offset[1], region.size[0]*region.size[1]); */
+    PDC_Client_data_server_write(0, size, metadata, &region, mydata);
 
     /* if (rank == 0) { */
     /*     printf("wait for 1s\n"); */
@@ -90,38 +117,22 @@ int main(int argc, const char *argv[])
     /* sleep(1); */
 
     int io_status = 0;
-    PDC_Client_data_server_read_check(0, rank, metadata, &region, &io_status, &buf);
-    ((char*)buf)[region.size[0]*region.size[1]] = 0;
-    /* printf("rank %d: io status = %d\n", rank, io_status); */
-    if (io_status == 1) {
-        /* printf("%d buf:\n%.2s\n", rank, (char*)buf); */
-        if ( ((char*)buf)[0] != 'A' + rank) {
-            printf("Proc%d: Data correctness verification FAILED!!!\n", rank);
-        }
-        else {
-            if (rank == 0) {
-                printf("Data read successfully!\n");
-            }
-        }
-    }
-
+    /* PDC_Client_data_server_write_check(0, rank, metadata, &region, &io_status, buf); */
+    /* printf("write status = %d\n", io_status); */
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-
     gettimeofday(&ht_total_end, 0);
     ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
     ht_total_sec        = ht_total_elapsed / 1000000.0;
 
     if (rank == 0) { 
-        printf("Time to read data with %d ranks: %.6f\n", size, ht_total_sec);
+        printf("Time to write data with %d ranks: %.6f\n", size, ht_total_sec);
         fflush(stdout);
     }
 
 done:
-    free(buf);
-
     // close a container
     if(PDCcont_close(cont, pdc) < 0)
         printf("fail to close container %lld\n", cont);

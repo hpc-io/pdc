@@ -323,7 +323,7 @@ perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t 
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_data_server_read_check(int server_id, int client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status, void *buf);
+perr_t PDC_Client_data_server_read_check(int server_id, int client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status, void **buf);
 
 
 #endif

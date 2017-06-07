@@ -19,10 +19,10 @@ struct PDC_obj_prop {
     uint64_t        *dims;
     PDC_var_type_t  type;
     uint32_t        user_id;
-    char*           app_name;
+    char            *app_name;
     uint32_t        time_step;
-    char*           tags;              //placeholder, may change in the future
-    char*           data_loc;
+    char            *tags;              //placeholder, may change in the future
+    char            *data_loc;
     void            *buf;
 //  pdcid_t         region;
 };

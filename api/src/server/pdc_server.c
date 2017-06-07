@@ -42,7 +42,8 @@ hg_thread_mutex_t pdc_metadata_hash_table_mutex_g;
 hg_thread_mutex_t pdc_time_mutex_g;
 hg_thread_mutex_t pdc_bloom_time_mutex_g;
 hg_thread_mutex_t n_metadata_mutex_g;
-hg_thread_mutex_t io_list_mutex_g;
+hg_thread_mutex_t data_read_list_mutex_g;
+hg_thread_mutex_t data_write_list_mutex_g;
 #endif
 
 #define BLOOM_TYPE_T counting_bloom_t
@@ -87,7 +88,8 @@ uint32_t n_metadata_g             = 0;
 
 
 // Data server related
-pdc_data_server_io_list_t *pdc_data_server_io_list_head_g = NULL;
+pdc_data_server_io_list_t *pdc_data_server_read_list_head_g = NULL;
+pdc_data_server_io_list_t *pdc_data_server_write_list_head_g = NULL;
 
 
 static int 
@@ -976,6 +978,7 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
                 /* printf("==PDC_SERVER: Found update target!\n"); */
                 /* printf("Received update info:\n"); */
                 /* PDC_print_metadata(&in->new_metadata); */
+                /* printf("==PDC_SERVER: new dataloc: [%s]\n", in->new_metadata.data_location); */
 
                 // Check and find valid update fields
                 // Currently user_id, obj_name are not supported to be updated in this way
@@ -1000,7 +1003,6 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
                 }
 
                 out->ret  = 1;
-
             } // if (lookup_value != NULL) 
             else {
                 // Object not found for deletion request
@@ -1636,7 +1638,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
 
     // Create server tmp dir
     
-    status = mkdir(pdc_server_tmp_dir_g, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    pdc_mkdir(pdc_server_tmp_dir_g);
 
     if (pdc_server_rank_g == 0) {
         all_addr_strings_1d = (char* )malloc(sizeof(char ) * pdc_server_size_g * ADDR_MAX);
@@ -1719,7 +1721,8 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     hg_thread_mutex_init(&pdc_time_mutex_g      );
     hg_thread_mutex_init(&pdc_bloom_time_mutex_g);
     hg_thread_mutex_init(&n_metadata_mutex_g    );
-    hg_thread_mutex_init(&io_list_mutex_g       );
+    hg_thread_mutex_init(&data_read_list_mutex_g       );
+    hg_thread_mutex_init(&data_write_list_mutex_g       );
 #else
     if (pdc_server_rank_g == 0) {
         printf("==PDC_SERVER: without multi-thread!\n");
@@ -1767,7 +1770,8 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     }
 
     // Data server related init
-    pdc_data_server_io_list_head_g = NULL;
+    pdc_data_server_read_list_head_g = NULL;
+    pdc_data_server_write_list_head_g = NULL;
 
     // Initalize atomic variable to finalize server 
     hg_atomic_set32(&close_server_g, 0);
@@ -1838,7 +1842,8 @@ perr_t PDC_Server_finalize()
     hg_thread_mutex_destroy(&pdc_time_mutex_g      );
     hg_thread_mutex_destroy(&pdc_bloom_time_mutex_g);
     hg_thread_mutex_destroy(&n_metadata_mutex_g    );
-    hg_thread_mutex_destroy(&io_list_mutex_g       );
+    hg_thread_mutex_destroy(&data_read_list_mutex_g       );
+    hg_thread_mutex_destroy(&data_write_list_mutex_g       );
 #endif
 
 done:
@@ -2762,6 +2767,17 @@ int region_list_cmp(region_list_t *a, region_list_t *b)
     return 0;
 }
 
+int region_list_cmp_by_client_id(region_list_t *a, region_list_t *b) 
+{
+    if (a->ndim != b->ndim) {
+        printf("  region_list_cmp_by_client_id(): not equal ndim! \n");
+        return -1;
+    }
+
+    return (a->client_ids[0] - b->client_ids[0]);
+}
+
+
 // TODO: currently only support merging regions that are cut in one dimension
 perr_t PDC_Server_merge_region_list_naive(region_list_t *list, region_list_t **merged)
 {
@@ -2780,9 +2796,9 @@ perr_t PDC_Server_merge_region_list_naive(region_list_t *list, region_list_t **m
     is_merged = (int*)malloc(sizeof(int)*count);
     memset(is_merged, 0, sizeof(int)*count);
 
-    /* DL_FOREACH(list, elt) { */
-    /*     PDC_print_region_list(elt); */
-    /* } */
+    DL_FOREACH(list, elt) {
+        PDC_print_region_list(elt);
+    }
 
     // Init merged head
     pos = 0;
@@ -2865,102 +2881,6 @@ perr_t PDC_Server_delete_shm(region_list_t *region)
     }
 }
 
-perr_t PDC_Server_data_read_real(pdc_data_server_io_list_t *io_list)
-{
-    perr_t ret_value = FAIL;
-    region_list_t *merged_list = NULL;
-
-    // Merge regions
-    PDC_Server_merge_region_list_naive(io_list->region_list_head, &merged_list);
-
-    // Replace region_list with merged list
-    region_list_t *elt, *tmp;
-    DL_FOREACH_SAFE(io_list->region_list_head, elt, tmp) {
-        DL_DELETE(io_list->region_list_head, elt);
-        free(elt);
-    }
-    io_list->region_list_head = merged_list;
-
-    printf("==PDC_SERVER: after merge\n");
-    DL_FOREACH(merged_list, elt) {
-        PDC_print_region_list(elt);
-    }
-
-    int i;
-    uint64_t start, tmp_size;
-
-    // Now we have a merged list of regions to be read, 
-    // so just read one by one
-    FILE *fp = fopen(io_list->path, "r");
-    if (fp != NULL) {
-        DL_FOREACH(merged_list, elt) {
-            tmp_size = 1;
-            elt->data_size = elt->count[0];
-            start = elt->start[0];
-            for (i = 1; i < elt->ndim; i++) {
-                tmp_size *= io_list->dims[i];
-                elt->data_size *= elt->count[i];
-                start += elt->start[i] * tmp_size;
-            }
-
-            // Get min max client ID
-            int client_id_min = elt->client_ids[0];
-            int client_id_max = elt->client_ids[0];
-            for (i = 1; i < PDC_SERVER_MAX_PROC_PER_NODE; i++) {
-                if (elt->client_ids[i] == 0) 
-                    break;
-                client_id_min = elt->client_ids[i] < client_id_min ? elt->client_ids[i] : client_id_min;
-                client_id_max = elt->client_ids[i] > client_id_max ? elt->client_ids[i] : client_id_max;
-            }
-            
-            int rnd = rand();
-            // Shared memory address is /objID_ServerID_ClientIDmin_to_ClientIDmax_rand
-            sprintf(elt->shm_addr, "/%llu_s%d_c%dto%d_%d", io_list->obj_id, pdc_server_rank_g,
-                                                 client_id_min, client_id_max, rnd);
-            
-            /* create the shared memory segment as if it was a file */
-            printf("==PDC_SERVER: creating share memory segment with address %s\n", elt->shm_addr);
-            elt->shm_fd = shm_open(elt->shm_addr, O_CREAT | O_RDWR, 0666);
-            if (elt->shm_fd == -1) {
-                printf("==PDC_SERVER: Shared memory shm_open failed\n");
-                ret_value = FAIL;
-                goto done;
-            }
-
-            /* configure the size of the shared memory segment */
-            ftruncate(elt->shm_fd, elt->data_size);
-
-            /* map the shared memory segment to the address space of the process */
-            elt->shm_base = mmap(0, elt->data_size, PROT_READ | PROT_WRITE, MAP_SHARED, elt->shm_fd, 0);
-            if (elt->shm_base == MAP_FAILED) {
-                printf("==PDC_SERVER: Shared memory mmap failed\n");
-                // close and shm_unlink?
-                ret_value = FAIL;
-                goto done;
-            }
-
-            fseek (fp, start, SEEK_SET);
-            fread(elt->shm_base, elt->data_size, 1, fp);
-            printf("Read offset %llu, size %llu\n", start, elt->data_size);
-
-
-            elt->is_data_ready = 1;
-        }
-        fclose(fp);
-    }
-    else {
-        printf("==PDC_SERVER: fopen failed [%s]\n", io_list->path);
-        ret_value = FAIL;
-        goto done;
-    }
-
-    ret_value = SUCCEED;
-
-done:
-    fflush(stdout);
-    FUNC_LEAVE(ret_value);
-}
-
 perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_check_out_t *out)
 {
     perr_t ret_value = FAIL;
@@ -2981,17 +2901,17 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
     pdc_region_transfer_t_to_list_t(&(in->region), &r_target);
 
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_lock(&io_list_mutex_g);
+    hg_thread_mutex_lock(&data_read_list_mutex_g);
 #endif
-    // Iterate io list, find or create the element to store current request
-    DL_FOREACH(pdc_data_server_io_list_head_g, io_elt) {
+    // Iterate io list, find current request
+    DL_FOREACH(pdc_data_server_read_list_head_g, io_elt) {
         if (meta.obj_id == io_elt->obj_id) {
             io_target = io_elt;
             break;
         }
     }
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_unlock(&io_list_mutex_g);
+    hg_thread_mutex_unlock(&data_read_list_mutex_g);
 #endif
 
     // If not found, create and insert one to the list
@@ -3003,15 +2923,19 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
         goto done;
     }
 
+    /* printf("%d region: start(%llu, %llu) size(%llu, %llu) \n", r_target.start[0], r_target.start[1], r_target.count[0], r_target.count[1]); */
     int found_region = 0;
     DL_FOREACH(io_target->region_list_head, r_elt) {
-        if (region_list_cmp(r_elt, &r_target) == 0) {
-            // Found io list
-            found_region = 1;
-            out->ret = r_elt->is_data_ready;
-            out->shm_addr = r_elt->shm_addr;
-            ret_value = SUCCEED;
-            goto done;
+        /* if (region_list_cmp(r_elt, &r_target) == 0) { */
+        for (i = 0; i < PDC_SERVER_MAX_PROC_PER_NODE; i++) {
+            if (r_elt->client_ids[i] == in->client_id) {
+                // Found io list
+                found_region = 1;
+                out->ret = r_elt->is_data_ready;
+                out->shm_addr = r_elt->shm_addr;
+                ret_value = SUCCEED;
+                goto done;
+            }
         }
     }
 
@@ -3027,94 +2951,105 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
     // Iterate the region list 
     ret_value = SUCCEED;
 
-    // TODO remove the item in pdc_data_server_io_list_head_g after the request is fulfilled
+    // TODO remove the item in pdc_data_server_read_list_head_g after the request is fulfilled
     //      at object close? time
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Server_data_write(data_server_write_in_t *in, data_server_write_out_t *out)
+perr_t PDC_Server_data_read_real(pdc_data_server_io_list_t *io_list)
 {
     perr_t ret_value = FAIL;
-    perr_t status    = FAIL;
-   
-    FUNC_ENTER(NULL);
+    /* region_list_t *merged_list = NULL; */
+
+    // Merge regions
+    /* PDC_Server_merge_region_list_naive(io_list->region_list_head, &merged_list); */
+
+    // Replace region_list with merged list
+    region_list_t *elt, *tmp;
+    DL_SORT(io_list->region_list_head, region_list_cmp_by_client_id);
+    /* DL_FOREACH_SAFE(io_list->region_list_head, elt, tmp) { */
+    /*     DL_DELETE(io_list->region_list_head, elt); */
+    /*     free(elt); */
+    /* } */
+    /* io_list->region_list_head = merged_list; */
+
+    /* printf("==PDC_SERVER: after merge\n"); */
+    /* DL_FOREACH(merged_list, elt) { */
+    /*     PDC_print_region_list(elt); */
+    /* } */
+    /* fflush(stdout); */
 
     int i;
-    pdc_metadata_t meta;
-    PDC_metadata_init(&meta);
-    pdc_transfer_t_to_metadata_t(&in->meta, &meta);
+    uint64_t start = 0, tmp_size;
 
-    pdc_data_server_io_list_t *elt = NULL, *target = NULL;
+    char read_path[ADDR_MAX];
+    memset(read_path, 0, ADDR_MAX);
+    sprintf(read_path, "%s/s%03d.bin", io_list->path, pdc_server_rank_g); 
 
-#ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_lock(&io_list_mutex_g);
-#endif
-    // Iterate io list, find the IO list and region of current request
-    DL_FOREACH(pdc_data_server_io_list_head_g, elt) {
-        if (meta.obj_id == elt->obj_id) {
-            target = elt;
-            break;
+    // Now we have a -merged- list of regions to be read, 
+    // so just read one by one
+    FILE *fp = fopen(read_path, "r");
+    if (fp != NULL) {
+        DL_FOREACH(io_list->region_list_head, elt) {
+            tmp_size = 1;
+            elt->data_size = elt->count[0];
+            /* start = elt->start[0]; */
+            for (i = 1; i < elt->ndim; i++) {
+                tmp_size *= io_list->dims[i-1];
+                /* start += elt->start[i] * tmp_size; */
+                elt->data_size *= elt->count[i];
+            }
+
+            // Get min max client ID
+            int client_id_min = elt->client_ids[0];
+            int client_id_max = elt->client_ids[0];
+            for (i = 1; i < PDC_SERVER_MAX_PROC_PER_NODE; i++) {
+                if (elt->client_ids[i] == 0) 
+                    break;
+                client_id_min = elt->client_ids[i] < client_id_min ? elt->client_ids[i] : client_id_min;
+                client_id_max = elt->client_ids[i] > client_id_max ? elt->client_ids[i] : client_id_max;
+            }
+            
+            int rnd = rand();
+            // Shared memory address is /objID_ServerID_ClientIDmin_to_ClientIDmax_rand
+            sprintf(elt->shm_addr, "/%llu_s%d_c%dto%d_%d", io_list->obj_id, pdc_server_rank_g,
+                                                 client_id_min, client_id_max, rnd);
+            
+            /* create the shared memory segment as if it was a file */
+            /* printf("==PDC_SERVER: creating share memory segment with address [%s]\n", elt->shm_addr); */
+            elt->shm_fd = shm_open(elt->shm_addr, O_CREAT | O_RDWR, 0666);
+            if (elt->shm_fd == -1) {
+                printf("==PDC_SERVER: Shared memory shm_open failed\n");
+                ret_value = FAIL;
+                goto done;
+            }
+
+            /* configure the size of the shared memory segment */
+            ftruncate(elt->shm_fd, elt->data_size);
+
+            /* map the shared memory segment to the address space of the process */
+            elt->shm_base = mmap(0, elt->data_size, PROT_READ | PROT_WRITE, MAP_SHARED, elt->shm_fd, 0);
+            if (elt->shm_base == MAP_FAILED) {
+                printf("==PDC_SERVER: Shared memory mmap failed\n");
+                // close and shm_unlink?
+                ret_value = FAIL;
+                goto done;
+            }
+
+            /* fseek (fp, start, SEEK_SET); */
+            fread(elt->shm_base, elt->data_size, 1, fp);
+            /* printf("Read offset %llu, size %llu\n", start, elt->data_size); */
+
+            elt->is_data_ready = 1;
         }
+        fclose(fp);
     }
-#ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_unlock(&io_list_mutex_g);
-#endif
-
-    // If not found, create and insert one to the list
-    if (NULL == target) {
-
-        printf("==PDC_SERVER: No existing io request with same obj_id found!\n");
-        target = (pdc_data_server_io_list_t*)malloc(sizeof(pdc_data_server_io_list_t));
-        if (NULL == target) {
-            printf("==PDC_SERVER: ERROR allocating pdc_data_server_io_list_t!\n");
-            ret_value = FAIL;
-            goto done;
-        }
-        target->obj_id = meta.obj_id;
-        target->total  = in->nclient;
-        target->count  = 0;
-        target->ndim   = meta.ndim;
-        for (i = 0; i < meta.ndim; i++) 
-            target->dims[i] = meta.dims[i];
-        
-        target->total_size  = 0;
-
-        strcpy(target->path, meta.data_location);
-        target->region_list_head = NULL;
-
-        DL_APPEND(pdc_data_server_io_list_head_g, target);
-    }
-
-
-    // Insert current request to the region list
-    target->count++;
-    printf("==PDC_SERVER: received %d/%d data write requests of [%s]\n", target->count, target->total, meta.obj_name);
-
-    // insert current request region to it 
-    region_list_t *new_region = (region_list_t*)malloc(sizeof(region_list_t));
-    if (new_region == NULL) {
-        printf("==PDC_SERVER: ERROR allocating new_region!\n");
+    else {
+        printf("==PDC_SERVER: fopen failed [%s]\n", io_list->path);
         ret_value = FAIL;
         goto done;
-    }
-    PDC_init_region_list(new_region);
-    new_region->client_ids[0] = in->client_id;
-
-    pdc_region_transfer_t_to_list_t(&(in->region), new_region);
-    // Calculate size
-    uint64_t tmp_total_size = 1;
-    for (i = 0; i < meta.ndim; i++) 
-        tmp_total_size *= new_region->count[i];
-    target->total_size += tmp_total_size;
-
-    DL_APPEND(target->region_list_head, new_region);
-
-    // Check if we have received all requests 
-    if (target->count >= target->total) {
-        printf("==PDC_SERVER: received all data requests, start writing data\n");
-
     }
 
     ret_value = SUCCEED;
@@ -3122,7 +3057,8 @@ perr_t PDC_Server_data_write(data_server_write_in_t *in, data_server_write_out_t
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
-}
+} //PDC_Server_data_read_real
+
 
 perr_t PDC_Server_data_read(data_server_read_in_t *in, data_server_read_out_t *out)
 {
@@ -3136,51 +3072,52 @@ perr_t PDC_Server_data_read(data_server_read_in_t *in, data_server_read_out_t *o
     PDC_metadata_init(&meta);
     pdc_transfer_t_to_metadata_t(&in->meta, &meta);
 
-    pdc_data_server_io_list_t *elt = NULL, *target = NULL;
+    pdc_data_server_io_list_t *elt = NULL, *io_list_target = NULL;
 
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_lock(&io_list_mutex_g);
+    hg_thread_mutex_lock(&data_read_list_mutex_g);
 #endif
     // Iterate io list, find the IO list and region of current request
-    DL_FOREACH(pdc_data_server_io_list_head_g, elt) {
+    DL_FOREACH(pdc_data_server_read_list_head_g, elt) {
         if (meta.obj_id == elt->obj_id) {
-            target = elt;
+            io_list_target = elt;
             break;
         }
     }
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_unlock(&io_list_mutex_g);
+    hg_thread_mutex_unlock(&data_read_list_mutex_g);
 #endif
 
     // If not found, create and insert one to the list
-    if (NULL == target) {
+    if (NULL == io_list_target) {
 
-        printf("==PDC_SERVER: No existing io request with same obj_id found!\n");
-        target = (pdc_data_server_io_list_t*)malloc(sizeof(pdc_data_server_io_list_t));
-        if (NULL == target) {
+        /* printf("==PDC_SERVER: No existing io request with same obj_id found!\n"); */
+        io_list_target = (pdc_data_server_io_list_t*)malloc(sizeof(pdc_data_server_io_list_t));
+        if (NULL == io_list_target) {
             printf("==PDC_SERVER: ERROR allocating pdc_data_server_io_list_t!\n");
             ret_value = FAIL;
             goto done;
         }
-        target->obj_id = meta.obj_id;
-        target->total  = in->nclient;
-        target->count  = 0;
-        target->ndim   = meta.ndim;
+        io_list_target->obj_id = meta.obj_id;
+        io_list_target->total  = in->nclient;
+        io_list_target->count  = 0;
+        io_list_target->ndim   = meta.ndim;
         for (i = 0; i < meta.ndim; i++) 
-            target->dims[i] = meta.dims[i];
+            io_list_target->dims[i] = meta.dims[i];
         
-        target->total_size  = 0;
+        io_list_target->total_size  = 0;
 
-        strcpy(target->path, meta.data_location);
-        target->region_list_head = NULL;
+        strcpy(io_list_target->path, meta.data_location);
+        io_list_target->region_list_head = NULL;
 
-        DL_APPEND(pdc_data_server_io_list_head_g, target);
+        DL_APPEND(pdc_data_server_read_list_head_g, io_list_target);
     }
 
 
     // Insert current request to the region list
-    target->count++;
-    printf("==PDC_SERVER: received %d/%d data read requests of [%s]\n", target->count, target->total, meta.obj_name);
+    io_list_target->count++;
+    /* printf("==PDC_SERVER: received %d/%d data read requests of [%s]\n", io_list_target->count, io_list_target->total, meta.obj_name); */
+    /* fflush(stdout); */
 
     // insert current request region to it 
     region_list_t *new_region = (region_list_t*)malloc(sizeof(region_list_t));
@@ -3197,17 +3134,17 @@ perr_t PDC_Server_data_read(data_server_read_in_t *in, data_server_read_out_t *o
     uint64_t tmp_total_size = 1;
     for (i = 0; i < meta.ndim; i++) 
         tmp_total_size *= new_region->count[i];
-    target->total_size += tmp_total_size;
+    io_list_target->total_size += tmp_total_size;
 
-    DL_APPEND(target->region_list_head, new_region);
+    DL_APPEND(io_list_target->region_list_head, new_region);
 
     // Check if we have received all requests 
-    if (target->count >= target->total) {
-        printf("==PDC_SERVER: received all data requests, start reading data\n");
+    if (io_list_target->count >= io_list_target->total) {
+        printf("==PDC_SERVER: received all %d data requests, start reading data from [%s]\n", io_list_target->total, io_list_target->path);
 
-        status = PDC_Server_data_read_real(target);
+        status = PDC_Server_data_read_real(io_list_target);
         if (status != SUCCEED) {
-            printf("==PDC_SERVER: ERROR reading data from file [%s]!\n", target->path);
+            printf("==PDC_SERVER: ERROR reading data from file [%s]!\n", io_list_target->path);
             ret_value = FAIL;
             goto done;
         }
@@ -3215,9 +3152,183 @@ perr_t PDC_Server_data_read(data_server_read_in_t *in, data_server_read_out_t *o
 
     ret_value = SUCCEED;
 
-    // TODO remove the item in pdc_data_server_io_list_head_g after the request is fulfilled
+    // TODO remove the item in pdc_data_server_read_list_head_g after the request is fulfilled
     //      at object close? time
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
+
+perr_t PDC_Server_data_write_real(pdc_data_server_io_list_t *io_list)
+{
+    perr_t ret_value = FAIL;
+    region_list_t *merged_list = NULL;
+
+
+    region_list_t *elt, *tmp;
+
+    // Sort the list so it is ordered by client id
+    DL_SORT(io_list->region_list_head, region_list_cmp_by_client_id);
+
+    /* printf("==PDC_SERVER: write regions after merge\n"); */
+    /* DL_FOREACH(io_list->region_list_head, elt) { */
+    /*     PDC_print_region_list(elt); */
+    /* } */
+
+    // Now we have a merged list of regions to be read, 
+    // so just write one by one
+    int i;
+    char write_path[ADDR_MAX];
+    memset(write_path, 0, ADDR_MAX);
+    sprintf(write_path, "%s/s%03d.bin", io_list->path, pdc_server_rank_g); 
+
+    /* pdc_mkdir(io_list->path); */
+
+    FILE *fp = fopen(write_path, "w");
+    if (fp != NULL) {
+        DL_FOREACH(io_list->region_list_head, elt) {
+            elt->data_size = elt->count[0];
+            for (i = 1; i < elt->ndim; i++) {
+                elt->data_size *= elt->count[i];
+            }
+
+            /* open the shared memory segment as if it was a file */
+            elt->shm_fd = shm_open(elt->shm_addr, O_RDONLY, 0666);
+            if (elt->shm_fd == -1) {
+                printf("==PDC_SERVER: Shared memory open failed [%s]!\n", elt->shm_addr);
+                ret_value = FAIL;
+                goto done;
+            }
+
+            /* map the shared memory segment to the address space of the process */
+            elt->shm_base = mmap(0, elt->data_size, PROT_READ, MAP_SHARED, elt->shm_fd, 0);
+            if (elt->shm_base == MAP_FAILED) {
+                printf("==PDC_CLIENT: Map failed: %s\n", strerror(errno));
+                // close and unlink?
+                fclose(fp);
+                ret_value = FAIL;
+                goto done;
+            }
+
+            fwrite(elt->shm_base, elt->data_size, 1, fp);
+            /* printf("Write iteration: size %llu\n", elt->data_size); */
+            elt->is_data_ready = 1;
+        }
+
+        fclose(fp);
+    }
+    else {
+        printf("==PDC_SERVER: fopen failed [%s]\n", write_path);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    ret_value = SUCCEED;
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} //PDC_Server_data_write_real
+
+
+perr_t PDC_Server_data_write(data_server_write_in_t *in, data_server_write_out_t *out)
+{
+    perr_t ret_value = FAIL;
+    perr_t status    = FAIL;
+   
+    FUNC_ENTER(NULL);
+
+    int i;
+    pdc_metadata_t meta;
+    PDC_metadata_init(&meta);
+    pdc_transfer_t_to_metadata_t(&in->meta, &meta);
+
+    pdc_data_server_io_list_t *elt = NULL, *io_list_target = NULL;
+
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_lock(&data_write_list_mutex_g);
+#endif
+    // Iterate io list, find the IO list and region of current request
+    DL_FOREACH(pdc_data_server_write_list_head_g, elt) {
+        if (meta.obj_id == elt->obj_id) {
+            io_list_target = elt;
+            break;
+        }
+    }
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_unlock(&data_write_list_mutex_g);
+#endif
+
+    // If not found, create and insert one to the list
+    if (NULL == io_list_target) {
+
+        /* printf("==PDC_SERVER: No existing io request with same obj_id found!\n"); */
+        io_list_target = (pdc_data_server_io_list_t*)malloc(sizeof(pdc_data_server_io_list_t));
+        if (NULL == io_list_target) {
+            printf("==PDC_SERVER: ERROR allocating pdc_data_server_io_list_t!\n");
+            ret_value = FAIL;
+            goto done;
+        }
+        io_list_target->obj_id = meta.obj_id;
+        io_list_target->total  = in->nclient;
+        io_list_target->count  = 0;
+        io_list_target->ndim   = meta.ndim;
+        for (i = 0; i < meta.ndim; i++) 
+            io_list_target->dims[i] = meta.dims[i];
+        
+        io_list_target->total_size  = 0;
+
+        // Auto generate a data location path for storing the data
+        strcpy(io_list_target->path, meta.data_location);
+        io_list_target->region_list_head = NULL;
+
+        DL_APPEND(pdc_data_server_write_list_head_g, io_list_target);
+    }
+
+    // Insert current request to the region list
+    io_list_target->count++;
+    /* printf("==PDC_SERVER: received %d/%d data write requests of [%s]\n", io_list_target->count, io_list_target->total, meta.obj_name); */
+
+    // insert current request region to it 
+    region_list_t *new_region = (region_list_t*)malloc(sizeof(region_list_t));
+    if (new_region == NULL) {
+        /* printf("==PDC_SERVER: ERROR allocating new_region!\n"); */
+        ret_value = FAIL;
+        goto done;
+    }
+    PDC_init_region_list(new_region);
+    new_region->client_ids[0] = in->client_id;
+    strcpy(new_region->shm_addr, in->shm_addr);
+
+    pdc_region_transfer_t_to_list_t(&(in->region), new_region);
+
+    // Calculate size
+    uint64_t tmp_total_size = 1;
+    for (i = 0; i < meta.ndim; i++) 
+        tmp_total_size *= new_region->count[i];
+    io_list_target->total_size += tmp_total_size;
+
+    DL_APPEND(io_list_target->region_list_head, new_region);
+
+    // Check if we have received all requests 
+    if (io_list_target->count >= io_list_target->total) {
+        printf("==PDC_SERVER: received all %d requests, start writing data to [%s]\n", io_list_target->total, io_list_target->path);
+        status = PDC_Server_data_write_real(io_list_target);
+        if (status != SUCCEED) {
+            printf("==PDC_SERVER: ERROR writing data to file [%s]!\n", io_list_target->path);
+            ret_value = FAIL;
+            goto done;
+        }
+    }
+
+    /* if (pdc_server_rank_g == 0) { */
+    /*     printf("==PDC_SERVER: finished writing to storage\n"); */
+    /* } */
+    ret_value = SUCCEED;
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+

@@ -2,6 +2,9 @@
 #define PDC_CLIENT_SERVER_COMMON_H
 
 #include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include "pdc_linkedlist.h"
 #include "pdc_private.h"
 #include "mercury.h"
@@ -1154,6 +1157,7 @@ perr_t pdc_region_list_t_to_transfer(region_list_t *region, region_info_transfer
 
 perr_t pdc_region_info_t_to_transfer(struct PDC_region_info *region, region_info_transfer_t *transfer);
 
+void pdc_mkdir(const char *dir);
 
 extern hg_hash_table_t   *metadata_hash_table_g;
 extern hg_atomic_int32_t  close_server_g;
