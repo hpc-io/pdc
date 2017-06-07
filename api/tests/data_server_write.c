@@ -98,6 +98,7 @@ int main(int argc, const char *argv[])
         }
     }
 
+    /* printf("%d: writing to (%llu, %llu) of %llu bytes\n", rank, region.offset[0], region.offset[1], region.size[0]*region.size[1]); */
     struct timeval  ht_total_start;
     struct timeval  ht_total_end;
     long long ht_total_elapsed;
@@ -108,17 +109,10 @@ int main(int argc, const char *argv[])
 #endif
     gettimeofday(&ht_total_start, 0);
 
-    /* printf("%d: writing to (%llu, %llu) of %llu bytes\n", rank, region.offset[0], region.offset[1], region.size[0]*region.size[1]); */
-    PDC_Client_data_server_write(0, size, metadata, &region, mydata);
 
-    /* if (rank == 0) { */
-    /*     printf("wait for 1s\n"); */
-    /* } */
-    /* sleep(1); */
+    /* PDC_Client_data_server_write(0, size, metadata, &region, mydata); */
+    PDCwrite(metadata, &region, mydata);
 
-    int io_status = 0;
-    /* PDC_Client_data_server_write_check(0, rank, metadata, &region, &io_status, buf); */
-    /* printf("write status = %d\n", io_status); */
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);

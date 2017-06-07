@@ -2661,6 +2661,7 @@ int main(int argc, char *argv[])
     data_server_read_register(hg_class_g);
     data_server_write_register(hg_class_g);
     data_server_read_check_register(hg_class_g);
+    data_server_write_check_register(hg_class_g);
 
 
 #ifdef ENABLE_MPI
@@ -2958,11 +2959,84 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_write_check_out_t *out)
+{
+    perr_t ret_value = FAIL;
+    perr_t status    = FAIL;
+   
+    FUNC_ENTER(NULL);
+
+    int i;
+    pdc_metadata_t meta;
+    PDC_metadata_init(&meta);
+    pdc_transfer_t_to_metadata_t(&in->meta, &meta);
+
+    pdc_data_server_io_list_t *io_elt = NULL, *io_target = NULL;
+    region_list_t *r_elt = NULL;
+
+    region_list_t r_target;
+    PDC_init_region_list(&r_target);
+    pdc_region_transfer_t_to_list_t(&(in->region), &r_target);
+
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_lock(&data_write_list_mutex_g);
+#endif
+    // Iterate io list, find current request
+    DL_FOREACH(pdc_data_server_write_list_head_g, io_elt) {
+        if (meta.obj_id == io_elt->obj_id) {
+            io_target = io_elt;
+            break;
+        }
+    }
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_unlock(&data_write_list_mutex_g);
+#endif
+
+    // If not found, create and insert one to the list
+    if (NULL == io_target) {
+        printf("==PDC_SERVER: No existing io request with same obj_id found, create a new one!\n");
+        out->ret = -1;
+        ret_value = SUCCEED;
+        goto done;
+    }
+
+    /* printf("%d region: start(%llu, %llu) size(%llu, %llu) \n", r_target.start[0], r_target.start[1], r_target.count[0], r_target.count[1]); */
+    int found_region = 0;
+    DL_FOREACH(io_target->region_list_head, r_elt) {
+        /* if (region_list_cmp(r_elt, &r_target) == 0) { */
+        for (i = 0; i < PDC_SERVER_MAX_PROC_PER_NODE; i++) {
+            if (r_elt->client_ids[i] == in->client_id) {
+                // Found io list
+                found_region = 1;
+                out->ret = r_elt->is_data_ready;
+                ret_value = SUCCEED;
+                goto done;
+            }
+        }
+    }
+
+    if (found_region == 0) {
+        printf("==PDC_SERVER: No existing io request with same region found!\n");
+        out->ret = -1;
+        ret_value = SUCCEED;
+        goto done;
+    }
+
+    ret_value = SUCCEED;
+    // TODO remove the item in pdc_data_server_write_list_head_g after the request is fulfilled
+    //      at object close? time
+    
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} //PDC_Server_write_check
+
 perr_t PDC_Server_data_read_real(pdc_data_server_io_list_t *io_list)
 {
     perr_t ret_value = FAIL;
     /* region_list_t *merged_list = NULL; */
 
+    // TODO: merge regions for aggregated read
     // Merge regions
     /* PDC_Server_merge_region_list_naive(io_list->region_list_head, &merged_list); */
 

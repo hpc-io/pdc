@@ -56,9 +56,21 @@ typedef struct pdc_server_info_t {
     hg_handle_t     data_server_write_handle;
     int             data_server_read_check_handle_valid;
     hg_handle_t     data_server_read_check_handle;
+    int             data_server_write_check_handle_valid;
+    hg_handle_t     data_server_write_check_handle;
 } pdc_server_info_t;
 
 extern pdc_server_info_t *pdc_server_info_g;
+
+// Request structure for async read/write
+typedef struct PDC_Request {
+    int                     server_id;
+    int                     n_client;
+    PDC_access_t            access_type;
+    pdc_metadata_t          *metadata;
+    struct PDC_region_info  *region;
+    void                    *buf;
+} PDC_Request;
 
 struct client_lookup_args {
     const char          *obj_name;
@@ -79,11 +91,11 @@ typedef struct metadata_query_args_t {
     pdc_metadata_t *data;
 } metadata_query_args_t;
 
-typedef struct client_name_cache_t {
-    char                        name[ADDR_MAX];
-    struct client_name_cache_t *prev;
-    struct client_name_cache_t *next;
-} client_name_cache_t;
+/* typedef struct client_name_cache_t { */
+/*     char                        name[ADDR_MAX]; */
+/*     struct client_name_cache_t *prev; */
+/*     struct client_name_cache_t *next; */
+/* } client_name_cache_t; */
 
 struct region_map_args {
 	int         ret;
@@ -323,7 +335,28 @@ perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t 
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_data_server_read_check(int server_id, int client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status, void **buf);
+perr_t PDC_Client_data_server_read_check(int server_id, int client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status, void *buf);
 
 
+/**
+ * Client request server to check IO status of a previous IO request
+ *
+ * \param server_id [IN]         Target local data server ID
+ * \param n_client [IN]          Client ID
+ * \param meta [IN]              Metadata 
+ * \param region [IN]            Region
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_data_server_write_check(int server_id, int client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status);
+
+
+perr_t PDCtest(PDC_Request *request, int *completed);
+perr_t PDCwait(PDC_Request *request);
+
+perr_t PDCiread(pdc_metadata_t *meta, struct PDC_region_info *region, PDC_Request *request, void *buf);
+perr_t PDCread(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf);
+
+perr_t PDCiwrite(pdc_metadata_t *meta, struct PDC_region_info *region, PDC_Request *request, void *buf);
+perr_t PDCwrite(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf);
 #endif

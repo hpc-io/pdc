@@ -431,6 +431,7 @@ hg_class_t *hg_class_g;
 perr_t PDC_Server_data_read(data_server_read_in_t *in, data_server_read_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_data_write(data_server_write_in_t *in, data_server_write_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_check_out_t *out) {return SUCCEED;}
+perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_write_check_out_t *out) {return SUCCEED;}
 
 #endif
 
@@ -1445,6 +1446,50 @@ data_server_read_check_register(hg_class_t *hg_class)
     FUNC_ENTER(NULL);
 
     ret_value = MERCURY_REGISTER(hg_class, "data_server_read_check", data_server_read_check_in_t, data_server_read_check_out_t, data_server_read_check_cb);
+
+    FUNC_LEAVE(ret_value);
+}
+
+// data_server_write_check(hg_handle_t handle)
+HG_TEST_RPC_CB(data_server_write_check, handle)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value;
+
+    /* Get input parameters sent on origin through on HG_Forward() */
+    // Decode input
+    data_server_write_check_in_t  in;
+    data_server_write_check_out_t out;
+
+    HG_Get_input(handle, &in);
+    /* printf("==PDC_SERVER: Got data server write_check request from client %d\n", in.client_id); */
+
+    PDC_Server_write_check(&in, &out);
+
+    HG_Respond(handle, NULL, NULL, &out);
+    /* printf("==PDC_SERVER: server write_check returning ret=%d\n", out.ret); */
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    ret_value = HG_SUCCESS;
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+HG_TEST_THREAD_CB(data_server_write_check)
+
+hg_id_t
+data_server_write_check_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+
+    ret_value = MERCURY_REGISTER(hg_class, "data_server_write_check", data_server_write_check_in_t, data_server_write_check_out_t, data_server_write_check_cb);
 
     FUNC_LEAVE(ret_value);
 }

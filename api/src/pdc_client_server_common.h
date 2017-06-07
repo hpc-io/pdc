@@ -218,9 +218,11 @@ MERCURY_GEN_PROC(data_server_read_out_t, ((int32_t)(ret)) )
 MERCURY_GEN_PROC(data_server_write_in_t, ((int32_t)(client_id)) ((int32_t)(nclient)) ((hg_const_string_t)(shm_addr)) ((pdc_metadata_transfer_t)(meta)) ((region_info_transfer_t)(region)))
 MERCURY_GEN_PROC(data_server_write_out_t, ((int32_t)(ret)) )
 
-MERCURY_GEN_PROC(data_server_read_check_in_t, ((int32_t)(client_id)) ((int32_t)(client_id)) ((pdc_metadata_transfer_t)(meta)) ((region_info_transfer_t)(region)))
+MERCURY_GEN_PROC(data_server_read_check_in_t, ((int32_t)(client_id)) ((pdc_metadata_transfer_t)(meta)) ((region_info_transfer_t)(region)))
 MERCURY_GEN_PROC(data_server_read_check_out_t, ((int32_t)(ret)) ((hg_const_string_t)(shm_addr)) )
 
+MERCURY_GEN_PROC(data_server_write_check_in_t, ((int32_t)(client_id)) ((pdc_metadata_transfer_t)(meta)) ((region_info_transfer_t)(region)))
+MERCURY_GEN_PROC(data_server_write_check_out_t, ((int32_t)(ret)) )
 #else
 
 typedef struct {
@@ -1284,7 +1286,6 @@ hg_proc_data_server_write_out_t(hg_proc_t proc, void *data)
 
 typedef struct {
     int32_t                     client_id;
-    int32_t                     nclient;
     pdc_metadata_transfer_t     meta;
     region_info_transfer_t      region;
 } data_server_read_check_in_t;
@@ -1300,11 +1301,6 @@ hg_proc_data_server_read_check_in_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     data_server_read_check_in_t *struct_data = (data_server_read_check_in_t*) data;
 
-    ret = hg_proc_int32_t(proc, &struct_data->client_id);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-        return ret;
-    }
     ret = hg_proc_int32_t(proc, &struct_data->client_id);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
@@ -1341,6 +1337,58 @@ hg_proc_data_server_read_check_out_t(hg_proc_t proc, void *data)
     }
     return ret;
 }
+
+
+typedef struct {
+    int32_t                     client_id;
+    pdc_metadata_transfer_t     meta;
+    region_info_transfer_t      region;
+} data_server_write_check_in_t;
+
+typedef struct {
+    int32_t            ret;
+} data_server_write_check_out_t;
+
+static HG_INLINE hg_return_t
+hg_proc_data_server_write_check_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    data_server_write_check_in_t *struct_data = (data_server_write_check_in_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->client_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_pdc_metadata_transfer_t(proc, &struct_data->meta);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->region);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_data_server_write_check_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    data_server_write_check_out_t *struct_data = (data_server_write_check_out_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+hg_id_t data_server_write_check_register(hg_class_t *hg_class);
+hg_id_t data_server_read_register(hg_class_t *hg_class);
 
 hg_id_t data_server_read_check_register(hg_class_t *hg_class);
 hg_id_t data_server_read_register(hg_class_t *hg_class);

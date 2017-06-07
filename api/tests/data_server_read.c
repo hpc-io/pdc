@@ -61,11 +61,6 @@ int main(int argc, const char *argv[])
     /*     PDC_print_metadata(metadata); */
     /* } */
 
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-
-
     int ndim = 2;
     region.ndim = ndim;
     region.offset = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
@@ -76,35 +71,18 @@ int main(int argc, const char *argv[])
     region.size[1] = metadata->dims[1]/size;
 
     void *buf = (void*)malloc(region.size[0]*region.size[1] + 1);
-
     /* printf("%d: reading start (%llu, %llu) count (%llu, %llu)\n", rank, region.offset[0], region.offset[1], */
     /*         region.size[0], region.size[1]); */
 
+    /* PDC_Client_data_server_read(0, size, metadata, &region); */
+    /* PDC_Client_data_server_read_check(0, rank, metadata, &region, &io_status, buf); */
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
     gettimeofday(&ht_total_start, 0);
 
-    PDC_Client_data_server_read(0, size, metadata, &region);
-
-    /* if (rank == 0) { */
-    /*     printf("wait for 1s\n"); */
-    /* } */
-    /* sleep(1); */
-
-    int io_status = 0;
-    PDC_Client_data_server_read_check(0, rank, metadata, &region, &io_status, &buf);
-    ((char*)buf)[region.size[0]*region.size[1]] = 0;
-    /* printf("rank %d: io status = %d\n", rank, io_status); */
-    if (io_status == 1) {
-        /* printf("%d buf:\n%.2s\n", rank, (char*)buf); */
-        if ( ((char*)buf)[0] != 'A' + rank) {
-            printf("Proc%d: Data correctness verification FAILED!!!\n", rank);
-        }
-        else {
-            if (rank == 0) {
-                printf("Data read successfully!\n");
-            }
-        }
-    }
-
+    PDCread(metadata, &region, buf);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -119,8 +97,21 @@ int main(int argc, const char *argv[])
         fflush(stdout);
     }
 
+    // Data verification
+    /* printf("%d buf:\n%s\n", rank, (char*)buf); */
+    /* printf("%d buf:\n%.10s\n", rank, (char*)buf); */
+    ((char*)buf)[region.size[0]*region.size[1]] = 0;
+    if ( ((char*)buf)[0] != 'A' + rank) {
+        printf("Proc%d: Data correctness verification FAILED!!!\n", rank);
+    }
+    else {
+        if (rank == 0) {
+            printf("Data read successfully!\n");
+        }
+    }
+
 done:
-    free(buf);
+    /* free(buf); */
 
     // close a container
     if(PDCcont_close(cont, pdc) < 0)
