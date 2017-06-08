@@ -2597,14 +2597,14 @@ int pdc_msleep(unsigned long milisec)
     return 1;
 }
 
-perr_t PDCtest(PDC_Request *request, int *completed)
+perr_t PDC_Client_test(PDC_Request *request, int *completed)
 {
     perr_t ret_value = FAIL;
 
     FUNC_ENTER(NULL);
 
     if (request == NULL || completed == NULL) {
-        printf("==PDC_CLIENT: PDCtest() - request and/or completed is NULL!\n");
+        printf("==PDC_CLIENT: PDC_Client_test() - request and/or completed is NULL!\n");
         ret_value = FAIL;
         goto done;
     }
@@ -2619,7 +2619,7 @@ perr_t PDCtest(PDC_Request *request, int *completed)
                      request->metadata, request->region, completed);
     }
     else {
-        printf("==PDC_CLIENT: PDCtest() - error with request access type!\n");
+        printf("==PDC_CLIENT: PDC_Client_test() - error with request access type!\n");
         ret_value = FAIL;
         goto done;
     }
@@ -2629,29 +2629,38 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDCwait(PDC_Request *request)
+perr_t PDC_Client_wait(PDC_Request *request, unsigned long max_wait_ms, unsigned long check_interval_ms)
 {
     int completed = 0;
     perr_t ret_value = FAIL;
+    struct timeval  start_time;
+    struct timeval  end_time;
+    long long elapsed_ms;
 
     FUNC_ENTER(NULL);
 
+    gettimeofday(&start_time, 0);
+
     while (completed == 0) {
-        PDCtest(request, &completed);
-        // wait for 100ms
-        pdc_msleep(100);
+        ret_value = PDC_Client_test(request, &completed);
+        pdc_msleep(check_interval_ms);
 
 printf("==PDC_CLIENT[%d]: waiting for server to finish IO request...\n", pdc_client_mpi_rank_g);
 
+        gettimeofday(&end_time, 0);
+        elapsed_ms = ( (end_time.tv_sec-start_time.tv_sec)*1000000LL + end_time.tv_usec - start_time.tv_usec ) / 1000;
+        if (elapsed_ms > max_wait_ms) {
+printf("==PDC_CLIENT[%d]: exceeded max IO request waiting time...\n", pdc_client_mpi_rank_g);
+            break;
+        }
     }
 
-    ret_value = SUCCEED;
 done:
     FUNC_LEAVE(ret_value);
 }
 
 /* perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t *meta, struct PDC_region_info *region, void *buf) */
-perr_t PDCiwrite(pdc_metadata_t *meta, struct PDC_region_info *region, PDC_Request *request, void *buf)
+perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct PDC_region_info *region, PDC_Request *request, void *buf)
 {
     perr_t ret_value = FAIL;
 
@@ -2671,22 +2680,22 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-// PDCwrite is done using PDCiwrite and PDCwait
-perr_t PDCwrite(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf)
+// PDC_Client_write is done using PDC_Client_iwrite and PDC_Client_wait
+perr_t PDC_Client_write(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf)
 {
     PDC_Request request;
     perr_t ret_value = FAIL;
 
     FUNC_ENTER(NULL);
 
-    PDCiwrite(meta, region, &request, buf);
-    ret_value = PDCwait(&request);
+    PDC_Client_iwrite(meta, region, &request, buf);
+    ret_value = PDC_Client_wait(&request, 10000, 100);
 
 done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDCiread(pdc_metadata_t *meta, struct PDC_region_info *region, PDC_Request *request, void *buf)
+perr_t PDC_Client_iread(pdc_metadata_t *meta, struct PDC_region_info *region, PDC_Request *request, void *buf)
 {
     perr_t ret_value = FAIL;
 
@@ -2706,15 +2715,15 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDCread(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf)
+perr_t PDC_Client_read(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf)
 {
     PDC_Request request;
     perr_t ret_value = FAIL;
 
     FUNC_ENTER(NULL);
 
-    PDCiread(meta, region, &request, buf);
-    ret_value = PDCwait(&request);
+    PDC_Client_iread(meta, region, &request, buf);
+    ret_value = PDC_Client_wait(&request, 10000, 100);
 
 done:
     FUNC_LEAVE(ret_value);

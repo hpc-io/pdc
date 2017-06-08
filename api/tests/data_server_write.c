@@ -111,7 +111,7 @@ int main(int argc, const char *argv[])
 
 
     /* PDC_Client_data_server_write(0, size, metadata, &region, mydata); */
-    PDCwrite(metadata, &region, mydata);
+    PDC_Client_write(metadata, &region, mydata);
 
 
 #ifdef ENABLE_MPI

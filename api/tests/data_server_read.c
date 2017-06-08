@@ -82,7 +82,7 @@ int main(int argc, const char *argv[])
 #endif
     gettimeofday(&ht_total_start, 0);
 
-    PDCread(metadata, &region, buf);
+    PDC_Client_read(metadata, &region, buf);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);

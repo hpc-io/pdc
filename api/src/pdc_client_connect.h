@@ -350,13 +350,71 @@ perr_t PDC_Client_data_server_read_check(int server_id, int client_id, pdc_metad
  */
 perr_t PDC_Client_data_server_write_check(int server_id, int client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status);
 
+/**
+ * Client request server to check IO status of a previous IO request
+ *
+ * \param request [IN]            IO request to data server 
+ * \param completed [IN]          Will be set to 1 if request is completed, otherwise 0 
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_test(PDC_Request *request, int *completed);
 
-perr_t PDCtest(PDC_Request *request, int *completed);
-perr_t PDCwait(PDC_Request *request);
+/**
+ * Wait for a previous IO request to be completed by server, or exit after timeout
+ *
+ * \param request [IN]            IO request to data server 
+ * \param max_wait_ms[IN]         Max wait time for the check 
+ * \param check_interval_ms[IN]   Time between sending check requet to server
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_wait(PDC_Request *request, unsigned long max_wait_ms, unsigned long check_interval_ms);
 
-perr_t PDCiread(pdc_metadata_t *meta, struct PDC_region_info *region, PDC_Request *request, void *buf);
-perr_t PDCread(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf);
+/**
+ * Async request send to server to read a region and put it in users buffer
+ *
+ * \param meta [IN]              Metadata object pointer to the operating object
+ * \param region [IN]            Region within the object to be read
+ * \param request [IN]           Request structure to store the IO information 
+ * \param buf [IN]               User's buffer to store data
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_iread(pdc_metadata_t *meta, struct PDC_region_info *region, PDC_Request *request, void *buf);
 
-perr_t PDCiwrite(pdc_metadata_t *meta, struct PDC_region_info *region, PDC_Request *request, void *buf);
-perr_t PDCwrite(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf);
+/**
+ * Sync request send to server to read a region and put it in users buffer
+ *
+ * \param meta [IN]              Metadata object pointer to the operating object
+ * \param region [IN]            Region within the object to be read
+ * \param buf [IN]               User's buffer to store data
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_read(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf);
+
+/**
+ * Sync request send to server to write a region of object with users buffer
+ *
+ * \param meta [IN]              Metadata object pointer to the operating object
+ * \param region [IN]            Region within the object to be read
+ * \param request [IN]           Request structure to store the IO information 
+ * \param buf [IN]               User's data to be written to storage
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct PDC_region_info *region, PDC_Request *request, void *buf);
+
+/**
+ * Sync request send to server to write a region of object with users buffer
+ *
+ * \param meta [IN]              Metadata object pointer to the operating object
+ * \param region [IN]            Region within the object to be read
+ * \param buf [IN]               User's data to be written to storage
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_write(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf);
+
 #endif
