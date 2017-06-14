@@ -166,11 +166,15 @@ MERCURY_GEN_PROC( gen_obj_id_out_t, ((uint64_t)(ret)) )
 /* MERCURY_GEN_PROC( send_obj_name_marker_in_t, ((hg_const_string_t)(obj_name)) ((uint32_t)(hash_value)) ) */
 /* MERCURY_GEN_PROC( send_obj_name_marker_out_t, ((int32_t)(ret)) ) */
 
-MERCURY_GEN_PROC( client_test_connect_in_t,  ((int32_t)(client_id)) )
-MERCURY_GEN_PROC( client_test_connect_out_t, ((int32_t)(ret))  )
+MERCURY_GEN_PROC( client_test_connect_in_t, ((int32_t)(client_id)) ((int32_t)(nclient)) ((hg_const_string_t)(client_addr)) )
+MERCURY_GEN_PROC( client_test_connect_out_t, ((int32_t)(ret)) )
+
+MERCURY_GEN_PROC( server_lookup_client_in_t, ((int32_t)(server_id)) ((int32_t)(nserver)) ((hg_const_string_t)(server_addr)) )
+MERCURY_GEN_PROC( server_lookup_client_out_t, ((int32_t)(ret)) )
+
 
 MERCURY_GEN_PROC( close_server_in_t,  ((int32_t)(client_id)) )
-MERCURY_GEN_PROC( close_server_out_t, ((int32_t)(ret))  )
+MERCURY_GEN_PROC( close_server_out_t, ((int32_t)(ret)) )
 
 MERCURY_GEN_STRUCT_PROC( metadata_query_transfer_in_t, ((int32_t)(is_list_all)) ((int32_t)(user_id)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((int32_t)(time_step_from)) ((int32_t)(time_step_to)) ((int32_t)(ndim)) ((hg_const_string_t)(tags)) )
 /* MERCURY_GEN_STRUCT_PROC( metadata_query_transfer_in_t, ((int32_t)(user_id)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((int32_t)(time_step_from)) ((int32_t)(time_step_to)) ((int32_t)(ndim)) ((int32_t)(create_time_from)) ((int32_t)(create_time_to)) ((int32_t)(last_modified_time_from)) ((int32_t)(last_modified_time_to)) ((hg_const_string_t)(tags)) ) */
@@ -760,7 +764,20 @@ typedef struct {
 /* } send_obj_name_marker_out_t; */
 
 typedef struct {
+    int32_t server_id;
+    int32_t nserver;
+    hg_const_string_t server_addr;
+} server_lookup_client_in_t;
+
+typedef struct {
+    int32_t ret;
+} server_lookup_client_out_t;
+
+
+typedef struct {
     int32_t client_id;
+    int32_t nclient;
+    hg_const_string_t client_addr;
 } client_test_connect_in_t;
 
 typedef struct {
@@ -871,6 +888,44 @@ hg_proc_gen_obj_id_out_t(hg_proc_t proc, void *data)
 /* } */
 
 static HG_INLINE hg_return_t
+hg_proc_server_lookup_client_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    server_lookup_client_in_t *struct_data = (server_lookup_client_in_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->server_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->nserver);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->server_addr);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_server_lookup_client_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    server_lookup_client_out_t *struct_data = (server_lookup_client_out_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
+
+
+static HG_INLINE hg_return_t
 hg_proc_client_test_connect_in_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret;
@@ -879,6 +934,17 @@ hg_proc_client_test_connect_in_t(hg_proc_t proc, void *data)
     ret = hg_proc_int32_t(proc, &struct_data->client_id);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->nclient);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->client_addr);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
     }
     return ret;
 }
@@ -1111,6 +1177,7 @@ hg_id_t test_bulk_xfer_register(hg_class_t *hg_class);
 hg_id_t gen_obj_id_register(hg_class_t *hg_class);
 /* hg_id_t send_obj_name_marker_register(hg_class_t *hg_class); */
 hg_id_t client_test_connect_register(hg_class_t *hg_class);
+hg_id_t server_lookup_client_register(hg_class_t *hg_class);
 hg_id_t close_server_register(hg_class_t *hg_class);
 hg_id_t metadata_query_register(hg_class_t *hg_class);
 hg_id_t metadata_delete_register(hg_class_t *hg_class);
@@ -1144,6 +1211,7 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
 perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out);
 perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *out);
 
+perr_t PDC_get_self_addr(hg_class_t* hg_class, char* self_addr_string);
 uint32_t PDC_get_server_by_obj_id(uint64_t obj_id, int n_server);
 uint32_t PDC_get_hash_by_name(const char *name);
 int      PDC_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b);

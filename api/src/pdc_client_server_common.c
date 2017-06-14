@@ -68,6 +68,25 @@ hg_core_get_thread_work(hg_handle_t handle);
 
 #endif // End of ENABLE_MULTITHREAD
 
+perr_t PDC_get_self_addr(hg_class_t* hg_class, char* self_addr_string)
+{
+    perr_t ret_value;
+    hg_addr_t self_addr;
+    hg_size_t self_addr_string_size = ADDR_MAX;
+    
+    FUNC_ENTER(NULL);
+ 
+    // Get self addr to tell client about 
+    HG_Addr_self(hg_class, &self_addr);
+    HG_Addr_to_string(hg_class, self_addr_string, &self_addr_string_size, self_addr);
+    HG_Addr_free(hg_class, self_addr);
+
+    ret_value = SUCCEED;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 uint32_t PDC_get_server_by_obj_id(uint64_t obj_id, int n_server)
 {
     // TODO: need a smart way to deal with server number change
@@ -413,6 +432,7 @@ perr_t pdc_transfer_t_to_metadata_t(pdc_metadata_transfer_t *transfer, pdc_metad
 
 #ifndef IS_PDC_SERVER
 // Dummy function for client to compile, real function is used only by server and code is in pdc_server.c
+perr_t PDC_Server_get_client_addr(client_test_connect_in_t *in, client_test_connect_out_t *out) {return SUCCEED;}
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out) {return SUCCEED;}
 /* perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out) {return SUCCEED;} */
 perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key, pdc_metadata_t** out) {return SUCCEED;}
@@ -471,6 +491,33 @@ HG_TEST_RPC_CB(gen_obj_id, handle)
     FUNC_LEAVE(ret_value);
 }
 
+// This is for the CLIENT
+/* static hg_return_t */
+/* server_lookup_client_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(server_lookup_client, handle)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    server_lookup_client_in_t  in;
+    server_lookup_client_out_t out;
+    
+    FUNC_ENTER(NULL);
+
+    /* Get input parameters sent on origin through on HG_Forward() */
+    // Decode input
+    HG_Get_input(handle, &in);
+    out.ret = in.server_id + 1000000;
+
+    HG_Respond(handle, NULL, NULL, &out);
+    /* printf("==PDC_CLIENT: server_lookup_client(): Returned %llu\n", out.ret); */
+    /* fflush(stdout); */
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
+
 /* static hg_return_t */
 /* client_test_connect_cb(hg_handle_t handle) */
 HG_TEST_RPC_CB(client_test_connect, handle)
@@ -485,6 +532,8 @@ HG_TEST_RPC_CB(client_test_connect, handle)
     // Decode input
     HG_Get_input(handle, &in);
     out.ret = in.client_id + 100000;
+
+    PDC_Server_get_client_addr(&in, &out);
 
     HG_Respond(handle, NULL, NULL, &out);
     /* printf("==PDC_SERVER: client_test_connect(): Returned %llu\n", out.ret); */
@@ -1149,6 +1198,19 @@ gen_obj_id_register(hg_class_t *hg_class)
     FUNC_ENTER(NULL);
 
     ret_value = MERCURY_REGISTER(hg_class, "gen_obj_id", gen_obj_id_in_t, gen_obj_id_out_t, gen_obj_id_cb);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+hg_id_t
+server_lookup_client_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+
+    ret_value = MERCURY_REGISTER(hg_class, "server_lookup_client", server_lookup_client_in_t, server_lookup_client_out_t, server_lookup_client_cb);
 
 done:
     FUNC_LEAVE(ret_value);

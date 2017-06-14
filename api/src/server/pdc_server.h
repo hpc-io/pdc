@@ -20,6 +20,7 @@
 static pdc_cnt_t pdc_num_reg;
 extern hg_class_t *hg_class_g;
 
+
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out);
 /* perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out); */
 perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out);
@@ -27,6 +28,7 @@ perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key,
 perr_t PDC_Server_checkpoint(char *filename);
 perr_t PDC_Server_restart(char *filename);
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs);
+PDC_Server_get_client_addr(client_test_connect_in_t *in, client_test_connect_out_t *out);
 pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id);
 
 /* typedef struct pdc_metadata_name_mark_t { */
@@ -44,6 +46,24 @@ typedef struct pdc_hash_table_entry_head {
 /* 
  * Data server related
  */
+
+typedef struct server_lookup_args_t {
+    int   server_id;
+    int   client_id;
+    int   ret_int;
+    char  *ret_string;
+    hg_const_string_t server_addr;
+} server_lookup_args_t;
+
+typedef struct pdc_client_info_t {
+    char            addr_string[ADDR_MAX];
+    int             addr_valid;
+    hg_addr_t       addr;
+    int             server_lookup_client_handle_valid;
+    hg_handle_t     server_lookup_client_handle;
+} pdc_client_info_t;
+ 
+extern hg_thread_mutex_t pdc_client_connect_mutex_g;
 
 typedef struct pdc_data_server_io_list_t {
     uint64_t obj_id;

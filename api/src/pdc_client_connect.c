@@ -213,7 +213,7 @@ client_test_connect_rpc_cb(const struct hg_cb_info *callback_info)
     client_test_connect_out_t output;
     ret_value = HG_Get_output(handle, &output);
     /* printf("Return value=%llu\n", output.ret); */
-    client_lookup_args->client_id = output.ret;
+    client_lookup_args->ret = output.ret;
 
     work_todo_g--;
 
@@ -324,7 +324,9 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
     }
 
     // Fill input structure
-    in.client_id = client_lookup_args->client_id;
+    in.client_id   = client_lookup_args->client_id;
+    in.client_addr = client_lookup_args->client_addr;
+    in.nclient     = pdc_client_mpi_size_g;
 
     /* printf("Sending input to target\n"); */
     ret_value = HG_Forward(pdc_server_info_g[server_id].client_test_handle, client_test_connect_rpc_cb, client_lookup_args, &in);
@@ -587,6 +589,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     hg_return_t hg_ret;
     struct client_lookup_args lookup_args;
     char *target_addr_string;
+    char self_addr[ADDR_MAX];
     
     FUNC_ENTER(NULL);
 
@@ -616,6 +619,8 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     /* Create HG context */
     *hg_context = HG_Context_create(*hg_class);
 
+    PDC_get_self_addr(*hg_class, self_addr);
+
     // Register RPC
     client_test_connect_register_id_g   = client_test_connect_register(*hg_class);
     gen_obj_register_id_g               = gen_obj_id_register(*hg_class);
@@ -644,6 +649,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     for (i = 0; i < pdc_server_num_g; i++) {
         lookup_args.client_id = pdc_client_mpi_rank_g;
         lookup_args.server_id = i;
+        lookup_args.client_addr = self_addr;
         target_addr_string = pdc_server_info_g[i].addr_string;
         /* printf("==PDC_CLIENT: [%d] - Testing connection to server %d: %s\n", pdc_client_mpi_rank_g, i, target_addr_string); */
         hg_ret = HG_Addr_lookup(send_context_g, client_test_connect_lookup_cb, &lookup_args, target_addr_string, HG_OP_ID_IGNORE);
