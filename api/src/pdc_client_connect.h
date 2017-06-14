@@ -79,6 +79,7 @@ struct client_lookup_args {
     int                  client_id;
     int                  ret;
     char                *ret_string;
+    char                *client_addr;
 
     uint32_t             user_id;
     const char          *app_name;
