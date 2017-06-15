@@ -664,6 +664,8 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     gen_reg_unmap_notification_register_id_g  = gen_reg_unmap_notification_register(*hg_class);
     gen_obj_unmap_notification_register_id_g  = gen_obj_unmap_notification_register(*hg_class);
 
+    server_lookup_client_register(*hg_class);
+
     // Lookup and fill the server info
     for (i = 0; i < pdc_server_num_g; i++) {
         lookup_args.client_id = pdc_client_mpi_rank_g;
@@ -682,10 +684,15 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
         PDC_Client_check_response(&send_context_g);
     }
 
-    if (pdc_client_mpi_rank_g == 0) {
-        printf("==PDC_CLIENT: Successfully established connection to %d PDC metadata server%s\n\n\n", pdc_server_num_g, pdc_client_mpi_size_g == 1 ? "": "s");
+    /* if (pdc_client_mpi_rank_g == 0) { */
+        printf("==PDC_CLIENT[%d]: Successfully established connection to %d PDC metadata server%s\n\n\n", 
+                pdc_client_mpi_rank_g, pdc_server_num_g, pdc_client_mpi_size_g == 1 ? "": "s");
         fflush(stdout);
-    }
+    /* } */
+
+    // Wait for server to connect back
+    work_todo_g = pdc_server_num_g;
+    PDC_Client_check_response(&send_context_g);
 
 done:
     FUNC_LEAVE(ret_value);
@@ -821,7 +828,6 @@ perr_t PDC_Client_finalize()
     // Send close server request to all servers
     /* if (pdc_client_mpi_rank_g == 0) */ 
     /*     PDC_Client_close_all_server(); */
-
 
     // Finalize Mercury
     for (i = 0; i < pdc_server_num_g; i++) {

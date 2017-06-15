@@ -508,8 +508,8 @@ HG_TEST_RPC_CB(server_lookup_client, handle)
     out.ret = in.server_id + 1000000;
 
     HG_Respond(handle, NULL, NULL, &out);
-    /* printf("==PDC_CLIENT: server_lookup_client(): Returned %llu\n", out.ret); */
-    /* fflush(stdout); */
+printf("==PDC_CLIENT: server_lookup_client(): Returned %llu to server[%d]\n", out.ret, in.server_id);
+fflush(stdout);
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
@@ -517,6 +517,25 @@ HG_TEST_RPC_CB(server_lookup_client, handle)
     FUNC_LEAVE(ret_value);
 }
 
+HG_TEST_RPC_CB(client_test_connect_server_get_addr, handle)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    client_test_connect_in_t  in;
+    client_test_connect_out_t out;
+    
+    FUNC_ENTER(NULL);
+
+    /* Get input parameters sent on origin through on HG_Forward() */
+    // Decode input
+    HG_Get_input(handle, &in);
+
+    PDC_Server_get_client_addr(&in, &out);
+
+    HG_Free_input(handle, &in);
+    /* HG_Destroy(handle); */
+
+    FUNC_LEAVE(ret_value);
+}
 
 /* static hg_return_t */
 /* client_test_connect_cb(hg_handle_t handle) */
@@ -533,14 +552,16 @@ HG_TEST_RPC_CB(client_test_connect, handle)
     HG_Get_input(handle, &in);
     out.ret = in.client_id + 100000;
 
-    PDC_Server_get_client_addr(&in, &out);
 
     HG_Respond(handle, NULL, NULL, &out);
+    /* HG_Respond(handle, client_test_connect_server_get_addr_cb, NULL, &out); */
     /* printf("==PDC_SERVER: client_test_connect(): Returned %llu\n", out.ret); */
     fflush(stdout);
 
+    /* PDC_Server_get_client_addr(&in, &out); */
+
     HG_Free_input(handle, &in);
-    HG_Destroy(handle);
+    /* HG_Destroy(handle); */
 
     FUNC_LEAVE(ret_value);
 }
