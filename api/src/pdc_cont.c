@@ -78,6 +78,7 @@ static perr_t PDCcont__close(struct PDC_cont_info *cp)
 
     FUNC_ENTER(NULL);
 
+    free(cp->name);
     cp = PDC_FREE(struct PDC_cont_info, cp);
     
     FUNC_LEAVE(ret_value);

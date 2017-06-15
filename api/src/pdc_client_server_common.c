@@ -547,6 +547,8 @@ HG_TEST_RPC_CB(region_lock, handle)
                         error = 1;
                         printf("==PDC SERVER ERROR: Could not create bulk data handle\n");
                     }
+                    free(data_ptrs);
+                    free(data_size);
                     /* Pull bulk data */
                     hg_ret = HG_Bulk_transfer(hg_info->context, region_lock_bulk_transfer_cb, bulk_args, HG_BULK_PULL, elt->local_addr, origin_bulk_handle, 0, local_bulk_handle, 0, size, &hg_bulk_op_id);
                     if (hg_ret != HG_SUCCESS) {
@@ -653,6 +655,7 @@ HG_TEST_RPC_CB(gen_reg_unmap_notification, handle)
             }
             HG_Bulk_free(elt->bulk_handle);
             DL_DELETE(target_obj->region_map_head, elt);
+            free(elt);
             out.ret = 1;
         }
     }

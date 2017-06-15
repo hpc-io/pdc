@@ -147,6 +147,8 @@ static perr_t PDCprop__obj_close(struct PDC_obj_prop *cp)
         free(cp->dims);
         cp->dims = NULL;
     }
+    free(cp->app_name);
+    free(cp->tags);
     cp = PDC_FREE(struct PDC_obj_prop, cp);
     
     FUNC_LEAVE(ret_value);

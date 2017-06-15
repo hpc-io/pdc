@@ -237,7 +237,7 @@ perr_t PDC_id_list_clear(PDC_type_t type)
 
     type_ptr = (pdc_id_list_g->PDC_id_type_list_g)[type];
 
-    if(!PDC_LIST_IS_EMPTY(&type_ptr->ids)) {
+    while(!PDC_LIST_IS_EMPTY(&type_ptr->ids)) {
         struct PDC_id_info *id_ptr = (&type_ptr->ids)->head;
         if(!type_ptr->free_func || (type_ptr->free_func)((void *)id_ptr->obj_ptr) >= 0) {
             PDC_MUTEX_LOCK(type_ptr->ids);

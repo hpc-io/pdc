@@ -128,7 +128,8 @@ perr_t PDCobj__close(struct PDC_obj_info *op)
     perr_t ret_value = SUCCEED;         /* Return value */
     
     FUNC_ENTER(NULL);
-    
+   
+    free(op->name); 
     op = PDC_FREE(struct PDC_obj_info, op);
     
     FUNC_LEAVE(ret_value);
@@ -141,6 +142,9 @@ perr_t PDCregion__close(struct PDC_region_info *op)
     FUNC_ENTER(NULL);
     
     free(op->size);
+    free(op->offset);
+    if(op->obj!=NULL)
+        op->obj = PDC_FREE(struct PDC_obj_info, op->obj);
     op = PDC_FREE(struct PDC_region_info, op);
     
     FUNC_LEAVE(ret_value);

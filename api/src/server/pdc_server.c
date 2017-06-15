@@ -2176,6 +2176,8 @@ perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
             if (is_region_identical(request_region, elt) == 1) {
                 // Found the requested region lock, remove from the linked list
                 DL_DELETE(target_obj->region_lock_head, elt);
+                free(request_region);
+                free(elt);
                 out->ret = 1;
                 /* printf("released!\n"); */
                 goto done;

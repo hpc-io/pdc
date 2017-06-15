@@ -103,6 +103,7 @@ perr_t PDCclass__close(struct PDC_class *p)
     
     FUNC_ENTER(NULL);
     
+    free(p->name);
     p = PDC_FREE(struct PDC_class, p);
     
     FUNC_LEAVE(ret_value);
