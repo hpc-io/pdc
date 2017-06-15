@@ -645,6 +645,8 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     gen_reg_unmap_notification_register_id_g  = gen_reg_unmap_notification_register(*hg_class);
     gen_obj_unmap_notification_register_id_g  = gen_obj_unmap_notification_register(*hg_class);
 
+    server_lookup_client_register(*hg_class);
+
     // Lookup and fill the server info
     for (i = 0; i < pdc_server_num_g; i++) {
         lookup_args.client_id = pdc_client_mpi_rank_g;
@@ -663,10 +665,15 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
         PDC_Client_check_response(&send_context_g);
     }
 
-    if (pdc_client_mpi_rank_g == 0) {
-        printf("==PDC_CLIENT: Successfully established connection to %d PDC metadata server%s\n\n\n", pdc_server_num_g, pdc_client_mpi_size_g == 1 ? "": "s");
+    /* if (pdc_client_mpi_rank_g == 0) { */
+        printf("==PDC_CLIENT[%d]: Successfully established connection to %d PDC metadata server%s\n\n\n", 
+                pdc_client_mpi_rank_g, pdc_server_num_g, pdc_client_mpi_size_g == 1 ? "": "s");
         fflush(stdout);
-    }
+    /* } */
+
+    // Wait for server to connect back
+    work_todo_g = pdc_server_num_g;
+    PDC_Client_check_response(&send_context_g);
 
 done:
     FUNC_LEAVE(ret_value);
@@ -748,6 +755,51 @@ perr_t PDC_Client_init()
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDC_Client_destroy_all_handles(pdc_server_info_t *server_info)
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+    if (server_info->rpc_handle_valid == 1)
+        HG_Destroy(server_info->rpc_handle);
+    if (server_info->client_test_handle_valid == 1)
+        HG_Destroy(server_info->client_test_handle);
+    if (server_info->close_server_handle_valid == 1)
+        HG_Destroy(server_info->close_server_handle);
+    if (server_info->metadata_query_handle_valid == 1)
+        HG_Destroy(server_info->metadata_query_handle);
+    if (server_info->metadata_delete_handle_valid == 1)
+        HG_Destroy(server_info->metadata_delete_handle);
+    if (server_info->metadata_delete_by_id_handle_valid == 1)
+        HG_Destroy(server_info->metadata_delete_by_id_handle);
+    if (server_info->metadata_add_tag_handle_valid == 1)
+        HG_Destroy(server_info->metadata_add_tag_handle);
+    if (server_info->metadata_update_handle_valid == 1)
+        HG_Destroy(server_info->metadata_update_handle);
+    if (server_info->client_send_region_map_handle_valid == 1);
+        HG_Destroy(server_info->client_send_region_map_handle);
+    if (server_info->client_send_region_unmap_handle_valid == 1)
+        HG_Destroy(server_info->client_send_region_unmap_handle);
+    if (server_info->client_send_object_unmap_handle_valid == 1)
+        HG_Destroy(server_info->client_send_object_unmap_handle);
+    if (server_info->region_lock_handle_valid == 1)
+        HG_Destroy(server_info->region_lock_handle);
+    if (server_info->query_partial_handle_valid == 1)
+        HG_Destroy(server_info->query_partial_handle);
+    if (server_info->data_server_read_handle_valid == 1)
+        HG_Destroy(server_info->data_server_read_handle);
+    if (server_info->data_server_write_handle_valid == 1)
+        HG_Destroy(server_info->data_server_write_handle);
+    if (server_info->data_server_read_check_handle_valid == 1)
+        HG_Destroy(server_info->data_server_read_check_handle);
+    if (server_info->data_server_write_check_handle_valid == 1)
+        HG_Destroy(server_info->data_server_write_check_handle);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+
 perr_t PDC_Client_finalize()
 {
     perr_t ret_value = SUCCEED;;
@@ -759,12 +811,12 @@ perr_t PDC_Client_finalize()
     /* if (pdc_client_mpi_rank_g == 0) */ 
     /*     PDC_Client_close_all_server(); */
 
-
     // Finalize Mercury
     for (i = 0; i < pdc_server_num_g; i++) {
         if (pdc_server_info_g[i].addr_valid) {
             HG_Addr_free(send_class_g, pdc_server_info_g[i].addr);
         }
+        PDC_Client_destroy_all_handles(&pdc_server_info_g[i]);
     }
     HG_Context_destroy(send_context_g);
     HG_Finalize(send_class_g);
