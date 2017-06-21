@@ -142,8 +142,8 @@ int PDC_Client_read_server_addr_from_file()
     for (i = 0; i < pdc_server_num_g; i++) {
         pdc_server_info_g[i].addr_valid                              = 0;
         pdc_server_info_g[i].rpc_handle_valid                        = 0;
-        pdc_server_info_g[i].client_test_handle_valid    	     = 0;
-        pdc_server_info_g[i].close_server_handle_valid   	     = 0;
+        pdc_server_info_g[i].client_test_handle_valid       	     = 0;
+        pdc_server_info_g[i].close_server_handle_valid      	     = 0;
         pdc_server_info_g[i].metadata_query_handle_valid             = 0;
         pdc_server_info_g[i].metadata_delete_handle_valid            = 0;
         pdc_server_info_g[i].metadata_update_handle_valid            = 0;
@@ -199,7 +199,7 @@ client_test_connect_rpc_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered client_test_connect_rpc_cb()"); */
+    /* printf("Entered client_test_connect_rpc_cb()\n"); */
     struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
     hg_handle_t handle = callback_info->info.forward.handle;
 
@@ -226,7 +226,7 @@ client_send_object_unmap_rpc_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered client_send_object_unmap_rpc_cb"); */
+    /* printf("Entered client_send_object_unmap_rpc_cb()\n"); */
     object_unmap_args = (struct object_unmap_args*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
@@ -252,7 +252,7 @@ client_send_region_unmap_rpc_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered client_send_region_unmap_rpc_cb"); */
+    /* printf("Entered client_send_region_unmap_rpc_cb()\n"); */
     region_unmap_args = (struct region_unmap_args*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
@@ -278,7 +278,7 @@ client_send_region_map_rpc_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered client_send_region_map_rpc_cb"); */
+    /* printf("Entered client_send_region_map_rpc_cb()\n"); */
     region_map_args = (struct region_map_args*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
@@ -342,7 +342,7 @@ close_server_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered close_server_cb()"); */
+    /* printf("Entered close_server_cb()\n"); */
     client_lookup_args = (struct client_lookup_args*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
@@ -391,7 +391,7 @@ client_rpc_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered client_rpc_cb()"); */
+    /* printf("Entered client_rpc_cb()\n"); */
     client_lookup_args = (struct client_lookup_args*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
@@ -416,7 +416,7 @@ client_region_lock_rpc_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered client_region_lock_rpc_cb\n"); */
+    /* printf("Entered client_region_lock_rpc_cb()\n"); */
     client_lookup_args = (struct client_lookup_args*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
@@ -842,7 +842,7 @@ metadata_query_bulk_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered client_rpc_cb()"); */
+    /* printf("Entered metadata_query_bulk_cb()\n"); */
     client_lookup_args = (struct hg_test_bulk_args*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
@@ -1006,7 +1006,7 @@ metadata_query_rpc_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered client_rpc_cb()"); */
+    /* printf("Entered metadata_query_rpc_cb()\n"); */
     client_lookup_args = (struct metadata_query_args_t*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
@@ -1062,7 +1062,7 @@ metadata_delete_rpc_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered client_rpc_cb()"); */
+    /* printf("Entered metadata_delete_rpc_cb()\n"); */
     client_lookup_args = (struct client_lookup_args*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
@@ -1086,7 +1086,7 @@ metadata_delete_by_id_rpc_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered client_rpc_cb()"); */
+    /* printf("Entered metadata_delete_by_id_rpc_cb()\n"); */
     client_lookup_args = (struct client_lookup_args*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
@@ -1112,7 +1112,7 @@ metadata_update_rpc_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered client_rpc_cb()"); */
+    /* printf("Entered metadata_update_rpc_cb()\n"); */
     client_lookup_args = (struct client_lookup_args*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
