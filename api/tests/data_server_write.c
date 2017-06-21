@@ -15,19 +15,31 @@
 #include "pdc_client_server_common.h"
 
 void print_usage() {
-    printf("Usage: srun -n ./data_server_read \n");
+    printf("Usage: srun -n ./data_server_read size_in_bytes\n");
 }
 
 int main(int argc, const char *argv[])
 {
     int rank = 0, size = 1;
     int i;
+    int size_in_bytes;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
+
+    if (argc < 2) {
+        print_usage();
+        return 0;
+    }
+
+    size_in_bytes = atoi(argv[1]);
+
+    if (rank == 0) {
+        printf("Writing a %d bytes object with %d clients.\n", size_in_bytes, size);
+    }
 
     struct PDC_prop p;
     // create a pdc
@@ -50,10 +62,10 @@ int main(int argc, const char *argv[])
         printf("Fail to create object property @ line  %d!\n", __LINE__);
 
     pdcid_t test_obj = -1;
-    const int my_data_size = 32;
+    const int my_data_size = size_in_bytes / size;
 
-    uint64_t dims[3]={my_data_size,my_data_size*size};
-    PDCprop_set_obj_dims(obj_prop, 2, dims, pdc);
+    uint64_t dims[1]={my_data_size};
+    PDCprop_set_obj_dims(obj_prop, 1, dims, pdc);
     PDCprop_set_obj_user_id( obj_prop, getuid(),    pdc);
     PDCprop_set_obj_time_step( obj_prop, 0,    pdc);
     PDCprop_set_obj_app_name(obj_prop, "DataServerTest",  pdc);
@@ -81,22 +93,16 @@ int main(int argc, const char *argv[])
     /*     PDC_print_metadata(metadata); */
     /* } */
 
-    int ndim = 2;
+    int ndim = 1;
     region.ndim = ndim;
     region.offset = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
     region.size = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
-    region.offset[0] = 0;
-    region.offset[1] = rank * my_data_size;
+    region.offset[0] = rank * my_data_size;
     region.size[0] = my_data_size;
-    region.size[1] = my_data_size;
 
-    char mydata[my_data_size][my_data_size];
+    char *mydata = (char*)malloc(my_data_size);
     int j;
-    for (i = 0; i < my_data_size; i++) {
-        for (j = 0; j < my_data_size; j++) {
-            mydata[i][j] = 'A' + rank;
-        }
-    }
+    memset(mydata, 'A' + rank, my_data_size);
 
     /* printf("%d: writing to (%llu, %llu) of %llu bytes\n", rank, region.offset[0], region.offset[1], region.size[0]*region.size[1]); */
     struct timeval  ht_total_start;

@@ -3214,7 +3214,7 @@ perr_t PDC_Server_data_read(data_server_read_in_t *in, data_server_read_out_t *o
 
     // Check if we have received all requests 
     if (io_list_target->count >= io_list_target->total) {
-        printf("==PDC_SERVER: received all %d data requests, start reading data from [%s]\n", io_list_target->total, io_list_target->path);
+            printf("==PDC_SERVER: received all %d data requests, start reading data from [%s]\n", io_list_target->total, io_list_target->path);
 
         status = PDC_Server_data_read_real(io_list_target);
         if (status != SUCCEED) {
@@ -3256,7 +3256,7 @@ perr_t PDC_Server_data_write_real(pdc_data_server_io_list_t *io_list)
     memset(write_path, 0, ADDR_MAX);
     sprintf(write_path, "%s/s%03d.bin", io_list->path, pdc_server_rank_g); 
 
-    /* pdc_mkdir(io_list->path); */
+    pdc_mkdir(io_list->path);
 
     FILE *fp = fopen(write_path, "w");
     if (fp != NULL) {
@@ -3385,7 +3385,7 @@ perr_t PDC_Server_data_write(data_server_write_in_t *in, data_server_write_out_t
     DL_APPEND(io_list_target->region_list_head, new_region);
 
     // Check if we have received all requests 
-    if (io_list_target->count >= io_list_target->total) {
+    if (io_list_target->count == io_list_target->total) {
         printf("==PDC_SERVER: received all %d requests, start writing data to [%s]\n", io_list_target->total, io_list_target->path);
         status = PDC_Server_data_write_real(io_list_target);
         if (status != SUCCEED) {
@@ -3393,6 +3393,9 @@ perr_t PDC_Server_data_write(data_server_write_in_t *in, data_server_write_out_t
             ret_value = FAIL;
             goto done;
         }
+    }
+    else if (io_list_target->count > io_list_target->total) {
+        printf("==PDC_SERVER[%d]: received more requested than requested, curr cnt: %d!\n", pdc_server_rank_g, io_list_target->count);
     }
 
     /* if (pdc_server_rank_g == 0) { */

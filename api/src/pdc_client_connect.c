@@ -2189,7 +2189,7 @@ perr_t PDC_Client_data_server_read_check(int server_id, int client_id, pdc_metad
     FUNC_ENTER(NULL);
 
     if (server_id < 0 || server_id >= pdc_server_num_g) {
-        printf("PDC_CLIENT: PDC_Client_data_server_read_check - invalid server id\n");
+        printf("PDC_CLIENT[%d]: PDC_Client_data_server_read_check - invalid server id (%d)\n", pdc_client_mpi_rank_g, server_id);
         ret_value = FAIL;
         goto done;
     }
@@ -2316,7 +2316,7 @@ perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *
     FUNC_ENTER(NULL);
 
     if (server_id < 0 || server_id >= pdc_server_num_g) {
-        printf("PDC_CLIENT: PDC_Client_data_server_read - invalid server id\n");
+        printf("PDC_CLIENT[%d]: PDC_Client_data_server_read - invalid server id (%d)\n", pdc_client_mpi_rank_g, server_id);
         ret_value = FAIL;
         goto done;
     }
@@ -2393,7 +2393,7 @@ perr_t PDC_Client_data_server_write_check(int server_id, int client_id, pdc_meta
     FUNC_ENTER(NULL);
 
     if (server_id < 0 || server_id >= pdc_server_num_g) {
-        printf("PDC_CLIENT: PDC_Client_data_server_write_check - invalid server id\n");
+        printf("PDC_CLIENT[%d]: PDC_Client_data_server_write_check - invalid server id (%d)\n", pdc_client_mpi_rank_g, server_id);
         ret_value = FAIL;
         goto done;
     }
@@ -2478,7 +2478,7 @@ perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t 
     FUNC_ENTER(NULL);
 
     if (server_id < 0 || server_id >= pdc_server_num_g) {
-        printf("PDC_CLIENT: PDC_Client_data_server_write - invalid server id\n");
+        printf("PDC_CLIENT[%d]: PDC_Client_data_server_write - invalid server id (%d)\n", pdc_client_mpi_rank_g, server_id);
         ret_value = FAIL;
         goto done;
     }
@@ -2521,14 +2521,24 @@ perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t 
     /* printf("==PDC_CLIENT: sending data server write request to server %d\n", server_id); */
 
     // Generate a location for data storage for data server to write 
-    const char *data_path = getenv("SCRATCH");
-    if (data_path == NULL) {
-        printf("==PDC_CLIENT: cannot get $SCRATCH for data write location,  \
-                using server's current dir instead!\n");
-        data_path = ".";
+    char *data_path = NULL;
+    char *user_specified_data_path = getenv("PDC_DATA_LOC");
+    if (user_specified_data_path != NULL) {
+        data_path = user_specified_data_path;
     }
+    else {
+        data_path = getenv("SCRATCH");
+        if (data_path == NULL) {
+            data_path = ".";
+            
+        }
+    }
+
     // Data path prefix will be $SCRATCH/pdc_data/obj_id/
     sprintf(meta->data_location, "%s/pdc_data/%llu", data_path, meta->obj_id);
+
+    if (pdc_client_mpi_rank_g == 0) 
+        printf("==PDC_CLIENT: data is written to %s\n", meta->data_location);
 
     // TODO: probably need more work when multiple data servers are involved
     // Update the data location of metadata object
@@ -2666,13 +2676,14 @@ perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct PDC_region_info *region, P
 
     FUNC_ENTER(NULL);
 
-    request->server_id   = get_server_id_by_obj_id(meta->obj_id);
     // TODO: currently assuming 1 server per compute node
+    request->server_id   = pdc_client_mpi_rank_g / (pdc_client_mpi_size_g/pdc_server_num_g);
     request->n_client    = pdc_client_mpi_size_g / pdc_server_num_g;
     request->access_type = WRITE;
     request->metadata    = meta;
     request->region      = region;
     request->buf         = buf;
+/* printf("==PDC_CLIENT[%d], sending write request to server %d\n", pdc_client_mpi_rank_g, request->server_id); */
 
     ret_value = PDC_Client_data_server_write(request->server_id, request->n_client, meta, region, buf);
 
@@ -2701,7 +2712,7 @@ perr_t PDC_Client_iread(pdc_metadata_t *meta, struct PDC_region_info *region, PD
 
     FUNC_ENTER(NULL);
 
-    request->server_id   = get_server_id_by_obj_id(meta->obj_id);
+    request->server_id   = pdc_client_mpi_rank_g / (pdc_client_mpi_size_g/pdc_server_num_g);
     // TODO: currently assuming 1 server per compute node
     request->n_client    = pdc_client_mpi_size_g / pdc_server_num_g;
     request->access_type = READ;
@@ -2709,6 +2720,7 @@ perr_t PDC_Client_iread(pdc_metadata_t *meta, struct PDC_region_info *region, PD
     request->region      = region;
     request->buf         = buf;
 
+/* printf("==PDC_CLIENT[%d], sending read request to server %d\n", pdc_client_mpi_rank_g, request->server_id); */
     ret_value = PDC_Client_data_server_read(request->server_id, request->n_client, meta, region);
 
 done:
