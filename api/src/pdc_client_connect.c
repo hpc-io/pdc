@@ -150,12 +150,16 @@ int PDC_Client_read_server_addr_from_file()
     // Fill in default values
     for (i = 0; i < pdc_server_num_g; i++) {
         pdc_server_info_g[i].client_send_region_map_handle_valid = 0;
+        pdc_server_info_g[i].client_send_region_unmap_handle_valid= 0;
+        pdc_server_info_g[i].client_send_object_unmap_handle_valid = 0;
         pdc_server_info_g[i].addr_valid                          = 0;
         pdc_server_info_g[i].rpc_handle_valid                    = 0;
         pdc_server_info_g[i].client_test_handle_valid            = 0;
         pdc_server_info_g[i].close_server_handle_valid           = 0;
         pdc_server_info_g[i].metadata_query_handle_valid         = 0;
+        pdc_server_info_g[i].query_partial_handle_valid = 0;
         pdc_server_info_g[i].metadata_delete_handle_valid        = 0;
+        pdc_server_info_g[i].metadata_delete_by_id_handle_valid= 0;
         pdc_server_info_g[i].metadata_update_handle_valid        = 0;
         pdc_server_info_g[i].metadata_add_tag_handle_valid       = 0;
         pdc_server_info_g[i].region_lock_handle_valid            = 0;
@@ -217,6 +221,8 @@ client_test_connect_rpc_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
+done:
+    HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -243,6 +249,8 @@ client_send_object_unmap_rpc_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
+done:
+    HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -269,6 +277,8 @@ client_send_region_unmap_rpc_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
+done:
+    HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -295,6 +305,8 @@ client_send_region_map_rpc_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
+done:
+    HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -333,6 +345,7 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
         return EXIT_FAILURE;
     }
 
+done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -358,6 +371,8 @@ close_server_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
+done:
+    HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -408,6 +423,8 @@ client_rpc_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
+done:
+    HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -434,6 +451,8 @@ client_region_lock_rpc_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
+done:
+    HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -742,6 +761,50 @@ perr_t PDC_Client_init()
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDC_Client_destroy_all_handles(pdc_server_info_t *server_info)
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+    if (server_info->rpc_handle_valid == 1)
+        HG_Destroy(server_info->rpc_handle);
+    if (server_info->client_test_handle_valid == 1)
+        HG_Destroy(server_info->client_test_handle);
+    if (server_info->close_server_handle_valid == 1)
+        HG_Destroy(server_info->close_server_handle);
+    if (server_info->metadata_query_handle_valid == 1)
+        HG_Destroy(server_info->metadata_query_handle);
+    if (server_info->metadata_delete_handle_valid == 1)
+        HG_Destroy(server_info->metadata_delete_handle);
+    if (server_info->metadata_delete_by_id_handle_valid == 1)
+        HG_Destroy(server_info->metadata_delete_by_id_handle);
+    if (server_info->metadata_add_tag_handle_valid == 1)
+        HG_Destroy(server_info->metadata_add_tag_handle);
+    if (server_info->metadata_update_handle_valid == 1)
+        HG_Destroy(server_info->metadata_update_handle);
+    if (server_info->client_send_region_map_handle_valid == 1)
+        HG_Destroy(server_info->client_send_region_map_handle);
+    if (server_info->client_send_region_unmap_handle_valid == 1)
+        HG_Destroy(server_info->client_send_region_unmap_handle);
+    if (server_info->client_send_object_unmap_handle_valid == 1)
+        HG_Destroy(server_info->client_send_object_unmap_handle);
+    if (server_info->region_lock_handle_valid == 1)
+        HG_Destroy(server_info->region_lock_handle);
+    if (server_info->query_partial_handle_valid == 1)
+        HG_Destroy(server_info->query_partial_handle);
+    if (server_info->data_server_read_handle_valid == 1)
+        HG_Destroy(server_info->data_server_read_handle);
+    if (server_info->data_server_write_handle_valid == 1)
+        HG_Destroy(server_info->data_server_write_handle);
+    if (server_info->data_server_read_check_handle_valid == 1)
+        HG_Destroy(server_info->data_server_read_check_handle);
+    if (server_info->data_server_write_check_handle_valid == 1)
+        HG_Destroy(server_info->data_server_write_check_handle);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 perr_t PDC_Client_finalize()
 {
     perr_t ret_value = SUCCEED;;
@@ -759,6 +822,7 @@ perr_t PDC_Client_finalize()
         if (pdc_server_info_g[i].addr_valid) {
             HG_Addr_free(send_class_g, pdc_server_info_g[i].addr);
         }
+        PDC_Client_destroy_all_handles(&pdc_server_info_g[i]);
     }
     HG_Context_destroy(send_context_g);
     HG_Finalize(send_class_g);
@@ -909,6 +973,7 @@ metadata_query_bulk_cb(const struct hg_cb_info *callback_info)
 done:
     work_todo_g--;
     HG_Free_output(handle, &output);
+    HG_Destroy(handle);
 
     FUNC_LEAVE(ret_value);
 }
@@ -1083,6 +1148,8 @@ metadata_query_rpc_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
+done:
+    HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -1110,6 +1177,8 @@ metadata_delete_rpc_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
+done:
+    HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -1134,6 +1203,8 @@ metadata_delete_by_id_rpc_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
+done:
+    HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -1160,6 +1231,7 @@ metadata_add_tag_rpc_cb(const struct hg_cb_info *callback_info)
     work_todo_g--;
 
 done:
+    HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -1243,6 +1315,8 @@ metadata_update_rpc_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
+done:
+    HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -2170,6 +2244,8 @@ data_server_read_check_rpc_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
+done:
+    HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -2302,6 +2378,8 @@ data_server_read_rpc_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
+done:
+    HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -2379,6 +2457,8 @@ data_server_write_check_rpc_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
+done:
+    HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -2462,6 +2542,8 @@ data_server_write_rpc_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g--;
 
+done:
+    HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -2538,7 +2620,7 @@ perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t 
     sprintf(meta->data_location, "%s/pdc_data/%llu", data_path, meta->obj_id);
 
     if (pdc_client_mpi_rank_g == 0) 
-        printf("==PDC_CLIENT: data is written to %s\n", meta->data_location);
+        printf("==PDC_CLIENT: data will be written to %s\n", meta->data_location);
 
     // TODO: probably need more work when multiple data servers are involved
     // Update the data location of metadata object
@@ -2655,7 +2737,7 @@ perr_t PDC_Client_wait(PDC_Request *request, unsigned long max_wait_ms, unsigned
         ret_value = PDC_Client_test(request, &completed);
         pdc_msleep(check_interval_ms);
 
-printf("==PDC_CLIENT[%d]: waiting for server to finish IO request...\n", pdc_client_mpi_rank_g);
+/* printf("==PDC_CLIENT[%d]: waiting for server to finish IO request...\n", pdc_client_mpi_rank_g); */
 
         gettimeofday(&end_time, 0);
         elapsed_ms = ( (end_time.tv_sec-start_time.tv_sec)*1000000LL + end_time.tv_usec - start_time.tv_usec ) / 1000;

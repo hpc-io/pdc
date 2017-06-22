@@ -15,14 +15,14 @@
 #include "pdc_client_server_common.h"
 
 void print_usage() {
-    printf("Usage: srun -n ./data_server_read size_in_bytes\n");
+    printf("Usage: srun -n ./data_server_read obj_name size_MB\n");
 }
 
 int main(int argc, const char *argv[])
 {
     int rank = 0, size = 1;
     int i;
-    int size_in_bytes;
+    uint64_t size_MB;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -30,16 +30,18 @@ int main(int argc, const char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    if (argc < 2) {
+    if (argc < 3) {
         print_usage();
         return 0;
     }
 
-    size_in_bytes = atoi(argv[1]);
+    char *obj_name = argv[1];
+    size_MB = atoi(argv[2]);
 
     if (rank == 0) {
-        printf("Writing a %d bytes object with %d clients.\n", size_in_bytes, size);
+        printf("Writing a %d MB object [%s] with %d clients.\n", size_MB, obj_name, size);
     }
+    size_MB *= 1048576;
 
     struct PDC_prop p;
     // create a pdc
@@ -62,7 +64,7 @@ int main(int argc, const char *argv[])
         printf("Fail to create object property @ line  %d!\n", __LINE__);
 
     pdcid_t test_obj = -1;
-    const int my_data_size = size_in_bytes / size;
+    const int my_data_size = size_MB / size;
 
     uint64_t dims[1]={my_data_size};
     PDCprop_set_obj_dims(obj_prop, 1, dims, pdc);
@@ -75,7 +77,7 @@ int main(int argc, const char *argv[])
 
     // Create a object with only rank 0
     if (rank == 0) {
-        test_obj = PDCobj_create(pdc, cont, "DataServerTestBin", obj_prop);
+        test_obj = PDCobj_create(pdc, cont, obj_name, obj_prop);
         if (test_obj < 0) {
             printf("Error getting an object id of %s from server, exit...\n", "DataServerTestBin");
             exit(-1);
@@ -88,7 +90,7 @@ int main(int argc, const char *argv[])
 
     // Query the created object
     pdc_metadata_t *metadata;
-    PDC_Client_query_metadata_name_timestep( "DataServerTestBin", 0, &metadata);
+    PDC_Client_query_metadata_name_timestep( obj_name, 0, &metadata);
     /* if (rank == 1) { */
     /*     PDC_print_metadata(metadata); */
     /* } */
@@ -102,7 +104,7 @@ int main(int argc, const char *argv[])
 
     char *mydata = (char*)malloc(my_data_size);
     int j;
-    memset(mydata, 'A' + rank, my_data_size);
+    memset(mydata, 'A' + rank%26, my_data_size);
 
     /* printf("%d: writing to (%llu, %llu) of %llu bytes\n", rank, region.offset[0], region.offset[1], region.size[0]*region.size[1]); */
     struct timeval  ht_total_start;

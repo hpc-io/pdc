@@ -15,14 +15,14 @@
 #include "pdc_client_server_common.h"
 
 void print_usage() {
-    printf("Usage: srun -n ./data_server_read readsize\n");
+    printf("Usage: srun -n ./data_server_read obj_name readsize\n");
 }
 
 int main(int argc, const char *argv[])
 {
     int rank = 0, size = 1;
     int i;
-    int readsize;
+    uint64_t readsize;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -30,12 +30,13 @@ int main(int argc, const char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    if (argc < 2) {
+    if (argc < 3) {
         print_usage();
         return 0;
     }
 
-    readsize = atoi(argv[1]);
+    readsize = atoi(argv[2]);
+    readsize *= 1048567;
 
     struct PDC_prop p;
     // create a pdc
@@ -63,13 +64,13 @@ int main(int argc, const char *argv[])
     struct PDC_region_info region;
 
     pdc_metadata_t *metadata;
-    PDC_Client_query_metadata_name_timestep( "DataServerTestBin", 0, &metadata);
+    PDC_Client_query_metadata_name_timestep( argv[1], 0, &metadata);
     // Debug print
     /* if (rank == 1) { */
     /*     PDC_print_metadata(metadata); */
     /* } */
 
-    int my_readsize = readsize / size;
+    uint64_t my_readsize = readsize / size;
     int ndim = 1;
     region.ndim = ndim;
     region.offset = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
@@ -110,15 +111,15 @@ int main(int argc, const char *argv[])
     // Data verification
     /* printf("%d buf:\n%s\n", rank, (char*)buf); */
     /* printf("%d buf:\n%.10s\n", rank, (char*)buf); */
-    ((char*)buf)[region.size[0]] = 0;
-    if ( ((char*)buf)[0] != 'A' + rank) {
-        printf("Proc%d: Data correctness verification FAILED!!!\n", rank);
-    }
-    else {
-        if (rank == 0) {
-            printf("Data read successfully!\n");
-        }
-    }
+    /* ((char*)buf)[region.size[0]] = 0; */
+    /* if ( ((char*)buf)[0] != ('A' + rank%26)) { */
+    /*     printf("Proc%d: Data correctness verification FAILED '%c'(%c)!!!\n", rank, ((char*)buf)[0], 'A' + rank%26); */
+    /* } */
+    /* else { */
+    /*     if (rank == 0) { */
+    /*         printf("Data read successfully!\n"); */
+    /*     } */
+    /* } */
 
 done:
     /* free(buf); */
