@@ -1,15 +1,7 @@
 
 Required libraries
 ======
-1 CCI (has some issues, so it is optional for now)
-```sh
-    git clone https://github.com/CCI/cci && cd cci
-    ./autogen.pl
-    ./configure (on Cori add --without-verbs for successful make)
-    make && make install
-```
-
-2 BMI 
+1 BMI 
 ```sh
     git clone git://git.mcs.anl.gov/bmi && cd bmi
     # If you are building BMI on an OSX platform, then apply the following patch:
@@ -18,17 +10,7 @@ Required libraries
     make && make install
 ```
 
-
-3 OpenPA
-```sh
-    wget https://trac.mpich.org/projects/openpa/raw-attachment/wiki/Downloads/openpa-1.0.4.tar.gz
-    tar xzvf openpa-1.0.4.tar.gz && cd openpa-1.0.4 
-    ./configure --enable-shared
-    make && make install
-
-```
-
-4 Mercury 
+2 Mercury 
 ```sh
     git clone https://github.com/mercury-hpc/mercury && cd mercury
     git submodule update --init
@@ -42,27 +24,21 @@ Type 'c' multiple times and choose suitable options. Recommended options are:
     BUILD_SHARED_LIBS                ON (or OFF if the library you link
                                      against requires static libraries)
     BUILD_TESTING                    ON
-    Boost_INCLUDE_DIR                /path/to/include/directory
     CMAKE_INSTALL_PREFIX             /path/to/install/directory
-    MERCURY_ENABLE_PARALLEL_TESTING  ON
-    MERCURY_USE_BOOST_PP             ON/OFF (ON requires BOOST library)
-    MERCURY_USE_SYSTEM_MCHECKSUM     OFF
+    MERCURY_ENABLE_PARALLEL_TESTING  OFF (ON requires running on HPC compute nodes)
+    MERCURY_USE_BOOST_PP             OFF
     MERCURY_USE_XDR                  OFF
-    MERCURY_USE_OPA                  ON
+    MERCURY_USE_OPA                  OFF
     NA_USE_BMI                       ON
     NA_USE_MPI                       OFF
-    NA_USE_CCI                       OFF (OFF for now)
+    NA_USE_CCI                       OFF
     
     BMI_INCLUDE_DIR                  BMI_PATH/include
     BMI_LIBRARY                      BMI_PATH/libbmi.so  
 
-    OPA_INCLUDE_DIR                  OPENPA_PATH/include
-    OPA_LIBRARY                      OPENPA_PATH/libopa.so
-    
-    CMAKE_C_FLAGS                    add -dynamic on NERSC machines if 
-    CMAKE_CXX_FLAGS                  there is error /usr/bin/ld: attempted 
-                                     static link of dynamic object 
-                                     `../bin/libmercury_hl.so.0.8.9' )
+    CMAKE_C_FLAGS                    for both FLAGS, add -dynamic on NERSC machines 
+    CMAKE_CXX_FLAGS                  if there you see errors: "/usr/bin/ld: attempted 
+                                     static link of dynamic object `../bin/libmercury_hl.so' "
 
 
 Setting include directory and library paths may require you to toggle to
@@ -77,6 +53,25 @@ To test Mercury is successfully built, run
     make test
 
 Look for Test  #1: mercury_rpc_bmi_tcp, Test  #2: mercury_bulk_bmi_tcp, etc.
+
+
+3 OpenPA (Optional)
+```sh
+    wget https://trac.mpich.org/projects/openpa/raw-attachment/wiki/Downloads/openpa-1.0.4.tar.gz
+    tar xzvf openpa-1.0.4.tar.gz && cd openpa-1.0.4 
+    ./configure --enable-shared
+    make && make install
+
+```
+
+4 CCI (Optional)
+```sh
+    git clone https://github.com/CCI/cci && cd cci
+    ./autogen.pl
+    ./configure (on Cori add --without-verbs for successful make)
+    make && make install
+```
+
 
 Building
 ====
@@ -114,17 +109,17 @@ On NERSC machines (e.g. Edison, Cori), do the following
 ```
 Run PDC create object test
 ----
-* Set pdc temporary directory for server config file and checkpoint file (optional, if not set, the server and client will create and write/read under ./pdc_tmp)
+* Set pdc temporary directory for server config file and checkpoint file (optional, if not set, the server and clients will create and write/read under ./pdc_tmp)
 ```sh
         export PDC_TMPDIR=/path/to/the/pdc/tmp/dir
 ```
 
 * Run 4 server processes, each on one node in background:
 ```sh
-        srun -N 4 -n  4 -c 2 --gres=craynetwork:1 ./src/server/pdc_server.exe &
+        srun -N 4 -n  4 -c 2 --cpu_bind=cores --gres=craynetwork:1 ./src/server/pdc_server.exe &
 ```
 
 * Run 64 client processes that concurrently create 1000 objects in total:
 ```sh
-        srun -N 4 -n 64 -c 2 --gres=craynetwork:1 ./tests/create_obj -r 1000
+        srun -N 4 -n 64 -c 2 --cpu_bind=cores --gres=craynetwork:1 ./tests/create_obj -r 1000
 ```
