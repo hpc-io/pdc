@@ -37,8 +37,3 @@ foreach(program ${PROGRAMS})
   add_executable(${program} ${program}.c)
   target_link_libraries(${program} pdc)
 endforeach(program)
-
-#------------------------------------------------------------------------------
-# Options
-#------------------------------------------------------------------------------
-add_definitions(-DENABLE_MPI=1)
