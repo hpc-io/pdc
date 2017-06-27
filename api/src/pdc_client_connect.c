@@ -795,11 +795,7 @@ perr_t PDC_Client_destroy_all_handles(pdc_server_info_t *server_info)
         HG_Destroy(server_info->metadata_add_tag_handle);
     if (server_info->metadata_update_handle_valid == 1)
         HG_Destroy(server_info->metadata_update_handle);
-<<<<<<< HEAD
     if (server_info->client_send_region_map_handle_valid == 1)
-=======
-    if (server_info->client_send_region_map_handle_valid == 1);
->>>>>>> 1603115dbab3b28e00c4f1d53cf4caf942c981bc
         HG_Destroy(server_info->client_send_region_map_handle);
     if (server_info->client_send_region_unmap_handle_valid == 1)
         HG_Destroy(server_info->client_send_region_unmap_handle);
@@ -822,10 +818,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 1603115dbab3b28e00c4f1d53cf4caf942c981bc
 perr_t PDC_Client_finalize()
 {
     perr_t ret_value = SUCCEED;;
