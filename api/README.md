@@ -72,7 +72,7 @@ configuration screen and are ready to build the targets, do:
 
     make
     
-To test Mercury is successfuly built, run
+To test Mercury is successfully built, run
 
     make test
 
@@ -114,7 +114,7 @@ On NERSC machines (e.g. Edison, Cori), do the following
 ```
 Run PDC create object test
 ----
-* Set pdc temperorary directory for server config file and checkpoint file (optional, if not set, the server and client will create and write/read under ./pdc_tmp)
+* Set pdc temporary directory for server config file and checkpoint file (optional, if not set, the server and client will create and write/read under ./pdc_tmp)
 ```sh
         export PDC_TMPDIR=/path/to/the/pdc/tmp/dir
 ```
