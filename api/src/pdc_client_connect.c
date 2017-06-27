@@ -1242,7 +1242,7 @@ perr_t PDC_Client_add_tag(pdc_metadata_t *old, const char *tag)
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
 
-    int hash_name_value = PDC_get_hash_by_name(old->obj_name);
+    uint32_t hash_name_value = PDC_get_hash_by_name(old->obj_name);
     uint32_t server_id = (hash_name_value + old->time_step);
     server_id %= pdc_server_num_g;
 
@@ -2559,6 +2559,8 @@ perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t 
     
     FUNC_ENTER(NULL);
 
+printf("PDC_CLIENT[%d]: PDC_Client_data_server_write - invalid server id (%d)\n", pdc_client_mpi_rank_g, server_id);
+
     if (server_id < 0 || server_id >= pdc_server_num_g) {
         printf("PDC_CLIENT[%d]: PDC_Client_data_server_write - invalid server id (%d)\n", pdc_client_mpi_rank_g, server_id);
         ret_value = FAIL;
@@ -2782,7 +2784,7 @@ perr_t PDC_Client_write(pdc_metadata_t *meta, struct PDC_region_info *region, vo
     FUNC_ENTER(NULL);
 
     PDC_Client_iwrite(meta, region, &request, buf);
-    ret_value = PDC_Client_wait(&request, 10000, 100);
+    ret_value = PDC_Client_wait(&request, 600000, 100);
 
 done:
     FUNC_LEAVE(ret_value);

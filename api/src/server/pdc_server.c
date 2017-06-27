@@ -2052,18 +2052,20 @@ static perr_t PDC_Server_loop(hg_class_t *hg_class, hg_context_t *hg_context)
         actual_count = 0;
         do {
             /* hg_ret = HG_Trigger(hg_context, 1024/1* timeout *1/, 4096/1* max count *1/, &actual_count); */
+/* printf("==PDC_SERVER[%d]: before HG_Trigger()\n", pdc_server_rank_g); */
+/* fflush(stdout); */
             hg_ret = HG_Trigger(hg_context, 0/* timeout */, 1 /* max count */, &actual_count);
+/* printf("==PDC_SERVER[%d]: after HG_Trigger()\n", pdc_server_rank_g); */
+/* fflush(stdout); */
         } while ((hg_ret == HG_SUCCESS) && actual_count);
 
         /* Do not try to make progress anymore if we're done */
         if (hg_atomic_cas32(&close_server_g, 1, 1)) break;
-        /* if (hg_atomic_get32(&close_server_g)) { */
-        /*     /1* printf("\n==PDC_SERVER[%d]: Close server request received\n", pdc_server_rank_g); *1/ */
-            /* fflush(stdout); */
-        /*     ret_value = SUCCEED; */
-        /*     goto done; */
-        /* } */
+/* printf("==PDC_SERVER[%d]: before HG_Progress()\n", pdc_server_rank_g); */
+/* fflush(stdout); */
         hg_ret = HG_Progress(hg_context, HG_MAX_IDLE_TIME);
+/* printf("==PDC_SERVER[%d]: after HG_Progress()\n", pdc_server_rank_g); */
+/* fflush(stdout); */
 
     } while (hg_ret == HG_SUCCESS);
 
@@ -3361,7 +3363,7 @@ perr_t PDC_Server_data_write(data_server_write_in_t *in, data_server_write_out_t
 
     // Insert current request to the region list
     io_list_target->count++;
-    /* printf("==PDC_SERVER: received %d/%d data write requests of [%s]\n", io_list_target->count, io_list_target->total, meta.obj_name); */
+    printf("==PDC_SERVER[%d]: received %d/%d data write requests of [%s]\n", pdc_server_rank_g, io_list_target->count, io_list_target->total, meta.obj_name);
 
     // insert current request region to it 
     region_list_t *new_region = (region_list_t*)malloc(sizeof(region_list_t));

@@ -576,7 +576,7 @@ HG_TEST_RPC_CB(metadata_query, handle)
     /* printf("==PDC_SERVER: metadata_query_cb(): Returned obj_name=%s, obj_id=%llu\n", out.ret.obj_name, out.ret.obj_id); */
     /* fflush(stdout); */
 
-//    HG_Free_input(handle, &in);
+    HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
     FUNC_LEAVE(ret_value);
