@@ -421,7 +421,7 @@ client_rpc_cb(const struct hg_cb_info *callback_info)
     /* Get output from server*/
     ret_value = HG_Get_output(handle, &output);
     /* printf("Return value=%llu\n", output.ret); */
-    client_lookup_args->obj_id = output.ret;
+    client_lookup_args->obj_id = output.obj_id;
 
     work_todo_g--;
 
@@ -684,15 +684,15 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
         PDC_Client_check_response(&send_context_g);
     }
 
-    /* if (pdc_client_mpi_rank_g == 0) { */
+    if (pdc_client_mpi_rank_g == 0) {
         printf("==PDC_CLIENT[%d]: Successfully established connection to %d PDC metadata server%s\n\n\n", 
                 pdc_client_mpi_rank_g, pdc_server_num_g, pdc_client_mpi_size_g == 1 ? "": "s");
         fflush(stdout);
-    /* } */
+    }
 
     // Wait for server to connect back
-    work_todo_g = pdc_server_num_g;
-    PDC_Client_check_response(&send_context_g);
+    /* work_todo_g = pdc_server_num_g; */
+    /* PDC_Client_check_response(&send_context_g); */
 
 done:
     FUNC_LEAVE(ret_value);
@@ -1774,9 +1774,11 @@ perr_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *ob
     PDC_Client_check_response(&send_context_g);
 
     // Now we have obj id stored in lookup_args.obj_id
-    /* if (lookup_args.obj_id == -1) { */
-    /*     printf("==PDC_CLIENT: Have not obtained valid obj id from PDC server!\n"); */
-    /* } */
+    if (lookup_args.obj_id == 0) {
+        ret_value = FAIL;
+        *meta_id = 0;
+        goto done;
+    }
 
     /* printf("Received obj_id=%llu\n", lookup_args.obj_id); */
     /* fflush(stdout); */

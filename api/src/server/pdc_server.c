@@ -353,8 +353,8 @@ printf("==PDC_SERVER: [%d] - Testing connection to client %d: %s\n", i, pdc_serv
         }
 
         // Wait for response from server
-        work_todo_g = 1;
-        PDC_Server_check_response(&hg_connect_client_context_g);
+        /* work_todo_g = 1; */
+        /* PDC_Server_check_response(&hg_connect_client_context_g); */
     }
 
 done:
@@ -410,10 +410,10 @@ perr_t PDC_Server_get_client_addr(client_test_connect_in_t *in, client_test_conn
     strcpy(pdc_client_info_g[in->client_id].addr_string, in->client_addr);
     /* printf("==PDC_SERVER: got client addr: %s from client[%d]\n", pdc_client_info_g[in->client_id].addr_string, in->client_id); */
 
-    if (pdc_client_num_g >= in->nclient) {
-printf("==PDC_SERVER[%d]: got the last connection request from client[%d]\n", pdc_server_rank_g, in->client_id);
-        ret_value = PDC_Server_lookup_client();
-    }
+    /* if (pdc_client_num_g >= in->nclient) { */
+/* printf("==PDC_SERVER[%d]: got the last connection request from client[%d]\n", pdc_server_rank_g, in->client_id); */
+    /*     /1* ret_value = PDC_Server_lookup_client(); *1/ */
+    /* } */
 #ifdef ENABLE_MULTITHREAD 
         hg_thread_mutex_lock(&pdc_client_addr_metex_g);
 #endif
@@ -1546,7 +1546,7 @@ done:
 
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
 {
-    perr_t ret_value;
+    perr_t ret_value = SUCCEED;
     pdc_metadata_t *metadata;
     uint32_t *hash_key;
     
@@ -1630,13 +1630,12 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
             /* found_identical = NULL; */
             found_identical = find_identical_metadata(lookup_value, metadata);
             if ( found_identical != NULL) {
+                printf("==PDC_SERVER[%d]: Found identical metadata with name %s!\n", pdc_server_rank_g, metadata->obj_name);
                 if (debug_flag == 1) {
-                    printf("Found identical metadata!\n");
                     /* PDC_print_metadata(metadata); */
                     /* PDC_print_metadata(found_identical); */
                 }
-                ret_value = -1;
-                out->ret  = -1;
+                out->obj_id = 0;
                 free(metadata);
                 goto done;
             }
@@ -1665,7 +1664,6 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     }
     else {
         printf("metadata_hash_table_g not initilized!\n");
-        ret_value = -1;
         goto done;
     }
 
@@ -1689,7 +1687,7 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
 
 
     // Fill $out structure for returning the generated obj_id to client
-    out->ret = metadata->obj_id;
+    out->obj_id = metadata->obj_id;
 
     // Debug print metadata info
     /* PDC_print_metadata(metadata); */
@@ -3090,8 +3088,8 @@ perr_t PDC_Server_delete_shm(region_list_t *region)
 
 perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_check_out_t *out)
 {
-    perr_t ret_value = FAIL;
-    perr_t status    = FAIL;
+    perr_t ret_value = SUCCEED;
+    perr_t status    = SUCCEED;
    
     FUNC_ENTER(NULL);
 
@@ -3126,7 +3124,6 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
         printf("==PDC_SERVER: No existing io request with same obj_id found, create a new one!\n");
         out->ret = -1;
         out->shm_addr = " ";
-        ret_value = SUCCEED;
         goto done;
     }
 
@@ -3140,7 +3137,6 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
                 found_region = 1;
                 out->ret = r_elt->is_data_ready;
                 out->shm_addr = r_elt->shm_addr;
-                ret_value = SUCCEED;
                 goto done;
             }
         }
@@ -3150,16 +3146,11 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
         printf("==PDC_SERVER: No existing io request with same region found!\n");
         out->ret = -1;
         out->shm_addr = " ";
-        ret_value = SUCCEED;
         goto done;
     }
 
-
-    // Iterate the region list 
-    ret_value = SUCCEED;
-
     // TODO remove the item in pdc_data_server_read_list_head_g after the request is fulfilled
-    //      at object close? time
+    //      at object close time?
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -3340,7 +3331,7 @@ done:
 } //PDC_Server_data_read_real
 
 
-perr_t PDC_Server_data_read(data_server_read_in_t *in, data_server_read_out_t *out)
+perr_t PDC_Server_data_read(data_server_read_in_t *in)
 {
     perr_t ret_value = FAIL;
     perr_t status    = FAIL;
@@ -3511,7 +3502,7 @@ done:
 } //PDC_Server_data_write_real
 
 
-perr_t PDC_Server_data_write(data_server_write_in_t *in, data_server_write_out_t *out)
+perr_t PDC_Server_data_write(data_server_write_in_t *in)
 {
     perr_t ret_value = FAIL;
     perr_t status    = FAIL;

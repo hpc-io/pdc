@@ -166,6 +166,9 @@ int main(int argc, const char *argv[])
         /* if (count < 4) { */
         /*     printf("Proc %d Name: %s\n", rank, obj_name); */
         /* } */
+        if (count < 20) {
+            printf("[%d] create obj with name %s\n", rank, obj_name);
+        }
         test_obj = PDCobj_create(pdc, cont, obj_name, obj_prop);
         if (test_obj < 0) { 
             printf("Error getting an object id of %s from server, exit...\n", obj_name);

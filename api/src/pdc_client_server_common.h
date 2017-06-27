@@ -161,7 +161,7 @@ typedef struct metadata_query_transfer_in_t{
 MERCURY_GEN_STRUCT_PROC( pdc_metadata_transfer_t, ((int32_t)(user_id)) ((int32_t)(time_step)) ((uint64_t)(obj_id)) ((int32_t)(ndim)) ((int32_t)(dims0)) ((int32_t)(dims1)) ((int32_t)(dims2)) ((int32_t)(dims3)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((hg_const_string_t)(data_location)) ((hg_const_string_t)(tags)) )
 
 MERCURY_GEN_PROC( gen_obj_id_in_t, ((pdc_metadata_transfer_t)(data)) ((uint32_t)(hash_value)) )
-MERCURY_GEN_PROC( gen_obj_id_out_t, ((uint64_t)(ret)) )
+MERCURY_GEN_PROC( gen_obj_id_out_t, ((uint64_t)(obj_id)) )
 
 /* MERCURY_GEN_PROC( send_obj_name_marker_in_t, ((hg_const_string_t)(obj_name)) ((uint32_t)(hash_value)) ) */
 /* MERCURY_GEN_PROC( send_obj_name_marker_out_t, ((int32_t)(ret)) ) */
@@ -750,7 +750,7 @@ typedef struct {
 } gen_obj_id_in_t;
 
 typedef struct {
-    uint64_t ret;
+    uint64_t obj_id;
 } gen_obj_id_out_t;
 
 
@@ -850,7 +850,7 @@ hg_proc_gen_obj_id_out_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     gen_obj_id_out_t *struct_data = (gen_obj_id_out_t*) data;
 
-    ret = hg_proc_uint64_t(proc, &struct_data->ret);
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
     }

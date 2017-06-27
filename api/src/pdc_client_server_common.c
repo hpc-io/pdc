@@ -448,8 +448,8 @@ hg_class_t *hg_class_g;
 /* 
  * Data server related
  */
-perr_t PDC_Server_data_read(data_server_read_in_t *in, data_server_read_out_t *out) {return SUCCEED;}
-perr_t PDC_Server_data_write(data_server_write_in_t *in, data_server_write_out_t *out) {return SUCCEED;}
+perr_t PDC_Server_data_read(data_server_read_in_t *in) {return SUCCEED;}
+perr_t PDC_Server_data_write(data_server_write_in_t *in) {return SUCCEED;}
 perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_check_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_write_check_out_t *out) {return SUCCEED;}
 
@@ -467,7 +467,7 @@ perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_writ
 /* gen_obj_id_cb(hg_handle_t handle) */
 HG_TEST_RPC_CB(gen_obj_id, handle)
 {
-    hg_return_t ret_value = HG_SUCCESS;
+    perr_t ret_value = SUCCEED;
     
     FUNC_ENTER(NULL);
 
@@ -477,10 +477,9 @@ HG_TEST_RPC_CB(gen_obj_id, handle)
     gen_obj_id_out_t out;
 
     HG_Get_input(handle, &in);
-    int ret;
 
     // Insert to hash table
-    ret = insert_metadata_to_hash_table(&in, &out);
+    ret_value = insert_metadata_to_hash_table(&in, &out);
 
     HG_Respond(handle, NULL, NULL, &out);
     /* printf("==PDC_SERVER: gen_obj_id_cb(): returned %llu\n", out.ret); */
@@ -525,14 +524,12 @@ HG_TEST_RPC_CB(client_test_connect_server_get_addr, handle)
     
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
-    // Decode input
     HG_Get_input(handle, &in);
 
     PDC_Server_get_client_addr(&in, &out);
 
     HG_Free_input(handle, &in);
-    /* HG_Destroy(handle); */
+    HG_Destroy(handle);
 
     FUNC_LEAVE(ret_value);
 }
@@ -552,16 +549,15 @@ HG_TEST_RPC_CB(client_test_connect, handle)
     HG_Get_input(handle, &in);
     out.ret = in.client_id + 100000;
 
-
     HG_Respond(handle, NULL, NULL, &out);
     /* HG_Respond(handle, client_test_connect_server_get_addr_cb, NULL, &out); */
     /* printf("==PDC_SERVER: client_test_connect(): Returned %llu\n", out.ret); */
-    fflush(stdout);
+    /* fflush(stdout); */
 
-    /* PDC_Server_get_client_addr(&in, &out); */
+    PDC_Server_get_client_addr(&in, &out);
 
     HG_Free_input(handle, &in);
-    /* HG_Destroy(handle); */
+    HG_Destroy(handle);
 
     FUNC_LEAVE(ret_value);
 }
@@ -1416,7 +1412,7 @@ HG_TEST_RPC_CB(data_server_read, handle)
     HG_Get_input(handle, &in);
     /* printf("==PDC_SERVER: Got data server read request from client %d\n", in.client_id); */
 
-    out.ret = PDC_Server_data_read(&in, &out);
+    out.ret = PDC_Server_data_read(&in);
 
     HG_Respond(handle, NULL, NULL, &out);
 
@@ -1460,7 +1456,7 @@ HG_TEST_RPC_CB(data_server_write, handle)
     HG_Get_input(handle, &in);
     /* printf("==PDC_SERVER: Got data server write request from client %d\n", in.client_id); */
 
-    out.ret = PDC_Server_data_write(&in, &out);
+    out.ret = PDC_Server_data_write(&in);
 
     HG_Respond(handle, NULL, NULL, &out);
 
