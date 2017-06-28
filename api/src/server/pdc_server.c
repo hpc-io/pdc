@@ -3411,7 +3411,7 @@ perr_t PDC_Server_data_read(data_server_read_in_t *in)
 
     // Check if we have received all requests 
     if (io_list_target->count >= io_list_target->total) {
-            printf("==PDC_SERVER: received all %d data requests, start reading data from [%s]\n", io_list_target->total, io_list_target->path);
+            printf("==PDC_SERVER[%d]: received all %d data requests, start reading data from [%s]\n", pdc_server_rank_g, io_list_target->total, io_list_target->path);
 
         status = PDC_Server_data_read_real(io_list_target);
         if (status != SUCCEED) {
@@ -3558,7 +3558,7 @@ perr_t PDC_Server_data_write(data_server_write_in_t *in)
 
     // Insert current request to the region list
     io_list_target->count++;
-    printf("==PDC_SERVER[%d]: received %d/%d data write requests of [%s]\n", pdc_server_rank_g, io_list_target->count, io_list_target->total, meta.obj_name);
+    /* printf("==PDC_SERVER[%d]: received %d/%d data write requests of [%s]\n", pdc_server_rank_g, io_list_target->count, io_list_target->total, meta.obj_name); */
 
     // insert current request region to it 
     region_list_t *new_region = (region_list_t*)malloc(sizeof(region_list_t));
@@ -3583,7 +3583,7 @@ perr_t PDC_Server_data_write(data_server_write_in_t *in)
 
     // Check if we have received all requests 
     if (io_list_target->count == io_list_target->total) {
-        printf("==PDC_SERVER: received all %d requests, start writing data to [%s]\n", io_list_target->total, io_list_target->path);
+        printf("==PDC_SERVER[%d]: received all %d requests, start writing data to [%s]\n", pdc_server_rank_g, io_list_target->total, io_list_target->path);
         status = PDC_Server_data_write_real(io_list_target);
         if (status != SUCCEED) {
             printf("==PDC_SERVER: ERROR writing data to file [%s]!\n", io_list_target->path);

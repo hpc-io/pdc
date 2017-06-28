@@ -2279,7 +2279,7 @@ perr_t PDC_Client_data_server_read_check(int server_id, int client_id, pdc_metad
     FUNC_ENTER(NULL);
 
     if (server_id < 0 || server_id >= pdc_server_num_g) {
-        printf("PDC_CLIENT[%d]: PDC_Client_data_server_read_check - invalid server id (%d)\n", pdc_client_mpi_rank_g, server_id);
+        printf("PDC_CLIENT[%d]: PDC_Client_data_server_read_check - invalid server id %d/%d\n", pdc_client_mpi_rank_g, server_id, pdc_server_num_g);
         ret_value = FAIL;
         goto done;
     }
@@ -2408,7 +2408,7 @@ perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *
     FUNC_ENTER(NULL);
 
     if (server_id < 0 || server_id >= pdc_server_num_g) {
-        printf("PDC_CLIENT[%d]: PDC_Client_data_server_read - invalid server id (%d)\n", pdc_client_mpi_rank_g, server_id);
+        printf("PDC_CLIENT[%d]: PDC_Client_data_server_read - invalid server id %d/%d\n", pdc_client_mpi_rank_g, server_id, pdc_server_num_g);
         ret_value = FAIL;
         goto done;
     }
@@ -2487,7 +2487,7 @@ perr_t PDC_Client_data_server_write_check(int server_id, int client_id, pdc_meta
     FUNC_ENTER(NULL);
 
     if (server_id < 0 || server_id >= pdc_server_num_g) {
-        printf("PDC_CLIENT[%d]: PDC_Client_data_server_write_check - invalid server id (%d)\n", pdc_client_mpi_rank_g, server_id);
+        printf("PDC_CLIENT[%d]: PDC_Client_data_server_write_check - invalid server id %d/%d\n", pdc_client_mpi_rank_g, server_id, pdc_server_num_g);
         ret_value = FAIL;
         goto done;
     }
@@ -2573,10 +2573,9 @@ perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t 
     
     FUNC_ENTER(NULL);
 
-printf("PDC_CLIENT[%d]: PDC_Client_data_server_write - invalid server id (%d)\n", pdc_client_mpi_rank_g, server_id);
 
     if (server_id < 0 || server_id >= pdc_server_num_g) {
-        printf("PDC_CLIENT[%d]: PDC_Client_data_server_write - invalid server id (%d)\n", pdc_client_mpi_rank_g, server_id);
+        printf("PDC_CLIENT[%d]: PDC_Client_data_server_write - invalid server id %d/%d\n", pdc_client_mpi_rank_g, server_id, pdc_server_num_g);
         ret_value = FAIL;
         goto done;
     }
