@@ -432,7 +432,7 @@ perr_t pdc_transfer_t_to_metadata_t(pdc_metadata_transfer_t *transfer, pdc_metad
 
 #ifndef IS_PDC_SERVER
 // Dummy function for client to compile, real function is used only by server and code is in pdc_server.c
-perr_t PDC_Server_get_client_addr(client_test_connect_in_t *in, client_test_connect_out_t *out) {return SUCCEED;}
+perr_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info) {return SUCCEED;}
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out) {return SUCCEED;}
 /* perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out) {return SUCCEED;} */
 perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key, pdc_metadata_t** out) {return SUCCEED;}
@@ -507,26 +507,9 @@ HG_TEST_RPC_CB(server_lookup_client, handle)
     out.ret = in.server_id + 1000000;
 
     HG_Respond(handle, NULL, NULL, &out);
-printf("==PDC_CLIENT: server_lookup_client(): Returned %llu to server[%d]\n", out.ret, in.server_id);
-fflush(stdout);
 
-    HG_Free_input(handle, &in);
-    HG_Destroy(handle);
-
-    FUNC_LEAVE(ret_value);
-}
-
-HG_TEST_RPC_CB(client_test_connect_server_get_addr, handle)
-{
-    hg_return_t ret_value = HG_SUCCESS;
-    client_test_connect_in_t  in;
-    client_test_connect_out_t out;
-    
-    FUNC_ENTER(NULL);
-
-    HG_Get_input(handle, &in);
-
-    PDC_Server_get_client_addr(&in, &out);
+    /* printf("==PDC_CLIENT: server_lookup_client_cb(): Responded with %llu to server[%d]\n", out.ret, in.server_id); */
+    /* fflush(stdout); */
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
@@ -538,9 +521,11 @@ HG_TEST_RPC_CB(client_test_connect_server_get_addr, handle)
 /* client_test_connect_cb(hg_handle_t handle) */
 HG_TEST_RPC_CB(client_test_connect, handle)
 {
+    // SERVER EXEC
     hg_return_t ret_value = HG_SUCCESS;
     client_test_connect_in_t  in;
     client_test_connect_out_t out;
+    client_test_connect_args *args = (client_test_connect_args*)malloc(sizeof(client_test_connect_args));
     
     FUNC_ENTER(NULL);
 
@@ -549,12 +534,19 @@ HG_TEST_RPC_CB(client_test_connect, handle)
     HG_Get_input(handle, &in);
     out.ret = in.client_id + 100000;
 
-    HG_Respond(handle, NULL, NULL, &out);
-    /* HG_Respond(handle, client_test_connect_server_get_addr_cb, NULL, &out); */
+    args->client_id = in.client_id;
+    args->nclient   = in.nclient;
+    sprintf(args->client_addr, in.client_addr);
+
+    /* HG_Respond(handle, NULL, NULL, &out); */
+    HG_Respond(handle, PDC_Server_get_client_addr, args, &out);
     /* printf("==PDC_SERVER: client_test_connect(): Returned %llu\n", out.ret); */
     /* fflush(stdout); */
 
-    PDC_Server_get_client_addr(&in, &out);
+    /* PDC_Server_get_client_addr(&in, &out); */
+
+    /* printf("==PDC_SERVER: finished PDC_Server_get_client_addr()\n"); */
+    /* fflush(stdout); */
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
@@ -731,6 +723,32 @@ HG_TEST_RPC_CB(metadata_add_tag, handle)
 done:
     FUNC_LEAVE(ret_value);
 }
+
+/* static hg_return_t */
+// notify_io_complete_cb(hg_handle_t handle)
+HG_TEST_RPC_CB(notify_io_complete, handle)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    notify_io_complete_in_t  in;
+    notify_io_complete_out_t out;
+    
+    FUNC_ENTER(NULL);
+
+    /* Get input parameters sent on origin through on HG_Forward() */
+    // Decode input
+    HG_Get_input(handle, &in);
+    printf("==PDC_CLIENT: Got IO complete notification: obj_id=%llu\n", in.obj_id);
+
+    out.ret = 1;
+    HG_Respond(handle, NULL, NULL, &out);
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 
 /* static hg_return_t */
 // metadata_update_cb(hg_handle_t handle)
@@ -1200,6 +1218,7 @@ HG_TEST_THREAD_CB(metadata_query)
 HG_TEST_THREAD_CB(metadata_delete)
 HG_TEST_THREAD_CB(metadata_delete_by_id)
 HG_TEST_THREAD_CB(metadata_update)
+HG_TEST_THREAD_CB(notify_io_complete)
 HG_TEST_THREAD_CB(close_server)
 HG_TEST_THREAD_CB(gen_reg_map_notification)
 HG_TEST_THREAD_CB(gen_reg_unmap_notification)
@@ -1241,6 +1260,19 @@ client_test_connect_register(hg_class_t *hg_class)
     FUNC_ENTER(NULL);
 
     ret_value = MERCURY_REGISTER(hg_class, "client_test_connect", client_test_connect_in_t, client_test_connect_out_t, client_test_connect_cb);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+hg_id_t
+notify_io_complete_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+
+    ret_value = MERCURY_REGISTER(hg_class, "notify_io_complete", notify_io_complete_in_t, notify_io_complete_out_t, notify_io_complete_cb);
 
 done:
     FUNC_LEAVE(ret_value);

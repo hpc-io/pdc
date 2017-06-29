@@ -28,7 +28,7 @@ perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key,
 perr_t PDC_Server_checkpoint(char *filename);
 perr_t PDC_Server_restart(char *filename);
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs);
-PDC_Server_get_client_addr(client_test_connect_in_t *in, client_test_connect_out_t *out);
+perr_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info);
 pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id);
 
 /* typedef struct pdc_metadata_name_mark_t { */
@@ -61,6 +61,8 @@ typedef struct pdc_client_info_t {
     hg_addr_t       addr;
     int             server_lookup_client_handle_valid;
     hg_handle_t     server_lookup_client_handle;
+    int             notify_io_complete_handle_valid;
+    hg_handle_t     notify_io_complete_handle;
 } pdc_client_info_t;
  
 extern hg_thread_mutex_t pdc_client_connect_mutex_g;

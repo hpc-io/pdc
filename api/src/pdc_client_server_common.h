@@ -156,6 +156,11 @@ typedef struct metadata_query_transfer_in_t{
     const char    *tags;
 } metadata_query_transfer_in_t;
 
+typedef struct {
+    int32_t client_id;
+    int32_t nclient;
+    char client_addr[ADDR_MAX];
+} client_test_connect_args;
 
 #ifdef HG_HAS_BOOST
 MERCURY_GEN_STRUCT_PROC( pdc_metadata_transfer_t, ((int32_t)(user_id)) ((int32_t)(time_step)) ((uint64_t)(obj_id)) ((int32_t)(ndim)) ((int32_t)(dims0)) ((int32_t)(dims1)) ((int32_t)(dims2)) ((int32_t)(dims3)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((hg_const_string_t)(data_location)) ((hg_const_string_t)(tags)) )
@@ -172,6 +177,8 @@ MERCURY_GEN_PROC( client_test_connect_out_t, ((int32_t)(ret)) )
 MERCURY_GEN_PROC( server_lookup_client_in_t, ((int32_t)(server_id)) ((int32_t)(nserver)) ((hg_const_string_t)(server_addr)) )
 MERCURY_GEN_PROC( server_lookup_client_out_t, ((int32_t)(ret)) )
 
+MERCURY_GEN_PROC( notify_io_complete_in_t,  ((uint64_t)(obj_id)) )
+MERCURY_GEN_PROC( notify_io_complete_out_t, ((int32_t)(ret)) )
 
 MERCURY_GEN_PROC( close_server_in_t,  ((int32_t)(client_id)) )
 MERCURY_GEN_PROC( close_server_out_t, ((int32_t)(ret)) )
@@ -784,6 +791,17 @@ typedef struct {
     int32_t ret;
 } client_test_connect_out_t;
 
+/* MERCURY_GEN_PROC( notify_io_complete_in_t,  ((uint64_t)(obj_id)) ) */
+/* MERCURY_GEN_PROC( notify_io_complete_out_t, ((int32_t)(ret)) ) */
+
+typedef struct {
+    uint64_t obj_id;
+} notify_io_complete_in_t;
+
+typedef struct {
+    int32_t ret;
+} notify_io_complete_out_t;
+
 typedef struct {
     int32_t client_id;
 } close_server_in_t;
@@ -961,6 +979,33 @@ hg_proc_client_test_connect_out_t(hg_proc_t proc, void *data)
     }
     return ret;
 }
+
+static HG_INLINE hg_return_t
+hg_proc_notify_io_complete_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    notify_io_complete_in_t *struct_data = (notify_io_complete_in_t*) data;
+
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_notify_io_complete_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    notify_io_complete_out_t *struct_data = (notify_io_complete_out_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
+
 
 static HG_INLINE hg_return_t
 hg_proc_close_server_in_t(hg_proc_t proc, void *data)

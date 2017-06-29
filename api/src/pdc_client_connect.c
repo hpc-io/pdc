@@ -469,7 +469,7 @@ perr_t PDC_Client_check_response(hg_context_t **hg_context)
     FUNC_ENTER(NULL);
 
     do {
-        actual_count = 0;
+        if (work_todo_g <= 0)  break;
         do {
             hg_ret = HG_Trigger(*hg_context, 0/* timeout */, 1 /* max count */, &actual_count);
         } while ((hg_ret == HG_SUCCESS) && actual_count);
@@ -641,30 +641,31 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     PDC_get_self_addr(*hg_class, self_addr);
 
     // Register RPC
-    client_test_connect_register_id_g   = client_test_connect_register(*hg_class);
-    gen_obj_register_id_g               = gen_obj_id_register(*hg_class);
-    close_server_register_id_g          = close_server_register(*hg_class);
-    /* send_obj_name_marker_register_id_g  = send_obj_name_marker_register(*hg_class); */
-    metadata_query_register_id_g        = metadata_query_register(*hg_class);
-    metadata_delete_register_id_g       = metadata_delete_register(*hg_class);
-    metadata_delete_by_id_register_id_g = metadata_delete_by_id_register(*hg_class);
-    metadata_update_register_id_g       = metadata_update_register(*hg_class);
-    metadata_add_tag_register_id_g      = metadata_add_tag_register(*hg_class);
-    region_lock_register_id_g           = region_lock_register(*hg_class);
-    data_server_read_register_id_g      = data_server_read_register(*hg_class);
-    data_server_read_check_register_id_g  = data_server_read_check_register(*hg_class);
-    data_server_write_check_register_id_g  = data_server_write_check_register(*hg_class);
-    data_server_write_register_id_g     = data_server_write_register(*hg_class);
+    client_test_connect_register_id_g         = client_test_connect_register(*hg_class);
+    gen_obj_register_id_g                     = gen_obj_id_register(*hg_class);
+    close_server_register_id_g                = close_server_register(*hg_class);
+    /* send_obj_name_marker_register_id_g       = send_obj_name_marker_register(*hg_class); */
+    metadata_query_register_id_g              = metadata_query_register(*hg_class);
+    metadata_delete_register_id_g             = metadata_delete_register(*hg_class);
+    metadata_delete_by_id_register_id_g       = metadata_delete_by_id_register(*hg_class);
+    metadata_update_register_id_g             = metadata_update_register(*hg_class);
+    metadata_add_tag_register_id_g            = metadata_add_tag_register(*hg_class);
+    region_lock_register_id_g                 = region_lock_register(*hg_class);
+    data_server_read_register_id_g            = data_server_read_register(*hg_class);
+    data_server_read_check_register_id_g      = data_server_read_check_register(*hg_class);
+    data_server_write_check_register_id_g     = data_server_write_check_register(*hg_class);
+    data_server_write_register_id_g           = data_server_write_register(*hg_class);
 
     // bulk
     query_partial_register_id_g               = query_partial_register(*hg_class);
 
     // 
-    gen_reg_map_notification_register_id_g 	  = gen_reg_map_notification_register(*hg_class);
+    gen_reg_map_notification_register_id_g    = gen_reg_map_notification_register(*hg_class);
     gen_reg_unmap_notification_register_id_g  = gen_reg_unmap_notification_register(*hg_class);
     gen_obj_unmap_notification_register_id_g  = gen_obj_unmap_notification_register(*hg_class);
 
     server_lookup_client_register(*hg_class);
+    notify_io_complete_register(*hg_class);
 
     // Lookup and fill the server info
     for (i = 0; i < pdc_server_num_g; i++) {
@@ -691,7 +692,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     }
 
     // Wait for server to connect back
-    /* work_todo_g = pdc_server_num_g; */
+    /* work_todo_g = 1; */
     /* PDC_Client_check_response(&send_context_g); */
 
 done:
@@ -779,6 +780,9 @@ perr_t PDC_Client_destroy_all_handles(pdc_server_info_t *server_info)
     perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
+
+    if (server_info->addr_valid == 1) 
+        HG_Addr_free(send_class_g, server_info->addr);
     if (server_info->rpc_handle_valid == 1)
         HG_Destroy(server_info->rpc_handle);
     if (server_info->client_test_handle_valid == 1)
@@ -2264,7 +2268,7 @@ done:
 }
 
 
-perr_t PDC_Client_data_server_read_check(int server_id, int client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status, void* buf)
+perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status, void* buf)
 {
     perr_t ret_value = FAIL;
     hg_return_t hg_ret;
@@ -2477,7 +2481,7 @@ done:
 }
 
 
-perr_t PDC_Client_data_server_write_check(int server_id, int client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status)
+perr_t PDC_Client_data_server_write_check(int server_id, uint32_t client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status)
 {
     perr_t ret_value = FAIL;
     hg_return_t hg_ret;
@@ -2787,6 +2791,24 @@ perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct PDC_region_info *region, P
 done:
     FUNC_LEAVE(ret_value);
 }
+
+// PDC_Client_write is done using PDC_Client_iwrite and PDC_Client_wait
+perr_t PDC_Client_write_wait_notify(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf)
+{
+    PDC_Request request;
+    perr_t ret_value = FAIL;
+
+    FUNC_ENTER(NULL);
+
+    PDC_Client_iwrite(meta, region, &request, buf);
+
+    /* work_todo_g = 1; */
+    /* PDC_Client_check_response(&send_context_g); */
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 
 // PDC_Client_write is done using PDC_Client_iwrite and PDC_Client_wait
 perr_t PDC_Client_write(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf)

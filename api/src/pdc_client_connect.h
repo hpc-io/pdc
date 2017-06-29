@@ -76,7 +76,7 @@ struct client_lookup_args {
     const char          *obj_name;
     uint64_t             obj_id;
     uint32_t             server_id;
-    int                  client_id;
+    uint32_t             client_id;
     int                  ret;
     char                *ret_string;
     char                *client_addr;
@@ -324,6 +324,20 @@ perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *
  */
 perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t *meta, struct PDC_region_info *region, void *buf); 
 
+/**
+ * Client request server to collectively write a region of an object
+ * and wait for server's push notification
+ *
+ * \param server_id [IN]         Target local data server ID
+ * \param n_client [IN]          Number of clients that send to read request to one data server
+ * \param meta [IN]              Metadata 
+ * \param region [IN]            Region
+ * \param buf[IN]                User buffer to store the read 
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_write_wait_notify(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf);
+
 
 /**
  * Client request server to check IO status of a previous IO request
@@ -336,7 +350,7 @@ perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t 
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_data_server_read_check(int server_id, int client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status, void *buf);
+perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status, void *buf);
 
 
 /**
@@ -349,7 +363,7 @@ perr_t PDC_Client_data_server_read_check(int server_id, int client_id, pdc_metad
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_data_server_write_check(int server_id, int client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status);
+perr_t PDC_Client_data_server_write_check(int server_id, uint32_t client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status);
 
 /**
  * Client request server to check IO status of a previous IO request
@@ -417,5 +431,18 @@ perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct PDC_region_info *region, P
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_Client_write(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf);
+
+/**
+ * Sync request send to server to write a region of object with users buffer
+ * and wait for server's push notification
+ *
+ * \param meta [IN]              Metadata object pointer to the operating object
+ * \param region [IN]            Region within the object to be read
+ * \param buf [IN]               User's data to be written to storage
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_write_wait_notify(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf);
+
 
 #endif
