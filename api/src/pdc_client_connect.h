@@ -15,7 +15,9 @@ extern int pdc_server_num_g;
 extern int pdc_client_mpi_rank_g;
 extern int pdc_client_mpi_size_g;
 
-extern char pdc_server_tmp_dir_g[ADDR_MAX];
+/* extern char pdc_server_tmp_dir_g[ADDR_MAX]; */
+hg_return_t PDC_Client_work_done_cb(const struct hg_cb_info *callback_info);
+hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *callback_info);
 
 typedef struct pdc_server_info_t {
     char            addr_string[ADDR_MAX];
@@ -63,14 +65,16 @@ typedef struct pdc_server_info_t {
 extern pdc_server_info_t *pdc_server_info_g;
 
 // Request structure for async read/write
-typedef struct PDC_Request {
+typedef struct PDC_Request_t {
     int                     server_id;
     int                     n_client;
     PDC_access_t            access_type;
     pdc_metadata_t          *metadata;
     struct PDC_region_info  *region;
     void                    *buf;
-} PDC_Request;
+    struct PDC_Request_t      *prev;
+    struct PDC_Request_t      *next;
+} PDC_Request_t;
 
 struct client_lookup_args {
     const char          *obj_name;
@@ -373,7 +377,7 @@ perr_t PDC_Client_data_server_write_check(int server_id, uint32_t client_id, pdc
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_test(PDC_Request *request, int *completed);
+perr_t PDC_Client_test(PDC_Request_t *request, int *completed);
 
 /**
  * Wait for a previous IO request to be completed by server, or exit after timeout
@@ -384,7 +388,7 @@ perr_t PDC_Client_test(PDC_Request *request, int *completed);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_wait(PDC_Request *request, unsigned long max_wait_ms, unsigned long check_interval_ms);
+perr_t PDC_Client_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsigned long check_interval_ms);
 
 /**
  * Async request send to server to read a region and put it in users buffer
@@ -396,7 +400,7 @@ perr_t PDC_Client_wait(PDC_Request *request, unsigned long max_wait_ms, unsigned
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_iread(pdc_metadata_t *meta, struct PDC_region_info *region, PDC_Request *request, void *buf);
+perr_t PDC_Client_iread(pdc_metadata_t *meta, struct PDC_region_info *region, PDC_Request_t *request, void *buf);
 
 /**
  * Sync request send to server to read a region and put it in users buffer
@@ -419,7 +423,7 @@ perr_t PDC_Client_read(pdc_metadata_t *meta, struct PDC_region_info *region, voi
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct PDC_region_info *region, PDC_Request *request, void *buf);
+perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct PDC_region_info *region, PDC_Request_t *request, void *buf);
 
 /**
  * Sync request send to server to write a region of object with users buffer
@@ -443,6 +447,18 @@ perr_t PDC_Client_write(pdc_metadata_t *meta, struct PDC_region_info *region, vo
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_Client_write_wait_notify(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf);
+
+/**
+ * Sync request send to server to read a region of object with users buffer
+ * and wait for server's push notification
+ *
+ * \param meta [IN]              Metadata object pointer to the operating object
+ * \param region [IN]            Region within the object to be read
+ * \param buf [IN]               User's data to be written to storage
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_read_wait_notify(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf);
 
 
 #endif

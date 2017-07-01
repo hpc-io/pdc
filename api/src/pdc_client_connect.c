@@ -7,11 +7,14 @@
 #include <sys/shm.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
+#include <inttypes.h>
 
 /* #define ENABLE_MPI 1 */
 #ifdef ENABLE_MPI
     #include "mpi.h"
 #endif
+
+#include "server/utlist.h"
 
 #include "mercury.h"
 #include "mercury_request.h"
@@ -32,6 +35,8 @@ int                    pdc_use_local_server_only_g = 0;
 char                   pdc_client_tmp_dir_g[ADDR_MAX];
 pdc_server_info_t     *pdc_server_info_g = NULL;
 static int            *debug_server_id_count = NULL;
+
+PDC_Request_t           *pdc_io_request_list_g = NULL;
 
 static int             mercury_has_init_g = 0;
 static hg_class_t     *send_class_g = NULL;
@@ -216,7 +221,7 @@ client_test_connect_rpc_cb(const struct hg_cb_info *callback_info)
     /* Get output from server*/
     client_test_connect_out_t output;
     ret_value = HG_Get_output(handle, &output);
-    /* printf("Return value=%llu\n", output.ret); */
+    /* printf("Return value=%" PRIu64 "\n", output.ret); */
     client_lookup_args->ret = output.ret;
 
     work_todo_g--;
@@ -369,7 +374,7 @@ close_server_cb(const struct hg_cb_info *callback_info)
 
     /* Get output from server*/
     ret_value = HG_Get_output(handle, &output);
-    /* printf("Return value=%llu\n", output.ret); */
+    /* printf("Return value=%" PRIu64 "\n", output.ret); */
 
     work_todo_g--;
 
@@ -394,7 +399,7 @@ done:
     /* // Get output from server */
 /*     send_obj_name_marker_out_t output; */
 /*     ret_value = HG_Get_output(handle, &output); */
-/*     /1* printf("Return value=%llu\n", output.ret); *1/ */
+/*     /1* printf("Return value=%" PRIu64 "\n", output.ret); *1/ */
 
 /*     work_todo_g--; */
 
@@ -420,7 +425,7 @@ client_rpc_cb(const struct hg_cb_info *callback_info)
 
     /* Get output from server*/
     ret_value = HG_Get_output(handle, &output);
-    /* printf("Return value=%llu\n", output.ret); */
+    /* printf("Return value=%" PRIu64 "\n", output.ret); */
     client_lookup_args->obj_id = output.obj_id;
 
     work_todo_g--;
@@ -447,7 +452,7 @@ client_region_lock_rpc_cb(const struct hg_cb_info *callback_info)
 
     /* Get output from server*/
     ret_value = HG_Get_output(handle, &output);
-    /* printf("Return value=%llu\n", output.ret); */
+    /* printf("Return value=%" PRIu64 "\n", output.ret); */
 
     client_lookup_args->ret = output.ret;
 
@@ -469,7 +474,6 @@ perr_t PDC_Client_check_response(hg_context_t **hg_context)
     FUNC_ENTER(NULL);
 
     do {
-        if (work_todo_g <= 0)  break;
         do {
             hg_ret = HG_Trigger(*hg_context, 0/* timeout */, 1 /* max count */, &actual_count);
         } while ((hg_ret == HG_SUCCESS) && actual_count);
@@ -1188,7 +1192,7 @@ metadata_delete_rpc_cb(const struct hg_cb_info *callback_info)
 
     /* Get output from server*/
     ret_value = HG_Get_output(handle, &output);
-    /* printf("Return value=%llu\n", output.ret); */
+    /* printf("Return value=%" PRIu64 "\n", output.ret); */
     client_lookup_args->ret = output.ret;
 
     work_todo_g--;
@@ -1214,7 +1218,7 @@ metadata_delete_by_id_rpc_cb(const struct hg_cb_info *callback_info)
 
     /* Get output from server*/
     ret_value = HG_Get_output(handle, &output);
-    /* printf("Return value=%llu\n", output.ret); */
+    /* printf("Return value=%" PRIu64 "\n", output.ret); */
     client_lookup_args->ret = output.ret;
 
     work_todo_g--;
@@ -1241,7 +1245,7 @@ metadata_add_tag_rpc_cb(const struct hg_cb_info *callback_info)
     /* Get output from server*/
     metadata_add_tag_out_t output;
     ret_value = HG_Get_output(handle, &output);
-    /* printf("Return value=%llu\n", output.ret); */
+    /* printf("Return value=%" PRIu64 "\n", output.ret); */
     client_lookup_args->ret = output.ret;
 
     work_todo_g--;
@@ -1326,7 +1330,7 @@ metadata_update_rpc_cb(const struct hg_cb_info *callback_info)
 
     /* Get output from server*/
     ret_value = HG_Get_output(handle, &output);
-    /* printf("Return value=%llu\n", output.ret); */
+    /* printf("Return value=%" PRIu64 "\n", output.ret); */
     client_lookup_args->ret = output.ret;
 
     work_todo_g--;
@@ -1784,7 +1788,7 @@ perr_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *ob
         goto done;
     }
 
-    /* printf("Received obj_id=%llu\n", lookup_args.obj_id); */
+    /* printf("Received obj_id=%" PRIu64 "\n", lookup_args.obj_id); */
     /* fflush(stdout); */
 
     *meta_id = lookup_args.obj_id;
@@ -2180,7 +2184,7 @@ perr_t PDC_Client_obtain_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_
     
     FUNC_ENTER(NULL);
 
-    /* printf("meta_id=%llu\n", meta_id); */
+    /* printf("meta_id=%" PRIu64 "\n", meta_id); */
 
     if (access_type == READ ) {
         // TODO: currently does not perform local lock
@@ -2264,6 +2268,94 @@ data_server_read_check_rpc_cb(const struct hg_cb_info *callback_info)
 
 done:
     HG_Destroy(handle);
+    FUNC_LEAVE(ret_value);
+}
+
+
+hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    hg_return_t hg_ret;
+    struct client_lookup_args lookup_args;
+    data_server_read_check_in_t in;
+
+    int shm_fd = -1;        // file descriptor, from shm_open()
+    int i = 0, found = 0;
+    char *shm_base = NULL;    // base address, from mmap()
+    char *shm_addr = NULL;
+    uint64_t data_size = 1;
+    client_read_info_t *read_info = NULL;
+    PDC_Request_t *elt = NULL;
+
+    FUNC_ENTER(NULL);
+
+    read_info = (client_read_info_t*)callback_info->arg;
+
+    shm_addr = read_info->shm_addr;
+
+    DL_FOREACH(pdc_io_request_list_g, elt) {
+        if (elt->metadata->obj_id == read_info->obj_id) {
+            found = 1;
+            break;
+        }
+    }
+
+    if (found == 0) {
+        printf("==PDC_CLIENT: PDC_Client_get_data_from_server_shm_cb() - read request not found!\n");
+        goto done;
+    }
+
+    // Calculate data_size, TODO: this should be done in other places?
+    for (i = 0; i < elt->region->ndim; i++) {
+        data_size *= elt->region->size[i];
+    }
+
+    printf("PDC_CLIENT: PDC_Client_get_data_from_server_shm - shm_addr=[%s]\n", shm_addr);
+
+    /* open the shared memory segment as if it was a file */
+    shm_fd = shm_open(shm_addr, O_RDONLY, 0666);
+    if (shm_fd == -1) {
+        printf("==PDC_CLIENT: Shared memory open failed [%s]!\n", shm_addr);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    /* map the shared memory segment to the address space of the process */
+    shm_base = mmap(0, data_size, PROT_READ, MAP_SHARED, shm_fd, 0);
+    if (shm_base == MAP_FAILED) {
+        printf("==PDC_CLIENT: Map failed: %s\n", strerror(errno));
+        // close and unlink?
+        ret_value = FAIL;
+        goto close;
+    }
+
+    // Copy data
+    memcpy(elt->buf, shm_base, data_size);
+
+    /* remove the mapped shared memory segment from the address space of the process */
+    if (munmap(shm_base, data_size) == -1) {
+        printf("==PDC_CLIENT: Unmap failed: %s\n", strerror(errno));
+        ret_value = FAIL;
+        goto done;
+    }
+
+close:
+    /* close the shared memory segment as if it was a file */
+    if (close(shm_fd) == -1) {
+        printf("==PDC_CLIENT: Close failed!\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    /* remove the shared memory segment from the file system */
+    if (shm_unlink(shm_addr) == -1) {
+        ret_value = FAIL;
+        goto done;
+        printf("==PDC_CLIENT: Error removing %s\n", shm_addr);
+    }
+
+done:
+    work_todo_g--;
     FUNC_LEAVE(ret_value);
 }
 
@@ -2391,7 +2483,7 @@ data_server_read_rpc_cb(const struct hg_cb_info *callback_info)
     /* Get output from server*/
     data_server_read_out_t output;
     ret_value = HG_Get_output(handle, &output);
-    /* printf("Return value=%llu\n", output.ret); */
+    /* printf("Return value=%" PRIu64 "\n", output.ret); */
     client_lookup_args->ret = output.ret;
 
     work_todo_g--;
@@ -2413,6 +2505,12 @@ perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *
 
     if (server_id < 0 || server_id >= pdc_server_num_g) {
         printf("PDC_CLIENT[%d]: PDC_Client_data_server_read - invalid server id %d/%d\n", pdc_client_mpi_rank_g, server_id, pdc_server_num_g);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    if (meta == NULL || region == NULL) {
+        printf("PDC_CLIENT[%d]: PDC_Client_data_server_read - invalid metadata or region \n", pdc_client_mpi_rank_g);
         ret_value = FAIL;
         goto done;
     }
@@ -2442,7 +2540,7 @@ perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
 
-    if (lookup_args.ret == 0) {
+    if (lookup_args.ret == 1) {
         ret_value = SUCCEED;
         /* printf("PDC_CLIENT: PDC_Client_data_server_read - received confirmation from server\n"); */
     }
@@ -2555,7 +2653,8 @@ data_server_write_rpc_cb(const struct hg_cb_info *callback_info)
     /* Get output from server*/
     data_server_write_out_t output;
     ret_value = HG_Get_output(handle, &output);
-    /* printf("Return value=%llu\n", output.ret); */
+    printf("PDC_CLIENT: data_server_write_rpc_cb(): Return value from server: %" PRIu64 "\n", output.ret);
+    fflush(stdout);
     client_lookup_args->ret = output.ret;
 
     work_todo_g--;
@@ -2591,7 +2690,7 @@ perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t 
     // Create shared memory 
     // Shared memory address is /objID_ServerID_ClientID_rand
     int rnd = rand();
-    sprintf(shm_addr, "/%llu_c%d_s%d_%d", meta->obj_id, pdc_client_mpi_rank_g, server_id, rnd);
+    sprintf(shm_addr, "/%" PRIu64 "_c%d_s%d_%d", meta->obj_id, pdc_client_mpi_rank_g, server_id, rnd);
 
     /* create the shared memory segment as if it was a file */
     char     *shm_base;
@@ -2636,7 +2735,7 @@ perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t 
     }
 
     // Data path prefix will be $SCRATCH/pdc_data/obj_id/
-    sprintf(meta->data_location, "%s/pdc_data/%llu", data_path, meta->obj_id);
+    sprintf(meta->data_location, "%s/pdc_data/%" PRIu64 "", data_path, meta->obj_id);
 
     if (pdc_client_mpi_rank_g == 0) 
         printf("==PDC_CLIENT: data will be written to %s\n", meta->data_location);
@@ -2671,7 +2770,7 @@ perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t 
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
 
-    if (lookup_args.ret == 0) {
+    if (lookup_args.ret == 1) {
         ret_value = SUCCEED;
         /* printf("PDC_CLIENT: PDC_Client_data_server_write - received confirmation from server\n"); */
     }
@@ -2708,7 +2807,7 @@ int pdc_msleep(unsigned long milisec)
     return 1;
 }
 
-perr_t PDC_Client_test(PDC_Request *request, int *completed)
+perr_t PDC_Client_test(PDC_Request_t *request, int *completed)
 {
     perr_t ret_value = FAIL;
 
@@ -2740,7 +2839,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_wait(PDC_Request *request, unsigned long max_wait_ms, unsigned long check_interval_ms)
+perr_t PDC_Client_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsigned long check_interval_ms)
 {
     int completed = 0;
     perr_t ret_value = FAIL;
@@ -2771,7 +2870,7 @@ done:
 }
 
 /* perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t *meta, struct PDC_region_info *region, void *buf) */
-perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct PDC_region_info *region, PDC_Request *request, void *buf)
+perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct PDC_region_info *region, PDC_Request_t *request, void *buf)
 {
     perr_t ret_value = FAIL;
 
@@ -2792,28 +2891,18 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-// PDC_Client_write is done using PDC_Client_iwrite and PDC_Client_wait
-perr_t PDC_Client_write_wait_notify(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf)
+hg_return_t PDC_Client_work_done_cb(const struct hg_cb_info *callback_info)
 {
-    PDC_Request request;
-    perr_t ret_value = FAIL;
+    work_todo_g--;
 
-    FUNC_ENTER(NULL);
-
-    PDC_Client_iwrite(meta, region, &request, buf);
-
-    /* work_todo_g = 1; */
-    /* PDC_Client_check_response(&send_context_g); */
-
-done:
-    FUNC_LEAVE(ret_value);
+    return HG_SUCCESS;
 }
 
 
 // PDC_Client_write is done using PDC_Client_iwrite and PDC_Client_wait
 perr_t PDC_Client_write(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf)
 {
-    PDC_Request request;
+    PDC_Request_t request;
     perr_t ret_value = FAIL;
 
     FUNC_ENTER(NULL);
@@ -2825,7 +2914,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_iread(pdc_metadata_t *meta, struct PDC_region_info *region, PDC_Request *request, void *buf)
+perr_t PDC_Client_iread(pdc_metadata_t *meta, struct PDC_region_info *region, PDC_Request_t *request, void *buf)
 {
     perr_t ret_value = FAIL;
 
@@ -2848,7 +2937,7 @@ done:
 
 perr_t PDC_Client_read(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf)
 {
-    PDC_Request request;
+    PDC_Request_t request;
     perr_t ret_value = FAIL;
 
     FUNC_ENTER(NULL);
@@ -2860,4 +2949,52 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDC_Client_write_wait_notify(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf)
+{
+    PDC_Request_t *request = (PDC_Request_t*)malloc(sizeof(PDC_Request_t));
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    ret_value = PDC_Client_iwrite(meta, region, request, buf);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_CLIENT: Faile to send write request to server\n");
+        goto done;
+    }
+
+    DL_APPEND(pdc_io_request_list_g, request);
+    printf("==PDC_CLIENT: Finished sending write request to server\n");
+    fflush(stdout);
+
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+
+perr_t PDC_Client_read_wait_notify(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf)
+{
+    PDC_Request_t *request = (PDC_Request_t*)malloc(sizeof(PDC_Request_t));
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    ret_value = PDC_Client_iread(meta, region, request, buf);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_CLIENT: Faile to send read request to server\n");
+        goto done;
+    }
+
+    DL_APPEND(pdc_io_request_list_g, request);
+    printf("==PDC_CLIENT: Finished sending read request to server\n");
+    fflush(stdout);
+
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
 

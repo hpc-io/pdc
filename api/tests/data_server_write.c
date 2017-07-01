@@ -21,7 +21,6 @@ void print_usage() {
 int main(int argc, const char *argv[])
 {
     int rank = 0, size = 1;
-    int i;
     uint64_t size_MB;
 
 #ifdef ENABLE_MPI
@@ -39,7 +38,7 @@ int main(int argc, const char *argv[])
     size_MB = atoi(argv[2]);
 
     if (rank == 0) {
-        printf("Writing a %d MB object [%s] with %d clients.\n", size_MB, obj_name, size);
+        printf("Writing a %llu MB object [%s] with %d clients.\n", size_MB, obj_name, size);
     }
     size_MB *= 1048576;
 
@@ -78,7 +77,7 @@ int main(int argc, const char *argv[])
     // Create a object with only rank 0
     if (rank == 0) {
         test_obj = PDCobj_create(pdc, cont, obj_name, obj_prop);
-        if (test_obj < 0) {
+        if (test_obj <= 0) {
             printf("Error getting an object id of %s from server, exit...\n", "DataServerTestBin");
             exit(-1);
         }
@@ -103,7 +102,6 @@ int main(int argc, const char *argv[])
     region.size[0] = my_data_size;
 
     char *mydata = (char*)malloc(my_data_size);
-    int j;
     memset(mydata, 'A' + rank%26, my_data_size);
 
     /* printf("%d: writing to (%llu, %llu) of %llu bytes\n", rank, region.offset[0], region.offset[1], region.size[0]*region.size[1]); */

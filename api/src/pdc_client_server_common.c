@@ -12,6 +12,7 @@
 #include "server/pdc_server.h"
 #include "server/utlist.h"
 #include "pdc_malloc.h"
+#include <inttypes.h>
 
 // Thread
 hg_thread_pool_t *hg_test_thread_pool_g;
@@ -300,6 +301,35 @@ void PDC_print_region_list(region_list_t *a)
     fflush(stdout);
 }
 
+perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to)
+{
+    int i;
+    if (NULL==from || NULL==to) {
+        printf("    pdc_region_list_t_deep_cp(): NULL input!\n");
+        return FAIL;
+    }
+
+    to->ndim = from->ndim  ;
+    for (i = 0; i < DIM_MAX; i++) {
+        to->start[i]  = from->start[i];
+        to->count[i]  = from->count[i];
+        to->stride[i] = from->stride[i];
+    }
+
+    for (i = 0; i < PDC_SERVER_MAX_PROC_PER_NODE; i++) 
+        to->client_ids[i] = from->client_ids[i];
+
+    to->data_size     = from->data_size;
+    to->is_data_ready = from->is_data_ready;
+    memcpy(to->shm_addr, from->shm_addr, sizeof(char) * ADDR_MAX);
+    to->shm_base      = from->shm_base;
+    to->shm_fd        = from->shm_fd;
+    to->access_type   = from->access_type;
+                            
+    return SUCCEED;
+}
+
+
 perr_t pdc_region_transfer_t_to_list_t(region_info_transfer_t *transfer, region_list_t *region)
 {
     if (NULL==region || NULL==transfer ) {
@@ -307,7 +337,6 @@ perr_t pdc_region_transfer_t_to_list_t(region_info_transfer_t *transfer, region_
         return FAIL;
     }
 
-    int i;
     region->ndim            = transfer->ndim  ;
     region->start[0]        = transfer->start_0;
     region->start[1]        = transfer->start_1;
@@ -334,7 +363,6 @@ perr_t pdc_region_info_t_to_transfer(struct PDC_region_info *region, region_info
         return FAIL;
     }
 
-    int i;
     transfer->ndim           = region->ndim    ;
     transfer->start_0        = region->offset[0];
     transfer->start_1        = region->offset[1];
@@ -362,7 +390,6 @@ perr_t pdc_region_list_t_to_transfer(region_list_t *region, region_info_transfer
         return FAIL;
     }
 
-    int i;
     transfer->ndim          = region->ndim    ;
     transfer->start_0        = region->start[0];
     transfer->start_1        = region->start[1];
@@ -432,7 +459,7 @@ perr_t pdc_transfer_t_to_metadata_t(pdc_metadata_transfer_t *transfer, pdc_metad
 
 #ifndef IS_PDC_SERVER
 // Dummy function for client to compile, real function is used only by server and code is in pdc_server.c
-perr_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info) {return SUCCEED;}
+hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info) {return SUCCEED;}
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out) {return SUCCEED;}
 /* perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out) {return SUCCEED;} */
 perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key, pdc_metadata_t** out) {return SUCCEED;}
@@ -448,12 +475,16 @@ hg_class_t *hg_class_g;
 /* 
  * Data server related
  */
-perr_t PDC_Server_data_read(data_server_read_in_t *in) {return SUCCEED;}
-perr_t PDC_Server_data_write(data_server_write_in_t *in) {return SUCCEED;}
+hg_return_t PDC_Server_data_io(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
 perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_check_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_write_check_out_t *out) {return SUCCEED;}
 
+#else
+hg_return_t PDC_Client_work_done_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;};
+hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;};
+
 #endif
+
 
 /*
  * The routine that sets up the routines that actually do the work.
@@ -737,10 +768,20 @@ HG_TEST_RPC_CB(notify_io_complete, handle)
     /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
-    printf("==PDC_CLIENT: Got IO complete notification: obj_id=%llu\n", in.obj_id);
+    printf("==PDC_CLIENT: Got IO complete notification from server: obj_id=%llu, shm_addr=%s\n", in.obj_id, in.shm_addr);
+
+    client_read_info_t * read_info = (client_read_info_t*)malloc(sizeof(client_read_info_t));
+    read_info->obj_id = in.obj_id;
+    strcpy(read_info->shm_addr, in.shm_addr);
 
     out.ret = 1;
-    HG_Respond(handle, NULL, NULL, &out);
+    PDC_access_t type = in.io_type;
+    if (type == READ) {
+        HG_Respond(handle, PDC_Client_get_data_from_server_shm_cb, read_info, &out);
+    }
+    else if (type == WRITE) {
+        HG_Respond(handle, PDC_Client_work_done_cb, NULL, &out);
+    }
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
@@ -923,7 +964,7 @@ HG_TEST_RPC_CB(region_lock, handle)
         }
         if(found == 0) {
             error = 1;
-            printf("==PDC SERVER ERROR: Could not find local region %lld in server\n", in.local_reg_id);
+            printf("==PDC SERVER ERROR: Could not find local region %" PRIu64 " in server\n", in.local_reg_id);
         }
     }
 
@@ -1063,7 +1104,7 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
                 PDC_LIST_TO_NEXT(tmp_ptr, entry);
             }
             if(tmp_ptr!=NULL) {
-                printf("==PDC SERVER ERROR: mapping from obj %lld (region %lld) to obj %lld (reg %lld) already exists\n", in.local_obj_id, in.local_reg_id, in.remote_obj_id, in.remote_reg_id);
+                printf("==PDC SERVER ERROR: mapping from obj %" PRIu64 " (region %" PRIu64 ") to obj %" PRIu64 " (reg %" PRIu64 ") already exists\n", in.local_obj_id, in.local_reg_id, in.remote_obj_id, in.remote_reg_id);
                 out.ret = 0;
                 goto done;
             }
@@ -1432,21 +1473,29 @@ query_partial_register(hg_class_t *hg_class)
 // data_server_read_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(data_server_read, handle)
 {
-    FUNC_ENTER(NULL);
-
     hg_return_t ret_value;
-
-    /* Get input parameters sent on origin through on HG_Forward() */
-    // Decode input
     data_server_read_in_t  in;
     data_server_read_out_t out;
 
+    FUNC_ENTER(NULL);
+
+    // Decode input
     HG_Get_input(handle, &in);
     /* printf("==PDC_SERVER: Got data server read request from client %d\n", in.client_id); */
 
-    out.ret = PDC_Server_data_read(&in);
+    data_server_io_info_t *io_info= (data_server_io_info_t*)malloc(sizeof(data_server_io_info_t));
 
-    HG_Respond(handle, NULL, NULL, &out);
+    io_info->io_type   = READ;
+    io_info->client_id = in.client_id;
+    io_info->nclient   = in.nclient;
+
+    PDC_metadata_init(&io_info->meta);
+    pdc_transfer_t_to_metadata_t(&(in.meta), &(io_info->meta));
+
+    pdc_region_transfer_t_to_list_t(&(in.region), &(io_info->region));
+
+    out.ret = 1;
+    HG_Respond(handle, PDC_Server_data_io, io_info, &out);
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
@@ -1476,21 +1525,30 @@ data_server_read_register(hg_class_t *hg_class)
 // data_server_write_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(data_server_write, handle)
 {
-    FUNC_ENTER(NULL);
-
     hg_return_t ret_value;
-
-    /* Get input parameters sent on origin through on HG_Forward() */
-    // Decode input
     data_server_write_in_t  in;
     data_server_write_out_t out;
 
+    FUNC_ENTER(NULL);
+
+    // Decode input
     HG_Get_input(handle, &in);
     /* printf("==PDC_SERVER: Got data server write request from client %d\n", in.client_id); */
 
-    out.ret = PDC_Server_data_write(&in);
+    data_server_io_info_t *io_info= (data_server_io_info_t*)malloc(sizeof(data_server_io_info_t));
 
-    HG_Respond(handle, NULL, NULL, &out);
+    io_info->io_type   = WRITE;
+    io_info->client_id = in.client_id;
+    io_info->nclient   = in.nclient;
+
+    PDC_metadata_init(&io_info->meta);
+    pdc_transfer_t_to_metadata_t(&(in.meta), &(io_info->meta));
+
+    pdc_region_transfer_t_to_list_t(&(in.region), &(io_info->region));
+    strcpy(&(io_info->region.shm_addr), in.shm_addr);
+
+    out.ret = 1;
+    HG_Respond(handle, PDC_Server_data_io, io_info, &out);
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
