@@ -84,6 +84,9 @@ typedef struct pdc_data_server_io_list_t {
 
 hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info);
 
+perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf);
+perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf);
+
 perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_check_out_t *out);
 perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_write_check_out_t *out);
 

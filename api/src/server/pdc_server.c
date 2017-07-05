@@ -3911,15 +3911,66 @@ done:
 /*     FUNC_LEAVE(ret_value); */
 /* } // end of PDC_Server_add_io_request */
 
-// Directly read/write buffer from/to storage
-perr_t PDC_Server_data_io_direct(pdc_metadata_t *meta, struct PDC_region_info *region_info, void *buf)
+// Directly read/write buffer from/to storage of one region
+perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct PDC_region_info *region_info, void *buf)
 {
     perr_t ret_value = SUCCEED;
+    region_list_t *io_region = NULL;
+    size_t i;
 
     FUNC_ENTER(NULL);
 
+    io_region = (region_list_t*)malloc(sizeof(region_list_t));
+    PDC_init_region_list(io_region);
 
+    pdc_region_info_to_list_t(region_info, io_region);
+
+    // Generate a location for data storage for data server to write
+    char *data_path = NULL;
+    char *user_specified_data_path = getenv("PDC_DATA_LOC");
+    if (user_specified_data_path != NULL) 
+        data_path = user_specified_data_path;
+    else {
+        data_path = getenv("SCRATCH");
+        if (data_path == NULL) 
+            data_path = ".";
+    }
+
+    // Data path prefix will be $SCRATCH/pdc_data/obj_id/
+    sprintf(io_region->storage_location, "%s/pdc_data/s%03d.bin" PRIu64 "", data_path, obj_id, pdc_server_rank_g);
+
+    io_region->access_type = io_type;
+
+    io_region->data_size = io_region->count[0];
+    for (i = 1; i < io_region->ndim; i++) 
+        io_region->data_size *= io_region->count[i];
+    
+    // Call the actual IO routine
+    PDC_Server_regions_io(io_region, POSIX);
 
 done:
     fflush(stdout);
 }
+
+perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf)
+{
+    perr_t ret_value = SUCCEED;
+    FUNC_ENTER(NULL);
+
+    ret_value = PDC_Server_data_io_direct(WRITE, obj_id, region_info, buf);
+
+done:
+    fflush(stdout);
+}
+
+perr_t PDC_Server_data_read_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf)
+{
+    perr_t ret_value = SUCCEED;
+    FUNC_ENTER(NULL);
+
+    ret_value = PDC_Server_data_io_direct(READ, obj_id, region_info, buf);
+
+done:
+    fflush(stdout);
+}
+
