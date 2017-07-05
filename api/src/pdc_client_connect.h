@@ -72,6 +72,7 @@ typedef struct PDC_Request_t {
     pdc_metadata_t          *metadata;
     struct PDC_region_info  *region;
     void                    *buf;
+
     struct PDC_Request_t      *prev;
     struct PDC_Request_t      *next;
 } PDC_Request_t;

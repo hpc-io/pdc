@@ -239,6 +239,7 @@ perr_t PDC_metadata_init(pdc_metadata_t *a)
     memset(a->dims,          0, sizeof(int32_t)*DIM_MAX);
 
     a->region_lock_head = NULL;
+    a->region_list_head = NULL;
     a->region_map_head  = NULL;
     a->prev  = NULL;
     a->next  = NULL;
@@ -252,21 +253,25 @@ perr_t PDC_init_region_list(region_list_t *a)
 {
     perr_t ret_value = SUCCEED;
 
-    a->ndim = 0;
-    a->prev = NULL;
-    a->next = NULL;
+    a->ndim          = 0;
+    a->prev          = NULL;
+    a->next          = NULL;
     a->is_data_ready = 0;
-    a->data_size = 0;
-    a->shm_fd    = -1;
-    a->shm_base  = NULL;
-    a->access_type = NA;
+    a->data_size     = 0;
+    a->shm_fd        = -1;
+    a->buf           = NULL;
+    a->access_type   = NA;
+    a->offset        = 0;
 
-    memset(a->start,      0, sizeof(uint64_t)*DIM_MAX);
-    memset(a->count,      0, sizeof(uint64_t)*DIM_MAX);
-    memset(a->stride,     0, sizeof(uint64_t)*DIM_MAX);
-    memset(a->shm_addr,   0, sizeof(char)*ADDR_MAX);
-    memset(a->client_ids, 0, sizeof(uint32_t)*PDC_SERVER_MAX_PROC_PER_NODE);
+    memset(a->start,  0, sizeof(uint64_t)*DIM_MAX);
+    memset(a->count,  0, sizeof(uint64_t)*DIM_MAX);
+    memset(a->stride, 0, sizeof(uint64_t)*DIM_MAX);
 
+    memset(a->shm_addr,         0, sizeof(char)*ADDR_MAX);
+    memset(a->client_ids,       0, sizeof(uint32_t)*PDC_SERVER_MAX_PROC_PER_NODE);
+    memset(a->storage_location, 0, sizeof(char)*ADDR_MAX);
+
+    // Init 15 attributes, double check to match the region_list_t def
     return ret_value;
 }
 
@@ -309,7 +314,7 @@ perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to)
         return FAIL;
     }
 
-    to->ndim = from->ndim  ;
+    to->ndim = from->ndim;
     for (i = 0; i < DIM_MAX; i++) {
         to->start[i]  = from->start[i];
         to->count[i]  = from->count[i];
@@ -322,9 +327,16 @@ perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to)
     to->data_size     = from->data_size;
     to->is_data_ready = from->is_data_ready;
     memcpy(to->shm_addr, from->shm_addr, sizeof(char) * ADDR_MAX);
-    to->shm_base      = from->shm_base;
     to->shm_fd        = from->shm_fd;
+    to->buf           = from->buf;
+    memcpy(to->storage_location , from->storage_location, sizeof(char) * ADDR_MAX);
     to->access_type   = from->access_type;
+    to->offset        = from->offset;
+
+    to->prev = NULL;
+    to->next = NULL;
+
+    // Copy 15 attributes, double check to match the region_list_t def
                             
     return SUCCEED;
 }
@@ -356,6 +368,32 @@ perr_t pdc_region_transfer_t_to_list_t(region_info_transfer_t *transfer, region_
     return SUCCEED;
 }
 
+perr_t pdc_region_info_to_list_t(struct PDC_region_info *region, region_list_t *list)
+{
+    int i;
+
+    if (NULL==region || NULL==list ) {
+        printf("    pdc_region_info_t_to_region_list_t(): NULL input!\n");
+        return FAIL;
+    }
+
+    size_t ndim = region->ndim;
+    if (ndim <= 0 || ndim >=5) {
+        printf("pdc_region_info_to_list_t() unsupported dim: %lu\n", ndim);
+        return FAIL;
+    }
+
+    list->ndim = ndim;
+    for (i = 0; i < ndim; i++) {
+        list->start[i]  = region->offset[i];
+        list->count[i]  = region->size[i];
+        list->stride[i] = 0;
+    }
+    
+    return SUCCEED;
+}
+
+
 perr_t pdc_region_info_t_to_transfer(struct PDC_region_info *region, region_info_transfer_t *transfer)
 {
     if (NULL==region || NULL==transfer ) {
@@ -363,21 +401,47 @@ perr_t pdc_region_info_t_to_transfer(struct PDC_region_info *region, region_info
         return FAIL;
     }
 
-    transfer->ndim           = region->ndim    ;
-    transfer->start_0        = region->offset[0];
-    transfer->start_1        = region->offset[1];
-    transfer->start_2        = region->offset[2];
-    transfer->start_3        = region->offset[3];
+    size_t ndim = region->ndim;
+    if (ndim <= 0 || ndim >=5) {
+        printf("pdc_region_info_t_to_transfer() unsupported dim: %lu\n", ndim);
+        return FAIL;
+    }
+    
+    transfer->ndim = ndim;
+    if (ndim >= 1)      transfer->start_0  = region->offset[0];
+    else                transfer->start_0  = 0;
 
-    transfer->count_0        = region->size[0];
-    transfer->count_1        = region->size[1];
-    transfer->count_2        = region->size[2];
-    transfer->count_3        = region->size[3];
+    if (ndim >= 2)      transfer->start_1  = region->offset[1];
+    else                transfer->start_1  = 0;
 
-    transfer->stride_0       = 0;
-    transfer->stride_1       = 0;
-    transfer->stride_2       = 0;
-    transfer->stride_3       = 0;
+    if (ndim >= 3)      transfer->start_2  = region->offset[2];
+    else                transfer->start_2  = 0;
+
+    if (ndim >= 4)      transfer->start_3  = region->offset[3];
+    else                transfer->start_3  = 0;
+
+
+    if (ndim >= 1)      transfer->count_0  = region->size[0];
+    else                transfer->count_0  = 0;
+
+    if (ndim >= 2)      transfer->count_1  = region->size[1];
+    else                transfer->count_1  = 0;
+
+    if (ndim >= 3)      transfer->count_2  = region->size[2];
+    else                transfer->count_2  = 0;
+
+    if (ndim >= 4)      transfer->count_3  = region->size[3];
+    else                transfer->count_3  = 0;
+
+    /* if (ndim >= 1)      transfer->stride_0 = 0; */
+    /* if (ndim >= 2)      transfer->stride_1 = 0; */
+    /* if (ndim >= 3)      transfer->stride_2 = 0; */
+    /* if (ndim >= 4)      transfer->stride_3 = 0; */
+
+    transfer->stride_0 = 0;
+    transfer->stride_1 = 0;
+    transfer->stride_2 = 0;
+    transfer->stride_3 = 0;
 
     return SUCCEED;
 }
@@ -475,7 +539,7 @@ hg_class_t *hg_class_g;
 /* 
  * Data server related
  */
-hg_return_t PDC_Server_data_io(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
+hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
 perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_check_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_write_check_out_t *out) {return SUCCEED;}
 
@@ -768,7 +832,7 @@ HG_TEST_RPC_CB(notify_io_complete, handle)
     /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
-    printf("==PDC_CLIENT: Got IO complete notification from server: obj_id=%llu, shm_addr=%s\n", in.obj_id, in.shm_addr);
+    printf("==PDC_CLIENT: Got IO complete notification from server: obj_id=%llu, shm_addr=[%s]\n", in.obj_id, in.shm_addr);
 
     client_read_info_t * read_info = (client_read_info_t*)malloc(sizeof(client_read_info_t));
     read_info->obj_id = in.obj_id;
@@ -1493,9 +1557,10 @@ HG_TEST_RPC_CB(data_server_read, handle)
     pdc_transfer_t_to_metadata_t(&(in.meta), &(io_info->meta));
 
     pdc_region_transfer_t_to_list_t(&(in.region), &(io_info->region));
+    io_info->region.access_type = io_info->io_type;
 
     out.ret = 1;
-    HG_Respond(handle, PDC_Server_data_io, io_info, &out);
+    HG_Respond(handle, PDC_Server_data_io_via_shm, io_info, &out);
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
@@ -1546,9 +1611,10 @@ HG_TEST_RPC_CB(data_server_write, handle)
 
     pdc_region_transfer_t_to_list_t(&(in.region), &(io_info->region));
     strcpy(&(io_info->region.shm_addr), in.shm_addr);
+    io_info->region.access_type = io_info->io_type;
 
     out.ret = 1;
-    HG_Respond(handle, PDC_Server_data_io, io_info, &out);
+    HG_Respond(handle, PDC_Server_data_io_via_shm, io_info, &out);
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);

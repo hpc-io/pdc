@@ -36,8 +36,9 @@ extern int pdc_server_rank_g;
 #define    PDC_LOCK_OP_OBTAIN  0
 #define    PDC_LOCK_OP_RELEASE 1
 
-typedef enum PDC_access_t { READ=0, WRITE=1, NA=2 } PDC_access_t;
-typedef enum PDC_lock_mode_t { BLOCK=0, NOBLOCK=1 } PDC_lock_mode_t;
+typedef enum { POSIX=0, DAOS=1 }       PDC_io_plugin_t;
+typedef enum { READ=0, WRITE=1, NA=2 } PDC_access_t;
+typedef enum { BLOCK=0, NOBLOCK=1 }    PDC_lock_mode_t;
 
 typedef struct region_list_t {
     size_t ndim;
@@ -50,12 +51,15 @@ typedef struct region_list_t {
     uint64_t data_size;
     int      is_data_ready;
     char     shm_addr[ADDR_MAX];
-    char     *shm_base;
     int      shm_fd;
+    char    *buf;
+    char     storage_location[ADDR_MAX];
+    uint64_t offset;
     PDC_access_t access_type;
 
     struct region_list_t *prev;
     struct region_list_t *next;
+    // 15 attributes, need to match init and deep_cp routines
 } region_list_t;
 
 typedef struct PDC_mapping_info {
@@ -107,8 +111,12 @@ typedef struct pdc_metadata_t {
     int     ndim;
     int     dims[DIM_MAX];
 
-    // For region lock
+    // For region storage list
+    region_list_t *region_list_head;
+
+    // For region lock list
     region_list_t *region_lock_head;
+
     // For region map
     region_map_t *region_map_head;
 
@@ -1295,6 +1303,7 @@ void     PDC_print_region_list(region_list_t *a);
 perr_t pdc_metadata_t_to_transfer_t(pdc_metadata_t *meta, pdc_metadata_transfer_t *transfer);
 perr_t pdc_transfer_t_to_metadata_t(pdc_metadata_transfer_t *transfer, pdc_metadata_t *meta);
 
+perr_t pdc_region_info_to_list_t(struct PDC_region_info *region, region_list_t *list);
 perr_t pdc_region_transfer_t_to_list_t(region_info_transfer_t *transfer, region_list_t *region);
 perr_t pdc_region_list_t_to_transfer(region_list_t *region, region_info_transfer_t *transfer);
 perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to);

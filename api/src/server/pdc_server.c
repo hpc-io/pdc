@@ -3080,22 +3080,25 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Server_delete_shm(region_list_t *region)
+perr_t PDC_Server_close_shm(region_list_t *region)
 {
     perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
 
+    if (region->buf == NULL) 
+        goto done;
+
     /* remove the mapped memory segment from the address space of the process */
-    if (munmap(region->shm_base, region->data_size) == -1) {
+    if (munmap(region->buf, region->data_size) == -1) {
         printf("==PDC_SERVER: Unmap failed\n");
-        exit(1);
+        return FAIL;
     }
   
     /* close the shared memory segment as if it was a file */
     if (close(region->shm_fd) == -1) {
         printf("==PDC_SERVER: close shm_fd failed\n");
-        exit(1);
+        return FAIL;
     }
 
 done:
@@ -3304,23 +3307,25 @@ done:
     FUNC_LEAVE(ret_value);
 } //PDC_Server_write_check
 
-perr_t PDC_Server_data_read_real(pdc_data_server_io_list_t *io_list)
+perr_t PDC_Server_data_read_to_shm(region_list_t *region_list_head, uint64_t obj_id)
 {
     perr_t ret_value = FAIL;
+    region_list_t *elt, *tmp;
     /* region_list_t *merged_list = NULL; */
+
+    FUNC_ENTER(NULL);
 
     // TODO: merge regions for aggregated read
     // Merge regions
-    /* PDC_Server_merge_region_list_naive(io_list->region_list_head, &merged_list); */
+    /* PDC_Server_merge_region_list_naive(region_list_head, &merged_list); */
 
     // Replace region_list with merged list
-    region_list_t *elt, *tmp;
-    DL_SORT(io_list->region_list_head, region_list_cmp_by_client_id);
-    /* DL_FOREACH_SAFE(io_list->region_list_head, elt, tmp) { */
-    /*     DL_DELETE(io_list->region_list_head, elt); */
+    DL_SORT(region_list_head, region_list_cmp_by_client_id);
+    /* DL_FOREACH_SAFE(region_list_head, elt, tmp) { */
+    /*     DL_DELETE(region_list_head, elt); */
     /*     free(elt); */
     /* } */
-    /* io_list->region_list_head = merged_list; */
+    /* region_list_head = merged_list; */
 
     /* printf("==PDC_SERVER: after merge\n"); */
     /* DL_FOREACH(merged_list, elt) { */
@@ -3328,74 +3333,56 @@ perr_t PDC_Server_data_read_real(pdc_data_server_io_list_t *io_list)
     /* } */
     /* fflush(stdout); */
 
-    int i;
-    uint64_t tmp_size;
-
-    char read_path[ADDR_MAX];
-    memset(read_path, 0, ADDR_MAX);
-    sprintf(read_path, "%s/s%03d.bin", io_list->path, pdc_server_rank_g); 
-
     // Now we have a -merged- list of regions to be read, 
     // so just read one by one
-    FILE *fp = fopen(read_path, "r");
-    if (fp != NULL) {
-        DL_FOREACH(io_list->region_list_head, elt) {
-            tmp_size = 1;
-            elt->data_size = elt->count[0];
-            /* start = elt->start[0]; */
-            for (i = 1; i < elt->ndim; i++) {
-                tmp_size *= io_list->dims[i-1];
-                /* start += elt->start[i] * tmp_size; */
-                elt->data_size *= elt->count[i];
-            }
+    DL_FOREACH(region_list_head, elt) {
 
-            // Get min max client ID
-            uint32_t client_id_min = elt->client_ids[0];
-            uint32_t client_id_max = elt->client_ids[0];
-            for (i = 1; i < PDC_SERVER_MAX_PROC_PER_NODE; i++) {
-                if (elt->client_ids[i] == 0) 
-                    break;
-                client_id_min = elt->client_ids[i] < client_id_min ? elt->client_ids[i] : client_id_min;
-                client_id_max = elt->client_ids[i] > client_id_max ? elt->client_ids[i] : client_id_max;
-            }
-            
-            int rnd = rand();
-            // Shared memory address is /objID_ServerID_ClientIDmin_to_ClientIDmax_rand
-            sprintf(elt->shm_addr, "/%" PRIu64 "_s%d_c%dto%d_%d", io_list->obj_id, pdc_server_rank_g,
-                                                 client_id_min, client_id_max, rnd);
-            
-            /* create the shared memory segment as if it was a file */
-            /* printf("==PDC_SERVER: creating share memory segment with address [%s]\n", elt->shm_addr); */
-            elt->shm_fd = shm_open(elt->shm_addr, O_CREAT | O_RDWR, 0666);
-            if (elt->shm_fd == -1) {
-                printf("==PDC_SERVER: Shared memory shm_open failed\n");
-                ret_value = FAIL;
-                goto done;
-            }
+        elt->data_size = elt->count[0];
+        size_t i = 0;
+        for (i = 1; i < elt->ndim; i++) 
+            elt->data_size *= elt->count[i];
 
-            /* configure the size of the shared memory segment */
-            ftruncate(elt->shm_fd, elt->data_size);
-
-            /* map the shared memory segment to the address space of the process */
-            elt->shm_base = mmap(0, elt->data_size, PROT_READ | PROT_WRITE, MAP_SHARED, elt->shm_fd, 0);
-            if (elt->shm_base == MAP_FAILED) {
-                printf("==PDC_SERVER: Shared memory mmap failed\n");
-                // close and shm_unlink?
-                ret_value = FAIL;
-                goto done;
-            }
-
-            /* fseek (fp, start, SEEK_SET); */
-            fread(elt->shm_base, elt->data_size, 1, fp);
-            /* printf("Read offset %" PRIu64 ", size %" PRIu64 "\n", start, elt->data_size); */
-
-            elt->is_data_ready = 1;
+        // Get min max client ID
+        uint32_t client_id_min = elt->client_ids[0];
+        uint32_t client_id_max = elt->client_ids[0];
+        for (i = 1; i < PDC_SERVER_MAX_PROC_PER_NODE; i++) {
+            if (elt->client_ids[i] == 0) 
+                break;
+            client_id_min = elt->client_ids[i] < client_id_min ? elt->client_ids[i] : client_id_min;
+            client_id_max = elt->client_ids[i] > client_id_max ? elt->client_ids[i] : client_id_max;
         }
-        fclose(fp);
-    }
-    else {
-        printf("==PDC_SERVER: fopen failed [%s]\n", io_list->path);
-        ret_value = FAIL;
+        
+        int rnd = rand();
+        // Shared memory address is /objID_ServerID_ClientIDmin_to_ClientIDmax_rand
+        sprintf(elt->shm_addr, "/%" PRIu64 "_s%d_c%dto%d_%d", obj_id, pdc_server_rank_g,
+                                             client_id_min, client_id_max, rnd);
+        
+        /* create the shared memory segment as if it was a file */
+        /* printf("==PDC_SERVER: creating share memory segment with address [%s]\n", elt->shm_addr); */
+        elt->shm_fd = shm_open(elt->shm_addr, O_CREAT | O_RDWR, 0666);
+        if (elt->shm_fd == -1) {
+            printf("==PDC_SERVER: Shared memory shm_open failed\n");
+            ret_value = FAIL;
+            goto done;
+        }
+
+        /* configure the size of the shared memory segment */
+        ftruncate(elt->shm_fd, elt->data_size);
+
+        /* map the shared memory segment to the address space of the process */
+        elt->buf = mmap(0, elt->data_size, PROT_READ | PROT_WRITE, MAP_SHARED, elt->shm_fd, 0);
+        if (elt->buf == MAP_FAILED) {
+            printf("==PDC_SERVER: Shared memory mmap failed\n");
+            // close and shm_unlink?
+            ret_value = FAIL;
+            goto done;
+        }
+    } // DL_FOREACH
+
+    // POSIX read for now 
+    ret_value = PDC_Server_regions_io(region_list_head, POSIX);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_SERVER: error reading data from stroage and create shared memory\n");
         goto done;
     }
 
@@ -3404,7 +3391,7 @@ perr_t PDC_Server_data_read_real(pdc_data_server_io_list_t *io_list)
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
-} //PDC_Server_data_read_real
+} //PDC_Server_data_read_to_shm
 
 /* hg_return_t PDC_Server_data_read(const struct hg_cb_info *callback_info) */
 /* { */
@@ -3488,7 +3475,7 @@ done:
 /*     if (io_list_target->count >= io_list_target->total) { */
 /*             printf("==PDC_SERVER[%d]: received all %d data requests, start reading data from [%s]\n", pdc_server_rank_g, io_list_target->total, io_list_target->path); */
 
-/*         status = PDC_Server_data_read_real(io_list_target); */
+/*         status = PDC_Server_data_read_to_shm(io_list_target); */
 /*         if (status != SUCCEED) { */
 /*             printf("==PDC_SERVER: ERROR reading data from file [%s]!\n", io_list_target->path); */
 /*             ret_value = FAIL; */
@@ -3516,17 +3503,42 @@ done:
 /*     FUNC_LEAVE(ret_value); */
 /* } // end of PDC_Server_data_read */
 
-perr_t PDC_Server_data_write_real(pdc_data_server_io_list_t *io_list)
+perr_t PDC_Server_regions_io(region_list_t *region_list_head, PDC_io_plugin_t plugin)
 {
-    perr_t ret_value = FAIL;
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    if (plugin == POSIX) 
+        ret_value = PDC_Server_posix_one_file_io(region_list_head);
+    else if (plugin == DAOS) {
+        printf("DAOS plugin in under development, switch to POSIX instead.\n");
+        ret_value = PDC_Server_posix_one_file_io(region_list_head);
+    }
+    else {
+        printf("==PDC_SERVER: unsupported IO plugin!\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_Server_data_write_from_shm(region_list_t *region_list_head)
+{
+    perr_t ret_value = SUCCEED;
     region_list_t *merged_list = NULL;
-
-
     region_list_t *elt;
 
-    // Sort the list so it is ordered by client id
-    DL_SORT(io_list->region_list_head, region_list_cmp_by_client_id);
+    FUNC_ENTER(NULL);
 
+    // Sort the list so it is ordered by client id
+    DL_SORT(region_list_head, region_list_cmp_by_client_id);
+
+    // TODO: Merge regions
+    /* PDC_Server_merge_region_list_naive(io_list->region_list_head, &merged_list); */
     /* printf("==PDC_SERVER: write regions after merge\n"); */
     /* DL_FOREACH(io_list->region_list_head, elt) { */
     /*     PDC_print_region_list(elt); */
@@ -3534,60 +3546,55 @@ perr_t PDC_Server_data_write_real(pdc_data_server_io_list_t *io_list)
 
     // Now we have a merged list of regions to be read, 
     // so just write one by one
-    size_t i;
-    char write_path[ADDR_MAX];
-    memset(write_path, 0, ADDR_MAX);
-    sprintf(write_path, "%s/s%03d.bin", io_list->path, pdc_server_rank_g); 
+    DL_FOREACH(region_list_head, elt) {
 
-    pdc_mkdir(io_list->path);
-
-    FILE *fp = fopen(write_path, "w");
-    if (fp != NULL) {
-        DL_FOREACH(io_list->region_list_head, elt) {
+        // Calculate io size
+        size_t i = 0;
+        if (elt->data_size == 0) {
             elt->data_size = elt->count[0];
-            for (i = 1; i < elt->ndim; i++) {
+            for (i = 1; i < elt->ndim; i++) 
                 elt->data_size *= elt->count[i];
-            }
-
-            /* open the shared memory segment as if it was a file */
-            elt->shm_fd = shm_open(elt->shm_addr, O_RDONLY, 0666);
-            if (elt->shm_fd == -1) {
-                printf("==PDC_SERVER: Shared memory open failed [%s]!\n", elt->shm_addr);
-                ret_value = FAIL;
-                goto done;
-            }
-
-            /* map the shared memory segment to the address space of the process */
-            elt->shm_base = mmap(0, elt->data_size, PROT_READ, MAP_SHARED, elt->shm_fd, 0);
-            if (elt->shm_base == MAP_FAILED) {
-                printf("==PDC_CLIENT: Map failed: %s\n", strerror(errno));
-                // close and unlink?
-                fclose(fp);
-                ret_value = FAIL;
-                goto done;
-            }
-
-            fwrite(elt->shm_base, elt->data_size, 1, fp);
-            /* printf("Write iteration: size %" PRIu64 "\n", elt->data_size); */
-            elt->is_data_ready = 1;
         }
 
-        fclose(fp);
+        // Open shared memory and map to data buf
+        elt->shm_fd = shm_open(elt->shm_addr, O_RDONLY, 0666);
+        if (elt->shm_fd == -1) {
+            printf("==PDC_SERVER: Shared memory open failed [%s]!\n", elt->shm_addr);
+            ret_value = FAIL;
+            goto done;
+        }
+
+        elt->buf= mmap(0, elt->data_size, PROT_READ, MAP_SHARED, elt->shm_fd, 0);
+        if (elt->buf== MAP_FAILED) {
+            printf("==PDC_CLIENT: Map failed: %s\n", strerror(errno));
+            // close and unlink?
+            ret_value = FAIL;
+            goto done;
+        }
     }
-    else {
-        printf("==PDC_SERVER: fopen failed [%s]\n", write_path);
-        ret_value = FAIL;
+
+    // POSIX write 
+    ret_value = PDC_Server_regions_io(region_list_head, POSIX);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_SERVER: error writing data to stroage from shared memory\n");
         goto done;
     }
 
-    ret_value = SUCCEED;
-
 done:
+    // Close all opened shared memory
+    DL_FOREACH(region_list_head, elt) {
+        ret_value = PDC_Server_close_shm(elt);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_SERVER: error closing shared memory\n");
+            goto done;
+        }
+    }
+
     fflush(stdout);
     FUNC_LEAVE(ret_value);
-} //PDC_Server_data_write_real
+} // PDC_Server_data_write_from_shm
 
-hg_return_t PDC_Server_data_io(const struct hg_cb_info *callback_info)
+hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
 {
     perr_t ret_value = SUCCEED;
     perr_t status    = SUCCEED;
@@ -3601,22 +3608,20 @@ hg_return_t PDC_Server_data_io(const struct hg_cb_info *callback_info)
 
     data_server_io_info_t *io_info = (data_server_io_info_t*) callback_info->arg;
 
+    if (io_info->io_type == WRITE) 
+        io_list = pdc_data_server_write_list_head_g;
+    else if (io_info->io_type == READ) 
+        io_list = pdc_data_server_read_list_head_g;
+    else {
+        printf("==PDC_SERVER: PDC_Server_data_io_via_shm - invalid IO type received from client!\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
 #ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_lock(&data_write_list_mutex_g);
 #endif
     // Iterate io list, find the IO list and region of current request
-    if (io_info->io_type == WRITE) {
-        io_list = pdc_data_server_write_list_head_g;
-    }
-    else if (io_info->io_type == READ) {
-        io_list = pdc_data_server_read_list_head_g;
-    }
-    else {
-        printf("==PDC_SERVER: PDC_Server_data_io - invalid IO type received from client!\n");
-        ret_value = FAIL;
-        goto done;
-    }
-    /* DL_FOREACH(pdc_data_server_write_list_head_g, elt) { */
     DL_FOREACH(io_list, elt) {
         if (io_info->meta.obj_id == elt->obj_id) {
             io_list_target = elt;
@@ -3678,13 +3683,25 @@ hg_return_t PDC_Server_data_io(const struct hg_cb_info *callback_info)
     if (io_list_target->count == io_list_target->total) {
         printf("==PDC_SERVER[%d]: received all %d requests, start %s data to [%s]\n", pdc_server_rank_g, io_list_target->total, io_info->io_type == READ? "reading": "writing", io_list_target->path);
         if (io_info->io_type == READ) {
-            status = PDC_Server_data_read_real(io_list_target);
+
+            // TODO: currently the file location is hard coded 
+            DL_FOREACH(io_list_target->region_list_head, region_elt) 
+                sprintf(region_elt->storage_location, "%s/s%03d.bin", io_list->path, pdc_server_rank_g); 
+            status = PDC_Server_data_read_to_shm(io_list_target->region_list_head, io_list_target->obj_id);
         }
         else if (io_info->io_type == WRITE) {
-            status = PDC_Server_data_write_real(io_list_target);
+
+            // Specify the location of data to be written to
+            DL_FOREACH(io_list_target->region_list_head, region_elt) 
+                sprintf(region_elt->storage_location, "%s/s%03d.bin", io_list->path, pdc_server_rank_g); 
+            
+            pdc_mkdir(io_list->path);
+
+            PDC_Server_data_write_from_shm(io_list_target->region_list_head);
+            /* status = PDC_Server_data_write_real(io_list_target); */
         }
         else {
-            printf("==PDC_SERVER: PDC_Server_data_io - invalid IO type received from client!\n");
+            printf("==PDC_SERVER: PDC_Server_data_io_via_shm - invalid IO type received from client!\n");
             ret_value = FAIL;
             goto done;
         }
@@ -3716,7 +3733,7 @@ hg_return_t PDC_Server_data_io(const struct hg_cb_info *callback_info)
                     PDC_Server_notify_io_complete_to_client(client_id, io_list_target->obj_id, " ", io_info->io_type);
                 }
                 else {
-                    printf("==PDC_SERVER: PDC_Server_data_io - invalid IO type received from client!\n");
+                    printf("==PDC_SERVER: PDC_Server_data_io_via_shm - invalid IO type received from client!\n");
                     ret_value = FAIL;
                     goto done;
                 }
@@ -3743,4 +3760,166 @@ done:
     FUNC_LEAVE(ret_value);
 } // end of PDC_Server_data_write
 
+perr_t PDC_Server_posix_one_file_io(region_list_t* region)
+{
+    perr_t ret_value = SUCCEED;
+    size_t io_bytes = 0;
+    uint32_t offset = 0;
+    region_list_t *elt = NULL;
+    FILE *fp = NULL;
 
+    FUNC_ENTER(NULL);
+
+    // Assumes all regions are written to one file
+    if (region->storage_location == NULL) {
+        printf("==PDC_SERVER: PDC_Server_posix_one_file_io- storage_location is NULL!\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    if (region->access_type == READ) 
+        fp = fopen(region->storage_location, "r");
+    else if (region->access_type == WRITE) 
+        fp = fopen(region->storage_location, "w");
+    else {
+        printf("==PDC_SERVER: PDC_Server_posix_one_file_io - unsupported access type\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    if (fp != NULL) {
+        DL_FOREACH(region, elt) {
+
+            if (region->access_type == READ) 
+                io_bytes += fread(elt->buf, 1, elt->data_size, fp);
+
+            else if (region->access_type == WRITE) 
+                io_bytes += fwrite(elt->buf, 1, elt->data_size, fp);
+
+            if (io_bytes != elt->data_size) {
+                ret_value= FAIL;
+                fclose(fp);
+                goto done;
+            }
+
+            /* printf("Write iteration: size %" PRIu64 "\n", elt->data_size); */
+            elt->is_data_ready = 1;
+            elt->offset = offset;
+            offset += io_bytes;
+
+            // TODO: need to update metadata with the location and offset
+            // PDC_Server_update_region_storagelocation_offset();
+        }
+        fclose(fp);
+    }
+    else {
+        printf("==PDC_SERVER: fopen failed [%s]\n", region->storage_location);
+        ret_value = FAIL;
+        goto done;
+    }
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+// Insert the write request to a queue(list) for aggregation
+/* perr_t PDC_Server_add_io_request(PDC_access_t io_type, pdc_metadata_t *meta, struct PDC_region_info *region_info, void *buf, uint32_t client_id) */
+/* { */
+/*     perr_t ret_value = SUCCEED; */
+/*     pdc_data_server_io_list_t *elt = NULL, *io_list = NULL, *io_list_target = NULL; */
+/*     region_list_t *region_elt = NULL; */
+
+/*     FUNC_ENTER(NULL); */
+
+/*     if (io_type == WRITE) */ 
+/*         io_list = pdc_data_server_write_list_head_g; */
+/*     else if (io_type == READ) */ 
+/*         io_list = pdc_data_server_read_list_head_g; */
+/*     else { */
+/*         printf("==PDC_SERVER: PDC_Server_add_io_request_to_queue - invalid IO type!\n"); */
+/*         ret_value = FAIL; */
+/*         goto done; */
+/*     } */
+
+/* #ifdef ENABLE_MULTITHREAD */ 
+/*     hg_thread_mutex_lock(&data_write_list_mutex_g); */
+/* #endif */
+/*     // Iterate io list, find the IO list and region of current request */
+/*     DL_FOREACH(io_list, elt) { */
+/*         if (meta->obj_id == elt->obj_id) { */
+/*             io_list_target = elt; */
+/*             break; */
+/*         } */
+/*     } */
+/* #ifdef ENABLE_MULTITHREAD */ 
+/*     hg_thread_mutex_unlock(&data_write_list_mutex_g); */
+/* #endif */
+
+/*     // If there is no IO list created for current obj_id, create one and insert it to the global list */
+/*     if (NULL == io_list_target) { */
+
+/*         /1* printf("==PDC_SERVER: No existing io request with same obj_id found!\n"); *1/ */
+/*         io_list_target = (pdc_data_server_io_list_t*)malloc(sizeof(pdc_data_server_io_list_t)); */
+/*         if (NULL == io_list_target) { */
+/*             printf("==PDC_SERVER: ERROR allocating pdc_data_server_io_list_t!\n"); */
+/*             ret_value = FAIL; */
+/*             goto done; */
+/*         } */
+/*         io_list_target->obj_id = meta->obj_id; */
+/*         io_list_target->total  = -1; */
+/*         io_list_target->count  = 0; */
+/*         io_list_target->ndim   = meta->ndim; */
+/*         for (i = 0; i < meta->ndim; i++) */ 
+/*             io_list_target->dims[i] = meta->dims[i]; */
+        
+/*         io_list_target->total_size  = 0; */
+
+/*         // Auto generate a data location path for storing the data */
+/*         strcpy(io_list_target->path, meta->data_location); */
+/*         io_list_target->region_list_head = NULL; */
+
+/*         DL_APPEND(io_list, io_list_target); */
+/*     } */
+
+/*     /1* printf("==PDC_SERVER[%d]: received %d/%d data %s requests of [%s]\n", pdc_server_rank_g, io_list_target->count, io_list_target->total, io_type == READ? "read": "write", meta->obj_name); *1/ */
+/*     region_list_t *new_region = (region_list_t*)malloc(sizeof(region_list_t)); */
+/*     if (new_region == NULL) { */
+/*         printf("==PDC_SERVER: ERROR allocating new_region!\n"); */
+/*         ret_value = FAIL; */
+/*         goto done; */
+/*     } */
+
+/*     PDC_init_region_list(new_region); */
+/*     perr_t pdc_region_info_to_list_t(region_info, new_region); */
+
+/*     new_region->client_ids[0] = client_id; */
+
+/*     // Calculate size */
+/*     new_region->data_size = 1; */
+/*     for (i = 0; i < new_region->ndim; i++) */ 
+/*         new_region->data_size *= new_region->count[i]; */
+
+/*     io_list_target->total_size += new_region->data_size; */
+/*     io_list_target->count++; */
+
+/*     // Insert current request to the IO list's region list head */
+/*     DL_APPEND(io_list_target->region_list_head, new_region); */
+
+/* done: */
+/*     fflush(stdout); */
+/*     FUNC_LEAVE(ret_value); */
+/* } // end of PDC_Server_add_io_request */
+
+// Directly read/write buffer from/to storage
+perr_t PDC_Server_data_io_direct(pdc_metadata_t *meta, struct PDC_region_info *region_info, void *buf)
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+
+
+done:
+    fflush(stdout);
+}
