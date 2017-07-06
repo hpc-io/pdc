@@ -1742,10 +1742,10 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
     hg_class_t *hg_class;
     hg_uint32_t i, j;
     hg_uint32_t count;
-    void      **data_ptrs;
-    hg_size_t  *data_size;
-    size_t      unit;
-    struct region_map_args map_args;
+    void    **data_ptrs;
+    size_t  *data_size;
+    size_t  unit;
+    struct  region_map_args map_args;
     hg_bulk_t bulk_handle = HG_BULK_NULL;
     
     FUNC_ENTER(NULL);
@@ -1777,14 +1777,14 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
     if(ndim == 1) {
         count = 1;
         data_ptrs = (void **)malloc( sizeof(void *) );
-        data_size = (hg_size_t *)malloc( sizeof(hg_size_t) );
+        data_size = (size_t *)malloc( sizeof(size_t) );
         *data_ptrs = local_data + unit*local_offset[0];
         *data_size = unit*size[0];
     }
     else if(ndim == 2) {
         count = size[0];
         data_ptrs = (void **)malloc( size[0] * sizeof(void *) );
-        data_size = (hg_size_t *)malloc( size[0] * sizeof(hg_size_t) );
+        data_size = (size_t *)malloc( size[0] * sizeof(size_t) );
         data_ptrs[0] = local_data + unit*(dims[1]*local_offset[0] + local_offset[1]);
         data_size[0] = unit*size[1];
         for(i=1; i<size[0]; i++) {
@@ -1795,7 +1795,7 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
     else if(ndim == 3) {
         count = size[0]*size[1];
         data_ptrs = (void **)malloc( size[0] * size[1] * sizeof(void *) );
-        data_size = (hg_size_t *)malloc( size[0] * size[1] * sizeof(hg_size_t) );
+        data_size = (size_t *)malloc( size[0] * size[1] * sizeof(size_t) );
         data_ptrs[0] = local_data + unit*(dims[2]*dims[1]*local_offset[0] + dims[2]*local_offset[1] + local_offset[2]);
         data_size[0] = unit*size[2];
         for(i=0; i<size[0]-1; i++) {
@@ -1822,7 +1822,7 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
     }
     
     // Create bulk handle
-    hg_ret = HG_Bulk_create(hg_class, count, data_ptrs, data_size, HG_BULK_READWRITE, &bulk_handle);
+    hg_ret = HG_Bulk_create(hg_class, count, data_ptrs, (hg_size_t *)data_size, HG_BULK_READWRITE, &bulk_handle);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "Could not create bulk data handle\n");
         return EXIT_FAILURE;
