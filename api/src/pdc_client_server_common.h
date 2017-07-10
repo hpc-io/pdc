@@ -1,3 +1,27 @@
+/*
+ * Copyright Notice for 
+ * Proactive Data Containers (PDC) Software Library and Utilities
+ * -----------------------------------------------------------------------------
+
+ *** Copyright Notice ***
+ 
+ * Proactive Data Containers (PDC) Copyright (c) 2017, The Regents of the
+ * University of California, through Lawrence Berkeley National Laboratory,
+ * UChicago Argonne, LLC, operator of Argonne National Laboratory, and The HDF
+ * Group (subject to receipt of any required approvals from the U.S. Dept. of
+ * Energy).  All rights reserved.
+ 
+ * If you have questions about your rights to use or distribute this software,
+ * please contact Berkeley Lab's Innovation & Partnerships Office at  IPO@lbl.gov.
+ 
+ * NOTICE.  This Software was developed under funding from the U.S. Department of
+ * Energy and the U.S. Government consequently retains certain rights. As such, the
+ * U.S. Government has been granted for itself and others acting on its behalf a
+ * paid-up, nonexclusive, irrevocable, worldwide license in the Software to
+ * reproduce, distribute copies to the public, prepare derivative works, and
+ * perform publicly and display publicly, and to permit other to do so.
+ */
+
 #ifndef PDC_CLIENT_SERVER_COMMON_H
 #define PDC_CLIENT_SERVER_COMMON_H
 
@@ -225,10 +249,10 @@ MERCURY_GEN_PROC( metadata_add_tag_out_t, ((int32_t)(ret)) )
 MERCURY_GEN_PROC( metadata_update_in_t, ((uint64_t)(obj_id)) ((uint32_t)(hash_value)) ((pdc_metadata_transfer_t)(new_metadata)) )
 MERCURY_GEN_PROC( metadata_update_out_t, ((int32_t)(ret)) )
 
-MERCURY_GEN_PROC( gen_obj_unmap_notification_in_t, ((uint64_t)(local_obj_id)) ((uint64_t)(pdc_id)) )
+MERCURY_GEN_PROC( gen_obj_unmap_notification_in_t, ((uint64_t)(local_obj_id)) )
 MERCURY_GEN_PROC( gen_obj_unmap_notification_out_t, ((int32_t)(ret)) )
 
-MERCURY_GEN_PROC( gen_reg_unmap_notification_in_t, ((uint64_t)(local_obj_id)) ((uint64_t)(local_reg_id)) ((uint64_t)(pdc_id)) )
+MERCURY_GEN_PROC( gen_reg_unmap_notification_in_t, ((uint64_t)(local_obj_id)) ((uint64_t)(local_reg_id)) )
 MERCURY_GEN_PROC( gen_reg_unmap_notification_out_t, ((int32_t)(ret)) )
 
 MERCURY_GEN_PROC( gen_reg_map_notification_in_t, ((uint64_t)(local_obj_id)) ((uint64_t)(local_reg_id)) ((uint64_t)(remote_obj_id)) ((uint64_t)(remote_reg_id)) ((uint8_t)(local_type)) ((uint8_t)(remote_type)) ((uint32_t)(ndim)) ((hg_bulk_t)(bulk_handle)) )
@@ -851,7 +875,6 @@ typedef struct {
 typedef struct {
     uint64_t        local_obj_id;
     uint64_t        local_reg_id;
-    uint64_t        pdc_id;
 } gen_reg_unmap_notification_in_t;
 
 typedef struct {
@@ -860,7 +883,6 @@ typedef struct {
 
 typedef struct {
     uint64_t        local_obj_id;
-    uint64_t        pdc_id;
 } gen_obj_unmap_notification_in_t;
 
 typedef struct {
@@ -880,7 +902,8 @@ hg_proc_gen_obj_id_in_t(hg_proc_t proc, void *data)
     }
     ret = hg_proc_uint32_t(proc, &struct_data->hash_value);
     if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
+	    HG_LOG_ERROR("Proc error");
+        return ret;
     }
     return ret;
 }
@@ -893,7 +916,8 @@ hg_proc_gen_obj_id_out_t(hg_proc_t proc, void *data)
 
     ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
     if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
+	    HG_LOG_ERROR("Proc error");
+        return ret;
     }
     return ret;
 }
@@ -998,7 +1022,8 @@ hg_proc_client_test_connect_out_t(hg_proc_t proc, void *data)
 
     ret = hg_proc_int32_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
+	    HG_LOG_ERROR("Proc error");
+        return ret;
     }
     return ret;
 }
@@ -1048,7 +1073,8 @@ hg_proc_close_server_in_t(hg_proc_t proc, void *data)
 
     ret = hg_proc_int32_t(proc, &struct_data->client_id);
     if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
+	    HG_LOG_ERROR("Proc error");
+        return ret;
     }
     return ret;
 }
@@ -1061,7 +1087,8 @@ hg_proc_close_server_out_t(hg_proc_t proc, void *data)
 
     ret = hg_proc_int32_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
+	    HG_LOG_ERROR("Proc error");
+        return ret;
     }
     return ret;
 }
@@ -1173,7 +1200,8 @@ hg_proc_gen_reg_map_notification_out_t(hg_proc_t proc, void *data)
 
     ret = hg_proc_int32_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
+	    HG_LOG_ERROR("Proc error");
+        return ret;
     }
     return ret;
 }
@@ -1194,11 +1222,6 @@ hg_proc_gen_reg_unmap_notification_in_t(hg_proc_t proc, void *data)
         HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_uint64_t(proc, &struct_data->pdc_id);
-    if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
-        return ret;
-    }
     return ret;
 }
 
@@ -1210,7 +1233,8 @@ hg_proc_gen_reg_unmap_notification_out_t(hg_proc_t proc, void *data)
 
     ret = hg_proc_int32_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
-    HG_LOG_ERROR("Proc error");
+        HG_LOG_ERROR("Proc error");
+        return ret;
     }
     return ret;
 }
@@ -1226,11 +1250,6 @@ hg_proc_gen_obj_unmap_notification_in_t(hg_proc_t proc, void *data)
         HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_uint64_t(proc, &struct_data->pdc_id);
-    if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
-        return ret;
-    }
     return ret;
 }
 
@@ -1242,7 +1261,8 @@ hg_proc_gen_obj_unmap_notification_out_t(hg_proc_t proc, void *data)
 
     ret = hg_proc_int32_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
-    HG_LOG_ERROR("Proc error");
+        HG_LOG_ERROR("Proc error");
+        return ret;
     }
     return ret;
 }

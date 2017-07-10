@@ -1,3 +1,27 @@
+/*
+ * Copyright Notice for 
+ * Proactive Data Containers (PDC) Software Library and Utilities
+ * -----------------------------------------------------------------------------
+
+ *** Copyright Notice ***
+ 
+ * Proactive Data Containers (PDC) Copyright (c) 2017, The Regents of the
+ * University of California, through Lawrence Berkeley National Laboratory,
+ * UChicago Argonne, LLC, operator of Argonne National Laboratory, and The HDF
+ * Group (subject to receipt of any required approvals from the U.S. Dept. of
+ * Energy).  All rights reserved.
+ 
+ * If you have questions about your rights to use or distribute this software,
+ * please contact Berkeley Lab's Innovation & Partnerships Office at  IPO@lbl.gov.
+ 
+ * NOTICE.  This Software was developed under funding from the U.S. Department of
+ * Energy and the U.S. Government consequently retains certain rights. As such, the
+ * U.S. Government has been granted for itself and others acting on its behalf a
+ * paid-up, nonexclusive, irrevocable, worldwide license in the Software to
+ * reproduce, distribute copies to the public, prepare derivative works, and
+ * perform publicly and display publicly, and to permit other to do so.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,6 +29,7 @@
 #include <getopt.h>
 #include <time.h>
 #include <sys/time.h>
+#include <ctype.h>
 
 /* #define ENABLE_MPI 1 */
 
@@ -32,14 +57,12 @@ void print_usage() {
     printf("Usage: srun -n ./creat_obj -r num_of_obj_per_rank\n");
 }
 
-int main(int argc, const char *argv[])
+int main(int argc, char **argv)
 {
     int rank = 0, size = 1;
     int count = -1;
     char c;
     int i;
-    const int metadata_size = 512;
-    struct PDC_prop p;
     pdcid_t pdc, cont_prop, cont, obj_prop;
     uint64_t dims[3] = {100, 200, 700};
     pdcid_t test_obj = -1;
@@ -94,7 +117,7 @@ int main(int argc, const char *argv[])
     fflush(stdout);
 
     // create a pdc
-    pdc = PDC_init(p);
+    pdc = PDC_init("pdc");
     /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
@@ -106,7 +129,7 @@ int main(int argc, const char *argv[])
     /*         printf("Create a container property, id is %lld\n", cont_prop); */
 
     // create a container
-    cont = PDCcont_create(pdc, "c1", cont_prop);
+    cont = PDCcont_create("c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
     /* else */
@@ -121,7 +144,7 @@ int main(int argc, const char *argv[])
     /*     if (rank == 0) */ 
     /*         printf("Create an object property, id is %lld\n", obj_prop); */
 
-    PDCprop_set_obj_dims(obj_prop, 3, dims, pdc);
+    PDCprop_set_obj_dims(obj_prop, 3, dims);
 
     env_str = getenv("PDC_OBJ_NAME");
     if (env_str != NULL) {
@@ -144,24 +167,24 @@ int main(int argc, const char *argv[])
 
         if (use_name == -1) {
             sprintf(obj_name, "%s", rand_string(tmp_str, 16));
-            PDCprop_set_obj_time_step(obj_prop, rank, pdc);
+            PDCprop_set_obj_time_step(obj_prop, rank);
             /* sprintf(obj_name[i], "%s_%d", rand_string(tmp_str, 16), i + rank * count); */
         }
         else if (use_name == 1) {
             sprintf(obj_name, "%s", obj_prefix[0]);
-            PDCprop_set_obj_time_step(obj_prop, i + rank * count, pdc);
+            PDCprop_set_obj_time_step(obj_prop, i + rank * count);
         }
         else if (use_name == 4) {
             sprintf(obj_name, "%s", obj_prefix[i%4]);
-            PDCprop_set_obj_time_step(obj_prop, i/4 + rank * count, pdc);
+            PDCprop_set_obj_time_step(obj_prop, i/4 + rank * count);
         }
         else {
             printf("Unsupported name choice\n");
             goto done;
         }
-        PDCprop_set_obj_user_id( obj_prop, getuid(),    pdc);
-        PDCprop_set_obj_app_name(obj_prop, "test_app",  pdc);
-        PDCprop_set_obj_tags(    obj_prop, "tag0=1",    pdc);
+        PDCprop_set_obj_user_id( obj_prop, getuid()    );
+        PDCprop_set_obj_app_name(obj_prop, "test_app"  );
+        PDCprop_set_obj_tags(    obj_prop, "tag0=1"    );
 
         /* if (count < 4) { */
         /*     printf("Proc %d Name: %s\n", rank, obj_name); */
@@ -169,7 +192,7 @@ int main(int argc, const char *argv[])
         if (count < 20) {
             printf("[%d] create obj with name %s\n", rank, obj_name);
         }
-        test_obj = PDCobj_create(pdc, cont, obj_name, obj_prop);
+        test_obj = PDCobj_create(cont, obj_name, obj_prop);
         if (test_obj < 0) { 
             printf("Error getting an object id of %s from server, exit...\n", obj_name);
             exit(-1);
@@ -226,14 +249,14 @@ int main(int argc, const char *argv[])
 
 done:
     // close a container
-    if(PDCcont_close(cont, pdc) < 0)
+    if(PDCcont_close(cont) < 0)
         printf("fail to close container %lld\n", cont);
     /* else */
     /*     if (rank == 0) */ 
     /*         printf("successfully close container # %lld\n", cont); */
 
     // close a container property
-    if(PDCprop_close(cont_prop, pdc) < 0)
+    if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
     /* else */
     /*     if (rank == 0) */ 

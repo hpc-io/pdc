@@ -1,8 +1,33 @@
+/*
+ * Copyright Notice for 
+ * Proactive Data Containers (PDC) Software Library and Utilities
+ * -----------------------------------------------------------------------------
+
+ *** Copyright Notice ***
+ 
+ * Proactive Data Containers (PDC) Copyright (c) 2017, The Regents of the
+ * University of California, through Lawrence Berkeley National Laboratory,
+ * UChicago Argonne, LLC, operator of Argonne National Laboratory, and The HDF
+ * Group (subject to receipt of any required approvals from the U.S. Dept. of
+ * Energy).  All rights reserved.
+ 
+ * If you have questions about your rights to use or distribute this software,
+ * please contact Berkeley Lab's Innovation & Partnerships Office at  IPO@lbl.gov.
+ 
+ * NOTICE.  This Software was developed under funding from the U.S. Department of
+ * Energy and the U.S. Government consequently retains certain rights. As such, the
+ * U.S. Government has been granted for itself and others acting on its behalf a
+ * paid-up, nonexclusive, irrevocable, worldwide license in the Software to
+ * reproduce, distribute copies to the public, prepare derivative works, and
+ * perform publicly and display publicly, and to permit other to do so.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
-#include <time.h>
+#include <sys/time.h>
+#include <ctype.h>
 
 /* #define ENABLE_MPI 1 */
 
@@ -39,7 +64,6 @@ int main(int argc, const char *argv[])
     int i;
     int use_name = -1;
     int ts;
-    struct PDC_prop p;
     pdcid_t pdc, cont_prop, cont, obj_prop;
     struct timeval  ht_total_start;
     struct timeval  ht_total_end;
@@ -92,7 +116,7 @@ int main(int argc, const char *argv[])
     fflush(stdout);
 
     // create a pdc
-    pdc = PDC_init(p);
+    pdc = PDC_init("pdc");
     /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
@@ -104,7 +128,7 @@ int main(int argc, const char *argv[])
     /*         printf("Create a container property, id is %lld\n", cont_prop); */
 
     // create a container
-    cont = PDCcont_create(pdc, "c1", cont_prop);
+    cont = PDCcont_create("c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
     /* else */
@@ -207,14 +231,14 @@ int main(int argc, const char *argv[])
 done:
 
     // close a container
-    if(PDCcont_close(cont, pdc) < 0)
+    if(PDCcont_close(cont) < 0)
         printf("fail to close container %lld\n", cont);
     /* else */
     /*     if (rank == 0) */ 
     /*         printf("successfully close container # %lld\n", cont); */
 
     // close a container property
-    if(PDCprop_close(cont_prop, pdc) < 0)
+    if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
     /* else */
     /*     if (rank == 0) */ 

@@ -1,3 +1,27 @@
+/*
+ * Copyright Notice for 
+ * Proactive Data Containers (PDC) Software Library and Utilities
+ * -----------------------------------------------------------------------------
+
+ *** Copyright Notice ***
+ 
+ * Proactive Data Containers (PDC) Copyright (c) 2017, The Regents of the
+ * University of California, through Lawrence Berkeley National Laboratory,
+ * UChicago Argonne, LLC, operator of Argonne National Laboratory, and The HDF
+ * Group (subject to receipt of any required approvals from the U.S. Dept. of
+ * Energy).  All rights reserved.
+ 
+ * If you have questions about your rights to use or distribute this software,
+ * please contact Berkeley Lab's Innovation & Partnerships Office at  IPO@lbl.gov.
+ 
+ * NOTICE.  This Software was developed under funding from the U.S. Department of
+ * Energy and the U.S. Government consequently retains certain rights. As such, the
+ * U.S. Government has been granted for itself and others acting on its behalf a
+ * paid-up, nonexclusive, irrevocable, worldwide license in the Software to
+ * reproduce, distribute copies to the public, prepare derivative works, and
+ * perform publicly and display publicly, and to permit other to do so.
+ */
+
 #ifndef PDC_CLIENT_CONNECT_H
 #define PDC_CLIENT_CONNECT_H
 
@@ -125,15 +149,13 @@ int PDC_Client_read_server_addr_from_file();
 /**
  * Client request of an obj id by sending object name
  *
- * \param pdc_id [IN]           Id of the PDC
- * \param cont_id [IN]          Id of the container
  * \param obj_name [IN]         Name of the object
  * \param obj_create_prop [IN]  Id of the object property
  * \param meta_id [IN]          Pointer to medadata id
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_send_name_recv_id(pdcid_t pdc_id, pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop, pdcid_t *meta_id);
+perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_prop, pdcid_t *meta_id);
 
 /**
  * Listing all objects on the client
@@ -174,14 +196,12 @@ perr_t PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t 
 /**
  * Request of PDC client to delete metadata by object name
  *
- * \param pdc_id [IN]           Id of the PDC
- * \param cont_id [IN]          Id of the container
  * \param delete_name [IN]      Name to delete
  * \param obj_delete_prop [IN]  Id of the associated property
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_delete_metadata(pdcid_t pdc_id, pdcid_t cont_id, char *delete_name, pdcid_t obj_delete_prop);
+perr_t PDC_Client_delete_metadata(char *delete_name, pdcid_t obj_delete_prop);
 
 /**
  * Request of PDC client to delete metadata by object id
@@ -234,24 +254,21 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id, pdcid_t pdc_id);
+perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id);
 
 /**
  * Client request for object unmapping
  *
  * \param local_obj_id [IN]      The origin object id
  * \param local_obj_id [IN]      The origin region id
- * \param pdc_id [IN]            The pdc id
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, pdcid_t pdc_id);
+perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id);
 
 /**
  * Request of PDC client to get region lock
  *
- * \param pdc_id [IN]           Id of the PDC
- * \param cont_id [IN]          Id of the container
  * \param obj_id [IN]           Id of the metadata
  * \param region_info [IN]      Pointer to PDC_region_info struct
  * \param access_type [IN]      Access type (enum)
@@ -260,13 +277,11 @@ perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, 
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_obtain_region_lock(pdcid_t pdc_id, pdcid_t cont_id, pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_lock_mode_t lock_mode, pbool_t *obtained);
+perr_t PDC_Client_obtain_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_lock_mode_t lock_mode, pbool_t *obtained);
 
 /**
  * Request of PDC client to get region lock
  *
- * \param pdc_id [IN]           Id of the PDC
- * \param cont_id [IN]          Id of the container
  * \param obj_id [IN]           Id of the metadata
  * \param region_info [IN]      Pointer to PDC_region_info struct
  * \param access_type [IN]      Access type (enum)
@@ -274,7 +289,7 @@ perr_t PDC_Client_obtain_region_lock(pdcid_t pdc_id, pdcid_t cont_id, pdcid_t me
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_release_region_lock(pdcid_t pdc_id, pdcid_t cont_id, pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, pbool_t *released);
+perr_t PDC_Client_release_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, pbool_t *released);
 
 /**
  * PDC client initialization

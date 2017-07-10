@@ -1,3 +1,27 @@
+/*
+ * Copyright Notice for 
+ * Proactive Data Containers (PDC) Software Library and Utilities
+ * -----------------------------------------------------------------------------
+
+ *** Copyright Notice ***
+ 
+ * Proactive Data Containers (PDC) Copyright (c) 2017, The Regents of the
+ * University of California, through Lawrence Berkeley National Laboratory,
+ * UChicago Argonne, LLC, operator of Argonne National Laboratory, and The HDF
+ * Group (subject to receipt of any required approvals from the U.S. Dept. of
+ * Energy).  All rights reserved.
+ 
+ * If you have questions about your rights to use or distribute this software,
+ * please contact Berkeley Lab's Innovation & Partnerships Office at  IPO@lbl.gov.
+ 
+ * NOTICE.  This Software was developed under funding from the U.S. Department of
+ * Energy and the U.S. Government consequently retains certain rights. As such, the
+ * U.S. Government has been granted for itself and others acting on its behalf a
+ * paid-up, nonexclusive, irrevocable, worldwide license in the Software to
+ * reproduce, distribute copies to the public, prepare derivative works, and
+ * perform publicly and display publicly, and to permit other to do so.
+ */
+
 #include "server/utlist.h"
 
 #include "mercury.h"
@@ -10,7 +34,6 @@
 #include "pdc_client_connect.h"
 #include "pdc_client_server_common.h"
 #include "server/pdc_server.h"
-#include "server/utlist.h"
 #include "pdc_malloc.h"
 #include <inttypes.h>
 
@@ -955,6 +978,9 @@ HG_TEST_RPC_CB(region_lock, handle)
     hg_return_t ret_value = HG_SUCCESS;
     region_lock_in_t in;
     region_lock_out_t out;
+    const struct hg_info *hg_info = NULL;
+    struct lock_bulk_args *bulk_args = NULL;
+    pdc_metadata_t *target_obj;
     int ret;
     int error = 0;
     int found = 0;
@@ -979,17 +1005,15 @@ HG_TEST_RPC_CB(region_lock, handle)
     // do data tranfer if it is write lock release. Respond to client in callback after data transfer is done
     else {
         hg_op_id_t hg_bulk_op_id;
-        struct hg_info *hg_info = NULL;
         /* Get info from handle */
         hg_info = HG_Get_info(handle);
 
-        struct lock_bulk_args *bulk_args = NULL;
         bulk_args = (struct lock_bulk_args *) malloc(sizeof(struct lock_bulk_args));
         /* Keep handle to pass to callback */
         bulk_args->handle = handle;
         bulk_args->in = in;
 
-        pdc_metadata_t *target_obj = PDC_Server_get_obj_metadata(in.obj_id);
+        target_obj = PDC_Server_get_obj_metadata(in.obj_id);
         if (target_obj == NULL) {
             error = 1;
             printf("==PDC_SERVER: PDC_Server_region_lock - requested object (id=%llu) does not exist\n", in.obj_id);
@@ -1017,6 +1041,8 @@ HG_TEST_RPC_CB(region_lock, handle)
                         error = 1;
                         printf("==PDC SERVER ERROR: Could not create bulk data handle\n");
                     }
+                    free(data_ptrs);
+                    free(data_size);
                     /* Pull bulk data */
                     hg_ret = HG_Bulk_transfer(hg_info->context, region_lock_bulk_transfer_cb, bulk_args, HG_BULK_PULL, elt->local_addr, origin_bulk_handle, 0, local_bulk_handle, 0, size, &hg_bulk_op_id);
                     if (hg_ret != HG_SUCCESS) {
@@ -1080,6 +1106,7 @@ HG_TEST_RPC_CB(gen_obj_unmap_notification, handle)
             out.ret = 1;
         }
     }
+    
 done:
     HG_Respond(handle, NULL, NULL, &out);
     HG_Free_input(handle, &in);
@@ -1122,6 +1149,7 @@ HG_TEST_RPC_CB(gen_reg_unmap_notification, handle)
             }
             HG_Bulk_free(elt->bulk_handle);
             DL_DELETE(target_obj->region_map_head, elt);
+            free(elt);
             out.ret = 1;
         }
     }
@@ -1144,6 +1172,7 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
     pdc_metadata_t *target_obj;
     int found;
     region_map_t *elt;
+    const struct hg_info *info;
     
     FUNC_ENTER(NULL);
 
@@ -1192,7 +1221,7 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
         map_ptr->local_reg_id = in.local_reg_id;
         map_ptr->local_ndim = in.ndim;
         map_ptr->local_data_type = in.local_type;
-        struct hg_info *info = HG_Get_info(handle);
+        info = HG_Get_info(handle);
         HG_Addr_dup(info->hg_class, info->addr, &(map_ptr->local_addr));
         HG_Bulk_ref_incr(in.bulk_handle);
         map_ptr->bulk_handle = in.bulk_handle;
@@ -1340,7 +1369,6 @@ gen_obj_id_register(hg_class_t *hg_class)
 
     ret_value = MERCURY_REGISTER(hg_class, "gen_obj_id", gen_obj_id_in_t, gen_obj_id_out_t, gen_obj_id_cb);
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -1366,7 +1394,6 @@ client_test_connect_register(hg_class_t *hg_class)
 
     ret_value = MERCURY_REGISTER(hg_class, "client_test_connect", client_test_connect_in_t, client_test_connect_out_t, client_test_connect_cb);
 
-done:
     FUNC_LEAVE(ret_value);
 }
 

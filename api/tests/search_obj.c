@@ -1,8 +1,33 @@
+/*
+ * Copyright Notice for 
+ * Proactive Data Containers (PDC) Software Library and Utilities
+ * -----------------------------------------------------------------------------
+
+ *** Copyright Notice ***
+ 
+ * Proactive Data Containers (PDC) Copyright (c) 2017, The Regents of the
+ * University of California, through Lawrence Berkeley National Laboratory,
+ * UChicago Argonne, LLC, operator of Argonne National Laboratory, and The HDF
+ * Group (subject to receipt of any required approvals from the U.S. Dept. of
+ * Energy).  All rights reserved.
+ 
+ * If you have questions about your rights to use or distribute this software,
+ * please contact Berkeley Lab's Innovation & Partnerships Office at  IPO@lbl.gov.
+ 
+ * NOTICE.  This Software was developed under funding from the U.S. Department of
+ * Energy and the U.S. Government consequently retains certain rights. As such, the
+ * U.S. Government has been granted for itself and others acting on its behalf a
+ * paid-up, nonexclusive, irrevocable, worldwide license in the Software to
+ * reproduce, distribute copies to the public, prepare derivative works, and
+ * perform publicly and display publicly, and to permit other to do so.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
-#include <time.h>
+#include <sys/time.h>
+#include <ctype.h>
 
 /* #define ENABLE_MPI 1 */
 
@@ -33,9 +58,30 @@ void print_usage() {
     printf("Usage: srun -n ./creat_obj -r num_of_obj_per_rank\n");
 }
 
-int main(int argc, const char *argv[])
+int main(int argc, char **argv)
 {
     int rank = 0, size = 1;
+    int count = -1;
+    int i;
+    char c;
+    pdcid_t pdc, cont_prop, cont, obj_prop;
+    
+    struct timeval  ht_total_start;
+    struct timeval  ht_total_end;
+    long long ht_total_elapsed;
+    double ht_total_sec;
+    
+    char name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name", "INVALID!", "INVALID!", "Four Obj Names"};
+    char filename[128], pdc_server_tmp_dir_g[128];
+    char *env_str;
+    char **obj_names;
+    int  *obj_ts;
+    char *tmp_dir;
+    int n_entry;
+    int use_name = -1;
+    pdc_metadata_t entry;
+    uint32_t *hash_key;
+    int j, read_count = 0, tmp_count;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -43,8 +89,6 @@ int main(int argc, const char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    int count = -1;
-    char c;
     while ((c = getopt (argc, argv, "r:")) != -1)
         switch (c)
         {
@@ -74,63 +118,45 @@ int main(int argc, const char *argv[])
     }
     count /= size;
 
-    int i;
-
-    PDC_prop_t p;
     // create a pdc
-    pdcid_t pdc = PDC_init(p);
+    pdc = PDC_init("pdc");
     /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
-    pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
+    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     // create a container
-    pdcid_t cont = PDCcont_create(pdc, "c1", cont_prop);
+    cont = PDCcont_create("c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
     // create an object property
-    pdcid_t obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
+    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if(obj_prop <= 0)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
+    
 
-    pdcid_t test_obj = -1;
-
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
-    double ht_total_sec;
-
-
-    char obj_prefix[4][10] = {"x", "y", "z", "energy"};
-    char tmp_str[128];
-
-    int use_name = -1;
-    char *env_str = getenv("PDC_OBJ_NAME");
+    env_str = getenv("PDC_OBJ_NAME");
     if (env_str != NULL) {
         use_name = atoi(env_str);
     }
 
     srand(rank+1);
 
-    char name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name", "INVALID!", "INVALID!", "Four Obj Names"}; 
     if (rank == 0) {
         printf("Using %s\n", name_mode[use_name+1]);
     }
 
-    const int metadata_size = 512;
-    char **obj_names = (char**)malloc(count * sizeof(char*));
-    int   *obj_ts    = (int*)  malloc(count * sizeof(int));
+    obj_names = (char**)malloc(count * sizeof(char*));
+    obj_ts    = (int*)  malloc(count * sizeof(int));
     for (i = 0; i < count; i++) {
         obj_names[i] = (char*)malloc(128*sizeof(char));
     }
 
-    char filename[128], pdc_server_tmp_dir_g[128];
-    int n_entry;
     // Set up tmp dir
-    char *tmp_dir = getenv("PDC_TMPDIR");
+    tmp_dir = getenv("PDC_TMPDIR");
     if (tmp_dir == NULL)
         strcpy(pdc_server_tmp_dir_g, "./pdc_tmp");
     else
@@ -144,9 +170,6 @@ int main(int argc, const char *argv[])
     fread(&n_entry, sizeof(int), 1, file);
     /* printf("%d entries\n", n_entry); */
 
-    pdc_metadata_t entry;
-    uint32_t *hash_key;
-    int j, read_count = 0, tmp_count;
     while (n_entry>0) {
         fread(&tmp_count, sizeof(int), 1, file);
         /* printf("Count:%d\n", tmp_count); */
@@ -238,13 +261,12 @@ int main(int argc, const char *argv[])
         fflush(stdout);
     }
 
-done:
     // close a container
-    if(PDCcont_close(cont, pdc) < 0)
+    if(PDCcont_close(cont) < 0)
         printf("fail to close container %lld\n", cont);
 
     // close a container property
-    if(PDCprop_close(cont_prop, pdc) < 0)
+    if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
 
     if(PDC_close(pdc) < 0)

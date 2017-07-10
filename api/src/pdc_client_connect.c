@@ -1,3 +1,27 @@
+/*
+ * Copyright Notice for 
+ * Proactive Data Containers (PDC) Software Library and Utilities
+ * -----------------------------------------------------------------------------
+
+ *** Copyright Notice ***
+ 
+ * Proactive Data Containers (PDC) Copyright (c) 2017, The Regents of the
+ * University of California, through Lawrence Berkeley National Laboratory,
+ * UChicago Argonne, LLC, operator of Argonne National Laboratory, and The HDF
+ * Group (subject to receipt of any required approvals from the U.S. Dept. of
+ * Energy).  All rights reserved.
+ 
+ * If you have questions about your rights to use or distribute this software,
+ * please contact Berkeley Lab's Innovation & Partnerships Office at  IPO@lbl.gov.
+ 
+ * NOTICE.  This Software was developed under funding from the U.S. Department of
+ * Energy and the U.S. Government consequently retains certain rights. As such, the
+ * U.S. Government has been granted for itself and others acting on its behalf a
+ * paid-up, nonexclusive, irrevocable, worldwide license in the Software to
+ * reproduce, distribute copies to the public, prepare derivative works, and
+ * perform publicly and display publicly, and to permit other to do so.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -214,7 +238,7 @@ client_test_connect_rpc_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered client_test_connect_rpc_cb()"); */
+    /* printf("Entered client_test_connect_rpc_cb()\n"); */
     struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
     hg_handle_t handle = callback_info->info.forward.handle;
 
@@ -243,7 +267,7 @@ client_send_object_unmap_rpc_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered client_send_object_unmap_rpc_cb"); */
+    /* printf("Entered client_send_object_unmap_rpc_cb()\n"); */
     object_unmap_args = (struct object_unmap_args*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
@@ -271,7 +295,7 @@ client_send_region_unmap_rpc_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered client_send_region_unmap_rpc_cb"); */
+    /* printf("Entered client_send_region_unmap_rpc_cb()\n"); */
     region_unmap_args = (struct region_unmap_args*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
@@ -299,7 +323,7 @@ client_send_region_map_rpc_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered client_send_region_map_rpc_cb"); */
+    /* printf("Entered client_send_region_map_rpc_cb()\n"); */
     region_map_args = (struct region_map_args*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
@@ -368,7 +392,7 @@ close_server_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered close_server_cb()"); */
+    /* printf("Entered close_server_cb()\n"); */
     client_lookup_args = (struct client_lookup_args*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
@@ -419,7 +443,7 @@ client_rpc_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered client_rpc_cb()"); */
+    /* printf("Entered client_rpc_cb()\n"); */
     client_lookup_args = (struct client_lookup_args*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
@@ -446,7 +470,7 @@ client_region_lock_rpc_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered client_region_lock_rpc_cb\n"); */
+    /* printf("Entered client_region_lock_rpc_cb()\n"); */
     client_lookup_args = (struct client_lookup_args*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
@@ -933,13 +957,13 @@ metadata_query_bulk_cb(const struct hg_cb_info *callback_info)
     hg_op_id_t hg_bulk_op_id;
     hg_bulk_t local_bulk_handle = HG_BULK_NULL;
     hg_bulk_t origin_bulk_handle = HG_BULK_NULL;
-    struct hg_info *hg_info = NULL;
+    const struct hg_info *hg_info = NULL;
     struct hg_test_bulk_args *bulk_args;
     void *recv_meta;
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered client_rpc_cb()"); */
+    /* printf("Entered metadata_query_bulk_cb()\n"); */
     client_lookup_args = (struct hg_test_bulk_args*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
@@ -1141,7 +1165,7 @@ metadata_query_rpc_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered client_rpc_cb()"); */
+    /* printf("Entered metadata_query_rpc_cb()\n"); */
     client_lookup_args = (struct metadata_query_args_t*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
@@ -1186,7 +1210,7 @@ metadata_delete_rpc_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered client_rpc_cb()"); */
+    /* printf("Entered metadata_delete_rpc_cb()\n"); */
     client_lookup_args = (struct client_lookup_args*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
@@ -1212,7 +1236,7 @@ metadata_delete_by_id_rpc_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered client_rpc_cb()"); */
+    /* printf("Entered metadata_delete_by_id_rpc_cb()\n"); */
     client_lookup_args = (struct client_lookup_args*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
@@ -1324,7 +1348,7 @@ metadata_update_rpc_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered client_rpc_cb()"); */
+    /* printf("Entered metadata_update_rpc_cb()\n"); */
     client_lookup_args = (struct client_lookup_args*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
@@ -1471,7 +1495,7 @@ done:
 }
 
 
-perr_t PDC_Client_delete_metadata(pdcid_t pdc, pdcid_t cont_id, char *delete_name, pdcid_t obj_delete_prop)
+perr_t PDC_Client_delete_metadata(char *delete_name, pdcid_t obj_delete_prop)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
@@ -1483,7 +1507,7 @@ perr_t PDC_Client_delete_metadata(pdcid_t pdc, pdcid_t cont_id, char *delete_nam
     
     FUNC_ENTER(NULL);
 
-    delete_prop = PDCobj_prop_get_info(obj_delete_prop, pdc);
+    delete_prop = PDCobj_prop_get_info(obj_delete_prop);
     // Fill input structure
     in.obj_name = delete_name;
     in.time_step = delete_prop->time_step;
@@ -1660,7 +1684,7 @@ perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_st
 }
 
 // Send a name to server and receive an obj id
-perr_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop, pdcid_t *meta_id)
+perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_prop, pdcid_t *meta_id)
 {
     perr_t ret_value = FAIL;
     hg_return_t hg_ret;
@@ -1674,7 +1698,7 @@ perr_t PDC_Client_send_name_recv_id(pdcid_t pdc, pdcid_t cont_id, const char *ob
     
     FUNC_ENTER(NULL);
     
-    create_prop = PDCobj_prop_get_info(obj_create_prop, pdc);
+    create_prop = PDCobj_prop_get_info(obj_create_prop);
     obj_life  = create_prop->obj_life;
     // Fill input structure
     
@@ -1857,7 +1881,7 @@ perr_t PDC_Client_close_all_server()
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id, pdcid_t pdc_id)
+perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = HG_SUCCESS;
@@ -1870,7 +1894,6 @@ perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id, pdcid_t pdc_id)
     
     // Fill input structure
     in.local_obj_id = local_obj_id;
-    in.pdc_id = pdc_id;
 
     // Create a bulk descriptor
     bulk_handle = HG_BULK_NULL;
@@ -1902,7 +1925,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, pdcid_t pdc_id)
+perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = HG_SUCCESS;
@@ -1916,7 +1939,6 @@ perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, 
     // Fill input structure
     in.local_obj_id = local_obj_id;
     in.local_reg_id = local_reg_id;
-    in.pdc_id = pdc_id;
 
     // Create a bulk descriptor
     bulk_handle = HG_BULK_NULL;
@@ -1957,10 +1979,10 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
     hg_class_t *hg_class;
     hg_uint32_t i, j;
     hg_uint32_t count;
-    void      **data_ptrs;
-    hg_size_t  *data_size;
-    size_t      unit;
-    struct region_map_args map_args;
+    void    **data_ptrs;
+    size_t  *data_size;
+    size_t  unit;
+    struct  region_map_args map_args;
     hg_bulk_t bulk_handle = HG_BULK_NULL;
     
     FUNC_ENTER(NULL);
@@ -1992,14 +2014,14 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
     if(ndim == 1) {
         count = 1;
         data_ptrs = (void **)malloc( sizeof(void *) );
-        data_size = (hg_size_t *)malloc( sizeof(hg_size_t) );
+        data_size = (size_t *)malloc( sizeof(size_t) );
         *data_ptrs = local_data + unit*local_offset[0];
         *data_size = unit*size[0];
     }
     else if(ndim == 2) {
         count = size[0];
         data_ptrs = (void **)malloc( size[0] * sizeof(void *) );
-        data_size = (hg_size_t *)malloc( size[0] * sizeof(hg_size_t) );
+        data_size = (size_t *)malloc( size[0] * sizeof(size_t) );
         data_ptrs[0] = local_data + unit*(dims[1]*local_offset[0] + local_offset[1]);
         data_size[0] = unit*size[1];
         for(i=1; i<size[0]; i++) {
@@ -2010,7 +2032,7 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
     else if(ndim == 3) {
         count = size[0]*size[1];
         data_ptrs = (void **)malloc( size[0] * size[1] * sizeof(void *) );
-        data_size = (hg_size_t *)malloc( size[0] * size[1] * sizeof(hg_size_t) );
+        data_size = (size_t *)malloc( size[0] * size[1] * sizeof(size_t) );
         data_ptrs[0] = local_data + unit*(dims[2]*dims[1]*local_offset[0] + dims[2]*local_offset[1] + local_offset[2]);
         data_size[0] = unit*size[2];
         for(i=0; i<size[0]-1; i++) {
@@ -2037,12 +2059,14 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
     }
     
     // Create bulk handle
-    hg_ret = HG_Bulk_create(hg_class, count, data_ptrs, data_size, HG_BULK_READWRITE, &bulk_handle);
+    hg_ret = HG_Bulk_create(hg_class, count, data_ptrs, (hg_size_t *)data_size, HG_BULK_READWRITE, &bulk_handle);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "Could not create bulk data handle\n");
         return EXIT_FAILURE;
     }
     in.bulk_handle = bulk_handle;
+    free(data_ptrs);
+    free(data_size);
 
     /* printf("Sending input to target\n"); */
     hg_ret = HG_Forward(pdc_server_info_g[server_id].client_send_region_map_handle, client_send_region_map_rpc_cb, &map_args, &in);	
@@ -2069,7 +2093,7 @@ done:
 }
 
 // General function for obtain/release region lock
-static perr_t PDC_Client_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, int lock_op, pbool_t *status)
+static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, int lock_op, pbool_t *status)
 {
     perr_t ret_value;
     hg_return_t hg_ret;
@@ -2177,7 +2201,7 @@ done:
 }
 
 /* , uint64_t *block */
-perr_t PDC_Client_obtain_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_id, struct PDC_region_info *region_info,
+perr_t PDC_Client_obtain_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info,
                                     PDC_access_t access_type, PDC_lock_mode_t lock_mode, pbool_t *obtained)
 {
     perr_t ret_value = FAIL;
@@ -2197,7 +2221,7 @@ perr_t PDC_Client_obtain_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_
         if (lock_mode == BLOCK) {
             // TODO: currently the client would keep trying to send lock request
             while (1) {
-                ret_value = PDC_Client_region_lock(pdc, cont_id, meta_id, region_info, WRITE, PDC_LOCK_OP_OBTAIN, obtained);
+                ret_value = PDC_Client_region_lock(meta_id, region_info, WRITE, PDC_LOCK_OP_OBTAIN, obtained);
                 if (*obtained == TRUE) {
                     ret_value = SUCCEED;
                     goto done;
@@ -2208,7 +2232,7 @@ perr_t PDC_Client_obtain_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_
             }
         }
         else if (lock_mode == NOBLOCK) {
-            ret_value = PDC_Client_region_lock(pdc, cont_id, meta_id, region_info, WRITE, PDC_LOCK_OP_OBTAIN, obtained);
+            ret_value = PDC_Client_region_lock(meta_id, region_info, WRITE, PDC_LOCK_OP_OBTAIN, obtained);
             goto done;
         }
         else {
@@ -2224,11 +2248,12 @@ perr_t PDC_Client_obtain_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_
     }
 
     ret_value = SUCCEED;
+    
 done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_release_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, pbool_t *released)
+perr_t PDC_Client_release_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, pbool_t *released)
 {
     perr_t ret_value = FAIL;
     
@@ -2237,7 +2262,7 @@ perr_t PDC_Client_release_region_lock(pdcid_t pdc, pdcid_t cont_id, pdcid_t meta
     /* uint64_t meta_id; */
     /* PDC_obj_info *obj_prop = PDCobj_get_info(obj_id, pdc); */
     /* meta_id = obj_prop->meta_id; */
-    ret_value = PDC_Client_region_lock(pdc, cont_id, meta_id, region_info, access_type, PDC_LOCK_OP_RELEASE, released);
+    ret_value = PDC_Client_region_lock(meta_id, region_info, access_type, PDC_LOCK_OP_RELEASE, released);
 
     FUNC_LEAVE(ret_value);
 }

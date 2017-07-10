@@ -1,3 +1,27 @@
+/*
+ * Copyright Notice for 
+ * Proactive Data Containers (PDC) Software Library and Utilities
+ * -----------------------------------------------------------------------------
+
+ *** Copyright Notice ***
+ 
+ * Proactive Data Containers (PDC) Copyright (c) 2017, The Regents of the
+ * University of California, through Lawrence Berkeley National Laboratory,
+ * UChicago Argonne, LLC, operator of Argonne National Laboratory, and The HDF
+ * Group (subject to receipt of any required approvals from the U.S. Dept. of
+ * Energy).  All rights reserved.
+ 
+ * If you have questions about your rights to use or distribute this software,
+ * please contact Berkeley Lab's Innovation & Partnerships Office at  IPO@lbl.gov.
+ 
+ * NOTICE.  This Software was developed under funding from the U.S. Department of
+ * Energy and the U.S. Government consequently retains certain rights. As such, the
+ * U.S. Government has been granted for itself and others acting on its behalf a
+ * paid-up, nonexclusive, irrevocable, worldwide license in the Software to
+ * reproduce, distribute copies to the public, prepare derivative works, and
+ * perform publicly and display publicly, and to permit other to do so.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -50,13 +74,18 @@ int
 main(int argc, char *argv[])
 {
     hg_hash_table_t *hash_table = NULL;
-    hg_hash_table_iter_t hash_table_iter;
 
     int *key1, *key2;
+    hash_value_metadata_t *value1, *value2;
+    const int num = 100;
+    int *keys[num];
+    int i;
+    hash_value_metadata_t *values[num];
+    hash_value_metadata_t *lookup_value = NULL;
+    int lookup_key;
+    
     /* int *value1, *value2; */
     int ret = EXIT_SUCCESS;
-
-    hash_value_metadata_t *value1, *value2;
 
     (void) argc;
     (void) argv;
@@ -78,12 +107,7 @@ main(int argc, char *argv[])
 
     value1->obj_id = 10;
     value2->obj_id = 20;
-
-    const int num = 100;
-    int *keys[num];
-    hash_value_metadata_t *values[num];
     
-    int i;
     for (i = 0; i < num; i++) {
         /* printf("Iter[%d]\n", i); */
         keys[i]   = (int*)malloc(sizeof(int)); 
@@ -100,8 +124,7 @@ main(int argc, char *argv[])
 
     printf("Entries: %d\n", hg_hash_table_num_entries(hash_table));
 
-    int lookup_key = *key2;
-    hash_value_metadata_t *lookup_value = NULL;
+    lookup_key = *key2;
     lookup_value = hg_hash_table_lookup(hash_table, &lookup_key);
     if (lookup_value != NULL) {
         printf("Found in hash table with obj_id=%d, obj_name=%s, test=%s\n", lookup_value->obj_id, lookup_value->obj_name, lookup_value->test);
@@ -121,11 +144,6 @@ main(int argc, char *argv[])
     else {
         printf("Object with lookup_key=%d not found!\n", lookup_key);
     }
-
-
-
-
-
 
     /* if (*value1 != *((int *)hg_hash_table_lookup(hash_table, key1))) { */
     /*     fprintf(stderr, "Error: values do not match\n"); */
@@ -153,7 +171,6 @@ main(int argc, char *argv[])
     /*     goto done; */
     /* } */
 
-done:
     hg_hash_table_free(hash_table);
     return ret;
 }
