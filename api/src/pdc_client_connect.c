@@ -694,6 +694,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
 
     server_lookup_client_register(*hg_class);
     notify_io_complete_register(*hg_class);
+    server_lookup_remote_server_register(*hg_class);
 
     // Lookup and fill the server info
     for (i = 0; i < pdc_server_num_g; i++) {

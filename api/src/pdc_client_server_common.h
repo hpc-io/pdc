@@ -224,6 +224,9 @@ MERCURY_GEN_PROC( client_test_connect_out_t, ((int32_t)(ret)) )
 MERCURY_GEN_PROC( server_lookup_client_in_t, ((int32_t)(server_id)) ((int32_t)(nserver)) ((hg_const_string_t)(server_addr)) )
 MERCURY_GEN_PROC( server_lookup_client_out_t, ((int32_t)(ret)) )
 
+MERCURY_GEN_PROC( server_lookup_remote_server_in_t, ((int32_t)(server_id)) )
+MERCURY_GEN_PROC( server_lookup_remote_server_out_t, ((int32_t)(ret)) )
+
 MERCURY_GEN_PROC( notify_io_complete_in_t, ((uint64_t)(obj_id)) ((int32_t)(io_type)) ((hg_const_string_t)(shm_addr)) )
 MERCURY_GEN_PROC( notify_io_complete_out_t, ((int32_t)(ret)) )
 
@@ -829,6 +832,15 @@ typedef struct {
 
 
 typedef struct {
+    int32_t server_id;
+} server_lookup_remote_server_in_t;
+
+typedef struct {
+    int32_t ret;
+} server_lookup_remote_server_out_t;
+
+
+typedef struct {
     int32_t client_id;
     int32_t nclient;
     hg_const_string_t client_addr;
@@ -951,6 +963,33 @@ hg_proc_gen_obj_id_out_t(hg_proc_t proc, void *data)
 /*     } */
 /*     return ret; */
 /* } */
+
+static HG_INLINE hg_return_t
+hg_proc_server_lookup_remote_server_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    server_lookup_remote_server_in_t *struct_data = (server_lookup_remote_server_in_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->server_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_server_lookup_remote_server_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    server_lookup_remote_server_out_t *struct_data = (server_lookup_remote_server_out_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
 
 static HG_INLINE hg_return_t
 hg_proc_server_lookup_client_in_t(hg_proc_t proc, void *data)
@@ -1283,6 +1322,8 @@ hg_id_t metadata_delete_by_id_register(hg_class_t *hg_class);
 hg_id_t metadata_update_register(hg_class_t *hg_class);
 hg_id_t metadata_add_tag_register(hg_class_t *hg_class);
 hg_id_t region_lock_register(hg_class_t *hg_class);
+
+hg_id_t server_lookup_remote_server_register(hg_class_t *hg_class);
 
 //bulk
 hg_id_t query_partial_register(hg_class_t *hg_class);

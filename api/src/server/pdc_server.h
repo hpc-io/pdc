@@ -80,7 +80,7 @@ typedef struct server_lookup_args_t {
 } server_lookup_args_t;
 
 typedef struct pdc_client_info_t {
-    char            addr_string[ADDR_MAX];
+    char            *addr_string[ADDR_MAX];
     int             addr_valid;
     hg_addr_t       addr;
     int             server_lookup_client_handle_valid;
@@ -88,6 +88,16 @@ typedef struct pdc_client_info_t {
     int             notify_io_complete_handle_valid;
     hg_handle_t     notify_io_complete_handle;
 } pdc_client_info_t;
+ 
+typedef struct pdc_remote_server_info_t {
+    char            *addr_string;
+    int             addr_valid;
+    hg_addr_t       addr;
+    int             server_lookup_remote_server_handle_valid;
+    hg_handle_t     server_lookup_remote_server_handle;
+    int             update_region_loc_handle_valid;
+    hg_handle_t     update_region_loc_handle;
+} pdc_remote_server_info_t;
  
 extern hg_thread_mutex_t pdc_client_connect_mutex_g;
 

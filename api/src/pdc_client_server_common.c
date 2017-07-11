@@ -636,6 +636,32 @@ HG_TEST_RPC_CB(server_lookup_client, handle)
 }
 
 /* static hg_return_t */
+/* server_lookup_remote_server_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(server_lookup_remote_server, handle)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    server_lookup_remote_server_in_t  in;
+    server_lookup_remote_server_out_t out;
+    
+    FUNC_ENTER(NULL);
+
+    /* Get input parameters sent on origin through on HG_Forward() */
+    // Decode input
+    HG_Get_input(handle, &in);
+    out.ret = in.server_id + 1000000;
+
+    HG_Respond(handle, NULL, NULL, &out);
+
+    /* printf("==PDC_SERVER: server_lookup_client_cb(): Responded with %llu to server[%d]\n", out.ret, in.server_id); */
+    /* fflush(stdout); */
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
+/* static hg_return_t */
 /* client_test_connect_cb(hg_handle_t handle) */
 HG_TEST_RPC_CB(client_test_connect, handle)
 {
@@ -1384,6 +1410,19 @@ server_lookup_client_register(hg_class_t *hg_class)
 done:
     FUNC_LEAVE(ret_value);
 }
+
+hg_id_t
+server_lookup_remote_server_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+
+    ret_value = MERCURY_REGISTER(hg_class, "server_lookup_remote_server", server_lookup_remote_server_in_t, server_lookup_remote_server_out_t, server_lookup_remote_server_cb);
+
+    FUNC_LEAVE(ret_value);
+}
+
 
 hg_id_t
 client_test_connect_register(hg_class_t *hg_class)

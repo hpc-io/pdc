@@ -79,13 +79,17 @@ hg_thread_mutex_t data_write_list_mutex_g;
 #define BLOOM_REMOVE counting_bloom_remove
 #define BLOOM_FREE   free_counting_bloom
 
-hg_class_t *hg_class_g = NULL;
+hg_class_t   *hg_class_g   = NULL;
 hg_context_t *hg_context_g = NULL;
 
-pdc_client_info_t *pdc_client_info_g = NULL;
+pdc_client_info_t        *pdc_client_info_g        = NULL;
+pdc_remote_server_info_t *pdc_remote_server_info_g = NULL;
+char                     *all_addr_strings_1d_g    = NULL;
+
 int pdc_client_num_g = 0;
 int work_todo_g = 0;
 static hg_id_t    server_lookup_client_register_id_g;
+static hg_id_t    server_lookup_remote_server_register_id_g;
 static hg_id_t    notify_io_complete_register_id_g;
 
 // Global thread pool
@@ -195,6 +199,28 @@ PDC_Server_metadata_hash_value_free(hg_hash_table_value_t value)
 /*     a->prev                 = NULL; */
 /*     a->next                 = NULL; */
 /* } */
+
+perr_t PDC_Server_remote_server_info_init(pdc_remote_server_info_t *info)
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    if (info == NULL) {
+        ret_value = FAIL;
+        printf("==PDC_SERVER: NULL alert, unable to init pdc_remote_server_info_t!\n");
+        goto done;
+    }
+
+    info->addr_string = NULL;
+    info->addr_valid  = 0;
+    info->addr        = 0;
+    info->server_lookup_remote_server_handle_valid = 0;
+    info->update_region_loc_handle_valid           = 0;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
 
 void PDC_Server_metadata_init(pdc_metadata_t* a)
 {
@@ -338,7 +364,7 @@ PDC_Server_lookup_client_cb(const struct hg_cb_info *callback_info)
         return EXIT_FAILURE;
     }
 
-    printf("PDC_Server_lookup_client_cb(): forwarded to client %d\n", client_id);
+    /* printf("PDC_Server_lookup_client_cb(): forwarded to client %d\n", client_id); */
     fflush(stdout);
 
     FUNC_LEAVE(ret_value);
@@ -389,7 +415,9 @@ static perr_t PDC_Server_lookup_client()
         /* printf("==PDC_SERVER[%d]: Received response from client %d\n", pdc_server_rank_g, i); */
         /* fflush(stdout); */
     }
-    printf("==PDC_SERVER[%d]: Finished connection test to all clients\n", pdc_server_rank_g);
+    if (pdc_server_rank_g == 0) {
+        printf("==PDC_SERVER[%d]: Finished connection test to all clients\n", pdc_server_rank_g);
+    }
 
 done:
     fflush(stdout);
@@ -1836,12 +1864,112 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+static hg_return_t
+lookup_remote_server_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    server_lookup_remote_server_out_t output;
+
+    FUNC_ENTER(NULL);
+
+    /* printf("Entered lookup_remote_server_rpc_cb()\n"); */
+    server_lookup_args_t *lookup_args = (server_lookup_args_t*) callback_info->arg;
+    hg_handle_t handle = callback_info->info.forward.handle;
+
+    /* Get output from server*/
+    ret_value = HG_Get_output(handle, &output);
+
+    /* printf("Return value=%" PRIu64 "\n", output.ret); */
+    work_todo_g--;
+
+done:
+    HG_Destroy(handle);
+    FUNC_LEAVE(ret_value);
+}
+
+static hg_return_t
+lookup_remote_server_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    uint32_t server_id;
+    server_lookup_args_t *lookup_args;
+    server_lookup_remote_server_in_t in;
+
+    FUNC_ENTER(NULL);
+
+    lookup_args = (server_lookup_args_t*) callback_info->arg;
+    server_id = lookup_args->server_id;
+
+    /* printf("lookup_remote_server_cb(): server ID=%d\n", server_id); */
+    /* fflush(stdout); */
+
+    pdc_remote_server_info_g[server_id].addr = callback_info->info.lookup.addr;
+    pdc_remote_server_info_g[server_id].addr_valid = 1;
+
+    // Create HG handle if needed
+    if (pdc_remote_server_info_g[server_id].server_lookup_remote_server_handle_valid != 1) {
+        HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, server_lookup_remote_server_register_id_g, &pdc_remote_server_info_g[server_id].server_lookup_remote_server_handle);
+        pdc_remote_server_info_g[server_id].server_lookup_remote_server_handle_valid= 1;
+    }
+
+    // Fill input structure
+    in.server_id = pdc_server_rank_g;
+
+    /* printf("Sending input to target\n"); */
+    ret_value = HG_Forward(pdc_remote_server_info_g[server_id].server_lookup_remote_server_handle, lookup_remote_server_rpc_cb, lookup_args, &in);
+    if (ret_value != HG_SUCCESS) {
+        fprintf(stderr, "lookup_remote_server_cb(): Could not start HG_Forward()\n");
+        return EXIT_FAILURE;
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_Server_lookup_remote_server()
+{
+    int i;
+    perr_t ret_value      = SUCCEED;
+    hg_return_t hg_ret    = HG_SUCCESS;
+    server_lookup_args_t lookup_args;
+
+    FUNC_ENTER(NULL);
+
+    // Lookup and fill the remote server info
+    for (i = 0; i < pdc_server_size_g; i++) {
+
+        if (i == pdc_server_rank_g) continue;
+        
+        lookup_args.server_id = pdc_server_rank_g;
+        printf("==PDC_SERVER[%d]: Testing connection to remote server %d: %s\n", pdc_server_rank_g, i, pdc_remote_server_info_g[i].addr_string);
+        fflush(stdout);
+
+        hg_ret = HG_Addr_lookup(hg_context_g, lookup_remote_server_cb, &lookup_args, pdc_remote_server_info_g[i].addr_string, HG_OP_ID_IGNORE);
+        if (hg_ret != HG_SUCCESS ) {
+            printf("==PDC_SERVER: Connection to remote server FAILED!\n");
+            ret_value = FAIL;
+            goto done;
+        }
+        // Wait for response from server
+        work_todo_g = 1;
+        PDC_Server_check_response(&hg_context_g);
+    }
+
+    if (pdc_server_rank_g == 0) {
+        printf("==PDC_SERVER[%d]: Successfully established connection to %d other PDC servers\n\n\n",
+                pdc_server_rank_g, pdc_server_size_g- 1);
+        fflush(stdout);
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+} // PDC_Server_lookup_remote_server
+
 perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context)
 {
     perr_t ret_value = SUCCEED;
     int status = SUCCEED;
     int i = 0;
-    char *all_addr_strings_1d = NULL;
     char **all_addr_strings = NULL;
     char self_addr_string[ADDR_MAX];
     char na_info_string[ADDR_MAX];
@@ -1855,14 +1983,11 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     pdc_id_seq_g = pdc_id_seq_g * (pdc_server_rank_g+1);
 
     // Create server tmp dir
-    
     pdc_mkdir(pdc_server_tmp_dir_g);
 
-    if (pdc_server_rank_g == 0) {
-        all_addr_strings_1d = (char* )malloc(sizeof(char ) * pdc_server_size_g * ADDR_MAX);
-        all_addr_strings    = (char**)malloc(sizeof(char*) * pdc_server_size_g );
-        total_mem_usage_g += (sizeof(char) + sizeof(char*));
-    }
+    all_addr_strings_1d_g = (char* )malloc(sizeof(char ) * pdc_server_size_g * ADDR_MAX);
+    all_addr_strings    = (char**)malloc(sizeof(char*) * pdc_server_size_g );
+    total_mem_usage_g += (sizeof(char) + sizeof(char*));
 
     memset(hostname, 0, 1024);
     gethostname(hostname, 1023);
@@ -1895,14 +2020,18 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     /* printf("Server address is: %s\n", self_addr_string); */
     /* fflush(stdout); */
 
+    // Init server to server communication.
+    pdc_remote_server_info_g = (pdc_remote_server_info_t*)malloc(sizeof(pdc_remote_server_info_t) * pdc_server_size_g);
+    for (i = 0; i < pdc_server_size_g; i++) 
+        PDC_Server_remote_server_info_init(&pdc_remote_server_info_g[i]);
+
     // Gather addresses
 #ifdef ENABLE_MPI
-    MPI_Gather(self_addr_string, ADDR_MAX, MPI_CHAR, all_addr_strings_1d, ADDR_MAX, MPI_CHAR, 0, MPI_COMM_WORLD);
-    if (pdc_server_rank_g == 0) {
-        for (i = 0; i < pdc_server_size_g; i++) {
-            all_addr_strings[i] = &all_addr_strings_1d[i*ADDR_MAX];
-            /* printf("%s\n", all_addr_strings[i]); */
-        }
+    MPI_Allgather(self_addr_string, ADDR_MAX, MPI_CHAR, all_addr_strings_1d_g, ADDR_MAX, MPI_CHAR, MPI_COMM_WORLD);
+    for (i = 0; i < pdc_server_size_g; i++) {
+        all_addr_strings[i] = &all_addr_strings_1d_g[i*ADDR_MAX];
+        pdc_remote_server_info_g[i].addr_string = &all_addr_strings_1d_g[i*ADDR_MAX];
+        /* printf("==PDC_SERVER[%d]: %s\n", pdc_server_rank_g, all_addr_strings[i]); */
     }
 #else 
     all_addr_strings[0] = self_addr_string;
@@ -1917,7 +2046,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
         PDC_Server_write_addr_to_file(all_addr_strings, pdc_server_size_g);
 
         // Free
-        free(all_addr_strings_1d);
+        /* free(all_addr_strings_1d_g); */
         free(all_addr_strings);
     }
     fflush(stdout);
@@ -1988,6 +2117,8 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
         }
     }
 
+    
+
     // Data server related init
     pdc_data_server_read_list_head_g = NULL;
     pdc_data_server_write_list_head_g = NULL;
@@ -1996,6 +2127,60 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     hg_atomic_set32(&close_server_g, 0);
 
     n_metadata_g = 0;
+
+done:
+    FUNC_LEAVE(ret_value);
+} // PDC_Server_init
+
+perr_t PDC_Server_destroy_remote_server_info(pdc_remote_server_info_t *info)
+{
+    int i;
+    perr_t ret_value = SUCCEED;
+    
+    FUNC_ENTER(NULL);
+
+    // Destroy addr and handle
+    for (i = 0; i <pdc_client_num_g ; i++) {
+        if (info[i].addr_valid == 1) {
+            info[i].addr_valid = 0;
+            HG_Addr_free(hg_context_g, info[i].addr);
+        }
+        if (info[i].server_lookup_remote_server_handle_valid == 1) {
+            info[i].server_lookup_remote_server_handle_valid = 0;
+            HG_Destroy(info[i].server_lookup_remote_server_handle);
+        }
+        if (info[i].update_region_loc_handle_valid == 1) {
+            info[i].update_region_loc_handle_valid = 0;
+            HG_Destroy(info[i].update_region_loc_handle);
+        }
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+} // PDC_Server_destroy_remote_server_info
+
+perr_t PDC_Server_destroy_client_info(pdc_client_info_t *info)
+{
+    int i;
+    perr_t ret_value = SUCCEED;
+    
+    FUNC_ENTER(NULL);
+
+    // Destroy addr and handle
+    for (i = 0; i <pdc_client_num_g ; i++) {
+        if (info[i].addr_valid == 1) {
+            info[i].addr_valid = 0;
+            HG_Addr_free(hg_context_g, info[i].addr);
+        }
+        if (info[i].server_lookup_client_handle_valid == 1) {
+            info[i].server_lookup_client_handle_valid = 0;
+            HG_Destroy(info[i].server_lookup_client_handle);
+        }
+        if (info[i].notify_io_complete_handle_valid == 1) {
+            info[i].notify_io_complete_handle_valid = 0;
+            HG_Destroy(info[i].notify_io_complete_handle);
+        }
+    }
 
 done:
     FUNC_LEAVE(ret_value);
@@ -2016,21 +2201,10 @@ perr_t PDC_Server_finalize()
     if(metadata_hash_table_g != NULL)
         hg_hash_table_free(metadata_hash_table_g);
 
-    // Destroy addr and handle
-    for (i = 0; i <pdc_client_num_g ; i++) {
-        if (pdc_client_info_g[i].addr_valid == 1) {
-            pdc_client_info_g[i].addr_valid = 0;
-            HG_Addr_free(hg_context_g, pdc_client_info_g[i].addr);
-        }
-        if (pdc_client_info_g[i].server_lookup_client_handle_valid == 1) {
-            pdc_client_info_g[i].server_lookup_client_handle_valid = 0;
-            HG_Destroy(pdc_client_info_g[i].server_lookup_client_handle);
-        }
-        if (pdc_client_info_g[i].notify_io_complete_handle_valid == 1) {
-            pdc_client_info_g[i].notify_io_complete_handle_valid = 0;
-            HG_Destroy(pdc_client_info_g[i].notify_io_complete_handle);
-        }
-    }
+    PDC_Server_destroy_client_info(pdc_client_info_g);
+
+    PDC_Server_destroy_remote_server_info(pdc_remote_server_info_g);
+
 /*     if(metadata_name_mark_hash_table_g != NULL) */
 /*         hg_hash_table_free(metadata_name_mark_hash_table_g); */
 #ifdef ENABLE_TIMING 
@@ -2083,6 +2257,7 @@ perr_t PDC_Server_finalize()
 #endif
 
 done:
+    free(all_addr_strings_1d_g);
     FUNC_LEAVE(ret_value);
 }
 
@@ -2868,6 +3043,7 @@ int main(int argc, char *argv[])
         if (strcmp(argv[1], "restart") == 0) 
             is_restart_g = 1;
     }
+
     ret = PDC_Server_init(port, &hg_class_g, &hg_context_g);
     if (ret != SUCCEED || hg_class_g == NULL || hg_context_g == NULL) {
         printf("Error with Mercury init, exit...\n");
@@ -2902,6 +3078,9 @@ int main(int argc, char *argv[])
 
     server_lookup_client_register_id_g = server_lookup_client_register(hg_class_g);
     notify_io_complete_register_id_g   = notify_io_complete_register(hg_class_g);
+    server_lookup_remote_server_register_id_g = server_lookup_remote_server_register(hg_class_g);
+
+    PDC_Server_lookup_remote_server();
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
