@@ -124,4 +124,6 @@ perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *reg
 perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_check_out_t *out);
 perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_write_check_out_t *out);
 
+perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region);
+
 #endif /* PDC_SERVER_H */

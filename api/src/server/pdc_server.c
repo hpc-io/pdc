@@ -91,6 +91,7 @@ int work_todo_g = 0;
 static hg_id_t    server_lookup_client_register_id_g;
 static hg_id_t    server_lookup_remote_server_register_id_g;
 static hg_id_t    notify_io_complete_register_id_g;
+static hg_id_t    update_region_loc_register_id_g;
 
 // Global thread pool
 hg_thread_pool_t *hg_test_thread_pool_g = NULL;
@@ -2733,6 +2734,7 @@ perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
         goto done;
     }
 
+    request_region->meta = target_obj;
 
     region_list_t *elt, *tmp;
     if (lock_op == PDC_LOCK_OP_OBTAIN) {
@@ -3079,6 +3081,7 @@ int main(int argc, char *argv[])
     server_lookup_client_register_id_g = server_lookup_client_register(hg_class_g);
     notify_io_complete_register_id_g   = notify_io_complete_register(hg_class_g);
     server_lookup_remote_server_register_id_g = server_lookup_remote_server_register(hg_class_g);
+    update_region_loc_register_id_g    = update_region_loc_register(hg_class_g);
 
     PDC_Server_lookup_remote_server();
 
@@ -3964,6 +3967,137 @@ done:
     FUNC_LEAVE(ret_value);
 } // end of PDC_Server_data_write
 
+
+perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region)
+{
+    perr_t ret_value = SUCCEED;
+    pdc_metadata_t *update_meta = NULL, *region_meta = NULL;
+    region_list_t  *update_region = NULL, *region_elt = NULL, *new_region = NULL;
+    int update_success = -1, i = 0;
+
+    FUNC_ENTER(NULL);
+
+/* printf("==PDC_SERVER: update region storage location\n"); */
+    region_meta = region->meta;
+
+    // Find object metadata
+    update_meta = PDC_Server_get_obj_metadata(region_meta->obj_id);
+    DL_FOREACH(update_meta->storage_region_list_head, region_elt) {
+        if (PDC_is_same_region_list(region_elt, region)) {
+            strcpy(region_elt->storage_location, region->storage_location);
+            region_elt->offset = region->offset;
+            update_success = 1;
+            break;
+        }
+        PDC_print_storage_region_list(region_elt);
+    } // DL_FOREACH
+
+    if (update_success == -1) {
+        printf("==PDC_SERVER: create new region location/offset\n");
+        // Create the region list
+        new_region = (region_list_t*)malloc(sizeof(region_list_t));
+        PDC_init_region_list(new_region);
+
+        // Only copy the ndim, start, and cout is sufficient
+        new_region->ndim = region->ndim;
+        for (i = 0; i < new_region->ndim; i++) {
+            new_region->start[i] = region->start[i];
+            new_region->count[i] = region->count[i];
+            new_region->stride[i] = region->stride[i];
+        }
+        strcpy(new_region->storage_location, region->storage_location);
+        new_region->offset = region->offset;
+
+        DL_APPEND(update_meta->storage_region_list_head, new_region);
+        PDC_print_storage_region_list(new_region);
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+static hg_return_t
+PDC_Server_update_region_loc_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret_value;
+    server_lookup_args_t *lookup_args;
+    hg_handle_t handle;
+    metadata_update_out_t output;
+
+    FUNC_ENTER(NULL);
+
+    lookup_args = (server_lookup_args_t*) callback_info->arg;
+    handle = callback_info->info.forward.handle;
+
+    /* Get output from server*/
+    ret_value = HG_Get_output(handle, &output);
+
+    printf("PDC_Server_update_region_loc_cb: ret=%d\n", output.ret);
+    lookup_args->ret_int = output.ret;
+
+    work_todo_g--;
+
+done:
+    HG_Destroy(handle);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region)
+{
+    hg_return_t hg_ret;
+    perr_t ret_value = SUCCEED;
+    uint32_t server_id = 0;
+    pdc_metadata_t *region_meta = NULL;
+
+    FUNC_ENTER(NULL);
+
+    region_meta = region->meta;
+
+    if (region->storage_location == NULL) {
+        printf("==PDC_SERVER: PDC_Server_update_region_storagelocation_offset() update storage_location is NULL!\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    server_id = PDC_get_server_by_obj_id(region_meta->obj_id, pdc_server_size_g);
+    if (server_id == pdc_server_rank_g) {
+        // Metadata object is local, no need to send update RPC
+        ret_value = PDC_Server_update_local_region_storage_loc(region);
+        if (ret_value != SUCCEED) 
+            goto done;
+    }
+    else {
+        if (pdc_remote_server_info_g[server_id].update_region_loc_handle_valid != 1) {
+            HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, update_region_loc_register_id_g, &pdc_remote_server_info_g[server_id].update_region_loc_handle);
+            pdc_remote_server_info_g[server_id].update_region_loc_handle_valid = 1;
+        }
+
+        /* printf("Sending updated region loc to target\n"); */
+        server_lookup_args_t lookup_args;
+
+        update_region_loc_in_t in;
+        in.obj_id = region->meta->obj_id;
+        in.storage_location = region->storage_location;
+        in.offset = region->offset;
+        pdc_region_list_t_to_transfer(region, &in.region);
+
+        hg_ret = HG_Forward(pdc_remote_server_info_g[server_id].update_region_loc_handle, PDC_Server_update_region_loc_cb, &lookup_args, &in);
+        if (hg_ret != HG_SUCCESS) {
+            fprintf(stderr, "PDC_Client_update_metadata_with_name(): Could not start HG_Forward()\n");
+            return FAIL;
+        }
+
+        // Wait for response from server
+        work_todo_g = 1;
+        PDC_Server_check_response(&hg_context_g);
+
+    }
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} // end of PDC_Server_update_region_storagelocation_offset
+
 perr_t PDC_Server_posix_one_file_io(region_list_t* region)
 {
     perr_t ret_value = SUCCEED;
@@ -4012,7 +4146,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
             offset += io_bytes;
 
             // TODO: need to update metadata with the location and offset
-            // PDC_Server_update_region_storagelocation_offset();
+            PDC_Server_update_region_storagelocation_offset(elt);
         }
         fclose(fp);
     }
@@ -4155,6 +4289,7 @@ perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct P
 
 done:
     fflush(stdout);
+    FUNC_LEAVE(ret_value);
 }
 
 perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf)
@@ -4166,6 +4301,7 @@ perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *reg
 
 done:
     fflush(stdout);
+    FUNC_LEAVE(ret_value);
 }
 
 perr_t PDC_Server_data_read_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf)
@@ -4177,5 +4313,6 @@ perr_t PDC_Server_data_read_direct(uint64_t obj_id, struct PDC_region_info *regi
 
 done:
     fflush(stdout);
+    FUNC_LEAVE(ret_value);
 }
 

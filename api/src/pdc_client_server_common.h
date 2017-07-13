@@ -64,6 +64,8 @@ typedef enum { POSIX=0, DAOS=1 }       PDC_io_plugin_t;
 typedef enum { READ=0, WRITE=1, NA=2 } PDC_access_t;
 typedef enum { BLOCK=0, NOBLOCK=1 }    PDC_lock_mode_t;
 
+typedef struct pdc_metadata_t pdc_metadata_t;
+
 typedef struct region_list_t {
     size_t ndim;
     uint64_t start[DIM_MAX];
@@ -81,9 +83,11 @@ typedef struct region_list_t {
     uint64_t offset;
     PDC_access_t access_type;
 
+    pdc_metadata_t *meta;
+
     struct region_list_t *prev;
     struct region_list_t *next;
-    // 15 attributes, need to match init and deep_cp routines
+    // 16 attributes, need to match init and deep_cp routines
 } region_list_t;
 
 typedef struct PDC_mapping_info {
@@ -108,15 +112,6 @@ typedef struct region_map_t {
     struct region_map_t             *next;
 } region_map_t;
 
-// Similar structure PDC_region_info_t defined in pdc_obj_pkg.h
-// TODO: currently only support upto four dimensions
-typedef struct {
-    size_t ndim;
-    uint64_t start_0, start_1, start_2, start_3;
-    uint64_t count_0, count_1, count_2, count_3;
-    uint64_t stride_0, stride_1, stride_2, stride_3;
-} region_info_transfer_t;
-
 // For storing metadata
 typedef struct pdc_metadata_t {
     int     user_id;                // Both server and client gets it and do security check
@@ -136,7 +131,7 @@ typedef struct pdc_metadata_t {
     int     dims[DIM_MAX];
 
     // For region storage list
-    region_list_t *region_list_head;
+    region_list_t *storage_region_list_head;
 
     // For region lock list
     region_list_t *region_lock_head;
@@ -150,6 +145,16 @@ typedef struct pdc_metadata_t {
     void *bloom;
 
 } pdc_metadata_t;
+
+
+// Similar structure PDC_region_info_t defined in pdc_obj_pkg.h
+// TODO: currently only support upto four dimensions
+typedef struct {
+    size_t ndim;
+    uint64_t start_0, start_1, start_2, start_3;
+    uint64_t count_0, count_1, count_2, count_3;
+    uint64_t stride_0, stride_1, stride_2, stride_3;
+} region_info_transfer_t;
 
 typedef struct pdc_metadata_transfer_t {
     int32_t     user_id;
@@ -303,7 +308,6 @@ typedef struct {
 typedef struct {
     int32_t            ret;
 } metadata_add_tag_out_t;
-
 
 typedef struct {
     uint64_t                obj_id;
@@ -1479,7 +1483,6 @@ hg_proc_data_server_read_check_out_t(hg_proc_t proc, void *data)
     return ret;
 }
 
-
 typedef struct {
     uint32_t                     client_id;
     pdc_metadata_transfer_t     meta;
@@ -1528,8 +1531,63 @@ hg_proc_data_server_write_check_out_t(hg_proc_t proc, void *data)
     return ret;
 }
 
+typedef struct {
+    uint64_t                    obj_id;
+    hg_const_string_t           storage_location;
+    uint64_t                    offset;
+    region_info_transfer_t      region;
+} update_region_loc_in_t;
 
-#endif
+typedef struct {
+    int32_t            ret;
+} update_region_loc_out_t;
+
+static HG_INLINE hg_return_t
+hg_proc_update_region_loc_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    update_region_loc_in_t *struct_data = (update_region_loc_in_t*) data;
+
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->storage_location);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->offset);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->region);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_update_region_loc_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    update_region_loc_out_t *struct_data = (update_region_loc_out_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+#endif // HAS_BOOST
+
+
 
 hg_id_t gen_obj_id_register(hg_class_t *hg_class);
 /* hg_id_t send_obj_name_marker_register(hg_class_t *hg_class); */
@@ -1546,6 +1604,7 @@ hg_id_t region_lock_register(hg_class_t *hg_class);
 hg_id_t test_bulk_xfer_register(hg_class_t *hg_class);
 
 hg_id_t server_lookup_remote_server_register(hg_class_t *hg_class);
+hg_id_t update_region_loc_register(hg_class_t *hg_class);
 
 //bulk
 hg_id_t query_partial_register(hg_class_t *hg_class);
@@ -1571,17 +1630,19 @@ struct lock_bulk_args {
 
 hg_id_t gen_reg_map_notification_register(hg_class_t *hg_class);
 
-perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out);
-perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out);
-perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *out);
-
-perr_t PDC_get_self_addr(hg_class_t* hg_class, char* self_addr_string);
+perr_t   delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out);
+perr_t   PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out);
+perr_t   PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *out);
+perr_t   PDC_get_self_addr(hg_class_t* hg_class, char* self_addr_string);
 uint32_t PDC_get_server_by_obj_id(uint64_t obj_id, int n_server);
 uint32_t PDC_get_hash_by_name(const char *name);
 int      PDC_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b);
 perr_t   PDC_metadata_init(pdc_metadata_t *a);
 void     PDC_print_metadata(pdc_metadata_t *a);
 void     PDC_print_region_list(region_list_t *a);
+void     PDC_print_storage_region_list(region_list_t *a);
+perr_t   PDC_init_region_list(region_list_t *a);
+int      PDC_is_same_region_list(region_list_t *a, region_list_t *b);
 
 perr_t pdc_metadata_t_to_transfer_t(pdc_metadata_t *meta, pdc_metadata_transfer_t *transfer);
 perr_t pdc_transfer_t_to_metadata_t(pdc_metadata_transfer_t *transfer, pdc_metadata_t *meta);

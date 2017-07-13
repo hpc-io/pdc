@@ -262,7 +262,7 @@ perr_t PDC_metadata_init(pdc_metadata_t *a)
     memset(a->dims,          0, sizeof(int32_t)*DIM_MAX);
 
     a->region_lock_head = NULL;
-    a->region_list_head = NULL;
+    a->storage_region_list_head = NULL;
     a->region_map_head  = NULL;
     a->prev  = NULL;
     a->next  = NULL;
@@ -270,7 +270,6 @@ perr_t PDC_metadata_init(pdc_metadata_t *a)
 
     return SUCCEED;
 }
-
 
 perr_t PDC_init_region_list(region_list_t *a)
 {
@@ -285,6 +284,7 @@ perr_t PDC_init_region_list(region_list_t *a)
     a->buf           = NULL;
     a->access_type   = NA;
     a->offset        = 0;
+    a->meta          = NULL;
 
     memset(a->start,  0, sizeof(uint64_t)*DIM_MAX);
     memset(a->count,  0, sizeof(uint64_t)*DIM_MAX);
@@ -294,9 +294,56 @@ perr_t PDC_init_region_list(region_list_t *a)
     memset(a->client_ids,       0, sizeof(uint32_t)*PDC_SERVER_MAX_PROC_PER_NODE);
     memset(a->storage_location, 0, sizeof(char)*ADDR_MAX);
 
-    // Init 15 attributes, double check to match the region_list_t def
+    // Init 16 attributes, double check to match the region_list_t def
     return ret_value;
 }
+
+// TODO: currently assumes both region are of same object, so only compare ndim, start, and count.
+int PDC_is_same_region_list(region_list_t *a, region_list_t *b)
+{
+    int ret_value = 1;
+    int i = 0;
+
+    if (a->ndim != b->ndim) {
+        ret_value = -1;
+        goto done;
+    }
+
+    for (i = 0; i < a->ndim; i++) {
+        if (a->start[i] != b->start[i] || a->count[i] != b->count[i]) {
+            ret_value = -1;
+            goto done;
+        }
+    }
+
+done:
+    return ret_value;
+}
+
+void PDC_print_storage_region_list(region_list_t *a)
+{
+    FUNC_ENTER(NULL);
+    
+    if (a == NULL) {
+        printf("==Empty region_list_t structure\n");
+        return;
+    }
+    int i;
+    printf("================================\n");
+    printf("  ndim      = %d\n",   a->ndim);
+    printf("  start    count\n");
+    /* printf("start stride count\n"); */
+    for (i = 0; i < a->ndim; i++) {
+        printf("  %5d    %5d\n", a->start[i], a->count[i]);
+        /* printf("%5d %6d %5d\n", a->start[i], a->stride[i], a->count[i]); */
+    }
+    printf("    path: %s\n", a->storage_location);
+    printf("  offset: %" PRIu64 "\n", a->offset);
+   
+    printf("================================\n\n");
+    fflush(stdout);
+}
+
 
 void PDC_print_region_list(region_list_t *a)
 {
@@ -332,8 +379,8 @@ void PDC_print_region_list(region_list_t *a)
 perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to)
 {
     int i;
-    if (NULL==from || NULL==to) {
-        printf("    pdc_region_list_t_deep_cp(): NULL input!\n");
+    if (NULL == from || NULL == to) {
+        printf("pdc_region_list_t_deep_cp(): NULL input!\n");
         return FAIL;
     }
 
@@ -355,11 +402,12 @@ perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to)
     memcpy(to->storage_location , from->storage_location, sizeof(char) * ADDR_MAX);
     to->access_type   = from->access_type;
     to->offset        = from->offset;
+    to->meta          = from->meta;
 
     to->prev = NULL;
     to->next = NULL;
 
-    // Copy 15 attributes, double check to match the region_list_t def
+    // Copy 16 attributes, double check to match the region_list_t def
                             
     return SUCCEED;
 }
@@ -526,14 +574,14 @@ perr_t pdc_transfer_t_to_metadata_t(pdc_metadata_transfer_t *transfer, pdc_metad
         printf("    pdc_transfer_t_to_metadata_t(): NULL input!\n");
         return FAIL;
     }
-    meta->user_id       = transfer->user_id      ;
-    meta->obj_id        = transfer->obj_id       ;
-    meta->time_step     = transfer->time_step    ;
-    meta->ndim          = transfer->ndim         ;
-    meta->dims[0]       = transfer->dims0        ;
-    meta->dims[1]       = transfer->dims1        ;
-    meta->dims[2]       = transfer->dims2        ;
-    meta->dims[3]       = transfer->dims3        ;
+    meta->user_id       = transfer->user_id;
+    meta->obj_id        = transfer->obj_id;
+    meta->time_step     = transfer->time_step;
+    meta->ndim          = transfer->ndim;
+    meta->dims[0]       = transfer->dims0;
+    meta->dims[1]       = transfer->dims1;
+    meta->dims[2]       = transfer->dims2;
+    meta->dims[3]       = transfer->dims3;
 
     strcpy(meta->app_name, transfer->app_name);
     strcpy(meta->obj_name, transfer->obj_name);
@@ -556,6 +604,7 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
 perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs) {return SUCCEED;}
+perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region) {return NULL;}
 pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id) {return NULL;}
 hg_class_t *hg_class_g;
 
@@ -881,7 +930,7 @@ HG_TEST_RPC_CB(notify_io_complete, handle)
     /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
-    printf("==PDC_CLIENT: Got IO complete notification from server: obj_id=%llu, shm_addr=[%s]\n", in.obj_id, in.shm_addr);
+    /* printf("==PDC_CLIENT: Got IO complete notification from server: obj_id=%llu, shm_addr=[%s]\n", in.obj_id, in.shm_addr); */
 
     client_read_info_t * read_info = (client_read_info_t*)malloc(sizeof(client_read_info_t));
     read_info->obj_id = in.obj_id;
@@ -1624,6 +1673,7 @@ HG_TEST_RPC_CB(data_server_read, handle)
 
     pdc_region_transfer_t_to_list_t(&(in.region), &(io_info->region));
     io_info->region.access_type = io_info->io_type;
+    io_info->region.meta = &(io_info->meta);
 
     out.ret = 1;
     HG_Respond(handle, PDC_Server_data_io_via_shm, io_info, &out);
@@ -1678,6 +1728,7 @@ HG_TEST_RPC_CB(data_server_write, handle)
     pdc_region_transfer_t_to_list_t(&(in.region), &(io_info->region));
     strcpy(&(io_info->region.shm_addr), in.shm_addr);
     io_info->region.access_type = io_info->io_type;
+    io_info->region.meta = &(io_info->meta);
 
     out.ret = 1;
     HG_Respond(handle, PDC_Server_data_io_via_shm, io_info, &out);
@@ -1795,4 +1846,44 @@ data_server_write_check_register(hg_class_t *hg_class)
     FUNC_LEAVE(ret_value);
 }
 
+/* update_region_loc_cb */
+HG_TEST_RPC_CB(update_region_loc, handle)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    metadata_update_in_t  in;
+    metadata_update_out_t out;
+    
+    FUNC_ENTER(NULL);
+
+    /* Get input parameters sent on origin through on HG_Forward() */
+    // Decode input
+    HG_Get_input(handle, &in);
+    printf("==PDC_SERVER: Got region location update request: obj_id=%llu\n", in.obj_id);
+
+    region_list_t *input_region = (region_list_t*)malloc(sizeof(region_list_t));
+
+    out.ret = 1;
+    ret_value = PDC_Server_update_local_region_storage_loc(input_region);
+    if (ret_value != SUCCEED) 
+        out.ret = -1;
+
+    HG_Respond(handle, NULL, NULL, &out);
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
+hg_id_t
+update_region_loc_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+
+    ret_value = MERCURY_REGISTER(hg_class, "update_region_loc", update_region_loc_in_t, update_region_loc_out_t, update_region_loc_cb);
+
+    FUNC_LEAVE(ret_value);
+}
 
