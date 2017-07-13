@@ -89,6 +89,7 @@ typedef struct region_list_t {
 typedef struct PDC_mapping_info {
     pdcid_t                          remote_obj_id;         /* target of object id */
     pdcid_t                          remote_reg_id;         /* target of region id */
+    int32_t                          remote_client_id;
     size_t                           remote_ndim;
     PDC_LIST_ENTRY(PDC_mapping_info) entry;
 } PDC_mapping_info_t;
@@ -99,6 +100,7 @@ typedef struct region_map_t {
     pdcid_t                          local_obj_id;         /* origin of object id */
     pdcid_t                          local_reg_id;         /* origin of region id */
     size_t                           local_ndim;
+    uint64_t                        *local_reg_size;
     hg_addr_t                        local_addr;
     hg_bulk_t                        bulk_handle;
     PDC_var_type_t                   local_data_type;
@@ -233,6 +235,12 @@ MERCURY_GEN_PROC( notify_io_complete_out_t, ((int32_t)(ret)) )
 MERCURY_GEN_PROC( close_server_in_t,  ((int32_t)(client_id)) )
 MERCURY_GEN_PROC( close_server_out_t, ((int32_t)(ret)) )
 
+MERCURY_GEN_PROC( notify_region_update_in_t, ((uint64_t)(obj_id)) ((uint64_t)(reg_id)) )
+MERCURY_GEN_PROC( notify_region_update_out_t, ((int32_t)(ret)) )
+
+MERCURY_GEN_PROC( close_server_in_t,  ((int32_t)(client_id)) )
+MERCURY_GEN_PROC( close_server_out_t, ((int32_t)(ret)) )
+
 MERCURY_GEN_STRUCT_PROC( metadata_query_transfer_in_t, ((int32_t)(is_list_all)) ((int32_t)(user_id)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((int32_t)(time_step_from)) ((int32_t)(time_step_to)) ((int32_t)(ndim)) ((hg_const_string_t)(tags)) )
 /* MERCURY_GEN_STRUCT_PROC( metadata_query_transfer_in_t, ((int32_t)(user_id)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((int32_t)(time_step_from)) ((int32_t)(time_step_to)) ((int32_t)(ndim)) ((int32_t)(create_time_from)) ((int32_t)(create_time_to)) ((int32_t)(last_modified_time_from)) ((int32_t)(last_modified_time_to)) ((hg_const_string_t)(tags)) ) */
 MERCURY_GEN_PROC( metadata_query_transfer_out_t, ((hg_bulk_t)(bulk_handle)) ((int32_t)(ret)) )
@@ -258,7 +266,7 @@ MERCURY_GEN_PROC( gen_obj_unmap_notification_out_t, ((int32_t)(ret)) )
 MERCURY_GEN_PROC( gen_reg_unmap_notification_in_t, ((uint64_t)(local_obj_id)) ((uint64_t)(local_reg_id)) )
 MERCURY_GEN_PROC( gen_reg_unmap_notification_out_t, ((int32_t)(ret)) )
 
-MERCURY_GEN_PROC( gen_reg_map_notification_in_t, ((uint64_t)(local_obj_id)) ((uint64_t)(local_reg_id)) ((uint64_t)(remote_obj_id)) ((uint64_t)(remote_reg_id)) ((uint8_t)(local_type)) ((uint8_t)(remote_type)) ((uint32_t)(ndim)) ((hg_bulk_t)(bulk_handle)) )
+MERCURY_GEN_PROC( gen_reg_map_notification_in_t, ((uint64_t)(local_obj_id)) ((uint64_t)(local_reg_id)) ((uint64_t)(remote_obj_id)) ((uint64_t)(remote_reg_id)) ((int32_t)(remote_client_id)) ((uint8_t)(local_type)) ((uint8_t)(remote_type)) ((uint32_t)(ndim)) ((hg_bulk_t)(bulk_handle)) )
 MERCURY_GEN_PROC( gen_reg_map_notification_out_t, ((int32_t)(ret)) ) 
 
 MERCURY_GEN_STRUCT_PROC( region_info_transfer_t, ((hg_size_t)(ndim)) ((uint64_t)(start_0)) ((uint64_t)(start_1)) ((uint64_t)(start_2)) ((uint64_t)(start_3))  ((uint64_t)(count_0)) ((uint64_t)(count_1)) ((uint64_t)(count_2)) ((uint64_t)(count_3)) ((uint64_t)(stride_0)) ((uint64_t)(stride_1)) ((uint64_t)(stride_2)) ((uint64_t)(stride_3)) )
@@ -862,6 +870,15 @@ typedef struct {
 } notify_io_complete_out_t;
 
 typedef struct {
+    uint64_t obj_id;
+    uint64_t reg_id;
+} notify_region_update_in_t;
+
+typedef struct {
+    int32_t ret;
+} notify_region_update_out_t;
+
+typedef struct {
     int32_t client_id;
 } close_server_in_t;
 
@@ -874,6 +891,7 @@ typedef struct {
     uint64_t        local_reg_id;
     uint64_t        remote_obj_id;
     uint64_t        remote_reg_id;
+    int32_t         remote_client_id;
     PDC_var_type_t  local_type;
     PDC_var_type_t  remote_type;
     size_t          ndim;
@@ -1103,6 +1121,35 @@ hg_proc_notify_io_complete_out_t(hg_proc_t proc, void *data)
     return ret;
 }
 
+static HG_INLINE hg_return_t
+hg_proc_notify_region_update_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    notify_region_update_in_t *struct_data = (notify_region_update_in_t*) data;
+
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
+    if (ret != HG_SUCCESS) {
+    HG_LOG_ERROR("Proc error");
+    }    
+    ret = hg_proc_uint64_t(proc, &struct_data->reg_id);
+    if (ret != HG_SUCCESS) {
+    HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_notify_region_update_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    notify_region_update_out_t *struct_data = (notify_region_update_out_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+    HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
 
 static HG_INLINE hg_return_t
 hg_proc_close_server_in_t(hg_proc_t proc, void *data)
@@ -1204,6 +1251,11 @@ hg_proc_gen_reg_map_notification_in_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->remote_reg_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->remote_client_id);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -1344,6 +1396,9 @@ struct hg_test_bulk_args {
 struct lock_bulk_args {
     hg_handle_t handle;
     region_lock_in_t in;
+    struct PDC_region_info *server_region;
+    void  *data_buf;
+    region_map_t *mapping_list;
 //    hg_handle_t local_bulk_handle;
 };
 

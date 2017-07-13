@@ -91,6 +91,7 @@ int work_todo_g = 0;
 static hg_id_t    server_lookup_client_register_id_g;
 static hg_id_t    server_lookup_remote_server_register_id_g;
 static hg_id_t    notify_io_complete_register_id_g;
+static hg_id_t    notify_region_update_register_id_g;
 
 // Global thread pool
 hg_thread_pool_t *hg_test_thread_pool_g = NULL;
@@ -3079,6 +3080,7 @@ int main(int argc, char *argv[])
     server_lookup_client_register_id_g = server_lookup_client_register(hg_class_g);
     notify_io_complete_register_id_g   = notify_io_complete_register(hg_class_g);
     server_lookup_remote_server_register_id_g = server_lookup_remote_server_register(hg_class_g);
+    notify_region_update_register_id_g = notify_region_update_register(hg_class_g);
 
     PDC_Server_lookup_remote_server();
 
@@ -3281,6 +3283,64 @@ perr_t PDC_Server_merge_region_list_naive(region_list_t *list, region_list_t **m
 done:
     fflush(stdout);
     free(is_merged);
+    FUNC_LEAVE(ret_value);
+}
+
+static hg_return_t PDC_Server_notify_region_update_cb(const struct hg_cb_info *callback_info)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value;
+
+//modify server_lookup_args_t
+    server_lookup_args_t *lookup_args = (server_lookup_args_t*) callback_info->arg;
+    hg_handle_t handle = callback_info->info.forward.handle;
+
+    /* Get output from server*/
+    notify_region_update_out_t output;
+
+    ret_value = HG_Get_output(handle, &output);
+    printf("==PDC_SERVER[%d]: PDC_Server_notify_region_update_cb - received from client with %d\n", pdc_server_rank_g, output.ret);
+    lookup_args->ret_int = output.ret;
+
+    work_todo_g--;
+
+done:
+    HG_Destroy(handle);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_SERVER_notify_region_update(pdcid_t meta_id, pdcid_t reg_id)
+{
+    perr_t ret_value = SUCCEED;
+    hg_return_t hg_ret;
+    uint32_t client_id;
+
+    FUNC_ENTER(NULL);
+
+    if (pdc_client_info_g[client_id].notify_region_update_handle_valid != 1) {
+        hg_ret = HG_Create(hg_context_g, pdc_client_info_g[client_id].addr, notify_region_update_register_id_g, &pdc_client_info_g[client_id].notify_region_update_handle);
+        if (hg_ret != HG_SUCCESS) {
+            fprintf(stderr, "PDC_Server_notify_region_update_to_client(): Could not HG_Create()\n");
+            return FAIL;
+        }
+        pdc_client_info_g[client_id].notify_region_update_handle_valid = 1;
+    }
+
+    // Fill input structure
+    notify_region_update_in_t in;
+    in.obj_id    = meta_id;
+    in.reg_id    = reg_id;
+
+    /* printf("Sending input to target\n"); */
+// change server_lookup_args_t
+    server_lookup_args_t lookup_args;
+    hg_ret = HG_Forward(pdc_client_info_g[client_id].notify_region_update_handle, PDC_Server_notify_region_update_cb, &lookup_args, &in);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "PDC_Server_notify_region_update_to_client(): Could not start HG_Forward()\n");
+        return FAIL;
+    }
+
     FUNC_LEAVE(ret_value);
 }
 
@@ -3983,8 +4043,10 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
 
     if (region->access_type == READ) 
         fp = fopen(region->storage_location, "r");
-    else if (region->access_type == WRITE) 
+    else if (region->access_type == WRITE) {
         fp = fopen(region->storage_location, "w");
+        printf("location is %s\n", region->storage_location);
+    }
     else {
         printf("==PDC_SERVER: PDC_Server_posix_one_file_io - unsupported access type\n");
         ret_value = FAIL;
