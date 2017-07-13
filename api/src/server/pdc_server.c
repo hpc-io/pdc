@@ -4202,8 +4202,9 @@ perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct P
             data_path = ".";
     }
 
-    // Data path prefix will be $SCRATCH/pdc_data/obj_id/
-    sprintf(io_region->storage_location, "%s/pdc_data/s%03d.bin" PRIu64 "", data_path, obj_id, pdc_server_rank_g);
+    // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
+    sprintf(io_region->storage_location, "%s/pdc_data/%llu/s%03d.bin", data_path, obj_id, pdc_server_rank_g);
+    pdc_mkdir(io_region->storage_location);
 
     io_region->access_type = io_type;
 
