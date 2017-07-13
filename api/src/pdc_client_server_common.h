@@ -196,12 +196,10 @@ typedef struct {
     region_list_t               region;
 } data_server_io_info_t;
 
-
 typedef struct {
     uint64_t                    obj_id;
     char                        shm_addr[ADDR_MAX];
 } client_read_info_t;
-
 
 typedef struct {
     int32_t client_id;
@@ -273,6 +271,7 @@ MERCURY_GEN_PROC(bulk_write_out_t, ((hg_uint64_t)(ret)) )
 /* 
  * Data Server
  */
+
 MERCURY_GEN_PROC(data_server_read_in_t, ((int32_t)(client_id)) ((int32_t)(nclient)) ((pdc_metadata_transfer_t)(meta)) ((region_info_transfer_t)(region)))
 MERCURY_GEN_PROC(data_server_read_out_t, ((int32_t)(ret)) )
 
@@ -1306,76 +1305,6 @@ hg_proc_gen_obj_unmap_notification_out_t(hg_proc_t proc, void *data)
     return ret;
 }
 
-hg_id_t test_bulk_xfer_register(hg_class_t *hg_class);
-
-
-#endif
-
-hg_id_t gen_obj_id_register(hg_class_t *hg_class);
-/* hg_id_t send_obj_name_marker_register(hg_class_t *hg_class); */
-hg_id_t client_test_connect_register(hg_class_t *hg_class);
-hg_id_t server_lookup_client_register(hg_class_t *hg_class);
-hg_id_t close_server_register(hg_class_t *hg_class);
-hg_id_t metadata_query_register(hg_class_t *hg_class);
-hg_id_t metadata_delete_register(hg_class_t *hg_class);
-hg_id_t metadata_delete_by_id_register(hg_class_t *hg_class);
-hg_id_t metadata_update_register(hg_class_t *hg_class);
-hg_id_t metadata_add_tag_register(hg_class_t *hg_class);
-hg_id_t region_lock_register(hg_class_t *hg_class);
-
-hg_id_t server_lookup_remote_server_register(hg_class_t *hg_class);
-
-//bulk
-hg_id_t query_partial_register(hg_class_t *hg_class);
-
-hg_id_t notify_io_complete_register(hg_class_t *hg_class);
-hg_id_t data_server_read_register(hg_class_t *hg_class);
-
-struct hg_test_bulk_args {
-    int cnt;
-    hg_handle_t handle;
-    size_t nbytes;
-    hg_atomic_int32_t completed_transfers;
-    size_t ret;
-    pdc_metadata_t **meta_arr;
-    int             *n_meta;
-};
-
-struct lock_bulk_args {
-    hg_handle_t handle;
-    region_lock_in_t in;
-//    hg_handle_t local_bulk_handle;
-};
-
-hg_id_t gen_reg_map_notification_register(hg_class_t *hg_class);
-
-perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out);
-perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out);
-perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *out);
-
-perr_t PDC_get_self_addr(hg_class_t* hg_class, char* self_addr_string);
-uint32_t PDC_get_server_by_obj_id(uint64_t obj_id, int n_server);
-uint32_t PDC_get_hash_by_name(const char *name);
-int      PDC_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b);
-perr_t   PDC_metadata_init(pdc_metadata_t *a);
-void     PDC_print_metadata(pdc_metadata_t *a);
-void     PDC_print_region_list(region_list_t *a);
-
-perr_t pdc_metadata_t_to_transfer_t(pdc_metadata_t *meta, pdc_metadata_transfer_t *transfer);
-perr_t pdc_transfer_t_to_metadata_t(pdc_metadata_transfer_t *transfer, pdc_metadata_t *meta);
-
-perr_t pdc_region_info_to_list_t(struct PDC_region_info *region, region_list_t *list);
-perr_t pdc_region_transfer_t_to_list_t(region_info_transfer_t *transfer, region_list_t *region);
-perr_t pdc_region_list_t_to_transfer(region_list_t *region, region_info_transfer_t *transfer);
-perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to);
-
-perr_t pdc_region_info_t_to_transfer(struct PDC_region_info *region, region_info_transfer_t *transfer);
-
-void pdc_mkdir(const char *dir);
-
-extern hg_hash_table_t   *metadata_hash_table_g;
-extern hg_atomic_int32_t  close_server_g;
-
 
 /*
  * Data Server related
@@ -1598,6 +1527,77 @@ hg_proc_data_server_write_check_out_t(hg_proc_t proc, void *data)
     }
     return ret;
 }
+
+
+#endif
+
+hg_id_t gen_obj_id_register(hg_class_t *hg_class);
+/* hg_id_t send_obj_name_marker_register(hg_class_t *hg_class); */
+hg_id_t client_test_connect_register(hg_class_t *hg_class);
+hg_id_t server_lookup_client_register(hg_class_t *hg_class);
+hg_id_t close_server_register(hg_class_t *hg_class);
+hg_id_t metadata_query_register(hg_class_t *hg_class);
+hg_id_t metadata_delete_register(hg_class_t *hg_class);
+hg_id_t metadata_delete_by_id_register(hg_class_t *hg_class);
+hg_id_t metadata_update_register(hg_class_t *hg_class);
+hg_id_t metadata_add_tag_register(hg_class_t *hg_class);
+hg_id_t region_lock_register(hg_class_t *hg_class);
+
+hg_id_t test_bulk_xfer_register(hg_class_t *hg_class);
+
+hg_id_t server_lookup_remote_server_register(hg_class_t *hg_class);
+
+//bulk
+hg_id_t query_partial_register(hg_class_t *hg_class);
+
+hg_id_t notify_io_complete_register(hg_class_t *hg_class);
+hg_id_t data_server_read_register(hg_class_t *hg_class);
+
+struct hg_test_bulk_args {
+    int cnt;
+    hg_handle_t handle;
+    size_t nbytes;
+    hg_atomic_int32_t completed_transfers;
+    size_t ret;
+    pdc_metadata_t **meta_arr;
+    int             *n_meta;
+};
+
+struct lock_bulk_args {
+    hg_handle_t handle;
+    region_lock_in_t in;
+//    hg_handle_t local_bulk_handle;
+};
+
+hg_id_t gen_reg_map_notification_register(hg_class_t *hg_class);
+
+perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out);
+perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out);
+perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *out);
+
+perr_t PDC_get_self_addr(hg_class_t* hg_class, char* self_addr_string);
+uint32_t PDC_get_server_by_obj_id(uint64_t obj_id, int n_server);
+uint32_t PDC_get_hash_by_name(const char *name);
+int      PDC_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b);
+perr_t   PDC_metadata_init(pdc_metadata_t *a);
+void     PDC_print_metadata(pdc_metadata_t *a);
+void     PDC_print_region_list(region_list_t *a);
+
+perr_t pdc_metadata_t_to_transfer_t(pdc_metadata_t *meta, pdc_metadata_transfer_t *transfer);
+perr_t pdc_transfer_t_to_metadata_t(pdc_metadata_transfer_t *transfer, pdc_metadata_t *meta);
+
+perr_t pdc_region_info_to_list_t(struct PDC_region_info *region, region_list_t *list);
+perr_t pdc_region_transfer_t_to_list_t(region_info_transfer_t *transfer, region_list_t *region);
+perr_t pdc_region_list_t_to_transfer(region_list_t *region, region_info_transfer_t *transfer);
+perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to);
+
+perr_t pdc_region_info_t_to_transfer(struct PDC_region_info *region, region_info_transfer_t *transfer);
+
+void pdc_mkdir(const char *dir);
+
+extern hg_hash_table_t   *metadata_hash_table_g;
+extern hg_atomic_int32_t  close_server_g;
+
 
 hg_id_t data_server_write_check_register(hg_class_t *hg_class);
 hg_id_t data_server_read_register(hg_class_t *hg_class);
