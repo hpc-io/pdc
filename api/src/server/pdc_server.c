@@ -418,9 +418,9 @@ static perr_t PDC_Server_lookup_client(uint32_t client_id)
     /* printf("==PDC_SERVER[%d]: Received response from client %d\n", pdc_server_rank_g, client_id); */
     /* fflush(stdout); */
 
-    if (pdc_server_rank_g == 0) {
-        printf("==PDC_SERVER[%d]: Finished connection test to all clients\n", pdc_server_rank_g);
-    }
+    /* if (pdc_server_rank_g == 0) { */
+    /*     printf("==PDC_SERVER[%d]: Finished connection test to all clients\n", pdc_server_rank_g); */
+    /* } */
 
 done:
     fflush(stdout);
@@ -447,7 +447,7 @@ perr_t PDC_client_info_init(pdc_client_info_t* a)
     a->addr_valid = 0;
     a->server_lookup_client_handle_valid = 0;
     a->notify_io_complete_handle_valid   = 0;
-
+    a->notify_region_update_handle_valid = 0;
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -464,7 +464,8 @@ hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info)
 #endif
     
     if (pdc_client_info_g != NULL) 
-        free(pdc_client_info_g);
+        PDC_Server_destroy_client_info(pdc_client_info_g);
+    
     
 
     pdc_client_info_g = (pdc_client_info_t*)malloc(sizeof(pdc_client_info_t) * (in->nclient+1));
@@ -2192,6 +2193,7 @@ perr_t PDC_Server_destroy_client_info(pdc_client_info_t *info)
         }
     }
 
+    free(info);
 done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_init
@@ -4165,7 +4167,7 @@ perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region)
     } // DL_FOREACH
 
     if (update_success == -1) {
-        printf("==PDC_SERVER: create new region location/offset\n");
+        /* printf("==PDC_SERVER: create new region location/offset\n"); */
         // Create the region list
         new_region = (region_list_t*)malloc(sizeof(region_list_t));
         PDC_init_region_list(new_region);
@@ -4181,7 +4183,7 @@ perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region)
         new_region->offset = region->offset;
 
         DL_APPEND(target_meta->storage_region_list_head, new_region);
-        PDC_print_storage_region_list(new_region);
+        /* PDC_print_storage_region_list(new_region); */
     }
 
 done:
@@ -4192,9 +4194,10 @@ static hg_return_t
 PDC_Server_get_metadata_by_id_cb(const struct hg_cb_info *callback_info)
 {
     hg_return_t ret_value;
+    pdc_metadata_t *meta;
     server_lookup_args_t *lookup_args;
     hg_handle_t handle;
-    metadata_update_out_t output;
+    get_metadata_by_id_out_t output;
 
     FUNC_ENTER(NULL);
 
@@ -4204,8 +4207,16 @@ PDC_Server_get_metadata_by_id_cb(const struct hg_cb_info *callback_info)
     /* Get output from server*/
     ret_value = HG_Get_output(handle, &output);
 
-    printf("PDC_Server_get_metadata_by_id_cb: ret=%d\n", output.ret);
-    lookup_args->ret_int = output.ret;
+    if (output.res_meta.obj_id != 0) {
+        meta = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t));
+        pdc_transfer_t_to_metadata_t(&output.res_meta, meta);
+    }
+    else {
+        lookup_args->meta = NULL;
+        printf("PDC_Server_get_metadata_by_id_cb: no valid metadata is retrieved\n");
+    }
+
+    lookup_args->meta = meta;
 
     work_todo_g--;
 
@@ -4297,6 +4308,9 @@ perr_t PDC_Server_get_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta)
         // Wait for response from server
         work_todo_g = 1;
         PDC_Server_check_response(&hg_context_g);
+
+        // Retrieved metadata is stored in lookup_args
+        *res_meta = lookup_args.meta;
     }
 
 done:
@@ -4555,6 +4569,7 @@ perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct P
 {
     perr_t ret_value = SUCCEED;
     region_list_t *io_region = NULL;
+    pdc_metadata_t *meta = NULL;
     size_t i;
 
     FUNC_ENTER(NULL);
@@ -4586,9 +4601,22 @@ perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct P
         io_region->data_size *= io_region->count[i];
 
     io_region->buf = buf;
+
+    // Need to get the metadata
+    meta = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t));
+    ret_value = PDC_Server_get_metadata_by_id(obj_id, &meta);
+    if (ret_value != SUCCEED) {
+        printf("PDC_SERVER: PDC_Server_data_io_direct - unable to get metadata of object\n");
+        goto done;
+    }
+    io_region->meta = meta;
     
     // Call the actual IO routine
-    PDC_Server_regions_io(io_region, POSIX);
+    ret_value = PDC_Server_regions_io(io_region, POSIX);
+    if (ret_value != SUCCEED) {
+        printf("PDC_SERVER: PDC_Server_data_io_direct - unable perform server direct IO\n");
+        goto done;
+    }
 
 done:
     fflush(stdout);

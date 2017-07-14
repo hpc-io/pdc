@@ -77,6 +77,7 @@ typedef struct server_lookup_args_t {
     int   client_id;
     int   ret_int;
     char  *ret_string;
+    pdc_metadata_t *meta;
     hg_const_string_t server_addr;
 } server_lookup_args_t;
 
