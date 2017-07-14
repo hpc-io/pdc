@@ -3710,6 +3710,99 @@ done:
 /*     FUNC_LEAVE(ret_value); */
 /* } // end of PDC_Server_data_read */
 
+perr_t PDC_Server_get_local_storage_location_of_region(region_list_t *region, int *n_loc, region_list_t **overlap_region_loc)
+{
+    perr_t ret_value = SUCCEED;
+    pdc_metadata_t *target_meta = NULL, *region_meta = NULL;
+    region_list_t  *update_region = NULL, *region_elt = NULL, *new_region = NULL;
+
+    FUNC_ENTER(NULL);
+
+    *n_loc = 0;
+
+/* printf("==PDC_SERVER: get local region storage location\n"); */
+    region_meta = region->meta;
+
+    // Find object metadata
+    target_meta = PDC_Server_get_obj_metadata(region_meta->obj_id);
+    DL_FOREACH(target_meta->storage_region_list_head, region_elt) {
+        if (is_contiguous_region_overlap(region_elt, region)) {
+            overlap_region_loc[*n_loc] = region_elt;
+            *n_loc += 1;
+        }
+        /* PDC_print_storage_region_list(region_elt); */
+        if (*n_loc > MAX_OVERLAP_REGION_NUM) {
+            printf("==PDC_SERVER: PDC_Server_get_local_storage_location_of_region - exceeding MAX_OVERLAP_REGION_NUM regions!\n");
+            ret_value = FAIL;
+            goto done;
+        }
+    } // DL_FOREACH
+
+    if (*n_loc == 0) {
+        printf("==PDC_SERVER: PDC_Server_get_local_storage_location_of_region - no overlapping region found\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+} // PDC_Server_get_local_storage_location_of_region
+
+// Note: one request region can spread across multiple regions in storage
+perr_t PDC_Server_get_storage_location_of_region(region_list_t *request_region, int *n_loc, region_list_t **overlap_region_loc)
+{
+    perr_t ret_value = SUCCEED;
+    pdc_metadata_t *region_meta = NULL;
+    uint32_t server_id = 0;
+
+    FUNC_ENTER(NULL);
+
+    if (request_region == NULL) {
+        printf("==PDC_SERVER: PDC_Server_get_storage_location_of_region() requet region is NULL!\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    region_meta = request_region->meta;
+    server_id = PDC_get_server_by_obj_id(region_meta->obj_id, pdc_server_size_g);
+    if (server_id == pdc_server_rank_g) {
+        // Metadata object is local, no need to send update RPC
+        ret_value = PDC_Server_get_local_storage_location_of_region(request_region, n_loc, overlap_region_loc);
+        if (ret_value != SUCCEED) 
+            goto done;
+    }
+    else {
+        /* if (pdc_remote_server_info_g[server_id].update_region_loc_handle_valid != 1) { */
+        /*     HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, update_region_loc_register_id_g, &pdc_remote_server_info_g[server_id].update_region_loc_handle); */
+        /*     pdc_remote_server_info_g[server_id].update_region_loc_handle_valid = 1; */
+        /* } */
+
+        /* /1* printf("Sending updated region loc to target\n"); *1/ */
+        /* server_lookup_args_t lookup_args; */
+
+        /* update_region_loc_in_t in; */
+        /* in.obj_id = region->meta->obj_id; */
+        /* in.storage_location = region->storage_location; */
+        /* in.offset = region->offset; */
+        /* pdc_region_list_t_to_transfer(region, &in.region); */
+
+        /* hg_ret = HG_Forward(pdc_remote_server_info_g[server_id].update_region_loc_handle, PDC_Server_update_region_loc_cb, &lookup_args, &in); */
+        /* if (hg_ret != HG_SUCCESS) { */
+        /*     fprintf(stderr, "PDC_Client_update_metadata_with_name(): Could not start HG_Forward()\n"); */
+        /*     return FAIL; */
+        /* } */
+
+        /* // Wait for response from server */
+        /* work_todo_g = 1; */
+        /* PDC_Server_check_response(&hg_context_g); */
+    }
+
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
 perr_t PDC_Server_regions_io(region_list_t *region_list_head, PDC_io_plugin_t plugin)
 {
     perr_t ret_value = SUCCEED;
@@ -3967,11 +4060,10 @@ done:
     FUNC_LEAVE(ret_value);
 } // end of PDC_Server_data_write
 
-
 perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region)
 {
     perr_t ret_value = SUCCEED;
-    pdc_metadata_t *update_meta = NULL, *region_meta = NULL;
+    pdc_metadata_t *target_meta = NULL, *region_meta = NULL;
     region_list_t  *update_region = NULL, *region_elt = NULL, *new_region = NULL;
     int update_success = -1, i = 0;
 
@@ -3981,8 +4073,8 @@ perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region)
     region_meta = region->meta;
 
     // Find object metadata
-    update_meta = PDC_Server_get_obj_metadata(region_meta->obj_id);
-    DL_FOREACH(update_meta->storage_region_list_head, region_elt) {
+    target_meta = PDC_Server_get_obj_metadata(region_meta->obj_id);
+    DL_FOREACH(target_meta->storage_region_list_head, region_elt) {
         if (PDC_is_same_region_list(region_elt, region)) {
             strcpy(region_elt->storage_location, region->storage_location);
             region_elt->offset = region->offset;
@@ -4008,7 +4100,7 @@ perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region)
         strcpy(new_region->storage_location, region->storage_location);
         new_region->offset = region->offset;
 
-        DL_APPEND(update_meta->storage_region_list_head, new_region);
+        DL_APPEND(target_meta->storage_region_list_head, new_region);
         PDC_print_storage_region_list(new_region);
     }
 
