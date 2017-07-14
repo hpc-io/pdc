@@ -214,89 +214,89 @@ typedef struct {
     char client_addr[ADDR_MAX];
 } client_test_connect_args;
 
-#ifdef HG_HAS_BOOST
-MERCURY_GEN_STRUCT_PROC( pdc_metadata_transfer_t, ((int32_t)(user_id)) ((int32_t)(time_step)) ((uint64_t)(obj_id)) ((int32_t)(ndim)) ((int32_t)(dims0)) ((int32_t)(dims1)) ((int32_t)(dims2)) ((int32_t)(dims3)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((hg_const_string_t)(data_location)) ((hg_const_string_t)(tags)) )
+/* #ifdef HG_HAS_BOOST */
+/* MERCURY_GEN_STRUCT_PROC( pdc_metadata_transfer_t, ((int32_t)(user_id)) ((int32_t)(time_step)) ((uint64_t)(obj_id)) ((int32_t)(ndim)) ((int32_t)(dims0)) ((int32_t)(dims1)) ((int32_t)(dims2)) ((int32_t)(dims3)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((hg_const_string_t)(data_location)) ((hg_const_string_t)(tags)) ) */
 
-MERCURY_GEN_PROC( gen_obj_id_in_t, ((pdc_metadata_transfer_t)(data)) ((uint32_t)(hash_value)) )
-MERCURY_GEN_PROC( gen_obj_id_out_t, ((uint64_t)(obj_id)) )
+/* MERCURY_GEN_PROC( gen_obj_id_in_t, ((pdc_metadata_transfer_t)(data)) ((uint32_t)(hash_value)) ) */
+/* MERCURY_GEN_PROC( gen_obj_id_out_t, ((uint64_t)(obj_id)) ) */
 
-/* MERCURY_GEN_PROC( send_obj_name_marker_in_t, ((hg_const_string_t)(obj_name)) ((uint32_t)(hash_value)) ) */
-/* MERCURY_GEN_PROC( send_obj_name_marker_out_t, ((int32_t)(ret)) ) */
+/* /1* MERCURY_GEN_PROC( send_obj_name_marker_in_t, ((hg_const_string_t)(obj_name)) ((uint32_t)(hash_value)) ) *1/ */
+/* /1* MERCURY_GEN_PROC( send_obj_name_marker_out_t, ((int32_t)(ret)) ) *1/ */
 
-MERCURY_GEN_PROC( client_test_connect_in_t, ((int32_t)(client_id)) ((int32_t)(nclient)) ((hg_const_string_t)(client_addr)) )
-MERCURY_GEN_PROC( client_test_connect_out_t, ((int32_t)(ret)) )
+/* MERCURY_GEN_PROC( client_test_connect_in_t, ((int32_t)(client_id)) ((int32_t)(nclient)) ((hg_const_string_t)(client_addr)) ) */
+/* MERCURY_GEN_PROC( client_test_connect_out_t, ((int32_t)(ret)) ) */
 
-MERCURY_GEN_PROC( server_lookup_client_in_t, ((int32_t)(server_id)) ((int32_t)(nserver)) ((hg_const_string_t)(server_addr)) )
-MERCURY_GEN_PROC( server_lookup_client_out_t, ((int32_t)(ret)) )
+/* MERCURY_GEN_PROC( server_lookup_client_in_t, ((int32_t)(server_id)) ((int32_t)(nserver)) ((hg_const_string_t)(server_addr)) ) */
+/* MERCURY_GEN_PROC( server_lookup_client_out_t, ((int32_t)(ret)) ) */
 
-MERCURY_GEN_PROC( server_lookup_remote_server_in_t, ((int32_t)(server_id)) )
-MERCURY_GEN_PROC( server_lookup_remote_server_out_t, ((int32_t)(ret)) )
+/* MERCURY_GEN_PROC( server_lookup_remote_server_in_t, ((int32_t)(server_id)) ) */
+/* MERCURY_GEN_PROC( server_lookup_remote_server_out_t, ((int32_t)(ret)) ) */
 
-MERCURY_GEN_PROC( notify_io_complete_in_t, ((uint64_t)(obj_id)) ((int32_t)(io_type)) ((hg_const_string_t)(shm_addr)) )
-MERCURY_GEN_PROC( notify_io_complete_out_t, ((int32_t)(ret)) )
+/* MERCURY_GEN_PROC( notify_io_complete_in_t, ((uint64_t)(obj_id)) ((int32_t)(io_type)) ((hg_const_string_t)(shm_addr)) ) */
+/* MERCURY_GEN_PROC( notify_io_complete_out_t, ((int32_t)(ret)) ) */
 
-MERCURY_GEN_PROC( close_server_in_t,  ((int32_t)(client_id)) )
-MERCURY_GEN_PROC( close_server_out_t, ((int32_t)(ret)) )
+/* MERCURY_GEN_PROC( close_server_in_t,  ((int32_t)(client_id)) ) */
+/* MERCURY_GEN_PROC( close_server_out_t, ((int32_t)(ret)) ) */
 
-MERCURY_GEN_PROC( notify_region_update_in_t, ((uint64_t)(obj_id)) ((uint64_t)(reg_id)) )
-MERCURY_GEN_PROC( notify_region_update_out_t, ((int32_t)(ret)) )
+/* MERCURY_GEN_PROC( notify_region_update_in_t, ((uint64_t)(obj_id)) ((uint64_t)(reg_id)) ) */
+/* MERCURY_GEN_PROC( notify_region_update_out_t, ((int32_t)(ret)) ) */
 
-MERCURY_GEN_PROC( close_server_in_t,  ((int32_t)(client_id)) )
-MERCURY_GEN_PROC( close_server_out_t, ((int32_t)(ret)) )
+/* MERCURY_GEN_PROC( close_server_in_t,  ((int32_t)(client_id)) ) */
+/* MERCURY_GEN_PROC( close_server_out_t, ((int32_t)(ret)) ) */
 
-MERCURY_GEN_STRUCT_PROC( metadata_query_transfer_in_t, ((int32_t)(is_list_all)) ((int32_t)(user_id)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((int32_t)(time_step_from)) ((int32_t)(time_step_to)) ((int32_t)(ndim)) ((hg_const_string_t)(tags)) )
-/* MERCURY_GEN_STRUCT_PROC( metadata_query_transfer_in_t, ((int32_t)(user_id)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((int32_t)(time_step_from)) ((int32_t)(time_step_to)) ((int32_t)(ndim)) ((int32_t)(create_time_from)) ((int32_t)(create_time_to)) ((int32_t)(last_modified_time_from)) ((int32_t)(last_modified_time_to)) ((hg_const_string_t)(tags)) ) */
-MERCURY_GEN_PROC( metadata_query_transfer_out_t, ((hg_bulk_t)(bulk_handle)) ((int32_t)(ret)) )
+/* MERCURY_GEN_STRUCT_PROC( metadata_query_transfer_in_t, ((int32_t)(is_list_all)) ((int32_t)(user_id)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((int32_t)(time_step_from)) ((int32_t)(time_step_to)) ((int32_t)(ndim)) ((hg_const_string_t)(tags)) ) */
+/* /1* MERCURY_GEN_STRUCT_PROC( metadata_query_transfer_in_t, ((int32_t)(user_id)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((int32_t)(time_step_from)) ((int32_t)(time_step_to)) ((int32_t)(ndim)) ((int32_t)(create_time_from)) ((int32_t)(create_time_to)) ((int32_t)(last_modified_time_from)) ((int32_t)(last_modified_time_to)) ((hg_const_string_t)(tags)) ) *1/ */
+/* MERCURY_GEN_PROC( metadata_query_transfer_out_t, ((hg_bulk_t)(bulk_handle)) ((int32_t)(ret)) ) */
 
-MERCURY_GEN_PROC( metadata_query_in_t, ((hg_const_string_t)(obj_name)) ((uint32_t)(hash_value)) )
-MERCURY_GEN_PROC( metadata_query_out_t, ((pdc_metadata_transfer_t)(ret)) )
+/* MERCURY_GEN_PROC( metadata_query_in_t, ((hg_const_string_t)(obj_name)) ((uint32_t)(hash_value)) ) */
+/* MERCURY_GEN_PROC( metadata_query_out_t, ((pdc_metadata_transfer_t)(ret)) ) */
 
-MERCURY_GEN_PROC( metadata_delete_by_id_in_t, ((uint64_t)(obj_id)) )
-MERCURY_GEN_PROC( metadata_delete_by_id_out_t, ((int32_t)(ret)) )
+/* MERCURY_GEN_PROC( metadata_delete_by_id_in_t, ((uint64_t)(obj_id)) ) */
+/* MERCURY_GEN_PROC( metadata_delete_by_id_out_t, ((int32_t)(ret)) ) */
 
-MERCURY_GEN_PROC( metadata_delete_in_t, ((hg_const_string_t)(obj_name)) ((int32_t)(time_step)) ((uint32_t)(hash_value)) )
-MERCURY_GEN_PROC( metadata_delete_out_t, ((int32_t)(ret)) )
+/* MERCURY_GEN_PROC( metadata_delete_in_t, ((hg_const_string_t)(obj_name)) ((int32_t)(time_step)) ((uint32_t)(hash_value)) ) */
+/* MERCURY_GEN_PROC( metadata_delete_out_t, ((int32_t)(ret)) ) */
 
-MERCURY_GEN_PROC( metadata_add_tag_in_t, ((uint64_t)(obj_id)) ((uint32_t)(hash_value)) ((hg_const_string_t)(new_tag)) )
-MERCURY_GEN_PROC( metadata_add_tag_out_t, ((int32_t)(ret)) )
+/* MERCURY_GEN_PROC( metadata_add_tag_in_t, ((uint64_t)(obj_id)) ((uint32_t)(hash_value)) ((hg_const_string_t)(new_tag)) ) */
+/* MERCURY_GEN_PROC( metadata_add_tag_out_t, ((int32_t)(ret)) ) */
 
-MERCURY_GEN_PROC( metadata_update_in_t, ((uint64_t)(obj_id)) ((uint32_t)(hash_value)) ((pdc_metadata_transfer_t)(new_metadata)) )
-MERCURY_GEN_PROC( metadata_update_out_t, ((int32_t)(ret)) )
+/* MERCURY_GEN_PROC( metadata_update_in_t, ((uint64_t)(obj_id)) ((uint32_t)(hash_value)) ((pdc_metadata_transfer_t)(new_metadata)) ) */
+/* MERCURY_GEN_PROC( metadata_update_out_t, ((int32_t)(ret)) ) */
 
-MERCURY_GEN_PROC( gen_obj_unmap_notification_in_t, ((uint64_t)(local_obj_id)) )
-MERCURY_GEN_PROC( gen_obj_unmap_notification_out_t, ((int32_t)(ret)) )
+/* MERCURY_GEN_PROC( gen_obj_unmap_notification_in_t, ((uint64_t)(local_obj_id)) ) */
+/* MERCURY_GEN_PROC( gen_obj_unmap_notification_out_t, ((int32_t)(ret)) ) */
 
-MERCURY_GEN_PROC( gen_reg_unmap_notification_in_t, ((uint64_t)(local_obj_id)) ((uint64_t)(local_reg_id)) )
-MERCURY_GEN_PROC( gen_reg_unmap_notification_out_t, ((int32_t)(ret)) )
+/* MERCURY_GEN_PROC( gen_reg_unmap_notification_in_t, ((uint64_t)(local_obj_id)) ((uint64_t)(local_reg_id)) ) */
+/* MERCURY_GEN_PROC( gen_reg_unmap_notification_out_t, ((int32_t)(ret)) ) */
 
-MERCURY_GEN_PROC( gen_reg_map_notification_in_t, ((uint64_t)(local_obj_id)) ((uint64_t)(local_reg_id)) ((uint64_t)(remote_obj_id)) ((uint64_t)(remote_reg_id)) ((int32_t)(remote_client_id)) ((uint8_t)(local_type)) ((uint8_t)(remote_type)) ((uint32_t)(ndim)) ((hg_bulk_t)(bulk_handle)) )
-MERCURY_GEN_PROC( gen_reg_map_notification_out_t, ((int32_t)(ret)) ) 
+/* MERCURY_GEN_PROC( gen_reg_map_notification_in_t, ((uint64_t)(local_obj_id)) ((uint64_t)(local_reg_id)) ((uint64_t)(remote_obj_id)) ((uint64_t)(remote_reg_id)) ((int32_t)(remote_client_id)) ((uint8_t)(local_type)) ((uint8_t)(remote_type)) ((uint32_t)(ndim)) ((hg_bulk_t)(bulk_handle)) ) */
+/* MERCURY_GEN_PROC( gen_reg_map_notification_out_t, ((int32_t)(ret)) ) */ 
 
-MERCURY_GEN_STRUCT_PROC( region_info_transfer_t, ((hg_size_t)(ndim)) ((uint64_t)(start_0)) ((uint64_t)(start_1)) ((uint64_t)(start_2)) ((uint64_t)(start_3))  ((uint64_t)(count_0)) ((uint64_t)(count_1)) ((uint64_t)(count_2)) ((uint64_t)(count_3)) ((uint64_t)(stride_0)) ((uint64_t)(stride_1)) ((uint64_t)(stride_2)) ((uint64_t)(stride_3)) )
+/* MERCURY_GEN_STRUCT_PROC( region_info_transfer_t, ((hg_size_t)(ndim)) ((uint64_t)(start_0)) ((uint64_t)(start_1)) ((uint64_t)(start_2)) ((uint64_t)(start_3))  ((uint64_t)(count_0)) ((uint64_t)(count_1)) ((uint64_t)(count_2)) ((uint64_t)(count_3)) ((uint64_t)(stride_0)) ((uint64_t)(stride_1)) ((uint64_t)(stride_2)) ((uint64_t)(stride_3)) ) */
 
-MERCURY_GEN_PROC( region_lock_in_t, ((uint64_t)(obj_id)) ((int32_t)(lock_op)) ((int8_t)(access_type)) ((uint64_t)(local_reg_id)) ((region_info_transfer_t)(region)) ((int32_t)(mapping)) )
-MERCURY_GEN_PROC( region_lock_out_t, ((int32_t)(ret)) )
+/* MERCURY_GEN_PROC( region_lock_in_t, ((uint64_t)(obj_id)) ((int32_t)(lock_op)) ((int8_t)(access_type)) ((uint64_t)(local_reg_id)) ((region_info_transfer_t)(region)) ((int32_t)(mapping)) ) */
+/* MERCURY_GEN_PROC( region_lock_out_t, ((int32_t)(ret)) ) */
 
-// Bulk
-MERCURY_GEN_PROC(bulk_write_in_t,  ((hg_int32_t)(cnt)) ((hg_bulk_t)(bulk_handle)))
-MERCURY_GEN_PROC(bulk_write_out_t, ((hg_uint64_t)(ret)) )
+/* // Bulk */
+/* MERCURY_GEN_PROC(bulk_write_in_t,  ((hg_int32_t)(cnt)) ((hg_bulk_t)(bulk_handle))) */
+/* MERCURY_GEN_PROC(bulk_write_out_t, ((hg_uint64_t)(ret)) ) */
 
-/* 
- * Data Server
- */
+/* /1* */ 
+/*  * Data Server */
+/*  *1/ */
 
-MERCURY_GEN_PROC(data_server_read_in_t, ((int32_t)(client_id)) ((int32_t)(nclient)) ((pdc_metadata_transfer_t)(meta)) ((region_info_transfer_t)(region)))
-MERCURY_GEN_PROC(data_server_read_out_t, ((int32_t)(ret)) )
+/* MERCURY_GEN_PROC(data_server_read_in_t, ((int32_t)(client_id)) ((int32_t)(nclient)) ((pdc_metadata_transfer_t)(meta)) ((region_info_transfer_t)(region))) */
+/* MERCURY_GEN_PROC(data_server_read_out_t, ((int32_t)(ret)) ) */
 
-MERCURY_GEN_PROC(data_server_write_in_t, ((int32_t)(client_id)) ((int32_t)(nclient)) ((hg_const_string_t)(shm_addr)) ((pdc_metadata_transfer_t)(meta)) ((region_info_transfer_t)(region)))
-MERCURY_GEN_PROC(data_server_write_out_t, ((int32_t)(ret)) )
+/* MERCURY_GEN_PROC(data_server_write_in_t, ((int32_t)(client_id)) ((int32_t)(nclient)) ((hg_const_string_t)(shm_addr)) ((pdc_metadata_transfer_t)(meta)) ((region_info_transfer_t)(region))) */
+/* MERCURY_GEN_PROC(data_server_write_out_t, ((int32_t)(ret)) ) */
 
-MERCURY_GEN_PROC(data_server_read_check_in_t, ((int32_t)(client_id)) ((pdc_metadata_transfer_t)(meta)) ((region_info_transfer_t)(region)))
-MERCURY_GEN_PROC(data_server_read_check_out_t, ((int32_t)(ret)) ((hg_const_string_t)(shm_addr)) )
+/* MERCURY_GEN_PROC(data_server_read_check_in_t, ((int32_t)(client_id)) ((pdc_metadata_transfer_t)(meta)) ((region_info_transfer_t)(region))) */
+/* MERCURY_GEN_PROC(data_server_read_check_out_t, ((int32_t)(ret)) ((hg_const_string_t)(shm_addr)) ) */
 
-MERCURY_GEN_PROC(data_server_write_check_in_t, ((int32_t)(client_id)) ((pdc_metadata_transfer_t)(meta)) ((region_info_transfer_t)(region)))
-MERCURY_GEN_PROC(data_server_write_check_out_t, ((int32_t)(ret)) )
-#else
+/* MERCURY_GEN_PROC(data_server_write_check_in_t, ((int32_t)(client_id)) ((pdc_metadata_transfer_t)(meta)) ((region_info_transfer_t)(region))) */
+/* MERCURY_GEN_PROC(data_server_write_check_out_t, ((int32_t)(ret)) ) */
+/* #else */
 
 typedef struct {
     hg_const_string_t    obj_name;
@@ -1637,7 +1637,44 @@ hg_proc_update_region_loc_out_t(hg_proc_t proc, void *data)
     return ret;
 }
 
-#endif // HAS_BOOST
+typedef struct {
+    uint64_t obj_id;
+} get_metadata_by_id_in_t;
+
+typedef struct {
+    pdc_metadata_transfer_t res_meta;
+} get_metadata_by_id_out_t;
+
+static HG_INLINE hg_return_t
+hg_proc_get_metadata_by_id_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    get_metadata_by_id_in_t *struct_data = (get_metadata_by_id_in_t*) data;
+
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_get_metadata_by_id_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    get_metadata_by_id_out_t *struct_data = (get_metadata_by_id_out_t*) data;
+
+    ret = hg_proc_pdc_metadata_transfer_t(proc, &struct_data->res_meta);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+/* #endif // HAS_BOOST */
 
 
 

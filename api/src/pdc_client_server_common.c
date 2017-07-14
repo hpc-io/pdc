@@ -214,7 +214,7 @@ void pdc_mkdir(const char *dir)
             mkdir(tmp, S_IRWXU | S_IRWXG);
             *p = '/';
         }
-    mkdir(tmp, S_IRWXU | S_IRWXG);
+    /* mkdir(tmp, S_IRWXU | S_IRWXG); */
 }
 
 void PDC_print_metadata(pdc_metadata_t *a)
@@ -607,6 +607,7 @@ perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uin
 perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region) {return NULL;}
 perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
 perr_t PDC_SERVER_notify_region_update(pdcid_t meta_id, pdcid_t reg_id, int32_t client_id) {return SUCCEED;}
+perr_t PDC_Server_get_local_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta) {return SUCCEED;}
 pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id) {return NULL;}
 hg_class_t *hg_class_g;
 
@@ -1961,7 +1962,59 @@ update_region_loc_register(hg_class_t *hg_class)
     
     FUNC_ENTER(NULL);
 
-    ret_value = MERCURY_REGISTER(hg_class, "update_region_loc", update_region_loc_in_t, update_region_loc_out_t, update_region_loc_cb);
+    ret_value = MERCURY_REGISTER(hg_class, "update_region_loc", update_region_loc_in_t, 
+                                 update_region_loc_out_t, update_region_loc_cb);
+
+    FUNC_LEAVE(ret_value);
+}
+
+/* get_metadata_by_id_cb */
+HG_TEST_RPC_CB(get_metadata_by_id, handle)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    get_metadata_by_id_in_t  in;
+    get_metadata_by_id_out_t out;
+    pdc_metadata_t *target;
+    
+    FUNC_ENTER(NULL);
+
+    /* Get input parameters sent on origin through on HG_Forward() */
+    // Decode input
+    HG_Get_input(handle, &in);
+    printf("==PDC_SERVER: Got metadata retrieval: obj_id=%llu\n", in.obj_id);
+
+    PDC_Server_get_local_metadata_by_id(in.obj_id, &target);
+
+    if (target != NULL) 
+        pdc_metadata_t_to_transfer_t(target, &out.res_meta);
+    else {
+        printf("==PDC_SERVER: no matching metadata of obj_id=%llu\n", in.obj_id);
+        out.res_meta.user_id        = -1;
+        out.res_meta.obj_id         = 0;
+        out.res_meta.time_step      = -1;
+        out.res_meta.obj_name       = "N/A";
+        out.res_meta.app_name       = "N/A";
+        out.res_meta.tags           = "N/A";
+        out.res_meta.data_location  = "N/A"; 
+    }
+    
+    HG_Respond(handle, NULL, NULL, &out);
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
+hg_id_t
+get_metadata_by_id_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+
+    ret_value = MERCURY_REGISTER(hg_class, "get_metadata_by_id", get_metadata_by_id_in_t, 
+                                 get_metadata_by_id_out_t, get_metadata_by_id_cb);
 
     FUNC_LEAVE(ret_value);
 }
