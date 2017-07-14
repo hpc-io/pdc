@@ -4210,6 +4210,8 @@ perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct P
     io_region->data_size = io_region->count[0];
     for (i = 1; i < io_region->ndim; i++) 
         io_region->data_size *= io_region->count[i];
+
+    io_region->buf = buf;
     
     // Call the actual IO routine
     PDC_Server_regions_io(io_region, POSIX);
