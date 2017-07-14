@@ -80,7 +80,7 @@ typedef struct server_lookup_args_t {
 } server_lookup_args_t;
 
 typedef struct pdc_client_info_t {
-    char            *addr_string[ADDR_MAX];
+    char            addr_string[ADDR_MAX];
     int             addr_valid;
     hg_addr_t       addr;
     int             server_lookup_client_handle_valid;

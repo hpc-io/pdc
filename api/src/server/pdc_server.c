@@ -1957,7 +1957,7 @@ perr_t PDC_Server_lookup_remote_server()
     }
 
     if (pdc_server_rank_g == 0) {
-        printf("==PDC_SERVER[%d]: Successfully established connection to %d other PDC servers\n\n\n",
+        printf("==PDC_SERVER[%d]: Successfully established connection to %d other PDC servers\n",
                 pdc_server_rank_g, pdc_server_size_g- 1);
         fflush(stdout);
     }
@@ -1995,7 +1995,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     sprintf(na_info_string, "bmi+tcp://%s:%d", hostname, port);
     /* sprintf(na_info_string, "cci+tcp://%s:%d", hostname, port); */
     if (pdc_server_rank_g == 0) 
-        printf("\n==PDC_SERVER: using %.7s\n", na_info_string);
+        printf("==PDC_SERVER[%d]: using %.7s\n", pdc_server_rank_g, na_info_string);
     
     if (!na_info_string) {
         fprintf(stderr, HG_PORT_NAME " environment variable must be set, e.g.:\nMERCURY_PORT_NAME=\"tcp://127.0.0.1:22222\"\n");
@@ -2063,7 +2063,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
         n_thread = 2;
     hg_thread_pool_init(n_thread, &hg_test_thread_pool_g);
     if (pdc_server_rank_g == 0) {
-        printf("\n==PDC_SERVER: Starting server with %d threads...\n", n_thread);
+        printf("\n==PDC_SERVER[d]: Starting server with %d threads...\n", pdc_server_rank_g, n_thread);
         fflush(stdout);
     }
     hg_thread_mutex_init(&pdc_client_addr_metex_g);
@@ -2074,7 +2074,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     hg_thread_mutex_init(&data_write_list_mutex_g);
 #else
     if (pdc_server_rank_g == 0) {
-        printf("==PDC_SERVER: without multi-thread!\n");
+        printf("==PDC_SERVER[%d]: without multi-thread!\n", pdc_server_rank_g);
         fflush(stdout);
     }
 #endif
@@ -3098,9 +3098,9 @@ int main(int argc, char *argv[])
 
     if (pdc_server_rank_g == 0) {
 #ifdef ENABLE_TIMING 
-        printf("==PDC_SERVER: total startup time = %.6f\n", server_init_time);
+        printf("==PDC_SERVER[%d]: total startup time = %.6f\n", pdc_server_rank_g, server_init_time);
 #endif
-        printf("==PDC_SERVER: Server ready!\n\n\n");
+        printf("==PDC_SERVER[%d]: Server ready!\n\n\n", pdc_server_rank_g);
     }
     fflush(stdout);
 
