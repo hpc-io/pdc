@@ -3310,11 +3310,10 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_SERVER_notify_region_update(pdcid_t meta_id, pdcid_t reg_id)
+perr_t PDC_SERVER_notify_region_update(pdcid_t meta_id, pdcid_t reg_id, int32_t client_id)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
-    uint32_t client_id;
 
     FUNC_ENTER(NULL);
 

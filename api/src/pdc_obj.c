@@ -100,7 +100,7 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id
     id_info = PDC_find_id(obj_prop_id);
     p->obj_pt = (struct PDC_obj_prop *)(id_info->obj_ptr);
 
-    ret = PDC_Client_send_name_recv_id(obj_name, obj_prop_id, &(p->meta_id));
+    ret = PDC_Client_send_name_recv_id(obj_name, obj_prop_id, &(p->meta_id), &(p->client_id));
     if (ret == FAIL) {
         ret_value = -1;
         PGOTO_ERROR(FAIL,"Unable to create object on server!\n");
@@ -540,6 +540,7 @@ perr_t PDCobj_map(pdcid_t local_obj, pdcid_t local_reg, pdcid_t remote_obj, pdci
     struct PDC_id_info *reginfo1, *reginfo2;
     struct PDC_region_info *reg1, *reg2;
     size_t ndim;
+    int32_t remote_client_id;
     
     FUNC_ENTER(NULL);
     
@@ -567,6 +568,7 @@ perr_t PDCobj_map(pdcid_t local_obj, pdcid_t local_reg, pdcid_t remote_obj, pdci
         PGOTO_ERROR(FAIL, "cannot locate object ID");
     obj2 = (struct PDC_obj_info *)(objinfo2->obj_ptr);
     remote_meta_id = obj2->meta_id;
+    remote_client_id = obj2->client_id;
     remote_type = obj2->obj_pt->type;
     remote_data = obj2->obj_pt->buf;
   
@@ -583,7 +585,7 @@ perr_t PDCobj_map(pdcid_t local_obj, pdcid_t local_reg, pdcid_t remote_obj, pdci
     
     //TODO: assume type is the same
     // start mapping
-	ret_value = PDC_Client_send_region_map(local_meta_id, local_reg, remote_meta_id, remote_reg, ndim, obj1->obj_pt->dims, reg1->offset, reg1->size, local_type, local_data, reg2->offset, remote_type);
+	ret_value = PDC_Client_send_region_map(local_meta_id, local_reg, remote_meta_id, remote_reg, ndim, obj1->obj_pt->dims, reg1->offset, reg1->size, local_type, local_data, reg2->offset, remote_type, remote_client_id);
 
     if(ret_value == SUCCEED) {
         // state in origin obj that there is mapping

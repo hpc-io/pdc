@@ -695,7 +695,8 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     server_lookup_client_register(*hg_class);
     notify_io_complete_register(*hg_class);
     server_lookup_remote_server_register(*hg_class);
-
+    notify_region_update_register(*hg_class);
+   
     // Lookup and fill the server info
     for (i = 0; i < pdc_server_num_g; i++) {
         lookup_args.client_id = pdc_client_mpi_rank_g;
@@ -1685,7 +1686,7 @@ perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_st
 }
 
 // Send a name to server and receive an obj id
-perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_prop, pdcid_t *meta_id)
+perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_prop, pdcid_t *meta_id, int32_t *client_id)
 {
     perr_t ret_value = FAIL;
     hg_return_t hg_ret;
@@ -1817,6 +1818,7 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_pro
     /* fflush(stdout); */
 
     *meta_id = lookup_args.obj_id;
+    *client_id = pdc_client_mpi_rank_g; 
     ret_value = SUCCEED;
 
 done:
@@ -1971,7 +1973,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *dims, uint64_t *local_offset, uint64_t *size, PDC_var_type_t local_type, void *local_data, uint64_t *remote_offset, PDC_var_type_t remote_type)
+perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *dims, uint64_t *local_offset, uint64_t *size, PDC_var_type_t local_type, void *local_data, uint64_t *remote_offset, PDC_var_type_t remote_type, int32_t remote_client_id)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = HG_SUCCESS;
@@ -2066,8 +2068,9 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
         return EXIT_FAILURE;
     }
     in.bulk_handle = bulk_handle;
-    free(data_ptrs);
-    free(data_size);
+//TODO: free
+//    free(data_ptrs);
+//    free(data_size);
 
     /* printf("Sending input to target\n"); */
     hg_ret = HG_Forward(pdc_server_info_g[server_id].client_send_region_map_handle, client_send_region_map_rpc_cb, &map_args, &in);	
@@ -2113,8 +2116,8 @@ static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *re
     usleep(delay);
 
 
-     printf("==PDC_CLIENT: lock going to server %u\n", server_id); 
-     fflush(stdout); 
+    printf("==PDC_CLIENT: lock going to server %u\n", server_id); 
+    fflush(stdout); 
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
