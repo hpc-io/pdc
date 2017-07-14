@@ -151,11 +151,12 @@ int PDC_Client_read_server_addr_from_file();
  *
  * \param obj_name [IN]         Name of the object
  * \param obj_create_prop [IN]  Id of the object property
- * \param meta_id [IN]          Pointer to medadata id
+ * \param meta_id [OUT]         Pointer to medadata id
+ * \param meta_id [OUT]         Pointer to client id
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_prop, pdcid_t *meta_id);
+perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_prop, pdcid_t *meta_id, int32_t *client_id);
 
 /**
  * Listing all objects on the client
@@ -242,10 +243,11 @@ perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new);
  * \param local_region_id [IN]  The origin region id
  * \param remote_obj_id [IN]    The target object id
  * \param remote_region_id [IN] The target region id
+ * \param remote_client_id [IN] The target client id
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *dims, uint64_t *local_offset, uint64_t *size, PDC_var_type_t local_type, void *local_data, uint64_t *remote_offset, PDC_var_type_t remote_type);
+perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *dims, uint64_t *local_offset, uint64_t *size, PDC_var_type_t local_type, void *local_data, uint64_t *remote_offset, PDC_var_type_t remote_type, int32_t remote_client_id);
 /**
  * Client request for object unmapping
  *

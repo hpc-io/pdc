@@ -81,13 +81,15 @@ typedef struct server_lookup_args_t {
 } server_lookup_args_t;
 
 typedef struct pdc_client_info_t {
-    char            *addr_string[ADDR_MAX];
+    char            addr_string[ADDR_MAX];
     int             addr_valid;
     hg_addr_t       addr;
     int             server_lookup_client_handle_valid;
     hg_handle_t     server_lookup_client_handle;
     int             notify_io_complete_handle_valid;
     hg_handle_t     notify_io_complete_handle;
+    int             notify_region_update_handle_valid;
+    hg_handle_t     notify_region_update_handle;
 } pdc_client_info_t;
  
 typedef struct pdc_remote_server_info_t {
@@ -120,7 +122,7 @@ typedef struct pdc_data_server_io_list_t {
 hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info);
 
 perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf);
-perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf);
+perr_t PDC_Server_data_read_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf);
 
 perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_check_out_t *out);
 perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_write_check_out_t *out);
