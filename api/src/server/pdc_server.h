@@ -40,6 +40,7 @@
 #include "pdc_client_server_common.h"
 
 #define CREATE_BLOOM_THRESHOLD 64
+#define MAX_OVERLAP_REGION_NUM 128 // max number of supported regions for PDC_Server_get_storage_location_of_region() 
 
 static pdc_cnt_t pdc_num_reg;
 extern hg_class_t *hg_class_g;
@@ -76,6 +77,7 @@ typedef struct server_lookup_args_t {
     int   client_id;
     int   ret_int;
     char  *ret_string;
+    pdc_metadata_t *meta;
     hg_const_string_t server_addr;
 } server_lookup_args_t;
 
@@ -99,6 +101,8 @@ typedef struct pdc_remote_server_info_t {
     hg_handle_t     server_lookup_remote_server_handle;
     int             update_region_loc_handle_valid;
     hg_handle_t     update_region_loc_handle;
+    int             get_metadata_by_id_handle_valid;
+    hg_handle_t     get_metadata_by_id_handle;
 } pdc_remote_server_info_t;
  
 extern hg_thread_mutex_t pdc_client_connect_mutex_g;
@@ -125,5 +129,8 @@ perr_t PDC_Server_data_read_direct(uint64_t obj_id, struct PDC_region_info *regi
 
 perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_check_out_t *out);
 perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_write_check_out_t *out);
+
+perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region);
+perr_t PDC_Server_get_local_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta);
 
 #endif /* PDC_SERVER_H */

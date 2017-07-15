@@ -2506,7 +2506,7 @@ data_server_read_rpc_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered client_test_connect_rpc_cb()"); */
+    /* printf("Entered data_server_read_rpc_cb()"); */
     struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
     hg_handle_t handle = callback_info->info.forward.handle;
 
