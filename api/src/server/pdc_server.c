@@ -1948,8 +1948,8 @@ perr_t PDC_Server_lookup_remote_server()
         if (i == pdc_server_rank_g) continue;
         
         lookup_args.server_id = pdc_server_rank_g;
-        printf("==PDC_SERVER[%d]: Testing connection to remote server %d: %s\n", pdc_server_rank_g, i, pdc_remote_server_info_g[i].addr_string);
-        fflush(stdout);
+        /* printf("==PDC_SERVER[%d]: Testing connection to remote server %d: %s\n", pdc_server_rank_g, i, pdc_remote_server_info_g[i].addr_string); */
+        /* fflush(stdout); */
 
         hg_ret = HG_Addr_lookup(hg_context_g, lookup_remote_server_cb, &lookup_args, pdc_remote_server_info_g[i].addr_string, HG_OP_ID_IGNORE);
         if (hg_ret != HG_SUCCESS ) {
@@ -3035,12 +3035,12 @@ int main(int argc, char *argv[])
     // Set up tmp dir
     tmp_dir = getenv("PDC_TMPDIR");
     if (tmp_dir == NULL) 
-        strcpy(pdc_server_tmp_dir_g, "./pdc_tmp");
-    else 
-        strcpy(pdc_server_tmp_dir_g, tmp_dir);
+        tmp_dir = "./pdc_tmp";
+
+    sprintf(pdc_server_tmp_dir_g, "%s/", tmp_dir);
 
     if (pdc_server_rank_g == 0) {
-        printf("==PDC_SERVER[%d]: using %s as tmp dir \n", pdc_server_rank_g, pdc_server_tmp_dir_g);
+        printf("==PDC_SERVER[%d]: using [%s] as tmp dir \n", pdc_server_rank_g, pdc_server_tmp_dir_g);
     }
 
 #ifdef ENABLE_TIMING 
@@ -4265,7 +4265,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-// TODO
 perr_t PDC_Server_get_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta)
 {
     hg_return_t hg_ret;
