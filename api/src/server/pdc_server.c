@@ -503,7 +503,6 @@ static pdc_metadata_t * find_metadata_by_id_and_hash_key(uint64_t obj_id, uint32
     
     FUNC_ENTER(NULL);
 
-    // TODO
     if (metadata_hash_table_g != NULL) {
         lookup_value = hg_hash_table_lookup(metadata_hash_table_g, &hash_key);
 
@@ -1346,7 +1345,6 @@ perr_t delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_
 
     target_obj_id = in->obj_id;
 
-    // TODO
     metadata.obj_id = 0;
         
     /* printf("==PDC_SERVER: delete request name:%s ts=%d hash=%u\n", in->obj_name, in->time_step, in->hash_value); */
@@ -4077,7 +4075,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
             DL_FOREACH(io_list_target->region_list_head, region_elt) 
                 sprintf(region_elt->storage_location, "%s/s%03d.bin", io_list->path, pdc_server_rank_g); 
             
-            pdc_mkdir(io_list->path);
+            pdc_mkdir(region_elt->storage_location);
 
             PDC_Server_data_write_from_shm(io_list_target->region_list_head);
             /* status = PDC_Server_data_write_real(io_list_target); */
@@ -4190,133 +4188,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-static hg_return_t
-PDC_Server_get_metadata_by_id_cb(const struct hg_cb_info *callback_info)
-{
-    hg_return_t ret_value;
-    pdc_metadata_t *meta;
-    server_lookup_args_t *lookup_args;
-    hg_handle_t handle;
-    get_metadata_by_id_out_t output;
-
-    FUNC_ENTER(NULL);
-
-    lookup_args = (server_lookup_args_t*) callback_info->arg;
-    handle = callback_info->info.forward.handle;
-
-    /* Get output from server*/
-    ret_value = HG_Get_output(handle, &output);
-
-    if (output.res_meta.obj_id != 0) {
-        meta = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t));
-        pdc_transfer_t_to_metadata_t(&output.res_meta, meta);
-    }
-    else {
-        lookup_args->meta = NULL;
-        printf("PDC_Server_get_metadata_by_id_cb: no valid metadata is retrieved\n");
-    }
-
-    lookup_args->meta = meta;
-
-    work_todo_g--;
-
-done:
-    HG_Destroy(handle);
-    FUNC_LEAVE(ret_value);
-}
-
-perr_t PDC_Server_get_local_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta)
-{
-    perr_t ret_value = SUCCEED;
-
-    pdc_hash_table_entry_head *head;
-    pdc_metadata_t *elt;
-    hg_hash_table_iter_t hash_table_iter;
-    int n_entry;
-    
-    FUNC_ENTER(NULL);
-
-    *res_meta = NULL;
-
-    if (metadata_hash_table_g != NULL) {
-        // Since we only have the obj id, need to iterate the entire hash table
-        n_entry = hg_hash_table_num_entries(metadata_hash_table_g);
-        hg_hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
-
-        while (n_entry != 0 && hg_hash_table_iter_has_more(&hash_table_iter)) {
-            head = hg_hash_table_iter_next(&hash_table_iter);
-            // Now iterate the list under this entry
-            DL_FOREACH(head->metadata, elt) {
-                if (elt->obj_id == obj_id) {
-                    *res_meta = elt;
-                    goto done;
-                }
-            }
-        }
-    }  
-    else {
-        printf("==PDC_SERVER: metadata_hash_table_g not initilized!\n");
-        ret_value = FAIL;
-        *res_meta = NULL;
-        goto done;
-    }
-
-done:
-    FUNC_LEAVE(ret_value);
-}
-
-perr_t PDC_Server_get_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta)
-{
-    hg_return_t hg_ret;
-    perr_t ret_value = SUCCEED;
-    uint32_t server_id = 0;
-
-    FUNC_ENTER(NULL);
-
-    server_id = PDC_get_server_by_obj_id(obj_id, pdc_server_size_g);
-    if (server_id == pdc_server_rank_g) {
-        // Metadata object is local, no need to send update RPC
-        ret_value = PDC_Server_get_local_metadata_by_id(obj_id, res_meta);
-        if (ret_value != SUCCEED) {
-            printf("==PDC_SERVER[%d]: PDC_Server_get_metadata_by_id failed!\n", pdc_server_rank_g);
-            goto done;
-        }
-    }
-    else {
-        // TODO
-        if (pdc_remote_server_info_g[server_id].get_metadata_by_id_handle_valid != 1) {
-            HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, get_metadata_by_id_register_id_g, 
-                    &pdc_remote_server_info_g[server_id].get_metadata_by_id_handle);
-            pdc_remote_server_info_g[server_id].get_metadata_by_id_handle_valid = 1;
-        }
-
-        /* printf("Sending updated region loc to target\n"); */
-        server_lookup_args_t lookup_args;
-
-        update_region_loc_in_t in;
-        in.obj_id = obj_id;
-
-        hg_ret = HG_Forward(pdc_remote_server_info_g[server_id].get_metadata_by_id_handle, 
-                PDC_Server_get_metadata_by_id_cb, &lookup_args, &in);
-
-        if (hg_ret != HG_SUCCESS) {
-            fprintf(stderr, "PDC_Server_get_metadata_by_id(): Could not start HG_Forward()\n");
-            return FAIL;
-        }
-
-        // Wait for response from server
-        work_todo_g = 1;
-        PDC_Server_check_response(&hg_context_g);
-
-        // Retrieved metadata is stored in lookup_args
-        *res_meta = lookup_args.meta;
-    }
-
-done:
-    fflush(stdout);
-    FUNC_LEAVE(ret_value);
-} // end of PDC_Server_update_region_storagelocation_offset
-
 
 static hg_return_t
 PDC_Server_update_region_loc_cb(const struct hg_cb_info *callback_info)
@@ -4410,6 +4281,133 @@ done:
     FUNC_LEAVE(ret_value);
 } // end of PDC_Server_update_region_storagelocation_offset
 
+static hg_return_t
+PDC_Server_get_metadata_by_id_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret_value;
+    pdc_metadata_t *meta;
+    server_lookup_args_t *lookup_args;
+    hg_handle_t handle;
+    get_metadata_by_id_out_t output;
+
+    FUNC_ENTER(NULL);
+
+    lookup_args = (server_lookup_args_t*) callback_info->arg;
+    handle = callback_info->info.forward.handle;
+
+    ret_value = HG_Get_output(handle, &output);
+
+    if (output.res_meta.obj_id != 0) {
+        // TODO free metdata
+        meta = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t));
+        pdc_transfer_t_to_metadata_t(&output.res_meta, meta);
+    }
+    else {
+        lookup_args->meta = NULL;
+        printf("PDC_Server_get_metadata_by_id_cb: no valid metadata is retrieved\n");
+    }
+
+    lookup_args->meta = meta;
+
+    work_todo_g--;
+
+done:
+    HG_Destroy(handle);
+    FUNC_LEAVE(ret_value);
+} // PDC_Server_get_metadata_by_id_cb
+
+perr_t PDC_Server_get_local_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta)
+{
+    perr_t ret_value = SUCCEED;
+
+    pdc_hash_table_entry_head *head;
+    pdc_metadata_t *elt;
+    hg_hash_table_iter_t hash_table_iter;
+    int n_entry;
+    
+    FUNC_ENTER(NULL);
+
+    *res_meta = NULL;
+
+    if (metadata_hash_table_g != NULL) {
+        // Since we only have the obj id, need to iterate the entire hash table
+        n_entry = hg_hash_table_num_entries(metadata_hash_table_g);
+        hg_hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
+
+        while (n_entry != 0 && hg_hash_table_iter_has_more(&hash_table_iter)) {
+            head = hg_hash_table_iter_next(&hash_table_iter);
+            // Now iterate the list under this entry
+            DL_FOREACH(head->metadata, elt) {
+                if (elt->obj_id == obj_id) {
+                    *res_meta = elt;
+                    goto done;
+                }
+            }
+        }
+    }  
+    else {
+        printf("==PDC_SERVER: metadata_hash_table_g not initilized!\n");
+        ret_value = FAIL;
+        *res_meta = NULL;
+        goto done;
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+} // PDC_Server_get_local_metadata_by_id
+
+perr_t PDC_Server_get_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta)
+{
+    hg_return_t hg_ret;
+    perr_t ret_value = SUCCEED;
+    uint32_t server_id = 0;
+
+    FUNC_ENTER(NULL);
+
+    server_id = PDC_get_server_by_obj_id(obj_id, pdc_server_size_g);
+    if (server_id == pdc_server_rank_g) {
+        // Metadata object is local, no need to send update RPC
+        ret_value = PDC_Server_get_local_metadata_by_id(obj_id, res_meta);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_SERVER[%d]: PDC_Server_get_metadata_by_id failed!\n", pdc_server_rank_g);
+            goto done;
+        }
+    }
+    else {
+        // TODO
+        if (pdc_remote_server_info_g[server_id].get_metadata_by_id_handle_valid != 1) {
+            HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, get_metadata_by_id_register_id_g, 
+                    &pdc_remote_server_info_g[server_id].get_metadata_by_id_handle);
+            pdc_remote_server_info_g[server_id].get_metadata_by_id_handle_valid = 1;
+        }
+
+        /* printf("Sending updated region loc to target\n"); */
+        server_lookup_args_t lookup_args;
+
+        get_metadata_by_id_in_t in;
+        in.obj_id = obj_id;
+
+        hg_ret = HG_Forward(pdc_remote_server_info_g[server_id].get_metadata_by_id_handle, 
+                PDC_Server_get_metadata_by_id_cb, &lookup_args, &in);
+
+        if (hg_ret != HG_SUCCESS) {
+            fprintf(stderr, "PDC_Server_get_metadata_by_id(): Could not start HG_Forward()\n");
+            return FAIL;
+        }
+
+        // Wait for response from server
+        work_todo_g = 1;
+        PDC_Server_check_response(&hg_context_g);
+
+        // Retrieved metadata is stored in lookup_args
+        *res_meta = lookup_args.meta;
+    }
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} // end of PDC_Server_get_metadata_by_id
+
 perr_t PDC_Server_posix_one_file_io(region_list_t* region)
 {
     perr_t ret_value = SUCCEED;
@@ -4473,7 +4471,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
-}
+} // PDC_Server_posix_one_file_io
 
 // Insert the write request to a queue(list) for aggregation
 /* perr_t PDC_Server_add_io_request(PDC_access_t io_type, pdc_metadata_t *meta, struct PDC_region_info *region_info, void *buf, uint32_t client_id) */
