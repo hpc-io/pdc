@@ -1995,7 +1995,6 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
     in.local_reg_id = local_region_id;
     in.remote_obj_id = remote_obj_id;
     in.remote_reg_id = remote_region_id;
-    in.remote_client_id = remote_client_id;
     in.local_type = local_type;
     in.remote_type = remote_type;
     in.ndim = ndim;

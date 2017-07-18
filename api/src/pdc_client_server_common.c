@@ -606,7 +606,6 @@ perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out) {ret
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs) {return SUCCEED;}
 perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region) {return NULL;}
 perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
-perr_t PDC_Server_data_read_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
 perr_t PDC_SERVER_notify_region_update(pdcid_t meta_id, pdcid_t reg_id, int32_t client_id) {return SUCCEED;}
 perr_t PDC_Server_get_local_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta) {return SUCCEED;}
 pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id) {return NULL;}
@@ -961,7 +960,6 @@ done:
 HG_TEST_RPC_CB(notify_region_update, handle)
 {
     hg_return_t ret_value = HG_SUCCESS;
-    perr_t ret = SUCCEED;
     notify_region_update_in_t  in;
     notify_region_update_out_t out;
 
@@ -970,13 +968,6 @@ HG_TEST_RPC_CB(notify_region_update, handle)
     /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
-    //  read doata to data server for that region
-//    ret = PDC_Server_data_read_direct(in.obj_id, );
-    if(ret == SUCCEED)
-        out.ret = 1;
-    else
-        out.ret = 0;
-
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
@@ -1046,6 +1037,7 @@ static hg_return_t
 region_lock_bulk_transfer_cb (const struct hg_cb_info *hg_cb_info)
 {
     hg_return_t ret = HG_SUCCESS;
+    perr_t ret_value; 
     region_lock_out_t out;
     struct lock_bulk_args *bulk_args;
     hg_bulk_t local_bulk_handle;
@@ -1066,18 +1058,18 @@ region_lock_bulk_transfer_cb (const struct hg_cb_info *hg_cb_info)
         out.ret = 0;
     }
     // Write to file system
-printf("server calling PDC_Server_data_write_direct()\n");
-    PDC_Server_data_write_direct((bulk_args->in).obj_id, bulk_args->server_region, bulk_args->data_buf);
-
+    ret_value = PDC_Server_data_write_direct((bulk_args->in).obj_id, bulk_args->server_region, bulk_args->data_buf);
+    if(ret_value != SUCCEED)
+        printf("==PDC SERVER: PDC_Server_data_write_direct() failed\n");
     // TODO
     // Perform lock function
     PDC_Server_region_lock(&(bulk_args->in), &out);
  
     // Send notification to mapped regions
-//    PDC_LIST_GET_FIRST(mapped_region, &(bulk_args->mapping_list)->ids);
-//    PDC_SERVER_notify_region_update(mapped_region->remote_obj_id, mapped_region->remote_reg_id, mapped_region->remote_client_id); 
-/*    while(mapped_region != NULL) {
-        PDC_SERVER_notify_region_update(mapped_region->remote_obj_id, mapped_region->remote_reg_id, mapped_region->remote_client_id); 
+/*    PDC_LIST_GET_FIRST(mapped_region, &(bulk_args->mapping_list)->ids);
+    while(mapped_region != NULL) {
+        // Fill input structure
+        PDC_SERVER_notify_region_update(mapped_region->remote_obj_id, mapped_region->remote_reg_idi, mapped_region->remote_client_id); 
         PDC_LIST_GET_FIRST(mapped_region, &(bulk_args->mapping_list)->ids);
     }
 */
@@ -1104,7 +1096,13 @@ HG_TEST_RPC_CB(region_lock, handle)
     int i, ret;
     int error = 0;
     int found = 0;
-    
+    hg_size_t   size;
+    hg_uint32_t count;
+    void      **from_data_ptrs;
+    void       *data_ptrs;
+    hg_size_t  *data_size;
+    struct PDC_region_info *server_region;
+ 
     FUNC_ENTER(NULL);
 
     /* Get input parameters sent on origin through on HG_Forward() */
@@ -1150,13 +1148,17 @@ HG_TEST_RPC_CB(region_lock, handle)
 
                     // copy data from client to server
                     // allocate contiguous space in the server or RDMA later
-                    hg_size_t   size = HG_Bulk_get_size(origin_bulk_handle);
-                    hg_uint32_t count = HG_Bulk_get_segment_count(origin_bulk_handle);
-                    void      **data_ptrs = (void **)malloc( count * sizeof(void *) );
-                    hg_size_t  *data_size = (hg_size_t *)malloc( count * sizeof(hg_size_t) );
-                    HG_Bulk_access(origin_bulk_handle, 0, size, HG_BULK_READWRITE, count, data_ptrs, data_size, NULL);
+/*
+                    count = HG_Bulk_get_segment_count(origin_bulk_handle);
+                    from_data_ptrs = (void **)malloc( count * sizeof(void *) );
+                    data_size = (hg_size_t *)malloc( count * sizeof(hg_size_t) );
+                    HG_Bulk_access(origin_bulk_handle, 0, size, HG_BULK_READWRITE, count, from_data_ptrs, data_size, NULL); 
+*/
+                    size = HG_Bulk_get_size(origin_bulk_handle);
+                    data_ptrs = (void *)malloc(size);
+                    //HG_Bulk_access(origin_bulk_handle, 0, size, HG_BULK_READWRITE, count, from_data_ptrs, data_size, NULL);
                     /* Create a new block handle to read the data */
-                    hg_return_t hg_ret = HG_Bulk_create(hg_info->hg_class, count, data_ptrs, data_size, HG_BULK_READWRITE, &local_bulk_handle);
+                    hg_return_t hg_ret = HG_Bulk_create(hg_info->hg_class, 1, &data_ptrs, &size, HG_BULK_READWRITE, &local_bulk_handle);
                     if (hg_ret != HG_SUCCESS) {
                         error = 1;
                         printf("==PDC SERVER ERROR: Could not create bulk data handle\n");
@@ -1164,13 +1166,12 @@ HG_TEST_RPC_CB(region_lock, handle)
                     bulk_args->data_buf = data_ptrs;
 // TODO: free in transfer callback
 //                    free(data_ptrs);
-//                    free(data_size);
 
-                    struct PDC_region_info *server_region;
                     // TODO: free
                     server_region = (struct PDC_region_info *)malloc(sizeof(struct PDC_region_info));
                     if(!server_region)
                         PGOTO_ERROR(FAIL,"server_region memory allocation failed\n");
+/*
                     server_region->ndim = elt->local_ndim;
                     server_region->size = (uint64_t *)malloc(server_region->ndim * sizeof(uint64_t));
                     server_region->offset = (uint64_t *)malloc(server_region->ndim * sizeof(uint64_t));
@@ -1190,6 +1191,12 @@ HG_TEST_RPC_CB(region_lock, handle)
                         (server_region->offset)[3] = 0;
                         (server_region->size)[3] = in.region.count_3;
                     }
+*/
+                    server_region->ndim = 1;
+                    server_region->size = (uint64_t *)malloc(sizeof(uint64_t));
+                    server_region->offset = (uint64_t *)malloc(sizeof(uint64_t));
+                    (server_region->size)[0] = size;
+                    (server_region->offset)[0] = 0; 
                     bulk_args->server_region = server_region;
                     bulk_args->mapping_list = elt;
                     /* Pull bulk data */
@@ -1504,7 +1511,6 @@ HG_TEST_THREAD_CB(metadata_delete)
 HG_TEST_THREAD_CB(metadata_delete_by_id)
 HG_TEST_THREAD_CB(metadata_update)
 HG_TEST_THREAD_CB(notify_io_complete)
-HG_TEST_THREAD_CB(notify_region_update)
 HG_TEST_THREAD_CB(close_server)
 HG_TEST_THREAD_CB(gen_reg_map_notification)
 HG_TEST_THREAD_CB(gen_reg_unmap_notification)
