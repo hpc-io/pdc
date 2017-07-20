@@ -202,12 +202,12 @@ void pdc_mkdir(const char *dir)
 {
     char tmp[ADDR_MAX];
     char *p = NULL;
-    size_t len;
+    /* size_t len; */
 
     snprintf(tmp, sizeof(tmp),"%s",dir);
-    len = strlen(tmp);
-    if(tmp[len - 1] == '/')
-        tmp[len - 1] = 0;
+    /* len = strlen(tmp); */
+    /* if(tmp[len - 1] == '/') */
+    /*     tmp[len - 1] = 0; */
     for(p = tmp + 1; *p; p++)
         if(*p == '/') {
             *p = 0;
@@ -288,7 +288,7 @@ perr_t PDC_init_region_list(region_list_t *a)
 
     memset(a->start,  0, sizeof(uint64_t)*DIM_MAX);
     memset(a->count,  0, sizeof(uint64_t)*DIM_MAX);
-    memset(a->stride, 0, sizeof(uint64_t)*DIM_MAX);
+    /* memset(a->stride, 0, sizeof(uint64_t)*DIM_MAX); */
 
     memset(a->shm_addr,         0, sizeof(char)*ADDR_MAX);
     memset(a->client_ids,       0, sizeof(uint32_t)*PDC_SERVER_MAX_PROC_PER_NODE);
@@ -388,7 +388,7 @@ perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to)
     for (i = 0; i < DIM_MAX; i++) {
         to->start[i]  = from->start[i];
         to->count[i]  = from->count[i];
-        to->stride[i] = from->stride[i];
+        /* to->stride[i] = from->stride[i]; */
     }
 
     for (i = 0; i < PDC_SERVER_MAX_PROC_PER_NODE; i++) 
@@ -431,10 +431,10 @@ perr_t pdc_region_transfer_t_to_list_t(region_info_transfer_t *transfer, region_
     region->count[2]        = transfer->count_2;
     region->count[3]        = transfer->count_3;
 
-    region->stride[0]       = transfer->stride_0;
-    region->stride[1]       = transfer->stride_1;
-    region->stride[2]       = transfer->stride_2;
-    region->stride[3]       = transfer->stride_3;
+    /* region->stride[0]       = transfer->stride_0; */
+    /* region->stride[1]       = transfer->stride_1; */
+    /* region->stride[2]       = transfer->stride_2; */
+    /* region->stride[3]       = transfer->stride_3; */
 
     return SUCCEED;
 }
@@ -458,7 +458,7 @@ perr_t pdc_region_info_to_list_t(struct PDC_region_info *region, region_list_t *
     for (i = 0; i < ndim; i++) {
         list->start[i]  = region->offset[i];
         list->count[i]  = region->size[i];
-        list->stride[i] = 0;
+        /* list->stride[i] = 0; */
     }
     
     return SUCCEED;
@@ -509,10 +509,10 @@ perr_t pdc_region_info_t_to_transfer(struct PDC_region_info *region, region_info
     /* if (ndim >= 3)      transfer->stride_2 = 0; */
     /* if (ndim >= 4)      transfer->stride_3 = 0; */
 
-    transfer->stride_0 = 0;
-    transfer->stride_1 = 0;
-    transfer->stride_2 = 0;
-    transfer->stride_3 = 0;
+    /* transfer->stride_0 = 0; */
+    /* transfer->stride_1 = 0; */
+    /* transfer->stride_2 = 0; */
+    /* transfer->stride_3 = 0; */
 
     return SUCCEED;
 }
@@ -536,10 +536,10 @@ perr_t pdc_region_list_t_to_transfer(region_list_t *region, region_info_transfer
     transfer->count_2        = region->count[2];
     transfer->count_3        = region->count[3];
 
-    transfer->stride_0       = region->stride[0];
-    transfer->stride_1       = region->stride[1];
-    transfer->stride_2       = region->stride[2];
-    transfer->stride_3       = region->stride[3];
+    /* transfer->stride_0       = region->stride[0]; */
+    /* transfer->stride_1       = region->stride[1]; */
+    /* transfer->stride_2       = region->stride[2]; */
+    /* transfer->stride_3       = region->stride[3]; */
 
     return SUCCEED;
 }

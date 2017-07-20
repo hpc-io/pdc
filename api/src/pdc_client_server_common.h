@@ -70,7 +70,7 @@ typedef struct region_list_t {
     size_t ndim;
     uint64_t start[DIM_MAX];
     uint64_t count[DIM_MAX];
-    uint64_t stride[DIM_MAX];
+    /* uint64_t stride[DIM_MAX]; */
 
     uint32_t client_ids[PDC_SERVER_MAX_PROC_PER_NODE];
 
@@ -155,7 +155,7 @@ typedef struct {
     size_t ndim;
     uint64_t start_0, start_1, start_2, start_3;
     uint64_t count_0, count_1, count_2, count_3;
-    uint64_t stride_0, stride_1, stride_2, stride_3;
+    /* uint64_t stride_0, stride_1, stride_2, stride_3; */
 } region_info_transfer_t;
 
 typedef struct pdc_metadata_transfer_t {
@@ -402,26 +402,26 @@ hg_proc_region_info_transfer_t(hg_proc_t proc, void *data)
         return ret;
     }
 
-    ret = hg_proc_uint64_t(proc, &struct_data->stride_0);
-    if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->stride_1);
-    if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->stride_2);
-    if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->stride_3);
-    if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
-        return ret;
-    }
+    /* ret = hg_proc_uint64_t(proc, &struct_data->stride_0); */
+    /* if (ret != HG_SUCCESS) { */
+    /*     HG_LOG_ERROR("Proc error"); */
+    /*     return ret; */
+    /* } */
+    /* ret = hg_proc_uint64_t(proc, &struct_data->stride_1); */
+    /* if (ret != HG_SUCCESS) { */
+    /*     HG_LOG_ERROR("Proc error"); */
+    /*     return ret; */
+    /* } */
+    /* ret = hg_proc_uint64_t(proc, &struct_data->stride_2); */
+    /* if (ret != HG_SUCCESS) { */
+    /*     HG_LOG_ERROR("Proc error"); */
+    /*     return ret; */
+    /* } */
+    /* ret = hg_proc_uint64_t(proc, &struct_data->stride_3); */
+    /* if (ret != HG_SUCCESS) { */
+    /*     HG_LOG_ERROR("Proc error"); */
+    /*     return ret; */
+    /* } */
     return ret;
 }
 
@@ -1656,7 +1656,6 @@ hg_proc_get_metadata_by_id_in_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-
     return ret;
 }
 
@@ -1673,6 +1672,44 @@ hg_proc_get_metadata_by_id_out_t(hg_proc_t proc, void *data)
     }
     return ret;
 }
+
+// For generic seralized data transfer
+typedef struct {
+    hg_const_string_t buf;
+} pdc_seralized_data_t;
+
+typedef struct {
+    int32_t ret;
+} pdc_seralized_data_ret_t;
+
+static HG_INLINE hg_return_t
+hg_proc_pdc_seralized_data_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    pdc_seralized_data_t *struct_data = (pdc_seralized_data_t*) data;
+
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->buf);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_pdc_seralized_data_ret_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    pdc_seralized_data_ret_t *struct_data = (pdc_seralized_data_ret_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
 
 /* #endif // HAS_BOOST */
 

@@ -2141,23 +2141,23 @@ static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *re
     if (ndim >=1) {
         in.region.start_0  = region_info->offset[0];
         in.region.count_0  = region_info->size[0];
-        in.region.stride_0 = 0;
+        /* in.region.stride_0 = 0; */
         // TODO current stride is not included in pdc.
     }
     if (ndim >=2) {
         in.region.start_1  = region_info->offset[1];
         in.region.count_1  = region_info->size[1];
-        in.region.stride_1 = 0;
+        /* in.region.stride_1 = 0; */
     }
     if (ndim >=3) {
         in.region.start_2  = region_info->offset[2];
         in.region.count_2  = region_info->size[2];
-        in.region.stride_2 = 0;
+        /* in.region.stride_2 = 0; */
     }
     if (ndim >=4) {
         in.region.start_3  = region_info->offset[3];
         in.region.count_3  = region_info->size[3];
-        in.region.stride_3 = 0;
+        /* in.region.stride_3 = 0; */
     }
     // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
     if (pdc_server_info_g[server_id].region_lock_handle_valid != 1) {

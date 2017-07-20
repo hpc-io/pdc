@@ -39,8 +39,9 @@
 
 #include "pdc_client_server_common.h"
 
-#define CREATE_BLOOM_THRESHOLD 64
-#define MAX_OVERLAP_REGION_NUM 128 // max number of supported regions for PDC_Server_get_storage_location_of_region() 
+#define CREATE_BLOOM_THRESHOLD  64
+#define PDC_MAX_OVERLAP_REGION_NUM 128 // max number of supported regions for PDC_Server_get_storage_location_of_region() 
+#define PDC_STR_DELIM            7
 
 static pdc_cnt_t pdc_num_reg;
 extern hg_class_t *hg_class_g;
