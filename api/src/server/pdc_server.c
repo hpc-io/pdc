@@ -346,7 +346,6 @@ PDC_Server_lookup_client_cb(const struct hg_cb_info *callback_info)
     server_lookup_args = (server_lookup_args_t*) callback_info->arg;
     client_id = server_lookup_args->client_id;
 
-
     pdc_client_info_g[client_id].addr = callback_info->info.lookup.addr;
     pdc_client_info_g[client_id].addr_valid = 1;
 
@@ -3306,7 +3305,6 @@ static hg_return_t PDC_Server_notify_region_update_cb(const struct hg_cb_info *c
 
     hg_return_t ret_value;
 
-//modify server_lookup_args_t
     server_lookup_args_t *lookup_args = (server_lookup_args_t*) callback_info->arg;
     hg_handle_t handle = callback_info->info.forward.handle;
 
@@ -3324,13 +3322,21 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_SERVER_notify_region_update(pdcid_t meta_id, pdcid_t reg_id, int32_t client_id)
+perr_t PDC_SERVER_notify_region_update_to_client(pdcid_t meta_id, pdcid_t reg_id, int32_t client_id)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
 
     FUNC_ENTER(NULL);
 
+    if (pdc_client_info_g[client_id].addr_valid == 0) {
+        ret_value = PDC_Server_lookup_client(client_id);
+        if (ret_value != SUCCEED) {
+            fprintf(stderr, "==PDC_SERVER: PDC_SERVER_notify_region_update() - \
+                    PDC_Server_lookup_client failed)\n");
+            return FAIL;
+        }
+    }
     if (pdc_client_info_g[client_id].notify_region_update_handle_valid != 1) {
         hg_ret = HG_Create(hg_context_g, pdc_client_info_g[client_id].addr, notify_region_update_register_id_g, &pdc_client_info_g[client_id].notify_region_update_handle);
         if (hg_ret != HG_SUCCESS) {
@@ -3346,13 +3352,14 @@ perr_t PDC_SERVER_notify_region_update(pdcid_t meta_id, pdcid_t reg_id, int32_t 
     in.reg_id    = reg_id;
 
     /* printf("Sending input to target\n"); */
-// change server_lookup_args_t
     server_lookup_args_t lookup_args;
     hg_ret = HG_Forward(pdc_client_info_g[client_id].notify_region_update_handle, PDC_Server_notify_region_update_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "PDC_Server_notify_region_update_to_client(): Could not start HG_Forward()\n");
         return FAIL;
     }
+    if(lookup_args.ret_int != 1)
+        ret_value = FAIL;
 
     FUNC_LEAVE(ret_value);
 }

@@ -606,7 +606,8 @@ perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out) {ret
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs) {return SUCCEED;}
 perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region) {return NULL;}
 perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
-perr_t PDC_SERVER_notify_region_update(pdcid_t meta_id, pdcid_t reg_id, int32_t client_id) {return SUCCEED;}
+perr_t PDC_Server_data_read_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
+perr_t PDC_SERVER_notify_region_update_to_client(pdcid_t meta_id, pdcid_t reg_id, int32_t client_id) {return SUCCEED;}
 perr_t PDC_Server_get_local_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta) {return SUCCEED;}
 pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id) {return NULL;}
 hg_class_t *hg_class_g;
@@ -675,7 +676,6 @@ HG_TEST_RPC_CB(server_lookup_client, handle)
     // Decode input
     HG_Get_input(handle, &in);
     out.ret = in.server_id + 1000000;
-
     HG_Respond(handle, NULL, NULL, &out);
 
     /* printf("==PDC_CLIENT: server_lookup_client_cb(): Responded with %llu to server[%d]\n", out.ret, in.server_id); */
@@ -968,10 +968,11 @@ HG_TEST_RPC_CB(notify_region_update, handle)
     /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
+    out.ret = 1;
+    HG_Respond(handle, NULL, NULL, &out);
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -1064,12 +1065,19 @@ region_lock_bulk_transfer_cb (const struct hg_cb_info *hg_cb_info)
     // TODO
     // Perform lock function
     PDC_Server_region_lock(&(bulk_args->in), &out);
+
+// check status before tranfer if it is write/read lock
+//bulk transfer here
  
     // Send notification to mapped regions
-/*    PDC_LIST_GET_FIRST(mapped_region, &(bulk_args->mapping_list)->ids);
+    PDC_LIST_GET_FIRST(mapped_region, &(bulk_args->mapping_list)->ids);
+    ret_value = PDC_SERVER_notify_region_update_to_client(mapped_region->remote_obj_id, mapped_region->remote_reg_id, mapped_region->remote_client_id);
+    if(ret_value != SUCCEED)
+        printf("==PDC SERVER: PDC_SERVER_notify_region_update_to_client() failed\n");
+/*
     while(mapped_region != NULL) {
         // Fill input structure
-        PDC_SERVER_notify_region_update(mapped_region->remote_obj_id, mapped_region->remote_reg_idi, mapped_region->remote_client_id); 
+        PDC_SERVER_notify_region_update(mapped_region->remote_obj_id, mapped_region->remote_reg_id, mapped_region->remote_client_id); 
         PDC_LIST_GET_FIRST(mapped_region, &(bulk_args->mapping_list)->ids);
     }
 */
@@ -1511,6 +1519,7 @@ HG_TEST_THREAD_CB(metadata_delete)
 HG_TEST_THREAD_CB(metadata_delete_by_id)
 HG_TEST_THREAD_CB(metadata_update)
 HG_TEST_THREAD_CB(notify_io_complete)
+HG_TEST_THREAD_CB(notify_region_update)
 HG_TEST_THREAD_CB(close_server)
 HG_TEST_THREAD_CB(gen_reg_map_notification)
 HG_TEST_THREAD_CB(gen_reg_unmap_notification)
