@@ -700,7 +700,8 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     // Lookup and fill the server info
     for (i = 0; i < pdc_server_num_g; i++) {
         lookup_args.client_id = pdc_client_mpi_rank_g;
-        lookup_args.server_id = i;
+        // Avoid making all clients connect to 1 server at the same time
+        lookup_args.server_id = (i + pdc_client_mpi_rank_g) % pdc_server_num_g;
         lookup_args.client_addr = self_addr;
         target_addr_string = pdc_server_info_g[i].addr_string;
         /* printf("==PDC_CLIENT: [%d] - Testing connection to server %d: %s\n", pdc_client_mpi_rank_g, i, target_addr_string); */

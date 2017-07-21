@@ -56,6 +56,10 @@ perr_t PDC_Server_restart(char *filename);
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs);
 hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info);
 pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id);
+perr_t PDC_Server_get_local_storage_location_of_region(uint32_t obj_id, region_list_t *region,
+        int *n_loc, region_list_t **overlap_region_loc);
+perr_t PDC_Server_get_total_str_len(region_list_t** regions, uint32_t n_region, uint32_t *len);
+perr_t PDC_Server_serialize_regions_info(region_list_t** regions, uint32_t n_region, void *buf);
 
 /* typedef struct pdc_metadata_name_mark_t { */
 /*     char obj_name[ADDR_MAX]; */
@@ -78,6 +82,7 @@ typedef struct server_lookup_args_t {
     int   client_id;
     int   ret_int;
     char  *ret_string;
+    void  *void_buf;
     pdc_metadata_t *meta;
     hg_const_string_t server_addr;
 } server_lookup_args_t;
@@ -104,6 +109,8 @@ typedef struct pdc_remote_server_info_t {
     hg_handle_t     update_region_loc_handle;
     int             get_metadata_by_id_handle_valid;
     hg_handle_t     get_metadata_by_id_handle;
+    int             get_storage_info_handle_valid;
+    hg_handle_t     get_storage_info_handle;
 } pdc_remote_server_info_t;
  
 extern hg_thread_mutex_t pdc_client_connect_mutex_g;

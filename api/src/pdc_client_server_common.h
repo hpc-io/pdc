@@ -1673,20 +1673,16 @@ hg_proc_get_metadata_by_id_out_t(hg_proc_t proc, void *data)
     return ret;
 }
 
-// For generic seralized data transfer
+// For generic serialized data transfer
 typedef struct {
     hg_const_string_t buf;
-} pdc_seralized_data_t;
-
-typedef struct {
-    int32_t ret;
-} pdc_seralized_data_ret_t;
+} pdc_serialized_data_t;
 
 static HG_INLINE hg_return_t
-hg_proc_pdc_seralized_data_t(hg_proc_t proc, void *data)
+hg_proc_pdc_serialized_data_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret;
-    pdc_seralized_data_t *struct_data = (pdc_seralized_data_t*) data;
+    pdc_serialized_data_t *struct_data = (pdc_serialized_data_t*) data;
 
     ret = hg_proc_hg_const_string_t(proc, &struct_data->buf);
     if (ret != HG_SUCCESS) {
@@ -1696,13 +1692,23 @@ hg_proc_pdc_seralized_data_t(hg_proc_t proc, void *data)
     return ret;
 }
 
+typedef struct {
+    uint64_t obj_id;
+    region_info_transfer_t req_region;
+} get_storage_info_in_t;
+
 static HG_INLINE hg_return_t
-hg_proc_pdc_seralized_data_ret_t(hg_proc_t proc, void *data)
+hg_proc_get_storage_info_in_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret;
-    pdc_seralized_data_ret_t *struct_data = (pdc_seralized_data_ret_t*) data;
+    get_storage_info_in_t *struct_data = (get_storage_info_in_t*) data;
 
-    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->req_region);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;

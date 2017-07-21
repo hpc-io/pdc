@@ -608,7 +608,12 @@ perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region) {return
 perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
 perr_t PDC_SERVER_notify_region_update(pdcid_t meta_id, pdcid_t reg_id, int32_t client_id) {return SUCCEED;}
 perr_t PDC_Server_get_local_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta) {return SUCCEED;}
+perr_t PDC_Server_get_local_storage_location_of_region(uint32_t obj_id, region_list_t *region,
+        int *n_loc, region_list_t **overlap_region_loc)  {return SUCCEED;}
+perr_t PDC_Server_get_total_str_len(region_list_t** regions, uint32_t n_region, uint32_t *len) {return SUCCEED;}
+perr_t PDC_Server_serialize_regions_info(region_list_t** regions, uint32_t n_region, void *buf) {return SUCCEED;}
 pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id) {return NULL;}
+
 hg_class_t *hg_class_g;
 
 /* 
@@ -721,7 +726,7 @@ HG_TEST_RPC_CB(client_test_connect, handle)
     hg_return_t ret_value = HG_SUCCESS;
     client_test_connect_in_t  in;
     client_test_connect_out_t out;
-    client_test_connect_args *args = (client_test_connect_args*)malloc(sizeof(client_test_connect_args));
+    client_test_connect_args *args = (client_test_connect_args*)calloc(1, sizeof(client_test_connect_args));
     
     FUNC_ENTER(NULL);
 
@@ -935,7 +940,7 @@ HG_TEST_RPC_CB(notify_io_complete, handle)
     HG_Get_input(handle, &in);
     /* printf("==PDC_CLIENT: Got IO complete notification from server: obj_id=%llu, shm_addr=[%s]\n", in.obj_id, in.shm_addr); */
 
-    client_read_info_t * read_info = (client_read_info_t*)malloc(sizeof(client_read_info_t));
+    client_read_info_t * read_info = (client_read_info_t*)calloc(1, sizeof(client_read_info_t));
     read_info->obj_id = in.obj_id;
     strcpy(read_info->shm_addr, in.shm_addr);
 
@@ -1143,7 +1148,7 @@ HG_TEST_RPC_CB(region_lock, handle)
                     // allocate contiguous space in the server or RDMA later
                     hg_size_t   size = HG_Bulk_get_size(origin_bulk_handle);
                     hg_uint32_t count = HG_Bulk_get_segment_count(origin_bulk_handle);
-                    void      **data_ptrs = (void **)malloc( count * sizeof(void *) );
+                    void      **data_ptrs = (void **)calloc(1,  count * sizeof(void *) );
                     hg_size_t  *data_size = (hg_size_t *)malloc( count * sizeof(hg_size_t) );
                     HG_Bulk_access(origin_bulk_handle, 0, size, HG_BULK_READWRITE, count, data_ptrs, data_size, NULL);
                     /* Create a new block handle to read the data */
@@ -1955,6 +1960,8 @@ HG_TEST_RPC_CB(update_region_loc, handle)
     FUNC_LEAVE(ret_value);
 }
 
+HG_TEST_THREAD_CB(update_region_loc)
+
 hg_id_t
 update_region_loc_register(hg_class_t *hg_class)
 {
@@ -2006,6 +2013,8 @@ HG_TEST_RPC_CB(get_metadata_by_id, handle)
     FUNC_LEAVE(ret_value);
 }
 
+HG_TEST_THREAD_CB(get_metadata_by_id)
+
 hg_id_t
 get_metadata_by_id_register(hg_class_t *hg_class)
 {
@@ -2015,6 +2024,94 @@ get_metadata_by_id_register(hg_class_t *hg_class)
 
     ret_value = MERCURY_REGISTER(hg_class, "get_metadata_by_id", get_metadata_by_id_in_t, 
                                  get_metadata_by_id_out_t, get_metadata_by_id_cb);
+
+    FUNC_LEAVE(ret_value);
+}
+
+/* get_storage_info_cb */
+HG_TEST_RPC_CB(get_storage_info, handle)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    get_storage_info_in_t in;
+    pdc_serialized_data_t  out;
+    pdc_metadata_t *target = NULL;
+    region_list_t request_region;
+    region_list_t **result_regions;
+    int n_region, i;
+    uint32_t serialize_len;
+    void *buf = NULL;
+    
+    FUNC_ENTER(NULL);
+
+    // Decode input
+    HG_Get_input(handle, &in);
+    printf("==PDC_SERVER: Got storage in request: obj_id=%llu\n", in.obj_id);
+    PDC_init_region_list(&request_region);
+    pdc_region_transfer_t_to_list_t(&in.req_region, &request_region);
+
+    result_regions = (region_list_t**)calloc(1, sizeof(region_list_t*)*PDC_MAX_OVERLAP_REGION_NUM);
+    for (i = 0; i < PDC_MAX_OVERLAP_REGION_NUM; i++) 
+        result_regions[i] = (region_list_t*)malloc(sizeof(region_list_t));
+
+    if (PDC_Server_get_local_storage_location_of_region(in.obj_id, &request_region, &n_region, result_regions) != SUCCEED) {
+        printf("==PDC_SERVER: unable to get_local_storage_location_of_region\n");
+        ret_value = FAIL;
+        goto done;
+    }
+    else {
+
+        if (PDC_Server_get_total_str_len(result_regions, n_region, &serialize_len) != SUCCEED) {
+            printf("==PDC_SERVER: fail to get_total_str_len\n");
+            ret_value = FAIL;
+            goto done;
+        }
+
+        buf = (void*)malloc(serialize_len);
+        if (PDC_Server_serialize_regions_info(result_regions, n_region, buf) != SUCCEED) {
+            printf("==PDC_SERVER: unable to serialize_regions_info\n");
+            ret_value = FAIL;
+            goto done;
+        }
+        out.buf = buf;
+    }
+
+    // Need to free buf
+    HG_Respond(handle, NULL, NULL, &out);
+
+done:
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    if (ret_value == FAIL) {
+        out.buf = " ";
+        HG_Respond(handle, NULL, NULL, &out);
+    }
+
+    if (result_regions != NULL) {
+        for (i = 0; i < PDC_MAX_OVERLAP_REGION_NUM; i++) {
+            if (result_regions[i] != NULL) 
+                free(result_regions[i]);
+        }
+        free(result_regions);
+    }
+
+    if (buf != NULL) 
+        free(buf);
+    
+    FUNC_LEAVE(ret_value);
+}
+
+HG_TEST_THREAD_CB(get_storage_info)
+
+hg_id_t
+get_storage_info_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+
+    ret_value = MERCURY_REGISTER(hg_class, "get_storage_info", get_storage_info_in_t, 
+                                 pdc_serialized_data_t, get_storage_info_cb);
 
     FUNC_LEAVE(ret_value);
 }
