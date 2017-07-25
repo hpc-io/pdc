@@ -60,6 +60,9 @@ extern int pdc_server_rank_g;
 #define    PDC_LOCK_OP_OBTAIN  0
 #define    PDC_LOCK_OP_RELEASE 1
 
+#define PDC_MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define PDC_MIN(x, y) (((x) < (y)) ? (x) : (y))
+
 typedef enum { POSIX=0, DAOS=1 }       PDC_io_plugin_t;
 typedef enum { READ=0, WRITE=1, NA=2 } PDC_access_t;
 typedef enum { BLOCK=0, NOBLOCK=1 }    PDC_lock_mode_t;

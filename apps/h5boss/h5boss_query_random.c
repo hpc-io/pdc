@@ -295,10 +295,11 @@ int main(int argc, char **argv)
 
     PDC_partial_query(0 , -1, NULL, NULL, -1, -1, -1, new_tag, &n_res, &res_arr);
 
-    gettimeofday(&ht_query_tag_end, 0);
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
+    gettimeofday(&ht_query_tag_end, 0);
+
     ht_query_tag_sec += ( (ht_query_tag_end.tv_sec-ht_query_tag_start.tv_sec)*1000000LL + 
                       ht_query_tag_end.tv_usec-ht_query_tag_start.tv_usec ) / 1000000.0;
 #ifdef ENABLE_MPI

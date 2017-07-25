@@ -33,6 +33,7 @@
 #include <ctype.h>
 #include <fcntl.h>
 #include <inttypes.h>
+#include <math.h>
 
 #include <sys/shm.h>
 #include <sys/mman.h>
@@ -2532,8 +2533,6 @@ static int is_overlap_1D(uint64_t xmin1, uint64_t xmax1, uint64_t xmin2, uint64_
 {
     int ret_value = -1;
     
-    FUNC_ENTER(NULL);
-
     if (xmax1 >= xmin2 && xmax2 >= xmin1) {
         ret_value = 1;
     }
@@ -2545,8 +2544,6 @@ static int is_overlap_2D(uint64_t xmin1, uint64_t xmax1, uint64_t ymin1, uint64_
                          uint64_t xmin2, uint64_t xmax2, uint64_t ymin2, uint64_t ymax2)
 {
     int ret_value = -1;
-    
-    FUNC_ENTER(NULL);
     
     /* if (is_overlap_1D(box1.x, box2.x) == 1 && is_overlap_1D(box1.y, box2.y) == 1) { */
     if (is_overlap_1D(xmin1, xmax1, xmin2, xmax2 ) == 1 &&                              
@@ -2561,8 +2558,6 @@ static int is_overlap_3D(uint64_t xmin1, uint64_t xmax1, uint64_t ymin1, uint64_
                          uint64_t xmin2, uint64_t xmax2, uint64_t ymin2, uint64_t ymax2, uint64_t zmin2, uint64_t zmax2)
 {
     int ret_value = -1;
-    
-    FUNC_ENTER(NULL);
     
     /* if (is_overlap_1D(box1.x, box2.x) == 1 && is_overlap_1D(box1.y, box2.y) == 1) { */
     if (is_overlap_1D(xmin1, xmax1, xmin2, xmax2) == 1 && 
@@ -2582,8 +2577,6 @@ static int is_overlap_4D(uint64_t xmin1, uint64_t xmax1, uint64_t ymin1, uint64_
 {
     int ret_value = -1;
     
-    FUNC_ENTER(NULL);
-    
     /* if (is_overlap_1D(box1.x, box2.x) == 1 && is_overlap_1D(box1.y, box2.y) == 1) { */
     if (is_overlap_1D(xmin1, xmax1, xmin2, xmax2) == 1 && 
         is_overlap_1D(ymin1, ymax1, ymin2, ymax2) == 1 && 
@@ -2601,8 +2594,6 @@ static int is_contiguous_region_overlap(region_list_t *a, region_list_t *b)
 {
     int ret_value = 1;
     
-    FUNC_ENTER(NULL);
-
     if (a == NULL || b == NULL) {
         printf("==PDC_SERVER: is_region_identical() - passed NULL value!\n");
         ret_value = -1;
@@ -2665,6 +2656,103 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+static int is_contiguous_start_count_overlap(uint32_t ndim, uint64_t *a_start, uint64_t *a_count, uint64_t *b_start, uint64_t *b_count)
+{
+    int ret_value = 1;
+    
+    if (ndim > DIM_MAX || NULL == a_start || NULL == a_count ||NULL == b_start ||NULL == b_count) {
+        printf("is_contiguous_start_count_overlap: invalid input !\n");
+        ret_value = -1;
+        goto done;
+    }
+
+    uint64_t xmin1 = 0, xmin2 = 0, xmax1 = 0, xmax2 = 0;
+    uint64_t ymin1 = 0, ymin2 = 0, ymax1 = 0, ymax2 = 0;
+    uint64_t zmin1 = 0, zmin2 = 0, zmax1 = 0, zmax2 = 0;
+    uint64_t mmin1 = 0, mmin2 = 0, mmax1 = 0, mmax2 = 0;
+
+    if (ndim >= 1) {
+        xmin1 = a_start[0];
+        xmax1 = a_start[0] + a_count[0] - 1;
+        xmin2 = b_start[0];
+        xmax2 = b_start[0] + b_count[0] - 1;
+        /* printf("xmin1, xmax1, xmin2, xmax2: %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 "\n", xmin1, xmax1, xmin2, xmax2); */
+    }
+    if (ndim >= 2) {
+        ymin1 = a_start[1];
+        ymax1 = a_start[1] + a_count[1] - 1;
+        ymin2 = b_start[1];
+        ymax2 = b_start[1] + b_count[1] - 1;
+        /* printf("ymin1, ymax1, ymin2, ymax2: %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 "\n", ymin1, ymax1, ymin2, ymax2); */
+    }
+    if (ndim >= 3) {
+        zmin1 = a_start[2];
+        zmax1 = a_start[2] + a_count[2] - 1;
+        zmin2 = b_start[2];
+        zmax2 = b_start[2] + b_count[2] - 1;
+        /* printf("zmin1, zmax1, zmin2, zmax2: %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 "\n", zmin1, zmax1, zmin2, zmax2); */
+    }
+    if (ndim >= 4) {
+        mmin1 = a_start[3];
+        mmax1 = a_start[3] + a_count[3] - 1;
+        mmin2 = b_start[3];
+        mmax2 = b_start[3] + b_count[3] - 1;
+    }
+ 
+    if (ndim == 1) 
+        ret_value = is_overlap_1D(xmin1, xmax1, xmin2, xmax2);
+    else if (ndim == 2) 
+        ret_value = is_overlap_2D(xmin1, xmax1, ymin1, ymax1, 
+                                  xmin2, xmax2, ymin2, ymax2);
+    else if (ndim == 3) 
+        ret_value = is_overlap_3D(xmin1, xmax1, ymin1, ymax1, zmin1, zmax2, 
+                                  xmin2, xmax2, ymin2, ymax2, zmin2, zmax2);
+    else if (ndim == 4) 
+        ret_value = is_overlap_4D(xmin1, xmax1, ymin1, ymax1, zmin1, zmax1, mmin1, mmax1, 
+                                  xmin2, xmax2, ymin2, ymax2, zmin2, zmax2, mmin2, mmax2);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+ 
+/* Get overlapping regions's start[] and count[] */
+static perr_t get_overlap_start_count(uint32_t ndim, uint64_t *start1, uint64_t *count1, 
+                                                     uint64_t *start2, uint64_t *count2, 
+                                       uint64_t *overlap_start, uint64_t *overlap_count)
+{
+    perr_t ret_value = SUCCEED;
+    int i;
+
+    if (NULL == start1 || NULL == count1 || NULL == start2 || NULL == count2 || 
+            NULL == overlap_start || NULL == overlap_count) {
+
+        printf("get_overlap NULL input!\n");
+        ret_value = FAIL;
+        return ret_value;
+    }
+    
+    // Check if they are truly overlapping regions
+    if (is_contiguous_start_count_overlap(ndim, start1, count1, start2, count2) != 1) {
+        printf("get_overlap_start_count: non-overlap regions!\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    for (i = 0; i < ndim; i++) {
+        overlap_start[i] = PDC_MAX(start1[i], start2[i]);
+        /* end = max(xmax2, xmax1); */
+        overlap_count[i] = PDC_MIN(start1[i]+count1[i], start2[i]+count2[i]) - overlap_start[i] + 1;
+    }
+
+done:
+    if (ret_value == FAIL) {
+        for (i = 0; i < ndim; i++) {
+            overlap_start[i] = 0;
+            overlap_count[i] = 0;
+        }
+    }
+    return ret_value;
+}
 
 static int is_region_identical(region_list_t *a, region_list_t *b)
 {
@@ -4745,10 +4833,25 @@ void test_serialize()
 
 }
 
+perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *start1, uint64_t *count1, 
+                                                      uint64_t *start2, uint64_t *count2, 
+                                       void *buf, uint64_t *buf_dims,  size_t *read_size)
+{
+    perr_t ret_value = SUCCEED;
+    uint64_t overlap_start[DIM_MAX], overlap_count[DIM_MAX];
+
+    FUNC_ENTER(NULL);
+
+    get_overlap_start_count(ndim, start1, count1, start2, count2, overlap_start, overlap_count);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
 perr_t PDC_Server_posix_one_file_io(region_list_t* region)
 {
     perr_t ret_value = SUCCEED;
-    size_t io_bytes = 0;
+    size_t read_bytes = 0, write_bytes = 0;
+    size_t total_read_bytes = 0, total_write_bytes = 0;
     uint32_t offset = 0;
     int n_storage_regions = 0, i = 0;
     region_list_t *elt = NULL, *previous_region = NULL;
@@ -4788,7 +4891,8 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
             // and offsets
             ret_value = PDC_Server_get_storage_location_of_region(elt, &n_storage_regions, overlap_regions);
             if (ret_value != SUCCEED) {
-                printf("==PDC_SERVER[%d]: PDC_Server_get_storage_location_of_region failed!\n", pdc_server_rank_g);
+                printf("==PDC_SERVER[%d]: PDC_Server_get_storage_location_of_region failed!\n", 
+                                                                            pdc_server_rank_g);
                 goto done;
             }
 
@@ -4810,8 +4914,18 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
                     }
                     // TODO: need to check the start/count of the storage region
                     //       and calculate the actual offset/size for the read.
-                    io_bytes += fread(elt->buf, 1, elt->data_size, fp_read);
-                    if (io_bytes != elt->data_size) {
+                    //
+                    // Request: elt->start/count
+                    // Storage: overlap_regions[i]->start/count
+
+
+                    PDC_Server_read_overlap_regions(elt->ndim, elt->start, elt->count, 
+                                                    overlap_regions[i]->start, overlap_regions[i]->count, 
+                                                    elt->buf, elt->meta->dims,  &read_bytes);
+
+                    total_read_bytes += read_bytes;
+                    read_bytes += fread(elt->buf, 1, elt->data_size, fp_read);
+                    if (read_bytes != elt->data_size) {
                         ret_value= FAIL;
                         fclose(fp_read);
                         goto done;
@@ -4824,7 +4938,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
             /* printf("Write iteration: size %" PRIu64 "\n", elt->data_size); */
             elt->is_data_ready = 1;
             elt->offset = offset;
-            offset += io_bytes;
+            offset += read_bytes;
 
         } // end of READ
         else if (elt->access_type == WRITE) {
@@ -4836,7 +4950,8 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
                 goto done;
             }
 
-            if (previous_region == NULL || strcmp(elt->storage_location, previous_region->storage_location) != 0) {
+            if (previous_region == NULL 
+                    || strcmp(elt->storage_location, previous_region->storage_location) != 0) {
 
                 // mkdir and set lustre premeters
                 pdc_mkdir(elt->storage_location);
@@ -4853,8 +4968,8 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
                 printf("write location is %s\n", elt->storage_location);
             }
 
-            io_bytes += fwrite(elt->buf, 1, elt->data_size, fp_write);
-            if (io_bytes != elt->data_size) {
+            write_bytes += fwrite(elt->buf, 1, elt->data_size, fp_write);
+            if (write_bytes != elt->data_size) {
                 ret_value= FAIL;
                 goto done;
             }
@@ -4864,7 +4979,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
             /* printf("Write iteration: size %" PRIu64 "\n", elt->data_size); */
             elt->is_data_ready = 1;
             elt->offset = offset;
-            offset += io_bytes;
+            offset += write_bytes;
 
             // Update metadata with the location and offset
             ret_value = PDC_Server_update_region_storagelocation_offset(elt);
