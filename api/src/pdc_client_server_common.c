@@ -334,7 +334,7 @@ void PDC_print_storage_region_list(region_list_t *a)
     printf("  start    count\n");
     /* printf("start stride count\n"); */
     for (i = 0; i < a->ndim; i++) {
-        printf("  %5d    %5d\n", a->start[i], a->count[i]);
+        printf("  %5" PRIu64 "    %5" PRIu64 "\n", a->start[i], a->count[i]);
         /* printf("%5d %6d %5d\n", a->start[i], a->stride[i], a->count[i]); */
     }
     printf("    path: %s\n", a->storage_location);
@@ -1754,6 +1754,7 @@ HG_TEST_RPC_CB(data_server_read, handle)
     // Decode input
     HG_Get_input(handle, &in);
     /* printf("==PDC_SERVER: Got data server read request from client %d\n", in.client_id); */
+    /* fflush(stdout); */
 
     data_server_io_info_t *io_info= (data_server_io_info_t*)malloc(sizeof(data_server_io_info_t));
 
@@ -1812,6 +1813,7 @@ HG_TEST_RPC_CB(data_server_write, handle)
     // Decode input
     HG_Get_input(handle, &in);
     /* printf("==PDC_SERVER: Got data server write request from client %d\n", in.client_id); */
+    /* fflush(stdout); */
 
     data_server_io_info_t *io_info= (data_server_io_info_t*)malloc(sizeof(data_server_io_info_t));
 
@@ -1832,6 +1834,9 @@ HG_TEST_RPC_CB(data_server_write, handle)
 
     out.ret = 1;
     HG_Respond(handle, PDC_Server_data_io_via_shm, io_info, &out);
+
+    /* printf("==PDC_SERVER: respond write request confirmation to client %d\n", in.client_id); */
+    /* fflush(stdout); */
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);

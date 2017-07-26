@@ -4,8 +4,6 @@
 #include <getopt.h>
 #include <time.h>
 
-/* #define ENABLE_MPI 1 */
-
 #ifdef ENABLE_MPI
   #include "mpi.h"
 #endif
@@ -41,7 +39,7 @@ pdcid_t create_obj(char *obj_name, uint32_t ndim, uint64_t *dims)
     if (rank == 0) {
         obj_id = PDCobj_create(cont, obj_name, obj_prop);
         if (obj_id <= 0) {
-            printf("Error getting an object id of %s from server, exit...\n", "DataServerTestBin");
+            printf("Error getting an object id of %s from server, exit...\n", obj_name);
             exit(-1);
         }
     }
@@ -51,7 +49,6 @@ pdcid_t create_obj(char *obj_name, uint32_t ndim, uint64_t *dims)
 
 int test1d(char *obj_name)
 {
-    uint32_t ndim = 1;
 
     uint64_t dims[3];
     uint64_t i = 0;
@@ -65,10 +62,21 @@ int test1d(char *obj_name)
     uint64_t offset0, offset1, offset2, offset3, read_offset;
     uint64_t size0, size1, size2, size3, read_size;
 
+    uint32_t ndim = 1;
     dims[0] = 120;
     dims[1] =   0;
     dims[2] =   0;
     obj_id = create_obj(obj_name, ndim, dims);
+    if (obj_id < 0) {
+        printf("[%d]: Error creating an object [%s]\n", rank, obj_name);
+        exit(-1);
+    }
+
+#ifdef ENABLE_MPI
+     MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
+    /* sleep(rank*3); */
 
     // Query the created object
     PDC_Client_query_metadata_name_timestep(obj_name, 0, &metadata);
@@ -77,15 +85,15 @@ int test1d(char *obj_name)
         exit(-1);
     }
 
-    offset0 = 10;
-    offset1 = 25;
-    offset2 = 45;
-    offset3 = 70;
+    offset0 = 10 + rank*dims[0];
+    offset1 = 25 + rank*dims[0];
+    offset2 = 45 + rank*dims[0];
+    offset3 = 70 + rank*dims[0];
 
     size0   = offset1 - offset0; // 15
     size1   = offset2 - offset1; // 20
     size2   = offset3 - offset2; // 25
-    size3   = dims[0] - offset3; // 30
+    size3   = (rank+1)*dims[0] - offset3; // 30
 
     region0.ndim = ndim;
     region1.ndim = ndim;
@@ -122,11 +130,15 @@ int test1d(char *obj_name)
     PDC_Client_write_wait_notify(metadata, &region2, data2);
     PDC_Client_write_wait_notify(metadata, &region3, data3);
 
-    read_offset = 15;
+    read_offset = 15 + rank*dims[0];
     read_size   = 80;
     read_region.ndim   = ndim;
     read_region.offset = &read_offset;
     read_region.size   = &read_size;
+
+
+    printf("[%d] read data region: %llu size: %llu\n", rank, read_offset, read_size);
+
 
     char *read_data = (char*)malloc(sizeof(char) * read_size + 1);
 
@@ -134,7 +146,8 @@ int test1d(char *obj_name)
 
     read_data[read_size] = 0;
 
-    printf("read data:\n%s\n", read_data);
+    printf("[%d] read data:\n%s\n", rank, read_data);
+    fflush(stdout);
 
 done:
     free(data0);
@@ -147,9 +160,6 @@ done:
 
 int main(int argc, const char *argv[])
 {
-
-    uint64_t dims_1d, dims_2d[2], dims_3d[3];
-    uint64_t size_MB;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -170,7 +180,10 @@ int main(int argc, const char *argv[])
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
-    test1d("test_obj_1d");
+    char obj_name[128];
+    /* sprintf(obj_name, "test_obj_1d_rank_%d", rank); */
+    sprintf(obj_name, "test_obj_1d");
+    test1d(obj_name);
 
 
 

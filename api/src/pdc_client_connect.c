@@ -365,9 +365,9 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
     }
 
     // Fill input structure
-    in.client_id   = client_lookup_args->client_id;
-    in.client_addr = client_lookup_args->client_addr;
+    in.client_id   = pdc_client_mpi_rank_g;
     in.nclient     = pdc_client_mpi_size_g;
+    in.client_addr = client_lookup_args->client_addr;
 
     /* printf("Sending input to target\n"); */
     ret_value = HG_Forward(pdc_server_info_g[server_id].client_test_handle, client_test_connect_rpc_cb, client_lookup_args, &in);
@@ -703,6 +703,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
         // Avoid making all clients connect to 1 server at the same time
         lookup_args.server_id = (i + pdc_client_mpi_rank_g) % pdc_server_num_g;
         lookup_args.client_addr = self_addr;
+        lookup_args.client_id   = pdc_client_mpi_rank_g;
         target_addr_string = pdc_server_info_g[i].addr_string;
         /* printf("==PDC_CLIENT: [%d] - Testing connection to server %d: %s\n", pdc_client_mpi_rank_g, i, target_addr_string); */
         hg_ret = HG_Addr_lookup(send_context_g, client_test_connect_lookup_cb, &lookup_args, target_addr_string, HG_OP_ID_IGNORE);
@@ -1787,7 +1788,7 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_pro
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
-    /* printf("==PDC_CLIENT: obj_name=%s, user_id=%u, time_step=%u\n", lookup_args.obj_name, lookup_args.user_id, lookup_args.time_step); */
+    /* printf("==PDC_CLIENT[%d]: obj_name=%s, user_id=%u, time_step=%u\n", pdc_client_mpi_rank_g, lookup_args.obj_name, lookup_args.user_id, lookup_args.time_step); */
 
     // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
     if (pdc_server_info_g[server_id].rpc_handle_valid != 1) {
@@ -1816,13 +1817,13 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_pro
     }
 
     /* printf("Received obj_id=%" PRIu64 "\n", lookup_args.obj_id); */
-    /* fflush(stdout); */
 
     *meta_id = lookup_args.obj_id;
     *client_id = pdc_client_mpi_rank_g; 
     ret_value = SUCCEED;
 
 done:
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
@@ -2341,7 +2342,7 @@ hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *call
         data_size *= elt->region->size[i];
     }
 
-    printf("PDC_CLIENT: PDC_Client_get_data_from_server_shm - shm_addr=[%s]\n", shm_addr);
+    /* printf("PDC_CLIENT: PDC_Client_get_data_from_server_shm - shm_addr=[%s]\n", shm_addr); */
 
     /* open the shared memory segment as if it was a file */
     shm_fd = shm_open(shm_addr, O_RDONLY, 0666);
@@ -2361,7 +2362,7 @@ hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *call
     }
 
     // Copy data
-    printf("==PDC_SERVER: memcpy size = %" PRIu64 "\n", data_size);
+    /* printf("==PDC_SERVER: memcpy size = %" PRIu64 "\n", data_size); */
     memcpy(elt->buf, shm_base, data_size);
 
     /* remove the mapped shared memory segment from the address space of the process */
@@ -2685,7 +2686,10 @@ data_server_write_rpc_cb(const struct hg_cb_info *callback_info)
     /* Get output from server*/
     data_server_write_out_t output;
     ret_value = HG_Get_output(handle, &output);
-    printf("PDC_CLIENT: data_server_write_rpc_cb(): Return value from server: %" PRIu64 "\n", output.ret);
+
+    /* printf("==PDC_CLIENT[%d]: data_server_write_rpc_cb(): Return value from server: %d\n", */ 
+    /*         pdc_client_mpi_rank_g, output.ret); */
+
     fflush(stdout);
     client_lookup_args->ret = output.ret;
 
@@ -2769,8 +2773,8 @@ perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t 
     // Data path prefix will be $SCRATCH/pdc_data/obj_id/
     sprintf(meta->data_location, "%s/pdc_data/%" PRIu64 "", data_path, meta->obj_id);
 
-    if (pdc_client_mpi_rank_g == 0) 
-        printf("==PDC_CLIENT: data will be written to %s\n", meta->data_location);
+    /* if (pdc_client_mpi_rank_g == 0) */ 
+    /*     printf("==PDC_CLIENT: data will be written to %s\n", meta->data_location); */
 
     // TODO: probably need more work when multiple data servers are involved
     // Update the data location of metadata object
@@ -2910,7 +2914,9 @@ perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct PDC_region_info *region, P
 
     // TODO: currently assuming 1 server per compute node
     request->server_id   = pdc_client_mpi_rank_g / (pdc_client_mpi_size_g/pdc_server_num_g);
-    request->n_client    = pdc_client_mpi_size_g / pdc_server_num_g;
+    // TODO: TEST
+    request->n_client    = 1;
+    /* request->n_client    = pdc_client_mpi_size_g / pdc_server_num_g; */
     request->access_type = WRITE;
     request->metadata    = meta;
     request->region      = region;
@@ -2954,7 +2960,9 @@ perr_t PDC_Client_iread(pdc_metadata_t *meta, struct PDC_region_info *region, PD
 
     request->server_id   = pdc_client_mpi_rank_g / (pdc_client_mpi_size_g/pdc_server_num_g);
     // TODO: currently assuming 1 server per compute node
-    request->n_client    = pdc_client_mpi_size_g / pdc_server_num_g;
+    /* request->n_client    = pdc_client_mpi_size_g / pdc_server_num_g; */
+    // TODO: TEST
+    request->n_client    = 1;
     request->access_type = READ;
     request->metadata    = meta;
     request->region      = region;
@@ -2995,7 +3003,7 @@ perr_t PDC_Client_write_wait_notify(pdc_metadata_t *meta, struct PDC_region_info
     }
 
     DL_PREPEND(pdc_io_request_list_g, request);
-    printf("==PDC_CLIENT: Finished sending write request to server\n");
+    printf("==PDC_CLIENT: Finished sending write request to server, waiting for notification\n");
     fflush(stdout);
 
     work_todo_g = 1;
@@ -3020,7 +3028,7 @@ perr_t PDC_Client_read_wait_notify(pdc_metadata_t *meta, struct PDC_region_info 
     }
 
     DL_PREPEND(pdc_io_request_list_g, request);
-    printf("==PDC_CLIENT: Finished sending read request to server\n");
+    printf("==PDC_CLIENT: Finished sending read request to server, waiting for notification\n");
     fflush(stdout);
 
     work_todo_g = 1;

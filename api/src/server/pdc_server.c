@@ -62,6 +62,7 @@
 #include "mercury_thread_pool.h"
 #include "mercury_thread_mutex.h"
 
+
 hg_thread_mutex_t pdc_client_addr_metex_g;
 hg_thread_mutex_t pdc_metadata_hash_table_mutex_g;
 /* hg_thread_mutex_t pdc_metadata_name_mark_hash_table_mutex_g; */
@@ -78,6 +79,10 @@ hg_thread_mutex_t data_write_list_mutex_g;
 #define BLOOM_ADD    counting_bloom_add
 #define BLOOM_REMOVE counting_bloom_remove
 #define BLOOM_FREE   free_counting_bloom
+
+// Global debug variable to control debug printfs
+int is_debug_g = 0;
+
 
 hg_class_t   *hg_class_g   = NULL;
 hg_context_t *hg_context_g = NULL;
@@ -389,7 +394,7 @@ static perr_t PDC_Server_lookup_client(uint32_t client_id)
         goto done;
     }
 
-    if (pdc_client_info_g[0].addr_valid == 1) 
+    if (pdc_client_info_g[client_id].addr_valid == 1) 
         goto done;
 
     // Lookup and fill the client info
@@ -465,24 +470,26 @@ hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info)
         hg_thread_mutex_lock(&pdc_client_addr_metex_g);
 #endif
     
-    if (pdc_client_info_g != NULL) 
-        PDC_Server_destroy_client_info(pdc_client_info_g);
-    
-    
+    /* if (pdc_client_info_g != NULL) */ 
+    /*     PDC_Server_destroy_client_info(pdc_client_info_g); */
 
-    pdc_client_info_g = (pdc_client_info_t*)malloc(sizeof(pdc_client_info_t) * (in->nclient+1));
     if (pdc_client_info_g == NULL) {
-        printf("==PDC_SERVER: PDC_Server_get_client_addr - unable to allocate space\n");
-        ret_value = FAIL;
-        goto done;
+        pdc_client_info_g = (pdc_client_info_t*)malloc(sizeof(pdc_client_info_t) * (in->nclient+1));
+        if (pdc_client_info_g == NULL) {
+            printf("==PDC_SERVER: PDC_Server_get_client_addr - unable to allocate space\n");
+            ret_value = FAIL;
+            goto done;
+        }
+        pdc_client_num_g = 0;
+        PDC_client_info_init(pdc_client_info_g);
     }
-    pdc_client_num_g = 0;
 
-    PDC_client_info_init(pdc_client_info_g);
 
     pdc_client_num_g++;
-    strcpy(pdc_client_info_g[in->client_id].addr_string, &(in->client_addr[0]));
-    /* printf("==PDC_SERVER: got client addr: %s from client[%d]\n", pdc_client_info_g[in->client_id].addr_string, in->client_id); */
+    strcpy(pdc_client_info_g[in->client_id].addr_string, in->client_addr);
+
+    /* printf("==PDC_SERVER: got client addr: %s from client[%d], total: %d\n", */ 
+    /*         pdc_client_info_g[in->client_id].addr_string, in->client_id, pdc_client_num_g); */
 
     /* if (pdc_client_num_g >= in->nclient) { */
         /* printf("==PDC_SERVER[%d]: got the last connection request from client[%d]\n", pdc_server_rank_g, in->client_id); */
@@ -2653,6 +2660,7 @@ static int is_contiguous_region_overlap(region_list_t *a, region_list_t *b)
     }
 
 done:
+    /* printf("is overlap: %d\n", ret_value); */
     FUNC_LEAVE(ret_value);
 }
 
@@ -2734,6 +2742,10 @@ static perr_t get_overlap_start_count(uint32_t ndim, uint64_t *start1, uint64_t 
     // Check if they are truly overlapping regions
     if (is_contiguous_start_count_overlap(ndim, start1, count1, start2, count2) != 1) {
         printf("get_overlap_start_count: non-overlap regions!\n");
+        for (i = 0; i < ndim; i++) {
+            printf("start1: %llu count1: %llu, start2:%llu count2:%llu\n", 
+                    start1[i], count1[i], start2[i], count2[i]);
+        }
         ret_value = FAIL;
         goto done;
     }
@@ -3504,7 +3516,7 @@ static hg_return_t PDC_Server_notify_io_complete_cb(const struct hg_cb_info *cal
     notify_io_complete_out_t output;
 
     ret_value = HG_Get_output(handle, &output);
-    printf("==PDC_SERVER[%d]: PDC_Server_notify_io_complete_cb - received from client with %d\n", pdc_server_rank_g, output.ret);
+    /* printf("==PDC_SERVER[%d]: PDC_Server_notify_io_complete_cb - received from client with %d\n", pdc_server_rank_g, output.ret); */
     lookup_args->ret_int = output.ret;
 
     work_todo_g--;
@@ -3522,7 +3534,7 @@ perr_t PDC_Server_notify_io_complete_to_client(uint32_t client_id, uint64_t obj_
 
     FUNC_ENTER(NULL);
 
-    if (pdc_client_info_g[client_id].addr_valid == 0) {
+    if (pdc_client_info_g[client_id].addr_valid != 1) {
         ret_value = PDC_Server_lookup_client(client_id);
         if (hg_ret != HG_SUCCESS) {
             fprintf(stderr, "==PDC_SERVER: PDC_Server_notify_io_complete_to_client() - \
@@ -3550,7 +3562,7 @@ perr_t PDC_Server_notify_io_complete_to_client(uint32_t client_id, uint64_t obj_
     else 
         in.shm_addr   = shm_addr;
 
-    printf("==PDC_SERVER: PDC_Server_notify_io_complete_to_client shm_addr = [%s]\n", in.shm_addr);
+    /* printf("==PDC_SERVER: PDC_Server_notify_io_complete_to_client shm_addr = [%s]\n", in.shm_addr); */
     
     /* printf("Sending input to target\n"); */
     server_lookup_args_t lookup_args;
@@ -3917,7 +3929,7 @@ perr_t PDC_Server_get_local_storage_location_of_region(uint32_t obj_id, region_l
     *n_loc = 0;
     target_meta = PDC_Server_get_obj_metadata(obj_id);
     DL_FOREACH(target_meta->storage_region_list_head, region_elt) {
-        if (is_contiguous_region_overlap(region_elt, region)) {
+        if (is_contiguous_region_overlap(region_elt, region) == 1) {
             PDC_init_region_list(overlap_region_loc[*n_loc]);
             pdc_region_list_t_deep_cp(region_elt, overlap_region_loc[*n_loc]);
             /* overlap_region_loc[*n_loc] = region_elt; */
@@ -4230,6 +4242,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
     // Insert current request to the region list
     io_list_target->count++;
     /* printf("==PDC_SERVER[%d]: received %d/%d data %s requests of [%s]\n", pdc_server_rank_g, io_list_target->count, io_list_target->total, io_info->io_type == READ? "read": "write", io_info->meta.obj_name); */
+    /* fflush(stdout); */
 
     // insert current request region to it 
     region_list_t *new_region = (region_list_t*)malloc(sizeof(region_list_t));
@@ -4289,11 +4302,13 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
                 
                 client_id = region_elt->client_ids[i];
                 if (client_id >= pdc_client_num_g) {
-                    printf("==PDC_SERVER[%d]: PDC_Server_data_io_via_shm - error with client_id=%u notify!\n", pdc_server_rank_g, client_id);
+                    printf("==PDC_SERVER[%d]: PDC_Server_data_io_via_shm - error with client_id=%u/%d notify!\n", pdc_server_rank_g, client_id, pdc_client_num_g);
                     break;
                 }
 
-                printf("==PDC_SERVER[%d]: Finished %s request, notify client %u\n", pdc_server_rank_g, io_info->io_type == READ? "read": "write", client_id);
+                /* printf("==PDC_SERVER[%d]: Finished %s request, notify client %u\n", */ 
+                /*         pdc_server_rank_g, io_info->io_type == READ? "read": "write", client_id); */
+
                 if (io_info->io_type == READ) {
                     // TODO: currently assumes each region is for one client only!
                     //       if one region is merged from the requests from multiple clients
@@ -4887,9 +4902,16 @@ perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
         }
     }
 
-    for (i = 0; i < ndim; i++) {
-        printf("==PDC_SERVER[%d]: dim=%" PRIu32 ", read with storage start %" PRIu64 ", to buffer offset %" PRIu64 ", of size %" PRIu64 " \n", 
-                pdc_server_rank_g, ndim, storage_start_physical[i], buf_start[i], overlap_count[i]);
+    if (is_debug_g == 1) {
+        for (i = 0; i < ndim; i++) {
+            printf("==PDC_SERVER[%d]: overlap start %" PRIu64 ", "
+                   "storage_start  %" PRIu64 ", req_start %" PRIu64 " \n", 
+                   pdc_server_rank_g, overlap_start[i], storage_start[i], req_start[i]);
+
+            printf("==PDC_SERVER[%d]: dim=%" PRIu32 ", read with storage start %" PRIu64 "," 
+                    " to buffer offset %" PRIu64 ", of size %" PRIu64 " \n", 
+                    pdc_server_rank_g, ndim, storage_start_physical[i], buf_start[i], overlap_count[i]);
+        }
     }
 
     // Check if the entire storage region is selected
@@ -4904,6 +4926,12 @@ perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
     // TODO: additional optimization to check if any dimension is entirely selected
     if (ndim == 1 || is_all_selected == 1) {
         fseek (fp, storage_offset, SEEK_SET);
+
+        if (is_debug_g == 1) {
+            printf("==PDC_SERVER[%d]: read storage offset %" PRIu64 ", buf_offset  %" PRIu64 "\n", 
+                    pdc_server_rank_g, storage_offset, buf_offset);
+        }
+
         // Can read the entire storage region at once
         read_bytes += fread(buf+buf_offset, 1, total_bytes, fp);
         if (read_bytes != total_bytes) {
@@ -5028,6 +5056,11 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
             // read with the corresponding offset and size
             for (i = 0; i < n_storage_regions; i++) {
 
+                /* printf("==PDC_SERVER: overlapping storage regions %d\n", n_storage_regions); */
+                /* printf("=========================================\n"); */
+                /* PDC_print_storage_region_list(overlap_regions[i]); */
+                /* printf("=========================================\n"); */
+
                 // If a new file needs to be opened
                 if (prev_path == NULL || strcmp(overlap_regions[i]->storage_location, prev_path) != 0) {
 
@@ -5089,7 +5122,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
                     ret_value = FAIL;
                     goto done;
                 }
-                printf("write location is %s\n", elt->storage_location);
+                /* printf("write location is %s\n", elt->storage_location); */
             }
 
             // Get the current write offset
