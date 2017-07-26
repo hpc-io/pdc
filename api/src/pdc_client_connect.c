@@ -2323,8 +2323,9 @@ hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *call
 
     shm_addr = read_info->shm_addr;
 
+    // TODO: Need to find the correct request
     DL_FOREACH(pdc_io_request_list_g, elt) {
-        if (elt->metadata->obj_id == read_info->obj_id) {
+        if (elt->metadata->obj_id == read_info->obj_id && elt->access_type == READ) {
             found = 1;
             break;
         }
@@ -2360,6 +2361,7 @@ hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *call
     }
 
     // Copy data
+    printf("==PDC_SERVER: memcpy size = %" PRIu64 "\n", data_size);
     memcpy(elt->buf, shm_base, data_size);
 
     /* remove the mapped shared memory segment from the address space of the process */
@@ -2992,7 +2994,7 @@ perr_t PDC_Client_write_wait_notify(pdc_metadata_t *meta, struct PDC_region_info
         goto done;
     }
 
-    DL_APPEND(pdc_io_request_list_g, request);
+    DL_PREPEND(pdc_io_request_list_g, request);
     printf("==PDC_CLIENT: Finished sending write request to server\n");
     fflush(stdout);
 
@@ -3017,7 +3019,7 @@ perr_t PDC_Client_read_wait_notify(pdc_metadata_t *meta, struct PDC_region_info 
         goto done;
     }
 
-    DL_APPEND(pdc_io_request_list_g, request);
+    DL_PREPEND(pdc_io_request_list_g, request);
     printf("==PDC_CLIENT: Finished sending read request to server\n");
     fflush(stdout);
 

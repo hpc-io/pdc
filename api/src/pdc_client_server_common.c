@@ -304,16 +304,16 @@ int PDC_is_same_region_list(region_list_t *a, region_list_t *b)
     int ret_value = 1;
     int i = 0;
 
-    if (a->ndim != b->ndim) {
-        ret_value = -1;
-        goto done;
-    }
+    if (a->ndim != b->ndim) 
+        return -1;
 
     for (i = 0; i < a->ndim; i++) {
-        if (a->start[i] != b->start[i] || a->count[i] != b->count[i]) {
-            ret_value = -1;
-            goto done;
-        }
+
+        if (a->start[i] != b->start[i]) 
+            return -1;
+
+        if (a->count[i] != b->count[i])
+            return -1;
     }
 
 done:
@@ -420,16 +420,24 @@ perr_t pdc_region_transfer_t_to_list_t(region_info_transfer_t *transfer, region_
         return FAIL;
     }
 
-    region->ndim            = transfer->ndim  ;
+    region->ndim            = transfer->ndim;
     region->start[0]        = transfer->start_0;
-    region->start[1]        = transfer->start_1;
-    region->start[2]        = transfer->start_2;
-    region->start[3]        = transfer->start_3;
-                              
     region->count[0]        = transfer->count_0;
-    region->count[1]        = transfer->count_1;
-    region->count[2]        = transfer->count_2;
-    region->count[3]        = transfer->count_3;
+
+    if (region->ndim > 1) {
+        region->start[1]        = transfer->start_1;
+        region->count[1]        = transfer->count_1;
+    }
+
+    if (region->ndim > 2) {
+        region->start[2]        = transfer->start_2;
+        region->count[2]        = transfer->count_2;
+    }
+
+    if (region->ndim > 3) {
+        region->start[3]        = transfer->start_3;
+        region->count[3]        = transfer->count_3;
+    }
 
     /* region->stride[0]       = transfer->stride_0; */
     /* region->stride[1]       = transfer->stride_1; */
@@ -1756,9 +1764,13 @@ HG_TEST_RPC_CB(data_server_read, handle)
     PDC_metadata_init(&io_info->meta);
     pdc_transfer_t_to_metadata_t(&(in.meta), &(io_info->meta));
 
+    PDC_init_region_list( &(io_info->region));
     pdc_region_transfer_t_to_list_t(&(in.region), &(io_info->region));
+
     io_info->region.access_type = io_info->io_type;
     io_info->region.meta = &(io_info->meta);
+    io_info->region.client_ids[0] = in.client_id;
+
 
     out.ret = 1;
     HG_Respond(handle, PDC_Server_data_io_via_shm, io_info, &out);
@@ -1810,10 +1822,13 @@ HG_TEST_RPC_CB(data_server_write, handle)
     PDC_metadata_init(&io_info->meta);
     pdc_transfer_t_to_metadata_t(&(in.meta), &(io_info->meta));
 
+    PDC_init_region_list( &(io_info->region));
     pdc_region_transfer_t_to_list_t(&(in.region), &(io_info->region));
+
     strcpy(&(io_info->region.shm_addr), in.shm_addr);
     io_info->region.access_type = io_info->io_type;
     io_info->region.meta = &(io_info->meta);
+    io_info->region.client_ids[0] = in.client_id;
 
     out.ret = 1;
     HG_Respond(handle, PDC_Server_data_io_via_shm, io_info, &out);

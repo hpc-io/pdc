@@ -31,6 +31,7 @@ set(PROGRAMS
   list_all
   data_server_read
   data_server_write
+  data_rw_test
   )
 
 foreach(program ${PROGRAMS})
