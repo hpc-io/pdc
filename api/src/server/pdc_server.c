@@ -2687,6 +2687,9 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDC_Server_region_lock_status(region_list_t *region, int *status)
+{
+}
 
 perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
 {
