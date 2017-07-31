@@ -6,7 +6,7 @@
 #include <time.h>
 #include <sys/time.h>
 
-#define ENABLE_MPI 1
+/* #define ENABLE_MPI 1 */
 
 #ifdef ENABLE_MPI
 #include "mpi.h"
@@ -119,14 +119,13 @@ int main(int argc, char **argv)
     /* printf("%d: myquery = %d\n", rank, my_query); */
 
 
-    struct PDC_prop p;
-    pdcid_t pdc = PDC_init(p);
+    pdcid_t pdc = PDC_init("pdc");
 
     pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
-    pdcid_t cont = PDCcont_create(pdc, "c1", cont_prop);
+    pdcid_t cont = PDCcont_create("c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
@@ -137,7 +136,7 @@ int main(int argc, char **argv)
     char data_loc[128];
     char obj_name[128];
     uint64_t dims[2] = {1000, 2};
-    PDCprop_set_obj_dims(obj_prop, 2, dims, pdc);
+    PDCprop_set_obj_dims(obj_prop, 2, dims);
 
     pdcid_t test_obj = -1;
 
@@ -286,6 +285,7 @@ int main(int argc, char **argv)
 
     int n_res, total_n_res;
     pdc_metadata_t **res_arr;
+    pdc_metadata_t **res_arr1;
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -295,11 +295,12 @@ int main(int argc, char **argv)
 
     PDC_partial_query(0 , -1, NULL, NULL, -1, -1, -1, new_tag, &n_res, &res_arr);
 
+    PDC_partial_query(0 , -1, NULL, NULL, -1, -1, -1, new_tag, &n_res, &res_arr1);
+
+    gettimeofday(&ht_query_tag_end, 0);
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-    gettimeofday(&ht_query_tag_end, 0);
-
     ht_query_tag_sec += ( (ht_query_tag_end.tv_sec-ht_query_tag_start.tv_sec)*1000000LL + 
                       ht_query_tag_end.tv_usec-ht_query_tag_start.tv_usec ) / 1000000.0;
 #ifdef ENABLE_MPI
@@ -334,10 +335,10 @@ int main(int argc, char **argv)
         /* } */
 
 done:
-    if(PDCcont_close(cont, pdc) < 0)
+    if(PDCcont_close(cont) < 0)
         printf("fail to close container %lld\n", cont);
 
-    if(PDCprop_close(cont_prop, pdc) < 0)
+    if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
 
     if(PDC_close(pdc) < 0)

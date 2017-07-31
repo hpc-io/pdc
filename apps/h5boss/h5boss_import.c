@@ -6,7 +6,7 @@
 #include <time.h>
 #include <sys/time.h>
 
-#define ENABLE_MPI 1
+/* #define ENABLE_MPI 1 */
 
 #ifdef ENABLE_MPI
 #include "mpi.h"
@@ -24,6 +24,8 @@ int main(int argc, char **argv)
     int rank = 0, size = 1;
 
 #ifdef ENABLE_MPI
+    printf("MPI enabled!\n");
+    fflush(stdout);
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -105,15 +107,13 @@ int main(int argc, char **argv)
     /* printf("mycount = %d\n", my_count); */
 
 
-    struct PDC_prop p;
-    /* PDC_prop_t p; */
-    pdcid_t pdc = PDC_init(p);
+    pdcid_t pdc = PDC_init("pdc");
 
     pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
-    pdcid_t cont = PDCcont_create(pdc, "c1", cont_prop);
+    pdcid_t cont = PDCcont_create("c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
@@ -124,7 +124,7 @@ int main(int argc, char **argv)
     char data_loc[128];
     char obj_name[128];
     uint64_t dims[2] = {1000, 2};
-    PDCprop_set_obj_dims(obj_prop, 2, dims, pdc);
+    PDCprop_set_obj_dims(obj_prop, 2, dims);
 
     pdcid_t test_obj = -1;
 
@@ -137,10 +137,10 @@ int main(int argc, char **argv)
         printf("Starting to import h5boss metadata...\n");
     }
 
-    PDCprop_set_obj_user_id( obj_prop, getuid(),    pdc);
-    PDCprop_set_obj_time_step( obj_prop, 0,    pdc);
-    PDCprop_set_obj_app_name(obj_prop, "H5BOSS",  pdc);
-    PDCprop_set_obj_tags(    obj_prop, "tag0=1",    pdc);
+    PDCprop_set_obj_user_id( obj_prop, getuid());
+    PDCprop_set_obj_time_step( obj_prop, 0);
+    PDCprop_set_obj_app_name(obj_prop, "H5BOSS");
+    PDCprop_set_obj_tags(    obj_prop, "tag0=1");
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -151,7 +151,7 @@ int main(int argc, char **argv)
     int n_fiber = 1000;
     for (i = 0; i < my_count; i++) {
         sprintf(data_loc, "/global/cscratch1/sd/jialin.old/h5boss/%d-%d.hdf5", plate_ptr[i], mjd_ptr[i]);
-        PDCprop_set_obj_data_loc(obj_prop, data_loc, pdc);
+        PDCprop_set_obj_data_loc(obj_prop, data_loc);
 
         /* printf("%d: creating %d-%d\n", rank, plate_ptr[i], mjd_ptr[i]); */
         // Everyone has 1000 fibers
@@ -159,7 +159,7 @@ int main(int argc, char **argv)
 
             sprintf(obj_name, "%d-%d-%d", plate_ptr[i], mjd_ptr[i], j);
 
-            test_obj = PDCobj_create(pdc, cont, obj_name, obj_prop);
+            test_obj = PDCobj_create(cont, obj_name, obj_prop);
             if (test_obj < 0) {
                 printf("Error getting an object id of %s from server, exit...\n", obj_name);
                 exit(-1);
@@ -192,10 +192,10 @@ int main(int argc, char **argv)
     }
 
 done:
-    if(PDCcont_close(cont, pdc) < 0)
+    if(PDCcont_close(cont) < 0)
         printf("fail to close container %lld\n", cont);
 
-    if(PDCprop_close(cont_prop, pdc) < 0)
+    if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
 
     if(PDC_close(pdc) < 0)

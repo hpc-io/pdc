@@ -1098,10 +1098,11 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
     for (server_id = my_server_start; server_id < my_server_end; server_id++) {
 
         // We may have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb
-        if (pdc_server_info_g[server_id].query_partial_handle_valid != 1) {
+        // TODO: the handle becomes invalid after one pratial query 
+        /* if (pdc_server_info_g[server_id].query_partial_handle_valid != 1) { */
             hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, query_partial_register_id_g, &pdc_server_info_g[server_id].query_partial_handle);
             pdc_server_info_g[server_id].query_partial_handle_valid= 1;
-        }
+        /* } */
 
         /* printf("Sending input to target\n"); */
         struct hg_test_bulk_args lookup_args;
@@ -2311,12 +2312,13 @@ hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *call
     data_server_read_check_in_t in;
 
     int shm_fd = -1;        // file descriptor, from shm_open()
-    int i = 0, found = 0;
+    int i = 0, j = 0;
     char *shm_base = NULL;    // base address, from mmap()
     char *shm_addr = NULL;
     uint64_t data_size = 1;
     client_read_info_t *read_info = NULL;
     PDC_Request_t *elt = NULL;
+    region_list_t *target_region = NULL;
 
     FUNC_ENTER(NULL);
 
@@ -2327,19 +2329,20 @@ hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *call
     // TODO: Need to find the correct request
     DL_FOREACH(pdc_io_request_list_g, elt) {
         if (elt->metadata->obj_id == read_info->obj_id && elt->access_type == READ) {
-            found = 1;
+            target_region = elt->region;
             break;
         }
     }
 
-    if (found == 0) {
-        printf("==PDC_CLIENT: PDC_Client_get_data_from_server_shm_cb() - read request not found!\n");
+    if (target_region == NULL) {
+        printf("==PDC_CLIENT: PDC_Client_get_data_from_server_shm_cb() - request region not found!\n");
         goto done;
     }
 
     // Calculate data_size, TODO: this should be done in other places?
-    for (i = 0; i < elt->region->ndim; i++) {
-        data_size *= elt->region->size[i];
+    data_size = 1;
+    for (i = 0; i < target_region->ndim; i++) {
+        data_size *= target_region->count[i];
     }
 
     /* printf("PDC_CLIENT: PDC_Client_get_data_from_server_shm - shm_addr=[%s]\n", shm_addr); */
@@ -2363,7 +2366,25 @@ hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *call
 
     // Copy data
     /* printf("==PDC_SERVER: memcpy size = %" PRIu64 "\n", data_size); */
-    memcpy(elt->buf, shm_base, data_size);
+    if (target_region->ndim == 1) {
+        memcpy(elt->buf, shm_base, data_size);
+    }
+    else if (target_region->ndim == 2) {
+        char **buf_2d = (char**)elt->buf;
+        for (i = 0; i < target_region->count[1]; i++) {
+            memcpy(buf_2d[i], shm_base + i*target_region->count[0], target_region->count[0]);
+        }
+    }
+    else if (target_region->ndim == 3) {
+        char ***buf_3d = *(char**)elt->buf;
+        for (j = 0; j < target_region->count[2]; j++) {
+            for (i = 0; i < target_region->count[1]; i++) {
+                memcpy(buf_3d[j][i], shm_base + i*target_region->count[0] + 
+                                                j*target_region->count[0]*target_region->count[1], 
+                                     target_region->count[0]);
+            }
+        }
+    }
 
     /* remove the mapped shared memory segment from the address space of the process */
     if (munmap(shm_base, data_size) == -1) {
@@ -2702,7 +2723,7 @@ done:
 
 perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t *meta, struct PDC_region_info *region, void *buf)
 {
-    int i;
+    int i, j;
     perr_t ret_value = FAIL;
     hg_return_t hg_ret;
     uint64_t region_size = 1;
@@ -2752,9 +2773,33 @@ perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t 
     }
 
     // Copy the user's buffer to shm that can be accessed by sdata server
-    memcpy(shm_base, buf, region_size);
+    // Linearize if more than 2D
+    if (region->ndim == 1) {
+        memcpy(shm_base, buf, region_size);
+    }
+    else if (region->ndim == 2) {
+        char **buf_2d = buf;
+        for (i = 0; i < region->size[1]; i++) {
+            memcpy(shm_base + i*region->size[0], buf_2d[i], region->size[0]);
+            printf("==PDC_CLIENT[%d]: write memcpy [%.*s]\n", 
+                    pdc_client_mpi_rank_g, region->size[0], buf_2d[i]);
+        }
+    }
+    else if (region->ndim == 3) {
+        char ***buf_3d = buf;
+        for (j = 0; j < region->size[2]; j++) {
+            for (i = 0; i < region->size[1]; i++) {
+                memcpy(shm_base + i*region->size[0] + j*region->size[0]*region->size[1], buf_3d[j][i], region->size[0]);
+            }
+        }
+    }
+    else {
+        printf("==PDC_CLIENT[%d]: %dD data write is not supported yet\n", 
+                pdc_client_mpi_rank_g, region->ndim);
+    }
 
-    /* printf("==PDC_CLIENT: sending data server write request to server %d\n", server_id); */
+    /* printf("==PDC_CLIENT: sending data server write with %" PRIu64 " bytes to server %d\ndata: [%.*s]\n", */ 
+    /*         region_size, server_id, region_size, buf); */
 
     // Generate a location for data storage for data server to write 
     char *data_path = NULL;
@@ -2923,6 +2968,7 @@ perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct PDC_region_info *region, P
     request->buf         = buf;
 /* printf("==PDC_CLIENT[%d], sending write request to server %d\n", pdc_client_mpi_rank_g, request->server_id); */
 
+    /* printf("==PDC_CLIENT: PDC_Client_iwrite - sending data server write with data: [%s]\n", buf); */
     ret_value = PDC_Client_data_server_write(request->server_id, request->n_client, meta, region, buf);
 
 done:

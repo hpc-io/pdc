@@ -758,6 +758,7 @@ perr_t PDC_Server_write_addr_to_file(char** addr_strings, int n)
         fprintf(na_config, "%s\n", addr_strings[i]);
     }
     fclose(na_config);
+    na_config = NULL;
 
 done:
     FUNC_LEAVE(ret_value);
@@ -2357,6 +2358,7 @@ perr_t PDC_Server_checkpoint(char *filename)
     }
 
     fclose(file);
+    file = NULL;
 
     int all_checkpoint_count;
 #ifdef ENABLE_MPI
@@ -2434,6 +2436,7 @@ perr_t PDC_Server_restart(char *filename)
     }
 
     fclose(file);
+    file = NULL;
 
 #ifdef ENABLE_MPI
     MPI_Reduce(&nobj, &all_nobj, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -4152,6 +4155,8 @@ perr_t PDC_Server_data_write_from_shm(region_list_t *region_list_head)
             ret_value = FAIL;
             goto done;
         }
+        printf("==PDC_SERVER[%d]: PDC_Server_data_write_from_shm buf [%.*s]\n", 
+                pdc_server_rank_g, elt->data_size, elt->buf);
     }
 
     // POSIX write 
@@ -4277,8 +4282,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
             DL_FOREACH(io_list_target->region_list_head, region_elt) 
                 sprintf(region_elt->storage_location, "%s/s%03d.bin", io_list->path, pdc_server_rank_g); 
 
-            PDC_Server_data_write_from_shm(io_list_target->region_list_head);
-            /* status = PDC_Server_data_write_real(io_list_target); */
+            status = PDC_Server_data_write_from_shm(io_list_target->region_list_head);
         }
         else {
             printf("==PDC_SERVER: PDC_Server_data_io_via_shm - invalid IO type received from client!\n");
@@ -4287,7 +4291,8 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
         }
 
         if (status != SUCCEED) {
-            printf("==PDC_SERVER: ERROR writing data to file [%s]!\n", io_list_target->path);
+            printf("==PDC_SERVER: ERROR %s data to file [%s]!\n", 
+                    io_info->io_type == WRITE? "writing": "reading", io_list_target->path);
             ret_value = FAIL;
             goto done;
         }
@@ -4887,6 +4892,9 @@ perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
     get_overlap_start_count(ndim, req_start, req_count, storage_start, storage_count, 
                             overlap_start, overlap_count);
 
+
+    /* is_debug_g = 1; */
+
     total_bytes = 1;
     for (i = 0; i < ndim; i++) {
         total_bytes              *= overlap_count[i];
@@ -5064,8 +5072,10 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
                 // If a new file needs to be opened
                 if (prev_path == NULL || strcmp(overlap_regions[i]->storage_location, prev_path) != 0) {
 
-                    if (fp_read != NULL) 
+                    if (fp_read != NULL)  {
                         fclose(fp_read);
+                        fp_read = NULL;
+                    }
                     
                     fp_read = fopen(overlap_regions[i]->storage_location, "rb");
                     if (fp_read == NULL) {
@@ -5083,6 +5093,8 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
 
                 if (ret_value != SUCCEED) {
                     fclose(fp_read);
+                    fp_read = NULL;
+                    
                     goto done;
                 }
                 total_read_bytes += read_bytes;
@@ -5112,8 +5124,10 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
                 pdc_mkdir(elt->storage_location);
                 PDC_Server_set_lustre_stripe(elt->storage_location, 248, 16);
 
-                if (fp_write != NULL) 
+                if (fp_write != NULL) {
                     fclose(fp_write);
+                    fp_write = NULL;
+                }
                 // Append the current write data
                 // TODO: need to recycle file space in cases of data update and delete
                 fp_write = fopen(elt->storage_location, "ab");
@@ -5135,7 +5149,8 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
 
             /* fclose(fp_write); */
 
-            /* printf("Write iteration: size %" PRIu64 "\n", elt->data_size); */
+            /* printf("Write data offset: %" PRIu64 ", size %" PRIu64 "\n", offset, elt->data_size); */
+            /* printf("Write data buf: [%.*s]\n", elt->data_size, (char*)elt->buf); */
             elt->is_data_ready = 1;
             elt->offset = offset;
 
@@ -5164,11 +5179,15 @@ done:
         free(overlap_regions);
     }
 
-    if (fp_write != NULL) 
+    if (fp_write != NULL) {
         fclose(fp_write);
+        fp_write = NULL;
+    }
 
-    if (fp_read != NULL) 
+    if (fp_read != NULL) {
         fclose(fp_read);
+        fp_write = NULL;
+    }
     
     fflush(stdout);
     FUNC_LEAVE(ret_value);

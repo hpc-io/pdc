@@ -119,14 +119,13 @@ int main(int argc, char **argv)
     printf("mycount = %d\n", my_count);
 
 
-    struct PDC_prop p;
-    pdcid_t pdc = PDC_init(p);
+    pdcid_t pdc = PDC_init("pdc");
 
     pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
-    pdcid_t cont = PDCcont_create(pdc, "c1", cont_prop);
+    pdcid_t cont = PDCcont_create("c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
@@ -137,7 +136,7 @@ int main(int argc, char **argv)
     char data_loc[128];
     char obj_name[128];
     uint64_t dims[2] = {1000, 2};
-    PDCprop_set_obj_dims(obj_prop, 2, dims, pdc);
+    PDCprop_set_obj_dims(obj_prop, 2, dims);
 
     pdcid_t test_obj = -1;
 
@@ -151,9 +150,9 @@ int main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-    PDCprop_set_obj_user_id( obj_prop, getuid(),    pdc);
-    PDCprop_set_obj_app_name(obj_prop, "H5BOSS",  pdc);
-    PDCprop_set_obj_tags(    obj_prop, "tag0=1",    pdc);
+    PDCprop_set_obj_user_id( obj_prop, getuid());
+    PDCprop_set_obj_app_name(obj_prop, "H5BOSS");
+    PDCprop_set_obj_tags(    obj_prop, "tag0=1");
 
     gettimeofday(&ht_total_start, 0);
 
@@ -198,10 +197,10 @@ int main(int argc, char **argv)
     }
 
 done:
-    if(PDCcont_close(cont, pdc) < 0)
+    if(PDCcont_close(cont) < 0)
         printf("fail to close container %lld\n", cont);
 
-    if(PDCprop_close(cont_prop, pdc) < 0)
+    if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
 
     if(PDC_close(pdc) < 0)
