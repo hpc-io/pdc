@@ -2000,7 +2000,6 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
     in.local_type = local_type;
     in.remote_type = remote_type;
     in.ndim = ndim;
-    
     pdc_region_info_t_to_transfer(remote_region, &(in.region));
 
     server_id = PDC_get_server_by_obj_id(local_obj_id, pdc_server_num_g);
@@ -2150,6 +2149,7 @@ done:
      FUNC_LEAVE(ret_value);
 }
 
+// TODO: separate lock and release
 // General function for obtain/release region lock
 static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, int lock_op, pbool_t *status)
 {

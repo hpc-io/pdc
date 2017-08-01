@@ -81,6 +81,7 @@ typedef struct region_list_t {
     char    *buf;
     char     storage_location[ADDR_MAX];
     uint64_t offset;
+    int      reg_dirty;
     PDC_access_t access_type;
 
     pdc_metadata_t *meta;
@@ -90,69 +91,9 @@ typedef struct region_list_t {
     // 16 attributes, need to match init and deep_cp routines
 } region_list_t;
 
-typedef struct PDC_mapping_info {
-    pdcid_t                          remote_obj_id;         /* target of object id */
-    pdcid_t                          remote_reg_id;         /* target of region id */
-    int32_t                          remote_client_id;
-    size_t                           remote_ndim;
-    hg_bulk_t                        remote_bulk_handle;
-    PDC_LIST_ENTRY(PDC_mapping_info) entry;
-} PDC_mapping_info_t;
-
-typedef struct region_map_t {
-// if keeping the struct of origin of region is needed?
-    pdc_cnt_t                        mapping_count;        /* count the number of mapping of this region */
-    pdcid_t                          local_obj_id;         /* origin of object id */
-    pdcid_t                          local_reg_id;         /* origin of region id */
-    size_t                           local_ndim;
-    uint64_t                        *local_reg_size;
-    hg_addr_t                        local_addr;
-    hg_bulk_t                        local_bulk_handle;
-    PDC_var_type_t                   local_data_type;
-    PDC_LIST_HEAD(PDC_mapping_info)  ids;                  /* Head of list of IDs */
-    
-    struct region_map_t             *prev;
-    struct region_map_t             *next;
-} region_map_t;
-
-// For storing metadata
-typedef struct pdc_metadata_t {
-    int     user_id;                // Both server and client gets it and do security check
-    char    app_name[ADDR_MAX];
-    char    obj_name[ADDR_MAX];
-    int     time_step;
-    // Above four are the unique identifier for objects
-
-    uint64_t obj_id;
-    time_t  create_time;
-    time_t  last_modified_time;
-
-    char    tags[TAG_LEN_MAX];
-    char    data_location[ADDR_MAX];
-
-    int     ndim;
-    int     dims[DIM_MAX];
-
-    // For region storage list
-    region_list_t *storage_region_list_head;
-
-    // For region lock list
-    region_list_t *region_lock_head;
-
-    // For region map
-    region_map_t *region_map_head;
-
-    // For hash table list
-    struct pdc_metadata_t *prev;
-    struct pdc_metadata_t *next;
-    void *bloom;
-
-} pdc_metadata_t;
-
-
 // Similar structure PDC_region_info_t defined in pdc_obj_pkg.h
 // TODO: currently only support upto four dimensions
-typedef struct {
+typedef struct region_info_transfer_t {
     size_t ndim;
     uint64_t start_0, start_1, start_2, start_3;
     uint64_t count_0, count_1, count_2, count_3;
@@ -197,14 +138,6 @@ typedef struct metadata_query_transfer_in_t{
 } metadata_query_transfer_in_t;
 
 typedef struct {
-    PDC_access_t                io_type;   
-    uint32_t                    client_id;
-    int32_t                     nclient;
-    pdc_metadata_t              meta;
-    region_list_t               region;
-} data_server_io_info_t;
-
-typedef struct {
     uint64_t                    obj_id;
     char                        shm_addr[ADDR_MAX];
 } client_read_info_t;
@@ -214,6 +147,74 @@ typedef struct {
     int32_t nclient;
     char client_addr[ADDR_MAX];
 } client_test_connect_args;
+
+typedef struct PDC_mapping_info {
+    pdcid_t                          remote_obj_id;         /* target of object id */
+    pdcid_t                          remote_reg_id;         /* target of region id */
+    int32_t                          remote_client_id;
+    size_t                           remote_ndim;
+    region_info_transfer_t           remote_region;
+    hg_bulk_t                        remote_bulk_handle;
+    PDC_LIST_ENTRY(PDC_mapping_info) entry;
+} PDC_mapping_info_t;
+
+typedef struct region_map_t {
+// if keeping the struct of origin of region is needed?
+    pdc_cnt_t                        mapping_count;        /* count the number of mapping of this region */
+    pdcid_t                          local_obj_id;         /* origin of object id */
+    pdcid_t                          local_reg_id;         /* origin of region id */
+    size_t                           local_ndim;
+    uint64_t                        *local_reg_size;
+    hg_addr_t                        local_addr;
+    hg_bulk_t                        local_bulk_handle;
+    PDC_var_type_t                   local_data_type;
+    PDC_LIST_HEAD(PDC_mapping_info)  ids;                  /* Head of list of IDs */
+
+    struct region_map_t             *prev;
+    struct region_map_t             *next;
+} region_map_t;
+
+// For storing metadata
+typedef struct pdc_metadata_t {
+    int     user_id;                // Both server and client gets it and do security check
+    char    app_name[ADDR_MAX];
+    char    obj_name[ADDR_MAX];
+    int     time_step;
+    // Above four are the unique identifier for objects
+
+    uint64_t obj_id;
+    time_t  create_time;
+    time_t  last_modified_time;
+
+    char    tags[TAG_LEN_MAX];
+    char    data_location[ADDR_MAX];
+
+    int     ndim;
+    int     dims[DIM_MAX];
+
+    // For region storage list
+    region_list_t *storage_region_list_head;
+
+    // For region lock list
+    region_list_t *region_lock_head;
+
+    // For region map
+    region_map_t *region_map_head;
+
+    // For hash table list
+    struct pdc_metadata_t *prev;
+    struct pdc_metadata_t *next;
+    void *bloom;
+
+} pdc_metadata_t;
+
+typedef struct {
+    PDC_access_t                io_type;
+    uint32_t                    client_id;
+    int32_t                     nclient;
+    pdc_metadata_t              meta;
+    region_list_t               region;
+} data_server_io_info_t;
 
 /* #ifdef HG_HAS_BOOST */
 /* MERCURY_GEN_STRUCT_PROC( pdc_metadata_transfer_t, ((int32_t)(user_id)) ((int32_t)(time_step)) ((uint64_t)(obj_id)) ((int32_t)(ndim)) ((int32_t)(dims0)) ((int32_t)(dims1)) ((int32_t)(dims2)) ((int32_t)(dims3)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((hg_const_string_t)(data_location)) ((hg_const_string_t)(tags)) ) */
@@ -1730,7 +1731,14 @@ struct lock_bulk_args {
     struct PDC_region_info *server_region;
     void  *data_buf;
     region_map_t *mapping_list;
-//    hg_handle_t local_bulk_handle;
+    hg_addr_t addr;
+};
+
+struct region_update_bulk_args {
+    hg_handle_t handle;
+    pdcid_t remote_obj_id;
+    pdcid_t remote_reg_id;
+    int32_t remote_client_id;
 };
 
 hg_id_t gen_reg_map_notification_register(hg_class_t *hg_class);
