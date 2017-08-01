@@ -219,22 +219,22 @@ int test2d(char *obj_name)
     }
 
     // Debug print
-    printf("Linearized Data:\n");
-    for (i = 0; i < storage_domain[1]; i++) 
-        printf("%.2llu (%.2llu): %.*s\n", i, storage_domain[0], storage_domain[0], data_2d[i]);
+    /* printf("Linearized Data:\n"); */
+    /* for (i = 0; i < storage_domain[1]; i++) */ 
+    /*     printf("%.2llu (%.2llu): %.*s\n", i, storage_domain[0], storage_domain[0], data_2d[i]); */
 
-    printf("\n\n2D Data by region:\na:\n");
-    for (i = 0; i < storage_size_a[1]; i++) 
-        printf("%.*s\n", storage_size_a[0], data_a_2d[i]);
-    printf("\nb:\n");
-    for (i = 0; i < storage_size_b[1]; i++) 
-        printf("%.*s\n", storage_size_b[0], data_b_2d[i]);
-    printf("\nc:\n");
-    for (i = 0; i < storage_size_c[1]; i++) 
-        printf("%.*s\n", storage_size_c[0], data_c_2d[i]);
-    printf("\nd:\n");
-    for (i = 0; i < storage_size_d[1]; i++) 
-        printf("%.*s\n", storage_size_d[0], data_d_2d[i]);
+    /* printf("\n\n2D Data by region:\na:\n"); */
+    /* for (i = 0; i < storage_size_a[1]; i++) */ 
+    /*     printf("%.*s\n", storage_size_a[0], data_a_2d[i]); */
+    /* printf("\nb:\n"); */
+    /* for (i = 0; i < storage_size_b[1]; i++) */ 
+    /*     printf("%.*s\n", storage_size_b[0], data_b_2d[i]); */
+    /* printf("\nc:\n"); */
+    /* for (i = 0; i < storage_size_c[1]; i++) */ 
+    /*     printf("%.*s\n", storage_size_c[0], data_c_2d[i]); */
+    /* printf("\nd:\n"); */
+    /* for (i = 0; i < storage_size_d[1]; i++) */ 
+    /*     printf("%.*s\n", storage_size_d[0], data_d_2d[i]); */
     
     PDC_Client_write_wait_notify(metadata, &region_a, data_a_2d);
     PDC_Client_write_wait_notify(metadata, &region_b, data_b_2d);
@@ -255,28 +255,36 @@ int test2d(char *obj_name)
 /*     /1* printf("proc%d: read data region: %llu size: %llu\n", rank, read_offset, read_size); *1/ */
 
 
-    char *read_data = (char*)malloc(sizeof(char) * read_size[0]*read_size[1] + 1);
+    char *read_data     = (char*)malloc(sizeof(char) * read_size[0]*read_size[1] + 1);
+    char **read_data_2d = (char**)calloc(sizeof(char*), storage_domain[1]);
+    for (i = 0; i < read_size[1]; i++) 
+        read_data_2d[i] = read_data + i * read_size[0];
 
-    PDC_Client_read_wait_notify(metadata, &read_region, read_data);
+    PDC_Client_read_wait_notify(metadata, &read_region, read_data_2d);
 
     read_data[read_size[0]*read_size[1]] = 0;
 
-    printf("===\nproc%d: read data:\n%s\n===\n", rank, read_data);
+    
+    printf("===\nproc%d: read data:\n", rank);
+    for (i = 0; i < read_size[1]; i++) 
+        printf("[%.*s]\n", read_size[0], read_data_2d[i]);
     fflush(stdout);
 
-/*     int truth_start = read_offset - region_a.offset[0]; */
-/*     int data_start = 0; */
+    int data_start[3] = {0,0,0};
 
-/*     printf("proc%d: Data verfication ...", rank, read_data); */
-/*     if (data_verify(ndim, &data_start, read_region.size, read_data, &truth_start, data) != 1) */ 
-/*         printf("FAILED!\n"); */
-/*     else */
-/*         printf("SUCCEED!\n"); */
+    printf("proc%d: Data verfication ...", rank, read_data);
+    if (data_verify(ndim, read_offset, read_region.size, data, data_start, read_data) != 1) 
+        printf("FAILED!\n");
+    else
+        printf("SUCCEED!\n");
     
 
 done:
     free(data);
     free(data_2d);
+
+    free(read_data);
+    free(read_data_2d);
 
     return 1;
 }

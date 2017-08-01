@@ -2318,7 +2318,7 @@ hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *call
     uint64_t data_size = 1;
     client_read_info_t *read_info = NULL;
     PDC_Request_t *elt = NULL;
-    region_list_t *target_region = NULL;
+    struct PDC_region_info *target_region = NULL;
 
     FUNC_ENTER(NULL);
 
@@ -2342,7 +2342,7 @@ hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *call
     // Calculate data_size, TODO: this should be done in other places?
     data_size = 1;
     for (i = 0; i < target_region->ndim; i++) {
-        data_size *= target_region->count[i];
+        data_size *= target_region->size[i];
     }
 
     /* printf("PDC_CLIENT: PDC_Client_get_data_from_server_shm - shm_addr=[%s]\n", shm_addr); */
@@ -2371,17 +2371,17 @@ hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *call
     }
     else if (target_region->ndim == 2) {
         char **buf_2d = (char**)elt->buf;
-        for (i = 0; i < target_region->count[1]; i++) {
-            memcpy(buf_2d[i], shm_base + i*target_region->count[0], target_region->count[0]);
+        for (i = 0; i < target_region->size[1]; i++) {
+            memcpy(buf_2d[i], shm_base + i*target_region->size[0], target_region->size[0]);
         }
     }
     else if (target_region->ndim == 3) {
         char ***buf_3d = *(char**)elt->buf;
-        for (j = 0; j < target_region->count[2]; j++) {
-            for (i = 0; i < target_region->count[1]; i++) {
-                memcpy(buf_3d[j][i], shm_base + i*target_region->count[0] + 
-                                                j*target_region->count[0]*target_region->count[1], 
-                                     target_region->count[0]);
+        for (j = 0; j < target_region->size[2]; j++) {
+            for (i = 0; i < target_region->size[1]; i++) {
+                memcpy(buf_3d[j][i], shm_base + i*target_region->size[0] + 
+                                                j*target_region->size[0]*target_region->size[1], 
+                                     target_region->size[0]);
             }
         }
     }
@@ -2781,8 +2781,8 @@ perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t 
         char **buf_2d = buf;
         for (i = 0; i < region->size[1]; i++) {
             memcpy(shm_base + i*region->size[0], buf_2d[i], region->size[0]);
-            printf("==PDC_CLIENT[%d]: write memcpy [%.*s]\n", 
-                    pdc_client_mpi_rank_g, region->size[0], buf_2d[i]);
+            /* printf("==PDC_CLIENT[%d]: write memcpy [%.*s]\n", */ 
+            /*         pdc_client_mpi_rank_g, region->size[0], buf_2d[i]); */
         }
     }
     else if (region->ndim == 3) {

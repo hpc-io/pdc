@@ -3795,6 +3795,7 @@ perr_t PDC_Server_data_read_to_shm(region_list_t *region_list_head, uint64_t obj
 
     // POSIX read for now 
     ret_value = PDC_Server_regions_io(region_list_head, POSIX);
+            /* status = PDC_Server_data_write_real(io_list_target); */
     if (ret_value != SUCCEED) {
         printf("==PDC_SERVER: error reading data from storage and create shared memory\n");
         goto done;
@@ -4155,8 +4156,8 @@ perr_t PDC_Server_data_write_from_shm(region_list_t *region_list_head)
             ret_value = FAIL;
             goto done;
         }
-        printf("==PDC_SERVER[%d]: PDC_Server_data_write_from_shm buf [%.*s]\n", 
-                pdc_server_rank_g, elt->data_size, elt->buf);
+        /* printf("==PDC_SERVER[%d]: PDC_Server_data_write_from_shm buf [%.*s]\n", */ 
+        /*         pdc_server_rank_g, elt->data_size, elt->buf); */
     }
 
     // POSIX write 
@@ -4268,7 +4269,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
 
     // Check if we have received all requests 
     if (io_list_target->count == io_list_target->total) {
-        printf("==PDC_SERVER[%d]: received all %d requests, start %s data to [%s]\n", pdc_server_rank_g, io_list_target->total, io_info->io_type == READ? "reading": "writing", io_list_target->path);
+        printf("==PDC_SERVER[%d]: received all %d requests, starts %s [%s]\n", pdc_server_rank_g, io_list_target->total, io_info->io_type == READ? "reading from ": "writing to ", io_list_target->path);
         if (io_info->io_type == READ) {
 
             /* DL_FOREACH(io_list_target->region_list_head, region_elt) */ 
@@ -4291,8 +4292,8 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
         }
 
         if (status != SUCCEED) {
-            printf("==PDC_SERVER: ERROR %s data to file [%s]!\n", 
-                    io_info->io_type == WRITE? "writing": "reading", io_list_target->path);
+            printf("==PDC_SERVER: ERROR %s [%s]!\n", 
+                    io_info->io_type == WRITE? "writing to": "reading from", io_list_target->path);
             ret_value = FAIL;
             goto done;
         }
@@ -4925,11 +4926,13 @@ perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
     // Check if the entire storage region is selected
     is_all_selected = 1;
     for (i = 0; i < ndim; i++) {
-        if (overlap_start[i] != storage_start[i] && overlap_count[i] != storage_count[i]) {
-            is_all_selected = 0;
+        if (overlap_start[i] != storage_start[i] || overlap_count[i] != storage_count[i]) {
+            is_all_selected = -1;
             break;
         }
     }
+
+    /* printf("ndim = %" PRIu64 ", is_all_selected=%d\n", ndim, is_all_selected); */
 
     // TODO: additional optimization to check if any dimension is entirely selected
     if (ndim == 1 || is_all_selected == 1) {
@@ -4941,14 +4944,16 @@ perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
         }
 
         // Can read the entire storage region at once
-        read_bytes += fread(buf+buf_offset, 1, total_bytes, fp);
+        read_bytes = fread(buf+buf_offset, 1, total_bytes, fp);
         if (read_bytes != total_bytes) {
             printf("==PDC_SERVER[%d]: PDC_Server_read_overlap_regions() fread failed!\n", pdc_server_rank_g);
             ret_value= FAIL;
             goto done;
         }
         *total_read_bytes += read_bytes;
-    }
+        /* printf("Read entire storage region, size=%" PRIu64 ": [%.*s]\n", read_bytes, */ 
+        /*                                 read_bytes, buf+buf_offset); */
+    } // end if
     else {
         // NOTE: assuming row major, read overlapping region row by row
         if (ndim == 2) {
@@ -4960,14 +4965,16 @@ perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
                     fseek (fp, storage_count[0] - overlap_count[0], SEEK_CUR);
                     row_offset += i * req_count[0];
                 }
-                read_bytes += fread(buf+buf_offset+row_offset, 1, overlap_count[0], fp);
-                if (read_bytes != total_bytes) {
+                read_bytes = fread(buf+buf_offset+row_offset, 1, overlap_count[0], fp);
+                if (read_bytes != overlap_count[0]) {
                     printf("==PDC_SERVER[%d]: PDC_Server_read_overlap_regions() fread failed!\n", 
                            pdc_server_rank_g);
                     ret_value= FAIL;
                     goto done;
                 }
                 *total_read_bytes += read_bytes;
+                /* printf("Row %" PRIu64 ", Read data size=%" PRIu64 ": [%.*s]\n", i, overlap_count[0], */ 
+                /*                                 overlap_count[0], buf+buf_offset+row_offset); */
             } // for each row
         } // ndim=2
         else if (ndim == 3) {
@@ -4982,7 +4989,7 @@ perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
                         fseek (fp, storage_count[0] - overlap_count[0], SEEK_CUR);
                         row_offset += i * req_count[0];
                     }
-                    read_bytes += fread(buf+buf_offset+row_offset+j*req_count[0]*req_count[1], 
+                    read_bytes = fread(buf+buf_offset+row_offset+j*req_count[0]*req_count[1], 
                                          1, overlap_count[0], fp);
                     if (read_bytes != overlap_count[0]) {
                         printf("==PDC_SERVER[%d]: PDC_Server_read_overlap_regions() fread failed!\n", 
@@ -4996,7 +5003,7 @@ perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
 
         }
 
-    }
+    } // end else (ndim != 1 && !is_all_selected);
 
 
     if (total_bytes != *total_read_bytes) {
@@ -5059,6 +5066,8 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
                                                                             pdc_server_rank_g);
                 goto done;
             }
+
+            /* printf("PDC_SERVER: Read %d storage regions.\n", n_storage_regions); */
 
             // Now for each storage region that overlaps with request region, 
             // read with the corresponding offset and size
