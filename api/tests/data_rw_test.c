@@ -81,215 +81,6 @@ int data_verify(int ndim, int *start, int *count, char *data, int *truth_start, 
     return 1;
 }
 
-int test2d(char *obj_name)
-{
-
-    pdcid_t obj_id;
-    pdc_metadata_t *metadata;
-    struct PDC_region_info region_a;
-    struct PDC_region_info region_b;
-    struct PDC_region_info region_c;
-    struct PDC_region_info region_d;
-    struct PDC_region_info read_region;
-    uint64_t storage_offset_a[3], storage_offset_b[3], storage_offset_c[3], storage_offset_d[3], read_offset[3];
-    uint64_t storage_size_a[3], storage_size_b[3], storage_size_c[3], storage_size_d[3], read_size[3];
-    uint64_t prob_domain[3], storage_domain[3], sel_offset[3], sel_size[3];
-    uint64_t i,j;
-
-    uint32_t ndim = 2;
-    prob_domain[0] = 25;
-    prob_domain[1] = 25;
-    prob_domain[2] =  0;
-
-    obj_id = create_obj(obj_name, ndim, prob_domain);
-    if (obj_id < 0) {
-        printf("[%d]: Error creating an object [%s]\n", rank, obj_name);
-        exit(-1);
-    }
-
-#ifdef ENABLE_MPI
-     MPI_Barrier(MPI_COMM_WORLD);
-#endif
-
-    /* sleep(rank*3); */
-
-    // Query the created object
-    PDC_Client_query_metadata_name_timestep(obj_name, 0, &metadata);
-    if (metadata == NULL) {
-        printf("Error getting metadata from server!\n");
-        exit(-1);
-    }
-
-    // Storage Regions  start     size
-    //            a      5,10     4, 6
-    //            b      9,10    11, 6
-    //            c      5,16     4, 9
-    //            d      9,16    11, 9
-    //            
-    //         5       9               25                 8             18
-    //    |-----------------------------|        |-----------------------------|
-    //    |                             |        |                             |
-    //    |                             |        |                             |
-    // 10 |    |-------|----------------|        |                             |
-    //    |    |   a   |       b        |     14 |        |--------------|     |
-    // 16 |    |-------|----------------|        |        |  selection   |     |
-    //    |    |       |                |     18 |        |--------------|     |
-    //    |    |   c   |       d        |        |                             |
-    //    |    |       |                |        |                             |
-    // 25 |----|-------|----------------|        |------------ ----------------|
-
-    storage_offset_a[0] =  5 + rank*prob_domain[0]*prob_domain[1];
-    storage_offset_b[0] =  9 + rank*prob_domain[0]*prob_domain[1];
-    storage_offset_c[0] =  5 + rank*prob_domain[0]*prob_domain[1];
-    storage_offset_d[0] =  9 + rank*prob_domain[0]*prob_domain[1];
-
-    storage_offset_a[1] = 10 + rank*prob_domain[0]*prob_domain[1];
-    storage_offset_b[1] = 10 + rank*prob_domain[0]*prob_domain[1];
-    storage_offset_c[1] = 16 + rank*prob_domain[0]*prob_domain[1];
-    storage_offset_d[1] = 16 + rank*prob_domain[0]*prob_domain[1];
-
-    storage_size_a[0]   =  4;
-    storage_size_b[0]   = 16;
-    storage_size_c[0]   =  4;
-    storage_size_d[0]   = 16;
-
-    storage_size_a[1]   =  6;
-    storage_size_b[1]   =  6;
-    storage_size_c[1]   =  9;
-    storage_size_d[1]   =  9;
-
-    storage_domain[0]   = storage_size_a[0] + storage_size_b[0]; // 20
-    storage_domain[1]   = storage_size_a[1] + storage_size_c[1]; // 15
-    storage_domain[2]   =  1;
-
-    region_a.ndim       = ndim;
-    region_b.ndim       = ndim;
-    region_c.ndim       = ndim;
-    region_d.ndim       = ndim;
-
-    region_a.offset     = storage_offset_a;
-    region_b.offset     = storage_offset_b;
-    region_c.offset     = storage_offset_c;
-    region_d.offset     = storage_offset_d;
-
-    region_a.size       = storage_size_a;
-    region_b.size       = storage_size_b;
-    region_c.size       = storage_size_c;
-    region_d.size       = storage_size_d;
-
-    // Now data selection
-    sel_offset[0] =  8;
-    sel_offset[1] = 14;
-    sel_size[0]   = 10;
-    sel_size[0]   =  4;
-    
-    int data_total_size = storage_domain[0] * storage_domain[1];
-    char *data          = ( char*)calloc(sizeof(char) , data_total_size);
-    char **data_2d      = (char**)calloc(sizeof(char*), storage_domain[1]);
-    for (i = 0; i < storage_domain[1]; i++) 
-        data_2d[i] = data + i * storage_domain[0];
-   
-    char **data_a_2d = (char**)malloc(sizeof(char*) * storage_size_a[1]); 
-    char **data_b_2d = (char**)malloc(sizeof(char*) * storage_size_b[1]); 
-    char **data_c_2d = (char**)malloc(sizeof(char*) * storage_size_c[1]); 
-    char **data_d_2d = (char**)malloc(sizeof(char*) * storage_size_d[1]); 
-
-    for (i = 0; i < storage_size_a[1]; i++) {
-        data_a_2d[i] = data_2d[i];
-        for (j = 0; j < storage_size_a[0]; j++) 
-            data_a_2d[i][j] = (i+j) % 4 + 'A';
-    }
-
-    for (i = 0; i < storage_size_b[1]; i++) {
-        data_b_2d[i] = data_2d[i] + storage_size_a[0];
-        for (j = 0; j < storage_size_b[0]; j++) 
-            data_b_2d[i][j] = (i+j) % 12 + 'a' + 6;
-    }
- 
-    for (i = 0; i < storage_size_c[1]; i++) {
-        data_c_2d[i] = data_2d[i+storage_size_a[1]];
-        for (j = 0; j < storage_size_c[0]; j++) 
-            data_c_2d[i][j] = (i+j) % 4 + 'a' + 14;
-    }
- 
-    for (i = 0; i < storage_size_d[1]; i++) {
-        data_d_2d[i] = data_2d[i+storage_size_a[1]] + storage_size_a[0];
-        for (j = 0; j < storage_size_d[0]; j++) 
-            data_d_2d[i][j] = (i+j) % 5 + 'A' + 20;
-    }
-
-    // Debug print
-    /* printf("Linearized Data:\n"); */
-    /* for (i = 0; i < storage_domain[1]; i++) */ 
-    /*     printf("%.2llu (%.2llu): %.*s\n", i, storage_domain[0], storage_domain[0], data_2d[i]); */
-
-    /* printf("\n\n2D Data by region:\na:\n"); */
-    /* for (i = 0; i < storage_size_a[1]; i++) */ 
-    /*     printf("%.*s\n", storage_size_a[0], data_a_2d[i]); */
-    /* printf("\nb:\n"); */
-    /* for (i = 0; i < storage_size_b[1]; i++) */ 
-    /*     printf("%.*s\n", storage_size_b[0], data_b_2d[i]); */
-    /* printf("\nc:\n"); */
-    /* for (i = 0; i < storage_size_c[1]; i++) */ 
-    /*     printf("%.*s\n", storage_size_c[0], data_c_2d[i]); */
-    /* printf("\nd:\n"); */
-    /* for (i = 0; i < storage_size_d[1]; i++) */ 
-    /*     printf("%.*s\n", storage_size_d[0], data_d_2d[i]); */
-    
-    PDC_Client_write_wait_notify(metadata, &region_a, data_a_2d);
-    PDC_Client_write_wait_notify(metadata, &region_b, data_b_2d);
-    PDC_Client_write_wait_notify(metadata, &region_c, data_c_2d);
-    PDC_Client_write_wait_notify(metadata, &region_d, data_d_2d);
-
-    read_offset[0] =  8 + rank*prob_domain[0];
-    read_offset[1] = 14 + rank*prob_domain[1];
-    read_size[0]   = 10;
-    read_size[1]   = 4;
-    read_region.ndim   = ndim;
-    read_region.offset = read_offset;
-    read_region.size   = read_size;
-
-
-/*     /1* printf("proc%d: write data [%s]\n", rank, data); *1/ */
-
-/*     /1* printf("proc%d: read data region: %llu size: %llu\n", rank, read_offset, read_size); *1/ */
-
-
-    char *read_data     = (char*)malloc(sizeof(char) * read_size[0]*read_size[1] + 1);
-    char **read_data_2d = (char**)calloc(sizeof(char*), storage_domain[1]);
-    for (i = 0; i < read_size[1]; i++) 
-        read_data_2d[i] = read_data + i * read_size[0];
-
-    PDC_Client_read_wait_notify(metadata, &read_region, read_data_2d);
-
-    read_data[read_size[0]*read_size[1]] = 0;
-
-    
-    printf("===\nproc%d: read data:\n", rank);
-    for (i = 0; i < read_size[1]; i++) 
-        printf("[%.*s]\n", read_size[0], read_data_2d[i]);
-    fflush(stdout);
-
-    int data_start[3] = {0,0,0};
-
-    printf("proc%d: Data verfication ...", rank, read_data);
-    if (data_verify(ndim, read_offset, read_region.size, data, data_start, read_data) != 1) 
-        printf("FAILED!\n");
-    else
-        printf("SUCCEED!\n");
-    
-
-done:
-    free(data);
-    free(data_2d);
-
-    free(read_data);
-    free(read_data_2d);
-
-    return 1;
-}
-
-
 int test1d(char *obj_name)
 {
 
@@ -422,6 +213,215 @@ done:
     return 1;
 }
 
+
+int test2d(char *obj_name)
+{
+
+    pdcid_t obj_id;
+    pdc_metadata_t *metadata;
+    struct PDC_region_info region_a;
+    struct PDC_region_info region_b;
+    struct PDC_region_info region_c;
+    struct PDC_region_info region_d;
+    struct PDC_region_info read_region;
+    uint64_t storage_offset_a[3], storage_offset_b[3], storage_offset_c[3], storage_offset_d[3], read_offset[3];
+    uint64_t storage_size_a[3], storage_size_b[3], storage_size_c[3], storage_size_d[3], read_size[3];
+    uint64_t prob_domain[3], storage_domain[3], sel_offset[3], sel_size[3];
+    uint64_t i,j;
+
+    uint32_t ndim = 2;
+    prob_domain[0] = 25 * size;
+    prob_domain[1] = 25 * size;
+    prob_domain[2] =  0;
+
+    obj_id = create_obj(obj_name, ndim, prob_domain);
+    if (obj_id < 0) {
+        printf("[%d]: Error creating an object [%s]\n", rank, obj_name);
+        exit(-1);
+    }
+
+#ifdef ENABLE_MPI
+     MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
+    /* sleep(rank*3); */
+
+    // Query the created object
+    PDC_Client_query_metadata_name_timestep(obj_name, 0, &metadata);
+    if (metadata == NULL) {
+        printf("Error getting metadata from server!\n");
+        exit(-1);
+    }
+
+    // Storage Regions  start     size
+    //            a      5,10     4, 6
+    //            b      9,10    11, 6
+    //            c      5,16     4, 9
+    //            d      9,16    11, 9
+    //            
+    //         5       9               25                 8             18
+    //    |-----------------------------|        |-----------------------------|
+    //    |                             |        |                             |
+    //    |                             |        |                             |
+    // 10 |    |-------|----------------|        |                             |
+    //    |    |   a   |       b        |     14 |        |--------------|     |
+    // 16 |    |-------|----------------|        |        |  selection   |     |
+    //    |    |       |                |     18 |        |--------------|     |
+    //    |    |   c   |       d        |        |                             |
+    //    |    |       |                |        |                             |
+    // 25 |----|-------|----------------|        |------------ ----------------|
+
+    storage_offset_a[0] =  5 + rank*prob_domain[0];
+    storage_offset_b[0] =  9 + rank*prob_domain[0];
+    storage_offset_c[0] =  5 + rank*prob_domain[0];
+    storage_offset_d[0] =  9 + rank*prob_domain[0];
+
+    storage_offset_a[1] = 10 + rank*prob_domain[1];
+    storage_offset_b[1] = 10 + rank*prob_domain[1];
+    storage_offset_c[1] = 16 + rank*prob_domain[1];
+    storage_offset_d[1] = 16 + rank*prob_domain[1];
+
+    storage_size_a[0]   =  4;
+    storage_size_b[0]   = 16;
+    storage_size_c[0]   =  4;
+    storage_size_d[0]   = 16;
+
+    storage_size_a[1]   =  6;
+    storage_size_b[1]   =  6;
+    storage_size_c[1]   =  9;
+    storage_size_d[1]   =  9;
+
+    storage_domain[0]   = (storage_size_a[0] + storage_size_b[0]) * size; // 20
+    storage_domain[1]   = (storage_size_a[1] + storage_size_c[1]) * size; // 15
+    storage_domain[2]   =  1;
+
+    region_a.ndim       = ndim;
+    region_b.ndim       = ndim;
+    region_c.ndim       = ndim;
+    region_d.ndim       = ndim;
+
+    region_a.offset     = storage_offset_a;
+    region_b.offset     = storage_offset_b;
+    region_c.offset     = storage_offset_c;
+    region_d.offset     = storage_offset_d;
+
+    region_a.size       = storage_size_a;
+    region_b.size       = storage_size_b;
+    region_c.size       = storage_size_c;
+    region_d.size       = storage_size_d;
+
+    // Now data selection
+    sel_offset[0] =  8 + rank*prob_domain[0];
+    sel_offset[1] = 14 + rank*prob_domain[1];
+    sel_size[0]   = 10;
+    sel_size[0]   =  4;
+    
+    int data_total_size = storage_domain[0] * storage_domain[1];
+    char *data          = ( char*)calloc(sizeof(char) , data_total_size);
+    char **data_2d      = (char**)calloc(sizeof(char*), storage_domain[1]);
+    for (i = 0; i < storage_domain[1]; i++) 
+        data_2d[i] = data + i * storage_domain[0];
+   
+    char **data_a_2d = (char**)malloc(sizeof(char*) * storage_size_a[1]); 
+    char **data_b_2d = (char**)malloc(sizeof(char*) * storage_size_b[1]); 
+    char **data_c_2d = (char**)malloc(sizeof(char*) * storage_size_c[1]); 
+    char **data_d_2d = (char**)malloc(sizeof(char*) * storage_size_d[1]); 
+
+    for (i = 0; i < storage_size_a[1]; i++) {
+        data_a_2d[i] = data_2d[i];
+        for (j = 0; j < storage_size_a[0]; j++) 
+            data_a_2d[i][j] = (i+j) % 4 + 'A';
+    }
+
+    for (i = 0; i < storage_size_b[1]; i++) {
+        data_b_2d[i] = data_2d[i] + storage_size_a[0];
+        for (j = 0; j < storage_size_b[0]; j++) 
+            data_b_2d[i][j] = (i+j) % 12 + 'a' + 6;
+    }
+ 
+    for (i = 0; i < storage_size_c[1]; i++) {
+        data_c_2d[i] = data_2d[i+storage_size_a[1]];
+        for (j = 0; j < storage_size_c[0]; j++) 
+            data_c_2d[i][j] = (i+j) % 4 + 'a' + 14;
+    }
+ 
+    for (i = 0; i < storage_size_d[1]; i++) {
+        data_d_2d[i] = data_2d[i+storage_size_a[1]] + storage_size_a[0];
+        for (j = 0; j < storage_size_d[0]; j++) 
+            data_d_2d[i][j] = (i+j) % 5 + 'A' + 20;
+    }
+
+    // Debug print
+    /* printf("Linearized Data:\n"); */
+    /* for (i = 0; i < storage_domain[1]; i++) */ 
+    /*     printf("%.2llu (%.2llu): %.*s\n", i, storage_domain[0], storage_domain[0], data_2d[i]); */
+
+    /* printf("\n\n2D Data by region:\na:\n"); */
+    /* for (i = 0; i < storage_size_a[1]; i++) */ 
+    /*     printf("%.*s\n", storage_size_a[0], data_a_2d[i]); */
+    /* printf("\nb:\n"); */
+    /* for (i = 0; i < storage_size_b[1]; i++) */ 
+    /*     printf("%.*s\n", storage_size_b[0], data_b_2d[i]); */
+    /* printf("\nc:\n"); */
+    /* for (i = 0; i < storage_size_c[1]; i++) */ 
+    /*     printf("%.*s\n", storage_size_c[0], data_c_2d[i]); */
+    /* printf("\nd:\n"); */
+    /* for (i = 0; i < storage_size_d[1]; i++) */ 
+    /*     printf("%.*s\n", storage_size_d[0], data_d_2d[i]); */
+    
+    PDC_Client_write_wait_notify(metadata, &region_a, data_a_2d);
+    PDC_Client_write_wait_notify(metadata, &region_b, data_b_2d);
+    PDC_Client_write_wait_notify(metadata, &region_c, data_c_2d);
+    PDC_Client_write_wait_notify(metadata, &region_d, data_d_2d);
+
+    read_offset[0] =  8 + rank*prob_domain[0];
+    read_offset[1] = 14 + rank*prob_domain[1];
+    read_size[0]   = 10;
+    read_size[1]   = 4;
+    read_region.ndim   = ndim;
+    read_region.offset = read_offset;
+    read_region.size   = read_size;
+
+
+/*     /1* printf("proc%d: write data [%s]\n", rank, data); *1/ */
+
+/*     /1* printf("proc%d: read data region: %llu size: %llu\n", rank, read_offset, read_size); *1/ */
+
+
+    char *read_data     = (char*)malloc(sizeof(char) * read_size[0]*read_size[1] + 1);
+    char **read_data_2d = (char**)calloc(sizeof(char*), storage_domain[1]);
+    for (i = 0; i < read_size[1]; i++) 
+        read_data_2d[i] = read_data + i * read_size[0];
+
+    PDC_Client_read_wait_notify(metadata, &read_region, read_data_2d);
+
+    read_data[read_size[0]*read_size[1]] = 0;
+
+    
+    printf("===\nproc%d: read data:\n", rank);
+    for (i = 0; i < read_size[1]; i++) 
+        printf("[%.*s]\n", read_size[0], read_data_2d[i]);
+    fflush(stdout);
+
+    int data_start[3] = {0,0,0};
+
+    printf("proc%d: Data verfication ...", rank, read_data);
+    if (data_verify(ndim, read_offset, read_region.size, data, data_start, read_data) != 1) 
+        printf("FAILED!\n");
+    else
+        printf("SUCCEED!\n");
+    
+
+done:
+    free(data);
+    free(data_2d);
+
+    free(read_data);
+    free(read_data_2d);
+
+    return 1;
+}
+
 int main(int argc, const char *argv[])
 {
 
@@ -444,14 +444,12 @@ int main(int argc, const char *argv[])
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
-    char obj_name[128];
-    /* sprintf(obj_name, "test_obj_1d_rank_%d", rank); */
-    sprintf(obj_name, "test_obj_1d");
 
-    /* test1d(obj_name); */
-    test2d(obj_name);
+    test1d("test_obj_1d");
 
+    test2d("test_obj_2d");
 
+    /* test3d("test_obj_3d"); */
 
 done:
     // close a container property
