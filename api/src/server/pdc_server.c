@@ -81,7 +81,7 @@ hg_thread_mutex_t data_write_list_mutex_g;
 #define BLOOM_FREE   free_counting_bloom
 
 // Global debug variable to control debug printfs
-int is_debug_g = 1;
+int is_debug_g = 0;
 int pdc_client_num_g = 0;
 
 hg_class_t   *hg_class_g   = NULL;
