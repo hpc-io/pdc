@@ -137,18 +137,31 @@ pdc_data_server_io_list_t *pdc_data_server_read_list_head_g = NULL;
 pdc_data_server_io_list_t *pdc_data_server_write_list_head_g = NULL;
 
 
+//TODO: Add description of the following function
+/**
+    Function name: PDC_Server_metadata_int_equal 
+    Arguments: 
+	vlocation1: ???
+	vlocation2: ???
+    Return value: 
+    Description:
+	- 
+	- 
+*/
 static int 
 PDC_Server_metadata_int_equal(hg_hash_table_key_t vlocation1, hg_hash_table_key_t vlocation2)
 {
     return *((uint32_t *) vlocation1) == *((uint32_t *) vlocation2);
 }
 
+//TODO: Add description of the following function
 static unsigned int
 PDC_Server_metadata_int_hash(hg_hash_table_key_t vlocation)
 {
     return *((uint32_t *) vlocation);
 }
 
+//TODO: Add description of the following function
 static void
 PDC_Server_metadata_int_hash_key_free(hg_hash_table_key_t key)
 {
@@ -170,6 +183,7 @@ PDC_Server_metadata_int_hash_key_free(hg_hash_table_key_t key)
 /* } */
 
 
+//TODO: Add description of the following function
 static void
 PDC_Server_metadata_hash_value_free(hg_hash_table_value_t value)
 {
@@ -209,6 +223,7 @@ PDC_Server_metadata_hash_value_free(hg_hash_table_value_t value)
 /*     a->next                 = NULL; */
 /* } */
 
+//TODO: Add description of the following function
 perr_t PDC_Server_remote_server_info_init(pdc_remote_server_info_t *info)
 {
     perr_t ret_value = SUCCEED;
@@ -233,6 +248,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 void PDC_Server_metadata_init(pdc_metadata_t* a)
 {
     int i;
@@ -261,6 +277,7 @@ void PDC_Server_metadata_init(pdc_metadata_t* a)
 }
 // ^ hash table
 
+//TODO: Add description of the following function
 static inline void combine_obj_info_to_string(pdc_metadata_t *metadata, char *output)
 {
     /* sprintf(output, "%d%s%s%d", metadata->user_id, metadata->app_name, metadata->obj_name, metadata->time_step); */
@@ -289,6 +306,7 @@ static inline void combine_obj_info_to_string(pdc_metadata_t *metadata, char *ou
 /*     FUNC_LEAVE(ret_value); */
 /* } */ 
 
+//TODO: Add description of the following function
 perr_t PDC_Server_check_response(hg_context_t **hg_context)
 {
     perr_t ret_value;
@@ -316,6 +334,7 @@ perr_t PDC_Server_check_response(hg_context_t **hg_context)
 }
 
 
+//TODO: Add description of the following function
 static hg_return_t
 server_lookup_client_rpc_cb(const struct hg_cb_info *callback_info)
 {
@@ -339,6 +358,7 @@ server_lookup_client_rpc_cb(const struct hg_cb_info *callback_info)
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 // Callback function for HG_Addr_lookup()
 static hg_return_t
 PDC_Server_lookup_client_cb(const struct hg_cb_info *callback_info)
@@ -381,6 +401,7 @@ PDC_Server_lookup_client_cb(const struct hg_cb_info *callback_info)
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 static perr_t PDC_Server_lookup_client(uint32_t client_id)
 {
     perr_t ret_value = SUCCEED;
@@ -434,6 +455,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 perr_t PDC_client_info_init(pdc_client_info_t* a)
 {
     perr_t ret_value = SUCCEED;
@@ -459,6 +481,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info)
 {
     hg_return_t ret_value = HG_SUCCESS;
@@ -504,6 +527,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 static pdc_metadata_t * find_metadata_by_id_and_hash_key(uint64_t obj_id, uint32_t hash_key) 
 {
     pdc_metadata_t *ret_value = NULL;
@@ -529,7 +553,7 @@ static pdc_metadata_t * find_metadata_by_id_and_hash_key(uint64_t obj_id, uint32
 
     }  // if (metadata_hash_table_g != NULL)
     else {
-        printf("==PDC_SERVER: metadata_hash_table_g not initilized!\n");
+        printf("==PDC_SERVER: metadata_hash_table_g not initialized!\n");
         ret_value = NULL;
         goto done;
     }
@@ -538,6 +562,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 static pdc_metadata_t * find_metadata_by_id_from_list(pdc_metadata_t *mlist, uint64_t obj_id) 
 {
     pdc_metadata_t *ret_value, *elt;
@@ -561,6 +586,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 // Iterate through all metadata stored in the hash table 
 static pdc_metadata_t * find_metadata_by_id(uint64_t obj_id) 
 {
@@ -589,7 +615,7 @@ static pdc_metadata_t * find_metadata_by_id(uint64_t obj_id)
         }
     }  // if (metadata_hash_table_g != NULL)
     else {
-        printf("==PDC_SERVER: metadata_hash_table_g not initilized!\n");
+        printf("==PDC_SERVER: metadata_hash_table_g not initialized!\n");
         ret_value = NULL;
         goto done;
     }
@@ -598,6 +624,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id)
 {
     pdc_metadata_t *ret_value = NULL;
@@ -610,6 +637,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 static pdc_metadata_t * find_identical_metadata(pdc_hash_table_entry_head *entry, pdc_metadata_t *a)
 {
     pdc_metadata_t *ret_value = NULL;
@@ -618,7 +646,7 @@ static pdc_metadata_t * find_identical_metadata(pdc_hash_table_entry_head *entry
     
     FUNC_ENTER(NULL);
 
-/*     printf("==PDC_SERVER: quering with:\n"); */
+/*     printf("==PDC_SERVER: querying with:\n"); */
 /*     PDC_print_metadata(a); */
 /*     fflush(stdout); */
 
@@ -713,6 +741,7 @@ done:
 } 
 
 
+//TODO: Add description of the following function
 void PDC_Server_print_version()
 {
     unsigned major, minor, patch;
@@ -724,6 +753,7 @@ void PDC_Server_print_version()
     return;
 }
 
+//TODO: Add description of the following function
 static uint64_t PDC_Server_gen_obj_id()
 {
     uint64_t ret_value;
@@ -736,6 +766,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 perr_t PDC_Server_write_addr_to_file(char** addr_strings, int n)
 {
     perr_t ret_value = SUCCEED;;
@@ -764,6 +795,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 static perr_t PDC_Server_init_hash_table()
 {
     perr_t ret_value = SUCCEED;
@@ -791,6 +823,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 static perr_t PDC_Server_remove_from_bloom(pdc_metadata_t *metadata, BLOOM_TYPE_T *bloom)
 {
     perr_t ret_value = SUCCEED;
@@ -813,6 +846,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 static perr_t PDC_Server_add_to_bloom(pdc_metadata_t *metadata, BLOOM_TYPE_T *bloom)
 {
     perr_t ret_value = SUCCEED;
@@ -841,6 +875,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 static perr_t PDC_Server_bloom_init(pdc_hash_table_entry_head *entry, BLOOM_TYPE_T *bloom)
 {
     perr_t      ret_value = 0;
@@ -886,6 +921,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 static perr_t PDC_Server_hash_table_list_insert(pdc_hash_table_entry_head *head, pdc_metadata_t *new)
 {
     perr_t ret_value = SUCCEED;
@@ -923,6 +959,7 @@ static perr_t PDC_Server_hash_table_list_insert(pdc_hash_table_entry_head *head,
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 static perr_t PDC_Server_hash_table_list_init(pdc_hash_table_entry_head *entry, uint32_t *hash_key)
 {
     
@@ -985,7 +1022,7 @@ done:
 
 /*     uint32_t *hash_key = (uint32_t*)malloc(sizeof(uint32_t)); */
 /*     if (hash_key == NULL) { */
-/*         printf("Cannnot allocate hash_key!\n"); */
+/*         printf("Cannot allocate hash_key!\n"); */
 /*         goto done; */
 /*     } */
 /*     total_mem_usage_g += sizeof(uint32_t); */
@@ -994,7 +1031,7 @@ done:
 
 /*     pdc_metadata_name_mark_t *namemark= (pdc_metadata_name_mark_t*)malloc(sizeof(pdc_metadata_name_mark_t)); */
 /*     if (namemark == NULL) { */
-/*         printf("==PDC_SERVER: ERROR - Cannnot allocate pdc_metadata_name_mark_t!\n"); */
+/*         printf("==PDC_SERVER: ERROR - Cannot allocate pdc_metadata_name_mark_t!\n"); */
 /*         goto done; */
 /*     } */
 /*     total_mem_usage_g += sizeof(pdc_metadata_name_mark_t); */
@@ -1046,7 +1083,7 @@ done:
 /*         } */
 /*     } */
 /*     else { */
-/*         printf("metadata_hash_table_g not initilized!\n"); */
+/*         printf("metadata_hash_table_g not initialized!\n"); */
 /*         ret_value = -1; */
 /*         goto done; */
 /*     } */
@@ -1061,6 +1098,7 @@ done:
 /*     FUNC_LEAVE(ret_value); */
 /* } */
 
+//TODO: Add description of the following function
 perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *out)
 {
 
@@ -1082,7 +1120,7 @@ perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_o
 
     uint32_t *hash_key = (uint32_t*)malloc(sizeof(uint32_t));
     if (hash_key == NULL) {
-        printf("==PDC_SERVER: Cannnot allocate hash_key!\n");
+        printf("==PDC_SERVER: Cannot allocate hash_key!\n");
         goto done;
     }
     total_mem_usage_g += sizeof(uint32_t);
@@ -1148,7 +1186,7 @@ perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_o
 
     } // if (metadata_hash_table_g != NULL)
     else {
-        printf("==PDC_SERVER: metadata_hash_table_g not initilized!\n");
+        printf("==PDC_SERVER: metadata_hash_table_g not initialized!\n");
         ret_value = -1;
         out->ret = -1;
         goto done;
@@ -1191,6 +1229,7 @@ done:
     FUNC_LEAVE(ret_value);
 } // end of add_tag_metadata_from_hash_table
 
+//TODO: Add description of the following function
 perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out)
 {
     perr_t ret_value;
@@ -1217,7 +1256,7 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
 
     hash_key = (uint32_t*)malloc(sizeof(uint32_t));
     if (hash_key == NULL) {
-        printf("==PDC_SERVER: Cannnot allocate hash_key!\n");
+        printf("==PDC_SERVER: Cannot allocate hash_key!\n");
         goto done;
     }
     total_mem_usage_g += sizeof(uint32_t);
@@ -1286,7 +1325,7 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
 
     } // if (metadata_hash_table_g != NULL)
     else {
-        printf("==PDC_SERVER: metadata_hash_table_g not initilized!\n");
+        printf("==PDC_SERVER: metadata_hash_table_g not initialized!\n");
         ret_value = -1;
         out->ret = -1;
         goto done;
@@ -1328,6 +1367,7 @@ done:
 } // end of update_metadata_from_hash_table
 
 
+//TODO: Add description of the following function
 perr_t delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_id_out_t *out)
 {
     perr_t ret_value = FAIL;
@@ -1413,7 +1453,7 @@ perr_t delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_
         }  // while 
     } // if (metadata_hash_table_g != NULL)
     else {
-        printf("==PDC_SERVER: metadata_hash_table_g not initilized!\n");
+        printf("==PDC_SERVER: metadata_hash_table_g not initialized!\n");
         ret_value = FAIL;
         out->ret = -1;
         goto done;
@@ -1466,6 +1506,7 @@ done:
 } // end of delete_metadata_by_id
 
 
+//TODO: Add description of the following function
 perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out)
 {
     perr_t ret_value;
@@ -1489,7 +1530,7 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
 
     hash_key = (uint32_t*)malloc(sizeof(uint32_t));
     if (hash_key == NULL) {
-        printf("==PDC_SERVER: Cannnot allocate hash_key!\n");
+        printf("==PDC_SERVER: Cannot allocate hash_key!\n");
         goto done;
     }
     total_mem_usage_g += sizeof(uint32_t);
@@ -1574,7 +1615,7 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
 
     } // if (metadata_hash_table_g != NULL)
     else {
-        printf("==PDC_SERVER: metadata_hash_table_g not initilized!\n");
+        printf("==PDC_SERVER: metadata_hash_table_g not initialized!\n");
         ret_value = -1;
         out->ret = -1;
         goto done;
@@ -1629,6 +1670,7 @@ done:
 } // end of delete_metadata_from_hash_table
 
 
+//TODO: Add description of the following function
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
 {
     perr_t ret_value = SUCCEED;
@@ -1652,7 +1694,7 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
 
     metadata = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t));
     if (metadata == NULL) {
-        printf("Cannnot allocate pdc_metadata_t!\n");
+        printf("Cannot allocate pdc_metadata_t!\n");
         goto done;
     }
     total_mem_usage_g += sizeof(pdc_metadata_t);
@@ -1681,7 +1723,7 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
 
     hash_key = (uint32_t*)malloc(sizeof(uint32_t));
     if (hash_key == NULL) {
-        printf("Cannnot allocate hash_key!\n");
+        printf("Cannot allocate hash_key!\n");
         goto done;
     }
     total_mem_usage_g += sizeof(uint32_t);
@@ -1745,7 +1787,7 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
 
     }
     else {
-        printf("metadata_hash_table_g not initilized!\n");
+        printf("metadata_hash_table_g not initialized!\n");
         goto done;
     }
 
@@ -1807,6 +1849,7 @@ done:
 } // end of insert_metadata_to_hash_table
 
 
+//TODO: Add description of the following function
 static perr_t PDC_Server_metadata_duplicate_check()
 {
     perr_t ret_value = SUCCEED;
@@ -1883,6 +1926,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 static hg_return_t
 lookup_remote_server_rpc_cb(const struct hg_cb_info *callback_info)
 {
@@ -1906,6 +1950,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 static hg_return_t
 lookup_remote_server_cb(const struct hg_cb_info *callback_info)
 {
@@ -1945,6 +1990,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 perr_t PDC_Server_lookup_remote_server()
 {
     int i;
@@ -1984,6 +2030,7 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_lookup_remote_server
 
+//TODO: Add description of the following function
 perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context)
 {
     perr_t ret_value = SUCCEED;
@@ -2151,6 +2198,7 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_init
 
+//TODO: Add description of the following function
 perr_t PDC_Server_destroy_remote_server_info(pdc_remote_server_info_t *info)
 {
     int i;
@@ -2186,6 +2234,7 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_destroy_remote_server_info
 
+//TODO: Add description of the following function
 perr_t PDC_Server_destroy_client_info(pdc_client_info_t *info)
 {
     int i;
@@ -2214,6 +2263,7 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_init
 
+//TODO: Add description of the following function
 perr_t PDC_Server_finalize()
 {
     int i;
@@ -2289,6 +2339,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 static HG_THREAD_RETURN_TYPE
 hg_progress_thread(void *arg)
 {
@@ -2313,6 +2364,7 @@ hg_progress_thread(void *arg)
     return tret;
 }
 
+//TODO: Add description of the following function
 // Backup in-memory DHT/Bloom to persist storage
 perr_t PDC_Server_checkpoint(char *filename)
 {
@@ -2374,6 +2426,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 // Restart in-memory DHT/Bloom filters from persist storage
 perr_t PDC_Server_restart(char *filename)
 {
@@ -2454,6 +2507,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 // Multithread Mercury
 static perr_t PDC_Server_multithread_loop(hg_class_t *class, hg_context_t *context)
 {
@@ -2481,6 +2535,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 // No threading
 static perr_t PDC_Server_loop(hg_class_t *hg_class, hg_context_t *hg_context)
 {
@@ -2539,6 +2594,7 @@ done:
 /*                            overlapping1D(box1.y, box2.y) and */
 /*                            overlapping1D(box1.z, box2.z) */
  
+//TODO: Add description of the following function
 static int is_overlap_1D(uint64_t xmin1, uint64_t xmax1, uint64_t xmin2, uint64_t xmax2)
 {
     int ret_value = -1;
@@ -2550,6 +2606,7 @@ static int is_overlap_1D(uint64_t xmin1, uint64_t xmax1, uint64_t xmin2, uint64_
     return ret_value;
 }
 
+//TODO: Add description of the following function
 static int is_overlap_2D(uint64_t xmin1, uint64_t xmax1, uint64_t ymin1, uint64_t ymax1, 
                          uint64_t xmin2, uint64_t xmax2, uint64_t ymin2, uint64_t ymax2)
 {
@@ -2564,6 +2621,7 @@ static int is_overlap_2D(uint64_t xmin1, uint64_t xmax1, uint64_t ymin1, uint64_
     return ret_value;
 }
 
+//TODO: Add description of the following function
 static int is_overlap_3D(uint64_t xmin1, uint64_t xmax1, uint64_t ymin1, uint64_t ymax1, uint64_t zmin1, uint64_t zmax1,
                          uint64_t xmin2, uint64_t xmax2, uint64_t ymin2, uint64_t ymax2, uint64_t zmin2, uint64_t zmax2)
 {
@@ -2667,6 +2725,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 static int is_contiguous_start_count_overlap(uint32_t ndim, uint64_t *a_start, uint64_t *a_count, uint64_t *b_start, uint64_t *b_count)
 {
     int ret_value = 1;
@@ -2726,6 +2785,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
  
+//TODO: Add description of the following function
 /* Get overlapping regions's start[] and count[] */
 static perr_t get_overlap_start_count(uint32_t ndim, uint64_t *start1, uint64_t *count1, 
                                                      uint64_t *start2, uint64_t *count2, 
@@ -2769,6 +2829,7 @@ done:
     return ret_value;
 }
 
+//TODO: Add description of the following function
 static int is_region_identical(region_list_t *a, region_list_t *b)
 {
     int ret_value = -1;
@@ -2802,6 +2863,7 @@ done:
 }
 
 
+//TODO: Add description of the following function
 perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
 {
     perr_t ret_value;
@@ -2908,6 +2970,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 static int is_metadata_satisfy_constraint(pdc_metadata_t *metadata, metadata_query_transfer_in_t *constraints)
 {
     int ret_value = 1;
@@ -2953,6 +3016,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs)
 {
     perr_t ret_value = FAIL;
@@ -2997,7 +3061,7 @@ perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uin
 
     }  // if (metadata_hash_table_g != NULL)
     else {
-        printf("==PDC_SERVER: metadata_hash_table_g not initilized!\n");
+        printf("==PDC_SERVER: metadata_hash_table_g not initialized!\n");
         ret_value = FAIL;
         goto done;
     }
@@ -3008,6 +3072,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key, pdc_metadata_t** out)
 {
     perr_t ret_value = SUCCEED;
@@ -3065,7 +3130,7 @@ perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key,
 
     }
     else {
-        printf("metadata_hash_table_g not initilized!\n");
+        printf("metadata_hash_table_g not initialized!\n");
         ret_value = -1;
         goto done;
     }
@@ -3121,6 +3186,7 @@ done:
 /*     return 0; */
 /* } */
 
+//TODO: Add description of the following function
 int main(int argc, char *argv[])
 {
     int port;
@@ -3309,6 +3375,7 @@ done:
 /*
  * Data Server related
  */
+//TODO: Add description of the following function
 int region_list_cmp(region_list_t *a, region_list_t *b) 
 {
     if (a->ndim != b->ndim) {
@@ -3326,6 +3393,7 @@ int region_list_cmp(region_list_t *a, region_list_t *b)
     return 0;
 }
 
+//TODO: Add description of the following function
 int region_list_cmp_by_client_id(region_list_t *a, region_list_t *b) 
 {
     if (a->ndim != b->ndim) {
@@ -3338,6 +3406,7 @@ int region_list_cmp_by_client_id(region_list_t *a, region_list_t *b)
 
 
 // TODO: currently only support merging regions that are cut in one dimension
+//TODO: Add description of the following function
 perr_t PDC_Server_merge_region_list_naive(region_list_t *list, region_list_t **merged)
 {
     perr_t ret_value = FAIL;
@@ -3424,6 +3493,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 static hg_return_t PDC_Server_notify_region_update_cb(const struct hg_cb_info *callback_info)
 {
     FUNC_ENTER(NULL);
@@ -3448,6 +3518,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 perr_t PDC_SERVER_notify_region_update(pdcid_t meta_id, pdcid_t reg_id, int32_t client_id)
 {
     perr_t ret_value = SUCCEED;
@@ -3481,6 +3552,7 @@ perr_t PDC_SERVER_notify_region_update(pdcid_t meta_id, pdcid_t reg_id, int32_t 
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 perr_t PDC_Server_close_shm(region_list_t *region)
 {
     perr_t ret_value = SUCCEED;
@@ -3506,6 +3578,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 static hg_return_t PDC_Server_notify_io_complete_cb(const struct hg_cb_info *callback_info)
 {
     FUNC_ENTER(NULL);
@@ -3529,6 +3602,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 perr_t PDC_Server_notify_io_complete_to_client(uint32_t client_id, uint64_t obj_id, char* shm_addr, PDC_access_t io_type)
 {
 
@@ -3579,6 +3653,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_check_out_t *out)
 {
     perr_t ret_value = SUCCEED;
@@ -3649,6 +3724,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_write_check_out_t *out)
 {
     perr_t ret_value = FAIL;
@@ -3721,6 +3797,7 @@ done:
     FUNC_LEAVE(ret_value);
 } //PDC_Server_write_check
 
+//TODO: Add description of the following function
 perr_t PDC_Server_data_read_to_shm(region_list_t *region_list_head, uint64_t obj_id)
 {
     perr_t ret_value = FAIL;
@@ -3918,6 +3995,7 @@ done:
 /*     FUNC_LEAVE(ret_value); */
 /* } // end of PDC_Server_data_read */
 
+//TODO: Add description of the following function
 perr_t PDC_Server_get_local_storage_location_of_region(uint32_t obj_id, region_list_t *region, 
         int *n_loc, region_list_t **overlap_region_loc)
 {
@@ -3960,6 +4038,7 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_get_local_storage_location_of_region
 
+//TODO: Add description of the following function
 static hg_return_t
 PDC_Server_get_storage_info_cb (const struct hg_cb_info *callback_info)
 {
@@ -3988,6 +4067,7 @@ done:
 
 // Note: one request region can spread across multiple regions in storage
 // Need to allocate **overlap_region_loc with PDC_MAX_OVERLAP_REGION_NUM before calling this 
+//TODO: Add description of the following function
 perr_t PDC_Server_get_storage_location_of_region(region_list_t *request_region, int *n_loc, region_list_t **overlap_region_loc)
 {
     perr_t ret_value = SUCCEED;
@@ -4055,6 +4135,7 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_get_storage_location_of_region
 
+//TODO: Add description of the following function
 perr_t PDC_Server_set_lustre_stripe(char *path, int stripe_count, int stripe_size_MB)
 {
     perr_t ret_value = SUCCEED;
@@ -4086,6 +4167,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 perr_t PDC_Server_regions_io(region_list_t *region_list_head, PDC_io_plugin_t plugin)
 {
     perr_t ret_value = SUCCEED;
@@ -4111,6 +4193,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 perr_t PDC_Server_data_write_from_shm(region_list_t *region_list_head)
 {
     perr_t ret_value = SUCCEED;
@@ -4181,6 +4264,7 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_data_write_from_shm
 
+//TODO: Add description of the following function
 hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
 {
     perr_t ret_value = SUCCEED;
@@ -4356,6 +4440,7 @@ done:
     FUNC_LEAVE(ret_value);
 } // end of PDC_Server_data_write
 
+//TODO: Add description of the following function
 perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region)
 {
     perr_t ret_value = SUCCEED;
@@ -4415,6 +4500,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 static hg_return_t
 PDC_Server_update_region_loc_cb(const struct hg_cb_info *callback_info)
 {
@@ -4441,6 +4527,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region)
 {
     hg_return_t hg_ret;
@@ -4507,6 +4594,7 @@ done:
     FUNC_LEAVE(ret_value);
 } // end of PDC_Server_update_region_storagelocation_offset
 
+//TODO: Add description of the following function
 static hg_return_t
 PDC_Server_get_metadata_by_id_cb(const struct hg_cb_info *callback_info)
 {
@@ -4542,6 +4630,7 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_get_metadata_by_id_cb
 
+//TODO: Add description of the following function
 perr_t PDC_Server_get_local_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta)
 {
     perr_t ret_value = SUCCEED;
@@ -4572,7 +4661,7 @@ perr_t PDC_Server_get_local_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res
         }
     }  
     else {
-        printf("==PDC_SERVER: metadata_hash_table_g not initilized!\n");
+        printf("==PDC_SERVER: metadata_hash_table_g not initialized!\n");
         ret_value = FAIL;
         *res_meta = NULL;
         goto done;
@@ -4582,6 +4671,7 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_get_local_metadata_by_id
 
+//TODO: Add description of the following function
 perr_t PDC_Server_get_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta)
 {
     hg_return_t hg_ret;
@@ -4633,6 +4723,7 @@ done:
     FUNC_LEAVE(ret_value);
 } // end of PDC_Server_get_metadata_by_id
 
+//TODO: Add description of the following function
 // Serialize regions information, including ndim, start[], count[], storage loc
 perr_t PDC_Server_serialize_regions_info(region_list_t** regions, uint32_t n_region, void *buf)
 {
@@ -4700,6 +4791,7 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_serialize_regions_info
 
+//TODO: Add description of the following function
 // Un-serialize regions information, including ndim, start[], count[], storage loc
 perr_t PDC_Server_unserialize_regions_info(void *buf, region_list_t** regions, uint32_t *n_region)
 {
@@ -4769,6 +4861,7 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_unserialize_regions_info
 
+//TODO: Add description of the following function
 perr_t PDC_Server_get_total_str_len(region_list_t** regions, uint32_t n_region, uint32_t *len)
 {
     perr_t ret_value = SUCCEED;
@@ -4799,6 +4892,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 void test_serialize()
 {
     region_list_t **head = NULL, *a, *b, *c, *d, *elt;
@@ -4867,6 +4961,7 @@ void test_serialize()
 
 }
 
+//TODO: Add description of the following function
 // For each intersecteed region in storage, calculate the actual overlapping regions'
 // start[] and count[], then read into the buffer with correct offset
 perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint64_t *req_count, 
@@ -5017,6 +5112,8 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
+
+//TODO: Add description of the following function
 perr_t PDC_Server_posix_one_file_io(region_list_t* region)
 {
     perr_t ret_value = SUCCEED;
@@ -5290,6 +5387,7 @@ done:
 /*     FUNC_LEAVE(ret_value); */
 /* } // end of PDC_Server_add_io_request */
 
+//TODO: Add description of the following function
 // Directly read/write buffer from/to storage of one region
 perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct PDC_region_info *region_info, void *buf)
 {
@@ -5350,6 +5448,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf)
 {
     perr_t ret_value = SUCCEED;
@@ -5362,6 +5461,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+//TODO: Add description of the following function
 perr_t PDC_Server_data_read_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf)
 {
     perr_t ret_value = SUCCEED;
