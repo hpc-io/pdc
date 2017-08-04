@@ -56,10 +56,12 @@ perr_t PDC_Server_restart(char *filename);
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs);
 hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info);
 pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id);
-perr_t PDC_Server_get_local_storage_location_of_region(uint32_t obj_id, region_list_t *region,
-        int *n_loc, region_list_t **overlap_region_loc);
+perr_t PDC_Server_get_local_storage_location_of_region(uint64_t obj_id, region_list_t *region,
+        uint32_t *n_loc, region_list_t **overlap_region_loc);
 perr_t PDC_Server_get_total_str_len(region_list_t** regions, uint32_t n_region, uint32_t *len);
 perr_t PDC_Server_serialize_regions_info(region_list_t** regions, uint32_t n_region, void *buf);
+
+perr_t PDC_Server_regions_io(region_list_t *region_list_head, PDC_io_plugin_t plugin);
 
 /* typedef struct pdc_metadata_name_mark_t { */
 /*     char obj_name[ADDR_MAX]; */
@@ -78,13 +80,13 @@ typedef struct pdc_hash_table_entry_head {
  */
 
 typedef struct server_lookup_args_t {
-    int   server_id;
-    int   client_id;
-    int   ret_int;
-    char  *ret_string;
-    void  *void_buf;
-    pdc_metadata_t *meta;
-    hg_const_string_t server_addr;
+    int             server_id;
+    uint32_t        client_id;
+    int             ret_int;
+    char            *ret_string;
+    void            *void_buf;
+    char            *server_addr;
+    pdc_metadata_t  *meta;
 } server_lookup_args_t;
 
 typedef struct pdc_client_info_t {
@@ -130,6 +132,7 @@ typedef struct pdc_data_server_io_list_t {
 } pdc_data_server_io_list_t;
 
 
+perr_t PDC_Server_unserialize_regions_info(void *buf, region_list_t** regions, uint32_t *n_region);
 hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info);
 
 perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf);
@@ -140,5 +143,7 @@ perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_writ
 
 perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region);
 perr_t PDC_Server_get_local_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta);
+
+perr_t PDC_Server_posix_one_file_io(region_list_t* region);
 
 #endif /* PDC_SERVER_H */

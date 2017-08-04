@@ -616,8 +616,8 @@ perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region) {return
 perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
 perr_t PDC_SERVER_notify_region_update(pdcid_t meta_id, pdcid_t reg_id, int32_t client_id) {return SUCCEED;}
 perr_t PDC_Server_get_local_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta) {return SUCCEED;}
-perr_t PDC_Server_get_local_storage_location_of_region(uint32_t obj_id, region_list_t *region,
-        int *n_loc, region_list_t **overlap_region_loc)  {return SUCCEED;}
+perr_t PDC_Server_get_local_storage_location_of_region(uint64_t obj_id, region_list_t *region,
+        uint32_t *n_loc, region_list_t **overlap_region_loc) {return SUCCEED;}
 perr_t PDC_Server_get_total_str_len(region_list_t** regions, uint32_t n_region, uint32_t *len) {return SUCCEED;}
 perr_t PDC_Server_serialize_regions_info(region_list_t** regions, uint32_t n_region, void *buf) {return SUCCEED;}
 pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id) {return NULL;}
@@ -946,25 +946,34 @@ HG_TEST_RPC_CB(notify_io_complete, handle)
     /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
-    /* printf("==PDC_CLIENT: Got IO complete notification from server: obj_id=%llu, shm_addr=[%s]\n", in.obj_id, in.shm_addr); */
+    PDC_access_t type = (PDC_access_t)in.io_type;
+
+    printf("==PDC_CLIENT: Got %s complete notification from server: obj_id=%llu, shm_addr=[%s]\n", 
+            in.io_type == READ? "read":"write", in.obj_id, in.shm_addr);
+    fflush(stdout);
 
     client_read_info_t * read_info = (client_read_info_t*)calloc(1, sizeof(client_read_info_t));
     read_info->obj_id = in.obj_id;
     strcpy(read_info->shm_addr, in.shm_addr);
 
-    out.ret = 1;
-    PDC_access_t type = in.io_type;
+    out.ret = atoi(in.shm_addr);
     if (type == READ) {
         HG_Respond(handle, PDC_Client_get_data_from_server_shm_cb, read_info, &out);
     }
     else if (type == WRITE) {
-        HG_Respond(handle, PDC_Client_work_done_cb, NULL, &out);
+        HG_Respond(handle, PDC_Client_work_done_cb, read_info, &out);
+        printf("==PDC_CLIENT: notify_io_complete_cb() respond write confirm confirmation %d\n", out.ret);
+    }
+    else {
+        printf("==PDC_CLIENT: notify_io_complete_cb() - error with io type!\n");
+        HG_Respond(handle, NULL, NULL, &out);
     }
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
 done:
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
@@ -1812,8 +1821,8 @@ HG_TEST_RPC_CB(data_server_write, handle)
 
     // Decode input
     HG_Get_input(handle, &in);
-    /* printf("==PDC_SERVER: Got data server write request from client %d\n", in.client_id); */
-    /* fflush(stdout); */
+    printf("==PDC_SERVER: Got data server write request from client %d\n", in.client_id);
+    fflush(stdout);
 
     data_server_io_info_t *io_info= (data_server_io_info_t*)malloc(sizeof(data_server_io_info_t));
 
@@ -1835,8 +1844,8 @@ HG_TEST_RPC_CB(data_server_write, handle)
     out.ret = 1;
     HG_Respond(handle, PDC_Server_data_io_via_shm, io_info, &out);
 
-    /* printf("==PDC_SERVER: respond write request confirmation to client %d\n", in.client_id); */
-    /* fflush(stdout); */
+    printf("==PDC_SERVER: respond write request confirmation to client %d\n", in.client_id);
+    fflush(stdout);
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
@@ -2057,7 +2066,7 @@ HG_TEST_RPC_CB(get_storage_info, handle)
     pdc_metadata_t *target = NULL;
     region_list_t request_region;
     region_list_t **result_regions;
-    int n_region, i;
+    uint32_t n_region, i;
     uint32_t serialize_len;
     void *buf = NULL;
     
@@ -2099,9 +2108,6 @@ HG_TEST_RPC_CB(get_storage_info, handle)
     HG_Respond(handle, NULL, NULL, &out);
 
 done:
-    HG_Free_input(handle, &in);
-    HG_Destroy(handle);
-
     if (ret_value == FAIL) {
         out.buf = " ";
         HG_Respond(handle, NULL, NULL, &out);
@@ -2118,6 +2124,9 @@ done:
     if (buf != NULL) 
         free(buf);
     
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
     FUNC_LEAVE(ret_value);
 }
 

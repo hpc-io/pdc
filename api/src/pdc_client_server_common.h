@@ -163,8 +163,8 @@ typedef struct {
 
 typedef struct pdc_metadata_transfer_t {
     int32_t     user_id;
-    const char  *app_name;
-    const char  *obj_name;
+    hg_const_string_t  *app_name;
+    hg_const_string_t  *obj_name;
     int32_t     time_step;
 
     uint64_t    obj_id;
@@ -172,8 +172,8 @@ typedef struct pdc_metadata_transfer_t {
     int32_t     ndim;
     int32_t     dims0, dims1, dims2, dims3;
 
-    const char  *tags;
-    const char  *data_location;
+    hg_const_string_t  *tags;
+    hg_const_string_t  *data_location;
     /* time_t      create_time; */
     /* time_t      last_modified_time; */
 } pdc_metadata_transfer_t;
@@ -182,8 +182,8 @@ typedef struct metadata_query_transfer_in_t{
     int     is_list_all;
 
     int     user_id;                // Both server and client gets it and do security check
-    const char    *app_name;
-    const char    *obj_name;
+    hg_const_string_t    *app_name;
+    hg_const_string_t    *obj_name;
 
     int     time_step_from;
     int     time_step_to;
@@ -195,7 +195,7 @@ typedef struct metadata_query_transfer_in_t{
     /* time_t  last_modified_time_from; */
     /* time_t  last_modified_time_to; */
 
-    const char    *tags;
+    hg_const_string_t    *tags;
 } metadata_query_transfer_in_t;
 
 typedef struct {
@@ -212,7 +212,7 @@ typedef struct {
 } client_read_info_t;
 
 typedef struct {
-    int32_t client_id;
+    uint32_t client_id;
     int32_t nclient;
     char client_addr[ADDR_MAX];
 } client_test_connect_args;
@@ -855,7 +855,7 @@ typedef struct {
 
 
 typedef struct {
-    int32_t client_id;
+    uint32_t client_id;
     int32_t nclient;
     hg_const_string_t client_addr;
 } client_test_connect_in_t;
@@ -885,7 +885,7 @@ typedef struct {
 } notify_region_update_out_t;
 
 typedef struct {
-    int32_t client_id;
+    uint32_t client_id;
 } close_server_in_t;
 
 typedef struct {
@@ -1059,7 +1059,7 @@ hg_proc_client_test_connect_in_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     client_test_connect_in_t *struct_data = (client_test_connect_in_t*) data;
 
-    ret = hg_proc_int32_t(proc, &struct_data->client_id);
+    ret = hg_proc_uint32_t(proc, &struct_data->client_id);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -1102,14 +1102,15 @@ hg_proc_notify_io_complete_in_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->shm_addr);
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->shm_addr);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
+        return ret;
     }
     return ret;
 }
@@ -1163,7 +1164,7 @@ hg_proc_close_server_in_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     close_server_in_t *struct_data = (close_server_in_t*) data;
 
-    ret = hg_proc_int32_t(proc, &struct_data->client_id);
+    ret = hg_proc_uint32_t(proc, &struct_data->client_id);
     if (ret != HG_SUCCESS) {
 	    HG_LOG_ERROR("Proc error");
         return ret;
@@ -1372,7 +1373,7 @@ hg_proc_gen_obj_unmap_notification_out_t(hg_proc_t proc, void *data)
 /* MERCURY_GEN_PROC(data_server_read_in_t,  ((int32_t)(nclient)) ((hg_uint64_t)(meta_id)) ((region_info_transfer_t)(region))) */
 /* MERCURY_GEN_PROC(data_server_read_out_t, ((int32_t)(ret)) ) */
 typedef struct {
-    int32_t                     client_id;
+    uint32_t                    client_id;
     int32_t                     nclient;
     pdc_metadata_transfer_t     meta;
     region_info_transfer_t      region;
@@ -1388,7 +1389,7 @@ hg_proc_data_server_read_in_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     data_server_read_in_t *struct_data = (data_server_read_in_t*) data;
 
-    ret = hg_proc_int32_t(proc, &struct_data->client_id);
+    ret = hg_proc_uint32_t(proc, &struct_data->client_id);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -1443,7 +1444,7 @@ hg_proc_data_server_write_in_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     data_server_write_in_t *struct_data = (data_server_write_in_t*) data;
 
-    ret = hg_proc_int32_t(proc, &struct_data->client_id);
+    ret = hg_proc_uint32_t(proc, &struct_data->client_id);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -1485,7 +1486,7 @@ hg_proc_data_server_write_out_t(hg_proc_t proc, void *data)
 }
 
 typedef struct {
-    int32_t                     client_id;
+    uint32_t                    client_id;
     pdc_metadata_transfer_t     meta;
     region_info_transfer_t      region;
 } data_server_read_check_in_t;
@@ -1554,7 +1555,7 @@ hg_proc_data_server_write_check_in_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     data_server_write_check_in_t *struct_data = (data_server_write_check_in_t*) data;
 
-    ret = hg_proc_int32_t(proc, &struct_data->client_id);
+    ret = hg_proc_uint32_t(proc, &struct_data->client_id);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -1678,7 +1679,7 @@ hg_proc_get_metadata_by_id_out_t(hg_proc_t proc, void *data)
 
 // For generic serialized data transfer
 typedef struct {
-    hg_const_string_t buf;
+    hg_const_string_t *buf;
 } pdc_serialized_data_t;
 
 static HG_INLINE hg_return_t
@@ -1735,15 +1736,18 @@ hg_id_t metadata_delete_by_id_register(hg_class_t *hg_class);
 hg_id_t metadata_update_register(hg_class_t *hg_class);
 hg_id_t metadata_add_tag_register(hg_class_t *hg_class);
 hg_id_t region_lock_register(hg_class_t *hg_class);
-
+hg_id_t gen_reg_unmap_notification_register(hg_class_t *hg_class);
+hg_id_t gen_obj_unmap_notification_register(hg_class_t *hg_class);
+hg_id_t data_server_write_register(hg_class_t *hg_class);
+hg_id_t notify_region_update_register(hg_class_t *hg_class);
 hg_id_t test_bulk_xfer_register(hg_class_t *hg_class);
-
 hg_id_t server_lookup_remote_server_register(hg_class_t *hg_class);
 hg_id_t update_region_loc_register(hg_class_t *hg_class);
+hg_id_t get_metadata_by_id_register(hg_class_t *hg_class);
+hg_id_t get_storage_info_register(hg_class_t *hg_class);
 
 //bulk
 hg_id_t query_partial_register(hg_class_t *hg_class);
-
 hg_id_t notify_io_complete_register(hg_class_t *hg_class);
 hg_id_t data_server_read_register(hg_class_t *hg_class);
 
@@ -1754,7 +1758,7 @@ struct hg_test_bulk_args {
     hg_atomic_int32_t completed_transfers;
     size_t ret;
     pdc_metadata_t **meta_arr;
-    int             *n_meta;
+    uint32_t        *n_meta;
 };
 
 struct lock_bulk_args {
