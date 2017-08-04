@@ -81,7 +81,7 @@ hg_thread_mutex_t data_write_list_mutex_g;
 #define BLOOM_FREE   free_counting_bloom
 
 // Global debug variable to control debug printfs
-int is_debug_g = 0;
+int is_debug_g = 1;
 int pdc_client_num_g = 0;
 
 hg_class_t   *hg_class_g   = NULL;
@@ -439,7 +439,7 @@ PDC_Server_lookup_client_cb(const struct hg_cb_info *callback_info)
 
     pdc_to_client_work_todo_g--;
     /* work_todo_g = 1; */
-    PDC_Server_check_client_response(&pdc_client_context_g);
+    /* PDC_Server_check_client_response(&pdc_client_context_g); */
 
     FUNC_LEAVE(ret_value);
 }
@@ -487,7 +487,7 @@ static perr_t PDC_Server_lookup_client(uint32_t client_id)
     /* printf("==PDC_SERVER[%d]: waiting for client %d\n", pdc_server_rank_g, client_id); */
     /* fflush(stdout); */
 
-    pdc_to_client_work_todo_g++;
+    pdc_to_client_work_todo_g = 1;
     /* work_todo_g = 1; */
     PDC_Server_check_client_response(&pdc_client_context_g);
 
@@ -567,11 +567,17 @@ hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info)
     /* printf("==PDC_SERVER: got client addr: %s from client[%d], total: %d\n", */ 
     /*         pdc_client_info_g[in->client_id].addr_string, in->client_id, pdc_client_num_g); */
 
-    /* if (pdc_client_num_g >= in->nclient) { */
-        /* printf("==PDC_SERVER[%d]: got the last connection request from client[%d]\n", pdc_server_rank_g, in->client_id); */
-        /* ret_value = PDC_Server_lookup_client(); */
-    /* } */
-    /* printf("==PDC_SERVER[%d]: PDC_Server_get_client_addr - Finished PDC_Server_lookup_client()\n", pdc_server_rank_g); */
+    if (pdc_client_num_g >= in->nclient) {
+        printf("==PDC_SERVER[%d]: got the last connection request from client[%d]\n", 
+                pdc_server_rank_g, in->client_id);
+
+        for (i = 0; i < in->nclient; i++) 
+            ret_value = PDC_Server_lookup_client(i);
+    }
+    if (is_debug_g) {
+        printf("==PDC_SERVER[%d]: PDC_Server_get_client_addr - Finished PDC_Server_lookup_client()\n", 
+                pdc_server_rank_g);
+    }
 #ifdef ENABLE_MULTITHREAD 
         hg_thread_mutex_lock(&pdc_client_addr_metex_g);
 #endif

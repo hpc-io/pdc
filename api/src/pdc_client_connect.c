@@ -751,10 +751,15 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
             ret_value = FAIL;
             goto done;
         }
-        // Wait for response from server
-        work_todo_g = 1;
-        PDC_Client_check_response(&send_context_g);
     }
+
+    // Wait for response from server
+    work_todo_g = pdc_server_num_g;
+    PDC_Client_check_response(&send_context_g);
+
+    // Wait for server to connect back
+    /* work_todo_g = 1; */
+    /* PDC_Client_check_response(&send_context_g); */
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -900,8 +905,8 @@ perr_t PDC_Client_finalize()
     FUNC_ENTER(NULL);
 
     // Send close server request to all servers
-    if (pdc_client_mpi_rank_g == 0) 
-        PDC_Client_close_all_server();
+    /* if (pdc_client_mpi_rank_g == 0) */ 
+    /*     PDC_Client_close_all_server(); */
 
     // Finalize Mercury
     for (i = 0; i < pdc_server_num_g; i++) {
