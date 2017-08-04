@@ -38,9 +38,13 @@ int main(int argc, const char *argv[])
     readsize = atoi(argv[2]);
     readsize *= 1048567;
 
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
     // create a pdc
     pdcid_t pdc = PDC_init("pdc");
-    /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
+    printf("create a new pdc, pdc id is: %lld\n", pdc);
+    fflush(stdout);
 
     // create a container property
     pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
@@ -53,7 +57,6 @@ int main(int argc, const char *argv[])
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
     pdcid_t test_obj = -1;
-    char obj_name[128];
 
     struct timeval  ht_total_start;
     struct timeval  ht_total_end;
@@ -65,9 +68,9 @@ int main(int argc, const char *argv[])
     pdc_metadata_t *metadata;
     PDC_Client_query_metadata_name_timestep( argv[1], 0, &metadata);
     // Debug print
-    /* if (rank == 1) { */
-    /*     PDC_print_metadata(metadata); */
-    /* } */
+    if (rank == 0) {
+        PDC_print_metadata(metadata);
+    }
 
     uint64_t my_readsize = readsize / size;
     int ndim = 1;
