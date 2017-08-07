@@ -37,7 +37,6 @@
 #include "pdc_malloc.h"
 #include <inttypes.h>
 
-int is_common_debug_g;
 // Thread
 hg_thread_pool_t *hg_test_thread_pool_g;
 
@@ -949,15 +948,17 @@ HG_TEST_RPC_CB(notify_io_complete, handle)
     HG_Get_input(handle, &in);
     PDC_access_t type = (PDC_access_t)in.io_type;
 
-    if (is_common_debug_g) {
-        printf("==PDC_CLIENT: Got %s complete notification from server: obj_id=%llu, shm_addr=[%s]\n", 
-                in.io_type == READ? "read":"write", in.obj_id, in.shm_addr);
-        fflush(stdout);
-    }
+    printf("==PDC_CLIENT: Got %s complete notification from server: obj_id=%llu, shm_addr=[%s]\n", 
+            in.io_type == READ? "read":"write", in.obj_id, in.shm_addr);
+    fflush(stdout);
 
     client_read_info_t * read_info = (client_read_info_t*)calloc(1, sizeof(client_read_info_t));
     read_info->obj_id = in.obj_id;
     strcpy(read_info->shm_addr, in.shm_addr);
+    if (ret_value != HG_SUCCESS) {
+        printf("Error with notify_io_complete_register\n");
+        goto done;
+    }
 
     out.ret = atoi(in.shm_addr);
     if (type == READ) {
@@ -965,9 +966,7 @@ HG_TEST_RPC_CB(notify_io_complete, handle)
     }
     else if (type == WRITE) {
         HG_Respond(handle, PDC_Client_work_done_cb, read_info, &out);
-        if (is_common_debug_g) {
-            printf("==PDC_CLIENT: notify_io_complete_cb() respond write confirm confirmation %d\n", out.ret);
-        }
+        printf("==PDC_CLIENT: notify_io_complete_cb() respond write confirm confirmation %d\n", out.ret);
     }
     else {
         printf("==PDC_CLIENT: notify_io_complete_cb() - error with io type!\n");
@@ -1826,10 +1825,8 @@ HG_TEST_RPC_CB(data_server_write, handle)
 
     // Decode input
     HG_Get_input(handle, &in);
-    if (is_common_debug_g) {
-        printf("==PDC_SERVER: Got data server write request from client %d\n", in.client_id);
-        fflush(stdout);
-    }
+    printf("==PDC_SERVER: Got data server write request from client %d\n", in.client_id);
+    fflush(stdout);
 
     data_server_io_info_t *io_info= (data_server_io_info_t*)malloc(sizeof(data_server_io_info_t));
 
@@ -1851,10 +1848,8 @@ HG_TEST_RPC_CB(data_server_write, handle)
     out.ret = 1;
     HG_Respond(handle, PDC_Server_data_io_via_shm, io_info, &out);
 
-    if (is_common_debug_g) {
-        printf("==PDC_SERVER: respond write request confirmation to client %d\n", in.client_id);
-        fflush(stdout);
-    }
+    printf("==PDC_SERVER: respond write request confirmation to client %d\n", in.client_id);
+    fflush(stdout);
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
@@ -1981,9 +1976,7 @@ HG_TEST_RPC_CB(update_region_loc, handle)
     /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
-    if (is_common_debug_g) {
-        printf("==PDC_SERVER: Got region location update request: obj_id=%llu\n", in.obj_id);
-    }
+    printf("==PDC_SERVER: Got region location update request: obj_id=%llu\n", in.obj_id);
 
     region_list_t *input_region = (region_list_t*)malloc(sizeof(region_list_t));
 
@@ -2028,9 +2021,7 @@ HG_TEST_RPC_CB(get_metadata_by_id, handle)
     /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
-    if (is_common_debug_g) {
-        printf("==PDC_SERVER: Got metadata retrieval: obj_id=%llu\n", in.obj_id);
-    }
+    printf("==PDC_SERVER: Got metadata retrieval: obj_id=%llu\n", in.obj_id);
 
     PDC_Server_get_local_metadata_by_id(in.obj_id, &target);
 
@@ -2087,9 +2078,7 @@ HG_TEST_RPC_CB(get_storage_info, handle)
 
     // Decode input
     HG_Get_input(handle, &in);
-    if (is_common_debug_g) {
-        printf("==PDC_SERVER: Got storage in request: obj_id=%llu\n", in.obj_id);
-    }
+    printf("==PDC_SERVER: Got storage in request: obj_id=%llu\n", in.obj_id);
     PDC_init_region_list(&request_region);
     pdc_region_transfer_t_to_list_t(&in.req_region, &request_region);
 
