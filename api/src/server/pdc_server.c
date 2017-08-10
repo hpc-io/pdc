@@ -140,31 +140,40 @@ pdc_data_server_io_list_t *pdc_data_server_read_list_head_g = NULL;
 pdc_data_server_io_list_t *pdc_data_server_write_list_head_g = NULL;
 
 
-//TODO: Add description of the following function
-/**
-    Function name: PDC_Server_metadata_int_equal 
-    Arguments: 
-	vlocation1: ???
-	vlocation2: ???
-    Return value: 
-    Description:
-	- 
-	- 
-*/
+/*
+ * Check if two hash keys are equal 
+ *
+ * \param vlocation1 [IN]       Hash table key
+ * \param vlocation2 [IN]       Hash table key
+ *
+ * \return 1 if two keys are equal, 0 otherwise
+ */
 static int 
 PDC_Server_metadata_int_equal(hg_hash_table_key_t vlocation1, hg_hash_table_key_t vlocation2)
 {
     return *((uint32_t *) vlocation1) == *((uint32_t *) vlocation2);
 }
 
-//TODO: Add description of the following function
+/*
+ * Get hash key's location in hash table
+ *
+ * \param vlocation [IN]        Hash table key
+ *
+ * \return the location of hash key in the table
+ */
 static unsigned int
 PDC_Server_metadata_int_hash(hg_hash_table_key_t vlocation)
 {
     return *((uint32_t *) vlocation);
 }
 
-//TODO: Add description of the following function
+/*
+ * Free the hash key 
+ *
+ * \param  key [IN]        Hash table key
+ *
+ * \return void
+ */
 static void
 PDC_Server_metadata_int_hash_key_free(hg_hash_table_key_t key)
 {
@@ -186,7 +195,13 @@ PDC_Server_metadata_int_hash_key_free(hg_hash_table_key_t key)
 /* } */
 
 
-//TODO: Add description of the following function
+/*
+ * Free metadata hash value
+ *
+ * \param  value [IN]        Hash table value
+ *
+ * \return void
+ */
 static void
 PDC_Server_metadata_hash_value_free(hg_hash_table_value_t value)
 {
@@ -220,13 +235,13 @@ PDC_Server_metadata_hash_value_free(hg_hash_table_value_t value)
     /* } */
 }
 
-/* inline void PDC_Server_metadata_name_mark_init(pdc_metadata_t* a) */
-/* { */
-/*     a->prev                 = NULL; */
-/*     a->next                 = NULL; */
-/* } */
-
-//TODO: Add description of the following function
+/*
+ * Init the remote server info structure
+ *
+ * \param  info [IN]        PDC remote server info
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_remote_server_info_init(pdc_remote_server_info_t *info)
 {
     perr_t ret_value = SUCCEED;
@@ -251,7 +266,13 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Init the PDC metadata structure
+ *
+ * \param  a [IN]        PDC metadata structure 
+ *
+ * \return void
+ */
 void PDC_Server_metadata_init(pdc_metadata_t* a)
 {
     int i;
@@ -280,7 +301,14 @@ void PDC_Server_metadata_init(pdc_metadata_t* a)
 }
 // ^ hash table
 
-//TODO: Add description of the following function
+/*
+ * Concatenate the metadata's obj_name and time_step to one char array
+ *
+ * \param  metadata [IN]        PDC metadata structure pointer
+ * \param  output   [OUT]       Concatenated char array pointer
+ *
+ * \return void
+ */
 static inline void combine_obj_info_to_string(pdc_metadata_t *metadata, char *output)
 {
     /* sprintf(output, "%d%s%s%d", metadata->user_id, metadata->app_name, metadata->obj_name, metadata->time_step); */
@@ -309,7 +337,13 @@ static inline void combine_obj_info_to_string(pdc_metadata_t *metadata, char *ou
 /*     FUNC_LEAVE(ret_value); */
 /* } */ 
 
-//TODO: Add description of the following function
+/*
+ * Trigger and progress the Mercury queue, execute callback function
+ *
+ * \param  hg_context[IN]        Mercury context pointer
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_check_client_response(hg_context_t **hg_context)
 {
     perr_t ret_value;
@@ -334,8 +368,13 @@ perr_t PDC_Server_check_client_response(hg_context_t **hg_context)
     FUNC_LEAVE(ret_value);
 }
 
-
-//TODO: Add description of the following function
+/*
+ * Trigger and progress the Mercury queue, execute callback function
+ *
+ * \param  hg_context[IN]        Mercury context pointer
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_check_response(hg_context_t **hg_context)
 {
     perr_t ret_value;
@@ -364,8 +403,13 @@ perr_t PDC_Server_check_response(hg_context_t **hg_context)
     FUNC_LEAVE(ret_value);
 }
 
-
-//TODO: Add description of the following function
+/*
+ * Callback function of the server to lookup clients, also gets the confirm message from client.
+ *
+ * \param  callback_info[IN]        Mercury callback info pointer 
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 static hg_return_t
 server_lookup_client_rpc_cb(const struct hg_cb_info *callback_info)
 {
@@ -395,8 +439,14 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
-// Callback function for HG_Addr_lookup()
+/*
+ * Callback function for HG_Addr_lookup(), creates a Mercury handle then forward the RPC message 
+ * to the client
+ *
+ * \param  callback_info[IN]        Mercury callback info pointer 
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 static hg_return_t
 PDC_Server_lookup_client_cb(const struct hg_cb_info *callback_info)
 {
@@ -444,7 +494,14 @@ PDC_Server_lookup_client_cb(const struct hg_cb_info *callback_info)
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Lookup the available clients to obtain proper address of them for future communication
+ * via Mercury.
+ *
+ * \param  client_id[IN]        Client's MPI rank
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 static perr_t PDC_Server_lookup_client(uint32_t client_id)
 {
     perr_t ret_value = SUCCEED;
@@ -505,7 +562,13 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Init the client info structure
+ *
+ * \param  a[IN]        PDC client info structure pointer
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_client_info_init(pdc_client_info_t* a)
 {
     perr_t ret_value = SUCCEED;
@@ -531,7 +594,15 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Callback function, allocates the client info structure with the first connectiong from all clients,
+ * copies the client's address, and when received all clients' test connection message, start the lookup
+ * process to test connection to all clients.
+ *
+ * \param  callback_info[IN]        Mercury callback info pointer 
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info)
 {
     int i;
@@ -586,7 +657,14 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Get the metadata with obj ID and hash key
+ *
+ * \param  obj_id[IN]        Object ID
+ * \param  hash_key[IN]      Hash value of the ID attributes
+ *
+ * \return NULL if no match is found/pointer to the metadata structure otherwise
+ */
 /* static pdc_metadata_t * find_metadata_by_id_and_hash_key(uint64_t obj_id, uint32_t hash_key) */ 
 /* { */
 /*     pdc_metadata_t *ret_value = NULL; */
@@ -620,7 +698,14 @@ done:
 /*     FUNC_LEAVE(ret_value); */
 /* } */
 
-//TODO: Add description of the following function
+/*
+ * Get the metadata with obj ID from the metadata list
+ *
+ * \param  mlist[IN]         Metadata list head 
+ * \param  obj_id[IN]        Object ID
+ *
+ * \return NULL if no match is found/pointer to the found metadata otherwise
+ */
 static pdc_metadata_t * find_metadata_by_id_from_list(pdc_metadata_t *mlist, uint64_t obj_id) 
 {
     pdc_metadata_t *ret_value, *elt;
@@ -644,8 +729,13 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
-// Iterate through all metadata stored in the hash table 
+/*
+ * Get the metadata with the specified object ID by iteration of all metadata in the hash table
+ *
+ * \param  obj_id[IN]        Object ID
+ *
+ * \return NULL if no match is found/pointer to the found metadata otherwise
+ */
 static pdc_metadata_t * find_metadata_by_id(uint64_t obj_id) 
 {
     pdc_metadata_t *ret_value;
@@ -682,7 +772,13 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Wrapper function of find_metadata_by_id().
+ *
+ * \param  obj_id[IN]        Object ID
+ *
+ * \return NULL if no match is found/pointer to the found metadata otherwise
+ */
 pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id)
 {
     pdc_metadata_t *ret_value = NULL;
@@ -700,7 +796,14 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Find if there is identical metadata exist in hash table
+ *
+ * \param  entry[IN]        Hash table entry of metadata
+ * \param  a[IN]            Pointer to metadata to be checked against
+ *
+ * \return NULL if no match is found/pointer to the found metadata otherwise
+ */
 static pdc_metadata_t * find_identical_metadata(pdc_hash_table_entry_head *entry, pdc_metadata_t *a)
 {
     pdc_metadata_t *ret_value = NULL;
@@ -803,8 +906,11 @@ done:
     FUNC_LEAVE(ret_value);
 } 
 
-
-//TODO: Add description of the following function
+/*
+ * Print the Mercury version
+ *
+ * \return void
+ */
 void PDC_Server_print_version()
 {
     unsigned major, minor, patch;
@@ -816,7 +922,11 @@ void PDC_Server_print_version()
     return;
 }
 
-//TODO: Add description of the following function
+/*
+ * Allocate a new object ID
+ *
+ * \return 64-bit integer of object ID
+ */
 static uint64_t PDC_Server_gen_obj_id()
 {
     uint64_t ret_value;
@@ -828,7 +938,14 @@ static uint64_t PDC_Server_gen_obj_id()
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Write the servers' addresses to file, so that client can read the file and 
+ * get all the servers' addresses.
+ *
+ * \param  addr_strings[IN]     2D char array of all servers' network address
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_write_addr_to_file(char** addr_strings, int n)
 {
     perr_t ret_value = SUCCEED;
@@ -857,7 +974,11 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Init the hash table for metadata storage
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 static perr_t PDC_Server_init_hash_table()
 {
     perr_t ret_value = SUCCEED;
@@ -885,7 +1006,14 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Remove a metadata from bloom filter
+ *
+ * \param  metadata[IN]     Metadata pointer of the remove target
+ * \param  bloom[IN]        Bloom filter's pointer
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 static perr_t PDC_Server_remove_from_bloom(pdc_metadata_t *metadata, BLOOM_TYPE_T *bloom)
 {
     perr_t ret_value = SUCCEED;
@@ -914,7 +1042,14 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Add a metadata to bloom filter
+ *
+ * \param  metadata[IN]     Metadata pointer of the target
+ * \param  bloom[IN]        Bloom filter's pointer
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 static perr_t PDC_Server_add_to_bloom(pdc_metadata_t *metadata, BLOOM_TYPE_T *bloom)
 {
     perr_t ret_value = SUCCEED;
@@ -949,7 +1084,13 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Init a bloom filter
+ *
+ * \param  entry[IN]     Entry of the metadata hash table
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 static perr_t PDC_Server_bloom_init(pdc_hash_table_entry_head *entry)
 {
     perr_t      ret_value = 0;
@@ -995,7 +1136,14 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Insert a metadata to the metadata hash table
+ *
+ * \param  head[IN]      Head of the hash table
+ * \param  new[IN]       Metadata pointer to be inserted
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 static perr_t PDC_Server_hash_table_list_insert(pdc_hash_table_entry_head *head, pdc_metadata_t *new)
 {
     perr_t ret_value = SUCCEED;
@@ -1045,7 +1193,14 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Init a metadata list (doubly linked) under the given hash table entry
+ *
+ * \param  entry[IN]        An entry pointer of the hash table
+ * \param  hash_key[IN]     Hash key of the entry
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 static perr_t PDC_Server_hash_table_list_init(pdc_hash_table_entry_head *entry, uint32_t *hash_key)
 {
     
@@ -1184,7 +1339,14 @@ done:
 /*     FUNC_LEAVE(ret_value); */
 /* } */
 
-//TODO: Add description of the following function
+/*
+ * Add the tag received from one client to the corresponding metadata structure
+ *
+ * \param  in[IN]       Input structure received from client
+ * \param  out[OUT]     Output structure to be sent back to the client
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *out)
 {
 
@@ -1321,7 +1483,14 @@ done:
     FUNC_LEAVE(ret_value);
 } // end of add_tag_metadata_from_hash_table
 
-//TODO: Add description of the following function
+/*
+ * Update the metadata received from one client to the corresponding metadata structure
+ *
+ * \param  in[IN]       Input structure received from client
+ * \param  out[OUT]     Output structure to be sent back to the client
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out)
 {
     perr_t ret_value;
@@ -1458,8 +1627,14 @@ done:
     FUNC_LEAVE(ret_value);
 } // end of update_metadata_from_hash_table
 
-
-//TODO: Add description of the following function
+/*
+ * Delete metdata with the ID received from a client
+ *
+ * \param  in[IN]       Input structure received from client, conatins object ID
+ * \param  out[OUT]     Output structure to be sent back to the client
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_id_out_t *out)
 {
     perr_t ret_value = FAIL;
@@ -1595,7 +1770,14 @@ done:
 } // end of delete_metadata_by_id
 
 
-//TODO: Add description of the following function
+/*
+ * Delete metdata from hash table with the ID received from a client
+ *
+ * \param  in[IN]       Input structure received from client, conatins object ID
+ * \param  out[OUT]     Output structure to be sent back to the client
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out)
 {
     perr_t ret_value;
@@ -1757,8 +1939,14 @@ done:
     FUNC_LEAVE(ret_value);
 } // end of delete_metadata_from_hash_table
 
-
-//TODO: Add description of the following function
+/*
+ * Insert the metdata received from client to the hash table
+ *
+ * \param  in[IN]       Input structure received from client, conatins metadata 
+ * \param  out[OUT]     Output structure to be sent back to the client
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
 {
     perr_t ret_value = SUCCEED;
@@ -1938,8 +2126,37 @@ done:
     FUNC_LEAVE(ret_value);
 } // end of insert_metadata_to_hash_table
 
+/*
+ * Print all existing metadata in the hash table
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+//TODO: test
+static perr_t PDC_Server_print_all_metadata()
+{
+    perr_t ret_value = SUCCEED;
+    hg_hash_table_iter_t hash_table_iter;
+    pdc_metadata_t *elt;
+    pdc_hash_table_entry_head *head;
+    
+    FUNC_ENTER(NULL);
 
-//TODO: Add description of the following function
+    hg_hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
+    while (hg_hash_table_iter_has_more(&hash_table_iter)) {
+        head = hg_hash_table_iter_next(&hash_table_iter);
+        DL_FOREACH(head->metadata, elt) {
+            PDC_print_metadata(elt);
+        }
+    }
+
+    FUNC_LEAVE(ret_value);
+}
+
+/*
+ * Check for duplicates in the hash table
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 static perr_t PDC_Server_metadata_duplicate_check()
 {
     perr_t ret_value = SUCCEED;
@@ -2016,7 +2233,13 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Callback function of the server to lookup clients, also gets the confirm message from client.
+ *
+ * \param  callback_info[IN]        Mercury callback info pointer 
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 static hg_return_t
 lookup_remote_server_rpc_cb(const struct hg_cb_info *callback_info)
 {
@@ -2044,7 +2267,13 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Callback function of the server to lookup other servers via Mercury RPC
+ *
+ * \param  callback_info[IN]        Mercury callback info pointer 
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 static hg_return_t
 lookup_remote_server_cb(const struct hg_cb_info *callback_info)
 {
@@ -2084,7 +2313,11 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Test connection to other servers
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_lookup_remote_server()
 {
     int i;
@@ -2124,7 +2357,15 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_lookup_remote_server
 
-//TODO: Add description of the following function
+/*
+ * Callback function of the server to lookup other servers via Mercury RPC
+ *
+ * \param  port[IN]        Port number for Mercury to use
+ * \param  hg_class[IN]    Pointer to Mercury class
+ * \param  hg_context[IN]  Pointer to Mercury context
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context)
 {
     perr_t ret_value = SUCCEED;
@@ -2307,7 +2548,13 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_init
 
-//TODO: Add description of the following function
+/*
+ * Destroy the remote server info structures, free the allocated space
+ *
+ * \param  info[IN]        Pointer to the remote server info structures
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_destroy_remote_server_info(pdc_remote_server_info_t *info)
 {
     int i;
@@ -2376,7 +2623,13 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_destroy_remote_server_info
 
-//TODO: Add description of the following function
+/*
+ * Destroy the client info structures, free the allocated space
+ *
+ * \param  info[IN]        Pointer to the client info structures
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_destroy_client_info(pdc_client_info_t *info)
 {
     int i;
@@ -2433,12 +2686,19 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_init
 
-//TODO: Add description of the following function
+/*
+ * Finalize the server, free allocated spaces
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_finalize()
 {
     perr_t ret_value = SUCCEED;
     
     FUNC_ENTER(NULL);
+
+    // Debug: print all metadata
+    PDC_Server_print_all_metadata();
 
     // Debug: check duplicates
     /* PDC_Server_metadata_duplicate_check(); */
@@ -2526,7 +2786,12 @@ done:
 }
 
 #ifdef ENABLE_MULTITHREAD
-//TODO: Add description of the following function
+
+/*
+ * Multi-thread Mercury progess
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 static HG_THREAD_RETURN_TYPE
 hg_progress_thread(void *arg)
 {
@@ -2552,14 +2817,20 @@ hg_progress_thread(void *arg)
 }
 #endif
 
-//TODO: Add description of the following function
-// Backup in-memory DHT/Bloom to persist storage
+/*
+ * Checkpoint in-memory metadata to persistant storage, each server writes to one file
+ *
+ * \param  filename[IN]     Checkpoint file name
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_checkpoint(char *filename)
 {
     perr_t ret_value = SUCCEED;
     pdc_metadata_t *elt;
+    region_list_t  *region_elt;
     pdc_hash_table_entry_head *head;
-    int n_entry, checkpoint_count = 0;
+    int n_entry, checkpoint_count = 0, n_region;
     uint32_t hash_key;
     
     FUNC_ENTER(NULL);
@@ -2597,6 +2868,14 @@ perr_t PDC_Server_checkpoint(char *filename)
             /* printf("==PDC_SERVER: Writing one metadata...\n"); */
             /* PDC_print_metadata(elt); */
             fwrite(elt, sizeof(pdc_metadata_t), 1, file);
+
+            // Write region info
+            DL_COUNT(elt->storage_region_list_head, retion_elt, n_region);
+            fwrite(&n_region, sizeof(int), 1, file);
+            DL_FOREACH(elt->storage_region_list_head, region_elt) {
+                fwrite(&region_elt, sizeof(region_list_t), 1, file);
+            }
+
             checkpoint_count++;
         }
     }
@@ -2618,13 +2897,19 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
-// Restart in-memory DHT/Bloom filters from persist storage
+/*
+ * Load metadata from checkpoint file in persistant storage
+ *
+ * \param  filename[IN]     Checkpoint file name
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_restart(char *filename)
 {
     perr_t ret_value = 1;
-    int n_entry, count, i, nobj = 0, all_nobj = 0;
+    int n_entry, count, i, j, nobj = 0, all_nobj = 0, n_region;
     pdc_metadata_t *metadata, *elt;
+    PDC_region_info_t *region_list;
     pdc_hash_table_entry_head *entry;
     uint32_t *hash_key;
     
@@ -2656,8 +2941,26 @@ perr_t PDC_Server_restart(char *filename)
         entry->n_obj = 0;
         entry->bloom = NULL;
         entry->metadata = NULL;
+        // Init hash table metadata (w/ bloom) with first obj
+        PDC_Server_hash_table_list_init(entry, hash_key);
+
+
         metadata = (pdc_metadata_t*)calloc(sizeof(pdc_metadata_t), count);
-        fread(metadata, sizeof(pdc_metadata_t), count, file);
+
+        // TODO: test
+        for (i = 0; i < count; i++) {
+            fread(metadata+i, sizeof(pdc_metadata_t), 1, file);
+
+            fread(&n_region, sizeof(int), 1, file);
+            region_list = (region_list_t*)calloc(sizeof(region_list_t), n_region);
+
+            fread(&region_elt, sizeof(region_list_t), n_region, file);
+
+            for (j = 0; j < n_region; j++) {
+                DL_APPEND(metadata->storage_region_list_head, region_list+j);
+            }
+        }
+
         nobj += count;
         total_mem_usage_g += sizeof(pdc_hash_table_entry_head);
         total_mem_usage_g += (sizeof(pdc_metadata_t)*count);
@@ -2668,8 +2971,6 @@ perr_t PDC_Server_restart(char *filename)
         /*     PDC_print_metadata(elt); */
         /* } */
 
-        // Init hash table metadata (w/ bloom) with first obj
-        PDC_Server_hash_table_list_init(entry, hash_key);
 
         entry->metadata = NULL;
 
@@ -2704,8 +3005,12 @@ done:
 }
 
 #ifdef ENABLE_MULTITHREAD
-//TODO: Add description of the following function
-// Multithread Mercury
+
+/*
+ * Multithread Mercury server to trigger and progress 
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 static perr_t PDC_Server_multithread_loop(hg_context_t *context)
 {
     perr_t ret_value = SUCCEED;
@@ -2732,8 +3037,11 @@ static perr_t PDC_Server_multithread_loop(hg_context_t *context)
 }
 #endif
 
-//TODO: Add description of the following function
-// No threading
+/*
+ * Single-thread Mercury server to trigger and progress
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 static perr_t PDC_Server_loop(hg_context_t *hg_context)
 {
     perr_t ret_value = SUCCEED;;
@@ -2790,7 +3098,16 @@ static perr_t PDC_Server_loop(hg_context_t *hg_context)
 /*                            overlapping1D(box1.y, box2.y) and */
 /*                            overlapping1D(box1.z, box2.z) */
  
-//TODO: Add description of the following function
+/*
+ * Check if two 1D segments overlaps
+ *
+ * \param  xmin1[IN]        Start offset of first segment
+ * \param  xmax1[IN]        End offset of first segment
+ * \param  xmin2[IN]        Start offset of second segment
+ * \param  xmax2[IN]        End offset of second segment
+ *
+ * \return 1 if they overlap/-1 otherwise
+ */
 static int is_overlap_1D(uint64_t xmin1, uint64_t xmax1, uint64_t xmin2, uint64_t xmax2)
 {
     int ret_value = -1;
@@ -2802,7 +3119,20 @@ static int is_overlap_1D(uint64_t xmin1, uint64_t xmax1, uint64_t xmin2, uint64_
     return ret_value;
 }
 
-//TODO: Add description of the following function
+/*
+ * Check if two 2D box overlaps
+ *
+ * \param  xmin1[IN]        Start offset (x-axis) of first  box
+ * \param  xmax1[IN]        End   offset (x-axis) of first  box
+ * \param  ymin1[IN]        Start offset (y-axis) of first  box
+ * \param  ymax1[IN]        End   offset (y-axis) of first  box
+ * \param  xmin2[IN]        Start offset (x-axis) of second box
+ * \param  xmax2[IN]        End   offset (x-axis) of second box
+ * \param  ymin2[IN]        Start offset (y-axis) of second box
+ * \param  ymax2[IN]        End   offset (y-axis) of second box
+ *
+ * \return 1 if they overlap/-1 otherwise
+ */
 static int is_overlap_2D(uint64_t xmin1, uint64_t xmax1, uint64_t ymin1, uint64_t ymax1, 
                          uint64_t xmin2, uint64_t xmax2, uint64_t ymin2, uint64_t ymax2)
 {
@@ -2817,7 +3147,24 @@ static int is_overlap_2D(uint64_t xmin1, uint64_t xmax1, uint64_t ymin1, uint64_
     return ret_value;
 }
 
-//TODO: Add description of the following function
+/*
+ * Check if two 3D box overlaps
+ *
+ * \param  xmin1[IN]        Start offset (x-axis) of first  box
+ * \param  xmax1[IN]        End   offset (x-axis) of first  box
+ * \param  ymin1[IN]        Start offset (y-axis) of first  box
+ * \param  ymax1[IN]        End   offset (y-axis) of first  box
+ * \param  zmin2[IN]        Start offset (z-axis) of first  box
+ * \param  zmax2[IN]        End   offset (z-axis) of first  box
+ * \param  xmin2[IN]        Start offset (x-axis) of second box
+ * \param  xmax2[IN]        End   offset (x-axis) of second box
+ * \param  ymin2[IN]        Start offset (y-axis) of second box
+ * \param  ymax2[IN]        End   offset (y-axis) of second box
+ * \param  zmin2[IN]        Start offset (z-axis) of second box
+ * \param  zmax2[IN]        End   offset (z-axis) of second box
+ *
+ * \return 1 if they overlap/-1 otherwise
+ */
 static int is_overlap_3D(uint64_t xmin1, uint64_t xmax1, uint64_t ymin1, uint64_t ymax1, uint64_t zmin1, uint64_t zmax1,
                          uint64_t xmin2, uint64_t xmax2, uint64_t ymin2, uint64_t ymax2, uint64_t zmin2, uint64_t zmax2)
 {
@@ -2834,26 +3181,33 @@ static int is_overlap_3D(uint64_t xmin1, uint64_t xmax1, uint64_t ymin1, uint64_
     return ret_value;
 }
 
-static int is_overlap_4D(uint64_t xmin1, uint64_t xmax1, uint64_t ymin1, uint64_t ymax1, uint64_t zmin1, uint64_t zmax1,
-                         uint64_t mmin1, uint64_t mmax1,
-                         uint64_t xmin2, uint64_t xmax2, uint64_t ymin2, uint64_t ymax2, uint64_t zmin2, uint64_t zmax2,
-                         uint64_t mmin2, uint64_t mmax2 )
-{
-    int ret_value = -1;
+/* static int is_overlap_4D(uint64_t xmin1, uint64_t xmax1, uint64_t ymin1, uint64_t ymax1, uint64_t zmin1, uint64_t zmax1, */
+/*                          uint64_t mmin1, uint64_t mmax1, */
+/*                          uint64_t xmin2, uint64_t xmax2, uint64_t ymin2, uint64_t ymax2, uint64_t zmin2, uint64_t zmax2, */
+/*                          uint64_t mmin2, uint64_t mmax2 ) */
+/* { */
+/*     int ret_value = -1; */
     
-    /* if (is_overlap_1D(box1.x, box2.x) == 1 && is_overlap_1D(box1.y, box2.y) == 1) { */
-    if (is_overlap_1D(xmin1, xmax1, xmin2, xmax2) == 1 && 
-        is_overlap_1D(ymin1, ymax1, ymin2, ymax2) == 1 && 
-        is_overlap_1D(zmin1, zmax1, zmin2, zmax2) == 1 && 
-        is_overlap_1D(mmin1, mmax1, mmin2, mmax2) == 1 ) 
-    {
-        ret_value = 1;
-    }
+/*     /1* if (is_overlap_1D(box1.x, box2.x) == 1 && is_overlap_1D(box1.y, box2.y) == 1) { *1/ */
+/*     if (is_overlap_1D(xmin1, xmax1, xmin2, xmax2) == 1 && */ 
+/*         is_overlap_1D(ymin1, ymax1, ymin2, ymax2) == 1 && */ 
+/*         is_overlap_1D(zmin1, zmax1, zmin2, zmax2) == 1 && */ 
+/*         is_overlap_1D(mmin1, mmax1, mmin2, mmax2) == 1 ) */ 
+/*     { */
+/*         ret_value = 1; */
+/*     } */
 
-    return ret_value;
-}
+/*     return ret_value; */
+/* } */
 
-// TODO: stride is not supported yet
+/*
+ * Check if two regions overlap
+ *
+ * \param  a[IN]     Pointer to first region
+ * \param  b[IN]     Pointer to second region
+ *
+ * \return 1 if they overlap/-1 otherwise
+ */
 static int is_contiguous_region_overlap(region_list_t *a, region_list_t *b)
 {
     int ret_value = 1;
@@ -2912,16 +3266,26 @@ static int is_contiguous_region_overlap(region_list_t *a, region_list_t *b)
     else if (a->ndim == 3) {
         ret_value = is_overlap_3D(xmin1, xmax1, ymin1, ymax1, zmin1, zmax2, xmin2, xmax2, ymin2, ymax2, zmin2, zmax2);
     }
-    else if (a->ndim == 4) {
-        ret_value = is_overlap_4D(xmin1, xmax1, ymin1, ymax1, zmin1, zmax1, mmin1, mmax1, xmin2, xmax2, ymin2, ymax2, zmin2, zmax2, mmin2, mmax2);
-    }
+    /* else if (a->ndim == 4) { */
+    /*     ret_value = is_overlap_4D(xmin1, xmax1, ymin1, ymax1, zmin1, zmax1, mmin1, mmax1, xmin2, xmax2, ymin2, ymax2, zmin2, zmax2, mmin2, mmax2); */
+    /* } */
 
 done:
     /* printf("is overlap: %d\n", ret_value); */
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Check if two regions overlap
+ *
+ * \param  ndim[IN]        Dimension of the two region
+ * \param  a_start[IN]     Start offsets of the the first region
+ * \param  a_count[IN]     Size of the the first region
+ * \param  b_start[IN]     Start offsets of the the second region
+ * \param  b_count[IN]     Size of the the second region
+ *
+ * \return 1 if they overlap/-1 otherwise
+ */
 static int is_contiguous_start_count_overlap(uint32_t ndim, uint64_t *a_start, uint64_t *a_count, uint64_t *b_start, uint64_t *b_count)
 {
     int ret_value = 1;
@@ -2981,8 +3345,19 @@ done:
     FUNC_LEAVE(ret_value);
 }
  
-//TODO: Add description of the following function
-/* Get overlapping regions's start[] and count[] */
+/*
+ * Get the overlapping region's information of two regions
+ *
+ * \param  ndim[IN]             Dimension of the two region
+ * \param  start1[IN]           Start offsets of the the first region
+ * \param  count1[IN]           Sizes of the the first region
+ * \param  start2[IN]           Start offsets of the the second region
+ * \param  count2[IN]           Sizes of the the second region
+ * \param  overlap_start[IN]    Start offsets of the the overlapping region
+ * \param  overlap_size[IN]     Sizes of the the overlapping region
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 static perr_t get_overlap_start_count(uint32_t ndim, uint64_t *start1, uint64_t *count1, 
                                                      uint64_t *start2, uint64_t *count2, 
                                        uint64_t *overlap_start, uint64_t *overlap_count)
@@ -3025,7 +3400,14 @@ done:
     return ret_value;
 }
 
-//TODO: Add description of the following function
+/*
+ * Check if two regions are the same
+ *
+ * \param  a[IN]     Pointer to the first region
+ * \param  b[IN]     Pointer to the second region
+ *
+ * \return 1 if they are the same/-1 otherwise
+ */
 static int is_region_identical(region_list_t *a, region_list_t *b)
 {
     int ret_value = -1;
@@ -3059,7 +3441,14 @@ done:
 }
 
 
-//TODO: Add description of the following function
+/*
+ * Lock a reigon.
+ *
+ * \param  in[IN]       Lock region information received from the client
+ * \param  out[OUT]     Output stucture to be sent back to the client
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
 {
     perr_t ret_value;
@@ -3166,7 +3555,14 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Check if the metadata satisfies the constraint received from client
+ *
+ * \param  metadata[IN]       Metadata pointer
+ * \param  constraints[IN]    Constraints received from client    
+ *
+ * \return 1 if the metadata satisfies the constratins/-1 otherwise
+ */
 static int is_metadata_satisfy_constraint(pdc_metadata_t *metadata, metadata_query_transfer_in_t *constraints)
 {
     int ret_value = 1;
@@ -3212,7 +3608,15 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Get the metadata that satisfies the query constraint
+ *
+ * \param  in[IN]           Input structure from client that contains the query constraint
+ * \param  n_meta[OUT]      Number of metadata that satisfies the query constraint
+ * \param  buf_ptrs[OUT]    Pointers to the found metadata
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs)
 {
     perr_t ret_value = FAIL;
@@ -3268,7 +3672,15 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Seach the hash table with object name and hash key
+ *
+ * \param  obj_name[IN]     Name of the object to be searched
+ * \param  hash_key[IN]     Hash value of the name string
+ * \param  out[OUT]         Pointers to the found metadata
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key, pdc_metadata_t** out)
 {
     perr_t ret_value = SUCCEED;
@@ -3382,7 +3794,14 @@ done:
 /*     return 0; */
 /* } */
 
-//TODO: Add description of the following function
+/*
+ * Main function of PDC server
+ *
+ * \param  argc[IN]     Number of command line arguments
+ * \param  argv[IN]     Command line arguments
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 int main(int argc, char *argv[])
 {
     int port;
@@ -3581,7 +4000,15 @@ done:
 /*
  * Data Server related
  */
-//TODO: Add description of the following function
+
+/*
+ * Check if two region are the same
+ *
+ * \param  a[IN]     Pointer of the first region 
+ * \param  b[IN]     Pointer of the second region 
+ *
+ * \return 1 if same/0 otherwise
+ */
 int region_list_cmp(region_list_t *a, region_list_t *b) 
 {
     if (a->ndim != b->ndim) {
@@ -3599,7 +4026,14 @@ int region_list_cmp(region_list_t *a, region_list_t *b)
     return 0;
 }
 
-//TODO: Add description of the following function
+/*
+ * Check if two region are from the same client
+ *
+ * \param  a[IN]     Pointer of the first region 
+ * \param  b[IN]     Pointer of the second region 
+ *
+ * \return 1 if same/0 otherwise
+ */
 int region_list_cmp_by_client_id(region_list_t *a, region_list_t *b) 
 {
     if (a->ndim != b->ndim) {
@@ -3612,7 +4046,14 @@ int region_list_cmp_by_client_id(region_list_t *a, region_list_t *b)
 
 
 // TODO: currently only support merging regions that are cut in one dimension
-//TODO: Add description of the following function
+/*
+ * Merge multiple region to contiguous ones
+ *
+ * \param  list[IN]         Pointer of the regions in a list
+ * \param  merged[OUT]      Merged list (new)
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_merge_region_list_naive(region_list_t *list, region_list_t **merged)
 {
     perr_t ret_value = FAIL;
@@ -3698,7 +4139,13 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Callback function for the region update, gets output from client
+ *
+ * \param  callback_info[OUT]      Mercury callback info
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 static hg_return_t PDC_Server_notify_region_update_cb(const struct hg_cb_info *callback_info)
 {
     FUNC_ENTER(NULL);
@@ -3731,7 +4178,15 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Callback function for the notify region update
+ *
+ * \param  meta_id[OUT]      Metadata ID
+ * \param  reg_id[OUT]       Object ID
+ * \param  client_id[OUT]    Client's MPI rank
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_SERVER_notify_region_update(pdcid_t meta_id, pdcid_t reg_id, int32_t client_id)
 {
     perr_t ret_value = SUCCEED;
@@ -3768,7 +4223,13 @@ perr_t PDC_SERVER_notify_region_update(pdcid_t meta_id, pdcid_t reg_id, int32_t 
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Close the shared memory
+ *
+ * \param  region[OUT]    Pointer to region
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_close_shm(region_list_t *region)
 {
     perr_t ret_value = SUCCEED;
@@ -3794,7 +4255,13 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Callback function for IO complete notification send to client, gets output from client
+ *
+ * \param  callback_info[IN]    Mercury callback info
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 static hg_return_t PDC_Server_notify_io_complete_cb(const struct hg_cb_info *callback_info)
 {
     hg_return_t ret_value;
@@ -3829,7 +4296,16 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Callback function for IO complete notification send to client
+ *
+ * \param  client_id[IN]    Target client's MPI rank
+ * \param  obj_id[IN]       Object ID 
+ * \param  shm_addr[IN]     Server's shared memory address  
+ * \param  io_typ[IN]       IO type (read/write)
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_notify_io_complete_to_client(uint32_t client_id, uint64_t obj_id, 
         char* shm_addr, PDC_access_t io_type)
 {
@@ -3913,7 +4389,14 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Check if a previous read request has been completed
+ *
+ * \param  in[IN]       Input structure received from client containing the IO request info
+ * \param  out[OUT]     Output structure to be sent back to the client
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_check_out_t *out)
 {
     perr_t ret_value = SUCCEED;
@@ -3983,7 +4466,14 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Check if a previous write request has been completed
+ *
+ * \param  in[IN]       Input structure received from client containing the IO request info
+ * \param  out[OUT]     Output structure to be sent back to the client
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_write_check_out_t *out)
 {
     perr_t ret_value = FAIL;
@@ -4055,7 +4545,14 @@ done:
     FUNC_LEAVE(ret_value);
 } //PDC_Server_write_check
 
-//TODO: Add description of the following function
+/*
+ * Read the requested data to shared memory address
+ *
+ * \param  region_list_head[IN]       List of IO request to be performed
+ * \param  obj_id[IN]                 Object ID of the IO request
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_data_read_to_shm(region_list_t *region_list_head, uint64_t obj_id)
 {
     perr_t ret_value = FAIL;
@@ -4254,7 +4751,16 @@ done:
 /*     FUNC_LEAVE(ret_value); */
 /* } // end of PDC_Server_data_read */
 
-//TODO: Add description of the following function
+/*
+ * Get the storage location of a region from local metadata hash table
+ *
+ * \param  obj_id[IN]               Object ID of the request
+ * \param  region[IN]               Request region
+ * \param  n_loc[OUT]               Number of storage locations of the target region
+ * \param  overlap_region_loc[OUT]  List of region locations
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_get_local_storage_location_of_region(uint64_t obj_id, region_list_t *region,
         uint32_t *n_loc, region_list_t **overlap_region_loc)
 {
@@ -4297,7 +4803,13 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_get_local_storage_location_of_region
 
-//TODO: Add description of the following function
+/*
+ * Callback function for get storage info.
+ *
+ * \param  callback_info[IN]         Mercury callback info
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 static hg_return_t
 PDC_Server_get_storage_info_cb (const struct hg_cb_info *callback_info)
 {
@@ -4328,9 +4840,18 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+/*
+ * Get the storage location of a region from (possiblly remote) metadata hash table
+ *
+ * \param  obj_id[IN]               Object ID of the request
+ * \param  region[IN]               Request region
+ * \param  n_loc[OUT]               Number of storage locations of the target region
+ * \param  overlap_region_loc[OUT]  List of region locations
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 // Note: one request region can spread across multiple regions in storage
 // Need to allocate **overlap_region_loc with PDC_MAX_OVERLAP_REGION_NUM before calling this 
-//TODO: Add description of the following function
 perr_t PDC_Server_get_storage_location_of_region(region_list_t *request_region, uint32_t *n_loc, 
                                                  region_list_t **overlap_region_loc)
 {
@@ -4402,7 +4923,15 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_get_storage_location_of_region
 
-//TODO: Add description of the following function
+/*
+ * Set the Lustre stripe count/size of a given path
+ *
+ * \param  path[IN]             Directory to be set with Lustre stripe/count
+ * \param  stripe_count[IN]     Stripe count
+ * \param  stripe_size_MB[IN]   Stripe size in MB
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_set_lustre_stripe(char *path, int stripe_count, int stripe_size_MB)
 {
     perr_t ret_value = SUCCEED;
@@ -4435,7 +4964,14 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Perform the IO request with different IO system
+ *
+ * \param  region_list_head[IN]     List of IO requests
+ * \param  plugin[IN]               IO system to be used
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_regions_io(region_list_t *region_list_head, PDC_io_plugin_t plugin)
 {
     perr_t ret_value = SUCCEED;
@@ -4461,7 +4997,13 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Write the data from clients' shared memory to persistant storage
+ *
+ * \param  region_list_head[IN]     List of IO requests
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_data_write_from_shm(region_list_t *region_list_head)
 {
     perr_t ret_value = SUCCEED;
@@ -4532,7 +5074,13 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_data_write_from_shm
 
-//TODO: Add description of the following function
+/*
+ * Perform the IO request via shared memory
+ *
+ * \param  callback_info[IN]     Mercury callback info
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
 {
     perr_t ret_value = SUCCEED;
@@ -4719,7 +5267,13 @@ done:
     FUNC_LEAVE(ret_value);
 } // end of PDC_Server_data_write
 
-//TODO: Add description of the following function
+/*
+ * Update the storage location information of the corresponding metadata that is stored locally
+ *
+ * \param  region[IN]     Region info of the data that's been written by server 
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region)
 {
     perr_t ret_value = SUCCEED;
@@ -4782,7 +5336,13 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Callback function for the region location info update
+ *
+ * \param  callback_info[IN]     Mercury callback info
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 static hg_return_t
 PDC_Server_update_region_loc_cb(const struct hg_cb_info *callback_info)
 {
@@ -4815,7 +5375,14 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Update the storage location information of the corresponding metadata that may be stored in a
+ * remote server.
+ *
+ * \param  callback_info[IN]     Mercury callback info
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region)
 {
     hg_return_t hg_ret;
@@ -4882,7 +5449,13 @@ done:
     FUNC_LEAVE(ret_value);
 } // end of PDC_Server_update_region_storagelocation_offset
 
-//TODO: Add description of the following function
+/*
+ * Callback function for get the metadata by ID
+ *
+ * \param  callback_info[IN]     Mercury callback info
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 static hg_return_t
 PDC_Server_get_metadata_by_id_cb(const struct hg_cb_info *callback_info)
 {
@@ -4922,7 +5495,14 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_get_metadata_by_id_cb
 
-//TODO: Add description of the following function
+/*
+ * Get metadata of the object ID received from client from local metadata hash table
+ *
+ * \param  obj_id[IN]           Object ID
+ * \param  res_metadata[IN]     Pointer of metadata of the specified object ID
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_get_local_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta)
 {
     perr_t ret_value = SUCCEED;
@@ -4963,7 +5543,14 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_get_local_metadata_by_id
 
-//TODO: Add description of the following function
+/*
+ * Get metadata of the object ID received from client from (possibly remtoe) metadata hash table
+ *
+ * \param  obj_id[IN]           Object ID
+ * \param  res_metadata[IN]     Pointer of metadata of the specified object ID
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_get_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta)
 {
     hg_return_t hg_ret;
@@ -5015,8 +5602,16 @@ done:
     FUNC_LEAVE(ret_value);
 } // end of PDC_Server_get_metadata_by_id
 
-//TODO: Add description of the following function
-// Serialize regions information, including ndim, start[], count[], storage loc
+/*
+ * Serialize the region info structure for network transfer,
+ * including ndim, start[], count[], storage loc
+ *
+ * \param  regions[IN]       List of region info to be serialized
+ * \param  n_region[IN]      Number of regions in the list
+ * \param  buf[OUT]          Serialized data
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_serialize_regions_info(region_list_t** regions, uint32_t n_region, void *buf)
 {
     perr_t ret_value = SUCCEED;
@@ -5082,8 +5677,16 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_serialize_regions_info
 
-//TODO: Add description of the following function
-// Un-serialize regions information, including ndim, start[], count[], storage loc
+/*
+ * Un-serialize the region info structure from network transfer,
+ * including ndim, start[], count[], storage loc
+ *
+ * \param  buf[IN]            Serialized data
+ * \param  regions[OUT]       List of region info that are un-serialized
+ * \param  n_region[OUT]      Number of regions in the list
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_unserialize_regions_info(void *buf, region_list_t** regions, uint32_t *n_region)
 {
     perr_t ret_value = SUCCEED;
@@ -5152,7 +5755,15 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_unserialize_regions_info
 
-//TODO: Add description of the following function
+/*
+ * Calculate the total string length of the regions to be serialized
+ *
+ * \param  regions[IN]       List of region info that are un-serialized
+ * \param  n_region[IN]      Number of regions in the list
+ * \param  len[OUT]          Length of the serialized string
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_get_total_str_len(region_list_t** regions, uint32_t n_region, uint32_t *len)
 {
     perr_t ret_value = SUCCEED;
@@ -5183,7 +5794,11 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Test serialize/un-serialized code
+ *
+ * \return void
+ */
 void test_serialize()
 {
     region_list_t **head = NULL, *a, *b, *c, *d;
@@ -5252,7 +5867,21 @@ void test_serialize()
 
 }
 
-//TODO: Add description of the following function
+/*
+ * Perform the POSIX read of multiple storage regions that overlap with the read request
+ *
+ * \param  ndim[IN]                 Number of dimension
+ * \param  req_start[IN]            Start offsets of the request
+ * \param  req_count[IN]            Counts of the request
+ * \param  storage_start[IN]        Start offsets of the storage region
+ * \param  storage_count[IN]        Counts of the storage region
+ * \param  fp[IN]                   File pointer 
+ * \param  storage region[IN]       File offset of the first storage region 
+ * \param  buf[OUT]                 Data buffer to be read to  
+ * \param  total_read_bytes[OUT]    Total number of bytes read
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 // For each intersecteed region in storage, calculate the actual overlapping regions'
 // start[] and count[], then read into the buffer with correct offset
 perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint64_t *req_count, 
@@ -5427,7 +6056,13 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Read with POSIX within one file
+ *
+ * \param  region[IN]       Region info of IO request
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_posix_one_file_io(region_list_t* region)
 {
     perr_t ret_value = SUCCEED;
@@ -5700,8 +6335,17 @@ done:
 /*     FUNC_LEAVE(ret_value); */
 /* } // end of PDC_Server_add_io_request */
 
-//TODO: Add description of the following function
-// Directly read/write buffer from/to storage of one region
+/*
+ * Directly server read/write buffer from/to storage of one region
+ * Read with POSIX within one file
+ *
+ * \param  io_type[IN]           IO type (read/write)
+ * \param  obj_id[IN]            Object ID
+ * \param  region_info[IN]       Region info of IO request
+ * \param  buf[IN/OUT]           Data buffer
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct PDC_region_info *region_info, void *buf)
 {
     perr_t ret_value = SUCCEED;
@@ -5761,7 +6405,16 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Server writes buffer to storage of one region without client involvement
+ * Read with POSIX within one file
+ *
+ * \param  obj_id[IN]            Object ID
+ * \param  region_info[IN]       Region info of IO request
+ * \param  buf[IN]               Data buffer
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf)
 {
     perr_t ret_value = SUCCEED;
@@ -5779,7 +6432,15 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//TODO: Add description of the following function
+/*
+ * Server reads buffer from storage of one region without client involvement
+ *
+ * \param  obj_id[IN]            Object ID
+ * \param  region_info[IN]       Region info of IO request
+ * \param  buf[OUT]              Data buffer
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_data_read_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf)
 {
     perr_t ret_value = SUCCEED;

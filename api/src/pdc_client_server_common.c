@@ -221,6 +221,7 @@ void pdc_mkdir(const char *dir)
 void PDC_print_metadata(pdc_metadata_t *a)
 {
     int i;
+    region_list_t *elt;
     FUNC_ENTER(NULL);
     
     if (a == NULL) {
@@ -239,6 +240,9 @@ void PDC_print_metadata(pdc_metadata_t *a)
     printf("  dims = %llu",   a->dims[0]);
     for (i = 1; i < a->ndim; i++) 
         printf(", %llu",   a->dims[i]);
+    // print regiono info
+    DL_FOREACH(a->storage_region_list_head, elt)
+        PDC_print_region_list(elt);
     printf("\n================================\n\n");
     fflush(stdout);
 }
@@ -355,15 +359,16 @@ void PDC_print_region_list(region_list_t *a)
         return;
     }
     int i;
-    printf("================================\n");
-    printf("  ndim      = %d\n",   a->ndim);
-    printf("  start    count\n");
+    printf("  == Region Info ==\n");
+    printf("    ndim      = %d\n",   a->ndim);
+    printf("    start    count\n");
     /* printf("start stride count\n"); */
     for (i = 0; i < a->ndim; i++) {
-        printf("  %5d    %5d\n", a->start[i], a->count[i]);
+        printf("    %5d    %5d\n", a->start[i], a->count[i]);
         /* printf("%5d %6d %5d\n", a->start[i], a->stride[i], a->count[i]); */
     }
-    printf("  Client IDs: ");
+    printf("    Storage location: [%s]\n", a->storage_location);
+    printf("    Client IDs: ");
     i = 0;
     while (1) {
         printf("%u, ", a->client_ids[i]);
@@ -373,7 +378,7 @@ void PDC_print_region_list(region_list_t *a)
     }
     printf("\n");
     
-    printf("================================\n\n");
+    printf("  =================\n");
     fflush(stdout);
 }
 
