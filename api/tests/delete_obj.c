@@ -188,7 +188,7 @@ MPI_Barrier(MPI_COMM_WORLD);
         /* printf("Proc %d: deleting metadata\n", rank); */
         /* fflush(stdout); */
         perr_t ret;
-        ret = PDC_Client_delete_metadata_by_id(pdc, cont, create_obj_ids[i]);
+        ret = PDC_Client_delete_metadata_by_id(create_obj_ids[i]);
         if (ret != SUCCEED) {
             printf("Delete fail with process %d, exiting\n", rank);
             goto done;

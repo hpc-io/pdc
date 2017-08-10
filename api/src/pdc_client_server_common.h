@@ -163,8 +163,8 @@ typedef struct {
 
 typedef struct pdc_metadata_transfer_t {
     int32_t     user_id;
-    hg_const_string_t  *app_name;
-    hg_const_string_t  *obj_name;
+    hg_const_string_t  app_name;
+    hg_const_string_t  obj_name;
     int32_t     time_step;
 
     uint64_t    obj_id;
@@ -172,8 +172,8 @@ typedef struct pdc_metadata_transfer_t {
     int32_t     ndim;
     int32_t     dims0, dims1, dims2, dims3;
 
-    hg_const_string_t  *tags;
-    hg_const_string_t  *data_location;
+    hg_const_string_t  tags;
+    hg_const_string_t  data_location;
     /* time_t      create_time; */
     /* time_t      last_modified_time; */
 } pdc_metadata_transfer_t;
@@ -182,8 +182,8 @@ typedef struct metadata_query_transfer_in_t{
     int     is_list_all;
 
     int     user_id;                // Both server and client gets it and do security check
-    hg_const_string_t    *app_name;
-    hg_const_string_t    *obj_name;
+    hg_const_string_t    app_name;
+    hg_const_string_t    obj_name;
 
     int     time_step_from;
     int     time_step_to;
@@ -195,7 +195,7 @@ typedef struct metadata_query_transfer_in_t{
     /* time_t  last_modified_time_from; */
     /* time_t  last_modified_time_to; */
 
-    hg_const_string_t    *tags;
+    hg_const_string_t    tags;
 } metadata_query_transfer_in_t;
 
 typedef struct {
@@ -1679,7 +1679,7 @@ hg_proc_get_metadata_by_id_out_t(hg_proc_t proc, void *data)
 
 // For generic serialized data transfer
 typedef struct {
-    hg_const_string_t *buf;
+    hg_const_string_t buf;
 } pdc_serialized_data_t;
 
 static HG_INLINE hg_return_t

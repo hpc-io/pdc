@@ -3,6 +3,7 @@
 #include <string.h>
 #include <getopt.h>
 #include <time.h>
+#include <inttypes.h>
 
 #ifdef ENABLE_MPI
   #include "mpi.h"
@@ -49,17 +50,17 @@ pdcid_t create_obj(char *obj_name, uint32_t ndim, uint64_t *dims)
 
 int print_data(int ndim, uint64_t *start, uint64_t *count, void *data)
 {
-    uint64_t i, j, k, m;
+    uint64_t i, j;
     char *data_1d, **data_2d, ***data_3d;
 
     if (ndim == 1) {
         data_1d = (char *)data;
-        printf("[%.*s]\n", count[0], data_1d + start[0]);
+        printf("[%.*s]\n", (int)count[0], data_1d + start[0]);
     }
     else if (ndim == 2) {
         data_2d = (char **)data;
         for (j = 0; j < count[1]; j++) {
-            printf("[%.*s]\n", count[0], data_2d[j+start[1]] + start[0]);
+            printf("[%.*s]\n", (int)count[0], data_2d[j+start[1]] + start[0]);
         }
 
     }
@@ -67,7 +68,7 @@ int print_data(int ndim, uint64_t *start, uint64_t *count, void *data)
         data_3d = (char ***)data;
         for (i = 0; i < count[2]; i++) {
             for (j = 0; j < count[1]; j++) {
-                printf("[%.*s]\n", count[0], data_2d[k+start[2]][j+start[1]] + start[0]);
+                printf("[%.*s]\n", (int)count[0], data_3d[i+start[2]][j+start[1]] + start[0]);
             }
             printf("\n");
         }
@@ -78,7 +79,7 @@ int print_data(int ndim, uint64_t *start, uint64_t *count, void *data)
 
 int data_verify(int ndim, uint64_t *start, uint64_t *count, void *data, uint64_t *truth_start, void *truth_data)
 {
-    uint64_t i, j, k, m;
+    uint64_t i, j, k;
     char *data_1d, **data_2d, ***data_3d;
     char *truth_data_1d, **truth_data_2d, ***truth_data_3d;
 
@@ -87,7 +88,7 @@ int data_verify(int ndim, uint64_t *start, uint64_t *count, void *data, uint64_t
         truth_data_1d = (char *)truth_data;
         for (k = 0; k < count[0]; k++) {
             if (data_1d[k+start[0]] != truth_data_1d[k+truth_start[0]]) {
-                printf("(%llu) %c / %c\n", k, data_1d[k+start[0]], 
+                printf("(%" PRIu64 ") %c / %c\n", k, data_1d[k+start[0]], 
                                 truth_data_1d[k+truth_start[0]]);
                 return -1;
             }
@@ -99,7 +100,7 @@ int data_verify(int ndim, uint64_t *start, uint64_t *count, void *data, uint64_t
         for (j = 0; j < count[1]; j++) {
             for (k = 0; k < count[0]; k++) {
                 if (data_2d[j+start[1]][k+start[0]] != truth_data_2d[j+truth_start[1]][k+truth_start[0]]) {
-                    printf("(%llu, %llu) %c / %c\n", j, k, data_2d[j+start[1]][k+start[0]],
+                    printf("(%" PRIu64 ", %" PRIu64 ") %c / %c\n", j, k, data_2d[j+start[1]][k+start[0]],
                                     truth_data_2d[j+truth_start[1]][k+truth_start[0]]);
                     return -1;
                 }
@@ -115,7 +116,7 @@ int data_verify(int ndim, uint64_t *start, uint64_t *count, void *data, uint64_t
                 for (k = 0; k < count[0]; k++) {
                     if (data_3d[i+start[2]][j+start[1]][k+start[0]] != 
                         truth_data_3d[i+truth_start[2]][j+truth_start[1]][k+truth_start[0]]) {
-                        printf("(%llu, %llu, %llu) %c / %c\n", i, j, k, 
+                        printf("(%" PRIu64 ", %" PRIu64 ", %" PRIu64 ") %c / %c\n", i, j, k, 
                                 data_3d[i+start[2]][j+start[1]][k+start[0]],
                                 truth_data_3d[i+truth_start[2]][j+truth_start[1]][k+truth_start[0]]);
                         return -1;
@@ -223,7 +224,7 @@ int test1d(char *obj_name)
 
     /* printf("proc%d: write data [%s]\n", rank, data); */
 
-    /* printf("proc%d: read data region: %llu size: %llu\n", rank, read_offset, read_size); */
+    /* printf("proc%d: read data region: %" PRIu64 " size: %" PRIu64 "\n", rank, read_offset, read_size); */
 
 
     char *read_data = (char*)calloc(sizeof(char), read_size + 1);
@@ -254,11 +255,12 @@ int test1d(char *obj_name)
     is_all_correct = is_correct;
 
 #ifdef ENABLE_MPI 
+    MPI_Barrier(MPI_COMM_WORLD);
     MPI_Reduce(&is_correct, &is_all_correct, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 #endif
 
     if (rank == 0) {
-        printf("1D data verfication ...", read_data);
+        printf("1D data verfication ...");
         if (is_all_correct != size) 
             printf("FAILED!\n");
         else
@@ -266,7 +268,6 @@ int test1d(char *obj_name)
     }
     
 
-done:
     free(data);
 
     return 1;
@@ -284,7 +285,7 @@ int test2d(char *obj_name)
     struct PDC_region_info read_region;
     uint64_t storage_offset_a[3], storage_offset_b[3], storage_offset_c[3], storage_offset_d[3], read_offset[3];
     uint64_t storage_size_a[3], storage_size_b[3], storage_size_c[3], storage_size_d[3], read_size[3];
-    uint64_t prob_domain[3], storage_domain[3], sel_offset[3], sel_size[3];
+    uint64_t prob_domain[3], storage_domain[3];
     uint64_t i,j;
 
     uint32_t ndim = 2;
@@ -368,12 +369,6 @@ int test2d(char *obj_name)
     region_c.size       = storage_size_c;
     region_d.size       = storage_size_d;
 
-    // Now data selection
-    sel_offset[0] =  8 + rank*prob_domain[0];
-    sel_offset[1] = 14 + rank*prob_domain[1];
-    sel_size[0]   = 10;
-    sel_size[1]   =  4;
-    
     uint64_t data_total_size = storage_domain[0] * storage_domain[1];
     char *data          = ( char*)calloc(sizeof(char) , data_total_size);
     char **data_2d      = (char**)calloc(sizeof(char*), storage_domain[1]);
@@ -412,7 +407,7 @@ int test2d(char *obj_name)
     // Debug print
     /* printf("Linearized Data:\n"); */
     /* for (i = 0; i < storage_domain[1]; i++) */ 
-    /*     printf("%.2llu (%.2llu): %.*s\n", i, storage_domain[0], storage_domain[0], data_2d[i]); */
+    /*     printf("%.2" PRIu64 " (%.2" PRIu64 "): %.*s\n", i, storage_domain[0], storage_domain[0], data_2d[i]); */
 
     /* printf("\n\n2D Data by region:\na:\n"); */
     /* for (i = 0; i < storage_size_a[1]; i++) */ 
@@ -443,7 +438,7 @@ int test2d(char *obj_name)
 
 /*     /1* printf("proc%d: write data [%s]\n", rank, data); *1/ */
 
-/*     /1* printf("proc%d: read data region: %llu size: %llu\n", rank, read_offset, read_size); *1/ */
+/*     /1* printf("proc%d: read data region: %" PRIu64 " size: %" PRIu64 "\n", rank, read_offset, read_size); *1/ */
 
 
     char *read_data     = (char*)calloc(sizeof(char), read_size[0]*read_size[1] + 1);
@@ -469,11 +464,12 @@ int test2d(char *obj_name)
     is_all_correct = is_correct;
 
 #ifdef ENABLE_MPI 
+    MPI_Barrier(MPI_COMM_WORLD);
     MPI_Reduce(&is_correct, &is_all_correct, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 #endif
 
     if (rank == 0) {
-        printf("2D data verfication ...", read_data);
+        printf("2D data verfication ...");
         if (is_all_correct != size) 
             printf("FAILED!\n");
         else
@@ -492,7 +488,6 @@ int test2d(char *obj_name)
 
          
 
-done:
     free(data);
     free(data_2d);
 
@@ -525,9 +520,9 @@ int test3d(char *obj_name)
     uint64_t storage_size_e[3], storage_size_f[3], storage_size_g[3], storage_size_h[3];
 
     uint64_t read_offset[3], read_size[3];
-    uint64_t prob_domain[3], storage_domain[3], sel_offset[3], sel_size[3];
+    uint64_t prob_domain[3], storage_domain[3];
 
-    uint64_t i, j, k;
+    uint64_t i, j;
 
     prob_domain[0] = 22 * size;
     prob_domain[1] = 21 * size;
@@ -691,7 +686,6 @@ int test3d(char *obj_name)
 
 
     char ***data_3d = (char***)calloc(sizeof(char**),  storage_domain[2]);
-    char  **data_2d;
 
     for (j = 0; j < storage_domain[2]; j++) {
         data_3d[j] = ( char**)calloc(sizeof(char*),   storage_domain[1]);
@@ -834,7 +828,7 @@ int test3d(char *obj_name)
     /* read_region.size   = region_g.size; */
 
     /* printf("proc%d: write data [%s]\n", rank, data); */
-    /* printf("proc%d: read data region: %llu size: %llu\n", rank, read_offset, read_size); */
+    /* printf("proc%d: read data region: %" PRIu64 " size: %" PRIu64 "\n", rank, read_offset, read_size); */
 
     
     char   *read_data    = (char*)calloc(sizeof(char), 
@@ -877,11 +871,12 @@ int test3d(char *obj_name)
     is_all_correct = is_correct;
 
 #ifdef ENABLE_MPI 
+    MPI_Barrier(MPI_COMM_WORLD);
     MPI_Reduce(&is_correct, &is_all_correct, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 #endif
 
     if (rank == 0) {
-        printf("3D data verfication ...", read_data);
+        printf("3D data verfication ...");
         if (is_all_correct != size) 
             printf("FAILED!\n");
         else
@@ -890,7 +885,6 @@ int test3d(char *obj_name)
  
    
 
-done:
     free(data);
     for (j = 0; j < storage_domain[2]; j++) 
         free(data_3d[j]);
@@ -978,14 +972,16 @@ int main(int argc, const char *argv[])
     if (rank == 0) 
         printf("\n\n");
     
-done:
+
+
+
     // close a container property
     if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
 
     // close a container
     if(PDCcont_close(cont) < 0)
-        printf("fail to close container %lld\n", cont);
+        printf("fail to close container %ld\n", cont);
 
     if(PDC_close(pdc) < 0)
        printf("fail to close PDC\n");

@@ -213,7 +213,7 @@ perr_t PDC_Client_delete_metadata(char *delete_name, pdcid_t obj_delete_prop);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_delete_metadata_by_id(pdcid_t pdc_id, pdcid_t cont_id, uint64_t obj_id);
+perr_t PDC_Client_delete_metadata_by_id(uint64_t obj_id);
 
 /**
  * Request of PDC client to add a tag to metadata
