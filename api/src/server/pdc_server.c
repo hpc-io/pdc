@@ -2691,7 +2691,8 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Server_region_lock_status(pdcid_t obj_id, region_info_transfer_t *region, int *lock_status)
+//perr_t PDC_Server_region_lock_status(pdcid_t obj_id, region_info_transfer_t *region, int *lock_status)
+perr_t PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status)
 {
     perr_t ret_value = SUCCEED;
     pdc_metadata_t *res_meta;
@@ -2699,9 +2700,9 @@ perr_t PDC_Server_region_lock_status(pdcid_t obj_id, region_info_transfer_t *reg
 
     *lock_status = 0;
     request_region = (region_list_t *)malloc(sizeof(region_list_t));
-    pdc_region_transfer_t_to_list_t(region, request_region);
+    pdc_region_transfer_t_to_list_t(&(mapped_region->remote_region), request_region);
     //PDC_Server_get_metadata_by_id(obj_id, res_meta);
-    res_meta = find_metadata_by_id(obj_id);
+    res_meta = find_metadata_by_id(mapped_region->remote_obj_id);
     /*
     printf("requested region: \n");
     printf("offset is %lld, %lld\n", (request_region->start)[0], (request_region->start)[1]);
@@ -2717,6 +2718,12 @@ perr_t PDC_Server_region_lock_status(pdcid_t obj_id, region_info_transfer_t *reg
         if (is_region_identical(request_region, elt) == 1) {
             *lock_status = 1;
             elt->reg_dirty = 1;
+            elt->bulk_handle = mapped_region->remote_bulk_handle; 
+            elt->addr = mapped_region->remote_addr;
+            elt->from_obj_id = mapped_region->from_obj_id; 
+            elt->obj_id = mapped_region->remote_obj_id;
+            elt->reg_id = mapped_region->remote_reg_id;
+            elt->client_id = mapped_region->remote_client_id;
         }
     }
 

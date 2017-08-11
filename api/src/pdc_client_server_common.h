@@ -83,6 +83,12 @@ typedef struct region_list_t {
     uint64_t offset;
     int      reg_dirty;
     PDC_access_t access_type;
+    hg_bulk_t bulk_handle;
+    hg_addr_t addr;
+    uint64_t  obj_id;
+    uint64_t  reg_id;
+    uint64_t  from_obj_id;
+    int32_t   client_id;
 
     pdc_metadata_t *meta;
 
@@ -155,6 +161,8 @@ typedef struct PDC_mapping_info {
     size_t                           remote_ndim;
     region_info_transfer_t           remote_region;
     hg_bulk_t                        remote_bulk_handle;
+    hg_addr_t                        remote_addr;
+    pdcid_t                          from_obj_id;
     PDC_LIST_ENTRY(PDC_mapping_info) entry;
 } PDC_mapping_info_t;
 
@@ -1739,6 +1747,16 @@ struct region_update_bulk_args {
     pdcid_t remote_obj_id;
     pdcid_t remote_reg_id;
     int32_t remote_client_id;
+};
+
+struct region_lock_update_bulk_args {
+    hg_handle_t handle;
+    region_lock_in_t in;
+    pdcid_t remote_obj_id;
+    pdcid_t remote_reg_id;
+    int32_t remote_client_id;
+    void  *data_buf;
+    struct PDC_region_info *server_region;
 };
 
 hg_id_t gen_reg_map_notification_register(hg_class_t *hg_class);

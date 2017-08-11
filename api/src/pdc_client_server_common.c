@@ -607,7 +607,8 @@ perr_t delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_
 perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out) {return SUCCEED;}
-perr_t PDC_Server_region_lock_status(pdcid_t obj_id, region_info_transfer_t *region, int *lock_status) {return SUCCEED;}
+//perr_t PDC_Server_region_lock_status(pdcid_t obj_id, region_info_transfer_t *region, int *lock_status) {return SUCCEED;}
+perr_t PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status) {return SUCCEED;}
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs) {return SUCCEED;}
 perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region) {return NULL;}
 perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
@@ -1057,8 +1058,8 @@ region_update_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     out.ret = 1;
     HG_Respond(bulk_args->handle, NULL, NULL, &out);
 
-    HG_Destroy(bulk_args->handle);
-    free(bulk_args);
+//    HG_Destroy(bulk_args->handle);
+//    free(bulk_args);
 }
 
 //enter this function, transfer is done
@@ -1068,9 +1069,9 @@ region_lock_bulk_transfer_cb (const struct hg_cb_info *hg_cb_info)
     hg_return_t hg_ret = HG_SUCCESS;
     perr_t ret_value; 
     region_lock_out_t out;
-    hg_handle_t handle;
+    hg_handle_t handle = HG_BULK_NULL;
     const struct hg_info *hg_info = NULL;
-    struct lock_bulk_args *bulk_args;
+    struct lock_bulk_args *bulk_args = NULL;
     struct region_update_bulk_args *update_bulk_args = NULL;
     hg_bulk_t local_bulk_handle = HG_BULK_NULL;
     PDC_mapping_info_t *mapped_region = NULL;
@@ -1144,7 +1145,8 @@ fflush(stdout);
     while(mapped_region != NULL) {
         // check status before tranfer if it is write/read lock
         // if region is locked, mark region as dirty
-        PDC_Server_region_lock_status(mapped_region->remote_obj_id, &(mapped_region->remote_region), &lock_status);
+        // PDC_Server_region_lock_status(mapped_region->remote_obj_id, &(mapped_region->remote_region), &lock_status);
+        PDC_Server_region_lock_status(mapped_region, &lock_status);
         if(lock_status == 0) {
             // printf("region is not locked\n");
             remote_size = HG_Bulk_get_size(mapped_region->remote_bulk_handle);
@@ -1180,7 +1182,7 @@ fflush(stdout);
         }
         else { 
             region_locked = 1;
-            printf("region is locked\n");
+            // printf("region is locked\n");
         }
         PDC_LIST_TO_NEXT(mapped_region, entry);
     }
@@ -1198,6 +1200,37 @@ fflush(stdout);
     FUNC_LEAVE(hg_ret);
 }
 
+static hg_return_t
+region_lock_update_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
+{
+    hg_return_t hg_ret = HG_SUCCESS;
+    perr_t ret_value;
+    region_lock_out_t out;
+    hg_handle_t handle;
+    const struct hg_info *hg_info = NULL;
+    struct region_lock_update_bulk_args *bulk_args = NULL;
+
+    bulk_args = (struct region_lock_update_bulk_args *)hg_cb_info->arg;
+    handle = bulk_args->handle;
+
+    // Perform lock function
+    PDC_Server_region_lock(&(bulk_args->in), &out);
+
+    // Send notification to mapped regions, when data transfer is done
+    PDC_SERVER_notify_region_update_to_client(bulk_args->remote_obj_id, bulk_args->remote_reg_id, bulk_args->remote_client_id);
+
+    free(bulk_args->server_region);
+    free(bulk_args->data_buf);
+
+    out.ret = 1;
+    HG_Respond(handle, NULL, NULL, &out);
+
+    HG_Free_input(handle, &(bulk_args->in));
+    HG_Destroy(handle); 
+
+    FUNC_LEAVE(hg_ret);
+}
+
 HG_TEST_RPC_CB(region_lock, handle)
 {
     hg_return_t ret_value = HG_SUCCESS;
@@ -1209,49 +1242,89 @@ HG_TEST_RPC_CB(region_lock, handle)
     int i, ret;
     int error = 0;
     int found = 0;
+    int dirty_reg = 0;
     hg_size_t   size;
     hg_uint32_t count;
+    hg_op_id_t hg_bulk_op_id;
+    hg_return_t hg_ret;
+    void       *data_buf;
     void      **from_data_ptrs;
     void       *data_ptrs;
     hg_size_t  *data_size;
     struct PDC_region_info *server_region;
     pdc_metadata_t *res_meta;
-    region_list_t *elt;
- 
+    region_list_t *elt, *request_region;
+    struct region_lock_update_bulk_args *lock_update_bulk_args = NULL;
+    hg_bulk_t origin_bulk_handle = HG_BULK_NULL; 
+    hg_bulk_t local_bulk_handle = HG_BULK_NULL;
+    hg_bulk_t lock_local_bulk_handle = HG_BULK_NULL;
+
     FUNC_ENTER(NULL);
 
     /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
+    /* Get info from handle */
+    hg_info = HG_Get_info(handle);
+
     if(in.access_type==READ || in.lock_op==PDC_LOCK_OP_OBTAIN || in.mapping==0) {
-/*
-        res_meta = find_metadata_by_id(obj_id);
-        DL_FOREACH(res_meta->region_lock_head, elt) {
-        if (is_region_identical(request_region, elt) == 1) {
-            *lock_status = 1;
-            elt->reg_dirty = 1;
+        // if lock_op is release, check region is dirty or not, if dirty transfer data
+        if(in.lock_op == PDC_LOCK_OP_RELEASE) {
+            request_region = (region_list_t *)malloc(sizeof(region_list_t));
+            pdc_region_transfer_t_to_list_t(&in.region, request_region);
+            PDC_Server_get_local_metadata_by_id(in.obj_id, &res_meta);
+            DL_FOREACH(res_meta->region_lock_head, elt) {
+                if (PDC_is_same_region_list(request_region, elt) == 1 && elt->reg_dirty == 1) {
+                    // printf("detect lock release dirty region\n");
+                    dirty_reg = 1;
+                    size = HG_Bulk_get_size(elt->bulk_handle);
+                    data_buf = (void *)malloc(size);
+                    // data transfer
+                    server_region = (struct PDC_region_info *)malloc(sizeof(struct PDC_region_info));
+                    server_region->ndim = 1;
+                    server_region->size = (uint64_t *)malloc(sizeof(uint64_t));
+                    server_region->offset = (uint64_t *)malloc(sizeof(uint64_t));
+                    (server_region->size)[0] = size;
+                    (server_region->offset)[0] = 0; 
+                    ret_value = PDC_Server_data_read_direct(elt->from_obj_id, server_region, data_buf);
+                    if(ret_value != SUCCEED)
+                        printf("==PDC SERVER: PDC_Server_data_read_direct() failed\n");
+                    hg_ret = HG_Bulk_create(hg_info->hg_class, 1, &data_buf, &size, HG_BULK_READWRITE, &lock_local_bulk_handle);
+                    if (hg_ret != HG_SUCCESS) {
+                        printf("==PDC SERVER ERROR: Could not create bulk data handle\n");
+                    }
+                    lock_update_bulk_args = (struct region_lock_update_bulk_args*) malloc(sizeof(struct region_lock_update_bulk_args));
+                    lock_update_bulk_args->handle = handle;
+                    lock_update_bulk_args->in = in;
+                    lock_update_bulk_args->remote_obj_id = elt->obj_id;
+                    lock_update_bulk_args->remote_reg_id= elt->reg_id;
+                    lock_update_bulk_args->remote_client_id = elt->client_id;
+                    lock_update_bulk_args->data_buf = data_buf;
+                    lock_update_bulk_args->server_region = server_region;
+ 
+                    hg_ret = HG_Bulk_transfer(hg_info->context, region_lock_update_bulk_transfer_cb, lock_update_bulk_args, HG_BULK_PUSH, elt->addr, elt->bulk_handle, 0, lock_local_bulk_handle, 0, size, &hg_bulk_op_id);
+                    if (hg_ret != HG_SUCCESS) {
+                        printf("==PDC SERVER ERROR: region_lock_bulk_transfer_cb() could not write bulk data\n");
+                    }
+
+                }
+            }
+            free(request_region);
         }
-    }
-// read from file system
-*/
-        // TODO
-        // Perform lock function
-        ret = PDC_Server_region_lock(&in, &out);
+        if(dirty_reg == 0) {
+            // TODO
+            // Perform lock function
+            ret = PDC_Server_region_lock(&in, &out);
 
-// if lock_op is release, check region is dirty or not, if dirty transfer data
+            HG_Respond(handle, NULL, NULL, &out);  // move to transfer_cb
+            /* printf("==PDC_SERVER: region_lock_cb(): returned %llu\n", out.ret); */
 
-        HG_Respond(handle, NULL, NULL, &out);  // move to transfer_cb
-        /* printf("==PDC_SERVER: region_lock_cb(): returned %llu\n", out.ret); */
-
-        HG_Free_input(handle, &in);
-        HG_Destroy(handle);   // move to transfer_cb
+            HG_Free_input(handle, &in);
+            HG_Destroy(handle);   // move to transfer_cb
+        }
     }
     // do data tranfer if it is write lock release. Respond to client in callback after data transfer is done
     else {
-        hg_op_id_t hg_bulk_op_id;
-        /* Get info from handle */
-        hg_info = HG_Get_info(handle);
-
         bulk_args = (struct lock_bulk_args *) malloc(sizeof(struct lock_bulk_args));
         /* Keep handle to pass to callback */
         bulk_args->handle = handle;
@@ -1269,8 +1342,8 @@ HG_TEST_RPC_CB(region_lock, handle)
             DL_FOREACH(target_obj->region_map_head, elt) {
                 if(elt->local_obj_id == in.obj_id && elt->local_reg_id==in.local_reg_id) {
                     found = 1;
-                    hg_bulk_t origin_bulk_handle = elt->local_bulk_handle;
-                    hg_bulk_t local_bulk_handle = HG_BULK_NULL;
+                    origin_bulk_handle = elt->local_bulk_handle;
+                    local_bulk_handle = HG_BULK_NULL;
 
                     // copy data from client to server
                     // allocate contiguous space in the server or RDMA later
@@ -1284,7 +1357,7 @@ HG_TEST_RPC_CB(region_lock, handle)
                     data_ptrs = (void *)malloc(size);
                     //HG_Bulk_access(origin_bulk_handle, 0, size, HG_BULK_READWRITE, count, from_data_ptrs, data_size, NULL);
                     /* Create a new block handle to read the data */
-                    hg_return_t hg_ret = HG_Bulk_create(hg_info->hg_class, 1, &data_ptrs, &size, HG_BULK_READWRITE, &local_bulk_handle);
+                    hg_ret = HG_Bulk_create(hg_info->hg_class, 1, &data_ptrs, &size, HG_BULK_READWRITE, &local_bulk_handle);
                     if (hg_ret != HG_SUCCESS) {
                         error = 1;
                         printf("==PDC SERVER ERROR: Could not create bulk data handle\n");
@@ -1493,6 +1566,8 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
                 m_info_ptr->remote_ndim = in.ndim;
                 m_info_ptr->remote_region = in.region;
                 m_info_ptr->remote_bulk_handle = in.remote_bulk_handle;
+                m_info_ptr->remote_addr = map_ptr->local_addr;
+                m_info_ptr->from_obj_id = map_ptr->local_obj_id;
                 HG_Bulk_ref_incr(in.remote_bulk_handle);
                 PDC_LIST_INSERT_HEAD(&map_ptr->ids, m_info_ptr, entry);
                 atomic_fetch_add(&(map_ptr->mapping_count), 1);
@@ -1520,6 +1595,8 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
         m_info_ptr->remote_ndim = in.ndim;
         m_info_ptr->remote_region = in.region;
         m_info_ptr->remote_bulk_handle = in.remote_bulk_handle;
+        m_info_ptr->remote_addr = map_ptr->local_addr;
+        m_info_ptr->from_obj_id = map_ptr->local_obj_id;
         HG_Bulk_ref_incr(in.remote_bulk_handle);
         PDC_LIST_INSERT_HEAD(&map_ptr->ids, m_info_ptr, entry);
         DL_APPEND(target_obj->region_map_head, map_ptr);
