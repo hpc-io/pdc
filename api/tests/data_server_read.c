@@ -43,8 +43,8 @@ int main(int argc, const char *argv[])
 #endif
     // create a pdc
     pdcid_t pdc = PDC_init("pdc");
-    printf("create a new pdc, pdc id is: %lld\n", pdc);
-    fflush(stdout);
+    /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
+    /* fflush(stdout); */
 
     // create a container property
     pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
@@ -68,9 +68,9 @@ int main(int argc, const char *argv[])
     pdc_metadata_t *metadata;
     PDC_Client_query_metadata_name_timestep( argv[1], 0, &metadata);
     // Debug print
-    if (rank == 0) {
-        PDC_print_metadata(metadata);
-    }
+    /* if (rank == 0) { */
+    /*     PDC_print_metadata(metadata); */
+    /* } */
 
     uint64_t my_readsize = readsize / size;
     int ndim = 1;

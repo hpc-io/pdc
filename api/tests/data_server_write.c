@@ -75,6 +75,8 @@ int main(int argc, const char *argv[])
 
     // Create a object with only rank 0
     if (rank == 0) {
+        /* printf("Creating an object with name [%s]", obj_name); */
+        /* fflush(stdout); */
         test_obj = PDCobj_create(cont, obj_name, obj_prop);
         if (test_obj <= 0) {
             printf("Error getting an object id of %s from server, exit...\n", "DataServerTestBin");
@@ -92,6 +94,9 @@ int main(int argc, const char *argv[])
     /* if (rank == 1) { */
     /*     PDC_print_metadata(metadata); */
     /* } */
+    if (metadata == NULL || metadata->obj_id == 0) {
+        printf("Error with metadata!\n");
+    }
 
     int ndim = 1;
     region.ndim = ndim;

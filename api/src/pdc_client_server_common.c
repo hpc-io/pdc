@@ -230,11 +230,11 @@ void PDC_print_metadata(pdc_metadata_t *a)
     printf("================================\n");
     printf("  obj_id    = %llu\n", a->obj_id);
     printf("  uid       = %d\n",   a->user_id);
-    printf("  app_name  = %s\n",   a->app_name);
-    printf("  obj_name  = %s\n",   a->obj_name);
-    printf("  obj_loc   = %s\n",   a->data_location);
+    printf("  app_name  = [%s]\n",   a->app_name);
+    printf("  obj_name  = [%s]\n",   a->obj_name);
+    printf("  obj_loc   = [%s]\n",   a->data_location);
     printf("  time_step = %d\n",   a->time_step);
-    printf("  tags      = %s\n",   a->tags);
+    printf("  tags      = [%s]\n",   a->tags);
     printf("  ndim      = %d\n",   a->ndim);
     printf("  dims = %llu",   a->dims[0]);
     for (i = 1; i < a->ndim; i++) 
@@ -358,7 +358,7 @@ void PDC_print_region_list(region_list_t *a)
         return;
     }
     int i;
-    printf("  == Region Info ==\n");
+    printf("\n  == Region Info ==\n");
     printf("    ndim      = %d\n",   a->ndim);
     printf("    start    count\n");
     /* printf("start stride count\n"); */
@@ -375,9 +375,7 @@ void PDC_print_region_list(region_list_t *a)
         if (a->client_ids[i] == 0 ) 
             break;
     }
-    printf("\n");
-    
-    printf("  =================\n");
+    printf("\n  =================\n");
     fflush(stdout);
 }
 
@@ -692,12 +690,12 @@ HG_TEST_RPC_CB(server_lookup_client, handle)
     /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
-    out.ret = in.server_id + 1000000;
+    out.ret = in.server_id + 43210000;
 
-    HG_Respond(handle, NULL, NULL, &out);
+    HG_Respond(handle, PDC_Client_work_done_cb, NULL, &out);
 
-    /* printf("==PDC_CLIENT: server_lookup_client_cb(): Responded with %llu to server[%d]\n", out.ret, in.server_id); */
-    /* fflush(stdout); */
+    printf("==PDC_CLIENT: server_lookup_client_cb(): Respond %llu to server[%d]\n", out.ret, in.server_id);
+    fflush(stdout);
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
@@ -722,9 +720,6 @@ HG_TEST_RPC_CB(server_lookup_remote_server, handle)
 
     HG_Respond(handle, NULL, NULL, &out);
 
-    /* printf("==PDC_SERVER: server_lookup_client_cb(): Responded with %llu to server[%d]\n", out.ret, in.server_id); */
-    /* fflush(stdout); */
-
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
@@ -746,7 +741,7 @@ HG_TEST_RPC_CB(client_test_connect, handle)
     /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
-    out.ret = in.client_id + 100000;
+    out.ret = in.client_id + 123400;
 
     args->client_id = in.client_id;
     args->nclient   = in.nclient;
@@ -754,13 +749,8 @@ HG_TEST_RPC_CB(client_test_connect, handle)
 
     /* HG_Respond(handle, NULL, NULL, &out); */
     HG_Respond(handle, PDC_Server_get_client_addr, args, &out);
-    /* printf("==PDC_SERVER: client_test_connect(): Returned %llu\n", out.ret); */
-    /* fflush(stdout); */
-
-    /* PDC_Server_get_client_addr(&in, &out); */
-
-    /* printf("==PDC_SERVER: finished PDC_Server_get_client_addr()\n"); */
-    /* fflush(stdout); */
+    printf("==PDC_SERVER: client_test_connect(): Returned %llu\n", out.ret);
+    fflush(stdout);
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
@@ -929,12 +919,12 @@ HG_TEST_RPC_CB(metadata_add_tag, handle)
     /* out.ret = 1; */
     HG_Respond(handle, NULL, NULL, &out);
 
-    HG_Free_input(handle, &in);
-    HG_Destroy(handle);
 
     ret_value = HG_SUCCESS;
 
 done:
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -965,7 +955,7 @@ HG_TEST_RPC_CB(notify_io_complete, handle)
         goto done;
     }
 
-    out.ret = atoi(in.shm_addr);
+    out.ret = atoi(in.shm_addr) + 112000;
     if (type == READ) {
         HG_Respond(handle, PDC_Client_get_data_from_server_shm_cb, read_info, &out);
     }
@@ -978,11 +968,11 @@ HG_TEST_RPC_CB(notify_io_complete, handle)
         HG_Respond(handle, NULL, NULL, &out);
     }
 
-    HG_Free_input(handle, &in);
-    HG_Destroy(handle);
 
 done:
     fflush(stdout);
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -1794,12 +1784,14 @@ HG_TEST_RPC_CB(data_server_read, handle)
     out.ret = 1;
     HG_Respond(handle, PDC_Server_data_io_via_shm, io_info, &out);
 
-    HG_Free_input(handle, &in);
-    HG_Destroy(handle);
 
     ret_value = HG_SUCCESS;
 
 done:
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+    if (ret_value != HG_SUCCESS) 
+        printf("==PDC_SERVER: data_server_read_cb - Error with HG_Destroy\n");
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
@@ -1856,12 +1848,14 @@ HG_TEST_RPC_CB(data_server_write, handle)
     printf("==PDC_SERVER: respond write request confirmation to client %d\n", in.client_id);
     fflush(stdout);
 
-    HG_Free_input(handle, &in);
-    HG_Destroy(handle);
 
     ret_value = HG_SUCCESS;
 
 done:
+    HG_Free_input(handle, &in);
+    ret_value = HG_Destroy(handle);
+    if (ret_value != HG_SUCCESS) 
+        printf("==PDC_SERVER: data_server_write_cb - Error with HG_Destroy\n");
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
@@ -1901,12 +1895,12 @@ HG_TEST_RPC_CB(data_server_read_check, handle)
     HG_Respond(handle, NULL, NULL, &out);
     /* printf("==PDC_SERVER: server read_check returning ret=%d, shm_addr=%s\n", out.ret, out.shm_addr); */
 
-    HG_Free_input(handle, &in);
-    HG_Destroy(handle);
 
     ret_value = HG_SUCCESS;
 
 done:
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
@@ -1945,12 +1939,12 @@ HG_TEST_RPC_CB(data_server_write_check, handle)
     HG_Respond(handle, NULL, NULL, &out);
     /* printf("==PDC_SERVER: server write_check returning ret=%d\n", out.ret); */
 
-    HG_Free_input(handle, &in);
-    HG_Destroy(handle);
 
     ret_value = HG_SUCCESS;
 
 done:
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
