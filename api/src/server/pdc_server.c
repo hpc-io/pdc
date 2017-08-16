@@ -427,8 +427,8 @@ perr_t PDC_Server_check_response(hg_context_t **hg_context)
         /* Do not try to make progress anymore if we're done */
         if (work_todo_g <= 0)  break;
 
-        /* hg_ret = HG_Progress(*hg_context, 1000); */
-        hg_ret = HG_Progress(*hg_context, HG_MAX_IDLE_TIME);
+        hg_ret = HG_Progress(*hg_context, 1000);
+        /* hg_ret = HG_Progress(*hg_context, HG_MAX_IDLE_TIME); */
         /* printf("==PDC_SERVER: PDC_Server_check_response after  HG_Progress \n"); */
         /* fflush(stdout); */
     } while (hg_ret == HG_SUCCESS);
@@ -661,7 +661,8 @@ static perr_t PDC_Server_lookup_client(uint32_t client_id)
 
     // Wait for response from client
     work_todo_g = 1;
-    PDC_Server_trigger(&hg_context_g);
+    PDC_Server_check_response(&hg_context_g);
+    /* PDC_Server_trigger(&hg_context_g); */
     /* pdc_to_client_work_todo_g = 1; */
     /* PDC_Server_check_client_response(&pdc_client_context_g); */
 
@@ -4505,8 +4506,8 @@ perr_t PDC_Server_notify_io_complete_to_client(uint32_t client_id, uint64_t obj_
     /* } */
 
     work_todo_g = 1;
-    /* PDC_Server_check_response(&hg_context_g); */
-    PDC_Server_trigger(&hg_context_g);
+    PDC_Server_check_response(&hg_context_g);
+    /* PDC_Server_trigger(&hg_context_g); */
     /* pdc_to_client_work_todo_g = 1; */
     /* PDC_Server_check_client_response(&pdc_client_context_g); */
 
@@ -5314,7 +5315,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
                     fflush(stdout);
                 }
 
-                if (io_info->io_type == READ)
+                if (io_info->io_type == WRITE)
                     region_elt->shm_addr[0] = 0;
 
                 // TODO: currently assumes each region is for one client only!
@@ -5355,8 +5356,8 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
                 pdc_data_server_read_list_head_g = NULL;
         }
         else {
-            DL_DELETE(io_list, io_list_target);
-            free(io_list_target);
+            /* DL_DELETE(io_list, io_list_target); */
+            /* free(io_list_target); */
         }
 
     } // end of if (io_list_target->count == io_list_target->total) 
