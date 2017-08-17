@@ -84,7 +84,14 @@ typedef struct region_list_t {
     char    *buf;
     char     storage_location[ADDR_MAX];
     uint64_t offset;
+    int      reg_dirty;
     PDC_access_t access_type;
+    hg_bulk_t bulk_handle;
+    hg_addr_t addr;
+    uint64_t  obj_id;
+    uint64_t  reg_id;
+    uint64_t  from_obj_id;
+    int32_t   client_id;
 
     pdc_metadata_t *meta;
 
@@ -93,11 +100,72 @@ typedef struct region_list_t {
     // 16 attributes, need to match init and deep_cp routines
 } region_list_t;
 
+// Similar structure PDC_region_info_t defined in pdc_obj_pkg.h
+// TODO: currently only support upto four dimensions
+typedef struct region_info_transfer_t {
+    size_t ndim;
+    uint64_t start_0, start_1, start_2, start_3;
+    uint64_t count_0, count_1, count_2, count_3;
+    uint64_t stride_0, stride_1, stride_2, stride_3;
+} region_info_transfer_t;
+
+typedef struct pdc_metadata_transfer_t {
+    int32_t     user_id;
+    const char  *app_name;
+    const char  *obj_name;
+    int32_t     time_step;
+
+    uint64_t    obj_id;
+
+    int32_t     ndim;
+    int32_t     dims0, dims1, dims2, dims3;
+
+    const char  *tags;
+    const char  *data_location;
+    /* time_t      create_time; */
+    /* time_t      last_modified_time; */
+} pdc_metadata_transfer_t;
+
+typedef struct metadata_query_transfer_in_t{
+    int     is_list_all;
+
+    int     user_id;                // Both server and client gets it and do security check
+    const char    *app_name;
+    const char    *obj_name;
+
+    int     time_step_from;
+    int     time_step_to;
+
+    int     ndim;
+
+    /* time_t  create_time_from; */
+    /* time_t  create_time_to; */
+    /* time_t  last_modified_time_from; */
+    /* time_t  last_modified_time_to; */
+
+    const char    *tags;
+} metadata_query_transfer_in_t;
+
+typedef struct {
+    uint64_t                    obj_id;
+    char                        shm_addr[ADDR_MAX];
+} client_read_info_t;
+
+typedef struct {
+    int32_t client_id;
+    int32_t nclient;
+    char client_addr[ADDR_MAX];
+} client_test_connect_args;
+
 typedef struct PDC_mapping_info {
     pdcid_t                          remote_obj_id;         /* target of object id */
     pdcid_t                          remote_reg_id;         /* target of region id */
     int32_t                          remote_client_id;
     size_t                           remote_ndim;
+    region_info_transfer_t           remote_region;
+    hg_bulk_t                        remote_bulk_handle;
+    hg_addr_t                        remote_addr;
+    pdcid_t                          from_obj_id;
     PDC_LIST_ENTRY(PDC_mapping_info) entry;
 } PDC_mapping_info_t;
 
@@ -109,10 +177,10 @@ typedef struct region_map_t {
     size_t                           local_ndim;
     uint64_t                        *local_reg_size;
     hg_addr_t                        local_addr;
-    hg_bulk_t                        bulk_handle;
+    hg_bulk_t                        local_bulk_handle;
     PDC_var_type_t                   local_data_type;
     PDC_LIST_HEAD(PDC_mapping_info)  ids;                  /* Head of list of IDs */
-    
+
     struct region_map_t             *prev;
     struct region_map_t             *next;
 } region_map_t;
@@ -151,53 +219,6 @@ typedef struct pdc_metadata_t {
 
 } pdc_metadata_t;
 
-
-// Similar structure PDC_region_info_t defined in pdc_obj_pkg.h
-// TODO: currently only support upto four dimensions
-typedef struct {
-    size_t ndim;
-    uint64_t start_0, start_1, start_2, start_3;
-    uint64_t count_0, count_1, count_2, count_3;
-    /* uint64_t stride_0, stride_1, stride_2, stride_3; */
-} region_info_transfer_t;
-
-typedef struct pdc_metadata_transfer_t {
-    int32_t     user_id;
-    hg_const_string_t  app_name;
-    hg_const_string_t  obj_name;
-    int32_t     time_step;
-
-    uint64_t    obj_id;
-
-    int32_t     ndim;
-    int32_t     dims0, dims1, dims2, dims3;
-
-    hg_const_string_t  tags;
-    hg_const_string_t  data_location;
-    /* time_t      create_time; */
-    /* time_t      last_modified_time; */
-} pdc_metadata_transfer_t;
-
-typedef struct metadata_query_transfer_in_t{
-    int     is_list_all;
-
-    int     user_id;                // Both server and client gets it and do security check
-    hg_const_string_t    app_name;
-    hg_const_string_t    obj_name;
-
-    int     time_step_from;
-    int     time_step_to;
-
-    int     ndim;
-
-    /* time_t  create_time_from; */
-    /* time_t  create_time_to; */
-    /* time_t  last_modified_time_from; */
-    /* time_t  last_modified_time_to; */
-
-    hg_const_string_t    tags;
-} metadata_query_transfer_in_t;
-
 typedef struct {
     PDC_access_t                io_type;   
     uint32_t                    client_id;
@@ -205,17 +226,6 @@ typedef struct {
     pdc_metadata_t              meta;
     region_list_t               region;
 } data_server_io_info_t;
-
-typedef struct {
-    uint64_t                    obj_id;
-    char                        shm_addr[ADDR_MAX];
-} client_read_info_t;
-
-typedef struct {
-    uint32_t client_id;
-    int32_t nclient;
-    char client_addr[ADDR_MAX];
-} client_test_connect_args;
 
 /* #ifdef HG_HAS_BOOST */
 /* MERCURY_GEN_STRUCT_PROC( pdc_metadata_transfer_t, ((int32_t)(user_id)) ((int32_t)(time_step)) ((uint64_t)(obj_id)) ((int32_t)(ndim)) ((int32_t)(dims0)) ((int32_t)(dims1)) ((int32_t)(dims2)) ((int32_t)(dims3)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((hg_const_string_t)(data_location)) ((hg_const_string_t)(tags)) ) */
@@ -340,7 +350,7 @@ typedef struct {
 
 typedef struct {
     uint64_t                    obj_id;
-    int32_t                     lock_op;
+//    int32_t                     lock_op;
     PDC_access_t                access_type;
     pdcid_t                     local_reg_id;
     region_info_transfer_t      region;
@@ -438,10 +448,12 @@ hg_proc_region_lock_in_t(hg_proc_t proc, void *data)
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
     }
+/*
     ret = hg_proc_uint32_t(proc, &struct_data->lock_op);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
     }
+*/
     ret = hg_proc_uint8_t(proc, &struct_data->access_type);
     if (ret != HG_SUCCESS) {
     HG_LOG_ERROR("Proc error");
@@ -901,7 +913,9 @@ typedef struct {
     PDC_var_type_t  local_type;
     PDC_var_type_t  remote_type;
     size_t          ndim;
-    hg_bulk_t       bulk_handle;
+    hg_bulk_t       local_bulk_handle;
+    hg_bulk_t       remote_bulk_handle;
+    region_info_transfer_t      region;
 } gen_reg_map_notification_in_t;
 
 typedef struct {
@@ -1282,7 +1296,17 @@ hg_proc_gen_reg_map_notification_in_t(hg_proc_t proc, void *data)
         HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_bulk_t(proc, &struct_data->bulk_handle);
+    ret = hg_proc_hg_bulk_t(proc, &struct_data->local_bulk_handle);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_bulk_t(proc, &struct_data->remote_bulk_handle);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->region);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -1736,10 +1760,13 @@ hg_id_t metadata_delete_by_id_register(hg_class_t *hg_class);
 hg_id_t metadata_update_register(hg_class_t *hg_class);
 hg_id_t metadata_add_tag_register(hg_class_t *hg_class);
 hg_id_t region_lock_register(hg_class_t *hg_class);
+
 hg_id_t gen_reg_unmap_notification_register(hg_class_t *hg_class);
 hg_id_t gen_obj_unmap_notification_register(hg_class_t *hg_class);
 hg_id_t data_server_write_register(hg_class_t *hg_class);
 hg_id_t notify_region_update_register(hg_class_t *hg_class);
+hg_id_t region_release_register(hg_class_t *hg_class);
+
 hg_id_t test_bulk_xfer_register(hg_class_t *hg_class);
 hg_id_t server_lookup_remote_server_register(hg_class_t *hg_class);
 hg_id_t update_region_loc_register(hg_class_t *hg_class);
@@ -1767,7 +1794,27 @@ struct lock_bulk_args {
     struct PDC_region_info *server_region;
     void  *data_buf;
     region_map_t *mapping_list;
-//    hg_handle_t local_bulk_handle;
+    hg_addr_t addr;
+};
+
+struct region_lock_update_bulk_args {
+    hg_handle_t handle;
+    region_lock_in_t in;
+    pdcid_t remote_obj_id;
+    pdcid_t remote_reg_id;
+    int32_t remote_client_id;
+    void  *data_buf;
+    struct PDC_region_info *server_region;
+};
+
+struct region_update_bulk_args {
+    pdc_cnt_t refcount;   // to track how many unlocked mapped region for data transfer
+    hg_handle_t handle;
+    hg_bulk_t   bulk_handle;
+    pdcid_t remote_obj_id;
+    pdcid_t remote_reg_id;
+    int32_t remote_client_id;
+    struct lock_bulk_args *args;
 };
 
 hg_id_t gen_reg_map_notification_register(hg_class_t *hg_class);

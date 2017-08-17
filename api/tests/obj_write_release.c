@@ -50,7 +50,7 @@ int main(int argc, char **argv)
     char obj_name2[512];
     char obj_name3[512];
     
-    int myArray1[4][4] = {{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}, {13, 14, 15, 16}};
+    int myArray1[4][4] = {{101, 102, 103, 104}, {105,106, 107, 108}, {109, 110, 111, 112}, {113, 114, 115, 116}};
     int myArray2[4][4];
     int myArray3[4][4];
     
@@ -139,7 +139,7 @@ int main(int argc, char **argv)
 //    printf("second region id: %lld\n", r3);
 
 	PDCobj_map(obj1, r1, obj2, r2);
-//	PDCobj_map(obj2, r2, obj3, r3);
+	PDCobj_map(obj1, r1, obj3, r3);
 //    PDCreg_unmap(obj1, r1);
 //	PDCobj_map(obj2, r2, obj3, r3);
 
@@ -176,6 +176,10 @@ int main(int argc, char **argv)
     if (rank == 0) {
         printf("Total lock obtain overhead:  %.6f\n", total_lock_overhead);
     }
+    
+    ret = PDCreg_obtain_lock(obj3, r3, WRITE, NOBLOCK);
+    if (ret != SUCCEED)
+        printf("Failed to obtain lock for region\n");
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -197,7 +201,21 @@ int main(int argc, char **argv)
     if (rank == 0) {
         printf("Total lock release overhead: %.6f\n", total_lock_overhead);
     }
-    
+
+    ret = PDCreg_release_lock(obj3, r3, WRITE);
+    if (ret != SUCCEED)
+        printf("Failed to release lock for region\n");
+ 
+    printf("mapped region is updated to: \n");
+    printf("%d, %d\n", myArray2[1][2], myArray2[1][3]);
+    printf("%d, %d\n", myArray2[2][2], myArray2[2][3]);
+    printf("%d, %d\n", myArray2[3][2], myArray2[3][3]);
+
+    printf("mapped region is updated to: \n");
+    printf("%d, %d\n", myArray3[1][2], myArray3[1][3]);
+    printf("%d, %d\n", myArray3[2][2], myArray3[2][3]);
+    printf("%d, %d\n", myArray3[3][2], myArray3[3][3]);
+
     PDCreg_unmap(obj1, r1);
 
     // close a container
