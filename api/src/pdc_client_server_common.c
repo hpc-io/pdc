@@ -702,8 +702,8 @@ HG_TEST_RPC_CB(server_lookup_client, handle)
 
     HG_Respond(handle, PDC_Client_work_done_cb, NULL, &out);
 
-    printf("==PDC_CLIENT: server_lookup_client_cb(): Respond %llu to server[%d]\n", out.ret, in.server_id);
-    fflush(stdout);
+    /* printf("==PDC_CLIENT: server_lookup_client_cb(): Respond %llu to server[%d]\n", out.ret, in.server_id); */
+    /* fflush(stdout); */
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
@@ -757,8 +757,8 @@ HG_TEST_RPC_CB(client_test_connect, handle)
 
     /* HG_Respond(handle, NULL, NULL, &out); */
     HG_Respond(handle, PDC_Server_get_client_addr, args, &out);
-    printf("==PDC_SERVER: client_test_connect(): Returned %llu\n", out.ret);
-    fflush(stdout);
+    /* printf("==PDC_SERVER: client_test_connect(): Returned %llu\n", out.ret); */
+    /* fflush(stdout); */
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
@@ -951,9 +951,9 @@ HG_TEST_RPC_CB(notify_io_complete, handle)
     HG_Get_input(handle, &in);
     PDC_access_t type = (PDC_access_t)in.io_type;
 
-    printf("==PDC_CLIENT: Got %s complete notification from server: obj_id=%llu, shm_addr=[%s]\n", 
-            in.io_type == READ? "read":"write", in.obj_id, in.shm_addr);
-    fflush(stdout);
+    /* printf("==PDC_CLIENT: Got %s complete notification from server: obj_id=%llu, shm_addr=[%s]\n", */ 
+    /*         in.io_type == READ? "read":"write", in.obj_id, in.shm_addr); */
+    /* fflush(stdout); */
 
     client_read_info_t * read_info = (client_read_info_t*)calloc(1, sizeof(client_read_info_t));
     read_info->obj_id = in.obj_id;
@@ -969,7 +969,7 @@ HG_TEST_RPC_CB(notify_io_complete, handle)
     }
     else if (type == WRITE) {
         HG_Respond(handle, PDC_Client_work_done_cb, read_info, &out);
-        printf("==PDC_CLIENT: notify_io_complete_cb() respond write confirm confirmation %d\n", out.ret);
+        /* printf("==PDC_CLIENT: notify_io_complete_cb() respond write confirm confirmation %d\n", out.ret); */
     }
     else {
         printf("==PDC_CLIENT: notify_io_complete_cb() - error with io type!\n");
@@ -2102,8 +2102,8 @@ HG_TEST_RPC_CB(data_server_write, handle)
 
     // Decode input
     HG_Get_input(handle, &in);
-    printf("==PDC_SERVER: Got data server write request from client %d\n", in.client_id);
-    fflush(stdout);
+    /* printf("==PDC_SERVER: Got data server write request from client %d\n", in.client_id); */
+    /* fflush(stdout); */
 
     data_server_io_info_t *io_info= (data_server_io_info_t*)malloc(sizeof(data_server_io_info_t));
 
@@ -2125,8 +2125,8 @@ HG_TEST_RPC_CB(data_server_write, handle)
     out.ret = 1;
     HG_Respond(handle, PDC_Server_data_io_via_shm, io_info, &out);
 
-    printf("==PDC_SERVER: respond write request confirmation to client %d\n", in.client_id);
-    fflush(stdout);
+    /* printf("==PDC_SERVER: respond write request confirmation to client %d\n", in.client_id); */
+    /* fflush(stdout); */
 
 
     ret_value = HG_SUCCESS;

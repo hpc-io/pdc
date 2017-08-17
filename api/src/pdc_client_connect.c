@@ -230,7 +230,7 @@ int PDC_Client_read_server_addr_from_file()
         pdc_server_info_g[i].data_server_write_handle_valid      = 0;
         pdc_server_info_g[i].data_server_read_check_handle_valid   = 0;
         pdc_server_info_g[i].data_server_write_check_handle_valid   = 0;
-        /* pdc_server_info_g[i].data_server_write_handle_valid      = 0; */
+        pdc_server_info_g[i].data_server_write_handle_valid      = 0;
     }
 
     i = 0;
@@ -2302,7 +2302,7 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
     /* if (pdc_server_info_g[server_id].client_send_region_map_handle_valid!= 1) { */
         HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_reg_map_notification_register_id_g, 
                   &pdc_server_info_g[server_id].client_send_region_map_handle);
-        /* pdc_server_info_g[server_id].client_send_region_map_handle_valid  = 1; */
+        pdc_server_info_g[server_id].client_send_region_map_handle_valid  = 1;
     /* } */
     
     // Create bulk handle
@@ -2344,7 +2344,7 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
 //        printf("PDC_CLIENT: object mapping successful\n");
 done:
     HG_Destroy(pdc_server_info_g[server_id].client_send_region_map_handle);
-     FUNC_LEAVE(ret_value);
+    FUNC_LEAVE(ret_value);
 }
 
 static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, pbool_t *status)
