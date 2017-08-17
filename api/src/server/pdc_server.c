@@ -356,14 +356,15 @@ perr_t PDC_Server_check_client_response(hg_context_t **hg_context)
     do {
         actual_count = 0;
         do {
+            /* hg_ret = HG_Trigger(*hg_context, 100/1* timeout *1/, 1/1* max count *1/, &actual_count); */
             hg_ret = HG_Trigger(*hg_context, 0/* timeout */, 1/* max count */, &actual_count);
         } while ((hg_ret == HG_SUCCESS) && actual_count && pdc_to_client_work_todo_g);
 
         if (pdc_to_client_work_todo_g == 0)  break;
 
         /* printf("========Before Progress\n"); */
-        /* hg_ret = HG_Progress(*hg_context, HG_MAX_IDLE_TIME); */
-        hg_ret = HG_Progress(*hg_context, 1000);
+        hg_ret = HG_Progress(*hg_context, HG_MAX_IDLE_TIME);
+        /* hg_ret = HG_Progress(*hg_context, 1000); */
         /* printf(" "); */
         /* printf("========After  Progress\n"); */
     } while (hg_ret == HG_SUCCESS);
@@ -429,8 +430,8 @@ perr_t PDC_Server_check_response(hg_context_t **hg_context)
 
         hg_ret = HG_Progress(*hg_context, 1000);
         /* hg_ret = HG_Progress(*hg_context, HG_MAX_IDLE_TIME); */
-        /* printf("==PDC_SERVER: PDC_Server_check_response after  HG_Progress \n"); */
-        /* fflush(stdout); */
+        printf("==PDC_SERVER: PDC_Server_check_response after  HG_Progress \n");
+        fflush(stdout);
     } while (hg_ret == HG_SUCCESS);
 
     ret_value = SUCCEED;
@@ -2536,7 +2537,8 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
 
     memset(hostname, 0, 1024);
     gethostname(hostname, 1023);
-    sprintf(na_info_string, "bmi+tcp://%s:%d", hostname, port);
+    /* sprintf(na_info_string, "bmi+tcp://%s:%d", hostname, port); */
+    sprintf(na_info_string, "ofi+gni://%s:%d", hostname, port);
     /* sprintf(na_info_string, "ofi+tcp://%s:%d", hostname, port); */
     /* sprintf(na_info_string, "cci+tcp://%s:%d", hostname, port); */
     if (pdc_server_rank_g == 0) 
@@ -3164,11 +3166,11 @@ static perr_t PDC_Server_loop(hg_context_t *hg_context)
         actual_count = 0;
         do {
             /* hg_ret = HG_Trigger(hg_context, 1024/1* timeout *1/, 4096/1* max count *1/, &actual_count); */
-/* printf("==PDC_SERVER[%d]: before HG_Trigger()\n", pdc_server_rank_g); */
-/* fflush(stdout); */
+printf("==PDC_SERVER[%d]: before HG_Trigger()\n", pdc_server_rank_g);
+fflush(stdout);
             hg_ret = HG_Trigger(hg_context, 0/* timeout */, 1 /* max count */, &actual_count);
-/* printf("==PDC_SERVER[%d]: after HG_Trigger()\n", pdc_server_rank_g); */
-/* fflush(stdout); */
+printf("==PDC_SERVER[%d]: after HG_Trigger()\n", pdc_server_rank_g);
+fflush(stdout);
         } while ((hg_ret == HG_SUCCESS) && actual_count);
 
         /* Do not try to make progress anymore if we're done */

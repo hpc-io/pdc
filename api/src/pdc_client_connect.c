@@ -157,6 +157,7 @@ perr_t PDC_Client_check_response(hg_context_t **hg_context)
 
     do {
         do {
+            /* hg_ret = HG_Trigger(*hg_context, 100/1* timeout *1/, 1/1* max count *1/, &actual_count); */
             hg_ret = HG_Trigger(*hg_context, 0/* timeout */, 1/* max count */, &actual_count);
         } while ((hg_ret == HG_SUCCESS) && actual_count);
 
@@ -164,6 +165,7 @@ perr_t PDC_Client_check_response(hg_context_t **hg_context)
         /* Do not try to make progress anymore if we're done */
         if (work_todo_g <= 0)  break;
 
+        /* hg_ret = HG_Progress(*hg_context, 1000); */
         hg_ret = HG_Progress(*hg_context, HG_MAX_IDLE_TIME);
     } while (hg_ret == HG_SUCCESS);
 
@@ -688,7 +690,8 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
 
     memset(hostname, 0, 1024);
     gethostname(hostname, 1023);
-    sprintf(na_info_string, "bmi+tcp://%s:%d", hostname, port);
+    /* sprintf(na_info_string, "bmi+tcp://%s:%d", hostname, port); */
+    sprintf(na_info_string, "ofi+gni://%s:%d", hostname, port);
     /* sprintf(na_info_string, "ofi+tcp://%s:%d", hostname, port); */
     /* sprintf(na_info_string, "cci+tcp://%d", port); */
     if (pdc_client_mpi_rank_g == 0) {
