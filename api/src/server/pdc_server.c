@@ -2735,10 +2735,11 @@ perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
     perr_t ret_value;
     uint64_t target_obj_id;
     int ndim;
-    int lock_op;
+//    int lock_op;
     region_list_t *request_region;
     pdc_metadata_t *target_obj;
-    
+    region_list_t *elt, *tmp;
+ 
     FUNC_ENTER(NULL);
     
     /* printf("==PDC_SERVER: received lock request,                                \ */
@@ -2748,7 +2749,7 @@ perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
 
     target_obj_id = in->obj_id;
     ndim = in->region.ndim;
-    lock_op = in->lock_op;
+//    lock_op = in->lock_op;
 
     // Convert transferred lock region to structure
     request_region = (region_list_t *)malloc(sizeof(region_list_t));
@@ -2788,46 +2789,103 @@ perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
 
     request_region->meta = target_obj;
 
+    /* printf("==PDC_SERVER: obtaining lock ... "); */
+    // Go through all existing locks to check for overlapping
+    // Note: currently only assumes contiguous region
+    DL_FOREACH(target_obj->region_lock_head, elt) {
+        if (is_contiguous_region_overlap(elt, request_region) == 1) {
+            /* printf("rejected! (found overlapping regions)\n"); */
+            out->ret = -1;
+            goto done;
+        }
+    }
+    // No overlaps found
+    DL_APPEND(target_obj->region_lock_head, request_region);
+    out->ret = 1;
+    /* printf("granted\n"); */
+
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_Server_region_release(region_lock_in_t *in, region_lock_out_t *out)
+{
+    perr_t ret_value;
+    uint64_t target_obj_id;
+    int ndim;
+//    int lock_op;
+    region_list_t *request_region;
+    pdc_metadata_t *target_obj;
     region_list_t *elt, *tmp;
-    if (lock_op == PDC_LOCK_OP_OBTAIN) {
-        /* printf("==PDC_SERVER: obtaining lock ... "); */
-        // Go through all existing locks to check for overlapping
-        // Note: currently only assumes contiguous region
-        DL_FOREACH(target_obj->region_lock_head, elt) {
-            if (is_contiguous_region_overlap(elt, request_region) == 1) {
-                /* printf("rejected! (found overlapping regions)\n"); */
-                out->ret = -1;
-                goto done;
-            }
-        }
-        // No overlaps found
-        DL_APPEND(target_obj->region_lock_head, request_region);
-        out->ret = 1;
-        /* printf("granted\n"); */
-        goto done;
+    int found = 0;
+ 
+    FUNC_ENTER(NULL);
+    
+    /* printf("==PDC_SERVER: received lock request,                                \ */
+    /*         obj_id=%" PRIu64 ", op=%d, ndim=%d, start=%" PRIu64 " count=%" PRIu64 " stride=%d\n", */ 
+    /*         in->obj_id, in->lock_op, in->region.ndim, */ 
+    /*         in->region.start_0, in->region.count_0, in->region.stride_0); */
+
+    target_obj_id = in->obj_id;
+    ndim = in->region.ndim;
+//    lock_op = in->lock_op;
+
+    // Convert transferred lock region to structure
+    request_region = (region_list_t *)malloc(sizeof(region_list_t));
+    PDC_init_region_list(request_region);
+    request_region->ndim = ndim;
+
+    if (ndim >=1) {
+        request_region->start[0]  = in->region.start_0;
+        request_region->count[0]  = in->region.count_0;
+        request_region->stride[0] = in->region.stride_0;
     }
-    else if (lock_op == PDC_LOCK_OP_RELEASE) {
-        /* printf("==PDC_SERVER: releasing lock ... "); */
-        // Find the lock region in the list and remove it
-        DL_FOREACH_SAFE(target_obj->region_lock_head, elt, tmp) {
-            if (is_region_identical(request_region, elt) == 1) {
-                // Found the requested region lock, remove from the linked list
-                DL_DELETE(target_obj->region_lock_head, elt);
-                free(request_region);
-                free(elt);
-                out->ret = 1;
-                /* printf("released!\n"); */
-                goto done;
-            }
-        }
-        // Request release lock region not found
-        /* printf("requested release region/object does not exist\n"); */
+    if (ndim >=2) {
+        request_region->start[1]  = in->region.start_1;
+        request_region->count[1]  = in->region.count_1;
+        request_region->stride[1] = in->region.stride_1;
     }
-    else {
-        printf("==PDC_SERVER: lock opreation %d not supported!\n", in->lock_op);
+    if (ndim >=3) {
+        request_region->start[2]  = in->region.start_2;
+        request_region->count[2]  = in->region.count_2;
+        request_region->stride[2] = in->region.stride_2;
+    }
+    if (ndim >=4) {
+        request_region->start[3]  = in->region.start_3;
+        request_region->count[3]  = in->region.count_3;
+        request_region->stride[3] = in->region.stride_3;
+    }
+    
+
+    // Locate target metadata structure
+    target_obj = find_metadata_by_id(target_obj_id);
+    if (target_obj == NULL) {
+        printf("==PDC_SERVER: PDC_Server_region_lock - requested object (id=%" PRIu64 ") does not exist\n", in->obj_id);
+        ret_value = -1;
         out->ret = -1;
         goto done;
     }
+
+    request_region->meta = target_obj;
+
+    /* printf("==PDC_SERVER: releasing lock ... "); */
+    // Find the lock region in the list and remove it
+    DL_FOREACH_SAFE(target_obj->region_lock_head, elt, tmp) {
+        if (is_region_identical(request_region, elt) == 1) {
+            // Found the requested region lock, remove from the linked list
+            found = 1;
+            DL_DELETE(target_obj->region_lock_head, elt);
+            free(request_region);
+            free(elt);
+            out->ret = 1;
+            /* printf("released!\n"); */
+            goto done;
+        }
+    }
+        // Request release lock region not found
+        /* printf("requested release region/object does not exist\n"); */
 
     out->ret = 1;
 
@@ -3116,6 +3174,7 @@ int main(int argc, char *argv[])
     metadata_update_register(hg_class_g);
     metadata_add_tag_register(hg_class_g);
     region_lock_register(hg_class_g);
+    region_release_register(hg_class_g);
     // bulk
     query_partial_register(hg_class_g);
 

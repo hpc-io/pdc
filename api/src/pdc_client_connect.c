@@ -77,6 +77,7 @@ static hg_id_t         metadata_delete_by_id_register_id_g;
 static hg_id_t         metadata_update_register_id_g;
 static hg_id_t         metadata_add_tag_register_id_g;
 static hg_id_t         region_lock_register_id_g;
+static hg_id_t         region_release_register_id_g;
 static hg_id_t         data_server_read_register_id_g;
 static hg_id_t         data_server_read_check_register_id_g;
 static hg_id_t         data_server_write_check_register_id_g;
@@ -192,6 +193,7 @@ int PDC_Client_read_server_addr_from_file()
         pdc_server_info_g[i].metadata_update_handle_valid        = 0;
         pdc_server_info_g[i].metadata_add_tag_handle_valid       = 0;
         pdc_server_info_g[i].region_lock_handle_valid            = 0;
+        pdc_server_info_g[i].region_release_handle_valid          = 0;
         pdc_server_info_g[i].data_server_read_handle_valid       = 0;
         pdc_server_info_g[i].data_server_write_handle_valid      = 0;
         pdc_server_info_g[i].data_server_read_check_handle_valid   = 0;
@@ -487,6 +489,33 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+static hg_return_t
+client_region_release_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    hg_handle_t handle;
+    struct client_lookup_args *client_lookup_args;
+    region_lock_out_t output;
+
+    FUNC_ENTER(NULL);
+
+    /* printf("Entered client_region_lock_rpc_cb()\n"); */
+    client_lookup_args = (struct client_lookup_args*) callback_info->arg;
+    handle = callback_info->info.forward.handle;
+
+    /* Get output from server*/
+    ret_value = HG_Get_output(handle, &output);
+    /* printf("Return value=%" PRIu64 "\n", output.ret); */
+
+    client_lookup_args->ret = output.ret;
+
+    work_todo_g--;
+
+done:
+    HG_Destroy(handle);
+    FUNC_LEAVE(ret_value);
+}
+
 // Check if all work has been processed
 // Using global variable $mercury_work_todo_g
 perr_t PDC_Client_check_response(hg_context_t **hg_context)
@@ -679,6 +708,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     metadata_update_register_id_g             = metadata_update_register(*hg_class);
     metadata_add_tag_register_id_g            = metadata_add_tag_register(*hg_class);
     region_lock_register_id_g                 = region_lock_register(*hg_class);
+    region_release_register_id_g              = region_release_register(*hg_class);
     data_server_read_register_id_g            = data_server_read_register(*hg_class);
     data_server_read_check_register_id_g      = data_server_read_check_register(*hg_class);
     data_server_write_check_register_id_g     = data_server_write_check_register(*hg_class);
@@ -837,6 +867,8 @@ perr_t PDC_Client_destroy_all_handles(pdc_server_info_t *server_info)
         HG_Destroy(server_info->client_send_object_unmap_handle);
     if (server_info->region_lock_handle_valid == 1)
         HG_Destroy(server_info->region_lock_handle);
+    if (server_info->region_release_handle_valid == 1)
+        HG_Destroy(server_info->region_release_handle);
     if (server_info->query_partial_handle_valid == 1)
         HG_Destroy(server_info->query_partial_handle);
     if (server_info->data_server_read_handle_valid == 1)
@@ -2149,9 +2181,7 @@ done:
      FUNC_LEAVE(ret_value);
 }
 
-// TODO: separate lock and release
-// General function for obtain/release region lock
-static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, int lock_op, pbool_t *status)
+static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, pbool_t *status)
 {
     perr_t ret_value;
     hg_return_t hg_ret;
@@ -2178,7 +2208,7 @@ static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *re
 
     // Fill input structure
     in.obj_id = meta_id;
-    in.lock_op = lock_op;
+//    in.lock_op = lock_op;
     in.access_type = access_type;
     in.mapping = region_info->mapping;
     in.local_reg_id = region_info->local_id;
@@ -2227,7 +2257,7 @@ static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *re
         fprintf(stderr, "PDC_Client_send_name_to_server(): Could not start HG_Forward()\n");
         return EXIT_FAILURE;
     }
-
+/*
     if (lock_op == PDC_LOCK_OP_OBTAIN) {
     }
     else if (lock_op == PDC_LOCK_OP_RELEASE) {
@@ -2238,7 +2268,7 @@ static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *re
         ret_value = FAIL;
         goto done;
     }
-
+*/
     // Wait for response from server
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
@@ -2267,19 +2297,21 @@ perr_t PDC_Client_obtain_region_lock(pdcid_t meta_id, struct PDC_region_info *re
     FUNC_ENTER(NULL);
 
     /* printf("meta_id=%" PRIu64 "\n", meta_id); */
-
+/*
     if (access_type == READ ) {
         // TODO: currently does not perform local lock
         ret_value = SUCCEED;
         *obtained  = TRUE;
         goto done;
     }
-    else if (access_type == WRITE) {
-        
+*/
+//    else if (access_type == WRITE) {
+      if (access_type == WRITE || access_type == READ) {      
         if (lock_mode == BLOCK) {
             // TODO: currently the client would keep trying to send lock request
             while (1) {
-                ret_value = PDC_Client_region_lock(meta_id, region_info, WRITE, PDC_LOCK_OP_OBTAIN, obtained);
+                // ret_value = PDC_Client_region_lock(meta_id, region_info, WRITE, PDC_LOCK_OP_OBTAIN, obtained);
+                ret_value = PDC_Client_region_lock(meta_id, region_info, access_type, obtained);
                 if (*obtained == TRUE) {
                     ret_value = SUCCEED;
                     goto done;
@@ -2290,7 +2322,8 @@ perr_t PDC_Client_obtain_region_lock(pdcid_t meta_id, struct PDC_region_info *re
             }
         }
         else if (lock_mode == NOBLOCK) {
-            ret_value = PDC_Client_region_lock(meta_id, region_info, WRITE, PDC_LOCK_OP_OBTAIN, obtained);
+            // ret_value = PDC_Client_region_lock(meta_id, region_info, WRITE, PDC_LOCK_OP_OBTAIN, obtained);
+            ret_value = PDC_Client_region_lock(meta_id, region_info, access_type, obtained);
             goto done;
         }
         else {
@@ -2311,6 +2344,102 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, pbool_t *status)
+{
+    perr_t ret_value;
+    hg_return_t hg_ret;
+    uint32_t server_id;
+    region_lock_in_t in;
+    struct client_lookup_args lookup_args;
+
+    FUNC_ENTER(NULL);
+
+    // Compute server id
+    server_id  = get_server_id_by_obj_id(meta_id);
+
+    // Delay test
+    srand(pdc_client_mpi_rank_g);
+    int delay = rand() % 500;
+    usleep(delay);
+
+
+    printf("==PDC_CLIENT: release going to server %u\n", server_id);
+    fflush(stdout);
+
+    // Debug statistics for counting number of messages sent to each server.
+    debug_server_id_count[server_id]++;
+
+    // Fill input structure
+    in.obj_id = meta_id;
+//    in.lock_op = lock_op;
+    in.access_type = access_type;
+    in.mapping = region_info->mapping;
+    in.local_reg_id = region_info->local_id;
+    in.region.ndim   = region_info->ndim;
+    size_t ndim = region_info->ndim;
+    /* printf("==PDC_CLINET: lock dim=%u\n", ndim); */
+ 
+    if (ndim >= 5 || ndim <=0) {
+        printf("Dimension %u is not supported\n", ndim);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    if (ndim >=1) {
+        in.region.start_0  = region_info->offset[0];
+        in.region.count_0  = region_info->size[0];
+        in.region.stride_0 = 0;
+        // TODO current stride is not included in pdc.
+    }
+    if (ndim >=2) {
+        in.region.start_1  = region_info->offset[1];
+        in.region.count_1  = region_info->size[1];
+        in.region.stride_1 = 0;
+    }
+    if (ndim >=3) {
+        in.region.start_2  = region_info->offset[2];
+        in.region.count_2  = region_info->size[2];
+        in.region.stride_2 = 0;
+    }
+    if (ndim >=4) {
+        in.region.start_3  = region_info->offset[3];
+        in.region.count_3  = region_info->size[3];
+        in.region.stride_3 = 0;
+    }
+    // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
+    if (pdc_server_info_g[server_id].region_release_handle_valid != 1) {
+        /* printf("Addr: %s\n", pdc_server_info_g[server_id].addr); */
+        /* fflush(stdout); */
+        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, region_release_register_id_g, &pdc_server_info_g[server_id].region_release_handle);
+        pdc_server_info_g[server_id].region_release_handle_valid = 1;
+    }
+    /* printf("Sending input to target\n"); */
+
+    hg_ret = HG_Forward(pdc_server_info_g[server_id].region_release_handle, client_region_release_rpc_cb, &lookup_args, &in);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "PDC_Client_send_name_to_server(): Could not start HG_Forward()\n");
+        return EXIT_FAILURE;
+    }
+
+    // Wait for response from server
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+
+    // Now the return value is stored in lookup_args.ret
+    if (lookup_args.ret == 1) {
+        *status = TRUE;
+        ret_value = SUCCEED;
+    }
+    else {
+        *status = FALSE;
+        ret_value = FAIL;
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 perr_t PDC_Client_release_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, pbool_t *released)
 {
     perr_t ret_value = FAIL;
@@ -2320,7 +2449,7 @@ perr_t PDC_Client_release_region_lock(pdcid_t meta_id, struct PDC_region_info *r
     /* uint64_t meta_id; */
     /* PDC_obj_info *obj_prop = PDCobj_get_info(obj_id, pdc); */
     /* meta_id = obj_prop->meta_id; */
-    ret_value = PDC_Client_region_lock(meta_id, region_info, access_type, PDC_LOCK_OP_RELEASE, released);
+    ret_value = PDC_Client_region_release(meta_id, region_info, access_type, released);
 
     FUNC_LEAVE(ret_value);
 }

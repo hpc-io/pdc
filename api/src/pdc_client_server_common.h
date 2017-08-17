@@ -347,7 +347,7 @@ typedef struct {
 
 typedef struct {
     uint64_t                    obj_id;
-    int32_t                     lock_op;
+//    int32_t                     lock_op;
     PDC_access_t                access_type;
     pdcid_t                     local_reg_id;
     region_info_transfer_t      region;
@@ -445,10 +445,12 @@ hg_proc_region_lock_in_t(hg_proc_t proc, void *data)
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
     }
+/*
     ret = hg_proc_uint32_t(proc, &struct_data->lock_op);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
     }
+*/
     ret = hg_proc_uint8_t(proc, &struct_data->access_type);
     if (ret != HG_SUCCESS) {
     HG_LOG_ERROR("Proc error");
@@ -1711,6 +1713,7 @@ hg_id_t metadata_delete_by_id_register(hg_class_t *hg_class);
 hg_id_t metadata_update_register(hg_class_t *hg_class);
 hg_id_t metadata_add_tag_register(hg_class_t *hg_class);
 hg_id_t region_lock_register(hg_class_t *hg_class);
+hg_id_t region_release_register(hg_class_t *hg_class);
 
 hg_id_t test_bulk_xfer_register(hg_class_t *hg_class);
 
@@ -1742,13 +1745,6 @@ struct lock_bulk_args {
     hg_addr_t addr;
 };
 
-struct region_update_bulk_args {
-    hg_handle_t handle;
-    pdcid_t remote_obj_id;
-    pdcid_t remote_reg_id;
-    int32_t remote_client_id;
-};
-
 struct region_lock_update_bulk_args {
     hg_handle_t handle;
     region_lock_in_t in;
@@ -1757,6 +1753,16 @@ struct region_lock_update_bulk_args {
     int32_t remote_client_id;
     void  *data_buf;
     struct PDC_region_info *server_region;
+};
+
+struct region_update_bulk_args {
+    pdc_cnt_t refcount;   // to track how many unlocked mapped region for data transfer
+    hg_handle_t handle;
+    hg_bulk_t   bulk_handle;
+    pdcid_t remote_obj_id;
+    pdcid_t remote_reg_id;
+    int32_t remote_client_id;
+    struct lock_bulk_args *args;
 };
 
 hg_id_t gen_reg_map_notification_register(hg_class_t *hg_class);

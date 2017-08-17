@@ -73,6 +73,8 @@ typedef struct pdc_server_info_t {
     hg_handle_t     client_send_object_unmap_handle;
     int             region_lock_handle_valid;
     hg_handle_t     region_lock_handle;
+    int             region_release_handle_valid;
+    hg_handle_t     region_release_handle;
     int             query_partial_handle_valid;
     hg_handle_t     query_partial_handle;
     // Data server related
