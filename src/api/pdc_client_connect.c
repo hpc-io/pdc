@@ -941,17 +941,20 @@ perr_t PDC_Client_destroy_all_handles(pdc_server_info_t *server_info)
 /*     if (server_info->metadata_update_handle_valid == 1) */
 /*         HG_Destroy(server_info->metadata_update_handle); */
 
-    if (server_info->client_send_region_map_handle_valid == 1)
-        HG_Destroy(server_info->client_send_region_map_handle);
+/*    if (server_info->client_send_region_map_handle_valid == 1) */
+/*        HG_Destroy(server_info->client_send_region_map_handle); */
 
-    if (server_info->client_send_region_unmap_handle_valid == 1)
-        HG_Destroy(server_info->client_send_region_unmap_handle);
+/*    if (server_info->client_send_region_unmap_handle_valid == 1) */
+/*        HG_Destroy(server_info->client_send_region_unmap_handle); */
     
-    if (server_info->client_send_object_unmap_handle_valid == 1)
-        HG_Destroy(server_info->client_send_object_unmap_handle);
+/*    if (server_info->client_send_object_unmap_handle_valid == 1) */
+/*        HG_Destroy(server_info->client_send_object_unmap_handle); */
 
-    if (server_info->region_lock_handle_valid == 1)
-        HG_Destroy(server_info->region_lock_handle);
+/*    if (server_info->region_lock_handle_valid == 1) */
+/*        HG_Destroy(server_info->region_lock_handle); */
+
+/*    if(server_info->region_release_handle_valid == 1) */
+/*        HG_Destroy(server_info->region_release_handle); */
 
 /*     if (server_info->query_partial_handle_valid == 1) */
 /*         HG_Destroy(server_info->query_partial_handle); */
@@ -2302,7 +2305,7 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
     /* if (pdc_server_info_g[server_id].client_send_region_map_handle_valid!= 1) { */
         HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_reg_map_notification_register_id_g, 
                   &pdc_server_info_g[server_id].client_send_region_map_handle);
-        pdc_server_info_g[server_id].client_send_region_map_handle_valid  = 1;
+        /* pdc_server_info_g[server_id].client_send_region_map_handle_valid  = 1; */
     /* } */
     
     // Create bulk handle
@@ -2548,7 +2551,7 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
     size_t ndim = region_info->ndim;
     /* printf("==PDC_CLINET: lock dim=%u\n", ndim); */
  
-    if (ndim >= 5 || ndim <=0) {
+    if (ndim >= 4 || ndim <=0) {
         printf("Dimension %u is not supported\n", ndim);
         ret_value = FAIL;
         goto done;
@@ -2570,18 +2573,20 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
         in.region.count_2  = region_info->size[2];
         in.region.stride_2 = 0;
     }
+/*
     if (ndim >=4) {
         in.region.start_3  = region_info->offset[3];
         in.region.count_3  = region_info->size[3];
         in.region.stride_3 = 0;
     }
+*/
     // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
-    if (pdc_server_info_g[server_id].region_release_handle_valid != 1) {
+//    if (pdc_server_info_g[server_id].region_release_handle_valid != 1) {
         /* printf("Addr: %s\n", pdc_server_info_g[server_id].addr); */
         /* fflush(stdout); */
         HG_Create(send_context_g, pdc_server_info_g[server_id].addr, region_release_register_id_g, &pdc_server_info_g[server_id].region_release_handle);
-        pdc_server_info_g[server_id].region_release_handle_valid = 1;
-    }
+//        pdc_server_info_g[server_id].region_release_handle_valid = 1;
+//    }
     /* printf("Sending input to target\n"); */
 
     hg_ret = HG_Forward(pdc_server_info_g[server_id].region_release_handle, client_region_release_rpc_cb, &lookup_args, &in);
@@ -2606,6 +2611,7 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
     }
 
 done:
+    HG_Destroy(pdc_server_info_g[server_id].region_release_handle);
     FUNC_LEAVE(ret_value);
 }
 
