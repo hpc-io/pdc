@@ -2382,7 +2382,7 @@ static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *re
     size_t ndim = region_info->ndim;
     /* printf("==PDC_CLINET: lock dim=%u\n", ndim); */
 
-    if (ndim >= 3 || ndim <=0) {
+    if (ndim >= 4 || ndim <=0) {
         printf("Dimension %lu is not supported\n", ndim);
         ret_value = FAIL;
         goto done;
