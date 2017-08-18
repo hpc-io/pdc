@@ -30,7 +30,7 @@ project(PDC C)
 #------------------------------------------------------------------------------
 # Options
 #------------------------------------------------------------------------------
-add_definitions(-DENABLE_MPI=1)
+#add_definitions(-DENABLE_MPI=1)
 #add_definitions(-DENABLE_TIMING=1)
 add_definitions(-DENABLE_CHECKPOINT=1)
 #add_definitions(-DENABLE_MULTITHREAD=1)
@@ -207,7 +207,8 @@ endfunction()
 #-----------------------------------------------------------------------------
 # Source
 #-----------------------------------------------------------------------------
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/api)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/server)
 
 #-----------------------------------------------------------------------------
 # Testing

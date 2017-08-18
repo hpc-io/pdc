@@ -22,7 +22,7 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#include "server/utlist.h"
+#include "../server/utlist.h"
 
 #include "mercury.h"
 #include "mercury_thread_pool.h"
@@ -33,7 +33,7 @@
 #include "pdc_interface.h"
 #include "pdc_client_connect.h"
 #include "pdc_client_server_common.h"
-#include "server/pdc_server.h"
+#include "../server/pdc_server.h"
 #include "pdc_malloc.h"
 #include <inttypes.h>
 

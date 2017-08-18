@@ -22,7 +22,7 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#include "server/utlist.h"
+#include "../server/utlist.h"
 #include "pdc_obj.h"
 #include "pdc_malloc.h"
 #include "pdc_prop_pkg.h"

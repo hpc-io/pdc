@@ -20,7 +20,7 @@ if(mercury_FOUND)
 endif()
 
 include_directories(${PDC_EXT_INCLUDE_DEPENDENCIES})
-include_directories(${CMAKE_INSTALL_PREFIX}/skiplist/include/)
+#include_directories(${CMAKE_INSTALL_PREFIX}/skiplist/include/)
 
 #------------------------------------------------------------------------------
 # Configure module header files
@@ -55,7 +55,7 @@ set(PDC_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_server_common.c
   )
 
-  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/server)
+#  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/server)
 
 #------------------------------------------------------------------------------
 # Libraries
