@@ -55,30 +55,29 @@ static char *rand_string(char *str, size_t size)
 int main(int argc, char **argv)
 {
     int rank = 0, size = 1;
-    pdcid_t pdc_id, cont_prop, cont_id, obj_prop1, obj_prop2, obj_prop3;
-    pdcid_t obj1, obj2, obj3, r1, r2, r3;
+    pdcid_t pdc_id, cont_prop, cont_id;
+    pdcid_t obj_prop1, obj_prop2, obj_prop3;
+    pdcid_t obj1, obj2, obj3;
+    pdcid_t r1, r2, r3;
+    perr_t ret;
     struct timeval  ht_total_start;
     struct timeval  ht_total_end;
     long long ht_total_elapsed;
     double ht_total_sec;
-    
+    int use_name = -1;
+    char srank[10];
     char obj_name1[512];
     char obj_name2[512];
     char obj_name3[512];
-    
-    int use_name = -1;
-    char obj_prefix[4][10] = {"x", "y", "z", "energy"};
     char tmp_str[128];
-    char *env_str;
-    char name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name", "INVALID!", "INVALID!", "Four Obj Names"};
-    char srank[10];
-    
     int myArray1[3][3] = { {1, 2, 3}, {4, 5, 6}, {7, 8, 9} };
     int myArray2[3][3];
     int myArray3[3][3];
     uint64_t dims[2] = {3, 3};
     uint64_t offset[2] = {1, 1};
     uint64_t rdims[2] = {2, 2};
+    char *env_str = getenv("PDC_OBJ_NAME");
+    char name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name", "INVALID!", "INVALID!", "Four Obj Names"};
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -86,7 +85,6 @@ int main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    
     // create a pdc
     pdc_id = PDC_init("pdc");
     /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
@@ -112,7 +110,6 @@ int main(int argc, char **argv)
     obj_prop2 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
     obj_prop3 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
 
-    env_str = getenv("PDC_OBJ_NAME");
     if (env_str != NULL) {
         use_name = atoi(env_str);
     }
@@ -180,16 +177,15 @@ int main(int argc, char **argv)
     r3 = PDCregion_create(2, offset, rdims);
 //    printf("second region id: %lld\n", r3);
 
-	PDCobj_map(obj1, r1, obj2, r2);
-	PDCobj_map(obj1, r1, obj3, r3);
-
-#ifdef ENABLE_MPI
+    #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
-#endif
+    #endif
 
     gettimeofday(&ht_total_start, 0);
 
-    PDCreg_unmap(obj1, r1);
+	PDCobj_map(obj1, r1, obj2, r2);
+	PDCobj_map(obj1, r1, obj3, r3);
+//	PDCobj_map(obj2, r2, obj3, r3);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -199,8 +195,7 @@ int main(int argc, char **argv)
     ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
     ht_total_sec        = ht_total_elapsed / 1000000.0;
     if (rank == 0) { 
-//        printf("Time to create %d obj/rank with %d ranks: %.6f\n", count, size, ht_total_sec);
-		printf("Time to unmap a region: %.6f\n",  ht_total_sec);
+		printf("Total map overhead          : %.6f\n",  ht_total_sec);
         fflush(stdout);
     }
 
@@ -223,7 +218,27 @@ int main(int argc, char **argv)
     /*         printf("Duplicate insertion test succeed!\n"); */
     /* } */
 
-done:
+    #ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    gettimeofday(&ht_total_start, 0);
+
+    ret = PDCreg_unmap(obj1, r1);
+    if (ret != SUCCEED)
+        printf("region unmap failed\n");
+
+    #ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
+    gettimeofday(&ht_total_end, 0);
+    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+    ht_total_sec        = ht_total_elapsed / 1000000.0;
+
+    if (rank == 0) {
+        printf("Total unmap overhead        : %.6f\n", ht_total_sec);
+    }
+
     // close a container
     if(PDCcont_close(cont_id) < 0)
         printf("fail to close container %lld\n", cont_id);

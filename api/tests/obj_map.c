@@ -72,6 +72,7 @@ int main(int argc, char **argv)
     int myArray1[3][3] = { {1, 2, 3}, {4, 5, 6}, {7, 8, 9} };
     int myArray2[3][3];
     int myArray3[3][3];
+    uint64_t dims[2] = {3, 3};
     uint64_t offset[2] = {1, 1};
     uint64_t rdims[2] = {2, 2};
     char *env_str = getenv("PDC_OBJ_NAME");
@@ -123,7 +124,6 @@ int main(int argc, char **argv)
 	sprintf(obj_name2, "%s%s", rand_string(tmp_str, 16), srank);
 	sprintf(obj_name3, "%s%s", rand_string(tmp_str, 16), srank);
 
-	uint64_t dims[2] = {3, 3};
     PDCprop_set_obj_dims(obj_prop1, 2, dims);
     PDCprop_set_obj_dims(obj_prop2, 2, dims);
     PDCprop_set_obj_dims(obj_prop3, 2, dims);
