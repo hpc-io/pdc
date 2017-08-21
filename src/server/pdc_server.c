@@ -5496,8 +5496,8 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
             /* PDC_print_region_list(region_elt); */
             DL_DELETE(io_list_target->region_list_head, region_elt);
             free(region_elt);
-            printf("Deleted one region\n");
-            fflush(stdout);
+            /* printf("Deleted one region\n"); */
+            /* fflush(stdout); */
         }
 
         // Check if this is the last one from the list
@@ -5510,10 +5510,11 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
                 pdc_data_server_read_list_head_g = NULL;
         }
         else {
-            /* DL_DELETE(io_list, io_list_target); */
-            /* free(io_list_target); */
+            DL_DELETE(io_list, io_list_target);
+            free(io_list_target);
         }
 
+        io_list_target->count = 0;
     } // end of if (io_list_target->count == io_list_target->total) 
     else if (io_list_target->count > io_list_target->total) {
         printf("==PDC_SERVER[%d]: received more requested than requested, %d/%d!\n", 
