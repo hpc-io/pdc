@@ -119,10 +119,8 @@ int main(int argc, const char *argv[])
 #endif
     gettimeofday(&ht_total_start, 0);
 
-
-    /* PDC_Client_data_server_write(0, size, metadata, &region, mydata); */
-    /* PDC_Client_write(metadata, &region, mydata); */
-    PDC_Client_write_wait_notify(metadata, &region, mydata);
+    PDC_Client_write(metadata, &region, mydata);
+    /* PDC_Client_write_wait_notify(metadata, &region, mydata); */
 
 
 #ifdef ENABLE_MPI

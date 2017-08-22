@@ -4434,7 +4434,8 @@ perr_t PDC_SERVER_notify_region_update_to_client(uint64_t obj_id, uint64_t reg_i
                             &pdc_client_info_g[client_id].notify_region_update_handle);
         if (hg_ret != HG_SUCCESS) {
             fprintf(stderr, "PDC_Server_notify_region_update_to_client(): Could not HG_Create()\n");
-            return FAIL;
+            ret_value = FAIL;
+            goto done;
         }
         pdc_client_info_g[client_id].notify_region_update_handle_valid = 1;
     }
@@ -4445,10 +4446,12 @@ perr_t PDC_SERVER_notify_region_update_to_client(uint64_t obj_id, uint64_t reg_i
     in.reg_id    = reg_id;
 
     /* printf("Sending input to target\n"); */
-    hg_ret = HG_Forward(pdc_client_info_g[client_id].notify_region_update_handle, PDC_Server_notify_region_update_cb, &update_args, &in);
+    hg_ret = HG_Forward(pdc_client_info_g[client_id].notify_region_update_handle, 
+                        PDC_Server_notify_region_update_cb, &update_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "PDC_Server_notify_region_update_to_client(): Could not start HG_Forward()\n");
-        return FAIL;
+        ret_value = FAIL;
+        goto done;
     }
 
 done:
@@ -4686,16 +4689,15 @@ done:
 perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_check_out_t *out)
 {
     perr_t ret_value = SUCCEED;
+    pdc_data_server_io_list_t *io_elt = NULL, *io_target = NULL;
+    region_list_t *region_elt = NULL, *region_tmp;
+    uint32_t i;
    
     FUNC_ENTER(NULL);
 
-    uint32_t i;
     pdc_metadata_t meta;
     PDC_metadata_init(&meta);
     pdc_transfer_t_to_metadata_t(&in->meta, &meta);
-
-    pdc_data_server_io_list_t *io_elt = NULL, *io_target = NULL;
-    region_list_t *r_elt = NULL;
 
     region_list_t r_target;
     PDC_init_region_list(&r_target);
@@ -4723,20 +4725,35 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
         goto done;
     }
 
-    /* printf("%d region: start(%" PRIu64 ", %" PRIu64 ") size(%" PRIu64 ", %" PRIu64 ") \n", r_target.start[0], r_target.start[1], r_target.count[0], r_target.count[1]); */
+    if (is_debug_g) {
+        printf("Obj_id=%" PRIu64 "region: start(%" PRIu64 ", %" PRIu64 ") size(%" PRIu64 ", %" PRIu64 ") \n", 
+                meta.obj_id, r_target.start[0], r_target.start[1], r_target.count[0], r_target.count[1]);
+    }
+
     int found_region = 0;
-    DL_FOREACH(io_target->region_list_head, r_elt) {
-        /* if (region_list_cmp(r_elt, &r_target) == 0) { */
-        for (i = 0; i < PDC_SERVER_MAX_PROC_PER_NODE; i++) {
-            if (r_elt->client_ids[i] == in->client_id) {
-                // Found io list
-                found_region = 1;
-                out->ret = r_elt->is_data_ready;
-                out->shm_addr = r_elt->shm_addr;
-                goto done;
-            }
+    /* DL_FOREACH_SAFE(io_target->region_list_head, region_elt, region_tmp) { */
+    DL_FOREACH(io_target->region_list_head, region_elt) {
+        if (region_list_cmp(region_elt, &r_target) == 0) {
+            /* for (i = 0; i < PDC_SERVER_MAX_PROC_PER_NODE; i++) { */
+            /*     if (r_elt->client_ids[i] == in->client_id) { */
+                    // Found io list
+                    found_region = 1;
+                    out->ret = region_elt->is_data_ready;
+                    out->shm_addr = region_elt->shm_addr;
+                    /* printf("==PDC_SERVER: found IO request region\n"); */
+                    if (region_elt->is_data_ready == 1) {
+                        DL_DELETE(io_target->region_list_head, region_elt);
+                        free(region_elt);
+                    }
+                    // TODO: may also want to free the io_target if there is no
+                    //       region in its list
+                    ret_value = SUCCEED;
+                    goto done;
+                /* } */
+            /* } */
         }
     }
+
 
     if (found_region == 0) {
         printf("==PDC_SERVER: No existing io request with same region found!\n");
@@ -4763,16 +4780,15 @@ done:
 perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_write_check_out_t *out)
 {
     perr_t ret_value = FAIL;
-   
+    pdc_data_server_io_list_t *io_elt = NULL, *io_target = NULL;
+    region_list_t *region_elt = NULL, *region_tmp = NULL;
+    int i;
+
     FUNC_ENTER(NULL);
 
-    int i;
     pdc_metadata_t meta;
     PDC_metadata_init(&meta);
     pdc_transfer_t_to_metadata_t(&in->meta, &meta);
-
-    pdc_data_server_io_list_t *io_elt = NULL, *io_target = NULL;
-    region_list_t *r_elt = NULL;
 
     region_list_t r_target;
     PDC_init_region_list(&r_target);
@@ -4794,7 +4810,7 @@ perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_writ
 
     // If not found, create and insert one to the list
     if (NULL == io_target) {
-        printf("==PDC_SERVER: No existing io request with same obj_id found, create a new one!\n");
+        printf("==PDC_SERVER: No existing io request with same obj_id found!\n");
         out->ret = -1;
         ret_value = SUCCEED;
         goto done;
@@ -4802,30 +4818,35 @@ perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_writ
 
     /* printf("%d region: start(%" PRIu64 ", %" PRIu64 ") size(%" PRIu64 ", %" PRIu64 ") \n", r_target.start[0], r_target.start[1], r_target.count[0], r_target.count[1]); */
     int found_region = 0;
-    DL_FOREACH(io_target->region_list_head, r_elt) {
-        /* if (region_list_cmp(r_elt, &r_target) == 0) { */
-        for (i = 0; i < PDC_SERVER_MAX_PROC_PER_NODE; i++) {
-            if (r_elt->client_ids[i] == in->client_id) {
-                // Found io list
-                found_region = 1;
-                out->ret = r_elt->is_data_ready;
-                ret_value = SUCCEED;
-                goto done;
-            }
+    DL_FOREACH_SAFE(io_target->region_list_head, region_elt, region_tmp) {
+    /* DL_FOREACH(io_target->region_list_head, r_elt) { */
+        if (region_list_cmp(region_elt, &r_target) == 0) {
+            /* for (i = 0; i < PDC_SERVER_MAX_PROC_PER_NODE; i++) { */
+            /*     if (r_elt->client_ids[i] == in->client_id) { */
+                    // Found io list
+                    found_region = 1;
+                    out->ret = region_elt->is_data_ready;
+                    ret_value = SUCCEED;
+                    /* printf("==PDC_SERVER: found IO request region\n"); */
+                    if (region_elt->is_data_ready == 1) {
+                        DL_DELETE(io_target->region_list_head, region_elt);
+                        free(region_elt);
+                    }
+                    // TODO: may also want to free the io_target if there is no
+                    //       region in its list
+                    goto done;
+                /* } */
+            /* } */
         }
     }
 
     if (found_region == 0) {
-        printf("==PDC_SERVER: No existing io request with same region found!\n");
+        printf("==PDC_SERVER: No existing IO request of requested region found!\n");
         out->ret = -1;
         ret_value = SUCCEED;
         goto done;
     }
 
-    ret_value = SUCCEED;
-    // TODO remove the item in pdc_data_server_write_list_head_g after the request is fulfilled
-    //      at object close? time
-    
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -5342,14 +5363,12 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
         strcpy(io_list_target->path, io_info->meta.data_location);
         io_list_target->region_list_head = NULL;
 
-        // Only add to the io list if there are more clients participating in this io request
-        if (io_info->nclient > 1) {
-            DL_APPEND(io_list, io_list_target);
-            if (io_info->io_type == WRITE && pdc_data_server_write_list_head_g == NULL) 
-                pdc_data_server_write_list_head_g = io_list_target;
-            else if (io_info->io_type == READ && pdc_data_server_read_list_head_g == NULL) 
-                pdc_data_server_read_list_head_g  = io_list_target;
-        }
+        // Add to the io list 
+        DL_APPEND(io_list, io_list_target);
+        if (io_info->io_type == WRITE && pdc_data_server_write_list_head_g == NULL) 
+            pdc_data_server_write_list_head_g = io_list_target;
+        else if (io_info->io_type == READ && pdc_data_server_read_list_head_g == NULL) 
+            pdc_data_server_read_list_head_g  = io_list_target;
     }
 
     io_list_target->count++;
@@ -5446,73 +5465,73 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
         /* sleep(10); */
 
         // IO is done, notify all clients
-        region_elt = NULL;
 
         /* DL_COUNT(io_list_target->region_list_head, region_elt, count); */
         /* printf("region_list_head: %d total\n", count); */
-        DL_FOREACH(io_list_target->region_list_head, region_elt) {
-            /* PDC_print_region_list(region_elt); */
-            for (i = 0; i < PDC_SERVER_MAX_PROC_PER_NODE; i++) {
-                if (i != 0 && region_elt->client_ids[i] == 0) 
-                    break;
-                
-                client_id = region_elt->client_ids[i];
-                if (client_id >= (uint32_t)pdc_client_num_g) {
-                    printf("==PDC_SERVER[%d]: PDC_Server_data_io_via_shm - error with client_id=%u/%d notify!\n", 
-                           pdc_server_rank_g, client_id, pdc_client_num_g);
-                    break;
-                }
-
-                if (is_debug_g ) {
-                    printf("==PDC_SERVER[%d]: Finished %s request, notify client %u\n", 
-                            pdc_server_rank_g, io_info->io_type == READ? "read": "write", client_id);
-                    fflush(stdout);
-                }
-
-                if (io_info->io_type == WRITE)
-                    region_elt->shm_addr[0] = 0;
-
-                // TODO: currently assumes each region is for one client only!
-                //       if one region is merged from the requests from multiple clients
-                //       the shm_addr needs to be properly offseted when returning to client
-                ret_value = PDC_Server_notify_io_complete_to_client(client_id, io_list_target->obj_id, 
-                                                    region_elt->shm_addr, io_info->io_type);
-                if (ret_value != SUCCEED) {
-                    printf("PDC_SERVER[%d]: PDC_Server_notify_io_complete_to_client FAILED!\n", 
-                            pdc_server_rank_g);
-                    /* goto done; */
-                }
-
-            } // End of for
-        } // End of DL_FOREACH
-
-        if (is_debug_g == 1) {
-            printf("==PDC_SERVER[%d]: finished writing to storage, and notified all clients\n", 
-                    pdc_server_rank_g);
-        }
-        // Remove all regions of the finished request
         region_elt = NULL;
-        DL_FOREACH_SAFE(io_list_target->region_list_head, region_elt, region_tmp) {
-            /* PDC_print_region_list(region_elt); */
-            DL_DELETE(io_list_target->region_list_head, region_elt);
-            free(region_elt);
-            /* printf("Deleted one region\n"); */
-            /* fflush(stdout); */
-        }
+        /* DL_FOREACH(io_list_target->region_list_head, region_elt) { */
+        /*     /1* PDC_print_region_list(region_elt); *1/ */
+        /*     for (i = 0; i < PDC_SERVER_MAX_PROC_PER_NODE; i++) { */
+        /*         if (i != 0 && region_elt->client_ids[i] == 0) */ 
+        /*             break; */
+                
+        /*         client_id = region_elt->client_ids[i]; */
+        /*         if (client_id >= (uint32_t)pdc_client_num_g) { */
+        /*             printf("==PDC_SERVER[%d]: PDC_Server_data_io_via_shm - error with client_id=%u/%d notify!\n", */ 
+        /*                    pdc_server_rank_g, client_id, pdc_client_num_g); */
+        /*             break; */
+        /*         } */
 
-        // Check if this is the last one from the list
-        DL_COUNT(io_list, io_list_elt, count);
-        if (count == 1) {
-            free(io_list);
-            if (io_info->io_type == WRITE) 
-                pdc_data_server_write_list_head_g = NULL;
-            else if (io_info->io_type == READ) 
-                pdc_data_server_read_list_head_g = NULL;
-        }
-        else {
-            DL_DELETE(io_list, io_list_target);
-            free(io_list_target);
-        }
+        /*         if (is_debug_g ) { */
+        /*             printf("==PDC_SERVER[%d]: Finished %s request, notify client %u\n", */ 
+        /*                     pdc_server_rank_g, io_info->io_type == READ? "read": "write", client_id); */
+        /*             fflush(stdout); */
+        /*         } */
+
+        /*         if (io_info->io_type == WRITE) */
+        /*             region_elt->shm_addr[0] = 0; */
+
+        /*         // TODO: currently assumes each region is for one client only! */
+        /*         //       if one region is merged from the requests from multiple clients */
+        /*         //       the shm_addr needs to be properly offseted when returning to client */
+        /*         ret_value = PDC_Server_notify_io_complete_to_client(client_id, io_list_target->obj_id, */ 
+        /*                                             region_elt->shm_addr, io_info->io_type); */
+        /*         if (ret_value != SUCCEED) { */
+        /*             printf("PDC_SERVER[%d]: PDC_Server_notify_io_complete_to_client FAILED!\n", */ 
+        /*                     pdc_server_rank_g); */
+        /*             /1* goto done; *1/ */
+        /*         } */
+
+        /*     } // End of for */
+        /* } // End of DL_FOREACH */
+
+        /* if (is_debug_g == 1) { */
+        /*     printf("==PDC_SERVER[%d]: finished writing to storage, and notified all clients\n", */ 
+        /*             pdc_server_rank_g); */
+        /* } */
+        /* // Remove all regions of the finished request */
+        /* region_elt = NULL; */
+        /* DL_FOREACH_SAFE(io_list_target->region_list_head, region_elt, region_tmp) { */
+        /*     /1* PDC_print_region_list(region_elt); *1/ */
+        /*     DL_DELETE(io_list_target->region_list_head, region_elt); */
+        /*     free(region_elt); */
+        /*     /1* printf("Deleted one region\n"); *1/ */
+        /*     /1* fflush(stdout); *1/ */
+        /* } */
+
+        /* // Check if this is the last one from the list */
+        /* DL_COUNT(io_list, io_list_elt, count); */
+        /* if (count == 1) { */
+        /*     free(io_list); */
+        /*     if (io_info->io_type == WRITE) */ 
+        /*         pdc_data_server_write_list_head_g = NULL; */
+        /*     else if (io_info->io_type == READ) */ 
+        /*         pdc_data_server_read_list_head_g = NULL; */
+        /* } */
+        /* else { */
+        /*     DL_DELETE(io_list, io_list_target); */
+        /*     free(io_list_target); */
+        /* } */
 
         io_list_target->count = 0;
     } // end of if (io_list_target->count == io_list_target->total) 
@@ -6230,7 +6249,7 @@ perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
 
         if (is_debug_g == 1) {
             printf("==PDC_SERVER[%d]: read storage offset %" PRIu64 ", buf_offset  %" PRIu64 "\n", 
-                    pdc_server_rank_g, storage_offset, buf_offset);
+                    pdc_server_rank_g,storage_offset, buf_offset);
         }
 
         // Can read the entire storage region at once

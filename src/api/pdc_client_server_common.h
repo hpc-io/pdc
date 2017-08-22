@@ -101,12 +101,12 @@ typedef struct region_list_t {
 } region_list_t;
 
 // Similar structure PDC_region_info_t defined in pdc_obj_pkg.h
-// TODO: currently only support upto four dimensions
+// TODO: currently only support upto 3D
 typedef struct region_info_transfer_t {
     size_t ndim;
     uint64_t start_0, start_1, start_2, start_3;
     uint64_t count_0, count_1, count_2, count_3;
-    uint64_t stride_0, stride_1, stride_2, stride_3;
+    /* uint64_t stride_0, stride_1, stride_2, stride_3; */
 } region_info_transfer_t;
 
 typedef struct pdc_metadata_transfer_t {

@@ -755,8 +755,8 @@ HG_TEST_RPC_CB(client_test_connect, handle)
     args->nclient   = in.nclient;
     sprintf(args->client_addr, in.client_addr);
 
-    /* HG_Respond(handle, NULL, NULL, &out); */
-    HG_Respond(handle, PDC_Server_get_client_addr, args, &out);
+    HG_Respond(handle, NULL, NULL, &out);
+    /* HG_Respond(handle, PDC_Server_get_client_addr, args, &out); */
     /* printf("==PDC_SERVER: client_test_connect(): Returned %llu\n", out.ret); */
     /* fflush(stdout); */
 
