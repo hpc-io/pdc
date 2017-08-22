@@ -1496,12 +1496,16 @@ HG_TEST_RPC_CB(gen_obj_unmap_notification, handle)
     gen_obj_unmap_notification_out_t out;
     pdc_metadata_t *target_obj;
     region_map_t *elt, *tmp;
-    
+    PDC_mapping_info_t *tmp_ptr;
+    const struct hg_info *info;
+ 
     FUNC_ENTER(NULL);
 
     // Decode input
     HG_Get_input(handle, &in);
     out.ret = 0;
+
+    info = HG_Get_info(handle);
 
     target_obj = PDC_Server_get_obj_metadata(in.local_obj_id);
     if (target_obj == NULL) {
@@ -1511,16 +1515,18 @@ HG_TEST_RPC_CB(gen_obj_unmap_notification, handle)
 
     DL_FOREACH_SAFE(target_obj->region_map_head, elt, tmp) {
         if(in.local_obj_id==elt->local_obj_id) {
-            region_map_t *map_ptr = target_obj->region_map_head;
-            PDC_mapping_info_t *tmp_ptr;
-            PDC_LIST_GET_FIRST(tmp_ptr, &map_ptr->ids);
+            PDC_LIST_GET_FIRST(tmp_ptr, &elt->ids);
             while(tmp_ptr != NULL) {
+                HG_Bulk_free(tmp_ptr->remote_bulk_handle);
+                HG_Addr_free(info->hg_class, tmp_ptr->remote_addr);
                 PDC_LIST_REMOVE(tmp_ptr, entry);
                 free(tmp_ptr);
-                PDC_LIST_GET_FIRST(tmp_ptr, &map_ptr->ids);
+                PDC_LIST_GET_FIRST(tmp_ptr, &elt->ids);
             }
             HG_Bulk_free(elt->local_bulk_handle);
+            HG_Addr_free(info->hg_class, elt->local_addr);
             DL_DELETE(target_obj->region_map_head, elt);
+            free(elt);
             out.ret = 1;
         }
     }
@@ -1542,11 +1548,14 @@ HG_TEST_RPC_CB(gen_reg_unmap_notification, handle)
     gen_reg_unmap_notification_out_t out;
     pdc_metadata_t *target_obj;
     region_map_t *elt, *tmp;
-    
+    PDC_mapping_info_t *tmp_ptr;
+    const struct hg_info *info;
+ 
     FUNC_ENTER(NULL);
 
     // Decode input
     HG_Get_input(handle, &in);
+    info = HG_Get_info(handle);
     out.ret = 0;
 
     target_obj = PDC_Server_get_obj_metadata(in.local_obj_id);
@@ -1557,15 +1566,16 @@ HG_TEST_RPC_CB(gen_reg_unmap_notification, handle)
 
     DL_FOREACH_SAFE(target_obj->region_map_head, elt, tmp) {
         if(in.local_obj_id==elt->local_obj_id && in.local_reg_id==elt->local_reg_id) {
-            region_map_t *map_ptr = target_obj->region_map_head;
-            PDC_mapping_info_t *tmp_ptr;
-            PDC_LIST_GET_FIRST(tmp_ptr, &map_ptr->ids);
+            PDC_LIST_GET_FIRST(tmp_ptr, &elt->ids);
             while(tmp_ptr != NULL) {
+                HG_Bulk_free(tmp_ptr->remote_bulk_handle);
+                HG_Addr_free(info->hg_class, tmp_ptr->remote_addr);
                 PDC_LIST_REMOVE(tmp_ptr, entry);
                 free(tmp_ptr);
-                PDC_LIST_GET_FIRST(tmp_ptr, &map_ptr->ids);
+                PDC_LIST_GET_FIRST(tmp_ptr, &elt->ids);
             }
             HG_Bulk_free(elt->local_bulk_handle);
+            HG_Addr_free(info->hg_class, elt->local_addr);
             DL_DELETE(target_obj->region_map_head, elt);
             free(elt);
             out.ret = 1;
