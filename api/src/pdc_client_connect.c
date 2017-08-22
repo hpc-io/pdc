@@ -728,6 +728,14 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     perr_t ret_value = SUCCEED;
     char na_info_string[ADDR_MAX];
     char hostname[1024];
+    /* Set the default mercury transport 
+     * but enable overriding that to any of:
+     *   "ofi+gni"
+     *   "ofi+tcp"
+     *   "cci+tcp"
+     */
+    char *default_hg_transport = "bmi+tcp";
+    char *hg_transport;
     int i;
     hg_return_t hg_ret;
     struct client_lookup_args lookup_args;
@@ -736,9 +744,12 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     
     FUNC_ENTER(NULL);
 
+    if ((hg_transport = getenv("HG_TRANSPORT")) == NULL) {
+        hg_transport = default_hg_transport;
+    }
     memset(hostname, 0, 1024);
     gethostname(hostname, 1023);
-    sprintf(na_info_string, "bmi+tcp://%s:%d", hostname, port);
+    sprintf(na_info_string, "%s://%s:%d", hg_transport, hostname, port);
     /* sprintf(na_info_string, "ofi+gni://%s:%d", hostname, port); */
     /* sprintf(na_info_string, "ofi+tcp://%s:%d", hostname, port); */
     /* sprintf(na_info_string, "cci+tcp://%d", port); */

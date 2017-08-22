@@ -2519,6 +2519,15 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     char self_addr_string[ADDR_MAX];
     char na_info_string[ADDR_MAX];
     char hostname[1024];
+
+    /* Set the default mercury transport 
+     * but enable overriding that to any of:
+     *   "ofi+gni"
+     *   "ofi+tcp"
+     *   "cci+tcp"
+     */
+    char *default_hg_transport = "bmi+tcp";
+    char *hg_transport;
     
     FUNC_ENTER(NULL);
 
@@ -2534,9 +2543,12 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     all_addr_strings    = (char**)calloc(sizeof(char*), pdc_server_size_g );
     total_mem_usage_g += (sizeof(char) + sizeof(char*));
 
+    if ((hg_transport = getenv("HG_TRANSPORT")) == NULL) {
+        hg_transport = default_hg_transport;
+    }
     memset(hostname, 0, 1024);
     gethostname(hostname, 1023);
-    sprintf(na_info_string, "bmi+tcp://%s:%d", hostname, port);
+    sprintf(na_info_string, "%s://%s:%d", hg_transport, hostname, port);
     /* sprintf(na_info_string, "ofi+gni://%s:%d", hostname, port); */
     /* sprintf(na_info_string, "ofi+tcp://%s:%d", hostname, port); */
     /* sprintf(na_info_string, "cci+tcp://%s:%d", hostname, port); */
