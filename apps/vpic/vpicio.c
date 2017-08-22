@@ -35,15 +35,14 @@ int main(int argc, char **argv)
     char *obj_name = argv[1];
     size_MB = atoi(argv[2]);
     size_MB *= 1048576;
-    struct PDC_prop p;
     
-    pdcid_t pdc = PDC_init(p);
+    pdcid_t pdc = PDC_init("pdc");
 
     pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
-    pdcid_t cont = PDCcont_create(pdc, "c1", cont_prop);
+    pdcid_t cont = PDCcont_create("c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
@@ -90,15 +89,15 @@ int main(int argc, char **argv)
     
     const int my_data_size = 8388608;
     uint64_t dims[1] = {my_data_size};  // {8388608};
-    PDCprop_set_obj_dims(obj_prop, 1, dims, pdc);
+    PDCprop_set_obj_dims(obj_prop, 1, dims);
 
     pdcid_t test_obj = -1;
 
    
-    PDCprop_set_obj_user_id( obj_prop, getuid(),pdc);
-    PDCprop_set_obj_time_step( obj_prop, 0, pdc);
-    PDCprop_set_obj_app_name(obj_prop, "VPICIO", pdc);
-    PDCprop_set_obj_tags(obj_prop, "tag0=1", pdc);
+    PDCprop_set_obj_user_id( obj_prop, getuid());
+    PDCprop_set_obj_time_step( obj_prop, 0);
+    PDCprop_set_obj_app_name(obj_prop, "VPICIO");
+    PDCprop_set_obj_tags(obj_prop, "tag0=1");
 
     struct PDC_region_info region1;
     struct PDC_region_info region2;
@@ -119,7 +118,7 @@ int main(int argc, char **argv)
 	for(int i=1; i<=8; i++){
          sprintf(obj_name, "obj-var-%d", i );
 
-          test_obj = PDCobj_create(pdc, cont, obj_name, obj_prop);
+          test_obj = PDCobj_create(cont, obj_name, obj_prop);
             if (test_obj < 0) {
                 printf("Error getting an object id of %s from server, exit...\n", obj_name);
                 exit(-1);
@@ -219,10 +218,10 @@ int main(int argc, char **argv)
         fflush(stdout);
     }
 done:
-    if(PDCcont_close(cont, pdc) < 0)
+    if(PDCcont_close(cont) < 0)
         printf("fail to close container %lld\n", cont);
 
-    if(PDCprop_close(cont_prop, pdc) < 0)
+    if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
 
     if(PDC_close(pdc) < 0)
