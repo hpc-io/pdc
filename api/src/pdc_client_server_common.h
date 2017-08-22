@@ -1855,4 +1855,6 @@ hg_id_t data_server_read_register(hg_class_t *hg_class);
 hg_id_t data_server_read_check_register(hg_class_t *hg_class);
 hg_id_t data_server_read_register(hg_class_t *hg_class);
 
+extern char *find_in_path(char *workingDir, char *application);
+
 #endif /* PDC_CLIENT_SERVER_COMMON_H */

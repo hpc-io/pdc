@@ -60,6 +60,8 @@ int                    pdc_use_local_server_only_g = 0;
 
 char                   pdc_client_tmp_dir_g[ADDR_MAX];
 pdc_server_info_t     *pdc_server_info_g = NULL;
+pdc_client_t          *pdc_client_direct_channels = NULL;
+pdc_client_t          *thisClient = NULL;
 static int            *debug_server_id_count = NULL;
 
 PDC_Request_t           *pdc_io_request_list_g = NULL;
@@ -93,6 +95,10 @@ hg_atomic_int32_t      bulk_transfer_done_g;
 static hg_id_t	       gen_reg_map_notification_register_id_g;
 static hg_id_t         gen_reg_unmap_notification_register_id_g;
 static hg_id_t         gen_obj_unmap_notification_register_id_g;
+
+// client direct
+static hg_id_t         client_direct_addr_register_id_g;
+
 /* hg_hash_table_t       *obj_names_cache_hash_table_g = NULL; */
 
 /* static inline uint32_t get_server_id_by_hash_all() */ 
@@ -211,26 +217,27 @@ int PDC_Client_read_server_addr_from_file()
     pdc_server_info_g = (pdc_server_info_t*)malloc(sizeof(pdc_server_info_t) * pdc_server_num_g);
     // Fill in default values
     for (i = 0; i < pdc_server_num_g; i++) {
-        pdc_server_info_g[i].client_send_region_map_handle_valid = 0;
-        pdc_server_info_g[i].client_send_region_unmap_handle_valid= 0;
+        pdc_server_info_g[i].client_send_region_map_handle_valid   = 0;
+        pdc_server_info_g[i].client_send_region_unmap_handle_valid = 0;
         pdc_server_info_g[i].client_send_object_unmap_handle_valid = 0;
-        pdc_server_info_g[i].addr_valid                          = 0;
-        pdc_server_info_g[i].rpc_handle_valid                    = 0;
-        pdc_server_info_g[i].client_test_handle_valid            = 0;
-        pdc_server_info_g[i].close_server_handle_valid           = 0;
-        pdc_server_info_g[i].metadata_query_handle_valid         = 0;
-        pdc_server_info_g[i].query_partial_handle_valid = 0;
-        pdc_server_info_g[i].metadata_delete_handle_valid        = 0;
-        pdc_server_info_g[i].metadata_delete_by_id_handle_valid= 0;
-        pdc_server_info_g[i].metadata_update_handle_valid        = 0;
-        pdc_server_info_g[i].metadata_add_tag_handle_valid       = 0;
-        pdc_server_info_g[i].region_lock_handle_valid            = 0;
-        pdc_server_info_g[i].region_release_handle_valid          = 0;
-        pdc_server_info_g[i].data_server_read_handle_valid       = 0;
-        pdc_server_info_g[i].data_server_write_handle_valid      = 0;
+        pdc_server_info_g[i].addr_valid                            = 0;
+        pdc_server_info_g[i].rpc_handle_valid                      = 0;
+        pdc_server_info_g[i].client_test_handle_valid              = 0;
+        pdc_server_info_g[i].close_server_handle_valid             = 0;
+        pdc_server_info_g[i].metadata_query_handle_valid           = 0;
+        pdc_server_info_g[i].query_partial_handle_valid            = 0;
+        pdc_server_info_g[i].metadata_delete_handle_valid          = 0;
+        pdc_server_info_g[i].metadata_delete_by_id_handle_valid    = 0;
+        pdc_server_info_g[i].metadata_update_handle_valid          = 0;
+        pdc_server_info_g[i].metadata_add_tag_handle_valid         = 0;
+        pdc_server_info_g[i].region_lock_handle_valid              = 0;
+        pdc_server_info_g[i].region_release_handle_valid           = 0;
+        pdc_server_info_g[i].client_direct_handle_valid            = 0;
+        pdc_server_info_g[i].data_server_read_handle_valid         = 0;
+        pdc_server_info_g[i].data_server_write_handle_valid        = 0;
         pdc_server_info_g[i].data_server_read_check_handle_valid   = 0;
-        pdc_server_info_g[i].data_server_write_check_handle_valid   = 0;
-        pdc_server_info_g[i].data_server_write_handle_valid      = 0;
+        pdc_server_info_g[i].data_server_write_check_handle_valid  = 0;
+        pdc_server_info_g[i].data_server_write_handle_valid        = 0;
     }
 
     i = 0;
@@ -701,6 +708,18 @@ int PDC_Client_check_bulk(hg_context_t *hg_context)
 
     FUNC_LEAVE(ret_value);
 }
+
+static
+perr_t get_self_addr(hg_class_t* hg_class, hg_addr_t *self_addr, char* self_addr_string)
+{
+    hg_size_t self_addr_string_size = PATH_MAX;
+ 
+    // Get self addr to tell client about 
+    HG_Addr_self(hg_class, self_addr);
+    HG_Addr_to_string(hg_class, self_addr_string, &self_addr_string_size, *self_addr);
+    return SUCCEED;
+}
+
 
 // Init Mercury class and context
 // Register gen_obj_id rpc
@@ -1885,20 +1904,26 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_pro
     
     create_prop = PDCobj_prop_get_info(obj_create_prop);
     obj_life  = create_prop->obj_life;
+
     // Fill input structure
-    
+
     if (obj_name == NULL) {
         printf("Cannot create object with empty object name\n");
         goto done;
     }
+
+    memset(&in,0,sizeof(in));
+
     in.data.obj_name  = obj_name;
     in.data.time_step = create_prop->time_step;
     in.data.user_id   = create_prop->user_id;
-    in.data.ndim      = create_prop->ndim;
-    in.data.dims0     = create_prop->dims[0];
-    in.data.dims1     = create_prop->dims[1];
-    in.data.dims2     = create_prop->dims[2];
-    in.data.dims3     = create_prop->dims[3];
+
+    if ((in.data.ndim = create_prop->ndim) > 0) {
+      in.data.dims0     = create_prop->dims[0];
+      in.data.dims1     = create_prop->dims[1];
+      in.data.dims2     = create_prop->dims[2];
+      in.data.dims3     = create_prop->dims[3];
+    }
    
     if (create_prop->tags == NULL) 
         in.data.tags      = " ";

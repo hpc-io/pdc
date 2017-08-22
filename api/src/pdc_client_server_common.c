@@ -2438,3 +2438,80 @@ get_storage_info_register(hg_class_t *hg_class)
     FUNC_LEAVE(ret_value);
 }
 
+
+/* 
+ * NOTE:
+ *   Because we use dlopen to dynamically open
+ *   an executable, it may be necessary for the server
+ *   to have the LD_LIBRARY_PATH of the client.
+ *   This can/should be part of the UDF registration
+ *   with the server, i.e. we provide the server
+ *   with: 
+ *      a) the full path to the client executable
+ *         which must be compiled with the "-fpie -rdynamic"
+ *         flags.
+ *      b) the contents of the PATH and LD_LIBRARY_PATH
+ *         environment variables.
+ */
+
+char *
+remove_relative_dirs(char *workingDir, char *application)
+{
+     int k, levels_up = 0;
+     char *appName = application;
+     char *dotdot;
+     while((dotdot = strstr(appName,"../")) != NULL) {
+       levels_up++;
+       appName = dotdot + 3;
+     }
+     for(k=0; k<levels_up; k++) {
+       char *slash = strrchr(workingDir,'/');
+       if (slash) *slash = 0;
+     }
+     k = strlen(workingDir);
+     if ((appName[0] == '.') && (appName[1] == '/'))
+       appName += 2;
+     sprintf(&workingDir[k],"/%s", appName);
+     return strdup(workingDir);
+}
+
+char *
+find_in_path(char *workingDir, char *application)
+{
+     struct stat fileStat;
+     char *pathVar = getenv("PATH");
+     char colon = ':';
+     char checkPath[PATH_MAX];
+     char *next = strchr(pathVar,colon);
+     while(next) {
+       *next++ = 0;
+       sprintf(checkPath,"%s/%s",pathVar,application);
+       if (stat(checkPath,&fileStat) == 0) {
+	 return strdup(checkPath);
+       }
+       pathVar = next;
+       next = strchr(pathVar,colon);
+     }
+     if (application[0] == '.') {
+       sprintf(checkPath, "%s/%s", workingDir, application);
+       if (stat(checkPath,&fileStat) == 0) {
+	 char *foundPath = strrchr(checkPath,'/');
+	 char *appName = foundPath+1;
+	 if (foundPath == NULL) {
+	   return remove_relative_dirs(workingDir, application);
+	 }
+	 *foundPath = 0;
+	 // Change directory (pushd) to the where we find the application
+	 if (chdir(checkPath) == 0) {
+	   int offset;
+	   getcwd(checkPath,sizeof(checkPath));
+	   offset = strlen(checkPath);
+	   // Change back (popd) to where we started 
+	   chdir(workingDir);
+	   sprintf(&checkPath[offset], "/%s", appName);
+	   return strdup(checkPath);
+	 }
+       }
+     }
+     return NULL;
+}

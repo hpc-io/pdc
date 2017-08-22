@@ -77,6 +77,8 @@ typedef struct pdc_server_info_t {
     hg_handle_t     region_release_handle;
     int             query_partial_handle_valid;
     hg_handle_t     query_partial_handle;
+    int             client_direct_handle_valid;
+    hg_handle_t     client_direct_handle;
     // Data server related
     int             data_server_read_handle_valid;
     hg_handle_t     data_server_read_handle;
@@ -89,6 +91,21 @@ typedef struct pdc_server_info_t {
 } pdc_server_info_t;
 
 extern pdc_server_info_t *pdc_server_info_g;
+
+typedef struct pdc_client {
+    pdcid_t         pdc;
+    int             client_rank;
+    int             client_port;
+    char         *  client_addr;
+/*  Some Mercury related info  */
+    hg_class_t   *  hg_class;
+    hg_context_t *  hg_context;
+    hg_addr_t       hg_addr;
+    hg_handle_t     client_handle;
+} pdc_client_t;
+
+extern pdc_client_t *pdc_client_direct_channels;
+
 
 // Request structure for async read/write
 typedef struct PDC_Request_t {
@@ -317,7 +334,12 @@ perr_t PDC_Client_finalize();
  */
 perr_t PDC_Client_close_all_server();
 
-
+/**
+ * PDC client direct (i.e. client-to-client comms) init
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_data_direct_init();
 
 
 /*
