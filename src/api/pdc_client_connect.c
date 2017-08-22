@@ -38,7 +38,7 @@
     #include "mpi.h"
 #endif
 
-#include "server/utlist.h"
+#include "../server/utlist.h"
 
 #include "mercury.h"
 #include "mercury_request.h"
