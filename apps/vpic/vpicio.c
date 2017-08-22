@@ -51,6 +51,7 @@ int main(int argc, char **argv)
     if(obj_prop <= 0)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
 
+	// Not taking size_MB into account yet. Fixing the number of particles to 8M
 	long numparticles=8388608;
 
 	float *x, *y, *z;
