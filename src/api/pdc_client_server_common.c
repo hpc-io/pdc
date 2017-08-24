@@ -2255,15 +2255,15 @@ HG_TEST_RPC_CB(update_region_loc, handle)
     /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
-    printf("==PDC_SERVER: Got region location update request: obj_id=%llu\n", in.obj_id);
+    /* printf("==PDC_SERVER: Got region location update request: obj_id=%llu\n", in.obj_id); */
     fflush(stdout);
 
     region_list_t *input_region = (region_list_t*)malloc(sizeof(region_list_t));
     pdc_region_transfer_t_to_list_t(&in.region, input_region);
     strcpy(input_region->storage_location, in.storage_location);
 
-    PDC_print_region_list(input_region);
-    fflush(stdout);
+    /* PDC_print_region_list(input_region); */
+    /* fflush(stdout); */
 
     out.ret = 1;
     ret_value = PDC_Server_update_local_region_storage_loc(input_region, in.obj_id);

@@ -3086,12 +3086,16 @@ perr_t PDC_Client_data_server_write_check(int server_id, uint32_t client_id, pdc
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
 
-    /* printf("==PDC_CLIENT: PDC_Client_data_server_write_check() - ret=%d \n", lookup_args.ret); */
+    if (is_client_debug_g == 1) {
+        printf("==PDC_CLIENT[%d]: PDC_Client_data_server_write_check() - ret=%d \n", pdc_client_mpi_rank_g, lookup_args.ret);
+    }
 
     *status = lookup_args.ret;
-    if (lookup_args.ret <= 0) {
+    if (lookup_args.ret != 1) {
         ret_value = SUCCEED;
-        printf("PDC_CLIENT: PDC_Client_data_server_write_check - IO request has not been fulfilled by server\n");
+        if (is_client_debug_g == 1) {
+            printf("PDC_CLIENT[%d]: PDC_Client_data_server_write_check - IO request has not been fulfilled by server\n");
+        }
         goto done;
     }
 

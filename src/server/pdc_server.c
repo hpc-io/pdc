@@ -4390,9 +4390,9 @@ perr_t PDC_Server_merge_region_list_naive(region_list_t *list, region_list_t **m
 
     is_merged = (int*)calloc(sizeof(int), count);
 
-    DL_FOREACH(list, elt) {
-        PDC_print_region_list(elt);
-    }
+    /* DL_FOREACH(list, elt) { */
+    /*     PDC_print_region_list(elt); */
+    /* } */
 
     // Init merged head
     pos = 0;
@@ -4926,7 +4926,6 @@ perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_writ
                     // Found io list
                     found_region = 1;
                     out->ret = region_elt->is_data_ready;
-                    ret_value = SUCCEED;
                     /* printf("==PDC_SERVER: found IO request region\n"); */
                     if (region_elt->is_data_ready == 1) {
                         DL_DELETE(io_target->region_list_head, region_elt);
@@ -4934,6 +4933,7 @@ perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_writ
                     }
                     // TODO: may also want to free the io_target if there is no
                     //       region in its list
+                    ret_value = SUCCEED;
                     goto done;
                 /* } */
             /* } */
@@ -5488,7 +5488,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
             // FIXME: there is something wrong with the obj_id, when 4 clients send 1 request collectively,
             // one of the request region's metadata's obj_id becomes 0
             if (region_elt->meta->obj_id != io_list_target->obj_id) {
-                PDC_print_region_list(region_elt);
+                /* PDC_print_region_list(region_elt); */
                 region_elt->meta->obj_id = io_list_target->obj_id;
             }
         }
@@ -5647,7 +5647,7 @@ perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_
 
     FUNC_ENTER(NULL);
 
-    printf("==PDC_SERVER[%d]: update local region storage location\n", pdc_server_rank_g);
+    /* printf("==PDC_SERVER[%d]: update local region storage location\n", pdc_server_rank_g); */
     if (region == NULL) {
         printf("==PDC_SERVER[%d] PDC_Server_update_local_region_storage_loc NULL region!\n", 
                 pdc_server_rank_g);
@@ -6470,7 +6470,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
         goto done;
     }
 
-    printf("==PDC_SERVER[%d]: existing IO request regions for actual IO\n", pdc_server_rank_g);
+    /* printf("==PDC_SERVER[%d]: existing IO request regions for actual IO\n", pdc_server_rank_g); */
     // Allocate for temporary overlap region storage info if there is a read in list
     DL_FOREACH(region, region_elt) {
         if (region_elt->access_type == READ) {
@@ -6481,7 +6481,9 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
             }
             break;
         }
-        PDC_print_storage_region_list(region_elt);
+        if (is_debug_g == 1) {
+            PDC_print_storage_region_list(region_elt);
+        }
     }
 
     // Iterate over all region IO requests and perform actual IO
@@ -6491,8 +6493,8 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
             ret_value = FAIL;
             goto done;
         }
-        printf("==PDC_SERVER[%d]:region_elt->access_type = %d\n", pdc_server_rank_g, region_elt->access_type);
-        fflush(stdout);
+        /* printf("==PDC_SERVER[%d]:region_elt->access_type = %d\n", pdc_server_rank_g, region_elt->access_type); */
+        /* fflush(stdout); */
 
         if (region_elt->access_type == READ) {
 
@@ -6644,7 +6646,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
 
             // FIXME: region list is corruptted
             // Close all opened shared memory
-            printf("==PDC_SERVER[%d]: closing shared mem\n", pdc_server_rank_g);
+            /* printf("==PDC_SERVER[%d]: closing shared mem\n", pdc_server_rank_g); */
             /* PDC_print_region_list(region_elt); */
             ret_value = PDC_Server_close_shm(region_elt);
             if (ret_value != SUCCEED) {
