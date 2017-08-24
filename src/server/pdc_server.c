@@ -4609,8 +4609,17 @@ perr_t PDC_Server_close_shm(region_list_t *region)
 
     FUNC_ENTER(NULL);
 
-    if (region->buf == NULL) 
+    if (region == NULL) {
+        printf("==PDC_SERVER[%d]: PDC_Server_close_shm - NULL input\n");
+        ret_value = FAIL;
         goto done;
+    }
+
+    if (region->buf == NULL) {
+        printf("==PDC_SERVER[%d]: PDC_Server_close_shm - NULL buf\n");
+        ret_value = FAIL;
+        goto done;
+    }
 
     /* remove the mapped memory segment from the address space of the process */
     if (munmap(region->buf, region->data_size) == -1) {
@@ -5335,35 +5344,6 @@ perr_t PDC_Server_data_write_from_shm(region_list_t *region_list_head)
 
     // Now we have a merged list of regions to be read, 
     // so just write one by one
-    DL_FOREACH(region_list_head, elt) {
-
-        // Calculate io size
-        size_t i = 0;
-        if (elt->data_size == 0) {
-            elt->data_size = elt->count[0];
-            for (i = 1; i < elt->ndim; i++) 
-                elt->data_size *= elt->count[i];
-        }
-
-        // Open shared memory and map to data buf
-        elt->shm_fd = shm_open(elt->shm_addr, O_RDONLY, 0666);
-        if (elt->shm_fd == -1) {
-            printf("==PDC_SERVER: Shared memory open failed [%s]!\n", elt->shm_addr);
-            ret_value = FAIL;
-            goto done;
-        }
-
-        elt->buf= mmap(0, elt->data_size, PROT_READ, MAP_SHARED, elt->shm_fd, 0);
-        if (elt->buf== MAP_FAILED) {
-            printf("==PDC_CLIENT: Map failed: %s\n", strerror(errno));
-            // close and unlink?
-            ret_value = FAIL;
-            goto done;
-        }
-        /* printf("==PDC_SERVER[%d]: PDC_Server_data_write_from_shm buf [%.*s]\n", */ 
-        /*         pdc_server_rank_g, elt->data_size, elt->buf); */
-    }
-
     // POSIX write 
     ret_value = PDC_Server_regions_io(region_list_head, POSIX);
     if (ret_value != SUCCEED) {
@@ -5372,14 +5352,6 @@ perr_t PDC_Server_data_write_from_shm(region_list_t *region_list_head)
     }
 
 done:
-    // Close all opened shared memory
-    DL_FOREACH(region_list_head, elt) {
-        ret_value = PDC_Server_close_shm(elt);
-        if (ret_value != SUCCEED) {
-            printf("==PDC_SERVER: error closing shared memory\n");
-            goto done;
-        }
-    }
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -5675,14 +5647,13 @@ perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_
 
     FUNC_ENTER(NULL);
 
-    printf("==PDC_SERVER[%d]: update region storage location\n", pdc_server_rank_g);
-    /* region_meta = region->meta; */
-    /* if (region->meta == NULL) { */
-    /*     printf("==PDC_SERVER[%d] PDC_Server_update_local_region_storage_loc FAIL to get request metadata\n", */ 
-    /*             pdc_server_rank_g); */
-    /*     ret_value = FAIL; */
-    /*     goto done; */
-    /* } */
+    printf("==PDC_SERVER[%d]: update local region storage location\n", pdc_server_rank_g);
+    if (region == NULL) {
+        printf("==PDC_SERVER[%d] PDC_Server_update_local_region_storage_loc NULL region!\n", 
+                pdc_server_rank_g);
+        ret_value = FAIL;
+        goto done;
+    }
 
     // Find object metadata
     target_meta = find_metadata_by_id(obj_id);
@@ -5693,6 +5664,7 @@ perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_
         goto done;
     }
 
+    // Find if there is the same region already stored in the metadata and update it
     DL_FOREACH(target_meta->storage_region_list_head, region_elt) {
         if (PDC_is_same_region_list(region_elt, region) == 1) {
             strcpy(region_elt->storage_location, region->storage_location);
@@ -5700,29 +5672,26 @@ perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_
             update_success = 1;
             break;
         }
-        /* PDC_print_storage_region_list(region_elt); */
+        if (is_debug_g == 1) {
+            printf("==PDC_SERVER[%d]: updated existing region location/offset\n", pdc_server_rank_g);
+            PDC_print_storage_region_list(region_elt);
+        }
     } // DL_FOREACH
 
+    // Insert the storage region if not found
     if (update_success == -1) {
-        if (is_debug_g == 1) 
-            printf("==PDC_SERVER[%d]: create new region location/offset\n", pdc_server_rank_g);
 
         // Create the region list
         new_region = (region_list_t*)calloc(1, sizeof(region_list_t));
         PDC_init_region_list(new_region);
 
-        // Only copy the ndim, start, and count is sufficient
-        new_region->ndim = region->ndim;
-        for (i = 0; i < new_region->ndim; i++) {
-            new_region->start[i] = region->start[i];
-            new_region->count[i] = region->count[i];
-            /* new_region->stride[i] = region->stride[i]; */
-        }
-        strcpy(new_region->storage_location, region->storage_location);
-        new_region->offset = region->offset;
+        pdc_region_list_t_deep_cp(region, new_region);
 
         DL_APPEND(target_meta->storage_region_list_head, new_region);
-        /* PDC_print_storage_region_list(new_region); */
+        if (is_debug_g == 1) {
+            printf("==PDC_SERVER[%d]: created new region location/offset\n", pdc_server_rank_g);
+            PDC_print_storage_region_list(new_region);
+        }
     }
 
 done:
@@ -5786,6 +5755,12 @@ perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region)
 
     FUNC_ENTER(NULL);
 
+    if (region == NULL) {
+        printf("==PDC_SERVER[%d] PDC_Server_update_region_storagelocation_offset - NULL region!\n", 
+                pdc_server_rank_g);
+        ret_value = FAIL;
+        goto done;
+    }
 
     if (region->storage_location == NULL) {
         printf("==PDC_SERVER: PDC_Server_update_region_storagelocation_offset() \
@@ -6482,7 +6457,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
     size_t total_read_bytes = 0;
     uint32_t offset = 0;
     uint32_t n_storage_regions = 0, i = 0;
-    region_list_t *region_elt = NULL, *previous_region = NULL;
+    region_list_t *region_elt = NULL, *region_tmp = NULL, *previous_region = NULL;
     region_list_t **overlap_regions = NULL;
     FILE *fp_read = NULL, *fp_write = NULL;
     char *prev_path = NULL;
@@ -6494,7 +6469,8 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
         ret_value = FAIL;
         goto done;
     }
-            
+
+    printf("==PDC_SERVER[%d]: existing IO request regions for actual IO\n", pdc_server_rank_g);
     // Allocate for temporary overlap region storage info if there is a read in list
     DL_FOREACH(region, region_elt) {
         if (region_elt->access_type == READ) {
@@ -6505,10 +6481,11 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
             }
             break;
         }
+        PDC_print_storage_region_list(region_elt);
     }
 
     // Iterate over all region IO requests and perform actual IO
-    DL_FOREACH(region, region_elt) {
+    DL_FOREACH_SAFE(region, region_elt, region_tmp) {
         if (region_elt == NULL) {
             printf("==PDC_SERVER[%d]: region_elt is NULL\n", pdc_server_rank_g);
             ret_value = FAIL;
@@ -6584,6 +6561,32 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
         } // end of READ
         else if (region_elt->access_type == WRITE) {
 
+            // Calculate io size
+            size_t i = 0;
+            if (region_elt->data_size == 0) {
+                region_elt->data_size = region_elt->count[0];
+                for (i = 1; i < region_elt->ndim; i++) 
+                    region_elt->data_size *= region_elt->count[i];
+            }
+
+            // Open shared memory and map to data buf
+            region_elt->shm_fd = shm_open(region_elt->shm_addr, O_RDONLY, 0666);
+            if (region_elt->shm_fd == -1) {
+                printf("==PDC_SERVER: Shared memory open failed [%s]!\n", region_elt->shm_addr);
+                ret_value = FAIL;
+                goto done;
+            }
+
+            region_elt->buf= mmap(0, region_elt->data_size, PROT_READ, MAP_SHARED, region_elt->shm_fd, 0);
+            if (region_elt->buf== MAP_FAILED) {
+                printf("==PDC_SERVER: Map failed: %s\n", strerror(errno));
+                // close and unlink?
+                ret_value = FAIL;
+                goto done;
+            }
+            /* printf("==PDC_SERVER[%d]: PDC_Server_data_write_from_shm buf [%.*s]\n", */ 
+            /*         pdc_server_rank_g, region_elt->data_size, region_elt->buf); */
+
             // Assumes all regions are written to one file
             if (region_elt->storage_location == NULL) {
                 printf("==PDC_SERVER: PDC_Server_posix_one_file_io - storage_location is NULL!\n");
@@ -6638,6 +6641,18 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
             }
 
             previous_region = region_elt;
+
+            // FIXME: region list is corruptted
+            // Close all opened shared memory
+            printf("==PDC_SERVER[%d]: closing shared mem\n", pdc_server_rank_g);
+            /* PDC_print_region_list(region_elt); */
+            ret_value = PDC_Server_close_shm(region_elt);
+            if (ret_value != SUCCEED) {
+                printf("==PDC_SERVER: error closing shared memory\n");
+                goto done;
+            }
+
+
 
         } // end of WRITE
         else {

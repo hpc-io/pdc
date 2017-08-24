@@ -192,7 +192,7 @@ int PDC_Client_read_server_addr_from_file()
         /* printf("config file:%s\n",config_fname); */
         na_config = fopen(config_fname, "r");
         if (!na_config) {
-            fprintf(stderr, "Could not open config file from default location: %s\n", pdc_server_cfg_name_g);
+            fprintf(stderr, "Could not open config file from default location: %s\n", config_fname);
             exit(0);
         }
         char n_server_string[ADDR_MAX];
@@ -839,7 +839,7 @@ perr_t PDC_Client_init()
     MPI_Comm_rank(MPI_COMM_WORLD, &pdc_client_mpi_rank_g);
     MPI_Comm_size(MPI_COMM_WORLD, &pdc_client_mpi_size_g);
 #endif
-
+ 
     // Set up tmp dir
     tmp_dir = getenv("PDC_TMPDIR");
     if (tmp_dir == NULL)
@@ -847,18 +847,8 @@ perr_t PDC_Client_init()
     else
         strcpy(pdc_client_tmp_dir_g, tmp_dir);
 
-    tmp_dir = getenv("PDC_NCLIENT_PER_SERVER");
-    if (tmp_dir == NULL)
-        pdc_nclient_per_server_g = 1;
-    else
-        pdc_nclient_per_server_g = atoi(tmp_dir);
 
-    if (pdc_client_mpi_rank_g == 0) {
-        printf("==PDC_SERVER[%d]: using [%s] as tmp dir, %d clients per server\n",
-                pdc_client_mpi_rank_g, pdc_client_tmp_dir_g, pdc_nclient_per_server_g);
-    }
-
-    
+   
     // Get debug environment var
     char *is_debug_env = getenv("PDC_DEBUG");
     if (is_debug_env != NULL) {
@@ -911,6 +901,20 @@ perr_t PDC_Client_init()
             exit(0);
         }
         mercury_has_init_g = 1;
+    }
+
+    tmp_dir = getenv("PDC_NCLIENT_PER_SERVER");
+    if (tmp_dir == NULL)
+        pdc_nclient_per_server_g = 1;
+    else
+        pdc_nclient_per_server_g = atoi(tmp_dir);
+
+    
+    /* if (pdc_client_mpi_size_g / pdc_server_num_g > pdc_nclient_per_server_g) */ 
+    /*     pdc_nclient_per_server_g = pdc_client_mpi_size_g / pdc_server_num_g; */
+    if (pdc_client_mpi_rank_g == 0) {
+        printf("==PDC_SERVER[%d]: using [%s] as tmp dir, %d clients per server\n",
+                pdc_client_mpi_rank_g, pdc_client_tmp_dir_g, pdc_nclient_per_server_g);
     }
 
     srand(time(NULL)); 
@@ -3393,7 +3397,7 @@ perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct PDC_region_info *region, P
 
     FUNC_ENTER(NULL);
 
-    request->server_id   = pdc_client_mpi_rank_g / pdc_nclient_per_server_g;
+    request->server_id   = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
     request->n_client    = pdc_nclient_per_server_g;    // Set by env var PDC_NCLIENT_PER_SERVER, default 1
     request->access_type = WRITE;
     request->metadata    = meta;
@@ -3447,7 +3451,7 @@ perr_t PDC_Client_iread(pdc_metadata_t *meta, struct PDC_region_info *region, PD
 
     FUNC_ENTER(NULL);
 
-    request->server_id   = pdc_client_mpi_rank_g / pdc_nclient_per_server_g;
+    request->server_id   = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
     request->n_client    = pdc_nclient_per_server_g;    // Set by env var PDC_NCLIENT_PER_SERVER, default 1
     request->access_type = READ;
     request->metadata    = meta;
