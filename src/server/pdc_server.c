@@ -5265,7 +5265,7 @@ perr_t PDC_Server_set_lustre_stripe(char *path, int stripe_count, int stripe_siz
             break;
         }
 
-    sprintf(cmd, "lfs setstripe -S %dm -c %d %s", stripe_count, stripe_size_MB, tmp);
+    sprintf(cmd, "lfs setstripe -S %dm -c %d %s", stripe_size_MB, stripe_count, tmp);
 
     if (system(cmd) < 0) {
         printf("==PDC_SERVER: Fail to set Lustre stripe parameters [%s]\n", tmp);
