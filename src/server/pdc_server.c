@@ -2843,8 +2843,8 @@ perr_t PDC_Server_destroy_remote_server_info()
         /* } */
         
         if (pdc_remote_server_info_g[i].addr_valid == 1) {
-            printf("==PDC_SERVER[%d]: HG_Addr_free #%d\n", pdc_server_rank_g, i);
-            fflush(stdout);
+            /* printf("==PDC_SERVER[%d]: HG_Addr_free #%d\n", pdc_server_rank_g, i); */
+            /* fflush(stdout); */
             pdc_remote_server_info_g[i].addr_valid = 0;
             hg_ret = HG_Addr_free(hg_class_g, pdc_remote_server_info_g[i].addr);
             if (hg_ret != HG_SUCCESS) {
@@ -4240,12 +4240,12 @@ int main(int argc, char *argv[])
     PDC_Server_loop(hg_context_g);
 #endif
 
-    printf("==PDC_SERVER[%d]: All work done, finalizing\n", pdc_server_rank_g);
+    /* printf("==PDC_SERVER[%d]: All work done, finalizing\n", pdc_server_rank_g); */
 
-    /* if (pdc_server_rank_g == 0) { */
-    /*     printf("==PDC_SERVER: All work done, finalizing\n"); */
-    /*     fflush(stdout); */
-    /* } */
+    if (pdc_server_rank_g == 0) {
+        printf("==PDC_SERVER: All work done, finalizing\n");
+        fflush(stdout);
+    }
 #ifdef ENABLE_CHECKPOINT
     // TODO: instead of checkpoint at app finalize time, try checkpoint with a time countdown or # of objects
     char checkpoint_file[ADDR_MAX];
