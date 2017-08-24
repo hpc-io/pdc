@@ -84,11 +84,13 @@ int main(int argc, const char *argv[])
         }
     }
 
+    printf("%d: object created.\n", rank);
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
     // Query the created object
+    printf("%d: Start to query object just created.\n", rank);
     pdc_metadata_t *metadata;
     PDC_Client_query_metadata_name_timestep( obj_name, 0, &metadata);
     /* if (rank == 1) { */
@@ -96,6 +98,7 @@ int main(int argc, const char *argv[])
     /* } */
     if (metadata == NULL || metadata->obj_id == 0) {
         printf("Error with metadata!\n");
+        exit(-1);
     }
 
     int ndim = 1;

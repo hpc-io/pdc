@@ -148,7 +148,7 @@ perr_t PDC_SERVER_notify_region_update_to_client(uint64_t meta_id, uint64_t reg_
 perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_check_out_t *out);
 perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_write_check_out_t *out);
 
-perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region);
+perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_t obj_id);
 perr_t PDC_Server_get_local_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta);
 
 perr_t PDC_Server_posix_one_file_io(region_list_t* region);

@@ -1614,7 +1614,7 @@ hg_proc_data_server_write_check_out_t(hg_proc_t proc, void *data)
 typedef struct {
     uint64_t                    obj_id;
     hg_const_string_t           storage_location;
-    uint64_t                    offset;
+    /* uint64_t                    offset; */
     region_info_transfer_t      region;
 } update_region_loc_in_t;
 
@@ -1638,11 +1638,11 @@ hg_proc_update_region_loc_in_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_uint64_t(proc, &struct_data->offset);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-        return ret;
-    }
+    /* ret = hg_proc_uint64_t(proc, &struct_data->offset); */
+    /* if (ret != HG_SUCCESS) { */
+	/* HG_LOG_ERROR("Proc error"); */
+    /*     return ret; */
+    /* } */
     ret = hg_proc_region_info_transfer_t(proc, &struct_data->region);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");

@@ -57,6 +57,7 @@ int                    pdc_client_mpi_size_g = 1;
 
 int                    pdc_server_num_g;
 int                    pdc_use_local_server_only_g = 0;
+int                    pdc_nclient_per_server_g = 0;
 
 char                   pdc_client_tmp_dir_g[ADDR_MAX];
 pdc_server_info_t     *pdc_server_info_g = NULL;
@@ -783,7 +784,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
         lookup_args.server_id = (i + pdc_client_mpi_rank_g) % pdc_server_num_g;
         lookup_args.client_addr = self_addr;
         lookup_args.client_id   = pdc_client_mpi_rank_g;
-        target_addr_string = pdc_server_info_g[i].addr_string;
+        target_addr_string = pdc_server_info_g[lookup_args.server_id].addr_string;
         if (is_client_debug_g == 1) {
             printf("==PDC_CLIENT[%d]: - Testing connection to server %d [%s]\n", 
                     pdc_client_mpi_rank_g, lookup_args.server_id, target_addr_string);
@@ -846,9 +847,17 @@ perr_t PDC_Client_init()
     else
         strcpy(pdc_client_tmp_dir_g, tmp_dir);
 
+    tmp_dir = getenv("PDC_NCLIENT_PER_SERVER");
+    if (tmp_dir == NULL)
+        pdc_nclient_per_server_g = 1;
+    else
+        pdc_nclient_per_server_g = atoi(tmp_dir);
+
     if (pdc_client_mpi_rank_g == 0) {
-        printf("==PDC_CLIENT: using %s as tmp dir \n", pdc_client_tmp_dir_g);
+        printf("==PDC_SERVER[%d]: using [%s] as tmp dir, %d clients per server\n",
+                pdc_client_mpi_rank_g, pdc_client_tmp_dir_g, pdc_nclient_per_server_g);
     }
+
     
     // Get debug environment var
     char *is_debug_env = getenv("PDC_DEBUG");
@@ -1820,14 +1829,12 @@ perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_st
     /* printf("==PDC_CLIENT[%d]: search request name [%s]\n", pdc_client_mpi_rank_g, obj_name); */
     /* fflush(stdout); */
 
-
     // Compute server id
     hash_name_value = PDC_get_hash_by_name(obj_name);
-    /* uint32_t hash_name_value = PDC_get_hash_by_name(obj_name); */
     server_id = (hash_name_value + time_step);
     server_id %= pdc_server_num_g;
 
-    /* printf("==PDC_CLIENT[%d]: processed request server id %u\n", pdc_client_mpi_rank_g, server_id); */
+    /* printf("==PDC_CLIENT[%d]: query will be sent to server id %u\n", pdc_client_mpi_rank_g, server_id); */
     /* fflush(stdout); */
 
     // Debug statistics for counting number of messages sent to each server.
@@ -1928,7 +1935,8 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_pro
     /*     server_id = pdc_client_mpi_rank_g % pdc_server_num_g; */
     /* } */
 
-    /* printf("==PDC_CLIENT: Create obj_name: %s, hash_value: %d, server_id:%d\n", name, hash_name_value, server_id); */
+    /* printf("==PDC_CLIENT: Create obj_name: %s, hash_value: %d, server_id:%d\n", */ 
+    /*         obj_name, hash_name_value, server_id); */
 
 /*     uint32_t *hash_key = (uint32_t *)malloc(sizeof(uint32_t)); */
 /*     *hash_key = hash_name_value; */
@@ -3126,7 +3134,7 @@ done:
 perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t *meta, struct PDC_region_info *region, void *buf)
 {
     uint32_t i, j;
-    perr_t ret_value = FAIL;
+    perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
     uint64_t region_size = 1;
     struct client_lookup_args lookup_args;
@@ -3135,8 +3143,16 @@ perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t 
     
     FUNC_ENTER(NULL);
 
+    if (NULL == meta || NULL == region || NULL == buf) {
+        printf("PDC_CLIENT[%d]: PDC_Client_data_server_write - input NULL\n", pdc_client_mpi_rank_g);
+        fflush(stdout);
+        ret_value = FAIL;
+        goto done;
+    }
+
     if (server_id < 0 || server_id >= pdc_server_num_g) {
-        printf("PDC_CLIENT[%d]: PDC_Client_data_server_write - invalid server id %d/%d\n", pdc_client_mpi_rank_g, server_id, pdc_server_num_g);
+        printf("PDC_CLIENT[%d]: PDC_Client_data_server_write - invalid server id %d/%d\n", 
+                pdc_client_mpi_rank_g, server_id, pdc_server_num_g);
         ret_value = FAIL;
         goto done;
     }
@@ -3204,30 +3220,32 @@ perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t 
     /*         region_size, server_id, region_size, buf); */
 
     // Generate a location for data storage for data server to write 
-    char *data_path = NULL;
-    char *user_specified_data_path = getenv("PDC_DATA_LOC");
-    if (user_specified_data_path != NULL) {
-        data_path = user_specified_data_path;
-    }
-    else {
-        data_path = getenv("SCRATCH");
-        if (data_path == NULL) {
-            data_path = ".";
+    /* char *data_path = NULL; */
+    /* char *user_specified_data_path = getenv("PDC_DATA_LOC"); */
+    /* if (user_specified_data_path != NULL) { */
+    /*     data_path = user_specified_data_path; */
+    /* } */
+    /* else { */
+    /*     data_path = getenv("SCRATCH"); */
+    /*     if (data_path == NULL) { */
+    /*         data_path = "."; */
             
-        }
-    }
+    /*     } */
+    /* } */
 
-    // Data path prefix will be $SCRATCH/pdc_data/obj_id/
-    sprintf(meta->data_location, "%s/pdc_data/%" PRIu64 "", data_path, meta->obj_id);
+    /* // Data path prefix will be $SCRATCH/pdc_data/obj_id/ */
+    /* sprintf(meta->data_location, "%s/pdc_data/%" PRIu64 "", data_path, meta->obj_id); */
 
     /* if (pdc_client_mpi_rank_g == 0) */ 
     /*     printf("==PDC_CLIENT: data will be written to %s\n", meta->data_location); */
 
     // TODO: probably need more work when multiple data servers are involved
     // Update the data location of metadata object
-    if (pdc_client_mpi_rank_g == 0) {
-        PDC_Client_update_metadata(meta, meta);
-    }
+    /* if (pdc_client_mpi_rank_g == 0) { */
+    /*     PDC_Client_update_metadata(meta, meta); */
+    /* } */
+    meta->data_location[0] = ' ';
+    meta->data_location[1] = 0;
 
     in.client_id         = pdc_client_mpi_rank_g;
     in.nclient           = n_client;
@@ -3341,6 +3359,11 @@ perr_t PDC_Client_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsign
     gettimeofday(&start_time, 0);
 
     while (completed != 1) {
+        if (is_client_debug_g == 1) {
+            printf("==PDC_CLIENT[%d]: waiting for server to finish IO request...\n", pdc_client_mpi_rank_g);
+            fflush(stdout);
+        }
+
         ret_value = PDC_Client_test(request, &completed);
         if (ret_value != SUCCEED) {
             goto done;
@@ -3350,9 +3373,6 @@ perr_t PDC_Client_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsign
             break;
         
         pdc_msleep(check_interval_ms);
-
-        printf("==PDC_CLIENT[%d]: waiting for server to finish IO request...\n", pdc_client_mpi_rank_g);
-        fflush(stdout);
 
         gettimeofday(&end_time, 0);
         elapsed_ms = ( (end_time.tv_sec-start_time.tv_sec)*1000000LL + end_time.tv_usec - start_time.tv_usec ) / 1000;
@@ -3373,11 +3393,8 @@ perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct PDC_region_info *region, P
 
     FUNC_ENTER(NULL);
 
-    // FIXME: currently assuming 1 server per compute node
-    request->server_id   = pdc_client_mpi_rank_g / (pdc_client_mpi_size_g/pdc_server_num_g);
-    // TODO: TEST
-    /* request->n_client    = 1; */
-    request->n_client    = pdc_client_mpi_size_g / pdc_server_num_g;
+    request->server_id   = pdc_client_mpi_rank_g / pdc_nclient_per_server_g;
+    request->n_client    = pdc_nclient_per_server_g;    // Set by env var PDC_NCLIENT_PER_SERVER, default 1
     request->access_type = WRITE;
     request->metadata    = meta;
     request->region      = region;
@@ -3414,7 +3431,7 @@ perr_t PDC_Client_write(pdc_metadata_t *meta, struct PDC_region_info *region, vo
         printf("==PDC_CLIENT: PDC_Client_write - PDC_Client_iwrite error\n");
         goto done;
     }
-    ret_value = PDC_Client_wait(&request, 600000, 100);
+    ret_value = PDC_Client_wait(&request, 600000, 1000);
     if (ret_value != SUCCEED) {
         printf("==PDC_CLIENT: PDC_Client_write - PDC_Client_wait error\n");
         goto done;
@@ -3430,11 +3447,8 @@ perr_t PDC_Client_iread(pdc_metadata_t *meta, struct PDC_region_info *region, PD
 
     FUNC_ENTER(NULL);
 
-    request->server_id   = pdc_client_mpi_rank_g / (pdc_client_mpi_size_g/pdc_server_num_g);
-    // TODO: currently assuming 1 server per compute node
-    request->n_client    = pdc_client_mpi_size_g / pdc_server_num_g;
-    // TODO: TEST
-    /* request->n_client    = 1; */
+    request->server_id   = pdc_client_mpi_rank_g / pdc_nclient_per_server_g;
+    request->n_client    = pdc_nclient_per_server_g;    // Set by env var PDC_NCLIENT_PER_SERVER, default 1
     request->access_type = READ;
     request->metadata    = meta;
     request->region      = region;
@@ -3459,7 +3473,7 @@ perr_t PDC_Client_read(pdc_metadata_t *meta, struct PDC_region_info *region, voi
     FUNC_ENTER(NULL);
 
     PDC_Client_iread(meta, region, &request, buf);
-    ret_value = PDC_Client_wait(&request, 10000, 100);
+    ret_value = PDC_Client_wait(&request, 10000, 1000);
     if (ret_value != SUCCEED) {
         printf("==PDC_CLIENT: PDC_Client_read - PDC_Client_wait error\n");
         goto done;

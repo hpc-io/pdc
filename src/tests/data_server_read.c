@@ -114,18 +114,18 @@ int main(int argc, const char *argv[])
     // Data verification
     /* printf("%d buf:\n%s\n", rank, (char*)buf); */
     /* printf("%d buf:\n%.10s\n", rank, (char*)buf); */
-    /* ((char*)buf)[region.size[0]] = 0; */
-    /* if ( ((char*)buf)[0] != ('A' + rank%26)) { */
-    /*     printf("Proc%d: Data correctness verification FAILED '%c'(%c)!!!\n", rank, ((char*)buf)[0], 'A' + rank%26); */
-    /* } */
-    /* else { */
-    /*     if (rank == 0) { */
-    /*         printf("Data read successfully!\n"); */
-    /*     } */
-    /* } */
+    ((char*)buf)[region.size[0]] = 0;
+    if ( ((char*)buf)[0] != ('A' + rank%26)) {
+        printf("Proc%d: Data correctness verification FAILED '%c'(%c)!!!\n", rank, ((char*)buf)[0], 'A' + rank%26);
+    }
+    else {
+        if (rank == 0) {
+            printf("Data read successfully!\n");
+        }
+    }
 
 done:
-    /* free(buf); */
+    free(buf);
 
     // close a container
     if(PDCcont_close(cont) < 0)

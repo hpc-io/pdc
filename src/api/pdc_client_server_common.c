@@ -622,7 +622,7 @@ perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out) {ret
 //perr_t PDC_Server_region_lock_status(pdcid_t obj_id, region_info_transfer_t *region, int *lock_status) {return SUCCEED;}
 perr_t PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status) {return SUCCEED;}
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs) {return SUCCEED;}
-perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region) {return NULL;}
+perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_t obj_id) {return NULL;}
 perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
 perr_t PDC_Server_data_read_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
 perr_t PDC_SERVER_notify_region_update_to_client(uint64_t meta_id, uint64_t reg_id, int32_t client_id) {return SUCCEED;}
@@ -724,7 +724,7 @@ HG_TEST_RPC_CB(server_lookup_remote_server, handle)
     /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
-    out.ret = in.server_id + 1000000;
+    out.ret = in.server_id + 777000;
 
     HG_Respond(handle, NULL, NULL, &out);
 
@@ -2247,8 +2247,8 @@ data_server_write_check_register(hg_class_t *hg_class)
 HG_TEST_RPC_CB(update_region_loc, handle)
 {
     hg_return_t ret_value = HG_SUCCESS;
-    metadata_update_in_t  in;
-    metadata_update_out_t out;
+    update_region_loc_in_t  in;
+    update_region_loc_out_t out;
     
     FUNC_ENTER(NULL);
 
@@ -2256,13 +2256,22 @@ HG_TEST_RPC_CB(update_region_loc, handle)
     // Decode input
     HG_Get_input(handle, &in);
     printf("==PDC_SERVER: Got region location update request: obj_id=%llu\n", in.obj_id);
+    fflush(stdout);
 
     region_list_t *input_region = (region_list_t*)malloc(sizeof(region_list_t));
+    pdc_region_transfer_t_to_list_t(&in.region, input_region);
+    strcpy(input_region->storage_location, in.storage_location);
+
+    PDC_print_region_list(input_region);
+    fflush(stdout);
 
     out.ret = 1;
-    ret_value = PDC_Server_update_local_region_storage_loc(input_region);
-    if (ret_value != SUCCEED) 
+    ret_value = PDC_Server_update_local_region_storage_loc(input_region, in.obj_id);
+    if (ret_value != SUCCEED) {
         out.ret = -1;
+        printf("==PDC_SERVER: FAILED to update region location: obj_id=%llu\n", in.obj_id);
+        fflush(stdout);
+    }
 
     HG_Respond(handle, NULL, NULL, &out);
 
@@ -2357,7 +2366,7 @@ HG_TEST_RPC_CB(get_storage_info, handle)
 
     // Decode input
     HG_Get_input(handle, &in);
-    printf("==PDC_SERVER: Got storage in request: obj_id=%llu\n", in.obj_id);
+    printf("==PDC_SERVER: Got storage info request: obj_id=%llu\n", in.obj_id);
     PDC_init_region_list(&request_region);
     pdc_region_transfer_t_to_list_t(&in.req_region, &request_region);
 
