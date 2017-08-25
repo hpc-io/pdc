@@ -4840,10 +4840,12 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
                 meta.obj_id, r_target.start[0], r_target.start[1], r_target.count[0], r_target.count[1]);
     }
 
-    int count = 0;
-    DL_COUNT(io_target->region_list_head, region_elt, count);
-    printf("==PDC_SERVER[%d]: current region list count: %d\n", pdc_server_rank_g, count);
-    PDC_print_region_list(io_target->region_list_head);
+    /* int count = 0; */
+    /* if (is_debug_g == 1) { */
+    /*     DL_COUNT(io_target->region_list_head, region_elt, count); */
+    /*     printf("==PDC_SERVER[%d]: current region list count: %d\n", pdc_server_rank_g, count); */
+    /*     PDC_print_region_list(io_target->region_list_head); */
+    /* } */
 
     int found_region = 0;
     DL_FOREACH_SAFE(io_target->region_list_head, region_elt, region_tmp) {
@@ -4856,8 +4858,8 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
             if (region_elt->is_data_ready == 1) {
                 out->shm_addr = calloc(1, strlen(region_elt->shm_addr) +1);
                 strcpy(out->shm_addr, region_elt->shm_addr);
-                printf("==PDC_SERVER[%d]: remove a read request region, shm_addr=[%s]\n", 
-                        pdc_server_rank_g, region_elt->shm_addr);
+                /* printf("==PDC_SERVER[%d]: remove a read request region, shm_addr=[%s]\n", */ 
+                /*         pdc_server_rank_g, region_elt->shm_addr); */
                 DL_DELETE(io_target->region_list_head, region_elt);
                 free(region_elt);
             }

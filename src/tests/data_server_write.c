@@ -110,6 +110,10 @@ int main(int argc, const char *argv[])
 
     char *mydata = (char*)malloc(my_data_size);
     memset(mydata, 'A' + rank%26, my_data_size);
+    int i;
+    for (i = 0; i < 5; i++) {
+        mydata[i+1] = (mydata[i] + 3) % 26;
+    }
 
     /* printf("%d: writing to (%llu, %llu) of %llu bytes\n", rank, region.offset[0], region.offset[1], region.size[0]*region.size[1]); */
     struct timeval  ht_total_start;

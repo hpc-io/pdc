@@ -112,18 +112,28 @@ int main(int argc, const char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     // Data verification
+    int is_data_correct = 1;
     /* printf("%d buf:\n%s\n", rank, (char*)buf); */
     /* printf("%d buf:\n%.10s\n", rank, (char*)buf); */
     ((char*)buf)[region.size[0]] = 0;
     if ( ((char*)buf)[0] != ('A' + rank%26)) {
+        is_data_correct = -1;
         printf("Proc%d: Data correctness verification FAILED '%c'(%c)!!!\n", rank, ((char*)buf)[0], 'A' + rank%26);
     }
     else {
-        if (rank == 0) {
-            printf("Data read successfully!\n");
-        }
+        for (i = 0; i < 5; i++) {
+            if (((char*)buf)[i+1] != (((char*)buf)[i] + 3) % 26) {
+                is_data_correct = -1;
+                printf("Proc%d: Data correctness verification FAILED '%c'(%c)!!!\n", 
+                        rank, ((char*)buf)[i+1], (((char*)buf)[i] + 3) % 26);
+                break;
+            }
+        }        
     }
 
+    if (rank == 0 && is_data_correct == 1) {
+        printf("Data read successfully!\n");
+    }
 done:
     free(buf);
 

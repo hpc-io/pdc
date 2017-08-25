@@ -3449,7 +3449,7 @@ perr_t PDC_Client_write(pdc_metadata_t *meta, struct PDC_region_info *region, vo
         printf("==PDC_CLIENT: PDC_Client_write - PDC_Client_iwrite error\n");
         goto done;
     }
-    ret_value = PDC_Client_wait(&request, 600000, 1000);
+    ret_value = PDC_Client_wait(&request, 600000, 400);
     if (ret_value != SUCCEED) {
         printf("==PDC_CLIENT: PDC_Client_write - PDC_Client_wait error\n");
         goto done;
@@ -3491,7 +3491,7 @@ perr_t PDC_Client_read(pdc_metadata_t *meta, struct PDC_region_info *region, voi
     FUNC_ENTER(NULL);
 
     PDC_Client_iread(meta, region, &request, buf);
-    ret_value = PDC_Client_wait(&request, 10000, 1000);
+    ret_value = PDC_Client_wait(&request, 600000, 400);
     if (ret_value != SUCCEED) {
         printf("==PDC_CLIENT: PDC_Client_read - PDC_Client_wait error\n");
         goto done;
