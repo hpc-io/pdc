@@ -4164,7 +4164,7 @@ int main(int argc, char *argv[])
     if (is_debug_env != NULL) {
         is_debug_g = atoi(is_debug_env);
         if (pdc_server_rank_g == 0) 
-            printf("==PDC_SERVER: PDC_DEBUG set to %d!\n", is_debug_g);
+            printf("==PDC_SERVER[%d]: PDC_DEBUG set to %d!\n", pdc_server_rank_g, is_debug_g);
     }
 
     // Register RPC, metadata related
@@ -4800,6 +4800,7 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
     perr_t ret_value = SUCCEED;
     pdc_data_server_io_list_t *io_elt = NULL, *io_target = NULL;
     region_list_t *region_elt = NULL;
+    region_list_t r_target;
     /* uint32_t i; */
    
     FUNC_ENTER(NULL);
@@ -4808,7 +4809,6 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
     PDC_metadata_init(&meta);
     pdc_transfer_t_to_metadata_t(&in->meta, &meta);
 
-    region_list_t r_target;
     PDC_init_region_list(&r_target);
     pdc_region_transfer_t_to_list_t(&(in->region), &r_target);
 
@@ -4826,9 +4826,9 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
     hg_thread_mutex_unlock(&data_read_list_mutex_g);
 #endif
 
-    // If not found, create and insert one to the list
     if (NULL == io_target) {
-        printf("==PDC_SERVER: No existing io request with same obj_id %" PRIu64 " found!\n", meta.obj_id);
+        printf("==PDC_SERVER[%d]: PDC_Server_read_check - No existing io request with same obj_id %" PRIu64 " found!\n", 
+                pdc_server_rank_g, meta.obj_id);
         out->ret = -1;
         out->shm_addr = " ";
         goto done;
@@ -4843,29 +4843,31 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
     int found_region = 0;
     DL_FOREACH(io_target->region_list_head, region_elt) {
         if (region_list_cmp(region_elt, &r_target) == 0) {
-            /* for (i = 0; i < PDC_SERVER_MAX_PROC_PER_NODE; i++) { */
-            /*     if (r_elt->client_ids[i] == in->client_id) { */
-                    // Found io list
-                    found_region = 1;
-                    out->ret = region_elt->is_data_ready;
-                    out->shm_addr = region_elt->shm_addr;
-                    /* printf("==PDC_SERVER: found IO request region\n"); */
-                    if (region_elt->is_data_ready == 1) {
-                        DL_DELETE(io_target->region_list_head, region_elt);
-                        free(region_elt);
-                    }
-                    // TODO: may also want to free the io_target if there is no
-                    //       region in its list
-                    ret_value = SUCCEED;
-                    goto done;
-                /* } */
-            /* } */
+            // Found io list
+            found_region = 1;
+            out->ret = region_elt->is_data_ready;
+            out->shm_addr = region_elt->shm_addr;
+            /* printf("==PDC_SERVER: found IO request region\n"); */
+            if (region_elt->is_data_ready == 1) {
+                DL_DELETE(io_target->region_list_head, region_elt);
+                free(region_elt);
+            }
+            else
+                out->shm_addr = " ";
+
+            ret_value = SUCCEED;
+            goto done;
+
+            // TODO: may also want to free the io_target if there is no
+            //       region in its list
         }
     }
 
 
     if (found_region == 0) {
-        printf("==PDC_SERVER: No existing io request with same region found!\n");
+        printf("==PDC_SERVER[%d]: PDC_Server_read_check -  No existing io request with same region found!\n", 
+                pdc_server_rank_g);
+        PDC_print_region_list(&r_target);
         out->ret = -1;
         out->shm_addr = " ";
         goto done;
@@ -5151,8 +5153,10 @@ PDC_Server_get_storage_info_cb (const struct hg_cb_info *callback_info)
     }
 
     lookup_args->void_buf = output.buf;
-    printf(  "==PDC_SERVER[%d]: PDC_Server_get_storage_info_cb: received storage info buf size: %lu\n", 
-            pdc_server_rank_g, strlen( (char*)lookup_args->void_buf )  );
+    if (is_debug_g == 1) {
+        printf(  "==PDC_SERVER[%d]: PDC_Server_get_storage_info_cb: received storage info buf size: %lu\n", 
+                pdc_server_rank_g, strlen( (char*)lookup_args->void_buf )  );
+    }
 
 done:
     work_todo_g--;
@@ -6136,7 +6140,7 @@ perr_t PDC_Server_serialize_regions_info(region_list_t** regions, uint32_t n_reg
             ret_value = FAIL;
             goto done;
         }
-        strcpy(char_ptr, regions[i]->storage_location);
+        strcpy((char*)char_ptr, regions[i]->storage_location);
         char_ptr[loc_len] = PDC_STR_DELIM;  // Delim to replace 0
         char_ptr += (loc_len + 1);
         total_len += (loc_len + 1);
@@ -6151,7 +6155,7 @@ perr_t PDC_Server_serialize_regions_info(region_list_t** regions, uint32_t n_reg
             printf("==PDC_SERVER[%d]: PDC_Server_serialize_regions_info total_len %u exceeds "
                     "buf_len %u\n", pdc_server_rank_g, total_len, buf_size);
         }
-        PDC_print_region_list(regions[i]);
+        /* PDC_print_region_list(regions[i]); */
     }
 
     // Replace the 0s in the buf so that Mercury can transfer the entire buf
@@ -6167,10 +6171,11 @@ perr_t PDC_Server_serialize_regions_info(region_list_t** regions, uint32_t n_reg
             zero_cnt++;
         }
     }
-    printf("==PDC_SERVER[%d]: PDC_Server_serialize_regions_info buf 0-count: %d\n",
-            pdc_server_rank_g, zero_cnt);
+
 
     /* if (is_debug_g == 1) { */
+        /* printf("==PDC_SERVER[%d]: PDC_Server_serialize_regions_info buf 0-count: %d\n", */
+        /*         pdc_server_rank_g, zero_cnt); */
     /*     printf("==PDC_SERVER[%d]: PDC_Server_serialize_regions_info n_region: %u, buf len is %u \n", */
     /*             pdc_server_rank_g, n_region, total_len); */
     /*     uint32_t nr_region; */
@@ -6223,7 +6228,7 @@ perr_t PDC_Server_unserialize_regions_info(void *buf, region_list_t** regions, u
 
     int zero_cnt = 0;
     char_ptr = (signed char*)buf;
-    buf_size = strlen(char_ptr);
+    buf_size = strlen((char*)char_ptr);
     for (i = 0; i < buf_size; i++) {
         if (char_ptr[i] == PDC_CHAR_FILL_VALUE) {
             char_ptr[i] = 0;
@@ -6231,8 +6236,10 @@ perr_t PDC_Server_unserialize_regions_info(void *buf, region_list_t** regions, u
         }
     }
 
-    printf("==PDC_SERVER[%d]: PDC_Server_unserialize_regions_info buf 0-count: %d, total size: %u\n",
-            pdc_server_rank_g, zero_cnt, buf_size);
+    if (is_debug_g == 1) {
+        printf("==PDC_SERVER[%d]: PDC_Server_unserialize_regions_info buf 0-count: %d, total size: %u\n",
+                pdc_server_rank_g, zero_cnt, buf_size);
+    }
 
     // n_region|ndim|start00|count00|...|start0n|count0n|loc_len|loc_str|offset|...
     
@@ -6285,7 +6292,7 @@ perr_t PDC_Server_unserialize_regions_info(void *buf, region_list_t** regions, u
             goto done;
         }
 
-        strncpy(regions[i]->storage_location, char_ptr, loc_len);
+        strncpy(regions[i]->storage_location, (char*)char_ptr, loc_len);
         // Add end of string
         regions[i]->storage_location[loc_len] = 0;
 

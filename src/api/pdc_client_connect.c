@@ -918,7 +918,7 @@ perr_t PDC_Client_init()
     /* if (pdc_client_mpi_size_g / pdc_server_num_g > pdc_nclient_per_server_g) */ 
     /*     pdc_nclient_per_server_g = pdc_client_mpi_size_g / pdc_server_num_g; */
     if (pdc_client_mpi_rank_g == 0) {
-        printf("==PDC_SERVER[%d]: using [%s] as tmp dir, %d clients per server\n",
+        printf("==PDC_CLIENT[%d]: using [%s] as tmp dir, %d clients per server\n",
                 pdc_client_mpi_rank_g, pdc_client_tmp_dir_g, pdc_nclient_per_server_g);
     }
 
@@ -3312,12 +3312,6 @@ done:
  * PDC User APIs
  * Similar to async MPI IO routines
  */
-
-/* int MPI_File_iwrite(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Request *request) */ 
-/* int MPI_File_iread(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Request *request) */
-/* MPI_Test(MPI_Request *request, int *completed, MPI_Status *status) */
-/* MPI_Wait(&request, &status); */
-
 int pdc_msleep(unsigned long milisec)
 {
     struct timespec req={0};
@@ -3376,7 +3370,7 @@ perr_t PDC_Client_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsign
     while (completed != 1) {
         pdc_msleep(check_interval_ms);
 
-        if (is_client_debug_g == 1) {
+        if (pdc_client_mpi_rank_g == 0) {
             printf("==PDC_CLIENT[%d]: waiting for server to finish IO request...\n", pdc_client_mpi_rank_g);
             fflush(stdout);
         }

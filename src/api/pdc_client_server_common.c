@@ -2368,7 +2368,7 @@ HG_TEST_RPC_CB(get_storage_info, handle)
 
     // Decode input
     HG_Get_input(handle, &in);
-    printf("==PDC_SERVER: Got storage info request: obj_id=%llu\n", in.obj_id);
+    /* printf("==PDC_SERVER: Got storage info request: obj_id=%llu\n", in.obj_id); */
     PDC_init_region_list(&request_region);
     pdc_region_transfer_t_to_list_t(&in.req_region, &request_region);
 
@@ -2407,8 +2407,8 @@ HG_TEST_RPC_CB(get_storage_info, handle)
         }
 
         // debug print
-        printf("==PDC_SERVER: serialize_region allocated %u, real %u \n", serialize_len, buf_len);
-        fflush(stdout);
+        /* printf("==PDC_SERVER: serialize_region allocated %u, real %u \n", serialize_len, buf_len); */
+        /* fflush(stdout); */
     }
 
     // Need to free buf
