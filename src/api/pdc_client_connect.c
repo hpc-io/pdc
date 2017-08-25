@@ -32,6 +32,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <inttypes.h>
+#include <sys/time.h>
 
 /* #define ENABLE_MPI 1 */
 #ifdef ENABLE_MPI
@@ -581,6 +582,10 @@ client_region_release_rpc_cb(const struct hg_cb_info *callback_info)
 
     /* Get output from server*/
     ret_value = HG_Get_output(handle, &output);
+    if (ret_value != HG_SUCCESS) {
+        printf("==PDC_CLIENT: client_region_release_rpc_cb - HG_Get_output error!\n");
+        goto done;
+    }
     /* printf("Return value=%" PRIu64 "\n", output.ret); */
 
     client_lookup_args->ret = output.ret;
@@ -1886,7 +1891,7 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_pro
     perr_t ret_value = FAIL;
     hg_return_t hg_ret;
     uint32_t server_id = 0;
-    PDC_lifetime obj_life;
+    /* PDC_lifetime obj_life; */
     struct PDC_obj_prop *create_prop;
     gen_obj_id_in_t in;
     uint32_t hash_name_value;
@@ -1895,7 +1900,8 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_pro
     FUNC_ENTER(NULL);
     
     create_prop = PDCobj_prop_get_info(obj_create_prop);
-    obj_life  = create_prop->obj_life;
+    // TODO: obj_life not used for now
+    /* obj_life  = create_prop->obj_life; */
     // Fill input structure
     
     if (obj_name == NULL) {
@@ -2048,8 +2054,8 @@ perr_t PDC_Client_close_all_server()
         }
         for (i = 0; i < (uint32_t)pdc_server_num_g; i++) {
             server_id = i;
-            printf("Closing server %d\n", server_id);
-            fflush(stdout);
+            /* printf("Closing server %d\n", server_id); */
+            /* fflush(stdout); */
 
             // We have already filled in the pdc_server_info_g[server_id].addr in 
             // previous client_test_connect_lookup_cb 
@@ -2563,7 +2569,7 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
     /* printf("==PDC_CLINET: lock dim=%u\n", ndim); */
  
     if (ndim >= 4 || ndim <=0) {
-        printf("Dimension %u is not supported\n", ndim);
+        printf("Dimension %lu is not supported\n", ndim);
         ret_value = FAIL;
         goto done;
     }
@@ -3086,19 +3092,20 @@ perr_t PDC_Client_data_server_write_check(int server_id, uint32_t client_id, pdc
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
 
-    if (is_client_debug_g == 1) {
-        printf("==PDC_CLIENT[%d]: PDC_Client_data_server_write_check() - ret=%d \n", pdc_client_mpi_rank_g, lookup_args.ret);
-    }
+    /* if (is_client_debug_g == 1) { */
+    /*     printf("==PDC_CLIENT[%d]: PDC_Client_data_server_write_check() - ret=%d \n", */ 
+    /*                 pdc_client_mpi_rank_g, lookup_args.ret); */
+    /* } */
 
     *status = lookup_args.ret;
     if (lookup_args.ret != 1) {
         ret_value = SUCCEED;
         if (is_client_debug_g == 1) {
-            printf("PDC_CLIENT[%d]: PDC_Client_data_server_write_check - IO request has not been fulfilled by server\n");
+            printf("PDC_CLIENT[%d]: PDC_Client_data_server_write_check - "
+                    "IO request has not been fulfilled by server\n", pdc_client_mpi_rank_g);
         }
         goto done;
     }
-
 
 done:
     HG_Destroy(pdc_server_info_g[server_id].data_server_write_check_handle);
@@ -3367,6 +3374,8 @@ perr_t PDC_Client_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsign
     gettimeofday(&start_time, 0);
 
     while (completed != 1) {
+        pdc_msleep(check_interval_ms);
+
         if (is_client_debug_g == 1) {
             printf("==PDC_CLIENT[%d]: waiting for server to finish IO request...\n", pdc_client_mpi_rank_g);
             fflush(stdout);
@@ -3379,11 +3388,14 @@ perr_t PDC_Client_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsign
         /* printf("completed ... %d\n", completed); */
         if (completed == 1) 
             break;
+        else {
+            printf("==PDC_CLIENT[%d]: IO has not completed yet, will wait and ping server again ...\n", 
+                    pdc_client_mpi_rank_g);
+        }
         
-        pdc_msleep(check_interval_ms);
-
         gettimeofday(&end_time, 0);
-        elapsed_ms = ( (end_time.tv_sec-start_time.tv_sec)*1000000LL + end_time.tv_usec - start_time.tv_usec ) / 1000;
+        elapsed_ms = ( (end_time.tv_sec-start_time.tv_sec)*1000000LL + end_time.tv_usec - 
+                        start_time.tv_usec ) / 1000;
         if (elapsed_ms > max_wait_ms) {
             printf("==PDC_CLIENT[%d]: exceeded max IO request waiting time...\n", pdc_client_mpi_rank_g);
             break;

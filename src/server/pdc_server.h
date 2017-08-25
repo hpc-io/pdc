@@ -42,6 +42,7 @@
 #define CREATE_BLOOM_THRESHOLD  64
 #define PDC_MAX_OVERLAP_REGION_NUM 128 // max number of supported regions for PDC_Server_get_storage_location_of_region() 
 #define PDC_STR_DELIM            7
+#define PDC_CHAR_FILL_VALUE     -123
 
 static pdc_cnt_t pdc_num_reg;
 extern hg_class_t *hg_class_g;
@@ -61,7 +62,7 @@ pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id);
 perr_t PDC_Server_get_local_storage_location_of_region(uint64_t obj_id, region_list_t *region,
         uint32_t *n_loc, region_list_t **overlap_region_loc);
 perr_t PDC_Server_get_total_str_len(region_list_t** regions, uint32_t n_region, uint32_t *len);
-perr_t PDC_Server_serialize_regions_info(region_list_t** regions, uint32_t n_region, void *buf);
+perr_t PDC_Server_serialize_regions_info(region_list_t** regions, uint32_t n_region, void **buf, uint32_t buf_size);
 
 perr_t PDC_Server_regions_io(region_list_t *region_list_head, PDC_io_plugin_t plugin);
 
@@ -89,6 +90,8 @@ typedef struct server_lookup_args_t {
     void            *void_buf;
     char            *server_addr;
     pdc_metadata_t  *meta;
+    region_list_t   **region_lists;
+    uint32_t        n_loc;
 } server_lookup_args_t;
 
 struct server_region_update_args {

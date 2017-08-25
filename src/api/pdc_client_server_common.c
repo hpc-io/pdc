@@ -370,6 +370,7 @@ void PDC_print_region_list(region_list_t *a)
         /* printf("%5d %6d %5d\n", a->start[i], a->stride[i], a->count[i]); */
     }
     printf("    Storage location: [%s]\n", a->storage_location);
+    printf("    Storage offset  : %" PRIu64 " \n", a->offset);
     printf("    Client IDs: ");
     i = 0;
     while (1) {
@@ -630,7 +631,7 @@ perr_t PDC_Server_get_local_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res
 perr_t PDC_Server_get_local_storage_location_of_region(uint64_t obj_id, region_list_t *region,
         uint32_t *n_loc, region_list_t **overlap_region_loc) {return SUCCEED;}
 perr_t PDC_Server_get_total_str_len(region_list_t** regions, uint32_t n_region, uint32_t *len) {return SUCCEED;}
-perr_t PDC_Server_serialize_regions_info(region_list_t** regions, uint32_t n_region, void *buf) {return SUCCEED;}
+perr_t PDC_Server_serialize_regions_info(region_list_t** regions, uint32_t n_region, void **buf, uint32_t buf_size) {return SUCCEED;}
 pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id) {return NULL;}
 
 hg_class_t *hg_class_g;
@@ -2064,7 +2065,6 @@ HG_TEST_RPC_CB(data_server_read, handle)
     out.ret = 1;
     HG_Respond(handle, PDC_Server_data_io_via_shm, io_info, &out);
 
-
     ret_value = HG_SUCCESS;
 
 done:
@@ -2261,6 +2261,7 @@ HG_TEST_RPC_CB(update_region_loc, handle)
     region_list_t *input_region = (region_list_t*)malloc(sizeof(region_list_t));
     pdc_region_transfer_t_to_list_t(&in.region, input_region);
     strcpy(input_region->storage_location, in.storage_location);
+    input_region->offset = in.offset;
 
     /* PDC_print_region_list(input_region); */
     /* fflush(stdout); */
@@ -2359,8 +2360,9 @@ HG_TEST_RPC_CB(get_storage_info, handle)
     region_list_t request_region;
     region_list_t **result_regions;
     uint32_t n_region, i;
-    uint32_t serialize_len;
+    uint32_t serialize_len, buf_len;
     void *buf = NULL;
+    signed char *char_ptr = NULL;
     
     FUNC_ENTER(NULL);
 
@@ -2387,13 +2389,26 @@ HG_TEST_RPC_CB(get_storage_info, handle)
             goto done;
         }
 
-        buf = (void*)malloc(serialize_len);
-        if (PDC_Server_serialize_regions_info(result_regions, n_region, buf) != SUCCEED) {
+        buf = (void*)calloc(1, serialize_len);
+        if (PDC_Server_serialize_regions_info(result_regions, n_region, &buf, serialize_len) != SUCCEED) {
             printf("==PDC_SERVER: unable to serialize_regions_info\n");
             ret_value = FAIL;
             goto done;
         }
         out.buf = buf;
+
+        char_ptr = (signed char*)out.buf;
+        buf_len = strlen(char_ptr);
+        for (i = 0; i < serialize_len; i++) {
+            if (char_ptr[i] == 0) {
+                printf("==PDC_SERVER:ERROR with serialize buf, 0 detected in string, %u!\n", i);
+                fflush(stdout);
+            }
+        }
+
+        // debug print
+        printf("==PDC_SERVER: serialize_region allocated %u, real %u \n", serialize_len, buf_len);
+        fflush(stdout);
     }
 
     // Need to free buf

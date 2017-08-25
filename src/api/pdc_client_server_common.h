@@ -70,7 +70,7 @@ typedef enum { BLOCK=0, NOBLOCK=1 }    PDC_lock_mode_t;
 typedef struct pdc_metadata_t pdc_metadata_t;
 
 typedef struct region_list_t {
-    size_t ndim;
+    size_t   ndim;
     uint64_t start[DIM_MAX];
     uint64_t count[DIM_MAX];
     /* uint64_t stride[DIM_MAX]; */
@@ -1614,7 +1614,7 @@ hg_proc_data_server_write_check_out_t(hg_proc_t proc, void *data)
 typedef struct {
     uint64_t                    obj_id;
     hg_const_string_t           storage_location;
-    /* uint64_t                    offset; */
+    uint64_t                    offset;
     region_info_transfer_t      region;
 } update_region_loc_in_t;
 
@@ -1638,11 +1638,11 @@ hg_proc_update_region_loc_in_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    /* ret = hg_proc_uint64_t(proc, &struct_data->offset); */
-    /* if (ret != HG_SUCCESS) { */
-	/* HG_LOG_ERROR("Proc error"); */
-    /*     return ret; */
-    /* } */
+    ret = hg_proc_uint64_t(proc, &struct_data->offset);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
     ret = hg_proc_region_info_transfer_t(proc, &struct_data->region);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
@@ -1703,7 +1703,7 @@ hg_proc_get_metadata_by_id_out_t(hg_proc_t proc, void *data)
 
 // For generic serialized data transfer
 typedef struct {
-    hg_const_string_t buf;
+    hg_string_t buf;
 } pdc_serialized_data_t;
 
 static HG_INLINE hg_return_t
@@ -1712,7 +1712,7 @@ hg_proc_pdc_serialized_data_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     pdc_serialized_data_t *struct_data = (pdc_serialized_data_t*) data;
 
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->buf);
+    ret = hg_proc_hg_string_t(proc, &struct_data->buf);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;

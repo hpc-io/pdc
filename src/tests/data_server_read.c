@@ -36,7 +36,7 @@ int main(int argc, const char *argv[])
     }
 
     readsize = atoi(argv[2]);
-    readsize *= 1048567;
+    readsize *= 1048576;
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);

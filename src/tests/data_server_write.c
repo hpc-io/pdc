@@ -64,7 +64,7 @@ int main(int argc, const char *argv[])
     pdcid_t test_obj = -1;
     const int my_data_size = size_MB / size;
 
-    uint64_t dims[1]={my_data_size};
+    uint64_t dims[1]={size_MB};
     PDCprop_set_obj_dims(obj_prop, 1, dims);
     PDCprop_set_obj_user_id( obj_prop, getuid());
     PDCprop_set_obj_time_step( obj_prop, 0);
