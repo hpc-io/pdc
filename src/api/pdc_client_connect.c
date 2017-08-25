@@ -2836,7 +2836,7 @@ perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_
     }
 
     if (is_client_debug_g) {
-        printf("PDC_CLIENT: checking io status with data server %d\n", server_id);
+        printf("PDC_CLIENT[%d]: checking io status with data server %d\n", pdc_client_mpi_rank_g, server_id);
         fflush(stdout);
     }
 
@@ -2860,19 +2860,19 @@ perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_
     PDC_Client_check_response(&send_context_g);
 
     *status = lookup_args.ret;
-    if (lookup_args.ret == 0) {
+    if (lookup_args.ret != 1) {
         ret_value = SUCCEED;
         if (is_client_debug_g) {
-            printf("PDC_CLIENT: PDC_Client_data_server_read_check - IO request has not been "
-                    "fulfilled by server\n");
+            printf("PDC_CLIENT[%d]: PDC_Client_data_server_read_check - IO request has not been "
+                    "fulfilled by server\n", pdc_client_mpi_rank_g);
         }
         goto done;
     }
     else {
-        if (is_client_debug_g) {
-            printf("PDC_CLIENT: PDC_Client_data_server_read_check - IO request done by server: shm_addr=[%s]\n", 
-                    lookup_args.ret_string);
-        }
+        /* if (is_client_debug_g) { */
+        /*     printf("PDC_CLIENT: PDC_Client_data_server_read_check - IO request done by server: shm_addr=[%s]\n", */ 
+        /*             lookup_args.ret_string); */
+        /* } */
         shm_addr = lookup_args.ret_string;
 
         /* open the shared memory segment as if it was a file */
@@ -3380,11 +3380,15 @@ perr_t PDC_Client_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsign
             goto done;
         }
         /* printf("completed ... %d\n", completed); */
-        if (completed == 1) 
+        if (is_client_debug_g ==1 && completed == 1) {
+            printf("==PDC_CLIENT[%d]: IO has completed.\n", pdc_client_mpi_rank_g);
+            fflush(stdout);
             break;
-        else {
+        }
+        else if (is_client_debug_g ==1 && completed == 0){
             printf("==PDC_CLIENT[%d]: IO has not completed yet, will wait and ping server again ...\n", 
                     pdc_client_mpi_rank_g);
+            fflush(stdout);
         }
         
         gettimeofday(&end_time, 0);

@@ -4799,7 +4799,7 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
 {
     perr_t ret_value = SUCCEED;
     pdc_data_server_io_list_t *io_elt = NULL, *io_target = NULL;
-    region_list_t *region_elt = NULL;
+    region_list_t *region_elt = NULL, *region_tmp = NULL;
     region_list_t r_target;
     /* uint32_t i; */
    
@@ -4827,8 +4827,8 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
 #endif
 
     if (NULL == io_target) {
-        printf("==PDC_SERVER[%d]: PDC_Server_read_check - No existing io request with same obj_id %" PRIu64 " found!\n", 
-                pdc_server_rank_g, meta.obj_id);
+        printf("==PDC_SERVER[%d]: PDC_Server_read_check - No existing io request with same "
+                "obj_id %" PRIu64 " found!\n", pdc_server_rank_g, meta.obj_id);
         out->ret = -1;
         out->shm_addr = " ";
         goto done;
@@ -4840,20 +4840,27 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
                 meta.obj_id, r_target.start[0], r_target.start[1], r_target.count[0], r_target.count[1]);
     }
 
+    int count = 0;
+    DL_COUNT(io_target->region_list_head, region_elt, count);
+    printf("==PDC_SERVER[%d]: current region list count: %d\n", pdc_server_rank_g, count);
+    PDC_print_region_list(io_target->region_list_head);
+
     int found_region = 0;
-    DL_FOREACH(io_target->region_list_head, region_elt) {
+    DL_FOREACH_SAFE(io_target->region_list_head, region_elt, region_tmp) {
         if (region_list_cmp(region_elt, &r_target) == 0) {
-            // Found io list
+            // Found previous io request 
             found_region = 1;
             out->ret = region_elt->is_data_ready;
-            out->shm_addr = region_elt->shm_addr;
+            out->shm_addr = " ";
             /* printf("==PDC_SERVER: found IO request region\n"); */
             if (region_elt->is_data_ready == 1) {
+                out->shm_addr = calloc(1, strlen(region_elt->shm_addr) +1);
+                strcpy(out->shm_addr, region_elt->shm_addr);
+                printf("==PDC_SERVER[%d]: remove a read request region, shm_addr=[%s]\n", 
+                        pdc_server_rank_g, region_elt->shm_addr);
                 DL_DELETE(io_target->region_list_head, region_elt);
                 free(region_elt);
             }
-            else
-                out->shm_addr = " ";
 
             ret_value = SUCCEED;
             goto done;
@@ -4930,24 +4937,19 @@ perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_writ
     /* printf("%d region: start(%" PRIu64 ", %" PRIu64 ") size(%" PRIu64 ", %" PRIu64 ") \n", r_target.start[0], r_target.start[1], r_target.count[0], r_target.count[1]); */
     int found_region = 0;
     DL_FOREACH_SAFE(io_target->region_list_head, region_elt, region_tmp) {
-    /* DL_FOREACH(io_target->region_list_head, r_elt) { */
         if (region_list_cmp(region_elt, &r_target) == 0) {
-            /* for (i = 0; i < PDC_SERVER_MAX_PROC_PER_NODE; i++) { */
-            /*     if (r_elt->client_ids[i] == in->client_id) { */
-                    // Found io list
-                    found_region = 1;
-                    out->ret = region_elt->is_data_ready;
-                    /* printf("==PDC_SERVER: found IO request region\n"); */
-                    if (region_elt->is_data_ready == 1) {
-                        DL_DELETE(io_target->region_list_head, region_elt);
-                        free(region_elt);
-                    }
-                    // TODO: may also want to free the io_target if there is no
-                    //       region in its list
-                    ret_value = SUCCEED;
-                    goto done;
-                /* } */
-            /* } */
+            // Found io list
+            found_region = 1;
+            out->ret = region_elt->is_data_ready;
+            /* printf("==PDC_SERVER: found IO request region\n"); */
+            if (region_elt->is_data_ready == 1) {
+                DL_DELETE(io_target->region_list_head, region_elt);
+                free(region_elt);
+            }
+            // TODO: may also want to free the io_target if there is no
+            //       region in its list
+            ret_value = SUCCEED;
+            goto done;
         }
     }
 
@@ -4985,7 +4987,8 @@ perr_t PDC_Server_data_read_to_shm(region_list_t *region_list_head, uint64_t obj
     /* PDC_Server_merge_region_list_naive(region_list_head, &merged_list); */
 
     // Replace region_list with merged list
-    DL_SORT(region_list_head, region_list_cmp_by_client_id);
+    // FIXME: seems there is something wrong with sort, list gets corrupted!
+    /* DL_SORT(region_list_head, region_list_cmp_by_client_id); */
     /* DL_FOREACH_SAFE(region_list_head, elt, tmp) { */
     /*     DL_DELETE(region_list_head, elt); */
     /*     free(elt); */
@@ -5364,6 +5367,7 @@ perr_t PDC_Server_data_write_from_shm(region_list_t *region_list_head)
     FUNC_ENTER(NULL);
 
     // Sort the list so it is ordered by client id
+    // FIXME: seems there is something wrong with sort, list gets corrupted!
     /* DL_SORT(region_list_head, region_list_cmp_by_client_id); */
 
     // TODO: Merge regions
@@ -5446,7 +5450,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
     pdc_data_server_io_list_t *io_list_elt = NULL, *io_list = NULL, *io_list_target = NULL;
     region_list_t *region_elt = NULL;
     /* region_list_t *region_tmp = NULL; */
-    /* int count; */
+    int count;
     /* uint32_t client_id; */
     int i;
 
@@ -5526,12 +5530,12 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
     }
 
     io_list_target->count++;
-    if (is_debug_g == 1) {
-        printf("==PDC_SERVER[%d]: received %d/%d data %s requests of [%s]\n", 
-                pdc_server_rank_g, io_list_target->count, io_list_target->total, 
-                io_info->io_type == READ? "read": "write", io_info->meta.obj_name);
-        fflush(stdout);
-    }
+    /* if (is_debug_g == 1) { */
+    /*     printf("==PDC_SERVER[%d]: received %d/%d data %s requests of [%s]\n", */ 
+    /*             pdc_server_rank_g, io_list_target->count, io_list_target->total, */ 
+    /*             io_info->io_type == READ? "read": "write", io_info->meta.obj_name); */
+    /*     fflush(stdout); */
+    /* } */
 
     // Init current request region
     region_list_t *new_region = (region_list_t*)calloc(1, sizeof(region_list_t));
@@ -5551,9 +5555,12 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
     // Add current request region to it the io list
     DL_APPEND(io_list_target->region_list_head, new_region);
 
-    /* DL_COUNT(io_list_target->region_list_head, region_elt, count); */
-    /* printf("Added 1 to region_list_head, obj_id=%" PRIu64 ", %d total\n", new_region->meta->obj_id, count); */
-    /* PDC_print_region_list(new_region); */
+    /* if (is_debug_g == 1) { */
+    /*     DL_COUNT(io_list_target->region_list_head, region_elt, count); */
+    /*     printf("==PDC_SERVER[%d]: Added 1 to IO request list, obj_id=%" PRIu64 ", %d total\n", */ 
+    /*             pdc_server_rank_g, new_region->meta->obj_id, count); */
+    /*     PDC_print_region_list(new_region); */
+    /* } */
 
     // Check if we have received all requests 
     if (io_list_target->count == io_list_target->total) {
@@ -5577,8 +5584,13 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
 
         if (io_info->io_type == READ) {
 
-            /* DL_FOREACH(io_list_target->region_list_head, region_elt) */ 
-            /*     sprintf(region_elt->storage_location, "%s/s%03d.bin", io_list->path, pdc_server_rank_g); */ 
+            if (is_debug_g == 1) {
+                DL_COUNT(io_list_target->region_list_head, region_elt, count);
+                printf("==PDC_SERVER[%d]: read request list %d total, first is:\n", 
+                        pdc_server_rank_g, count);
+                PDC_print_region_list(io_list_target->region_list_head);
+            }
+
             // Storage location is obtained later 
             status = PDC_Server_data_read_to_shm(io_list_target->region_list_head, io_list_target->obj_id);
             if (status != SUCCEED) {
@@ -6635,7 +6647,7 @@ done:
 }
 
 /*
- * Read with POSIX within one file
+ * POSIX Read/write of one PDC data file on storage system
  *
  * \param  region[IN]       Region info of IO request
  *

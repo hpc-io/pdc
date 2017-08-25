@@ -2166,6 +2166,7 @@ HG_TEST_RPC_CB(data_server_read_check, handle)
     // Decode input
     data_server_read_check_in_t  in;
     data_server_read_check_out_t out;
+    out.shm_addr = NULL;
 
     HG_Get_input(handle, &in);
     /* printf("==PDC_SERVER: Got data server read_check request from client %d\n", in.client_id); */
@@ -2179,6 +2180,8 @@ HG_TEST_RPC_CB(data_server_read_check, handle)
     ret_value = HG_SUCCESS;
 
 done:
+    if (NULL != out.shm_addr && out.shm_addr[0] != ' ') 
+        free(out.shm_addr);
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
     fflush(stdout);

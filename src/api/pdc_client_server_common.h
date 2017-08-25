@@ -1517,7 +1517,7 @@ typedef struct {
 
 typedef struct {
     int32_t            ret;
-    hg_const_string_t  shm_addr;
+    hg_string_t  shm_addr;
 } data_server_read_check_out_t;
 
 static HG_INLINE hg_return_t
@@ -1555,7 +1555,7 @@ hg_proc_data_server_read_check_out_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->shm_addr);
+    ret = hg_proc_hg_string_t(proc, &struct_data->shm_addr);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
