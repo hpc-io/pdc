@@ -1722,6 +1722,30 @@ hg_proc_pdc_serialized_data_t(hg_proc_t proc, void *data)
 }
 
 typedef struct {
+    hg_string_t buf;
+    pdc_metadata_transfer_t meta;
+} pdc_aggregated_io_to_server_t;
+
+static HG_INLINE hg_return_t
+hg_proc_pdc_aggregated_io_to_server_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    pdc_aggregated_io_to_server_t *struct_data = (pdc_aggregated_io_to_server_t*) data;
+
+    ret = hg_proc_hg_string_t(proc, &struct_data->buf);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_pdc_metadata_transfer_t(proc, &struct_data->meta);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+typedef struct {
     uint64_t obj_id;
     region_info_transfer_t req_region;
 } get_storage_info_in_t;
@@ -1745,6 +1769,22 @@ hg_proc_get_storage_info_in_t(hg_proc_t proc, void *data)
     return ret;
 }
 
+typedef struct {
+    int ret;
+} pdc_int_ret_t;
+
+static HG_INLINE hg_return_t
+hg_proc_pdc_int_ret_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    pdc_int_ret_t *struct_data = (pdc_int_ret_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
 
 /* #endif // HAS_BOOST */
 
@@ -1843,6 +1883,13 @@ perr_t pdc_region_list_t_to_transfer(region_list_t *region, region_info_transfer
 perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to);
 
 perr_t pdc_region_info_t_to_transfer(struct PDC_region_info *region, region_info_transfer_t *transfer);
+
+perr_t PDC_serialize_regions_lists(region_list_t** regions, uint32_t n_region, void **buf, uint32_t buf_size);
+perr_t PDC_unserialize_region_lists(void *buf, region_list_t** regions, uint32_t *n_region);
+perr_t PDC_get_serialized_size(region_list_t** regions, uint32_t n_region, uint32_t *len);
+
+perr_t PDC_replace_zero_chars(char *buf, uint32_t buf_size);
+perr_t PDC_replace_char_fill_values(char *buf, uint32_t buf_size);
 
 void pdc_mkdir(const char *dir);
 
