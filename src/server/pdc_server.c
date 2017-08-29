@@ -6507,7 +6507,14 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
 
                 // mkdir and set lustre premeters
                 pdc_mkdir(region_elt->storage_location);
-                PDC_Server_set_lustre_stripe(region_elt->storage_location, 248, 16);
+
+                // Set Lustre stripe only if this is Lustre
+                // TODO: this only applies to NERSC Lustre
+                if (strstr(region_elt->storage_location, "/global/cscratch") != NULL      ||
+                    strstr(region_elt->storage_location, "/scratch1/scratchdirs") != NULL ||
+                    strstr(region_elt->storage_location, "/scratch2/scratchdirs") != NULL ) {
+                    PDC_Server_set_lustre_stripe(region_elt->storage_location, 248, 16);
+                }
 
                 if (fp_write != NULL) {
                     fclose(fp_write);
