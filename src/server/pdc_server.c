@@ -5539,6 +5539,10 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
     /*     fflush(stdout); */
     /* } */
 
+    // TODO: instead of having a single list that stores IO requests, we can have an array of 
+    //       lists each corresponds to one client, so the lookup can be faster and more error
+    //       prune.
+
     // Init current request region
     region_list_t *new_region = (region_list_t*)calloc(1, sizeof(region_list_t));
     if (new_region == NULL) {

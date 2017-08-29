@@ -49,6 +49,7 @@
 #define TAG_LEN_MAX 128
 #define PDC_SERVER_ID_INTERVEL 1000000
 #define PDC_SERVER_MAX_PROC_PER_NODE 64
+#define PDC_SERIALIZE_MAX_SIZE 256
 
 /* #define pdc_server_tmp_dir_g  "./pdc_tmp" */
 /* extern char pdc_server_tmp_dir_g[ADDR_MAX]; */
