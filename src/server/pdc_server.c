@@ -5284,11 +5284,17 @@ perr_t PDC_Server_set_lustre_stripe(char *path, int stripe_count, int stripe_siz
 {
     perr_t ret_value = SUCCEED;
     size_t len;
-    int i;
+    int i, index;
     char tmp[ADDR_MAX];
     char cmd[ADDR_MAX];
 
     FUNC_ENTER(NULL);
+
+    if (stripe_count <= 0) 
+        stripe_count = 1;
+
+    if (stripe_size_MB <= 0) 
+        stripe_size_MB = 1;
 
     snprintf(tmp, sizeof(tmp),"%s",path);
 
@@ -5299,7 +5305,8 @@ perr_t PDC_Server_set_lustre_stripe(char *path, int stripe_count, int stripe_siz
             break;
         }
 
-    sprintf(cmd, "lfs setstripe -S %dm -c %d %s", stripe_size_MB, stripe_count, tmp);
+    index = 248 / stripe_count; 
+    sprintf(cmd, "lfs setstripe -S %dM -c %d -i %d %s", stripe_size_MB, stripe_count, index, tmp);
 
     if (system(cmd) < 0) {
         printf("==PDC_SERVER: Fail to set Lustre stripe parameters [%s]\n", tmp);
@@ -5609,7 +5616,8 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
 
             // Specify the location of data to be written to
             DL_FOREACH(io_list_target->region_list_head, region_elt) {
-                sprintf(region_elt->storage_location, "%s/s%03d.bin", io_list_target->path, pdc_server_rank_g); 
+                sprintf(region_elt->storage_location, "%s/server%d/s%03d.bin", 
+                        io_list_target->path, pdc_server_rank_g, pdc_server_rank_g); 
                 /* printf("region to write obj_id: %" PRIu64 "\n", region_elt->meta->obj_id); */
                 /* PDC_print_region_list(region_elt); */
             }
@@ -6383,6 +6391,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
     region_list_t **overlap_regions = NULL;
     FILE *fp_read = NULL, *fp_write = NULL;
     char *prev_path = NULL;
+    int stripe_count, stripe_size;
 
     FUNC_ENTER(NULL);
 
@@ -6513,7 +6522,10 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
                 if (strstr(region_elt->storage_location, "/global/cscratch") != NULL      ||
                     strstr(region_elt->storage_location, "/scratch1/scratchdirs") != NULL ||
                     strstr(region_elt->storage_location, "/scratch2/scratchdirs") != NULL ) {
-                    PDC_Server_set_lustre_stripe(region_elt->storage_location, 248, 16);
+
+                    stripe_count = 248 / pdc_server_size_g;
+                    stripe_size  = 16;                      // MB
+                    PDC_Server_set_lustre_stripe(region_elt->storage_location, stripe_count, stripe_size);
                 }
 
                 if (fp_write != NULL) {
@@ -6692,6 +6704,7 @@ perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct P
     perr_t ret_value = SUCCEED;
     region_list_t *io_region = NULL;
     pdc_metadata_t *meta = NULL;
+    int stripe_count, stripe_size;
     size_t i;
 
     FUNC_ENTER(NULL);
@@ -6713,9 +6726,12 @@ perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct P
     }
 
     // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
-    sprintf(io_region->storage_location, "%s/pdc_data/%" PRIu64 "/s%03d.bin", data_path, obj_id, pdc_server_rank_g);
+    sprintf(io_region->storage_location, "%s/pdc_data/%" PRIu64 "/server%d/s%03d.bin", 
+            data_path, obj_id, pdc_server_rank_g, pdc_server_rank_g);
     pdc_mkdir(io_region->storage_location);
-    PDC_Server_set_lustre_stripe(io_region->storage_location, 248, 16);
+    stripe_count = 248 / pdc_server_size_g;
+    stripe_size  = 16;                      // MB
+    PDC_Server_set_lustre_stripe(io_region->storage_location, stripe_count, stripe_size);
 
     io_region->access_type = io_type;
 
