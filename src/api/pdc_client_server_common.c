@@ -2561,20 +2561,11 @@ perr_t PDC_unserialize_region_lists(void *buf, region_list_t** regions, uint32_t
         goto done;
     }
 
-    int zero_cnt = 0;
-    char_ptr = (signed char*)buf;
-    buf_size = strlen((char*)char_ptr);
-    for (i = 0; i < buf_size; i++) {
-        if (char_ptr[i] == PDC_CHAR_FILL_VALUE) {
-            char_ptr[i] = 0;
-            zero_cnt++;
-        }
+    ret_value = PDC_replace_char_fill_values((char *)buf, buf_size);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_unserialize_region_lists replace_char_fill_values ERROR!\n");
+        goto done;
     }
-
-    /* if (is_debug_g == 1) { */
-    /*     printf("==PDC_unserialize_region_lists buf 0-count: %d, total size: %u\n", */
-    /*             zero_cnt, buf_size); */
-    /* } */
 
     // n_region|ndim|start00|count00|...|start0n|count0n|loc_len|loc_str|offset|...
     
