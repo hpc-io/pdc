@@ -2352,23 +2352,21 @@ get_metadata_by_id_register(hg_class_t *hg_class)
 }
 
 // Replace the 0s in the buf so that Mercury can transfer the entire buf
-perr_t PDC_replace_char_fill_values(char *buf, uint32_t buf_size)
+perr_t PDC_replace_char_fill_values(signed char *buf, uint32_t buf_size)
 {
     perr_t ret_value = SUCCEED;
-    signed char *char_ptr   = NULL;
     uint32_t zero_cnt, i;
     FUNC_ENTER(NULL);
 
-    char_ptr = (signed char*)buf;
     zero_cnt = 0;
 
     for (i = 0; i < buf_size; i++) {
-        if (char_ptr[i] == PDC_CHAR_FILL_VALUE) {
-            char_ptr[i] = 0;
+        if (buf[i] == PDC_CHAR_FILL_VALUE) {
+            buf[i] = 0;
             zero_cnt++;
             goto done;
         }
-        else if (char_ptr[i] == 0) {
+        else if (buf[i] == 0) {
             printf("==ERROR! PDC_replace_char_fill_values 0 exist at %d!\n", i);
             ret_value = FAIL;
         }
@@ -2380,24 +2378,21 @@ done:
 
 
 // Replace the 0s in the buf so that Mercury can transfer the entire buf
-perr_t PDC_replace_zero_chars(char *buf, uint32_t buf_size)
+perr_t PDC_replace_zero_chars(signed char *buf, uint32_t buf_size)
 {
     perr_t ret_value = SUCCEED;
-    signed char *char_ptr   = NULL;
     uint32_t zero_cnt, i;
     FUNC_ENTER(NULL);
 
-    char_ptr = (signed char*)buf;
     zero_cnt = 0;
-
     for (i = 0; i < buf_size; i++) {
-        if (char_ptr[i] == PDC_CHAR_FILL_VALUE) {
+        if (buf[i] == PDC_CHAR_FILL_VALUE) {
             printf("==PDC_replace_zero_chars CHAR_FILL_VALUE exist at %d!\n", i);
             ret_value = FAIL;
             goto done;
         }
-        else if (char_ptr[i] == 0) {
-            char_ptr[i] = PDC_CHAR_FILL_VALUE;
+        else if (buf[i] == 0) {
+            buf[i] = PDC_CHAR_FILL_VALUE;
             zero_cnt++;
         }
     }
@@ -2561,11 +2556,22 @@ perr_t PDC_unserialize_region_lists(void *buf, region_list_t** regions, uint32_t
         goto done;
     }
 
-    ret_value = PDC_replace_char_fill_values((char *)buf, buf_size);
-    if (ret_value != SUCCEED) {
-        printf("==PDC_unserialize_region_lists replace_char_fill_values ERROR!\n");
-        goto done;
+    int zero_cnt = 0;
+    char_ptr = (signed char*)buf;
+    buf_size = strlen((char*)char_ptr);
+    for (i = 0; i < buf_size; i++) {
+        if (char_ptr[i] == PDC_CHAR_FILL_VALUE) {
+            char_ptr[i] = 0;
+            zero_cnt++;
+        }
     }
+
+
+/*     ret_value = PDC_replace_char_fill_values((signed char *)buf, buf_size); */
+/*     if (ret_value != SUCCEED) { */
+/*         printf("==PDC_unserialize_region_lists replace_char_fill_values ERROR!\n"); */
+/*         goto done; */
+/*     } */
 
     // n_region|ndim|start00|count00|...|start0n|count0n|loc_len|loc_str|offset|...
     
@@ -2574,6 +2580,12 @@ perr_t PDC_unserialize_region_lists(void *buf, region_list_t** regions, uint32_t
 
     uint32_ptr++;
     ndim = *uint32_ptr;
+
+    if (ndim <= 0 || ndim > 3) {
+        printf("==PDC_unserialize_region_lists ndim %lu ERROR!\n", ndim);
+        ret_value = FAIL;
+        goto done;
+    }
 
     uint32_ptr++;
     uint64_ptr = (uint64_t*)uint32_ptr;
@@ -2599,10 +2611,8 @@ perr_t PDC_unserialize_region_lists(void *buf, region_list_t** regions, uint32_t
             uint64_ptr++;
         }
 
-        /* if (is_debug_g == 1) { */
-        /*     printf("==unserialize_regions_info start[0]: %" PRIu64 ", count[0]: %" PRIu64 "\n", */
-        /*             regions[i]->start[0], regions[i]->count[0]); */
-        /* } */
+        printf("==unserialize_regions_info start[0]: %" PRIu64 ", count[0]: %" PRIu64 "\n",
+                regions[i]->start[0], regions[i]->count[0]);
 
         uint32_ptr = (uint32_t*)uint64_ptr;
         loc_len = *uint32_ptr;

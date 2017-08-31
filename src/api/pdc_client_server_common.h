@@ -1889,8 +1889,8 @@ perr_t PDC_serialize_regions_lists(region_list_t** regions, uint32_t n_region, v
 perr_t PDC_unserialize_region_lists(void *buf, region_list_t** regions, uint32_t *n_region);
 perr_t PDC_get_serialized_size(region_list_t** regions, uint32_t n_region, uint32_t *len);
 
-perr_t PDC_replace_zero_chars(char *buf, uint32_t buf_size);
-perr_t PDC_replace_char_fill_values(char *buf, uint32_t buf_size);
+perr_t PDC_replace_zero_chars(signed char *buf, uint32_t buf_size);
+perr_t PDC_replace_char_fill_values(signed char *buf, uint32_t buf_size);
 
 void pdc_mkdir(const char *dir);
 

@@ -5149,9 +5149,9 @@ PDC_Server_get_storage_info_cb (const struct hg_cb_info *callback_info)
         goto done;
     }
 
-    if (PDC_unserialize_region_lists(output.buf, lookup_args->region_lists, &(lookup_args->n_loc)) 
+    if (PDC_unserialize_region_lists(&output.buf[0], lookup_args->region_lists, &(lookup_args->n_loc)) 
             != SUCCEED ) {
-        printf("==PDC_SERVER: ERROR unserialize_regions_info");
+        printf("==PDC_SERVER: ERROR unserialize_regions_info\n");
         lookup_args->n_loc = 0;
         ret_value = FAIL;
         goto done;
