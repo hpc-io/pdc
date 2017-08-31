@@ -50,7 +50,7 @@
 #define PDC_SERVER_ID_INTERVEL 1000000
 #define PDC_SERVER_MAX_PROC_PER_NODE 64
 #define PDC_SERIALIZE_MAX_SIZE 256
-#define PDC_CHAR_FILL_VALUE     -121
+#define PDC_CHAR_FILL_VALUE     -123
 
 /* #define pdc_server_tmp_dir_g  "./pdc_tmp" */
 /* extern char pdc_server_tmp_dir_g[ADDR_MAX]; */
@@ -1615,8 +1615,8 @@ hg_proc_data_server_write_check_out_t(hg_proc_t proc, void *data)
 
 typedef struct {
     uint64_t                    obj_id;
-    hg_const_string_t           storage_location;
     uint64_t                    offset;
+    hg_string_t                 storage_location;
     region_info_transfer_t      region;
 } update_region_loc_in_t;
 
@@ -1635,7 +1635,7 @@ hg_proc_update_region_loc_in_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->storage_location);
+    ret = hg_proc_hg_string_t(proc, &struct_data->storage_location);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -1885,7 +1885,7 @@ perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to);
 
 perr_t pdc_region_info_t_to_transfer(struct PDC_region_info *region, region_info_transfer_t *transfer);
 
-perr_t PDC_serialize_regions_lists(region_list_t** regions, uint32_t n_region, void **buf, uint32_t buf_size);
+perr_t PDC_serialize_regions_lists(region_list_t** regions, uint32_t n_region, void *buf, uint32_t buf_size);
 perr_t PDC_unserialize_region_lists(void *buf, region_list_t** regions, uint32_t *n_region);
 perr_t PDC_get_serialized_size(region_list_t** regions, uint32_t n_region, uint32_t *len);
 

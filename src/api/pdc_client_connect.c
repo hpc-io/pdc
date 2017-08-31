@@ -60,7 +60,7 @@ MPI_Comm               PDC_SAME_NODE_COMM_g;
 int                    pdc_client_same_node_rank_g = 0;
 int                    pdc_client_same_node_size_g = 1;
 
-int                    pdc_server_num_g;
+int                    pdc_server_num_g = 0;
 int                    pdc_use_local_server_only_g = 0;
 int                    pdc_nclient_per_server_g = 0;
 
@@ -213,6 +213,10 @@ int PDC_Client_read_server_addr_from_file()
      /* fflush(stdout); */
 #endif
 
+     if (pdc_server_num_g == 0) {
+         printf("==PDC_CLIENT[%d]: server number error %d\n", pdc_client_mpi_rank_g, pdc_server_num_g);
+         return -1;
+     }
 
     // Allocate $pdc_server_info_g
     pdc_server_info_g = (pdc_server_info_t*)malloc(sizeof(pdc_server_info_t) * pdc_server_num_g);
@@ -892,7 +896,10 @@ perr_t PDC_Client_init()
         printf("==PDC_CLIENT: PDC_DEBUG set to %d!\n", is_client_debug_g);
 
     // get server address and fill in $pdc_server_info_g
-    PDC_Client_read_server_addr_from_file();
+    if (PDC_Client_read_server_addr_from_file() < 0) {
+        printf("==PDC_CLIENT[%d]: Error getting number of PDC Metadata servers, exiting ...", pdc_server_num_g);
+        exit(0);
+    }
 
     if (pdc_client_mpi_rank_g == 0) {
         printf("==PDC_CLIENT: Found %d PDC Metadata servers, running with %d PDC clients\n", 
@@ -3192,9 +3199,23 @@ perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t 
         goto done;
     }
 
+    if (region->ndim > 4) {
+        printf("PDC_CLIENT[%d]: PDC_Client_data_server_write - invalid dim %lu\n", 
+                pdc_client_mpi_rank_g, region->ndim);
+        ret_value = FAIL;
+        goto done;
+    }
+
     // Calculate region size
-    for (i = 0; i < region->ndim; i++)
+    for (i = 0; i < region->ndim; i++) {
         region_size *= region->size[i];
+        if (region_size == 0) {
+            printf("PDC_CLIENT[%d]: PDC_Client_data_server_write - size[%d]=0\n", 
+                    pdc_client_mpi_rank_g, i);
+            ret_value = FAIL;
+            goto done;
+        }
+    }
 
     // Create shared memory 
     // Shared memory address is /objID_ServerID_ClientID_rand
@@ -3218,7 +3239,7 @@ perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t 
     /* map the shared memory segment to the address space of the process */
     shm_base = mmap(0, region_size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
     if (shm_base == MAP_FAILED) {
-        printf("==PDC_CLIENT: Shared memory mmap failed\n");
+        printf("==PDC_CLIENT: Shared memory mmap failed, region size = %" PRIu64 "\n", region_size);
         // close and shm_unlink?
         ret_value = FAIL;
         goto done;
@@ -3356,11 +3377,9 @@ perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t 
         uint64_t *uint64_ptr = NULL;
         region_list_t tmp_region;
         region_list_t *regions[2];
-        char          *bufs[2];
         pdc_aggregated_io_to_server_t agg_write_in;
 
         regions[0] = &tmp_region;
-        bufs[0]    = my_serialized_buf;
 
         memset(my_serialized_buf, 0, PDC_SERIALIZE_MAX_SIZE);
         memset(&tmp_region, 0, sizeof(region_list_t));
@@ -3370,14 +3389,14 @@ perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t 
         // Store the shm addr in storage_location
         strcpy(tmp_region.storage_location, shm_addr); 
 
-        ret_value = PDC_serialize_regions_lists(regions, 1, bufs, PDC_SERIALIZE_MAX_SIZE); 
+        ret_value = PDC_serialize_regions_lists(regions, 1, my_serialized_buf, PDC_SERIALIZE_MAX_SIZE); 
         if (ret_value != SUCCEED) {
             printf("PDC_CLIENT[%d]: PDC_serialize_regions_lists ERROR!\n", pdc_client_mpi_rank_g);
             goto done;
         }
 
         PDC_replace_zero_chars(my_serialized_buf, PDC_SERIALIZE_MAX_SIZE);
-        // Now bufs[0] (my_serialized_buf) has the serialized region data, with 0 substituted
+        // Now my_serialized_buf has the serialized region data, with 0 substituted
         // n_region(1)|ndim|start_0|count_0|...|start_ndim|count_ndim|loc_len|shm_addr|offset|...
 
 
