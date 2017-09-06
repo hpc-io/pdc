@@ -1,4 +1,10 @@
 #!/bin/bash
+#
+# to run:
+# makdir build
+# cd build
+# . ../pdc_start
+#
 
 SRCDIR=`dirname ${BASH_SOURCE[0]}`
 
