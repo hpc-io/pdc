@@ -6457,8 +6457,9 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
 
                 // mkdir and set lustre premeters
                 pdc_mkdir(region_elt->storage_location);
+#ifdef ENABLE_LUSTRE
                 PDC_Server_set_lustre_stripe(region_elt->storage_location, 248, 16);
-
+#endif
                 if (fp_write != NULL) {
                     fclose(fp_write);
                     fp_write = NULL;
@@ -6657,8 +6658,11 @@ perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct P
     // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
     sprintf(io_region->storage_location, "%s/pdc_data/%" PRIu64 "/s%03d.bin", data_path, obj_id, pdc_server_rank_g);
     pdc_mkdir(io_region->storage_location);
+    printf("storage_location is %s\n", io_region->storage_location);
+#ifdef ENABLE_LUSTRE
     PDC_Server_set_lustre_stripe(io_region->storage_location, 248, 16);
-
+printf("lustre is enabled");
+#endif
     io_region->access_type = io_type;
 
     io_region->data_size = io_region->count[0];

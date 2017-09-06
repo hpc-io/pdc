@@ -1,0 +1,22 @@
+#!/bin/bash
+#
+# to run:
+# makdir build
+# cd build
+# . ../pdc_start
+#
+
+SRCDIR=`dirname ${BASH_SOURCE[0]}`
+
+export ENABLE_MPI=OFF
+export ENABLE_LUSTRE=OFF
+export ENABLE_TIMING=OFF
+export ENABLE_CHECKPOINT=ON
+export ENABLE_MULTITHREAD=OFF
+export BUILD_TESTING=ON
+export BUILD_DOCUMENTATION=OFF
+export CMAKE_PREFIX_PATH=/Users/kmu/Research/PDC/tools/mercury/share/cmake/mercury
+export PDC_DATA_LOC=/Users/kmu/Research/PDC/pdc/src/build/gen_data
+export HG_TRANSPORT=bmi+tcp
+
+cmake $SRCDIR

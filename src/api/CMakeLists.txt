@@ -15,8 +15,8 @@ set(PDC_EXT_INCLUDE_DEPENDENCIES ${CMAKE_CURRENT_SOURCE_DIR}/profiling)
 set(PDC_EXPORTED_LIBS pdcprof)
 
 # Mercury
-find_package(mercury REQUIRED)
-if(mercury_FOUND)
+find_package(MERCURY REQUIRED)
+if(MERCURY_FOUND)
   message(STATUS "mercury include directory: ${MERCURY_INCLUDE_DIR}")
   set(PDC_EXT_INCLUDE_DEPENDENCIES ${MERCURY_INCLUDE_DIR}
     ${PDC_EXT_INCLUDE_DEPENDENCIES}
