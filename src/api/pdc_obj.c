@@ -22,6 +22,8 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
+#include <time.h>
+#include <stdlib.h>
 #include "../server/utlist.h"
 #include "pdc_obj.h"
 #include "pdc_malloc.h"
@@ -80,7 +82,7 @@ done:
 } /* end PDCregion_init() */
 
 
-pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id)
+pdcid_t PDCobj_create(pdcid_t cont_id, char *obj_name, pdcid_t obj_prop_id)
 {
     pdcid_t ret_value = SUCCEED;
     struct PDC_obj_info *p = NULL;
@@ -604,30 +606,39 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDCobj_buf_map(void *buf, pdcid_t from_reg, pdcid_t obj_id, pdcid_t to_reg)
+pdcid_t PDCobj_buf_map(pdcid_t cont_id, void *buf, PDC_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg)
 {
-    perr_t ret_value = SUCCEED;         /* Return value */
-    struct PDC_id_info *info1;
-    struct PDC_id_info *reginfo1, *reginfo2;
+    pdcid_t ret_value = SUCCEED;         /* Return value */
+    struct PDC_id_info *id_info = NULL;
+    struct PDC_cont_info *cont = NULL;
+    char obj_name[128];
+    pdcid_t pdc_id, obj_prop, local_obj;
     struct PDC_region_info *reg1, *reg2;
-    struct PDC_obj_info *object1;
     
-    FUNC_ENTER(NULL);
+    id_info = PDC_find_id(local_reg);
+    reg1 = (struct PDC_region_info *)(id_info->obj_ptr);
+    id_info = PDC_find_id(cont_id);
+    cont = (struct PDC_cont_info *)(id_info->obj_ptr);
+    pdc_id = cont->cont_pt->pdc->local_id;
+    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
+    PDCprop_set_obj_dims(obj_prop, reg1->ndim, reg1->size);
+    PDCprop_set_obj_type(obj_prop, local_type);
+    PDCprop_set_obj_buf(obj_prop, buf);
+    PDCprop_set_obj_time_step(obj_prop, 0);
+    PDCprop_set_obj_user_id( obj_prop, getuid());
     
-    info1 = PDC_find_id(obj_id);
-    if(info1 == NULL)
-        PGOTO_ERROR(FAIL, "cannot locate object ID");
-    object1 = (struct PDC_obj_info *)(info1->obj_ptr);
+    srand(time(NULL));
+    sprintf(obj_name, "%s%d", "object", rand());
+//    sprintf(obj_name, "%s", "object");
+
+    local_obj = PDCobj_create(cont_id, obj_name, obj_prop);
+    if(local_obj < 0)
+        PGOTO_ERROR(FAIL, "PDC CLIENT Failed to create local object");
+
+    ret_value = PDCobj_map(local_obj, local_reg, remote_obj, remote_reg);
     
-    reginfo1 = PDC_find_id(from_reg);
-    reginfo2 = PDC_find_id(to_reg);
-    reg1 = (struct PDC_region_info *)(reginfo1->obj_ptr);
-    reg2 = (struct PDC_region_info *)(reginfo2->obj_ptr);
-    
-    // start mapping
-    // state that there is mapping to other objects
-//    object1->mapping = 1;
-    reg1->mapping = 1;
+    if(ret_value == SUCCEED)
+        ret_value = local_obj;
     
 done:
     FUNC_LEAVE(ret_value);

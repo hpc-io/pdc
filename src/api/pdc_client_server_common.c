@@ -1078,8 +1078,8 @@ region_update_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     // Send notification to mapped regions, when data transfer is done
     PDC_SERVER_notify_region_update_to_client(bulk_args->remote_obj_id, bulk_args->remote_reg_id, bulk_args->remote_client_id);
 
-    out.ret = 1;
-    HG_Respond(bulk_args->handle, NULL, NULL, &out);
+//    out.ret = 1;
+//    HG_Respond(bulk_args->handle, NULL, NULL, &out);
 
     if(atomic_fetch_sub(&(bulk_args->refcount), 1) == 1) {
         HG_Bulk_free(bulk_args->bulk_handle);
@@ -1103,14 +1103,11 @@ region_release_bulk_transfer_cb (const struct hg_cb_info *hg_cb_info)
     struct region_update_bulk_args *update_bulk_args = NULL;
     hg_bulk_t local_bulk_handle = HG_BULK_NULL;
     PDC_mapping_info_t *mapped_region = NULL;
-    uint32_t server_id;
     hg_op_id_t hg_bulk_op_id;
     size_t size, remote_size;
-    void   *data_buf;
-    struct PDC_region_info *server_region;
-    region_list_t *list;
     int lock_status;
     int region_locked;
+    int all_reg_locked;
 /*
 void      **from_data_ptrs;
 void       *data_ptrs;
@@ -1135,6 +1132,7 @@ hg_uint32_t count;
 
     // Perform lock release function
     PDC_Server_region_release(&(bulk_args->in), &out);
+    HG_Respond(bulk_args->handle, NULL, NULL, &out);
 /*
     data_buf = (void *)malloc(size);
     server_region->ndim = 1;
@@ -1161,6 +1159,7 @@ fflush(stdout);
     update_bulk_args->args = bulk_args;
 
     region_locked = 0;
+    all_reg_locked = 1;
     size = HG_Bulk_get_size(local_bulk_handle);
 
     PDC_LIST_GET_FIRST(mapped_region, &(bulk_args->mapping_list)->ids);
@@ -1170,6 +1169,7 @@ fflush(stdout);
         // PDC_Server_region_lock_status(mapped_region->remote_obj_id, &(mapped_region->remote_region), &lock_status);
         PDC_Server_region_lock_status(mapped_region, &lock_status);
         if(lock_status == 0) {
+            all_reg_locked = 0;
             // printf("region is not locked\n");
             remote_size = HG_Bulk_get_size(mapped_region->remote_bulk_handle);
             // printf("remote_size = %lld\n", remote_size);
@@ -1228,6 +1228,14 @@ fflush(stdout);
     /* printf("==PDC_SERVER: region_release_bulk_transfer_cb(): returned %llu\n", out.ret); */
 
     HG_Free_input(bulk_args->handle, &(bulk_args->in));
+    
+    if(all_reg_locked == 1) {
+//        HG_Respond(bulk_args->handle, NULL, NULL, &out);
+        HG_Destroy(bulk_args->handle);
+        HG_Bulk_free(local_bulk_handle);
+        free(bulk_args->data_buf);
+        free(bulk_args);
+    }
 //    HG_Bulk_free(local_bulk_handle);
 
 //    HG_Destroy(bulk_args->handle);
@@ -1252,6 +1260,7 @@ region_release_update_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
 
     // Perform lock releae function
     PDC_Server_region_release(&(bulk_args->in), &out);
+    HG_Respond(handle, NULL, NULL, &out);
 
     // Send notification to mapped regions, when data transfer is done
     PDC_SERVER_notify_region_update_to_client(bulk_args->remote_obj_id, bulk_args->remote_reg_id, bulk_args->remote_client_id);
@@ -1261,7 +1270,7 @@ region_release_update_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     free(bulk_args->server_region);
     free(bulk_args->data_buf);
 
-    HG_Respond(handle, NULL, NULL, &out);
+//    HG_Respond(handle, NULL, NULL, &out);
 
     HG_Free_input(handle, &(bulk_args->in));
     HG_Destroy(handle); 
@@ -1461,7 +1470,7 @@ done:
         HG_Free_input(handle, &in);
         HG_Destroy(handle);
      }
-
+    
     FUNC_LEAVE(ret_value);
 }
 

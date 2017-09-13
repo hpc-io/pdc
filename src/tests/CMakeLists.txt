@@ -32,6 +32,7 @@ set(PROGRAMS
   data_server_write
   data_rw_test
   init_only
+  obj_buf_map
   )
 
 foreach(program ${PROGRAMS})
