@@ -62,7 +62,7 @@ int main(int argc, const char *argv[])
         printf("Fail to create object property @ line  %d!\n", __LINE__);
 
     pdcid_t test_obj = -1;
-    const int my_data_size = size_MB / size;
+    uint64_t my_data_size = size_MB / size;
 
     uint64_t dims[1]={size_MB};
     PDCprop_set_obj_dims(obj_prop, 1, dims);

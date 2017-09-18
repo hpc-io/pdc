@@ -644,6 +644,7 @@ hg_class_t *hg_class_g;
 hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
 perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_check_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_write_check_out_t *out) {return SUCCEED;}
+hg_return_t PDC_Server_work_done_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
 
 #else
 hg_return_t PDC_Client_work_done_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;};
@@ -2401,7 +2402,7 @@ perr_t PDC_replace_zero_chars(signed char *buf, uint32_t buf_size)
         }
     }
 
-    printf("==PDC_replace_zero_chars: replaced %d zero values. \n", zero_cnt);
+    /* printf("==PDC_replace_zero_chars: replaced %d zero values. \n", zero_cnt); */
 
 done:
     FUNC_LEAVE(ret_value);
@@ -2575,7 +2576,7 @@ perr_t PDC_unserialize_region_lists(void *buf, region_list_t** regions, uint32_t
         }
     }
 
-    printf("==PDC_unserialize_region_lists fill value count %d!\n", zero_cnt);
+    /* printf("==PDC_unserialize_region_lists fill value count %d!\n", zero_cnt); */
 
 /*     ret_value = PDC_replace_char_fill_values((signed char *)buf, buf_size); */
 /*     if (ret_value != SUCCEED) { */
@@ -2648,6 +2649,9 @@ perr_t PDC_unserialize_region_lists(void *buf, region_list_t** regions, uint32_t
 
         uint64_ptr++;
         // n_region|ndim|start00|count00|...|start0n|count0n|loc_len|loc_str|offset|...
+        //
+        /* printf("==PDC_SERVER: unserialize_region_list\n"); */
+        /* PDC_print_region_list(regions[i]); */
     }
 
 done:
@@ -2714,7 +2718,9 @@ HG_TEST_RPC_CB(get_storage_info, handle)
 
     // Decode input
     HG_Get_input(handle, &in);
-    /* printf("==PDC_SERVER: Got storage info request: obj_id=%llu\n", in.obj_id); */
+
+    /* printf("==PDC_SERVER: Got storage info request from other server: obj_id=%llu\n", in.obj_id); */
+
     PDC_init_region_list(&request_region);
     pdc_region_transfer_t_to_list_t(&in.req_region, &request_region);
 
@@ -2758,7 +2764,7 @@ HG_TEST_RPC_CB(get_storage_info, handle)
     }
 
     // Need to free buf
-    HG_Respond(handle, NULL, NULL, &out);
+    HG_Respond(handle, PDC_Server_work_done_cb, NULL, &out);
 
 done:
     if (ret_value == FAIL) {

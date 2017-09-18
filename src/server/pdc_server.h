@@ -65,6 +65,7 @@ perr_t PDC_Server_serialize_regions_info(region_list_t** regions, uint32_t n_reg
 
 perr_t PDC_Server_regions_io(region_list_t *region_list_head, PDC_io_plugin_t plugin);
 
+hg_return_t PDC_Server_work_done_cb(const struct hg_cb_info *callback_info);
 /* typedef struct pdc_metadata_name_mark_t { */
 /*     char obj_name[ADDR_MAX]; */
 /*     struct pdc_metadata_name_mark_t *next; */
