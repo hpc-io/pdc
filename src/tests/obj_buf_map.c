@@ -136,7 +136,7 @@ int main(int argc, char **argv)
     
 //	PDCobj_map(obj1, r1, obj2, r2);
 //	PDCobj_map(obj1, r1, obj3, r3);
-    obj1 = PDCobj_buf_map(cont_id, &myArray1[0], PDC_INT, r1, obj2, r2);
+    obj1 = PDCobj_buf_map(cont_id, "test_obj1", &myArray1[0], PDC_INT, r1, obj2, r2);
 //    PDCreg_unmap(obj1, r1);
 //	PDCobj_map(obj2, r2, obj3, r3);
 
@@ -148,7 +148,9 @@ int main(int argc, char **argv)
     ret = PDCreg_obtain_lock(obj1, r1, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region\n");
-
+    // update r1
+    myArray1[0][0] = 117;
+    
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -173,8 +175,7 @@ int main(int argc, char **argv)
     ret = PDCreg_release_lock(obj1, r1, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region\n");
-    printf("r1 is released\n");
-    fflush(stdout);
+
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
