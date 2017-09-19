@@ -69,7 +69,7 @@ pdcid_t PDCregion_create(size_t ndims, uint64_t *offset, uint64_t *size);
  *
  * \return Object id on success/Negative on failure 
  */
-pdcid_t PDCobj_create(pdcid_t cont_id, char *obj_name, pdcid_t obj_create_prop);
+pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop);
 
 /**
  * Set object lifetime 
@@ -259,7 +259,7 @@ obj_handle *PDCview_iter_start(pdcid_t view_id);
  *
  * \return Non-negative on success/Negative on failure
  */
-pdcid_t PDCobj_buf_map(pdcid_t cont_id, void *buf, PDC_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg);
+pdcid_t PDCobj_buf_map(pdcid_t cont_id, const char *obj_name, void *buf, PDC_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg);
 
 /**
  * Map an object to another object

@@ -82,7 +82,7 @@ done:
 } /* end PDCregion_init() */
 
 
-pdcid_t PDCobj_create(pdcid_t cont_id, char *obj_name, pdcid_t obj_prop_id)
+pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id)
 {
     pdcid_t ret_value = SUCCEED;
     struct PDC_obj_info *p = NULL;
@@ -606,12 +606,11 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-pdcid_t PDCobj_buf_map(pdcid_t cont_id, void *buf, PDC_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg)
+pdcid_t PDCobj_buf_map(pdcid_t cont_id, const char *obj_name, void *buf, PDC_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg)
 {
     pdcid_t ret_value = SUCCEED;         /* Return value */
     struct PDC_id_info *id_info = NULL;
     struct PDC_cont_info *cont = NULL;
-    char obj_name[128];
     pdcid_t pdc_id, obj_prop, local_obj;
     struct PDC_region_info *reg1, *reg2;
     
@@ -627,8 +626,8 @@ pdcid_t PDCobj_buf_map(pdcid_t cont_id, void *buf, PDC_var_type_t local_type, pd
     PDCprop_set_obj_time_step(obj_prop, 0);
     PDCprop_set_obj_user_id( obj_prop, getuid());
     
-    srand(time(NULL));
-    sprintf(obj_name, "%s%d", "object", rand());
+//    srand(time(NULL));
+//    sprintf(obj_name, "%s%d", "object", rand());
 //    sprintf(obj_name, "%s", "object");
 
     local_obj = PDCobj_create(cont_id, obj_name, obj_prop);
