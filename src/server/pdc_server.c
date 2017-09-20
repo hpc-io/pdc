@@ -83,6 +83,7 @@ hg_thread_mutex_t data_write_list_mutex_g;
 // Global debug variable to control debug printfs
 int is_debug_g = 0;
 int pdc_client_num_g = 0;
+int pdc_nost_per_file_g = 1;
 
 hg_class_t   *hg_class_g   = NULL;
 hg_context_t *hg_context_g = NULL;
@@ -4110,6 +4111,7 @@ int main(int argc, char *argv[])
 {
     int port;
     char *tmp_dir;
+    char *nost_per_file;
     perr_t ret;
     hg_return_t hg_ret;
     
@@ -4138,8 +4140,19 @@ int main(int argc, char *argv[])
 
     sprintf(pdc_server_tmp_dir_g, "%s/", tmp_dir);
 
+    // Get number of OST per file
+    nost_per_file = getenv("PDC_NOST_PER_FILE");
+    if (nost_per_file != NULL) {
+        pdc_nost_per_file_g = atoi(nost_per_file);
+        // Make sure it is a sane value
+        if (pdc_nost_per_file_g < 1 || pdc_nost_per_file_g > 248) {
+            pdc_nost_per_file_g = 1;
+        }
+    }
+
     if (pdc_server_rank_g == 0) {
-        printf("==PDC_SERVER[%d]: using [%s] as tmp dir \n", pdc_server_rank_g, pdc_server_tmp_dir_g);
+        printf("==PDC_SERVER[%d]: using [%s] as tmp dir. %d OSTs per data file.\n", 
+                pdc_server_rank_g, pdc_server_tmp_dir_g, pdc_nost_per_file_g);
     }
 
 #ifdef ENABLE_TIMING 
@@ -5181,7 +5194,7 @@ hg_return_t PDC_Server_work_done_cb(const struct hg_cb_info *callback_info)
 {
     work_todo_g--;
 
-    /* printf("==PDC_SERVER[%d]: \n", pdc_server_rank_g); */
+    /* printf("==PDC_SERVER[%d]: work done\n", pdc_server_rank_g); */
     /* fflush(stdout); */
 
     return HG_SUCCESS;
@@ -5339,8 +5352,8 @@ perr_t PDC_Server_set_lustre_stripe(const char *path, int stripe_count, int stri
         }
 
     index = (pdc_server_rank_g * stripe_count) % 248; 
-    sprintf(cmd, "lfs setstripe -S %dM -c %d %s", stripe_size_MB, stripe_count, tmp);
-    /* sprintf(cmd, "lfs setstripe -S %dM -c %d -i %d %s", stripe_size_MB, stripe_count, index, tmp); */
+    /* sprintf(cmd, "lfs setstripe -S %dM -c %d %s", stripe_size_MB, stripe_count, tmp); */
+    sprintf(cmd, "lfs setstripe -S %dM -c %d -i %d %s", stripe_size_MB, stripe_count, index, tmp);
 
     if (system(cmd) < 0) {
         printf("==PDC_SERVER: Fail to set Lustre stripe parameters [%s]\n", tmp);
@@ -6587,6 +6600,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
             if (region_elt->storage_location == NULL) {
                 printf("==PDC_SERVER: PDC_Server_posix_one_file_io - storage_location is NULL!\n");
                 ret_value = FAIL;
+                region_elt->is_data_ready = -1;
                 goto done;
             }
 
@@ -6602,7 +6616,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
                     strstr(region_elt->storage_location, "/scratch1/scratchdirs") != NULL ||
                     strstr(region_elt->storage_location, "/scratch2/scratchdirs") != NULL ) {
 
-                    stripe_count = 248 / pdc_server_size_g;
+                    stripe_count = 248 / pdc_server_size_g * pdc_nost_per_file_g;
                     stripe_size  = 16;                      // MB
                     PDC_Server_set_lustre_stripe(region_elt->storage_location, stripe_count, stripe_size);
                 }
@@ -6742,6 +6756,9 @@ done:
         fclose(fp_read);
         fp_write = NULL;
     }
+    
+    if (ret_value != SUCCEED) 
+        region_elt->is_data_ready = -1;
     
     fflush(stdout);
     FUNC_LEAVE(ret_value);

@@ -2892,6 +2892,8 @@ perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_
                     "fulfilled by server\n", pdc_client_mpi_rank_g);
         }
         HG_Destroy(data_server_read_check_handle);
+        if (lookup_args.ret == -1) 
+            ret_value = -1;
         goto done;
     }
     else {
@@ -3127,6 +3129,8 @@ perr_t PDC_Client_data_server_write_check(int server_id, uint32_t client_id, pdc
             printf("PDC_CLIENT[%d]: PDC_Client_data_server_write_check - "
                     "IO request has not been fulfilled by server\n", pdc_client_mpi_rank_g);
         }
+        if (lookup_args.ret == -1) 
+            ret_value = -1;
         goto done;
     }
 
@@ -3493,11 +3497,19 @@ perr_t PDC_Client_test(PDC_Request_t *request, int *completed)
     if (request->access_type == READ) {
         ret_value = PDC_Client_data_server_read_check(request->server_id, pdc_client_mpi_rank_g, 
                      request->metadata, request->region, completed, request->buf);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_CLIENT: PDC_Client_write_check ERROR!\n");
+            goto done;
+        }
     }
     else if (request->access_type == WRITE) {
 
         ret_value = PDC_Client_data_server_write_check(request->server_id, pdc_client_mpi_rank_g, 
                      request->metadata, request->region, completed);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_CLIENT: PDC_Client_write_check ERROR!\n");
+            goto done;
+        }
     }
     else {
         printf("==PDC_CLIENT: PDC_Client_test() - error with request access type!\n");
@@ -3603,7 +3615,7 @@ perr_t PDC_Client_write(pdc_metadata_t *meta, struct PDC_region_info *region, vo
         printf("==PDC_CLIENT: PDC_Client_write - PDC_Client_iwrite error\n");
         goto done;
     }
-    ret_value = PDC_Client_wait(&request, 300000, 400);
+    ret_value = PDC_Client_wait(&request, 120000, 400);
     if (ret_value != SUCCEED) {
         printf("==PDC_CLIENT: PDC_Client_write - PDC_Client_wait error\n");
         goto done;
@@ -3645,7 +3657,7 @@ perr_t PDC_Client_read(pdc_metadata_t *meta, struct PDC_region_info *region, voi
     FUNC_ENTER(NULL);
 
     PDC_Client_iread(meta, region, &request, buf);
-    ret_value = PDC_Client_wait(&request, 300000, 400);
+    ret_value = PDC_Client_wait(&request, 120000, 400);
     if (ret_value != SUCCEED) {
         printf("==PDC_CLIENT: PDC_Client_read - PDC_Client_wait error\n");
         goto done;
