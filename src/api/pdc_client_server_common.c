@@ -22,6 +22,7 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
+#include "config.h"
 #include "../server/utlist.h"
 
 #include "mercury.h"
