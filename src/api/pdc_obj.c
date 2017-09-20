@@ -22,6 +22,7 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
+#include "config.h"
 #include <time.h>
 #include <stdlib.h>
 #include "../server/utlist.h"
@@ -29,6 +30,9 @@
 #include "pdc_malloc.h"
 #include "pdc_prop_pkg.h"
 #include "pdc_client_server_common.h"
+#ifdef ENABLE_MPI
+    #include "mpi.h"
+#endif
 
 static perr_t PDCobj__close(struct PDC_obj_info *op);
 
@@ -641,6 +645,49 @@ pdcid_t PDCobj_buf_map(pdcid_t cont_id, const char *obj_name, void *buf, PDC_var
     
 done:
     FUNC_LEAVE(ret_value);
+}
+
+perr_t PDCobj_encode(pdcid_t obj_id, int rank, obj_encode send)
+{
+    struct PDC_id_info *objinfo;
+    struct PDC_obj_info *obj;
+    perr_t ret_value = FAIL;
+    
+#ifdef ENABLE_MPI
+    int client_rank, client_size;
+    const int nitems=2;
+    int          blocklengths[2] = {1,1};
+    MPI_Datatype types[2] = {MPI_LONG_LONG, MPI_INT};
+    MPI_Datatype mpi_obj_type;
+    MPI_Aint     offsets[2];
+    
+    send.meta_id = 0;
+    send.ndim = 0;
+    MPI_Comm_size(MPI_COMM_WORLD, &client_size);
+    if (client_size < 2) {
+        PGOTO_ERROR(ret_value, "Requires at least two processes.");
+    }
+    
+    offsets[0] = offsetof(obj_encode, meta_id);
+    offsets[1] = offsetof(obj_encode, ndim);
+    MPI_Type_create_struct(nitems, blocklengths, offsets, types, &mpi_obj_type);
+    MPI_Type_commit(&mpi_obj_type);
+    
+    MPI_Comm_rank(MPI_COMM_WORLD, &client_rank);
+    
+    if(client_rank == rank) {
+        printf("rank = %d\n", rank);
+        objinfo = PDC_find_id(obj_id);
+        if(objinfo == NULL)
+            PGOTO_ERROR(ret_value, "cannot locate object ID");
+        obj = (struct PDC_obj_info *)(objinfo->obj_ptr);
+        send.meta_id = obj->meta_id;
+        send.ndim = 1;
+    }
+#endif
+done:
+    FUNC_LEAVE(ret_value);
+    
 }
 
 static struct PDC_region_info *PDCregion_get_info(pdcid_t reg_id)
