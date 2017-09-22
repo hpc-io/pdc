@@ -2447,6 +2447,8 @@ perr_t PDC_serialize_regions_lists(region_list_t** regions, uint32_t n_region, v
     uint32_ptr  = (uint32_t*)buf;
     *uint32_ptr = n_region;
 
+    /* printf("==PDC_SERVER: serializing %u regions!\n", n_region); */
+
     uint32_ptr++;
     total_len += sizeof(uint32_t);
 
@@ -2588,6 +2590,8 @@ perr_t PDC_unserialize_region_lists(void *buf, region_list_t** regions, uint32_t
     
     uint32_ptr = (uint32_t*)buf;
     *n_region = *uint32_ptr;
+
+    /* printf("PDC unserialize region %u regions!\n", *n_region); */
 
     uint32_ptr++;
     ndim = *uint32_ptr;

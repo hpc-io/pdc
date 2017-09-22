@@ -708,7 +708,7 @@ static perr_t PDC_Server_lookup_client(uint32_t client_id)
     }
 
     // Wait for response from client
-    work_todo_g++;
+    work_todo_g = 1;
     PDC_Server_check_response(&hg_context_g);
     /* PDC_Server_trigger(&hg_context_g); */
     /* pdc_to_client_work_todo_g = 1; */
@@ -3088,7 +3088,7 @@ done:
  */
 perr_t PDC_Server_restart(char *filename)
 {
-    perr_t ret_value = 1;
+    perr_t ret_value = SUCCEED;
     int n_entry, count, i, j, nobj = 0, all_nobj = 0, n_region;
     pdc_metadata_t *metadata, *elt;
     region_list_t *region_list;
@@ -3097,6 +3097,9 @@ perr_t PDC_Server_restart(char *filename)
     
     FUNC_ENTER(NULL);
 
+    // init hash table
+    PDC_Server_init_hash_table();
+
     FILE *file = fopen(filename, "r");
     if (file==NULL) {
         printf("==PDC_SERVER: PDC_Server_checkpoint() - Checkpoint file open error"); 
@@ -3104,10 +3107,10 @@ perr_t PDC_Server_restart(char *filename)
         goto done;
     }
 
-    // init hash table
-    PDC_Server_init_hash_table();
     fread(&n_entry, sizeof(int), 1, file);
-    /* printf("%d entries\n", n_entry); */
+    if (is_debug_g == 1) {
+        printf("==PDC_SERVER[%d]: %d entries from checkpoint file.\n", pdc_server_rank_g, n_entry);
+    }
 
     while (n_entry>0) {
         fread(&count, sizeof(int), 1, file);
@@ -3119,17 +3122,16 @@ perr_t PDC_Server_restart(char *filename)
         total_mem_usage_g += sizeof(uint32_t);
 
         // Reconstruct hash table
-        entry = (pdc_hash_table_entry_head*)malloc(sizeof(pdc_hash_table_entry_head));
+        entry = (pdc_hash_table_entry_head*)calloc(1, sizeof(pdc_hash_table_entry_head));
         entry->n_obj = 0;
         entry->bloom = NULL;
         entry->metadata = NULL;
+
         // Init hash table metadata (w/ bloom) with first obj
         PDC_Server_hash_table_list_init(entry, hash_key);
 
-
         metadata = (pdc_metadata_t*)calloc(sizeof(pdc_metadata_t), count);
 
-        // TODO: test
         for (i = 0; i < count; i++) {
             fread(metadata+i, sizeof(pdc_metadata_t), 1, file);
 
@@ -3200,7 +3202,8 @@ perr_t PDC_Server_restart(char *filename)
     all_nobj = nobj;
 #endif 
     if (pdc_server_rank_g == 0) {
-        printf("==PDC_SERVER: Server restarted from saved session, successfully loaded %d objects...\n", all_nobj);
+        printf("==PDC_SERVER: Server restarted from saved session, "
+               "successfully loaded %d objects...\n", all_nobj);
     }
 
     // debug
@@ -5137,6 +5140,13 @@ perr_t PDC_Server_get_local_storage_location_of_region(uint64_t obj_id, region_l
         ret_value = FAIL;
         goto done;
     }
+    else {
+        if (is_debug_g == 1) {
+            printf("==PDC_SERVER[%d]: PDC_Server_get_local_storage_location_of_region - \
+                    %u regions found\n", pdc_server_rank_g, *n_loc);
+        }
+
+    }
 
 
 done:
@@ -5157,6 +5167,7 @@ PDC_Server_get_storage_info_cb (const struct hg_cb_info *callback_info)
     server_lookup_args_t *lookup_args;
     hg_handle_t handle;
     pdc_serialized_data_t output;
+    uint32_t n_loc;
 
     FUNC_ENTER(NULL);
 
@@ -5170,7 +5181,12 @@ PDC_Server_get_storage_info_cb (const struct hg_cb_info *callback_info)
         goto done;
     }
 
-    if (  PDC_unserialize_region_lists(output.buf, lookup_args->region_lists, &(lookup_args->n_loc) ) 
+    if (is_debug_g == 1) {
+        printf(  "==PDC_SERVER[%d]: PDC_Server_get_storage_info_cb: received storage info buf size: %u\n", 
+                pdc_server_rank_g, strlen( (char*)output.buf )  );
+    }
+
+    if (  PDC_unserialize_region_lists(output.buf, lookup_args->region_lists, &n_loc ) 
           != SUCCEED ) {
         printf("==PDC_SERVER: ERROR unserialize_regions_info\n");
         lookup_args->n_loc = 0;
@@ -5178,13 +5194,15 @@ PDC_Server_get_storage_info_cb (const struct hg_cb_info *callback_info)
         goto done;
     }
 
-    lookup_args->void_buf = output.buf;
+    lookup_args->n_loc = n_loc;
+    /* lookup_args->void_buf = output.buf; */
     if (is_debug_g == 1) {
-        printf(  "==PDC_SERVER[%d]: PDC_Server_get_storage_info_cb: received storage info, buf size: %lu\n", 
-                pdc_server_rank_g, strlen( (char*)lookup_args->void_buf )  );
+        printf(  "==PDC_SERVER[%d]: PDC_Server_get_storage_info_cb: received %u storage info\n", 
+                pdc_server_rank_g, lookup_args->n_loc);
     }
 
 done:
+    fflush(stdout);
     work_todo_g = 0;
     HG_Free_output(handle, &output);
     FUNC_LEAVE(ret_value);
@@ -5296,7 +5314,7 @@ perr_t PDC_Server_get_storage_location_of_region(region_list_t *request_region, 
         }
 
         // Wait for response from remote metadata server
-        work_todo_g++;
+        work_todo_g = 1;
         PDC_Server_check_response(&hg_context_g);
         /* PDC_Server_trigger(&hg_context_g); */
         /* pdc_to_server_work_todo_g = 1; */
@@ -5305,7 +5323,7 @@ perr_t PDC_Server_get_storage_location_of_region(region_list_t *request_region, 
         *n_loc = lookup_args.n_loc;
 
         if (is_debug_g == 1) {
-            printf("==PDC_SERVER[%d]: got %d locations of region\n",
+            printf("==PDC_SERVER[%d]: got %u locations of region\n",
                     pdc_server_rank_g, *n_loc);
             fflush(stdout);
         }
@@ -6141,7 +6159,7 @@ perr_t PDC_Server_get_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta)
         }
 
         // Wait for response from server
-        work_todo_g++;
+        work_todo_g = 1;
         /* PDC_Server_check_response(&hg_context_g); */
         PDC_Server_trigger(&hg_context_g);
         /* pdc_to_server_work_todo_g = 1; */
