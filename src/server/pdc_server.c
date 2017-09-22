@@ -5336,22 +5336,27 @@ perr_t PDC_Server_set_lustre_stripe(const char *path, int stripe_count, int stri
 
     FUNC_ENTER(NULL);
 
-    if (stripe_count <= 0) 
+    // Make sure stripe count is sane
+    if (stripe_count > 248 / pdc_server_size_g ) 
+        stripe_count = 248 / pdc_server_size_g;
+    
+    if (stripe_count < 1) 
         stripe_count = 1;
 
     if (stripe_size_MB <= 0) 
         stripe_size_MB = 1;
 
+    index = (pdc_server_rank_g * stripe_count) % 248; 
+
     snprintf(tmp, sizeof(tmp),"%s",path);
 
     len = strlen(tmp);
-    for (i = len-1; i >= 0; i--) 
+    for (i = len-1; i >= 0; i--) {
         if (tmp[i] == '/') {
             tmp[i] = 0;
             break;
         }
-
-    index = (pdc_server_rank_g * stripe_count) % 248; 
+    }
     /* sprintf(cmd, "lfs setstripe -S %dM -c %d %s", stripe_size_MB, stripe_count, tmp); */
     sprintf(cmd, "lfs setstripe -S %dM -c %d -i %d %s", stripe_size_MB, stripe_count, index, tmp);
 
@@ -6616,7 +6621,11 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
                     strstr(region_elt->storage_location, "/scratch1/scratchdirs") != NULL ||
                     strstr(region_elt->storage_location, "/scratch2/scratchdirs") != NULL ) {
 
-                    stripe_count = 248 / pdc_server_size_g * pdc_nost_per_file_g;
+                    // When env var PDC_NOST_PER_FILE is not set
+                    if (pdc_nost_per_file_g != 1) 
+                        stripe_count = 248 / pdc_server_size_g;
+                    else 
+                        stripe_count = pdc_nost_per_file_g;
                     stripe_size  = 16;                      // MB
                     PDC_Server_set_lustre_stripe(region_elt->storage_location, stripe_count, stripe_size);
                 }
