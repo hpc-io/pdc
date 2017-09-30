@@ -248,7 +248,7 @@ pdcid_t PDC_query_create(pdcid_t pdc_id, PDC_query_type_t query_type, PDC_query_
  */
 obj_handle *PDCview_iter_start(pdcid_t view_id);
 
-perr_t PDCobj_encode(pdcid_t obj_id, int rank, obj_encode send);
+perr_t PDCobj_encode(pdcid_t obj_id, int rank, pdcid_t *meta_id);
 
 /**
  * Map an application buffer to an object

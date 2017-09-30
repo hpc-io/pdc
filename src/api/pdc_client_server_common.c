@@ -1600,6 +1600,35 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+static pbool_t region_is_identical(region_info_transfer_t reg1, region_info_transfer_t reg2)
+{
+    pbool_t ret_value = 0;
+    int i;
+    
+    FUNC_ENTER(NULL);
+    
+    if(reg1.ndim != reg2.ndim)
+        PGOTO_DONE(ret_value);
+    if (reg1.ndim >= 1) {
+        if(reg1.count_0 != reg2.count_0 || reg1.start_0 != reg2.start_0)
+            PGOTO_DONE(ret_value);
+    }
+    if (reg1.ndim >= 2) {
+        if(reg1.count_1 != reg2.count_1 || reg1.start_1 != reg2.start_1)
+            PGOTO_DONE(ret_value);
+    }
+    if (reg1.ndim >= 3) {
+        if(reg1.count_2 != reg2.count_2 || reg1.start_2 != reg2.start_2)
+            PGOTO_DONE(ret_value);
+    }
+    if (reg1.ndim >= 4) {
+        if(reg1.count_3 != reg2.count_3 || reg1.start_3 != reg2.start_3)
+            PGOTO_DONE(ret_value);
+    }
+    ret_value = 1;
+done:
+    FUNC_LEAVE(ret_value);
+}
 /* static hg_return_t */
 // gen_reg_map_notification_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(gen_reg_map_notification, handle)
@@ -1626,12 +1655,14 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
     
     found = 0;
     DL_FOREACH(target_obj->region_map_head, elt) {
-        if(in.local_obj_id==elt->local_obj_id && in.local_reg_id==elt->local_reg_id) {
+//        if(in.local_obj_id==elt->local_obj_id && in.local_reg_id==elt->local_reg_id) {
+        if(in.local_obj_id==elt->local_obj_id && region_is_identical(in.local_region, elt->local_region)) {
             found = 1;
             region_map_t *map_ptr = target_obj->region_map_head;
             PDC_mapping_info_t *tmp_ptr;
             PDC_LIST_GET_FIRST(tmp_ptr, &map_ptr->ids);         
-            while(tmp_ptr!=NULL && (tmp_ptr->remote_reg_id!=in.remote_reg_id || tmp_ptr->remote_obj_id!=in.remote_obj_id)) {
+//            while(tmp_ptr!=NULL && (tmp_ptr->remote_reg_id!=in.remote_reg_id || tmp_ptr->remote_obj_id!=in.remote_obj_id)) {
+            while(tmp_ptr!=NULL && (tmp_ptr->remote_obj_id!=in.remote_obj_id || !region_is_identical(tmp_ptr->remote_region, in.remote_region))) {
                 PDC_LIST_TO_NEXT(tmp_ptr, entry);
             }
             if(tmp_ptr!=NULL) {
@@ -1646,7 +1677,7 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
                 m_info_ptr->remote_reg_id = in.remote_reg_id;
                 m_info_ptr->remote_client_id = in.remote_client_id;
                 m_info_ptr->remote_ndim = in.ndim;
-                m_info_ptr->remote_region = in.region;
+                m_info_ptr->remote_region = in.remote_region;
                 m_info_ptr->remote_bulk_handle = in.remote_bulk_handle;
                 m_info_ptr->remote_addr = map_ptr->local_addr;
                 m_info_ptr->from_obj_id = map_ptr->local_obj_id;
@@ -1663,6 +1694,7 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
         map_ptr->mapping_count = ATOMIC_VAR_INIT(1);
         map_ptr->local_obj_id = in.local_obj_id;
         map_ptr->local_reg_id = in.local_reg_id;
+        map_ptr->local_region = in.local_region;
         map_ptr->local_ndim = in.ndim;
         map_ptr->local_data_type = in.local_type;
         info = HG_Get_info(handle);
@@ -1675,7 +1707,7 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
         m_info_ptr->remote_reg_id = in.remote_reg_id;
         m_info_ptr->remote_client_id = in.remote_client_id;
         m_info_ptr->remote_ndim = in.ndim;
-        m_info_ptr->remote_region = in.region;
+        m_info_ptr->remote_region = in.remote_region;
         m_info_ptr->remote_bulk_handle = in.remote_bulk_handle;
         m_info_ptr->remote_addr = map_ptr->local_addr;
         m_info_ptr->from_obj_id = map_ptr->local_obj_id;
