@@ -4,7 +4,7 @@ include_directories(
   ${PDC_INCLUDES_BUILD_TIME}
 )
 
-#add_definitions(-DENABLE_MPI=1)
+add_definitions(-DENABLE_MPI=1)
 
 set(PROGRAMS
   pdc_init
@@ -35,7 +35,9 @@ set(PROGRAMS
   data_rw_test
   init_only
   obj_buf_map
-  obj_encode
+  obj_map_mpi
+  obj_map_mpi_s2
+  obj_buf_map_mpi
   )
 
 foreach(program ${PROGRAMS})
