@@ -174,6 +174,7 @@ typedef struct region_map_t {
     pdc_cnt_t                        mapping_count;        /* count the number of mapping of this region */
     pdcid_t                          local_obj_id;         /* origin of object id */
     pdcid_t                          local_reg_id;         /* origin of region id */
+    region_info_transfer_t           local_region;
     size_t                           local_ndim;
     uint64_t                        *local_reg_size;
     hg_addr_t                        local_addr;
@@ -224,7 +225,7 @@ typedef struct {
     uint32_t                    client_id;
     int32_t                     nclient;
     pdc_metadata_t              meta;
-    region_list_t               region;
+    region_list_t                region;
 } data_server_io_info_t;
 
 /* #ifdef HG_HAS_BOOST */
@@ -915,7 +916,8 @@ typedef struct {
     size_t          ndim;
     hg_bulk_t       local_bulk_handle;
     hg_bulk_t       remote_bulk_handle;
-    region_info_transfer_t      region;
+    region_info_transfer_t      remote_region;
+    region_info_transfer_t      local_region;
 } gen_reg_map_notification_in_t;
 
 typedef struct {
@@ -1306,7 +1308,12 @@ hg_proc_gen_reg_map_notification_in_t(hg_proc_t proc, void *data)
         HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_region_info_transfer_t(proc, &struct_data->region);
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->local_region);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->remote_region);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;

@@ -111,7 +111,6 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id
         ret_value = -1;
         PGOTO_ERROR(FAIL,"Unable to create object on server!\n");
     }
-
     p->local_id = PDC_id_register(PDC_OBJ, p);
 
     ret_value = p->local_id;
@@ -591,7 +590,7 @@ perr_t PDCobj_map(pdcid_t local_obj, pdcid_t local_reg, pdcid_t remote_obj, pdci
     
     //TODO: assume type is the same
     // start mapping
-    ret_value = PDC_Client_send_region_map(local_meta_id, local_reg, remote_meta_id, remote_reg, ndim, obj1->obj_pt->dims, reg1->offset, reg1->size, local_type, local_data, obj2->obj_pt->dims, reg2->offset, reg2->size, remote_type, remote_client_id, remote_data, reg2);
+    ret_value = PDC_Client_send_region_map(local_meta_id, local_reg, remote_meta_id, remote_reg, ndim, obj1->obj_pt->dims, reg1->offset, reg1->size, local_type, local_data, obj2->obj_pt->dims, reg2->offset, reg2->size, remote_type, remote_client_id, remote_data, reg1, reg2);
     if(ret_value == SUCCEED) {
         // state in origin obj that there is mapping
 //        obj1->mapping = 1;
@@ -647,44 +646,30 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDCobj_encode(pdcid_t obj_id, int rank, obj_encode send)
+perr_t PDCobj_encode(pdcid_t obj_id, int rank, pdcid_t *meta_id)
 {
     struct PDC_id_info *objinfo;
     struct PDC_obj_info *obj;
     perr_t ret_value = FAIL;
-    
+
 #ifdef ENABLE_MPI
     int client_rank, client_size;
-    const int nitems=2;
-    int          blocklengths[2] = {1,1};
-    MPI_Datatype types[2] = {MPI_LONG_LONG, MPI_INT};
-    MPI_Datatype mpi_obj_type;
-    MPI_Aint     offsets[2];
-    
-    send.meta_id = 0;
-    send.ndim = 0;
+
     MPI_Comm_size(MPI_COMM_WORLD, &client_size);
     if (client_size < 2) {
         PGOTO_ERROR(ret_value, "Requires at least two processes.");
     }
-    
-    offsets[0] = offsetof(obj_encode, meta_id);
-    offsets[1] = offsetof(obj_encode, ndim);
-    MPI_Type_create_struct(nitems, blocklengths, offsets, types, &mpi_obj_type);
-    MPI_Type_commit(&mpi_obj_type);
-    
     MPI_Comm_rank(MPI_COMM_WORLD, &client_rank);
-    
+
     if(client_rank == rank) {
-        printf("rank = %d\n", rank);
         objinfo = PDC_find_id(obj_id);
         if(objinfo == NULL)
             PGOTO_ERROR(ret_value, "cannot locate object ID");
         obj = (struct PDC_obj_info *)(objinfo->obj_ptr);
-        send.meta_id = obj->meta_id;
-        send.ndim = 1;
+        *meta_id = obj->meta_id;
     }
 #endif
+
 done:
     FUNC_LEAVE(ret_value);
     

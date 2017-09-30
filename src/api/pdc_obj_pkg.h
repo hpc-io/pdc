@@ -58,9 +58,4 @@ struct PDC_region_info {
 //  PDC_loci    locus;
 };
 
-typedef struct{
-    pdcid_t             meta_id;
-    int                 ndim;
-} obj_encode;
-
 #endif

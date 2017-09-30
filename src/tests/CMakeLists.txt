@@ -4,8 +4,6 @@ include_directories(
   ${PDC_INCLUDES_BUILD_TIME}
 )
 
-add_definitions(-DENABLE_MPI=1)
-
 set(PROGRAMS
   pdc_init
   create_prop
