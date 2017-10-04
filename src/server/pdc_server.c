@@ -3985,6 +3985,86 @@ done:
  *
  * \param  obj_name[IN]     Name of the object to be searched
  * \param  hash_key[IN]     Hash value of the name string
+ * \param  ts[IN]           Timestep value
+ * \param  out[OUT]         Pointers to the found metadata
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Server_search_with_name_timestep(const char *obj_name, uint32_t hash_key, uint32_t ts, pdc_metadata_t** out)
+{
+    perr_t ret_value = SUCCEED;
+    pdc_hash_table_entry_head *lookup_value;
+    pdc_metadata_t metadata;
+    const char *name;
+    
+    FUNC_ENTER(NULL);
+    
+    *out = NULL;
+
+    // Set up a metadata struct to query
+    PDC_Server_metadata_init(&metadata);
+    
+    name = obj_name;
+
+    strcpy(metadata.obj_name, name);
+    metadata.time_step = ts;
+
+    /* printf("==PDC_SERVER[%d]: search with name [%s], hash key %u\n", pdc_server_rank_g, name, hash_key); */
+
+    if (metadata_hash_table_g != NULL) {
+        // lookup
+        /* printf("checking hash table with key=%d\n", hash_key); */
+        lookup_value = hg_hash_table_lookup(metadata_hash_table_g, &hash_key);
+
+        // Is this hash value exist in the Hash table?
+        if (lookup_value != NULL) {
+            /* printf("==PDC_SERVER: PDC_Server_search_with_name_hash(): lookup_value not NULL!\n"); */
+            // Check if there exist metadata identical to current one
+            /* PDC_print_metadata(lookup_value->metadata); */
+            /* if (lookup_value->bloom == NULL) { */
+            /*     printf("bloom is NULL\n"); */
+            /* } */
+            *out = find_identical_metadata(lookup_value, &metadata);
+
+            if (*out == NULL) {
+                 /* printf("==PDC_SERVER[%d]: Queried object with name [%s] has no full match!\n", */ 
+                 /* pdc_server_rank_g, obj_name); */ 
+                /* fflush(stdout); */
+                ret_value = FAIL;
+                goto done;
+            }
+            /* else { */
+                /* printf("==PDC_SERVER[%d]: name %s found in hash table \n", pdc_server_rank_g, name); */
+                /* fflush(stdout); */
+                /* PDC_print_metadata(*out); */
+            /* } */
+        }
+        else {
+            *out = NULL;
+        }
+
+    }
+    else {
+        printf("metadata_hash_table_g not initialized!\n");
+        ret_value = -1;
+        goto done;
+    }
+
+    if (*out == NULL) 
+        printf("==PDC_SERVER[%d]: Queried object with name [%s] not found! \n", pdc_server_rank_g, name);
+    
+    /* PDC_print_metadata(*out); */
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+/*
+ * Seach the hash table with object name and hash key
+ *
+ * \param  obj_name[IN]     Name of the object to be searched
+ * \param  hash_key[IN]     Hash value of the name string
  * \param  out[OUT]         Pointers to the found metadata
  *
  * \return Non-negative on success/Negative on failure
@@ -5186,9 +5266,8 @@ PDC_Server_get_storage_info_cb (const struct hg_cb_info *callback_info)
                 pdc_server_rank_g, strlen( (char*)output.buf )  );
     }
 
-    if (  PDC_unserialize_region_lists(output.buf, lookup_args->region_lists, &n_loc ) 
-          != SUCCEED ) {
-        printf("==PDC_SERVER: ERROR unserialize_regions_info\n");
+    if ( PDC_unserialize_region_lists(output.buf, lookup_args->region_lists, &n_loc ) != SUCCEED ) {
+        printf("==PDC_SERVER: ERROR with PDC_unserialize_region_lists\n");
         lookup_args->n_loc = 0;
         ret_value = FAIL;
         goto done;

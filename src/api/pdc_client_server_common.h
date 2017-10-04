@@ -50,7 +50,6 @@
 #define PDC_SERVER_ID_INTERVEL 1000000
 #define PDC_SERVER_MAX_PROC_PER_NODE 64
 #define PDC_SERIALIZE_MAX_SIZE 256
-#define PDC_CHAR_FILL_VALUE     -123
 
 /* #define pdc_server_tmp_dir_g  "./pdc_tmp" */
 /* extern char pdc_server_tmp_dir_g[ADDR_MAX]; */
@@ -316,6 +315,7 @@ typedef struct {
 typedef struct {
     hg_const_string_t    obj_name;
     uint32_t             hash_value;
+    uint32_t             time_step;
 } metadata_query_in_t;
 
 typedef struct {
@@ -807,10 +807,17 @@ hg_proc_metadata_query_in_t(hg_proc_t proc, void *data)
     ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint32_t(proc, &struct_data->time_step);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
     }
     ret = hg_proc_uint32_t(proc, &struct_data->hash_value);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
+        return ret;
     }
     return ret;
 }

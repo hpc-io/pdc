@@ -1849,7 +1849,7 @@ perr_t PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t 
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_step, pdc_metadata_t **out)
+perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, uint32_t time_step, pdc_metadata_t **out)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
@@ -1884,6 +1884,7 @@ perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_st
     // Fill input structure
     in.obj_name   = obj_name;
     in.hash_value = PDC_get_hash_by_name(obj_name);
+    in.time_step  = time_step;
 
     /* printf("==PDC_CLIENT[%d]: search request obj_name [%s], hash value %u, server id %u\n", pdc_client_mpi_rank_g, in.obj_name, in.hash_value, server_id); */
     /* fflush(stdout); */
@@ -3534,13 +3535,6 @@ perr_t PDC_Client_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsign
     gettimeofday(&start_time, 0);
 
     while (completed != 1) {
-        pdc_msleep(check_interval_ms);
-
-        if (pdc_client_mpi_rank_g == 0) {
-            printf("==PDC_CLIENT[%d]: waiting for server to finish IO request...\n", pdc_client_mpi_rank_g);
-            fflush(stdout);
-        }
-
         ret_value = PDC_Client_test(request, &completed);
         if (ret_value != SUCCEED) {
             goto done;
@@ -3563,6 +3557,13 @@ perr_t PDC_Client_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsign
         if (elapsed_ms > max_wait_ms) {
             printf("==PDC_CLIENT[%d]: exceeded max IO request waiting time...\n", pdc_client_mpi_rank_g);
             break;
+        }
+
+        pdc_msleep(check_interval_ms);
+
+        if (pdc_client_mpi_rank_g == 0) {
+            printf("==PDC_CLIENT[%d]: waiting for server to finish IO request...\n", pdc_client_mpi_rank_g);
+            fflush(stdout);
         }
     }
 

@@ -31,6 +31,8 @@ set(PROGRAMS
   list_all
   data_server_read
   data_server_write
+  data_server_read_multi
+  data_server_write_multi
   data_rw_test
   init_only
   )

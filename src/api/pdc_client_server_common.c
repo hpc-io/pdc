@@ -618,6 +618,7 @@ hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info) {
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out) {return SUCCEED;}
 /* perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out) {return SUCCEED;} */
 perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key, pdc_metadata_t** out) {return SUCCEED;}
+perr_t PDC_Server_search_with_name_timestep(const char *obj_name, uint32_t hash_key, uint32_t ts, pdc_metadata_t** out) {return SUCCEED;}
 perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out) {return SUCCEED;}
 perr_t delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_id_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out) {return SUCCEED;}
@@ -821,7 +822,7 @@ HG_TEST_RPC_CB(metadata_query, handle)
     /* fflush(stdout); */
 
     // Do the work
-    PDC_Server_search_with_name_hash(in.obj_name, in.hash_value, &query_result);
+    PDC_Server_search_with_name_timestep(in.obj_name, in.hash_value, in.time_step, &query_result);
 
     // Convert for transfer
     if (query_result != NULL) {
@@ -2361,23 +2362,28 @@ perr_t PDC_replace_char_fill_values(signed char *buf, uint32_t buf_size)
 {
     perr_t ret_value = SUCCEED;
     uint32_t zero_cnt, i;
+    signed char fill_value;
     FUNC_ENTER(NULL);
 
+    fill_value = buf[buf_size-1];
     zero_cnt = 0;
 
     for (i = 0; i < buf_size; i++) {
-        if (buf[i] == PDC_CHAR_FILL_VALUE) {
+        if (buf[i] == fill_value) {
             buf[i] = 0;
             zero_cnt++;
-            goto done;
         }
         else if (buf[i] == 0) {
             printf("==ERROR! PDC_replace_char_fill_values 0 exist at %d!\n", i);
             ret_value = FAIL;
+            goto done;
         }
     }
 
+    /* printf("==PDC_replace_char_fill_values replaced %d char fill values %d!\n", zero_cnt, (int)fill_value); */
+
 done:
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
@@ -2386,28 +2392,52 @@ done:
 perr_t PDC_replace_zero_chars(signed char *buf, uint32_t buf_size)
 {
     perr_t ret_value = SUCCEED;
-    uint32_t zero_cnt, i;
+    uint32_t zero_cnt, i, j, fill_value_valid = 0;
+    signed char fill_value;
+    char num_cnt[257] = {0};
     FUNC_ENTER(NULL);
+
+    memset(num_cnt, 0, 256);
+
+    for (i = 0; i < buf_size; i++) {
+        num_cnt[buf[i]+128]++;
+    }
+
+    for (i = 0; i < 256; i++) {
+        if (num_cnt[i] == 0) {
+            fill_value = i - 128;
+            fill_value_valid = 1;
+            break;
+        }
+    }
+
+    if (fill_value_valid == 0) {
+        printf("==PDC_replace_zero_chars cannot find a char value not used by buffer!\n");
+        ret_value = FAIL;
+        goto done;
+    }
 
     zero_cnt = 0;
     for (i = 0; i < buf_size; i++) {
-        if (buf[i] == PDC_CHAR_FILL_VALUE) {
+        if (buf[i] == fill_value) {
             printf("==PDC_replace_zero_chars CHAR_FILL_VALUE exist at %d!\n", i);
             ret_value = FAIL;
             goto done;
         }
         else if (buf[i] == 0) {
-            buf[i] = PDC_CHAR_FILL_VALUE;
+            buf[i] = fill_value;
             zero_cnt++;
         }
     }
 
-    /* printf("==PDC_replace_zero_chars: replaced %d zero values. \n", zero_cnt); */
+    // Last char is fill value
+    buf[buf_size-1] = fill_value;
+
+    /* printf("==PDC_replace_zero_chars: replaced %d zero values with %d.\n", zero_cnt, (int)fill_value); */
 
 done:
     FUNC_LEAVE(ret_value);
 }
-
 
 /*
  * Serialize the region info structure for network transfer,
@@ -2563,35 +2593,21 @@ perr_t PDC_unserialize_region_lists(void *buf, region_list_t** regions, uint32_t
         goto done;
     }
 
-    int zero_cnt = 0;
     char_ptr = (signed char*)buf;
     buf_size = strlen((char*)char_ptr);
-    for (i = 0; i < buf_size; i++) {
-        if (char_ptr[i] == PDC_CHAR_FILL_VALUE) {
-            char_ptr[i] = 0;
-            zero_cnt++;
-        }
-        else if (char_ptr[i] == 0) {
-            printf("==PDC_unserialize_region_lists ERROR zero value exist!\n");
-            ret_value = FAIL;
-            goto done;
-        }
+
+    ret_value = PDC_replace_char_fill_values(char_ptr, buf_size);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_unserialize_region_lists replace_char_fill_values ERROR!\n");
+        goto done;
     }
-
-    /* printf("==PDC_unserialize_region_lists fill value count %d!\n", zero_cnt); */
-
-/*     ret_value = PDC_replace_char_fill_values((signed char *)buf, buf_size); */
-/*     if (ret_value != SUCCEED) { */
-/*         printf("==PDC_unserialize_region_lists replace_char_fill_values ERROR!\n"); */
-/*         goto done; */
-/*     } */
 
     // n_region|ndim|start00|count00|...|start0n|count0n|loc_len|loc_str|offset|...
     
     uint32_ptr = (uint32_t*)buf;
     *n_region = *uint32_ptr;
 
-    /* printf("PDC unserialize region %u regions!\n", *n_region); */
+    /* printf("==PDC_unserialize_region_lists: %u regions!\n", *n_region); */
 
     uint32_ptr++;
     ndim = *uint32_ptr;
@@ -2696,9 +2712,9 @@ perr_t PDC_get_serialized_size(region_list_t** regions, uint32_t n_region, uint3
     }
 
             // n_region | ndim | start00 | count00 | ... | startndim0 | countndim0 | loc_len | loc |
-            // delim | offset
+            // delim | offset | char_fill_value | \0
      *len += ( sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint64_t)*regions[0]->ndim*2*n_region + 
-               sizeof(uint32_t)*n_region + sizeof(uint64_t)*n_region + 1);
+               sizeof(uint32_t)*n_region + sizeof(uint64_t)*n_region + 2);
 
 done:
     FUNC_LEAVE(ret_value);
