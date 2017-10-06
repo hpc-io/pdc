@@ -967,20 +967,20 @@ static pdc_metadata_t * find_identical_metadata(pdc_hash_table_entry_head *entry
         /* printf("bloom_check: Combined string: %s\n", combined_string); */
         /* fflush(stdout); */
 
-#ifdef ENABLE_TIMING
         // Timing
+        struct timeval  ht_total_start;
+        struct timeval  ht_total_end;
+        long long ht_total_elapsed;
+        double ht_total_sec;
+ 
+#ifdef ENABLE_TIMING
         gettimeofday(&ht_total_start, 0);
 #endif
 
         bloom_check = BLOOM_CHECK(bloom, combined_string, strlen(combined_string));
 
 #ifdef ENABLE_TIMING
-        // Timing
-        struct timeval  ht_total_start;
-        struct timeval  ht_total_end;
-        long long ht_total_elapsed;
-        double ht_total_sec;
-        
+       
         gettimeofday(&ht_total_end, 0);
         ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
         ht_total_sec        = ht_total_elapsed / 1000000.0;
