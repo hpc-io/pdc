@@ -4388,10 +4388,12 @@ int main(int argc, char *argv[])
 #endif
 
     // Debug print
+#ifdef ENABLE_TIMING 
     printf("==PDC_SERVER[%d]: server fwrite count %d, total fwrite time %.2f, total fread time %.2f, "
             "total update region location time %.2f, get region location time %.2f, total IO time %.2f\n",
             pdc_server_rank_g, n_fwrite_g, server_write_time_g, server_read_time_g,
             server_update_region_location_time_g, server_get_storage_info_time_g, server_total_io_time_g);
+#endif
 
 done:
     if (pdc_server_rank_g == 0) {
