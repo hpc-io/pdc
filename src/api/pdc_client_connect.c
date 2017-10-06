@@ -56,7 +56,9 @@ int is_client_debug_g = 0;
 int                    pdc_client_mpi_rank_g = 0;
 int                    pdc_client_mpi_size_g = 1;
 
+#ifdef ENABLE_MPI
 MPI_Comm               PDC_SAME_NODE_COMM_g;
+#endif
 int                    pdc_client_same_node_rank_g = 0;
 int                    pdc_client_same_node_size_g = 1;
 
@@ -3410,8 +3412,10 @@ perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t 
         }
 
         // Gather serialized region info to first rank of each node
+#ifdef ENABLE_MPI
         MPI_Gather(my_serialized_buf,  PDC_SERIALIZE_MAX_SIZE, MPI_CHAR, 
                    all_serialized_buf, PDC_SERIALIZE_MAX_SIZE, MPI_CHAR, 0, PDC_SAME_NODE_COMM_g);
+#endif
 
         if (pdc_client_same_node_rank_g == 0) {
 
@@ -3451,8 +3455,10 @@ perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t 
             free(all_serialized_buf);
         } // End of if client is first rank of the node
 
+#ifdef ENABLE_MPI
         // Now broadcast the result from server
         MPI_Bcast(&server_ret, 1, MPI_INT, 0, PDC_SAME_NODE_COMM_g);
+#endif
     }
 
     if (server_ret == 1) {
