@@ -21,5 +21,5 @@ set(PDC_VERSION_PATCH   @PDC_VERSION_PATCH@)
 # project which has already built PDC as a subproject
 #-----------------------------------------------------------------------------
 if(NOT TARGET "pdc" AND NOT PDC_INSTALL_SKIP_TARGETS)
-  include(${SELF_DIR}/src/pdc-targets.cmake)
+  include(${SELF_DIR}/api/pdc-targets.cmake)
 endif()

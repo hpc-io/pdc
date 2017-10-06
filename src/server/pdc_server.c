@@ -1015,19 +1015,19 @@ static pdc_metadata_t * find_identical_metadata(pdc_hash_table_entry_head *entry
         /* printf("bloom_check: Combined string: %s\n", combined_string); */
         /* fflush(stdout); */
 
-#ifdef ENABLE_TIMING
         // Timing
         struct timeval  ht_total_start;
         struct timeval  ht_total_end;
         long long ht_total_elapsed;
         double ht_total_sec;
+ 
+#ifdef ENABLE_TIMING
         gettimeofday(&ht_total_start, 0);
 #endif
 
         bloom_check = BLOOM_CHECK(bloom, combined_string, strlen(combined_string));
 
 #ifdef ENABLE_TIMING
-        // Timing
         gettimeofday(&ht_total_end, 0);
         ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
         ht_total_sec        = ht_total_elapsed / 1000000.0;
@@ -6712,6 +6712,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
                 // Only need to mkdir once
                 pdc_mkdir(region_elt->storage_location);
 
+#ifdef ENABLE_LUSTRE
                 // Set Lustre stripe only if this is Lustre
                 // NOTE: this only applies to NERSC Lustre on Cori and Edison
                 if (strstr(region_elt->storage_location, "/global/cscratch") != NULL      ||
@@ -6727,6 +6728,8 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
                     PDC_Server_set_lustre_stripe(region_elt->storage_location, stripe_count, stripe_size);
                 }
 
+                PDC_Server_set_lustre_stripe(region_elt->storage_location, 248, 16);
+#endif
                 if (fp_write != NULL) {
                     fclose(fp_write);
                     fp_write = NULL;
@@ -6999,9 +7002,19 @@ perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct P
     sprintf(io_region->storage_location, "%s/pdc_data/%" PRIu64 "/server%d/s%03d.bin", 
             data_path, obj_id, pdc_server_rank_g, pdc_server_rank_g);
     pdc_mkdir(io_region->storage_location);
+
+
+#ifdef ENABLE_LUSTRE
     stripe_count = 248 / pdc_server_size_g;
     stripe_size  = 16;                      // MB
     PDC_Server_set_lustre_stripe(io_region->storage_location, stripe_count, stripe_size);
+
+    if (is_debug_g == 1) {
+        printf("storage_location is %s\n", io_region->storage_location);
+        printf("lustre is enabled\n");
+    }
+    PDC_Server_set_lustre_stripe(io_region->storage_location, 248, 16);
+#endif
 
     io_region->access_type = io_type;
 
