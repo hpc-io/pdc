@@ -225,7 +225,7 @@ typedef struct {
     uint32_t                    client_id;
     int32_t                     nclient;
     pdc_metadata_t              meta;
-    region_list_t                region;
+    region_list_t               region;
 } data_server_io_info_t;
 
 /* #ifdef HG_HAS_BOOST */
@@ -927,6 +927,7 @@ typedef struct {
 typedef struct {
     uint64_t        local_obj_id;
     uint64_t        local_reg_id;
+    region_info_transfer_t      local_region;
 } gen_reg_unmap_notification_in_t;
 
 typedef struct {
@@ -1308,12 +1309,12 @@ hg_proc_gen_reg_map_notification_in_t(hg_proc_t proc, void *data)
         HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_region_info_transfer_t(proc, &struct_data->local_region);
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->remote_region);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_region_info_transfer_t(proc, &struct_data->remote_region);
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->local_region);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -1347,6 +1348,11 @@ hg_proc_gen_reg_unmap_notification_in_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->local_reg_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->local_region);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;

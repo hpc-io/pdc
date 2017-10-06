@@ -71,6 +71,10 @@ pdcid_t PDCregion_create(size_t ndims, uint64_t *offset, uint64_t *size);
  */
 pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop);
 
+pdcid_t PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop);
+
+pdcid_t PDCobj_create_mpi2(pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop);
+
 /**
  * Set object lifetime 
  *
@@ -247,8 +251,6 @@ pdcid_t PDC_query_create(pdcid_t pdc_id, PDC_query_type_t query_type, PDC_query_
  * \return Object handle on success/Null on failure
  */
 obj_handle *PDCview_iter_start(pdcid_t view_id);
-
-perr_t PDCobj_encode(pdcid_t obj_id, int rank, pdcid_t *meta_id);
 
 /**
  * Map an application buffer to an object

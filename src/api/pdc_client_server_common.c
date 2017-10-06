@@ -649,6 +649,35 @@ hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *call
 
 #endif
 
+static pbool_t region_is_identical(region_info_transfer_t reg1, region_info_transfer_t reg2)
+{
+    pbool_t ret_value = 0;
+
+    FUNC_ENTER(NULL);
+
+    if(reg1.ndim != reg2.ndim)
+        PGOTO_DONE(ret_value);
+    if (reg1.ndim >= 1) {
+        if(reg1.count_0 != reg2.count_0 || reg1.start_0 != reg2.start_0)
+            PGOTO_DONE(ret_value);
+    }
+    if (reg1.ndim >= 2) {
+        if(reg1.count_1 != reg2.count_1 || reg1.start_1 != reg2.start_1)
+            PGOTO_DONE(ret_value);
+    }
+    if (reg1.ndim >= 3) {
+        if(reg1.count_2 != reg2.count_2 || reg1.start_2 != reg2.start_2)
+            PGOTO_DONE(ret_value);
+    }
+    if (reg1.ndim >= 4) {
+        if(reg1.count_3 != reg2.count_3 || reg1.start_3 != reg2.start_3)
+            PGOTO_DONE(ret_value);
+    }
+    ret_value = 1;
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 
 /*
  * The routine that sets up the routines that actually do the work.
@@ -1390,7 +1419,8 @@ HG_TEST_RPC_CB(region_release, handle)
         if(target_obj->region_map_head != NULL) {
             region_map_t *elt;
             DL_FOREACH(target_obj->region_map_head, elt) {
-                if(elt->local_obj_id == in.obj_id && elt->local_reg_id==in.local_reg_id) {
+//                if(elt->local_obj_id == in.obj_id && elt->local_reg_id==in.local_reg_id) {
+                  if(elt->local_obj_id == in.obj_id && region_is_identical(in.region, elt->local_region)) {
                     found = 1;
                     origin_bulk_handle = elt->local_bulk_handle;
                     local_bulk_handle = HG_BULK_NULL;
@@ -1575,7 +1605,8 @@ HG_TEST_RPC_CB(gen_reg_unmap_notification, handle)
     }
 
     DL_FOREACH_SAFE(target_obj->region_map_head, elt, tmp) {
-        if(in.local_obj_id==elt->local_obj_id && in.local_reg_id==elt->local_reg_id) {
+//        if(in.local_obj_id==elt->local_obj_id && in.local_reg_id==elt->local_reg_id) {
+        if(in.local_obj_id==elt->local_obj_id && region_is_identical(in.local_region, elt->local_region)) {
             PDC_LIST_GET_FIRST(tmp_ptr, &elt->ids);
             while(tmp_ptr != NULL) {
                 HG_Bulk_free(tmp_ptr->remote_bulk_handle);
@@ -1600,35 +1631,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-static pbool_t region_is_identical(region_info_transfer_t reg1, region_info_transfer_t reg2)
-{
-    pbool_t ret_value = 0;
-    int i;
-    
-    FUNC_ENTER(NULL);
-    
-    if(reg1.ndim != reg2.ndim)
-        PGOTO_DONE(ret_value);
-    if (reg1.ndim >= 1) {
-        if(reg1.count_0 != reg2.count_0 || reg1.start_0 != reg2.start_0)
-            PGOTO_DONE(ret_value);
-    }
-    if (reg1.ndim >= 2) {
-        if(reg1.count_1 != reg2.count_1 || reg1.start_1 != reg2.start_1)
-            PGOTO_DONE(ret_value);
-    }
-    if (reg1.ndim >= 3) {
-        if(reg1.count_2 != reg2.count_2 || reg1.start_2 != reg2.start_2)
-            PGOTO_DONE(ret_value);
-    }
-    if (reg1.ndim >= 4) {
-        if(reg1.count_3 != reg2.count_3 || reg1.start_3 != reg2.start_3)
-            PGOTO_DONE(ret_value);
-    }
-    ret_value = 1;
-done:
-    FUNC_LEAVE(ret_value);
-}
 /* static hg_return_t */
 // gen_reg_map_notification_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(gen_reg_map_notification, handle)
@@ -1647,6 +1649,7 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
     HG_Get_input(handle, &in);
 
     target_obj = PDC_Server_get_obj_metadata(in.local_obj_id);
+printf("meta id is %lld\n", in.local_obj_id);
     if (target_obj == NULL) {
         printf("==PDC_SERVER: PDC_Server_region_map - requested object (id=%llu) does not exist\n", in.local_obj_id);
         out.ret = 0;

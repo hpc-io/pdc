@@ -114,7 +114,8 @@ static inline uint32_t get_server_id_by_hash_name(const char *name)
 
 static inline uint32_t get_server_id_by_obj_id(uint64_t obj_id) 
 {
-    return (uint32_t)((obj_id / PDC_SERVER_ID_INTERVEL) % pdc_server_num_g);
+//    return (uint32_t)((obj_id / PDC_SERVER_ID_INTERVEL) % pdc_server_num_g);
+    return (uint32_t)((obj_id / PDC_SERVER_ID_INTERVEL - 1) % pdc_server_num_g);
 }
 
 /* static int */
@@ -1901,7 +1902,7 @@ perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_st
 }
 
 // Send a name to server and receive an obj id
-perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_prop, pdcid_t *meta_id, int32_t *client_id)
+perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_prop, pdcid_t *meta_id)
 {
     perr_t ret_value = FAIL;
     hg_return_t hg_ret;
@@ -1957,6 +1958,7 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_pro
     // Compute server id
     server_id       = (hash_name_value + in.data.time_step);
     server_id      %= pdc_server_num_g; 
+printf("regiester obj on server %d\n", server_id);
 
     /* uint32_t base_server_id  = get_server_id_by_hash_name(obj_name); */
 
@@ -2038,7 +2040,6 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_pro
     /* printf("Received obj_id=%" PRIu64 "\n", lookup_args.obj_id); */
 
     *meta_id = lookup_args.obj_id;
-    *client_id = pdc_client_mpi_rank_g; 
     ret_value = SUCCEED;
 
 
@@ -2162,7 +2163,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id)
+perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, struct PDC_region_info *reginfo)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = HG_SUCCESS;
@@ -2176,6 +2177,7 @@ perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id)
     // Fill input structure
     in.local_obj_id = local_obj_id;
     in.local_reg_id = local_reg_id;
+    pdc_region_info_t_to_transfer(reginfo, &(in.local_region));
 
     // Create a bulk descriptor
     /* bulk_handle = HG_BULK_NULL; */
@@ -2239,7 +2241,11 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
     pdc_region_info_t_to_transfer(local_region, &(in.local_region));
     pdc_region_info_t_to_transfer(remote_region, &(in.remote_region));
 
+    // Compute server id
     server_id = PDC_get_server_by_obj_id(local_obj_id, pdc_server_num_g);
+printf("map local_obj_id = %lld\n", local_obj_id);
+printf("PDC_Client_send_region_map(): server %d\n", server_id);
+
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
     
@@ -2364,6 +2370,7 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
 //    free(data_size);
 
     /* printf("Sending input to target\n"); */
+printf("HG_Forward to server %d\n", server_id);
     hg_ret = HG_Forward(pdc_server_info_g[server_id].client_send_region_map_handle, client_send_region_map_rpc_cb, &map_args, &in);	
     if (hg_ret != HG_SUCCESS) {
         PGOTO_ERROR(FAIL, "PDC_Client_send_region_map(): Could not start HG_Forward()");
@@ -2399,7 +2406,8 @@ static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *re
     FUNC_ENTER(NULL);
     
     // Compute server id
-    server_id  = get_server_id_by_obj_id(meta_id);
+    server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
+printf("PDC_Client_region_lock(): server %d\n", server_id);
 
     // Delay test
     srand(pdc_client_mpi_rank_g);
@@ -2565,7 +2573,8 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
     FUNC_ENTER(NULL);
 
     // Compute server id
-    server_id  = get_server_id_by_obj_id(meta_id);
+    server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
+printf("PDC_Client_region_release(): server %d\n", server_id);
 
     // Delay test
     srand(pdc_client_mpi_rank_g);

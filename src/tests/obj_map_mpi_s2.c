@@ -118,13 +118,13 @@ int main(int argc, char **argv)
     PDCprop_set_obj_app_name(obj_prop2, "VPICIO"  );
     PDCprop_set_obj_tags(    obj_prop2, "tag0=1"    );
 
-    obj1 = PDCobj_create_mpi(cont_id, "obj-var-x", obj_prop1);
+    obj1 = PDCobj_create_mpi2(cont_id, "obj-var-x", obj_prop1);
     if (obj1 < 0) { 
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-x");
         exit(-1);
     }
 
-    obj2 = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop2);
+    obj2 = PDCobj_create_mpi2(cont_id, "obj-var-xx", obj_prop2);
     if (obj2 < 0) {    
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
         exit(-1);
@@ -169,6 +169,7 @@ printf("xx = %f\n", xx[i]);
     }
 
     ret = PDCreg_unmap(obj1, r1);
+//    ret = PDCreg_unmap(obj1);
     if (ret != SUCCEED)
         printf("region unmap failed\n");
 

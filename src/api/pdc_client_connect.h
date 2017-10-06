@@ -171,11 +171,10 @@ int PDC_Client_read_server_addr_from_file();
  * \param obj_name [IN]         Name of the object
  * \param obj_create_prop [IN]  Id of the object property
  * \param meta_id [OUT]         Pointer to medadata id
- * \param meta_id [OUT]         Pointer to client id
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_prop, pdcid_t *meta_id, int32_t *client_id);
+perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_prop, pdcid_t *meta_id);
 
 /**
  * Listing all objects on the client
@@ -286,7 +285,7 @@ perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id);
+perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, struct PDC_region_info *reginfo);
 
 /**
  * Request of PDC client to get region lock

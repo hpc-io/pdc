@@ -118,12 +118,12 @@ int main(int argc, char **argv)
     PDCprop_set_obj_app_name(obj_prop2, "VPICIO"  );
     PDCprop_set_obj_tags(    obj_prop2, "tag0=1"    );
 
-    obj1 = PDCobj_create_mpi(cont_id, "obj-var-x", obj_prop1);
+/*    obj1 = PDCobj_create_mpi(cont_id, "obj-var-x", obj_prop1);
     if (obj1 < 0) { 
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-x");
         exit(-1);
     }
-
+*/
     obj2 = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop2);
     if (obj2 < 0) {    
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
@@ -141,8 +141,9 @@ int main(int argc, char **argv)
     r2 = PDCregion_create(1, offset, mysize);
 //    printf("second region id: %lld\n", r2);
 
-	PDCobj_map(obj1, r1, obj2, r2);
-
+//	PDCobj_map(obj1, r1, obj2, r2);
+    obj1 = PDCobj_buf_map(cont_id, "obj-var-x", &x[0], PDC_FLOAT, r1, obj2, r2);
+    
     ret = PDCreg_obtain_lock(obj1, r1, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for r1\n");
