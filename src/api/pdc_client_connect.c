@@ -114,7 +114,7 @@ static inline uint32_t get_server_id_by_hash_name(const char *name)
 
 static inline uint32_t get_server_id_by_obj_id(uint64_t obj_id) 
 {
-    return (uint32_t)((obj_id / PDC_SERVER_ID_INTERVEL) % pdc_server_num_g);
+    return (uint32_t)((obj_id / PDC_SERVER_ID_INTERVEL - 1) % pdc_server_num_g);
 }
 
 /* static int */
@@ -183,7 +183,7 @@ perr_t PDC_Client_check_response(hg_context_t **hg_context)
 }
 
 
-int PDC_Client_read_server_addr_from_file()
+perr_t PDC_Client_read_server_addr_from_file()
 {
     FUNC_ENTER(NULL);
 
@@ -199,7 +199,7 @@ int PDC_Client_read_server_addr_from_file()
         na_config = fopen(config_fname, "r");
         if (!na_config) {
             fprintf(stderr, "Could not open config file from default location: %s\n", config_fname);
-            exit(0);
+            return FAIL;
         }
         char n_server_string[ADDR_MAX];
         // Get the first line as $pdc_server_num_g

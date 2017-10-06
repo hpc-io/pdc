@@ -146,7 +146,7 @@ struct object_unmap_args {
  *
  * \return Number of servers on success/Negative on failure
  */
-int PDC_Client_read_server_addr_from_file();
+perr_t PDC_Client_read_server_addr_from_file();
 
 /**
  * Client request of an obj id by sending object name
