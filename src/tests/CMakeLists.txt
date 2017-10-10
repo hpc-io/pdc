@@ -35,6 +35,7 @@ set(PROGRAMS
   obj_buf_map
   obj_map_mpi
   obj_map_mpi_s2
+  obj_map_mpi_s3
   obj_buf_map_mpi
   )
 
