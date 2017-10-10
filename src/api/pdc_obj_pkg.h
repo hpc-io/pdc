@@ -38,11 +38,17 @@ struct region_map_list{
     struct region_map_list *next;
 };
 
+typedef enum {
+    PDC_GLOBAL,
+    PDC_LOCAL
+} PDCobj_location;
+
 struct PDC_obj_info {
     const char             *name;
     pdcid_t                meta_id;
     pdcid_t                local_id;
     int32_t                client_id;
+    PDCobj_location        location;
     struct PDC_cont_info   *cont;
     struct PDC_obj_prop    *obj_pt;
     struct region_map_list *region_list_head;
