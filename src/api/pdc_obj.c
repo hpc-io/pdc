@@ -198,7 +198,7 @@ pdcid_t PDCobj_create_(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_i
     p->meta_id = 0;
     p->local_id = PDC_id_register(PDC_OBJ, p);
 
-    if(location == PDC_GLOBAL) {
+    if(location == PDC_OBJ_GLOBAL) {
 #ifdef ENABLE_MPI
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
         p->client_id = rank;
@@ -770,6 +770,7 @@ pdcid_t PDCobj_buf_map(pdcid_t cont_id, const char *obj_name, void *buf, PDC_var
     pdcid_t ret_value = SUCCEED;         /* Return value */
     struct PDC_id_info *id_info = NULL;
     struct PDC_cont_info *cont = NULL;
+    pdcid_t meta1, meta2;
     pdcid_t pdc_id, obj_prop, local_obj;
     struct PDC_region_info *reg1, *reg2;
     
@@ -786,7 +787,23 @@ pdcid_t PDCobj_buf_map(pdcid_t cont_id, const char *obj_name, void *buf, PDC_var
     PDCprop_set_obj_user_id( obj_prop, getuid());
     
 #ifdef ENABLE_MPI
-    local_obj = PDCobj_create_mpi(cont_id, obj_name, obj_prop);
+//    local_obj = PDCobj_create_mpi(cont_id, obj_name, obj_prop);
+    local_obj = PDCobj_create_(cont_id, obj_name, obj_prop, PDC_OBJ_GLOBAL);
+
+    PDCobj_encode(local_obj, &meta1);
+    PDCobj_encode(remote_obj, &meta2);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Bcast(&meta1, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&meta2, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    PDCobj_decode(local_obj, meta1);
+    PDCobj_decode(remote_obj, meta2);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
 #else
     local_obj = PDCobj_create(cont_id, obj_name, obj_prop);
 #endif
@@ -823,7 +840,7 @@ perr_t PDCobj_encode(pdcid_t obj_id, pdcid_t *meta_id)
         if(objinfo == NULL)
             PGOTO_ERROR(ret_value, "cannot locate object ID");
         obj = (struct PDC_obj_info *)(objinfo->obj_ptr);
-        if(obj->location == PDC_LOCAL)
+        if(obj->location == PDC_OBJ_LOCAL)
             PGOTO_ERROR(FAIL, "trying to encode local object");
         *meta_id = obj->meta_id;
     }

@@ -39,8 +39,8 @@ struct region_map_list{
 };
 
 typedef enum {
-    PDC_GLOBAL,
-    PDC_LOCAL
+    PDC_OBJ_GLOBAL,
+    PDC_OBJ_LOCAL
 } PDCobj_location;
 
 struct PDC_obj_info {
