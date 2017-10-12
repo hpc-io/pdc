@@ -119,13 +119,13 @@ int main(int argc, char **argv)
     PDCprop_set_obj_app_name(obj_prop2, "VPICIO"  );
     PDCprop_set_obj_tags(    obj_prop2, "tag0=1"    );
 
-    obj1 = PDCobj_create_(cont_id, "obj-var-x", obj_prop1, PDC_GLOBAL);
+    obj1 = PDCobj_create_(cont_id, "obj-var-x", obj_prop1, PDC_OBJ_GLOBAL);
     if (obj1 < 0) { 
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-x");
         exit(-1);
     }
 
-    obj2 = PDCobj_create_(cont_id, "obj-var-xx", obj_prop2, PDC_GLOBAL);
+    obj2 = PDCobj_create_(cont_id, "obj-var-xx", obj_prop2, PDC_OBJ_GLOBAL);
     if (obj2 < 0) {    
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
         exit(-1);
@@ -136,6 +136,13 @@ int main(int argc, char **argv)
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
+/*
+    pdc_metadata_t *res = NULL;
+    PDC_Client_query_metadata_name_only("obj-var-x", &res);
+    printf("rank %d: meta id is %lld\n", rank, res->obj_id);
+    PDC_Client_query_metadata_name_only("obj-var-xx", &res);
+    printf("rank %d: meta id is %lld\n", rank, res->obj_id);
+*/
 #endif
     MPI_Bcast(&meta1, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
     MPI_Bcast(&meta2, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
