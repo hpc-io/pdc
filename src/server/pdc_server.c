@@ -1161,6 +1161,31 @@ done:
 }
 
 /*
+ * Remove server config file
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Server_rm_config_file()
+{
+    perr_t ret_value = SUCCEED;
+    char config_fname[ADDR_MAX];
+    
+    FUNC_ENTER(NULL);
+
+    sprintf(config_fname, "%s%s", pdc_server_tmp_dir_g, pdc_server_cfg_name_g);
+
+    if (remove(config_fname) != 0) {
+        printf("==PDC_SERVER[%d]: Unable to delete the config file[%s]", pdc_server_rank_g, config_fname);
+        ret_value = FAIL;
+        goto done;
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+
+/*
  * Init the hash table for metadata storage
  *
  * \return Non-negative on success/Negative on failure
@@ -2962,6 +2987,10 @@ perr_t PDC_Server_finalize()
     hg_thread_mutex_destroy(&data_write_list_mutex_g       );
 #endif
 
+    if (pdc_server_rank_g == 0) 
+        PDC_Server_rm_config_file();
+    
+
 done:
     free(all_addr_strings_1d_g);
     FUNC_LEAVE(ret_value);
@@ -4213,7 +4242,7 @@ int main(int argc, char *argv[])
     srand(time(NULL));
 
     is_restart_g = 0;
-    port = pdc_server_rank_g % 32 + 7000 ;
+    port = pdc_server_rank_g % PDC_MAX_CORE_PER_NODE + 7000 ;
     /* printf("rank=%d, port=%d\n", pdc_server_rank_g,port); */
 
     // Set up tmp dir
@@ -4234,7 +4263,7 @@ int main(int argc, char *argv[])
     }
 
     if (pdc_server_rank_g == 0) {
-        printf("==PDC_SERVER[%d]: using [%s] as tmp dir. %d OSTs per data file.\n", 
+        printf("\n==PDC_SERVER[%d]: using [%s] as tmp dir. %d OSTs per data file.\n", 
                 pdc_server_rank_g, pdc_server_tmp_dir_g, pdc_nost_per_file_g);
     }
 
@@ -4421,6 +4450,9 @@ done:
         printf("done.\n");
         /* printf("==PDC_SERVER: [%d] exiting...\n", pdc_server_rank_g); */
         fflush(stdout);
+
+        // Remove the env var when closing server
+        unsetenv("PDC_SERVER_READY");
     }
 
 #ifdef ENABLE_MPI
@@ -6729,8 +6761,6 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
                     stripe_size  = 16;                      // MB
                     PDC_Server_set_lustre_stripe(region_elt->storage_location, stripe_count, stripe_size);
                 }
-
-                PDC_Server_set_lustre_stripe(region_elt->storage_location, 248, 16);
 #endif
                 if (fp_write != NULL) {
                     fclose(fp_write);
@@ -7011,11 +7041,10 @@ perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct P
     stripe_size  = 16;                      // MB
     PDC_Server_set_lustre_stripe(io_region->storage_location, stripe_count, stripe_size);
 
-    if (is_debug_g == 1) {
+    if (is_debug_g == 1 && pdc_server_rank_g == 0) {
         printf("storage_location is %s\n", io_region->storage_location);
-        printf("lustre is enabled\n");
+        /* printf("lustre is enabled\n"); */
     }
-    PDC_Server_set_lustre_stripe(io_region->storage_location, 248, 16);
 #endif
 
     io_region->access_type = io_type;

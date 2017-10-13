@@ -44,12 +44,13 @@
 
 #include "pdc_obj_pkg.h"
 
-#define ADDR_MAX 128
-#define DIM_MAX  4
-#define TAG_LEN_MAX 128
-#define PDC_SERVER_ID_INTERVEL 1000000
-#define PDC_SERVER_MAX_PROC_PER_NODE 64
-#define PDC_SERIALIZE_MAX_SIZE 256
+#define ADDR_MAX                            128
+#define DIM_MAX                             4
+#define TAG_LEN_MAX                         128
+#define PDC_SERVER_ID_INTERVEL              1000000
+#define PDC_SERVER_MAX_PROC_PER_NODE        64
+#define PDC_SERIALIZE_MAX_SIZE              256
+#define PDC_MAX_CORE_PER_NODE               68           // Cori KNL has 68 cores per node, Haswell 32
 
 /* #define pdc_server_tmp_dir_g  "./pdc_tmp" */
 /* extern char pdc_server_tmp_dir_g[ADDR_MAX]; */
