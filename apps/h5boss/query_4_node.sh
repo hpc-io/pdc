@@ -26,12 +26,12 @@ NCLIENT=1
 let NSERVER=$N_NODE*2
 let TOTALPROC=$NCLIENT*$N_NODE
 
-SERVER=/global/homes/w/wzhang5/software/SoMeta/src/build/bin/pdc_server.exe
-CLOSE=/global/homes/w/wzhang5/software/SoMeta/src/build/bin/close_server
-IMPORT=/global/homes/w/wzhang5/software/SoMeta/apps/search/build/h5boss_import.exe
-SEARCH=/global/homes/w/wzhang5/software/SoMeta/apps/search/build/h5boss_query_random.exe
+SERVER=/global/homes/w/wzhang5/software/newSoMeta/src/build/bin/pdc_server.exe
+CLOSE= /global/homes/w/wzhang5/software/newSoMeta/src/build/bin/close_server
+IMPORT=/global/homes/w/wzhang5/software/newSoMeta/apps/h5boss/build/h5boss_import.exe
+SEARCH=/global/homes/w/wzhang5/software/newSoMeta/apps/h5boss/build/h5boss_query_random.exe
 
-PMLIST=/global/homes/w/wzhang5/software/SoMeta/apps/search/pm_list_2000.txt
+PMLIST=/global/homes/w/wzhang5/software/SoMeta/apps/h5boss/pm_list_2000.txt
 
 COMMON_CMD="--cpu_bind=cores -c 2 --mem=10240 --gres=craynetwork:1"
 
