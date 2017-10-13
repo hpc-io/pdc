@@ -97,6 +97,7 @@ int           pdc_to_server_work_todo_g = 0;
 pdc_client_info_t        *pdc_client_info_g        = NULL;
 pdc_remote_server_info_t *pdc_remote_server_info_g = NULL;
 char                     *all_addr_strings_1d_g    = NULL;
+char                    **all_addr_strings_g       = NULL;
 int                       is_all_client_connected  = 0;
 
 static hg_id_t    server_lookup_client_register_id_g;
@@ -2628,7 +2629,6 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
 {
     perr_t ret_value = SUCCEED;
     int i = 0;
-    char **all_addr_strings = NULL;
     char self_addr_string[ADDR_MAX];
     char na_info_string[ADDR_MAX];
     char hostname[1024];
@@ -2644,7 +2644,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     pdc_mkdir(pdc_server_tmp_dir_g);
 
     all_addr_strings_1d_g = (char* )calloc(sizeof(char ), pdc_server_size_g * ADDR_MAX);
-    all_addr_strings    = (char**)calloc(sizeof(char*), pdc_server_size_g );
+    all_addr_strings_g  = (char**)calloc(sizeof(char*), pdc_server_size_g );
     total_mem_usage_g += (sizeof(char) + sizeof(char*));
 
     memset(hostname, 0, 1024);
@@ -2698,29 +2698,14 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
 #ifdef ENABLE_MPI
     MPI_Allgather(self_addr_string, ADDR_MAX, MPI_CHAR, all_addr_strings_1d_g, ADDR_MAX, MPI_CHAR, MPI_COMM_WORLD);
     for (i = 0; i < pdc_server_size_g; i++) {
-        all_addr_strings[i] = &all_addr_strings_1d_g[i*ADDR_MAX];
+        all_addr_strings_g[i] = &all_addr_strings_1d_g[i*ADDR_MAX];
         pdc_remote_server_info_g[i].addr_string = &all_addr_strings_1d_g[i*ADDR_MAX];
         /* printf("==PDC_SERVER[%d]: server %d addr [%s]\n", */ 
         /*         pdc_server_rank_g, i, pdc_remote_server_info_g[i].addr_string); */
     }
 #else 
-    all_addr_strings[0] = self_addr_string;
+    all_addr_strings_g[0] = self_addr_string;
 #endif
-    // Rank 0 write all addresses to one file
-    if (pdc_server_rank_g == 0) {
-        /* printf("========================\n"); */
-        /* printf("Server address%s:\n", pdc_server_size_g ==1?"":"es"); */
-        /* for (i = 0; i < pdc_server_size_g; i++) */ 
-        /*     printf("%s\n", all_addr_strings[i]); */
-        /* printf("========================\n"); */
-        PDC_Server_write_addr_to_file(all_addr_strings, pdc_server_size_g);
-
-        // Free
-        /* free(all_addr_strings_1d_g); */
-        free(all_addr_strings);
-    }
-    fflush(stdout);
-
 #ifdef ENABLE_MULTITHREAD
     // Init threadpool
     char *nthread_env = getenv("PDC_SERVER_NTHREAD"); 
@@ -2992,6 +2977,7 @@ perr_t PDC_Server_finalize()
     
 
 done:
+    free(all_addr_strings_g);
     free(all_addr_strings_1d_g);
     FUNC_LEAVE(ret_value);
 }
@@ -4342,13 +4328,14 @@ int main(int argc, char *argv[])
         goto done;
     }
 
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
 
     if (pdc_server_rank_g == 0) {
         printf("==PDC_SERVER[%d]: Successfully established connection to %d other PDC servers\n",
                 pdc_server_rank_g, pdc_server_size_g- 1);
+
+        if (PDC_Server_write_addr_to_file(all_addr_strings_g, pdc_server_size_g) != SUCCEED) {
+            printf("==PDC_SERVER[%d]: Error with write config file\n", pdc_server_rank_g);
+        }
     }
 
 #ifdef ENABLE_TIMING 
@@ -4362,9 +4349,14 @@ int main(int argc, char *argv[])
 #ifdef ENABLE_TIMING 
         printf("==PDC_SERVER[%d]: total startup time = %.6f\n", pdc_server_rank_g, server_init_time);
 #endif
+
         printf("==PDC_SERVER[%d]: Server ready!\n\n\n", pdc_server_rank_g);
     }
     fflush(stdout);
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
     // Debug test
     /* test_serialize(); */
