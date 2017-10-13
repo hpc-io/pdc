@@ -159,7 +159,7 @@ static inline uint32_t get_server_id_by_obj_id(uint64_t obj_id)
 // Using global variable $mercury_work_todo_g
 perr_t PDC_Client_check_response(hg_context_t **hg_context)
 {
-    perr_t ret_value;
+    perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
     unsigned int actual_count;
     
@@ -202,8 +202,8 @@ perr_t PDC_Client_read_server_addr_from_file()
         
         for (i = 0; i < max_tries; i++) {
             if( access( config_fname, F_OK ) != -1 ) {
-                break;
                 is_server_ready = 1;
+                break;
             }
             printf("==PDC_CLIENT[%d]: Config file from default location [%s] not available, "
                    "waiting %d seconds\n", pdc_client_mpi_rank_g, config_fname, sleeptime);
@@ -290,6 +290,7 @@ perr_t PDC_Client_read_server_addr_from_file()
 
     ret_value = SUCCEED;
 done:
+    fflush(stdout);
 
     FUNC_LEAVE(ret_value);
 }
