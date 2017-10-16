@@ -757,10 +757,21 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
 
     memset(hostname, 0, 1024);
     gethostname(hostname, 1023);
-    sprintf(na_info_string, "bmi+tcp://%s:%d", hostname, port);
-    /* sprintf(na_info_string, "ofi+gni://%s:%d", hostname, port); */
-    /* sprintf(na_info_string, "ofi+tcp://%s:%d", hostname, port); */
-    /* sprintf(na_info_string, "cci+tcp://%d", port); */
+
+    char *na_env = getenv("PDC_NA_PLUGIN");
+    if (na_env != NULL) {
+        if (strcmp(na_env, "BMI") == 0)
+            sprintf(na_info_string, "bmi+tcp://%s:%d", hostname, port);
+        else if (strcmp(na_env, "OFI") == 0)
+            sprintf(na_info_string, "ofi+tcp://%s:%d", hostname, port);
+        else if (strcmp(na_env, "OFIGNI") == 0)
+            sprintf(na_info_string, "ofi+gni://%s:%d", hostname, port);
+        else if (strcmp(na_env, "CCI") == 0)
+            sprintf(na_info_string, "cci+tcp://%s:%d", hostname, port);
+    }
+    else
+        sprintf(na_info_string, "bmi+tcp://%s:%d", hostname, port);
+
     if (pdc_client_mpi_rank_g == 0) {
         printf("==PDC_CLIENT: using %.7s\n", na_info_string);
         fflush(stdout);

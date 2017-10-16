@@ -2649,10 +2649,21 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
 
     memset(hostname, 0, 1024);
     gethostname(hostname, 1023);
-    sprintf(na_info_string, "bmi+tcp://%s:%d", hostname, port);
-    /* sprintf(na_info_string, "ofi+gni://%s:%d", hostname, port); */
-    /* sprintf(na_info_string, "ofi+tcp://%s:%d", hostname, port); */
-    /* sprintf(na_info_string, "cci+tcp://%s:%d", hostname, port); */
+
+    char *na_env = getenv("PDC_NA_PLUGIN");
+    if (na_env != NULL) {
+        if (strcmp(na_env, "BMI") == 0) 
+            sprintf(na_info_string, "bmi+tcp://%s:%d", hostname, port);
+        else if (strcmp(na_env, "OFI") == 0)
+            sprintf(na_info_string, "ofi+tcp://%s:%d", hostname, port);
+        else if (strcmp(na_env, "OFIGNI") == 0)
+            sprintf(na_info_string, "ofi+gni://%s:%d", hostname, port);
+        else if (strcmp(na_env, "CCI") == 0)
+            sprintf(na_info_string, "cci+tcp://%s:%d", hostname, port);
+    }
+    else
+        sprintf(na_info_string, "bmi+tcp://%s:%d", hostname, port);
+
     if (pdc_server_rank_g == 0) 
         printf("==PDC_SERVER[%d]: using %.7s\n", pdc_server_rank_g, na_info_string);
 
