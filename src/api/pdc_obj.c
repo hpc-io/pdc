@@ -124,7 +124,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-pdcid_t PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id)
+pdcid_t PDCobj_create_MPI(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id)
 {
     pdcid_t ret_value = SUCCEED;
     struct PDC_obj_info *p = NULL;
@@ -163,8 +163,6 @@ pdcid_t PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_pro
     }
 
     p->local_id = PDC_id_register(PDC_OBJ, p);
-printf("local_id = %lld\n", p->local_id);
-printf("meta id = %lld\n", p->meta_id);
 
     ret_value = p->local_id;
 
@@ -204,7 +202,6 @@ pdcid_t PDCobj_create_(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_i
         p->client_id = rank;
         if(rank == 0)
             ret = PDC_Client_send_name_recv_id(obj_name, obj_prop_id, &(p->meta_id));
-printf("rank 0 generate meta id %lld\n", p->meta_id);
 #else
         p->client_id = 0;
         ret = PDC_Client_send_name_recv_id(obj_name, obj_prop_id, &(p->meta_id));
@@ -215,6 +212,77 @@ printf("rank 0 generate meta id %lld\n", p->meta_id);
         }
     }
     ret_value = p->local_id;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+pdcid_t PDCobj_create__(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, PDCobj_location location)
+{
+    pdcid_t ret_value = SUCCEED;
+    struct PDC_obj_info *p = NULL;
+    struct PDC_id_info *id_info = NULL;
+    int  rank;
+    char name[512];
+    char srank[10];
+    perr_t ret = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    p = PDC_MALLOC(struct PDC_obj_info);
+    if(!p)
+        PGOTO_ERROR(FAIL,"PDC object memory allocation failed\n");
+    p->name = strdup(obj_name);
+    p->location = location;
+    p->region_list_head = NULL;
+
+    id_info = PDC_find_id(cont_id);
+    p->cont = (struct PDC_cont_info *)(id_info->obj_ptr);
+    id_info = PDC_find_id(obj_prop_id);
+    p->obj_pt = (struct PDC_obj_prop *)(id_info->obj_ptr);
+    p->meta_id = 0;
+    p->local_id = PDC_id_register(PDC_OBJ, p);
+
+    if(location == PDC_OBJ_GLOBAL) {
+        ret = PDC_Client_send_name_recv_id(obj_name, obj_prop_id, &(p->meta_id));
+        p->client_id = 0;
+    }
+    if (ret == FAIL) {
+        ret_value = -1;
+        PGOTO_ERROR(FAIL,"Unable to create object on server!\n");
+    }
+    ret_value = p->local_id;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+pdcid_t PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, int rank_id)
+{
+    pdcid_t ret_value = SUCCEED;
+    struct PDC_obj_info *p = NULL;
+    struct PDC_id_info *id_info = NULL;
+    int  rank;
+    char name[512];
+    char srank[10];
+    perr_t ret = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if(rank == rank_id) {
+        ret_value = PDCobj_create__(cont_id, obj_name, obj_prop_id, PDC_OBJ_GLOBAL);
+    }
+    else
+        ret_value = PDCobj_create__(cont_id, obj_name, obj_prop_id, PDC_OBJ_LOCAL);
+
+    id_info = PDC_find_id(ret_value);
+    p = (struct PDC_obj_info *)(id_info->obj_ptr);
+    p->client_id = rank;
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Bcast(&(p->meta_id), 1, MPI_LONG_LONG, rank_id, MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
 
 done:
     FUNC_LEAVE(ret_value);
@@ -788,8 +856,9 @@ pdcid_t PDCobj_buf_map(pdcid_t cont_id, const char *obj_name, void *buf, PDC_var
     
 #ifdef ENABLE_MPI
 //    local_obj = PDCobj_create_mpi(cont_id, obj_name, obj_prop);
-    local_obj = PDCobj_create_(cont_id, obj_name, obj_prop, PDC_OBJ_GLOBAL);
+    local_obj = PDCobj_create_mpi(cont_id, obj_name, obj_prop, 0);
 
+/*
     PDCobj_encode(local_obj, &meta1);
     PDCobj_encode(remote_obj, &meta2);
 
@@ -803,7 +872,7 @@ pdcid_t PDCobj_buf_map(pdcid_t cont_id, const char *obj_name, void *buf, PDC_var
     PDCobj_decode(remote_obj, meta2);
 
     MPI_Barrier(MPI_COMM_WORLD);
-
+*/
 #else
     local_obj = PDCobj_create(cont_id, obj_name, obj_prop);
 #endif
