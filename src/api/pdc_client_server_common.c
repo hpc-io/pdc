@@ -1649,7 +1649,6 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
     HG_Get_input(handle, &in);
 
     target_obj = PDC_Server_get_obj_metadata(in.local_obj_id);
-printf("meta id is %lld\n", in.local_obj_id);
     if (target_obj == NULL) {
         printf("==PDC_SERVER: PDC_Server_region_map - requested object (id=%llu) does not exist\n", in.local_obj_id);
         out.ret = 0;
