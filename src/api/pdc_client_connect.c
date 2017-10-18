@@ -190,7 +190,7 @@ perr_t PDC_Client_read_server_addr_from_file()
     FUNC_ENTER(NULL);
 
     perr_t ret_value = SUCCEED;
-    int max_tries = 7, sleeptime = 1;
+    int max_tries = 9, sleeptime = 1;
     int i = 0, is_server_ready = 0;
     char  *p;
     FILE *na_config = NULL;

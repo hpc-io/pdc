@@ -2501,6 +2501,7 @@ lookup_remote_server_cb(const struct hg_cb_info *callback_info)
     uint32_t server_id;
     server_lookup_args_t *lookup_args;
     server_lookup_remote_server_in_t in;
+    hg_handle_t server_lookup_remote_server_handle;
 
     FUNC_ENTER(NULL);
 
@@ -2517,17 +2518,13 @@ lookup_remote_server_cb(const struct hg_cb_info *callback_info)
     }
 
     // Create HG handle if needed
-    /* if (pdc_remote_server_info_g[server_id].server_lookup_remote_server_handle_valid != 1) { */
         HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, 
-                  server_lookup_remote_server_register_id_g, 
-                  &pdc_remote_server_info_g[server_id].server_lookup_remote_server_handle);
-        /* pdc_remote_server_info_g[server_id].server_lookup_remote_server_handle_valid= 1; */
-    /* } */
+                  server_lookup_remote_server_register_id_g, &server_lookup_remote_server_handle);
 
     // Fill input structure
     in.server_id = pdc_server_rank_g;
 
-    ret_value = HG_Forward(pdc_remote_server_info_g[server_id].server_lookup_remote_server_handle, 
+    ret_value = HG_Forward(server_lookup_remote_server_handle, 
                            lookup_remote_server_rpc_cb, lookup_args, &in);
     if (ret_value != HG_SUCCESS) {
         fprintf(stderr, "lookup_remote_server_cb(): Could not start HG_Forward()\n");
@@ -2535,21 +2532,61 @@ lookup_remote_server_cb(const struct hg_cb_info *callback_info)
     }
 
 done:
-    HG_Destroy(pdc_remote_server_info_g[server_id].server_lookup_remote_server_handle);
+    HG_Destroy(server_lookup_remote_server_handle);
     FUNC_LEAVE(ret_value);
 }
 
 /*
- * Test connection to other servers
+ * Test connection to another server, and stores the remote server's addr into 
+ * pdc_remote_server_info_g
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_lookup_remote_server()
+perr_t PDC_Server_lookup_server_id(int remote_server_id)
 {
-    int i, j;
     perr_t ret_value      = SUCCEED;
     hg_return_t hg_ret    = HG_SUCCESS;
     server_lookup_args_t lookup_args;
+
+    FUNC_ENTER(NULL);
+    if (remote_server_id == pdc_server_rank_g) 
+        goto done;
+
+    if (is_debug_g == 1) {
+        printf("==PDC_SERVER[%d]: Testing connection to remote server %d: %s\n", 
+                pdc_server_rank_g, remote_server_id, pdc_remote_server_info_g[remote_server_id].addr_string);
+        fflush(stdout);
+    }
+
+    lookup_args.server_id = remote_server_id;
+    hg_ret = HG_Addr_lookup(hg_context_g, lookup_remote_server_cb, &lookup_args, 
+                            pdc_remote_server_info_g[remote_server_id].addr_string, HG_OP_ID_IGNORE);
+    if (hg_ret != HG_SUCCESS ) {
+        printf("==PDC_SERVER: Connection to remote server FAILED!\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    /* pdc_to_server_work_todo_g = 1; */
+    /* PDC_Server_check_server_response(&hg_context_g); */
+    work_todo_g = 1;
+    /* PDC_Server_check_response(&hg_context_g); */
+    PDC_Server_trigger(&hg_context_g);
+   
+done:
+    FUNC_LEAVE(ret_value);
+} // PDC_Server_lookup_server_id 
+
+
+/*
+ * Test connection to all other servers
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Server_lookup_all_servers()
+{
+    int i, j;
+    perr_t ret_value      = SUCCEED;
 
     FUNC_ENTER(NULL);
 
@@ -2567,44 +2604,28 @@ perr_t PDC_Server_lookup_remote_server()
         if (j == pdc_server_rank_g) {
             // It's my turn, I will connect to all other servers
             for (i = 0; i < pdc_server_size_g; i++) {
-                if (i == pdc_server_rank_g) continue;
-                
-                lookup_args.server_id = i;
-                if (is_debug_g == 1) {
-                    printf("==PDC_SERVER[%d]: Testing connection to remote server %d: %s\n", 
-                            pdc_server_rank_g, i, pdc_remote_server_info_g[i].addr_string);
-                    fflush(stdout);
-                }
+                if (i == pdc_server_rank_g) 
+                    continue;
 
-                hg_ret = HG_Addr_lookup(hg_context_g, lookup_remote_server_cb, &lookup_args, 
-                                        pdc_remote_server_info_g[i].addr_string, HG_OP_ID_IGNORE);
-                if (hg_ret != HG_SUCCESS ) {
-                    printf("==PDC_SERVER: Connection to remote server FAILED!\n");
+                if (PDC_Server_lookup_server_id(i) != SUCCEED) {
                     ret_value = FAIL;
                     goto done;
                 }
-
-                /* pdc_to_server_work_todo_g = 1; */
-                /* PDC_Server_check_server_response(&hg_context_g); */
-                work_todo_g = 1;
-                /* PDC_Server_check_response(&hg_context_g); */
-                PDC_Server_trigger(&hg_context_g);
             }
-
         }
         else {
             // Waiting for another server to connect to me
-            if (is_debug_g == 1) {
-                printf("==PDC_SERVER[%d]: waiting for connection from %d\n", pdc_server_rank_g, j);
-                fflush(stdout);
-            }
+            /* if (is_debug_g == 1) { */
+            /*     printf("==PDC_SERVER[%d]: waiting for connection from %d\n", pdc_server_rank_g, j); */
+            /*     fflush(stdout); */
+            /* } */
             work_todo_g = 1;
             /* PDC_Server_check_response(&hg_context_g); */
             PDC_Server_trigger(&hg_context_g);
-            if (is_debug_g == 1) {
-                printf("==PDC_SERVER[%d]: connection from %d finished \n", pdc_server_rank_g, j);
-                fflush(stdout);
-            }
+            /* if (is_debug_g == 1) { */
+            /*     printf("==PDC_SERVER[%d]: connection from %d finished \n", pdc_server_rank_g, j); */
+            /*     fflush(stdout); */
+            /* } */
         }
         
         /* if (is_debug_g == 1) { */
@@ -2614,7 +2635,7 @@ perr_t PDC_Server_lookup_remote_server()
     }
 done:
     FUNC_LEAVE(ret_value);
-} // PDC_Server_lookup_remote_server
+} // PDC_Server_lookup_all_servers
 
 /*
  * Callback function of the server to lookup other servers via Mercury RPC
@@ -2871,13 +2892,13 @@ perr_t PDC_Server_destroy_remote_server_info()
         if (pdc_remote_server_info_g[i].addr_valid == 1) {
             /* printf("==PDC_SERVER[%d]: HG_Addr_free #%d\n", pdc_server_rank_g, i); */
             /* fflush(stdout); */
-            pdc_remote_server_info_g[i].addr_valid = 0;
             hg_ret = HG_Addr_free(hg_class_g, pdc_remote_server_info_g[i].addr);
             if (hg_ret != HG_SUCCESS) {
                 printf("==PDC_SERVER: PDC_Server_destroy_remote_server_info() error with HG_Addr_free\n");
                 ret_value = FAIL;
                 goto done;
             }
+            pdc_remote_server_info_g[i].addr_valid = 0;
         }
 
     }
@@ -2939,7 +2960,7 @@ perr_t PDC_Server_finalize()
 
     double all_bloom_check_time_max, all_bloom_check_time_min, all_insert_time_max, all_insert_time_min;
     double all_server_bloom_init_time_min,  all_server_bloom_init_time_max;
-    double all_server_bloom_insert_time_min,  all_server_bloom_insert_time_max;
+    /* double all_server_bloom_insert_time_min,  all_server_bloom_insert_time_max; */
     double all_server_hash_insert_time_min, all_server_hash_insert_time_max;
 
     #ifdef ENABLE_MPI
@@ -3308,7 +3329,8 @@ static perr_t PDC_Server_loop(hg_context_t *hg_context)
 /* printf("==PDC_SERVER[%d]: after HG_Progress()\n", pdc_server_rank_g); */
 /* fflush(stdout); */
 
-    } while (hg_ret == HG_SUCCESS || close_server_g != 1);
+    } while (hg_ret == HG_SUCCESS || hg_ret == HG_TIMEOUT);
+    /* } while (hg_ret == HG_SUCCESS || close_server_g != 1); */
 
     if (hg_ret == HG_SUCCESS) 
         ret_value = SUCCEED;
@@ -4269,7 +4291,7 @@ int main(int argc, char *argv[])
     struct timeval  start;
     struct timeval  end;
     long long elapsed;
-    double server_init_time, all_server_init_time;
+    double server_init_time;
     gettimeofday(&start, 0);
 #endif
 
@@ -4333,21 +4355,30 @@ int main(int argc, char *argv[])
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-
-    if (PDC_Server_lookup_remote_server() != SUCCEED) {
-        printf("==PDC_SERVER[%d]: unable to lookup_remote_server, exiting...\n", pdc_server_rank_g);
-        goto done;
-    }
-
-
-    if (pdc_server_rank_g == 0) {
-        printf("==PDC_SERVER[%d]: Successfully established connection to %d other PDC servers\n",
-                pdc_server_rank_g, pdc_server_size_g- 1);
-
-        if (PDC_Server_write_addr_to_file(all_addr_strings_g, pdc_server_size_g) != SUCCEED) {
-            printf("==PDC_SERVER[%d]: Error with write config file\n", pdc_server_rank_g);
+    
+    char *is_lookupall = getenv("PDC_LOOKUP_ALL");
+    if (is_lookupall == NULL || strcmp(is_lookupall, "0") == 0) {
+        // Lookup all remote servers addr
+        if (PDC_Server_lookup_all_servers() != SUCCEED) {
+            printf("==PDC_SERVER[%d]: unable to lookup_remote_server, exiting...\n", pdc_server_rank_g);
+            goto done;
+        }
+        else {
+            if (pdc_server_rank_g == 0) {
+                printf("==PDC_SERVER[%d]: Successfully established connection to %d other PDC servers\n",
+                        pdc_server_rank_g, pdc_server_size_g- 1);
+            }
         }
     }
+    else {
+        if (pdc_server_rank_g == 0) 
+            printf("==PDC_SERVER[%d]: will lookup other PDC servers on demand\n", pdc_server_rank_g);
+    }
+
+
+    if (pdc_server_rank_g == 0) 
+        if (PDC_Server_write_addr_to_file(all_addr_strings_g, pdc_server_size_g) != SUCCEED) 
+            printf("==PDC_SERVER[%d]: Error with write config file\n", pdc_server_rank_g);
 
 #ifdef ENABLE_TIMING 
     // Timing
@@ -5295,23 +5326,20 @@ PDC_Server_get_storage_info_cb (const struct hg_cb_info *callback_info)
     if (ret_value != HG_SUCCESS) {
         printf("==PDC_SERVER[%d]: PDC_Server_get_storage_info_cb - ERROR HG_Get_output\n", pdc_server_rank_g);
         lookup_args->void_buf = NULL;
+        ret_value = FAIL;
         goto done;
     }
 
-    if (is_debug_g == 1) {
-        printf(  "==PDC_SERVER[%d]: PDC_Server_get_storage_info_cb: received storage info buf size: %u\n", 
-                pdc_server_rank_g, strlen( (char*)output.buf )  );
-    }
-
     if ( PDC_unserialize_region_lists(output.buf, lookup_args->region_lists, &n_loc ) != SUCCEED ) {
-        printf("==PDC_SERVER: ERROR with PDC_unserialize_region_lists\n");
+        printf("==PDC_SERVER[%d]: ERROR with PDC_unserialize_region_lists, buf size %lu\n", 
+                              pdc_server_rank_g,                    strlen((char*)output.buf));
         lookup_args->n_loc = 0;
         ret_value = FAIL;
         goto done;
     }
 
     lookup_args->n_loc = n_loc;
-    /* lookup_args->void_buf = output.buf; */
+    lookup_args->void_buf = output.buf;
     if (is_debug_g == 1) {
         printf(  "==PDC_SERVER[%d]: PDC_Server_get_storage_info_cb: received %u storage info\n", 
                 pdc_server_rank_g, lookup_args->n_loc);
@@ -5355,6 +5383,7 @@ perr_t PDC_Server_get_storage_location_of_region(region_list_t *request_region, 
     pdc_metadata_t *region_meta = NULL;
     get_storage_info_in_t in;
     server_lookup_args_t lookup_args;
+    hg_handle_t get_storage_info_handle;
 
     FUNC_ENTER(NULL);
 
@@ -5393,8 +5422,10 @@ perr_t PDC_Server_get_storage_location_of_region(region_list_t *request_region, 
         }
 
         // FIXME: assumes all other servers will connect me for storage region info
-        work_todo_g = pdc_server_size_g - 1;
-        PDC_Server_check_response(&hg_context_g);
+        // FIXME: if first connection then needs an extra response
+        /* work_todo_g = (pdc_server_size_g - 1) * 2; */
+        /* work_todo_g = pdc_server_size_g - 1; */
+        /* PDC_Server_check_response(&hg_context_g); */
     }
     else {
 
@@ -5403,11 +5434,17 @@ perr_t PDC_Server_get_storage_location_of_region(region_list_t *request_region, 
                     pdc_server_rank_g, server_id);
         }
 
-        /* if (pdc_remote_server_info_g[server_id].get_storage_info_handle_valid!= 1) { */
-            HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, get_storage_info_register_id_g, 
-                      &pdc_remote_server_info_g[server_id].get_storage_info_handle);
-            /* pdc_remote_server_info_g[server_id].get_storage_info_handle_valid = 1; */
-        /* } */
+        if (pdc_remote_server_info_g[server_id].addr_valid != 1) {
+            if (PDC_Server_lookup_server_id(server_id) != SUCCEED) {
+                printf("==PDC_SERVER[%d]: Error getting remote server %d addr via lookup\n",
+                        pdc_server_rank_g, server_id);
+                ret_value = FAIL;
+                goto done;
+            }
+        }
+
+        HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, get_storage_info_register_id_g, 
+                  &get_storage_info_handle);
 
 
         if (request_region->meta == NULL) {
@@ -5420,13 +5457,13 @@ perr_t PDC_Server_get_storage_location_of_region(region_list_t *request_region, 
 
         lookup_args.region_lists = overlap_region_loc;
 
-        hg_ret = HG_Forward(pdc_remote_server_info_g[server_id].get_storage_info_handle, 
-                            PDC_Server_get_storage_info_cb, &lookup_args, &in);
+        hg_ret = HG_Forward(get_storage_info_handle, PDC_Server_get_storage_info_cb, &lookup_args, &in);
         if (hg_ret != HG_SUCCESS) {
             printf("PDC_Client_update_metadata_with_name(): Could not start HG_Forward() to server %u\n", 
                         server_id);
-            HG_Destroy(pdc_remote_server_info_g[server_id].get_storage_info_handle);
-            return FAIL;
+            HG_Destroy(get_storage_info_handle);
+            ret_value = FAIL;
+            goto done;
         }
 
         // Wait for response from remote metadata server
@@ -5443,7 +5480,7 @@ perr_t PDC_Server_get_storage_location_of_region(region_list_t *request_region, 
                     pdc_server_rank_g, *n_loc);
             fflush(stdout);
         }
-        HG_Destroy(pdc_remote_server_info_g[server_id].get_storage_info_handle);
+        HG_Destroy(get_storage_info_handle);
     }
 
 done:
@@ -6093,6 +6130,15 @@ perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region)
     }
     else {
 
+        if (pdc_remote_server_info_g[server_id].addr_valid != 1) {
+            if (PDC_Server_lookup_server_id(server_id) != SUCCEED) {
+                printf("==PDC_SERVER[%d]: Error getting remote server %d addr via lookup\n",
+                        pdc_server_rank_g, server_id);
+                ret_value = FAIL;
+                goto done;
+            }
+        }
+
         HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, update_region_loc_register_id_g, 
                 &update_region_loc_handle);
 
@@ -6241,6 +6287,7 @@ perr_t PDC_Server_get_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta)
     hg_return_t hg_ret;
     perr_t ret_value = SUCCEED;
     uint32_t server_id = 0;
+    hg_handle_t get_metadata_by_id_handle;
 
     FUNC_ENTER(NULL);
 
@@ -6254,11 +6301,18 @@ perr_t PDC_Server_get_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta)
         }
     }
     else {
-        /* if (pdc_remote_server_info_g[server_id].get_metadata_by_id_handle_valid != 1) { */
+
+        if (pdc_remote_server_info_g[server_id].addr_valid != 1) {
+            if (PDC_Server_lookup_server_id(server_id) != SUCCEED) {
+                printf("==PDC_SERVER[%d]: Error getting remote server %d addr via lookup\n",
+                        pdc_server_rank_g, server_id);
+                ret_value = FAIL;
+                goto done;
+            }
+        }
+
             HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, get_metadata_by_id_register_id_g, 
-                    &pdc_remote_server_info_g[server_id].get_metadata_by_id_handle);
-            /* pdc_remote_server_info_g[server_id].get_metadata_by_id_handle_valid = 1; */
-        /* } */
+                    &get_metadata_by_id_handle);
 
         /* printf("Sending updated region loc to target\n"); */
         server_lookup_args_t lookup_args;
@@ -6266,7 +6320,7 @@ perr_t PDC_Server_get_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta)
         get_metadata_by_id_in_t in;
         in.obj_id = obj_id;
 
-        hg_ret = HG_Forward(pdc_remote_server_info_g[server_id].get_metadata_by_id_handle, 
+        hg_ret = HG_Forward(get_metadata_by_id_handle, 
                 PDC_Server_get_metadata_by_id_cb, &lookup_args, &in);
 
         if (hg_ret != HG_SUCCESS) {
@@ -6284,7 +6338,7 @@ perr_t PDC_Server_get_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta)
         // Retrieved metadata is stored in lookup_args
         *res_meta = lookup_args.meta;
 
-        HG_Destroy(pdc_remote_server_info_g[server_id].get_metadata_by_id_handle);
+        HG_Destroy(get_metadata_by_id_handle);
     }
 
 done:
