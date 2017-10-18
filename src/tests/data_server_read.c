@@ -36,7 +36,7 @@ int main(int argc, const char *argv[])
     }
 
     readsize = atoi(argv[2]);
-    readsize *= 1048576;
+    readsize *= 1048567;
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -92,8 +92,8 @@ int main(int argc, const char *argv[])
 #endif
     gettimeofday(&ht_total_start, 0);
 
-    PDC_Client_read(metadata, &region, buf);
-    /* PDC_Client_read_wait_notify(metadata, &region, buf); */
+    /* PDC_Client_read(metadata, &region, buf); */
+    PDC_Client_read_wait_notify(metadata, &region, buf);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -112,30 +112,20 @@ int main(int argc, const char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     // Data verification
-    int is_data_correct = 1;
     /* printf("%d buf:\n%s\n", rank, (char*)buf); */
     /* printf("%d buf:\n%.10s\n", rank, (char*)buf); */
-    ((char*)buf)[region.size[0]] = 0;
-    if ( ((char*)buf)[0] != ('A' + rank%26)) {
-        is_data_correct = -1;
-        printf("Proc%d: Data correctness verification FAILED '%c'(%c)!!!\n", rank, ((char*)buf)[0], 'A' + rank%26);
-    }
-    else {
-        for (i = 0; i < 5; i++) {
-            if (((char*)buf)[i+1] != (((char*)buf)[i] + 3) % 26) {
-                is_data_correct = -1;
-                printf("Proc%d: Data correctness verification FAILED '%c'(%c)!!!\n", 
-                        rank, ((char*)buf)[i+1], (((char*)buf)[i] + 3) % 26);
-                break;
-            }
-        }        
-    }
+    /* ((char*)buf)[region.size[0]] = 0; */
+    /* if ( ((char*)buf)[0] != ('A' + rank%26)) { */
+    /*     printf("Proc%d: Data correctness verification FAILED '%c'(%c)!!!\n", rank, ((char*)buf)[0], 'A' + rank%26); */
+    /* } */
+    /* else { */
+    /*     if (rank == 0) { */
+    /*         printf("Data read successfully!\n"); */
+    /*     } */
+    /* } */
 
-    if (rank == 0 && is_data_correct == 1) {
-        printf("Data read successfully!\n");
-    }
 done:
-    free(buf);
+    /* free(buf); */
 
     // close a container
     if(PDCcont_close(cont) < 0)

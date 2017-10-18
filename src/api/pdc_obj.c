@@ -280,7 +280,9 @@ pdcid_t PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_pro
     p = (struct PDC_obj_info *)(id_info->obj_ptr);
     p->client_id = rank;
 
+    MPI_Barrier(MPI_COMM_WORLD);
     MPI_Bcast(&(p->meta_id), 1, MPI_LONG_LONG, rank_id, MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
 
 done:
     FUNC_LEAVE(ret_value);

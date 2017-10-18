@@ -44,13 +44,11 @@
 
 #include "pdc_obj_pkg.h"
 
-#define ADDR_MAX                            128
-#define DIM_MAX                             4
-#define TAG_LEN_MAX                         128
-#define PDC_SERVER_ID_INTERVEL              1000000
-#define PDC_SERVER_MAX_PROC_PER_NODE        64
-#define PDC_SERIALIZE_MAX_SIZE              256
-#define PDC_MAX_CORE_PER_NODE               68           // Cori KNL has 68 cores per node, Haswell 32
+#define ADDR_MAX 128
+#define DIM_MAX  4
+#define TAG_LEN_MAX 128
+#define PDC_SERVER_ID_INTERVEL 1000000
+#define PDC_SERVER_MAX_PROC_PER_NODE 64
 
 /* #define pdc_server_tmp_dir_g  "./pdc_tmp" */
 /* extern char pdc_server_tmp_dir_g[ADDR_MAX]; */
@@ -72,7 +70,7 @@ typedef enum { BLOCK=0, NOBLOCK=1 }    PDC_lock_mode_t;
 typedef struct pdc_metadata_t pdc_metadata_t;
 
 typedef struct region_list_t {
-    size_t   ndim;
+    size_t ndim;
     uint64_t start[DIM_MAX];
     uint64_t count[DIM_MAX];
     /* uint64_t stride[DIM_MAX]; */
@@ -103,12 +101,12 @@ typedef struct region_list_t {
 } region_list_t;
 
 // Similar structure PDC_region_info_t defined in pdc_obj_pkg.h
-// TODO: currently only support upto 3D
+// TODO: currently only support upto four dimensions
 typedef struct region_info_transfer_t {
     size_t ndim;
     uint64_t start_0, start_1, start_2, start_3;
     uint64_t count_0, count_1, count_2, count_3;
-    /* uint64_t stride_0, stride_1, stride_2, stride_3; */
+    uint64_t stride_0, stride_1, stride_2, stride_3;
 } region_info_transfer_t;
 
 typedef struct pdc_metadata_transfer_t {
@@ -317,7 +315,6 @@ typedef struct {
 typedef struct {
     hg_const_string_t    obj_name;
     uint32_t             hash_value;
-    uint32_t             time_step;
 } metadata_query_in_t;
 
 typedef struct {
@@ -809,17 +806,10 @@ hg_proc_metadata_query_in_t(hg_proc_t proc, void *data)
     ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_uint32_t(proc, &struct_data->time_step);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-        return ret;
     }
     ret = hg_proc_uint32_t(proc, &struct_data->hash_value);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
-        return ret;
     }
     return ret;
 }
@@ -1540,7 +1530,7 @@ typedef struct {
 
 typedef struct {
     int32_t            ret;
-    hg_string_t  shm_addr;
+    hg_const_string_t  shm_addr;
 } data_server_read_check_out_t;
 
 static HG_INLINE hg_return_t
@@ -1578,7 +1568,7 @@ hg_proc_data_server_read_check_out_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_string_t(proc, &struct_data->shm_addr);
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->shm_addr);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -1636,8 +1626,8 @@ hg_proc_data_server_write_check_out_t(hg_proc_t proc, void *data)
 
 typedef struct {
     uint64_t                    obj_id;
+    hg_const_string_t           storage_location;
     uint64_t                    offset;
-    hg_string_t                 storage_location;
     region_info_transfer_t      region;
 } update_region_loc_in_t;
 
@@ -1656,7 +1646,7 @@ hg_proc_update_region_loc_in_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_string_t(proc, &struct_data->storage_location);
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->storage_location);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -1726,7 +1716,7 @@ hg_proc_get_metadata_by_id_out_t(hg_proc_t proc, void *data)
 
 // For generic serialized data transfer
 typedef struct {
-    hg_string_t buf;
+    hg_const_string_t buf;
 } pdc_serialized_data_t;
 
 static HG_INLINE hg_return_t
@@ -1735,33 +1725,9 @@ hg_proc_pdc_serialized_data_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     pdc_serialized_data_t *struct_data = (pdc_serialized_data_t*) data;
 
-    ret = hg_proc_hg_string_t(proc, &struct_data->buf);
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->buf);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    return ret;
-}
-
-typedef struct {
-    hg_string_t buf;
-    pdc_metadata_transfer_t meta;
-} pdc_aggregated_io_to_server_t;
-
-static HG_INLINE hg_return_t
-hg_proc_pdc_aggregated_io_to_server_t(hg_proc_t proc, void *data)
-{
-    hg_return_t ret;
-    pdc_aggregated_io_to_server_t *struct_data = (pdc_aggregated_io_to_server_t*) data;
-
-    ret = hg_proc_hg_string_t(proc, &struct_data->buf);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_pdc_metadata_transfer_t(proc, &struct_data->meta);
-    if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
         return ret;
     }
     return ret;
@@ -1791,22 +1757,6 @@ hg_proc_get_storage_info_in_t(hg_proc_t proc, void *data)
     return ret;
 }
 
-typedef struct {
-    int ret;
-} pdc_int_ret_t;
-
-static HG_INLINE hg_return_t
-hg_proc_pdc_int_ret_t(hg_proc_t proc, void *data)
-{
-    hg_return_t ret;
-    pdc_int_ret_t *struct_data = (pdc_int_ret_t*) data;
-
-    ret = hg_proc_int32_t(proc, &struct_data->ret);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-    }
-    return ret;
-}
 
 /* #endif // HAS_BOOST */
 
@@ -1905,13 +1855,6 @@ perr_t pdc_region_list_t_to_transfer(region_list_t *region, region_info_transfer
 perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to);
 
 perr_t pdc_region_info_t_to_transfer(struct PDC_region_info *region, region_info_transfer_t *transfer);
-
-perr_t PDC_serialize_regions_lists(region_list_t** regions, uint32_t n_region, void *buf, uint32_t buf_size);
-perr_t PDC_unserialize_region_lists(void *buf, region_list_t** regions, uint32_t *n_region);
-perr_t PDC_get_serialized_size(region_list_t** regions, uint32_t n_region, uint32_t *len);
-
-perr_t PDC_replace_zero_chars(signed char *buf, uint32_t buf_size);
-perr_t PDC_replace_char_fill_values(signed char *buf, uint32_t buf_size);
 
 void pdc_mkdir(const char *dir);
 
