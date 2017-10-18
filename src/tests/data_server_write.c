@@ -62,9 +62,9 @@ int main(int argc, const char *argv[])
         printf("Fail to create object property @ line  %d!\n", __LINE__);
 
     pdcid_t test_obj = -1;
-    const int my_data_size = size_MB / size;
+    uint64_t my_data_size = size_MB / size;
 
-    uint64_t dims[1]={my_data_size};
+    uint64_t dims[1]={size_MB};
     PDCprop_set_obj_dims(obj_prop, 1, dims);
     PDCprop_set_obj_user_id( obj_prop, getuid());
     PDCprop_set_obj_time_step( obj_prop, 0);
@@ -84,11 +84,13 @@ int main(int argc, const char *argv[])
         }
     }
 
+    /* printf("%d: object created.\n", rank); */
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
     // Query the created object
+    /* printf("%d: Start to query object just created.\n", rank); */
     pdc_metadata_t *metadata;
     PDC_Client_query_metadata_name_timestep( obj_name, 0, &metadata);
     /* if (rank == 1) { */
@@ -96,6 +98,7 @@ int main(int argc, const char *argv[])
     /* } */
     if (metadata == NULL || metadata->obj_id == 0) {
         printf("Error with metadata!\n");
+        exit(-1);
     }
 
     int ndim = 1;
@@ -107,6 +110,10 @@ int main(int argc, const char *argv[])
 
     char *mydata = (char*)malloc(my_data_size);
     memset(mydata, 'A' + rank%26, my_data_size);
+    int i;
+    for (i = 0; i < 5; i++) {
+        mydata[i+1] = (mydata[i] + 3) % 26;
+    }
 
     /* printf("%d: writing to (%llu, %llu) of %llu bytes\n", rank, region.offset[0], region.offset[1], region.size[0]*region.size[1]); */
     struct timeval  ht_total_start;
@@ -119,10 +126,8 @@ int main(int argc, const char *argv[])
 #endif
     gettimeofday(&ht_total_start, 0);
 
-
-    /* PDC_Client_data_server_write(0, size, metadata, &region, mydata); */
-    /* PDC_Client_write(metadata, &region, mydata); */
-    PDC_Client_write_wait_notify(metadata, &region, mydata);
+    PDC_Client_write(metadata, &region, mydata);
+    /* PDC_Client_write_wait_notify(metadata, &region, mydata); */
 
 
 #ifdef ENABLE_MPI

@@ -46,13 +46,13 @@
 static pdc_cnt_t pdc_num_reg;
 extern hg_class_t *hg_class_g;
 
-
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out);
 /* perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out); */
 perr_t PDC_Server_region_release(region_lock_in_t *in, region_lock_out_t *out);
 perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out);
 perr_t PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status);
 perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key, pdc_metadata_t** out);
+perr_t PDC_Server_search_with_name_timestep(const char *obj_name, uint32_t hash_key, uint32_t ts, pdc_metadata_t** out);
 perr_t PDC_Server_checkpoint(char *filename);
 perr_t PDC_Server_restart(char *filename);
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs);
@@ -61,10 +61,11 @@ pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id);
 perr_t PDC_Server_get_local_storage_location_of_region(uint64_t obj_id, region_list_t *region,
         uint32_t *n_loc, region_list_t **overlap_region_loc);
 perr_t PDC_Server_get_total_str_len(region_list_t** regions, uint32_t n_region, uint32_t *len);
-perr_t PDC_Server_serialize_regions_info(region_list_t** regions, uint32_t n_region, void *buf);
+perr_t PDC_Server_serialize_regions_info(region_list_t** regions, uint32_t n_region, void **buf, uint32_t buf_size);
 
 perr_t PDC_Server_regions_io(region_list_t *region_list_head, PDC_io_plugin_t plugin);
 
+hg_return_t PDC_Server_work_done_cb(const struct hg_cb_info *callback_info);
 /* typedef struct pdc_metadata_name_mark_t { */
 /*     char obj_name[ADDR_MAX]; */
 /*     struct pdc_metadata_name_mark_t *next; */
@@ -89,6 +90,8 @@ typedef struct server_lookup_args_t {
     void            *void_buf;
     char            *server_addr;
     pdc_metadata_t  *meta;
+    region_list_t   **region_lists;
+    uint32_t        n_loc;
 } server_lookup_args_t;
 
 struct server_region_update_args {
@@ -148,7 +151,7 @@ perr_t PDC_SERVER_notify_region_update_to_client(uint64_t meta_id, uint64_t reg_
 perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_check_out_t *out);
 perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_write_check_out_t *out);
 
-perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region);
+perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_t obj_id);
 perr_t PDC_Server_get_local_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta);
 
 perr_t PDC_Server_posix_one_file_io(region_list_t* region);

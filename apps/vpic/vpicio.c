@@ -123,7 +123,7 @@ int main(int argc, char **argv)
 
     PDCprop_set_obj_dims(obj_prop_xx, 1, dims);
     PDCprop_set_obj_type(obj_prop_xx, PDC_FLOAT);
-	PDCprop_set_obj_buf(obj_prop_xx, &xx[0]  );
+    PDCprop_set_obj_buf(obj_prop_xx, &xx[0]  );
     PDCprop_set_obj_time_step(obj_prop_xx, 0       );
     PDCprop_set_obj_user_id( obj_prop_xx, getuid()    );
     PDCprop_set_obj_app_name(obj_prop_xx, "VPICIO"  );
@@ -219,41 +219,6 @@ int main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-    ret = PDCreg_obtain_lock(obj_x, region_x, WRITE, NOBLOCK);
-    if (ret != SUCCEED)
-        printf("Failed to obtain lock for region_x\n");
-    ret = PDCreg_obtain_lock(obj_y, region_y, WRITE, NOBLOCK);
-    if (ret != SUCCEED)
-        printf("Failed to obtain lock for region_y\n");
-    ret = PDCreg_obtain_lock(obj_z, region_z, WRITE, NOBLOCK);
-    if (ret != SUCCEED)
-        printf("Failed to obtain lock for region_z\n");
-    ret = PDCreg_obtain_lock(obj_px, region_px, WRITE, NOBLOCK);
-    if (ret != SUCCEED)
-        printf("Failed to obtain lock for region_px\n");
-    ret = PDCreg_obtain_lock(obj_py, region_py, WRITE, NOBLOCK);
-    if (ret != SUCCEED)
-        printf("Failed to obtain lock for region_py\n");
-    ret = PDCreg_obtain_lock(obj_pz, region_pz, WRITE, NOBLOCK);
-    if (ret != SUCCEED)
-        printf("Failed to obtain lock for region_pz\n");
-
-    for (int i=0; i<numparticles; i++) {
-        x[i]   = uniform_random_number() * x_dim;
-        y[i]   = uniform_random_number() * y_dim;
-        z[i]   = ((float)id1[i]/numparticles) * z_dim;
-        px[i]  = uniform_random_number() * x_dim;
-        py[i]  = uniform_random_number() * y_dim;
-        pz[i]  = ((float)id2[i]/numparticles) * z_dim;
-        xx[i]  = 0;
-        yy[i]  = 0;
-        zz[i]  = 0;
-        pxx[i] = 0;
-        pyy[i] = 0;
-        pzz[i] = 0;       
-printf("x = %f\n", x[i]);
-    }
-
     ret = PDCreg_obtain_lock(obj_xx, region_xx, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_xx\n");
@@ -273,24 +238,21 @@ printf("x = %f\n", x[i]);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_pzz\n");
 
-    ret = PDCreg_release_lock(obj_x, region_x, WRITE);
-    if (ret != SUCCEED)
-        printf("Failed to release lock for region_x\n");
-    ret = PDCreg_release_lock(obj_y, region_y, WRITE);
-    if (ret != SUCCEED)
-        printf("Failed to release lock for region_y\n");
-    ret = PDCreg_release_lock(obj_z, region_z, WRITE);
-    if (ret != SUCCEED)
-        printf("Failed to release lock for region_z\n");
-    ret = PDCreg_release_lock(obj_px, region_px, WRITE);
-    if (ret != SUCCEED)
-        printf("Failed to release lock for region_px\n");
-    ret = PDCreg_release_lock(obj_py, region_py, WRITE);
-    if (ret != SUCCEED)
-        printf("Failed to release lock for region_py\n");
-    ret = PDCreg_release_lock(obj_pz, region_pz, WRITE);
-    if (ret != SUCCEED)
-        printf("Failed to release lock for region_pz\n");
+    for (int i=0; i<numparticles; i++) {
+        x[i]   = uniform_random_number() * x_dim;
+        y[i]   = uniform_random_number() * y_dim;
+        z[i]   = ((float)id1[i]/numparticles) * z_dim;
+        px[i]  = uniform_random_number() * x_dim;
+        py[i]  = uniform_random_number() * y_dim;
+        pz[i]  = ((float)id2[i]/numparticles) * z_dim;
+        xx[i]  = 0;
+        yy[i]  = 0;
+        zz[i]  = 0;
+        pxx[i] = 0;
+        pyy[i] = 0;
+        pzz[i] = 0;       
+printf("x = %f\n", x[i]);
+    }
 
     ret = PDCreg_release_lock(obj_xx, region_xx, WRITE);
     if (ret != SUCCEED)
@@ -425,14 +387,9 @@ printf("xx = %f\n", xx[i]);
     // close a container property
     if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
-    /* else */
-    /*     if (rank == 0) */ 
-    /*         printf("successfully close container property # %lld\n", cont_prop); */
 
     if(PDC_close(pdc_id) < 0)
        printf("fail to close PDC\n");
-    /* else */
-    /*    printf("PDC is closed\n"); */
 
 #ifdef ENABLE_MPI
      MPI_Finalize();
