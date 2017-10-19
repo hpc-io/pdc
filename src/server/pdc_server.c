@@ -136,8 +136,10 @@ double server_bloom_init_time_g   = 0.0;
 double server_write_time_g        = 0.0;
 double server_read_time_g         = 0.0;
 double server_get_storage_info_time_g = 0.0;
+double server_fopen_time_g        = 0.0;
 int    n_fwrite_g                 = 0;
 int    n_fread_g                  = 0;
+int    n_fopen_g                  = 0;
 double server_total_io_time_g     = 0.0;
 double total_mem_usage_g          = 0.0;
 uint32_t n_metadata_g             = 0;
@@ -1017,34 +1019,32 @@ static pdc_metadata_t * find_identical_metadata(pdc_hash_table_entry_head *entry
         /* fflush(stdout); */
 
         // Timing
-        struct timeval  ht_total_start;
-        struct timeval  ht_total_end;
-        long long ht_total_elapsed;
+        struct timeval  pdc_timer_start;
+        struct timeval  pdc_timer_end;
         double ht_total_sec;
  
-#ifdef ENABLE_TIMING
-        gettimeofday(&ht_total_start, 0);
-#endif
+        #ifdef ENABLE_TIMING
+        gettimeofday(&pdc_timer_start, 0);
+        #endif
 
         bloom_check = BLOOM_CHECK(bloom, combined_string, strlen(combined_string));
 
-#ifdef ENABLE_TIMING
-        gettimeofday(&ht_total_end, 0);
-        ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
-        ht_total_sec        = ht_total_elapsed / 1000000.0;
-#endif
+        #ifdef ENABLE_TIMING
+        gettimeofday(&pdc_timer_end, 0);
+        ht_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+        #endif
 
-#ifdef ENABLE_MULTITHREAD 
+        #ifdef ENABLE_MULTITHREAD 
         hg_thread_mutex_lock(&pdc_bloom_time_mutex_g);
-#endif
+        #endif
 
-#ifdef ENABLE_TIMING 
+        #ifdef ENABLE_TIMING 
         server_bloom_check_time_g += ht_total_sec;
-#endif
+        #endif
 
-#ifdef ENABLE_MULTITHREAD 
+        #ifdef ENABLE_MULTITHREAD 
         hg_thread_mutex_unlock(&pdc_bloom_time_mutex_g);
-#endif
+        #endif
 
         n_bloom_total_g++;
         if (bloom_check == 0) {
@@ -1318,12 +1318,11 @@ static perr_t PDC_Server_bloom_init(pdc_hash_table_entry_head *entry)
 
 #ifdef ENABLE_TIMING 
     // Timing
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
     double ht_total_sec;
     
-    gettimeofday(&ht_total_start, 0);
+    gettimeofday(&pdc_timer_start, 0);
 #endif
 
     entry->bloom = (BLOOM_TYPE_T*)BLOOM_NEW(capacity, error_rate);
@@ -1337,9 +1336,8 @@ static perr_t PDC_Server_bloom_init(pdc_hash_table_entry_head *entry)
 
 #ifdef ENABLE_TIMING 
     // Timing
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
-    ht_total_sec        = ht_total_elapsed / 1000000.0;
+    gettimeofday(&pdc_timer_end, 0);
+    ht_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
 
     server_bloom_init_time_g += ht_total_sec;
 #endif
@@ -1429,12 +1427,11 @@ static perr_t PDC_Server_hash_table_list_init(pdc_hash_table_entry_head *entry, 
 
 #ifdef ENABLE_TIMING 
     // Timing
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
     double ht_total_sec;
 
-    gettimeofday(&ht_total_start, 0);
+    gettimeofday(&pdc_timer_start, 0);
 #endif
 
     // Insert to hash table
@@ -1450,9 +1447,8 @@ static perr_t PDC_Server_hash_table_list_init(pdc_hash_table_entry_head *entry, 
 
 #ifdef ENABLE_TIMING 
     // Timing
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
-    ht_total_sec        = ht_total_elapsed / 1000000.0;
+    gettimeofday(&pdc_timer_end, 0);
+    ht_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
 
     server_hash_insert_time_g += ht_total_sec;
 #endif
@@ -1568,12 +1564,11 @@ perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_o
 
 #ifdef ENABLE_TIMING 
     // Timing
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
     double ht_total_sec;
 
-    gettimeofday(&ht_total_start, 0);
+    gettimeofday(&pdc_timer_start, 0);
 #endif
 
     /* printf("==PDC_SERVER: Got add_tag request: hash=%u, obj_id=%" PRIu64 "\n", in->hash_value, in->obj_id); */
@@ -1666,9 +1661,8 @@ perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_o
 
 #ifdef ENABLE_TIMING 
     // Timing
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
-    ht_total_sec        = ht_total_elapsed / 1000000.0;
+    gettimeofday(&pdc_timer_end, 0);
+    ht_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
 #endif   
 
 #ifdef ENABLE_MULTITHREAD 
@@ -1717,12 +1711,11 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
 
 #ifdef ENABLE_TIMING 
     // Timing
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
     double ht_total_sec;
     
-    gettimeofday(&ht_total_start, 0);
+    gettimeofday(&pdc_timer_start, 0);
 #endif
 
     /* printf("==PDC_SERVER: Got update request: hash=%u, obj_id=%" PRIu64 "\n", in->hash_value, in->obj_id); */
@@ -1812,9 +1805,8 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
 
 #ifdef ENABLE_TIMING 
     // Timing
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
-    ht_total_sec        = ht_total_elapsed / 1000000.0;
+    gettimeofday(&pdc_timer_end, 0);
+    ht_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
 #endif   
 
 #ifdef ENABLE_MULTITHREAD 
@@ -1861,12 +1853,11 @@ perr_t delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_
 
 #ifdef ENABLE_TIMING 
     // Timing
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
     double ht_total_sec;
 
-    gettimeofday(&ht_total_start, 0);
+    gettimeofday(&pdc_timer_start, 0);
 #endif
 
 
@@ -1943,9 +1934,8 @@ perr_t delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_
 
 #ifdef ENABLE_TIMING 
     // Timing
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
-    ht_total_sec        = ht_total_elapsed / 1000000.0;
+    gettimeofday(&pdc_timer_end, 0);
+    ht_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
 #endif
 
 #ifdef ENABLE_MULTITHREAD 
@@ -2000,12 +1990,11 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
 
 #ifdef ENABLE_TIMING 
     // Timing
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
     double ht_total_sec;
 
-    gettimeofday(&ht_total_start, 0);
+    gettimeofday(&pdc_timer_start, 0);
 #endif
 
     /* printf("==PDC_SERVER[%d]: Got delete request: hash=%d, obj_id=%" PRIu64 "\n", pdc_server_rank_g, in->hash_value, in->obj_id); */
@@ -2111,9 +2100,8 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
 
 #ifdef ENABLE_TIMING 
     // Timing
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
-    ht_total_sec        = ht_total_elapsed / 1000000.0;
+    gettimeofday(&pdc_timer_end, 0);
+    ht_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
 #endif
 
 #ifdef ENABLE_MULTITHREAD 
@@ -2170,12 +2158,11 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
 
 #ifdef ENABLE_TIMING 
     // Timing
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
     double ht_total_sec;
 
-    gettimeofday(&ht_total_start, 0);
+    gettimeofday(&pdc_timer_start, 0);
 #endif
 
     /* printf("==PDC_SERVER[%d]: Got object creation request with name: %s\tHash=%u\n", */ 
@@ -2313,9 +2300,8 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
 
 #ifdef ENABLE_TIMING 
     // Timing
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
-    ht_total_sec        = ht_total_elapsed / 1000000.0;
+    gettimeofday(&pdc_timer_end, 0);
+    ht_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
 #endif
 
 #ifdef ENABLE_MULTITHREAD 
@@ -2772,11 +2758,10 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
 
 #ifdef ENABLE_TIMING 
         // Timing
-        struct timeval  ht_total_start;
-        struct timeval  ht_total_end;
-        long long ht_total_elapsed;
+        struct timeval  pdc_timer_start;
+        struct timeval  pdc_timer_end;
         double restart_time, all_restart_time;
-        gettimeofday(&ht_total_start, 0);
+        gettimeofday(&pdc_timer_start, 0);
 #endif
 
         ret_value = PDC_Server_restart(checkpoint_file);
@@ -2786,9 +2771,8 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
         }
 #ifdef ENABLE_TIMING 
         // Timing
-        gettimeofday(&ht_total_end, 0);
-        ht_total_elapsed = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
-        restart_time = ht_total_elapsed / 1000000.0;
+        gettimeofday(&pdc_timer_end, 0);
+        restart_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
 
     #ifdef ENABLE_MPI
         MPI_Reduce(&restart_time, &all_restart_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
@@ -4357,7 +4341,11 @@ int main(int argc, char *argv[])
 #endif
     
     char *is_lookupall = getenv("PDC_LOOKUP_ALL");
-    if (is_lookupall == NULL || strcmp(is_lookupall, "0") == 0) {
+    if (strcmp(is_lookupall, "0") == 0) {
+        if (pdc_server_rank_g == 0) 
+            printf("==PDC_SERVER[%d]: will lookup other PDC servers on demand\n", pdc_server_rank_g);
+    }
+    else {
         // Lookup all remote servers addr
         if (PDC_Server_lookup_all_servers() != SUCCEED) {
             printf("==PDC_SERVER[%d]: unable to lookup_remote_server, exiting...\n", pdc_server_rank_g);
@@ -4369,10 +4357,6 @@ int main(int argc, char *argv[])
                         pdc_server_rank_g, pdc_server_size_g- 1);
             }
         }
-    }
-    else {
-        if (pdc_server_rank_g == 0) 
-            printf("==PDC_SERVER[%d]: will lookup other PDC servers on demand\n", pdc_server_rank_g);
     }
 
 
@@ -4422,20 +4406,18 @@ int main(int argc, char *argv[])
 
     #ifdef ENABLE_TIMING 
     // Timing
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
     double checkpoint_time, all_checkpoint_time;
-    gettimeofday(&ht_total_start, 0);
+    gettimeofday(&pdc_timer_start, 0);
     #endif
 
     PDC_Server_checkpoint(checkpoint_file);
 
     #ifdef ENABLE_TIMING 
     // Timing
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
-    checkpoint_time = ht_total_elapsed / 1000000.0;
+    gettimeofday(&pdc_timer_end, 0);
+    checkpoint_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
 
     #ifdef ENABLE_MPI
     MPI_Reduce(&checkpoint_time, &all_checkpoint_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
@@ -4452,9 +4434,10 @@ int main(int argc, char *argv[])
 
     // Debug print
 #ifdef ENABLE_TIMING 
-    printf("==PDC_SERVER[%d]: server fwrite count %d, total fwrite time %.2f, total fread time %.2f, "
-            "total update region location time %.2f, get region location time %.2f, total IO time %.2f\n",
-            pdc_server_rank_g, n_fwrite_g, server_write_time_g, server_read_time_g,
+    printf("==PDC_SERVER[%d]: #fwrite %d, Tfwrite %.2f, #fread %d, Tfread %.2f, #fopen %d, Tfopen %.2f\n"
+           "                  Tregion_update %.2f, Tget_region %.2f, Ttotal_IO %.2f\n",
+            pdc_server_rank_g, n_fwrite_g, server_write_time_g, n_fread_g, server_read_time_g,
+            n_fopen_g, server_fopen_time_g, 
             server_update_region_location_time_g, server_get_storage_info_time_g, server_total_io_time_g);
 #endif
 
@@ -5560,11 +5543,11 @@ perr_t PDC_Server_regions_io(region_list_t *region_list_head, PDC_io_plugin_t pl
     
     if (plugin == POSIX) {
 
-        // Timing
-        struct timeval  ht_total_start;
-        struct timeval  ht_total_end;
-        long long ht_total_elapsed;
-        gettimeofday(&ht_total_start, 0);
+        #ifdef ENABLE_TIMING
+        struct timeval  pdc_timer_start;
+        struct timeval  pdc_timer_end;
+        gettimeofday(&pdc_timer_start, 0);
+        #endif
 
         ret_value = PDC_Server_posix_one_file_io(region_list_head);
         if (ret_value !=  SUCCEED) {
@@ -5573,11 +5556,10 @@ perr_t PDC_Server_regions_io(region_list_t *region_list_head, PDC_io_plugin_t pl
             goto done;
         }
 
-        // Timing
-        gettimeofday(&ht_total_end, 0);
-        ht_total_elapsed     = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + 
-                                ht_total_end.tv_usec-ht_total_start.tv_usec;
-        server_total_io_time_g += ht_total_elapsed / 1000000.0;
+        #ifdef ENABLE_TIMING
+        gettimeofday(&pdc_timer_end, 0);
+        server_total_io_time_g += PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+        #endif
     }
     else if (plugin == DAOS) {
         printf("DAOS plugin in under development, switch to POSIX instead.\n");
@@ -6523,11 +6505,11 @@ perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
 
     /* printf("ndim = %" PRIu64 ", is_all_selected=%d\n", ndim, is_all_selected); */
 
-    // Timing
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
-    gettimeofday(&ht_total_start, 0);
+    #ifdef ENABLE_TIMING
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
+    gettimeofday(&pdc_timer_start, 0);
+    #endif
 
 
     // TODO: additional optimization to check if any dimension is entirely selected
@@ -6541,8 +6523,7 @@ perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
         }
 
         read_bytes = fread(buf+buf_offset, 1, total_bytes, fp);
-
-
+        n_fread_g++;
         if (read_bytes != total_bytes) {
             printf("==PDC_SERVER[%d]: PDC_Server_read_overlap_regions() fread failed "
                     "actual read bytes %" PRIu64 ", should be %" PRIu64 "\n", 
@@ -6569,6 +6550,7 @@ perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
                     row_offset = i * req_count[0];
                 }
                 read_bytes = fread(buf+buf_offset+row_offset, 1, overlap_count[0], fp);
+                n_fread_g++;
                 if (read_bytes != overlap_count[0]) {
                     if (is_debug_g == 1) {
                         printf("==PDC_SERVER[%d]: PDC_Server_read_overlap_regions() fread failed!\n", 
@@ -6607,6 +6589,7 @@ perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
                     }
 
                     read_bytes = fread(buf+buf_serialize_offset, 1, overlap_count[0], fp);
+                    n_fread_g++;
                     if (read_bytes != overlap_count[0]) {
                         printf("==PDC_SERVER[%d]: PDC_Server_read_overlap_regions() fread failed!\n", 
                                pdc_server_rank_g);
@@ -6625,11 +6608,10 @@ perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
 
     } // end else (ndim != 1 && !is_all_selected);
 
-    // Timing
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed     = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + 
-                            ht_total_end.tv_usec-ht_total_start.tv_usec;
-    server_read_time_g += ht_total_elapsed / 1000000.0;
+#ifdef ENABLE_TIMING
+    gettimeofday(&pdc_timer_end, 0);
+    server_read_time_g += PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+#endif
 
     if (total_bytes != *total_read_bytes) {
         printf("==PDC_SERVER[%d]: PDC_Server_read_overlap_regions() read size error!\n", pdc_server_rank_g);
@@ -6663,6 +6645,12 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
     char *prev_path = NULL;
     int stripe_count, stripe_size;
     int is_read_only = 1;
+
+#ifdef ENABLE_TIMING
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
+    gettimeofday(&pdc_timer_start, 0);
+#endif
 
     FUNC_ENTER(NULL);
 
@@ -6699,12 +6687,6 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
 
         if (region_elt->access_type == READ) {
 
-            // Timing
-            struct timeval  ht_total_start;
-            struct timeval  ht_total_end;
-            long long ht_total_elapsed;
-            gettimeofday(&ht_total_start, 0);
-
             // For each region, need to contact metadata server to get its 
             // storage location (may span multiple storage regions/files)
             // and offsets
@@ -6716,11 +6698,10 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
                 goto done;
             }
 
-            // Timing
-            gettimeofday(&ht_total_end, 0);
-            ht_total_elapsed     = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + 
-                                    ht_total_end.tv_usec-ht_total_start.tv_usec;
-            server_get_storage_info_time_g += ht_total_elapsed / 1000000.0;
+            #ifdef ENABLE_TIMING
+            gettimeofday(&pdc_timer_end, 0);
+            server_get_storage_info_time_g += PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+            #endif
 
             /* printf("PDC_SERVER: found %d overlap storage regions.\n", n_storage_regions); */
 
@@ -6744,7 +6725,18 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
                         fp_read = NULL;
                     }
                     
+                    #ifdef ENABLE_TIMING
+                    gettimeofday(&pdc_timer_start, 0);
+                    #endif
+
                     fp_read = fopen(overlap_regions[i]->storage_location, "rb");
+                    n_fopen_g++;
+
+                    #ifdef ENABLE_TIMING
+                    gettimeofday(&pdc_timer_end, 0);
+                    server_fopen_time_g += PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+                    #endif
+
                     if (fp_read == NULL) {
                         printf("==PDC_SERVER[%d]: fopen failed [%s]\n", 
                                 pdc_server_rank_g, region_elt->storage_location);
@@ -6825,7 +6817,20 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
                 }
                 // Append the current write data
                 // TODO: need to recycle file space in cases of data update and delete
+                
+                                    
+                #ifdef ENABLE_TIMING
+                gettimeofday(&pdc_timer_start, 0);
+                #endif
+
                 fp_write = fopen(region_elt->storage_location, "ab");
+                n_fopen_g++;
+
+                #ifdef ENABLE_TIMING
+                gettimeofday(&pdc_timer_end, 0);
+                server_fopen_time_g += PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+                #endif
+
                 if (NULL == fp_write) {
                     printf("==PDC_SERVER: fopen failed [%s]\n", region_elt->storage_location);
                     ret_value = FAIL;
@@ -6837,11 +6842,9 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
             // Get the current write offset
             offset = ftell(fp_write);
 
-            // Timing
-            struct timeval  ht_total_start;
-            struct timeval  ht_total_end;
-            long long ht_total_elapsed;
-            gettimeofday(&ht_total_start, 0);
+            #ifdef ENABLE_TIMING
+            gettimeofday(&pdc_timer_start, 0);
+            #endif
 
             write_bytes = fwrite(region_elt->buf, 1, region_elt->data_size, fp_write);
             if (write_bytes != region_elt->data_size) {
@@ -6851,11 +6854,10 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
             }
             n_fwrite_g++;
 
-            // Timing
-            gettimeofday(&ht_total_end, 0);
-            ht_total_elapsed     = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + 
-                                    ht_total_end.tv_usec-ht_total_start.tv_usec;
-            server_write_time_g += ht_total_elapsed / 1000000.0;
+            #ifdef ENABLE_TIMING
+            gettimeofday(&pdc_timer_end, 0);
+            server_write_time_g += PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+            #endif
 
             /* fclose(fp_write); */
 
@@ -6890,12 +6892,9 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
     //        maybe the regions get corruppted somewhere above
     if (is_read_only != 1) {
 
-        // Timer
-        struct timeval  ht_total_start;
-        struct timeval  ht_total_end;
-        long long ht_total_elapsed;
-        double update_region_location_time = 0.0;
-        gettimeofday(&ht_total_start, 0);
+        #ifdef ENABLE_TIMING
+        gettimeofday(&pdc_timer_start, 0);
+        #endif
 
         // Update all regions location info to the metadata server
         DL_FOREACH(region, region_elt) {
@@ -6926,14 +6925,13 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
             iter++;
         }
 
-        // Timer
-        gettimeofday(&ht_total_end, 0);
-        ht_total_elapsed     = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + 
-                                ht_total_end.tv_usec-ht_total_start.tv_usec;
-        update_region_location_time = ht_total_elapsed / 1000000.0;
+        #ifdef ENABLE_TIMING
+        gettimeofday(&pdc_timer_end, 0);
+        double update_region_location_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
         /* printf("==PDC_SERVER[%d]: update region location [%s] time %.6f!\n", */ 
         /*         pdc_server_rank_g, region_elt->storage_location, update_region_location_time); */
         server_update_region_location_time_g += update_region_location_time;
+        #endif
 
     }
 

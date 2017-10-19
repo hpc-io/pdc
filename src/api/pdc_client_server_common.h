@@ -1869,6 +1869,7 @@ struct region_update_bulk_args {
 
 hg_id_t gen_reg_map_notification_register(hg_class_t *hg_class);
 
+double   PDC_get_elapsed_time_double(struct timeval *tstart, struct timeval *tend);
 perr_t   delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out);
 perr_t   PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out);
 perr_t   PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *out);
