@@ -240,30 +240,7 @@ perr_t PDC_Client_read_server_addr_from_file()
      }
 
     // Allocate $pdc_server_info_g
-    pdc_server_info_g = (pdc_server_info_t*)malloc(sizeof(pdc_server_info_t) * pdc_server_num_g);
-    // Fill in default values
-    for (i = 0; i < pdc_server_num_g; i++) {
-        pdc_server_info_g[i].client_send_region_map_handle_valid = 0;
-        pdc_server_info_g[i].client_send_region_unmap_handle_valid= 0;
-        pdc_server_info_g[i].client_send_object_unmap_handle_valid = 0;
-        pdc_server_info_g[i].addr_valid                          = 0;
-        pdc_server_info_g[i].rpc_handle_valid                    = 0;
-        pdc_server_info_g[i].client_test_handle_valid            = 0;
-        pdc_server_info_g[i].close_server_handle_valid           = 0;
-        pdc_server_info_g[i].metadata_query_handle_valid         = 0;
-        pdc_server_info_g[i].query_partial_handle_valid = 0;
-        pdc_server_info_g[i].metadata_delete_handle_valid        = 0;
-        pdc_server_info_g[i].metadata_delete_by_id_handle_valid= 0;
-        pdc_server_info_g[i].metadata_update_handle_valid        = 0;
-        pdc_server_info_g[i].metadata_add_tag_handle_valid       = 0;
-        pdc_server_info_g[i].region_lock_handle_valid            = 0;
-        pdc_server_info_g[i].region_release_handle_valid          = 0;
-        pdc_server_info_g[i].data_server_read_handle_valid       = 0;
-        pdc_server_info_g[i].data_server_write_handle_valid      = 0;
-        pdc_server_info_g[i].data_server_read_check_handle_valid   = 0;
-        pdc_server_info_g[i].data_server_write_check_handle_valid   = 0;
-        pdc_server_info_g[i].data_server_write_handle_valid      = 0;
-    }
+    pdc_server_info_g = (pdc_server_info_t*)calloc(sizeof(pdc_server_info_t), pdc_server_num_g);
 
     i = 0;
     while (i < pdc_server_num_g) {
@@ -440,6 +417,7 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
     uint32_t server_id;
     struct client_lookup_args *client_lookup_args;
     client_test_connect_in_t in;
+    hg_handle_t client_test_handle;
     
     FUNC_ENTER(NULL);
 
@@ -453,11 +431,8 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
     pdc_server_info_g[server_id].addr_valid = 1;
 
     // Create HG handle if needed
-    /* if (pdc_server_info_g[server_id].client_test_handle_valid!= 1) { */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, client_test_connect_register_id_g, 
-                  &pdc_server_info_g[server_id].client_test_handle);
-        /* pdc_server_info_g[server_id].client_test_handle_valid= 1; */
-    /* } */
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, client_test_connect_register_id_g, 
+              &client_test_handle);
 
     // Fill input structure
     in.client_id   = pdc_client_mpi_rank_g;
@@ -465,8 +440,7 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
     in.client_addr = client_lookup_args->client_addr;
 
     /* printf("Sending input to target\n"); */
-    ret_value = HG_Forward(pdc_server_info_g[server_id].client_test_handle, 
-                           client_test_connect_rpc_cb, client_lookup_args, &in);
+    ret_value = HG_Forward(client_test_handle, client_test_connect_rpc_cb, client_lookup_args, &in);
     if (ret_value != HG_SUCCESS) {
         fprintf(stderr, "client_test_connect_lookup_cb(): Could not start HG_Forward()\n");
         goto done;
@@ -477,7 +451,7 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
 
 
 done:
-    HG_Destroy(pdc_server_info_g[server_id].client_test_handle);
+    HG_Destroy(client_test_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -1037,59 +1011,8 @@ perr_t PDC_Client_destroy_all_handles(pdc_server_info_t *server_info)
 
     if (server_info->addr_valid == 1) 
         HG_Addr_free(send_class_g, server_info->addr);
-/*     if (server_info->rpc_handle_valid == 1) */
-/*         HG_Destroy(server_info->rpc_handle); */
 
-/*     /1* if (server_info->client_test_handle_valid == 1) *1/ */
-/*     /1*     HG_Destroy(server_info->client_test_handle); *1/ */
-
-/*     if (server_info->close_server_handle_valid == 1) */
-/*         HG_Destroy(server_info->close_server_handle); */
-    
-/*     if (server_info->metadata_query_handle_valid == 1) */
-/*         HG_Destroy(server_info->metadata_query_handle); */
-
-/*     if (server_info->metadata_delete_handle_valid == 1) */
-/*         HG_Destroy(server_info->metadata_delete_handle); */
-
-/*     if (server_info->metadata_delete_by_id_handle_valid == 1) */
-/*         HG_Destroy(server_info->metadata_delete_by_id_handle); */
-
-/*     if (server_info->metadata_add_tag_handle_valid == 1) */
-/*         HG_Destroy(server_info->metadata_add_tag_handle); */
-
-/*     if (server_info->metadata_update_handle_valid == 1) */
-/*         HG_Destroy(server_info->metadata_update_handle); */
-
-/*    if (server_info->client_send_region_map_handle_valid == 1) */
-/*        HG_Destroy(server_info->client_send_region_map_handle); */
-
-/*    if (server_info->client_send_region_unmap_handle_valid == 1) */
-/*        HG_Destroy(server_info->client_send_region_unmap_handle); */
-    
-/*    if (server_info->client_send_object_unmap_handle_valid == 1) */
-/*        HG_Destroy(server_info->client_send_object_unmap_handle); */
-
-/*    if (server_info->region_lock_handle_valid == 1) */
-/*        HG_Destroy(server_info->region_lock_handle); */
-
-/*    if(server_info->region_release_handle_valid == 1) */
-/*        HG_Destroy(server_info->region_release_handle); */
-
-/*     if (server_info->query_partial_handle_valid == 1) */
-/*         HG_Destroy(server_info->query_partial_handle); */
-
-/*     if (server_info->data_server_read_handle_valid == 1) */
-/*         HG_Destroy(server_info->data_server_read_handle); */
-
-/*     if (server_info->data_server_write_handle_valid == 1) */
-/*         HG_Destroy(server_info->data_server_write_handle); */
-
-/*     if (server_info->data_server_read_check_handle_valid == 1) */
-/*         HG_Destroy(server_info->data_server_read_check_handle); */
-
-/*     if (server_info->data_server_write_check_handle_valid == 1) */
-/*         HG_Destroy(server_info->data_server_write_check_handle); */
+    server_info->addr_valid = 0;
 
     FUNC_LEAVE(ret_value);
 }
@@ -1310,6 +1233,7 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
     int n_recv = 0;
     uint32_t i, server_id = 0, my_server_start, my_server_end, my_server_count;
     size_t out_size = 0;
+    hg_handle_t query_partial_handle;
 
     // Fill input structure
     metadata_query_transfer_in_t in;
@@ -1372,21 +1296,18 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
             n_retry++;
         }
 
-        /* if (pdc_server_info_g[server_id].query_partial_handle_valid != 1) { */
-            hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, query_partial_register_id_g, 
-                                &pdc_server_info_g[server_id].query_partial_handle);
-            /* pdc_server_info_g[server_id].query_partial_handle_valid= 1; */
-        /* } */
+        hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, query_partial_register_id_g, 
+                            &query_partial_handle);
 
         /* printf("Sending input to target\n"); */
         struct hg_test_bulk_args lookup_args;
-        if (pdc_server_info_g[server_id].query_partial_handle == NULL) {
+        if (query_partial_handle == NULL) {
             printf("==CLIENT[%d]: Error with query_partial_handle\n", pdc_client_mpi_rank_g);
             ret_value = FAIL;
             goto done;
         }
 
-        hg_ret = HG_Forward(pdc_server_info_g[server_id].query_partial_handle, metadata_query_bulk_cb, &lookup_args, &in);
+        hg_ret = HG_Forward(query_partial_handle, metadata_query_bulk_cb, &lookup_args, &in);
         if (hg_ret!= HG_SUCCESS) {
             fprintf(stderr, "PDC_client_list_all(): Could not start HG_Forward()\n");
             ret_value = FAIL;
@@ -1434,7 +1355,7 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
 
     // TODO: need to be careful when freeing the lookup_args, as it include the results returned to user
 done:
-    HG_Destroy(pdc_server_info_g[server_id].query_partial_handle);
+    HG_Destroy(query_partial_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -1584,6 +1505,7 @@ perr_t PDC_Client_add_tag(pdc_metadata_t *old, const char *tag)
 
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
+    hg_handle_t  metadata_add_tag_handle;
 
     uint32_t hash_name_value = PDC_get_hash_by_name(old->obj_name);
     uint32_t server_id = (hash_name_value + old->time_step);
@@ -1606,12 +1528,8 @@ perr_t PDC_Client_add_tag(pdc_metadata_t *old, const char *tag)
         n_retry++;
     }
 
-    // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
-    /* if (pdc_server_info_g[server_id].metadata_add_tag_handle_valid != 1) { */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_add_tag_register_id_g, 
-                    &pdc_server_info_g[server_id].metadata_add_tag_handle);
-        /* pdc_server_info_g[server_id].metadata_add_tag_handle_valid  = 1; */
-    /* } */
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_add_tag_register_id_g, 
+                &metadata_add_tag_handle);
 
     // Fill input structure
     metadata_add_tag_in_t in;
@@ -1630,7 +1548,7 @@ perr_t PDC_Client_add_tag(pdc_metadata_t *old, const char *tag)
 
     /* printf("Sending input to target\n"); */
     struct client_lookup_args lookup_args;
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].metadata_add_tag_handle, metadata_add_tag_rpc_cb, &lookup_args, &in);
+    hg_ret = HG_Forward(metadata_add_tag_handle, metadata_add_tag_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "==PDC_Client_add_tag_metadata_with_name(): Could not start HG_Forward()\n");
         return FAIL;
@@ -1644,7 +1562,7 @@ perr_t PDC_Client_add_tag(pdc_metadata_t *old, const char *tag)
         printf("==PDC_CLIENT: add tag NOT successful ... ret_value = %d\n", lookup_args.ret);
 
 done:
-    HG_Destroy(pdc_server_info_g[server_id].metadata_add_tag_handle);
+    HG_Destroy(metadata_add_tag_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -1689,6 +1607,7 @@ perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
     uint32_t server_id = 0;
     metadata_update_in_t in;
     struct client_lookup_args lookup_args;
+    hg_handle_t metadata_update_handle;
     
     FUNC_ENTER(NULL);
 
@@ -1718,11 +1637,9 @@ perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
         }
         n_retry++;
     }
-    /* if (pdc_server_info_g[server_id].metadata_update_handle_valid != 1) { */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_update_register_id_g, 
-                    &pdc_server_info_g[server_id].metadata_update_handle);
-        /* pdc_server_info_g[server_id].metadata_update_handle_valid  = 1; */
-    /* } */
+
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_update_register_id_g, 
+                &metadata_update_handle);
 
     // Fill input structure
     in.obj_id     = old->obj_id;
@@ -1749,7 +1666,7 @@ perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
         in.new_metadata.tags            = new->tags;
 
     /* printf("Sending input to target\n"); */
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].metadata_update_handle, metadata_update_rpc_cb, &lookup_args, &in);
+    hg_ret = HG_Forward(metadata_update_handle, metadata_update_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "==PDC_Client_update_metadata_with_name(): Could not start HG_Forward()\n");
         return FAIL;
@@ -1763,7 +1680,7 @@ perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
         printf("==PDC_CLIENT: update NOT successful ... ret_value = %d\n", lookup_args.ret);
 
 done:
-    HG_Destroy(pdc_server_info_g[server_id].metadata_update_handle);
+    HG_Destroy(metadata_update_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -1775,6 +1692,7 @@ perr_t PDC_Client_delete_metadata_by_id(uint64_t obj_id)
     metadata_delete_by_id_in_t in;
     uint32_t server_id;
     struct client_lookup_args lookup_args;
+    hg_handle_t metadata_delete_by_id_handle;
     
     FUNC_ENTER(NULL);
     
@@ -1807,14 +1725,14 @@ perr_t PDC_Client_delete_metadata_by_id(uint64_t obj_id)
         n_retry++;
     }
 
-    // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
-    /* if (pdc_server_info_g[server_id].metadata_delete_by_id_handle_valid != 1) { */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_delete_by_id_register_id_g, 
-                  &pdc_server_info_g[server_id].metadata_delete_by_id_handle);
-        /* pdc_server_info_g[server_id].metadata_delete_by_id_handle_valid  = 1; */
-    /* } */
-    /* printf("Sending input to target\n"); */
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].metadata_delete_by_id_handle, metadata_delete_by_id_rpc_cb, &lookup_args, &in);
+    hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_delete_by_id_register_id_g, 
+                       &metadata_delete_by_id_handle);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "==PDC_Client_delete_by_id_metadata_with_name(): Could not create handle\n");
+        return FAIL;
+    }
+
+    hg_ret = HG_Forward(metadata_delete_by_id_handle, metadata_delete_by_id_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "==PDC_Client_delete_by_id_metadata_with_name(): Could not start HG_Forward()\n");
         return FAIL;
@@ -1833,7 +1751,7 @@ perr_t PDC_Client_delete_metadata_by_id(uint64_t obj_id)
         printf("==PDC_CLIENT: delete_by_id NOT successful ... ret_value = %d\n", lookup_args.ret);
 
 done:
-    HG_Destroy(pdc_server_info_g[server_id].metadata_delete_by_id_handle);
+    HG_Destroy(metadata_delete_by_id_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -1846,6 +1764,7 @@ perr_t PDC_Client_delete_metadata(char *delete_name, pdcid_t obj_delete_prop)
     int hash_name_value;
     uint32_t server_id;
     struct client_lookup_args lookup_args;
+    hg_handle_t metadata_delete_handle;
     
     FUNC_ENTER(NULL);
 
@@ -1886,14 +1805,9 @@ perr_t PDC_Client_delete_metadata(char *delete_name, pdcid_t obj_delete_prop)
         n_retry++;
     }
 
-    // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
-    /* if (pdc_server_info_g[server_id].metadata_delete_handle_valid != 1) { */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_delete_register_id_g, 
-                    &pdc_server_info_g[server_id].metadata_delete_handle);
-        /* pdc_server_info_g[server_id].metadata_delete_handle_valid  = 1; */
-    /* } */
-    /* printf("Sending input to target\n"); */
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].metadata_delete_handle, metadata_delete_rpc_cb, &lookup_args, &in);
+    hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_delete_register_id_g, 
+                    &metadata_delete_handle);
+    hg_ret = HG_Forward(metadata_delete_handle, metadata_delete_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "==PDC_Client_delete_metadata_with_name(): Could not start HG_Forward()\n");
         return FAIL;
@@ -1912,7 +1826,7 @@ perr_t PDC_Client_delete_metadata(char *delete_name, pdcid_t obj_delete_prop)
         printf("==PDC_CLIENT: delete NOT successful ... ret_value = %d\n", lookup_args.ret);
 
 done:
-    HG_Destroy(pdc_server_info_g[server_id].metadata_delete_handle);
+    HG_Destroy(metadata_delete_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -1927,6 +1841,7 @@ perr_t PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t 
     metadata_query_args_t **lookup_args;
     uint32_t server_id;
     uint32_t i, count = 0;
+    hg_handle_t metadata_query_handle;
     
     FUNC_ENTER(NULL);
 
@@ -1960,9 +1875,9 @@ perr_t PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t 
         }
 
         HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_query_register_id_g, 
-                    &pdc_server_info_g[server_id].metadata_query_handle);
+                    &metadata_query_handle);
 
-        hg_ret = HG_Forward(pdc_server_info_g[server_id].metadata_query_handle, metadata_query_rpc_cb, lookup_args[server_id], &in);
+        hg_ret = HG_Forward(metadata_query_handle, metadata_query_rpc_cb, lookup_args[server_id], &in);
         if (hg_ret != HG_SUCCESS) {
             fprintf(stderr, "==PDC_Client_query_metadata_name_only(): Could not start HG_Forward()\n");
             return FAIL;
@@ -1983,8 +1898,7 @@ perr_t PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t 
     /* printf("==PDC_CLIENT: Found %d metadata with search\n", count); */
 
     // TODO lookup_args[i] are not freed
-    //
-    HG_Destroy(pdc_server_info_g[server_id].metadata_query_handle);
+    HG_Destroy(metadata_query_handle);
 
 done:
     FUNC_LEAVE(ret_value);
@@ -1998,6 +1912,7 @@ perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, uint32_t ti
     uint32_t  server_id;
     metadata_query_in_t in;
     metadata_query_args_t lookup_args;
+    hg_handle_t metadata_query_handle;
     
     FUNC_ENTER(NULL);
 
@@ -2027,12 +1942,8 @@ perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, uint32_t ti
         n_retry++;
     }
 
-   // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
-    /* if (pdc_server_info_g[server_id].metadata_query_handle_valid != 1) { */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_query_register_id_g, 
-                  &pdc_server_info_g[server_id].metadata_query_handle);
-        /* pdc_server_info_g[server_id].metadata_query_handle_valid  = 1; */
-    /* } */
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_query_register_id_g, 
+              &metadata_query_handle);
 
     // Fill input structure
     in.obj_name   = obj_name;
@@ -2048,7 +1959,7 @@ perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, uint32_t ti
         printf("==PDC_CLIENT: ERROR - PDC_Client_query_metadata_with_name() "
                 "cannnot allocate space for client_lookup_args->data \n");
     }
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].metadata_query_handle, metadata_query_rpc_cb, &lookup_args, &in);
+    hg_ret = HG_Forward(metadata_query_handle, metadata_query_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "==PDC_Client_query_metadata_with_name(): Could not start HG_Forward()\n");
         return FAIL;
@@ -2061,7 +1972,7 @@ perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, uint32_t ti
     /* printf("==PDC_CLIENT[%d]: received query result name [%s], hash value %u\n", pdc_client_mpi_rank_g, in.obj_name, in.hash_value); */
     *out = lookup_args.data;
 
-    HG_Destroy(pdc_server_info_g[server_id].metadata_query_handle);
+    HG_Destroy(metadata_query_handle);
 
 done:
     FUNC_LEAVE(ret_value);
@@ -2078,6 +1989,7 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_pro
     gen_obj_id_in_t in;
     uint32_t hash_name_value;
     struct client_lookup_args lookup_args;
+    hg_handle_t rpc_handle;
     
     FUNC_ENTER(NULL);
     
@@ -2184,16 +2096,10 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_pro
     }
 
     // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
-    /* if (pdc_server_info_g[server_id].rpc_handle_valid != 1) { */
-        /* printf("Addr: %s\n", pdc_server_info_g[server_id].addr); */
-        /* fflush(stdout); */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_obj_register_id_g, 
-                  &pdc_server_info_g[server_id].rpc_handle);
-        /* pdc_server_info_g[server_id].rpc_handle_valid = 1; */
-    /* } */
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_obj_register_id_g, &rpc_handle);
 
     /* printf("Sending input to target\n"); */
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].rpc_handle, client_rpc_cb, &lookup_args, &in);
+    hg_ret = HG_Forward(rpc_handle, client_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "==PDC_Client_send_name_to_server(): Could not start HG_Forward()\n");
         return EXIT_FAILURE;
@@ -2218,7 +2124,7 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_pro
 
 
 done:
-    HG_Destroy(pdc_server_info_g[server_id].rpc_handle);
+    HG_Destroy(rpc_handle);
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
@@ -2231,6 +2137,7 @@ perr_t PDC_Client_close_all_server()
     uint32_t port, i;
     close_server_in_t in;
     struct client_lookup_args lookup_args;
+    hg_handle_t close_server_handle;
     
     FUNC_ENTER(NULL);
 
@@ -2266,19 +2173,21 @@ perr_t PDC_Client_close_all_server()
             /* printf("Addr: %s\n", pdc_server_info_g[server_id].addr); */
             /* fflush(stdout); */
             HG_Create(send_context_g, pdc_server_info_g[server_id].addr, close_server_register_id_g, 
-                      &pdc_server_info_g[server_id].close_server_handle);
+                      &close_server_handle);
 
             // Fill input structure
             in.client_id = 0;
 
             /* printf("Sending input to target\n"); */
-            hg_ret = HG_Forward(pdc_server_info_g[server_id].close_server_handle, 
+            hg_ret = HG_Forward(close_server_handle, 
                                    close_server_cb, &lookup_args, &in);
             if (hg_ret != HG_SUCCESS) {
                 fprintf(stderr, "==PDC_Client_close_all_server(): Could not start HG_Forward()\n");
                 ret_value = FAIL;
                 goto done;
             }
+
+            HG_Destroy(close_server_handle);
         }
 
         // Wait for response from server
@@ -2292,8 +2201,6 @@ perr_t PDC_Client_close_all_server()
     }
 
 done:
-    for (i = 0; i < (uint32_t)pdc_server_num_g; i++) 
-        HG_Destroy(pdc_server_info_g[i].close_server_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -2305,6 +2212,7 @@ perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id)
     /* hg_bulk_t bulk_handle; */
     uint32_t server_id;
     struct object_unmap_args unmap_args;
+    hg_handle_t client_send_object_unmap_handle;
     
     FUNC_ENTER(NULL);
     
@@ -2332,9 +2240,9 @@ perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id)
     }
 
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_obj_unmap_notification_register_id_g, 
-              &pdc_server_info_g[server_id].client_send_object_unmap_handle);
+              &client_send_object_unmap_handle);
 
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].client_send_object_unmap_handle, client_send_object_unmap_rpc_cb, &unmap_args, &in);
+    hg_ret = HG_Forward(client_send_object_unmap_handle, client_send_object_unmap_rpc_cb, &unmap_args, &in);
     if (hg_ret != HG_SUCCESS) {
         PGOTO_ERROR(FAIL, "==PDC_Client_send_object_unmap(): Could not start HG_Forward()");
     }
@@ -2347,7 +2255,7 @@ perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id)
         PGOTO_ERROR(FAIL,"==PDC_CLIENT: object unmapping failed...");
     
 done:
-    HG_Destroy(pdc_server_info_g[server_id].client_send_object_unmap_handle);
+    HG_Destroy(client_send_object_unmap_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -2359,6 +2267,7 @@ perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id)
     /* hg_bulk_t bulk_handle; */
     uint32_t server_id;
     struct region_unmap_args unmap_args;
+    hg_handle_t client_send_region_unmap_handle;
     
     FUNC_ENTER(NULL);
     
@@ -2386,15 +2295,10 @@ perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id)
         n_retry++;
     }
 
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_reg_unmap_notification_register_id_g, 
+                &client_send_region_unmap_handle);
 
-    // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
-    /* if (pdc_server_info_g[server_id].client_send_region_unmap_handle_valid!= 1) { */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_reg_unmap_notification_register_id_g, 
-                    &pdc_server_info_g[server_id].client_send_region_unmap_handle);
-        /* pdc_server_info_g[server_id].client_send_region_unmap_handle_valid  = 1; */
-    /* } */
-
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].client_send_region_unmap_handle, client_send_region_unmap_rpc_cb, &unmap_args, &in);
+    hg_ret = HG_Forward(client_send_region_unmap_handle, client_send_region_unmap_rpc_cb, &unmap_args, &in);
     if (hg_ret != HG_SUCCESS) {
         PGOTO_ERROR(FAIL, "==PDC_Client_send_region_unmap(): Could not start HG_Forward()");
     }
@@ -2407,7 +2311,7 @@ perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id)
         PGOTO_ERROR(FAIL,"==PDC_CLIENT: region unmapping failed...");
     
 done:
-    HG_Destroy(pdc_server_info_g[server_id].client_send_region_unmap_handle);
+    HG_Destroy(client_send_region_unmap_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -2426,6 +2330,7 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
     struct  region_map_args map_args;
     hg_bulk_t local_bulk_handle = HG_BULK_NULL;
     hg_bulk_t remote_bulk_handle = HG_BULK_NULL;
+    hg_handle_t client_send_region_map_handle;
  
     FUNC_ENTER(NULL);
     
@@ -2552,12 +2457,8 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
         n_retry++;
     }
 
-    // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
-    /* if (pdc_server_info_g[server_id].client_send_region_map_handle_valid!= 1) { */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_reg_map_notification_register_id_g, 
-                  &pdc_server_info_g[server_id].client_send_region_map_handle);
-        /* pdc_server_info_g[server_id].client_send_region_map_handle_valid  = 1; */
-    /* } */
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_reg_map_notification_register_id_g, 
+              &client_send_region_map_handle);
     
     // Create bulk handle
     hg_ret = HG_Bulk_create(hg_class, local_count, data_ptrs, (hg_size_t *)data_size, HG_BULK_READWRITE, &local_bulk_handle);
@@ -2577,7 +2478,7 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
 //    free(data_size);
 
     /* printf("Sending input to target\n"); */
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].client_send_region_map_handle, client_send_region_map_rpc_cb, &map_args, &in);	
+    hg_ret = HG_Forward(client_send_region_map_handle, client_send_region_map_rpc_cb, &map_args, &in);	
     if (hg_ret != HG_SUCCESS) {
         PGOTO_ERROR(FAIL, "==PDC_Client_send_region_map(): Could not start HG_Forward()");
     }
@@ -2597,7 +2498,7 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
 //    else
 //        printf("==PDC_CLIENT: object mapping successful\n");
 done:
-    HG_Destroy(pdc_server_info_g[server_id].client_send_region_map_handle);
+    HG_Destroy(client_send_region_map_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -2608,6 +2509,7 @@ static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *re
     uint32_t server_id;
     region_lock_in_t in;
     struct client_lookup_args lookup_args;
+    hg_handle_t region_lock_handle;
     
     FUNC_ENTER(NULL);
     
@@ -2676,18 +2578,10 @@ static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *re
         n_retry++;
     }
 
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, region_lock_register_id_g, 
+                &region_lock_handle);
 
-    // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
-    /* if (pdc_server_info_g[server_id].region_lock_handle_valid != 1) { */
-        /* printf("Addr: %s\n", pdc_server_info_g[server_id].addr); */
-        /* fflush(stdout); */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, region_lock_register_id_g, 
-                    &pdc_server_info_g[server_id].region_lock_handle);
-        /* pdc_server_info_g[server_id].region_lock_handle_valid = 1; */
-    /* } */
-    /* printf("Sending input to target\n"); */
-
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].region_lock_handle, client_region_lock_rpc_cb, &lookup_args, &in);
+    hg_ret = HG_Forward(region_lock_handle, client_region_lock_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "==PDC_Client_send_name_to_server(): Could not start HG_Forward()\n");
         return EXIT_FAILURE;
@@ -2720,7 +2614,7 @@ static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *re
     }
 
 done:
-    HG_Destroy(pdc_server_info_g[server_id].region_lock_handle);
+    HG_Destroy(region_lock_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -2787,6 +2681,7 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
     uint32_t server_id;
     region_lock_in_t in;
     struct client_lookup_args lookup_args;
+    hg_handle_t region_release_handle;
 
     FUNC_ENTER(NULL);
 
@@ -2856,16 +2751,10 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
         n_retry++;
     }
 
-    // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
-//    if (pdc_server_info_g[server_id].region_release_handle_valid != 1) {
-        /* printf("Addr: %s\n", pdc_server_info_g[server_id].addr); */
-        /* fflush(stdout); */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, region_release_register_id_g, &pdc_server_info_g[server_id].region_release_handle);
-//        pdc_server_info_g[server_id].region_release_handle_valid = 1;
-//    }
-    /* printf("Sending input to target\n"); */
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, region_release_register_id_g, 
+              &region_release_handle);
 
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].region_release_handle, client_region_release_rpc_cb, &lookup_args, &in);
+    hg_ret = HG_Forward(region_release_handle, client_region_release_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "==PDC_Client_send_name_to_server(): Could not start HG_Forward()\n");
         return EXIT_FAILURE;
@@ -2887,7 +2776,7 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
     }
 
 done:
-    HG_Destroy(pdc_server_info_g[server_id].region_release_handle);
+    HG_Destroy(region_release_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -3113,13 +3002,8 @@ perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_
         n_retry++;
     }
 
-   // We may have already filled in the pdc_server_info_g[server_id].addr in previous calls
-    /* if (pdc_server_info_g[server_id].data_server_read_check_handle_valid != 1) { */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, data_server_read_check_register_id_g, 
-                    &data_server_read_check_handle);
-        /* pdc_server_info_g[server_id].data_server_read_check_handle_valid = 1; */
-    /* } */
-    /* printf("Sending input to target\n"); */
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, data_server_read_check_register_id_g, 
+                &data_server_read_check_handle);
 
     hg_ret = HG_Forward(data_server_read_check_handle, data_server_read_check_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
@@ -3336,6 +3220,7 @@ perr_t PDC_Client_data_server_write_check(int server_id, uint32_t client_id, pdc
     hg_return_t hg_ret;
     struct client_lookup_args lookup_args;
     data_server_write_check_in_t in;
+    hg_handle_t data_server_write_check_handle;
 
     FUNC_ENTER(NULL);
 
@@ -3369,15 +3254,11 @@ perr_t PDC_Client_data_server_write_check(int server_id, uint32_t client_id, pdc
         }
         n_retry++;
     }
-    // We may have already filled in the pdc_server_info_g[server_id].addr in previous calls
-    /* if (pdc_server_info_g[server_id].data_server_write_check_handle_valid != 1) { */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, data_server_write_check_register_id_g, 
-                    &pdc_server_info_g[server_id].data_server_write_check_handle);
-        pdc_server_info_g[server_id].data_server_write_check_handle_valid = 1;
-    /* } */
-    /* printf("Sending input to target\n"); */
 
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].data_server_write_check_handle, data_server_write_check_rpc_cb, &lookup_args, &in);
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, data_server_write_check_register_id_g, 
+                &data_server_write_check_handle);
+
+    hg_ret = HG_Forward(data_server_write_check_handle, data_server_write_check_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "==PDC_Client_data_server_write_check(): Could not start HG_Forward()\n");
         return EXIT_FAILURE;
@@ -3405,7 +3286,7 @@ perr_t PDC_Client_data_server_write_check(int server_id, uint32_t client_id, pdc
     }
 
 done:
-    HG_Destroy(pdc_server_info_g[server_id].data_server_write_check_handle);
+    HG_Destroy(data_server_write_check_handle);
     FUNC_LEAVE(ret_value);
 }
 

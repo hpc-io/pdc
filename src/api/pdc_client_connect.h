@@ -47,45 +47,6 @@ typedef struct pdc_server_info_t {
     char            addr_string[ADDR_MAX];
     int             addr_valid;
     hg_addr_t       addr;
-    int             rpc_handle_valid;
-    hg_handle_t     rpc_handle;
-    int             client_test_handle_valid;
-    hg_handle_t     client_test_handle;
-    int             close_server_handle_valid;
-    hg_handle_t     close_server_handle;
-    /* int             name_marker_handle_valid; */
-    /* hg_handle_t     name_marker_handle; */
-    int             metadata_query_handle_valid;
-    hg_handle_t     metadata_query_handle;
-    int             metadata_delete_handle_valid;
-    hg_handle_t     metadata_delete_handle;
-    int             metadata_delete_by_id_handle_valid;
-    hg_handle_t     metadata_delete_by_id_handle;
-    int             metadata_add_tag_handle_valid;
-    hg_handle_t     metadata_add_tag_handle;
-    int             metadata_update_handle_valid;
-    hg_handle_t     metadata_update_handle;
-    int	            client_send_region_map_handle_valid;
-    hg_handle_t     client_send_region_map_handle;
-    int             client_send_region_unmap_handle_valid;
-    hg_handle_t     client_send_region_unmap_handle;
-    int             client_send_object_unmap_handle_valid;
-    hg_handle_t     client_send_object_unmap_handle;
-    int             region_lock_handle_valid;
-    hg_handle_t     region_lock_handle;
-    int             region_release_handle_valid;
-    hg_handle_t     region_release_handle;
-    int             query_partial_handle_valid;
-    hg_handle_t     query_partial_handle;
-    // Data server related
-    int             data_server_read_handle_valid;
-    hg_handle_t     data_server_read_handle;
-    int             data_server_write_handle_valid;
-    hg_handle_t     data_server_write_handle;
-    int             data_server_read_check_handle_valid;
-    hg_handle_t     data_server_read_check_handle;
-    int             data_server_write_check_handle_valid;
-    hg_handle_t     data_server_write_check_handle;
 } pdc_server_info_t;
 
 extern pdc_server_info_t *pdc_server_info_g;
