@@ -4341,7 +4341,7 @@ int main(int argc, char *argv[])
 #endif
     
     char *is_lookupall = getenv("PDC_LOOKUP_ALL");
-    if (strcmp(is_lookupall, "0") == 0) {
+    if (is_lookupall != NULL && strcmp(is_lookupall, "0") == 0) {
         if (pdc_server_rank_g == 0) 
             printf("==PDC_SERVER[%d]: will lookup other PDC servers on demand\n", pdc_server_rank_g);
     }
