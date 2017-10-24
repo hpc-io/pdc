@@ -1365,6 +1365,7 @@ HG_TEST_RPC_CB(region_release, handle)
                     (server_region->size)[0] = size;
                     (server_region->offset)[0] = 0; 
                     ret_value = PDC_Server_data_read_direct(elt->from_obj_id, server_region, data_buf);
+printf("read data %f from obj %lld\n", *(float *)data_buf, elt->from_obj_id);
                     if(ret_value != SUCCEED)
                         printf("==PDC SERVER: PDC_Server_data_read_direct() failed\n");
                     hg_ret = HG_Bulk_create(hg_info->hg_class, 1, &data_buf, &size, HG_BULK_READWRITE, &lock_local_bulk_handle);
