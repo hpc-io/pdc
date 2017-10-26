@@ -848,20 +848,27 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
 /* #endif */
    
     // Client 0 looks up all servers, others only lookup their node local server
-    if (pdc_client_mpi_rank_g != 0) {
-        local_server_id = pdc_client_mpi_rank_g/pdc_nclient_per_server_g;
-        if (PDC_Client_lookup_server(local_server_id) != SUCCEED) {
-            printf("==PDC_CLIENT[%d]: ERROR lookup server %d\n", pdc_client_mpi_rank_g, local_server_id);
-            ret_value = FAIL;
-            goto done;
-        }
+    char *client_lookup_env = getenv("PDC_CLIENT_LOOKUP");
+    if (client_lookup_env != NULL && strcmp(client_lookup_env, "0")==0) {
+        if (pdc_client_mpi_rank_g == 0) 
+            printf("==PDC_CLIENT[%d]: Client lookup server at start time disabled!\n", pdc_client_mpi_rank_g);
     }
     else {
-        for (i = 0; i < pdc_server_num_g; i++) {
-            if (PDC_Client_lookup_server(i) != SUCCEED) {
-                printf("==PDC_CLIENT[%d]: ERROR lookup server %d\n", pdc_client_mpi_rank_g, i);
+        if (pdc_client_mpi_rank_g != 0) {
+            local_server_id = pdc_client_mpi_rank_g/pdc_nclient_per_server_g;
+            if (PDC_Client_lookup_server(local_server_id) != SUCCEED) {
+                printf("==PDC_CLIENT[%d]: ERROR lookup server %d\n", pdc_client_mpi_rank_g, local_server_id);
                 ret_value = FAIL;
                 goto done;
+            }
+        }
+        else {
+            for (i = 0; i < pdc_server_num_g; i++) {
+                if (PDC_Client_lookup_server(i) != SUCCEED) {
+                    printf("==PDC_CLIENT[%d]: ERROR lookup server %d\n", pdc_client_mpi_rank_g, i);
+                    ret_value = FAIL;
+                    goto done;
+                }
             }
         }
     }
@@ -876,7 +883,8 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-    if (is_client_debug_g == 1) {
+    /* if (is_client_debug_g == 1) { */
+    if (is_client_debug_g == 1 && pdc_client_mpi_rank_g == 0) {
         printf("==PDC_CLIENT[%d]: Successfully established connection to %d PDC metadata server%s\n\n", 
                 pdc_client_mpi_rank_g, pdc_server_num_g, pdc_client_mpi_size_g == 1 ? "": "s");
         fflush(stdout);
@@ -947,8 +955,12 @@ perr_t PDC_Client_init()
     same_node_color = pdc_client_mpi_rank_g / pdc_nclient_per_server_g;
     MPI_Comm_split(MPI_COMM_WORLD, same_node_color, pdc_client_mpi_rank_g, &PDC_SAME_NODE_COMM_g);
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &pdc_client_same_node_rank_g );
-    MPI_Comm_size(MPI_COMM_WORLD, &pdc_client_same_node_size_g );
+    MPI_Comm_rank(PDC_SAME_NODE_COMM_g, &pdc_client_same_node_rank_g );
+    MPI_Comm_size(PDC_SAME_NODE_COMM_g, &pdc_client_same_node_size_g );
+
+    /* printf("==PDC_CLIENT[%d]: color %d, key %d, node rank %d!\n", */ 
+    /*         pdc_client_mpi_rank_g, same_node_color, pdc_client_mpi_rank_g, pdc_client_same_node_rank_g); */
+
 #endif
 
     if (pdc_client_mpi_rank_g == 0) {
@@ -1050,7 +1062,7 @@ perr_t PDC_Client_finalize()
     }
     hg_ret = HG_Finalize(send_class_g);
     if (hg_ret != HG_SUCCESS) {
-        printf("==PDC_CLIENT[%d]: PDC_Client_finalize - error with HG_Context_destroy\n", pdc_client_mpi_rank_g);
+        printf("==PDC_CLIENT[%d]: PDC_Client_finalize - error with HG_Finalize\n", pdc_client_mpi_rank_g);
         ret_value = FAIL;
         goto done;
     }
@@ -1961,8 +1973,10 @@ perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, uint32_t ti
     }
     hg_ret = HG_Forward(metadata_query_handle, metadata_query_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
-        fprintf(stderr, "==PDC_Client_query_metadata_with_name(): Could not start HG_Forward()\n");
-        return FAIL;
+        printf("==PDC_CLIENT[%d] - PDC_Client_query_metadata_with_name(): Could not start HG_Forward()\n",
+                pdc_client_mpi_rank_g);
+        ret_value = FAIL;
+        goto done;
     }
 
     // Wait for response from server
@@ -1973,6 +1987,41 @@ perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, uint32_t ti
     *out = lookup_args.data;
 
     HG_Destroy(metadata_query_handle);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+// Only let one process per node to do the actual query, then broadcast to all others
+perr_t PDC_Client_query_metadata_name_timestep_agg(const char *obj_name, uint32_t time_step, pdc_metadata_t **out)
+{
+    perr_t ret_value = SUCCEED;
+
+#ifdef ENABLE_MPI
+    if (pdc_client_same_node_rank_g == 0) {
+
+        /* printf("==PDC_CLIENT[%d] - agg query, local rank: %d\n", */ 
+        /*             pdc_client_mpi_rank_g, pdc_client_same_node_rank_g); */
+
+        ret_value = PDC_Client_query_metadata_name_timestep(obj_name, time_step, out);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_CLIENT[%d] - PDC_Client_query_metadata_name_timestep_agg(): ERROR with query [%s]\n",
+                    pdc_client_mpi_rank_g, obj_name);
+            goto done;
+        }
+    }
+    else    
+        *out = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t));
+
+    MPI_Bcast(*out, sizeof(pdc_metadata_t), MPI_CHAR, 0, PDC_SAME_NODE_COMM_g);
+
+#else
+    if (pdc_client_mpi_rank_g == 0) {
+        printf("==PDC_CLIENT[%d] - PDC_Client_query_metadata_name_timestep_agg(): should only be called "
+                "with MPI enabled!\n", pdc_client_mpi_rank_g);
+    }
+    goto done;
+#endif
 
 done:
     FUNC_LEAVE(ret_value);
@@ -3310,10 +3359,10 @@ data_server_write_rpc_cb(const struct hg_cb_info *callback_info)
         goto done;
     }
 
-    if (is_client_debug_g == 1) {
-        printf("==PDC_CLIENT[%d]: data_server_write_rpc_cb(): Return value from server: %d\n", 
-                pdc_client_mpi_rank_g, output.ret);
-    }
+    /* if (is_client_debug_g == 1) { */
+    /*     printf("==PDC_CLIENT[%d]: data_server_write_rpc_cb(): Return value from server: %d\n", */ 
+    /*             pdc_client_mpi_rank_g, output.ret); */
+    /* } */
 
     client_lookup_args->ret = output.ret;
 
@@ -3609,7 +3658,7 @@ perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t 
             hg_ret = HG_Forward(aggregate_write_handle, data_server_write_rpc_cb, &lookup_args, &in);
             if (hg_ret != HG_SUCCESS) {
                 fprintf(stderr, "==PDC_Client_data_server_write(): Could not start HG_Forward()\n");
-                HG_Destroy(data_server_write_handle);
+                HG_Destroy(aggregate_write_handle);
                 ret_value = FAIL;
                 goto done;
             }

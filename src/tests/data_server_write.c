@@ -92,7 +92,8 @@ int main(int argc, const char *argv[])
     // Query the created object
     /* printf("%d: Start to query object just created.\n", rank); */
     pdc_metadata_t *metadata;
-    PDC_Client_query_metadata_name_timestep( obj_name, 0, &metadata);
+    PDC_Client_query_metadata_name_timestep_agg( obj_name, 0, &metadata);
+    /* PDC_Client_query_metadata_name_timestep( obj_name, 0, &metadata); */
     /* if (rank == 1) { */
     /*     PDC_print_metadata(metadata); */
     /* } */

@@ -123,6 +123,8 @@ int pdc_server_size_g = 1;
 
 char pdc_server_tmp_dir_g[ADDR_MAX];
 
+int write_to_bb_percentage_g        = 0;
+
 // Debug statistics var
 int n_bloom_total_g;
 int n_bloom_maybe_g;
@@ -1839,7 +1841,7 @@ done:
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_id_out_t *out)
+perr_t PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_id_out_t *out)
 {
     perr_t ret_value = FAIL;
     pdc_metadata_t *elt;
@@ -1969,7 +1971,7 @@ done:
         hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
 #endif
     FUNC_LEAVE(ret_value);
-} // end of delete_metadata_by_id
+} // end of PDC_Server_delete_metadata_by_id
 
 
 /*
@@ -2497,11 +2499,11 @@ lookup_remote_server_cb(const struct hg_cb_info *callback_info)
     pdc_remote_server_info_g[server_id].addr = callback_info->info.lookup.addr;
     pdc_remote_server_info_g[server_id].addr_valid = 1;
 
-    if (is_debug_g == 1) {
-        printf("==PDC_SERVER[%d]: lookup_remote_server_cb() - server %d\n", 
-                pdc_server_rank_g, server_id);
-        fflush(stdout);
-    }
+    /* if (is_debug_g == 1) { */
+    /*     printf("==PDC_SERVER[%d]: lookup_remote_server_cb() - server %d\n", */ 
+    /*             pdc_server_rank_g, server_id); */
+    /*     fflush(stdout); */
+    /* } */
 
     // Create HG handle if needed
         HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, 
@@ -2538,11 +2540,11 @@ perr_t PDC_Server_lookup_server_id(int remote_server_id)
     if (remote_server_id == pdc_server_rank_g) 
         goto done;
 
-    if (is_debug_g == 1) {
-        printf("==PDC_SERVER[%d]: Testing connection to remote server %d: %s\n", 
-                pdc_server_rank_g, remote_server_id, pdc_remote_server_info_g[remote_server_id].addr_string);
-        fflush(stdout);
-    }
+    /* if (is_debug_g == 1) { */
+    /*     printf("==PDC_SERVER[%d]: Testing connection to remote server %d: %s\n", */ 
+    /*             pdc_server_rank_g, remote_server_id, pdc_remote_server_info_g[remote_server_id].addr_string); */
+    /*     fflush(stdout); */
+    /* } */
 
     lookup_args.server_id = remote_server_id;
     hg_ret = HG_Addr_lookup(hg_context_g, lookup_remote_server_cb, &lookup_args, 
@@ -2968,14 +2970,14 @@ perr_t PDC_Server_finalize()
     all_server_hash_insert_time_max = server_hash_insert_time_g;
     all_server_hash_insert_time_min = server_hash_insert_time_g;
     #endif
-    if (pdc_server_rank_g == 0) {
-        printf("==PDC_SERVER: total bloom check time = %.6f, %.6f\n", all_bloom_check_time_min, all_bloom_check_time_max);
-        printf("==PDC_SERVER: total insert      time = %.6f, %.6f\n", all_insert_time_min, all_insert_time_max);
-        printf("==PDC_SERVER: total hash insert time = %.6f, %.6f\n", all_server_hash_insert_time_min, all_server_hash_insert_time_max);
-        printf("==PDC_SERVER: total bloom init  time = %.6f, %.6f\n", all_server_bloom_init_time_min, all_server_bloom_init_time_max);
-        printf("==PDC_SERVER: total memory usage     = %.2f MB\n", total_mem_usage_g/1048576.0);
-        fflush(stdout);
-    }
+    /* if (pdc_server_rank_g == 0) { */
+    /*     printf("==PDC_SERVER: total bloom check time = %.6f, %.6f\n", all_bloom_check_time_min, all_bloom_check_time_max); */
+    /*     printf("==PDC_SERVER: total insert      time = %.6f, %.6f\n", all_insert_time_min, all_insert_time_max); */
+    /*     printf("==PDC_SERVER: total hash insert time = %.6f, %.6f\n", all_server_hash_insert_time_min, all_server_hash_insert_time_max); */
+    /*     printf("==PDC_SERVER: total bloom init  time = %.6f, %.6f\n", all_server_bloom_init_time_min, all_server_bloom_init_time_max); */
+    /*     printf("==PDC_SERVER: total memory usage     = %.2f MB\n", total_mem_usage_g/1048576.0); */
+    /*     fflush(stdout); */
+    /* } */
 
 #endif
 
@@ -4225,8 +4227,7 @@ done:
 int main(int argc, char *argv[])
 {
     int port;
-    char *tmp_dir;
-    char *nost_per_file;
+    char *tmp_env_char;
     perr_t ret;
     hg_return_t hg_ret;
     
@@ -4249,25 +4250,36 @@ int main(int argc, char *argv[])
     /* printf("rank=%d, port=%d\n", pdc_server_rank_g,port); */
 
     // Set up tmp dir
-    tmp_dir = getenv("PDC_TMPDIR");
-    if (tmp_dir == NULL) 
-        tmp_dir = "./pdc_tmp";
+    tmp_env_char = getenv("PDC_TMPDIR");
+    if (tmp_env_char == NULL) 
+        tmp_env_char = "./pdc_tmp";
 
-    sprintf(pdc_server_tmp_dir_g, "%s/", tmp_dir);
+    sprintf(pdc_server_tmp_dir_g, "%s/", tmp_env_char);
 
     // Get number of OST per file
-    nost_per_file = getenv("PDC_NOST_PER_FILE");
-    if (nost_per_file != NULL) {
-        pdc_nost_per_file_g = atoi(nost_per_file);
+    tmp_env_char = getenv("PDC_NOST_PER_FILE");
+    if (tmp_env_char!= NULL) {
+        pdc_nost_per_file_g = atoi(tmp_env_char);
         // Make sure it is a sane value
         if (pdc_nost_per_file_g < 1 || pdc_nost_per_file_g > 248) {
             pdc_nost_per_file_g = 1;
         }
     }
 
+    // Get bb write percentage 
+    tmp_env_char = getenv("PDC_BB_WRITE_PERCENT");
+    if (tmp_env_char == NULL) 
+        write_to_bb_percentage_g = 0;
+    else
+        write_to_bb_percentage_g = atoi(tmp_env_char);
+
+    if (write_to_bb_percentage_g < 0 || write_to_bb_percentage_g > 100) 
+        write_to_bb_percentage_g = 0;
+
+
     if (pdc_server_rank_g == 0) {
-        printf("\n==PDC_SERVER[%d]: using [%s] as tmp dir. %d OSTs per data file.\n", 
-                pdc_server_rank_g, pdc_server_tmp_dir_g, pdc_nost_per_file_g);
+        printf("\n==PDC_SERVER[%d]: using [%s] as tmp dir. %d OSTs per data file, %d%% to BB\n", 
+                pdc_server_rank_g, pdc_server_tmp_dir_g, pdc_nost_per_file_g, write_to_bb_percentage_g);
     }
 
 #ifdef ENABLE_TIMING 
@@ -5734,16 +5746,20 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
         io_list_target->total_size  = 0;
 
         char *data_path = NULL;
+        char *bb_data_path = NULL;
         char *user_specified_data_path = getenv("PDC_DATA_LOC");
         if (user_specified_data_path != NULL) {
             data_path = user_specified_data_path;
         }
         else {
             data_path = getenv("SCRATCH");
-            if (data_path == NULL) {
+            if (data_path == NULL) 
                 data_path = ".";
-            }
         }
+            
+        bb_data_path = getenv("PDC_BB_LOC");
+        if (bb_data_path != NULL) 
+            sprintf(io_list_target->bb_path, "%s/pdc_data/%" PRIu64 "", bb_data_path, io_info->meta.obj_id);
 
         // Auto generate a data location path for storing the data
         sprintf(io_list_target->path, "%s/pdc_data/%" PRIu64 "", data_path, io_info->meta.obj_id);
@@ -5808,9 +5824,8 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
         }
 
         if (is_debug_g) {
-            printf("==PDC_SERVER[%d]: received all %d requests, starts %s [%s]\n", 
-                    pdc_server_rank_g, io_list_target->total, 
-                    io_info->io_type == READ? "reading from ": "writing to ", io_list_target->path);
+            printf("==PDC_SERVER[%d]: received all %d requests, starts %s.\n", 
+                    pdc_server_rank_g, io_list_target->total, io_info->io_type == READ? "reading": "writing");
         }
 
         if (io_info->io_type == READ) {
@@ -5831,13 +5846,26 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
             }
         }
         else if (io_info->io_type == WRITE) {
+            // received all requests, start writing
+            // Some server write to BB when specified
+            int curr_cnt = 0;
+            int write_to_bb_cnt = io_list_target->total * write_to_bb_percentage_g / 100;
 
             // Specify the location of data to be written to
             DL_FOREACH(io_list_target->region_list_head, region_elt) {
-                sprintf(region_elt->storage_location, "%s/server%d/s%03d.bin", 
+
+                sprintf(region_elt->storage_location, "%s/server%d/s%04d.bin", 
                         io_list_target->path, pdc_server_rank_g, pdc_server_rank_g); 
-                /* printf("region to write obj_id: %" PRIu64 "\n", region_elt->meta->obj_id); */
                 /* PDC_print_region_list(region_elt); */
+
+                // If BB is enabled, then overwrite with BB path with the right number of servers
+                if (write_to_bb_percentage_g > 0 && curr_cnt < write_to_bb_cnt) {
+                    sprintf(region_elt->storage_location, "%s/server%d/s%04d.bin", 
+                            io_list_target->bb_path, pdc_server_rank_g, pdc_server_rank_g); 
+                }
+                curr_cnt++;
+                /* printf("region to write obj_id: %" PRIu64 ", loc [%s], %d %%\n", */ 
+                /*        region_elt->meta->obj_id, region_elt->storage_location, write_to_bb_percentage_g); */
             }
 
             status = PDC_Server_data_write_from_shm(io_list_target->region_list_head);
@@ -6007,10 +6035,10 @@ perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_
         pdc_region_list_t_deep_cp(region, new_region);
 
         DL_APPEND(target_meta->storage_region_list_head, new_region);
-        if (is_debug_g == 1) {
-            printf("==PDC_SERVER[%d]: created new region location/offset\n", pdc_server_rank_g);
-            PDC_print_storage_region_list(new_region);
-        }
+        /* if (is_debug_g == 1) { */
+        /*     printf("==PDC_SERVER[%d]: created new region location/offset\n", pdc_server_rank_g); */
+        /*     PDC_print_storage_region_list(new_region); */
+        /* } */
 
         // Debug print
         /* printf("==PDC_SERVER[%d]: created new region location [%s]\n", */ 
@@ -6789,6 +6817,8 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
                 goto done;
             }
 
+            // Open file if needed:
+            // if this is first time to write data, or writing to a different location from last write.
             if (previous_region == NULL 
                     || strcmp(region_elt->storage_location, previous_region->storage_location) != 0) {
 
@@ -6811,18 +6841,25 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
                     PDC_Server_set_lustre_stripe(region_elt->storage_location, stripe_count, stripe_size);
                 }
 #endif
+                // Close previous file 
                 if (fp_write != NULL) {
                     fclose(fp_write);
                     fp_write = NULL;
+
+                    if (is_debug_g == 1) {
+                        printf("==PDC_SERVER[%d]: close and open new file [%s]\n", 
+                                  pdc_server_rank_g, region_elt->storage_location);
+                    }
                 }
-                // Append the current write data
+
                 // TODO: need to recycle file space in cases of data update and delete
-                
                                     
                 #ifdef ENABLE_TIMING
                 gettimeofday(&pdc_timer_start, 0);
                 #endif
 
+                // Open current file as binary and append only, it is guarenteed that only current 
+                // server process access this file, so no lock is needed.
                 fp_write = fopen(region_elt->storage_location, "ab");
                 n_fopen_g++;
 
@@ -6832,12 +6869,13 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
                 #endif
 
                 if (NULL == fp_write) {
-                    printf("==PDC_SERVER: fopen failed [%s]\n", region_elt->storage_location);
+                    printf("==PDC_SERVER[%d]: fopen failed [%s]\n", 
+                                pdc_server_rank_g, region_elt->storage_location);
                     ret_value = FAIL;
                     goto done;
                 }
                 /* printf("write location is %s\n", region_elt->storage_location); */
-            } // End if previous_region and current region have same storage location
+            } // End open file
 
             // Get the current write offset
             offset = ftell(fp_write);
@@ -6846,9 +6884,13 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
             gettimeofday(&pdc_timer_start, 0);
             #endif
 
+            // Actual write (append)
             write_bytes = fwrite(region_elt->buf, 1, region_elt->data_size, fp_write);
             if (write_bytes != region_elt->data_size) {
-                printf("==PDC_SERVER[%d]: fwrite ERROR!\n", pdc_server_rank_g);
+                printf("==PDC_SERVER[%d]: fwrite to [%s] FAILED, region off %" PRIu64 ", size %" PRIu64 ", " 
+                       "actual writeen %" PRIu64 "!\n", 
+                            pdc_server_rank_g, region_elt->storage_location, offset, region_elt->data_size, 
+                            write_bytes);
                 ret_value= FAIL;
                 goto done;
             }
@@ -6862,7 +6904,8 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
             /* fclose(fp_write); */
 
             if (is_debug_g == 1) {
-                printf("Write data offset: %" PRIu64 ", size %" PRIu64 "\n", offset, region_elt->data_size);
+                printf("Write data offset: %" PRIu64 ", size %" PRIu64 ", to [%s]\n", 
+                                              offset, region_elt->data_size, region_elt->storage_location);
                 /* printf("Write data buf: [%.*s]\n", region_elt->data_size, (char*)region_elt->buf); */
             }
             region_elt->is_data_ready = 1;
@@ -6890,6 +6933,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
 
     // FIXME: looks like even for read calls the region still has access type of write
     //        maybe the regions get corruppted somewhere above
+    // NOTE: this seems to be fixed
     if (is_read_only != 1) {
 
         #ifdef ENABLE_TIMING
@@ -6907,6 +6951,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
                 // Update metadata with the location and offset
                 /* printf("obj_id before update region storage offset: %" PRIu64 "\n", region_elt->meta->obj_id); */
                 // FIXME: region is corrupted, ndim gets changed!
+                // NOTE:  this seems to be fixed
                 ret_value = PDC_Server_update_region_storagelocation_offset(region_elt);
                 if (ret_value != SUCCEED) {
                     printf("==PDC_SERVER[%d]: failed to update region storage info!\n", pdc_server_rank_g);
@@ -7086,7 +7131,7 @@ perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct P
     }
 
     // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
-    sprintf(io_region->storage_location, "%s/pdc_data/%" PRIu64 "/server%d/s%03d.bin", 
+    sprintf(io_region->storage_location, "%s/pdc_data/%" PRIu64 "/server%d/s%04d.bin", 
             data_path, obj_id, pdc_server_rank_g, pdc_server_rank_g);
     pdc_mkdir(io_region->storage_location);
 

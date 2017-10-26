@@ -66,8 +66,13 @@ extern int pdc_server_rank_g;
 #define PDC_MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 typedef enum { POSIX=0, DAOS=1 }       PDC_io_plugin_t;
-typedef enum { READ=0, WRITE=1, NA=2 } PDC_access_t;
+typedef enum { NA=0, READ=1, WRITE=2 } PDC_access_t;
 typedef enum { BLOCK=0, NOBLOCK=1 }    PDC_lock_mode_t;
+typedef enum { NONE=0, 
+               LUSTRE=1, 
+               BB=2, 
+               MEM=3 
+             } PDC_data_loc_t;
 
 typedef struct pdc_metadata_t pdc_metadata_t;
 
@@ -84,6 +89,7 @@ typedef struct region_list_t {
     char     shm_addr[ADDR_MAX];
     int      shm_fd;
     char    *buf;
+    PDC_data_loc_t data_loc_type;
     char     storage_location[ADDR_MAX];
     uint64_t offset;
     int      reg_dirty;
@@ -99,7 +105,7 @@ typedef struct region_list_t {
 
     struct region_list_t *prev;
     struct region_list_t *next;
-    // 16 attributes, need to match init and deep_cp routines
+    // 23 attributes, need to match init and deep_cp routines
 } region_list_t;
 
 // Similar structure PDC_region_info_t defined in pdc_obj_pkg.h
@@ -119,7 +125,7 @@ typedef struct pdc_metadata_transfer_t {
 
     uint64_t    obj_id;
 
-    int32_t     ndim;
+    size_t      ndim;
     int32_t     dims0, dims1, dims2, dims3;
 
     const char  *tags;
@@ -138,7 +144,7 @@ typedef struct metadata_query_transfer_in_t{
     int     time_step_from;
     int     time_step_to;
 
-    int     ndim;
+    size_t  ndim;
 
     /* time_t  create_time_from; */
     /* time_t  create_time_to; */
@@ -174,8 +180,8 @@ typedef struct PDC_mapping_info {
 typedef struct region_map_t {
 // if keeping the struct of origin of region is needed?
     pdc_cnt_t                        mapping_count;        /* count the number of mapping of this region */
-    pdcid_t                          local_obj_id;         /* origin of object id */
-    pdcid_t                          local_reg_id;         /* origin of region id */
+    uint64_t                         local_obj_id;         /* origin of object id */
+    uint64_t                         local_reg_id;         /* origin of region id */
     size_t                           local_ndim;
     uint64_t                        *local_reg_size;
     hg_addr_t                        local_addr;
@@ -202,7 +208,7 @@ typedef struct pdc_metadata_t {
     char    tags[TAG_LEN_MAX];
     char    data_location[ADDR_MAX];
 
-    int     ndim;
+    size_t  ndim;
     int     dims[DIM_MAX];
 
     // For region storage list
@@ -536,7 +542,8 @@ hg_proc_metadata_query_transfer_in_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_uint32_t(proc, &struct_data->ndim);
+
+    ret = hg_proc_hg_size_t(proc, &struct_data->ndim);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -620,7 +627,7 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_uint32_t(proc, &struct_data->ndim);
+    ret = hg_proc_hg_size_t(proc, &struct_data->ndim);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -1301,7 +1308,7 @@ hg_proc_gen_reg_map_notification_in_t(hg_proc_t proc, void *data)
         HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_uint32_t(proc, &struct_data->ndim);
+    ret = hg_proc_hg_size_t(proc, &struct_data->ndim);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;

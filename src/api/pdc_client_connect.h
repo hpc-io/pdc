@@ -146,6 +146,7 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, uint32_t time_step, pdc_metadata_t **out);
+perr_t PDC_Client_query_metadata_name_timestep_agg(const char *obj_name, uint32_t time_step, pdc_metadata_t **out);
 
 /**
  * PDC client query metadata by object name

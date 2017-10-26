@@ -65,6 +65,9 @@ perr_t PDC_Server_serialize_regions_info(region_list_t** regions, uint32_t n_reg
 
 perr_t PDC_Server_regions_io(region_list_t *region_list_head, PDC_io_plugin_t plugin);
 
+perr_t PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_id_out_t *out);
+
+
 hg_return_t PDC_Server_work_done_cb(const struct hg_cb_info *callback_info);
 /* typedef struct pdc_metadata_name_mark_t { */
 /*     char obj_name[ADDR_MAX]; */
@@ -129,6 +132,7 @@ extern hg_thread_mutex_t pdc_client_connect_mutex_g;
 typedef struct pdc_data_server_io_list_t {
     uint64_t obj_id;
     char  path[ADDR_MAX];
+    char  bb_path[ADDR_MAX];
     int   total;
     int   count;
     int   ndim;
