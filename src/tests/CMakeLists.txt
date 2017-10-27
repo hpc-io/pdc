@@ -18,7 +18,6 @@ set(PROGRAMS
   obj_dim
   obj_buf
   obj_map
-  obj_unmap
   obj_write_release
   create_obj_scale
   close_server
@@ -31,11 +30,16 @@ set(PROGRAMS
   list_all
   data_server_read
   data_server_write
-  data_server_read_multi
-  data_server_write_multi
   data_rw_test
   init_only
+  obj_buf_map
+  obj_map_mpi
+  obj_map_mpi_s2
+  obj_map_mpi_s3
+  obj_map_mpi_s4
+  vpicio
   )
+# obj_buf_map_mpi_v1
 
 foreach(program ${PROGRAMS})
   add_executable(${program} ${program}.c)

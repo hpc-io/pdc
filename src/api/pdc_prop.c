@@ -71,44 +71,85 @@ done:
 pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdcid)
 {
     pdcid_t ret_value = SUCCEED;
-    struct PDC_cont_prop *p;
-    struct PDC_obj_prop *q;
-    struct PDC_id_info *id_info;
-    
+    struct PDC_cont_prop *p = NULL;
+    struct PDC_obj_prop *q = NULL;
+    struct PDC_id_info *id_info = NULL;
+    pdcid_t new_id_c;
+    pdcid_t new_id_o;
+ 
     FUNC_ENTER(NULL);
 
     if (type == PDC_CONT_CREATE) {
-        p = NULL;
         p = PDC_MALLOC(struct PDC_cont_prop);
         if(!p)
             PGOTO_ERROR(FAIL, "PDC container property memory allocation failed\n");
         p->cont_life = PDC_PERSIST;
-        pdcid_t new_id_c = PDC_id_register(PDC_CONT_PROP, p);
+        new_id_c = PDC_id_register(PDC_CONT_PROP, p);
         p->cont_prop_id = new_id_c;
         id_info = PDC_find_id(pdcid);
         p->pdc = (struct PDC_class *)(id_info->obj_ptr);
         ret_value = new_id_c;
     }
     if(type == PDC_OBJ_CREATE) {
-        q = NULL;
         q = PDC_MALLOC(struct PDC_obj_prop);
-      if(!q)
-          PGOTO_ERROR(FAIL, "PDC object property memory allocation failed\n");
+        if(!q)
+            PGOTO_ERROR(FAIL, "PDC object property memory allocation failed\n");
         q->obj_life = PDC_TRANSIENT;
         q->ndim = 0;
         q->dims = NULL;
         q->data_loc = NULL;
         q->type = PDC_UNKNOWN; 
-	q->app_name = NULL;
-	q->tags = NULL;
+	    q->app_name = NULL;
+        q->time_step = 0;
+	    q->tags = NULL;
         q->buf = NULL;
-        pdcid_t new_id_o = PDC_id_register(PDC_OBJ_PROP, q);
+        new_id_o = PDC_id_register(PDC_OBJ_PROP, q);
         q->obj_prop_id = new_id_o;
         id_info = PDC_find_id(pdcid);
         q->pdc = (struct PDC_class *)(id_info->obj_ptr);
         ret_value = new_id_o;
     }
     
+done:
+    FUNC_LEAVE(ret_value);
+} /* end PDCprop_create() */
+
+pdcid_t PDCprop_obj_dup(pdcid_t prop_id)
+{
+    pdcid_t ret_value = SUCCEED;
+    struct  PDC_cont_prop *p = NULL;
+    struct  PDC_obj_prop *q = NULL;
+    struct  PDC_obj_prop *info = NULL;
+    struct  PDC_id_info *prop = NULL;
+    pdcid_t new_id;
+    int     i;
+
+    FUNC_ENTER(NULL);
+
+    prop = PDC_find_id(prop_id);
+    if(prop == NULL)
+        PGOTO_ERROR(NULL, "cannot locate object property");
+    info = (struct PDC_obj_prop *)(prop->obj_ptr);
+
+    q = PDC_MALLOC(struct PDC_obj_prop);
+    if(!q)
+        PGOTO_ERROR(FAIL, "PDC object property memory allocation failed\n");
+    q->obj_life = info->obj_life;
+    q->ndim = info->ndim;
+    q->dims = (uint64_t *)malloc(info->ndim * sizeof(uint64_t));
+    for(i=0; i<info->ndim; i++)
+        (q->dims)[i] = (info->dims)[i];
+    q->app_name = strdup(info->app_name);
+    q->time_step = info->time_step;
+    q->tags = strdup(info->tags);
+    new_id = PDC_id_register(PDC_OBJ_PROP, q);
+    q->obj_prop_id = new_id;
+    q->pdc = info->pdc;
+    q->data_loc = NULL;
+    q->type = PDC_UNKNOWN;
+    q->buf = NULL;
+    ret_value = new_id;
+
 done:
     FUNC_LEAVE(ret_value);
 } /* end PDCprop_create() */
@@ -174,6 +215,7 @@ static perr_t PDCprop__obj_close(struct PDC_obj_prop *cp)
     }
     free(cp->app_name);
     free(cp->tags);
+    free(cp->data_loc);
     cp = PDC_FREE(struct PDC_obj_prop, cp);
     
     FUNC_LEAVE(ret_value);

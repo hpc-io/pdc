@@ -48,12 +48,11 @@ int main(int argc, char **argv)
 {
     int rank = 0, size = 1;
     pdcid_t pdc_id, cont_prop, cont_id;
-    pdcid_t obj_prop1;
-    pdcid_t obj_prop_xx, obj_prop_yy, obj_prop_zz, obj_prop_pxx, obj_prop_pyy, obj_prop_pzz;
-    pdcid_t obj_x, obj_y, obj_z, obj_px, obj_py, obj_pz;
-    pdcid_t obj_xx, obj_yy, obj_zz, obj_pxx, obj_pyy, obj_pzz;
-    pdcid_t region_x, region_y, region_z, region_px, region_py, region_pz; 
-    pdcid_t region_xx, region_yy, region_zz, region_pxx, region_pyy, region_pzz; 
+    pdcid_t obj_prop_xx, obj_prop_yy, obj_prop_zz, obj_prop_pxx, obj_prop_pyy, obj_prop_pzz, obj_prop_id11, obj_prop_id22;
+    pdcid_t obj_x, obj_y, obj_z, obj_px, obj_py, obj_pz, obj_id1, obj_id2;
+    pdcid_t obj_xx, obj_yy, obj_zz, obj_pxx, obj_pyy, obj_pzz, obj_id11, obj_id22;
+    pdcid_t region_x, region_y, region_z, region_px, region_py, region_pz, region_id1, region_id2; 
+    pdcid_t region_xx, region_yy, region_zz, region_pxx, region_pyy, region_pzz, region_id11, region_id22; 
     perr_t ret;
     struct timeval  ht_total_start;
     struct timeval  ht_total_end;
@@ -61,7 +60,7 @@ int main(int argc, char **argv)
     double ht_total_sec;
     float *x, *y, *z, *xx, *yy, *zz;
     float *px, *py, *pz, *pxx, *pyy, *pzz;
-    int *id1, *id2;
+    int *id1, *id2, *id11, *id22;
     int x_dim = 64;
     int y_dim = 64;
     int z_dim = 64;
@@ -97,6 +96,9 @@ int main(int argc, char **argv)
     pyy = (float *)malloc(numparticles*sizeof(float));
     pzz = (float *)malloc(numparticles*sizeof(float));
 
+    id11 = (int *)malloc(numparticles*sizeof(int));
+    id22 = (int *)malloc(numparticles*sizeof(int));
+
     // create a pdc
     pdc_id = PDC_init("pdc");
     /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
@@ -118,7 +120,6 @@ int main(int argc, char **argv)
     /*         printf("Create a container, id is %lld\n", cont_id); */
 
     // create an object property
-    obj_prop1 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
     obj_prop_xx = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
 
     PDCprop_set_obj_dims(obj_prop_xx, 1, dims);
@@ -148,6 +149,14 @@ int main(int argc, char **argv)
     obj_prop_pzz = PDCprop_obj_dup(obj_prop_xx);
     PDCprop_set_obj_type(obj_prop_pzz, PDC_FLOAT);
     PDCprop_set_obj_buf(obj_prop_pzz, pzz);
+
+    obj_prop_id11 = PDCprop_obj_dup(obj_prop_xx);
+    PDCprop_set_obj_type(obj_prop_id11, PDC_INT);
+    PDCprop_set_obj_buf(obj_prop_id11, id11);
+
+    obj_prop_id22 = PDCprop_obj_dup(obj_prop_xx);
+    PDCprop_set_obj_type(obj_prop_id22, PDC_INT);
+    PDCprop_set_obj_buf(obj_prop_id22, id22);
 
     obj_xx = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop_xx, PDC_OBJ_GLOBAL);
     if (obj_xx < 0) {    
@@ -181,6 +190,17 @@ int main(int argc, char **argv)
         exit(-1);
     }
 
+    obj_id11 = PDCobj_create_mpi(cont_id, "id11", obj_prop_id11, PDC_OBJ_GLOBAL);
+    if (obj_id11 < 0) {
+        printf("Error getting an object id of %s from server, exit...\n", "obj_id11");
+        exit(-1);
+    }
+    obj_id22 = PDCobj_create_mpi(cont_id, "id22", obj_prop_id22, PDC_OBJ_GLOBAL);
+    if (obj_id22 < 0) {
+        printf("Error getting an object id of %s from server, exit...\n", "obj_id22");
+        exit(-1);
+    }
+
 //    pdc_metadata_t *res = NULL;
 //    PDC_Client_query_metadata_name_only("obj-var-xx", &res);
 //    printf("rank %d: meta id is %lld\n", rank, res->obj_id);
@@ -191,19 +211,23 @@ int main(int argc, char **argv)
     mysize[0] = my_data_size/size;
 
     // create a region
-    region_x = PDCregion_create(1, offset, mysize);
+    region_x = PDCregion_create(ndim, offset, mysize);
     region_y = PDCregion_create(ndim, offset, mysize);
     region_z = PDCregion_create(ndim, offset, mysize);
     region_px = PDCregion_create(ndim, offset, mysize);
     region_py = PDCregion_create(ndim, offset, mysize);
     region_pz = PDCregion_create(ndim, offset, mysize);
+    region_id1 = PDCregion_create(ndim, offset, mysize);
+    region_id2 = PDCregion_create(ndim, offset, mysize);
 
-    region_xx = PDCregion_create(1, offset, mysize);
+    region_xx = PDCregion_create(ndim, offset, mysize);
     region_yy = PDCregion_create(ndim, offset, mysize);
     region_zz = PDCregion_create(ndim, offset, mysize);
     region_pxx = PDCregion_create(ndim, offset, mysize);
     region_pyy = PDCregion_create(ndim, offset, mysize);
     region_pzz = PDCregion_create(ndim, offset, mysize);
+    region_id11 = PDCregion_create(ndim, offset, mysize);
+    region_id22 = PDCregion_create(ndim, offset, mysize);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -211,10 +235,13 @@ int main(int argc, char **argv)
 
     obj_x = PDCobj_buf_map(cont_id, "obj-var-x", &x[0], PDC_FLOAT, region_x, obj_xx, region_xx);
     obj_y = PDCobj_buf_map(cont_id, "obj-var-y", &y[0], PDC_FLOAT, region_y, obj_yy, region_yy);
-    obj_z = PDCobj_buf_map(cont_id, "obj-var-z", &z[0], PDC_FLOAT, region_z, obj_zz, region_zz);
-    obj_px = PDCobj_buf_map(cont_id, "obj-var-px", &px[0], PDC_FLOAT, region_px, obj_pxx, region_pxx);
-    obj_py = PDCobj_buf_map(cont_id, "obj-var-py", &py[0], PDC_FLOAT, region_py, obj_pyy, region_pyy);
-    obj_pz = PDCobj_buf_map(cont_id, "obj-var-pz", &pz[0], PDC_FLOAT, region_pz, obj_pzz, region_pzz);    
+//    obj_z = PDCobj_buf_map(cont_id, "obj-var-z", &z[0], PDC_FLOAT, region_z, obj_zz, region_zz);
+//    obj_px = PDCobj_buf_map(cont_id, "obj-var-px", &px[0], PDC_FLOAT, region_px, obj_pxx, region_pxx);
+//    obj_py = PDCobj_buf_map(cont_id, "obj-var-py", &py[0], PDC_FLOAT, region_py, obj_pyy, region_pyy);
+//    obj_pz = PDCobj_buf_map(cont_id, "obj-var-pz", &pz[0], PDC_FLOAT, region_pz, obj_pzz, region_pzz);    
+//    obj_id1 = PDCobj_buf_map(cont_id, "id1", &id1[0], PDC_INT, region_id1, obj_id11, region_id11);
+//    obj_id2 = PDCobj_buf_map(cont_id, "id2", &id2[0], PDC_INT, region_id2, obj_id22, region_id22);
+ 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -225,7 +252,7 @@ int main(int argc, char **argv)
     ret = PDCreg_obtain_lock(obj_y, region_y, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_y\n");
-    ret = PDCreg_obtain_lock(obj_z, region_z, WRITE, NOBLOCK);
+/*    ret = PDCreg_obtain_lock(obj_z, region_z, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_z\n");
     ret = PDCreg_obtain_lock(obj_px, region_px, WRITE, NOBLOCK);
@@ -237,22 +264,13 @@ int main(int argc, char **argv)
     ret = PDCreg_obtain_lock(obj_pz, region_pz, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_pz\n");
-
-    for (int i=0; i<numparticles; i++) {
-        x[i]   = uniform_random_number() * x_dim;
-        y[i]   = uniform_random_number() * y_dim;
-        z[i]   = ((float)id1[i]/numparticles) * z_dim;
-        px[i]  = uniform_random_number() * x_dim;
-        py[i]  = uniform_random_number() * y_dim;
-        pz[i]  = ((float)id2[i]/numparticles) * z_dim;
-        xx[i]  = 0;
-        yy[i]  = 0;
-        zz[i]  = 0;
-        pxx[i] = 0;
-        pyy[i] = 0;
-        pzz[i] = 0;       
-printf("x = %f\n", x[i]);
-    }
+    ret = PDCreg_obtain_lock(obj_id1, region_id1, WRITE, NOBLOCK);
+    if (ret != SUCCEED)
+        printf("Failed to obtain lock for region_id1\n");
+    ret = PDCreg_obtain_lock(obj_id2, region_id2, WRITE, NOBLOCK);
+    if (ret != SUCCEED)
+        printf("Failed to obtain lock for region_id2\n");
+*/
 
     ret = PDCreg_obtain_lock(obj_xx, region_xx, WRITE, NOBLOCK);
     if (ret != SUCCEED)
@@ -272,6 +290,33 @@ printf("x = %f\n", x[i]);
     ret = PDCreg_obtain_lock(obj_pzz, region_pzz, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_pzz\n");
+    ret = PDCreg_obtain_lock(obj_id11, region_id11, WRITE, NOBLOCK);
+    if (ret != SUCCEED)
+        printf("Failed to obtain lock for region_id11\n");
+    ret = PDCreg_obtain_lock(obj_id22, region_id22, WRITE, NOBLOCK);
+    if (ret != SUCCEED)
+        printf("Failed to obtain lock for region_id22\n");
+
+     for (int i=0; i<numparticles; i++) {
+        id1[i] = i;
+        id2[i] = i*2;
+        x[i]   = uniform_random_number() * x_dim;
+        y[i]   = uniform_random_number() * y_dim;
+        z[i]   = ((float)id1[i]/numparticles) * z_dim;
+        px[i]  = uniform_random_number() * x_dim;
+        py[i]  = uniform_random_number() * y_dim;
+        pz[i]  = ((float)id2[i]/numparticles) * z_dim;
+        xx[i]  = 0;
+        yy[i]  = 0;
+        zz[i]  = 0;
+        pxx[i] = 0;
+        pyy[i] = 0;
+        pzz[i] = 0;
+        id11[i] = 0;
+        id22[i] = 0;
+printf("x = %f\n", x[i]);
+//printf("id1 = %d\n", id1[i]);
+    }
 
     ret = PDCreg_release_lock(obj_x, region_x, WRITE);
     if (ret != SUCCEED)
@@ -279,7 +324,7 @@ printf("x = %f\n", x[i]);
     ret = PDCreg_release_lock(obj_y, region_y, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_y\n");
-    ret = PDCreg_release_lock(obj_z, region_z, WRITE);
+/*    ret = PDCreg_release_lock(obj_z, region_z, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_z\n");
     ret = PDCreg_release_lock(obj_px, region_px, WRITE);
@@ -291,6 +336,13 @@ printf("x = %f\n", x[i]);
     ret = PDCreg_release_lock(obj_pz, region_pz, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_pz\n");
+    ret = PDCreg_release_lock(obj_id1, region_id1, WRITE);
+    if (ret != SUCCEED)
+        printf("Failed to release lock for region_id1\n");
+    ret = PDCreg_release_lock(obj_id2, region_id2, WRITE);
+    if (ret != SUCCEED)
+        printf("Failed to release lock for region_id2\n");
+*/
 
     ret = PDCreg_release_lock(obj_xx, region_xx, WRITE);
     if (ret != SUCCEED)
@@ -310,9 +362,16 @@ printf("x = %f\n", x[i]);
     ret = PDCreg_release_lock(obj_pzz, region_pzz, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_pzz\n");
+    ret = PDCreg_release_lock(obj_id11, region_id11, WRITE);
+    if (ret != SUCCEED)
+        printf("Failed to release lock for region_id11\n");
+    ret = PDCreg_release_lock(obj_id22, region_id22, WRITE);
+    if (ret != SUCCEED)
+        printf("Failed to release lock for region_id22\n");
 
 for (int i=0; i<numparticles; i++) {
 printf("xx = %f\n", xx[i]);
+//printf("id11 = %d\n", id11[i]);
     }
 
 #ifdef ENABLE_MPI
@@ -320,17 +379,20 @@ printf("xx = %f\n", xx[i]);
 #endif
 
     ret = PDCreg_unmap(obj_x, region_x);
-    PDCreg_unmap(obj_y, region_y);
-    PDCreg_unmap(obj_z, region_z);
-    PDCreg_unmap(obj_px, region_px);
-    PDCreg_unmap(obj_py, region_py);
-    PDCreg_unmap(obj_pz, region_pz);
+//    PDCreg_unmap(obj_y, region_y);
+//    PDCreg_unmap(obj_z, region_z);
+//    PDCreg_unmap(obj_px, region_px);
+//    PDCreg_unmap(obj_py, region_py);
+//    PDCreg_unmap(obj_pz, region_pz);
+//    PDCreg_unmap(obj_id1, region_id1);
+//    PDCreg_unmap(obj_id2, region_id2);
+
     if (ret != SUCCEED)
         printf("region unmap failed\n");
 
     if(PDCobj_close(obj_x) < 0)
         printf("fail to close obj_x %lld\n", obj_x);
-
+/*
     if(PDCobj_close(obj_y) < 0)
         printf("fail to close object %lld\n", obj_y);
   
@@ -345,6 +407,13 @@ printf("xx = %f\n", xx[i]);
 
     if(PDCobj_close(obj_pz) < 0)
         printf("fail to close object %lld\n", obj_pz);
+
+    if(PDCobj_close(obj_id1) < 0)
+        printf("fail to close object %lld\n", obj_id1);
+
+    if(PDCobj_close(obj_id2) < 0)
+        printf("fail to close object %lld\n", obj_id2);
+*/
 
     if(PDCobj_close(obj_xx) < 0)
         printf("fail to close obj_xx %lld\n", obj_xx);
@@ -363,6 +432,12 @@ printf("xx = %f\n", xx[i]);
     
     if(PDCobj_close(obj_pzz) < 0)
         printf("fail to close object %lld\n", obj_pzz);
+
+    if(PDCobj_close(obj_id11) < 0)
+        printf("fail to close object %lld\n", obj_id11);
+
+    if(PDCobj_close(obj_id22) < 0)
+        printf("fail to close object %lld\n", obj_id22);
     
     if(PDCprop_close(obj_prop_xx) < 0)
         printf("Fail to close obj property %lld\n", obj_prop_xx);
@@ -382,6 +457,12 @@ printf("xx = %f\n", xx[i]);
     if(PDCprop_close(obj_prop_pzz) < 0)
         printf("Fail to close obj property %lld\n", obj_prop_pzz);
     
+    if(PDCprop_close(obj_prop_id11) < 0)
+        printf("Fail to close obj property %lld\n", obj_prop_id11);
+
+    if(PDCprop_close(obj_prop_id22) < 0)
+        printf("Fail to close obj property %lld\n", obj_prop_id22);
+
     if(PDCregion_close(region_x) < 0)
         printf("fail to close region %lld\n", region_x);
 
@@ -400,6 +481,12 @@ printf("xx = %f\n", xx[i]);
     if(PDCobj_close(region_pz) < 0)
         printf("fail to close region %lld\n", region_pz);
 
+    if(PDCobj_close(region_id1) < 0)
+        printf("fail to close region %lld\n", region_id1);
+
+    if(PDCobj_close(region_id2) < 0)
+        printf("fail to close region %lld\n", region_id2);
+
     if(PDCregion_close(region_xx) < 0)
         printf("fail to close region %lld\n", region_xx);
         
@@ -417,6 +504,12 @@ printf("xx = %f\n", xx[i]);
     
     if(PDCregion_close(region_pzz) < 0)
         printf("fail to close region %lld\n", region_pzz);
+    
+    if(PDCobj_close(region_id11) < 0)
+        printf("fail to close region %lld\n", region_id11);
+
+    if(PDCobj_close(region_id22) < 0)
+        printf("fail to close region %lld\n", region_id22);
 
     // close a container
     if(PDCcont_close(cont_id) < 0)

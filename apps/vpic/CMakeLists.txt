@@ -22,6 +22,7 @@ endif()
 
 include_directories(${PDC_EXT_INCLUDE_DEPENDENCIES})
 
+add_definitions(-DENABLE_MPI=1)
 
 set(PROGRAMS vpicio)
 

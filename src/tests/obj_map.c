@@ -59,6 +59,7 @@ int main(int argc, char **argv)
     pdcid_t obj_prop1, obj_prop2, obj_prop3;
     pdcid_t obj1, obj2, obj3;
     pdcid_t r1, r2, r3;
+    perr_t ret;
     struct timeval  ht_total_start;
     struct timeval  ht_total_end;
     long long ht_total_elapsed;
@@ -183,7 +184,7 @@ int main(int argc, char **argv)
     gettimeofday(&ht_total_start, 0);
 
 	PDCobj_map(obj1, r1, obj2, r2);
-//	PDCobj_map(obj1, r1, obj3, r3);
+	PDCobj_map(obj1, r1, obj3, r3);
 //	PDCobj_map(obj2, r2, obj3, r3);
 
 #ifdef ENABLE_MPI
@@ -194,7 +195,7 @@ int main(int argc, char **argv)
     ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
     ht_total_sec        = ht_total_elapsed / 1000000.0;
     if (rank == 0) { 
-		printf("Time to map obj %.6f\n",  ht_total_sec);
+		printf("Total map overhead          : %.6f\n",  ht_total_sec);
         fflush(stdout);
     }
 
@@ -216,6 +217,27 @@ int main(int argc, char **argv)
     /*     else */ 
     /*         printf("Duplicate insertion test succeed!\n"); */
     /* } */
+
+    #ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    gettimeofday(&ht_total_start, 0);
+
+    ret = PDCreg_unmap(obj1, r1);
+    if (ret != SUCCEED)
+        printf("region unmap failed\n");
+
+    #ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
+    gettimeofday(&ht_total_end, 0);
+    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+    ht_total_sec        = ht_total_elapsed / 1000000.0;
+
+    if (rank == 0) {
+        printf("Total unmap overhead        : %.6f\n", ht_total_sec);
+    }
 
     // close a container
     if(PDCcont_close(cont_id) < 0)

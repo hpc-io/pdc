@@ -46,13 +46,13 @@
 static pdc_cnt_t pdc_num_reg;
 extern hg_class_t *hg_class_g;
 
+
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out);
 /* perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out); */
 perr_t PDC_Server_region_release(region_lock_in_t *in, region_lock_out_t *out);
 perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out);
 perr_t PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status);
 perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key, pdc_metadata_t** out);
-perr_t PDC_Server_search_with_name_timestep(const char *obj_name, uint32_t hash_key, uint32_t ts, pdc_metadata_t** out);
 perr_t PDC_Server_checkpoint(char *filename);
 perr_t PDC_Server_restart(char *filename);
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs);
@@ -61,12 +61,11 @@ pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id);
 perr_t PDC_Server_get_local_storage_location_of_region(uint64_t obj_id, region_list_t *region,
         uint32_t *n_loc, region_list_t **overlap_region_loc);
 perr_t PDC_Server_get_total_str_len(region_list_t** regions, uint32_t n_region, uint32_t *len);
-perr_t PDC_Server_serialize_regions_info(region_list_t** regions, uint32_t n_region, void **buf, uint32_t buf_size);
+perr_t PDC_Server_serialize_regions_info(region_list_t** regions, uint32_t n_region, void *buf);
 
 perr_t PDC_Server_regions_io(region_list_t *region_list_head, PDC_io_plugin_t plugin);
 
 perr_t PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_id_out_t *out);
-
 
 hg_return_t PDC_Server_work_done_cb(const struct hg_cb_info *callback_info);
 /* typedef struct pdc_metadata_name_mark_t { */
@@ -105,26 +104,12 @@ typedef struct pdc_client_info_t {
     char            addr_string[ADDR_MAX];
     int             addr_valid;
     hg_addr_t       addr;
-    int             server_lookup_client_handle_valid;
-    hg_handle_t     server_lookup_client_handle;
-    int             notify_io_complete_handle_valid;
-    hg_handle_t     notify_io_complete_handle;
-    int             notify_region_update_handle_valid;
-    hg_handle_t     notify_region_update_handle;
 } pdc_client_info_t;
  
 typedef struct pdc_remote_server_info_t {
     char            *addr_string;
     int             addr_valid;
     hg_addr_t       addr;
-    int             server_lookup_remote_server_handle_valid;
-    hg_handle_t     server_lookup_remote_server_handle;
-    int             update_region_loc_handle_valid;
-    hg_handle_t     update_region_loc_handle;
-    int             get_metadata_by_id_handle_valid;
-    hg_handle_t     get_metadata_by_id_handle;
-    int             get_storage_info_handle_valid;
-    hg_handle_t     get_storage_info_handle;
 } pdc_remote_server_info_t;
  
 extern hg_thread_mutex_t pdc_client_connect_mutex_g;

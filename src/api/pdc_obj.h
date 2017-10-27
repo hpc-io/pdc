@@ -71,6 +71,14 @@ pdcid_t PDCregion_create(size_t ndims, uint64_t *offset, uint64_t *size);
  */
 pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop);
 
+pdcid_t PDCobj_create_MPI(pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop);
+
+pdcid_t PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop, int rank_id);
+
+pdcid_t PDCobj_create_mpi2(pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop);
+
+pdcid_t PDCobj_create_(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, PDCobj_location location);
+
 /**
  * Set object lifetime 
  *
@@ -248,17 +256,22 @@ pdcid_t PDC_query_create(pdcid_t pdc_id, PDC_query_type_t query_type, PDC_query_
  */
 obj_handle *PDCview_iter_start(pdcid_t view_id);
 
+perr_t PDCobj_encode(pdcid_t obj_id, pdcid_t *meta_id);
+
+pdcid_t PDCobj_decode(pdcid_t obj_id, pdcid_t meta_id);
+
 /**
  * Map an application buffer to an object
  *
  * \param buf [IN]              Start point of an application buffer
- * \param region [IN]           Id of the source region
- * \param obj_id [IN]           Id of the target object
- * \param region [IN]           Id of the target region
+ * \param local_type [IN]       Data type of data in memory
+ * \param local_reg  [IN]       Id of the source region
+ * \param remote_obj [IN]       Id of the target object
+ * \param remote_reg [IN]       Id of the target region
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCobj_buf_map(void *buf, pdcid_t from_reg, pdcid_t obj_id, pdcid_t to_reg);
+pdcid_t PDCobj_buf_map(pdcid_t cont_id, const char *obj_name, void *buf, PDC_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg);
 
 /**
  * Map an object to another object

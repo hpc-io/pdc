@@ -84,12 +84,26 @@ typedef struct {
 #define FAIL    (-1)
 
 #define PDCmemset(X,C,Z)     memset((void*)(X),C,Z)
+/* Include a basic profiling interface */
+#ifdef ENABLE_PROFILING
+#include "stack_ops.h"
 
+#define FUNC_ENTER(X) do {             \
+    if (enableProfiling) push(__func__, (X)); \
+} while(0)
+
+#define FUNC_LEAVE(ret_value) do {     \
+    if (enableProfiling) pop();	       \
+    return(ret_value);                 \
+} while(0)
+
+#else
 #define FUNC_ENTER(X) do {            \
 } while(0)
 
 #define FUNC_LEAVE(ret_value) do {              \
         return(ret_value);                      \
 } while(0)
+#endif
 
 #endif /* end of _pdc_private_H */

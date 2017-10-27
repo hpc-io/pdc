@@ -51,6 +51,21 @@ typedef struct pdc_server_info_t {
 
 extern pdc_server_info_t *pdc_server_info_g;
 
+typedef struct pdc_client {
+    pdcid_t         pdc;
+    int             client_rank;
+    int             client_port;
+    char         *  client_addr;
+/*  Some Mercury related info  */
+    hg_class_t   *  hg_class;
+    hg_context_t *  hg_context;
+    hg_addr_t       hg_addr;
+    hg_handle_t     client_handle;
+} pdc_client_t;
+
+extern pdc_client_t *pdc_client_direct_channels;
+
+
 // Request structure for async read/write
 typedef struct PDC_Request_t {
     int                     server_id;
@@ -75,7 +90,7 @@ struct client_lookup_args {
 
     uint32_t             user_id;
     const char          *app_name;
-    uint32_t             time_step;
+    int                  time_step;
     uint32_t             hash_value;
     const char          *tags;
 };
@@ -115,11 +130,10 @@ perr_t PDC_Client_read_server_addr_from_file();
  * \param obj_name [IN]         Name of the object
  * \param obj_create_prop [IN]  Id of the object property
  * \param meta_id [OUT]         Pointer to medadata id
- * \param meta_id [OUT]         Pointer to client id
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_prop, pdcid_t *meta_id, int32_t *client_id);
+perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_prop, pdcid_t *meta_id);
 
 /**
  * Listing all objects on the client
@@ -145,8 +159,8 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, uint32_t time_step, pdc_metadata_t **out);
-perr_t PDC_Client_query_metadata_name_timestep_agg(const char *obj_name, uint32_t time_step, pdc_metadata_t **out);
+perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_step, pdc_metadata_t **out);
+perr_t PDC_Client_query_metadata_name_timestep_agg(const char *obj_name, int time_step, pdc_metadata_t **out);
 
 /**
  * PDC client query metadata by object name
@@ -211,7 +225,7 @@ perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *local_dims, uint64_t *local_offset, uint64_t *local_size, PDC_var_type_t local_type, void *local_data, uint64_t *remote_dims, uint64_t *remote_offset, uint64_t *remote_size, PDC_var_type_t remote_type, int32_t remote_client_id, void *remote_data, struct PDC_region_info *remote_region);
+perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *local_dims, uint64_t *local_offset, uint64_t *local_size, PDC_var_type_t local_type, void *local_data, uint64_t *remote_dims, uint64_t *remote_offset, uint64_t *remote_size, PDC_var_type_t remote_type, int32_t remote_client_id, void *remote_data, struct PDC_region_info *local_region, struct PDC_region_info *remote_region);
 
 /**
  * Client request for object unmapping
@@ -231,7 +245,7 @@ perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id);
+perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, struct PDC_region_info *reginfo);
 
 /**
  * Request of PDC client to get region lock
@@ -279,7 +293,12 @@ perr_t PDC_Client_finalize();
  */
 perr_t PDC_Client_close_all_server();
 
-
+/**
+ * PDC client direct (i.e. client-to-client comms) init
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_data_direct_init();
 
 
 /*

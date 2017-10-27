@@ -49,6 +49,18 @@ perr_t PDCprop_init();
 pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdc_id);
 
 /**
+ * Quickly create object property from an existing object property 
+ * Share the same property with the existing one other than data_loc, data type, buf, which are data related
+ *
+ * \param type [IN]             PDC property creation type (enum type), 
+ *                              PDC_CONT_CREATE or PDC_OBJ_CREATE
+ * \param id [IN]               Id of the PDC
+ *
+ * \return PDC property id on success (0 for container and 1 for object)/Negative on failure
+ */
+pdcid_t PDCprop_obj_dup(pdcid_t prop_id);
+
+/**
  * Close property
  *
  * \param id [IN]               Id of the property

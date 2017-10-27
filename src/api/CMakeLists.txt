@@ -9,6 +9,11 @@ include_directories(
 #------------------------------------------------------------------------------
 # External dependencies
 #------------------------------------------------------------------------------
+# profiling
+set(PDC_EXT_LIB_DEPENDENCIES pdcprof ${PDC_EXT_LIB_DEPENDENCIES})
+set(PDC_EXT_INCLUDE_DEPENDENCIES ${CMAKE_CURRENT_SOURCE_DIR}/profiling)
+set(PDC_EXPORTED_LIBS pdcprof)
+
 # Mercury
 find_package(MERCURY REQUIRED)
 if(MERCURY_FOUND)
@@ -55,7 +60,8 @@ set(PDC_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_server_common.c
   )
 
-#  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/server)
+  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/profiling)
+  #add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/server)
 
 #------------------------------------------------------------------------------
 # Libraries
@@ -73,6 +79,9 @@ set(PDC_EXPORTED_LIBS pdc ${PDC_EXPORTED_LIBS})
 set(PDC_HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_private.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_public.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_pkg.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_life.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_error.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_interface.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_malloc.h
