@@ -4332,11 +4332,69 @@ int main(int argc, char *argv[])
 
     // Debug print
 #ifdef ENABLE_TIMING 
-    printf("==PDC_SERVER[%d]: #fwrite %d, Tfwrite %.2f, #fread %d, Tfread %.2f, #fopen %d, Tfopen %.2f\n"
-           "                  Tregion_update %.2f, Tget_region %.2f, Ttotal_IO %.2f\n",
-            pdc_server_rank_g, n_fwrite_g, server_write_time_g, n_fread_g, server_read_time_g,
-            n_fopen_g, server_fopen_time_g, 
-            server_update_region_location_time_g, server_get_storage_info_time_g, server_total_io_time_g);
+    double write_time_max, write_time_min, write_time_avg;
+    double read_time_max,  read_time_min,  read_time_avg;
+    double open_time_max,  open_time_min,  open_time_avg;
+    double total_io_max,   total_io_min,   total_io_avg;
+    double update_time_max, update_time_min, update_time_avg; 
+    double get_info_time_max, get_info_time_min, get_info_time_avg;
+
+    #ifdef ENABLE_MPI
+    MPI_Reduce(&server_write_time_g,  &write_time_max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&server_write_time_g,  &write_time_min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&server_write_time_g,  &write_time_avg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    write_time_avg /= pdc_server_size_g;
+
+    MPI_Reduce(&server_read_time_g,    &read_time_max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&server_read_time_g,    &read_time_min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&server_read_time_g,    &read_time_avg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    read_time_avg /= pdc_server_size_g;
+
+    MPI_Reduce(&server_fopen_time_g,   &open_time_max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&server_fopen_time_g,   &open_time_min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&server_fopen_time_g,   &open_time_avg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    open_time_avg /= pdc_server_size_g;
+
+    MPI_Reduce(&server_total_io_time_g, &total_io_max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&server_total_io_time_g, &total_io_min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&server_total_io_time_g, &total_io_avg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    total_io_avg /= pdc_server_size_g;
+
+    MPI_Reduce(&server_update_region_location_time_g, &update_time_max, 1, MPI_DOUBLE, MPI_MAX,0,MPI_COMM_WORLD);
+    MPI_Reduce(&server_update_region_location_time_g, &update_time_min, 1, MPI_DOUBLE, MPI_MIN,0,MPI_COMM_WORLD);
+    MPI_Reduce(&server_update_region_location_time_g, &update_time_avg, 1, MPI_DOUBLE, MPI_SUM,0,MPI_COMM_WORLD);
+    update_time_avg /= pdc_server_size_g;
+
+    MPI_Reduce(&server_get_storage_info_time_g, &get_info_time_max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&server_get_storage_info_time_g, &get_info_time_min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&server_get_storage_info_time_g, &get_info_time_avg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    get_info_time_avg /= pdc_server_size_g;
+
+    #else
+    write_time_avg    = write_time_max    = write_time_min    = server_write_time_g;
+    read_time_avg     = read_time_max     = read_time_min     = server_read_time_g;
+    open_time_avg     = open_time_max     = open_time_min     = server_fopen_time_g;
+    total_io_avg      = total_io_max      = total_io_min      = server_total_io_time_g;
+    total_io_avg      = update_time_max   = update_time_min   = server_update_region_location_time_g;
+    get_info_time_avg = get_info_time_max = get_info_time_min = server_get_storage_info_time_g;
+ 
+    #endif
+
+    if (pdc_server_rank_g == 0) {
+        printf("==PDC_SERVER: IO STATS (MIN, AVG, MAX)\n"
+               "              #fwrite %3d, Tfwrite %6.2f, %6.2f, %6.2f\n"
+               "              #fread  %3d, Tfread  %6.2f, %6.2f, %6.2f\n"
+               "              #fopen  %3d, Tfopen  %6.2f, %6.2f, %6.2f\n"
+               "              Ttotal_IO            %6.2f, %6.2f, %6.2f\n"
+               "              Tregion_update       %6.2f, %6.2f, %6.2f\n"
+               "              Tget_region          %6.2f, %6.2f, %6.2f\n",  
+                n_fwrite_g, write_time_min,    write_time_avg,    write_time_max, 
+                n_fread_g ,  read_time_min,     read_time_avg,     read_time_max, 
+                n_fopen_g ,  open_time_min,     open_time_avg,     open_time_max, 
+                              total_io_min,      total_io_avg,      total_io_max,
+                           update_time_min,   update_time_avg,   update_time_max,
+                         get_info_time_min, get_info_time_avg, get_info_time_max);
+    }
 #endif
 
 done:

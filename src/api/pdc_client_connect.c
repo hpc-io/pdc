@@ -72,7 +72,8 @@ pdc_client_t          *pdc_client_direct_channels = NULL;
 pdc_client_t          *thisClient = NULL;
 static int            *debug_server_id_count = NULL;
 
-PDC_Request_t           *pdc_io_request_list_g = NULL;
+PDC_Request_t         *pdc_io_request_list_g = NULL;
+double                 memcpy_time_g = 0.0;
 
 static int             mercury_has_init_g = 0;
 static hg_class_t     *send_class_g = NULL;
@@ -1081,12 +1082,19 @@ perr_t PDC_Client_finalize()
     if (debug_server_id_count != NULL) 
         free(debug_server_id_count);
 
+
+    #ifdef ENABLE_TIMING
+    if (pdc_client_mpi_rank_g == 0) 
+        printf("==PDC_CLIENT[%d]: T_memcpy: %.2f\n", pdc_client_mpi_rank_g, memcpy_time_g);
+    #endif
+
+
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 done:
     if (is_client_debug_g == 1 && pdc_client_mpi_rank_g == 0) {
-        printf("PDC_CLIENT: finalized\n");
+        printf("==PDC_CLIENT: finalized\n");
     }
     FUNC_LEAVE(ret_value);
 }
@@ -2877,6 +2885,7 @@ done:
 }
 
 
+// This function is used with server push notification
 hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *callback_info)
 {
     hg_return_t ret_value = HG_SUCCESS;
@@ -2939,27 +2948,20 @@ hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *call
         goto close;
     }
 
+    #ifdef ENABLE_TIMING
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
+    gettimeofday(&pdc_timer_start, 0);
+    #endif
+
     // Copy data
     /* printf("==PDC_SERVER: memcpy size = %" PRIu64 "\n", data_size); */
-    if (target_region->ndim == 1) {
-        memcpy(elt->buf, shm_base, data_size);
-    }
-    else if (target_region->ndim == 2) {
-        char **buf_2d = (char**)elt->buf;
-        for (i = 0; i < target_region->size[1]; i++) {
-            memcpy(buf_2d[i], shm_base + i*target_region->size[0], target_region->size[0]);
-        }
-    }
-    else if (target_region->ndim == 3) {
-        char ***buf_3d = (char***)elt->buf;
-        for (j = 0; j < target_region->size[2]; j++) {
-            for (i = 0; i < target_region->size[1]; i++) {
-                memcpy(buf_3d[j][i], shm_base + i*target_region->size[0] + 
-                                                j*target_region->size[0]*target_region->size[1], 
-                                     target_region->size[0]);
-            }
-        }
-    }
+    memcpy(elt->buf, shm_base, data_size);
+
+    #ifdef ENABLE_TIMING
+    gettimeofday(&pdc_timer_end, 0);
+    memcpy_time_g += PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+    #endif
 
     /* remove the mapped shared memory segment from the address space of the process */
     if (munmap(shm_base, data_size) == -1) {
@@ -2989,6 +2991,7 @@ done:
 }
 
 
+// This is used with polling approach to get data from server read
 perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_metadata_t *meta, 
                                          struct PDC_region_info *region, int *status, void* buf)
 {
@@ -3096,8 +3099,20 @@ perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_
             goto close;
         }
 
+        #ifdef ENABLE_TIMING
+        struct timeval  pdc_timer_start;
+        struct timeval  pdc_timer_end;
+        gettimeofday(&pdc_timer_start, 0);
+        #endif
+
         // Copy data
         memcpy(buf, shm_base, read_size);
+
+        #ifdef ENABLE_TIMING
+        gettimeofday(&pdc_timer_end, 0);
+        memcpy_time_g += PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+        #endif
+
 
         /* remove the mapped shared memory segment from the address space of the process */
         if (munmap(shm_base, read_size) == -1) {
@@ -3445,32 +3460,19 @@ perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t 
         goto done;
     }
 
+    #ifdef ENABLE_TIMING
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
+    gettimeofday(&pdc_timer_start, 0);
+    #endif
+
     // Copy the user's buffer to shm that can be accessed by data server
-    // Linearize if more than 2D
-    if (region->ndim == 1) {
-        memcpy(shm_base, buf, region_size);
-    }
-    else if (region->ndim == 2) {
-        char **buf_2d = buf;
-        for (i = 0; i < region->size[1]; i++) {
-            memcpy(shm_base + i*region->size[0], buf_2d[i], region->size[0]);
-            /* printf("==PDC_CLIENT[%d]: write memcpy [%.*s]\n", */
-            /*         pdc_client_mpi_rank_g, region->size[0], buf_2d[i]); */
-        }
-    }
-    else if (region->ndim == 3) {
-        char ***buf_3d = buf;
-        for (j = 0; j < region->size[2]; j++) {
-            for (i = 0; i < region->size[1]; i++) {
-                memcpy(shm_base + i*region->size[0] + j*region->size[0]*region->size[1],
-                       buf_3d[j][i], region->size[0]);
-            }
-        }
-    }
-    else {
-        printf("==PDC_CLIENT[%d]: %lu data write is not supported yet\n",
-                pdc_client_mpi_rank_g, region->ndim);
-    }
+    memcpy(shm_base, buf, region_size);
+
+    #ifdef ENABLE_TIMING
+    gettimeofday(&pdc_timer_end, 0);
+    memcpy_time_g += PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+    #endif
 
     int can_aggregate_send = 0;
     /* uint64_t same_node_ids[64]; */
