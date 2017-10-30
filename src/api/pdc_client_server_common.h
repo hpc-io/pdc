@@ -237,7 +237,7 @@ typedef struct {
 } data_server_io_info_t;
 
 typedef struct {
-    hg_const_string_t    obj_name;
+    hg_string_t    obj_name;
     uint32_t             hash_value;
     int32_t              time_step;
 } metadata_query_in_t;
@@ -249,7 +249,7 @@ typedef struct {
 typedef struct {
     uint64_t                obj_id;
     uint32_t                hash_value;
-    hg_const_string_t       new_tag;
+    hg_string_t       new_tag;
 } metadata_add_tag_in_t;
 
 typedef struct {
@@ -414,7 +414,7 @@ hg_proc_region_lock_out_t(hg_proc_t proc, void *data)
 }
 
 typedef struct {
-    hg_const_string_t    obj_name;
+    hg_string_t    obj_name;
     int32_t              time_step;
     uint32_t             hash_value;
 } metadata_delete_in_t;
@@ -439,12 +439,12 @@ hg_proc_metadata_query_transfer_in_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->app_name);
+    ret = hg_proc_hg_string_t(proc, &struct_data->app_name);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name);
+    ret = hg_proc_hg_string_t(proc, &struct_data->obj_name);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -485,7 +485,7 @@ hg_proc_metadata_query_transfer_in_t(hg_proc_t proc, void *data)
 	/* HG_LOG_ERROR("Proc error"); */
     /*     return ret; */
     /* } */
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->tags);
+    ret = hg_proc_hg_string_t(proc, &struct_data->tags);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -529,12 +529,12 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->app_name);
+    ret = hg_proc_hg_string_t(proc, &struct_data->app_name);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name);
+    ret = hg_proc_hg_string_t(proc, &struct_data->obj_name);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -574,12 +574,12 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->data_location);
+    ret = hg_proc_hg_string_t(proc, &struct_data->data_location);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->tags);
+    ret = hg_proc_hg_string_t(proc, &struct_data->tags);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -603,7 +603,7 @@ hg_proc_metadata_add_tag_in_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->new_tag);
+    ret = hg_proc_hg_string_t(proc, &struct_data->new_tag);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -694,7 +694,7 @@ hg_proc_metadata_delete_in_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     metadata_delete_in_t *struct_data = (metadata_delete_in_t*) data;
 
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name);
+    ret = hg_proc_hg_string_t(proc, &struct_data->obj_name);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
     }
@@ -729,7 +729,7 @@ hg_proc_metadata_query_in_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     metadata_query_in_t *struct_data = (metadata_query_in_t*) data;
 
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name);
+    ret = hg_proc_hg_string_t(proc, &struct_data->obj_name);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -772,7 +772,7 @@ typedef struct {
 
 
 /* typedef struct { */
-/*     hg_const_string_t    obj_name; */
+/*     hg_string_t    obj_name; */
 /*     uint32_t             hash_value; */
 /* } send_obj_name_marker_in_t; */
 
@@ -783,7 +783,7 @@ typedef struct {
 typedef struct {
     int32_t server_id;
     int32_t nserver;
-    hg_const_string_t server_addr;
+    hg_string_t server_addr;
 } server_lookup_client_in_t;
 
 typedef struct {
@@ -803,7 +803,7 @@ typedef struct {
 typedef struct {
     uint32_t client_id;
     int32_t nclient;
-    hg_const_string_t client_addr;
+    hg_string_t client_addr;
 } client_test_connect_in_t;
 
 typedef struct {
@@ -814,7 +814,7 @@ typedef struct {
 typedef struct {
     int32_t  io_type;
     uint64_t obj_id;
-    hg_const_string_t shm_addr;
+    hg_string_t shm_addr;
 } notify_io_complete_in_t;
 
 typedef struct {
@@ -914,7 +914,7 @@ hg_proc_gen_obj_id_out_t(hg_proc_t proc, void *data)
 /*     hg_return_t ret; */
 /*     send_obj_name_marker_in_t *struct_data = (send_obj_name_marker_in_t*) data; */
 
-/*     ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name); */
+/*     ret = hg_proc_hg_string_t(proc, &struct_data->obj_name); */
 /*     if (ret != HG_SUCCESS) { */
 /* 	HG_LOG_ERROR("Proc error"); */
 /*     } */
@@ -981,7 +981,7 @@ hg_proc_server_lookup_client_in_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->server_addr);
+    ret = hg_proc_hg_string_t(proc, &struct_data->server_addr);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -1019,7 +1019,7 @@ hg_proc_client_test_connect_in_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->client_addr);
+    ret = hg_proc_hg_string_t(proc, &struct_data->client_addr);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -1057,7 +1057,7 @@ hg_proc_notify_io_complete_in_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->shm_addr);
+    ret = hg_proc_hg_string_t(proc, &struct_data->shm_addr);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -1399,7 +1399,7 @@ hg_proc_data_server_read_out_t(hg_proc_t proc, void *data)
 typedef struct {
     uint32_t                    client_id;
     int32_t                     nclient;
-    hg_const_string_t           shm_addr;
+    hg_string_t           shm_addr;
     pdc_metadata_transfer_t     meta;
     region_info_transfer_t      region;
 } data_server_write_in_t;
@@ -1424,7 +1424,7 @@ hg_proc_data_server_write_in_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->shm_addr);
+    ret = hg_proc_hg_string_t(proc, &struct_data->shm_addr);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -1463,7 +1463,7 @@ typedef struct {
 
 typedef struct {
     int32_t            ret;
-    hg_const_string_t  shm_addr;
+    hg_string_t  shm_addr;
 } data_server_read_check_out_t;
 
 static HG_INLINE hg_return_t
@@ -1501,7 +1501,7 @@ hg_proc_data_server_read_check_out_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->shm_addr);
+    ret = hg_proc_hg_string_t(proc, &struct_data->shm_addr);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -1559,7 +1559,7 @@ hg_proc_data_server_write_check_out_t(hg_proc_t proc, void *data)
 
 typedef struct {
     uint64_t                    obj_id;
-    hg_const_string_t           storage_location;
+    hg_string_t           storage_location;
     uint64_t                    offset;
     region_info_transfer_t      region;
 } update_region_loc_in_t;
@@ -1579,7 +1579,7 @@ hg_proc_update_region_loc_in_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->storage_location);
+    ret = hg_proc_hg_string_t(proc, &struct_data->storage_location);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -1649,7 +1649,7 @@ hg_proc_get_metadata_by_id_out_t(hg_proc_t proc, void *data)
 
 // For generic serialized data transfer
 typedef struct {
-    hg_const_string_t buf;
+    hg_string_t buf;
 } pdc_serialized_data_t;
 
 static HG_INLINE hg_return_t
@@ -1658,7 +1658,7 @@ hg_proc_pdc_serialized_data_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     pdc_serialized_data_t *struct_data = (pdc_serialized_data_t*) data;
 
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->buf);
+    ret = hg_proc_hg_string_t(proc, &struct_data->buf);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;

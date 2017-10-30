@@ -262,7 +262,7 @@ pdcid_t PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_pro
     pdcid_t ret_value = SUCCEED;
     struct PDC_obj_info *p = NULL;
     struct PDC_id_info *id_info = NULL;
-    int  rank;
+    int  rank = 0;
     char name[512];
     char srank[10];
     perr_t ret = SUCCEED;
@@ -271,6 +271,7 @@ pdcid_t PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_pro
 
 #ifdef ENABLE_MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
     if(rank == rank_id) {
         ret_value = PDCobj_create__(cont_id, obj_name, obj_prop_id, PDC_OBJ_GLOBAL);
     }
@@ -281,6 +282,7 @@ pdcid_t PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_pro
     p = (struct PDC_obj_info *)(id_info->obj_ptr);
     p->client_id = rank;
 
+#ifdef ENABLE_MPI
     MPI_Bcast(&(p->meta_id), 1, MPI_LONG_LONG, rank_id, MPI_COMM_WORLD);
 #endif
 

@@ -45,7 +45,7 @@ typedef enum {
 
 struct PDC_obj_info {
     const char             *name;
-    pdcid_t                meta_id;
+    uint64_t               meta_id;
     pdcid_t                local_id;
     int32_t                client_id;
     PDCobj_location        location;

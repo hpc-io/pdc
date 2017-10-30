@@ -805,8 +805,8 @@ HG_TEST_RPC_CB(client_test_connect, handle)
     args->nclient   = in.nclient;
     sprintf(args->client_addr, in.client_addr);
 
-    HG_Respond(handle, NULL, NULL, &out);
-    /* HG_Respond(handle, PDC_Server_get_client_addr, args, &out); */
+    /* HG_Respond(handle, NULL, NULL, &out); */
+    HG_Respond(handle, PDC_Server_get_client_addr, args, &out);
     /* printf("==PDC_SERVER: client_test_connect(): Returned %" PRIu64 "\n", out.ret); */
     /* fflush(stdout); */
 
@@ -1358,6 +1358,7 @@ HG_TEST_RPC_CB(region_release, handle)
     hg_bulk_t origin_bulk_handle = HG_BULK_NULL; 
     hg_bulk_t local_bulk_handle = HG_BULK_NULL;
     hg_bulk_t lock_local_bulk_handle = HG_BULK_NULL;
+    region_map_t *map_elt;
 
     FUNC_ENTER(NULL);
 
@@ -1375,10 +1376,11 @@ HG_TEST_RPC_CB(region_release, handle)
             PDC_Server_get_local_metadata_by_id(in.obj_id, &res_meta);
             DL_FOREACH(res_meta->region_lock_head, elt) {
                 if (PDC_is_same_region_list(request_region, elt) == 1 && elt->reg_dirty == 1) {
+                    printf("==PDC SERVER: region_release start %" PRIu64 " \n", request_region->start[0]);
                     // printf("detect lock release dirty region\n");
                     dirty_reg = 1;
                     size = HG_Bulk_get_size(elt->bulk_handle);
-                    data_buf = (void *)malloc(size);
+                    data_buf = (void *)calloc(1,size);
                     // data transfer
                     server_region = (struct PDC_region_info *)malloc(sizeof(struct PDC_region_info));
                     server_region->ndim = 1;
@@ -1387,7 +1389,7 @@ HG_TEST_RPC_CB(region_release, handle)
                     (server_region->size)[0] = size;
                     (server_region->offset)[0] = 0; 
                     ret_value = PDC_Server_data_read_direct(elt->from_obj_id, server_region, data_buf);
-printf("read data %f from obj %lld\n", *(float *)data_buf, elt->from_obj_id);
+printf("read data %f, %f from obj %lld\n", *(float *)data_buf, *((float*)data_buf+1), elt->from_obj_id);
                     if(ret_value != SUCCEED)
                         printf("==PDC SERVER: PDC_Server_data_read_direct() failed\n");
                     hg_ret = HG_Bulk_create(hg_info->hg_class, 1, &data_buf, &size, HG_BULK_READWRITE, &lock_local_bulk_handle);
@@ -1440,12 +1442,11 @@ printf("read data %f from obj %lld\n", *(float *)data_buf, elt->from_obj_id);
         }
         found = 0;
         if(target_obj->region_map_head != NULL) {
-            region_map_t *elt;
-            DL_FOREACH(target_obj->region_map_head, elt) {
-//                if(elt->local_obj_id == in.obj_id && elt->local_reg_id==in.local_reg_id) {
-                  if(elt->local_obj_id == in.obj_id && region_is_identical(in.region, elt->local_region)) {
+            DL_FOREACH(target_obj->region_map_head, map_elt) {
+//                if(map_elt->local_obj_id == in.obj_id && map_elt->local_reg_id==in.local_reg_id) {
+                  if(map_elt->local_obj_id == in.obj_id && region_is_identical(in.region, map_elt->local_region)) {
                     found = 1;
-                    origin_bulk_handle = elt->local_bulk_handle;
+                    origin_bulk_handle = map_elt->local_bulk_handle;
                     local_bulk_handle = HG_BULK_NULL;
 
                     // copy data from client to server
@@ -1474,22 +1475,22 @@ printf("read data %f from obj %lld\n", *(float *)data_buf, elt->from_obj_id);
                     if(!server_region)
                         PGOTO_ERROR(FAIL,"server_region memory allocation failed\n");
 /*
-                    server_region->ndim = elt->local_ndim;
+                    server_region->ndim = map_elt->local_ndim;
                     server_region->size = (uint64_t *)malloc(server_region->ndim * sizeof(uint64_t));
                     server_region->offset = (uint64_t *)malloc(server_region->ndim * sizeof(uint64_t));
-                    if(elt->local_ndim >= 1) {
+                    if(map_elt->local_ndim >= 1) {
                         (server_region->offset)[0] = 0;
                         (server_region->size)[0] = in.region.count_0;
                     }
-                    if(elt->local_ndim >= 2) {
+                    if(map_elt->local_ndim >= 2) {
                         (server_region->offset)[1] = 0;
                         (server_region->size)[1] = in.region.count_1; 
                     }
-                    if(elt->local_ndim >= 3) {
+                    if(map_elt->local_ndim >= 3) {
                         (server_region->offset)[2] = 0;
                         (server_region->size)[2] = in.region.count_2;
                     }
-                    if(elt->local_ndim >= 4) {
+                    if(map_elt->local_ndim >= 4) {
                         (server_region->offset)[3] = 0;
                         (server_region->size)[3] = in.region.count_3;
                     }
@@ -1500,10 +1501,10 @@ printf("read data %f from obj %lld\n", *(float *)data_buf, elt->from_obj_id);
                     (server_region->size)[0] = size;
                     (server_region->offset)[0] = 0; 
                     bulk_args->server_region = server_region;
-                    bulk_args->mapping_list = elt;
-                    bulk_args->addr = elt->local_addr;
+                    bulk_args->mapping_list = map_elt;
+                    bulk_args->addr = map_elt->local_addr;
                     /* Pull bulk data */
-                    hg_ret = HG_Bulk_transfer(hg_info->context, region_release_bulk_transfer_cb, bulk_args, HG_BULK_PULL, elt->local_addr, origin_bulk_handle, 0, local_bulk_handle, 0, size, &hg_bulk_op_id);
+                    hg_ret = HG_Bulk_transfer(hg_info->context, region_release_bulk_transfer_cb, bulk_args, HG_BULK_PULL, map_elt->local_addr, origin_bulk_handle, 0, local_bulk_handle, 0, size, &hg_bulk_op_id);
                     if (hg_ret != HG_SUCCESS) {
                         error = 1;
                         printf("==PDC SERVER ERROR: Could not read bulk data\n");  
@@ -2795,7 +2796,7 @@ done:
 /* get_storage_info_cb */
 HG_TEST_RPC_CB(get_storage_info, handle)
 {
-    hg_return_t ret_value = HG_SUCCESS;
+    perr_t ret_value = HG_SUCCESS;
     get_storage_info_in_t in;
     pdc_serialized_data_t  out;
     pdc_metadata_t *target = NULL;

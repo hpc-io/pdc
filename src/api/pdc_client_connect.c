@@ -450,8 +450,9 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
         goto done;
     }
 
-    /* work_todo_g = 1; */
-    /* PDC_Client_check_response(&send_context_g); */
+    // Wait for server to connect back
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
 
 
 done:
@@ -600,10 +601,9 @@ client_region_release_rpc_cb(const struct hg_cb_info *callback_info)
 
     client_lookup_args->ret = output.ret;
 
-    work_todo_g--;
-
 done:
-    HG_Destroy(handle);
+    work_todo_g--;
+    HG_Free_output(handle, &output);
     FUNC_LEAVE(ret_value);
 }
 
@@ -1013,12 +1013,6 @@ perr_t PDC_Client_destroy_all_handles(pdc_server_info_t *server_info)
     perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
-
-    if (server_info->addr_valid == 1) 
-        HG_Addr_free(send_class_g, server_info->addr);
-
-    server_info->addr_valid = 0;
-
     FUNC_LEAVE(ret_value);
 }
 
@@ -1038,12 +1032,7 @@ perr_t PDC_Client_finalize()
     for (i = 0; i < pdc_server_num_g; i++) {
         if (pdc_server_info_g[i].addr_valid) {
             HG_Addr_free(send_class_g, pdc_server_info_g[i].addr);
-        }
-        ret_value = PDC_Client_destroy_all_handles(&pdc_server_info_g[i]);
-        if (ret_value != SUCCEED) {
-            printf("==PDC_CLIENT[%d]: PDC_Client_finalize - error with PDC_Client_destroy_all_handles\n", 
-                    pdc_client_mpi_rank_g);
-            goto done;
+            pdc_server_info_g[i].addr_valid = 0;
         }
     }
 
@@ -1351,6 +1340,8 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
             n_recv++;
         }
         /* printf("Received %u metadata from server %d\n", *lookup_args.n_meta, server_id); */
+
+        HG_Destroy(query_partial_handle);
     } // for server_id
 
     
@@ -1361,7 +1352,6 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
 
     // TODO: need to be careful when freeing the lookup_args, as it include the results returned to user
 done:
-    HG_Destroy(query_partial_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -1847,9 +1837,11 @@ perr_t PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t 
     metadata_query_args_t **lookup_args;
     uint32_t server_id;
     uint32_t i, count = 0;
-    hg_handle_t metadata_query_handle;
+    hg_handle_t *metadata_query_handle;
     
     FUNC_ENTER(NULL);
+
+    metadata_query_handle = (hg_handle_t*)malloc(sizeof(hg_handle_t)*pdc_server_num_g);
 
     // Fill input structure
     in.obj_name   = obj_name;
@@ -1881,9 +1873,9 @@ perr_t PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t 
         }
 
         HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_query_register_id_g, 
-                    &metadata_query_handle);
+                    &metadata_query_handle[server_id]);
 
-        hg_ret = HG_Forward(metadata_query_handle, metadata_query_rpc_cb, lookup_args[server_id], &in);
+        hg_ret = HG_Forward(metadata_query_handle[server_id], metadata_query_rpc_cb, lookup_args[server_id], &in);
         if (hg_ret != HG_SUCCESS) {
             fprintf(stderr, "PDC_Client_query_metadata_name_only(): Could not start HG_Forward()\n");
             return FAIL;
@@ -1900,13 +1892,15 @@ perr_t PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t 
             *out = lookup_args[i]->data;
             count++;
         }
+
+        // TODO lookup_args[i] are not freed
+        HG_Destroy(metadata_query_handle[i]);
     }
     /* printf("==PDC_CLIENT: Found %d metadata with search\n", count); */
 
-    // TODO lookup_args[i] are not freed
-    HG_Destroy(metadata_query_handle);
 
 done:
+    free(metadata_query_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -1980,9 +1974,9 @@ perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_st
     /* printf("==PDC_CLIENT[%d]: received query result name [%s], hash value %u\n", pdc_client_mpi_rank_g, in.obj_name, in.hash_value); */
     *out = lookup_args.data;
 
-    HG_Destroy(metadata_query_handle);
 
 done:
+    HG_Destroy(metadata_query_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -2354,8 +2348,8 @@ perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, 
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
 
-    if (unmap_args.ret != 1)
-        PGOTO_ERROR(FAIL,"PDC_CLIENT: region unmapping failed...");
+    /* if (unmap_args.ret != 1) */
+    /*     PGOTO_ERROR(FAIL,"PDC_CLIENT: region unmapping failed..."); */
     
 done:
     HG_Destroy(client_send_region_unmap_handle);
