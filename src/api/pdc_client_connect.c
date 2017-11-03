@@ -2227,8 +2227,7 @@ perr_t PDC_Client_close_all_server()
             in.client_id = 0;
 
             /* printf("Sending input to target\n"); */
-            hg_ret = HG_Forward(close_server_handle, 
-                                   close_server_cb, &lookup_args, &in);
+            hg_ret = HG_Forward(close_server_handle, close_server_cb, &lookup_args, &in);
             if (hg_ret != HG_SUCCESS) {
                 fprintf(stderr, "PDC_Client_close_all_server(): Could not start HG_Forward()\n");
                 ret_value = FAIL;

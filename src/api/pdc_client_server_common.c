@@ -1398,9 +1398,9 @@ HG_TEST_RPC_CB(region_release, handle)
                     server_region->size = (uint64_t *)malloc(sizeof(uint64_t));
                     server_region->offset = (uint64_t *)malloc(sizeof(uint64_t));
                     (server_region->size)[0] = size;
-                    (server_region->offset)[0] = 10; 
+                    (server_region->offset)[0] = in.region.start_0 * sizeof(float); 
                     ret_value = PDC_Server_data_read_direct(elt->from_obj_id, server_region, data_buf);
-printf("read data %f, %f from obj %lld\n", *(float *)data_buf, *((float*)data_buf+1), elt->from_obj_id);
+printf("read data %f, %f from obj %lld, with size %lu\n", *(float *)data_buf, *((float*)data_buf+1), elt->from_obj_id, size);
                     if(ret_value != SUCCEED)
                         printf("==PDC SERVER: PDC_Server_data_read_direct() failed\n");
                     hg_ret = HG_Bulk_create(hg_info->hg_class, 1, &data_buf, &size, HG_BULK_READWRITE, &lock_local_bulk_handle);
@@ -1510,7 +1510,7 @@ printf("read data %f, %f from obj %lld\n", *(float *)data_buf, *((float*)data_bu
                     server_region->size = (uint64_t *)malloc(sizeof(uint64_t));
                     server_region->offset = (uint64_t *)malloc(sizeof(uint64_t));
                     (server_region->size)[0] = size;
-                    (server_region->offset)[0] = 0; 
+                    (server_region->offset)[0] = in.region.start_0*sizeof(float); 
                     bulk_args->server_region = server_region;
                     bulk_args->mapping_list = map_elt;
                     bulk_args->addr = map_elt->local_addr;
