@@ -321,6 +321,11 @@ int PDC_is_same_region_list(region_list_t *a, region_list_t *b)
     int ret_value = 1;
     size_t i = 0;
 
+    if (NULL == a || NULL == b) {
+        printf("==Empty region_list_t structure\n");
+        return -1;
+    }
+
     if (a->ndim != b->ndim) 
         return -1;
 
@@ -405,6 +410,11 @@ perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to)
         return FAIL;
     }
 
+    if (from->ndim > 4 || from->ndim <= 0) {
+        printf("pdc_region_list_t_deep_cp(): ndim %u ERROR!\n", from->ndim);
+        return FAIL;
+    }
+
     to->ndim = from->ndim;
     memcpy(to->start, from->start, sizeof(uint64_t)*from->ndim);
     memcpy(to->count, from->count, sizeof(uint64_t)*from->ndim);
@@ -431,14 +441,11 @@ perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to)
 
     to->meta          = from->meta;
 
-    to->prev = NULL;
-    to->next = NULL;
-
+    to->prev = from->prev;
+    to->next = from->next;
     // Copy 23 attributes, double check to match the region_list_t def
-                            
     return SUCCEED;
 }
-
 
 perr_t pdc_region_transfer_t_to_list_t(region_info_transfer_t *transfer, region_list_t *region)
 {
@@ -774,9 +781,13 @@ HG_TEST_RPC_CB(server_lookup_remote_server, handle)
     /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
-    out.ret = in.server_id + 1000000;
+    out.ret = in.server_id + 1024000;
 
     HG_Respond(handle, NULL, NULL, &out);
+
+    /* printf("==PDC_SERVER: server_lookup_remote_server_cb(): Respond %" PRIu64 " back to to server[%d]\n", */ 
+    /*         out.ret, in.server_id); */
+    /* fflush(stdout); */
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
@@ -1387,7 +1398,7 @@ HG_TEST_RPC_CB(region_release, handle)
                     server_region->size = (uint64_t *)malloc(sizeof(uint64_t));
                     server_region->offset = (uint64_t *)malloc(sizeof(uint64_t));
                     (server_region->size)[0] = size;
-                    (server_region->offset)[0] = 0; 
+                    (server_region->offset)[0] = 10; 
                     ret_value = PDC_Server_data_read_direct(elt->from_obj_id, server_region, data_buf);
 printf("read data %f, %f from obj %lld\n", *(float *)data_buf, *((float*)data_buf+1), elt->from_obj_id);
                     if(ret_value != SUCCEED)
@@ -2346,7 +2357,7 @@ HG_TEST_RPC_CB(update_region_loc, handle)
     /* PDC_print_region_list(input_region); */
     /* fflush(stdout); */
 
-    out.ret = 1;
+    out.ret = 20171031;
     ret_value = PDC_Server_update_local_region_storage_loc(input_region, in.obj_id);
     if (ret_value != SUCCEED) {
         out.ret = -1;

@@ -2574,7 +2574,7 @@ static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *re
     usleep(delay);
 
 
-    printf("==PDC_CLIENT: lock going to server %u\n", server_id); 
+    printf("==PDC_CLIENT[%d]: lock going to server %u\n", pdc_client_mpi_rank_g, server_id); 
     fflush(stdout); 
 
     // Debug statistics for counting number of messages sent to each server.
@@ -2746,7 +2746,7 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
     usleep(delay);
 
 
-    printf("==PDC_CLIENT: release going to server %u\n", server_id);
+    printf("==PDC_CLIENT[%d]: release going to server %u\n", pdc_client_mpi_rank_g, server_id);
     fflush(stdout);
 
     // Debug statistics for counting number of messages sent to each server.
@@ -2771,18 +2771,18 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
     if (ndim >=1) {
         in.region.start_0  = region_info->offset[0];
         in.region.count_0  = region_info->size[0];
-        in.region.stride_0 = 0;
+        /* in.region.stride_0 = 0; */
         // TODO current stride is not included in pdc.
     }
     if (ndim >=2) {
         in.region.start_1  = region_info->offset[1];
         in.region.count_1  = region_info->size[1];
-        in.region.stride_1 = 0;
+        /* in.region.stride_1 = 0; */
     }
     if (ndim >=3) {
         in.region.start_2  = region_info->offset[2];
         in.region.count_2  = region_info->size[2];
-        in.region.stride_2 = 0;
+        /* in.region.stride_2 = 0; */
     }
 /*
     if (ndim >=4) {

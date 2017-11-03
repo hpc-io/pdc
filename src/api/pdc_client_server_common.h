@@ -114,7 +114,6 @@ typedef struct region_info_transfer_t {
     size_t ndim;
     uint64_t start_0, start_1, start_2, start_3;
     uint64_t count_0, count_1, count_2, count_3;
-    uint64_t stride_0, stride_1, stride_2, stride_3;
 } region_info_transfer_t;
 
 typedef struct pdc_metadata_transfer_t {
@@ -1559,7 +1558,7 @@ hg_proc_data_server_write_check_out_t(hg_proc_t proc, void *data)
 
 typedef struct {
     uint64_t                    obj_id;
-    hg_string_t           storage_location;
+    hg_string_t                 storage_location;
     uint64_t                    offset;
     region_info_transfer_t      region;
 } update_region_loc_in_t;
