@@ -143,9 +143,10 @@ int main(int argc, char **argv)
     PDC_Client_query_metadata_name_only("obj-var-xx", &res);
     printf("rank %d: meta id is %lld\n", rank, res->obj_id);
 */
-#endif
     MPI_Bcast(&meta1, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
     MPI_Bcast(&meta2, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
+
+#endif
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);

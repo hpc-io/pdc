@@ -1666,6 +1666,36 @@ hg_proc_pdc_serialized_data_t(hg_proc_t proc, void *data)
 }
 
 typedef struct {
+    region_info_transfer_t region_transfer;
+    hg_string_t            storage_loc;
+    uint64_t               file_offset;
+} get_storage_info_single_out_t;
+
+static HG_INLINE hg_return_t
+hg_proc_get_storage_info_single_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    get_storage_info_single_out_t *struct_data = (get_storage_info_single_out_t*) data;
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->region_transfer);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_string_t(proc, &struct_data->storage_loc);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->file_offset);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+
+typedef struct {
     uint64_t obj_id;
     region_info_transfer_t req_region;
 } get_storage_info_in_t;

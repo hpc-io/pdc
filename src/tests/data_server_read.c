@@ -66,7 +66,8 @@ int main(int argc, const char *argv[])
     struct PDC_region_info region;
 
     pdc_metadata_t *metadata;
-    PDC_Client_query_metadata_name_timestep( argv[1], 0, &metadata);
+    PDC_Client_query_metadata_name_timestep_agg( argv[1], 0, &metadata);
+    /* PDC_Client_query_metadata_name_timestep( argv[1], 0, &metadata); */
     // Debug print
     /* if (rank == 0) { */
     /*     PDC_print_metadata(metadata); */
