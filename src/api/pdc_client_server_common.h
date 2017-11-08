@@ -356,6 +356,7 @@ typedef struct {
     pdcid_t                     local_reg_id;
     region_info_transfer_t      region;
     pbool_t                     mapping;
+    PDC_var_type_t              data_type;
 } region_lock_in_t;
 
 typedef struct {
@@ -471,6 +472,11 @@ hg_proc_region_lock_in_t(hg_proc_t proc, void *data)
     ret = hg_proc_uint32_t(proc, &struct_data->mapping);
     if (ret != HG_SUCCESS) {
     HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_uint8_t(proc, &struct_data->data_type);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
     }
     return ret;
 }
@@ -1855,6 +1861,7 @@ perr_t pdc_region_list_t_to_transfer(region_list_t *region, region_info_transfer
 perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to);
 
 perr_t pdc_region_info_t_to_transfer(struct PDC_region_info *region, region_info_transfer_t *transfer);
+perr_t pdc_region_info_t_to_transfer_unit(struct PDC_region_info *region, region_info_transfer_t *transfer, size_t unit);
 
 void pdc_mkdir(const char *dir);
 

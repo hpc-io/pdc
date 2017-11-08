@@ -534,6 +534,59 @@ perr_t pdc_region_info_t_to_transfer(struct PDC_region_info *region, region_info
 }
 
 
+perr_t pdc_region_info_t_to_transfer_unit(struct PDC_region_info *region, region_info_transfer_t *transfer, size_t unit)
+{
+    if (NULL==region || NULL==transfer ) {
+        printf("    pdc_region_info_t_to_region_list_t(): NULL input!\n");
+        return FAIL;
+    }
+
+    size_t ndim = region->ndim;
+    if (ndim <= 0 || ndim >=5) {
+        printf("pdc_region_info_t_to_transfer() unsupported dim: %lu\n", ndim);
+        return FAIL;
+    }
+
+    transfer->ndim = ndim;
+    if (ndim >= 1)      transfer->start_0  = unit * region->offset[0];
+    else                transfer->start_0  = 0;
+
+    if (ndim >= 2)      transfer->start_1  = unit * region->offset[1];
+    else                transfer->start_1  = 0;
+
+    if (ndim >= 3)      transfer->start_2  = unit * region->offset[2];
+    else                transfer->start_2  = 0;
+
+    if (ndim >= 4)      transfer->start_3  = unit * region->offset[3];
+    else                transfer->start_3  = 0;
+
+
+    if (ndim >= 1)      transfer->count_0  = unit * region->size[0];
+    else                transfer->count_0  = 0;
+
+    if (ndim >= 2)      transfer->count_1  = unit * region->size[1];
+    else                transfer->count_1  = 0;
+
+    if (ndim >= 3)      transfer->count_2  = unit * region->size[2];
+    else                transfer->count_2  = 0;
+
+    if (ndim >= 4)      transfer->count_3  = unit * region->size[3];
+    else                transfer->count_3  = 0;
+
+    /* if (ndim >= 1)      transfer->stride_0 = 0; */
+    /* if (ndim >= 2)      transfer->stride_1 = 0; */
+    /* if (ndim >= 3)      transfer->stride_2 = 0; */
+    /* if (ndim >= 4)      transfer->stride_3 = 0; */
+
+    transfer->stride_0 = 0;
+    transfer->stride_1 = 0; 
+    transfer->stride_2 = 0; 
+    transfer->stride_3 = 0; 
+
+    return SUCCEED;
+}
+
+
 perr_t pdc_region_list_t_to_transfer(region_list_t *region, region_info_transfer_t *transfer)
 {
     if (NULL==region || NULL==transfer ) {
@@ -1104,7 +1157,6 @@ region_update_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
 
     bulk_args = (struct region_update_bulk_args *)hg_cb_info->arg;
 //    handle = bulk_args->handle;
-
     // Send notification to mapped regions, when data transfer is done
     PDC_SERVER_notify_region_update_to_client(bulk_args->remote_obj_id, bulk_args->remote_reg_id, bulk_args->remote_client_id);
 
@@ -1229,6 +1281,7 @@ fflush(stdout);
                 //increase ref
                 atomic_fetch_add(&(update_bulk_args->refcount), 1);
 
+printf("call region_update_bulk_transfer_cb()\n");
                 hg_ret = HG_Bulk_transfer(hg_info->context, region_update_bulk_transfer_cb, update_bulk_args, HG_BULK_PUSH, bulk_args->addr, mapped_region->remote_bulk_handle, 0, local_bulk_handle, 0, size, &hg_bulk_op_id);
                 if (hg_ret != HG_SUCCESS) {
                     printf("==PDC SERVER ERROR: region_release_bulk_transfer_cb() could not write bulk data\n");
@@ -1363,9 +1416,8 @@ HG_TEST_RPC_CB(region_release, handle)
                     server_region->size = (uint64_t *)malloc(sizeof(uint64_t));
                     server_region->offset = (uint64_t *)malloc(sizeof(uint64_t));
                     (server_region->size)[0] = size;
-                    (server_region->offset)[0] = 0; 
+                    (server_region->offset)[0] = in.region.start_0;
                     ret_value = PDC_Server_data_read_direct(elt->from_obj_id, server_region, data_buf);
-printf("read data %f from obj %lld\n", *(float *)data_buf, elt->from_obj_id);
                     if(ret_value != SUCCEED)
                         printf("==PDC SERVER: PDC_Server_data_read_direct() failed\n");
                     hg_ret = HG_Bulk_create(hg_info->hg_class, 1, &data_buf, &size, HG_BULK_READWRITE, &lock_local_bulk_handle);
@@ -1476,7 +1528,7 @@ printf("read data %f from obj %lld\n", *(float *)data_buf, elt->from_obj_id);
                     server_region->size = (uint64_t *)malloc(sizeof(uint64_t));
                     server_region->offset = (uint64_t *)malloc(sizeof(uint64_t));
                     (server_region->size)[0] = size;
-                    (server_region->offset)[0] = 0; 
+                    (server_region->offset)[0] = in.region.start_0;
                     bulk_args->server_region = server_region;
                     bulk_args->mapping_list = elt;
                     bulk_args->addr = elt->local_addr;
