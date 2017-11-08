@@ -39,7 +39,7 @@
 #include <inttypes.h>
 
 // Thread
-hg_thread_pool_t *hg_test_thread_pool_g;
+hg_thread_pool_t *hg_test_thread_pool_g = NULL;
 
 hg_atomic_int32_t close_server_g;
 
@@ -69,6 +69,7 @@ hg_core_get_thread_work(hg_handle_t handle);
             hg_handle_t handle = (hg_handle_t) arg; \
             hg_thread_ret_t thread_ret = (hg_thread_ret_t) 0; \
             \
+            printf("HG_TEST_THREAD_CB func_name %s!\n", #func_name);\
             func_name ## _thread_cb(handle); \
             \
             return thread_ret; \
@@ -732,8 +733,13 @@ HG_TEST_RPC_CB(gen_obj_id, handle)
     // Insert to hash table
     ret_value = insert_metadata_to_hash_table(&in, &out);
 
+    /* printf("==PDC_SERVER: gen_obj_id_cb(): going to return %" PRIu64 "\n", out.obj_id); */
+    /* fflush(stdout); */
+
     HG_Respond(handle, NULL, NULL, &out);
-    /* printf("==PDC_SERVER: gen_obj_id_cb(): returned %" PRIu64 "\n", out.ret); */
+
+    /* printf("==PDC_SERVER: gen_obj_id_cb(): After HG_Respond%\n"); */
+    /* fflush(stdout); */
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
@@ -817,9 +823,11 @@ HG_TEST_RPC_CB(client_test_connect, handle)
     args->nclient   = in.nclient;
     sprintf(args->client_addr, in.client_addr);
 
+    /* printf("==PDC_SERVER: client_test_connect(): going to return %" PRIu64 "\n", out.ret); */
+    /* fflush(stdout); */
     /* HG_Respond(handle, NULL, NULL, &out); */
     HG_Respond(handle, PDC_Server_get_client_addr, args, &out);
-    /* printf("==PDC_SERVER: client_test_connect(): Returned %" PRIu64 "\n", out.ret); */
+    /* printf("==PDC_SERVER: client_test_connect(): Done Respond\n", out.ret); */
     /* fflush(stdout); */
 
     HG_Free_input(handle, &in);

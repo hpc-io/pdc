@@ -302,6 +302,7 @@ client_test_connect_rpc_cb(const struct hg_cb_info *callback_info)
     if (is_client_debug_g == 1) {
         printf("==PDC_CLIENT[%d]: client_test_connect_rpc_cb return from server %d\n", 
                 pdc_client_mpi_rank_g, output.ret);
+        fflush(stdout);
     }
     client_lookup_args->ret = output.ret;
 
@@ -2153,6 +2154,7 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_pro
         fprintf(stderr, "PDC_Client_send_name_to_server(): Could not start HG_Forward()\n");
         return EXIT_FAILURE;
     }
+    /* printf("After sending input to target\n"); */
 
     // Wait for response from server
     work_todo_g = 1;
@@ -3751,16 +3753,36 @@ perr_t PDC_Client_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsign
     struct timeval  start_time;
     struct timeval  end_time;
     unsigned long elapsed_ms;
+    uint64_t total_size = 1;
+    long est_wait_time;
+    long est_write_rate = 500;
+    size_t i;
 
     FUNC_ENTER(NULL);
 
     gettimeofday(&start_time, 0);
+    // TODO: Calculate region size and estimate the wait time
+    // Write is 4-5x faster
+    if (request->access_type == WRITE ) 
+        est_write_rate *= 4;
+    
+    for (i = 0; i < request->region->ndim; i++) 
+        total_size *= request->region->size[i]; 
+    total_size /= 1048576;
+    est_wait_time = total_size * request->n_client * 1000 / est_write_rate;
+    if (pdc_client_mpi_rank_g == 0) {
+        printf("==PDC_CLIENT[%d]: estimate wait time is %ld\n", pdc_client_mpi_rank_g, est_wait_time);
+        fflush(stdout);
+    }
+    /* pdc_msleep(est_wait_time); */
 
     while (completed != 1) {
+
         ret_value = PDC_Client_test(request, &completed);
         if (ret_value != SUCCEED) {
             goto done;
         }
+
         /* printf("completed ... %d\n", completed); */
         if (is_client_debug_g ==1 && completed == 1) {
             printf("==PDC_CLIENT[%d]: IO has completed.\n", pdc_client_mpi_rank_g);
@@ -3781,12 +3803,11 @@ perr_t PDC_Client_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsign
             break;
         }
 
-        pdc_msleep(check_interval_ms);
-
         if (pdc_client_mpi_rank_g == 0) {
             printf("==PDC_CLIENT[%d]: waiting for server to finish IO request...\n", pdc_client_mpi_rank_g);
             fflush(stdout);
         }
+        pdc_msleep(check_interval_ms);
     }
 
 done:
@@ -3838,7 +3859,7 @@ perr_t PDC_Client_write(pdc_metadata_t *meta, struct PDC_region_info *region, vo
         printf("==PDC_CLIENT: PDC_Client_write - PDC_Client_iwrite error\n");
         goto done;
     }
-    ret_value = PDC_Client_wait(&request, 120000, 400);
+    ret_value = PDC_Client_wait(&request, 120000, 500);
     if (ret_value != SUCCEED) {
         printf("==PDC_CLIENT: PDC_Client_write - PDC_Client_wait error\n");
         goto done;

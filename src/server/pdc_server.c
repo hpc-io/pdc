@@ -107,7 +107,7 @@ static hg_id_t    get_metadata_by_id_register_id_g;
 static hg_id_t    get_storage_info_register_id_g;
 
 // Global thread pool
-hg_thread_pool_t *hg_test_thread_pool_g = NULL;
+extern hg_thread_pool_t *hg_test_thread_pool_g;
 
 // Global hash table for storing metadata 
 hg_hash_table_t *metadata_hash_table_g = NULL;
@@ -3150,7 +3150,7 @@ hg_progress_thread(void *arg)
         /* ret = HG_Progress(context, 100); */
         /* printf("==PDC_SERVER[%d]: Before HG_Progress()\n", pdc_server_rank_g); */
         ret = HG_Progress(context, HG_MAX_IDLE_TIME);
-        printf("==PDC_SERVER[%d]: After HG_Progress()\n", pdc_server_rank_g);
+        /* printf("==PDC_SERVER[%d]: After HG_Progress()\n", pdc_server_rank_g); */
         /* printf("thread [%d]\n", tid); */
     } while (ret == HG_SUCCESS || ret == HG_TIMEOUT);
 
@@ -6598,8 +6598,8 @@ perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
         uint64_t cur_off = (uint64_t)ftell(fp);
         if (cur_off != storage_offset) {
             fseek (fp, storage_offset, SEEK_SET);
-            printf("==PDC_SERVER[%d]: curr %" PRIu64 ", fseek to %" PRIu64 "!\n", 
-                    pdc_server_rank_g, cur_off, storage_offset);
+            /* printf("==PDC_SERVER[%d]: curr %" PRIu64 ", fseek to %" PRIu64 "!\n", */ 
+                    /* pdc_server_rank_g, cur_off, storage_offset); */
         }
 
         if (is_debug_g == 1) {
