@@ -450,8 +450,8 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
         goto done;
     }
 
-    printf("==PDC_CLIENT[%d]: forwarded lookup rpc to server %d\n", pdc_client_mpi_rank_g, server_id);
-    fflush(stdout);
+    /* printf("==PDC_CLIENT[%d]: forwarded lookup rpc to server %d\n", pdc_client_mpi_rank_g, server_id); */
+    /* fflush(stdout); */
 
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);

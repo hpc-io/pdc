@@ -193,8 +193,8 @@ int main(int argc, char **argv)
     // Timing
     gettimeofday(&pdc_timer_start, 0);
 
-    for (i = 0; i < 3; i++) {
-    /* for (i = 0; i < NUM_VAR; i++) { */
+    /* for (i = 0; i < 3; i++) { */
+    for (i = 0; i < NUM_VAR; i++) {
         ret = PDC_Client_write(obj_metas[i], &obj_regions[i], mydata[i]);
         if (ret != SUCCEED) {
             printf("Error with PDC_Client_write!\n");

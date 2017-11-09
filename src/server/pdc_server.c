@@ -4365,8 +4365,8 @@ int main(int argc, char *argv[])
 /* } */
 
 
-    printf("==PDC_SERVER[%d]: shutdown in progress...\n", pdc_server_rank_g);
-    fflush(stdout);
+    /* printf("==PDC_SERVER[%d]: shutdown in progress...\n", pdc_server_rank_g); */
+    /* fflush(stdout); */
 
     /* if (pdc_server_rank_g == 0) { */
     /*     printf("==PDC_SERVER: All work done, finalizing\n"); */
@@ -5357,7 +5357,7 @@ hg_return_t PDC_Server_s2s_work_done_cb(const struct hg_cb_info *callback_info)
     // TODO: add mutex when multi threading
     s2s_work_todo_g--;
 
-    /* printf("==PDC_SERVER[%d]: work done\n", pdc_server_rank_g); */
+    /* printf("==PDC_SERVER[%d]: s2s work todo %d\n", pdc_server_rank_g, s2s_work_todo_g); */
     /* fflush(stdout); */
 
     return HG_SUCCESS;
@@ -5426,7 +5426,7 @@ perr_t PDC_Server_get_storage_location_of_region(region_list_t *request_region, 
             goto done;
         }
 
-        s2s_work_todo_g = pdc_server_size_g - 1;
+        s2s_work_todo_g += pdc_server_size_g - 1;
         if (s2s_work_todo_g != 0) 
             PDC_Server_check_s2s_response(&hg_context_g);
         /* work_todo_g = pdc_server_size_g - 1; */
@@ -6065,8 +6065,8 @@ perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_
     }
 
 done:
-    printf("==PDC_SERVER[%d]: updated local region storage location, start %" PRIu64 "\n", 
-            pdc_server_rank_g, region->start[0]);
+    /* printf("==PDC_SERVER[%d]: updated local region storage location, start %" PRIu64 "\n", */ 
+    /*         pdc_server_rank_g, region->start[0]); */
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
@@ -6106,7 +6106,7 @@ PDC_Server_update_region_loc_cb(const struct hg_cb_info *callback_info)
     lookup_args->ret_int = output.ret;
 
 done:
-    work_todo_g--;
+    s2s_work_todo_g--;
     HG_Free_output(handle, &output);
     FUNC_LEAVE(ret_value);
 }
@@ -6154,8 +6154,8 @@ perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region)
     }
 
     server_id = PDC_get_server_by_obj_id(region_meta->obj_id, pdc_server_size_g);
-    printf("==PDC_SERVER[%d]: will update storage region to server %d\n",
-            pdc_server_rank_g, server_id);
+    /* printf("==PDC_SERVER[%d]: will update storage region to server %d, %" PRIu64 "\n", */
+    /*         pdc_server_rank_g, server_id, region->start[0]); */
 
     if (server_id == (uint32_t)pdc_server_rank_g) {
         // Metadata object is local, no need to send update RPC
@@ -6168,14 +6168,14 @@ perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region)
         }
 
         // Wait for other server to connect me to update the metadata
-        printf("==PDC_SERVER[%d]: Start waiting for other server to connect me\n", pdc_server_rank_g);
-        fflush(stdout);
-        s2s_work_todo_g = pdc_server_size_g - 1;
+        /* printf("==PDC_SERVER[%d]: Start waiting for other server to connect me\n", pdc_server_rank_g); */
+        /* fflush(stdout); */
+        s2s_work_todo_g += pdc_server_size_g - 1;
         if (s2s_work_todo_g != 0) 
             PDC_Server_check_s2s_response(&hg_context_g);
 
-        printf("==PDC_SERVER[%d]: Finished waiting for other server to connect me\n", pdc_server_rank_g);
-        fflush(stdout);
+        /* printf("==PDC_SERVER[%d]: Finished waiting for other server to connect me\n", pdc_server_rank_g); */
+        /* fflush(stdout); */
     }
     else {
 
@@ -6226,8 +6226,10 @@ perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region)
         }
 
         // Wait for response from server
-        work_todo_g = 1;
-        PDC_Server_check_response(&hg_context_g);
+        /* work_todo_g = 1; */
+        /* PDC_Server_check_response(&hg_context_g); */
+        s2s_work_todo_g += 1;
+        PDC_Server_check_s2s_response(&hg_context_g);
         /* PDC_Server_trigger(&hg_context_g); */
         /* PDC_Server_check_server_response(&hg_context_g); */
 
