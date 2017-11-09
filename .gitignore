@@ -1,0 +1,5 @@
+# ignore swp files
+*.swp
+
+# build dir
+src/*build
