@@ -1160,8 +1160,8 @@ region_update_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     // Send notification to mapped regions, when data transfer is done
     PDC_SERVER_notify_region_update_to_client(bulk_args->remote_obj_id, bulk_args->remote_reg_id, bulk_args->remote_client_id);
 
-//    out.ret = 1;
-//    HG_Respond(bulk_args->handle, NULL, NULL, &out);
+    out.ret = 1;
+    HG_Respond(bulk_args->handle, NULL, NULL, &out);
 
 //    if(atomic_fetch_sub(&(bulk_args->refcount), 1) == 1) {
       if(hg_atomic_decr32(&(bulk_args->refcount)) == 1) {
@@ -1215,7 +1215,7 @@ hg_uint32_t count;
 
     // Perform lock release function
     PDC_Server_region_release(&(bulk_args->in), &out);
-    HG_Respond(bulk_args->handle, NULL, NULL, &out);
+//    HG_Respond(bulk_args->handle, NULL, NULL, &out);
 /*
     data_buf = (void *)malloc(size);
     server_region->ndim = 1;
@@ -1301,6 +1301,7 @@ fflush(stdout);
         ret_value = PDC_Server_data_write_direct((bulk_args->in).obj_id, bulk_args->server_region, bulk_args->data_buf);
         if(ret_value != SUCCEED)
             printf("==PDC SERVER: PDC_Server_data_write_direct() failed\n");
+        HG_Respond(bulk_args->handle, NULL, NULL, &out);
     }
     free(bulk_args->server_region->size);
     free(bulk_args->server_region->offset);
