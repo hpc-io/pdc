@@ -34,7 +34,6 @@ set(PROGRAMS
   init_only
   obj_buf_map
   obj_map_mpi
-  obj_buf_map_mpi_v1
   vpicio
   )
 
