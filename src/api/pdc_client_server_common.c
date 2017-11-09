@@ -1163,7 +1163,8 @@ region_update_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
 //    out.ret = 1;
 //    HG_Respond(bulk_args->handle, NULL, NULL, &out);
 
-    if(atomic_fetch_sub(&(bulk_args->refcount), 1) == 1) {
+//    if(atomic_fetch_sub(&(bulk_args->refcount), 1) == 1) {
+      if(hg_atomic_decr32(&(bulk_args->refcount)) == 1) {
         HG_Bulk_free(bulk_args->bulk_handle);
         free(bulk_args->args->data_buf);
         free(bulk_args->args);
@@ -1235,7 +1236,8 @@ fflush(stdout);
 */
  
     update_bulk_args = (struct region_update_bulk_args *) malloc(sizeof(struct region_update_bulk_args));
-    update_bulk_args->refcount = ATOMIC_VAR_INIT(0);
+//    update_bulk_args->refcount = ATOMIC_VAR_INIT(0);
+    hg_atomic_init32(&(update_bulk_args->refcount), 0);
     update_bulk_args->handle = handle;
     update_bulk_args->bulk_handle = local_bulk_handle;
     update_bulk_args->args = bulk_args;
@@ -1279,9 +1281,8 @@ printf("match addr %lld\n", bulk_args->data_buf);
 fflush(stdout);
 */
                 //increase ref
-                atomic_fetch_add(&(update_bulk_args->refcount), 1);
-
-printf("call region_update_bulk_transfer_cb()\n");
+//                atomic_fetch_add(&(update_bulk_args->refcount), 1);
+                hg_atomic_incr32(&(update_bulk_args->refcount));
                 hg_ret = HG_Bulk_transfer(hg_info->context, region_update_bulk_transfer_cb, update_bulk_args, HG_BULK_PUSH, bulk_args->addr, mapped_region->remote_bulk_handle, 0, local_bulk_handle, 0, size, &hg_bulk_op_id);
                 if (hg_ret != HG_SUCCESS) {
                     printf("==PDC SERVER ERROR: region_release_bulk_transfer_cb() could not write bulk data\n");
@@ -1343,7 +1344,7 @@ region_release_update_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
 
     // Perform lock releae function
     PDC_Server_region_release(&(bulk_args->in), &out);
-    HG_Respond(handle, NULL, NULL, &out);
+//    HG_Respond(handle, NULL, NULL, &out);
 
     // Send notification to mapped regions, when data transfer is done
     PDC_SERVER_notify_region_update_to_client(bulk_args->remote_obj_id, bulk_args->remote_reg_id, bulk_args->remote_client_id);
@@ -1353,7 +1354,7 @@ region_release_update_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     free(bulk_args->server_region);
     free(bulk_args->data_buf);
 
-//    HG_Respond(handle, NULL, NULL, &out);
+    HG_Respond(handle, NULL, NULL, &out);
 
     HG_Free_input(handle, &(bulk_args->in));
     HG_Destroy(handle); 
@@ -1738,7 +1739,8 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
                 m_info_ptr->from_obj_id = map_ptr->local_obj_id;
                 HG_Bulk_ref_incr(in.remote_bulk_handle);
                 PDC_LIST_INSERT_HEAD(&map_ptr->ids, m_info_ptr, entry);
-                atomic_fetch_add(&(map_ptr->mapping_count), 1);
+//                atomic_fetch_add(&(map_ptr->mapping_count), 1);
+                hg_atomic_incr32(&(map_ptr->mapping_count));
                 out.ret = 1;
             }
         }
@@ -1746,7 +1748,8 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
     if(found == 0) {
         region_map_t *map_ptr = (region_map_t *)malloc(sizeof(region_map_t));
         PDC_LIST_INIT(&map_ptr->ids);
-        map_ptr->mapping_count = ATOMIC_VAR_INIT(1);
+//        map_ptr->mapping_count = ATOMIC_VAR_INIT(1);
+        hg_atomic_init32(&(map_ptr->mapping_count), 1);
         map_ptr->local_obj_id = in.local_obj_id;
         map_ptr->local_reg_id = in.local_reg_id;
         map_ptr->local_region = in.local_region;
