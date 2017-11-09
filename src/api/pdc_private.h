@@ -27,8 +27,6 @@
 
 #include "stdint.h"
 
-typedef _Atomic unsigned int pdc_cnt_t;
-
 typedef enum {
     PDC_UNKNOWN      = -1, /* error                                      */
     PDC_INT          = 0,  /* integer types                              */
