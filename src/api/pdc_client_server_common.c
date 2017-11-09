@@ -41,7 +41,7 @@
 // Thread
 hg_thread_pool_t *hg_test_thread_pool_g = NULL;
 
-hg_atomic_int32_t close_server_g;
+hg_atomic_int32_t close_server_g = 0;
 
 uint64_t pdc_id_seq_g = PDC_SERVER_ID_INTERVEL;
 // actual value for each server is set by PDC_Server_init()
@@ -670,6 +670,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info) {
 perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_check_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_write_check_out_t *out) {return SUCCEED;}
 hg_return_t PDC_Server_work_done_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
+hg_return_t PDC_Server_s2s_work_done_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
 
 #else
 hg_return_t PDC_Client_work_done_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;};
@@ -823,11 +824,11 @@ HG_TEST_RPC_CB(client_test_connect, handle)
     args->nclient   = in.nclient;
     sprintf(args->client_addr, in.client_addr);
 
-    /* printf("==PDC_SERVER: client_test_connect(): going to return %" PRIu64 "\n", out.ret); */
+    /* printf("==PDC_SERVER: got client_test_connect req, going to return %" PRIu64 "\n", out.ret); */
     /* fflush(stdout); */
     /* HG_Respond(handle, NULL, NULL, &out); */
     HG_Respond(handle, PDC_Server_get_client_addr, args, &out);
-    /* printf("==PDC_SERVER: client_test_connect(): Done Respond\n", out.ret); */
+    /* printf("==PDC_SERVER: client_test_connect(): Done respond to client test connect\n", out.ret); */
     /* fflush(stdout); */
 
     HG_Free_input(handle, &in);
@@ -1111,11 +1112,10 @@ HG_TEST_RPC_CB(close_server, handle)
     
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
-    // Decode input
     HG_Get_input(handle, &in);
-    /* printf("\n==PDC_SERVER: Close server request received\n"); */
-    /* fflush(stdout); */
+
+    printf("\n==PDC_SERVER: Close server request received\n");
+    fflush(stdout);
 
     // Set close server marker
     while (hg_atomic_get32(&close_server_g) == 0 ) {
@@ -1125,10 +1125,8 @@ HG_TEST_RPC_CB(close_server, handle)
     out.ret = 1;
     HG_Respond(handle, NULL, NULL, &out);
 
-
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
-   //when to free bulk_handle
 
     FUNC_LEAVE(ret_value);
 }
@@ -1916,7 +1914,7 @@ HG_TEST_RPC_CB(data_server_read, handle)
 
 done:
     HG_Free_input(handle, &in);
-    HG_Destroy(handle);
+    ret_value = HG_Destroy(handle);
     if (ret_value != HG_SUCCESS) 
         printf("==PDC_SERVER: data_server_read_cb - Error with HG_Destroy\n");
     fflush(stdout);
@@ -1981,7 +1979,7 @@ HG_TEST_RPC_CB(data_server_read_check, handle)
 {
     FUNC_ENTER(NULL);
 
-    hg_return_t ret_value;
+    hg_return_t ret_value = HG_SUCCESS;
 
     /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
@@ -1989,16 +1987,13 @@ HG_TEST_RPC_CB(data_server_read_check, handle)
     data_server_read_check_out_t out;
     out.shm_addr = NULL;
 
-    HG_Get_input(handle, &in);
+    ret_value = HG_Get_input(handle, &in);
     /* printf("==PDC_SERVER: Got data server read_check request from client %d\n", in.client_id); */
 
     PDC_Server_read_check(&in, &out);
 
-    HG_Respond(handle, NULL, NULL, &out);
+    ret_value = HG_Respond(handle, NULL, NULL, &out);
     /* printf("==PDC_SERVER: server read_check returning ret=%d, shm_addr=%s\n", out.ret, out.shm_addr); */
-
-
-    ret_value = HG_SUCCESS;
 
 done:
     if (NULL != out.shm_addr && out.shm_addr[0] != ' ')
@@ -2015,23 +2010,20 @@ HG_TEST_RPC_CB(data_server_write_check, handle)
 {
     FUNC_ENTER(NULL);
 
-    hg_return_t ret_value;
+    hg_return_t ret_value = HG_SUCCESS;
 
     /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     data_server_write_check_in_t  in;
     data_server_write_check_out_t out;
 
-    HG_Get_input(handle, &in);
+    ret_value = HG_Get_input(handle, &in);
     /* printf("==PDC_SERVER: Got data server write_check request from client %d\n", in.client_id); */
 
     PDC_Server_write_check(&in, &out);
 
-    HG_Respond(handle, NULL, NULL, &out);
+    ret_value = HG_Respond(handle, NULL, NULL, &out);
     /* printf("==PDC_SERVER: server write_check returning ret=%d\n", out.ret); */
-
-
-    ret_value = HG_SUCCESS;
 
 done:
     HG_Free_input(handle, &in);
@@ -2071,7 +2063,8 @@ HG_TEST_RPC_CB(update_region_loc, handle)
         fflush(stdout);
     }
 
-    HG_Respond(handle, NULL, NULL, &out);
+    /* HG_Respond(handle, NULL, NULL, &out); */
+    HG_Respond(handle, PDC_Server_s2s_work_done_cb, NULL, &out);
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);

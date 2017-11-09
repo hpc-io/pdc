@@ -45,6 +45,7 @@
 
 static pdc_cnt_t pdc_num_reg;
 extern hg_class_t *hg_class_g;
+extern hg_atomic_int32_t close_server_g;
 
 
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out);
@@ -68,6 +69,7 @@ perr_t PDC_Server_regions_io(region_list_t *region_list_head, PDC_io_plugin_t pl
 perr_t PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_id_out_t *out);
 
 hg_return_t PDC_Server_work_done_cb(const struct hg_cb_info *callback_info);
+hg_return_t PDC_Server_s2s_work_done_cb(const struct hg_cb_info *callback_info);
 /* typedef struct pdc_metadata_name_mark_t { */
 /*     char obj_name[ADDR_MAX]; */
 /*     struct pdc_metadata_name_mark_t *next; */

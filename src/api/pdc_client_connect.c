@@ -286,7 +286,6 @@ client_test_connect_rpc_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered client_test_connect_rpc_cb()\n"); */
     struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
     hg_handle_t handle = callback_info->info.forward.handle;
 
@@ -445,17 +444,17 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
     in.nclient     = pdc_client_mpi_size_g;
     in.client_addr = client_lookup_args->client_addr;
 
-    /* printf("Sending input to target\n"); */
     ret_value = HG_Forward(client_test_handle, client_test_connect_rpc_cb, client_lookup_args, &in);
     if (ret_value != HG_SUCCESS) {
         fprintf(stderr, "client_test_connect_lookup_cb(): Could not start HG_Forward()\n");
         goto done;
     }
 
-    // Wait for server to connect back
+    printf("==PDC_CLIENT[%d]: forwarded lookup rpc to server %d\n", pdc_client_mpi_rank_g, server_id);
+    fflush(stdout);
+
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
-
 
 done:
     HG_Destroy(client_test_handle);
@@ -707,7 +706,6 @@ int PDC_Client_check_bulk(hg_context_t *hg_context)
 
         /* Do not try to make progress anymore if we're done */
         if (bulk_todo_g <= 0)  break;
-        /* if (hg_atomic_cas32(&close_server_g, 1, 1)) break; */
         hg_ret = HG_Progress(hg_context, HG_MAX_IDLE_TIME);
 
     } while (hg_ret == HG_SUCCESS);
@@ -850,7 +848,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
    
     // Client 0 looks up all servers, others only lookup their node local server
     char *client_lookup_env = getenv("PDC_CLIENT_LOOKUP");
-    if (client_lookup_env != NULL && strcmp(client_lookup_env, "0")==0) {
+    if (client_lookup_env != NULL && strcmp(client_lookup_env, "ALL") == 0) {
         if (pdc_client_mpi_rank_g == 0) 
             printf("==PDC_CLIENT[%d]: Client lookup server at start time disabled!\n", pdc_client_mpi_rank_g);
     }
@@ -3341,8 +3339,9 @@ perr_t PDC_Client_data_server_write_check(int server_id, uint32_t client_id, pdc
             printf("==PDC_CLIENT[%d]: PDC_Client_data_server_write_check - "
                     "IO request has not been fulfilled by server\n", pdc_client_mpi_rank_g);
         }
+
         if (lookup_args.ret == -1)
-            ret_value = -1;
+            ret_value = FAIL;
         goto done;
     }
 
@@ -3770,10 +3769,10 @@ perr_t PDC_Client_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsign
         total_size *= request->region->size[i]; 
     total_size /= 1048576;
     est_wait_time = total_size * request->n_client * 1000 / est_write_rate;
-    if (pdc_client_mpi_rank_g == 0) {
-        printf("==PDC_CLIENT[%d]: estimate wait time is %ld\n", pdc_client_mpi_rank_g, est_wait_time);
-        fflush(stdout);
-    }
+    /* if (pdc_client_mpi_rank_g == 0) { */
+    /*     printf("==PDC_CLIENT[%d]: estimate wait time is %ld\n", pdc_client_mpi_rank_g, est_wait_time); */
+    /*     fflush(stdout); */
+    /* } */
     /* pdc_msleep(est_wait_time); */
 
     while (completed != 1) {

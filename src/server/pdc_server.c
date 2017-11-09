@@ -87,6 +87,7 @@ hg_class_t   *hg_class_g   = NULL;
 hg_context_t *hg_context_g = NULL;
 
 int           work_todo_g = 0;
+int           s2s_work_todo_g = 0;
 
 /* hg_context_t *pdc_client_context_g = NULL; */
 int           pdc_to_client_work_todo_g = 0;
@@ -414,6 +415,39 @@ perr_t PDC_Server_trigger(hg_context_t **hg_context)
 
     FUNC_LEAVE(ret_value);
 }
+
+/*
+ * Trigger and progress the Mercury queue, execute callback function
+ *
+ * \param  hg_context[IN]        Mercury context pointer
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Server_check_s2s_response(hg_context_t **hg_context)
+{
+    perr_t ret_value;
+    hg_return_t hg_ret;
+    unsigned int actual_count;
+
+    FUNC_ENTER(NULL);
+
+    do {
+        actual_count = 0;
+        do {
+            hg_ret = HG_Trigger(*hg_context, 0, 1, &actual_count);
+        } while (hg_ret == HG_SUCCESS);
+
+        if (s2s_work_todo_g <= 0) 
+            break;
+        hg_ret = HG_Progress(*hg_context, HG_MAX_IDLE_TIME);
+    } while (hg_ret == HG_SUCCESS);
+
+    ret_value = SUCCEED;
+
+    FUNC_LEAVE(ret_value);
+}
+
+
 /*
  * Trigger and progress the Mercury queue, execute callback function
  *
@@ -625,8 +659,7 @@ static perr_t PDC_Server_lookup_client(uint32_t client_id)
                 pdc_server_rank_g, client_id, target_addr_string);
         fflush(stdout);
     }
-    /* hg_ret = HG_Addr_lookup(pdc_client_context_g, PDC_Server_lookup_client_cb, */ 
-    /*                         &lookup_args, target_addr_string, HG_OP_ID_IGNORE); */
+
     hg_ret = HG_Addr_lookup(hg_context_g, PDC_Server_lookup_client_cb, 
                             &lookup_args, target_addr_string, HG_OP_ID_IGNORE);
     if (hg_ret != HG_SUCCESS ) {
@@ -713,10 +746,10 @@ hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info)
     
 
     if (is_all_client_connected_g  == 1) {
-        if (is_debug_g == 1) { 
-            printf("==PDC_SERVER[%d]: new application run detected\n", pdc_server_rank_g);
+        /* if (is_debug_g == 1) { */ 
+            printf("==PDC_SERVER[%d]: new application run detected, create new client info\n", pdc_server_rank_g);
             fflush(stdout);
-        }
+        /* } */
         
         PDC_Server_destroy_client_info(pdc_client_info_g);
         pdc_client_info_g = NULL;
@@ -741,6 +774,7 @@ hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info)
         
     }
 
+    // Copy the client's address
     memcpy(pdc_client_info_g[in->client_id].addr_string, in->client_addr, sizeof(char)*ADDR_MAX);
 
     if (is_debug_g) {
@@ -2539,8 +2573,8 @@ perr_t PDC_Server_lookup_all_servers()
             /*     fflush(stdout); */
             /* } */
             work_todo_g = 1;
-            /* PDC_Server_check_response(&hg_context_g); */
-            PDC_Server_trigger(&hg_context_g);
+            PDC_Server_check_response(&hg_context_g);
+            /* PDC_Server_trigger(&hg_context_g); */
             /* if (is_debug_g == 1) { */
             /*     printf("==PDC_SERVER[%d]: connection from %d finished \n", pdc_server_rank_g, j); */
             /*     fflush(stdout); */
@@ -3216,11 +3250,11 @@ static perr_t PDC_Server_loop(hg_context_t *hg_context)
 
         /* Do not try to make progress anymore if we're done */
         if (hg_atomic_cas32(&close_server_g, 1, 1)) break;
-        hg_ret = HG_Progress(hg_context, HG_MAX_IDLE_TIME);
-        /* hg_ret = HG_Progress(hg_context, 1000); */
+        /* hg_ret = HG_Progress(hg_context, HG_MAX_IDLE_TIME); */
+        hg_ret = HG_Progress(hg_context, 1000);
 
-    } while (hg_ret == HG_SUCCESS);
-    /* } while (hg_ret == HG_SUCCESS || hg_ret == HG_TIMEOUT); */
+    /* } while (hg_ret == HG_SUCCESS); */
+    } while (hg_ret == HG_SUCCESS || hg_ret == HG_TIMEOUT);
 
     if (hg_ret == HG_SUCCESS) 
         ret_value = SUCCEED;
@@ -4331,7 +4365,8 @@ int main(int argc, char *argv[])
 /* } */
 
 
-    /* printf("==PDC_SERVER[%d]: All work done, finalizing\n", pdc_server_rank_g); */
+    printf("==PDC_SERVER[%d]: shutdown in progress...\n", pdc_server_rank_g);
+    fflush(stdout);
 
     /* if (pdc_server_rank_g == 0) { */
     /*     printf("==PDC_SERVER: All work done, finalizing\n"); */
@@ -4721,53 +4756,6 @@ done:
     HG_Destroy(notify_region_update_handle);
     FUNC_LEAVE(ret_value);
 }
-
-/*
-perr_t PDC_SERVER_notify_region_update_to_client(pdcid_t meta_id, pdcid_t reg_id, int32_t client_id)
-{
-    perr_t ret_value = SUCCEED;
-    hg_return_t hg_ret;
-
-    FUNC_ENTER(NULL);
-
-    if (pdc_client_info_g[client_id].addr_valid == 0) {
-        ret_value = PDC_Server_lookup_client(client_id);
-        if (ret_value != SUCCEED) {
-            fprintf(stderr, "==PDC_SERVER: PDC_SERVER_notify_region_update() - \
-                    PDC_Server_lookup_client failed)\n");
-            return FAIL;
-        }
-    }
-    if (pdc_client_info_g[client_id].notify_region_update_handle_valid != 1) {
-        hg_ret = HG_Create(hg_context_g, pdc_client_info_g[client_id].addr, notify_region_update_register_id_g, 
-                           &pdc_client_info_g[client_id].notify_region_update_handle);
-        if (hg_ret != HG_SUCCESS) {
-            fprintf(stderr, "PDC_Server_notify_region_update_to_client(): Could not HG_Create()\n");
-            return FAIL;
-        }
-        pdc_client_info_g[client_id].notify_region_update_handle_valid = 1;
-    }
-
-    // Fill input structure
-    notify_region_update_in_t in;
-    in.obj_id    = meta_id;
-    in.reg_id    = reg_id;
-
-    server_lookup_args_t lookup_args;
-    hg_ret = HG_Forward(pdc_client_info_g[client_id].notify_region_update_handle, PDC_Server_notify_region_update_cb, &lookup_args, &in);
-    if (hg_ret != HG_SUCCESS) {
-        fprintf(stderr, "PDC_Server_notify_region_update_to_client(): Could not start HG_Forward()\n");
-        return FAIL;
-    }
-    if(lookup_args.ret_int != 1)
-        ret_value = FAIL;
-
-    work_todo_g = 1;
-    PDC_Server_check_response(&hg_context_g);
-
-    FUNC_LEAVE(ret_value);
-}
-*/
 
 /*
  * Close the shared memory
@@ -5364,9 +5352,20 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+hg_return_t PDC_Server_s2s_work_done_cb(const struct hg_cb_info *callback_info)
+{
+    // TODO: add mutex when multi threading
+    s2s_work_todo_g--;
+
+    /* printf("==PDC_SERVER[%d]: work done\n", pdc_server_rank_g); */
+    /* fflush(stdout); */
+
+    return HG_SUCCESS;
+}
+
 hg_return_t PDC_Server_work_done_cb(const struct hg_cb_info *callback_info)
 {
-    work_todo_g = 0;
+    work_todo_g--;
 
     /* printf("==PDC_SERVER[%d]: work done\n", pdc_server_rank_g); */
     /* fflush(stdout); */
@@ -5427,8 +5426,11 @@ perr_t PDC_Server_get_storage_location_of_region(region_list_t *request_region, 
             goto done;
         }
 
-        work_todo_g = pdc_server_size_g - 1;
-        PDC_Server_check_response(&hg_context_g);
+        s2s_work_todo_g = pdc_server_size_g - 1;
+        if (s2s_work_todo_g != 0) 
+            PDC_Server_check_s2s_response(&hg_context_g);
+        /* work_todo_g = pdc_server_size_g - 1; */
+        /* PDC_Server_check_response(&hg_context_g); */
     }
     else {
         if (is_debug_g == 1) {
@@ -5632,14 +5634,15 @@ perr_t PDC_Server_data_write_from_shm(region_list_t *region_list_head)
         // Open shared memory and map to data buf
         region_elt->shm_fd = shm_open(region_elt->shm_addr, O_RDONLY, 0666);
         if (region_elt->shm_fd == -1) {
-            printf("==PDC_SERVER: Shared memory open failed [%s]!\n", region_elt->shm_addr);
+            printf("==PDC_SERVER[%d]: Shared memory open failed [%s]!\n", 
+                    pdc_server_rank_g, region_elt->shm_addr);
             ret_value = FAIL;
             goto done;
         }
 
         region_elt->buf= mmap(0, region_elt->data_size, PROT_READ, MAP_SHARED, region_elt->shm_fd, 0);
         if (region_elt->buf== MAP_FAILED) {
-            printf("==PDC_SERVER: Map failed: %s\n", strerror(errno));
+            printf("==PDC_SERVER[%d]: Map failed: %s\n", pdc_server_rank_g, strerror(errno));
             // close and unlink?
             ret_value = FAIL;
             goto done;
@@ -5656,6 +5659,7 @@ perr_t PDC_Server_data_write_from_shm(region_list_t *region_list_head)
         goto done;
     }
 
+    /* printf("==PDC_SERVER[%d]: Finished PDC_Server_regions_io\n", pdc_server_rank_g); */
 done:
 
     // TODO: keep the shared memory for now and close them later?
@@ -5985,7 +5989,7 @@ done:
     /* free(io_info); */
     fflush(stdout);
     FUNC_LEAVE(ret_value);
-} // end of PDC_Server_data_write
+} // end of PDC_Server_data_io_via_shm
 
 /*
  * Update the storage location information of the corresponding metadata that is stored locally
@@ -6004,8 +6008,6 @@ perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_
 
     FUNC_ENTER(NULL);
 
-    /* printf("==PDC_SERVER[%d]: update local region storage location, start %" PRIu64 "\n", */ 
-    /*         pdc_server_rank_g, region->start[0]); */
 
     if (region == NULL) {
         printf("==PDC_SERVER[%d] PDC_Server_update_local_region_storage_loc NULL region!\n",
@@ -6063,6 +6065,9 @@ perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_
     }
 
 done:
+    printf("==PDC_SERVER[%d]: updated local region storage location, start %" PRIu64 "\n", 
+            pdc_server_rank_g, region->start[0]);
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
@@ -6124,10 +6129,7 @@ perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region)
     update_region_loc_in_t in;
     server_lookup_args_t lookup_args;
 
-   
-
     FUNC_ENTER(NULL);
-
 
     if (region == NULL) {
         printf("==PDC_SERVER[%d] PDC_Server_update_region_storagelocation_offset - NULL region!\n",
@@ -6152,6 +6154,9 @@ perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region)
     }
 
     server_id = PDC_get_server_by_obj_id(region_meta->obj_id, pdc_server_size_g);
+    printf("==PDC_SERVER[%d]: will update storage region to server %d\n",
+            pdc_server_rank_g, server_id);
+
     if (server_id == (uint32_t)pdc_server_rank_g) {
         // Metadata object is local, no need to send update RPC
         ret_value = PDC_Server_update_local_region_storage_loc(region, region_meta->obj_id);
@@ -6161,17 +6166,20 @@ perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region)
                    "PDC_Server_update_local_region_storage_loc FAILED!\n");
             goto done;
         }
+
+        // Wait for other server to connect me to update the metadata
+        printf("==PDC_SERVER[%d]: Start waiting for other server to connect me\n", pdc_server_rank_g);
+        fflush(stdout);
+        s2s_work_todo_g = pdc_server_size_g - 1;
+        if (s2s_work_todo_g != 0) 
+            PDC_Server_check_s2s_response(&hg_context_g);
+
+        printf("==PDC_SERVER[%d]: Finished waiting for other server to connect me\n", pdc_server_rank_g);
+        fflush(stdout);
     }
     else {
 
-        // Debug
-        /* volatile int debug_sleep = 1; */
-        /* while(debug_sleep ==1) { */
-        /*     debug_sleep = 1; */
-        /*     sleep(1); */
-        /* } */
-
-        if (pdc_remote_server_info_g[server_id].addr_valid != 1) {
+       if (pdc_remote_server_info_g[server_id].addr_valid != 1) {
             /* printf("==PDC_SERVER[%d]: will get remote server %d addr via lookup\n", */
             /*         pdc_server_rank_g, server_id); */
 
@@ -7083,7 +7091,8 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
     } // end if
 
     /* DL_COUNT(region, region_elt, n_region); */
-    /* printf("==PDC_SERVER[%d]: %d regions in the list, %d are write.\n", pdc_server_rank_g, iter, n_write_region); */
+    /* printf("==PDC_SERVER[%d]: updated %d regions in the list, %d are write.\n", */ 
+    /*         pdc_server_rank_g, iter, n_write_region); */
     /* fflush(stdout); */
 
 done:
