@@ -2,4 +2,11 @@
 *.swp
 
 # build dir
-src/*build
+*build*
+
+# exes
+*.exe
+
+#
+!apps/h5boss
+apps/h5boss/*
