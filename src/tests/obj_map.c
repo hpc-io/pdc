@@ -93,17 +93,11 @@ int main(int argc, char **argv)
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
     if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
-    /* else */
-    /*     if (rank == 0) */ 
-    /*         printf("Create a container property, id is %lld\n", cont_prop); */
 
     // create a container
     cont_id = PDCcont_create("c1", cont_prop);
     if(cont_id <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
-    /* else */
-    /*     if (rank == 0) */ 
-    /*         printf("Create a container, id is %lld\n", cont_id); */
 
     // create an object property
     obj_prop1 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
@@ -199,26 +193,7 @@ int main(int argc, char **argv)
         fflush(stdout);
     }
 
-    /* // Check for duplicate insertion */
-    /* int dup_obj_id; */
-    /* sprintf(obj_name, "%s_%d", obj_prefix[0], rank * 10000000); */
-    /* dup_obj_id = PDCobj_create(pdc, obj_name, NULL); */
-    /* int all_dup_obj_id; */
-
-/* #ifdef ENABLE_MPI */
-    /* MPI_Reduce(&dup_obj_id, &all_dup_obj_id, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD); */  
-/* #else */
-    /* all_dup_obj_id = dup_obj_id; */
-/* #endif */
-
-    /* if (rank == 0) { */
-    /*     if (all_dup_obj_id>=0 ) */ 
-    /*         printf("Duplicate insertion test failed!\n"); */
-    /*     else */ 
-    /*         printf("Duplicate insertion test succeed!\n"); */
-    /* } */
-
-    #ifdef ENABLE_MPI
+ #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     gettimeofday(&ht_total_start, 0);
@@ -242,21 +217,13 @@ int main(int argc, char **argv)
     // close a container
     if(PDCcont_close(cont_id) < 0)
         printf("fail to close container %lld\n", cont_id);
-    /* else */
-    /*     if (rank == 0) */ 
-    /*         printf("successfully close container # %lld\n", cont); */
 
     // close a container property
     if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
-    /* else */
-    /*     if (rank == 0) */ 
-    /*         printf("successfully close container property # %lld\n", cont_prop); */
 
     if(PDC_close(pdc_id) < 0)
        printf("fail to close PDC\n");
-    /* else */
-    /*    printf("PDC is closed\n"); */
 
 #ifdef ENABLE_MPI
      MPI_Finalize();
