@@ -30,8 +30,10 @@ Type 'c' multiple times and choose suitable options. Recommended options are:
     MERCURY_USE_XDR                  OFF
     MERCURY_USE_OPA                  OFF
     NA_USE_BMI                       ON
+    NA_USE_OFI                       OFF (ON if you need libfabric)
     NA_USE_MPI                       OFF
     NA_USE_CCI                       OFF
+    NA_USE_SM                        OFF
     
     BMI_INCLUDE_DIR                  BMI_PATH/include
     BMI_LIBRARY                      BMI_PATH/libbmi.so  
