@@ -193,7 +193,7 @@ int main(int argc, char **argv)
     // Timing
     gettimeofday(&pdc_timer_start, 0);
 
-    /* for (i = 0; i < 3; i++) { */
+    /* for (i = 0; i < 7; i++) { */
     for (i = 0; i < NUM_VAR; i++) {
         ret = PDC_Client_write(obj_metas[i], &obj_regions[i], mydata[i]);
         if (ret != SUCCEED) {
@@ -207,8 +207,10 @@ int main(int argc, char **argv)
 #endif
     gettimeofday(&pdc_timer_end, 0);
     double write_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+    double total_size = NPARTICLES * 4.0 * 8.0 * size / 1024.0 / 1024.0; 
     if (rank == 0) { 
-        printf("Time to write data with %d ranks: %.2f\n", size, write_time);
+        printf("Time to write %.2f MB data with %d ranks: %.2f\nThroughput %.2f MB/s\n", 
+                            total_size, size, write_time, total_size/write_time);
         fflush(stdout);
     }
 

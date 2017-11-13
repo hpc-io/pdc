@@ -614,7 +614,7 @@ static hg_return_t
 hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
 {
     hg_return_t ret = HG_SUCCESS;
-    struct hg_test_bulk_args *bulk_args;
+    struct bulk_args_t *bulk_args;
     hg_bulk_t local_bulk_handle;
     /* bulk_write_out_t out_struct; */
     uint32_t i;
@@ -626,7 +626,7 @@ hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     
     FUNC_ENTER(NULL);
     
-    bulk_args = (struct hg_test_bulk_args *)hg_cb_info->arg;
+    bulk_args = (struct bulk_args_t *)hg_cb_info->arg;
     local_bulk_handle = hg_cb_info->info.bulk.local_handle;
 
     if (hg_cb_info->ret == HG_CANCELED) {
@@ -1140,7 +1140,7 @@ static hg_return_t
 metadata_query_bulk_cb(const struct hg_cb_info *callback_info)
 {
     hg_return_t ret_value;
-    struct hg_test_bulk_args *client_lookup_args;
+    struct bulk_args_t *client_lookup_args;
     hg_handle_t handle;
     metadata_query_transfer_out_t output;
     uint32_t n_meta;
@@ -1148,13 +1148,13 @@ metadata_query_bulk_cb(const struct hg_cb_info *callback_info)
     hg_bulk_t local_bulk_handle = HG_BULK_NULL;
     hg_bulk_t origin_bulk_handle = HG_BULK_NULL;
     const struct hg_info *hg_info = NULL;
-    struct hg_test_bulk_args *bulk_args;
+    struct bulk_args_t *bulk_args;
     void *recv_meta;
     
     FUNC_ENTER(NULL);
 
     /* printf("Entered metadata_query_bulk_cb()\n"); */
-    client_lookup_args = (struct hg_test_bulk_args*) callback_info->arg;
+    client_lookup_args = (struct bulk_args_t*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
     // Get output from server
@@ -1179,7 +1179,7 @@ metadata_query_bulk_cb(const struct hg_cb_info *callback_info)
     origin_bulk_handle = output.bulk_handle;
     hg_info = HG_Get_info(handle);
 
-    bulk_args = (struct hg_test_bulk_args *) malloc(sizeof(struct hg_test_bulk_args));
+    bulk_args = (struct bulk_args_t *) malloc(sizeof(struct bulk_args_t));
 
     bulk_args->handle = handle;
     bulk_args->nbytes = HG_Bulk_get_size(origin_bulk_handle);
@@ -1302,7 +1302,7 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
                             &query_partial_handle);
 
         /* printf("Sending input to target\n"); */
-        struct hg_test_bulk_args lookup_args;
+        struct bulk_args_t lookup_args;
         if (query_partial_handle == NULL) {
             printf("==CLIENT[%d]: Error with query_partial_handle\n", pdc_client_mpi_rank_g);
             ret_value = FAIL;
@@ -2011,11 +2011,9 @@ perr_t PDC_Client_query_metadata_name_timestep_agg(const char *obj_name, int tim
     MPI_Bcast(*out, sizeof(pdc_metadata_t), MPI_CHAR, 0, PDC_SAME_NODE_COMM_g);
 
 #else
-    if (pdc_client_mpi_rank_g == 0) {
-        printf("==PDC_CLIENT[%d] - PDC_Client_query_metadata_name_timestep_agg(): should only be called "
-                "with MPI enabled!\n", pdc_client_mpi_rank_g);
-    }
-    goto done;
+
+    ret_value = PDC_Client_query_metadata_name_timestep(obj_name, time_step, out);
+
 #endif
 
 done:
@@ -2739,10 +2737,10 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
     // Compute server id
     server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
 
-    // Delay test
-    srand(pdc_client_mpi_rank_g);
-    int delay = rand() % 500;
-    usleep(delay);
+    /* // Delay test */
+    /* srand(pdc_client_mpi_rank_g); */
+    /* int delay = rand() % 500; */
+    /* usleep(delay); */
 
 
     printf("==PDC_CLIENT[%d]: release going to server %u\n", pdc_client_mpi_rank_g, server_id);
@@ -3694,18 +3692,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-int pdc_msleep(unsigned long milisec)
-{
-    struct timespec req={0};
-    time_t sec=(int)(milisec/1000);
-    milisec=milisec-(sec*1000);
-    req.tv_sec=sec;
-    req.tv_nsec=milisec*1000000L;
-    while(nanosleep(&req,&req)==-1)
-         continue;
-    return 1;
-}
-
 perr_t PDC_Client_test(PDC_Request_t *request, int *completed)
 {
     perr_t ret_value = SUCCEED;
@@ -3762,13 +3748,13 @@ perr_t PDC_Client_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsign
     gettimeofday(&start_time, 0);
     // TODO: Calculate region size and estimate the wait time
     // Write is 4-5x faster
-    if (request->access_type == WRITE ) 
-        est_write_rate *= 4;
+    /* if (request->access_type == WRITE ) */ 
+    /*     est_write_rate *= 4; */
     
-    for (i = 0; i < request->region->ndim; i++) 
-        total_size *= request->region->size[i]; 
-    total_size /= 1048576;
-    est_wait_time = total_size * request->n_client * 1000 / est_write_rate;
+    /* for (i = 0; i < request->region->ndim; i++) */ 
+    /*     total_size *= request->region->size[i]; */ 
+    /* total_size /= 1048576; */
+    /* est_wait_time = total_size * request->n_client * 1000 / est_write_rate; */
     /* if (pdc_client_mpi_rank_g == 0) { */
     /*     printf("==PDC_CLIENT[%d]: estimate wait time is %ld\n", pdc_client_mpi_rank_g, est_wait_time); */
     /*     fflush(stdout); */

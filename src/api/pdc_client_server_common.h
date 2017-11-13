@@ -1137,18 +1137,18 @@ hg_proc_close_server_out_t(hg_proc_t proc, void *data)
 
 
 // Bulk
-/* Define bulk_write_in_t */
+/* Define bulk_rpc_in_t */
 typedef struct {
     hg_int32_t cnt;
     hg_bulk_t bulk_handle;
-} bulk_write_in_t;
+} bulk_rpc_in_t;
 
-/* Define hg_proc_bulk_write_in_t */
+/* Define hg_proc_bulk_rpc_in_t */
 static HG_INLINE hg_return_t
-hg_proc_bulk_write_in_t(hg_proc_t proc, void *data)
+hg_proc_bulk_rpc_in_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret = HG_SUCCESS;
-    bulk_write_in_t *struct_data = (bulk_write_in_t *) data;
+    bulk_rpc_in_t *struct_data = (bulk_rpc_in_t *) data;
 
     ret = hg_proc_int32_t(proc, &struct_data->cnt);
     if (ret != HG_SUCCESS) {
@@ -1163,17 +1163,17 @@ hg_proc_bulk_write_in_t(hg_proc_t proc, void *data)
     return ret;
 }
 
-/* Define bulk_write_out_t */
+/* Define bulk_rpc_out_t */
 typedef struct {
     hg_uint64_t ret;
-} bulk_write_out_t;
+} bulk_rpc_out_t;
 
-/* Define hg_proc_bulk_write_out_t */
+/* Define hg_proc_bulk_rpc_out_t */
 static HG_INLINE hg_return_t
-hg_proc_bulk_write_out_t(hg_proc_t proc, void *data)
+hg_proc_bulk_rpc_out_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret = HG_SUCCESS;
-    bulk_write_out_t *struct_data = (bulk_write_out_t *) data;
+    bulk_rpc_out_t *struct_data = (bulk_rpc_out_t *) data;
 
     ret = hg_proc_uint64_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
@@ -1557,6 +1557,13 @@ hg_proc_data_server_write_check_out_t(hg_proc_t proc, void *data)
 }
 
 typedef struct {
+    region_info_transfer_t      region_transfer;
+    char                        storage_location[ADDR_MAX];
+    uint64_t                    offset;
+} update_region_storage_meta_bulk_t;
+
+
+typedef struct {
     uint64_t                    obj_id;
     hg_string_t                 storage_location;
     uint64_t                    offset;
@@ -1783,15 +1790,17 @@ hg_id_t server_lookup_remote_server_register(hg_class_t *hg_class);
 hg_id_t update_region_loc_register(hg_class_t *hg_class);
 hg_id_t get_metadata_by_id_register(hg_class_t *hg_class);
 hg_id_t get_storage_info_register(hg_class_t *hg_class);
+hg_id_t bulk_rpc_register(hg_class_t *hg_class);
 
 //bulk
 hg_id_t query_partial_register(hg_class_t *hg_class);
 hg_id_t notify_io_complete_register(hg_class_t *hg_class);
 hg_id_t data_server_read_register(hg_class_t *hg_class);
 
-struct hg_test_bulk_args {
+struct bulk_args_t {
     int cnt;
     hg_handle_t handle;
+    hg_bulk_t   bulk_handle;
     size_t nbytes;
     hg_atomic_int32_t completed_transfers;
     size_t ret;
@@ -1875,5 +1884,8 @@ hg_id_t data_server_read_check_register(hg_class_t *hg_class);
 hg_id_t data_server_read_register(hg_class_t *hg_class);
 
 extern char *find_in_path(char *workingDir, char *application);
+
+
+int pdc_msleep(unsigned long milisec);
 
 #endif /* PDC_CLIENT_SERVER_COMMON_H */

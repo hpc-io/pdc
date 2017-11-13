@@ -144,6 +144,18 @@ static uint32_t pdc_hash_djb2(const char *pc)
     return hash;
 }
 
+int pdc_msleep(unsigned long milisec)
+{
+    struct timespec req={0};
+    time_t sec=(int)(milisec/1000);
+    milisec=milisec-(sec*1000);
+    req.tv_sec=sec;
+    req.tv_nsec=milisec*1000000L;
+    while(nanosleep(&req,&req)==-1)
+         continue;
+    return 1;
+}
+
 /*
 static uint32_t pdc_hash_sdbm(const char *pc)
 {
@@ -349,6 +361,11 @@ void PDC_print_storage_region_list(region_list_t *a)
     
     if (a == NULL) {
         printf("==Empty region_list_t structure\n");
+        return;
+    }
+
+    if (a->ndim > 4) {
+        printf("==Error with ndim %lu\n", a->ndim);
         return;
     }
     size_t i;
@@ -560,7 +577,6 @@ perr_t pdc_region_info_t_to_transfer(struct PDC_region_info *region, region_info
     return SUCCEED;
 }
 
-
 perr_t pdc_region_list_t_to_transfer(region_list_t *region, region_info_transfer_t *transfer)
 {
     if (NULL==region || NULL==transfer ) {
@@ -586,7 +602,6 @@ perr_t pdc_region_list_t_to_transfer(region_list_t *region, region_info_transfer
 
     return SUCCEED;
 }
-
 
 // Fill the structure of pdc_metadata_transfer_t with pdc_metadata_t
 perr_t pdc_metadata_t_to_transfer_t(pdc_metadata_t *meta, pdc_metadata_transfer_t *transfer)
@@ -660,6 +675,7 @@ perr_t PDC_Server_get_local_storage_location_of_region(uint64_t obj_id, region_l
 perr_t PDC_Server_get_total_str_len(region_list_t** regions, uint32_t n_region, uint32_t *len) {return SUCCEED;}
 perr_t PDC_Server_serialize_regions_info(region_list_t** regions, uint32_t n_region, void *buf) {return SUCCEED;}
 pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id) {return NULL;}
+perr_t PDC_Server_update_region_storage_meta_bulk_local(update_region_storage_meta_bulk_t **bulk_ptrs, int cnt){return SUCCEED;}
 
 hg_class_t *hg_class_g;
 
@@ -1877,6 +1893,152 @@ done:
  * Data server related
  */
 
+// TODO
+static hg_return_t
+update_storage_meta_bulk_cb(const struct hg_cb_info *hg_cb_info)
+{
+    struct bulk_args_t *bulk_args = (struct bulk_args_t *)hg_cb_info->arg;
+    hg_bulk_t local_bulk_handle = hg_cb_info->info.bulk.local_handle;
+    hg_return_t ret = HG_SUCCESS;
+    int cnt, i;
+    uint64_t *obj_id_ptr;
+    update_region_storage_meta_bulk_t *data_ptr;
+    pdc_int_ret_t out_struct;
+    void **buf;
+    void *buf_1d;
+
+    out_struct.ret = 0;
+
+    
+    if (hg_cb_info->ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Error in callback");
+        ret = HG_PROTOCOL_ERROR;
+        goto done;
+    }
+    else if (hg_cb_info->ret == HG_SUCCESS) {
+
+        cnt = bulk_args->cnt;
+        buf = (void**)calloc(sizeof(void*), cnt);
+
+        /* printf("==PDC_SERVER[x]: finished bulk xfer, with %d regions, %ld bytes\n", cnt, bulk_args->nbytes); */
+        /* fflush(stdout); */
+
+        HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, &buf_1d, NULL, NULL);
+
+        // Mercury combines the buffer into 1, so need to make it 2d ptr again
+        buf[0] = buf_1d;
+        buf[1] = buf_1d + sizeof(uint64_t);
+        for (i = 2; i < cnt; i++) {
+            buf[i] = buf[i-1] + sizeof(update_region_storage_meta_bulk_t);
+        }
+
+        // Now we have the to be updated storage info in buf
+        // First elem is the obj id, following by cnt region infos
+        obj_id_ptr = (uint64_t*)buf[0];
+        if (*obj_id_ptr <= 0) {
+            printf("==PDC_SERVER[ ]: error with bulk access, obj id invalid!\n");
+            ret = EXIT_FAILURE;
+            goto done;
+        }
+
+
+        /* printf("==PDC_SERVER[x]: obj id is %" PRIu64 " \n", *obj_id_ptr); */
+        /* fflush(stdout); */
+
+        if (PDC_Server_update_region_storage_meta_bulk_local((update_region_storage_meta_bulk_t**)buf, cnt) == SUCCEED)
+
+        /* for (i = 0; i < cnt; i++) */ 
+        /*     free(buf[i]); */
+        free(buf);
+        
+        out_struct.ret = 9999;
+    }
+
+done:
+    /* Free block handle */
+    ret = HG_Bulk_free(local_bulk_handle);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not free HG bulk handle\n");
+        return ret;
+    }
+
+    /* Send response back */
+    ret = HG_Respond(bulk_args->handle, NULL, NULL, &out_struct);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not respond\n");
+        return ret;
+    }
+
+
+    HG_Destroy(bulk_args->handle);
+    free(bulk_args);
+
+    return ret;
+}
+
+/* static hg_return_t */
+/* bulk_rpc_cb(hg_handle_t handle) */
+// Server execute after receives the bulk_rpc from another server
+HG_TEST_RPC_CB(bulk_rpc, handle)
+{
+//TODO
+    const struct hg_info *hg_info = NULL;
+    hg_bulk_t origin_bulk_handle = HG_BULK_NULL;
+    hg_bulk_t local_bulk_handle = HG_BULK_NULL;
+    struct bulk_args_t *bulk_args = NULL;
+    bulk_rpc_in_t in_struct;
+    hg_return_t ret = HG_SUCCESS;
+    int cnt;
+    void **buf_ptrs = NULL;
+
+    hg_op_id_t hg_bulk_op_id;
+
+    bulk_args = (struct bulk_args_t *)malloc(sizeof(struct bulk_args_t));
+
+    /* Keep handle to pass to callback */
+    bulk_args->handle = handle;
+
+    /* Get info from handle */
+    hg_info = HG_Get_info(handle);
+
+    /* Get input parameters and data */
+    ret = HG_Get_input(handle, &in_struct);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not get input\n");
+        return ret;
+    }
+
+    /* Get parameters */
+    cnt = in_struct.cnt;
+    origin_bulk_handle = in_struct.bulk_handle;
+
+    /* printf("==PDC_SERVER[x]: received update storage meta bulk rpc, with %d regions\n", cnt); */
+    /* fflush(stdout); */
+
+    bulk_args->nbytes = HG_Bulk_get_size(origin_bulk_handle);
+    bulk_args->cnt = cnt;
+
+    /* Create a new block handle to read the data */
+    HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *) &bulk_args->nbytes, HG_BULK_READWRITE, 
+                   &local_bulk_handle);
+
+    /* Pull bulk data */
+    ret = HG_Bulk_transfer(hg_info->context, update_storage_meta_bulk_cb,
+                           bulk_args, HG_BULK_PULL, hg_info->addr, origin_bulk_handle, 0,
+                           local_bulk_handle, 0, bulk_args->nbytes, &hg_bulk_op_id);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not read bulk data\n");
+        return ret;
+    }
+
+    HG_Free_input(handle, &in_struct);
+
+done:
+    FUNC_LEAVE(ret);
+}
+
+
+
 // READ
 /* static hg_return_t */
 // data_server_read_cb(hg_handle_t handle)
@@ -1952,7 +2114,7 @@ HG_TEST_RPC_CB(data_server_write, handle)
     PDC_init_region_list( &(io_info->region));
     pdc_region_transfer_t_to_list_t(&(in.region), &(io_info->region));
 
-    strcpy(&(io_info->region.shm_addr), in.shm_addr);
+    strcpy(io_info->region.shm_addr, in.shm_addr);
     io_info->region.access_type = io_info->io_type;
     io_info->region.meta = &(io_info->meta);
     io_info->region.client_ids[0] = in.client_id;
@@ -2658,6 +2820,7 @@ HG_TEST_THREAD_CB(aggregate_write)
 HG_TEST_THREAD_CB(region_release)
 HG_TEST_THREAD_CB(metadata_add_tag)
 HG_TEST_THREAD_CB(server_lookup_remote_server)
+HG_TEST_THREAD_CB(bulk_rpc)
 
 hg_id_t
 gen_obj_id_register(hg_class_t *hg_class)
@@ -2904,6 +3067,16 @@ get_storage_info_register(hg_class_t *hg_class)
     ret_value = MERCURY_REGISTER(hg_class, "get_storage_info", get_storage_info_in_t, 
                                 get_storage_info_single_out_t, get_storage_info_cb);
 
+    FUNC_LEAVE(ret_value);
+}
+
+hg_id_t
+bulk_rpc_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+    ret_value = MERCURY_REGISTER(hg_class, "bulk_rpc", bulk_rpc_in_t, bulk_rpc_out_t, bulk_rpc_cb);
     FUNC_LEAVE(ret_value);
 }
 

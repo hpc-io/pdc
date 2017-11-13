@@ -131,6 +131,16 @@ typedef struct pdc_data_server_io_list_t {
     struct pdc_data_server_io_list_t *next;
 } pdc_data_server_io_list_t;
 
+#define PDC_BULK_XFER_INIT_NALLOC 128
+typedef struct bulk_xfer_data_t {
+    void     **buf_ptrs;
+    hg_size_t *buf_sizes;
+    int        n_alloc;
+    int        idx;
+    uint64_t   obj_id;
+    int        target_id;
+    int        origin_id;
+} bulk_xfer_data_t;
 
 perr_t PDC_Server_unserialize_regions_info(void *buf, region_list_t** regions, uint32_t *n_region);
 hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info);
@@ -146,5 +156,9 @@ perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_
 perr_t PDC_Server_get_local_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta);
 
 perr_t PDC_Server_posix_one_file_io(region_list_t* region);
+
+perr_t PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bulk_xfer_data_t *bulk_data);
+perr_t PDC_Server_update_region_storage_meta_bulk(bulk_xfer_data_t *bulk_data);
+perr_t PDC_Server_update_region_storage_meta_bulk_local(update_region_storage_meta_bulk_t **bulk_ptrs, int cnt);
 
 #endif /* PDC_SERVER_H */
