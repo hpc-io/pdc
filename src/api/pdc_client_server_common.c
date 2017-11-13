@@ -740,7 +740,6 @@ HG_TEST_RPC_CB(gen_obj_id, handle)
     
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     gen_obj_id_in_t in;
     gen_obj_id_out_t out;
@@ -775,7 +774,6 @@ HG_TEST_RPC_CB(server_lookup_client, handle)
     
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
     out.ret = in.server_id + 43210000;
@@ -802,7 +800,6 @@ HG_TEST_RPC_CB(server_lookup_remote_server, handle)
     
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
     out.ret = in.server_id + 1024000;
@@ -831,7 +828,6 @@ HG_TEST_RPC_CB(client_test_connect, handle)
     
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
     out.ret = in.client_id + 123400;
@@ -861,7 +857,6 @@ HG_TEST_RPC_CB(client_test_connect, handle)
 
 /*     hg_return_t ret_value; */
 
-/*     /1* Get input parameters sent on origin through on HG_Forward() *1/ */
 /*     // Decode input */
 /*     send_obj_name_marker_in_t  in; */
 /*     send_obj_name_marker_out_t out; */
@@ -897,7 +892,6 @@ HG_TEST_RPC_CB(metadata_query, handle)
     
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
     /* printf("==PDC_SERVER: Received query with name: %s, hash value: %u\n", in.obj_name, in.hash_value); */
@@ -949,7 +943,6 @@ HG_TEST_RPC_CB(metadata_delete_by_id, handle)
     
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
     /* printf("==PDC_SERVER: Got delete_by_id request: hash=%d, obj_id=%" PRIu64 "\n", in.hash_value, in.obj_id); */
@@ -976,7 +969,6 @@ HG_TEST_RPC_CB(metadata_delete, handle)
     
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
     /* printf("==PDC_SERVER: Got delete request: hash=%d, obj_id=%" PRIu64 "\n", in.hash_value, in.obj_id); */
@@ -1000,7 +992,6 @@ HG_TEST_RPC_CB(metadata_add_tag, handle)
 
     hg_return_t ret_value;
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     metadata_add_tag_in_t  in;
     metadata_add_tag_out_t out;
@@ -1033,7 +1024,6 @@ HG_TEST_RPC_CB(notify_io_complete, handle)
     
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
     PDC_access_t type = (PDC_access_t)in.io_type;
@@ -1081,7 +1071,6 @@ HG_TEST_RPC_CB(notify_region_update, handle)
 
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
     out.ret = 1;
@@ -1102,7 +1091,6 @@ HG_TEST_RPC_CB(metadata_update, handle)
     
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
     /* printf("==PDC_SERVER: Got update request: hash=%d, obj_id=%" PRIu64 "\n", in.hash_value, in.obj_id); */
@@ -1399,7 +1387,6 @@ HG_TEST_RPC_CB(region_release, handle)
 
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
     /* Get info from handle */
@@ -1808,7 +1795,6 @@ HG_TEST_RPC_CB(query_partial, handle)
     
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
 
@@ -2146,7 +2132,6 @@ HG_TEST_RPC_CB(data_server_read_check, handle)
 
     hg_return_t ret_value = HG_SUCCESS;
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     data_server_read_check_in_t  in;
     data_server_read_check_out_t out;
@@ -2177,7 +2162,6 @@ HG_TEST_RPC_CB(data_server_write_check, handle)
 
     hg_return_t ret_value = HG_SUCCESS;
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     data_server_write_check_in_t  in;
     data_server_write_check_out_t out;
@@ -2206,7 +2190,6 @@ HG_TEST_RPC_CB(update_region_loc, handle)
 
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
     /* printf("==PDC_SERVER: Got region location update request: obj_id=%" PRIu64 "\n", in.obj_id); */
@@ -2248,7 +2231,6 @@ HG_TEST_RPC_CB(get_metadata_by_id, handle)
     
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
     printf("==PDC_SERVER: Got metadata retrieval: obj_id=%" PRIu64 "\n", in.obj_id);
