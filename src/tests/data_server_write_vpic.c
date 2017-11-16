@@ -87,6 +87,8 @@ int main(int argc, char **argv)
     for (; i < NUM_VAR; i++) 
         mydata[i] = (void*)malloc(int_bytes);
 
+    PDC_Request_t request[NUM_VAR];
+
     struct timeval  pdc_timer_start;
     struct timeval  pdc_timer_end;
     struct timeval  pdc_timer_start_1;
@@ -202,19 +204,14 @@ int main(int argc, char **argv)
         ((float*)mydata[7])[i] = i*2;                                     // id2
     }
 
+    if (rank == 0) 
+        printf("Write out %d variables\n", write_var);
+
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-
     // Timing
     gettimeofday(&pdc_timer_start, 0);
-
-    PDC_Request_t request[NUM_VAR];
-
-    if (rank == 0) 
-        printf("Write out %d variables\n", write_var);
-    
-
 
     for (i = 0; i < write_var; i++) {
 
@@ -228,9 +225,9 @@ int main(int argc, char **argv)
             goto done;
         }
 
-        #ifdef ENABLE_MPI
-        MPI_Barrier(MPI_COMM_WORLD);
-        #endif
+        /* #ifdef ENABLE_MPI */
+        /* MPI_Barrier(MPI_COMM_WORLD); */
+        /* #endif */
         gettimeofday(&pdc_timer_end_1, 0);
         sent_time = PDC_get_elapsed_time_double(&pdc_timer_start_1, &pdc_timer_end_1);
         sent_time_total += sent_time;
@@ -238,7 +235,7 @@ int main(int argc, char **argv)
         // Timing
         gettimeofday(&pdc_timer_start_1, 0);
 
-        ret = PDC_Client_wait(&request[i], 30000, 300);
+        ret = PDC_Client_wait(&request[i], 30000, 100);
         if (ret != SUCCEED) {
             printf("Error with PDC_Client_wait!\n");
             goto done;
@@ -251,8 +248,8 @@ int main(int argc, char **argv)
         wait_time = PDC_get_elapsed_time_double(&pdc_timer_start_1, &pdc_timer_end_1);
         wait_time_total += wait_time;
 
-        if (rank == 0) 
-            printf("Sent time %.2f, wait time %.2f\n", sent_time, wait_time);
+        /* if (rank == 0) */ 
+        /*     printf("Sent time %.2f, wait time %.2f\n", sent_time, wait_time); */
     }
 
     /* for (i = 0; i < write_var; i++) { */
@@ -271,8 +268,7 @@ int main(int argc, char **argv)
     write_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
     total_size = NPARTICLES * 4.0 * 8.0 * size / 1024.0 / 1024.0; 
     if (rank == 0) { 
-        printf("Time to write %.2f MB data with %d ranks: %.2f\nTime to sent %.2f, to wait %.2f"
-               "\nThroughput %.2f MB/s\n", 
+        printf("Time to write %.2f MB data with %d ranks: %.2f\nSent %.2f, wait %.2f, Throughput %.2f MB/s\n", 
                 total_size, size, write_time, sent_time_total, wait_time_total, total_size/write_time);
         fflush(stdout);
     }

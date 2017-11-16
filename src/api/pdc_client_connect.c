@@ -443,18 +443,19 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
     in.nclient     = pdc_client_mpi_size_g;
     in.client_addr = client_lookup_args->client_addr;
 
-    ret_value = HG_Forward(client_test_handle, client_test_connect_rpc_cb, client_lookup_args, &in);
-    if (ret_value != HG_SUCCESS) {
-        fprintf(stderr, "%s - Could not start HG_Forward\n", __func__);
-        goto done;
-    }
+    /* ret_value = HG_Forward(client_test_handle, client_test_connect_rpc_cb, client_lookup_args, &in); */
+    /* if (ret_value != HG_SUCCESS) { */
+    /*     fprintf(stderr, "%s - Could not start HG_Forward\n", __func__); */
+    /*     goto done; */
+    /* } */
 
-    /* printf("==PDC_CLIENT[%d]: forwarded lookup rpc to server %d\n", pdc_client_mpi_rank_g, server_id); */
-    /* fflush(stdout); */
+    /* /1* printf("==PDC_CLIENT[%d]: forwarded lookup rpc to server %d\n", pdc_client_mpi_rank_g, server_id); *1/ */
+    /* /1* fflush(stdout); *1/ */
 
-    work_todo_g = 1;
-    PDC_Client_check_response(&send_context_g);
+    /* work_todo_g = 1; */
+    /* PDC_Client_check_response(&send_context_g); */
 
+    work_todo_g = 0;
 done:
     HG_Destroy(client_test_handle);
     FUNC_LEAVE(ret_value);
@@ -3820,11 +3821,11 @@ perr_t PDC_Client_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsign
             fflush(stdout);
             break;
         }
-        else if (completed == 0){
-            printf("==PDC_CLIENT[%d]: IO has not completed yet, will wait and ping server again ...\n",
-                    pdc_client_mpi_rank_g);
-            fflush(stdout);
-        }
+        /* else if (completed == 0){ */
+        /*     printf("==PDC_CLIENT[%d]: IO has not completed yet, will wait and ping server again ...\n", */
+        /*             pdc_client_mpi_rank_g); */
+        /*     fflush(stdout); */
+        /* } */
 
         gettimeofday(&end_time, 0);
         elapsed_ms = ( (end_time.tv_sec-start_time.tv_sec)*1000000LL + end_time.tv_usec -
@@ -3835,7 +3836,7 @@ perr_t PDC_Client_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsign
         }
 
         if (pdc_client_mpi_rank_g == 0) {
-            printf("==PDC_CLIENT[%d]: waiting for server to finish IO request...\n", pdc_client_mpi_rank_g);
+            printf("==PDC_CLIENT[ALL]: waiting for server to finish IO request...\n");
             fflush(stdout);
         }
         pdc_msleep(check_interval_ms);

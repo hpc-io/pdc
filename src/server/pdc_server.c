@@ -7654,7 +7654,7 @@ done:
         gettimeofday(&pdc_timer_start, 0);
         #endif
 
-        fsync(fileno(fp_write));
+        /* fsync(fileno(fp_write)); */
 
         #ifdef ENABLE_TIMING
         double fsync_time;
