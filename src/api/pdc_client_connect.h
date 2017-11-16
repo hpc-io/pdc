@@ -369,14 +369,12 @@ perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_
 /**
  * Client request server to check IO status of a previous IO request
  *
- * \param server_id [IN]         Target local data server ID
- * \param n_client [IN]          Client ID
- * \param meta [IN]              Metadata 
+ * \param request[IN]            PDC IO request
  * \param region [IN]            Region
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_data_server_write_check(int server_id, uint32_t client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status);
+perr_t PDC_Client_data_server_write_check(PDC_Request_t *request, int *status);
 
 /**
  * Client request server to check IO status of a previous IO request

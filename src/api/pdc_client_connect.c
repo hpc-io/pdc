@@ -3248,11 +3248,11 @@ perr_t PDC_Client_close_shm(PDC_Request_t *req)
     }  
 
     /* remove the mapped memory segment from the address space of the process */
-    if (munmap(req->shm_base, req->shm_size) == -1) {
-        printf("==PDC_CLIENT[%d]: %s - Unmap failed\n", pdc_client_mpi_rank_g, __func__);
-        ret_value = FAIL;
-        goto done;
-    }
+    /* if (munmap(req->shm_base, req->shm_size) == -1) { */
+    /*     printf("==PDC_CLIENT[%d]: %s - Unmap failed\n", pdc_client_mpi_rank_g, __func__); */
+    /*     ret_value = FAIL; */
+    /*     goto done; */
+    /* } */
 
     /* close the shared memory segment as if it was a file */
     if (close(req->shm_fd) == -1) {
@@ -3300,24 +3300,31 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_data_server_write_check(int server_id, uint32_t client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status)
+perr_t PDC_Client_data_server_write_check(PDC_Request_t *request, int *status)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
     struct client_lookup_args lookup_args;
     data_server_write_check_in_t in;
     hg_handle_t data_server_write_check_handle;
+    int server_id;
+    pdc_metadata_t *meta;
+    struct PDC_region_info *region;
 
     FUNC_ENTER(NULL);
 
+    server_id = request->server_id;
+    meta      = request->metadata;
+    region    = request->region;
+
     if (server_id < 0 || server_id >= pdc_server_num_g) {
-        printf("PDC_CLIENT[%d]: PDC_Client_data_server_write_check - invalid server id %d/%d\n"
-                , pdc_client_mpi_rank_g, server_id, pdc_server_num_g);
+        printf("PDC_CLIENT[%d]: %s - invalid server id %d/%d\n"
+                , pdc_client_mpi_rank_g, __func__, server_id, pdc_server_num_g);
         ret_value = FAIL;
         goto done;
     }
 
-    in.client_id         = client_id;
+    in.client_id         = pdc_client_mpi_rank_g;
     pdc_metadata_t_to_transfer_t(meta, &in.meta);
     pdc_region_info_t_to_transfer(region, &in.region);
 
@@ -3346,8 +3353,9 @@ perr_t PDC_Client_data_server_write_check(int server_id, uint32_t client_id, pdc
 
     hg_ret = HG_Forward(data_server_write_check_handle, data_server_write_check_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
-        fprintf(stderr, "PDC_Client_data_server_write_check(): Could not start HG_Forward()\n");
-        return EXIT_FAILURE;
+        fprintf(stderr, "%s(): Could not start HG_Forward()\n", __func__);
+        ret_value = FAIL;
+        goto done;
     }
 
     // Wait for response from server
@@ -3363,8 +3371,7 @@ perr_t PDC_Client_data_server_write_check(int server_id, uint32_t client_id, pdc
     if (lookup_args.ret != 1) {
         ret_value = SUCCEED;
         if (is_client_debug_g == 1) {
-            printf("==PDC_CLIENT[%d]: PDC_Client_data_server_write_check - "
-                    "IO request has not been fulfilled by server\n", pdc_client_mpi_rank_g);
+            printf("==PDC_CLIENT[%d]: %s IO request not done by server yet\n", pdc_client_mpi_rank_g,__func__);
         }
 
         if (lookup_args.ret == -1)
@@ -3373,7 +3380,7 @@ perr_t PDC_Client_data_server_write_check(int server_id, uint32_t client_id, pdc
     }
     else {
         // Close shm
-        /* PDC_Client_close_shm(region); */
+        PDC_Client_close_shm(request);
     }
 
 done:
@@ -3754,8 +3761,7 @@ perr_t PDC_Client_test(PDC_Request_t *request, int *completed)
     }
     else if (request->access_type == WRITE) {
 
-        ret_value = PDC_Client_data_server_write_check(request->server_id, pdc_client_mpi_rank_g,
-                     request->metadata, request->region, completed);
+        ret_value = PDC_Client_data_server_write_check(request, completed);
         if (ret_value != SUCCEED) {
             printf("==PDC_CLIENT: PDC_Client_write_check ERROR!\n");
             goto done;
@@ -3814,7 +3820,7 @@ perr_t PDC_Client_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsign
             fflush(stdout);
             break;
         }
-        else if (is_client_debug_g ==1 && completed == 0){
+        else if (completed == 0){
             printf("==PDC_CLIENT[%d]: IO has not completed yet, will wait and ping server again ...\n",
                     pdc_client_mpi_rank_g);
             fflush(stdout);

@@ -155,6 +155,7 @@ double fread_total_MB                 = 0.0;
 double fwrite_total_MB                = 0.0;
 
 double server_update_region_location_time_g = 0.0;
+double server_io_elapsed_time_g       = 0.0;
 
 // Data server related
 pdc_data_server_io_list_t *pdc_data_server_read_list_head_g = NULL;
@@ -4325,6 +4326,7 @@ int main(int argc, char *argv[])
     double total_io_max,   total_io_min,   total_io_avg;
     double update_time_max, update_time_min, update_time_avg; 
     double get_info_time_max, get_info_time_min, get_info_time_avg;
+    double io_elapsed_time_max, io_elapsed_time_min, io_elapsed_time_avg;
 
     #ifdef ENABLE_MPI
     MPI_Reduce(&server_write_time_g,  &write_time_max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
@@ -4352,6 +4354,11 @@ int main(int argc, char *argv[])
     MPI_Reduce(&server_total_io_time_g, &total_io_avg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     total_io_avg /= pdc_server_size_g;
 
+    MPI_Reduce(&server_io_elapsed_time_g, &io_elapsed_time_max, 1, MPI_DOUBLE, MPI_MAX,0,MPI_COMM_WORLD);
+    MPI_Reduce(&server_io_elapsed_time_g, &io_elapsed_time_min, 1, MPI_DOUBLE, MPI_MIN,0,MPI_COMM_WORLD);
+    MPI_Reduce(&server_io_elapsed_time_g, &io_elapsed_time_avg, 1, MPI_DOUBLE, MPI_SUM,0,MPI_COMM_WORLD);
+    io_elapsed_time_avg /= pdc_server_size_g;
+
     MPI_Reduce(&server_update_region_location_time_g, &update_time_max, 1, MPI_DOUBLE, MPI_MAX,0,MPI_COMM_WORLD);
     MPI_Reduce(&server_update_region_location_time_g, &update_time_min, 1, MPI_DOUBLE, MPI_MIN,0,MPI_COMM_WORLD);
     MPI_Reduce(&server_update_region_location_time_g, &update_time_avg, 1, MPI_DOUBLE, MPI_SUM,0,MPI_COMM_WORLD);
@@ -4370,6 +4377,7 @@ int main(int argc, char *argv[])
     total_io_avg      = total_io_max      = total_io_min      = server_total_io_time_g;
     update_time_avg   = update_time_max   = update_time_min   = server_update_region_location_time_g;
     get_info_time_avg = get_info_time_max = get_info_time_min = server_get_storage_info_time_g;
+    io_elapsed_time_avg = io_elapsed_time_max = io_elapsed_time_min = io_elapsed_timeorage_info_time_g;
  
     #endif
 
@@ -4380,6 +4388,7 @@ int main(int argc, char *argv[])
                "              #fopen  %3d, Tfopen  (%6.2f, %6.2f, %6.2f)\n"
                "              Tfsync               (%6.2f, %6.2f, %6.2f)\n"
                "              Ttotal_IO            (%6.2f, %6.2f, %6.2f)\n"
+               "              Ttotal_IO_elapsed    (%6.2f, %6.2f, %6.2f)\n"
                "              Tregion_update       (%6.2f, %6.2f, %6.2f)\n"
                "              Tget_region          (%6.2f, %6.2f, %6.2f)\n",  
                 n_fwrite_g, write_time_min,    write_time_avg,    write_time_max, fwrite_total_MB, 
@@ -4387,6 +4396,7 @@ int main(int argc, char *argv[])
                 n_fopen_g ,  open_time_min,     open_time_avg,     open_time_max, 
                             fsync_time_min,    fsync_time_avg,    fsync_time_max,
                               total_io_min,      total_io_avg,      total_io_max,
+                       io_elapsed_time_min, io_elapsed_time_avg, io_elapsed_time_max,
                            update_time_min,   update_time_avg,   update_time_max,
                          get_info_time_min, get_info_time_avg, get_info_time_max);
     }
@@ -5686,13 +5696,13 @@ done:
     // TODO: keep the shared memory for now and close them later?
     /* printf("==PDC_SERVER[%d]: closing shared mem\n", pdc_server_rank_g); */
     /* PDC_print_region_list(region_elt); */
-    /* DL_FOREACH(region_list_head, region_elt) { */
-    /*     ret_value = PDC_Server_close_shm(region_elt); */
-    /*     if (ret_value != SUCCEED) { */
-    /*         printf("==PDC_SERVER: error closing shared memory\n"); */
-    /*         goto done; */
-    /*     } */
-    /* } */
+    DL_FOREACH(region_list_head, region_elt) {
+        ret_value = PDC_Server_close_shm(region_elt);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_SERVER: error closing shared memory\n");
+            goto done;
+        }
+    }
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -5718,6 +5728,13 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
     size_t i;
 
     FUNC_ENTER(NULL);
+
+    #ifdef ENABLE_TIMING
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
+    gettimeofday(&pdc_timer_start, 0);
+    #endif
+
 
     data_server_io_info_t *io_info = (data_server_io_info_t*) callback_info->arg;
 
@@ -6013,6 +6030,12 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
 
 
     ret_value = SUCCEED;
+
+#ifdef ENABLE_TIMING
+    gettimeofday(&pdc_timer_end, 0);
+    server_io_elapsed_time_g += PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+#endif
+
 
 done:
     /* free(io_info); */
