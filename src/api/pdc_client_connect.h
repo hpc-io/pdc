@@ -70,10 +70,17 @@ extern pdc_client_t *pdc_client_direct_channels;
 typedef struct PDC_Request_t {
     int                     server_id;
     int                     n_client;
+    int                     n_update;
     PDC_access_t            access_type;
     pdc_metadata_t          *metadata;
     struct PDC_region_info  *region;
     void                    *buf;
+
+    // shm info
+    char                    *shm_base;
+    char                     shm_addr[ADDR_MAX];
+    int                      shm_fd;
+    int                      shm_size;
 
     struct PDC_Request_t      *prev;
     struct PDC_Request_t      *next;
@@ -328,7 +335,7 @@ perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t *meta, struct PDC_region_info *region, void *buf); 
+perr_t PDC_Client_data_server_write(PDC_Request_t *request); 
 
 /**
  * Client request server to collectively write a region of an object

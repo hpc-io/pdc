@@ -38,6 +38,8 @@
 #include "pdc.h"
 #include "pdc_client_server_common.h"
 
+/* #define NUM_VAR         2 */
+/* #define NUM_FLOAT_VAR   2 */
 #define NUM_VAR         8
 #define NUM_FLOAT_VAR   6
 #define NUM_INT_VAR     2
@@ -59,7 +61,7 @@ int main(int argc, char **argv)
     perr_t ret;
     pdcid_t pdc_id, cont_prop, cont_id;
 
-    char *obj_names[NUM_VAR] = {"x", "y", "z", "px", "py", "pz", "id1", "id2"};
+    char *obj_names[] = {"x", "y", "z", "px", "py", "pz", "id1", "id2"};
 
     pdcid_t         obj_ids[NUM_VAR];
     struct PDC_region_info obj_regions[NUM_VAR];
@@ -76,6 +78,8 @@ int main(int argc, char **argv)
     uint64_t myoffset[NDIM], mysize[NDIM];
     void *mydata[NUM_VAR];
 
+    int write_var = NUM_VAR;
+
     // Float vars are first in the array follow by int vars
     for (i = 0; i < NUM_FLOAT_VAR; i++) 
         mydata[i] = (void*)malloc(float_bytes);
@@ -91,6 +95,13 @@ int main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
+
+    if (argc > 1) 
+        write_var = atoi(argv[1]);
+
+    if (write_var < 0 || write_var > 8) 
+        write_var = NUM_VAR;
+    
 
     // create a pdc
     pdc_id = PDC_init("pdc");
@@ -193,18 +204,41 @@ int main(int argc, char **argv)
     // Timing
     gettimeofday(&pdc_timer_start, 0);
 
-    /* for (i = 0; i < 7; i++) { */
-    for (i = 0; i < NUM_VAR; i++) {
-        ret = PDC_Client_write(obj_metas[i], &obj_regions[i], mydata[i]);
+    PDC_Request_t request[NUM_VAR];
+
+    if (rank == 0) 
+        printf("Write out %d variables\n", write_var);
+    
+
+    for (i = 0; i < write_var; i++) {
+        request[i].n_update = write_var;
+        ret = PDC_Client_iwrite(obj_metas[i], &obj_regions[i], &request[i], mydata[i]);
         if (ret != SUCCEED) {
-            printf("Error with PDC_Client_write!\n");
+            printf("Error with PDC_Client_iwrite!\n");
+            goto done;
+        }
+        ret = PDC_Client_wait(&request[i], 30000, 300);
+        if (ret != SUCCEED) {
+            printf("Error with PDC_Client_wait!\n");
             goto done;
         }
     }
 
+    /* if (rank == 0) */ 
+    /*     printf("All write requests sent.\n"); */
+
+    /* for (i = 0; i < write_var; i++) { */
+    /*     ret = PDC_Client_wait(&request[i], 30000, 500); */
+    /*     if (ret != SUCCEED) { */
+    /*         printf("Error with PDC_Client_wait!\n"); */
+    /*         goto done; */
+    /*     } */
+    /* } */
+
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
+
     gettimeofday(&pdc_timer_end, 0);
     double write_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
     double total_size = NPARTICLES * 4.0 * 8.0 * size / 1024.0 / 1024.0; 

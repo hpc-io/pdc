@@ -231,6 +231,7 @@ typedef struct {
     PDC_access_t                io_type;   
     uint32_t                    client_id;
     int32_t                     nclient;
+    int32_t                     n_buffered_update;
     pdc_metadata_t              meta;
     region_list_t               region;
 } data_server_io_info_t;
@@ -1140,6 +1141,7 @@ hg_proc_close_server_out_t(hg_proc_t proc, void *data)
 /* Define bulk_rpc_in_t */
 typedef struct {
     hg_int32_t cnt;
+    hg_int32_t origin;
     hg_bulk_t bulk_handle;
 } bulk_rpc_in_t;
 
@@ -1151,6 +1153,11 @@ hg_proc_bulk_rpc_in_t(hg_proc_t proc, void *data)
     bulk_rpc_in_t *struct_data = (bulk_rpc_in_t *) data;
 
     ret = hg_proc_int32_t(proc, &struct_data->cnt);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->origin);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -1397,8 +1404,9 @@ hg_proc_data_server_read_out_t(hg_proc_t proc, void *data)
 // Data server write
 typedef struct {
     uint32_t                    client_id;
-    int32_t                     nclient;
-    hg_string_t           shm_addr;
+    int32_t                     nclient;    // Number of client requests expected to buffer before actual IO
+    int32_t                     nupdate;    // Number of write requests expected to buffer before meta update
+    hg_string_t                 shm_addr;
     pdc_metadata_transfer_t     meta;
     region_info_transfer_t      region;
 } data_server_write_in_t;
@@ -1419,6 +1427,11 @@ hg_proc_data_server_write_in_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->nclient);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->nupdate);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -1561,7 +1574,6 @@ typedef struct {
     char                        storage_location[ADDR_MAX];
     uint64_t                    offset;
 } update_region_storage_meta_bulk_t;
-
 
 typedef struct {
     uint64_t                    obj_id;
@@ -1802,6 +1814,7 @@ struct bulk_args_t {
     hg_handle_t handle;
     hg_bulk_t   bulk_handle;
     size_t nbytes;
+    int origin;
     hg_atomic_int32_t completed_transfers;
     size_t ret;
     pdc_metadata_t **meta_arr;
