@@ -125,7 +125,7 @@ typedef struct pdc_metadata_transfer_t {
     uint64_t    obj_id;
 
     size_t      ndim;
-    int32_t     dims0, dims1, dims2, dims3;
+    uint64_t    dims0, dims1, dims2, dims3;
 
     const char  *tags;
     const char  *data_location;
@@ -208,8 +208,8 @@ typedef struct pdc_metadata_t {
     char    tags[TAG_LEN_MAX];
     char    data_location[ADDR_MAX];
 
-    size_t  ndim;
-    int     dims[DIM_MAX];
+    size_t   ndim;
+    uint64_t dims[DIM_MAX];
 
     // For region storage list
     region_list_t *storage_region_list_head;
@@ -549,22 +549,22 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_int32_t(proc, &struct_data->dims0);
+    ret = hg_proc_uint64_t(proc, &struct_data->dims0);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_int32_t(proc, &struct_data->dims1);
+    ret = hg_proc_uint64_t(proc, &struct_data->dims1);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_int32_t(proc, &struct_data->dims2);
+    ret = hg_proc_uint64_t(proc, &struct_data->dims2);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_int32_t(proc, &struct_data->dims3);
+    ret = hg_proc_uint64_t(proc, &struct_data->dims3);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;

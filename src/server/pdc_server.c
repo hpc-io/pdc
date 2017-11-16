@@ -5390,8 +5390,8 @@ hg_return_t PDC_Server_s2s_recv_work_done_cb(const struct hg_cb_info *callback_i
     // TODO: add mutex when multi threading
     s2s_recv_work_todo_g--;
 
-    printf("==PDC_SERVER[%d]: s2s_recv_work_done!\n", pdc_server_rank_g);
-    fflush(stdout);
+    /* printf("==PDC_SERVER[%d]: s2s_recv_work_done!\n", pdc_server_rank_g); */
+    /* fflush(stdout); */
     return HG_SUCCESS;
 }
 

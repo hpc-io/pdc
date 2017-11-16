@@ -252,9 +252,9 @@ void PDC_print_metadata(pdc_metadata_t *a)
     printf("  time_step = %d\n",     a->time_step);
     printf("  tags      = [%s]\n",   a->tags);
     printf("  ndim      = %lu\n",    a->ndim);
-    printf("  dims = %d",            a->dims[0]);
+    printf("  dims = %" PRIu64 "",   a->dims[0]);
     for (i = 1; i < a->ndim; i++) 
-        printf(", %d",   a->dims[i]);
+        printf(", %" PRIu64 "",      a->dims[i]);
     // print regiono info
     DL_FOREACH(a->storage_region_list_head, elt)
         PDC_print_region_list(elt);
@@ -279,7 +279,7 @@ perr_t PDC_metadata_init(pdc_metadata_t *a)
     memset(a->obj_name,      0, sizeof(char)*ADDR_MAX);
     memset(a->tags,          0, sizeof(char)*TAG_LEN_MAX);
     memset(a->data_location, 0, sizeof(char)*ADDR_MAX);
-    memset(a->dims,          0, sizeof(int32_t)*DIM_MAX);
+    memset(a->dims,          0, sizeof(uint64_t)*DIM_MAX);
 
     a->region_lock_head = NULL;
     a->region_map_head = NULL;

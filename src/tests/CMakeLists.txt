@@ -39,6 +39,7 @@ set(PROGRAMS
   obj_map_mpi_s4
   vpicio
   data_server_write_vpic
+  data_server_read_vpic
   )
 # obj_buf_map_mpi_v1
 
