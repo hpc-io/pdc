@@ -309,6 +309,8 @@ perr_t PDC_init_region_list(region_list_t *a)
     a->buf           = NULL;
     a->data_loc_type = NONE;
     memset(a->storage_location, 0, sizeof(char)*ADDR_MAX);
+    a->overlap_storage_regions = NULL;
+    a->n_overlap_storage_region = 0;
     a->offset        = 0;
     a->reg_dirty     = 0;
     a->access_type   = NA;
@@ -322,7 +324,7 @@ perr_t PDC_init_region_list(region_list_t *a)
 
     a->prev          = NULL;
     a->next          = NULL;
-    // Init 23 attributes, double check to match the region_list_t def
+    // Init 25 attributes, double check to match the region_list_t def
     return ret_value;
 }
 
@@ -445,6 +447,8 @@ perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to)
     to->buf           = from->buf;
     to->data_loc_type = from->data_loc_type;
     strcpy(to->storage_location, from->storage_location);
+    to->overlap_storage_regions  = from->overlap_storage_regions;
+    to->n_overlap_storage_region = from->n_overlap_storage_region;
     to->offset        = from->offset;
     to->reg_dirty     = from->reg_dirty;
     to->access_type   = from->access_type;

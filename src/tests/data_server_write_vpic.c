@@ -194,6 +194,7 @@ int main(int argc, char **argv)
     }
 
     for (i = 0; i < NPARTICLES; i++) {
+        /* ((float*)mydata[0])[i] = i + 0.89;          // x */
         ((float*)mydata[0])[i] = uniform_random_number() * XDIM;          // x
         ((float*)mydata[1])[i] = uniform_random_number() * YDIM;          // y
         ((float*)mydata[2])[i] = (i*1.0/NPARTICLES) * ZDIM; // z

@@ -48,9 +48,10 @@
 #define DIM_MAX                             4
 #define TAG_LEN_MAX                         128
 #define PDC_SERVER_ID_INTERVEL              1000000
-#define PDC_SERVER_MAX_PROC_PER_NODE        64
+#define PDC_SERVER_MAX_PROC_PER_NODE        32
 #define PDC_SERIALIZE_MAX_SIZE              256
 #define PDC_MAX_CORE_PER_NODE               68           // Cori KNL has 68 cores per node, Haswell 32
+#define PDC_MAX_TRIAL_NUM   10
 
 /* #define pdc_server_tmp_dir_g  "./pdc_tmp" */
 /* extern char pdc_server_tmp_dir_g[ADDR_MAX]; */
@@ -92,6 +93,8 @@ typedef struct region_list_t {
     PDC_data_loc_t data_loc_type;
     char     storage_location[ADDR_MAX];
     uint64_t offset;
+    struct region_list_t *overlap_storage_regions;
+    uint32_t n_overlap_storage_region;
     int      reg_dirty;
     PDC_access_t access_type;
     hg_bulk_t bulk_handle;
@@ -105,7 +108,7 @@ typedef struct region_list_t {
 
     struct region_list_t *prev;
     struct region_list_t *next;
-    // 23 attributes, need to match init and deep_cp routines
+    // 25 attributes, need to match init and deep_cp routines
 } region_list_t;
 
 // Similar structure PDC_region_info_t defined in pdc_obj_pkg.h

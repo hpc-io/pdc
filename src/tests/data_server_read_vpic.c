@@ -166,16 +166,16 @@ int main(int argc, char **argv)
         // Timing
         gettimeofday(&pdc_timer_start_1, 0);
 
-        request[i].n_update = read_var;
+        /* request[i].n_update = read_var; */
         ret = PDC_Client_iread(obj_metas[i], &obj_regions[i], &request[i], mydata[i]);
         if (ret != SUCCEED) {
             printf("Error with PDC_Client_iread!\n");
             goto done;
         }
 
-        /* #ifdef ENABLE_MPI */
-        /* MPI_Barrier(MPI_COMM_WORLD); */
-        /* #endif */
+        #ifdef ENABLE_MPI
+        MPI_Barrier(MPI_COMM_WORLD);
+        #endif
         gettimeofday(&pdc_timer_end_1, 0);
         sent_time = PDC_get_elapsed_time_double(&pdc_timer_start_1, &pdc_timer_end_1);
         sent_time_total += sent_time;
@@ -184,7 +184,7 @@ int main(int argc, char **argv)
         gettimeofday(&pdc_timer_start_1, 0);
 
         ret = PDC_Client_wait(&request[i], 30000000, 100);
-        /* ret = PDC_Client_wait(&request[i], 30000, 100); */
+        /* ret = PDC_Client_wait(&request[i], 60000, 100); */
         if (ret != SUCCEED) {
             printf("Error with PDC_Client_wait!\n");
             goto done;
