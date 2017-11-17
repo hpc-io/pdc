@@ -200,8 +200,8 @@ int main(int argc, char **argv)
         ((float*)mydata[3])[i] = uniform_random_number() * XDIM;          // px
         ((float*)mydata[4])[i] = uniform_random_number() * YDIM;          // py
         ((float*)mydata[5])[i] = (i*2.0/NPARTICLES) * ZDIM; // pz
-        ((float*)mydata[6])[i] = i;                                       // id1
-        ((float*)mydata[7])[i] = i*2;                                     // id2
+        ((int*)mydata[6])[i]   = i;                                       // id1
+        ((int*)mydata[7])[i]   = i*2;                                     // id2
     }
 
     if (rank == 0) 

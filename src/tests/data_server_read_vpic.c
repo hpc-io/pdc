@@ -123,7 +123,7 @@ int main(int argc, char **argv)
 
 
     // Query obj metadata and create read region one by one
-    for (i = 0; i < NUM_FLOAT_VAR; i++) {
+    for (i = 0; i < NUM_VAR; i++) {
 
         #ifdef ENABLE_MPI
         ret = PDC_Client_query_metadata_name_timestep_agg(obj_names[i], 0, &obj_metas[i]);
@@ -183,7 +183,8 @@ int main(int argc, char **argv)
         // Timing
         gettimeofday(&pdc_timer_start_1, 0);
 
-        ret = PDC_Client_wait(&request[i], 30000, 100);
+        ret = PDC_Client_wait(&request[i], 30000000, 100);
+        /* ret = PDC_Client_wait(&request[i], 30000, 100); */
         if (ret != SUCCEED) {
             printf("Error with PDC_Client_wait!\n");
             goto done;
@@ -224,26 +225,29 @@ int main(int argc, char **argv)
 
     int verify = 1;
     if (rank == 0) 
-        printf("Verifying data correctness ... \n");
+        printf("Verifying data correctness ... ");
 
     // Data verification
     for (i = 0; i < NPARTICLES; i++) {
-        if ( ((float*)mydata[7])[i] != i*2                       || 
-             ((float*)mydata[6])[i] != i                         ||
-             ((float*)mydata[2])[i] != (i*1.0/NPARTICLES) * ZDIM ||
-             ((float*)mydata[2])[i] != (i*1.0/NPARTICLES) * ZDIM
-           ) {
-            printf("ERROR on rank %d at element %d.\n", rank, i);
+        if ( ((int*)mydata[7])[i] != i*2                         || 
+             ((int*)mydata[6])[i] != i                           ||
+             ((float*)mydata[5])[i] != (i*2.0/NPARTICLES) * ZDIM ||
+             ((float*)mydata[2])[i] != (i*1.0/NPARTICLES) * ZDIM    ) {
+            printf("\nERROR on rank %d at element %d. [%d %d %.2f %.2f]/[%d %d %.2f %.2f]\n", 
+                    rank, i, ((int*)mydata[7])[i], ((int*)mydata[6])[i], 
+                             ((float*)mydata[5])[i], ((float*)mydata[2])[i], 
+                             i*2, i, (i*2.0/NPARTICLES) * ZDIM, (i*1.0/NPARTICLES) * ZDIM);
             verify = 0;
             break;
         } // end if
     } // end of
-    if (verify == 0) {
+    if (verify == 1) {
         if (rank == 0) 
             printf("SUCCEED\n");
     }
 
 done:
+    fflush(stdout);
     /* for (i = 0; i < NUM_VAR; i++) { */
         /* if(PDCobj_close(obj_ids[i]) < 0) */
         /*     printf("Fail to close %s\n", obj_names[i]); */

@@ -124,7 +124,7 @@ typedef struct pdc_data_server_io_list_t {
     int   total;
     int   count;
     int   ndim;
-    int   dims[DIM_MAX];
+    uint64_t dims[DIM_MAX];
     uint64_t total_size;
     region_list_t *region_list_head;
 
@@ -173,5 +173,6 @@ perr_t PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bul
 perr_t PDC_Server_update_region_storage_meta_bulk(bulk_xfer_data_t *bulk_data);
 perr_t PDC_Server_update_region_storage_meta_bulk_local(update_region_storage_meta_bulk_t **bulk_ptrs, int cnt);
 perr_t PDC_Server_set_close(void);
+perr_t PDC_Server_update_region_storage_meta_bulk_mpi(bulk_xfer_data_t *bulk_data);
 
 #endif /* PDC_SERVER_H */

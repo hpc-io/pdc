@@ -2141,12 +2141,14 @@ HG_TEST_RPC_CB(data_server_read_check, handle)
     out.shm_addr = NULL;
 
     ret_value = HG_Get_input(handle, &in);
-    /* printf("==PDC_SERVER: Got data server read_check request from client %d\n", in.client_id); */
+    /* printf("==PDC_SERVER[x]: Got data server read_check request from client %d for [%s] " */
+    /*        "start %" PRIu64", count %" PRIu64"\n", */ 
+    /*         in.client_id, in.meta.obj_name, in.region.start_0, in.region.count_0); */
 
     PDC_Server_read_check(&in, &out);
 
     ret_value = HG_Respond(handle, NULL, NULL, &out);
-    /* printf("==PDC_SERVER: server read_check returning ret=%d, shm_addr=%s\n", out.ret, out.shm_addr); */
+    /* printf("==PDC_SERVER[x]: server read_check returning ret=%d, shm_addr=%s\n", out.ret, out.shm_addr); */
 
 done:
     if (NULL != out.shm_addr && out.shm_addr[0] != ' ')
