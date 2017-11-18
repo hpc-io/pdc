@@ -658,6 +658,7 @@ hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info) {
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out) {return SUCCEED;}
 /* perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out) {return SUCCEED;} */
 perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key, pdc_metadata_t** out) {return SUCCEED;}
+perr_t PDC_Server_search_with_name_timestep(const char *obj_name, uint32_t hash_key, uint32_t ts, pdc_metadata_t** out) {return SUCCEED;}
 perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_id_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out) {return SUCCEED;}
@@ -854,38 +855,6 @@ HG_TEST_RPC_CB(client_test_connect, handle)
 }
 
 /* static hg_return_t */
-// send_obj_name_marker_cb(hg_handle_t handle)
-/* HG_TEST_RPC_CB(send_obj_name_marker, handle) */
-/* { */
-/*     FUNC_ENTER(NULL); */
-
-/*     hg_return_t ret_value; */
-
-/*     // Decode input */
-/*     send_obj_name_marker_in_t  in; */
-/*     send_obj_name_marker_out_t out; */
-
-/*     HG_Get_input(handle, &in); */
-    
-/*     // Insert to object marker hash table */
-/*     insert_obj_name_marker(&in, &out); */
-
-/*     /1* out.ret = 1; *1/ */
-/*     HG_Respond(handle, NULL, NULL, &out); */
-/*     /1* printf("==PDC_SERVER: send_obj_name_marker() Returned %" PRIu64 "\n", out.ret); *1/ */
-/*     /1* fflush(stdout); *1/ */
-
-/*     HG_Free_input(handle, &in); */
-/*     HG_Destroy(handle); */
-
-/*     ret_value = HG_SUCCESS; */
-
-/* done: */
-/*     FUNC_LEAVE(ret_value); */
-/* } */
-
-
-/* static hg_return_t */
 /* metadata_query_cb(hg_handle_t handle) */
 HG_TEST_RPC_CB(metadata_query, handle)
 {
@@ -902,7 +871,8 @@ HG_TEST_RPC_CB(metadata_query, handle)
     /* fflush(stdout); */
 
     // Do the work
-    PDC_Server_search_with_name_hash(in.obj_name, in.hash_value, &query_result);
+    /* PDC_Server_search_with_name_hash(in.obj_name, in.hash_value, &query_result); */
+    PDC_Server_search_with_name_timestep(in.obj_name, in.hash_value, in.time_step, &query_result);
 
     // Convert for transfer
     if (query_result != NULL) {

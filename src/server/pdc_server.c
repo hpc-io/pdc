@@ -3910,7 +3910,7 @@ perr_t PDC_Server_search_with_name_timestep(const char *obj_name, uint32_t hash_
 
         // Is this hash value exist in the Hash table?
         if (lookup_value != NULL) {
-            /* printf("==PDC_SERVER: PDC_Server_search_with_name_hash(): lookup_value not NULL!\n"); */
+            /* printf("==PDC_SERVER: %s - lookup_value not NULL!\n", __func__); */
             // Check if there exist metadata identical to current one
             /* PDC_print_metadata(lookup_value->metadata); */
             /* if (lookup_value->bloom == NULL) { */
@@ -3950,7 +3950,7 @@ perr_t PDC_Server_search_with_name_timestep(const char *obj_name, uint32_t hash_
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
-}
+} // end of PDC_Server_search_with_name_timestep
 
 /*
  * Seach the hash table with object name and hash key

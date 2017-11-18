@@ -38,8 +38,6 @@
 #include "pdc.h"
 #include "pdc_client_server_common.h"
 
-/* #define NUM_VAR         2 */
-/* #define NUM_FLOAT_VAR   2 */
 #define NUM_VAR         8
 #define NUM_FLOAT_VAR   6
 #define NUM_INT_VAR     2

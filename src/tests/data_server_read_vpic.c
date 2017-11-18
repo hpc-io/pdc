@@ -183,8 +183,8 @@ int main(int argc, char **argv)
         // Timing
         gettimeofday(&pdc_timer_start_1, 0);
 
-        ret = PDC_Client_wait(&request[i], 30000000, 100);
-        /* ret = PDC_Client_wait(&request[i], 60000, 100); */
+        /* ret = PDC_Client_wait(&request[i], 30000000, 100); */
+        ret = PDC_Client_wait(&request[i], 60000, 100);
         if (ret != SUCCEED) {
             printf("Error with PDC_Client_wait!\n");
             goto done;

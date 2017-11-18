@@ -1946,6 +1946,7 @@ perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_st
     // Fill input structure
     in.obj_name   = obj_name;
     in.hash_value = PDC_get_hash_by_name(obj_name);
+    in.time_step  = time_step;
 
     /* printf("==PDC_CLIENT[%d]: search request obj_name [%s], hash value %u, server id %u\n", pdc_client_mpi_rank_g, in.obj_name, in.hash_value, server_id); */
     /* fflush(stdout); */
@@ -1989,14 +1990,16 @@ perr_t PDC_Client_query_metadata_name_timestep_agg(const char *obj_name, int tim
         /*             pdc_client_mpi_rank_g, pdc_client_same_node_rank_g); */
 
         ret_value = PDC_Client_query_metadata_name_timestep(obj_name, time_step, out);
-        if (ret_value != SUCCEED) {
-            printf("==PDC_CLIENT[%d] - PDC_Client_query_metadata_name_timestep_agg(): ERROR with query [%s]\n",
-                    pdc_client_mpi_rank_g, obj_name);
-            goto done;
+        if (ret_value != SUCCEED || NULL == *out) {
+            printf("==PDC_CLIENT[%d]: %s - ERROR with query [%s]\n", pdc_client_mpi_rank_g, __func__, obj_name);
+            fflush(stdout);
+            *out = (pdc_metadata_t*)calloc(1, sizeof(pdc_metadata_t));
+            ret_value = FAIL;
         }
+        /* PDC_print_metadata(*out); */
     }
     else    
-        *out = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t));
+        *out = (pdc_metadata_t*)calloc(1, sizeof(pdc_metadata_t));
 
     MPI_Bcast(*out, sizeof(pdc_metadata_t), MPI_CHAR, 0, PDC_SAME_NODE_COMM_g);
 
@@ -3246,11 +3249,11 @@ perr_t PDC_Client_close_shm(PDC_Request_t *req)
     }  
 
     /* remove the mapped memory segment from the address space of the process */
-    /* if (munmap(req->shm_base, req->shm_size) == -1) { */
-    /*     printf("==PDC_CLIENT[%d]: %s - Unmap failed\n", pdc_client_mpi_rank_g, __func__); */
-    /*     ret_value = FAIL; */
-    /*     goto done; */
-    /* } */
+    if (munmap(req->shm_base, req->shm_size) == -1) {
+        printf("==PDC_CLIENT[%d]: %s - Unmap failed\n", pdc_client_mpi_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
 
     /* close the shared memory segment as if it was a file */
     if (close(req->shm_fd) == -1) {
@@ -3577,7 +3580,7 @@ perr_t PDC_Client_data_server_write(PDC_Request_t *request)
     /*     PDC_Client_update_metadata(meta, meta); */
     /* } */
 
-    if (can_aggregate_send != 1) {
+    /* if (can_aggregate_send != 1) { */
         // Normal send to server by each process
         meta->data_location[0] = ' ';
         meta->data_location[1] = 0;
@@ -3624,103 +3627,103 @@ perr_t PDC_Client_data_server_write(PDC_Request_t *request)
         HG_Destroy(data_server_write_handle);
 
         server_ret = lookup_args.ret;
-    }
-    else {
-        // First client rank as the delegate and aggregate the requests from other clients
-        // of same node to it (only needs region offsets/counts and shm_addr, metadata is shared)
+    /* } */
+    /* else { */
+    /*     // First client rank as the delegate and aggregate the requests from other clients */
+    /*     // of same node to it (only needs region offsets/counts and shm_addr, metadata is shared) */
 
-        char my_serialized_buf[PDC_SERIALIZE_MAX_SIZE];
-        char *all_serialized_buf = NULL;
-        /* uint64_t *uint64_ptr = NULL; */
-        region_list_t tmp_region;
-        region_list_t *regions[2];
-        pdc_aggregated_io_to_server_t agg_write_in;
+    /*     char my_serialized_buf[PDC_SERIALIZE_MAX_SIZE]; */
+    /*     char *all_serialized_buf = NULL; */
+    /*     /1* uint64_t *uint64_ptr = NULL; *1/ */
+    /*     region_list_t tmp_region; */
+    /*     region_list_t *regions[2]; */
+    /*     pdc_aggregated_io_to_server_t agg_write_in; */
 
-        regions[0] = &tmp_region;
+    /*     regions[0] = &tmp_region; */
 
-        memset(my_serialized_buf, 0, PDC_SERIALIZE_MAX_SIZE);
-        memset(&tmp_region, 0, sizeof(region_list_t));
+    /*     memset(my_serialized_buf, 0, PDC_SERIALIZE_MAX_SIZE); */
+    /*     memset(&tmp_region, 0, sizeof(region_list_t)); */
 
-        pdc_region_info_to_list_t(region, &tmp_region);
+    /*     pdc_region_info_to_list_t(region, &tmp_region); */
 
-        // Store the shm addr in storage_location
-        strcpy(tmp_region.storage_location, request->shm_addr);
+    /*     // Store the shm addr in storage_location */
+    /*     strcpy(tmp_region.storage_location, request->shm_addr); */
 
-        ret_value = PDC_serialize_regions_lists(regions, 1, my_serialized_buf, PDC_SERIALIZE_MAX_SIZE);
-        if (ret_value != SUCCEED) {
-            printf("==PDC_CLIENT[%d]: PDC_serialize_regions_lists ERROR!\n", pdc_client_mpi_rank_g);
-            goto done;
-        }
+    /*     ret_value = PDC_serialize_regions_lists(regions, 1, my_serialized_buf, PDC_SERIALIZE_MAX_SIZE); */
+    /*     if (ret_value != SUCCEED) { */
+    /*         printf("==PDC_CLIENT[%d]: PDC_serialize_regions_lists ERROR!\n", pdc_client_mpi_rank_g); */
+    /*         goto done; */
+    /*     } */
 
-        PDC_replace_zero_chars(my_serialized_buf, PDC_SERIALIZE_MAX_SIZE);
-        // Now my_serialized_buf has the serialized region data, with 0 substituted
-        // n_region(1)|ndim|start_0|count_0|...|start_ndim|count_ndim|loc_len|shm_addr|offset|...
+    /*     PDC_replace_zero_chars(my_serialized_buf, PDC_SERIALIZE_MAX_SIZE); */
+    /*     // Now my_serialized_buf has the serialized region data, with 0 substituted */
+    /*     // n_region(1)|ndim|start_0|count_0|...|start_ndim|count_ndim|loc_len|shm_addr|offset|... */
 
 
-        if (pdc_client_same_node_rank_g == 0) {
-            all_serialized_buf = (char*)calloc(PDC_SERIALIZE_MAX_SIZE, pdc_client_same_node_size_g);
-        }
+    /*     if (pdc_client_same_node_rank_g == 0) { */
+    /*         all_serialized_buf = (char*)calloc(PDC_SERIALIZE_MAX_SIZE, pdc_client_same_node_size_g); */
+    /*     } */
 
-        // Gather serialized region info to first rank of each node
-#ifdef ENABLE_MPI
-        MPI_Gather(my_serialized_buf,  PDC_SERIALIZE_MAX_SIZE, MPI_CHAR,
-                   all_serialized_buf, PDC_SERIALIZE_MAX_SIZE, MPI_CHAR, 0, PDC_SAME_NODE_COMM_g);
-#endif
+    /*     // Gather serialized region info to first rank of each node */
+/* #ifdef ENABLE_MPI */
+    /*     MPI_Gather(my_serialized_buf,  PDC_SERIALIZE_MAX_SIZE, MPI_CHAR, */
+    /*                all_serialized_buf, PDC_SERIALIZE_MAX_SIZE, MPI_CHAR, 0, PDC_SAME_NODE_COMM_g); */
+/* #endif */
 
-        if (pdc_client_same_node_rank_g == 0) {
+    /*     if (pdc_client_same_node_rank_g == 0) { */
 
-            tmp_regions = (region_list_t*)calloc(sizeof(region_list_t), pdc_client_same_node_size_g);
+    /*         tmp_regions = (region_list_t*)calloc(sizeof(region_list_t), pdc_client_same_node_size_g); */
 
-            // Now send all_serialized_buf to server and let server unserialize the regions
-            meta->data_location[0] = ' ';
-            meta->data_location[1] = 0;
-            pdc_metadata_t_to_transfer_t(meta, &agg_write_in.meta);
-            agg_write_in.buf = all_serialized_buf;
+    /*         // Now send all_serialized_buf to server and let server unserialize the regions */
+    /*         meta->data_location[0] = ' '; */
+    /*         meta->data_location[1] = 0; */
+    /*         pdc_metadata_t_to_transfer_t(meta, &agg_write_in.meta); */
+    /*         agg_write_in.buf = all_serialized_buf; */
 
-            int n_retry = 0;
-            while (pdc_server_info_g[server_id].addr_valid != 1) {
-                if (n_retry > 0)
-                    break;
-                if( PDC_Client_lookup_server(server_id) != SUCCEED) {
-                    printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
-                    ret_value = FAIL;
-                    goto done;
-                }
-                n_retry++;
-            }
+    /*         int n_retry = 0; */
+    /*         while (pdc_server_info_g[server_id].addr_valid != 1) { */
+    /*             if (n_retry > 0) */
+    /*                 break; */
+    /*             if( PDC_Client_lookup_server(server_id) != SUCCEED) { */
+    /*                 printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g); */
+    /*                 ret_value = FAIL; */
+    /*                 goto done; */
+    /*             } */
+    /*             n_retry++; */
+    /*         } */
 
-            hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr,
-                               aggregate_write_register_id_g, &aggregate_write_handle);
-            if (hg_ret != HG_SUCCESS) {
-                fprintf(stderr, "==%s: Could not HG_Create()\n", __func__);
-                ret_value = FAIL;
-                goto done;
-            }
+    /*         hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, */
+    /*                            aggregate_write_register_id_g, &aggregate_write_handle); */
+    /*         if (hg_ret != HG_SUCCESS) { */
+    /*             fprintf(stderr, "==%s: Could not HG_Create()\n", __func__); */
+    /*             ret_value = FAIL; */
+    /*             goto done; */
+    /*         } */
 
-            hg_ret = HG_Forward(aggregate_write_handle, data_server_write_rpc_cb, &lookup_args, &in);
-            if (hg_ret != HG_SUCCESS) {
-                fprintf(stderr, "==%s: Could not start HG_Forward()\n", __func__);
-                HG_Destroy(aggregate_write_handle);
-                ret_value = FAIL;
-                goto done;
-            }
+    /*         hg_ret = HG_Forward(aggregate_write_handle, data_server_write_rpc_cb, &lookup_args, &in); */
+    /*         if (hg_ret != HG_SUCCESS) { */
+    /*             fprintf(stderr, "==%s: Could not start HG_Forward()\n", __func__); */
+    /*             HG_Destroy(aggregate_write_handle); */
+    /*             ret_value = FAIL; */
+    /*             goto done; */
+    /*         } */
 
-            // Wait for response from server
-            work_todo_g = 1;
-            PDC_Client_check_response(&send_context_g);
+    /*         // Wait for response from server */
+    /*         work_todo_g = 1; */
+    /*         PDC_Client_check_response(&send_context_g); */
 
-            HG_Destroy(aggregate_write_handle);
-            server_ret = lookup_args.ret;
+    /*         HG_Destroy(aggregate_write_handle); */
+    /*         server_ret = lookup_args.ret; */
 
-            free(tmp_regions);
-            free(all_serialized_buf);
-        } // End of if client is first rank of the node
+    /*         free(tmp_regions); */
+    /*         free(all_serialized_buf); */
+    /*     } // End of if client is first rank of the node */
 
-#ifdef ENABLE_MPI
-        // Now broadcast the result from server
-        MPI_Bcast(&server_ret, 1, MPI_INT, 0, PDC_SAME_NODE_COMM_g);
-#endif
-    }
+/* #ifdef ENABLE_MPI */
+    /*     // Now broadcast the result from server */
+    /*     MPI_Bcast(&server_ret, 1, MPI_INT, 0, PDC_SAME_NODE_COMM_g); */
+/* #endif */
+    /* } */
 
     if (server_ret == 1) {
         ret_value = SUCCEED;
@@ -3735,7 +3738,7 @@ perr_t PDC_Client_data_server_write(PDC_Request_t *request)
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
-}
+} // End of PDC_Client_data_server_write
 
 perr_t PDC_Client_test(PDC_Request_t *request, int *completed)
 {
@@ -3916,7 +3919,7 @@ perr_t PDC_Client_iread(pdc_metadata_t *meta, struct PDC_region_info *region, PD
 /* printf("==PDC_CLIENT[%d], sending read request to server %d\n", pdc_client_mpi_rank_g, request->server_id); */
     ret_value = PDC_Client_data_server_read(request->server_id, request->n_client, meta, region);
     if (ret_value != SUCCEED) {
-        printf("==PDC_CLIENT: PDC_Client_iwrite - PDC_Client_data_server_read error\n");
+        printf("==PDC_CLIENT: PDC_Client_iread- PDC_Client_data_server_read error\n");
         goto done;
     }
 
