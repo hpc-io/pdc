@@ -3122,11 +3122,11 @@ close:
     }
 
     /* remove the shared memory segment from the file system */
-    if (shm_unlink(shm_addr) == -1) {
-        ret_value = FAIL;
-        goto done;
-        printf("==PDC_CLIENT: Error removing %s\n", shm_addr);
-    }
+    /* if (shm_unlink(shm_addr) == -1) { */
+    /*     printf("==PDC_CLIENT: Error removing %s\n", shm_addr); */
+    /*     ret_value = FAIL; */
+    /*     goto done; */
+    /* } */
 
     free(lookup_args.ret_string);
 
@@ -3775,6 +3775,7 @@ perr_t PDC_Client_test(PDC_Request_t *request, int *completed)
     }
 
 done:
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 } // End of PDC_Client_test
 
@@ -3813,6 +3814,7 @@ perr_t PDC_Client_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsign
 
         ret_value = PDC_Client_test(request, &completed);
         if (ret_value != SUCCEED) {
+            printf("==PDC_CLIENT[%d]: PDC_Client_test ERROR!\n", pdc_client_mpi_rank_g);
             goto done;
         }
 
@@ -3934,14 +3936,23 @@ perr_t PDC_Client_read(pdc_metadata_t *meta, struct PDC_region_info *region, voi
 
     FUNC_ENTER(NULL);
 
-    PDC_Client_iread(meta, region, &request, buf);
-    ret_value = PDC_Client_wait(&request, 120000, 400);
+    ret_value = PDC_Client_iread(meta, region, &request, buf);
     if (ret_value != SUCCEED) {
-        printf("==PDC_CLIENT: PDC_Client_read - PDC_Client_wait error\n");
+        printf("==PDC_CLIENT[%d]: %s - PDC_Client_iread error\n", pdc_client_mpi_rank_g, __func__);
         goto done;
     }
 
+    pdc_msleep(500);
+
+    ret_value = PDC_Client_wait(&request, 60000, 500);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_CLIENT[%d]: %s - PDC_Client_wait error\n", pdc_client_mpi_rank_g, __func__);
+        goto done;
+    }
+
+    /* printf("==PDC_CLIENT: PDC_Client_read - Done\n"); */
 done:
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 

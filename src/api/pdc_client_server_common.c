@@ -404,7 +404,7 @@ void PDC_print_region_list(region_list_t *a)
     printf("    start    count\n");
     /* printf("start stride count\n"); */
     for (i = 0; i < a->ndim; i++) {
-        printf("    %5d    %5d\n", a->start[i], a->count[i]);
+        printf("    %5" PRIu64"    %5" PRIu64"\n", a->start[i], a->count[i]);
         /* printf("%5d %6d %5d\n", a->start[i], a->stride[i], a->count[i]); */
     }
     printf("    Storage location: [%s]\n", a->storage_location);

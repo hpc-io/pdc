@@ -177,5 +177,6 @@ perr_t PDC_Server_update_region_storage_meta_bulk(bulk_xfer_data_t *bulk_data);
 perr_t PDC_Server_update_region_storage_meta_bulk_local(update_region_storage_meta_bulk_t **bulk_ptrs, int cnt);
 perr_t PDC_Server_set_close(void);
 perr_t PDC_Server_update_region_storage_meta_bulk_mpi(bulk_xfer_data_t *bulk_data);
+perr_t PDC_Server_close_shm(region_list_t *region);
 
 #endif /* PDC_SERVER_H */

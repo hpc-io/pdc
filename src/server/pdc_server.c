@@ -2738,6 +2738,8 @@ done:
  */
 perr_t PDC_Server_finalize()
 {
+    pdc_data_server_io_list_t *io_elt = NULL;
+    region_list_t *region_elt = NULL, *region_tmp = NULL;
     perr_t ret_value = SUCCEED;
     
     FUNC_ENTER(NULL);
@@ -2751,6 +2753,20 @@ perr_t PDC_Server_finalize()
     if (is_debug_g == 1) {
         PDC_Server_metadata_duplicate_check();
         fflush(stdout);
+    }
+
+    // Remove the opened shm
+    DL_FOREACH(pdc_data_server_read_list_head_g, io_elt) {
+        // remove IO request and its shm of perviously used obj
+        DL_FOREACH_SAFE(io_elt->region_list_head, region_elt, region_tmp) {
+            ret_value = PDC_Server_close_shm(region_elt);
+            if (ret_value != SUCCEED) 
+                printf("==PDC_SERVER: error closing shared memory\n");
+            fflush(stdout);
+            DL_DELETE(io_elt->region_list_head, region_elt);
+            free(region_elt);
+        }
+        io_elt->region_list_head = NULL;
     }
 
     // Free hash table
@@ -4681,21 +4697,15 @@ perr_t PDC_Server_close_shm(region_list_t *region)
 
     FUNC_ENTER(NULL);
 
-    if (region == NULL) {
-        printf("==PDC_SERVER[%d]: PDC_Server_close_shm - NULL input\n", pdc_server_rank_g);
-        ret_value = FAIL;
-        goto done;
-    }
-
-    if (region->buf == NULL) {
-        printf("==PDC_SERVER[%d]: PDC_Server_close_shm - NULL buf\n", pdc_server_rank_g);
+    if (region == NULL || region->buf == NULL) {
+        printf("==PDC_SERVER[%d]: %s - NULL input\n", pdc_server_rank_g, __func__);
         ret_value = FAIL;
         goto done;
     }
 
     /* remove the mapped memory segment from the address space of the process */
     if (munmap(region->buf, region->data_size) == -1) {
-        printf("==PDC_SERVER[%d]: Unmap failed\n", pdc_server_rank_g);
+        printf("==PDC_SERVER[%d]: %s - unmap failed\n", pdc_server_rank_g, __func__);
         ret_value = FAIL;
         goto done;
     }
@@ -4707,7 +4717,16 @@ perr_t PDC_Server_close_shm(region_list_t *region)
         goto done;
     }
 
+    /* remove the shared memory segment from the file system */
+    if (shm_unlink(region->shm_addr) == -1) {
+        ret_value = FAIL;
+        goto done;
+        printf("==PDC_SERVER[%d]: Error removing %s\n", pdc_server_rank_g, region->shm_addr);
+    }
+
+    /* printf("==PDC_SERVER[%d]: shm %s closed\n", pdc_server_rank_g, region->shm_addr); */
 done:
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
@@ -4869,11 +4888,23 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
 #ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_lock(&data_read_list_mutex_g);
 #endif
+    // FIXME:  need to find a better place to remove shm
     // Iterate io list, find current request
     DL_FOREACH(pdc_data_server_read_list_head_g, io_elt) {
         if (meta.obj_id == io_elt->obj_id) {
             io_target = io_elt;
-            break;
+        }
+        else {
+            // remove IO request and its shm of perviously used obj
+            DL_FOREACH_SAFE(io_elt->region_list_head, region_elt, region_tmp) {
+                ret_value = PDC_Server_close_shm(region_elt);
+                if (ret_value != SUCCEED) 
+                    printf("==PDC_SERVER: error closing shared memory\n");
+                fflush(stdout);
+                DL_DELETE(io_elt->region_list_head, region_elt);
+                free(region_elt);
+            }
+            io_elt->region_list_head = NULL;
         }
     }
 #ifdef ENABLE_MULTITHREAD
@@ -4913,7 +4944,7 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
             // NOTE: Similar to write check, we don't want to remove the region info, 
             //       as it will be used to release the shm at a later time.
             if (region_elt->is_data_ready == 1) {
-                out->shm_addr = calloc(1, strlen(region_elt->shm_addr) +1);
+                out->shm_addr = calloc(sizeof(char), ADDR_MAX);
                 strcpy(out->shm_addr, region_elt->shm_addr);
                 /* printf("==PDC_SERVER[%d]: remove a read request region, shm_addr=[%s]\n", */
                 /*         pdc_server_rank_g, region_elt->shm_addr); */
@@ -4938,9 +4969,10 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
         goto done;
     }
 
+done:
     // TODO remove the item in pdc_data_server_read_list_head_g after the request is fulfilled
     //      at object close time?
-done:
+    // TODO server needs to remove the shm after client finished reading from it
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 } // End of PDC_Server_read_check
@@ -7247,6 +7279,9 @@ perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
         goto done;
     }
 
+/*     printf("==PDC_SERVER[%d]: get_overlap_start_count done!\n", pdc_server_rank_g); */
+/*     fflush(stdout); */
+
     total_bytes = 1;
     for (i = 0; i < ndim; i++) {
         if (is_debug_g == 1) {
@@ -7607,7 +7642,6 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
             if (is_debug_g == 1) {
                 printf("==PDC_SERVER[%d]: Read data total size %" PRIu64 "\n",
                         pdc_server_rank_g, total_read_bytes);
-                /* printf("Write data buf: [%.*s]\n", region_elt->data_size, (char*)region_elt->buf); */
                 fflush(stdout);
             }
             /* printf("Read iteration: size %" PRIu64 "\n", region_elt->data_size); */
@@ -7765,6 +7799,8 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
         
     } // end DL_FOREACH region IO request (region)
 
+    /* printf("==PDC_SERVER[%d]: %s- IO finished\n", pdc_server_rank_g, __func__); */
+    /* fflush(stdout); */
 
     // Buffer the region storage metadata update 
     update_storage_meta_list_t *tmp_alloc;
