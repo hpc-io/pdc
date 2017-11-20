@@ -252,7 +252,7 @@ int main(int argc, char **argv)
             for (i = 0; i < n_var; i++) {
                 ret = PDC_Client_read(obj_metas[ts][i], &obj_regions[ts][i], mydata[i]);
                 if (ret != SUCCEED) {
-                    printf("Error with PDC_Client_iread!\n");
+                    printf("Error with PDC_Client_read!\n");
                     goto done;
                 }
             } // end of for
@@ -273,19 +273,20 @@ int main(int argc, char **argv)
             /*
              * WAIT
              */
-            if (rank == 0) {
-                printf("Timestep %d: Wait for prefetch.\n", ts);
-                fflush(stdout);
-            }
             // Check if prefetch is done
             #ifdef ENABLE_MPI
             MPI_Barrier(MPI_COMM_WORLD);
             #endif
             gettimeofday(&pdc_timer_start_1, 0);
 
+            if (rank == 0) {
+                printf("Timestep %d: Wait for prefetch.\n", ts);
+                fflush(stdout);
+            }
+
             // wait for read to finish before reading next timestep
             for (i = 0; i < n_var; i++) {
-                ret = PDC_Client_wait(&request[ts][i], 30000, 100);
+                ret = PDC_Client_wait(&request[ts][i], 90000, 100);
                 if (ret != SUCCEED) {
                     printf("Error with PDC_Client_wait!\n");
                     goto done;

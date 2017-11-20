@@ -2022,6 +2022,7 @@ HG_TEST_RPC_CB(data_server_read, handle)
     io_info->io_type   = READ;
     io_info->client_id = in.client_id;
     io_info->nclient   = in.nclient;
+    io_info->nbuffer_request = in.nupdate;
 
     PDC_metadata_init(&io_info->meta);
     pdc_transfer_t_to_metadata_t(&(in.meta), &(io_info->meta));
@@ -2069,7 +2070,7 @@ HG_TEST_RPC_CB(data_server_write, handle)
     io_info->io_type   = WRITE;
     io_info->client_id = in.client_id;
     io_info->nclient   = in.nclient;
-    io_info->n_buffered_update = in.nupdate;
+    io_info->nbuffer_request = in.nupdate;
 
     PDC_metadata_init(&io_info->meta);
     pdc_transfer_t_to_metadata_t(&(in.meta), &(io_info->meta));

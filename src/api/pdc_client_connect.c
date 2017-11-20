@@ -3163,24 +3163,34 @@ done:
 }
 
 
-perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *meta, struct PDC_region_info *region)
+perr_t PDC_Client_data_server_read(PDC_Request_t *request)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
     struct client_lookup_args lookup_args;
     data_server_read_in_t in;
     hg_handle_t data_server_read_handle;
-    
+    int server_id, n_client, n_update;
+    pdc_metadata_t *meta;
+    struct PDC_region_info *region;
+
     FUNC_ENTER(NULL);
 
+    server_id = request->server_id;
+    n_client  = request->n_client;
+    n_update  = request->n_update;
+    meta      = request->metadata;
+    region    = request->region;
+
     if (server_id < 0 || server_id >= pdc_server_num_g) {
-        printf("PDC_CLIENT[%d]: PDC_Client_data_server_read - invalid server id %d/%d\n", pdc_client_mpi_rank_g, server_id, pdc_server_num_g);
+        printf("PDC_CLIENT[%d]: %s - invalid server id %d/%d\n", 
+                pdc_client_mpi_rank_g, __func__, server_id, pdc_server_num_g);
         ret_value = FAIL;
         goto done;
     }
 
     if (meta == NULL || region == NULL) {
-        printf("PDC_CLIENT[%d]: PDC_Client_data_server_read - invalid metadata or region \n", pdc_client_mpi_rank_g);
+        printf("PDC_CLIENT[%d]: %s - invalid metadata or region \n", pdc_client_mpi_rank_g, __func__);
         ret_value = FAIL;
         goto done;
     }
@@ -3188,6 +3198,9 @@ perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *
     // Dummy value fill
     in.client_id         = pdc_client_mpi_rank_g;
     in.nclient           = n_client;
+    in.nupdate           = n_update;
+    if (request->n_update == 0) 
+        request->n_update    = 1;       // Only set to default value if it is not set prior
     pdc_metadata_t_to_transfer_t(meta, &in.meta);
     pdc_region_info_t_to_transfer(region, &in.region);
 
@@ -3210,8 +3223,9 @@ perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *
 
     hg_ret = HG_Forward(data_server_read_handle, data_server_read_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
-        fprintf(stderr, "PDC_Client_data_server_read(): Could not start HG_Forward()\n");
-        return EXIT_FAILURE;
+        fprintf(stderr, "%s - Could not start HG_Forward()\n", __func__);
+        ret_value = FAIL;
+        goto done;
     }
 
     // Wait for response from server
@@ -3220,18 +3234,18 @@ perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *
 
     if (lookup_args.ret == 1) {
         ret_value = SUCCEED;
-        /* printf("PDC_CLIENT: PDC_Client_data_server_read - received confirmation from server\n"); */
+        /* printf("PDC_CLIENT: %s - received confirmation from server\n", __func__); */
     }
     else {
         ret_value = FAIL;
-        printf("PDC_CLIENT: PDC_Client_data_server_read - ERROR from server\n");
+        printf("PDC_CLIENT: %s - ERROR from server\n", __func__);
     }
 
 
 done:
     HG_Destroy(data_server_read_handle);
     FUNC_LEAVE(ret_value);
-}
+} // End of PDC_Request_t *request
 
 /*
  * Close the shared memory
@@ -3890,6 +3904,7 @@ perr_t PDC_Client_write(pdc_metadata_t *meta, struct PDC_region_info *region, vo
 
     FUNC_ENTER(NULL);
 
+    request.n_update = 1;
     ret_value = PDC_Client_iwrite(meta, region, &request, buf);
     if (ret_value != SUCCEED) {
         printf("==PDC_CLIENT: PDC_Client_write - PDC_Client_iwrite error\n");
@@ -3913,13 +3928,15 @@ perr_t PDC_Client_iread(pdc_metadata_t *meta, struct PDC_region_info *region, PD
 
     request->server_id   = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
     request->n_client    = pdc_nclient_per_server_g;    // Set by env var PDC_NCLIENT_PER_SERVER, default 1
+    if (request->n_update == 0) 
+        request->n_update    = 1;       // Only set to default value if it is not set prior
     request->access_type = READ;
     request->metadata    = meta;
     request->region      = region;
     request->buf         = buf;
 
 /* printf("==PDC_CLIENT[%d], sending read request to server %d\n", pdc_client_mpi_rank_g, request->server_id); */
-    ret_value = PDC_Client_data_server_read(request->server_id, request->n_client, meta, region);
+    ret_value = PDC_Client_data_server_read(request);
     if (ret_value != SUCCEED) {
         printf("==PDC_CLIENT: PDC_Client_iread- PDC_Client_data_server_read error\n");
         goto done;
@@ -3936,6 +3953,7 @@ perr_t PDC_Client_read(pdc_metadata_t *meta, struct PDC_region_info *region, voi
 
     FUNC_ENTER(NULL);
 
+    request.n_update = 1;
     ret_value = PDC_Client_iread(meta, region, &request, buf);
     if (ret_value != SUCCEED) {
         printf("==PDC_CLIENT[%d]: %s - PDC_Client_iread error\n", pdc_client_mpi_rank_g, __func__);

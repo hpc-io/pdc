@@ -213,19 +213,23 @@ int main(int argc, char **argv)
             true_sleep_time = sleep_time - gen_time;
         }
 
+        if (rank == 0) {
+            printf("Compute for %.2f seconds\n", gen_time + true_sleep_time);
+        }
+        fflush(stdout);
+
         // Sleep to fake compute time
         pdc_msleep((unsigned long)(true_sleep_time*1000));
         compute_total += gen_time+true_sleep_time;
 
-        if (rank == 0) {
-            printf("Computing for %d seconds.\n", (int)(gen_time + true_sleep_time));
-            fflush(stdout);
-        }
-
-
         #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
         #endif
+
+        if (rank == 0) {
+            printf("Compute done\n");
+            fflush(stdout);
+        }
 
         gettimeofday(&pdc_timer_start_1, 0);
         // Create obj and region one by one
@@ -268,6 +272,11 @@ int main(int argc, char **argv)
         create_time = PDC_get_elapsed_time_double(&pdc_timer_start_1, &pdc_timer_end_1);
         create_time_total += create_time;
 
+        if (rank == 0) {
+            printf("%d: start querying objects\n", rank);
+            fflush(stdout);
+        }
+
         for (i = 0; i < n_var; i++) {
             ret = PDC_Client_query_metadata_name_timestep_agg(obj_names[i], ts, &obj_metas[ts][i]);
             if (ret != SUCCEED || obj_metas[ts][i] == NULL || obj_metas[ts][i]->obj_id == 0) {
@@ -283,6 +292,14 @@ int main(int argc, char **argv)
         query_time = PDC_get_elapsed_time_double(&pdc_timer_end_1, &pdc_timer_end_2);
         query_time_total += query_time;
 
+        #ifdef ENABLE_MPI
+        MPI_Barrier(MPI_COMM_WORLD);
+        #endif
+        if (rank == 0) {
+            printf("%d: querying done\n", rank);
+            fflush(stdout);
+        }
+
         // Wait for the previous request to finish
         if (ts > 0 && ts != n_ts - 1) {
 
@@ -290,19 +307,15 @@ int main(int argc, char **argv)
             gettimeofday(&pdc_timer_start_1, 0);
 
             for (i = 0; i < n_var; i++) {
-                // Timing
-                gettimeofday(&pdc_timer_start_1, 0);
-
                 ret = PDC_Client_wait(&request[ts-1][i], 30000, 100);
                 if (ret != SUCCEED) {
                     printf("Error with PDC_Client_wait!\n");
                     goto done;
                 }
-
-                #ifdef ENABLE_MPI
-                MPI_Barrier(MPI_COMM_WORLD);
-                #endif
             }
+            #ifdef ENABLE_MPI
+            MPI_Barrier(MPI_COMM_WORLD);
+            #endif
             gettimeofday(&pdc_timer_end_1, 0);
             wait_time = PDC_get_elapsed_time_double(&pdc_timer_start_1, &pdc_timer_end_1);
             wait_time_total += wait_time;
@@ -311,6 +324,7 @@ int main(int argc, char **argv)
 
         if (rank == 0) 
             printf("Timestep %d: start to write.\n", ts);
+        fflush(stdout);
 
         // Last ts is sync IO
         if (ts != n_ts - 1) {

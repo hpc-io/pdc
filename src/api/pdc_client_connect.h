@@ -322,8 +322,8 @@ perr_t PDC_Client_data_direct_init();
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *meta, struct PDC_region_info *region); 
 
+perr_t PDC_Client_data_server_read(PDC_Request_t *request);
 /**
  * Client request server to collectively write a region of an object
  *

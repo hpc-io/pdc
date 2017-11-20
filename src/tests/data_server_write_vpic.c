@@ -217,7 +217,7 @@ int main(int argc, char **argv)
         // Timing
         gettimeofday(&pdc_timer_start_1, 0);
 
-        request[i].n_update = write_var;
+        request[i].n_update = 1;
         ret = PDC_Client_iwrite(obj_metas[i], &obj_regions[i], &request[i], mydata[i]);
         if (ret != SUCCEED) {
             printf("Error with PDC_Client_iwrite!\n");

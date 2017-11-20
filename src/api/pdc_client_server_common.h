@@ -234,7 +234,7 @@ typedef struct {
     PDC_access_t                io_type;   
     uint32_t                    client_id;
     int32_t                     nclient;
-    int32_t                     n_buffered_update;
+    int32_t                     nbuffer_request;
     pdc_metadata_t              meta;
     region_list_t               region;
 } data_server_io_info_t;
@@ -1354,6 +1354,7 @@ hg_proc_gen_obj_unmap_notification_out_t(hg_proc_t proc, void *data)
 typedef struct {
     uint32_t                    client_id;
     int32_t                     nclient;
+    int32_t                     nupdate;
     pdc_metadata_transfer_t     meta;
     region_info_transfer_t      region;
 } data_server_read_in_t;
@@ -1374,6 +1375,11 @@ hg_proc_data_server_read_in_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->nclient);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->nupdate);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
