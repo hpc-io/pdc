@@ -5976,6 +5976,8 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
     pdc_data_server_io_list_t *io_list_elt, *io_list_tmp, *io_list = NULL, *io_list_target = NULL;
     region_list_t *region_elt = NULL, *region_tmp;
     /* region_list_t *region_tmp = NULL; */
+    int real_bb_cnt = 0, real_lustre_cnt = 0;
+    int write_to_bb_cnt = 0;
     int count;
     /* uint32_t client_id; */
     size_t i;
@@ -6170,24 +6172,54 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
                 // received all requests, start writing
                 // Some server write to BB when specified
                 int curr_cnt = 0;
-                int write_to_bb_cnt = io_list_elt->total * write_to_bb_percentage_g / 100;
-
+                write_to_bb_cnt = io_list_elt->total * write_to_bb_percentage_g / 100;
+                real_bb_cnt = 0;
+                real_lustre_cnt = 0;
                 // Specify the location of data to be written to
                 DL_FOREACH(io_list_elt->region_list_head, region_elt) {
 
                     sprintf(region_elt->storage_location, "%s/server%d/s%04d.bin",
                             io_list_elt->path, pdc_server_rank_g, pdc_server_rank_g);
+                    real_lustre_cnt++;
                     /* PDC_print_region_list(region_elt); */
 
                     // If BB is enabled, then overwrite with BB path with the right number of servers
-                    if (write_to_bb_percentage_g > 0 && curr_cnt < write_to_bb_cnt) {
-                        sprintf(region_elt->storage_location, "%s/server%d/s%04d.bin",
-                                io_list_elt->bb_path, pdc_server_rank_g, pdc_server_rank_g);
+                    if (write_to_bb_percentage_g > 0 ) {
+                        if (io_list_elt->bb_path == NULL || io_list_elt->bb_path[0] == ' ') {
+                            printf("==PDC_SERVER[%d]: Error with BB path [%s]!\n",
+                                    pdc_server_rank_g, io_list_elt->bb_path);
+                        }
+                        else {
+                            if (pdc_server_rank_g < pdc_server_size_g / 2) {
+                                // First half of the servers writes to BB first
+                                if (curr_cnt < write_to_bb_cnt) {
+                                    sprintf(region_elt->storage_location, "%s/server%d/s%04d.bin",
+                                            io_list_elt->bb_path, pdc_server_rank_g, pdc_server_rank_g);
+                                    real_bb_cnt++;
+                                    real_lustre_cnt--;
+                                }
+                            }
+                            else {
+                                // Others write to Lustre first
+                                if (curr_cnt >= io_list_elt->total - write_to_bb_cnt) {
+                                    sprintf(region_elt->storage_location, "%s/server%d/s%04d.bin",
+                                            io_list_elt->bb_path, pdc_server_rank_g, pdc_server_rank_g);
+                                    real_bb_cnt++;
+                                    real_lustre_cnt--;
+                                }
+                            }
+                        }
                     }
                     curr_cnt++;
                     /* printf("region to write obj_id: %" PRIu64 ", loc [%s], %d %%\n", */
-                    /*        region_elt->meta->obj_id, region_elt->storage_location, write_to_bb_percentage_g); */
+                    /*        region_elt->meta->obj_id,region_elt->storage_location,write_to_bb_percentage_g); */
                 }
+
+                /* if (write_to_bb_percentage_g > 0) { */
+                /*     printf("==PDC_SERVER[%d]: write to BB %d, write to Lustre %d\n", */ 
+                /*             pdc_server_rank_g, real_bb_cnt, real_lustre_cnt); */
+                /*     fflush(stdout); */
+                /* } */
 
                 status = PDC_Server_data_write_from_shm(io_list_elt->region_list_head);
                 if (status != SUCCEED) {
