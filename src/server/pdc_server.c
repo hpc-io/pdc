@@ -4387,7 +4387,7 @@ int main(int argc, char *argv[])
     total_io_avg      = total_io_max      = total_io_min      = server_total_io_time_g;
     update_time_avg   = update_time_max   = update_time_min   = server_update_region_location_time_g;
     get_info_time_avg = get_info_time_max = get_info_time_min = server_get_storage_info_time_g;
-    io_elapsed_time_avg = io_elapsed_time_max = io_elapsed_time_min = io_elapsed_timeorage_info_time_g;
+    io_elapsed_time_avg = io_elapsed_time_max = io_elapsed_time_min = server_io_elapsed_time_g;
  
     #endif
 
@@ -5453,6 +5453,7 @@ perr_t PDC_Server_get_storage_location_of_region_mpi(region_list_t *regions_head
 
     FUNC_ENTER(NULL);
 
+#ifdef ENABLE_MPI
     if (regions_head == NULL) {
         printf("==PDC_SERVER[%d]: %s - NULL input!\n", pdc_server_rank_g, __func__);
         ret_value = FAIL;
@@ -5644,6 +5645,9 @@ done:
     if (send_bytes) free(send_bytes);
     if (displs) free(displs);
     if (request_overlap_cnt) free(request_overlap_cnt);
+#else
+    printf("%s - is not supposed to be called without MPI enabled!\n", __func__);
+#endif
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -6950,6 +6954,7 @@ perr_t PDC_Server_update_region_storage_meta_bulk_mpi(bulk_xfer_data_t *bulk_dat
 
     FUNC_ENTER(NULL);
 
+#ifdef ENABLE_MPI
     server_id        = bulk_data->target_id;
     int meta_cnt     = bulk_data->idx-1;        // idx includes the first element of buf_ptrs, which is count
     int data_size    = sizeof(update_region_storage_meta_bulk_t)*meta_cnt;
@@ -7006,6 +7011,9 @@ done:
         free(recv_buf);
         free(all_meta);
     }
+#else
+    printf("%s - is not supposed to be called without MPI enabled!\n", __func__);
+#endif
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 } // end of PDC_Server_update_region_storage_meta_bulk
