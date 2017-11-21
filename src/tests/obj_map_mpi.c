@@ -159,7 +159,7 @@ int main(int argc, char **argv)
     for (int i=0; i<numparticles; i++) {
         x[i]   = uniform_random_number() * x_dim;
         xx[i]  = 0;
-printf("x = %f\n", x[i]);
+// printf("x = %f\n", x[i]);
     }
 
 //    ret = PDCreg_obtain_lock(obj2, r2, WRITE, NOBLOCK);
@@ -173,10 +173,12 @@ printf("x = %f\n", x[i]);
 //    if (ret != SUCCEED)
 //        printf("Failed to release lock for region_y\n");
 
+/*
 for (int i=0; i<numparticles; i++) {
 printf("xx = %f\n", xx[i]);
     }
-
+*/
+    
     ret = PDCreg_unmap(obj1, r1);
 //    ret = PDCreg_unmap(obj1);
     if (ret != SUCCEED)

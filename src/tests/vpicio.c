@@ -226,6 +226,7 @@ int main(int argc, char **argv)
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
+    gettimeofday(&ht_total_start, 0);
 
     obj_x = PDCobj_buf_map(cont_id, "obj-var-x", &x[0], PDC_FLOAT, region_x, obj_xx, region_xx);
     obj_y = PDCobj_buf_map(cont_id, "obj-var-y", &y[0], PDC_FLOAT, region_y, obj_yy, region_yy);
@@ -239,7 +240,19 @@ int main(int argc, char **argv)
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
+    gettimeofday(&ht_total_end, 0);
+    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+    ht_total_sec        = ht_total_elapsed / 1000000.0;
+    if (rank == 0) {
+        printf("Time to map with %d ranks: %.6f\n", size, ht_total_sec);
+        fflush(stdout);
+    }
 
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    gettimeofday(&ht_total_start, 0);
+    
     ret = PDCreg_obtain_lock(obj_x, region_x, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_x\n");
@@ -289,6 +302,17 @@ int main(int argc, char **argv)
     ret = PDCreg_obtain_lock(obj_id22, region_id22, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_id22\n");
+    
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    gettimeofday(&ht_total_end, 0);
+    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+    ht_total_sec        = ht_total_elapsed / 1000000.0;
+    if (rank == 0) {
+        printf("Time to lock with %d ranks: %.6f\n", size, ht_total_sec);
+        fflush(stdout);
+    }
 
      for (int i=0; i<numparticles; i++) {
         id1[i] = i;
@@ -312,6 +336,11 @@ int main(int argc, char **argv)
 //printf("id2 = %d\n", id2[i]);
     }
 
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    gettimeofday(&ht_total_start, 0);
+    
     ret = PDCreg_release_lock(obj_x, region_x, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_x\n");
@@ -340,10 +369,22 @@ int main(int argc, char **argv)
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
+    gettimeofday(&ht_total_end, 0);
+    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+    ht_total_sec        = ht_total_elapsed / 1000000.0;
+    if (rank == 0) {
+        printf("Time to write data with %d ranks: %.6f\n", size, ht_total_sec);
+        fflush(stdout);
+    }
 
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    gettimeofday(&ht_total_start, 0);
+    
     ret = PDCreg_release_lock(obj_xx, region_xx, WRITE);
     if (ret != SUCCEED)
-        printf("Failed to release lock for region_y\n");
+        printf("Failed to release lock for region_xx\n");
     ret = PDCreg_release_lock(obj_yy, region_yy, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_yy\n");
@@ -366,11 +407,21 @@ int main(int argc, char **argv)
     if (ret != SUCCEED)
         printf("Failed to release lock for region_id22\n");
 
-
-for (int i=0; i<numparticles; i++) {
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    gettimeofday(&ht_total_end, 0);
+    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+    ht_total_sec        = ht_total_elapsed / 1000000.0;
+    if (rank == 0) {
+        printf("Time to update data with %d ranks: %.6f\n", size, ht_total_sec);
+        fflush(stdout);
+    }
+    
+//for (int i=0; i<numparticles; i++) {
 //printf("id11 = %d\n", id11[i]);
 //printf("id22 = %d\n", id22[i]);
-    }
+//    }
 
 
     for (int i=0; i<my_data_size/size; i++) {
