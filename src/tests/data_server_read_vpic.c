@@ -218,7 +218,7 @@ int main(int argc, char **argv)
     read_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
     total_size = NPARTICLES * 4.0 * 8.0 * size / 1024.0 / 1024.0; 
     if (rank == 0) { 
-        printf("Time to read %.2f MB data with %d ranks: %.2f\nSent %.2f, wait %.2f, Throughput %.2f MB/s\n", 
+        printf("Read %.2f MB data with %d ranks\nTotal read time: %.2f\nSent %.2f, wait %.2f, Throughput %.2f MB/s\n", 
                 total_size, size, read_time, sent_time_total, wait_time_total, total_size/read_time);
         fflush(stdout);
     }

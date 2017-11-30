@@ -6194,8 +6194,8 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
                                     pdc_server_rank_g, io_list_elt->bb_path);
                         }
                         else {
-                            if (pdc_server_rank_g < pdc_server_size_g / 2) {
-                                // First half of the servers writes to BB first
+                            if (pdc_server_rank_g % 2 == 0) {
+                                // Half of the servers writes to BB first
                                 if (curr_cnt < write_to_bb_cnt) {
                                     sprintf(region_elt->storage_location, "%s/server%d/s%04d.bin",
                                             io_list_elt->bb_path, pdc_server_rank_g, pdc_server_rank_g);
@@ -7787,13 +7787,12 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
                         goto done;
                     }
                 }
+
                 // Request: elt->start/count
                 // Storage: region_elt->overlap_storage_regions[i]->start/count
-                ret_value = PDC_Server_read_overlap_regions(region_elt->ndim, region_elt->start,
-                            region_elt->count, region_elt->overlap_storage_regions[i].start, 
-                            region_elt->overlap_storage_regions[i].count,
-                            fp_read, region_elt->overlap_storage_regions[i].offset, 
-                            region_elt->buf, &read_bytes);
+                ret_value = PDC_Server_read_overlap_regions(region_elt->ndim, region_elt->start, region_elt->count, 
+                            region_elt->overlap_storage_regions[i].start, region_elt->overlap_storage_regions[i].count,
+                            fp_read, region_elt->overlap_storage_regions[i].offset, region_elt->buf, &read_bytes);
 
                 if (ret_value != SUCCEED) {
                     printf("==PDC_SERVER[%d]: error with PDC_Server_read_overlap_regions\n",

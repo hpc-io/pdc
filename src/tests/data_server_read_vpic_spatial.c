@@ -38,6 +38,8 @@
 #include "pdc.h"
 #include "pdc_client_server_common.h"
 
+/* #define NUM_VAR         2 */
+/* #define NUM_FLOAT_VAR   2 */
 #define NUM_VAR         8
 #define NUM_FLOAT_VAR   6
 #define NUM_INT_VAR     2
@@ -47,6 +49,11 @@
 #define YDIM            64
 #define ZDIM            64
 
+void usage(const char *name)
+{
+    printf("Usage:\n./%s num_variable(up to 8) selectivity_percentage (0.0 to 1.0)\nexiting...\n", name);
+
+}
 
 float uniform_random_number()
 {
@@ -59,19 +66,11 @@ int main(int argc, char **argv)
     perr_t ret;
     pdcid_t pdc_id, cont_prop, cont_id;
 
-#ifdef ENABLE_MPI
-    MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-#endif
-
     char *obj_names[] = {"x", "y", "z", "px", "py", "pz", "id1", "id2"};
 
     pdcid_t         obj_ids[NUM_VAR];
     struct PDC_region_info obj_regions[NUM_VAR];
     pdc_metadata_t *obj_metas[NUM_VAR];
-
-    pdcid_t         obj_prop_float, obj_prop_int;
 
     uint64_t float_bytes  = NPARTICLES * sizeof(float);
     uint64_t int_bytes    = NPARTICLES * sizeof(int);
@@ -82,7 +81,7 @@ int main(int argc, char **argv)
     uint64_t myoffset[NDIM], mysize[NDIM];
     void *mydata[NUM_VAR];
 
-    int write_var = NUM_VAR;
+    int read_var = NUM_VAR;
 
     // Float vars are first in the array follow by int vars
     for (i = 0; i < NUM_FLOAT_VAR; i++) 
@@ -99,14 +98,38 @@ int main(int argc, char **argv)
     struct timeval  pdc_timer_end_1;
 
     double sent_time = 0.0, sent_time_total = 0.0, wait_time = 0.0, wait_time_total = 0.0;
-    double write_time = 0.0, total_size = 0.0;
+    double read_time = 0.0, total_size = 0.0;
+    double  selectivity = 0.0;
 
-    if (argc > 1) 
-        write_var = atoi(argv[1]);
+#ifdef ENABLE_MPI
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+#endif
 
-    if (write_var < 0 || write_var > 8) 
-        write_var = NUM_VAR;
+    if (argc > 2)  {
+        read_var = atoi(argv[1]);
+        selectivity = atof(argv[2]);
+    }
+    else { 
+        if (rank == 0) {
+            usage(argv[0]);
+        }
+        goto exit;
+    }
     
+    if (read_var < 0 || read_var > 8) 
+        read_var = NUM_VAR;
+    
+    if (selectivity < 0 || selectivity > 1.0) 
+        selectivity = 1.0;
+
+    if (rank == 0) 
+        printf("Read %d variables with selectivity %.2f\n", read_var, selectivity);
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
     // create a pdc
     pdc_id = PDC_init("pdc");
@@ -121,62 +144,10 @@ int main(int argc, char **argv)
     if(cont_id <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
-    // create object property for float and int
-    obj_prop_float = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
-    obj_prop_int   = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
 
-    PDCprop_set_obj_dims(obj_prop_float, 1, float_dims);
-    PDCprop_set_obj_type(obj_prop_float, PDC_FLOAT);
-    PDCprop_set_obj_time_step(obj_prop_float, 0);
-    PDCprop_set_obj_user_id( obj_prop_float, getuid());
-    PDCprop_set_obj_app_name(obj_prop_float, "VPICIO");
-    PDCprop_set_obj_tags(    obj_prop_float, "tag0=1");
-
-    PDCprop_set_obj_dims(obj_prop_int, 1, int_dims);
-    PDCprop_set_obj_type(obj_prop_int, PDC_INT);
-    PDCprop_set_obj_time_step(obj_prop_int, 0);
-    PDCprop_set_obj_user_id( obj_prop_int, getuid());
-    PDCprop_set_obj_app_name(obj_prop_int, "VPICIO");
-    PDCprop_set_obj_tags(    obj_prop_int, "tag0=1");
-
-
-    // Create obj and region one by one
-    for (i = 0; i < NUM_FLOAT_VAR; i++) {
-        if (rank == 0) {
-                obj_ids[i] = PDCobj_create(cont_id, obj_names[i], obj_prop_float);
-                if (obj_ids[i]<= 0) {    
-                    printf("Error getting an object %s from server, exit...\n", obj_names[i]);
-                    goto done;
-                }
-        }
-        myoffset[0] = rank * float_bytes;
-        mysize[0]   = float_bytes;
-        obj_regions[i].ndim      = NDIM;
-        obj_regions[i].offset    = myoffset;
-        obj_regions[i].size      = mysize;
-    }
-
-    // Continue to create the int vars id1 and id2
-    for (; i < NUM_VAR; i++) {
-        if (rank == 0) {
-            obj_ids[i] = PDCobj_create(cont_id, obj_names[i], obj_prop_int);
-            if (obj_ids[i]<= 0) {    
-                printf("Error getting an object %s from server, exit...\n", obj_names[i]);
-                goto done;
-            }
-        }
-        myoffset[0] = rank * int_bytes;
-        mysize[0]   = int_bytes;
-        obj_regions[i].ndim      = NDIM;
-        obj_regions[i].offset    = myoffset;
-        obj_regions[i].size      = mysize;
-    }
-
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-
+    // Query obj metadata and create read region one by one
     for (i = 0; i < NUM_VAR; i++) {
+
         #ifdef ENABLE_MPI
         ret = PDC_Client_query_metadata_name_timestep_agg(obj_names[i], 0, &obj_metas[i]);
         #else
@@ -186,25 +157,19 @@ int main(int argc, char **argv)
             printf("Error with metadata!\n");
             exit(-1);
         }
-        /* if (rank == 1) { */
-        /*     PDC_print_metadata(obj_metas[i]); */
-        /* } */
-    }
 
-    for (i = 0; i < NPARTICLES; i++) {
-        /* ((float*)mydata[0])[i] = i + 0.89;          // x */
-        ((float*)mydata[0])[i] = uniform_random_number() * XDIM;          // x
-        ((float*)mydata[1])[i] = uniform_random_number() * YDIM;          // y
-        ((float*)mydata[2])[i] = (i*1.0/NPARTICLES) * ZDIM; // z
-        ((float*)mydata[3])[i] = uniform_random_number() * XDIM;          // px
-        ((float*)mydata[4])[i] = uniform_random_number() * YDIM;          // py
-        ((float*)mydata[5])[i] = (i*2.0/NPARTICLES) * ZDIM; // pz
-        ((int*)mydata[6])[i]   = i;                                       // id1
-        ((int*)mydata[7])[i]   = i*2;                                     // id2
+        if (i<NUM_FLOAT_VAR) {
+            myoffset[0] = rank * float_bytes * selectivity;
+            mysize[0]   = float_bytes * selectivity;
+        }
+        else {
+            myoffset[0] = rank * int_bytes * selectivity;
+            mysize[0]   = int_bytes * selectivity;
+        }
+        obj_regions[i].ndim      = NDIM;
+        obj_regions[i].offset    = myoffset;
+        obj_regions[i].size      = mysize;
     }
-
-    if (rank == 0) 
-        printf("Write out %d variables\n", write_var);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -212,21 +177,21 @@ int main(int argc, char **argv)
     // Timing
     gettimeofday(&pdc_timer_start, 0);
 
-    for (i = 0; i < write_var; i++) {
+    for (i = 0; i < read_var; i++) {
 
         // Timing
         gettimeofday(&pdc_timer_start_1, 0);
 
         request[i].n_update = 1;
-        ret = PDC_Client_iwrite(obj_metas[i], &obj_regions[i], &request[i], mydata[i]);
+        ret = PDC_Client_iread(obj_metas[i], &obj_regions[i], &request[i], mydata[i]);
         if (ret != SUCCEED) {
-            printf("Error with PDC_Client_iwrite!\n");
+            printf("Error with PDC_Client_iread!\n");
             goto done;
         }
 
-        /* #ifdef ENABLE_MPI */
-        /* MPI_Barrier(MPI_COMM_WORLD); */
-        /* #endif */
+        #ifdef ENABLE_MPI
+        MPI_Barrier(MPI_COMM_WORLD);
+        #endif
         gettimeofday(&pdc_timer_end_1, 0);
         sent_time = PDC_get_elapsed_time_double(&pdc_timer_start_1, &pdc_timer_end_1);
         sent_time_total += sent_time;
@@ -234,7 +199,8 @@ int main(int argc, char **argv)
         // Timing
         gettimeofday(&pdc_timer_start_1, 0);
 
-        ret = PDC_Client_wait(&request[i], 30000, 100);
+        /* ret = PDC_Client_wait(&request[i], 30000000, 100); */
+        ret = PDC_Client_wait(&request[i], 60000, 100);
         if (ret != SUCCEED) {
             printf("Error with PDC_Client_wait!\n");
             goto done;
@@ -251,7 +217,7 @@ int main(int argc, char **argv)
         /*     printf("Sent time %.2f, wait time %.2f\n", sent_time, wait_time); */
     }
 
-    /* for (i = 0; i < write_var; i++) { */
+    /* for (i = 0; i < read_var; i++) { */
     /*     ret = PDC_Client_wait(&request[i], 30000, 500); */
     /*     if (ret != SUCCEED) { */
     /*         printf("Error with PDC_Client_wait!\n"); */
@@ -263,17 +229,41 @@ int main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
+
     gettimeofday(&pdc_timer_end, 0);
-    write_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-    total_size = NPARTICLES * 4.0 * 8.0 * size / 1024.0 / 1024.0; 
+    read_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+    total_size = NPARTICLES * selectivity * 4.0 * 8.0 * size / 1024.0 / 1024.0; 
     if (rank == 0) { 
-        printf("Write %f MB data with %d ranks\nTotal write time: %.2f\nSent %.2f, wait %.2f, Throughput %.2f MB/s\n", 
-                total_size, size, write_time, sent_time_total, wait_time_total, total_size/write_time);
+        printf("Read %.2f MB data with %d ranks\nTotal read time: %.2f\nSent %.2f, wait %.2f, Throughput %.2f MB/s\n", 
+                total_size, size, read_time, sent_time_total, wait_time_total, total_size/read_time);
         fflush(stdout);
     }
 
+    /* int verify = 1; */
+    /* if (rank == 0) */ 
+    /*     printf("Verifying data correctness ... "); */
+
+    /* // Data verification */
+    /* for (i = 0; i < 1024; i++) { */
+    /*     if ( ((int*)mydata[7])[i] != i*2                         || */ 
+    /*          ((int*)mydata[6])[i] != i                           || */
+    /*          ((float*)mydata[5])[i] != (i*2.0/NPARTICLES) * ZDIM || */
+    /*          ((float*)mydata[2])[i] != (i*1.0/NPARTICLES) * ZDIM    ) { */
+    /*         printf("\nERROR on rank %d at element %d. [%d %d %.2f %.2f]/[%d %d %.2f %.2f]\n", */ 
+    /*                 rank, i, ((int*)mydata[7])[i], ((int*)mydata[6])[i], */ 
+    /*                          ((float*)mydata[5])[i], ((float*)mydata[2])[i], */ 
+    /*                          i*2, i, (i*2.0/NPARTICLES) * ZDIM, (i*1.0/NPARTICLES) * ZDIM); */
+    /*         verify = 0; */
+    /*         break; */
+    /*     } // end if */
+    /* } // end of */
+    /* if (verify == 1) { */
+    /*     if (rank == 0) */ 
+    /*         printf("SUCCEED\n"); */
+    /* } */
 
 done:
+    fflush(stdout);
     /* for (i = 0; i < NUM_VAR; i++) { */
         /* if(PDCobj_close(obj_ids[i]) < 0) */
         /*     printf("Fail to close %s\n", obj_names[i]); */
@@ -282,11 +272,6 @@ done:
         /*     printf("Fail to close region %s\n", obj_names[i]); */
     /* } */
     
-    if(PDCprop_close(obj_prop_float) < 0)
-        printf("Fail to close float obj property \n");
-
-    if(PDCprop_close(obj_prop_int) < 0)
-        printf("Fail to close int obj property \n");
 
     if(PDCcont_close(cont_id) < 0)
         printf("Fail to close container\n");
@@ -296,6 +281,7 @@ done:
 
     if(PDC_close(pdc_id) < 0)
        printf("Fail to close PDC\n");
+exit:
 
 #ifdef ENABLE_MPI
      MPI_Finalize();

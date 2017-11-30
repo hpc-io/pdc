@@ -934,6 +934,7 @@ perr_t PDC_Client_init()
 
 
 #ifdef ENABLE_MPI
+    // TODO: split based on hostname, use code from TAPIOCA
     // Split the MPI_COMM_WORLD communicator
     same_node_color = pdc_client_mpi_rank_g / pdc_nclient_per_server_g;
     MPI_Comm_split(MPI_COMM_WORLD, same_node_color, pdc_client_mpi_rank_g, &PDC_SAME_NODE_COMM_g);
@@ -3910,7 +3911,7 @@ perr_t PDC_Client_write(pdc_metadata_t *meta, struct PDC_region_info *region, vo
         printf("==PDC_CLIENT: PDC_Client_write - PDC_Client_iwrite error\n");
         goto done;
     }
-    ret_value = PDC_Client_wait(&request, 120000, 500);
+    ret_value = PDC_Client_wait(&request, 60000, 500);
     if (ret_value != SUCCEED) {
         printf("==PDC_CLIENT: PDC_Client_write - PDC_Client_wait error\n");
         goto done;
