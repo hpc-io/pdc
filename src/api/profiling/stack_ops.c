@@ -177,13 +177,12 @@ void initialize_profile(void **hashtab, size_t size)
   }
 }
 
-int show_profile_info( void ** ht_live_entry, void *extraInfo)
+int show_profile_info( void ** ht_live_entry)
 {
   static int count=0;
   char *LineBreak = "------------------------------------------------------------------------------";
   char *header = " item  calls Time/call [Sec,nSec]\tftn_name";
   const profileEntry_t *thisEntry = *(const profileEntry_t **) ht_live_entry;
-  int *itemId = (int *)extraInfo;
 
   if (thisEntry) {
     struct timespec totalTime;

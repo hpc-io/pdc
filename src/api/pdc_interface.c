@@ -30,6 +30,14 @@
 /* Combine a Type number and an atom index into an atom */
 #define PDCID_MAKE(g,i)   ((((pdcid_t)(g) & TYPE_MASK) << ID_BITS) | ((pdcid_t)(i) & ID_MASK))
 
+/* Variable to keep track of the number of types allocated.  Its value is the
+ * next type ID to be handed out, so it is always one greater than the number
+ * of types.
+ * Starts at 1 instead of 0 because it makes trace output look nicer.  If more
+ * types (or IDs within a type) are needed, adjust TYPE_BITS in pdc_id_pkg.h
+ * and/or increase size of pdcid_t */
+static PDC_type_t PDC_next_type = (PDC_type_t)PDC_NTYPES;
+
 struct PDC_id_info *PDC_find_id(pdcid_t idid)
 {
     PDC_type_t      type;               /*ID's type         */
@@ -105,7 +113,7 @@ done:
 }*/ /* end PDCid_register() */
 
 
-pdcid_t PDC_id_register(PDC_type_t type, const void *object)
+pdcid_t PDC_id_register(PDC_type_t type, void *object)
 {
     struct PDC_id_type   *type_ptr;           /* ptr to the type               */
     struct PDC_id_info   *id_ptr;             /* ptr to the new ID information */
@@ -215,7 +223,7 @@ done:
     FUNC_LEAVE(ret_value);
 } /* end of PDC__find_byname() */
 
-int pdc_inc_ref(pdcid_t id)
+int PDC_inc_ref(pdcid_t id)
 {
     int ret_value = 0;               /* Return value */
     struct PDC_id_info *id_ptr;      /* Pointer to the ID */

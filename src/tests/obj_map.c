@@ -27,16 +27,13 @@
 #include <string.h>
 #include <unistd.h>
 #include <getopt.h>
-#include <time.h>
 #include <sys/time.h>
-
-/* #define ENABLE_MPI 1 */
+#include <inttypes.h>
+#include "pdc.h"
 
 #ifdef ENABLE_MPI
   #include "mpi.h"
 #endif
-
-#include "pdc.h"
 
 static char *rand_string(char *str, size_t size)
 {
@@ -87,7 +84,6 @@ int main(int argc, char **argv)
 
     // create a pdc
     pdc_id = PDC_init("pdc");
-    /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
@@ -107,14 +103,10 @@ int main(int argc, char **argv)
     if (env_str != NULL) {
         use_name = atoi(env_str);
     }
-
-    if (rank == 0) {
-        printf("Using %s\n", name_mode[use_name+1]);
-    }
+    printf("Using %s\n", name_mode[use_name+1]);
 
     srand(rank+1);
-
-	sprintf(srank, "%d", rank);
+    sprintf(srank, "%d", rank);
 	sprintf(obj_name1, "%s%s", rand_string(tmp_str, 16), srank);
 	sprintf(obj_name2, "%s%s", rand_string(tmp_str, 16), srank);
 	sprintf(obj_name3, "%s%s", rand_string(tmp_str, 16), srank);
@@ -128,19 +120,19 @@ int main(int argc, char **argv)
     PDCprop_set_obj_type(obj_prop3, PDC_INT);
 
     PDCprop_set_obj_buf(obj_prop1, &myArray1[0][0]  );
-    PDCprop_set_obj_time_step(obj_prop1, rank       );
+    PDCprop_set_obj_time_step(obj_prop1, 0       );
     PDCprop_set_obj_user_id( obj_prop1, getuid()    );
     PDCprop_set_obj_app_name(obj_prop1, "test_app"  );
     PDCprop_set_obj_tags(    obj_prop1, "tag0=1"    );
 
 	PDCprop_set_obj_buf(obj_prop2, &myArray2[0][0]  );
-    PDCprop_set_obj_time_step(obj_prop2, rank       );
+    PDCprop_set_obj_time_step(obj_prop2, 0       );
     PDCprop_set_obj_user_id( obj_prop2, getuid()    );
     PDCprop_set_obj_app_name(obj_prop2, "test_app"  );
     PDCprop_set_obj_tags(    obj_prop2, "tag0=1"    );
 
 	PDCprop_set_obj_buf(obj_prop3, &myArray3[0][0]  );
-    PDCprop_set_obj_time_step(obj_prop3, rank       );
+    PDCprop_set_obj_time_step(obj_prop3, 0       );
     PDCprop_set_obj_user_id( obj_prop3, getuid()    );
     PDCprop_set_obj_app_name(obj_prop3, "test_app"  );
     PDCprop_set_obj_tags(    obj_prop3, "tag0=1"    );
@@ -165,15 +157,8 @@ int main(int argc, char **argv)
 
     // create a region
     r1 = PDCregion_create(2, offset, rdims);
-//    printf("first region id: %lld\n", r1);
     r2 = PDCregion_create(2, offset, rdims);
-//    printf("second region id: %lld\n", r2);
     r3 = PDCregion_create(2, offset, rdims);
-//    printf("second region id: %lld\n", r3);
-
-    #ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-    #endif
 
     gettimeofday(&ht_total_start, 0);
 
@@ -181,42 +166,27 @@ int main(int argc, char **argv)
 	PDCobj_map(obj1, r1, obj3, r3);
 //	PDCobj_map(obj2, r2, obj3, r3);
 
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-
     gettimeofday(&ht_total_end, 0);
     ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
     ht_total_sec        = ht_total_elapsed / 1000000.0;
-    if (rank == 0) { 
-		printf("Total map overhead          : %.6f\n",  ht_total_sec);
-        fflush(stdout);
-    }
+    printf("Total map overhead          : %.6f\n",  ht_total_sec);
+    fflush(stdout);
 
- #ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
     gettimeofday(&ht_total_start, 0);
 
     ret = PDCreg_unmap(obj1, r1);
     if (ret != SUCCEED)
         printf("region unmap failed\n");
 
-    #ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-
     gettimeofday(&ht_total_end, 0);
     ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
     ht_total_sec        = ht_total_elapsed / 1000000.0;
 
-    if (rank == 0) {
-        printf("Total unmap overhead        : %.6f\n", ht_total_sec);
-    }
+    printf("Total unmap overhead        : %.6f\n", ht_total_sec);
 
     // close a container
     if(PDCcont_close(cont_id) < 0)
-        printf("fail to close container %lld\n", cont_id);
+        printf("fail to close container c1\n");
 
     // close a container property
     if(PDCprop_close(cont_prop) < 0)

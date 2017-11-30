@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
+#include <inttypes.h>
 
 #include "pdc.h"
 #include  "pdc_client_connect.h"
@@ -38,19 +39,19 @@
 int main(int argc, char **argv)
 {
     int rank = 0, size = 1, i;
-    pdcid_t pdc, cont_prop, cont, obj_prop, obj1;
+    pdcid_t pdc, cont_prop, cont, obj_prop, obj1 = 0;
     uint64_t d[3] = {10, 20, 30};
     char obj_name[64];
-    struct PDC_obj_prop *op;
+//    struct PDC_obj_prop *op = NULL;
     
-    struct PDC_region_info *region;
-    struct PDC_region_info region_info;
-    uint64_t start[3] = {10,10,10};
-    uint64_t count[3] = {10,10,10};
+    struct PDC_region_info *region = NULL;
+//   struct PDC_region_info region_info;
+//    uint64_t start[3] = {10,10,10};
+//    uint64_t count[3] = {10,10,10};
     
-    struct PDC_region_info region_info1;
-    uint64_t start1[3] = {11,11,11};
-    uint64_t count1[3] = {5,5,5};
+//    struct PDC_region_info region_info1;
+//    uint64_t start1[3] = {11,11,11};
+//    uint64_t count1[3] = {5,5,5};
     
     struct PDC_region_info region_info_no_overlap;
     uint64_t start_no_overlap[3] = {1,1,1};
@@ -72,7 +73,6 @@ int main(int argc, char **argv)
 
     // create a pdc
     pdc = PDC_init("pdc");
-    /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
@@ -92,7 +92,7 @@ int main(int argc, char **argv)
     // set object dimension
     PDCprop_set_obj_dims(obj_prop, 3, d);
     PDCprop_set_obj_time_step(obj_prop, 0);
-    op = PDCobj_prop_get_info(obj_prop);
+//    op = PDCobj_prop_get_info(obj_prop);
     /* printf("# of dim = %d\n", op->ndim); */
     /* int i; */
     /* for(i=0; i<op->ndim; i++) { */
@@ -110,6 +110,7 @@ int main(int argc, char **argv)
     }
  
     // Lock Test
+/*
     region_info.ndim = 3;
     region_info.offset = &start[0];
     region_info.size   = &count[0];
@@ -117,6 +118,7 @@ int main(int argc, char **argv)
     region_info1.ndim = 3;
     region_info1.offset = &start1[0];
     region_info1.size   = &count1[0];
+*/
 
     for (i = 0; i < 3; i++) {
         start_no_overlap[i] *= rank;
@@ -212,7 +214,7 @@ int main(int argc, char **argv)
     ret = PDCreg_obtain_lock(obj1, reg, WRITE, NOBLOCK);
     
     if (ret != SUCCEED)
-        printf("[%d] Failed to obtain lock for region (%lld,%lld,%lld) (%lld,%lld,%lld) ... error\n", rank,
+        printf("[%d] Failed to obtain lock for region (%" PRIu64 ",%" PRIu64 ",%" PRIu64 ") (%" PRIu64 ",%" PRIu64 ",%" PRIu64 ") ... error\n", rank,
                 region->offset[0], region->offset[1], region->offset[2], region->size[0], region->size[1], region->size[2]);
 
 #ifdef ENABLE_MPI
@@ -236,7 +238,7 @@ int main(int argc, char **argv)
 //    PDC_Client_release_region_lock(pdc, cont, meta_id, region, WRITE, &lock_status);
     ret = PDCreg_release_lock(obj1, reg, WRITE);
     if (ret != SUCCEED)
-        printf("[%d] Failed to release lock for region (%lld,%lld,%lld) (%lld,%lld,%lld) ... error\n", rank, 
+        printf("[%d] Failed to release lock for region (%" PRIu64 ",%" PRIu64 ",%" PRIu64 ") (%" PRIu64 ",%" PRIu64 ",%" PRIu64 ") ... error\n", rank, 
                 region->offset[0], region->offset[1], region->offset[2], region->size[0], region->size[1], region->size[2]);
 
 #ifdef ENABLE_MPI
@@ -254,7 +256,7 @@ int main(int argc, char **argv)
     // close object
     if (rank == 0) {
         if(PDCobj_close(obj1) < 0)
-            printf("fail to close object %lld\n", obj1);
+            printf("fail to close object o1\n");
     }
     
     // close object property
@@ -263,7 +265,7 @@ int main(int argc, char **argv)
        
     // close a container
     if(PDCcont_close(cont) < 0)
-        printf("fail to close container %lld\n", cont);
+        printf("fail to close container c1\n");
     
 
     // close a container property
@@ -274,7 +276,6 @@ int main(int argc, char **argv)
     if(PDC_close(pdc) < 0)
        printf("fail to close PDC\n");
 
-done:
 #ifdef ENABLE_MPI
      MPI_Finalize();
 #endif

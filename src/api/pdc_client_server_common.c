@@ -1301,7 +1301,7 @@ fflush(stdout);
         ret_value = PDC_Server_data_write_direct((bulk_args->in).obj_id, bulk_args->server_region, bulk_args->data_buf);
         if(ret_value != SUCCEED)
             printf("==PDC SERVER: PDC_Server_data_write_direct() failed\n");
-        HG_Respond(bulk_args->handle, NULL, NULL, &out);
+//        HG_Respond(bulk_args->handle, NULL, NULL, &out);
     }
     free(bulk_args->server_region->size);
     free(bulk_args->server_region->offset);
@@ -1315,7 +1315,7 @@ fflush(stdout);
     HG_Free_input(bulk_args->handle, &(bulk_args->in));
     
     if(all_reg_locked == 1) {
-//        HG_Respond(bulk_args->handle, NULL, NULL, &out);
+        HG_Respond(bulk_args->handle, NULL, NULL, &out);
         HG_Destroy(bulk_args->handle);
         HG_Bulk_free(local_bulk_handle);
         free(bulk_args->data_buf);

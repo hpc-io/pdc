@@ -6447,7 +6447,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region)
 
             // Assumes all regions are written to one file
             if (region_elt->storage_location == NULL) {
-                printf("==PDC_SERVER: PDC_Server_posix_one_file_io - storage_location is NULL!\n");
+                // printf("==PDC_SERVER: PDC_Server_posix_one_file_io - storage_location is NULL!\n");
                 ret_value = FAIL;
                 goto done;
             }
@@ -6658,7 +6658,7 @@ perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct P
     // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
     sprintf(io_region->storage_location, "%s/pdc_data/%" PRIu64 "/s%03d.bin", data_path, obj_id, pdc_server_rank_g);
     pdc_mkdir(io_region->storage_location);
-    printf("storage_location is %s\n", io_region->storage_location);
+    // printf("storage_location is %s\n", io_region->storage_location);
 #ifdef ENABLE_LUSTRE
     PDC_Server_set_lustre_stripe(io_region->storage_location, 248, 16);
 printf("lustre is enabled");

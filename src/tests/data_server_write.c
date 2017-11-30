@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
-#include <time.h>
+#include <sys/time.h>
+#include <inttypes.h>
+#include <unistd.h>
 
 /* #define ENABLE_MPI 1 */
 
@@ -18,7 +20,7 @@ void print_usage() {
     printf("Usage: srun -n ./data_server_read obj_name size_MB\n");
 }
 
-int main(int argc, const char *argv[])
+int main(int argc, char **argv)
 {
     int rank = 0, size = 1;
     uint64_t size_MB;
@@ -38,7 +40,7 @@ int main(int argc, const char *argv[])
     size_MB = atoi(argv[2]);
 
     if (rank == 0) {
-        printf("Writing a %llu MB object [%s] with %d clients.\n", size_MB, obj_name, size);
+        printf("Writing a %" PRIu64 " MB object [%s] with %d clients.\n", size_MB, obj_name, size);
     }
     size_MB *= 1048576;
 
@@ -137,10 +139,9 @@ int main(int argc, const char *argv[])
         fflush(stdout);
     }
 
-done:
     // close a container
     if(PDCcont_close(cont) < 0)
-        printf("fail to close container %lld\n", cont);
+        printf("fail to close container c1\n");
 
     // close a container property
     if(PDCprop_close(cont_prop) < 0)
