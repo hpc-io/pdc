@@ -644,8 +644,8 @@ hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info)
 
     FUNC_ENTER(NULL);
 
-    printf("==PDC_Server_get_client_addr!\n");
-    fflush(stdout);
+    /* printf("==PDC_Server_get_client_addr!\n"); */
+    /* fflush(stdout); */
 
     client_test_connect_args *in= (client_test_connect_args*) callback_info->arg;
 #ifdef ENABLE_MULTITHREAD 
