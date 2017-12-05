@@ -1360,6 +1360,7 @@ HG_TEST_RPC_CB(region_release, handle)
     /* Get info from handle */
     hg_info = HG_Get_info(handle);
 
+printf("release %lld\n", in.obj_id);
     if(in.access_type==READ || in.mapping==0) {
         // check region is dirty or not, if dirty transfer data
 //        if(in.lock_op == PDC_LOCK_OP_RELEASE) {
@@ -2211,6 +2212,8 @@ HG_TEST_RPC_CB(get_metadata_by_id, handle)
     pdc_metadata_t *target;
     
     FUNC_ENTER(NULL);
+
+printf("enter HG_TEST_RPC_CB(get_metadata_by_id, handle)\n");
 
     // Decode input
     HG_Get_input(handle, &in);
