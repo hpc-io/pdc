@@ -30,8 +30,10 @@ Type 'c' multiple times and choose suitable options. Recommended options are:
     MERCURY_USE_XDR                  OFF
     MERCURY_USE_OPA                  OFF
     NA_USE_BMI                       ON
+    NA_USE_OFI                       OFF (ON if you need libfabric)
     NA_USE_MPI                       OFF
     NA_USE_CCI                       OFF
+    NA_USE_SM                        OFF
     
     BMI_INCLUDE_DIR                  BMI_PATH/include
     BMI_LIBRARY                      BMI_PATH/libbmi.so  
@@ -116,10 +118,10 @@ Run PDC create object test
 
 * Run 4 server processes, each on one node in background:
 ```sh
-        srun -N 4 -n  4 -c 2 --cpu_bind=cores --gres=craynetwork:1 ./bin/pdc_server.exe &
+        srun -N 4 -n  4 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 ./bin/pdc_server.exe &
 ```
 
 * Run 64 client processes that concurrently create 1000 objects in total:
 ```sh
-        srun -N 4 -n 64 -c 2 --cpu_bind=cores --gres=craynetwork:1 ./bin/create_obj_scale -r 1000
+        srun -N 4 -n 64 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 ./bin/create_obj_scale -r 1000
 ```

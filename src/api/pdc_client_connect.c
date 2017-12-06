@@ -56,8 +56,15 @@ int is_client_debug_g = 0;
 int                    pdc_client_mpi_rank_g = 0;
 int                    pdc_client_mpi_size_g = 1;
 
+#ifdef ENABLE_MPI
+MPI_Comm               PDC_SAME_NODE_COMM_g;
+#endif
+int                    pdc_client_same_node_rank_g = 0;
+int                    pdc_client_same_node_size_g = 1;
+
 int                    pdc_server_num_g;
 int                    pdc_use_local_server_only_g = 0;
+int                    pdc_nclient_per_server_g = 0;
 
 char                   pdc_client_tmp_dir_g[ADDR_MAX];
 pdc_server_info_t     *pdc_server_info_g = NULL;
@@ -65,7 +72,8 @@ pdc_client_t          *pdc_client_direct_channels = NULL;
 pdc_client_t          *thisClient = NULL;
 static int            *debug_server_id_count = NULL;
 
-PDC_Request_t           *pdc_io_request_list_g = NULL;
+PDC_Request_t         *pdc_io_request_list_g = NULL;
+double                 memcpy_time_g = 0.0;
 
 static int             mercury_has_init_g = 0;
 static hg_class_t     *send_class_g = NULL;
@@ -87,6 +95,7 @@ static hg_id_t         data_server_read_register_id_g;
 static hg_id_t         data_server_read_check_register_id_g;
 static hg_id_t         data_server_write_check_register_id_g;
 static hg_id_t         data_server_write_register_id_g;
+static hg_id_t         aggregate_write_register_id_g;
 
 // bulk
 static hg_id_t         query_partial_register_id_g;
@@ -100,8 +109,6 @@ static hg_id_t         gen_obj_unmap_notification_register_id_g;
 // client direct
 static hg_id_t         client_direct_addr_register_id_g;
 
-/* hg_hash_table_t       *obj_names_cache_hash_table_g = NULL; */
-
 /* static inline uint32_t get_server_id_by_hash_all() */ 
 /* { */
 
@@ -114,7 +121,6 @@ static inline uint32_t get_server_id_by_hash_name(const char *name)
 
 static inline uint32_t get_server_id_by_obj_id(uint64_t obj_id) 
 {
-//    return (uint32_t)((obj_id / PDC_SERVER_ID_INTERVEL) % pdc_server_num_g);
     return (uint32_t)((obj_id / PDC_SERVER_ID_INTERVEL - 1) % pdc_server_num_g);
 }
 
@@ -158,7 +164,7 @@ static inline uint32_t get_server_id_by_obj_id(uint64_t obj_id)
 // Using global variable $mercury_work_todo_g
 perr_t PDC_Client_check_response(hg_context_t **hg_context)
 {
-    perr_t ret_value;
+    perr_t ret_value= SUCCEED;
     hg_return_t hg_ret;
     unsigned int actual_count;
     
@@ -174,9 +180,9 @@ perr_t PDC_Client_check_response(hg_context_t **hg_context)
         /* Do not try to make progress anymore if we're done */
         if (work_todo_g <= 0)  break;
 
-        /* hg_ret = HG_Progress(*hg_context, 1000); */
-        hg_ret = HG_Progress(*hg_context, HG_MAX_IDLE_TIME);
-    } while (hg_ret == HG_SUCCESS);
+        hg_ret = HG_Progress(*hg_context, 1000);
+        /* hg_ret = HG_Progress(*hg_context, HG_MAX_IDLE_TIME); */
+    } while (hg_ret == HG_SUCCESS || hg_ret == HG_TIMEOUT);
 
     ret_value = SUCCEED;
 
@@ -184,12 +190,13 @@ perr_t PDC_Client_check_response(hg_context_t **hg_context)
 }
 
 
-int PDC_Client_read_server_addr_from_file()
+perr_t PDC_Client_read_server_addr_from_file()
 {
     FUNC_ENTER(NULL);
 
-    int ret_value;
-    int i = 0;
+    perr_t ret_value = SUCCEED;
+    int max_tries = 9, sleeptime = 1;
+    int i = 0, is_server_ready = 0;
     char  *p;
     FILE *na_config = NULL;
     char config_fname[ADDR_MAX];
@@ -197,10 +204,28 @@ int PDC_Client_read_server_addr_from_file()
     if (pdc_client_mpi_rank_g == 0) {
         sprintf(config_fname, "%s/%s", pdc_client_tmp_dir_g, pdc_server_cfg_name_g);
         /* printf("config file:%s\n",config_fname); */
+
+        for (i = 0; i < max_tries; i++) {
+            if( access( config_fname, F_OK ) != -1 ) {
+                is_server_ready = 1;
+                break;
+            }
+            printf("==PDC_CLIENT[%d]: Config file from default location [%s] not available, "
+                   "waiting %d seconds\n", pdc_client_mpi_rank_g, config_fname, sleeptime);
+            fflush(stdout);
+            sleep(sleeptime);
+            sleeptime *= 2;
+        }
+        if (is_server_ready != 1) {
+            ret_value = FAIL;
+            goto done;
+        }
+
         na_config = fopen(config_fname, "r");
         if (!na_config) {
-            fprintf(stderr, "Could not open config file from default location: %s\n", pdc_server_cfg_name_g);
-            exit(0);
+            fprintf(stderr, "Could not open config file from default location: %s\n", config_fname);
+            ret_value = FAIL;
+            goto done;
         }
         char n_server_string[ADDR_MAX];
         // Get the first line as $pdc_server_num_g
@@ -214,33 +239,13 @@ int PDC_Client_read_server_addr_from_file()
      /* fflush(stdout); */
 #endif
 
+     if (pdc_server_num_g == 0) {
+         printf("==PDC_CLIENT[%d]: server number error %d\n", pdc_client_mpi_rank_g, pdc_server_num_g);
+         return -1;
+     }
 
     // Allocate $pdc_server_info_g
-    pdc_server_info_g = (pdc_server_info_t*)malloc(sizeof(pdc_server_info_t) * pdc_server_num_g);
-    // Fill in default values
-    for (i = 0; i < pdc_server_num_g; i++) {
-        pdc_server_info_g[i].client_send_region_map_handle_valid   = 0;
-        pdc_server_info_g[i].client_send_region_unmap_handle_valid = 0;
-        pdc_server_info_g[i].client_send_object_unmap_handle_valid = 0;
-        pdc_server_info_g[i].addr_valid                            = 0;
-        pdc_server_info_g[i].rpc_handle_valid                      = 0;
-        pdc_server_info_g[i].client_test_handle_valid              = 0;
-        pdc_server_info_g[i].close_server_handle_valid             = 0;
-        pdc_server_info_g[i].metadata_query_handle_valid           = 0;
-        pdc_server_info_g[i].query_partial_handle_valid            = 0;
-        pdc_server_info_g[i].metadata_delete_handle_valid          = 0;
-        pdc_server_info_g[i].metadata_delete_by_id_handle_valid    = 0;
-        pdc_server_info_g[i].metadata_update_handle_valid          = 0;
-        pdc_server_info_g[i].metadata_add_tag_handle_valid         = 0;
-        pdc_server_info_g[i].region_lock_handle_valid              = 0;
-        pdc_server_info_g[i].region_release_handle_valid           = 0;
-        pdc_server_info_g[i].client_direct_handle_valid            = 0;
-        pdc_server_info_g[i].data_server_read_handle_valid         = 0;
-        pdc_server_info_g[i].data_server_write_handle_valid        = 0;
-        pdc_server_info_g[i].data_server_read_check_handle_valid   = 0;
-        pdc_server_info_g[i].data_server_write_check_handle_valid  = 0;
-        pdc_server_info_g[i].data_server_write_handle_valid        = 0;
-    }
+    pdc_server_info_g = (pdc_server_info_t*)calloc(sizeof(pdc_server_info_t), pdc_server_num_g);
 
     i = 0;
     while (i < pdc_server_num_g) {
@@ -254,10 +259,10 @@ int PDC_Client_read_server_addr_from_file()
 
         #ifdef ENABLE_MPI
         MPI_Bcast(pdc_server_info_g[i].addr_string, ADDR_MAX, MPI_CHAR, 0, MPI_COMM_WORLD);
-        /* printf("[%d]: received server addr [%s]\n", pdc_client_mpi_rank_g, &pdc_server_info_g[i].addr_string); */
+        /* printf("[%d]: received server addr [%s]\n", pdc_client_mpi_rank_g, &pdc_server_info_g[i].addr_string);      */
         /* fflush(stdout); */
         #endif
-        
+
         i++;
     }
 
@@ -265,43 +270,10 @@ int PDC_Client_read_server_addr_from_file()
         fclose(na_config);
     }
 
-    ret_value = i;
-
-    FUNC_LEAVE(ret_value);
-}
-
-// Callback function for  HG_Forward()
-// Gets executed after a call to HG_Trigger and the RPC has completed
-static hg_return_t
-client_test_connect_rpc_cb(const struct hg_cb_info *callback_info)
-{
-    hg_return_t ret_value = HG_SUCCESS;
-    
-    FUNC_ENTER(NULL);
-
-    /* printf("Entered client_test_connect_rpc_cb()\n"); */
-    struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
-    hg_handle_t handle = callback_info->info.forward.handle;
-
-    /* Get output from server*/
-    client_test_connect_out_t output;
-    ret_value = HG_Get_output(handle, &output);
-    if (ret_value != HG_SUCCESS) {
-        printf("PDC_CLIENT[%d]: client_test_connect_rpc_cb error with HG_Get_output\n", pdc_client_mpi_rank_g);
-        client_lookup_args->ret = -1;
-        goto done;
-    }
-
-    if (is_client_debug_g == 1) {
-        printf("==PDC_CLIENT[%d]: client_test_connect_rpc_cb return from server %d\n", 
-                pdc_client_mpi_rank_g, output.ret);
-    }
-    client_lookup_args->ret = output.ret;
-
+    ret_value = SUCCEED;
 done:
     fflush(stdout);
-    work_todo_g = 0;
-    HG_Free_output(handle, &output);
+
     FUNC_LEAVE(ret_value);
 }
 
@@ -401,10 +373,43 @@ client_send_region_map_rpc_cb(const struct hg_cb_info *callback_info)
     region_map_args->ret = output.ret;
 
 done:
-    work_todo_g--;
+    work_todo_g = 0;
     HG_Free_output(handle, &output);
     FUNC_LEAVE(ret_value);
 }
+
+// Callback function for  HG_Forward()
+// Gets executed after a call to HG_Trigger and the RPC has completed
+/* static hg_return_t */
+/* client_test_connect_rpc_cb(const struct hg_cb_info *callback_info) */
+/* { */
+/*     hg_return_t ret_value = HG_SUCCESS; */
+    
+/*     FUNC_ENTER(NULL); */
+
+/*     struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg; */
+/*     hg_handle_t handle = callback_info->info.forward.handle; */
+
+/*     client_test_connect_out_t output; */
+/*     ret_value = HG_Get_output(handle, &output); */
+/*     if (ret_value != HG_SUCCESS) { */
+/*         printf("PDC_CLIENT[%d]: %s - error with HG_Get_output\n", pdc_client_mpi_rank_g, __func__); */
+/*         client_lookup_args->ret = -1; */
+/*         goto done; */
+/*     } */
+
+/*     if (is_client_debug_g == 1) { */
+/*         printf("==PDC_CLIENT[%d]: %s - return from server %d\n", pdc_client_mpi_rank_g, __func__, output.ret); */
+/*         fflush(stdout); */
+/*     } */
+/*     client_lookup_args->ret = output.ret; */
+
+/* done: */
+/*     fflush(stdout); */
+/*     work_todo_g = 0; */
+/*     HG_Free_output(handle, &output); */
+/*     FUNC_LEAVE(ret_value); */
+/* } // End of client_test_connect_rpc_cb */ 
 
 // Callback function for HG_Addr_lookup()
 // Start RPC connection
@@ -415,44 +420,93 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
     uint32_t server_id;
     struct client_lookup_args *client_lookup_args;
     client_test_connect_in_t in;
+    /* hg_handle_t client_test_handle; */
     
     FUNC_ENTER(NULL);
 
     client_lookup_args = (struct client_lookup_args *) callback_info->arg;
     server_id = client_lookup_args->server_id;
     /* if (is_client_debug_g == 1) { */
-    /*     printf("client_test_connect_lookup_cb(): server ID=%d\n", server_id); */
+    /*     printf("%s - server ID=%d\n", __func__, server_id); */
     /*     fflush(stdout); */
     /* } */
     pdc_server_info_g[server_id].addr = callback_info->info.lookup.addr;
     pdc_server_info_g[server_id].addr_valid = 1;
 
-    // Create HG handle if needed
-    /* if (pdc_server_info_g[server_id].client_test_handle_valid!= 1) { */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, client_test_connect_register_id_g, 
-                  &pdc_server_info_g[server_id].client_test_handle);
-        /* pdc_server_info_g[server_id].client_test_handle_valid= 1; */
-    /* } */
+    /* HG_Create(send_context_g, pdc_server_info_g[server_id].addr, client_test_connect_register_id_g, */ 
+    /*           &client_test_handle); */
 
     // Fill input structure
-    in.client_id   = pdc_client_mpi_rank_g;
-    in.nclient     = pdc_client_mpi_size_g;
-    in.client_addr = client_lookup_args->client_addr;
+    /* in.client_id   = pdc_client_mpi_rank_g; */
+    /* in.nclient     = pdc_client_mpi_size_g; */
+    /* in.client_addr = client_lookup_args->client_addr; */
 
-    /* printf("Sending input to target\n"); */
-    ret_value = HG_Forward(pdc_server_info_g[server_id].client_test_handle, 
-                           client_test_connect_rpc_cb, client_lookup_args, &in);
-    if (ret_value != HG_SUCCESS) {
-        fprintf(stderr, "client_test_connect_lookup_cb(): Could not start HG_Forward()\n");
-        goto done;
-    }
+    /* ret_value = HG_Forward(client_test_handle, client_test_connect_rpc_cb, client_lookup_args, &in); */
+    /* if (ret_value != HG_SUCCESS) { */
+    /*     fprintf(stderr, "%s - Could not start HG_Forward\n", __func__); */
+    /*     goto done; */
+    /* } */
+
+    /* /1* printf("==PDC_CLIENT[%d]: forwarded lookup rpc to server %d\n", pdc_client_mpi_rank_g, server_id); *1/ */
+    /* /1* fflush(stdout); *1/ */
 
     /* work_todo_g = 1; */
     /* PDC_Client_check_response(&send_context_g); */
 
-
+    work_todo_g = 0;
 done:
-    HG_Destroy(pdc_server_info_g[server_id].client_test_handle);
+    /* HG_Destroy(client_test_handle); */
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_Client_lookup_server(int server_id)
+{
+    perr_t ret_value = SUCCEED;
+    hg_return_t hg_ret;
+    struct client_lookup_args lookup_args;
+    char self_addr[ADDR_MAX];
+    char *target_addr_string;
+
+    FUNC_ENTER(NULL);
+
+    if (server_id <0 || server_id > pdc_server_num_g) {
+        printf("==PDC_CLIENT[%d]: ERROR with server id input %d\n", pdc_client_mpi_rank_g, server_id); 
+        ret_value = FAIL;
+        goto done;
+    }
+
+    ret_value = PDC_get_self_addr(send_class_g, self_addr);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_CLIENT[%d]: ERROR geting self addr\n", pdc_client_mpi_rank_g); 
+        goto done;
+    }
+
+    lookup_args.client_id = pdc_client_mpi_rank_g;
+    lookup_args.server_id = server_id;
+    lookup_args.client_addr = self_addr;
+    target_addr_string = pdc_server_info_g[lookup_args.server_id].addr_string;
+
+    if (is_client_debug_g == 1) {
+        printf("==PDC_CLIENT[%d]: - Testing connection to server %d [%s]\n", 
+                pdc_client_mpi_rank_g, lookup_args.server_id, target_addr_string);
+        fflush(stdout);
+    }
+
+    hg_ret = HG_Addr_lookup(send_context_g, client_test_connect_lookup_cb, &lookup_args, 
+                            target_addr_string, HG_OP_ID_IGNORE);
+    if (hg_ret != HG_SUCCESS ) {
+        printf("==PDC_CLIENT: Connection to server FAILED!\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    // Wait for response from server
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+    /* printf("==PDC_CLIENT[%d]: - connected to server %d\n", pdc_client_mpi_rank_g, lookup_args.server_id); */
+    /* fflush(stdout); */
+done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -589,14 +643,17 @@ client_region_release_rpc_cb(const struct hg_cb_info *callback_info)
 
     /* Get output from server*/
     ret_value = HG_Get_output(handle, &output);
+    if (ret_value != HG_SUCCESS) {
+        printf("==PDC_CLIENT: client_region_release_rpc_cb - HG_Get_output error!\n");
+        goto done;
+    }
     /* printf("Return value=%" PRIu64 "\n", output.ret); */
 
     client_lookup_args->ret = output.ret;
 
-    work_todo_g--;
-
 done:
-    HG_Destroy(handle);
+    work_todo_g--;
+    HG_Free_output(handle, &output);
     FUNC_LEAVE(ret_value);
 }
 
@@ -606,7 +663,7 @@ static hg_return_t
 hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
 {
     hg_return_t ret = HG_SUCCESS;
-    struct hg_test_bulk_args *bulk_args;
+    struct bulk_args_t *bulk_args;
     hg_bulk_t local_bulk_handle;
     /* bulk_write_out_t out_struct; */
     uint32_t i;
@@ -618,7 +675,7 @@ hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     
     FUNC_ENTER(NULL);
     
-    bulk_args = (struct hg_test_bulk_args *)hg_cb_info->arg;
+    bulk_args = (struct bulk_args_t *)hg_cb_info->arg;
     local_bulk_handle = hg_cb_info->info.bulk.local_handle;
 
     if (hg_cb_info->ret == HG_CANCELED) {
@@ -698,7 +755,6 @@ int PDC_Client_check_bulk(hg_context_t *hg_context)
 
         /* Do not try to make progress anymore if we're done */
         if (bulk_todo_g <= 0)  break;
-        /* if (hg_atomic_cas32(&close_server_g, 1, 1)) break; */
         hg_ret = HG_Progress(hg_context, HG_MAX_IDLE_TIME);
 
     } while (hg_ret == HG_SUCCESS);
@@ -711,18 +767,6 @@ int PDC_Client_check_bulk(hg_context_t *hg_context)
     FUNC_LEAVE(ret_value);
 }
 
-static
-perr_t get_self_addr(hg_class_t* hg_class, hg_addr_t *self_addr, char* self_addr_string)
-{
-    hg_size_t self_addr_string_size = PATH_MAX;
- 
-    // Get self addr to tell client about 
-    HG_Addr_self(hg_class, self_addr);
-    HG_Addr_to_string(hg_class, self_addr_string, &self_addr_string_size, *self_addr);
-    return SUCCEED;
-}
-
-
 // Init Mercury class and context
 // Register gen_obj_id rpc
 perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int port)
@@ -730,6 +774,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     perr_t ret_value = SUCCEED;
     char na_info_string[ADDR_MAX];
     char hostname[1024];
+    int local_server_id;
     /* Set the default mercury transport 
      * but enable overriding that to any of:
      *   "ofi+gni"
@@ -739,10 +784,6 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     char *default_hg_transport = "bmi+tcp";
     char *hg_transport;
     int i;
-    hg_return_t hg_ret;
-    struct client_lookup_args lookup_args;
-    char *target_addr_string;
-    char self_addr[ADDR_MAX];
     
     FUNC_ENTER(NULL);
 
@@ -776,13 +817,11 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     /* Create HG context */
     *hg_context = HG_Context_create(*hg_class);
 
-    PDC_get_self_addr(*hg_class, self_addr);
 
     // Register RPC
     client_test_connect_register_id_g         = client_test_connect_register(*hg_class);
     gen_obj_register_id_g                     = gen_obj_id_register(*hg_class);
     close_server_register_id_g                = close_server_register(*hg_class);
-    /* send_obj_name_marker_register_id_g       = send_obj_name_marker_register(*hg_class); */
     metadata_query_register_id_g              = metadata_query_register(*hg_class);
     metadata_delete_register_id_g             = metadata_delete_register(*hg_class);
     metadata_delete_by_id_register_id_g       = metadata_delete_by_id_register(*hg_class);
@@ -805,49 +844,30 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
 
     server_lookup_client_register(*hg_class);
     notify_io_complete_register(*hg_class);
-    /* server_lookup_remote_server_register(*hg_class); */
     notify_region_update_register(*hg_class);
    
-    // Lookup and fill the server info
-    for (i = 0; i < pdc_server_num_g; i++) {
-        lookup_args.client_id = pdc_client_mpi_rank_g;
-        // Avoid making all clients connect to 1 server at the same time
-        lookup_args.server_id = (i + pdc_client_mpi_rank_g) % pdc_server_num_g;
-        lookup_args.client_addr = self_addr;
-        lookup_args.client_id   = pdc_client_mpi_rank_g;
-        target_addr_string = pdc_server_info_g[i].addr_string;
-        if (is_client_debug_g == 1) {
-            printf("==PDC_CLIENT[%d]: - Testing connection to server %d [%s]\n", 
-                    pdc_client_mpi_rank_g, lookup_args.server_id, target_addr_string);
-            fflush(stdout);
-        }
-        hg_ret = HG_Addr_lookup(send_context_g, client_test_connect_lookup_cb, &lookup_args, 
-                                target_addr_string, HG_OP_ID_IGNORE);
-        if (hg_ret != HG_SUCCESS ) {
-            printf("==PDC_CLIENT: Connection to server FAILED!\n");
+    // Client 0 looks up all servers, others only lookup their node local server
+    char *client_lookup_env = getenv("PDC_CLIENT_LOOKUP");
+    if (client_lookup_env != NULL && strcmp(client_lookup_env, "ALL") == 0) {
+        if (pdc_client_mpi_rank_g == 0) 
+            printf("==PDC_CLIENT[%d]: Client lookup server at start time disabled!\n", pdc_client_mpi_rank_g);
+    }
+    else {
+        // Each client connect to its node local server only at start time
+        local_server_id = pdc_client_mpi_rank_g/pdc_nclient_per_server_g;
+        if (PDC_Client_lookup_server(local_server_id) != SUCCEED) {
+            printf("==PDC_CLIENT[%d]: ERROR lookup server %d\n", pdc_client_mpi_rank_g, local_server_id);
             ret_value = FAIL;
             goto done;
         }
-        // Wait for response from server
-        work_todo_g = 1;
-        PDC_Client_check_response(&send_context_g);
     }
-
-    if (is_client_debug_g == 1) {
-        printf("==PDC_CLIENT[%d]: finished lookup all servers, now waiting for %d server to connect back\n",
-                pdc_client_mpi_rank_g, pdc_server_num_g);
-        fflush(stdout);
-    }
-
-    // Wait for server to connect back
-    work_todo_g = pdc_server_num_g;
-    PDC_Client_check_response(&send_context_g);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-    if (is_client_debug_g == 1) {
+    /* if (is_client_debug_g == 1) { */
+    if (is_client_debug_g == 1 && pdc_client_mpi_rank_g == 0) {
         printf("==PDC_CLIENT[%d]: Successfully established connection to %d PDC metadata server%s\n\n", 
                 pdc_client_mpi_rank_g, pdc_server_num_g, pdc_client_mpi_size_g == 1 ? "": "s");
         fflush(stdout);
@@ -863,49 +883,77 @@ perr_t PDC_Client_init()
     pdc_server_info_g = NULL;
     char *tmp_dir;
     uint32_t port;
-    
+    int same_node_color, is_mpi_init = 0;
+
     FUNC_ENTER(NULL);
-
-#ifdef ENABLE_MPI
-    MPI_Comm_rank(MPI_COMM_WORLD, &pdc_client_mpi_rank_g);
-    MPI_Comm_size(MPI_COMM_WORLD, &pdc_client_mpi_size_g);
-#endif
-
-    // Set up tmp dir
+    // Get up tmp dir env var
     tmp_dir = getenv("PDC_TMPDIR");
     if (tmp_dir == NULL)
         strcpy(pdc_client_tmp_dir_g, "./pdc_tmp");
     else
         strcpy(pdc_client_tmp_dir_g, tmp_dir);
 
-    if (pdc_client_mpi_rank_g == 0) {
-        printf("==PDC_CLIENT: using %s as tmp dir \n", pdc_client_tmp_dir_g);
-    }
-    
     // Get debug environment var
     char *is_debug_env = getenv("PDC_DEBUG");
     if (is_debug_env != NULL) {
         is_client_debug_g = atoi(is_debug_env);
-        if (pdc_client_mpi_rank_g == 0) 
-            printf("==PDC_CLIENT: PDC_DEBUG set to %d!\n", is_client_debug_g);
     }
+
+    pdc_client_mpi_rank_g       = 0;
+    pdc_client_mpi_size_g       = 1;
+
+    pdc_client_same_node_rank_g = 0;
+    pdc_client_same_node_size_g = 1;
+
+#ifdef ENABLE_MPI
+    MPI_Initialized(&is_mpi_init);
+    if (is_mpi_init != 1)
+        MPI_Init(NULL, NULL);
+    MPI_Comm_rank(MPI_COMM_WORLD, &pdc_client_mpi_rank_g);
+    MPI_Comm_size(MPI_COMM_WORLD, &pdc_client_mpi_size_g);
+#endif
+
+    if (pdc_client_mpi_rank_g == 0)
+        printf("==PDC_CLIENT: PDC_DEBUG set to %d!\n", is_client_debug_g);
+
 
     // get server address and fill in $pdc_server_info_g
-    PDC_Client_read_server_addr_from_file();
+    if (PDC_Client_read_server_addr_from_file() != SUCCEED) {
+        printf("==PDC_CLIENT[%d]: Error getting PDC Metadata servers info, exiting ...", pdc_server_num_g);
+        exit(0);
+    }
+    // Get the number of clients per server(node) through environment variable
+    tmp_dir = getenv("PDC_NCLIENT_PER_SERVER");
+    if (tmp_dir == NULL)
+        pdc_nclient_per_server_g = pdc_client_mpi_size_g / pdc_server_num_g;
+    else
+        pdc_nclient_per_server_g = atoi(tmp_dir);
+
+    if (pdc_nclient_per_server_g <= 0)
+        pdc_nclient_per_server_g = 1;
+
+
+#ifdef ENABLE_MPI
+    // TODO: split based on hostname, use code from TAPIOCA
+    // Split the MPI_COMM_WORLD communicator
+    same_node_color = pdc_client_mpi_rank_g / pdc_nclient_per_server_g;
+    MPI_Comm_split(MPI_COMM_WORLD, same_node_color, pdc_client_mpi_rank_g, &PDC_SAME_NODE_COMM_g);
+
+    MPI_Comm_rank(PDC_SAME_NODE_COMM_g, &pdc_client_same_node_rank_g );
+    MPI_Comm_size(PDC_SAME_NODE_COMM_g, &pdc_client_same_node_size_g );
+
+    /* printf("==PDC_CLIENT[%d]: color %d, key %d, node rank %d!\n", */
+    /*         pdc_client_mpi_rank_g, same_node_color, pdc_client_mpi_rank_g, pdc_client_same_node_rank_g); */
+
+#endif
 
     if (pdc_client_mpi_rank_g == 0) {
-        printf("==PDC_CLIENT: Found %d PDC Metadata servers, running with %d PDC clients\n", pdc_server_num_g ,pdc_client_mpi_size_g);
+        printf("==PDC_CLIENT: Found %d PDC Metadata servers, running with %d PDC clients\n",
+                pdc_server_num_g ,pdc_client_mpi_size_g);
     }
-    /* printf("pdc_rank:%d\n", pdc_client_mpi_rank_g); */
-    /* fflush(stdout); */
-
-    // Init client hash table to cache created object names
-    /* obj_names_cache_hash_table_g = hg_hash_table_new(PDC_Client_int_hash, PDC_Client_int_equal); */
-    /* hg_hash_table_register_free_functions(obj_names_cache_hash_table_g, PDC_Client_int_hash_key_free, PDC_Client_int_hash_value_free); */
-
 
     // Init debug info
-    if (pdc_server_num_g > 0) { 
+    if (pdc_server_num_g > 0) {
         debug_server_id_count = (int*)malloc(sizeof(int) * pdc_server_num_g);
         memset(debug_server_id_count, 0, sizeof(int) * pdc_server_num_g);
     }
@@ -925,19 +973,29 @@ perr_t PDC_Client_init()
     /*     } */
     /* } */
 
-    port = pdc_client_mpi_rank_g % 32 + 8000;
+    // Cori KNL has 68 cores per node, Haswell 32
+    port = pdc_client_mpi_rank_g % PDC_MAX_CORE_PER_NODE + 8000;
     if (mercury_has_init_g == 0) {
         // Init Mercury network connection
-        PDC_Client_mercury_init(&send_class_g, &send_context_g, port);
-        if (send_class_g == NULL || send_context_g == NULL) {
+        ret_value = PDC_Client_mercury_init(&send_class_g, &send_context_g, port);
+        if (ret_value != SUCCEED || send_class_g == NULL || send_context_g == NULL) {
             printf("Error with Mercury Init, exiting...\n");
-            exit(0);
+            ret_value = FAIL;
+            goto done;
         }
         mercury_has_init_g = 1;
     }
 
-    srand(time(NULL)); 
+    /* if (pdc_client_mpi_size_g / pdc_server_num_g > pdc_nclient_per_server_g) */
+    /*     pdc_nclient_per_server_g = pdc_client_mpi_size_g / pdc_server_num_g; */
+    if (pdc_client_mpi_rank_g == 0) {
+        printf("==PDC_CLIENT[%d]: using [%s] as tmp dir, %d clients per server\n",
+                pdc_client_mpi_rank_g, pdc_client_tmp_dir_g, pdc_nclient_per_server_g);
+    }
 
+    srand(time(NULL));
+
+done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -946,63 +1004,6 @@ perr_t PDC_Client_destroy_all_handles(pdc_server_info_t *server_info)
     perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
-
-    if (server_info->addr_valid == 1) 
-        HG_Addr_free(send_class_g, server_info->addr);
-/*     if (server_info->rpc_handle_valid == 1) */
-/*         HG_Destroy(server_info->rpc_handle); */
-
-/*     /1* if (server_info->client_test_handle_valid == 1) *1/ */
-/*     /1*     HG_Destroy(server_info->client_test_handle); *1/ */
-
-/*     if (server_info->close_server_handle_valid == 1) */
-/*         HG_Destroy(server_info->close_server_handle); */
-    
-/*     if (server_info->metadata_query_handle_valid == 1) */
-/*         HG_Destroy(server_info->metadata_query_handle); */
-
-/*     if (server_info->metadata_delete_handle_valid == 1) */
-/*         HG_Destroy(server_info->metadata_delete_handle); */
-
-/*     if (server_info->metadata_delete_by_id_handle_valid == 1) */
-/*         HG_Destroy(server_info->metadata_delete_by_id_handle); */
-
-/*     if (server_info->metadata_add_tag_handle_valid == 1) */
-/*         HG_Destroy(server_info->metadata_add_tag_handle); */
-
-/*     if (server_info->metadata_update_handle_valid == 1) */
-/*         HG_Destroy(server_info->metadata_update_handle); */
-
-/*    if (server_info->client_send_region_map_handle_valid == 1) */
-/*        HG_Destroy(server_info->client_send_region_map_handle); */
-
-/*    if (server_info->client_send_region_unmap_handle_valid == 1) */
-/*        HG_Destroy(server_info->client_send_region_unmap_handle); */
-    
-/*    if (server_info->client_send_object_unmap_handle_valid == 1) */
-/*        HG_Destroy(server_info->client_send_object_unmap_handle); */
-
-/*    if (server_info->region_lock_handle_valid == 1) */
-/*        HG_Destroy(server_info->region_lock_handle); */
-
-/*    if(server_info->region_release_handle_valid == 1) */
-/*        HG_Destroy(server_info->region_release_handle); */
-
-/*     if (server_info->query_partial_handle_valid == 1) */
-/*         HG_Destroy(server_info->query_partial_handle); */
-
-/*     if (server_info->data_server_read_handle_valid == 1) */
-/*         HG_Destroy(server_info->data_server_read_handle); */
-
-/*     if (server_info->data_server_write_handle_valid == 1) */
-/*         HG_Destroy(server_info->data_server_write_handle); */
-
-/*     if (server_info->data_server_read_check_handle_valid == 1) */
-/*         HG_Destroy(server_info->data_server_read_check_handle); */
-
-/*     if (server_info->data_server_write_check_handle_valid == 1) */
-/*         HG_Destroy(server_info->data_server_write_check_handle); */
-
     FUNC_LEAVE(ret_value);
 }
 
@@ -1022,12 +1023,7 @@ perr_t PDC_Client_finalize()
     for (i = 0; i < pdc_server_num_g; i++) {
         if (pdc_server_info_g[i].addr_valid) {
             HG_Addr_free(send_class_g, pdc_server_info_g[i].addr);
-        }
-        ret_value = PDC_Client_destroy_all_handles(&pdc_server_info_g[i]);
-        if (ret_value != SUCCEED) {
-            printf("==PDC_CLIENT[%d]: PDC_Client_finalize - error with PDC_Client_destroy_all_handles\n", 
-                    pdc_client_mpi_rank_g);
-            goto done;
+            pdc_server_info_g[i].addr_valid = 0;
         }
     }
 
@@ -1039,7 +1035,7 @@ perr_t PDC_Client_finalize()
     }
     hg_ret = HG_Finalize(send_class_g);
     if (hg_ret != HG_SUCCESS) {
-        printf("==PDC_CLIENT[%d]: PDC_Client_finalize - error with HG_Context_destroy\n", pdc_client_mpi_rank_g);
+        printf("==PDC_CLIENT[%d]: PDC_Client_finalize - error with HG_Finalize\n", pdc_client_mpi_rank_g);
         ret_value = FAIL;
         goto done;
     }
@@ -1076,12 +1072,19 @@ perr_t PDC_Client_finalize()
     if (debug_server_id_count != NULL) 
         free(debug_server_id_count);
 
+
+    #ifdef ENABLE_TIMING
+    if (pdc_client_mpi_rank_g == 0) 
+        printf("==PDC_CLIENT[%d]: T_memcpy: %.2f\n", pdc_client_mpi_rank_g, memcpy_time_g);
+    #endif
+
+
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 done:
     if (is_client_debug_g == 1 && pdc_client_mpi_rank_g == 0) {
-        printf("PDC_CLIENT: finalized\n");
+        printf("==PDC_CLIENT: finalized\n");
     }
     FUNC_LEAVE(ret_value);
 }
@@ -1128,7 +1131,7 @@ static hg_return_t
 metadata_query_bulk_cb(const struct hg_cb_info *callback_info)
 {
     hg_return_t ret_value;
-    struct hg_test_bulk_args *client_lookup_args;
+    struct bulk_args_t *client_lookup_args;
     hg_handle_t handle;
     metadata_query_transfer_out_t output;
     uint32_t n_meta;
@@ -1136,13 +1139,13 @@ metadata_query_bulk_cb(const struct hg_cb_info *callback_info)
     hg_bulk_t local_bulk_handle = HG_BULK_NULL;
     hg_bulk_t origin_bulk_handle = HG_BULK_NULL;
     const struct hg_info *hg_info = NULL;
-    struct hg_test_bulk_args *bulk_args;
+    struct bulk_args_t *bulk_args;
     void *recv_meta;
     
     FUNC_ENTER(NULL);
 
     /* printf("Entered metadata_query_bulk_cb()\n"); */
-    client_lookup_args = (struct hg_test_bulk_args*) callback_info->arg;
+    client_lookup_args = (struct bulk_args_t*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
     // Get output from server
@@ -1167,7 +1170,7 @@ metadata_query_bulk_cb(const struct hg_cb_info *callback_info)
     origin_bulk_handle = output.bulk_handle;
     hg_info = HG_Get_info(handle);
 
-    bulk_args = (struct hg_test_bulk_args *) malloc(sizeof(struct hg_test_bulk_args));
+    bulk_args = (struct bulk_args_t *) malloc(sizeof(struct bulk_args_t));
 
     bulk_args->handle = handle;
     bulk_args->nbytes = HG_Bulk_get_size(origin_bulk_handle);
@@ -1214,14 +1217,16 @@ perr_t PDC_Client_list_all(int *n_res, pdc_metadata_t ***out)
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, const char* obj_name, int time_step_from, 
-                         int time_step_to, int ndim, const char* tags, int *n_res, pdc_metadata_t ***out)
+perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, const char* obj_name, 
+                         int time_step_from, int time_step_to, int ndim, const char* tags, int *n_res, 
+                         pdc_metadata_t ***out)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
     int n_recv = 0;
     uint32_t i, server_id = 0, my_server_start, my_server_end, my_server_count;
     size_t out_size = 0;
+    hg_handle_t query_partial_handle;
 
     // Fill input structure
     metadata_query_transfer_in_t in;
@@ -1272,24 +1277,30 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
     /* fflush(stdout); */
 
     for (server_id = my_server_start; server_id < my_server_end; server_id++) {
+        int n_retry = 0;
+        while (pdc_server_info_g[server_id].addr_valid != 1) {
+            if (n_retry > 0) 
+                break;
+            if( PDC_Client_lookup_server(server_id) != SUCCEED) {
+                printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+                ret_value = FAIL;
+                goto done;
+            }
+            n_retry++;
+        }
 
-        // We may have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb
-        // TODO: the handle becomes invalid after one pratial query 
-        /* if (pdc_server_info_g[server_id].query_partial_handle_valid != 1) { */
-            hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, query_partial_register_id_g, 
-                                &pdc_server_info_g[server_id].query_partial_handle);
-            /* pdc_server_info_g[server_id].query_partial_handle_valid= 1; */
-        /* } */
+        hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, query_partial_register_id_g, 
+                            &query_partial_handle);
 
         /* printf("Sending input to target\n"); */
-        struct hg_test_bulk_args lookup_args;
-        if (pdc_server_info_g[server_id].query_partial_handle == NULL) {
+        struct bulk_args_t lookup_args;
+        if (query_partial_handle == NULL) {
             printf("==CLIENT[%d]: Error with query_partial_handle\n", pdc_client_mpi_rank_g);
             ret_value = FAIL;
             goto done;
         }
 
-        hg_ret = HG_Forward(pdc_server_info_g[server_id].query_partial_handle, metadata_query_bulk_cb, &lookup_args, &in);
+        hg_ret = HG_Forward(query_partial_handle, metadata_query_bulk_cb, &lookup_args, &in);
         if (hg_ret!= HG_SUCCESS) {
             fprintf(stderr, "PDC_client_list_all(): Could not start HG_Forward()\n");
             ret_value = FAIL;
@@ -1327,6 +1338,8 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
             n_recv++;
         }
         /* printf("Received %u metadata from server %d\n", *lookup_args.n_meta, server_id); */
+
+        HG_Destroy(query_partial_handle);
     } // for server_id
 
     
@@ -1337,7 +1350,6 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
 
     // TODO: need to be careful when freeing the lookup_args, as it include the results returned to user
 done:
-    HG_Destroy(pdc_server_info_g[server_id].query_partial_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -1487,6 +1499,7 @@ perr_t PDC_Client_add_tag(pdc_metadata_t *old, const char *tag)
 
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
+    hg_handle_t  metadata_add_tag_handle;
 
     uint32_t hash_name_value = PDC_get_hash_by_name(old->obj_name);
     uint32_t server_id = (hash_name_value + old->time_step);
@@ -1497,12 +1510,20 @@ perr_t PDC_Client_add_tag(pdc_metadata_t *old, const char *tag)
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
-    // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
-    /* if (pdc_server_info_g[server_id].metadata_add_tag_handle_valid != 1) { */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_add_tag_register_id_g, 
-                    &pdc_server_info_g[server_id].metadata_add_tag_handle);
-        /* pdc_server_info_g[server_id].metadata_add_tag_handle_valid  = 1; */
-    /* } */
+    int n_retry = 0;
+    while (pdc_server_info_g[server_id].addr_valid != 1) {
+        if (n_retry > 0) 
+            break;
+        if( PDC_Client_lookup_server(server_id) != SUCCEED) {
+            printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+            ret_value = FAIL;
+            goto done;
+        }
+        n_retry++;
+    }
+
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_add_tag_register_id_g, 
+                &metadata_add_tag_handle);
 
     // Fill input structure
     metadata_add_tag_in_t in;
@@ -1521,7 +1542,7 @@ perr_t PDC_Client_add_tag(pdc_metadata_t *old, const char *tag)
 
     /* printf("Sending input to target\n"); */
     struct client_lookup_args lookup_args;
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].metadata_add_tag_handle, metadata_add_tag_rpc_cb, &lookup_args, &in);
+    hg_ret = HG_Forward(metadata_add_tag_handle, metadata_add_tag_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "PDC_Client_add_tag_metadata_with_name(): Could not start HG_Forward()\n");
         return FAIL;
@@ -1535,7 +1556,7 @@ perr_t PDC_Client_add_tag(pdc_metadata_t *old, const char *tag)
         printf("PDC_CLIENT: add tag NOT successful ... ret_value = %d\n", lookup_args.ret);
 
 done:
-    HG_Destroy(pdc_server_info_g[server_id].metadata_add_tag_handle);
+    HG_Destroy(metadata_add_tag_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -1580,6 +1601,7 @@ perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
     uint32_t server_id = 0;
     metadata_update_in_t in;
     struct client_lookup_args lookup_args;
+    hg_handle_t metadata_update_handle;
     
     FUNC_ENTER(NULL);
 
@@ -1598,12 +1620,20 @@ perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
-    // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
-    /* if (pdc_server_info_g[server_id].metadata_update_handle_valid != 1) { */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_update_register_id_g, 
-                    &pdc_server_info_g[server_id].metadata_update_handle);
-        /* pdc_server_info_g[server_id].metadata_update_handle_valid  = 1; */
-    /* } */
+    int n_retry = 0;
+    while (pdc_server_info_g[server_id].addr_valid != 1) {
+        if (n_retry > 0) 
+            break;
+        if( PDC_Client_lookup_server(server_id) != SUCCEED) {
+            printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+            ret_value = FAIL;
+            goto done;
+        }
+        n_retry++;
+    }
+
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_update_register_id_g, 
+                &metadata_update_handle);
 
     // Fill input structure
     in.obj_id     = old->obj_id;
@@ -1630,7 +1660,7 @@ perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
         in.new_metadata.tags            = new->tags;
 
     /* printf("Sending input to target\n"); */
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].metadata_update_handle, metadata_update_rpc_cb, &lookup_args, &in);
+    hg_ret = HG_Forward(metadata_update_handle, metadata_update_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "PDC_Client_update_metadata_with_name(): Could not start HG_Forward()\n");
         return FAIL;
@@ -1644,7 +1674,7 @@ perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
         printf("PDC_CLIENT: update NOT successful ... ret_value = %d\n", lookup_args.ret);
 
 done:
-    HG_Destroy(pdc_server_info_g[server_id].metadata_update_handle);
+    HG_Destroy(metadata_update_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -1656,6 +1686,7 @@ perr_t PDC_Client_delete_metadata_by_id(uint64_t obj_id)
     metadata_delete_by_id_in_t in;
     uint32_t server_id;
     struct client_lookup_args lookup_args;
+    hg_handle_t metadata_delete_by_id_handle;
     
     FUNC_ENTER(NULL);
     
@@ -1676,14 +1707,26 @@ perr_t PDC_Client_delete_metadata_by_id(uint64_t obj_id)
     else 
         debug_server_id_count[server_id]++;
 
-    // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
-    /* if (pdc_server_info_g[server_id].metadata_delete_by_id_handle_valid != 1) { */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_delete_by_id_register_id_g, 
-                  &pdc_server_info_g[server_id].metadata_delete_by_id_handle);
-        /* pdc_server_info_g[server_id].metadata_delete_by_id_handle_valid  = 1; */
-    /* } */
-    /* printf("Sending input to target\n"); */
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].metadata_delete_by_id_handle, metadata_delete_by_id_rpc_cb, &lookup_args, &in);
+    int n_retry = 0;
+    while (pdc_server_info_g[server_id].addr_valid != 1) {
+        if (n_retry > 0) 
+            break;
+        if( PDC_Client_lookup_server(server_id) != SUCCEED) {
+            printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+            ret_value = FAIL;
+            goto done;
+        }
+        n_retry++;
+    }
+
+    hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_delete_by_id_register_id_g, 
+                       &metadata_delete_by_id_handle);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "==PDC_Client_delete_by_id_metadata_with_name(): Could not create handle\n");
+        return FAIL;
+    }
+
+    hg_ret = HG_Forward(metadata_delete_by_id_handle, metadata_delete_by_id_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "PDC_Client_delete_by_id_metadata_with_name(): Could not start HG_Forward()\n");
         return FAIL;
@@ -1702,7 +1745,7 @@ perr_t PDC_Client_delete_metadata_by_id(uint64_t obj_id)
         printf("PDC_CLIENT: delete_by_id NOT successful ... ret_value = %d\n", lookup_args.ret);
 
 done:
-    HG_Destroy(pdc_server_info_g[server_id].metadata_delete_by_id_handle);
+    HG_Destroy(metadata_delete_by_id_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -1715,6 +1758,7 @@ perr_t PDC_Client_delete_metadata(char *delete_name, pdcid_t obj_delete_prop)
     int hash_name_value;
     uint32_t server_id;
     struct client_lookup_args lookup_args;
+    hg_handle_t metadata_delete_handle;
     
     FUNC_ENTER(NULL);
 
@@ -1743,14 +1787,21 @@ perr_t PDC_Client_delete_metadata(char *delete_name, pdcid_t obj_delete_prop)
     else 
         debug_server_id_count[server_id]++;
 
-    // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
-    /* if (pdc_server_info_g[server_id].metadata_delete_handle_valid != 1) { */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_delete_register_id_g, 
-                    &pdc_server_info_g[server_id].metadata_delete_handle);
-        /* pdc_server_info_g[server_id].metadata_delete_handle_valid  = 1; */
-    /* } */
-    /* printf("Sending input to target\n"); */
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].metadata_delete_handle, metadata_delete_rpc_cb, &lookup_args, &in);
+    int n_retry = 0;
+    while (pdc_server_info_g[server_id].addr_valid != 1) {
+        if (n_retry > 0) 
+            break;
+        if( PDC_Client_lookup_server(server_id) != SUCCEED) {
+            printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+            ret_value = FAIL;
+            goto done;
+        }
+        n_retry++;
+    }
+
+    hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_delete_register_id_g, 
+                    &metadata_delete_handle);
+    hg_ret = HG_Forward(metadata_delete_handle, metadata_delete_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "PDC_Client_delete_metadata_with_name(): Could not start HG_Forward()\n");
         return FAIL;
@@ -1769,7 +1820,7 @@ perr_t PDC_Client_delete_metadata(char *delete_name, pdcid_t obj_delete_prop)
         printf("PDC_CLIENT: delete NOT successful ... ret_value = %d\n", lookup_args.ret);
 
 done:
-    HG_Destroy(pdc_server_info_g[server_id].metadata_delete_handle);
+    HG_Destroy(metadata_delete_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -1784,8 +1835,11 @@ perr_t PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t 
     metadata_query_args_t **lookup_args;
     uint32_t server_id;
     uint32_t i, count = 0;
+    hg_handle_t *metadata_query_handle;
     
     FUNC_ENTER(NULL);
+
+    metadata_query_handle = (hg_handle_t*)malloc(sizeof(hg_handle_t)*pdc_server_num_g);
 
     // Fill input structure
     in.obj_name   = obj_name;
@@ -1804,14 +1858,22 @@ perr_t PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t 
         // Debug statistics for counting number of messages sent to each server.
         debug_server_id_count[server_id]++;
 
-        // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
-        /* if (pdc_server_info_g[server_id].metadata_query_handle_valid != 1) { */
-            HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_query_register_id_g, 
-                        &pdc_server_info_g[server_id].metadata_query_handle);
-            /* pdc_server_info_g[server_id].metadata_query_handle_valid  = 1; */
-        /* } */
+        int n_retry = 0;
+        while (pdc_server_info_g[server_id].addr_valid != 1) {
+            if (n_retry > 0) 
+                break;
+            if( PDC_Client_lookup_server(server_id) != SUCCEED) {
+                printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+                ret_value = FAIL;
+                goto done;
+            }
+            n_retry++;
+        }
 
-        hg_ret = HG_Forward(pdc_server_info_g[server_id].metadata_query_handle, metadata_query_rpc_cb, lookup_args[server_id], &in);
+        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_query_register_id_g, 
+                    &metadata_query_handle[server_id]);
+
+        hg_ret = HG_Forward(metadata_query_handle[server_id], metadata_query_rpc_cb, lookup_args[server_id], &in);
         if (hg_ret != HG_SUCCESS) {
             fprintf(stderr, "PDC_Client_query_metadata_name_only(): Could not start HG_Forward()\n");
             return FAIL;
@@ -1828,13 +1890,15 @@ perr_t PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t 
             *out = lookup_args[i]->data;
             count++;
         }
+
+        // TODO lookup_args[i] are not freed
+        HG_Destroy(metadata_query_handle[i]);
     }
     /* printf("==PDC_CLIENT: Found %d metadata with search\n", count); */
 
-    // TODO lookup_args[i] are not freed
-    //
-    HG_Destroy(pdc_server_info_g[server_id].metadata_query_handle);
 
+done:
+    free(metadata_query_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -1846,12 +1910,12 @@ perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_st
     uint32_t  server_id;
     metadata_query_in_t in;
     metadata_query_args_t lookup_args;
+    hg_handle_t metadata_query_handle;
     
     FUNC_ENTER(NULL);
 
     /* printf("==PDC_CLIENT[%d]: search request name [%s]\n", pdc_client_mpi_rank_g, obj_name); */
     /* fflush(stdout); */
-
 
     // Compute server id
     hash_name_value = PDC_get_hash_by_name(obj_name);
@@ -1865,16 +1929,25 @@ perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_st
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
-    // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
-    /* if (pdc_server_info_g[server_id].metadata_query_handle_valid != 1) { */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_query_register_id_g, 
-                  &pdc_server_info_g[server_id].metadata_query_handle);
-        /* pdc_server_info_g[server_id].metadata_query_handle_valid  = 1; */
-    /* } */
+    int n_retry = 0;
+    while (pdc_server_info_g[server_id].addr_valid != 1) {
+        if (n_retry > 0) 
+            break;
+        if( PDC_Client_lookup_server(server_id) != SUCCEED) {
+            printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+            ret_value = FAIL;
+            goto done;
+        }
+        n_retry++;
+    }
+
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_query_register_id_g, 
+              &metadata_query_handle);
 
     // Fill input structure
     in.obj_name   = obj_name;
     in.hash_value = PDC_get_hash_by_name(obj_name);
+    in.time_step  = time_step;
 
     /* printf("==PDC_CLIENT[%d]: search request obj_name [%s], hash value %u, server id %u\n", pdc_client_mpi_rank_g, in.obj_name, in.hash_value, server_id); */
     /* fflush(stdout); */
@@ -1882,12 +1955,15 @@ perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_st
     // client_lookup_args->data is a pdc_metadata_t
     lookup_args.data = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t));
     if (lookup_args.data == NULL) {
-        printf("==PDC_CLIENT: ERROR - PDC_Client_query_metadata_with_name() cannnot allocate space for client_lookup_args->data \n");
+        printf("==PDC_CLIENT: ERROR - PDC_Client_query_metadata_with_name() "
+                "cannnot allocate space for client_lookup_args->data \n");
     }
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].metadata_query_handle, metadata_query_rpc_cb, &lookup_args, &in);
+    hg_ret = HG_Forward(metadata_query_handle, metadata_query_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
-        fprintf(stderr, "PDC_Client_query_metadata_with_name(): Could not start HG_Forward()\n");
-        return FAIL;
+        printf("==PDC_CLIENT[%d] - PDC_Client_query_metadata_with_name(): Could not start HG_Forward()\n",
+                pdc_client_mpi_rank_g);
+        ret_value = FAIL;
+        goto done;
     }
 
     // Wait for response from server
@@ -1897,14 +1973,51 @@ perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_st
     /* printf("==PDC_CLIENT[%d]: received query result name [%s], hash value %u\n", pdc_client_mpi_rank_g, in.obj_name, in.hash_value); */
     *out = lookup_args.data;
 
-    HG_Destroy(pdc_server_info_g[server_id].metadata_query_handle);
+
+done:
+    HG_Destroy(metadata_query_handle);
+    FUNC_LEAVE(ret_value);
+}
+
+// Only let one process per node to do the actual query, then broadcast to all others
+perr_t PDC_Client_query_metadata_name_timestep_agg(const char *obj_name, int time_step, pdc_metadata_t **out)
+{
+    perr_t ret_value = SUCCEED;
+
+#ifdef ENABLE_MPI
+    if (pdc_client_same_node_rank_g == 0) {
+
+        /* printf("==PDC_CLIENT[%d] - agg query, local rank: %d\n", */ 
+        /*             pdc_client_mpi_rank_g, pdc_client_same_node_rank_g); */
+
+        ret_value = PDC_Client_query_metadata_name_timestep(obj_name, time_step, out);
+        if (ret_value != SUCCEED || NULL == *out) {
+            printf("==PDC_CLIENT[%d]: %s - ERROR with query [%s]\n", pdc_client_mpi_rank_g, __func__, obj_name);
+            fflush(stdout);
+            *out = (pdc_metadata_t*)calloc(1, sizeof(pdc_metadata_t));
+            ret_value = FAIL;
+        }
+        /* PDC_print_metadata(*out); */
+    }
+    else    
+        *out = (pdc_metadata_t*)calloc(1, sizeof(pdc_metadata_t));
+
+    MPI_Bcast(*out, sizeof(pdc_metadata_t), MPI_CHAR, 0, PDC_SAME_NODE_COMM_g);
+
+#else
+
+    ret_value = PDC_Client_query_metadata_name_timestep(obj_name, time_step, out);
+
+#endif
+
+done:
     FUNC_LEAVE(ret_value);
 }
 
 // Send a name to server and receive an obj id
 perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_prop, pdcid_t *meta_id)
 {
-    perr_t ret_value = FAIL;
+    perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
     uint32_t server_id = 0;
     PDC_lifetime obj_life;
@@ -1912,6 +2025,7 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_pro
     gen_obj_id_in_t in;
     uint32_t hash_name_value;
     struct client_lookup_args lookup_args;
+    hg_handle_t rpc_handle;
     
     FUNC_ENTER(NULL);
     
@@ -2009,21 +2123,28 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_pro
 
     /* printf("==PDC_CLIENT[%d]: obj_name=%s, user_id=%u, time_step=%u\n", pdc_client_mpi_rank_g, lookup_args.obj_name, lookup_args.user_id, lookup_args.time_step); */
 
+    int n_retry = 0;
+    while (pdc_server_info_g[server_id].addr_valid != 1) {
+        if (n_retry > 0) 
+            break;
+        if( PDC_Client_lookup_server(server_id) != SUCCEED) {
+            printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+            ret_value = FAIL;
+            goto done;
+        }
+        n_retry++;
+    }
+
     // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
-    /* if (pdc_server_info_g[server_id].rpc_handle_valid != 1) { */
-        /* printf("Addr: %s\n", pdc_server_info_g[server_id].addr); */
-        /* fflush(stdout); */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_obj_register_id_g, 
-                  &pdc_server_info_g[server_id].rpc_handle);
-        /* pdc_server_info_g[server_id].rpc_handle_valid = 1; */
-    /* } */
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_obj_register_id_g, &rpc_handle);
 
     /* printf("Sending input to target\n"); */
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].rpc_handle, client_rpc_cb, &lookup_args, &in);
+    hg_ret = HG_Forward(rpc_handle, client_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "PDC_Client_send_name_to_server(): Could not start HG_Forward()\n");
         return EXIT_FAILURE;
     }
+    /* printf("After sending input to target\n"); */
 
     // Wait for response from server
     work_todo_g = 1;
@@ -2043,8 +2164,8 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_pro
 
 
 done:
+    HG_Destroy(rpc_handle);
     fflush(stdout);
-    HG_Destroy(pdc_server_info_g[server_id].rpc_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -2056,6 +2177,7 @@ perr_t PDC_Client_close_all_server()
     uint32_t port, i;
     close_server_in_t in;
     struct client_lookup_args lookup_args;
+    hg_handle_t close_server_handle;
     
     FUNC_ENTER(NULL);
 
@@ -2073,35 +2195,43 @@ perr_t PDC_Client_close_all_server()
         }
         for (i = 0; i < (uint32_t)pdc_server_num_g; i++) {
             server_id = i;
-            printf("Closing server %d\n", server_id);
-            fflush(stdout);
+            /* printf("Closing server %d\n", server_id); */
+            /* fflush(stdout); */
 
-            // We have already filled in the pdc_server_info_g[server_id].addr in 
-            // previous client_test_connect_lookup_cb 
-            /* if (pdc_server_info_g[server_id].close_server_handle_valid != 1) { */
-                /* printf("Addr: %s\n", pdc_server_info_g[server_id].addr); */
-                /* fflush(stdout); */
-                HG_Create(send_context_g, pdc_server_info_g[server_id].addr, close_server_register_id_g, 
-                          &pdc_server_info_g[server_id].close_server_handle);
-                /* pdc_server_info_g[server_id].close_server_handle_valid= 1; */
-            /* } */
+            int n_retry = 0;
+            while (pdc_server_info_g[server_id].addr_valid != 1) {
+                if (n_retry > 0) 
+                    break;
+                if( PDC_Client_lookup_server(server_id) != SUCCEED) {
+                    printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+                    ret_value = FAIL;
+                    goto done;
+                }
+                n_retry++;
+            }
+
+            /* printf("Addr: %s\n", pdc_server_info_g[server_id].addr); */
+            /* fflush(stdout); */
+            HG_Create(send_context_g, pdc_server_info_g[server_id].addr, close_server_register_id_g, 
+                      &close_server_handle);
 
             // Fill input structure
             in.client_id = 0;
 
             /* printf("Sending input to target\n"); */
-            hg_ret = HG_Forward(pdc_server_info_g[server_id].close_server_handle, 
-                                   close_server_cb, &lookup_args, &in);
+            hg_ret = HG_Forward(close_server_handle, close_server_cb, &lookup_args, &in);
             if (hg_ret != HG_SUCCESS) {
                 fprintf(stderr, "PDC_Client_close_all_server(): Could not start HG_Forward()\n");
                 ret_value = FAIL;
                 goto done;
             }
+
+            // Wait for response from server
+            work_todo_g = 1;
+            PDC_Client_check_response(&send_context_g);
+            HG_Destroy(close_server_handle);
         }
 
-        // Wait for response from server
-        work_todo_g = pdc_server_num_g;
-        PDC_Client_check_response(&send_context_g);
 
         if (is_client_debug_g == 1) {
             printf("\n\n\n==PDC_CLIENT: sent finalize request to all servers\n");
@@ -2110,9 +2240,6 @@ perr_t PDC_Client_close_all_server()
     }
 
 done:
-    for (i = 0; i < (uint32_t)pdc_server_num_g; i++) 
-        HG_Destroy(pdc_server_info_g[i].close_server_handle);
-    
     FUNC_LEAVE(ret_value);
 }
 
@@ -2124,6 +2251,7 @@ perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id)
     /* hg_bulk_t bulk_handle; */
     uint32_t server_id;
     struct object_unmap_args unmap_args;
+    hg_handle_t client_send_object_unmap_handle;
     
     FUNC_ENTER(NULL);
     
@@ -2138,14 +2266,22 @@ perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id)
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
-    // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
-    /* if (pdc_server_info_g[server_id].client_send_object_unmap_handle_valid!= 1) { */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_obj_unmap_notification_register_id_g, 
-                  &pdc_server_info_g[server_id].client_send_object_unmap_handle);
-        /* pdc_server_info_g[server_id].client_send_object_unmap_handle_valid  = 1; */
-    /* } */
+    int n_retry = 0;
+    while (pdc_server_info_g[server_id].addr_valid != 1) {
+        if (n_retry > 0) 
+            break;
+        if( PDC_Client_lookup_server(server_id) != SUCCEED) {
+            printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+            ret_value = FAIL;
+            goto done;
+        }
+        n_retry++;
+    }
 
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].client_send_object_unmap_handle, client_send_object_unmap_rpc_cb, &unmap_args, &in);
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_obj_unmap_notification_register_id_g, 
+              &client_send_object_unmap_handle);
+
+    hg_ret = HG_Forward(client_send_object_unmap_handle, client_send_object_unmap_rpc_cb, &unmap_args, &in);
     if (hg_ret != HG_SUCCESS) {
         PGOTO_ERROR(FAIL, "PDC_Client_send_object_unmap(): Could not start HG_Forward()");
     }
@@ -2158,7 +2294,7 @@ perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id)
         PGOTO_ERROR(FAIL,"PDC_CLIENT: object unmapping failed...");
     
 done:
-    HG_Destroy(pdc_server_info_g[server_id].client_send_object_unmap_handle);
+    HG_Destroy(client_send_object_unmap_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -2171,6 +2307,7 @@ perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, 
     uint32_t server_id;
     size_t unit;
     struct region_unmap_args unmap_args;
+    hg_handle_t client_send_region_unmap_handle;
     
     FUNC_ENTER(NULL);
     
@@ -2196,14 +2333,22 @@ perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
-    // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
-    /* if (pdc_server_info_g[server_id].client_send_region_unmap_handle_valid!= 1) { */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_reg_unmap_notification_register_id_g, 
-                    &pdc_server_info_g[server_id].client_send_region_unmap_handle);
-        /* pdc_server_info_g[server_id].client_send_region_unmap_handle_valid  = 1; */
-    /* } */
+    int n_retry = 0;
+    while (pdc_server_info_g[server_id].addr_valid != 1) {
+        if (n_retry > 0) 
+            break;
+        if( PDC_Client_lookup_server(server_id) != SUCCEED) {
+            printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+            ret_value = FAIL;
+            goto done;
+        }
+        n_retry++;
+    }
 
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].client_send_region_unmap_handle, client_send_region_unmap_rpc_cb, &unmap_args, &in);
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_reg_unmap_notification_register_id_g, 
+                &client_send_region_unmap_handle);
+
+    hg_ret = HG_Forward(client_send_region_unmap_handle, client_send_region_unmap_rpc_cb, &unmap_args, &in);
     if (hg_ret != HG_SUCCESS) {
         PGOTO_ERROR(FAIL, "PDC_Client_send_region_unmap(): Could not start HG_Forward()");
     }
@@ -2212,11 +2357,11 @@ perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, 
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
 
-    if (unmap_args.ret != 1)
-        PGOTO_ERROR(FAIL,"PDC_CLIENT: region unmapping failed...");
+    /* if (unmap_args.ret != 1) */
+    /*     PGOTO_ERROR(FAIL,"PDC_CLIENT: region unmapping failed..."); */
     
 done:
-    HG_Destroy(pdc_server_info_g[server_id].client_send_region_unmap_handle);
+    HG_Destroy(client_send_region_unmap_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -2235,6 +2380,7 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
     struct  region_map_args map_args;
     hg_bulk_t local_bulk_handle = HG_BULK_NULL;
     hg_bulk_t remote_bulk_handle = HG_BULK_NULL;
+    hg_handle_t client_send_region_map_handle;
  
     FUNC_ENTER(NULL);
     
@@ -2352,12 +2498,20 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
     else
         PGOTO_ERROR(FAIL, "mapping for array of dimension greater than 4 is not supproted");
 
-    // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
-    /* if (pdc_server_info_g[server_id].client_send_region_map_handle_valid!= 1) { */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_reg_map_notification_register_id_g, 
-                  &pdc_server_info_g[server_id].client_send_region_map_handle);
-        /* pdc_server_info_g[server_id].client_send_region_map_handle_valid  = 1; */
-    /* } */
+    int n_retry = 0;
+    while (pdc_server_info_g[server_id].addr_valid != 1) {
+        if (n_retry > 0) 
+            break;
+        if( PDC_Client_lookup_server(server_id) != SUCCEED) {
+            printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+            ret_value = FAIL;
+            goto done;
+        }
+        n_retry++;
+    }
+
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_reg_map_notification_register_id_g, 
+              &client_send_region_map_handle);
     
     // Create bulk handle
     hg_ret = HG_Bulk_create(hg_class, local_count, data_ptrs, (hg_size_t *)data_size, HG_BULK_READWRITE, &local_bulk_handle);
@@ -2377,7 +2531,7 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
 //    free(data_size);
 
     /* printf("Sending input to target\n"); */
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].client_send_region_map_handle, client_send_region_map_rpc_cb, &map_args, &in);	
+    hg_ret = HG_Forward(client_send_region_map_handle, client_send_region_map_rpc_cb, &map_args, &in);	
     if (hg_ret != HG_SUCCESS) {
         PGOTO_ERROR(FAIL, "PDC_Client_send_region_map(): Could not start HG_Forward()");
     }
@@ -2397,7 +2551,7 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
 //    else
 //        printf("PDC_CLIENT: object mapping successful\n");
 done:
-    HG_Destroy(pdc_server_info_g[server_id].client_send_region_map_handle);
+    HG_Destroy(client_send_region_map_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -2409,7 +2563,9 @@ static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *re
     region_lock_in_t in;
     size_t  unit;
     struct client_lookup_args lookup_args;
-    
+    hg_handle_t region_lock_handle;
+    int n_retry = 0;
+ 
     FUNC_ENTER(NULL);
     
     // Compute server id
@@ -2421,8 +2577,8 @@ static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *re
     usleep(delay);
 
 
-//    printf("==PDC_CLIENT: lock going to server %u\n", server_id); 
-//    fflush(stdout); 
+    printf("==PDC_CLIENT[%d]: lock going to server %u\n", pdc_client_mpi_rank_g, server_id); 
+    fflush(stdout); 
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
@@ -2476,17 +2632,21 @@ static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *re
     /*     /1* in.region.stride_3 = 0; *1/ */
     /* } */
 
-    // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
-    /* if (pdc_server_info_g[server_id].region_lock_handle_valid != 1) { */
-        /* printf("Addr: %s\n", pdc_server_info_g[server_id].addr); */
-        /* fflush(stdout); */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, region_lock_register_id_g, 
-                    &pdc_server_info_g[server_id].region_lock_handle);
-        /* pdc_server_info_g[server_id].region_lock_handle_valid = 1; */
-    /* } */
-    /* printf("Sending input to target\n"); */
+    while (pdc_server_info_g[server_id].addr_valid != 1) {
+        if (n_retry > 0) 
+            break;
+        if( PDC_Client_lookup_server(server_id) != SUCCEED) {
+            printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+            ret_value = FAIL;
+            goto done;
+        }
+        n_retry++;
+    }
 
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].region_lock_handle, client_region_lock_rpc_cb, &lookup_args, &in);
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, region_lock_register_id_g, 
+                &region_lock_handle);
+
+    hg_ret = HG_Forward(region_lock_handle, client_region_lock_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "PDC_Client_send_name_to_server(): Could not start HG_Forward()\n");
         return EXIT_FAILURE;
@@ -2519,14 +2679,14 @@ static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *re
     }
 
 done:
-    HG_Destroy(pdc_server_info_g[server_id].region_lock_handle);
+    HG_Destroy(region_lock_handle);
     FUNC_LEAVE(ret_value);
 }
 
 /* , uint64_t *block */
 perr_t PDC_Client_obtain_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_lock_mode_t lock_mode, PDC_var_type_t data_type, pbool_t *obtained)
 {
-    perr_t ret_value = FAIL;
+    perr_t ret_value = SUCCEED;
     
     FUNC_ENTER(NULL);
 
@@ -2580,26 +2740,27 @@ done:
 
 static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_var_type_t data_type, pbool_t *status)
 {
-    perr_t ret_value;
+    perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
     uint32_t server_id;
     region_lock_in_t in;
     size_t unit;
     struct client_lookup_args lookup_args;
+    hg_handle_t region_release_handle;
 
     FUNC_ENTER(NULL);
 
     // Compute server id
     server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
 
-    // Delay test
-    srand(pdc_client_mpi_rank_g);
-    int delay = rand() % 500;
-    usleep(delay);
+    /* // Delay test */
+    /* srand(pdc_client_mpi_rank_g); */
+    /* int delay = rand() % 500; */
+    /* usleep(delay); */
 
 
-//    printf("==PDC_CLIENT: release going to server %u\n", server_id);
-//    fflush(stdout);
+    printf("==PDC_CLIENT[%d]: release going to server %u\n", pdc_client_mpi_rank_g, server_id);
+    fflush(stdout);
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
@@ -2653,16 +2814,22 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
         in.region.stride_3 = 0;
     }
 */
-    // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb 
-//    if (pdc_server_info_g[server_id].region_release_handle_valid != 1) {
-        /* printf("Addr: %s\n", pdc_server_info_g[server_id].addr); */
-        /* fflush(stdout); */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, region_release_register_id_g, &pdc_server_info_g[server_id].region_release_handle);
-//        pdc_server_info_g[server_id].region_release_handle_valid = 1;
-//    }
-    /* printf("Sending input to target\n"); */
+    int n_retry = 0;
+    while (pdc_server_info_g[server_id].addr_valid != 1) {
+        if (n_retry > 0) 
+            break;
+        if( PDC_Client_lookup_server(server_id) != SUCCEED) {
+            printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+            ret_value = FAIL;
+            goto done;
+        }
+        n_retry++;
+    }
 
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].region_release_handle, client_region_release_rpc_cb, &lookup_args, &in);
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, region_release_register_id_g, 
+              &region_release_handle);
+
+    hg_ret = HG_Forward(region_release_handle, client_region_release_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "PDC_Client_send_name_to_server(): Could not start HG_Forward()\n");
         return EXIT_FAILURE;
@@ -2684,13 +2851,13 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
     }
 
 done:
-    HG_Destroy(pdc_server_info_g[server_id].region_release_handle);
+    HG_Destroy(region_release_handle);
     FUNC_LEAVE(ret_value);
 }
 
 perr_t PDC_Client_release_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_var_type_t data_type, pbool_t *released)
 {
-    perr_t ret_value = FAIL;
+    perr_t ret_value = SUCCEED;
     
     FUNC_ENTER(NULL);
 
@@ -2710,7 +2877,7 @@ static hg_return_t
 data_server_read_check_rpc_cb(const struct hg_cb_info *callback_info)
 {
     hg_return_t ret_value = HG_SUCCESS;
-    
+
     FUNC_ENTER(NULL);
 
     /* printf("Entered data_server_read_check_rpc_cb()"); */
@@ -2721,15 +2888,18 @@ data_server_read_check_rpc_cb(const struct hg_cb_info *callback_info)
     data_server_read_check_out_t output;
     ret_value = HG_Get_output(handle, &output);
     if (ret_value !=  HG_SUCCESS) {
-        printf("==PDC_CLIENT[%d]: data_server_read_check_rpc_cb error with HG_Get_output\n", 
+        printf("==PDC_CLIENT[%d]: data_server_read_check_rpc_cb error with HG_Get_output\n",
                 pdc_client_mpi_rank_g);
         client_lookup_args->ret = -1;
         client_lookup_args->ret_string = " ";
         goto done;
     }
-    /* printf("==PDC_CLIENT: data_server_read_check ret=%d, addr=%s\n", output.ret, output.shm_addr); */
+    if (is_client_debug_g == 1) {
+        printf("==PDC_CLIENT: data_server_read_check ret=%d, addr=%s\n", output.ret, output.shm_addr);
+    }
     client_lookup_args->ret = output.ret;
-    client_lookup_args->ret_string = output.shm_addr;
+    client_lookup_args->ret_string = (char*)malloc(strlen(output.shm_addr)+1);
+    strcpy(client_lookup_args->ret_string, output.shm_addr);
 
 done:
     work_todo_g--;
@@ -2738,6 +2908,7 @@ done:
 }
 
 
+// This function is used with server push notification
 hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *callback_info)
 {
     hg_return_t ret_value = HG_SUCCESS;
@@ -2779,7 +2950,9 @@ hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *call
         data_size *= target_region->size[i];
     }
 
-    /* printf("PDC_CLIENT: PDC_Client_get_data_from_server_shm - shm_addr=[%s]\n", shm_addr); */
+    if (is_client_debug_g == 1) {
+        printf("==PDC_CLIENT: PDC_Client_get_data_from_server_shm - shm_addr=[%s]\n", shm_addr);
+    }
 
     /* open the shared memory segment as if it was a file */
     shm_fd = shm_open(shm_addr, O_RDONLY, 0666);
@@ -2793,32 +2966,24 @@ hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *call
     shm_base = mmap(0, data_size, PROT_READ, MAP_SHARED, shm_fd, 0);
     if (shm_base == MAP_FAILED) {
         printf("==PDC_CLIENT: Map failed: %s\n", strerror(errno));
-        // close and unlink?
         ret_value = FAIL;
         goto close;
     }
 
+    #ifdef ENABLE_TIMING
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
+    gettimeofday(&pdc_timer_start, 0);
+    #endif
+
     // Copy data
     /* printf("==PDC_SERVER: memcpy size = %" PRIu64 "\n", data_size); */
-    if (target_region->ndim == 1) {
-        memcpy(elt->buf, shm_base, data_size);
-    }
-    else if (target_region->ndim == 2) {
-        char **buf_2d = (char**)elt->buf;
-        for (i = 0; i < target_region->size[1]; i++) {
-            memcpy(buf_2d[i], shm_base + i*target_region->size[0], target_region->size[0]);
-        }
-    }
-    else if (target_region->ndim == 3) {
-        char ***buf_3d = (char***)elt->buf;
-        for (j = 0; j < target_region->size[2]; j++) {
-            for (i = 0; i < target_region->size[1]; i++) {
-                memcpy(buf_3d[j][i], shm_base + i*target_region->size[0] + 
-                                                j*target_region->size[0]*target_region->size[1], 
-                                     target_region->size[0]);
-            }
-        }
-    }
+    memcpy(elt->buf, shm_base, data_size);
+
+    #ifdef ENABLE_TIMING
+    gettimeofday(&pdc_timer_end, 0);
+    memcpy_time_g += PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+    #endif
 
     /* remove the mapped shared memory segment from the address space of the process */
     if (munmap(shm_base, data_size) == -1) {
@@ -2848,23 +3013,33 @@ done:
 }
 
 
-perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status, void* buf)
+// This is used with polling approach to get data from server read
+perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_metadata_t *meta, 
+                                         struct PDC_region_info *region, int *status, void* buf)
 {
-    perr_t ret_value = FAIL;
+    perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
     struct client_lookup_args lookup_args;
     data_server_read_check_in_t in;
     uint32_t i;
+    hg_handle_t data_server_read_check_handle;
 
     int shm_fd;        // file descriptor, from shm_open()
     char *shm_base;    // base address, from mmap()
     char *shm_addr;
 
-   
+
     FUNC_ENTER(NULL);
 
+    if (meta == NULL || region == NULL || status == NULL || buf == NULL) {
+        printf("==PDC_CLIENT[%d]: %s - NULL input\n", pdc_client_mpi_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
     if (server_id < 0 || server_id >= pdc_server_num_g) {
-        printf("PDC_CLIENT[%d]: PDC_Client_data_server_read_check - invalid server id %d/%d\n", pdc_client_mpi_rank_g, server_id, pdc_server_num_g);
+        printf("==PDC_CLIENT[%d]: %s- invalid server id %d/%d\n",
+                pdc_client_mpi_rank_g, __func__, server_id, pdc_server_num_g);
         ret_value = FAIL;
         goto done;
     }
@@ -2879,19 +3054,30 @@ perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_
         read_size *= region->size[i];
     }
 
-    /* printf("PDC_CLIENT: checking io status with data server %d\n", server_id); */
+    if (is_client_debug_g) {
+        printf("==PDC_CLIENT[%d]: checking io status (%" PRIu64 ", %" PRIu64 ") with data server %d\n",
+                pdc_client_mpi_rank_g, region->offset[0], region->size[0], server_id);
+        fflush(stdout);
+    }
 
-    // We may have already filled in the pdc_server_info_g[server_id].addr in previous calls
-    /* if (pdc_server_info_g[server_id].data_server_read_check_handle_valid != 1) { */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, data_server_read_check_register_id_g, 
-                    &pdc_server_info_g[server_id].data_server_read_check_handle);
-        /* pdc_server_info_g[server_id].data_server_read_check_handle_valid = 1; */
-    /* } */
-    /* printf("Sending input to target\n"); */
+    int n_retry = 0;
+    while (pdc_server_info_g[server_id].addr_valid != 1) {
+        if (n_retry > 0)
+            break;
+        if( PDC_Client_lookup_server(server_id) != SUCCEED) {
+            printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+            ret_value = FAIL;
+            goto done;
+        }
+        n_retry++;
+    }
 
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].data_server_read_check_handle, data_server_read_check_rpc_cb, &lookup_args, &in);
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, data_server_read_check_register_id_g,
+                &data_server_read_check_handle);
+
+    hg_ret = HG_Forward(data_server_read_check_handle, data_server_read_check_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
-        fprintf(stderr, "PDC_Client_data_server_read_check(): Could not start HG_Forward()\n");
+        fprintf(stderr, "==%s(): Could not start HG_Forward()\n", __func__);
         return EXIT_FAILURE;
     }
 
@@ -2900,13 +3086,21 @@ perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_
     PDC_Client_check_response(&send_context_g);
 
     *status = lookup_args.ret;
-    if (lookup_args.ret == 0) {
+    if (lookup_args.ret != 1) {
         ret_value = SUCCEED;
-        /* printf("PDC_CLIENT: PDC_Client_data_server_read_check - IO request has not been fulfilled by server\n"); */
+        if (is_client_debug_g) {
+            printf("==PDC_CLIENT[%d]: %s- IO request has not been fulfilled by server\n", pdc_client_mpi_rank_g, __func__);
+        }
+        HG_Destroy(data_server_read_check_handle);
+        if (lookup_args.ret == -1)
+            ret_value = -1;
         goto done;
     }
     else {
-        /* printf("PDC_CLIENT: PDC_Client_data_server_read_check - IO request done by server: shm_addr=[%s]\n", lookup_args.ret_string); */
+        /* if (is_client_debug_g) { */
+        /*     printf("==PDC_CLIENT: %s - IO request done by server: shm_addr=[%s]\n", */
+        /*             lookup_args.ret_string, __func__); */
+        /* } */
         shm_addr = lookup_args.ret_string;
 
         /* open the shared memory segment as if it was a file */
@@ -2926,8 +3120,20 @@ perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_
             goto close;
         }
 
+        #ifdef ENABLE_TIMING
+        struct timeval  pdc_timer_start;
+        struct timeval  pdc_timer_end;
+        gettimeofday(&pdc_timer_start, 0);
+        #endif
+
         // Copy data
         memcpy(buf, shm_base, read_size);
+
+        #ifdef ENABLE_TIMING
+        gettimeofday(&pdc_timer_end, 0);
+        memcpy_time_g += PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+        #endif
+
 
         /* remove the mapped shared memory segment from the address space of the process */
         if (munmap(shm_base, read_size) == -1) {
@@ -2936,6 +3142,7 @@ perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_
             goto done;
         }
 
+        HG_Destroy(data_server_read_check_handle);
     } // end of check io
 
 
@@ -2948,14 +3155,15 @@ close:
     }
 
     /* remove the shared memory segment from the file system */
-    if (shm_unlink(shm_addr) == -1) {
-        ret_value = FAIL;
-        goto done;
-        printf("==PDC_CLIENT: Error removing %s\n", shm_addr);
-    }
+    /* if (shm_unlink(shm_addr) == -1) { */
+    /*     printf("==PDC_CLIENT: Error removing %s\n", shm_addr); */
+    /*     ret_value = FAIL; */
+    /*     goto done; */
+    /* } */
+
+    free(lookup_args.ret_string);
 
 done:
-    HG_Destroy(pdc_server_info_g[server_id].data_server_read_check_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -2988,23 +3196,34 @@ done:
 }
 
 
-perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *meta, struct PDC_region_info *region)
+perr_t PDC_Client_data_server_read(PDC_Request_t *request)
 {
-    perr_t ret_value = FAIL;
+    perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
     struct client_lookup_args lookup_args;
     data_server_read_in_t in;
-    
+    hg_handle_t data_server_read_handle;
+    int server_id, n_client, n_update;
+    pdc_metadata_t *meta;
+    struct PDC_region_info *region;
+
     FUNC_ENTER(NULL);
 
+    server_id = request->server_id;
+    n_client  = request->n_client;
+    n_update  = request->n_update;
+    meta      = request->metadata;
+    region    = request->region;
+
     if (server_id < 0 || server_id >= pdc_server_num_g) {
-        printf("PDC_CLIENT[%d]: PDC_Client_data_server_read - invalid server id %d/%d\n", pdc_client_mpi_rank_g, server_id, pdc_server_num_g);
+        printf("PDC_CLIENT[%d]: %s - invalid server id %d/%d\n", 
+                pdc_client_mpi_rank_g, __func__, server_id, pdc_server_num_g);
         ret_value = FAIL;
         goto done;
     }
 
     if (meta == NULL || region == NULL) {
-        printf("PDC_CLIENT[%d]: PDC_Client_data_server_read - invalid metadata or region \n", pdc_client_mpi_rank_g);
+        printf("PDC_CLIENT[%d]: %s - invalid metadata or region \n", pdc_client_mpi_rank_g, __func__);
         ret_value = FAIL;
         goto done;
     }
@@ -3012,23 +3231,34 @@ perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *
     // Dummy value fill
     in.client_id         = pdc_client_mpi_rank_g;
     in.nclient           = n_client;
+    in.nupdate           = n_update;
+    if (request->n_update == 0) 
+        request->n_update    = 1;       // Only set to default value if it is not set prior
     pdc_metadata_t_to_transfer_t(meta, &in.meta);
     pdc_region_info_t_to_transfer(region, &in.region);
 
     /* printf("PDC_CLIENT: sending data server read request to server %d\n", server_id); */
 
-    // We may have already filled in the pdc_server_info_g[server_id].addr in previous calls
-    /* if (pdc_server_info_g[server_id].data_server_read_handle_valid != 1) { */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, data_server_read_register_id_g, 
-                    &pdc_server_info_g[server_id].data_server_read_handle);
-        /* pdc_server_info_g[server_id].data_server_read_handle_valid = 1; */
-    /* } */
-    /* printf("Sending input to target\n"); */
+    int n_retry = 0;
+    while (pdc_server_info_g[server_id].addr_valid != 1) {
+        if (n_retry > 0) 
+            break;
+        if( PDC_Client_lookup_server(server_id) != SUCCEED) {
+            printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+            ret_value = FAIL;
+            goto done;
+        }
+        n_retry++;
+    }
 
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].data_server_read_handle, data_server_read_rpc_cb, &lookup_args, &in);
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, data_server_read_register_id_g, 
+                &data_server_read_handle);
+
+    hg_ret = HG_Forward(data_server_read_handle, data_server_read_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
-        fprintf(stderr, "PDC_Client_data_server_read(): Could not start HG_Forward()\n");
-        return EXIT_FAILURE;
+        fprintf(stderr, "%s - Could not start HG_Forward()\n", __func__);
+        ret_value = FAIL;
+        goto done;
     }
 
     // Wait for response from server
@@ -3037,16 +3267,56 @@ perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *
 
     if (lookup_args.ret == 1) {
         ret_value = SUCCEED;
-        /* printf("PDC_CLIENT: PDC_Client_data_server_read - received confirmation from server\n"); */
+        /* printf("PDC_CLIENT: %s - received confirmation from server\n", __func__); */
     }
     else {
         ret_value = FAIL;
-        printf("PDC_CLIENT: PDC_Client_data_server_read - ERROR from server\n");
+        printf("PDC_CLIENT: %s - ERROR from server\n", __func__);
     }
 
 
 done:
-    HG_Destroy(pdc_server_info_g[server_id].data_server_read_handle);
+    HG_Destroy(data_server_read_handle);
+    FUNC_LEAVE(ret_value);
+} // End of PDC_Request_t *request
+
+/*
+ * Close the shared memory
+ */
+perr_t PDC_Client_close_shm(PDC_Request_t *req)
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    if (req == NULL || req->shm_fd == 0 || req->shm_base == NULL) {
+        printf("==PDC_CLIENT[%d]: %s - invalid input\n", pdc_client_mpi_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }  
+
+    /* remove the mapped memory segment from the address space of the process */
+    if (munmap(req->shm_base, req->shm_size) == -1) {
+        printf("==PDC_CLIENT[%d]: %s - Unmap failed\n", pdc_client_mpi_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    /* close the shared memory segment as if it was a file */
+    if (close(req->shm_fd) == -1) {
+        printf("==PDC_CLIENT[%d]: %s - close shm failed\n", pdc_client_mpi_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    /* remove the shared memory segment from the file system */
+    if (shm_unlink(req->shm_addr) == -1) {
+        ret_value = FAIL;
+        goto done;
+        printf("==PDC_CLIENT: Error removing %s\n", req->shm_addr);
+    }
+
+done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -3057,7 +3327,6 @@ data_server_write_check_rpc_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered data_server_write_check_rpc_cb()"); */
     struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
     hg_handle_t handle = callback_info->info.forward.handle;
 
@@ -3079,24 +3348,31 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-
-perr_t PDC_Client_data_server_write_check(int server_id, uint32_t client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status)
+perr_t PDC_Client_data_server_write_check(PDC_Request_t *request, int *status)
 {
-    perr_t ret_value = FAIL;
+    perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
     struct client_lookup_args lookup_args;
     data_server_write_check_in_t in;
+    hg_handle_t data_server_write_check_handle;
+    int server_id;
+    pdc_metadata_t *meta;
+    struct PDC_region_info *region;
 
     FUNC_ENTER(NULL);
 
+    server_id = request->server_id;
+    meta      = request->metadata;
+    region    = request->region;
+
     if (server_id < 0 || server_id >= pdc_server_num_g) {
-        printf("PDC_CLIENT[%d]: PDC_Client_data_server_write_check - invalid server id %d/%d\n"
-                , pdc_client_mpi_rank_g, server_id, pdc_server_num_g);
+        printf("PDC_CLIENT[%d]: %s - invalid server id %d/%d\n"
+                , pdc_client_mpi_rank_g, __func__, server_id, pdc_server_num_g);
         ret_value = FAIL;
         goto done;
     }
 
-    in.client_id         = client_id;
+    in.client_id         = pdc_client_mpi_rank_g;
     pdc_metadata_t_to_transfer_t(meta, &in.meta);
     pdc_region_info_t_to_transfer(region, &in.region);
 
@@ -3108,36 +3384,55 @@ perr_t PDC_Client_data_server_write_check(int server_id, uint32_t client_id, pdc
 
     /* printf("PDC_CLIENT: checking io status with data server %d\n", server_id); */
 
-    // We may have already filled in the pdc_server_info_g[server_id].addr in previous calls
-    /* if (pdc_server_info_g[server_id].data_server_write_check_handle_valid != 1) { */
-        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, data_server_write_check_register_id_g, 
-                    &pdc_server_info_g[server_id].data_server_write_check_handle);
-        /* pdc_server_info_g[server_id].data_server_write_check_handle_valid = 1; */
-    /* } */
-    /* printf("Sending input to target\n"); */
+    int n_retry = 0;
+    while (pdc_server_info_g[server_id].addr_valid != 1) {
+        if (n_retry > 0) 
+            break;
+        if( PDC_Client_lookup_server(server_id) != SUCCEED) {
+            printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+            ret_value = FAIL;
+            goto done;
+        }
+        n_retry++;
+    }
 
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].data_server_write_check_handle, data_server_write_check_rpc_cb, &lookup_args, &in);
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, data_server_write_check_register_id_g, 
+                &data_server_write_check_handle);
+
+    hg_ret = HG_Forward(data_server_write_check_handle, data_server_write_check_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
-        fprintf(stderr, "PDC_Client_data_server_write_check(): Could not start HG_Forward()\n");
-        return EXIT_FAILURE;
+        fprintf(stderr, "%s(): Could not start HG_Forward()\n", __func__);
+        ret_value = FAIL;
+        goto done;
     }
 
     // Wait for response from server
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
 
-    /* printf("==PDC_CLIENT: PDC_Client_data_server_write_check() - ret=%d \n", lookup_args.ret); */
+    /* if (is_client_debug_g == 1) { */
+    /*     printf("==PDC_CLIENT[%d]: PDC_Client_data_server_write_check() - ret=%d \n", */
+    /*                 pdc_client_mpi_rank_g, lookup_args.ret); */
+    /* } */
 
     *status = lookup_args.ret;
-    if (lookup_args.ret == 0) {
+    if (lookup_args.ret != 1) {
         ret_value = SUCCEED;
-        /* printf("PDC_CLIENT: PDC_Client_data_server_write_check - IO request has not been fulfilled by server\n"); */
+        if (is_client_debug_g == 1) {
+            printf("==PDC_CLIENT[%d]: %s IO request not done by server yet\n", pdc_client_mpi_rank_g,__func__);
+        }
+
+        if (lookup_args.ret == -1)
+            ret_value = FAIL;
         goto done;
     }
-
+    else {
+        // Close shm
+        PDC_Client_close_shm(request);
+    }
 
 done:
-    HG_Destroy(pdc_server_info_g[server_id].data_server_write_check_handle);
+    HG_Destroy(data_server_write_check_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -3145,7 +3440,7 @@ static hg_return_t
 data_server_write_rpc_cb(const struct hg_cb_info *callback_info)
 {
     hg_return_t ret_value = HG_SUCCESS;
-    
+
     FUNC_ENTER(NULL);
 
     struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
@@ -3155,16 +3450,16 @@ data_server_write_rpc_cb(const struct hg_cb_info *callback_info)
     data_server_write_out_t output;
     ret_value = HG_Get_output(handle, &output);
     if (ret_value !=  HG_SUCCESS) {
-        printf("==PDC_CLIENT[%d]: data_server_write_rpc_cb error with HG_Get_output\n", 
+        printf("==PDC_CLIENT[%d]: data_server_write_rpc_cb error with HG_Get_output\n",
                 pdc_client_mpi_rank_g);
         client_lookup_args->ret = -1;
         goto done;
     }
 
-    if (is_client_debug_g == 1) {
-        printf("==PDC_CLIENT[%d]: data_server_write_rpc_cb(): Return value from server: %d\n", 
-                pdc_client_mpi_rank_g, output.ret);
-    }
+    /* if (is_client_debug_g == 1) { */
+    /*     printf("==PDC_CLIENT[%d]: data_server_write_rpc_cb(): Return value from server: %d\n", */
+    /*             pdc_client_mpi_rank_g, output.ret); */
+    /* } */
 
     client_lookup_args->ret = output.ret;
 
@@ -3175,253 +3470,442 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t *meta, struct PDC_region_info *region, void *buf)
+perr_t PDC_Client_data_server_write(PDC_Request_t *request)
 {
-    uint32_t i, j;
-    perr_t ret_value = FAIL;
+    perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
+    uint32_t i, j;
     uint64_t region_size = 1;
     struct client_lookup_args lookup_args;
-    char shm_addr[ADDR_MAX];
     data_server_write_in_t in;
-    
+    int server_ret;
+    hg_handle_t data_server_write_handle;
+    hg_handle_t aggregate_write_handle;
+    region_list_t* tmp_regions = NULL;
+    int server_id, n_client, n_update; 
+    pdc_metadata_t *meta; 
+    struct PDC_region_info *region;
+    void *buf;
+
     FUNC_ENTER(NULL);
 
+    server_id = request->server_id;
+    n_client  = request->n_client;
+    n_update  = request->n_update;
+    meta      = request->metadata;
+    region    = request->region;
+    buf       = request->buf;
+
+    if (NULL == meta || NULL == region || NULL == buf) {
+        printf("==PDC_CLIENT[%d]: %s - input NULL\n", pdc_client_mpi_rank_g, __func__);
+        fflush(stdout);
+        ret_value = FAIL;
+        goto done;
+    }
+
     if (server_id < 0 || server_id >= pdc_server_num_g) {
-        printf("PDC_CLIENT[%d]: PDC_Client_data_server_write - invalid server id %d/%d\n", pdc_client_mpi_rank_g, server_id, pdc_server_num_g);
+        printf("==PDC_CLIENT[%d]: %s - invalid server id %d/%d\n",
+                pdc_client_mpi_rank_g, __func__, server_id, pdc_server_num_g);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    if (region->ndim > 4) {
+        printf("==PDC_CLIENT[%d]: %s - invalid dim %lu\n", pdc_client_mpi_rank_g, __func__, region->ndim);
         ret_value = FAIL;
         goto done;
     }
 
     // Calculate region size
-    for (i = 0; i < region->ndim; i++)
+    for (i = 0; i < region->ndim; i++) {
         region_size *= region->size[i];
+        if (region_size == 0) {
+            printf("==PDC_CLIENT[%d]: %s - size[%d]=0\n", pdc_client_mpi_rank_g, __func__, i);
+            ret_value = FAIL;
+            goto done;
+        }
+    }
 
-    // Create shared memory 
+    // Create shared memory
     // Shared memory address is /objID_ServerID_ClientID_rand
     int rnd = rand();
-    sprintf(shm_addr, "/%" PRIu64 "_c%d_s%d_%d", meta->obj_id, pdc_client_mpi_rank_g, server_id, rnd);
+    sprintf(request->shm_addr, "/%" PRIu64 "_c%d_s%d_%d", meta->obj_id, pdc_client_mpi_rank_g, server_id, rnd);
 
     /* create the shared memory segment as if it was a file */
-    char     *shm_base;
-    int      shm_fd;
     /* printf("==PDC_CLIENT: creating share memory segment with address %s\n", shm_addr); */
-    shm_fd = shm_open(shm_addr, O_CREAT | O_RDWR, 0666);
-    if (shm_fd == -1) {
+    request->shm_fd = shm_open(request->shm_addr, O_CREAT | O_RDWR, 0666);
+    if (request->shm_fd == -1) {
         printf("==PDC_CLIENT: Shared memory creation with shm_open failed\n");
         ret_value = FAIL;
         goto done;
     }
 
     /* configure the size of the shared memory segment */
-    ftruncate(shm_fd, region_size);
+    ftruncate(request->shm_fd, region_size);
+    request->shm_size = region_size;
 
     /* map the shared memory segment to the address space of the process */
-    shm_base = mmap(0, region_size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    if (shm_base == MAP_FAILED) {
-        printf("==PDC_CLIENT: Shared memory mmap failed\n");
+    request->shm_base = mmap(0, region_size, PROT_READ | PROT_WRITE, MAP_SHARED, request->shm_fd, 0);
+    if (request->shm_base == MAP_FAILED) {
+        printf("==PDC_CLIENT: Shared memory mmap failed, region size = %" PRIu64 "\n", region_size);
         // close and shm_unlink?
         ret_value = FAIL;
         goto done;
     }
 
-    // Copy the user's buffer to shm that can be accessed by sdata server
-    // Linearize if more than 2D
-    if (region->ndim == 1) {
-        memcpy(shm_base, buf, region_size);
-    }
-    else if (region->ndim == 2) {
-        char **buf_2d = buf;
-        for (i = 0; i < region->size[1]; i++) {
-            memcpy(shm_base + i*region->size[0], buf_2d[i], region->size[0]);
-            /* printf("==PDC_CLIENT[%d]: write memcpy [%.*s]\n", */ 
-            /*         pdc_client_mpi_rank_g, region->size[0], buf_2d[i]); */
-        }
-    }
-    else if (region->ndim == 3) {
-        char ***buf_3d = buf;
-        for (j = 0; j < region->size[2]; j++) {
-            for (i = 0; i < region->size[1]; i++) {
-                memcpy(shm_base + i*region->size[0] + j*region->size[0]*region->size[1], 
-                       buf_3d[j][i], region->size[0]);
-            }
-        }
-    }
-    else {
-        printf("==PDC_CLIENT[%d]: %lu data write is not supported yet\n", 
-                pdc_client_mpi_rank_g, region->ndim);
-    }
+    #ifdef ENABLE_TIMING
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
+    gettimeofday(&pdc_timer_start, 0);
+    #endif
 
-    /* printf("==PDC_CLIENT: sending data server write with %" PRIu64 " bytes to server %d\ndata: [%.*s]\n", */ 
+    // Copy the user's buffer to shm that can be accessed by data server
+    memcpy(request->shm_base, buf, region_size);
+
+    #ifdef ENABLE_TIMING
+    gettimeofday(&pdc_timer_end, 0);
+    memcpy_time_g += PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+    #endif
+
+    int can_aggregate_send = 0;
+    /* uint64_t same_node_ids[64]; */
+    // Aggregate the send request when clients of same node are sending requests of same object
+    // First check the obj ID are the same among the node local ranks
+
+#ifdef ENABLE_MPI
+    // TODO test
+    /* if (pdc_client_same_node_size_g <= 1) { */
+
+    /*     MPI_Gather(meta->obj_id, 1, MPI_UNSIGNED_LONG_LONG, */
+    /*                same_node_ids, 1, MPI_UNSIGNED_LONG_LONG, 0, PDC_SAME_NODE_COMM_g); */
+
+    /*     if (pdc_client_same_node_rank_g == 0) { */
+    /*         for (i = 0; i < pdc_client_same_node_size_g; i++) { */
+    /*             if (meta->obj_id != same_node_ids[i]) { */
+    /*                 can_aggregate_send = -1; */
+    /*                 break; */
+    /*             } */
+    /*         } */
+    /*     } */
+
+    /*     MPI_Bcast(&can_aggregate_send, 1, MPI_INT, 0, PDC_SAME_NODE_COMM_g); */
+    /* } */
+    /* // No need to aggregate if there is only one client per node */
+    /* else */
+    /*     can_aggregate_send = -1; */
+
+    /* if (can_aggregate_send == 0) */
+    /*     can_aggregate_send = 1; */
+#endif
+
+
+    /* printf("==PDC_CLIENT: sending data server write with %" PRIu64 " bytes to server %d\ndata: [%.*s]\n", */
     /*         region_size, server_id, region_size, buf); */
 
-    // Generate a location for data storage for data server to write 
-    char *data_path = NULL;
-    char *user_specified_data_path = getenv("PDC_DATA_LOC");
-    if (user_specified_data_path != NULL) {
-        data_path = user_specified_data_path;
-    }
-    else {
-        data_path = getenv("SCRATCH");
-        if (data_path == NULL) {
-            data_path = ".";
-            
-        }
-    }
+    // Generate a location for data storage for data server to write
+    /* char *data_path = NULL; */
+    /* char *user_specified_data_path = getenv("PDC_DATA_LOC"); */
+    /* if (user_specified_data_path != NULL) { */
+    /*     data_path = user_specified_data_path; */
+    /* } */
+    /* else { */
+    /*     data_path = getenv("SCRATCH"); */
+    /*     if (data_path == NULL) { */
+    /*         data_path = "."; */
 
-    // Data path prefix will be $SCRATCH/pdc_data/obj_id/
-    sprintf(meta->data_location, "%s/pdc_data/%" PRIu64 "", data_path, meta->obj_id);
+    /*     } */
+    /* } */
 
-    /* if (pdc_client_mpi_rank_g == 0) */ 
+    /* // Data path prefix will be $SCRATCH/pdc_data/obj_id/ */
+    /* sprintf(meta->data_location, "%s/pdc_data/%" PRIu64 "", data_path, meta->obj_id); */
+
+    /* if (pdc_client_mpi_rank_g == 0) */
     /*     printf("==PDC_CLIENT: data will be written to %s\n", meta->data_location); */
 
-    // TODO: probably need more work when multiple data servers are involved
     // Update the data location of metadata object
-    if (pdc_client_mpi_rank_g == 0) {
-        PDC_Client_update_metadata(meta, meta);
-    }
+    /* if (pdc_client_mpi_rank_g == 0) { */
+    /*     PDC_Client_update_metadata(meta, meta); */
+    /* } */
 
-    in.client_id         = pdc_client_mpi_rank_g;
-    in.nclient           = n_client;
-    in.shm_addr          = shm_addr;
-    pdc_metadata_t_to_transfer_t(meta, &in.meta);
-    pdc_region_info_t_to_transfer(region, &in.region);
+    /* if (can_aggregate_send != 1) { */
+        // Normal send to server by each process
+        meta->data_location[0] = ' ';
+        meta->data_location[1] = 0;
+
+        in.client_id         = pdc_client_mpi_rank_g;
+        in.nclient           = n_client;
+        in.nupdate           = n_update;
+        in.shm_addr          = request->shm_addr;
+        pdc_metadata_t_to_transfer_t(meta, &in.meta);
+        pdc_region_info_t_to_transfer(region, &in.region);
 
 
-    // We may have already filled in the pdc_server_info_g[server_id].addr in previous calls
-    /* if (pdc_server_info_g[server_id].data_server_write_handle_valid != 1) { */
-        hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, data_server_write_register_id_g, 
-                           &pdc_server_info_g[server_id].data_server_write_handle);
+        int n_retry = 0;
+        while (pdc_server_info_g[server_id].addr_valid != 1) {
+            if (n_retry > 0)
+                break;
+            if( PDC_Client_lookup_server(server_id) != SUCCEED) {
+                printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+                ret_value = FAIL;
+                goto done;
+            }
+            n_retry++;
+        }
+        hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr,
+                           data_server_write_register_id_g, &data_server_write_handle);
         if (hg_ret != HG_SUCCESS) {
-            fprintf(stderr, "PDC_Client_data_server_write(): Could not HG_Create()\n");
+            fprintf(stderr, "==%s: Could not HG_Create()\n", __func__);
             ret_value = FAIL;
             goto done;
         }
-        /* pdc_server_info_g[server_id].data_server_write_handle_valid = 1; */
+
+        hg_ret = HG_Forward(data_server_write_handle, data_server_write_rpc_cb, &lookup_args, &in);
+        if (hg_ret != HG_SUCCESS) {
+            fprintf(stderr, "==%s: Could not start HG_Forward()\n", __func__);
+            HG_Destroy(data_server_write_handle);
+            ret_value = FAIL;
+            goto done;
+        }
+
+        // Wait for response from server
+        work_todo_g = 1;
+        PDC_Client_check_response(&send_context_g);
+
+        HG_Destroy(data_server_write_handle);
+
+        server_ret = lookup_args.ret;
+    /* } */
+    /* else { */
+    /*     // First client rank as the delegate and aggregate the requests from other clients */
+    /*     // of same node to it (only needs region offsets/counts and shm_addr, metadata is shared) */
+
+    /*     char my_serialized_buf[PDC_SERIALIZE_MAX_SIZE]; */
+    /*     char *all_serialized_buf = NULL; */
+    /*     /1* uint64_t *uint64_ptr = NULL; *1/ */
+    /*     region_list_t tmp_region; */
+    /*     region_list_t *regions[2]; */
+    /*     pdc_aggregated_io_to_server_t agg_write_in; */
+
+    /*     regions[0] = &tmp_region; */
+
+    /*     memset(my_serialized_buf, 0, PDC_SERIALIZE_MAX_SIZE); */
+    /*     memset(&tmp_region, 0, sizeof(region_list_t)); */
+
+    /*     pdc_region_info_to_list_t(region, &tmp_region); */
+
+    /*     // Store the shm addr in storage_location */
+    /*     strcpy(tmp_region.storage_location, request->shm_addr); */
+
+    /*     ret_value = PDC_serialize_regions_lists(regions, 1, my_serialized_buf, PDC_SERIALIZE_MAX_SIZE); */
+    /*     if (ret_value != SUCCEED) { */
+    /*         printf("==PDC_CLIENT[%d]: PDC_serialize_regions_lists ERROR!\n", pdc_client_mpi_rank_g); */
+    /*         goto done; */
+    /*     } */
+
+    /*     PDC_replace_zero_chars(my_serialized_buf, PDC_SERIALIZE_MAX_SIZE); */
+    /*     // Now my_serialized_buf has the serialized region data, with 0 substituted */
+    /*     // n_region(1)|ndim|start_0|count_0|...|start_ndim|count_ndim|loc_len|shm_addr|offset|... */
+
+
+    /*     if (pdc_client_same_node_rank_g == 0) { */
+    /*         all_serialized_buf = (char*)calloc(PDC_SERIALIZE_MAX_SIZE, pdc_client_same_node_size_g); */
+    /*     } */
+
+    /*     // Gather serialized region info to first rank of each node */
+/* #ifdef ENABLE_MPI */
+    /*     MPI_Gather(my_serialized_buf,  PDC_SERIALIZE_MAX_SIZE, MPI_CHAR, */
+    /*                all_serialized_buf, PDC_SERIALIZE_MAX_SIZE, MPI_CHAR, 0, PDC_SAME_NODE_COMM_g); */
+/* #endif */
+
+    /*     if (pdc_client_same_node_rank_g == 0) { */
+
+    /*         tmp_regions = (region_list_t*)calloc(sizeof(region_list_t), pdc_client_same_node_size_g); */
+
+    /*         // Now send all_serialized_buf to server and let server unserialize the regions */
+    /*         meta->data_location[0] = ' '; */
+    /*         meta->data_location[1] = 0; */
+    /*         pdc_metadata_t_to_transfer_t(meta, &agg_write_in.meta); */
+    /*         agg_write_in.buf = all_serialized_buf; */
+
+    /*         int n_retry = 0; */
+    /*         while (pdc_server_info_g[server_id].addr_valid != 1) { */
+    /*             if (n_retry > 0) */
+    /*                 break; */
+    /*             if( PDC_Client_lookup_server(server_id) != SUCCEED) { */
+    /*                 printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g); */
+    /*                 ret_value = FAIL; */
+    /*                 goto done; */
+    /*             } */
+    /*             n_retry++; */
+    /*         } */
+
+    /*         hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, */
+    /*                            aggregate_write_register_id_g, &aggregate_write_handle); */
+    /*         if (hg_ret != HG_SUCCESS) { */
+    /*             fprintf(stderr, "==%s: Could not HG_Create()\n", __func__); */
+    /*             ret_value = FAIL; */
+    /*             goto done; */
+    /*         } */
+
+    /*         hg_ret = HG_Forward(aggregate_write_handle, data_server_write_rpc_cb, &lookup_args, &in); */
+    /*         if (hg_ret != HG_SUCCESS) { */
+    /*             fprintf(stderr, "==%s: Could not start HG_Forward()\n", __func__); */
+    /*             HG_Destroy(aggregate_write_handle); */
+    /*             ret_value = FAIL; */
+    /*             goto done; */
+    /*         } */
+
+    /*         // Wait for response from server */
+    /*         work_todo_g = 1; */
+    /*         PDC_Client_check_response(&send_context_g); */
+
+    /*         HG_Destroy(aggregate_write_handle); */
+    /*         server_ret = lookup_args.ret; */
+
+    /*         free(tmp_regions); */
+    /*         free(all_serialized_buf); */
+    /*     } // End of if client is first rank of the node */
+
+/* #ifdef ENABLE_MPI */
+    /*     // Now broadcast the result from server */
+    /*     MPI_Bcast(&server_ret, 1, MPI_INT, 0, PDC_SAME_NODE_COMM_g); */
+/* #endif */
     /* } */
 
-    hg_ret = HG_Forward(pdc_server_info_g[server_id].data_server_write_handle, data_server_write_rpc_cb, &lookup_args, &in);
-    if (hg_ret != HG_SUCCESS) {
-        fprintf(stderr, "PDC_Client_data_server_write(): Could not start HG_Forward()\n");
+    if (server_ret == 1) {
+        ret_value = SUCCEED;
+        /* printf("==PDC_CLIENT: %s- received confirmation from server\n", __func__); */
+    }
+    else {
+        printf("==PDC_CLIENT[%d]: %s - ERROR from server\n", pdc_client_mpi_rank_g, __func__);
         ret_value = FAIL;
         goto done;
     }
 
-    // Wait for response from server
-    work_todo_g = 1;
-    PDC_Client_check_response(&send_context_g);
-
-    if (lookup_args.ret == 1) {
-        ret_value = SUCCEED;
-        /* printf("PDC_CLIENT: PDC_Client_data_server_write - received confirmation from server\n"); */
-    }
-    else {
-        ret_value = FAIL;
-        printf("PDC_CLIENT: PDC_Client_data_server_write - ERROR from server\n");
-    }
-
-
 done:
-    HG_Destroy(pdc_server_info_g[server_id].data_server_write_handle);
     fflush(stdout);
     FUNC_LEAVE(ret_value);
-}
-
-/*
- * PDC User APIs
- * Similar to async MPI IO routines
- */
-
-/* int MPI_File_iwrite(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Request *request) */ 
-/* int MPI_File_iread(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Request *request) */
-/* MPI_Test(MPI_Request *request, int *completed, MPI_Status *status) */
-/* MPI_Wait(&request, &status); */
-
-int pdc_msleep(unsigned long milisec)
-{
-    struct timespec req={0};
-    time_t sec=(int)(milisec/1000);
-    milisec=milisec-(sec*1000);
-    req.tv_sec=sec;
-    req.tv_nsec=milisec*1000000L;
-    while(nanosleep(&req,&req)==-1)
-         continue;
-    return 1;
-}
+} // End of PDC_Client_data_server_write
 
 perr_t PDC_Client_test(PDC_Request_t *request, int *completed)
 {
-    perr_t ret_value = FAIL;
+    perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
 
     if (request == NULL || completed == NULL) {
-        printf("==PDC_CLIENT: PDC_Client_test() - request and/or completed is NULL!\n");
+        printf("==PDC_CLIENT: %s - request and/or completed is NULL!\n", __func__);
         ret_value = FAIL;
         goto done;
     }
 
     if (request->access_type == READ) {
-        PDC_Client_data_server_read_check(request->server_id, pdc_client_mpi_rank_g, 
+        ret_value = PDC_Client_data_server_read_check(request->server_id, pdc_client_mpi_rank_g,
                      request->metadata, request->region, completed, request->buf);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_CLIENT: PDC_Client_write_check ERROR!\n");
+            goto done;
+        }
     }
     else if (request->access_type == WRITE) {
 
-        PDC_Client_data_server_write_check(request->server_id, pdc_client_mpi_rank_g, 
-                     request->metadata, request->region, completed);
+        ret_value = PDC_Client_data_server_write_check(request, completed);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_CLIENT: PDC_Client_write_check ERROR!\n");
+            goto done;
+        }
     }
     else {
-        printf("==PDC_CLIENT: PDC_Client_test() - error with request access type!\n");
+        printf("==PDC_CLIENT: %s - error with request access type!\n", __func__);
         ret_value = FAIL;
         goto done;
     }
 
-    ret_value = SUCCEED;
 done:
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
-}
+} // End of PDC_Client_test
 
 perr_t PDC_Client_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsigned long check_interval_ms)
 {
     int completed = 0;
-    perr_t ret_value = FAIL;
+    perr_t ret_value = SUCCEED;
     struct timeval  start_time;
     struct timeval  end_time;
     unsigned long elapsed_ms;
+    uint64_t total_size = 1;
+    long est_wait_time;
+    long est_write_rate = 500;
+    size_t i;
+    int cnt = 0;
 
     FUNC_ENTER(NULL);
 
     gettimeofday(&start_time, 0);
+    // TODO: Calculate region size and estimate the wait time
+    // Write is 4-5x faster
+    /* if (request->access_type == WRITE ) */ 
+    /*     est_write_rate *= 4; */
+    
+    /* for (i = 0; i < request->region->ndim; i++) */ 
+    /*     total_size *= request->region->size[i]; */ 
+    /* total_size /= 1048576; */
+    /* est_wait_time = total_size * request->n_client * 1000 / est_write_rate; */
+    /* if (pdc_client_mpi_rank_g == 0) { */
+    /*     printf("==PDC_CLIENT[%d]: estimate wait time is %ld\n", pdc_client_mpi_rank_g, est_wait_time); */
+    /*     fflush(stdout); */
+    /* } */
+    /* pdc_msleep(est_wait_time); */
 
-    while (completed == 0) {
+    while (completed != 1 && cnt < PDC_MAX_TRIAL_NUM) {
+
         ret_value = PDC_Client_test(request, &completed);
-        pdc_msleep(check_interval_ms);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_CLIENT[%d]: PDC_Client_test ERROR!\n", pdc_client_mpi_rank_g);
+            goto done;
+        }
 
-/* printf("==PDC_CLIENT[%d]: waiting for server to finish IO request...\n", pdc_client_mpi_rank_g); */
-
-        gettimeofday(&end_time, 0);
-        elapsed_ms = ( (end_time.tv_sec-start_time.tv_sec)*1000000LL + end_time.tv_usec - start_time.tv_usec ) / 1000;
-        if (elapsed_ms > max_wait_ms) {
-printf("==PDC_CLIENT[%d]: exceeded max IO request waiting time...\n", pdc_client_mpi_rank_g);
+        /* printf("completed ... %d\n", completed); */
+        if (is_client_debug_g ==1 && completed == 1) {
+            printf("==PDC_CLIENT[%d]: IO has completed.\n", pdc_client_mpi_rank_g);
+            fflush(stdout);
             break;
         }
+        /* else if (completed == 0){ */
+        /*     printf("==PDC_CLIENT[%d]: IO has not completed yet, will wait and ping server again ...\n", */
+        /*             pdc_client_mpi_rank_g); */
+        /*     fflush(stdout); */
+        /* } */
+
+        gettimeofday(&end_time, 0);
+        elapsed_ms = ( (end_time.tv_sec-start_time.tv_sec)*1000000LL + end_time.tv_usec -
+                        start_time.tv_usec ) / 1000;
+        if (elapsed_ms > max_wait_ms) {
+            printf("==PDC_CLIENT[%d]: exceeded max IO request waiting time...\n", pdc_client_mpi_rank_g);
+            break;
+        }
+
+        if (pdc_client_mpi_rank_g == 0) {
+            printf("==PDC_CLIENT[ALL]: waiting for server to finish IO request...\n");
+            fflush(stdout);
+        }
+        pdc_msleep(check_interval_ms);
     }
 
+done:
     FUNC_LEAVE(ret_value);
 }
 
-/* perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t *meta, struct PDC_region_info *region, void *buf) */
 perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct PDC_region_info *region, PDC_Request_t *request, void *buf)
 {
-    perr_t ret_value = FAIL;
+    perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
 
-    // FIXME: currently assuming 1 server per compute node
-    request->server_id   = pdc_client_mpi_rank_g / (pdc_client_mpi_size_g/pdc_server_num_g);
-    // TODO: TEST
-    /* request->n_client    = 1; */
-    request->n_client    = pdc_client_mpi_size_g / pdc_server_num_g;
+    request->server_id   = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
+    request->n_client    = pdc_nclient_per_server_g;    // Set by env var PDC_NCLIENT_PER_SERVER, default 1
+    if (request->n_update == 0) 
+        request->n_update    = 1;       // Only set to default value if it is not set prior
     request->access_type = WRITE;
     request->metadata    = meta;
     request->region      = region;
@@ -3429,7 +3913,7 @@ perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct PDC_region_info *region, P
 /* printf("==PDC_CLIENT[%d], sending write request to server %d\n", pdc_client_mpi_rank_g, request->server_id); */
 
     /* printf("==PDC_CLIENT: PDC_Client_iwrite - sending data server write with data: [%s]\n", buf); */
-    ret_value = PDC_Client_data_server_write(request->server_id, request->n_client, meta, region, buf);
+    ret_value = PDC_Client_data_server_write(request);
 
     FUNC_LEAVE(ret_value);
 }
@@ -3453,12 +3937,13 @@ perr_t PDC_Client_write(pdc_metadata_t *meta, struct PDC_region_info *region, vo
 
     FUNC_ENTER(NULL);
 
+    request.n_update = 1;
     ret_value = PDC_Client_iwrite(meta, region, &request, buf);
     if (ret_value != SUCCEED) {
         printf("==PDC_CLIENT: PDC_Client_write - PDC_Client_iwrite error\n");
         goto done;
     }
-    ret_value = PDC_Client_wait(&request, 600000, 100);
+    ret_value = PDC_Client_wait(&request, 60000, 500);
     if (ret_value != SUCCEED) {
         printf("==PDC_CLIENT: PDC_Client_write - PDC_Client_wait error\n");
         goto done;
@@ -3470,24 +3955,23 @@ done:
 
 perr_t PDC_Client_iread(pdc_metadata_t *meta, struct PDC_region_info *region, PDC_Request_t *request, void *buf)
 {
-    perr_t ret_value = FAIL;
+    perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
 
-    request->server_id   = pdc_client_mpi_rank_g / (pdc_client_mpi_size_g/pdc_server_num_g);
-    // TODO: currently assuming 1 server per compute node
-    /* request->n_client    = pdc_client_mpi_size_g / pdc_server_num_g; */
-    // TODO: TEST
-    request->n_client    = 1;
+    request->server_id   = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
+    request->n_client    = pdc_nclient_per_server_g;    // Set by env var PDC_NCLIENT_PER_SERVER, default 1
+    if (request->n_update == 0) 
+        request->n_update    = 1;       // Only set to default value if it is not set prior
     request->access_type = READ;
     request->metadata    = meta;
     request->region      = region;
     request->buf         = buf;
 
 /* printf("==PDC_CLIENT[%d], sending read request to server %d\n", pdc_client_mpi_rank_g, request->server_id); */
-    ret_value = PDC_Client_data_server_read(request->server_id, request->n_client, meta, region);
+    ret_value = PDC_Client_data_server_read(request);
     if (ret_value != SUCCEED) {
-        printf("==PDC_CLIENT: PDC_Client_iwrite - PDC_Client_data_server_read error\n");
+        printf("==PDC_CLIENT: PDC_Client_iread- PDC_Client_data_server_read error\n");
         goto done;
     }
 
@@ -3498,18 +3982,28 @@ done:
 perr_t PDC_Client_read(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf)
 {
     PDC_Request_t request;
-    perr_t ret_value = FAIL;
+    perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
 
-    PDC_Client_iread(meta, region, &request, buf);
-    ret_value = PDC_Client_wait(&request, 10000, 100);
+    request.n_update = 1;
+    ret_value = PDC_Client_iread(meta, region, &request, buf);
     if (ret_value != SUCCEED) {
-        printf("==PDC_CLIENT: PDC_Client_read - PDC_Client_wait error\n");
+        printf("==PDC_CLIENT[%d]: %s - PDC_Client_iread error\n", pdc_client_mpi_rank_g, __func__);
         goto done;
     }
 
+    pdc_msleep(500);
+
+    ret_value = PDC_Client_wait(&request, 60000, 500);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_CLIENT[%d]: %s - PDC_Client_wait error\n", pdc_client_mpi_rank_g, __func__);
+        goto done;
+    }
+
+    /* printf("==PDC_CLIENT: PDC_Client_read - Done\n"); */
 done:
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 

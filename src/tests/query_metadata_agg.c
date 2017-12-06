@@ -2,9 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
-#include <sys/time.h>
-#include <inttypes.h>
-#include <unistd.h>
+#include <time.h>
 
 /* #define ENABLE_MPI 1 */
 
@@ -20,10 +18,11 @@ void print_usage() {
     printf("Usage: srun -n ./data_server_read obj_name size_MB\n");
 }
 
-int main(int argc, char **argv)
+int main(int argc, const char *argv[])
 {
     int rank = 0, size = 1;
-    uint64_t size_MB;
+    uint64_t size_MB = 0;
+    char *obj_name = "test";
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -31,18 +30,18 @@ int main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    if (argc < 3) {
-        print_usage();
-        return 0;
-    }
+    /* if (argc < 3) { */
+    /*     print_usage(); */
+    /*     return 0; */
+    /* } */
 
-    char *obj_name = argv[1];
-    size_MB = atoi(argv[2]);
+    /* obj_name = argv[1]; */
+    /* size_MB = atoi(argv[2]); */
 
-    if (rank == 0) {
-        printf("Writing a %" PRIu64 " MB object [%s] with %d clients.\n", size_MB, obj_name, size);
-    }
-    size_MB *= 1048576;
+    /* if (rank == 0) { */
+    /*     printf("Writing a %llu MB object [%s] with %d clients.\n", size_MB, obj_name, size); */
+    /* } */
+    /* size_MB *= 1048576; */
 
     // create a pdc
     pdcid_t pdc = PDC_init("pdc");
@@ -95,59 +94,19 @@ int main(int argc, char **argv)
     /* printf("%d: Start to query object just created.\n", rank); */
     pdc_metadata_t *metadata;
     PDC_Client_query_metadata_name_timestep_agg( obj_name, 0, &metadata);
-    /* PDC_Client_query_metadata_name_timestep( obj_name, 0, &metadata); */
-    /* if (rank == 1) { */
-    /*     PDC_print_metadata(metadata); */
-    /* } */
     if (metadata == NULL || metadata->obj_id == 0) {
-        printf("Error with metadata!\n");
+        printf("Proc %d: Error with metadata!\n", rank);
         exit(-1);
     }
 
-    int ndim = 1;
-    region.ndim = ndim;
-    region.offset = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
-    region.size = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
-    region.offset[0] = rank * my_data_size;
-    region.size[0] = my_data_size;
-
-    char *mydata = (char*)malloc(my_data_size);
-    memset(mydata, 'A' + rank%26, my_data_size);
-    int i;
-    for (i = 0; i < 5; i++) {
-        mydata[i+1] = (mydata[i] + 3) % 26;
+    if (rank % 4 == 0) {
+        PDC_print_metadata(metadata);
     }
 
-    /* printf("%d: writing to (%llu, %llu) of %llu bytes\n", rank, region.offset[0], region.offset[1], region.size[0]*region.size[1]); */
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
-    double ht_total_sec;
-
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-    gettimeofday(&ht_total_start, 0);
-
-    PDC_Client_write(metadata, &region, mydata);
-    /* PDC_Client_write_wait_notify(metadata, &region, mydata); */
-
-
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
-    ht_total_sec        = ht_total_elapsed / 1000000.0;
-
-    if (rank == 0) { 
-        printf("Time to write data with %d ranks: %.6f\n", size, ht_total_sec);
-        fflush(stdout);
-    }
-
+done:
     // close a container
     if(PDCcont_close(cont) < 0)
-        printf("fail to close container c1\n");
+        printf("fail to close container %lu\n", cont);
 
     // close a container property
     if(PDCprop_close(cont_prop) < 0)

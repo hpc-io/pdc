@@ -47,47 +47,6 @@ typedef struct pdc_server_info_t {
     char            addr_string[ADDR_MAX];
     int             addr_valid;
     hg_addr_t       addr;
-    int             rpc_handle_valid;
-    hg_handle_t     rpc_handle;
-    int             client_test_handle_valid;
-    hg_handle_t     client_test_handle;
-    int             close_server_handle_valid;
-    hg_handle_t     close_server_handle;
-    /* int             name_marker_handle_valid; */
-    /* hg_handle_t     name_marker_handle; */
-    int             metadata_query_handle_valid;
-    hg_handle_t     metadata_query_handle;
-    int             metadata_delete_handle_valid;
-    hg_handle_t     metadata_delete_handle;
-    int             metadata_delete_by_id_handle_valid;
-    hg_handle_t     metadata_delete_by_id_handle;
-    int             metadata_add_tag_handle_valid;
-    hg_handle_t     metadata_add_tag_handle;
-    int             metadata_update_handle_valid;
-    hg_handle_t     metadata_update_handle;
-    int	            client_send_region_map_handle_valid;
-    hg_handle_t     client_send_region_map_handle;
-    int             client_send_region_unmap_handle_valid;
-    hg_handle_t     client_send_region_unmap_handle;
-    int             client_send_object_unmap_handle_valid;
-    hg_handle_t     client_send_object_unmap_handle;
-    int             region_lock_handle_valid;
-    hg_handle_t     region_lock_handle;
-    int             region_release_handle_valid;
-    hg_handle_t     region_release_handle;
-    int             query_partial_handle_valid;
-    hg_handle_t     query_partial_handle;
-    int             client_direct_handle_valid;
-    hg_handle_t     client_direct_handle;
-    // Data server related
-    int             data_server_read_handle_valid;
-    hg_handle_t     data_server_read_handle;
-    int             data_server_write_handle_valid;
-    hg_handle_t     data_server_write_handle;
-    int             data_server_read_check_handle_valid;
-    hg_handle_t     data_server_read_check_handle;
-    int             data_server_write_check_handle_valid;
-    hg_handle_t     data_server_write_check_handle;
 } pdc_server_info_t;
 
 extern pdc_server_info_t *pdc_server_info_g;
@@ -111,10 +70,17 @@ extern pdc_client_t *pdc_client_direct_channels;
 typedef struct PDC_Request_t {
     int                     server_id;
     int                     n_client;
+    int                     n_update;
     PDC_access_t            access_type;
     pdc_metadata_t          *metadata;
     struct PDC_region_info  *region;
     void                    *buf;
+
+    // shm info
+    char                    *shm_base;
+    char                     shm_addr[ADDR_MAX];
+    int                      shm_fd;
+    int                      shm_size;
 
     struct PDC_Request_t      *prev;
     struct PDC_Request_t      *next;
@@ -131,7 +97,7 @@ struct client_lookup_args {
 
     uint32_t             user_id;
     const char          *app_name;
-    uint32_t             time_step;
+    int                  time_step;
     uint32_t             hash_value;
     const char          *tags;
 };
@@ -163,7 +129,7 @@ struct object_unmap_args {
  *
  * \return Number of servers on success/Negative on failure
  */
-int PDC_Client_read_server_addr_from_file();
+perr_t PDC_Client_read_server_addr_from_file();
 
 /**
  * Client request of an obj id by sending object name
@@ -201,6 +167,7 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_step, pdc_metadata_t **out);
+perr_t PDC_Client_query_metadata_name_timestep_agg(const char *obj_name, int time_step, pdc_metadata_t **out);
 
 /**
  * PDC client query metadata by object name
@@ -355,8 +322,8 @@ perr_t PDC_Client_data_direct_init();
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *meta, struct PDC_region_info *region); 
 
+perr_t PDC_Client_data_server_read(PDC_Request_t *request);
 /**
  * Client request server to collectively write a region of an object
  *
@@ -368,7 +335,7 @@ perr_t PDC_Client_data_server_read(int server_id, int n_client, pdc_metadata_t *
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_data_server_write(int server_id, int n_client, pdc_metadata_t *meta, struct PDC_region_info *region, void *buf); 
+perr_t PDC_Client_data_server_write(PDC_Request_t *request); 
 
 /**
  * Client request server to collectively write a region of an object
@@ -402,14 +369,12 @@ perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_
 /**
  * Client request server to check IO status of a previous IO request
  *
- * \param server_id [IN]         Target local data server ID
- * \param n_client [IN]          Client ID
- * \param meta [IN]              Metadata 
+ * \param request[IN]            PDC IO request
  * \param region [IN]            Region
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_data_server_write_check(int server_id, uint32_t client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status);
+perr_t PDC_Client_data_server_write_check(PDC_Request_t *request, int *status);
 
 /**
  * Client request server to check IO status of a previous IO request

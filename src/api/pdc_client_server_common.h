@@ -44,11 +44,14 @@
 
 #include "pdc_obj_pkg.h"
 
-#define ADDR_MAX 128
-#define DIM_MAX  4
-#define TAG_LEN_MAX 128
-#define PDC_SERVER_ID_INTERVEL 1000000
-#define PDC_SERVER_MAX_PROC_PER_NODE 64
+#define ADDR_MAX                            128
+#define DIM_MAX                             4
+#define TAG_LEN_MAX                         128
+#define PDC_SERVER_ID_INTERVEL              1000000
+#define PDC_SERVER_MAX_PROC_PER_NODE        32
+#define PDC_SERIALIZE_MAX_SIZE              256
+#define PDC_MAX_CORE_PER_NODE               68           // Cori KNL has 68 cores per node, Haswell 32
+#define PDC_MAX_TRIAL_NUM   10
 
 /* #define pdc_server_tmp_dir_g  "./pdc_tmp" */
 /* extern char pdc_server_tmp_dir_g[ADDR_MAX]; */
@@ -64,8 +67,13 @@ extern int pdc_server_rank_g;
 #define PDC_MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 typedef enum { POSIX=0, DAOS=1 }       PDC_io_plugin_t;
-typedef enum { READ=0, WRITE=1, NA=2 } PDC_access_t;
+typedef enum { NA=0, READ=1, WRITE=2 } PDC_access_t;
 typedef enum { BLOCK=0, NOBLOCK=1 }    PDC_lock_mode_t;
+typedef enum { NONE=0, 
+               LUSTRE=1, 
+               BB=2, 
+               MEM=3 
+             } PDC_data_loc_t;
 
 typedef struct pdc_metadata_t pdc_metadata_t;
 
@@ -82,8 +90,11 @@ typedef struct region_list_t {
     char     shm_addr[ADDR_MAX];
     int      shm_fd;
     char    *buf;
+    PDC_data_loc_t data_loc_type;
     char     storage_location[ADDR_MAX];
     uint64_t offset;
+    struct region_list_t *overlap_storage_regions;
+    uint32_t n_overlap_storage_region;
     int      reg_dirty;
     PDC_access_t access_type;
     hg_bulk_t bulk_handle;
@@ -97,7 +108,7 @@ typedef struct region_list_t {
 
     struct region_list_t *prev;
     struct region_list_t *next;
-    // 16 attributes, need to match init and deep_cp routines
+    // 25 attributes, need to match init and deep_cp routines
 } region_list_t;
 
 // Similar structure PDC_region_info_t defined in pdc_obj_pkg.h
@@ -106,19 +117,18 @@ typedef struct region_info_transfer_t {
     size_t ndim;
     uint64_t start_0, start_1, start_2, start_3;
     uint64_t count_0, count_1, count_2, count_3;
-    uint64_t stride_0, stride_1, stride_2, stride_3;
 } region_info_transfer_t;
 
 typedef struct pdc_metadata_transfer_t {
     int32_t     user_id;
     const char  *app_name;
     const char  *obj_name;
-    int32_t     time_step;
+    int          time_step;
 
     uint64_t    obj_id;
 
-    int32_t     ndim;
-    int32_t     dims0, dims1, dims2, dims3;
+    size_t      ndim;
+    uint64_t    dims0, dims1, dims2, dims3;
 
     const char  *tags;
     const char  *data_location;
@@ -136,7 +146,7 @@ typedef struct metadata_query_transfer_in_t{
     int     time_step_from;
     int     time_step_to;
 
-    int     ndim;
+    size_t  ndim;
 
     /* time_t  create_time_from; */
     /* time_t  create_time_to; */
@@ -201,8 +211,8 @@ typedef struct pdc_metadata_t {
     char    tags[TAG_LEN_MAX];
     char    data_location[ADDR_MAX];
 
-    int     ndim;
-    int     dims[DIM_MAX];
+    size_t   ndim;
+    uint64_t dims[DIM_MAX];
 
     // For region storage list
     region_list_t *storage_region_list_head;
@@ -224,97 +234,15 @@ typedef struct {
     PDC_access_t                io_type;   
     uint32_t                    client_id;
     int32_t                     nclient;
+    int32_t                     nbuffer_request;
     pdc_metadata_t              meta;
     region_list_t               region;
 } data_server_io_info_t;
 
-/* #ifdef HG_HAS_BOOST */
-/* MERCURY_GEN_STRUCT_PROC( pdc_metadata_transfer_t, ((int32_t)(user_id)) ((int32_t)(time_step)) ((uint64_t)(obj_id)) ((int32_t)(ndim)) ((int32_t)(dims0)) ((int32_t)(dims1)) ((int32_t)(dims2)) ((int32_t)(dims3)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((hg_const_string_t)(data_location)) ((hg_const_string_t)(tags)) ) */
-
-/* MERCURY_GEN_PROC( gen_obj_id_in_t, ((pdc_metadata_transfer_t)(data)) ((uint32_t)(hash_value)) ) */
-/* MERCURY_GEN_PROC( gen_obj_id_out_t, ((uint64_t)(obj_id)) ) */
-
-/* /1* MERCURY_GEN_PROC( send_obj_name_marker_in_t, ((hg_const_string_t)(obj_name)) ((uint32_t)(hash_value)) ) *1/ */
-/* /1* MERCURY_GEN_PROC( send_obj_name_marker_out_t, ((int32_t)(ret)) ) *1/ */
-
-/* MERCURY_GEN_PROC( client_test_connect_in_t, ((int32_t)(client_id)) ((int32_t)(nclient)) ((hg_const_string_t)(client_addr)) ) */
-/* MERCURY_GEN_PROC( client_test_connect_out_t, ((int32_t)(ret)) ) */
-
-/* MERCURY_GEN_PROC( server_lookup_client_in_t, ((int32_t)(server_id)) ((int32_t)(nserver)) ((hg_const_string_t)(server_addr)) ) */
-/* MERCURY_GEN_PROC( server_lookup_client_out_t, ((int32_t)(ret)) ) */
-
-/* MERCURY_GEN_PROC( server_lookup_remote_server_in_t, ((int32_t)(server_id)) ) */
-/* MERCURY_GEN_PROC( server_lookup_remote_server_out_t, ((int32_t)(ret)) ) */
-
-/* MERCURY_GEN_PROC( notify_io_complete_in_t, ((uint64_t)(obj_id)) ((int32_t)(io_type)) ((hg_const_string_t)(shm_addr)) ) */
-/* MERCURY_GEN_PROC( notify_io_complete_out_t, ((int32_t)(ret)) ) */
-
-/* MERCURY_GEN_PROC( close_server_in_t,  ((int32_t)(client_id)) ) */
-/* MERCURY_GEN_PROC( close_server_out_t, ((int32_t)(ret)) ) */
-
-/* MERCURY_GEN_PROC( notify_region_update_in_t, ((uint64_t)(obj_id)) ((uint64_t)(reg_id)) ) */
-/* MERCURY_GEN_PROC( notify_region_update_out_t, ((int32_t)(ret)) ) */
-
-/* MERCURY_GEN_PROC( close_server_in_t,  ((int32_t)(client_id)) ) */
-/* MERCURY_GEN_PROC( close_server_out_t, ((int32_t)(ret)) ) */
-
-/* MERCURY_GEN_STRUCT_PROC( metadata_query_transfer_in_t, ((int32_t)(is_list_all)) ((int32_t)(user_id)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((int32_t)(time_step_from)) ((int32_t)(time_step_to)) ((int32_t)(ndim)) ((hg_const_string_t)(tags)) ) */
-/* /1* MERCURY_GEN_STRUCT_PROC( metadata_query_transfer_in_t, ((int32_t)(user_id)) ((hg_const_string_t)(app_name)) ((hg_const_string_t)(obj_name)) ((int32_t)(time_step_from)) ((int32_t)(time_step_to)) ((int32_t)(ndim)) ((int32_t)(create_time_from)) ((int32_t)(create_time_to)) ((int32_t)(last_modified_time_from)) ((int32_t)(last_modified_time_to)) ((hg_const_string_t)(tags)) ) *1/ */
-/* MERCURY_GEN_PROC( metadata_query_transfer_out_t, ((hg_bulk_t)(bulk_handle)) ((int32_t)(ret)) ) */
-
-/* MERCURY_GEN_PROC( metadata_query_in_t, ((hg_const_string_t)(obj_name)) ((uint32_t)(hash_value)) ) */
-/* MERCURY_GEN_PROC( metadata_query_out_t, ((pdc_metadata_transfer_t)(ret)) ) */
-
-/* MERCURY_GEN_PROC( metadata_delete_by_id_in_t, ((uint64_t)(obj_id)) ) */
-/* MERCURY_GEN_PROC( metadata_delete_by_id_out_t, ((int32_t)(ret)) ) */
-
-/* MERCURY_GEN_PROC( metadata_delete_in_t, ((hg_const_string_t)(obj_name)) ((int32_t)(time_step)) ((uint32_t)(hash_value)) ) */
-/* MERCURY_GEN_PROC( metadata_delete_out_t, ((int32_t)(ret)) ) */
-
-/* MERCURY_GEN_PROC( metadata_add_tag_in_t, ((uint64_t)(obj_id)) ((uint32_t)(hash_value)) ((hg_const_string_t)(new_tag)) ) */
-/* MERCURY_GEN_PROC( metadata_add_tag_out_t, ((int32_t)(ret)) ) */
-
-/* MERCURY_GEN_PROC( metadata_update_in_t, ((uint64_t)(obj_id)) ((uint32_t)(hash_value)) ((pdc_metadata_transfer_t)(new_metadata)) ) */
-/* MERCURY_GEN_PROC( metadata_update_out_t, ((int32_t)(ret)) ) */
-
-/* MERCURY_GEN_PROC( gen_obj_unmap_notification_in_t, ((uint64_t)(local_obj_id)) ) */
-/* MERCURY_GEN_PROC( gen_obj_unmap_notification_out_t, ((int32_t)(ret)) ) */
-
-/* MERCURY_GEN_PROC( gen_reg_unmap_notification_in_t, ((uint64_t)(local_obj_id)) ((uint64_t)(local_reg_id)) ) */
-/* MERCURY_GEN_PROC( gen_reg_unmap_notification_out_t, ((int32_t)(ret)) ) */
-
-/* MERCURY_GEN_PROC( gen_reg_map_notification_in_t, ((uint64_t)(local_obj_id)) ((uint64_t)(local_reg_id)) ((uint64_t)(remote_obj_id)) ((uint64_t)(remote_reg_id)) ((int32_t)(remote_client_id)) ((uint8_t)(local_type)) ((uint8_t)(remote_type)) ((uint32_t)(ndim)) ((hg_bulk_t)(bulk_handle)) ) */
-/* MERCURY_GEN_PROC( gen_reg_map_notification_out_t, ((int32_t)(ret)) ) */ 
-
-/* MERCURY_GEN_STRUCT_PROC( region_info_transfer_t, ((hg_size_t)(ndim)) ((uint64_t)(start_0)) ((uint64_t)(start_1)) ((uint64_t)(start_2)) ((uint64_t)(start_3))  ((uint64_t)(count_0)) ((uint64_t)(count_1)) ((uint64_t)(count_2)) ((uint64_t)(count_3)) ((uint64_t)(stride_0)) ((uint64_t)(stride_1)) ((uint64_t)(stride_2)) ((uint64_t)(stride_3)) ) */
-
-/* MERCURY_GEN_PROC( region_lock_in_t, ((uint64_t)(obj_id)) ((int32_t)(lock_op)) ((int8_t)(access_type)) ((uint64_t)(local_reg_id)) ((region_info_transfer_t)(region)) ((int32_t)(mapping)) ) */
-/* MERCURY_GEN_PROC( region_lock_out_t, ((int32_t)(ret)) ) */
-
-/* // Bulk */
-/* MERCURY_GEN_PROC(bulk_write_in_t,  ((hg_int32_t)(cnt)) ((hg_bulk_t)(bulk_handle))) */
-/* MERCURY_GEN_PROC(bulk_write_out_t, ((hg_uint64_t)(ret)) ) */
-
-/* /1* */ 
-/*  * Data Server */
-/*  *1/ */
-
-/* MERCURY_GEN_PROC(data_server_read_in_t, ((int32_t)(client_id)) ((int32_t)(nclient)) ((pdc_metadata_transfer_t)(meta)) ((region_info_transfer_t)(region))) */
-/* MERCURY_GEN_PROC(data_server_read_out_t, ((int32_t)(ret)) ) */
-
-/* MERCURY_GEN_PROC(data_server_write_in_t, ((int32_t)(client_id)) ((int32_t)(nclient)) ((hg_const_string_t)(shm_addr)) ((pdc_metadata_transfer_t)(meta)) ((region_info_transfer_t)(region))) */
-/* MERCURY_GEN_PROC(data_server_write_out_t, ((int32_t)(ret)) ) */
-
-/* MERCURY_GEN_PROC(data_server_read_check_in_t, ((int32_t)(client_id)) ((pdc_metadata_transfer_t)(meta)) ((region_info_transfer_t)(region))) */
-/* MERCURY_GEN_PROC(data_server_read_check_out_t, ((int32_t)(ret)) ((hg_const_string_t)(shm_addr)) ) */
-
-/* MERCURY_GEN_PROC(data_server_write_check_in_t, ((int32_t)(client_id)) ((pdc_metadata_transfer_t)(meta)) ((region_info_transfer_t)(region))) */
-/* MERCURY_GEN_PROC(data_server_write_check_out_t, ((int32_t)(ret)) ) */
-/* #else */
-
 typedef struct {
-    hg_const_string_t    obj_name;
+    hg_string_t    obj_name;
     uint32_t             hash_value;
+    int32_t              time_step;
 } metadata_query_in_t;
 
 typedef struct {
@@ -324,7 +252,7 @@ typedef struct {
 typedef struct {
     uint64_t                obj_id;
     uint32_t                hash_value;
-    hg_const_string_t       new_tag;
+    hg_string_t       new_tag;
 } metadata_add_tag_in_t;
 
 typedef struct {
@@ -495,7 +423,7 @@ hg_proc_region_lock_out_t(hg_proc_t proc, void *data)
 }
 
 typedef struct {
-    hg_const_string_t    obj_name;
+    hg_string_t    obj_name;
     int32_t              time_step;
     uint32_t             hash_value;
 } metadata_delete_in_t;
@@ -520,12 +448,12 @@ hg_proc_metadata_query_transfer_in_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->app_name);
+    ret = hg_proc_hg_string_t(proc, &struct_data->app_name);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name);
+    ret = hg_proc_hg_string_t(proc, &struct_data->obj_name);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -540,7 +468,8 @@ hg_proc_metadata_query_transfer_in_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_uint32_t(proc, &struct_data->ndim);
+
+    ret = hg_proc_hg_size_t(proc, &struct_data->ndim);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -565,7 +494,7 @@ hg_proc_metadata_query_transfer_in_t(hg_proc_t proc, void *data)
 	/* HG_LOG_ERROR("Proc error"); */
     /*     return ret; */
     /* } */
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->tags);
+    ret = hg_proc_hg_string_t(proc, &struct_data->tags);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -609,12 +538,12 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->app_name);
+    ret = hg_proc_hg_string_t(proc, &struct_data->app_name);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name);
+    ret = hg_proc_hg_string_t(proc, &struct_data->obj_name);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -624,27 +553,27 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_uint32_t(proc, &struct_data->ndim);
+    ret = hg_proc_hg_size_t(proc, &struct_data->ndim);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_int32_t(proc, &struct_data->dims0);
+    ret = hg_proc_uint64_t(proc, &struct_data->dims0);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_int32_t(proc, &struct_data->dims1);
+    ret = hg_proc_uint64_t(proc, &struct_data->dims1);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_int32_t(proc, &struct_data->dims2);
+    ret = hg_proc_uint64_t(proc, &struct_data->dims2);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_int32_t(proc, &struct_data->dims3);
+    ret = hg_proc_uint64_t(proc, &struct_data->dims3);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -654,12 +583,12 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->data_location);
+    ret = hg_proc_hg_string_t(proc, &struct_data->data_location);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->tags);
+    ret = hg_proc_hg_string_t(proc, &struct_data->tags);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -683,7 +612,7 @@ hg_proc_metadata_add_tag_in_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->new_tag);
+    ret = hg_proc_hg_string_t(proc, &struct_data->new_tag);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -774,7 +703,7 @@ hg_proc_metadata_delete_in_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     metadata_delete_in_t *struct_data = (metadata_delete_in_t*) data;
 
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name);
+    ret = hg_proc_hg_string_t(proc, &struct_data->obj_name);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
     }
@@ -809,13 +738,20 @@ hg_proc_metadata_query_in_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     metadata_query_in_t *struct_data = (metadata_query_in_t*) data;
 
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name);
+    ret = hg_proc_hg_string_t(proc, &struct_data->obj_name);
     if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->time_step);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
     }
     ret = hg_proc_uint32_t(proc, &struct_data->hash_value);
     if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
+        HG_LOG_ERROR("Proc error");
+        return ret;
     }
     return ret;
 }
@@ -845,7 +781,7 @@ typedef struct {
 
 
 /* typedef struct { */
-/*     hg_const_string_t    obj_name; */
+/*     hg_string_t    obj_name; */
 /*     uint32_t             hash_value; */
 /* } send_obj_name_marker_in_t; */
 
@@ -856,7 +792,7 @@ typedef struct {
 typedef struct {
     int32_t server_id;
     int32_t nserver;
-    hg_const_string_t server_addr;
+    hg_string_t server_addr;
 } server_lookup_client_in_t;
 
 typedef struct {
@@ -876,7 +812,7 @@ typedef struct {
 typedef struct {
     uint32_t client_id;
     int32_t nclient;
-    hg_const_string_t client_addr;
+    hg_string_t client_addr;
 } client_test_connect_in_t;
 
 typedef struct {
@@ -887,7 +823,7 @@ typedef struct {
 typedef struct {
     int32_t  io_type;
     uint64_t obj_id;
-    hg_const_string_t shm_addr;
+    hg_string_t shm_addr;
 } notify_io_complete_in_t;
 
 typedef struct {
@@ -987,7 +923,7 @@ hg_proc_gen_obj_id_out_t(hg_proc_t proc, void *data)
 /*     hg_return_t ret; */
 /*     send_obj_name_marker_in_t *struct_data = (send_obj_name_marker_in_t*) data; */
 
-/*     ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name); */
+/*     ret = hg_proc_hg_string_t(proc, &struct_data->obj_name); */
 /*     if (ret != HG_SUCCESS) { */
 /* 	HG_LOG_ERROR("Proc error"); */
 /*     } */
@@ -1054,7 +990,7 @@ hg_proc_server_lookup_client_in_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->server_addr);
+    ret = hg_proc_hg_string_t(proc, &struct_data->server_addr);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -1092,7 +1028,7 @@ hg_proc_client_test_connect_in_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->client_addr);
+    ret = hg_proc_hg_string_t(proc, &struct_data->client_addr);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -1130,7 +1066,7 @@ hg_proc_notify_io_complete_in_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->shm_addr);
+    ret = hg_proc_hg_string_t(proc, &struct_data->shm_addr);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -1211,20 +1147,26 @@ hg_proc_close_server_out_t(hg_proc_t proc, void *data)
 
 
 // Bulk
-/* Define bulk_write_in_t */
+/* Define bulk_rpc_in_t */
 typedef struct {
     hg_int32_t cnt;
+    hg_int32_t origin;
     hg_bulk_t bulk_handle;
-} bulk_write_in_t;
+} bulk_rpc_in_t;
 
-/* Define hg_proc_bulk_write_in_t */
+/* Define hg_proc_bulk_rpc_in_t */
 static HG_INLINE hg_return_t
-hg_proc_bulk_write_in_t(hg_proc_t proc, void *data)
+hg_proc_bulk_rpc_in_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret = HG_SUCCESS;
-    bulk_write_in_t *struct_data = (bulk_write_in_t *) data;
+    bulk_rpc_in_t *struct_data = (bulk_rpc_in_t *) data;
 
     ret = hg_proc_int32_t(proc, &struct_data->cnt);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->origin);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -1237,17 +1179,17 @@ hg_proc_bulk_write_in_t(hg_proc_t proc, void *data)
     return ret;
 }
 
-/* Define bulk_write_out_t */
+/* Define bulk_rpc_out_t */
 typedef struct {
     hg_uint64_t ret;
-} bulk_write_out_t;
+} bulk_rpc_out_t;
 
-/* Define hg_proc_bulk_write_out_t */
+/* Define hg_proc_bulk_rpc_out_t */
 static HG_INLINE hg_return_t
-hg_proc_bulk_write_out_t(hg_proc_t proc, void *data)
+hg_proc_bulk_rpc_out_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret = HG_SUCCESS;
-    bulk_write_out_t *struct_data = (bulk_write_out_t *) data;
+    bulk_rpc_out_t *struct_data = (bulk_rpc_out_t *) data;
 
     ret = hg_proc_uint64_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
@@ -1300,7 +1242,7 @@ hg_proc_gen_reg_map_notification_in_t(hg_proc_t proc, void *data)
         HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_uint32_t(proc, &struct_data->ndim);
+    ret = hg_proc_hg_size_t(proc, &struct_data->ndim);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -1418,6 +1360,7 @@ hg_proc_gen_obj_unmap_notification_out_t(hg_proc_t proc, void *data)
 typedef struct {
     uint32_t                    client_id;
     int32_t                     nclient;
+    int32_t                     nupdate;
     pdc_metadata_transfer_t     meta;
     region_info_transfer_t      region;
 } data_server_read_in_t;
@@ -1438,6 +1381,11 @@ hg_proc_data_server_read_in_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->nclient);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->nupdate);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -1471,8 +1419,9 @@ hg_proc_data_server_read_out_t(hg_proc_t proc, void *data)
 // Data server write
 typedef struct {
     uint32_t                    client_id;
-    int32_t                     nclient;
-    hg_const_string_t           shm_addr;
+    int32_t                     nclient;    // Number of client requests expected to buffer before actual IO
+    int32_t                     nupdate;    // Number of write requests expected to buffer before meta update
+    hg_string_t                 shm_addr;
     pdc_metadata_transfer_t     meta;
     region_info_transfer_t      region;
 } data_server_write_in_t;
@@ -1497,7 +1446,12 @@ hg_proc_data_server_write_in_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->shm_addr);
+    ret = hg_proc_int32_t(proc, &struct_data->nupdate);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_string_t(proc, &struct_data->shm_addr);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -1536,7 +1490,7 @@ typedef struct {
 
 typedef struct {
     int32_t            ret;
-    hg_const_string_t  shm_addr;
+    hg_string_t  shm_addr;
 } data_server_read_check_out_t;
 
 static HG_INLINE hg_return_t
@@ -1574,7 +1528,7 @@ hg_proc_data_server_read_check_out_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->shm_addr);
+    ret = hg_proc_hg_string_t(proc, &struct_data->shm_addr);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -1631,8 +1585,14 @@ hg_proc_data_server_write_check_out_t(hg_proc_t proc, void *data)
 }
 
 typedef struct {
+    region_info_transfer_t      region_transfer;
+    char                        storage_location[ADDR_MAX];
+    uint64_t                    offset;
+} update_region_storage_meta_bulk_t;
+
+typedef struct {
     uint64_t                    obj_id;
-    hg_const_string_t           storage_location;
+    hg_string_t                 storage_location;
     uint64_t                    offset;
     region_info_transfer_t      region;
 } update_region_loc_in_t;
@@ -1652,7 +1612,7 @@ hg_proc_update_region_loc_in_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->storage_location);
+    ret = hg_proc_hg_string_t(proc, &struct_data->storage_location);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -1722,7 +1682,7 @@ hg_proc_get_metadata_by_id_out_t(hg_proc_t proc, void *data)
 
 // For generic serialized data transfer
 typedef struct {
-    hg_const_string_t buf;
+    hg_string_t buf;
 } pdc_serialized_data_t;
 
 static HG_INLINE hg_return_t
@@ -1731,13 +1691,43 @@ hg_proc_pdc_serialized_data_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     pdc_serialized_data_t *struct_data = (pdc_serialized_data_t*) data;
 
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->buf);
+    ret = hg_proc_hg_string_t(proc, &struct_data->buf);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
     return ret;
 }
+
+typedef struct {
+    region_info_transfer_t region_transfer;
+    hg_string_t            storage_loc;
+    uint64_t               file_offset;
+} get_storage_info_single_out_t;
+
+static HG_INLINE hg_return_t
+hg_proc_get_storage_info_single_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    get_storage_info_single_out_t *struct_data = (get_storage_info_single_out_t*) data;
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->region_transfer);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_string_t(proc, &struct_data->storage_loc);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->file_offset);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
 
 typedef struct {
     uint64_t obj_id;
@@ -1763,10 +1753,46 @@ hg_proc_get_storage_info_in_t(hg_proc_t proc, void *data)
     return ret;
 }
 
+typedef struct {
+    int ret;
+} pdc_int_ret_t;
 
-/* #endif // HAS_BOOST */
+static HG_INLINE hg_return_t
+hg_proc_pdc_int_ret_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    pdc_int_ret_t *struct_data = (pdc_int_ret_t*) data;
 
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
 
+typedef struct {
+    hg_string_t buf;
+    pdc_metadata_transfer_t meta;
+} pdc_aggregated_io_to_server_t;
+
+static HG_INLINE hg_return_t
+hg_proc_pdc_aggregated_io_to_server_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    pdc_aggregated_io_to_server_t *struct_data = (pdc_aggregated_io_to_server_t*) data;
+
+    ret = hg_proc_hg_string_t(proc, &struct_data->buf);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_pdc_metadata_transfer_t(proc, &struct_data->meta);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
 
 hg_id_t gen_obj_id_register(hg_class_t *hg_class);
 /* hg_id_t send_obj_name_marker_register(hg_class_t *hg_class); */
@@ -1791,16 +1817,19 @@ hg_id_t server_lookup_remote_server_register(hg_class_t *hg_class);
 hg_id_t update_region_loc_register(hg_class_t *hg_class);
 hg_id_t get_metadata_by_id_register(hg_class_t *hg_class);
 hg_id_t get_storage_info_register(hg_class_t *hg_class);
+hg_id_t bulk_rpc_register(hg_class_t *hg_class);
 
 //bulk
 hg_id_t query_partial_register(hg_class_t *hg_class);
 hg_id_t notify_io_complete_register(hg_class_t *hg_class);
 hg_id_t data_server_read_register(hg_class_t *hg_class);
 
-struct hg_test_bulk_args {
+struct bulk_args_t {
     int cnt;
     hg_handle_t handle;
+    hg_bulk_t   bulk_handle;
     size_t nbytes;
+    int origin;
     hg_atomic_int32_t completed_transfers;
     size_t ret;
     pdc_metadata_t **meta_arr;
@@ -1838,6 +1867,7 @@ struct region_update_bulk_args {
 
 hg_id_t gen_reg_map_notification_register(hg_class_t *hg_class);
 
+double   PDC_get_elapsed_time_double(struct timeval *tstart, struct timeval *tend);
 perr_t   delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out);
 perr_t   PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out);
 perr_t   PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *out);
@@ -1863,6 +1893,13 @@ perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to);
 perr_t pdc_region_info_t_to_transfer(struct PDC_region_info *region, region_info_transfer_t *transfer);
 perr_t pdc_region_info_t_to_transfer_unit(struct PDC_region_info *region, region_info_transfer_t *transfer, size_t unit);
 
+perr_t PDC_serialize_regions_lists(region_list_t** regions, uint32_t n_region, void *buf, uint32_t buf_size);
+perr_t PDC_unserialize_region_lists(void *buf, region_list_t** regions, uint32_t *n_region);
+perr_t PDC_get_serialized_size(region_list_t** regions, uint32_t n_region, uint32_t *len);
+
+perr_t PDC_replace_zero_chars(signed char *buf, uint32_t buf_size);
+perr_t PDC_replace_char_fill_values(signed char *buf, uint32_t buf_size);
+
 void pdc_mkdir(const char *dir);
 
 extern hg_hash_table_t   *metadata_hash_table_g;
@@ -1876,5 +1913,8 @@ hg_id_t data_server_read_check_register(hg_class_t *hg_class);
 hg_id_t data_server_read_register(hg_class_t *hg_class);
 
 extern char *find_in_path(char *workingDir, char *application);
+
+
+int pdc_msleep(unsigned long milisec);
 
 #endif /* PDC_CLIENT_SERVER_COMMON_H */

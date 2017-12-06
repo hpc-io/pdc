@@ -39,9 +39,7 @@
 #include <inttypes.h>
 
 // Thread
-hg_thread_pool_t *hg_test_thread_pool_g;
-
-hg_atomic_int32_t close_server_g;
+hg_thread_pool_t *hg_test_thread_pool_g = NULL;
 
 uint64_t pdc_id_seq_g = PDC_SERVER_ID_INTERVEL;
 // actual value for each server is set by PDC_Server_init()
@@ -69,6 +67,7 @@ hg_core_get_thread_work(hg_handle_t handle);
             hg_handle_t handle = (hg_handle_t) arg; \
             hg_thread_ret_t thread_ret = (hg_thread_ret_t) 0; \
             \
+            printf("HG_TEST_THREAD_CB func_name %s!\n", #func_name);\
             func_name ## _thread_cb(handle); \
             \
             return thread_ret; \
@@ -93,6 +92,11 @@ hg_core_get_thread_work(hg_handle_t handle);
 
 #endif // End of ENABLE_MULTITHREAD
 
+double PDC_get_elapsed_time_double(struct timeval *tstart, struct timeval *tend)
+{
+    return (double)(((tend->tv_sec-tstart->tv_sec)*1000000LL + tend->tv_usec-tstart->tv_usec) / 1000000.0);
+}
+
 perr_t PDC_get_self_addr(hg_class_t* hg_class, char* self_addr_string)
 {
     perr_t ret_value;
@@ -108,7 +112,6 @@ perr_t PDC_get_self_addr(hg_class_t* hg_class, char* self_addr_string)
 
     ret_value = SUCCEED;
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -137,6 +140,18 @@ static uint32_t pdc_hash_djb2(const char *pc)
         hash *= -1;
 
     return hash;
+}
+
+int pdc_msleep(unsigned long milisec)
+{
+    struct timespec req={0};
+    time_t sec=(int)(milisec/1000);
+    milisec=milisec-(sec*1000);
+    req.tv_sec=sec;
+    req.tv_nsec=milisec*1000000L;
+    while(nanosleep(&req,&req)==-1)
+         continue;
+    return 1;
 }
 
 /*
@@ -220,7 +235,7 @@ void pdc_mkdir(const char *dir)
 
 void PDC_print_metadata(pdc_metadata_t *a)
 {
-    int i;
+    size_t i;
     region_list_t *elt;
     FUNC_ENTER(NULL);
     
@@ -229,17 +244,17 @@ void PDC_print_metadata(pdc_metadata_t *a)
         return;
     }
     printf("================================\n");
-    printf("  obj_id    = %llu\n", a->obj_id);
+    printf("  obj_id    = %" PRIu64 "\n", a->obj_id);
     printf("  uid       = %d\n",   a->user_id);
     printf("  app_name  = [%s]\n",   a->app_name);
     printf("  obj_name  = [%s]\n",   a->obj_name);
     printf("  obj_loc   = [%s]\n",   a->data_location);
-    printf("  time_step = %d\n",   a->time_step);
+    printf("  time_step = %d\n",     a->time_step);
     printf("  tags      = [%s]\n",   a->tags);
-    printf("  ndim      = %d\n",   a->ndim);
-    printf("  dims = %llu",   a->dims[0]);
+    printf("  ndim      = %lu\n",    a->ndim);
+    printf("  dims = %" PRIu64 "",   a->dims[0]);
     for (i = 1; i < a->ndim; i++) 
-        printf(", %llu",   a->dims[i]);
+        printf(", %" PRIu64 "",      a->dims[i]);
     // print regiono info
     DL_FOREACH(a->storage_region_list_head, elt)
         PDC_print_region_list(elt);
@@ -264,7 +279,7 @@ perr_t PDC_metadata_init(pdc_metadata_t *a)
     memset(a->obj_name,      0, sizeof(char)*ADDR_MAX);
     memset(a->tags,          0, sizeof(char)*TAG_LEN_MAX);
     memset(a->data_location, 0, sizeof(char)*ADDR_MAX);
-    memset(a->dims,          0, sizeof(int32_t)*DIM_MAX);
+    memset(a->dims,          0, sizeof(uint64_t)*DIM_MAX);
 
     a->region_lock_head = NULL;
     a->region_map_head = NULL;
@@ -282,26 +297,34 @@ perr_t PDC_init_region_list(region_list_t *a)
     perr_t ret_value = SUCCEED;
 
     a->ndim          = 0;
-    a->prev          = NULL;
-    a->next          = NULL;
-    a->is_data_ready = 0;
-    a->data_size     = 0;
-    a->shm_fd        = -1;
-    a->buf           = NULL;
-    a->access_type   = NA;
-    a->offset        = 0;
-    a->reg_dirty     = 0;
-    a->meta          = NULL;
-
     memset(a->start,  0, sizeof(uint64_t)*DIM_MAX);
     memset(a->count,  0, sizeof(uint64_t)*DIM_MAX);
     /* memset(a->stride, 0, sizeof(uint64_t)*DIM_MAX); */
+    memset(a->client_ids, 0, sizeof(uint32_t)*PDC_SERVER_MAX_PROC_PER_NODE);
 
-    memset(a->shm_addr,         0, sizeof(char)*ADDR_MAX);
-    memset(a->client_ids,       0, sizeof(uint32_t)*PDC_SERVER_MAX_PROC_PER_NODE);
+    a->data_size     = 0;
+    a->is_data_ready = 0;
+    memset(a->shm_addr, 0, sizeof(char)*ADDR_MAX);
+    a->shm_fd        = -1;
+    a->buf           = NULL;
+    a->data_loc_type = NONE;
     memset(a->storage_location, 0, sizeof(char)*ADDR_MAX);
+    a->overlap_storage_regions = NULL;
+    a->n_overlap_storage_region = 0;
+    a->offset        = 0;
+    a->reg_dirty     = 0;
+    a->access_type   = NA;
+    a->bulk_handle   = NULL;
+    a->addr          = 0;
+    a->meta          = NULL;
+    a->obj_id        = 0;
+    a->reg_id        = 0;
+    a->from_obj_id   = 0;
+    a->client_id     = 0;
 
-    // Init 16 attributes, double check to match the region_list_t def
+    a->prev          = NULL;
+    a->next          = NULL;
+    // Init 25 attributes, double check to match the region_list_t def
     return ret_value;
 }
 
@@ -309,7 +332,12 @@ perr_t PDC_init_region_list(region_list_t *a)
 int PDC_is_same_region_list(region_list_t *a, region_list_t *b)
 {
     int ret_value = 1;
-    int i = 0;
+    size_t i = 0;
+
+    if (NULL == a || NULL == b) {
+        printf("==Empty region_list_t structure\n");
+        return -1;
+    }
 
     if (a->ndim != b->ndim) 
         return -1;
@@ -323,7 +351,7 @@ int PDC_is_same_region_list(region_list_t *a, region_list_t *b)
             return -1;
     }
 
-done:
+/* done: */
     return ret_value;
 }
 
@@ -335,9 +363,14 @@ void PDC_print_storage_region_list(region_list_t *a)
         printf("==Empty region_list_t structure\n");
         return;
     }
-    int i;
+
+    if (a->ndim > 4) {
+        printf("==Error with ndim %lu\n", a->ndim);
+        return;
+    }
+    size_t i;
     printf("================================\n");
-    printf("  ndim      = %d\n",   a->ndim);
+    printf("  ndim      = %lu\n",   a->ndim);
     printf("  start    count\n");
     /* printf("start stride count\n"); */
     for (i = 0; i < a->ndim; i++) {
@@ -361,16 +394,21 @@ void PDC_print_region_list(region_list_t *a)
         printf("==Empty region_list_t structure\n");
         return;
     }
-    int i;
+    size_t i;
     printf("\n  == Region Info ==\n");
-    printf("    ndim      = %d\n",   a->ndim);
+    printf("    ndim      = %lu\n",   a->ndim);
+    if (a->ndim > 4) {
+        printf("Error with dim %lu\n", a->ndim);
+        return;
+    }
     printf("    start    count\n");
     /* printf("start stride count\n"); */
     for (i = 0; i < a->ndim; i++) {
-        printf("    %5d    %5d\n", a->start[i], a->count[i]);
+        printf("    %5" PRIu64"    %5" PRIu64"\n", a->start[i], a->count[i]);
         /* printf("%5d %6d %5d\n", a->start[i], a->stride[i], a->count[i]); */
     }
     printf("    Storage location: [%s]\n", a->storage_location);
+    printf("    Storage offset  : %" PRIu64 " \n", a->offset);
     printf("    Client IDs: ");
     i = 0;
     while (1) {
@@ -385,41 +423,49 @@ void PDC_print_region_list(region_list_t *a)
 
 perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to)
 {
-    int i;
     if (NULL == from || NULL == to) {
         printf("pdc_region_list_t_deep_cp(): NULL input!\n");
         return FAIL;
     }
 
-    to->ndim = from->ndim;
-    for (i = 0; i < DIM_MAX; i++) {
-        to->start[i]  = from->start[i];
-        to->count[i]  = from->count[i];
-        /* to->stride[i] = from->stride[i]; */
+    if (from->ndim > 4 || from->ndim <= 0) {
+        printf("pdc_region_list_t_deep_cp(): ndim %u ERROR!\n", from->ndim);
+        return FAIL;
     }
 
-    for (i = 0; i < PDC_SERVER_MAX_PROC_PER_NODE; i++) 
-        to->client_ids[i] = from->client_ids[i];
+    to->ndim = from->ndim;
+    memcpy(to->start, from->start, sizeof(uint64_t)*from->ndim);
+    memcpy(to->count, from->count, sizeof(uint64_t)*from->ndim);
+    /* memcpy(to->stride, from->stride, sizeof(uint64_t)*from->ndim); */
+
+    memcpy(to->client_ids, from->client_ids, sizeof(uint32_t)*PDC_SERVER_MAX_PROC_PER_NODE);
 
     to->data_size     = from->data_size;
     to->is_data_ready = from->is_data_ready;
     memcpy(to->shm_addr, from->shm_addr, sizeof(char) * ADDR_MAX);
     to->shm_fd        = from->shm_fd;
     to->buf           = from->buf;
-    memcpy(to->storage_location , from->storage_location, sizeof(char) * ADDR_MAX);
-    to->access_type   = from->access_type;
-    to->reg_dirty     = from->reg_dirty;
+    to->data_loc_type = from->data_loc_type;
+    strcpy(to->storage_location, from->storage_location);
+    to->overlap_storage_regions  = from->overlap_storage_regions;
+    to->n_overlap_storage_region = from->n_overlap_storage_region;
     to->offset        = from->offset;
+    to->reg_dirty     = from->reg_dirty;
+    to->access_type   = from->access_type;
+    to->bulk_handle   = from->bulk_handle;
+    to->addr          = from->addr;
+    to->obj_id        = from->obj_id;
+    to->reg_id        = from->reg_id;
+    to->from_obj_id   = from->from_obj_id;
+    to->client_id     = from->client_id;
+
     to->meta          = from->meta;
 
-    to->prev = NULL;
-    to->next = NULL;
-
-    // Copy 16 attributes, double check to match the region_list_t def
-                            
+    to->prev = from->prev;
+    to->next = from->next;
+    // Copy 23 attributes, double check to match the region_list_t def
     return SUCCEED;
 }
-
 
 perr_t pdc_region_transfer_t_to_list_t(region_info_transfer_t *transfer, region_list_t *region)
 {
@@ -457,7 +503,7 @@ perr_t pdc_region_transfer_t_to_list_t(region_info_transfer_t *transfer, region_
 
 perr_t pdc_region_info_to_list_t(struct PDC_region_info *region, region_list_t *list)
 {
-    int i;
+    size_t i;
 
     if (NULL==region || NULL==list ) {
         printf("    pdc_region_info_t_to_region_list_t(): NULL input!\n");
@@ -533,7 +579,6 @@ perr_t pdc_region_info_t_to_transfer(struct PDC_region_info *region, region_info
     return SUCCEED;
 }
 
-
 perr_t pdc_region_info_t_to_transfer_unit(struct PDC_region_info *region, region_info_transfer_t *transfer, size_t unit)
 {
     if (NULL==region || NULL==transfer ) {
@@ -578,14 +623,13 @@ perr_t pdc_region_info_t_to_transfer_unit(struct PDC_region_info *region, region
     /* if (ndim >= 3)      transfer->stride_2 = 0; */
     /* if (ndim >= 4)      transfer->stride_3 = 0; */
 
-    transfer->stride_0 = 0;
-    transfer->stride_1 = 0; 
-    transfer->stride_2 = 0; 
-    transfer->stride_3 = 0; 
+    /* transfer->stride_0 = 0; */
+    /* transfer->stride_1 = 0; */
+    /* transfer->stride_2 = 0; */
+    /* transfer->stride_3 = 0; */
 
     return SUCCEED;
 }
-
 
 perr_t pdc_region_list_t_to_transfer(region_list_t *region, region_info_transfer_t *transfer)
 {
@@ -612,7 +656,6 @@ perr_t pdc_region_list_t_to_transfer(region_list_t *region, region_info_transfer
 
     return SUCCEED;
 }
-
 
 // Fill the structure of pdc_metadata_transfer_t with pdc_metadata_t
 perr_t pdc_metadata_t_to_transfer_t(pdc_metadata_t *meta, pdc_metadata_transfer_t *transfer)
@@ -667,8 +710,9 @@ hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info) {
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out) {return SUCCEED;}
 /* perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out) {return SUCCEED;} */
 perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key, pdc_metadata_t** out) {return SUCCEED;}
+perr_t PDC_Server_search_with_name_timestep(const char *obj_name, uint32_t hash_key, uint32_t ts, pdc_metadata_t** out) {return SUCCEED;}
 perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out) {return SUCCEED;}
-perr_t delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_id_out_t *out) {return SUCCEED;}
+perr_t PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_id_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_region_release(region_lock_in_t *in, region_lock_out_t *out) {return SUCCEED;}
@@ -676,7 +720,7 @@ perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out) {ret
 //perr_t PDC_Server_region_lock_status(pdcid_t obj_id, region_info_transfer_t *region, int *lock_status) {return SUCCEED;}
 perr_t PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status) {return SUCCEED;}
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs) {return SUCCEED;}
-perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region) {return NULL;}
+perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_t obj_id) {return NULL;}
 perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
 perr_t PDC_Server_data_read_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
 perr_t PDC_SERVER_notify_region_update_to_client(uint64_t meta_id, uint64_t reg_id, int32_t client_id) {return SUCCEED;}
@@ -686,6 +730,11 @@ perr_t PDC_Server_get_local_storage_location_of_region(uint64_t obj_id, region_l
 perr_t PDC_Server_get_total_str_len(region_list_t** regions, uint32_t n_region, uint32_t *len) {return SUCCEED;}
 perr_t PDC_Server_serialize_regions_info(region_list_t** regions, uint32_t n_region, void *buf) {return SUCCEED;}
 pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id) {return NULL;}
+perr_t PDC_Server_update_region_storage_meta_bulk_local(update_region_storage_meta_bulk_t **bulk_ptrs, int cnt){return SUCCEED;}
+hg_return_t PDC_Server_count_write_check_update_storage_meta_cb (const struct hg_cb_info *callback_info) {return SUCCEED;}
+
+hg_return_t PDC_Server_s2s_recv_work_done_cb(const struct hg_cb_info *callback_info) {return SUCCEED;}
+perr_t PDC_Server_set_close() {return SUCCEED;}
 
 hg_class_t *hg_class_g;
 
@@ -695,6 +744,7 @@ hg_class_t *hg_class_g;
 hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
 perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_check_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_write_check_out_t *out) {return SUCCEED;}
+hg_return_t PDC_Server_s2s_work_done_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
 
 #else
 hg_return_t PDC_Client_work_done_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;};
@@ -748,7 +798,6 @@ HG_TEST_RPC_CB(gen_obj_id, handle)
     
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     gen_obj_id_in_t in;
     gen_obj_id_out_t out;
@@ -758,8 +807,13 @@ HG_TEST_RPC_CB(gen_obj_id, handle)
     // Insert to hash table
     ret_value = insert_metadata_to_hash_table(&in, &out);
 
+    /* printf("==PDC_SERVER: gen_obj_id_cb(): going to return %" PRIu64 "\n", out.obj_id); */
+    /* fflush(stdout); */
+
     HG_Respond(handle, NULL, NULL, &out);
-    /* printf("==PDC_SERVER: gen_obj_id_cb(): returned %llu\n", out.ret); */
+
+    /* printf("==PDC_SERVER: gen_obj_id_cb(): After HG_Respond%\n"); */
+    /* fflush(stdout); */
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
@@ -778,14 +832,13 @@ HG_TEST_RPC_CB(server_lookup_client, handle)
     
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
     out.ret = in.server_id + 43210000;
 
     HG_Respond(handle, PDC_Client_work_done_cb, NULL, &out);
 
-    /* printf("==PDC_CLIENT: server_lookup_client_cb(): Respond %llu to server[%d]\n", out.ret, in.server_id); */
+    /* printf("==PDC_CLIENT: server_lookup_client_cb(): Respond %" PRIu64 " to server[%d]\n", out.ret, in.server_id); */
     /* fflush(stdout); */
 
     HG_Free_input(handle, &in);
@@ -793,6 +846,7 @@ HG_TEST_RPC_CB(server_lookup_client, handle)
 
     FUNC_LEAVE(ret_value);
 }
+
 
 /* static hg_return_t */
 /* server_lookup_remote_server_cb(hg_handle_t handle) */
@@ -804,12 +858,14 @@ HG_TEST_RPC_CB(server_lookup_remote_server, handle)
     
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
-    out.ret = in.server_id + 1000000;
+    out.ret = in.server_id + 1024000;
 
     HG_Respond(handle, NULL, NULL, &out);
+
+    /* printf("==PDC_SERVER[x]: %s - Responded %" PRIu64 " back to server[%d]\n", __func__, out.ret, in.server_id); */
+    /* fflush(stdout); */
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
@@ -829,7 +885,6 @@ HG_TEST_RPC_CB(client_test_connect, handle)
     
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
     out.ret = in.client_id + 123400;
@@ -838,9 +893,11 @@ HG_TEST_RPC_CB(client_test_connect, handle)
     args->nclient   = in.nclient;
     sprintf(args->client_addr, in.client_addr);
 
+    /* printf("==PDC_SERVER: got client_test_connect req, going to return %" PRIu64 "\n", out.ret); */
+    /* fflush(stdout); */
     /* HG_Respond(handle, NULL, NULL, &out); */
     HG_Respond(handle, PDC_Server_get_client_addr, args, &out);
-    /* printf("==PDC_SERVER: client_test_connect(): Returned %llu\n", out.ret); */
+    /* printf("==PDC_SERVER: client_test_connect(): Done respond to client test connect\n", out.ret); */
     /* fflush(stdout); */
 
     HG_Free_input(handle, &in);
@@ -848,39 +905,6 @@ HG_TEST_RPC_CB(client_test_connect, handle)
 
     FUNC_LEAVE(ret_value);
 }
-
-/* static hg_return_t */
-// send_obj_name_marker_cb(hg_handle_t handle)
-/* HG_TEST_RPC_CB(send_obj_name_marker, handle) */
-/* { */
-/*     FUNC_ENTER(NULL); */
-
-/*     hg_return_t ret_value; */
-
-/*     /1* Get input parameters sent on origin through on HG_Forward() *1/ */
-/*     // Decode input */
-/*     send_obj_name_marker_in_t  in; */
-/*     send_obj_name_marker_out_t out; */
-
-/*     HG_Get_input(handle, &in); */
-    
-/*     // Insert to object marker hash table */
-/*     insert_obj_name_marker(&in, &out); */
-
-/*     /1* out.ret = 1; *1/ */
-/*     HG_Respond(handle, NULL, NULL, &out); */
-/*     /1* printf("==PDC_SERVER: send_obj_name_marker() Returned %llu\n", out.ret); *1/ */
-/*     /1* fflush(stdout); *1/ */
-
-/*     HG_Free_input(handle, &in); */
-/*     HG_Destroy(handle); */
-
-/*     ret_value = HG_SUCCESS; */
-
-/* done: */
-/*     FUNC_LEAVE(ret_value); */
-/* } */
-
 
 /* static hg_return_t */
 /* metadata_query_cb(hg_handle_t handle) */
@@ -893,14 +917,14 @@ HG_TEST_RPC_CB(metadata_query, handle)
     
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
     /* printf("==PDC_SERVER: Received query with name: %s, hash value: %u\n", in.obj_name, in.hash_value); */
     /* fflush(stdout); */
 
     // Do the work
-    PDC_Server_search_with_name_hash(in.obj_name, in.hash_value, &query_result);
+    /* PDC_Server_search_with_name_hash(in.obj_name, in.hash_value, &query_result); */
+    PDC_Server_search_with_name_timestep(in.obj_name, in.hash_value, in.time_step, &query_result);
 
     // Convert for transfer
     if (query_result != NULL) {
@@ -926,7 +950,7 @@ HG_TEST_RPC_CB(metadata_query, handle)
     /* printf("out.ret.data_location: %s\n", out.ret.data_location); */
 
     HG_Respond(handle, NULL, NULL, &out);
-    /* printf("==PDC_SERVER: metadata_query_cb(): Returned obj_name=%s, obj_id=%llu\n", out.ret.obj_name, out.ret.obj_id); */
+    /* printf("==PDC_SERVER: metadata_query_cb(): Returned obj_name=%s, obj_id=%" PRIu64 "\n", out.ret.obj_name, out.ret.obj_id); */
     /* fflush(stdout); */
 
     HG_Free_input(handle, &in);
@@ -945,12 +969,11 @@ HG_TEST_RPC_CB(metadata_delete_by_id, handle)
     
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
-    /* printf("==PDC_SERVER: Got delete_by_id request: hash=%d, obj_id=%llu\n", in.hash_value, in.obj_id); */
+    /* printf("==PDC_SERVER: Got delete_by_id request: hash=%d, obj_id=%" PRIu64 "\n", in.hash_value, in.obj_id); */
 
-    delete_metadata_by_id(&in, &out);
+    PDC_Server_delete_metadata_by_id(&in, &out);
     
     /* out.ret = 1; */
     HG_Respond(handle, NULL, NULL, &out);
@@ -972,10 +995,9 @@ HG_TEST_RPC_CB(metadata_delete, handle)
     
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
-    /* printf("==PDC_SERVER: Got delete request: hash=%d, obj_id=%llu\n", in.hash_value, in.obj_id); */
+    /* printf("==PDC_SERVER: Got delete request: hash=%d, obj_id=%" PRIu64 "\n", in.hash_value, in.obj_id); */
 
     delete_metadata_from_hash_table(&in, &out);
     
@@ -996,13 +1018,12 @@ HG_TEST_RPC_CB(metadata_add_tag, handle)
 
     hg_return_t ret_value;
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     metadata_add_tag_in_t  in;
     metadata_add_tag_out_t out;
 
     HG_Get_input(handle, &in);
-    /* printf("==PDC_SERVER: Got add_tag request: hash=%d, obj_id=%llu\n", in.hash_value, in.obj_id); */
+    /* printf("==PDC_SERVER: Got add_tag request: hash=%d, obj_id=%" PRIu64 "\n", in.hash_value, in.obj_id); */
 
 
     PDC_Server_add_tag_metadata(&in, &out);
@@ -1013,7 +1034,7 @@ HG_TEST_RPC_CB(metadata_add_tag, handle)
 
     ret_value = HG_SUCCESS;
 
-done:
+/* done: */
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
@@ -1029,12 +1050,11 @@ HG_TEST_RPC_CB(notify_io_complete, handle)
     
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
     PDC_access_t type = (PDC_access_t)in.io_type;
 
-    /* printf("==PDC_CLIENT: Got %s complete notification from server: obj_id=%llu, shm_addr=[%s]\n", */ 
+    /* printf("==PDC_CLIENT: Got %s complete notification from server: obj_id=%" PRIu64 ", shm_addr=[%s]\n", */ 
     /*         in.io_type == READ? "read":"write", in.obj_id, in.shm_addr); */
     /* fflush(stdout); */
 
@@ -1077,7 +1097,6 @@ HG_TEST_RPC_CB(notify_region_update, handle)
 
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
     out.ret = 1;
@@ -1098,10 +1117,9 @@ HG_TEST_RPC_CB(metadata_update, handle)
     
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
-    /* printf("==PDC_SERVER: Got update request: hash=%d, obj_id=%llu\n", in.hash_value, in.obj_id); */
+    /* printf("==PDC_SERVER: Got update request: hash=%d, obj_id=%" PRIu64 "\n", in.hash_value, in.obj_id); */
 
     PDC_Server_update_metadata(&in, &out);
     
@@ -1124,29 +1142,24 @@ HG_TEST_RPC_CB(close_server, handle)
     
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
-    // Decode input
     HG_Get_input(handle, &in);
-    /* printf("\n==PDC_SERVER: Close server request received\n"); */
-    /* fflush(stdout); */
 
-    // Set close server marker
-    while (hg_atomic_get32(&close_server_g) == 0 ) {
-        hg_atomic_set32(&close_server_g, 1);
-    }
+    PDC_Server_set_close();
 
     out.ret = 1;
     HG_Respond(handle, NULL, NULL, &out);
 
+    /* printf("\n==PDC_SERVER: Respond back to close server request\n"); */
+    /* fflush(stdout); */
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
-   //when to free bulk_handle
 
     FUNC_LEAVE(ret_value);
 }
 
 //enter this function, transfer is done, data is pushed to mapping region
+static hg_return_t
 region_update_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
 {
     hg_return_t hg_ret = HG_SUCCESS;
@@ -1158,7 +1171,8 @@ region_update_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     bulk_args = (struct region_update_bulk_args *)hg_cb_info->arg;
 //    handle = bulk_args->handle;
     // Send notification to mapped regions, when data transfer is done
-    PDC_SERVER_notify_region_update_to_client(bulk_args->remote_obj_id, bulk_args->remote_reg_id, bulk_args->remote_client_id);
+    PDC_SERVER_notify_region_update_to_client(bulk_args->remote_obj_id, 
+                                              bulk_args->remote_reg_id, bulk_args->remote_client_id);
 
     out.ret = 1;
     HG_Respond(bulk_args->handle, NULL, NULL, &out);
@@ -1310,7 +1324,7 @@ fflush(stdout);
 //done:
 //    out.ret = 1;
 //    HG_Respond(bulk_args->handle, NULL, NULL, &out);
-    /* printf("==PDC_SERVER: region_release_bulk_transfer_cb(): returned %llu\n", out.ret); */
+    /* printf("==PDC_SERVER: region_release_bulk_transfer_cb(): returned %" PRIu64 "\n", out.ret); */
 
     HG_Free_input(bulk_args->handle, &(bulk_args->in));
     
@@ -1391,10 +1405,10 @@ HG_TEST_RPC_CB(region_release, handle)
     hg_bulk_t origin_bulk_handle = HG_BULK_NULL; 
     hg_bulk_t local_bulk_handle = HG_BULK_NULL;
     hg_bulk_t lock_local_bulk_handle = HG_BULK_NULL;
+    region_map_t *map_elt;
 
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
     /* Get info from handle */
@@ -1408,10 +1422,11 @@ HG_TEST_RPC_CB(region_release, handle)
             PDC_Server_get_local_metadata_by_id(in.obj_id, &res_meta);
             DL_FOREACH(res_meta->region_lock_head, elt) {
                 if (PDC_is_same_region_list(request_region, elt) == 1 && elt->reg_dirty == 1) {
+                    printf("==PDC SERVER: region_release start %" PRIu64 " \n", request_region->start[0]);
                     // printf("detect lock release dirty region\n");
                     dirty_reg = 1;
                     size = HG_Bulk_get_size(elt->bulk_handle);
-                    data_buf = (void *)malloc(size);
+                    data_buf = (void *)calloc(1,size);
                     // data transfer
                     server_region = (struct PDC_region_info *)malloc(sizeof(struct PDC_region_info));
                     server_region->ndim = 1;
@@ -1450,7 +1465,7 @@ HG_TEST_RPC_CB(region_release, handle)
             PDC_Server_region_release(&in, &out);
 
             HG_Respond(handle, NULL, NULL, &out);  // move to transfer_cb
-            /* printf("==PDC_SERVER: region_lock_cb(): returned %llu\n", out.ret); */
+            /* printf("==PDC_SERVER: region_lock_cb(): returned %" PRIu64 "\n", out.ret); */
 
             HG_Free_input(handle, &in);
             HG_Destroy(handle);   // move to transfer_cb
@@ -1467,17 +1482,16 @@ HG_TEST_RPC_CB(region_release, handle)
         target_obj = PDC_Server_get_obj_metadata(in.obj_id);
         if (target_obj == NULL) {
             error = 1;
-            printf("==PDC_SERVER: PDC_Server_region_release - requested object (id=%llu) does not exist\n", in.obj_id);
+            printf("==PDC_SERVER: PDC_Server_region_release - requested object (id=%" PRIu64 ") does not exist\n", in.obj_id);
             goto done;
         }
         found = 0;
         if(target_obj->region_map_head != NULL) {
-            region_map_t *elt;
-            DL_FOREACH(target_obj->region_map_head, elt) {
-//                if(elt->local_obj_id == in.obj_id && elt->local_reg_id==in.local_reg_id) {
-                  if(elt->local_obj_id == in.obj_id && region_is_identical(in.region, elt->local_region)) {
+            DL_FOREACH(target_obj->region_map_head, map_elt) {
+//                if(map_elt->local_obj_id == in.obj_id && map_elt->local_reg_id==in.local_reg_id) {
+                  if(map_elt->local_obj_id == in.obj_id && region_is_identical(in.region, map_elt->local_region)) {
                     found = 1;
-                    origin_bulk_handle = elt->local_bulk_handle;
+                    origin_bulk_handle = map_elt->local_bulk_handle;
                     local_bulk_handle = HG_BULK_NULL;
 
                     // copy data from client to server
@@ -1506,22 +1520,22 @@ HG_TEST_RPC_CB(region_release, handle)
                     if(!server_region)
                         PGOTO_ERROR(FAIL,"server_region memory allocation failed\n");
 /*
-                    server_region->ndim = elt->local_ndim;
+                    server_region->ndim = map_elt->local_ndim;
                     server_region->size = (uint64_t *)malloc(server_region->ndim * sizeof(uint64_t));
                     server_region->offset = (uint64_t *)malloc(server_region->ndim * sizeof(uint64_t));
-                    if(elt->local_ndim >= 1) {
+                    if(map_elt->local_ndim >= 1) {
                         (server_region->offset)[0] = 0;
                         (server_region->size)[0] = in.region.count_0;
                     }
-                    if(elt->local_ndim >= 2) {
+                    if(map_elt->local_ndim >= 2) {
                         (server_region->offset)[1] = 0;
                         (server_region->size)[1] = in.region.count_1; 
                     }
-                    if(elt->local_ndim >= 3) {
+                    if(map_elt->local_ndim >= 3) {
                         (server_region->offset)[2] = 0;
                         (server_region->size)[2] = in.region.count_2;
                     }
-                    if(elt->local_ndim >= 4) {
+                    if(map_elt->local_ndim >= 4) {
                         (server_region->offset)[3] = 0;
                         (server_region->size)[3] = in.region.count_3;
                     }
@@ -1532,10 +1546,10 @@ HG_TEST_RPC_CB(region_release, handle)
                     (server_region->size)[0] = size;
                     (server_region->offset)[0] = in.region.start_0;
                     bulk_args->server_region = server_region;
-                    bulk_args->mapping_list = elt;
-                    bulk_args->addr = elt->local_addr;
+                    bulk_args->mapping_list = map_elt;
+                    bulk_args->addr = map_elt->local_addr;
                     /* Pull bulk data */
-                    hg_ret = HG_Bulk_transfer(hg_info->context, region_release_bulk_transfer_cb, bulk_args, HG_BULK_PULL, elt->local_addr, origin_bulk_handle, 0, local_bulk_handle, 0, size, &hg_bulk_op_id);
+                    hg_ret = HG_Bulk_transfer(hg_info->context, region_release_bulk_transfer_cb, bulk_args, HG_BULK_PULL, map_elt->local_addr, origin_bulk_handle, 0, local_bulk_handle, 0, size, &hg_bulk_op_id);
                     if (hg_ret != HG_SUCCESS) {
                         error = 1;
                         printf("==PDC SERVER ERROR: Could not read bulk data\n");  
@@ -1604,7 +1618,7 @@ HG_TEST_RPC_CB(gen_obj_unmap_notification, handle)
 
     target_obj = PDC_Server_get_obj_metadata(in.local_obj_id);
     if (target_obj == NULL) {
-        printf("==PDC_SERVER: PDC_Server_object_unmap - requested object (id=%llu) does not exist\n", in.local_obj_id);
+        printf("==PDC_SERVER: PDC_Server_object_unmap - requested object (id=%" PRIu64 ") does not exist\n", in.local_obj_id);
         goto done;
     }
 
@@ -1655,7 +1669,7 @@ HG_TEST_RPC_CB(gen_reg_unmap_notification, handle)
 
     target_obj = PDC_Server_get_obj_metadata(in.local_obj_id);
     if (target_obj == NULL) {
-        printf("==PDC_SERVER: PDC_Server_object_unmap - requested object (id=%llu) does not exist\n", in.local_obj_id);
+        printf("==PDC_SERVER: PDC_Server_object_unmap - requested object (id=%" PRIu64 ") does not exist\n", in.local_obj_id);
         goto done;
     }
 
@@ -1705,7 +1719,7 @@ HG_TEST_RPC_CB(gen_reg_map_notification, handle)
 
     target_obj = PDC_Server_get_obj_metadata(in.local_obj_id);
     if (target_obj == NULL) {
-        printf("==PDC_SERVER: PDC_Server_region_map - requested object (id=%llu) does not exist\n", in.local_obj_id);
+        printf("==PDC_SERVER: PDC_Server_region_map - requested object (id=%" PRIu64 ") does not exist\n", in.local_obj_id);
         out.ret = 0;
         goto done;
     }
@@ -1795,7 +1809,7 @@ HG_TEST_RPC_CB(query_partial, handle)
     hg_return_t ret_value;
     hg_return_t hg_ret;
     hg_bulk_t bulk_handle = HG_BULK_NULL;
-    int i;
+    uint32_t i;
     void  **buf_ptrs;
     size_t *buf_sizes;
     uint32_t *n_meta_ptr, n_buf;
@@ -1804,7 +1818,6 @@ HG_TEST_RPC_CB(query_partial, handle)
     
     FUNC_ENTER(NULL);
 
-    /* Get input parameters sent on origin through on HG_Forward() */
     // Decode input
     HG_Get_input(handle, &in);
 
@@ -1885,7 +1898,926 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+/*
+ * Data server related
+ */
 
+// TODO
+static hg_return_t
+update_storage_meta_bulk_cb(const struct hg_cb_info *hg_cb_info)
+{
+    struct bulk_args_t *bulk_args = (struct bulk_args_t *)hg_cb_info->arg;
+    hg_bulk_t local_bulk_handle = hg_cb_info->info.bulk.local_handle;
+    hg_return_t ret = HG_SUCCESS;
+    int cnt, i;
+    uint64_t *obj_id_ptr;
+    update_region_storage_meta_bulk_t *data_ptr;
+    pdc_int_ret_t out_struct;
+    void **buf;
+    void *buf_1d;
+
+    out_struct.ret = 0;
+
+    if (hg_cb_info->ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Error in callback");
+        ret = HG_PROTOCOL_ERROR;
+        goto done;
+    }
+    else {
+
+        cnt = bulk_args->cnt;
+        buf = (void**)calloc(sizeof(void*), cnt);
+
+        /* printf("==PDC_SERVER[x]: finished bulk xfer, with %d regions, %ld bytes\n",cnt-1,bulk_args->nbytes); */
+        /* fflush(stdout); */
+
+        HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, &buf_1d, NULL, NULL);
+
+        // Mercury combines the buffer into 1, so need to make it 2d ptr again
+        buf[0] = buf_1d;
+        buf[1] = buf_1d + sizeof(uint64_t);
+        for (i = 2; i < cnt; i++) {
+            buf[i] = buf[i-1] + sizeof(update_region_storage_meta_bulk_t);
+        }
+
+        // Now we have the storage info in buf
+        // First elem is the obj id, following by cnt region infos
+        obj_id_ptr = (uint64_t*)buf[0];
+        if (*obj_id_ptr <= 0) {
+            printf("==PDC_SERVER[ ]: error with bulk access, obj id invalid!\n");
+            ret = EXIT_FAILURE;
+            goto done;
+        }
+
+        /* printf("==PDC_SERVER[x]: obj id is %" PRIu64 " \n", *obj_id_ptr); */
+        /* fflush(stdout); */
+
+        if (PDC_Server_update_region_storage_meta_bulk_local((update_region_storage_meta_bulk_t**)buf, cnt) 
+            == SUCCEED) {
+
+            free(buf);
+            // Should not free buf_1d here
+            /* free(buf_1d); */
+            
+            out_struct.ret = 9999;
+        }
+    } // end of else
+
+done:
+    /* Free block handle */
+    ret = HG_Bulk_free(local_bulk_handle);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not free HG bulk handle\n");
+        return ret;
+    }
+
+    /* Send response back */
+    ret = HG_Respond(bulk_args->handle, PDC_Server_s2s_recv_work_done_cb, NULL, &out_struct);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not respond\n");
+        return ret;
+    }
+
+    printf("==PDC_SERVER[ ]: Responded to client %d of storage meta update!\n", bulk_args->origin);
+    fflush(stdout);
+
+    HG_Destroy(bulk_args->handle);
+    free(bulk_args);
+
+    return ret;
+}
+
+/* static hg_return_t */
+/* bulk_rpc_cb(hg_handle_t handle) */
+// Server execute after receives the bulk_rpc from another server
+HG_TEST_RPC_CB(bulk_rpc, handle)
+{
+//TODO
+    const struct hg_info *hg_info = NULL;
+    hg_bulk_t origin_bulk_handle = HG_BULK_NULL;
+    hg_bulk_t local_bulk_handle = HG_BULK_NULL;
+    struct bulk_args_t *bulk_args = NULL;
+    bulk_rpc_in_t in_struct;
+    hg_return_t ret = HG_SUCCESS;
+    int cnt;
+    void **buf_ptrs = NULL;
+
+    hg_op_id_t hg_bulk_op_id;
+
+    bulk_args = (struct bulk_args_t *)malloc(sizeof(struct bulk_args_t));
+
+    /* Keep handle to pass to callback */
+    bulk_args->handle = handle;
+
+    /* Get info from handle */
+    hg_info = HG_Get_info(handle);
+
+    /* Get input parameters and data */
+    ret = HG_Get_input(handle, &in_struct);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not get input\n");
+        return ret;
+    }
+
+    bulk_args->origin = in_struct.origin;
+
+    /* Get parameters */
+    cnt = in_struct.cnt;
+    origin_bulk_handle = in_struct.bulk_handle;
+
+    printf("==PDC_SERVER[x]: received update storage meta bulk rpc from %d, with %d regions\n", 
+            in_struct.origin, cnt);
+    fflush(stdout);
+
+    bulk_args->nbytes = HG_Bulk_get_size(origin_bulk_handle);
+    bulk_args->cnt = cnt;
+
+    /* Create a new block handle to read the data */
+    HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *) &bulk_args->nbytes, HG_BULK_READWRITE, 
+                   &local_bulk_handle);
+
+    /* Pull bulk data */
+    ret = HG_Bulk_transfer(hg_info->context, update_storage_meta_bulk_cb,
+                           bulk_args, HG_BULK_PULL, hg_info->addr, origin_bulk_handle, 0,
+                           local_bulk_handle, 0, bulk_args->nbytes, &hg_bulk_op_id);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not read bulk data\n");
+        return ret;
+    }
+
+    printf("==PDC_SERVER[x]: Pulled data from %d\n", in_struct.origin);
+    fflush(stdout);
+
+    HG_Free_input(handle, &in_struct);
+
+done:
+    FUNC_LEAVE(ret);
+}
+
+
+
+// READ
+/* static hg_return_t */
+// data_server_read_cb(hg_handle_t handle)
+HG_TEST_RPC_CB(data_server_read, handle)
+{
+    hg_return_t ret_value;
+    data_server_read_in_t  in;
+    data_server_read_out_t out;
+
+    FUNC_ENTER(NULL);
+
+    // Decode input
+    HG_Get_input(handle, &in);
+    /* printf("==PDC_SERVER: Got data server read request from client %d\n", in.client_id); */
+    /* fflush(stdout); */
+
+    data_server_io_info_t *io_info= (data_server_io_info_t*)malloc(sizeof(data_server_io_info_t));
+
+    io_info->io_type   = READ;
+    io_info->client_id = in.client_id;
+    io_info->nclient   = in.nclient;
+    io_info->nbuffer_request = in.nupdate;
+
+    PDC_metadata_init(&io_info->meta);
+    pdc_transfer_t_to_metadata_t(&(in.meta), &(io_info->meta));
+
+    PDC_init_region_list( &(io_info->region));
+    pdc_region_transfer_t_to_list_t(&(in.region), &(io_info->region));
+
+    io_info->region.access_type = io_info->io_type;
+    io_info->region.meta = &(io_info->meta);
+    io_info->region.client_ids[0] = in.client_id;
+
+
+    out.ret = 1;
+    HG_Respond(handle, PDC_Server_data_io_via_shm, io_info, &out);
+
+    ret_value = HG_SUCCESS;
+
+done:
+    HG_Free_input(handle, &in);
+    ret_value = HG_Destroy(handle);
+    if (ret_value != HG_SUCCESS) 
+        printf("==PDC_SERVER: data_server_read_cb - Error with HG_Destroy\n");
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+
+// WRITE
+// data_server_write_cb(hg_handle_t handle)
+HG_TEST_RPC_CB(data_server_write, handle)
+{
+    hg_return_t ret_value;
+    data_server_write_in_t  in;
+    data_server_write_out_t out;
+
+    FUNC_ENTER(NULL);
+
+    // Decode input
+    HG_Get_input(handle, &in);
+    /* printf("==PDC_SERVER: Got data server write request from client %d\n", in.client_id); */
+    /* fflush(stdout); */
+
+    data_server_io_info_t *io_info= (data_server_io_info_t*)malloc(sizeof(data_server_io_info_t));
+
+    io_info->io_type   = WRITE;
+    io_info->client_id = in.client_id;
+    io_info->nclient   = in.nclient;
+    io_info->nbuffer_request = in.nupdate;
+
+    PDC_metadata_init(&io_info->meta);
+    pdc_transfer_t_to_metadata_t(&(in.meta), &(io_info->meta));
+
+    PDC_init_region_list( &(io_info->region));
+    pdc_region_transfer_t_to_list_t(&(in.region), &(io_info->region));
+
+    strcpy(io_info->region.shm_addr, in.shm_addr);
+    io_info->region.access_type = io_info->io_type;
+    io_info->region.meta = &(io_info->meta);
+    io_info->region.client_ids[0] = in.client_id;
+
+    out.ret = 1;
+    HG_Respond(handle, PDC_Server_data_io_via_shm, io_info, &out);
+
+    /* printf("==PDC_SERVER: respond write request confirmation to client %d\n", in.client_id); */
+    /* fflush(stdout); */
+
+
+    ret_value = HG_SUCCESS;
+
+done:
+    HG_Free_input(handle, &in);
+    ret_value = HG_Destroy(handle);
+    if (ret_value != HG_SUCCESS) 
+        printf("==PDC_SERVER: data_server_write_cb - Error with HG_Destroy\n");
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+
+// IO CHECK
+// data_server_read_check(hg_handle_t handle)
+HG_TEST_RPC_CB(data_server_read_check, handle)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value = HG_SUCCESS;
+
+    // Decode input
+    data_server_read_check_in_t  in;
+    data_server_read_check_out_t out;
+    out.shm_addr = NULL;
+
+    ret_value = HG_Get_input(handle, &in);
+    /* printf("==PDC_SERVER[x]: Got data server read_check request from client %d for [%s] " */
+    /*        "start %" PRIu64", count %" PRIu64"\n", */ 
+    /*         in.client_id, in.meta.obj_name, in.region.start_0, in.region.count_0); */
+
+    PDC_Server_read_check(&in, &out);
+
+    ret_value = HG_Respond(handle, NULL, NULL, &out);
+    /* printf("==PDC_SERVER[x]: server read_check returning ret=%d, shm_addr=%s\n", out.ret, out.shm_addr); */
+
+done:
+    if (NULL != out.shm_addr && out.shm_addr[0] != ' ')
+        free(out.shm_addr);
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+
+// data_server_write_check_cb(hg_handle_t handle)
+HG_TEST_RPC_CB(data_server_write_check, handle)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value = HG_SUCCESS;
+
+    // Decode input
+    data_server_write_check_in_t  in;
+    data_server_write_check_out_t *out = (data_server_write_check_out_t*)calloc(sizeof(data_server_write_check_out_t), 1);
+
+    ret_value = HG_Get_input(handle, &in);
+    /* printf("==PDC_SERVER: Got data server write_check request from client %d\n", in.client_id); */
+
+    PDC_Server_write_check(&in, out);
+
+    // TODO: After returning the last write check finish to client, start the storage meta bulk update process
+    ret_value = HG_Respond(handle, PDC_Server_count_write_check_update_storage_meta_cb, out, out);
+    /* printf("==PDC_SERVER: server write_check returning ret=%d\n", out->ret); */
+
+done:
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+/* update_region_loc_cb */
+HG_TEST_RPC_CB(update_region_loc, handle)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    update_region_loc_in_t  in;
+    update_region_loc_out_t out;
+
+    FUNC_ENTER(NULL);
+
+    // Decode input
+    HG_Get_input(handle, &in);
+    /* printf("==PDC_SERVER: Got region location update request: obj_id=%" PRIu64 "\n", in.obj_id); */
+    fflush(stdout);
+
+    region_list_t *input_region = (region_list_t*)malloc(sizeof(region_list_t));
+    pdc_region_transfer_t_to_list_t(&in.region, input_region);
+    strcpy(input_region->storage_location, in.storage_location);
+    input_region->offset = in.offset;
+
+    /* PDC_print_region_list(input_region); */
+    /* fflush(stdout); */
+
+    out.ret = 20171031;
+    ret_value = PDC_Server_update_local_region_storage_loc(input_region, in.obj_id);
+    if (ret_value != SUCCEED) {
+        out.ret = -1;
+        printf("==PDC_SERVER: FAILED to update region location: obj_id=%" PRIu64 "\n", in.obj_id);
+        fflush(stdout);
+    }
+
+    /* HG_Respond(handle, NULL, NULL, &out); */
+    HG_Respond(handle, PDC_Server_s2s_recv_work_done_cb, NULL, &out);
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
+
+/* get_metadata_by_id_cb */
+HG_TEST_RPC_CB(get_metadata_by_id, handle)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    get_metadata_by_id_in_t  in;
+    get_metadata_by_id_out_t out;
+    pdc_metadata_t *target;
+    
+    FUNC_ENTER(NULL);
+
+    // Decode input
+    HG_Get_input(handle, &in);
+    printf("==PDC_SERVER: Got metadata retrieval: obj_id=%" PRIu64 "\n", in.obj_id);
+
+    PDC_Server_get_local_metadata_by_id(in.obj_id, &target);
+
+    if (target != NULL) 
+        pdc_metadata_t_to_transfer_t(target, &out.res_meta);
+    else {
+        printf("==PDC_SERVER: no matching metadata of obj_id=%" PRIu64 "\n", in.obj_id);
+        out.res_meta.user_id        = -1;
+        out.res_meta.obj_id         = 0;
+        out.res_meta.time_step      = -1;
+        out.res_meta.obj_name       = "N/A";
+        out.res_meta.app_name       = "N/A";
+        out.res_meta.tags           = "N/A";
+        out.res_meta.data_location  = "N/A"; 
+    }
+    
+    HG_Respond(handle, NULL, NULL, &out);
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
+
+// Replace the 0s in the buf so that Mercury can transfer the entire buf
+perr_t PDC_replace_char_fill_values(signed char *buf, uint32_t buf_size)
+{
+    perr_t ret_value = SUCCEED;
+    uint32_t zero_cnt, i;
+    signed char fill_value;
+    FUNC_ENTER(NULL);
+
+    fill_value = buf[buf_size-1];
+    zero_cnt = 0;
+
+    for (i = 0; i < buf_size; i++) {
+        if (buf[i] == fill_value) {
+            buf[i] = 0;
+            zero_cnt++;
+        }
+        else if (buf[i] == 0) {
+            printf("==ERROR! PDC_replace_char_fill_values 0 exist at %d!\n", i);
+            ret_value = FAIL;
+            goto done;
+        }
+    }
+
+    /* printf("==PDC_replace_char_fill_values replaced %d char fill values %d!\n", zero_cnt, (int)fill_value); */
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+
+// Replace the 0s in the buf so that Mercury can transfer the entire buf
+perr_t PDC_replace_zero_chars(signed char *buf, uint32_t buf_size)
+{
+    perr_t ret_value = SUCCEED;
+    uint32_t zero_cnt, i, j, fill_value_valid = 0;
+    signed char fill_value;
+    char num_cnt[257] = {0};
+    FUNC_ENTER(NULL);
+
+    memset(num_cnt, 0, 256);
+
+    for (i = 0; i < buf_size; i++) {
+        num_cnt[buf[i]+128]++;
+    }
+
+    for (i = 0; i < 256; i++) {
+        if (num_cnt[i] == 0) {
+            fill_value = i - 128;
+            fill_value_valid = 1;
+            break;
+        }
+    }
+
+    if (fill_value_valid == 0) {
+        printf("==PDC_replace_zero_chars cannot find a char value not used by buffer!\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    zero_cnt = 0;
+    for (i = 0; i < buf_size; i++) {
+        if (buf[i] == fill_value) {
+            printf("==PDC_replace_zero_chars CHAR_FILL_VALUE exist at %d!\n", i);
+            ret_value = FAIL;
+            goto done;
+        }
+        else if (buf[i] == 0) {
+            buf[i] = fill_value;
+            zero_cnt++;
+        }
+    }
+
+    // Last char is fill value
+    buf[buf_size-1] = fill_value;
+
+    /* printf("==PDC_replace_zero_chars: replaced %d zero values with %d.\n", zero_cnt, (int)fill_value); */
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+/*
+ * Serialize the region info structure for network transfer,
+ * including ndim, start[], count[], storage loc
+ *
+ * \param  regions[IN]       List of region info to be serialized
+ * \param  n_region[IN]      Number of regions in the list
+ * \param  buf[OUT]          Serialized data
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_serialize_regions_lists(region_list_t** regions, uint32_t n_region, void *buf, uint32_t buf_size)
+{
+    perr_t ret_value = SUCCEED;
+    uint32_t i, j;
+    uint32_t ndim, loc_len, total_len;
+    uint32_t *uint32_ptr = NULL;
+    uint64_t *uint64_ptr = NULL;
+    signed char *char_ptr   = NULL;
+    int       zero_cnt   = 0;
+
+    FUNC_ENTER(NULL);
+
+    if (regions == NULL || regions[0] == NULL) {
+        printf("==PDC_SERVER: PDC_serialize_regions_lists NULL input!\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    total_len = 0;
+
+    ndim = regions[0]->ndim;
+
+    // serialize format:
+    // n_region|ndim|start00|count00|...|start0n|count0n|loc_len|loc_str|offset|...
+
+    uint32_ptr  = (uint32_t*)buf;
+    *uint32_ptr = n_region;
+
+    /* printf("==PDC_SERVER: serializing %u regions!\n", n_region); */
+
+    uint32_ptr++;
+    total_len += sizeof(uint32_t);
+
+    *uint32_ptr = ndim;
+
+    uint32_ptr++;
+    total_len += sizeof(uint32_t);
+
+    uint64_ptr = (uint64_t*)uint32_ptr;
+
+    for (i = 0; i < n_region; i++) {
+        if (regions[i] == NULL) {
+            printf("==PDC_serialize_regions_lists NULL input!\n");
+            ret_value = FAIL;
+            goto done;
+        }
+        for (j = 0; j < ndim; j++) {
+            *uint64_ptr = regions[i]->start[j];
+            uint64_ptr++;
+            total_len += sizeof(uint64_t);
+            *uint64_ptr = regions[i]->count[j];
+            uint64_ptr++;
+            total_len += sizeof(uint64_t);
+        }
+
+        loc_len = strlen(regions[i]->storage_location);
+        uint32_ptr  = (uint32_t*)uint64_ptr;
+        *uint32_ptr = loc_len;
+        uint32_ptr++;
+        total_len += sizeof(uint32_t);
+
+        char_ptr = (signed char*)uint32_ptr;
+        if (loc_len <= 0) {
+            printf("==PDC_serialize_regions_lists invalid storage location [%s]!\n",
+                                regions[i]->storage_location);
+            ret_value = FAIL;
+            goto done;
+        }
+        strcpy((char*)char_ptr, regions[i]->storage_location);
+        char_ptr[loc_len] = PDC_STR_DELIM;  // Delim to replace 0
+        char_ptr += (loc_len + 1);
+        total_len += (loc_len + 1);
+
+        uint64_ptr = (uint64_t*)char_ptr;
+
+        *uint64_ptr = regions[i]->offset;
+        uint64_ptr++;
+        total_len += sizeof(uint64_t);
+
+        if (total_len > buf_size) {
+            printf("==PDC_serialize_regions_lists total_len %u exceeds "
+                    "buf_len %u\n", total_len, buf_size);
+            ret_value = FAIL;
+            goto done;
+        }
+        /* PDC_print_region_list(regions[i]); */
+    }
+
+    if (PDC_replace_zero_chars((char*)buf, buf_size) != SUCCEED) {
+        printf("==PDC_serialize_regions_lists PDC_replace_zero_chars ERROR! ");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    /* if (is_debug_g == 1) { */
+    /*     printf("==PDC_serialize_regions_lists n_region: %u, buf len is %u \n", */
+    /*             n_region, total_len); */
+    /*     uint32_t nr_region; */
+
+    /*     region_list_t **r_regions = (region_list_t**)malloc(sizeof(region_list_t*) * PDC_MAX_OVERLAP_REGION_NUM     ); */
+    /*     for (i = 0; i < PDC_MAX_OVERLAP_REGION_NUM; i++) { */
+    /*         r_regions[i] = (region_list_t*)calloc(1, sizeof(region_list_t)); */
+    /*     } */
+
+    /*     PDC_unserialize_region_lists(buf, r_regions, &nr_region); */
+
+        /* printf("==PDC_serialize_regions_lists after unserialize %d\n", nr_region); */
+    /*     for (i = 0; i < nr_region; i++) { */
+    /*         PDC_print_region_list(r_regions[i]); */
+    /*     } */
+    /* } */
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} // PDC_serialize_regions_lists
+
+/*
+ * Un-serialize the region info structure from network transfer,
+ * including ndim, start[], count[], storage loc
+ *
+ * \param  buf[IN]            Serialized data
+ * \param  regions[OUT]       List of region info that are un-serialized
+ * \param  n_region[OUT]      Number of regions in the list
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_unserialize_region_lists(void *buf, region_list_t** regions, uint32_t *n_region)
+{
+    perr_t ret_value = SUCCEED;
+    uint32_t i, j;
+    uint32_t ndim, loc_len, buf_size;
+    uint32_t *uint32_ptr = NULL;
+    uint64_t *uint64_ptr = NULL;
+    signed char *char_ptr   = NULL;
+
+    FUNC_ENTER(NULL);
+
+    if (buf == NULL || regions == NULL || n_region == NULL) {
+        printf("==PDC_SERVER: PDC_unserialize_region_lists NULL input!\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    char_ptr = (signed char*)buf;
+    buf_size = strlen((char*)char_ptr);
+
+    ret_value = PDC_replace_char_fill_values(char_ptr, buf_size);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_unserialize_region_lists replace_char_fill_values ERROR!\n");
+        goto done;
+    }
+
+    // n_region|ndim|start00|count00|...|start0n|count0n|loc_len|loc_str|offset|...
+
+    uint32_ptr = (uint32_t*)buf;
+    *n_region = *uint32_ptr;
+
+    /* printf("==PDC_unserialize_region_lists: %u regions!\n", *n_region); */
+
+    uint32_ptr++;
+    ndim = *uint32_ptr;
+
+    if (ndim == 0 || ndim > 3) {
+        printf("==PDC_unserialize_region_lists ndim %lu ERROR!\n", ndim);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    uint32_ptr++;
+    uint64_ptr = (uint64_t*)uint32_ptr;
+
+    /* if (is_debug_g == 1) { */
+    /*     printf("==unserialize_regions_info n_region: %u, ndim: %u \n", */
+    /*             pdc_server_rank_g, *n_region, ndim); */
+    /* } */
+
+    for (i = 0; i < *n_region; i++) {
+        if (regions[i] == NULL) {
+            printf("==PDC_unserialize_region_lists NULL input,"
+                    " try increade PDC_MAX_OVERLAP_REGION_NUM value!\n");
+            ret_value = FAIL;
+            goto done;
+        }
+        regions[i]->ndim = ndim;
+
+        for (j = 0; j < ndim; j++) {
+            regions[i]->start[j] = *uint64_ptr;
+            uint64_ptr++;
+            regions[i]->count[j] = *uint64_ptr;
+            uint64_ptr++;
+        }
+
+        /* printf("==unserialize_regions_info start[0]: %" PRIu64 ", count[0]: %" PRIu64 "\n", */
+        /*         regions[i]->start[0], regions[i]->count[0]); */
+
+        uint32_ptr = (uint32_t*)uint64_ptr;
+        loc_len = *uint32_ptr;
+
+        uint32_ptr++;
+
+        char_ptr = (signed char*)uint32_ptr;
+        // Verify delimiter
+        if (char_ptr[loc_len] != PDC_STR_DELIM) {
+            printf("==PDC_unserialize_region_lists delim error!\n");
+            ret_value = FAIL;
+            goto done;
+        }
+
+        strncpy(regions[i]->storage_location, (char*)char_ptr, loc_len);
+        // Add end of string
+        regions[i]->storage_location[loc_len] = 0;
+
+        char_ptr += (loc_len + 1);
+
+        uint64_ptr = (uint64_t*)char_ptr;
+        regions[i]->offset = *uint64_ptr;
+
+        uint64_ptr++;
+        // n_region|ndim|start00|count00|...|start0n|count0n|loc_len|loc_str|offset|...
+        //
+        /* printf("==PDC_SERVER: unserialize_region_list\n"); */
+        /* PDC_print_region_list(regions[i]); */
+    }
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} // PDC_unserialize_region_lists
+
+/*
+ * Calculate the total string length of the regions to be serialized
+ *
+ * \param  regions[IN]       List of region info that are un-serialized
+ * \param  n_region[IN]      Number of regions in the list
+ * \param  len[OUT]          Length of the serialized string
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_get_serialized_size(region_list_t** regions, uint32_t n_region, uint32_t *len)
+{
+    perr_t ret_value = SUCCEED;
+    uint32_t i;
+
+    FUNC_ENTER(NULL);
+
+    if (regions == NULL || n_region == 0 || len == NULL || regions[0] == NULL) {
+        printf("==PDC_SERVER: PDC_get_serialized_size NULL input!\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    *len = 0;
+    for (i = 0; i < n_region; i++) {
+        if (regions[i] == NULL) {
+            printf("==PDC_SERVER: PDC_get_serialized_size NULL input in regions!\n");
+            ret_value = FAIL;
+            goto done;
+        }
+        *len += (strlen(regions[i]->storage_location) + 1);
+    }
+
+            // n_region | ndim | start00 | count00 | ... | startndim0 | countndim0 | loc_len | loc |
+            // delim | offset | char_fill_value | \0
+     *len += ( sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint64_t)*regions[0]->ndim*2*n_region +
+               sizeof(uint32_t)*n_region + sizeof(uint64_t)*n_region + 2);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+/* get_storage_info_cb */
+HG_TEST_RPC_CB(get_storage_info, handle)
+{
+    perr_t                        ret_value = HG_SUCCESS;
+    get_storage_info_in_t         in;
+    pdc_serialized_data_t         serialized_out;
+    get_storage_info_single_out_t single_region_out;
+    pdc_metadata_t               *target = NULL;
+    region_list_t                 request_region;
+    region_list_t                 **result_regions;
+
+    uint32_t n_region, i;
+    uint32_t serialize_len, buf_len;
+    void *buf = NULL;
+    signed char *char_ptr = NULL;
+
+    FUNC_ENTER(NULL);
+
+    // Decode input
+    HG_Get_input(handle, &in);
+
+    /* printf("==PDC_SERVER: Got storage info request from other server: obj_id=%" PRIu64 "\n", in.obj_id); */
+
+    PDC_init_region_list(&request_region);
+    pdc_region_transfer_t_to_list_t(&in.req_region, &request_region);
+
+    result_regions = (region_list_t**)calloc(1, sizeof(region_list_t*)*PDC_MAX_OVERLAP_REGION_NUM);
+    for (i = 0; i < PDC_MAX_OVERLAP_REGION_NUM; i++)
+        result_regions[i] = (region_list_t*)malloc(sizeof(region_list_t));
+
+    if (PDC_Server_get_local_storage_location_of_region(in.obj_id, &request_region, &n_region, result_regions) !=      SUCCEED) {
+        printf("==PDC_SERVER: unable to get_local_storage_location_of_region\n");
+        ret_value = FAIL;
+        goto done;
+    }
+    else {
+
+        if (n_region == 1) {
+            // If there is only one matching region, send it with the easy way throught Mercury
+            pdc_region_list_t_to_transfer(result_regions[0], &single_region_out.region_transfer);
+            single_region_out.storage_loc = result_regions[0]->storage_location;
+            single_region_out.file_offset = result_regions[0]->offset;
+            HG_Respond(handle, PDC_Server_s2s_recv_work_done_cb, NULL, &single_region_out);
+        }
+        else {
+            // If there are multiple regions, serialze them to a 1D buf, replace the 0s
+            // and send as a string.
+            // FIXME: with large scale, i.e. more than 128 servers, this approach don't work correctly
+
+            /* if (PDC_get_serialized_size(result_regions, n_region, &serialize_len) != SUCCEED) { */
+            /*     printf("==PDC_SERVER: fail to get_total_str_len\n"); */
+            /*     ret_value = FAIL; */
+            /*     goto done; */
+            /* } */
+
+            /* buf = (void*)calloc(1, serialize_len); */
+            /* if (PDC_serialize_regions_lists(result_regions, n_region, buf, serialize_len) != SUCCEED) { */
+            /*     printf("==PDC_SERVER: unable to serialize_regions_info\n"); */
+            /*     ret_value = FAIL; */
+            /*     goto done; */
+            /* } */
+            /* serialized_out.buf = buf; */
+
+            /* // Check if 0 still exists in buffer */
+            /* char_ptr = (signed char*)serialized_out.buf; */
+            /* buf_len = strlen(char_ptr); */
+            /* for (i = 0; i < serialize_len; i++) { */
+            /*     if (char_ptr[i] == 0) { */
+            /*         printf("==PDC_SERVER:ERROR with serialize buf, 0 detected in string, %u!\n", i); */
+            /*         fflush(stdout); */
+            /*     } */
+            /* } */
+
+            // debug print
+            /* printf("==PDC_SERVER: serialize_region allocated %u, real %u \n", serialize_len, buf_len); */
+            /* fflush(stdout); */
+            /* HG_Respond(handle, PDC_Server_s2s_recv_work_done_cb, NULL, &serialized_out); */
+
+            printf("==PDC_SERVER: cannot handle more than 1 storage region match!\n");
+            fflush(stdout);
+            ret_value = FAIL;
+            HG_Respond(handle, PDC_Server_s2s_recv_work_done_cb, NULL, &single_region_out);
+            goto done;
+        } // end of else (n_region is not 1)
+    } // end of else
+
+done:
+    if (result_regions != NULL) {
+        for (i = 0; i < PDC_MAX_OVERLAP_REGION_NUM; i++) {
+            if (result_regions[i] != NULL)
+                free(result_regions[i]);
+        }
+        free(result_regions);
+    }
+
+    if (buf != NULL)
+        free(buf);
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
+/* aggregate_write_cb */
+HG_TEST_RPC_CB(aggregate_write, handle)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    pdc_aggregated_io_to_server_t in;
+    pdc_int_ret_t                 out;
+
+    pdc_metadata_t *target = NULL;
+    region_list_t request_region;
+    region_list_t **result_regions;
+    uint32_t n_region, i;
+    uint32_t serialize_len, buf_len;
+    void *buf = NULL;
+    signed char *char_ptr = NULL;
+    
+    FUNC_ENTER(NULL);
+
+    // Decode input
+    HG_Get_input(handle, &in);
+    /* printf("==PDC_SERVER: Got aggregate write request: obj_id=%" PRIu64 "\n", in.meta.obj_id); */
+    PDC_init_region_list(&request_region);
+
+    // Need to un-serialize regions from each client of the same node one by one
+
+
+/*     pdc_region_transfer_t_to_list_t(&in.req_region, &request_region); */
+
+/*     result_regions = (region_list_t**)calloc(1, sizeof(region_list_t*)*PDC_MAX_OVERLAP_REGION_NUM); */
+/*     result_regions_all = (region_list_t*)calloc(sizeof(region_list_t), PDC_MAX_OVERLAP_REGION_NUM); */
+/*     for (i = 0; i < PDC_MAX_OVERLAP_REGION_NUM; i++) */ 
+/*         result_regions[i] = (region_list_t*)malloc(sizeof(region_list_t)); */
+
+
+
+    out.ret = 1;
+
+    HG_Respond(handle, NULL, NULL, &out);
+
+done:
+    /* if (result_regions != NULL) { */
+    /*     for (i = 0; i < PDC_MAX_OVERLAP_REGION_NUM; i++) { */
+    /*         if (result_regions[i] != NULL) */ 
+    /*             free(result_regions[i]); */
+    /*     } */
+    /*     free(result_regions); */
+    /* } */
+
+    
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
+
+HG_TEST_THREAD_CB(server_lookup_client)
 HG_TEST_THREAD_CB(gen_obj_id)
 /* HG_TEST_THREAD_CB(send_obj_name_marker) */
 HG_TEST_THREAD_CB(client_test_connect)
@@ -1901,6 +2833,18 @@ HG_TEST_THREAD_CB(gen_reg_unmap_notification)
 HG_TEST_THREAD_CB(gen_obj_unmap_notification)
 HG_TEST_THREAD_CB(region_lock)
 HG_TEST_THREAD_CB(query_partial)
+HG_TEST_THREAD_CB(data_server_read)
+HG_TEST_THREAD_CB(data_server_write)
+HG_TEST_THREAD_CB(data_server_read_check)
+HG_TEST_THREAD_CB(data_server_write_check)
+HG_TEST_THREAD_CB(update_region_loc)
+HG_TEST_THREAD_CB(get_metadata_by_id)
+HG_TEST_THREAD_CB(get_storage_info)
+HG_TEST_THREAD_CB(aggregate_write)
+HG_TEST_THREAD_CB(region_release)
+HG_TEST_THREAD_CB(metadata_add_tag)
+HG_TEST_THREAD_CB(server_lookup_remote_server)
+HG_TEST_THREAD_CB(bulk_rpc)
 
 hg_id_t
 gen_obj_id_register(hg_class_t *hg_class)
@@ -2135,59 +3079,30 @@ query_partial_register(hg_class_t *hg_class)
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Data server related
- */
 
-// READ
-/* static hg_return_t */
-// data_server_read_cb(hg_handle_t handle)
-HG_TEST_RPC_CB(data_server_read, handle)
+hg_id_t
+get_storage_info_register(hg_class_t *hg_class)
 {
-    hg_return_t ret_value;
-    data_server_read_in_t  in;
-    data_server_read_out_t out;
-
+    hg_id_t ret_value;
+    
     FUNC_ENTER(NULL);
 
-    // Decode input
-    HG_Get_input(handle, &in);
-    /* printf("==PDC_SERVER: Got data server read request from client %d\n", in.client_id); */
-    /* fflush(stdout); */
+    // TODO: multiple storage region register
+    ret_value = MERCURY_REGISTER(hg_class, "get_storage_info", get_storage_info_in_t, 
+                                get_storage_info_single_out_t, get_storage_info_cb);
 
-    data_server_io_info_t *io_info= (data_server_io_info_t*)malloc(sizeof(data_server_io_info_t));
-
-    io_info->io_type   = READ;
-    io_info->client_id = in.client_id;
-    io_info->nclient   = in.nclient;
-
-    PDC_metadata_init(&io_info->meta);
-    pdc_transfer_t_to_metadata_t(&(in.meta), &(io_info->meta));
-
-    PDC_init_region_list( &(io_info->region));
-    pdc_region_transfer_t_to_list_t(&(in.region), &(io_info->region));
-
-    io_info->region.access_type = io_info->io_type;
-    io_info->region.meta = &(io_info->meta);
-    io_info->region.client_ids[0] = in.client_id;
-
-
-    out.ret = 1;
-    HG_Respond(handle, PDC_Server_data_io_via_shm, io_info, &out);
-
-
-    ret_value = HG_SUCCESS;
-
-done:
-    HG_Free_input(handle, &in);
-    HG_Destroy(handle);
-    if (ret_value != HG_SUCCESS) 
-        printf("==PDC_SERVER: data_server_read_cb - Error with HG_Destroy\n");
-    fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
-HG_TEST_THREAD_CB(data_server_read)
+hg_id_t
+bulk_rpc_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+    ret_value = MERCURY_REGISTER(hg_class, "bulk_rpc", bulk_rpc_in_t, bulk_rpc_out_t, bulk_rpc_cb);
+    FUNC_LEAVE(ret_value);
+}
 
 hg_id_t
 data_server_read_register(hg_class_t *hg_class)
@@ -2201,58 +3116,6 @@ data_server_read_register(hg_class_t *hg_class)
     FUNC_LEAVE(ret_value);
 }
 
-// WRITE
-// data_server_write_cb(hg_handle_t handle)
-HG_TEST_RPC_CB(data_server_write, handle)
-{
-    hg_return_t ret_value;
-    data_server_write_in_t  in;
-    data_server_write_out_t out;
-
-    FUNC_ENTER(NULL);
-
-    // Decode input
-    HG_Get_input(handle, &in);
-    /* printf("==PDC_SERVER: Got data server write request from client %d\n", in.client_id); */
-    /* fflush(stdout); */
-
-    data_server_io_info_t *io_info= (data_server_io_info_t*)malloc(sizeof(data_server_io_info_t));
-
-    io_info->io_type   = WRITE;
-    io_info->client_id = in.client_id;
-    io_info->nclient   = in.nclient;
-
-    PDC_metadata_init(&io_info->meta);
-    pdc_transfer_t_to_metadata_t(&(in.meta), &(io_info->meta));
-
-    PDC_init_region_list( &(io_info->region));
-    pdc_region_transfer_t_to_list_t(&(in.region), &(io_info->region));
-
-    strcpy(&(io_info->region.shm_addr), in.shm_addr);
-    io_info->region.access_type = io_info->io_type;
-    io_info->region.meta = &(io_info->meta);
-    io_info->region.client_ids[0] = in.client_id;
-
-    out.ret = 1;
-    HG_Respond(handle, PDC_Server_data_io_via_shm, io_info, &out);
-
-    /* printf("==PDC_SERVER: respond write request confirmation to client %d\n", in.client_id); */
-    /* fflush(stdout); */
-
-
-    ret_value = HG_SUCCESS;
-
-done:
-    HG_Free_input(handle, &in);
-    ret_value = HG_Destroy(handle);
-    if (ret_value != HG_SUCCESS) 
-        printf("==PDC_SERVER: data_server_write_cb - Error with HG_Destroy\n");
-    fflush(stdout);
-    FUNC_LEAVE(ret_value);
-}
-
-HG_TEST_THREAD_CB(data_server_write)
-
 hg_id_t
 data_server_write_register(hg_class_t *hg_class)
 {
@@ -2264,39 +3127,6 @@ data_server_write_register(hg_class_t *hg_class)
 
     FUNC_LEAVE(ret_value);
 }
-
-// IO CHECK
-// data_server_read_check(hg_handle_t handle)
-HG_TEST_RPC_CB(data_server_read_check, handle)
-{
-    FUNC_ENTER(NULL);
-
-    hg_return_t ret_value;
-
-    /* Get input parameters sent on origin through on HG_Forward() */
-    // Decode input
-    data_server_read_check_in_t  in;
-    data_server_read_check_out_t out;
-
-    HG_Get_input(handle, &in);
-    /* printf("==PDC_SERVER: Got data server read_check request from client %d\n", in.client_id); */
-
-    PDC_Server_read_check(&in, &out);
-
-    HG_Respond(handle, NULL, NULL, &out);
-    /* printf("==PDC_SERVER: server read_check returning ret=%d, shm_addr=%s\n", out.ret, out.shm_addr); */
-
-
-    ret_value = HG_SUCCESS;
-
-done:
-    HG_Free_input(handle, &in);
-    HG_Destroy(handle);
-    fflush(stdout);
-    FUNC_LEAVE(ret_value);
-}
-
-HG_TEST_THREAD_CB(data_server_read_check)
 
 hg_id_t
 data_server_read_check_register(hg_class_t *hg_class)
@@ -2310,38 +3140,6 @@ data_server_read_check_register(hg_class_t *hg_class)
     FUNC_LEAVE(ret_value);
 }
 
-// data_server_write_check(hg_handle_t handle)
-HG_TEST_RPC_CB(data_server_write_check, handle)
-{
-    FUNC_ENTER(NULL);
-
-    hg_return_t ret_value;
-
-    /* Get input parameters sent on origin through on HG_Forward() */
-    // Decode input
-    data_server_write_check_in_t  in;
-    data_server_write_check_out_t out;
-
-    HG_Get_input(handle, &in);
-    /* printf("==PDC_SERVER: Got data server write_check request from client %d\n", in.client_id); */
-
-    PDC_Server_write_check(&in, &out);
-
-    HG_Respond(handle, NULL, NULL, &out);
-    /* printf("==PDC_SERVER: server write_check returning ret=%d\n", out.ret); */
-
-
-    ret_value = HG_SUCCESS;
-
-done:
-    HG_Free_input(handle, &in);
-    HG_Destroy(handle);
-    fflush(stdout);
-    FUNC_LEAVE(ret_value);
-}
-
-HG_TEST_THREAD_CB(data_server_write_check)
-
 hg_id_t
 data_server_write_check_register(hg_class_t *hg_class)
 {
@@ -2353,37 +3151,6 @@ data_server_write_check_register(hg_class_t *hg_class)
 
     FUNC_LEAVE(ret_value);
 }
-
-/* update_region_loc_cb */
-HG_TEST_RPC_CB(update_region_loc, handle)
-{
-    hg_return_t ret_value = HG_SUCCESS;
-    metadata_update_in_t  in;
-    metadata_update_out_t out;
-    
-    FUNC_ENTER(NULL);
-
-    /* Get input parameters sent on origin through on HG_Forward() */
-    // Decode input
-    HG_Get_input(handle, &in);
-    printf("==PDC_SERVER: Got region location update request: obj_id=%llu\n", in.obj_id);
-
-    region_list_t *input_region = (region_list_t*)malloc(sizeof(region_list_t));
-
-    out.ret = 1;
-    ret_value = PDC_Server_update_local_region_storage_loc(input_region);
-    if (ret_value != SUCCEED) 
-        out.ret = -1;
-
-    HG_Respond(handle, NULL, NULL, &out);
-
-    HG_Free_input(handle, &in);
-    HG_Destroy(handle);
-
-    FUNC_LEAVE(ret_value);
-}
-
-HG_TEST_THREAD_CB(update_region_loc)
 
 hg_id_t
 update_region_loc_register(hg_class_t *hg_class)
@@ -2398,46 +3165,6 @@ update_region_loc_register(hg_class_t *hg_class)
     FUNC_LEAVE(ret_value);
 }
 
-/* get_metadata_by_id_cb */
-HG_TEST_RPC_CB(get_metadata_by_id, handle)
-{
-    hg_return_t ret_value = HG_SUCCESS;
-    get_metadata_by_id_in_t  in;
-    get_metadata_by_id_out_t out;
-    pdc_metadata_t *target;
-    
-    FUNC_ENTER(NULL);
-
-    /* Get input parameters sent on origin through on HG_Forward() */
-    // Decode input
-    HG_Get_input(handle, &in);
-    printf("==PDC_SERVER: Got metadata retrieval: obj_id=%llu\n", in.obj_id);
-
-    PDC_Server_get_local_metadata_by_id(in.obj_id, &target);
-
-    if (target != NULL) 
-        pdc_metadata_t_to_transfer_t(target, &out.res_meta);
-    else {
-        printf("==PDC_SERVER: no matching metadata of obj_id=%llu\n", in.obj_id);
-        out.res_meta.user_id        = -1;
-        out.res_meta.obj_id         = 0;
-        out.res_meta.time_step      = -1;
-        out.res_meta.obj_name       = "N/A";
-        out.res_meta.app_name       = "N/A";
-        out.res_meta.tags           = "N/A";
-        out.res_meta.data_location  = "N/A"; 
-    }
-    
-    HG_Respond(handle, NULL, NULL, &out);
-
-    HG_Free_input(handle, &in);
-    HG_Destroy(handle);
-
-    FUNC_LEAVE(ret_value);
-}
-
-HG_TEST_THREAD_CB(get_metadata_by_id)
-
 hg_id_t
 get_metadata_by_id_register(hg_class_t *hg_class)
 {
@@ -2447,94 +3174,6 @@ get_metadata_by_id_register(hg_class_t *hg_class)
 
     ret_value = MERCURY_REGISTER(hg_class, "get_metadata_by_id", get_metadata_by_id_in_t, 
                                  get_metadata_by_id_out_t, get_metadata_by_id_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-/* get_storage_info_cb */
-HG_TEST_RPC_CB(get_storage_info, handle)
-{
-    hg_return_t ret_value = HG_SUCCESS;
-    get_storage_info_in_t in;
-    pdc_serialized_data_t  out;
-    pdc_metadata_t *target = NULL;
-    region_list_t request_region;
-    region_list_t **result_regions;
-    uint32_t n_region, i;
-    uint32_t serialize_len;
-    void *buf = NULL;
-    
-    FUNC_ENTER(NULL);
-
-    // Decode input
-    HG_Get_input(handle, &in);
-    printf("==PDC_SERVER: Got storage in request: obj_id=%llu\n", in.obj_id);
-    PDC_init_region_list(&request_region);
-    pdc_region_transfer_t_to_list_t(&in.req_region, &request_region);
-
-    result_regions = (region_list_t**)calloc(1, sizeof(region_list_t*)*PDC_MAX_OVERLAP_REGION_NUM);
-    for (i = 0; i < PDC_MAX_OVERLAP_REGION_NUM; i++) 
-        result_regions[i] = (region_list_t*)malloc(sizeof(region_list_t));
-
-    if (PDC_Server_get_local_storage_location_of_region(in.obj_id, &request_region, &n_region, result_regions) != SUCCEED) {
-        printf("==PDC_SERVER: unable to get_local_storage_location_of_region\n");
-        ret_value = FAIL;
-        goto done;
-    }
-    else {
-
-        if (PDC_Server_get_total_str_len(result_regions, n_region, &serialize_len) != SUCCEED) {
-            printf("==PDC_SERVER: fail to get_total_str_len\n");
-            ret_value = FAIL;
-            goto done;
-        }
-
-        buf = (void*)malloc(serialize_len);
-        if (PDC_Server_serialize_regions_info(result_regions, n_region, buf) != SUCCEED) {
-            printf("==PDC_SERVER: unable to serialize_regions_info\n");
-            ret_value = FAIL;
-            goto done;
-        }
-        out.buf = buf;
-    }
-
-    // Need to free buf
-    HG_Respond(handle, NULL, NULL, &out);
-
-done:
-    if (ret_value == FAIL) {
-        out.buf = " ";
-        HG_Respond(handle, NULL, NULL, &out);
-    }
-
-    if (result_regions != NULL) {
-        for (i = 0; i < PDC_MAX_OVERLAP_REGION_NUM; i++) {
-            if (result_regions[i] != NULL) 
-                free(result_regions[i]);
-        }
-        free(result_regions);
-    }
-
-    if (buf != NULL) 
-        free(buf);
-    
-    HG_Free_input(handle, &in);
-    HG_Destroy(handle);
-
-    FUNC_LEAVE(ret_value);
-}
-
-HG_TEST_THREAD_CB(get_storage_info)
-
-hg_id_t
-get_storage_info_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "get_storage_info", get_storage_info_in_t, 
-                                 pdc_serialized_data_t, get_storage_info_cb);
 
     FUNC_LEAVE(ret_value);
 }

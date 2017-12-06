@@ -40,7 +40,7 @@
 #include "pdc_client_server_common.h"
 
 #define CREATE_BLOOM_THRESHOLD  64
-#define PDC_MAX_OVERLAP_REGION_NUM 128 // max number of supported regions for PDC_Server_get_storage_location_of_region() 
+#define PDC_MAX_OVERLAP_REGION_NUM 8 // max number of supported regions for PDC_Server_get_storage_location_of_region() 
 #define PDC_STR_DELIM            7
 
 static hg_atomic_int32_t pdc_num_reg;
@@ -53,6 +53,9 @@ perr_t PDC_Server_region_release(region_lock_in_t *in, region_lock_out_t *out);
 perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out);
 perr_t PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status);
 perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key, pdc_metadata_t** out);
+
+perr_t PDC_Server_search_with_name_timestep(const char *obj_name, uint32_t hash_key, uint32_t ts, 
+                                            pdc_metadata_t** out);
 perr_t PDC_Server_checkpoint(char *filename);
 perr_t PDC_Server_restart(char *filename);
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs);
@@ -65,6 +68,12 @@ perr_t PDC_Server_serialize_regions_info(region_list_t** regions, uint32_t n_reg
 
 perr_t PDC_Server_regions_io(region_list_t *region_list_head, PDC_io_plugin_t plugin);
 
+perr_t PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_id_out_t *out);
+
+hg_return_t PDC_Server_work_done_cb(const struct hg_cb_info *callback_info);
+hg_return_t PDC_Server_s2s_send_work_done_cb(const struct hg_cb_info *callback_info);
+hg_return_t PDC_Server_s2s_recv_work_done_cb(const struct hg_cb_info *callback_info);
+hg_return_t PDC_Server_count_write_check_update_storage_meta_cb(const struct hg_cb_info *callback_info);
 /* typedef struct pdc_metadata_name_mark_t { */
 /*     char obj_name[ADDR_MAX]; */
 /*     struct pdc_metadata_name_mark_t *next; */
@@ -89,6 +98,8 @@ typedef struct server_lookup_args_t {
     void            *void_buf;
     char            *server_addr;
     pdc_metadata_t  *meta;
+    region_list_t   **region_lists;
+    uint32_t        n_loc;
 } server_lookup_args_t;
 
 struct server_region_update_args {
@@ -99,26 +110,12 @@ typedef struct pdc_client_info_t {
     char            addr_string[ADDR_MAX];
     int             addr_valid;
     hg_addr_t       addr;
-    int             server_lookup_client_handle_valid;
-    hg_handle_t     server_lookup_client_handle;
-    int             notify_io_complete_handle_valid;
-    hg_handle_t     notify_io_complete_handle;
-    int             notify_region_update_handle_valid;
-    hg_handle_t     notify_region_update_handle;
 } pdc_client_info_t;
  
 typedef struct pdc_remote_server_info_t {
     char            *addr_string;
     int             addr_valid;
     hg_addr_t       addr;
-    int             server_lookup_remote_server_handle_valid;
-    hg_handle_t     server_lookup_remote_server_handle;
-    int             update_region_loc_handle_valid;
-    hg_handle_t     update_region_loc_handle;
-    int             get_metadata_by_id_handle_valid;
-    hg_handle_t     get_metadata_by_id_handle;
-    int             get_storage_info_handle_valid;
-    hg_handle_t     get_storage_info_handle;
 } pdc_remote_server_info_t;
  
 extern hg_thread_mutex_t pdc_client_connect_mutex_g;
@@ -126,21 +123,45 @@ extern hg_thread_mutex_t pdc_client_connect_mutex_g;
 typedef struct pdc_data_server_io_list_t {
     uint64_t obj_id;
     char  path[ADDR_MAX];
+    char  bb_path[ADDR_MAX];
     int   total;
     int   count;
     int   ndim;
-    int   dims[DIM_MAX];
+    uint64_t dims[DIM_MAX];
     uint64_t total_size;
     region_list_t *region_list_head;
+    int   is_io_done;
+    int   is_shm_closed;
 
     struct pdc_data_server_io_list_t *prev;
     struct pdc_data_server_io_list_t *next;
 } pdc_data_server_io_list_t;
 
+#define PDC_BULK_XFER_INIT_NALLOC 128
+typedef struct bulk_xfer_data_t {
+    void     **buf_ptrs;
+    hg_size_t *buf_sizes;
+    int        n_alloc;
+    int        idx;
+    uint64_t   obj_id;
+    int        target_id;
+    int        origin_id;
+} bulk_xfer_data_t;
+
+// Linked list used to defer bulk update
+typedef struct update_storage_meta_list_t {
+    bulk_xfer_data_t *storage_meta_bulk_xfer_data;
+
+    struct update_storage_meta_list_t *prev;
+    struct update_storage_meta_list_t *next;
+} update_storage_meta_list_t;
+
+
 
 perr_t PDC_Server_unserialize_regions_info(void *buf, region_list_t** regions, uint32_t *n_region);
 hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info);
 
+hg_return_t PDC_Server_count_write_check_update_storage_meta_cb (const struct hg_cb_info *callback_info);
 perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf);
 perr_t PDC_Server_data_read_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf);
 perr_t PDC_SERVER_notify_region_update_to_client(uint64_t meta_id, uint64_t reg_id, int32_t client_id);
@@ -148,9 +169,16 @@ perr_t PDC_SERVER_notify_region_update_to_client(uint64_t meta_id, uint64_t reg_
 perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_check_out_t *out);
 perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_write_check_out_t *out);
 
-perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region);
+perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_t obj_id);
 perr_t PDC_Server_get_local_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta);
 
 perr_t PDC_Server_posix_one_file_io(region_list_t* region);
+
+perr_t PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bulk_xfer_data_t *bulk_data);
+perr_t PDC_Server_update_region_storage_meta_bulk(bulk_xfer_data_t *bulk_data);
+perr_t PDC_Server_update_region_storage_meta_bulk_local(update_region_storage_meta_bulk_t **bulk_ptrs, int cnt);
+perr_t PDC_Server_set_close(void);
+perr_t PDC_Server_update_region_storage_meta_bulk_mpi(bulk_xfer_data_t *bulk_data);
+perr_t PDC_Server_close_shm(region_list_t *region);
 
 #endif /* PDC_SERVER_H */

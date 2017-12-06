@@ -1,0 +1,12 @@
+# ignore swp files
+*.swp
+
+# build dir
+*build*
+
+# exes
+*.exe
+
+#
+!apps/h5boss
+apps/h5boss/*

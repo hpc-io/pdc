@@ -16,7 +16,7 @@
 /* #include "pdc_client_server_common.h" */
 
 void print_usage() {
-    printf("Usage: srun -n ./data_server_read obj_name size_MB n_timestep sleepseconds\n");
+    printf("Usage: srun -n ./data_server_write obj_name size_MB n_timestep sleepseconds\n");
 }
 
 int main(int argc, char **argv)
@@ -146,7 +146,7 @@ int main(int argc, char **argv)
         if (rank == 0) 
             printf("%d: Start to query object just created ...", rank);
 
-        PDC_Client_query_metadata_name_timestep( obj_name, ts, &metadata);
+        PDC_Client_query_metadata_name_timestep_agg( obj_name, ts, &metadata);
         /* if (rank == 1) { */
         /*     PDC_print_metadata(metadata); */
         /* } */
