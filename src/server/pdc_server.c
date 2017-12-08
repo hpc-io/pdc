@@ -106,6 +106,7 @@ static hg_id_t    notify_io_complete_register_id_g;
 static hg_id_t    update_region_loc_register_id_g;
 static hg_id_t    notify_region_update_register_id_g;
 static hg_id_t    get_metadata_by_id_register_id_g;
+static hg_id_t    get_reg_lock_register_id_g;
 static hg_id_t    get_storage_info_register_id_g;
 static hg_id_t    bulk_rpc_register_id_g;
 
@@ -3561,8 +3562,18 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//perr_t PDC_Server_region_lock_status(pdcid_t obj_id, region_info_transfer_t *region, int *lock_status)
-perr_t PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status)
+perr_t PDC_Server_get_reg_lock_status_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret_value;
+    pdc_metadata_t *meta = NULL;
+    server_lookup_args_t *lookup_args;
+    hg_handle_t handle;
+    get_reg_lock_status_out_t output;
+
+    FUNC_ENTER(NULL);
+}
+
+perr_t PDC_Server_local_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status)
 {
     perr_t ret_value = SUCCEED;
     pdc_metadata_t *res_meta;
@@ -3571,13 +3582,13 @@ perr_t PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *loc
     *lock_status = 0;
     request_region = (region_list_t *)malloc(sizeof(region_list_t));
     pdc_region_transfer_t_to_list_t(&(mapped_region->remote_region), request_region);
-    //PDC_Server_get_metadata_by_id(obj_id, res_meta);
     res_meta = find_metadata_by_id(mapped_region->remote_obj_id);
     if (res_meta == NULL || res_meta->region_lock_head == NULL) {
-        printf("==PDC_SERVER[%d]: PDC_Server_region_lock_status - metadata/region_lock is NULL!\n", 
+        printf("==PDC_SERVER[%d]: PDC_Server_region_lock_status - metadata/region_lock is NULL!\n",
                 pdc_server_rank_g);
         fflush(stdout);
-        return FAIL;
+        ret_value = FAIL;
+        goto done;
     }
     /*
     printf("requested region: \n");
@@ -3594,15 +3605,99 @@ perr_t PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *loc
         if (is_region_identical(request_region, elt) == 1) {
             *lock_status = 1;
             elt->reg_dirty = 1;
-            elt->bulk_handle = mapped_region->remote_bulk_handle; 
+            elt->bulk_handle = mapped_region->remote_bulk_handle;
             elt->addr = mapped_region->remote_addr;
-            elt->from_obj_id = mapped_region->from_obj_id; 
+            elt->from_obj_id = mapped_region->from_obj_id;
             elt->obj_id = mapped_region->remote_obj_id;
             elt->reg_id = mapped_region->remote_reg_id;
             elt->client_id = mapped_region->remote_client_id;
         }
     }
+    free(request_region);
 
+done:
+    FUNC_LEAVE(ret_value);
+}
+//perr_t PDC_Server_region_lock_status(pdcid_t obj_id, region_info_transfer_t *region, int *lock_status)
+perr_t PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status)
+{
+    perr_t ret_value = SUCCEED;
+    pdc_metadata_t *res_meta = NULL;
+    region_list_t *elt, *request_region;
+    hg_return_t hg_ret;
+    uint32_t server_id = 0;
+    get_reg_lock_status_in_t in;
+    hg_handle_t get_reg_lock_handle;
+    server_reg_lock_args_t lookup_args;
+
+    *lock_status = 0;
+    request_region = (region_list_t *)malloc(sizeof(region_list_t));
+    pdc_region_transfer_t_to_list_t(&(mapped_region->remote_region), request_region);
+
+    server_id = PDC_get_server_by_obj_id(mapped_region->remote_obj_id, pdc_server_size_g);
+    if (server_id == (uint32_t)pdc_server_rank_g) {
+        PDC_Server_local_region_lock_status(mapped_region, lock_status);
+    }
+    else {
+        printf("lock is located in a different server, work not finished yet\n");
+        fflush(stdout);
+    }
+/*
+    else {
+        if (pdc_remote_server_info_g[server_id].addr_valid != 1) {
+            if (PDC_Server_lookup_server_id(server_id) != SUCCEED) {
+                printf("==PDC_SERVER[%d]: Error getting remote server %d addr via lookup\n",
+                        pdc_server_rank_g, server_id);
+                ret_value = FAIL;
+                goto done;
+            }
+        }
+
+        HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, get_reg_lock_register_id_g,
+                &get_reg_lock_handle);
+
+        in.remote_obj_id = mapped_region->remote_obj_id;
+        in.remote_reg_id = mapped_region->remote_reg_id;
+        in.remote_client_id = mapped_region->remote_client_id;
+        size_t ndim = mapped_region->remote_ndim;
+        if (ndim >= 4 || ndim <=0) {
+            printf("Dimension %lu is not supported\n", ndim);
+            ret_value = FAIL;
+            goto done;
+        }
+        if (ndim >=1) {
+            in.remote_region.start_0  = (mapped_region->remote_region).start_0;
+            in.remote_region.count_0  = (mapped_region->remote_region).count_0;
+        }
+        if (ndim >=2) {
+            in.remote_region.start_1  = (mapped_region->remote_region).start_1;
+            in.remote_region.count_1  = (mapped_region->remote_region).count_1;
+        }
+        if (ndim >=3) {
+            in.remote_region.start_2  = (mapped_region->remote_region).start_2;
+            in.remote_region.count_2  = (mapped_region->remote_region).count_2;
+        }
+        in.remote_bulk_handle = mapped_region->remote_bulk_handle;
+        in.remote_addr = mapped_region->remote_addr;
+        in.from_obj_id = mapped_region->from_obj_id;
+        hg_ret = HG_Forward(get_reg_lock_handle, PDC_Server_get_reg_lock_status_cb, &lookup_args, &in);
+
+        if (hg_ret != HG_SUCCESS) {
+            fprintf(stderr, "PDC_Server_get_metadata_by_id(): Could not start HG_Forward()\n");
+            return FAIL;
+        }
+
+        // Wait for response from server
+        work_todo_g += 1;
+        PDC_Server_check_response(&hg_context_g, &work_todo_g);
+
+        // Retrieved metadata is stored in lookup_args
+        *lock_status = lookup_args.lock;
+
+        HG_Destroy(get_reg_lock_handle);
+    }
+*/
+done: 
     FUNC_LEAVE(ret_value);
 }
 
@@ -4231,6 +4326,7 @@ int main(int argc, char *argv[])
     update_region_loc_register_id_g    = update_region_loc_register(hg_class_g);
     notify_region_update_register_id_g = notify_region_update_register(hg_class_g);
     get_metadata_by_id_register_id_g   = get_metadata_by_id_register(hg_class_g);
+    get_reg_lock_register_id_g         = get_reg_lock_register(hg_class_g);
     get_storage_info_register_id_g     = get_storage_info_register(hg_class_g);
     bulk_rpc_register_id_g             = bulk_rpc_register(hg_class_g);
 
@@ -7316,7 +7412,6 @@ perr_t PDC_Server_get_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta)
         }
     }
     else {
-
         if (pdc_remote_server_info_g[server_id].addr_valid != 1) {
             if (PDC_Server_lookup_server_id(server_id) != SUCCEED) {
                 printf("==PDC_SERVER[%d]: Error getting remote server %d addr via lookup\n",

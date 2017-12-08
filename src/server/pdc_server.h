@@ -102,6 +102,10 @@ typedef struct server_lookup_args_t {
     uint32_t        n_loc;
 } server_lookup_args_t;
 
+typedef struct server_reg_lock_args_t{
+    int lock;
+} server_reg_lock_args_t;
+
 struct server_region_update_args {
     int             ret;
 };
