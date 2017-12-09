@@ -426,21 +426,21 @@ int main(int argc, char **argv)
 
     for (int i=0; i<my_data_size/size; i++) {
         if(xx[rank * my_data_size/size+i] != x[rank * my_data_size/size+i])
-            printf("== ERROR == rank %d: x data does not match\n");
+            printf("== ERROR == rank %d: x data does not match\n", rank);
         if(yy[rank * my_data_size/size+i] != y[rank * my_data_size/size+i])
-            printf("== ERROR == rank %d: y data does not match\n");
+            printf("== ERROR == rank %d: y data does not match\n", rank);
         if(zz[rank * my_data_size/size+i] != z[rank * my_data_size/size+i])
-            printf("== ERROR == rank %d: z data does not match\n");
+            printf("== ERROR == rank %d: z data does not match\n", rank);
         if(pxx[rank * my_data_size/size+i] != px[rank * my_data_size/size+i])
-            printf("== ERROR == rank %d: px data does not match\n");
+            printf("== ERROR == rank %d: px data does not match\n", rank);
         if(pyy[rank * my_data_size/size+i] != py[rank * my_data_size/size+i])
-            printf("== ERROR == rank %d: py data does not match\n");
+            printf("== ERROR == rank %d: py data does not match\n", rank);
         if(pzz[rank * my_data_size/size+i] != pz[rank * my_data_size/size+i])
-            printf("== ERROR == rank %d: pz data does not match\n");
+            printf("== ERROR == rank %d: pz data does not match\n", rank);
         if(id11[rank * my_data_size/size+i] != id1[rank * my_data_size/size+i])
-            printf("== ERROR == rank %d: id1 data does not match\n");
+            printf("== ERROR == rank %d: id1 data does not match\n", rank);
         if(id22[rank * my_data_size/size+i] != id2[rank * my_data_size/size+i])
-            printf("== ERROR == rank %d: id2 data does not match\n");
+            printf("== ERROR == rank %d: id2 data does not match\n", rank);
     }
 
 #ifdef ENABLE_MPI
@@ -460,128 +460,125 @@ int main(int argc, char **argv)
         printf("region unmap failed\n");
 
     if(PDCobj_close(obj_x) < 0)
-        printf("fail to close obj_x %lld\n", obj_x);
+        printf("fail to close obj_x\n");
 
     if(PDCobj_close(obj_y) < 0)
-        printf("fail to close object %lld\n", obj_y);
-  
+        printf("fail to close object obj_y\n");
+
     if(PDCobj_close(obj_z) < 0)
-        printf("fail to close object %lld\n", obj_z);
+        printf("fail to close object obj_z\n");
 
     if(PDCobj_close(obj_px) < 0)
-        printf("fail to close object %lld\n", obj_px);
+        printf("fail to close object obj_px\n");
 
     if(PDCobj_close(obj_py) < 0)
-        printf("fail to close object %lld\n", obj_py);
+        printf("fail to close object obj_py\n");
 
     if(PDCobj_close(obj_pz) < 0)
-        printf("fail to close object %lld\n", obj_pz);
+        printf("fail to close object obj_pz\n");
 
     if(PDCobj_close(obj_id1) < 0)
-        printf("fail to close object %lld\n", obj_id1);
+        printf("fail to close object obj_id1\n");
 
     if(PDCobj_close(obj_id2) < 0)
-        printf("fail to close object %lld\n", obj_id2);
+        printf("fail to close object obj_id2\n");
 
     if(PDCobj_close(obj_xx) < 0)
-        printf("fail to close obj_xx %lld\n", obj_xx);
+        printf("fail to close obj_xx\n");
 
     if(PDCobj_close(obj_yy) < 0)
-        printf("fail to close object %lld\n", obj_yy);
+        printf("fail to close object obj_yy\n");
 
     if(PDCobj_close(obj_zz) < 0)
-        printf("fail to close object %lld\n", obj_zz);
+        printf("fail to close object obj_zz\n");
 
     if(PDCobj_close(obj_pxx) < 0)
-        printf("fail to close object %lld\n", obj_pxx);
+        printf("fail to close object obj_pxx\n");
 
     if(PDCobj_close(obj_pyy) < 0)
-        printf("fail to close object %lld\n", obj_pyy);
-    
-    if(PDCobj_close(obj_pzz) < 0)
-        printf("fail to close object %lld\n", obj_pzz);
+        printf("fail to close object obj_pyy\n");
 
     if(PDCobj_close(obj_id11) < 0)
-        printf("fail to close object %lld\n", obj_id11);
+        printf("fail to close object obj_id11\n");
 
     if(PDCobj_close(obj_id22) < 0)
-        printf("fail to close object %lld\n", obj_id22);
-    
+        printf("fail to close object obj_id22\n");
+
     if(PDCprop_close(obj_prop_xx) < 0)
-        printf("Fail to close obj property %lld\n", obj_prop_xx);
+        printf("Fail to close obj property obj_prop_xx\n");
 
     if(PDCprop_close(obj_prop_yy) < 0)
-        printf("Fail to close obj property %lld\n", obj_prop_yy);
+        printf("Fail to close obj property obj_prop_yy\n");
 
     if(PDCprop_close(obj_prop_zz) < 0)
-        printf("Fail to close obj property %lld\n", obj_prop_zz);
+        printf("Fail to close obj property obj_prop_zz\n");
 
     if(PDCprop_close(obj_prop_pxx) < 0)
-        printf("Fail to close obj property %lld\n", obj_prop_pxx);
+        printf("Fail to close obj property obj_prop_pxx\n");
 
     if(PDCprop_close(obj_prop_pyy) < 0)
-        printf("Fail to close obj property %lld\n", obj_prop_pyy);
+        printf("Fail to close obj property obj_prop_pyy\n");
 
     if(PDCprop_close(obj_prop_pzz) < 0)
-        printf("Fail to close obj property %lld\n", obj_prop_pzz);
-    
+        printf("Fail to close obj property obj_prop_pzz\n");
+
     if(PDCprop_close(obj_prop_id11) < 0)
-        printf("Fail to close obj property %lld\n", obj_prop_id11);
+        printf("Fail to close obj property obj_prop_id11\n");
 
     if(PDCprop_close(obj_prop_id22) < 0)
-        printf("Fail to close obj property %lld\n", obj_prop_id22);
+        printf("Fail to close obj property obj_prop_id22\n");
 
     if(PDCregion_close(region_x) < 0)
-        printf("fail to close region %lld\n", region_x);
+        printf("fail to close region region_x\n");
 
     if(PDCregion_close(region_y) < 0)
-        printf("fail to close region %lld\n", region_y);
+        printf("fail to close region region_y\n");
 
     if(PDCregion_close(region_z) < 0)
-        printf("fail to close region %lld\n", region_z);
-
+        printf("fail to close region region_z\n");
+    
     if(PDCregion_close(region_px) < 0)
-        printf("fail to close region %lld\n", region_px);
+        printf("fail to close region region_px\n");
 
     if(PDCregion_close(region_py) < 0)
-        printf("fail to close region %lld\n", region_py);
-    
+        printf("fail to close region region_py\n");
+
     if(PDCobj_close(region_pz) < 0)
-        printf("fail to close region %lld\n", region_pz);
+        printf("fail to close region region_pz\n");
 
     if(PDCobj_close(region_id1) < 0)
-        printf("fail to close region %lld\n", region_id1);
+        printf("fail to close region region_id1\n");
 
     if(PDCobj_close(region_id2) < 0)
-        printf("fail to close region %lld\n", region_id2);
+        printf("fail to close region region_id2\n");
 
     if(PDCregion_close(region_xx) < 0)
-        printf("fail to close region %lld\n", region_xx);
-        
+        printf("fail to close region region_xx\n");
+
     if(PDCregion_close(region_yy) < 0)
-        printf("fail to close region %lld\n", region_yy);
-        
+        printf("fail to close region region_yy\n");
+
     if(PDCregion_close(region_zz) < 0)
-        printf("fail to close region %lld\n", region_zz);
-        
+        printf("fail to close region region_zz\n");
+
     if(PDCregion_close(region_pxx) < 0)
-        printf("fail to close region %lld\n", region_pxx);
-    
+        printf("fail to close region region_pxx\n");
+
     if(PDCregion_close(region_pyy) < 0)
-        printf("fail to close region %lld\n", region_pyy);
-    
+        printf("fail to close region region_pyy\n");
+
     if(PDCregion_close(region_pzz) < 0)
-        printf("fail to close region %lld\n", region_pzz);
-    
+        printf("fail to close region region_pzz\n");
+
     if(PDCobj_close(region_id11) < 0)
-        printf("fail to close region %lld\n", region_id11);
+        printf("fail to close region region_id11\n");
 
     if(PDCobj_close(region_id22) < 0)
-        printf("fail to close region %lld\n", region_id22);
+        printf("fail to close region region_id22\n");
 
     // close a container
     if(PDCcont_close(cont_id) < 0)
-        printf("fail to close container %lld\n", cont_id);
+        printf("fail to close container c1\n");
 
     // close a container property
     if(PDCprop_close(cont_prop) < 0)
@@ -613,4 +610,3 @@ int main(int argc, char **argv)
 
      return 0;
 }
-
