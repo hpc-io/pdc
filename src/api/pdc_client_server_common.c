@@ -719,7 +719,6 @@ perr_t PDC_Server_region_release(region_lock_in_t *in, region_lock_out_t *out) {
 perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out) {return SUCCEED;}
 //perr_t PDC_Server_region_lock_status(pdcid_t obj_id, region_info_transfer_t *region, int *lock_status) {return SUCCEED;}
 perr_t PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status) {return SUCCEED;}
-perr_t PDC_Server_local_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status) {return SUCCEED;}
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs) {return SUCCEED;}
 perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_t obj_id) {return NULL;}
 perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
@@ -1415,7 +1414,6 @@ HG_TEST_RPC_CB(region_release, handle)
     /* Get info from handle */
     hg_info = HG_Get_info(handle);
 
-printf("release %lld\n", in.obj_id);
     if(in.access_type==READ || in.mapping==0) {
         // check region is dirty or not, if dirty transfer data
 //        if(in.lock_op == PDC_LOCK_OP_RELEASE) {
@@ -2258,21 +2256,6 @@ HG_TEST_RPC_CB(update_region_loc, handle)
     FUNC_LEAVE(ret_value);
 }
 
-// not finished yet
-/* get_reg_lock_status_cb */
-HG_TEST_RPC_CB(get_reg_lock_status, handle)
-{
-    hg_return_t ret_value = HG_SUCCESS;
-    get_reg_lock_status_in_t  in;
-    get_reg_lock_status_out_t out;
-
-    FUNC_ENTER(NULL);
-
-    // Decode input
-    HG_Get_input(handle, &in);
-//    printf("==PDC_SERVER: Got metadata retrieval: obj_id=%" PRIu64 "\n", in.obj_id);
-
-}
 
 /* get_metadata_by_id_cb */
 HG_TEST_RPC_CB(get_metadata_by_id, handle)
@@ -3178,19 +3161,6 @@ update_region_loc_register(hg_class_t *hg_class)
 
     ret_value = MERCURY_REGISTER(hg_class, "update_region_loc", update_region_loc_in_t, 
                                  update_region_loc_out_t, update_region_loc_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-get_reg_lock_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "get_reg_lock_status", get_reg_lock_status_in_t,
-                                 get_reg_lock_status_out_t, get_reg_lock_status_cb);
 
     FUNC_LEAVE(ret_value);
 }

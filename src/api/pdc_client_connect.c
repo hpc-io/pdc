@@ -381,35 +381,35 @@ done:
 // Callback function for  HG_Forward()
 // Gets executed after a call to HG_Trigger and the RPC has completed
 /* static hg_return_t */
-client_test_connect_rpc_cb(const struct hg_cb_info *callback_info)
-{
-    hg_return_t ret_value = HG_SUCCESS;
+/* client_test_connect_rpc_cb(const struct hg_cb_info *callback_info) */
+/* { */
+/*     hg_return_t ret_value = HG_SUCCESS; */
     
-    FUNC_ENTER(NULL);
+/*     FUNC_ENTER(NULL); */
 
-    struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
-    hg_handle_t handle = callback_info->info.forward.handle;
+/*     struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg; */
+/*     hg_handle_t handle = callback_info->info.forward.handle; */
 
-    client_test_connect_out_t output;
-    ret_value = HG_Get_output(handle, &output);
-    if (ret_value != HG_SUCCESS) {
-        printf("PDC_CLIENT[%d]: %s - error with HG_Get_output\n", pdc_client_mpi_rank_g, __func__);
-        client_lookup_args->ret = -1;
-        goto done;
-    }
+/*     client_test_connect_out_t output; */
+/*     ret_value = HG_Get_output(handle, &output); */
+/*     if (ret_value != HG_SUCCESS) { */
+/*         printf("PDC_CLIENT[%d]: %s - error with HG_Get_output\n", pdc_client_mpi_rank_g, __func__); */
+/*         client_lookup_args->ret = -1; */
+/*         goto done; */
+/*     } */
 
-    if (is_client_debug_g == 1) {
-        printf("==PDC_CLIENT[%d]: %s - return from server %d\n", pdc_client_mpi_rank_g, __func__, output.ret);
-        fflush(stdout);
-    }
-    client_lookup_args->ret = output.ret;
+/*     if (is_client_debug_g == 1) { */
+/*         printf("==PDC_CLIENT[%d]: %s - return from server %d\n", pdc_client_mpi_rank_g, __func__, output.ret); */
+/*         fflush(stdout); */
+/*     } */
+/*     client_lookup_args->ret = output.ret; */
 
-done:
-    fflush(stdout);
-    work_todo_g = 0;
-    HG_Free_output(handle, &output);
-    FUNC_LEAVE(ret_value);
-} // End of client_test_connect_rpc_cb 
+/* done: */
+/*     fflush(stdout); */
+/*     work_todo_g = 0; */
+/*     HG_Free_output(handle, &output); */
+/*     FUNC_LEAVE(ret_value); */
+/* } // End of client_test_connect_rpc_cb */ 
 
 // Callback function for HG_Addr_lookup()
 // Start RPC connection
@@ -420,7 +420,7 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
     uint32_t server_id;
     struct client_lookup_args *client_lookup_args;
     client_test_connect_in_t in;
-    hg_handle_t client_test_handle;
+    /* hg_handle_t client_test_handle; */
     
     FUNC_ENTER(NULL);
 
@@ -433,25 +433,25 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
     pdc_server_info_g[server_id].addr = callback_info->info.lookup.addr;
     pdc_server_info_g[server_id].addr_valid = 1;
 
-    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, client_test_connect_register_id_g, 
-              &client_test_handle);
+    /* HG_Create(send_context_g, pdc_server_info_g[server_id].addr, client_test_connect_register_id_g, */ 
+    /*           &client_test_handle); */
 
     // Fill input structure
-    in.client_id   = pdc_client_mpi_rank_g;
-    in.nclient     = pdc_client_mpi_size_g;
-    in.client_addr = client_lookup_args->client_addr;
+    /* in.client_id   = pdc_client_mpi_rank_g; */
+    /* in.nclient     = pdc_client_mpi_size_g; */
+    /* in.client_addr = client_lookup_args->client_addr; */
 
-    ret_value = HG_Forward(client_test_handle, client_test_connect_rpc_cb, client_lookup_args, &in);
-    if (ret_value != HG_SUCCESS) {
-        fprintf(stderr, "%s - Could not start HG_Forward\n", __func__);
-        goto done;
-    }
+    /* ret_value = HG_Forward(client_test_handle, client_test_connect_rpc_cb, client_lookup_args, &in); */
+    /* if (ret_value != HG_SUCCESS) { */
+    /*     fprintf(stderr, "%s - Could not start HG_Forward\n", __func__); */
+    /*     goto done; */
+    /* } */
 
-    /* printf("==PDC_CLIENT[%d]: forwarded lookup rpc to server %d\n", pdc_client_mpi_rank_g, server_id); */
-    /* fflush(stdout); */
+    /* /1* printf("==PDC_CLIENT[%d]: forwarded lookup rpc to server %d\n", pdc_client_mpi_rank_g, server_id); *1/ */
+    /* /1* fflush(stdout); *1/ */
 
-    work_todo_g = 1;
-    PDC_Client_check_response(&send_context_g);
+    /* work_todo_g = 1; */
+    /* PDC_Client_check_response(&send_context_g); */
 
     work_todo_g = 0;
 done:

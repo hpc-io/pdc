@@ -41,7 +41,6 @@ set(PROGRAMS
   data_server_read_vpic_multits
   data_server_read_vpic_spatial
   data_server_read_vpic_spatial_multits
-  write_1obj
   )
 # obj_buf_map_mpi_v1
 
