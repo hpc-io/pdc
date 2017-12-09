@@ -118,16 +118,17 @@ int main(int argc, char **argv)
     PDCprop_set_obj_app_name(obj_prop2, "VPICIO"  );
     PDCprop_set_obj_tags(    obj_prop2, "tag0=1"    );
 
-//    obj2 = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop2);
-    obj2 = PDCobj_create_(cont_id, "obj-var-xx", obj_prop2, PDC_OBJ_GLOBAL);
+    obj1 = PDCobj_create_mpi2(cont_id, "obj-var-x", obj_prop1);
+    if (obj1 < 0) { 
+        printf("Error getting an object id of %s from server, exit...\n", "obj-var-x");
+        exit(-1);
+    }
+
+    obj2 = PDCobj_create_mpi2(cont_id, "obj-var-xx", obj_prop2);
     if (obj2 < 0) {    
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
         exit(-1);
     }
-
-    pdc_metadata_t *res = NULL;
-//    PDC_Client_query_metadata_name_only("obj-var-xx", &res);
-//    printf("rank %d: meta id is %lld\n", rank, res->obj_id);
 
     offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
     mysize = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
@@ -140,9 +141,8 @@ int main(int argc, char **argv)
     r2 = PDCregion_create(1, offset, mysize);
 //    printf("second region id: %lld\n", r2);
 
-//	PDCobj_map(obj1, r1, obj2, r2);
-    obj1 = PDCobj_buf_map(cont_id, "obj-var-x", &x[0], PDC_FLOAT, r1, obj2, r2);
-    
+	PDCobj_map(obj1, r1, obj2, r2);
+
     ret = PDCreg_obtain_lock(obj1, r1, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for r1\n");
@@ -169,6 +169,7 @@ printf("xx = %f\n", xx[i]);
     }
 
     ret = PDCreg_unmap(obj1, r1);
+//    ret = PDCreg_unmap(obj1);
     if (ret != SUCCEED)
         printf("region unmap failed\n");
 

@@ -35,7 +35,7 @@
 
 int main(int argc, char **argv) {
     pdcid_t pdc, create_prop1, create_prop2, create_prop;
-    PDC_prop_type type = PDC_CONT_CREATE;
+    PDC_prop_type type;
     int rank = 0, size = 1;
     
 #ifdef ENABLE_MPI
@@ -60,19 +60,19 @@ int main(int argc, char **argv) {
     if(PDCprop_close(create_prop1)<0)
         printf("Fail to close property @ line %d\n", __LINE__);
     else
-        printf("successfully close first property\n");
+        printf("successfully close property # %lld\n", create_prop1);
     if(PDCprop_close(create_prop2)<0)
         printf("Fail to close property @ line %d\n", __LINE__);
     else
-        printf("successfully close second property\n");
+        printf("successfully close property # %lld\n", create_prop2);
 
     // create a container property
     create_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if(create_prop > 0) {
         if(type == PDC_CONT_CREATE)
-            printf("Create a container property\n");
+            printf("Create a container property, id is %lld\n", create_prop);
         else if(type == PDC_OBJ_CREATE)
-            printf("Create an object property\n");
+            printf("Create an object property, id is %lld\n", create_prop);
     }
     else
         printf("Fail to create @ line  %d!\n", __LINE__);
@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
    if(PDCprop_close(create_prop)<0)
        printf("Fail to close property @ line %d\n", __LINE__);
    else
-       printf("successfully close property\n");
+       printf("successfully close property # %lld\n", create_prop);
 
     // close a pdc
     if(PDC_close(pdc) < 0)

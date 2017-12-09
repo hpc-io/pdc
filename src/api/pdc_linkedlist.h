@@ -45,7 +45,6 @@
 
 #include "mercury_thread_mutex.h"
 #include "pdc_cont_pkg.h"
-#include <string.h>
 
 #define PDC_LIST_HEAD_INITIALIZER(name)  { NULL }
 

@@ -46,6 +46,9 @@ int main(int argc, char **argv)
     uint64_t dims[2] = {4,4};
     uint64_t offset[2] = {1, 2};
     uint64_t rdims[2] = {3, 2};
+    char obj_name1[512];
+    char obj_name2[512];
+    char obj_name3[512];
     
     int myArray1[4][4] = {{101, 102, 103, 104}, {105,106, 107, 108}, {109, 110, 111, 112}, {113, 114, 115, 116}};
     int myArray2[4][4];
@@ -82,6 +85,12 @@ int main(int argc, char **argv)
     obj_prop2 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
     obj_prop3 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
 
+//	char srank[10];
+//	sprintf(srank, "%d", rank);
+//	sprintf(obj_name1, "%s%s", rand_string(tmp_str, 16), srank);
+//	sprintf(obj_name2, "%s%s", rand_string(tmp_str, 16), srank);
+//	sprintf(obj_name3, "%s%s", rand_string(tmp_str, 16), srank);
+
     PDCprop_set_obj_dims(obj_prop1, 2, dims);
     PDCprop_set_obj_dims(obj_prop2, 2, dims);
     PDCprop_set_obj_dims(obj_prop3, 2, dims);
@@ -108,24 +117,45 @@ int main(int argc, char **argv)
     PDCprop_set_obj_app_name(obj_prop3, "test_app"  );
     PDCprop_set_obj_tags(    obj_prop3, "tag0=1"    );
 
-    obj1 = PDCobj_create(cont_id, "test_obj1", obj_prop1);
-    obj2 = PDCobj_create(cont_id, "test_obj2", obj_prop2);
-    obj3 = PDCobj_create(cont_id, "test_obj3", obj_prop3);
-
+    // Only rank 0 create a object
+    if (rank == 0) {
+        sprintf(obj_name1, "test_obj1");
+        sprintf(obj_name2, "test_obj2");
+        sprintf(obj_name3, "test_obj3");
+        obj1 = PDCobj_create(cont_id, obj_name1, obj_prop1);
+        obj2 = PDCobj_create(cont_id, obj_name2, obj_prop2);
+        obj3 = PDCobj_create(cont_id, obj_name3, obj_prop3);
+    }
     #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     #endif
 
     // create a region
     r1 = PDCregion_create(2, offset, rdims);
+//    printf("first region id: %lld\n", r1);
     r2 = PDCregion_create(2, offset, rdims);
+//    printf("second region id: %lld\n", r2);
     r3 = PDCregion_create(2, offset, rdims);
+//    printf("second region id: %lld\n", r3);
 
 	PDCobj_map(obj1, r1, obj2, r2);
 	PDCobj_map(obj1, r1, obj3, r3);
 //    PDCreg_unmap(obj1, r1);
 //	PDCobj_map(obj2, r2, obj3, r3);
 
+/*
+    // Query and get meta id
+    pdc_metadata_t *metadata = NULL;
+    pdcid_t meta_id;
+    PDC_Client_query_metadata_name_only("test_obj1", &metadata);
+    if (metadata != NULL) {
+        meta_id = metadata->obj_id;
+    }
+    else {
+        printf("Previously created object test_obj1 by rank 0 not found!\n");
+        goto done;
+    }
+*/
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -190,14 +220,22 @@ int main(int argc, char **argv)
 
     // close a container
     if(PDCcont_close(cont_id) < 0)
-        printf("fail to close container c1\n");
+        printf("fail to close container %lld\n", cont_id);
+    /* else */
+    /*     if (rank == 0) */ 
+    /*         printf("successfully close container # %lld\n", cont); */
 
     // close a container property
     if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
+    /* else */
+    /*     if (rank == 0) */ 
+    /*         printf("successfully close container property # %lld\n", cont_prop); */
 
     if(PDC_close(pdc_id) < 0)
        printf("fail to close PDC\n");
+    /* else */
+    /*    printf("PDC is closed\n"); */
 
 #ifdef ENABLE_MPI
      MPI_Finalize();

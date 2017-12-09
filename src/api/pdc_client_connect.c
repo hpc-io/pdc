@@ -2298,14 +2298,13 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, struct PDC_region_info *reginfo, PDC_var_type_t data_type)
+perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, struct PDC_region_info *reginfo)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = HG_SUCCESS;
     gen_reg_unmap_notification_in_t in;
     /* hg_bulk_t bulk_handle; */
     uint32_t server_id;
-    size_t unit;
     struct region_unmap_args unmap_args;
     hg_handle_t client_send_region_unmap_handle;
     
@@ -2314,16 +2313,7 @@ perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, 
     // Fill input structure
     in.local_obj_id = local_obj_id;
     in.local_reg_id = local_reg_id;
-
-    if(data_type == PDC_DOUBLE)
-        unit = sizeof(double);
-    else if(data_type == PDC_FLOAT)
-        unit = sizeof(float);
-    else if(data_type == PDC_INT)
-        unit = sizeof(int);
-    else
-        PGOTO_ERROR(FAIL, "data type is not supported yet");
-    pdc_region_info_t_to_transfer_unit(reginfo, &(in.local_region), unit);
+    pdc_region_info_t_to_transfer(reginfo, &(in.local_region));
 
     // Create a bulk descriptor
     /* bulk_handle = HG_BULK_NULL; */
@@ -2393,6 +2383,8 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
     in.local_type = local_type;
     in.remote_type = remote_type;
     in.ndim = ndim;
+    pdc_region_info_t_to_transfer(local_region, &(in.local_region));
+    pdc_region_info_t_to_transfer(remote_region, &(in.remote_region));
 
     // Compute server id
     server_id = PDC_get_server_by_obj_id(local_obj_id, pdc_server_num_g);
@@ -2410,7 +2402,6 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
         unit = sizeof(int);
     else
         PGOTO_ERROR(FAIL, "local data type is not supported yet");
-    pdc_region_info_t_to_transfer_unit(local_region, &(in.local_region), unit);
 
     if(remote_type == PDC_DOUBLE)
         unit_to = sizeof(double);
@@ -2420,7 +2411,6 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
         unit_to = sizeof(int);
     else
         PGOTO_ERROR(FAIL, "local data type is not supported yet");
-    pdc_region_info_t_to_transfer_unit(remote_region, &(in.remote_region), unit_to);
 
     if(ndim == 1) {
         local_count = 1;
@@ -2555,17 +2545,15 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_var_type_t data_type, pbool_t *status)
+static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, pbool_t *status)
 {
     perr_t ret_value;
     hg_return_t hg_ret;
     uint32_t server_id;
     region_lock_in_t in;
-    size_t  unit;
     struct client_lookup_args lookup_args;
     hg_handle_t region_lock_handle;
-    int n_retry = 0;
- 
+    
     FUNC_ENTER(NULL);
     
     // Compute server id
@@ -2589,9 +2577,8 @@ static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *re
     in.access_type = access_type;
     in.mapping = region_info->mapping;
     in.local_reg_id = region_info->local_id;
-//    in.region.ndim   = region_info->ndim;
+    in.region.ndim   = region_info->ndim;
     size_t ndim = region_info->ndim;
-    in.data_type = data_type;
     /* printf("==PDC_CLINET: lock dim=%u\n", ndim); */
 
     if (ndim >= 4 || ndim <=0) {
@@ -2600,38 +2587,29 @@ static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *re
         goto done;
     }
 
-    if(data_type == PDC_DOUBLE)
-        unit = sizeof(double);
-    else if(data_type == PDC_FLOAT)
-        unit = sizeof(float);
-    else if(data_type == PDC_INT)
-        unit = sizeof(int);
-    else
-        PGOTO_ERROR(FAIL, "data type is not supported yet");
-
-    pdc_region_info_t_to_transfer_unit(region_info, &(in.region), unit);
-//    if (ndim >=1) {
-//        in.region.start_0  = unit * region_info->offset[0];
-//        in.region.count_0  = unit * region_info->size[0];
+    if (ndim >=1) {
+        in.region.start_0  = region_info->offset[0];
+        in.region.count_0  = region_info->size[0];
         /* in.region.stride_0 = 0; */
         // TODO current stride is not included in pdc.
-//    }
-//    if (ndim >=2) {
-//        in.region.start_1  = unit * region_info->offset[1];
-//        in.region.count_1  = unit * region_info->size[1];
+    }
+    if (ndim >=2) {
+        in.region.start_1  = region_info->offset[1];
+        in.region.count_1  = region_info->size[1];
         /* in.region.stride_1 = 0; */
-//    }
-//    if (ndim >=3) {
-//        in.region.start_2  = unit * region_info->offset[2];
-//        in.region.count_2  = unit * region_info->size[2];
+    }
+    if (ndim >=3) {
+        in.region.start_2  = region_info->offset[2];
+        in.region.count_2  = region_info->size[2];
         /* in.region.stride_2 = 0; */
-//    }
+    }
     /* if (ndim >=4) { */
     /*     in.region.start_3  = region_info->offset[3]; */
     /*     in.region.count_3  = region_info->size[3]; */
     /*     /1* in.region.stride_3 = 0; *1/ */
     /* } */
 
+    int n_retry = 0;
     while (pdc_server_info_g[server_id].addr_valid != 1) {
         if (n_retry > 0) 
             break;
@@ -2684,7 +2662,8 @@ done:
 }
 
 /* , uint64_t *block */
-perr_t PDC_Client_obtain_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_lock_mode_t lock_mode, PDC_var_type_t data_type, pbool_t *obtained)
+perr_t PDC_Client_obtain_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info,
+                                    PDC_access_t access_type, PDC_lock_mode_t lock_mode, pbool_t *obtained)
 {
     perr_t ret_value = SUCCEED;
     
@@ -2705,7 +2684,7 @@ perr_t PDC_Client_obtain_region_lock(pdcid_t meta_id, struct PDC_region_info *re
             // TODO: currently the client would keep trying to send lock request
             while (1) {
                 // ret_value = PDC_Client_region_lock(meta_id, region_info, WRITE, PDC_LOCK_OP_OBTAIN, obtained);
-                ret_value = PDC_Client_region_lock(meta_id, region_info, access_type, data_type, obtained);
+                ret_value = PDC_Client_region_lock(meta_id, region_info, access_type, obtained);
                 if (*obtained == TRUE) {
                     ret_value = SUCCEED;
                     goto done;
@@ -2717,7 +2696,7 @@ perr_t PDC_Client_obtain_region_lock(pdcid_t meta_id, struct PDC_region_info *re
         }
         else if (lock_mode == NOBLOCK) {
             // ret_value = PDC_Client_region_lock(meta_id, region_info, WRITE, PDC_LOCK_OP_OBTAIN, obtained);
-            ret_value = PDC_Client_region_lock(meta_id, region_info, access_type, data_type, obtained);
+            ret_value = PDC_Client_region_lock(meta_id, region_info, access_type, obtained);
             goto done;
         }
         else {
@@ -2738,13 +2717,12 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_var_type_t data_type, pbool_t *status)
+static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, pbool_t *status)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
     uint32_t server_id;
     region_lock_in_t in;
-    size_t unit;
     struct client_lookup_args lookup_args;
     hg_handle_t region_release_handle;
 
@@ -2771,7 +2749,7 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
     in.access_type = access_type;
     in.mapping = region_info->mapping;
     in.local_reg_id = region_info->local_id;
-//    in.region.ndim   = region_info->ndim;
+    in.region.ndim   = region_info->ndim;
     size_t ndim = region_info->ndim;
     /* printf("==PDC_CLINET: lock dim=%u\n", ndim); */
  
@@ -2781,32 +2759,22 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
         goto done;
     }
 
-    if(data_type == PDC_DOUBLE)
-        unit = sizeof(double);
-    else if(data_type == PDC_FLOAT)
-        unit = sizeof(float);
-    else if(data_type == PDC_INT)
-        unit = sizeof(int);
-    else
-        PGOTO_ERROR(FAIL, "data type is not supported yet");
-
-    pdc_region_info_t_to_transfer_unit(region_info, &(in.region), unit);
-//    if (ndim >=1) {
-//        in.region.start_0  = unit * region_info->offset[0];
-//        in.region.count_0  = unit * region_info->size[0];
-//        in.region.stride_0 = 0;
+    if (ndim >=1) {
+        in.region.start_0  = region_info->offset[0];
+        in.region.count_0  = region_info->size[0];
+        /* in.region.stride_0 = 0; */
         // TODO current stride is not included in pdc.
-//    }
-//    if (ndim >=2) {
-//        in.region.start_1  = unit * region_info->offset[1];
-//        in.region.count_1  = unit * region_info->size[1];
-//        in.region.stride_1 = 0;
-//    }
-//    if (ndim >=3) {
-//        in.region.start_2  = unit * region_info->offset[2];
-//        in.region.count_2  = unit * region_info->size[2];
-//        in.region.stride_2 = 0;
-//    }
+    }
+    if (ndim >=2) {
+        in.region.start_1  = region_info->offset[1];
+        in.region.count_1  = region_info->size[1];
+        /* in.region.stride_1 = 0; */
+    }
+    if (ndim >=3) {
+        in.region.start_2  = region_info->offset[2];
+        in.region.count_2  = region_info->size[2];
+        /* in.region.stride_2 = 0; */
+    }
 /*
     if (ndim >=4) {
         in.region.start_3  = region_info->offset[3];
@@ -2855,7 +2823,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_release_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_var_type_t data_type, pbool_t *released)
+perr_t PDC_Client_release_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, pbool_t *released)
 {
     perr_t ret_value = SUCCEED;
     
@@ -2864,7 +2832,7 @@ perr_t PDC_Client_release_region_lock(pdcid_t meta_id, struct PDC_region_info *r
     /* uint64_t meta_id; */
     /* PDC_obj_info *obj_prop = PDCobj_get_info(obj_id, pdc); */
     /* meta_id = obj_prop->meta_id; */
-    ret_value = PDC_Client_region_release(meta_id, region_info, access_type, data_type, released);
+    ret_value = PDC_Client_region_release(meta_id, region_info, access_type, released);
 
     FUNC_LEAVE(ret_value);
 }

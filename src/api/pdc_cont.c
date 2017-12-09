@@ -82,12 +82,11 @@ perr_t PDC_cont_list_null()
 {
     perr_t ret_value = SUCCEED;   /* Return value */
     int nelemts;
- 
+    
     FUNC_ENTER(NULL);
-
     // list is not empty
     nelemts = PDC_id_list_null(PDC_CONT);
-    if(nelemts > 0) {
+    if(PDC_id_list_null(PDC_CONT) > 0) {
         /* printf("%d element(s) in the container list will be automatically closed by PDC_close()\n", nelemts); */
         if(PDC_id_list_clear(PDC_CONT) < 0)
             PGOTO_ERROR(FAIL, "fail to clear container list");
@@ -103,7 +102,7 @@ static perr_t PDCcont__close(struct PDC_cont_info *cp)
 
     FUNC_ENTER(NULL);
 
-    free((void*)(cp->name));
+    free(cp->name);
     cp = PDC_FREE(struct PDC_cont_info, cp);
     
     FUNC_LEAVE(ret_value);
@@ -148,7 +147,7 @@ pdcid_t PDCcont_open(const char *cont_name)
     cont_id = PDC_find_byname(PDC_CONT, cont_name);
     if(cont_id <= 0)
         PGOTO_ERROR(FAIL, "cannot locate container");
-    PDC_inc_ref(cont_id);
+    pdc_inc_ref(cont_id);
     ret_value = cont_id;
     
 done:

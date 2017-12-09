@@ -50,6 +50,7 @@ int main(int argc, char **argv)
     pdcid_t pdc_id, cont_prop, cont_id;
     pdcid_t obj_prop1, obj_prop2;
     pdcid_t obj1, obj2;
+    pdcid_t meta1, meta2;
     pdcid_t r1, r2;
     perr_t ret;
     struct timeval  ht_total_start;
@@ -118,16 +119,45 @@ int main(int argc, char **argv)
     PDCprop_set_obj_app_name(obj_prop2, "VPICIO"  );
     PDCprop_set_obj_tags(    obj_prop2, "tag0=1"    );
 
-//    obj2 = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop2);
+    obj1 = PDCobj_create_(cont_id, "obj-var-x", obj_prop1, PDC_OBJ_GLOBAL);
+    if (obj1 < 0) { 
+        printf("Error getting an object id of %s from server, exit...\n", "obj-var-x");
+        exit(-1);
+    }
+
     obj2 = PDCobj_create_(cont_id, "obj-var-xx", obj_prop2, PDC_OBJ_GLOBAL);
     if (obj2 < 0) {    
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
         exit(-1);
     }
 
+    PDCobj_encode(obj1, &meta1);
+    PDCobj_encode(obj2, &meta2);
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+/*
     pdc_metadata_t *res = NULL;
-//    PDC_Client_query_metadata_name_only("obj-var-xx", &res);
-//    printf("rank %d: meta id is %lld\n", rank, res->obj_id);
+    PDC_Client_query_metadata_name_only("obj-var-x", &res);
+    printf("rank %d: meta id is %lld\n", rank, res->obj_id);
+    PDC_Client_query_metadata_name_only("obj-var-xx", &res);
+    printf("rank %d: meta id is %lld\n", rank, res->obj_id);
+*/
+    MPI_Bcast(&meta1, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&meta2, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
+
+#endif
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
+    PDCobj_decode(obj1, meta1);
+    PDCobj_decode(obj2, meta2);
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
     offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
     mysize = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
@@ -140,9 +170,12 @@ int main(int argc, char **argv)
     r2 = PDCregion_create(1, offset, mysize);
 //    printf("second region id: %lld\n", r2);
 
-//	PDCobj_map(obj1, r1, obj2, r2);
-    obj1 = PDCobj_buf_map(cont_id, "obj-var-x", &x[0], PDC_FLOAT, r1, obj2, r2);
-    
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
+	PDCobj_map(obj1, r1, obj2, r2);
+
     ret = PDCreg_obtain_lock(obj1, r1, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for r1\n");
@@ -169,6 +202,7 @@ printf("xx = %f\n", xx[i]);
     }
 
     ret = PDCreg_unmap(obj1, r1);
+//    ret = PDCreg_unmap(obj1);
     if (ret != SUCCEED)
         printf("region unmap failed\n");
 

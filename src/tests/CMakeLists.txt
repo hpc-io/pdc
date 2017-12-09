@@ -34,6 +34,9 @@ set(PROGRAMS
   init_only
   obj_buf_map
   obj_map_mpi
+  obj_map_mpi_s2
+  obj_map_mpi_s3
+  obj_map_mpi_s4
   vpicio
   data_server_write_vpic
   data_server_write_vpic_multits

@@ -181,7 +181,7 @@ typedef struct PDC_mapping_info {
 
 typedef struct region_map_t {
 // if keeping the struct of origin of region is needed?
-    hg_atomic_int32_t                mapping_count;        /* count the number of mapping of this region */
+    pdc_cnt_t                        mapping_count;        /* count the number of mapping of this region */
     pdcid_t                          local_obj_id;         /* origin of object id */
     pdcid_t                          local_reg_id;         /* origin of region id */
     region_info_transfer_t           local_region;
@@ -284,7 +284,6 @@ typedef struct {
     pdcid_t                     local_reg_id;
     region_info_transfer_t      region;
     pbool_t                     mapping;
-    PDC_var_type_t              data_type;
 } region_lock_in_t;
 
 typedef struct {
@@ -400,11 +399,6 @@ hg_proc_region_lock_in_t(hg_proc_t proc, void *data)
     ret = hg_proc_uint32_t(proc, &struct_data->mapping);
     if (ret != HG_SUCCESS) {
     HG_LOG_ERROR("Proc error");
-    }
-    ret = hg_proc_uint8_t(proc, &struct_data->data_type);
-    if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
-        return ret;
     }
     return ret;
 }
@@ -1924,7 +1918,7 @@ struct region_lock_update_bulk_args {
 };
 
 struct region_update_bulk_args {
-    hg_atomic_int32_t refcount;   // to track how many unlocked mapped region for data transfer
+    pdc_cnt_t refcount;   // to track how many unlocked mapped region for data transfer
     hg_handle_t handle;
     hg_bulk_t   bulk_handle;
     pdcid_t remote_obj_id;
@@ -1959,7 +1953,6 @@ perr_t pdc_region_list_t_to_transfer(region_list_t *region, region_info_transfer
 perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to);
 
 perr_t pdc_region_info_t_to_transfer(struct PDC_region_info *region, region_info_transfer_t *transfer);
-perr_t pdc_region_info_t_to_transfer_unit(struct PDC_region_info *region, region_info_transfer_t *transfer, size_t unit);
 
 perr_t PDC_serialize_regions_lists(region_list_t** regions, uint32_t n_region, void *buf, uint32_t buf_size);
 perr_t PDC_unserialize_region_lists(void *buf, region_list_t** regions, uint32_t *n_region);
