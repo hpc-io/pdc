@@ -43,7 +43,7 @@ struct PDC_obj_prop {
     struct PDC_class *pdc;
     pdcid_t          obj_prop_id;
     PDC_lifetime     obj_life;
-    int              ndim;
+    size_t           ndim;
     uint64_t         *dims;
     PDC_var_type_t   type;
     uint32_t         user_id;

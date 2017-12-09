@@ -39,7 +39,7 @@
 #include "pdc_client_connect.h"
 #include "pdc_client_server_common.h"
 
-
+/*
 static char *rand_string(char *str, size_t size)
 {
     const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJK...";
@@ -53,6 +53,7 @@ static char *rand_string(char *str, size_t size)
     }
     return str;
 }
+*/
 
 void print_usage() {
     printf("Usage: srun -n ./creat_obj -r num_of_obj_per_rank\n");
@@ -121,7 +122,6 @@ int main(int argc, char **argv)
 
     // create a pdc
     pdc = PDC_init("pdc");
-    /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
@@ -256,7 +256,7 @@ int main(int argc, char **argv)
 
     // close a container
     if(PDCcont_close(cont) < 0)
-        printf("fail to close container %lld\n", cont);
+        printf("fail to close container c1\n");
 
     // close a container property
     if(PDCprop_close(cont_prop) < 0)

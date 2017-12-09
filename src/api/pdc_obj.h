@@ -187,12 +187,11 @@ void ** PDCobj_buf_retrieve(pdcid_t obj_id);
 /**
  * Open an object within a container
  *
- * \param cont_id [IN]          Id of the container
  * \param obj_name [IN]         Name of the object
  *
  * \return Object id on success/Negative on failure
  */
-pdcid_t PDCobj_open(pdcid_t cont_id, const char *obj_name);
+pdcid_t PDCobj_open(const char *obj_name);
 
 /**
  * Iterate over objects in a container

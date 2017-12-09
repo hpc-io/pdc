@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
-#include <time.h>
+#include <sys/time.h>
 
 /* #define ENABLE_MPI 1 */
 
@@ -18,11 +18,11 @@ void print_usage() {
     printf("Usage: srun -n ./data_server_read obj_name readsize\n");
 }
 
-int main(int argc, const char *argv[])
+int main(int argc, char **argv)
 {
     int rank = 0, size = 1;
-    int i;
     uint64_t readsize;
+    int i;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -43,8 +43,6 @@ int main(int argc, const char *argv[])
 #endif
     // create a pdc
     pdcid_t pdc = PDC_init("pdc");
-    /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
-    /* fflush(stdout); */
 
     // create a container property
     pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
@@ -55,8 +53,6 @@ int main(int argc, const char *argv[])
     pdcid_t cont = PDCcont_create("c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
-
-    pdcid_t test_obj = -1;
 
     struct timeval  ht_total_start;
     struct timeval  ht_total_end;
@@ -140,7 +136,7 @@ done:
 
     // close a container
     if(PDCcont_close(cont) < 0)
-        printf("fail to close container %lld\n", cont);
+        printf("fail to close container c1\n");
 
     // close a container property
     if(PDCprop_close(cont_prop) < 0)

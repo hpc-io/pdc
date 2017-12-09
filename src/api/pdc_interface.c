@@ -30,6 +30,14 @@
 /* Combine a Type number and an atom index into an atom */
 #define PDCID_MAKE(g,i)   ((((pdcid_t)(g) & TYPE_MASK) << ID_BITS) | ((pdcid_t)(i) & ID_MASK))
 
+/* Variable to keep track of the number of types allocated.  Its value is the
+ * next type ID to be handed out, so it is always one greater than the number
+ * of types.
+ * Starts at 1 instead of 0 because it makes trace output look nicer.  If more
+ * types (or IDs within a type) are needed, adjust TYPE_BITS in pdc_id_pkg.h
+ * and/or increase size of pdcid_t */
+static PDC_type_t PDC_next_type = (PDC_type_t)PDC_NTYPES;
+
 struct PDC_id_info *PDC_find_id(pdcid_t idid)
 {
     PDC_type_t      type;               /*ID's type         */
@@ -105,7 +113,7 @@ done:
 }*/ /* end PDCid_register() */
 
 
-pdcid_t PDC_id_register(PDC_type_t type, const void *object)
+pdcid_t PDC_id_register(PDC_type_t type, void *object)
 {
     struct PDC_id_type   *type_ptr;           /* ptr to the type               */
     struct PDC_id_info   *id_ptr;             /* ptr to the new ID information */
@@ -126,7 +134,8 @@ pdcid_t PDC_id_register(PDC_type_t type, const void *object)
     PDC_MUTEX_LOCK(type_ptr->ids);
     new_id = PDCID_MAKE(type, type_ptr->nextid);
     id_ptr->id = new_id;
-    id_ptr->count = ATOMIC_VAR_INIT(1);      /*initial reference count*/
+//    id_ptr->count = ATOMIC_VAR_INIT(1);      /*initial reference count*/
+    hg_atomic_init32(&(id_ptr->count), 1);
     id_ptr->obj_ptr = object;
 
     /* Insert into the type */
@@ -161,7 +170,8 @@ int PDC_dec_ref(pdcid_t id)
 
 //    (id_ptr->count)--;
 //    if(id_ptr->count == 0) {
-    ret_value = atomic_fetch_sub(&(id_ptr->count), 1) - 1;
+//    ret_value = atomic_fetch_sub(&(id_ptr->count), 1) - 1;
+    ret_value = hg_atomic_decr32(&(id_ptr->count));
     if(ret_value == 0) {
         struct PDC_id_type   *type_ptr;      /*ptr to the type   */
         
@@ -175,7 +185,7 @@ int PDC_dec_ref(pdcid_t id)
             PDC_MUTEX_LOCK(type_ptr->ids);
             /* Remove the node from the type */
             PDC_LIST_REMOVE(id_ptr, entry);
-	    id_ptr = PDC_FREE(struct PDC_id_info, id_ptr);
+	        id_ptr = PDC_FREE(struct PDC_id_info, id_ptr);
             /* Decrement the number of IDs in the type */
             (type_ptr->id_count)--;
             ret_value = 0;
@@ -213,7 +223,7 @@ done:
     FUNC_LEAVE(ret_value);
 } /* end of PDC__find_byname() */
 
-int pdc_inc_ref(pdcid_t id)
+int PDC_inc_ref(pdcid_t id)
 {
     int ret_value = 0;               /* Return value */
     struct PDC_id_info *id_ptr;      /* Pointer to the ID */
@@ -228,7 +238,8 @@ int pdc_inc_ref(pdcid_t id)
         PGOTO_ERROR(FAIL, "can't locate ID");
 
     /* Set return value */
-    ret_value = atomic_fetch_add(&(id_ptr->count), 1) + 1;
+//    ret_value = atomic_fetch_add(&(id_ptr->count), 1) + 1;
+    ret_value = hg_atomic_incr32(&(id_ptr->count));
     
 done:
     FUNC_LEAVE(ret_value);
