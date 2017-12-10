@@ -25,7 +25,7 @@
 #ifndef _pdc_interface_H
 #define _pdc_interface_H
 
-#include <stdatomic.h>
+#include "mercury_atomic.h"
 #include "pdc_public.h"
 #include "pdc_private.h"
 #include "pdc_error.h"
@@ -69,9 +69,9 @@ typedef struct {
 
 /* Atom information structure used */
 struct PDC_id_info {
-    pdcid_t     id;             /* ID for this info                 */
-    pdc_cnt_t   count;          /* ref. count for this atom         */
-    const void  *obj_ptr;       /* pointer associated with the atom */
+    pdcid_t             id;             /* ID for this info                 */
+    hg_atomic_int32_t   count;          /* ref. count for this atom         */
+    const void          *obj_ptr;       /* pointer associated with the atom */
     PDC_LIST_ENTRY(PDC_id_info) entry;
 };
 

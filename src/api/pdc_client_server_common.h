@@ -181,7 +181,7 @@ typedef struct PDC_mapping_info {
 
 typedef struct region_map_t {
 // if keeping the struct of origin of region is needed?
-    pdc_cnt_t                        mapping_count;        /* count the number of mapping of this region */
+    hg_atomic_int32_t                mapping_count;        /* count the number of mapping of this region */
     pdcid_t                          local_obj_id;         /* origin of object id */
     pdcid_t                          local_reg_id;         /* origin of region id */
     region_info_transfer_t           local_region;
@@ -1924,13 +1924,13 @@ struct region_lock_update_bulk_args {
 };
 
 struct region_update_bulk_args {
-    pdc_cnt_t refcount;   // to track how many unlocked mapped region for data transfer
-    hg_handle_t handle;
-    hg_bulk_t   bulk_handle;
-    pdcid_t remote_obj_id;
-    pdcid_t remote_reg_id;
-    int32_t remote_client_id;
-    struct lock_bulk_args *args;
+    hg_atomic_int32_t refcount;   // to track how many unlocked mapped region for data transfer
+    hg_handle_t       handle;
+    hg_bulk_t         bulk_handle;
+    pdcid_t           remote_obj_id;
+    pdcid_t           remote_reg_id;
+    int32_t           remote_client_id;
+    struct            lock_bulk_args *args;
 };
 
 hg_id_t gen_reg_map_notification_register(hg_class_t *hg_class);
