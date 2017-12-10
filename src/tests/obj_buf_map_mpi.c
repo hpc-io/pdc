@@ -118,16 +118,11 @@ int main(int argc, char **argv)
     PDCprop_set_obj_app_name(obj_prop2, "VPICIO"  );
     PDCprop_set_obj_tags(    obj_prop2, "tag0=1"    );
 
-//    obj2 = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop2);
-    obj2 = PDCobj_create_(cont_id, "obj-var-xx", obj_prop2, PDC_OBJ_GLOBAL);
+    obj2 = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop2, 0);
     if (obj2 < 0) {    
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
         exit(-1);
     }
-
-    pdc_metadata_t *res = NULL;
-//    PDC_Client_query_metadata_name_only("obj-var-xx", &res);
-//    printf("rank %d: meta id is %lld\n", rank, res->obj_id);
 
     offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
     mysize = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
@@ -150,23 +145,24 @@ int main(int argc, char **argv)
     for (int i=0; i<numparticles; i++) {
         x[i]   = uniform_random_number() * x_dim;
         xx[i]  = 0;
-printf("x = %f\n", x[i]);
+// printf("x = %f\n", x[i]);
     }
 
-    ret = PDCreg_obtain_lock(obj2, r2, WRITE, NOBLOCK);
-    if (ret != SUCCEED)
-        printf("Failed to obtain lock for r2\n");
+//    ret = PDCreg_obtain_lock(obj2, r2, WRITE, NOBLOCK);
+//    if (ret != SUCCEED)
+//        printf("Failed to obtain lock for r2\n");
 
     ret = PDCreg_release_lock(obj1, r1, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_x\n");
-    ret = PDCreg_release_lock(obj2, r2, WRITE);
-    if (ret != SUCCEED)
-        printf("Failed to release lock for region_y\n");
-
+//    ret = PDCreg_release_lock(obj2, r2, WRITE);
+//    if (ret != SUCCEED)
+//        printf("Failed to release lock for region_y\n");
+/*
 for (int i=0; i<numparticles; i++) {
 printf("xx = %f\n", xx[i]);
     }
+*/
 
     ret = PDCreg_unmap(obj1, r1);
     if (ret != SUCCEED)

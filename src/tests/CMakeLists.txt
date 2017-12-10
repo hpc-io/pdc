@@ -34,9 +34,6 @@ set(PROGRAMS
   init_only
   obj_buf_map
   obj_map_mpi
-  obj_map_mpi_s2
-  obj_map_mpi_s3
-  obj_map_mpi_s4
   vpicio
   data_server_write_vpic
   data_server_write_vpic_multits
@@ -46,7 +43,6 @@ set(PROGRAMS
   data_server_read_vpic_spatial_multits
   write_1obj
   )
-# obj_buf_map_mpi_v1
 
 foreach(program ${PROGRAMS})
   add_executable(${program} ${program}.c)

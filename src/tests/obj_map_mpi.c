@@ -50,6 +50,7 @@ int main(int argc, char **argv)
     pdcid_t pdc_id, cont_prop, cont_id;
     pdcid_t obj_prop1, obj_prop2;
     pdcid_t obj1, obj2;
+    pdcid_t meta1, meta2;
     pdcid_t r1, r2;
     perr_t ret;
     struct timeval  ht_total_start;
@@ -118,17 +119,21 @@ int main(int argc, char **argv)
     PDCprop_set_obj_app_name(obj_prop2, "VPICIO"  );
     PDCprop_set_obj_tags(    obj_prop2, "tag0=1"    );
 
-    obj1 = PDCobj_create_MPI(cont_id, "obj-var-x", obj_prop1);
+    obj1 = PDCobj_create_mpi(cont_id, "obj-var-x", obj_prop1, 0);
     if (obj1 < 0) { 
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-x");
         exit(-1);
     }
 
-    obj2 = PDCobj_create_MPI(cont_id, "obj-var-xx", obj_prop2);
+    obj2 = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop2, 0);
     if (obj2 < 0) {    
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
         exit(-1);
     }
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
     offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
     mysize = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
@@ -141,6 +146,10 @@ int main(int argc, char **argv)
     r2 = PDCregion_create(1, offset, mysize);
 //    printf("second region id: %lld\n", r2);
 
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
 	PDCobj_map(obj1, r1, obj2, r2);
 
     ret = PDCreg_obtain_lock(obj1, r1, WRITE, NOBLOCK);
@@ -150,25 +159,26 @@ int main(int argc, char **argv)
     for (int i=0; i<numparticles; i++) {
         x[i]   = uniform_random_number() * x_dim;
         xx[i]  = 0;
-printf("x = %f\n", x[i]);
+// printf("x = %f\n", x[i]);
     }
 
-    ret = PDCreg_obtain_lock(obj2, r2, WRITE, NOBLOCK);
-    if (ret != SUCCEED)
-        printf("Failed to obtain lock for r2\n");
+//    ret = PDCreg_obtain_lock(obj2, r2, WRITE, NOBLOCK);
+//    if (ret != SUCCEED)
+//        printf("Failed to obtain lock for r2\n");
 
     ret = PDCreg_release_lock(obj1, r1, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_x\n");
-    ret = PDCreg_release_lock(obj2, r2, WRITE);
-    if (ret != SUCCEED)
-        printf("Failed to release lock for region_y\n");
-
+//    ret = PDCreg_release_lock(obj2, r2, WRITE);
+//    if (ret != SUCCEED)
+//        printf("Failed to release lock for region_y\n");
+/*
 for (int i=0; i<numparticles; i++) {
 printf("xx = %f\n", xx[i]);
     }
-
+*/
     ret = PDCreg_unmap(obj1, r1);
+//    ret = PDCreg_unmap(obj1);
     if (ret != SUCCEED)
         printf("region unmap failed\n");
 
