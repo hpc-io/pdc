@@ -1002,18 +1002,20 @@ perr_t PDCreg_unmap(pdcid_t obj_id, pdcid_t reg_id)
     struct PDC_id_info *info1;
     struct PDC_obj_info *object1;
     struct PDC_region_info *reginfo;
-    
+    PDC_var_type_t data_type;
+ 
     FUNC_ENTER(NULL);
 
     info1 = PDC_find_id(obj_id);
     if(info1 == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object ID");
     object1 = (struct PDC_obj_info *)(info1->obj_ptr);
+    data_type = object1->obj_pt->type;
     info1 = PDC_find_id(reg_id);
     if(info1 == NULL)
         PGOTO_ERROR(FAIL, "cannot locate region ID");
     reginfo = (struct PDC_region_info *)(info1->obj_ptr);
-    ret_value = PDC_Client_send_region_unmap(object1->meta_id, reg_id, reginfo);
+    ret_value = PDC_Client_send_region_unmap(object1->meta_id, reg_id, reginfo, data_type);
     if(ret_value == SUCCEED) {
         PDC_dec_ref(obj_id);
         if(PDC_dec_ref(reg_id) == 1) {
@@ -1074,15 +1076,17 @@ perr_t PDCreg_obtain_lock(pdcid_t obj_id, pdcid_t reg_id, PDC_access_t access_ty
     pdcid_t meta_id;
     struct PDC_obj_info *object_info;
     struct PDC_region_info *region_info;
+    PDC_var_type_t data_type;
     pbool_t obtained;
     
     FUNC_ENTER(NULL);
     
     object_info = PDCobj_get_info(obj_id);
     meta_id = object_info->meta_id;
+    data_type = object_info->obj_pt->type;
     region_info = PDCregion_get_info(reg_id);
     
-    ret_value = PDC_Client_obtain_region_lock(meta_id, region_info, access_type, lock_mode, &obtained);
+    ret_value = PDC_Client_obtain_region_lock(meta_id, region_info, access_type, lock_mode, data_type, &obtained);
 
     FUNC_LEAVE(ret_value);
 }
@@ -1094,14 +1098,16 @@ perr_t PDCreg_release_lock(pdcid_t obj_id, pdcid_t reg_id, PDC_access_t access_t
     pdcid_t meta_id;
     struct PDC_obj_info *object_info;
     struct PDC_region_info *region_info;
-    
+    PDC_var_type_t data_type;
+ 
     FUNC_ENTER(NULL);
     
     object_info = PDCobj_get_info(obj_id);
     meta_id = object_info->meta_id;
+    data_type = object_info->obj_pt->type;
     region_info = PDCregion_get_info(reg_id);
     
-    ret_value = PDC_Client_release_region_lock(meta_id, region_info, access_type, &released);
-    
+    ret_value = PDC_Client_release_region_lock(meta_id, region_info, access_type, data_type, &released);
+ 
     FUNC_LEAVE(ret_value);
 }

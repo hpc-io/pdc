@@ -579,6 +579,58 @@ perr_t pdc_region_info_t_to_transfer(struct PDC_region_info *region, region_info
     return SUCCEED;
 }
 
+perr_t pdc_region_info_t_to_transfer_unit(struct PDC_region_info *region, region_info_transfer_t *transfer, size_t unit)
+{
+    if (NULL==region || NULL==transfer ) {
+        printf("    pdc_region_info_t_to_region_list_t(): NULL input!\n");
+        return FAIL;
+    }
+
+    size_t ndim = region->ndim;
+    if (ndim <= 0 || ndim >=5) {
+        printf("pdc_region_info_t_to_transfer() unsupported dim: %lu\n", ndim);
+        return FAIL;
+    }
+
+    transfer->ndim = ndim;
+    if (ndim >= 1)      transfer->start_0  = unit * region->offset[0];
+    else                transfer->start_0  = 0;
+
+    if (ndim >= 2)      transfer->start_1  = unit * region->offset[1];
+    else                transfer->start_1  = 0;
+
+    if (ndim >= 3)      transfer->start_2  = unit * region->offset[2];
+    else                transfer->start_2  = 0;
+
+    if (ndim >= 4)      transfer->start_3  = unit * region->offset[3];
+    else                transfer->start_3  = 0;
+
+
+    if (ndim >= 1)      transfer->count_0  = unit * region->size[0];
+    else                transfer->count_0  = 0;
+
+    if (ndim >= 2)      transfer->count_1  = unit * region->size[1];
+    else                transfer->count_1  = 0;
+
+    if (ndim >= 3)      transfer->count_2  = unit * region->size[2];
+    else                transfer->count_2  = 0;
+
+    if (ndim >= 4)      transfer->count_3  = unit * region->size[3];
+    else                transfer->count_3  = 0;
+
+    /* if (ndim >= 1)      transfer->stride_0 = 0; */
+    /* if (ndim >= 2)      transfer->stride_1 = 0; */
+    /* if (ndim >= 3)      transfer->stride_2 = 0; */
+    /* if (ndim >= 4)      transfer->stride_3 = 0; */
+
+    /* transfer->stride_0 = 0; */
+    /* transfer->stride_1 = 0; */
+    /* transfer->stride_2 = 0; */
+    /* transfer->stride_3 = 0; */
+
+    return SUCCEED;
+}
+
 perr_t pdc_region_list_t_to_transfer(region_list_t *region, region_info_transfer_t *transfer)
 {
     if (NULL==region || NULL==transfer ) {
@@ -1361,7 +1413,7 @@ HG_TEST_RPC_CB(region_release, handle)
     /* Get info from handle */
     hg_info = HG_Get_info(handle);
 
-printf("release %lld\n", in.obj_id);
+//  printf("release %lld\n", in.obj_id);
     if(in.access_type==READ || in.mapping==0) {
         // check region is dirty or not, if dirty transfer data
 //        if(in.lock_op == PDC_LOCK_OP_RELEASE) {
@@ -1370,7 +1422,7 @@ printf("release %lld\n", in.obj_id);
             PDC_Server_get_local_metadata_by_id(in.obj_id, &res_meta);
             DL_FOREACH(res_meta->region_lock_head, elt) {
                 if (PDC_is_same_region_list(request_region, elt) == 1 && elt->reg_dirty == 1) {
-                    printf("==PDC SERVER: region_release start %" PRIu64 " \n", request_region->start[0]);
+//                    printf("==PDC SERVER: region_release start %" PRIu64 " \n", request_region->start[0]);
                     // printf("detect lock release dirty region\n");
                     dirty_reg = 1;
                     size = HG_Bulk_get_size(elt->bulk_handle);
@@ -1381,9 +1433,9 @@ printf("release %lld\n", in.obj_id);
                     server_region->size = (uint64_t *)malloc(sizeof(uint64_t));
                     server_region->offset = (uint64_t *)malloc(sizeof(uint64_t));
                     (server_region->size)[0] = size;
-                    (server_region->offset)[0] = in.region.start_0 * sizeof(float); 
+                    (server_region->offset)[0] = in.region.start_0; 
                     ret_value = PDC_Server_data_read_direct(elt->from_obj_id, server_region, data_buf);
-printf("read data %f, %f from obj %lld, with size %lu\n", *(float *)data_buf, *((float*)data_buf+1), elt->from_obj_id, size);
+// printf("read data %f, %f from obj %lld, with size %lu\n", *(float *)data_buf, *((float*)data_buf+1), elt->from_obj_id, size);
                     if(ret_value != SUCCEED)
                         printf("==PDC SERVER: PDC_Server_data_read_direct() failed\n");
                     hg_ret = HG_Bulk_create(hg_info->hg_class, 1, &data_buf, &size, HG_BULK_READWRITE, &lock_local_bulk_handle);
@@ -1493,7 +1545,7 @@ printf("read data %f, %f from obj %lld, with size %lu\n", *(float *)data_buf, *(
                     server_region->size = (uint64_t *)malloc(sizeof(uint64_t));
                     server_region->offset = (uint64_t *)malloc(sizeof(uint64_t));
                     (server_region->size)[0] = size;
-                    (server_region->offset)[0] = in.region.start_0*sizeof(float); 
+                    (server_region->offset)[0] = in.region.start_0; 
                     bulk_args->server_region = server_region;
                     bulk_args->mapping_list = map_elt;
                     bulk_args->addr = map_elt->local_addr;
