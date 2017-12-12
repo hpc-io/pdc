@@ -71,7 +71,7 @@ typedef struct {
 struct PDC_id_info {
     pdcid_t             id;             /* ID for this info                 */
     hg_atomic_int32_t   count;          /* ref. count for this atom         */
-    const void          *obj_ptr;       /* pointer associated with the atom */
+    void                *obj_ptr;       /* pointer associated with the atom */
     PDC_LIST_ENTRY(PDC_id_info) entry;
 };
 
@@ -85,14 +85,6 @@ struct PDC_id_type {
     pdcid_t                     nextid;            /* ID to use for the next atom                */
     PDC_LIST_HEAD(PDC_id_info)  ids;               /* Head of list of IDs                        */
 };
-
-/* Variable to keep track of the number of types allocated.  Its value is the
- * next type ID to be handed out, so it is always one greater than the number
- * of types.
- * Starts at 1 instead of 0 because it makes trace output look nicer.  If more
- * types (or IDs within a type) are needed, adjust TYPE_BITS in pdc_id_pkg.h
- * and/or increase size of pdcid_t */
-static PDC_type_t PDC_next_type = (PDC_type_t)PDC_NTYPES;
 
 struct pdc_id_list {
     struct PDC_id_type *PDC_id_type_list_g[PDC_MAX_NUM_TYPES];
@@ -135,7 +127,7 @@ pdcid_t PDCid_register(PDC_type_t type, const void *object);
  *
  * \return Type id on success/Negative on failure
  */
-pdcid_t PDC_id_register(PDC_type_t type, const void *object);
+pdcid_t PDC_id_register(PDC_type_t type, void *object);
 
 /**
  * Increment the number of references outstanding for an ID.

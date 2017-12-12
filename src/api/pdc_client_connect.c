@@ -2577,8 +2577,8 @@ static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *re
     usleep(delay);
 
 
-    printf("==PDC_CLIENT[%d]: lock going to server %u\n", pdc_client_mpi_rank_g, server_id); 
-    fflush(stdout); 
+//    printf("==PDC_CLIENT[%d]: lock going to server %u\n", pdc_client_mpi_rank_g, server_id); 
+//    fflush(stdout); 
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
@@ -2760,8 +2760,8 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
     /* usleep(delay); */
 
 
-    printf("==PDC_CLIENT[%d]: release going to server %u\n", pdc_client_mpi_rank_g, server_id);
-    fflush(stdout);
+//    printf("==PDC_CLIENT[%d]: release going to server %u\n", pdc_client_mpi_rank_g, server_id);
+//    fflush(stdout);
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;

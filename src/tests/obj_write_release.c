@@ -46,9 +46,6 @@ int main(int argc, char **argv)
     uint64_t dims[2] = {4,4};
     uint64_t offset[2] = {1, 2};
     uint64_t rdims[2] = {3, 2};
-    char obj_name1[512];
-    char obj_name2[512];
-    char obj_name3[512];
     
     int myArray1[4][4] = {{101, 102, 103, 104}, {105,106, 107, 108}, {109, 110, 111, 112}, {113, 114, 115, 116}};
     int myArray2[4][4];
@@ -115,17 +112,14 @@ int main(int argc, char **argv)
     obj2 = PDCobj_create(cont_id, "test_obj2", obj_prop2);
     obj3 = PDCobj_create(cont_id, "test_obj3", obj_prop3);
 
-#ifdef ENABLE_MPI
+    #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
-#endif
+    #endif
 
     // create a region
     r1 = PDCregion_create(2, offset, rdims);
-//    printf("first region id: %lld\n", r1);
     r2 = PDCregion_create(2, offset, rdims);
-//    printf("second region id: %lld\n", r2);
     r3 = PDCregion_create(2, offset, rdims);
-//    printf("second region id: %lld\n", r3);
 
 	PDCobj_map(obj1, r1, obj2, r2);
 	PDCobj_map(obj1, r1, obj3, r3);
@@ -196,7 +190,7 @@ int main(int argc, char **argv)
 
     // close a container
     if(PDCcont_close(cont_id) < 0)
-        printf("fail to close container %lld\n", cont_id);
+        printf("fail to close container c1\n");
 
     // close a container property
     if(PDCprop_close(cont_prop) < 0)

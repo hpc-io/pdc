@@ -107,17 +107,11 @@ int main(int argc, char **argv)
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
     if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
-    /* else */
-    /*     if (rank == 0) */ 
-    /*         printf("Create a container property, id is %lld\n", cont_prop); */
 
     // create a container
     cont_id = PDCcont_create("c1", cont_prop);
     if(cont_id <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
-    /* else */
-    /*     if (rank == 0) */ 
-    /*         printf("Create a container, id is %lld\n", cont_id); */
 
     // create an object property
     obj_prop_xx = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
@@ -158,54 +152,49 @@ int main(int argc, char **argv)
     PDCprop_set_obj_type(obj_prop_id22, PDC_INT);
     PDCprop_set_obj_buf(obj_prop_id22, id22);
 
-if(rank == 0)
-printf("create obj_xx\n");
-    obj_xx = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop_xx, 0);
+    obj_xx = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop_xx, PDC_OBJ_GLOBAL);
     if (obj_xx < 0) {    
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
         exit(-1);
     }
    
-if(rank == 0)
-printf("create obj_yy\n");
-    obj_yy = PDCobj_create_mpi(cont_id, "obj-var-yy", obj_prop_yy, 0);
+    obj_yy = PDCobj_create_mpi(cont_id, "obj-var-yy", obj_prop_yy, PDC_OBJ_GLOBAL);
     if (obj_yy < 0) {
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-yy");
         exit(-1);
     }
-/*
-    obj_zz = PDCobj_create_mpi(cont_id, "obj-var-zz", obj_prop_zz, 0);
+    obj_zz = PDCobj_create_mpi(cont_id, "obj-var-zz", obj_prop_zz, PDC_OBJ_GLOBAL);
     if (obj_zz < 0) {
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-zz");
         exit(-1);
     }
-    obj_pxx = PDCobj_create_mpi(cont_id, "obj-var-pxx", obj_prop_pxx, 0);
+    obj_pxx = PDCobj_create_mpi(cont_id, "obj-var-pxx", obj_prop_pxx, PDC_OBJ_GLOBAL);
     if (obj_pxx < 0) {
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-pxx");
         exit(-1);
     }
-    obj_pyy = PDCobj_create_mpi(cont_id, "obj-var-pyy", obj_prop_pyy, 0);
+    obj_pyy = PDCobj_create_mpi(cont_id, "obj-var-pyy", obj_prop_pyy, PDC_OBJ_GLOBAL);
     if (obj_pyy < 0) {
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-pyy");
         exit(-1);
     }
-    obj_pzz = PDCobj_create_mpi(cont_id, "obj-var-pzz", obj_prop_pzz, 0);
+    obj_pzz = PDCobj_create_mpi(cont_id, "obj-var-pzz", obj_prop_pzz, PDC_OBJ_GLOBAL);
     if (obj_pzz < 0) {
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-pzz");
         exit(-1);
     }
 
-    obj_id11 = PDCobj_create_mpi(cont_id, "id11", obj_prop_id11, 0);
+    obj_id11 = PDCobj_create_mpi(cont_id, "id11", obj_prop_id11, PDC_OBJ_GLOBAL);
     if (obj_id11 < 0) {
         printf("Error getting an object id of %s from server, exit...\n", "obj_id11");
         exit(-1);
     }
-    obj_id22 = PDCobj_create_mpi(cont_id, "id22", obj_prop_id22, 0);
+    obj_id22 = PDCobj_create_mpi(cont_id, "id22", obj_prop_id22, PDC_OBJ_GLOBAL);
     if (obj_id22 < 0) {
         printf("Error getting an object id of %s from server, exit...\n", "obj_id22");
         exit(-1);
     }
-*/
+
 //    pdc_metadata_t *res = NULL;
 //    PDC_Client_query_metadata_name_only("obj-var-xx", &res);
 //    printf("rank %d: meta id is %lld\n", rank, res->obj_id);
@@ -237,31 +226,40 @@ printf("create obj_yy\n");
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
+    gettimeofday(&ht_total_start, 0);
 
-if(rank == 0)
-printf("create obj_x\n");
     obj_x = PDCobj_buf_map(cont_id, "obj-var-x", &x[0], PDC_FLOAT, region_x, obj_xx, region_xx);
-if(rank == 0)
-printf("create obj_y\n");
     obj_y = PDCobj_buf_map(cont_id, "obj-var-y", &y[0], PDC_FLOAT, region_y, obj_yy, region_yy);
-//    obj_z = PDCobj_buf_map(cont_id, "obj-var-z", &z[0], PDC_FLOAT, region_z, obj_zz, region_zz);
-//    obj_px = PDCobj_buf_map(cont_id, "obj-var-px", &px[0], PDC_FLOAT, region_px, obj_pxx, region_pxx);
-//    obj_py = PDCobj_buf_map(cont_id, "obj-var-py", &py[0], PDC_FLOAT, region_py, obj_pyy, region_pyy);
-//    obj_pz = PDCobj_buf_map(cont_id, "obj-var-pz", &pz[0], PDC_FLOAT, region_pz, obj_pzz, region_pzz);    
-//    obj_id1 = PDCobj_buf_map(cont_id, "id1", &id1[0], PDC_INT, region_id1, obj_id11, region_id11);
-//    obj_id2 = PDCobj_buf_map(cont_id, "id2", &id2[0], PDC_INT, region_id2, obj_id22, region_id22);
- 
+    obj_z = PDCobj_buf_map(cont_id, "obj-var-z", &z[0], PDC_FLOAT, region_z, obj_zz, region_zz);
+    obj_px = PDCobj_buf_map(cont_id, "obj-var-px", &px[0], PDC_FLOAT, region_px, obj_pxx, region_pxx);
+    obj_py = PDCobj_buf_map(cont_id, "obj-var-py", &py[0], PDC_FLOAT, region_py, obj_pyy, region_pyy);
+    obj_pz = PDCobj_buf_map(cont_id, "obj-var-pz", &pz[0], PDC_FLOAT, region_pz, obj_pzz, region_pzz);    
+    obj_id1 = PDCobj_buf_map(cont_id, "id1", &id1[0], PDC_INT, region_id1, obj_id11, region_id11);
+    obj_id2 = PDCobj_buf_map(cont_id, "id2", &id2[0], PDC_INT, region_id2, obj_id22, region_id22);
+
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
+    gettimeofday(&ht_total_end, 0);
+    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+    ht_total_sec        = ht_total_elapsed / 1000000.0;
+    if (rank == 0) {
+        printf("Time to map with %d ranks: %.6f\n", size, ht_total_sec);
+        fflush(stdout);
+    }
 
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    gettimeofday(&ht_total_start, 0);
+    
     ret = PDCreg_obtain_lock(obj_x, region_x, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_x\n");
     ret = PDCreg_obtain_lock(obj_y, region_y, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_y\n");
-/*    ret = PDCreg_obtain_lock(obj_z, region_z, WRITE, NOBLOCK);
+    ret = PDCreg_obtain_lock(obj_z, region_z, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_z\n");
     ret = PDCreg_obtain_lock(obj_px, region_px, WRITE, NOBLOCK);
@@ -279,7 +277,6 @@ printf("create obj_y\n");
     ret = PDCreg_obtain_lock(obj_id2, region_id2, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_id2\n");
-*/
 
     ret = PDCreg_obtain_lock(obj_xx, region_xx, WRITE, NOBLOCK);
     if (ret != SUCCEED)
@@ -287,7 +284,6 @@ printf("create obj_y\n");
     ret = PDCreg_obtain_lock(obj_yy, region_yy, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_yy\n");
-/*
     ret = PDCreg_obtain_lock(obj_zz, region_zz, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_zz\n");
@@ -306,7 +302,17 @@ printf("create obj_y\n");
     ret = PDCreg_obtain_lock(obj_id22, region_id22, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_id22\n");
-*/
+    
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    gettimeofday(&ht_total_end, 0);
+    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+    ht_total_sec        = ht_total_elapsed / 1000000.0;
+    if (rank == 0) {
+        printf("Time to lock with %d ranks: %.6f\n", size, ht_total_sec);
+        fflush(stdout);
+    }
 
      for (int i=0; i<numparticles; i++) {
         id1[i] = i;
@@ -325,17 +331,23 @@ printf("create obj_y\n");
         pzz[i] = 0;
         id11[i] = 0;
         id22[i] = 0;
-printf("x = %f\n", x[i]);
+//printf("px = %f\n", px[i]);
 //printf("id1 = %d\n", id1[i]);
+//printf("id2 = %d\n", id2[i]);
     }
 
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    gettimeofday(&ht_total_start, 0);
+    
     ret = PDCreg_release_lock(obj_x, region_x, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_x\n");
     ret = PDCreg_release_lock(obj_y, region_y, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_y\n");
-/*    ret = PDCreg_release_lock(obj_z, region_z, WRITE);
+    ret = PDCreg_release_lock(obj_z, region_z, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_z\n");
     ret = PDCreg_release_lock(obj_px, region_px, WRITE);
@@ -353,15 +365,29 @@ printf("x = %f\n", x[i]);
     ret = PDCreg_release_lock(obj_id2, region_id2, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_id2\n");
-*/
 
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    gettimeofday(&ht_total_end, 0);
+    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+    ht_total_sec        = ht_total_elapsed / 1000000.0;
+    if (rank == 0) {
+        printf("Time to write data with %d ranks: %.6f\n", size, ht_total_sec);
+        fflush(stdout);
+    }
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    gettimeofday(&ht_total_start, 0);
+    
     ret = PDCreg_release_lock(obj_xx, region_xx, WRITE);
     if (ret != SUCCEED)
-        printf("Failed to release lock for region_y\n");
+        printf("Failed to release lock for region_xx\n");
     ret = PDCreg_release_lock(obj_yy, region_yy, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_yy\n");
-/*
     ret = PDCreg_release_lock(obj_zz, region_zz, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_zz\n");
@@ -380,167 +406,206 @@ printf("x = %f\n", x[i]);
     ret = PDCreg_release_lock(obj_id22, region_id22, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_id22\n");
-*/
 
-for (int i=0; i<numparticles; i++) {
-printf("xx = %f\n", xx[i]);
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    gettimeofday(&ht_total_end, 0);
+    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+    ht_total_sec        = ht_total_elapsed / 1000000.0;
+    if (rank == 0) {
+        printf("Time to update data with %d ranks: %.6f\n", size, ht_total_sec);
+        fflush(stdout);
+    }
+    
+//for (int i=0; i<numparticles; i++) {
 //printf("id11 = %d\n", id11[i]);
+//printf("id22 = %d\n", id22[i]);
+//    }
+
+
+    for (int i=0; i<my_data_size/size; i++) {
+        if(xx[rank * my_data_size/size+i] != x[rank * my_data_size/size+i])
+            printf("== ERROR == rank %d: x data does not match\n", rank);
+        if(yy[rank * my_data_size/size+i] != y[rank * my_data_size/size+i])
+            printf("== ERROR == rank %d: y data does not match\n", rank);
+        if(zz[rank * my_data_size/size+i] != z[rank * my_data_size/size+i])
+            printf("== ERROR == rank %d: z data does not match\n", rank);
+        if(pxx[rank * my_data_size/size+i] != px[rank * my_data_size/size+i])
+            printf("== ERROR == rank %d: px data does not match\n", rank);
+        if(pyy[rank * my_data_size/size+i] != py[rank * my_data_size/size+i])
+            printf("== ERROR == rank %d: py data does not match\n", rank);
+        if(pzz[rank * my_data_size/size+i] != pz[rank * my_data_size/size+i])
+            printf("== ERROR == rank %d: pz data does not match\n", rank);
+        if(id11[rank * my_data_size/size+i] != id1[rank * my_data_size/size+i])
+            printf("== ERROR == rank %d: id1 data does not match\n", rank);
+        if(id22[rank * my_data_size/size+i] != id2[rank * my_data_size/size+i])
+            printf("== ERROR == rank %d: id2 data does not match\n", rank);
     }
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-    ret = PDCreg_unmap(obj_x, region_x);
+    PDCreg_unmap(obj_x, region_x);
     PDCreg_unmap(obj_y, region_y);
-//    PDCreg_unmap(obj_z, region_z);
-//    PDCreg_unmap(obj_px, region_px);
-//    PDCreg_unmap(obj_py, region_py);
-//    PDCreg_unmap(obj_pz, region_pz);
-//    PDCreg_unmap(obj_id1, region_id1);
-//    PDCreg_unmap(obj_id2, region_id2);
+    PDCreg_unmap(obj_z, region_z);
+    PDCreg_unmap(obj_px, region_px);
+    PDCreg_unmap(obj_py, region_py);
+    PDCreg_unmap(obj_pz, region_pz);
+    PDCreg_unmap(obj_id1, region_id1);
+    PDCreg_unmap(obj_id2, region_id2);
 
     if (ret != SUCCEED)
         printf("region unmap failed\n");
 
     if(PDCobj_close(obj_x) < 0)
-        printf("fail to close obj_x %lld\n", obj_x);
-/*
+        printf("fail to close obj_x\n");
+
     if(PDCobj_close(obj_y) < 0)
-        printf("fail to close object %lld\n", obj_y);
-  
+        printf("fail to close object obj_y\n");
+
     if(PDCobj_close(obj_z) < 0)
-        printf("fail to close object %lld\n", obj_z);
+        printf("fail to close object obj_z\n");
 
     if(PDCobj_close(obj_px) < 0)
-        printf("fail to close object %lld\n", obj_px);
+        printf("fail to close object obj_px\n");
 
     if(PDCobj_close(obj_py) < 0)
-        printf("fail to close object %lld\n", obj_py);
+        printf("fail to close object obj_py\n");
 
     if(PDCobj_close(obj_pz) < 0)
-        printf("fail to close object %lld\n", obj_pz);
+        printf("fail to close object obj_pz\n");
 
     if(PDCobj_close(obj_id1) < 0)
-        printf("fail to close object %lld\n", obj_id1);
+        printf("fail to close object obj_id1\n");
 
     if(PDCobj_close(obj_id2) < 0)
-        printf("fail to close object %lld\n", obj_id2);
-*/
+        printf("fail to close object obj_id2\n");
 
     if(PDCobj_close(obj_xx) < 0)
-        printf("fail to close obj_xx %lld\n", obj_xx);
+        printf("fail to close obj_xx\n");
 
     if(PDCobj_close(obj_yy) < 0)
-            printf("fail to close object %lld\n", obj_yy);
+        printf("fail to close object obj_yy\n");
 
-/*
     if(PDCobj_close(obj_zz) < 0)
-        printf("fail to close object %lld\n", obj_zz);
+        printf("fail to close object obj_zz\n");
 
     if(PDCobj_close(obj_pxx) < 0)
-        printf("fail to close object %lld\n", obj_pxx);
+        printf("fail to close object obj_pxx\n");
 
     if(PDCobj_close(obj_pyy) < 0)
-        printf("fail to close object %lld\n", obj_pyy);
-    
+        printf("fail to close object obj_pyy\n");
+
     if(PDCobj_close(obj_pzz) < 0)
-        printf("fail to close object %lld\n", obj_pzz);
+        printf("fail to close object obj_pzz\n");
 
     if(PDCobj_close(obj_id11) < 0)
-        printf("fail to close object %lld\n", obj_id11);
+        printf("fail to close object obj_id11\n");
 
     if(PDCobj_close(obj_id22) < 0)
-        printf("fail to close object %lld\n", obj_id22);
-*/
-  
+        printf("fail to close object obj_id22\n");
+
     if(PDCprop_close(obj_prop_xx) < 0)
-        printf("Fail to close obj property %lld\n", obj_prop_xx);
+        printf("Fail to close obj property obj_prop_xx\n");
 
     if(PDCprop_close(obj_prop_yy) < 0)
-        printf("Fail to close obj property %lld\n", obj_prop_yy);
+        printf("Fail to close obj property obj_prop_yy\n");
 
     if(PDCprop_close(obj_prop_zz) < 0)
-        printf("Fail to close obj property %lld\n", obj_prop_zz);
+        printf("Fail to close obj property obj_prop_zz\n");
 
     if(PDCprop_close(obj_prop_pxx) < 0)
-        printf("Fail to close obj property %lld\n", obj_prop_pxx);
+        printf("Fail to close obj property obj_prop_pxx\n");
 
     if(PDCprop_close(obj_prop_pyy) < 0)
-        printf("Fail to close obj property %lld\n", obj_prop_pyy);
+        printf("Fail to close obj property obj_prop_pyy\n");
 
     if(PDCprop_close(obj_prop_pzz) < 0)
-        printf("Fail to close obj property %lld\n", obj_prop_pzz);
-    
+        printf("Fail to close obj property obj_prop_pzz\n");
+
     if(PDCprop_close(obj_prop_id11) < 0)
-        printf("Fail to close obj property %lld\n", obj_prop_id11);
+        printf("Fail to close obj property obj_prop_id11\n");
 
     if(PDCprop_close(obj_prop_id22) < 0)
-        printf("Fail to close obj property %lld\n", obj_prop_id22);
+        printf("Fail to close obj property obj_prop_id22\n");
 
     if(PDCregion_close(region_x) < 0)
-        printf("fail to close region %lld\n", region_x);
+        printf("fail to close region region_x\n");
 
     if(PDCregion_close(region_y) < 0)
-        printf("fail to close region %lld\n", region_y);
+        printf("fail to close region region_y\n");
 
     if(PDCregion_close(region_z) < 0)
-        printf("fail to close region %lld\n", region_z);
+        printf("fail to close region region_z\n");
 
     if(PDCregion_close(region_px) < 0)
-        printf("fail to close region %lld\n", region_px);
+        printf("fail to close region region_px\n");
 
     if(PDCregion_close(region_py) < 0)
-        printf("fail to close region %lld\n", region_py);
-    
+        printf("fail to close region region_py\n");
+
     if(PDCobj_close(region_pz) < 0)
-        printf("fail to close region %lld\n", region_pz);
+        printf("fail to close region region_pz\n");
 
     if(PDCobj_close(region_id1) < 0)
-        printf("fail to close region %lld\n", region_id1);
+        printf("fail to close region region_id1\n");
 
     if(PDCobj_close(region_id2) < 0)
-        printf("fail to close region %lld\n", region_id2);
+        printf("fail to close region region_id2\n");
 
     if(PDCregion_close(region_xx) < 0)
-        printf("fail to close region %lld\n", region_xx);
-        
+        printf("fail to close region region_xx\n");
+
     if(PDCregion_close(region_yy) < 0)
-        printf("fail to close region %lld\n", region_yy);
-        
+        printf("fail to close region region_yy\n");
+
     if(PDCregion_close(region_zz) < 0)
-        printf("fail to close region %lld\n", region_zz);
-        
+        printf("fail to close region region_zz\n");
+
     if(PDCregion_close(region_pxx) < 0)
-        printf("fail to close region %lld\n", region_pxx);
-    
+        printf("fail to close region region_pxx\n");
+
     if(PDCregion_close(region_pyy) < 0)
-        printf("fail to close region %lld\n", region_pyy);
-    
+        printf("fail to close region region_pyy\n");
+
     if(PDCregion_close(region_pzz) < 0)
-        printf("fail to close region %lld\n", region_pzz);
-    
+        printf("fail to close region region_pzz\n");
+
     if(PDCobj_close(region_id11) < 0)
-        printf("fail to close region %lld\n", region_id11);
+        printf("fail to close region region_id11\n");
 
     if(PDCobj_close(region_id22) < 0)
-        printf("fail to close region %lld\n", region_id22);
+        printf("fail to close region region_id22\n");
 
     // close a container
     if(PDCcont_close(cont_id) < 0)
-        printf("fail to close container %lld\n", cont_id);
+        printf("fail to close container c1\n");
 
     // close a container property
     if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
-    /* else */
-    /*     if (rank == 0) */ 
-    /*         printf("successfully close container property # %lld\n", cont_prop); */
 
     if(PDC_close(pdc_id) < 0)
        printf("fail to close PDC\n");
-    /* else */
-    /*    printf("PDC is closed\n"); */
+
+    free(x);
+    free(y);
+    free(z);
+    free(px);
+    free(py);
+    free(pz);
+    free(id1);
+    free(id2);
+    free(xx);
+    free(yy);
+    free(zz);
+    free(pxx);
+    free(pyy);
+    free(pzz);
+    free(id11);
+    free(id22);
 
 #ifdef ENABLE_MPI
      MPI_Finalize();

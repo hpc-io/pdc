@@ -1176,8 +1176,8 @@ region_update_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     PDC_SERVER_notify_region_update_to_client(bulk_args->remote_obj_id, 
                                               bulk_args->remote_reg_id, bulk_args->remote_client_id);
 
-//    out.ret = 1;
-//    HG_Respond(bulk_args->handle, NULL, NULL, &out);
+    out.ret = 1;
+    HG_Respond(bulk_args->handle, NULL, NULL, &out);
 
 //    if(atomic_fetch_sub(&(bulk_args->refcount), 1) == 1) {
     if(hg_atomic_decr32(&(bulk_args->refcount)) == 1) {

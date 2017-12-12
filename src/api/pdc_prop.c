@@ -122,13 +122,13 @@ pdcid_t PDCprop_obj_dup(pdcid_t prop_id)
     struct  PDC_obj_prop *info = NULL;
     struct  PDC_id_info *prop = NULL;
     pdcid_t new_id;
-    int     i;
+    size_t  i;
 
     FUNC_ENTER(NULL);
 
     prop = PDC_find_id(prop_id);
     if(prop == NULL)
-        PGOTO_ERROR(NULL, "cannot locate object property");
+        PGOTO_ERROR(FAIL, "cannot locate object property");
     info = (struct PDC_obj_prop *)(prop->obj_ptr);
 
     q = PDC_MALLOC(struct PDC_obj_prop);

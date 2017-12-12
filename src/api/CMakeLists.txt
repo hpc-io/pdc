@@ -55,7 +55,6 @@ set(PDC_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_prop.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_cont.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_obj.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_dt_conv.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_connect.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_server_common.c
   )

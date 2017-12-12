@@ -25,6 +25,7 @@
 #include "config.h"
 #include <time.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "../server/utlist.h"
 #include "pdc_obj.h"
 #include "pdc_malloc.h"
@@ -91,9 +92,6 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id
     pdcid_t ret_value = SUCCEED;
     struct PDC_obj_info *p = NULL;
     struct PDC_id_info *id_info = NULL;
-    int  rank;
-    char name[512];
-    char srank[10];
     perr_t ret;
 
     FUNC_ENTER(NULL);
@@ -175,9 +173,7 @@ pdcid_t PDCobj_create_(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_i
     pdcid_t ret_value = SUCCEED;
     struct PDC_obj_info *p = NULL;
     struct PDC_id_info *id_info = NULL;
-    int  rank;
-    char name[512];
-    char srank[10];
+    int rank;
     perr_t ret = SUCCEED;
 
     FUNC_ENTER(NULL);
@@ -222,9 +218,6 @@ pdcid_t PDCobj_create__(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_
     pdcid_t ret_value = SUCCEED;
     struct PDC_obj_info *p = NULL;
     struct PDC_id_info *id_info = NULL;
-    int  rank;
-    char name[512];
-    char srank[10];
     perr_t ret = SUCCEED;
 
     FUNC_ENTER(NULL);
@@ -262,9 +255,7 @@ pdcid_t PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_pro
     pdcid_t ret_value = SUCCEED;
     struct PDC_obj_info *p = NULL;
     struct PDC_id_info *id_info = NULL;
-    int  rank = 0;
-    char name[512];
-    char srank[10];
+    int rank;
     perr_t ret = SUCCEED;
 
     FUNC_ENTER(NULL);
@@ -286,7 +277,6 @@ pdcid_t PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_pro
     MPI_Bcast(&(p->meta_id), 1, MPI_LONG_LONG, rank_id, MPI_COMM_WORLD);
 #endif
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -296,9 +286,7 @@ pdcid_t PDCobj_create_mpi2(pdcid_t cont_id, const char *obj_name, pdcid_t obj_pr
     struct PDC_obj_info *p = NULL;
     struct PDC_id_info *id_info = NULL;
     int  rank;
-    char name[512];
-    char srank[10];
-    perr_t ret;
+    perr_t ret = SUCCEED;
     
     FUNC_ENTER(NULL);
     
@@ -335,15 +323,12 @@ pdcid_t PDCobj_create_mpi2(pdcid_t cont_id, const char *obj_name, pdcid_t obj_pr
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     ret_value = p->local_id;
-printf("rank %d: \n", rank);
-printf("local_id = %lld\n", p->local_id);
-printf("meta id = %lld\n", p->meta_id);
     
 done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_obj_list_null(pdcid_t pdc)
+perr_t PDC_obj_list_null()
 {
     perr_t ret_value = SUCCEED;   /* Return value */
     int nelemts;
@@ -362,7 +347,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_region_list_null(pdcid_t pdc)
+perr_t PDC_region_list_null()
 {
     perr_t ret_value = SUCCEED;   /* Return value */
     int nelemts;
@@ -386,7 +371,7 @@ perr_t PDCobj__close(struct PDC_obj_info *op)
     
     FUNC_ENTER(NULL);
    
-    free(op->name); 
+    free((void*)(op->name));
     op = PDC_FREE(struct PDC_obj_info, op);
     
     FUNC_LEAVE(ret_value);
@@ -435,7 +420,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDCobj_end(pdcid_t pdc)
+perr_t PDCobj_end()
 {
     perr_t ret_value = SUCCEED;         /* Return value */
 
@@ -461,7 +446,7 @@ done:
     FUNC_LEAVE(ret_value);
 } /* end of PDCregion_end() */
 
-pdcid_t PDCobj_open(pdcid_t cont_id, const char *obj_name)
+pdcid_t PDCobj_open(const char *obj_name)
 {
     pdcid_t ret_value = SUCCEED;
     pdcid_t obj_id;
@@ -473,7 +458,7 @@ pdcid_t PDCobj_open(pdcid_t cont_id, const char *obj_name)
     obj_id = PDC_find_byname(PDC_OBJ, obj_name);
     if(obj_id <= 0)
         PGOTO_ERROR(FAIL, "cannot locate object");
-    pdc_inc_ref(obj_id);
+    PDC_inc_ref(obj_id);
     ret_value = obj_id;
     
 done:
@@ -709,8 +694,6 @@ void **PDCobj_buf_retrieve(pdcid_t obj_id)
     void **ret_value = NULL;         /* Return value */
     struct PDC_id_info *info;
     struct PDC_obj_info *object;
-    pdcid_t propid;
-    struct PDC_obj_prop *prop;
     
     FUNC_ENTER(NULL);
     
@@ -730,7 +713,8 @@ pdcid_t PDCregion_create(size_t ndims, uint64_t *offset, uint64_t *size)
     pdcid_t ret_value = SUCCEED;         /* Return value */
     struct PDC_region_info *p = NULL;
     pdcid_t new_id;
-    
+    size_t i = 0;
+ 
     FUNC_ENTER(NULL);
     
     p = PDC_MALLOC(struct PDC_region_info);
@@ -742,7 +726,6 @@ pdcid_t PDCregion_create(size_t ndims, uint64_t *offset, uint64_t *size)
     p->size = (uint64_t *)malloc(ndims * sizeof(uint64_t));
     p->mapping = 0;
     p->local_id = 0;
-    int i = 0;
     for(i=0; i<ndims; i++) {
         (p->offset)[i] = offset[i];
         (p->size)[i] = size[i];
@@ -759,7 +742,7 @@ done:
 perr_t PDCobj_map(pdcid_t local_obj, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg)
 {
     perr_t ret_value = SUCCEED;         /* Return value */
-    int i;
+    size_t i;
     struct PDC_id_info *objinfo1, *objinfo2;
     struct PDC_obj_info *obj1, *obj2;
     pdcid_t local_meta_id, remote_meta_id;
@@ -821,8 +804,8 @@ perr_t PDCobj_map(pdcid_t local_obj, pdcid_t local_reg, pdcid_t remote_obj, pdci
         // state in origin obj that there is mapping
 //        obj1->mapping = 1;
         reg1->mapping = 1;
-        pdc_inc_ref(local_obj);
-        pdc_inc_ref(local_reg);
+        PDC_inc_ref(local_obj);
+        PDC_inc_ref(local_reg);
         // update region map list
         struct region_map_list *new_map = malloc(sizeof(struct region_map_list));
         new_map->orig_reg_id = local_reg;
@@ -840,9 +823,8 @@ pdcid_t PDCobj_buf_map(pdcid_t cont_id, const char *obj_name, void *buf, PDC_var
     pdcid_t ret_value = SUCCEED;         /* Return value */
     struct PDC_id_info *id_info = NULL;
     struct PDC_cont_info *cont = NULL;
-    pdcid_t meta1, meta2;
     pdcid_t pdc_id, obj_prop, local_obj;
-    struct PDC_region_info *reg1, *reg2;
+    struct PDC_region_info *reg1;
     
     id_info = PDC_find_id(local_reg);
     reg1 = (struct PDC_region_info *)(id_info->obj_ptr);

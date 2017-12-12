@@ -28,6 +28,7 @@
 #include <getopt.h>
 #include <sys/time.h>
 #include <ctype.h>
+#include <unistd.h>
 
 /* #define ENABLE_MPI 1 */
 
@@ -209,7 +210,7 @@ MPI_Barrier(MPI_COMM_WORLD);
 done:
     // close a container
     if(PDCcont_close(cont) < 0)
-        printf("fail to close container %lld\n", cont);
+        printf("fail to close container c1\n");
 
     // close a container property
     if(PDCprop_close(cont_prop) < 0)

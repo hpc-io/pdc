@@ -7953,7 +7953,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
 
             // Assumes all regions are written to one file
             if (region_elt->storage_location == NULL) {
-                printf("==PDC_SERVER[%d]: %s - storage_location is NULL!\n", pdc_server_rank_g, __func__);
+//                printf("==PDC_SERVER[%d]: %s - storage_location is NULL!\n", pdc_server_rank_g, __func__);
                 ret_value = FAIL;
                 region_elt->is_data_ready = -1;
                 goto done;

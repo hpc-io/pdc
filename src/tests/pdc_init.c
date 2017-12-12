@@ -33,12 +33,12 @@
 #include "pdc.h"
 
 
-int main(int argc, char **argv) {
+int main() {
     pdcid_t pdc;
     
     // create a pdc
     pdc = PDC_init("pdc");
-    printf("generated new pdc, id is %lld\n", pdc);
+    printf("generated new pdc\n");
 
     // close pdc
     if(PDC_close(pdc) < 0)

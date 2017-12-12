@@ -4,6 +4,7 @@
 #include <getopt.h>
 #include <time.h>
 #include <inttypes.h>
+#include <unistd.h>
 
 #ifdef ENABLE_MPI
   #include "mpi.h"
@@ -932,7 +933,7 @@ int test3d(char *obj_name)
     return 1;
 }
 
-int main(int argc, const char *argv[])
+int main(int argc, char **argv)
 {
 
 #ifdef ENABLE_MPI

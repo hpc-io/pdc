@@ -3,6 +3,7 @@
 #include <string.h>
 #include <getopt.h>
 #include <time.h>
+#include <inttypes.h>
 
 /* #define ENABLE_MPI 1 */
 
@@ -10,6 +11,8 @@
   #include "mpi.h"
 #endif
 
+#include <unistd.h>
+#include <sys/time.h>
 #include "pdc.h"
 #include "pdc_client_connect.h"
 #include "pdc_client_server_common.h"
@@ -18,7 +21,7 @@ void print_usage() {
     printf("Usage: srun -n ./data_server_read obj_name size_MB\n");
 }
 
-int main(int argc, const char *argv[])
+int main(int argc, char **argv)
 {
     int rank = 0, size = 1;
     uint64_t size_MB, size_B;
@@ -56,7 +59,7 @@ int main(int argc, const char *argv[])
     size_MB = atoi(argv[2]);
 
     if (rank == 0) {
-        printf("Writing a %llu MB object [%s] with %d clients.\n", size_MB, obj_name, size);
+        printf("Writing a %" PRIu64 " MB object [%s] with %d clients.\n", size_MB, obj_name, size);
     }
     size_B = size_MB * 1048576;
 

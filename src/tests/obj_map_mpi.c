@@ -50,23 +50,20 @@ int main(int argc, char **argv)
     pdcid_t pdc_id, cont_prop, cont_id;
     pdcid_t obj_prop1, obj_prop2;
     pdcid_t obj1, obj2;
-    pdcid_t meta1, meta2;
     pdcid_t r1, r2;
     perr_t ret;
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
-    double ht_total_sec;
     float *x, *xx;
     int x_dim = 64;
-    int y_dim = 64;
-    int z_dim = 64;
     long numparticles = 4;
     const int my_data_size = 4;
     uint64_t dims[1] = {my_data_size};  // {8388608};
     int ndim = 1;
     uint64_t *offset;
     uint64_t *mysize;
+//    struct timeval  ht_total_start;
+//    struct timeval  ht_total_end;
+//    long long ht_total_elapsed;
+//    double ht_total_sec;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -79,23 +76,16 @@ int main(int argc, char **argv)
 
     // create a pdc
     pdc_id = PDC_init("pdc");
-    /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
     if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
-    /* else */
-    /*     if (rank == 0) */ 
-    /*         printf("Create a container property, id is %lld\n", cont_prop); */
 
     // create a container
     cont_id = PDCcont_create("c1", cont_prop);
     if(cont_id <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
-    /* else */
-    /*     if (rank == 0) */ 
-    /*         printf("Create a container, id is %lld\n", cont_id); */
 
     // create an object property
     obj_prop1 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
@@ -142,9 +132,7 @@ int main(int argc, char **argv)
 
     // create a region
     r1 = PDCregion_create(1, offset, mysize);
-//    printf("first region id: %lld\n", r1);
     r2 = PDCregion_create(1, offset, mysize);
-//    printf("second region id: %lld\n", r2);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -172,38 +160,35 @@ int main(int argc, char **argv)
 //    ret = PDCreg_release_lock(obj2, r2, WRITE);
 //    if (ret != SUCCEED)
 //        printf("Failed to release lock for region_y\n");
+
 /*
 for (int i=0; i<numparticles; i++) {
 printf("xx = %f\n", xx[i]);
     }
 */
+    
     ret = PDCreg_unmap(obj1, r1);
 //    ret = PDCreg_unmap(obj1);
     if (ret != SUCCEED)
         printf("region unmap failed\n");
 
     if(PDCobj_close(obj1) < 0)
-        printf("fail to close obj1 %lld\n", obj1);
+        printf("fail to close obj1 o1\n");
 
     if(PDCobj_close(obj2) < 0)
-        printf("fail to close obj2 %lld\n", obj2);
+        printf("fail to close obj2 o2\n");
 
     // close a container
     if(PDCcont_close(cont_id) < 0)
-        printf("fail to close container %lld\n", cont_id);
+        printf("fail to close container c1\n");
 
 
     // close a container property
     if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
-    /* else */
-    /*     if (rank == 0) */ 
-    /*         printf("successfully close container property # %lld\n", cont_prop); */
 
     if(PDC_close(pdc_id) < 0)
        printf("fail to close PDC\n");
-    /* else */
-    /*    printf("PDC is closed\n"); */
 
 #ifdef ENABLE_MPI
      MPI_Finalize();
@@ -211,4 +196,3 @@ printf("xx = %f\n", xx[i]);
 
      return 0;
 }
-
