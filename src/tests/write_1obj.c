@@ -100,7 +100,7 @@ int main(int argc, char **argv)
     /* printf("Creating an object with name [%s]", obj_name); */
     /* fflush(stdout); */
     /* global_obj = PDCobj_create(cont, obj_name, obj_prop); */
-    global_obj = PDCobj_create_mpi(cont, obj_name, obj_prop, PDC_OBJ_GLOBAL);
+    global_obj = PDCobj_create_mpi(cont, obj_name, obj_prop, 0);
     if (global_obj <= 0) {
         printf("Error creating an object [%s], exit...\n", obj_name);
         exit(-1);
