@@ -799,7 +799,7 @@ perr_t PDCobj_map(pdcid_t local_obj, pdcid_t local_reg, pdcid_t remote_obj, pdci
     
     //TODO: assume type is the same
     // start mapping
-    ret_value = PDC_Client_send_region_map(local_meta_id, local_reg, remote_meta_id, remote_reg, ndim, obj1->obj_pt->dims, reg1->offset, reg1->size, local_type, local_data, obj2->obj_pt->dims, reg2->offset, reg2->size, remote_type, remote_client_id, remote_data, reg1, reg2);
+    ret_value = PDC_Client_region_map(local_meta_id, local_reg, remote_meta_id, remote_reg, ndim, obj1->obj_pt->dims, reg1->offset, reg1->size, local_type, local_data, obj2->obj_pt->dims, reg2->offset, reg2->size, remote_type, remote_client_id, remote_data, reg1, reg2);
     if(ret_value == SUCCEED) {
         // state in origin obj that there is mapping
 //        obj1->mapping = 1;
@@ -818,14 +818,17 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+/*
 pdcid_t PDCobj_buf_map(pdcid_t cont_id, const char *obj_name, void *buf, PDC_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg)
 {
-    pdcid_t ret_value = SUCCEED;         /* Return value */
+    pdcid_t ret_value = SUCCEED;    
     struct PDC_id_info *id_info = NULL;
     struct PDC_cont_info *cont = NULL;
     pdcid_t pdc_id, obj_prop, local_obj;
     struct PDC_region_info *reg1;
     
+    FUNC_ENTER(NULL);
+
     id_info = PDC_find_id(local_reg);
     reg1 = (struct PDC_region_info *)(id_info->obj_ptr);
     id_info = PDC_find_id(cont_id);
@@ -842,21 +845,6 @@ pdcid_t PDCobj_buf_map(pdcid_t cont_id, const char *obj_name, void *buf, PDC_var
 //    local_obj = PDCobj_create_mpi(cont_id, obj_name, obj_prop);
     local_obj = PDCobj_create_mpi(cont_id, obj_name, obj_prop, 0);
 
-/*
-    PDCobj_encode(local_obj, &meta1);
-    PDCobj_encode(remote_obj, &meta2);
-
-    MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Bcast(&meta1, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&meta2, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
-
-    MPI_Barrier(MPI_COMM_WORLD);
-
-    PDCobj_decode(local_obj, meta1);
-    PDCobj_decode(remote_obj, meta2);
-
-    MPI_Barrier(MPI_COMM_WORLD);
-*/
 #else
     local_obj = PDCobj_create(cont_id, obj_name, obj_prop);
 #endif
@@ -869,6 +857,54 @@ pdcid_t PDCobj_buf_map(pdcid_t cont_id, const char *obj_name, void *buf, PDC_var
     if(ret_value == SUCCEED)
         ret_value = local_obj;
     
+done:
+    FUNC_LEAVE(ret_value);
+}
+*/
+
+perr_t PDCobj_buf_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg)
+{
+    pdcid_t ret_value = SUCCEED;    
+    size_t i;
+    struct PDC_id_info *id_info = NULL, *objinfo2;
+    struct PDC_obj_info *obj2;
+    pdcid_t remote_meta_id;
+
+    PDC_var_type_t remote_type;
+    void *remote_data;
+    struct PDC_id_info *reginfo1, *reginfo2;
+    struct PDC_region_info *reg1, *reg2;
+    int32_t remote_client_id;
+    
+    FUNC_ENTER(NULL);
+
+    reginfo1 = PDC_find_id(local_reg);
+    reg1 = (struct PDC_region_info *)(reginfo1->obj_ptr);
+
+    objinfo2 = PDC_find_id(remote_obj);
+    if(objinfo2 == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate remote object ID");
+    obj2 = (struct PDC_obj_info *)(objinfo2->obj_ptr);
+    remote_meta_id = obj2->meta_id;
+    remote_client_id = obj2->client_id;
+    remote_type = obj2->obj_pt->type;
+    remote_data = obj2->obj_pt->buf;
+  
+    reginfo2 = PDC_find_id(remote_reg);
+    reg2 = (struct PDC_region_info *)(reginfo2->obj_ptr);
+    if(obj2->obj_pt->ndim != reg2->ndim)
+        PGOTO_ERROR(FAIL, "remote object dimension and region dimension does not match");
+    for(i=0; i<reg2->ndim; i++)
+        if((obj2->obj_pt->dims)[i] < ((reg2->size)[i] + (reg2->offset)[i]))
+            PGOTO_ERROR(FAIL, "remote object region size error");
+
+    ret_value = PDC_Client_buf_map(local_reg, remote_meta_id, remote_reg, reg1->ndim, reg1->size, reg1->offset, reg1->size, local_type, buf, obj2->obj_pt->dims, reg2->offset, reg2->size, remote_type, remote_client_id, remote_data, reg1, reg2);
+
+    if(ret_value == SUCCEED) {
+        PDC_inc_ref(remote_obj);
+        PDC_inc_ref(remote_reg);
+    }
+
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -946,6 +982,38 @@ done:
     FUNC_LEAVE(ret_value);
 } /* end of PDCregion_get_info() */
 
+perr_t PDCobj_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id)
+{
+    perr_t ret_value = SUCCEED;         /* Return value */
+    struct PDC_id_info *info1;
+    struct PDC_obj_info *object1;
+    struct PDC_region_info *reginfo;
+    PDC_var_type_t data_type;
+
+    FUNC_ENTER(NULL);
+
+    info1 = PDC_find_id(remote_obj_id);
+    if(info1 == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object ID");
+    object1 = (struct PDC_obj_info *)(info1->obj_ptr);
+    data_type = object1->obj_pt->type;
+
+    info1 = PDC_find_id(remote_reg_id);
+    if(info1 == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate region ID");
+    reginfo = (struct PDC_region_info *)(info1->obj_ptr);
+
+    ret_value = PDC_Client_buf_unmap(object1->meta_id, remote_reg_id, reginfo, data_type);
+    
+    if(ret_value == SUCCEED) { 
+        PDC_dec_ref(remote_obj_id);  
+        PDC_dec_ref(remote_reg_id); 
+    } 
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 perr_t PDCobj_unmap(pdcid_t obj_id)
 {
     perr_t ret_value = SUCCEED;         /* Return value */
@@ -959,7 +1027,7 @@ perr_t PDCobj_unmap(pdcid_t obj_id)
     if(info1 == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object ID");
     object1 = (struct PDC_obj_info *)(info1->obj_ptr);
-    ret_value = PDC_Client_send_object_unmap(object1->meta_id);
+    ret_value = PDC_Client_object_unmap(object1->meta_id);
 //    object1->mapping = 0;
     if(ret_value == SUCCEED) {
         struct region_map_list *elt, *tmp;
@@ -997,7 +1065,7 @@ perr_t PDCreg_unmap(pdcid_t obj_id, pdcid_t reg_id)
     if(info1 == NULL)
         PGOTO_ERROR(FAIL, "cannot locate region ID");
     reginfo = (struct PDC_region_info *)(info1->obj_ptr);
-    ret_value = PDC_Client_send_region_unmap(object1->meta_id, reg_id, reginfo, data_type);
+    ret_value = PDC_Client_region_unmap(object1->meta_id, reg_id, reginfo, data_type);
     if(ret_value == SUCCEED) {
         PDC_dec_ref(obj_id);
         if(PDC_dec_ref(reg_id) == 1) {

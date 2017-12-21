@@ -40,7 +40,7 @@ int main(int argc, char **argv)
     int rank = 0, size = 1;
     perr_t ret;
     pdcid_t pdc_id, cont_prop, cont_id, obj_prop2;
-    pdcid_t obj1 = 0, obj2 = 0, r1, r2;
+    pdcid_t obj2 = 0, r1, r2;
     uint64_t dims[2] = {4,4};
     uint64_t offset[2] = {1, 2};
     uint64_t offset1[2] = {0, 0};
@@ -51,10 +51,10 @@ int main(int argc, char **argv)
     int myArray1[3][2] = {{107, 108}, {111, 112}, {115, 116}};
     int myArray2[4][4];
     
-    struct timeval  start_time;
-    struct timeval  end;
-    long long elapsed;
-    double total_lock_overhead;
+//    struct timeval  start_time;
+//    struct timeval  end;
+//    long long elapsed;
+//    double total_lock_overhead;
     
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -99,37 +99,17 @@ int main(int argc, char **argv)
 //    r3 = PDCregion_create(2, offset, rdims);
 //    printf("second region id: %lld\n", r3);
     
-    obj1 = PDCobj_buf_map(cont_id, "test_obj1", &myArray1[0], PDC_INT, r1, obj2, r2);
+    ret = PDCobj_buf_map(&myArray1[0], PDC_INT, r1, obj2, r2);
+    if(ret < 0)
+        printf("PDCobj_buf_map failed\n");
 
-    gettimeofday(&start_time, 0);
-
-    ret = PDCreg_obtain_lock(obj1, r1, WRITE, NOBLOCK);
-    if (ret != SUCCEED)
-        printf("Failed to obtain lock for region\n");
-    // update r1
-    myArray1[0][0] = 117;
-    
-    gettimeofday(&end, 0);
-
-    elapsed = (end.tv_sec-start_time.tv_sec)*1000000LL + end.tv_usec-start_time.tv_usec;
-    total_lock_overhead = elapsed / 1000000.0;
-    printf("Total lock obtain overhead:  %.6f\n", total_lock_overhead);
-    
     ret = PDCreg_obtain_lock(obj2, r2, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region\n");
 
-    gettimeofday(&start_time, 0);
-
-    ret = PDCreg_release_lock(obj1, r1, WRITE);
-    if (ret != SUCCEED)
-        printf("Failed to release lock for region\n");
-
-    gettimeofday(&end, 0);
-
-    elapsed = (end.tv_sec-start_time.tv_sec)*1000000LL + end.tv_usec-start_time.tv_usec;
-    total_lock_overhead = elapsed / 1000000.0;
-    printf("Total lock release overhead: %.6f\n", total_lock_overhead);
+    // update buffer
+    myArray1[0][0] = 117;
+    myArray1[0][1] = 118; 
 
     ret = PDCreg_release_lock(obj2, r2, WRITE);
     if (ret != SUCCEED)
@@ -147,7 +127,18 @@ int main(int argc, char **argv)
     printf("%d, %d\n", myArray3[3][2], myArray3[3][3]);
 */
     
-    PDCreg_unmap(obj1, r1);
+    PDCobj_buf_unmap(obj2, r2);
+
+    // close region
+    if(PDCregion_close(r1) < 0)
+        printf("fail to close region r1\n");
+
+    if(PDCregion_close(r2) < 0)
+        printf("fail to close region r2\n");
+
+    // close object
+    if(PDCobj_close(obj2) < 0)
+        printf("fail to close obj2\n");
 
     // close a container
     if(PDCcont_close(cont_id) < 0)

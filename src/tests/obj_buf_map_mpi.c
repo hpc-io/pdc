@@ -49,17 +49,11 @@ int main(int argc, char **argv)
     int rank = 0, size = 1;
     pdcid_t pdc_id, cont_prop, cont_id;
     pdcid_t obj_prop1, obj_prop2;
-    pdcid_t obj1, obj2;
+    pdcid_t obj2;
     pdcid_t r1, r2;
     perr_t ret;
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
-    double ht_total_sec;
     float *x, *xx;
     int x_dim = 64;
-    int y_dim = 64;
-    int z_dim = 64;
     long numparticles = 4;
     const int my_data_size = 4;
     uint64_t dims[1] = {my_data_size};  // {8388608};
@@ -135,12 +129,15 @@ int main(int argc, char **argv)
     r2 = PDCregion_create(1, offset, mysize);
 //    printf("second region id: %lld\n", r2);
 
-//	PDCobj_map(obj1, r1, obj2, r2);
-    obj1 = PDCobj_buf_map(cont_id, "obj-var-x", &x[0], PDC_FLOAT, r1, obj2, r2);
-    
-    ret = PDCreg_obtain_lock(obj1, r1, WRITE, NOBLOCK);
+    ret = PDCobj_buf_map(&x[0], PDC_FLOAT, r1, obj2, r2);
+    if(ret < 0)
+        printf("PDCobj_buf_map failed\n");
+
+    ret = PDCreg_obtain_lock(obj2, r2, WRITE, NOBLOCK);
     if (ret != SUCCEED)
-        printf("Failed to obtain lock for r1\n");
+        printf("Failed to obtain lock for r2\n");
+
+    MPI_Barrier(MPI_COMM_WORLD);
 
     for (int i=0; i<numparticles; i++) {
         x[i]   = uniform_random_number() * x_dim;
@@ -148,35 +145,25 @@ int main(int argc, char **argv)
 // printf("x = %f\n", x[i]);
     }
 
-//    ret = PDCreg_obtain_lock(obj2, r2, WRITE, NOBLOCK);
-//    if (ret != SUCCEED)
-//        printf("Failed to obtain lock for r2\n");
-
-    ret = PDCreg_release_lock(obj1, r1, WRITE);
+    ret = PDCreg_release_lock(obj2, r2, WRITE);
     if (ret != SUCCEED)
-        printf("Failed to release lock for region_x\n");
-//    ret = PDCreg_release_lock(obj2, r2, WRITE);
-//    if (ret != SUCCEED)
-//        printf("Failed to release lock for region_y\n");
-/*
+        printf("Failed to release lock for r2\n");
+
 for (int i=0; i<numparticles; i++) {
 printf("xx = %f\n", xx[i]);
     }
-*/
 
-    ret = PDCreg_unmap(obj1, r1);
+
+    ret = PDCreg_unmap(obj2, r2);
     if (ret != SUCCEED)
         printf("region unmap failed\n");
 
-    if(PDCobj_close(obj1) < 0)
-        printf("fail to close obj1 %lld\n", obj1);
-
     if(PDCobj_close(obj2) < 0)
-        printf("fail to close obj2 %lld\n", obj2);
+        printf("fail to close obj2\n");
 
     // close a container
     if(PDCcont_close(cont_id) < 0)
-        printf("fail to close container %lld\n", cont_id);
+        printf("fail to close container\n");
 
 
     // close a container property

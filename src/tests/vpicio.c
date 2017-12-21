@@ -228,14 +228,14 @@ int main(int argc, char **argv)
 #endif
     gettimeofday(&ht_total_start, 0);
 
-    obj_x = PDCobj_buf_map(cont_id, "obj-var-x", &x[0], PDC_FLOAT, region_x, obj_xx, region_xx);
-    obj_y = PDCobj_buf_map(cont_id, "obj-var-y", &y[0], PDC_FLOAT, region_y, obj_yy, region_yy);
-    obj_z = PDCobj_buf_map(cont_id, "obj-var-z", &z[0], PDC_FLOAT, region_z, obj_zz, region_zz);
-    obj_px = PDCobj_buf_map(cont_id, "obj-var-px", &px[0], PDC_FLOAT, region_px, obj_pxx, region_pxx);
-    obj_py = PDCobj_buf_map(cont_id, "obj-var-py", &py[0], PDC_FLOAT, region_py, obj_pyy, region_pyy);
-    obj_pz = PDCobj_buf_map(cont_id, "obj-var-pz", &pz[0], PDC_FLOAT, region_pz, obj_pzz, region_pzz);    
-    obj_id1 = PDCobj_buf_map(cont_id, "id1", &id1[0], PDC_INT, region_id1, obj_id11, region_id11);
-    obj_id2 = PDCobj_buf_map(cont_id, "id2", &id2[0], PDC_INT, region_id2, obj_id22, region_id22);
+    obj_x = PDCobj_buf_map(&x[0], PDC_FLOAT, region_x, obj_xx, region_xx);
+    obj_y = PDCobj_buf_map(&y[0], PDC_FLOAT, region_y, obj_yy, region_yy);
+    obj_z = PDCobj_buf_map(&z[0], PDC_FLOAT, region_z, obj_zz, region_zz);
+    obj_px = PDCobj_buf_map(&px[0], PDC_FLOAT, region_px, obj_pxx, region_pxx);
+    obj_py = PDCobj_buf_map(&py[0], PDC_FLOAT, region_py, obj_pyy, region_pyy);
+    obj_pz = PDCobj_buf_map(&pz[0], PDC_FLOAT, region_pz, obj_pzz, region_pzz);    
+    obj_id1 = PDCobj_buf_map(&id1[0], PDC_INT, region_id1, obj_id11, region_id11);
+    obj_id2 = PDCobj_buf_map(&id2[0], PDC_INT, region_id2, obj_id22, region_id22);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);

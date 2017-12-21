@@ -33,6 +33,7 @@ set(PROGRAMS
   data_rw_test
   init_only
   obj_buf_map
+  obj_buf_map_mpi
   obj_map_mpi
   vpicio
   data_server_write_vpic

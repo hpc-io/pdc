@@ -327,6 +327,7 @@ void PDC_Server_metadata_init(pdc_metadata_t* a)
 
     a->region_lock_head     = NULL;
     a->region_map_head      = NULL;
+    a->region_buf_map_head  = NULL;
     a->prev                 = NULL;
     a->next                 = NULL;
 }
@@ -3021,6 +3022,7 @@ perr_t PDC_Server_restart(char *filename)
             (metadata+i)->storage_region_list_head = NULL;
             (metadata+i)->region_lock_head         = NULL;
             (metadata+i)->region_map_head          = NULL;
+            (metadata+i)->region_buf_map_head      = NULL;
             (metadata+i)->bloom                    = NULL;
             (metadata+i)->prev                     = NULL;
             (metadata+i)->next                     = NULL;
@@ -3718,6 +3720,7 @@ perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
     region_list_t *request_region;
     pdc_metadata_t *target_obj;
     region_list_t *elt, *tmp;
+    region_buf_map_t *eltt;
  
     FUNC_ENTER(NULL);
     
@@ -3778,12 +3781,23 @@ perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
             goto done;
         }
     }
+
+    // check if the lock region is used in buf map before 
+    tmp = (region_list_t *)malloc(sizeof(region_list_t));
+    DL_FOREACH(target_obj->region_buf_map_head, eltt) {
+        pdc_region_transfer_t_to_list_t(&(eltt->remote_region), tmp);
+        if(PDC_is_same_region_list(tmp, request_region)) {
+            request_region->reg_dirty = 1;
+            hg_atomic_incr32(&(request_region->buf_map_refcount));
+        }
+    }
+    free(tmp);
+
     // No overlaps found
     DL_APPEND(target_obj->region_lock_head, request_region);
     out->ret = 1;
     /* printf("granted\n"); */
-
-
+   
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -3840,7 +3854,7 @@ perr_t PDC_Server_region_release(region_lock_in_t *in, region_lock_out_t *out)
     // Locate target metadata structure
     target_obj = find_metadata_by_id(target_obj_id);
     if (target_obj == NULL) {
-        printf("==PDC_SERVER: PDC_Server_region_lock - requested object (id=%" PRIu64 ") does not exist\n", in->obj_id);
+        printf("==PDC_SERVER: PDC_Server_region_releasae - requested object (id=%" PRIu64 ") does not exist\n", in->obj_id);
         ret_value = -1;
         out->ret = -1;
         goto done;
@@ -4307,9 +4321,11 @@ int main(int argc, char *argv[])
     query_partial_register(hg_class_g);
 
     // Mapping
-    gen_reg_map_notification_register(hg_class_g);
-    gen_reg_unmap_notification_register(hg_class_g);
-    gen_obj_unmap_notification_register(hg_class_g);
+    buf_map_register(hg_class_g);
+    reg_map_register(hg_class_g);
+    buf_unmap_register(hg_class_g);
+    reg_unmap_register(hg_class_g);
+    obj_unmap_register(hg_class_g);
 
     // Data server
     data_server_read_register(hg_class_g);

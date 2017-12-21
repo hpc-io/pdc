@@ -102,9 +102,11 @@ static hg_id_t         query_partial_register_id_g;
 static int             bulk_todo_g = 0;
 hg_atomic_int32_t      bulk_transfer_done_g;
 
-static hg_id_t	       gen_reg_map_notification_register_id_g;
-static hg_id_t         gen_reg_unmap_notification_register_id_g;
-static hg_id_t         gen_obj_unmap_notification_register_id_g;
+static hg_id_t         buf_map_register_id_g;
+static hg_id_t	       reg_map_register_id_g;
+static hg_id_t         buf_unmap_register_id_g;
+static hg_id_t         reg_unmap_register_id_g;
+static hg_id_t         obj_unmap_register_id_g;
 
 // client direct
 static hg_id_t         client_direct_addr_register_id_g;
@@ -285,7 +287,7 @@ client_send_object_unmap_rpc_cb(const struct hg_cb_info *callback_info)
     hg_return_t ret_value = HG_SUCCESS;
     hg_handle_t handle;
     struct object_unmap_args *object_unmap_args;
-    gen_obj_unmap_notification_out_t output;
+    obj_unmap_out_t output;
     
     FUNC_ENTER(NULL);
 
@@ -314,12 +316,45 @@ done:
 // Callback function for  HG_Forward()
 // Gets executed after a call to HG_Trigger and the RPC has completed
 static hg_return_t
+client_send_buf_unmap_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    hg_handle_t handle;
+    struct region_unmap_args *region_unmap_args;
+    reg_unmap_out_t output;
+
+    FUNC_ENTER(NULL);
+
+    /* printf("Entered client_send_buf_unmap_rpc_cb()\n"); */
+    region_unmap_args = (struct region_unmap_args*) callback_info->arg;
+    handle = callback_info->info.forward.handle;
+
+    ret_value = HG_Get_output(handle, &output);
+    if (ret_value != HG_SUCCESS) {
+        printf("PDC_CLIENT[%d]: client_send_buf_unmap_rpc_cb error with HG_Get_output\n",
+                pdc_client_mpi_rank_g);
+        region_unmap_args->ret = -1;
+        goto done;
+    }
+    /* printf("Return value=%d\n", output.ret); */
+
+    region_unmap_args->ret = output.ret;
+
+done:
+    work_todo_g--;
+    HG_Free_output(handle, &output);
+    FUNC_LEAVE(ret_value);
+}
+
+// Callback function for  HG_Forward()
+// Gets executed after a call to HG_Trigger and the RPC has completed
+static hg_return_t
 client_send_region_unmap_rpc_cb(const struct hg_cb_info *callback_info)
 {
     hg_return_t ret_value = HG_SUCCESS;
     hg_handle_t handle;
     struct region_unmap_args *region_unmap_args;
-    gen_reg_unmap_notification_out_t output;
+    reg_unmap_out_t output;
     
     FUNC_ENTER(NULL);
 
@@ -348,12 +383,45 @@ done:
 // Callback function for  HG_Forward()
 // Gets executed after a call to HG_Trigger and the RPC has completed
 static hg_return_t
+client_send_buf_map_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    hg_handle_t handle;
+    struct buf_map_args *buf_map_args;
+    buf_map_out_t output;
+
+    FUNC_ENTER(NULL);
+
+    /* printf("Entered client_send_buf_map_rpc_cb()\n"); */
+    buf_map_args = (struct region_map_args*) callback_info->arg;
+    handle = callback_info->info.forward.handle;
+
+    ret_value = HG_Get_output(handle, &output);
+    if (ret_value != HG_SUCCESS) {
+        printf("PDC_CLIENT[%d]: client_send_buf_map_rpc_cb error with HG_Get_output\n",
+                pdc_client_mpi_rank_g);
+        buf_map_args->ret = -1;
+        goto done;
+    }
+    /* printf("Return value=%d\n", output.ret); */
+
+    buf_map_args->ret = output.ret;
+
+done:
+    work_todo_g = 0;
+    HG_Free_output(handle, &output);
+    FUNC_LEAVE(ret_value);
+}
+
+// Callback function for  HG_Forward()
+// Gets executed after a call to HG_Trigger and the RPC has completed
+static hg_return_t
 client_send_region_map_rpc_cb(const struct hg_cb_info *callback_info)
 {
     hg_return_t ret_value = HG_SUCCESS;
     hg_handle_t handle;
     struct region_map_args *region_map_args;
-    gen_reg_map_notification_out_t output;
+    reg_map_out_t output;
     
     FUNC_ENTER(NULL);
 
@@ -363,7 +431,7 @@ client_send_region_map_rpc_cb(const struct hg_cb_info *callback_info)
 
     ret_value = HG_Get_output(handle, &output);
     if (ret_value != HG_SUCCESS) {
-        printf("PDC_CLIENT[%d]: client_send_region_unmap_rpc_cb error with HG_Get_output\n", 
+        printf("PDC_CLIENT[%d]: client_send_region_map_rpc_cb error with HG_Get_output\n", 
                 pdc_client_mpi_rank_g);
         region_map_args->ret = -1;
         goto done;
@@ -838,9 +906,11 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     query_partial_register_id_g               = query_partial_register(*hg_class);
 
     // 
-    gen_reg_map_notification_register_id_g    = gen_reg_map_notification_register(*hg_class);
-    gen_reg_unmap_notification_register_id_g  = gen_reg_unmap_notification_register(*hg_class);
-    gen_obj_unmap_notification_register_id_g  = gen_obj_unmap_notification_register(*hg_class);
+    buf_map_register_id_g                     = buf_map_register(*hg_class);
+    reg_map_register_id_g                     = reg_map_register(*hg_class);
+    buf_unmap_register_id_g                   = buf_unmap_register(*hg_class);
+    reg_unmap_register_id_g                   = reg_unmap_register(*hg_class);
+    obj_unmap_register_id_g                   = obj_unmap_register(*hg_class);
 
     server_lookup_client_register(*hg_class);
     notify_io_complete_register(*hg_class);
@@ -2243,12 +2313,13 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id)
+perr_t PDC_Client_object_unmap(pdcid_t local_obj_id)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = HG_SUCCESS;
-    gen_obj_unmap_notification_in_t in;
+    obj_unmap_in_t in;
     /* hg_bulk_t bulk_handle; */
+    int n_retry;
     uint32_t server_id;
     struct object_unmap_args unmap_args;
     hg_handle_t client_send_object_unmap_handle;
@@ -2266,7 +2337,7 @@ perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id)
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
-    int n_retry = 0;
+    n_retry = 0;
     while (pdc_server_info_g[server_id].addr_valid != 1) {
         if (n_retry > 0) 
             break;
@@ -2278,8 +2349,7 @@ perr_t PDC_Client_send_object_unmap(pdcid_t local_obj_id)
         n_retry++;
     }
 
-    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_obj_unmap_notification_register_id_g, 
-              &client_send_object_unmap_handle);
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, obj_unmap_register_id_g, &client_send_object_unmap_handle);
 
     hg_ret = HG_Forward(client_send_object_unmap_handle, client_send_object_unmap_rpc_cb, &unmap_args, &in);
     if (hg_ret != HG_SUCCESS) {
@@ -2298,15 +2368,78 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, struct PDC_region_info *reginfo, PDC_var_type_t data_type)
+perr_t PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct PDC_region_info *reginfo, PDC_var_type_t data_type)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = HG_SUCCESS;
-    gen_reg_unmap_notification_in_t in;
+    buf_unmap_in_t in;
+    int n_retry;
+    size_t unit;
+    uint32_t server_id;
+    struct region_unmap_args unmap_args;
+    hg_handle_t client_send_buf_unmap_handle;
+
+    FUNC_ENTER(NULL); 
+  
+    // Fill input structure
+    in.remote_obj_id = remote_obj_id;
+    in.remote_reg_id = remote_reg_id;
+
+    if(data_type == PDC_DOUBLE)
+        unit = sizeof(double);
+    else if(data_type == PDC_FLOAT)
+        unit = sizeof(float);
+    else if(data_type == PDC_INT)
+        unit = sizeof(int);
+    else
+        PGOTO_ERROR(FAIL, "data type is not supported yet");
+    pdc_region_info_t_to_transfer_unit(reginfo, &(in.remote_region), unit);
+
+    server_id = PDC_get_server_by_obj_id(remote_obj_id, pdc_server_num_g);
+
+    // Debug statistics for counting number of messages sent to each server.
+    debug_server_id_count[server_id]++;
+
+    while (pdc_server_info_g[server_id].addr_valid != 1) {
+        if (n_retry > 0) 
+            break;
+        if( PDC_Client_lookup_server(server_id) != SUCCEED) {
+            printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+            ret_value = FAIL;
+            goto done;
+        }
+        n_retry++;
+    }
+
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, buf_unmap_register_id_g, &client_send_buf_unmap_handle);
+
+    hg_ret = HG_Forward(client_send_buf_unmap_handle, client_send_buf_unmap_rpc_cb, &unmap_args, &in);
+    if (hg_ret != HG_SUCCESS) {
+        PGOTO_ERROR(FAIL, "PDC_Client_send_buf_unmap(): Could not start HG_Forward()");
+    } 
+
+    // Wait for response from server
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g); 
+    
+    if (unmap_args.ret != 1) 
+        PGOTO_ERROR(FAIL,"PDC_CLIENT: buf unmap failed...");
+    
+done:
+    HG_Destroy(client_send_buf_unmap_handle);
+    FUNC_LEAVE(ret_value);
+
+}
+
+perr_t PDC_Client_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, struct PDC_region_info *reginfo, PDC_var_type_t data_type)
+{
+    perr_t ret_value = SUCCEED;
+    hg_return_t  hg_ret = HG_SUCCESS;
+    reg_unmap_in_t in;
     /* hg_bulk_t bulk_handle; */
     uint32_t server_id;
     size_t unit;
-    int n_retry = 0;
+    int n_retry;
     struct region_unmap_args unmap_args;
     hg_handle_t client_send_region_unmap_handle;
     
@@ -2334,6 +2467,7 @@ perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
+    n_retry = 0;
     while (pdc_server_info_g[server_id].addr_valid != 1) {
         if (n_retry > 0) 
             break;
@@ -2345,8 +2479,7 @@ perr_t PDC_Client_send_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, 
         n_retry++;
     }
 
-    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_reg_unmap_notification_register_id_g, 
-                &client_send_region_unmap_handle);
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, reg_unmap_register_id_g, &client_send_region_unmap_handle);
 
     hg_ret = HG_Forward(client_send_region_unmap_handle, client_send_region_unmap_rpc_cb, &unmap_args, &in);
     if (hg_ret != HG_SUCCESS) {
@@ -2365,13 +2498,191 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *local_dims, uint64_t *local_offset, uint64_t *local_size, PDC_var_type_t local_type, void *local_data, uint64_t *remote_dims, uint64_t *remote_offset, uint64_t *remote_size, PDC_var_type_t remote_type, int32_t remote_client_id, void *remote_data, struct PDC_region_info *local_region, struct PDC_region_info *remote_region)
+perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *local_dims, uint64_t *local_offset, uint64_t *local_size, PDC_var_type_t local_type, void *local_data, uint64_t *remote_dims, uint64_t *remote_offset, uint64_t *remote_size, PDC_var_type_t remote_type, int32_t remote_client_id, void *remote_data, struct PDC_region_info *local_region, struct PDC_region_info *remote_region)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = HG_SUCCESS;
-    gen_reg_map_notification_in_t in;
+    buf_map_in_t in;
     uint32_t server_id;
     hg_class_t *hg_class;
+    int n_retry;
+    hg_uint32_t i, j;
+    hg_uint32_t local_count, remote_count;
+    void    **data_ptrs, **data_ptrs_to;
+    size_t  *data_size, *data_size_to;
+    size_t  unit, unit_to; 
+    struct  buf_map_args map_args;
+    hg_bulk_t local_bulk_handle = HG_BULK_NULL;
+    hg_bulk_t remote_bulk_handle = HG_BULK_NULL;
+    hg_handle_t client_send_buf_map_handle;
+
+    FUNC_ENTER(NULL);
+
+    in.local_reg_id = local_region_id;
+    in.remote_obj_id = remote_obj_id;
+    in.remote_reg_id = remote_region_id;
+    in.remote_client_id = remote_client_id;
+    in.local_type = local_type;
+    in.remote_type = remote_type;
+    in.ndim = ndim;
+
+    // Compute server id
+    server_id = PDC_get_server_by_obj_id(remote_obj_id, pdc_server_num_g);
+
+    // Debug statistics for counting number of messages sent to each server.
+    debug_server_id_count[server_id]++;
+    
+    hg_class = HG_Context_get_class(send_context_g);
+ 
+    if(local_type == PDC_DOUBLE)
+        unit = sizeof(double);
+    else if(local_type == PDC_FLOAT) 
+        unit = sizeof(float);
+    else if(local_type == PDC_INT)
+        unit = sizeof(int);
+    else
+        PGOTO_ERROR(FAIL, "local data type is not supported yet");
+    pdc_region_info_t_to_transfer_unit(local_region, &(in.local_region), unit);
+
+    if(remote_type == PDC_DOUBLE)
+        unit_to = sizeof(double);
+    else if(remote_type == PDC_FLOAT)
+        unit_to = sizeof(float);
+    else if(remote_type == PDC_INT)
+        unit_to = sizeof(int);
+    else
+        PGOTO_ERROR(FAIL, "local data type is not supported yet");
+    pdc_region_info_t_to_transfer_unit(remote_region, &(in.remote_region), unit_to);
+
+    if(ndim == 1) {
+        local_count = 1;
+        data_ptrs = (void **)malloc( sizeof(void *) );
+        data_size = (size_t *)malloc( sizeof(size_t) );
+        *data_ptrs = local_data + unit*local_offset[0];
+        *data_size = unit*local_size[0];
+   
+        remote_count = 1;
+        data_ptrs_to = (void **)malloc( sizeof(void *) );
+        data_size_to = (size_t *)malloc( sizeof(size_t) );
+        *data_ptrs_to = remote_data + unit_to*remote_offset[0];
+        *data_size_to = unit_to*remote_size[0];
+    }
+    else if(ndim == 2) {
+        local_count = local_size[0];
+        data_ptrs = (void **)malloc( local_size[0] * sizeof(void *) );
+        data_size = (size_t *)malloc( local_size[0] * sizeof(size_t) );
+        data_ptrs[0] = local_data + unit*(local_dims[1]*local_offset[0] + local_offset[1]);
+        data_size[0] = unit*local_size[1];
+        for(i=1; i<local_size[0]; i++) {
+            data_ptrs[i] = data_ptrs[i-1] + unit*local_dims[1]; 
+            data_size[i] = unit*local_size[1];
+        }
+
+        remote_count = remote_size[0];
+        data_ptrs_to = (void **)malloc( remote_size[0] * sizeof(void *) );
+        data_size_to = (size_t *)malloc( remote_size[0] * sizeof(size_t) );
+        data_ptrs_to[0] = remote_data + unit_to*(remote_dims[1]*remote_offset[0] + remote_offset[1]);
+        data_size_to[0] = unit_to*remote_size[1];
+        for(i=1; i<remote_size[0]; i++) {
+            data_ptrs_to[i] = data_ptrs_to[i-1] + unit_to*remote_dims[1];
+            data_size_to[i] = unit_to*remote_size[1];
+         }
+    }
+    else if(ndim == 3) {
+        local_count = local_size[0]*local_size[1];
+        data_ptrs = (void **)malloc( local_size[0] * local_size[1] * sizeof(void *) );
+        data_size = (size_t *)malloc( local_size[0] * local_size[1] * sizeof(size_t) );
+        data_ptrs[0] = local_data + unit*(local_dims[2]*local_dims[1]*local_offset[0] + local_dims[2]*local_offset[1] + local_offset[2]);
+        data_size[0] = unit*local_size[2];
+        for(i=0; i<local_size[0]-1; i++) {
+            for(j=0; j<local_size[1]-1; j++) {
+                data_ptrs[i*local_size[1]+j+1] = data_ptrs[i*local_size[1]+j]+unit*local_dims[2];
+                data_size[i*local_size[1]+j+1] = unit*local_size[2];
+            }
+            data_ptrs[i*local_size[1]+local_size[1]] = data_ptrs[i*local_size[1]]+unit*local_dims[2]*local_dims[1];
+            data_size[i*local_size[1]+local_size[1]] = unit*local_size[2];
+        }
+        i = local_size[0]-1;
+        for(j=0; j<local_size[1]-1; j++) {
+             data_ptrs[i*local_size[1]+j+1] = data_ptrs[i*local_size[1]+j]+unit*local_dims[2];
+             data_size[i*local_size[1]+j+1] = unit*local_size[2];
+        }
+
+        remote_count = remote_size[0] * remote_size[1];
+        data_ptrs_to = (void **)malloc( remote_size[0] * remote_size[1] * sizeof(void *) );
+        data_size_to = (size_t *)malloc( remote_size[0] * remote_size[1] * sizeof(size_t) );
+        data_ptrs_to[0] = remote_data + unit_to*(remote_dims[2]*remote_dims[1]*remote_offset[0] + remote_dims[2]*remote_offset[1] + remote_offset[2]);
+        data_size_to[0] = unit_to*remote_size[2];
+        for(i=0; i<remote_size[0]-1; i++) {
+            for(j=0; j<remote_size[1]-1; j++) {
+                data_ptrs_to[i*remote_size[1]+j+1] = data_ptrs_to[i*remote_size[1]+j]+unit_to*remote_dims[2];
+                data_size_to[i*remote_size[1]+j+1] = unit_to*remote_size[2];
+            }
+            data_ptrs_to[i*remote_size[1]+remote_size[1]] = data_ptrs_to[i*remote_size[1]]+unit_to*remote_dims[2]*remote_dims[1];
+            data_size_to[i*remote_size[1]+remote_size[1]] = unit_to*remote_size[2];
+        }
+        i = remote_size[0]-1;
+        for(j=0; j<remote_size[1]-1; j++) {
+             data_ptrs_to[i*remote_size[1]+j+1] = data_ptrs_to[i*remote_size[1]+j]+unit_to*remote_dims[2];
+             data_size_to[i*remote_size[1]+j+1] = unit_to*remote_size[2];
+        } 
+    }
+    else
+        PGOTO_ERROR(FAIL, "mapping for array of dimension greater than 4 is not supproted");
+
+    n_retry = 0;
+    while (pdc_server_info_g[server_id].addr_valid != 1) {
+        if (n_retry > 0) 
+            break;
+        if( PDC_Client_lookup_server(server_id) != SUCCEED) {
+            printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+            ret_value = FAIL;
+            goto done;
+        }
+        n_retry++;
+    }
+
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, buf_map_register_id_g, &client_send_buf_map_handle);
+
+    // Create bulk handle
+    hg_ret = HG_Bulk_create(hg_class, local_count, data_ptrs, (hg_size_t *)data_size, HG_BULK_READWRITE, &local_bulk_handle);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not create local bulk data handle\n");
+        return EXIT_FAILURE;
+    }
+    hg_ret = HG_Bulk_create(hg_class, remote_count, data_ptrs_to, (hg_size_t *)data_size_to, HG_BULK_READWRITE, &remote_bulk_handle);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not create remote bulk data handle\n");
+        return EXIT_FAILURE;
+    }
+    in.local_bulk_handle = local_bulk_handle;
+    in.remote_bulk_handle = remote_bulk_handle;
+
+    hg_ret = HG_Forward(client_send_buf_map_handle, client_send_buf_map_rpc_cb, &map_args, &in);	
+    if (hg_ret != HG_SUCCESS) {
+        PGOTO_ERROR(FAIL, "PDC_Client_send_buf_map(): Could not start HG_Forward()");
+    }
+
+    // Wait for response from server
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+    if (map_args.ret != 1) 
+        PGOTO_ERROR(FAIL,"PDC_CLIENT: buf map failed...");
+
+done:
+    HG_Destroy(client_send_buf_map_handle);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_Client_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *local_dims, uint64_t *local_offset, uint64_t *local_size, PDC_var_type_t local_type, void *local_data, uint64_t *remote_dims, uint64_t *remote_offset, uint64_t *remote_size, PDC_var_type_t remote_type, int32_t remote_client_id, void *remote_data, struct PDC_region_info *local_region, struct PDC_region_info *remote_region)
+{
+    perr_t ret_value = SUCCEED;
+    hg_return_t  hg_ret = HG_SUCCESS;
+    reg_map_in_t in;
+    uint32_t server_id;
+    hg_class_t *hg_class;
+    int n_retry = 0;
     hg_uint32_t i, j;
     hg_uint32_t local_count, remote_count;
     void    **data_ptrs, **data_ptrs_to;
@@ -2498,7 +2809,6 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
     else
         PGOTO_ERROR(FAIL, "mapping for array of dimension greater than 4 is not supproted");
 
-    int n_retry = 0;
     while (pdc_server_info_g[server_id].addr_valid != 1) {
         if (n_retry > 0) 
             break;
@@ -2510,8 +2820,7 @@ perr_t PDC_Client_send_region_map(pdcid_t local_obj_id, pdcid_t local_region_id,
         n_retry++;
     }
 
-    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, gen_reg_map_notification_register_id_g, 
-              &client_send_region_map_handle);
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, reg_map_register_id_g, &client_send_region_map_handle);
     
     // Create bulk handle
     hg_ret = HG_Bulk_create(hg_class, local_count, data_ptrs, (hg_size_t *)data_size, HG_BULK_READWRITE, &local_bulk_handle);
@@ -2610,7 +2919,6 @@ static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *re
         PGOTO_ERROR(FAIL, "data type is not supported yet");
 
     pdc_region_info_t_to_transfer_unit(region_info, &(in.region), unit);
-
 //    if (ndim >=1) {
 //        in.region.start_0  = unit * region_info->offset[0];
 //        in.region.count_0  = unit * region_info->size[0];
@@ -2792,7 +3100,6 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
         PGOTO_ERROR(FAIL, "data type is not supported yet");
 
     pdc_region_info_t_to_transfer_unit(region_info, &(in.region), unit);
-
 //    if (ndim >=1) {
 //        in.region.start_0  = unit * region_info->offset[0];
 //        in.region.count_0  = unit * region_info->size[0];

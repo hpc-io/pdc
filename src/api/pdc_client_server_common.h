@@ -95,6 +95,7 @@ typedef struct region_list_t {
     uint64_t offset;
     struct region_list_t *overlap_storage_regions;
     uint32_t n_overlap_storage_region;
+    hg_atomic_int32_t      buf_map_refcount;
     int      reg_dirty;
     PDC_access_t access_type;
     hg_bulk_t bulk_handle;
@@ -196,6 +197,28 @@ typedef struct region_map_t {
     struct region_map_t             *next;
 } region_map_t;
 
+typedef struct region_buf_map_t {
+    pdcid_t                          remote_obj_id;         /* target of object id */
+    pdcid_t                          remote_reg_id;         /* target of region id */
+    int32_t                          remote_client_id;
+    size_t                           remote_ndim;
+    region_info_transfer_t           remote_region;
+    hg_bulk_t                        remote_bulk_handle;
+    hg_addr_t                        remote_addr;
+    pdcid_t                          from_obj_id;
+
+    pdcid_t                          local_reg_id;         /* origin of region id */
+    region_info_transfer_t           local_region;
+    size_t                           local_ndim;
+    uint64_t                        *local_reg_size;
+    hg_addr_t                        local_addr;
+    hg_bulk_t                        local_bulk_handle;
+    PDC_var_type_t                   local_data_type;
+
+    struct region_buf_map_t         *prev;
+    struct region_buf_map_t         *next;
+} region_buf_map_t;
+
 // For storing metadata
 typedef struct pdc_metadata_t {
     int     user_id;                // Both server and client gets it and do security check
@@ -222,6 +245,9 @@ typedef struct pdc_metadata_t {
 
     // For region map
     region_map_t *region_map_head;
+
+    // For buf map
+    region_buf_map_t *region_buf_map_head;
 
     // For hash table list
     struct pdc_metadata_t *prev;
@@ -848,6 +874,24 @@ typedef struct {
 } close_server_out_t;
 
 typedef struct {
+    uint64_t        local_reg_id;
+    uint64_t        remote_obj_id;
+    uint64_t        remote_reg_id;
+    int32_t         remote_client_id;
+    PDC_var_type_t  local_type;
+    PDC_var_type_t  remote_type;
+    size_t          ndim;
+    hg_bulk_t       local_bulk_handle;
+    hg_bulk_t       remote_bulk_handle;
+    region_info_transfer_t      remote_region;
+    region_info_transfer_t      local_region;
+} buf_map_in_t;
+
+typedef struct {
+    int32_t ret;
+} buf_map_out_t;
+
+typedef struct {
     uint64_t        local_obj_id;
     uint64_t        local_reg_id;
     uint64_t        remote_obj_id;
@@ -860,29 +904,39 @@ typedef struct {
     hg_bulk_t       remote_bulk_handle;
     region_info_transfer_t      remote_region;
     region_info_transfer_t      local_region;
-} gen_reg_map_notification_in_t;
+} reg_map_in_t;
 
 typedef struct {
     int32_t ret;
-} gen_reg_map_notification_out_t;
+} reg_map_out_t;
+
+typedef struct {
+    uint64_t        remote_obj_id;
+    uint64_t        remote_reg_id;
+    region_info_transfer_t      remote_region;
+} buf_unmap_in_t;
+
+typedef struct {
+    int32_t ret;
+} buf_unmap_out_t;
 
 typedef struct {
     uint64_t        local_obj_id;
     uint64_t        local_reg_id;
     region_info_transfer_t      local_region;
-} gen_reg_unmap_notification_in_t;
+} reg_unmap_in_t;
 
 typedef struct {
     int32_t ret;
-} gen_reg_unmap_notification_out_t;
+} reg_unmap_out_t;
 
 typedef struct {
     uint64_t        local_obj_id;
-} gen_obj_unmap_notification_in_t;
+} obj_unmap_in_t;
 
 typedef struct {
     int32_t ret;
-} gen_obj_unmap_notification_out_t;
+} obj_unmap_out_t;
 
 static HG_INLINE hg_return_t
 hg_proc_gen_obj_id_in_t(hg_proc_t proc, void *data)
@@ -1200,12 +1254,89 @@ hg_proc_bulk_rpc_out_t(hg_proc_t proc, void *data)
 }
 // End of bulk
 
-
 static HG_INLINE hg_return_t
-hg_proc_gen_reg_map_notification_in_t(hg_proc_t proc, void *data)
+hg_proc_buf_map_in_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret;
-    gen_reg_map_notification_in_t *struct_data = (gen_reg_map_notification_in_t *) data;
+    buf_map_in_t *struct_data = (buf_map_in_t *) data;
+
+    ret = hg_proc_uint64_t(proc, &struct_data->local_reg_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->remote_obj_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->remote_reg_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->remote_client_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint8_t(proc, &struct_data->local_type);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint8_t(proc, &struct_data->remote_type);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_size_t(proc, &struct_data->ndim);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_bulk_t(proc, &struct_data->local_bulk_handle);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_bulk_t(proc, &struct_data->remote_bulk_handle);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->remote_region);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->local_region);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_buf_map_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    buf_map_out_t *struct_data = (buf_map_out_t *) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_reg_map_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    reg_map_in_t *struct_data = (reg_map_in_t *) data;
 
     ret = hg_proc_uint64_t(proc, &struct_data->local_obj_id);
     if (ret != HG_SUCCESS) {
@@ -1271,10 +1402,10 @@ hg_proc_gen_reg_map_notification_in_t(hg_proc_t proc, void *data)
 }
 
 static HG_INLINE hg_return_t
-hg_proc_gen_reg_map_notification_out_t(hg_proc_t proc, void *data)
+hg_proc_reg_map_out_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret;
-    gen_reg_map_notification_out_t *struct_data = (gen_reg_map_notification_out_t*) data;
+    reg_map_out_t *struct_data = (reg_map_out_t *) data;
 
     ret = hg_proc_int32_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
@@ -1285,10 +1416,48 @@ hg_proc_gen_reg_map_notification_out_t(hg_proc_t proc, void *data)
 }
 
 static HG_INLINE hg_return_t
-hg_proc_gen_reg_unmap_notification_in_t(hg_proc_t proc, void *data)
+hg_proc_buf_unmap_in_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret;
-    gen_reg_unmap_notification_in_t *struct_data = (gen_reg_unmap_notification_in_t *) data;
+    buf_unmap_in_t *struct_data = (buf_unmap_in_t *) data;
+
+    ret = hg_proc_uint64_t(proc, &struct_data->remote_obj_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->remote_reg_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->remote_region);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_buf_unmap_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    buf_unmap_out_t *struct_data = (buf_unmap_out_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_reg_unmap_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    reg_unmap_in_t *struct_data = (reg_unmap_in_t *) data;
 
     ret = hg_proc_uint64_t(proc, &struct_data->local_obj_id);
     if (ret != HG_SUCCESS) {
@@ -1309,10 +1478,10 @@ hg_proc_gen_reg_unmap_notification_in_t(hg_proc_t proc, void *data)
 }
 
 static HG_INLINE hg_return_t
-hg_proc_gen_reg_unmap_notification_out_t(hg_proc_t proc, void *data)
+hg_proc_reg_unmap_out_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret;
-    gen_reg_unmap_notification_out_t *struct_data = (gen_reg_unmap_notification_out_t*) data;
+    reg_unmap_out_t *struct_data = (reg_unmap_out_t*) data;
 
     ret = hg_proc_int32_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
@@ -1323,10 +1492,10 @@ hg_proc_gen_reg_unmap_notification_out_t(hg_proc_t proc, void *data)
 }
 
 static HG_INLINE hg_return_t
-hg_proc_gen_obj_unmap_notification_in_t(hg_proc_t proc, void *data)
+hg_proc_obj_unmap_in_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret;
-    gen_obj_unmap_notification_in_t *struct_data = (gen_obj_unmap_notification_in_t *) data;
+    obj_unmap_in_t *struct_data = (obj_unmap_in_t *) data;
 
     ret = hg_proc_uint64_t(proc, &struct_data->local_obj_id);
     if (ret != HG_SUCCESS) {
@@ -1337,10 +1506,10 @@ hg_proc_gen_obj_unmap_notification_in_t(hg_proc_t proc, void *data)
 }
 
 static HG_INLINE hg_return_t
-hg_proc_gen_obj_unmap_notification_out_t(hg_proc_t proc, void *data)
+hg_proc_obj_unmap_out_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret;
-    gen_obj_unmap_notification_out_t *struct_data = (gen_obj_unmap_notification_out_t*) data;
+    obj_unmap_out_t *struct_data = (obj_unmap_out_t*) data;
 
     ret = hg_proc_int32_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
@@ -1873,8 +2042,8 @@ hg_id_t metadata_update_register(hg_class_t *hg_class);
 hg_id_t metadata_add_tag_register(hg_class_t *hg_class);
 hg_id_t region_lock_register(hg_class_t *hg_class);
 
-hg_id_t gen_reg_unmap_notification_register(hg_class_t *hg_class);
-hg_id_t gen_obj_unmap_notification_register(hg_class_t *hg_class);
+hg_id_t reg_unmap_register(hg_class_t *hg_class);
+hg_id_t obj_unmap_register(hg_class_t *hg_class);
 hg_id_t data_server_write_register(hg_class_t *hg_class);
 hg_id_t notify_region_update_register(hg_class_t *hg_class);
 hg_id_t region_release_register(hg_class_t *hg_class);
@@ -1904,6 +2073,18 @@ struct bulk_args_t {
     uint32_t        *n_meta;
 };
 
+struct buf_map_release_bulk_args {
+    hg_handle_t handle;
+    region_lock_in_t in;
+    struct PDC_region_info *server_region;
+    void  *data_buf;
+    hg_handle_t remote_bulk_handle;
+    hg_addr_t addr;
+    pdcid_t remote_obj_id;         /* target of object id */
+    pdcid_t remote_reg_id;         /* target of region id */
+    int32_t remote_client_id;
+};
+
 struct lock_bulk_args {
     hg_handle_t handle;
     region_lock_in_t in;
@@ -1930,10 +2111,21 @@ struct region_update_bulk_args {
     pdcid_t           remote_obj_id;
     pdcid_t           remote_reg_id;
     int32_t           remote_client_id;
-    struct            lock_bulk_args *args;
+    struct lock_bulk_args *args;
 };
 
-hg_id_t gen_reg_map_notification_register(hg_class_t *hg_class);
+struct buf_region_update_bulk_args {
+    hg_handle_t       handle;
+    hg_bulk_t         bulk_handle;
+    pdcid_t           remote_obj_id;
+    pdcid_t           remote_reg_id;
+    int32_t           remote_client_id;
+    struct buf_map_release_bulk_args *args;
+    int32_t           lock_ret;
+};
+
+
+hg_id_t reg_map_register(hg_class_t *hg_class);
 
 double   PDC_get_elapsed_time_double(struct timeval *tstart, struct timeval *tend);
 perr_t   delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out);
@@ -1949,6 +2141,7 @@ void     PDC_print_region_list(region_list_t *a);
 void     PDC_print_storage_region_list(region_list_t *a);
 perr_t   PDC_init_region_list(region_list_t *a);
 int      PDC_is_same_region_list(region_list_t *a, region_list_t *b);
+int      PDC_is_same_region_transfer(region_info_transfer_t *a, region_info_transfer_t *b);
 
 perr_t pdc_metadata_t_to_transfer_t(pdc_metadata_t *meta, pdc_metadata_transfer_t *transfer);
 perr_t pdc_transfer_t_to_metadata_t(pdc_metadata_transfer_t *transfer, pdc_metadata_t *meta);

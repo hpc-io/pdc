@@ -271,7 +271,7 @@ pdcid_t PDCobj_decode(pdcid_t obj_id, pdcid_t meta_id);
  *
  * \return Non-negative on success/Negative on failure
  */
-pdcid_t PDCobj_buf_map(pdcid_t cont_id, const char *obj_name, void *buf, PDC_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg);
+perr_t PDCobj_buf_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg);
 
 /**
  * Map an object to another object
@@ -303,6 +303,16 @@ perr_t PDCobj_map(pdcid_t from_obj, pdcid_t from_reg, pdcid_t to_obj, pdcid_t to
  * \return Pointer to PDC_obj_info struct on success/Null on failure
  */
 //struct PDC_region_info *PDCregion_get_info(pdcid_t reg_id);
+
+/**
+ * Unmap all regions within the object 
+ *
+ * \param remote_obj_id [IN]    Id of the target object
+ * \param remote_reg_id [IN]    Id of the target region
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCobj_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id);
 
 /**
  * Unmap all regions within the object 

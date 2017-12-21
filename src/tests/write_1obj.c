@@ -86,7 +86,7 @@ int main(int argc, char **argv)
     my_data_size = size_B / size;
 
     obj_data = (float *)calloc(1, my_data_size);
-    mydata = (float*)calloc(1, my_data_size);
+    mydata = (float *)calloc(1, my_data_size);
 
     PDCprop_set_obj_type(obj_prop, PDC_FLOAT);
     PDCprop_set_obj_buf(obj_prop, obj_data);
@@ -132,7 +132,7 @@ int main(int argc, char **argv)
     local_region  = PDCregion_create(ndim, offset, mysize);
     global_region = PDCregion_create(ndim, offset, mysize);
 
-    local_obj = PDCobj_buf_map(cont, obj_name, mydata, PDC_FLOAT, local_region, global_obj, global_region);
+    local_obj = PDCobj_buf_map(mydata, PDC_FLOAT, local_region, global_obj, global_region);
 
     /* printf("%d: writing to (%llu, %llu) of %llu bytes\n", rank, region.offset[0], region.offset[1], region.size[0]*region.size[1]); */
 
