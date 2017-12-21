@@ -161,6 +161,11 @@ perr_t PDC_Client_list_all(int *n_res, pdc_metadata_t ***out);
  */
 perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, const char* obj_name, int time_step_from, int time_step_to, int ndim, const char* tags, int *n_res, pdc_metadata_t ***out);
 
+/*
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_query_tag(const char* tags, int *n_res, pdc_metadata_t ***out);
+
 /** 
  * PDC client query metadata from server for a certain time step
  *
