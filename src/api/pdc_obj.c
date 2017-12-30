@@ -57,7 +57,6 @@ static const PDCID_class_t PDC_REGION_CLS[1] = {{
     (PDC_free_t)PDCregion__close        
 }};
 */
-pbool_t buf_map = 0;
 
 perr_t PDCobj_init()
 {
@@ -771,11 +770,9 @@ perr_t PDCobj_map(pdcid_t local_obj, pdcid_t local_reg, pdcid_t remote_obj, pdci
     reg1 = (struct PDC_region_info *)(reginfo1->obj_ptr);
     if(obj1->obj_pt->ndim != reg1->ndim)
         PGOTO_ERROR(FAIL, "local object dimension and region dimension does not match");
-    if(buf_map == 0) {
-        for(i=0; i<reg1->ndim; i++)
-            if((obj1->obj_pt->dims)[i] < ((reg1->size)[i] + (reg1->offset)[i]))
-                PGOTO_ERROR(FAIL, "local object region size error");
-    }
+    for(i=0; i<reg1->ndim; i++)
+        if((obj1->obj_pt->dims)[i] < ((reg1->size)[i] + (reg1->offset)[i]))
+            PGOTO_ERROR(FAIL, "local object region size error");
 
     objinfo2 = PDC_find_id(remote_obj);
     if(objinfo2 == NULL)
@@ -817,50 +814,6 @@ perr_t PDCobj_map(pdcid_t local_obj, pdcid_t local_reg, pdcid_t remote_obj, pdci
 done:
     FUNC_LEAVE(ret_value);
 }
-
-/*
-pdcid_t PDCobj_buf_map(pdcid_t cont_id, const char *obj_name, void *buf, PDC_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg)
-{
-    pdcid_t ret_value = SUCCEED;    
-    struct PDC_id_info *id_info = NULL;
-    struct PDC_cont_info *cont = NULL;
-    pdcid_t pdc_id, obj_prop, local_obj;
-    struct PDC_region_info *reg1;
-    
-    FUNC_ENTER(NULL);
-
-    id_info = PDC_find_id(local_reg);
-    reg1 = (struct PDC_region_info *)(id_info->obj_ptr);
-    id_info = PDC_find_id(cont_id);
-    cont = (struct PDC_cont_info *)(id_info->obj_ptr);
-    pdc_id = cont->cont_pt->pdc->local_id;
-    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
-    PDCprop_set_obj_dims(obj_prop, reg1->ndim, reg1->size);
-    PDCprop_set_obj_type(obj_prop, local_type);
-    PDCprop_set_obj_buf(obj_prop, buf);
-    PDCprop_set_obj_time_step(obj_prop, 0);
-    PDCprop_set_obj_user_id( obj_prop, getuid());
-    
-#ifdef ENABLE_MPI
-//    local_obj = PDCobj_create_mpi(cont_id, obj_name, obj_prop);
-    local_obj = PDCobj_create_mpi(cont_id, obj_name, obj_prop, 0);
-
-#else
-    local_obj = PDCobj_create(cont_id, obj_name, obj_prop);
-#endif
-    if(local_obj < 0)
-        PGOTO_ERROR(FAIL, "PDC CLIENT Failed to create local object");
-
-    buf_map = 1;
-    ret_value = PDCobj_map(local_obj, local_reg, remote_obj, remote_reg);
-    
-    if(ret_value == SUCCEED)
-        ret_value = local_obj;
-    
-done:
-    FUNC_LEAVE(ret_value);
-}
-*/
 
 perr_t PDCobj_buf_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg)
 {
@@ -904,7 +857,6 @@ perr_t PDCobj_buf_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, p
         PDC_inc_ref(remote_obj);
         PDC_inc_ref(remote_reg);
     }
-
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -1004,12 +956,11 @@ perr_t PDCobj_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id)
     reginfo = (struct PDC_region_info *)(info1->obj_ptr);
 
     ret_value = PDC_Client_buf_unmap(object1->meta_id, remote_reg_id, reginfo, data_type);
-    
+
     if(ret_value == SUCCEED) { 
         PDC_dec_ref(remote_obj_id);  
         PDC_dec_ref(remote_reg_id); 
     } 
-
 done:
     FUNC_LEAVE(ret_value);
 }

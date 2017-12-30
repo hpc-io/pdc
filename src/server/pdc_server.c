@@ -2015,7 +2015,7 @@ done:
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
+perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out, void *data_ptr)
 {
     perr_t ret_value = SUCCEED;
     pdc_metadata_t *metadata;
@@ -2048,6 +2048,7 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
 
     metadata->user_id   = in->data.user_id;
     metadata->time_step = in->data.time_step;
+    metadata->data_ptr  = data_ptr;
     metadata->ndim      = in->data.ndim;
     metadata->dims[0]   = in->data.dims0;
     metadata->dims[1]   = in->data.dims1;
@@ -3782,11 +3783,11 @@ perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
         }
     }
 
-    // check if the lock region is used in buf map before 
+    // check if the lock region is used in buf map function 
     tmp = (region_list_t *)malloc(sizeof(region_list_t));
     DL_FOREACH(target_obj->region_buf_map_head, eltt) {
-        pdc_region_transfer_t_to_list_t(&(eltt->remote_region), tmp);
-        if(PDC_is_same_region_list(tmp, request_region)) {
+        pdc_region_transfer_t_to_list_t(&(eltt->remote_region_unit), tmp);
+        if(PDC_is_same_region_list(tmp, request_region) == 1) {
             request_region->reg_dirty = 1;
             hg_atomic_incr32(&(request_region->buf_map_refcount));
         }

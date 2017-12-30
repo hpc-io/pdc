@@ -49,7 +49,7 @@ int main(int argc, char **argv)
     
 //    int myArray1[4][4] = {{101, 102, 103, 104}, {105,106, 107, 108}, {109, 110, 111, 112}, {113, 114, 115, 116}};
     int myArray1[3][2] = {{107, 108}, {111, 112}, {115, 116}};
-    int myArray2[4][4];
+//    int myArray2[4][4];
     
 //    struct timeval  start_time;
 //    struct timeval  end;
@@ -79,10 +79,8 @@ int main(int argc, char **argv)
     obj_prop2 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
 
     PDCprop_set_obj_dims(obj_prop2, 2, dims);
-
     PDCprop_set_obj_type(obj_prop2, PDC_INT);
-
-	PDCprop_set_obj_buf(obj_prop2, &myArray2[0]     );
+//	PDCprop_set_obj_buf(obj_prop2, &myArray2[0]     );
     PDCprop_set_obj_time_step(obj_prop2, 0          );
     PDCprop_set_obj_user_id( obj_prop2, getuid()    );
     PDCprop_set_obj_app_name(obj_prop2, "test_app"  );
@@ -115,12 +113,12 @@ int main(int argc, char **argv)
     if (ret != SUCCEED)
         printf("Failed to release lock for region\n");
 
+/*
     printf("mapped region2 is updated to: \n");
     printf("%d, %d\n", myArray2[1][2], myArray2[1][3]);
     printf("%d, %d\n", myArray2[2][2], myArray2[2][3]);
     printf("%d, %d\n", myArray2[3][2], myArray2[3][3]);
 
-/*
     printf("mapped region3 is updated to: \n");
     printf("%d, %d\n", myArray3[1][2], myArray3[1][3]);
     printf("%d, %d\n", myArray3[2][2], myArray3[2][3]);

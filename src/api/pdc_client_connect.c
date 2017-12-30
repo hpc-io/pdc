@@ -523,7 +523,7 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
 
     work_todo_g = 0;
 done:
-    /* HG_Destroy(client_test_handle); */
+    HG_Destroy(client_test_handle); 
     FUNC_LEAVE(ret_value);
 }
 
@@ -2213,18 +2213,18 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_pro
     create_prop = PDCobj_prop_get_info(obj_create_prop);
     obj_life  = create_prop->obj_life;
 
-    // Fill input structure
-
     if (obj_name == NULL) {
         printf("Cannot create object with empty object name\n");
         goto done;
     }
 
+    // Fill input structure
     memset(&in,0,sizeof(in));
 
     in.data.obj_name  = obj_name;
     in.data.time_step = create_prop->time_step;
     in.data.user_id   = create_prop->user_id;
+    in.data_type = create_prop->type;
 
     if ((in.data.ndim = create_prop->ndim) > 0) {
       in.data.dims0     = create_prop->dims[0];
@@ -2618,13 +2618,12 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_
     hg_class_t *hg_class;
     int n_retry;
     hg_uint32_t i, j;
-    hg_uint32_t local_count, remote_count;
-    void    **data_ptrs, **data_ptrs_to;
-    size_t  *data_size, *data_size_to;
+    hg_uint32_t local_count;
+    void    **data_ptrs;
+    size_t  *data_size;
     size_t  unit, unit_to; 
     struct  buf_map_args map_args;
     hg_bulk_t local_bulk_handle = HG_BULK_NULL;
-    hg_bulk_t remote_bulk_handle = HG_BULK_NULL;
     hg_handle_t client_send_buf_map_handle;
 
     FUNC_ENTER(NULL);
@@ -2663,7 +2662,9 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_
         unit_to = sizeof(int);
     else
         PGOTO_ERROR(FAIL, "local data type is not supported yet");
-    pdc_region_info_t_to_transfer_unit(remote_region, &(in.remote_region), unit_to);
+    pdc_region_info_t_to_transfer_unit(remote_region, &(in.remote_region_unit), unit_to);
+    pdc_region_info_t_to_transfer(remote_region, &(in.remote_region_nounit));
+    in.remote_unit = unit_to;
 
     if(ndim == 1) {
         local_count = 1;
@@ -2671,38 +2672,22 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_
         data_size = (size_t *)malloc( sizeof(size_t) );
         *data_ptrs = local_data + unit*local_offset[0];
         *data_size = unit*local_size[0];
-   
-        remote_count = 1;
-        data_ptrs_to = (void **)malloc( sizeof(void *) );
-        data_size_to = (size_t *)malloc( sizeof(size_t) );
-        *data_ptrs_to = remote_data + unit_to*remote_offset[0];
-        *data_size_to = unit_to*remote_size[0];
     }
     else if(ndim == 2) {
         local_count = local_size[0];
-        data_ptrs = (void **)malloc( local_size[0] * sizeof(void *) );
-        data_size = (size_t *)malloc( local_size[0] * sizeof(size_t) );
+        data_ptrs = (void **)malloc( local_count * sizeof(void *) );
+        data_size = (size_t *)malloc( local_count * sizeof(size_t) );
         data_ptrs[0] = local_data + unit*(local_dims[1]*local_offset[0] + local_offset[1]);
         data_size[0] = unit*local_size[1];
         for(i=1; i<local_size[0]; i++) {
             data_ptrs[i] = data_ptrs[i-1] + unit*local_dims[1]; 
-            data_size[i] = unit*local_size[1];
+            data_size[i] = data_size[0];
         }
-
-        remote_count = remote_size[0];
-        data_ptrs_to = (void **)malloc( remote_size[0] * sizeof(void *) );
-        data_size_to = (size_t *)malloc( remote_size[0] * sizeof(size_t) );
-        data_ptrs_to[0] = remote_data + unit_to*(remote_dims[1]*remote_offset[0] + remote_offset[1]);
-        data_size_to[0] = unit_to*remote_size[1];
-        for(i=1; i<remote_size[0]; i++) {
-            data_ptrs_to[i] = data_ptrs_to[i-1] + unit_to*remote_dims[1];
-            data_size_to[i] = unit_to*remote_size[1];
-         }
     }
     else if(ndim == 3) {
         local_count = local_size[0]*local_size[1];
-        data_ptrs = (void **)malloc( local_size[0] * local_size[1] * sizeof(void *) );
-        data_size = (size_t *)malloc( local_size[0] * local_size[1] * sizeof(size_t) );
+        data_ptrs = (void **)malloc( local_count * sizeof(void *) );
+        data_size = (size_t *)malloc( local_count * sizeof(size_t) );
         data_ptrs[0] = local_data + unit*(local_dims[2]*local_dims[1]*local_offset[0] + local_dims[2]*local_offset[1] + local_offset[2]);
         data_size[0] = unit*local_size[2];
         for(i=0; i<local_size[0]-1; i++) {
@@ -2711,32 +2696,13 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_
                 data_size[i*local_size[1]+j+1] = unit*local_size[2];
             }
             data_ptrs[i*local_size[1]+local_size[1]] = data_ptrs[i*local_size[1]]+unit*local_dims[2]*local_dims[1];
-            data_size[i*local_size[1]+local_size[1]] = unit*local_size[2];
+            data_size[i*local_size[1]+local_size[1]] = data_size[0];
         }
         i = local_size[0]-1;
         for(j=0; j<local_size[1]-1; j++) {
              data_ptrs[i*local_size[1]+j+1] = data_ptrs[i*local_size[1]+j]+unit*local_dims[2];
-             data_size[i*local_size[1]+j+1] = unit*local_size[2];
+             data_size[i*local_size[1]+j+1] = data_size[0];
         }
-
-        remote_count = remote_size[0] * remote_size[1];
-        data_ptrs_to = (void **)malloc( remote_size[0] * remote_size[1] * sizeof(void *) );
-        data_size_to = (size_t *)malloc( remote_size[0] * remote_size[1] * sizeof(size_t) );
-        data_ptrs_to[0] = remote_data + unit_to*(remote_dims[2]*remote_dims[1]*remote_offset[0] + remote_dims[2]*remote_offset[1] + remote_offset[2]);
-        data_size_to[0] = unit_to*remote_size[2];
-        for(i=0; i<remote_size[0]-1; i++) {
-            for(j=0; j<remote_size[1]-1; j++) {
-                data_ptrs_to[i*remote_size[1]+j+1] = data_ptrs_to[i*remote_size[1]+j]+unit_to*remote_dims[2];
-                data_size_to[i*remote_size[1]+j+1] = unit_to*remote_size[2];
-            }
-            data_ptrs_to[i*remote_size[1]+remote_size[1]] = data_ptrs_to[i*remote_size[1]]+unit_to*remote_dims[2]*remote_dims[1];
-            data_size_to[i*remote_size[1]+remote_size[1]] = unit_to*remote_size[2];
-        }
-        i = remote_size[0]-1;
-        for(j=0; j<remote_size[1]-1; j++) {
-             data_ptrs_to[i*remote_size[1]+j+1] = data_ptrs_to[i*remote_size[1]+j]+unit_to*remote_dims[2];
-             data_size_to[i*remote_size[1]+j+1] = unit_to*remote_size[2];
-        } 
     }
     else
         PGOTO_ERROR(FAIL, "mapping for array of dimension greater than 4 is not supproted");
@@ -2758,16 +2724,10 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_
     // Create bulk handle
     hg_ret = HG_Bulk_create(hg_class, local_count, data_ptrs, (hg_size_t *)data_size, HG_BULK_READWRITE, &local_bulk_handle);
     if (hg_ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not create local bulk data handle\n");
-        return EXIT_FAILURE;
-    }
-    hg_ret = HG_Bulk_create(hg_class, remote_count, data_ptrs_to, (hg_size_t *)data_size_to, HG_BULK_READWRITE, &remote_bulk_handle);
-    if (hg_ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not create remote bulk data handle\n");
+        fprintf(stderr, "PDC_Client_buf_map(): Could not create local bulk data handle\n");
         return EXIT_FAILURE;
     }
     in.local_bulk_handle = local_bulk_handle;
-    in.remote_bulk_handle = remote_bulk_handle;
 
     hg_ret = HG_Forward(client_send_buf_map_handle, client_send_buf_map_rpc_cb, &map_args, &in);	
     if (hg_ret != HG_SUCCESS) {

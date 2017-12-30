@@ -121,18 +121,18 @@ typedef struct region_info_transfer_t {
 } region_info_transfer_t;
 
 typedef struct pdc_metadata_transfer_t {
-    int32_t     user_id;
-    const char  *app_name;
-    const char  *obj_name;
-    int          time_step;
+    int32_t        user_id;
+    const char    *app_name;
+    const char    *obj_name;
+    int            time_step;
 
-    uint64_t    obj_id;
+    uint64_t       obj_id;
+//    PDC_var_type_t data_type;  
+    size_t         ndim;
+    uint64_t       dims0, dims1, dims2, dims3;
 
-    size_t      ndim;
-    uint64_t    dims0, dims1, dims2, dims3;
-
-    const char  *tags;
-    const char  *data_location;
+    const char    *tags;
+    const char    *data_location;
     /* time_t      create_time; */
     /* time_t      last_modified_time; */
 } pdc_metadata_transfer_t;
@@ -202,10 +202,9 @@ typedef struct region_buf_map_t {
     pdcid_t                          remote_reg_id;         /* target of region id */
     int32_t                          remote_client_id;
     size_t                           remote_ndim;
-    region_info_transfer_t           remote_region;
-    hg_bulk_t                        remote_bulk_handle;
-    hg_addr_t                        remote_addr;
-    pdcid_t                          from_obj_id;
+    size_t                           remote_unit;
+    region_info_transfer_t           remote_region_unit;
+    region_info_transfer_t           remote_region_nounit;
 
     pdcid_t                          local_reg_id;         /* origin of region id */
     region_info_transfer_t           local_region;
@@ -234,6 +233,7 @@ typedef struct pdc_metadata_t {
     char    tags[TAG_LEN_MAX];
     char    data_location[ADDR_MAX];
 
+    void    *data_ptr;   // object address in server
     size_t   ndim;
     uint64_t dims[DIM_MAX];
 
@@ -579,6 +579,18 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
+    if (ret != HG_SUCCESS) {
+    HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+/*
+    ret = hg_proc_uint8_t(proc, &struct_data->data_type);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+*/
     ret = hg_proc_hg_size_t(proc, &struct_data->ndim);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
@@ -600,11 +612,6 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->dims3);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -799,6 +806,7 @@ hg_proc_metadata_query_out_t(hg_proc_t proc, void *data)
 typedef struct {
     pdc_metadata_transfer_t data;
     uint32_t hash_value;
+    PDC_var_type_t data_type;
 } gen_obj_id_in_t;
 
 typedef struct {
@@ -881,9 +889,10 @@ typedef struct {
     PDC_var_type_t  local_type;
     PDC_var_type_t  remote_type;
     size_t          ndim;
+    size_t          remote_unit;
     hg_bulk_t       local_bulk_handle;
-    hg_bulk_t       remote_bulk_handle;
-    region_info_transfer_t      remote_region;
+    region_info_transfer_t      remote_region_unit;
+    region_info_transfer_t      remote_region_nounit;
     region_info_transfer_t      local_region;
 } buf_map_in_t;
 
@@ -952,6 +961,11 @@ hg_proc_gen_obj_id_in_t(hg_proc_t proc, void *data)
     ret = hg_proc_uint32_t(proc, &struct_data->hash_value);
     if (ret != HG_SUCCESS) {
 	    HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint8_t(proc, &struct_data->data_type);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
         return ret;
     }
     return ret;
@@ -1295,17 +1309,22 @@ hg_proc_buf_map_in_t(hg_proc_t proc, void *data)
         HG_LOG_ERROR("Proc error");
         return ret;
     }
+    ret = hg_proc_hg_size_t(proc, &struct_data->remote_unit);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
     ret = hg_proc_hg_bulk_t(proc, &struct_data->local_bulk_handle);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_bulk_t(proc, &struct_data->remote_bulk_handle);
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->remote_region_unit);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_region_info_transfer_t(proc, &struct_data->remote_region);
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->remote_region_nounit);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -2075,11 +2094,8 @@ struct bulk_args_t {
 
 struct buf_map_release_bulk_args {
     hg_handle_t handle;
-    region_lock_in_t in;
-    struct PDC_region_info *server_region;
     void  *data_buf;
-    hg_handle_t remote_bulk_handle;
-    hg_addr_t addr;
+    region_lock_in_t in;
     pdcid_t remote_obj_id;         /* target of object id */
     pdcid_t remote_reg_id;         /* target of region id */
     int32_t remote_client_id;
