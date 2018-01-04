@@ -1307,7 +1307,8 @@ fflush(stdout);
     HG_Respond(bulk_args->handle, NULL, NULL, &out);
   
     // Send notification to mapped regions, when data transfer is done
-    PDC_SERVER_notify_region_update_to_client(bulk_args->remote_obj_id, bulk_args->remote_reg_id, bulk_args->remote_client_id);
+//    PDC_SERVER_notify_region_update_to_client(bulk_args->remote_obj_id, bulk_args->remote_reg_id, bulk_args->remote_client_id);
+
     remote_reg_info = (struct PDC_region_info *)malloc(sizeof(struct PDC_region_info));
     if(remote_reg_info == NULL) {
         printf("remote_reg_info memory allocation failed\n");
