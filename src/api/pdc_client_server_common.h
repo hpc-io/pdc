@@ -76,6 +76,31 @@ typedef enum { NONE=0,
              } PDC_data_loc_t;
 
 typedef struct pdc_metadata_t pdc_metadata_t;
+typedef struct region_list_t region_list_t;
+
+typedef struct get_storage_loc_args_t{
+    perr_t        (*cb)();
+    void          *cb_args;
+    region_list_t **region_lists;
+    hg_handle_t    rpc_handle;
+    uint32_t      *n_loc;
+    void          *void_buf;
+} get_storage_loc_args_t;
+
+typedef struct update_region_storage_meta_bulk_args_t{
+    perr_t   (*cb)();
+    void     *meta_list_target;
+    int      *n_updated;
+    int       server_id;
+    hg_bulk_t bulk_handle;
+    hg_handle_t rpc_handle;
+} update_region_storage_meta_bulk_args_t;
+
+
+typedef struct get_metadata_by_id_args_t{
+    perr_t          (*cb)();
+    void            *args;
+} get_metadata_by_id_args_t;
 
 typedef struct region_list_t {
     size_t ndim;

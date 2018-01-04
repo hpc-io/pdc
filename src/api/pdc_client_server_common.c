@@ -1263,16 +1263,18 @@ fflush(stdout);
         if(ret_value != SUCCEED)
             printf("==PDC SERVER: PDC_Server_data_write_direct() failed\n");
     }
-    free(bulk_args->server_region->size);
-    free(bulk_args->server_region->offset);
-    free(bulk_args->server_region);
+    // Tang: commented the following lines as PDC_Server_data_write_direct is executed as callback function
+    //       after getting metadata from remote server in the next round of server_loop
+    /* free(bulk_args->server_region->size); */
+    /* free(bulk_args->server_region->offset); */
+    /* free(bulk_args->server_region); */
 
-//done:
-//    out.ret = 1;
-//    HG_Respond(bulk_args->handle, NULL, NULL, &out);
-    /* printf("==PDC_SERVER: region_release_bulk_transfer_cb(): returned %" PRIu64 "\n", out.ret); */
+/* //done: */
+/* //    out.ret = 1; */
+/* //    HG_Respond(bulk_args->handle, NULL, NULL, &out); */
+    /* /1* printf("==PDC_SERVER: region_release_bulk_transfer_cb(): returned %" PRIu64 "\n", out.ret); *1/ */
 
-    HG_Free_input(bulk_args->handle, &(bulk_args->in));
+    /* HG_Free_input(bulk_args->handle, &(bulk_args->in)); */
     
     if(all_reg_locked == 1) {
 //        HG_Respond(bulk_args->handle, NULL, NULL, &out);
