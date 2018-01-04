@@ -2099,6 +2099,7 @@ struct buf_map_release_bulk_args {
     pdcid_t remote_obj_id;         /* target of object id */
     pdcid_t remote_reg_id;         /* target of region id */
     int32_t remote_client_id;
+    region_info_transfer_t remote_region; 
 };
 
 struct lock_bulk_args {
@@ -2169,6 +2170,7 @@ perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to);
 
 perr_t pdc_region_info_t_to_transfer(struct PDC_region_info *region, region_info_transfer_t *transfer);
 perr_t pdc_region_info_t_to_transfer_unit(struct PDC_region_info *region, region_info_transfer_t *transfer, size_t unit);
+perr_t pdc_region_transfer_t_to_region_info(region_info_transfer_t *transfer, struct PDC_region_info *region);
 
 perr_t PDC_serialize_regions_lists(region_list_t** regions, uint32_t n_region, void *buf, uint32_t buf_size);
 perr_t PDC_unserialize_region_lists(void *buf, region_list_t** regions, uint32_t *n_region);

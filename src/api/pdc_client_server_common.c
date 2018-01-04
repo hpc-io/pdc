@@ -665,6 +665,15 @@ perr_t pdc_region_info_t_to_transfer_unit(struct PDC_region_info *region, region
     return SUCCEED;
 }
 
+perr_t pdc_region_transfer_t_to_region_info(region_info_transfer_t *transfer, struct PDC_region_info *region)
+{
+    if (NULL==region || NULL==transfer ) {
+        printf("    pdc_region_transfer_t_to_region_info(): NULL input!\n");
+        return FAIL;
+    }
+    
+}
+
 perr_t pdc_region_list_t_to_transfer(region_list_t *region, region_info_transfer_t *transfer)
 {
     if (NULL==region || NULL==transfer ) {
@@ -1259,6 +1268,7 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     region_lock_out_t out;
     const struct hg_info *hg_info = NULL;
     struct buf_map_release_bulk_args *bulk_args = NULL;
+    struct PDC_region_info *remote_reg_info = NULL;
 
     FUNC_ENTER(NULL);
     
@@ -1274,21 +1284,42 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
         hg_ret = HG_PROTOCOL_ERROR;
         out.ret = 0;
     }
-
-void *data_buf = bulk_args->data_buf;
+//void *data_buf = bulk_args->data_buf;
+/*
 printf("address is %lld\n", data_buf);
+printf("first data is %d\n", *(int *)(data_buf+24));
+printf("next is %d\n", *(int *)(data_buf+28));
+printf("next is %d\n", *(int *)(data_buf+40));
+printf("next is %d\n", *(int *)(data_buf+44));
+printf("next is %d\n", *(int *)(data_buf+56));
+printf("next is %d\n", *(int *)(data_buf+60));
+fflush(stdout);
+*/
+/*
 printf("first data is %f\n", *(float *)(data_buf));
 printf("next is %f\n", *(float *)(data_buf+4));
 printf("next is %f\n", *(float *)(data_buf+8));
 printf("next is %f\n", *(float *)(data_buf+12));
 fflush(stdout);
-
+*/
     // Perform lock release function
     PDC_Server_region_release(&(bulk_args->in), &out);
     HG_Respond(bulk_args->handle, NULL, NULL, &out);
   
     // Send notification to mapped regions, when data transfer is done
     PDC_SERVER_notify_region_update_to_client(bulk_args->remote_obj_id, bulk_args->remote_reg_id, bulk_args->remote_client_id);
+    remote_reg_info = (struct PDC_region_info *)malloc(sizeof(struct PDC_region_info));
+    if(remote_reg_info == NULL) {
+        printf("remote_reg_info memory allocation failed\n");
+        fflush(stdout);
+    }
+//    pdc_region_transfer_t_to_region_info(bulk_args->remote_region, remote_reg_info);
+    remote_reg_info->ndim = (bulk_args->remote_region).ndim;
+    remote_reg_info->offset = (uint64_t *)malloc(sizeof(uint64_t));
+    remote_reg_info->size = (uint64_t *)malloc(sizeof(uint64_t));
+    (remote_reg_info->offset)[0] = (bulk_args->remote_region).start_0;
+    (remote_reg_info->size)[0] = (bulk_args->remote_region).count_0;
+    PDC_Server_data_write_direct(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf+(bulk_args->remote_region).start_0);
 
     HG_Destroy(bulk_args->handle);
     free(bulk_args);
@@ -1662,14 +1693,16 @@ HG_TEST_RPC_CB(region_release, handle)
                             buf_map_bulk_args->in = in;
                             buf_map_bulk_args->remote_obj_id = eltt->remote_obj_id;
                             buf_map_bulk_args->remote_reg_id = eltt->remote_reg_id;
+                            buf_map_bulk_args->remote_region = eltt->remote_region_unit;
                             buf_map_bulk_args->remote_client_id = eltt->remote_client_id;
-                            
+                             
                             /* Pull bulk data */
                             size = HG_Bulk_get_size(eltt->local_bulk_handle);
                             if(size != HG_Bulk_get_size(remote_bulk_handle)) {
                                 error = 1;
                                 printf("===PDC SERVER: HG_TEST_RPC_CB(region_release, handle) local and remote bulk size does not match\n");
                             }
+
                             hg_ret = HG_Bulk_transfer(hg_info->context, buf_map_region_release_bulk_transfer_cb, buf_map_bulk_args, HG_BULK_PULL, eltt->local_addr, eltt->local_bulk_handle, 0, remote_bulk_handle, 0, size, &hg_bulk_op_id);
                             if (hg_ret != HG_SUCCESS) {
                                error = 1;

@@ -132,8 +132,11 @@ int main(int argc, char **argv)
     local_region  = PDCregion_create(ndim, offset, mysize);
     global_region = PDCregion_create(ndim, offset, mysize);
 
-    local_obj = PDCobj_buf_map(mydata, PDC_FLOAT, local_region, global_obj, global_region);
-
+    ret = PDCobj_buf_map(mydata, PDC_FLOAT, local_region, global_obj, global_region);
+    if(ret != SUCCEED) {
+        printf("PDCobj_buf_map failed\n");
+        exit(-1);
+    }
     /* printf("%d: writing to (%llu, %llu) of %llu bytes\n", rank, region.offset[0], region.offset[1], region.size[0]*region.size[1]); */
 
 #ifdef ENABLE_MPI

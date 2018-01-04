@@ -123,14 +123,14 @@ int main(int argc, char **argv)
 
     for (int i=0; i<numparticles; i++) {
         x[i]   = uniform_random_number() * x_dim;
- printf("x = %f\n", x[i]);
+// printf("x = %f\n", x[i]);
     }
 
     ret = PDCreg_release_lock(obj2, r2, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for r2\n");
 
-    ret = PDCreg_unmap(obj2, r2);
+    ret = PDCobj_buf_unmap(obj2, r2);
     if (ret != SUCCEED)
         printf("region unmap failed\n");
 
