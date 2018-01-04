@@ -31,9 +31,9 @@
 #include "pdc.h"
 #include "pdc_client_connect.h"
 
-int main(int argc, char **argv)
+int main()
 {
-    int rank = 0, size = 1;
+//    int rank = 0, size = 1;
     pdcid_t pdc;
 
     pdc = PDC_init("pdc");

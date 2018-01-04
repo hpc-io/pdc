@@ -16,7 +16,7 @@ void print_usage() {
     printf("Usage: srun -n ./data_server_read obj_name size_MB\n");
 }
 
-int main(int argc, const char *argv[])
+int main(int argc, char **argv)
 {
     int rank = 0, size = 1;
 
@@ -28,7 +28,6 @@ int main(int argc, const char *argv[])
 
     // create a pdc
     pdcid_t pdc = PDC_init("pdc");
-    /* printf("create a new pdc, pdc id is: %ld\n", pdc); */
 
     // create a container property
     pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
@@ -42,7 +41,6 @@ int main(int argc, const char *argv[])
 
     printf("PROC[%d] FINISHED!\n", rank);
 
-done:
     // close a container
     if(PDCcont_close(cont) < 0)
         printf("fail to close container %ld\n", cont);

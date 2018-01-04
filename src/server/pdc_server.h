@@ -43,11 +43,11 @@
 #define PDC_MAX_OVERLAP_REGION_NUM 8 // max number of supported regions for PDC_Server_get_storage_location_of_region() 
 #define PDC_STR_DELIM            7
 
-static pdc_cnt_t pdc_num_reg;
+static hg_atomic_int32_t pdc_num_reg;
 extern hg_class_t *hg_class_g;
 
 
-perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out);
+perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out, void *data_ptr);
 /* perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out); */
 perr_t PDC_Server_region_release(region_lock_in_t *in, region_lock_out_t *out);
 perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out);
@@ -101,6 +101,10 @@ typedef struct server_lookup_args_t {
     region_list_t   **region_lists;
     uint32_t        n_loc;
 } server_lookup_args_t;
+
+typedef struct server_reg_lock_args_t{
+    int lock;
+} server_reg_lock_args_t;
 
 struct server_region_update_args {
     int             ret;

@@ -102,7 +102,8 @@ static perr_t PDCcont__close(struct PDC_cont_info *cp)
 
     FUNC_ENTER(NULL);
 
-    free(cp->name);
+//    free(cp->name);
+    free((void*)(cp->name));
     cp = PDC_FREE(struct PDC_cont_info, cp);
     
     FUNC_LEAVE(ret_value);
@@ -147,7 +148,7 @@ pdcid_t PDCcont_open(const char *cont_name)
     cont_id = PDC_find_byname(PDC_CONT, cont_name);
     if(cont_id <= 0)
         PGOTO_ERROR(FAIL, "cannot locate container");
-    pdc_inc_ref(cont_id);
+    PDC_inc_ref(cont_id);
     ret_value = cont_id;
     
 done:

@@ -28,6 +28,7 @@
 #include <getopt.h>
 #include <sys/time.h>
 #include <ctype.h>
+#include <unistd.h>
 
 /* #define ENABLE_MPI 1 */
 
@@ -237,22 +238,14 @@ done:
 
     // close a container
     if(PDCcont_close(cont) < 0)
-        printf("fail to close container %lld\n", cont);
-    /* else */
-    /*     if (rank == 0) */ 
-    /*         printf("successfully close container # %lld\n", cont); */
+        printf("fail to close container c1\n");
 
     // close a container property
     if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
-    /* else */
-    /*     if (rank == 0) */ 
-    /*         printf("successfully close container property # %lld\n", cont_prop); */
 
     if(PDC_close(pdc) < 0)
        printf("fail to close PDC\n");
-    /* else */
-    /*    printf("PDC is closed\n"); */
 
 #ifdef ENABLE_MPI
      MPI_Finalize();

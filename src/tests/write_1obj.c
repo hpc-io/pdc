@@ -61,7 +61,7 @@ int main(int argc, char **argv)
     if (rank == 0) {
         printf("Writing a %" PRIu64 " MB object [%s] with %d clients.\n", size_MB, obj_name, size);
     }
-    size_B = size_MB * 1048576 / 4;
+    size_B = size_MB * 1048576;
 
     // create a pdc
     pdcid_t pdc = PDC_init("pdc");
@@ -86,15 +86,15 @@ int main(int argc, char **argv)
     my_data_size = size_B / size;
 
     obj_data = (float *)calloc(1, my_data_size);
-    mydata = (float*)calloc(1, my_data_size);
+    mydata = (float *)calloc(1, my_data_size);
 
-    PDCprop_set_obj_type(       obj_prop, PDC_FLOAT);
-    PDCprop_set_obj_buf(        obj_prop, obj_data);
-    PDCprop_set_obj_dims(       obj_prop, 1, dims);
-    PDCprop_set_obj_user_id(    obj_prop, getuid());
-    PDCprop_set_obj_time_step(  obj_prop, 0);
-    PDCprop_set_obj_app_name(   obj_prop, "DataServerTest");
-    PDCprop_set_obj_tags(       obj_prop, "tag0=1");
+    PDCprop_set_obj_type(obj_prop, PDC_FLOAT);
+    PDCprop_set_obj_buf(obj_prop, obj_data);
+    PDCprop_set_obj_dims(obj_prop, 1, dims);
+    PDCprop_set_obj_user_id( obj_prop, getuid());
+    PDCprop_set_obj_time_step( obj_prop, 0);
+    PDCprop_set_obj_app_name(obj_prop, "DataServerTest");
+    PDCprop_set_obj_tags(    obj_prop, "tag0=1");
 
     // Create a object 
     /* printf("Creating an object with name [%s]", obj_name); */
@@ -132,8 +132,11 @@ int main(int argc, char **argv)
     local_region  = PDCregion_create(ndim, offset, mysize);
     global_region = PDCregion_create(ndim, offset, mysize);
 
-    local_obj = PDCobj_buf_map(cont, "local_obj_name", mydata, PDC_FLOAT, local_region, global_obj, global_region);
-
+    ret = PDCobj_buf_map(mydata, PDC_FLOAT, local_region, global_obj, global_region);
+    if(ret != SUCCEED) {
+        printf("PDCobj_buf_map failed\n");
+        exit(-1);
+    }
     /* printf("%d: writing to (%llu, %llu) of %llu bytes\n", rank, region.offset[0], region.offset[1], region.size[0]*region.size[1]); */
 
 #ifdef ENABLE_MPI

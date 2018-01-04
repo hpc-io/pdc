@@ -75,7 +75,7 @@ int main(int argc, char **argv)
 
     int n_var = NUM_VAR_MAX, n_ts = 1;
     double sleep_time = 0, true_sleep_time;
-    double compute_total = 0.0, gen_time = 0.0; 
+    double compute_total = 0.0; 
     int size_per_proc_var_MB = 32;            // Default value to read 8388608 particles
 
     if (argc > 4) { 
@@ -113,14 +113,14 @@ int main(int argc, char **argv)
     uint64_t float_bytes  = n_particles * sizeof(float);
     uint64_t int_bytes    = n_particles * sizeof(int);
 
-    uint64_t float_dims[NDIM] = {float_bytes*size};
-    uint64_t int_dims[NDIM] = {int_bytes*size};
+//    uint64_t float_dims[NDIM] = {float_bytes*size};
+//    uint64_t int_dims[NDIM] = {int_bytes*size};
     uint64_t myoffset[NDIM], mysize[NDIM];
     void *mydata[NUM_VAR_MAX];
 
-    pdcid_t         obj_prop_float, obj_prop_int;
+//    pdcid_t         obj_prop_float, obj_prop_int;
 
-    pdcid_t         obj_ids[TS_MAX][NUM_VAR_MAX];
+//    pdcid_t         obj_ids[TS_MAX][NUM_VAR_MAX];
     struct PDC_region_info obj_regions[TS_MAX][NUM_VAR_MAX];
     pdc_metadata_t *obj_metas[TS_MAX][NUM_VAR_MAX];
     PDC_Request_t request[TS_MAX][NUM_VAR_MAX];
@@ -128,12 +128,12 @@ int main(int argc, char **argv)
     struct timeval  pdc_timer_start;
     struct timeval  pdc_timer_end;
     struct timeval  pdc_timer_start_1;
-    struct timeval  pdc_timer_start_2;
+//    struct timeval  pdc_timer_start_2;
     struct timeval  pdc_timer_end_1;
-    struct timeval  pdc_timer_end_2;
+//    struct timeval  pdc_timer_end_2;
 
     double read_time = 0.0, read_time_total = 0.0, wait_time = 0.0, wait_time_total = 0.0;
-    double create_time = 0.0, create_time_total = 0.0, query_time = 0.0, query_time_total = 0.0;
+    double query_time = 0.0, query_time_total = 0.0;
     double total_time = 0.0, total_size = 0.0;
 
 

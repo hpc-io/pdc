@@ -63,15 +63,15 @@ int main(int argc, char **argv)
 
     char *obj_names[] = {"x", "y", "z", "px", "py", "pz", "id1", "id2"};
 
-    pdcid_t         obj_ids[NUM_VAR];
+//    pdcid_t         obj_ids[NUM_VAR];
     struct PDC_region_info obj_regions[NUM_VAR];
     pdc_metadata_t *obj_metas[NUM_VAR];
 
     uint64_t float_bytes  = NPARTICLES * sizeof(float);
     uint64_t int_bytes    = NPARTICLES * sizeof(int);
 
-    uint64_t float_dims[NDIM] = {float_bytes*size};
-    uint64_t int_dims[NDIM] = {int_bytes*size};
+//    uint64_t float_dims[NDIM] = {float_bytes*size};
+//    uint64_t int_dims[NDIM] = {int_bytes*size};
 
     uint64_t myoffset[NDIM], mysize[NDIM];
     void *mydata[NUM_VAR];

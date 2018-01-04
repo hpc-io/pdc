@@ -119,31 +119,21 @@ int main(int argc, char **argv)
 
     // create a pdc
     pdc = PDC_init("pdc");
-    /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
-    /* else */
-    /*     if (rank == 0) */ 
-    /*         printf("Create a container property, id is %lld\n", cont_prop); */
 
     // create a container
     cont = PDCcont_create("c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
-    /* else */
-    /*     if (rank == 0) */ 
-    /*         printf("Create a container, id is %lld\n", cont); */
 
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if(obj_prop <= 0)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
-    /* else */
-    /*     if (rank == 0) */ 
-    /*         printf("Create an object property, id is %lld\n", obj_prop); */
 
     PDCprop_set_obj_dims(obj_prop, 3, dims);
 
@@ -194,8 +184,6 @@ int main(int argc, char **argv)
             printf("Error getting an object id of %s from server, exit...\n", obj_name);
             exit(-1);
         }
-        /* else */ 
-        /*     printf("%lld\n", test_obj); */
 
         // Print progress
         /* int progress_factor = count < 10 ? 1 : 10; */
@@ -255,22 +243,14 @@ int main(int argc, char **argv)
 done:
     // close a container
     if(PDCcont_close(cont) < 0)
-        printf("fail to close container %lld\n", cont);
-    /* else */
-    /*     if (rank == 0) */ 
-    /*         printf("successfully close container # %lld\n", cont); */
+        printf("fail to close container c1\n");
 
     // close a container property
     if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
-    /* else */
-    /*     if (rank == 0) */ 
-    /*         printf("successfully close container property # %lld\n", cont_prop); */
 
     if(PDC_close(pdc) < 0)
        printf("fail to close PDC\n");
-    /* else */
-    /*    printf("PDC is closed\n"); */
 
 #ifdef ENABLE_MPI
      MPI_Finalize();
