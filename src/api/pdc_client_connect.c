@@ -2225,12 +2225,18 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_pro
     in.data.time_step = create_prop->time_step;
     in.data.user_id   = create_prop->user_id;
     in.data_type = create_prop->type;
+//printf("data_type = %d\n", in.data_type);
+//fflush(stdout);
 
     if ((in.data.ndim = create_prop->ndim) > 0) {
-      in.data.dims0     = create_prop->dims[0];
-      in.data.dims1     = create_prop->dims[1];
-      in.data.dims2     = create_prop->dims[2];
-      in.data.dims3     = create_prop->dims[3];
+      if(in.data.ndim >= 1)
+          in.data.dims0     = create_prop->dims[0];
+      if(in.data.ndim >= 2)
+          in.data.dims1     = create_prop->dims[1];
+      if(in.data.ndim >= 3)
+          in.data.dims2     = create_prop->dims[2];
+      if(in.data.ndim >= 4)
+          in.data.dims3     = create_prop->dims[3];
     }
    
     if (create_prop->tags == NULL) 

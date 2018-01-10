@@ -30,6 +30,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <math.h>
+#include <inttypes.h>
 
 /* #define ENABLE_MPI 1 */
 
@@ -42,6 +43,10 @@
 double uniform_random_number()
 {
     return (((double)rand())/((double)(RAND_MAX)));
+}
+
+void print_usage() {
+    printf("Usage: srun -n ./vpicio #particles\n");
 }
 
 int main(int argc, char **argv)
@@ -63,10 +68,10 @@ int main(int argc, char **argv)
     int x_dim = 64;
     int y_dim = 64;
     int z_dim = 64;
-    long numparticles = 32;
-//    const int my_data_size = 4;
+    uint64_t numparticles;
+//    int my_data_size;
 //    uint64_t dims[1] = {my_data_size};  // {8388608};
-    uint64_t dims[1] = {numparticles};
+    uint64_t dims[1];
     int ndim = 1;
     uint64_t *offset;
     uint64_t *mysize;
@@ -76,6 +81,16 @@ int main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
+
+    if (argc < 2) {
+        print_usage();
+        return 0;
+    }
+    numparticles = atoll(argv[1]);
+    if (rank == 0) {
+        printf("Writing %" PRIu64 " number of particles with %d clients.\n", numparticles, size);
+    }
+    dims[0] = numparticles;
 
     x = (float *)malloc(numparticles*sizeof(float));
     y = (float *)malloc(numparticles*sizeof(float));
@@ -286,7 +301,7 @@ int main(int argc, char **argv)
         fflush(stdout);
     }
 
-     for (int i=0; i<numparticles; i++) {
+     for (uint64_t i=0; i<numparticles; i++) {
         id1[i] = i;
         id2[i] = i*2;
         x[i]   = uniform_random_number() * x_dim;
@@ -381,8 +396,6 @@ fflush(stdout);
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-printf("start to unmap\n");
-fflush(stdout);
     ret = PDCobj_buf_unmap(obj_xx, region_xx);
     if (ret != SUCCEED)
         printf("region xx unmap failed\n");

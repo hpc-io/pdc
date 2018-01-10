@@ -853,6 +853,9 @@ HG_TEST_RPC_CB(gen_obj_id, handle)
 
     // allocate memory for global object on server
     data_type = in.data_type;   //in.data.data_type
+//printf("data_type = %d\n", data_type);
+//fflush(stdout);
+
     if(data_type == PDC_DOUBLE)
         unit = sizeof(double);
     else if(data_type == PDC_FLOAT) 
@@ -1309,6 +1312,7 @@ fflush(stdout);
     // Send notification to mapped regions, when data transfer is done
 //    PDC_SERVER_notify_region_update_to_client(bulk_args->remote_obj_id, bulk_args->remote_reg_id, bulk_args->remote_client_id);
 
+/*
     remote_reg_info = (struct PDC_region_info *)malloc(sizeof(struct PDC_region_info));
     if(remote_reg_info == NULL) {
         printf("remote_reg_info memory allocation failed\n");
@@ -1321,7 +1325,7 @@ fflush(stdout);
     (remote_reg_info->offset)[0] = (bulk_args->remote_region).start_0;
     (remote_reg_info->size)[0] = (bulk_args->remote_region).count_0;
     PDC_Server_data_write_direct(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf+(bulk_args->remote_region).start_0);
-
+*/
     HG_Destroy(bulk_args->handle);
     free(bulk_args);
 
