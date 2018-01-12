@@ -7084,9 +7084,9 @@ perr_t PDC_Server_update_region_storage_meta_bulk_with_cb(bulk_xfer_data_t *bulk
 
     server_id = bulk_data->target_id;
 
-    printf("==PDC_SERVER[%d]: will bulk update storage region to server %d, obj id is %" PRIu64 "\n",
-            pdc_server_rank_g, server_id, bulk_data->obj_id);
-    fflush(stdout);
+    /* printf("==PDC_SERVER[%d]: will bulk update storage region to server %d, obj id is %" PRIu64 "\n", */
+    /*         pdc_server_rank_g, server_id, bulk_data->obj_id); */
+    /* fflush(stdout); */
 
     if (server_id == (uint32_t)pdc_server_rank_g) {
 
