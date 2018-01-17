@@ -849,6 +849,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
      *   "ofi+tcp"
      *   "cci+tcp"
      */
+    struct hg_init_info init_info = { 0 };
     char *default_hg_transport = "bmi+tcp";
     char *hg_transport;
     int i;
@@ -876,7 +877,9 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
 
     /* Initialize Mercury with the desired network abstraction class */
     /* printf("Using %s\n", na_info_string); */
-    *hg_class = HG_Init(na_info_string, HG_TRUE);
+//    *hg_class = HG_Init(na_info_string, HG_TRUE);
+    init_info.na_init_info.progress_mode = NA_NO_BLOCK;
+    *hg_class = HG_Init_opt(na_info_string, HG_TRUE, &init_info);
     if (*hg_class == NULL) {
         printf("Error with HG_Init()\n");
         goto done;
