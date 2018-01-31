@@ -20,8 +20,37 @@ void print_usage() {
 }
 
 char tags_g[MAX_TAG_LEN];
-char *tags_ptr;
+char *tags_ptr_g;
 hsize_t tag_size_g;
+int  ndset = 0;
+
+int add_tag(char *str)
+{
+    int str_len = 0;
+    if (NULL == str || NULL == tags_ptr_g) {
+        fprintf(stderr, "%s - input str is NULL!", __func__);
+        return 0;
+    }
+    else if (tag_size_g + str_len >= MAX_TAG_LEN) {
+        fprintf(stderr, "%s - tags_ptr_g overflow!", __func__);
+        return 0;
+    }
+
+    // Remove the trailing ','
+    if (*str == '}' || *str == ')' || *str == ']' ) {
+        if (*(--tags_ptr_g) != ',') {
+            tags_ptr_g++;
+        }
+    }
+
+    str_len = strlen(str);
+    strncpy(tags_ptr_g, str, str_len);
+
+    tag_size_g += str_len;
+    tags_ptr_g += str_len;
+
+    return str_len;
+}
 
 int
 main(int argc, char **argv)
@@ -50,6 +79,7 @@ main(int argc, char **argv)
 
        status = H5Fclose(file);
 
+       printf("\n\n======================\nNumber of datasets: %d\n", ndset);
        return 0;
     }
 }
@@ -157,7 +187,7 @@ do_dset(hid_t did, char *name)
 
         tag_size_g = 0;
         memset(tags_g, 0, sizeof(char)*MAX_TAG_LEN);
-        tags_ptr = tags_g;
+        tags_ptr_g = tags_g;
         /*
          * Information about the group:
          *  Name and attributes
@@ -165,20 +195,23 @@ do_dset(hid_t did, char *name)
          *  Other info., not shown here: number of links, object id
          */
 	H5Iget_name(did, ds_name, MAX_NAME  );
+        add_tag(ds_name);
+        add_tag("{");
+
         name_len = strlen(ds_name);
         for (i = name_len; i >= 0; i--) {
             if (ds_name[i] == '/') {
                 obj_name = &ds_name[i+1];
-                if (i != 0) {
-                    strncpy(tags_ptr, ds_name, i);
-                    tag_size_g += i;
-                    tags_ptr += i;
-                }
                 break;
             }
         }
 	printf("[%s] {\n", obj_name);
 
+        if (strcmp(obj_name, "match") == 0 ) {
+            i = 0;
+        }
+
+        ndset ++;
 	/*
 	 *  process the attributes of the dataset, if any.
 	 */
@@ -211,7 +244,10 @@ do_dset(hid_t did, char *name)
 	H5Tclose(tid);
 	H5Sclose(sid);
 
-        printf("} [%s] tag_size %d [%s]\n\n\n", obj_name, tag_size_g, tags_g);
+        add_tag("}");
+
+        printf("} [%s] tag_size %d  \n========================\n%s\n========================\n\n\n", 
+                obj_name, tag_size_g, tags_g);
         tag_size_g = 0;
 }
 
@@ -224,11 +260,10 @@ do_dtype(hid_t tid, hid_t oid, int is_compound) {
         int compound_nmember, i;
         hsize_t dims[8], ndim;
         char *mem_name;
-        char attr_string[MAX_TAG_LEN], new_string[MAX_TAG_LEN];
+        char *attr_string[100], new_string[MAX_TAG_LEN], tmp_str[MAX_TAG_LEN];
         hsize_t size, attr_len;
         hid_t mem_type;
-        htri_t size_var;
-        hid_t atype, aspace;
+        hid_t atype, aspace, naive_type;
 	H5T_class_t t_class, compound_class;
 	t_class = H5Tget_class(tid);
 	if(t_class < 0){ 
@@ -242,9 +277,13 @@ do_dtype(hid_t tid, hid_t oid, int is_compound) {
 		 */
 		if(t_class == H5T_INTEGER) {
 		      puts(" 'H5T_INTEGER'.");
+                      sprintf(tmp_str, "I%lu,", size);
+                      add_tag(tmp_str);
 			/* display size, signed, endianess, etc. */
 		} else if(t_class == H5T_FLOAT) {
 		      puts(" 'H5T_FLOAT'.");
+                      sprintf(tmp_str, "F%lu,", size);
+                      add_tag(tmp_str);
 			/* display size, endianess, exponennt, etc. */
 		} else if(t_class == H5T_STRING) {
 		      puts(" 'H5T_STRING'.");
@@ -258,55 +297,49 @@ do_dtype(hid_t tid, hid_t oid, int is_compound) {
                           ndim = H5Sget_simple_extent_ndims(aspace);
                           H5Sget_simple_extent_dims(aspace, dims, NULL);
                           // Deal with variable-length string
-                          if((size_var = H5Tis_variable_str(atype)) != 1) {
-                              memset(attr_string, 0, MAX_TAG_LEN);
-                              H5Aread(oid, atype, attr_string);
+                          memset(attr_string, 0, 100);
+                          if(H5Tis_variable_str(atype) != 1) {
+                              H5Aread(oid, atype, &attr_string);
                           }
                           else {
                               // TODO: string attribute with variable size is not read correctly
-                              mem_type = H5Tcopy (H5T_C_S1);
-                              H5Tset_size(mem_type, H5T_VARIABLE);
-                              H5Tset_strpad (mem_type, H5T_STR_NULLTERM);
-                              memset(attr_string, 0, MAX_TAG_LEN);
-                              H5Aread (oid, mem_type, attr_string);
+                              naive_type = H5Tget_native_type(atype, H5T_DIR_ASCEND);
+                              H5Aread(oid, naive_type, &attr_string);
                           }
 
-                          // Remove the NULL in attr_string
-                          for (i = 0; i < MAX_TAG_LEN; i++) {
-                              // Omit the NULL in the string
-                              if (attr_string[i] != 0) {
-                                  attr_len = strlen(&attr_string[i]);
-                                  strncpy(tags_ptr, &attr_string[i], attr_len);
-                                  tags_ptr += attr_len;
-                                  tag_size_g += attr_len;
-                                  i+= attr_len;
-                                  continue;
-                              }
-                          }
+                          add_tag(attr_string[0]);
+                          add_tag(",");
 
-                          memset(attr_string, 0, MAX_TAG_LEN);
                       } // End if is_compound == 0
+                      else {
+                          sprintf(tmp_str, "S%lu,", size);
+                          add_tag(tmp_str);
+                      }
 
 			/* display size, padding, termination, etc. */
-		} else if(t_class == H5T_BITFIELD) {
-		      puts(" 'H5T_BITFIELD'.");
-			/* display size, label, etc. */
-		} else if(t_class == H5T_OPAQUE) {
-		      puts(" 'H5T_OPAQUE'.");
-			/* display size, etc. */
+		/* } else if(t_class == H5T_BITFIELD) { */
+		/*       puts(" 'H5T_BITFIELD'."); */
+		/* 	/1* display size, label, etc. *1/ */
+		/* } else if(t_class == H5T_OPAQUE) { */
+		/*       puts(" 'H5T_OPAQUE'."); */
+		/* 	/1* display size, etc. *1/ */
 		} else if(t_class == H5T_COMPOUND) {
                       // For compound type, the size would be calculated by its sub-types
 		      puts(" 'H5T_COMPOUND' {");
+                      add_tag("C[");
 			/* recursively display each member: field name, type  */
                       compound_nmember = H5Tget_nmembers(tid);
                       for (i = 0; i < compound_nmember; i++) {
                           mem_name = H5Tget_member_name(tid, i);
                           printf("        Compound member [%20s]  ", mem_name);
+                          add_tag(mem_name);
+                          add_tag("=");
                           mem_type = H5Tget_member_type(tid, i);
                           do_dtype(mem_type, oid, 1);
                       }
 		      puts("    } End 'H5T_COMPOUND'.\n");
 
+                      add_tag("]");
 
 		} else if(t_class == H5T_ARRAY) {
                       if (is_compound == 0) {
@@ -315,16 +348,25 @@ do_dtype(hid_t tid, hid_t oid, int is_compound) {
                       ndim = H5Tget_array_ndims(tid);
                       H5Tget_array_dims2(tid, dims);
                       printf(" 'H5T_ARRAY', ndim=%d:  ", ndim);
-                      for (i = 0; i < ndim; i++) 
+                      sprintf(tmp_str, "A%d", ndim);
+                      add_tag(tmp_str);
+                      for (i = 0; i < ndim; i++) { 
                           printf("%d, ", dims[i]);
+                          sprintf(tmp_str, "_%d", dims[i]);
+                          add_tag(tmp_str);
+                      }
                       printf("\n                                                ");
                       do_dtype(H5Tget_super(tid), oid, 0);
 			/* display  dimensions, base type  */
 		} else if(t_class == H5T_ENUM) {
 		      puts(" 'H5T_ENUM'.");
+                      sprintf(tmp_str, "E,");
+                      add_tag(tmp_str);
 			/* display elements: name, value   */
 		} else  {
 		      puts(" 'Other'.");
+                      sprintf(tmp_str, "!OTHER!,");
+                      add_tag(tmp_str);
 		      /* eg. Object Reference, ...and so on ... */
 		}
 	}
@@ -373,7 +415,7 @@ void do_attr(hid_t aid) {
 	ssize_t len;
 	hid_t atype;
 	hid_t aspace;
-	char buf[MAX_NAME]; 
+	char buf[MAX_NAME] = {0}; 
 
 	/* 
 	 * Get the name of the attribute.
@@ -381,6 +423,12 @@ void do_attr(hid_t aid) {
 	len = H5Aget_name(aid, MAX_NAME, buf );
 	printf("    Attribute Name : %s\n",buf);
 
+        // Skip the COMMENT attribute
+        if (strcmp("COMMENT", buf) == 0) 
+            return;
+        
+        add_tag(buf);
+        add_tag("=");
 	/*    
 	 * Get attribute information: dataspace, data type 
 	 */
