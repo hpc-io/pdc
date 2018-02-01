@@ -54,8 +54,8 @@ int main(int argc, char **argv)
     perr_t ret;
     float *x;
     int x_dim = 64;
-    long numparticles = 4;
-    const int my_data_size = 4;
+    long numparticles = 992;
+    const int my_data_size = 992;
     uint64_t dims[1] = {my_data_size};  // {8388608};
     int ndim = 1;
     uint64_t *offset;
@@ -112,24 +112,48 @@ int main(int argc, char **argv)
 //    printf("second region id: %lld\n", r2);
 
     ret = PDCobj_buf_map(&x[0], PDC_FLOAT, r1, obj2, r2);
-    if(ret < 0)
+    if(ret < 0) {
         printf("PDCobj_buf_map failed\n");
-
+        exit(-1);
+    }
+    
+    MPI_Barrier(MPI_COMM_WORLD);
+/*
+if(rank == 0){
+printf("buf map is done\n");
+fflush(stdout);}
+*/
     ret = PDCreg_obtain_lock(obj2, r2, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for r2\n");
 
     MPI_Barrier(MPI_COMM_WORLD);
-
+/*
+if(rank ==0) {
+printf("lock is done\n");
+fflush(stdout);}
+*/
     for (int i=0; i<numparticles; i++) {
         x[i]   = uniform_random_number() * x_dim;
 // printf("x = %f\n", x[i]);
+// fflush(stdout);
     }
 
     ret = PDCreg_release_lock(obj2, r2, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for r2\n");
-
+  
+    MPI_Barrier(MPI_COMM_WORLD);
+/*
+if(rank == 0) {
+printf("release is done\n");
+fflush(stdout);}
+*/
+/*
+if(rank == 0) {
+printf("start PDCobj_buf_unmap()\n");
+fflush(stdout);}
+*/
     ret = PDCobj_buf_unmap(obj2, r2);
     if (ret != SUCCEED)
         printf("region unmap failed\n");
