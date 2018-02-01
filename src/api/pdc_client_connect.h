@@ -113,7 +113,7 @@ typedef struct metadata_query_args_t {
 /* } client_name_cache_t; */
 
 struct buf_map_args {
-    int         ret;
+    int32_t     ret;
 };
 
 struct region_map_args {
@@ -125,9 +125,18 @@ struct region_unmap_args {
 };
 
 struct object_unmap_args {
+    int32_t     ret;
+};
+
+struct region_lock_args {
+    pbool_t     *status;
     int         ret;
 };
 
+struct region_release_args {
+    pbool_t     *status;
+    int         ret;
+};
 /**
  * Request from client to get address of the server
  *
