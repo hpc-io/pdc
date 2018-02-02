@@ -5316,8 +5316,6 @@ static hg_return_t server_send_buf_unmap_rpc_cb(const struct hg_cb_info *callbac
 
     FUNC_ENTER(NULL);
 
-printf("enter server_send_buf_unmap_rpc_cb()\n");
-fflush(stdout);
     tranx_args = (struct transfer_buf_unmap_args *) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
@@ -5370,10 +5368,6 @@ perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle)
                 free(elt);
             }
         }
-//if(in->remote_obj_id == 2000005) {
-printf("enter PDC_Meta_Server_buf_unmap(): responding from same node\n");
-fflush(stdout);
-//}
         out.ret = 1;
         HG_Respond(*handle, NULL, NULL, &out);
         HG_Free_input(*handle, in);
@@ -5393,10 +5387,6 @@ fflush(stdout);
             buf_unmap_args = (struct transfer_buf_unmap_args *)malloc(sizeof(struct transfer_buf_unmap_args));
             buf_unmap_args->handle = *handle;
             buf_unmap_args->in = *in;
-//if(in->remote_obj_id == 2000005) {
-printf("addr valid: enter PDC_Meta_Server_buf_unmap(): start HG_Forward\n");
-fflush(stdout);
-//}
             hg_ret = HG_Forward(server_send_buf_unmap_handle, server_send_buf_unmap_rpc_cb, buf_unmap_args, in);
             if (hg_ret != HG_SUCCESS) {
                 HG_Destroy(server_send_buf_unmap_handle);
@@ -5716,6 +5706,7 @@ perr_t PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_p
              addr_args = (struct transfer_buf_map *)malloc(sizeof(struct transfer_buf_map));
              addr_args->handle = *handle;
              addr_args->in = *in;
+
              PDC_Server_buf_map_lookup_server_id(in->meta_server_id, addr_args);
         }
         else {

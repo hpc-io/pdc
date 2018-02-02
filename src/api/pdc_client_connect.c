@@ -2551,17 +2551,10 @@ perr_t PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct
     
     if (unmap_args.ret != 1) 
         PGOTO_ERROR(FAIL,"PDC_CLIENT: buf unmap failed...");
-else {
-//if(remote_obj_id == 2000005){
-printf("rank %d: buf unmap success\n", pdc_client_mpi_rank_g);
-fflush(stdout);
-//}
 
-} 
 done:
     HG_Destroy(client_send_buf_unmap_handle);
     FUNC_LEAVE(ret_value);
-
 }
 
 perr_t PDC_Client_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, struct PDC_region_info *reginfo, PDC_var_type_t data_type)
