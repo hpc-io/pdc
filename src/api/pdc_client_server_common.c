@@ -2005,10 +2005,6 @@ HG_TEST_RPC_CB(buf_unmap, handle)
         HG_Destroy(handle);
     }
 
-if(in.remote_obj_id == 2000005) {
-printf("HG_TEST_RPC_CB(buf_unmap, handle) calls PDC_Meta_Server_buf_unmap()\n");
-fflush(stdout);
-}
     ret = PDC_Meta_Server_buf_unmap(&in, &handle);
     if(ret != SUCCEED) {
         printf("===PDC_DATA_SERVER: HG_TEST_RPC_CB(buf_unmap, handle) - PDC_Meta_Server_buf_unmap() failed");
@@ -2069,11 +2065,6 @@ HG_TEST_RPC_CB(buf_unmap_server, handle)
 
     // Decode input
     HG_Get_input(handle, &in);
-
-if(in.remote_obj_id == 2000005) {    
-printf("enter HG_TEST_RPC_CB(buf_unmap_server, handle)\n");
-fflush(stdout);
-}
 
     target_obj = PDC_Server_get_obj_metadata(in.remote_obj_id);
     if (target_obj == NULL) {
