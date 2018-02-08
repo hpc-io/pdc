@@ -1238,12 +1238,7 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
         out.ret = 0;
         PGOTO_ERROR(HG_PROTOCOL_ERROR, "Error in region_release_bulk_transfer_cb()");
     }
-/*
-if(bulk_args->in.obj_id == 2000002) {
-printf("enter buf_map_region_release_bulk_transfer_cb()\n");
-fflush(stdout);
-}
-*/
+
 //void *data_buf = bulk_args->data_buf;
 /*
 printf("address is %lld\n", data_buf);
@@ -1272,7 +1267,8 @@ fflush(stdout);
 
 //    pdc_region_transfer_t_to_region_info(bulk_args->remote_region, remote_reg_info);
 
-/*    remote_reg_info = (struct PDC_region_info *)malloc(sizeof(struct PDC_region_info));
+/*
+    remote_reg_info = (struct PDC_region_info *)malloc(sizeof(struct PDC_region_info));
     if(remote_reg_info == NULL) {
         error = 1;
         PGOTO_ERROR(HG_OTHER_ERROR, "remote_reg_info memory allocation failed\n");
@@ -1285,7 +1281,6 @@ fflush(stdout);
 //    PDC_Server_data_write_direct(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf+(bulk_args->remote_region).start_0);
     PDC_Server_data_write_direct(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf);
 */
-
 
 done:
     fflush(stdout);
@@ -1372,7 +1367,7 @@ hg_uint32_t count;
     }
 
     // Perform lock release function
-    PDC_Meta_Server_region_release(&(bulk_args->in), &out);
+    PDC_Data_Server_region_release(&(bulk_args->in), &out);
 //    HG_Respond(bulk_args->handle, NULL, NULL, &out);
 /*
     data_buf = (void *)malloc(size);
@@ -1501,7 +1496,7 @@ region_release_update_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     handle = bulk_args->handle;
 
     // Perform lock releae function
-    PDC_Meta_Server_region_release(&(bulk_args->in), &out);
+    PDC_Data_Server_region_release(&(bulk_args->in), &out);
     HG_Respond(handle, NULL, NULL, &out);
 
     // Send notification to mapped regions, when data transfer is done
@@ -1534,10 +1529,7 @@ HG_TEST_RPC_CB(region_release_server, handle)
     FUNC_ENTER(NULL);
 
     HG_Get_input(handle, &in);
-if(in.obj_id == 2000002) {
-printf("enter HG_TEST_RPC_CB(region_release_server, handle)\n");
-fflush(stdout);
-}
+
     // Perform lock function
     PDC_Meta_Server_region_release(&in, &out);
 
@@ -1716,7 +1708,7 @@ HG_TEST_RPC_CB(region_release, handle)
         if(dirty_reg == 0) {
             // TODO
             // Perform lock release function
-            PDC_Meta_Server_region_release(&in, &out);
+            PDC_Data_Server_region_release(&in, &out);
 
             HG_Respond(handle, NULL, NULL, &out);  // move to transfer_cb
             /* printf("==PDC_SERVER: region_lock_cb(): returned %" PRIu64 "\n", out.ret); */

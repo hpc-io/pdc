@@ -2749,6 +2749,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     // Init server
 //    *hg_class = HG_Init(na_info_string, NA_TRUE);
     init_info.na_init_info.progress_mode = NA_NO_BLOCK;
+    init_info.auto_sm = HG_TRUE;
     *hg_class = HG_Init_opt(na_info_string, NA_TRUE, &init_info);
     if (*hg_class == NULL) {
         printf("Error with HG_Init()\n");
@@ -3981,6 +3982,12 @@ perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
         /* request_region->stride[3] = in->region.stride_3; */
     }
     
+/*
+printf("enter PDC_Data_Server_region_lock()\n");
+printf("request_region->start[0] = %lld\n", request_region->start[0]);
+printf("request_region->count[0] = %lld\n", request_region->count[0]);
+fflush(stdout);
+*/
     new_obj_reg = PDC_Server_get_obj_region(in->obj_id);
     if(new_obj_reg == NULL) {
         new_obj_reg = (data_server_region_t *)malloc(sizeof(struct data_server_region_t));
@@ -4355,7 +4362,12 @@ perr_t PDC_Data_Server_region_release(struct buf_map_release_bulk_args *bulk_arg
         request_region.count[3]  = in->region.count_3;
         /* request_region->stride[3] = in->region.stride_3; */
     }
-
+/*
+printf("enter PDC_Data_Server_region_release()\n");
+printf("request_region.start[0] = %lld\n", request_region.start[0]);
+printf("request_region.count[0] = %lld\n", request_region.count[0]);
+fflush(stdout);
+*/
     obj_reg = PDC_Server_get_obj_region(in->obj_id);
     /* printf("==PDC_SERVER: releasing lock ... "); */
     // Find the lock region in the list and remove it
