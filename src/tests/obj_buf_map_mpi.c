@@ -54,11 +54,12 @@ int main(int argc, char **argv)
     perr_t ret;
     float *x;
     int x_dim = 64;
-    long numparticles = 992;
-    const int my_data_size = 992;
-    uint64_t dims[1] = {my_data_size};  // {8388608};
+    long numparticles = 8388608;
+//    const int my_data_size = 992;
+    uint64_t dims[1] = {numparticles};  // {8388608};
     int ndim = 1;
     uint64_t *offset;
+    uint64_t *offset_remote;
     uint64_t *mysize;
 
 #ifdef ENABLE_MPI
@@ -101,14 +102,16 @@ int main(int argc, char **argv)
     }
 
     offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
+    offset_remote = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
     mysize = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
-    offset[0] = rank * my_data_size/size;
-    mysize[0] = my_data_size/size;
+    offset[0] = 0;
+    offset_remote[0] = rank*numparticles; 
+    mysize[0] = numparticles;
 
     // create a region
     r1 = PDCregion_create(1, offset, mysize);
 //    printf("first region id: %lld\n", r1);
-    r2 = PDCregion_create(1, offset, mysize);
+    r2 = PDCregion_create(1, offset_remote, mysize);
 //    printf("second region id: %lld\n", r2);
 
     ret = PDCobj_buf_map(&x[0], PDC_FLOAT, r1, obj2, r2);

@@ -40,6 +40,8 @@
 
 #include "pdc.h"
 
+#define NPARTICLES      8388608
+
 double uniform_random_number()
 {
     return (((double)rand())/((double)(RAND_MAX)));
@@ -74,6 +76,7 @@ int main(int argc, char **argv)
     uint64_t dims[1];
     int ndim = 1;
     uint64_t *offset;
+    uint64_t *offset_remote;
     uint64_t *mysize;
 
 #ifdef ENABLE_MPI
@@ -82,14 +85,17 @@ int main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
+/*
     if (argc < 2) {
         print_usage();
         return 0;
     }
-    numparticles = atoll(argv[1]);
+    numparticles = atoll(argv[1]) * 1024 * 1024;
     if (rank == 0) {
         printf("Writing %" PRIu64 " number of particles with %d clients.\n", numparticles, size);
     }
+*/
+    numparticles = NPARTICLES;
     dims[0] = numparticles;
 
     x = (float *)malloc(numparticles*sizeof(float));
@@ -196,9 +202,11 @@ int main(int argc, char **argv)
 //    printf("rank %d: meta id is %lld\n", rank, res->obj_id);
 
     offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
+    offset_remote = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
     mysize = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
-    offset[0] = rank * numparticles/size;
-    mysize[0] = numparticles/size;
+    offset[0] = 0;
+    offset_remote[0] = rank * numparticles;
+    mysize[0] = numparticles;
 
     // create a region
     region_x = PDCregion_create(ndim, offset, mysize);
@@ -210,14 +218,14 @@ int main(int argc, char **argv)
     region_id1 = PDCregion_create(ndim, offset, mysize);
     region_id2 = PDCregion_create(ndim, offset, mysize);
 
-    region_xx = PDCregion_create(ndim, offset, mysize);
-    region_yy = PDCregion_create(ndim, offset, mysize);
-    region_zz = PDCregion_create(ndim, offset, mysize);
-    region_pxx = PDCregion_create(ndim, offset, mysize);
-    region_pyy = PDCregion_create(ndim, offset, mysize);
-    region_pzz = PDCregion_create(ndim, offset, mysize);
-    region_id11 = PDCregion_create(ndim, offset, mysize);
-    region_id22 = PDCregion_create(ndim, offset, mysize);
+    region_xx = PDCregion_create(ndim, offset_remote, mysize);
+    region_yy = PDCregion_create(ndim, offset_remote, mysize);
+    region_zz = PDCregion_create(ndim, offset_remote, mysize);
+    region_pxx = PDCregion_create(ndim, offset_remote, mysize);
+    region_pyy = PDCregion_create(ndim, offset_remote, mysize);
+    region_pzz = PDCregion_create(ndim, offset_remote, mysize);
+    region_id11 = PDCregion_create(ndim, offset_remote, mysize);
+    region_id22 = PDCregion_create(ndim, offset_remote, mysize);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -444,7 +452,6 @@ fflush(stdout);
     ret = PDCobj_buf_unmap(obj_id22, region_id22);
     if (ret != SUCCEED)
         printf("region id22 unmap failed\n");
-
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
