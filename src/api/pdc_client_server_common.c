@@ -1267,7 +1267,6 @@ fflush(stdout);
 
 //    pdc_region_transfer_t_to_region_info(bulk_args->remote_region, remote_reg_info);
 
-/*
     remote_reg_info = (struct PDC_region_info *)malloc(sizeof(struct PDC_region_info));
     if(remote_reg_info == NULL) {
         error = 1;
@@ -1280,7 +1279,6 @@ fflush(stdout);
     (remote_reg_info->size)[0] = (bulk_args->remote_region).count_0;
 //    PDC_Server_data_write_direct(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf+(bulk_args->remote_region).start_0);
     PDC_Server_data_write_direct(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf);
-*/
 
 done:
     fflush(stdout);
@@ -1455,16 +1453,18 @@ fflush(stdout);
         if(ret_value != SUCCEED)
             printf("==PDC SERVER: PDC_Server_data_write_direct() failed\n");
     }
-    free(bulk_args->server_region->size);
-    free(bulk_args->server_region->offset);
-    free(bulk_args->server_region);
+    // Tang: commented the following lines as PDC_Server_data_write_direct is executed as callback function
+    //       after getting metadata from remote server in the next round of server_loop
+    /* free(bulk_args->server_region->size); */
+    /* free(bulk_args->server_region->offset); */
+    /* free(bulk_args->server_region); */
 
-//done:
-//    out.ret = 1;
-//    HG_Respond(bulk_args->handle, NULL, NULL, &out);
-    /* printf("==PDC_SERVER: region_release_bulk_transfer_cb(): returned %" PRIu64 "\n", out.ret); */
+/* //done: */
+/* //    out.ret = 1; */
+/* //    HG_Respond(bulk_args->handle, NULL, NULL, &out); */
+    /* /1* printf("==PDC_SERVER: region_release_bulk_transfer_cb(): returned %" PRIu64 "\n", out.ret); *1/ */
 
-    HG_Free_input(bulk_args->handle, &(bulk_args->in));
+    /* HG_Free_input(bulk_args->handle, &(bulk_args->in)); */
     
     if(all_reg_locked == 1) {
         HG_Respond(bulk_args->handle, NULL, NULL, &out);
@@ -2793,7 +2793,7 @@ HG_TEST_RPC_CB(get_metadata_by_id, handle)
 
     // Decode input
     HG_Get_input(handle, &in);
-    printf("==PDC_SERVER: Got metadata retrieval: obj_id=%" PRIu64 "\n", in.obj_id);
+//    printf("==PDC_SERVER: Got metadata retrieval: obj_id=%" PRIu64 "\n", in.obj_id);
 
     PDC_Server_get_local_metadata_by_id(in.obj_id, &target);
 
