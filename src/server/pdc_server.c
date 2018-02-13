@@ -8415,6 +8415,7 @@ PDC_Server_get_metadata_by_id_cb(const struct hg_cb_info *callback_info)
 done:
     HG_Free_output(handle, &output);
     free(cb_args);
+    HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
 } // PDC_Server_get_metadata_by_id_cb
 
@@ -8488,7 +8489,7 @@ perr_t PDC_Server_get_metadata_by_id_with_cb(uint64_t obj_id, perr_t (*cb)(), vo
         /* work_todo_g = 1; */
         /* PDC_Server_check_response(&hg_context_g, &work_todo_g); */
 
-        HG_Destroy(get_metadata_by_id_handle);
+//        HG_Destroy(get_metadata_by_id_handle);
     }
 
 done:
