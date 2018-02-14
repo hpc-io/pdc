@@ -1,11 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "mpi.h"
 #include "hdf5.h"
 #include "pdc.h"
 
 #define MAX_NAME 1024
 #define MAX_TAG_LEN 16384
+#define MAX_FILES 2500
+#define MAX_FILENAME_LEN 64
 
 void do_dtype(hid_t, hid_t, int);
 void do_dset(hid_t did, char *name);
@@ -16,15 +19,17 @@ void scan_attrs(hid_t);
 void do_plist(hid_t);
 
 void print_usage() {
-    printf("Usage: srun -n ./h5boss_v2_import /path/to/h5boss_file\n");
+    printf("Usage: srun -n 2443 ./h5boss_v2_import h5boss_filenames\n");
 }
 
 char tags_g[MAX_TAG_LEN];
 char *tags_ptr_g;
+char dset_name_g[MAX_TAG_LEN];
 hsize_t tag_size_g;
 int  ndset = 0;
-FILE *summary_fp_g;
+/* FILE *summary_fp_g; */
 int max_tag_size_g = 0;
+pdcid_t pdc_id_g, cont_prop_g, cont_id_g, obj_prop_g;
 
 int add_tag(char *str)
 {
@@ -38,12 +43,12 @@ int add_tag(char *str)
         return 0;
     }
 
-    // Remove the trailing ','
-    if (*str == '}' || *str == ')' || *str == ']' ) {
-        if (*(--tags_ptr_g) != ',') {
-            tags_ptr_g++;
-        }
-    }
+    /* // Remove the trailing ',' */
+    /* if (*str == '}' || *str == ')' || *str == ']' ) { */
+    /*     if (*(--tags_ptr_g) != ',') { */
+    /*         tags_ptr_g++; */
+    /*     } */
+    /* } */
 
     str_len = strlen(str);
     strncpy(tags_ptr_g, str, str_len);
@@ -57,38 +62,122 @@ int add_tag(char *str)
 int
 main(int argc, char **argv)
 {
+    int rank, size;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
 
     hid_t    file;
     hid_t    grp;
-
     herr_t   status;
 
-
+    int i, my_count, total_count;
     char* filename;
-    char* summary_fname = "/global/cscratch1/sd/houhun/tag_size_summary.csv";
+    char all_filenames[MAX_FILES][MAX_FILENAME_LEN];
+    char my_filenames[MAX_FILES][MAX_FILENAME_LEN];
+    int  send_counts[MAX_FILES];
+    int  displs[MAX_FILES];
+    /* char* summary_fname = "/global/cscratch1/sd/houhun/tag_size_summary.csv"; */
 
-    summary_fp_g = fopen(summary_fname, "a+");
+    /* summary_fp_g = fopen(summary_fname, "a+"); */
 
-    if (argc != 2)
-        print_usage();
+    // create a pdc
+    pdc_id_g = PDC_init("pdc");
+
+    // create a container property
+    cont_prop_g = PDCprop_create(PDC_CONT_CREATE, pdc_id_g);
+    if(cont_prop_g <= 0)
+        printf("Fail to create container property @ line  %d!\n", __LINE__);
+
+    // create a container
+    cont_id_g = PDCcont_create("VPIC_cont", cont_prop_g);
+    if(cont_id_g <= 0)
+        printf("Fail to create container @ line  %d!\n", __LINE__);
+
+    // create object property for float and int
+    obj_prop_g= PDCprop_create(PDC_OBJ_CREATE, pdc_id_g);
+
+    uint64_t float_dims[1] = {1};
+
+    PDCprop_set_obj_dims(obj_prop_g, 1, float_dims);
+    PDCprop_set_obj_type(obj_prop_g, PDC_FLOAT);
+    PDCprop_set_obj_time_step(obj_prop_g, 0);
+    PDCprop_set_obj_user_id( obj_prop_g, getuid());
+    PDCprop_set_obj_app_name(obj_prop_g, "H5BOSS");
+
+    if (argc != 2) {
+        if (rank == 0) 
+            print_usage();
+    }
     else {
-        filename = argv[1];
 
-        /*
-         *  Example: open a file, open the root, scan the whole file.
-         */
-        file = H5Fopen(filename, H5F_ACC_RDWR, H5P_DEFAULT);
+        // Rank 0 reads the filename list and distribute data to other ranks
+        if (rank == 0) {
 
-        grp = H5Gopen(file,"/", H5P_DEFAULT);
-        scan_group(grp);
+            FILE *filenames_fp = fopen(argv[1], "r");
+            i = 0;
+            while (fgets(all_filenames[i], MAX_FILENAME_LEN, filenames_fp)) {
+                /* printf("%s\n", all_filenames[i]); */
+                // Remove the trailing '\n'
+                int len = strlen(all_filenames[i]);
+                all_filenames[i][len-1] = 0;
+                i++;
+            }
+            total_count = i;
+            fclose(filenames_fp);
 
-        status = H5Fclose(file);
+            printf("Running with %d clients, %d files\n", size, total_count);
+            fflush(stdout);
+        }
 
-        printf("%s, %d\n", filename, max_tag_size_g);
-        /* printf("\n\n======================\nNumber of datasets: %d\n", ndset); */
+        MPI_Bcast(&total_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+        if (total_count < size) {
+            printf("More MPI ranks than total number of files, exiting...\n");
+            goto done;
+        }
+
+        my_count = total_count / size;
+        for (i = 0; i < size; i++) {
+            send_counts[i] = my_count * MAX_FILENAME_LEN;
+            displs[i]      = i * send_counts[i];
+        }
+
+        // Last rank takes care of leftovers
+        if (rank == size - 1) {
+            my_count += total_count % size;
+        }
+        send_counts[size-1] += (total_count % size * MAX_FILENAME_LEN);
+
+        // Distribute the data
+        MPI_Scatterv(&all_filenames[0][0], send_counts, displs, MPI_CHAR, 
+                     &my_filenames[0][0],  my_count*MAX_FILENAME_LEN, MPI_CHAR, 0, MPI_COMM_WORLD);
+
+
+        /* for (i = 0; i < my_count; i++) { */
+        /*     printf("%d: %d [%s] \n", rank, my_count, my_filenames[i]); */
+        /* } */
+
+        for (i = 0; i < my_count; i++) {
+            filename = my_filenames[i];
+            printf("%d: processing [%s]\n", rank, my_filenames[i]);
+            fflush(stdout);
+            file = H5Fopen(filename, H5F_ACC_RDWR, H5P_DEFAULT);
+
+            grp = H5Gopen(file,"/", H5P_DEFAULT);
+            scan_group(grp);
+
+            status = H5Fclose(file);
+
+            printf("%s, %d\n", filename, max_tag_size_g);
+            /* printf("\n\n======================\nNumber of datasets: %d\n", ndset); */
+        }
     }
 
-    fclose(summary_fp_g);
+    /* fclose(summary_fp_g); */
+
+done:
+    MPI_Finalize();
     return 0;
 }
 
@@ -203,7 +292,8 @@ do_dset(hid_t did, char *name)
      *  Other info., not shown here: number of links, object id
      */
     H5Iget_name(did, ds_name, MAX_NAME  );
-    add_tag(ds_name);
+    strcpy(dset_name_g, ds_name);
+    /* add_tag(ds_name); */
 
     name_len = strlen(ds_name);
     for (i = name_len; i >= 0; i--) {
@@ -214,15 +304,14 @@ do_dset(hid_t did, char *name)
     }
     /* printf("[%s] {\n", obj_name); */
 
-    fprintf(summary_fp_g, "%s, ", ds_name);
+    /* fprintf(summary_fp_g, "%s, ", ds_name); */
 
     /*
      * Get dataset information: dataspace, data type
      */
     sid = H5Dget_space(did); /* the dimensions of the dataset (not shown) */
     tid = H5Dget_type(did);
-    /* printf(" DATA TYPE:\n"); */
-    add_tag(",DT:");
+    /* add_tag(",DT:"); */
 
     do_dtype(tid, did, 0);
 
@@ -254,10 +343,20 @@ do_dset(hid_t did, char *name)
     H5Sclose(sid);
 
 
+    // Create a pdc object per dataset with tag
+    PDCprop_set_obj_tags(obj_prop_g, tags_g);
+    pdcid_t obj_id = PDCobj_create(cont_id_g, dset_name_g, obj_prop_g);
+    if (obj_id <= 0) {    
+        printf("Error getting an object %s from server, exit...\n", dset_name_g);
+    }
+    /* else { */
+    /*     printf("created %s with tag size %d [%s]\n", dset_name_g, tag_size_g, tags_g); */
+    /* } */
+
     /* printf("} [%s] tag_size %d  \n========================\n%s\n========================\n\n\n", */
     /*         obj_name, tag_size_g, tags_g); */
     /* printf("size %d\n%s\n\n", tag_size_g, tags_g); */
-    fprintf(summary_fp_g, "%d\n", tag_size_g);
+    /* fprintf(summary_fp_g, "%d\n", tag_size_g); */
     if (tag_size_g > max_tag_size_g) {
         max_tag_size_g = tag_size_g;
     }

@@ -29,6 +29,8 @@ set(PROGRAMS
     h5boss_pdc_query 
     create_symlink 
     h5boss_v2_import
+    h5boss_dataset_stat
+    h5boss_v1_import_mpi
     )
 
 foreach(program ${PROGRAMS})
