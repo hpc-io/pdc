@@ -246,10 +246,14 @@ typedef struct region_buf_map_t {
 
 typedef struct data_server_region_t {
     uint64_t obj_id;
+    int fd;                           // file handle
+
     // For region lock list
     region_list_t *region_lock_head;
     // For buf map
     region_buf_map_t *region_buf_map_head;
+    // For region storage list
+//    region_list_t *region_storage_head;
     // For region map
     region_map_t *region_map_head;
 

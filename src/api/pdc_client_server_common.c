@@ -770,6 +770,8 @@ perr_t PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *loc
 perr_t PDC_Server_local_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status) {return SUCCEED;}
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs) {return SUCCEED;}
 perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_t obj_id) {return NULL;}
+perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
+perr_t PDC_Server_data_read_in(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
 perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
 perr_t PDC_Server_data_read_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
 perr_t PDC_SERVER_notify_region_update_to_client(uint64_t meta_id, uint64_t reg_id, int32_t client_id) {return SUCCEED;}
@@ -1239,8 +1241,8 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
         PGOTO_ERROR(HG_PROTOCOL_ERROR, "Error in region_release_bulk_transfer_cb()");
     }
 
-//void *data_buf = bulk_args->data_buf;
 /*
+void *data_buf = bulk_args->data_buf;
 printf("address is %lld\n", data_buf);
 printf("first data is %d\n", *(int *)(data_buf+24));
 printf("next is %d\n", *(int *)(data_buf+28));
@@ -1250,15 +1252,16 @@ printf("next is %d\n", *(int *)(data_buf+56));
 printf("next is %d\n", *(int *)(data_buf+60));
 fflush(stdout);
 */
-
-//printf("first data is %f\n", *(float *)(data_buf));
-//printf("next is %f\n", *(float *)(data_buf+4));
-//printf("next is %f\n", *(float *)(data_buf+8));
-//printf("next is %f\n", *(float *)(data_buf+12));
-//fflush(stdout);
-
+/*
+void *data_buf = bulk_args->data_buf;
+printf("first data is %f\n", *(float *)(data_buf));
+printf("next is %f\n", *(float *)(data_buf+4));
+printf("next is %f\n", *(float *)(data_buf+8));
+printf("next is %f\n", *(float *)(data_buf+12));
+fflush(stdout);
+*/
     // Perform lock release function
-    PDC_Data_Server_region_release(bulk_args, &out);
+//    PDC_Data_Server_region_release(bulk_args, &out);
 //    PDC_Data_Server_region_release(&(bulk_args->in), &out, &(bulk_args->handle));
 //    HG_Respond(bulk_args->handle, NULL, NULL, &out);
   
@@ -1278,7 +1281,10 @@ fflush(stdout);
     (remote_reg_info->offset)[0] = (bulk_args->remote_region).start_0;
     (remote_reg_info->size)[0] = (bulk_args->remote_region).count_0;
 //    PDC_Server_data_write_direct(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf+(bulk_args->remote_region).start_0);
-    PDC_Server_data_write_direct(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf);
+    PDC_Server_data_write_out(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf);
+
+    // Perform lock release function
+    PDC_Data_Server_region_release(bulk_args, &out);
 
 done:
     fflush(stdout);

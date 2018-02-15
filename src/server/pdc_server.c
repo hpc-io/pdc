@@ -3860,6 +3860,7 @@ fflush(stdout);
         new_obj_reg->obj_id = in->obj_id;
         new_obj_reg->region_lock_head = NULL;
         new_obj_reg->region_buf_map_head = NULL;
+//        new_obj_reg->region_storage_head = NULL;
         DL_APPEND(dataserver_region_g, new_obj_reg);
     }
 
@@ -5047,6 +5048,9 @@ perr_t PDC_Data_Server_buf_unmap(buf_unmap_in_t *in)
             free(elt);
         }
     }
+    if(target_obj->region_buf_map_head == NULL && pdc_server_rank_g == 0) {
+        close(target_obj->fd);
+    }
 
 done:
     FUNC_LEAVE(ret_value);
@@ -5072,8 +5076,6 @@ static hg_return_t server_send_buf_unmap_addr_rpc_cb(const struct hg_cb_info *ca
     }
 
 done:
-printf("server_send_buf_unmap_addr_rpc_cb() sending HG_Respond()\n");
-fflush(stdout);
     HG_Respond(tranx_args->handle, NULL, NULL, &out);
     HG_Free_input(tranx_args->handle, &(tranx_args->in));
     HG_Destroy(tranx_args->handle);
@@ -5113,10 +5115,6 @@ buf_unmap_lookup_remote_server_cb(const struct hg_cb_info *callback_info)
     }
     HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, buf_unmap_server_register_id_g, &server_send_buf_unmap_handle);
 
-//if(tranx_args->in.remote_obj_id == 2000005) {
-printf("addr invalid: enter buf_unmap_lookup_remote_server_cb(): start HG_Forward\n");
-fflush(stdout);
-//}
     ret_value = HG_Forward(server_send_buf_unmap_handle, server_send_buf_unmap_addr_rpc_cb, tranx_args, &(tranx_args->in)); 
     if (ret_value != HG_SUCCESS) {
         error = 1;
@@ -5147,8 +5145,6 @@ perr_t PDC_Server_buf_unmap_lookup_server_id(int remote_server_id, struct transf
 
     FUNC_ENTER(NULL);
 
-printf("enter PDC_Server_buf_unmap_lookup_server_id()\n");
-fflush(stdout);
     if (is_debug_g == 1) {
         printf("==PDC_SERVER[%d]: Testing connection to remote server %d: %s\n",
                 pdc_server_rank_g, remote_server_id, pdc_remote_server_info_g[remote_server_id].addr_string);
@@ -5289,6 +5285,9 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
     data_server_region_t *elt = NULL;
     region_list_t *elt_reg;
     region_buf_map_t *buf_map_ptr = NULL;
+    char *data_path = NULL;
+    char *user_specified_data_path = NULL;
+    char storage_location[ADDR_MAX];
 
     FUNC_ENTER(NULL);
 
@@ -5300,6 +5299,27 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
         new_obj_reg->obj_id = in->remote_obj_id;
         new_obj_reg->region_lock_head = NULL;
         new_obj_reg->region_buf_map_head = NULL;
+//        new_obj_reg->region_storage_head = NULL;
+
+        // Generate a location for data storage for data server to write
+        user_specified_data_path = getenv("PDC_DATA_LOC");
+        if (user_specified_data_path != NULL)
+            data_path = user_specified_data_path;
+        else {
+            data_path = getenv("SCRATCH");
+            if (data_path == NULL)
+                data_path = ".";
+        }
+        // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
+        sprintf(storage_location, "%s/pdc_data/%" PRIu64 ".bin",
+            data_path, in->remote_obj_id);
+        pdc_mkdir(storage_location);
+        new_obj_reg->fd = open(storage_location, O_WRONLY|O_CREAT, 0666);
+        if(new_obj_reg->fd == -1){
+            printf("==PDC_SERVER[%d]: open %s failed\n", pdc_server_rank_g, storage_location);
+            goto done;
+        }
+
         DL_APPEND(dataserver_region_g, new_obj_reg);
     }
 
@@ -9518,6 +9538,62 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region_info, void *buf)
+{
+    perr_t ret_value = SUCCEED;
+    region_list_t *io_region = NULL;
+    char *data_path = NULL;
+    char *user_specified_data_path = NULL;
+    int stripe_count, stripe_size;
+    int fd;
+    size_t i;
+    ssize_t write_bytes; 
+    data_server_region_t *region = NULL;
+
+    FUNC_ENTER(NULL);
+
+/*
+    io_region = (region_list_t*)malloc(sizeof(region_list_t));
+    PDC_init_region_list(io_region);
+    pdc_region_info_to_list_t(region_info, io_region);
+    io_region->access_type = WRITE;
+    io_region->buf = buf;
+*/
+/*
+#ifdef ENABLE_LUSTRE
+        if (pdc_nost_per_file_g != 1)
+            stripe_count = 248 / pdc_server_size_g;
+        else
+            stripe_size  = 16;                      // MB
+        PDC_Server_set_lustre_stripe(io_region->storage_location, stripe_count, stripe_size);
+
+        if (is_debug_g == 1 && pdc_server_rank_g == 0) {
+            printf("storage_location is %s\n", io_region->storage_location);
+        }
+#endif
+*/
+/*
+    // only working for 1D array
+    io_region->data_size = io_region->count[0];
+//    for (i = 1; i < io_region->ndim; i++)
+//        io_region->data_size *= io_region->count[i];
+*/
+    region = PDC_Server_get_obj_region(obj_id);
+    if(region == NULL) {
+        printf("cannot locate file handle\n");
+        goto done;
+    }
+    write_bytes = pwrite(region->fd, buf, region_info->size[0], region_info->offset[0]);
+//printf("server %d calls pwrite, offset = %lld, size = %lld\n", pdc_server_rank_g, region_info->offset[0], region_info->size[0]);
+    if(write_bytes == -1){
+        printf("==PDC_SERVER[%d]: pwrite %s failed\n", pdc_server_rank_g, io_region->storage_location);
+        goto done;
+    }
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
 /*
  * Server writes buffer to storage of one region without client involvement
  * Read with POSIX within one file
