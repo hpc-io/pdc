@@ -5288,6 +5288,7 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
     char *data_path = NULL;
     char *user_specified_data_path = NULL;
     char storage_location[ADDR_MAX];
+    int stripe_count, stripe_size;
 
     FUNC_ENTER(NULL);
 
@@ -5311,9 +5312,21 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
                 data_path = ".";
         }
         // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
-        sprintf(storage_location, "%s/pdc_data/%" PRIu64 ".bin",
-            data_path, in->remote_obj_id);
+        sprintf(storage_location, "%s/pdc_data/%" PRIu64 "/server%d/s%04d.bin",
+            data_path, in->remote_obj_id, pdc_server_rank_g, pdc_server_rank_g);
         pdc_mkdir(storage_location);
+
+#ifdef ENABLE_LUSTRE
+        if (pdc_nost_per_file_g != 1)
+            stripe_count = 248 / pdc_server_size_g;
+        else
+            stripe_count = pdc_nost_per_file_g;
+        PDC_Server_set_lustre_stripe(storage_location, stripe_count, stripe_size);
+
+        if (is_debug_g == 1 && pdc_server_rank_g == 0) {
+            printf("storage_location is %s\n", storage_location);
+        }
+#endif
         new_obj_reg->fd = open(storage_location, O_WRONLY|O_CREAT, 0666);
         if(new_obj_reg->fd == -1){
             printf("==PDC_SERVER[%d]: open %s failed\n", pdc_server_rank_g, storage_location);
@@ -9548,6 +9561,8 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region
     int fd;
     size_t i;
     ssize_t write_bytes; 
+    char *nclient_per_node_str;
+    int nclient_per_node, default_nclient_per_node = 31;
     data_server_region_t *region = NULL;
 
     FUNC_ENTER(NULL);
@@ -9583,8 +9598,14 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region
         printf("cannot locate file handle\n");
         goto done;
     }
-    write_bytes = pwrite(region->fd, buf, region_info->size[0], region_info->offset[0]);
-//printf("server %d calls pwrite, offset = %lld, size = %lld\n", pdc_server_rank_g, region_info->offset[0], region_info->size[0]);
+    nclient_per_node_str = (getenv("NCLIENT"));
+    if (nclient_per_node_str == NULL) 
+        nclient_per_node = default_nclient_per_node;
+    else
+      nclient_per_node = atoi(nclient_per_node_str);
+
+    write_bytes = pwrite(region->fd, buf, region_info->size[0], region_info->offset[0]-pdc_server_rank_g*nclient_per_node*region_info->size[0]);
+//printf("server %d calls pwrite, offset = %lld, size = %lld\n", pdc_server_rank_g, region_info->offset[0]-pdc_server_rank_g*nclient_per_node*region_info->size[0], region_info->size[0]);
     if(write_bytes == -1){
         printf("==PDC_SERVER[%d]: pwrite %s failed\n", pdc_server_rank_g, io_region->storage_location);
         goto done;
