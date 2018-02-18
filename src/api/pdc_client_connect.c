@@ -39,6 +39,10 @@
     #include "mpi.h"
 #endif
 
+#ifdef PDC_HAS_CRAY_DRC
+    # include <rdmacred.h>
+#endif
+
 #include "../server/utlist.h"
 
 #include "mercury.h"
@@ -494,6 +498,8 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
+printf("enter client_test_connect_lookup_cb()\n");
+fflush(stdout);
     client_lookup_args = (struct client_lookup_args *) callback_info->arg;
     server_id = client_lookup_args->server_id;
     /* if (is_client_debug_g == 1) { */
@@ -524,6 +530,8 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
     PDC_Client_check_response(&send_context_g);
 
     work_todo_g = 0;
+printf("exit from client_test_connect_lookup_cb()\n");
+fflush(stdout);
 done:
     HG_Destroy(client_test_handle); 
     FUNC_LEAVE(ret_value);
@@ -576,6 +584,9 @@ perr_t PDC_Client_lookup_server(int server_id)
 
     /* printf("==PDC_CLIENT[%d]: - connected to server %d\n", pdc_client_mpi_rank_g, lookup_args.server_id); */
     /* fflush(stdout); */
+printf("end of PDC_Client_lookup_server()\n");
+fflush(stdout);
+
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -837,6 +848,31 @@ int PDC_Client_check_bulk(hg_context_t *hg_context)
     FUNC_LEAVE(ret_value);
 }
 
+#ifdef PDC_HAS_CRAY_DRC
+/* Convert value to string */
+#define DRC_ERROR_STRING_MACRO(def, value, string) \
+  if (value == def) string = #def
+
+static const char *
+drc_strerror(int errnum)
+{
+    const char *errstring = "UNDEFINED";
+
+    DRC_ERROR_STRING_MACRO(DRC_SUCCESS, errnum, errstring);
+    DRC_ERROR_STRING_MACRO(DRC_EINVAL, errnum, errstring);
+    DRC_ERROR_STRING_MACRO(DRC_EPERM, errnum, errstring);
+    DRC_ERROR_STRING_MACRO(DRC_ENOSPC, errnum, errstring);
+    DRC_ERROR_STRING_MACRO(DRC_ECONNREFUSED, errnum, errstring);
+    DRC_ERROR_STRING_MACRO(DRC_ALREADY_GRANTED, errnum, errstring);
+    DRC_ERROR_STRING_MACRO(DRC_CRED_NOT_FOUND, errnum, errstring);
+    DRC_ERROR_STRING_MACRO(DRC_CRED_CREATE_FAILURE, errnum, errstring);
+    DRC_ERROR_STRING_MACRO(DRC_CRED_EXTERNAL_FAILURE, errnum, errstring);
+    DRC_ERROR_STRING_MACRO(DRC_BAD_TOKEN, errnum, errstring);
+
+    return errstring;
+}
+#endif
+
 // Init Mercury class and context
 // Register gen_obj_id rpc
 perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int port)
@@ -854,6 +890,13 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     struct hg_init_info init_info = { 0 };
     char *default_hg_transport = "bmi+tcp";
     char *hg_transport;
+#ifdef PDC_HAS_CRAY_DRC
+    uint32_t credential, cookie;
+    drc_info_handle_t credential_info;
+    char pdc_auth_key[256] = { '\0' };
+    char *auth_key;
+    int rc;
+#endif
     int i;
     
     FUNC_ENTER(NULL);
@@ -876,6 +919,31 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     /*     fprintf(stderr, HG_PORT_NAME " environment variable must be set, e.g.:\nMERCURY_PORT_NAME=\"cci+tcp://22222\"\n"); */
     /*     exit(0); */
     /* } */
+
+// gni starts here
+#ifdef PDC_HAS_CRAY_DRC
+    /* Acquire credential */
+    if (pdc_client_mpi_rank_g == 0) {
+        credential = atoi(getenv("PDC_DRC_KEY")); 
+    } else {
+        MPI_Bcast(&credential, 1, MPI_UINT32_T, 0, MPI_COMM_WORLD);
+    }
+    printf("# Credential is %u\n", credential);
+    rc = drc_access(credential, 0, &credential_info);
+    if (rc != DRC_SUCCESS) { /* failed to access credential */
+        printf("drc_access() failed (%d, %s)", rc,
+            drc_strerror(-rc));
+        ret_value = FAIL;
+        goto done;
+    }
+    cookie = drc_get_first_cookie(credential_info);
+
+    printf("# Cookie is %u\n", cookie);
+    fflush(stdout);
+    sprintf(pdc_auth_key, "%u", cookie);
+    init_info.na_init_info.auth_key = strdup(pdc_auth_key);
+#endif
+// gni ends
 
     /* Initialize Mercury with the desired network abstraction class */
     /* printf("Using %s\n", na_info_string); */
@@ -931,6 +999,8 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     else {
         // Each client connect to its node local server only at start time
         local_server_id = pdc_client_mpi_rank_g/pdc_nclient_per_server_g;
+printf("local_server_id %d: calling PDC_Client_lookup_server()\n", local_server_id);
+fflush(stdout);
         if (PDC_Client_lookup_server(local_server_id) != SUCCEED) {
             printf("==PDC_CLIENT[%d]: ERROR lookup server %d\n", pdc_client_mpi_rank_g, local_server_id);
             ret_value = FAIL;
@@ -949,6 +1019,8 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
         fflush(stdout);
     }
 
+printf("end of PDC_Client_mercury_init()\n");
+fflush(stdout);
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -1071,6 +1143,8 @@ perr_t PDC_Client_init()
 
     srand(time(NULL));
 
+printf("end of PDC_Client_init()\n");
+fflush(stdout);
 done:
     FUNC_LEAVE(ret_value);
 }

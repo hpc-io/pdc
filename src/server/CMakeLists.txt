@@ -17,4 +17,4 @@ add_executable(pdc_server.exe
                dablooms/dablooms.c 
                dablooms/murmur.c 
 )
-target_link_libraries(pdc_server.exe mercury pdcprof -lm -ldl)
+target_link_libraries(pdc_server.exe mercury pdcprof -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES})

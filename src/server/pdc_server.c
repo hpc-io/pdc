@@ -38,6 +38,8 @@
 #include <sys/shm.h>
 #include <sys/mman.h>
 
+#include "config.h"
+
 #ifdef ENABLE_MPI
     #include "mpi.h"
 #endif
@@ -69,6 +71,10 @@ hg_thread_mutex_t pdc_bloom_time_mutex_g;
 hg_thread_mutex_t n_metadata_mutex_g;
 hg_thread_mutex_t data_read_list_mutex_g;
 hg_thread_mutex_t data_write_list_mutex_g;
+#endif
+
+#ifdef PDC_HAS_CRAY_DRC
+# include <rdmacred.h>
 #endif
 
 #define BLOOM_TYPE_T counting_bloom_t
@@ -723,6 +729,8 @@ hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info)
 #ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_lock(&pdc_client_addr_metex_g);
 #endif
+printf("end of PDC_Server_get_client_addr\n");
+fflush(stdout);
 
 done:
     FUNC_LEAVE(ret_value);
@@ -2545,6 +2553,30 @@ perr_t PDC_Server_set_close(void)
     FUNC_LEAVE(ret_value);
 }
 
+#ifdef PDC_HAS_CRAY_DRC
+/* Convert value to string */
+#define DRC_ERROR_STRING_MACRO(def, value, string) \
+  if (value == def) string = #def
+
+static const char *drc_strerror(int errnum)
+{
+    const char *errstring = "UNDEFINED";
+
+    DRC_ERROR_STRING_MACRO(DRC_SUCCESS, errnum, errstring);
+    DRC_ERROR_STRING_MACRO(DRC_EINVAL, errnum, errstring);
+    DRC_ERROR_STRING_MACRO(DRC_EPERM, errnum, errstring);
+    DRC_ERROR_STRING_MACRO(DRC_ENOSPC, errnum, errstring);
+    DRC_ERROR_STRING_MACRO(DRC_ECONNREFUSED, errnum, errstring);
+    DRC_ERROR_STRING_MACRO(DRC_ALREADY_GRANTED, errnum, errstring);
+    DRC_ERROR_STRING_MACRO(DRC_CRED_NOT_FOUND, errnum, errstring);
+    DRC_ERROR_STRING_MACRO(DRC_CRED_CREATE_FAILURE, errnum, errstring);
+    DRC_ERROR_STRING_MACRO(DRC_CRED_EXTERNAL_FAILURE, errnum, errstring);
+    DRC_ERROR_STRING_MACRO(DRC_BAD_TOKEN, errnum, errstring);
+
+    return errstring;
+}
+#endif
+
 /*
  * Callback function of the server to lookup other servers via Mercury RPC
  *
@@ -2571,6 +2603,13 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
      */
     char *default_hg_transport = "bmi+tcp";
     char *hg_transport;
+#ifdef PDC_HAS_CRAY_DRC
+    uint32_t credential, cookie;
+    drc_info_handle_t credential_info;
+    char pdc_auth_key[256] = { '\0' };
+    char *auth_key;
+    int rc;
+#endif
     
     FUNC_ENTER(NULL);
 
@@ -2597,6 +2636,39 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
 
     // Clean up all the tmp files etc
     HG_Cleanup();
+
+//gni starts here
+#ifdef PDC_HAS_CRAY_DRC
+printf("enable PDC_HAS_CRAY_DRC\n");
+fflush(stdout);
+    /* Acquire credential */
+    if (pdc_server_rank_g == 0) {
+        rc = drc_acquire(&credential, 0);
+        if (rc != DRC_SUCCESS) { /* failed to acquire credential */
+            printf("drc_acquire() failed (%d, %s)", rc, drc_strerror(-rc));
+            goto done;
+        }
+    } else {
+        MPI_Bcast(&credential, 1, MPI_UINT32_T, 0, MPI_COMM_WORLD);
+    }
+    printf("# Credential is %u\n", credential);
+    fflush(stdout);
+    rc = drc_access(credential, 0, &credential_info);
+    if (rc != DRC_SUCCESS) { /* failed to access credential */
+        printf("drc_access() failed (%d, %s)", rc,
+            drc_strerror(-rc));
+        ret_value = FAIL; 
+        goto done;
+    }
+    cookie = drc_get_first_cookie(credential_info);
+
+    printf("# Cookie is %u\n", cookie);
+    fflush(stdout);
+    sprintf(pdc_auth_key, "%u", cookie);
+    init_info.na_init_info.auth_key = strdup(pdc_auth_key);
+#endif
+//end of gni
+
     // Init server
 //    *hg_class = HG_Init(na_info_string, NA_TRUE);
     init_info.na_init_info.progress_mode = NA_NO_BLOCK;
