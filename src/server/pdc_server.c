@@ -2642,17 +2642,21 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
 printf("enable PDC_HAS_CRAY_DRC\n");
 fflush(stdout);
     /* Acquire credential */
-    if (pdc_server_rank_g == 0) {
+/*    if (pdc_server_rank_g == 0) {
         rc = drc_acquire(&credential, 0);
-        if (rc != DRC_SUCCESS) { /* failed to acquire credential */
+        if (rc != DRC_SUCCESS) { 
             printf("drc_acquire() failed (%d, %s)", rc, drc_strerror(-rc));
             goto done;
         }
-    } else {
-        MPI_Bcast(&credential, 1, MPI_UINT32_T, 0, MPI_COMM_WORLD);
+    }*/
+    if (pdc_server_rank_g == 0) {
+        credential = atoi(getenv("PDC_DRC_KEY"));
     }
+    MPI_Bcast(&credential, 1, MPI_UINT32_T, 0, MPI_COMM_WORLD);
+    
     printf("# Credential is %u\n", credential);
     fflush(stdout);
+
     rc = drc_access(credential, 0, &credential_info);
     if (rc != DRC_SUCCESS) { /* failed to access credential */
         printf("drc_access() failed (%d, %s)", rc,

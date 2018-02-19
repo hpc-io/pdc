@@ -925,17 +925,23 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     /* Acquire credential */
     if (pdc_client_mpi_rank_g == 0) {
         credential = atoi(getenv("PDC_DRC_KEY")); 
-    } else {
-        MPI_Bcast(&credential, 1, MPI_UINT32_T, 0, MPI_COMM_WORLD);
     }
+    MPI_Bcast(&credential, 1, MPI_UINT32_T, 0, MPI_COMM_WORLD);
+    
     printf("# Credential is %u\n", credential);
+    fflush(stdout);
     rc = drc_access(credential, 0, &credential_info);
     if (rc != DRC_SUCCESS) { /* failed to access credential */
         printf("drc_access() failed (%d, %s)", rc,
             drc_strerror(-rc));
+        fflush(stdout);
         ret_value = FAIL;
         goto done;
     }
+else{
+printf("DRC_SUCCESS\n");
+fflush(stdout);
+}
     cookie = drc_get_first_cookie(credential_info);
 
     printf("# Cookie is %u\n", cookie);
