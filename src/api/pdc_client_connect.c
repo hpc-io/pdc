@@ -509,6 +509,8 @@ fflush(stdout);
     pdc_server_info_g[server_id].addr = callback_info->info.lookup.addr;
     pdc_server_info_g[server_id].addr_valid = 1;
 
+printf("HG_Create from id %d\n", client_test_connect_register_id_g);
+fflush(stdout);
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, client_test_connect_register_id_g, 
               &client_test_handle);
 
@@ -526,12 +528,6 @@ fflush(stdout);
     /* printf("==PDC_CLIENT[%d]: forwarded lookup rpc to server %d\n", pdc_client_mpi_rank_g, server_id); */
     /* fflush(stdout); */
 
-    work_todo_g = 1;
-    PDC_Client_check_response(&send_context_g);
-
-    work_todo_g = 0;
-printf("exit from client_test_connect_lookup_cb()\n");
-fflush(stdout);
 done:
     HG_Destroy(client_test_handle); 
     FUNC_LEAVE(ret_value);

@@ -3207,6 +3207,7 @@ done:
     fflush(stdout);
     /* if (hash_key != NULL) */ 
     /*     free(hash_key); */
+
     FUNC_LEAVE(ret_value);
 } // End of PDC_Server_restart
 
@@ -3228,15 +3229,19 @@ hg_progress_thread(void *arg)
     
     FUNC_ENTER(NULL);
 
+printf("enter hg_progress_thread\n");
+fflush(stdout);
     do {
         if (hg_atomic_cas32(&close_server_g, 1, 1)) break;
 
         /* printf("==PDC_SERVER[%d]: Before HG_Progress()\n", pdc_server_rank_g); */
-        ret = HG_Progress(context, HG_MAX_IDLE_TIME);
+        ret = HG_Progress(context, 100);
         /* printf("==PDC_SERVER[%d]: After HG_Progress()\n", pdc_server_rank_g); */
         /* printf("thread [%d]\n", tid); */
     } while (ret == HG_SUCCESS || ret == HG_TIMEOUT);
 
+printf("leaving hg_progress_thread\n");
+fflush(stdout);
     hg_thread_exit(tret);
 
     return tret;
@@ -3263,7 +3268,7 @@ static perr_t PDC_Server_multithread_loop(hg_context_t *context)
         if (hg_atomic_get32(&close_server_g)) break;
 
         /* printf("==PDC_SERVER[%d]: Before HG_Trigger()\n", pdc_server_rank_g); */
-        ret = HG_Trigger(context, 0, 1, &actual_count);
+        ret = HG_Trigger(context, HG_MAX_IDLE_TIME, 1, NULL);
         /* printf("==PDC_SERVER[%d]: After HG_Trigger()\n", pdc_server_rank_g); */
     } while (ret == HG_SUCCESS || ret == HG_TIMEOUT);
 
@@ -4891,11 +4896,16 @@ int main(int argc, char *argv[])
     /* // Debug */
     /* test_serialize(); */
 
+
 #ifdef ENABLE_MULTITHREAD
+printf("calling PDC_Server_multithread_loop()\n");
+fflush(stdout);
     PDC_Server_multithread_loop(hg_context_g);
 #else
     PDC_Server_loop(hg_context_g);
 #endif
+printf("Leaving pdc server\n");
+fflush(stdout);
 
     /* printf("==PDC_SERVER[%d]: shutdown in progress...\n", pdc_server_rank_g); */
     /* fflush(stdout); */

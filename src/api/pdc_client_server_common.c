@@ -45,7 +45,7 @@ uint64_t pdc_id_seq_g = PDC_SERVER_ID_INTERVEL;
 // actual value for each server is set by PDC_Server_init()
 //
 
-#ifdef ENABLE_MULTITHREAD
+#if defined(IS_PDC_SERVER) && defined(ENABLE_MULTITHREAD)
 
 extern struct hg_thread_work *
 hg_core_get_thread_work(hg_handle_t handle);
@@ -80,6 +80,7 @@ hg_core_get_thread_work(hg_handle_t handle);
             \
             work->func = func_name ## _thread; \
             work->args = handle; \
+            printf("HG_TEST_THREAD_EXE func_name %s!\n", #func_name);\
             hg_thread_pool_post(hg_test_thread_pool_g, work); \
             \
             return ret; \
@@ -913,6 +914,8 @@ HG_TEST_RPC_CB(client_test_connect, handle)
     
     FUNC_ENTER(NULL);
 
+printf("enter HG_TEST_RPC_CB(client_test_connect, handle)\n");
+fflush(stdout);
     // Decode input
     HG_Get_input(handle, &in);
     out.ret = in.client_id + 123400;
@@ -927,6 +930,9 @@ HG_TEST_RPC_CB(client_test_connect, handle)
     HG_Respond(handle, PDC_Server_get_client_addr, args, &out);
     /* printf("==PDC_SERVER: client_test_connect(): Done respond to client test connect\n", out.ret); */
     /* fflush(stdout); */
+
+printf("leaving HG_TEST_RPC_CB(client_test_connect, handle)\n");
+fflush(stdout);
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
