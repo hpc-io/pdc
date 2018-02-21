@@ -727,7 +727,7 @@ hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info)
     /*     } */
     /* } */
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_lock(&pdc_client_addr_metex_g);
+    hg_thread_mutex_unlock(&pdc_client_addr_metex_g);
 #endif
 printf("end of PDC_Server_get_client_addr\n");
 fflush(stdout);
