@@ -1010,10 +1010,11 @@ fflush(stdout);
         }
     }
 
+/*
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-
+*/
     /* if (is_client_debug_g == 1) { */
     if (is_client_debug_g == 1 && pdc_client_mpi_rank_g == 0) {
         printf("==PDC_CLIENT[%d]: Successfully established connection to %d PDC metadata server%s\n\n", 
