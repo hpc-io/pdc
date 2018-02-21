@@ -729,8 +729,6 @@ hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info)
 #ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_unlock(&pdc_client_addr_metex_g);
 #endif
-printf("end of PDC_Server_get_client_addr\n");
-fflush(stdout);
 
 done:
     FUNC_LEAVE(ret_value);
@@ -2639,8 +2637,6 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
 
 //gni starts here
 #ifdef PDC_HAS_CRAY_DRC
-printf("enable PDC_HAS_CRAY_DRC\n");
-fflush(stdout);
     /* Acquire credential */
 /*    if (pdc_server_rank_g == 0) {
         rc = drc_acquire(&credential, 0);
@@ -3229,8 +3225,6 @@ hg_progress_thread(void *arg)
     
     FUNC_ENTER(NULL);
 
-printf("enter hg_progress_thread\n");
-fflush(stdout);
     do {
         if (hg_atomic_cas32(&close_server_g, 1, 1)) break;
 
@@ -3240,8 +3234,6 @@ fflush(stdout);
         /* printf("thread [%d]\n", tid); */
     } while (ret == HG_SUCCESS || ret == HG_TIMEOUT);
 
-printf("leaving hg_progress_thread\n");
-fflush(stdout);
     hg_thread_exit(tret);
 
     return tret;
@@ -4898,14 +4890,10 @@ int main(int argc, char *argv[])
 
 
 #ifdef ENABLE_MULTITHREAD
-printf("calling PDC_Server_multithread_loop()\n");
-fflush(stdout);
     PDC_Server_multithread_loop(hg_context_g);
 #else
     PDC_Server_loop(hg_context_g);
 #endif
-printf("Leaving pdc server\n");
-fflush(stdout);
 
     /* printf("==PDC_SERVER[%d]: shutdown in progress...\n", pdc_server_rank_g); */
     /* fflush(stdout); */

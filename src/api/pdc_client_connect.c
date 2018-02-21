@@ -498,8 +498,6 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
     
     FUNC_ENTER(NULL);
 
-printf("enter client_test_connect_lookup_cb()\n");
-fflush(stdout);
     client_lookup_args = (struct client_lookup_args *) callback_info->arg;
     server_id = client_lookup_args->server_id;
     /* if (is_client_debug_g == 1) { */
@@ -509,8 +507,6 @@ fflush(stdout);
     pdc_server_info_g[server_id].addr = callback_info->info.lookup.addr;
     pdc_server_info_g[server_id].addr_valid = 1;
 
-printf("HG_Create from id %d\n", client_test_connect_register_id_g);
-fflush(stdout);
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, client_test_connect_register_id_g, 
               &client_test_handle);
 
@@ -580,8 +576,6 @@ perr_t PDC_Client_lookup_server(int server_id)
 
     /* printf("==PDC_CLIENT[%d]: - connected to server %d\n", pdc_client_mpi_rank_g, lookup_args.server_id); */
     /* fflush(stdout); */
-printf("end of PDC_Client_lookup_server()\n");
-fflush(stdout);
 
 done:
     FUNC_LEAVE(ret_value);
@@ -934,10 +928,6 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
         ret_value = FAIL;
         goto done;
     }
-else{
-printf("DRC_SUCCESS\n");
-fflush(stdout);
-}
     cookie = drc_get_first_cookie(credential_info);
 
     printf("# Cookie is %u\n", cookie);
@@ -1001,8 +991,6 @@ fflush(stdout);
     else {
         // Each client connect to its node local server only at start time
         local_server_id = pdc_client_mpi_rank_g/pdc_nclient_per_server_g;
-printf("local_server_id %d: calling PDC_Client_lookup_server()\n", local_server_id);
-fflush(stdout);
         if (PDC_Client_lookup_server(local_server_id) != SUCCEED) {
             printf("==PDC_CLIENT[%d]: ERROR lookup server %d\n", pdc_client_mpi_rank_g, local_server_id);
             ret_value = FAIL;
@@ -1022,8 +1010,6 @@ fflush(stdout);
         fflush(stdout);
     }
 
-printf("end of PDC_Client_mercury_init()\n");
-fflush(stdout);
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -1146,8 +1132,6 @@ perr_t PDC_Client_init()
 
     srand(time(NULL));
 
-printf("end of PDC_Client_init()\n");
-fflush(stdout);
 done:
     FUNC_LEAVE(ret_value);
 }
