@@ -71,6 +71,10 @@ hg_thread_mutex_t pdc_bloom_time_mutex_g;
 hg_thread_mutex_t n_metadata_mutex_g;
 hg_thread_mutex_t data_read_list_mutex_g;
 hg_thread_mutex_t data_write_list_mutex_g;
+hg_thread_mutex_t create_region_struct_metex_g;
+hg_thread_mutex_t delete_buf_map_metex_g;
+hg_thread_mutex_t remove_buf_map_metex_g;
+hg_thread_mutex_t remove_lock_metex_g;
 #endif
 
 #ifdef PDC_HAS_CRAY_DRC
@@ -4172,8 +4176,6 @@ perr_t PDC_Meta_Server_region_release(region_lock_in_t *in, region_lock_out_t *o
 
     // Locate target metadata structure
     target_obj = find_metadata_by_id(target_obj_id);
-printf("target_obj_id = %lld\n", target_obj_id);
-fflush(stdout);
     if (target_obj == NULL) {
         out->ret = -1;
         PGOTO_ERROR(FAIL, "==PDC_SERVER: PDC_Meta_Server_region_release() - requested object does not exist\n");
@@ -4307,6 +4309,9 @@ fflush(stdout);
     obj_reg = PDC_Server_get_obj_region(in->obj_id);
     /* printf("==PDC_SERVER: releasing lock ... "); */
     // Find the lock region in the list and remove it
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_lock(&remove_lock_metex_g);
+#endif
     DL_FOREACH_SAFE(obj_reg->region_lock_head, tmp1, tmp2) {
         if (is_region_identical(&request_region, tmp1) == 1) {
             // Found the requested region lock, remove from the linked list
@@ -4318,7 +4323,9 @@ fflush(stdout);
 //            goto done;
         }
     }
-
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_unlock(&remove_lock_metex_g);
+#endif
     // Request release lock region not found
     if (found == 0) {
         ret_value = FAIL; 
@@ -5115,6 +5122,9 @@ perr_t PDC_Data_Server_buf_unmap(buf_unmap_in_t *in)
     if (target_obj == NULL) {
         PGOTO_ERROR(FAIL, "===PDC_DATA_SERVER: PDC_Data_Server_buf_unmap() - requested object does not exist");
     }
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_lock(&delete_buf_map_metex_g);
+#endif
     DL_FOREACH_SAFE(target_obj->region_buf_map_head, elt, tmp) {
         if(in->remote_obj_id==elt->remote_obj_id && region_is_identical(in->remote_region, elt->remote_region_unit)) {
 //            HG_Bulk_free(elt->local_bulk_handle);
@@ -5125,6 +5135,9 @@ perr_t PDC_Data_Server_buf_unmap(buf_unmap_in_t *in)
     if(target_obj->region_buf_map_head == NULL && pdc_server_rank_g == 0) {
         close(target_obj->fd);
     }
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_unlock(&delete_buf_map_metex_g);
+#endif
 
 done:
     FUNC_LEAVE(ret_value);
@@ -5304,6 +5317,9 @@ perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle)
             error = 1;
             PGOTO_ERROR(FAIL, "===PDC META SERVER: cannot retrieve object metadata");
         }
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_lock(&remove_buf_map_metex_g);
+#endif
         DL_FOREACH_SAFE(target_meta->region_buf_map_head, elt, tmp) {
 
             if(in->remote_obj_id==elt->remote_obj_id && region_is_identical(in->remote_region, elt->remote_region_unit)) {
@@ -5312,6 +5328,9 @@ perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle)
                 free(elt);
             }
         }
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_unlock(&remove_buf_map_metex_g);
+#endif
         out.ret = 1;
         HG_Respond(*handle, NULL, NULL, &out);
         HG_Free_input(*handle, in);
@@ -5366,6 +5385,10 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
 
     FUNC_ENTER(NULL);
 
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_lock(&create_region_struct_metex_g);
+#endif
+
     new_obj_reg = PDC_Server_get_obj_region(in->remote_obj_id);
     if(new_obj_reg == NULL) {
         new_obj_reg = (data_server_region_t *)malloc(sizeof(struct data_server_region_t));
@@ -5409,6 +5432,9 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
 
         DL_APPEND(dataserver_region_g, new_obj_reg);
     }
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_unlock(&create_region_struct_metex_g);
+#endif
 
     buf_map_ptr = (region_buf_map_t *)malloc(sizeof(region_buf_map_t));
     if(buf_map_ptr == NULL)
@@ -5431,8 +5457,6 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
     buf_map_ptr->remote_region_nounit = in->remote_region_nounit;
     buf_map_ptr->remote_data_ptr = data_ptr;
 
-//printf("PDC_Data_Server_buf_map appending region_buf_map_head\n");
-//fflush(stdout);
     DL_APPEND(new_obj_reg->region_buf_map_head, buf_map_ptr);
 
     DL_FOREACH(new_obj_reg->region_lock_head, elt_reg) {
