@@ -2369,9 +2369,38 @@ static perr_t PDC_Server_print_all_metadata()
             PDC_print_metadata(elt);
         }
     }
+    FUNC_LEAVE(ret_value);
+}
+
+/*
+ * Print all existing container in the hash table
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+static perr_t PDC_Server_print_all_containers()
+{
+    int i;
+    perr_t ret_value = SUCCEED;
+    hg_hash_table_iter_t hash_table_iter;
+    pdc_cont_hash_table_entry_t *cont_entry = NULL;
+    
+    FUNC_ENTER(NULL);
+
+    hg_hash_table_iterate(container_hash_table_g, &hash_table_iter);
+    while (hg_hash_table_iter_has_more(&hash_table_iter)) {
+        cont_entry = hg_hash_table_iter_next(&hash_table_iter);
+        printf("Container [%s]:", cont_entry->cont_name);
+        for (i = 0; i < cont_entry->n_obj; i++) {
+            if (cont_entry->obj_ids[i] != 0) {
+                printf("%" PRIu64 ", ", cont_entry->obj_ids[i]);
+            }
+        }
+        printf("\n");
+    }
 
     FUNC_LEAVE(ret_value);
 }
+
 
 /*
  * Check for duplicates in the hash table
@@ -2907,6 +2936,7 @@ perr_t PDC_Server_finalize()
     if (is_debug_g == 1) {
         PDC_Server_print_all_metadata();
     }
+    PDC_Server_print_all_containers();
 
     // Debug: check duplicates
     if (is_debug_g == 1) {
