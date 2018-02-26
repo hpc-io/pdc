@@ -47,11 +47,17 @@
 static hg_atomic_int32_t pdc_num_reg;
 extern hg_class_t *hg_class_g;
 
-
-perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out, void *data_ptr);
+int PDC_Server_is_contiguous_region_overlap(region_list_t *a, region_list_t *b);
+pbool_t region_is_identical(region_info_transfer_t reg1, region_info_transfer_t reg2);
+perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out);
 /* perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out); */
-perr_t PDC_Server_region_release(region_lock_in_t *in, region_lock_out_t *out);
-perr_t PDC_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out);
+perr_t PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_ptr, hg_handle_t *handle);
+perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle);
+perr_t PDC_Data_Server_buf_unmap(buf_unmap_in_t *in);
+perr_t PDC_Data_Server_region_release(struct buf_map_release_bulk_args *bulk_args, region_lock_out_t *out);
+perr_t PDC_Meta_Server_region_release(region_lock_in_t *in, region_lock_out_t *out);
+perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out);
+perr_t PDC_Meta_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out);
 perr_t PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status);
 perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key, pdc_metadata_t** out);
 
@@ -70,6 +76,9 @@ perr_t PDC_Server_serialize_regions_info(region_list_t** regions, uint32_t n_reg
 perr_t PDC_Server_regions_io(region_list_t *region_list_head, PDC_io_plugin_t plugin);
 
 perr_t PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_id_out_t *out);
+data_server_region_t *PDC_Server_get_obj_region(pdcid_t obj_id);
+region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in_t *in, region_list_t *request_region, void *data_ptr);
+void *PDC_Server_get_region_ptr(pdcid_t obj_id, region_info_transfer_t region);
 
 hg_return_t PDC_Server_work_done_cb(const struct hg_cb_info *callback_info);
 hg_return_t PDC_Server_s2s_send_work_done_cb(const struct hg_cb_info *callback_info);
@@ -113,11 +122,76 @@ typedef struct server_lookup_args_t {
     uint32_t        n_loc;
 } server_lookup_args_t;
 
+struct transfer_buf_map {
+    hg_handle_t     handle;
+    buf_map_in_t    in;
+};
+
+struct buf_map_server_lookup_args_t {
+    int             server_id;
+    uint32_t        client_id;
+    int             ret_int;
+    char            *ret_string;
+    void            *void_buf;
+    char            *server_addr;
+    pdc_metadata_t  *meta;
+    region_list_t   **region_lists;
+    uint32_t        n_loc;
+    struct transfer_buf_map *buf_map_args; 
+} buf_map_server_lookup_args_t;
+
+struct transfer_buf_unmap {
+    hg_handle_t     handle;
+    buf_unmap_in_t  in;
+};
+
+struct buf_unmap_server_lookup_args_t {
+    int             server_id;
+    uint32_t        client_id;
+    int             ret_int;
+    char            *ret_string;
+    void            *void_buf;
+    char            *server_addr;
+    pdc_metadata_t  *meta;
+    region_list_t   **region_lists;
+    uint32_t        n_loc;
+    struct transfer_buf_unmap *buf_unmap_args;
+} buf_unmap_server_lookup_args_t;
+
 typedef struct server_reg_lock_args_t{
     int lock;
 } server_reg_lock_args_t;
 
 struct server_region_update_args {
+    int             ret;
+};
+
+struct get_remote_metadata_arg {
+    pdc_metadata_t *data;
+};
+
+struct transfer_lock_args {
+    hg_handle_t      handle;
+    region_lock_in_t in;
+    int              ret;
+};
+
+struct transfer_unlock_args {
+    hg_handle_t      handle;
+    region_lock_in_t in;
+    int              ret;
+    struct buf_map_release_bulk_args *bulk_args;
+};
+
+struct transfer_buf_map_args {
+    hg_handle_t     handle;
+    buf_map_in_t    in;
+    int             ret;
+};
+
+struct transfer_buf_unmap_args {
+    hg_handle_t     handle;
+    buf_unmap_in_t  in;
     int             ret;
 };
 
@@ -177,6 +251,8 @@ perr_t PDC_Server_unserialize_regions_info(void *buf, region_list_t** regions, u
 hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info);
 
 hg_return_t PDC_Server_count_write_check_update_storage_meta_cb (const struct hg_cb_info *callback_info);
+perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region_info, void *buf);
+perr_t PDC_Server_data_read_in(uint64_t obj_id, struct PDC_region_info *region_info, void *buf);
 perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf);
 perr_t PDC_Server_data_read_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf);
 perr_t PDC_SERVER_notify_region_update_to_client(uint64_t meta_id, uint64_t reg_id, int32_t client_id);

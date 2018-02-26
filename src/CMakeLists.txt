@@ -27,118 +27,6 @@ endif()
 
 project(PDC C)
 
-#------------------------------------------------------------------------------
-# Options
-#------------------------------------------------------------------------------
-add_definitions(-DENABLE_MPI=1)
-add_definitions(-DENABLE_LUSTRE=1)
-#add_definitions(-DENABLE_TIMING=1)
-add_definitions(-DENABLE_CHECKPOINT=1)
-#add_definitions(-DENABLE_PROFILING=1)
-#add_definitions(-DENABLE_MULTITHREAD=1)
-
-#--------------- start generating config.h from config.h.cmake ---------------#
-
-if(DEFINED ENV{ENABLE_MPI})
-  if("$ENV{ENABLE_MPI}" STREQUAL "")
-    set(ENABLE_MPI OFF CACHE BOOL "")
-    set(ENABLE_MPI 0)
-  else()
-    set(ENABLE_MPI $ENV{ENABLE_MPI})
-  endif()
-  if(ENABLE_MPI)
-    set(ENABLE_MPI ON CACHE BOOL "")
-    set(ENABLE_MPI 1)
-  else()
-    set(ENABLE_MPI OFF CACHE BOOL "")
-    set(ENABLE_MPI 0)
-  endif()
-else()
-  set(ENABLE_MPI OFF CACHE BOOL "")
-  set(ENABLE_MPI 0)
-endif()
-
-if(DEFINED ENV{ENABLE_LUSTRE})
-  if("$ENV{ENABLE_LUSTRE}" STREQUAL "")
-    set(ENABLE_LUSTRE OFF CACHE BOOL "")
-    set(ENABLE_LUSTRE 0)
-  else()
-    set(ENABLE_LUSTRE $ENV{ENABLE_LUSTRE})
-  endif()
-  if(ENABLE_LUSTRE)
-    set(ENABLE_LUSTRE ON CACHE BOOL "")
-    set(ENABLE_LUSTRE 1)
-  else()
-    set(ENABLE_LUSTRE OFF CACHE BOOL "")
-    set(ENABLE_LUSTRE 0)
-  endif()
-else()
-  set(ENABLE_LUSTRE ON CACHE BOOL "")
-  set(ENABLE_LUSTRE 1)
-endif()
-
-if(DEFINED ENV{ENABLE_TIMING})
-  if("$ENV{ENABLE_TIMING}" STREQUAL "")
-    set(ENABLE_TIMING OFF CACHE BOOL "")
-    set(ENABLE_TIMING 0)
-  else()
-    set(ENABLE_TIMING $ENV{ENABLE_TIMING})
-  endif()
-  if(ENABLE_TIMING)
-    set(ENABLE_TIMING ON CACHE BOOL "")
-    set(ENABLE_TIMING 1)
-  else()
-    set(ENABLE_TIMING OFF CACHE BOOL "")
-    set(ENABLE_TIMING 0)
-  endif()
-else()
-  set(ENABLE_TIMING OFF CACHE BOOL "")
-  set(ENABLE_TIMING 0)
-endif()
-
-if(DEFINED ENV{ENABLE_CHECKPOINT})
-  if("$ENV{ENABLE_CHECKPOINT}" STREQUAL "")
-    set(ENABLE_CHECKPOINT ON CACHE BOOL "")
-    set(ENABLE_CHECKPOINT 1)
-  else()
-    set(ENABLE_CHECKPOINT $ENV{ENABLE_CHECKPOINT})
-  endif()
-  if(ENABLE_CHECKPOINT)
-    set(ENABLE_CHECKPOINT ON CACHE BOOL "")
-    set(ENABLE_CHECKPOINT 1)
-  else()
-    set(ENABLE_CHECKPOINT OFF CACHE BOOL "")
-    set(ENABLE_CHECKPOINT 0)
-  endif()
-else()
-  set(ENABLE_CHECKPOINT ON CACHE BOOL "")
-  set(ENABLE_CHECKPOINT 1)
-endif()
-
-if(DEFINED ENV{ENABLE_MULTITHREAD})
-  if("$ENV{ENABLE_MULTITHREAD}" STREQUAL "")
-    set(ENABLE_MULTITHREAD OFF CACHE BOOL "")
-    set(ENABLE_MULTITHREAD 0)
-  else()
-    set(ENABLE_MULTITHREAD $ENV{ENABLE_MULTITHREAD})
-  endif()
-  if(ENABLE_MULTITHREAD)
-    set(ENABLE_MULTITHREAD ON CACHE BOOL "")
-    set(ENABLE_MULTITHREAD 1)
-  else()
-    set(ENABLE_MULTITHREAD OFF CACHE BOOL "")
-    set(ENABLE_MULTITHREAD 0)
-  endif()
-else()
-  set(ENABLE_MULTITHREAD OFF CACHE BOOL "")
-  set(ENABLE_MULTITHREAD 0)
-endif()
-
-message(${PROJECT_BINARY_DIR})
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${PROJECT_BINARY_DIR}/config.h)
-
-#--------------- end of generating config.h ---------------#
-
 include_directories(${PROJECT_BINARY_DIR})
 
 #------------------------------------------------------------------------------
@@ -309,6 +197,88 @@ function(pdc_set_lib_options libtarget libname libtype)
     )
   endif()
 endfunction()
+
+#--------------- start generating config.h from config.h.cmake ---------------
+
+#-----------------------------------------------------------------------------
+# DRC option
+#-----------------------------------------------------------------------------
+option(PDC_USE_CRAY_DRC
+    "Use Cray DRC to allow multi-job communication." OFF)
+if(PDC_USE_CRAY_DRC)
+  find_package(DRC REQUIRED)
+  if(DRC_FOUND)
+    set(PDC_HAS_CRAY_DRC 1)
+    include_directories(${DRC_INCLUDE_DIRS})
+    set(PDC_EXT_LIB_DEPENDENCIES
+      ${PDC_EXT_LIB_DEPENDENCIES}
+      ${DRC_LIBRARIES}
+    )
+  else()
+    message(FATAL_ERROR "Could not find Cray DRC.")
+  endif()
+endif()
+
+#-----------------------------------------------------------------------------
+# MPI option
+#-----------------------------------------------------------------------------
+option(PDC_ENABLE_MPI "Enable MPI." OFF)
+if(PDC_ENABLE_MPI)
+  find_package(MPI)
+  if(MPI_FOUND)
+#    set(PDC_HAS_MPI 1)
+    set(ENABLE_MPI 1)
+  endif()
+endif()
+
+#-----------------------------------------------------------------------------
+# LUSTRE option
+#-----------------------------------------------------------------------------
+option(PDC_ENABLE_LUSTRE "Enable Lustre." OFF)
+if(PDC_ENABLE_LUSTRE)
+#  set(PDC_HAS_LUSTRE 1)
+  set(ENABLE_LUSTRE 1)
+endif()
+
+#-----------------------------------------------------------------------------
+# TIMING option
+#-----------------------------------------------------------------------------
+option(PDC_ENABLE_TIMING "Enable timing." OFF)
+if(PDC_ENABLE_TIMING)
+#  set(PDC_HAS_TIMING 1)
+  set(ENABLE_TIMING 1)
+endif()
+
+#-----------------------------------------------------------------------------
+# CHECKPOINT option
+#-----------------------------------------------------------------------------
+option(PDC_ENABLE_CHECKPOINT "Enable checkpointing." OFF)
+if(PDC_ENABLE_CHECKPOINT)
+#  set(PDC_HAS_CHECKPOINT 1)
+  set(ENABLE_CHECKPOINT 1)
+endif()
+
+#-----------------------------------------------------------------------------
+# MULTITHREAD option
+#-----------------------------------------------------------------------------
+option(PDC_ENABLE_MULTITHREAD "Enable multithreading." OFF)
+if(PDC_ENABLE_MULTITHREAD)
+#  set(PDC_HAS_MULTITHREAD 1)
+  set(ENABLE_MULTITHREAD 1)
+endif()
+
+#-----------------------------------------------------------------------------
+# PROFILING option
+#-----------------------------------------------------------------------------
+option(PDC_ENABLE_PROFILING "Enable profiling." OFF)
+if(PDC_ENABLE_PROFILING)
+#  set(PDC_HAS_PROFILING 1)
+  set(ENABLE_PROFILING 1)
+endif()
+
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${PROJECT_BINARY_DIR}/config.h)
+
+#---------------------- end of generating config.h ---------------------------
 
 #-----------------------------------------------------------------------------
 # Source

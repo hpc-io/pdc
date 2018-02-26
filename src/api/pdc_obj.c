@@ -854,7 +854,8 @@ perr_t PDCobj_buf_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, p
     if(obj2->obj_pt->ndim != reg2->ndim)
         PGOTO_ERROR(FAIL, "remote object dimension and region dimension does not match");
     for(i=0; i<reg2->ndim; i++)
-        if((obj2->obj_pt->dims)[i] < ((reg2->size)[i] + (reg2->offset)[i]))
+//        if((obj2->obj_pt->dims)[i] < ((reg2->size)[i] + (reg2->offset)[i]))
+          if((obj2->obj_pt->dims)[i] < (reg2->size)[i])
             PGOTO_ERROR(FAIL, "remote object region size error");
 
     ret_value = PDC_Client_buf_map(local_reg, remote_meta_id, remote_reg, reg1->ndim, reg1->size, reg1->offset, reg1->size, local_type, buf, obj2->obj_pt->dims, reg2->offset, reg2->size, remote_type, remote_client_id, remote_data, reg1, reg2);

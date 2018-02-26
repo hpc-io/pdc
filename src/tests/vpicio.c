@@ -30,6 +30,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <math.h>
+#include <inttypes.h>
 
 /* #define ENABLE_MPI 1 */
 
@@ -39,9 +40,15 @@
 
 #include "pdc.h"
 
+#define NPARTICLES      8388608
+
 double uniform_random_number()
 {
     return (((double)rand())/((double)(RAND_MAX)));
+}
+
+void print_usage() {
+    printf("Usage: srun -n ./vpicio #particles\n");
 }
 
 int main(int argc, char **argv)
@@ -63,12 +70,13 @@ int main(int argc, char **argv)
     int x_dim = 64;
     int y_dim = 64;
     int z_dim = 64;
-    long numparticles = 32;
-//    const int my_data_size = 4;
+    uint64_t numparticles;
+//    int my_data_size;
 //    uint64_t dims[1] = {my_data_size};  // {8388608};
-    uint64_t dims[1] = {numparticles};
+    uint64_t dims[1];
     int ndim = 1;
     uint64_t *offset;
+    uint64_t *offset_remote;
     uint64_t *mysize;
 
 #ifdef ENABLE_MPI
@@ -76,6 +84,19 @@ int main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
+
+/*
+    if (argc < 2) {
+        print_usage();
+        return 0;
+    }
+    numparticles = atoll(argv[1]) * 1024 * 1024;
+    if (rank == 0) {
+        printf("Writing %" PRIu64 " number of particles with %d clients.\n", numparticles, size);
+    }
+*/
+    numparticles = NPARTICLES;
+    dims[0] = numparticles;
 
     x = (float *)malloc(numparticles*sizeof(float));
     y = (float *)malloc(numparticles*sizeof(float));
@@ -181,9 +202,11 @@ int main(int argc, char **argv)
 //    printf("rank %d: meta id is %lld\n", rank, res->obj_id);
 
     offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
+    offset_remote = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
     mysize = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
-    offset[0] = rank * numparticles/size;
-    mysize[0] = numparticles/size;
+    offset[0] = 0;
+    offset_remote[0] = rank * numparticles;
+    mysize[0] = numparticles;
 
     // create a region
     region_x = PDCregion_create(ndim, offset, mysize);
@@ -195,14 +218,14 @@ int main(int argc, char **argv)
     region_id1 = PDCregion_create(ndim, offset, mysize);
     region_id2 = PDCregion_create(ndim, offset, mysize);
 
-    region_xx = PDCregion_create(ndim, offset, mysize);
-    region_yy = PDCregion_create(ndim, offset, mysize);
-    region_zz = PDCregion_create(ndim, offset, mysize);
-    region_pxx = PDCregion_create(ndim, offset, mysize);
-    region_pyy = PDCregion_create(ndim, offset, mysize);
-    region_pzz = PDCregion_create(ndim, offset, mysize);
-    region_id11 = PDCregion_create(ndim, offset, mysize);
-    region_id22 = PDCregion_create(ndim, offset, mysize);
+    region_xx = PDCregion_create(ndim, offset_remote, mysize);
+    region_yy = PDCregion_create(ndim, offset_remote, mysize);
+    region_zz = PDCregion_create(ndim, offset_remote, mysize);
+    region_pxx = PDCregion_create(ndim, offset_remote, mysize);
+    region_pyy = PDCregion_create(ndim, offset_remote, mysize);
+    region_pzz = PDCregion_create(ndim, offset_remote, mysize);
+    region_id11 = PDCregion_create(ndim, offset_remote, mysize);
+    region_id22 = PDCregion_create(ndim, offset_remote, mysize);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -212,24 +235,31 @@ int main(int argc, char **argv)
     ret = PDCobj_buf_map(&x[0], PDC_FLOAT, region_x, obj_xx, region_xx);
     if(ret < 0)
         printf("Array x PDCobj_buf_map failed\n");
+
     ret = PDCobj_buf_map(&y[0], PDC_FLOAT, region_y, obj_yy, region_yy);
     if(ret < 0)
         printf("Array y PDCobj_buf_map failed\n");
+
     ret = PDCobj_buf_map(&z[0], PDC_FLOAT, region_z, obj_zz, region_zz);
     if(ret < 0)
         printf("Array z PDCobj_buf_map failed\n");
+
     ret = PDCobj_buf_map(&px[0], PDC_FLOAT, region_px, obj_pxx, region_pxx);
     if(ret < 0)
         printf("Array px PDCobj_buf_map failed\n");
+
     ret = PDCobj_buf_map(&py[0], PDC_FLOAT, region_py, obj_pyy, region_pyy);
     if(ret < 0)
         printf("Array py PDCobj_buf_map failed\n");
+
     ret = PDCobj_buf_map(&pz[0], PDC_FLOAT, region_pz, obj_pzz, region_pzz);    
     if(ret < 0)
         printf("Array pz PDCobj_buf_map failed\n");
+
     ret = PDCobj_buf_map(&id1[0], PDC_INT, region_id1, obj_id11, region_id11);
     if(ret < 0)
         printf("Array id1 PDCobj_buf_map failed\n");
+
     ret = PDCobj_buf_map(&id2[0], PDC_INT, region_id2, obj_id22, region_id22);
     if(ret < 0)
         printf("Array id2 PDCobj_buf_map failed\n");
@@ -253,24 +283,31 @@ int main(int argc, char **argv)
     ret = PDCreg_obtain_lock(obj_xx, region_xx, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_xx\n");
+
     ret = PDCreg_obtain_lock(obj_yy, region_yy, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_yy\n");
+
     ret = PDCreg_obtain_lock(obj_zz, region_zz, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_zz\n");
+
     ret = PDCreg_obtain_lock(obj_pxx, region_pxx, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_pxx\n");
+
     ret = PDCreg_obtain_lock(obj_pyy, region_pyy, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_pyy\n");
+
     ret = PDCreg_obtain_lock(obj_pzz, region_pzz, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_pzz\n");
+
     ret = PDCreg_obtain_lock(obj_id11, region_id11, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_id11\n");
+
     ret = PDCreg_obtain_lock(obj_id22, region_id22, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_id22\n");
@@ -286,7 +323,7 @@ int main(int argc, char **argv)
         fflush(stdout);
     }
 
-     for (int i=0; i<numparticles; i++) {
+     for (uint64_t i=0; i<numparticles; i++) {
         id1[i] = i;
         id2[i] = i*2;
         x[i]   = uniform_random_number() * x_dim;
@@ -314,28 +351,35 @@ fflush(stdout);
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     gettimeofday(&ht_total_start, 0);
-    
+
     ret = PDCreg_release_lock(obj_xx, region_xx, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_xx\n");
+
     ret = PDCreg_release_lock(obj_yy, region_yy, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_yy\n");
+
     ret = PDCreg_release_lock(obj_zz, region_zz, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_zz\n");
+
     ret = PDCreg_release_lock(obj_pxx, region_pxx, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_pxx\n");
+
     ret = PDCreg_release_lock(obj_pyy, region_pyy, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_pyy\n");
+
     ret = PDCreg_release_lock(obj_pzz, region_pzz, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_pzz\n");
+
     ret = PDCreg_release_lock(obj_id11, region_id11, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_id11\n");
+
     ret = PDCreg_release_lock(obj_id22, region_id22, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_id22\n");
@@ -351,11 +395,6 @@ fflush(stdout);
         fflush(stdout);
     }
     
-//for (int i=0; i<numparticles; i++) {
-//printf("id11 = %d\n", id11[i]);
-//printf("id22 = %d\n", id22[i]);
-//    }
-
 /*
     for (int i=0; i<my_data_size/size; i++) {
         if(xx[rank * my_data_size/size+i] != x[rank * my_data_size/size+i])
@@ -381,32 +420,42 @@ fflush(stdout);
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-printf("start to unmap\n");
-fflush(stdout);
+
     ret = PDCobj_buf_unmap(obj_xx, region_xx);
     if (ret != SUCCEED)
         printf("region xx unmap failed\n");
+
     ret = PDCobj_buf_unmap(obj_yy, region_yy);
     if (ret != SUCCEED)
         printf("region yy unmap failed\n");
+
     ret = PDCobj_buf_unmap(obj_zz, region_zz);
     if (ret != SUCCEED)
         printf("region zz unmap failed\n");
+
     ret = PDCobj_buf_unmap(obj_pxx, region_pxx);
     if (ret != SUCCEED)
         printf("region pxx unmap failed\n");
+
     ret = PDCobj_buf_unmap(obj_pyy, region_pyy);
     if (ret != SUCCEED)
         printf("region pyy unmap failed\n");
+
     ret = PDCobj_buf_unmap(obj_pzz, region_pzz);
     if (ret != SUCCEED)
         printf("region pzz unmap failed\n");
+
     ret = PDCobj_buf_unmap(obj_id11, region_id11);
     if (ret != SUCCEED)
         printf("region id11 unmap failed\n");
+
     ret = PDCobj_buf_unmap(obj_id22, region_id22);
     if (ret != SUCCEED)
         printf("region id22 unmap failed\n");
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
     if(PDCobj_close(obj_xx) < 0)
         printf("fail to close obj_xx\n");
