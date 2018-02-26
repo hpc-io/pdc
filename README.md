@@ -49,7 +49,7 @@ errors, type 'g' to generate makefiles. Once you exit the CMake
 configuration screen and are ready to build the targets, do:
 
     make
-    
+
 To test Mercury is successfully built, run
 
     make test
@@ -92,6 +92,11 @@ suitable options, and toggle to advanced mode by typing 't'. Recommended options
     BUILD_SHARED_LIBS                ON (or OFF if the library you link
                                      against requires static libraries)
     CFLAGS                           -dynamic (this is required on NERSC machines)
+    ENABLE_CHECKPOINT                ON (or OFF if no metadata checkpoint is needed)
+    ENABLE_LUSTRE                    ON
+    ENABLE_MPI                       ON (or OFF if only used in serial mode)
+    ENABLE_MULTITHREAD               OFF
+    ENABLE_TIMING                    OFF (or ON to enable PDC timer)
 
 
 Once you are done and do not see any errors, type 'g' to generate makefiles. 
@@ -100,14 +105,13 @@ Once you exit the CMake configuration screen and are ready to build the targets,
     make
 
 
-
 Testing
 ====
-On NERSC machines (e.g. Edison, Cori), do the following
+On NERSC machines (e.g. Cori), do the following
 ----
 * Job allocation (e.g. use 4 nodes)
 ```sh
-    salloc -N 4 -p debug -t 00:30:00 --gres=craynetwork:2
+    salloc -C haswell -N 4 -t 01:00:00 -q interactive --gres=craynetwork:2
 ```
 Run PDC create object test
 ----
