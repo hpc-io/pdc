@@ -41,7 +41,9 @@
 #ifdef ENABLE_MULTITHREAD 
 // Mercury multithread
 #include "mercury_thread_mutex.h"
-hg_thread_mutex_t delete_buf_map_metex_g;
+hg_thread_mutex_t server_delete_buf_map_metex_g = HG_THREAD_MUTEX_INITIALIZER;
+hg_thread_mutex_t server_append_buf_map_metex_g = HG_THREAD_MUTEX_INITIALIZER;
+hg_thread_mutex_t insert_metadata_metex_g = HG_THREAD_MUTEX_INITIALIZER;
 #endif
 
 // Thread
@@ -836,9 +838,14 @@ HG_TEST_RPC_CB(gen_obj_id, handle)
 
     HG_Get_input(handle, &in);
 
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_lock(&insert_metadata_metex_g);
+#endif
     // Insert to hash table
     ret_value = insert_metadata_to_hash_table(&in, &out);
-
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_unlock(&insert_metadata_metex_g);
+#endif
     /* printf("==PDC_SERVER: gen_obj_id_cb(): going to return %" PRIu64 "\n", out.obj_id); */
     /* fflush(stdout); */
 
@@ -2066,7 +2073,7 @@ done:
 }
 
 /* static hg_return_t */
-// buf_map_server_cb(hg_handle_t handle)
+// buf_unmap_server_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(buf_unmap_server, handle)
 {
     hg_return_t ret_value = HG_SUCCESS;
@@ -2088,7 +2095,7 @@ HG_TEST_RPC_CB(buf_unmap_server, handle)
         PGOTO_ERROR(HG_OTHER_ERROR, "==PDC_SERVER: HG_TEST_RPC_CB(buf_unmap_server, handle) - requested object does not exist\n");
     }
 #ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_lock(&delete_buf_map_metex_g);
+    hg_thread_mutex_lock(&server_delete_buf_map_metex_g);
 #endif
 
     DL_FOREACH_SAFE(target_obj->region_buf_map_head, elt, tmp) {
@@ -2100,7 +2107,7 @@ HG_TEST_RPC_CB(buf_unmap_server, handle)
         }
     }
 #ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_unlock(&delete_buf_map_metex_g);
+    hg_thread_mutex_unlock(&server_delete_buf_map_metex_g);
 #endif
 
 done:
@@ -2161,9 +2168,14 @@ HG_TEST_RPC_CB(buf_map_server, handle)
     buf_map_ptr->remote_region_unit = in.remote_region_unit;
     buf_map_ptr->remote_region_nounit = in.remote_region_nounit;
 
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_lock(&server_append_buf_map_metex_g);
+#endif
     DL_APPEND(target_obj->region_buf_map_head, buf_map_ptr);
     out.ret = 1;
-
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_unlock(&server_append_buf_map_metex_g);
+#endif
 done:
     HG_Respond(handle, NULL, NULL, &out);
 //    HG_Free_input(handle, &in);
