@@ -42,6 +42,7 @@
 #define CREATE_BLOOM_THRESHOLD  64
 #define PDC_MAX_OVERLAP_REGION_NUM 8 // max number of supported regions for PDC_Server_get_storage_location_of_region() 
 #define PDC_STR_DELIM            7
+#define PDC_ALLOC_BASE_NUM      64
 
 static hg_atomic_int32_t pdc_num_reg;
 extern hg_class_t *hg_class_g;
@@ -74,6 +75,7 @@ hg_return_t PDC_Server_work_done_cb(const struct hg_cb_info *callback_info);
 hg_return_t PDC_Server_s2s_send_work_done_cb(const struct hg_cb_info *callback_info);
 hg_return_t PDC_Server_s2s_recv_work_done_cb(const struct hg_cb_info *callback_info);
 hg_return_t PDC_Server_count_write_check_update_storage_meta_cb(const struct hg_cb_info *callback_info);
+perr_t PDC_Server_create_container(gen_cont_id_in_t *in, gen_cont_id_out_t *out);
 /* typedef struct pdc_metadata_name_mark_t { */
 /*     char obj_name[ADDR_MAX]; */
 /*     struct pdc_metadata_name_mark_t *next; */
@@ -85,6 +87,15 @@ typedef struct pdc_hash_table_entry_head {
     void *bloom;
     pdc_metadata_t *metadata;
 } pdc_hash_table_entry_head;
+
+typedef struct pdc_cont_hash_table_entry_t {
+    uint64_t  cont_id;
+    char      cont_name[ADDR_MAX];
+    int       n_obj;
+    int       n_deleted;
+    int       n_allocated;
+    uint64_t *obj_ids;
+} pdc_cont_hash_table_entry_t;
 
 /* 
  * Data server related
@@ -184,5 +195,9 @@ perr_t PDC_Server_update_region_storage_meta_bulk_local(update_region_storage_me
 perr_t PDC_Server_set_close(void);
 perr_t PDC_Server_update_region_storage_meta_bulk_mpi(bulk_xfer_data_t *bulk_data);
 perr_t PDC_Server_close_shm(region_list_t *region);
+
+
+perr_t PDC_Server_container_del_objs(int n_obj, uint64_t *obj_ids, uint64_t cont_id);
+perr_t PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint64_t cont_id);
 
 #endif /* PDC_SERVER_H */

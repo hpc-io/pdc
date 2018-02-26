@@ -63,10 +63,12 @@
 #include "mercury_thread_mutex.h"
 hg_thread_mutex_t pdc_client_addr_metex_g;
 hg_thread_mutex_t pdc_metadata_hash_table_mutex_g;
+hg_thread_mutex_t pdc_container_hash_table_mutex_g;
 /* hg_thread_mutex_t pdc_metadata_name_mark_hash_table_mutex_g; */
 hg_thread_mutex_t pdc_time_mutex_g;
 hg_thread_mutex_t pdc_bloom_time_mutex_g;
 hg_thread_mutex_t n_metadata_mutex_g;
+hg_thread_mutex_t gen_obj_id_mutex_g;
 hg_thread_mutex_t data_read_list_mutex_g;
 hg_thread_mutex_t data_write_list_mutex_g;
 #endif
@@ -114,7 +116,8 @@ static hg_id_t    bulk_rpc_register_id_g;
 extern hg_thread_pool_t *hg_test_thread_pool_g;
 
 // Global hash table for storing metadata 
-hg_hash_table_t *metadata_hash_table_g = NULL;
+hg_hash_table_t *metadata_hash_table_g  = NULL;
+hg_hash_table_t *container_hash_table_g = NULL;
 /* hg_hash_table_t *metadata_name_mark_hash_table_g = NULL; */
 
 hg_atomic_int32_t close_server_g;
@@ -269,6 +272,21 @@ PDC_Server_metadata_hash_value_free(hg_hash_table_value_t value)
         /* } */
     /* } */
 }
+
+/*
+ * Free container hash value
+ *
+ * \param  value [IN]        Hash table value
+ *
+ * \return void
+ */
+static void
+PDC_Server_container_hash_value_free(hg_hash_table_value_t value)
+{
+    pdc_cont_hash_table_entry_t *head = (pdc_cont_hash_table_entry_t*) value;
+    free(head->obj_ids);
+}
+
 
 /*
  * Init the remote server info structure
@@ -613,10 +631,10 @@ hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info)
         pdc_client_num_g = in->nclient;
         for (i = 0; i < in->nclient; i++) 
             PDC_client_info_init(&pdc_client_info_g[i]);
-        /* if (is_debug_g == 1) { */ 
+        if (is_debug_g == 1) { 
             printf("==PDC_SERVER[%d]: finished init %d client info\n", pdc_server_rank_g, in->nclient);
             fflush(stdout);
-        /* } */
+        }
         
     }
 
@@ -926,8 +944,16 @@ static uint64_t PDC_Server_gen_obj_id()
     
     FUNC_ENTER(NULL);
     
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_lock(&gen_obj_id_mutex_g);
+#endif
+
     ret_value = pdc_id_seq_g++;
     
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_unlock(&gen_obj_id_mutex_g);
+#endif
+
     FUNC_LEAVE(ret_value);
 }
 
@@ -1002,12 +1028,22 @@ static perr_t PDC_Server_init_hash_table()
     
     FUNC_ENTER(NULL);
 
+    // Metadata hash table
     metadata_hash_table_g = hg_hash_table_new(PDC_Server_metadata_int_hash, PDC_Server_metadata_int_equal);
     if (metadata_hash_table_g == NULL) {
         printf("==PDC_SERVER: metadata_hash_table_g init error! Exit...\n");
         goto done;
     }
     hg_hash_table_register_free_functions(metadata_hash_table_g, PDC_Server_metadata_int_hash_key_free, PDC_Server_metadata_hash_value_free);
+
+    // Container hash table
+    container_hash_table_g = hg_hash_table_new(PDC_Server_metadata_int_hash, PDC_Server_metadata_int_equal);
+    if (container_hash_table_g == NULL) {
+        printf("==PDC_SERVER: container_hash_table_g init error! Exit...\n");
+        goto done;
+    }
+    hg_hash_table_register_free_functions(container_hash_table_g, PDC_Server_metadata_int_hash_key_free, PDC_Server_container_hash_value_free);
+
 
     /* // Name marker hash table, reuse some functions from metadata_hash_table */
     /* metadata_name_mark_hash_table_g = hg_hash_table_new(PDC_Server_metadata_int_hash, PDC_Server_metadata_int_equal); */
@@ -2494,10 +2530,13 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
         printf("\n==PDC_SERVER[%d]: Starting server with %d threads...\n", pdc_server_rank_g, n_thread);
         fflush(stdout);
     }
+    hg_thread_mutex_init(&pdc_metadata_hash_table_mutex_g);
+    hg_thread_mutex_init(&pdc_container_hash_table_mutex_g);
     hg_thread_mutex_init(&pdc_client_addr_metex_g);
     hg_thread_mutex_init(&pdc_time_mutex_g);
     hg_thread_mutex_init(&pdc_bloom_time_mutex_g);
     hg_thread_mutex_init(&n_metadata_mutex_g);
+    hg_thread_mutex_init(&gen_obj_id_mutex_g);
     hg_thread_mutex_init(&data_read_list_mutex_g);
     hg_thread_mutex_init(&data_write_list_mutex_g);
 #else
@@ -2645,6 +2684,8 @@ perr_t PDC_Server_finalize()
     if(metadata_hash_table_g != NULL)
         hg_hash_table_free(metadata_hash_table_g);
 
+    if(container_hash_table_g != NULL)
+        hg_hash_table_free(container_hash_table_g);
 /* printf("hash table freed!\n"); */
 /* fflush(stdout); */
 
@@ -2714,6 +2755,7 @@ perr_t PDC_Server_finalize()
     hg_thread_mutex_destroy(&pdc_client_addr_metex_g);
     hg_thread_mutex_destroy(&pdc_bloom_time_mutex_g);
     hg_thread_mutex_destroy(&n_metadata_mutex_g);
+    hg_thread_mutex_destroy(&gen_obj_id_mutex_g);
     hg_thread_mutex_destroy(&data_read_list_mutex_g);
     hg_thread_mutex_destroy(&data_write_list_mutex_g);
 #endif
@@ -3441,8 +3483,6 @@ perr_t PDC_Server_get_reg_lock_status_cb(const struct hg_cb_info *callback_info)
     server_lookup_args_t *lookup_args;
     hg_handle_t handle;
     get_reg_lock_status_out_t output;
-
-    FUNC_ENTER(NULL);
 }
 
 perr_t PDC_Server_local_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status)
@@ -4190,8 +4230,11 @@ int main(int argc, char *argv[])
     metadata_add_tag_register(hg_class_g);
     region_lock_register(hg_class_g);
     region_release_register(hg_class_g);
+    gen_cont_id_register(hg_class_g);
+
     // bulk
     query_partial_register(hg_class_g);
+    cont_add_del_objs_rpc_register(hg_class_g);
 
     // Mapping
     buf_map_register(hg_class_g);
@@ -5432,7 +5475,7 @@ PDC_Server_get_storage_info_cb (const struct hg_cb_info *callback_info)
             cb_args->n_loc = n_loc;
             cb_args->void_buf = serialized_output.buf;
             if (is_debug_g == 1) {
-                printf(  "==PDC_SERVER[%d]: PDC_Server_get_storage_info_cb: received %u storage info\n",
+                printf(  "==PDC_SERVER[%d]: PDC_Server_get_storage_info_cb: received %ls storage info\n",
                         pdc_server_rank_g, cb_args->n_loc);
             }
         } // end of else (with multiple storage regions)
@@ -8448,4 +8491,399 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
+
+/*
+ * Create a container
+ *
+ * \param  in[IN]       Input structure received from client, conatins metadata 
+ * \param  out[OUT]     Output structure to be sent back to the client
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Server_create_container(gen_cont_id_in_t *in, gen_cont_id_out_t *out)
+{
+    perr_t ret_value = SUCCEED;
+    pdc_metadata_t *metadata;
+    uint32_t *hash_key, i;
+
+    FUNC_ENTER(NULL);
+
+    out->cont_id = 0;
+
+#ifdef ENABLE_TIMING 
+    // Timing
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
+    double ht_total_sec;
+
+    gettimeofday(&pdc_timer_start, 0);
+#endif
+
+    /* printf("==PDC_SERVER[%d]: Got container creation request with name: %s\n", */
+    /*         pdc_server_rank_g, in->cont_name); */
+    /* fflush(stdout); */
+
+    hash_key = (uint32_t*)malloc(sizeof(uint32_t));
+    if (hash_key == NULL) {
+        printf("Cannot allocate hash_key!\n");
+        goto done;
+    }
+    total_mem_usage_g += sizeof(uint32_t);
+    *hash_key = in->hash_value;
+
+    pdc_cont_hash_table_entry_t *lookup_value;
+
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_lock(&pdc_container_hash_table_mutex_g);
+#endif
+
+    if (metadata_hash_table_g != NULL) {
+        // lookup
+        lookup_value = hg_hash_table_lookup(container_hash_table_g, hash_key);
+
+        // Is this hash value exist in the Hash table?
+        if (lookup_value != NULL) {
+            
+            // Check if there exist metadata identical to current one
+            printf("==PDC_SERVER[%d]: Found existing container with same hash value, name=%s!\n", 
+                    pdc_server_rank_g, lookup_value->cont_name);
+            out->cont_id = 0;
+            goto done;
+        
+        }
+        else {
+            pdc_cont_hash_table_entry_t *entry = (pdc_cont_hash_table_entry_t*)calloc(1, sizeof(pdc_cont_hash_table_entry_t));
+            strcpy(entry->cont_name, in->cont_name);
+            entry->n_obj = 0;
+            entry->n_allocated = 128;
+            entry->obj_ids = (uint64_t*)calloc(entry->n_allocated, sizeof(uint64_t));
+            entry->cont_id = PDC_Server_gen_obj_id();
+
+            total_mem_usage_g += sizeof(pdc_cont_hash_table_entry_t);
+            total_mem_usage_g += sizeof(uint64_t)*entry->n_allocated;
+
+            // Insert to hash table
+            if (hg_hash_table_insert(container_hash_table_g, hash_key, entry) != 1) {
+                printf("==PDC_SERVER[%d]: %s - hash table insert failed\n", pdc_server_rank_g, __func__);
+                ret_value = FAIL;
+            }
+            else
+                out->cont_id = entry->cont_id;
+        }
+
+    }
+    else {
+        printf("==PDC_SERVER[%d]: %s - container_hash_table_g not initialized!\n", pdc_server_rank_g, __func__);
+        goto done;
+    }
+
+#ifdef ENABLE_MULTITHREAD 
+    // ^ Release hash table lock
+    hg_thread_mutex_unlock(&pdc_container_hash_table_mutex_g);
+    hg_thread_mutex_lock(&pdc_time_mutex_g);
+#endif
+
+#ifdef ENABLE_TIMING 
+    // Timing
+    gettimeofday(&pdc_timer_end, 0);
+    ht_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+    server_insert_time_g += ht_total_sec;
+#endif
+
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_unlock(&pdc_time_mutex_g);
+#endif
+    
+
+done:
+    /* if (hash_key != NULL) */ 
+    /*     free(hash_key); */
+    FUNC_LEAVE(ret_value);
+} // end PDC_Server_create_container
+
+
+
+/*
+ * Delete a container by name
+ *
+ * \param  in[IN]       Input structure received from client, conatins metadata 
+ * \param  out[OUT]     Output structure to be sent back to the client
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Server_delete_container_by_name(gen_cont_id_in_t *in, gen_cont_id_out_t *out)
+{
+    perr_t ret_value = SUCCEED;
+    pdc_metadata_t *metadata;
+    uint32_t hash_key, i;
+
+    FUNC_ENTER(NULL);
+
+    out->cont_id = 0;
+
+    /* printf("==PDC_SERVER[%d]: Got container creation request with name: %s\n", */
+    /*         pdc_server_rank_g, in->data.cont_name); */
+    hash_key = in->hash_value;
+
+    pdc_cont_hash_table_entry_t *lookup_value;
+
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_lock(&pdc_container_hash_table_mutex_g);
+#endif
+
+    if (metadata_hash_table_g != NULL) {
+        // lookup
+        lookup_value = hg_hash_table_lookup(container_hash_table_g, hash_key);
+
+        // Is this hash value exist in the Hash table?
+        if (lookup_value != NULL) {
+            
+            // Check if there exist metadata identical to current one
+            printf("==PDC_SERVER[%d]: Found existing container with same hash value, name=%s!\n", 
+                    pdc_server_rank_g, lookup_value->cont_name);
+            out->cont_id = 0;
+            goto done;
+        
+        }
+        else {
+            // Check if there exist metadata identical to current one
+            printf("==PDC_SERVER[%d]: Did not found existing container with same hash value, name=%s!\n", 
+                    pdc_server_rank_g, lookup_value->cont_name);
+            ret_value = FAIL;
+        }
+
+    }
+    else {
+        printf("==PDC_SERVER[%d]: %s - container_hash_table_g not initialized!\n", pdc_server_rank_g, __func__);
+        goto done;
+    }
+
+#ifdef ENABLE_MULTITHREAD 
+    // ^ Release hash table lock
+    hg_thread_mutex_unlock(&pdc_container_hash_table_mutex_g);
+#endif
+
+done:
+    FUNC_LEAVE(ret_value);
+} // end PDC_Server_delete_container
+
+/*
+ * Search a container by name
+ *
+ * \param  cont_name[IN]       Container name
+ * \param  hash_key[IN]       Hash value of container name
+ * \param  out[OUT]           Pointer to the result container
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+
+perr_t PDC_Server_find_container_by_name(const char *cont_name, pdc_cont_hash_table_entry_t **out)
+{
+    perr_t ret_value = SUCCEED;
+    uint32_t hash_key;
+
+    FUNC_ENTER(NULL);
+    if (NULL == cont_name || NULL == out) {
+        printf("==PDC_SERVER[%d]: %s - input is NULL! \n", pdc_server_rank_g, __func__);
+        goto done;
+    }
+
+    if (container_hash_table_g != NULL) {
+        // lookup
+        /* printf("checking hash table with key=%d\n", hash_key); */
+        hash_key = PDC_get_hash_by_name(cont_name);
+        *out = hg_hash_table_lookup(container_hash_table_g, &hash_key);
+        if (*out != NULL) {
+            // Double check with name match
+            if (strcmp(cont_name, (*out)->cont_name) != 0) {
+                *out = NULL;
+            }
+        }
+    }
+    else {
+        printf("container_hash_table_g not initialized!\n");
+        ret_value = -1;
+        goto done;
+    }
+
+    if (*out == NULL)
+        printf("==PDC_SERVER[%d]: container [%s] not found! \n", pdc_server_rank_g, cont_name);
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} // end of PDC_Server_search_with_name_timestep
+
+/*
+ * Search a container by obj id 
+ *
+ * \param  cont_id[IN]        Container  ID
+ * \param  out[OUT]           Pointer to the result container
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+
+perr_t PDC_Server_find_container_by_id(uint64_t cont_id, pdc_cont_hash_table_entry_t **out)
+{
+    perr_t ret_value = SUCCEED;
+    pdc_cont_hash_table_entry_t *cont_entry;
+    pdc_metadata_t *elt;
+    hg_hash_table_iter_t hash_table_iter;
+    int n_entry;
+    
+    FUNC_ENTER(NULL);
+
+    if (NULL == out) {
+        printf("==PDC_SERVER[%d]: %s - input is NULL! \n", pdc_server_rank_g, __func__);
+        goto done;
+    }
+
+    if (container_hash_table_g != NULL) {
+        // Since we only have the obj id, need to iterate the entire hash table
+        n_entry = hg_hash_table_num_entries(container_hash_table_g);
+        hg_hash_table_iterate(container_hash_table_g, &hash_table_iter);
+
+        while (n_entry != 0 && hg_hash_table_iter_has_more(&hash_table_iter)) {
+            cont_entry = hg_hash_table_iter_next(&hash_table_iter);
+            if (cont_entry->cont_id == cont_id) {
+                *out = cont_entry;
+                goto done;
+            }
+        }
+    }  
+    else {
+        printf("==PDC_SERVER[%d]: %s - container_hash_table_g not initialized!\n", pdc_server_rank_g, __func__);
+        ret_value = FAIL;
+        out = NULL;
+        goto done;
+    }
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} // end of PDC_Server_find_container_by_id
+
+/*
+ * Add objects to a container 
+ *
+ * \param  n_obj[IN]           Number of objects to be added/deleted
+ * \param  obj_ids[IN]        Pointer to object array with nobj objects
+ * \param  cont_id[IN]        Container ID
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+
+perr_t PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint64_t cont_id)
+{
+    perr_t ret_value = SUCCEED;
+    pdc_cont_hash_table_entry_t *cont_entry = NULL;
+    int realloc_size = 0;
+
+    FUNC_ENTER(NULL);
+    ret_value = PDC_Server_find_container_by_id(cont_id, &cont_entry);
+
+    if (cont_entry != NULL) {
+        // Check if need to allocate space
+        if (cont_entry->n_allocated == 0) {
+            cont_entry->n_allocated = PDC_ALLOC_BASE_NUM;
+            cont_entry->obj_ids = (uint64_t*)calloc(sizeof(uint64_t), PDC_ALLOC_BASE_NUM);
+        }
+        else if (cont_entry->n_allocated < cont_entry->n_obj + n_obj) {
+            // Extend the allocated space by twice its original size 
+            // or twice the n_obj size, whichever greater
+            realloc_size = cont_entry->n_allocated > n_obj? cont_entry->n_allocated: n_obj;
+            realloc_size *= (sizeof(uint64_t)*2);
+            cont_entry->obj_ids = (uint64_t*)realloc(cont_entry->obj_ids, realloc_size);
+        }
+
+        // Append the new ids
+        memcpy(cont_entry->obj_ids+cont_entry->n_obj, obj_ids, n_obj*sizeof(uint64_t));
+        cont_entry->n_obj += n_obj;
+            
+        // Debug prints
+        printf("==PDC_SERVER[%d]: add %d objects to container %" PRIu64 ", total %d !\n", 
+                pdc_server_rank_g, n_obj, cont_id, cont_entry->n_obj - cont_entry->n_deleted);
+        
+        /* int i; */
+        /* for (i = 0; i < cont_entry->n_obj; i++) */ 
+        /*     printf(" %" PRIu64 ",", cont_entry->obj_ids[i]); */
+        /* printf("\n"); */
+ 
+        // TODO: find duplicates
+    }
+    else {
+        printf("==PDC_SERVER[%d]: %s - container %" PRIu64 " not found!\n", 
+                pdc_server_rank_g, __func__, cont_id);
+        ret_value = FAIL;
+        goto done;
+    }
+   
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} // end of PDC_Server_container_add_objs
+
+/*
+ * Delete objects to a container 
+ *
+ * \param  n_obj[IN]           Number of objects to be added/deleted
+ * \param  obj_ids[IN]        Pointer to object array with n_obj objects
+ * \param  cont_id[IN]        Container ID
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+
+perr_t PDC_Server_container_del_objs(int n_obj, uint64_t *obj_ids, uint64_t cont_id)
+{
+    perr_t ret_value = SUCCEED;
+    pdc_cont_hash_table_entry_t *cont_entry = NULL;
+    int realloc_size = 0, i, j;
+    int n_deletes = 0;
+
+    FUNC_ENTER(NULL);
+    ret_value = PDC_Server_find_container_by_id(cont_id, &cont_entry);
+
+    if (cont_entry != NULL) {
+        for (i = 0; i < n_obj; i++) {
+            for (j = 0; j < cont_entry->n_obj; j++) {
+                if (cont_entry->obj_ids[j] == obj_ids[i]) {
+                    cont_entry->obj_ids[j] = 0;
+                    cont_entry->n_deleted++;
+                    n_deletes++;
+                    break;
+                }
+            }
+        }
+        // Debug print
+        printf("==PDC_SERVER[%d]: successfully deleted %d objects!\n", 
+                pdc_server_rank_g, n_deletes);
+
+        if (n_deletes != n_obj) {
+            printf("==PDC_SERVER[%d]: %s - %d objects are not found to be deleted!\n", 
+                    pdc_server_rank_g, __func__, n_obj - n_deletes);
+        }
+    }
+    else {
+        printf("==PDC_SERVER[%d]: %s - container %" PRIu64 " not found!\n", 
+                pdc_server_rank_g, __func__, cont_id);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    // Debug prints
+    printf("==PDC_SERVER[%d]: After deletion, container %" PRIu64 " has %d objects:\n", 
+            pdc_server_rank_g, cont_id, cont_entry->n_obj - cont_entry->n_deleted);
+    for (i = 0; i < cont_entry->n_obj; i++) {
+        if (cont_entry->obj_ids[i] != 0) {
+            printf(" %" PRIu64 ",", cont_entry->obj_ids[i]);
+        }
+    }
+    printf("\n");
+ 
+ 
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} // end of PDC_Server_container_del_objs
 

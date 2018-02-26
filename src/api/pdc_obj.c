@@ -113,6 +113,12 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id
         PGOTO_ERROR(FAIL,"Unable to create object on server!\n");
     }
 
+    ret = PDC_Client_add_del_objects_to_container(1, &(p->meta_id), p->cont->meta_id, ADD_OBJ);
+    if (ret == FAIL) {
+        ret_value = -1;
+        PGOTO_ERROR(FAIL,"Unable to put object to container!\n");
+    }
+
     p->local_id = PDC_id_register(PDC_OBJ, p);
 
     ret_value = p->local_id;

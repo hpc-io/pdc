@@ -29,6 +29,7 @@
 struct PDC_cont_info {
     const char             *name;
     pdcid_t                local_id;
+    uint64_t               meta_id;
     struct PDC_cont_prop   *cont_pt;
 };
 

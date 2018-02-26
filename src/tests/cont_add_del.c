@@ -31,13 +31,13 @@
 #include <sys/time.h>
 #include <ctype.h>
 
-/* #define ENABLE_MPI 1 */
-
 #ifdef ENABLE_MPI
   #include "mpi.h"
 #endif
 
 #include "pdc.h"
+
+#define NCONT 10
 
 static char *rand_string(char *str, size_t size)
 {
@@ -63,9 +63,10 @@ int main(int argc, char **argv)
     int count = -1;
     char c;
     int i;
-    pdcid_t pdc, cont_prop, cont, obj_prop;
+    pdcid_t pdc, cont_prop, cont[NCONT], obj_prop;
+    char cont_name[128];
     uint64_t dims[3] = {100, 200, 700};
-    pdcid_t test_obj = -1;
+    pdcid_t *obj_ids = NULL;
     int use_name = -1;
 
     struct timeval  ht_total_start;
@@ -112,6 +113,8 @@ int main(int argc, char **argv)
 
     count /= size;
 
+    obj_ids = (pdcid_t*)calloc(count, sizeof(pdcid_t));
+
     if (rank == 0) 
         printf("Creating %d objects per MPI rank\n", count);
     fflush(stdout);
@@ -124,10 +127,13 @@ int main(int argc, char **argv)
     if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
-    // create a container
-    cont = PDCcont_create("c1", cont_prop);
-    if(cont <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+    // create NCONT  container
+    for (i = 0; i < NCONT; i++) {
+        sprintf(cont_name, "Cont%d", i);
+        cont[i] = PDCcont_create(cont_name, cont_prop);
+        if(cont[i] <= 0)
+            printf("Fail to create container @ line  %d!\n", __LINE__);
+    }
 
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
@@ -177,14 +183,11 @@ int main(int argc, char **argv)
         PDCprop_set_obj_app_name(obj_prop, "test_app"  );
         PDCprop_set_obj_tags(    obj_prop, "tag0=1"    );
 
-        /* if (count < 4) { */
-        /*     printf("Proc %d Name: %s\n", rank, obj_name); */
-        /* } */
         if (count < 20) {
             printf("[%d] create obj with name %s\n", rank, obj_name);
         }
-        test_obj = PDCobj_create(cont, obj_name, obj_prop);
-        if (test_obj < 0) { 
+        obj_ids[i] = PDCobj_create(cont[i%NCONT], obj_name, obj_prop);
+        if (obj_ids[i] < 0) { 
             printf("Error getting an object id of %s from server, exit...\n", obj_name);
             exit(-1);
         }
@@ -217,6 +220,12 @@ int main(int argc, char **argv)
         fflush(stdout);
     }
 
+    // Add object to container
+    PDC_Client_add_objects_to_container(count, obj_ids, cont[0]);
+
+    // Delete object to container
+    PDC_Client_del_objects_to_container(count, obj_ids, cont[0]);
+
     /* // Check for duplicate insertion */
     /* int dup_obj_id; */
     /* sprintf(obj_name, "%s_%d", obj_prefix[0], rank * 10000000); */
@@ -237,9 +246,11 @@ int main(int argc, char **argv)
     /* } */
 
 done:
-    // close a container
-    if(PDCcont_close(cont) < 0)
-        printf("fail to close container c1\n");
+    // close all container
+    for (i = 0; i < NCONT; i++) {
+        if(PDCcont_close(cont[i]) < 0)
+            printf("fail to close container c1\n");
+    }
 
     // close a container property
     if(PDCprop_close(cont_prop) < 0)

@@ -4,16 +4,17 @@
 #include "mpi.h"
 #include "hdf5.h"
 #include "pdc.h"
+#include "pdc_client_server_common.h"
 
 #define MAX_NAME 1024
-#define MAX_TAG_LEN 16384
 #define MAX_FILES 2500
 #define MAX_FILENAME_LEN 64
+
 
 void do_dtype(hid_t, hid_t, int);
 void do_dset(hid_t did, char *name);
 void do_link(hid_t, char *);
-void scan_group(hid_t);
+void scan_group(hid_t, int);
 void do_attr(hid_t);
 void scan_attrs(hid_t);
 void do_plist(hid_t);
@@ -22,11 +23,12 @@ void print_usage() {
     printf("Usage: srun -n 2443 ./h5boss_v2_import h5boss_filenames\n");
 }
 
-char tags_g[MAX_TAG_LEN];
+char tags_g[TAG_LEN_MAX];
+char grp_path_g[TAG_LEN_MAX];
 char *tags_ptr_g;
-char dset_name_g[MAX_TAG_LEN];
+char dset_name_g[TAG_LEN_MAX];
 hsize_t tag_size_g;
-int  ndset = 0;
+int  ndset_g = 0;
 /* FILE *summary_fp_g; */
 int max_tag_size_g = 0;
 pdcid_t pdc_id_g, cont_prop_g, cont_id_g, obj_prop_g;
@@ -38,17 +40,17 @@ int add_tag(char *str)
         fprintf(stderr, "%s - input str is NULL!", __func__);
         return 0;
     }
-    else if (tag_size_g + str_len >= MAX_TAG_LEN) {
+    else if (tag_size_g + str_len >= TAG_LEN_MAX) {
         fprintf(stderr, "%s - tags_ptr_g overflow!", __func__);
         return 0;
     }
 
-    /* // Remove the trailing ',' */
-    /* if (*str == '}' || *str == ')' || *str == ']' ) { */
-    /*     if (*(--tags_ptr_g) != ',') { */
-    /*         tags_ptr_g++; */
-    /*     } */
-    /* } */
+    // Remove the trailing ','
+    if (*str == '}' || *str == ')' || *str == ']' ) {
+        if (*(--tags_ptr_g) != ',') {
+            tags_ptr_g++;
+        }
+    }
 
     str_len = strlen(str);
     strncpy(tags_ptr_g, str, str_len);
@@ -77,6 +79,7 @@ main(int argc, char **argv)
     char my_filenames[MAX_FILES][MAX_FILENAME_LEN];
     int  send_counts[MAX_FILES];
     int  displs[MAX_FILES];
+    int total_dset = 0;
     /* char* summary_fname = "/global/cscratch1/sd/houhun/tag_size_summary.csv"; */
 
     /* summary_fp_g = fopen(summary_fname, "a+"); */
@@ -88,11 +91,6 @@ main(int argc, char **argv)
     cont_prop_g = PDCprop_create(PDC_CONT_CREATE, pdc_id_g);
     if(cont_prop_g <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
-
-    // create a container
-    cont_id_g = PDCcont_create("VPIC_cont", cont_prop_g);
-    if(cont_id_g <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
 
     // create object property for float and int
     obj_prop_g= PDCprop_create(PDC_OBJ_CREATE, pdc_id_g);
@@ -158,19 +156,37 @@ main(int argc, char **argv)
         /*     printf("%d: %d [%s] \n", rank, my_count, my_filenames[i]); */
         /* } */
 
+        struct timeval  pdc_timer_start;
+        struct timeval  pdc_timer_end;
+        gettimeofday(&pdc_timer_start, 0);
+
         for (i = 0; i < my_count; i++) {
             filename = my_filenames[i];
-            printf("%d: processing [%s]\n", rank, my_filenames[i]);
-            fflush(stdout);
+            /* printf("%d: processing [%s]\n", rank, my_filenames[i]); */
+            /* fflush(stdout); */
             file = H5Fopen(filename, H5F_ACC_RDWR, H5P_DEFAULT);
+            if (file < 0) {
+                status = H5Fclose(file);
+                continue;
+            }
 
+            memset(grp_path_g, 0, sizeof(MAX_NAME));
             grp = H5Gopen(file,"/", H5P_DEFAULT);
-            scan_group(grp);
+            scan_group(grp, 1);
 
             status = H5Fclose(file);
 
-            printf("%s, %d\n", filename, max_tag_size_g);
-            /* printf("\n\n======================\nNumber of datasets: %d\n", ndset); */
+            /* printf("%s, %d\n", filename, max_tag_size_g); */
+            /* printf("\n\n======================\nNumber of datasets: %d\n", ndset_g); */
+        }
+
+        MPI_Barrier(MPI_COMM_WORLD);
+        gettimeofday(&pdc_timer_end, 0);
+        double write_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+
+        MPI_Reduce(&ndset_g, &total_dset, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+        if (rank == 0) {
+            printf("Import %d datasets with %d ranks took %.2f seconds.\n", total_dset, size, write_time);
         }
     }
 
@@ -189,7 +205,7 @@ done:
  */
 
 void
-scan_group(hid_t gid) {
+scan_group(hid_t gid, int level) {
     int i;
     ssize_t len;
     hsize_t nobj;
@@ -206,6 +222,18 @@ scan_group(hid_t gid) {
      *  Other info., not shown here: number of links, object id
      */
     len = H5Iget_name (gid, group_name, MAX_NAME);
+
+    strcat(grp_path_g, group_name);
+    strcat(grp_path_g, "/");
+
+    // Create a container for the second level
+    if (level == 2) {
+        // create a container
+        cont_id_g = PDCcont_create(group_name, cont_prop_g);
+        if(cont_id_g <= 0)
+            printf("Fail to create container @ line  %d!\n", __LINE__);
+    }
+
 
     /* printf("Group Name: %s\n",group_name); */
 
@@ -241,7 +269,7 @@ scan_group(hid_t gid) {
         case H5G_GROUP:
             /* printf(" GROUP:\n"); */
             grpid = H5Gopen(gid,memb_name, H5P_DEFAULT);
-            scan_group(grpid);
+            scan_group(grpid, level + 1);
             H5Gclose(grpid);
             break;
         case H5G_DATASET:
@@ -279,11 +307,12 @@ do_dset(hid_t did, char *name)
     hid_t sid;
     hsize_t size;
     char ds_name[MAX_NAME];
+    char grp_name[MAX_NAME];
     char *obj_name;
     int name_len, i;
 
     tag_size_g = 0;
-    memset(tags_g, 0, sizeof(char)*MAX_TAG_LEN);
+    memset(tags_g, 0, sizeof(char)*TAG_LEN_MAX);
     tags_ptr_g = tags_g;
     /*
      * Information about the group:
@@ -295,6 +324,8 @@ do_dset(hid_t did, char *name)
     strcpy(dset_name_g, ds_name);
     /* add_tag(ds_name); */
 
+    // dset_name_g has the full path to the dataset, e.g. /group/subgroup/dset_name
+    // substract the actual dset name with following
     name_len = strlen(ds_name);
     for (i = name_len; i >= 0; i--) {
         if (ds_name[i] == '/') {
@@ -317,7 +348,7 @@ do_dset(hid_t did, char *name)
 
     add_tag(",");
 
-    ndset ++;
+    ndset_g ++;
     /*
      *  process the attributes of the dataset, if any.
      */
@@ -341,7 +372,6 @@ do_dset(hid_t did, char *name)
     /* H5Pclose(pid); */
     H5Tclose(tid);
     H5Sclose(sid);
-
 
     // Create a pdc object per dataset with tag
     PDCprop_set_obj_tags(obj_prop_g, tags_g);
@@ -373,7 +403,7 @@ do_dtype(hid_t tid, hid_t oid, int is_compound) {
     int compound_nmember, i;
     hsize_t dims[8], ndim;
     char *mem_name;
-    char *attr_string[100], new_string[MAX_TAG_LEN], tmp_str[MAX_TAG_LEN];
+    char *attr_string[100], new_string[TAG_LEN_MAX], tmp_str[TAG_LEN_MAX];
     hsize_t size, attr_len;
     hid_t mem_type;
     hid_t atype, aspace, naive_type;
@@ -422,7 +452,7 @@ do_dtype(hid_t tid, hid_t oid, int is_compound) {
                 }
                 /* H5Aread (oid, H5T_NATIVE_DOUBLE, &attr_float); */
                 if (attr_float == 0) {
-                    add_tag("0");
+                    add_tag("0,");
                 }
                 else {
                     sprintf(tmp_str,"%.2f,", attr_float);

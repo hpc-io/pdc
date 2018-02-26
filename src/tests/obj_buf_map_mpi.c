@@ -119,7 +119,9 @@ int main(int argc, char **argv)
     if (ret != SUCCEED)
         printf("Failed to obtain lock for r2\n");
 
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
     for (int i=0; i<numparticles; i++) {
         x[i]   = uniform_random_number() * x_dim;

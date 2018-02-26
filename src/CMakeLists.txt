@@ -32,7 +32,7 @@ project(PDC C)
 #------------------------------------------------------------------------------
 add_definitions(-DENABLE_MPI=1)
 add_definitions(-DENABLE_LUSTRE=1)
-add_definitions(-DENABLE_TIMING=1)
+#add_definitions(-DENABLE_TIMING=1)
 add_definitions(-DENABLE_CHECKPOINT=1)
 #add_definitions(-DENABLE_PROFILING=1)
 #add_definitions(-DENABLE_MULTITHREAD=1)

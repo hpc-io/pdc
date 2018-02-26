@@ -46,7 +46,7 @@
 
 #define ADDR_MAX                            128
 #define DIM_MAX                             4
-#define TAG_LEN_MAX                         128
+#define TAG_LEN_MAX                         5500
 #define PDC_SERVER_ID_INTERVEL              1000000
 #define PDC_SERVER_MAX_PROC_PER_NODE        32
 #define PDC_SERIALIZE_MAX_SIZE              256
@@ -56,6 +56,9 @@
 /* #define pdc_server_tmp_dir_g  "./pdc_tmp" */
 /* extern char pdc_server_tmp_dir_g[ADDR_MAX]; */
 #define pdc_server_cfg_name_g "server.cfg"
+
+#define ADD_OBJ 1
+#define DEL_OBJ 2
 
 extern uint64_t pdc_id_seq_g;
 extern int pdc_server_rank_g;
@@ -829,9 +832,53 @@ hg_proc_metadata_query_out_t(hg_proc_t proc, void *data)
 }
 
 typedef struct {
+    hg_string_t cont_name;
+    uint32_t    hash_value;
+} gen_cont_id_in_t;
+
+typedef struct {
+    uint64_t cont_id;
+} gen_cont_id_out_t;
+
+static HG_INLINE hg_return_t
+hg_proc_gen_cont_id_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    gen_cont_id_in_t *struct_data = (gen_cont_id_in_t*) data;
+
+    ret = hg_proc_hg_string_t(proc, &struct_data->cont_name);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint32_t(proc, &struct_data->hash_value);
+    if (ret != HG_SUCCESS) {
+	    HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_gen_cont_id_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    gen_cont_id_out_t *struct_data = (gen_cont_id_out_t*) data;
+
+    ret = hg_proc_uint64_t(proc, &struct_data->cont_id);
+    if (ret != HG_SUCCESS) {
+	    HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+
+typedef struct {
     pdc_metadata_transfer_t data;
     uint32_t hash_value;
-    PDC_var_type_t data_type;
+    uint32_t data_type;
 } gen_obj_id_in_t;
 
 typedef struct {
@@ -988,7 +1035,7 @@ hg_proc_gen_obj_id_in_t(hg_proc_t proc, void *data)
 	    HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_uint8_t(proc, &struct_data->data_type);
+    ret = hg_proc_uint32_t(proc, &struct_data->data_type);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -2099,6 +2146,7 @@ hg_id_t get_metadata_by_id_register(hg_class_t *hg_class);
 hg_id_t get_reg_lock_status_register(hg_class_t *hg_class);
 hg_id_t get_storage_info_register(hg_class_t *hg_class);
 hg_id_t bulk_rpc_register(hg_class_t *hg_class);
+hg_id_t gen_cont_id_register(hg_class_t *hg_class);
 
 //bulk
 hg_id_t query_partial_register(hg_class_t *hg_class);
@@ -2107,6 +2155,8 @@ hg_id_t data_server_read_register(hg_class_t *hg_class);
 
 struct bulk_args_t {
     int cnt;
+    int op;
+    uint64_t cont_id;
     hg_handle_t handle;
     hg_bulk_t   bulk_handle;
     size_t nbytes;
@@ -2220,5 +2270,68 @@ extern char *find_in_path(char *workingDir, char *application);
 
 
 int pdc_msleep(unsigned long milisec);
+
+// Container add/del objects
+typedef struct {
+    hg_int32_t op;
+    hg_int32_t cnt;
+    hg_int32_t origin;
+    hg_uint64_t cont_id;
+    hg_bulk_t bulk_handle;
+} cont_add_del_objs_rpc_in_t;
+
+/* Define hg_proc_cont_add_del_objs_rpc_in_t*/
+static HG_INLINE hg_return_t
+hg_proc_cont_add_del_objs_rpc_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret = HG_SUCCESS;
+    cont_add_del_objs_rpc_in_t *struct_data = (cont_add_del_objs_rpc_in_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->op);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->cnt);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->origin);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->cont_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_bulk_t(proc, &struct_data->bulk_handle);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+typedef struct {
+    hg_uint32_t ret;
+} cont_add_del_objs_rpc_out_t;
+
+/* Define hg_proc_bulk_rpc_out_t */
+static HG_INLINE hg_return_t
+hg_proc_cont_add_del_objs_rpc_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret = HG_SUCCESS;
+    bulk_rpc_out_t *struct_data = (bulk_rpc_out_t *) data;
+
+    ret = hg_proc_uint32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
 
 #endif /* PDC_CLIENT_SERVER_COMMON_H */
