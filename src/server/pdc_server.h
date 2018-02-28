@@ -50,7 +50,6 @@ extern hg_class_t *hg_class_g;
 int PDC_Server_is_contiguous_region_overlap(region_list_t *a, region_list_t *b);
 pbool_t region_is_identical(region_info_transfer_t reg1, region_info_transfer_t reg2);
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out);
-/* perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out); */
 perr_t PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_ptr, hg_handle_t *handle);
 perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle);
 perr_t PDC_Data_Server_buf_unmap(buf_unmap_in_t *in);
@@ -85,11 +84,6 @@ hg_return_t PDC_Server_s2s_send_work_done_cb(const struct hg_cb_info *callback_i
 hg_return_t PDC_Server_s2s_recv_work_done_cb(const struct hg_cb_info *callback_info);
 hg_return_t PDC_Server_count_write_check_update_storage_meta_cb(const struct hg_cb_info *callback_info);
 perr_t PDC_Server_create_container(gen_cont_id_in_t *in, gen_cont_id_out_t *out);
-/* typedef struct pdc_metadata_name_mark_t { */
-/*     char obj_name[ADDR_MAX]; */
-/*     struct pdc_metadata_name_mark_t *next; */
-/*     struct pdc_metadata_name_mark_t *prev; */
-/* } pdc_metadata_name_mark_t; */
 
 typedef struct pdc_hash_table_entry_head {
     int n_obj;

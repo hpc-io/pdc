@@ -46,13 +46,14 @@
 
 #include "utlist.h"
 #include "dablooms.h"
+#include "hash-table.h"
 
 #include "mercury.h"
 #include "mercury_macros.h"
 
 // Mercury hash table and list
-#include "mercury_hash_table.h"
-#include "mercury_list.h"
+/* #include "mercury_hash_table.h" */
+/* #include "mercury_list.h" */
 
 #include "pdc_interface.h"
 #include "pdc_client_server_common.h"
@@ -66,7 +67,6 @@
 hg_thread_mutex_t pdc_client_addr_metex_g;
 hg_thread_mutex_t pdc_metadata_hash_table_mutex_g;
 hg_thread_mutex_t pdc_container_hash_table_mutex_g;
-/* hg_thread_mutex_t pdc_metadata_name_mark_hash_table_mutex_g; */
 hg_thread_mutex_t pdc_time_mutex_g;
 hg_thread_mutex_t pdc_bloom_time_mutex_g;
 hg_thread_mutex_t n_metadata_mutex_g;
@@ -131,9 +131,8 @@ static hg_id_t    bulk_rpc_register_id_g;
 extern hg_thread_pool_t *hg_test_thread_pool_g;
 
 // Global hash table for storing metadata 
-hg_hash_table_t *metadata_hash_table_g  = NULL;
-hg_hash_table_t *container_hash_table_g = NULL;
-/* hg_hash_table_t *metadata_name_mark_hash_table_g = NULL; */
+HashTable *metadata_hash_table_g  = NULL;
+HashTable *container_hash_table_g = NULL;
 
 // Global object region info list in local data server
 data_server_region_t *dataserver_region_g = NULL;
@@ -271,7 +270,7 @@ done:
  * \return 1 if two keys are equal, 0 otherwise
  */
 static int 
-PDC_Server_metadata_int_equal(hg_hash_table_key_t vlocation1, hg_hash_table_key_t vlocation2)
+PDC_Server_metadata_int_equal(void *vlocation1, void *vlocation2)
 {
     return *((uint32_t *) vlocation1) == *((uint32_t *) vlocation2);
 }
@@ -284,7 +283,7 @@ PDC_Server_metadata_int_equal(hg_hash_table_key_t vlocation1, hg_hash_table_key_
  * \return the location of hash key in the table
  */
 static unsigned int
-PDC_Server_metadata_int_hash(hg_hash_table_key_t vlocation)
+PDC_Server_metadata_int_hash(void *vlocation)
 {
     return *((uint32_t *) vlocation);
 }
@@ -297,25 +296,10 @@ PDC_Server_metadata_int_hash(hg_hash_table_key_t vlocation)
  * \return void
  */
 static void
-PDC_Server_metadata_int_hash_key_free(hg_hash_table_key_t key)
+PDC_Server_metadata_int_hash_key_free(void * key)
 {
     free((uint32_t *) key);
 }
-
-/* static void */
-/* PDC_Server_metadata_name_mark_hash_value_free(hg_hash_table_value_t value) */
-/* { */
-/*     pdc_metadata_name_mark_t *elt, *tmp, *head; */
-
-/*     head = (pdc_metadata_name_mark_t *) value; */
-
-/*     // Free metadata list */
-/*     DL_FOREACH_SAFE(head,elt,tmp) { */
-/*       /1* DL_DELETE(head,elt); *1/ */
-/*       free(elt); */
-/*     } */
-/* } */
-
 
 /*
  * Free metadata hash value
@@ -325,7 +309,7 @@ PDC_Server_metadata_int_hash_key_free(hg_hash_table_key_t key)
  * \return void
  */
 static void
-PDC_Server_metadata_hash_value_free(hg_hash_table_value_t value)
+PDC_Server_metadata_hash_value_free(void * value)
 {
     pdc_metadata_t *elt, *tmp;
     pdc_hash_table_entry_head *head;
@@ -365,7 +349,7 @@ PDC_Server_metadata_hash_value_free(hg_hash_table_value_t value)
  * \return void
  */
 static void
-PDC_Server_container_hash_value_free(hg_hash_table_value_t value)
+PDC_Server_container_hash_value_free(void * value)
 {
     pdc_cont_hash_table_entry_t *head = (pdc_cont_hash_table_entry_t*) value;
     free(head->obj_ids);
@@ -773,7 +757,7 @@ done:
 /*     FUNC_ENTER(NULL); */
 
 /*     if (metadata_hash_table_g != NULL) { */
-/*         lookup_value = hg_hash_table_lookup(metadata_hash_table_g, &hash_key); */
+/*         lookup_value = hash_table_lookup(metadata_hash_table_g, &hash_key); */
 
 /*         if (lookup_value == NULL) { */
 /*             ret_value = NULL; */
@@ -916,19 +900,21 @@ static pdc_metadata_t * find_metadata_by_id(uint64_t obj_id)
     pdc_metadata_t *ret_value;
     pdc_hash_table_entry_head *head;
     pdc_metadata_t *elt;
-    hg_hash_table_iter_t hash_table_iter;
+    HashTableIterator hash_table_iter;
+    HashTablePair pair;
     int n_entry;
     
     FUNC_ENTER(NULL);
 
     if (metadata_hash_table_g != NULL) {
         // Since we only have the obj id, need to iterate the entire hash table
-        n_entry = hg_hash_table_num_entries(metadata_hash_table_g);
-        hg_hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
+        n_entry = hash_table_num_entries(metadata_hash_table_g);
+        hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
 
-        while (n_entry != 0 && hg_hash_table_iter_has_more(&hash_table_iter)) {
+        while (n_entry != 0 && hash_table_iter_has_more(&hash_table_iter)) {
 
-            head = hg_hash_table_iter_next(&hash_table_iter);
+            pair = hash_table_iter_next(&hash_table_iter);
+            head = pair.value;
             // Now iterate the list under this entry
             DL_FOREACH(head->metadata, elt) {
                 if (elt->obj_id == obj_id) {
@@ -1207,29 +1193,20 @@ static perr_t PDC_Server_init_hash_table()
     FUNC_ENTER(NULL);
 
     // Metadata hash table
-    metadata_hash_table_g = hg_hash_table_new(PDC_Server_metadata_int_hash, PDC_Server_metadata_int_equal);
+    metadata_hash_table_g = hash_table_new(PDC_Server_metadata_int_hash, PDC_Server_metadata_int_equal);
     if (metadata_hash_table_g == NULL) {
         printf("==PDC_SERVER: metadata_hash_table_g init error! Exit...\n");
         goto done;
     }
-    hg_hash_table_register_free_functions(metadata_hash_table_g, PDC_Server_metadata_int_hash_key_free, PDC_Server_metadata_hash_value_free);
+    hash_table_register_free_functions(metadata_hash_table_g, PDC_Server_metadata_int_hash_key_free, PDC_Server_metadata_hash_value_free);
 
     // Container hash table
-    container_hash_table_g = hg_hash_table_new(PDC_Server_metadata_int_hash, PDC_Server_metadata_int_equal);
+    container_hash_table_g = hash_table_new(PDC_Server_metadata_int_hash, PDC_Server_metadata_int_equal);
     if (container_hash_table_g == NULL) {
         printf("==PDC_SERVER: container_hash_table_g init error! Exit...\n");
         goto done;
     }
-    hg_hash_table_register_free_functions(container_hash_table_g, PDC_Server_metadata_int_hash_key_free, PDC_Server_container_hash_value_free);
-
-
-    /* // Name marker hash table, reuse some functions from metadata_hash_table */
-    /* metadata_name_mark_hash_table_g = hg_hash_table_new(PDC_Server_metadata_int_hash, PDC_Server_metadata_int_equal); */
-    /* if (metadata_name_mark_hash_table_g == NULL) { */
-    /*     printf("==PDC_SERVER: metadata_name_mark_hash_table_g init error! Exit...\n"); */
-    /*     exit(-1); */
-    /* } */
-    /* hg_hash_table_register_free_functions(metadata_name_mark_hash_table_g, PDC_Server_metadata_int_hash_key_free, PDC_Server_metadata_name_mark_hash_value_free); */
+    hash_table_register_free_functions(container_hash_table_g, PDC_Server_metadata_int_hash_key_free, PDC_Server_container_hash_value_free);
 
     is_hash_table_init_g = 1;
 
@@ -1454,7 +1431,7 @@ static perr_t PDC_Server_hash_table_list_init(pdc_hash_table_entry_head *entry, 
 #endif
 
     // Insert to hash table
-    ret = hg_hash_table_insert(metadata_hash_table_g, hash_key, entry);
+    ret = hash_table_insert(metadata_hash_table_g, hash_key, entry);
     if (ret != 1) {
         fprintf(stderr, "PDC_Server_hash_table_list_init(): Error with hash table insert!\n");
         ret_value = FAIL;
@@ -1477,94 +1454,6 @@ static perr_t PDC_Server_hash_table_list_init(pdc_hash_table_entry_head *entry, 
 done:
     FUNC_LEAVE(ret_value);
 }
-
-/* perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out) { */
-    
-/*     FUNC_ENTER(NULL); */
-
-/*     perr_t ret_value = SUCCEED; */
-/*     hg_return_t hg_ret; */
-
-
-/*     /1* printf("==PDC_SERVER: Insert obj name marker [%s]\n", in->obj_name); *1/ */
-
-/*     uint32_t *hash_key = (uint32_t*)malloc(sizeof(uint32_t)); */
-/*     if (hash_key == NULL) { */
-/*         printf("Cannot allocate hash_key!\n"); */
-/*         goto done; */
-/*     } */
-/*     total_mem_usage_g += sizeof(uint32_t); */
-
-/*     *hash_key = in->hash_value; */
-
-/*     pdc_metadata_name_mark_t *namemark= (pdc_metadata_name_mark_t*)malloc(sizeof(pdc_metadata_name_mark_t)); */
-/*     if (namemark == NULL) { */
-/*         printf("==PDC_SERVER: ERROR - Cannot allocate pdc_metadata_name_mark_t!\n"); */
-/*         goto done; */
-/*     } */
-/*     total_mem_usage_g += sizeof(pdc_metadata_name_mark_t); */
-/*     strcpy(namemark->obj_name, in->obj_name); */
-
-/*     pdc_metadata_name_mark_t *lookup_value; */
-/*     pdc_metadata_name_mark_t *elt; */
-
-/* #ifdef ENABLE_MULTITHREAD */ 
-/*     // Obtain lock for hash table */
-/*     int unlocked = 0; */
-/*     hg_thread_mutex_lock(&pdc_metadata_name_mark_hash_table_mutex_g); */
-/* #endif */
-
-/*     if (metadata_name_mark_hash_table_g != NULL) { */
-/*         // lookup */
-/*         /1* printf("checking hash table with key=%d\n", *hash_key); *1/ */
-/*         lookup_value = hg_hash_table_lookup(metadata_name_mark_hash_table_g, hash_key); */
-
-/*         // Is this hash value exist in the Hash table? */
-/*         if (lookup_value != NULL) { */
-/*             // Check if there exist namemark identical to current one */
-/*             if (find_identical_namemark(lookup_value, namemark) == 1) { */
-/*                 // If find same one, do nothing */
-/*                 /1* printf("==PDC_SERVER: marker exist for [%s]\n", namemark->obj_name); *1/ */
-/*                 ret_value = 0; */
-/*                 free(namemark); */
-/*             } */
-/*             else { */
-/*                 // Currently namemark is unique, insert to linked list */
-/*                 DL_APPEND(lookup_value, namemark); */
-/*             } */
-        
-/*             /1* free(hash_key); *1/ */
-/*         } */
-/*         else { */
-/*             /1* printf("lookup_value is NULL!\n"); *1/ */
-/*             // First entry for current hasy_key, init linked list */
-/*             namemark->prev = namemark;                                                                   \ */
-/*             namemark->next = NULL; */   
-
-/*             // Insert to hash table */
-/*             hg_ret = hg_hash_table_insert(metadata_name_mark_hash_table_g, hash_key, namemark); */
-/*             if (hg_ret != 1) { */
-/*                 fprintf(stderr, "==PDC_SERVER: ERROR - insert_obj_name_marker() error with hash table insert!\n"); */
-/*                 ret_value = -1; */
-/*                 goto done; */
-/*             } */
-/*         } */
-/*     } */
-/*     else { */
-/*         printf("metadata_hash_table_g not initialized!\n"); */
-/*         ret_value = -1; */
-/*         goto done; */
-/*     } */
-
-/* #ifdef ENABLE_MULTITHREAD */ 
-/*     // ^ Release hash table lock */
-/*     hg_thread_mutex_unlock(&pdc_metadata_name_mark_hash_table_mutex_g); */
-/* #endif */
-
-/* done: */
-/*     out->ret = 1; */
-/*     FUNC_LEAVE(ret_value); */
-/* } */
 
 /*
  * Add the tag received from one client to the corresponding metadata structure
@@ -1612,7 +1501,7 @@ perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_o
     if (metadata_hash_table_g != NULL) {
         // lookup
         /* printf("==PDC_SERVER: checking hash table with key=%d\n", *hash_key); */
-        lookup_value = hg_hash_table_lookup(metadata_hash_table_g, hash_key);
+        lookup_value = hash_table_lookup(metadata_hash_table_g, hash_key);
 
         // Is this hash value exist in the Hash table?
         if (lookup_value != NULL) {
@@ -1756,7 +1645,7 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
     if (metadata_hash_table_g != NULL) {
         // lookup
         /* printf("==PDC_SERVER: checking hash table with key=%d\n", *hash_key); */
-        lookup_value = hg_hash_table_lookup(metadata_hash_table_g, hash_key);
+        lookup_value = hash_table_lookup(metadata_hash_table_g, hash_key);
 
         // Is this hash value exist in the Hash table?
         if (lookup_value != NULL) {
@@ -1862,7 +1751,8 @@ perr_t PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata
 {
     perr_t ret_value = FAIL;
     pdc_metadata_t *elt;
-    hg_hash_table_iter_t hash_table_iter;
+    HashTableIterator hash_table_iter;
+    HashTablePair pair;
     uint64_t target_obj_id;
     int n_entry;
 
@@ -1898,12 +1788,13 @@ perr_t PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata
         // Since we only have the obj id, need to iterate the entire hash table
         pdc_hash_table_entry_head *head; 
 
-        n_entry = hg_hash_table_num_entries(metadata_hash_table_g);
-        hg_hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
+        n_entry = hash_table_num_entries(metadata_hash_table_g);
+        hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
 
-        while (n_entry != 0 && hg_hash_table_iter_has_more(&hash_table_iter)) {
+        while (n_entry != 0 && hash_table_iter_has_more(&hash_table_iter)) {
 
-            head = hg_hash_table_iter_next(&hash_table_iter);
+            pair = hash_table_iter_next(&hash_table_iter);
+            head = pair.value;
             // Now iterate the list under this entry
             DL_FOREACH(head->metadata, elt) {
 
@@ -1925,7 +1816,7 @@ perr_t PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata
                         // This is the last item under the current entry, remove the hash entry 
                         /* printf("==PDC_SERVER: delete from hash table!\n"); */
                         uint32_t hash_key = PDC_get_hash_by_name(elt->obj_name);
-                        hg_hash_table_remove(metadata_hash_table_g, &hash_key);
+                        hash_table_remove(metadata_hash_table_g, &hash_key);
 
                         // Free this item and delete hash table entry
                         /* if(is_restart_g != 1) { */
@@ -2047,7 +1938,7 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
     if (metadata_hash_table_g != NULL) {
         // lookup
         /* printf("==PDC_SERVER: checking hash table with key=%d\n", *hash_key); */
-        lookup_value = hg_hash_table_lookup(metadata_hash_table_g, hash_key);
+        lookup_value = hash_table_lookup(metadata_hash_table_g, hash_key);
 
         // Is this hash value exist in the Hash table?
         if (lookup_value != NULL) {
@@ -2079,7 +1970,7 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
                 else {
                     // Remove from hash
                     /* printf("==PDC_SERVER: delete from hash table!\n"); */
-                    hg_hash_table_remove(metadata_hash_table_g, hash_key);
+                    hash_table_remove(metadata_hash_table_g, hash_key);
 
                     // Free this item and delete hash table entry
                     /* if(is_restart_g != 1) { */
@@ -2188,6 +2079,7 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     /*         pdc_server_rank_g, in->data.obj_name, in->hash_value); */
     /* printf("Full name check: %s\n", &in->obj_name[507]); */
 
+    /* printf("%s\t%u\n", in->data.obj_name, in->hash_value); */
     metadata = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t));
     if (metadata == NULL) {
         printf("Cannot allocate pdc_metadata_t!\n");
@@ -2240,9 +2132,15 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     if (debug_flag == 1) 
         printf("checking hash table with key=%d\n", *hash_key);
 
+    // Debug
+    int ttt;
+    if (strcmp("/3673/55160/421/coadd", metadata->obj_name) == 0) {
+        ttt = 1;
+    }
+
     if (metadata_hash_table_g != NULL) {
         // lookup
-        lookup_value = hg_hash_table_lookup(metadata_hash_table_g, hash_key);
+        lookup_value = hash_table_lookup(metadata_hash_table_g, hash_key);
 
         // Is this hash value exist in the Hash table?
         if (lookup_value != NULL) {
@@ -2356,15 +2254,17 @@ done:
 static perr_t PDC_Server_print_all_metadata()
 {
     perr_t ret_value = SUCCEED;
-    hg_hash_table_iter_t hash_table_iter;
+    HashTableIterator hash_table_iter;
     pdc_metadata_t *elt;
     pdc_hash_table_entry_head *head;
+    HashTablePair pair;
     
     FUNC_ENTER(NULL);
 
-    hg_hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
-    while (hg_hash_table_iter_has_more(&hash_table_iter)) {
-        head = hg_hash_table_iter_next(&hash_table_iter);
+    hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
+    while (hash_table_iter_has_more(&hash_table_iter)) {
+        pair = hash_table_iter_next(&hash_table_iter);
+        head = pair.value;
         DL_FOREACH(head->metadata, elt) {
             PDC_print_metadata(elt);
         }
@@ -2381,14 +2281,16 @@ static perr_t PDC_Server_print_all_containers()
 {
     int i;
     perr_t ret_value = SUCCEED;
-    hg_hash_table_iter_t hash_table_iter;
+    HashTableIterator hash_table_iter;
     pdc_cont_hash_table_entry_t *cont_entry = NULL;
+    HashTablePair pair;
     
     FUNC_ENTER(NULL);
 
-    hg_hash_table_iterate(container_hash_table_g, &hash_table_iter);
-    while (hg_hash_table_iter_has_more(&hash_table_iter)) {
-        cont_entry = hg_hash_table_iter_next(&hash_table_iter);
+    hash_table_iterate(container_hash_table_g, &hash_table_iter);
+    while (hash_table_iter_has_more(&hash_table_iter)) {
+        pair = hash_table_iter_next(&hash_table_iter);
+        cont_entry = pair.value;
         printf("Container [%s]:", cont_entry->cont_name);
         for (i = 0; i < cont_entry->n_obj; i++) {
             if (cont_entry->obj_ids[i] != 0) {
@@ -2410,7 +2312,8 @@ static perr_t PDC_Server_print_all_containers()
 static perr_t PDC_Server_metadata_duplicate_check()
 {
     perr_t ret_value = SUCCEED;
-    hg_hash_table_iter_t hash_table_iter;
+    HashTableIterator hash_table_iter;
+    HashTablePair pair;
     int n_entry, count = 0;
     int all_maybe, all_total, all_entry;
     int has_dup_obj = 0;
@@ -2420,7 +2323,7 @@ static perr_t PDC_Server_metadata_duplicate_check()
     
     FUNC_ENTER(NULL);
 
-    n_entry = hg_hash_table_num_entries(metadata_hash_table_g);
+    n_entry = hash_table_num_entries(metadata_hash_table_g);
 
     #ifdef ENABLE_MPI
         MPI_Reduce(&n_bloom_maybe_g, &all_maybe, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -2439,10 +2342,11 @@ static perr_t PDC_Server_metadata_duplicate_check()
 
     fflush(stdout);
 
-    hg_hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
+    hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
 
-    while (n_entry != 0 && hg_hash_table_iter_has_more(&hash_table_iter)) {
-        head = hg_hash_table_iter_next(&hash_table_iter);
+    while (n_entry != 0 && hash_table_iter_has_more(&hash_table_iter)) {
+        pair = hash_table_iter_next(&hash_table_iter);
+        head = pair.value;
         /* DL_COUNT(head, elt, dl_count); */
         /* if (pdc_server_rank_g == 0) { */
         /*     printf("  Hash entry[%d], with %d items\n", count, dl_count); */
@@ -2935,8 +2839,8 @@ perr_t PDC_Server_finalize()
     // Debug: print all metadata
     if (is_debug_g == 1) {
         PDC_Server_print_all_metadata();
+        PDC_Server_print_all_containers();
     }
-    PDC_Server_print_all_containers();
 
     // Debug: check duplicates
     if (is_debug_g == 1) {
@@ -2960,10 +2864,10 @@ perr_t PDC_Server_finalize()
 
     // Free hash table
     if(metadata_hash_table_g != NULL)
-        hg_hash_table_free(metadata_hash_table_g);
+        hash_table_free(metadata_hash_table_g);
 
     if(container_hash_table_g != NULL)
-        hg_hash_table_free(container_hash_table_g);
+        hash_table_free(container_hash_table_g);
 /* printf("hash table freed!\n"); */
 /* fflush(stdout); */
 
@@ -2985,8 +2889,6 @@ perr_t PDC_Server_finalize()
 /* printf("server info destroyed!"\n); */
 /* fflush(stdout); */
 
-/*     if(metadata_name_mark_hash_table_g != NULL) */
-/*         hg_hash_table_free(metadata_name_mark_hash_table_g); */
 #ifdef ENABLE_TIMING 
 
     double all_bloom_check_time_max, all_bloom_check_time_min, all_insert_time_max, all_insert_time_min;
@@ -3063,6 +2965,8 @@ perr_t PDC_Server_checkpoint(char *filename)
     pdc_hash_table_entry_head *head;
     int n_entry, metadata_size = 0, region_count = 0, n_region, n_write_region = 0;
     uint32_t hash_key;
+    HashTablePair pair;
+
     
     FUNC_ENTER(NULL);
 
@@ -3079,15 +2983,16 @@ perr_t PDC_Server_checkpoint(char *filename)
     }
 
     // DHT
-    n_entry = hg_hash_table_num_entries(metadata_hash_table_g);
+    n_entry = hash_table_num_entries(metadata_hash_table_g);
     /* printf("%d entries\n", n_entry); */
     fwrite(&n_entry, sizeof(int), 1, file);
 
-    hg_hash_table_iter_t hash_table_iter;
-    hg_hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
+    HashTableIterator hash_table_iter;
+    hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
 
-    while (n_entry != 0 && hg_hash_table_iter_has_more(&hash_table_iter)) {
-        head = hg_hash_table_iter_next(&hash_table_iter);
+    while (n_entry != 0 && hash_table_iter_has_more(&hash_table_iter)) {
+        pair = hash_table_iter_next(&hash_table_iter);
+        head = pair.value;
         /* printf("count=%d\n", head->n_obj); */
         /* fflush(stdout); */
 
@@ -4520,8 +4425,10 @@ perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uin
     uint32_t n_buf, iter = 0;
     pdc_hash_table_entry_head *head;
     pdc_metadata_t *elt;
-    hg_hash_table_iter_t hash_table_iter;
+    HashTableIterator hash_table_iter;
     int n_entry;
+    HashTablePair pair;
+
     
     FUNC_ENTER(NULL);
 
@@ -4534,12 +4441,13 @@ perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uin
     // TODO: free buf_ptrs
     if (metadata_hash_table_g != NULL) {
 
-        n_entry = hg_hash_table_num_entries(metadata_hash_table_g);
-        hg_hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
+        n_entry = hash_table_num_entries(metadata_hash_table_g);
+        hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
 
 
-        while (n_entry != 0 && hg_hash_table_iter_has_more(&hash_table_iter)) {
-            head = hg_hash_table_iter_next(&hash_table_iter);
+        while (n_entry != 0 && hash_table_iter_has_more(&hash_table_iter)) {
+            pair = hash_table_iter_next(&hash_table_iter);
+            head = pair.value;
             DL_FOREACH(head->metadata, elt) {
                 // List all objects, no need to check other constraints
                 if (in->is_list_all == 1) {
@@ -4602,7 +4510,7 @@ perr_t PDC_Server_search_with_name_timestep(const char *obj_name, uint32_t hash_
     if (metadata_hash_table_g != NULL) {
         // lookup
         /* printf("checking hash table with key=%d\n", hash_key); */
-        lookup_value = hg_hash_table_lookup(metadata_hash_table_g, &hash_key);
+        lookup_value = hash_table_lookup(metadata_hash_table_g, &hash_key);
 
         // Is this hash value exist in the Hash table?
         if (lookup_value != NULL) {
@@ -4683,7 +4591,7 @@ perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key,
     if (metadata_hash_table_g != NULL) {
         // lookup
         /* printf("checking hash table with key=%d\n", hash_key); */
-        lookup_value = hg_hash_table_lookup(metadata_hash_table_g, &hash_key);
+        lookup_value = hash_table_lookup(metadata_hash_table_g, &hash_key);
 
         // Is this hash value exist in the Hash table?
         if (lookup_value != NULL) {
@@ -4872,7 +4780,6 @@ int main(int argc, char *argv[])
     client_test_connect_register(hg_class_g);
     gen_obj_id_register(hg_class_g);
     close_server_register(hg_class_g);
-    /* send_obj_name_marker_register(hg_class_g); */
     metadata_query_register(hg_class_g);
     metadata_delete_register(hg_class_g);
     metadata_delete_by_id_register(hg_class_g);
@@ -8535,8 +8442,10 @@ perr_t PDC_Server_get_local_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res
 
     pdc_hash_table_entry_head *head;
     pdc_metadata_t *elt;
-    hg_hash_table_iter_t hash_table_iter;
+    HashTableIterator hash_table_iter;
     int n_entry;
+    HashTablePair pair;
+
     
     FUNC_ENTER(NULL);
 
@@ -8544,11 +8453,12 @@ perr_t PDC_Server_get_local_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res
 
     if (metadata_hash_table_g != NULL) {
         // Since we only have the obj id, need to iterate the entire hash table
-        n_entry = hg_hash_table_num_entries(metadata_hash_table_g);
-        hg_hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
+        n_entry = hash_table_num_entries(metadata_hash_table_g);
+        hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
 
-        while (n_entry != 0 && hg_hash_table_iter_has_more(&hash_table_iter)) {
-            head = hg_hash_table_iter_next(&hash_table_iter);
+        while (n_entry != 0 && hash_table_iter_has_more(&hash_table_iter)) {
+            pair = hash_table_iter_next(&hash_table_iter);
+            head = pair.value;
             // Now iterate the list under this entry
             DL_FOREACH(head->metadata, elt) {
                 if (elt->obj_id == obj_id) {
@@ -9892,14 +9802,14 @@ perr_t PDC_Server_create_container(gen_cont_id_in_t *in, gen_cont_id_out_t *out)
     hg_thread_mutex_lock(&pdc_container_hash_table_mutex_g);
 #endif
 
-    if (metadata_hash_table_g != NULL) {
+    if (container_hash_table_g != NULL) {
         // lookup
-        lookup_value = hg_hash_table_lookup(container_hash_table_g, hash_key);
+        lookup_value = hash_table_lookup(container_hash_table_g, hash_key);
 
         // Is this hash value exist in the Hash table?
         if (lookup_value != NULL) {
             
-            // Check if there exist metadata identical to current one
+            // Check if there exist container identical to current one
             printf("==PDC_SERVER[%d]: Found existing container with same hash value, name=%s!\n", 
                     pdc_server_rank_g, lookup_value->cont_name);
             out->cont_id = 0;
@@ -9918,7 +9828,7 @@ perr_t PDC_Server_create_container(gen_cont_id_in_t *in, gen_cont_id_out_t *out)
             total_mem_usage_g += sizeof(uint64_t)*entry->n_allocated;
 
             // Insert to hash table
-            if (hg_hash_table_insert(container_hash_table_g, hash_key, entry) != 1) {
+            if (hash_table_insert(container_hash_table_g, hash_key, entry) != 1) {
                 printf("==PDC_SERVER[%d]: %s - hash table insert failed\n", pdc_server_rank_g, __func__);
                 ret_value = FAIL;
             }
@@ -9986,9 +9896,9 @@ perr_t PDC_Server_delete_container_by_name(gen_cont_id_in_t *in, gen_cont_id_out
     hg_thread_mutex_lock(&pdc_container_hash_table_mutex_g);
 #endif
 
-    if (metadata_hash_table_g != NULL) {
+    if (container_hash_table_g != NULL) {
         // lookup
-        lookup_value = hg_hash_table_lookup(container_hash_table_g, hash_key);
+        lookup_value = hash_table_lookup(container_hash_table_g, &hash_key);
 
         // Is this hash value exist in the Hash table?
         if (lookup_value != NULL) {
@@ -10047,7 +9957,7 @@ perr_t PDC_Server_find_container_by_name(const char *cont_name, pdc_cont_hash_ta
         // lookup
         /* printf("checking hash table with key=%d\n", hash_key); */
         hash_key = PDC_get_hash_by_name(cont_name);
-        *out = hg_hash_table_lookup(container_hash_table_g, &hash_key);
+        *out = hash_table_lookup(container_hash_table_g, &hash_key);
         if (*out != NULL) {
             // Double check with name match
             if (strcmp(cont_name, (*out)->cont_name) != 0) {
@@ -10083,9 +9993,10 @@ perr_t PDC_Server_find_container_by_id(uint64_t cont_id, pdc_cont_hash_table_ent
     perr_t ret_value = SUCCEED;
     pdc_cont_hash_table_entry_t *cont_entry;
     pdc_metadata_t *elt;
-    hg_hash_table_iter_t hash_table_iter;
+    HashTableIterator hash_table_iter;
     int n_entry;
-    
+    HashTablePair pair;
+
     FUNC_ENTER(NULL);
 
     if (NULL == out) {
@@ -10095,11 +10006,12 @@ perr_t PDC_Server_find_container_by_id(uint64_t cont_id, pdc_cont_hash_table_ent
 
     if (container_hash_table_g != NULL) {
         // Since we only have the obj id, need to iterate the entire hash table
-        n_entry = hg_hash_table_num_entries(container_hash_table_g);
-        hg_hash_table_iterate(container_hash_table_g, &hash_table_iter);
+        n_entry = hash_table_num_entries(container_hash_table_g);
+        hash_table_iterate(container_hash_table_g, &hash_table_iter);
 
-        while (n_entry != 0 && hg_hash_table_iter_has_more(&hash_table_iter)) {
-            cont_entry = hg_hash_table_iter_next(&hash_table_iter);
+        while (n_entry != 0 && hash_table_iter_has_more(&hash_table_iter)) {
+            pair = hash_table_iter_next(&hash_table_iter);
+            cont_entry = pair.value;
             if (cont_entry->cont_id == cont_id) {
                 *out = cont_entry;
                 goto done;
@@ -10149,6 +10061,7 @@ perr_t PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint64_t cont
             realloc_size = cont_entry->n_allocated > n_obj? cont_entry->n_allocated: n_obj;
             realloc_size *= (sizeof(uint64_t)*2);
             cont_entry->obj_ids = (uint64_t*)realloc(cont_entry->obj_ids, realloc_size);
+            cont_entry->n_allocated = realloc_size / sizeof(uint64_t);
         }
 
         // Append the new ids
@@ -10156,8 +10069,8 @@ perr_t PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint64_t cont
         cont_entry->n_obj += n_obj;
             
         // Debug prints
-        printf("==PDC_SERVER[%d]: add %d objects to container %" PRIu64 ", total %d !\n", 
-                pdc_server_rank_g, n_obj, cont_id, cont_entry->n_obj - cont_entry->n_deleted);
+        /* printf("==PDC_SERVER[%d]: add %d objects to container %" PRIu64 ", total %d !\n", */ 
+                /* pdc_server_rank_g, n_obj, cont_id, cont_entry->n_obj - cont_entry->n_deleted); */
         
         /* int i; */
         /* for (i = 0; i < cont_entry->n_obj; i++) */ 

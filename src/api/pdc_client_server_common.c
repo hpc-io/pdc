@@ -756,7 +756,6 @@ perr_t pdc_transfer_t_to_metadata_t(pdc_metadata_transfer_t *transfer, pdc_metad
 pbool_t region_is_identical(region_info_transfer_t reg1, region_info_transfer_t reg2) {return SUCCEED;}
 hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info) {return SUCCEED;}
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out) {return SUCCEED;}
-/* perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out) {return SUCCEED;} */
 perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key, pdc_metadata_t** out) {return SUCCEED;}
 perr_t PDC_Server_search_with_name_timestep(const char *obj_name, uint32_t hash_key, uint32_t ts, pdc_metadata_t** out) {return SUCCEED;}
 perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out) {return SUCCEED;}
@@ -3410,7 +3409,6 @@ done:
 
 HG_TEST_THREAD_CB(server_lookup_client)
 HG_TEST_THREAD_CB(gen_obj_id)
-/* HG_TEST_THREAD_CB(send_obj_name_marker) */
 HG_TEST_THREAD_CB(client_test_connect)
 HG_TEST_THREAD_CB(metadata_query)
 HG_TEST_THREAD_CB(metadata_delete)
@@ -3532,18 +3530,6 @@ notify_region_update_register(hg_class_t *hg_class)
 done:
     FUNC_LEAVE(ret_value);
 }
-
-/* hg_id_t */
-/* send_obj_name_marker_register(hg_class_t *hg_class) */
-/* { */
-/*     FUNC_ENTER(NULL); */
-
-/*     hg_id_t ret_value; */
-/*     ret_value = MERCURY_REGISTER(hg_class, "send_obj_name_marker", send_obj_name_marker_in_t, send_obj_name_marker_out_t, send_obj_name_marker_cb); */
-
-/* done: */
-/*     FUNC_LEAVE(ret_value); */
-/* } */
 
 hg_id_t
 metadata_query_register(hg_class_t *hg_class)

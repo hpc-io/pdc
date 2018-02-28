@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef ENABLE_MPI
 #include "mpi.h"
+#endif
+
 #include "hdf5.h"
 #include "pdc.h"
 #include "pdc_client_server_common.h"
@@ -24,14 +27,13 @@ void print_usage() {
 }
 
 char tags_g[TAG_LEN_MAX];
-char grp_path_g[TAG_LEN_MAX];
 char *tags_ptr_g;
 char dset_name_g[TAG_LEN_MAX];
 hsize_t tag_size_g;
 int  ndset_g = 0;
 /* FILE *summary_fp_g; */
 int max_tag_size_g = 0;
-pdcid_t pdc_id_g, cont_prop_g, cont_id_g, obj_prop_g;
+pdcid_t pdc_id_g = 0, cont_prop_g = 0, cont_id_g = 0, obj_prop_g = 0;
 
 int add_tag(char *str)
 {
@@ -64,10 +66,12 @@ int add_tag(char *str)
 int
 main(int argc, char **argv)
 {
-    int rank, size;
+    int rank = 0, size = 1;
+#ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
+#endif
 
     hid_t    file;
     hid_t    grp;
@@ -87,15 +91,13 @@ main(int argc, char **argv)
     // create a pdc
     pdc_id_g = PDC_init("pdc");
 
-    // create a container property
     cont_prop_g = PDCprop_create(PDC_CONT_CREATE, pdc_id_g);
     if(cont_prop_g <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
-    // create object property for float and int
-    obj_prop_g= PDCprop_create(PDC_OBJ_CREATE, pdc_id_g);
+    obj_prop_g = PDCprop_create(PDC_OBJ_CREATE, pdc_id_g);
 
-    uint64_t float_dims[1] = {1};
+    uint64_t float_dims[1] = {1000};
 
     PDCprop_set_obj_dims(obj_prop_g, 1, float_dims);
     PDCprop_set_obj_type(obj_prop_g, PDC_FLOAT);
@@ -128,7 +130,9 @@ main(int argc, char **argv)
             fflush(stdout);
         }
 
+#ifdef ENABLE_MPI
         MPI_Bcast(&total_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif
 
         if (total_count < size) {
             printf("More MPI ranks than total number of files, exiting...\n");
@@ -147,9 +151,14 @@ main(int argc, char **argv)
         }
         send_counts[size-1] += (total_count % size * MAX_FILENAME_LEN);
 
+#ifdef ENABLE_MPI
         // Distribute the data
         MPI_Scatterv(&all_filenames[0][0], send_counts, displs, MPI_CHAR, 
                      &my_filenames[0][0],  my_count*MAX_FILENAME_LEN, MPI_CHAR, 0, MPI_COMM_WORLD);
+#else
+        memcpy(&my_filenames[0][0], &all_filenames[0][0], MAX_FILES*MAX_FILENAME_LEN);
+        
+#endif
 
 
         /* for (i = 0; i < my_count; i++) { */
@@ -170,9 +179,8 @@ main(int argc, char **argv)
                 continue;
             }
 
-            memset(grp_path_g, 0, sizeof(MAX_NAME));
             grp = H5Gopen(file,"/", H5P_DEFAULT);
-            scan_group(grp, 1);
+            scan_group(grp, 0);
 
             status = H5Fclose(file);
 
@@ -180,11 +188,18 @@ main(int argc, char **argv)
             /* printf("\n\n======================\nNumber of datasets: %d\n", ndset_g); */
         }
 
+#ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
         gettimeofday(&pdc_timer_end, 0);
         double write_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
 
+#ifdef ENABLE_MPI
         MPI_Reduce(&ndset_g, &total_dset, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+#else
+        total_dset = ndset_g;
+#endif
         if (rank == 0) {
             printf("Import %d datasets with %d ranks took %.2f seconds.\n", total_dset, size, write_time);
         }
@@ -193,7 +208,9 @@ main(int argc, char **argv)
     /* fclose(summary_fp_g); */
 
 done:
+#ifdef ENABLE_MPI
     MPI_Finalize();
+#endif
     return 0;
 }
 
@@ -222,16 +239,12 @@ scan_group(hid_t gid, int level) {
      *  Other info., not shown here: number of links, object id
      */
     len = H5Iget_name (gid, group_name, MAX_NAME);
-
-    strcat(grp_path_g, group_name);
-    strcat(grp_path_g, "/");
-
-    // Create a container for the second level
     if (level == 2) {
         // create a container
         cont_id_g = PDCcont_create(group_name, cont_prop_g);
         if(cont_id_g <= 0)
             printf("Fail to create container @ line  %d!\n", __LINE__);
+        printf("Created container [%s], %" PRIu64 "\n", group_name, cont_id_g);
     }
 
 
@@ -320,7 +333,8 @@ do_dset(hid_t did, char *name)
      *
      *  Other info., not shown here: number of links, object id
      */
-    H5Iget_name(did, ds_name, MAX_NAME  );
+    H5Iget_name(did, ds_name, TAG_LEN_MAX);
+    memset(dset_name_g, 0, TAG_LEN_MAX);
     strcpy(dset_name_g, ds_name);
     /* add_tag(ds_name); */
 
@@ -373,15 +387,21 @@ do_dset(hid_t did, char *name)
     H5Tclose(tid);
     H5Sclose(sid);
 
+    if (strcmp("/3673/55160/420/coadd", dset_name_g) == 0) {
+        int t=1;
+    }
+
     // Create a pdc object per dataset with tag
     PDCprop_set_obj_tags(obj_prop_g, tags_g);
     pdcid_t obj_id = PDCobj_create(cont_id_g, dset_name_g, obj_prop_g);
     if (obj_id <= 0) {    
         printf("Error getting an object %s from server, exit...\n", dset_name_g);
     }
-    /* else { */
-    /*     printf("created %s with tag size %d [%s]\n", dset_name_g, tag_size_g, tags_g); */
-    /* } */
+    else {
+        /* printf("%s\n", dset_name_g); */
+        /* printf("created [%s] with tag size %d \n", dset_name_g, tag_size_g); */
+        /* printf("created [%s] with tag size %d [%s]\n", dset_name_g, tag_size_g, tags_g); */
+    }
 
     /* printf("} [%s] tag_size %d  \n========================\n%s\n========================\n\n\n", */
     /*         obj_name, tag_size_g, tags_g); */

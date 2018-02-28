@@ -908,16 +908,6 @@ typedef struct {
     uint64_t obj_id;
 } gen_obj_id_out_t;
 
-
-/* typedef struct { */
-/*     hg_string_t    obj_name; */
-/*     uint32_t             hash_value; */
-/* } send_obj_name_marker_in_t; */
-
-/* typedef struct { */
-/*     int32_t ret; */
-/* } send_obj_name_marker_out_t; */
-
 typedef struct {
     int32_t server_id;
     int32_t nserver;
@@ -1089,36 +1079,6 @@ hg_proc_gen_obj_id_out_t(hg_proc_t proc, void *data)
     }
     return ret;
 }
-
-/* static HG_INLINE hg_return_t */
-/* hg_proc_send_obj_name_marker_in_t(hg_proc_t proc, void *data) */
-/* { */
-/*     hg_return_t ret; */
-/*     send_obj_name_marker_in_t *struct_data = (send_obj_name_marker_in_t*) data; */
-
-/*     ret = hg_proc_hg_string_t(proc, &struct_data->obj_name); */
-/*     if (ret != HG_SUCCESS) { */
-/* 	HG_LOG_ERROR("Proc error"); */
-/*     } */
-/*     ret = hg_proc_uint32_t(proc, &struct_data->hash_value); */
-/*     if (ret != HG_SUCCESS) { */
-/* 	HG_LOG_ERROR("Proc error"); */
-/*     } */
-/*     return ret; */
-/* } */
-
-/* static HG_INLINE hg_return_t */
-/* hg_proc_send_obj_name_marker_out_t(hg_proc_t proc, void *data) */
-/* { */
-/*     hg_return_t ret; */
-/*     send_obj_name_marker_out_t *struct_data = (send_obj_name_marker_out_t*) data; */
-
-/*     ret = hg_proc_int32_t(proc, &struct_data->ret); */
-/*     if (ret != HG_SUCCESS) { */
-/* 	HG_LOG_ERROR("Proc error"); */
-/*     } */
-/*     return ret; */
-/* } */
 
 static HG_INLINE hg_return_t
 hg_proc_server_lookup_remote_server_in_t(hg_proc_t proc, void *data)
@@ -2193,7 +2153,6 @@ hg_proc_pdc_aggregated_io_to_server_t(hg_proc_t proc, void *data)
 }
 
 hg_id_t gen_obj_id_register(hg_class_t *hg_class);
-/* hg_id_t send_obj_name_marker_register(hg_class_t *hg_class); */
 hg_id_t client_test_connect_register(hg_class_t *hg_class);
 hg_id_t server_lookup_client_register(hg_class_t *hg_class);
 hg_id_t close_server_register(hg_class_t *hg_class);
@@ -2327,8 +2286,8 @@ perr_t PDC_replace_char_fill_values(signed char *buf, uint32_t buf_size);
 
 void pdc_mkdir(const char *dir);
 
-extern hg_hash_table_t   *metadata_hash_table_g;
-extern hg_atomic_int32_t  close_server_g;
+/* extern hg_hash_table_t   *metadata_hash_table_g; */
+/* extern hg_atomic_int32_t  close_server_g; */
 
 
 hg_id_t data_server_write_check_register(hg_class_t *hg_class);
