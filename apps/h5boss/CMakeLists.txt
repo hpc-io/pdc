@@ -31,6 +31,7 @@ set(PROGRAMS
     h5boss_v2_import
     h5boss_dataset_stat
     h5boss_v1_import_mpi
+    read_schedule
     )
 
 foreach(program ${PROGRAMS})

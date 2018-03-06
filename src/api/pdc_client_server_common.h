@@ -2364,4 +2364,47 @@ hg_proc_cont_add_del_objs_rpc_out_t(hg_proc_t proc, void *data)
     return ret;
 }
 
+typedef struct {
+    hg_string_t    cont_name;
+    uint32_t       hash_value;
+} container_query_in_t;
+
+typedef struct {
+    pdc_metadata_transfer_t ret;
+} container_query_out_t;
+
+static HG_INLINE hg_return_t
+hg_proc_container_query_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    container_query_in_t *struct_data = (container_query_in_t*) data;
+
+    ret = hg_proc_hg_string_t(proc, &struct_data->cont_name);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint32_t(proc, &struct_data->hash_value);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_container_query_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret = HG_SUCCESS;
+    container_query_out_t *struct_data = (container_query_out_t*) data;
+
+    ret = hg_proc_pdc_metadata_transfer_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+
 #endif /* PDC_CLIENT_SERVER_COMMON_H */
