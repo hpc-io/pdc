@@ -132,12 +132,14 @@ typedef struct region_list_t {
     uint64_t  reg_id;
     uint64_t  from_obj_id;
     int32_t   client_id;
+    int       is_io_done;
+    int       is_shm_closed;
 
     pdc_metadata_t *meta;
 
     struct region_list_t *prev;
     struct region_list_t *next;
-    // 25 attributes, need to match init and deep_cp routines
+    // 28 attributes, need to match init and deep_cp routines
 } region_list_t;
 
 // Similar structure PDC_region_info_t defined in pdc_obj_pkg.h

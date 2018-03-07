@@ -4220,13 +4220,15 @@ perr_t PDC_Client_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsign
             break;
         }
 
-        if (pdc_client_mpi_rank_g == 0) {
-            printf("==PDC_CLIENT[ALL]: waiting for server to finish IO request...\n");
-            fflush(stdout);
-        }
+        printf("==PDC_CLIENT[%d]: waiting for server to finish IO request\n", pdc_client_mpi_rank_g);
+        /* if (pdc_client_mpi_rank_g == 0) { */
+        /*     printf("==PDC_CLIENT[ALL]: waiting for server to finish IO request...\n"); */
+        /*     fflush(stdout); */
+        /* } */
         pdc_msleep(check_interval_ms);
     }
 
+    printf("==PDC_CLIENT[%d]: IO request completed by server\n", pdc_client_mpi_rank_g);
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -4238,9 +4240,10 @@ perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct PDC_region_info *region, P
     FUNC_ENTER(NULL);
 
     request->server_id   = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
-    request->n_client    = pdc_nclient_per_server_g;    // Set by env var PDC_NCLIENT_PER_SERVER, default 1
+    if (request->n_client == 0) 
+        request->n_client = pdc_nclient_per_server_g;    // Set by env var PDC_NCLIENT_PER_SERVER, default 1
     if (request->n_update == 0) 
-        request->n_update    = 1;       // Only set to default value if it is not set prior
+        request->n_update = 1;       // Only set to default value if it is not set prior
     request->access_type = WRITE;
     request->metadata    = meta;
     request->region      = region;
@@ -4295,7 +4298,8 @@ perr_t PDC_Client_iread(pdc_metadata_t *meta, struct PDC_region_info *region, PD
     FUNC_ENTER(NULL);
 
     request->server_id   = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
-    request->n_client    = pdc_nclient_per_server_g;    // Set by env var PDC_NCLIENT_PER_SERVER, default 1
+    if (request->n_client == 0) 
+        request->n_client    = pdc_nclient_per_server_g;    // Set by env var PDC_NCLIENT_PER_SERVER, default 1
     if (request->n_update == 0) 
         request->n_update    = 1;       // Only set to default value if it is not set prior
     request->access_type = READ;

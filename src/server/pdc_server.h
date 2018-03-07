@@ -213,7 +213,6 @@ typedef struct pdc_data_server_io_list_t {
     uint64_t dims[DIM_MAX];
     uint64_t total_size;
     region_list_t *region_list_head;
-    int   is_io_done;
     int   is_shm_closed;
 
     struct pdc_data_server_io_list_t *prev;
