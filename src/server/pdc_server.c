@@ -63,7 +63,7 @@
 #include "mercury_thread.h"
 #include "mercury_thread_pool.h"
 #include "mercury_thread_mutex.h"
-hg_thread_mutex_t pdc_client_addr_metex_g;
+static hg_thread_mutex_t pdc_client_addr_metex_g;
 hg_thread_mutex_t pdc_metadata_hash_table_mutex_g;
 /* hg_thread_mutex_t pdc_metadata_name_mark_hash_table_mutex_g; */
 hg_thread_mutex_t pdc_time_mutex_g;
@@ -79,6 +79,8 @@ hg_thread_mutex_t append_lock_metex_g;
 hg_thread_mutex_t append_buf_map_metex_g; 
 hg_thread_mutex_t append_region_struct_metex_g;
 hg_thread_mutex_t insert_hash_table_metex_g;
+hg_thread_mutex_t append_lock_request_metex_g;
+hg_thread_mutex_t remove_lock_request_metex_g;
 #endif
 
 #ifdef PDC_HAS_CRAY_DRC
@@ -2685,7 +2687,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
 
     // Init server
 //    *hg_class = HG_Init(na_info_string, NA_TRUE);
-    init_info.na_init_info.progress_mode = NA_NO_BLOCK;
+//    init_info.na_init_info.progress_mode = NA_NO_BLOCK;   // busy mode
     init_info.auto_sm = HG_TRUE;
     *hg_class = HG_Init_opt(na_info_string, NA_TRUE, &init_info);
     if (*hg_class == NULL) {
@@ -2767,6 +2769,8 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     hg_thread_mutex_init(&append_buf_map_metex_g);
     hg_thread_mutex_init(&append_region_struct_metex_g);
     hg_thread_mutex_init(&insert_hash_table_metex_g);
+    hg_thread_mutex_init(&append_lock_request_metex_g);
+    hg_thread_mutex_init(&remove_lock_request_metex_g);
 #else
     if (pdc_server_rank_g == 0) {
         printf("==PDC_SERVER[%d]: without multi-thread!\n", pdc_server_rank_g);
@@ -2992,6 +2996,8 @@ perr_t PDC_Server_finalize()
     hg_thread_mutex_destroy(&append_buf_map_metex_g);
     hg_thread_mutex_destroy(&append_region_struct_metex_g);
     hg_thread_mutex_destroy(&insert_hash_table_metex_g);
+    hg_thread_mutex_destroy(&append_lock_request_metex_g);
+    hg_thread_mutex_destroy(&remove_lock_request_metex_g);
 #endif
 
     if (pdc_server_rank_g == 0)
@@ -3895,8 +3901,7 @@ done:
  *
  * \return Non-negative on success/Negative on failure
  */
-//perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out, hg_handle_t *handle)
-perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
+perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out, hg_handle_t *handle)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t hg_ret = HG_SUCCESS;
@@ -3906,11 +3911,12 @@ perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
     region_list_t *request_region;
     data_server_region_t *new_obj_reg;
     pdc_metadata_t *target_meta;
-    region_list_t *elt, *tmp;
+    region_list_t *elt1, *tmp;
     region_buf_map_t *eltt;
     hg_handle_t server_send_region_lock_handle;
     struct transfer_lock_args *tranx_args; 
     int error = 0;
+    int found_lock = 0;
 
     FUNC_ENTER(NULL);
     
@@ -3968,38 +3974,37 @@ fflush(stdout);
         new_obj_reg->obj_id = in->obj_id;
         new_obj_reg->region_lock_head = NULL;
         new_obj_reg->region_buf_map_head = NULL;
+        new_obj_reg->region_lock_request_head = NULL;
 //        new_obj_reg->region_storage_head = NULL;
         DL_APPEND(dataserver_region_g, new_obj_reg);
     }
 #ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_unlock(&create_region_struct_metex_g);
 #endif
-/*
-    // Locate target metadata structure
-    if(in->meta_server_id == pdc_server_rank_g) {
-        target_meta = find_metadata_by_id(target_obj_id);
-        if (target_meta == NULL) {
-            error = 1;
-            PGOTO_ERROR(FAIL, "==PDC_SERVER: PDC_Server_region_lock - requested object does not exist\n");
+
+    // Go through all existing locks to check for region lock
+    DL_FOREACH(new_obj_reg->region_lock_head, elt1) {
+        if (PDC_is_same_region_list(elt1, request_region) == 1) {
+            found_lock = 1;
+            if(in->lock_mode == BLOCK) {
+                ret_value = FAIL;
+//printf("region is currently lock\n");
+//fflush(stdout);
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_lock(&append_lock_request_metex_g);
+#endif
+                request_region->lock_handle = handle;
+                DL_APPEND(new_obj_reg->region_lock_request_head, request_region);
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_unlock(&append_lock_request_metex_g);
+#endif
+            }
+            else
+                error = 1; 
         }
     }
-    // Locate target metadata from remote server
-    else
-        target_meta = find_remote_metadata_by_id(in->meta_server_id, target_obj_id);
 
-    request_region->meta = target_meta;
-
-    // printf("==PDC_SERVER: obtaining lock ... "); 
-    // Go through all existing locks to check for overlapping
-    // Note: currently only assumes contiguous region
-    DL_FOREACH(new_obj_reg->region_lock_head, elt) {
-        if (is_contiguous_region_overlap(elt, request_region) == 1) {
-            // printf("rejected! (found overlapping regions)\n"); 
-            error = 1;
-            PGOTO_ERROR(FAIL, "rejected! (found overlapping regions)\n");
-        }
-    }
-*/
+    if(found_lock == 0) {
     // check if the lock region is used in buf map function 
     tmp = (region_list_t *)malloc(sizeof(region_list_t));
     DL_FOREACH(new_obj_reg->region_buf_map_head, eltt) {
@@ -4019,42 +4024,10 @@ fflush(stdout);
 #ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_unlock(&append_lock_metex_g);
 #endif
+    }
 
     out->ret = 1;
-    /* printf("granted\n"); */
-/* 
-    if(pdc_server_rank_g != in->meta_server_id) {
-        if (pdc_remote_server_info_g[in->meta_server_id].addr_valid != 1) {
-             if (PDC_Server_lookup_server_id(in->meta_server_id) != SUCCEED) {
-                printf("==PDC_SERVER[%d]: Error getting remote server %d addr via lookup\n",
-                        pdc_server_rank_g, in->meta_server_id);
-                ret_value = FAIL;
-                error = 1;
-                goto done;
-            }
-        }
-        HG_Create(hg_context_g, pdc_remote_server_info_g[in->meta_server_id].addr, region_lock_server_register_id_g, &server_send_region_lock_handle);
 
-        tranx_args = (struct transfer_lock_args *)malloc(sizeof(struct transfer_lock_args));
-        tranx_args->handle = *handle;
-        tranx_args->in = *in;
-        hg_ret = HG_Forward(server_send_region_lock_handle, server_send_region_lock_rpc_cb, tranx_args, in);
-        if (hg_ret != HG_SUCCESS) {
-            HG_Destroy(server_send_region_lock_handle);
-            free(tranx_args);
-            error = 1;
-            PGOTO_ERROR(FAIL, "===PDC SERVER: PDC_Data_Server_region_lock(): Could not start HG_Forward()");
-        }
-
-    }
-    else {
-        PDC_Meta_Server_region_lock(in, out);
-
-        HG_Respond(*handle, NULL, NULL, out);
-        HG_Free_input(*handle, in);
-        HG_Destroy(*handle);
-    }
-*/   
 done:
     fflush(stdout);
     if(error == 1) {
@@ -4064,6 +4037,44 @@ done:
 //        HG_Destroy(*handle);
     }
 
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_Server_release_lock_request(uint64_t obj_id, struct PDC_region_info *region) 
+{
+    perr_t ret_value = SUCCEED;
+    region_list_t *request_region;
+    region_list_t *elt, *tmp;
+    data_server_region_t *new_obj_reg;
+    region_lock_out_t out;
+
+    FUNC_ENTER(NULL);
+
+    request_region = (region_list_t *)malloc(sizeof(region_list_t));
+    PDC_init_region_list(request_region);
+    pdc_region_info_to_list_t(region, request_region);
+
+    new_obj_reg = PDC_Server_get_obj_region(obj_id);
+    if(new_obj_reg == NULL) {
+        PGOTO_ERROR(FAIL, "===PDC Server: cannot locate data_server_region_t strcut for object ID");
+    }
+    DL_FOREACH_SAFE(new_obj_reg->region_lock_request_head, elt, tmp) {
+        if (is_region_identical(&request_region, elt) == 1) {
+            out.ret = 1;
+            HG_Respond(elt->lock_handle, NULL, NULL, &out);
+            HG_Destroy(elt->lock_handle);
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_lock(&remove_lock_request_metex_g);
+#endif
+            DL_DELETE(new_obj_reg->region_lock_request_head, elt);
+            free(elt); 
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_unlock(&remove_lock_request_metex_g);
+#endif
+        }
+    }
+done:
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
@@ -5443,6 +5454,7 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
         new_obj_reg->obj_id = in->remote_obj_id;
         new_obj_reg->region_lock_head = NULL;
         new_obj_reg->region_buf_map_head = NULL;
+        new_obj_reg->region_lock_request_head = NULL;
 //        new_obj_reg->region_storage_head = NULL;
 
         // Generate a location for data storage for data server to write

@@ -719,6 +719,8 @@ client_region_release_rpc_cb(const struct hg_cb_info *callback_info)
         goto done;
     }
     /* printf("Return value=%" PRIu64 "\n", output.ret); */
+//printf("client_region_release_rpc_cb get output\n");
+//fflush(stdout);
 
     client_lookup_args->ret = output.ret;
 
@@ -940,7 +942,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     /* Initialize Mercury with the desired network abstraction class */
     /* printf("Using %s\n", na_info_string); */
 //    *hg_class = HG_Init(na_info_string, HG_TRUE);
-    init_info.na_init_info.progress_mode = NA_NO_BLOCK;
+//    init_info.na_init_info.progress_mode = NA_NO_BLOCK;  //busy mode
     init_info.auto_sm = HG_TRUE;
     *hg_class = HG_Init_opt(na_info_string, HG_TRUE, &init_info);
     if (*hg_class == NULL) {
@@ -3016,9 +3018,9 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_var_type_t data_type, pbool_t *status)
+perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_lock_mode_t lock_mode, PDC_var_type_t data_type, pbool_t *status)
 {
-    perr_t ret_value;
+    perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
     uint32_t server_id, meta_server_id;
     region_lock_in_t in;
@@ -3033,6 +3035,7 @@ static perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *re
     server_id = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
     meta_server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
     in.meta_server_id = meta_server_id;
+    in.lock_mode = lock_mode;
 
     // Delay test
     srand(pdc_client_mpi_rank_g);
@@ -3146,22 +3149,13 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/* , uint64_t *block */
+/* 
 perr_t PDC_Client_obtain_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_lock_mode_t lock_mode, PDC_var_type_t data_type, pbool_t *obtained)
 {
     perr_t ret_value = SUCCEED;
     
     FUNC_ENTER(NULL);
 
-    /* printf("meta_id=%" PRIu64 "\n", meta_id); */
-/*
-    if (access_type == READ ) {
-        // TODO: currently does not perform local lock
-        ret_value = SUCCEED;
-        *obtained  = TRUE;
-        goto done;
-    }
-*/
 //    else if (access_type == WRITE) {
       if (access_type == WRITE || access_type == READ) {      
         if (lock_mode == BLOCK) {
@@ -3200,7 +3194,7 @@ perr_t PDC_Client_obtain_region_lock(pdcid_t meta_id, struct PDC_region_info *re
 done:
     FUNC_LEAVE(ret_value);
 }
-
+*/
 static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_var_type_t data_type, pbool_t *status)
 {
     perr_t ret_value = SUCCEED;
@@ -3309,6 +3303,8 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
     if (lookup_args.ret == 1) {
         *status = TRUE;
         ret_value = SUCCEED;
+//printf("client lock release check reponse, get results\n");
+//fflush(stdout);
     }
     else {
         *status = FALSE;

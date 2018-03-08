@@ -321,8 +321,9 @@ perr_t PDC_init_region_list(region_list_t *a)
     a->offset        = 0;
     hg_atomic_init32(&(a->buf_map_refcount), 0);
     a->reg_dirty     = 0;
+    a->lock_handle   = NULL;
     a->access_type   = NA;
-    a->bulk_handle   = NULL;
+    a->bulk_handle   = HG_BULK_NULL;
     a->addr          = 0;
     a->meta          = NULL;
     a->obj_id        = 0;
@@ -770,13 +771,14 @@ perr_t PDC_Data_Server_buf_unmap(buf_unmap_in_t *in) {return SUCCEED;}
 perr_t PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_ptr, hg_handle_t *handle) {return SUCCEED;}
 perr_t PDC_Data_Server_region_release(struct buf_map_release_bulk_args *bulk_args, region_lock_out_t *out) {return SUCCEED;}
 perr_t PDC_Meta_Server_region_release(region_lock_in_t *in, region_lock_out_t *out) {return SUCCEED;}
-perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out) {return SUCCEED;}
+perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out, hg_handle_t *handle) {return SUCCEED;}
 perr_t PDC_Meta_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out) {return SUCCEED;}
 //perr_t PDC_Server_region_lock_status(pdcid_t obj_id, region_info_transfer_t *region, int *lock_status) {return SUCCEED;}
 perr_t PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status) {return SUCCEED;}
 perr_t PDC_Server_local_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status) {return SUCCEED;}
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs) {return SUCCEED;}
 perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_t obj_id) {return NULL;}
+perr_t PDC_Server_release_lock_request(uint64_t obj_id, struct PDC_region_info *region) {return SUCCEED;}
 perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
 perr_t PDC_Server_data_read_in(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
 perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
@@ -1253,6 +1255,8 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
         PGOTO_ERROR(HG_PROTOCOL_ERROR, "Error in region_release_bulk_transfer_cb()");
     }
    
+//printf("server responds release to client\n");
+//fflush(stdout);
     out.ret = 1;
     HG_Respond(bulk_args->handle, NULL, NULL, &out);
 /*
@@ -1295,16 +1299,24 @@ fflush(stdout);
     (remote_reg_info->offset)[0] = (bulk_args->remote_region).start_0;
     (remote_reg_info->size)[0] = (bulk_args->remote_region).count_0;
 //    PDC_Server_data_write_direct(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf+(bulk_args->remote_region).start_0);
+//printf("server starts writing to fs\n");
+//fflush(stdout);
     PDC_Server_data_write_out(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf);
+printf("server finishes writing to fs\n");
+fflush(stdout);
 
     // Perform lock release function
     PDC_Data_Server_region_release(bulk_args, &out);
+
+    PDC_Server_release_lock_request(bulk_args->remote_obj_id, remote_reg_info);
 
 done:
     fflush(stdout);
 //    if(error == 1) 
 //        out.ret = 0;
 
+//printf("server responds release to client\n");
+//fflush(stdout);
 //    HG_Respond(bulk_args->handle, NULL, NULL, &out);
     HG_Free_input(bulk_args->handle, &(bulk_args->in));
     HG_Destroy(bulk_args->handle);
@@ -1878,6 +1890,7 @@ HG_TEST_RPC_CB(region_lock_server, handle)
 HG_TEST_RPC_CB(region_lock, handle)
 {
     hg_return_t ret_value = HG_SUCCESS;
+    perr_t ret = SUCCEED;
     region_lock_in_t in;
     region_lock_out_t out;
     const struct hg_info *hg_info = NULL;
@@ -1888,12 +1901,14 @@ HG_TEST_RPC_CB(region_lock, handle)
     HG_Get_input(handle, &in);
 
     // Perform lock function
-//    PDC_Data_Server_region_lock(&in, &out, &handle);
-    PDC_Data_Server_region_lock(&in, &out);
+    ret = PDC_Data_Server_region_lock(&in, &out, &handle);
+//    PDC_Data_Server_region_lock(&in, &out);
 
-    HG_Respond(handle, NULL, NULL, &out);
     HG_Free_input(handle, &in);
-    HG_Destroy(handle);
+    if(ret == SUCCEED) {
+        HG_Respond(handle, NULL, NULL, &out);
+        HG_Destroy(handle);
+    }
 
     FUNC_LEAVE(ret_value);
 }
