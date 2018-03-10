@@ -767,7 +767,7 @@ perr_t PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata
 perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *out) {return SUCCEED;}
 perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle) {return SUCCEED;}
-perr_t PDC_Data_Server_buf_unmap(buf_unmap_in_t *in) {return SUCCEED;}
+perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in) {return SUCCEED;}
 perr_t PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_ptr, hg_handle_t *handle) {return SUCCEED;}
 perr_t PDC_Data_Server_region_release(struct buf_map_release_bulk_args *bulk_args, region_lock_out_t *out) {return SUCCEED;}
 perr_t PDC_Meta_Server_region_release(region_lock_in_t *in, region_lock_out_t *out) {return SUCCEED;}
@@ -2015,7 +2015,7 @@ HG_TEST_RPC_CB(buf_unmap, handle)
     info = HG_Get_info(handle);
     out.ret = 0;
 
-    ret = PDC_Data_Server_buf_unmap(&in);
+    ret = PDC_Data_Server_buf_unmap(info, &in);
     if(ret != SUCCEED) {
         out.ret = 0;
         printf("===PDC_DATA_SERVER: HG_TEST_RPC_CB(buf_unmap, handle) - PDC_Data_Server_buf_unmap() failed"); 

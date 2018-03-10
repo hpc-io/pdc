@@ -5166,7 +5166,7 @@ int region_list_cmp_by_client_id(region_list_t *a, region_list_t *b)
     return (a->client_ids[0] - b->client_ids[0]);
 }
 
-perr_t PDC_Data_Server_buf_unmap(buf_unmap_in_t *in)
+perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t hg_ret = HG_SUCCESS;
@@ -5185,6 +5185,7 @@ perr_t PDC_Data_Server_buf_unmap(buf_unmap_in_t *in)
     DL_FOREACH_SAFE(target_obj->region_buf_map_head, elt, tmp) {
         if(in->remote_obj_id==elt->remote_obj_id && region_is_identical(in->remote_region, elt->remote_region_unit)) {
 //            HG_Bulk_free(elt->local_bulk_handle);
+            HG_Addr_free(info->hg_class, elt->local_addr);
             DL_DELETE(target_obj->region_buf_map_head, elt);
             free(elt);
         }
@@ -5364,9 +5365,12 @@ perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle)
     pdc_metadata_t *target_meta = NULL;
     region_buf_map_t *tmp, *elt;
     buf_unmap_out_t out;
+    const struct hg_info *info;
     int error = 0;
  
     FUNC_ENTER(NULL);
+
+    info = HG_Get_info(handle);
 
     if(pdc_server_rank_g == in->meta_server_id) {
         target_meta = find_metadata_by_id(in->remote_obj_id);
@@ -5381,6 +5385,7 @@ perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle)
 
             if(in->remote_obj_id==elt->remote_obj_id && region_is_identical(in->remote_region, elt->remote_region_unit)) {
                 HG_Bulk_free(elt->local_bulk_handle);
+                HG_Addr_free(info->hg_class, elt->local_addr);
                 DL_DELETE(target_meta->region_buf_map_head, elt);
                 free(elt);
             }
