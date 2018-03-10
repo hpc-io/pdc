@@ -203,6 +203,15 @@ endfunction()
 #--------------- start generating config.h from config.h.cmake ---------------
 
 #-----------------------------------------------------------------------------
+# Server mode option
+#-----------------------------------------------------------------------------
+option(PDC_SHARED_SERVER
+    "Use shared server with client mode." OFF)
+if(PDC_SHARED_SERVER)
+  set(PDC_HAS_SHARED_SERVER 1)
+endif()
+
+#-----------------------------------------------------------------------------
 # DRC option
 #-----------------------------------------------------------------------------
 option(PDC_USE_CRAY_DRC

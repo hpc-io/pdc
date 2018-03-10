@@ -4979,7 +4979,7 @@ int main(int argc, char *argv[])
     gettimeofday(&pdc_timer_start, 0);
     #endif
 
-    PDC_Server_checkpoint(checkpoint_file);
+//    PDC_Server_checkpoint(checkpoint_file);
 
     #ifdef ENABLE_TIMING 
     // Timing
@@ -9735,32 +9735,6 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region
 
     FUNC_ENTER(NULL);
 
-/*
-    io_region = (region_list_t*)malloc(sizeof(region_list_t));
-    PDC_init_region_list(io_region);
-    pdc_region_info_to_list_t(region_info, io_region);
-    io_region->access_type = WRITE;
-    io_region->buf = buf;
-*/
-/*
-#ifdef ENABLE_LUSTRE
-        if (pdc_nost_per_file_g != 1)
-            stripe_count = 248 / pdc_server_size_g;
-        else
-            stripe_size  = 16;                      // MB
-        PDC_Server_set_lustre_stripe(io_region->storage_location, stripe_count, stripe_size);
-
-        if (is_debug_g == 1 && pdc_server_rank_g == 0) {
-            printf("storage_location is %s\n", io_region->storage_location);
-        }
-#endif
-*/
-/*
-    // only working for 1D array
-    io_region->data_size = io_region->count[0];
-//    for (i = 1; i < io_region->ndim; i++)
-//        io_region->data_size *= io_region->count[i];
-*/
     region = PDC_Server_get_obj_region(obj_id);
     if(region == NULL) {
         printf("cannot locate file handle\n");
@@ -9772,10 +9746,15 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region
     else
       nclient_per_node = atoi(nclient_per_node_str);
 
+#ifdef PDC_HAS_SHARED_SERVER
     write_bytes = pwrite(region->fd, buf, region_info->size[0], region_info->offset[0]-pdc_server_rank_g*nclient_per_node*region_info->size[0]);
-//printf("server %d calls pwrite, offset = %lld, size = %lld\n", pdc_server_rank_g, region_info->offset[0]-pdc_server_rank_g*nclient_per_node*region_info->size[0], region_info->size[0]);
+    // printf("server %d calls pwrite, offset = %lld, size = %lld\n", pdc_server_rank_g, region_info->offset[0]-pdc_server_rank_g*nclient_per_node*region_info->size[0], region_info->size[0]);
+#else
+    write_bytes = pwrite(region->fd, buf, region_info->size[0], region_info->offset[0]);
+    // printf("server %d calls pwrite, offset = %lld, size = %lld\n", pdc_server_rank_g, region_info->offset[0], region_info->size[0]);
+#endif
     if(write_bytes == -1){
-        printf("==PDC_SERVER[%d]: pwrite %s failed\n", pdc_server_rank_g, io_region->storage_location);
+        printf("==PDC_SERVER[%d]: pwrite %d failed\n", pdc_server_rank_g, region->fd);
         goto done;
     }
 

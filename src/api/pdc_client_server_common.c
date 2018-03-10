@@ -1255,8 +1255,6 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
         PGOTO_ERROR(HG_PROTOCOL_ERROR, "Error in region_release_bulk_transfer_cb()");
     }
    
-//printf("server responds release to client\n");
-//fflush(stdout);
     out.ret = 1;
     HG_Respond(bulk_args->handle, NULL, NULL, &out);
 /*
@@ -1278,19 +1276,12 @@ printf("next is %f\n", *(float *)(data_buf+8));
 printf("next is %f\n", *(float *)(data_buf+12));
 fflush(stdout);
 */
-    // Perform lock release function
-//    PDC_Data_Server_region_release(bulk_args, &out);
-//    PDC_Data_Server_region_release(&(bulk_args->in), &out, &(bulk_args->handle));
-//    HG_Respond(bulk_args->handle, NULL, NULL, &out);
   
     // Send notification to mapped regions, when data transfer is done
 //    PDC_SERVER_notify_region_update_to_client(bulk_args->remote_obj_id, bulk_args->remote_reg_id, bulk_args->remote_client_id);
 
-//    pdc_region_transfer_t_to_region_info(bulk_args->remote_region, remote_reg_info);
-
     remote_reg_info = (struct PDC_region_info *)malloc(sizeof(struct PDC_region_info));
     if(remote_reg_info == NULL) {
-//        error = 1;
         PGOTO_ERROR(HG_OTHER_ERROR, "remote_reg_info memory allocation failed\n");
     }
     remote_reg_info->ndim = (bulk_args->remote_region).ndim;
@@ -1298,12 +1289,7 @@ fflush(stdout);
     remote_reg_info->size = (uint64_t *)malloc(sizeof(uint64_t));
     (remote_reg_info->offset)[0] = (bulk_args->remote_region).start_0;
     (remote_reg_info->size)[0] = (bulk_args->remote_region).count_0;
-//    PDC_Server_data_write_direct(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf+(bulk_args->remote_region).start_0);
-//printf("server starts writing to fs\n");
-//fflush(stdout);
     PDC_Server_data_write_out(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf);
-printf("server finishes writing to fs\n");
-fflush(stdout);
 
     // Perform lock release function
     PDC_Data_Server_region_release(bulk_args, &out);
@@ -1312,12 +1298,7 @@ fflush(stdout);
 
 done:
     fflush(stdout);
-//    if(error == 1) 
-//        out.ret = 0;
 
-//printf("server responds release to client\n");
-//fflush(stdout);
-//    HG_Respond(bulk_args->handle, NULL, NULL, &out);
     HG_Free_input(bulk_args->handle, &(bulk_args->in));
     HG_Destroy(bulk_args->handle);
     free(bulk_args);
