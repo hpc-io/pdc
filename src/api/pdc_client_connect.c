@@ -2833,6 +2833,8 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_
         PGOTO_ERROR(FAIL,"PDC_CLIENT: buf map failed...");
 
 done:
+    free(data_ptrs);
+    free(data_size);
     HG_Destroy(client_send_buf_map_handle);
     FUNC_LEAVE(ret_value);
 }

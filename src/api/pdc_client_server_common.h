@@ -2205,6 +2205,7 @@ struct buf_map_release_bulk_args {
     pdcid_t remote_reg_id;         /* target of region id */
     int32_t remote_client_id;
     region_info_transfer_t remote_region; 
+    hg_handle_t remote_bulk_handle;
 };
 
 struct lock_bulk_args {

@@ -126,11 +126,13 @@ if(rank == 0){
 printf("buf map is done\n");
 fflush(stdout);}
 */
+
     ret = PDCreg_obtain_lock(obj2, r2, WRITE, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for r2\n");
 
     MPI_Barrier(MPI_COMM_WORLD);
+
 /*
 if(rank ==0) {
 printf("lock is done\n");
@@ -147,6 +149,7 @@ fflush(stdout);}
         printf("Failed to release lock for r2\n");
   
     MPI_Barrier(MPI_COMM_WORLD);
+
 /*
 if(rank == 0) {
 printf("release is done\n");
@@ -157,6 +160,7 @@ if(rank == 0) {
 printf("start PDCobj_buf_unmap()\n");
 fflush(stdout);}
 */
+
     ret = PDCobj_buf_unmap(obj2, r2);
     if (ret != SUCCEED)
         printf("region unmap failed\n");
@@ -175,6 +179,11 @@ fflush(stdout);}
 
     if(PDC_close(pdc_id) < 0)
        printf("fail to close PDC\n");
+
+    free(x);
+    free(offset);
+    free(offset_remote);
+    free(mysize);
 
 #ifdef ENABLE_MPI
      MPI_Finalize();

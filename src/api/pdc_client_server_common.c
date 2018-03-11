@@ -1289,6 +1289,7 @@ fflush(stdout);
     remote_reg_info->size = (uint64_t *)malloc(sizeof(uint64_t));
     (remote_reg_info->offset)[0] = (bulk_args->remote_region).start_0;
     (remote_reg_info->size)[0] = (bulk_args->remote_region).count_0;
+
     PDC_Server_data_write_out(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf);
 
     // Perform lock release function
@@ -1299,6 +1300,11 @@ fflush(stdout);
 done:
     fflush(stdout);
 
+    free(remote_reg_info->offset);
+    free(remote_reg_info->size);
+    free(remote_reg_info);
+
+    HG_Bulk_free(bulk_args->remote_bulk_handle);
     HG_Free_input(bulk_args->handle, &(bulk_args->in));
     HG_Destroy(bulk_args->handle);
     free(bulk_args);
@@ -1702,7 +1708,9 @@ fflush(stdout);
                                 error = 1;
                                 PGOTO_ERROR(FAIL, "==PDC SERVER ERROR: Could not create bulk data handle\n");
                             }
-                            
+                            free(data_ptrs_to);
+                            free(data_size_to); 
+
                             buf_map_bulk_args = (struct buf_map_release_bulk_args *) malloc(sizeof(struct buf_map_release_bulk_args));
                             buf_map_bulk_args->handle = handle;
                             buf_map_bulk_args->data_buf = data_buf;
@@ -1711,6 +1719,7 @@ fflush(stdout);
                             buf_map_bulk_args->remote_reg_id = eltt->remote_reg_id;
                             buf_map_bulk_args->remote_region = eltt->remote_region_unit;
                             buf_map_bulk_args->remote_client_id = eltt->remote_client_id;
+                            buf_map_bulk_args->remote_bulk_handle = remote_bulk_handle;
                              
                             /* Pull bulk data */
                             size = HG_Bulk_get_size(eltt->local_bulk_handle);
@@ -1725,6 +1734,7 @@ fflush(stdout);
                             }
                         }
                     }
+                    free(tmp);
                 }
             }
             free(request_region);
@@ -2172,6 +2182,8 @@ HG_TEST_RPC_CB(buf_map_server, handle)
 #ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_unlock(&server_append_buf_map_metex_g);
 #endif
+    free(request_region);
+
 done:
     HG_Respond(handle, NULL, NULL, &out);
 //    HG_Free_input(handle, &in);

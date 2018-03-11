@@ -4073,6 +4073,8 @@ perr_t PDC_Server_release_lock_request(uint64_t obj_id, struct PDC_region_info *
 #endif
         }
     }
+    free(request_region);
+
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -5536,6 +5538,8 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
         }
     }
     ret_value = buf_map_ptr;
+
+    free(request_region);
 
 done:
     FUNC_LEAVE(ret_value);
