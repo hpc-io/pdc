@@ -82,7 +82,6 @@ void *PDC_Server_get_region_ptr(pdcid_t obj_id, region_info_transfer_t region);
 hg_return_t PDC_Server_work_done_cb(const struct hg_cb_info *callback_info);
 hg_return_t PDC_Server_s2s_send_work_done_cb(const struct hg_cb_info *callback_info);
 hg_return_t PDC_Server_s2s_recv_work_done_cb(const struct hg_cb_info *callback_info);
-hg_return_t PDC_Server_count_write_check_update_storage_meta_cb(const struct hg_cb_info *callback_info);
 perr_t PDC_Server_create_container(gen_cont_id_in_t *in, gen_cont_id_out_t *out);
 
 typedef struct pdc_hash_table_entry_head {
@@ -233,6 +232,7 @@ typedef struct bulk_xfer_data_t {
 // Linked list used to defer bulk update
 typedef struct update_storage_meta_list_t {
     bulk_xfer_data_t *storage_meta_bulk_xfer_data;
+    int is_updated;
 
     struct update_storage_meta_list_t *prev;
     struct update_storage_meta_list_t *next;

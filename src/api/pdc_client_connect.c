@@ -617,6 +617,7 @@ close_server_cb(const struct hg_cb_info *callback_info)
     FUNC_ENTER(NULL);
 
     /* printf("Entered close_server_cb()\n"); */
+    /* fflush(stdout); */
     /* client_lookup_args = (struct client_lookup_args*) callback_info->arg; */
     handle = callback_info->info.forward.handle;
 
@@ -629,7 +630,8 @@ close_server_cb(const struct hg_cb_info *callback_info)
     /* printf("Return value=%" PRIu64 "\n", output.ret); */
 
 done:
-    work_todo_g--;
+    fflush(stdout);
+    work_todo_g = 0;
     HG_Free_output(handle, &output);
     FUNC_LEAVE(ret_value);
 }
@@ -878,7 +880,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
      *   "cci+tcp"
      */
     struct hg_init_info init_info = { 0 };
-    char *default_hg_transport = "bmi+tcp";
+    char *default_hg_transport = "ofi+tcp";
     char *hg_transport;
 #ifdef PDC_HAS_CRAY_DRC
     uint32_t credential, cookie;
@@ -2386,7 +2388,8 @@ perr_t PDC_Client_close_all_server()
             }
             mercury_has_init_g = 1;
         }
-        for (i = 0; i < (uint32_t)pdc_server_num_g; i++) {
+        for (i = pdc_server_num_g - 1; i > 0; i--) {
+        /* for (i = 0; i < (uint32_t)pdc_server_num_g; i++) { */
             server_id = i;
             /* printf("Closing server %d\n", server_id); */
             /* fflush(stdout); */
@@ -2417,6 +2420,7 @@ perr_t PDC_Client_close_all_server()
             work_todo_g = 1;
             PDC_Client_check_response(&send_context_g);
             HG_Destroy(close_server_handle);
+
         }
 
 
@@ -4276,6 +4280,7 @@ perr_t PDC_Client_write(pdc_metadata_t *meta, struct PDC_region_info *region, vo
     FUNC_ENTER(NULL);
 
     request.n_update = 1;
+    request.n_client = 1;
     ret_value = PDC_Client_iwrite(meta, region, &request, buf);
     if (ret_value != SUCCEED) {
         printf("==PDC_CLIENT: PDC_Client_write - PDC_Client_iwrite error\n");

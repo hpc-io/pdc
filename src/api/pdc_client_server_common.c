@@ -2557,8 +2557,8 @@ done:
         return ret;
     }
 
-    printf("==PDC_SERVER[ ]: Responded to client %d of storage meta update!\n", bulk_args->origin);
-    fflush(stdout);
+    /* printf("==PDC_SERVER[ ]: Responded to client %d of storage meta update!\n", bulk_args->origin); */
+    /* fflush(stdout); */
 
     HG_Destroy(bulk_args->handle);
     free(bulk_args);
@@ -2571,7 +2571,6 @@ done:
 // Server execute after receives the bulk_rpc from another server
 HG_TEST_RPC_CB(bulk_rpc, handle)
 {
-//TODO
     const struct hg_info *hg_info = NULL;
     hg_bulk_t origin_bulk_handle = HG_BULK_NULL;
     hg_bulk_t local_bulk_handle = HG_BULK_NULL;
@@ -2604,9 +2603,9 @@ HG_TEST_RPC_CB(bulk_rpc, handle)
     cnt = in_struct.cnt;
     origin_bulk_handle = in_struct.bulk_handle;
 
-    printf("==PDC_SERVER[x]: received update storage meta bulk rpc from %d, with %d regions\n", 
-            in_struct.origin, cnt);
-    fflush(stdout);
+    /* printf("==PDC_SERVER[x]: received update storage meta bulk rpc from %d, with %d regions\n", */ 
+    /*         in_struct.origin, cnt); */
+    /* fflush(stdout); */
 
     bulk_args->nbytes = HG_Bulk_get_size(origin_bulk_handle);
     bulk_args->cnt = cnt;
@@ -2624,8 +2623,8 @@ HG_TEST_RPC_CB(bulk_rpc, handle)
         return ret;
     }
 
-    printf("==PDC_SERVER[x]: Pulled data from %d\n", in_struct.origin);
-    fflush(stdout);
+    /* printf("==PDC_SERVER[x]: Pulled data from %d\n", in_struct.origin); */
+    /* fflush(stdout); */
 
     HG_Free_input(handle, &in_struct);
 
