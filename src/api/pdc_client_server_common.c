@@ -41,9 +41,7 @@
 #ifdef ENABLE_MULTITHREAD 
 // Mercury multithread
 #include "mercury_thread_mutex.h"
-hg_thread_mutex_t server_delete_buf_map_metex_g = HG_THREAD_MUTEX_INITIALIZER;
-hg_thread_mutex_t server_append_buf_map_metex_g = HG_THREAD_MUTEX_INITIALIZER;
-hg_thread_mutex_t insert_metadata_metex_g = HG_THREAD_MUTEX_INITIALIZER;
+hg_thread_mutex_t delete_buf_map_metex_g;
 #endif
 
 // Thread
@@ -321,9 +319,8 @@ perr_t PDC_init_region_list(region_list_t *a)
     a->n_overlap_storage_region = 0;
     hg_atomic_init32(&(a->buf_map_refcount), 0);
     a->reg_dirty     = 0;
-    a->lock_handle   = NULL;
     a->access_type   = NA;
-    a->bulk_handle   = HG_BULK_NULL;
+    a->bulk_handle   = NULL;
     a->addr          = 0;
     a->meta          = NULL;
     a->obj_id        = 0;
@@ -770,18 +767,17 @@ perr_t PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata
 perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *out) {return SUCCEED;}
 perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle) {return SUCCEED;}
-perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in) {return SUCCEED;}
+perr_t PDC_Data_Server_buf_unmap(buf_unmap_in_t *in) {return SUCCEED;}
 perr_t PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_ptr, hg_handle_t *handle) {return SUCCEED;}
 perr_t PDC_Data_Server_region_release(struct buf_map_release_bulk_args *bulk_args, region_lock_out_t *out) {return SUCCEED;}
 perr_t PDC_Meta_Server_region_release(region_lock_in_t *in, region_lock_out_t *out) {return SUCCEED;}
-perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out, hg_handle_t *handle) {return SUCCEED;}
+perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out) {return SUCCEED;}
 perr_t PDC_Meta_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out) {return SUCCEED;}
 //perr_t PDC_Server_region_lock_status(pdcid_t obj_id, region_info_transfer_t *region, int *lock_status) {return SUCCEED;}
 perr_t PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status) {return SUCCEED;}
 perr_t PDC_Server_local_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status) {return SUCCEED;}
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs) {return SUCCEED;}
 perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_t obj_id) {return NULL;}
-perr_t PDC_Server_release_lock_request(uint64_t obj_id, struct PDC_region_info *region) {return SUCCEED;}
 perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
 perr_t PDC_Server_data_read_in(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
 perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
@@ -849,14 +845,9 @@ HG_TEST_RPC_CB(gen_obj_id, handle)
 
     HG_Get_input(handle, &in);
 
-#ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_lock(&insert_metadata_metex_g);
-#endif
     // Insert to hash table
     ret_value = insert_metadata_to_hash_table(&in, &out);
-#ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_unlock(&insert_metadata_metex_g);
-#endif
+
     /* printf("==PDC_SERVER: gen_obj_id_cb(): going to return %" PRIu64 "\n", out.obj_id); */
     /* fflush(stdout); */
 
@@ -1316,12 +1307,19 @@ printf("next is %f\n", *(float *)(data_buf+8));
 printf("next is %f\n", *(float *)(data_buf+12));
 fflush(stdout);
 */
+    // Perform lock release function
+//    PDC_Data_Server_region_release(bulk_args, &out);
+//    PDC_Data_Server_region_release(&(bulk_args->in), &out, &(bulk_args->handle));
+//    HG_Respond(bulk_args->handle, NULL, NULL, &out);
   
     // Send notification to mapped regions, when data transfer is done
 //    PDC_SERVER_notify_region_update_to_client(bulk_args->remote_obj_id, bulk_args->remote_reg_id, bulk_args->remote_client_id);
 
+//    pdc_region_transfer_t_to_region_info(bulk_args->remote_region, remote_reg_info);
+
     remote_reg_info = (struct PDC_region_info *)malloc(sizeof(struct PDC_region_info));
     if(remote_reg_info == NULL) {
+//        error = 1;
         PGOTO_ERROR(HG_OTHER_ERROR, "remote_reg_info memory allocation failed\n");
     }
     remote_reg_info->ndim = (bulk_args->remote_region).ndim;
@@ -1329,22 +1327,18 @@ fflush(stdout);
     remote_reg_info->size = (uint64_t *)malloc(sizeof(uint64_t));
     (remote_reg_info->offset)[0] = (bulk_args->remote_region).start_0;
     (remote_reg_info->size)[0] = (bulk_args->remote_region).count_0;
-
+//    PDC_Server_data_write_direct(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf+(bulk_args->remote_region).start_0);
     PDC_Server_data_write_out(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf);
 
     // Perform lock release function
     PDC_Data_Server_region_release(bulk_args, &out);
 
-    PDC_Server_release_lock_request(bulk_args->remote_obj_id, remote_reg_info);
-
 done:
     fflush(stdout);
+//    if(error == 1) 
+//        out.ret = 0;
 
-    free(remote_reg_info->offset);
-    free(remote_reg_info->size);
-    free(remote_reg_info);
-
-    HG_Bulk_free(bulk_args->remote_bulk_handle);
+//    HG_Respond(bulk_args->handle, NULL, NULL, &out);
     HG_Free_input(bulk_args->handle, &(bulk_args->in));
     HG_Destroy(bulk_args->handle);
     free(bulk_args);
@@ -1748,9 +1742,7 @@ fflush(stdout);
                                 error = 1;
                                 PGOTO_ERROR(FAIL, "==PDC SERVER ERROR: Could not create bulk data handle\n");
                             }
-                            free(data_ptrs_to);
-                            free(data_size_to); 
-
+                            
                             buf_map_bulk_args = (struct buf_map_release_bulk_args *) malloc(sizeof(struct buf_map_release_bulk_args));
                             buf_map_bulk_args->handle = handle;
                             buf_map_bulk_args->data_buf = data_buf;
@@ -1759,7 +1751,6 @@ fflush(stdout);
                             buf_map_bulk_args->remote_reg_id = eltt->remote_reg_id;
                             buf_map_bulk_args->remote_region = eltt->remote_region_unit;
                             buf_map_bulk_args->remote_client_id = eltt->remote_client_id;
-                            buf_map_bulk_args->remote_bulk_handle = remote_bulk_handle;
                              
                             /* Pull bulk data */
                             size = HG_Bulk_get_size(eltt->local_bulk_handle);
@@ -1774,7 +1765,6 @@ fflush(stdout);
                             }
                         }
                     }
-                    free(tmp);
                 }
             }
             free(request_region);
@@ -1921,7 +1911,6 @@ HG_TEST_RPC_CB(region_lock_server, handle)
 HG_TEST_RPC_CB(region_lock, handle)
 {
     hg_return_t ret_value = HG_SUCCESS;
-    perr_t ret = SUCCEED;
     region_lock_in_t in;
     region_lock_out_t out;
     const struct hg_info *hg_info = NULL;
@@ -1932,14 +1921,12 @@ HG_TEST_RPC_CB(region_lock, handle)
     HG_Get_input(handle, &in);
 
     // Perform lock function
-    ret = PDC_Data_Server_region_lock(&in, &out, &handle);
-//    PDC_Data_Server_region_lock(&in, &out);
+//    PDC_Data_Server_region_lock(&in, &out, &handle);
+    PDC_Data_Server_region_lock(&in, &out);
 
+    HG_Respond(handle, NULL, NULL, &out);
     HG_Free_input(handle, &in);
-    if(ret == SUCCEED) {
-        HG_Respond(handle, NULL, NULL, &out);
-        HG_Destroy(handle);
-    }
+    HG_Destroy(handle);
 
     FUNC_LEAVE(ret_value);
 }
@@ -2065,7 +2052,7 @@ HG_TEST_RPC_CB(buf_unmap, handle)
     info = HG_Get_info(handle);
     out.ret = 0;
 
-    ret = PDC_Data_Server_buf_unmap(info, &in);
+    ret = PDC_Data_Server_buf_unmap(&in);
     if(ret != SUCCEED) {
         out.ret = 0;
         printf("===PDC_DATA_SERVER: HG_TEST_RPC_CB(buf_unmap, handle) - PDC_Data_Server_buf_unmap() failed"); 
@@ -2119,7 +2106,7 @@ done:
 }
 
 /* static hg_return_t */
-// buf_unmap_server_cb(hg_handle_t handle)
+// buf_map_server_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(buf_unmap_server, handle)
 {
     hg_return_t ret_value = HG_SUCCESS;
@@ -2141,7 +2128,7 @@ HG_TEST_RPC_CB(buf_unmap_server, handle)
         PGOTO_ERROR(HG_OTHER_ERROR, "==PDC_SERVER: HG_TEST_RPC_CB(buf_unmap_server, handle) - requested object does not exist\n");
     }
 #ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_lock(&server_delete_buf_map_metex_g);
+    hg_thread_mutex_lock(&delete_buf_map_metex_g);
 #endif
 
     DL_FOREACH_SAFE(target_obj->region_buf_map_head, elt, tmp) {
@@ -2153,7 +2140,7 @@ HG_TEST_RPC_CB(buf_unmap_server, handle)
         }
     }
 #ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_unlock(&server_delete_buf_map_metex_g);
+    hg_thread_mutex_unlock(&delete_buf_map_metex_g);
 #endif
 
 done:
@@ -2214,15 +2201,8 @@ HG_TEST_RPC_CB(buf_map_server, handle)
     buf_map_ptr->remote_region_unit = in.remote_region_unit;
     buf_map_ptr->remote_region_nounit = in.remote_region_nounit;
 
-#ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_lock(&server_append_buf_map_metex_g);
-#endif
     DL_APPEND(target_obj->region_buf_map_head, buf_map_ptr);
     out.ret = 1;
-#ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_unlock(&server_append_buf_map_metex_g);
-#endif
-    free(request_region);
 
 done:
     HG_Respond(handle, NULL, NULL, &out);

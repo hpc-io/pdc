@@ -125,7 +125,6 @@ typedef struct region_list_t {
     uint32_t n_overlap_storage_region;
     hg_atomic_int32_t      buf_map_refcount;
     int      reg_dirty;
-    hg_handle_t  lock_handle;
     PDC_access_t access_type;
     hg_bulk_t bulk_handle;
     hg_addr_t addr;
@@ -258,8 +257,6 @@ typedef struct data_server_region_t {
     region_list_t *region_lock_head;
     // For buf map
     region_buf_map_t *region_buf_map_head;
-    // For lock request list
-    region_list_t *region_lock_request_head;
     // For region storage list
 //    region_list_t *region_storage_head;
     // For region map
@@ -362,7 +359,6 @@ typedef struct {
     region_info_transfer_t      region;
     pbool_t                     mapping;
     PDC_var_type_t              data_type;
-    PDC_lock_mode_t             lock_mode;
 } region_lock_in_t;
 
 typedef struct {
@@ -485,11 +481,6 @@ hg_proc_region_lock_in_t(hg_proc_t proc, void *data)
     HG_LOG_ERROR("Proc error");
     }
     ret = hg_proc_uint8_t(proc, &struct_data->data_type);
-    if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_int32_t(proc, &struct_data->lock_mode);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -2216,7 +2207,6 @@ struct buf_map_release_bulk_args {
     pdcid_t remote_reg_id;         /* target of region id */
     int32_t remote_client_id;
     region_info_transfer_t remote_region; 
-    hg_handle_t remote_bulk_handle;
 };
 
 struct lock_bulk_args {

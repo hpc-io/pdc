@@ -52,10 +52,10 @@ pbool_t region_is_identical(region_info_transfer_t reg1, region_info_transfer_t 
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out);
 perr_t PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_ptr, hg_handle_t *handle);
 perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle);
-perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in);
+perr_t PDC_Data_Server_buf_unmap(buf_unmap_in_t *in);
 perr_t PDC_Data_Server_region_release(struct buf_map_release_bulk_args *bulk_args, region_lock_out_t *out);
 perr_t PDC_Meta_Server_region_release(region_lock_in_t *in, region_lock_out_t *out);
-perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out, hg_handle_t *handle);
+perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out);
 perr_t PDC_Meta_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out);
 perr_t PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status);
 perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key, pdc_metadata_t** out);
@@ -244,7 +244,6 @@ perr_t PDC_Server_unserialize_regions_info(void *buf, region_list_t** regions, u
 hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info);
 
 hg_return_t PDC_Server_count_write_check_update_storage_meta_cb (const struct hg_cb_info *callback_info);
-perr_t PDC_Server_release_lock_request(uint64_t obj_id, struct PDC_region_info *region);
 perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region_info, void *buf);
 perr_t PDC_Server_data_read_in(uint64_t obj_id, struct PDC_region_info *region_info, void *buf);
 perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf);

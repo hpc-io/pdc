@@ -20,6 +20,3 @@
 
 /* Define if has Cray DRC */
 #cmakedefine PDC_HAS_CRAY_DRC
-
-/* Define if use shared server */
-#cmakedefine PDC_HAS_SHARED_SERVER
