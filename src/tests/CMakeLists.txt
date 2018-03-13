@@ -44,6 +44,7 @@ set(PROGRAMS
   data_server_read_vpic_spatial_multits
   write_1obj
   cont_add_del
+  blocked_lock
   )
 
 foreach(program ${PROGRAMS})

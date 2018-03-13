@@ -572,6 +572,9 @@ fflush(stdout);
     free(pz);
     free(id1);
     free(id2);
+    free(offset);
+    free(offset_remote);
+    free(mysize);
 
 #ifdef ENABLE_MPI
      MPI_Finalize();
