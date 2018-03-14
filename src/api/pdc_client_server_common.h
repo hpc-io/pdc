@@ -156,6 +156,7 @@ typedef struct pdc_metadata_transfer_t {
     const char    *obj_name;
     int            time_step;
 
+    uint64_t       cont_id;
     uint64_t       obj_id;
 //    PDC_var_type_t data_type;  
     size_t         ndim;
@@ -275,6 +276,7 @@ typedef struct pdc_metadata_t {
     // Above four are the unique identifier for objects
 
     uint64_t obj_id;
+    uint64_t cont_id;
     time_t  create_time;
     time_t  last_modified_time;
 
@@ -630,6 +632,11 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
     ret = hg_proc_int32_t(proc, &struct_data->time_step);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->cont_id);
+    if (ret != HG_SUCCESS) {
+    HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->obj_id);

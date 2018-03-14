@@ -315,14 +315,16 @@ scan_group(hid_t gid, int level) {
 void
 do_dset(hid_t did, char *name)
 {
-    hid_t tid;
-    hid_t pid;
-    hid_t sid;
-    hsize_t size;
+    hid_t tid, pid, sid, dspace;
+    hsize_t dtype_size, dset_size;
     char ds_name[MAX_NAME];
     char grp_name[MAX_NAME];
     char *obj_name;
     int name_len, i;
+    hsize_t ndim, dims[10];
+    uint64_t offset[10], size[10];
+    void *buf;
+    struct PDC_region_info obj_region;
 
     tag_size_g = 0;
     memset(tags_g, 0, sizeof(char)*TAG_LEN_MAX);
@@ -382,14 +384,22 @@ do_dset(hid_t did, char *name)
      */
 
     /* ... read data with H5Dread, write with H5Dwrite, etc. */
+    dspace = H5Dget_space(did);
+    ndim = H5Sget_simple_extent_ndims(dspace);
+    H5Sget_simple_extent_dims(dspace, dims, NULL);
+    dtype_size = H5Tget_size(tid);
+    dset_size = dtype_size;
+    for (i = 0; i < ndim; i++) 
+        dset_size *= dims[i];
+    
+
+    buf = malloc(dset_size);
+    H5Dread(did, tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, buf);
+
 
     /* H5Pclose(pid); */
     H5Tclose(tid);
     H5Sclose(sid);
-
-    if (strcmp("/3673/55160/420/coadd", dset_name_g) == 0) {
-        int t=1;
-    }
 
     // Create a pdc object per dataset with tag
     PDCprop_set_obj_tags(obj_prop_g, tags_g);
@@ -403,6 +413,23 @@ do_dset(hid_t did, char *name)
         /* printf("created [%s] with tag size %d [%s]\n", dset_name_g, tag_size_g, tags_g); */
     }
 
+    pdc_metadata_t *meta = NULL;
+    obj_region.ndim   = ndim;
+    for (i = 0; i < ndim; i++) {
+        offset[i] = 0;
+        size[i] = dims[i];
+    }
+    size[0] *= dtype_size; 
+    obj_region.offset = offset;
+    obj_region.size   = size;
+
+    PDC_Client_query_metadata_name_timestep(dset_name_g, 0, &meta);
+    if (meta == NULL) 
+        printf("Error with obtainig metadata, skipping PDC write\n");
+    else
+        PDC_Client_write(meta, &obj_region, buf);
+
+    free(buf);
     /* printf("} [%s] tag_size %d  \n========================\n%s\n========================\n\n\n", */
     /*         obj_name, tag_size_g, tags_g); */
     /* printf("size %d\n%s\n\n", tag_size_g, tags_g); */

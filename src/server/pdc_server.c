@@ -2089,6 +2089,7 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
 
     PDC_metadata_init(metadata);
 
+    metadata->cont_id   = in->data.cont_id;
     metadata->user_id   = in->data.user_id;
     metadata->time_step = in->data.time_step;
     metadata->ndim      = in->data.ndim;
@@ -3165,7 +3166,7 @@ perr_t PDC_Server_restart(char *filename)
     MPI_Reduce(&total_region, &all_n_region, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 #else
     all_nobj = nobj;
-    all_n_region = n_region;
+    all_n_region = total_region;
 #endif 
     
     /* printf("==PDC_SERVER[%d]: Server restarted from saved session, " */
@@ -7393,10 +7394,11 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
 
         bb_data_path = getenv("PDC_BB_LOC");
         if (bb_data_path != NULL)
-            sprintf(io_list_target->bb_path, "%s/pdc_data/%" PRIu64 "", bb_data_path, io_info->meta.obj_id);
+            sprintf(io_list_target->bb_path, "%s/pdc_data/cont_%" PRIu64 "", 
+                    bb_data_path, io_info->meta.cont_id);
 
         // Auto generate a data location path for storing the data
-        sprintf(io_list_target->path, "%s/pdc_data/%" PRIu64 "", data_path, io_info->meta.obj_id);
+        sprintf(io_list_target->path, "%s/pdc_data/cont_%" PRIu64 "", data_path, io_info->meta.cont_id);
         io_list_target->region_list_head = NULL;
 
         // Add to the io list
@@ -9178,9 +9180,10 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
 
                 // Request: elt->start/count
                 // Storage: region_elt->overlap_storage_regions[i]->start/count
-                ret_value = PDC_Server_read_overlap_regions(region_elt->ndim, region_elt->start, region_elt->count, 
-                            region_elt->overlap_storage_regions[i].start, region_elt->overlap_storage_regions[i].count,
-                            fp_read, region_elt->overlap_storage_regions[i].offset, region_elt->buf, &read_bytes);
+                ret_value = PDC_Server_read_overlap_regions(region_elt->ndim, region_elt->start, 
+                            region_elt->count, region_elt->overlap_storage_regions[i].start, 
+                            region_elt->overlap_storage_regions[i].count, fp_read, 
+                            region_elt->overlap_storage_regions[i].offset, region_elt->buf, &read_bytes);
 
                 if (ret_value != SUCCEED) {
                     printf("==PDC_SERVER[%d]: error with PDC_Server_read_overlap_regions\n",

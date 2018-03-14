@@ -2255,7 +2255,7 @@ done:
 
 
 // Send a name to server and receive an obj id
-perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_prop, pdcid_t *meta_id)
+perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj_create_prop, pdcid_t *meta_id)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
@@ -2281,6 +2281,7 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_pro
     memset(&in,0,sizeof(in));
 
     in.data.obj_name  = obj_name;
+    in.data.cont_id   = cont_id;
     in.data.time_step = create_prop->time_step;
     in.data.user_id   = create_prop->user_id;
     in.data_type = create_prop->type;
@@ -2376,11 +2377,11 @@ perr_t PDC_Client_close_all_server()
     
     FUNC_ENTER(NULL);
 
-    port = pdc_client_mpi_rank_g % 32 + 8000;
 
     if (pdc_client_mpi_rank_g == 0) {
         if (mercury_has_init_g == 0) {
             // Init Mercury network connection
+            port = pdc_client_mpi_rank_g % 32 + 8000;
             PDC_Client_mercury_init(&send_class_g, &send_context_g, port);
             if (send_class_g == NULL || send_context_g == NULL) {
                 printf("Error with Mercury Init, exiting...\n");
@@ -2388,11 +2389,11 @@ perr_t PDC_Client_close_all_server()
             }
             mercury_has_init_g = 1;
         }
-        for (i = pdc_server_num_g - 1; i > 0; i--) {
-        /* for (i = 0; i < (uint32_t)pdc_server_num_g; i++) { */
+        /* for (i = pdc_server_num_g - 1; i > 0; i--) { */
+        for (i = 0; i < (uint32_t)pdc_server_num_g; i++) {
             server_id = i;
-            /* printf("Closing server %d\n", server_id); */
-            /* fflush(stdout); */
+            printf("Closing server %d\n", server_id);
+            fflush(stdout);
 
             if( PDC_Client_try_lookup_server(server_id) != SUCCEED) {
                 printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);

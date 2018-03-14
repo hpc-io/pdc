@@ -720,6 +720,7 @@ perr_t pdc_metadata_t_to_transfer_t(pdc_metadata_t *meta, pdc_metadata_transfer_
     transfer->obj_name      = meta->obj_name     ;
     transfer->time_step     = meta->time_step    ;
     transfer->obj_id        = meta->obj_id       ;
+    transfer->cont_id       = meta->cont_id      ;
     transfer->ndim          = meta->ndim         ;
     transfer->dims0         = meta->dims[0]      ;
     transfer->dims1         = meta->dims[1]      ;
@@ -739,6 +740,7 @@ perr_t pdc_transfer_t_to_metadata_t(pdc_metadata_transfer_t *transfer, pdc_metad
     }
     meta->user_id       = transfer->user_id;
     meta->obj_id        = transfer->obj_id;
+    meta->cont_id       = transfer->cont_id;
     meta->time_step     = transfer->time_step;
     meta->ndim          = transfer->ndim;
     meta->dims[0]       = transfer->dims0;

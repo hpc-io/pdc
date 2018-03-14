@@ -107,7 +107,7 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id
     p->obj_pt = (struct PDC_obj_prop *)(id_info->obj_ptr);
     p->client_id = 0;
 
-    ret = PDC_Client_send_name_recv_id(obj_name, obj_prop_id, &(p->meta_id));
+    ret = PDC_Client_send_name_recv_id(obj_name, p->cont->meta_id, obj_prop_id, &(p->meta_id));
     if (ret == FAIL) {
         ret_value = -1;
         PGOTO_ERROR(FAIL,"Unable to create object on server!\n");
@@ -155,10 +155,10 @@ pdcid_t PDCobj_create_MPI(pdcid_t cont_id, const char *obj_name, pdcid_t obj_pro
     sprintf(srank, "%d", rank);
     sprintf(name, "%s%s", obj_name, srank);
     p->client_id = rank;
-    ret = PDC_Client_send_name_recv_id(name, obj_prop_id, &(p->meta_id));
+    ret = PDC_Client_send_name_recv_id(obj_name, p->cont->meta_id, obj_prop_id, &(p->meta_id));
 #else
     p->client_id = 0;
-    ret = PDC_Client_send_name_recv_id(obj_name, obj_prop_id, &(p->meta_id));
+    ret = PDC_Client_send_name_recv_id(obj_name, p->cont->meta_id, obj_prop_id, &(p->meta_id));
 #endif
     if (ret == FAIL) {
         ret_value = -1;
@@ -202,10 +202,10 @@ pdcid_t PDCobj_create_(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_i
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
         p->client_id = rank;
         if(rank == 0)
-            ret = PDC_Client_send_name_recv_id(obj_name, obj_prop_id, &(p->meta_id));
+            ret = PDC_Client_send_name_recv_id(obj_name, p->cont->meta_id, obj_prop_id, &(p->meta_id));
 #else
         p->client_id = 0;
-        ret = PDC_Client_send_name_recv_id(obj_name, obj_prop_id, &(p->meta_id));
+        ret = PDC_Client_send_name_recv_id(obj_name, p->cont->meta_id, obj_prop_id, &(p->meta_id));
 #endif
         if (ret == FAIL) {
             ret_value = -1;
@@ -242,7 +242,7 @@ pdcid_t PDCobj_create__(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_
     p->local_id = PDC_id_register(PDC_OBJ, p);
 
     if(location == PDC_OBJ_GLOBAL) {
-        ret = PDC_Client_send_name_recv_id(obj_name, obj_prop_id, &(p->meta_id));
+        ret = PDC_Client_send_name_recv_id(obj_name, p->cont->meta_id, obj_prop_id, &(p->meta_id));
         p->client_id = 0;
     }
     if (ret == FAIL) {
@@ -310,10 +310,10 @@ pdcid_t PDCobj_create_mpi2(pdcid_t cont_id, const char *obj_name, pdcid_t obj_pr
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     p->client_id = rank;
     if(rank == 0)
-        ret = PDC_Client_send_name_recv_id(obj_name, obj_prop_id, &(p->meta_id));
+        ret = PDC_Client_send_name_recv_id(obj_name, p->cont->meta_id, obj_prop_id, &(p->meta_id));
 #else
     p->client_id = 0;
-    ret = PDC_Client_send_name_recv_id(obj_name, obj_prop_id, &(p->meta_id));
+    ret = PDC_Client_send_name_recv_id(obj_name, p->cont->meta_id, obj_prop_id, &(p->meta_id));
 #endif
     if (ret == FAIL) {
         ret_value = -1;

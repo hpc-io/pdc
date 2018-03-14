@@ -148,12 +148,13 @@ perr_t PDC_Client_read_server_addr_from_file();
  * Client request of an obj id by sending object name
  *
  * \param obj_name [IN]         Name of the object
+ * \param cont_id[IN]           Container ID (obtained from metadata server)
  * \param obj_create_prop [IN]  Id of the object property
  * \param meta_id [OUT]         Pointer to medadata id
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_send_name_recv_id(const char *obj_name, pdcid_t obj_create_prop, pdcid_t *meta_id);
+perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj_create_prop, pdcid_t *meta_id);
 
 /**
  * Listing all objects on the client
