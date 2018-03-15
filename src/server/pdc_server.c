@@ -63,7 +63,7 @@
 #include "mercury_thread.h"
 #include "mercury_thread_pool.h"
 #include "mercury_thread_mutex.h"
-static hg_thread_mutex_t pdc_client_addr_metex_g;
+static hg_thread_mutex_t pdc_client_addr_mutex_g;
 hg_thread_mutex_t pdc_metadata_hash_table_mutex_g;
 /* hg_thread_mutex_t pdc_metadata_name_mark_hash_table_mutex_g; */
 hg_thread_mutex_t pdc_time_mutex_g;
@@ -71,16 +71,17 @@ hg_thread_mutex_t pdc_bloom_time_mutex_g;
 hg_thread_mutex_t n_metadata_mutex_g;
 hg_thread_mutex_t data_read_list_mutex_g;
 hg_thread_mutex_t data_write_list_mutex_g;
-hg_thread_mutex_t create_region_struct_metex_g;
-hg_thread_mutex_t delete_buf_map_metex_g;
-hg_thread_mutex_t remove_buf_map_metex_g;
-hg_thread_mutex_t remove_lock_metex_g;
-hg_thread_mutex_t append_lock_metex_g; 
-hg_thread_mutex_t append_buf_map_metex_g; 
-hg_thread_mutex_t append_region_struct_metex_g;
-hg_thread_mutex_t insert_hash_table_metex_g;
-hg_thread_mutex_t append_lock_request_metex_g;
-hg_thread_mutex_t remove_lock_request_metex_g;
+hg_thread_mutex_t create_region_struct_mutex_g;
+hg_thread_mutex_t delete_buf_map_mutex_g;
+hg_thread_mutex_t remove_buf_map_mutex_g;
+hg_thread_mutex_t remove_lock_mutex_g;
+hg_thread_mutex_t append_lock_mutex_g; 
+hg_thread_mutex_t append_buf_map_mutex_g; 
+hg_thread_mutex_t append_region_struct_mutex_g;
+hg_thread_mutex_t insert_hash_table_mutex_g;
+hg_thread_mutex_t append_lock_request_mutex_g;
+hg_thread_mutex_t remove_lock_request_mutex_g;
+hg_thread_mutex_t update_remote_server_addr_mutex_g;
 #endif
 
 #ifdef PDC_HAS_CRAY_DRC
@@ -678,7 +679,7 @@ hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info)
 
     client_test_connect_args *in= (client_test_connect_args*) callback_info->arg;
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_lock(&pdc_client_addr_metex_g);
+    hg_thread_mutex_lock(&pdc_client_addr_mutex_g);
 #endif
 
     if (is_all_client_connected_g  == 1) {
@@ -737,7 +738,7 @@ hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info)
     /*     } */
     /* } */
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_unlock(&pdc_client_addr_metex_g);
+    hg_thread_mutex_unlock(&pdc_client_addr_mutex_g);
 #endif
 
 done:
@@ -1379,14 +1380,14 @@ static perr_t PDC_Server_hash_table_list_insert(pdc_hash_table_entry_head *head,
     }
 
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_lock(&insert_hash_table_metex_g);
+    hg_thread_mutex_lock(&insert_hash_table_mutex_g);
 #endif
     /* printf("Adding to linked list\n"); */
     // Currently $metadata is unique, insert to linked list
     DL_APPEND(head->metadata, new);
     head->n_obj++;
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_unlock(&insert_hash_table_metex_g);
+    hg_thread_mutex_unlock(&insert_hash_table_mutex_g);
 #endif
     /* // Debug print */
     /* int count; */
@@ -2450,8 +2451,14 @@ lookup_remote_server_cb(const struct hg_cb_info *callback_info)
     lookup_args = (server_lookup_args_t*) callback_info->arg;
     server_id = lookup_args->server_id;
 
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_lock(&update_remote_server_addr_mutex_g);
+#endif
     pdc_remote_server_info_g[server_id].addr = callback_info->info.lookup.addr;
     pdc_remote_server_info_g[server_id].addr_valid = 1;
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(&update_remote_server_addr_mutex_g);
+#endif
 
     if (pdc_remote_server_info_g[server_id].addr == NULL) {
         printf("==PDC_SERVER[%d]: %s - remote server addr is NULL\n", pdc_server_rank_g, __func__);
@@ -2754,23 +2761,24 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
         printf("\n==PDC_SERVER[%d]: Starting server with %d threads...\n", pdc_server_rank_g, n_thread);
         fflush(stdout);
     }
-    hg_thread_mutex_init(&pdc_client_addr_metex_g);
+    hg_thread_mutex_init(&pdc_client_addr_mutex_g);
     hg_thread_mutex_init(&pdc_metadata_hash_table_mutex_g);
     hg_thread_mutex_init(&pdc_time_mutex_g);
     hg_thread_mutex_init(&pdc_bloom_time_mutex_g);
     hg_thread_mutex_init(&n_metadata_mutex_g);
     hg_thread_mutex_init(&data_read_list_mutex_g);
     hg_thread_mutex_init(&data_write_list_mutex_g);
-    hg_thread_mutex_init(&create_region_struct_metex_g);
-    hg_thread_mutex_init(&delete_buf_map_metex_g);
-    hg_thread_mutex_init(&remove_buf_map_metex_g);
-    hg_thread_mutex_init(&remove_lock_metex_g);
-    hg_thread_mutex_init(&append_lock_metex_g);
-    hg_thread_mutex_init(&append_buf_map_metex_g);
-    hg_thread_mutex_init(&append_region_struct_metex_g);
-    hg_thread_mutex_init(&insert_hash_table_metex_g);
-    hg_thread_mutex_init(&append_lock_request_metex_g);
-    hg_thread_mutex_init(&remove_lock_request_metex_g);
+    hg_thread_mutex_init(&create_region_struct_mutex_g);
+    hg_thread_mutex_init(&delete_buf_map_mutex_g);
+    hg_thread_mutex_init(&remove_buf_map_mutex_g);
+    hg_thread_mutex_init(&remove_lock_mutex_g);
+    hg_thread_mutex_init(&append_lock_mutex_g);
+    hg_thread_mutex_init(&append_buf_map_mutex_g);
+    hg_thread_mutex_init(&append_region_struct_mutex_g);
+    hg_thread_mutex_init(&insert_hash_table_mutex_g);
+    hg_thread_mutex_init(&append_lock_request_mutex_g);
+    hg_thread_mutex_init(&remove_lock_request_mutex_g);
+    hg_thread_mutex_init(&update_remote_server_addr_mutex_g);
 #else
     if (pdc_server_rank_g == 0) {
         printf("==PDC_SERVER[%d]: without multi-thread!\n", pdc_server_rank_g);
@@ -2983,21 +2991,22 @@ perr_t PDC_Server_finalize()
 #ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_destroy(&pdc_time_mutex_g);
     hg_thread_mutex_destroy(&pdc_metadata_hash_table_mutex_g);
-    hg_thread_mutex_destroy(&pdc_client_addr_metex_g);
+    hg_thread_mutex_destroy(&pdc_client_addr_mutex_g);
     hg_thread_mutex_destroy(&pdc_bloom_time_mutex_g);
     hg_thread_mutex_destroy(&n_metadata_mutex_g);
     hg_thread_mutex_destroy(&data_read_list_mutex_g);
     hg_thread_mutex_destroy(&data_write_list_mutex_g);
-    hg_thread_mutex_destroy(&create_region_struct_metex_g);
-    hg_thread_mutex_destroy(&delete_buf_map_metex_g);
-    hg_thread_mutex_destroy(&remove_buf_map_metex_g);
-    hg_thread_mutex_destroy(&remove_lock_metex_g);
-    hg_thread_mutex_destroy(&append_lock_metex_g);
-    hg_thread_mutex_destroy(&append_buf_map_metex_g);
-    hg_thread_mutex_destroy(&append_region_struct_metex_g);
-    hg_thread_mutex_destroy(&insert_hash_table_metex_g);
-    hg_thread_mutex_destroy(&append_lock_request_metex_g);
-    hg_thread_mutex_destroy(&remove_lock_request_metex_g);
+    hg_thread_mutex_destroy(&create_region_struct_mutex_g);
+    hg_thread_mutex_destroy(&delete_buf_map_mutex_g);
+    hg_thread_mutex_destroy(&remove_buf_map_mutex_g);
+    hg_thread_mutex_destroy(&remove_lock_mutex_g);
+    hg_thread_mutex_destroy(&append_lock_mutex_g);
+    hg_thread_mutex_destroy(&append_buf_map_mutex_g);
+    hg_thread_mutex_destroy(&append_region_struct_mutex_g);
+    hg_thread_mutex_destroy(&insert_hash_table_mutex_g);
+    hg_thread_mutex_destroy(&append_lock_request_mutex_g);
+    hg_thread_mutex_destroy(&remove_lock_request_mutex_g);
+    hg_thread_mutex_destroy(&update_remote_server_addr_mutex_g);
 #endif
 
     if (pdc_server_rank_g == 0)
@@ -3962,7 +3971,7 @@ printf("request_region->count[0] = %lld\n", request_region->count[0]);
 fflush(stdout);
 */
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_lock(&create_region_struct_metex_g);
+    hg_thread_mutex_lock(&create_region_struct_mutex_g);
 #endif
     new_obj_reg = PDC_Server_get_obj_region(in->obj_id);
     if(new_obj_reg == NULL) {
@@ -3979,7 +3988,7 @@ fflush(stdout);
         DL_APPEND(dataserver_region_g, new_obj_reg);
     }
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_unlock(&create_region_struct_metex_g);
+    hg_thread_mutex_unlock(&create_region_struct_mutex_g);
 #endif
 
     // Go through all existing locks to check for region lock
@@ -3991,12 +4000,12 @@ fflush(stdout);
 //printf("region is currently lock\n");
 //fflush(stdout);
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_lock(&append_lock_request_metex_g);
+    hg_thread_mutex_lock(&append_lock_request_mutex_g);
 #endif
                 request_region->lock_handle = handle;
                 DL_APPEND(new_obj_reg->region_lock_request_head, request_region);
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_unlock(&append_lock_request_metex_g);
+    hg_thread_mutex_unlock(&append_lock_request_mutex_g);
 #endif
             }
             else
@@ -4017,12 +4026,12 @@ fflush(stdout);
     free(tmp);
 
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_lock(&append_lock_metex_g);
+    hg_thread_mutex_lock(&append_lock_mutex_g);
 #endif
     // No overlaps found
     DL_APPEND(new_obj_reg->region_lock_head, request_region);
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_unlock(&append_lock_metex_g);
+    hg_thread_mutex_unlock(&append_lock_mutex_g);
 #endif
     }
 
@@ -4064,12 +4073,12 @@ perr_t PDC_Server_release_lock_request(uint64_t obj_id, struct PDC_region_info *
             HG_Respond(elt->lock_handle, NULL, NULL, &out);
             HG_Destroy(elt->lock_handle);
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_lock(&remove_lock_request_metex_g);
+    hg_thread_mutex_lock(&remove_lock_request_mutex_g);
 #endif
             DL_DELETE(new_obj_reg->region_lock_request_head, elt);
             free(elt); 
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_unlock(&remove_lock_request_metex_g);
+    hg_thread_mutex_unlock(&remove_lock_request_mutex_g);
 #endif
         }
     }
@@ -4169,12 +4178,12 @@ perr_t PDC_Meta_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out)
     free(tmp);
 
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_lock(&append_lock_metex_g);
+    hg_thread_mutex_lock(&append_lock_mutex_g);
 #endif
     // No overlaps found
     DL_APPEND(target_obj->region_lock_head, request_region);
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_unlock(&append_lock_metex_g);
+    hg_thread_mutex_unlock(&append_lock_mutex_g);
 #endif
 
     out->ret = 1;
@@ -4369,7 +4378,7 @@ fflush(stdout);
     /* printf("==PDC_SERVER: releasing lock ... "); */
     // Find the lock region in the list and remove it
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_lock(&remove_lock_metex_g);
+    hg_thread_mutex_lock(&remove_lock_mutex_g);
 #endif
     DL_FOREACH_SAFE(obj_reg->region_lock_head, tmp1, tmp2) {
         if (is_region_identical(&request_region, tmp1) == 1) {
@@ -4383,7 +4392,7 @@ fflush(stdout);
         }
     }
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_unlock(&remove_lock_metex_g);
+    hg_thread_mutex_unlock(&remove_lock_mutex_g);
 #endif
     // Request release lock region not found
     if (found == 0) {
@@ -5182,7 +5191,7 @@ perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
         PGOTO_ERROR(FAIL, "===PDC_DATA_SERVER: PDC_Data_Server_buf_unmap() - requested object does not exist");
     }
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_lock(&delete_buf_map_metex_g);
+    hg_thread_mutex_lock(&delete_buf_map_mutex_g);
 #endif
     DL_FOREACH_SAFE(target_obj->region_buf_map_head, elt, tmp) {
         if(in->remote_obj_id==elt->remote_obj_id && region_is_identical(in->remote_region, elt->remote_region_unit)) {
@@ -5197,7 +5206,7 @@ perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
         close(target_obj->fd);
     }
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_unlock(&delete_buf_map_metex_g);
+    hg_thread_mutex_unlock(&delete_buf_map_mutex_g);
 #endif
 
 done:
@@ -5382,7 +5391,7 @@ perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle)
             PGOTO_ERROR(FAIL, "===PDC META SERVER: cannot retrieve object metadata");
         }
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_lock(&remove_buf_map_metex_g);
+    hg_thread_mutex_lock(&remove_buf_map_mutex_g);
 #endif
         DL_FOREACH_SAFE(target_meta->region_buf_map_head, elt, tmp) {
 
@@ -5394,7 +5403,7 @@ perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle)
             }
         }
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_unlock(&remove_buf_map_metex_g);
+    hg_thread_mutex_unlock(&remove_buf_map_mutex_g);
 #endif
         out.ret = 1;
         HG_Respond(*handle, NULL, NULL, &out);
@@ -5451,7 +5460,7 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
     FUNC_ENTER(NULL);
 
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_lock(&create_region_struct_metex_g);
+    hg_thread_mutex_lock(&create_region_struct_mutex_g);
 #endif
 
     new_obj_reg = PDC_Server_get_obj_region(in->remote_obj_id);
@@ -5499,7 +5508,7 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
         DL_APPEND(dataserver_region_g, new_obj_reg);
     }
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_unlock(&create_region_struct_metex_g);
+    hg_thread_mutex_unlock(&create_region_struct_mutex_g);
 #endif
 
     buf_map_ptr = (region_buf_map_t *)malloc(sizeof(region_buf_map_t));
@@ -5524,11 +5533,11 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
     buf_map_ptr->remote_data_ptr = data_ptr;
 
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_lock(&append_region_struct_metex_g);
+    hg_thread_mutex_lock(&append_region_struct_mutex_g);
 #endif
     DL_APPEND(new_obj_reg->region_buf_map_head, buf_map_ptr);
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_unlock(&append_region_struct_metex_g);
+    hg_thread_mutex_unlock(&append_region_struct_mutex_g);
 #endif
 
     DL_FOREACH(new_obj_reg->region_lock_head, elt_reg) {
@@ -5625,8 +5634,14 @@ buf_map_lookup_remote_server_cb(const struct hg_cb_info *callback_info)
     tranx_args = lookup_args->buf_map_args;
     handle = tranx_args->handle;
 
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_lock(&update_remote_server_addr_mutex_g);
+#endif
     pdc_remote_server_info_g[server_id].addr = callback_info->info.lookup.addr;
     pdc_remote_server_info_g[server_id].addr_valid = 1;
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(&update_remote_server_addr_mutex_g);
+#endif
 
     if (pdc_remote_server_info_g[server_id].addr == NULL) {
         printf("==PDC_SERVER[%d]: %s - remote server addr is NULL\n", pdc_server_rank_g, __func__);
@@ -5774,11 +5789,11 @@ perr_t PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_p
         buf_map_ptr->remote_data_ptr = new_buf_map_ptr->remote_data_ptr;
 
 #ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_lock(&append_buf_map_metex_g);
+    hg_thread_mutex_lock(&append_buf_map_mutex_g);
 #endif
         DL_APPEND(target_meta->region_buf_map_head, buf_map_ptr);
 #ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_unlock(&append_buf_map_metex_g);
+    hg_thread_mutex_unlock(&append_buf_map_mutex_g);
 #endif
 
         out.ret = 1;
