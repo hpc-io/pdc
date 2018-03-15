@@ -116,6 +116,7 @@ static hg_id_t         obj_unmap_register_id_g;
 static hg_id_t         client_direct_addr_register_id_g;
 
 static hg_id_t         cont_add_del_objs_rpc_register_id_g;
+static hg_id_t         query_read_obj_name_register_id_g;
 
 /* static inline uint32_t get_server_id_by_hash_all() */ 
 /* { */
@@ -587,6 +588,11 @@ perr_t PDC_Client_try_lookup_server(int server_id)
 {
     perr_t ret_value = SUCCEED;
     int    n_retry = 1;
+    if (server_id < 0 || server_id > pdc_server_num_g) {
+        printf("==CLIENT[%d]: %s - invalid server ID %d\n", pdc_client_mpi_rank_g, __func__, server_id);
+        ret_value = FAIL;
+        goto done;
+    }
 
     while (pdc_server_info_g[server_id].addr_valid != 1) {
         if (n_retry > PDC_MAX_TRIAL_NUM) 
@@ -975,6 +981,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     query_partial_register_id_g               = query_partial_register(*hg_class);
 
     cont_add_del_objs_rpc_register_id_g       = cont_add_del_objs_rpc_register(*hg_class);
+    query_read_obj_name_register_id_g         = query_read_obj_name_rpc_register(*hg_class);
 
     // 
     buf_map_register_id_g                     = buf_map_register(*hg_class);
@@ -4629,3 +4636,128 @@ done:
     HG_Destroy(metadata_query_handle);
     FUNC_LEAVE(ret_value);
 }
+
+
+static hg_return_t
+PDC_Client_query_read_obj_name_cb(const struct hg_cb_info *callback_info)
+{
+    hg_handle_t handle = callback_info->info.forward.handle;
+    pdc_int_ret_t bulk_rpc_ret;
+    hg_return_t ret = HG_SUCCESS;
+    update_region_storage_meta_bulk_args_t *cb_args = (update_region_storage_meta_bulk_args_t*)callback_info->arg;
+
+    // Sent the bulk handle with rpc and get a response
+    ret = HG_Get_output(handle, &bulk_rpc_ret);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not get output\n");
+        goto done;
+    }
+
+    /* printf("==PDC_SERVER[%d]: received rpc response from %d!\n", pdc_server_rank_g, cb_args->server_id); */
+    /* fflush(stdout); */
+
+    ret = HG_Free_output(handle, &bulk_rpc_ret);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not free output\n");
+        goto done;
+    }
+
+
+    /* Free memory handle */
+    ret = HG_Bulk_free(cb_args->bulk_handle);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not free bulk data handle\n");
+        goto done;
+    }
+
+    HG_Destroy(cb_args->rpc_handle);
+done:
+    work_todo_g--;
+    return ret;
+} // end of PDC_Client_query_read_obj_name_cb 
+
+
+// Query and read objects with obj name, read data is stored in user provided buf
+perr_t PDC_Client_query_read_name(int nobj, char **obj_names, void **out_buf, int *out_buf_sizes)
+{
+    perr_t      ret_value = SUCCEED;
+    hg_return_t hg_ret = HG_SUCCESS;
+    hg_handle_t rpc_handle;
+    hg_bulk_t   bulk_handle;
+    uint32_t    server_id;
+    size_t   *buf_sizes, total_size;
+    int i;
+    query_read_obj_name_in_t bulk_rpc_in;
+    // Reuse the existing args structure
+    update_region_storage_meta_bulk_args_t cb_args;
+
+    FUNC_ENTER(NULL);
+
+    if (nobj == 0 || obj_names == NULL || out_buf == NULL || out_buf_sizes == NULL) {
+        printf("==PDC_CLIENT[%d]: %s - invalid input\n", pdc_client_mpi_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    server_id = PDC_get_local_server_id(pdc_client_mpi_rank_g, pdc_nclient_per_server_g, pdc_server_num_g);
+
+    // Debug statistics for counting number of messages sent to each server.
+    debug_server_id_count[server_id]++;
+
+    if( PDC_Client_try_lookup_server(server_id) != SUCCEED) {
+        printf("==PDC_CLIENT[%d]: %s - ERROR with PDC_Client_lookup_server\n", 
+                pdc_client_mpi_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    // Send the bulk handle to the target with RPC
+    hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, 
+                       query_read_obj_name_register_id_g, &rpc_handle);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not create handle\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    total_size = 0;
+    buf_sizes = (size_t)calloc(sizeof(size_t), nobj);
+    for (i = 0; i < nobj; i++) {
+        buf_sizes[i] = strlen(obj_names[i]) + 1;
+        total_size += buf_sizes[i];
+    }
+
+    /* Register memory */
+    hg_ret = HG_Bulk_create(send_class_g, nobj, obj_names, buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not create bulk data handle\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    /* Fill input structure */
+    bulk_rpc_in.cnt         = nobj;
+    bulk_rpc_in.total_size  = total_size;
+    bulk_rpc_in.origin      = pdc_client_mpi_rank_g;
+    bulk_rpc_in.bulk_handle = bulk_handle;
+
+    cb_args.bulk_handle = bulk_handle;
+    cb_args.rpc_handle  = rpc_handle;
+
+    /* Forward call to remote addr */
+    hg_ret = HG_Forward(rpc_handle, PDC_Client_query_read_obj_name_cb, &cb_args, &bulk_rpc_in);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not forward call\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+    ret_value = SUCCEED;
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+

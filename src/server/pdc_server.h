@@ -269,4 +269,5 @@ perr_t PDC_Server_close_shm(region_list_t *region);
 perr_t PDC_Server_container_del_objs(int n_obj, uint64_t *obj_ids, uint64_t cont_id);
 perr_t PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint64_t cont_id);
 
+perr_t PDC_Server_query_read_names(int cnt, char *obj_names, int len);
 #endif /* PDC_SERVER_H */

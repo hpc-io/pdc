@@ -4792,6 +4792,7 @@ int main(int argc, char *argv[])
     // bulk
     query_partial_register(hg_class_g);
     cont_add_del_objs_rpc_register(hg_class_g);
+    query_read_obj_name_rpc_register(hg_class_g);
 
     // Mapping
     buf_map_register(hg_class_g);
@@ -10168,4 +10169,46 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 } // end of PDC_Server_container_del_objs
+
+/*
+ * Query and read entire objects with a list of object names
+ *
+ * \param  cnt[IN]              Number of names
+ * \param  obj_names[IN]        Object names seperated by NULL
+ * \param  len[IN]              Total len of obj_names
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+
+
+perr_t PDC_Server_query_read_names(int cnt, char *obj_names, int len)
+{
+    perr_t ret_value = SUCCEED;
+    int i, iter;
+    char **names_ptr;
+
+    names_ptr = (char*)calloc(cnt, sizeof(char*));
+    
+    FUNC_ENTER(NULL);
+
+    // Parse the obj_names to the 2d names_ptr
+    iter = 0;
+    names_ptr[iter++] = obj_names;
+    for (i = 1; i < len; i++) {
+        if (obj_names[i-1] == 0) 
+            names_ptr[iter++] = &obj_names[i];
+    }
+
+    // Now we need to retrieve their storage metadata, some can be found in local metadata server, 
+    // others are stored on remote metadata servers
+    printf("==PDC_Server[%d]: Query read obj names:\n");
+    for (i = 0; i < cnt; i++) {
+        printf("%s\n", names_ptr[i]);
+    }
+ 
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} // end of PDC_Server_query_read_names
+
 
