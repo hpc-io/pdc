@@ -2094,6 +2094,7 @@ HG_TEST_RPC_CB(buf_unmap_server, handle)
 
     // Decode input
     HG_Get_input(handle, &in);
+    info = HG_Get_info(handle);
 
     target_obj = PDC_Server_get_obj_metadata(in.remote_obj_id);
     if (target_obj == NULL) {
@@ -2107,6 +2108,7 @@ HG_TEST_RPC_CB(buf_unmap_server, handle)
     DL_FOREACH_SAFE(target_obj->region_buf_map_head, elt, tmp) {
         if(in.remote_obj_id==elt->remote_obj_id && region_is_identical(in.remote_region, elt->remote_region_unit)) {
             HG_Bulk_free(elt->local_bulk_handle);
+            HG_Addr_free(info->hg_class, elt->local_addr);
             DL_DELETE(target_obj->region_buf_map_head, elt);
             free(elt);
             out.ret = 1;
@@ -2118,7 +2120,7 @@ HG_TEST_RPC_CB(buf_unmap_server, handle)
 
 done:
     HG_Respond(handle, NULL, NULL, &out);
-//    HG_Free_input(handle, &in);
+    HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
     FUNC_LEAVE(ret_value);
@@ -2186,7 +2188,7 @@ HG_TEST_RPC_CB(buf_map_server, handle)
 
 done:
     HG_Respond(handle, NULL, NULL, &out);
-//    HG_Free_input(handle, &in);
+    HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
     FUNC_LEAVE(ret_value);

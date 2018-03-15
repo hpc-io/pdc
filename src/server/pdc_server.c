@@ -5186,8 +5186,9 @@ perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
 #endif
     DL_FOREACH_SAFE(target_obj->region_buf_map_head, elt, tmp) {
         if(in->remote_obj_id==elt->remote_obj_id && region_is_identical(in->remote_region, elt->remote_region_unit)) {
-//            HG_Bulk_free(elt->local_bulk_handle);
+            free(elt->remote_data_ptr);
             HG_Addr_free(info->hg_class, elt->local_addr);
+            HG_Bulk_free(elt->local_bulk_handle);
             DL_DELETE(target_obj->region_buf_map_head, elt);
             free(elt);
         }

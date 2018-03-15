@@ -415,7 +415,6 @@ client_send_buf_map_rpc_cb(const struct hg_cb_info *callback_info)
 done:
     work_todo_g = 0;
     HG_Free_output(handle, &output);
-//    HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
 }
 
