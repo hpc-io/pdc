@@ -9771,12 +9771,8 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region
     else
       nclient_per_node = atoi(nclient_per_node_str);
 
-#ifdef PDC_HAS_SHARED_SERVER
     write_bytes = pwrite(region->fd, buf, region_info->size[0], region_info->offset[0]-pdc_server_rank_g*nclient_per_node*region_info->size[0]);
     // printf("server %d calls pwrite, offset = %lld, size = %lld\n", pdc_server_rank_g, region_info->offset[0]-pdc_server_rank_g*nclient_per_node*region_info->size[0], region_info->size[0]);
-#else
-    write_bytes = pwrite(region->fd, buf, region_info->size[0], region_info->offset[0]);
-    // printf("server %d calls pwrite, offset = %lld, size = %lld\n", pdc_server_rank_g, region_info->offset[0], region_info->size[0]);
 #endif
     if(write_bytes == -1){
         printf("==PDC_SERVER[%d]: pwrite %d failed\n", pdc_server_rank_g, region->fd);

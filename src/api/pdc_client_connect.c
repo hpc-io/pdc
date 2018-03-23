@@ -2585,11 +2585,7 @@ perr_t PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct
     in.meta_server_id = meta_server_id;
 
     // Compute local data server id
-#ifdef PDC_HAS_SHARED_SERVER
     data_server_id = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
-#else
-    data_server_id = PDC_get_server_by_obj_id(remote_obj_id, pdc_server_num_g);
-#endif
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[data_server_id]++;
@@ -2723,11 +2719,7 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_
     in.meta_server_id = meta_server_id;
 
     // Compute local data server id
-#ifdef PDC_HAS_SHARED_SERVER
     data_server_id = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
-#else
-    data_server_id = PDC_get_server_by_obj_id(remote_obj_id, pdc_server_num_g);
-#endif
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[data_server_id]++;
@@ -3041,11 +3033,7 @@ perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_in
     FUNC_ENTER(NULL);
     
     // Compute local data server id
-#ifdef PDC_HAS_SHARED_SERVER
     server_id = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
-#else
-    server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
-#endif
     meta_server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
     in.meta_server_id = meta_server_id;
     in.lock_mode = lock_mode;
@@ -3221,11 +3209,7 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
     FUNC_ENTER(NULL);
 
     // Compute local data server id
-#ifdef PDC_HAS_SHARED_SERVER
     server_id = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
-#else
-    server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
-#endif
     meta_server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
     in.meta_server_id = meta_server_id;
 
