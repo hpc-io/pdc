@@ -134,6 +134,7 @@ static hg_id_t    bulk_rpc_register_id_g;
 
 // Global thread pool
 extern hg_thread_pool_t *hg_test_thread_pool_g;
+extern hg_thread_pool_t *hg_test_thread_pool_fs_g;
 
 // Global hash table for storing metadata 
 hg_hash_table_t *metadata_hash_table_g = NULL;
@@ -2757,6 +2758,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     if (n_thread < 1) 
         n_thread = 2;
     hg_thread_pool_init(n_thread, &hg_test_thread_pool_g);
+    hg_thread_pool_init(1, &hg_test_thread_pool_fs_g);
     if (pdc_server_rank_g == 0) {
         printf("\n==PDC_SERVER[%d]: Starting server with %d threads...\n", pdc_server_rank_g, n_thread);
         fflush(stdout);
@@ -3007,6 +3009,9 @@ perr_t PDC_Server_finalize()
     hg_thread_mutex_destroy(&append_lock_request_mutex_g);
     hg_thread_mutex_destroy(&remove_lock_request_mutex_g);
     hg_thread_mutex_destroy(&update_remote_server_addr_mutex_g);
+
+    // Destory pool
+    hg_thread_pool_destroy(hg_test_thread_pool_fs_g);
 #endif
 
     if (pdc_server_rank_g == 0)
@@ -5195,7 +5200,8 @@ perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
 #endif
     DL_FOREACH_SAFE(target_obj->region_buf_map_head, elt, tmp) {
         if(in->remote_obj_id==elt->remote_obj_id && region_is_identical(in->remote_region, elt->remote_region_unit)) {
-            free(elt->remote_data_ptr);
+            // wait for work to be done, then free
+//            free(elt->remote_data_ptr);
             HG_Addr_free(info->hg_class, elt->local_addr);
             HG_Bulk_free(elt->local_bulk_handle);
             DL_DELETE(target_obj->region_buf_map_head, elt);
@@ -9773,7 +9779,6 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region
 
     write_bytes = pwrite(region->fd, buf, region_info->size[0], region_info->offset[0]-pdc_server_rank_g*nclient_per_node*region_info->size[0]);
     // printf("server %d calls pwrite, offset = %lld, size = %lld\n", pdc_server_rank_g, region_info->offset[0]-pdc_server_rank_g*nclient_per_node*region_info->size[0], region_info->size[0]);
-#endif
     if(write_bytes == -1){
         printf("==PDC_SERVER[%d]: pwrite %d failed\n", pdc_server_rank_g, region->fd);
         goto done;

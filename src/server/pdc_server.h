@@ -43,7 +43,6 @@
 #define PDC_MAX_OVERLAP_REGION_NUM 8 // max number of supported regions for PDC_Server_get_storage_location_of_region() 
 #define PDC_STR_DELIM            7
 
-static hg_atomic_int32_t pdc_num_reg;
 extern hg_class_t *hg_class_g;
 
 int PDC_Server_is_contiguous_region_overlap(region_list_t *a, region_list_t *b);

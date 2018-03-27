@@ -2206,6 +2206,7 @@ struct buf_map_release_bulk_args {
     int32_t remote_client_id;
     region_info_transfer_t remote_region; 
     hg_handle_t remote_bulk_handle;
+    struct hg_thread_work work;
 };
 
 struct lock_bulk_args {

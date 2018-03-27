@@ -48,6 +48,7 @@ hg_thread_mutex_t insert_metadata_metex_g = HG_THREAD_MUTEX_INITIALIZER;
 
 // Thread
 hg_thread_pool_t *hg_test_thread_pool_g = NULL;
+hg_thread_pool_t *hg_test_thread_pool_fs_g = NULL;
 
 uint64_t pdc_id_seq_g = PDC_SERVER_ID_INTERVEL;
 // actual value for each server is set by PDC_Server_init()
@@ -1227,6 +1228,47 @@ buf_map_region_update_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
 }
 */
 
+static HG_THREAD_RETURN_TYPE
+pdc_region_write_out_progress(void *arg)
+{
+    HG_THREAD_RETURN_TYPE ret_value = (HG_THREAD_RETURN_TYPE) 0;
+    struct buf_map_release_bulk_args *bulk_args = (struct buf_map_release_bulk_args *)arg;
+    struct PDC_region_info *remote_reg_info = NULL;
+    region_lock_out_t out;
+
+    FUNC_ENTER(NULL);
+
+    remote_reg_info = (struct PDC_region_info *)malloc(sizeof(struct PDC_region_info));
+    if(remote_reg_info == NULL) {
+        printf("remote_reg_info memory allocation failed\n");
+        goto done;
+    }
+    remote_reg_info->ndim = (bulk_args->remote_region).ndim;
+    remote_reg_info->offset = (uint64_t *)malloc(sizeof(uint64_t));
+    remote_reg_info->size = (uint64_t *)malloc(sizeof(uint64_t));
+    (remote_reg_info->offset)[0] = (bulk_args->remote_region).start_0;
+    (remote_reg_info->size)[0] = (bulk_args->remote_region).count_0;
+
+    PDC_Server_data_write_out(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf);
+
+    // Perform lock release function
+    PDC_Data_Server_region_release(bulk_args, &out);
+
+    PDC_Server_release_lock_request(bulk_args->remote_obj_id, remote_reg_info);
+
+    free(remote_reg_info->offset);
+    free(remote_reg_info->size);
+    free(remote_reg_info);
+
+done:
+    fflush(stdout);
+    HG_Bulk_free(bulk_args->remote_bulk_handle);
+    HG_Free_input(bulk_args->handle, &(bulk_args->in));
+    HG_Destroy(bulk_args->handle);
+    free(bulk_args);
+    FUNC_LEAVE(ret_value);
+}
+
 //enter this function, transfer is done, data is in data server
 static hg_return_t
 buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
@@ -1236,7 +1278,6 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     region_lock_out_t out;
     const struct hg_info *hg_info = NULL;
     struct buf_map_release_bulk_args *bulk_args = NULL;
-    struct PDC_region_info *remote_reg_info = NULL;
     int error = 0;
 
     FUNC_ENTER(NULL);
@@ -1280,36 +1321,12 @@ fflush(stdout);
     // Send notification to mapped regions, when data transfer is done
 //    PDC_SERVER_notify_region_update_to_client(bulk_args->remote_obj_id, bulk_args->remote_reg_id, bulk_args->remote_client_id);
 
-    remote_reg_info = (struct PDC_region_info *)malloc(sizeof(struct PDC_region_info));
-    if(remote_reg_info == NULL) {
-        PGOTO_ERROR(HG_OTHER_ERROR, "remote_reg_info memory allocation failed\n");
-    }
-    remote_reg_info->ndim = (bulk_args->remote_region).ndim;
-    remote_reg_info->offset = (uint64_t *)malloc(sizeof(uint64_t));
-    remote_reg_info->size = (uint64_t *)malloc(sizeof(uint64_t));
-    (remote_reg_info->offset)[0] = (bulk_args->remote_region).start_0;
-    (remote_reg_info->size)[0] = (bulk_args->remote_region).count_0;
-
-    PDC_Server_data_write_out(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf);
-
-    // Perform lock release function
-    PDC_Data_Server_region_release(bulk_args, &out);
-
-    PDC_Server_release_lock_request(bulk_args->remote_obj_id, remote_reg_info);
+    bulk_args->work.func = pdc_region_write_out_progress;
+    bulk_args->work.args = bulk_args; 
+    hg_thread_pool_post(hg_test_thread_pool_fs_g, &(bulk_args->work));
 
 done:
     fflush(stdout);
-
-    free(remote_reg_info->offset);
-    free(remote_reg_info->size);
-    free(remote_reg_info);
-
-    HG_Bulk_free(bulk_args->remote_bulk_handle);
-    HG_Free_input(bulk_args->handle, &(bulk_args->in));
-    HG_Destroy(bulk_args->handle);
-    free(bulk_args);
-    
-
     FUNC_LEAVE(ret_value);
 }
 
