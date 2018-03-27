@@ -1265,7 +1265,7 @@ done:
     HG_Bulk_free(bulk_args->remote_bulk_handle);
     HG_Free_input(bulk_args->handle, &(bulk_args->in));
     HG_Destroy(bulk_args->handle);
-    free(bulk_args);
+//    free(bulk_args);
     FUNC_LEAVE(ret_value);
 }
 
@@ -1278,6 +1278,8 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     region_lock_out_t out;
     const struct hg_info *hg_info = NULL;
     struct buf_map_release_bulk_args *bulk_args = NULL;
+    data_server_region_t *target_reg = NULL;
+    region_buf_map_t *elt;
     int error = 0;
 
     FUNC_ENTER(NULL);
@@ -1298,31 +1300,17 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
    
     out.ret = 1;
     HG_Respond(bulk_args->handle, NULL, NULL, &out);
-/*
-void *data_buf = bulk_args->data_buf;
-printf("address is %lld\n", data_buf);
-printf("first data is %d\n", *(int *)(data_buf+24));
-printf("next is %d\n", *(int *)(data_buf+28));
-printf("next is %d\n", *(int *)(data_buf+40));
-printf("next is %d\n", *(int *)(data_buf+44));
-printf("next is %d\n", *(int *)(data_buf+56));
-printf("next is %d\n", *(int *)(data_buf+60));
-fflush(stdout);
-*/
-/*
-void *data_buf = bulk_args->data_buf;
-printf("first data is %f\n", *(float *)(data_buf));
-printf("next is %f\n", *(float *)(data_buf+4));
-printf("next is %f\n", *(float *)(data_buf+8));
-printf("next is %f\n", *(float *)(data_buf+12));
-fflush(stdout);
-*/
-  
-    // Send notification to mapped regions, when data transfer is done
-//    PDC_SERVER_notify_region_update_to_client(bulk_args->remote_obj_id, bulk_args->remote_reg_id, bulk_args->remote_client_id);
 
     bulk_args->work.func = pdc_region_write_out_progress;
     bulk_args->work.args = bulk_args; 
+
+    target_reg = PDC_Server_get_obj_region(bulk_args->remote_obj_id);
+    DL_FOREACH(target_reg->region_buf_map_head, elt) {
+        if((bulk_args->remote_region).start_0 == elt->remote_region_unit.start_0 &&
+            (bulk_args->remote_region).count_0 == elt->remote_region_unit.count_0)
+            elt->bulk_args = bulk_args;
+    }
+
     hg_thread_pool_post(hg_test_thread_pool_fs_g, &(bulk_args->work));
 
 done:

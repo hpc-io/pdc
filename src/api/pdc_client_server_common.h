@@ -232,6 +232,7 @@ typedef struct region_buf_map_t {
     size_t                           remote_unit;
     region_info_transfer_t           remote_region_unit;
     region_info_transfer_t           remote_region_nounit;
+    struct buf_map_release_bulk_args *bulk_args;
 
     pdcid_t                          local_reg_id;         /* origin of region id */
     region_info_transfer_t           local_region;
