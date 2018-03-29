@@ -1541,7 +1541,7 @@ hg_proc_buf_unmap_in_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     buf_unmap_in_t *struct_data = (buf_unmap_in_t *) data;
 
-    ret = hg_proc_int32_t(proc, &struct_data->meta_server_id);
+    ret = hg_proc_uint32_t(proc, &struct_data->meta_server_id);
     if (ret != HG_SUCCESS) {
        HG_LOG_ERROR("Proc error");
         return ret;
@@ -2165,6 +2165,7 @@ hg_id_t metadata_delete_register(hg_class_t *hg_class);
 hg_id_t metadata_delete_by_id_register(hg_class_t *hg_class);
 hg_id_t metadata_update_register(hg_class_t *hg_class);
 hg_id_t metadata_add_tag_register(hg_class_t *hg_class);
+hg_id_t get_remote_metadata_register(hg_class_t *hg_class_g);
 hg_id_t region_lock_register(hg_class_t *hg_class);
 
 hg_id_t reg_unmap_register(hg_class_t *hg_class);
@@ -2172,6 +2173,11 @@ hg_id_t obj_unmap_register(hg_class_t *hg_class);
 hg_id_t data_server_write_register(hg_class_t *hg_class);
 hg_id_t notify_region_update_register(hg_class_t *hg_class);
 hg_id_t region_release_register(hg_class_t *hg_class);
+hg_id_t buf_map_server_register(hg_class_t *hg_class);
+hg_id_t buf_unmap_server_register(hg_class_t *hg_class);
+hg_id_t region_lock_server_register(hg_class_t *hg_class);
+hg_id_t region_release_server_register(hg_class_t *hg_class);
+hg_id_t get_reg_lock_register(hg_class_t *hg_class);
 
 hg_id_t test_bulk_xfer_register(hg_class_t *hg_class);
 hg_id_t server_lookup_remote_server_register(hg_class_t *hg_class);
@@ -2251,6 +2257,9 @@ struct buf_region_update_bulk_args {
 
 
 hg_id_t reg_map_register(hg_class_t *hg_class);
+hg_id_t reg_unmap_register(hg_class_t *hg_class);
+hg_id_t buf_map_register(hg_class_t *hg_class);
+hg_id_t buf_unmap_register(hg_class_t *hg_class);
 
 double   PDC_get_elapsed_time_double(struct timeval *tstart, struct timeval *tend);
 perr_t   delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out);
