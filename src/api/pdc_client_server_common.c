@@ -57,9 +57,6 @@ uint64_t pdc_id_seq_g = PDC_SERVER_ID_INTERVEL;
 
 #if defined(IS_PDC_SERVER) && defined(ENABLE_MULTITHREAD)
 
-extern struct hg_thread_work *
-hg_core_get_thread_work(hg_handle_t handle);
-
 // Macros for multi-thread callback, grabbed from Mercury/Testing/mercury_rpc_cb.c
 #define HG_TEST_RPC_CB(func_name, handle) \
     static hg_return_t \
@@ -70,7 +67,7 @@ hg_core_get_thread_work(hg_handle_t handle);
  * to execute RPC callback from a thread
  */
 #define HG_TEST_THREAD_CB(func_name) \
-        static HG_THREAD_RETURN_TYPE \
+        static HG_INLINE HG_THREAD_RETURN_TYPE \
         func_name ## _thread \
         (void *arg) \
         { \
@@ -84,7 +81,7 @@ hg_core_get_thread_work(hg_handle_t handle);
         hg_return_t \
         func_name ## _cb(hg_handle_t handle) \
         { \
-            struct hg_thread_work *work = hg_core_get_thread_work(handle); \
+            struct hg_thread_work *work = HG_Get_data(handle); \
             hg_return_t ret = HG_SUCCESS; \
             \
             work->func = func_name ## _thread; \

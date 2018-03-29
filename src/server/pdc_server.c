@@ -2610,6 +2610,28 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_lookup_all_servers
 
+/*---------------------------------------------------------------------------*/
+static hg_return_t
+PDC_hg_handle_create_cb(hg_handle_t handle, void *arg)
+{
+    struct hg_thread_work *hg_thread_work =
+        malloc(sizeof(struct hg_thread_work));
+    hg_return_t ret = HG_SUCCESS;
+
+    if (!hg_thread_work) {
+        HG_LOG_ERROR("Could not allocate hg_thread_work");
+        ret = HG_NOMEM_ERROR;
+        goto done;
+    }
+
+    (void) arg;
+    HG_Set_data(handle, hg_thread_work, free);
+
+done:
+    return ret;
+}
+
+/*---------------------------------------------------------------------------*/
 perr_t PDC_Server_set_close(void)
 {
     perr_t ret_value = SUCCEED;
@@ -2752,6 +2774,10 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
         return FAIL;
     }
 
+    /* Attach handle created for worker thread */
+    HG_Class_set_handle_create_callback(*hg_class,
+        PDC_hg_handle_create_cb, NULL);
+
     // Create HG context 
     *hg_context = HG_Context_create(*hg_class);
     if (*hg_context == NULL) {
@@ -2800,7 +2826,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
 #ifdef ENABLE_MULTITHREAD
     // Init threadpool
     char *nthread_env = getenv("PDC_SERVER_NTHREAD"); 
-    int n_thread = 0; 
+    int n_thread = 4;
     if (nthread_env != NULL) 
         n_thread = atoi(nthread_env);
     
