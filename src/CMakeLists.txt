@@ -27,8 +27,6 @@ endif()
 
 project(PDC C)
 
-add_definitions(-DENABLE_MPI=1)
-
 include_directories(${PROJECT_BINARY_DIR})
 
 #------------------------------------------------------------------------------
