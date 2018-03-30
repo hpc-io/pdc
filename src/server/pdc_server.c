@@ -58,32 +58,6 @@
 #include "pdc_client_server_common.h"
 #include "pdc_server.h"
 
-#ifdef ENABLE_MULTITHREAD 
-// Mercury multithread
-#include "mercury_thread.h"
-#include "mercury_thread_pool.h"
-#include "mercury_thread_mutex.h"
-static hg_thread_mutex_t pdc_client_addr_mutex_g;
-hg_thread_mutex_t pdc_metadata_hash_table_mutex_g;
-/* hg_thread_mutex_t pdc_metadata_name_mark_hash_table_mutex_g; */
-hg_thread_mutex_t pdc_time_mutex_g;
-hg_thread_mutex_t pdc_bloom_time_mutex_g;
-hg_thread_mutex_t n_metadata_mutex_g;
-hg_thread_mutex_t data_read_list_mutex_g;
-hg_thread_mutex_t data_write_list_mutex_g;
-hg_thread_mutex_t create_region_struct_mutex_g;
-hg_thread_mutex_t delete_buf_map_mutex_g;
-hg_thread_mutex_t remove_buf_map_mutex_g;
-hg_thread_mutex_t remove_lock_mutex_g;
-hg_thread_mutex_t append_lock_mutex_g; 
-hg_thread_mutex_t append_buf_map_mutex_g; 
-hg_thread_mutex_t append_region_struct_mutex_g;
-hg_thread_mutex_t insert_hash_table_mutex_g;
-hg_thread_mutex_t append_lock_request_mutex_g;
-hg_thread_mutex_t remove_lock_request_mutex_g;
-hg_thread_mutex_t update_remote_server_addr_mutex_g;
-#endif
-
 #ifdef PDC_HAS_CRAY_DRC
 # include <rdmacred.h>
 #endif
@@ -2848,7 +2822,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     hg_thread_mutex_init(&create_region_struct_mutex_g);
     hg_thread_mutex_init(&delete_buf_map_mutex_g);
     hg_thread_mutex_init(&remove_buf_map_mutex_g);
-    hg_thread_mutex_init(&remove_lock_mutex_g);
+    hg_thread_mutex_init(&access_lock_list_mutex_g);
     hg_thread_mutex_init(&append_lock_mutex_g);
     hg_thread_mutex_init(&append_buf_map_mutex_g);
     hg_thread_mutex_init(&append_region_struct_mutex_g);
@@ -3066,6 +3040,9 @@ perr_t PDC_Server_finalize()
 #endif
 
 #ifdef ENABLE_MULTITHREAD
+    // Destory pool
+    hg_thread_pool_destroy(hg_test_thread_pool_fs_g);
+
     hg_thread_mutex_destroy(&pdc_time_mutex_g);
     hg_thread_mutex_destroy(&pdc_metadata_hash_table_mutex_g);
     hg_thread_mutex_destroy(&pdc_client_addr_mutex_g);
@@ -3076,7 +3053,7 @@ perr_t PDC_Server_finalize()
     hg_thread_mutex_destroy(&create_region_struct_mutex_g);
     hg_thread_mutex_destroy(&delete_buf_map_mutex_g);
     hg_thread_mutex_destroy(&remove_buf_map_mutex_g);
-    hg_thread_mutex_destroy(&remove_lock_mutex_g);
+    hg_thread_mutex_destroy(&access_lock_list_mutex_g);
     hg_thread_mutex_destroy(&append_lock_mutex_g);
     hg_thread_mutex_destroy(&append_buf_map_mutex_g);
     hg_thread_mutex_destroy(&append_region_struct_mutex_g);
@@ -3084,9 +3061,6 @@ perr_t PDC_Server_finalize()
     hg_thread_mutex_destroy(&append_lock_request_mutex_g);
     hg_thread_mutex_destroy(&remove_lock_request_mutex_g);
     hg_thread_mutex_destroy(&update_remote_server_addr_mutex_g);
-
-    // Destory pool
-    hg_thread_pool_destroy(hg_test_thread_pool_fs_g);
 #endif
 
     if (pdc_server_rank_g == 0)
@@ -4437,17 +4411,12 @@ perr_t PDC_Data_Server_region_release(struct buf_map_release_bulk_args *bulk_arg
         request_region.count[3]  = in->region.count_3;
         /* request_region->stride[3] = in->region.stride_3; */
     }
-/*
-printf("enter PDC_Data_Server_region_release()\n");
-printf("request_region.start[0] = %lld\n", request_region.start[0]);
-printf("request_region.count[0] = %lld\n", request_region.count[0]);
-fflush(stdout);
-*/
+
     obj_reg = PDC_Server_get_obj_region(in->obj_id);
     /* printf("==PDC_SERVER: releasing lock ... "); */
     // Find the lock region in the list and remove it
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_lock(&remove_lock_mutex_g);
+    hg_thread_mutex_lock(&access_lock_list_mutex_g);
 #endif
     DL_FOREACH_SAFE(obj_reg->region_lock_head, tmp1, tmp2) {
         if (is_region_identical(&request_region, tmp1) == 1) {
@@ -4461,7 +4430,7 @@ fflush(stdout);
         }
     }
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_unlock(&remove_lock_mutex_g);
+    hg_thread_mutex_unlock(&access_lock_list_mutex_g);
 #endif
     // Request release lock region not found
     if (found == 0) {
@@ -5570,8 +5539,6 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
         }
 #endif
         new_obj_reg->fd = open(storage_location, O_WRONLY|O_CREAT, 0666);
-printf("server %d: open file at %s\n", pdc_server_rank_g, storage_location);
-fflush(stdout);
         if(new_obj_reg->fd == -1){
             printf("==PDC_SERVER[%d]: open %s failed\n", pdc_server_rank_g, storage_location);
             goto done;

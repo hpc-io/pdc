@@ -31,13 +31,37 @@
 #include "mercury_macros.h"
 #include "mercury_proc_string.h"
 
-#include "mercury_thread_pool.h"
 #include "mercury_atomic.h"
-#include "mercury_thread_mutex.h"
 #include "mercury_hash_table.h"
 #include "mercury_list.h"
 
 #include "pdc_client_server_common.h"
+
+#ifdef ENABLE_MULTITHREAD 
+// Mercury multithread
+#include "mercury_thread.h"
+#include "mercury_thread_pool.h"
+#include "mercury_thread_mutex.h"
+static hg_thread_mutex_t pdc_client_addr_mutex_g;
+hg_thread_mutex_t pdc_metadata_hash_table_mutex_g;
+/* hg_thread_mutex_t pdc_metadata_name_mark_hash_table_mutex_g; */
+hg_thread_mutex_t pdc_time_mutex_g;
+hg_thread_mutex_t pdc_bloom_time_mutex_g;
+hg_thread_mutex_t n_metadata_mutex_g;
+hg_thread_mutex_t data_read_list_mutex_g;
+hg_thread_mutex_t data_write_list_mutex_g;
+hg_thread_mutex_t create_region_struct_mutex_g;
+hg_thread_mutex_t delete_buf_map_mutex_g;
+hg_thread_mutex_t remove_buf_map_mutex_g;
+hg_thread_mutex_t access_lock_list_mutex_g;
+hg_thread_mutex_t append_lock_mutex_g;
+hg_thread_mutex_t append_buf_map_mutex_g;
+hg_thread_mutex_t append_region_struct_mutex_g;
+hg_thread_mutex_t insert_hash_table_mutex_g;
+hg_thread_mutex_t append_lock_request_mutex_g;
+hg_thread_mutex_t remove_lock_request_mutex_g;
+hg_thread_mutex_t update_remote_server_addr_mutex_g;
+#endif
 
 #define CREATE_BLOOM_THRESHOLD  64
 #define PDC_MAX_OVERLAP_REGION_NUM 8 // max number of supported regions for PDC_Server_get_storage_location_of_region() 

@@ -42,9 +42,9 @@
 #ifdef ENABLE_MULTITHREAD 
 // Mercury multithread
 #include "mercury_thread_mutex.h"
-hg_thread_mutex_t server_delete_buf_map_metex_g = HG_THREAD_MUTEX_INITIALIZER;
-hg_thread_mutex_t server_append_buf_map_metex_g = HG_THREAD_MUTEX_INITIALIZER;
-hg_thread_mutex_t insert_metadata_metex_g = HG_THREAD_MUTEX_INITIALIZER;
+hg_thread_mutex_t server_delete_buf_map_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
+hg_thread_mutex_t server_append_buf_map_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
+hg_thread_mutex_t insert_metadata_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
 #endif
 
 // Thread
@@ -837,12 +837,12 @@ HG_TEST_RPC_CB(gen_obj_id, handle)
     HG_Get_input(handle, &in);
 
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_lock(&insert_metadata_metex_g);
+    hg_thread_mutex_lock(&insert_metadata_mutex_g);
 #endif
     // Insert to hash table
     ret_value = insert_metadata_to_hash_table(&in, &out);
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_unlock(&insert_metadata_metex_g);
+    hg_thread_mutex_unlock(&insert_metadata_mutex_g);
 #endif
     /* printf("==PDC_SERVER: gen_obj_id_cb(): going to return %" PRIu64 "\n", out.obj_id); */
     /* fflush(stdout); */
@@ -1599,17 +1599,13 @@ HG_TEST_RPC_CB(region_release, handle)
             pdc_region_transfer_t_to_list_t(&in.region, request_region);
 //            PDC_Server_get_local_metadata_by_id(in.obj_id, &res_meta);
             target_obj = PDC_Server_get_obj_region(in.obj_id);
+#ifdef ENABLE_MULTITHREAD 
+            hg_thread_mutex_lock(&access_lock_list_mutex_g);
+#endif
             DL_FOREACH(target_obj->region_lock_head, elt) {
-/*
-printf("entering HG_TEST_RPC_CB(region_release, handle)\n");
-printf("in.region.start0 = %lld\n", in.region.start_0);
-printf("in.region.count0 = %lld\n", in.region.count_0);
-printf("elt->start[0] = %lld\n", elt->start[0]);
-printf("elt->count[0] = %lld\n", elt->count[0]);
-printf("elt->reg_dirty = %d\n", elt->reg_dirty);
-printf("elt->buf_map_refcount = %d\n", elt->buf_map_refcount);
-fflush(stdout);
-*/
+#ifdef ENABLE_MULTITHREAD 
+                hg_thread_mutex_unlock(&access_lock_list_mutex_g);
+#endif
                 if (PDC_is_same_region_list(request_region, elt) == 1 && elt->reg_dirty == 1 && hg_atomic_get32(&(elt->buf_map_refcount)) == 0) {
 //                    printf("==PDC SERVER: region_release start %" PRIu64 " \n", request_region->start[0]);
                     // printf("detect lock release dirty region\n");
@@ -1624,7 +1620,6 @@ fflush(stdout);
                     (server_region->size)[0] = size;
                     (server_region->offset)[0] = in.region.start_0; 
                     ret_value = PDC_Server_data_read_direct(elt->from_obj_id, server_region, data_buf);
-// printf("read data %f, %f from obj %lld, with size %lu\n", *(float *)data_buf, *((float*)data_buf+1), elt->from_obj_id, size);
                     if(ret_value != SUCCEED)
                         printf("==PDC SERVER: PDC_Server_data_read_direct() failed\n");
                     hg_ret = HG_Bulk_create(hg_info->hg_class, 1, &data_buf, &size, HG_BULK_READWRITE, &lock_local_bulk_handle);
@@ -1727,7 +1722,13 @@ fflush(stdout);
                     }
                     free(tmp);
                 }
+#ifdef ENABLE_MULTITHREAD 
+                hg_thread_mutex_lock(&access_lock_list_mutex_g);
+#endif
             }
+#ifdef ENABLE_MULTITHREAD 
+            hg_thread_mutex_unlock(&access_lock_list_mutex_g);
+#endif
             free(request_region);
 //        }
         if(dirty_reg == 0) {
@@ -2085,7 +2086,7 @@ HG_TEST_RPC_CB(buf_unmap_server, handle)
         PGOTO_ERROR(HG_OTHER_ERROR, "==PDC_SERVER: HG_TEST_RPC_CB(buf_unmap_server, handle) - requested object does not exist\n");
     }
 #ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_lock(&server_delete_buf_map_metex_g);
+    hg_thread_mutex_lock(&server_delete_buf_map_mutex_g);
 #endif
 
     DL_FOREACH_SAFE(target_obj->region_buf_map_head, elt, tmp) {
@@ -2098,7 +2099,7 @@ HG_TEST_RPC_CB(buf_unmap_server, handle)
         }
     }
 #ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_unlock(&server_delete_buf_map_metex_g);
+    hg_thread_mutex_unlock(&server_delete_buf_map_mutex_g);
 #endif
 
 done:
@@ -2159,12 +2160,12 @@ HG_TEST_RPC_CB(buf_map_server, handle)
     buf_map_ptr->remote_region_nounit = in.remote_region_nounit;
 
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_lock(&server_append_buf_map_metex_g);
+    hg_thread_mutex_lock(&server_append_buf_map_mutex_g);
 #endif
     DL_APPEND(target_obj->region_buf_map_head, buf_map_ptr);
     out.ret = 1;
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_unlock(&server_append_buf_map_metex_g);
+    hg_thread_mutex_unlock(&server_append_buf_map_mutex_g);
 #endif
     free(request_region);
 
