@@ -42,7 +42,8 @@
 #include "mercury_thread.h"
 #include "mercury_thread_pool.h"
 #include "mercury_thread_mutex.h"
-static hg_thread_mutex_t pdc_client_addr_mutex_g;
+#include "mercury_thread_condition.h"
+hg_thread_mutex_t pdc_client_addr_mutex_g;
 hg_thread_mutex_t pdc_metadata_hash_table_mutex_g;
 /* hg_thread_mutex_t pdc_metadata_name_mark_hash_table_mutex_g; */
 hg_thread_mutex_t pdc_time_mutex_g;

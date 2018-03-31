@@ -36,6 +36,7 @@
 #include "mercury_proc_string.h"
 
 #include "mercury_thread_pool.h"
+#include "mercury_thread_condition.h"
 #include "mercury_atomic.h"
 #include "mercury_thread_mutex.h"
 #include "mercury_hash_table.h"
@@ -2214,6 +2215,9 @@ struct buf_map_release_bulk_args {
     region_info_transfer_t remote_region; 
     hg_bulk_t remote_bulk_handle;
     struct hg_thread_work work;
+    hg_thread_mutex_t work_mutex;
+    hg_thread_cond_t work_cond;
+    int work_completed;
 };
 
 struct lock_bulk_args {

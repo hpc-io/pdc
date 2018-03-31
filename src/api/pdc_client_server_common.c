@@ -1260,6 +1260,12 @@ done:
     HG_Free_input(bulk_args->handle, &(bulk_args->in));
     HG_Destroy(bulk_args->handle);
 //    free(bulk_args);
+
+    hg_thread_mutex_lock(&(bulk_args->work_mutex));
+    bulk_args->work_completed = 1;
+    hg_thread_cond_signal(&(bulk_args->work_cond));
+    hg_thread_mutex_unlock(&(bulk_args->work_mutex));
+
     FUNC_LEAVE(ret_value);
 }
 
@@ -1698,6 +1704,7 @@ HG_TEST_RPC_CB(region_release, handle)
                             free(data_size_to); 
 
                             buf_map_bulk_args = (struct buf_map_release_bulk_args *) malloc(sizeof(struct buf_map_release_bulk_args));
+                            memset(buf_map_bulk_args, 0, sizeof(struct buf_map_release_bulk_args));
                             buf_map_bulk_args->handle = handle;
                             buf_map_bulk_args->data_buf = data_buf;
                             buf_map_bulk_args->in = in;
@@ -1706,6 +1713,9 @@ HG_TEST_RPC_CB(region_release, handle)
                             buf_map_bulk_args->remote_region = eltt->remote_region_unit;
                             buf_map_bulk_args->remote_client_id = eltt->remote_client_id;
                             buf_map_bulk_args->remote_bulk_handle = remote_bulk_handle;
+
+                            hg_thread_mutex_init(&(buf_map_bulk_args->work_mutex));
+                            hg_thread_cond_init(&(buf_map_bulk_args->work_cond));
                              
                             /* Pull bulk data */
                             size = HG_Bulk_get_size(eltt->local_bulk_handle);

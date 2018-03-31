@@ -5233,11 +5233,19 @@ perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
     DL_FOREACH_SAFE(target_obj->region_buf_map_head, elt, tmp) {
         if(in->remote_obj_id==elt->remote_obj_id && region_is_identical(in->remote_region, elt->remote_region_unit)) {
             // wait for work to be done, then free
-//            free(elt->remote_data_ptr);   // TODO: need to free
+            hg_thread_mutex_lock(&(elt->bulk_args->work_mutex));
+            while (!elt->bulk_args->work_completed)
+                hg_thread_cond_wait(&(elt->bulk_args->work_cond), &(elt->bulk_args->work_mutex));
+            elt->bulk_args->work_completed = 0;
+            hg_thread_mutex_unlock(&(elt->bulk_args->work_mutex));  //per bulk_args
+
+            free(elt->remote_data_ptr);  
             HG_Addr_free(info->hg_class, elt->local_addr);
             HG_Bulk_free(elt->local_bulk_handle);
             DL_DELETE(target_obj->region_buf_map_head, elt);
-//            free(elt->bulk_args);       // TODO: need to free
+            hg_thread_mutex_destroy(&(elt->bulk_args->work_mutex));
+            hg_thread_cond_destroy(&(elt->bulk_args->work_cond)); 
+            free(elt->bulk_args); 
             free(elt);
         }
     }
