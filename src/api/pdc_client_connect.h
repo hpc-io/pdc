@@ -27,6 +27,7 @@
 
 #include "mercury.h"
 #include "mercury_proc_string.h"
+#include "mercury_request.h"
 
 #include "pdc.h"
 #include "pdc_prop.h"
@@ -100,6 +101,8 @@ struct client_lookup_args {
     int                  time_step;
     uint32_t             hash_value;
     const char          *tags;
+
+    hg_request_t        *request;
 };
 
 typedef struct metadata_query_args_t {
@@ -511,6 +514,6 @@ perr_t PDC_Client_read_wait_notify(pdc_metadata_t *meta, struct PDC_region_info 
 
 perr_t PDC_Client_del_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdcid_t local_cont_id);
 perr_t PDC_Client_add_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdcid_t local_cont_id);
-perr_t PDC_Client_query_read_name(int nobj, char **obj_names, void **buf, int *buf_sizes);
+perr_t PDC_Client_query_name_read_entire_obj(int nobj, char **obj_names, void **out_buf, int *out_buf_sizes);
 
 #endif

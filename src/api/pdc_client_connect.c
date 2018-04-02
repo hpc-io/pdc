@@ -48,7 +48,8 @@
 #include "mercury.h"
 #include "mercury_request.h"
 #include "mercury_macros.h"
-#include "mercury_hash_table.h"
+#include "mercury_hl.h"
+
 
 #include "pdc_interface.h"
 #include "pdc_client_connect.h"
@@ -83,6 +84,10 @@ static int             mercury_has_init_g = 0;
 static hg_class_t     *send_class_g = NULL;
 static hg_context_t   *send_context_g = NULL;
 static int             work_todo_g = 0;
+hg_request_class_t    *request_class_g = NULL;
+static int             request_progressed = 0;
+static int             request_triggered = 0;
+
 
 static hg_id_t         client_test_connect_register_id_g;
 static hg_id_t         gen_obj_register_id_g;
@@ -118,10 +123,44 @@ static hg_id_t         client_direct_addr_register_id_g;
 static hg_id_t         cont_add_del_objs_rpc_register_id_g;
 static hg_id_t         query_read_obj_name_register_id_g;
 
-/* static inline uint32_t get_server_id_by_hash_all() */ 
-/* { */
 
-/* } */
+/* 
+ *
+ * Client Functions
+ *
+ */
+
+static int
+mercury_request_progress(unsigned int timeout, void *arg)
+{
+    /*
+    printf("Doing progress\n");
+    */
+    hg_context_t *context = (hg_context_t *) arg;
+    int ret = HG_UTIL_SUCCESS;
+
+    if (HG_Progress(context, timeout) != HG_SUCCESS)
+        ret = HG_UTIL_FAIL;
+
+    return ret;
+}
+
+static int
+mercury_request_trigger(unsigned int timeout, unsigned int *flag, void *arg)
+{
+    /*
+    printf("Calling trigger\n");
+    */
+    hg_context_t *context = (hg_context_t *) arg;
+    unsigned int actual_count = 0;
+    int ret = HG_UTIL_SUCCESS;
+
+    if (HG_Trigger(context, timeout, 1, &actual_count)
+            != HG_SUCCESS) ret = HG_UTIL_FAIL;
+    *flag = (actual_count) ? HG_UTIL_TRUE : HG_UTIL_FALSE;
+
+    return ret;
+}
 
 static inline uint32_t get_server_id_by_hash_name(const char *name) 
 {
@@ -132,42 +171,6 @@ static inline uint32_t get_server_id_by_obj_id(uint64_t obj_id)
 {
     return (uint32_t)((obj_id / PDC_SERVER_ID_INTERVEL - 1) % pdc_server_num_g);
 }
-
-/* static int */
-/* PDC_Client_int_equal(hg_hash_table_key_t vlocation1, hg_hash_table_key_t vlocation2) */
-/* { */
-/*     return *((int *) vlocation1) == *((int *) vlocation2); */
-/* } */
-
-/* static unsigned int */
-/* PDC_Client_int_hash(hg_hash_table_key_t vlocation) */
-/* { */
-/*     return *((unsigned int *) vlocation); */
-/* } */
-
-/* static void */
-/* PDC_Client_int_hash_key_free(hg_hash_table_key_t key) */
-/* { */
-/*     free((int *) key); */
-/* } */
-
-/* static void */
-/* PDC_Client_int_hash_value_free(hg_hash_table_value_t value) */
-/* { */
-/*     free((int *) value); */
-/* } */
-
-/* typedef struct hash_value_client_obj_name_t { */
-/*     char obj_name[ADDR_MAX]; */
-/* } hash_value_client_obj_name_t; */
-
-/* static void */
-/* metadata_hash_value_free(hg_hash_table_value_t value) */
-/* { */
-/*     free((hash_value_client_obj_name_t*) value); */
-/* } */
-
-// ^ Client hash table related functions
 
 // Check if all work has been processed
 // Using global variable $mercury_work_todo_g
@@ -618,27 +621,31 @@ close_server_cb(const struct hg_cb_info *callback_info)
     hg_return_t ret_value = HG_SUCCESS;
     hg_handle_t handle;
     close_server_out_t output;
-    /* struct client_lookup_args *client_lookup_args; */
+    struct client_lookup_args *args;
     
     FUNC_ENTER(NULL);
 
-    /* printf("Entered close_server_cb()\n"); */
-    /* fflush(stdout); */
-    /* client_lookup_args = (struct client_lookup_args*) callback_info->arg; */
+    args   = (struct client_lookup_args *)callback_info->arg;
     handle = callback_info->info.forward.handle;
 
     /* Get output from server*/
     ret_value = HG_Get_output(handle, &output);
     if (ret_value != HG_SUCCESS) {
-        printf("PDC_CLIENT[%d]: close_server_cb error with HG_Get_output\n", pdc_client_mpi_rank_g);
+        printf("PDC_CLIENT[%d]: %s - error with HG_Get_output\n", pdc_client_mpi_rank_g, __func__);
         goto done;
     }
     /* printf("Return value=%" PRIu64 "\n", output.ret); */
 
+    ret_value = HG_Free_output(handle, &output);
+    if (ret_value != HG_SUCCESS) {
+        printf("PDC_CLIENT[%d]: %s - error with free HG_Get_output\n", pdc_client_mpi_rank_g, __func__);
+        goto done;
+    }
+
 done:
     fflush(stdout);
-    work_todo_g = 0;
-    HG_Free_output(handle, &output);
+    /* work_todo_g = 0; */
+    hg_request_complete(args->request);
     FUNC_LEAVE(ret_value);
 }
 
@@ -959,6 +966,10 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     /* Create HG context */
     *hg_context = HG_Context_create(*hg_class);
 
+    // Init mercury request class
+    request_class_g = hg_request_init(mercury_request_progress, mercury_request_trigger, send_context_g);
+    /* request_class_g = hg_request_init(hg_hl_request_progress, hg_hl_request_trigger, NULL); */
+
 
     // Register RPC
     client_test_connect_register_id_g         = client_test_connect_register(*hg_class);
@@ -1168,6 +1179,9 @@ perr_t PDC_Client_finalize()
     /* if (pdc_client_mpi_rank_g == 0) */ 
     /*     PDC_Client_close_all_server(); */
 
+    hg_request_finalize(request_class_g, NULL);
+
+
     // Finalize Mercury
     for (i = 0; i < pdc_server_num_g; i++) {
         if (pdc_server_info_g[i].addr_valid) {
@@ -1292,7 +1306,7 @@ metadata_query_bulk_cb(const struct hg_cb_info *callback_info)
     recv_meta = (void *)malloc(sizeof(pdc_metadata_t) * n_meta);
 
     /* Create a new bulk handle to read the data */
-    HG_Bulk_create(hg_info->hg_class, 1, &recv_meta, (hg_size_t *) &bulk_args->nbytes, HG_BULK_READWRITE, &local_bulk_handle);
+    HG_Bulk_create(hg_info->hg_class, 1, (void**)&recv_meta, (hg_size_t *) &bulk_args->nbytes, HG_BULK_READWRITE, &local_bulk_handle);
 
     /* Pull bulk data */
     ret_value = HG_Bulk_transfer(hg_info->context, hg_test_bulk_transfer_cb,
@@ -2291,7 +2305,7 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdci
     in.data.cont_id   = cont_id;
     in.data.time_step = create_prop->time_step;
     in.data.user_id   = create_prop->user_id;
-    in.data_type = create_prop->type;
+    in.data_type      = create_prop->type;
 //printf("data_type = %d\n", in.data_type);
 //fflush(stdout);
 
@@ -2379,7 +2393,7 @@ perr_t PDC_Client_close_all_server()
     uint32_t server_id = 0;
     uint32_t port, i;
     close_server_in_t in;
-    struct client_lookup_args lookup_args;
+    struct client_lookup_args forward_args;
     hg_handle_t close_server_handle;
     
     FUNC_ENTER(NULL);
@@ -2415,19 +2429,30 @@ perr_t PDC_Client_close_all_server()
 
             // Fill input structure
             in.client_id = 0;
+            forward_args.request = hg_request_create(request_class_g);
 
             /* printf("Sending input to target\n"); */
-            hg_ret = HG_Forward(close_server_handle, close_server_cb, &lookup_args, &in);
+            hg_ret = HG_Forward(close_server_handle, close_server_cb, &forward_args, &in);
             if (hg_ret != HG_SUCCESS) {
                 fprintf(stderr, "PDC_Client_close_all_server(): Could not start HG_Forward()\n");
                 ret_value = FAIL;
                 goto done;
             }
 
+            hg_request_wait(forward_args.request, HG_MAX_IDLE_TIME, NULL);
+
+
             // Wait for response from server
-            work_todo_g = 1;
-            PDC_Client_check_response(&send_context_g);
-            HG_Destroy(close_server_handle);
+            /* work_todo_g = 1; */
+            /* PDC_Client_check_response(&send_context_g); */
+            if (HG_Destroy(close_server_handle) != HG_SUCCESS) {
+                fprintf(stderr, "==PDC_CLIENT[0]: %s - Could not destroy handle\n", __func__);
+                hg_request_destroy(forward_args.request);
+                ret_value = FAIL;
+                goto done;
+            }
+
+            hg_request_destroy(forward_args.request);
 
         }
 
@@ -2725,7 +2750,7 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_
     HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr, buf_map_register_id_g, &client_send_buf_map_handle);
 
     // Create bulk handle
-    hg_ret = HG_Bulk_create(hg_class, local_count, data_ptrs, (hg_size_t *)data_size, HG_BULK_READWRITE, &local_bulk_handle);
+    hg_ret = HG_Bulk_create(hg_class, local_count, (void**)data_ptrs, (hg_size_t *)data_size, HG_BULK_READWRITE, &local_bulk_handle);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "PDC_Client_buf_map(): Could not create local bulk data handle\n");
         return EXIT_FAILURE;
@@ -4490,7 +4515,7 @@ perr_t PDC_Client_add_del_objects_to_container(int nobj, uint64_t *obj_ids, uint
     buf_sizes[0] = sizeof(uint64_t)*nobj;
 
     /* Register memory */
-    hg_ret = HG_Bulk_create(send_class_g, 1, &obj_ids, buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
+    hg_ret = HG_Bulk_create(send_class_g, 1, (void**)&obj_ids, buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "Could not create bulk data handle\n");
         ret_value = FAIL;
@@ -4586,7 +4611,7 @@ perr_t PDC_Client_query_container_name(const char *cont_name, pdc_metadata_t **o
 {
     perr_t                ret_value = SUCCEED;
     hg_return_t           hg_ret    = 0;
-    uint32_t              hash_name_value, server_id;
+    uint32_t               hash_name_value, server_id;
     container_query_in_t  in;
     metadata_query_args_t lookup_args;
     hg_handle_t           metadata_query_handle;
@@ -4598,7 +4623,7 @@ perr_t PDC_Client_query_container_name(const char *cont_name, pdc_metadata_t **o
 
     // Compute server id
     hash_name_value = PDC_get_hash_by_name(cont_name);
-    server_id %= pdc_server_num_g;
+    server_id = hash_name_value % pdc_server_num_g;
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
@@ -4662,7 +4687,6 @@ PDC_Client_query_read_obj_name_cb(const struct hg_cb_info *callback_info)
         goto done;
     }
 
-
     /* Free memory handle */
     ret = HG_Bulk_free(cb_args->bulk_handle);
     if (ret != HG_SUCCESS) {
@@ -4670,15 +4694,17 @@ PDC_Client_query_read_obj_name_cb(const struct hg_cb_info *callback_info)
         goto done;
     }
 
+    /* Free other malloced resources*/
+
     HG_Destroy(cb_args->rpc_handle);
 done:
     work_todo_g--;
     return ret;
-} // end of PDC_Client_query_read_obj_name_cb 
+} // end PDC_Client_query_read_obj_name_cb 
 
 
 // Query and read objects with obj name, read data is stored in user provided buf
-perr_t PDC_Client_query_read_name(int nobj, char **obj_names, void **out_buf, int *out_buf_sizes)
+perr_t PDC_Client_query_name_read_entire_obj(int nobj, char **obj_names, void **out_buf, int *out_buf_sizes)
 {
     perr_t      ret_value = SUCCEED;
     hg_return_t hg_ret = HG_SUCCESS;
@@ -4721,14 +4747,14 @@ perr_t PDC_Client_query_read_name(int nobj, char **obj_names, void **out_buf, in
     }
 
     total_size = 0;
-    buf_sizes = (size_t)calloc(sizeof(size_t), nobj);
+    buf_sizes = (size_t*)calloc(sizeof(size_t), nobj);
     for (i = 0; i < nobj; i++) {
         buf_sizes[i] = strlen(obj_names[i]) + 1;
         total_size += buf_sizes[i];
     }
 
     /* Register memory */
-    hg_ret = HG_Bulk_create(send_class_g, nobj, obj_names, buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
+    hg_ret = HG_Bulk_create(send_class_g, nobj, (void**)obj_names, buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "Could not create bulk data handle\n");
         ret_value = FAIL;
@@ -4758,6 +4784,6 @@ perr_t PDC_Client_query_read_name(int nobj, char **obj_names, void **out_buf, in
     ret_value = SUCCEED;
 done:
     FUNC_LEAVE(ret_value);
-}
+} // end PDC_Client_query_name_read_entire_obj
 
 

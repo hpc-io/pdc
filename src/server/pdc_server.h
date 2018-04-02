@@ -39,10 +39,11 @@
 
 #include "pdc_client_server_common.h"
 
-#define CREATE_BLOOM_THRESHOLD  64
-#define PDC_MAX_OVERLAP_REGION_NUM 8 // max number of supported regions for PDC_Server_get_storage_location_of_region() 
-#define PDC_STR_DELIM            7
-#define PDC_ALLOC_BASE_NUM      64
+#define CREATE_BLOOM_THRESHOLD          64
+#define PDC_MAX_OVERLAP_REGION_NUM       8 // max regions for PDC_Server_get_storage_location_of_region() 
+#define PDC_STR_DELIM                    7
+#define PDC_ALLOC_BASE_NUM              64
+#define PDC_SERVER_TASK_INIT_VALUE    1000
 
 static hg_atomic_int32_t pdc_num_reg;
 extern hg_class_t *hg_class_g;
@@ -265,9 +266,50 @@ perr_t PDC_Server_set_close(void);
 perr_t PDC_Server_update_region_storage_meta_bulk_mpi(bulk_xfer_data_t *bulk_data);
 perr_t PDC_Server_close_shm(region_list_t *region);
 
+perr_t PDC_Server_update_region_storage_meta_bulk_with_cb(bulk_xfer_data_t *bulk_data, perr_t (*cb)(), update_storage_meta_list_t *meta_list_target, int *n_updated);
 
 perr_t PDC_Server_container_del_objs(int n_obj, uint64_t *obj_ids, uint64_t cont_id);
 perr_t PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint64_t cont_id);
 
-perr_t PDC_Server_query_read_names(int cnt, char *obj_names, int len);
+hg_return_t PDC_Server_query_read_names(const struct hg_cb_info *callback_info);
+
+typedef struct storage_meta_query_one_name_args_t storage_meta_query_one_name_args_t;
+
+typedef struct accumulate_storage_meta_t {
+    int      n_total;
+    int      n_accumulated;
+    storage_meta_query_one_name_args_t **storage_meta;
+} accumulate_storage_meta_t;
+
+typedef struct storage_meta_query_one_name_args_t{
+    char     *name;
+    int      n_res;
+    region_list_t **regions;
+    perr_t   (*cb)();
+    void     *cb_args;
+    accumulate_storage_meta_t *accu_meta;
+} storage_meta_query_one_name_args_t;
+
+typedef struct pdc_server_task_list_t {
+    int task_id;
+    perr_t   (*cb)();
+    void     *cb_args;
+
+    struct pdc_server_task_list_t *prev;
+    struct pdc_server_task_list_t *next;
+} pdc_server_task_list_t;
+
+int PDC_Server_add_task_to_list(pdc_server_task_list_t *target_list, perr_t (*cb)(), void *cb_args);
+perr_t PDC_Server_del_task_from_list(pdc_server_task_list_t *target_list, pdc_server_task_list_t *del);
+perr_t PDC_Server_del_task_from_list_id(pdc_server_task_list_t *target_list, int id);
+pdc_server_task_list_t *PDC_Server_find_task_from_s2s_list(int id);
+
+hg_cb_t PDC_Server_storage_meta_name_query_bulk_respond(storage_meta_name_query_in_t *args);
+inline int PDC_Server_is_valid_task_id(int id);
+
+perr_t PDC_Server_proc_storage_meta_bulk(int task_id, int n_regions, region_list_t *region_list_head);
+
+
+perr_t PDC_Server_set_lustre_stripe(const char *path, int stripe_count, int stripe_size_MB);
 #endif /* PDC_SERVER_H */
+

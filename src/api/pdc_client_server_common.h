@@ -2265,14 +2265,17 @@ perr_t   PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag
 perr_t   PDC_get_self_addr(hg_class_t* hg_class, char* self_addr_string);
 uint32_t PDC_get_server_by_obj_id(uint64_t obj_id, int n_server);
 uint32_t PDC_get_hash_by_name(const char *name);
+uint32_t PDC_get_server_by_name(char *name, int n_server);
 int      PDC_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b);
 perr_t   PDC_metadata_init(pdc_metadata_t *a);
 void     PDC_print_metadata(pdc_metadata_t *a);
 void     PDC_print_region_list(region_list_t *a);
 void     PDC_print_storage_region_list(region_list_t *a);
+uint64_t pdc_get_region_size(region_list_t *a);
 perr_t   PDC_init_region_list(region_list_t *a);
 int      PDC_is_same_region_list(region_list_t *a, region_list_t *b);
 int      PDC_is_same_region_transfer(region_info_transfer_t *a, region_info_transfer_t *b);
+uint32_t PDC_get_local_server_id(int my_rank, int n_client_per_server, int n_server);
 
 perr_t pdc_metadata_t_to_transfer_t(pdc_metadata_t *meta, pdc_metadata_transfer_t *transfer);
 perr_t pdc_transfer_t_to_metadata_t(pdc_metadata_transfer_t *transfer, pdc_metadata_t *meta);
@@ -2304,6 +2307,9 @@ hg_id_t data_server_read_register(hg_class_t *hg_class);
 
 hg_id_t data_server_read_check_register(hg_class_t *hg_class);
 hg_id_t data_server_read_register(hg_class_t *hg_class);
+
+
+hg_id_t storage_meta_name_query_rpc_register(hg_class_t *hg_class);
 
 extern char *find_in_path(char *workingDir, char *application);
 
@@ -2429,8 +2435,6 @@ hg_proc_query_read_obj_name_out_t(hg_proc_t proc, void *data)
     return ret;
 }
 
-
-
 typedef struct {
     hg_string_t    cont_name;
     uint32_t       hash_value;
@@ -2473,6 +2477,43 @@ hg_proc_container_query_out_t(hg_proc_t proc, void *data)
     return ret;
 }
 
-uint32_t PDC_get_local_server_id(int my_rank, int n_client_per_server, int n_server);
+typedef struct query_read_names_args_t {
+    int  cnt;
+    char **obj_names;
+    char *obj_names_1d;
+} query_read_names_args_t;
 
+
+// Server to server storage meta query with name
+typedef struct {
+    hg_string_t    obj_name;
+    int            task_id;
+    int            origin_id;
+} storage_meta_name_query_in_t;
+
+static HG_INLINE hg_return_t
+hg_proc_storage_meta_name_query_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    storage_meta_name_query_in_t *struct_data = (storage_meta_name_query_in_t*) data;
+
+    ret = hg_proc_hg_string_t(proc, &struct_data->obj_name);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->task_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->origin_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+hg_return_t pdc_check_int_ret_cb(const struct hg_cb_info *callback_info);
 #endif /* PDC_CLIENT_SERVER_COMMON_H */

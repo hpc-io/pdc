@@ -145,7 +145,7 @@ int main(int argc, char **argv)
     }
 
 
-    PDC_Client_query_read_name(my_count, obj_names, buf, buf_sizes);
+    PDC_Client_query_name_read_entire_obj(my_count, obj_names, buf, buf_sizes);
 
 
     fflush(stdout);

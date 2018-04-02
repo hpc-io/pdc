@@ -365,6 +365,9 @@ do_dset(hid_t did, char *name)
     add_tag(",");
 
     ndset_g ++;
+    if (ndset_g > 10) {
+        return;
+    }
     /*
      *  process the attributes of the dataset, if any.
      */
