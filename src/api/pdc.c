@@ -31,27 +31,14 @@
 #include "pdc_malloc.h"
 #include "pdc_interface.h"
 
-//
 #include "mercury.h"
 #include "pdc_client_server_common.h"
 #include "pdc_client_connect.h"
 
-/*
-static pdc_id_list_g *PDC__class_create()
-{
-    pdc_id_list_g *pc;
-    pdc_id_list_g *ret_value = NULL;
-    
-    FUNC_ENTER(NULL);
+#ifdef ENABLE_MPI
+    #include "mpi.h"
+#endif
 
-    if(NULL == (pc = PDC_CALLOC(PDC_CLASS_t)))
-        PGOTO_ERROR(NULL, "create pdc class: memory allocation failed"); 
-    ret_value = pc;
-    
-done:
-    FUNC_LEAVE(ret_value);
-}
-*/
 static perr_t PDCclass__close(struct PDC_class *p);
 
 static perr_t PDCclass_init()
@@ -163,8 +150,19 @@ done:
 perr_t PDC_close(pdcid_t pdcid)
 {
     perr_t ret_value = SUCCEED;         /* Return value */
+#ifdef ENABLE_MPI
+    int rank;
+#endif
 
     FUNC_ENTER(NULL);
+
+#ifdef ENABLE_MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if(rank == 0)
+        PDC_Client_close_all_server();
+#else
+    PDC_Client_close_all_server();
+#endif
 
     // check every list before closing
     // container property

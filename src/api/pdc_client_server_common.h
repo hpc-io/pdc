@@ -36,6 +36,7 @@
 #include "mercury_proc_string.h"
 
 #include "mercury_thread_pool.h"
+#include "mercury_thread_condition.h"
 #include "mercury_atomic.h"
 #include "mercury_thread_mutex.h"
 #include "mercury_hash_table.h"
@@ -125,6 +126,7 @@ typedef struct region_list_t {
     uint32_t n_overlap_storage_region;
     hg_atomic_int32_t      buf_map_refcount;
     int      reg_dirty;
+    hg_handle_t lock_handle;
     PDC_access_t access_type;
     hg_bulk_t bulk_handle;
     hg_addr_t addr;
@@ -237,6 +239,7 @@ typedef struct region_buf_map_t {
     size_t                           remote_unit;
     region_info_transfer_t           remote_region_unit;
     region_info_transfer_t           remote_region_nounit;
+    struct buf_map_release_bulk_args *bulk_args;
 
     pdcid_t                          local_reg_id;         /* origin of region id */
     region_info_transfer_t           local_region;
@@ -258,6 +261,8 @@ typedef struct data_server_region_t {
     region_list_t *region_lock_head;
     // For buf map
     region_buf_map_t *region_buf_map_head;
+    // For lock request list
+    region_list_t *region_lock_request_head;
     // For region storage list
 //    region_list_t *region_storage_head;
     // For region map
@@ -361,6 +366,7 @@ typedef struct {
     region_info_transfer_t      region;
     pbool_t                     mapping;
     PDC_var_type_t              data_type;
+    PDC_lock_mode_t             lock_mode;
 } region_lock_in_t;
 
 typedef struct {
@@ -1547,7 +1553,7 @@ hg_proc_buf_unmap_in_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     buf_unmap_in_t *struct_data = (buf_unmap_in_t *) data;
 
-    ret = hg_proc_int32_t(proc, &struct_data->meta_server_id);
+    ret = hg_proc_uint32_t(proc, &struct_data->meta_server_id);
     if (ret != HG_SUCCESS) {
        HG_LOG_ERROR("Proc error");
         return ret;
@@ -2170,6 +2176,7 @@ hg_id_t metadata_delete_register(hg_class_t *hg_class);
 hg_id_t metadata_delete_by_id_register(hg_class_t *hg_class);
 hg_id_t metadata_update_register(hg_class_t *hg_class);
 hg_id_t metadata_add_tag_register(hg_class_t *hg_class);
+hg_id_t get_remote_metadata_register(hg_class_t *hg_class_g);
 hg_id_t region_lock_register(hg_class_t *hg_class);
 
 hg_id_t reg_unmap_register(hg_class_t *hg_class);
@@ -2177,6 +2184,11 @@ hg_id_t obj_unmap_register(hg_class_t *hg_class);
 hg_id_t data_server_write_register(hg_class_t *hg_class);
 hg_id_t notify_region_update_register(hg_class_t *hg_class);
 hg_id_t region_release_register(hg_class_t *hg_class);
+hg_id_t buf_map_server_register(hg_class_t *hg_class);
+hg_id_t buf_unmap_server_register(hg_class_t *hg_class);
+hg_id_t region_lock_server_register(hg_class_t *hg_class);
+hg_id_t region_release_server_register(hg_class_t *hg_class);
+hg_id_t get_reg_lock_register(hg_class_t *hg_class);
 
 hg_id_t test_bulk_xfer_register(hg_class_t *hg_class);
 hg_id_t server_lookup_remote_server_register(hg_class_t *hg_class);
@@ -2214,6 +2226,11 @@ struct buf_map_release_bulk_args {
     pdcid_t remote_reg_id;         /* target of region id */
     int32_t remote_client_id;
     region_info_transfer_t remote_region; 
+    hg_bulk_t remote_bulk_handle;
+    struct hg_thread_work work;
+    hg_thread_mutex_t work_mutex;
+    hg_thread_cond_t work_cond;
+    int work_completed;
 };
 
 struct lock_bulk_args {
@@ -2257,6 +2274,9 @@ struct buf_region_update_bulk_args {
 
 
 hg_id_t reg_map_register(hg_class_t *hg_class);
+hg_id_t reg_unmap_register(hg_class_t *hg_class);
+hg_id_t buf_map_register(hg_class_t *hg_class);
+hg_id_t buf_unmap_register(hg_class_t *hg_class);
 
 double   PDC_get_elapsed_time_double(struct timeval *tstart, struct timeval *tend);
 perr_t   delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out);

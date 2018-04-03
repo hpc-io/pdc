@@ -31,32 +31,57 @@
 #include "mercury_macros.h"
 #include "mercury_proc_string.h"
 
-#include "mercury_thread_pool.h"
 #include "mercury_atomic.h"
-#include "mercury_thread_mutex.h"
 #include "mercury_hash_table.h"
 #include "mercury_list.h"
 
 #include "pdc_client_server_common.h"
 
-#define CREATE_BLOOM_THRESHOLD          64
-#define PDC_MAX_OVERLAP_REGION_NUM       8 // max regions for PDC_Server_get_storage_location_of_region() 
-#define PDC_STR_DELIM                    7
+#ifdef ENABLE_MULTITHREAD 
+// Mercury multithread
+#include "mercury_thread.h"
+#include "mercury_thread_pool.h"
+#include "mercury_thread_mutex.h"
+#include "mercury_thread_condition.h"
+hg_thread_mutex_t pdc_client_addr_mutex_g;
+hg_thread_mutex_t pdc_metadata_hash_table_mutex_g;
+/* hg_thread_mutex_t pdc_metadata_name_mark_hash_table_mutex_g; */
+hg_thread_mutex_t pdc_time_mutex_g;
+hg_thread_mutex_t pdc_bloom_time_mutex_g;
+hg_thread_mutex_t n_metadata_mutex_g;
+hg_thread_mutex_t data_read_list_mutex_g;
+hg_thread_mutex_t data_write_list_mutex_g;
+hg_thread_mutex_t create_region_struct_mutex_g;
+hg_thread_mutex_t delete_buf_map_mutex_g;
+hg_thread_mutex_t remove_buf_map_mutex_g;
+hg_thread_mutex_t access_lock_list_mutex_g;
+hg_thread_mutex_t append_lock_mutex_g;
+hg_thread_mutex_t append_buf_map_mutex_g;
+hg_thread_mutex_t append_region_struct_mutex_g;
+hg_thread_mutex_t insert_hash_table_mutex_g;
+hg_thread_mutex_t append_lock_request_mutex_g;
+hg_thread_mutex_t remove_lock_request_mutex_g;
+hg_thread_mutex_t update_remote_server_addr_mutex_g;
+#endif
+
+#define CREATE_BLOOM_THRESHOLD  64
+#define PDC_MAX_OVERLAP_REGION_NUM 8 // max number of supported regions for PDC_Server_get_storage_location_of_region() 
+#define PDC_STR_DELIM            7
 #define PDC_ALLOC_BASE_NUM              64
 #define PDC_SERVER_TASK_INIT_VALUE    1000
 
-static hg_atomic_int32_t pdc_num_reg;
 extern hg_class_t *hg_class_g;
 
 int PDC_Server_is_contiguous_region_overlap(region_list_t *a, region_list_t *b);
 pbool_t region_is_identical(region_info_transfer_t reg1, region_info_transfer_t reg2);
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out);
+/* perr_t insert_obj_name_marker(send_obj_name_marker_in_t *in, send_obj_name_marker_out_t *out); */
 perr_t PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_ptr, hg_handle_t *handle);
 perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle);
-perr_t PDC_Data_Server_buf_unmap(buf_unmap_in_t *in);
+perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in);
 perr_t PDC_Data_Server_region_release(struct buf_map_release_bulk_args *bulk_args, region_lock_out_t *out);
 perr_t PDC_Meta_Server_region_release(region_lock_in_t *in, region_lock_out_t *out);
-perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out);
+perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out, hg_handle_t *handle);
 perr_t PDC_Meta_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out);
 perr_t PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status);
 perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key, pdc_metadata_t** out);
