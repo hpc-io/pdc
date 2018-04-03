@@ -156,13 +156,13 @@ perr_t PDC_close(pdcid_t pdcid)
 
     FUNC_ENTER(NULL);
 
-#ifdef ENABLE_MPI
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    if(rank == 0)
-        PDC_Client_close_all_server();
-#else
-    PDC_Client_close_all_server();
-#endif
+/* #ifdef ENABLE_MPI */
+/*     MPI_Comm_rank(MPI_COMM_WORLD, &rank); */
+/*     if(rank == 0) */
+/*         PDC_Client_close_all_server(); */
+/* #else */
+/*     PDC_Client_close_all_server(); */
+/* #endif */
 
     // check every list before closing
     // container property
