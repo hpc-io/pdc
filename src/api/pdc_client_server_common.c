@@ -1587,8 +1587,8 @@ HG_TEST_RPC_CB(region_release, handle)
     region_map_t *map_elt;
     region_buf_map_t *eltt;
     hg_uint32_t remote_count;
-    void **data_ptrs_to;
-    size_t *data_size_to;
+    void **data_ptrs_to = NULL;
+    size_t *data_size_to = NULL;
 
     FUNC_ENTER(NULL);
 

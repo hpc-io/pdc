@@ -4424,9 +4424,6 @@ perr_t PDC_Data_Server_region_release(struct buf_map_release_bulk_args *bulk_arg
             found = 1;
             DL_DELETE(obj_reg->region_lock_head, tmp1);
             free(tmp1);
-//            out->ret = 1;
-            /* printf("released!\n"); */
-//            goto done;
         }
     }
 #ifdef ENABLE_MULTITHREAD 
