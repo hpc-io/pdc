@@ -31,8 +31,6 @@
 #include <sys/time.h>
 #include <math.h>
 
-/* #define ENABLE_MPI 1 */
-
 #ifdef ENABLE_MPI
   #include "mpi.h"
 #endif

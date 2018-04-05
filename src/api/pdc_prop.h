@@ -29,14 +29,6 @@
 #include "pdc_interface.h"
 #include "pdc_prop_pkg.h"
 
-
-/**
- * PDC container and object property initialization
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDCprop_init();
-
 /**
  * Create PDC property 
  *
@@ -68,29 +60,6 @@ pdcid_t PDCprop_obj_dup(pdcid_t prop_id);
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDCprop_close(pdcid_t id);
-
-/**
- * PDC container and object property finalize
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDCprop_end();
-
-/* private functions */
-
-/**
- * Check if object property list is empty
- *
- * \return SUCCEED if empty/FAIL if not empty
- */
-perr_t PDC_prop_obj_list_null();
-
-/**
- * Check if container property list is empty
- *
- * \return SUCCEED if empty/FAIL if not empty
- */
-perr_t PDC_prop_cont_list_null();
 
 /**
  * Get container property infomation

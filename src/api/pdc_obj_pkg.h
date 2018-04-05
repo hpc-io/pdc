@@ -44,8 +44,8 @@ typedef enum {
 } PDCobj_location;
 
 struct PDC_obj_info {
-    const char             *name;
-    uint64_t               meta_id;
+    char                   *name;
+    pdcid_t                meta_id;
     pdcid_t                local_id;
     int32_t                client_id;
     PDCobj_location        location;
@@ -61,7 +61,6 @@ struct PDC_region_info {
     uint64_t            *offset;
     uint64_t            *size;
     bool                mapping;
-//  PDC_loci    locus;
 };
 
 #endif

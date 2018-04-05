@@ -87,7 +87,6 @@ static int             work_todo_g = 0;
 static hg_id_t         client_test_connect_register_id_g;
 static hg_id_t         gen_obj_register_id_g;
 static hg_id_t         close_server_register_id_g;
-/* static hg_id_t         send_obj_name_marker_register_id_g; */
 static hg_id_t         metadata_query_register_id_g;
 static hg_id_t         metadata_delete_register_id_g;
 static hg_id_t         metadata_delete_by_id_register_id_g;
@@ -99,7 +98,6 @@ static hg_id_t         data_server_read_register_id_g;
 static hg_id_t         data_server_read_check_register_id_g;
 static hg_id_t         data_server_write_check_register_id_g;
 static hg_id_t         data_server_write_register_id_g;
-static hg_id_t         aggregate_write_register_id_g;
 
 // bulk
 static hg_id_t         query_partial_register_id_g;
@@ -888,7 +886,6 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     char *auth_key;
     int rc;
 #endif
-    int i;
     
     FUNC_ENTER(NULL);
 
@@ -1154,8 +1151,8 @@ perr_t PDC_Client_finalize()
     FUNC_ENTER(NULL);
 
     // Send close server request to all servers
-    /* if (pdc_client_mpi_rank_g == 0) */ 
-    /*     PDC_Client_close_all_server(); */
+    if (pdc_client_mpi_rank_g == 0) 
+         PDC_Client_close_all_server(); 
 
     // Finalize Mercury
     for (i = 0; i < pdc_server_num_g; i++) {
@@ -2590,6 +2587,7 @@ perr_t PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[data_server_id]++;
 
+    n_retry = 0;
     while (pdc_server_info_g[data_server_id].addr_valid != 1) {
         if (n_retry > 0) 
             break;
@@ -2697,8 +2695,8 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_
     int n_retry;
     hg_uint32_t i, j;
     hg_uint32_t local_count;
-    void    **data_ptrs;
-    size_t  *data_size;
+    void    **data_ptrs = NULL;
+    size_t  *data_size = NULL;
     size_t  unit, unit_to; 
     struct  buf_map_args map_args;
     hg_bulk_t local_bulk_handle = HG_BULK_NULL;

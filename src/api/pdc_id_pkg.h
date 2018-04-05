@@ -45,4 +45,4 @@
 /* Map an atom to an ID type number */
 #define PDC_TYPE(a) ((PDC_type_t)(((pdcid_t)(a) >> ID_BITS) & TYPE_MASK))
 
-#endif /*_pdc_id_pkg_H*/
+#endif 

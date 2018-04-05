@@ -33,13 +33,6 @@
 typedef struct PDC_id_info cont_handle;
 
 /**
- * PDC container initialization
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDCcont_init();
-
-/**
  * Create a container
  *
  * \param cont_name [IN]        Name of the container
@@ -127,20 +120,4 @@ perr_t PDCprop_set_cont_lifetime(pdcid_t cont_create_prop, PDC_lifetime cont_lif
  */
 perr_t PDCcont_close(pdcid_t cont_id);
 
-/**
- * PDC container finalize
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDCcont_end();
-
-/**
- * Check if container list is empty
- *
- * \param pdc_id [IN]           Id of the PDC
- *
- * \return SUCCEED if empty/FAIL if not empty
- */
-perr_t PDC_cont_list_null();
-
-#endif /* end _pdc_cont_H */
+#endif 
