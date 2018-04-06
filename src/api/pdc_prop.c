@@ -52,7 +52,7 @@ done:
 
 pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdcid)
 {
-    pdcid_t ret_value = SUCCEED;
+    pdcid_t ret_value = 0;
     struct PDC_cont_prop *p = NULL;
     struct PDC_obj_prop *q = NULL;
     struct PDC_id_info *id_info = NULL;
@@ -64,7 +64,7 @@ pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdcid)
     if (type == PDC_CONT_CREATE) {
         p = PDC_MALLOC(struct PDC_cont_prop);
         if(!p)
-            PGOTO_ERROR(FAIL, "PDC container property memory allocation failed\n");
+            PGOTO_ERROR(ret_value, "PDC container property memory allocation failed\n");
         p->cont_life = PDC_PERSIST;
         new_id_c = pdc_id_register(PDC_CONT_PROP, p);
         p->cont_prop_id = new_id_c;
@@ -75,7 +75,7 @@ pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdcid)
     if(type == PDC_OBJ_CREATE) {
         q = PDC_MALLOC(struct PDC_obj_prop);
         if(!q)
-            PGOTO_ERROR(FAIL, "PDC object property memory allocation failed\n");
+            PGOTO_ERROR(ret_value, "PDC object property memory allocation failed\n");
         q->obj_life = PDC_TRANSIENT;
         q->ndim = 0;
         q->dims = NULL;
@@ -98,7 +98,7 @@ done:
 
 pdcid_t PDCprop_obj_dup(pdcid_t prop_id)
 {
-    pdcid_t ret_value = SUCCEED;
+    pdcid_t ret_value = 0;
     struct  PDC_obj_prop *q = NULL;
     struct  PDC_obj_prop *info = NULL;
     struct  PDC_id_info *prop = NULL;
@@ -109,12 +109,12 @@ pdcid_t PDCprop_obj_dup(pdcid_t prop_id)
 
     prop = pdc_find_id(prop_id);
     if(prop == NULL)
-        PGOTO_ERROR(FAIL, "cannot locate object property");
+        PGOTO_ERROR(ret_value, "cannot locate object property");
     info = (struct PDC_obj_prop *)(prop->obj_ptr);
 
     q = PDC_MALLOC(struct PDC_obj_prop);
     if(!q)
-        PGOTO_ERROR(FAIL, "PDC object property memory allocation failed\n");
+        PGOTO_ERROR(ret_value, "PDC object property memory allocation failed\n");
     q->obj_life = info->obj_life;
     q->ndim = info->ndim;
     q->dims = (uint64_t *)malloc(info->ndim * sizeof(uint64_t));

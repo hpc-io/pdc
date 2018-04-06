@@ -22,18 +22,20 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_public_H
-#define _pdc_public_H
-#include <stdint.h>
-#include <stdbool.h>
+#ifndef _pdc_mpi_H
+#define _pdc_mpi_H
 
-typedef int                         perr_t;
-typedef uint64_t                    pdcid_t;
-typedef unsigned long long          psize_t;
-typedef bool                        pbool_t;
-
-typedef int                         PDC_int_t;
-typedef float                       PDC_float_t;
-typedef double                      PDC_double_t;
+/**
+ * Create an object 
+ * 
+ * \param cont_id [IN]          Id of the container
+ * \param obj_name [IN]         Name of the object
+ * \param obj_create_prop [IN]  Id of object property, 
+ *                              returned by PDCprop_create(PDC_OBJ_CREATE)
+ * \param rank_id [IN]          MPI process rank
+ *
+ * \return Object id on success/Negative on failure 
+ */
+pdcid_t PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop, int rank_id);
 
 #endif

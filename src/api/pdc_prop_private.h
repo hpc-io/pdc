@@ -22,18 +22,37 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_public_H
-#define _pdc_public_H
-#include <stdint.h>
-#include <stdbool.h>
+#ifndef _pdc_prop_private_H
+#define _pdc_prop_private_H
 
-typedef int                         perr_t;
-typedef uint64_t                    pdcid_t;
-typedef unsigned long long          psize_t;
-typedef bool                        pbool_t;
+/**
+ * PDC container and object property initialization
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t pdc_prop_init();
 
-typedef int                         PDC_int_t;
-typedef float                       PDC_float_t;
-typedef double                      PDC_double_t;
+/**
+ * PDC container and object property finalize
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t pdc_prop_end();
 
-#endif
+/* private functions */
+
+/**
+ * Check if object property list is empty
+ *
+ * \return SUCCEED if empty/FAIL if not empty
+ */
+perr_t pdc_prop_obj_list_null();
+
+/**
+ * Check if container property list is empty
+ *
+ * \return SUCCEED if empty/FAIL if not empty
+ */
+perr_t pdc_prop_cont_list_null();
+
+#endif /* end of _pdc_prop_private_H */

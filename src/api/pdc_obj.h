@@ -41,7 +41,7 @@ typedef struct PDC_id_info obj_handle;
  * \param offset [IN]           Offset of each dimension
  * \param size [IN]             Size of each dimension
  *
- * \return Object id on success/Negative on failure
+ * \return Object id on success/Zero on failure
  */
 pdcid_t PDCregion_create(size_t ndims, uint64_t *offset, uint64_t *size);
 
@@ -53,11 +53,9 @@ pdcid_t PDCregion_create(size_t ndims, uint64_t *offset, uint64_t *size);
  * \param obj_create_prop [IN]  Id of object property, 
  *                              returned by PDCprop_create(PDC_OBJ_CREATE)
  *
- * \return Object id on success/Negative on failure 
+ * \return Object id on success/Zero on failure 
  */
 pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop);
-
-pdcid_t PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop, int rank_id);
 
 /**
  * Set object lifetime 
@@ -169,7 +167,7 @@ void ** PDCobj_buf_retrieve(pdcid_t obj_id);
  * \param cont_id [IN]          Id of the container
  * \param obj_name [IN]         Name of the object
  *
- * \return Object id on success/Negative on failure
+ * \return Object id on success/Zero on failure
  */
 pdcid_t PDCobj_open(const char *obj_name);
 
@@ -179,7 +177,7 @@ pdcid_t PDCobj_open(const char *obj_name);
  * \param cont_id [IN]          Container id, returned by 
  *                              PDCobj_open(pdcid_t pdc_id, const char *cont_name)
  *
- * \return A pointer to object handle struct on success/Negative on failure
+ * \return A pointer to object handle struct on success/NULL on failure
  */
 obj_handle *PDCobj_iter_start(pdcid_t cont_id);
 
@@ -199,7 +197,7 @@ pbool_t PDCobj_iter_null(obj_handle *ohandle);
  *                              PDCobj_iter_start(pdcid_t cont_id)
  * \param cont_id [IN]          Id of the container
  *
- * \return A pointer to object handle struct on success/Negative on failure
+ * \return A pointer to object handle struct on success/Zero on failure
  */
 obj_handle *PDCobj_iter_next(obj_handle *ohandle, pdcid_t cont_id);
 
@@ -209,7 +207,7 @@ obj_handle *PDCobj_iter_next(obj_handle *ohandle, pdcid_t cont_id);
  * \param ohandle [IN]          A pointer to obj_handle struct, 
  *                              returned by PDCobj_iter_start(pdcid_t cont_id)
  *
- * \return Pointer to a PDC_obj_info struct on success/Negative on failure
+ * \return Pointer to a PDC_obj_info struct on success/NULL on failure
  */
 struct PDC_obj_info * PDCobj_iter_get_info(obj_handle *ohandle);
 
@@ -223,9 +221,9 @@ struct PDC_obj_info * PDCobj_iter_get_info(obj_handle *ohandle);
  */
 obj_handle *PDCview_iter_start(pdcid_t view_id);
 
-perr_t PDCobj_encode(pdcid_t obj_id, pdcid_t *meta_id);
+//perr_t PDCobj_encode(pdcid_t obj_id, pdcid_t *meta_id);
 
-pdcid_t PDCobj_decode(pdcid_t obj_id, pdcid_t meta_id);
+//pdcid_t PDCobj_decode(pdcid_t obj_id, pdcid_t meta_id);
 
 /**
  * Map an application buffer to an object

@@ -117,17 +117,17 @@ pdcid_t pdc_id_register(PDC_type_t type, void *object)
     struct PDC_id_type   *type_ptr;          
     struct PDC_id_info   *id_ptr;           
     pdcid_t              new_id;           
-    pdcid_t              ret_value = SUCCEED; 
+    pdcid_t              ret_value = 0; 
     FUNC_ENTER(NULL);
 
     /* Check arguments */
     if(type <= PDC_BADID || type >= PDC_next_type)
-        PGOTO_ERROR(FAIL, "invalid type number");
+        PGOTO_ERROR(ret_value, "invalid type number");
     type_ptr = (pdc_id_list_g->PDC_id_type_list_g)[type];
     if(NULL == type_ptr || type_ptr->init_count <= 0)
-        PGOTO_ERROR(FAIL, "invalid type");
+        PGOTO_ERROR(ret_value, "invalid type");
     if(NULL == (id_ptr = PDC_MALLOC(struct PDC_id_info)))
-        PGOTO_ERROR(FAIL, "memory allocation failed");
+        PGOTO_ERROR(ret_value, "memory allocation failed");
 
     /* Create the struct & it's ID */
     PDC_MUTEX_LOCK(type_ptr->ids);

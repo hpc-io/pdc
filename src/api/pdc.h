@@ -36,14 +36,17 @@
 #include "pdc_cont_pkg.h"
 #include "pdc_obj.h"
 #include "pdc_obj_pkg.h"
-#include "pdc_dt_conv.h"
+
+#ifdef ENABLE_MPI
+#include "pdc_mpi.h"
+#endif
 
 /**
  * Initialize the PDC layer
  *
  * \param pdc_name [IN]         Name of the PDC
  *
- * \return PDC id on success/Negative on failure
+ * \return PDC id on success/Zero on failure
  */
 pdcid_t PDC_init(const char *pdc_name);
 

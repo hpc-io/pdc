@@ -36,7 +36,7 @@
  *                              PDC_CONT_CREATE or PDC_OBJ_CREATE
  * \param id [IN]               Id of the PDC
  *
- * \return PDC property id on success (0 for container and 1 for object)/Negative on failure
+ * \return PDC property id on success/Zero on failure
  */
 pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdc_id);
 
@@ -48,7 +48,7 @@ pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdc_id);
  *                              PDC_CONT_CREATE or PDC_OBJ_CREATE
  * \param id [IN]               Id of the PDC
  *
- * \return PDC property id on success (0 for container and 1 for object)/Negative on failure
+ * \return PDC property id on success/Zero on failure
  */
 pdcid_t PDCprop_obj_dup(pdcid_t prop_id);
 

@@ -22,18 +22,49 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_public_H
-#define _pdc_public_H
-#include <stdint.h>
-#include <stdbool.h>
+#ifndef _pdc_obj_object_H
+#define _pdc_obj_object_H
 
-typedef int                         perr_t;
-typedef uint64_t                    pdcid_t;
-typedef unsigned long long          psize_t;
-typedef bool                        pbool_t;
+/**
+ * PDC object initialization
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t pdc_obj_init();
 
-typedef int                         PDC_int_t;
-typedef float                       PDC_float_t;
-typedef double                      PDC_double_t;
+/**
+ * PDC region initialization
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t pdc_region_init();
+
+/**
+ * PDC object finalize
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t pdc_obj_end();
+
+/**
+ * PDC region finalize
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t pdc_region_end();
+
+/**
+ * Check if object list is empty
+ *
+ * \return SUCCEED if empty/FAIL if not empty
+ */
+perr_t pdc_obj_list_null();
+
+/**
+ * Check if region list is empty
+ *
+ * \return SUCCEED if empty/FAIL if not empty
+ */
+perr_t pdc_region_list_null();
 
 #endif

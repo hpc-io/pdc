@@ -110,13 +110,13 @@ int main(int argc, char **argv)
     PDCprop_set_obj_tags(    obj_prop2, "tag0=1"    );
 
     obj1 = PDCobj_create_mpi(cont_id, "obj-var-x", obj_prop1, 0);
-    if (obj1 < 0) { 
+    if (obj1 == 0) { 
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-x");
         exit(-1);
     }
 
     obj2 = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop2, 0);
-    if (obj2 < 0) {    
+    if (obj2 == 0) {    
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
         exit(-1);
     }

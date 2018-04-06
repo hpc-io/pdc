@@ -47,9 +47,10 @@ done:
 
 pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_prop_id)
 {
-    pdcid_t ret_value = SUCCEED;
-    struct PDC_cont_info *p = NULL;
+    pdcid_t ret_value = 0;
     pdcid_t new_id;
+    struct PDC_cont_info *p = NULL;
+    struct PDC_id_info *id_info = NULL;
 
     FUNC_ENTER(NULL);
 
@@ -58,7 +59,7 @@ pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_prop_id)
         PGOTO_ERROR(FAIL,"PDC container memory allocation failed\n");
     p->name = strdup(cont_name);
     
-    struct PDC_id_info *id_info = pdc_find_id(cont_prop_id);
+    id_info = pdc_find_id(cont_prop_id);
     p->cont_pt = (struct PDC_cont_prop *)(id_info->obj_ptr);
     
     new_id = pdc_id_register(PDC_CONT, p);
@@ -128,7 +129,7 @@ done:
 
 pdcid_t PDCcont_open(const char *cont_name)
 {
-    pdcid_t ret_value = SUCCEED;
+    pdcid_t ret_value = 0;
     pdcid_t cont_id;
 
     FUNC_ENTER(NULL);
@@ -137,7 +138,7 @@ pdcid_t PDCcont_open(const char *cont_name)
     // look up in the list for now
     cont_id = pdc_find_byname(PDC_CONT, cont_name);
     if(cont_id <= 0)
-        PGOTO_ERROR(FAIL, "cannot locate container");
+        PGOTO_ERROR(ret_value, "cannot locate container");
     pdc_inc_ref(cont_id);
     ret_value = cont_id;
     

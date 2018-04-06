@@ -83,20 +83,20 @@ int main(int argc, char **argv) {
     
     // open first object twice
     open11 = PDCobj_open("o1");
-    if(open11 < 0)
+    if(open11 == 0)
         printf("Fail to open object o1\n");
     else
         printf("Open object o1\n");
     
     open12 = PDCobj_open("o1");
-    if(open12 < 0)
+    if(open12 == 0)
         printf("Fail to open object o1\n");
     else
         printf("Open object o1\n");
     
     // open second object once
     open21 = PDCobj_open("o2");
-    if(open21 < 0)
+    if(open21 == 0)
         printf("Fail to open object o2\n");
     else
         printf("Open object o2\n");

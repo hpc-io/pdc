@@ -39,7 +39,7 @@ typedef struct PDC_id_info cont_handle;
  * \param cont_create_prop [IN] Id of container property
  *                              returned by PDCprop_create(PDC_CONT_CREATE)
  *
- * \return Container id on success/Negative on failure
+ * \return Container id on success/Zero on failure
  */
 pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_create_prop);
 
@@ -48,7 +48,7 @@ pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_create_prop);
  *
  * \param cont_name [IN]        Name of the container
  *
- * \return Container id on success/Negative on failure
+ * \return Container id on success/Zero on failure
  */
 pdcid_t PDCcont_open(const char *cont_name);
 

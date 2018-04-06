@@ -173,7 +173,7 @@ MPI_Barrier(MPI_COMM_WORLD);
 
         // Create object
         create_obj_ids[i] = PDCobj_create(cont, obj_name, obj_prop);
-        if (create_obj_ids[i] < 0 ) {
+        if (create_obj_ids[i] == 0 ) {
             printf("Error getting an object id of %s from server, exit...\n", obj_name);
             exit(-1);
         }

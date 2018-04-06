@@ -68,14 +68,14 @@ int main(int argc, char **argv) {
 
     // open 1st container
     cont1_cp = PDCcont_open("c1");
-    if(cont1_cp < 0)
+    if(cont1_cp == 0)
         printf("Fail to open container c1\n");
     else
         printf("Open container c1\n");
 
     // open 2nd container
     cont2_cp = PDCcont_open("c2");
-    if(cont2_cp < 0)
+    if(cont2_cp == 0)
         printf("Fail to open container c2\n");
     else
         printf("Open container c2 \n");
