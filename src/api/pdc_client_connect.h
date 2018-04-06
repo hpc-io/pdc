@@ -69,6 +69,7 @@ extern pdc_client_t *pdc_client_direct_channels;
 
 // Request structure for async read/write
 typedef struct PDC_Request_t {
+    int                     seq_id;
     int                     server_id;
     int                     n_client;
     int                     n_update;
@@ -82,6 +83,13 @@ typedef struct PDC_Request_t {
     char                     shm_addr[ADDR_MAX];
     int                      shm_fd;
     int                      shm_size;
+
+    int                     n_buf_arr;
+    void                   ***buf_arr;
+    char                   **shm_base_arr;
+    char                   **shm_addr_arr;
+    int                     *shm_fd_arr;
+    uint64_t               **shm_size_arr;
 
     struct PDC_Request_t      *prev;
     struct PDC_Request_t      *next;
@@ -514,6 +522,6 @@ perr_t PDC_Client_read_wait_notify(pdc_metadata_t *meta, struct PDC_region_info 
 
 perr_t PDC_Client_del_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdcid_t local_cont_id);
 perr_t PDC_Client_add_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdcid_t local_cont_id);
-perr_t PDC_Client_query_name_read_entire_obj(int nobj, char **obj_names, void **out_buf, int *out_buf_sizes);
+perr_t PDC_Client_query_name_read_entire_obj(int nobj, char **obj_names, void ***out_buf, uint64_t **out_buf_sizes);
 
 #endif

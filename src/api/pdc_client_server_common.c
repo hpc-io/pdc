@@ -199,7 +199,7 @@ uint32_t PDC_get_server_by_name(char *name, int n_server)
     FUNC_LEAVE(ret_value);
 }
 
-inline int PDC_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b)
+int PDC_metadata_cmp(pdc_metadata_t *a, pdc_metadata_t *b)
 {
     int ret = 0;
     
@@ -531,10 +531,16 @@ perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to)
 
     to->meta          = from->meta;
 
-    to->prev = from->prev;
-    to->next = from->next;
-    // Copy 27 attributes, double check to match the region_list_t def
+    to->seq_id        = from->seq_id;
+    to->prev          = from->prev;
+    to->next          = from->next;
+    // Copy 29 attributes, double check to match the region_list_t def
     return SUCCEED;
+}
+
+int PDC_region_list_seq_id_cmp(region_list_t *a, region_list_t *b)
+{
+    return (a->seq_id > b->seq_id) ? 1 : -1;
 }
 
 perr_t pdc_region_transfer_t_to_list_t(region_info_transfer_t *transfer, region_list_t *region)
@@ -845,17 +851,16 @@ hg_return_t PDC_Server_s2s_work_done_cb(const struct hg_cb_info *callback_info) 
 
 perr_t PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint64_t cont_id) {return SUCCEED;}
 perr_t PDC_Server_container_del_objs(int n_obj, uint64_t *obj_ids, uint64_t cont_id) {return SUCCEED;}
-hg_return_t PDC_Server_query_read_names(const struct hg_cb_info *callback_info) {return SUCCEED;}
+hg_return_t PDC_Server_query_read_names_cb(const struct hg_cb_info *callback_info) {return SUCCEED;}
 
-hg_cb_t PDC_Server_storage_meta_name_query_bulk_respond(storage_meta_name_query_in_t *args)  {return HG_SUCCESS;};
+hg_cb_t PDC_Server_storage_meta_name_query_bulk_respond(const struct hg_cb_info *callback_info)  {return HG_SUCCESS;};
 perr_t PDC_Server_proc_storage_meta_bulk(int task_id, int n_regions, region_list_t *region_list_head) {return SUCCEED;}
 
 #else
 hg_return_t PDC_Client_work_done_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;};
 hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;};
+perr_t PDC_Client_query_read_complete(char *shm_addrs, int size, int n_shm, int seq_id) {return SUCCEED;}
 
-
-int PDC_Server_is_valid_task_id(int id)  {return 0;}
 #endif
 
 
@@ -1265,8 +1270,8 @@ HG_TEST_RPC_CB(close_server, handle)
     out.ret = 1;
     HG_Respond(handle, NULL, NULL, &out);
 
-    printf("\n==PDC_SERVER: Respond back to close server request\n");
-    fflush(stdout);
+    /* printf("\n==PDC_SERVER: Respond back to close server request\n"); */
+    /* fflush(stdout); */
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
@@ -3187,11 +3192,6 @@ perr_t PDC_unserialize_region_lists(void *buf, region_list_t** regions, uint32_t
     uint32_ptr++;
     uint64_ptr = (uint64_t*)uint32_ptr;
 
-    /* if (is_debug_g == 1) { */
-    /*     printf("==unserialize_regions_info n_region: %u, ndim: %u \n", */
-    /*             pdc_server_rank_g, *n_region, ndim); */
-    /* } */
-
     for (i = 0; i < *n_region; i++) {
         if (regions[i] == NULL) {
             printf("==PDC_unserialize_region_lists NULL input,"
@@ -4148,6 +4148,9 @@ query_read_obj_name_bulk_cb(const struct hg_cb_info *hg_cb_info)
     else {
         query_read_names_args = (query_read_names_args_t*)calloc(1, sizeof(query_read_names_args_t));
         query_read_names_args->cnt = bulk_args->cnt;
+        query_read_names_args->client_seq_id = bulk_args->client_seq_id;
+        query_read_names_args->client_id = bulk_args->origin;
+        query_read_names_args->is_select_all = 1;
         query_read_names_args->obj_names = (char**)calloc(sizeof(char*), bulk_args->cnt);
         query_read_names_args->obj_names_1d = (char*)calloc(sizeof(char), bulk_args->nbytes);
 
@@ -4167,10 +4170,9 @@ query_read_obj_name_bulk_cb(const struct hg_cb_info *hg_cb_info)
 
     }
 
-    // TODO
     out_struct.ret = 1;
     // Data server retrieve storage metadata and then read data to shared memory
-    ret = HG_Respond(bulk_args->handle, PDC_Server_query_read_names, query_read_names_args, &out_struct);
+    ret = HG_Respond(bulk_args->handle, PDC_Server_query_read_names_cb, query_read_names_args, &out_struct);
     if (ret != HG_SUCCESS) {
         fprintf(stderr, "Could not respond\n");
         return ret;
@@ -4222,17 +4224,14 @@ HG_TEST_RPC_CB(query_read_obj_name_rpc, handle)
         return ret;
     }
 
-    bulk_args->origin = in_struct.origin;
-
-    /* Get parameters */
-    origin_bulk_handle = in_struct.bulk_handle;
-
     /* printf("==PDC_SERVER[x]: received update container bulk rpc from %d, with %d regions\n", */ 
     /*         in_struct.origin, in_struct.cnt); */
     /* fflush(stdout); */
-
+    origin_bulk_handle = in_struct.bulk_handle;
+    bulk_args->client_seq_id = in_struct.client_seq_id;
     bulk_args->nbytes  = HG_Bulk_get_size(origin_bulk_handle);
     bulk_args->cnt     = in_struct.cnt;
+    bulk_args->origin  = in_struct.origin;
 
     /* Create a new block handle to read the data */
     HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *)&bulk_args->nbytes, HG_BULK_READWRITE, 
@@ -4285,6 +4284,10 @@ HG_TEST_RPC_CB(storage_meta_name_query_rpc, handle)
     args->obj_name = strdup(in.obj_name);
     args->task_id  = in.task_id;
     args->origin_id = in.origin_id;
+
+    /* printf("==PDC_SERVER[x]: received storage meta query, name [%s], task_id %d, origin_id %d\n", */ 
+    /*         args->obj_name, args->task_id, args->origin_id); */
+    /* fflush(stdout); */
     
     out.ret = 1;
     HG_Respond(handle, PDC_Server_storage_meta_name_query_bulk_respond, args, &out);
@@ -4383,9 +4386,6 @@ get_storage_meta_bulk_cb(const struct hg_cb_info *hg_cb_info)
             region_info_ptr++;
             int_ptr = (int*)region_info_ptr;
         }
-
-        PDC_Server_proc_storage_meta_bulk(task_id, n_regions,  region_list_head);
-
     }
 
     out_struct.ret = 1;
@@ -4395,6 +4395,8 @@ get_storage_meta_bulk_cb(const struct hg_cb_info *hg_cb_info)
         fprintf(stderr, "Could not respond\n");
         return ret;
     }
+
+    PDC_Server_proc_storage_meta_bulk(task_id, n_regions, region_list_head);
 
     /* Free block handle */
     ret = HG_Bulk_free(local_bulk_handle);
@@ -4409,8 +4411,6 @@ done:
 
     return ret;
 }
-
-
 
 /* get_storage_meta_name_query_bulk_result_rpc_cb */
 HG_TEST_RPC_CB(get_storage_meta_name_query_bulk_result_rpc, handle)
@@ -4473,3 +4473,265 @@ get_storage_meta_name_query_bulk_result_rpc_register(hg_class_t *hg_class)
     return  MERCURY_REGISTER(hg_class, "get_storage_meta_name_query_bulk_result_rpc", bulk_rpc_in_t, pdc_int_ret_t, get_storage_meta_name_query_bulk_result_rpc_cb);
 }
 
+static hg_return_t
+notify_client_multi_io_complete_bulk_cb(const struct hg_cb_info *hg_cb_info)
+{
+    // Client executes after received request from server
+    struct bulk_args_t *bulk_args = (struct bulk_args_t *)hg_cb_info->arg;
+    hg_bulk_t local_bulk_handle = hg_cb_info->info.bulk.local_handle;
+    hg_return_t ret = HG_SUCCESS;
+    int i, task_id, n_shm;
+    void *buf;
+    char *char_ptr;
+    char *buf_cp;
+    pdc_int_ret_t out_struct;
+
+    /* printf("==PDC_CLIENT[x]: accessing multi io complete shm addrs\n"); */
+    /* fflush(stdout); */
+
+    out_struct.ret = 0;
+    if (hg_cb_info->ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Error in callback");
+        HG_Respond(bulk_args->handle, NULL, NULL, &out_struct);
+        goto done;
+    }
+    else {
+        n_shm = bulk_args->cnt;
+        HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, &buf, NULL, NULL);
+        buf_cp = (char*)malloc(bulk_args->nbytes);
+        memcpy(buf_cp, buf, bulk_args->nbytes);
+    }
+
+    /* printf("==PDC_CLIENT[x]: respond back to server\n"); */
+    /* fflush(stdout); */
+
+    out_struct.ret = 1;
+    // Data server retrieve storage metadata and then read data to shared memory
+    ret = HG_Respond(bulk_args->handle, NULL, NULL, &out_struct);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not respond\n");
+        return ret;
+    }
+
+    PDC_Client_query_read_complete(buf_cp, bulk_args->nbytes, n_shm, bulk_args->client_seq_id);
+
+    /* Free block handle */
+    ret = HG_Bulk_free(local_bulk_handle);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not free HG bulk handle\n");
+        return ret;
+    }
+
+done:
+    HG_Destroy(bulk_args->handle);
+    free(bulk_args);
+
+    return ret;
+}
+
+/* notify_client_multi_io_complete_rpc_cb*/
+HG_TEST_RPC_CB(notify_client_multi_io_complete_rpc, handle)
+{
+    const struct hg_info *hg_info = NULL;
+    struct bulk_args_t *bulk_args = NULL;
+    hg_bulk_t origin_bulk_handle  = HG_BULK_NULL;
+    hg_bulk_t local_bulk_handle   = HG_BULK_NULL;
+    hg_return_t ret = HG_SUCCESS;
+    bulk_rpc_in_t in_struct;
+    hg_op_id_t hg_bulk_op_id;
+
+
+
+    bulk_args = (struct bulk_args_t *)malloc(sizeof(struct bulk_args_t));
+    bulk_args->handle = handle;
+
+    ret = HG_Get_input(handle, &in_struct);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not get input\n");
+        return ret;
+    }
+
+    bulk_args->origin        = in_struct.origin;
+    origin_bulk_handle       = in_struct.bulk_handle;
+    bulk_args->nbytes        = HG_Bulk_get_size(origin_bulk_handle);
+    bulk_args->cnt           = in_struct.cnt;
+    bulk_args->client_seq_id = in_struct.seq_id;
+
+    /* printf("==PDC_CLIENT[x]: received multi io complete bulk rpc, with %lu bytes!\n", bulk_args->nbytes); */
+    /* fflush(stdout); */
+
+    hg_info = HG_Get_info(handle);
+    HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *)&bulk_args->nbytes, HG_BULK_READWRITE, 
+                   &local_bulk_handle);
+
+    /* Pull bulk data */
+    ret = HG_Bulk_transfer(hg_info->context, notify_client_multi_io_complete_bulk_cb,
+                           bulk_args, HG_BULK_PULL, hg_info->addr, origin_bulk_handle, 0,
+                           local_bulk_handle, 0, bulk_args->nbytes, &hg_bulk_op_id);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not read bulk data\n");
+        return ret;
+    }
+
+done:
+    HG_Free_input(handle, &in_struct);
+    FUNC_LEAVE(ret);
+}
+hg_id_t
+notify_client_multi_io_complete_rpc_register(hg_class_t *hg_class)
+{
+    return  MERCURY_REGISTER(hg_class, "notify_client_multi_io_complete_rpc_register", bulk_rpc_in_t, pdc_int_ret_t, notify_client_multi_io_complete_rpc_cb);
+}
+
+/*
+ * Add a callback function and its parameters to a task list
+ *
+ * \param  target_list[IN]      target task list
+ * \param  cb[IN]               callback function pointer
+ * \param  cb_args[IN]          callback function parameters
+ * \param  curr_task_id[IN]     global task sequence id
+ *
+ * \return Non-negative on success/Negative on failure                                                               9  */
+int PDC_add_task_to_list(pdc_task_list_t **target_list, perr_t (*cb)(), void *cb_args, int *curr_task_id, 
+                         hg_thread_mutex_t *mutex)
+{
+    pdc_task_list_t *new_task;
+
+    FUNC_ENTER(NULL);
+    if (target_list == NULL ) {
+        printf("== %s - NULL input!\n", __func__);
+        return NULL;
+    }
+
+    new_task = (pdc_task_list_t*)calloc(1, sizeof(pdc_task_list_t));
+    new_task->cb = cb;
+    new_task->cb_args = cb_args;
+
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_lock(mutex);
+#endif
+
+    new_task->task_id = *curr_task_id;
+    *curr_task_id++;
+    DL_APPEND(*target_list, new_task);
+
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(mutex);
+#endif
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(new_task->task_id);
+} // end PDC_add_task_to_list
+
+/*
+ * Delete a callback function and its parameters to a task list
+ *
+ * \param  target_list[IN]      target task list
+ * \param  del[IN]              target task pointer to be deleted
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_del_task_from_list(pdc_task_list_t **target_list, pdc_task_list_t *del, hg_thread_mutex_t *mutex) 
+{
+    perr_t ret_value;
+    pdc_task_list_t *tmp;
+    FUNC_ENTER(NULL);
+
+    if (target_list == NULL || del == NULL) {
+        printf("== %s - NULL input!\n", __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_lock(mutex);
+#endif
+
+    tmp = del;
+    DL_DELETE(*target_list, del);
+
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(mutex);
+#endif
+    free(tmp);
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);                                                                                  
+} // end PDC_del_task_from_list
+
+int PDC_is_valid_task_id(int id)
+{
+    if (id < PDC_SERVER_TASK_INIT_VALUE || id > 10000 ) {
+        printf("== id %d is invalid!\n", id);
+        return -1;
+    }
+    return 1;
+}
+
+/*
+ * Delete a callback function and its parameters to a task list
+ *
+ * \param  list_head[IN]        target task list
+ * \param  id[IN]               target task ID
+ *
+ * \return task pointer on success/NULL on failure
+ */
+pdc_task_list_t *PDC_find_task_from_list(pdc_task_list_t** target_list, int id, hg_thread_mutex_t *mutex)
+{
+    pdc_task_list_t *tmp;
+    FUNC_ENTER(NULL);
+
+    if (PDC_is_valid_task_id(id) != 1) {
+        printf("== %s - NULL input!\n", __func__);
+        goto done;
+    }
+
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_lock(mutex);
+#endif
+
+    DL_FOREACH(*target_list, tmp) {
+        if (tmp->task_id == id) {
+            return tmp;
+        }
+    }
+
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(mutex);
+#endif
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(NULL);
+} // end PDC_find_task_from_list
+
+perr_t PDC_del_task_from_list_id(pdc_task_list_t **target_list, int id, hg_thread_mutex_t *mutex)
+{
+    perr_t ret_value;
+    pdc_task_list_t *tmp;
+    FUNC_ENTER(NULL);
+
+    if (target_list == NULL || PDC_is_valid_task_id(id) != 1) {
+        printf("== %s - NULL input!\n", __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_lock(mutex);
+#endif
+
+    tmp = PDC_find_task_from_list(*target_list, id, mutex);
+    DL_DELETE(*target_list, tmp);
+
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(mutex);
+#endif
+    free(tmp);
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} // end PDC_del_task_from_list_id

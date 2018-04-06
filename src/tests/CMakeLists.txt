@@ -46,6 +46,7 @@ set(PROGRAMS
   data_server_read_vpic_spatial_multits
   write_1obj
   cont_add_del
+  data_server_meta_test
   )
 
 foreach(program ${PROGRAMS})

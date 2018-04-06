@@ -39,20 +39,20 @@
 #include "mercury_thread_condition.h"
 #include "mercury_atomic.h"
 #include "mercury_thread_mutex.h"
-#include "mercury_hash_table.h"
 #include "mercury_list.h"
-
 
 #include "pdc_obj_pkg.h"
 
-#define ADDR_MAX                            128
+#define ADDR_MAX                            256
 #define DIM_MAX                             4
 #define TAG_LEN_MAX                         5500
 #define PDC_SERVER_ID_INTERVEL              1000000
 #define PDC_SERVER_MAX_PROC_PER_NODE        32
 #define PDC_SERIALIZE_MAX_SIZE              256
 #define PDC_MAX_CORE_PER_NODE               68           // Cori KNL has 68 cores per node, Haswell 32
-#define PDC_MAX_TRIAL_NUM   10
+#define PDC_MAX_TRIAL_NUM                   10
+#define PDC_STR_DELIM                       7
+#define PDC_SEQ_ID_INIT_VALUE               1000
 
 /* #define pdc_server_tmp_dir_g  "./pdc_tmp" */
 /* extern char pdc_server_tmp_dir_g[ADDR_MAX]; */
@@ -139,9 +139,10 @@ typedef struct region_list_t {
 
     pdc_metadata_t *meta;
 
+    int    seq_id;
     struct region_list_t *prev;
     struct region_list_t *next;
-    // 28 attributes, need to match init and deep_cp routines
+    // 29 attributes, need to match init and deep_cp routines
 } region_list_t;
 
 // Similar structure PDC_region_info_t defined in pdc_obj_pkg.h
@@ -1299,6 +1300,7 @@ hg_proc_close_server_out_t(hg_proc_t proc, void *data)
 typedef struct {
     hg_int32_t cnt;
     hg_int32_t origin;
+    hg_int32_t seq_id;
     hg_bulk_t bulk_handle;
 } bulk_rpc_in_t;
 
@@ -1310,6 +1312,11 @@ hg_proc_bulk_rpc_in_t(hg_proc_t proc, void *data)
     bulk_rpc_in_t *struct_data = (bulk_rpc_in_t *) data;
 
     ret = hg_proc_int32_t(proc, &struct_data->cnt);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->seq_id);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -2216,6 +2223,7 @@ struct bulk_args_t {
     size_t ret;
     pdc_metadata_t **meta_arr;
     uint32_t        *n_meta;
+    int client_seq_id;
 };
 
 struct buf_map_release_bulk_args {
@@ -2318,9 +2326,7 @@ perr_t PDC_replace_char_fill_values(signed char *buf, uint32_t buf_size);
 
 void pdc_mkdir(const char *dir);
 
-/* extern hg_hash_table_t   *metadata_hash_table_g; */
-/* extern hg_atomic_int32_t  close_server_g; */
-
+extern hg_atomic_int32_t  close_server_g;
 
 hg_id_t data_server_write_check_register(hg_class_t *hg_class);
 hg_id_t data_server_read_register(hg_class_t *hg_class);
@@ -2402,6 +2408,7 @@ hg_proc_cont_add_del_objs_rpc_out_t(hg_proc_t proc, void *data)
 
 // Query and read obj 
 typedef struct {
+    hg_int32_t client_seq_id;
     hg_int32_t cnt;
     hg_int32_t total_size;
     hg_int32_t origin;
@@ -2414,6 +2421,11 @@ hg_proc_query_read_obj_name_in_t(hg_proc_t proc, void *data)
     hg_return_t ret = HG_SUCCESS;
     query_read_obj_name_in_t *struct_data = (query_read_obj_name_in_t*) data;
 
+    ret = hg_proc_int32_t(proc, &struct_data->client_seq_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
     ret = hg_proc_int32_t(proc, &struct_data->cnt);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
@@ -2498,7 +2510,10 @@ hg_proc_container_query_out_t(hg_proc_t proc, void *data)
 }
 
 typedef struct query_read_names_args_t {
+    int  client_id;
+    int  client_seq_id;
     int  cnt;
+    int  is_select_all;
     char **obj_names;
     char *obj_names_1d;
 } query_read_names_args_t;
@@ -2536,4 +2551,23 @@ hg_proc_storage_meta_name_query_in_t(hg_proc_t proc, void *data)
 }
 
 hg_return_t pdc_check_int_ret_cb(const struct hg_cb_info *callback_info);
+int PDC_region_list_seq_id_cmp(region_list_t *a, region_list_t *b);
+
+typedef struct pdc_task_list_t {
+    int task_id;
+    perr_t   (*cb)();
+    void     *cb_args;
+
+    struct pdc_task_list_t *prev;
+    struct pdc_task_list_t *next;
+} pdc_task_list_t;
+
+int PDC_add_task_to_list(pdc_task_list_t **target_list, perr_t (*cb)(), void *cb_args, int *curr_task_id, hg_thread_mutex_t *mutex);
+perr_t PDC_del_task_from_list(pdc_task_list_t **target_list, pdc_task_list_t *del, hg_thread_mutex_t *mutex);
+perr_t PDC_del_task_from_list_id(pdc_task_list_t **target_list, int id, hg_thread_mutex_t *mutex);
+pdc_task_list_t *PDC_find_task_from_list(pdc_task_list_t** target_list, int id, hg_thread_mutex_t *mutex);
+int PDC_is_valid_task_id(int id);
+
+perr_t PDC_Client_query_read_complete(char *shm_addrs, int size, int n_shm, int seq_id);
+
 #endif /* PDC_CLIENT_SERVER_COMMON_H */
