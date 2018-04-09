@@ -2671,7 +2671,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     char *default_hg_transport = "bmi+tcp";
     char *hg_transport;
 #ifdef PDC_HAS_CRAY_DRC
-    uint32_t credential, cookie;
+    uint32_t credential = 0, cookie;
     drc_info_handle_t credential_info;
     char pdc_auth_key[256] = { '\0' };
     char *auth_key;
@@ -2740,8 +2740,12 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
 
     // Init server
 //    *hg_class = HG_Init(na_info_string, NA_TRUE);
-//    init_info.na_init_info.progress_mode = NA_NO_BLOCK;   // busy mode
+#ifndef ENABLE_MULTITHREAD
+    init_info.na_init_info.progress_mode = NA_NO_BLOCK;   // busy mode
+#endif
+#ifndef PDC_HAS_CRAY_DRC
     init_info.auto_sm = HG_TRUE;
+#else
     *hg_class = HG_Init_opt(na_info_string, NA_TRUE, &init_info);
     if (*hg_class == NULL) {
         printf("Error with HG_Init()\n");
@@ -4424,6 +4428,7 @@ perr_t PDC_Data_Server_region_release(struct buf_map_release_bulk_args *bulk_arg
             found = 1;
             DL_DELETE(obj_reg->region_lock_head, tmp1);
             free(tmp1);
+            tmp1 = NULL;
         }
     }
 #ifdef ENABLE_MULTITHREAD 

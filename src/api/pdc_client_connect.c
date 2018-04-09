@@ -941,8 +941,12 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     /* Initialize Mercury with the desired network abstraction class */
     /* printf("Using %s\n", na_info_string); */
 //    *hg_class = HG_Init(na_info_string, HG_TRUE);
-//    init_info.na_init_info.progress_mode = NA_NO_BLOCK;  //busy mode
+#ifndef ENABLE_MULTITHREAD
+    init_info.na_init_info.progress_mode = NA_NO_BLOCK;  //busy mode
+#endif
+#ifndef PDC_HAS_CRAY_DRC
     init_info.auto_sm = HG_TRUE;
+#endif
     *hg_class = HG_Init_opt(na_info_string, HG_TRUE, &init_info);
     if (*hg_class == NULL) {
         printf("Error with HG_Init()\n");
