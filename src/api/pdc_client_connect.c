@@ -2170,6 +2170,20 @@ perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_st
     in.hash_value = PDC_get_hash_by_name(obj_name);
     in.time_step  = time_step;
 
+/* // Debug */                                                                                                         
+/* volatile int dbg_sleep_g = 1; */
+/* if (pdc_client_mpi_rank_g == 1) { */
+/*     char hostname[128]; */
+/*     gethostname(hostname, 127); */
+/*     dbg_sleep_g = 1; */
+/*     printf("== %s attach %d\n", hostname, getpid()); */
+/*     fflush(stdout); */
+/*     while(dbg_sleep_g ==1) { */
+/*         dbg_sleep_g = 1; */
+/*         sleep(1); */
+/*     } */
+/* } */
+
     /* printf("==PDC_CLIENT[%d]: search request obj_name [%s], hash value %u, server id %u\n", pdc_client_mpi_rank_g, in.obj_name, in.hash_value, server_id); */
     /* fflush(stdout); */
     /* printf("Sending input to target\n"); */

@@ -45,7 +45,7 @@
 
 #define ADDR_MAX                            256
 #define DIM_MAX                             4
-#define TAG_LEN_MAX                         5500
+#define TAG_LEN_MAX                         2048
 #define PDC_SERVER_ID_INTERVEL              1000000
 #define PDC_SERVER_MAX_PROC_PER_NODE        32
 #define PDC_SERIALIZE_MAX_SIZE              256
@@ -628,12 +628,12 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
     }
     ret = hg_proc_hg_string_t(proc, &struct_data->app_name);
     if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
+	HG_LOG_ERROR("Proc app_name error");
         return ret;
     }
     ret = hg_proc_hg_string_t(proc, &struct_data->obj_name);
     if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
+	HG_LOG_ERROR("Proc obj_name error");
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->time_step);
@@ -685,12 +685,12 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
     }
     ret = hg_proc_hg_string_t(proc, &struct_data->data_location);
     if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
+	HG_LOG_ERROR("Proc data_location error");
         return ret;
     }
     ret = hg_proc_hg_string_t(proc, &struct_data->tags);
     if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
+	HG_LOG_ERROR("Proc tags error");
         return ret;
     }
     return ret;

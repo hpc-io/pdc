@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define ENABLE_MPI 1
+
 #ifdef ENABLE_MPI
 #include "mpi.h"
 #endif
@@ -12,6 +14,7 @@
 #define MAX_NAME 1024
 #define MAX_FILES 2500
 #define MAX_FILENAME_LEN 64
+#define MAX_TAG_SIZE 8192
 
 
 void do_dtype(hid_t, hid_t, int);
@@ -26,7 +29,7 @@ void print_usage() {
     printf("Usage: srun -n 2443 ./h5boss_v2_import h5boss_filenames\n");
 }
 
-char tags_g[TAG_LEN_MAX];
+char tags_g[MAX_TAG_SIZE];
 char *tags_ptr_g;
 char dset_name_g[TAG_LEN_MAX];
 hsize_t tag_size_g;
@@ -42,7 +45,7 @@ int add_tag(char *str)
         fprintf(stderr, "%s - input str is NULL!", __func__);
         return 0;
     }
-    else if (tag_size_g + str_len >= TAG_LEN_MAX) {
+    else if (tag_size_g + str_len >= MAX_TAG_SIZE) {
         fprintf(stderr, "%s - tags_ptr_g overflow!", __func__);
         return 0;
     }
@@ -173,7 +176,7 @@ main(int argc, char **argv)
             filename = my_filenames[i];
             /* printf("%d: processing [%s]\n", rank, my_filenames[i]); */
             /* fflush(stdout); */
-            file = H5Fopen(filename, H5F_ACC_RDWR, H5P_DEFAULT);
+            file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
             if (file < 0) {
                 status = H5Fclose(file);
                 continue;
@@ -405,6 +408,9 @@ do_dset(hid_t did, char *name)
     H5Sclose(sid);
 
     // Create a pdc object per dataset with tag
+    // Currently there is a bug in Mercury that causes issues when send size is larger than 4KB
+    // so we temporarily just cut the tags longer than 2048
+    tags_g[2047] = 0;
     PDCprop_set_obj_tags(obj_prop_g, tags_g);
     pdcid_t obj_id = PDCobj_create(cont_id_g, dset_name_g, obj_prop_g);
     if (obj_id <= 0) {    
