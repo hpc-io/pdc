@@ -832,6 +832,7 @@ perr_t PDC_Server_create_container(gen_cont_id_in_t *in, gen_cont_id_out_t *out)
 
 hg_return_t PDC_Server_s2s_recv_work_done_cb(const struct hg_cb_info *callback_info) {return SUCCEED;}
 perr_t PDC_Server_set_close() {return SUCCEED;}
+hg_return_t PDC_Server_checkpoint_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
 
 data_server_region_t *PDC_Server_get_obj_region(pdcid_t obj_id) {return NULL;}
 region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in_t *in, region_list_t *request_region, void *data_ptr) {return SUCCEED;}
@@ -4723,7 +4724,7 @@ perr_t PDC_del_task_from_list_id(pdc_task_list_t **target_list, int id, hg_threa
     hg_thread_mutex_lock(mutex);
 #endif
 
-    tmp = PDC_find_task_from_list(*target_list, id, mutex);
+    tmp = PDC_find_task_from_list(target_list, id, mutex);
     DL_DELETE(*target_list, tmp);
 
 #ifdef ENABLE_MULTITHREAD
@@ -4735,3 +4736,38 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 } // end PDC_del_task_from_list_id
+
+int PDC_is_valid_obj_id(uint64_t id)
+{
+    if (id <  PDC_SERVER_ID_INTERVEL) {
+        printf("== id %" PRIu64 " is invalid!\n", id);
+        return -1;
+    }
+    return 1;
+}
+/* server_checkpoint_rpc_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(server_checkpoint_rpc, handle)
+{
+    perr_t ret_value = HG_SUCCESS;
+    FUNC_ENTER(NULL);
+
+    pdc_int_send_t in;
+    pdc_int_ret_t  out;
+
+    HG_Get_input(handle, &in);
+
+    out.ret = 1;
+    HG_Respond(handle, PDC_Server_checkpoint_cb, NULL, &out);
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
+
+hg_id_t
+server_checkpoing_rpc_register(hg_class_t *hg_class)
+{
+    return  MERCURY_REGISTER(hg_class, "server_checkpoing_rpc_register", pdc_int_send_t, pdc_int_ret_t, server_checkpoint_rpc_cb);
+}

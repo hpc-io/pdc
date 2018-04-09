@@ -155,6 +155,10 @@ int main(int argc, char **argv)
     /* printf("%d - Finished reading a region, data[0]=%c.\n", rank, read_data[0]); */
     /* fflush(stdout); */
 
+    if (rank == 0) {
+        PDC_Client_all_server_checkpoint();
+    }
+
 done:
     // close a container
     if(PDCcont_close(cont) < 0)

@@ -134,6 +134,7 @@ static hg_id_t    bulk_rpc_register_id_g;
 static hg_id_t    storage_meta_name_query_register_id_g;
 static hg_id_t    get_storage_meta_name_query_bulk_result_rpc_register_id_g;
 static hg_id_t    notify_client_multi_io_complete_rpc_register_id_g;
+static hg_id_t    server_checkpoint_rpc_register_id_g;
 
 // Global thread pool
 extern hg_thread_pool_t *hg_test_thread_pool_g;
@@ -3076,7 +3077,7 @@ perr_t PDC_Server_checkpoint(char *filename)
 
     FILE *file = fopen(filename, "w+");
     if (file==NULL) {
-        printf("==PDC_SERVER: PDC_Server_checkpoint() - Checkpoint file open error"); 
+        printf("==PDC_SERVER[%d]: %s - Checkpoint file open error", pdc_server_rank_g, __func__); 
         ret_value = FAIL;
         goto done;
     }
@@ -3115,7 +3116,7 @@ perr_t PDC_Server_checkpoint(char *filename)
             }
 
             if (n_write_region != n_region) {
-                printf("==PDC_SERVER: PDC_Server_checkpoint() - ERROR with number of regions"); 
+                printf("==PDC_SERVER[%d]: %s - ERROR with number of regions", pdc_server_rank_g, __func__); 
                 ret_value = FAIL;
                 goto done;
             }
@@ -3136,9 +3137,9 @@ perr_t PDC_Server_checkpoint(char *filename)
     all_metadata_size = metadata_size;
     all_region_count   = region_count;
 #endif
-    /* if (pdc_server_rank_g == 0) { */
+    if (pdc_server_rank_g == 0) {
         printf("==PDC_SERVER: checkpointed %d objects, with %d regions \n", all_metadata_size, all_region_count);
-    /* } */
+    }
 
 done:
     FUNC_LEAVE(ret_value);
@@ -4936,6 +4937,7 @@ int main(int argc, char *argv[])
     storage_meta_name_query_register_id_g     = storage_meta_name_query_rpc_register(hg_class_g);
     get_storage_meta_name_query_bulk_result_rpc_register_id_g = get_storage_meta_name_query_bulk_result_rpc_register(hg_class_g);
     notify_client_multi_io_complete_rpc_register_id_g = notify_client_multi_io_complete_rpc_register(hg_class_g);
+    server_checkpoint_rpc_register_id_g       = server_checkpoing_rpc_register(hg_class_g);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -10939,5 +10941,23 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+hg_return_t
+PDC_Server_checkpoint_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret = HG_SUCCESS;
+    perr_t ret_value;
 
+    char checkpoint_file[ADDR_MAX];
+    sprintf(checkpoint_file, "%s%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.", pdc_server_rank_g);
+
+    ret_value = PDC_Server_checkpoint(checkpoint_file);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_SERVER[%d]: %s - Error checkpoint to [%s]\n", pdc_server_rank_g, __func__, checkpoint_file);
+        fflush(stdout);
+        goto done;
+    }
+
+done:
+    return ret;
+}
 // END OF PDC_SERVER.C

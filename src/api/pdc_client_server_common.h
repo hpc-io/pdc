@@ -2132,7 +2132,22 @@ hg_proc_get_storage_info_in_t(hg_proc_t proc, void *data)
     }
     return ret;
 }
+ typedef struct {
+    int origin;
+} pdc_int_send_t;
 
+static HG_INLINE hg_return_t
+hg_proc_pdc_int_send_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    pdc_int_send_t *struct_data = (pdc_int_send_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->origin);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+    }
+    return ret;
+}
 typedef struct {
     int ret;
 } pdc_int_ret_t;
@@ -2567,7 +2582,9 @@ perr_t PDC_del_task_from_list(pdc_task_list_t **target_list, pdc_task_list_t *de
 perr_t PDC_del_task_from_list_id(pdc_task_list_t **target_list, int id, hg_thread_mutex_t *mutex);
 pdc_task_list_t *PDC_find_task_from_list(pdc_task_list_t** target_list, int id, hg_thread_mutex_t *mutex);
 int PDC_is_valid_task_id(int id);
+int PDC_is_valid_obj_id(uint64_t id);
 
 perr_t PDC_Client_query_read_complete(char *shm_addrs, int size, int n_shm, int seq_id);
+
 
 #endif /* PDC_CLIENT_SERVER_COMMON_H */

@@ -29,6 +29,7 @@ void print_usage() {
     printf("Usage: srun -n 2443 ./h5boss_v2_import h5boss_filenames\n");
 }
 
+int rank = 0, size = 1;
 char tags_g[MAX_TAG_SIZE];
 char *tags_ptr_g;
 char dset_name_g[TAG_LEN_MAX];
@@ -69,7 +70,6 @@ int add_tag(char *str)
 int
 main(int argc, char **argv)
 {
-    int rank = 0, size = 1;
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -178,7 +178,9 @@ main(int argc, char **argv)
             /* fflush(stdout); */
             file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
             if (file < 0) {
-                status = H5Fclose(file);
+                /* status = H5Fclose(file); */
+                printf("Failed to open file [%s]\n", filename);
+                fflush(stdout);
                 continue;
             }
 
@@ -187,6 +189,8 @@ main(int argc, char **argv)
 
             status = H5Fclose(file);
 
+            // Checkpoint all metadata after import each hdf5 file
+            PDC_Client_all_server_checkpoint();
             /* printf("%s, %d\n", filename, max_tag_size_g); */
             /* printf("\n\n======================\nNumber of datasets: %d\n", ndset_g); */
         }
@@ -247,7 +251,7 @@ scan_group(hid_t gid, int level) {
         cont_id_g = PDCcont_create(group_name, cont_prop_g);
         if(cont_id_g <= 0)
             printf("Fail to create container @ line  %d!\n", __LINE__);
-        printf("Created container [%s], %" PRIu64 "\n", group_name, cont_id_g);
+        printf("Created container [%s]\n", group_name);
     }
 
 

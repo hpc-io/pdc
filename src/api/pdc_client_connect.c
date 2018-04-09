@@ -107,6 +107,7 @@ static hg_id_t         data_server_read_check_register_id_g;
 static hg_id_t         data_server_write_check_register_id_g;
 static hg_id_t         data_server_write_register_id_g;
 static hg_id_t         aggregate_write_register_id_g;
+static hg_id_t         server_checkpoint_rpc_register_id_g;
 
 // bulk
 static hg_id_t         query_partial_register_id_g;
@@ -1018,6 +1019,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     data_server_read_check_register_id_g      = data_server_read_check_register(*hg_class);
     data_server_write_check_register_id_g     = data_server_write_check_register(*hg_class);
     data_server_write_register_id_g           = data_server_write_register(*hg_class);
+    server_checkpoint_rpc_register_id_g       = server_checkpoing_rpc_register(*hg_class);
 
     // bulk
     query_partial_register_id_g               = query_partial_register(*hg_class);
@@ -5094,3 +5096,100 @@ done:
     work_todo_g = 0;
     FUNC_LEAVE(ret_value);
 } // End PDC_Client_query_read_complete
+
+// Generic function to check the return value (RPC receipt) is 1
+hg_return_t pdc_client_check_int_ret_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    pdc_int_ret_t output;
+
+    FUNC_ENTER(NULL);
+
+    hg_handle_t handle = callback_info->info.forward.handle;
+
+    ret_value = HG_Get_output(handle, &output);
+    if (ret_value != HG_SUCCESS) {
+        printf("==%s() - Error with HG_Get_output\n", __func__);
+        goto done;
+    }
+
+    if (output.ret != 1) {
+        printf("==%s() - Return value [%d] is NOT expected\n", __func__, output.ret);
+    }
+done:
+    work_todo_g--;
+    HG_Free_output(handle, &output);
+    FUNC_LEAVE(ret_value);
+}
+
+// Send a name to server and receive an obj id
+perr_t PDC_Client_server_checkpoint(uint32_t server_id)
+{
+    perr_t ret_value = SUCCEED;
+    hg_return_t hg_ret;
+    PDC_lifetime obj_life;
+    pdc_int_send_t in;
+    struct client_lookup_args lookup_args;
+    hg_handle_t rpc_handle;
+    
+    FUNC_ENTER(NULL);
+    
+    // Debug statistics for counting number of messages sent to each server.
+    debug_server_id_count[server_id]++;
+
+    if( PDC_Client_try_lookup_server(server_id) != SUCCEED) {
+        printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, server_checkpoint_rpc_register_id_g, &rpc_handle);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "==PDC_CLIENT[%d]: %s - Could not create handle\n", pdc_client_mpi_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    in.origin = pdc_client_mpi_rank_g;
+    hg_ret = HG_Forward(rpc_handle, pdc_client_check_int_ret_cb, &lookup_args, &in);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "==PDC_CLIENT[%d]: %s - Could not start forward to server\n", pdc_client_mpi_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    // Wait for response from server
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+done:
+    HG_Destroy(rpc_handle);
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+
+perr_t PDC_Client_all_server_checkpoint()
+{
+    perr_t      ret_value = SUCCEED;
+    uint32_t    i;
+
+    FUNC_ENTER(NULL);
+
+    if (pdc_server_num_g == 0) {
+        printf("==PDC_CLIENT[%d]: %s - server number not initialized!\n", pdc_client_mpi_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    // only let client rank 0 send all requests
+    if (pdc_client_mpi_rank_g != 0) {
+        goto done;
+    }
+
+    for (i = 0; i < pdc_server_num_g; i++) 
+        ret_value = PDC_Client_server_checkpoint(i);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
