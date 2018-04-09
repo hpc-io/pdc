@@ -45,11 +45,11 @@
 hg_thread_mutex_t server_delete_buf_map_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
 hg_thread_mutex_t server_append_buf_map_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
 hg_thread_mutex_t insert_metadata_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
-#endif
 
 // Thread
 hg_thread_pool_t *hg_test_thread_pool_g = NULL;
 hg_thread_pool_t *hg_test_thread_pool_fs_g = NULL;
+#endif
 
 uint64_t pdc_id_seq_g = PDC_SERVER_ID_INTERVEL;
 // actual value for each server is set by PDC_Server_init()
@@ -1281,6 +1281,9 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     data_server_region_t *target_reg = NULL;
     region_buf_map_t *elt;
     int error = 0;
+#ifndef ENABLE_MULTITHREAD
+    struct PDC_region_info *remote_reg_info = NULL;
+#endif
 
     FUNC_ENTER(NULL);
 
@@ -1301,6 +1304,7 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     out.ret = 1;
     HG_Respond(bulk_args->handle, NULL, NULL, &out);
 
+#ifdef ENABLE_MULTITHREAD
     bulk_args->work.func = pdc_region_write_out_progress;
     bulk_args->work.args = bulk_args; 
 
@@ -1312,9 +1316,39 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     }
 
     hg_thread_pool_post(hg_test_thread_pool_fs_g, &(bulk_args->work));
+#else
+    remote_reg_info = (struct PDC_region_info *)malloc(sizeof(struct PDC_region_info));
+    if(remote_reg_info == NULL) {
+        PGOTO_ERROR(HG_OTHER_ERROR, "remote_reg_info memory allocation failed\n");
+    }
+    remote_reg_info->ndim = (bulk_args->remote_region).ndim;
+    remote_reg_info->offset = (uint64_t *)malloc(sizeof(uint64_t));
+    remote_reg_info->size = (uint64_t *)malloc(sizeof(uint64_t));
+    (remote_reg_info->offset)[0] = (bulk_args->remote_region).start_0;
+    (remote_reg_info->size)[0] = (bulk_args->remote_region).count_0;
+
+    PDC_Server_data_write_out(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf);
+
+    // Perform lock release function
+    PDC_Data_Server_region_release(bulk_args, &out);
+
+    PDC_Server_release_lock_request(bulk_args->remote_obj_id, remote_reg_info);
+#endif
 
 done:
     fflush(stdout);
+
+#ifndef ENABLE_MULTITHREAD
+    free(remote_reg_info->offset);
+    free(remote_reg_info->size);
+    free(remote_reg_info);
+
+    HG_Bulk_free(bulk_args->remote_bulk_handle);
+    HG_Free_input(bulk_args->handle, &(bulk_args->in));
+    HG_Destroy(bulk_args->handle);
+    free(bulk_args);
+#endif
+
     FUNC_LEAVE(ret_value);
 }
 
