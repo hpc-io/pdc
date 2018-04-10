@@ -4379,7 +4379,7 @@ perr_t PDC_Client_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsign
             break;
         }
 
-        printf("==PDC_CLIENT[%d]: waiting for server to finish IO request\n", pdc_client_mpi_rank_g);
+        /* printf("==PDC_CLIENT[%d]: waiting for server to finish IO request\n", pdc_client_mpi_rank_g); */
         /* if (pdc_client_mpi_rank_g == 0) { */
         /*     printf("==PDC_CLIENT[ALL]: waiting for server to finish IO request...\n"); */
         /*     fflush(stdout); */
@@ -4387,7 +4387,7 @@ perr_t PDC_Client_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsign
         pdc_msleep(check_interval_ms);
     }
 
-    printf("==PDC_CLIENT[%d]: IO request completed by server\n", pdc_client_mpi_rank_g);
+    /* printf("==PDC_CLIENT[%d]: IO request completed by server\n", pdc_client_mpi_rank_g); */
 done:
     FUNC_LEAVE(ret_value);
 }

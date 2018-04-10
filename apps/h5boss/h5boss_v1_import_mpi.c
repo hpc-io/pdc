@@ -38,6 +38,8 @@ int  ndset_g = 0;
 /* FILE *summary_fp_g; */
 int max_tag_size_g = 0;
 pdcid_t pdc_id_g = 0, cont_prop_g = 0, cont_id_g = 0, obj_prop_g = 0;
+struct timeval  write_timer_start_g;
+struct timeval  write_timer_end_g;
 
 int add_tag(char *str)
 {
@@ -438,11 +440,21 @@ do_dset(hid_t did, char *name)
     obj_region.offset = offset;
     obj_region.size   = size;
 
+    if (ndset_g == 1) 
+        gettimeofday(&write_timer_start_g, 0);
+    
     /* PDC_Client_query_metadata_name_timestep(dset_name_g, 0, &meta); */
     /* if (meta == NULL) */ 
     /*     printf("Error with obtainig metadata, skipping PDC write\n"); */
     /* else */
     PDC_Client_write_id(obj_id, &obj_region, buf);
+    if (ndset_g % 100 == 0) {
+        gettimeofday(&write_timer_end_g, 0);
+        double elapsed_time = PDC_get_elapsed_time_double(&write_timer_start_g, &write_timer_end_g);
+        printf("Importer%d: Finished written 100 objects, took %.2f\n", rank, elapsed_time);
+        fflush(stdout);
+        gettimeofday(&write_timer_start_g, 0);
+    }
 
     free(buf);
     /* printf("} [%s] tag_size %d  \n========================\n%s\n========================\n\n\n", */
