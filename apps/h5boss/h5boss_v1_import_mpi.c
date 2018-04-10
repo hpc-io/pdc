@@ -190,7 +190,9 @@ main(int argc, char **argv)
             status = H5Fclose(file);
 
             // Checkpoint all metadata after import each hdf5 file
-            PDC_Client_all_server_checkpoint();
+            if (rank == 0) {
+                PDC_Client_all_server_checkpoint();
+            }
             /* printf("%s, %d\n", filename, max_tag_size_g); */
             /* printf("\n\n======================\nNumber of datasets: %d\n", ndset_g); */
         }
@@ -436,11 +438,11 @@ do_dset(hid_t did, char *name)
     obj_region.offset = offset;
     obj_region.size   = size;
 
-    PDC_Client_query_metadata_name_timestep(dset_name_g, 0, &meta);
-    if (meta == NULL) 
-        printf("Error with obtainig metadata, skipping PDC write\n");
-    else
-        PDC_Client_write(meta, &obj_region, buf);
+    /* PDC_Client_query_metadata_name_timestep(dset_name_g, 0, &meta); */
+    /* if (meta == NULL) */ 
+    /*     printf("Error with obtainig metadata, skipping PDC write\n"); */
+    /* else */
+    PDC_Client_write_id(obj_id, &obj_region, buf);
 
     free(buf);
     /* printf("} [%s] tag_size %d  \n========================\n%s\n========================\n\n\n", */

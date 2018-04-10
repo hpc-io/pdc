@@ -6,7 +6,7 @@
 #include <time.h>
 #include <sys/time.h>
 
-/* #define ENABLE_MPI 1 */
+#define ENABLE_MPI 1
 
 #ifdef ENABLE_MPI
 #include "mpi.h"
@@ -15,9 +15,11 @@
 #include "pdc.h"
 #include "pdc_client_connect.h"
 
+#define NDSET 25304802
+#define NAMELEN 48
 
 void print_usage() {
-    printf("Usage: srun -n ./h5boss_query_random /path/to/pmf_list.txt \n");
+    printf("Usage: srun -n ./h5boss_query_read /path/to/dset_list.txt n_select_read\n");
 }
 
 int main(int argc, char **argv)
@@ -30,30 +32,34 @@ int main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
+    int i, j, count, my_count;
+    char **all_dset_names, *all_dset_names_1d;
+    char **my_dset_names, *my_dset_names_1d;
     const char *pm_filename = argv[1];
+    count = atoi(argv[2]);
 
-    if (argc != 2 || pm_filename == NULL) {
+    if (argc != 3 || pm_filename == NULL || count == 0) {
         print_usage();
         exit(-1);
     }
 
-    int i, j, count, my_count;
-    int plate[3000], mjd[3000], fiber[3000];
-    int my_plate[3000], my_mjd[3000], my_fiber[3000];
-    int *plate_ptr, *mjd_ptr, *fiber_ptr;
 
     // Rank 0 read from pm file
     if (rank == 0) {
+        all_dset_names    = (char**)calloc(NDSET, sizeof(char*));
+        all_dset_names_1d = (char*)calloc(NDSET*NAMELEN, sizeof(char));
+        for (i = 0; i < NDSET; i++) 
+            all_dset_names[i] = all_dset_names_1d + i*NAMELEN;
+
         printf("Reading from %s\n", pm_filename);
         FILE *pm_file = fopen(pm_filename, "r");
-
         if (NULL == pm_file) {
             fprintf(stderr, "Error opening file: %s\n", pm_filename);
             return (-1);
         }
 
         i = 0;
-        while (EOF != fscanf(pm_file, "%d %d %d", &plate[i], &mjd[i], &fiber[i])) {
+        while (EOF != fscanf(pm_file, "%s", all_dset_names[i])) {
             /* printf("%d, %d, %d\n", plate[i], mjd[i], fiber[i]); */
             i++;
         }
@@ -62,18 +68,13 @@ int main(int argc, char **argv)
         count = i;
     }
 
-    
-
     my_count  = count;
-    plate_ptr = plate;
-    mjd_ptr   = mjd;
-    fiber_ptr = fiber;
 
 #ifdef ENABLE_MPI
     MPI_Bcast( &count, 1, MPI_INT, 0, MPI_COMM_WORLD);
     if (size > count) {
         if (rank == 0) {
-            printf("Number of process is more than plate-mjd-fiber combination, exiting...\n");
+            printf("Number of process is more than number of dsets, exiting...\n");
         }
         MPI_Finalize();
         exit (-1);
@@ -87,37 +88,32 @@ int main(int argc, char **argv)
         my_count += count % size;
     }
 
+    my_dset_names    = (char**)calloc(my_count, sizeof(char*));
+    my_dset_names_1d = (char*)calloc(my_count*NAMELEN, sizeof(char));
+    for (i = 0; i < my_count; i++) 
+        my_dset_names[i] = my_dset_names_1d + i*NAMELEN;
 
-    int *sendcount = (int*)malloc(sizeof(int)* size);
-    int *displs = (int*)malloc(sizeof(int)* size);
+    int *sendcount = (int*)calloc(sizeof(int), size);
+    int *displs = (int*)calloc(sizeof(int), size);
     for (i = 0; i < size; i++) {
-        sendcount[i] = count / size;
-        if (i == size - 1) 
-            sendcount[i] += count % size;
+        sendcount[i] = my_count * NAMELEN;
         displs[i] = i * (count / size);
     }
     
-    MPI_Scatterv(plate, sendcount, displs, MPI_INT, my_plate, my_count, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Scatterv(mjd,   sendcount, displs, MPI_INT, my_mjd,   my_count, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Scatterv(fiber, sendcount, displs, MPI_INT, my_fiber, my_count, MPI_INT, 0, MPI_COMM_WORLD);
-    plate_ptr = my_plate;
-    mjd_ptr   = my_mjd;
-    fiber_ptr = my_fiber;
+    MPI_Scatterv(all_dset_names_1d, sendcount, displs, MPI_CHAR, my_dset_names_1d, my_count, MPI_CHAR, 0, 
+                 MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
     free(displs);
     free(sendcount);
 #endif 
 
     printf("%d: myquery = %d\n", rank, my_count);
-
+    fflush(stdout);
 
     pdcid_t pdc = PDC_init("PDC");
 
-    char **obj_names;
     void **buf;
-    int *buf_sizes;
-
-    pdcid_t test_obj = -1;
+    size_t *buf_sizes;
 
     struct timeval  ht_total_start;
     struct timeval  ht_total_end;
@@ -125,30 +121,18 @@ int main(int argc, char **argv)
     double ht_total_sec;
 
 
+    if (rank == 0) {
+        printf("Starting to query...\n");
+        fflush(stdout);
+    }
+
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-
-    if (rank == 0) {
-        printf("Starting to query...\n");
-    }
-
     gettimeofday(&ht_total_start, 0);
 
-    obj_names = (char**)calloc(my_count, sizeof(char*));
-    buf       = (void**)calloc(my_count, sizeof(void*));
-    buf_sizes = (int*)calloc(my_count, sizeof(int));
-    for (i = 0; i < my_count; i++) {
-        obj_names[i] = (char*)calloc(128, sizeof(char));
-        buf[i] = (void*)calloc(128, sizeof(void*));
-        sprintf(obj_names[i], "/%d/%d/%d/exposures/104198/r", plate_ptr[i], mjd_ptr[i], fiber_ptr[i]);
-    }
+    PDC_Client_query_name_read_entire_obj(my_count, my_dset_names, &buf, &buf_sizes);
 
-
-    PDC_Client_query_name_read_entire_obj(my_count, obj_names, buf, buf_sizes);
-
-
-    fflush(stdout);
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif

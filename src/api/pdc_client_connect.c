@@ -4297,7 +4297,7 @@ perr_t PDC_Client_test(PDC_Request_t *request, int *completed)
         ret_value = PDC_Client_data_server_read_check(request->server_id, pdc_client_mpi_rank_g,
                      request->metadata, request->region, completed, request->buf);
         if (ret_value != SUCCEED) {
-            printf("==PDC_CLIENT: PDC_Client_write_check ERROR!\n");
+            printf("==PDC_CLIENT: PDC Client read check ERROR!\n");
             goto done;
         }
     }
@@ -4305,7 +4305,7 @@ perr_t PDC_Client_test(PDC_Request_t *request, int *completed)
 
         ret_value = PDC_Client_data_server_write_check(request, completed);
         if (ret_value != SUCCEED) {
-            printf("==PDC_CLIENT: PDC_Client_write_check ERROR!\n");
+            printf("==PDC_CLIENT: PDC Client write check ERROR!\n");
             goto done;
         }
     }
@@ -4425,7 +4425,6 @@ hg_return_t PDC_Client_work_done_cb(const struct hg_cb_info *callback_info)
     return HG_SUCCESS;
 }
 
-
 // PDC_Client_write is done using PDC_Client_iwrite and PDC_Client_wait
 perr_t PDC_Client_write(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf)
 {
@@ -4433,6 +4432,49 @@ perr_t PDC_Client_write(pdc_metadata_t *meta, struct PDC_region_info *region, vo
     perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
+
+    request.n_update = 1;
+    request.n_client = 1;
+    ret_value = PDC_Client_iwrite(meta, region, &request, buf);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_CLIENT: PDC_Client_write - PDC_Client_iwrite error\n");
+        goto done;
+    }
+    ret_value = PDC_Client_wait(&request, 60000, 500);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_CLIENT: PDC_Client_write - PDC_Client_wait error\n");
+        goto done;
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+// PDC_Client_write is done using PDC_Client_iwrite and PDC_Client_wait
+perr_t PDC_Client_write_id(pdcid_t local_obj_id, struct PDC_region_info *region, void *buf)
+{
+    PDC_Request_t request;
+    struct PDC_id_info *info;
+    struct PDC_obj_info *object;
+    pdc_metadata_t *meta;
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+ 
+    info = PDC_find_id(local_obj_id);
+    if(info == NULL) {
+        printf("==PDC_CLIENT[%d]: %s - obj_id %" PRIu64 " invalid!\n", 
+                pdc_client_mpi_rank_g, __func__, local_obj_id);
+        ret_value = FAIL;
+        goto done;
+    }
+    object = (struct PDC_obj_info *)(info->obj_ptr);
+    meta = object->obj_pt->metadata;
+    if (meta == NULL) {
+        printf("==PDC_CLIENT[%d]: %s - metadata is NULL!\n", pdc_client_mpi_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
 
     request.n_update = 1;
     request.n_client = 1;
@@ -5189,6 +5231,33 @@ perr_t PDC_Client_all_server_checkpoint()
 
     for (i = 0; i < pdc_server_num_g; i++) 
         ret_value = PDC_Client_server_checkpoint(i);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_Client_attach_metadata_to_local_obj(char *obj_name, uint64_t obj_id, uint64_t cont_id, 
+                                               struct PDC_obj_prop *obj_prop)
+{
+    perr_t      ret_value = SUCCEED;
+    FUNC_ENTER(NULL);
+
+    obj_prop->metadata = (pdc_metadata_t*)calloc(1, sizeof(pdc_metadata_t));
+    obj_prop->metadata->user_id = obj_prop->user_id;
+    if (NULL != obj_prop->app_name) 
+        strcpy(obj_prop->metadata->app_name, obj_prop->app_name);
+    if (NULL != obj_name) 
+        strcpy(obj_prop->metadata->obj_name, obj_name);
+    obj_prop->metadata->time_step = obj_prop->time_step;
+    obj_prop->metadata->obj_id  = obj_id;
+    obj_prop->metadata->cont_id = cont_id;
+    if (NULL != obj_prop->tags) 
+        strcpy(obj_prop->metadata->tags, obj_prop->tags);
+    if (NULL != obj_prop->data_loc) 
+        strcpy(obj_prop->metadata->data_location, obj_prop->data_loc);
+    obj_prop->metadata->ndim    = obj_prop->ndim;
+        if (NULL != obj_prop->dims) 
+    memcpy(obj_prop->metadata->dims, obj_prop->dims, sizeof(uint64_t)*obj_prop->ndim);
 
 done:
     FUNC_LEAVE(ret_value);

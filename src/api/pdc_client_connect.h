@@ -496,6 +496,8 @@ perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct PDC_region_info *region, P
  */
 perr_t PDC_Client_write(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf);
 
+perr_t PDC_Client_write_id(pdcid_t local_obj_id, struct PDC_region_info *region, void *buf);
+
 /**
  * Sync request send to server to write a region of object with users buffer
  * and wait for server's push notification
@@ -524,4 +526,6 @@ perr_t PDC_Client_del_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdc
 perr_t PDC_Client_add_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdcid_t local_cont_id);
 perr_t PDC_Client_query_name_read_entire_obj(int nobj, char **obj_names, void ***out_buf, uint64_t **out_buf_sizes);
 
+perr_t PDC_Client_attach_metadata_to_local_obj(char *obj_name, uint64_t obj_id, uint64_t cont_id, 
+                                               struct PDC_obj_prop *obj_prop);
 #endif

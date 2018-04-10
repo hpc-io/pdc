@@ -31,6 +31,7 @@
 #include "pdc_malloc.h"
 #include "pdc_prop_pkg.h"
 #include "pdc_client_server_common.h"
+#include "pdc_client_connect.h"
 #ifdef ENABLE_MPI
     #include "mpi.h"
 #endif
@@ -118,6 +119,8 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id
         ret_value = -1;
         PGOTO_ERROR(FAIL,"Unable to put object to container!\n");
     }
+
+    ret = PDC_Client_attach_metadata_to_local_obj(obj_name, p->meta_id, p->cont->meta_id, p->obj_pt);
 
     p->local_id = PDC_id_register(PDC_OBJ, p);
 
