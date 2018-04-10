@@ -8002,15 +8002,18 @@ perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_
     // Find if there is the same region already stored in the metadata and update it
     DL_FOREACH_SAFE(target_meta->storage_region_list_head, region_elt, region_tmp) {
         if (PDC_is_same_region_list(region_elt, region) == 1) {
+            printf("==PDC_SERVER[%d]: overwrite existing region location/offset\n", pdc_server_rank_g);
+            printf("==PDC_SERVER[%d]: original:\n", pdc_server_rank_g);
+            PDC_print_storage_region_list(region);
+            printf("==PDC_SERVER[%d]: new:\n", pdc_server_rank_g);
+            PDC_print_storage_region_list(region_elt);
+            fflush(stdout);
             // Update location and offset
             memcpy(region_elt->storage_location, region->storage_location, sizeof(char)*ADDR_MAX);
             region_elt->offset = region->offset;
             region_elt->data_size = pdc_get_region_size(region_elt);
             update_success = 1;
-            /* if (is_debug_g == 1) { */
-                printf("==PDC_SERVER[%d]: overwrite existing region location/offset\n", pdc_server_rank_g);
-                PDC_print_storage_region_list(region_elt);
-            /* } */
+
             break;
         }
     } // DL_FOREACH

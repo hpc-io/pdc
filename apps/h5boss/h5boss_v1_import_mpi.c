@@ -176,8 +176,8 @@ main(int argc, char **argv)
 
         for (i = 0; i < my_count; i++) {
             filename = my_filenames[i];
-            /* printf("%d: processing [%s]\n", rank, my_filenames[i]); */
-            /* fflush(stdout); */
+            printf("Importer%d: processing [%s]\n", rank, my_filenames[i]);
+            fflush(stdout);
             file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
             if (file < 0) {
                 /* status = H5Fclose(file); */
@@ -451,7 +451,7 @@ do_dset(hid_t did, char *name)
     if (ndset_g % 100 == 0) {
         gettimeofday(&write_timer_end_g, 0);
         double elapsed_time = PDC_get_elapsed_time_double(&write_timer_start_g, &write_timer_end_g);
-        printf("Importer%d: Finished written 100 objects, took %.2f\n", rank, elapsed_time);
+        printf("Importer%d: Finished written 100 objects, took %.2f, total\n", rank, elapsed_time, ndset_g);
         fflush(stdout);
         gettimeofday(&write_timer_start_g, 0);
     }
