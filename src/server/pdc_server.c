@@ -2745,7 +2745,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
 #endif
 #ifndef PDC_HAS_CRAY_DRC
     init_info.auto_sm = HG_TRUE;
-#else
+#endif
     *hg_class = HG_Init_opt(na_info_string, NA_TRUE, &init_info);
     if (*hg_class == NULL) {
         printf("Error with HG_Init()\n");
