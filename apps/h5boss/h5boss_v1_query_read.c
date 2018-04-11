@@ -19,7 +19,7 @@
 #define NAMELEN 48
 
 void print_usage() {
-    printf("Usage: srun -n ./h5boss_query_read /path/to/dset_list.txt n_select_read\n");
+    printf("Usage: srun -n ./h5boss_query_read /path/to/dset_list.txt \n");
 }
 
 int main(int argc, char **argv)
@@ -33,12 +33,11 @@ int main(int argc, char **argv)
 #endif
 
     int i, j, count, my_count;
-    char **all_dset_names, *all_dset_names_1d;
-    char **my_dset_names, *my_dset_names_1d;
+    char **all_dset_names = NULL, *all_dset_names_1d = NULL;
+    char **my_dset_names = NULL, *my_dset_names_1d = NULL;
     const char *pm_filename = argv[1];
-    count = atoi(argv[2]);
 
-    if (argc != 3 || pm_filename == NULL || count == 0) {
+    if (argc != 2 || pm_filename == NULL ) {
         print_usage();
         exit(-1);
     }
@@ -60,15 +59,20 @@ int main(int argc, char **argv)
 
         i = 0;
         while (EOF != fscanf(pm_file, "%s", all_dset_names[i])) {
-            /* printf("%d, %d, %d\n", plate[i], mjd[i], fiber[i]); */
             i++;
         }
 
         fclose(pm_file);
         count = i;
+
+        /* for (i = 0; i < count; i++) { */
+        /*     printf("[%s]\n", all_dset_names[i]); */
+        /* } */
     }
 
+    fflush(stdout);
     my_count  = count;
+    my_dset_names = all_dset_names;
 
 #ifdef ENABLE_MPI
     MPI_Bcast( &count, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -88,27 +92,38 @@ int main(int argc, char **argv)
         my_count += count % size;
     }
 
+    /* printf("%d: mycount is %d\n", rank, my_count); */
+    /* fflush(stdout); */
+
     my_dset_names    = (char**)calloc(my_count, sizeof(char*));
     my_dset_names_1d = (char*)calloc(my_count*NAMELEN, sizeof(char));
-    for (i = 0; i < my_count; i++) 
-        my_dset_names[i] = my_dset_names_1d + i*NAMELEN;
 
     int *sendcount = (int*)calloc(sizeof(int), size);
     int *displs = (int*)calloc(sizeof(int), size);
     for (i = 0; i < size; i++) {
-        sendcount[i] = my_count * NAMELEN;
-        displs[i] = i * (count / size);
+        sendcount[i] = (count / size) * NAMELEN;
+        if (i == size-1) 
+            sendcount[i] += (count % size) * NAMELEN;
+        displs[i] = i * (count / size) * NAMELEN;
+        /* if (rank == 0) */ 
+        /*     printf("count[%d]=%d, displs[%d]=%d\n", i, sendcount[i], i, displs[i]); */
     }
     
-    MPI_Scatterv(all_dset_names_1d, sendcount, displs, MPI_CHAR, my_dset_names_1d, my_count, MPI_CHAR, 0, 
+    /* printf("%d: all_dset_names_1d [%s]\n", rank, all_dset_names_1d+NAMELEN); */
+    MPI_Scatterv(all_dset_names_1d, sendcount, displs, MPI_CHAR, my_dset_names_1d, my_count*NAMELEN, MPI_CHAR, 0, 
                  MPI_COMM_WORLD);
-    MPI_Barrier(MPI_COMM_WORLD);
+    for (i = 0; i < my_count; i++) 
+        my_dset_names[i] = my_dset_names_1d + i*NAMELEN;
     free(displs);
     free(sendcount);
 #endif 
+    /* printf("%d: my_dset_names_1d [%s]\n", rank, my_dset_names_1d); */
 
-    printf("%d: myquery = %d\n", rank, my_count);
-    fflush(stdout);
+    /* printf("%d: my count is %d\n", rank, my_count); */
+    /* for (i = 0; i < my_count; i++) { */
+    /*     printf("%d: [%s]\n", rank, my_dset_names[i]); */
+    /* } */
+    /* fflush(stdout); */
 
     pdcid_t pdc = PDC_init("PDC");
 
@@ -137,11 +152,19 @@ int main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
+    size_t my_total_data_size = 0;
+    for (i = 0; i < my_count; i++) {
+        my_total_data_size += buf_sizes[i];
+        /* printf("%d: read [%s], size %lu\n", rank, my_dset_names[i], buf_sizes[i]); */
+    }
+    /* printf("%d: my total read size = %lu\n", rank, my_total_data_size); */
+
     gettimeofday(&ht_total_end, 0);
     ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
     ht_total_sec        = ht_total_elapsed / 1000000.0;
     if (rank == 0) {
-        printf("Time to query and read %d obj with %d ranks: %.6f\n", count, size, ht_total_sec);
+        printf("Time to query and read %d obj of %.4f MB with %d ranks: %.4f\n", 
+                count, my_total_data_size/1048576, size, ht_total_sec);
         fflush(stdout);
     }
 

@@ -166,9 +166,14 @@ main(int argc, char **argv)
 #endif
 
 
-        /* for (i = 0; i < my_count; i++) { */
-        /*     printf("%d: %d [%s] \n", rank, my_count, my_filenames[i]); */
-        /* } */
+        printf("Importer%d: I will import %d files\n", rank, my_count);
+        for (i = 0; i < my_count; i++) 
+            printf("Importer%d: [%s] \n", rank, my_filenames[i]);
+        fflush(stdout);
+        
+#ifdef ENABLE_MPI
+        MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
         struct timeval  pdc_timer_start;
         struct timeval  pdc_timer_end;

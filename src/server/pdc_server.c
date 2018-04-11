@@ -8379,7 +8379,12 @@ perr_t PDC_Server_update_region_storage_meta_bulk_local(update_region_storage_me
                     update_success = 1;
 
                     printf("==PDC_SERVER[%d]: overwrite existing region location/offset\n", pdc_server_rank_g);
+                    PDC_print_metadata(target_meta);
+                    printf("==PDC_SERVER[%d]: original:\n", pdc_server_rank_g);
                     PDC_print_storage_region_list(region_elt);
+                    printf("==PDC_SERVER[%d]: new:\n", pdc_server_rank_g);
+                    PDC_print_storage_region_list(new_region);
+                    fflush(stdout);
                     free(new_region);
                     break;
                 }
@@ -9131,6 +9136,7 @@ perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
         double region_read_time1 = PDC_get_elapsed_time_double(&pdc_timer_start1, &pdc_timer_end1);
         /* printf("==PDC_SERVER[%d]: fread %" PRIu64 " bytes, %.2fs\n", */ 
         /*         pdc_server_rank_g, read_bytes, region_read_time1); */
+        /* fflush(stdout); */
         #endif
 
         n_contig_MB += read_bytes/1048576.0;
