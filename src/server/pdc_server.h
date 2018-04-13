@@ -51,16 +51,13 @@ hg_thread_mutex_t pdc_bloom_time_mutex_g;
 hg_thread_mutex_t n_metadata_mutex_g;
 hg_thread_mutex_t data_read_list_mutex_g;
 hg_thread_mutex_t data_write_list_mutex_g;
-hg_thread_mutex_t create_region_struct_mutex_g;
-hg_thread_mutex_t delete_buf_map_mutex_g;
-hg_thread_mutex_t remove_buf_map_mutex_g;
-hg_thread_mutex_t access_lock_list_mutex_g;
-hg_thread_mutex_t append_lock_mutex_g;
-hg_thread_mutex_t append_buf_map_mutex_g;
-hg_thread_mutex_t append_region_struct_mutex_g;
+hg_thread_mutex_t region_struct_mutex_g;
+hg_thread_mutex_t data_buf_map_mutex_g;
+hg_thread_mutex_t meta_buf_map_mutex_g;
+hg_thread_mutex_t lock_list_mutex_g;
 hg_thread_mutex_t insert_hash_table_mutex_g;
-hg_thread_mutex_t append_lock_request_mutex_g;
-hg_thread_mutex_t remove_lock_request_mutex_g;
+hg_thread_mutex_t lock_request_mutex_g;
+hg_thread_mutex_t addr_valid_mutex_g;
 hg_thread_mutex_t update_remote_server_addr_mutex_g;
 #endif
 
@@ -78,7 +75,6 @@ perr_t PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_p
 perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle);
 perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in);
 perr_t PDC_Data_Server_region_release(struct buf_map_release_bulk_args *bulk_args, region_lock_out_t *out);
-perr_t PDC_Meta_Server_region_release(region_lock_in_t *in, region_lock_out_t *out);
 perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out, hg_handle_t *handle);
 perr_t PDC_Meta_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out);
 perr_t PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status);
