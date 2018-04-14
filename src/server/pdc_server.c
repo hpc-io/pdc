@@ -5219,7 +5219,7 @@ perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle)
             }
         }
 #ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_lock(&addr_valid_mutex_g);
+    hg_thread_mutex_unlock(&addr_valid_mutex_g);
 #endif
     }
 
