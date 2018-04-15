@@ -919,8 +919,9 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     }
     MPI_Bcast(&credential, 1, MPI_UINT32_T, 0, MPI_COMM_WORLD);
     
-    printf("# Credential is %u\n", credential);
-    fflush(stdout);
+    //printf("# Credential is %u\n", credential);
+    //fflush(stdout);
+
     rc = drc_access(credential, 0, &credential_info);
     if (rc != DRC_SUCCESS) { /* failed to access credential */
         printf("drc_access() failed (%d, %s)", rc,
@@ -931,8 +932,10 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     }
     cookie = drc_get_first_cookie(credential_info);
 
-    printf("# Cookie is %u\n", cookie);
-    fflush(stdout);
+    if (pdc_client_mpi_rank_g == 0) {
+        printf("# Cookie is %u\n", cookie);
+        fflush(stdout);
+    }
     sprintf(pdc_auth_key, "%u", cookie);
     init_info.na_init_info.auth_key = strdup(pdc_auth_key);
 #endif

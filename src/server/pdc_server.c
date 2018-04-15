@@ -5040,6 +5040,9 @@ buf_unmap_lookup_remote_server_cb(const struct hg_cb_info *callback_info)
 
     FUNC_ENTER(NULL);
 
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_lock(&addr_valid_mutex_g);
+#endif
     lookup_args = (struct buf_unmap_server_lookup_args_t*) callback_info->arg;
     server_id = lookup_args->server_id;
     tranx_args = lookup_args->buf_unmap_args;
@@ -5053,6 +5056,10 @@ buf_unmap_lookup_remote_server_cb(const struct hg_cb_info *callback_info)
         error = 1;
         goto done;
     }
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(&addr_valid_mutex_g);
+#endif
+
     HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, buf_unmap_server_register_id_g, &server_send_buf_unmap_handle);
 
     ret_value = HG_Forward(server_send_buf_unmap_handle, server_send_buf_unmap_addr_rpc_cb, tranx_args, &(tranx_args->in)); 
