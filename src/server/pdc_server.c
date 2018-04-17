@@ -2730,6 +2730,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     cookie = drc_get_first_cookie(credential_info);
 
     if(pdc_server_rank_g == 0) {
+        printf("# Credential is %u\n", credential);
         printf("# Cookie is %u\n", cookie);
         fflush(stdout);
     }

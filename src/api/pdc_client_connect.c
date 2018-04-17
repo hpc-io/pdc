@@ -933,6 +933,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     cookie = drc_get_first_cookie(credential_info);
 
     if (pdc_client_mpi_rank_g == 0) {
+        printf("# Credential is %u\n", credential);
         printf("# Cookie is %u\n", cookie);
         fflush(stdout);
     }
