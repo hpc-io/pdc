@@ -151,20 +151,21 @@ int main(int argc, char **argv)
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
+    gettimeofday(&ht_total_end, 0);
+    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+    ht_total_sec        = ht_total_elapsed / 1000000.0;
 
-    size_t my_total_data_size = 0;
+    long long my_total_data_size = 0, all_total_data_size;
     for (i = 0; i < my_count; i++) {
         my_total_data_size += buf_sizes[i];
         /* printf("%d: read [%s], size %lu\n", rank, my_dset_names[i], buf_sizes[i]); */
     }
     /* printf("%d: my total read size = %lu\n", rank, my_total_data_size); */
+    MPI_Reduce(&my_total_data_size, &all_total_data_size, 1, MPI_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
 
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
-    ht_total_sec        = ht_total_elapsed / 1000000.0;
     if (rank == 0) {
         printf("Time to query and read %d obj of %.4f MB with %d ranks: %.4f\n", 
-                count, my_total_data_size/1048576, size, ht_total_sec);
+                count, all_total_data_size/1048576.0, size, ht_total_sec);
         fflush(stdout);
     }
 

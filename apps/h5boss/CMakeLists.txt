@@ -33,6 +33,8 @@ set(PROGRAMS
     h5boss_v1_import_mpi
     read_schedule
     h5boss_v1_query_read
+    h5boss_write_dummy_data
+    h5boss_write_dummy_data_h5
     )
 
 foreach(program ${PROGRAMS})

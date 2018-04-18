@@ -166,9 +166,9 @@ main(int argc, char **argv)
 #endif
 
 
-        printf("Importer%d: I will import %d files\n", rank, my_count);
+        printf("Importer%2d: I will import %d files\n", rank, my_count);
         for (i = 0; i < my_count; i++) 
-            printf("Importer%d: [%s] \n", rank, my_filenames[i]);
+            printf("Importer%2d: [%s] \n", rank, my_filenames[i]);
         fflush(stdout);
         
 #ifdef ENABLE_MPI
@@ -181,7 +181,7 @@ main(int argc, char **argv)
 
         for (i = 0; i < my_count; i++) {
             filename = my_filenames[i];
-            printf("Importer%d: processing [%s]\n", rank, my_filenames[i]);
+            printf("Importer%2d: processing [%s]\n", rank, my_filenames[i]);
             fflush(stdout);
             file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
             if (file < 0) {
@@ -196,12 +196,18 @@ main(int argc, char **argv)
 
             status = H5Fclose(file);
 
+#ifdef ENABLE_MPI
+            MPI_Barrier(MPI_COMM_WORLD);
+#endif
             // Checkpoint all metadata after import each hdf5 file
             if (rank == 0) {
                 PDC_Client_all_server_checkpoint();
             }
             /* printf("%s, %d\n", filename, max_tag_size_g); */
             /* printf("\n\n======================\nNumber of datasets: %d\n", ndset_g); */
+/* #ifdef ENABLE_MPI */
+/*             MPI_Barrier(MPI_COMM_WORLD); */
+/* #endif */
         }
 
 #ifdef ENABLE_MPI
@@ -260,7 +266,7 @@ scan_group(hid_t gid, int level) {
         cont_id_g = PDCcont_create(group_name, cont_prop_g);
         if(cont_id_g <= 0)
             printf("Fail to create container @ line  %d!\n", __LINE__);
-        printf("Created container [%s]\n", group_name);
+        printf("Importer%2d: Created container [%s]\n", rank, group_name);
     }
 
 
@@ -452,11 +458,13 @@ do_dset(hid_t did, char *name)
     /* if (meta == NULL) */ 
     /*     printf("Error with obtainig metadata, skipping PDC write\n"); */
     /* else */
+    /*     PDC_Client_write(meta, &obj_region, buf); */
+
     PDC_Client_write_id(obj_id, &obj_region, buf);
     if (ndset_g % 100 == 0) {
         gettimeofday(&write_timer_end_g, 0);
         double elapsed_time = PDC_get_elapsed_time_double(&write_timer_start_g, &write_timer_end_g);
-        printf("Importer%d: Finished written 100 objects, took %.2f, total\n", rank, elapsed_time, ndset_g);
+        printf("Importer%2d: Finished written 100 objects, took %.2f, my total %d\n", rank, elapsed_time, ndset_g);
         fflush(stdout);
         gettimeofday(&write_timer_start_g, 0);
     }

@@ -3173,7 +3173,8 @@ perr_t PDC_Server_restart(char *filename)
 
     FILE *file = fopen(filename, "r");
     if (file==NULL) {
-        printf("==PDC_SERVER[%d]: %s -  Checkpoint file open FAILED!", pdc_server_rank_g, __func__); 
+        printf("==PDC_SERVER[%d]: %s -  Checkpoint file open FAILED [%s]!", 
+                pdc_server_rank_g, __func__, filename); 
         ret_value = FAIL;
         goto done;
     }
@@ -3373,8 +3374,8 @@ static perr_t PDC_Server_loop(hg_context_t *hg_context)
         do {
             /* printf("==%d: Before Trigger\n", pdc_server_rank_g); */
             /* fflush(stdout); */
-            /* hg_ret = HG_Trigger(hg_context, 1024/1* timeout *1/, 4096/1* max count *1/, &actual_count); */
-            hg_ret = HG_Trigger(hg_context, 0/* timeout */, 1 /* max count */, &actual_count);
+            hg_ret = HG_Trigger(hg_context, 1024/* timeout */, 4096/* max count */, &actual_count);
+            /* hg_ret = HG_Trigger(hg_context, 0/1* timeout *1/, 1 /1* max count *1/, &actual_count); */
             /* printf("==%d: After Trigger\n", pdc_server_rank_g); */
             /* fflush(stdout); */
         } while ((hg_ret == HG_SUCCESS) && actual_count);
@@ -3383,10 +3384,10 @@ static perr_t PDC_Server_loop(hg_context_t *hg_context)
         if (hg_atomic_cas32(&close_server_g, 1, 1)) break;
         /* printf("==%d: Before Progress\n", pdc_server_rank_g); */
         /* fflush(stdout); */
-        hg_ret = HG_Progress(hg_context, HG_MAX_IDLE_TIME);
+        /* hg_ret = HG_Progress(hg_context, HG_MAX_IDLE_TIME); */
         /* printf("==%d: After Progress\n", pdc_server_rank_g); */
         /* fflush(stdout); */
-        /* hg_ret = HG_Progress(hg_context, 50000); */
+        hg_ret = HG_Progress(hg_context, 50000);
 
     /* } while (hg_ret == HG_SUCCESS); */
     } while (hg_ret == HG_SUCCESS || hg_ret == HG_TIMEOUT);
@@ -7979,7 +7980,7 @@ perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_
     perr_t ret_value = SUCCEED;
     pdc_metadata_t *target_meta = NULL;
     /* pdc_metadata_t *region_meta = NULL; */
-    region_list_t  *region_elt = NULL, *region_tmp, *new_region = NULL;
+    region_list_t  *region_elt = NULL, *new_region = NULL;
     int update_success = -1;
 
     FUNC_ENTER(NULL);
@@ -8000,7 +8001,7 @@ perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_
     }
 
     // Find if there is the same region already stored in the metadata and update it
-    DL_FOREACH_SAFE(target_meta->storage_region_list_head, region_elt, region_tmp) {
+    DL_FOREACH(target_meta->storage_region_list_head, region_elt) {
         if (PDC_is_same_region_list(region_elt, region) == 1) {
             printf("==PDC_SERVER[%d]: overwrite existing region location/offset\n", pdc_server_rank_g);
             printf("==PDC_SERVER[%d]: original:\n", pdc_server_rank_g);
@@ -8162,7 +8163,7 @@ perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region)
         if (is_debug_g == 1) {
             printf("==PDC_SERVER[%d]: Sending updated region loc to server %d\n",
                     pdc_server_rank_g, server_id);
-            /* PDC_print_region_list(region); */
+            PDC_print_region_list(region);
             fflush(stdout);
         }
 
@@ -8183,23 +8184,11 @@ perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region)
             goto done;
         }
 
-        /* if (s2s_send_work_todo_g != 0) { */
-        /*     printf("==PDC_SERVER[%d]: %s s2s_send_work_todo_g is %d", */ 
-        /*             pdc_server_rank_g, __func__, s2s_send_work_todo_g); */
-        /*     fflush(stdout); */
-        /* } */
-
-/* printf("PDC_Server_update_region_storagelocation_offset() calls PDC_Server_check_response()\n"); */
-/* fflush(stdout); */
-        // Wait for response from server
-        /* s2s_send_work_todo_g = 1; */
-        /* PDC_Server_check_response(&hg_context_g, &s2s_send_work_todo_g); */
-
         // TODO: move to callback
         update_remote_region_count_g++;
 
         HG_Destroy(update_region_loc_handle);
-        free(in.storage_location);
+        /* free(in.storage_location); */
     }
 
 done:
@@ -8379,11 +8368,11 @@ perr_t PDC_Server_update_region_storage_meta_bulk_local(update_region_storage_me
                     update_success = 1;
 
                     printf("==PDC_SERVER[%d]: overwrite existing region location/offset\n", pdc_server_rank_g);
-                    PDC_print_metadata(target_meta);
-                    printf("==PDC_SERVER[%d]: original:\n", pdc_server_rank_g);
-                    PDC_print_storage_region_list(region_elt);
-                    printf("==PDC_SERVER[%d]: new:\n", pdc_server_rank_g);
-                    PDC_print_storage_region_list(new_region);
+                    /* PDC_print_metadata(target_meta); */
+                    /* printf("==PDC_SERVER[%d]: original:\n", pdc_server_rank_g); */
+                    /* PDC_print_storage_region_list(region_elt); */
+                    /* printf("==PDC_SERVER[%d]: new:\n", pdc_server_rank_g); */
+                    /* PDC_print_storage_region_list(new_region); */
                     fflush(stdout);
                     free(new_region);
                     break;
@@ -8619,6 +8608,20 @@ perr_t PDC_Server_update_region_storage_meta_bulk_with_cb(bulk_xfer_data_t *bulk
         cb_args->server_id = server_id;
         cb_args->bulk_handle = bulk_handle;
         cb_args->rpc_handle  = rpc_handle;
+// Debug
+if (pdc_server_rank_g == 0) {
+    char hostname[128];
+    gethostname(hostname, 127);
+    dbg_sleep_g = 1;
+    printf("== %s attach %d\n", hostname, getpid());
+    fflush(stdout);
+    while(dbg_sleep_g ==1) {
+        dbg_sleep_g = 1;
+        sleep(1);
+    }
+}
+
+
 
         /* Forward call to remote addr */
         hg_ret = HG_Forward(rpc_handle, update_storage_meta_bulk_rpc_cb, cb_args, &bulk_rpc_in);
@@ -9410,6 +9413,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
     bulk_xfer_data_t *bulk_data = NULL;
     int nregion_in_bulk_update = 0;
     int has_read  = 0;
+    int is_read_only = 1;
     /* int has_write = 0; */
 
     FUNC_ENTER(NULL);
@@ -9428,8 +9432,8 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
             has_read = 1;
             break;
         }
-        /* else if (region_elt->access_type == WRITE) */ 
-        /*     has_write = 1; */
+        else if (region_elt->access_type == WRITE) 
+            is_read_only = 0;
     }
 
     // For read requests, it's better to aggregate read requests from all node-local clients
@@ -9661,19 +9665,25 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
             region_elt->is_data_ready = 1;
             region_elt->offset = offset;
 
-            // add current region to the update bulk buf
-            if (NULL == bulk_data) {
-                bulk_data = (bulk_xfer_data_t*)calloc(1, sizeof(bulk_xfer_data_t));
-                PDC_init_bulk_xfer_data_t(bulk_data);
-            }
-
-            ret_value = PDC_Server_add_region_storage_meta_to_bulk_buf(region_elt, bulk_data);
+            ret_value = PDC_Server_update_region_storagelocation_offset(region_elt);
             if (ret_value != SUCCEED) {
-                printf("==PDC_SERVER[%d]: %s - add_region_storage_meta_to_bulk_buf FAILED!", 
-                        pdc_server_rank_g, __func__);
+                printf("==PDC_SERVER[%d]: failed to update region storage info!\n", pdc_server_rank_g);
                 goto done;
             }
-            nregion_in_bulk_update++;
+
+            // add current region to the update bulk buf
+            /* if (NULL == bulk_data) { */
+            /*     bulk_data = (bulk_xfer_data_t*)calloc(1, sizeof(bulk_xfer_data_t)); */
+            /*     PDC_init_bulk_xfer_data_t(bulk_data); */
+            /* } */
+
+            /* ret_value = PDC_Server_add_region_storage_meta_to_bulk_buf(region_elt, bulk_data); */
+            /* if (ret_value != SUCCEED) { */
+            /*     printf("==PDC_SERVER[%d]: %s - add_region_storage_meta_to_bulk_buf FAILED!", */ 
+            /*             pdc_server_rank_g, __func__); */
+            /*     goto done; */
+            /* } */
+            /* nregion_in_bulk_update++; */
 
             previous_region = region_elt;
 
@@ -9710,68 +9720,79 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
         pdc_nbuffered_bulk_update_g++;
     }
 
-    // FIXME: tmp fix for server direct IO
-    int n_updated;
-    if (is_server_direct_io_g) {
-        ret_value = PDC_Server_update_storage_meta(&n_updated);
-        if (ret_value != SUCCEED) {
-            printf("==PDC_SERVER[%d]: %s - FAILED to update storage meta\n", pdc_server_rank_g, __func__);
-        }
-    }
+    /* // FIXME: tmp fix for server direct IO */
+    /* int n_updated; */
+    /* if (is_server_direct_io_g) { */
+    /*     ret_value = PDC_Server_update_storage_meta(&n_updated); */
+    /*     if (ret_value != SUCCEED) { */
+    /*         printf("==PDC_SERVER[%d]: %s - FAILED to update storage meta\n", pdc_server_rank_g, __func__); */
+    /*     } */
+    /* } */
     /* int n_region = 0; */
     /* DL_COUNT(region_list_head, region_elt, n_region); */
     /* printf("==PDC_SERVER[%d]: after writes done, will update %d regions \n", pdc_server_rank_g, n_region); */
     /* fflush(stdout); */
 
-    /* int iter = 0, n_write_region = 0; */
+    int iter = 0, n_write_region = 0;
     /* if (is_read_only != 1) { */
 
     /*     #ifdef ENABLE_TIMING */
+    /*     struct timeval  pdc_timer_end; */
+    /*     struct timeval  pdc_timer_start; */
     /*     gettimeofday(&pdc_timer_start, 0); */
     /*     #endif */
 
-    /*     // update all regions that are just written through bulk transfer */
-    /*     ret_value = PDC_Server_update_region_storage_meta_bulk_with_cb(&bulk_data); */
-    /*     if (ret_value != SUCCEED) { */
-    /*         printf("==PDC_SERVER[%d]: %s - update storage info FAILED!", pdc_server_rank_g, __func__); */
-    /*         goto done; */
-    /*     } */
+        // update all regions that are just written through bulk transfer
+        /* ret_value = PDC_Server_update_region_storage_meta_bulk_with_cb(&bulk_data); */
+        /* if (ret_value != SUCCEED) { */
+        /*     printf("==PDC_SERVER[%d]: %s - update storage info FAILED!", pdc_server_rank_g, __func__); */
+        /*     goto done; */
+        /* } */
+// Debug
+/* if (pdc_server_rank_g == 0) { */
+/*     char hostname[128]; */
+/*     gethostname(hostname, 127); */
+/*     dbg_sleep_g = 1; */
+/*     printf("== %s attach %d\n", hostname, getpid()); */
+/*     fflush(stdout); */
+/*     while(dbg_sleep_g ==1) { */
+/*         dbg_sleep_g = 1; */
+/*         sleep(1); */
+/*     } */
+/* } */
 
-    /* /1*     // Update all regions location info to the metadata server *1/ */
-    /* /1*     DL_FOREACH_SAFE(region_list_head, region_elt, region_tmp) { *1/ */
-    /* /1*         // Debug print *1/ */
-    /* /1*         /2* PDC_print_region_list(region_elt); *2/ *1/ */
-    /* /1*         /2* fflush(stdout); *2/ *1/ */
-    /* /1*         /2* printf("==PDC_SERVER[%d]: goint to update region no. %d\n", pdc_server_rank_g, iter); *2/ *1/ */
 
-    /* /1*         if (region_elt->access_type == WRITE) { *1/ */
-    /* /1*             n_write_region++; *1/ */
-    /* /1*             // Update metadata with the location and offset *1/ */
-    /* /1*             /2* printf("==PDC_SERVER[%d]: update storage info obj_id: %" PRIu64 " " *2/ *1/ */
-    /* /1*             /2*        "ndim: %" PRIu64 ", offset %" PRIu64 " \n", pdc_server_rank_g, *2/ *1/ */ 
-    /* /1*             /2*        region_elt->meta->obj_id, region_elt->ndim,  region_elt->start[0]); *2/ *1/ */     
+        /* // Update all regions location info to the metadata server */
+        /* DL_FOREACH(region_list_head, region_elt) { */
 
-    /* /1*             ret_value = PDC_Server_update_region_storagelocation_offset(region_elt); *1/ */
-    /* /1*             if (ret_value != SUCCEED) { *1/ */
-    /* /1*                 printf("==PDC_SERVER[%d]: failed to update region storage info!\n", pdc_server_rank_g); *1/ */
-    /* /1*                 goto done; *1/ */
-    /* /1*             } *1/ */
-    /* /1*         } *1/ */
+        /*     if (region_elt->access_type == WRITE) { */
+        /*         n_write_region++; */
+        /*         // Update metadata with the location and offset */
+        /*         /1* printf("==PDC_SERVER[%d]: update storage info obj_id: %" PRIu64 " " *1/ */
+        /*         /1*        "ndim: %" PRIu64 ", offset %" PRIu64 " \n", pdc_server_rank_g, *1/ */ 
+        /*         /1*        region_elt->meta->obj_id, region_elt->ndim,  region_elt->start[0]); *1/ */     
 
-    /* /1*         // Debug print *1/ */
-    /* /1*         /2* PDC_print_region_list(region_elt); *2/ *1/ */
-    /* /1*         /2* fflush(stdout); *2/ *1/ */
+        /*         ret_value = PDC_Server_update_region_storagelocation_offset(region_elt); */
+        /*         if (ret_value != SUCCEED) { */
+        /*             printf("==PDC_SERVER[%d]: failed to update region storage info!\n", pdc_server_rank_g); */
+        /*             goto done; */
+        /*         } */
+        /*     } */
 
-    /* /1*         iter++; *1/ */
-    /* /1*     } // end DL_FOREACH *1/ */
+        /*     // Debug print */
+        /*     /1* PDC_print_region_list(region_elt); *1/ */
+        /*     /1* fflush(stdout); *1/ */
 
-    /*     #ifdef ENABLE_TIMING */
-    /*     gettimeofday(&pdc_timer_end, 0); */
-    /*     double update_region_location_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end); */
-    /*     /1* printf("==PDC_SERVER[%d]: update region location [%s] time %.6f!\n", *1/ */
-    /*     /1*         pdc_server_rank_g, region_elt->storage_location, update_region_location_time); *1/ */
-    /*     server_update_region_location_time_g += update_region_location_time; */
-    /*     #endif */
+        /*     iter++; */
+        /* } // end DL_FOREACH */
+
+        /* #ifdef ENABLE_TIMING */
+        /* gettimeofday(&pdc_timer_end, 0); */
+        /* double update_region_location_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end); */
+        /* printf("==PDC_SERVER[%d]: update region location [%s] time %.6f!\n", */
+        /*         pdc_server_rank_g, region_elt->storage_location, update_region_location_time); */
+        /* server_update_region_location_time_g += update_region_location_time; */
+        /* #endif */
 
     /* } // end if is_read_only */
 
@@ -10482,7 +10503,7 @@ perr_t PDC_Server_get_local_storage_meta_with_one_name(storage_meta_query_one_na
     // FIXME: currently use timestep value of 0
     PDC_Server_search_with_name_timestep(args->name, PDC_get_hash_by_name(args->name), 0, &meta);
     if (meta == NULL) {
-        printf("==PDC_SERVER[%d]: No metadata with name [%s] found!\n", pdc_server_rank_g, args->name);
+        /* printf("==PDC_SERVER[%d]: No metadata with name [%s] found!\n", pdc_server_rank_g, args->name); */
         goto done;
     }
 

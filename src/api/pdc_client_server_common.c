@@ -45,7 +45,6 @@ hg_thread_mutex_t delete_buf_map_metex_g;
 hg_thread_mutex_t server_delete_buf_map_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
 hg_thread_mutex_t server_append_buf_map_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
 hg_thread_mutex_t insert_metadata_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
->>>>>>> stable
 #endif
 
 // Thread
@@ -2827,8 +2826,9 @@ HG_TEST_RPC_CB(data_server_write_check, handle)
 
     PDC_Server_write_check(&in, out);
 
-    // TODO: After returning the last write check finish to client, start the storage meta bulk update process
-    ret_value = HG_Respond(handle, PDC_Server_count_write_check_update_storage_meta_cb, out, out);
+    ret_value = HG_Respond(handle, NULL, NULL, out);
+    // After returning the last write check finish to client, start the storage meta bulk update process
+    /* ret_value = HG_Respond(handle, PDC_Server_count_write_check_update_storage_meta_cb, out, out); */
     /* printf("==PDC_SERVER: server write_check returning ret=%d\n", out->ret); */
 
     HG_Free_input(handle, &in);
@@ -2849,7 +2849,7 @@ HG_TEST_RPC_CB(update_region_loc, handle)
     // Decode input
     HG_Get_input(handle, &in);
     /* printf("==PDC_SERVER: Got region location update request: obj_id=%" PRIu64 "\n", in.obj_id); */
-    fflush(stdout);
+    /* fflush(stdout); */
 
     region_list_t *input_region = (region_list_t*)malloc(sizeof(region_list_t));
     pdc_region_transfer_t_to_list_t(&in.region, input_region);
@@ -2868,7 +2868,7 @@ HG_TEST_RPC_CB(update_region_loc, handle)
     }
 
     /* HG_Respond(handle, NULL, NULL, &out); */
-    HG_Respond(handle, PDC_Server_s2s_recv_work_done_cb, NULL, &out);
+    HG_Respond(handle, NULL, NULL, &out);
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
