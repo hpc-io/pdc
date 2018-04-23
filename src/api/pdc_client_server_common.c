@@ -2228,14 +2228,11 @@ HG_TEST_RPC_CB(buf_map, handle)
         HG_Destroy(handle);
     }
     else {
-        out.ret = 1;
-        HG_Respond(handle, NULL, NULL, &out);
-    
         ret = PDC_Meta_Server_buf_map(&in, new_buf_map_ptr, &handle);
         if(ret != SUCCEED)
             printf("===PDC Data Server: PDC_Meta_Server_buf_map() failed");
     }
-      
+
 done:
 //    HG_Respond(handle, NULL, NULL, &out);
 //    HG_Free_input(handle, &in);
