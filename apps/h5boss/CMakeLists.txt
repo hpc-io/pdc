@@ -36,6 +36,8 @@ set(PROGRAMS
     h5boss_write_dummy_data
     h5boss_write_dummy_data_h5
     h5boss_read_write_h5
+    get_pdc_server_by_name
+    h5boss_gen_query_input
     )
 
 foreach(program ${PROGRAMS})

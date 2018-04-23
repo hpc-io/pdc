@@ -184,6 +184,7 @@ int    update_remote_region_count_g   = 0;
 int    update_local_region_count_g    = 0;
 double fread_total_MB                 = 0.0;
 double fwrite_total_MB                = 0.0;
+int    n_get_remote_storage_meta_g    = 0;
 
 double server_update_region_location_time_g = 0.0;
 double server_io_elapsed_time_g       = 0.0;
@@ -10609,6 +10610,7 @@ perr_t PDC_Server_get_all_storage_meta_with_one_name(storage_meta_query_one_name
             ret_value = FAIL;
             goto done;
         }
+        n_get_remote_storage_meta_g++;
 
         // Add current task and relevant data ptrs to s2s task queue, so later when receiving bulk transfer
         // request we know which task that bulk data is needed 
@@ -10659,7 +10661,9 @@ perr_t PDC_Server_accumulate_storage_meta_then_read(storage_meta_query_one_name_
 
     // Trigger the read procedure when we have accumulated all storage meta
     if (accu_meta->n_accumulated >= accu_meta->n_total) {
-        /* printf("==PDC_SERVER[%d]: Retrieved all storage meta: \n", pdc_server_rank_g); */
+        printf("==PDC_SERVER[%d]: Retrieved all storage meta, %d from remote servers. \n", 
+                pdc_server_rank_g, n_get_remote_storage_meta_g);
+        fflush(stdout);
 
         for (i = 0; i < accu_meta->n_accumulated; i++) {
             req_region = accu_meta->storage_meta[i]->req_region;
