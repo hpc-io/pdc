@@ -35,6 +35,7 @@ set(PROGRAMS
     h5boss_v1_query_read
     h5boss_write_dummy_data
     h5boss_write_dummy_data_h5
+    h5boss_read_write_h5
     )
 
 foreach(program ${PROGRAMS})

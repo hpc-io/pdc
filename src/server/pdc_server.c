@@ -405,7 +405,7 @@ perr_t PDC_Server_set_lustre_stripe(const char *path, int stripe_count, int stri
         }
     }
     /* sprintf(cmd, "lfs setstripe -S %dM -c %d %s", stripe_size_MB, stripe_count, tmp); */
-    sprintf(cmd, "lfs setstripe -S %dM -c %d -i %d %s", stripe_size_MB, stripe_count, index, tmp);
+    snprintf(cmd, ADDR_MAX,  "lfs setstripe -S %dM -c %d -i %d %s", stripe_size_MB, stripe_count, index, tmp);
 
     if (system(cmd) < 0) {
         printf("==PDC_SERVER: Fail to set Lustre stripe parameters [%s]\n", tmp);
@@ -493,7 +493,7 @@ static inline void combine_obj_info_to_string(pdc_metadata_t *metadata, char *ou
 {
     /* sprintf(output, "%d%s%s%d", metadata->user_id, metadata->app_name, metadata->obj_name, metadata->time_step); */
     FUNC_ENTER(NULL);
-    sprintf(output, "%s%d", metadata->obj_name, metadata->time_step);
+    snprintf(output, TAG_LEN_MAX, "%s%d", metadata->obj_name, metadata->time_step);
 }
 
 /*
@@ -1172,7 +1172,7 @@ perr_t PDC_Server_write_addr_to_file(char** addr_strings, int n)
 
     // write to file
     
-    sprintf(config_fname, "%s%s", pdc_server_tmp_dir_g, pdc_server_cfg_name_g);
+    snprintf(config_fname, ADDR_MAX, "%s%s", pdc_server_tmp_dir_g, pdc_server_cfg_name_g);
     FILE *na_config = fopen(config_fname, "w+");
     if (!na_config) {
         fprintf(stderr, "Could not open config file from: %s\n", config_fname);
@@ -1202,7 +1202,7 @@ perr_t PDC_Server_rm_config_file()
 
     FUNC_ENTER(NULL);
 
-    sprintf(config_fname, "%s%s", pdc_server_tmp_dir_g, pdc_server_cfg_name_g);
+    snprintf(config_fname, ADDR_MAX, "%s%s", pdc_server_tmp_dir_g, pdc_server_cfg_name_g);
 
     if (remove(config_fname) != 0) {
         printf("==PDC_SERVER[%d]: Unable to delete the config file[%s]", pdc_server_rank_g, config_fname);
@@ -2668,7 +2668,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     }
     memset(hostname, 0, 1024);
     gethostname(hostname, 1023);
-    sprintf(na_info_string, "%s://%s:%d", hg_transport, hostname, port);
+    snprintf(na_info_string, ADDR_MAX, "%s://%s:%d", hg_transport, hostname, port);
     if (pdc_server_rank_g == 0) 
         printf("==PDC_SERVER[%d]: using %.7s\n", pdc_server_rank_g, na_info_string);
 
@@ -2815,7 +2815,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     // TODO: support restart with different number of servers than previous run 
     char checkpoint_file[ADDR_MAX];
     if (is_restart_g == 1) {
-        sprintf(checkpoint_file, "%s%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.", pdc_server_rank_g);
+        snprintf(checkpoint_file, ADDR_MAX, "%s%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.", pdc_server_rank_g);
 
 #ifdef ENABLE_TIMING 
         // Timing
@@ -4827,7 +4827,7 @@ int main(int argc, char *argv[])
     if (tmp_env_char == NULL) 
         tmp_env_char = "./pdc_tmp";
 
-    sprintf(pdc_server_tmp_dir_g, "%s/", tmp_env_char);
+    snprintf(pdc_server_tmp_dir_g, ADDR_MAX,  "%s/", tmp_env_char);
 
     // Get number of OST per file
     tmp_env_char = getenv("PDC_NOST_PER_FILE");
@@ -5010,7 +5010,7 @@ int main(int argc, char *argv[])
 #ifdef ENABLE_CHECKPOINT
     // TODO: instead of checkpoint at app finalize time, try checkpoint with a time countdown or # of objects
     char checkpoint_file[ADDR_MAX];
-    sprintf(checkpoint_file, "%s%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.", pdc_server_rank_g);
+    snprintf(checkpoint_file, ADDR_MAX, "%s%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.", pdc_server_rank_g);
 
     #ifdef ENABLE_TIMING 
     // Timing
@@ -5521,7 +5521,7 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
                 data_path = ".";
         }
         // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
-        sprintf(storage_location, "%s/pdc_data/%" PRIu64 "/server%d/s%04d.bin",
+        snprintf(storage_location, ADDR_MAX, "%s/pdc_data/%" PRIu64 "/server%d/s%04d.bin",
             data_path, in->remote_obj_id, pdc_server_rank_g, pdc_server_rank_g);
         pdc_mkdir(storage_location);
 
@@ -6174,7 +6174,7 @@ done:
 perr_t PDC_Server_notify_io_complete_to_client(uint32_t client_id, uint64_t obj_id, 
         char* shm_addr, PDC_access_t io_type)
 {
-    char tmp_shm[50];
+    char tmp_shm[ADDR_MAX];
     perr_t ret_value   = SUCCEED;
     hg_return_t hg_ret = HG_SUCCESS;
     server_lookup_args_t lookup_args;
@@ -6212,7 +6212,7 @@ perr_t PDC_Server_notify_io_complete_to_client(uint32_t client_id, uint64_t obj_
     in.obj_id     = obj_id;
     in.io_type    = io_type;
     if (shm_addr[0] == 0) {
-        sprintf(tmp_shm, "%d", client_id * 10);
+        snprintf(tmp_shm, ADDR_MAX, "%d", client_id * 10);
         in.shm_addr   = tmp_shm;
         /* in.shm_addr   = " "; */
     }
@@ -6596,7 +6596,7 @@ perr_t PDC_Server_create_shm_segment(region_list_t *region)
     retry = 0;
     while (retry < PDC_MAX_TRIAL_NUM) {
         // Shared memory address is /PDC$ServerID_$rand()
-        sprintf(region->shm_addr, "/PDC%d_%d", pdc_server_rank_g, rand());
+        snprintf(region->shm_addr, ADDR_MAX, "/PDC%d_%d", pdc_server_rank_g, rand());
         region->shm_fd = shm_open(region->shm_addr, O_CREAT | O_RDWR, 0666);
         if (region->shm_fd != -1) 
             break;
@@ -7609,11 +7609,11 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
 
         bb_data_path = getenv("PDC_BB_LOC");
         if (bb_data_path != NULL)
-            sprintf(io_list_target->bb_path, "%s/pdc_data/cont_%" PRIu64 "", 
+            snprintf(io_list_target->bb_path, ADDR_MAX, "%s/pdc_data/cont_%" PRIu64 "", 
                     bb_data_path, io_info->meta.cont_id);
 
         // Auto generate a data location path for storing the data
-        sprintf(io_list_target->path, "%s/pdc_data/cont_%" PRIu64 "", data_path, io_info->meta.cont_id);
+        snprintf(io_list_target->path, ADDR_MAX, "%s/pdc_data/cont_%" PRIu64 "", data_path, io_info->meta.cont_id);
         io_list_target->region_list_head = NULL;
 
         // Add to the io list
@@ -7703,7 +7703,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
             // Specify the location of data to be written to
             DL_FOREACH(io_list_elt->region_list_head, region_elt) {
 
-                sprintf(region_elt->storage_location, "%s/server%d/s%04d.bin",
+                snprintf(region_elt->storage_location, ADDR_MAX, "%s/server%d/s%04d.bin",
                         io_list_elt->path, pdc_server_rank_g, pdc_server_rank_g);
                 real_lustre_cnt++;
                 /* PDC_print_region_list(region_elt); */
@@ -7718,7 +7718,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
                         if (pdc_server_rank_g % 2 == 0) {
                             // Half of the servers writes to BB first
                             if (curr_cnt < write_to_bb_cnt) {
-                                sprintf(region_elt->storage_location, "%s/server%d/s%04d.bin",
+                                snprintf(region_elt->storage_location, ADDR_MAX, "%s/server%d/s%04d.bin",
                                         io_list_elt->bb_path, pdc_server_rank_g, pdc_server_rank_g);
                                 real_bb_cnt++;
                                 real_lustre_cnt--;
@@ -7727,7 +7727,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
                         else {
                             // Others write to Lustre first
                             if (curr_cnt >= io_list_elt->total - write_to_bb_cnt) {
-                                sprintf(region_elt->storage_location, "%s/server%d/s%04d.bin",
+                                snprintf(region_elt->storage_location, ADDR_MAX, "%s/server%d/s%04d.bin",
                                         io_list_elt->bb_path, pdc_server_rank_g, pdc_server_rank_g);
                                 real_bb_cnt++;
                                 real_lustre_cnt--;
@@ -8946,7 +8946,7 @@ void test_serialize()
     a->count[0] = 10;
     a->count[1] = 14;
     a->offset   = 1234;
-    sprintf(a->storage_location, "%s", "/path/to/a/a/a/a/a");
+    snprintf(a->storage_location, ADDR_MAX, "%s", "/path/to/a/a/a/a/a");
 
     b->ndim = 2;
     b->start[0] = 10;
@@ -8954,7 +8954,7 @@ void test_serialize()
     b->count[0] = 100;
     b->count[1] = 104;
     b->offset   = 12345;
-    sprintf(b->storage_location, "%s", "/path/to/b/b");
+    snprintf(b->storage_location, "%s", ADDR_MAX, "/path/to/b/b");
 
 
     c->ndim = 2;
@@ -8963,7 +8963,7 @@ void test_serialize()
     c->count[0] = 23;
     c->count[1] = 24;
     c->offset   = 123456;
-    sprintf(c->storage_location, "%s", "/path/to/c/c/c/c");
+    snprintf(c->storage_location, ADDR_MAX, "%s", "/path/to/c/c/c/c");
 
 
     d->ndim = 2;
@@ -8972,7 +8972,7 @@ void test_serialize()
     d->count[0] = 70;
     d->count[1] = 71;
     d->offset   = 1234567;
-    sprintf(d->storage_location, "%s", "/path/to/d");
+    snprintf(d->storage_location, ADDR_MAX, "%s", "/path/to/d");
 
     uint32_t total_str_len = 0;
     uint32_t n_region = 4;
@@ -9113,6 +9113,12 @@ perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
     if (ndim == 1 || is_all_selected == 1) {
         // Can read the entire storage region at once
 
+        #ifdef ENABLE_TIMING
+        struct timeval  pdc_timer_start1;
+        struct timeval  pdc_timer_end1;
+        gettimeofday(&pdc_timer_start1, 0);
+        #endif
+
         // Check if current file ptr is at correct pos
         uint64_t cur_off = (uint64_t)ftell(fp);
         if (cur_off != storage_offset) {
@@ -9126,20 +9132,16 @@ perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
                     pdc_server_rank_g,storage_offset, buf_offset);
         }
 
-        #ifdef ENABLE_TIMING
-        struct timeval  pdc_timer_start1;
-        struct timeval  pdc_timer_end1;
-        gettimeofday(&pdc_timer_start1, 0);
-        #endif
-
         read_bytes = fread(buf+buf_offset, 1, total_bytes, fp);
 
         #ifdef ENABLE_TIMING
         gettimeofday(&pdc_timer_end1, 0);
         double region_read_time1 = PDC_get_elapsed_time_double(&pdc_timer_start1, &pdc_timer_end1);
-        /* printf("==PDC_SERVER[%d]: fread %" PRIu64 " bytes, %.2fs\n", */ 
-        /*         pdc_server_rank_g, read_bytes, region_read_time1); */
-        /* fflush(stdout); */
+        if (is_debug_g) {
+            printf("==PDC_SERVER[%d]: fseek + fread %" PRIu64 " bytes, %.2fs\n", 
+                    pdc_server_rank_g, read_bytes, region_read_time1);
+            fflush(stdout);
+        }
         #endif
 
         n_contig_MB += read_bytes/1048576.0;
@@ -9232,8 +9234,8 @@ perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
     gettimeofday(&pdc_timer_end, 0);
     double region_read_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
     server_read_time_g += region_read_time;
-    /* printf("==PDC_SERVER[%d]: %d fread total %" PRIu64 " bytes, %.2fs\n", */ 
-    /*         pdc_server_rank_g, n_contig_read, read_bytes, region_read_time); */
+    printf("==PDC_SERVER[%d]: %d fseek + fread total %" PRIu64 " bytes, %.4fs\n", 
+            pdc_server_rank_g, n_contig_read, read_bytes, region_read_time);
 #endif
 
 
@@ -9958,7 +9960,7 @@ perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct P
     }
 
     // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
-    sprintf(io_region->storage_location, "%s/pdc_data/%" PRIu64 "/server%d/s%04d.bin",
+    snprintf(io_region->storage_location, ADDR_MAX, "%s/pdc_data/%" PRIu64 "/server%d/s%04d.bin",
             data_path, obj_id, pdc_server_rank_g, pdc_server_rank_g);
     pdc_mkdir(io_region->storage_location);
 
@@ -10978,7 +10980,7 @@ PDC_Server_checkpoint_cb(const struct hg_cb_info *callback_info)
     perr_t ret_value;
 
     char checkpoint_file[ADDR_MAX];
-    sprintf(checkpoint_file, "%s%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.", pdc_server_rank_g);
+    snprintf(checkpoint_file, ADDR_MAX, "%s%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.", pdc_server_rank_g);
 
     ret_value = PDC_Server_checkpoint(checkpoint_file);
     if (ret_value != SUCCEED) {
