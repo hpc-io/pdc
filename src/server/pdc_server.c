@@ -5404,7 +5404,6 @@ static hg_return_t server_send_buf_map_addr_rpc_cb(const struct hg_cb_info *call
     }
 
 done:
-    HG_Respond(tranx_args->handle, NULL, NULL, &out);
     HG_Free_input(tranx_args->handle, &(tranx_args->in));
     HG_Destroy(tranx_args->handle);
     HG_Free_output(handle, &out);
@@ -5535,7 +5534,6 @@ static hg_return_t server_send_buf_map_rpc_cb(const struct hg_cb_info *callback_
     tranx_args->ret = out.ret;
 
 done:
-    HG_Respond(tranx_args->handle, NULL, NULL, &out);
     HG_Free_input(tranx_args->handle, &(tranx_args->in));
     HG_Destroy(tranx_args->handle);
     HG_Free_output(handle, &out);
@@ -5597,7 +5595,6 @@ perr_t PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_p
 #endif
 
         out.ret = 1;
-        HG_Respond(*handle, NULL, NULL, &out);
         HG_Free_input(*handle, in);
         HG_Destroy(*handle);
     }
