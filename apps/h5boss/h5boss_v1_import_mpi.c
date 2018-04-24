@@ -120,19 +120,25 @@ main(int argc, char **argv)
         if (rank == 0) {
 
             FILE *filenames_fp = fopen(argv[1], "r");
-            i = 0;
-            while (fgets(all_filenames[i], MAX_FILENAME_LEN, filenames_fp)) {
-                /* printf("%s\n", all_filenames[i]); */
-                // Remove the trailing '\n'
-                int len = strlen(all_filenames[i]);
-                all_filenames[i][len-1] = 0;
-                i++;
+            if (filenames_fp == NULL) {
+                printf("Input file open error [%s]\n", argv[1]);
+                total_count = 0;
             }
-            total_count = i;
-            fclose(filenames_fp);
+            else {
+                i = 0;
+                while (fgets(all_filenames[i], MAX_FILENAME_LEN, filenames_fp)) {
+                    /* printf("%s\n", all_filenames[i]); */
+                    // Remove the trailing '\n'
+                    int len = strlen(all_filenames[i]);
+                    all_filenames[i][len-1] = 0;
+                    i++;
+                }
+                total_count = i;
+                fclose(filenames_fp);
 
-            printf("Running with %d clients, %d files\n", size, total_count);
-            fflush(stdout);
+                printf("Running with %d clients, %d files\n", size, total_count);
+                fflush(stdout);
+            }
         }
 
 #ifdef ENABLE_MPI
