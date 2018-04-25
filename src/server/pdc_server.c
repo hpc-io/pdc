@@ -3185,6 +3185,11 @@ perr_t PDC_Server_restart(char *filename)
     fread(&n_entry, sizeof(int), 1, file);
     /* printf("%d entries\n", n_entry); */
 
+    char *slurm_jobid = getenv("SLURM_JOB_ID");
+    if (slurm_jobid == NULL) {
+        printf("Error getting slurm job id from SLURM_JOB_ID!\n");
+    }
+
     while (n_entry>0) {
         fread(&count, sizeof(int), 1, file);
         /* printf("Count:%d\n", count); */
@@ -3218,24 +3223,58 @@ perr_t PDC_Server_restart(char *filename)
 
             fread(&n_region, sizeof(int), 1, file);
             if (n_region < 0) {
-                printf("==PDC_SERVER[%d]: %s -  Checkpoint file region number ERROR!", pdc_server_rank_g, __func__); 
+                printf("==PDC_SERVER[%d]: %s -  Checkpoint file region number ERROR!", 
+                        pdc_server_rank_g, __func__); 
                 ret_value = FAIL;
                 goto done;
             }
 
             total_region += n_region; 
-            region_list = (region_list_t*)calloc(sizeof(region_list_t), n_region);
+            region_list = (region_list_t*)malloc(sizeof(region_list_t)* n_region);
 
             fread(region_list, sizeof(region_list_t), n_region, file);
 
+            int idx;
             for (j = 0; j < n_region; j++) {
-                (region_list+j)->buf           = NULL;
-                (region_list+j)->is_data_ready = 0;
-                (region_list+j)->shm_fd        = 0;
-                (region_list+j)->meta          = (metadata+i);
-                (region_list+j)->prev          = NULL;
-                (region_list+j)->next          = NULL;
+                (region_list+j)->buf                        = NULL;
+                (region_list+j)->data_size                  = 1;
+                for (idx = 0; idx < (region_list+j)->ndim; idx++) 
+                    (region_list+j)->data_size *= (region_list+j)->count[idx];
+                (region_list+j)->is_data_ready              = 0;
+                (region_list+j)->shm_fd                     = 0;
+                (region_list+j)->meta                       = (metadata+i);
+                (region_list+j)->prev                       = NULL;
+                (region_list+j)->next                       = NULL;
+                (region_list+j)->overlap_storage_regions    = NULL;
+                (region_list+j)->n_overlap_storage_region   = 0;
+                (region_list+j)->buf_map_refcount           = 0;
+                (region_list+j)->reg_dirty                  = 0;
+                (region_list+j)->access_type                = NA;
+                (region_list+j)->bulk_handle                = NULL;
+                (region_list+j)->addr                       = NULL;
+                (region_list+j)->obj_id                     = (metadata+i)->obj_id;
+                (region_list+j)->reg_id                     = 0;
+                (region_list+j)->from_obj_id                = 0;
+                (region_list+j)->client_id                  = 0;
+                (region_list+j)->is_io_done                 = 0;
+                (region_list+j)->is_shm_closed              = 0;
+                (region_list+j)->seq_id                     = 0;
+
                 memset((region_list+j)->shm_addr, 0, ADDR_MAX);
+                memset((region_list+j)->client_ids, 0, PDC_SERVER_MAX_PROC_PER_NODE*sizeof(uint32_t));
+                // Check if data is in persistent BB, change path if so
+                if (strstr( (region_list+j)->storage_location, "/var/opt/cray/dws/mounts/batch") != NULL) {
+                    (region_list+j)->data_loc_type = BB;
+                    // find job id and replace it with current one
+                    for (idx = 0; idx < strlen((region_list+j)->storage_location); idx++) 
+                        if (isdigit((region_list+j)->storage_location[idx])) 
+                            break;
+                    if ( NULL != slurm_jobid) 
+                        strncpy(&((region_list+j)->storage_location[idx]), slurm_jobid, strlen(slurm_jobid));
+                }
+                else if (strstr( (region_list+j)->storage_location, "/global/cscratch") != NULL) {
+                    (region_list+j)->data_loc_type = LUSTRE;
+                }
 
                 DL_APPEND((metadata+i)->storage_region_list_head, region_list+j);
             }

@@ -213,9 +213,12 @@ int main(int argc, char *argv[])
         fflush(stdout);
         if (i % 100 == 0) {
             printf("Rank %d - finished written 100 objects, total %d\n", rank, i); 
+            fflush(stdout);
         }
     }
 
+    printf("Rank %d - finished written all %d objects\n", rank, i); 
+    fflush(stdout);
 
 #ifdef ENABLE_MPI
     MPI_Finalize();
