@@ -9274,8 +9274,8 @@ perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
     gettimeofday(&pdc_timer_end, 0);
     double region_read_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
     server_read_time_g += region_read_time;
-    printf("==PDC_SERVER[%d]: %d fseek + fread total %" PRIu64 " bytes, %.4fs\n", 
-            pdc_server_rank_g, n_contig_read, read_bytes, region_read_time);
+    /* printf("==PDC_SERVER[%d]: %d fseek + fread total %" PRIu64 " bytes, %.4fs\n", */ 
+    /*         pdc_server_rank_g, n_contig_read, read_bytes, region_read_time); */
 #endif
 
 
@@ -10690,6 +10690,11 @@ perr_t PDC_Server_accumulate_storage_meta_then_read(storage_meta_query_one_name_
     accumulate_storage_meta_t *accu_meta;
     region_list_t *req_region = NULL, *region_elt = NULL, *result_list_head = NULL;
     int i, j;
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
+    struct timeval  pdc_timer_start1;
+    struct timeval  pdc_timer_end1;
+    double read_total_sec, notify_total_sec;
 
     FUNC_ENTER(NULL);
 
@@ -10698,12 +10703,16 @@ perr_t PDC_Server_accumulate_storage_meta_then_read(storage_meta_query_one_name_
     // Add current input to accumulate_storage_meta structure
     accu_meta->storage_meta[accu_meta->n_accumulated++] = in;
 
+
     // Trigger the read procedure when we have accumulated all storage meta
     if (accu_meta->n_accumulated >= accu_meta->n_total) {
         printf("==PDC_SERVER[%d]: Retrieved all storage meta, %d from remote servers. \n", 
                 pdc_server_rank_g, n_get_remote_storage_meta_g);
         fflush(stdout);
 
+        #ifdef ENABLE_TIMING
+        gettimeofday(&pdc_timer_start, 0);
+        #endif
         for (i = 0; i < accu_meta->n_accumulated; i++) {
             req_region = accu_meta->storage_meta[i]->req_region;
             // Attach the overlapping storage regions we got to the request region
@@ -10742,10 +10751,25 @@ perr_t PDC_Server_accumulate_storage_meta_then_read(storage_meta_query_one_name_
 
         } // End for
 
+        #ifdef ENABLE_TIMING
+        gettimeofday(&pdc_timer_end, 0);
+        read_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+        printf("==PDC_SERVER[%d]: read %d objects time: %.4f\n", 
+                pdc_server_rank_g, accu_meta->n_accumulated, read_total_sec);
+        fflush(stdout);
+        #endif
+
         // send all shm info to client 
         ret_value = PDC_Server_notify_client_multi_io_complete(accu_meta->client_id, accu_meta->client_seq_id,
                                                                accu_meta->n_total, result_list_head);
 
+        /* #ifdef ENABLE_TIMING */
+        /* gettimeofday(&pdc_timer_end1, 0); */
+        /* notify_total_sec = PDC_get_elapsed_time_double(&pdc_timer_end, &pdc_timer_end1); */
+        /* printf("==PDC_SERVER[%d]: read %d objects time: %.4f, notify time: %.4f\n", */ 
+        /*         pdc_server_rank_g, accu_meta->n_accumulated, read_total_sec, notify_total_sec); */
+        /* fflush(stdout); */
+        /* #endif */
     } // End if
 
 done:
