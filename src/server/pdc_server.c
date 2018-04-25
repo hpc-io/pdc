@@ -10708,6 +10708,7 @@ perr_t PDC_Server_accumulate_storage_meta_then_read(storage_meta_query_one_name_
     if (accu_meta->n_accumulated >= accu_meta->n_total) {
         printf("==PDC_SERVER[%d]: Retrieved all storage meta, %d from remote servers. \n", 
                 pdc_server_rank_g, n_get_remote_storage_meta_g);
+        n_get_remote_storage_meta_g = 0;
         fflush(stdout);
 
         #ifdef ENABLE_TIMING
