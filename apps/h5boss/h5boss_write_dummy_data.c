@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "pdc.h"
 
 #define ENABLE_MPI 1
 
@@ -15,7 +16,7 @@ void print_usage() {
     printf("Usage: srun -n n_proc ./h5boss_write_dummy_data /path/to/dset_list.txt n_dsets(optional)\n");
 }
 
-int main(int argc, const char *argv[])
+int main(int argc, char *argv[])
 {
     int size, rank;
 
@@ -140,9 +141,81 @@ int main(int argc, const char *argv[])
     free(sendn_write_size);
 #endif 
 
+    /* for (i = 0; i < my_n_write; i++) { */
+    /*     printf("Rank %d - [%s]: %d\n", rank, my_dset_names[i], my_dset_sizes[i]); */
+    /* } */
+
+    pdcid_t pdc_id, cont_id, obj_prop, cont_prop, obj_id;
+    uint64_t float_dims[1] = {1000};
+    uint64_t offset[1], len[1];
+    char cont_name[128]={0}, prev_cont_name[128]={0}, tags[128]={0};
+    sprintf(tags, "%s", "tags0=1");
+    struct PDC_region_info obj_region;
+    char *buf;
+    int prev_buf_size;
+
+    pdc_id    = PDC_init("pdc");
+    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
+    obj_prop  = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
+
+    PDCprop_set_obj_dims(obj_prop, 1, float_dims);
+    PDCprop_set_obj_type(obj_prop, PDC_FLOAT);
+    PDCprop_set_obj_time_step(obj_prop, 0);
+    PDCprop_set_obj_user_id(obj_prop, 12345);
+    PDCprop_set_obj_app_name(obj_prop, "H5BOSS");
+    PDCprop_set_obj_tags(obj_prop, tags);
+
+    strncpy(cont_name, my_dset_names[0], 10);
+    cont_name[10] = 0;
+    strcpy(prev_cont_name, cont_name);
+    cont_id = PDCcont_create(cont_name, cont_prop);
+    /* printf("Rank %d - Created container [%s]\n", rank, cont_name); */
+
     for (i = 0; i < my_n_write; i++) {
-        printf("Rank %d - [%s]: %d\n", rank, my_dset_names[i], my_dset_sizes[i]);
+        strncpy(cont_name, my_dset_names[0], 10);
+        cont_name[10] = 0;
+        if (strcmp(cont_name, prev_cont_name) != 0) {
+            cont_id = PDCcont_create(cont_name, cont_prop);
+            /* printf("Rank %d - Created container [%s]\n", rank, cont_name); */
+        }
+        strcpy(prev_cont_name, cont_name);
+
+
+        obj_region.ndim   = 1;
+        offset[0] = 0;
+        len[0] = my_dset_sizes[i];
+        obj_region.offset = offset;
+        obj_region.size   = len;
+
+        obj_id = PDCobj_create(cont_id, my_dset_names[i], obj_prop);
+        if (obj_id <= 0) {    
+            printf("Error getting an object %s from server, exit...\n", my_dset_names[i]);
+            continue;
+        }
+        /* printf("Rank %d - create object [%s]: %d\n", rank, my_dset_names[i], my_dset_sizes[i]); */
+
+        if (buf == NULL) {
+            buf = (char*)calloc(sizeof(char), my_dset_sizes[i]);
+            prev_buf_size = my_dset_sizes[i];
+        }
+        else {
+            if (prev_buf_size < my_dset_sizes[i]) {
+                buf = realloc(buf, my_dset_sizes[i]);
+            }
+        }
+        buf[0] = my_dset_names[i][1]; 
+        buf[1] = my_dset_names[i][2]; 
+        buf[2] = my_dset_names[i][3]; 
+        buf[3] = my_dset_names[i][4]; 
+
+        PDC_Client_write_id(obj_id, &obj_region, buf);
+        /* printf("Rank %d - written object [%s]: %d\n", rank, my_dset_names[i], my_dset_sizes[i]); */
+        fflush(stdout);
+        if (i % 100 == 0) {
+            printf("Rank %d - finished written 100 objects, total %d\n", rank, i); 
+        }
     }
+
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

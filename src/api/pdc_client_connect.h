@@ -69,23 +69,23 @@ extern pdc_client_t *pdc_client_direct_channels;
 
 // Request structure for async read/write
 typedef struct PDC_Request_t {
-    int                     seq_id;
-    int                     server_id;
-    int                     n_client;
-    int                     n_update;
-    PDC_access_t            access_type;
+    int                      seq_id;
+    int                      server_id;
+    int                      n_client;
+    int                      n_update;
+    PDC_access_t             access_type;
     pdc_metadata_t          *metadata;
     struct PDC_region_info  *region;
     void                    *buf;
 
-    // shm info
     char                    *shm_base;
     char                     shm_addr[ADDR_MAX];
     int                      shm_fd;
     int                      shm_size;
 
-    int                     n_buf_arr;
-    void                   ***buf_arr;
+    int                      n_buf_arr;
+    void                  ***buf_arr;
+    int                     *buf_arr_idx;
     char                   **shm_base_arr;
     char                   **shm_addr_arr;
     int                     *shm_fd_arr;
