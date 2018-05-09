@@ -132,7 +132,7 @@ int main(int argc, char **argv)
 
     // Read two regions
     uint64_t *out_buf_sizes;
-    char **out_buf;
+    void **out_buf;
 
     int my_read_obj = NOBJ / size;
     int my_read_obj_start = my_read_obj * rank;
@@ -145,7 +145,7 @@ int main(int argc, char **argv)
     printf("Received %d data objects:\n", NOBJ);
     for (i = 0; i < my_read_obj; i++) {
         printf("Proc %d - [%s]: [%c] ... [%c], size %lu\n", 
-                rank, obj_names[i], out_buf[i][0], out_buf[i][out_buf_sizes[i]-1], out_buf_sizes[i]);
+                rank, obj_names[i], ((char**)out_buf)[i][0], ((char**)out_buf)[i][out_buf_sizes[i]-1], out_buf_sizes[i]);
         fflush(stdout);
     }
 

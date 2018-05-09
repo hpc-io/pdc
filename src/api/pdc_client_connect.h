@@ -554,7 +554,8 @@ perr_t PDC_Client_add_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdc
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_query_name_read_entire_obj(int nobj, char **obj_names, void ***out_buf, uint64_t **out_buf_sizes);
+perr_t PDC_Client_query_name_read_entire_obj(int nobj, char **obj_names, 
+                                             void ***out_buf, uint64_t **out_buf_sizes);
 
 /*
  * Send a checkpoint metadata to all servers
@@ -576,6 +577,7 @@ perr_t PDC_Client_all_server_checkpoint();
 perr_t PDC_Client_attach_metadata_to_local_obj(char *obj_name, uint64_t obj_id, uint64_t cont_id, 
                                                struct PDC_obj_prop *obj_prop);
 
+enum pdc_prop_name_t {PDC_OBJ_NAME, PDC_CONT_NAME, PDC_APP_NAME, PDC_USER_ID};
 
 
 /*
@@ -589,7 +591,8 @@ perr_t PDC_Client_attach_metadata_to_local_obj(char *obj_name, uint64_t obj_id, 
  *
  * \return Non-negative on success/Negative on failure
  */
-PDCobj_prop_query(pdcid_t cont_id, enum prop_name, void *prop_value, pdcid_t **out_ids, size_t *n_out);
+perr_t PDCobj_prop_query(pdcid_t cont_id, enum pdc_prop_name_t prop_name, void *prop_value, 
+                         pdcid_t **out_ids, size_t *n_out);
 
 /* TODO: another routine to destroy query results */
 
@@ -601,7 +604,7 @@ PDCobj_prop_query(pdcid_t cont_id, enum prop_name, void *prop_value, pdcid_t **o
  *
  * \return Non-negative on success/Negative on failure
  */
-PDCprop_update(pdcid_t obj_id, pdcid_t prop_id);
+perr_t PDCprop_update(pdcid_t obj_id, pdcid_t prop_id);
 
 /*
  * Create a tag with a specific name and value
@@ -613,7 +616,7 @@ PDCprop_update(pdcid_t obj_id, pdcid_t prop_id);
  *
  * \return Non-negative on success/Negative on failure
  */
-PDCtag_create(pdcid_t obj_id, char *tag_name, void *tag_value, size_t value_len);
+perr_t PDCtag_create(pdcid_t obj_id, char *tag_name, void *tag_value, size_t value_len);
 
 /*
  * Delete a tag with a specific name and value
@@ -625,7 +628,7 @@ PDCtag_create(pdcid_t obj_id, char *tag_name, void *tag_value, size_t value_len)
  *
  * \return Non-negative on success/Negative on failure
  */
-PDCtag_delete(pdcid_t obj_id, char *tag_name, void *tag_value, size_t value_len);
+perr_t PDCtag_delete(pdcid_t obj_id, char *tag_name, void *tag_value, size_t value_len);
 
 /*
  * Get the size of the value of a specific tag name
@@ -636,7 +639,7 @@ PDCtag_delete(pdcid_t obj_id, char *tag_name, void *tag_value, size_t value_len)
  *
  * \return Non-negative on success/Negative on failure
  */
-PDCtag_getinfo(pdcid_t obj_id, char *tag_name, size_t *value_len);
+perr_t PDCtag_getinfo(pdcid_t obj_id, char *tag_name, size_t *value_len);
 
 /*
  * Get the value of a specific tag name
@@ -647,6 +650,6 @@ PDCtag_getinfo(pdcid_t obj_id, char *tag_name, size_t *value_len);
  *
  * \return Non-negative on success/Negative on failure
  */
-PDCtag_get(pdcid_t obj_id, char *tag_name, void *tag_value);
+perr_t PDCtag_get(pdcid_t obj_id, char *tag_name, void *tag_value);
 
 #endif
