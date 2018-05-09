@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
     my_count = count / size;
     my_start = my_rank * my_count;
 
-    // Last rank may have extra work
+    // Last few ranks may have extra work
     if (my_rank >= size - count % size) {
         my_count++; 
         my_start += my_rank - (size - count % size);
@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
 
     if (my_rank == 0) {
         printf("Proc %d: read data from BB %.2f MB\n", my_rank, fsize_total/1048576.0);
-        printf("Total read time from Lustre: %.4f\n", end_time - start_time);
+        printf("Total read time from BB: %.4f\n", end_time - start_time);
         fflush(stdout);
     }
 

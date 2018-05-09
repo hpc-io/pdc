@@ -39,6 +39,7 @@ set(PROGRAMS
     get_pdc_server_by_name
     h5boss_gen_query_input
     h5boss_read_all_data
+    h5boss_v1_query_read_h5
     )
 
 foreach(program ${PROGRAMS})

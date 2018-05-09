@@ -5228,6 +5228,28 @@ int region_list_cmp(region_list_t *a, region_list_t *b)
     }
     return 0;
 }
+/*
+ * Check if two region are the same
+ *
+ * \param  a[IN]     Pointer of the first region 
+ * \param  b[IN]     Pointer of the second region 
+ *
+ * \return 1 if same/0 otherwise
+ */
+int region_list_path_offset_cmp(region_list_t *a, region_list_t *b) 
+{
+    int ret_value;
+    if (NULL == a || NULL == b) {
+        printf("  %s - NULL input!\n", __func__);
+        return -1;
+    }
+
+    ret_value = strcmp(a->storage_location, b->storage_location);
+    if (0 == ret_value) 
+        ret_value = a->offset > b->offset ? 1: -1;
+
+    return ret_value;
+}
 
 /*
  * Check if two region are from the same client
@@ -10688,8 +10710,8 @@ perr_t PDC_Server_accumulate_storage_meta_then_read(storage_meta_query_one_name_
 {
     perr_t ret_value = SUCCEED;
     accumulate_storage_meta_t *accu_meta;
-    region_list_t *req_region = NULL, *region_elt = NULL, *result_list_head = NULL;
-    int i, j;
+    region_list_t *req_region = NULL, *region_elt = NULL, *read_list_head = NULL;
+    int i, j, is_sort_read;
     struct timeval  pdc_timer_start;
     struct timeval  pdc_timer_end;
     struct timeval  pdc_timer_start1;
@@ -10706,17 +10728,23 @@ perr_t PDC_Server_accumulate_storage_meta_then_read(storage_meta_query_one_name_
 
     // Trigger the read procedure when we have accumulated all storage meta
     if (accu_meta->n_accumulated >= accu_meta->n_total) {
-        printf("==PDC_SERVER[%d]: Retrieved all storage meta, %d from remote servers. \n", 
-                pdc_server_rank_g, n_get_remote_storage_meta_g);
-        n_get_remote_storage_meta_g = 0;
-        fflush(stdout);
+        /* printf("==PDC_SERVER[%d]: Retrieved all storage meta, %d from remote servers. \n", */ 
+        /*         pdc_server_rank_g, n_get_remote_storage_meta_g); */
+        /* n_get_remote_storage_meta_g = 0; */
+        /* fflush(stdout); */
+        is_sort_read = 0;
+        char *sort_request = getenv("PDC_SORT_READ");
+        if (NULL != sort_request) 
+            is_sort_read = 1;
+        
 
         #ifdef ENABLE_TIMING
         gettimeofday(&pdc_timer_start, 0);
         #endif
+
+        // Attach the overlapping storage regions we got to the request region
         for (i = 0; i < accu_meta->n_accumulated; i++) {
             req_region = accu_meta->storage_meta[i]->req_region;
-            // Attach the overlapping storage regions we got to the request region
             req_region->n_overlap_storage_region = accu_meta->storage_meta[i]->n_res;
             req_region->overlap_storage_regions  = accu_meta->storage_meta[i]->overlap_storage_region_list;
             req_region->seq_id                   = accu_meta->storage_meta[i]->seq_id;
@@ -10734,10 +10762,18 @@ perr_t PDC_Server_accumulate_storage_meta_then_read(storage_meta_query_one_name_
                                                        region_elt->count[j]+region_elt->start[j]);
                 }
             }
+            // Insert the request to a list based on file path and offset
+            if (1 == is_sort_read) 
+                DL_INSERT_INORDER(read_list_head, req_region, region_list_path_offset_cmp);
+            else
+                DL_APPEND(read_list_head, req_region);
+        }
+
+        DL_FOREACH(read_list_head, region_elt) {
 
             // Read data to shm
             /* printf("==PDC_SERVER[%d]: Start reading a region\n", pdc_server_rank_g); */
-            ret_value = PDC_Server_read_one_region(req_region);
+            ret_value = PDC_Server_read_one_region(region_elt);
             if (ret_value != SUCCEED) {
                 printf("==PDC_SERVER[%d]: %s - Error with PDC_Server_read_one_region\n", 
                         pdc_server_rank_g, __func__);
@@ -10746,23 +10782,29 @@ perr_t PDC_Server_accumulate_storage_meta_then_read(storage_meta_query_one_name_
             /* printf("==PDC_SERVER[%d]: Finished reading a region [%c]...[%c]\n", */ 
             /*         pdc_server_rank_g, req_region->buf[0], req_region->buf[req_region->data_size-1]); */
 
-            // Add the request region with data in the shm to a list for later notification
-            // need to restore the order of result_list_head according to the original order from request
-            DL_INSERT_INORDER(result_list_head, req_region, PDC_region_list_seq_id_cmp);
+        }
 
-        } // End for
+        // Sort (restore) the order of read_list_head according to the original order from request
+        DL_SORT(read_list_head, PDC_region_list_seq_id_cmp);
+        /* for (i = 0; i < accu_meta->n_accumulated; i++) { */
+        /*     req_region = accu_meta->storage_meta[i]->req_region; */
+        /*     req_region->prev = NULL; */
+        /*     req_region->next = NULL; */
+        /*     DL_INSERT_INORDER(result_list_head, req_region, PDC_region_list_seq_id_cmp); */
+
+        /* } // End for */
 
         #ifdef ENABLE_TIMING
         gettimeofday(&pdc_timer_end, 0);
         read_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-        printf("==PDC_SERVER[%d]: read %d objects time: %.4f\n", 
-                pdc_server_rank_g, accu_meta->n_accumulated, read_total_sec);
+        printf("==PDC_SERVER[%d]: read %d objects time: %.4f, n_fread: %d, n_fopen: %d, is_sort_read: %d\n", 
+                pdc_server_rank_g, accu_meta->n_accumulated, read_total_sec, n_fread_g, n_fopen_g, is_sort_read);
         fflush(stdout);
         #endif
 
         // send all shm info to client 
         ret_value = PDC_Server_notify_client_multi_io_complete(accu_meta->client_id, accu_meta->client_seq_id,
-                                                               accu_meta->n_total, result_list_head);
+                                                               accu_meta->n_total, read_list_head);
 
         /* #ifdef ENABLE_TIMING */
         /* gettimeofday(&pdc_timer_end1, 0); */

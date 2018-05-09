@@ -522,21 +522,76 @@ perr_t PDC_Client_write_wait_notify(pdc_metadata_t *meta, struct PDC_region_info
  */
 perr_t PDC_Client_read_wait_notify(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf);
 
+/*
+ * Delete a number of objects from a container
+ *
+ * \param nobj[IN]               Number of objects to be deleted
+ * \param local_obj_ids[IN]      Object ids   (local id, not the global one from metadata server)
+ * \param local_cont_id[IN]      Container id (local id, not the global one from metadata server)
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_del_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdcid_t local_cont_id);
+
+/*
+ * Add a number of objects to a container
+ *
+ * \param nobj[IN]               Number of objects to be added
+ * \param local_obj_ids[IN]      Object ids   (local id, not the global one from metadata server)
+ * \param local_cont_id[IN]      Container id (local id, not the global one from metadata server)
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_add_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdcid_t local_cont_id);
+
+/*
+ * Query and read a number of objects with their obj name
+ *
+ * \param nobj[IN]               Number of objects to be queried
+ * \param obj_names[IN]          Object names
+ * \param out_buf[OUT]           Object data buffer, allocated by PDC
+ * \param out_buf_sizes[OUT]     Sizes of object data buffer
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_query_name_read_entire_obj(int nobj, char **obj_names, void ***out_buf, uint64_t **out_buf_sizes);
+
+/*
+ * Send a checkpoint metadata to all servers
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_all_server_checkpoint();
+
+/*
+ * Copy the metadata to local object property, internal function
+ *
+ * \param obj_name[IN]           Object name
+ * \param obj_id[IN]             Object id (global, obtained from metadata server)
+ * \param cont_id[IN]            Container id (global, obtained from metadata server)
+ * \param obj_prop[IN]           Object property
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_attach_metadata_to_local_obj(char *obj_name, uint64_t obj_id, uint64_t cont_id, 
+                                               struct PDC_obj_prop *obj_prop);
+
+
 
 /*
  * Query an object based on a specific metadata (attribute) name and value  
  *
- * \param cont_id[IN]            Container ID, 0 for all containers
- * \param meta_field_name [IN]   Metadta field name
- * \param meta_field_value [IN]  Metadta field value
- * \param value_len [IN]         Length of the metadta field value
- * \param *out_ids[OUT]          Result object ids
- * \param *n_out[OUT]            Number of results
+ * \param cont_id[IN]           Container ID, 0 for all containers
+ * \param prop_name [IN]        Metadta field name
+ * \param prop_value [IN]       Metadta field value
+ * \param out_ids[OUT]          Result object ids
+ * \param n_out[OUT]            Number of results
  *
  * \return Non-negative on success/Negative on failure
  */
-PDCobj_query(pdcid_t cont_id, char *meta_field_name, void *meta_field_value, size_t value_len, 
-             pdcid_t *out_ids, int *n_out);
+PDCobj_prop_query(pdcid_t cont_id, enum prop_name, void *prop_value, pdcid_t **out_ids, size_t *n_out);
+
+/* TODO: another routine to destroy query results */
 
 /*
  * Send updated metadata (stored as property) to metadata server
@@ -593,44 +648,5 @@ PDCtag_getinfo(pdcid_t obj_id, char *tag_name, size_t *value_len);
  * \return Non-negative on success/Negative on failure
  */
 PDCtag_get(pdcid_t obj_id, char *tag_name, void *tag_value);
-
-/*
- * Delete a number of objects from a container
- *
- * \param nobj[IN]               Number of objects to be deleted
- * \param local_obj_ids[IN]      Object ids   (local id, not the global one from metadata server)
- * \param local_cont_id[IN]      Container id (local id, not the global one from metadata server)
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDC_Client_del_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdcid_t local_cont_id);
-
-/*
- * Add a number of objects to a container
- *
- * \param nobj[IN]               Number of objects to be added
- * \param local_obj_ids[IN]      Object ids   (local id, not the global one from metadata server)
- * \param local_cont_id[IN]      Container id (local id, not the global one from metadata server)
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDC_Client_add_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdcid_t local_cont_id);
-
-/*
- * Query and read a number of objects with their obj name
- *
- * \param nobj[IN]               Number of objects to be queried
- * \param obj_names[IN]          Object names
- * \param out_buf[OUT]           Object data buffer, allocated by PDC
- * \param out_buf_sizes[OUT]     Sizes of object data buffer
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDC_Client_query_name_read_entire_obj(int nobj, char **obj_names, void ***out_buf, uint64_t **out_buf_sizes);
-
-perr_t PDC_Client_all_server_checkpoint();
-
-perr_t PDC_Client_attach_metadata_to_local_obj(char *obj_name, uint64_t obj_id, uint64_t cont_id, 
-                                               struct PDC_obj_prop *obj_prop);
 
 #endif

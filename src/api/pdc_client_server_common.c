@@ -1268,7 +1268,7 @@ HG_TEST_RPC_CB(close_server, handle)
     PDC_Server_set_close();
 
     out.ret = 1;
-    HG_Respond(handle, NULL, NULL, &out);
+    /* HG_Respond(handle, NULL, NULL, &out); */
 
     /* printf("\n==PDC_SERVER: Respond back to close server request\n"); */
     /* fflush(stdout); */

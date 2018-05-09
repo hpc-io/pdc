@@ -529,11 +529,16 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
         goto done;
     }
 
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
     /* printf("==PDC_CLIENT[%d]: forwarded lookup rpc to server %d\n", pdc_client_mpi_rank_g, server_id); */
     /* fflush(stdout); */
 
 done:
-    HG_Destroy(client_test_handle); 
+    ret_value = HG_Destroy(client_test_handle); 
+    if (ret_value != HG_SUCCESS) {
+        fprintf(stderr, "PDC_Client_close_all_server(): Could not destroy handle\n");
+    }
     FUNC_LEAVE(ret_value);
 }
 
@@ -628,6 +633,7 @@ close_server_cb(const struct hg_cb_info *callback_info)
     FUNC_ENTER(NULL);
 
     /* printf("Entered close_server_cb()\n"); */
+    /* fflush(stdout); */
     /* client_lookup_args = (struct client_lookup_args*) callback_info->arg; */
     handle = callback_info->info.forward.handle;
 
@@ -638,6 +644,7 @@ close_server_cb(const struct hg_cb_info *callback_info)
         goto done;
     }
     /* printf("Return value from server is %" PRIu64 "\n", output.ret); */
+    /* fflush(stdout); */
 
 done:
     work_todo_g = 0;
@@ -2484,17 +2491,19 @@ perr_t PDC_Client_close_all_server()
             in.client_id = 0;
 
             /* printf("Sending input to target\n"); */
-            hg_ret = HG_Forward(close_server_handle, close_server_cb, &lookup_args, &in);
+            hg_ret = HG_Forward(close_server_handle, NULL, NULL, &in);
+            /* hg_ret = HG_Forward(close_server_handle, close_server_cb, &lookup_args, &in); */
             if (hg_ret != HG_SUCCESS) {
                 fprintf(stderr, "PDC_Client_close_all_server(): Could not start HG_Forward()\n");
-                ret_value = FAIL;
-                goto done;
             }
 
             // Wait for response from server
-            work_todo_g = 1;
-            PDC_Client_check_response(&send_context_g);
-            HG_Destroy(close_server_handle);
+            /* work_todo_g = 1; */
+            /* PDC_Client_check_response(&send_context_g); */
+            hg_ret = HG_Destroy(close_server_handle);
+            if (hg_ret != HG_SUCCESS) {
+                fprintf(stderr, "PDC_Client_close_all_server(): Could not destroy handle\n");
+            }
         }
 
 
@@ -2502,7 +2511,7 @@ perr_t PDC_Client_close_all_server()
             printf("\n\n\n==PDC_CLIENT: sent finalize request to all servers\n");
             fflush(stdout);
         }
-    }
+    }// end if mpi_rank == 0
 
 done:
     FUNC_LEAVE(ret_value);
