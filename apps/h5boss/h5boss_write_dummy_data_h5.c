@@ -16,7 +16,7 @@ void print_usage() {
     printf("Usage: srun -n n_proc ./h5boss_write_dummy_data /path/to/dset_list.txt output_file n_dsets(optional)\n");
 }
 
-int main(int argc, const char *argv[])
+int main(int argc, char *argv[])
 {
     int size, rank;
 

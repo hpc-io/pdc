@@ -13,7 +13,7 @@ static uint32_t pdc_hash_djb2(const char *pc)
     return hash;
 }
 
-int main(int argc, const char *argv[])
+int main(int argc, char *argv[])
 {
     char *in_fname;
     char out_fname[128];

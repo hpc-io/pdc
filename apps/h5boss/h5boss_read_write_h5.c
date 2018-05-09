@@ -16,7 +16,7 @@ void print_usage() {
     printf("Usage: srun -n n_proc ./h5boss_read_write_h5 /path/to/read_list.txt n_read output_file \n");
 }
 
-int main(int argc, const char *argv[])
+int main(int argc, char *argv[])
 {
     int size, rank;
 
