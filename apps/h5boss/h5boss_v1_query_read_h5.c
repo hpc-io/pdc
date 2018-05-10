@@ -23,6 +23,7 @@ int assign_work_to_rank(int rank, int size, int nwork, int *my_count, int *my_st
             *my_count = 1;
         else
             *my_count = 0;
+        (*my_start) = rank * (*my_count);
     }
     else {
         (*my_count) = nwork / size;
@@ -31,7 +32,7 @@ int assign_work_to_rank(int rank, int size, int nwork, int *my_count, int *my_st
         // Last few ranks may have extra work
         if (rank >= size - nwork % size) {
             (*my_count)++; 
-            (*my_start) += rank - (size - nwork % size);
+            (*my_start) += (rank - (size - nwork % size));
         }
     }
 
@@ -148,7 +149,13 @@ int main(int argc, char *argv[])
     H5Eset_auto(H5E_DEFAULT, NULL, NULL);
 
     for (i = 0; i < my_count; i++) {
-        /* printf("Proc %d: opening file [%s]\n", my_rank, all_h5_filenames[i+my_start]); */
+        if (i+my_start >= count || i+my_start<0) {
+            printf("Proc %d: error with filename array %d\n", i+my_start);
+            continue;
+        }
+        /* printf("Proc %d: opening file id %d\n", my_rank, i+my_start); */
+        /* fflush(stdout); */
+
         file_id = H5Fopen(all_h5_filenames[i+my_start], H5F_ACC_RDONLY, H5P_DEFAULT);
         if (file_id < 0) {
             printf("Proc %d: error opening file [%s]\n", my_rank, all_h5_filenames[i+my_start]);
@@ -197,11 +204,6 @@ int main(int argc, char *argv[])
         printf("Total query time: %.4f\n", query_time);
         fflush(stdout);
     }
-
-    // Read objects
-    MPI_Barrier(MPI_COMM_WORLD);
-    start_time = MPI_Wtime();
-
     int my_read_count, my_read_start;
     assign_work_to_rank(my_rank, size, n_query, &my_read_count, &my_read_start);
 
@@ -216,10 +218,16 @@ int main(int argc, char *argv[])
     double total_size = 0, all_size;
     int ndim;
 
+    // Read objects
+    MPI_Barrier(MPI_COMM_WORLD);
+    start_time = MPI_Wtime();
+
+
     for (i = 0; i < my_read_count; i++) {
         fname = all_h5_filenames[all_query_exist[i+my_read_start]];
         query_name = all_query_names[i+my_read_start];
         /* printf("Proc %d: reading [%s] from [%s]\n", my_rank, query_name, fname); */
+        /* fflush(stdout); */
         file_id = H5Fopen(fname, H5F_ACC_RDONLY, H5P_DEFAULT);
         if (file_id < 0) {
             printf("Proc %d: error opening file [%s]\n", my_rank, all_h5_filenames[i+my_start]);

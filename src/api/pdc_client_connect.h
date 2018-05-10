@@ -652,4 +652,12 @@ perr_t PDCtag_getinfo(pdcid_t obj_id, char *tag_name, size_t *value_len);
  */
 perr_t PDCtag_get(pdcid_t obj_id, char *tag_name, void *tag_value);
 
+
+/* perr_t PDCquery_constraint_set(pdcquery_t *constraint, ...); */
+
+/* perr_t PDCdata_query(pdcid_t obj_id, pdcquery_t *constraint /1* or use SQL like string? JSON? *1/, int *n_out, void **buf, pdc_loc_t **loc_idx); */
+
+/* perr_t PDCbuf_destroy(void *buf); */
+/* perr_t PDClocidx_destroy(void *loc_idx); */
+
 #endif
