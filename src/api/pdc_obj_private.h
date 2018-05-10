@@ -22,27 +22,49 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_id_pkg_H
-#define _pdc_id_pkg_H
+#ifndef _pdc_obj_object_H
+#define _pdc_obj_object_H
 
-#include "pdc_private.h"
-/*
- * Number of bits to use for ID Type in each atom. Increase if more types
- * are needed (though this will decrease the number of available IDs per
- * type). This is the only number that must be changed since all other bit
- * field sizes and masks are calculated from TYPE_BITS.
+/**
+ * PDC object initialization
+ *
+ * \return Non-negative on success/Negative on failure
  */
-#define TYPE_BITS       7
-#define TYPE_MASK       (((pdcid_t)1 << TYPE_BITS) - 1)
-#define PDC_MAX_NUM_TYPES TYPE_MASK
-/*
- * Number of bits to use for the Atom index in each atom (assumes 8-bit
- * bytes). We don't use the sign bit.
+perr_t pdc_obj_init();
+
+/**
+ * PDC region initialization
+ *
+ * \return Non-negative on success/Negative on failure
  */
-#define ID_BITS         ((sizeof(pdcid_t) * 8) - (TYPE_BITS + 1))
-#define ID_MASK         (((pdcid_t)1 << ID_BITS) - 1)
+perr_t pdc_region_init();
 
-/* Map an atom to an ID type number */
-#define PDC_TYPE(a) ((PDC_type_t)(((pdcid_t)(a) >> ID_BITS) & TYPE_MASK))
+/**
+ * PDC object finalize
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t pdc_obj_end();
 
-#endif 
+/**
+ * PDC region finalize
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t pdc_region_end();
+
+/**
+ * Check if object list is empty
+ *
+ * \return SUCCEED if empty/FAIL if not empty
+ */
+perr_t pdc_obj_list_null();
+
+/**
+ * Check if region list is empty
+ *
+ * \return SUCCEED if empty/FAIL if not empty
+ */
+perr_t pdc_region_list_null();
+
+#endif

@@ -1671,8 +1671,8 @@ HG_TEST_RPC_CB(region_release, handle)
     region_map_t *map_elt;
     region_buf_map_t *eltt;
     hg_uint32_t remote_count;
-    void **data_ptrs_to;
-    size_t *data_size_to;
+    void **data_ptrs_to = NULL;
+    size_t *data_size_to = NULL;
 
     FUNC_ENTER(NULL);
 
@@ -2898,7 +2898,7 @@ HG_TEST_RPC_CB(get_metadata_by_id, handle)
     hg_return_t ret_value = HG_SUCCESS;
     get_metadata_by_id_in_t  in;
     get_metadata_by_id_out_t out;
-    pdc_metadata_t *target;
+    pdc_metadata_t *target = NULL;
     
     FUNC_ENTER(NULL);
 
@@ -3313,13 +3313,12 @@ HG_TEST_RPC_CB(get_storage_info, handle)
     for (i = 0; i < PDC_MAX_OVERLAP_REGION_NUM; i++)
         result_regions[i] = (region_list_t*)malloc(sizeof(region_list_t));
 
-    if (PDC_Server_get_local_storage_location_of_region(in.obj_id, &request_region, &n_region, result_regions) !=      SUCCEED) {
+    if (PDC_Server_get_local_storage_location_of_region(in.obj_id, &request_region, &n_region, result_regions) != SUCCEED) {
         printf("==PDC_SERVER: unable to get_local_storage_location_of_region\n");
         ret_value = FAIL;
         goto done;
     }
     else {
-
         if (n_region == 1) {
             // If there is only one matching region, send it with the easy way throught Mercury
             pdc_region_list_t_to_transfer(result_regions[0], &single_region_out.region_transfer);

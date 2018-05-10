@@ -19,8 +19,6 @@ set(PROGRAMS
   obj_life
   obj_dim
   obj_buf
-  obj_map
-  obj_write_release
   create_obj_scale
   close_server
   update_obj
@@ -36,7 +34,6 @@ set(PROGRAMS
   init_only
   obj_buf_map
   obj_buf_map_mpi
-  obj_map_mpi
   vpicio
   data_server_write_vpic
   data_server_write_vpic_multits

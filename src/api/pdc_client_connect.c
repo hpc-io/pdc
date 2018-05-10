@@ -941,7 +941,6 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     char *auth_key;
     int rc;
 #endif
-    int i;
     
     FUNC_ENTER(NULL);
 
@@ -1217,8 +1216,8 @@ perr_t PDC_Client_finalize()
     FUNC_ENTER(NULL);
 
     // Send close server request to all servers
-    /* if (pdc_client_mpi_rank_g == 0) */ 
-    /*     PDC_Client_close_all_server(); */
+    if (pdc_client_mpi_rank_g == 0) 
+         PDC_Client_close_all_server(); 
 
     hg_request_finalize(request_class_g, NULL);
 
@@ -2780,8 +2779,8 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_
     int n_retry;
     hg_uint32_t i, j;
     hg_uint32_t local_count;
-    void    **data_ptrs;
-    size_t  *data_size;
+    void    **data_ptrs = NULL;
+    size_t  *data_size = NULL;
     size_t  unit, unit_to; 
     struct  buf_map_args map_args;
     hg_bulk_t local_bulk_handle = HG_BULK_NULL;
@@ -4470,7 +4469,7 @@ perr_t PDC_Client_write_id(pdcid_t local_obj_id, struct PDC_region_info *region,
 
     FUNC_ENTER(NULL);
  
-    info = PDC_find_id(local_obj_id);
+    info = pdc_find_id(local_obj_id);
     if(info == NULL) {
         printf("==PDC_CLIENT[%d]: %s - obj_id %" PRIu64 " invalid!\n", 
                 pdc_client_mpi_rank_g, __func__, local_obj_id);
@@ -4738,11 +4737,11 @@ perr_t PDC_Client_add_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdc
 
     obj_ids = (uint64_t*)malloc(sizeof(uint64_t)*nobj);
     for (i = 0; i < nobj; i++) {
-        id_info = PDC_find_id(local_obj_ids[i]);
+        id_info = pdc_find_id(local_obj_ids[i]);
         obj_ids[i] = ((struct PDC_obj_info*)(id_info->obj_ptr))->meta_id;
     }
 
-    id_info = PDC_find_id(local_cont_id);
+    id_info = pdc_find_id(local_cont_id);
     cont_meta_id = ((struct PDC_cont_info *)(id_info->obj_ptr))->meta_id;
  
     ret_value = PDC_Client_add_del_objects_to_container(nobj, obj_ids, cont_meta_id, ADD_OBJ);
@@ -4765,11 +4764,11 @@ perr_t PDC_Client_del_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdc
 
     obj_ids = (uint64_t*)malloc(sizeof(uint64_t)*nobj);
     for (i = 0; i < nobj; i++) {
-        id_info = PDC_find_id(local_obj_ids[i]);
+        id_info = pdc_find_id(local_obj_ids[i]);
         obj_ids[i] = ((struct PDC_obj_info*)(id_info->obj_ptr))->meta_id;
     }
 
-    id_info = PDC_find_id(local_cont_id);
+    id_info = pdc_find_id(local_cont_id);
     cont_meta_id = ((struct PDC_cont_info *)(id_info->obj_ptr))->meta_id;
  
     ret_value = PDC_Client_add_del_objects_to_container(nobj, obj_ids, cont_meta_id, DEL_OBJ);

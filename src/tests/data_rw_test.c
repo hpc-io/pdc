@@ -149,7 +149,7 @@ int test1d(char *obj_name)
     dims[1] =   0;
     dims[2] =   0;
     obj_id = create_obj(obj_name, ndim, dims);
-    if (obj_id < 0) {
+    if (obj_id == 0) {
         printf("[%d]: Error creating an object [%s]\n", rank, obj_name);
         exit(-1);
     }
@@ -295,7 +295,7 @@ int test2d(char *obj_name)
     prob_domain[2] =  0;
 
     obj_id = create_obj(obj_name, ndim, prob_domain);
-    if (obj_id < 0) {
+    if (obj_id == 0) {
         printf("[%d]: Error creating an object [%s]\n", rank, obj_name);
         exit(-1);
     }
@@ -530,7 +530,7 @@ int test3d(char *obj_name)
     prob_domain[2] = 20 * size;
 
     obj_id = create_obj(obj_name, ndim, prob_domain);
-    if (obj_id < 0) {
+    if (obj_id == 0) {
         printf("[%d]: Error creating an object [%s]\n", rank, obj_name);
         exit(-1);
     }

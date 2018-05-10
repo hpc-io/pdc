@@ -71,13 +71,6 @@ typedef enum {
     COL_major
 } PDC_major_type;
 
-typedef struct {
-} PDC_loci_info_t;
-
-typedef struct {
-    PDC_major_type type;
-} PDC_transform;
-
 #define SUCCEED    0
 #define FAIL    (-1)
 
@@ -104,4 +97,4 @@ typedef struct {
 } while(0)
 #endif
 
-#endif /* end of _pdc_private_H */
+#endif 
