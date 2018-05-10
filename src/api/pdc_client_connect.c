@@ -1216,8 +1216,8 @@ perr_t PDC_Client_finalize()
     FUNC_ENTER(NULL);
 
     // Send close server request to all servers
-    if (pdc_client_mpi_rank_g == 0) 
-         PDC_Client_close_all_server(); 
+    /* if (pdc_client_mpi_rank_g == 0) */ 
+    /*      PDC_Client_close_all_server(); */ 
 
     hg_request_finalize(request_class_g, NULL);
 
