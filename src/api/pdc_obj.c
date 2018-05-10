@@ -815,7 +815,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDCobj_buf_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg)
+perr_t PDCbuf_obj_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg)
 {
     pdcid_t ret_value = SUCCEED;    
     size_t i;

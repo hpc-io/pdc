@@ -97,9 +97,9 @@ int main(int argc, char **argv)
 //    r3 = PDCregion_create(2, offset, rdims);
 //    printf("second region id: %lld\n", r3);
     
-    ret = PDCobj_buf_map(&myArray1[0], PDC_INT, r1, obj2, r2);
+    ret = PDCbuf_obj_map(&myArray1[0], PDC_INT, r1, obj2, r2);
     if(ret < 0)
-        printf("PDCobj_buf_map failed\n");
+        printf("PDCbuf_obj_map failed\n");
 
     ret = PDCreg_obtain_lock(obj2, r2, WRITE, NOBLOCK);
     if (ret != SUCCEED)
