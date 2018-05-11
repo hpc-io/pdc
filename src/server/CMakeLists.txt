@@ -13,6 +13,8 @@ add_definitions( -DIS_PDC_SERVER=1 )
 
 add_executable(pdc_server.exe 
                pdc_server.c 
+               pdc_server_data.c 
+               pdc_server_metadata.c 
                ../api/pdc_client_server_common.c 
                dablooms/dablooms.c 
                dablooms/murmur.c 
