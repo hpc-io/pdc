@@ -68,6 +68,17 @@ hg_thread_mutex_t remove_lock_request_mutex_g;
 hg_thread_mutex_t update_remote_server_addr_mutex_g;
 #endif
 
+extern int      n_bloom_total_g           ;
+extern int      n_bloom_maybe_g           ;
+extern double   server_bloom_check_time_g ;
+extern double   server_bloom_insert_time_g;
+extern double   server_insert_time_g      ;
+extern double   server_delete_time_g      ;
+extern double   server_update_time_g      ;
+extern double   server_hash_insert_time_g ;
+extern double   server_bloom_init_time_g  ;
+extern uint32_t n_metadata_g              ;
+
 perr_t PDC_Server_set_close(void);
 perr_t PDC_Server_checkpoint(char *filename);
 perr_t PDC_Server_restart(char *filename);

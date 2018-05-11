@@ -142,6 +142,15 @@ int    n_fopen_g                          = 0;
 double fread_total_MB                     = 0;
 double fwrite_total_MB                    = 0;
 
+double server_write_time_g                  = 0.0;
+double server_read_time_g                   = 0.0;
+double server_get_storage_info_time_g       = 0.0;
+double server_fopen_time_g                  = 0.0;
+double server_fsync_time_g                  = 0.0;
+double server_total_io_time_g               = 0.0;
+double server_update_region_location_time_g = 0.0;
+double server_io_elapsed_time_g             = 0.0;
+
 // Debug var
 volatile int dbg_sleep_g                    = 1;
 
