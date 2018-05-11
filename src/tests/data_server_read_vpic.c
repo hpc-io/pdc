@@ -31,6 +31,8 @@
 #include <sys/time.h>
 #include <math.h>
 
+#define ENABLE_MPI 1
+
 #ifdef ENABLE_MPI
   #include "mpi.h"
 #endif
@@ -166,6 +168,7 @@ int main(int argc, char **argv)
         // Timing
         gettimeofday(&pdc_timer_start_1, 0);
 
+        request[i].n_client = 1;
         request[i].n_update = 1;
         ret = PDC_Client_iread(obj_metas[i], &obj_regions[i], &request[i], mydata[i]);
         if (ret != SUCCEED) {

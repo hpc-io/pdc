@@ -1,8 +1,16 @@
 
 Required libraries
 ======
+1 BMI 
+```sh
+    git clone git://git.mcs.anl.gov/bmi && cd bmi
+    # If you are building BMI on an OSX platform, then apply the following patch:
+    # patch -p1 < patches/bmi-osx.patch
+    ./prepare && ./configure --enable-shared --enable-bmi-only
+    make && make install
+```
 
-1 Mercury 
+2 Mercury 
 ```sh
     git clone https://github.com/mercury-hpc/mercury && cd mercury
     git submodule update --init
@@ -21,14 +29,14 @@ Type 'c' multiple times and choose suitable options. Recommended options are:
     MERCURY_USE_BOOST_PP             OFF
     MERCURY_USE_XDR                  OFF
     MERCURY_USE_OPA                  OFF
-    NA_USE_BMI                       OFF
-    NA_USE_OFI                       ON
+    NA_USE_BMI                       ON
+    NA_USE_OFI                       OFF (ON if you need libfabric)
     NA_USE_MPI                       OFF
     NA_USE_CCI                       OFF
     NA_USE_SM                        OFF
     
-    OFI_INCLUDE_DIR                  /global/homes/j/jsoumagn/apps/libfabric/1.5.3/include
-    OFI_LIBRARY                      /global/homes/j/jsoumagn/apps/libfabric/1.5.3/lib/libfabric.so
+    BMI_INCLUDE_DIR                  BMI_PATH/include
+    BMI_LIBRARY                      BMI_PATH/libbmi.so  
 
     CMAKE_C_FLAGS                    for both FLAGS, add -dynamic on NERSC machines 
     CMAKE_CXX_FLAGS                  if there you see errors: "/usr/bin/ld: attempted 
@@ -46,10 +54,10 @@ To test Mercury is successfully built, run
 
     make test
 
-Look for Test  #1: mercury_rpc_ofi_tcp, Test  #2: mercury_bulk_ofi_tcp, etc.
+Look for Test  #1: mercury_rpc_bmi_tcp, Test  #2: mercury_bulk_bmi_tcp, etc.
 
 
-2 OpenPA (Optional)
+3 OpenPA (Optional)
 ```sh
     wget https://trac.mpich.org/projects/openpa/raw-attachment/wiki/Downloads/openpa-1.0.4.tar.gz
     tar xzvf openpa-1.0.4.tar.gz && cd openpa-1.0.4 
@@ -58,7 +66,7 @@ Look for Test  #1: mercury_rpc_ofi_tcp, Test  #2: mercury_bulk_ofi_tcp, etc.
 
 ```
 
-3 CCI (Optional)
+4 CCI (Optional)
 ```sh
     git clone https://github.com/CCI/cci && cd cci
     ./autogen.pl
@@ -66,14 +74,6 @@ Look for Test  #1: mercury_rpc_ofi_tcp, Test  #2: mercury_bulk_ofi_tcp, etc.
     make && make install
 ```
 
-4 BMI (optional)
-```sh
-    git clone git://git.mcs.anl.gov/bmi && cd bmi
-    # If you are building BMI on an OSX platform, then apply the following patch:
-    # patch -p1 < patches/bmi-osx.patch
-    ./prepare && ./configure --enable-shared --enable-bmi-only
-    make && make install
-```
 
 Building
 ====

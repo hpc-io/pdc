@@ -6,7 +6,7 @@
 #include <inttypes.h>
 #include <unistd.h>
 
-/* #define ENABLE_MPI 1 */
+#define ENABLE_MPI 1
 
 #ifdef ENABLE_MPI
   #include "mpi.h"
@@ -123,9 +123,8 @@ int main(int argc, char **argv)
 
 
     /* PDC_Client_data_server_write(0, size, metadata, &region, mydata); */
-    /* PDC_Client_write(metadata, &region, mydata); */
-    PDC_Client_write_wait_notify(metadata, &region, mydata);
-
+    PDC_Client_write(metadata, &region, mydata);
+    /* PDC_Client_write_wait_notify(metadata, &region, mydata); */
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);

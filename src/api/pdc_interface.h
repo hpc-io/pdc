@@ -58,15 +58,6 @@ typedef enum {
     PDC_NTYPES       = 7    /* number of library types, MUST BE LAST!      */
 } PDC_type_t;
 
-/*
-typedef struct {
-    PDC_type_t type_id;
-    unsigned flags;
-    unsigned reserved;
-    PDC_free_t free_func;
-} PDCID_class_t;
-*/
-
 /* Atom information structure used */
 struct PDC_id_info {
     pdcid_t             id;             /* ID for this info                 */
@@ -127,7 +118,7 @@ pdcid_t PDCid_register(PDC_type_t type, const void *object);
  *
  * \return Type id on success/Negative on failure
  */
-pdcid_t PDC_id_register(PDC_type_t type, void *object);
+pdcid_t pdc_id_register(PDC_type_t type, void *object);
 
 /**
  * Increment the number of references outstanding for an ID.
@@ -136,7 +127,7 @@ pdcid_t PDC_id_register(PDC_type_t type, void *object);
  *
  * \return New reference count on success/Negative on failure
  */
-int PDC_inc_ref(pdcid_t id);
+int pdc_inc_ref(pdcid_t id);
 
 /**
  * Decrement the number of references outstanding for an ID.
@@ -145,7 +136,7 @@ int PDC_inc_ref(pdcid_t id);
  *
  * \return New reference count on success/Negative on failure
  */
-int PDC_dec_ref(pdcid_t id);
+int pdc_dec_ref(pdcid_t id);
 
 /**
  *  Check if PDC_type_t id list is empty
@@ -154,7 +145,7 @@ int PDC_dec_ref(pdcid_t id);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_id_list_null(PDC_type_t type);
+perr_t pdc_id_list_null(PDC_type_t type);
 
 
 /**
@@ -164,7 +155,7 @@ perr_t PDC_id_list_null(PDC_type_t type);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_id_list_clear(PDC_type_t type);
+perr_t pdc_id_list_clear(PDC_type_t type);
 
 /**
  * To destroy ID types
@@ -173,7 +164,7 @@ perr_t PDC_id_list_clear(PDC_type_t type);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_destroy_type(PDC_type_t type);
+perr_t pdc_destroy_type(PDC_type_t type);
 
 /**
  * Given an object ID find the info struct that describes the object
@@ -182,7 +173,7 @@ perr_t PDC_destroy_type(PDC_type_t type);
  *
  * \return Pointer to the object's info struct on success/Null on failure
  */
-struct PDC_id_info *PDC_find_id(pdcid_t idid);
+struct PDC_id_info *pdc_find_id(pdcid_t idid);
 
 /**
  * Given an object ID find the info struct that describes the object
@@ -192,6 +183,6 @@ struct PDC_id_info *PDC_find_id(pdcid_t idid);
  *
  * \return Id of the object on success/Negative on failure
  */
-pdcid_t PDC_find_byname(PDC_type_t type, const char *byname);
+pdcid_t pdc_find_byname(PDC_type_t type, const char *byname);
 
 #endif

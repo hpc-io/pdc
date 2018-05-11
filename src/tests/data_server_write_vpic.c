@@ -31,6 +31,8 @@
 #include <sys/time.h>
 #include <math.h>
 
+#define ENABLE_MPI 1
+
 #ifdef ENABLE_MPI
   #include "mpi.h"
 #endif
@@ -63,6 +65,9 @@ int main(int argc, char **argv)
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
+#else
+    printf("MPI NOT Enabled!\n");
+    fflush(stdout);
 #endif
 
     char *obj_names[] = {"x", "y", "z", "px", "py", "pz", "id1", "id2"};
@@ -143,11 +148,11 @@ int main(int argc, char **argv)
     // Create obj and region one by one
     for (i = 0; i < NUM_FLOAT_VAR; i++) {
         if (rank == 0) {
-                obj_ids[i] = PDCobj_create(cont_id, obj_names[i], obj_prop_float);
-                if (obj_ids[i]<= 0) {    
-                    printf("Error getting an object %s from server, exit...\n", obj_names[i]);
-                    goto done;
-                }
+            obj_ids[i] = PDCobj_create(cont_id, obj_names[i], obj_prop_float);
+            if (obj_ids[i]<= 0) {    
+                printf("Error getting an object %s from server, exit...\n", obj_names[i]);
+                goto done;
+            }
         }
         myoffset[0] = rank * float_bytes;
         mysize[0]   = float_bytes;
@@ -217,7 +222,8 @@ int main(int argc, char **argv)
         // Timing
         gettimeofday(&pdc_timer_start_1, 0);
 
-        request[i].n_update = 1;
+        /* request[i].n_update = 1; */
+        request[i].n_client = 1;
         ret = PDC_Client_iwrite(obj_metas[i], &obj_regions[i], &request[i], mydata[i]);
         if (ret != SUCCEED) {
             printf("Error with PDC_Client_iwrite!\n");

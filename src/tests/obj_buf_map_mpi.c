@@ -31,8 +31,6 @@
 #include <sys/time.h>
 #include <math.h>
 
-/* #define ENABLE_MPI 1 */
-
 #ifdef ENABLE_MPI
   #include "mpi.h"
 #endif
@@ -96,7 +94,7 @@ int main(int argc, char **argv)
     PDCprop_set_obj_tags(    obj_prop2, "tag0=1"    );
 
     obj2 = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop2, 0);
-    if (obj2 < 0) {    
+    if (obj2 == 0) {    
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
         exit(-1);
     }
@@ -166,11 +164,6 @@ int main(int argc, char **argv)
 
     if(PDC_close(pdc_id) < 0)
        printf("fail to close PDC\n");
-
-    free(x);
-    free(offset);
-    free(offset_remote);
-    free(mysize);
 
 #ifdef ENABLE_MPI
      MPI_Finalize();

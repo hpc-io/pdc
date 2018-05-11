@@ -38,11 +38,11 @@
  * and/or increase size of pdcid_t */
 static PDC_type_t PDC_next_type = (PDC_type_t)PDC_NTYPES;
 
-struct PDC_id_info *PDC_find_id(pdcid_t idid)
+struct PDC_id_info *pdc_find_id(pdcid_t idid)
 {
-    PDC_type_t      type;               /*ID's type         */
-    struct PDC_id_type   *type_ptr;          /*ptr to the type   */
-    struct PDC_id_info   *ret_value = NULL;  /* Return value     */
+    PDC_type_t      type;   
+    struct PDC_id_type   *type_ptr; 
+    struct PDC_id_info   *ret_value = NULL;
 
     FUNC_ENTER(NULL);
 
@@ -60,13 +60,13 @@ struct PDC_id_info *PDC_find_id(pdcid_t idid)
     
 done:
     FUNC_LEAVE(ret_value);
-} /* end PDC_find_id() */
+}
 
 
 perr_t PDC_register_type(PDC_type_t type_id, PDC_free_t free_func)
 {
-    struct PDC_id_type *type_ptr = NULL;     /* Ptr to the atomic type */
-    perr_t ret_value = SUCCEED;              /* Return value           */
+    struct PDC_id_type *type_ptr = NULL; 
+    perr_t ret_value = SUCCEED;         
     
     FUNC_ENTER(NULL);
 
@@ -97,7 +97,7 @@ perr_t PDC_register_type(PDC_type_t type_id, PDC_free_t free_func)
 
 done:
     FUNC_LEAVE(ret_value);
-} /* end PDC_register_type() */
+} 
 
 /*
 pdcid_t PDCid_register(PDC_type_t type, const void *object) {
@@ -107,28 +107,27 @@ pdcid_t PDCid_register(PDC_type_t type, const void *object) {
 
     if(!PDCID_IS_LIB_TYPE(type))
         PGOTO_ERROR(FAIL, "cannot call public function on library type");
-    ret_value = PDC_id_register(type, object);
+    ret_value = pdc_id_register(type, object);
 done:
     FUNC_LEAVE(ret_value);
-}*/ /* end PDCid_register() */
+}*/
 
-
-pdcid_t PDC_id_register(PDC_type_t type, void *object)
+pdcid_t pdc_id_register(PDC_type_t type, void *object)
 {
-    struct PDC_id_type   *type_ptr;           /* ptr to the type               */
-    struct PDC_id_info   *id_ptr;             /* ptr to the new ID information */
-    pdcid_t              new_id;              /* new ID                        */
-    pdcid_t              ret_value = SUCCEED; /* return value                  */
+    struct PDC_id_type   *type_ptr;          
+    struct PDC_id_info   *id_ptr;           
+    pdcid_t              new_id;           
+    pdcid_t              ret_value = 0; 
     FUNC_ENTER(NULL);
 
     /* Check arguments */
     if(type <= PDC_BADID || type >= PDC_next_type)
-        PGOTO_ERROR(FAIL, "invalid type number");
+        PGOTO_ERROR(ret_value, "invalid type number");
     type_ptr = (pdc_id_list_g->PDC_id_type_list_g)[type];
     if(NULL == type_ptr || type_ptr->init_count <= 0)
-        PGOTO_ERROR(FAIL, "invalid type");
+        PGOTO_ERROR(ret_value, "invalid type");
     if(NULL == (id_ptr = PDC_MALLOC(struct PDC_id_info)))
-        PGOTO_ERROR(FAIL, "memory allocation failed");
+        PGOTO_ERROR(ret_value, "memory allocation failed");
 
     /* Create the struct & it's ID */
     PDC_MUTEX_LOCK(type_ptr->ids);
@@ -152,12 +151,12 @@ pdcid_t PDC_id_register(PDC_type_t type, void *object)
     
 done:
     FUNC_LEAVE(ret_value);
-} /* end PDC_id_register() */
+} 
 
-int PDC_dec_ref(pdcid_t id)
+int pdc_dec_ref(pdcid_t id)
 {
-    int ret_value = 0;               /* Return value */
-    struct PDC_id_info *id_ptr;      /* Pointer to the new ID */
+    int ret_value = 0;      
+    struct PDC_id_info *id_ptr;    
     
     FUNC_ENTER(NULL);
 
@@ -165,11 +164,9 @@ int PDC_dec_ref(pdcid_t id)
     assert(id >= 0);
 
     /* General lookup of the ID */
-    if(NULL == (id_ptr = PDC_find_id(id)))
+    if(NULL == (id_ptr = pdc_find_id(id)))
         PGOTO_ERROR(FAIL, "can't locate ID");
 
-//    (id_ptr->count)--;
-//    if(id_ptr->count == 0) {
 //    ret_value = atomic_fetch_sub(&(id_ptr->count), 1) - 1;
     ret_value = hg_atomic_decr32(&(id_ptr->count));
     if(ret_value == 0) {
@@ -194,17 +191,16 @@ int PDC_dec_ref(pdcid_t id)
         else
             ret_value = FAIL;
     }
-//    else
-//        ret_value = (int)id_ptr->count;
+
 done:
     FUNC_LEAVE(ret_value);
-} /* end PDC_dec_ref() */
+} 
 
-pdcid_t PDC_find_byname(PDC_type_t type, const char *byname)
+pdcid_t pdc_find_byname(PDC_type_t type, const char *byname)
 {
-    pdcid_t              ret_value = SUCCEED; /* return value          */
-    struct PDC_id_info   *id_ptr = NULL;      /* Pointer to the ID     */
-    struct PDC_id_type   *type_ptr;           /* Pointer to the type   */
+    pdcid_t              ret_value = SUCCEED; 
+    struct PDC_id_info   *id_ptr = NULL;     
+    struct PDC_id_type   *type_ptr;         
     
     FUNC_ENTER(NULL);
 
@@ -221,12 +217,12 @@ pdcid_t PDC_find_byname(PDC_type_t type, const char *byname)
     
 done:
     FUNC_LEAVE(ret_value);
-} /* end of PDC__find_byname() */
+} 
 
-int PDC_inc_ref(pdcid_t id)
+int pdc_inc_ref(pdcid_t id)
 {
-    int ret_value = 0;               /* Return value */
-    struct PDC_id_info *id_ptr;      /* Pointer to the ID */
+    int ret_value = 0;      
+    struct PDC_id_info *id_ptr;  
     
     FUNC_ENTER(NULL);
 
@@ -234,7 +230,7 @@ int PDC_inc_ref(pdcid_t id)
     assert(id >= 0);
 
     /* General lookup of the ID */
-    if(NULL == (id_ptr = PDC_find_id(id)))
+    if(NULL == (id_ptr = pdc_find_id(id)))
         PGOTO_ERROR(FAIL, "can't locate ID");
 
     /* Set return value */
@@ -243,12 +239,12 @@ int PDC_inc_ref(pdcid_t id)
   
 done:
     FUNC_LEAVE(ret_value);
-} /* end of pdc_inc_ref() */
+}
 
-int PDC_id_list_null(PDC_type_t type)
+int pdc_id_list_null(PDC_type_t type)
 {
-    perr_t ret_value = 0;              /* Return value */
-    struct PDC_id_type   *type_ptr;    /* Pointer to the type   */
+    perr_t ret_value = 0;          
+    struct PDC_id_type   *type_ptr; 
     
     FUNC_ENTER(NULL);
 
@@ -263,10 +259,10 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_id_list_clear(PDC_type_t type)
+perr_t pdc_id_list_clear(PDC_type_t type)
 {
-    perr_t ret_value = SUCCEED;        /* Return value */
-    struct PDC_id_type   *type_ptr;    /* Pointer to the type   */
+    perr_t ret_value = SUCCEED;
+    struct PDC_id_type   *type_ptr;
     
     FUNC_ENTER(NULL);
 
@@ -289,10 +285,10 @@ perr_t PDC_id_list_clear(PDC_type_t type)
 }
 
 
-perr_t PDC_destroy_type(PDC_type_t type)
+perr_t pdc_destroy_type(PDC_type_t type)
 {
-    perr_t ret_value = SUCCEED;              /* Return value           */
-    struct PDC_id_type *type_ptr = NULL;     /* Ptr to the atomic type */
+    perr_t ret_value = SUCCEED;        
+    struct PDC_id_type *type_ptr = NULL; 
     
     FUNC_ENTER(NULL);
 

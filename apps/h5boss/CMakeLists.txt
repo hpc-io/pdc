@@ -29,6 +29,17 @@ set(PROGRAMS
     h5boss_pdc_query 
     create_symlink 
     h5boss_v2_import
+    h5boss_dataset_stat
+    h5boss_v1_import_mpi
+    read_schedule
+    h5boss_v1_query_read
+    h5boss_write_dummy_data
+    h5boss_write_dummy_data_h5
+    h5boss_read_write_h5
+    get_pdc_server_by_name
+    h5boss_gen_query_input
+    h5boss_read_all_data
+    h5boss_v1_query_read_h5
     )
 
 foreach(program ${PROGRAMS})

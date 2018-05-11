@@ -7,6 +7,3 @@
 # exes
 *.exe
 
-#
-!apps/h5boss
-apps/h5boss/*

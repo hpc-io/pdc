@@ -31,7 +31,7 @@
 #include <sys/time.h>
 #include <ctype.h>
 
-/* #define ENABLE_MPI 1 */
+#define ENABLE_MPI 1
 
 #ifdef ENABLE_MPI
   #include "mpi.h"
@@ -134,6 +134,7 @@ int main(int argc, char **argv)
     if(obj_prop <= 0)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
 
+    PDCprop_set_obj_type(obj_prop, PDC_INT);
     PDCprop_set_obj_dims(obj_prop, 3, dims);
 
     env_str = getenv("PDC_OBJ_NAME");
@@ -183,7 +184,7 @@ int main(int argc, char **argv)
             printf("[%d] create obj with name %s\n", rank, obj_name);
         }
         test_obj = PDCobj_create(cont, obj_name, obj_prop);
-        if (test_obj < 0) { 
+        if (test_obj == 0) { 
             printf("Error getting an object id of %s from server, exit...\n", obj_name);
             exit(-1);
         }
