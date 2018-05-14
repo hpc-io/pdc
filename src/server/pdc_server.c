@@ -229,7 +229,34 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_init
 
+/*
+ * Init the client info structure
+ *
+ * \param  a[IN]        PDC client info structure pointer
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_client_info_init(pdc_client_info_t* a)
+{
+    perr_t ret_value = SUCCEED;
 
+    FUNC_ENTER(NULL);
+    if (a == NULL) {
+        printf("==PDC_SERVER: PDC_client_info_init() NULL input!\n");
+        ret_value = FAIL;
+        goto done;
+    }
+    /* else if (pdc_client_num_g != 0) { */
+    /*     printf("==PDC_SERVER: PDC_client_info_init() - pdc_client_num_g is not 0!\n"); */
+    /*     ret_value = FAIL; */
+    /*     goto done; */
+    /* } */
+
+    memset(a->addr_string, 0, ADDR_MAX);
+    a->addr_valid = 0;
+done:
+    FUNC_LEAVE(ret_value);
+}
 
 /*
  * Callback function, allocates the client info structure with the first connectiong from all clients,
@@ -1631,10 +1658,6 @@ int main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-    /* // Debug */
-    /* test_serialize(); */
-
-
 #ifdef ENABLE_MULTITHREAD
     PDC_Server_multithread_loop(hg_context_g);
 #else
@@ -1661,21 +1684,28 @@ int main(int argc, char *argv[])
     gettimeofday(&pdc_timer_start, 0);
     #endif
 
-    PDC_Server_checkpoint(checkpoint_file);
+    tmp_env_char = getenv("PDC_DISABLE_CHECKPOINT");
+    if (NULL != tmp_env_char) {
+        if (pdc_server_rank_g == 0) 
+            printf("==PDC_SERVER: checkpoint disabled!\n");
+    }
+    else { 
+        PDC_Server_checkpoint(checkpoint_file);
 
     #ifdef ENABLE_TIMING 
-    // Timing
-    gettimeofday(&pdc_timer_end, 0);
-    checkpoint_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+        // Timing
+        gettimeofday(&pdc_timer_end, 0);
+        checkpoint_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
 
         #ifdef ENABLE_MPI
-    MPI_Reduce(&checkpoint_time, &all_checkpoint_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&checkpoint_time, &all_checkpoint_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
         #else
-    all_checkpoint_time = checkpoint_time;
+        all_checkpoint_time = checkpoint_time;
         #endif
 
-    if (pdc_server_rank_g == 0) {
-        printf("==PDC_SERVER: total checkpoint  time = %.6f\n", all_checkpoint_time);
+        if (pdc_server_rank_g == 0) {
+            printf("==PDC_SERVER: total checkpoint  time = %.6f\n", all_checkpoint_time);
+        }
     }
 
     #endif

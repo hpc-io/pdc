@@ -176,34 +176,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Init the client info structure
- *
- * \param  a[IN]        PDC client info structure pointer
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDC_client_info_init(pdc_client_info_t* a)
-{
-    perr_t ret_value = SUCCEED;
 
-    FUNC_ENTER(NULL);
-    if (a == NULL) {
-        printf("==PDC_SERVER: PDC_client_info_init() NULL input!\n");
-        ret_value = FAIL;
-        goto done;
-    }
-    /* else if (pdc_client_num_g != 0) { */
-    /*     printf("==PDC_SERVER: PDC_client_info_init() - pdc_client_num_g is not 0!\n"); */
-    /*     ret_value = FAIL; */
-    /*     goto done; */
-    /* } */
-
-    memset(a->addr_string, 0, ADDR_MAX);
-    a->addr_valid = 0;
-done:
-    FUNC_LEAVE(ret_value);
-}
 /*
  * Set the Lustre stripe count/size of a given path
  *

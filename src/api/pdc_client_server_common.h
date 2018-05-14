@@ -2220,11 +2220,17 @@ hg_id_t get_reg_lock_status_register(hg_class_t *hg_class);
 hg_id_t get_storage_info_register(hg_class_t *hg_class);
 hg_id_t bulk_rpc_register(hg_class_t *hg_class);
 hg_id_t gen_cont_id_register(hg_class_t *hg_class);
+hg_id_t cont_add_del_objs_rpc_register(hg_class_t *hg_class);
+hg_id_t query_read_obj_name_rpc_register(hg_class_t *hg_class);
+hg_id_t server_checkpoing_rpc_register(hg_class_t *hg_class);
 
 //bulk
 hg_id_t query_partial_register(hg_class_t *hg_class);
 hg_id_t notify_io_complete_register(hg_class_t *hg_class);
 hg_id_t data_server_read_register(hg_class_t *hg_class);
+
+hg_id_t get_storage_meta_name_query_bulk_result_rpc_register(hg_class_t *hg_class);
+hg_id_t notify_client_multi_io_complete_rpc_register(hg_class_t *hg_class);
 
 struct bulk_args_t {
     int cnt;
