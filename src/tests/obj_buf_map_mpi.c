@@ -110,9 +110,9 @@ int main(int argc, char **argv)
     r1 = PDCregion_create(1, offset, mysize);
     r2 = PDCregion_create(1, offset_remote, mysize);
 
-    ret = PDCobj_buf_map(&x[0], PDC_FLOAT, r1, obj2, r2);
+    ret = PDCbuf_obj_map(&x[0], PDC_FLOAT, r1, obj2, r2);
     if(ret < 0) {
-        printf("PDCobj_buf_map failed\n");
+        printf("PDCbuf_obj_map failed\n");
         exit(-1);
     }
     

@@ -55,16 +55,13 @@ hg_thread_mutex_t pdc_bloom_time_mutex_g;
 hg_thread_mutex_t n_metadata_mutex_g;
 hg_thread_mutex_t data_read_list_mutex_g;
 hg_thread_mutex_t data_write_list_mutex_g;
-hg_thread_mutex_t create_region_struct_mutex_g;
-hg_thread_mutex_t delete_buf_map_mutex_g;
-hg_thread_mutex_t remove_buf_map_mutex_g;
-hg_thread_mutex_t access_lock_list_mutex_g;
-hg_thread_mutex_t append_lock_mutex_g;
-hg_thread_mutex_t append_buf_map_mutex_g;
-hg_thread_mutex_t append_region_struct_mutex_g;
+hg_thread_mutex_t region_struct_mutex_g;
+hg_thread_mutex_t data_buf_map_mutex_g;
+hg_thread_mutex_t meta_buf_map_mutex_g;
+hg_thread_mutex_t lock_list_mutex_g;
 hg_thread_mutex_t insert_hash_table_mutex_g;
-hg_thread_mutex_t append_lock_request_mutex_g;
-hg_thread_mutex_t remove_lock_request_mutex_g;
+hg_thread_mutex_t lock_request_mutex_g;
+hg_thread_mutex_t addr_valid_mutex_g;
 hg_thread_mutex_t update_remote_server_addr_mutex_g;
 #endif
 

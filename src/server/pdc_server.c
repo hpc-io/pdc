@@ -106,8 +106,6 @@ int                       is_hash_table_init_g = 0;
 hg_id_t    get_remote_metadata_register_id_g;
 hg_id_t    buf_map_server_register_id_g;
 hg_id_t    buf_unmap_server_register_id_g;
-hg_id_t    region_lock_server_register_id_g;
-hg_id_t    region_release_server_register_id_g;
 hg_id_t    server_lookup_client_register_id_g;
 hg_id_t    server_lookup_remote_server_register_id_g;
 hg_id_t    notify_io_complete_register_id_g;
@@ -1594,8 +1592,6 @@ int main(int argc, char *argv[])
     get_remote_metadata_register_id_g         = get_remote_metadata_register(hg_class_g);  
     buf_map_server_register_id_g              = buf_map_server_register(hg_class_g);
     buf_unmap_server_register_id_g            = buf_unmap_server_register(hg_class_g);
-    region_lock_server_register_id_g          = region_lock_server_register(hg_class_g);
-    region_release_server_register_id_g       = region_release_server_register(hg_class_g);
     server_lookup_remote_server_register_id_g = server_lookup_remote_server_register(hg_class_g);
     update_region_loc_register_id_g           = update_region_loc_register(hg_class_g);
     notify_region_update_register_id_g        = notify_region_update_register(hg_class_g);
@@ -1810,8 +1806,10 @@ done:
     /*     printf("error with HG_Context_destroy(pdc_client_context_g)\n"); */
 
     hg_ret = HG_Context_destroy(hg_context_g);
-    if (hg_ret != HG_SUCCESS) 
+    if (hg_ret != HG_SUCCESS) {
         printf("==PDC_SERVER[%d]: error with HG_Context_destroy\n", pdc_server_rank_g);
+        goto exit;
+    }
 
     hg_ret = HG_Finalize(hg_class_g);
     if (hg_ret != HG_SUCCESS) 
@@ -1824,6 +1822,7 @@ done:
         }
     }
 
+exit:
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif

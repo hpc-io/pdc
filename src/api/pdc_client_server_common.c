@@ -45,11 +45,11 @@ hg_thread_mutex_t delete_buf_map_metex_g;
 hg_thread_mutex_t server_delete_buf_map_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
 hg_thread_mutex_t server_append_buf_map_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
 hg_thread_mutex_t insert_metadata_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
-#endif
 
 // Thread
 hg_thread_pool_t *hg_test_thread_pool_g = NULL;
 hg_thread_pool_t *hg_test_thread_pool_fs_g = NULL;
+#endif
 
 uint64_t pdc_id_seq_g = PDC_SERVER_ID_INTERVEL;
 // actual value for each server is set by PDC_Server_init()
@@ -1259,7 +1259,7 @@ HG_TEST_RPC_CB(close_server, handle)
 {
     hg_return_t ret_value = HG_SUCCESS;
     close_server_in_t  in;
-    close_server_out_t out;
+    /* close_server_out_t out; */
     
     FUNC_ENTER(NULL);
 
@@ -1267,14 +1267,15 @@ HG_TEST_RPC_CB(close_server, handle)
 
     PDC_Server_set_close();
 
-    out.ret = 1;
+    /* out.ret = 1; */
     /* HG_Respond(handle, NULL, NULL, &out); */
 
     /* printf("\n==PDC_SERVER: Respond back to close server request\n"); */
     /* fflush(stdout); */
 
     HG_Free_input(handle, &in);
-    HG_Destroy(handle);
+    if (HG_Destroy(handle) != HG_SUCCESS)
+        printf("==PDC_SERVER[x]: %s Error with HG_Destroy\n", __func__);
 
     FUNC_LEAVE(ret_value);
 }
@@ -1365,6 +1366,9 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     data_server_region_t *target_reg = NULL;
     region_buf_map_t *elt;
     int error = 0;
+#ifndef ENABLE_MULTITHREAD
+    struct PDC_region_info *remote_reg_info = NULL;
+#endif
 
     FUNC_ENTER(NULL);
 
@@ -1385,6 +1389,7 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     out.ret = 1;
     HG_Respond(bulk_args->handle, NULL, NULL, &out);
 
+#ifdef ENABLE_MULTITHREAD
     bulk_args->work.func = pdc_region_write_out_progress;
     bulk_args->work.args = bulk_args; 
 
@@ -1396,9 +1401,39 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     }
 
     hg_thread_pool_post(hg_test_thread_pool_fs_g, &(bulk_args->work));
+#else
+    remote_reg_info = (struct PDC_region_info *)malloc(sizeof(struct PDC_region_info));
+    if(remote_reg_info == NULL) {
+        PGOTO_ERROR(HG_OTHER_ERROR, "remote_reg_info memory allocation failed\n");
+    }
+    remote_reg_info->ndim = (bulk_args->remote_region).ndim;
+    remote_reg_info->offset = (uint64_t *)malloc(sizeof(uint64_t));
+    remote_reg_info->size = (uint64_t *)malloc(sizeof(uint64_t));
+    (remote_reg_info->offset)[0] = (bulk_args->remote_region).start_0;
+    (remote_reg_info->size)[0] = (bulk_args->remote_region).count_0;
+
+    PDC_Server_data_write_out(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf);
+
+    // Perform lock release function
+    PDC_Data_Server_region_release(bulk_args, &out);
+
+    PDC_Server_release_lock_request(bulk_args->remote_obj_id, remote_reg_info);
+#endif
 
 done:
     fflush(stdout);
+
+#ifndef ENABLE_MULTITHREAD
+    free(remote_reg_info->offset);
+    free(remote_reg_info->size);
+    free(remote_reg_info);
+
+    HG_Bulk_free(bulk_args->remote_bulk_handle);
+    HG_Free_input(bulk_args->handle, &(bulk_args->in));
+    HG_Destroy(bulk_args->handle);
+    free(bulk_args);
+#endif
+
     FUNC_LEAVE(ret_value);
 }
 
@@ -1622,28 +1657,6 @@ region_release_update_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     FUNC_LEAVE(hg_ret);
 }
 
-/* static hg_return_t */
-// region_release_server_cb(hg_handle_t handle)
-HG_TEST_RPC_CB(region_release_server, handle)
-{
-    hg_return_t ret_value = HG_SUCCESS;
-    region_lock_in_t in;
-    region_lock_out_t out;
-
-    FUNC_ENTER(NULL);
-
-    HG_Get_input(handle, &in);
-
-    // Perform lock function
-    PDC_Meta_Server_region_release(&in, &out);
-
-    HG_Respond(handle, NULL, NULL, &out);
-//    HG_Free_input(handle, &in);
-    HG_Destroy(handle);
-
-    FUNC_LEAVE(ret_value);
-}
-
 HG_TEST_RPC_CB(region_release, handle)
 {
     hg_return_t ret_value = HG_SUCCESS;
@@ -1690,11 +1703,11 @@ HG_TEST_RPC_CB(region_release, handle)
 //            PDC_Server_get_local_metadata_by_id(in.obj_id, &res_meta);
             target_obj = PDC_Server_get_obj_region(in.obj_id);
 #ifdef ENABLE_MULTITHREAD 
-            hg_thread_mutex_lock(&access_lock_list_mutex_g);
+            hg_thread_mutex_lock(&lock_list_mutex_g);
 #endif
             DL_FOREACH(target_obj->region_lock_head, elt) {
 #ifdef ENABLE_MULTITHREAD 
-                hg_thread_mutex_unlock(&access_lock_list_mutex_g);
+                hg_thread_mutex_unlock(&lock_list_mutex_g);
 #endif
                 if (PDC_is_same_region_list(request_region, elt) == 1 && elt->reg_dirty == 1 && hg_atomic_get32(&(elt->buf_map_refcount)) == 0) {
 //                    printf("==PDC SERVER: region_release start %" PRIu64 " \n", request_region->start[0]);
@@ -1814,11 +1827,11 @@ HG_TEST_RPC_CB(region_release, handle)
                     }
                 }
 #ifdef ENABLE_MULTITHREAD 
-                hg_thread_mutex_lock(&access_lock_list_mutex_g);
+                hg_thread_mutex_lock(&lock_list_mutex_g);
 #endif
             }
 #ifdef ENABLE_MULTITHREAD 
-            hg_thread_mutex_unlock(&access_lock_list_mutex_g);
+            hg_thread_mutex_unlock(&lock_list_mutex_g);
 #endif
             free(request_region);
 //        }
@@ -1934,28 +1947,6 @@ done:
         HG_Destroy(handle);
      }
     
-    FUNC_LEAVE(ret_value);
-}
-
-/* static hg_return_t */
-// region_lock_server_cb(hg_handle_t handle)
-HG_TEST_RPC_CB(region_lock_server, handle)
-{
-    hg_return_t ret_value = HG_SUCCESS;
-    region_lock_in_t in;
-    region_lock_out_t out;
-
-    FUNC_ENTER(NULL);
-
-    HG_Get_input(handle, &in);
-
-    // Perform lock function
-    PDC_Meta_Server_region_lock(&in, &out);
-
-    HG_Respond(handle, NULL, NULL, &out);
-//    HG_Free_input(handle, &in);
-    HG_Destroy(handle);
-
     FUNC_LEAVE(ret_value);
 }
 
@@ -2174,7 +2165,7 @@ HG_TEST_RPC_CB(buf_unmap_server, handle)
         PGOTO_ERROR(HG_OTHER_ERROR, "==PDC_SERVER: HG_TEST_RPC_CB(buf_unmap_server, handle) - requested object does not exist\n");
     }
 #ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_lock(&server_delete_buf_map_mutex_g);
+    hg_thread_mutex_lock(&meta_buf_map_mutex_g);
 #endif
 
     DL_FOREACH_SAFE(target_obj->region_buf_map_head, elt, tmp) {
@@ -2187,7 +2178,7 @@ HG_TEST_RPC_CB(buf_unmap_server, handle)
         }
     }
 #ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_unlock(&server_delete_buf_map_mutex_g);
+    hg_thread_mutex_unlock(&meta_buf_map_mutex_g);
 #endif
 
 done:
@@ -2248,12 +2239,12 @@ HG_TEST_RPC_CB(buf_map_server, handle)
     buf_map_ptr->remote_region_nounit = in.remote_region_nounit;
 
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_lock(&server_append_buf_map_mutex_g);
+    hg_thread_mutex_lock(&meta_buf_map_mutex_g);
 #endif
     DL_APPEND(target_obj->region_buf_map_head, buf_map_ptr);
     out.ret = 1;
 #ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_unlock(&server_append_buf_map_mutex_g);
+    hg_thread_mutex_unlock(&meta_buf_map_mutex_g);
 #endif
     free(request_region);
 
@@ -3466,8 +3457,6 @@ HG_TEST_THREAD_CB(buf_unmap_server)
 HG_TEST_THREAD_CB(buf_unmap)
 HG_TEST_THREAD_CB(region_map)
 HG_TEST_THREAD_CB(region_unmap)
-HG_TEST_THREAD_CB(region_lock_server)
-HG_TEST_THREAD_CB(region_release_server)
 HG_TEST_THREAD_CB(get_reg_lock_status)
 
 hg_id_t
@@ -3731,30 +3720,6 @@ region_lock_register(hg_class_t *hg_class)
     FUNC_ENTER(NULL);
 
     ret_value = MERCURY_REGISTER(hg_class, "region_lock", region_lock_in_t, region_lock_out_t, region_lock_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-region_lock_server_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "region_lock_server", region_lock_in_t, region_lock_out_t, region_lock_server_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-region_release_server_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "region_release_server", region_lock_in_t, region_lock_out_t, region_release_server_cb);
 
     FUNC_LEAVE(ret_value);
 }

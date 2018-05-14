@@ -236,7 +236,7 @@ obj_handle *PDCview_iter_start(pdcid_t view_id);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCobj_buf_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg);
+perr_t PDCbuf_obj_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg);
 
 /**
  * Map an object to another object

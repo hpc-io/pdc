@@ -46,7 +46,7 @@
 #include "../server/utlist.h"
 
 #include "mercury.h"
-#include "mercury_request.h"
+/* #include "mercury_request.h" */
 #include "mercury_macros.h"
 #include "mercury_hl.h"
 
@@ -68,7 +68,6 @@ int                    pdc_client_same_node_rank_g = 0;
 int                    pdc_client_same_node_size_g = 1;
 
 int                    pdc_server_num_g;
-int                    pdc_use_local_server_only_g = 0;
 int                    pdc_nclient_per_server_g = 0;
 
 char                   pdc_client_tmp_dir_g[ADDR_MAX];
@@ -86,9 +85,9 @@ static int             mercury_has_init_g = 0;
 static hg_class_t     *send_class_g = NULL;
 static hg_context_t   *send_context_g = NULL;
 static int             work_todo_g = 0;
-hg_request_class_t    *request_class_g = NULL;
-static int             request_progressed = 0;
-static int             request_triggered = 0;
+/* hg_request_class_t    *request_class_g = NULL; */
+/* static int             request_progressed = 0; */
+/* static int             request_triggered = 0; */
 
 
 static hg_id_t         client_test_connect_register_id_g;
@@ -490,6 +489,8 @@ done:
     fflush(stdout);
     work_todo_g = 0;
     HG_Free_output(handle, &output);
+    HG_Destroy(callback_info->info.forward.handle);
+
     FUNC_LEAVE(ret_value);
 } // End of client_test_connect_rpc_cb 
 
@@ -518,6 +519,9 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, client_test_connect_register_id_g, 
               &client_test_handle);
 
+    /* printf("==PDC_CLIENT[%d]: %s - handle = %p\n", pdc_client_mpi_rank_g, __func__, client_test_handle); */
+    /* fflush(stdout); */
+
     // Fill input structure
     in.client_id   = pdc_client_mpi_rank_g;
     in.nclient     = pdc_client_mpi_size_g;
@@ -535,10 +539,10 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
     /* fflush(stdout); */
 
 done:
-    ret_value = HG_Destroy(client_test_handle); 
-    if (ret_value != HG_SUCCESS) {
-        fprintf(stderr, "PDC_Client_close_all_server(): Could not destroy handle\n");
-    }
+    /* ret_value = HG_Destroy(client_test_handle); */ 
+    /* if (ret_value != HG_SUCCESS) { */
+    /*     fprintf(stderr, "client_test_connect_lookup_cb(): Could not destroy handle\n"); */
+    /* } */
     FUNC_LEAVE(ret_value);
 }
 
@@ -617,74 +621,6 @@ perr_t PDC_Client_try_lookup_server(int server_id)
     }
 
 done:
-    FUNC_LEAVE(ret_value);
-}
-
-// Callback function for  HG_Forward()
-// Gets executed after a call to HG_Trigger and the RPC has completed
-static hg_return_t
-close_server_cb(const struct hg_cb_info *callback_info)
-{
-    hg_return_t ret_value = HG_SUCCESS;
-    hg_handle_t handle;
-    close_server_out_t output;
-    /* struct client_lookup_args *client_lookup_args; */
-    
-    FUNC_ENTER(NULL);
-
-    /* printf("Entered close_server_cb()\n"); */
-    /* fflush(stdout); */
-    /* client_lookup_args = (struct client_lookup_args*) callback_info->arg; */
-    handle = callback_info->info.forward.handle;
-
-    /* Get output from server*/
-    ret_value = HG_Get_output(handle, &output);
-    if (ret_value != HG_SUCCESS) {
-        printf("PDC_CLIENT[%d]: close_server_cb error with HG_Get_output\n", pdc_client_mpi_rank_g);
-        goto done;
-    }
-    /* printf("Return value from server is %" PRIu64 "\n", output.ret); */
-    /* fflush(stdout); */
-
-done:
-    work_todo_g = 0;
-    HG_Free_output(handle, &output);
-    FUNC_LEAVE(ret_value);
-}
-
-// Callback function for  HG_Forward()
-// Gets executed after a call to HG_Trigger and the RPC has completed
-static hg_return_t
-close_server_cb_from_dataserver(const struct hg_cb_info *callback_info)
-{
-    hg_return_t ret_value = HG_SUCCESS;
-    hg_handle_t handle;
-    close_server_out_t output;
-    struct client_lookup_args *args;
-    
-    FUNC_ENTER(NULL);
-
-    args   = (struct client_lookup_args *)callback_info->arg;
-    handle = callback_info->info.forward.handle;
-
-    /* Get output from server*/
-    ret_value = HG_Get_output(handle, &output);
-    if (ret_value != HG_SUCCESS) {
-        printf("PDC_CLIENT[%d]: %s - error with HG_Get_output\n", pdc_client_mpi_rank_g, __func__);
-        goto done;
-    }
-    /* printf("Return value=%" PRIu64 "\n", output.ret); */
-
-    ret_value = HG_Free_output(handle, &output);
-    if (ret_value != HG_SUCCESS) {
-        printf("PDC_CLIENT[%d]: %s - error with free HG_Get_output\n", pdc_client_mpi_rank_g, __func__);
-        goto done;
-    }
-
-done:
-    fflush(stdout);
-    /* work_todo_g = 0; */
-    hg_request_complete(args->request);
     FUNC_LEAVE(ret_value);
 }
 
@@ -971,8 +907,9 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     }
     MPI_Bcast(&credential, 1, MPI_UINT32_T, 0, MPI_COMM_WORLD);
     
-    printf("# Credential is %u\n", credential);
-    fflush(stdout);
+    //printf("# Credential is %u\n", credential);
+    //fflush(stdout);
+
     rc = drc_access(credential, 0, &credential_info);
     if (rc != DRC_SUCCESS) { /* failed to access credential */
         printf("drc_access() failed (%d, %s)", rc,
@@ -983,8 +920,11 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     }
     cookie = drc_get_first_cookie(credential_info);
 
-    printf("# Cookie is %u\n", cookie);
-    fflush(stdout);
+    if (pdc_client_mpi_rank_g == 0) {
+        printf("# Credential is %u\n", credential);
+        printf("# Cookie is %u\n", cookie);
+        fflush(stdout);
+    }
     sprintf(pdc_auth_key, "%u", cookie);
     init_info.na_init_info.auth_key = strdup(pdc_auth_key);
 #endif
@@ -993,8 +933,12 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     /* Initialize Mercury with the desired network abstraction class */
     /* printf("Using %s\n", na_info_string); */
 //    *hg_class = HG_Init(na_info_string, HG_TRUE);
-    init_info.na_init_info.progress_mode = NA_NO_BLOCK;
+#ifndef ENABLE_MULTITHREAD
+    init_info.na_init_info.progress_mode = NA_NO_BLOCK;  //busy mode
+#endif
+#ifndef PDC_HAS_CRAY_DRC
     init_info.auto_sm = HG_TRUE;
+#endif
     *hg_class = HG_Init_opt(na_info_string, HG_TRUE, &init_info);
     if (*hg_class == NULL) {
         printf("Error with HG_Init()\n");
@@ -1005,7 +949,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     *hg_context = HG_Context_create(*hg_class);
 
     // Init mercury request class
-    request_class_g = hg_request_init(mercury_request_progress, mercury_request_trigger, send_context_g);
+    /* request_class_g = hg_request_init(mercury_request_progress, mercury_request_trigger, send_context_g); */
     /* request_class_g = hg_request_init(hg_hl_request_progress, hg_hl_request_trigger, NULL); */
 
 
@@ -1014,6 +958,8 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     gen_obj_register_id_g                     = gen_obj_id_register(*hg_class);
     gen_cont_register_id_g                    = gen_cont_id_register(*hg_class);
     close_server_register_id_g                = close_server_register(*hg_class);
+    HG_Registered_disable_response(*hg_class, close_server_register_id_g, HG_TRUE);
+
     metadata_query_register_id_g              = metadata_query_register(*hg_class);
     metadata_delete_register_id_g             = metadata_delete_register(*hg_class);
     metadata_delete_by_id_register_id_g       = metadata_delete_by_id_register(*hg_class);
@@ -1160,19 +1106,6 @@ perr_t PDC_Client_init()
     else
         printf("==PDC_CLIENT: Server number not properly initialized!\n");
 
-    // Do we want local server mode?
-    /* int   tmp_env; */
-    /* char *tmp= NULL; */
-    /* tmp = getenv("PDC_USE_LOCAL_SERVER"); */
-    /* if (tmp != NULL) { */
-    /*     tmp_env = atoi(tmp); */
-    /*     if (tmp_env == 1) { */
-    /*         pdc_use_local_server_only_g = 1; */
-    /*         if(pdc_client_mpi_rank_g == 0) */
-    /*             printf("==PDC_CLIENT: Contact local server only!\n"); */
-    /*     } */
-    /* } */
-
     // Cori KNL has 68 cores per node, Haswell 32
     port = pdc_client_mpi_rank_g % PDC_MAX_CORE_PER_NODE + 8000;
     if (mercury_has_init_g == 0) {
@@ -1219,8 +1152,7 @@ perr_t PDC_Client_finalize()
     /* if (pdc_client_mpi_rank_g == 0) */ 
     /*      PDC_Client_close_all_server(); */ 
 
-    hg_request_finalize(request_class_g, NULL);
-
+    /* hg_request_finalize(request_class_g, NULL); */
 
     // Finalize Mercury
     for (i = 0; i < pdc_server_num_g; i++) {
@@ -1230,25 +1162,8 @@ perr_t PDC_Client_finalize()
         }
     }
 
-    hg_ret = HG_Context_destroy(send_context_g);
-    if (hg_ret != HG_SUCCESS) {
-        printf("==PDC_CLIENT[%d]: PDC_Client_finalize - error with HG_Context_destroy\n", pdc_client_mpi_rank_g);
-        ret_value = FAIL;
-        goto done;
-    }
-    hg_ret = HG_Finalize(send_class_g);
-    if (hg_ret != HG_SUCCESS) {
-        printf("==PDC_CLIENT[%d]: PDC_Client_finalize - error with HG_Finalize\n", pdc_client_mpi_rank_g);
-        ret_value = FAIL;
-        goto done;
-    }
-
     if (pdc_server_info_g != NULL)
         free(pdc_server_info_g);
-
-    // Free client hash table
-    /* if (obj_names_cache_hash_table_g != NULL) */ 
-    /*     hg_hash_table_free(obj_names_cache_hash_table_g); */
 
 #ifdef ENABLE_MPI
 
@@ -1275,22 +1190,33 @@ perr_t PDC_Client_finalize()
     if (debug_server_id_count != NULL) 
         free(debug_server_id_count);
 
-
     #ifdef ENABLE_TIMING
     if (pdc_client_mpi_rank_g == 0) 
         printf("==PDC_CLIENT[%d]: T_memcpy: %.2f\n", pdc_client_mpi_rank_g, memcpy_time_g);
     #endif
 
+    hg_ret = HG_Context_destroy(send_context_g);
+    if (hg_ret != HG_SUCCESS) {
+        printf("==PDC_CLIENT[%d]: error with HG_Context_destroy\n", pdc_client_mpi_rank_g);
+        ret_value = FAIL;
+        goto done;
+    }
+    hg_ret = HG_Finalize(send_class_g);
+    if (hg_ret != HG_SUCCESS) {
+        printf("==PDC_CLIENT[%d]: error with HG_Finalize\n", pdc_client_mpi_rank_g);
+        ret_value = FAIL;
+        goto done;
+    }
 
+done:
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-done:
     if (is_client_debug_g == 1 && pdc_client_mpi_rank_g == 0) {
         printf("==PDC_CLIENT: finalized\n");
     }
     FUNC_LEAVE(ret_value);
-}
+} // End PDC_Client_finalize
 
 // Bulk
 static hg_return_t
@@ -1332,7 +1258,6 @@ metadata_query_bulk_cb(const struct hg_cb_info *callback_info)
 
     // We have received the bulk handle from server (server uses hg_respond)
     // Use this to initiate a bulk transfer
-
     origin_bulk_handle = output.bulk_handle;
     hg_info = HG_Get_info(handle);
 
@@ -2440,6 +2365,37 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+/* static hg_return_t */
+/* close_server_cb(const struct hg_cb_info *callback_info) */
+/* { */
+/*     hg_return_t ret_value = HG_SUCCESS; */
+/*     hg_handle_t handle; */
+/*     close_server_out_t output; */
+/*     /1* struct client_lookup_args *client_lookup_args; *1/ */
+    
+/*     FUNC_ENTER(NULL); */
+
+/*     /1* printf("Entered close_server_cb()\n"); *1/ */
+/*     /1* fflush(stdout); *1/ */
+/*     /1* client_lookup_args = (struct client_lookup_args*) callback_info->arg; *1/ */
+/*     handle = callback_info->info.forward.handle; */
+
+    /* //Get output from server */
+/*     ret_value = HG_Get_output(handle, &output); */
+/*     if (ret_value != HG_SUCCESS) { */
+/*         printf("PDC_CLIENT[%d]: close_server_cb error with HG_Get_output\n", pdc_client_mpi_rank_g); */
+/*         goto done; */
+/*     } */
+/*     /1* printf("Return value from server is %" PRIu64 "\n", output.ret); *1/ */
+/*     /1* fflush(stdout); *1/ */
+
+/* done: */
+/*     work_todo_g = 0; */
+/*     HG_Free_output(handle, &output); */
+/*     HG_Destroy(callback_info->info.forward.handle); */
+/*     FUNC_LEAVE(ret_value); */
+/* } */
+
 perr_t PDC_Client_close_all_server()
 {
     uint64_t ret_value = SUCCEED;
@@ -2455,36 +2411,25 @@ perr_t PDC_Client_close_all_server()
     port = pdc_client_mpi_rank_g % 32 + 8000;
 
     if (pdc_client_mpi_rank_g == 0) {
-        if (mercury_has_init_g == 0) {
-            // Init Mercury network connection
-            PDC_Client_mercury_init(&send_class_g, &send_context_g, port);
-            if (send_class_g == NULL || send_context_g == NULL) {
-                printf("Error with Mercury Init, exiting...\n");
-                exit(0);
-            }
-            mercury_has_init_g = 1;
-        }
+
         for (i = 0; i < (uint32_t)pdc_server_num_g; i++) {
             server_id = i;
             /* printf("Closing server %d\n", server_id); */
             /* fflush(stdout); */
 
-            int n_retry = 0;
-            while (pdc_server_info_g[server_id].addr_valid != 1) {
-                if (n_retry > 0) 
-                    break;
-                if( PDC_Client_lookup_server(server_id) != SUCCEED) {
-                    printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
-                    ret_value = FAIL;
-                    goto done;
-                }
-                n_retry++;
+            if( PDC_Client_try_lookup_server(server_id) != SUCCEED) {
+                printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+                ret_value = FAIL;
+                goto done;
             }
 
             /* printf("Addr: %s\n", pdc_server_info_g[server_id].addr); */
             /* fflush(stdout); */
             HG_Create(send_context_g, pdc_server_info_g[server_id].addr, close_server_register_id_g, 
                       &close_server_handle);
+
+            /* printf("==PDC_CLIENT[%d]: %s handle = %p\n",pdc_client_mpi_rank_g,__func__,close_server_handle); */
+            /* fflush(stdout); */
 
             // Fill input structure
             in.client_id = 0;
@@ -2511,87 +2456,6 @@ perr_t PDC_Client_close_all_server()
             fflush(stdout);
         }
     }// end if mpi_rank == 0
-
-done:
-    FUNC_LEAVE(ret_value);
-}
-
-perr_t PDC_Client_close_all_server_dataserver()
-{
-    uint64_t ret_value = SUCCEED;
-    hg_return_t  hg_ret = HG_SUCCESS;
-    uint32_t server_id = 0;
-    uint32_t port, i;
-    close_server_in_t in;
-    struct client_lookup_args forward_args;
-    hg_handle_t close_server_handle;
-    
-    FUNC_ENTER(NULL);
-
-
-    if (pdc_client_mpi_rank_g == 0) {
-        if (mercury_has_init_g == 0) {
-            // Init Mercury network connection
-            port = pdc_client_mpi_rank_g % 32 + 8000;
-            PDC_Client_mercury_init(&send_class_g, &send_context_g, port);
-            if (send_class_g == NULL || send_context_g == NULL) {
-                printf("Error with Mercury Init, exiting...\n");
-                exit(0);
-            }
-            mercury_has_init_g = 1;
-        }
-        /* for (i = pdc_server_num_g - 1; i > 0; i--) { */
-        for (i = 0; i < (uint32_t)pdc_server_num_g; i++) {
-            server_id = i;
-            printf("Closing server %d\n", server_id);
-            fflush(stdout);
-
-            if( PDC_Client_try_lookup_server(server_id) != SUCCEED) {
-                printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
-                ret_value = FAIL;
-                goto done;
-            }
-
-            /* printf("Addr: %s\n", pdc_server_info_g[server_id].addr); */
-            /* fflush(stdout); */
-            HG_Create(send_context_g, pdc_server_info_g[server_id].addr, close_server_register_id_g, 
-                      &close_server_handle);
-
-            // Fill input structure
-            in.client_id = 0;
-            forward_args.request = hg_request_create(request_class_g);
-
-            /* printf("Sending input to target\n"); */
-            hg_ret = HG_Forward(close_server_handle, close_server_cb, &forward_args, &in);
-            if (hg_ret != HG_SUCCESS) {
-                fprintf(stderr, "PDC_Client_close_all_server(): Could not start HG_Forward()\n");
-                ret_value = FAIL;
-                goto done;
-            }
-
-            hg_request_wait(forward_args.request, HG_MAX_IDLE_TIME, NULL);
-
-
-            // Wait for response from server
-            /* work_todo_g = 1; */
-            /* PDC_Client_check_response(&send_context_g); */
-            if (HG_Destroy(close_server_handle) != HG_SUCCESS) {
-                fprintf(stderr, "==PDC_CLIENT[0]: %s - Could not destroy handle\n", __func__);
-                hg_request_destroy(forward_args.request);
-                ret_value = FAIL;
-                goto done;
-            }
-
-            hg_request_destroy(forward_args.request);
-
-        }
-
-
-        if (is_client_debug_g == 1) {
-            printf("\n\n\n==PDC_CLIENT: sent finalize request to all servers\n");
-            fflush(stdout);
-        }
-    }
 
 done:
     FUNC_LEAVE(ret_value);
