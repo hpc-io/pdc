@@ -1706,9 +1706,6 @@ int main(int argc, char *argv[])
     // Get environmental variables
     PDC_Server_get_env();
 
-    // Register Mercury RPC/bulk
-    PDC_Server_mercury_register();
-
     port = pdc_server_rank_g % 32 + 7000 ;
     /* printf("rank=%d, port=%d\n", pdc_server_rank_g,port); */
     ret = PDC_Server_init(port, &hg_class_g, &hg_context_g);
@@ -1716,6 +1713,9 @@ int main(int argc, char *argv[])
         printf("==PDC_SERVER[%d]: Error with Mercury init\n", pdc_server_rank_g);
         goto done;
     }
+
+    // Register Mercury RPC/bulk
+    PDC_Server_mercury_register();
 
 #ifdef ENABLE_MPI
     // Need a barrier so that all servers finish init before the lookup process
