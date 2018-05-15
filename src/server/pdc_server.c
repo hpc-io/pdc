@@ -113,7 +113,7 @@ hg_id_t    update_region_loc_register_id_g;
 hg_id_t    notify_region_update_register_id_g;
 hg_id_t    get_metadata_by_id_register_id_g;
 hg_id_t    get_reg_lock_register_id_g;
-hg_id_t    get_storage_info_register_id_g;
+/* hg_id_t    get_storage_info_register_id_g; */
 hg_id_t    bulk_rpc_register_id_g;
 hg_id_t    storage_meta_name_query_register_id_g;
 hg_id_t    get_storage_meta_name_query_bulk_result_rpc_register_id_g;
@@ -530,6 +530,7 @@ perr_t PDC_Server_lookup_all_servers()
                     continue;
 
                 if (PDC_Server_lookup_server_id(i) != SUCCEED) {
+                    printf("==PDC_SERVER[%d]: ERROR when lookup remote server %d!\n", pdc_server_rank_g, i);
                     ret_value = FAIL;
                     goto done;
                 }
@@ -541,11 +542,11 @@ perr_t PDC_Server_lookup_all_servers()
         /* } */
     }
 
-    /* if (pdc_server_rank_g == 0) { */
-    /*     printf("==PDC_SERVER[%d]: Successfully established connection to %d other PDC servers\n", */
-    /*             pdc_server_rank_g, pdc_server_size_g- 1); */
-    /*     fflush(stdout); */
-    /* } */
+    if (pdc_server_rank_g == 0) {
+        printf("==PDC_SERVER[%d]: Successfully established connection to %d other PDC servers\n",
+                pdc_server_rank_g, pdc_server_size_g- 1);
+        fflush(stdout);
+    }
 
 done:
     FUNC_LEAVE(ret_value);
@@ -839,7 +840,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
         all_restart_time = restart_time;
     #endif
         if (pdc_server_rank_g == 0) 
-            printf("==PDC_SERVER: total restart time = %.6f\n", all_restart_time);
+            printf("==PDC_SERVER[0]: total restart time = %.6f\n", all_restart_time);
 #endif
     }
     else {
@@ -914,6 +915,7 @@ perr_t PDC_Server_finalize()
     pdc_data_server_io_list_t *io_elt = NULL;
     region_list_t *region_elt = NULL, *region_tmp = NULL;
     perr_t ret_value = SUCCEED;
+    hg_return_t hg_ret;
     
     FUNC_ENTER(NULL);
 
@@ -1040,6 +1042,17 @@ perr_t PDC_Server_finalize()
         PDC_Server_rm_config_file();
 
 
+    hg_ret = HG_Context_destroy(hg_context_g);
+    if (hg_ret != HG_SUCCESS) {
+        printf("==PDC_SERVER[%d]: error with HG_Context_destroy\n", pdc_server_rank_g);
+        goto done;
+    }
+
+    hg_ret = HG_Finalize(hg_class_g);
+    if (hg_ret != HG_SUCCESS) 
+        printf("==PDC_SERVER[%d]: error with HG_Finalize\n", pdc_server_rank_g);
+
+
 done:
     free(all_addr_strings_g);
     free(all_addr_strings_1d_g);
@@ -1049,21 +1062,9 @@ done:
 hg_return_t
 PDC_Server_checkpoint_cb(const struct hg_cb_info *callback_info)
 {
-    hg_return_t ret = HG_SUCCESS;
-    perr_t ret_value;
+    PDC_Server_checkpoint();
 
-    char checkpoint_file[ADDR_MAX];
-    snprintf(checkpoint_file, ADDR_MAX, "%s%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.", pdc_server_rank_g);
-
-    ret_value = PDC_Server_checkpoint(checkpoint_file);
-    if (ret_value != SUCCEED) {
-        printf("==PDC_SERVER[%d]: %s - Error checkpoint to [%s]\n", pdc_server_rank_g, __func__, checkpoint_file);
-        fflush(stdout);
-        goto done;
-    }
-
-done:
-    return ret;
+    return HG_SUCCESS;
 }
 
 /*
@@ -1073,7 +1074,7 @@ done:
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_checkpoint(char *filename)
+perr_t PDC_Server_checkpoint()
 {
     perr_t ret_value = SUCCEED;
     pdc_metadata_t *elt;
@@ -1082,16 +1083,26 @@ perr_t PDC_Server_checkpoint(char *filename)
     int n_entry, metadata_size = 0, region_count = 0, n_region, n_write_region = 0;
     uint32_t hash_key;
     HashTablePair pair;
-
+    char checkpoint_file[ADDR_MAX];
     
     FUNC_ENTER(NULL);
 
+#ifdef ENABLE_TIMING 
+    // Timing
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
+    double checkpoint_time;
+    gettimeofday(&pdc_timer_start, 0);
+#endif
+
+    // TODO: instead of checkpoint at app finalize time, try checkpoint with a time countdown or # of objects
+    snprintf(checkpoint_file, ADDR_MAX, "%s%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.", pdc_server_rank_g);
     /* if (pdc_server_rank_g == 0) { */
-        printf("\n\n==PDC_SERVER[%d]: Checkpoint file [%s]\n",pdc_server_rank_g, filename);
+        printf("\n\n==PDC_SERVER[%d]: Checkpoint file [%s]\n",pdc_server_rank_g, checkpoint_file);
         fflush(stdout);
     /* } */
 
-    FILE *file = fopen(filename, "w+");
+    FILE *file = fopen(checkpoint_file, "w+");
     if (file==NULL) {
         printf("==PDC_SERVER[%d]: %s - Checkpoint file open error", pdc_server_rank_g, __func__); 
         ret_value = FAIL;
@@ -1156,6 +1167,15 @@ perr_t PDC_Server_checkpoint(char *filename)
     if (pdc_server_rank_g == 0) {
         printf("==PDC_SERVER: checkpointed %d objects, with %d regions \n", all_metadata_size, all_region_count);
     }
+
+#ifdef ENABLE_TIMING 
+    // Timing
+    gettimeofday(&pdc_timer_end, 0);
+    checkpoint_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+    if (pdc_server_rank_g == 0) {
+        printf("==PDC_SERVER: total checkpoint time = %.6f\n", checkpoint_time);
+    }
+#endif
 
 done:
     FUNC_LEAVE(ret_value);
@@ -1249,7 +1269,7 @@ perr_t PDC_Server_restart(char *filename)
 
             fread(region_list, sizeof(region_list_t), n_region, file);
 
-            int idx;
+            unsigned idx;
             for (j = 0; j < n_region; j++) {
                 (region_list+j)->buf                        = NULL;
                 (region_list+j)->data_size                  = 1;
@@ -1329,7 +1349,7 @@ perr_t PDC_Server_restart(char *filename)
     /*        "successfully loaded %d objects, %d regions...\n", pdc_server_rank_g, nobj, total_region); */
 
     if (pdc_server_rank_g == 0) {
-        printf("==PDC_SERVER: Server restarted from saved session, "
+        printf("==PDC_SERVER[0]: Server restarted from saved session, "
                "successfully loaded %d objects, %d regions...\n", all_nobj, all_n_region);
     }
 
@@ -1455,258 +1475,8 @@ static perr_t PDC_Server_loop(hg_context_t *hg_context)
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Main function of PDC server
- *
- * \param  argc[IN]     Number of command line arguments
- * \param  argv[IN]     Command line arguments
- *
- * \return Non-negative on success/Negative on failure
- */
-int main(int argc, char *argv[])
+static void PDC_print_IO_stats()
 {
-    int port;
-    char *tmp_env_char;
-    perr_t ret;
-    hg_return_t hg_ret;
-    
-    FUNC_ENTER(NULL);
-    
-#ifdef ENABLE_MPI
-    MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &pdc_server_rank_g);
-    MPI_Comm_size(MPI_COMM_WORLD, &pdc_server_size_g);
-#else
-    pdc_server_rank_g = 0;
-    pdc_server_size_g = 1;
-#endif
-
-    // Init rand seed
-    srand(time(NULL));
-
-    is_restart_g = 0;
-    port = pdc_server_rank_g % 32 + 7000 ;
-    /* printf("rank=%d, port=%d\n", pdc_server_rank_g,port); */
-
-    // Set up tmp dir
-    tmp_env_char = getenv("PDC_TMPDIR");
-    if (tmp_env_char == NULL) 
-        tmp_env_char = "./pdc_tmp";
-
-    snprintf(pdc_server_tmp_dir_g, ADDR_MAX,  "%s/", tmp_env_char);
-
-    // Get number of OST per file
-    tmp_env_char = getenv("PDC_NOST_PER_FILE");
-    if (tmp_env_char!= NULL) {
-        pdc_nost_per_file_g = atoi(tmp_env_char);
-        // Make sure it is a sane value
-        if (pdc_nost_per_file_g < 1 || pdc_nost_per_file_g > 248) {
-            pdc_nost_per_file_g = 1;
-        }
-    }
-
-    // Get bb write percentage 
-    tmp_env_char = getenv("PDC_BB_WRITE_PERCENT");
-    if (tmp_env_char == NULL) 
-        write_to_bb_percentage_g = 0;
-    else
-        write_to_bb_percentage_g = atoi(tmp_env_char);
-
-    if (write_to_bb_percentage_g < 0 || write_to_bb_percentage_g > 100) 
-        write_to_bb_percentage_g = 0;
-
-    /* int pid = getpid(); */
-    /* printf("==PDC_SERVER[%d]: my pid is %d\n", pdc_server_rank_g, pid); */
-
-
-    if (pdc_server_rank_g == 0) {
-        printf("\n==PDC_SERVER[%d]: using [%s] as tmp dir. %d OSTs per data file, %d%% to BB\n", 
-                pdc_server_rank_g, pdc_server_tmp_dir_g, pdc_nost_per_file_g, write_to_bb_percentage_g);
-    }
-
-#ifdef ENABLE_TIMING 
-    // Timing
-    struct timeval  start;
-    struct timeval  end;
-    long long elapsed;
-    double server_init_time;
-    gettimeofday(&start, 0);
-#endif
-
-    if (argc > 1) {
-        if (strcmp(argv[1], "restart") == 0) 
-            is_restart_g = 1;
-    }
-
-    ret = PDC_Server_init(port, &hg_class_g, &hg_context_g);
-    if (ret != SUCCEED || hg_class_g == NULL || hg_context_g == NULL) {
-        printf("Error with Mercury init, exit...\n");
-        ret = FAIL;
-        goto done;
-    }
-
-    // Get debug environment var
-    char *is_debug_env = getenv("PDC_DEBUG");
-    if (is_debug_env != NULL) {
-        is_debug_g = atoi(is_debug_env);
-        if (pdc_server_rank_g == 0)
-            printf("==PDC_SERVER[%d]: PDC_DEBUG set to %d!\n", pdc_server_rank_g, is_debug_g);
-    }
-
-    // Register RPC, metadata related
-    client_test_connect_register(hg_class_g);
-    gen_obj_id_register(hg_class_g);
-    close_server_register(hg_class_g);
-    metadata_query_register(hg_class_g);
-    metadata_delete_register(hg_class_g);
-    metadata_delete_by_id_register(hg_class_g);
-    metadata_update_register(hg_class_g);
-    metadata_add_tag_register(hg_class_g);
-    region_lock_register(hg_class_g);
-    region_release_register(hg_class_g);
-    gen_cont_id_register(hg_class_g);
-
-    // bulk
-    query_partial_register(hg_class_g);
-    cont_add_del_objs_rpc_register(hg_class_g);
-    query_read_obj_name_rpc_register(hg_class_g);
-
-    // Mapping
-    buf_map_register(hg_class_g);
-    reg_map_register(hg_class_g);
-    buf_unmap_register(hg_class_g);
-    reg_unmap_register(hg_class_g);
-    obj_unmap_register(hg_class_g);
-
-    // Data server
-    data_server_read_register(hg_class_g);
-    data_server_write_register(hg_class_g);
-    data_server_read_check_register(hg_class_g);
-    data_server_write_check_register(hg_class_g);
-
-    // Server to client RPC
-    server_lookup_client_register_id_g = server_lookup_client_register(hg_class_g);
-    notify_io_complete_register_id_g   = notify_io_complete_register(hg_class_g);
-
-    // Server to server RPC
-    get_remote_metadata_register_id_g         = get_remote_metadata_register(hg_class_g);  
-    buf_map_server_register_id_g              = buf_map_server_register(hg_class_g);
-    buf_unmap_server_register_id_g            = buf_unmap_server_register(hg_class_g);
-    server_lookup_remote_server_register_id_g = server_lookup_remote_server_register(hg_class_g);
-    update_region_loc_register_id_g           = update_region_loc_register(hg_class_g);
-    notify_region_update_register_id_g        = notify_region_update_register(hg_class_g);
-    get_metadata_by_id_register_id_g          = get_metadata_by_id_register(hg_class_g);
-    get_reg_lock_register_id_g                = get_reg_lock_register(hg_class_g);
-    get_storage_info_register_id_g            = get_storage_info_register(hg_class_g);
-    bulk_rpc_register_id_g                    = bulk_rpc_register(hg_class_g);
-    storage_meta_name_query_register_id_g     = storage_meta_name_query_rpc_register(hg_class_g);
-    get_storage_meta_name_query_bulk_result_rpc_register_id_g = get_storage_meta_name_query_bulk_result_rpc_register(hg_class_g);
-    notify_client_multi_io_complete_rpc_register_id_g = notify_client_multi_io_complete_rpc_register(hg_class_g);
-    server_checkpoint_rpc_register_id_g       = server_checkpoing_rpc_register(hg_class_g);
-
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-    
-    /* char *is_lookupall = getenv("PDC_LOOKUP_ALL"); */
-    /* if (is_lookupall == NULL || strcmp(is_lookupall, "0") == 0) { */
-    /*     if (pdc_server_rank_g == 0) */ 
-    /*         printf("==PDC_SERVER[%d]: will lookup other PDC servers on demand\n", pdc_server_rank_g); */
-    /* } */
-    /* else { */
-        // Lookup all remote servers addr
-        if (PDC_Server_lookup_all_servers() != SUCCEED) {
-            printf("==PDC_SERVER[%d]: unable to lookup_remote_server, exiting...\n", pdc_server_rank_g);
-            fflush(stdout);
-            goto done;
-        }
-        else {
-            if (pdc_server_rank_g == 0) {
-                printf("==PDC_SERVER[%d]: Successfully established connection to %d other PDC servers\n",
-                        pdc_server_rank_g, pdc_server_size_g- 1);
-                fflush(stdout);
-            }
-        }
-    /* } */
-
-
-    if (pdc_server_rank_g == 0) 
-        if (PDC_Server_write_addr_to_file(all_addr_strings_g, pdc_server_size_g) != SUCCEED) 
-            printf("==PDC_SERVER[%d]: Error with write config file\n", pdc_server_rank_g);
-
-#ifdef ENABLE_TIMING 
-    // Timing
-    gettimeofday(&end, 0);
-    elapsed = (end.tv_sec-start.tv_sec)*1000000LL + end.tv_usec-start.tv_usec;
-    server_init_time = elapsed / 1000000.0;
-#endif
-
-    if (pdc_server_rank_g == 0) {
-        #ifdef ENABLE_TIMING
-        printf("==PDC_SERVER[%d]: total startup time = %.6f\n", pdc_server_rank_g, server_init_time);
-        #endif
-
-        printf("==PDC_SERVER[%d]: Server ready!\n\n\n", pdc_server_rank_g);
-    }
-    fflush(stdout);
-
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-
-#ifdef ENABLE_MULTITHREAD
-    PDC_Server_multithread_loop(hg_context_g);
-#else
-    PDC_Server_loop(hg_context_g);
-#endif
-
-    /* printf("==PDC_SERVER[%d]: shutdown in progress...\n", pdc_server_rank_g); */
-    /* fflush(stdout); */
-
-    /* if (pdc_server_rank_g == 0) { */
-    /*     printf("==PDC_SERVER: All work done, finalizing\n"); */
-    /*     fflush(stdout); */
-    /* } */
-#ifdef ENABLE_CHECKPOINT
-    // TODO: instead of checkpoint at app finalize time, try checkpoint with a time countdown or # of objects
-    char checkpoint_file[ADDR_MAX];
-    snprintf(checkpoint_file, ADDR_MAX, "%s%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.", pdc_server_rank_g);
-
-    #ifdef ENABLE_TIMING 
-    // Timing
-    struct timeval  pdc_timer_start;
-    struct timeval  pdc_timer_end;
-    double checkpoint_time, all_checkpoint_time;
-    gettimeofday(&pdc_timer_start, 0);
-    #endif
-
-    tmp_env_char = getenv("PDC_DISABLE_CHECKPOINT");
-    if (NULL != tmp_env_char) {
-        if (pdc_server_rank_g == 0) 
-            printf("==PDC_SERVER: checkpoint disabled!\n");
-    }
-    else { 
-        PDC_Server_checkpoint(checkpoint_file);
-
-    #ifdef ENABLE_TIMING 
-        // Timing
-        gettimeofday(&pdc_timer_end, 0);
-        checkpoint_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-
-        #ifdef ENABLE_MPI
-        MPI_Reduce(&checkpoint_time, &all_checkpoint_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-        #else
-        all_checkpoint_time = checkpoint_time;
-        #endif
-
-        if (pdc_server_rank_g == 0) {
-            printf("==PDC_SERVER: total checkpoint  time = %.6f\n", all_checkpoint_time);
-        }
-    }
-
-    #endif
-#endif
-
     // Debug print
 #ifdef ENABLE_TIMING 
     double write_time_max, write_time_min, write_time_avg;
@@ -1773,14 +1543,14 @@ int main(int argc, char *argv[])
 
     if (pdc_server_rank_g == 0) {
         printf("==PDC_SERVER: IO STATS (MIN, AVG, MAX)\n"
-               "              #fwrite %3d, Tfwrite (%6.2f, %6.2f, %6.2f), %.0f MB\n"
-               "              #fread  %3d, Tfread  (%6.2f, %6.2f, %6.2f), %.0f MB\n"
-               "              #fopen  %3d, Tfopen  (%6.2f, %6.2f, %6.2f)\n"
-               "              Tfsync               (%6.2f, %6.2f, %6.2f)\n"
-               "              Ttotal_IO            (%6.2f, %6.2f, %6.2f)\n"
-               "              Ttotal_IO_elapsed    (%6.2f, %6.2f, %6.2f)\n"
-               "              Tregion_update       (%6.2f, %6.2f, %6.2f)\n"
-               "              Tget_region          (%6.2f, %6.2f, %6.2f)\n",  
+               "              #fwrite %4d, Tfwrite (%6.2f, %6.2f, %6.2f), %.0f MB\n"
+               "              #fread  %4d, Tfread  (%6.2f, %6.2f, %6.2f), %.0f MB\n"
+               "              #fopen  %4d, Tfopen  (%6.2f, %6.2f, %6.2f)\n"
+               "              Tfsync                (%6.2f, %6.2f, %6.2f)\n"
+               "              Ttotal_IO             (%6.2f, %6.2f, %6.2f)\n"
+               "              Ttotal_IO_elapsed     (%6.2f, %6.2f, %6.2f)\n"
+               "              Tregion_update        (%6.2f, %6.2f, %6.2f)\n"
+               "              Tget_region           (%6.2f, %6.2f, %6.2f)\n",  
                 n_fwrite_g, write_time_min,    write_time_avg,    write_time_max, fwrite_total_MB, 
                 n_fread_g ,  read_time_min,     read_time_avg,     read_time_max, fread_total_MB, 
                 n_fopen_g ,  open_time_min,     open_time_avg,     open_time_max, 
@@ -1792,42 +1562,220 @@ int main(int argc, char *argv[])
     }
 #endif
 
-done:
-    if (pdc_server_rank_g == 0) {
-        printf("==PDC_SERVER[0]: start finalizing ...\n");
-        /* printf("==PDC_SERVER: [%d] exiting...\n", pdc_server_rank_g); */
-        fflush(stdout);
-    }
-    PDC_Server_finalize();
+}
 
-    // Finalize 
-    /* hg_ret = HG_Context_destroy(pdc_client_context_g); */
-    /* if (hg_ret != HG_SUCCESS) */ 
-    /*     printf("error with HG_Context_destroy(pdc_client_context_g)\n"); */
+static void PDC_Server_mercury_register()
+{
+    // Register RPC, metadata related
+    client_test_connect_register(hg_class_g);
+    gen_obj_id_register(hg_class_g);
+    close_server_register(hg_class_g);
+    metadata_query_register(hg_class_g);
+    metadata_delete_register(hg_class_g);
+    metadata_delete_by_id_register(hg_class_g);
+    metadata_update_register(hg_class_g);
+    metadata_add_tag_register(hg_class_g);
+    region_lock_register(hg_class_g);
+    region_release_register(hg_class_g);
+    gen_cont_id_register(hg_class_g);
 
-    hg_ret = HG_Context_destroy(hg_context_g);
-    if (hg_ret != HG_SUCCESS) {
-        printf("==PDC_SERVER[%d]: error with HG_Context_destroy\n", pdc_server_rank_g);
-        goto exit;
-    }
+    // bulk
+    query_partial_register(hg_class_g);
+    cont_add_del_objs_rpc_register(hg_class_g);
+    query_read_obj_name_rpc_register(hg_class_g);
 
-    hg_ret = HG_Finalize(hg_class_g);
-    if (hg_ret != HG_SUCCESS) 
-        printf("==PDC_SERVER[%d]: error with HG_Finalize\n", pdc_server_rank_g);
-    else {
-        if (pdc_server_rank_g == 0) {
-            printf("==PDC_SERVER[0]: Finalized\n");
-            /* printf("==PDC_SERVER: [%d] exiting...\n", pdc_server_rank_g); */
-            fflush(stdout);
+    // Mapping
+    buf_map_register(hg_class_g);
+    reg_map_register(hg_class_g);
+    buf_unmap_register(hg_class_g);
+    reg_unmap_register(hg_class_g);
+    obj_unmap_register(hg_class_g);
+
+    // Data server
+    data_server_read_register(hg_class_g);
+    data_server_write_register(hg_class_g);
+    data_server_read_check_register(hg_class_g);
+    data_server_write_check_register(hg_class_g);
+
+    // Server to client RPC
+    server_lookup_client_register_id_g = server_lookup_client_register(hg_class_g);
+    notify_io_complete_register_id_g   = notify_io_complete_register(hg_class_g);
+
+    // Server to server RPC
+    get_remote_metadata_register_id_g         = get_remote_metadata_register(hg_class_g);  
+    buf_map_server_register_id_g              = buf_map_server_register(hg_class_g);
+    buf_unmap_server_register_id_g            = buf_unmap_server_register(hg_class_g);
+    server_lookup_remote_server_register_id_g = server_lookup_remote_server_register(hg_class_g);
+    update_region_loc_register_id_g           = update_region_loc_register(hg_class_g);
+    notify_region_update_register_id_g        = notify_region_update_register(hg_class_g);
+    get_metadata_by_id_register_id_g          = get_metadata_by_id_register(hg_class_g);
+    get_reg_lock_register_id_g                = get_reg_lock_register(hg_class_g);
+    /* get_storage_info_register_id_g            = get_storage_info_register(hg_class_g); */
+    bulk_rpc_register_id_g                    = bulk_rpc_register(hg_class_g);
+    storage_meta_name_query_register_id_g     = storage_meta_name_query_rpc_register(hg_class_g);
+    get_storage_meta_name_query_bulk_result_rpc_register_id_g = get_storage_meta_name_query_bulk_result_rpc_register(hg_class_g);
+    notify_client_multi_io_complete_rpc_register_id_g = notify_client_multi_io_complete_rpc_register(hg_class_g);
+    server_checkpoint_rpc_register_id_g       = server_checkpoing_rpc_register(hg_class_g);
+
+}
+
+static void PDC_Server_get_env()
+{
+    char *tmp_env_char;
+
+    // Set up tmp dir
+    tmp_env_char = getenv("PDC_TMPDIR");
+    if (tmp_env_char == NULL) 
+        tmp_env_char = "./pdc_tmp";
+
+    snprintf(pdc_server_tmp_dir_g, ADDR_MAX,  "%s/", tmp_env_char);
+
+    // Get number of OST per file
+    tmp_env_char = getenv("PDC_NOST_PER_FILE");
+    if (tmp_env_char!= NULL) {
+        pdc_nost_per_file_g = atoi(tmp_env_char);
+        // Make sure it is a sane value
+        if (pdc_nost_per_file_g < 1 || pdc_nost_per_file_g > 248) {
+            pdc_nost_per_file_g = 1;
         }
     }
 
-exit:
+    // Get bb write percentage 
+    tmp_env_char = getenv("PDC_BB_WRITE_PERCENT");
+    if (tmp_env_char == NULL) 
+        write_to_bb_percentage_g = 0;
+    else
+        write_to_bb_percentage_g = atoi(tmp_env_char);
+
+    if (write_to_bb_percentage_g < 0 || write_to_bb_percentage_g > 100) 
+        write_to_bb_percentage_g = 0;
+
+    // Get debug environment var
+    char *is_debug_env = getenv("PDC_DEBUG");
+    if (is_debug_env != NULL) {
+        is_debug_g = atoi(is_debug_env);
+        if (pdc_server_rank_g == 0)
+            printf("==PDC_SERVER[%d]: PDC_DEBUG set to %d!\n", pdc_server_rank_g, is_debug_g);
+    }
+
+    if (pdc_server_rank_g == 0) {
+        printf("\n==PDC_SERVER[%d]: using [%s] as tmp dir. %d OSTs per data file, %d%% to BB\n", 
+                pdc_server_rank_g, pdc_server_tmp_dir_g, pdc_nost_per_file_g, write_to_bb_percentage_g);
+    }
+
+    /* int pid = getpid(); */
+    /* printf("==PDC_SERVER[%d]: my pid is %d\n", pdc_server_rank_g, pid); */
+}
+
+/*
+ * Main function of PDC server
+ *
+ * \param  argc[IN]     Number of command line arguments
+ * \param  argv[IN]     Command line arguments
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+int main(int argc, char *argv[])
+{
+    int port;
+    char *tmp_env_char;
+    perr_t ret;
+    
+#ifdef ENABLE_MPI
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &pdc_server_rank_g);
+    MPI_Comm_size(MPI_COMM_WORLD, &pdc_server_size_g);
+#else
+    pdc_server_rank_g = 0;
+    pdc_server_size_g = 1;
+#endif
+
+#ifdef ENABLE_TIMING 
+    struct timeval  start;
+    struct timeval  end;
+    double server_init_time;
+    gettimeofday(&start, 0);
+#endif
+
+    if (argc > 1) 
+        if (strcmp(argv[1], "restart") == 0) is_restart_g = 1;
+
+    // Init rand seed
+    srand(time(NULL));
+
+    // Get environmental variables
+    PDC_Server_get_env();
+
+    // Register Mercury RPC/bulk
+    PDC_Server_mercury_register();
+
+    port = pdc_server_rank_g % 32 + 7000 ;
+    /* printf("rank=%d, port=%d\n", pdc_server_rank_g,port); */
+    ret = PDC_Server_init(port, &hg_class_g, &hg_context_g);
+    if (ret != SUCCEED || hg_class_g == NULL || hg_context_g == NULL) {
+        printf("==PDC_SERVER[%d]: Error with Mercury init\n", pdc_server_rank_g);
+        goto done;
+    }
+
+#ifdef ENABLE_MPI
+    // Need a barrier so that all servers finish init before the lookup process
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    
+    // Lookup and get addresses of other servers
+    char *lookup_on_demand = getenv("PDC_LOOKUP_ON_DEMAND");
+    if (lookup_on_demand != NULL) {
+        if (pdc_server_rank_g == 0) printf("==PDC_SERVER[0]: will lookup other PDC servers on demand\n");
+    }
+    else
+        PDC_Server_lookup_all_servers();
+
+    // Write server addrs to the config file for client to read from
+    if (pdc_server_rank_g == 0) 
+        if (PDC_Server_write_addr_to_file(all_addr_strings_g, pdc_server_size_g) != SUCCEED) 
+            printf("==PDC_SERVER[%d]: Error with write config file\n", pdc_server_rank_g);
+
+#ifdef ENABLE_TIMING 
+    // Timing
+    gettimeofday(&end, 0);
+    server_init_time = PDC_get_elapsed_time_double(&start, &end);
+#endif
+
+    if (pdc_server_rank_g == 0) {
+        #ifdef ENABLE_TIMING
+        printf("==PDC_SERVER[%d]: total startup time = %.6f\n", pdc_server_rank_g, server_init_time);
+        #endif
+        printf("==PDC_SERVER[%d]: Server ready!\n\n\n", pdc_server_rank_g);
+    }
+    fflush(stdout);
+
+    // Main loop to handle Mercury RPC/Bulk requests
+#ifdef ENABLE_MULTITHREAD
+    PDC_Server_multithread_loop(hg_context_g);
+#else
+    PDC_Server_loop(hg_context_g);
+#endif
+
+    // Exit from the loop, start finalize process
+#ifdef ENABLE_CHECKPOINT
+    tmp_env_char = getenv("PDC_DISABLE_CHECKPOINT");
+    if (NULL != tmp_env_char) {
+        if (pdc_server_rank_g == 0) printf("==PDC_SERVER[0]: checkpoint disabled!\n");
+    }
+    else  
+        PDC_Server_checkpoint();
+#endif
+
+#ifdef ENABLE_TIMING 
+    PDC_print_IO_stats();
+#endif
+
+done:
+    PDC_Server_finalize();
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
     return 0;
 } // End main
-
 
 // END OF PDC_SERVER.C

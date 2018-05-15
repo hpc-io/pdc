@@ -89,6 +89,6 @@ perr_t PDC_Server_metadata_duplicate_check();
 perr_t PDC_Server_init_hash_table();
 perr_t PDC_Server_hash_table_list_init(pdc_hash_table_entry_head *entry, uint32_t *hash_key);
 perr_t PDC_Server_hash_table_list_insert(pdc_hash_table_entry_head *head, pdc_metadata_t *new);
-pdc_metadata_t * find_metadata_by_id(uint64_t obj_id);
+pdc_metadata_t *find_metadata_by_id(uint64_t obj_id);
 
 #endif /* PDC_SERVER_METADATA_H */

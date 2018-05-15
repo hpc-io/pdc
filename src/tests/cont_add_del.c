@@ -187,7 +187,7 @@ int main(int argc, char **argv)
             printf("[%d] create obj with name %s\n", rank, obj_name);
         }
         obj_ids[i] = PDCobj_create(cont[i%NCONT], obj_name, obj_prop);
-        if (obj_ids[i] < 0) { 
+        if (obj_ids[i] <= 0) { 
             printf("Error getting an object id of %s from server, exit...\n", obj_name);
             exit(-1);
         }

@@ -76,8 +76,9 @@ extern double   server_hash_insert_time_g ;
 extern double   server_bloom_init_time_g  ;
 extern uint32_t n_metadata_g              ;
 
+perr_t PDC_Server_lookup_server_id(int remote_server_id);
 perr_t PDC_Server_set_close(void);
-perr_t PDC_Server_checkpoint(char *filename);
+perr_t PDC_Server_checkpoint();
 perr_t PDC_Server_restart(char *filename);
 hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info);
 /* perr_t PDC_Server_get_total_str_len(region_list_t** regions, uint32_t n_region, uint32_t *len); */

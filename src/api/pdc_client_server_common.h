@@ -374,7 +374,7 @@ typedef struct {
     int32_t            ret;
 } region_lock_out_t;
 
-static HG_INLINE hg_return_t
+static hg_return_t
 hg_proc_region_info_transfer_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret;
@@ -615,7 +615,7 @@ hg_proc_metadata_query_transfer_out_t(hg_proc_t proc, void *data)
 }
 
 
-static HG_INLINE hg_return_t
+static hg_return_t
 hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret;

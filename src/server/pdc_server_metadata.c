@@ -397,7 +397,7 @@ done:
  *
  * \return NULL if no match is found/pointer to the found metadata otherwise
  */
-pdc_metadata_t * find_metadata_by_id(uint64_t obj_id) 
+pdc_metadata_t* find_metadata_by_id(uint64_t obj_id) 
 {
     pdc_metadata_t *ret_value;
     pdc_hash_table_entry_head *head;
