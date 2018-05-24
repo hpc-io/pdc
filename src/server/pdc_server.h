@@ -90,5 +90,7 @@ hg_return_t PDC_Server_s2s_send_work_done_cb(const struct hg_cb_info *callback_i
 hg_return_t PDC_Server_s2s_recv_work_done_cb(const struct hg_cb_info *callback_info);
 hg_return_t PDC_Server_checkpoint_cb(const struct hg_cb_info *callback_info);
 
+perr_t PDC_Server_lookup_client(uint32_t client_id);
+
 #endif /* PDC_SERVER_H */
 

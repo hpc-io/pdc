@@ -119,6 +119,7 @@ hg_id_t    storage_meta_name_query_register_id_g;
 hg_id_t    get_storage_meta_name_query_bulk_result_rpc_register_id_g;
 hg_id_t    notify_client_multi_io_complete_rpc_register_id_g;
 hg_id_t    server_checkpoint_rpc_register_id_g;
+hg_id_t    send_client_storage_meta_rpc_register_id_g;
 
 // Global thread pool
 extern hg_thread_pool_t *hg_test_thread_pool_g;
@@ -552,6 +553,92 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_lookup_all_servers
 
+/*
+ * Callback function for HG_Addr_lookup(), creates a Mercury handle then forward the RPC message 
+ * to the client
+ *
+ * \param  callback_info[IN]        Mercury callback info pointer 
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+static hg_return_t
+PDC_Server_lookup_client_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    uint32_t client_id;
+    server_lookup_args_t *server_lookup_args;
+
+    FUNC_ENTER(NULL);
+
+    server_lookup_args = (server_lookup_args_t*) callback_info->arg;
+    client_id = server_lookup_args->client_id;
+
+    pdc_client_info_g[client_id].addr = callback_info->info.lookup.addr;
+    pdc_client_info_g[client_id].addr_valid = 1;
+
+    FUNC_LEAVE(ret_value);
+}
+
+/*
+ * Lookup the available clients to obtain proper address of them for future communication
+ * via Mercury.
+ *
+ * \param  client_id[IN]        Client's MPI rank
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Server_lookup_client(uint32_t client_id)
+{
+    perr_t ret_value = SUCCEED;
+    hg_return_t hg_ret;
+
+    FUNC_ENTER(NULL);
+
+    if (pdc_client_num_g <= 0) {
+        printf("==PDC_SERVER[%d]: %s - number of client <= 0!\n", pdc_server_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    if (pdc_client_info_g[client_id].addr_valid == 1) 
+        goto done;
+
+    // Lookup and fill the client info
+    server_lookup_args_t lookup_args;
+    char *target_addr_string;
+
+    lookup_args.server_id = pdc_server_rank_g;
+    lookup_args.client_id = client_id;
+    lookup_args.server_addr = pdc_client_info_g[client_id].addr_string;
+    target_addr_string = pdc_client_info_g[client_id].addr_string;
+
+    if (is_debug_g == 1) {
+        printf("==PDC_SERVER[%d]: Testing connection to client %d: %s\n", 
+                pdc_server_rank_g, client_id, target_addr_string);
+        fflush(stdout);
+    }
+
+    hg_ret = HG_Addr_lookup(hg_context_g, PDC_Server_lookup_client_cb, 
+                            &lookup_args, target_addr_string, HG_OP_ID_IGNORE);
+    if (hg_ret != HG_SUCCESS ) {
+        printf("==PDC_SERVER[%d]: Connection to client %d FAILED!\n", pdc_server_rank_g, client_id);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    int actual_count;
+    hg_ret = HG_Trigger(hg_context_g, 0/* timeout */, 1 /* max count */, &actual_count);
+
+    if (is_debug_g == 1) {
+        printf("==PDC_SERVER[%d]: waiting for client %d\n", pdc_server_rank_g, client_id);
+        fflush(stdout);
+    }
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
 /*---------------------------------------------------------------------------*/
 static hg_return_t
 PDC_hg_handle_create_cb(hg_handle_t handle, void *arg)
@@ -816,32 +903,32 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     if (is_restart_g == 1) {
         snprintf(checkpoint_file, ADDR_MAX, "%s%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.", pdc_server_rank_g);
 
-#ifdef ENABLE_TIMING 
-        // Timing
-        struct timeval  pdc_timer_start;
-        struct timeval  pdc_timer_end;
-        double restart_time, all_restart_time;
-        gettimeofday(&pdc_timer_start, 0);
-#endif
+/* #ifdef ENABLE_TIMING */ 
+/*         // Timing */
+/*         struct timeval  pdc_timer_start; */
+/*         struct timeval  pdc_timer_end; */
+/*         double restart_time, all_restart_time; */
+/*         gettimeofday(&pdc_timer_start, 0); */
+/* #endif */
 
         ret_value = PDC_Server_restart(checkpoint_file);
         if (ret_value != SUCCEED) {
             printf("==PDC_SERVER[%d]: error with PDC_Server_restart\n", pdc_server_rank_g);
             goto done;
         }
-#ifdef ENABLE_TIMING 
-        // Timing
-        gettimeofday(&pdc_timer_end, 0);
-        restart_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+/* #ifdef ENABLE_TIMING */ 
+/*         // Timing */
+/*         gettimeofday(&pdc_timer_end, 0); */
+/*         restart_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end); */
 
-    #ifdef ENABLE_MPI
-        MPI_Reduce(&restart_time, &all_restart_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    #else
-        all_restart_time = restart_time;
-    #endif
-        if (pdc_server_rank_g == 0) 
-            printf("==PDC_SERVER[0]: total restart time = %.6f\n", all_restart_time);
-#endif
+    /* #ifdef ENABLE_MPI */
+    /*     MPI_Reduce(&restart_time, &all_restart_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD); */
+    /* #else */
+    /*     all_restart_time = restart_time; */
+    /* #endif */
+        /* if (pdc_server_rank_g == 0) */ 
+        /*     printf("==PDC_SERVER[0]: total restart time = %.6f\n", all_restart_time); */
+/* #endif */
     }
     else {
         // We are starting a brand new server
@@ -1583,6 +1670,7 @@ static void PDC_Server_mercury_register()
     query_partial_register(hg_class_g);
     cont_add_del_objs_rpc_register(hg_class_g);
     query_read_obj_name_rpc_register(hg_class_g);
+    query_read_obj_name_client_rpc_register(hg_class_g);
 
     // Mapping
     buf_map_register(hg_class_g);
@@ -1617,6 +1705,7 @@ static void PDC_Server_mercury_register()
     notify_client_multi_io_complete_rpc_register_id_g = notify_client_multi_io_complete_rpc_register(hg_class_g);
     server_checkpoint_rpc_register_id_g       = server_checkpoing_rpc_register(hg_class_g);
 
+    send_client_storage_meta_rpc_register_id_g= send_client_storage_meta_rpc_register(hg_class_g);
 }
 
 static void PDC_Server_get_env()

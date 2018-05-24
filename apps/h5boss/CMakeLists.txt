@@ -40,6 +40,7 @@ set(PROGRAMS
     h5boss_gen_query_input
     h5boss_read_all_data
     h5boss_v1_query_read_h5
+    h5boss_v1_query_client_read
     )
 
 foreach(program ${PROGRAMS})

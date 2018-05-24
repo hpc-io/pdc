@@ -89,7 +89,7 @@ typedef struct PDC_Request_t {
     char                   **shm_base_arr;
     char                   **shm_addr_arr;
     int                     *shm_fd_arr;
-    uint64_t               **shm_size_arr;
+    uint64_t               *shm_size_arr;
 
     struct PDC_Request_t      *prev;
     struct PDC_Request_t      *next;
@@ -555,7 +555,7 @@ perr_t PDC_Client_add_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdc
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_Client_query_name_read_entire_obj(int nobj, char **obj_names, 
-                                             void ***out_buf, uint64_t **out_buf_sizes);
+                                             void ***out_buf, uint64_t *out_buf_sizes);
 
 /*
  * Send a checkpoint metadata to all servers
@@ -659,5 +659,14 @@ perr_t PDCtag_get(pdcid_t obj_id, char *tag_name, void *tag_value);
 
 /* perr_t PDCbuf_destroy(void *buf); */
 /* perr_t PDClocidx_destroy(void *loc_idx); */
+
+hg_return_t PDC_Client_recv_bulk_storage_meta_cb(const struct hg_cb_info *callback_info);
+perr_t PDC_Client_recv_bulk_storage_meta(process_bulk_storage_meta_args_t *process_args);
+perr_t PDC_Client_query_name_read_entire_obj_client(int nobj, char **obj_names, void ***out_buf, 
+                                             uint64_t *out_buf_sizes);
+
+perr_t PDC_Client_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint64_t *req_count,
+                                       uint64_t *storage_start, uint64_t *storage_count,
+                                       FILE *fp, uint64_t file_offset, void *buf,  size_t *total_read_bytes);
 
 #endif

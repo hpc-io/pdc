@@ -1898,6 +1898,14 @@ hg_proc_data_server_write_check_out_t(hg_proc_t proc, void *data)
 }
 
 typedef struct {
+    uint64_t                    obj_id;
+    region_info_transfer_t      region_transfer;
+    char                        storage_location[ADDR_MAX];
+    uint64_t                    offset;
+    uint64_t                    size;
+} region_storage_meta_t;
+
+typedef struct {
     region_info_transfer_t      region_transfer;
     char                        storage_location[ADDR_MAX];
     uint64_t                    offset;
@@ -2221,6 +2229,7 @@ hg_id_t gen_cont_id_register(hg_class_t *hg_class);
 hg_id_t cont_add_del_objs_rpc_register(hg_class_t *hg_class);
 hg_id_t query_read_obj_name_rpc_register(hg_class_t *hg_class);
 hg_id_t server_checkpoing_rpc_register(hg_class_t *hg_class);
+hg_id_t query_read_obj_name_client_rpc_register(hg_class_t *hg_class);
 
 //bulk
 hg_id_t query_partial_register(hg_class_t *hg_class);
@@ -2229,6 +2238,8 @@ hg_id_t data_server_read_register(hg_class_t *hg_class);
 
 hg_id_t get_storage_meta_name_query_bulk_result_rpc_register(hg_class_t *hg_class);
 hg_id_t notify_client_multi_io_complete_rpc_register(hg_class_t *hg_class);
+
+hg_id_t send_client_storage_meta_rpc_register(hg_class_t *hg_class);
 
 struct bulk_args_t {
     int cnt;
@@ -2590,5 +2601,15 @@ int PDC_is_valid_obj_id(uint64_t id);
 
 perr_t PDC_Client_query_read_complete(char *shm_addrs, int size, int n_shm, int seq_id);
 
+typedef struct process_bulk_storage_meta_args_t{
+    int n_storage_meta;
+    int seq_id;
+    region_storage_meta_t *all_storage_meta;
+} process_bulk_storage_meta_args_t;
 
+int is_contiguous_start_count_overlap(uint32_t ndim, uint64_t *a_start, uint64_t *a_count, uint64_t *b_start, uint64_t *b_count);
+perr_t get_overlap_start_count(uint32_t ndim, uint64_t *start_a, uint64_t *count_a, 
+                                                     uint64_t *start_b, uint64_t *count_b, 
+                                       uint64_t *overlap_start, uint64_t *overlap_count);
+int is_contiguous_region_overlap(region_list_t *a, region_list_t *b);
 #endif /* PDC_CLIENT_SERVER_COMMON_H */

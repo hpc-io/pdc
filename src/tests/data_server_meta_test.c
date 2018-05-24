@@ -131,17 +131,17 @@ int main(int argc, char **argv)
 
 
     // Read two regions
-    uint64_t *out_buf_sizes;
-    void **out_buf;
-
     int my_read_obj = NOBJ / size;
     int my_read_obj_start = my_read_obj * rank;
+    uint64_t *out_buf_sizes = (uint64_t*)calloc(sizeof(uint64_t), my_read_obj);
+    void **out_buf;
+
 
     for (i = 0; i < my_read_obj; i++) {
         sprintf(obj_names[i], "TestObj%d", i+my_read_obj_start);
     }
 
-    PDC_Client_query_name_read_entire_obj(my_read_obj, obj_names, &out_buf, &out_buf_sizes);
+    PDC_Client_query_name_read_entire_obj(my_read_obj, obj_names, &out_buf, out_buf_sizes);
     printf("Received %d data objects:\n", NOBJ);
     for (i = 0; i < my_read_obj; i++) {
         printf("Proc %d - [%s]: [%c] ... [%c], size %lu\n", 

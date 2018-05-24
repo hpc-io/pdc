@@ -6,7 +6,7 @@
 #include <time.h>
 #include <sys/time.h>
 
-#define ENABLE_MPI 1
+/* #define ENABLE_MPI 1 */
 
 #ifdef ENABLE_MPI
 #include "mpi.h"
@@ -128,7 +128,7 @@ int main(int argc, char **argv)
     pdcid_t pdc = PDC_init("PDC");
 
     void **buf;
-    uint64_t *buf_sizes = (uint64_t*)calloc(sizeof(uint64_t), my_count);
+    size_t *buf_sizes = calloc(sizeof(size_t), my_count);
 
     struct timeval  ht_total_start;
     struct timeval  ht_total_end;
@@ -146,7 +146,7 @@ int main(int argc, char **argv)
 #endif
     gettimeofday(&ht_total_start, 0);
 
-    PDC_Client_query_name_read_entire_obj(my_count, my_dset_names, &buf, buf_sizes);
+    PDC_Client_query_name_read_entire_obj_client(my_count, my_dset_names, &buf, buf_sizes);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -161,7 +161,11 @@ int main(int argc, char **argv)
         /* printf("%d: read [%s], size %lu\n", rank, my_dset_names[i], buf_sizes[i]); */
     }
     /* printf("%d: my total read size = %lu\n", rank, my_total_data_size); */
+#ifdef ENABLE_MPI
     MPI_Reduce(&my_total_data_size, &all_total_data_size, 1, MPI_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+#else
+    all_total_data_size = my_total_data_size;
+#endif
 
     if (rank == 0) {
         printf("Time to query and read %d obj of %.4f MB with %d ranks: %.4f\n", 

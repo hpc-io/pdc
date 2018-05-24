@@ -274,7 +274,7 @@ hg_return_t PDC_Server_bulk_cleanup_cb(const struct hg_cb_info *callback_info);
 
 perr_t PDC_Server_notify_client_multi_io_complete(uint32_t client_id, int client_seq_id, int n_completed, 
                                                   region_list_t *completed_region_list);
-perr_t PDC_Server_release_lock_request(uint64_t obj_id, struct PDC_region_info *region) ;
+perr_t PDC_Server_release_lock_request(uint64_t obj_id, struct PDC_region_info *region);
 
 
 

@@ -51,6 +51,7 @@ extern hg_context_t *hg_context_g;
 extern int is_debug_g;
 
 extern hg_id_t get_metadata_by_id_register_id_g;
+extern hg_id_t send_client_storage_meta_rpc_register_id_g;
 extern pdc_client_info_t        *pdc_client_info_g       ;
 extern pdc_remote_server_info_t *pdc_remote_server_info_g;
 extern double total_mem_usage_g;
@@ -91,4 +92,5 @@ perr_t PDC_Server_hash_table_list_init(pdc_hash_table_entry_head *entry, uint32_
 perr_t PDC_Server_hash_table_list_insert(pdc_hash_table_entry_head *head, pdc_metadata_t *new);
 pdc_metadata_t *find_metadata_by_id(uint64_t obj_id);
 
+hg_return_t PDC_Server_query_read_names_clinet_cb(const struct hg_cb_info *callback_info);
 #endif /* PDC_SERVER_METADATA_H */

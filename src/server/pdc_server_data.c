@@ -90,92 +90,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Callback function for HG_Addr_lookup(), creates a Mercury handle then forward the RPC message 
- * to the client
- *
- * \param  callback_info[IN]        Mercury callback info pointer 
- *
- * \return Non-negative on success/Negative on failure
- */
-static hg_return_t
-PDC_Server_lookup_client_cb(const struct hg_cb_info *callback_info)
-{
-    hg_return_t ret_value = HG_SUCCESS;
-    uint32_t client_id;
-    server_lookup_args_t *server_lookup_args;
-
-    FUNC_ENTER(NULL);
-
-    server_lookup_args = (server_lookup_args_t*) callback_info->arg;
-    client_id = server_lookup_args->client_id;
-
-    pdc_client_info_g[client_id].addr = callback_info->info.lookup.addr;
-    pdc_client_info_g[client_id].addr_valid = 1;
-
-    FUNC_LEAVE(ret_value);
-}
-
-/*
- * Lookup the available clients to obtain proper address of them for future communication
- * via Mercury.
- *
- * \param  client_id[IN]        Client's MPI rank
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDC_Server_lookup_client(uint32_t client_id)
-{
-    perr_t ret_value = SUCCEED;
-    hg_return_t hg_ret;
-
-    FUNC_ENTER(NULL);
-
-    if (pdc_client_num_g <= 0) {
-        printf("==PDC_SERVER[%d]: %s - number of client <= 0!\n", pdc_server_rank_g, __func__);
-        ret_value = FAIL;
-        goto done;
-    }
-
-    if (pdc_client_info_g[client_id].addr_valid == 1) 
-        goto done;
-
-    // Lookup and fill the client info
-    server_lookup_args_t lookup_args;
-    char *target_addr_string;
-
-    lookup_args.server_id = pdc_server_rank_g;
-    lookup_args.client_id = client_id;
-    lookup_args.server_addr = pdc_client_info_g[client_id].addr_string;
-    target_addr_string = pdc_client_info_g[client_id].addr_string;
-
-    if (is_debug_g == 1) {
-        printf("==PDC_SERVER[%d]: Testing connection to client %d: %s\n", 
-                pdc_server_rank_g, client_id, target_addr_string);
-        fflush(stdout);
-    }
-
-    hg_ret = HG_Addr_lookup(hg_context_g, PDC_Server_lookup_client_cb, 
-                            &lookup_args, target_addr_string, HG_OP_ID_IGNORE);
-    if (hg_ret != HG_SUCCESS ) {
-        printf("==PDC_SERVER[%d]: Connection to client %d FAILED!\n", pdc_server_rank_g, client_id);
-        ret_value = FAIL;
-        goto done;
-    }
-
-    int actual_count;
-    hg_ret = HG_Trigger(hg_context_g, 0/* timeout */, 1 /* max count */, &actual_count);
-
-    if (is_debug_g == 1) {
-        printf("==PDC_SERVER[%d]: waiting for client %d\n", pdc_server_rank_g, client_id);
-        fflush(stdout);
-    }
-
-done:
-    fflush(stdout);
-    FUNC_LEAVE(ret_value);
-}
-
 
 /*
  * Set the Lustre stripe count/size of a given path
@@ -623,200 +537,7 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
-/* For 1D boxes (intervals) we have: */
-/* box1 = (xmin1, xmax1) */
-/* box2 = (xmin2, xmax2) */
-/* overlapping1D(box1,box2) = xmax1 >= xmin2 and xmax2 >= xmin1 */
 
-/* For 2D boxes (rectangles) we have: */
-/* box1 = (x:(xmin1,xmax1),y:(ymin1,ymax1)) */
-/* box2 = (x:(xmin2,xmax2),y:(ymin2,ymax2)) */
-/* overlapping2D(box1,box2) = overlapping1D(box1.x, box2.x) and */ 
-/*                            overlapping1D(box1.y, box2.y) */
-
-/* For 3D boxes we have: */
-/* box1 = (x:(xmin1,xmax1),y:(ymin1,ymax1),z:(zmin1,zmax1)) */
-/* box2 = (x:(xmin2,xmax2),y:(ymin2,ymax2),z:(zmin2,zmax2)) */
-/* overlapping3D(box1,box2) = overlapping1D(box1.x, box2.x) and */ 
-/*                            overlapping1D(box1.y, box2.y) and */
-/*                            overlapping1D(box1.z, box2.z) */
- 
-/*
- * Check if two 1D segments overlaps
- *
- * \param  xmin1[IN]        Start offset of first segment
- * \param  xmax1[IN]        End offset of first segment
- * \param  xmin2[IN]        Start offset of second segment
- * \param  xmax2[IN]        End offset of second segment
- *
- * \return 1 if they overlap/-1 otherwise
- */
-static int is_overlap_1D(uint64_t xmin1, uint64_t xmax1, uint64_t xmin2, uint64_t xmax2)
-{
-    int ret_value = -1;
-    
-    if (xmax1 >= xmin2 && xmax2 >= xmin1) {
-        ret_value = 1;
-    }
-
-    return ret_value;
-}
-
-/*
- * Check if two 2D box overlaps
- *
- * \param  xmin1[IN]        Start offset (x-axis) of first  box
- * \param  xmax1[IN]        End   offset (x-axis) of first  box
- * \param  ymin1[IN]        Start offset (y-axis) of first  box
- * \param  ymax1[IN]        End   offset (y-axis) of first  box
- * \param  xmin2[IN]        Start offset (x-axis) of second box
- * \param  xmax2[IN]        End   offset (x-axis) of second box
- * \param  ymin2[IN]        Start offset (y-axis) of second box
- * \param  ymax2[IN]        End   offset (y-axis) of second box
- *
- * \return 1 if they overlap/-1 otherwise
- */
-static int is_overlap_2D(uint64_t xmin1, uint64_t xmax1, uint64_t ymin1, uint64_t ymax1, 
-                         uint64_t xmin2, uint64_t xmax2, uint64_t ymin2, uint64_t ymax2)
-{
-    int ret_value = -1;
-    
-    /* if (is_overlap_1D(box1.x, box2.x) == 1 && is_overlap_1D(box1.y, box2.y) == 1) { */
-    if (is_overlap_1D(xmin1, xmax1, xmin2, xmax2 ) == 1 &&                              
-        is_overlap_1D(ymin1, ymax1, ymin2, ymax2) == 1) {
-        ret_value = 1;
-    }
-
-    return ret_value;
-}
-
-/*
- * Check if two 3D box overlaps
- *
- * \param  xmin1[IN]        Start offset (x-axis) of first  box
- * \param  xmax1[IN]        End   offset (x-axis) of first  box
- * \param  ymin1[IN]        Start offset (y-axis) of first  box
- * \param  ymax1[IN]        End   offset (y-axis) of first  box
- * \param  zmin2[IN]        Start offset (z-axis) of first  box
- * \param  zmax2[IN]        End   offset (z-axis) of first  box
- * \param  xmin2[IN]        Start offset (x-axis) of second box
- * \param  xmax2[IN]        End   offset (x-axis) of second box
- * \param  ymin2[IN]        Start offset (y-axis) of second box
- * \param  ymax2[IN]        End   offset (y-axis) of second box
- * \param  zmin2[IN]        Start offset (z-axis) of second box
- * \param  zmax2[IN]        End   offset (z-axis) of second box
- *
- * \return 1 if they overlap/-1 otherwise
- */
-static int is_overlap_3D(uint64_t xmin1, uint64_t xmax1, uint64_t ymin1, uint64_t ymax1, uint64_t zmin1, uint64_t zmax1,
-                         uint64_t xmin2, uint64_t xmax2, uint64_t ymin2, uint64_t ymax2, uint64_t zmin2, uint64_t zmax2)
-{
-    int ret_value = -1;
-    
-    /* if (is_overlap_1D(box1.x, box2.x) == 1 && is_overlap_1D(box1.y, box2.y) == 1) { */
-    if (is_overlap_1D(xmin1, xmax1, xmin2, xmax2) == 1 && 
-        is_overlap_1D(ymin1, ymax1, ymin2, ymax2) == 1 && 
-        is_overlap_1D(zmin1, zmax1, zmin2, zmax2) == 1 ) 
-    {
-        ret_value = 1;
-    }
-
-    return ret_value;
-}
-
-/* static int is_overlap_4D(uint64_t xmin1, uint64_t xmax1, uint64_t ymin1, uint64_t ymax1, uint64_t zmin1, uint64_t zmax1, */
-/*                          uint64_t mmin1, uint64_t mmax1, */
-/*                          uint64_t xmin2, uint64_t xmax2, uint64_t ymin2, uint64_t ymax2, uint64_t zmin2, uint64_t zmax2, */
-/*                          uint64_t mmin2, uint64_t mmax2 ) */
-/* { */
-/*     int ret_value = -1; */
-    
-/*     /1* if (is_overlap_1D(box1.x, box2.x) == 1 && is_overlap_1D(box1.y, box2.y) == 1) { *1/ */
-/*     if (is_overlap_1D(xmin1, xmax1, xmin2, xmax2) == 1 && */ 
-/*         is_overlap_1D(ymin1, ymax1, ymin2, ymax2) == 1 && */ 
-/*         is_overlap_1D(zmin1, zmax1, zmin2, zmax2) == 1 && */ 
-/*         is_overlap_1D(mmin1, mmax1, mmin2, mmax2) == 1 ) */ 
-/*     { */
-/*         ret_value = 1; */
-/*     } */
-
-/*     return ret_value; */
-/* } */
-
-/*
- * Check if two regions overlap
- *
- * \param  a[IN]     Pointer to first region
- * \param  b[IN]     Pointer to second region
- *
- * \return 1 if they overlap/-1 otherwise
- */
-static int is_contiguous_region_overlap(region_list_t *a, region_list_t *b)
-{
-    int ret_value = 1;
-    
-    if (a == NULL || b == NULL) {
-        printf("==PDC_SERVER: is_contiguous_region_overlap() - passed NULL value!\n");
-        ret_value = -1;
-        goto done;
-    }
-
-    /* printf("==PDC_SERVER: is_contiguous_region_overlap adim=%d, bdim=%d\n", a->ndim, b->ndim); */
-    if (a->ndim != b->ndim || a->ndim <= 0 || b->ndim <= 0) {
-        ret_value = -1;
-        goto done;
-    }
-
-    uint64_t xmin1 = 0, xmin2 = 0, xmax1 = 0, xmax2 = 0;
-    uint64_t ymin1 = 0, ymin2 = 0, ymax1 = 0, ymax2 = 0;
-    uint64_t zmin1 = 0, zmin2 = 0, zmax1 = 0, zmax2 = 0;
-    /* uint64_t mmin1 = 0, mmin2 = 0, mmax1 = 0, mmax2 = 0; */
-
-    if (a->ndim >= 1) {
-        xmin1 = a->start[0];
-        xmax1 = a->start[0] + a->count[0] - 1;
-        xmin2 = b->start[0];
-        xmax2 = b->start[0] + b->count[0] - 1;
-        /* printf("xmin1, xmax1, xmin2, xmax2: %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 "\n", xmin1, xmax1, xmin2, xmax2); */
-    }
-    if (a->ndim >= 2) {
-        ymin1 = a->start[1];
-        ymax1 = a->start[1] + a->count[1] - 1;
-        ymin2 = b->start[1];
-        ymax2 = b->start[1] + b->count[1] - 1;
-        /* printf("ymin1, ymax1, ymin2, ymax2: %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 "\n", ymin1, ymax1, ymin2, ymax2); */
-    }
-    if (a->ndim >= 3) {
-        zmin1 = a->start[2];
-        zmax1 = a->start[2] + a->count[2] - 1;
-        zmin2 = b->start[2];
-        zmax2 = b->start[2] + b->count[2] - 1;
-        /* printf("zmin1, zmax1, zmin2, zmax2: %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 "\n", zmin1, zmax1, zmin2, zmax2); */
-    }
-    /* if (a->ndim >= 4) { */
-    /*     mmin1 = a->start[3]; */
-    /*     mmax1 = a->start[3] + a->count[3] - 1; */
-    /*     mmin2 = b->start[3]; */
-    /*     mmax2 = b->start[3] + b->count[3] - 1; */
-    /* } */
- 
-    if (a->ndim == 1) {
-        ret_value = is_overlap_1D(xmin1, xmax1, xmin2, xmax2);
-    }
-    else if (a->ndim == 2) {
-        ret_value = is_overlap_2D(xmin1, xmax1, ymin1, ymax1, xmin2, xmax2, ymin2, ymax2);
-    }
-    else if (a->ndim == 3) {
-        ret_value = is_overlap_3D(xmin1, xmax1, ymin1, ymax1, zmin1, zmax1, xmin2, xmax2, ymin2, ymax2, zmin2, zmax2);
-    }
-    /* else if (a->ndim == 4) { */
-    /*     ret_value = is_overlap_4D(xmin1, xmax1, ymin1, ymax1, zmin1, zmax1, mmin1, mmax1, xmin2, xmax2, ymin2, ymax2, zmin2, zmax2, mmin2, mmax2); */
-    /* } */
-
-done:
-    /* printf("is overlap: %d\n", ret_value); */
-    FUNC_LEAVE(ret_value);
-}
 /*
  * Lock a reigon.
  *
@@ -4702,131 +4423,6 @@ done:
     FUNC_LEAVE(ret_value);
 } // end of PDC_Server_update_region_storage_meta_bulk_with_cb
  
-/*
- * Check if two regions overlap
- *
- * \param  ndim[IN]        Dimension of the two region
- * \param  a_start[IN]     Start offsets of the the first region
- * \param  a_count[IN]     Size of the the first region
- * \param  b_start[IN]     Start offsets of the the second region
- * \param  b_count[IN]     Size of the the second region
- *
- * \return 1 if they overlap/-1 otherwise
- */
-static int is_contiguous_start_count_overlap(uint32_t ndim, uint64_t *a_start, uint64_t *a_count, uint64_t *b_start, uint64_t *b_count)
-{
-    int ret_value = 1;
-    
-    if (ndim > DIM_MAX || NULL == a_start || NULL == a_count ||NULL == b_start ||NULL == b_count) {
-        printf("is_contiguous_start_count_overlap: invalid input !\n");
-        ret_value = -1;
-        goto done;
-    }
-
-    uint64_t xmin1 = 0, xmin2 = 0, xmax1 = 0, xmax2 = 0;
-    uint64_t ymin1 = 0, ymin2 = 0, ymax1 = 0, ymax2 = 0;
-    uint64_t zmin1 = 0, zmin2 = 0, zmax1 = 0, zmax2 = 0;
-    /* uint64_t mmin1 = 0, mmin2 = 0, mmax1 = 0, mmax2 = 0; */
-
-    if (ndim >= 1) {
-        xmin1 = a_start[0];
-        xmax1 = a_start[0] + a_count[0] - 1;
-        xmin2 = b_start[0];
-        xmax2 = b_start[0] + b_count[0] - 1;
-        /* printf("xmin1, xmax1, xmin2, xmax2: %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 "\n", xmin1, xmax1, xmin2, xmax2); */
-    }
-    if (ndim >= 2) {
-        ymin1 = a_start[1];
-        ymax1 = a_start[1] + a_count[1] - 1;
-        ymin2 = b_start[1];
-        ymax2 = b_start[1] + b_count[1] - 1;
-        /* printf("ymin1, ymax1, ymin2, ymax2: %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 "\n", ymin1, ymax1, ymin2, ymax2); */
-    }
-    if (ndim >= 3) {
-        zmin1 = a_start[2];
-        zmax1 = a_start[2] + a_count[2] - 1;
-        zmin2 = b_start[2];
-        zmax2 = b_start[2] + b_count[2] - 1;
-        /* printf("zmin1, zmax1, zmin2, zmax2: %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 "\n", zmin1, zmax1, zmin2, zmax2); */
-    }
-    /* if (ndim >= 4) { */
-    /*     mmin1 = a_start[3]; */
-    /*     mmax1 = a_start[3] + a_count[3] - 1; */
-    /*     mmin2 = b_start[3]; */
-    /*     mmax2 = b_start[3] + b_count[3] - 1; */
-    /* } */
- 
-    if (ndim == 1) 
-        ret_value = is_overlap_1D(xmin1, xmax1, xmin2, xmax2);
-    else if (ndim == 2) 
-        ret_value = is_overlap_2D(xmin1, xmax1, ymin1, ymax1, 
-                                  xmin2, xmax2, ymin2, ymax2);
-    else if (ndim == 3) 
-        ret_value = is_overlap_3D(xmin1, xmax1, ymin1, ymax1, zmin1, zmax1, 
-                                  xmin2, xmax2, ymin2, ymax2, zmin2, zmax2);
-    /* else if (ndim == 4) */ 
-    /*     ret_value = is_overlap_4D(xmin1, xmax1, ymin1, ymax1, zmin1, zmax1, mmin1, mmax1, */ 
-    /*                               xmin2, xmax2, ymin2, ymax2, zmin2, zmax2, mmin2, mmax2); */
-
-done:
-    FUNC_LEAVE(ret_value);
-}
-
-/*
- * Get the overlapping region's information of two regions
- *
- * \param  ndim[IN]             Dimension of the two region
- * \param  start_a[IN]           Start offsets of the the first region
- * \param  count_a[IN]           Sizes of the the first region
- * \param  start_b[IN]           Start offsets of the the second region
- * \param  count_b[IN]           Sizes of the the second region
- * \param  overlap_start[IN]    Start offsets of the the overlapping region
- * \param  overlap_size[IN]     Sizes of the the overlapping region
- *
- * \return Non-negative on success/Negative on failure
- */
-static perr_t get_overlap_start_count(uint32_t ndim, uint64_t *start_a, uint64_t *count_a, 
-                                                     uint64_t *start_b, uint64_t *count_b, 
-                                       uint64_t *overlap_start, uint64_t *overlap_count)
-{
-    perr_t ret_value = SUCCEED;
-    uint64_t i;
-
-    if (NULL == start_a || NULL == count_a || NULL == start_b || NULL == count_b || 
-            NULL == overlap_start || NULL == overlap_count) {
-
-        printf("get_overlap NULL input!\n");
-        ret_value = FAIL;
-        return ret_value;
-    }
-    
-    // Check if they are truly overlapping regions
-    if (is_contiguous_start_count_overlap(ndim, start_a, count_a, start_b, count_b) != 1) {
-        printf("==PDC_SERVER[%d]: %s: non-overlap regions!\n", pdc_server_rank_g, __func__);
-        for (i = 0; i < ndim; i++) {
-            printf("\t\tdim%" PRIu64 " - start_a: %" PRIu64 " count_a: %" PRIu64 ", "
-                   "\t\tstart_b:%" PRIu64 " count_b:%" PRIu64 "\n", 
-                    i, start_a[i], count_a[i], start_b[i], count_b[i]);
-        }
-        ret_value = FAIL;
-        goto done;
-    }
-
-    for (i = 0; i < ndim; i++) {
-        overlap_start[i] = PDC_MAX(start_a[i], start_b[i]);
-        /* end = max(xmax2, xmax1); */
-        overlap_count[i] = PDC_MIN(start_a[i]+count_a[i], start_b[i]+count_b[i]) - overlap_start[i];
-    }
-
-done:
-    if (ret_value == FAIL) {
-        for (i = 0; i < ndim; i++) {
-            overlap_start[i] = 0;
-            overlap_count[i] = 0;
-        }
-    }
-    return ret_value;
-}
 
 /*
  * Perform the POSIX read of multiple storage regions that overlap with the read request
@@ -5119,6 +4715,7 @@ perr_t PDC_Server_read_one_region(region_list_t *read_region)
     region_list_t  *previous_region = NULL, *region_elt;
     FILE *fp_read = NULL;
     char *prev_path = NULL;
+    double fopen_time;
 
     FUNC_ENTER(NULL);
 
@@ -5177,19 +4774,19 @@ perr_t PDC_Server_read_one_region(region_list_t *read_region)
             /* fflush(stdout); */
 
             fp_read = fopen(region_elt->storage_location, "rb");
-            n_fopen_g++;
-
-            #ifdef ENABLE_TIMING
-            gettimeofday(&pdc_timer_end2, 0);
-            server_fopen_time_g += PDC_get_elapsed_time_double(&pdc_timer_start2, &pdc_timer_end2);
-            #endif
-
             if (fp_read == NULL) {
                 printf("==PDC_SERVER[%d]: fopen failed [%s]\n",
                         pdc_server_rank_g, read_region->storage_location);
                 ret_value = FAIL;
                 goto done;
             }
+            n_fopen_g++;
+
+            #ifdef ENABLE_TIMING
+            gettimeofday(&pdc_timer_end2, 0);
+            fopen_time = PDC_get_elapsed_time_double(&pdc_timer_start2, &pdc_timer_end2);
+            server_fopen_time_g += fopen_time;
+            #endif
         }
 
         // Request: elt->start/count
@@ -5213,8 +4810,8 @@ perr_t PDC_Server_read_one_region(region_list_t *read_region)
     } // end of for all overlapping storage regions for one request region
 
     if (is_debug_g == 1) {
-        printf("==PDC_SERVER[%d]: Read data total size %" PRIu64 "\n",
-                pdc_server_rank_g, total_read_bytes);
+        printf("==PDC_SERVER[%d]: Read data total size %" PRIu64 ", fopen time: %.3f\n",
+                pdc_server_rank_g, total_read_bytes, fopen_time);
         fflush(stdout);
     }
 
@@ -5954,20 +5551,6 @@ perr_t PDC_Server_get_local_storage_meta_with_one_name(storage_meta_query_one_na
     args->n_res = region_count;
     res_region_list = (region_list_t*)calloc(region_count, sizeof(region_list_t));
 
-// Debug
-/* if (pdc_server_rank_g == 0) { */
-    /* char hostname[128]; */
-    /* gethostname(hostname, 127); */
-    /* dbg_sleep_g = 1; */
-    /* printf("== %s attach %d\n", hostname, getpid()); */
-    /* fflush(stdout); */
-    /* while(dbg_sleep_g ==1) { */
-    /*     dbg_sleep_g = 1; */
-    /*     sleep(1); */
-    /* } */
-/* } */
-
-
     // Copy location and offset
     i = 0;
     /* args->overlap_storage_region_list = res_region_list; */
@@ -6474,3 +6057,4 @@ data_server_region_t *PDC_Server_get_obj_region(pdcid_t obj_id)
 
     FUNC_LEAVE(ret_value);
 }
+

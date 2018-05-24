@@ -42,6 +42,7 @@
 #include "pdc_interface.h"
 #include "pdc_client_server_common.h"
 #include "pdc_server_metadata.h"
+#include "pdc_server.h"
 
 #define BLOOM_TYPE_T counting_bloom_t
 #define BLOOM_NEW    new_counting_bloom
@@ -2806,5 +2807,164 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 } // end of PDC_Server_container_del_objs
+
+static perr_t PDC_copy_all_storage_meta(pdc_metadata_t *meta, region_storage_meta_t **storage_meta, int *n_region)
+{
+    perr_t ret_value = SUCCEED;
+    region_list_t *region_elt = NULL, *region_head = NULL;
+    int i, region_cnt;
+
+    FUNC_ENTER(NULL);
+
+    if (NULL == meta || NULL == storage_meta) {
+        ret_value = FAIL;
+        goto done;
+    }
+
+    region_head = meta->storage_region_list_head;
+    DL_COUNT(region_head, region_elt, region_cnt);
+    *n_region = region_cnt;
+    *storage_meta = (region_storage_meta_t *)calloc(sizeof(region_storage_meta_t), region_cnt);
+
+    i = 0;
+    DL_FOREACH(region_head, region_elt) {
+        (*storage_meta)[i].obj_id = meta->obj_id;
+        (*storage_meta)[i].offset = region_elt->offset;
+        (*storage_meta)[i].size   = region_elt->data_size;
+        pdc_region_list_t_to_transfer(region_elt, &((*storage_meta)[i].region_transfer));
+        strcpy((*storage_meta)[i].storage_location, region_elt->storage_location);
+        i++;
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+// Get storage metadata of objects with a list of names and transfer back to client
+static perr_t PDC_Server_get_storage_meta_by_names(query_read_names_args_t *args)
+{
+    hg_return_t hg_ret = HG_SUCCESS;
+    perr_t ret_value;
+    hg_handle_t rpc_handle;
+    hg_bulk_t bulk_handle;
+    bulk_rpc_in_t bulk_rpc_in;
+    void **buf_ptrs;
+    hg_size_t *buf_sizes;
+    uint32_t client_id;
+    char *obj_name;
+    pdc_metadata_t *meta = NULL;
+    region_list_t *region_elt = NULL, *region_head = NULL, *res_region_list = NULL;
+    int region_count = 0, i = 0, j = 0;
+    region_storage_meta_t **all_storage_meta;
+    int *all_nregion, total_region;
+    FUNC_ENTER(NULL);
+
+    // Get the storage meta for each queried object name
+    all_storage_meta = (region_storage_meta_t **)calloc(sizeof(region_storage_meta_t *), args->cnt);
+    all_nregion      = (int*)calloc(sizeof(int), args->cnt);
+
+    total_region = 0;
+    for (i = 0; i < args->cnt; i++) {
+        obj_name = args->obj_names[i];
+        
+        // FIXME: currently assumes timestep 0
+        PDC_Server_search_with_name_timestep(obj_name, PDC_get_hash_by_name(obj_name), 0, &meta);
+        if (meta == NULL) {
+            printf("==PDC_SERVER[%d]: No metadata with name [%s] found!\n", pdc_server_rank_g, obj_name);
+            continue;
+        }
+
+        ret_value = PDC_copy_all_storage_meta(meta, &(all_storage_meta[i]), &(all_nregion[i]));
+        if (ret_value != SUCCEED) {
+            printf("==PDC_SERVER[%d]: error when getting storage meta for [%s]!\n", pdc_server_rank_g, obj_name);
+            continue;
+        }
+        total_region += all_nregion[i];
+
+        /* printf("==PDC_SERVER[%d]: got storage meta for [%s], obj_id %" PRIu64 ", offset %" PRIu64 "\n", */ 
+        /*         pdc_server_rank_g, obj_name, all_storage_meta[i]->obj_id, all_storage_meta[i]->offset); */
+        /* fflush(stdout); */
+
+    } // End for cnt
+
+    // Now the storage meta is stored in all_storage_meta;
+    client_id = args->client_id;
+    if (PDC_Server_lookup_client(client_id) != SUCCEED) {
+        printf("==PDC_SERVER[%d]: Error getting client %d addr via lookup\n",
+                pdc_server_rank_g, client_id);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    // Now we have all the storage metadata of the queried objects, send them back to client with
+    // bulk transfer to args->origin_id
+    //
+    // Prepare bulk ptrs, buf_ptrs[0] is task_id
+    int nbuf  = total_region + 1;
+    buf_sizes = (size_t*)calloc(sizeof(size_t), nbuf);
+    buf_ptrs  = (void**)calloc(sizeof(void*),  nbuf);
+
+    buf_ptrs[0]  = &(args->client_seq_id);
+    buf_sizes[0] = sizeof(int);
+
+    int iter = 1;
+    for (i = 0; i < args->cnt; i++) {
+        for (j = 0; j < all_nregion[i]; j++) {
+            buf_ptrs[iter]  = &(all_storage_meta[i][j]);
+            buf_sizes[iter] = sizeof(region_storage_meta_t);
+            iter++;
+        }
+    }
+
+    /* Register memory */
+    hg_ret = HG_Bulk_create(hg_class_g, nbuf, buf_ptrs, buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not create bulk data handle\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    hg_ret = HG_Create(hg_context_g, pdc_client_info_g[client_id].addr, send_client_storage_meta_rpc_register_id_g, &rpc_handle);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not create handle\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    /* Fill input structure */
+    bulk_rpc_in.cnt         = total_region;
+    bulk_rpc_in.seq_id      = args->client_seq_id;
+    bulk_rpc_in.origin      = pdc_server_rank_g;
+    bulk_rpc_in.bulk_handle = bulk_handle;
+
+    /* printf("==PDC_SERVER[%d]: sending storage meta bulk rpc to client \n", pdc_server_rank_g); */
+    /* fflush(stdout); */
+
+    hg_ret = HG_Forward(rpc_handle, pdc_check_int_ret_cb, NULL, &bulk_rpc_in);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not forward call\n");
+        ret_value = FAIL;
+        goto done;
+    } 
+
+done:
+    HG_Destroy(rpc_handle);
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} // End PDC_Server_get_storage_meta_by_names
+
+/*
+ * Wrapper function for callback
+ *
+ * \param  callback_info[IN]              Callback info pointer
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+hg_return_t PDC_Server_query_read_names_clinet_cb(const struct hg_cb_info *callback_info)
+{
+    PDC_Server_get_storage_meta_by_names((query_read_names_args_t*) callback_info->arg);
+
+    return HG_SUCCESS;
+} // End PDC_Server_query_read_names_clinet_cb
 
 

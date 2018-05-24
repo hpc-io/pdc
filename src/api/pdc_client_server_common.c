@@ -852,6 +852,7 @@ hg_return_t PDC_Server_s2s_work_done_cb(const struct hg_cb_info *callback_info) 
 perr_t PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint64_t cont_id) {return SUCCEED;}
 perr_t PDC_Server_container_del_objs(int n_obj, uint64_t *obj_ids, uint64_t cont_id) {return SUCCEED;}
 hg_return_t PDC_Server_query_read_names_cb(const struct hg_cb_info *callback_info) {return SUCCEED;}
+hg_return_t PDC_Server_query_read_names_clinet_cb(const struct hg_cb_info *callback_info) {return SUCCEED;}
 
 hg_cb_t PDC_Server_storage_meta_name_query_bulk_respond(const struct hg_cb_info *callback_info)  {return HG_SUCCESS;};
 perr_t PDC_Server_proc_storage_meta_bulk(int task_id, int n_regions, region_list_t *region_list_head) {return SUCCEED;}
@@ -860,7 +861,8 @@ perr_t PDC_Server_proc_storage_meta_bulk(int task_id, int n_regions, region_list
 hg_return_t PDC_Client_work_done_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;};
 hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;};
 perr_t PDC_Client_query_read_complete(char *shm_addrs, int size, int n_shm, int seq_id) {return SUCCEED;}
-
+hg_return_t PDC_Client_recv_bulk_storage_meta_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
+perr_t PDC_Client_recv_bulk_storage_meta(process_bulk_storage_meta_args_t *process_args) {return HG_SUCCESS;}
 #endif
 
 
@@ -4090,7 +4092,6 @@ cont_add_del_objs_rpc_register(hg_class_t *hg_class)
     FUNC_LEAVE(ret_value);
 }
 
-// Update container with objects
 static hg_return_t
 query_read_obj_name_bulk_cb(const struct hg_cb_info *hg_cb_info)
 {
@@ -4160,6 +4161,134 @@ done:
     return ret;
 }
 
+static hg_return_t
+query_read_obj_name_client_bulk_cb(const struct hg_cb_info *hg_cb_info)
+{
+    // Server executes after received request from client
+    struct bulk_args_t *bulk_args = (struct bulk_args_t *)hg_cb_info->arg;
+    hg_bulk_t local_bulk_handle = hg_cb_info->info.bulk.local_handle;
+    hg_return_t ret = HG_SUCCESS;
+    int i, iter;
+    char* tmp_buf;
+    query_read_obj_name_out_t out_struct;
+    query_read_names_args_t *query_read_names_args;
+
+    out_struct.ret = 0;
+
+    if (hg_cb_info->ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Error in callback");
+        HG_Respond(bulk_args->handle, NULL, NULL, &out_struct);
+        goto done;
+    }
+    else {
+        query_read_names_args = (query_read_names_args_t*)calloc(1, sizeof(query_read_names_args_t));
+        query_read_names_args->cnt = bulk_args->cnt;
+        query_read_names_args->client_seq_id = bulk_args->client_seq_id;
+        query_read_names_args->client_id = bulk_args->origin;
+        query_read_names_args->is_select_all = 1;
+        query_read_names_args->obj_names = (char**)calloc(sizeof(char*), bulk_args->cnt);
+        query_read_names_args->obj_names_1d = (char*)calloc(sizeof(char), bulk_args->nbytes);
+
+        HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE,1,(void**)&tmp_buf, NULL, NULL);
+        memcpy(query_read_names_args->obj_names_1d, tmp_buf, bulk_args->nbytes);
+
+        // Parse the obj_names to the 2d obj_names
+        iter = 0;
+        query_read_names_args->obj_names[iter++] = query_read_names_args->obj_names_1d;
+        for (i = 1; i < bulk_args->nbytes; i++) {
+            if (query_read_names_args->obj_names_1d[i-1] == '\0')
+                query_read_names_args->obj_names[iter++] = &query_read_names_args->obj_names_1d[i];
+        }
+
+        /* printf("==PDC_SERVER[x]: finished bulk xfer, with %d regions, %ld bytes\n",cnt-1,bulk_args->nbytes); */
+        /* fflush(stdout); */
+
+    }
+
+    out_struct.ret = 1;
+    // Data server retrieve storage metadata and then read data to shared memory
+    ret = HG_Respond(bulk_args->handle, PDC_Server_query_read_names_clinet_cb, query_read_names_args, &out_struct);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not respond\n");
+        return ret;
+    }
+
+    /* Free block handle */
+    ret = HG_Bulk_free(local_bulk_handle);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not free HG bulk handle\n");
+        return ret;
+    }
+
+    /* printf("==PDC_SERVER[ ]: Responded to client %d of storage meta update!\n", bulk_args->origin); */
+    /* fflush(stdout); */
+
+done:
+    HG_Destroy(bulk_args->handle);
+    free(bulk_args);
+
+    return ret;
+}
+
+// 
+/* query_read_obj_name_client_rpc_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(query_read_obj_name_client_rpc, handle)
+{
+    const struct hg_info *hg_info = NULL;
+    struct bulk_args_t *bulk_args = NULL;
+    hg_bulk_t origin_bulk_handle  = HG_BULK_NULL;
+    hg_bulk_t local_bulk_handle   = HG_BULK_NULL;
+    hg_return_t ret = HG_SUCCESS;
+
+    query_read_obj_name_in_t in_struct;
+
+    hg_op_id_t hg_bulk_op_id;
+
+    bulk_args = (struct bulk_args_t *)malloc(sizeof(struct bulk_args_t));
+
+    /* Keep handle to pass to callback */
+    bulk_args->handle = handle;
+
+    /* Get info from handle */
+    hg_info = HG_Get_info(handle);
+
+    /* Get input parameters and data */
+    ret = HG_Get_input(handle, &in_struct);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not get input\n");
+        return ret;
+    }
+
+    /* printf("==PDC_SERVER[x]: received update container bulk rpc from %d, with %d regions\n", */ 
+    /*         in_struct.origin, in_struct.cnt); */
+    /* fflush(stdout); */
+    origin_bulk_handle = in_struct.bulk_handle;
+    bulk_args->client_seq_id = in_struct.client_seq_id;
+    bulk_args->nbytes  = HG_Bulk_get_size(origin_bulk_handle);
+    bulk_args->cnt     = in_struct.cnt;
+    bulk_args->origin  = in_struct.origin;
+
+    /* Create a new block handle to read the data */
+    HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *)&bulk_args->nbytes, HG_BULK_READWRITE, 
+                   &local_bulk_handle);
+
+    /* Pull bulk data */
+    ret = HG_Bulk_transfer(hg_info->context, query_read_obj_name_client_bulk_cb,
+                           bulk_args, HG_BULK_PULL, hg_info->addr, origin_bulk_handle, 0,
+                           local_bulk_handle, 0, bulk_args->nbytes, &hg_bulk_op_id);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not read bulk data\n");
+        return ret;
+    }
+
+    /* printf("==PDC_SERVER[x]: Pulled data from %d\n", in_struct.origin); */
+    /* fflush(stdout); */
+
+    HG_Free_input(handle, &in_struct);
+
+done:
+    FUNC_LEAVE(ret);
+}
 
 /* query_read_obj_name_rpc_cb(hg_handle_t handle) */
 HG_TEST_RPC_CB(query_read_obj_name_rpc, handle)
@@ -4233,6 +4362,15 @@ query_read_obj_name_rpc_register(hg_class_t *hg_class)
     FUNC_LEAVE(ret_value);
 }
 
+hg_id_t
+query_read_obj_name_client_rpc_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    FUNC_ENTER(NULL);
+    ret_value = MERCURY_REGISTER(hg_class, "query_read_obj_name_client_rpc", query_read_obj_name_in_t, query_read_obj_name_out_t, query_read_obj_name_client_rpc_cb);
+    FUNC_LEAVE(ret_value);
+}
+
 // Receives the query with one name, return all storage metadata of the corresponding object with bulk transfer
 /* storage_meta_name_query_rpc_cb(hg_handle_t handle) */
 HG_TEST_RPC_CB(storage_meta_name_query_rpc, handle)
@@ -4284,6 +4422,9 @@ hg_return_t pdc_check_int_ret_cb(const struct hg_cb_info *callback_info)
         printf("==%s() - Error with HG_Get_output\n", __func__);
         goto done;
     }
+
+    /* printf("==%s() - received int ret\n", __func__, output.ret); */
+    /* fflush(stdout); */
 
     if (output.ret != 1) {
         printf("==%s() - Return value [%d] is NOT expected\n", __func__, output.ret);
@@ -4706,6 +4847,7 @@ int PDC_is_valid_obj_id(uint64_t id)
     }
     return 1;
 }
+
 /* server_checkpoint_rpc_cb(hg_handle_t handle) */
 HG_TEST_RPC_CB(server_checkpoint_rpc, handle)
 {
@@ -4726,9 +4868,458 @@ HG_TEST_RPC_CB(server_checkpoint_rpc, handle)
     FUNC_LEAVE(ret_value);
 }
 
-
 hg_id_t
 server_checkpoing_rpc_register(hg_class_t *hg_class)
 {
     return  MERCURY_REGISTER(hg_class, "server_checkpoing_rpc_register", pdc_int_send_t, pdc_int_ret_t, server_checkpoint_rpc_cb);
+}
+
+// Client receives bulk transfer rpc request, start transfer, then
+// process the bulk data of all storage meta for a previous request
+static hg_return_t
+send_client_storage_meta_bulk_cb(const struct hg_cb_info *hg_cb_info)
+{
+    struct bulk_args_t *bulk_args = (struct bulk_args_t *)hg_cb_info->arg;
+    hg_bulk_t local_bulk_handle = hg_cb_info->info.bulk.local_handle;
+    hg_return_t ret = HG_SUCCESS;
+    int cnt, i;
+    uint64_t *obj_id_ptr;
+    pdc_int_ret_t out_struct;
+    void *buf_1d = NULL;
+    process_bulk_storage_meta_args_t *process_args = NULL;
+
+    out_struct.ret = 0;
+
+    if (hg_cb_info->ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Error in callback");
+        ret = HG_PROTOCOL_ERROR;
+        goto done;
+    }
+    else {
+
+        buf_1d = (void*)calloc(1, bulk_args->nbytes);
+        ret = HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, &buf_1d, NULL, NULL);
+        if (ret != HG_SUCCESS) {
+            printf("==PDC_CLIENT[x]: %s - Error with bulk access\n", __func__);
+            goto done;
+        }
+
+        process_args = (process_bulk_storage_meta_args_t*)calloc(sizeof(process_bulk_storage_meta_args_t), 1);
+        process_args->n_storage_meta = bulk_args->cnt;
+        process_args->seq_id = *((int*)buf_1d);
+        process_args->all_storage_meta = (region_storage_meta_t*)(buf_1d + sizeof(int));
+
+        out_struct.ret = 1;
+        /* printf("==PDC_CLIENT[x]: %s - received %d storage meta\n", __func__, bulk_args->cnt); */
+        /* fflush(stdout); */
+    } // end of else
+
+    // Need to free buf_1d later
+    PDC_Client_recv_bulk_storage_meta(process_args);
+
+done:
+    /* /1* Send response back *1/ */
+    /* ret = HG_Respond(bulk_args->handle, PDC_Client_recv_bulk_storage_meta_cb, process_args, &out_struct); */
+    /* if (ret != HG_SUCCESS) { */
+    /*     printf("==PDC_CLIENT[x]: %s - Error with HG_Respond\n", __func__); */
+    /* } */
+
+    /* Free bulk handle */
+    HG_Bulk_free(local_bulk_handle);
+    HG_Destroy(bulk_args->handle);
+
+    free(bulk_args);
+
+    return ret;
+}
+
+// Client receives bulk transfer request
+/* send_client_storage_meta_rpc_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(send_client_storage_meta_rpc, handle)
+{
+    const struct hg_info *hg_info = NULL;
+    hg_bulk_t origin_bulk_handle = HG_BULK_NULL;
+    hg_bulk_t local_bulk_handle = HG_BULK_NULL;
+    struct bulk_args_t *bulk_args = NULL;
+    bulk_rpc_in_t in_struct;
+    hg_return_t ret = HG_SUCCESS;
+    pdc_int_ret_t out_struct;
+    hg_op_id_t hg_bulk_op_id;
+    int cnt;
+
+    bulk_args = (struct bulk_args_t *)malloc(sizeof(struct bulk_args_t));
+
+    /* Keep handle to pass to callback */
+    bulk_args->handle = handle;
+
+    /* Get info from handle */
+    hg_info = HG_Get_info(handle);
+
+    /* Get input parameters and data */
+    ret = HG_Get_input(handle, &in_struct);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not get input\n");
+        return ret;
+    }
+
+    bulk_args->origin = in_struct.origin;
+
+    /* Get parameters */
+    cnt = in_struct.cnt;
+    origin_bulk_handle = in_struct.bulk_handle;
+    bulk_args->nbytes  = HG_Bulk_get_size(origin_bulk_handle);
+    bulk_args->cnt     = cnt;
+
+    /* Create a new bulk handle to read the data */
+    HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *) &bulk_args->nbytes, HG_BULK_READWRITE, 
+                   &local_bulk_handle);
+
+    /* Pull bulk data */
+    ret = HG_Bulk_transfer(hg_info->context, send_client_storage_meta_bulk_cb,
+                           bulk_args, HG_BULK_PULL, hg_info->addr, origin_bulk_handle, 0,
+                           local_bulk_handle, 0, bulk_args->nbytes, &hg_bulk_op_id);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not read bulk data\n");
+        return ret;
+    }
+
+    HG_Free_input(handle, &in_struct);
+
+    /* Send response back */
+    out_struct.ret = 1;
+    ret = HG_Respond(bulk_args->handle, NULL, NULL, &out_struct);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not respond\n");
+        return ret;
+    }
+
+    FUNC_LEAVE(ret);
+} // End send_client_storage_meta_rpc_cb
+
+hg_id_t
+send_client_storage_meta_rpc_register(hg_class_t *hg_class)
+{
+    return  MERCURY_REGISTER(hg_class, "send_client_storage_meta_rpc_register", bulk_rpc_in_t, pdc_int_ret_t, send_client_storage_meta_rpc_cb);
+}
+
+/* For 1D boxes (intervals) we have: */
+/* box1 = (xmin1, xmax1) */
+/* box2 = (xmin2, xmax2) */
+/* overlapping1D(box1,box2) = xmax1 >= xmin2 and xmax2 >= xmin1 */
+
+/* For 2D boxes (rectangles) we have: */
+/* box1 = (x:(xmin1,xmax1),y:(ymin1,ymax1)) */
+/* box2 = (x:(xmin2,xmax2),y:(ymin2,ymax2)) */
+/* overlapping2D(box1,box2) = overlapping1D(box1.x, box2.x) and */ 
+/*                            overlapping1D(box1.y, box2.y) */
+
+/* For 3D boxes we have: */
+/* box1 = (x:(xmin1,xmax1),y:(ymin1,ymax1),z:(zmin1,zmax1)) */
+/* box2 = (x:(xmin2,xmax2),y:(ymin2,ymax2),z:(zmin2,zmax2)) */
+/* overlapping3D(box1,box2) = overlapping1D(box1.x, box2.x) and */ 
+/*                            overlapping1D(box1.y, box2.y) and */
+/*                            overlapping1D(box1.z, box2.z) */
+ 
+/*
+ * Check if two 1D segments overlaps
+ *
+ * \param  xmin1[IN]        Start offset of first segment
+ * \param  xmax1[IN]        End offset of first segment
+ * \param  xmin2[IN]        Start offset of second segment
+ * \param  xmax2[IN]        End offset of second segment
+ *
+ * \return 1 if they overlap/-1 otherwise
+ */
+static int is_overlap_1D(uint64_t xmin1, uint64_t xmax1, uint64_t xmin2, uint64_t xmax2)
+{
+    int ret_value = -1;
+    
+    if (xmax1 >= xmin2 && xmax2 >= xmin1) {
+        ret_value = 1;
+    }
+
+    return ret_value;
+}
+
+/*
+ * Check if two 2D box overlaps
+ *
+ * \param  xmin1[IN]        Start offset (x-axis) of first  box
+ * \param  xmax1[IN]        End   offset (x-axis) of first  box
+ * \param  ymin1[IN]        Start offset (y-axis) of first  box
+ * \param  ymax1[IN]        End   offset (y-axis) of first  box
+ * \param  xmin2[IN]        Start offset (x-axis) of second box
+ * \param  xmax2[IN]        End   offset (x-axis) of second box
+ * \param  ymin2[IN]        Start offset (y-axis) of second box
+ * \param  ymax2[IN]        End   offset (y-axis) of second box
+ *
+ * \return 1 if they overlap/-1 otherwise
+ */
+static int is_overlap_2D(uint64_t xmin1, uint64_t xmax1, uint64_t ymin1, uint64_t ymax1, 
+                         uint64_t xmin2, uint64_t xmax2, uint64_t ymin2, uint64_t ymax2)
+{
+    int ret_value = -1;
+    
+    /* if (is_overlap_1D(box1.x, box2.x) == 1 && is_overlap_1D(box1.y, box2.y) == 1) { */
+    if (is_overlap_1D(xmin1, xmax1, xmin2, xmax2 ) == 1 &&                              
+        is_overlap_1D(ymin1, ymax1, ymin2, ymax2) == 1) {
+        ret_value = 1;
+    }
+
+    return ret_value;
+}
+
+/*
+ * Check if two 3D box overlaps
+ *
+ * \param  xmin1[IN]        Start offset (x-axis) of first  box
+ * \param  xmax1[IN]        End   offset (x-axis) of first  box
+ * \param  ymin1[IN]        Start offset (y-axis) of first  box
+ * \param  ymax1[IN]        End   offset (y-axis) of first  box
+ * \param  zmin2[IN]        Start offset (z-axis) of first  box
+ * \param  zmax2[IN]        End   offset (z-axis) of first  box
+ * \param  xmin2[IN]        Start offset (x-axis) of second box
+ * \param  xmax2[IN]        End   offset (x-axis) of second box
+ * \param  ymin2[IN]        Start offset (y-axis) of second box
+ * \param  ymax2[IN]        End   offset (y-axis) of second box
+ * \param  zmin2[IN]        Start offset (z-axis) of second box
+ * \param  zmax2[IN]        End   offset (z-axis) of second box
+ *
+ * \return 1 if they overlap/-1 otherwise
+ */
+static int is_overlap_3D(uint64_t xmin1, uint64_t xmax1, uint64_t ymin1, uint64_t ymax1, uint64_t zmin1, uint64_t zmax1,
+                         uint64_t xmin2, uint64_t xmax2, uint64_t ymin2, uint64_t ymax2, uint64_t zmin2, uint64_t zmax2)
+{
+    int ret_value = -1;
+    
+    /* if (is_overlap_1D(box1.x, box2.x) == 1 && is_overlap_1D(box1.y, box2.y) == 1) { */
+    if (is_overlap_1D(xmin1, xmax1, xmin2, xmax2) == 1 && 
+        is_overlap_1D(ymin1, ymax1, ymin2, ymax2) == 1 && 
+        is_overlap_1D(zmin1, zmax1, zmin2, zmax2) == 1 ) 
+    {
+        ret_value = 1;
+    }
+
+    return ret_value;
+}
+
+/* static int is_overlap_4D(uint64_t xmin1, uint64_t xmax1, uint64_t ymin1, uint64_t ymax1, uint64_t zmin1, uint64_t zmax1, */
+/*                          uint64_t mmin1, uint64_t mmax1, */
+/*                          uint64_t xmin2, uint64_t xmax2, uint64_t ymin2, uint64_t ymax2, uint64_t zmin2, uint64_t zmax2, */
+/*                          uint64_t mmin2, uint64_t mmax2 ) */
+/* { */
+/*     int ret_value = -1; */
+    
+/*     /1* if (is_overlap_1D(box1.x, box2.x) == 1 && is_overlap_1D(box1.y, box2.y) == 1) { *1/ */
+/*     if (is_overlap_1D(xmin1, xmax1, xmin2, xmax2) == 1 && */ 
+/*         is_overlap_1D(ymin1, ymax1, ymin2, ymax2) == 1 && */ 
+/*         is_overlap_1D(zmin1, zmax1, zmin2, zmax2) == 1 && */ 
+/*         is_overlap_1D(mmin1, mmax1, mmin2, mmax2) == 1 ) */ 
+/*     { */
+/*         ret_value = 1; */
+/*     } */
+
+/*     return ret_value; */
+/* } */
+
+/*
+ * Check if two regions overlap
+ *
+ * \param  a[IN]     Pointer to first region
+ * \param  b[IN]     Pointer to second region
+ *
+ * \return 1 if they overlap/-1 otherwise
+ */
+int is_contiguous_region_overlap(region_list_t *a, region_list_t *b)
+{
+    int ret_value = 1;
+    
+    if (a == NULL || b == NULL) {
+        printf("==PDC_SERVER: is_contiguous_region_overlap() - passed NULL value!\n");
+        ret_value = -1;
+        goto done;
+    }
+
+    /* printf("==PDC_SERVER: is_contiguous_region_overlap adim=%d, bdim=%d\n", a->ndim, b->ndim); */
+    if (a->ndim != b->ndim || a->ndim <= 0 || b->ndim <= 0) {
+        ret_value = -1;
+        goto done;
+    }
+
+    uint64_t xmin1 = 0, xmin2 = 0, xmax1 = 0, xmax2 = 0;
+    uint64_t ymin1 = 0, ymin2 = 0, ymax1 = 0, ymax2 = 0;
+    uint64_t zmin1 = 0, zmin2 = 0, zmax1 = 0, zmax2 = 0;
+    /* uint64_t mmin1 = 0, mmin2 = 0, mmax1 = 0, mmax2 = 0; */
+
+    if (a->ndim >= 1) {
+        xmin1 = a->start[0];
+        xmax1 = a->start[0] + a->count[0] - 1;
+        xmin2 = b->start[0];
+        xmax2 = b->start[0] + b->count[0] - 1;
+        /* printf("xmin1, xmax1, xmin2, xmax2: %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 "\n", xmin1, xmax1, xmin2, xmax2); */
+    }
+    if (a->ndim >= 2) {
+        ymin1 = a->start[1];
+        ymax1 = a->start[1] + a->count[1] - 1;
+        ymin2 = b->start[1];
+        ymax2 = b->start[1] + b->count[1] - 1;
+        /* printf("ymin1, ymax1, ymin2, ymax2: %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 "\n", ymin1, ymax1, ymin2, ymax2); */
+    }
+    if (a->ndim >= 3) {
+        zmin1 = a->start[2];
+        zmax1 = a->start[2] + a->count[2] - 1;
+        zmin2 = b->start[2];
+        zmax2 = b->start[2] + b->count[2] - 1;
+        /* printf("zmin1, zmax1, zmin2, zmax2: %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 "\n", zmin1, zmax1, zmin2, zmax2); */
+    }
+    /* if (a->ndim >= 4) { */
+    /*     mmin1 = a->start[3]; */
+    /*     mmax1 = a->start[3] + a->count[3] - 1; */
+    /*     mmin2 = b->start[3]; */
+    /*     mmax2 = b->start[3] + b->count[3] - 1; */
+    /* } */
+ 
+    if (a->ndim == 1) {
+        ret_value = is_overlap_1D(xmin1, xmax1, xmin2, xmax2);
+    }
+    else if (a->ndim == 2) {
+        ret_value = is_overlap_2D(xmin1, xmax1, ymin1, ymax1, xmin2, xmax2, ymin2, ymax2);
+    }
+    else if (a->ndim == 3) {
+        ret_value = is_overlap_3D(xmin1, xmax1, ymin1, ymax1, zmin1, zmax1, xmin2, xmax2, ymin2, ymax2, zmin2, zmax2);
+    }
+    /* else if (a->ndim == 4) { */
+    /*     ret_value = is_overlap_4D(xmin1, xmax1, ymin1, ymax1, zmin1, zmax1, mmin1, mmax1, xmin2, xmax2, ymin2, ymax2, zmin2, zmax2, mmin2, mmax2); */
+    /* } */
+
+done:
+    /* printf("is overlap: %d\n", ret_value); */
+    FUNC_LEAVE(ret_value);
+}
+/*
+ * Check if two regions overlap
+ *
+ * \param  ndim[IN]        Dimension of the two region
+ * \param  a_start[IN]     Start offsets of the the first region
+ * \param  a_count[IN]     Size of the the first region
+ * \param  b_start[IN]     Start offsets of the the second region
+ * \param  b_count[IN]     Size of the the second region
+ *
+ * \return 1 if they overlap/-1 otherwise
+ */
+int is_contiguous_start_count_overlap(uint32_t ndim, uint64_t *a_start, uint64_t *a_count, uint64_t *b_start, uint64_t *b_count)
+{
+    int ret_value = 1;
+    
+    if (ndim > DIM_MAX || NULL == a_start || NULL == a_count ||NULL == b_start ||NULL == b_count) {
+        printf("is_contiguous_start_count_overlap: invalid input !\n");
+        ret_value = -1;
+        goto done;
+    }
+
+    uint64_t xmin1 = 0, xmin2 = 0, xmax1 = 0, xmax2 = 0;
+    uint64_t ymin1 = 0, ymin2 = 0, ymax1 = 0, ymax2 = 0;
+    uint64_t zmin1 = 0, zmin2 = 0, zmax1 = 0, zmax2 = 0;
+    /* uint64_t mmin1 = 0, mmin2 = 0, mmax1 = 0, mmax2 = 0; */
+
+    if (ndim >= 1) {
+        xmin1 = a_start[0];
+        xmax1 = a_start[0] + a_count[0] - 1;
+        xmin2 = b_start[0];
+        xmax2 = b_start[0] + b_count[0] - 1;
+        /* printf("xmin1, xmax1, xmin2, xmax2: %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 "\n", xmin1, xmax1, xmin2, xmax2); */
+    }
+    if (ndim >= 2) {
+        ymin1 = a_start[1];
+        ymax1 = a_start[1] + a_count[1] - 1;
+        ymin2 = b_start[1];
+        ymax2 = b_start[1] + b_count[1] - 1;
+        /* printf("ymin1, ymax1, ymin2, ymax2: %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 "\n", ymin1, ymax1, ymin2, ymax2); */
+    }
+    if (ndim >= 3) {
+        zmin1 = a_start[2];
+        zmax1 = a_start[2] + a_count[2] - 1;
+        zmin2 = b_start[2];
+        zmax2 = b_start[2] + b_count[2] - 1;
+        /* printf("zmin1, zmax1, zmin2, zmax2: %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 "\n", zmin1, zmax1, zmin2, zmax2); */
+    }
+    /* if (ndim >= 4) { */
+    /*     mmin1 = a_start[3]; */
+    /*     mmax1 = a_start[3] + a_count[3] - 1; */
+    /*     mmin2 = b_start[3]; */
+    /*     mmax2 = b_start[3] + b_count[3] - 1; */
+    /* } */
+ 
+    if (ndim == 1) 
+        ret_value = is_overlap_1D(xmin1, xmax1, xmin2, xmax2);
+    else if (ndim == 2) 
+        ret_value = is_overlap_2D(xmin1, xmax1, ymin1, ymax1, 
+                                  xmin2, xmax2, ymin2, ymax2);
+    else if (ndim == 3) 
+        ret_value = is_overlap_3D(xmin1, xmax1, ymin1, ymax1, zmin1, zmax1, 
+                                  xmin2, xmax2, ymin2, ymax2, zmin2, zmax2);
+    /* else if (ndim == 4) */ 
+    /*     ret_value = is_overlap_4D(xmin1, xmax1, ymin1, ymax1, zmin1, zmax1, mmin1, mmax1, */ 
+    /*                               xmin2, xmax2, ymin2, ymax2, zmin2, zmax2, mmin2, mmax2); */
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+
+
+/*
+ * Get the overlapping region's information of two regions
+ *
+ * \param  ndim[IN]             Dimension of the two region
+ * \param  start_a[IN]           Start offsets of the the first region
+ * \param  count_a[IN]           Sizes of the the first region
+ * \param  start_b[IN]           Start offsets of the the second region
+ * \param  count_b[IN]           Sizes of the the second region
+ * \param  overlap_start[IN]    Start offsets of the the overlapping region
+ * \param  overlap_size[IN]     Sizes of the the overlapping region
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t get_overlap_start_count(uint32_t ndim, uint64_t *start_a, uint64_t *count_a, 
+                                                     uint64_t *start_b, uint64_t *count_b, 
+                                       uint64_t *overlap_start, uint64_t *overlap_count)
+{
+    perr_t ret_value = SUCCEED;
+    uint64_t i;
+
+    if (NULL == start_a || NULL == count_a || NULL == start_b || NULL == count_b || 
+            NULL == overlap_start || NULL == overlap_count) {
+
+        printf("get_overlap NULL input!\n");
+        ret_value = FAIL;
+        return ret_value;
+    }
+    
+    // Check if they are truly overlapping regions
+    if (is_contiguous_start_count_overlap(ndim, start_a, count_a, start_b, count_b) != 1) {
+        printf("== %s: non-overlap regions!\n", __func__);
+        for (i = 0; i < ndim; i++) {
+            printf("\t\tdim%" PRIu64 " - start_a: %" PRIu64 " count_a: %" PRIu64 ", "
+                   "\t\tstart_b:%" PRIu64 " count_b:%" PRIu64 "\n", 
+                    i, start_a[i], count_a[i], start_b[i], count_b[i]);
+        }
+        ret_value = FAIL;
+        goto done;
+    }
+
+    for (i = 0; i < ndim; i++) {
+        overlap_start[i] = PDC_MAX(start_a[i], start_b[i]);
+        /* end = max(xmax2, xmax1); */
+        overlap_count[i] = PDC_MIN(start_a[i]+count_a[i], start_b[i]+count_b[i]) - overlap_start[i];
+    }
+
+done:
+    if (ret_value == FAIL) {
+        for (i = 0; i < ndim; i++) {
+            overlap_start[i] = 0;
+            overlap_count[i] = 0;
+        }
+    }
+    return ret_value;
 }
