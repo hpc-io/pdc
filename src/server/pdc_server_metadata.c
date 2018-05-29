@@ -2863,6 +2863,10 @@ static perr_t PDC_Server_get_storage_meta_by_names(query_read_names_args_t *args
     all_storage_meta = (region_storage_meta_t **)calloc(sizeof(region_storage_meta_t *), args->cnt);
     all_nregion      = (int*)calloc(sizeof(int), args->cnt);
 
+    /* printf("==PDC_SERVER[%d]: received %d query requests from client %d\n", */ 
+    /*         pdc_server_rank_g, args->cnt, args->client_id); */
+    /* fflush(stdout); */
+
     total_region = 0;
     for (i = 0; i < args->cnt; i++) {
         obj_name = args->obj_names[i];
@@ -2898,7 +2902,6 @@ static perr_t PDC_Server_get_storage_meta_by_names(query_read_names_args_t *args
 
     // Now we have all the storage metadata of the queried objects, send them back to client with
     // bulk transfer to args->origin_id
-    //
     // Prepare bulk ptrs, buf_ptrs[0] is task_id
     int nbuf  = total_region + 1;
     buf_sizes = (size_t*)calloc(sizeof(size_t), nbuf);
@@ -2924,6 +2927,11 @@ static perr_t PDC_Server_get_storage_meta_by_names(query_read_names_args_t *args
         goto done;
     }
 
+    if (pdc_client_info_g[client_id].addr == NULL) {
+        printf("==PDC_SERVER[%d]: Error with client %d addr\n", pdc_server_rank_g, client_id);
+        goto done;
+    }
+
     hg_ret = HG_Create(hg_context_g, pdc_client_info_g[client_id].addr, send_client_storage_meta_rpc_register_id_g, &rpc_handle);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "Could not create handle\n");
@@ -2937,7 +2945,7 @@ static perr_t PDC_Server_get_storage_meta_by_names(query_read_names_args_t *args
     bulk_rpc_in.origin      = pdc_server_rank_g;
     bulk_rpc_in.bulk_handle = bulk_handle;
 
-    /* printf("==PDC_SERVER[%d]: sending storage meta bulk rpc to client \n", pdc_server_rank_g); */
+    /* printf("==PDC_SERVER[%d]: sending storage meta bulk rpc to client %d\n", pdc_server_rank_g, client_id); */
     /* fflush(stdout); */
 
     hg_ret = HG_Forward(rpc_handle, pdc_check_int_ret_cb, NULL, &bulk_rpc_in);
@@ -2947,8 +2955,9 @@ static perr_t PDC_Server_get_storage_meta_by_names(query_read_names_args_t *args
         goto done;
     } 
 
-done:
     HG_Destroy(rpc_handle);
+
+done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 } // End PDC_Server_get_storage_meta_by_names

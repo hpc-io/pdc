@@ -4715,7 +4715,9 @@ perr_t PDC_Server_read_one_region(region_list_t *read_region)
     region_list_t  *previous_region = NULL, *region_elt;
     FILE *fp_read = NULL;
     char *prev_path = NULL;
+    #ifdef ENABLE_TIMING
     double fopen_time;
+    #endif
 
     FUNC_ENTER(NULL);
 
@@ -4809,11 +4811,13 @@ perr_t PDC_Server_read_one_region(region_list_t *read_region)
         prev_path = region_elt->storage_location;
     } // end of for all overlapping storage regions for one request region
 
+    #ifdef ENABLE_TIMING
     if (is_debug_g == 1) {
         printf("==PDC_SERVER[%d]: Read data total size %" PRIu64 ", fopen time: %.3f\n",
                 pdc_server_rank_g, total_read_bytes, fopen_time);
         fflush(stdout);
     }
+    #endif
 
     read_region->is_data_ready = 1;
     read_region->is_io_done = 1;
@@ -5862,12 +5866,11 @@ hg_return_t PDC_Server_bulk_cleanup_cb(const struct hg_cb_info *callback_info)
     return HG_SUCCESS;
 } // end PDC_Server_bulk_cleanup_cb 
 
-hg_cb_t PDC_Server_storage_meta_name_query_bulk_respond_cb(const struct hg_cb_info *callback_info)
+hg_return_t PDC_Server_storage_meta_name_query_bulk_respond_cb(const struct hg_cb_info *callback_info)
 {
     hg_return_t ret = HG_SUCCESS;
     hg_handle_t handle = callback_info->info.forward.handle;
     pdc_int_ret_t bulk_rpc_ret;
-    hg_cb_t hg_cb_ret = HG_SUCCESS;
 
     // Sent the bulk handle with rpc and get a response
     ret = HG_Get_output(handle, &bulk_rpc_ret);
@@ -5891,14 +5894,13 @@ hg_cb_t PDC_Server_storage_meta_name_query_bulk_respond_cb(const struct hg_cb_in
 
     /* HG_Destroy(cb_args->rpc_handle); */
 done:
-    return hg_cb_ret;
+    return ret;
 } // end PDC_Server_storage_meta_name_query_bulk_respond_cb
 
 // Get all storage meta of the one requested object name and bulk xfer to original requested server  
-hg_cb_t PDC_Server_storage_meta_name_query_bulk_respond(const struct hg_cb_info *callback_info)
+hg_return_t PDC_Server_storage_meta_name_query_bulk_respond(const struct hg_cb_info *callback_info)
 {
     hg_return_t hg_ret = HG_SUCCESS;
-    hg_cb_t hg_cb_ret = HG_SUCCESS;
     perr_t ret_value;
     storage_meta_name_query_in_t *args;
     storage_meta_query_one_name_args_t *query_args;
@@ -6000,7 +6002,7 @@ hg_cb_t PDC_Server_storage_meta_name_query_bulk_respond(const struct hg_cb_info 
 done:
     /* HG_Destroy(rpc_handle); */
     fflush(stdout);
-    FUNC_LEAVE(hg_cb_ret);
+    FUNC_LEAVE(hg_ret);
 } // end PDC_Server_storage_meta_name_query_bulk_respond
 
 

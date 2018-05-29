@@ -267,7 +267,7 @@ perr_t PDC_Server_close_shm(region_list_t *region);
 
 perr_t PDC_Server_update_region_storage_meta_bulk_with_cb(bulk_xfer_data_t *bulk_data, perr_t (*cb)(), update_storage_meta_list_t *meta_list_target, int *n_updated);
 
-hg_cb_t PDC_Server_storage_meta_name_query_bulk_respond(const struct hg_cb_info *callback_info);
+hg_return_t PDC_Server_storage_meta_name_query_bulk_respond(const struct hg_cb_info *callback_info);
 perr_t PDC_Server_proc_storage_meta_bulk(int task_id, int n_regions, region_list_t *region_list_head);
 perr_t PDC_Server_set_lustre_stripe(const char *path, int stripe_count, int stripe_size_MB);
 hg_return_t PDC_Server_bulk_cleanup_cb(const struct hg_cb_info *callback_info);

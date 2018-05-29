@@ -91,6 +91,8 @@ typedef struct PDC_Request_t {
     int                     *shm_fd_arr;
     uint64_t               *shm_size_arr;
 
+    process_bulk_storage_meta_args_t *storage_meta;
+
     struct PDC_Request_t      *prev;
     struct PDC_Request_t      *next;
 } PDC_Request_t;
@@ -669,4 +671,5 @@ perr_t PDC_Client_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
                                        uint64_t *storage_start, uint64_t *storage_count,
                                        FILE *fp, uint64_t file_offset, void *buf,  size_t *total_read_bytes);
 
+perr_t PDC_Client_query_container_name(char *cont_name, pdc_metadata_t **out);
 #endif

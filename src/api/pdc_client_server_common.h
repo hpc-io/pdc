@@ -2602,6 +2602,7 @@ int PDC_is_valid_obj_id(uint64_t id);
 perr_t PDC_Client_query_read_complete(char *shm_addrs, int size, int n_shm, int seq_id);
 
 typedef struct process_bulk_storage_meta_args_t{
+    int origin_id;
     int n_storage_meta;
     int seq_id;
     region_storage_meta_t *all_storage_meta;

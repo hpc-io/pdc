@@ -294,13 +294,14 @@ hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info)
 
 
     if (pdc_client_info_g == NULL) {
+        pdc_client_num_g = in->nclient;
         pdc_client_info_g = (pdc_client_info_t*)calloc(sizeof(pdc_client_info_t), in->nclient);
         if (pdc_client_info_g == NULL) {
             printf("==PDC_SERVER: PDC_Server_get_client_addr - unable to allocate space\n");
             ret_value = FAIL;
             goto done;
         }
-        pdc_client_num_g = in->nclient;
+
         for (i = 0; i < in->nclient; i++) 
             PDC_client_info_init(&pdc_client_info_g[i]);
         if (is_debug_g == 1) { 
@@ -573,9 +574,15 @@ PDC_Server_lookup_client_cb(const struct hg_cb_info *callback_info)
     server_lookup_args = (server_lookup_args_t*) callback_info->arg;
     client_id = server_lookup_args->client_id;
 
+    if (client_id >= pdc_client_num_g ) {
+        printf("==PDC_SERVER[%d]: invalid input client id %d\n", pdc_server_rank_g, client_id);
+        goto done;
+    }
     pdc_client_info_g[client_id].addr = callback_info->info.lookup.addr;
     pdc_client_info_g[client_id].addr_valid = 1;
 
+done:
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
@@ -591,6 +598,7 @@ perr_t PDC_Server_lookup_client(uint32_t client_id)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
+    unsigned actual_count;
 
     FUNC_ENTER(NULL);
 
@@ -626,7 +634,6 @@ perr_t PDC_Server_lookup_client(uint32_t client_id)
         goto done;
     }
 
-    int actual_count;
     hg_ret = HG_Trigger(hg_context_g, 0/* timeout */, 1 /* max count */, &actual_count);
 
     if (is_debug_g == 1) {
@@ -1007,10 +1014,10 @@ perr_t PDC_Server_finalize()
     FUNC_ENTER(NULL);
 
     // Debug: print all metadata
-    if (is_debug_g == 1) {
-        PDC_Server_print_all_metadata();
-        PDC_Server_print_all_containers();
-    }
+    /* if (is_debug_g == 1) { */
+    /*     PDC_Server_print_all_metadata(); */
+    /*     PDC_Server_print_all_containers(); */
+    /* } */
 
     // Debug: check duplicates
     if (is_debug_g == 1) {
