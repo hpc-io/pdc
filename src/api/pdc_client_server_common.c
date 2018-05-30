@@ -3427,15 +3427,840 @@ HG_TEST_RPC_CB(aggregate_write, handle)
 }
 
 
+/* 
+ * NOTE:
+ *   Because we use dlopen to dynamically open
+ *   an executable, it may be necessary for the server
+ *   to have the LD_LIBRARY_PATH of the client.
+ *   This can/should be part of the UDF registration
+ *   with the server, i.e. we provide the server
+ *   with: 
+ *      a) the full path to the client executable
+ *         which must be compiled with the "-fpie -rdynamic"
+ *         flags.
+ *      b) the contents of the PATH and LD_LIBRARY_PATH
+ *         environment variables.
+ */
+
+char *
+remove_relative_dirs(char *workingDir, char *application)
+{
+     int k, levels_up = 0;
+     char *appName = application;
+     char *dotdot;
+     while((dotdot = strstr(appName,"../")) != NULL) {
+       levels_up++;
+       appName = dotdot + 3;
+     }
+     for(k=0; k<levels_up; k++) {
+       char *slash = strrchr(workingDir,'/');
+       if (slash) *slash = 0;
+     }
+     k = strlen(workingDir);
+     if ((appName[0] == '.') && (appName[1] == '/'))
+       appName += 2;
+     sprintf(&workingDir[k],"/%s", appName);
+     return strdup(workingDir);
+}
+
+char *
+find_in_path(char *workingDir, char *application)
+{
+     struct stat fileStat;
+     char *pathVar = getenv("PATH");
+     char colon = ':';
+     char checkPath[PATH_MAX];
+     char *next = strchr(pathVar,colon);
+     while(next) {
+       *next++ = 0;
+       sprintf(checkPath,"%s/%s",pathVar,application);
+       if (stat(checkPath,&fileStat) == 0) {
+	 return strdup(checkPath);
+       }
+       pathVar = next;
+       next = strchr(pathVar,colon);
+     }
+     if (application[0] == '.') {
+       sprintf(checkPath, "%s/%s", workingDir, application);
+       if (stat(checkPath,&fileStat) == 0) {
+	 char *foundPath = strrchr(checkPath,'/');
+	 char *appName = foundPath+1;
+	 if (foundPath == NULL) {
+	   return remove_relative_dirs(workingDir, application);
+	 }
+	 *foundPath = 0;
+	 // Change directory (pushd) to the where we find the application
+	 if (chdir(checkPath) == 0) {
+	   int offset;
+	   getcwd(checkPath,sizeof(checkPath));
+	   offset = strlen(checkPath);
+	   // Change back (popd) to where we started 
+	   chdir(workingDir);
+	   sprintf(&checkPath[offset], "/%s", appName);
+	   return strdup(checkPath);
+	 }
+       }
+     }
+     return NULL;
+}
+
+// Update container with objects
+static hg_return_t
+cont_add_del_objs_bulk_cb(const struct hg_cb_info *hg_cb_info)
+{
+    // Server executes after received request from client
+    struct bulk_args_t *bulk_args = (struct bulk_args_t *)hg_cb_info->arg;
+    hg_bulk_t local_bulk_handle = hg_cb_info->info.bulk.local_handle;
+    hg_return_t ret = HG_SUCCESS;
+    int cnt, i, op;
+    cont_add_del_objs_rpc_out_t out_struct;
+    uint64_t *obj_ids, cont_id;
+
+    out_struct.ret = 0;
+
+    if (hg_cb_info->ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Error in callback");
+        ret = HG_PROTOCOL_ERROR;
+        goto done;
+    }
+    else {
+
+        cnt     = bulk_args->cnt;
+        op      = bulk_args->op;
+        cont_id = bulk_args->cont_id;
+        obj_ids = (uint64_t*)calloc(sizeof(uint64_t), cnt);
+
+        /* printf("==PDC_SERVER[x]: finished bulk xfer, with %d regions, %ld bytes\n",cnt-1,bulk_args->nbytes); */
+        /* fflush(stdout); */
+
+        HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, (void**)&obj_ids, NULL, NULL);
+
+        if (op == ADD_OBJ) {
+            if (PDC_Server_container_add_objs(cnt, obj_ids, cont_id) == SUCCEED) 
+                out_struct.ret = 1;
+            else
+                printf("==PDC_SERVER[ ]: error updating objects to container\n");
+        }
+        else if (op == DEL_OBJ) {
+            if (PDC_Server_container_del_objs(cnt, obj_ids, cont_id) == SUCCEED) 
+                out_struct.ret = 1;
+            else
+                printf("==PDC_SERVER[ ]: error updating objects to container\n");
+        }
+        else {
+            printf("==PDC_SERVER[ ]: %s - unsupported container operation type\n", __func__);
+            out_struct.ret = 0;
+            goto done;
+        }
+
+    } // end of else
+
+done:
+    /* Free block handle */
+    ret = HG_Bulk_free(local_bulk_handle);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not free HG bulk handle\n");
+        return ret;
+    }
+
+    /* Send response back */
+    ret = HG_Respond(bulk_args->handle, NULL, NULL, &out_struct);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not respond\n");
+        return ret;
+    }
+
+    /* printf("==PDC_SERVER[ ]: Responded to client %d of storage meta update!\n", bulk_args->origin); */
+    /* fflush(stdout); */
+
+    HG_Destroy(bulk_args->handle);
+    free(bulk_args);
+
+    return ret;
+}
+
+/* cont_add_del_objs_rpc_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(cont_add_del_objs_rpc, handle)
+{
+    const struct hg_info *hg_info = NULL;
+    struct bulk_args_t *bulk_args = NULL;
+    hg_bulk_t origin_bulk_handle  = HG_BULK_NULL;
+    hg_bulk_t local_bulk_handle   = HG_BULK_NULL;
+    hg_return_t ret = HG_SUCCESS;
+
+    cont_add_del_objs_rpc_in_t in_struct;
+
+    hg_op_id_t hg_bulk_op_id;
+
+    bulk_args = (struct bulk_args_t *)malloc(sizeof(struct bulk_args_t));
+
+    /* Keep handle to pass to callback */
+    bulk_args->handle = handle;
+
+    /* Get info from handle */
+    hg_info = HG_Get_info(handle);
+
+    /* Get input parameters and data */
+    ret = HG_Get_input(handle, &in_struct);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not get input\n");
+        return ret;
+    }
+
+    bulk_args->origin = in_struct.origin;
+
+    /* Get parameters */
+    origin_bulk_handle = in_struct.bulk_handle;
+
+    /* printf("==PDC_SERVER[x]: received update container bulk rpc from %d, with %d regions\n", */ 
+    /*         in_struct.origin, in_struct.cnt); */
+    /* fflush(stdout); */
+
+    bulk_args->nbytes  = HG_Bulk_get_size(origin_bulk_handle);
+    bulk_args->cnt     = in_struct.cnt;
+    bulk_args->op      = in_struct.op;
+    bulk_args->cont_id = in_struct.cont_id;
+
+    /* Create a new block handle to read the data */
+    HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *)&bulk_args->nbytes, HG_BULK_READWRITE, 
+                   &local_bulk_handle);
+
+    /* Pull bulk data */
+    ret = HG_Bulk_transfer(hg_info->context, cont_add_del_objs_bulk_cb,
+                           bulk_args, HG_BULK_PULL, hg_info->addr, origin_bulk_handle, 0,
+                           local_bulk_handle, 0, bulk_args->nbytes, &hg_bulk_op_id);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not read bulk data\n");
+        return ret;
+    }
+
+    /* printf("==PDC_SERVER[x]: Pulled data from %d\n", in_struct.origin); */
+    /* fflush(stdout); */
+
+    HG_Free_input(handle, &in_struct);
+
+done:
+    FUNC_LEAVE(ret);
+}
+
+
+// Update container with objects
+static hg_return_t
+query_read_obj_name_bulk_cb(const struct hg_cb_info *hg_cb_info)
+{
+    // Server executes after received request from client
+    struct bulk_args_t *bulk_args = (struct bulk_args_t *)hg_cb_info->arg;
+    hg_bulk_t local_bulk_handle = hg_cb_info->info.bulk.local_handle;
+    hg_return_t ret = HG_SUCCESS;
+    int i, iter;
+    char* tmp_buf;
+    query_read_obj_name_out_t out_struct;
+    query_read_names_args_t *query_read_names_args;
+
+    out_struct.ret = 0;
+
+    if (hg_cb_info->ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Error in callback");
+        HG_Respond(bulk_args->handle, NULL, NULL, &out_struct);
+        goto done;
+    }
+    else {
+        query_read_names_args = (query_read_names_args_t*)calloc(1, sizeof(query_read_names_args_t));
+        query_read_names_args->cnt = bulk_args->cnt;
+        query_read_names_args->client_seq_id = bulk_args->client_seq_id;
+        query_read_names_args->client_id = bulk_args->origin;
+        query_read_names_args->is_select_all = 1;
+        query_read_names_args->obj_names = (char**)calloc(sizeof(char*), bulk_args->cnt);
+        query_read_names_args->obj_names_1d = (char*)calloc(sizeof(char), bulk_args->nbytes);
+
+        HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE,1,(void**)&tmp_buf, NULL, NULL);
+        memcpy(query_read_names_args->obj_names_1d, tmp_buf, bulk_args->nbytes);
+
+        // Parse the obj_names to the 2d obj_names
+        iter = 0;
+        query_read_names_args->obj_names[iter++] = query_read_names_args->obj_names_1d;
+        for (i = 1; i < bulk_args->nbytes; i++) {
+            if (query_read_names_args->obj_names_1d[i-1] == '\0')
+                query_read_names_args->obj_names[iter++] = &query_read_names_args->obj_names_1d[i];
+        }
+
+        /* printf("==PDC_SERVER[x]: finished bulk xfer, with %d regions, %ld bytes\n",cnt-1,bulk_args->nbytes); */
+        /* fflush(stdout); */
+
+    }
+
+    out_struct.ret = 1;
+    // Data server retrieve storage metadata and then read data to shared memory
+    ret = HG_Respond(bulk_args->handle, PDC_Server_query_read_names_cb, query_read_names_args, &out_struct);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not respond\n");
+        return ret;
+    }
+
+    /* Free block handle */
+    ret = HG_Bulk_free(local_bulk_handle);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not free HG bulk handle\n");
+        return ret;
+    }
+
+    /* printf("==PDC_SERVER[ ]: Responded to client %d of storage meta update!\n", bulk_args->origin); */
+    /* fflush(stdout); */
+
+done:
+    HG_Destroy(bulk_args->handle);
+    free(bulk_args);
+
+    return ret;
+}
+
+
+/* query_read_obj_name_rpc_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(query_read_obj_name_rpc, handle)
+{
+    const struct hg_info *hg_info = NULL;
+    struct bulk_args_t *bulk_args = NULL;
+    hg_bulk_t origin_bulk_handle  = HG_BULK_NULL;
+    hg_bulk_t local_bulk_handle   = HG_BULK_NULL;
+    hg_return_t ret = HG_SUCCESS;
+
+    query_read_obj_name_in_t in_struct;
+
+    hg_op_id_t hg_bulk_op_id;
+
+    bulk_args = (struct bulk_args_t *)malloc(sizeof(struct bulk_args_t));
+
+    /* Keep handle to pass to callback */
+    bulk_args->handle = handle;
+
+    /* Get info from handle */
+    hg_info = HG_Get_info(handle);
+
+    /* Get input parameters and data */
+    ret = HG_Get_input(handle, &in_struct);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not get input\n");
+        return ret;
+    }
+
+    /* printf("==PDC_SERVER[x]: received update container bulk rpc from %d, with %d regions\n", */ 
+    /*         in_struct.origin, in_struct.cnt); */
+    /* fflush(stdout); */
+    origin_bulk_handle = in_struct.bulk_handle;
+    bulk_args->client_seq_id = in_struct.client_seq_id;
+    bulk_args->nbytes  = HG_Bulk_get_size(origin_bulk_handle);
+    bulk_args->cnt     = in_struct.cnt;
+    bulk_args->origin  = in_struct.origin;
+
+    /* Create a new block handle to read the data */
+    HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *)&bulk_args->nbytes, HG_BULK_READWRITE, 
+                   &local_bulk_handle);
+
+    /* Pull bulk data */
+    ret = HG_Bulk_transfer(hg_info->context, query_read_obj_name_bulk_cb,
+                           bulk_args, HG_BULK_PULL, hg_info->addr, origin_bulk_handle, 0,
+                           local_bulk_handle, 0, bulk_args->nbytes, &hg_bulk_op_id);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not read bulk data\n");
+        return ret;
+    }
+
+    /* printf("==PDC_SERVER[x]: Pulled data from %d\n", in_struct.origin); */
+    /* fflush(stdout); */
+
+    HG_Free_input(handle, &in_struct);
+
+done:
+    FUNC_LEAVE(ret);
+}
+
+
+// Receives the query with one name, return all storage metadata of the corresponding object with bulk transfer
+/* storage_meta_name_query_rpc_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(storage_meta_name_query_rpc, handle)
+{
+    hg_return_t ret = HG_SUCCESS;
+    pdc_int_ret_t out;
+
+    storage_meta_name_query_in_t in;
+    storage_meta_name_query_in_t *args;
+
+    HG_Get_input(handle, &in);
+    // Duplicate the structure so we can continue to use it after leaving this function
+    args = (storage_meta_name_query_in_t*)calloc(1, sizeof(storage_meta_name_query_in_t));
+    args->obj_name = strdup(in.obj_name);
+    args->task_id  = in.task_id;
+    args->origin_id = in.origin_id;
+
+    /* printf("==PDC_SERVER[x]: received storage meta query, name [%s], task_id %d, origin_id %d\n", */ 
+    /*         args->obj_name, args->task_id, args->origin_id); */
+    /* fflush(stdout); */
+    
+    out.ret = 1;
+    HG_Respond(handle, PDC_Server_storage_meta_name_query_bulk_respond, args, &out);
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret);
+} // end storage_meta_name_query_rpc_cb
+
+// Generic function to check the return value (RPC receipt) is 1
+hg_return_t pdc_check_int_ret_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    pdc_int_ret_t output;
+
+    FUNC_ENTER(NULL);
+
+    hg_handle_t handle = callback_info->info.forward.handle;
+
+    ret_value = HG_Get_output(handle, &output);
+    if (ret_value != HG_SUCCESS) {
+        printf("==%s() - Error with HG_Get_output\n", __func__);
+        goto done;
+    }
+
+    if (output.ret != 1) {
+        printf("==%s() - Return value [%d] is NOT expected\n", __func__, output.ret);
+    }
+done:
+    HG_Free_output(handle, &output);
+    FUNC_LEAVE(ret_value);
+}
+
+static hg_return_t
+get_storage_meta_bulk_cb(const struct hg_cb_info *hg_cb_info)
+{
+    // Server executes after received request from client
+    struct bulk_args_t *bulk_args = (struct bulk_args_t *)hg_cb_info->arg;
+    hg_bulk_t local_bulk_handle = hg_cb_info->info.bulk.local_handle;
+    hg_return_t ret = HG_SUCCESS;
+    int i, task_id, n_regions;
+    int *int_ptr;
+    char *char_ptr, *file_path;
+    uint64_t *uint64_ptr, offset;
+    void *buf;
+    region_info_transfer_t *region_info_ptr;
+    region_list_t *region_list, *region_list_head = NULL;
+    pdc_int_ret_t out_struct;
+
+    out_struct.ret = 0;
+
+    if (hg_cb_info->ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Error in callback");
+        HG_Respond(bulk_args->handle, NULL, NULL, &out_struct);
+        goto done;
+    }
+    else {
+
+        n_regions = bulk_args->cnt;
+        buf = (void*)calloc(1, bulk_args->nbytes);
+
+        /* printf("==PDC_SERVER[x]: finished bulk xfer, with %d regions, %ld bytes\n", n_regions,bulk_args->nbytes); */
+        /* fflush(stdout); */
+
+        HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, &buf, NULL, NULL);
+
+        // buf_ptrs[0]: task_id
+        // then for each next ptr, path, offset, region info (region_info_transfer_t)
+        int_ptr = (int*)buf;
+        task_id = *int_ptr;
+        int_ptr++;
+
+        for (i = 0; i < n_regions; i++) {
+            char_ptr = (char*)int_ptr;
+            file_path = char_ptr;
+            uint64_ptr = (uint64_t*)(char_ptr+strlen(char_ptr)+1);
+            offset = *uint64_ptr;
+            uint64_ptr++;
+            region_info_ptr = (region_info_transfer_t*)uint64_ptr;
+            region_list = (region_list_t*)calloc(1, sizeof(region_list_t));
+            PDC_init_region_list(region_list);
+            pdc_region_transfer_t_to_list_t(region_info_ptr, region_list);
+            strcpy(region_list->storage_location, file_path);
+            region_list->offset = offset;
+
+            DL_APPEND(region_list_head, region_list);
+            
+            region_info_ptr++;
+            int_ptr = (int*)region_info_ptr;
+        }
+    }
+
+    out_struct.ret = 1;
+    // Data server retrieve storage metadata and then read data to shared memory
+    ret = HG_Respond(bulk_args->handle, NULL, NULL, &out_struct);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not respond\n");
+        return ret;
+    }
+
+    PDC_Server_proc_storage_meta_bulk(task_id, n_regions, region_list_head);
+
+    /* Free block handle */
+    ret = HG_Bulk_free(local_bulk_handle);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not free HG bulk handle\n");
+        return ret;
+    }
+
+done:
+    HG_Destroy(bulk_args->handle);
+    free(bulk_args);
+
+    return ret;
+}
+
+/* get_storage_meta_name_query_bulk_result_rpc_cb */
+HG_TEST_RPC_CB(get_storage_meta_name_query_bulk_result_rpc, handle)
+{
+    const struct hg_info *hg_info = NULL;
+    struct bulk_args_t *bulk_args = NULL;
+    hg_bulk_t origin_bulk_handle  = HG_BULK_NULL;
+    hg_bulk_t local_bulk_handle   = HG_BULK_NULL;
+    hg_return_t ret = HG_SUCCESS;
+
+    bulk_rpc_in_t in_struct;
+
+    hg_op_id_t hg_bulk_op_id;
+
+    bulk_args = (struct bulk_args_t *)malloc(sizeof(struct bulk_args_t));
+
+    /* Keep handle to pass to callback */
+    bulk_args->handle = handle;
+
+    /* Get info from handle */
+    hg_info = HG_Get_info(handle);
+
+    /* Get input parameters and data */
+    ret = HG_Get_input(handle, &in_struct);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not get input\n");
+        return ret;
+    }
+
+    bulk_args->origin = in_struct.origin;
+
+    origin_bulk_handle = in_struct.bulk_handle;
+
+    bulk_args->nbytes  = HG_Bulk_get_size(origin_bulk_handle);
+    bulk_args->cnt     = in_struct.cnt;
+
+    HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *)&bulk_args->nbytes, HG_BULK_READWRITE, 
+                   &local_bulk_handle);
+
+    /* Pull bulk data */
+    ret = HG_Bulk_transfer(hg_info->context, get_storage_meta_bulk_cb,
+                           bulk_args, HG_BULK_PULL, hg_info->addr, origin_bulk_handle, 0,
+                           local_bulk_handle, 0, bulk_args->nbytes, &hg_bulk_op_id);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not read bulk data\n");
+        return ret;
+    }
+    /* printf("==PDC_SERVER[x]: Pulled data from %d\n", in_struct.origin); */
+    /* fflush(stdout); */
+
+    HG_Free_input(handle, &in_struct);
+
+    FUNC_LEAVE(ret);
+}
+
+static hg_return_t
+notify_client_multi_io_complete_bulk_cb(const struct hg_cb_info *hg_cb_info)
+{
+    // Client executes after received request from server
+    struct bulk_args_t *bulk_args = (struct bulk_args_t *)hg_cb_info->arg;
+    hg_bulk_t local_bulk_handle = hg_cb_info->info.bulk.local_handle;
+    hg_return_t ret = HG_SUCCESS;
+    int i, task_id, n_shm;
+    void *buf;
+    char *char_ptr;
+    char *buf_cp;
+    pdc_int_ret_t out_struct;
+
+    /* printf("==PDC_CLIENT[x]: accessing multi io complete shm addrs\n"); */
+    /* fflush(stdout); */
+
+    out_struct.ret = 0;
+    if (hg_cb_info->ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Error in callback");
+        HG_Respond(bulk_args->handle, NULL, NULL, &out_struct);
+        goto done;
+    }
+    else {
+        n_shm = bulk_args->cnt;
+        HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, &buf, NULL, NULL);
+        buf_cp = (char*)malloc(bulk_args->nbytes);
+        memcpy(buf_cp, buf, bulk_args->nbytes);
+    }
+
+    /* printf("==PDC_CLIENT[x]: respond back to server\n"); */
+    /* fflush(stdout); */
+
+    out_struct.ret = 1;
+    // Data server retrieve storage metadata and then read data to shared memory
+    ret = HG_Respond(bulk_args->handle, NULL, NULL, &out_struct);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not respond\n");
+        return ret;
+    }
+
+    PDC_Client_query_read_complete(buf_cp, bulk_args->nbytes, n_shm, bulk_args->client_seq_id);
+
+    /* Free block handle */
+    ret = HG_Bulk_free(local_bulk_handle);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not free HG bulk handle\n");
+        return ret;
+    }
+
+done:
+    HG_Destroy(bulk_args->handle);
+    free(bulk_args);
+
+    return ret;
+}
+
+/* notify_client_multi_io_complete_rpc_cb*/
+HG_TEST_RPC_CB(notify_client_multi_io_complete_rpc, handle)
+{
+    const struct hg_info *hg_info = NULL;
+    struct bulk_args_t *bulk_args = NULL;
+    hg_bulk_t origin_bulk_handle  = HG_BULK_NULL;
+    hg_bulk_t local_bulk_handle   = HG_BULK_NULL;
+    hg_return_t ret = HG_SUCCESS;
+    bulk_rpc_in_t in_struct;
+    hg_op_id_t hg_bulk_op_id;
+
+
+
+    bulk_args = (struct bulk_args_t *)malloc(sizeof(struct bulk_args_t));
+    bulk_args->handle = handle;
+
+    ret = HG_Get_input(handle, &in_struct);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not get input\n");
+        return ret;
+    }
+
+    bulk_args->origin        = in_struct.origin;
+    origin_bulk_handle       = in_struct.bulk_handle;
+    bulk_args->nbytes        = HG_Bulk_get_size(origin_bulk_handle);
+    bulk_args->cnt           = in_struct.cnt;
+    bulk_args->client_seq_id = in_struct.seq_id;
+
+    /* printf("==PDC_CLIENT[x]: received multi io complete bulk rpc, with %lu bytes!\n", bulk_args->nbytes); */
+    /* fflush(stdout); */
+
+    hg_info = HG_Get_info(handle);
+    HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *)&bulk_args->nbytes, HG_BULK_READWRITE, 
+                   &local_bulk_handle);
+
+    /* Pull bulk data */
+    ret = HG_Bulk_transfer(hg_info->context, notify_client_multi_io_complete_bulk_cb,
+                           bulk_args, HG_BULK_PULL, hg_info->addr, origin_bulk_handle, 0,
+                           local_bulk_handle, 0, bulk_args->nbytes, &hg_bulk_op_id);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not read bulk data\n");
+        return ret;
+    }
+
+    HG_Free_input(handle, &in_struct);
+    FUNC_LEAVE(ret);
+}
+
+
+/*
+ * Add a callback function and its parameters to a task list
+ *
+ * \param  target_list[IN]      target task list
+ * \param  cb[IN]               callback function pointer
+ * \param  cb_args[IN]          callback function parameters
+ * \param  curr_task_id[IN]     global task sequence id
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+int PDC_add_task_to_list(pdc_task_list_t **target_list, perr_t (*cb)(), void *cb_args, int *curr_task_id, 
+                         hg_thread_mutex_t *mutex)
+{
+    pdc_task_list_t *new_task;
+
+    FUNC_ENTER(NULL);
+    if (target_list == NULL ) {
+        printf("== %s - NULL input!\n", __func__);
+        return -1;
+    }
+
+    new_task = (pdc_task_list_t*)calloc(1, sizeof(pdc_task_list_t));
+    new_task->cb = cb;
+    new_task->cb_args = cb_args;
+
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_lock(mutex);
+#endif
+
+    new_task->task_id = *curr_task_id;
+    (*curr_task_id)++;
+    DL_APPEND(*target_list, new_task);
+
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(mutex);
+#endif
+
+    fflush(stdout);
+    FUNC_LEAVE(new_task->task_id);
+} // end PDC_add_task_to_list
+
+/*
+ * Delete a callback function and its parameters to a task list
+ *
+ * \param  target_list[IN]      target task list
+ * \param  del[IN]              target task pointer to be deleted
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_del_task_from_list(pdc_task_list_t **target_list, pdc_task_list_t *del, hg_thread_mutex_t *mutex) 
+{
+    perr_t ret_value;
+    pdc_task_list_t *tmp;
+    FUNC_ENTER(NULL);
+
+    if (target_list == NULL || del == NULL) {
+        printf("== %s - NULL input!\n", __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_lock(mutex);
+#endif
+
+    tmp = del;
+    DL_DELETE(*target_list, del);
+
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(mutex);
+#endif
+    free(tmp);
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);                                                                                  
+} // end PDC_del_task_from_list
+
+int PDC_is_valid_task_id(int id)
+{
+    if (id < PDC_SERVER_TASK_INIT_VALUE || id > 10000 ) {
+        printf("== id %d is invalid!\n", id);
+        return -1;
+    }
+    return 1;
+}
+
+/*
+ * Delete a callback function and its parameters to a task list
+ *
+ * \param  list_head[IN]        target task list
+ * \param  id[IN]               target task ID
+ *
+ * \return task pointer on success/NULL on failure
+ */
+pdc_task_list_t *PDC_find_task_from_list(pdc_task_list_t** target_list, int id, hg_thread_mutex_t *mutex)
+{
+    pdc_task_list_t *tmp;
+    FUNC_ENTER(NULL);
+
+    if (PDC_is_valid_task_id(id) != 1) {
+        printf("== %s - NULL input!\n", __func__);
+        goto done;
+    }
+
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_lock(mutex);
+#endif
+
+    DL_FOREACH(*target_list, tmp) {
+        if (tmp->task_id == id) {
+            return tmp;
+        }
+    }
+
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(mutex);
+#endif
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(NULL);
+} // end PDC_find_task_from_list
+
+perr_t PDC_del_task_from_list_id(pdc_task_list_t **target_list, int id, hg_thread_mutex_t *mutex)
+{
+    perr_t ret_value;
+    pdc_task_list_t *tmp;
+    FUNC_ENTER(NULL);
+
+    if (target_list == NULL || PDC_is_valid_task_id(id) != 1) {
+        printf("== %s - NULL input!\n", __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_lock(mutex);
+#endif
+
+    tmp = PDC_find_task_from_list(target_list, id, mutex);
+    DL_DELETE(*target_list, tmp);
+
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(mutex);
+#endif
+    free(tmp);
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} // end PDC_del_task_from_list_id
+
+int PDC_is_valid_obj_id(uint64_t id)
+{
+    if (id <  PDC_SERVER_ID_INTERVEL) {
+        printf("== id %" PRIu64 " is invalid!\n", id);
+        return -1;
+    }
+    return 1;
+}
+/* server_checkpoint_rpc_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(server_checkpoint_rpc, handle)
+{
+    perr_t ret_value = HG_SUCCESS;
+    FUNC_ENTER(NULL);
+
+    pdc_int_send_t in;
+    pdc_int_ret_t  out;
+
+    HG_Get_input(handle, &in);
+
+    out.ret = 1;
+    HG_Respond(handle, PDC_Server_checkpoint_cb, NULL, &out);
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
 HG_TEST_THREAD_CB(server_lookup_client)
 HG_TEST_THREAD_CB(gen_obj_id)
-//HG_TEST_THREAD_CB(gen_cont_id)
-//HG_TEST_THREAD_CB(cont_add_del_objs_rpc)
-//HG_TEST_THREAD_CB(query_read_obj_name_rpc)
-//HG_TEST_THREAD_CB(storage_meta_name_query_rpc)
-//HG_TEST_THREAD_CB(get_storage_meta_name_query_bulk_result_rpc)
-//HG_TEST_THREAD_CB(notify_client_multi_io_complete_rpc)
-//HG_TEST_THREAD_CB(server_checkpoint_rpc)
+HG_TEST_THREAD_CB(gen_cont_id)
+HG_TEST_THREAD_CB(cont_add_del_objs_rpc)
+HG_TEST_THREAD_CB(query_read_obj_name_rpc)
+HG_TEST_THREAD_CB(storage_meta_name_query_rpc)
+HG_TEST_THREAD_CB(get_storage_meta_name_query_bulk_result_rpc)
+HG_TEST_THREAD_CB(notify_client_multi_io_complete_rpc)
+HG_TEST_THREAD_CB(server_checkpoint_rpc)
 HG_TEST_THREAD_CB(client_test_connect)
 HG_TEST_THREAD_CB(metadata_query)
 HG_TEST_THREAD_CB(metadata_delete)
@@ -3453,7 +4278,7 @@ HG_TEST_THREAD_CB(data_server_read_check)
 HG_TEST_THREAD_CB(data_server_write_check)
 HG_TEST_THREAD_CB(update_region_loc)
 HG_TEST_THREAD_CB(get_metadata_by_id)
-HG_TEST_THREAD_CB(get_storage_info)
+/* HG_TEST_THREAD_CB(get_storage_info) */
 HG_TEST_THREAD_CB(aggregate_write)
 HG_TEST_THREAD_CB(region_release)
 HG_TEST_THREAD_CB(metadata_add_tag)
@@ -3467,6 +4292,7 @@ HG_TEST_THREAD_CB(buf_unmap)
 HG_TEST_THREAD_CB(region_map)
 HG_TEST_THREAD_CB(region_unmap)
 HG_TEST_THREAD_CB(get_reg_lock_status)
+
 
 hg_id_t
 gen_obj_id_register(hg_class_t *hg_class)
@@ -3870,220 +4696,10 @@ get_metadata_by_id_register(hg_class_t *hg_class)
 }
 
 
-/* 
- * NOTE:
- *   Because we use dlopen to dynamically open
- *   an executable, it may be necessary for the server
- *   to have the LD_LIBRARY_PATH of the client.
- *   This can/should be part of the UDF registration
- *   with the server, i.e. we provide the server
- *   with: 
- *      a) the full path to the client executable
- *         which must be compiled with the "-fpie -rdynamic"
- *         flags.
- *      b) the contents of the PATH and LD_LIBRARY_PATH
- *         environment variables.
- */
-
-char *
-remove_relative_dirs(char *workingDir, char *application)
+hg_id_t
+server_checkpoing_rpc_register(hg_class_t *hg_class)
 {
-     int k, levels_up = 0;
-     char *appName = application;
-     char *dotdot;
-     while((dotdot = strstr(appName,"../")) != NULL) {
-       levels_up++;
-       appName = dotdot + 3;
-     }
-     for(k=0; k<levels_up; k++) {
-       char *slash = strrchr(workingDir,'/');
-       if (slash) *slash = 0;
-     }
-     k = strlen(workingDir);
-     if ((appName[0] == '.') && (appName[1] == '/'))
-       appName += 2;
-     sprintf(&workingDir[k],"/%s", appName);
-     return strdup(workingDir);
-}
-
-char *
-find_in_path(char *workingDir, char *application)
-{
-     struct stat fileStat;
-     char *pathVar = getenv("PATH");
-     char colon = ':';
-     char checkPath[PATH_MAX];
-     char *next = strchr(pathVar,colon);
-     while(next) {
-       *next++ = 0;
-       sprintf(checkPath,"%s/%s",pathVar,application);
-       if (stat(checkPath,&fileStat) == 0) {
-	 return strdup(checkPath);
-       }
-       pathVar = next;
-       next = strchr(pathVar,colon);
-     }
-     if (application[0] == '.') {
-       sprintf(checkPath, "%s/%s", workingDir, application);
-       if (stat(checkPath,&fileStat) == 0) {
-	 char *foundPath = strrchr(checkPath,'/');
-	 char *appName = foundPath+1;
-	 if (foundPath == NULL) {
-	   return remove_relative_dirs(workingDir, application);
-	 }
-	 *foundPath = 0;
-	 // Change directory (pushd) to the where we find the application
-	 if (chdir(checkPath) == 0) {
-	   int offset;
-	   getcwd(checkPath,sizeof(checkPath));
-	   offset = strlen(checkPath);
-	   // Change back (popd) to where we started 
-	   chdir(workingDir);
-	   sprintf(&checkPath[offset], "/%s", appName);
-	   return strdup(checkPath);
-	 }
-       }
-     }
-     return NULL;
-}
-
-// Update container with objects
-static hg_return_t
-cont_add_del_objs_bulk_cb(const struct hg_cb_info *hg_cb_info)
-{
-    // Server executes after received request from client
-    struct bulk_args_t *bulk_args = (struct bulk_args_t *)hg_cb_info->arg;
-    hg_bulk_t local_bulk_handle = hg_cb_info->info.bulk.local_handle;
-    hg_return_t ret = HG_SUCCESS;
-    int cnt, i, op;
-    cont_add_del_objs_rpc_out_t out_struct;
-    uint64_t *obj_ids, cont_id;
-
-    out_struct.ret = 0;
-
-    if (hg_cb_info->ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Error in callback");
-        ret = HG_PROTOCOL_ERROR;
-        goto done;
-    }
-    else {
-
-        cnt     = bulk_args->cnt;
-        op      = bulk_args->op;
-        cont_id = bulk_args->cont_id;
-        obj_ids = (uint64_t*)calloc(sizeof(uint64_t), cnt);
-
-        /* printf("==PDC_SERVER[x]: finished bulk xfer, with %d regions, %ld bytes\n",cnt-1,bulk_args->nbytes); */
-        /* fflush(stdout); */
-
-        HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, (void**)&obj_ids, NULL, NULL);
-
-        if (op == ADD_OBJ) {
-            if (PDC_Server_container_add_objs(cnt, obj_ids, cont_id) == SUCCEED) 
-                out_struct.ret = 1;
-            else
-                printf("==PDC_SERVER[ ]: error updating objects to container\n");
-        }
-        else if (op == DEL_OBJ) {
-            if (PDC_Server_container_del_objs(cnt, obj_ids, cont_id) == SUCCEED) 
-                out_struct.ret = 1;
-            else
-                printf("==PDC_SERVER[ ]: error updating objects to container\n");
-        }
-        else {
-            printf("==PDC_SERVER[ ]: %s - unsupported container operation type\n", __func__);
-            out_struct.ret = 0;
-            goto done;
-        }
-
-    } // end of else
-
-done:
-    /* Free block handle */
-    ret = HG_Bulk_free(local_bulk_handle);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not free HG bulk handle\n");
-        return ret;
-    }
-
-    /* Send response back */
-    ret = HG_Respond(bulk_args->handle, NULL, NULL, &out_struct);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not respond\n");
-        return ret;
-    }
-
-    /* printf("==PDC_SERVER[ ]: Responded to client %d of storage meta update!\n", bulk_args->origin); */
-    /* fflush(stdout); */
-
-    HG_Destroy(bulk_args->handle);
-    free(bulk_args);
-
-    return ret;
-}
-
-/* cont_add_del_objs_rpc_cb(hg_handle_t handle) */
-HG_TEST_RPC_CB(cont_add_del_objs_rpc, handle)
-{
-    const struct hg_info *hg_info = NULL;
-    struct bulk_args_t *bulk_args = NULL;
-    hg_bulk_t origin_bulk_handle  = HG_BULK_NULL;
-    hg_bulk_t local_bulk_handle   = HG_BULK_NULL;
-    hg_return_t ret = HG_SUCCESS;
-
-    cont_add_del_objs_rpc_in_t in_struct;
-
-    hg_op_id_t hg_bulk_op_id;
-
-    bulk_args = (struct bulk_args_t *)malloc(sizeof(struct bulk_args_t));
-
-    /* Keep handle to pass to callback */
-    bulk_args->handle = handle;
-
-    /* Get info from handle */
-    hg_info = HG_Get_info(handle);
-
-    /* Get input parameters and data */
-    ret = HG_Get_input(handle, &in_struct);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not get input\n");
-        return ret;
-    }
-
-    bulk_args->origin = in_struct.origin;
-
-    /* Get parameters */
-    origin_bulk_handle = in_struct.bulk_handle;
-
-    /* printf("==PDC_SERVER[x]: received update container bulk rpc from %d, with %d regions\n", */ 
-    /*         in_struct.origin, in_struct.cnt); */
-    /* fflush(stdout); */
-
-    bulk_args->nbytes  = HG_Bulk_get_size(origin_bulk_handle);
-    bulk_args->cnt     = in_struct.cnt;
-    bulk_args->op      = in_struct.op;
-    bulk_args->cont_id = in_struct.cont_id;
-
-    /* Create a new block handle to read the data */
-    HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *)&bulk_args->nbytes, HG_BULK_READWRITE, 
-                   &local_bulk_handle);
-
-    /* Pull bulk data */
-    ret = HG_Bulk_transfer(hg_info->context, cont_add_del_objs_bulk_cb,
-                           bulk_args, HG_BULK_PULL, hg_info->addr, origin_bulk_handle, 0,
-                           local_bulk_handle, 0, bulk_args->nbytes, &hg_bulk_op_id);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not read bulk data\n");
-        return ret;
-    }
-
-    /* printf("==PDC_SERVER[x]: Pulled data from %d\n", in_struct.origin); */
-    /* fflush(stdout); */
-
-    HG_Free_input(handle, &in_struct);
-
-done:
-    FUNC_LEAVE(ret);
+    return  MERCURY_REGISTER(hg_class, "server_checkpoing_rpc_register", pdc_int_send_t, pdc_int_ret_t, server_checkpoint_rpc_cb);
 }
 
 
@@ -4099,137 +4715,6 @@ cont_add_del_objs_rpc_register(hg_class_t *hg_class)
     FUNC_LEAVE(ret_value);
 }
 
-// Update container with objects
-static hg_return_t
-query_read_obj_name_bulk_cb(const struct hg_cb_info *hg_cb_info)
-{
-    // Server executes after received request from client
-    struct bulk_args_t *bulk_args = (struct bulk_args_t *)hg_cb_info->arg;
-    hg_bulk_t local_bulk_handle = hg_cb_info->info.bulk.local_handle;
-    hg_return_t ret = HG_SUCCESS;
-    int i, iter;
-    char* tmp_buf;
-    query_read_obj_name_out_t out_struct;
-    query_read_names_args_t *query_read_names_args;
-
-    out_struct.ret = 0;
-
-    if (hg_cb_info->ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Error in callback");
-        HG_Respond(bulk_args->handle, NULL, NULL, &out_struct);
-        goto done;
-    }
-    else {
-        query_read_names_args = (query_read_names_args_t*)calloc(1, sizeof(query_read_names_args_t));
-        query_read_names_args->cnt = bulk_args->cnt;
-        query_read_names_args->client_seq_id = bulk_args->client_seq_id;
-        query_read_names_args->client_id = bulk_args->origin;
-        query_read_names_args->is_select_all = 1;
-        query_read_names_args->obj_names = (char**)calloc(sizeof(char*), bulk_args->cnt);
-        query_read_names_args->obj_names_1d = (char*)calloc(sizeof(char), bulk_args->nbytes);
-
-        HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE,1,(void**)&tmp_buf, NULL, NULL);
-        memcpy(query_read_names_args->obj_names_1d, tmp_buf, bulk_args->nbytes);
-
-        // Parse the obj_names to the 2d obj_names
-        iter = 0;
-        query_read_names_args->obj_names[iter++] = query_read_names_args->obj_names_1d;
-        for (i = 1; i < bulk_args->nbytes; i++) {
-            if (query_read_names_args->obj_names_1d[i-1] == '\0')
-                query_read_names_args->obj_names[iter++] = &query_read_names_args->obj_names_1d[i];
-        }
-
-        /* printf("==PDC_SERVER[x]: finished bulk xfer, with %d regions, %ld bytes\n",cnt-1,bulk_args->nbytes); */
-        /* fflush(stdout); */
-
-    }
-
-    out_struct.ret = 1;
-    // Data server retrieve storage metadata and then read data to shared memory
-    ret = HG_Respond(bulk_args->handle, PDC_Server_query_read_names_cb, query_read_names_args, &out_struct);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not respond\n");
-        return ret;
-    }
-
-    /* Free block handle */
-    ret = HG_Bulk_free(local_bulk_handle);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not free HG bulk handle\n");
-        return ret;
-    }
-
-    /* printf("==PDC_SERVER[ ]: Responded to client %d of storage meta update!\n", bulk_args->origin); */
-    /* fflush(stdout); */
-
-done:
-    HG_Destroy(bulk_args->handle);
-    free(bulk_args);
-
-    return ret;
-}
-
-
-/* query_read_obj_name_rpc_cb(hg_handle_t handle) */
-HG_TEST_RPC_CB(query_read_obj_name_rpc, handle)
-{
-    const struct hg_info *hg_info = NULL;
-    struct bulk_args_t *bulk_args = NULL;
-    hg_bulk_t origin_bulk_handle  = HG_BULK_NULL;
-    hg_bulk_t local_bulk_handle   = HG_BULK_NULL;
-    hg_return_t ret = HG_SUCCESS;
-
-    query_read_obj_name_in_t in_struct;
-
-    hg_op_id_t hg_bulk_op_id;
-
-    bulk_args = (struct bulk_args_t *)malloc(sizeof(struct bulk_args_t));
-
-    /* Keep handle to pass to callback */
-    bulk_args->handle = handle;
-
-    /* Get info from handle */
-    hg_info = HG_Get_info(handle);
-
-    /* Get input parameters and data */
-    ret = HG_Get_input(handle, &in_struct);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not get input\n");
-        return ret;
-    }
-
-    /* printf("==PDC_SERVER[x]: received update container bulk rpc from %d, with %d regions\n", */ 
-    /*         in_struct.origin, in_struct.cnt); */
-    /* fflush(stdout); */
-    origin_bulk_handle = in_struct.bulk_handle;
-    bulk_args->client_seq_id = in_struct.client_seq_id;
-    bulk_args->nbytes  = HG_Bulk_get_size(origin_bulk_handle);
-    bulk_args->cnt     = in_struct.cnt;
-    bulk_args->origin  = in_struct.origin;
-
-    /* Create a new block handle to read the data */
-    HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *)&bulk_args->nbytes, HG_BULK_READWRITE, 
-                   &local_bulk_handle);
-
-    /* Pull bulk data */
-    ret = HG_Bulk_transfer(hg_info->context, query_read_obj_name_bulk_cb,
-                           bulk_args, HG_BULK_PULL, hg_info->addr, origin_bulk_handle, 0,
-                           local_bulk_handle, 0, bulk_args->nbytes, &hg_bulk_op_id);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not read bulk data\n");
-        return ret;
-    }
-
-    /* printf("==PDC_SERVER[x]: Pulled data from %d\n", in_struct.origin); */
-    /* fflush(stdout); */
-
-    HG_Free_input(handle, &in_struct);
-
-done:
-    FUNC_LEAVE(ret);
-}
-
-
 hg_id_t
 query_read_obj_name_rpc_register(hg_class_t *hg_class)
 {
@@ -4242,201 +4727,10 @@ query_read_obj_name_rpc_register(hg_class_t *hg_class)
     FUNC_LEAVE(ret_value);
 }
 
-// Receives the query with one name, return all storage metadata of the corresponding object with bulk transfer
-/* storage_meta_name_query_rpc_cb(hg_handle_t handle) */
-HG_TEST_RPC_CB(storage_meta_name_query_rpc, handle)
-{
-    hg_return_t ret = HG_SUCCESS;
-    pdc_int_ret_t out;
-
-    storage_meta_name_query_in_t in;
-    storage_meta_name_query_in_t *args;
-
-    HG_Get_input(handle, &in);
-    // Duplicate the structure so we can continue to use it after leaving this function
-    args = (storage_meta_name_query_in_t*)calloc(1, sizeof(storage_meta_name_query_in_t));
-    args->obj_name = strdup(in.obj_name);
-    args->task_id  = in.task_id;
-    args->origin_id = in.origin_id;
-
-    /* printf("==PDC_SERVER[x]: received storage meta query, name [%s], task_id %d, origin_id %d\n", */ 
-    /*         args->obj_name, args->task_id, args->origin_id); */
-    /* fflush(stdout); */
-    
-    out.ret = 1;
-    HG_Respond(handle, PDC_Server_storage_meta_name_query_bulk_respond, args, &out);
-
-    HG_Free_input(handle, &in);
-    HG_Destroy(handle);
-
-    FUNC_LEAVE(ret);
-} // end storage_meta_name_query_rpc_cb
-
 hg_id_t
 storage_meta_name_query_rpc_register(hg_class_t *hg_class)
 {
     return MERCURY_REGISTER(hg_class, "storage_meta_name_query_rpc", storage_meta_name_query_in_t, pdc_int_ret_t, storage_meta_name_query_rpc_cb);
-}
-
-// Generic function to check the return value (RPC receipt) is 1
-hg_return_t pdc_check_int_ret_cb(const struct hg_cb_info *callback_info)
-{
-    hg_return_t ret_value = HG_SUCCESS;
-    pdc_int_ret_t output;
-
-    FUNC_ENTER(NULL);
-
-    hg_handle_t handle = callback_info->info.forward.handle;
-
-    ret_value = HG_Get_output(handle, &output);
-    if (ret_value != HG_SUCCESS) {
-        printf("==%s() - Error with HG_Get_output\n", __func__);
-        goto done;
-    }
-
-    if (output.ret != 1) {
-        printf("==%s() - Return value [%d] is NOT expected\n", __func__, output.ret);
-    }
-done:
-    HG_Free_output(handle, &output);
-    FUNC_LEAVE(ret_value);
-}
-
-static hg_return_t
-get_storage_meta_bulk_cb(const struct hg_cb_info *hg_cb_info)
-{
-    // Server executes after received request from client
-    struct bulk_args_t *bulk_args = (struct bulk_args_t *)hg_cb_info->arg;
-    hg_bulk_t local_bulk_handle = hg_cb_info->info.bulk.local_handle;
-    hg_return_t ret = HG_SUCCESS;
-    int i, task_id, n_regions;
-    int *int_ptr;
-    char *char_ptr, *file_path;
-    uint64_t *uint64_ptr, offset;
-    void *buf;
-    region_info_transfer_t *region_info_ptr;
-    region_list_t *region_list, *region_list_head = NULL;
-    pdc_int_ret_t out_struct;
-
-    out_struct.ret = 0;
-
-    if (hg_cb_info->ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Error in callback");
-        HG_Respond(bulk_args->handle, NULL, NULL, &out_struct);
-        goto done;
-    }
-    else {
-
-        n_regions = bulk_args->cnt;
-        buf = (void*)calloc(1, bulk_args->nbytes);
-
-        /* printf("==PDC_SERVER[x]: finished bulk xfer, with %d regions, %ld bytes\n", n_regions,bulk_args->nbytes); */
-        /* fflush(stdout); */
-
-        HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, &buf, NULL, NULL);
-
-        // buf_ptrs[0]: task_id
-        // then for each next ptr, path, offset, region info (region_info_transfer_t)
-        int_ptr = (int*)buf;
-        task_id = *int_ptr;
-        int_ptr++;
-
-        for (i = 0; i < n_regions; i++) {
-            char_ptr = (char*)int_ptr;
-            file_path = char_ptr;
-            uint64_ptr = (uint64_t*)(char_ptr+strlen(char_ptr)+1);
-            offset = *uint64_ptr;
-            uint64_ptr++;
-            region_info_ptr = (region_info_transfer_t*)uint64_ptr;
-            region_list = (region_list_t*)calloc(1, sizeof(region_list_t));
-            PDC_init_region_list(region_list);
-            pdc_region_transfer_t_to_list_t(region_info_ptr, region_list);
-            strcpy(region_list->storage_location, file_path);
-            region_list->offset = offset;
-
-            DL_APPEND(region_list_head, region_list);
-            
-            region_info_ptr++;
-            int_ptr = (int*)region_info_ptr;
-        }
-    }
-
-    out_struct.ret = 1;
-    // Data server retrieve storage metadata and then read data to shared memory
-    ret = HG_Respond(bulk_args->handle, NULL, NULL, &out_struct);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not respond\n");
-        return ret;
-    }
-
-    PDC_Server_proc_storage_meta_bulk(task_id, n_regions, region_list_head);
-
-    /* Free block handle */
-    ret = HG_Bulk_free(local_bulk_handle);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not free HG bulk handle\n");
-        return ret;
-    }
-
-done:
-    HG_Destroy(bulk_args->handle);
-    free(bulk_args);
-
-    return ret;
-}
-
-/* get_storage_meta_name_query_bulk_result_rpc_cb */
-HG_TEST_RPC_CB(get_storage_meta_name_query_bulk_result_rpc, handle)
-{
-    const struct hg_info *hg_info = NULL;
-    struct bulk_args_t *bulk_args = NULL;
-    hg_bulk_t origin_bulk_handle  = HG_BULK_NULL;
-    hg_bulk_t local_bulk_handle   = HG_BULK_NULL;
-    hg_return_t ret = HG_SUCCESS;
-
-    bulk_rpc_in_t in_struct;
-
-    hg_op_id_t hg_bulk_op_id;
-
-    bulk_args = (struct bulk_args_t *)malloc(sizeof(struct bulk_args_t));
-
-    /* Keep handle to pass to callback */
-    bulk_args->handle = handle;
-
-    /* Get info from handle */
-    hg_info = HG_Get_info(handle);
-
-    /* Get input parameters and data */
-    ret = HG_Get_input(handle, &in_struct);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not get input\n");
-        return ret;
-    }
-
-    bulk_args->origin = in_struct.origin;
-
-    origin_bulk_handle = in_struct.bulk_handle;
-
-    bulk_args->nbytes  = HG_Bulk_get_size(origin_bulk_handle);
-    bulk_args->cnt     = in_struct.cnt;
-
-    HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *)&bulk_args->nbytes, HG_BULK_READWRITE, 
-                   &local_bulk_handle);
-
-    /* Pull bulk data */
-    ret = HG_Bulk_transfer(hg_info->context, get_storage_meta_bulk_cb,
-                           bulk_args, HG_BULK_PULL, hg_info->addr, origin_bulk_handle, 0,
-                           local_bulk_handle, 0, bulk_args->nbytes, &hg_bulk_op_id);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not read bulk data\n");
-        return ret;
-    }
-    /* printf("==PDC_SERVER[x]: Pulled data from %d\n", in_struct.origin); */
-    /* fflush(stdout); */
-
-    HG_Free_input(handle, &in_struct);
-
-    FUNC_LEAVE(ret);
 }
 
 hg_id_t
@@ -4444,300 +4738,8 @@ get_storage_meta_name_query_bulk_result_rpc_register(hg_class_t *hg_class)
 {
     return  MERCURY_REGISTER(hg_class, "get_storage_meta_name_query_bulk_result_rpc", bulk_rpc_in_t, pdc_int_ret_t, get_storage_meta_name_query_bulk_result_rpc_cb);
 }
-
-static hg_return_t
-notify_client_multi_io_complete_bulk_cb(const struct hg_cb_info *hg_cb_info)
-{
-    // Client executes after received request from server
-    struct bulk_args_t *bulk_args = (struct bulk_args_t *)hg_cb_info->arg;
-    hg_bulk_t local_bulk_handle = hg_cb_info->info.bulk.local_handle;
-    hg_return_t ret = HG_SUCCESS;
-    int i, task_id, n_shm;
-    void *buf;
-    char *char_ptr;
-    char *buf_cp;
-    pdc_int_ret_t out_struct;
-
-    /* printf("==PDC_CLIENT[x]: accessing multi io complete shm addrs\n"); */
-    /* fflush(stdout); */
-
-    out_struct.ret = 0;
-    if (hg_cb_info->ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Error in callback");
-        HG_Respond(bulk_args->handle, NULL, NULL, &out_struct);
-        goto done;
-    }
-    else {
-        n_shm = bulk_args->cnt;
-        HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, &buf, NULL, NULL);
-        buf_cp = (char*)malloc(bulk_args->nbytes);
-        memcpy(buf_cp, buf, bulk_args->nbytes);
-    }
-
-    /* printf("==PDC_CLIENT[x]: respond back to server\n"); */
-    /* fflush(stdout); */
-
-    out_struct.ret = 1;
-    // Data server retrieve storage metadata and then read data to shared memory
-    ret = HG_Respond(bulk_args->handle, NULL, NULL, &out_struct);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not respond\n");
-        return ret;
-    }
-
-    PDC_Client_query_read_complete(buf_cp, bulk_args->nbytes, n_shm, bulk_args->client_seq_id);
-
-    /* Free block handle */
-    ret = HG_Bulk_free(local_bulk_handle);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not free HG bulk handle\n");
-        return ret;
-    }
-
-done:
-    HG_Destroy(bulk_args->handle);
-    free(bulk_args);
-
-    return ret;
-}
-
-/* notify_client_multi_io_complete_rpc_cb*/
-HG_TEST_RPC_CB(notify_client_multi_io_complete_rpc, handle)
-{
-    const struct hg_info *hg_info = NULL;
-    struct bulk_args_t *bulk_args = NULL;
-    hg_bulk_t origin_bulk_handle  = HG_BULK_NULL;
-    hg_bulk_t local_bulk_handle   = HG_BULK_NULL;
-    hg_return_t ret = HG_SUCCESS;
-    bulk_rpc_in_t in_struct;
-    hg_op_id_t hg_bulk_op_id;
-
-
-
-    bulk_args = (struct bulk_args_t *)malloc(sizeof(struct bulk_args_t));
-    bulk_args->handle = handle;
-
-    ret = HG_Get_input(handle, &in_struct);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not get input\n");
-        return ret;
-    }
-
-    bulk_args->origin        = in_struct.origin;
-    origin_bulk_handle       = in_struct.bulk_handle;
-    bulk_args->nbytes        = HG_Bulk_get_size(origin_bulk_handle);
-    bulk_args->cnt           = in_struct.cnt;
-    bulk_args->client_seq_id = in_struct.seq_id;
-
-    /* printf("==PDC_CLIENT[x]: received multi io complete bulk rpc, with %lu bytes!\n", bulk_args->nbytes); */
-    /* fflush(stdout); */
-
-    hg_info = HG_Get_info(handle);
-    HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *)&bulk_args->nbytes, HG_BULK_READWRITE, 
-                   &local_bulk_handle);
-
-    /* Pull bulk data */
-    ret = HG_Bulk_transfer(hg_info->context, notify_client_multi_io_complete_bulk_cb,
-                           bulk_args, HG_BULK_PULL, hg_info->addr, origin_bulk_handle, 0,
-                           local_bulk_handle, 0, bulk_args->nbytes, &hg_bulk_op_id);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not read bulk data\n");
-        return ret;
-    }
-
-    HG_Free_input(handle, &in_struct);
-    FUNC_LEAVE(ret);
-}
 hg_id_t
 notify_client_multi_io_complete_rpc_register(hg_class_t *hg_class)
 {
     return  MERCURY_REGISTER(hg_class, "notify_client_multi_io_complete_rpc_register", bulk_rpc_in_t, pdc_int_ret_t, notify_client_multi_io_complete_rpc_cb);
-}
-
-/*
- * Add a callback function and its parameters to a task list
- *
- * \param  target_list[IN]      target task list
- * \param  cb[IN]               callback function pointer
- * \param  cb_args[IN]          callback function parameters
- * \param  curr_task_id[IN]     global task sequence id
- *
- * \return Non-negative on success/Negative on failure
- */
-int PDC_add_task_to_list(pdc_task_list_t **target_list, perr_t (*cb)(), void *cb_args, int *curr_task_id, 
-                         hg_thread_mutex_t *mutex)
-{
-    pdc_task_list_t *new_task;
-
-    FUNC_ENTER(NULL);
-    if (target_list == NULL ) {
-        printf("== %s - NULL input!\n", __func__);
-        return -1;
-    }
-
-    new_task = (pdc_task_list_t*)calloc(1, sizeof(pdc_task_list_t));
-    new_task->cb = cb;
-    new_task->cb_args = cb_args;
-
-#ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_lock(mutex);
-#endif
-
-    new_task->task_id = *curr_task_id;
-    (*curr_task_id)++;
-    DL_APPEND(*target_list, new_task);
-
-#ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_unlock(mutex);
-#endif
-
-    fflush(stdout);
-    FUNC_LEAVE(new_task->task_id);
-} // end PDC_add_task_to_list
-
-/*
- * Delete a callback function and its parameters to a task list
- *
- * \param  target_list[IN]      target task list
- * \param  del[IN]              target task pointer to be deleted
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDC_del_task_from_list(pdc_task_list_t **target_list, pdc_task_list_t *del, hg_thread_mutex_t *mutex) 
-{
-    perr_t ret_value;
-    pdc_task_list_t *tmp;
-    FUNC_ENTER(NULL);
-
-    if (target_list == NULL || del == NULL) {
-        printf("== %s - NULL input!\n", __func__);
-        ret_value = FAIL;
-        goto done;
-    }
-
-#ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_lock(mutex);
-#endif
-
-    tmp = del;
-    DL_DELETE(*target_list, del);
-
-#ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_unlock(mutex);
-#endif
-    free(tmp);
-
-done:
-    fflush(stdout);
-    FUNC_LEAVE(ret_value);                                                                                  
-} // end PDC_del_task_from_list
-
-int PDC_is_valid_task_id(int id)
-{
-    if (id < PDC_SERVER_TASK_INIT_VALUE || id > 10000 ) {
-        printf("== id %d is invalid!\n", id);
-        return -1;
-    }
-    return 1;
-}
-
-/*
- * Delete a callback function and its parameters to a task list
- *
- * \param  list_head[IN]        target task list
- * \param  id[IN]               target task ID
- *
- * \return task pointer on success/NULL on failure
- */
-pdc_task_list_t *PDC_find_task_from_list(pdc_task_list_t** target_list, int id, hg_thread_mutex_t *mutex)
-{
-    pdc_task_list_t *tmp;
-    FUNC_ENTER(NULL);
-
-    if (PDC_is_valid_task_id(id) != 1) {
-        printf("== %s - NULL input!\n", __func__);
-        goto done;
-    }
-
-#ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_lock(mutex);
-#endif
-
-    DL_FOREACH(*target_list, tmp) {
-        if (tmp->task_id == id) {
-            return tmp;
-        }
-    }
-
-#ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_unlock(mutex);
-#endif
-
-done:
-    fflush(stdout);
-    FUNC_LEAVE(NULL);
-} // end PDC_find_task_from_list
-
-perr_t PDC_del_task_from_list_id(pdc_task_list_t **target_list, int id, hg_thread_mutex_t *mutex)
-{
-    perr_t ret_value;
-    pdc_task_list_t *tmp;
-    FUNC_ENTER(NULL);
-
-    if (target_list == NULL || PDC_is_valid_task_id(id) != 1) {
-        printf("== %s - NULL input!\n", __func__);
-        ret_value = FAIL;
-        goto done;
-    }
-
-#ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_lock(mutex);
-#endif
-
-    tmp = PDC_find_task_from_list(target_list, id, mutex);
-    DL_DELETE(*target_list, tmp);
-
-#ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_unlock(mutex);
-#endif
-    free(tmp);
-
-done:
-    fflush(stdout);
-    FUNC_LEAVE(ret_value);
-} // end PDC_del_task_from_list_id
-
-int PDC_is_valid_obj_id(uint64_t id)
-{
-    if (id <  PDC_SERVER_ID_INTERVEL) {
-        printf("== id %" PRIu64 " is invalid!\n", id);
-        return -1;
-    }
-    return 1;
-}
-/* server_checkpoint_rpc_cb(hg_handle_t handle) */
-HG_TEST_RPC_CB(server_checkpoint_rpc, handle)
-{
-    perr_t ret_value = HG_SUCCESS;
-    FUNC_ENTER(NULL);
-
-    pdc_int_send_t in;
-    pdc_int_ret_t  out;
-
-    HG_Get_input(handle, &in);
-
-    out.ret = 1;
-    HG_Respond(handle, PDC_Server_checkpoint_cb, NULL, &out);
-
-    HG_Free_input(handle, &in);
-    HG_Destroy(handle);
-
-    FUNC_LEAVE(ret_value);
-}
-
-
-hg_id_t
-server_checkpoing_rpc_register(hg_class_t *hg_class)
-{
-    return  MERCURY_REGISTER(hg_class, "server_checkpoing_rpc_register", pdc_int_send_t, pdc_int_ret_t, server_checkpoint_rpc_cb);
 }
