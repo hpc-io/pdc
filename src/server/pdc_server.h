@@ -49,10 +49,11 @@
 #include "mercury_thread_condition.h"
 hg_thread_mutex_t pdc_client_addr_mutex_g;
 hg_thread_mutex_t pdc_metadata_hash_table_mutex_g;
-/* hg_thread_mutex_t pdc_metadata_name_mark_hash_table_mutex_g; */
+hg_thread_mutex_t pdc_container_hash_table_mutex_g;
 hg_thread_mutex_t pdc_time_mutex_g;
 hg_thread_mutex_t pdc_bloom_time_mutex_g;
 hg_thread_mutex_t n_metadata_mutex_g;
+hg_thread_mutex_t gen_obj_id_mutex_g;
 hg_thread_mutex_t data_read_list_mutex_g;
 hg_thread_mutex_t data_write_list_mutex_g;
 hg_thread_mutex_t region_struct_mutex_g;
@@ -63,6 +64,10 @@ hg_thread_mutex_t insert_hash_table_mutex_g;
 hg_thread_mutex_t lock_request_mutex_g;
 hg_thread_mutex_t addr_valid_mutex_g;
 hg_thread_mutex_t update_remote_server_addr_mutex_g;
+hg_thread_mutex_t pdc_server_task_mutex_g;
+#else
+#define hg_thread_mutex_t int
+hg_thread_mutex_t pdc_server_task_mutex_g;
 #endif
 
 extern int      n_bloom_total_g           ;

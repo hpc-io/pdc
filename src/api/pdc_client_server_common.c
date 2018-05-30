@@ -40,10 +40,7 @@
 
 #ifdef ENABLE_MULTITHREAD 
 // Mercury multithread
-#include "mercury_thread_mutex.h"
-hg_thread_mutex_t delete_buf_map_metex_g;
-hg_thread_mutex_t server_delete_buf_map_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
-hg_thread_mutex_t server_append_buf_map_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
+//#include "mercury_thread_mutex.h"
 hg_thread_mutex_t insert_metadata_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
 
 // Thread
@@ -338,8 +335,9 @@ perr_t PDC_init_region_list(region_list_t *a)
     a->n_overlap_storage_region = 0;
     hg_atomic_init32(&(a->buf_map_refcount), 0);
     a->reg_dirty     = 0;
+    a->lock_handle   = NULL;
     a->access_type   = NA;
-    a->bulk_handle   = NULL;
+    a->bulk_handle   = HG_BULK_NULL;
     a->addr          = 0;
     a->meta          = NULL;
     a->obj_id        = 0;
@@ -805,9 +803,7 @@ perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle) {retur
 perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in) {return SUCCEED;}
 perr_t PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_ptr, hg_handle_t *handle) {return SUCCEED;}
 perr_t PDC_Data_Server_region_release(struct buf_map_release_bulk_args *bulk_args, region_lock_out_t *out) {return SUCCEED;}
-perr_t PDC_Meta_Server_region_release(region_lock_in_t *in, region_lock_out_t *out) {return SUCCEED;}
 perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out, hg_handle_t *handle) {return SUCCEED;}
-perr_t PDC_Meta_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out) {return SUCCEED;}
 //perr_t PDC_Server_region_lock_status(pdcid_t obj_id, region_info_transfer_t *region, int *lock_status) {return SUCCEED;}
 perr_t PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status) {return SUCCEED;}
 perr_t PDC_Server_local_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status) {return SUCCEED;}
@@ -1797,7 +1793,9 @@ HG_TEST_RPC_CB(region_release, handle)
                                 error = 1;
                                 PGOTO_ERROR(FAIL, "==PDC SERVER ERROR: Could not create bulk data handle\n");
                             }
-                            
+                            free(data_ptrs_to);
+                            free(data_size_to);
+ 
                             buf_map_bulk_args = (struct buf_map_release_bulk_args *) malloc(sizeof(struct buf_map_release_bulk_args));
                             memset(buf_map_bulk_args, 0, sizeof(struct buf_map_release_bulk_args));
                             buf_map_bulk_args->handle = handle;
@@ -1825,6 +1823,7 @@ HG_TEST_RPC_CB(region_release, handle)
                             }
                         }
                     }
+                    free(tmp);
                 }
 #ifdef ENABLE_MULTITHREAD 
                 hg_thread_mutex_lock(&lock_list_mutex_g);
@@ -1953,6 +1952,7 @@ done:
 HG_TEST_RPC_CB(region_lock, handle)
 {
     hg_return_t ret_value = HG_SUCCESS;
+    perr_t ret = SUCCEED;
     region_lock_in_t in;
     region_lock_out_t out;
 
@@ -1961,12 +1961,14 @@ HG_TEST_RPC_CB(region_lock, handle)
     HG_Get_input(handle, &in);
 
     // Perform lock function
-    PDC_Data_Server_region_lock(&in, &out, &handle);
+    ret = PDC_Data_Server_region_lock(&in, &out, &handle);
 //    PDC_Data_Server_region_lock(&in, &out);
 
     HG_Respond(handle, NULL, NULL, &out);
-    HG_Free_input(handle, &in);
-    HG_Destroy(handle);
+    if(ret == SUCCEED) {
+        HG_Free_input(handle, &in);
+        HG_Destroy(handle);
+    }
 
     FUNC_LEAVE(ret_value);
 }
@@ -2143,7 +2145,7 @@ HG_TEST_RPC_CB(get_remote_metadata, handle)
 }
 
 /* static hg_return_t */
-// buf_map_server_cb(hg_handle_t handle)
+// buf_unmap_server_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(buf_unmap_server, handle)
 {
     hg_return_t ret_value = HG_SUCCESS;
@@ -2164,10 +2166,10 @@ HG_TEST_RPC_CB(buf_unmap_server, handle)
         out.ret = 0;
         PGOTO_ERROR(HG_OTHER_ERROR, "==PDC_SERVER: HG_TEST_RPC_CB(buf_unmap_server, handle) - requested object does not exist\n");
     }
+
 #ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_lock(&meta_buf_map_mutex_g);
 #endif
-
     DL_FOREACH_SAFE(target_obj->region_buf_map_head, elt, tmp) {
         if(in.remote_obj_id==elt->remote_obj_id && region_is_identical(in.remote_region, elt->remote_region_unit)) {
             HG_Bulk_free(elt->local_bulk_handle);
@@ -3427,6 +3429,13 @@ HG_TEST_RPC_CB(aggregate_write, handle)
 
 HG_TEST_THREAD_CB(server_lookup_client)
 HG_TEST_THREAD_CB(gen_obj_id)
+HG_TEST_THREAD_CB(gen_cont_id)
+HG_TEST_THREAD_CB(cont_add_del_objs_rpc)
+HG_TEST_THREAD_CB(query_read_obj_name_rpc)
+HG_TEST_THREAD_CB(storage_meta_name_query_rpc)
+HG_TEST_THREAD_CB(get_storage_meta_name_query_bulk_result_rpc)
+HG_TEST_THREAD_CB(notify_client_multi_io_complete_rpc)
+HG_TEST_THREAD_CB(server_checkpoint_rpc)
 HG_TEST_THREAD_CB(client_test_connect)
 HG_TEST_THREAD_CB(metadata_query)
 HG_TEST_THREAD_CB(metadata_delete)

@@ -56,30 +56,6 @@
 #include "pdc_server_metadata.h"
 #include "pdc_server_data.h"
 
-#ifdef ENABLE_MULTITHREAD 
-// Mercury multithread
-#include "mercury_thread.h"
-#include "mercury_thread_pool.h"
-#include "mercury_thread_mutex.h"
-hg_thread_mutex_t pdc_client_addr_metex_g;
-hg_thread_mutex_t pdc_metadata_hash_table_mutex_g;
-hg_thread_mutex_t pdc_container_hash_table_mutex_g;
-hg_thread_mutex_t pdc_time_mutex_g;
-hg_thread_mutex_t pdc_bloom_time_mutex_g;
-hg_thread_mutex_t n_metadata_mutex_g;
-hg_thread_mutex_t gen_obj_id_mutex_g;
-hg_thread_mutex_t data_read_list_mutex_g;
-hg_thread_mutex_t data_write_list_mutex_g;
-hg_thread_mutex_t create_region_struct_metex_g;
-hg_thread_mutex_t delete_buf_map_metex_g;
-hg_thread_mutex_t remove_buf_map_metex_g;
-hg_thread_mutex_t remove_lock_metex_g;
-hg_thread_mutex_t pdc_server_task_mutex_g;
-#else
-#define hg_thread_mutex_t int
-hg_thread_mutex_t pdc_server_task_mutex_g;
-#endif
-
 #ifdef PDC_HAS_CRAY_DRC
 # include <rdmacred.h>
 #endif
@@ -641,7 +617,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     char *default_hg_transport = "ofi+tcp";
     char *hg_transport;
 #ifdef PDC_HAS_CRAY_DRC
-    uint32_t credential, cookie;
+    uint32_t credential = 0, cookie;
     drc_info_handle_t credential_info;
     char pdc_auth_key[256] = { '\0' };
     char *auth_key;
@@ -689,8 +665,8 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     }
     MPI_Bcast(&credential, 1, MPI_UINT32_T, 0, MPI_COMM_WORLD);
     
-    printf("# Credential is %u\n", credential);
-    fflush(stdout);
+//    printf("# Credential is %u\n", credential);
+//    fflush(stdout);
 
     rc = drc_access(credential, 0, &credential_info);
     if (rc != DRC_SUCCESS) { /* failed to access credential */
@@ -701,8 +677,11 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     }
     cookie = drc_get_first_cookie(credential_info);
 
-    printf("# Cookie is %u\n", cookie);
-    fflush(stdout);
+    if (pdc_server_rank_g == 0) { 
+        printf("# Credential is %u\n", credential);
+        printf("# Cookie is %u\n", cookie);
+        fflush(stdout);
+    }
     sprintf(pdc_auth_key, "%u", cookie);
     init_info.na_init_info.auth_key = strdup(pdc_auth_key);
 #endif
@@ -710,8 +689,13 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
 
     // Init server
 //    *hg_class = HG_Init(na_info_string, NA_TRUE);
-    init_info.na_init_info.progress_mode = NA_NO_BLOCK;
+#ifndef ENABLE_MULTITHREAD
+    init_info.na_init_info.progress_mode = NA_NO_BLOCK;    // busy mode
+#endif
+
+#ifndef PDC_HAS_CRAY_DRC
     init_info.auto_sm = HG_TRUE;
+#endif
     *hg_class = HG_Init_opt(na_info_string, NA_TRUE, &init_info);
     if (*hg_class == NULL) {
         printf("Error with HG_Init()\n");
@@ -782,10 +766,9 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
         printf("\n==PDC_SERVER[%d]: Starting server with %d threads...\n", pdc_server_rank_g, n_thread);
         fflush(stdout);
     }
-    hg_thread_mutex_init(&pdc_client_addr_mutex_g);
     hg_thread_mutex_init(&pdc_metadata_hash_table_mutex_g);
     hg_thread_mutex_init(&pdc_container_hash_table_mutex_g);
-    hg_thread_mutex_init(&pdc_client_addr_metex_g);
+    hg_thread_mutex_init(&pdc_client_addr_mutex_g);
     hg_thread_mutex_init(&pdc_time_mutex_g);
     hg_thread_mutex_init(&pdc_bloom_time_mutex_g);
     hg_thread_mutex_init(&n_metadata_mutex_g);
@@ -793,16 +776,13 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     hg_thread_mutex_init(&data_read_list_mutex_g);
     hg_thread_mutex_init(&data_write_list_mutex_g);
     hg_thread_mutex_init(&pdc_server_task_mutex_g);
-    hg_thread_mutex_init(&create_region_struct_mutex_g);
-    hg_thread_mutex_init(&delete_buf_map_mutex_g);
-    hg_thread_mutex_init(&remove_buf_map_mutex_g);
-    hg_thread_mutex_init(&access_lock_list_mutex_g);
-    hg_thread_mutex_init(&append_lock_mutex_g);
-    hg_thread_mutex_init(&append_buf_map_mutex_g);
-    hg_thread_mutex_init(&append_region_struct_mutex_g);
+    hg_thread_mutex_init(&region_struct_mutex_g);
+    hg_thread_mutex_init(&data_buf_map_mutex_g);
+    hg_thread_mutex_init(&meta_buf_map_mutex_g);
+    hg_thread_mutex_init(&lock_list_mutex_g);
     hg_thread_mutex_init(&insert_hash_table_mutex_g);
-    hg_thread_mutex_init(&append_lock_request_mutex_g);
-    hg_thread_mutex_init(&remove_lock_request_mutex_g);
+    hg_thread_mutex_init(&lock_request_mutex_g);
+    hg_thread_mutex_init(&addr_valid_mutex_g);
     hg_thread_mutex_init(&update_remote_server_addr_mutex_g);
 #else
     if (pdc_server_rank_g == 0) {
@@ -1019,22 +999,21 @@ perr_t PDC_Server_finalize()
 
     hg_thread_mutex_destroy(&pdc_time_mutex_g);
     hg_thread_mutex_destroy(&pdc_metadata_hash_table_mutex_g);
+    hg_thread_mutex_destroy(&pdc_container_hash_table_mutex_g);
     hg_thread_mutex_destroy(&pdc_client_addr_mutex_g);
     hg_thread_mutex_destroy(&pdc_bloom_time_mutex_g);
     hg_thread_mutex_destroy(&n_metadata_mutex_g);
     hg_thread_mutex_destroy(&gen_obj_id_mutex_g);
     hg_thread_mutex_destroy(&data_read_list_mutex_g);
     hg_thread_mutex_destroy(&data_write_list_mutex_g);
-    hg_thread_mutex_destroy(&create_region_struct_mutex_g);
-    hg_thread_mutex_destroy(&delete_buf_map_mutex_g);
-    hg_thread_mutex_destroy(&remove_buf_map_mutex_g);
-    hg_thread_mutex_destroy(&access_lock_list_mutex_g);
-    hg_thread_mutex_destroy(&append_lock_mutex_g);
-    hg_thread_mutex_destroy(&append_buf_map_mutex_g);
-    hg_thread_mutex_destroy(&append_region_struct_mutex_g);
+    hg_thread_mutex_destroy(&pdc_server_task_mutex_g);
+    hg_thread_mutex_destroy(&region_struct_mutex_g);
+    hg_thread_mutex_destroy(&data_buf_map_mutex_g);
+    hg_thread_mutex_destroy(&meta_buf_map_mutex_g);
     hg_thread_mutex_destroy(&insert_hash_table_mutex_g);
-    hg_thread_mutex_destroy(&append_lock_request_mutex_g);
-    hg_thread_mutex_destroy(&remove_lock_request_mutex_g);
+    hg_thread_mutex_destroy(&lock_list_mutex_g);
+    hg_thread_mutex_destroy(&lock_request_mutex_g);
+    hg_thread_mutex_destroy(&addr_valid_mutex_g);
     hg_thread_mutex_destroy(&update_remote_server_addr_mutex_g);
 #endif
 
@@ -1051,7 +1030,6 @@ perr_t PDC_Server_finalize()
     hg_ret = HG_Finalize(hg_class_g);
     if (hg_ret != HG_SUCCESS) 
         printf("==PDC_SERVER[%d]: error with HG_Finalize\n", pdc_server_rank_g);
-
 
 done:
     free(all_addr_strings_g);

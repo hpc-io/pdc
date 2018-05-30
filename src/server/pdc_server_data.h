@@ -209,8 +209,6 @@ extern double total_mem_usage_g;
 extern hg_id_t get_remote_metadata_register_id_g;
 extern hg_id_t buf_map_server_register_id_g;
 extern hg_id_t buf_unmap_server_register_id_g;
-extern hg_id_t region_lock_server_register_id_g;
-extern hg_id_t region_release_server_register_id_g;
 extern hg_id_t server_lookup_client_register_id_g;
 extern hg_id_t server_lookup_remote_server_register_id_g;
 extern hg_id_t notify_io_complete_register_id_g;
@@ -231,9 +229,7 @@ perr_t PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_p
 perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle);
 perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in);
 perr_t PDC_Data_Server_region_release(struct buf_map_release_bulk_args *bulk_args, region_lock_out_t *out);
-perr_t PDC_Meta_Server_region_release(region_lock_in_t *in, region_lock_out_t *out);
 perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out, hg_handle_t *handle);
-perr_t PDC_Meta_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out);
 perr_t PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status);
 perr_t PDC_Server_get_local_storage_location_of_region(uint64_t obj_id, region_list_t *region,
         uint32_t *n_loc, region_list_t **overlap_region_loc);
