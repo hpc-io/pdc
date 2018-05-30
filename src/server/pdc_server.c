@@ -315,8 +315,8 @@ hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info)
     memcpy(pdc_client_info_g[in->client_id].addr_string, in->client_addr, sizeof(char)*ADDR_MAX);
 
     if (is_debug_g) {
-        printf("==PDC_SERVER: got client addr: %s from client[%d], total: %d\n", 
-                pdc_client_info_g[in->client_id].addr_string, in->client_id, pdc_client_num_g);
+        printf("==PDC_SERVER[%d]: got client addr: %s from client[%d], total: %d\n", 
+                pdc_server_rank_g, pdc_client_info_g[in->client_id].addr_string, in->client_id, pdc_client_num_g);
         fflush(stdout);
     }
 
@@ -456,6 +456,8 @@ lookup_remote_server_cb(const struct hg_cb_info *callback_info)
         goto done;
     }
 
+    lookup_args->ret_int = 1;
+
 done:
     free(lookup_args);
     /* HG_Destroy(handle); */
@@ -473,13 +475,14 @@ perr_t PDC_Server_lookup_server_id(int remote_server_id)
     perr_t ret_value      = SUCCEED;
     hg_return_t hg_ret    = HG_SUCCESS;
     server_lookup_args_t *lookup_args;
+    unsigned actual_count;
 
     FUNC_ENTER(NULL);
 
     if (remote_server_id == pdc_server_rank_g || pdc_remote_server_info_g[remote_server_id].addr_valid == 1)
         return SUCCEED;
 
-    lookup_args = (server_lookup_args_t*)malloc(sizeof(server_lookup_args_t));
+    lookup_args = (server_lookup_args_t*)calloc(1, sizeof(server_lookup_args_t));
     if (is_debug_g == 1) {
         printf("==PDC_SERVER[%d]: Testing connection to remote server %d: %s\n", 
                 pdc_server_rank_g, remote_server_id, pdc_remote_server_info_g[remote_server_id].addr_string);
@@ -494,6 +497,9 @@ perr_t PDC_Server_lookup_server_id(int remote_server_id)
         ret_value = FAIL;
         goto done;
     }
+
+    /* while(lookup_args->ret_int == 0) */
+        hg_ret = HG_Trigger(hg_context_g, 0/* timeout */, 32 /* max count */, &actual_count);
     /* printf("==PDC_SERVER[%d]: connected to remote server %d\n", pdc_server_rank_g, remote_server_id); */
 
 done:
@@ -581,6 +587,11 @@ PDC_Server_lookup_client_cb(const struct hg_cb_info *callback_info)
     pdc_client_info_g[client_id].addr = callback_info->info.lookup.addr;
     pdc_client_info_g[client_id].addr_valid = 1;
 
+    if (is_debug_g == 1) {
+        printf("==PDC_SERVER[%d]: got client %d addr\n", pdc_server_rank_g, client_id);
+        fflush(stdout);
+    }
+
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -634,12 +645,12 @@ perr_t PDC_Server_lookup_client(uint32_t client_id)
         goto done;
     }
 
-    hg_ret = HG_Trigger(hg_context_g, 0/* timeout */, 1 /* max count */, &actual_count);
+    hg_ret = HG_Trigger(hg_context_g, 0/* timeout */, 32 /* max count */, &actual_count);
 
-    if (is_debug_g == 1) {
-        printf("==PDC_SERVER[%d]: waiting for client %d\n", pdc_server_rank_g, client_id);
-        fflush(stdout);
-    }
+    /* if (is_debug_g == 1) { */
+    /*     printf("==PDC_SERVER[%d]: waiting for client %d\n", pdc_server_rank_g, client_id); */
+    /*     fflush(stdout); */
+    /* } */
 
 done:
     fflush(stdout);

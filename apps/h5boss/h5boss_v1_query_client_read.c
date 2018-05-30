@@ -22,6 +22,34 @@ void print_usage() {
     printf("Usage: srun -n ./h5boss_query_read /path/to/dset_list.txt \n");
 }
 
+int assign_work_to_rank(int rank, int size, int nwork, int *my_count, int *my_start)
+{
+    if (rank > size || my_count == NULL || my_start == NULL) {
+        printf("assign_work_to_rank(): Error with input!\n");
+        return -1;
+    }
+    if (nwork < size) {
+        if (rank < nwork) 
+            *my_count = 1;
+        else
+            *my_count = 0;
+        (*my_start) = rank * (*my_count);
+    }
+    else {
+        (*my_count) = nwork / size;
+        (*my_start) = rank * (*my_count);
+
+        // Last few ranks may have extra work
+        if (rank >= size - nwork % size) {
+            (*my_count)++; 
+            (*my_start) += (rank - (size - nwork % size));
+        }
+    }
+
+    return 1;
+}
+
+
 int main(int argc, char **argv)
 {
     int rank = 0, size = 1;
@@ -32,9 +60,9 @@ int main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    int i, j, count, my_count;
+    int i, j, count, my_count, my_start;
     char **all_dset_names = NULL, *all_dset_names_1d = NULL;
-    char **my_dset_names = NULL, *my_dset_names_1d = NULL;
+    char **my_dset_names = NULL;
     const char *pm_filename = argv[1];
 
     if (argc != 2 || pm_filename == NULL ) {
@@ -42,13 +70,13 @@ int main(int argc, char **argv)
         exit(-1);
     }
 
+    all_dset_names    = (char**)calloc(NDSET, sizeof(char*));
+    all_dset_names_1d = (char*)calloc(NDSET*NAMELEN, sizeof(char));
+    for (i = 0; i < NDSET; i++) 
+        all_dset_names[i] = all_dset_names_1d + i*NAMELEN;
 
     // Rank 0 read from pm file
     if (rank == 0) {
-        all_dset_names    = (char**)calloc(NDSET, sizeof(char*));
-        all_dset_names_1d = (char*)calloc(NDSET*NAMELEN, sizeof(char));
-        for (i = 0; i < NDSET; i++) 
-            all_dset_names[i] = all_dset_names_1d + i*NAMELEN;
 
         printf("Reading from %s\n", pm_filename);
         FILE *pm_file = fopen(pm_filename, "r");
@@ -71,53 +99,27 @@ int main(int argc, char **argv)
     }
 
     fflush(stdout);
-    my_count  = count;
+    my_count      = count;
+    my_start      = 0;
     my_dset_names = all_dset_names;
 
 #ifdef ENABLE_MPI
     MPI_Bcast( &count, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    if (size > count) {
-        if (rank == 0) {
-            printf("Number of process is more than number of dsets, exiting...\n");
-        }
-        MPI_Finalize();
-        exit (-1);
-    }
+    MPI_Bcast( all_dset_names_1d, NDSET*NAMELEN, MPI_CHAR, 0, MPI_COMM_WORLD);
 
-    // Distribute work evenly
-    my_count = count / size;
+    assign_work_to_rank(rank, size, count, &my_count, &my_start);
 
-    // Last rank may have extra work
-    if (rank == size - 1) {
-        my_count += count % size;
-    }
-
-    /* printf("%d: mycount is %d\n", rank, my_count); */
+    /* printf("Proc %d: my_count: %d, my_start: %d\n", my_rank, my_count, my_start); */
     /* fflush(stdout); */
-
-    my_dset_names    = (char**)calloc(my_count, sizeof(char*));
-    my_dset_names_1d = (char*)calloc(my_count*NAMELEN, sizeof(char));
-
-    int *sendcount = (int*)calloc(sizeof(int), size);
-    int *displs = (int*)calloc(sizeof(int), size);
-    for (i = 0; i < size; i++) {
-        sendcount[i] = (count / size) * NAMELEN;
-        if (i == size-1) 
-            sendcount[i] += (count % size) * NAMELEN;
-        displs[i] = i * (count / size) * NAMELEN;
-        /* if (rank == 0) */ 
-        /*     printf("count[%d]=%d, displs[%d]=%d\n", i, sendcount[i], i, displs[i]); */
-    }
-    
-    /* printf("%d: all_dset_names_1d [%s]\n", rank, all_dset_names_1d+NAMELEN); */
-    MPI_Scatterv(all_dset_names_1d, sendcount, displs, MPI_CHAR, my_dset_names_1d, my_count*NAMELEN, MPI_CHAR, 0, 
-                 MPI_COMM_WORLD);
-    for (i = 0; i < my_count; i++) 
-        my_dset_names[i] = my_dset_names_1d + i*NAMELEN;
-    free(displs);
-    free(sendcount);
 #endif 
-    /* printf("%d: my_dset_names_1d [%s]\n", rank, my_dset_names_1d); */
+
+    if (my_count > 0) {
+        my_dset_names = (char**)calloc(my_count, sizeof(char*)); 
+        for (i = 0; i < my_count; i++) 
+            my_dset_names[i] = all_dset_names[i+my_start];
+    }
+    else
+        my_dset_names = NULL;
 
     /* printf("%d: my count is %d\n", rank, my_count); */
     /* for (i = 0; i < my_count; i++) { */
@@ -147,6 +149,7 @@ int main(int argc, char **argv)
     gettimeofday(&ht_total_start, 0);
 
     PDC_Client_query_name_read_entire_obj_client(my_count, my_dset_names, &buf, buf_sizes);
+    /* PDC_Client_query_name_read_entire_obj_client_agg(my_count, my_dset_names, &buf, buf_sizes); */
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);

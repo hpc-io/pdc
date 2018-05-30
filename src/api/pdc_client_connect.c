@@ -80,6 +80,7 @@ int                    pdc_io_request_seq_id = PDC_SEQ_ID_INIT_VALUE;
 PDC_Request_t         *pdc_io_request_list_g = NULL;
 
 double                 memcpy_time_g = 0.0;
+double                 read_time_g = 0.0;
 
 static int             mercury_has_init_g = 0;
 static hg_class_t     *send_class_g = NULL;
@@ -553,7 +554,7 @@ perr_t PDC_Client_lookup_server(int server_id)
 
     FUNC_ENTER(NULL);
 
-    if (server_id <0 || server_id > pdc_server_num_g) {
+    if (server_id <0 || server_id >= pdc_server_num_g) {
         printf("==PDC_CLIENT[%d]: ERROR with server id input %d\n", pdc_client_mpi_rank_g, server_id); 
         ret_value = FAIL;
         goto done;
@@ -599,8 +600,8 @@ perr_t PDC_Client_try_lookup_server(int server_id)
 {
     perr_t ret_value = SUCCEED;
     int    n_retry = 1;
-    if (server_id < 0 || server_id > pdc_server_num_g) {
-        printf("==CLIENT[%d]: %s - invalid server ID %d\n", pdc_client_mpi_rank_g, __func__, server_id);
+    if (server_id < 0 || server_id >= pdc_server_num_g) {
+        printf("==PDC_CLIENT[%d]: %s - invalid server ID %d\n", pdc_client_mpi_rank_g, __func__, server_id);
         ret_value = FAIL;
         goto done;
     }
@@ -610,7 +611,7 @@ perr_t PDC_Client_try_lookup_server(int server_id)
             break;
         ret_value = PDC_Client_lookup_server(server_id);
         if(ret_value != SUCCEED) {
-            printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+            printf("==PDC_CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
             ret_value = FAIL;
             goto done;
         }
@@ -999,7 +1000,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     }
     else {
         // Each client connect to its node local server only at start time
-        local_server_id = pdc_client_mpi_rank_g/pdc_nclient_per_server_g;
+        local_server_id = pdc_client_mpi_rank_g/pdc_nclient_per_server_g % pdc_server_num_g;
         if (PDC_Client_try_lookup_server(local_server_id) != SUCCEED) {
             printf("==PDC_CLIENT[%d]: ERROR lookup server %d\n", pdc_client_mpi_rank_g, local_server_id);
             ret_value = FAIL;
@@ -1094,7 +1095,7 @@ perr_t PDC_Client_init()
 #endif
 
     if (pdc_client_mpi_rank_g == 0) {
-        printf("==PDC_CLIENT: Found %d PDC Metadata servers, running with %d PDC clients\n",
+        printf("==PDC_CLIENT[0]: Found %d PDC Metadata servers, running with %d PDC clients\n",
                 pdc_server_num_g ,pdc_client_mpi_size_g);
     }
 
@@ -1112,7 +1113,7 @@ perr_t PDC_Client_init()
         // Init Mercury network connection
         ret_value = PDC_Client_mercury_init(&send_class_g, &send_context_g, port);
         if (ret_value != SUCCEED || send_class_g == NULL || send_context_g == NULL) {
-            printf("Error with Mercury Init, exiting...\n");
+            printf("==PDC_CLIENT[%d]: Error with Mercury Init, exiting...\n", pdc_client_mpi_rank_g);
             ret_value = FAIL;
             goto done;
         }
@@ -1209,9 +1210,6 @@ perr_t PDC_Client_finalize()
     }
 
 done:
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
     if (is_client_debug_g == 1 && pdc_client_mpi_rank_g == 0) {
         printf("==PDC_CLIENT: finalized\n");
     }
@@ -5375,6 +5373,7 @@ perr_t PDC_Client_query_name_read_entire_obj_client(int nobj, char **obj_names, 
     int         i, iter, *n_obj_name_by_server = NULL;
     int **obj_names_server_seq_mapping = NULL, *obj_names_server_seq_mapping_1d;
     int         send_n_request = 0;
+    int         i_have_query = 0, total_have_query = 1;
     char        ***obj_names_by_server = NULL;
     char        **obj_names_by_server_2d = NULL;
     query_read_obj_name_in_t bulk_rpc_in;
@@ -5383,7 +5382,17 @@ perr_t PDC_Client_query_name_read_entire_obj_client(int nobj, char **obj_names, 
 
     FUNC_ENTER(NULL);
 
-    if (nobj == 0 || obj_names == NULL || out_buf == NULL || out_buf_sizes == NULL) {
+    if (nobj > 0) 
+        i_have_query = 1;
+    #ifdef ENABLE_MPI
+    MPI_Reduce(&i_have_query, &total_have_query, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    #endif
+
+    if (nobj == 0) {
+        ret_value = SUCCEED;
+        goto done;
+    }
+    else if (obj_names == NULL || out_buf == NULL || out_buf_sizes == NULL) {
         printf("==PDC_CLIENT[%d]: %s - invalid input\n", pdc_client_mpi_rank_g, __func__);
         ret_value = FAIL;
         goto done;
@@ -5498,8 +5507,38 @@ perr_t PDC_Client_query_name_read_entire_obj_client(int nobj, char **obj_names, 
         PDC_Client_check_response(&send_context_g);
     }
 
+    #ifdef ENABLE_TIMING
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
+    gettimeofday(&pdc_timer_start, 0);
+    #endif
+
     // Now we have all the storage metadata of all requests, start reading them all
     ret_value = PDC_Client_read_with_storage_meta(requests, pdc_server_num_g);
+
+    #ifdef ENABLE_TIMING
+    gettimeofday(&pdc_timer_end, 0);
+    double read_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+    read_time_g += read_time;
+    printf("==PDC_CLIENT[%d]: read time %.4f\n", pdc_client_mpi_rank_g, read_time);
+    #endif
+
+    /* #if defined(ENABLE_MPI) && defined(ENABLE_TIMING) */
+    /* double read_time_max,  read_time_min,  read_time_avg, reduce_overhead; */
+    /* if (total_have_query == pdc_client_mpi_size_g) { */
+    /*     reduce_overhead = MPI_Wtime(); */
+    /*     MPI_Reduce(&read_time, &read_time_max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD); */
+    /*     MPI_Reduce(&read_time, &read_time_min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD); */
+    /*     MPI_Reduce(&read_time, &read_time_avg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD); */
+    /*     read_time_avg /= pdc_client_mpi_size_g; */
+    /*     reduce_overhead = MPI_Wtime() - reduce_overhead; */
+    /*     printf("==PDC_CLIENT: IO STATS (MIN, AVG, MAX)\n" */
+    /*            "              Tfwrite (%6.2f, %6.2f, %6.2f)\nMPI overhead %.2f" */
+    /*                            , read_time_min, read_time_avg, read_time_max, reduce_overhead); */
+    /* } */
+    /* else */
+    /*     printf("==PDC_CLIENT[%d]: read time %.4f\n", pdc_client_mpi_rank_g, read_time); */
+    /* #endif */
 
 
 done:
@@ -5512,6 +5551,85 @@ done:
     
     FUNC_LEAVE(ret_value);
 } // end PDC_Client_query_name_read_entire_obj_client
+
+perr_t PDC_Client_query_name_read_entire_obj_client_agg(int nobj, char **obj_names, void ***out_buf, 
+                                             uint64_t *out_buf_sizes)
+{
+    perr_t      ret_value = SUCCEED;
+    char      **all_names = obj_names;
+    char       *local_names_1d, *all_names_1d = NULL;
+    int        *total_obj = NULL, i, ntotal_obj = nobj, *recvcounts = NULL, *displs = NULL;
+    int         max_name_len = 64;
+
+    FUNC_ENTER(NULL);
+/* int                    pdc_client_same_node_rank_g = 0; */
+/* int                    pdc_client_same_node_size_g = 1; */
+    
+    if (pdc_client_same_node_rank_g == 0) {
+        total_obj  = (int*)malloc(sizeof(int)*pdc_client_same_node_size_g);
+        recvcounts = (int*)malloc(sizeof(int)*pdc_client_same_node_size_g);
+        displs     = (int*)malloc(sizeof(int)*pdc_client_same_node_size_g);
+    }
+
+#ifdef ENABLE_MPI
+    local_names_1d = (char*)calloc(nobj, max_name_len);
+    for (i = 0; i < nobj; i++) {
+        if (strlen(obj_names[i]) > max_name_len) 
+            printf("==PDC_CLIENT[%2d]: object name longer than %d [%s]!\n", 
+                    pdc_client_mpi_rank_g, max_name_len, obj_names[i]);
+        strncpy(local_names_1d+i*max_name_len, obj_names[i], max_name_len-1);
+
+    }
+
+    MPI_Gather(&nobj, 1, MPI_INT, total_obj, 1, MPI_INT, 0, PDC_SAME_NODE_COMM_g);
+
+    ntotal_obj = 0;
+    if (pdc_client_same_node_rank_g == 0) 
+        for (i = 0; i < pdc_client_same_node_size_g; i++) {
+            ntotal_obj   += total_obj[i];
+            recvcounts[i] = total_obj[i] * max_name_len;
+            if (i == 0) 
+                displs[i]     = 0;
+            else
+                displs[i]     = displs[i-1] + recvcounts[i-1];
+        }
+
+    all_names = (char**)calloc(sizeof(char*),ntotal_obj);
+
+    if (pdc_client_same_node_rank_g == 0) {
+        all_names_1d = (char*)malloc(ntotal_obj*max_name_len);
+        for (i = 0; i < ntotal_obj; i++) 
+            all_names[i] = all_names_1d + i*max_name_len;
+    }
+
+    MPI_Gatherv(local_names_1d, nobj*max_name_len, MPI_CHAR,
+                all_names_1d, recvcounts, displs, MPI_CHAR, 0, PDC_SAME_NODE_COMM_g); 
+
+    /* for (i = 0; i < ntotal_obj; i++) { */
+    /*     printf("==PDC_CLIENT[%2d]: gathered obj_name [%s]\n", pdc_client_mpi_rank_g, all_names[i]); */
+    /* } */
+#endif
+
+    PDC_Client_query_name_read_entire_obj_client(ntotal_obj, all_names, out_buf, out_buf_sizes);
+
+#ifdef ENABLE_MPI
+    /* MPI_Gatherv(local_names_1d, nobj*max_name_len, MPI_CHAR, */
+    /*             all_names_1d, recvcounts, displs, MPI_CHAR, 0, PDC_SAME_NODE_COMM_g); */ 
+#endif
+
+done:
+    if (pdc_client_same_node_rank_g == 0) {
+        free(total_obj);
+        free(recvcounts); 
+        free(displs);     
+    }
+
+
+    FUNC_LEAVE(ret_value);
+} // end PDC_Client_query_name_read_entire_obj_client_agg
+
+
+
 
 // Process the storage metadata received from bulk transfer
 perr_t PDC_Client_recv_bulk_storage_meta(process_bulk_storage_meta_args_t *process_args)
