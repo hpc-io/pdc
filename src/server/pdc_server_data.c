@@ -41,6 +41,7 @@
 #include "pdc_interface.h"
 #include "pdc_client_server_common.h"
 #include "pdc_server_data.h"
+#include "pdc_server_metadata.h"
 
 // Global object region info list in local data server
 data_server_region_t *dataserver_region_g = NULL;
