@@ -2351,6 +2351,8 @@ hg_id_t notify_region_update_register(hg_class_t *hg_class);
 hg_id_t region_release_register(hg_class_t *hg_class);
 hg_id_t buf_map_server_register(hg_class_t *hg_class);
 hg_id_t buf_unmap_server_register(hg_class_t *hg_class);
+hg_id_t obj_map_server_register(hg_class_t *hg_class);
+hg_id_t obj_unmap_server_register(hg_class_t *hg_class);
 hg_id_t get_reg_lock_register(hg_class_t *hg_class);
 
 hg_id_t test_bulk_xfer_register(hg_class_t *hg_class);

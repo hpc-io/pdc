@@ -2542,6 +2542,74 @@ done:
 }
 
 /* static hg_return_t */
+// obj_map_server_cb(hg_handle_t handle)
+HG_TEST_RPC_CB(obj_map_server, handle)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    obj_map_in_t in;
+    obj_map_out_t out;
+    pdc_metadata_t *target_obj;
+    const struct hg_info *info;
+    region_list_t *elt, *request_region;
+    region_obj_map_t *obj_map_ptr;
+    
+    FUNC_ENTER(NULL);
+    
+    // Decode input
+    HG_Get_input(handle, &in);
+    
+    target_obj = PDC_Server_get_obj_metadata(in.remote_obj_id);
+    if (target_obj == NULL) {
+        printf("==PDC_SERVER: HG_TEST_RPC_CB(buf_map_server, handle) - requested object (id=%" PRIu64 ") does not exist\n", in.remote_obj_id);
+        out.ret = 0;
+        goto done;
+    }
+    request_region = (region_list_t *)malloc(sizeof(region_list_t));
+    pdc_region_transfer_t_to_list_t(&in.remote_region_unit, request_region);
+    DL_FOREACH(target_obj->region_lock_head, elt) {
+        if (PDC_is_same_region_list(elt, request_region) == 1) {
+            hg_atomic_incr32(&(elt->buf_map_refcount));
+            //            printf("mapped region is locked \n");
+            //            fflush(stdout);
+        }
+    }
+    obj_map_ptr = (region_obj_map_t *)malloc(sizeof(region_obj_map_t));
+    obj_map_ptr->local_reg_id = in.local_reg_id;
+    obj_map_ptr->local_region = in.local_region;
+    obj_map_ptr->local_ndim = in.ndim;
+    obj_map_ptr->local_data_type = in.local_type;
+    info = HG_Get_info(handle);
+    HG_Addr_dup(info->hg_class, info->addr, &(obj_map_ptr->local_addr));
+    HG_Bulk_ref_incr(in.local_bulk_handle);
+    obj_map_ptr->local_bulk_handle = in.local_bulk_handle;
+    
+    obj_map_ptr->remote_obj_id = in.remote_obj_id;
+    obj_map_ptr->remote_reg_id = in.remote_reg_id;
+    obj_map_ptr->remote_client_id = in.remote_client_id;
+    obj_map_ptr->remote_ndim = in.ndim;
+    obj_map_ptr->remote_unit = in.remote_unit;
+    obj_map_ptr->remote_region_unit = in.remote_region_unit;
+    obj_map_ptr->remote_region_nounit = in.remote_region_nounit;
+    
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_lock(&meta_obj_map_mutex_g);
+#endif
+    DL_APPEND(target_obj->region_obj_map_head, obj_map_ptr);
+    out.ret = 1;
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(&meta_obj_map_mutex_g);
+#endif
+    free(request_region);
+    
+done:
+    HG_Respond(handle, NULL, NULL, &out);
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+    
+    FUNC_LEAVE(ret_value);
+}
+
+/* static hg_return_t */
 // obj_map_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(obj_map, handle)
 {
@@ -4794,6 +4862,32 @@ buf_unmap_server_register(hg_class_t *hg_class)
 
     FUNC_LEAVE(ret_value);
 }
+
+hg_id_t
+obj_map_server_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+    
+    ret_value = MERCURY_REGISTER(hg_class, "obj_map_server", obj_map_in_t, obj_map_out_t, obj_map_server_cb);
+    
+    FUNC_LEAVE(ret_value);
+}
+
+/*
+hg_id_t
+obj_unmap_server_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+    
+    ret_value = MERCURY_REGISTER(hg_class, "obj_unmap_server", obj_unmap_in_t, obj_unmap_out_t, obj_unmap_server_cb);
+    
+    FUNC_LEAVE(ret_value);
+}
+*/
 
 hg_id_t
 reg_map_register(hg_class_t *hg_class)

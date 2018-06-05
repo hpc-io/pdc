@@ -1763,7 +1763,7 @@ obj_map_lookup_remote_server_cb(const struct hg_cb_info *callback_info)
     hg_thread_mutex_unlock(&addr_valid_mutex_g);
 #endif
     
-    HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, buf_map_server_register_id_g, &server_send_obj_map_handle);
+    HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, obj_map_server_register_id_g, &server_send_obj_map_handle);
     
     ret_value = HG_Forward(server_send_obj_map_handle, server_send_obj_map_addr_rpc_cb, tranx_args, &(tranx_args->in));
     if (ret_value != HG_SUCCESS) {
@@ -2093,7 +2093,7 @@ perr_t PDC_Meta_Server_obj_map(obj_map_in_t *in, region_obj_map_t *new_obj_map_p
             PDC_Server_obj_map_lookup_server_id(in->meta_server_id, tranx_args);
         }
         else {
-            HG_Create(hg_context_g, pdc_remote_server_info_g[in->meta_server_id].addr, buf_map_server_register_id_g, &server_send_obj_map_handle);
+            HG_Create(hg_context_g, pdc_remote_server_info_g[in->meta_server_id].addr, obj_map_server_register_id_g, &server_send_obj_map_handle);
             
             tranx_args = (struct transfer_obj_map *)malloc(sizeof(struct transfer_obj_map));
             tranx_args->handle = *handle;

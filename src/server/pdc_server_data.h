@@ -223,6 +223,8 @@ extern double total_mem_usage_g;
 extern hg_id_t get_remote_metadata_register_id_g;
 extern hg_id_t buf_map_server_register_id_g;
 extern hg_id_t buf_unmap_server_register_id_g;
+extern hg_id_t obj_map_server_register_id_g;
+extern hg_id_t obj_unmap_server_register_id_g;
 extern hg_id_t server_lookup_client_register_id_g;
 extern hg_id_t server_lookup_remote_server_register_id_g;
 extern hg_id_t notify_io_complete_register_id_g;
