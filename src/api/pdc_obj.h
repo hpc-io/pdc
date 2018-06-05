@@ -239,6 +239,20 @@ obj_handle *PDCview_iter_start(pdcid_t view_id);
 perr_t PDCbuf_obj_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg);
 
 /**
+ * Map an object to an application buffer
+ *
+ * \param buf [IN]              Start point of an application buffer
+ * \param local_type [IN]       Data type of data in memory
+ * \param local_reg  [IN]       Id of the source region
+ * \param remote_obj [IN]       Id of the target object
+ * \param remote_reg [IN]       Id of the target region
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCobj_buf_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg);
+
+
+/**
  * Map an object to another object
  *
  * \param from_obj [IN]         Id of the source object

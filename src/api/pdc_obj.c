@@ -671,6 +671,53 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDCobj_buf_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg)
+{
+    pdcid_t ret_value = SUCCEED;
+    size_t i;
+    struct PDC_id_info *id_info = NULL, *objinfo2;
+    struct PDC_obj_info *obj2;
+    pdcid_t remote_meta_id;
+
+    PDC_var_type_t remote_type;
+    void *remote_data;
+    struct PDC_id_info *reginfo1, *reginfo2;
+    struct PDC_region_info *reg1, *reg2;
+    int32_t remote_client_id;
+
+    FUNC_ENTER(NULL);
+
+    reginfo1 = pdc_find_id(local_reg);
+    reg1 = (struct PDC_region_info *)(reginfo1->obj_ptr);
+
+    objinfo2 = pdc_find_id(remote_obj);
+    if(objinfo2 == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate remote object ID");
+    obj2 = (struct PDC_obj_info *)(objinfo2->obj_ptr);
+    remote_meta_id = obj2->meta_id;
+    remote_client_id = obj2->client_id;
+    remote_type = obj2->obj_pt->type;
+    remote_data = obj2->obj_pt->buf;
+   
+    reginfo2 = pdc_find_id(remote_reg);
+    reg2 = (struct PDC_region_info *)(reginfo2->obj_ptr);
+    if(obj2->obj_pt->ndim != reg2->ndim)
+        PGOTO_ERROR(FAIL, "remote object dimension and region dimension does not match");
+    for(i=0; i<reg2->ndim; i++)
+        //        if((obj2->obj_pt->dims)[i] < ((reg2->size)[i] + (reg2->offset)[i]))
+        if((obj2->obj_pt->dims)[i] < (reg2->size)[i])
+            PGOTO_ERROR(FAIL, "remote object region size error");
+
+    ret_value = PDC_Client_obj_map(local_reg, remote_meta_id, remote_reg, reg1->ndim, reg1->size, reg1->offset, reg1->size, local_type, buf, obj2->obj_pt->dims, reg2->offset, reg2->size, remote_type, remote_client_id, remote_data, reg1, reg2);
+
+    if(ret_value == SUCCEED) {
+        pdc_inc_ref(remote_obj);
+        pdc_inc_ref(remote_reg);
+    }
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 static struct PDC_region_info *PDCregion_get_info(pdcid_t reg_id)
 {
     struct PDC_region_info *ret_value = NULL;

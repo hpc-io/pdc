@@ -59,6 +59,8 @@ hg_thread_mutex_t data_write_list_mutex_g;
 hg_thread_mutex_t region_struct_mutex_g;
 hg_thread_mutex_t data_buf_map_mutex_g;
 hg_thread_mutex_t meta_buf_map_mutex_g;
+hg_thread_mutex_t data_obj_map_mutex_g;
+hg_thread_mutex_t meta_obj_map_mutex_g;
 hg_thread_mutex_t lock_list_mutex_g;
 hg_thread_mutex_t insert_hash_table_mutex_g;
 hg_thread_mutex_t lock_request_mutex_g;

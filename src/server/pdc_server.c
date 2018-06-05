@@ -107,6 +107,7 @@ int    pdc_server_rank_g                  = 0;
 int    pdc_server_size_g                  = 1;
 int    write_to_bb_percentage_g           = 0;
 int    pdc_nost_per_file_g                = 0;
+int    nclient_per_node                   = 0;
 int    n_get_remote_storage_meta_g        = 0;
 int    update_remote_region_count_g       = 0;
 int    update_local_region_count_g        = 0;
@@ -779,6 +780,8 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     hg_thread_mutex_init(&region_struct_mutex_g);
     hg_thread_mutex_init(&data_buf_map_mutex_g);
     hg_thread_mutex_init(&meta_buf_map_mutex_g);
+    hg_thread_mutex_init(&data_obj_map_mutex_g);
+    hg_thread_mutex_init(&meta_obj_map_mutex_g);
     hg_thread_mutex_init(&lock_list_mutex_g);
     hg_thread_mutex_init(&insert_hash_table_mutex_g);
     hg_thread_mutex_init(&lock_request_mutex_g);
@@ -1010,6 +1013,8 @@ perr_t PDC_Server_finalize()
     hg_thread_mutex_destroy(&region_struct_mutex_g);
     hg_thread_mutex_destroy(&data_buf_map_mutex_g);
     hg_thread_mutex_destroy(&meta_buf_map_mutex_g);
+    hg_thread_mutex_destroy(&data_obj_map_mutex_g);
+    hg_thread_mutex_destroy(&meta_obj_map_mutex_g);
     hg_thread_mutex_destroy(&insert_hash_table_mutex_g);
     hg_thread_mutex_destroy(&lock_list_mutex_g);
     hg_thread_mutex_destroy(&lock_request_mutex_g);
@@ -1230,6 +1235,7 @@ perr_t PDC_Server_restart(char *filename)
             (metadata+i)->region_lock_head         = NULL;
             (metadata+i)->region_map_head          = NULL;
             (metadata+i)->region_buf_map_head      = NULL;
+            (metadata+i)->region_obj_map_head      = NULL;
             (metadata+i)->bloom                    = NULL;
             (metadata+i)->prev                     = NULL;
             (metadata+i)->next                     = NULL;
@@ -1261,7 +1267,8 @@ perr_t PDC_Server_restart(char *filename)
                 (region_list+j)->overlap_storage_regions    = NULL;
                 (region_list+j)->n_overlap_storage_region   = 0;
                 (region_list+j)->buf_map_refcount           = 0;
-                (region_list+j)->reg_dirty                  = 0;
+                (region_list+j)->reg_dirty_from_buf         = 0;
+                (region_list+j)->reg_dirty_to_buf         = 0;
                 (region_list+j)->access_type                = NA;
                 (region_list+j)->bulk_handle                = NULL;
                 (region_list+j)->addr                       = NULL;
@@ -1567,6 +1574,7 @@ static void PDC_Server_mercury_register()
     reg_map_register(hg_class_g);
     buf_unmap_register(hg_class_g);
     reg_unmap_register(hg_class_g);
+    obj_map_register(hg_class_g);
     obj_unmap_register(hg_class_g);
 
     // Data server
@@ -1600,6 +1608,7 @@ static void PDC_Server_mercury_register()
 static void PDC_Server_get_env()
 {
     char *tmp_env_char;
+    int default_nclient_per_node = 31;
 
     // Set up tmp dir
     tmp_env_char = getenv("PDC_TMPDIR");
@@ -1617,6 +1626,13 @@ static void PDC_Server_get_env()
             pdc_nost_per_file_g = 1;
         }
     }
+
+    // Get number of clients per node
+    tmp_env_char = (getenv("NCLIENT"));
+    if (tmp_env_char == NULL)
+        nclient_per_node = default_nclient_per_node;
+    else
+        nclient_per_node = atoi(tmp_env_char);
 
     // Get bb write percentage 
     tmp_env_char = getenv("PDC_BB_WRITE_PERCENT");
