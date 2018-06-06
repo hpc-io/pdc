@@ -129,24 +129,19 @@ int main(int argc, char **argv)
 
     pdcid_t pdc = PDC_init("PDC");
 
+    double start_time, end_time, elapsed_time;
     void **buf;
     size_t *buf_sizes = calloc(sizeof(size_t), my_count);
 
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
-    double ht_total_sec;
-
-
     if (rank == 0) {
-        printf("Starting to query...\n");
+        printf("Starting to query and read...\n");
         fflush(stdout);
     }
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-    gettimeofday(&ht_total_start, 0);
+    start_time = MPI_Wtime();
 
     PDC_Client_query_name_read_entire_obj_client(my_count, my_dset_names, &buf, buf_sizes);
     /* PDC_Client_query_name_read_entire_obj_client_agg(my_count, my_dset_names, &buf, buf_sizes); */
@@ -154,9 +149,11 @@ int main(int argc, char **argv)
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
-    ht_total_sec        = ht_total_elapsed / 1000000.0;
+    end_time = MPI_Wtime();
+    elapsed_time = end_time - start_time;
+
+    /* printf("%d: my count is %d\n", rank, my_count); */
+    /* fflush(stdout); */
 
     long long my_total_data_size = 0, all_total_data_size;
     for (i = 0; i < my_count; i++) {
@@ -164,6 +161,8 @@ int main(int argc, char **argv)
         /* printf("%d: read [%s], size %lu\n", rank, my_dset_names[i], buf_sizes[i]); */
     }
     /* printf("%d: my total read size = %lu\n", rank, my_total_data_size); */
+    /* fflush(stdout); */
+
 #ifdef ENABLE_MPI
     MPI_Reduce(&my_total_data_size, &all_total_data_size, 1, MPI_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
 #else
@@ -172,7 +171,7 @@ int main(int argc, char **argv)
 
     if (rank == 0) {
         printf("Time to query and read %d obj of %.4f MB with %d ranks: %.4f\n", 
-                count, all_total_data_size/1048576.0, size, ht_total_sec);
+                count, all_total_data_size/1048576.0, size, elapsed_time);
         fflush(stdout);
     }
 

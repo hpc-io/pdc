@@ -100,7 +100,6 @@ typedef struct update_region_storage_meta_bulk_args_t{
     hg_handle_t rpc_handle;
 } update_region_storage_meta_bulk_args_t;
 
-
 typedef struct get_metadata_by_id_args_t{
     perr_t          (*cb)();
     void            *args;
@@ -1904,6 +1903,11 @@ typedef struct {
     uint64_t                    offset;
     uint64_t                    size;
 } region_storage_meta_t;
+
+/* typedef struct pdc_storage_meta_t{ */
+/*     int n_region; */
+/*     region_storage_meta_t **region_storage_meta; */
+/* } pdc_storage_meta_t; */
 
 typedef struct {
     region_info_transfer_t      region_transfer;

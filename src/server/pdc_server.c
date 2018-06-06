@@ -499,7 +499,7 @@ perr_t PDC_Server_lookup_server_id(int remote_server_id)
     }
 
     /* while(lookup_args->ret_int == 0) */
-        hg_ret = HG_Trigger(hg_context_g, 0/* timeout */, 32 /* max count */, &actual_count);
+        hg_ret = HG_Trigger(hg_context_g, 0/* timeout */, 1024/* max count */, &actual_count);
     /* printf("==PDC_SERVER[%d]: connected to remote server %d\n", pdc_server_rank_g, remote_server_id); */
 
 done:
@@ -645,7 +645,7 @@ perr_t PDC_Server_lookup_client(uint32_t client_id)
         goto done;
     }
 
-    hg_ret = HG_Trigger(hg_context_g, 0/* timeout */, 32 /* max count */, &actual_count);
+    hg_ret = HG_Trigger(hg_context_g, 0/* timeout */, 1024/* max count */, &actual_count);
 
     /* if (is_debug_g == 1) { */
     /*     printf("==PDC_SERVER[%d]: waiting for client %d\n", pdc_server_rank_g, client_id); */
