@@ -35,6 +35,7 @@ set(PROGRAMS
   obj_buf_map
   obj_buf_map_mpi
   vpicio
+  bdcats
   data_server_write_vpic
   data_server_write_vpic_multits
   data_server_read_vpic

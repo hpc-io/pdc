@@ -275,7 +275,7 @@ perr_t PDCobj_buf_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, p
 //struct PDC_region_info *PDCregion_get_info(pdcid_t reg_id);
 
 /**
- * Unmap all regions within the object 
+ * Unmap all regions within the object to a buffer (read unmap) 
  *
  * \param remote_obj_id [IN]    Id of the target object
  * \param remote_reg_id [IN]    Id of the target region
@@ -283,6 +283,16 @@ perr_t PDCobj_buf_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, p
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDCobj_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id);
+
+/**
+ * Unmap all regions within the object from a buffer (write unmap)
+ *
+ * \param remote_obj_id [IN]    Id of the target object
+ * \param remote_reg_id [IN]    Id of the target region
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCbuf_obj_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id);
 
 /**
  * Unmap all regions within the object 

@@ -1053,6 +1053,54 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDC_Data_Server_obj_unmap(const struct hg_info *info, obj_unmap_in_t *in)
+{
+    perr_t ret_value = SUCCEED;
+    region_obj_map_t *tmp, *elt;
+    data_server_region_t *target_obj;
+    
+    FUNC_ENTER(NULL);
+    
+    target_obj = PDC_Server_get_obj_region(in->remote_obj_id);
+    if (target_obj == NULL) {
+        PGOTO_ERROR(FAIL, "===PDC_DATA_SERVER: PDC_Data_Server_buf_unmap() - requested object does not exist");
+    }
+/*#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_lock(&data_obj_map_mutex_g);
+#endif*/
+    DL_FOREACH_SAFE(target_obj->region_obj_map_head, elt, tmp) {
+        if(in->remote_obj_id==elt->remote_obj_id && region_is_identical(in->remote_region, elt->remote_region_unit)) {
+/*#ifdef ENABLE_MULTITHREAD
+            // wait for work to be done, then free
+            hg_thread_mutex_lock(&(elt->bulk_args->work_mutex));
+            while (!elt->bulk_args->work_completed)
+                hg_thread_cond_wait(&(elt->bulk_args->work_cond), &(elt->bulk_args->work_mutex));
+            elt->bulk_args->work_completed = 0;
+            hg_thread_mutex_unlock(&(elt->bulk_args->work_mutex));  //per bulk_args
+#endif*/
+            free(elt->remote_data_ptr);
+            HG_Addr_free(info->hg_class, elt->local_addr);
+            HG_Bulk_free(elt->local_bulk_handle);
+            DL_DELETE(target_obj->region_obj_map_head, elt);
+/*#ifdef ENABLE_MULTITHREAD
+            hg_thread_mutex_destroy(&(elt->bulk_args->work_mutex));
+            hg_thread_cond_destroy(&(elt->bulk_args->work_cond));
+            free(elt->bulk_args);
+#endif*/
+            free(elt);
+        }
+    }
+    if(target_obj->region_obj_map_head == NULL && pdc_server_rank_g == 0) {
+        close(target_obj->fd);
+    }
+/*#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(&data_obj_map_mutex_g);
+#endif*/
+    
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 static hg_return_t server_send_buf_unmap_addr_rpc_cb(const struct hg_cb_info *callback_info)
 {
     hg_return_t ret_value = HG_SUCCESS;
@@ -1295,6 +1343,243 @@ done:
         HG_Destroy(*handle);
     }
 
+    FUNC_LEAVE(ret_value);
+}
+
+static hg_return_t server_send_obj_unmap_addr_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    hg_handle_t handle;
+    obj_map_out_t out;
+    struct transfer_obj_unmap *tranx_args;
+    
+    FUNC_ENTER(NULL);
+    
+    tranx_args = (struct transfer_obj_unmap *) callback_info->arg;
+    handle = callback_info->info.forward.handle;
+    
+    ret_value = HG_Get_output(handle, &out);
+    if (ret_value != HG_SUCCESS) {
+        printf("==PDC_SERVER[%d]: server_send_obj_unmap_addr_rpc_cb - error with HG_Get_output\n", pdc_server_rank_g);
+        goto done;
+    }
+    
+done:
+    HG_Respond(tranx_args->handle, NULL, NULL, &out);
+    HG_Free_input(tranx_args->handle, &(tranx_args->in));
+    HG_Destroy(tranx_args->handle);
+    HG_Free_output(handle, &out);
+    HG_Destroy(handle);
+    free(tranx_args);
+    
+    FUNC_LEAVE(ret_value);
+}
+
+static hg_return_t
+obj_unmap_lookup_remote_server_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    uint32_t server_id;
+    struct obj_unmap_server_lookup_args_t *lookup_args;
+    hg_handle_t server_send_obj_unmap_handle;
+    hg_handle_t handle;
+    struct transfer_obj_unmap *tranx_args;
+    obj_unmap_out_t out;
+    int error = 0;
+    
+    FUNC_ENTER(NULL);
+    
+/*#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_lock(&addr_valid_mutex_g);
+#endif*/
+    lookup_args = (struct obj_unmap_server_lookup_args_t*) callback_info->arg;
+    server_id = lookup_args->server_id;
+    tranx_args = lookup_args->obj_unmap_args;
+    handle = tranx_args->handle;
+    
+    pdc_remote_server_info_g[server_id].addr = callback_info->info.lookup.addr;
+    pdc_remote_server_info_g[server_id].addr_valid = 1;
+    
+    if (pdc_remote_server_info_g[server_id].addr == NULL) {
+        printf("==PDC_SERVER[%d]: %s - remote server addr is NULL\n", pdc_server_rank_g, __func__);
+        error = 1;
+        goto done;
+    }
+/*#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(&addr_valid_mutex_g);
+#endif*/
+    
+    HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, obj_unmap_server_register_id_g, &server_send_obj_unmap_handle);
+    
+    ret_value = HG_Forward(server_send_obj_unmap_handle, server_send_obj_unmap_addr_rpc_cb, tranx_args, &(tranx_args->in));
+    if (ret_value != HG_SUCCESS) {
+        error = 1;
+        HG_Destroy(server_send_obj_unmap_handle);
+        PGOTO_ERROR(ret_value, "===PDC SERVER: obj_unmap_lookup_remote_server_cb() - Could not start HG_Forward()");
+    }
+done:
+    if(error == 1) {
+        out.ret = 0;
+        HG_Respond(handle, NULL, NULL, &out);
+        HG_Free_input(handle, &(lookup_args->obj_unmap_args->in));
+        HG_Destroy(handle);
+        free(tranx_args);
+    }
+    free(lookup_args);
+    FUNC_LEAVE(ret_value);
+}
+
+// reference from PDC_Server_lookup_server_id
+perr_t PDC_Server_obj_unmap_lookup_server_id(int remote_server_id, struct transfer_obj_unmap *transfer_args)
+{
+    perr_t ret_value      = SUCCEED;
+    hg_return_t hg_ret    = HG_SUCCESS;
+    struct obj_unmap_server_lookup_args_t *lookup_args;
+    hg_handle_t handle;
+    obj_unmap_out_t out;
+    int error = 0;
+    
+    FUNC_ENTER(NULL);
+    
+    if (is_debug_g == 1) {
+        printf("==PDC_SERVER[%d]: Testing connection to remote server %d: %s\n", pdc_server_rank_g, remote_server_id, pdc_remote_server_info_g[remote_server_id].addr_string);
+        fflush(stdout);
+    }
+    
+    handle = transfer_args->handle;
+    lookup_args = (struct obj_unmap_server_lookup_args_t *)malloc(sizeof(struct obj_unmap_server_lookup_args_t));
+    lookup_args->server_id = remote_server_id;
+    lookup_args->obj_unmap_args = transfer_args;
+    hg_ret = HG_Addr_lookup(hg_context_g, obj_unmap_lookup_remote_server_cb, lookup_args, pdc_remote_server_info_g[remote_server_id].addr_string, HG_OP_ID_IGNORE);
+    if (hg_ret != HG_SUCCESS) {
+        error = 1;
+        PGOTO_ERROR(FAIL, "==PDC_SERVER: PDC_Server_buf_unmap_lookup_server_id() Connection to remote server FAILED!");
+    }
+    
+    /* printf("==PDC_SERVER[%d]: connected to remote server %d\n", pdc_server_rank_g, remote_server_id); */
+    
+done:
+    fflush(stdout);
+    if(error == 1) {
+        out.ret = 0;
+        HG_Respond(handle, NULL, NULL, &out);
+        HG_Free_input(handle, &(transfer_args->in));
+        HG_Destroy(handle);
+        free(transfer_args);
+    }
+    
+    FUNC_LEAVE(ret_value);
+} //  PDC_Server_obj_unmap_lookup_server_id
+
+static hg_return_t server_send_obj_unmap_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    hg_handle_t handle;
+    obj_unmap_out_t output;
+    struct transfer_obj_unmap *tranx_args;
+    
+    FUNC_ENTER(NULL);
+    
+    tranx_args = (struct transfer_obj_unmap *) callback_info->arg;
+    handle = callback_info->info.forward.handle;
+    
+    ret_value = HG_Get_output(handle, &output);
+    if (ret_value != HG_SUCCESS) {
+        printf("==PDC_SERVER[%d]: server_send_obj_unmap_rpc_cb() - error with HG_Get_output\n", pdc_server_rank_g);
+        goto done;
+    }
+    
+done:
+    HG_Respond(tranx_args->handle, NULL, NULL, &output);
+    HG_Free_input(tranx_args->handle, &(tranx_args->in));
+    HG_Destroy(tranx_args->handle);
+    HG_Free_output(handle, &output);
+    HG_Destroy(handle);
+    free(tranx_args);
+    
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_Meta_Server_obj_unmap(obj_unmap_in_t *in, hg_handle_t *handle)
+{
+    perr_t ret_value = SUCCEED;
+    hg_return_t hg_ret = HG_SUCCESS;
+    hg_handle_t server_send_obj_unmap_handle;
+    struct transfer_obj_unmap *obj_unmap_args;
+    pdc_metadata_t *target_meta = NULL;
+    region_obj_map_t *tmp, *elt;
+    obj_unmap_out_t out;
+    const struct hg_info *info;
+    int error = 0;
+    
+    FUNC_ENTER(NULL);
+    
+    info = HG_Get_info(*handle);
+    
+    if((uint32_t)pdc_server_rank_g == in->meta_server_id) {
+        target_meta = find_metadata_by_id(in->remote_obj_id);
+        if(target_meta == NULL) {
+            error = 1;
+            PGOTO_ERROR(FAIL, "===PDC META SERVER: cannot retrieve object metadata");
+        }
+/*#ifdef ENABLE_MULTITHREAD
+        hg_thread_mutex_lock(&meta_obj_map_mutex_g);
+#endif*/
+        DL_FOREACH_SAFE(target_meta->region_obj_map_head, elt, tmp) {
+            
+            if(in->remote_obj_id==elt->remote_obj_id && region_is_identical(in->remote_region, elt->remote_region_unit)) {
+                HG_Bulk_free(elt->local_bulk_handle);
+                HG_Addr_free(info->hg_class, elt->local_addr);
+                DL_DELETE(target_meta->region_obj_map_head, elt);
+                free(elt);
+            }
+        }
+/*#ifdef ENABLE_MULTITHREAD
+        hg_thread_mutex_unlock(&meta_obj_map_mutex_g);
+#endif*/
+        out.ret = 1;
+        HG_Respond(*handle, NULL, NULL, &out);
+        HG_Free_input(*handle, in);
+        HG_Destroy(*handle);
+    }
+    else {
+/*#ifdef ENABLE_MULTITHREAD
+        hg_thread_mutex_lock(&addr_valid_mutex_g);
+#endif*/
+        if (pdc_remote_server_info_g[in->meta_server_id].addr_valid != 1) {
+            obj_unmap_args = (struct transfer_obj_unmap *)malloc(sizeof(struct transfer_obj_unmap));
+            obj_unmap_args->handle = *handle;
+            obj_unmap_args->in = *in;
+            
+            PDC_Server_obj_unmap_lookup_server_id(in->meta_server_id, obj_unmap_args);
+        }
+        else {
+            HG_Create(hg_context_g, pdc_remote_server_info_g[in->meta_server_id].addr, obj_unmap_server_register_id_g, &server_send_obj_unmap_handle);
+            
+            obj_unmap_args = (struct transfer_obj_unmap *)malloc(sizeof(struct transfer_obj_unmap));
+            obj_unmap_args->handle = *handle;
+            obj_unmap_args->in = *in;
+            hg_ret = HG_Forward(server_send_obj_unmap_handle, server_send_obj_unmap_rpc_cb, obj_unmap_args, in);
+            if (hg_ret != HG_SUCCESS) {
+                HG_Destroy(server_send_obj_unmap_handle);
+                free(obj_unmap_args);
+                error = 1;
+                PGOTO_ERROR(FAIL, "PDC_Meta_Server_obj_unmap(): Could not start HG_Forward()");
+            }
+        }
+#ifdef ENABLE_MULTITHREAD
+        hg_thread_mutex_unlock(&addr_valid_mutex_g);
+#endif
+    }
+    
+done:
+    if(error == 1) {
+        out.ret = 0;
+        HG_Respond(*handle, NULL, NULL, &out);
+        HG_Free_input(*handle, in);
+        HG_Destroy(*handle);
+    }
+    
     FUNC_LEAVE(ret_value);
 }
 

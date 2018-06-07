@@ -806,6 +806,8 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
 perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *out) {return SUCCEED;}
 perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle) {return SUCCEED;}
 perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in) {return SUCCEED;}
+perr_t PDC_Data_Server_obj_unmap(const struct hg_info *info, obj_unmap_in_t *in) {return SUCCEED;}
+perr_t PDC_Meta_Server_obj_unmap(obj_unmap_in_t *in, hg_handle_t *handle) {return SUCCEED;}
 perr_t PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_ptr, hg_handle_t *handle) {return SUCCEED;}
 perr_t PDC_Meta_Server_obj_map(obj_map_in_t *in, region_obj_map_t *new_obj_map_ptr, hg_handle_t *handle) {return SUCCEED;}
 perr_t PDC_Data_Server_region_release(region_lock_in_t *in, region_lock_out_t *out) {return SUCCEED;}
@@ -2195,49 +2197,32 @@ HG_TEST_RPC_CB(region_lock, handle)
 HG_TEST_RPC_CB(obj_unmap, handle)
 {
     hg_return_t ret_value = HG_SUCCESS;
+    perr_t ret;
     obj_unmap_in_t in;
     obj_unmap_out_t out;
-    pdc_metadata_t *target_obj;
-    region_map_t *elt, *tmp;
-    PDC_mapping_info_t *tmp_ptr;
     const struct hg_info *info;
- 
+    
     FUNC_ENTER(NULL);
-
+    
     // Decode input
     HG_Get_input(handle, &in);
     info = HG_Get_info(handle);
     out.ret = 0;
-
-    target_obj = PDC_Server_get_obj_metadata(in.local_obj_id);
-    if (target_obj == NULL) {
-        printf("==PDC_SERVER: PDC_Server_object_unmap - requested object (id=%" PRIu64 ") does not exist\n", in.local_obj_id);
-        goto done;
-    }
-
-    DL_FOREACH_SAFE(target_obj->region_map_head, elt, tmp) {
-        if(in.local_obj_id==elt->local_obj_id) {
-            PDC_LIST_GET_FIRST(tmp_ptr, &elt->ids);
-            while(tmp_ptr != NULL) {
-                HG_Bulk_free(tmp_ptr->remote_bulk_handle);
-                HG_Addr_free(info->hg_class, tmp_ptr->remote_addr);
-                PDC_LIST_REMOVE(tmp_ptr, entry);
-                free(tmp_ptr);
-                PDC_LIST_GET_FIRST(tmp_ptr, &elt->ids);
-            }
-            HG_Bulk_free(elt->local_bulk_handle);
-            HG_Addr_free(info->hg_class, elt->local_addr);
-            DL_DELETE(target_obj->region_map_head, elt);
-            free(elt);
-            out.ret = 1;
-        }
+    
+    ret = PDC_Data_Server_obj_unmap(info, &in);
+    if(ret != SUCCEED) {
+        out.ret = 0;
+        printf("===PDC_DATA_SERVER: HG_TEST_RPC_CB(obj_unmap, handle) - PDC_Data_Server_obj_unmap() failed");
+        HG_Respond(handle, NULL, NULL, &out);
+        HG_Free_input(handle, &in);
+        HG_Destroy(handle);
     }
     
-done:
-    HG_Respond(handle, NULL, NULL, &out);
-    HG_Free_input(handle, &in);
-    HG_Destroy(handle);
-
+    ret = PDC_Meta_Server_obj_unmap(&in, &handle);
+    if(ret != SUCCEED) {
+        printf("===PDC_DATA_SERVER: HG_TEST_RPC_CB(obj_unmap, handle) - PDC_Meta_Server_obj_unmap() failed");
+    }
+    
     FUNC_LEAVE(ret_value);
 }
 
@@ -2358,6 +2343,53 @@ HG_TEST_RPC_CB(get_remote_metadata, handle)
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
+    FUNC_LEAVE(ret_value);
+}
+
+/* static hg_return_t */
+// obj_unmap_server_cb(hg_handle_t handle)
+HG_TEST_RPC_CB(obj_unmap_server, handle)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    obj_unmap_in_t in;
+    obj_unmap_out_t out;
+    pdc_metadata_t *target_obj;
+    const struct hg_info *info;
+    region_obj_map_t *tmp, *elt;
+    
+    FUNC_ENTER(NULL);
+    
+    // Decode input
+    HG_Get_input(handle, &in);
+    info = HG_Get_info(handle);
+    
+    target_obj = PDC_Server_get_obj_metadata(in.remote_obj_id);
+    if (target_obj == NULL) {
+        out.ret = 0;
+        PGOTO_ERROR(HG_OTHER_ERROR, "==PDC_SERVER: HG_TEST_RPC_CB(obj_unmap_server, handle) - requested object does not exist\n");
+    }
+    
+/*#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_lock(&meta_buf_map_mutex_g);
+#endif*/
+    DL_FOREACH_SAFE(target_obj->region_obj_map_head, elt, tmp) {
+        if(in.remote_obj_id==elt->remote_obj_id && region_is_identical(in.remote_region, elt->remote_region_unit)) {
+            HG_Bulk_free(elt->local_bulk_handle);
+            HG_Addr_free(info->hg_class, elt->local_addr);
+            DL_DELETE(target_obj->region_obj_map_head, elt);
+            free(elt);
+            out.ret = 1;
+        }
+    }
+/*#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(&meta_buf_map_mutex_g);
+#endif*/
+    
+done:
+    HG_Respond(handle, NULL, NULL, &out);
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+    
     FUNC_LEAVE(ret_value);
 }
 
@@ -4638,9 +4670,11 @@ HG_TEST_THREAD_CB(buf_map)
 HG_TEST_THREAD_CB(obj_map)
 HG_TEST_THREAD_CB(get_remote_metadata)
 HG_TEST_THREAD_CB(buf_map_server)
+HG_TEST_THREAD_CB(obj_map_server)
 HG_TEST_THREAD_CB(buf_unmap_server)
 HG_TEST_THREAD_CB(buf_unmap)
 HG_TEST_THREAD_CB(obj_unmap)
+HG_TEST_THREAD_CB(obj_unmap_server)
 HG_TEST_THREAD_CB(region_map)
 HG_TEST_THREAD_CB(region_unmap)
 HG_TEST_THREAD_CB(get_reg_lock_status)
@@ -4875,7 +4909,6 @@ obj_map_server_register(hg_class_t *hg_class)
     FUNC_LEAVE(ret_value);
 }
 
-/*
 hg_id_t
 obj_unmap_server_register(hg_class_t *hg_class)
 {
@@ -4887,7 +4920,6 @@ obj_unmap_server_register(hg_class_t *hg_class)
     
     FUNC_LEAVE(ret_value);
 }
-*/
 
 hg_id_t
 reg_map_register(hg_class_t *hg_class)

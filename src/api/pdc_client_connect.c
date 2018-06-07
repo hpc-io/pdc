@@ -335,28 +335,28 @@ client_send_buf_unmap_rpc_cb(const struct hg_cb_info *callback_info)
     hg_handle_t handle;
     struct region_unmap_args *region_unmap_args;
     reg_unmap_out_t output;
-
+    
     FUNC_ENTER(NULL);
-
+    
     /* printf("Entered client_send_buf_unmap_rpc_cb()\n"); */
     region_unmap_args = (struct region_unmap_args*) callback_info->arg;
     handle = callback_info->info.forward.handle;
-
+    
     ret_value = HG_Get_output(handle, &output);
     if (ret_value != HG_SUCCESS) {
         printf("PDC_CLIENT[%d]: client_send_buf_unmap_rpc_cb error with HG_Get_output\n",
-                pdc_client_mpi_rank_g);
+               pdc_client_mpi_rank_g);
         region_unmap_args->ret = -1;
         goto done;
     }
     /* printf("Return value=%d\n", output.ret); */
-
+    
     region_unmap_args->ret = output.ret;
-
+    
 done:
     work_todo_g--;
     HG_Free_output(handle, &output);
-//    HG_Destroy(handle);
+    //    HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -2497,12 +2497,12 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+/*
 perr_t PDC_Client_object_unmap(pdcid_t local_obj_id)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = HG_SUCCESS;
     obj_unmap_in_t in;
-    /* hg_bulk_t bulk_handle; */
     int n_retry;
     uint32_t server_id;
     struct object_unmap_args unmap_args;
@@ -2514,7 +2514,6 @@ perr_t PDC_Client_object_unmap(pdcid_t local_obj_id)
     in.local_obj_id = local_obj_id;
 
     // Create a bulk descriptor
-    /* bulk_handle = HG_BULK_NULL; */
 
     server_id = PDC_get_server_by_obj_id(local_obj_id, pdc_server_num_g);
 
@@ -2545,13 +2544,13 @@ done:
     HG_Destroy(client_send_object_unmap_handle);
     FUNC_LEAVE(ret_value);
 }
+*/
 
 perr_t PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct PDC_region_info *reginfo, PDC_var_type_t data_type)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = HG_SUCCESS;
     buf_unmap_in_t in;
-    int n_retry;
     size_t unit;
     uint32_t data_server_id, meta_server_id;
     struct region_unmap_args unmap_args;
@@ -2605,6 +2604,101 @@ perr_t PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct
 
 done:
     HG_Destroy(client_send_buf_unmap_handle);
+    FUNC_LEAVE(ret_value);
+}
+
+// Callback function for  HG_Forward()
+// Gets executed after a call to HG_Trigger and the RPC has completed
+static hg_return_t
+client_send_obj_unmap_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    hg_handle_t handle;
+    struct region_unmap_args *region_unmap_args;
+    obj_unmap_out_t output;
+    
+    FUNC_ENTER(NULL);
+    
+    /* printf("Entered client_send_buf_unmap_rpc_cb()\n"); */
+    region_unmap_args = (struct region_unmap_args*) callback_info->arg;
+    handle = callback_info->info.forward.handle;
+    
+    ret_value = HG_Get_output(handle, &output);
+    if (ret_value != HG_SUCCESS) {
+        printf("PDC_CLIENT[%d]: client_send_obj_unmap_rpc_cb error with HG_Get_output\n",
+               pdc_client_mpi_rank_g);
+        region_unmap_args->ret = -1;
+        goto done;
+    }
+    /* printf("Return value=%d\n", output.ret); */
+    
+    region_unmap_args->ret = output.ret;
+    
+done:
+    work_todo_g--;
+    HG_Free_output(handle, &output);
+    //    HG_Destroy(handle);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_Client_obj_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct PDC_region_info *reginfo, PDC_var_type_t data_type)
+{
+    perr_t ret_value = SUCCEED;
+    hg_return_t  hg_ret = HG_SUCCESS;
+    obj_unmap_in_t in;
+    size_t unit;
+    uint32_t data_server_id, meta_server_id;
+    struct region_unmap_args unmap_args;
+    hg_handle_t client_send_obj_unmap_handle;
+    
+    FUNC_ENTER(NULL);
+    
+    // Fill input structure
+    in.remote_obj_id = remote_obj_id;
+    in.remote_reg_id = remote_reg_id;
+    
+    if(data_type == PDC_DOUBLE)
+        unit = sizeof(double);
+    else if(data_type == PDC_FLOAT)
+        unit = sizeof(float);
+    else if(data_type == PDC_INT)
+        unit = sizeof(int);
+    else
+        PGOTO_ERROR(FAIL, "data type is not supported yet");
+    pdc_region_info_t_to_transfer_unit(reginfo, &(in.remote_region), unit);
+    
+    // Compute metadata server id
+    meta_server_id = PDC_get_server_by_obj_id(remote_obj_id, pdc_server_num_g);
+    in.meta_server_id = meta_server_id;
+    
+    // Compute local data server id
+    data_server_id = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
+    
+    // Debug statistics for counting number of messages sent to each server.
+    debug_server_id_count[data_server_id]++;
+    
+    if( PDC_Client_try_lookup_server(data_server_id) != SUCCEED) {
+        printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+        ret_value = FAIL;
+        goto done;
+    }
+    
+    HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr, obj_unmap_register_id_g, &client_send_obj_unmap_handle);
+    
+    hg_ret = HG_Forward(client_send_obj_unmap_handle, client_send_obj_unmap_rpc_cb, &unmap_args, &in);
+    if (hg_ret != HG_SUCCESS) {
+        PGOTO_ERROR(FAIL, "PDC_Client_send_buf_unmap(): Could not start HG_Forward()");
+    }
+    
+    // Wait for response from server
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+    
+    if (unmap_args.ret != 1)
+        PGOTO_ERROR(FAIL,"PDC_CLIENT: buf unmap failed...");
+    
+done:
+    HG_Destroy(client_send_obj_unmap_handle);
     FUNC_LEAVE(ret_value);
 }
 

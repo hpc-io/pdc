@@ -125,7 +125,7 @@ int main(int argc, char **argv)
     printf("%d, %d\n", myArray3[3][2], myArray3[3][3]);
 */
     
-    PDCobj_buf_unmap(obj2, r2);
+    PDCbuf_obj_unmap(obj2, r2);
 
     // close region
     if(PDCregion_close(r1) < 0)

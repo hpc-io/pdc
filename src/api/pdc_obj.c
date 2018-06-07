@@ -737,7 +737,7 @@ done:
     FUNC_LEAVE(ret_value);
 } 
 
-perr_t PDCobj_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id)
+perr_t PDCbuf_obj_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id)
 {
     perr_t ret_value = SUCCEED;   
     struct PDC_id_info *info1;
@@ -768,6 +768,38 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDCobj_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id)
+{
+    perr_t ret_value = SUCCEED;
+    struct PDC_id_info *info1;
+    struct PDC_obj_info *object1;
+    struct PDC_region_info *reginfo;
+    PDC_var_type_t data_type;
+    
+    FUNC_ENTER(NULL);
+    
+    info1 = pdc_find_id(remote_obj_id);
+    if(info1 == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object ID");
+    object1 = (struct PDC_obj_info *)(info1->obj_ptr);
+    data_type = object1->obj_pt->type;
+    
+    info1 = pdc_find_id(remote_reg_id);
+    if(info1 == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate region ID");
+    reginfo = (struct PDC_region_info *)(info1->obj_ptr);
+    
+    ret_value = PDC_Client_obj_unmap(object1->meta_id, remote_reg_id, reginfo, data_type);
+    
+    if(ret_value == SUCCEED) {
+        pdc_dec_ref(remote_obj_id);
+        pdc_dec_ref(remote_reg_id);
+    }
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+/*
 perr_t PDCobj_unmap(pdcid_t obj_id)
 {
     perr_t ret_value = SUCCEED; 
@@ -799,6 +831,7 @@ perr_t PDCobj_unmap(pdcid_t obj_id)
 done:
     FUNC_LEAVE(ret_value);
 }
+*/
 
 perr_t PDCreg_unmap(pdcid_t obj_id, pdcid_t reg_id)
 {

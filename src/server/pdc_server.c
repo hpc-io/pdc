@@ -1594,7 +1594,7 @@ static void PDC_Server_mercury_register()
     buf_map_server_register_id_g              = buf_map_server_register(hg_class_g);
     buf_unmap_server_register_id_g            = buf_unmap_server_register(hg_class_g);
     obj_map_server_register_id_g              = obj_map_server_register(hg_class_g);
-//    obj_unmap_server_register_id_g              = obj_unmap_server_register(hg_class_g);
+    obj_unmap_server_register_id_g            = obj_unmap_server_register(hg_class_g);
     server_lookup_remote_server_register_id_g = server_lookup_remote_server_register(hg_class_g);
     update_region_loc_register_id_g           = update_region_loc_register(hg_class_g);
     notify_region_update_register_id_g        = notify_region_update_register(hg_class_g);

@@ -1096,6 +1096,17 @@ typedef struct {
 } buf_unmap_out_t;
 
 typedef struct {
+    uint32_t                    meta_server_id;
+    uint64_t                    remote_obj_id;
+    uint64_t                    remote_reg_id;
+    region_info_transfer_t      remote_region;
+} obj_unmap_in_t;
+
+typedef struct {
+    int32_t ret;
+} obj_unmap_out_t;
+
+typedef struct {
     uint64_t                    local_obj_id;
     uint64_t                    local_reg_id;
     region_info_transfer_t      local_region;
@@ -1104,14 +1115,6 @@ typedef struct {
 typedef struct {
     int32_t ret;
 } reg_unmap_out_t;
-
-typedef struct {
-    uint64_t        local_obj_id;
-} obj_unmap_in_t;
-
-typedef struct {
-    int32_t ret;
-} obj_unmap_out_t;
 
 static HG_INLINE hg_return_t
 hg_proc_gen_obj_id_in_t(hg_proc_t proc, void *data)
@@ -1784,7 +1787,22 @@ hg_proc_obj_unmap_in_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     obj_unmap_in_t *struct_data = (obj_unmap_in_t *) data;
 
-    ret = hg_proc_uint64_t(proc, &struct_data->local_obj_id);
+    ret = hg_proc_uint32_t(proc, &struct_data->meta_server_id);
+    if (ret != HG_SUCCESS) {
+       HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->remote_obj_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->remote_reg_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->remote_region);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -1805,8 +1823,6 @@ hg_proc_obj_unmap_out_t(hg_proc_t proc, void *data)
     }
     return ret;
 }
-
-
 /*
  * Data Server related
  */

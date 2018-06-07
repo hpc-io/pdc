@@ -155,7 +155,7 @@ printf("lock is granted\n");
 fflush(stdout);
 }
 
-    ret = PDCobj_buf_unmap(obj2, r2);
+    ret = PDCbuf_obj_unmap(obj2, r2);
     if (ret != SUCCEED)
         printf("region unmap failed\n");
 
