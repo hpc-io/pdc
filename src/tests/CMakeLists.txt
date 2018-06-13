@@ -33,6 +33,7 @@ set(PROGRAMS
   data_rw_test
   init_only
   obj_buf_map
+  buf_obj_map_mpi
   obj_buf_map_mpi
   vpicio
   bdcats

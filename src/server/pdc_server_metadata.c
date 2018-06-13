@@ -42,6 +42,7 @@
 #include "pdc_interface.h"
 #include "pdc_client_server_common.h"
 #include "pdc_server_metadata.h"
+#include "pdc_server.h"
 
 #define BLOOM_TYPE_T counting_bloom_t
 #define BLOOM_NEW    new_counting_bloom
@@ -2447,7 +2448,13 @@ perr_t PDC_Server_create_container(gen_cont_id_in_t *in, gen_cont_id_out_t *out)
         printf("Cannot allocate hash_key!\n");
         goto done;
     }
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_lock(&total_mem_usage_mutex_g);
+#endif
     total_mem_usage_g += sizeof(uint32_t);
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(&total_mem_usage_mutex_g);
+#endif
     *hash_key = in->hash_value;
 
     pdc_cont_hash_table_entry_t *lookup_value;
@@ -2532,8 +2539,7 @@ done:
 perr_t PDC_Server_delete_container_by_name(gen_cont_id_in_t *in, gen_cont_id_out_t *out)
 {
     perr_t ret_value = SUCCEED;
-    pdc_metadata_t *metadata;
-    uint32_t hash_key, i;
+    uint32_t hash_key;
 
     FUNC_ENTER(NULL);
 

@@ -776,6 +776,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     hg_thread_mutex_init(&pdc_bloom_time_mutex_g);
     hg_thread_mutex_init(&n_metadata_mutex_g);
     hg_thread_mutex_init(&gen_obj_id_mutex_g);
+    hg_thread_mutex_init(&total_mem_usage_mutex_g);
     hg_thread_mutex_init(&data_read_list_mutex_g);
     hg_thread_mutex_init(&data_write_list_mutex_g);
     hg_thread_mutex_init(&pdc_server_task_mutex_g);
@@ -1009,6 +1010,7 @@ perr_t PDC_Server_finalize()
     hg_thread_mutex_destroy(&pdc_bloom_time_mutex_g);
     hg_thread_mutex_destroy(&n_metadata_mutex_g);
     hg_thread_mutex_destroy(&gen_obj_id_mutex_g);
+    hg_thread_mutex_destroy(&total_mem_usage_mutex_g);
     hg_thread_mutex_destroy(&data_read_list_mutex_g);
     hg_thread_mutex_destroy(&data_write_list_mutex_g);
     hg_thread_mutex_destroy(&pdc_server_task_mutex_g);

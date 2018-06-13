@@ -54,6 +54,7 @@ hg_thread_mutex_t pdc_time_mutex_g;
 hg_thread_mutex_t pdc_bloom_time_mutex_g;
 hg_thread_mutex_t n_metadata_mutex_g;
 hg_thread_mutex_t gen_obj_id_mutex_g;
+hg_thread_mutex_t total_mem_usage_mutex_g;
 hg_thread_mutex_t data_read_list_mutex_g;
 hg_thread_mutex_t data_write_list_mutex_g;
 hg_thread_mutex_t region_struct_mutex_g;

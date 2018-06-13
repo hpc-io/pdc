@@ -40,7 +40,8 @@
 
 #include "pdc.h"
 
-#define NPARTICLES      4
+#define NPARTICLES      8388608
+//#define NPARTICLES      4
 
 double uniform_random_number()
 {
@@ -186,10 +187,6 @@ int main(int argc, char **argv)
         printf("Error getting an object id of %s from server, exit...\n", "obj_id22");
         exit(-1);
     }
-
-//    pdc_metadata_t *res = NULL;
-//    PDC_Client_query_metadata_name_only("obj-var-xx", &res);
-//    printf("rank %d: meta id is %lld\n", rank, res->obj_id);
 
     offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
     offset_remote = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
