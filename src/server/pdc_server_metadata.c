@@ -1502,8 +1502,15 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
         printf("Cannot allocate pdc_metadata_t!\n");
         goto done;
     }
+    
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_lock(&total_mem_usage_mutex_g);
+#endif
     total_mem_usage_g += sizeof(pdc_metadata_t);
-
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(&total_mem_usage_mutex_g);
+#endif
+    
     PDC_metadata_init(metadata);
 
     metadata->cont_id   = in->data.cont_id;
@@ -2423,8 +2430,7 @@ done:
 perr_t PDC_Server_create_container(gen_cont_id_in_t *in, gen_cont_id_out_t *out)
 {
     perr_t ret_value = SUCCEED;
-    pdc_metadata_t *metadata;
-    uint32_t *hash_key, i;
+    uint32_t *hash_key;
 
     FUNC_ENTER(NULL);
 

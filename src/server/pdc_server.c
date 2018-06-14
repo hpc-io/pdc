@@ -270,7 +270,9 @@ hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info)
         is_all_client_connected_g = 0;
     }
 
-
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_lock(&pdc_client_info_mutex_g);
+#endif
     if (pdc_client_info_g == NULL) {
         pdc_client_info_g = (pdc_client_info_t*)calloc(sizeof(pdc_client_info_t), in->nclient);
         if (pdc_client_info_g == NULL) {
@@ -287,6 +289,9 @@ hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info)
         }
         
     }
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(&pdc_client_info_mutex_g);
+#endif
 
     // Copy the client's address
     memcpy(pdc_client_info_g[in->client_id].addr_string, in->client_addr, sizeof(char)*ADDR_MAX);
@@ -769,6 +774,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
         printf("\n==PDC_SERVER[%d]: Starting server with %d threads...\n", pdc_server_rank_g, n_thread);
         fflush(stdout);
     }
+    hg_thread_mutex_init(&pdc_client_info_mutex_g);
     hg_thread_mutex_init(&pdc_metadata_hash_table_mutex_g);
     hg_thread_mutex_init(&pdc_container_hash_table_mutex_g);
     hg_thread_mutex_init(&pdc_client_addr_mutex_g);
@@ -1003,6 +1009,7 @@ perr_t PDC_Server_finalize()
     // Destory pool
     hg_thread_pool_destroy(hg_test_thread_pool_fs_g);
 
+    hg_thread_mutex_destroy(&pdc_client_info_mutex_g);
     hg_thread_mutex_destroy(&pdc_time_mutex_g);
     hg_thread_mutex_destroy(&pdc_metadata_hash_table_mutex_g);
     hg_thread_mutex_destroy(&pdc_container_hash_table_mutex_g);
@@ -1678,7 +1685,6 @@ static void PDC_Server_get_env()
 int main(int argc, char *argv[])
 {
     int port;
-    char *tmp_env_char;
     perr_t ret;
     
 #ifdef ENABLE_MPI

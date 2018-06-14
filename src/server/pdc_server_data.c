@@ -450,18 +450,12 @@ data_server_region_t *PDC_Server_get_obj_region(pdcid_t obj_id)
 
     FUNC_ENTER(NULL);
 
-#ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_lock(&region_struct_mutex_g);
-#endif
     if(dataserver_region_g != NULL) {
        DL_FOREACH(dataserver_region_g, elt) {
            if (elt->obj_id == obj_id)
                ret_value = elt;
        }
     }
-#ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_unlock(&region_struct_mutex_g);
-#endif
 
     FUNC_LEAVE(ret_value);
 }

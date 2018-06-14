@@ -884,10 +884,7 @@ perr_t PDC_Client_query_read_complete(char *shm_addrs, int size, int n_shm, int 
 HG_TEST_RPC_CB(gen_obj_id, handle)
 {
     perr_t ret_value = HG_SUCCESS;
-    uint32_t data_type;
-    void *data_ptr = NULL;
-    size_t ndim;
-    size_t unit;
+    
     FUNC_ENTER(NULL);
 
     // Decode input
@@ -1017,10 +1014,16 @@ HG_TEST_RPC_CB(client_test_connect, handle)
     HG_Get_input(handle, &in);
     out.ret = in.client_id + 123400;
 
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_lock(&pdc_client_info_mutex_g);
+#endif
     args->client_id = in.client_id;
     args->nclient   = in.nclient;
     sprintf(args->client_addr, in.client_addr);
-
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(&pdc_client_info_mutex_g);
+#endif
+    
     /* printf("==PDC_SERVER: got client_test_connect req, going to return %" PRIu64 "\n", out.ret); */
     /* fflush(stdout); */
     /* HG_Respond(handle, NULL, NULL, &out); */
