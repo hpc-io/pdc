@@ -2489,10 +2489,14 @@ perr_t PDC_Server_create_container(gen_cont_id_in_t *in, gen_cont_id_out_t *out)
             entry->n_allocated = 128;
             entry->obj_ids = (uint64_t*)calloc(entry->n_allocated, sizeof(uint64_t));
             entry->cont_id = PDC_Server_gen_obj_id();
-
+#ifdef ENABLE_MULTITHREAD
+            hg_thread_mutex_lock(&total_mem_usage_mutex_g);
+#endif
             total_mem_usage_g += sizeof(pdc_cont_hash_table_entry_t);
             total_mem_usage_g += sizeof(uint64_t)*entry->n_allocated;
-
+#ifdef ENABLE_MULTITHREAD
+            hg_thread_mutex_unlock(&total_mem_usage_mutex_g);
+#endif
             // Insert to hash table
             if (hash_table_insert(container_hash_table_g, hash_key, entry) != 1) {
                 printf("==PDC_SERVER[%d]: %s - hash table insert failed\n", pdc_server_rank_g, __func__);

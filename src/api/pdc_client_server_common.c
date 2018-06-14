@@ -2514,12 +2514,13 @@ HG_TEST_RPC_CB(buf_map_server, handle)
     hg_thread_mutex_lock(&meta_buf_map_mutex_g);
 #endif
     DL_APPEND(target_obj->region_buf_map_head, buf_map_ptr);
-    out.ret = 1;
 #ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_unlock(&meta_buf_map_mutex_g);
 #endif
+    
+    out.ret = 1;
     free(request_region);
-
+ 
 done:
     HG_Respond(handle, NULL, NULL, &out);
     HG_Free_input(handle, &in);
