@@ -1394,7 +1394,9 @@ obj_map_region_release_bulk_transfer_thread_cb(const struct hg_cb_info *hg_cb_in
     
     // release the lock
     PDC_Data_Server_region_release(&(bulk_args->in), &out);
-    HG_Respond(bulk_args->handle, NULL, NULL, &out);
+    
+    PDC_Server_release_lock_request(bulk_args->remote_obj_id, bulk_args->remote_reg_info);
+//    HG_Respond(bulk_args->handle, NULL, NULL, &out);
     
 done:
     free(bulk_args->remote_reg_info->offset);
@@ -1444,8 +1446,6 @@ pdc_region_read_from_progress(void *arg)
         error = 1;
         printf("===PDC SERVER: pdc_region_read_from_progress push data failed\n");
     }
-    
-//    PDC_Server_release_lock_request(bulk_args->remote_obj_id, bulk_args->remote_reg_info);
     
 done:
     if(error == 1) {
@@ -2046,6 +2046,8 @@ HG_TEST_RPC_CB(region_release, handle)
                         
                         hg_thread_pool_post(hg_test_thread_pool_fs_g, &(obj_map_bulk_args->work));
                         
+                        out.ret = 1;
+                        HG_Respond(handle, NULL, NULL, &out);
 #else
                         PDC_Server_data_read_from(obj_map_bulk_args->remote_obj_id, remote_reg_info, data_buf);
                         
@@ -2390,9 +2392,9 @@ HG_TEST_RPC_CB(obj_unmap_server, handle)
         PGOTO_ERROR(HG_OTHER_ERROR, "==PDC_SERVER: HG_TEST_RPC_CB(obj_unmap_server, handle) - requested object does not exist\n");
     }
     
-/*#ifdef ENABLE_MULTITHREAD
+#ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_lock(&meta_buf_map_mutex_g);
-#endif*/
+#endif
     DL_FOREACH_SAFE(target_obj->region_obj_map_head, elt, tmp) {
         if(in.remote_obj_id==elt->remote_obj_id && region_is_identical(in.remote_region, elt->remote_region_unit)) {
             HG_Bulk_free(elt->local_bulk_handle);
@@ -2402,9 +2404,9 @@ HG_TEST_RPC_CB(obj_unmap_server, handle)
             out.ret = 1;
         }
     }
-/*#ifdef ENABLE_MULTITHREAD
+#ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_unlock(&meta_buf_map_mutex_g);
-#endif*/
+#endif
     
 done:
     HG_Respond(handle, NULL, NULL, &out);

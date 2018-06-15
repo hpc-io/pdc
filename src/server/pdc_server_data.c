@@ -450,13 +450,19 @@ data_server_region_t *PDC_Server_get_obj_region(pdcid_t obj_id)
 
     FUNC_ENTER(NULL);
 
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_lock(&region_struct_mutex_g);
+#endif
     if(dataserver_region_g != NULL) {
        DL_FOREACH(dataserver_region_g, elt) {
            if (elt->obj_id == obj_id)
                ret_value = elt;
        }
     }
-
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(&region_struct_mutex_g);
+#endif
+    
     FUNC_LEAVE(ret_value);
 }
 
@@ -550,7 +556,8 @@ fflush(stdout);
     hg_thread_mutex_lock(&lock_list_mutex_g);
 #endif
     // Go through all existing locks to check for region lock
-    DL_FOREACH(new_obj_reg->region_lock_head, elt1) {
+//    DL_FOREACH(new_obj_reg->region_lock_head, elt1) {
+    for ((elt1) = (new_obj_reg->region_lock_head); elt1; (elt1) = (elt1)->next) {
         if (PDC_is_same_region_list(elt1, request_region) == 1) {
             found_lock = 1;
             if(in->lock_mode == BLOCK) {
@@ -592,7 +599,19 @@ fflush(stdout);
     hg_thread_mutex_lock(&lock_list_mutex_g);
 #endif
     // No overlaps found
-    DL_APPEND(new_obj_reg->region_lock_head, request_region);
+//    DL_APPEND(new_obj_reg->region_lock_head, request_region);
+    do {
+        if (new_obj_reg->region_lock_head) {
+            (request_region)->prev = (new_obj_reg->region_lock_head)->prev;
+            (new_obj_reg->region_lock_head)->prev->next = (request_region);
+            (new_obj_reg->region_lock_head)->prev = (request_region);
+            (request_region)->next = NULL;
+        } else {
+            (new_obj_reg->region_lock_head)=(request_region);
+            (new_obj_reg->region_lock_head)->prev = (new_obj_reg->region_lock_head);
+            (new_obj_reg->region_lock_head)->next = NULL;
+        }
+    } while (0);
 #ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_unlock(&lock_list_mutex_g);
 #endif
@@ -1073,25 +1092,42 @@ perr_t PDC_Data_Server_obj_unmap(const struct hg_info *info, obj_unmap_in_t *in)
 #endif
     DL_FOREACH_SAFE(target_obj->region_obj_map_head, elt, tmp) {
         if(in->remote_obj_id==elt->remote_obj_id && region_is_identical(in->remote_region, elt->remote_region_unit)) {
-/*#ifdef ENABLE_MULTITHREAD
+#ifdef ENABLE_MULTITHREAD
             // wait for work to be done, then free
             hg_thread_mutex_lock(&(elt->bulk_args->work_mutex));
             while (!elt->bulk_args->work_completed)
                 hg_thread_cond_wait(&(elt->bulk_args->work_cond), &(elt->bulk_args->work_mutex));
             elt->bulk_args->work_completed = 0;
             hg_thread_mutex_unlock(&(elt->bulk_args->work_mutex));  //per bulk_args
-#endif*/
+#endif
             free(elt->remote_data_ptr);
             HG_Addr_free(info->hg_class, elt->local_addr);
             HG_Bulk_free(elt->local_bulk_handle);
-            DL_DELETE(target_obj->region_obj_map_head, elt);
+//            DL_DELETE(target_obj->region_obj_map_head, elt);
+            do {
+                assert((target_obj->region_obj_map_head) != NULL);
+                assert((elt)->prev != NULL);
+                if ((elt)->prev == (elt)) {
+                    (target_obj->region_obj_map_head)=NULL;
+                } else if ((elt)==(target_obj->region_obj_map_head)) {
+                    (elt)->next->prev = (elt)->prev;
+                    (target_obj->region_obj_map_head) = (elt)->next;
+                } else {
+                    (elt)->prev->next = (elt)->next;
+                    if ((elt)->next) {
+                        (elt)->next->prev = (elt)->prev;
+                    } else {
+                        (target_obj->region_obj_map_head)->prev = (elt)->prev;
+                    }
+                }
+            } while (0);
             if((uint32_t)pdc_server_rank_g != in->meta_server_id)
                free(elt);
-/*#ifdef ENABLE_MULTITHREAD
+#ifdef ENABLE_MULTITHREAD
             hg_thread_mutex_destroy(&(elt->bulk_args->work_mutex));
             hg_thread_cond_destroy(&(elt->bulk_args->work_cond));
             free(elt->bulk_args);
-#endif*/
+#endif
         }
     }
     if(target_obj->region_obj_map_head == NULL && pdc_server_rank_g == 0) {
