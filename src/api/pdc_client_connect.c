@@ -2776,7 +2776,6 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_
     size_t  *data_size = NULL;
     size_t  unit, unit_to; 
     struct  buf_map_args map_args;
-    hg_bulk_t local_bulk_handle = HG_BULK_NULL;
     hg_handle_t client_send_buf_map_handle;
 
     FUNC_ENTER(NULL);
@@ -2873,12 +2872,11 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_
     HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr, buf_map_register_id_g, &client_send_buf_map_handle);
 
     // Create bulk handle
-    hg_ret = HG_Bulk_create(hg_class, local_count, (void**)data_ptrs, (hg_size_t *)data_size, HG_BULK_READWRITE, &local_bulk_handle);
+    hg_ret = HG_Bulk_create(hg_class, local_count, (void**)data_ptrs, (hg_size_t *)data_size, HG_BULK_READWRITE, &(in.local_bulk_handle));
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "PDC_Client_buf_map(): Could not create local bulk data handle\n");
         return EXIT_FAILURE;
     }
-    in.local_bulk_handle = local_bulk_handle;
 
     hg_ret = HG_Forward(client_send_buf_map_handle, client_send_buf_map_rpc_cb, &map_args, &in);	
     if (hg_ret != HG_SUCCESS) {
