@@ -564,6 +564,9 @@ fflush(stdout);
     if(PDC_close(pdc_id) < 0)
        printf("fail to close PDC\n");
 
+    free(offset);
+    free(offset_remote);
+    free(mysize);
     free(x);
     free(y);
     free(z);
