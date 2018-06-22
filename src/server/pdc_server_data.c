@@ -1331,8 +1331,8 @@ perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle)
         DL_FOREACH_SAFE(target_meta->region_buf_map_head, elt, tmp) {
 
             if(in->remote_obj_id==elt->remote_obj_id && region_is_identical(in->remote_region, elt->remote_region_unit)) {
-                HG_Bulk_free(elt->local_bulk_handle);
-                HG_Addr_free(info->hg_class, elt->local_addr);
+//                HG_Bulk_free(elt->local_bulk_handle);
+//                HG_Addr_free(info->hg_class, elt->local_addr);
                 DL_DELETE(target_meta->region_buf_map_head, elt);
                 free(elt);
             }
@@ -2281,8 +2281,8 @@ perr_t PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_p
         buf_map_ptr->local_region = new_buf_map_ptr->local_region;
         buf_map_ptr->local_ndim = new_buf_map_ptr->local_ndim;
         buf_map_ptr->local_data_type = new_buf_map_ptr->local_data_type;
-        buf_map_ptr->local_addr = new_buf_map_ptr->local_addr;
-        buf_map_ptr->local_bulk_handle = new_buf_map_ptr->local_bulk_handle;
+//        buf_map_ptr->local_addr = new_buf_map_ptr->local_addr;
+//        buf_map_ptr->local_bulk_handle = new_buf_map_ptr->local_bulk_handle;
 
         buf_map_ptr->remote_obj_id = new_buf_map_ptr->remote_obj_id;
         buf_map_ptr->remote_reg_id = new_buf_map_ptr->remote_reg_id;

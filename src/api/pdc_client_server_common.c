@@ -2444,8 +2444,8 @@ HG_TEST_RPC_CB(buf_unmap_server, handle)
 #endif
     DL_FOREACH_SAFE(target_obj->region_buf_map_head, elt, tmp) {
         if(in.remote_obj_id==elt->remote_obj_id && region_is_identical(in.remote_region, elt->remote_region_unit)) {
-            HG_Bulk_free(elt->local_bulk_handle);
-            HG_Addr_free(info->hg_class, elt->local_addr);
+//            HG_Bulk_free(elt->local_bulk_handle);
+//            HG_Addr_free(info->hg_class, elt->local_addr);
             DL_DELETE(target_obj->region_buf_map_head, elt);
             free(elt);
             out.ret = 1;
@@ -2499,10 +2499,10 @@ HG_TEST_RPC_CB(buf_map_server, handle)
     buf_map_ptr->local_region = in.local_region;
     buf_map_ptr->local_ndim = in.ndim;
     buf_map_ptr->local_data_type = in.local_type;
-    info = HG_Get_info(handle);
-    HG_Addr_dup(info->hg_class, info->addr, &(buf_map_ptr->local_addr));
-    HG_Bulk_ref_incr(in.local_bulk_handle);
-    buf_map_ptr->local_bulk_handle = in.local_bulk_handle;
+//    info = HG_Get_info(handle);
+//    HG_Addr_dup(info->hg_class, info->addr, &(buf_map_ptr->local_addr));
+//    HG_Bulk_ref_incr(in.local_bulk_handle);
+//    buf_map_ptr->local_bulk_handle = in.local_bulk_handle;
 
     buf_map_ptr->remote_obj_id = in.remote_obj_id;
     buf_map_ptr->remote_reg_id = in.remote_reg_id;
