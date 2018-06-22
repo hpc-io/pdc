@@ -125,13 +125,13 @@ int main(int argc, char **argv)
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-/*
+
     for (int i=0; i<numparticles; i++) {
         x[i]   = uniform_random_number() * x_dim;
-      printf("x = %f\n", x[i]);
-      fflush(stdout);
+//      printf("x = %f\n", x[i]);
+//      fflush(stdout);
     }
-*/
+
     ret = PDCreg_release_lock(obj2, r2, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for r2\n");
