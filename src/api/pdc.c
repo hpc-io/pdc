@@ -39,7 +39,7 @@
     #include "mpi.h"
 #endif
 
-static perr_t pdc_class__close(struct PDC_class *p);
+perr_t pdc_class__close(struct PDC_class *p);
 
 static perr_t pdc_class_init()
 {

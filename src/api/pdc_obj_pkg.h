@@ -61,6 +61,8 @@ struct PDC_region_info {
     uint64_t            *offset;
     uint64_t            *size;
     bool                mapping;
+    bool                registered_transform;
+    void                *buf;
 };
 
 #endif

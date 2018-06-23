@@ -54,6 +54,12 @@ struct PDC_obj_prop {
     char*            tags;
     void             *buf;
     pdc_metadata_t   *metadata;
+
+    /* The following have been added to support of PDC analysis and transforms */
+    size_t           type_extent;
+    PDC_major_type   storage_order;
+    uint64_t         locus;
+    uint32_t         data_state;
 };
 
 #endif

@@ -272,7 +272,7 @@ perr_t PDCobj_buf_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, p
  *
  * \return Pointer to PDC_obj_info struct on success/Null on failure
  */
-//struct PDC_region_info *PDCregion_get_info(pdcid_t reg_id);
+struct PDC_region_info *PDCregion_get_info(pdcid_t reg_id);
 
 /**
  * Unmap all regions within the object to a buffer (read unmap) 
@@ -370,6 +370,6 @@ perr_t PDCregion_close(pdcid_t region_id);
  *
  * \return Pointer to PDC_obj_info struct on success/Null on failure
  */
-//struct PDC_obj_info *PDCobj_get_info(pdcid_t obj_id);
+struct PDC_obj_info *PDCobj_get_info(pdcid_t obj_id);
 
 #endif

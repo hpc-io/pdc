@@ -89,6 +89,10 @@ pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdcid)
         q->obj_prop_id = new_id_o;
         id_info = pdc_find_id(pdcid);
         q->pdc = (struct PDC_class *)(id_info->obj_ptr);
+	q->type_extent = 0;
+	q->storage_order = 0;
+	q->locus = CLIENT_MEMORY;
+	q->data_state = 0;
         ret_value = new_id_o;
     }
     

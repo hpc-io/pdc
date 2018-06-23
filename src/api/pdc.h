@@ -36,6 +36,8 @@
 #include "pdc_cont_pkg.h"
 #include "pdc_obj.h"
 #include "pdc_obj_pkg.h"
+#include "pdc_analysis_support.h"
+#include "pdc_transform_support.h"
 
 #ifdef ENABLE_MPI
 #include "pdc_mpi.h"

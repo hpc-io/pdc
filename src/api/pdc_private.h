@@ -41,13 +41,19 @@ typedef enum {
 } PDC_var_type_t;
 
 typedef enum {
-    UNKNOWN = -1,
-    MEMORY,
-    FLASH,
-    DISK,
-    FILESYSTEM,
-    TAPE
+    UNKNOWN =0,
+    SERVER_MEMORY =1,
+    CLIENT_MEMORY =2,
+    FLASH =3,
+    DISK =4,
+    FILESYSTEM =5,
+    TAPE =6
 } PDC_loci;
+
+typedef enum {
+    NATIVE_STATE = 0,
+    TRANSFORMED = 1
+} PDC_data_state;
 
 /* Query type */
 typedef enum {
@@ -70,6 +76,14 @@ typedef enum {
     ROW_major,
     COL_major
 } PDC_major_type;
+
+typedef enum {
+    C_lang = 0,
+    FORTRAN_lang,
+    PYTHON_lang,
+    JULIA_lang,
+    N_LANGUAGES
+} PDC_Analysis_language;
 
 #define SUCCEED    0
 #define FAIL    (-1)

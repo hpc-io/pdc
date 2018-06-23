@@ -1596,6 +1596,12 @@ static void PDC_Server_mercury_register()
     data_server_read_check_register(hg_class_g);
     data_server_write_check_register(hg_class_g);
 
+    // Analysis and Transforms
+    set_execution_locus(SERVER_MEMORY);
+    obj_data_iterator_register(hg_class_g);
+    analysis_ftn_register(hg_class_g);
+    transform_ftn_register(hg_class_g);
+
     // Server to client RPC
     server_lookup_client_register_id_g = server_lookup_client_register(hg_class_g);
     notify_io_complete_register_id_g   = notify_io_complete_register(hg_class_g);

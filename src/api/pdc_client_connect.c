@@ -1022,6 +1022,11 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     reg_unmap_register_id_g                   = reg_unmap_register(*hg_class);
     obj_unmap_register_id_g                   = obj_unmap_register(*hg_class);
 
+    // Analysis and Transforms
+    analysis_ftn_register_id_g                = analysis_ftn_register(*hg_class);
+    transform_ftn_register_id_g               = transform_ftn_register(*hg_class);
+    object_data_iterator_register_id_g        = obj_data_iterator_register(*hg_class);
+
     server_lookup_client_register(*hg_class);
     notify_io_complete_register(*hg_class);
     notify_region_update_register(*hg_class);
@@ -1128,6 +1133,8 @@ perr_t PDC_Client_init()
     /*         pdc_client_mpi_rank_g, same_node_color, pdc_client_mpi_rank_g, pdc_client_same_node_rank_g); */
 
 #endif
+
+    set_execution_locus(CLIENT_MEMORY);
 
     if (pdc_client_mpi_rank_g == 0) {
         printf("==PDC_CLIENT: Found %d PDC Metadata servers, running with %d PDC clients\n",
@@ -3393,6 +3400,29 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
     hg_handle_t region_release_handle;
 
     FUNC_ENTER(NULL);
+    if (region_info->registered_transform) {
+        void *transform_result;
+        size_t transform_size;
+        struct region_transform_ftn_info **registry;
+        int k, registered_count = pdc_get_transforms(&registry);
+        for(k=0; k < registered_count; k++) {
+	    if ((registry[k]->dest_region == region_info) &&
+	        (registry[k]->op_type == PDC_DATA_MAP) &&
+                (registry[k]->when == DATA_OUT) &&
+                (access_type == WRITE)) {
+                size_t (*this_transform)(void *, PDC_var_type_t , int , int , uint64_t *, void **) = registry[k]->ftnPtr;
+                transform_size = this_transform(registry[k]->data,registry[k]->type, registry[k]->type_extent,
+					  region_info->ndim, region_info->size, &transform_result);
+            }
+        }
+        /* FIXME::
+         * At this point we have a transform result size and a transform result buffer
+         * which both need to be sent to the server as part of the region release RPC.
+         * We probably need to modify the region_lock_in_t data structure to accomodate
+         * these fields and also fix the serialization code to add these for transport
+         * with mercury...
+	 */
+    }
 
     // Compute local data server id
     server_id = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
@@ -5524,4 +5554,4 @@ done:
     FUNC_LEAVE(ret_value);
 } // end PDC_Client_query_name_read_entire_obj
 
-
+#include "pdc_analysis_and_transforms_connect.c"

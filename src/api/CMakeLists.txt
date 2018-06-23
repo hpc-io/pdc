@@ -49,15 +49,17 @@ configure_file(
 #------------------------------------------------------------------------------
 set(PDC_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_interface.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_error.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_malloc.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_prop.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_cont.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_obj.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_mpi.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_analysis_support.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_connect.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_server_common.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_cont.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_error.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_interface.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_malloc.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_prop.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_obj.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_mpi.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transform_support.c
   )
 
   add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/profiling)

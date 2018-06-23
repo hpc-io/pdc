@@ -2,6 +2,7 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
   ${PDC_INCLUDES_BUILD_TIME}
+#  $ENV{HOME}/Sandbox/c-blosc/blosc
 )
 
 add_definitions(-DENABLE_MPI=1)
@@ -33,7 +34,6 @@ set(PROGRAMS
   data_rw_test
   init_only
   obj_buf_map
-  buf_obj_map_mpi
   obj_buf_map_mpi
   vpicio
   bdcats
@@ -46,9 +46,28 @@ set(PROGRAMS
   write_1obj
   cont_add_del
   data_server_meta_test
+#  obj_transformation
+#  obj_analysis
   )
 
 foreach(program ${PROGRAMS})
   add_executable(${program} ${program}.c)
   target_link_libraries(${program} pdc)
 endforeach(program)
+
+# *******************************************
+# Create a transform library which contains:
+#  1. compression/depression functions
+#  2. datatype conversion
+# *******************************************
+#FIND_LIBRARY(BLOSC_LIBRARY blosc $ENV{HOME}/Sandbox/c-blosc/build/blosc)
+#set(PDC_TRANSFORMS_SRCS pdc_transforms_lib.c)
+#add_library(pdctransforms  ${PDC_TRANSFORMS_SRCS})
+#target_link_libraries(pdctransforms pdc ${BLOSC_LIBRARY})
+
+# *******************************************
+# Create a transform library for testing
+# *******************************************
+set(PDC_ANALYSIS_SRCS pdc_analysis_lib.c)
+add_library(pdcanalysis ${PDC_ANALYSIS_SRCS})
+target_link_libraries(pdcanalysis pdc)

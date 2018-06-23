@@ -5188,3 +5188,6 @@ notify_client_multi_io_complete_rpc_register(hg_class_t *hg_class)
 {
     return  MERCURY_REGISTER(hg_class, "notify_client_multi_io_complete_rpc_register", bulk_rpc_in_t, pdc_int_ret_t, notify_client_multi_io_complete_rpc_cb);
 }
+
+#include "pdc_analysis_common.c"
+#include "pdc_transforms_common.c"

@@ -42,6 +42,7 @@
 #include "mercury_list.h"
 
 #include "pdc_obj_pkg.h"
+#include "pdc_analysis_and_transforms.h"
 
 #define ADDR_MAX                            256
 #define DIM_MAX                             4
@@ -295,6 +296,9 @@ typedef struct data_server_region_t {
 //    region_list_t *region_storage_head;
     // For region map
     region_map_t *region_map_head;
+    // For non-mapped object analysis
+    // Used primarily as a local_temp
+    void *obj_data_ptr;
 
     struct data_server_region_t *prev;
     struct data_server_region_t *next;
