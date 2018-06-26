@@ -599,19 +599,7 @@ fflush(stdout);
     hg_thread_mutex_lock(&lock_list_mutex_g);
 #endif
     // No overlaps found
-//    DL_APPEND(new_obj_reg->region_lock_head, request_region);
-    do {
-        if (new_obj_reg->region_lock_head) {
-            (request_region)->prev = (new_obj_reg->region_lock_head)->prev;
-            (new_obj_reg->region_lock_head)->prev->next = (request_region);
-            (new_obj_reg->region_lock_head)->prev = (request_region);
-            (request_region)->next = NULL;
-        } else {
-            (new_obj_reg->region_lock_head)=(request_region);
-            (new_obj_reg->region_lock_head)->prev = (new_obj_reg->region_lock_head);
-            (new_obj_reg->region_lock_head)->next = NULL;
-        }
-    } while (0);
+    DL_APPEND(new_obj_reg->region_lock_head, request_region);
 #ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_unlock(&lock_list_mutex_g);
 #endif
@@ -1054,8 +1042,7 @@ perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
             HG_Addr_free(info->hg_class, elt->local_addr);
             HG_Bulk_free(elt->local_bulk_handle);
             DL_DELETE(target_obj->region_buf_map_head, elt);
-            if((uint32_t)pdc_server_rank_g != in->meta_server_id)
-                free(elt);
+            free(elt);
 #ifdef ENABLE_MULTITHREAD
             hg_thread_mutex_destroy(&(elt->bulk_args->work_mutex));
             hg_thread_cond_destroy(&(elt->bulk_args->work_cond)); 
@@ -1103,26 +1090,8 @@ perr_t PDC_Data_Server_obj_unmap(const struct hg_info *info, obj_unmap_in_t *in)
             free(elt->remote_data_ptr);
             HG_Addr_free(info->hg_class, elt->local_addr);
             HG_Bulk_free(elt->local_bulk_handle);
-//            DL_DELETE(target_obj->region_obj_map_head, elt);
-            do {
-                assert((target_obj->region_obj_map_head) != NULL);
-                assert((elt)->prev != NULL);
-                if ((elt)->prev == (elt)) {
-                    (target_obj->region_obj_map_head)=NULL;
-                } else if ((elt)==(target_obj->region_obj_map_head)) {
-                    (elt)->next->prev = (elt)->prev;
-                    (target_obj->region_obj_map_head) = (elt)->next;
-                } else {
-                    (elt)->prev->next = (elt)->next;
-                    if ((elt)->next) {
-                        (elt)->next->prev = (elt)->prev;
-                    } else {
-                        (target_obj->region_obj_map_head)->prev = (elt)->prev;
-                    }
-                }
-            } while (0);
-            if((uint32_t)pdc_server_rank_g != in->meta_server_id)
-               free(elt);
+            DL_DELETE(target_obj->region_obj_map_head, elt);
+            free(elt);
 #ifdef ENABLE_MULTITHREAD
             hg_thread_mutex_destroy(&(elt->bulk_args->work_mutex));
             hg_thread_cond_destroy(&(elt->bulk_args->work_cond));
