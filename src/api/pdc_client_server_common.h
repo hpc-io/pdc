@@ -44,6 +44,13 @@
 #include "pdc_obj_pkg.h"
 #include "pdc_analysis_and_transforms.h"
 
+#ifdef ENABLE_MULTITHREAD 
+hg_thread_mutex_t pdc_client_info_mutex_g;
+hg_thread_mutex_t lock_list_mutex_g;
+hg_thread_mutex_t meta_buf_map_mutex_g;
+hg_thread_mutex_t meta_obj_map_mutex_g;
+#endif
+
 #define ADDR_MAX                            256
 #define DIM_MAX                             4
 #define TAG_LEN_MAX                         2048

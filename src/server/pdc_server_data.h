@@ -32,11 +32,6 @@
 #define PDC_MAX_OVERLAP_REGION_NUM 8 // max number of regions for PDC_Server_get_storage_location_of_region() 
 #define PDC_BULK_XFER_INIT_NALLOC 128
 
-#ifdef ENABLE_MULTITHREAD
-hg_thread_mutex_t pdc_server_task_mutex_g;
-#else
-int  pdc_server_task_mutex_g;
-#endif
 
 struct buf_map_server_lookup_args_t {
     int             server_id;

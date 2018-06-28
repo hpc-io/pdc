@@ -1032,6 +1032,14 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     notify_region_update_register(*hg_class);
     notify_client_multi_io_complete_rpc_register(*hg_class);
    
+#ifdef ENABLE_MULTITHREAD
+    /* Mutex initialization for the client versions of these... */
+    /* The Server versions gets initialized in pdc_server.c */
+    hg_thread_mutex_init(&pdc_client_info_mutex_g);
+    hg_thread_mutex_init(&lock_list_mutex_g);
+    hg_thread_mutex_init(&meta_buf_map_mutex_g);
+    hg_thread_mutex_init(&meta_obj_map_mutex_g);
+#endif
     // Client 0 looks up all servers, others only lookup their node local server
     char *client_lookup_env = getenv("PDC_CLIENT_LOOKUP");
     if (client_lookup_env != NULL && strcmp(client_lookup_env, "ALL") == 0) {

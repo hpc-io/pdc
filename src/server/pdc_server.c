@@ -40,10 +40,6 @@
 
 #include "config.h"
 
-#ifdef ENABLE_MPI
-    #include "mpi.h"
-#endif
-
 #include "utlist.h"
 #include "hash-table.h"
 
