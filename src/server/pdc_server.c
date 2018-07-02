@@ -1275,9 +1275,9 @@ perr_t PDC_Server_restart(char *filename)
                 (region_list+j)->next                       = NULL;
                 (region_list+j)->overlap_storage_regions    = NULL;
                 (region_list+j)->n_overlap_storage_region   = 0;
-                (region_list+j)->buf_map_refcount           = 0;
+		hg_atomic_init32(&((region_list+j)->buf_map_refcount), 0);
                 (region_list+j)->reg_dirty_from_buf         = 0;
-                (region_list+j)->reg_dirty_to_buf         = 0;
+                (region_list+j)->reg_dirty_to_buf           = 0;
                 (region_list+j)->access_type                = NA;
                 (region_list+j)->bulk_handle                = NULL;
                 (region_list+j)->addr                       = NULL;
