@@ -5400,24 +5400,25 @@ perr_t PDC_Client_attach_metadata_to_local_obj(char *obj_name, uint64_t obj_id, 
                                                struct PDC_obj_prop *obj_prop)
 {
     perr_t      ret_value = SUCCEED;
+    
     FUNC_ENTER(NULL);
 
     obj_prop->metadata = (pdc_metadata_t*)calloc(1, sizeof(pdc_metadata_t));
-    obj_prop->metadata->user_id = obj_prop->user_id;
+    ((pdc_metadata_t*)obj_prop->metadata)->user_id = obj_prop->user_id;
     if (NULL != obj_prop->app_name) 
-        strcpy(obj_prop->metadata->app_name, obj_prop->app_name);
+        strcpy(((pdc_metadata_t*)obj_prop->metadata)->app_name, obj_prop->app_name);
     if (NULL != obj_name) 
-        strcpy(obj_prop->metadata->obj_name, obj_name);
-    obj_prop->metadata->time_step = obj_prop->time_step;
-    obj_prop->metadata->obj_id  = obj_id;
-    obj_prop->metadata->cont_id = cont_id;
+        strcpy(((pdc_metadata_t*)obj_prop->metadata)->obj_name, obj_name);
+    ((pdc_metadata_t*)obj_prop->metadata)->time_step = obj_prop->time_step;
+    ((pdc_metadata_t*)obj_prop->metadata)->obj_id  = obj_id;
+    ((pdc_metadata_t*)obj_prop->metadata)->cont_id = cont_id;
     if (NULL != obj_prop->tags) 
-        strcpy(obj_prop->metadata->tags, obj_prop->tags);
+        strcpy(((pdc_metadata_t*)obj_prop->metadata)->tags, obj_prop->tags);
     if (NULL != obj_prop->data_loc) 
-        strcpy(obj_prop->metadata->data_location, obj_prop->data_loc);
-    obj_prop->metadata->ndim    = obj_prop->ndim;
+        strcpy(((pdc_metadata_t*)obj_prop->metadata)->data_location, obj_prop->data_loc);
+    ((pdc_metadata_t*)obj_prop->metadata)->ndim    = obj_prop->ndim;
         if (NULL != obj_prop->dims) 
-    memcpy(obj_prop->metadata->dims, obj_prop->dims, sizeof(uint64_t)*obj_prop->ndim);
+    memcpy(((pdc_metadata_t*)obj_prop->metadata)->dims, obj_prop->dims, sizeof(uint64_t)*obj_prop->ndim);
 
 done:
     FUNC_LEAVE(ret_value);

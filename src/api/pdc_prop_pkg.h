@@ -27,7 +27,6 @@
 
 #include "pdc_life.h"
 #include "pdc_private.h"
-#include "pdc_client_server_common.h"
 
 typedef enum {
     PDC_CONT_CREATE = 0,
@@ -52,8 +51,8 @@ struct PDC_obj_prop {
     uint32_t         time_step;
     char*            data_loc;
     char*            tags;
-    void             *buf;
-    pdc_metadata_t   *metadata;
+    void*            buf;
+    void*            metadata;
 
     /* The following have been added to support of PDC analysis and transforms */
     size_t           type_extent;
