@@ -143,8 +143,8 @@ int main(int argc, char **argv)
 #endif
     start_time = MPI_Wtime();
 
-    PDC_Client_query_name_read_entire_obj_client(my_count, my_dset_names, &buf, buf_sizes);
-    /* PDC_Client_query_name_read_entire_obj_client_agg(my_count, my_dset_names, &buf, buf_sizes); */
+    /* PDC_Client_query_name_read_entire_obj_client(my_count, my_dset_names, &buf, buf_sizes); */
+    PDC_Client_query_name_read_entire_obj_client_agg(my_count, my_dset_names, &buf, buf_sizes);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);

@@ -5,7 +5,7 @@
 #include <sys/time.h> 
 
 #define OP_TIMER 1
-/* #define ENABLE_MPI 1 */
+#define ENABLE_MPI 1
 
 #ifdef ENABLE_MPI
 #include "mpi.h"
@@ -506,7 +506,7 @@ int main(int argc, char *argv[])
         /* srand((my_rank_g+i)%proc_num_g); */
         if (0 == my_rank_g)
             printf("Iter %d Start\n", i);
-        read_within_one_file_contig(nfile, filelist, filesize, ind_size);
+        read_within_one_file_contig(nfile, filelist, filesize, total_size/proc_num_g);
         read_within_one_file_noncontig(nfile, filelist, filesize, ind_size, ind_count);
         read_multi_files(nfile, filelist, filesize, ind_size, ind_count);
         if (0 == my_rank_g)

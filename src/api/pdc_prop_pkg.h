@@ -27,7 +27,7 @@
 
 #include "pdc_life.h"
 #include "pdc_private.h"
-#include "pdc_client_server_common.h"
+/* #include "pdc_client_server_common.h" */
 
 typedef enum {
     PDC_CONT_CREATE = 0,
@@ -53,7 +53,8 @@ struct PDC_obj_prop {
     char*            data_loc;
     char*            tags;
     void             *buf;
-    pdc_metadata_t   *metadata;
+    void             *metadata;
+    /* pdc_metadata_t   *metadata; */
 };
 
 #endif

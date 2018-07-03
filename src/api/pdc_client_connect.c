@@ -83,6 +83,8 @@ double                 memcpy_time_g = 0.0;
 double                 read_time_g = 0.0;
 double                 query_time_g = 0.0;
 
+int                    nfopen_g = 0;
+
 static int             mercury_has_init_g = 0;
 static hg_class_t     *send_class_g = NULL;
 static hg_context_t   *send_context_g = NULL;
@@ -5112,21 +5114,21 @@ perr_t PDC_Client_attach_metadata_to_local_obj(char *obj_name, uint64_t obj_id, 
     FUNC_ENTER(NULL);
 
     obj_prop->metadata = (pdc_metadata_t*)calloc(1, sizeof(pdc_metadata_t));
-    obj_prop->metadata->user_id = obj_prop->user_id;
+    ((pdc_metadata_t*)obj_prop->metadata)->user_id = obj_prop->user_id;
     if (NULL != obj_prop->app_name) 
-        strcpy(obj_prop->metadata->app_name, obj_prop->app_name);
+        strcpy(((pdc_metadata_t*)obj_prop->metadata)->app_name, obj_prop->app_name);
     if (NULL != obj_name) 
-        strcpy(obj_prop->metadata->obj_name, obj_name);
-    obj_prop->metadata->time_step = obj_prop->time_step;
-    obj_prop->metadata->obj_id  = obj_id;
-    obj_prop->metadata->cont_id = cont_id;
+        strcpy(((pdc_metadata_t*)obj_prop->metadata)->obj_name, obj_name);
+    ((pdc_metadata_t*)obj_prop->metadata)->time_step = obj_prop->time_step;
+    ((pdc_metadata_t*)obj_prop->metadata)->obj_id  = obj_id;
+    ((pdc_metadata_t*)obj_prop->metadata)->cont_id = cont_id;
     if (NULL != obj_prop->tags) 
-        strcpy(obj_prop->metadata->tags, obj_prop->tags);
+        strcpy(((pdc_metadata_t*)obj_prop->metadata)->tags, obj_prop->tags);
     if (NULL != obj_prop->data_loc) 
-        strcpy(obj_prop->metadata->data_location, obj_prop->data_loc);
-    obj_prop->metadata->ndim    = obj_prop->ndim;
+        strcpy(((pdc_metadata_t*)obj_prop->metadata)->data_location, obj_prop->data_loc);
+    ((pdc_metadata_t*)obj_prop->metadata)->ndim    = obj_prop->ndim;
         if (NULL != obj_prop->dims) 
-    memcpy(obj_prop->metadata->dims, obj_prop->dims, sizeof(uint64_t)*obj_prop->ndim);
+    memcpy(((pdc_metadata_t*)obj_prop->metadata)->dims, obj_prop->dims, sizeof(uint64_t)*obj_prop->ndim);
 
     FUNC_LEAVE(ret_value);
 }
@@ -5313,6 +5315,7 @@ perr_t PDC_Client_read_with_storage_meta(int nobj, region_storage_meta_t **all_s
             }
 
             fp_read = fopen(fname, "r");
+            nfopen_g++;
             if (fp_read == NULL) {
                 printf("==PDC_CLIENT[%d]: fopen failed [%s]\n", pdc_client_mpi_rank_g, fname);
                 ret_value = FAIL;
@@ -5490,6 +5493,7 @@ perr_t PDC_Client_query_multi_storage_info(int nobj, char **obj_names, region_st
     }
 
     // Now we have all the storage meta stored in the requests structure
+    // Reorgaze them and fill the output buffer
     int n_region, loc;
     (*all_storage_meta) = (region_storage_meta_t**)calloc(sizeof(region_storage_meta_t*), nobj);
     for (iter = 0; iter < pdc_server_num_g; iter++) {
@@ -5523,6 +5527,47 @@ done:
     
     FUNC_LEAVE(ret_value);
 } // end PDC_Client_query_multi_storage_info
+
+perr_t PDC_get_io_stats_mpi(double read_time, double query_time, int nfopen)
+{
+    perr_t ret_value = SUCCEED;
+    double read_time_max,  read_time_min,  read_time_avg, reduce_overhead;
+    double query_time_max, query_time_min, query_time_avg;
+    int    nfopen_min, nfopen_max, nfopen_avg;
+    FUNC_ENTER(NULL);
+
+    #if defined(ENABLE_MPI) && defined(ENABLE_TIMING)
+    reduce_overhead = MPI_Wtime();
+    MPI_Reduce(&read_time, &read_time_max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&read_time, &read_time_min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&read_time, &read_time_avg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    read_time_avg /= pdc_client_mpi_size_g;
+
+    MPI_Reduce(&query_time, &query_time_max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&query_time, &query_time_min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&query_time, &query_time_avg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    query_time_avg /= pdc_client_mpi_size_g;
+
+    MPI_Reduce(&nfopen, &nfopen_max, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&nfopen, &nfopen_min, 1, MPI_INT, MPI_MIN, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&nfopen, &nfopen_avg, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    nfopen_avg /= pdc_client_mpi_size_g;
+
+
+    reduce_overhead = MPI_Wtime() - reduce_overhead;
+    if (pdc_client_mpi_rank_g == 0) {
+        printf("==PDC_CLIENT: IO STATS (MIN, AVG, MAX)\n"
+               "              #fopen   (%d, %d, %d)\n"
+               "              Tquery   (%6.4f, %6.4f, %6.4f)\n"
+               "              Tread    (%6.4f, %6.4f, %6.4f)\nMPI overhead %.4f\n"
+                               , nfopen_min, nfopen_avg, nfopen_max 
+                               , query_time_min, query_time_avg, query_time_max 
+                               , read_time_min, read_time_avg, read_time_max, reduce_overhead);
+    }
+    #endif
+
+    FUNC_LEAVE(ret_value);
+}
 
 perr_t PDC_Client_query_name_read_entire_obj_client(int nobj, char **obj_names, void ***out_buf, 
                                              size_t *out_buf_sizes)
@@ -5565,32 +5610,7 @@ perr_t PDC_Client_query_name_read_entire_obj_client(int nobj, char **obj_names, 
     read_time    = PDC_get_elapsed_time_double(&pdc_timer2, &pdc_timer1);
     read_time_g += read_time;
     /* printf("==PDC_CLIENT[%d]: read time %.4f\n", pdc_client_mpi_rank_g, read_time); */
-    #endif
-
-    #if defined(ENABLE_MPI) && defined(ENABLE_TIMING)
-    double read_time_max,  read_time_min,  read_time_avg, reduce_overhead;
-    double query_time_max, query_time_min, query_time_avg;
-    /* if (total_have_query == pdc_client_mpi_size_g) { */
-        reduce_overhead = MPI_Wtime();
-        MPI_Reduce(&read_time, &read_time_max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-        MPI_Reduce(&read_time, &read_time_min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
-        MPI_Reduce(&read_time, &read_time_avg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-        read_time_avg /= pdc_client_mpi_size_g;
-        MPI_Reduce(&query_time, &query_time_max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-        MPI_Reduce(&query_time, &query_time_min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
-        MPI_Reduce(&query_time, &query_time_avg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-        query_time_avg /= pdc_client_mpi_size_g;
-        reduce_overhead = MPI_Wtime() - reduce_overhead;
-        if (pdc_client_mpi_rank_g == 0) {
-        printf("==PDC_CLIENT: IO STATS (MIN, AVG, MAX)\n"
-               "              Tquery   (%6.4f, %6.4f, %6.4f)\n"
-               "              Tread    (%6.4f, %6.4f, %6.4f)\nMPI overhead %.4f\n"
-                               , query_time_min, query_time_avg, query_time_max 
-                               , read_time_min, read_time_avg, read_time_max, reduce_overhead);
-        }
-    /* } */
-    /* else */
-    /*     printf("==PDC_CLIENT[%d]: read time %.4f\n", pdc_client_mpi_rank_g, read_time); */
+    PDC_get_io_stats_mpi(read_time, query_time, nfopen_g);
     #endif
 
 done:
@@ -5599,16 +5619,18 @@ done:
 } // end PDC_Client_query_name_read_entire_obj_client
 
 
-perr_t PDC_Client_query_name_read_entire_obj_client_agg(int nobj, char **obj_names, void ***out_buf, 
+perr_t PDC_Client_query_name_read_entire_obj_client_agg(int my_nobj, char **my_obj_names, void ***out_buf, 
                                              size_t *out_buf_sizes)
 {
     perr_t      ret_value = SUCCEED;
-    char      **all_names = obj_names;
+    char      **all_names = my_obj_names;
     char       *local_names_1d, *all_names_1d = NULL;
-    int        *total_obj = NULL, i, ntotal_obj = nobj, *recvcounts = NULL, *displs = NULL;
+    int        *total_obj = NULL, i, ntotal_obj = my_nobj, *recvcounts = NULL, *displs = NULL;
     int         max_name_len = 64;
     PDC_Request_t **requests = NULL;
     int         n_requests;
+    region_storage_meta_t **all_storage_meta = NULL, **my_storage_meta = NULL;
+    region_storage_meta_t *my_storage_meta_1d = NULL, *res_storage_meta_1d = NULL;
 
     #ifdef ENABLE_TIMING
     struct timeval  pdc_timer1;
@@ -5620,25 +5642,22 @@ perr_t PDC_Client_query_name_read_entire_obj_client_agg(int nobj, char **obj_nam
 
 #ifdef ENABLE_MPI
     
-    if (pdc_client_same_node_rank_g == 0) {
-        total_obj  = (int*)malloc(sizeof(int)*pdc_client_same_node_size_g);
-        recvcounts = (int*)malloc(sizeof(int)*pdc_client_same_node_size_g);
-        displs     = (int*)malloc(sizeof(int)*pdc_client_same_node_size_g);
-    }
-
-    local_names_1d = (char*)calloc(nobj, max_name_len);
-    for (i = 0; i < nobj; i++) {
-        if (strlen(obj_names[i]) > max_name_len) 
+    local_names_1d = (char*)calloc(my_nobj, max_name_len);
+    for (i = 0; i < my_nobj; i++) {
+        if (strlen(my_obj_names[i]) > max_name_len) 
             printf("==PDC_CLIENT[%2d]: object name longer than %d [%s]!\n", 
-                    pdc_client_mpi_rank_g, max_name_len, obj_names[i]);
-        strncpy(local_names_1d+i*max_name_len, obj_names[i], max_name_len-1);
+                    pdc_client_mpi_rank_g, max_name_len, my_obj_names[i]);
+        strncpy(local_names_1d+i*max_name_len, my_obj_names[i], max_name_len-1);
 
     }
 
-    MPI_Gather(&nobj, 1, MPI_INT, total_obj, 1, MPI_INT, 0, PDC_SAME_NODE_COMM_g);
+    displs     = (int*)malloc(sizeof(int)*pdc_client_same_node_size_g);
+    recvcounts = (int*)malloc(sizeof(int)*pdc_client_same_node_size_g);
+    total_obj  = (int*)malloc(sizeof(int)*pdc_client_same_node_size_g);
+    MPI_Allgather(&my_nobj, 1, MPI_INT, total_obj, 1, MPI_INT, PDC_SAME_NODE_COMM_g);
 
     ntotal_obj = 0;
-    if (pdc_client_same_node_rank_g == 0) 
+    if (pdc_client_same_node_rank_g == 0) {
         for (i = 0; i < pdc_client_same_node_size_g; i++) {
             ntotal_obj   += total_obj[i];
             recvcounts[i] = total_obj[i] * max_name_len;
@@ -5647,56 +5666,95 @@ perr_t PDC_Client_query_name_read_entire_obj_client_agg(int nobj, char **obj_nam
             else
                 displs[i]     = displs[i-1] + recvcounts[i-1];
         }
+    }
 
-    all_names = (char**)calloc(sizeof(char*),ntotal_obj);
 
     if (pdc_client_same_node_rank_g == 0) {
+        all_names = (char**)calloc(sizeof(char*),ntotal_obj);
         all_names_1d = (char*)malloc(ntotal_obj*max_name_len);
         for (i = 0; i < ntotal_obj; i++) 
             all_names[i] = all_names_1d + i*max_name_len;
     }
 
     // Gather all object names to rank 0 of each node
-    MPI_Gatherv(local_names_1d, nobj*max_name_len, MPI_CHAR,
-                all_names_1d, recvcounts, displs, MPI_CHAR, 0, PDC_SAME_NODE_COMM_g); 
+    MPI_Gatherv(local_names_1d, my_nobj*max_name_len, MPI_CHAR,
+                  all_names_1d, recvcounts, displs, MPI_CHAR, 0, PDC_SAME_NODE_COMM_g); 
 
     /* for (i = 0; i < ntotal_obj; i++) { */
     /*     printf("==PDC_CLIENT[%2d]: gathered obj_name [%s]\n", pdc_client_mpi_rank_g, all_names[i]); */
     /* } */
 
+    #ifdef ENABLE_TIMING
+    gettimeofday(&pdc_timer1, 0);
+    #endif
+ 
     // rank 0 on each node sends the query
-    region_storage_meta_t **all_storage_meta = NULL;
     if (pdc_client_same_node_rank_g == 0) {
-        ret_value = PDC_Client_query_multi_storage_info(nobj, obj_names, &all_storage_meta);
+        ret_value = PDC_Client_query_multi_storage_info(ntotal_obj, all_names, &all_storage_meta);
+
+        // Copy the result to the result array for scatter
+        res_storage_meta_1d = (region_storage_meta_t* )malloc(sizeof(region_storage_meta_t)*ntotal_obj);
+        for (i = 0; i < ntotal_obj; i++) 
+            memcpy(&res_storage_meta_1d[i], all_storage_meta[i], sizeof(region_storage_meta_t));
     }
-
-    // Now rank 0 of each node distribute the query result
-
-    /* MPI_Scatterv(local_names_1d, nobj*max_name_len, MPI_CHAR, */
-    /*             all_names_1d, recvcounts, displs, MPI_CHAR, 0, PDC_SAME_NODE_COMM_g); */ 
-
-
-    // Read
+ 
     #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer2, 0);
     query_time    = PDC_get_elapsed_time_double(&pdc_timer1, &pdc_timer2);
     query_time_g += query_time;
-    printf("==PDC_CLIENT[%d]: query time %.4f\n", pdc_client_mpi_rank_g, query_time);
+    /* printf("==PDC_CLIENT[%d]: query time %.4f\n", pdc_client_mpi_rank_g, query_time); */
+    #endif
+
+   
+    // Now we can free the data in all_storage_meta
+    /* for (i = 0; i < ntotal_obj; i++) */ 
+    /*     free(all_storage_meta[i]); */
+    /* free(all_storage_meta); */
+
+    // allocate space for storage meta results
+    my_storage_meta     = (region_storage_meta_t**)malloc(sizeof(region_storage_meta_t*)*my_nobj);
+    my_storage_meta_1d  = (region_storage_meta_t* )malloc(sizeof(region_storage_meta_t )*my_nobj);
+    for (i = 0; i < my_nobj; i++) 
+        my_storage_meta[i] = &(my_storage_meta_1d[i]);
+
+    // Now rank 0 of each node distribute the query result
+    for (i = 0; i < pdc_client_same_node_size_g; i++) {
+        recvcounts[i] = total_obj[i] * sizeof(region_storage_meta_t);
+        if (i == 0) 
+            displs[i]     = 0;
+        else
+            displs[i]     = displs[i-1] + recvcounts[i-1];
+    }
+    MPI_Scatterv(res_storage_meta_1d, recvcounts, displs, MPI_CHAR, 
+                 my_storage_meta_1d, my_nobj*sizeof(region_storage_meta_t), MPI_CHAR, 0, PDC_SAME_NODE_COMM_g); 
+
+    /* for (i = 0; i < my_nobj; i++) { */
+    /*     printf("==PDC_CLIENT[%2d]: [%s] - ndim = %ld, offset %" PRIu64 " size %" PRIu64 ", loc [%s]\n", */ 
+    /*             pdc_client_mpi_rank_g, my_obj_names[i], my_storage_meta_1d[i].region_transfer.ndim, */ 
+    /*             my_storage_meta_1d[i].offset, my_storage_meta_1d[i].size, */ 
+    /*             &(my_storage_meta_1d[i].storage_location[60])); */
+    /* } */
+    /* fflush(stdout); */
+
+    // Read
+    #ifdef ENABLE_TIMING
+    gettimeofday(&pdc_timer2, 0);
     #endif
 
     // Now we have all the storage metadata of all requests, start reading them all
-    /* ret_value = PDC_Client_read_with_storage_meta(requests, n_requests, out_buf, out_buf_sizes); */
+    ret_value = PDC_Client_read_with_storage_meta(my_nobj, my_storage_meta, out_buf, out_buf_sizes);
 
     #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer1, 0);
     read_time    = PDC_get_elapsed_time_double(&pdc_timer2, &pdc_timer1);
     read_time_g += read_time;
-    printf("==PDC_CLIENT[%d]: read time %.4f\n", pdc_client_mpi_rank_g, read_time);
+    /* printf("==PDC_CLIENT[%d]: read time %.4f\n", pdc_client_mpi_rank_g, read_time); */
+    PDC_get_io_stats_mpi(read_time, query_time, nfopen_g);
     #endif
 
 
 #else
-        PDC_Client_query_name_read_entire_obj_client(nobj, obj_names, out_buf, out_buf_sizes);
+        PDC_Client_query_name_read_entire_obj_client(my_nobj, my_obj_names, out_buf, out_buf_sizes);
 #endif
 
 
@@ -5704,10 +5762,16 @@ perr_t PDC_Client_query_name_read_entire_obj_client_agg(int nobj, char **obj_nam
 
 #ifdef ENABLE_MPI
     if (pdc_client_same_node_rank_g == 0) {
-        free(total_obj);
-        free(recvcounts); 
-        free(displs);     
+        free(all_names);
+        free(all_names_1d);
     }
+    free(recvcounts); 
+    free(displs);     
+    free(total_obj);
+    if (NULL != my_storage_meta) 
+        free(my_storage_meta);
+    if (NULL != my_storage_meta_1d) 
+        free(my_storage_meta_1d);
 #endif
 
     FUNC_LEAVE(ret_value);
