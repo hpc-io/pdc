@@ -320,38 +320,11 @@ perr_t PDC_init_region_list(region_list_t *a)
 {
     perr_t ret_value = SUCCEED;
 
-    a->ndim          = 0;
-    memset(a->start,  0, sizeof(uint64_t)*DIM_MAX);
-    memset(a->count,  0, sizeof(uint64_t)*DIM_MAX);
-    /* memset(a->stride, 0, sizeof(uint64_t)*DIM_MAX); */
-    memset(a->client_ids, 0, sizeof(uint32_t)*PDC_SERVER_MAX_PROC_PER_NODE);
-
-    a->data_size     = 0;
-    a->is_data_ready = 0;
-    memset(a->shm_addr, 0, sizeof(char)*ADDR_MAX);
+    memset(a, 0, sizeof(region_list_t));
     a->shm_fd        = -1;
-    a->buf           = NULL;
     a->data_loc_type = NONE;
-    memset(a->storage_location, 0, sizeof(char)*ADDR_MAX);
-    a->offset        = 0;
-    a->overlap_storage_regions = NULL;
-    a->n_overlap_storage_region = 0;
     hg_atomic_init32(&(a->buf_map_refcount), 0);
-    a->reg_dirty     = 0;
     a->access_type   = NA;
-    a->bulk_handle   = NULL;
-    a->addr          = 0;
-    a->meta          = NULL;
-    a->obj_id        = 0;
-    a->reg_id        = 0;
-    a->from_obj_id   = 0;
-    a->client_id     = 0;
-    a->is_io_done    = 0;
-    a->is_shm_closed = 0;
-
-    a->prev          = NULL;
-    a->next          = NULL;
-    // Init 27 attributes, double check to match the region_list_t def
     return ret_value;
 }
 
@@ -528,12 +501,16 @@ perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to)
     to->is_io_done    = from->is_io_done;
     to->is_shm_closed = from->is_shm_closed;
 
+    strcpy(to->cache_location, from->cache_location);
+    to->cache_offset  = from->cache_offset;
+
     to->meta          = from->meta;
+    to->seq_id        = from->seq_id;
 
     to->seq_id        = from->seq_id;
     to->prev          = from->prev;
     to->next          = from->next;
-    // Copy 29 attributes, double check to match the region_list_t def
+    // Copy 32 attributes, double check to match the region_list_t def
     return SUCCEED;
 }
 

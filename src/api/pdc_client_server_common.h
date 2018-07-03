@@ -136,12 +136,15 @@ typedef struct region_list_t {
     int       is_io_done;
     int       is_shm_closed;
 
+    char      cache_location[ADDR_MAX];
+    uint64_t  cache_offset;
+
     pdc_metadata_t *meta;
 
     int    seq_id;
     struct region_list_t *prev;
     struct region_list_t *next;
-    // 29 attributes, need to match init and deep_cp routines
+    // 32 attributes, need to match init and deep_cp routines
 } region_list_t;
 
 // Similar structure PDC_region_info_t defined in pdc_obj_pkg.h
