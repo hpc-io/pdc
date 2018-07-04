@@ -1595,6 +1595,9 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
     char *data_path = NULL;
     char *user_specified_data_path = NULL;
     char storage_location[ADDR_MAX];
+#ifdef ENABLE_LUSTRE
+    int stripe_count, stripe_size;
+#endif
 
     FUNC_ENTER(NULL);
 
@@ -1704,6 +1707,9 @@ region_obj_map_t *PDC_Data_Server_obj_map(const struct hg_info *info, obj_map_in
     char *data_path = NULL;
     char *user_specified_data_path = NULL;
     char storage_location[ADDR_MAX];
+#ifdef ENABLE_LUSTRE
+    int stripe_count, stripe_size;
+#endif
     
     FUNC_ENTER(NULL);
     
