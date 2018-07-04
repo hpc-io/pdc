@@ -34,6 +34,8 @@
 #include <sys/mman.h>
 #include <inttypes.h>
 
+#include "config.h"
+
 /* #define ENABLE_MPI 1 */
 #ifdef ENABLE_MPI
     #include "mpi.h"

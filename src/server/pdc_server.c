@@ -285,9 +285,6 @@ hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info)
         }
         
     }
-#ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_unlock(&pdc_client_info_mutex_g);
-#endif
 
     // Copy the client's address
     memcpy(pdc_client_info_g[in->client_id].addr_string, in->client_addr, sizeof(char)*ADDR_MAX);
@@ -297,7 +294,10 @@ hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info)
                 pdc_client_info_g[in->client_id].addr_string, in->client_id, pdc_client_num_g);
         fflush(stdout);
     }
-
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(&pdc_client_info_mutex_g);
+#endif
+    
     /* ret_value = PDC_Server_lookup_client(in->client_id); */
 
     /* if (pdc_client_num_g >= in->nclient) { */

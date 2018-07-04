@@ -39,6 +39,7 @@
 #include "hash-table.h"
 #include "dablooms.h"
 
+#include "config.h"
 #include "pdc_interface.h"
 #include "pdc_client_server_common.h"
 #include "pdc_server_metadata.h"
