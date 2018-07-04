@@ -323,32 +323,26 @@ int hash_table_insert(HashTable *hash_table, HashTableKey key,
 	if (newentry == NULL) {
 		return 0;
 	}
-#ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_lock(&hash_table_mutex_g);
-#endif
 	newentry->pair.key = key;
 	newentry->pair.value = value;
-#ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_unlock(&hash_table_mutex_g);
-#endif
     
 	/* Link into the list */
 
 	newentry->next = hash_table->table[index];
 #ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_lock(&hash_table_mutex_g);
+    hg_thread_mutex_lock(&hash_table_new_mutex_g);
 #endif
 	hash_table->table[index] = newentry;
-#ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_unlock(&hash_table_mutex_g);
-#endif
     
 	/* Maintain the count of the number of entries */
 
 	++hash_table->entries;
 
 	/* Added successfully */
-
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(&hash_table_new_mutex_g);
+#endif
+    
 	return 1;
 }
 
@@ -364,28 +358,17 @@ HashTableValue hash_table_lookup(HashTable *hash_table, HashTableKey key)
 
 	/* Walk the chain at this index until the corresponding entry is
 	 * found */
-#ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_lock(&hash_table_mutex_g);
-#endif
+
 	rover = hash_table->table[index];
-#ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_unlock(&hash_table_mutex_g);
-#endif
     
 	while (rover != NULL) {
 		pair = &(rover->pair);
-#ifdef ENABLE_MULTITHREAD
-        hg_thread_mutex_lock(&hash_table_mutex_g);
-#endif
 		if (hash_table->equal_func(key, pair->key) != 0) {
 
 			/* Found the entry.  Return the data. */
 
 			return pair->value;
 		}
-#ifdef ENABLE_MULTITHREAD
-        hg_thread_mutex_unlock(&hash_table_mutex_g);
-#endif
 
 		rover = rover->next;
 	}

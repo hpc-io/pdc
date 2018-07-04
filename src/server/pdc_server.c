@@ -770,7 +770,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
         printf("\n==PDC_SERVER[%d]: Starting server with %d threads...\n", pdc_server_rank_g, n_thread);
         fflush(stdout);
     }
-    hg_thread_mutex_init(&hash_table_mutex_g);
+    hg_thread_mutex_init(&hash_table_new_mutex_g);
     hg_thread_mutex_init(&pdc_client_info_mutex_g);
     hg_thread_mutex_init(&pdc_metadata_hash_table_mutex_g);
     hg_thread_mutex_init(&pdc_container_hash_table_mutex_g);
@@ -1006,7 +1006,7 @@ perr_t PDC_Server_finalize()
     // Destory pool
     hg_thread_pool_destroy(hg_test_thread_pool_fs_g);
 
-    hg_thread_mutex_destroy(&hash_table_mutex_g);
+    hg_thread_mutex_destroy(&hash_table_new_mutex_g);
     hg_thread_mutex_destroy(&pdc_client_info_mutex_g);
     hg_thread_mutex_destroy(&pdc_time_mutex_g);
     hg_thread_mutex_destroy(&pdc_metadata_hash_table_mutex_g);
