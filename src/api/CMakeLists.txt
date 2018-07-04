@@ -70,7 +70,7 @@ set(PDC_SRCS
 #------------------------------------------------------------------------------
 # PDC
 add_library(pdc ${PDC_SRCS})
-target_link_libraries(pdc ${PDC_EXPORTED_LIBS} ${PDC_EXT_LIB_DEPENDENCIES})
+target_link_libraries(pdc ${PDC_EXPORTED_LIBS} ${PDC_EXT_LIB_DEPENDENCIES} -ldl)
 pdc_set_lib_options(pdc "pdc" ${PDC_LIBTYPE})
 
 set(PDC_EXPORTED_LIBS pdc ${PDC_EXPORTED_LIBS})
