@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "config.h"
 #include "pdc.h"
 #include "pdc_private.h"
 #include "pdc_prop_private.h"

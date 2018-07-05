@@ -79,8 +79,7 @@ extern int pdc_server_rank_g;
 #define PDC_MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 typedef enum { POSIX=0, DAOS=1 }       PDC_io_plugin_t;
-typedef enum { NA=0, READ=1, WRITE=2 } PDC_access_t;
-typedef enum { BLOCK=0, NOBLOCK=1 }    PDC_lock_mode_t;
+
 typedef enum { NONE=0, 
                LUSTRE=1, 
                BB=2, 

@@ -31,6 +31,7 @@
 #include "pdc_malloc.h"
 #include "pdc_prop_pkg.h"
 #include "pdc_obj_private.h"
+#include "pdc_interface.h"
 
 static perr_t pdc_obj_close(struct PDC_obj_info *op);
 

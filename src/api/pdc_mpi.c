@@ -25,6 +25,7 @@
 #include "mpi.h"
 #include "pdc_obj.h"
 #include "pdc_obj_private.h"
+#include "pdc_interface.h"
 
 pdcid_t PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, int rank_id)
 {

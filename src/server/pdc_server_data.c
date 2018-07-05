@@ -38,6 +38,7 @@
 
 #include "utlist.h"
 
+#include "config.h"
 #include "pdc_interface.h"
 #include "pdc_client_server_common.h"
 #include "pdc_server_data.h"
@@ -450,18 +451,12 @@ data_server_region_t *PDC_Server_get_obj_region(pdcid_t obj_id)
 
     FUNC_ENTER(NULL);
 
-#ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_lock(&region_struct_mutex_g);
-#endif
     if(dataserver_region_g != NULL) {
        DL_FOREACH(dataserver_region_g, elt) {
            if (elt->obj_id == obj_id)
                ret_value = elt;
        }
     }
-#ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_unlock(&region_struct_mutex_g);
-#endif
     
     FUNC_LEAVE(ret_value);
 }
@@ -1041,13 +1036,13 @@ perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
             free(elt->remote_data_ptr);  
             HG_Addr_free(info->hg_class, elt->local_addr);
             HG_Bulk_free(elt->local_bulk_handle);
-            DL_DELETE(target_obj->region_buf_map_head, elt);
-            free(elt);
 #ifdef ENABLE_MULTITHREAD
             hg_thread_mutex_destroy(&(elt->bulk_args->work_mutex));
             hg_thread_cond_destroy(&(elt->bulk_args->work_cond)); 
             free(elt->bulk_args); 
 #endif
+            DL_DELETE(target_obj->region_buf_map_head, elt);
+            free(elt);
             
         }
     }
@@ -1600,6 +1595,9 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
     char *data_path = NULL;
     char *user_specified_data_path = NULL;
     char storage_location[ADDR_MAX];
+#ifdef ENABLE_LUSTRE
+    int stripe_count, stripe_size;
+#endif
 
     FUNC_ENTER(NULL);
 
@@ -1709,6 +1707,9 @@ region_obj_map_t *PDC_Data_Server_obj_map(const struct hg_info *info, obj_map_in
     char *data_path = NULL;
     char *user_specified_data_path = NULL;
     char storage_location[ADDR_MAX];
+#ifdef ENABLE_LUSTRE
+    int stripe_count, stripe_size;
+#endif
     
     FUNC_ENTER(NULL);
     

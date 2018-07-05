@@ -27,7 +27,6 @@
 #include "pdc_cont_private.h"
 #include "pdc_malloc.h"
 #include "pdc_prop_pkg.h"
-#include "pdc_interface.h"
 
 static perr_t pdc_cont_close(struct PDC_cont_info *cp);
 
