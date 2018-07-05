@@ -70,7 +70,7 @@ int main(int argc, char **argv)
     int x_dim = 64;
     int y_dim = 64;
     int z_dim = 64;
-    uint64_t numparticles;
+    uint64_t numparticles, i;
 //    int my_data_size;
 //    uint64_t dims[1] = {my_data_size};  // {8388608};
     uint64_t dims[1];
@@ -323,7 +323,7 @@ int main(int argc, char **argv)
         fflush(stdout);
     }
 
-     for (uint64_t i=0; i<numparticles; i++) {
+     for (i=0; i<numparticles; i++) {
         id1[i] = i;
         id2[i] = i*2;
         x[i]   = uniform_random_number() * x_dim;
