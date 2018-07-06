@@ -36,9 +36,13 @@
 #include <sys/shm.h>
 #include <sys/mman.h>
 
-#include "utlist.h"
-
 #include "config.h"
+
+#ifdef ENABLE_MPI
+#include "mpi.h"
+#endif
+
+#include "utlist.h"
 #include "pdc_interface.h"
 #include "pdc_client_server_common.h"
 #include "pdc_server_data.h"

@@ -35,11 +35,16 @@
 #include <inttypes.h>
 #include <math.h>
 
+#include "config.h"
+
+#ifdef ENABLE_MPI
+#include "mpi.h"
+#endif
+
 #include "utlist.h"
 #include "hash-table.h"
 #include "dablooms.h"
 
-#include "config.h"
 #include "pdc_interface.h"
 #include "pdc_client_server_common.h"
 #include "pdc_server_metadata.h"
