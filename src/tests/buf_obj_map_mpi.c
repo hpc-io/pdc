@@ -44,7 +44,7 @@ double uniform_random_number()
 
 int main(int argc, char **argv)
 {
-    int rank = 0, size = 1;
+  int rank = 0, size = 1, i;
     pdcid_t pdc_id, cont_prop, cont_id;
     pdcid_t obj_prop2;
     pdcid_t obj2;
@@ -126,7 +126,7 @@ int main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-    for (int i=0; i<numparticles; i++) {
+    for (i=0; i<numparticles; i++) {
         x[i]   = uniform_random_number() * x_dim;
 //      printf("x = %f\n", x[i]);
 //      fflush(stdout);
