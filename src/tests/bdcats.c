@@ -41,7 +41,6 @@
 #include "pdc.h"
 
 #define NPARTICLES      8388608
-//#define NPARTICLES      4
 
 double uniform_random_number()
 {
@@ -68,12 +67,7 @@ int main(int argc, char **argv)
     float *x, *y, *z; 
     float *px, *py, *pz;
     int *id1, *id2;
-    int x_dim = 64;
-    int y_dim = 64;
-    int z_dim = 64;
     uint64_t numparticles;
-//    int my_data_size;
-//    uint64_t dims[1] = {my_data_size};  // {8388608};
     uint64_t dims[1];
     int ndim = 1;
     uint64_t *offset;
