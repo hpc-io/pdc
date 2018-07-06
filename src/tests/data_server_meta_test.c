@@ -144,7 +144,7 @@ int main(int argc, char **argv)
     PDC_Client_query_name_read_entire_obj(my_read_obj, obj_names, &out_buf, &out_buf_sizes);
     printf("Received %d data objects:\n", NOBJ);
     for (i = 0; i < my_read_obj; i++) {
-        printf("Proc %d - [%s]: [%c] ... [%c], size %lu\n", 
+        printf("Proc %d - [%s]: [%c] ... [%c], size %" PRId64 "\n", 
                 rank, obj_names[i], ((char**)out_buf)[i][0], ((char**)out_buf)[i][out_buf_sizes[i]-1], out_buf_sizes[i]);
         fflush(stdout);
     }

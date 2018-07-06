@@ -982,7 +982,7 @@ int main(int argc, char **argv)
 
     // close a container
     if(PDCcont_close(cont) < 0)
-        printf("fail to close container %ld\n", cont);
+        printf("fail to close container\n");
 
     if(PDC_close(pdc) < 0)
        printf("fail to close PDC\n");
