@@ -551,8 +551,7 @@ fflush(stdout);
     hg_thread_mutex_lock(&lock_list_mutex_g);
 #endif
     // Go through all existing locks to check for region lock
-//    DL_FOREACH(new_obj_reg->region_lock_head, elt1) {
-    for ((elt1) = (new_obj_reg->region_lock_head); elt1; (elt1) = (elt1)->next) {
+    DL_FOREACH(new_obj_reg->region_lock_head, elt1) {
         if (PDC_is_same_region_list(elt1, request_region) == 1) {
             found_lock = 1;
             if(in->lock_mode == BLOCK) {
