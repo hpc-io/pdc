@@ -27,6 +27,7 @@
 #include "pdc_obj.h"
 #include "pdc_private.h"
 #include "pdc_prop.h"
+#include "mercury_proc_string.h"
 
 typedef enum {
     PDC_TESTING = 0,

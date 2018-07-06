@@ -25,6 +25,8 @@
 #define PDC_OBJ_ANALYSIS_H
 
 #include <dlfcn.h>
+#include "mercury.h"
+#include "mercury_proc_string.h"
 
 #define PDC_REGION_ALL (pdcid_t)(-1)
 

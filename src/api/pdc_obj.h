@@ -28,7 +28,6 @@
 #include "pdc_obj_pkg.h"
 #include "pdc_error.h"
 #include "pdc_life.h"
-#include "pdc_client_connect.h"
 
 typedef struct PDC_id_info obj_handle;
 

@@ -29,10 +29,12 @@
 #include <libgen.h>
 #include "../server/utlist.h"
 #include "pdc_obj.h"
+#include "pdc_obj_pkg.h"
 #include "pdc_malloc.h"
 #include "pdc_private.h"
 #include "pdc_prop.h"
 #include "pdc_obj_private.h"
+#include "pdc_interface.h"
 #include "pdc_transform_support.h"
 
 extern int pdc_client_mpi_rank_g;
