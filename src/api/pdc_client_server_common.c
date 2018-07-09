@@ -21,9 +21,22 @@
  * reproduce, distribute copies to the public, prepare derivative works, and
  * perform publicly and display publicly, and to permit other to do so.
  */
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <sys/time.h>
+#include <unistd.h>
+#include <sys/syscall.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <ctype.h>
+#include <fcntl.h>
+#include <inttypes.h>
+#include <math.h>
+#include <sys/shm.h>
+#include <sys/mman.h>
 
 #include "config.h"
-#include "../server/utlist.h"
 
 #include "mercury.h"
 #include "mercury_thread_pool.h"
@@ -33,10 +46,9 @@
 #include "pdc_interface.h"
 #include "pdc_client_connect.h"
 #include "pdc_client_server_common.h"
+#include "../server/utlist.h"
 #include "../server/pdc_server.h"
 #include "pdc_malloc.h"
-#include <inttypes.h>
-#include <unistd.h>
 
 #ifdef ENABLE_MULTITHREAD 
 // Mercury multithread
@@ -472,45 +484,15 @@ perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to)
         return FAIL;
     }
 
-    to->ndim = from->ndim;
+    memcpy(to, from, sizeof(region_list_t));
+
     memcpy(to->start, from->start, sizeof(uint64_t)*from->ndim);
     memcpy(to->count, from->count, sizeof(uint64_t)*from->ndim);
-    /* memcpy(to->stride, from->stride, sizeof(uint64_t)*from->ndim); */
-
     memcpy(to->client_ids, from->client_ids, sizeof(uint32_t)*PDC_SERVER_MAX_PROC_PER_NODE);
-
-    to->data_size     = from->data_size;
-    to->is_data_ready = from->is_data_ready;
     memcpy(to->shm_addr, from->shm_addr, sizeof(char) * ADDR_MAX);
-    to->shm_fd        = from->shm_fd;
-    to->buf           = from->buf;
-    to->data_loc_type = from->data_loc_type;
     strcpy(to->storage_location, from->storage_location);
-    to->overlap_storage_regions  = from->overlap_storage_regions;
-    to->n_overlap_storage_region = from->n_overlap_storage_region;
-    to->offset        = from->offset;
-    to->buf_map_refcount = from->buf_map_refcount;
-    to->reg_dirty     = from->reg_dirty;
-    to->access_type   = from->access_type;
-    to->bulk_handle   = from->bulk_handle;
-    to->addr          = from->addr;
-    to->obj_id        = from->obj_id;
-    to->reg_id        = from->reg_id;
-    to->from_obj_id   = from->from_obj_id;
-    to->client_id     = from->client_id;
-    to->is_io_done    = from->is_io_done;
-    to->is_shm_closed = from->is_shm_closed;
-
     strcpy(to->cache_location, from->cache_location);
-    to->cache_offset  = from->cache_offset;
 
-    to->meta          = from->meta;
-    to->seq_id        = from->seq_id;
-
-    to->seq_id        = from->seq_id;
-    to->prev          = from->prev;
-    to->next          = from->next;
-    // Copy 32 attributes, double check to match the region_list_t def
     return SUCCEED;
 }
 
@@ -5292,3 +5274,65 @@ done:
     }
     return ret_value;
 }
+
+/*
+ * Create a shm segment and attach to the input region pointer
+ *
+ * \param  region[IN/OUT]       Request region, with shm_fd as the newly created shm segment
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_create_shm_segment(region_list_t *region)
+{
+    perr_t ret_value = SUCCEED;
+    size_t i = 0;
+    int retry;
+
+    FUNC_ENTER(NULL);
+
+    if (region->shm_addr[0] == 0) {
+        printf("== %s - Shared memory addr is NULL!\n", __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    /* create the shared memory segment as if it was a file */
+    retry = 0;
+    while (retry < PDC_MAX_TRIAL_NUM) {
+        region->shm_fd = shm_open(region->shm_addr, O_CREAT | O_RDWR, 0666);
+        if (region->shm_fd != -1) 
+            break;
+        retry++;
+    }
+
+    if (region->shm_fd == -1) {
+        printf("== %s - Shared memory create failed\n", __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    // Calculate the actual size for reading the data if needed 
+    if (region->data_size == 0) {
+        region->data_size = region->count[0];
+        for (i = 1; i < region->ndim; i++)
+            region->data_size *= region->count[i];
+    }
+
+    /* configure the size of the shared memory segment */
+    ftruncate(region->shm_fd, region->data_size);
+
+    /* map the shared memory segment to the address space of the process */
+    region->buf = mmap(0, region->data_size, PROT_READ | PROT_WRITE, MAP_SHARED, region->shm_fd, 0);
+    if (region->buf == MAP_FAILED) {
+        printf("== %s - Shared memory mmap failed\n", __func__);
+        // close and shm_unlink?
+        ret_value = FAIL;
+        goto done;
+    }
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} // PDC_Server_create_shm_segment
+
+

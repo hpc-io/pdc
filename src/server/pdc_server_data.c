@@ -2361,65 +2361,6 @@ done:
 } //PDC_Server_write_check
 
 /*
- * Create a shm segment and attach to the input region pointer
- *
- * \param  region[IN/OUT]       Request region, with shm_fd as the newly created shm segment
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDC_Server_create_shm_segment(region_list_t *region)
-{
-    perr_t ret_value = SUCCEED;
-    size_t i = 0;
-    int retry;
-
-    FUNC_ENTER(NULL);
-
-    /* create the shared memory segment as if it was a file */
-    /* printf("==PDC_SERVER: creating share memory segment with address [%s]\n", region->shm_addr); */
-    retry = 0;
-    while (retry < PDC_MAX_TRIAL_NUM) {
-        // Shared memory address is /PDC$ServerID_$rand()
-        snprintf(region->shm_addr, ADDR_MAX, "/PDC%d_%d", pdc_server_rank_g, rand());
-        region->shm_fd = shm_open(region->shm_addr, O_CREAT | O_RDWR, 0666);
-        if (region->shm_fd != -1) 
-            break;
-        retry++;
-    }
-
-    if (region->shm_fd == -1) {
-        printf("==PDC_SERVER[%d]: %s - Shared memory create failed\n", pdc_server_rank_g, __func__);
-        ret_value = FAIL;
-        goto done;
-    }
-
-    // Calculate the actual size for reading the data if needed 
-    if (region->data_size == 0) {
-        region->data_size = region->count[0];
-        for (i = 1; i < region->ndim; i++)
-            region->data_size *= region->count[i];
-    }
-
-    /* configure the size of the shared memory segment */
-    ftruncate(region->shm_fd, region->data_size);
-
-    /* map the shared memory segment to the address space of the process */
-    region->buf = mmap(0, region->data_size, PROT_READ | PROT_WRITE, MAP_SHARED, region->shm_fd, 0);
-    if (region->buf == MAP_FAILED) {
-        printf("==PDC_SERVER: Shared memory mmap failed\n");
-        // close and shm_unlink?
-        ret_value = FAIL;
-        goto done;
-    }
-
-
-done:
-    fflush(stdout);
-    FUNC_LEAVE(ret_value);
-} // PDC_Server_create_shm_segment
-
-
-/*
  * Read the requested data to shared memory address
  *
  * \param  region_list_head[IN]       List of IO request to be performed
@@ -2652,8 +2593,7 @@ hg_return_t PDC_Server_count_write_check_update_storage_meta_cb (const struct hg
     FUNC_ENTER(NULL);
 
     #ifdef ENABLE_TIMING
-    struct timeval  pdc_timer_start;
-    struct timeval  pdc_timer_end;
+    struct timeval  pdc_timer_start, pdc_timer_end;
     gettimeofday(&pdc_timer_start, 0);
     #endif
 
@@ -3130,8 +3070,7 @@ perr_t PDC_Server_regions_io(region_list_t *region_list_head, PDC_io_plugin_t pl
     FUNC_ENTER(NULL);
 
     #ifdef ENABLE_TIMING
-    struct timeval  pdc_timer_start;
-    struct timeval  pdc_timer_end;
+    struct timeval  pdc_timer_start, pdc_timer_end;
     gettimeofday(&pdc_timer_start, 0);
     #endif
 
@@ -3286,8 +3225,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
     /* is_debug_g = 1; */
 
     #ifdef ENABLE_TIMING
-    struct timeval  pdc_timer_start;
-    struct timeval  pdc_timer_end;
+    struct timeval  pdc_timer_start, pdc_timer_end;
     gettimeofday(&pdc_timer_start, 0);
     #endif
 
@@ -4545,8 +4483,7 @@ perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
         // Can read the entire storage region at once
 
         #ifdef ENABLE_TIMING
-        struct timeval  pdc_timer_start1;
-        struct timeval  pdc_timer_end1;
+        struct timeval  pdc_timer_start1, pdc_timer_end1;
         gettimeofday(&pdc_timer_start1, 0);
         #endif
 
@@ -4722,7 +4659,7 @@ perr_t PDC_Server_read_one_region(region_list_t *read_region)
     FUNC_ENTER(NULL);
 
     if (read_region->access_type != READ || read_region->n_overlap_storage_region == 0 ||
-        read_region->overlap_storage_regions == NULL || read_region->storage_location == NULL) {
+        read_region->overlap_storage_regions == NULL || read_region->storage_location[0] == 0) {
 
         printf("==PDC_SERVER[%d]: %s - Error with input\n", pdc_server_rank_g, __func__);
         PDC_print_region_list(read_region);
@@ -4730,12 +4667,16 @@ perr_t PDC_Server_read_one_region(region_list_t *read_region)
     }
 
     // Create the shm segment to read data into
-    PDC_Server_create_shm_segment(read_region);
+    snprintf(read_region->shm_addr, ADDR_MAX, "/PDC%d_%d", pdc_server_rank_g, rand());
+    ret_value = PDC_create_shm_segment(read_region);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_SERVER[%d]: %s - Error with shared memory creation\n", pdc_server_rank_g, __func__);
+        goto done;
+    }
 
     // Now for each storage region that overlaps with request region,
     // read with the corresponding offset and size
     DL_FOREACH(read_region->overlap_storage_regions, region_elt) {
-    /* for (i = 0; i < read_region->n_overlap_storage_region; i++) { */
 
         if (is_debug_g == 1) {
             printf("==PDC_SERVER[%d]: Found overlapping storage regions %d\n",
@@ -4745,7 +4686,7 @@ perr_t PDC_Server_read_one_region(region_list_t *read_region)
             /* printf("=========================================\n"); */
         }
 
-        if (region_elt->storage_location == NULL) {
+        if (region_elt->storage_location[0] == 0) {
             printf("==PDC_SERVER[%d]: empty overlapping storage location \n", pdc_server_rank_g);
             PDC_print_storage_region_list(region_elt);
             fflush(stdout);
@@ -4766,8 +4707,7 @@ perr_t PDC_Server_read_one_region(region_list_t *read_region)
             }
 
             #ifdef ENABLE_TIMING
-            struct timeval  pdc_timer_start2;
-            struct timeval  pdc_timer_end2;
+            struct timeval  pdc_timer_start2, pdc_timer_end2;
             gettimeofday(&pdc_timer_start2, 0);
             #endif
 
@@ -4878,8 +4818,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
     // and query once, rather than query one by one, so we aggregate at the beginning
     if (has_read == 1) {
         #ifdef ENABLE_TIMING
-        struct timeval  pdc_timer_start1;
-        struct timeval  pdc_timer_end1;
+        struct timeval  pdc_timer_start1, pdc_timer_end1;
         gettimeofday(&pdc_timer_start1, 0);
         #endif
 
@@ -4906,7 +4845,13 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
         if (region_elt->access_type == READ) {
 
             // Prepare the shared memory for transfer back to client
-            PDC_Server_create_shm_segment(region_elt);
+            snprintf(region_elt->shm_addr, ADDR_MAX, "/PDC%d_%d", pdc_server_rank_g, rand());
+
+            ret_value = PDC_create_shm_segment(region_elt);
+            if (ret_value != SUCCEED) {
+                printf("==PDC_SERVER[%d]: %s - Error with shared memory creation\n", pdc_server_rank_g, __func__);
+                continue;
+            }
 
             // Now for each storage region that overlaps with request region,
             // read with the corresponding offset and size
@@ -4930,8 +4875,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
                     }
 
                     #ifdef ENABLE_TIMING
-                    struct timeval  pdc_timer_start2;
-                    struct timeval  pdc_timer_end2;
+                    struct timeval  pdc_timer_start2, pdc_timer_end2;
                     gettimeofday(&pdc_timer_start2, 0);
                     #endif
 
@@ -4992,7 +4936,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
         else if (region_elt->access_type == WRITE) {
 
             // Assumes all regions are written to one file
-            if (region_elt->storage_location == NULL) {
+            if (region_elt->storage_location[0] == 0) {
 //                printf("==PDC_SERVER[%d]: %s - storage_location is NULL!\n", pdc_server_rank_g, __func__);
                 ret_value = FAIL;
                 region_elt->is_data_ready = -1;
@@ -5039,8 +4983,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
                 // TODO: need to recycle file space in cases of data update and delete
 
                 #ifdef ENABLE_TIMING
-                struct timeval  pdc_timer_start4;
-                struct timeval  pdc_timer_end4;
+                struct timeval  pdc_timer_start4, pdc_timer_end4;
                 gettimeofday(&pdc_timer_start4, 0);
                 #endif
 
@@ -5067,8 +5010,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
             offset = ftell(fp_write);
 
             #ifdef ENABLE_TIMING
-            struct timeval  pdc_timer_start5;
-            struct timeval  pdc_timer_end5;
+            struct timeval  pdc_timer_start5, pdc_timer_end5;
             gettimeofday(&pdc_timer_start5, 0);
             #endif
 
@@ -5697,10 +5639,7 @@ perr_t PDC_Server_accumulate_storage_meta_then_read(storage_meta_query_one_name_
         
 
         #ifdef ENABLE_TIMING
-        struct timeval  pdc_timer_start;
-        struct timeval  pdc_timer_end;
-        struct timeval  pdc_timer_start1;
-        struct timeval  pdc_timer_end1;
+        struct timeval  pdc_timer_start, pdc_timer_end, pdc_timer_start1, pdc_timer_end1;
         double read_total_sec, notify_total_sec;
         gettimeofday(&pdc_timer_start, 0);
         #endif
@@ -5719,7 +5658,7 @@ perr_t PDC_Server_accumulate_storage_meta_then_read(storage_meta_query_one_name_
                 for (j = 0; j < req_region->ndim; j++) {
                     req_region->start[j] = 0;
                     req_region->count[j] = 0;
-                    // Count is the max value of bottom right cornier of all storage regions
+                    // Count is the max value of bottom right corner of all storage regions
                     DL_FOREACH(req_region->overlap_storage_regions, region_elt) 
                         req_region->count[j] = PDC_MAX(req_region->count[j]+req_region->start[j], 
                                                        region_elt->count[j]+region_elt->start[j]);

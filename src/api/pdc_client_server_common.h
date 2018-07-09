@@ -2620,4 +2620,7 @@ perr_t get_overlap_start_count(uint32_t ndim, uint64_t *start_a, uint64_t *count
                                                      uint64_t *start_b, uint64_t *count_b, 
                                        uint64_t *overlap_start, uint64_t *overlap_count);
 int is_contiguous_region_overlap(region_list_t *a, region_list_t *b);
+
+
+perr_t PDC_create_shm_segment(region_list_t *region);
 #endif /* PDC_CLIENT_SERVER_COMMON_H */
