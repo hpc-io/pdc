@@ -28,6 +28,7 @@
 #include "pdc_interface.h"
 #include "pdc_malloc.h"
 #include "pdc_prop_pkg.h"
+#include "pdc_atomic.h"
 
 static perr_t pdc_prop_cont_close(struct PDC_cont_prop *cp);
 

@@ -32,18 +32,18 @@
 
 // Analysis
 extern size_t                     analysis_registry_size;
-extern hg_atomic_int32_t          registered_ftn_count_g;
+/* extern hg_atomic_int32_t          registered_ftn_count_g; */
 extern struct PDC_iterator_info * PDC_Block_iterator_cache;
 extern int                      * i_cache_freed;
 extern size_t                     iterator_cache_entries;
-extern hg_atomic_int32_t          i_cache_index;
-extern hg_atomic_int32_t          i_free_index;
+/* extern hg_atomic_int32_t          i_cache_index; */
+/* extern hg_atomic_int32_t          i_free_index; */
 extern PDC_loci                   execution_locus;
 
 extern hg_id_t                    analysis_ftn_register_id_g;
 extern hg_id_t                    transform_ftn_register_id_g;
 extern hg_id_t                    object_data_iterator_register_id_g;
-extern hg_thread_mutex_t          insert_iterator_mutex_g;
+/* extern hg_thread_mutex_t          insert_iterator_mutex_g; */
 
 struct analysis_ftn_info {
     int (*ftnPtr)(void *, size_t *, size_t);
