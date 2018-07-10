@@ -2808,6 +2808,45 @@ done:
     FUNC_LEAVE(ret_value);
 } // end of PDC_Server_container_del_objs
 
+/*
+ * Add tags to a container 
+ *
+ * \param  cont_id[IN]        Container ID
+ * \param  tags[IN]           Pointer to the tags string
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+
+perr_t PDC_Server_container_add_tags(uint64_t cont_id, char *tags)
+{
+    perr_t ret_value = SUCCEED;
+    pdc_cont_hash_table_entry_t *cont_entry = NULL;
+    int realloc_size = 0;
+
+    FUNC_ENTER(NULL);
+    ret_value = PDC_Server_find_container_by_id(cont_id, &cont_entry);
+
+    if (cont_entry != NULL) {
+           
+        strcat(cont_entry->tags, tags);
+        // Debug prints
+        printf("==PDC_SERVER[%d]: add [%s] tags to container %" PRIu64 "\n", 
+                pdc_server_rank_g, tags, cont_id);
+
+    }
+    else {
+        printf("==PDC_SERVER[%d]: %s - container %" PRIu64 " not found!\n", 
+                pdc_server_rank_g, __func__, cont_id);
+        ret_value = FAIL;
+        goto done;
+    }
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} // end of PDC_Server_container_add_objs
+
+
 static perr_t PDC_copy_all_storage_meta(pdc_metadata_t *meta, region_storage_meta_t **storage_meta, int *n_region)
 {
     perr_t ret_value = SUCCEED;
