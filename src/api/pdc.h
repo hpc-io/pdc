@@ -36,6 +36,7 @@
 #include "pdc_cont_pkg.h"
 #include "pdc_obj.h"
 #include "pdc_obj_pkg.h"
+#include "pdc_client_public.h"
 #include "pdc_analysis_support.h"
 #include "pdc_transform_support.h"
 

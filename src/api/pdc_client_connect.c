@@ -55,6 +55,7 @@
 
 #include "pdc_interface.h"
 #include "pdc_client_connect.h"
+#include "pdc_client_public.h"
 #include "pdc_client_server_common.h"
 #include "pdc_obj_pkg.h"
 #include "pdc_atomic.h"
@@ -3616,7 +3617,7 @@ hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *call
 
     // TODO: Need to find the correct request
     DL_FOREACH(pdc_io_request_list_g, elt) {
-        if (elt->metadata->obj_id == read_info->obj_id && elt->access_type == READ) {
+        if (((pdc_metadata_t*)elt->metadata)->obj_id == read_info->obj_id && elt->access_type == READ) {
             target_region = elt->region;
             break;
         }
@@ -5881,9 +5882,9 @@ perr_t PDC_Client_query_multi_storage_info(int nobj, char **obj_names, region_st
 
         // Number of storage meta received
         // TODO: currently assumes 1d data and 1 storage region per object, see the other comment
-        for (j = 0; j < request->storage_meta->n_storage_meta; j++) {
+        for (j = 0; j < ((process_bulk_storage_meta_args_t*)request->storage_meta)->n_storage_meta; j++) {
             loc = obj_names_server_seq_mapping[iter][j];
-            (*all_storage_meta)[loc] = &(request->storage_meta->all_storage_meta[j]);
+            (*all_storage_meta)[loc] = &(((process_bulk_storage_meta_args_t*)request->storage_meta)->all_storage_meta[j]);
         }
     }
 
