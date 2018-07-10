@@ -5189,6 +5189,19 @@ cont_add_del_objs_rpc_register(hg_class_t *hg_class)
 }
 
 hg_id_t
+cont_add_tags_rpc_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+
+    ret_value = MERCURY_REGISTER(hg_class, "cont_add_tags_rpc", cont_add_tags_rpc_in_t, pdc_int_ret_t, pdc_check_int_ret_cb);
+
+    FUNC_LEAVE(ret_value);
+}
+
+
+hg_id_t
 query_read_obj_name_rpc_register(hg_class_t *hg_class)
 {
     hg_id_t ret_value;

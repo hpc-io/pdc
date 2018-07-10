@@ -696,4 +696,6 @@ perr_t PDC_Client_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
                                        FILE *fp, uint64_t file_offset, void *buf,  size_t *total_read_bytes);
 
 perr_t PDC_Client_query_container_name(char *cont_name, pdc_metadata_t **out);
+
+perr_t PDC_Client_add_tags_to_container(uint64_t cont_meta_id, char *tags);
 #endif

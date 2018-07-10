@@ -2633,6 +2633,29 @@ hg_proc_cont_add_del_objs_rpc_out_t(hg_proc_t proc, void *data)
     return ret;
 }
 
+typedef struct {
+    hg_uint64_t cont_id;
+    hg_string_t tags;
+} cont_add_tags_rpc_in_t;
+
+static HG_INLINE hg_return_t
+hg_proc_cont_add_tags_rpc_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret = HG_SUCCESS;
+    cont_add_tags_rpc_in_t *struct_data = (cont_add_tags_rpc_in_t*) data;
+
+    ret = hg_proc_uint64_t(proc, &struct_data->cont_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_string_t(proc, &struct_data->tags);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
 
 // Query and read obj 
 typedef struct {

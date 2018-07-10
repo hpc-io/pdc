@@ -131,6 +131,7 @@ static hg_id_t         obj_unmap_register_id_g;
 static hg_id_t         client_direct_addr_register_id_g;
 
 static hg_id_t         cont_add_del_objs_rpc_register_id_g;
+static hg_id_t         cont_add_tags_rpc_register_id_g;
 static hg_id_t         query_read_obj_name_register_id_g;
 static hg_id_t         query_read_obj_name_client_register_id_g;
 
@@ -1016,6 +1017,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     query_partial_register_id_g               = query_partial_register(*hg_class);
 
     cont_add_del_objs_rpc_register_id_g       = cont_add_del_objs_rpc_register(*hg_class);
+    cont_add_tags_rpc_register_id_g           = cont_add_tags_rpc_register(*hg_class);
     query_read_obj_name_register_id_g         = query_read_obj_name_rpc_register(*hg_class);
     query_read_obj_name_client_register_id_g  = query_read_obj_name_client_rpc_register(*hg_class);
 
@@ -4930,6 +4932,89 @@ perr_t PDC_Client_del_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdc
     /* free(obj_ids); */
     FUNC_LEAVE(ret_value);
 }
+
+static hg_return_t
+PDC_Client_add_tags_to_container_cb(const struct hg_cb_info *callback_info)
+{
+    hg_handle_t handle = callback_info->info.forward.handle;
+    pdc_int_ret_t int_ret;
+    hg_return_t ret = HG_SUCCESS;
+
+    // Sent the bulk handle with rpc and get a response
+    ret = HG_Get_output(handle, &int_ret);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not get output\n");
+        goto done;
+    }
+
+    /* printf("==PDC_CLIENT[%d]: received rpc response from %d!\n", pdc_client_mpi_rank_g, cb_args->server_id); */
+    /* fflush(stdout); */
+
+    ret = HG_Free_output(handle, &int_ret);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not free output\n");
+        goto done;
+    }
+
+done:
+    work_todo_g--;
+    return ret;
+} // end of PDC_Client_add_tags_to_container_cb
+
+// Add/delete a number of objects to one container
+perr_t PDC_Client_add_tags_to_container(uint64_t cont_meta_id, char *tags)
+{
+    perr_t      ret_value = SUCCEED;
+    hg_return_t hg_ret = HG_SUCCESS;
+    hg_handle_t rpc_handle;
+    uint32_t    server_id;
+    cont_add_tags_rpc_in_t add_tag_rpc_in;
+    // Reuse the existing args structure
+    update_region_storage_meta_bulk_args_t cb_args;
+
+    FUNC_ENTER(NULL);
+
+    server_id = PDC_get_server_by_obj_id(cont_meta_id, pdc_server_num_g);
+
+    // Debug statistics for counting number of messages sent to each server.
+    debug_server_id_count[server_id]++;
+
+    if( PDC_Client_try_lookup_server(server_id) != SUCCEED) {
+        printf("==PDC_CLIENT[%d]: %s - ERROR with PDC_Client_lookup_server\n", 
+                pdc_client_mpi_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    // Send the bulk handle to the target with RPC
+    hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, 
+                       cont_add_tags_rpc_register_id_g, &rpc_handle);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not create handle\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    add_tag_rpc_in.cont_id = cont_meta_id;
+    add_tag_rpc_in.tags    = tags;
+
+    /* Forward call to remote addr */
+    hg_ret = HG_Forward(rpc_handle, PDC_Client_add_tags_to_container_cb, &cb_args, &add_tag_rpc_in);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not forward call\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+    ret_value = SUCCEED;
+done:
+    HG_Destroy(rpc_handle);
+    FUNC_LEAVE(ret_value);
+}
+
 
 // Query container with name, retrieve all metadata within that container
 perr_t PDC_Client_query_container_name(char *cont_name, pdc_metadata_t **out)
