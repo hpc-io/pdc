@@ -103,6 +103,7 @@ set(PDC_HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_analysis_and_transforms.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transforms_pkg.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_atomic.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_public.h
   )
 
 #-----------------------------------------------------------------------------
