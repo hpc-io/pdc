@@ -22,43 +22,22 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_prop_pkg_H
-#define _pdc_prop_pkg_H
+#ifndef _pdc_atomic_H
+#define _pdc_atomic_H
 
-#include "pdc_life.h"
+#include "mercury_atomic.h"
+#include "pdc_public.h"
 #include "pdc_private.h"
+#include "pdc_error.h"
+#include "pdc_linkedlist.h"
+#include "pdc_id_pkg.h"
 
-typedef enum {
-    PDC_CONT_CREATE = 0,
-    PDC_OBJ_CREATE
-} PDC_prop_type;
-
-struct PDC_cont_prop {
-    struct PDC_class *pdc;
-    pdcid_t          cont_prop_id;
-    PDC_lifetime     cont_life;
-};
-
-struct PDC_obj_prop {
-    struct PDC_class *pdc;
-    pdcid_t          obj_prop_id;
-    PDC_lifetime     obj_life;
-    size_t           ndim;
-    uint64_t         *dims;
-    PDC_var_type_t   type;
-    uint32_t         user_id;
-    char*            app_name;
-    uint32_t         time_step;
-    char*            data_loc;
-    char*            tags;
-    void*            buf;
-    void*            metadata;
-
-    /* The following have been added to support of PDC analysis and transforms */
-    size_t           type_extent;
-    PDC_major_type   storage_order;
-    uint64_t         locus;
-    uint32_t         data_state;
+/* Atom information structure used */
+struct PDC_id_info {
+    pdcid_t             id;             /* ID for this info                 */
+    hg_atomic_int32_t   count;          /* ref. count for this atom         */
+    void                *obj_ptr;       /* pointer associated with the atom */
+    PDC_LIST_ENTRY(PDC_id_info) entry;
 };
 
 #endif

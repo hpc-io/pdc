@@ -188,19 +188,19 @@ int main(int argc, char **argv)
 
 done:
     if(PDCobj_close(local_obj) < 0)
-        printf("fail to close obj %ld\n", local_obj);
+        printf("fail to close local obj\n");
 
     if(PDCobj_close(global_obj) < 0)
-        printf("fail to close obj %ld\n", global_obj);
+        printf("fail to close global obj\n");
 
     if(PDCregion_close(local_region) < 0)
-        printf("fail to close region %ld\n", local_region);
+        printf("fail to close local region\n");
 
     if(PDCregion_close(global_region) < 0)
-        printf("fail to close region %ld\n", global_region);
+        printf("fail to close global region\n");
 
     if(PDCcont_close(cont) < 0)
-        printf("fail to close container %ld\n", cont);
+        printf("fail to close container\n");
 
     if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);

@@ -31,6 +31,9 @@
 #include "pdc_malloc.h"
 #include "pdc_prop_pkg.h"
 #include "pdc_obj_private.h"
+#include "pdc_interface.h"
+#include "pdc_transforms_pkg.h"
+#include "pdc_atomic.h"
 
 static perr_t pdc_obj_close(struct PDC_obj_info *op);
 
@@ -117,6 +120,7 @@ pdcid_t pdc_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_i
     p->cont = (struct PDC_cont_info *)(id_info->obj_ptr);
     id_info = pdc_find_id(obj_prop_id);
     p->obj_pt = (struct PDC_obj_prop *)(id_info->obj_ptr);
+    p->obj_pt->locus = get_execution_locus();
     p->meta_id = 0;
     p->local_id = pdc_id_register(PDC_OBJ, p);
 
@@ -662,6 +666,58 @@ perr_t PDCbuf_obj_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, p
             PGOTO_ERROR(FAIL, "remote object region size error");
 
     ret_value = PDC_Client_buf_map(local_reg, remote_meta_id, remote_reg, reg1->ndim, reg1->size, reg1->offset, reg1->size, local_type, buf, obj2->obj_pt->dims, reg2->offset, reg2->size, remote_type, remote_client_id, remote_data, reg1, reg2);
+    if(ret_value == SUCCEED) {
+        /* 
+	 * For analysis and/or transforms, we only identify the target region as being mapped.
+	 * The lock/unlock protocol for writing will protect the target from being written by
+	 * more than one source.
+	 */
+        check_transform(PDC_DATA_MAP, reg2);
+        pdc_inc_ref(remote_obj);
+        pdc_inc_ref(remote_reg);
+    }
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDCobj_buf_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg)
+{
+    pdcid_t ret_value = SUCCEED;
+    size_t i;
+    struct PDC_id_info *id_info = NULL, *objinfo2;
+    struct PDC_obj_info *obj2;
+    pdcid_t remote_meta_id;
+
+    PDC_var_type_t remote_type;
+    void *remote_data;
+    struct PDC_id_info *reginfo1, *reginfo2;
+    struct PDC_region_info *reg1, *reg2;
+    int32_t remote_client_id;
+
+    FUNC_ENTER(NULL);
+
+    reginfo1 = pdc_find_id(local_reg);
+    reg1 = (struct PDC_region_info *)(reginfo1->obj_ptr);
+
+    objinfo2 = pdc_find_id(remote_obj);
+    if(objinfo2 == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate remote object ID");
+    obj2 = (struct PDC_obj_info *)(objinfo2->obj_ptr);
+    remote_meta_id = obj2->meta_id;
+    remote_client_id = obj2->client_id;
+    remote_type = obj2->obj_pt->type;
+    remote_data = obj2->obj_pt->buf;
+   
+    reginfo2 = pdc_find_id(remote_reg);
+    reg2 = (struct PDC_region_info *)(reginfo2->obj_ptr);
+    if(obj2->obj_pt->ndim != reg2->ndim)
+        PGOTO_ERROR(FAIL, "remote object dimension and region dimension does not match");
+    for(i=0; i<reg2->ndim; i++)
+        //        if((obj2->obj_pt->dims)[i] < ((reg2->size)[i] + (reg2->offset)[i]))
+        if((obj2->obj_pt->dims)[i] < (reg2->size)[i])
+            PGOTO_ERROR(FAIL, "remote object region size error");
+
+    ret_value = PDC_Client_obj_map(local_reg, remote_meta_id, remote_reg, reg1->ndim, reg1->size, reg1->offset, reg1->size, local_type, buf, obj2->obj_pt->dims, reg2->offset, reg2->size, remote_type, remote_client_id, remote_data, reg1, reg2);
 
     if(ret_value == SUCCEED) {
         pdc_inc_ref(remote_obj);
@@ -671,7 +727,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-static struct PDC_region_info *PDCregion_get_info(pdcid_t reg_id)
+struct PDC_region_info *PDCregion_get_info(pdcid_t reg_id)
 {
     struct PDC_region_info *ret_value = NULL;
     struct PDC_region_info *info =  NULL;
@@ -690,7 +746,7 @@ done:
     FUNC_LEAVE(ret_value);
 } 
 
-perr_t PDCobj_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id)
+perr_t PDCbuf_obj_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id)
 {
     perr_t ret_value = SUCCEED;   
     struct PDC_id_info *info1;
@@ -721,6 +777,38 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDCobj_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id)
+{
+    perr_t ret_value = SUCCEED;
+    struct PDC_id_info *info1;
+    struct PDC_obj_info *object1;
+    struct PDC_region_info *reginfo;
+    PDC_var_type_t data_type;
+    
+    FUNC_ENTER(NULL);
+    
+    info1 = pdc_find_id(remote_obj_id);
+    if(info1 == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object ID");
+    object1 = (struct PDC_obj_info *)(info1->obj_ptr);
+    data_type = object1->obj_pt->type;
+    
+    info1 = pdc_find_id(remote_reg_id);
+    if(info1 == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate region ID");
+    reginfo = (struct PDC_region_info *)(info1->obj_ptr);
+    
+    ret_value = PDC_Client_obj_unmap(object1->meta_id, remote_reg_id, reginfo, data_type);
+    
+    if(ret_value == SUCCEED) {
+        pdc_dec_ref(remote_obj_id);
+        pdc_dec_ref(remote_reg_id);
+    }
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+/*
 perr_t PDCobj_unmap(pdcid_t obj_id)
 {
     perr_t ret_value = SUCCEED; 
@@ -752,6 +840,7 @@ perr_t PDCobj_unmap(pdcid_t obj_id)
 done:
     FUNC_LEAVE(ret_value);
 }
+*/
 
 perr_t PDCreg_unmap(pdcid_t obj_id, pdcid_t reg_id)
 {
@@ -792,7 +881,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-static struct PDC_obj_info *PDCobj_get_info(pdcid_t obj_id)
+struct PDC_obj_info *PDCobj_get_info(pdcid_t obj_id)
 {
     struct PDC_obj_info *ret_value = NULL;
     struct PDC_obj_info *info =  NULL;
@@ -843,7 +932,8 @@ perr_t PDCreg_obtain_lock(pdcid_t obj_id, pdcid_t reg_id, PDC_access_t access_ty
     data_type = object_info->obj_pt->type;
     region_info = PDCregion_get_info(reg_id);
     
-    ret_value = PDC_Client_obtain_region_lock(meta_id, region_info, access_type, lock_mode, data_type, &obtained);
+//    ret_value = PDC_Client_obtain_region_lock(meta_id, region_info, access_type, lock_mode, data_type, &obtained);
+    ret_value = PDC_Client_region_lock(meta_id, region_info, access_type, lock_mode, data_type, &obtained);
 
     FUNC_LEAVE(ret_value);
 }

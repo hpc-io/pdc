@@ -49,15 +49,17 @@ configure_file(
 #------------------------------------------------------------------------------
 set(PDC_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_interface.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_error.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_malloc.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_prop.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_cont.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_obj.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_mpi.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_analysis_support.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_connect.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_server_common.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_cont.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_error.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_interface.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_malloc.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_prop.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_obj.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_mpi.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transform_support.c
   )
 
   add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/profiling)
@@ -68,7 +70,7 @@ set(PDC_SRCS
 #------------------------------------------------------------------------------
 # PDC
 add_library(pdc ${PDC_SRCS})
-target_link_libraries(pdc ${PDC_EXPORTED_LIBS} ${PDC_EXT_LIB_DEPENDENCIES})
+target_link_libraries(pdc ${PDC_EXPORTED_LIBS} ${PDC_EXT_LIB_DEPENDENCIES} -ldl)
 pdc_set_lib_options(pdc "pdc" ${PDC_LIBTYPE})
 
 set(PDC_EXPORTED_LIBS pdc ${PDC_EXPORTED_LIBS})
@@ -96,6 +98,11 @@ set(PDC_HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_dt_conv.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_connect.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_server_common.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_analysis_support.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transform_support.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_analysis_and_transforms.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transforms_pkg.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_atomic.h
   )
 
 #-----------------------------------------------------------------------------

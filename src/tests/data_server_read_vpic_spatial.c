@@ -37,6 +37,7 @@
 
 #include "pdc.h"
 #include "pdc_client_server_common.h"
+#include "pdc_client_connect.h"
 
 /* #define NUM_VAR         2 */
 /* #define NUM_FLOAT_VAR   2 */

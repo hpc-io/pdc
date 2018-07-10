@@ -26,6 +26,7 @@
 #include <assert.h>
 #include "pdc_interface.h"
 #include "pdc_malloc.h"
+#include "pdc_atomic.h"
 
 /* Combine a Type number and an atom index into an atom */
 #define PDCID_MAKE(g,i)   ((((pdcid_t)(g) & TYPE_MASK) << ID_BITS) | ((pdcid_t)(i) & ID_MASK))

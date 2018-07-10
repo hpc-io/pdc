@@ -37,6 +37,7 @@
 
 #include "pdc.h"
 #include "pdc_client_server_common.h"
+#include "pdc_client_connect.h"
 
 /* #define NPARTICLES      8388608 */
 #define NUM_VAR_MAX         8

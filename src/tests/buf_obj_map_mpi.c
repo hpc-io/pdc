@@ -108,7 +108,7 @@ int main(int argc, char **argv)
     r1 = PDCregion_create(1, offset, mysize);
     r2 = PDCregion_create(1, offset_remote, mysize);
 
-    ret = PDCobj_buf_map(&x[0], PDC_FLOAT, r1, obj2, r2);
+    ret = PDCbuf_obj_map(&x[0], PDC_FLOAT, r1, obj2, r2);
     if(ret < 0) {
         printf("PDCbuf_obj_map failed\n");
         exit(-1);
@@ -128,8 +128,8 @@ int main(int argc, char **argv)
 
     for (i=0; i<numparticles; i++) {
         x[i]   = uniform_random_number() * x_dim;
-        printf("x = %f\n", x[i]);
-        fflush(stdout);
+//      printf("x = %f\n", x[i]);
+//      fflush(stdout);
     }
 
     ret = PDCreg_release_lock(obj2, r2, WRITE);
@@ -140,7 +140,7 @@ int main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-    ret = PDCobj_buf_unmap(obj2, r2);
+    ret = PDCbuf_obj_unmap(obj2, r2);
     if (ret != SUCCEED)
         printf("region unmap failed\n");
 

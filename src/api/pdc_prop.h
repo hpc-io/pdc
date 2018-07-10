@@ -26,7 +26,6 @@
 #define _pdc_prop_H
 
 #include "pdc_error.h"
-/* #include "pdc_interface.h" */
 #include "pdc_prop_pkg.h"
 
 /**

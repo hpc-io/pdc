@@ -323,21 +323,26 @@ int hash_table_insert(HashTable *hash_table, HashTableKey key,
 	if (newentry == NULL) {
 		return 0;
 	}
-
 	newentry->pair.key = key;
 	newentry->pair.value = value;
-
+    
 	/* Link into the list */
 
 	newentry->next = hash_table->table[index];
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_lock(&hash_table_new_mutex_g);
+#endif
 	hash_table->table[index] = newentry;
-
+    
 	/* Maintain the count of the number of entries */
 
 	++hash_table->entries;
 
 	/* Added successfully */
-
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(&hash_table_new_mutex_g);
+#endif
+    
 	return 1;
 }
 
@@ -355,10 +360,9 @@ HashTableValue hash_table_lookup(HashTable *hash_table, HashTableKey key)
 	 * found */
 
 	rover = hash_table->table[index];
-
+    
 	while (rover != NULL) {
 		pair = &(rover->pair);
-
 		if (hash_table->equal_func(key, pair->key) != 0) {
 
 			/* Found the entry.  Return the data. */

@@ -40,6 +40,19 @@ perr_t pdc_obj_init();
 perr_t pdc_region_init();
 
 /**
+ * Create an object
+ *
+ * \param cont_id [IN]          Id of the container
+ * \param obj_name [IN]         Name of the object
+ * \param obj_create_prop [IN]  Id of object property,
+ *                              returned by PDCprop_create(PDC_OBJ_CREATE)
+ * \param location [IN]         PDC_OBJ_GLOBAL/PDC_OBJ_LOCAL
+ *
+ * \return Object id on success/Negative on failure
+ */
+pdcid_t pdc_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, PDCobj_location location);
+
+/**
  * PDC object finalize
  *
  * \return Non-negative on success/Negative on failure

@@ -39,6 +39,7 @@
 #endif
 
 #include "pdc.h"
+#include "pdc_transform_support.h"
 
 #define NPARTICLES      8388608
 
@@ -70,7 +71,7 @@ int main(int argc, char **argv)
     int x_dim = 64;
     int y_dim = 64;
     int z_dim = 64;
-    uint64_t numparticles, i;
+    uint64_t numparticles;
 //    int my_data_size;
 //    uint64_t dims[1] = {my_data_size};  // {8388608};
     uint64_t dims[1];
@@ -232,6 +233,20 @@ int main(int argc, char **argv)
 #endif
     gettimeofday(&ht_total_start, 0);
 
+#if 0
+    ret = PDCreg_transform_register("pdc_transform_compress", &x[0], region_x, obj_xx, region_xx, 0, INCR_STATE, DATA_OUT);
+    ret = PDCbuf_transform_register("pdc_transform_compress", &x[0], region_x, obj_xx, region_xx, 0, INCR_STATE, DATA_OUT);
+    ret = PDCobj_transform_register("pdc_transform_compress", &x[0], region_x, obj_xx, region_xx, 0, INCR_STATE, DATA_OUT);
+#else
+    ret = PDCbuf_map_transform_register("pdc_transform_compress", &x[0], region_x, obj_xx, region_xx, 0, INCR_STATE, DATA_OUT);
+#endif
+    if(ret < 0)
+        printf("PDCobj_transform_register(1) failed\n");
+
+    ret = PDCbuf_map_transform_register("pdc_transform_decompress", NULL, region_x, obj_xx, region_xx, 1, DECR_STATE, DATA_IN);
+    if(ret < 0)
+        printf("PDCobj_transform_register(2) failed\n");
+
     ret = PDCbuf_obj_map(&x[0], PDC_FLOAT, region_x, obj_xx, region_xx);
     if(ret < 0)
         printf("Array x PDCbuf_obj_map failed\n");
@@ -323,7 +338,7 @@ int main(int argc, char **argv)
         fflush(stdout);
     }
 
-     for (i=0; i<numparticles; i++) {
+    for (uint64_t i=0; i<numparticles; i++) {
         id1[i] = i;
         id2[i] = i*2;
         x[i]   = uniform_random_number() * x_dim;
@@ -332,25 +347,28 @@ int main(int argc, char **argv)
         px[i]  = uniform_random_number() * x_dim;
         py[i]  = uniform_random_number() * y_dim;
         pz[i]  = ((float)id2[i]/numparticles) * z_dim;
-/*
-if(rank == 0) {
-printf("x = %f\n", x[i]);
-printf("y = %f\n", y[i]);
-printf("z = %f\n", z[i]);
-printf("px = %f\n", px[i]);
-printf("py = %f\n", py[i]);
-printf("pz = %f\n", pz[i]);
-printf("id1 = %d\n", id1[i]);
-printf("id2 = %d\n", id2[i]);
-fflush(stdout);
-    }
-*/
+#if 0
+	if(rank == 0) {
+	  printf("\tx = %f\n", x[i]);
+	  printf("\ty = %f\n", y[i]);
+	  printf("\tz = %f\n", z[i]);
+	  printf("\tpx = %f\n", px[i]);
+	  printf("\tpy = %f\n", py[i]);
+	  printf("\tpz = %f\n", pz[i]);
+	  printf("\tid1 = %d\n", id1[i]);
+	  printf("\tid2 = %d\n", id2[i]);
+	  fflush(stdout);
+	}
+#endif
     }
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     gettimeofday(&ht_total_start, 0);
+
+    x[0] = 1.0;
+    x[1] = 2.0;
 
     ret = PDCreg_release_lock(obj_xx, region_xx, WRITE);
     if (ret != SUCCEED)
@@ -421,35 +439,35 @@ fflush(stdout);
 #endif
 
 
-    ret = PDCbuf_obj_unmap(obj_xx, region_xx);
+    ret = PDCobj_buf_unmap(obj_xx, region_xx);
     if (ret != SUCCEED)
         printf("region xx unmap failed\n");
 
-    ret = PDCbuf_obj_unmap(obj_yy, region_yy);
+    ret = PDCobj_buf_unmap(obj_yy, region_yy);
     if (ret != SUCCEED)
         printf("region yy unmap failed\n");
 
-    ret = PDCbuf_obj_unmap(obj_zz, region_zz);
+    ret = PDCobj_buf_unmap(obj_zz, region_zz);
     if (ret != SUCCEED)
         printf("region zz unmap failed\n");
 
-    ret = PDCbuf_obj_unmap(obj_pxx, region_pxx);
+    ret = PDCobj_buf_unmap(obj_pxx, region_pxx);
     if (ret != SUCCEED)
         printf("region pxx unmap failed\n");
 
-    ret = PDCbuf_obj_unmap(obj_pyy, region_pyy);
+    ret = PDCobj_buf_unmap(obj_pyy, region_pyy);
     if (ret != SUCCEED)
         printf("region pyy unmap failed\n");
 
-    ret = PDCbuf_obj_unmap(obj_pzz, region_pzz);
+    ret = PDCobj_buf_unmap(obj_pzz, region_pzz);
     if (ret != SUCCEED)
         printf("region pzz unmap failed\n");
 
-    ret = PDCbuf_obj_unmap(obj_id11, region_id11);
+    ret = PDCobj_buf_unmap(obj_id11, region_id11);
     if (ret != SUCCEED)
         printf("region id11 unmap failed\n");
 
-    ret = PDCbuf_obj_unmap(obj_id22, region_id22);
+    ret = PDCobj_buf_unmap(obj_id22, region_id22);
     if (ret != SUCCEED)
         printf("region id22 unmap failed\n");
 
@@ -564,9 +582,6 @@ fflush(stdout);
     if(PDC_close(pdc_id) < 0)
        printf("fail to close PDC\n");
 
-    free(offset);
-    free(offset_remote);
-    free(mysize);
     free(x);
     free(y);
     free(z);

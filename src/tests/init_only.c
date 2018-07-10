@@ -9,8 +9,6 @@
 #endif
 
 #include "pdc.h"
-#include "pdc_client_connect.h"
-#include "pdc_client_server_common.h"
 
 void print_usage() {
     printf("Usage: srun -n ./data_server_read obj_name size_MB\n");
@@ -43,7 +41,7 @@ int main(int argc, char **argv)
 
     // close a container
     if(PDCcont_close(cont) < 0)
-        printf("fail to close container %ld\n", cont);
+        printf("fail to close container\n");
 
     // close a container property
     if(PDCprop_close(cont_prop) < 0)

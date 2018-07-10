@@ -35,6 +35,12 @@
 #include <inttypes.h>
 #include <math.h>
 
+#include "config.h"
+
+#ifdef ENABLE_MPI
+#include "mpi.h"
+#endif
+
 #include "utlist.h"
 #include "hash-table.h"
 #include "dablooms.h"
@@ -223,6 +229,7 @@ void PDC_Server_metadata_init(pdc_metadata_t* a)
     a->region_lock_head     = NULL;
     a->region_map_head      = NULL;
     a->region_buf_map_head  = NULL;
+    a->region_obj_map_head  = NULL;
     a->prev                 = NULL;
     a->next                 = NULL;
 }
@@ -1501,8 +1508,15 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
         printf("Cannot allocate pdc_metadata_t!\n");
         goto done;
     }
+    
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_lock(&total_mem_usage_mutex_g);
+#endif
     total_mem_usage_g += sizeof(pdc_metadata_t);
-
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(&total_mem_usage_mutex_g);
+#endif
+    
     PDC_metadata_init(metadata);
 
     metadata->cont_id   = in->data.cont_id;
@@ -2422,8 +2436,7 @@ done:
 perr_t PDC_Server_create_container(gen_cont_id_in_t *in, gen_cont_id_out_t *out)
 {
     perr_t ret_value = SUCCEED;
-    pdc_metadata_t *metadata;
-    uint32_t *hash_key, i;
+    uint32_t *hash_key;
 
     FUNC_ENTER(NULL);
 
@@ -2447,7 +2460,13 @@ perr_t PDC_Server_create_container(gen_cont_id_in_t *in, gen_cont_id_out_t *out)
         printf("Cannot allocate hash_key!\n");
         goto done;
     }
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_lock(&total_mem_usage_mutex_g);
+#endif
     total_mem_usage_g += sizeof(uint32_t);
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(&total_mem_usage_mutex_g);
+#endif
     *hash_key = in->hash_value;
 
     pdc_cont_hash_table_entry_t *lookup_value;
@@ -2476,10 +2495,14 @@ perr_t PDC_Server_create_container(gen_cont_id_in_t *in, gen_cont_id_out_t *out)
             entry->n_allocated = 128;
             entry->obj_ids = (uint64_t*)calloc(entry->n_allocated, sizeof(uint64_t));
             entry->cont_id = PDC_Server_gen_obj_id();
-
+#ifdef ENABLE_MULTITHREAD
+            hg_thread_mutex_lock(&total_mem_usage_mutex_g);
+#endif
             total_mem_usage_g += sizeof(pdc_cont_hash_table_entry_t);
             total_mem_usage_g += sizeof(uint64_t)*entry->n_allocated;
-
+#ifdef ENABLE_MULTITHREAD
+            hg_thread_mutex_unlock(&total_mem_usage_mutex_g);
+#endif
             // Insert to hash table
             if (hash_table_insert(container_hash_table_g, hash_key, entry) != 1) {
                 printf("==PDC_SERVER[%d]: %s - hash table insert failed\n", pdc_server_rank_g, __func__);
@@ -2532,8 +2555,7 @@ done:
 perr_t PDC_Server_delete_container_by_name(gen_cont_id_in_t *in, gen_cont_id_out_t *out)
 {
     perr_t ret_value = SUCCEED;
-    pdc_metadata_t *metadata;
-    uint32_t hash_key, i;
+    uint32_t hash_key;
 
     FUNC_ENTER(NULL);
 
