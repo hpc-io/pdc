@@ -236,20 +236,6 @@ obj_handle *PDCview_iter_start(pdcid_t view_id);
 perr_t PDCbuf_obj_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg);
 
 /**
- * Map an object to an application buffer
- *
- * \param buf [IN]              Start point of an application buffer
- * \param local_type [IN]       Data type of data in memory
- * \param local_reg  [IN]       Id of the source region
- * \param remote_obj [IN]       Id of the target object
- * \param remote_reg [IN]       Id of the target region
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDCobj_buf_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg);
-
-
-/**
  * Map an object to another object
  *
  * \param from_obj [IN]         Id of the source object
@@ -270,16 +256,6 @@ perr_t PDCobj_buf_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, p
  * \return Pointer to PDC_obj_info struct on success/Null on failure
  */
 struct PDC_region_info *PDCregion_get_info(pdcid_t reg_id);
-
-/**
- * Unmap all regions within the object to a buffer (read unmap) 
- *
- * \param remote_obj_id [IN]    Id of the target object
- * \param remote_reg_id [IN]    Id of the target region
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDCobj_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id);
 
 /**
  * Unmap all regions within the object from a buffer (write unmap)

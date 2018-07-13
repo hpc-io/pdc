@@ -213,35 +213,35 @@ int main(int argc, char **argv)
 #endif
     gettimeofday(&ht_total_start, 0);
 
-    ret = PDCobj_buf_map(&x[0], PDC_FLOAT, region_x, obj_xx, region_xx);
+    ret = PDCbuf_obj_map(&x[0], PDC_FLOAT, region_x, obj_xx, region_xx);
     if(ret < 0)
         printf("Array x PDCobj_buf_map failed\n");
 
-    ret = PDCobj_buf_map(&y[0], PDC_FLOAT, region_y, obj_yy, region_yy);
+    ret = PDCbuf_obj_map(&y[0], PDC_FLOAT, region_y, obj_yy, region_yy);
     if(ret < 0)
         printf("Array y PDCobj_buf_map failed\n");
 
-    ret = PDCobj_buf_map(&z[0], PDC_FLOAT, region_z, obj_zz, region_zz);
+    ret = PDCbuf_obj_map(&z[0], PDC_FLOAT, region_z, obj_zz, region_zz);
     if(ret < 0)
         printf("Array z PDCobj_buf_map failed\n");
 
-    ret = PDCobj_buf_map(&px[0], PDC_FLOAT, region_px, obj_pxx, region_pxx);
+    ret = PDCbuf_obj_map(&px[0], PDC_FLOAT, region_px, obj_pxx, region_pxx);
     if(ret < 0)
         printf("Array px PDCobj_buf_map failed\n");
 
-    ret = PDCobj_buf_map(&py[0], PDC_FLOAT, region_py, obj_pyy, region_pyy);
+    ret = PDCbuf_obj_map(&py[0], PDC_FLOAT, region_py, obj_pyy, region_pyy);
     if(ret < 0)
         printf("Array py PDCobj_buf_map failed\n");
 
-    ret = PDCobj_buf_map(&pz[0], PDC_FLOAT, region_pz, obj_pzz, region_pzz);
+    ret = PDCbuf_obj_map(&pz[0], PDC_FLOAT, region_pz, obj_pzz, region_pzz);
     if(ret < 0)
         printf("Array pz PDCobj_buf_map failed\n");
 
-    ret = PDCobj_buf_map(&id1[0], PDC_INT, region_id1, obj_id11, region_id11);
+    ret = PDCbuf_obj_map(&id1[0], PDC_INT, region_id1, obj_id11, region_id11);
     if(ret < 0)
         printf("Array id1 PDCobj_buf_map failed\n");
 
-    ret = PDCobj_buf_map(&id2[0], PDC_INT, region_id2, obj_id22, region_id22);
+    ret = PDCbuf_obj_map(&id2[0], PDC_INT, region_id2, obj_id22, region_id22);
     if(ret < 0)
         printf("Array id2 PDCobj_buf_map failed\n");
 
@@ -356,35 +356,35 @@ int main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     
-    ret = PDCobj_buf_unmap(obj_xx, region_xx);
+    ret = PDCbuf_obj_unmap(obj_xx, region_xx);
     if (ret != SUCCEED)
         printf("region xx unmap failed\n");
 
-    ret = PDCobj_buf_unmap(obj_yy, region_yy);
+    ret = PDCbuf_obj_unmap(obj_yy, region_yy);
     if (ret != SUCCEED)
         printf("region yy unmap failed\n");
 
-    ret = PDCobj_buf_unmap(obj_zz, region_zz);
+    ret = PDCbuf_obj_unmap(obj_zz, region_zz);
     if (ret != SUCCEED)
         printf("region zz unmap failed\n");
 
-    ret = PDCobj_buf_unmap(obj_pxx, region_pxx);
+    ret = PDCbuf_obj_unmap(obj_pxx, region_pxx);
     if (ret != SUCCEED)
         printf("region pxx unmap failed\n");
 
-    ret = PDCobj_buf_unmap(obj_pyy, region_pyy);
+    ret = PDCbuf_obj_unmap(obj_pyy, region_pyy);
     if (ret != SUCCEED)
         printf("region pyy unmap failed\n");
 
-    ret = PDCobj_buf_unmap(obj_pzz, region_pzz);
+    ret = PDCbuf_obj_unmap(obj_pzz, region_pzz);
     if (ret != SUCCEED)
         printf("region pzz unmap failed\n");
 
-    ret = PDCobj_buf_unmap(obj_id11, region_id11);
+    ret = PDCbuf_obj_unmap(obj_id11, region_id11);
     if (ret != SUCCEED)
         printf("region id11 unmap failed\n");
 
-    ret = PDCobj_buf_unmap(obj_id22, region_id22);
+    ret = PDCbuf_obj_unmap(obj_id22, region_id22);
     if (ret != SUCCEED)
         printf("region id22 unmap failed\n");
 

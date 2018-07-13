@@ -127,10 +127,6 @@ struct buf_map_args {
     int32_t     ret;
 };
 
-struct obj_map_args {
-    int32_t     ret;
-};
-
 struct region_map_args {
 	int         ret;
 };
@@ -266,18 +262,6 @@ perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new);
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *local_dims, uint64_t *local_offset, uint64_t *local_size, PDC_var_type_t local_type, void *local_data, uint64_t *remote_dims, uint64_t *remote_offset, uint64_t *remote_size, PDC_var_type_t remote_type, int32_t remote_client_id, void *remote_data, struct PDC_region_info *local_region, struct PDC_region_info *remote_region);
-
-/**
- * Apply a map from object to buffer
- *
- * \param buf [IN]              Memory address
- * \param region_info [IN]      Pointer to PDC_region_info struct
- * \param access_type [IN]      Access type (enum)
- * \param released [OUT]        Lock released or not
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDC_Client_obj_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *local_dims, uint64_t *local_offset, uint64_t *local_size, PDC_var_type_t local_type, void *local_data, uint64_t *remote_dims, uint64_t *remote_offset, uint64_t *remote_size, PDC_var_type_t remote_type, int32_t remote_client_id, void *remote_data, struct PDC_region_info *local_region, struct PDC_region_info *remote_region);
 
 /**
  * Client request for object mapping

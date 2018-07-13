@@ -48,11 +48,6 @@ struct transfer_buf_map {
     buf_map_in_t    in;
 };
 
-struct transfer_obj_map {
-    hg_handle_t     handle;
-    obj_map_in_t    in;
-};
-
 typedef struct pdc_remote_server_info_t {
     char            *addr_string;
     int             addr_valid;
