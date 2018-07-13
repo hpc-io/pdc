@@ -27,11 +27,11 @@
 
 #include "pdc_obj_pkg.h"
 #include "pdc_error.h"
-#include "pdc_interface.h"
+/* #include "pdc_interface.h" */
 #include "pdc_life.h"
 #include "pdc_analysis_and_transforms.h"
-#include "pdc_client_connect.h"
-#include "pdc_client_server_common.h"
+/* #include "pdc_client_connect.h" */
+/* #include "pdc_client_server_common.h" */
 
 /**
  * Create a PDC iterator (general form)

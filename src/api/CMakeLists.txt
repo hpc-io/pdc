@@ -98,6 +98,11 @@ set(PDC_HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_dt_conv.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_connect.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_server_common.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_analysis_support.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transform_support.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_analysis_and_transforms.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transforms_pkg.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_atomic.h
   )
 
 #-----------------------------------------------------------------------------

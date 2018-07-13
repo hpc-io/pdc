@@ -25,7 +25,7 @@
 #ifndef _pdc_interface_H
 #define _pdc_interface_H
 
-#include "mercury_atomic.h"
+/* #include "mercury_atomic.h" */
 #include "pdc_public.h"
 #include "pdc_private.h"
 #include "pdc_error.h"
@@ -59,12 +59,12 @@ typedef enum {
 } PDC_type_t;
 
 /* Atom information structure used */
-struct PDC_id_info {
-    pdcid_t             id;             /* ID for this info                 */
-    hg_atomic_int32_t   count;          /* ref. count for this atom         */
-    void                *obj_ptr;       /* pointer associated with the atom */
-    PDC_LIST_ENTRY(PDC_id_info) entry;
-};
+/* struct PDC_id_info { */
+/*     pdcid_t             id;             /1* ID for this info                 *1/ */
+/*     hg_atomic_int32_t   count;          /1* ref. count for this atom         *1/ */
+/*     void                *obj_ptr;       /1* pointer associated with the atom *1/ */
+/*     PDC_LIST_ENTRY(PDC_id_info) entry; */
+/* }; */
 
 /* ID type structure used */
 struct PDC_id_type {

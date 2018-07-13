@@ -1760,7 +1760,7 @@ int main(int argc, char *argv[])
 
     // Exit from the loop, start finalize process
 #ifdef ENABLE_CHECKPOINT
-    tmp_env_char = getenv("PDC_DISABLE_CHECKPOINT");
+    char *tmp_env_char = getenv("PDC_DISABLE_CHECKPOINT");
     if (NULL != tmp_env_char) {
         if (pdc_server_rank_g == 0) printf("==PDC_SERVER[0]: checkpoint disabled!\n");
     }

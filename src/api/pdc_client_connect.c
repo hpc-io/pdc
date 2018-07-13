@@ -57,6 +57,7 @@
 #include "pdc_client_connect.h"
 #include "pdc_client_server_common.h"
 #include "pdc_obj_pkg.h"
+#include "pdc_atomic.h"
 
 int is_client_debug_g = 0;
 
