@@ -1512,7 +1512,7 @@ static perr_t PDC_Server_multithread_loop(hg_context_t *context)
         if (hg_atomic_get32(&close_server_g)) break;
 
         /* printf("==PDC_SERVER[%d]: Before HG_Trigger()\n", pdc_server_rank_g); */
-        ret = HG_Trigger(context, HG_MAX_IDLE_TIME, 1, NULL);
+        ret = HG_Trigger(context, 1024, 4096, NULL);
         /* printf("==PDC_SERVER[%d]: After HG_Trigger()\n", pdc_server_rank_g); */
     } while (ret == HG_SUCCESS || ret == HG_TIMEOUT);
 
