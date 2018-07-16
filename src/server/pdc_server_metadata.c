@@ -229,7 +229,6 @@ void PDC_Server_metadata_init(pdc_metadata_t* a)
     a->region_lock_head     = NULL;
     a->region_map_head      = NULL;
     a->region_buf_map_head  = NULL;
-    a->region_obj_map_head  = NULL;
     a->prev                 = NULL;
     a->next                 = NULL;
 }

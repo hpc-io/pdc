@@ -77,11 +77,6 @@ struct buf_unmap_server_lookup_args_t {
     struct transfer_buf_unmap *buf_unmap_args;
 } buf_unmap_server_lookup_args_t;
 
-struct transfer_obj_unmap {
-    hg_handle_t     handle;
-    obj_unmap_in_t  in;
-};
-
 struct obj_unmap_server_lookup_args_t {
     int             server_id;
     uint32_t        client_id;
@@ -236,8 +231,6 @@ extern double total_mem_usage_g;
 extern hg_id_t get_remote_metadata_register_id_g;
 extern hg_id_t buf_map_server_register_id_g;
 extern hg_id_t buf_unmap_server_register_id_g;
-extern hg_id_t obj_map_server_register_id_g;
-extern hg_id_t obj_unmap_server_register_id_g;
 extern hg_id_t server_lookup_client_register_id_g;
 extern hg_id_t server_lookup_remote_server_register_id_g;
 extern hg_id_t notify_io_complete_register_id_g;
@@ -256,11 +249,8 @@ extern hg_id_t notify_client_multi_io_complete_rpc_register_id_g;
 perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out);
 perr_t PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_ptr, hg_handle_t *handle);
 perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle);
-perr_t PDC_Meta_Server_obj_map(obj_map_in_t *in, region_obj_map_t *new_obj_map_ptr, hg_handle_t *handle);
-perr_t PDC_Meta_Server_obj_unmap(obj_unmap_in_t *in, hg_handle_t *handle); 
 
 perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in);
-perr_t PDC_Data_Server_obj_unmap(const struct hg_info *info, obj_unmap_in_t *in); 
 perr_t PDC_Data_Server_region_release(region_lock_in_t *in, region_lock_out_t *out);
 perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out, hg_handle_t *handle);
 perr_t PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status);
@@ -269,9 +259,7 @@ perr_t PDC_Server_get_local_storage_location_of_region(uint64_t obj_id, region_l
 perr_t PDC_Server_regions_io(region_list_t *region_list_head, PDC_io_plugin_t plugin);
 data_server_region_t *PDC_Server_get_obj_region(pdcid_t obj_id);
 region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in_t *in, region_list_t *request_region, void *data_ptr);
-region_obj_map_t *PDC_Data_Server_obj_map(const struct hg_info *info, obj_map_in_t *in, region_list_t *request_region, void *data_ptr);
 void *PDC_Server_get_region_buf_ptr(pdcid_t obj_id, region_info_transfer_t region);
-void *PDC_Server_get_region_obj_ptr(pdcid_t obj_id, region_info_transfer_t region);
 hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info);
 hg_return_t PDC_Server_count_write_check_update_storage_meta_cb (const struct hg_cb_info *callback_info);
 perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region_info, void *buf);

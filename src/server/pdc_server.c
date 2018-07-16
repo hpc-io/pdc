@@ -78,8 +78,6 @@ int                       is_hash_table_init_g = 0;
 hg_id_t    get_remote_metadata_register_id_g;
 hg_id_t    buf_map_server_register_id_g;
 hg_id_t    buf_unmap_server_register_id_g;
-hg_id_t    obj_map_server_register_id_g;
-hg_id_t    obj_unmap_server_register_id_g;
 hg_id_t    server_lookup_client_register_id_g;
 hg_id_t    server_lookup_remote_server_register_id_g;
 hg_id_t    notify_io_complete_register_id_g;
@@ -1349,7 +1347,6 @@ perr_t PDC_Server_restart(char *filename)
             (metadata+i)->region_lock_head         = NULL;
             (metadata+i)->region_map_head          = NULL;
             (metadata+i)->region_buf_map_head      = NULL;
-            (metadata+i)->region_obj_map_head      = NULL;
             (metadata+i)->bloom                    = NULL;
             (metadata+i)->prev                     = NULL;
             (metadata+i)->next                     = NULL;
@@ -1382,7 +1379,6 @@ perr_t PDC_Server_restart(char *filename)
                 (region_list+j)->n_overlap_storage_region   = 0;
 		hg_atomic_init32(&((region_list+j)->buf_map_refcount), 0);
                 (region_list+j)->reg_dirty_from_buf         = 0;
-                (region_list+j)->reg_dirty_to_buf           = 0;
                 (region_list+j)->access_type                = NA;
                 (region_list+j)->bulk_handle                = NULL;
                 (region_list+j)->addr                       = NULL;
@@ -1690,8 +1686,6 @@ static void PDC_Server_mercury_register()
     reg_map_register(hg_class_g);
     buf_unmap_register(hg_class_g);
     reg_unmap_register(hg_class_g);
-    obj_map_register(hg_class_g);
-    obj_unmap_register(hg_class_g);
 
     // Data server
     data_server_read_register(hg_class_g);
@@ -1713,8 +1707,6 @@ static void PDC_Server_mercury_register()
     get_remote_metadata_register_id_g         = get_remote_metadata_register(hg_class_g);  
     buf_map_server_register_id_g              = buf_map_server_register(hg_class_g);
     buf_unmap_server_register_id_g            = buf_unmap_server_register(hg_class_g);
-    obj_map_server_register_id_g              = obj_map_server_register(hg_class_g);
-    obj_unmap_server_register_id_g            = obj_unmap_server_register(hg_class_g);
     server_lookup_remote_server_register_id_g = server_lookup_remote_server_register(hg_class_g);
     update_region_loc_register_id_g           = update_region_loc_register(hg_class_g);
     notify_region_update_register_id_g        = notify_region_update_register(hg_class_g);
