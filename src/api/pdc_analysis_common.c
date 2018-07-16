@@ -40,6 +40,8 @@ hg_atomic_int32_t          i_cache_index;
 hg_atomic_int32_t          i_free_index;
 PDC_loci                   execution_locus = UNKNOWN;
 
+extern hg_thread_mutex_t          insert_iterator_mutex_g;
+
 static inline int compare_gt(int *a, int b) { return (*a) > (b); }
 struct region_analysis_ftn_info **pdc_region_analysis_registry = NULL; 
 struct region_transform_ftn_info **pdc_region_transform_registry = NULL; 

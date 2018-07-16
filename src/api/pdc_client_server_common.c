@@ -4324,59 +4324,6 @@ HG_TEST_RPC_CB(server_checkpoint_rpc, handle)
     FUNC_LEAVE(ret_value);
 }
 
-HG_TEST_THREAD_CB(server_lookup_client)
-HG_TEST_THREAD_CB(gen_obj_id)
-HG_TEST_THREAD_CB(gen_cont_id)
-HG_TEST_THREAD_CB(cont_add_del_objs_rpc)
-HG_TEST_THREAD_CB(query_read_obj_name_rpc)
-HG_TEST_THREAD_CB(storage_meta_name_query_rpc)
-HG_TEST_THREAD_CB(get_storage_meta_name_query_bulk_result_rpc)
-HG_TEST_THREAD_CB(notify_client_multi_io_complete_rpc)
-HG_TEST_THREAD_CB(server_checkpoint_rpc)
-HG_TEST_THREAD_CB(client_test_connect)
-HG_TEST_THREAD_CB(metadata_query)
-HG_TEST_THREAD_CB(metadata_delete)
-HG_TEST_THREAD_CB(metadata_delete_by_id)
-HG_TEST_THREAD_CB(metadata_update)
-HG_TEST_THREAD_CB(notify_io_complete)
-HG_TEST_THREAD_CB(notify_region_update)
-HG_TEST_THREAD_CB(close_server)
-HG_TEST_THREAD_CB(region_lock)
-HG_TEST_THREAD_CB(query_partial)
-HG_TEST_THREAD_CB(data_server_read)
-HG_TEST_THREAD_CB(data_server_write)
-HG_TEST_THREAD_CB(data_server_read_check)
-HG_TEST_THREAD_CB(data_server_write_check)
-HG_TEST_THREAD_CB(update_region_loc)
-HG_TEST_THREAD_CB(get_metadata_by_id)
-/* HG_TEST_THREAD_CB(get_storage_info) */
-HG_TEST_THREAD_CB(aggregate_write)
-HG_TEST_THREAD_CB(region_release)
-HG_TEST_THREAD_CB(metadata_add_tag)
-HG_TEST_THREAD_CB(server_lookup_remote_server)
-HG_TEST_THREAD_CB(bulk_rpc)
-HG_TEST_THREAD_CB(buf_map)
-HG_TEST_THREAD_CB(get_remote_metadata)
-HG_TEST_THREAD_CB(buf_map_server)
-HG_TEST_THREAD_CB(buf_unmap_server)
-HG_TEST_THREAD_CB(buf_unmap)
-HG_TEST_THREAD_CB(region_map)
-HG_TEST_THREAD_CB(region_unmap)
-HG_TEST_THREAD_CB(get_reg_lock_status)
-
-
-hg_id_t
-gen_obj_id_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "gen_obj_id", gen_obj_id_in_t, gen_obj_id_out_t, gen_obj_id_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
 static hg_return_t
 query_read_obj_name_client_bulk_cb(const struct hg_cb_info *hg_cb_info)
 {
@@ -4446,7 +4393,6 @@ done:
     return ret;
 }
 
-// 
 /* query_read_obj_name_client_rpc_cb(hg_handle_t handle) */
 HG_TEST_RPC_CB(query_read_obj_name_client_rpc, handle)
 {
@@ -4505,6 +4451,176 @@ HG_TEST_RPC_CB(query_read_obj_name_client_rpc, handle)
 done:
     FUNC_LEAVE(ret);
 }
+
+// Client receives bulk transfer rpc request, start transfer, then
+// process the bulk data of all storage meta for a previous request
+static hg_return_t
+send_client_storage_meta_bulk_cb(const struct hg_cb_info *hg_cb_info)
+{
+    struct bulk_args_t *bulk_args = (struct bulk_args_t *)hg_cb_info->arg;
+    hg_bulk_t local_bulk_handle = hg_cb_info->info.bulk.local_handle;
+    hg_return_t ret = HG_SUCCESS;
+    int cnt, i;
+    uint64_t *obj_id_ptr;
+    void *buf = NULL, *buf_cp = NULL;
+    process_bulk_storage_meta_args_t *process_args = NULL;
+
+    if (hg_cb_info->ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Error in callback");
+        ret = HG_PROTOCOL_ERROR;
+        goto done;
+    }
+    else {
+
+        ret = HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READ_ONLY, 1, &buf, NULL, NULL);
+        if (ret != HG_SUCCESS) {
+            printf("==PDC_CLIENT[x]: %s - Error with bulk access\n", __func__);
+            goto done;
+        }
+        buf_cp= malloc(bulk_args->nbytes);
+        memcpy(buf_cp, buf, bulk_args->nbytes);
+
+        process_args = (process_bulk_storage_meta_args_t*)calloc(sizeof(process_bulk_storage_meta_args_t), 1);
+        process_args->origin_id = bulk_args->origin;
+        process_args->n_storage_meta = bulk_args->cnt;
+        process_args->seq_id = *((int*)buf_cp);
+        process_args->all_storage_meta = (region_storage_meta_t*)(buf_cp + sizeof(int));
+
+        /* printf("==PDC_CLIENT[x]: %s - received %d storage meta\n", __func__, bulk_args->cnt); */
+        /* fflush(stdout); */
+    } // end of else
+
+    // Need to free buf_cp later
+    PDC_Client_recv_bulk_storage_meta(process_args);
+
+done:
+    /* Free bulk handle */
+    HG_Bulk_free(local_bulk_handle);
+    HG_Destroy(bulk_args->handle);
+
+    free(bulk_args);
+
+    return ret;
+}
+
+// Client receives bulk transfer request
+/* send_client_storage_meta_rpc_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(send_client_storage_meta_rpc, handle)
+{
+    const struct hg_info *hg_info = NULL;
+    hg_bulk_t origin_bulk_handle = HG_BULK_NULL;
+    hg_bulk_t local_bulk_handle = HG_BULK_NULL;
+    struct bulk_args_t *bulk_args = NULL;
+    bulk_rpc_in_t in_struct;
+    hg_return_t ret = HG_SUCCESS;
+    pdc_int_ret_t out_struct;
+    hg_op_id_t hg_bulk_op_id;
+    int cnt;
+
+    bulk_args = (struct bulk_args_t *)malloc(sizeof(struct bulk_args_t));
+
+    /* Keep handle to pass to callback */
+    bulk_args->handle = handle;
+
+    /* Get info from handle */
+    hg_info = HG_Get_info(handle);
+
+    /* Get input parameters and data */
+    ret = HG_Get_input(handle, &in_struct);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not get input\n");
+        return ret;
+    }
+
+    bulk_args->origin = in_struct.origin;
+
+    /* Get parameters */
+    cnt = in_struct.cnt;
+    origin_bulk_handle = in_struct.bulk_handle;
+    bulk_args->nbytes  = HG_Bulk_get_size(origin_bulk_handle);
+    bulk_args->cnt     = cnt;
+
+    /* Create a new bulk handle to read the data */
+    HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *) &bulk_args->nbytes, HG_BULK_READWRITE, 
+                   &local_bulk_handle);
+
+    /* Pull bulk data */
+    ret = HG_Bulk_transfer(hg_info->context, send_client_storage_meta_bulk_cb,
+                           bulk_args, HG_BULK_PULL, hg_info->addr, origin_bulk_handle, 0,
+                           local_bulk_handle, 0, bulk_args->nbytes, &hg_bulk_op_id);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not read bulk data\n");
+        return ret;
+    }
+
+    HG_Free_input(handle, &in_struct);
+
+    /* Send response back */
+    out_struct.ret = 1;
+    ret = HG_Respond(bulk_args->handle, NULL, NULL, &out_struct);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not respond\n");
+        return ret;
+    }
+
+    FUNC_LEAVE(ret);
+} // End send_client_storage_meta_rpc_cb
+
+
+HG_TEST_THREAD_CB(server_lookup_client)
+HG_TEST_THREAD_CB(gen_obj_id)
+HG_TEST_THREAD_CB(gen_cont_id)
+HG_TEST_THREAD_CB(cont_add_del_objs_rpc)
+HG_TEST_THREAD_CB(query_read_obj_name_rpc)
+HG_TEST_THREAD_CB(storage_meta_name_query_rpc)
+HG_TEST_THREAD_CB(get_storage_meta_name_query_bulk_result_rpc)
+HG_TEST_THREAD_CB(notify_client_multi_io_complete_rpc)
+HG_TEST_THREAD_CB(server_checkpoint_rpc)
+HG_TEST_THREAD_CB(client_test_connect)
+HG_TEST_THREAD_CB(metadata_query)
+HG_TEST_THREAD_CB(metadata_delete)
+HG_TEST_THREAD_CB(metadata_delete_by_id)
+HG_TEST_THREAD_CB(metadata_update)
+HG_TEST_THREAD_CB(notify_io_complete)
+HG_TEST_THREAD_CB(notify_region_update)
+HG_TEST_THREAD_CB(close_server)
+HG_TEST_THREAD_CB(region_lock)
+HG_TEST_THREAD_CB(query_partial)
+HG_TEST_THREAD_CB(data_server_read)
+HG_TEST_THREAD_CB(data_server_write)
+HG_TEST_THREAD_CB(data_server_read_check)
+HG_TEST_THREAD_CB(data_server_write_check)
+HG_TEST_THREAD_CB(update_region_loc)
+HG_TEST_THREAD_CB(get_metadata_by_id)
+/* HG_TEST_THREAD_CB(get_storage_info) */
+HG_TEST_THREAD_CB(aggregate_write)
+HG_TEST_THREAD_CB(region_release)
+HG_TEST_THREAD_CB(metadata_add_tag)
+HG_TEST_THREAD_CB(server_lookup_remote_server)
+HG_TEST_THREAD_CB(bulk_rpc)
+HG_TEST_THREAD_CB(buf_map)
+HG_TEST_THREAD_CB(get_remote_metadata)
+HG_TEST_THREAD_CB(buf_map_server)
+HG_TEST_THREAD_CB(buf_unmap_server)
+HG_TEST_THREAD_CB(buf_unmap)
+HG_TEST_THREAD_CB(region_map)
+HG_TEST_THREAD_CB(region_unmap)
+HG_TEST_THREAD_CB(get_reg_lock_status)
+HG_TEST_THREAD_CB(query_read_obj_name_client_rpc)
+HG_TEST_THREAD_CB(send_client_storage_meta_rpc)
+
+hg_id_t
+gen_obj_id_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+
+    ret_value = MERCURY_REGISTER(hg_class, "gen_obj_id", gen_obj_id_in_t, gen_obj_id_out_t, gen_obj_id_cb);
+
+    FUNC_LEAVE(ret_value);
+}
+
 
 /* query_read_obj_name_rpc_cb(hg_handle_t handle) */
 hg_id_t
@@ -4955,120 +5071,6 @@ notify_client_multi_io_complete_rpc_register(hg_class_t *hg_class)
 {
     return  MERCURY_REGISTER(hg_class, "notify_client_multi_io_complete_rpc_register", bulk_rpc_in_t, pdc_int_ret_t, notify_client_multi_io_complete_rpc_cb);
 }
-
-// Client receives bulk transfer rpc request, start transfer, then
-// process the bulk data of all storage meta for a previous request
-static hg_return_t
-send_client_storage_meta_bulk_cb(const struct hg_cb_info *hg_cb_info)
-{
-    struct bulk_args_t *bulk_args = (struct bulk_args_t *)hg_cb_info->arg;
-    hg_bulk_t local_bulk_handle = hg_cb_info->info.bulk.local_handle;
-    hg_return_t ret = HG_SUCCESS;
-    int cnt, i;
-    uint64_t *obj_id_ptr;
-    void *buf = NULL, *buf_cp = NULL;
-    process_bulk_storage_meta_args_t *process_args = NULL;
-
-    if (hg_cb_info->ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Error in callback");
-        ret = HG_PROTOCOL_ERROR;
-        goto done;
-    }
-    else {
-
-        ret = HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READ_ONLY, 1, &buf, NULL, NULL);
-        if (ret != HG_SUCCESS) {
-            printf("==PDC_CLIENT[x]: %s - Error with bulk access\n", __func__);
-            goto done;
-        }
-        buf_cp= malloc(bulk_args->nbytes);
-        memcpy(buf_cp, buf, bulk_args->nbytes);
-
-        process_args = (process_bulk_storage_meta_args_t*)calloc(sizeof(process_bulk_storage_meta_args_t), 1);
-        process_args->origin_id = bulk_args->origin;
-        process_args->n_storage_meta = bulk_args->cnt;
-        process_args->seq_id = *((int*)buf_cp);
-        process_args->all_storage_meta = (region_storage_meta_t*)(buf_cp + sizeof(int));
-
-        /* printf("==PDC_CLIENT[x]: %s - received %d storage meta\n", __func__, bulk_args->cnt); */
-        /* fflush(stdout); */
-    } // end of else
-
-    // Need to free buf_cp later
-    PDC_Client_recv_bulk_storage_meta(process_args);
-
-done:
-    /* Free bulk handle */
-    HG_Bulk_free(local_bulk_handle);
-    HG_Destroy(bulk_args->handle);
-
-    free(bulk_args);
-
-    return ret;
-}
-
-// Client receives bulk transfer request
-/* send_client_storage_meta_rpc_cb(hg_handle_t handle) */
-HG_TEST_RPC_CB(send_client_storage_meta_rpc, handle)
-{
-    const struct hg_info *hg_info = NULL;
-    hg_bulk_t origin_bulk_handle = HG_BULK_NULL;
-    hg_bulk_t local_bulk_handle = HG_BULK_NULL;
-    struct bulk_args_t *bulk_args = NULL;
-    bulk_rpc_in_t in_struct;
-    hg_return_t ret = HG_SUCCESS;
-    pdc_int_ret_t out_struct;
-    hg_op_id_t hg_bulk_op_id;
-    int cnt;
-
-    bulk_args = (struct bulk_args_t *)malloc(sizeof(struct bulk_args_t));
-
-    /* Keep handle to pass to callback */
-    bulk_args->handle = handle;
-
-    /* Get info from handle */
-    hg_info = HG_Get_info(handle);
-
-    /* Get input parameters and data */
-    ret = HG_Get_input(handle, &in_struct);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not get input\n");
-        return ret;
-    }
-
-    bulk_args->origin = in_struct.origin;
-
-    /* Get parameters */
-    cnt = in_struct.cnt;
-    origin_bulk_handle = in_struct.bulk_handle;
-    bulk_args->nbytes  = HG_Bulk_get_size(origin_bulk_handle);
-    bulk_args->cnt     = cnt;
-
-    /* Create a new bulk handle to read the data */
-    HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *) &bulk_args->nbytes, HG_BULK_READWRITE, 
-                   &local_bulk_handle);
-
-    /* Pull bulk data */
-    ret = HG_Bulk_transfer(hg_info->context, send_client_storage_meta_bulk_cb,
-                           bulk_args, HG_BULK_PULL, hg_info->addr, origin_bulk_handle, 0,
-                           local_bulk_handle, 0, bulk_args->nbytes, &hg_bulk_op_id);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not read bulk data\n");
-        return ret;
-    }
-
-    HG_Free_input(handle, &in_struct);
-
-    /* Send response back */
-    out_struct.ret = 1;
-    ret = HG_Respond(bulk_args->handle, NULL, NULL, &out_struct);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not respond\n");
-        return ret;
-    }
-
-    FUNC_LEAVE(ret);
-} // End send_client_storage_meta_rpc_cb
 
 hg_id_t
 send_client_storage_meta_rpc_register(hg_class_t *hg_class)

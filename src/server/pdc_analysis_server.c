@@ -69,6 +69,7 @@
 #define BLOOM_REMOVE counting_bloom_remove
 #define BLOOM_FREE   free_counting_bloom
 
+extern hg_thread_mutex_t          insert_iterator_mutex_g;
 
 /*
  * Insert an iterator received from client into a collection
