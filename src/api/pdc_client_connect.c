@@ -4907,7 +4907,7 @@ done:
 
 // Query and read objects with obj name, read data is stored in user provided buf
 perr_t PDC_Client_query_name_read_entire_obj(int nobj, char **obj_names, void ***out_buf, 
-                                             size_t *out_buf_sizes)
+                                             uint64_t *out_buf_sizes)
 {
     perr_t      ret_value = SUCCEED;
     hg_return_t hg_ret = HG_SUCCESS;
@@ -5682,7 +5682,7 @@ perr_t PDC_get_io_stats_mpi(double read_time, double query_time, int nfopen)
 }
 
 perr_t PDC_Client_query_name_read_entire_obj_client(int nobj, char **obj_names, void ***out_buf, 
-                                             size_t *out_buf_sizes)
+                                             uint64_t *out_buf_sizes)
 {
     perr_t      ret_value = SUCCEED;
     region_storage_meta_t **all_storage_meta = NULL;
