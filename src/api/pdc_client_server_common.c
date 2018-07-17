@@ -5401,6 +5401,65 @@ done:
 }
 
 /*
+ * Create a shm segment 
+ *
+ * \param  size[IN]            Total size of the shared memroy segment
+ * \param  shm_fd[OUT]         Shared memory file handle
+ * \param  buf[OUT]            Shared memory mapped buffer
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_create_shm_segment_ind(uint64_t size, int *shm_fd, void **buf)
+{
+    perr_t ret_value = SUCCEED;
+    size_t i = 0;
+    int retry;
+    char shm_addr[ADDR_MAX];
+
+    FUNC_ENTER(NULL);
+
+    if (shm_addr == 0) {
+        printf("== %s - Shared memory addr is NULL!\n", __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    /* create the shared memory segment as if it was a file */
+    retry = 0;
+    srand(time(0));
+    while (retry < PDC_MAX_TRIAL_NUM) {
+        snprintf(shm_addr, ADDR_MAX, "/PDCshm%d", rand());
+        *shm_fd = shm_open(shm_addr, O_CREAT | O_RDWR, 0666);
+        if (*shm_fd != -1) 
+            break;
+        retry++;
+    }
+
+    if (*shm_fd == -1) {
+        printf("== %s - Shared memory create failed\n", __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    /* configure the size of the shared memory segment */
+    ftruncate(*shm_fd, size);
+
+    /* map the shared memory segment to the address space of the process */
+    *buf = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, *shm_fd, 0);
+    if (*buf == MAP_FAILED) {
+        printf("== %s - Shared memory mmap failed\n", __func__);
+        // close and shm_unlink?
+        ret_value = FAIL;
+        goto done;
+    }
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} // PDC_create_shm_segment_ind
+
+
+/*
  * Create a shm segment and attach to the input region pointer
  *
  * \param  region[IN/OUT]       Request region, with shm_fd as the newly created shm segment
@@ -5458,7 +5517,7 @@ perr_t PDC_create_shm_segment(region_list_t *region)
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
-} // PDC_Server_create_shm_segment
+} // PDC_create_shm_segment
 
 
 #include "pdc_analysis_common.c"

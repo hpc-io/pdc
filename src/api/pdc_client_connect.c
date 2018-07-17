@@ -5387,6 +5387,47 @@ perr_t PDC_Client_attach_metadata_to_local_obj(char *obj_name, uint64_t obj_id, 
 /*     FUNC_LEAVE(ret_value); */
 /* } // end PDC_Client_query_name_read_entire_obj */
 
+perr_t PDC_Client_cp_data_to_local_server(int nobj, region_storage_meta_t **all_storage_meta, void ***buf_arr, size_t *size_arr)
+
+{
+    perr_t ret_value;
+    int iter, i;
+    uint32_t ndim;
+
+    uint64_t total_size = 0, cp_loc = 0;
+    int shm_fd = -1;
+    void *buf = NULL;
+
+    FUNC_ENTER(NULL);
+
+    for (i = 0; i < nobj; i++) 
+        total_size += size_arr[i];
+
+    // Create 1 big shm segment
+    ret_value = PDC_create_shm_segment_ind(total_size, &shm_fd, &buf);
+
+    // Copy data to the shm segment
+    for (i = 0; i < nobj; i++) {
+        if (NULL == all_storage_meta[i]) {
+            printf("==PDC_CLIENT[%d]: NULL storage meta for %dth object!\n", pdc_client_mpi_rank_g, i);
+            continue;
+        }
+        ndim = all_storage_meta[i]->region_transfer.ndim;
+        if (ndim != 1) {
+            printf("==PDC_CLIENT[%d]: only support for 1D data now (%u)!\n", pdc_client_mpi_rank_g, ndim);
+            continue;
+        }
+        
+        memcpy(buf+cp_loc, (*buf_arr)[i], size_arr[i]);
+        cp_loc += size_arr[i];
+    }
+
+    // TODO send to node local server
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+ 
 
 perr_t PDC_Client_read_with_storage_meta(int nobj, region_storage_meta_t **all_storage_meta, void ***buf_arr, size_t *size_arr)
 
@@ -5725,6 +5766,10 @@ perr_t PDC_Client_query_name_read_entire_obj_client(int nobj, char **obj_names, 
     PDC_get_io_stats_mpi(read_time, query_time, nfopen_g);
     #endif
 
+
+    #ifdef ENABLE_CACHE
+    ret_value = PDC_Client_cp_data_to_local_server(nobj, all_storage_meta, out_buf, out_buf_sizes);
+    #endif
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);

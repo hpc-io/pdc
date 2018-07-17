@@ -5714,14 +5714,18 @@ hg_return_t PDC_Server_storage_meta_name_query_bulk_respond(const struct hg_cb_i
         region_infos[j] = (region_info_transfer_t*)calloc(sizeof(region_info_transfer_t), 1);
         pdc_region_list_t_to_transfer(region_elt, region_infos[j]);
         // Check if cache is available
+        #ifdef ENABLE_CACHE
         if (region_elt->cache_location[0] != 0) {
             buf_ptrs[i  ]  = region_elt->cache_location;
             buf_ptrs[i+1]  = &(region_elt->cache_offset);
         }
         else {
+        #endif
             buf_ptrs[i  ]  = region_elt->storage_location;
             buf_ptrs[i+1]  = &(region_elt->offset);
+        #ifdef ENABLE_CACHE
         }
+        #endif
         buf_ptrs[i+2]  = region_infos[j];
         buf_sizes[i  ] = strlen(buf_ptrs[i]) + 1;
         buf_sizes[i+1] = sizeof(uint64_t);

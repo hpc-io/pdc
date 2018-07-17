@@ -2893,14 +2893,18 @@ static perr_t PDC_copy_all_storage_meta(pdc_metadata_t *meta, region_storage_met
         pdc_region_list_t_to_transfer(region_elt, &((*storage_meta)[i].region_transfer));
 
         // Check if cache available
+        #ifdef ENABLE_CACHE
         if (region_elt->cache_location[0] != 0) {
             strcpy((*storage_meta)[i].storage_location, region_elt->cache_location);
             (*storage_meta)[i].offset = region_elt->cache_offset;
         }
         else {
+        #endif
             strcpy((*storage_meta)[i].storage_location, region_elt->storage_location);
             (*storage_meta)[i].offset = region_elt->offset;
+        #ifdef ENABLE_CACHE
         }
+        #endif
         i++;
     }
 
