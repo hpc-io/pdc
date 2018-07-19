@@ -71,7 +71,7 @@ int main(int argc, char **argv)
     int x_dim = 64;
     int y_dim = 64;
     int z_dim = 64;
-    uint64_t numparticles;
+    uint64_t numparticles, i;
 //    int my_data_size;
 //    uint64_t dims[1] = {my_data_size};  // {8388608};
     uint64_t dims[1];
@@ -338,7 +338,7 @@ int main(int argc, char **argv)
         fflush(stdout);
     }
 
-    for (uint64_t i=0; i<numparticles; i++) {
+    for (i=0; i<numparticles; i++) {
         id1[i] = i;
         id2[i] = i*2;
         x[i]   = uniform_random_number() * x_dim;
@@ -439,35 +439,35 @@ int main(int argc, char **argv)
 #endif
 
 
-    ret = PDCobj_buf_unmap(obj_xx, region_xx);
+    ret = PDCbuf_obj_unmap(obj_xx, region_xx);
     if (ret != SUCCEED)
         printf("region xx unmap failed\n");
 
-    ret = PDCobj_buf_unmap(obj_yy, region_yy);
+    ret = PDCbuf_obj_unmap(obj_yy, region_yy);
     if (ret != SUCCEED)
         printf("region yy unmap failed\n");
 
-    ret = PDCobj_buf_unmap(obj_zz, region_zz);
+    ret = PDCbuf_obj_unmap(obj_zz, region_zz);
     if (ret != SUCCEED)
         printf("region zz unmap failed\n");
 
-    ret = PDCobj_buf_unmap(obj_pxx, region_pxx);
+    ret = PDCbuf_obj_unmap(obj_pxx, region_pxx);
     if (ret != SUCCEED)
         printf("region pxx unmap failed\n");
 
-    ret = PDCobj_buf_unmap(obj_pyy, region_pyy);
+    ret = PDCbuf_obj_unmap(obj_pyy, region_pyy);
     if (ret != SUCCEED)
         printf("region pyy unmap failed\n");
 
-    ret = PDCobj_buf_unmap(obj_pzz, region_pzz);
+    ret = PDCbuf_obj_unmap(obj_pzz, region_pzz);
     if (ret != SUCCEED)
         printf("region pzz unmap failed\n");
 
-    ret = PDCobj_buf_unmap(obj_id11, region_id11);
+    ret = PDCbuf_obj_unmap(obj_id11, region_id11);
     if (ret != SUCCEED)
         printf("region id11 unmap failed\n");
 
-    ret = PDCobj_buf_unmap(obj_id22, region_id22);
+    ret = PDCbuf_obj_unmap(obj_id22, region_id22);
     if (ret != SUCCEED)
         printf("region id22 unmap failed\n");
 
