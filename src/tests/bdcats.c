@@ -348,7 +348,7 @@ int main(int argc, char **argv)
     ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
     ht_total_sec        = ht_total_elapsed / 1000000.0;
     if (rank == 0) {
-        printf("Time to update data with %d ranks: %.6f\n", size, ht_total_sec);
+        printf("Time to relese lock with %d ranks: %.6f\n", size, ht_total_sec);
         fflush(stdout);
     }
 
@@ -391,6 +391,13 @@ int main(int argc, char **argv)
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
+    gettimeofday(&ht_total_end, 0);
+    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
+    ht_total_sec        = ht_total_elapsed / 1000000.0;
+    if (rank == 0) {
+        printf("Time to read data with %d ranks: %.6f\n", size, ht_total_sec);
+        fflush(stdout);
+    }
 /*
     for (uint64_t i=0; i<numparticles; i++) {
         printf("id1[i] = %d\n", id1[i]);
