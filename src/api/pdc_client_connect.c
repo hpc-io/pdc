@@ -115,6 +115,7 @@ static hg_id_t         data_server_write_check_register_id_g;
 static hg_id_t         data_server_write_register_id_g;
 static hg_id_t         aggregate_write_register_id_g;
 static hg_id_t         server_checkpoint_rpc_register_id_g;
+static hg_id_t         send_shm_register_id_g;
 
 // bulk
 static hg_id_t         query_partial_register_id_g;
@@ -133,6 +134,7 @@ static hg_id_t         cont_add_del_objs_rpc_register_id_g;
 static hg_id_t         cont_add_tags_rpc_register_id_g;
 static hg_id_t         query_read_obj_name_register_id_g;
 static hg_id_t         query_read_obj_name_client_register_id_g;
+static hg_id_t         send_region_storage_meta_shm_bulk_rpc_register_id_g;
 
 
 /* 
@@ -977,6 +979,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     data_server_write_check_register_id_g     = data_server_write_check_register(*hg_class);
     data_server_write_register_id_g           = data_server_write_register(*hg_class);
     server_checkpoint_rpc_register_id_g       = server_checkpoing_rpc_register(*hg_class);
+    send_shm_register_id_g                    = send_shm_register(*hg_class);
 
     // bulk
     query_partial_register_id_g               = query_partial_register(*hg_class);
@@ -985,6 +988,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     cont_add_tags_rpc_register_id_g           = cont_add_tags_rpc_register(*hg_class);
     query_read_obj_name_register_id_g         = query_read_obj_name_rpc_register(*hg_class);
     query_read_obj_name_client_register_id_g  = query_read_obj_name_client_rpc_register(*hg_class);
+    send_region_storage_meta_shm_bulk_rpc_register_id_g = send_shm_bulk_rpc_register(*hg_class);
 
     // 
     buf_map_register_id_g                     = buf_map_register(*hg_class);
@@ -4846,6 +4850,46 @@ done:
     return ret;
 } // end PDC_Client_query_read_obj_name_cb 
 
+static hg_return_t
+PDC_Client_send_shm_bulk_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    hg_handle_t handle = callback_info->info.forward.handle;
+    pdc_int_ret_t bulk_rpc_ret;
+    hg_return_t ret = HG_SUCCESS;
+    update_region_storage_meta_bulk_args_t *cb_args = (update_region_storage_meta_bulk_args_t*)callback_info->arg;
+
+    // Sent the bulk handle with rpc and get a response
+    ret = HG_Get_output(handle, &bulk_rpc_ret);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not get output\n");
+        goto done;
+    }
+
+    /* printf("==PDC_CLIENT[%d]: received rpc response from %d!\n", pdc_client_mpi_rank_g, cb_args->server_id); */
+    /* fflush(stdout); */
+
+    ret = HG_Free_output(handle, &bulk_rpc_ret);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not free output\n");
+        goto done;
+    }
+
+    /* Free memory handle */
+    ret = HG_Bulk_free(cb_args->bulk_handle);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not free bulk data handle\n");
+        goto done;
+    }
+
+    /* Free other malloced resources*/
+
+    HG_Destroy(cb_args->rpc_handle);
+done:
+    work_todo_g--;
+    return ret;
+} // end PDC_Client_send_shm_bulk_rpc_cb
+
+
 perr_t PDC_add_request_to_list(PDC_Request_t **list_head, PDC_Request_t *request)
 {
     perr_t      ret_value = SUCCEED;
@@ -5387,16 +5431,140 @@ perr_t PDC_Client_attach_metadata_to_local_obj(char *obj_name, uint64_t obj_id, 
 /*     FUNC_LEAVE(ret_value); */
 /* } // end PDC_Client_query_name_read_entire_obj */
 
+perr_t PDC_Client_send_client_shm_info(uint32_t server_id, char *shm_addr, uint64_t size)
+
+{
+    perr_t ret_value;
+    hg_return_t hg_ret;
+    send_shm_in_t in;
+    struct client_lookup_args lookup_args;
+    hg_handle_t rpc_handle;
+    
+    FUNC_ENTER(NULL);
+
+    
+    // Debug statistics for counting number of messages sent to each server.
+    debug_server_id_count[server_id]++;
+
+    if( PDC_Client_try_lookup_server(server_id) != SUCCEED) {
+        printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, send_shm_register_id_g, &rpc_handle);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "==PDC_CLIENT[%d]: %s - Could not create handle\n", pdc_client_mpi_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    in.client_id = pdc_client_mpi_rank_g;
+    hg_ret = HG_Forward(rpc_handle, pdc_client_check_int_ret_cb, &lookup_args, &in);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "==PDC_CLIENT[%d]: %s - Could not forward to server\n", pdc_client_mpi_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    // Wait for response from server
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+done:
+    HG_Destroy(rpc_handle);
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+ 
+/*typedef struct {
+    uint64_t                    obj_id;
+    region_info_transfer_t      region_transfer;
+    char                        storage_location[ADDR_MAX];
+    uint64_t                    offset;
+    uint64_t                    size;
+} region_storage_meta_t;
+*/
+
+perr_t PDC_send_region_storage_meta_shm(uint32_t server_id, int n, region_storage_meta_t* storage_meta)
+{
+    perr_t ret_value;
+    int i;
+    hg_return_t hg_ret;
+    bulk_rpc_in_t bulk_rpc_in;
+    struct client_lookup_args lookup_args;
+    hg_handle_t rpc_handle;
+    size_t buf_sizes;
+    update_region_storage_meta_bulk_args_t cb_args;
+    hg_bulk_t   bulk_handle;
+    
+    FUNC_ENTER(NULL);
+    
+    // Debug statistics for counting number of messages sent to each server.
+    debug_server_id_count[server_id]++;
+
+    if( PDC_Client_try_lookup_server(server_id) != SUCCEED) {
+        printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server\n", pdc_client_mpi_rank_g);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    // TODO: Send the bulk handle to the target with RPC
+    hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, 
+                       send_region_storage_meta_shm_bulk_rpc_register_id_g, &rpc_handle);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not create handle\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    buf_sizes = n * sizeof(region_storage_meta_t);
+    hg_ret = HG_Bulk_create(send_class_g, 1, (void**)&storage_meta, &buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not create bulk data handle\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    /* Fill input structure */
+    bulk_rpc_in.cnt           = n;
+    bulk_rpc_in.origin        = pdc_client_mpi_rank_g;
+    bulk_rpc_in.bulk_handle   = bulk_handle;
+
+    /* Forward call to remote addr */
+    cb_args.bulk_handle = bulk_handle;
+    cb_args.rpc_handle  = rpc_handle;
+    hg_ret = HG_Forward(rpc_handle, /* reuse */PDC_Client_query_read_obj_name_cb, &cb_args, &bulk_rpc_in);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not forward call\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    // Wait for RPC response
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+    // Wait for server initiated bulk xfer
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+done:
+    HG_Destroy(rpc_handle);
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+ 
 perr_t PDC_Client_cp_data_to_local_server(int nobj, region_storage_meta_t **all_storage_meta, void ***buf_arr, size_t *size_arr)
 
 {
     perr_t ret_value;
-    int iter, i;
-    uint32_t ndim;
-
+    uint32_t ndim, server_id;
     uint64_t total_size = 0, cp_loc = 0;
-    int shm_fd = -1;
     void *buf = NULL;
+    char shm_addr[ADDR_MAX];
+    int  iter, i, *total_obj = NULL, ntotal_obj = nobj, *recvcounts = NULL, *displs = NULL;
+    region_storage_meta_t *all_region_storage_meta_1d = NULL, *my_region_storage_meta_1d = NULL;
 
     FUNC_ENTER(NULL);
 
@@ -5404,7 +5572,7 @@ perr_t PDC_Client_cp_data_to_local_server(int nobj, region_storage_meta_t **all_
         total_size += size_arr[i];
 
     // Create 1 big shm segment
-    ret_value = PDC_create_shm_segment_ind(total_size, &shm_fd, &buf);
+    ret_value = PDC_create_shm_segment_ind(total_size, shm_addr, &buf);
 
     // Copy data to the shm segment
     for (i = 0; i < nobj; i++) {
@@ -5417,12 +5585,78 @@ perr_t PDC_Client_cp_data_to_local_server(int nobj, region_storage_meta_t **all_
             printf("==PDC_CLIENT[%d]: only support for 1D data now (%u)!\n", pdc_client_mpi_rank_g, ndim);
             continue;
         }
+
+        // Update the storage location and offset with the shared memory
+        memcpy(all_storage_meta[i]->storage_location, shm_addr, ADDR_MAX);
+        all_storage_meta[i]->offset = cp_loc;
         
         memcpy(buf+cp_loc, (*buf_arr)[i], size_arr[i]);
         cp_loc += size_arr[i];
     }
 
-    // TODO send to node local server
+
+#ifdef ENABLE_MPI
+
+    displs     = (int*)malloc(sizeof(int)*pdc_client_same_node_size_g);
+    recvcounts = (int*)malloc(sizeof(int)*pdc_client_same_node_size_g);
+    total_obj  = (int*)malloc(sizeof(int)*pdc_client_same_node_size_g);
+
+    // Gather number of objects to each client
+    MPI_Allgather(&nobj, 1, MPI_INT, total_obj, 1, MPI_INT, PDC_SAME_NODE_COMM_g);
+
+    ntotal_obj = 0;
+    if (pdc_client_same_node_rank_g == 0) {
+        for (i = 0; i < pdc_client_same_node_size_g; i++) {
+            ntotal_obj   += total_obj[i];
+            recvcounts[i] = total_obj[i] * sizeof(region_storage_meta_t);
+            if (i == 0) 
+                displs[i]     = 0;
+            else
+                displs[i]     = displs[i-1] + recvcounts[i-1];
+        }
+
+        all_region_storage_meta_1d = (region_storage_meta_t*)malloc(ntotal_obj * sizeof(region_storage_meta_t));
+    }
+
+    // Copy data to 1 buffer
+    my_region_storage_meta_1d = (region_storage_meta_t*)malloc(nobj * sizeof(region_storage_meta_t));
+    for (i = 0; i < nobj; i++) 
+        memcpy(&my_region_storage_meta_1d[i], all_storage_meta[i], sizeof(region_storage_meta_t));
+
+    // Gather all object names to rank 0 of each node
+    MPI_Gatherv(my_region_storage_meta_1d, nobj*sizeof(region_storage_meta_t), MPI_CHAR,
+                  all_region_storage_meta_1d, recvcounts, displs, MPI_CHAR, 0, PDC_SAME_NODE_COMM_g); 
+
+    // Send to node local data server
+    if (pdc_client_same_node_rank_g == 0) {
+
+        server_id = PDC_get_local_server_id(pdc_client_mpi_rank_g, pdc_nclient_per_server_g, pdc_server_num_g);
+        ret_value = PDC_send_region_storage_meta_shm(server_id, ntotal_obj, all_region_storage_meta_1d);
+    }
+
+
+    free(displs);
+    free(recvcounts);
+    free(total_obj);
+    free(my_region_storage_meta_1d);
+    if (pdc_client_same_node_rank_g == 0) 
+        free(all_region_storage_meta_1d);
+
+#else
+
+    // send to node local server
+    /* printf("==PDC_CLIENT[%d]: %s - Non-MPI version is not implemented!\n", pdc_client_mpi_rank_g, __func__); */
+    all_region_storage_meta_1d = (region_storage_meta_t*)malloc(nobj * sizeof(region_storage_meta_t));
+    for (i = 0; i < nobj; i++) 
+        memcpy(&all_region_storage_meta_1d[i], all_storage_meta[i], sizeof(region_storage_meta_t));
+    
+    server_id = PDC_get_local_server_id(pdc_client_mpi_rank_g, pdc_nclient_per_server_g, pdc_server_num_g);
+    ret_value = PDC_send_region_storage_meta_shm(server_id, nobj, all_region_storage_meta_1d);
+    
+    free(all_region_storage_meta_1d);
+#endif
+
+    
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -5766,7 +6000,6 @@ perr_t PDC_Client_query_name_read_entire_obj_client(int nobj, char **obj_names, 
     PDC_get_io_stats_mpi(read_time, query_time, nfopen_g);
     #endif
 
-
     #ifdef ENABLE_CACHE
     ret_value = PDC_Client_cp_data_to_local_server(nobj, all_storage_meta, out_buf, out_buf_sizes);
     #endif
@@ -5911,8 +6144,13 @@ perr_t PDC_Client_query_name_read_entire_obj_client_agg(int my_nobj, char **my_o
 
 
 #else
-        PDC_Client_query_name_read_entire_obj_client(my_nobj, my_obj_names, out_buf, out_buf_sizes);
+    // MPI is disabled
+    ret_value = PDC_Client_query_name_read_entire_obj_client(my_nobj, my_obj_names, out_buf, out_buf_sizes);
 #endif
+
+    #ifdef ENABLE_CACHE
+    ret_value = PDC_Client_cp_data_to_local_server(nobj, my_storage_meta, out_buf, out_buf_sizes);
+    #endif
 
 
 /* done: */
@@ -5980,7 +6218,7 @@ perr_t PDC_Client_recv_bulk_storage_meta(process_bulk_storage_meta_args_t *proce
     // Attach the received storage meta to the request
     request->storage_meta = process_args;
 
-    PDC_del_request_from_list(&pdc_io_request_list_g, request);
+    ret_value = PDC_del_request_from_list(&pdc_io_request_list_g, request);
    
 done:
     work_todo_g--;
@@ -5999,7 +6237,7 @@ hg_return_t PDC_Client_recv_bulk_storage_meta_cb(const struct hg_cb_info *callba
     PDC_Client_recv_bulk_storage_meta((process_bulk_storage_meta_args_t*) callback_info->arg);
 
     return HG_SUCCESS;
-} // End PDC_Server_query_read_names_clinet_cb
+} // End PDC_Client_recv_bulk_storage_meta_cb
 
 /*
  * Perform the POSIX read of (potentially) multiple storage regions that overlap with the read request

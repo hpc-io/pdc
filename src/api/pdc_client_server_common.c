@@ -789,6 +789,7 @@ perr_t PDC_Server_create_container(gen_cont_id_in_t *in, gen_cont_id_out_t *out)
 /* hg_return_t PDC_Server_s2s_recv_work_done_cb(const struct hg_cb_info *callback_info) {return SUCCEED;} */
 perr_t PDC_Server_set_close() {return SUCCEED;}
 hg_return_t PDC_Server_checkpoint_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
+hg_return_t PDC_Server_recv_shm_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
 
 data_server_region_t *PDC_Server_get_obj_region(pdcid_t obj_id) {return NULL;}
 region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in_t *in, region_list_t *request_region, void *data_ptr) {return SUCCEED;}
@@ -4316,13 +4317,40 @@ HG_TEST_RPC_CB(server_checkpoint_rpc, handle)
     HG_Get_input(handle, &in);
 
     out.ret = 1;
-    HG_Respond(handle, PDC_Server_checkpoint_cb, NULL, &out);
+    HG_Respond(handle, PDC_Server_checkpoint_cb, &in, &out);
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
     FUNC_LEAVE(ret_value);
 }
+
+/* send_shm_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(send_shm, handle)
+{
+    send_shm_in_t in;
+    pdc_int_ret_t  out;
+    perr_t ret_value = HG_SUCCESS;
+    pdc_shm_info_t *shm_info;
+
+    FUNC_ENTER(NULL);
+
+    HG_Get_input(handle, &in);
+
+    shm_info = (pdc_shm_info_t*)calloc(sizeof(pdc_shm_info_t), 1);
+    shm_info->client_id = in.client_id;
+    shm_info->size      = in.size;
+    strcpy(shm_info->shm_addr, in.shm_addr);
+
+    out.ret = 1;
+    HG_Respond(handle, PDC_Server_recv_shm_cb, shm_info, &out);
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
 
 static hg_return_t
 query_read_obj_name_client_bulk_cb(const struct hg_cb_info *hg_cb_info)
@@ -4566,6 +4594,117 @@ HG_TEST_RPC_CB(send_client_storage_meta_rpc, handle)
     FUNC_LEAVE(ret);
 } // End send_client_storage_meta_rpc_cb
 
+static hg_return_t
+server_recv_shm_bulk_cb(const struct hg_cb_info *hg_cb_info)
+{
+    struct bulk_args_t *bulk_args = (struct bulk_args_t *)hg_cb_info->arg;
+    hg_bulk_t local_bulk_handle = hg_cb_info->info.bulk.local_handle;
+    hg_return_t ret = HG_SUCCESS;
+    int cnt, i;
+    uint64_t *obj_id_ptr;
+    void *buf = NULL, *buf_cp = NULL;
+
+    if (hg_cb_info->ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Error in callback");
+        ret = HG_PROTOCOL_ERROR;
+        goto done;
+    }
+    else {
+
+        ret = HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READ_ONLY, 1, &buf, NULL, NULL);
+        if (ret != HG_SUCCESS) {
+            printf("==PDC_CLIENT[x]: %s - Error with bulk access\n", __func__);
+            goto done;
+        }
+        buf_cp= malloc(bulk_args->nbytes);
+        memcpy(buf_cp, buf, bulk_args->nbytes);
+
+        /* bulk_args->origin; */
+        /* bulk_args->cnt; */
+
+        printf("==PDC_CLIENT[x]: %s - received %d storage meta\n", __func__, bulk_args->cnt);
+        fflush(stdout);
+
+        // TODO now we have all storage info (region, shm_addr, offset, etc.)
+        // Have the server update the metadata or write to burst buffer
+
+    } // end of else
+
+
+done:
+    /* Free bulk handle */
+    HG_Bulk_free(local_bulk_handle);
+    HG_Destroy(bulk_args->handle);
+
+    free(bulk_args);
+
+    return ret;
+} // End server_recv_shm_bulk_cb
+
+
+/* send_shm_bulk_rpc_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(send_shm_bulk_rpc, handle)
+{
+    const struct hg_info *hg_info = NULL;
+    hg_bulk_t origin_bulk_handle = HG_BULK_NULL;
+    hg_bulk_t local_bulk_handle = HG_BULK_NULL;
+    struct bulk_args_t *bulk_args = NULL;
+    bulk_rpc_in_t in_struct;
+    hg_return_t ret = HG_SUCCESS;
+    pdc_int_ret_t out_struct;
+    hg_op_id_t hg_bulk_op_id;
+    int cnt;
+
+    bulk_args = (struct bulk_args_t *)malloc(sizeof(struct bulk_args_t));
+
+    /* Keep handle to pass to callback */
+    bulk_args->handle = handle;
+
+    /* Get info from handle */
+    hg_info = HG_Get_info(handle);
+
+    /* Get input parameters and data */
+    ret = HG_Get_input(handle, &in_struct);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not get input\n");
+        return ret;
+    }
+
+    bulk_args->origin = in_struct.origin;
+
+    /* Get parameters */
+    cnt = in_struct.cnt;
+    origin_bulk_handle = in_struct.bulk_handle;
+    bulk_args->nbytes  = HG_Bulk_get_size(origin_bulk_handle);
+    bulk_args->cnt     = cnt;
+
+    /* Create a new bulk handle to read the data */
+    HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *) &bulk_args->nbytes, HG_BULK_READWRITE, 
+                   &local_bulk_handle);
+
+    /* Pull bulk data */
+    ret = HG_Bulk_transfer(hg_info->context, server_recv_shm_bulk_cb,
+                           bulk_args, HG_BULK_PULL, hg_info->addr, origin_bulk_handle, 0,
+                           local_bulk_handle, 0, bulk_args->nbytes, &hg_bulk_op_id);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not read bulk data\n");
+        return ret;
+    }
+
+    HG_Free_input(handle, &in_struct);
+
+    /* Send response back */
+    out_struct.ret = 1;
+    ret = HG_Respond(bulk_args->handle, NULL, NULL, &out_struct);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not respond\n");
+        return ret;
+    }
+
+    FUNC_LEAVE(ret);
+} // End send_shm_bulk_rpc_cb
+
+
 
 HG_TEST_THREAD_CB(server_lookup_client)
 HG_TEST_THREAD_CB(gen_obj_id)
@@ -4576,6 +4715,7 @@ HG_TEST_THREAD_CB(storage_meta_name_query_rpc)
 HG_TEST_THREAD_CB(get_storage_meta_name_query_bulk_result_rpc)
 HG_TEST_THREAD_CB(notify_client_multi_io_complete_rpc)
 HG_TEST_THREAD_CB(server_checkpoint_rpc)
+HG_TEST_THREAD_CB(send_shm)
 HG_TEST_THREAD_CB(client_test_connect)
 HG_TEST_THREAD_CB(metadata_query)
 HG_TEST_THREAD_CB(metadata_delete)
@@ -4608,6 +4748,8 @@ HG_TEST_THREAD_CB(region_unmap)
 HG_TEST_THREAD_CB(get_reg_lock_status)
 HG_TEST_THREAD_CB(query_read_obj_name_client_rpc)
 HG_TEST_THREAD_CB(send_client_storage_meta_rpc)
+
+HG_TEST_THREAD_CB(send_shm_bulk_rpc)
 
 hg_id_t
 gen_obj_id_register(hg_class_t *hg_class)
@@ -4683,6 +4825,16 @@ notify_io_complete_register(hg_class_t *hg_class)
 
     FUNC_LEAVE(ret_value);
 }
+
+hg_id_t
+send_shm_bulk_rpc_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    FUNC_ENTER(NULL);
+    ret_value = MERCURY_REGISTER(hg_class, "send_shm_bulk_rpc", bulk_rpc_in_t, bulk_rpc_out_t, send_shm_bulk_rpc_cb);
+    FUNC_LEAVE(ret_value);
+}
+
 
 hg_id_t
 query_read_obj_name_client_rpc_register(hg_class_t *hg_class)
@@ -5016,6 +5168,12 @@ hg_id_t
 server_checkpoing_rpc_register(hg_class_t *hg_class)
 {
     return  MERCURY_REGISTER(hg_class, "server_checkpoing_rpc_register", pdc_int_send_t, pdc_int_ret_t, server_checkpoint_rpc_cb);
+}
+
+hg_id_t
+send_shm_register(hg_class_t *hg_class)
+{
+    return  MERCURY_REGISTER(hg_class, "send_shm_register", send_shm_in_t, pdc_int_ret_t, send_shm_cb);
 }
 
 hg_id_t
@@ -5409,16 +5567,16 @@ done:
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_create_shm_segment_ind(uint64_t size, int *shm_fd, void **buf)
+perr_t PDC_create_shm_segment_ind(uint64_t size, char *shm_addr, void **buf)
 {
     perr_t ret_value = SUCCEED;
     size_t i = 0;
     int retry;
-    char shm_addr[ADDR_MAX];
+    int shm_fd = -1;
 
     FUNC_ENTER(NULL);
 
-    if (shm_addr == 0) {
+    if (shm_addr == NULL) {
         printf("== %s - Shared memory addr is NULL!\n", __func__);
         ret_value = FAIL;
         goto done;
@@ -5429,23 +5587,23 @@ perr_t PDC_create_shm_segment_ind(uint64_t size, int *shm_fd, void **buf)
     srand(time(0));
     while (retry < PDC_MAX_TRIAL_NUM) {
         snprintf(shm_addr, ADDR_MAX, "/PDCshm%d", rand());
-        *shm_fd = shm_open(shm_addr, O_CREAT | O_RDWR, 0666);
-        if (*shm_fd != -1) 
+        shm_fd = shm_open(shm_addr, O_CREAT | O_RDWR, 0666);
+        if (shm_fd != -1) 
             break;
         retry++;
     }
 
-    if (*shm_fd == -1) {
+    if (shm_fd == -1) {
         printf("== %s - Shared memory create failed\n", __func__);
         ret_value = FAIL;
         goto done;
     }
 
     /* configure the size of the shared memory segment */
-    ftruncate(*shm_fd, size);
+    ftruncate(shm_fd, size);
 
     /* map the shared memory segment to the address space of the process */
-    *buf = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, *shm_fd, 0);
+    *buf = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
     if (*buf == MAP_FAILED) {
         printf("== %s - Shared memory mmap failed\n", __func__);
         // close and shm_unlink?

@@ -386,6 +386,45 @@ typedef struct {
     int32_t            ret;
 } region_lock_out_t;
 
+typedef struct {
+    uint32_t                    client_id;
+    char                        shm_addr[ADDR_MAX];
+    uint64_t                    size;
+} pdc_shm_info_t;
+
+typedef struct {
+    uint32_t                    client_id;
+    hg_string_t                 shm_addr;
+    uint64_t                    size;
+} send_shm_in_t;
+
+static hg_return_t
+hg_proc_send_shm_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    send_shm_in_t *struct_data = (send_shm_in_t*) data;
+
+    ret = hg_proc_uint32_t(proc, &struct_data->client_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_hg_string_t(proc, &struct_data->shm_addr);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+ 
+    ret = hg_proc_uint64_t(proc, &struct_data->size);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+
 static hg_return_t
 hg_proc_region_info_transfer_t(hg_proc_t proc, void *data)
 {
@@ -1317,7 +1356,7 @@ hg_proc_close_server_out_t(hg_proc_t proc, void *data)
 
 // Bulk
 /* Define bulk_rpc_in_t */
-typedef struct {
+typedef struct bulk_rpc_in_t {
     hg_int32_t cnt;
     hg_int32_t origin;
     hg_int32_t seq_id;
@@ -2227,7 +2266,10 @@ hg_id_t gen_cont_id_register(hg_class_t *hg_class);
 hg_id_t cont_add_del_objs_rpc_register(hg_class_t *hg_class);
 hg_id_t query_read_obj_name_rpc_register(hg_class_t *hg_class);
 hg_id_t server_checkpoing_rpc_register(hg_class_t *hg_class);
+hg_id_t send_shm_register(hg_class_t *hg_class);
 hg_id_t query_read_obj_name_client_rpc_register(hg_class_t *hg_class);
+
+hg_id_t send_shm_bulk_rpc_register(hg_class_t *hg_class);
 
 //bulk
 hg_id_t query_partial_register(hg_class_t *hg_class);
@@ -2574,7 +2616,6 @@ typedef struct query_read_names_args_t {
     char *obj_names_1d;
 } query_read_names_args_t;
 
-
 // Server to server storage meta query with name
 typedef struct {
     hg_string_t    obj_name;
@@ -2642,4 +2683,9 @@ int is_contiguous_region_overlap(region_list_t *a, region_list_t *b);
 
 
 perr_t PDC_create_shm_segment(region_list_t *region);
+perr_t PDC_create_shm_segment_ind(uint64_t size, char *shm_addr, void **buf);
+
+
+hg_id_t cont_add_tags_rpc_register(hg_class_t *hg_class);
+
 #endif /* PDC_CLIENT_SERVER_COMMON_H */

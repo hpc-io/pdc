@@ -91,6 +91,7 @@ hg_id_t    storage_meta_name_query_register_id_g;
 hg_id_t    get_storage_meta_name_query_bulk_result_rpc_register_id_g;
 hg_id_t    notify_client_multi_io_complete_rpc_register_id_g;
 hg_id_t    server_checkpoint_rpc_register_id_g;
+hg_id_t    send_shm_register_id_g;
 hg_id_t    send_client_storage_meta_rpc_register_id_g;
 
 // Global thread pool
@@ -1155,6 +1156,20 @@ done:
 }
 
 hg_return_t
+PDC_Server_recv_shm_cb(const struct hg_cb_info *callback_info)
+{
+    pdc_shm_info_t *shm_info;
+
+    shm_info = (pdc_shm_info_t*)callback_info->arg;
+
+    printf("==PDC_SERVER[%d]: recv shm from %d: [%s], %" PRIu64 "\n", 
+            pdc_server_rank_g, shm_info->client_id, shm_info->shm_addr, shm_info->size);
+    // TODO
+
+    return HG_SUCCESS;
+}
+
+hg_return_t
 PDC_Server_checkpoint_cb(const struct hg_cb_info *callback_info)
 {
     PDC_Server_checkpoint();
@@ -1680,6 +1695,7 @@ static void PDC_Server_mercury_register()
     cont_add_tags_rpc_register(hg_class_g);
     query_read_obj_name_rpc_register(hg_class_g);
     query_read_obj_name_client_rpc_register(hg_class_g);
+    send_shm_bulk_rpc_register(hg_class_g);
 
     // Mapping
     buf_map_register(hg_class_g);
@@ -1718,6 +1734,7 @@ static void PDC_Server_mercury_register()
     get_storage_meta_name_query_bulk_result_rpc_register_id_g = get_storage_meta_name_query_bulk_result_rpc_register(hg_class_g);
     notify_client_multi_io_complete_rpc_register_id_g = notify_client_multi_io_complete_rpc_register(hg_class_g);
     server_checkpoint_rpc_register_id_g       = server_checkpoing_rpc_register(hg_class_g);
+    send_shm_register_id_g                    = send_shm_register(hg_class_g);
 
     send_client_storage_meta_rpc_register_id_g= send_client_storage_meta_rpc_register(hg_class_g);
 }
