@@ -89,6 +89,13 @@ typedef enum { NONE=0,
 typedef struct pdc_metadata_t pdc_metadata_t;
 typedef struct region_list_t region_list_t;
 
+typedef struct pdc_tag_t {
+    char            *name;
+    void            *value;
+    size_t          value_size;
+    PDC_var_type_t  value_type;
+} pdc_tag_t;
+
 typedef struct get_storage_loc_args_t{
     perr_t        (*cb)();
     void          *cb_args;
