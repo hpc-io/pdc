@@ -1971,31 +1971,30 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
 #ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_lock(&data_read_list_mutex_g);
 #endif
-    // FIXME:  need to find a better place to remove shm
     // Iterate io list, find current request
     DL_FOREACH(pdc_data_server_read_list_head_g, io_elt) {
         if (meta.obj_id == io_elt->obj_id) {
             io_target = io_elt;
             break;
         }
-        else {
-            // Only close the shm that is in the list before current reqd check request
-            // as we know for sure that the clinet has copied the data in shm already
-            // this way we can correctly release the shm that has been used
-            if (io_elt->is_shm_closed != 1) {
-                // remove IO request and its shm of perviously used obj
-                DL_FOREACH_SAFE(io_elt->region_list_head, region_elt, region_tmp) {
-                    ret_value = PDC_Server_close_shm(region_elt);
-                    if (ret_value != SUCCEED) 
-                        printf("==PDC_SERVER: error closing shared memory\n");
-                    fflush(stdout);
-                    DL_DELETE(io_elt->region_list_head, region_elt);
-                    free(region_elt);
-                }
-                io_elt->region_list_head = NULL;
-                io_elt->is_shm_closed = 1;
-            }
-        }
+        /* else { */
+        /*     // Only close the shm that is in the list before current reqd check request */
+        /*     // as we know for sure that the clinet has copied the data in shm already */
+        /*     // this way we can correctly release the shm that has been used */
+        /*     if (io_elt->is_shm_closed != 1) { */
+        /*         // remove IO request and its shm of perviously used obj */
+        /*         DL_FOREACH_SAFE(io_elt->region_list_head, region_elt, region_tmp) { */
+        /*             ret_value = PDC_Server_close_shm(region_elt); */
+        /*             if (ret_value != SUCCEED) */ 
+        /*                 printf("==PDC_SERVER: error closing shared memory\n"); */
+        /*             fflush(stdout); */
+        /*             DL_DELETE(io_elt->region_list_head, region_elt); */
+        /*             free(region_elt); */
+        /*         } */
+        /*         io_elt->region_list_head = NULL; */
+        /*         io_elt->is_shm_closed = 1; */
+        /*     } */
+        /* } */
     }
 #ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_unlock(&data_read_list_mutex_g);
@@ -2009,13 +2008,11 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
         goto done;
     }
 
-
     if (is_debug_g) {
         printf("==PDC_SERVER[%d]: Read check Obj [%s] id=%" PRIu64 "  region: start(%" PRIu64 ", %" PRIu64 ") "
                 "size(%" PRIu64 ", %" PRIu64 ") \n", pdc_server_rank_g, meta.obj_name,
                 meta.obj_id, r_target.start[0], r_target.start[1], r_target.count[0], r_target.count[1]);
     }
-
     /* int count = 0; */
     /* if (is_debug_g == 1) { */
     /*     DL_COUNT(io_target->region_list_head, region_elt, count); */
@@ -2044,12 +2041,8 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
 
             ret_value = SUCCEED;
             goto done;
-
-            // TODO: may also want to free the io_target if there is no
-            //       region in its list
         }
     }
-
 
     if (found_region == 0) {
         printf("==PDC_SERVER[%d]: %s -  No io request with same region found!\n", pdc_server_rank_g, __func__);
@@ -2060,9 +2053,6 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
     }
 
 done:
-    // TODO remove the item in pdc_data_server_read_list_head_g after the request is fulfilled
-    //      at object close time?
-    // TODO server needs to remove the shm after client finished reading from it
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 } // End of PDC_Server_read_check
@@ -3053,7 +3043,10 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
     fflush(stdout);
 
 #ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_lock(&data_write_list_mutex_g);
+    if (io_info->io_type == WRITE) 
+        hg_thread_mutex_lock(&data_write_list_mutex_g);
+    else if (io_info->io_type == READ)
+        hg_thread_mutex_lock(&data_read_list_mutex_g);
 #endif
     // Iterate io list, find the IO list of this obj
     if (io_info->io_type == WRITE) 
@@ -3070,7 +3063,10 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
         }
     }
 #ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_unlock(&data_write_list_mutex_g);
+    if (io_info->io_type == WRITE) 
+        hg_thread_mutex_unlock(&data_write_list_mutex_g);
+    else if (io_info->io_type == READ)
+        hg_thread_mutex_unlock(&data_read_list_mutex_g);
 #endif
 
     // If not found, create and insert one to the list
@@ -4882,13 +4878,13 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
     /* fflush(stdout); */
 
     // Buffer the region storage metadata update 
-    update_storage_meta_list_t *tmp_alloc;
-    if (nregion_in_bulk_update != 0) {
-        tmp_alloc = (update_storage_meta_list_t*)calloc(sizeof(update_storage_meta_list_t), 1);
-        tmp_alloc->storage_meta_bulk_xfer_data = bulk_data;
-        DL_APPEND(pdc_update_storage_meta_list_head_g, tmp_alloc);
-        pdc_nbuffered_bulk_update_g++;
-    }
+    /* update_storage_meta_list_t *tmp_alloc; */
+    /* if (nregion_in_bulk_update != 0) { */
+    /*     tmp_alloc = (update_storage_meta_list_t*)calloc(sizeof(update_storage_meta_list_t), 1); */
+    /*     tmp_alloc->storage_meta_bulk_xfer_data = bulk_data; */
+    /*     DL_APPEND(pdc_update_storage_meta_list_head_g, tmp_alloc); */
+    /*     pdc_nbuffered_bulk_update_g++; */
+    /* } */
 
     /* // FIXME: tmp fix for server direct IO */
     /* int n_updated; */
@@ -4903,7 +4899,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
     /* printf("==PDC_SERVER[%d]: after writes done, will update %d regions \n", pdc_server_rank_g, n_region); */
     /* fflush(stdout); */
 
-    int iter = 0, n_write_region = 0;
+    /* int iter = 0, n_write_region = 0; */
     /* if (is_read_only != 1) { */
 
     /*     #ifdef ENABLE_TIMING */
