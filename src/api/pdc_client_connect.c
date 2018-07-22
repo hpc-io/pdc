@@ -3333,9 +3333,6 @@ done:
 hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *callback_info)
 {
     hg_return_t ret_value = HG_SUCCESS;
-    /* hg_return_t hg_ret; */
-    /* struct client_lookup_args lookup_args; */
-    /* data_server_read_check_in_t in; */
 
     int shm_fd = -1;        // file descriptor, from shm_open()
     uint32_t i = 0, j = 0;

@@ -31,7 +31,7 @@
 #include <sys/time.h>
 #include <math.h>
 
-#define ENABLE_MPI 1
+/* #define ENABLE_MPI 1 */
 
 #ifdef ENABLE_MPI
   #include "mpi.h"
@@ -223,8 +223,8 @@ int main(int argc, char **argv)
         // Timing
         gettimeofday(&pdc_timer_start_1, 0);
 
-        /* request[i].n_update = 1; */
-        request[i].n_client = 1;
+        request[i].n_client = (size/31==0 ? 1 : 31);
+        request[i].n_update = write_var;
         ret = PDC_Client_iwrite(obj_metas[i], &obj_regions[i], &request[i], mydata[i]);
         if (ret != SUCCEED) {
             printf("Error with PDC_Client_iwrite!\n");
@@ -238,33 +238,42 @@ int main(int argc, char **argv)
         sent_time = PDC_get_elapsed_time_double(&pdc_timer_start_1, &pdc_timer_end_1);
         sent_time_total += sent_time;
 
-        // Timing
-        gettimeofday(&pdc_timer_start_1, 0);
+        /* // Timing */
+        /* gettimeofday(&pdc_timer_start_1, 0); */
 
-        ret = PDC_Client_wait(&request[i], 30000, 100);
-        if (ret != SUCCEED) {
-            printf("Error with PDC_Client_wait!\n");
-            goto done;
-        }
+        /* ret = PDC_Client_wait(&request[i], 30000, 100); */
+        /* if (ret != SUCCEED) { */
+        /*     printf("Error with PDC_Client_wait!\n"); */
+        /*     goto done; */
+        /* } */
 
-        #ifdef ENABLE_MPI
-        MPI_Barrier(MPI_COMM_WORLD);
-        #endif
-        gettimeofday(&pdc_timer_end_1, 0);
-        wait_time = PDC_get_elapsed_time_double(&pdc_timer_start_1, &pdc_timer_end_1);
-        wait_time_total += wait_time;
+        /* #ifdef ENABLE_MPI */
+        /* MPI_Barrier(MPI_COMM_WORLD); */
+        /* #endif */
+        /* gettimeofday(&pdc_timer_end_1, 0); */
+        /* wait_time = PDC_get_elapsed_time_double(&pdc_timer_start_1, &pdc_timer_end_1); */
+        /* wait_time_total += wait_time; */
 
         /* if (rank == 0) */ 
         /*     printf("Sent time %.2f, wait time %.2f\n", sent_time, wait_time); */
     }
 
-    /* for (i = 0; i < write_var; i++) { */
-    /*     ret = PDC_Client_wait(&request[i], 30000, 500); */
-    /*     if (ret != SUCCEED) { */
-    /*         printf("Error with PDC_Client_wait!\n"); */
-    /*         goto done; */
-    /*     } */
-    /* } */
+    if (rank == 0) 
+        printf("Finished sending all write requests, now waiting\n");
+
+    gettimeofday(&pdc_timer_start_1, 0);
+
+    for (i = 0; i < write_var; i++) {
+        ret = PDC_Client_wait(&request[i], 200000, 500);
+        if (ret != SUCCEED) {
+            printf("Error with PDC_Client_wait!\n");
+            goto done;
+        }
+    }
+    gettimeofday(&pdc_timer_end_1, 0);
+    wait_time = PDC_get_elapsed_time_double(&pdc_timer_start_1, &pdc_timer_end_1);
+    wait_time_total += wait_time;
+
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);

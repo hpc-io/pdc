@@ -200,7 +200,7 @@ static perr_t PDC_Server_destroy_client_info(pdc_client_info_t *info)
     free(info);
 done:
     FUNC_LEAVE(ret_value);
-} // PDC_Server_init
+} // PDC_Server_destroy_client_info
 
 /*
  * Init the client info structure
@@ -870,10 +870,8 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
         n_thread = 2;
     hg_thread_pool_init(n_thread, &hg_test_thread_pool_g);
     hg_thread_pool_init(1, &hg_test_thread_pool_fs_g);
-    if (pdc_server_rank_g == 0) {
+    if (pdc_server_rank_g == 0) 
         printf("\n==PDC_SERVER[%d]: Starting server with %d threads...\n", pdc_server_rank_g, n_thread);
-        fflush(stdout);
-    }
     hg_thread_mutex_init(&hash_table_new_mutex_g);
     hg_thread_mutex_init(&pdc_client_info_mutex_g);
     hg_thread_mutex_init(&pdc_metadata_hash_table_mutex_g);
@@ -898,11 +896,14 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     hg_thread_mutex_init(&addr_valid_mutex_g);
     hg_thread_mutex_init(&update_remote_server_addr_mutex_g);
 #else
-    if (pdc_server_rank_g == 0) {
+    if (pdc_server_rank_g == 0) 
         printf("==PDC_SERVER[%d]: without multi-thread!\n", pdc_server_rank_g);
-        fflush(stdout);
-    }
 #endif
+
+/* #ifdef ENABLE_CACHE */
+    if (pdc_server_rank_g == 0) 
+        printf("==PDC_SERVER[%d]: Read cache enabled!\n", pdc_server_rank_g);
+/* #endif */
 
     // TODO: support restart with different number of servers than previous run 
     char checkpoint_file[ADDR_MAX];
