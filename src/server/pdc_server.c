@@ -1030,9 +1030,9 @@ perr_t PDC_Server_finalize()
         // remove IO request and its shm of perviously used obj
         DL_FOREACH_SAFE(io_elt->region_list_head, region_elt, region_tmp) {
             ret_value = PDC_Server_close_shm(region_elt);
-            if (ret_value != SUCCEED) 
-                printf("==PDC_SERVER: error closing shared memory\n");
-            fflush(stdout);
+            /* if (ret_value != SUCCEED) */ 
+            /*     printf("==PDC_SERVER: error closing shared memory\n"); */
+            /* fflush(stdout); */
             DL_DELETE(io_elt->region_list_head, region_elt);
             free(region_elt);
         }
@@ -1408,17 +1408,18 @@ perr_t PDC_Server_restart(char *filename)
 
                 memset((region_list+j)->shm_addr, 0, ADDR_MAX);
                 memset((region_list+j)->client_ids, 0, PDC_SERVER_MAX_PROC_PER_NODE*sizeof(uint32_t));
-                // Check if data is in persistent BB, change path if so
-                if (strstr( (region_list+j)->storage_location, "/var/opt/cray/dws/mounts/batch") != NULL) {
-                    (region_list+j)->data_loc_type = BB;
-                    // find job id and replace it with current one
-                    for (idx = 0; idx < strlen((region_list+j)->storage_location); idx++) 
-                        if (isdigit((region_list+j)->storage_location[idx])) 
-                            break;
-                    if ( NULL != slurm_jobid) 
-                        strncpy(&((region_list+j)->storage_location[idx]), slurm_jobid, strlen(slurm_jobid));
-                }
-                else if (strstr( (region_list+j)->storage_location, "/global/cscratch") != NULL) {
+                /* // Check if data is in persistent BB, change path if so */
+                /* if (strstr( (region_list+j)->storage_location, "/var/opt/cray/dws/mounts/batch") != NULL) { */
+                /*     (region_list+j)->data_loc_type = BB; */
+                /*     // find job id and replace it with current one */
+                /*     for (idx = 0; idx < strlen((region_list+j)->storage_location); idx++) */ 
+                /*         if (isdigit((region_list+j)->storage_location[idx])) */ 
+                /*             break; */
+                /*     if ( NULL != slurm_jobid) */ 
+                /*         strncpy(&((region_list+j)->storage_location[idx]), slurm_jobid, strlen(slurm_jobid)); */
+                /* } */
+                /* else if (strstr( (region_list+j)->storage_location, "/global/cscratch") != NULL) { */
+                if (strstr( (region_list+j)->storage_location, "/global/cscratch") != NULL) {
                     (region_list+j)->data_loc_type = LUSTRE;
                 }
 
@@ -1887,7 +1888,7 @@ int main(int argc, char *argv[])
     // Exit from the loop, start finalize process
 #ifdef ENABLE_CHECKPOINT
     char *tmp_env_char = getenv("PDC_DISABLE_CHECKPOINT");
-    if (NULL != tmp_env_char) {
+    if (strcmp(tmp_env_char, "TRUE")==0) {
         if (pdc_server_rank_g == 0) printf("==PDC_SERVER[0]: checkpoint disabled!\n");
     }
     else  

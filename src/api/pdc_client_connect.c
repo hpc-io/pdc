@@ -3640,10 +3640,20 @@ perr_t PDC_Client_data_server_read(PDC_Request_t *request)
         goto done;
     }
 
+    // TODO TEMPWORK
+    char *tmp_env = getenv("PDC_CACHE_PERCENTAGE");
+    int cache_percentage;
+    if (tmp_env != NULL) 
+        cache_percentage = atoi(tmp_env);
+    else
+        cache_percentage = 100;
+ 
     // Dummy value fill
+    //
     in.client_id         = pdc_client_mpi_rank_g;
     in.nclient           = n_client;
     in.nupdate           = n_update;
+    in.cache_percentage  = cache_percentage;
     if (request->n_update == 0) 
         request->n_update    = 1;       // Only set to default value if it is not set prior
     pdc_metadata_t_to_transfer_t(meta, &in.meta);
@@ -5473,15 +5483,6 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
- 
-/*typedef struct {
-    uint64_t                    obj_id;
-    region_info_transfer_t      region_transfer;
-    char                        storage_location[ADDR_MAX];
-    uint64_t                    offset;
-    uint64_t                    size;
-} region_storage_meta_t;
-*/
 
 perr_t PDC_send_region_storage_meta_shm(uint32_t server_id, int n, region_storage_meta_t* storage_meta)
 {
@@ -5506,7 +5507,6 @@ perr_t PDC_send_region_storage_meta_shm(uint32_t server_id, int n, region_storag
         goto done;
     }
 
-    // TODO: Send the bulk handle to the target with RPC
     hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, 
                        send_region_storage_meta_shm_bulk_rpc_register_id_g, &rpc_handle);
     if (hg_ret != HG_SUCCESS) {
@@ -5543,8 +5543,8 @@ perr_t PDC_send_region_storage_meta_shm(uint32_t server_id, int n, region_storag
     PDC_Client_check_response(&send_context_g);
 
     // Wait for server initiated bulk xfer
-    work_todo_g = 1;
-    PDC_Client_check_response(&send_context_g);
+    /* work_todo_g = 1; */
+    /* PDC_Client_check_response(&send_context_g); */
 
 done:
     HG_Destroy(rpc_handle);
@@ -5565,8 +5565,12 @@ perr_t PDC_Client_cp_data_to_local_server(int nobj, region_storage_meta_t **all_
 
     FUNC_ENTER(NULL);
 
-    for (i = 0; i < nobj; i++) 
+    for (i = 0; i < nobj; i++) {
         total_size += size_arr[i];
+        // Add padding for shared memory access, as it must be multiple of page size
+        if (size_arr[i] % PAGE_SIZE != 0) 
+            total_size += PAGE_SIZE - (size_arr[i] % PAGE_SIZE);
+    }
 
     // Create 1 big shm segment
     ret_value = PDC_create_shm_segment_ind(total_size, shm_addr, &buf);
@@ -5589,6 +5593,8 @@ perr_t PDC_Client_cp_data_to_local_server(int nobj, region_storage_meta_t **all_
         
         memcpy(buf+cp_loc, (*buf_arr)[i], size_arr[i]);
         cp_loc += size_arr[i];
+        if (size_arr[i] % PAGE_SIZE != 0) 
+            cp_loc += PAGE_SIZE - (size_arr[i] % PAGE_SIZE);
     }
 
 
@@ -5874,7 +5880,7 @@ perr_t PDC_Client_query_multi_storage_info(int nobj, char **obj_names, region_st
         // Wait for server initiated bulk xfer
         work_todo_g = 1;
         PDC_Client_check_response(&send_context_g);
-    }
+    } // End for each meta server
 
     // Now we have all the storage meta stored in the requests structure
     // Reorgaze them and fill the output buffer
@@ -5886,7 +5892,7 @@ perr_t PDC_Client_query_multi_storage_info(int nobj, char **obj_names, region_st
             continue;
 
         // Number of storage meta received
-        // TODO: currently assumes 1d data and 1 storage region per object, see the other comment
+        // TODO: currently assumes 1 storage region per object, see the other comment
         for (j = 0; j < ((process_bulk_storage_meta_args_t*)request->storage_meta)->n_storage_meta; j++) {
             loc = obj_names_server_seq_mapping[iter][j];
             (*all_storage_meta)[loc] = &(((process_bulk_storage_meta_args_t*)request->storage_meta)->all_storage_meta[j]);
@@ -5986,7 +5992,7 @@ perr_t PDC_Client_query_name_read_entire_obj_client(int nobj, char **obj_names, 
     /* printf("==PDC_CLIENT[%d]: query time %.4f\n", pdc_client_mpi_rank_g, query_time); */
     #endif
 
-    /* // Now we have all the storage metadata of all requests, start reading them all */
+    // Now we have all the storage metadata of all requests, start reading them all
     ret_value = PDC_Client_read_with_storage_meta(nobj, all_storage_meta, out_buf, out_buf_sizes);
 
     #ifdef ENABLE_TIMING
@@ -5997,9 +6003,9 @@ perr_t PDC_Client_query_name_read_entire_obj_client(int nobj, char **obj_names, 
     PDC_get_io_stats_mpi(read_time, query_time, nfopen_g);
     #endif
 
-    #ifdef ENABLE_CACHE
+    /* #ifdef ENABLE_CACHE */
     ret_value = PDC_Client_cp_data_to_local_server(nobj, all_storage_meta, out_buf, out_buf_sizes);
-    #endif
+    /* #endif */
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -6139,15 +6145,13 @@ perr_t PDC_Client_query_name_read_entire_obj_client_agg(int my_nobj, char **my_o
     PDC_get_io_stats_mpi(read_time, query_time, nfopen_g);
     #endif
 
-
+    /* #ifdef ENABLE_CACHE */
+    ret_value = PDC_Client_cp_data_to_local_server(ntotal_obj, my_storage_meta, out_buf, out_buf_sizes);
+    /* #endif */
 #else
     // MPI is disabled
     ret_value = PDC_Client_query_name_read_entire_obj_client(my_nobj, my_obj_names, out_buf, out_buf_sizes);
 #endif
-
-    #ifdef ENABLE_CACHE
-    ret_value = PDC_Client_cp_data_to_local_server(nobj, my_storage_meta, out_buf, out_buf_sizes);
-    #endif
 
 
 /* done: */

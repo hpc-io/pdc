@@ -3,7 +3,7 @@
 #include <string.h>
 #include "pdc.h"
 
-#define ENABLE_MPI 1
+/* #define ENABLE_MPI 1 */
 
 #ifdef ENABLE_MPI
 #include "mpi.h"
@@ -139,6 +139,11 @@ int main(int argc, char *argv[])
     free(sendn_write);
     free(displs_size);
     free(sendn_write_size);
+#else
+
+    my_n_write = n_write;
+    my_dset_names = all_dset_names;
+    my_dset_sizes = all_dset_sizes;
 #endif 
 
     /* for (i = 0; i < my_n_write; i++) { */
@@ -180,7 +185,6 @@ int main(int argc, char *argv[])
         }
         strcpy(prev_cont_name, cont_name);
 
-
         obj_region.ndim   = 1;
         offset[0] = 0;
         len[0] = my_dset_sizes[i];
@@ -211,7 +215,7 @@ int main(int argc, char *argv[])
         PDC_Client_write_id(obj_id, &obj_region, buf);
         /* printf("Rank %d - written object [%s]: %d\n", rank, my_dset_names[i], my_dset_sizes[i]); */
         fflush(stdout);
-        if (i % 100 == 0) {
+        if (i != 0 && i % 100 == 0) {
             printf("Rank %d - finished written 100 objects, total %d\n", rank, i); 
             fflush(stdout);
         }

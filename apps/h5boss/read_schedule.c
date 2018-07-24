@@ -10,6 +10,10 @@
 #define PDC_UNDEFINED_INT           -123456
 #define PDC_LABEL_INIT_ALLOC_SIZE   32
 
+#define ADDR_MAX 128
+#define PDC_MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define PDC_MIN(x, y) (((x) < (y)) ? (x) : (y))
+
 typedef struct PDC_label_t {
     void     *attached_addr;
 

@@ -815,6 +815,7 @@ hg_return_t PDC_Server_query_read_names_clinet_cb(const struct hg_cb_info *callb
 
 hg_return_t PDC_Server_storage_meta_name_query_bulk_respond(const struct hg_cb_info *callback_info)  {return HG_SUCCESS;};
 perr_t PDC_Server_proc_storage_meta_bulk(int task_id, int n_regions, region_list_t *region_list_head) {return SUCCEED;}
+perr_t PDC_Server_add_client_shm_to_cache(int origin, int cnt, void *buf_cp){return SUCCEED;}
 
 #else
 hg_return_t PDC_Client_work_done_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;};
@@ -2770,6 +2771,7 @@ HG_TEST_RPC_CB(data_server_read, handle)
     io_info->client_id = in.client_id;
     io_info->nclient   = in.nclient;
     io_info->nbuffer_request = in.nupdate;
+    io_info->cache_percentage = in.cache_percentage;
 
     PDC_metadata_init(&io_info->meta);
     pdc_transfer_t_to_metadata_t(&(in.meta), &(io_info->meta));
@@ -4619,23 +4621,16 @@ server_recv_shm_bulk_cb(const struct hg_cb_info *hg_cb_info)
         buf_cp= malloc(bulk_args->nbytes);
         memcpy(buf_cp, buf, bulk_args->nbytes);
 
-        /* bulk_args->origin; */
-        /* bulk_args->cnt; */
+        // TODO now we have all storage info (region, shm_addr, offset, etc.) of data read by client
+        // Insert them to the request list, and mark io_done
+        PDC_Server_add_client_shm_to_cache(bulk_args->origin, bulk_args->cnt, buf_cp);
 
-        printf("==PDC_CLIENT[x]: %s - received %d storage meta\n", __func__, bulk_args->cnt);
-        fflush(stdout);
-
-        // TODO now we have all storage info (region, shm_addr, offset, etc.)
-        // Have the server update the metadata or write to burst buffer
-
-    } // end of else
-
+    } // end else
 
 done:
     /* Free bulk handle */
     HG_Bulk_free(local_bulk_handle);
     HG_Destroy(bulk_args->handle);
-
     free(bulk_args);
 
     return ret;

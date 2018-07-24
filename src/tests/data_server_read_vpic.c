@@ -169,7 +169,7 @@ int main(int argc, char **argv)
         // Timing
         gettimeofday(&pdc_timer_start_1, 0);
 
-        request[i].n_client = (size/31==0 ? 1 : 31);
+        request[i].n_client = (size%31==0 ? 31 : 1);
         request[i].n_update = read_var;
         ret = PDC_Client_iread(obj_metas[i], &obj_regions[i], &request[i], mydata[i]);
         if (ret != SUCCEED) {

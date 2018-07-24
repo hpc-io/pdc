@@ -51,6 +51,7 @@ hg_thread_mutex_t meta_buf_map_mutex_g;
 hg_thread_mutex_t meta_obj_map_mutex_g;
 #endif
 
+#define PAGE_SIZE                           4096
 #define ADDR_MAX                            256
 #define DIM_MAX                             4
 #define TAG_LEN_MAX                         2048
@@ -337,6 +338,7 @@ typedef struct {
     int32_t                     nbuffer_request;
     pdc_metadata_t              meta;
     region_list_t               region;
+    int32_t                     cache_percentage;
 } data_server_io_info_t;
 
 typedef struct {
@@ -376,18 +378,6 @@ typedef struct {
 typedef struct {
     int32_t            ret;
 } metadata_delete_by_id_out_t;
-
-typedef struct {
-    uint32_t                    meta_server_id;
-    uint64_t                    obj_id;
-//    int32_t                     lock_op;
-    uint8_t                     access_type;
-    pdcid_t                     local_reg_id;
-    region_info_transfer_t      region;
-    uint8_t                     mapping;
-    uint8_t                     data_type;
-    uint8_t                     lock_mode;
-} region_lock_in_t;
 
 typedef struct {
     int32_t            ret;
@@ -430,7 +420,6 @@ hg_proc_send_shm_in_t(hg_proc_t proc, void *data)
     }
     return ret;
 }
-
 
 static hg_return_t
 hg_proc_region_info_transfer_t(hg_proc_t proc, void *data)
@@ -508,6 +497,18 @@ hg_proc_region_info_transfer_t(hg_proc_t proc, void *data)
     /* } */
     return ret;
 }
+
+typedef struct {
+    uint32_t                    meta_server_id;
+    uint64_t                    obj_id;
+//    int32_t                     lock_op;
+    uint8_t                     access_type;
+    pdcid_t                     local_reg_id;
+    region_info_transfer_t      region;
+    uint8_t                     mapping;
+    uint8_t                     data_type;
+    uint8_t                     lock_mode;
+} region_lock_in_t;
 
 static HG_INLINE hg_return_t
 hg_proc_region_lock_in_t(hg_proc_t proc, void *data)
@@ -1713,6 +1714,7 @@ typedef struct {
     int32_t                     nupdate;
     pdc_metadata_transfer_t     meta;
     region_info_transfer_t      region;
+    int32_t                     cache_percentage;
 } data_server_read_in_t;
 
 typedef struct {
@@ -1748,6 +1750,11 @@ hg_proc_data_server_read_in_t(hg_proc_t proc, void *data)
     ret = hg_proc_region_info_transfer_t(proc, &struct_data->region);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->cache_percentage);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
         return ret;
     }
     return ret;
@@ -1941,11 +1948,6 @@ typedef struct {
     uint64_t                    offset;
     uint64_t                    size;
 } region_storage_meta_t;
-
-/* typedef struct pdc_storage_meta_t{ */
-/*     int n_region; */
-/*     region_storage_meta_t **region_storage_meta; */
-/* } pdc_storage_meta_t; */
 
 typedef struct {
     region_info_transfer_t      region_transfer;

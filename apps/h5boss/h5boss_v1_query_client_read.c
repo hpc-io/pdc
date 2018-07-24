@@ -6,7 +6,7 @@
 #include <time.h>
 #include <sys/time.h>
 
-#define ENABLE_MPI 1
+/* #define ENABLE_MPI 1 */
 
 #ifdef ENABLE_MPI
 #include "mpi.h"
@@ -140,17 +140,17 @@ int main(int argc, char **argv)
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
-#endif
     start_time = MPI_Wtime();
+#endif
 
     /* PDC_Client_query_name_read_entire_obj_client(my_count, my_dset_names, &buf, buf_sizes); */
     PDC_Client_query_name_read_entire_obj_client_agg(my_count, my_dset_names, &buf, buf_sizes);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
-#endif
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
+#endif
 
     /* printf("%d: my count is %d\n", rank, my_count); */
     /* fflush(stdout); */

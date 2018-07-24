@@ -296,6 +296,7 @@ perr_t PDC_Server_notify_client_multi_io_complete(uint32_t client_id, int client
                                                   region_list_t *completed_region_list);
 perr_t PDC_Server_release_lock_request(uint64_t obj_id, struct PDC_region_info *region);
 
+perr_t PDC_Server_add_client_shm_to_cache(int origin, int cnt, void *buf_cp);
 
 
 #endif /* PDC_SERVER_DATA_H */
