@@ -41,6 +41,7 @@ set(PROGRAMS
     h5boss_read_all_data
     h5boss_v1_query_read_h5
     h5boss_v1_query_client_read
+    h5boss_v1_query_client_read_iter
     )
 
 foreach(program ${PROGRAMS})

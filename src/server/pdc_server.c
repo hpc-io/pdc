@@ -1423,6 +1423,10 @@ perr_t PDC_Server_restart(char *filename)
                     (region_list+j)->data_loc_type = LUSTRE;
                 }
 
+                /* if ((region_list+j)->storage_location[1] != 'g') { */
+                /*     printf("==PDC_SERVER[%d]: Error with region storage location [%s] [%s]!\n", */
+                /*             pdc_server_rank_g, (metadata+i)->obj_name, (region_list+j)->storage_location); */
+                /* } */
                 DL_APPEND((metadata+i)->storage_region_list_head, region_list+j);
             }
         }
@@ -1888,7 +1892,7 @@ int main(int argc, char *argv[])
     // Exit from the loop, start finalize process
 #ifdef ENABLE_CHECKPOINT
     char *tmp_env_char = getenv("PDC_DISABLE_CHECKPOINT");
-    if (strcmp(tmp_env_char, "TRUE")==0) {
+    if (tmp_env_char != NULL && strcmp(tmp_env_char, "TRUE")==0) {
         if (pdc_server_rank_g == 0) printf("==PDC_SERVER[0]: checkpoint disabled!\n");
     }
     else  

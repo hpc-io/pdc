@@ -271,6 +271,22 @@ typedef struct region_buf_map_t {
     struct region_buf_map_t         *next;
 } region_buf_map_t;
 
+typedef struct pdc_data_server_io_list_t {
+    uint64_t obj_id;
+    char  path[ADDR_MAX];
+    char  bb_path[ADDR_MAX];
+    int   total;
+    int   count;
+    int   ndim;
+    uint64_t dims[DIM_MAX];
+    uint64_t total_size;
+    region_list_t *region_list_head;
+    int   is_shm_closed;
+
+    struct pdc_data_server_io_list_t *prev;
+    struct pdc_data_server_io_list_t *next;
+} pdc_data_server_io_list_t;
+
 typedef struct data_server_region_t {
     uint64_t obj_id;
     int fd;                           // file handle

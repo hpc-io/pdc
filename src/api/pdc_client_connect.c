@@ -136,6 +136,11 @@ static hg_id_t         query_read_obj_name_register_id_g;
 static hg_id_t         query_read_obj_name_client_register_id_g;
 static hg_id_t         send_region_storage_meta_shm_bulk_rpc_register_id_g;
 
+pdc_data_server_io_list_t *client_cache_list_head_g = NULL;
+int                    cache_percentage_g = 0;
+int                    cache_count_g      = 0;
+int                    cache_total_g      = 0;
+
 
 /* 
  *
@@ -765,7 +770,7 @@ hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
         /* fflush(stdout); */
 
         meta_ptr = (pdc_metadata_t*)(buf);
-        bulk_args->meta_arr = (pdc_metadata_t**)malloc(sizeof(pdc_metadata_t*) * n_meta);
+        bulk_args->meta_arr = (pdc_metadata_t**)calloc(sizeof(pdc_metadata_t*), n_meta);
         for (i = 0; i < n_meta; i++) {
             bulk_args->meta_arr[i] = meta_ptr;
             /* PDC_print_metadata(meta_ptr); */
@@ -1293,7 +1298,7 @@ metadata_query_bulk_cb(const struct hg_cb_info *callback_info)
     bulk_args->n_meta = client_lookup_args->n_meta;
 
     /* printf("nbytes=%u\n", bulk_args->nbytes); */
-    recv_meta = (void *)malloc(sizeof(pdc_metadata_t) * n_meta);
+    recv_meta = (void *)calloc(sizeof(pdc_metadata_t), n_meta);
 
     /* Create a new bulk handle to read the data */
     HG_Bulk_create(hg_info->hg_class, 1, (void**)&recv_meta, (hg_size_t *) &bulk_args->nbytes, HG_BULK_READWRITE, &local_bulk_handle);
@@ -5484,6 +5489,82 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+static region_list_t *PDC_get_storage_meta_from_io_list(pdc_data_server_io_list_t **list, 
+                                              region_storage_meta_t *storage_meta)
+{
+    pdc_data_server_io_list_t *io_list_elt, *io_list_target = NULL;
+    region_list_t *new_region;
+    int j;
+    perr_t ret_value = NULL;
+
+    FUNC_ENTER(NULL);
+
+    DL_FOREACH(*list, io_list_elt) {
+        if (storage_meta->obj_id == io_list_elt->obj_id) {
+            io_list_target = io_list_elt;
+            break;
+        }
+    }
+
+    if (NULL == io_list_target) 
+        return NULL;
+    else
+        return io_list_target->region_list_head;
+
+    // TODO: currently assumes 1 region per object
+    /* DL_FOREACH(io_list_target->region_list_head) { */
+    /* } */
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+ 
+static perr_t PDC_add_storage_meta_to_io_list(pdc_data_server_io_list_t **list, 
+                                              region_storage_meta_t *storage_meta, void *buf)
+{
+    pdc_data_server_io_list_t *io_list_elt, *io_list_target = NULL;
+    region_list_t *new_region;
+    int j;
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    DL_FOREACH(*list, io_list_elt) 
+        if (storage_meta->obj_id == io_list_elt->obj_id) {
+            io_list_target = io_list_elt;
+            break;
+        }
+
+    // If not found, create and insert one to the read list
+    if (NULL == io_list_target) {
+        io_list_target = (pdc_data_server_io_list_t*)calloc(1, sizeof(pdc_data_server_io_list_t));
+        io_list_target->obj_id = storage_meta->obj_id;
+        io_list_target->total  = 0;
+        io_list_target->count  = 0;
+        io_list_target->ndim   = storage_meta->region_transfer.ndim;
+        // TODO
+        for (j = 0; j < io_list_target->ndim; j++)
+            io_list_target->dims[j] = 0;
+
+        DL_APPEND(*list, io_list_target);
+    }
+    io_list_target->total++;
+    io_list_target->count++;
+
+    new_region = (region_list_t*)calloc(1, sizeof(region_list_t));
+    pdc_region_transfer_t_to_list_t(&storage_meta->region_transfer, new_region);
+    strcpy(new_region->shm_addr, storage_meta->storage_location);
+    new_region->offset        = storage_meta->offset;
+    new_region->data_size     = storage_meta->size;
+    new_region->is_data_ready = 1;
+    new_region->is_io_done    = 1;
+    new_region->buf           = buf;
+    DL_PREPEND(io_list_target->region_list_head, new_region);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+ 
 perr_t PDC_send_region_storage_meta_shm(uint32_t server_id, int n, region_storage_meta_t* storage_meta)
 {
     perr_t ret_value;
@@ -5547,15 +5628,14 @@ perr_t PDC_send_region_storage_meta_shm(uint32_t server_id, int n, region_storag
     /* PDC_Client_check_response(&send_context_g); */
 
 done:
-    HG_Destroy(rpc_handle);
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
- 
+
 perr_t PDC_Client_cp_data_to_local_server(int nobj, region_storage_meta_t **all_storage_meta, void ***buf_arr, size_t *size_arr)
 
 {
-    perr_t ret_value;
+    perr_t ret_value = SUCCEED;
     uint32_t ndim, server_id;
     uint64_t total_size = 0, cp_loc = 0;
     void *buf = NULL;
@@ -5595,11 +5675,11 @@ perr_t PDC_Client_cp_data_to_local_server(int nobj, region_storage_meta_t **all_
         cp_loc += size_arr[i];
         if (size_arr[i] % PAGE_SIZE != 0) 
             cp_loc += PAGE_SIZE - (size_arr[i] % PAGE_SIZE);
+
+        ret_value = PDC_add_storage_meta_to_io_list(&client_cache_list_head_g, all_storage_meta[i], buf);
     }
 
-
 #ifdef ENABLE_MPI
-
     displs     = (int*)malloc(sizeof(int)*pdc_client_same_node_size_g);
     recvcounts = (int*)malloc(sizeof(int)*pdc_client_same_node_size_g);
     total_obj  = (int*)malloc(sizeof(int)*pdc_client_same_node_size_g);
@@ -5649,7 +5729,7 @@ perr_t PDC_Client_cp_data_to_local_server(int nobj, region_storage_meta_t **all_
 
     // send to node local server
     /* printf("==PDC_CLIENT[%d]: %s - Non-MPI version is not implemented!\n", pdc_client_mpi_rank_g, __func__); */
-    all_region_storage_meta_1d = (region_storage_meta_t*)malloc(nobj * sizeof(region_storage_meta_t));
+    all_region_storage_meta_1d = (region_storage_meta_t*)calloc(nobj, sizeof(region_storage_meta_t));
     for (i = 0; i < nobj; i++) 
         memcpy(&all_region_storage_meta_1d[i], all_storage_meta[i], sizeof(region_storage_meta_t));
     
@@ -5676,10 +5756,14 @@ perr_t PDC_Client_read_with_storage_meta(int nobj, region_storage_meta_t **all_s
     uint32_t ndim;
     uint64_t req_start, req_count, storage_start, storage_count, file_offset, buf_size;
     size_t read_bytes;
+    region_list_t *cache_region = NULL;
 
     FUNC_ENTER(NULL);
 
     *buf_arr = (void**)calloc(sizeof(void*), nobj);
+
+    cache_count_g = 0;
+    cache_total_g = nobj * cache_percentage_g / 100;
 
     // TODO: support for multi-dimensional data
     // Now read the data object one by one
@@ -5695,6 +5779,18 @@ perr_t PDC_Client_read_with_storage_meta(int nobj, region_storage_meta_t **all_s
             printf("==PDC_CLIENT[%d]: only support for 1D data now (%u)!\n", pdc_client_mpi_rank_g, ndim);
             continue;
         }
+
+        // Check if there is local cache
+        if (cache_count_g < cache_total_g) {
+            cache_region = PDC_get_storage_meta_from_io_list(&client_cache_list_head_g, all_storage_meta[i]);
+            if (cache_region != NULL) {
+                buf_size      = all_storage_meta[i]->size;
+                (*buf_arr)[i]    = malloc(buf_size);
+                memcpy((*buf_arr)[i], cache_region->buf, buf_size);
+                cache_count_g ++;
+                continue;
+            }
+        }
         
         fname = all_storage_meta[i]->storage_location;
         // Only opens a new file if necessary
@@ -5703,13 +5799,13 @@ perr_t PDC_Client_read_with_storage_meta(int nobj, region_storage_meta_t **all_s
                 fclose(fp_read);
                 fp_read = NULL;
             }
-
             fp_read = fopen(fname, "r");
             nfopen_g++;
             if (fp_read == NULL) {
-                printf("==PDC_CLIENT[%d]: fopen failed [%s]\n", pdc_client_mpi_rank_g, fname);
-                ret_value = FAIL;
-                goto done;
+                printf("==PDC_CLIENT[%d]: %s - fopen failed [%s] objid %" PRIu64 "\n", 
+                        pdc_client_mpi_rank_g, __func__, fname, all_storage_meta[i]->obj_id);
+                prev_fname = fname;
+                continue;
             }
         }
         prev_fname = fname;
@@ -6004,7 +6100,8 @@ perr_t PDC_Client_query_name_read_entire_obj_client(int nobj, char **obj_names, 
     #endif
 
     /* #ifdef ENABLE_CACHE */
-    ret_value = PDC_Client_cp_data_to_local_server(nobj, all_storage_meta, out_buf, out_buf_sizes);
+    if (cache_percentage_g == 0) 
+        ret_value = PDC_Client_cp_data_to_local_server(nobj, all_storage_meta, out_buf, out_buf_sizes);
     /* #endif */
 done:
     fflush(stdout);
@@ -6086,7 +6183,7 @@ perr_t PDC_Client_query_name_read_entire_obj_client_agg(int my_nobj, char **my_o
         ret_value = PDC_Client_query_multi_storage_info(ntotal_obj, all_names, &all_storage_meta);
 
         // Copy the result to the result array for scatter
-        res_storage_meta_1d = (region_storage_meta_t* )malloc(sizeof(region_storage_meta_t)*ntotal_obj);
+        res_storage_meta_1d = (region_storage_meta_t* )calloc(sizeof(region_storage_meta_t),ntotal_obj);
         for (i = 0; i < ntotal_obj; i++) 
             memcpy(&res_storage_meta_1d[i], all_storage_meta[i], sizeof(region_storage_meta_t));
     }
@@ -6105,8 +6202,8 @@ perr_t PDC_Client_query_name_read_entire_obj_client_agg(int my_nobj, char **my_o
     /* free(all_storage_meta); */
 
     // allocate space for storage meta results
-    my_storage_meta     = (region_storage_meta_t**)malloc(sizeof(region_storage_meta_t*)*my_nobj);
-    my_storage_meta_1d  = (region_storage_meta_t* )malloc(sizeof(region_storage_meta_t )*my_nobj);
+    my_storage_meta     = (region_storage_meta_t**)calloc(sizeof(region_storage_meta_t*),my_nobj);
+    my_storage_meta_1d  = (region_storage_meta_t* )calloc(sizeof(region_storage_meta_t ),my_nobj);
     for (i = 0; i < my_nobj; i++) 
         my_storage_meta[i] = &(my_storage_meta_1d[i]);
 
@@ -6146,7 +6243,9 @@ perr_t PDC_Client_query_name_read_entire_obj_client_agg(int my_nobj, char **my_o
     #endif
 
     /* #ifdef ENABLE_CACHE */
-    ret_value = PDC_Client_cp_data_to_local_server(ntotal_obj, my_storage_meta, out_buf, out_buf_sizes);
+    if (cache_percentage_g == 0) 
+        ret_value = PDC_Client_cp_data_to_local_server(ntotal_obj, my_storage_meta, out_buf, out_buf_sizes);
+    
     /* #endif */
 #else
     // MPI is disabled
@@ -6498,4 +6597,15 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDC_Client_query_name_read_entire_obj_client_agg_cache_iter(int my_nobj, char **my_obj_names, 
+                                                                   void ***out_buf, size_t *out_buf_sizes, 
+                                                                   int cache_percentage)
+{
+    perr_t ret_value = SUCCEED;
+
+    cache_percentage_g = cache_percentage;
+    ret_value = PDC_Client_query_name_read_entire_obj_client_agg(my_nobj, my_obj_names, out_buf, out_buf_sizes);
+
+    FUNC_LEAVE(ret_value);
+}
 #include "pdc_analysis_and_transforms_connect.c"

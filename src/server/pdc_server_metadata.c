@@ -2895,7 +2895,7 @@ static perr_t PDC_copy_all_storage_meta(pdc_metadata_t *meta, region_storage_met
 
         // Check if cache available
         /* #ifdef ENABLE_CACHE */
-        if (region_elt->cache_location[0] != 0) {
+        if (strstr(region_elt->cache_location, "PDCcache") != NULL ) {
             strcpy((*storage_meta)[i].storage_location, region_elt->cache_location);
             (*storage_meta)[i].offset = region_elt->cache_offset;
         }
@@ -2958,9 +2958,13 @@ static perr_t PDC_Server_get_storage_meta_by_names(query_read_names_args_t *args
         }
         total_region += all_nregion[i];
 
-        /* printf("==PDC_SERVER[%d]: got storage meta for [%s], obj_id %" PRIu64 ", offset %" PRIu64 "\n", */ 
-        /*         pdc_server_rank_g, obj_name, all_storage_meta[i]->obj_id, all_storage_meta[i]->offset); */
-        /* fflush(stdout); */
+        if (all_storage_meta[i]->storage_location[1] != 'g') {
+            printf("==PDC_SERVER[%d]: error with storage meta for [%s], obj_id %" PRIu64 ", loc [%s], offset "
+                   "%" PRIu64 "\n", 
+                    pdc_server_rank_g, obj_name, all_storage_meta[i]->obj_id, 
+                    all_storage_meta[i]->storage_location, all_storage_meta[i]->offset);
+            fflush(stdout);
+        }
 
     } // End for cnt
 

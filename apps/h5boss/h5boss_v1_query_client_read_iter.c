@@ -138,43 +138,49 @@ int main(int argc, char **argv)
         fflush(stdout);
     }
 
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-    start_time = MPI_Wtime();
-#endif
+    int iter = 0, niter = 10;
+    for (iter = 0; iter < niter; iter++) {
+    #ifdef ENABLE_MPI
+        MPI_Barrier(MPI_COMM_WORLD);
+        start_time = MPI_Wtime();
+    #endif
+    
+        /* PDC_Client_query_name_read_entire_obj_client(my_count, my_dset_names, &buf, buf_sizes); */
+        /* PDC_Client_query_name_read_entire_obj_client_agg(my_count, my_dset_names, &buf, buf_sizes); */
+        PDC_Client_query_name_read_entire_obj_client_agg_cache_iter(my_count, my_dset_names, &buf, buf_sizes, 
+                                                                    iter*10);
+    
+    #ifdef ENABLE_MPI
+        MPI_Barrier(MPI_COMM_WORLD);
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+    #endif
+    
+        /* printf("%d: my count is %d\n", rank, my_count); */
+        /* fflush(stdout); */
+    
+        long long my_total_data_size = 0, all_total_data_size;
+        for (i = 0; i < my_count; i++) {
+            my_total_data_size += buf_sizes[i];
+            /* printf("%d: read [%s], size %lu\n", rank, my_dset_names[i], buf_sizes[i]); */
+        }
+        /* printf("%d: my total read size = %lu\n", rank, my_total_data_size); */
+        /* fflush(stdout); */
+    
+    #ifdef ENABLE_MPI
+        MPI_Reduce(&my_total_data_size, &all_total_data_size, 1, MPI_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+    #else
+        all_total_data_size = my_total_data_size;
+    #endif
+    
+        if (rank == 0) {
+            printf("Time to query and read %d obj of %.4f MB with %d ranks and cache %d\%: %.4f\n", 
+                    count, all_total_data_size/1048576.0, size, iter*10, elapsed_time);
+            fflush(stdout);
+        }
 
-    /* PDC_Client_query_name_read_entire_obj_client(my_count, my_dset_names, &buf, buf_sizes); */
-    PDC_Client_query_name_read_entire_obj_client_agg(my_count, my_dset_names, &buf, buf_sizes);
-
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-    end_time = MPI_Wtime();
-    elapsed_time = end_time - start_time;
-#endif
-
-    /* printf("%d: my count is %d\n", rank, my_count); */
-    /* fflush(stdout); */
-
-    long long my_total_data_size = 0, all_total_data_size;
-    for (i = 0; i < my_count; i++) {
-        my_total_data_size += buf_sizes[i];
-        /* printf("%d: read [%s], size %lu\n", rank, my_dset_names[i], buf_sizes[i]); */
+        sleep(3);
     }
-    /* printf("%d: my total read size = %lu\n", rank, my_total_data_size); */
-    /* fflush(stdout); */
-
-#ifdef ENABLE_MPI
-    MPI_Reduce(&my_total_data_size, &all_total_data_size, 1, MPI_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
-#else
-    all_total_data_size = my_total_data_size;
-#endif
-
-    if (rank == 0) {
-        printf("Time to query and read %d obj of %.4f MB with %d ranks: %.4f\n", 
-                count, all_total_data_size/1048576.0, size, elapsed_time);
-        fflush(stdout);
-    }
-
 done:
     if(PDC_close(pdc) < 0)
         printf("fail to close PDC\n");

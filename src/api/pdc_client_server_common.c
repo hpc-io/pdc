@@ -489,8 +489,8 @@ perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to)
     memcpy(to->count, from->count, sizeof(uint64_t)*from->ndim);
     memcpy(to->client_ids, from->client_ids, sizeof(uint32_t)*PDC_SERVER_MAX_PROC_PER_NODE);
     memcpy(to->shm_addr, from->shm_addr, sizeof(char) * ADDR_MAX);
-    strcpy(to->storage_location, from->storage_location);
-    strcpy(to->cache_location, from->cache_location);
+    memcpy(to->storage_location, from->storage_location, ADDR_MAX);
+    memcpy(to->cache_location, from->cache_location, ADDR_MAX);
 
     return SUCCEED;
 }

@@ -449,4 +449,7 @@ perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct PDC_region_info *region, P
 perr_t PDC_Client_write(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf);
 
 
+perr_t PDC_Client_query_name_read_entire_obj_client_agg_cache_iter(int my_nobj, char **my_obj_names, 
+                                                                   void ***out_buf, size_t *out_buf_sizes, 
+                                                                   int cache_percentage);
 #endif

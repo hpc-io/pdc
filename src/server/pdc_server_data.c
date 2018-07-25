@@ -2940,8 +2940,8 @@ perr_t PDC_Server_data_write_from_shm(region_list_t *region_list_head)
         // Open shared memory and map to data buf
         region_elt->shm_fd = shm_open(region_elt->shm_addr, O_RDONLY, 0666);
         if (region_elt->shm_fd == -1) {
-            printf("==PDC_SERVER[%d]: Shared memory open failed [%s]!\n", 
-                    pdc_server_rank_g, region_elt->shm_addr);
+            printf("==PDC_SERVER[%d]: %s - Shared memory open failed [%s]!\n", 
+                    pdc_server_rank_g, __func__, region_elt->shm_addr);
             ret_value = FAIL;
             goto done;
         }
@@ -5707,8 +5707,8 @@ perr_t PDC_Server_add_client_shm_to_cache(int origin, int cnt, void *buf_cp)
         // Open shared memory and map to data buf
         new_region->shm_fd = shm_open(new_region->shm_addr, O_RDONLY, 0666);
         if (new_region->shm_fd == -1) {
-            printf("==PDC_SERVER[%d]: Shared memory open failed [%s]!\n", 
-                    pdc_server_rank_g, new_region->shm_addr);
+            printf("==PDC_SERVER[%d]: %s - Shared memory open failed [%s]!\n", 
+                    pdc_server_rank_g, __func__, new_region->shm_addr);
             ret_value = FAIL;
             goto done;
         }
