@@ -816,6 +816,7 @@ hg_return_t PDC_Server_query_read_names_clinet_cb(const struct hg_cb_info *callb
 hg_return_t PDC_Server_storage_meta_name_query_bulk_respond(const struct hg_cb_info *callback_info)  {return HG_SUCCESS;};
 perr_t PDC_Server_proc_storage_meta_bulk(int task_id, int n_regions, region_list_t *region_list_head) {return SUCCEED;}
 perr_t PDC_Server_add_client_shm_to_cache(int origin, int cnt, void *buf_cp){return SUCCEED;}
+perr_t PDC_Server_container_add_tags(uint64_t cont_id, char *tags){return SUCCEED;}
 
 #else
 hg_return_t PDC_Client_work_done_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;};
@@ -3718,7 +3719,30 @@ done:
     FUNC_LEAVE(ret);
 }
 
+/* cont_add_tag_rpc_cb*/
+HG_TEST_RPC_CB(cont_add_tag_rpc, handle)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    cont_add_tags_rpc_in_t in;
+    pdc_int_ret_t          out;
 
+    FUNC_ENTER(NULL);
+
+    // Decode input
+    HG_Get_input(handle, &in);
+    if (PDC_Server_container_add_tags(in.cont_id, in.tags) != SUCCEED)
+        out.ret = -1;
+    else
+        out.ret = 1;
+
+
+    HG_Respond(handle, NULL, NULL, &out);
+    
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
 // Update container with objects
 static hg_return_t
 query_read_obj_name_bulk_cb(const struct hg_cb_info *hg_cb_info)
@@ -5190,7 +5214,7 @@ cont_add_tags_rpc_register(hg_class_t *hg_class)
     
     FUNC_ENTER(NULL);
 
-    ret_value = MERCURY_REGISTER(hg_class, "cont_add_tags_rpc", cont_add_tags_rpc_in_t, pdc_int_ret_t, pdc_check_int_ret_cb);
+    ret_value = MERCURY_REGISTER(hg_class, "cont_add_tags_rpc", cont_add_tags_rpc_in_t, pdc_int_ret_t, cont_add_tag_rpc_cb);
 
     FUNC_LEAVE(ret_value);
 }

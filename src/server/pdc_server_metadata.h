@@ -94,4 +94,6 @@ perr_t PDC_Server_hash_table_list_insert(pdc_hash_table_entry_head *head, pdc_me
 pdc_metadata_t *find_metadata_by_id(uint64_t obj_id);
 
 hg_return_t PDC_Server_query_read_names_clinet_cb(const struct hg_cb_info *callback_info);
+
+perr_t PDC_Server_container_add_tags(uint64_t cont_id, char *tags);
 #endif /* PDC_SERVER_METADATA_H */
