@@ -18,6 +18,8 @@
 #define NDSET 25304802
 #define NAMELEN 48
 
+int rank_g = 0, size_g = 1;
+
 void print_usage() {
     printf("Usage: srun -n ./h5boss_query_read /path/to/dset_list.txt \n");
 }
@@ -49,15 +51,61 @@ int assign_work_to_rank(int rank, int size, int nwork, int *my_count, int *my_st
     return 1;
 }
 
+void clear_read_cache(size_t read_size)
+{
+    char *filelist="/global/cscratch1/sd/houhun/pdc_data_64server_640files_OST1_1M_filelist";
+    char filenames[640][256];
+    int i;
+
+    if (rank_g == 0) {
+        FILE *pm_file = fopen(filelist, "r");
+        if (NULL == pm_file) {
+            fprintf(stderr, "Error opening clear cache filelist: %s\n", filelist);
+            return;
+        }
+        i = 0;
+        while (EOF != fscanf(pm_file, "%s", filenames[i])) {
+            i++;
+        }
+        fclose(pm_file);
+    }
+    MPI_Bcast( filenames, 640*256, MPI_CHAR, 0, MPI_COMM_WORLD);
+
+    char *readfile = filenames[rank_g % 640];
+    FILE *fp = fopen(readfile, "r");
+    if (NULL == fp) {
+        fprintf(stderr, "Error opening clear cache file: %s\n", readfile);
+        return;
+    }
+
+    void *data = malloc(read_size);
+    fseek (fp, 0 , SEEK_END);
+    size_t filesize = ftell(fp);
+    rewind(fp);
+
+    if (read_size > filesize) 
+        read_size = filesize;
+    size_t off = (rank_g * read_size) % filesize;
+    if (off + read_size > filesize) 
+        off = 0;
+    
+    fseek (fp, off, SEEK_SET);
+    fread(data, read_size, 1, fp);
+
+    fclose(fp);
+    free(data);
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+}
 
 int main(int argc, char **argv)
 {
-    int rank = 0, size = 1;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank_g);
+    MPI_Comm_size(MPI_COMM_WORLD, &size_g);
 #endif
 
     int i, j, count, my_count, my_start;
@@ -76,7 +124,7 @@ int main(int argc, char **argv)
         all_dset_names[i] = all_dset_names_1d + i*NAMELEN;
 
     // Rank 0 read from pm file
-    if (rank == 0) {
+    if (rank_g == 0) {
 
         printf("Reading from %s\n", pm_filename);
         FILE *pm_file = fopen(pm_filename, "r");
@@ -107,7 +155,7 @@ int main(int argc, char **argv)
     MPI_Bcast( &count, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast( all_dset_names_1d, NDSET*NAMELEN, MPI_CHAR, 0, MPI_COMM_WORLD);
 
-    assign_work_to_rank(rank, size, count, &my_count, &my_start);
+    assign_work_to_rank(rank_g, size_g, count, &my_count, &my_start);
 
     /* printf("Proc %d: my_count: %d, my_start: %d\n", my_rank, my_count, my_start); */
     /* fflush(stdout); */
@@ -121,9 +169,9 @@ int main(int argc, char **argv)
     else
         my_dset_names = NULL;
 
-    /* printf("%d: my count is %d\n", rank, my_count); */
+    /* printf("%d: my count is %d\n", rank_g, my_count); */
     /* for (i = 0; i < my_count; i++) { */
-    /*     printf("%d: [%s]\n", rank, my_dset_names[i]); */
+    /*     printf("%d: [%s]\n", rank_g, my_dset_names[i]); */
     /* } */
     /* fflush(stdout); */
 
@@ -133,12 +181,12 @@ int main(int argc, char **argv)
     void **buf;
     size_t *buf_sizes = calloc(sizeof(size_t), my_count);
 
-    if (rank == 0) {
+    if (rank_g == 0) {
         printf("Starting to query and read...\n");
         fflush(stdout);
     }
 
-    int iter = 0, niter = 10;
+    int iter = 0, niter = 11;
     for (iter = 0; iter < niter; iter++) {
     #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
@@ -156,15 +204,15 @@ int main(int argc, char **argv)
         elapsed_time = end_time - start_time;
     #endif
     
-        /* printf("%d: my count is %d\n", rank, my_count); */
+        /* printf("%d: my count is %d\n", rank_g, my_count); */
         /* fflush(stdout); */
     
         long long my_total_data_size = 0, all_total_data_size;
         for (i = 0; i < my_count; i++) {
             my_total_data_size += buf_sizes[i];
-            /* printf("%d: read [%s], size %lu\n", rank, my_dset_names[i], buf_sizes[i]); */
+            /* printf("%d: read [%s], size %lu\n", rank_g, my_dset_names[i], buf_sizes[i]); */
         }
-        /* printf("%d: my total read size = %lu\n", rank, my_total_data_size); */
+        /* printf("%d: my total read size = %lu\n", rank_g, my_total_data_size); */
         /* fflush(stdout); */
     
     #ifdef ENABLE_MPI
@@ -173,13 +221,13 @@ int main(int argc, char **argv)
         all_total_data_size = my_total_data_size;
     #endif
     
-        if (rank == 0) {
+        if (rank_g == 0) {
             printf("Time to query and read %d obj of %.4f MB with %d ranks and cache %d\%: %.4f\n", 
-                    count, all_total_data_size/1048576.0, size, iter*10, elapsed_time);
+                    count, all_total_data_size/1048576.0, size_g, iter*10, elapsed_time);
             fflush(stdout);
         }
 
-        sleep(3);
+        clear_read_cache(my_total_data_size);
     }
 done:
     if(PDC_close(pdc) < 0)

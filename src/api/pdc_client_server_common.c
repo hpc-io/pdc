@@ -5600,7 +5600,7 @@ perr_t PDC_create_shm_segment_ind(uint64_t size, char *shm_addr, void **buf)
     /* map the shared memory segment to the address space of the process */
     *buf = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
     if (*buf == MAP_FAILED) {
-        printf("== %s - Shared memory mmap failed\n", __func__);
+        printf("== %s - Shared memory mmap failed [%s]\n", __func__, shm_addr);
         // close and shm_unlink?
         ret_value = FAIL;
         goto done;
