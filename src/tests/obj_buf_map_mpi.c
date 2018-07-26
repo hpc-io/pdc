@@ -44,14 +44,13 @@ double uniform_random_number()
 
 int main(int argc, char **argv)
 {
-    int rank = 0, size = 1, i;
+    int rank = 0, size = 1;
     pdcid_t pdc_id, cont_prop, cont_id;
     pdcid_t obj_prop2;
     pdcid_t obj2;
     pdcid_t r1, r2;
     perr_t ret;
     float *x;
-    int x_dim = 64;
     long numparticles = 4;
     uint64_t dims[1] = {numparticles};  // {8388608};
     int ndim = 1;
