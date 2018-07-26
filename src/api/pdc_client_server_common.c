@@ -4729,6 +4729,7 @@ HG_TEST_THREAD_CB(server_lookup_client)
 HG_TEST_THREAD_CB(gen_obj_id)
 HG_TEST_THREAD_CB(gen_cont_id)
 HG_TEST_THREAD_CB(cont_add_del_objs_rpc)
+HG_TEST_THREAD_CB(cont_add_tag_rpc)
 HG_TEST_THREAD_CB(query_read_obj_name_rpc)
 HG_TEST_THREAD_CB(storage_meta_name_query_rpc)
 HG_TEST_THREAD_CB(get_storage_meta_name_query_bulk_result_rpc)
@@ -5210,13 +5211,7 @@ cont_add_del_objs_rpc_register(hg_class_t *hg_class)
 hg_id_t
 cont_add_tags_rpc_register(hg_class_t *hg_class)
 {
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "cont_add_tags_rpc", cont_add_tags_rpc_in_t, pdc_int_ret_t, cont_add_tag_rpc_cb);
-
-    FUNC_LEAVE(ret_value);
+    return MERCURY_REGISTER(hg_class, "cont_add_tag_rpc", cont_add_tags_rpc_in_t, pdc_int_ret_t, cont_add_tag_rpc_cb);
 }
 
 

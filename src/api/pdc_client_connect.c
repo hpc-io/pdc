@@ -215,6 +215,31 @@ perr_t PDC_Client_check_response(hg_context_t **hg_context)
     FUNC_LEAVE(ret_value);
 }
 
+// Generic function to check the return value (RPC receipt) is 1
+hg_return_t pdc_client_check_int_ret_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    pdc_int_ret_t output;
+
+    FUNC_ENTER(NULL);
+
+    hg_handle_t handle = callback_info->info.forward.handle;
+
+    ret_value = HG_Get_output(handle, &output);
+    if (ret_value != HG_SUCCESS) {
+        printf("==%s() - Error with HG_Get_output\n", __func__);
+        goto done;
+    }
+
+    if (output.ret != 1) {
+        printf("==%s() - Return value [%d] is NOT expected\n", __func__, output.ret);
+    }
+done:
+    work_todo_g--;
+    HG_Free_output(handle, &output);
+    FUNC_LEAVE(ret_value);
+}
+
 
 perr_t PDC_Client_read_server_addr_from_file()
 {
@@ -4683,46 +4708,29 @@ perr_t PDC_Client_del_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdc
     FUNC_LEAVE(ret_value);
 }
 
-static hg_return_t
-PDC_Client_add_tags_to_container_cb(const struct hg_cb_info *callback_info)
-{
-    hg_handle_t handle = callback_info->info.forward.handle;
-    pdc_int_ret_t int_ret;
-    hg_return_t ret = HG_SUCCESS;
-
-    // Sent the bulk handle with rpc and get a response
-    ret = HG_Get_output(handle, &int_ret);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not get output\n");
-        goto done;
-    }
-
-    /* printf("==PDC_CLIENT[%d]: received rpc response from %d!\n", pdc_client_mpi_rank_g, cb_args->server_id); */
-    /* fflush(stdout); */
-
-    ret = HG_Free_output(handle, &int_ret);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not free output\n");
-        goto done;
-    }
-
-done:
-    work_todo_g--;
-    return ret;
-} // end of PDC_Client_add_tags_to_container_cb
-
 // Add/delete a number of objects to one container
-perr_t PDC_Client_add_tags_to_container(uint64_t cont_meta_id, char *tags)
+perr_t PDC_Client_add_tags_to_container(pdcid_t cont_id, char *tags)
 {
     perr_t      ret_value = SUCCEED;
     hg_return_t hg_ret = HG_SUCCESS;
     hg_handle_t rpc_handle;
     uint32_t    server_id;
+    struct PDC_id_info *info;
+    struct PDC_cont_info *object;
+    uint64_t cont_meta_id;
     cont_add_tags_rpc_in_t add_tag_rpc_in;
-    // Reuse the existing args structure
-    update_region_storage_meta_bulk_args_t cb_args;
 
     FUNC_ENTER(NULL);
+ 
+    info = pdc_find_id(cont_id);
+    if(info == NULL) {
+        printf("==PDC_CLIENT[%d]: %s - cont_id %" PRIu64 " invalid!\n", 
+                pdc_client_mpi_rank_g, __func__, cont_id);
+        ret_value = FAIL;
+        goto done;
+    }
+    object = (struct PDC_cont_info*)(info->obj_ptr);
+    cont_meta_id = object->meta_id;
 
     server_id = PDC_get_server_by_obj_id(cont_meta_id, pdc_server_num_g);
 
@@ -4749,7 +4757,7 @@ perr_t PDC_Client_add_tags_to_container(uint64_t cont_meta_id, char *tags)
     add_tag_rpc_in.tags    = tags;
 
     /* Forward call to remote addr */
-    hg_ret = HG_Forward(rpc_handle, PDC_Client_add_tags_to_container_cb, &cb_args, &add_tag_rpc_in);
+    hg_ret = HG_Forward(rpc_handle, pdc_client_check_int_ret_cb, NULL, &add_tag_rpc_in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "Could not forward call\n");
         ret_value = FAIL;
@@ -5176,31 +5184,6 @@ done:
     work_todo_g--;
     FUNC_LEAVE(ret_value);
 } // End PDC_Client_query_read_complete
-
-// Generic function to check the return value (RPC receipt) is 1
-hg_return_t pdc_client_check_int_ret_cb(const struct hg_cb_info *callback_info)
-{
-    hg_return_t ret_value = HG_SUCCESS;
-    pdc_int_ret_t output;
-
-    FUNC_ENTER(NULL);
-
-    hg_handle_t handle = callback_info->info.forward.handle;
-
-    ret_value = HG_Get_output(handle, &output);
-    if (ret_value != HG_SUCCESS) {
-        printf("==%s() - Error with HG_Get_output\n", __func__);
-        goto done;
-    }
-
-    if (output.ret != 1) {
-        printf("==%s() - Return value [%d] is NOT expected\n", __func__, output.ret);
-    }
-done:
-    work_todo_g--;
-    HG_Free_output(handle, &output);
-    FUNC_LEAVE(ret_value);
-}
 
 // Send a name to server and receive an obj id
 perr_t PDC_Client_server_checkpoint(uint32_t server_id)

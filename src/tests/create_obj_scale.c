@@ -130,6 +130,9 @@ int main(int argc, char **argv)
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
+    char *cont_tags = "cont_tags0=123";
+    PDC_Client_add_tags_to_container(cont, cont_tags);
+
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if(obj_prop <= 0)
