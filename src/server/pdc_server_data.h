@@ -167,6 +167,13 @@ typedef struct storage_meta_query_one_name_args_t{
     accumulate_storage_meta_t *accu_meta;
 } storage_meta_query_one_name_args_t;
 
+typedef struct server_read_check_out_t {
+    int              ret;
+    int              is_cache_to_bb;
+    region_list_t   *region;
+    char            *shm_addr;
+} server_read_check_out_t; 
+
 extern int    pdc_server_rank_g;
 extern int    pdc_server_size_g;
 extern char   pdc_server_tmp_dir_g[ADDR_MAX];
@@ -253,10 +260,10 @@ perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *reg
 perr_t PDC_Server_data_read_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf);
 perr_t PDC_SERVER_notify_region_update_to_client(uint64_t meta_id, uint64_t reg_id, int32_t client_id);
 
-perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_check_out_t *out);
+perr_t PDC_Server_read_check(data_server_read_check_in_t *in, server_read_check_out_t *out);
 perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_write_check_out_t *out);
 
-perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_t obj_id);
+perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_t obj_id, int type);
 perr_t PDC_Server_get_local_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta);
 
 perr_t PDC_Server_posix_one_file_io(region_list_t* region);
@@ -267,7 +274,7 @@ perr_t PDC_Server_update_region_storage_meta_bulk_local(update_region_storage_me
 
 hg_return_t PDC_Server_query_read_names_cb(const struct hg_cb_info *callback_info);
 perr_t PDC_Server_update_region_storage_meta_bulk_mpi(bulk_xfer_data_t *bulk_data);
-perr_t PDC_Server_close_shm(region_list_t *region);
+perr_t PDC_Server_close_shm(region_list_t *region, int is_remove);
 
 perr_t PDC_Server_update_region_storage_meta_bulk_with_cb(bulk_xfer_data_t *bulk_data, perr_t (*cb)(), update_storage_meta_list_t *meta_list_target, int *n_updated);
 
@@ -282,6 +289,9 @@ perr_t PDC_Server_release_lock_request(uint64_t obj_id, struct PDC_region_info *
 
 perr_t PDC_Server_add_client_shm_to_cache(int origin, int cnt, void *buf_cp);
 
+perr_t PDC_Close_cache_file();
+
+hg_return_t PDC_cache_region_to_bb_cb (const struct hg_cb_info *callback_info) ;
 
 #endif /* PDC_SERVER_DATA_H */
 

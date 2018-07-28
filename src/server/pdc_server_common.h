@@ -41,6 +41,7 @@ typedef struct server_lookup_args_t {
     pdc_metadata_t  *meta;
     region_list_t   **region_lists;
     uint32_t        n_loc;
+    hg_handle_t     rpc_handle;
 } server_lookup_args_t;
 
 struct transfer_buf_map {

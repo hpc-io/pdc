@@ -266,4 +266,9 @@ perr_t PDCtag_get(pdcid_t obj_id, char *tag_name, void *tag_value);
 
 perr_t PDC_Client_add_tags_to_container(uint64_t cont_meta_id, char *tags);
 
+perr_t PDC_query_name_timestep_agg(const char *obj_name, int time_step, void **out);
+
+perr_t PDC_iwrite(void *meta, struct PDC_region_info *region, PDC_Request_t *request, void *buf);
+
+perr_t PDC_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsigned long check_interval_ms);
 #endif

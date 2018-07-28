@@ -2852,8 +2852,8 @@ perr_t PDC_Server_container_add_tags(uint64_t cont_id, char *tags)
            
         strcat(cont_entry->tags, tags);
         // Debug prints
-        printf("==PDC_SERVER[%d]: add [%s] tags to container %" PRIu64 "\n", 
-                pdc_server_rank_g, tags, cont_id);
+        /* printf("==PDC_SERVER[%d]: add [%s] tags to container %" PRIu64 "\n", */ 
+        /*         pdc_server_rank_g, tags, cont_id); */
 
     }
     else {

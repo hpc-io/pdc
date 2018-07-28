@@ -1029,7 +1029,7 @@ perr_t PDC_Server_finalize()
     DL_FOREACH(pdc_data_server_read_list_head_g, io_elt) {
         // remove IO request and its shm of perviously used obj
         DL_FOREACH_SAFE(io_elt->region_list_head, region_elt, region_tmp) {
-            ret_value = PDC_Server_close_shm(region_elt);
+            ret_value = PDC_Server_close_shm(region_elt, 1);
             /* if (ret_value != SUCCEED) */ 
             /*     printf("==PDC_SERVER: error closing shared memory\n"); */
             /* fflush(stdout); */
@@ -1063,6 +1063,7 @@ perr_t PDC_Server_finalize()
         goto done;
     }
 
+    PDC_Close_cache_file();
 /* printf("server info destroyed!"\n); */
 /* fflush(stdout); */
 

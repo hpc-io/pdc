@@ -2237,6 +2237,13 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDC_query_name_timestep_agg(const char *obj_name, int time_step, void **out)
+{
+    return PDC_Client_query_metadata_name_timestep_agg(obj_name, time_step, (pdc_metadata_t**)out);
+
+}
+
+
 // Send a name to server and receive an container (object) id
 perr_t PDC_Client_create_cont_id(const char *cont_name, pdcid_t cont_create_prop, pdcid_t *cont_id)
 {
@@ -3331,7 +3338,6 @@ data_server_read_check_rpc_cb(const struct hg_cb_info *callback_info)
 
     FUNC_ENTER(NULL);
 
-    /* printf("Entered data_server_read_check_rpc_cb()"); */
     struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
     hg_handle_t handle = callback_info->info.forward.handle;
 
@@ -3339,18 +3345,21 @@ data_server_read_check_rpc_cb(const struct hg_cb_info *callback_info)
     data_server_read_check_out_t output;
     ret_value = HG_Get_output(handle, &output);
     if (ret_value !=  HG_SUCCESS) {
-        printf("==PDC_CLIENT[%d]: data_server_read_check_rpc_cb error with HG_Get_output\n",
-                pdc_client_mpi_rank_g);
+        printf("==PDC_CLIENT[%d]: %s error with HG_Get_output\n", pdc_client_mpi_rank_g, __func__);
         client_lookup_args->ret = -1;
         client_lookup_args->ret_string = " ";
         goto done;
     }
-    if (is_client_debug_g == 1) {
+    if (is_client_debug_g == 1) 
         printf("==PDC_CLIENT: data_server_read_check ret=%d, addr=%s\n", output.ret, output.shm_addr);
-    }
+
     client_lookup_args->ret = output.ret;
-    client_lookup_args->ret_string = (char*)malloc(strlen(output.shm_addr)+1);
-    strcpy(client_lookup_args->ret_string, output.shm_addr);
+    if (output.shm_addr != NULL) {
+        client_lookup_args->ret_string = (char*)malloc(strlen(output.shm_addr)+1);
+        strcpy(client_lookup_args->ret_string, output.shm_addr);
+    }
+    else 
+        client_lookup_args->ret_string = NULL;
 
 done:
     work_todo_g--;
@@ -3388,7 +3397,7 @@ hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *call
     }
 
     if (target_region == NULL) {
-        printf("==PDC_CLIENT: PDC_Client_get_data_from_server_shm_cb() - request region not found!\n");
+        printf("==PDC_CLIENT[%d]: %s - request region not found!\n", pdc_client_mpi_rank_g, __func__);
         goto done;
     }
 
@@ -3405,7 +3414,8 @@ hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *call
     /* open the shared memory segment as if it was a file */
     shm_fd = shm_open(shm_addr, O_RDONLY, 0666);
     if (shm_fd == -1) {
-        printf("==PDC_CLIENT: Shared memory open failed [%s]!\n", shm_addr);
+        printf("==PDC_CLIENT[%d]: %s - Shared memory open failed [%s]!\n", 
+                pdc_client_mpi_rank_g, __func__, shm_addr);
         ret_value = FAIL;
         goto done;
     }
@@ -3528,11 +3538,10 @@ perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_
     PDC_Client_check_response(&send_context_g);
 
     *status = lookup_args.ret;
-    if (lookup_args.ret != 1) {
+    if (lookup_args.ret != 1 && lookup_args.ret != 111) {
         ret_value = SUCCEED;
-        if (is_client_debug_g) {
-            printf("==PDC_CLIENT[%d]: %s- IO request has not been fulfilled by server\n", pdc_client_mpi_rank_g, __func__);
-        }
+        if (is_client_debug_g) 
+            printf("==PDC_CLIENT[%d]: %s- IO request has not been fulfilled by server\n", pdc_client_mpi_rank_g,__func__);
         HG_Destroy(data_server_read_check_handle);
         if (lookup_args.ret == -1)
             ret_value = -1;
@@ -3548,7 +3557,8 @@ perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_
         /* open the shared memory segment as if it was a file */
         shm_fd = shm_open(shm_addr, O_RDONLY, 0666);
         if (shm_fd == -1) {
-            printf("==PDC_CLIENT: Shared memory open failed [%s]!\n", shm_addr);
+            printf("==PDC_CLIENT[%d]: %s - Shared memory open failed [%s]!\n", 
+                    pdc_client_mpi_rank_g, __func__, shm_addr);
             ret_value = FAIL;
             goto done;
         }
@@ -3584,6 +3594,7 @@ perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_
             goto done;
         }
 
+
         HG_Destroy(data_server_read_check_handle);
     } // end of check io
 
@@ -3596,11 +3607,14 @@ close:
         goto done;
     }
 
-    /* remove the shared memory segment from the file system */
-    /* if (shm_unlink(shm_addr) == -1) { */
-    /*     printf("==PDC_CLIENT: Error removing %s\n", shm_addr); */
-    /*     ret_value = FAIL; */
-    /*     goto done; */
+    // TODO: need to make sure server has cached it to BB
+    /* if (lookup_args.ret == 111) { */
+    /*     // remove the shared memory segment from the file system */
+    /*     if (shm_unlink(shm_addr) == -1) { */
+    /*         printf("==PDC_CLIENT[%d]: %s - Error removing %s\n", pdc_client_mpi_rank_g, __func__, shm_addr); */
+    /*         ret_value = FAIL; */
+    /*         goto done; */
+    /*     } */
     /* } */
 
     free(lookup_args.ret_string);
@@ -4291,7 +4305,7 @@ perr_t PDC_Client_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsign
     /* } */
     /* pdc_msleep(est_wait_time); */
 
-    while (completed != 1 && cnt < PDC_MAX_TRIAL_NUM) {
+    while (completed == 0 && cnt < PDC_MAX_TRIAL_NUM) {
 
         ret_value = PDC_Client_test(request, &completed);
         if (ret_value != SUCCEED) {
@@ -4332,6 +4346,11 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDC_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsigned long check_interval_ms)
+{
+    return PDC_Client_wait(request, max_wait_ms, check_interval_ms);
+}
+
 perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct PDC_region_info *region, PDC_Request_t *request, void *buf)
 {
     perr_t ret_value = SUCCEED;
@@ -4353,6 +4372,11 @@ perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct PDC_region_info *region, P
     ret_value = PDC_Client_data_server_write(request);
 
     FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_iwrite(void *meta, struct PDC_region_info *region, PDC_Request_t *request, void *buf)
+{
+    return PDC_Client_iwrite((pdc_metadata_t*)meta, region, request, buf);
 }
 
 hg_return_t PDC_Client_work_done_cb(const struct hg_cb_info *callback_info)
@@ -5089,7 +5113,8 @@ perr_t PDC_Client_complete_read_request(int nbuf, PDC_Request_t *req)
         /* open the shared memory segment as if it was a file */
         req->shm_fd_arr[i] = shm_open(req->shm_addr_arr[i], O_RDONLY, 0666);
         if (req->shm_fd_arr[i] == -1) {
-            printf("==PDC_CLIENT: Shared memory open failed [%s]!\n", req->shm_addr_arr[i]);
+            printf("==PDC_CLIENT[%d]: %s - Shared memory open failed [%s]!\n", 
+                    pdc_client_mpi_rank_g, __func__, req->shm_addr_arr[i]);
             ret_value = FAIL;
             goto done;
         }

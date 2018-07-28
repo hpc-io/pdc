@@ -61,9 +61,13 @@ int buffer_write_request_num_g       = 0;
 int buffer_read_request_num_g        = 0;
 int is_server_direct_io_g            = 0;
 
-int cache_percentage_g = 0;
-int current_read_from_cache_cnt_g = 0;
-int total_read_from_cache_cnt_g = 0;
+uint64_t total_mem_cache_size_mb_g   = 0;
+uint64_t max_mem_cache_size_mb_g     = 0;
+int cache_percentage_g               = 0;
+int current_read_from_cache_cnt_g    = 0;
+int total_read_from_cache_cnt_g      = 0;
+FILE *pdc_cache_file_ptr_g           = NULL;
+char pdc_cache_file_path_g[ADDR_MAX];
 
 /*
  * Callback function of the server to lookup clients, also gets the confirm message from client.
@@ -127,6 +131,9 @@ perr_t PDC_Server_set_lustre_stripe(const char *path, int stripe_count, int stri
 
     if (stripe_count < 1)
         stripe_count = 1;
+
+    if (stripe_count > 16) 
+        stripe_count = 16;
 
     if (stripe_size_MB <= 0)
         stripe_size_MB = 1;
@@ -1655,7 +1662,7 @@ done:
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_close_shm(region_list_t *region)
+perr_t PDC_Server_close_shm(region_list_t *region, int is_remove)
 {
     perr_t ret_value = SUCCEED;
 
@@ -1685,14 +1692,20 @@ perr_t PDC_Server_close_shm(region_list_t *region)
         goto done;
     }
 
-    /* remove the shared memory segment from the file system */
-    if (shm_unlink(region->shm_addr) == -1) {
-        ret_value = FAIL;
-        goto done;
-        printf("==PDC_SERVER[%d]: Error removing %s\n", pdc_server_rank_g, region->shm_addr);
+    if (is_remove == 1) {
+        /* remove the shared memory segment from the file system */
+        if (shm_unlink(region->shm_addr) == -1) {
+            ret_value = FAIL;
+            goto done;
+            printf("==PDC_SERVER[%d]: Error removing %s\n", pdc_server_rank_g, region->shm_addr);
+        }
     }
 
+    region->buf           = NULL;
+    region->shm_fd        = -1;
     region->is_shm_closed = 1;
+    memset(region->shm_addr, 0, ADDR_MAX);
+    total_mem_cache_size_mb_g -= (region->data_size / 1048576);
 
     /* printf("==PDC_SERVER[%d]: shm %s closed\n", pdc_server_rank_g, region->shm_addr); */
 done:
@@ -1947,6 +1960,134 @@ done:
     HG_Destroy(rpc_handle);
     FUNC_LEAVE(ret_value);
 } // End PDC_Server_notify_client_multi_io_complete
+
+perr_t PDC_Close_cache_file()
+{
+    if (pdc_cache_file_ptr_g != NULL) 
+        fclose(pdc_cache_file_ptr_g);
+    return SUCCEED;
+}
+/*
+ * Cache a region to BB, write and update
+ *
+ * \param  in[IN]       Region pointer, must have valid buf (data pointer)
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Server_cache_region_to_BB(region_list_t *region)
+{
+    perr_t ret_value = SUCCEED;
+    uint64_t write_bytes, offset;
+
+    FUNC_ENTER(NULL);
+    // Write to BB
+
+    #ifdef ENABLE_TIMING
+    struct timeval  pdc_timer_start, pdc_timer_end;
+    double cache_total_sec;
+    gettimeofday(&pdc_timer_start, 0);
+    #endif
+
+    if (pdc_cache_file_ptr_g == NULL) {
+        char *bb_data_path = getenv("PDC_BB_LOC");
+        if (bb_data_path != NULL) {
+            sprintf(pdc_cache_file_path_g, "%s/PDCcache.%d", bb_data_path, pdc_server_rank_g);
+        }
+        else {
+            char *user_specified_data_path = getenv("PDC_DATA_LOC");
+            if (user_specified_data_path != NULL)
+                bb_data_path = user_specified_data_path;
+            else {
+                bb_data_path = getenv("SCRATCH");
+                if (bb_data_path == NULL)
+                    bb_data_path = ".";
+            }
+            sprintf(pdc_cache_file_path_g, "%s/PDCcache.%d", bb_data_path, pdc_server_rank_g);
+            printf("==PDC_SERVER[%d]: %s - No PDC_BB_LOC specified, use [%s]!\n", 
+                    pdc_server_rank_g, __func__, bb_data_path);
+        }
+
+        // Debug print
+        /* printf("==PDC_SERVER[%d]: %s - opening file in BB [%s]!\n", */ 
+        /*         pdc_server_rank_g, __func__, pdc_cache_file_path_g); */
+
+        pdc_cache_file_ptr_g = fopen(pdc_cache_file_path_g, "ab");
+        if (NULL == pdc_cache_file_ptr_g) {
+            printf("==PDC_SERVER[%d]: fopen failed [%s]\n", pdc_server_rank_g, pdc_cache_file_path_g);
+            ret_value = FAIL;
+            goto done;
+        }
+        n_fopen_g++;
+    } // End open cache file
+
+    // Get the current write offset
+    offset = ftell(pdc_cache_file_ptr_g);
+
+    // Actual write (append)
+    /* printf("==PDC_SERVER[%d]: %s - appending %" PRIu64 " bytes to BB\n", */ 
+    /*         pdc_server_rank_g, __func__, region->data_size); */
+    write_bytes = fwrite(region->buf, 1, region->data_size, pdc_cache_file_ptr_g);
+    if (write_bytes != region->data_size) {
+        printf("==PDC_SERVER[%d]: fwrite to [%s] FAILED, size %" PRIu64", actual writeen %" PRIu64 "!\n",
+                    pdc_server_rank_g, region->storage_location, region->data_size, write_bytes);
+        ret_value= FAIL;
+        goto done;
+    }
+    n_fwrite_g++;
+    /* fwrite_total_MB += write_bytes/1048576.0; */
+
+    #ifdef ENABLE_TIMING
+    gettimeofday(&pdc_timer_end, 0);
+    double region_write_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+    server_write_time_g += region_write_time;
+    /* printf("==PDC_SERVER[%d]: fwrite %" PRIu64 " bytes, %.2fs\n", */ 
+    /*         pdc_server_rank_g, write_bytes, region_write_time); */
+    #endif
+
+    // Prepare update
+    strcpy(region->storage_location, pdc_cache_file_path_g);
+    region->offset = offset;
+    strcpy(region->cache_location, pdc_cache_file_path_g);
+    region->cache_offset = offset;
+
+    // Update storage meta
+    ret_value = PDC_Server_update_region_storagelocation_offset(region, PDC_UPDATE_CACHE);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_SERVER[%d]: failed to update region storage info!\n", pdc_server_rank_g);
+        goto done;
+    }
+
+    // Close shm after writing to BB
+    ret_value = PDC_Server_close_shm(region, 0);
+    region->is_data_ready = 0;
+    region->is_io_done    = 0;
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} // PDC_Server_cache_region_to_BB
+
+hg_return_t PDC_cache_region_to_bb_cb (const struct hg_cb_info *callback_info) 
+{
+    perr_t ret;
+    hg_return_t ret_value = HG_SUCCESS;
+    server_read_check_out_t *out;
+
+    FUNC_ENTER(NULL);
+
+    out = (server_read_check_out_t*) callback_info->arg;
+    ret = PDC_Server_cache_region_to_BB(out->region);
+    if (ret != SUCCEED) 
+        printf("==PDC_SERVER[%d]: %s - Error with PDC_Server_cache_region_to_BB\n", pdc_server_rank_g, __func__);
+
+    if (out != NULL) {
+        free(out);
+        /* if (out->shm_addr != NULL) */ 
+        /*     free(out->shm_addr); */
+    }
+    FUNC_LEAVE(ret_value);
+}
+
 /*
  * Check if a previous read request has been completed
  *
@@ -1955,15 +2096,23 @@ done:
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_check_out_t *out)
+perr_t PDC_Server_read_check(data_server_read_check_in_t *in, server_read_check_out_t *out)
 {
     perr_t ret_value = SUCCEED;
     pdc_data_server_io_list_t *io_elt = NULL, *io_target = NULL;
-    region_list_t *region_elt = NULL, *region_tmp = NULL;
+    region_list_t *region_elt = NULL;
     region_list_t r_target;
     /* uint32_t i; */
 
     FUNC_ENTER(NULL);
+
+/* volatile int dbg_sleep_g = 1; */
+/* printf("== attach %d\n", getpid()); */
+/* fflush(stdout); */
+/* while(dbg_sleep_g ==1) { */
+/*     dbg_sleep_g = 1; */
+/*     sleep(1); */
+/* } */
 
     pdc_metadata_t meta;
     PDC_metadata_init(&meta);
@@ -1981,24 +2130,6 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
             io_target = io_elt;
             break;
         }
-        /* else { */
-        /*     // Only close the shm that is in the list before current reqd check request */
-        /*     // as we know for sure that the clinet has copied the data in shm already */
-        /*     // this way we can correctly release the shm that has been used */
-        /*     if (io_elt->is_shm_closed != 1) { */
-        /*         // remove IO request and its shm of perviously used obj */
-        /*         DL_FOREACH_SAFE(io_elt->region_list_head, region_elt, region_tmp) { */
-        /*             ret_value = PDC_Server_close_shm(region_elt); */
-        /*             if (ret_value != SUCCEED) */ 
-        /*                 printf("==PDC_SERVER: error closing shared memory\n"); */
-        /*             fflush(stdout); */
-        /*             DL_DELETE(io_elt->region_list_head, region_elt); */
-        /*             free(region_elt); */
-        /*         } */
-        /*         io_elt->region_list_head = NULL; */
-        /*         io_elt->is_shm_closed = 1; */
-        /*     } */
-        /* } */
     }
 #ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_unlock(&data_read_list_mutex_g);
@@ -2008,7 +2139,6 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
         printf("==PDC_SERVER[%d]: %s - No existing io request with same obj_id %" PRIu64 " found!\n", 
                     pdc_server_rank_g, __func__, meta.obj_id);
         out->ret = -1;
-        out->shm_addr = " ";
         goto done;
     }
 
@@ -2025,24 +2155,26 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
     /* } */
 
     int found_region = 0;
-    DL_FOREACH_SAFE(io_target->region_list_head, region_elt, region_tmp) {
+    DL_FOREACH(io_target->region_list_head, region_elt) {
         if (region_list_cmp(region_elt, &r_target) == 0) {
             // Found previous io request
             found_region = 1;
             out->ret = region_elt->is_data_ready;
-            out->shm_addr = " ";
-            /* printf("==PDC_SERVER: found IO request region\n"); */
-            // NOTE: Similar to write check, we don't want to remove the region info, 
-            //       as it will be used to release the shm at a later time.
+            out->region = NULL;
+            out->is_cache_to_bb = 0;
             if (region_elt->is_data_ready == 1) {
                 out->shm_addr = calloc(sizeof(char), ADDR_MAX);
                 strcpy(out->shm_addr, region_elt->shm_addr);
-                /* printf("==PDC_SERVER[%d]: remove a read request region, shm_addr=[%s]\n", */
-                /*         pdc_server_rank_g, region_elt->shm_addr); */
-                /* DL_DELETE(io_target->region_list_head, region_elt); */
-                /* free(region_elt); */
+                /* printf("==PDC_SERVER[%d]: %s - found shm_addr [%s]\n", */ 
+                /*         pdc_server_rank_g, __func__,region_elt->shm_addr); */
+                if (region_elt->shm_addr == NULL) 
+                    printf("==PDC_SERVER[%d]: %s - found shm_addr is NULL!\n", pdc_server_rank_g, __func__);
+                out->region = region_elt;
+                // If total cache in memory exceeds threshold, cache the data in BB when available
+                if (total_mem_cache_size_mb_g >= max_mem_cache_size_mb_g && 
+                        strstr(region_elt->cache_location, "PDCcache") == NULL) 
+                    out->is_cache_to_bb = 1;
             }
-
             ret_value = SUCCEED;
             goto done;
         }
@@ -2052,7 +2184,6 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_c
         printf("==PDC_SERVER[%d]: %s -  No io request with same region found!\n", pdc_server_rank_g, __func__);
         PDC_print_region_list(&r_target);
         out->ret = -1;
-        out->shm_addr = " ";
         goto done;
     }
 
@@ -2977,13 +3108,8 @@ done:
     /* printf("==PDC_SERVER[%d]: closing shared mem\n", pdc_server_rank_g); */
     /* PDC_print_region_list(region_elt); */
     DL_FOREACH(region_list_head, region_elt) {
-        if (region_elt->is_io_done == 1) {
-            ret_value = PDC_Server_close_shm(region_elt);
-            /* if (ret_value != SUCCEED) { */
-            /*     printf("==PDC_SERVER: error closing shared memory\n"); */
-            /*     goto done; */
-            /* } */
-        }
+        if (region_elt->is_io_done == 1) 
+            ret_value = PDC_Server_close_shm(region_elt, 1);
     }
 
     fflush(stdout);
@@ -3138,7 +3264,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
             // free the shm if read
             if (io_info->io_type == READ) {
                 has_read_cache = 1;
-                /* if (PDC_Server_close_shm(region_elt) != SUCCEED) { */
+                /* if (PDC_Server_close_shm(region_elt, 1) != SUCCEED) { */
                 /*     printf("==PDC_SERVER[%d]: PDC_Server_data_io_via_shm() - ERROR close shm!\n", */ 
                 /*             pdc_server_rank_g); */
                 /* } */
@@ -3253,19 +3379,17 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
         } // end for io_list
         buffer_write_request_num_g = 0;
         buffer_write_request_total_g = 0;
-    }
+    } // End write
     else if (io_info->io_type == READ && buffer_read_request_num_g == buffer_read_request_total_g &&
         buffer_read_request_total_g != 0) {
-
+        // Read
         // TODO TEMPWORK
-        cache_percentage_g = io_info->cache_percentage;
-        
+        cache_percentage_g            = io_info->cache_percentage;
         current_read_from_cache_cnt_g = 0;
-
-        total_read_from_cache_cnt_g = buffer_read_request_total_g * cache_percentage_g / 100;
+        total_read_from_cache_cnt_g   = buffer_read_request_total_g * cache_percentage_g / 100;
         if (pdc_server_rank_g == 0) {
             printf("==PDC_SERVER[%d]: cache percentage %d\%, read_from_cache %d/%d\n", 
-                    pdc_server_rank_g, cache_percentage_g, current_read_from_cache_cnt_g, total_read_from_cache_cnt_g);
+               pdc_server_rank_g, cache_percentage_g, current_read_from_cache_cnt_g, total_read_from_cache_cnt_g);
         }
 
         if (is_debug_g) {
@@ -3300,6 +3424,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
             }
 
             // Storage location is obtained later
+            /* ret_value = PDC_Server_posix_one_file_io(io_list_elt->region_list_head, io_list_elt->obj_id); */
             ret_value = PDC_Server_data_read_to_shm(io_list_elt->region_list_head, io_list_elt->obj_id);
             if (ret_value != SUCCEED) {
                 printf("==PDC_SERVER[%d]: PDC_Server_data_read_to_shm FAILED!\n", pdc_server_rank_g);
@@ -3309,7 +3434,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
         }
         buffer_read_request_num_g = 0;
         buffer_read_request_total_g = 0;
-    }
+    } // End read
 
 #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer_end, 0);
@@ -3328,7 +3453,7 @@ done:
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_t obj_id)
+perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_t obj_id, int type)
 {
     perr_t ret_value = SUCCEED;
     pdc_metadata_t *target_meta = NULL;
@@ -3356,15 +3481,27 @@ perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_
     // Find if there is the same region already stored in the metadata and update it
     DL_FOREACH(target_meta->storage_region_list_head, region_elt) {
         if (PDC_is_same_region_list(region_elt, region) == 1) {
-            printf("==PDC_SERVER[%d]: overwrite existing region location/offset\n", pdc_server_rank_g);
-            printf("==PDC_SERVER[%d]: original:\n", pdc_server_rank_g);
-            PDC_print_storage_region_list(region);
-            printf("==PDC_SERVER[%d]: new:\n", pdc_server_rank_g);
-            PDC_print_storage_region_list(region_elt);
-            fflush(stdout);
+            /* printf("==PDC_SERVER[%d]: overwrite existing region location/offset\n", pdc_server_rank_g); */
+            /* printf("==PDC_SERVER[%d]: original:\n", pdc_server_rank_g); */
+            /* PDC_print_storage_region_list(region_elt); */
+            /* printf("==PDC_SERVER[%d]: new:\n", pdc_server_rank_g); */
+            /* PDC_print_storage_region_list(region); */
+            /* fflush(stdout); */
+
             // Update location and offset
-            memcpy(region_elt->storage_location, region->storage_location, sizeof(char)*ADDR_MAX);
-            region_elt->offset = region->offset;
+            if (type == PDC_UPDATE_CACHE) {
+                memcpy(region_elt->cache_location, region->storage_location, sizeof(char)*ADDR_MAX);
+                region_elt->cache_offset = region->offset;
+            }
+            else if (type == PDC_UPDATE_STORAGE) {
+                memcpy(region_elt->storage_location, region->storage_location, sizeof(char)*ADDR_MAX);
+                region_elt->offset = region->offset;
+            }
+            else {
+                printf("==PDC_SERVER[%d]: %s - error with update type %d!\n", pdc_server_rank_g, __func__, type);
+                break;
+            }
+
             region_elt->data_size = pdc_get_region_size(region_elt);
             update_success = 1;
 
@@ -3436,13 +3573,11 @@ PDC_Server_update_region_loc_cb(const struct hg_cb_info *callback_info)
     }
     lookup_args->ret_int = output.ret;
 
+    update_remote_region_count_g++;
 done:
-    /* s2s_send_work_todo_g--; */
     HG_Free_output(handle, &output);
     FUNC_LEAVE(ret_value);
 }
-
-
 
 /*
  * Update the storage location information of the corresponding metadata that may be stored in a
@@ -3452,7 +3587,7 @@ done:
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region)
+perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region, int type)
 {
     hg_return_t hg_ret;
     perr_t ret_value = SUCCEED;
@@ -3489,7 +3624,7 @@ perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region)
 
     if (server_id == (uint32_t)pdc_server_rank_g) {
         // Metadata object is local, no need to send update RPC
-        ret_value = PDC_Server_update_local_region_storage_loc(region, region_meta->obj_id);
+        ret_value = PDC_Server_update_local_region_storage_loc(region, region_meta->obj_id, type);
         update_local_region_count_g++;
         if (ret_value != SUCCEED) {
             printf("==PDC_SERVER[%d]: %s - update_local_region_storage FAILED!\n",pdc_server_rank_g,__func__);
@@ -3520,14 +3655,13 @@ perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region)
             fflush(stdout);
         }
 
-
-        in.obj_id = region->meta->obj_id;
-        in.offset = region->offset;
-        in.storage_location = calloc(sizeof(char), ADDR_MAX);
-        memcpy(in.storage_location, region->storage_location, sizeof(char)*ADDR_MAX);
-
+        in.obj_id           = region->meta->obj_id;
+        in.offset           = region->offset;
+        in.storage_location = region->storage_location;
+        in.type             = type;
         pdc_region_list_t_to_transfer(region, &(in.region));
 
+        lookup_args.rpc_handle = update_region_loc_handle;
         hg_ret = HG_Forward(update_region_loc_handle, PDC_Server_update_region_loc_cb, &lookup_args, &in);
         if (hg_ret != HG_SUCCESS) {
             printf("==PDC_SERVER[%d]: %s - HG_Forward() to server %d FAILED\n",
@@ -3536,12 +3670,7 @@ perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region)
             ret_value = FAIL;
             goto done;
         }
-
-        // TODO: move to callback
-        update_remote_region_count_g++;
-
         HG_Destroy(update_region_loc_handle);
-        /* free(in.storage_location); */
     }
 
 done:
@@ -4292,6 +4421,7 @@ perr_t PDC_Server_read_one_region(region_list_t *read_region)
     region_list_t  *previous_region = NULL, *region_elt;
     FILE *fp_read = NULL;
     char *prev_path = NULL;
+    int is_shm_created = 0, is_read_succeed = 0;
     #ifdef ENABLE_TIMING
     double fopen_time;
     #endif
@@ -4313,6 +4443,8 @@ perr_t PDC_Server_read_one_region(region_list_t *read_region)
         printf("==PDC_SERVER[%d]: %s - Error with shared memory creation\n", pdc_server_rank_g, __func__);
         goto done;
     }
+    is_shm_created = 1;
+    total_mem_cache_size_mb_g += (read_region->data_size/1048576);
 
     // Now for each storage region that overlaps with request region,
     // read with the corresponding offset and size
@@ -4387,6 +4519,7 @@ perr_t PDC_Server_read_one_region(region_list_t *read_region)
             goto done;
         }
         total_read_bytes += read_bytes;
+        is_read_succeed = 1;
 
         prev_path = region_elt->storage_location;
     } // end of for all overlapping storage regions for one request region
@@ -4403,6 +4536,12 @@ perr_t PDC_Server_read_one_region(region_list_t *read_region)
     read_region->is_io_done = 1;
 
 done:
+    // Close shm if read failed
+    if (is_shm_created == 1 && is_read_succeed == 0) {
+        PDC_Server_close_shm(read_region, 1);
+        read_region->is_data_ready = 0;
+        read_region->is_io_done = 0;
+    }
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 } // End PDC_Server_read_one_region
@@ -4449,6 +4588,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
     /* ret_value = PDC_Server_get_storage_location_of_region_with_cb(region_elt); */
     DL_FOREACH(region_list_head, region_elt) {
         if (region_elt->access_type == READ) {
+
             /* #ifdef ENABLE_CACHE */
             if (region_elt->is_io_done == 1) {
                 continue;
@@ -4471,8 +4611,8 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
     // Iterate over all region IO requests and perform actual IO
     // We have all requests from node local clients, now read them from storage system
     DL_FOREACH(region_list_head, region_elt) {
-        if (region_elt->is_io_done == 1) {
-            /* printf("==PDC_SERVER[%d]: found cached data!\n", pdc_server_rank_g); */
+        if (region_elt->is_io_done == 1 && region_elt->is_shm_closed != 1) {
+            printf("==PDC_SERVER[%d]: found cached data!\n", pdc_server_rank_g);
             if(region_elt->access_type == READ && current_read_from_cache_cnt_g < total_read_from_cache_cnt_g)
                 current_read_from_cache_cnt_g++;
             else
@@ -4483,97 +4623,138 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
 
             // Prepare the shared memory for transfer back to client
             snprintf(region_elt->shm_addr, ADDR_MAX, "/PDC%d_%d", pdc_server_rank_g, rand());
-
             ret_value = PDC_create_shm_segment(region_elt);
             if (ret_value != SUCCEED) {
                 printf("==PDC_SERVER[%d]: %s - Error with shared memory creation\n", pdc_server_rank_g, __func__);
                 continue;
             }
+            /* printf("==PDC_SERVER[%d]: %s - shared memory created [%s]\n", pdc_server_rank_g, __func__, region_elt->shm_addr); */
+            /* printf("==PDC_SERVER[%d]: %s - cache_location [%s]\n", pdc_server_rank_g, __func__, region_elt->cache_location); */
 
-            // Now for each storage region that overlaps with request region,
-            // read with the corresponding offset and size
-            for (i = 0; i < region_elt->n_overlap_storage_region; i++) {
+            // Check if the region is cached to BB
+            if (strstr(region_elt->cache_location, "PDCcache") != NULL) {
 
-                if (is_debug_g == 1) {
-                    printf("==PDC_SERVER[%d]: Found overlapping storage regions %d\n",
-                            pdc_server_rank_g, n_storage_regions);
-                    /* printf("=========================================\n"); */
-                    /* PDC_print_storage_region_list(overlap_regions[i]); */
-                    /* printf("=========================================\n"); */
+                #ifdef ENABLE_TIMING
+                struct timeval  pdc_timer_start11, pdc_timer_end11;
+                gettimeofday(&pdc_timer_start11, 0);
+                #endif
+                if (prev_path == NULL || strcmp(region_elt->cache_location, prev_path) != 0) {
+                    if (fp_read != NULL)  
+                        fclose(fp_read);
+                    fp_read = fopen(region_elt->cache_location, "rb");
+                    n_fopen_g++;
+                }
+                offset = ftell(fp_read);
+                if (offset < region_elt->cache_offset) 
+                    fseek(fp_read, region_elt->cache_offset-offset, SEEK_CUR);
+                else
+                    fseek(fp_read, region_elt->cache_offset, SEEK_SET);
+                
+                if (region_elt->data_size == 0) {
+                    printf("==PDC_SERVER[%d]: %s - region data_size is 0\n", pdc_server_rank_g, __func__);
+                    continue;
                 }
 
-                // If a new file needs to be opened
-                if (prev_path == NULL || 
-                    strcmp(region_elt->overlap_storage_regions[i].storage_location, prev_path) != 0) {
+                // Debug print
+                /* printf("==PDC_SERVER[%d]: %s - read from [%s] offset %" PRIu64 "\n", */ 
+                /*         pdc_server_rank_g, __func__, region_elt->cache_location, region_elt->cache_offset); */
 
-                    if (fp_read != NULL)  {
+                read_bytes = fread(region_elt->buf, 1, region_elt->data_size, fp_read);
+                if (read_bytes != region_elt->data_size) {
+                    printf("==PDC_SERVER[%d]: %s - read size %" PRIu64 " is not expected %" PRIu64 "\n", 
+                            pdc_server_rank_g, __func__, read_bytes, region_elt->data_size);
+                    continue;
+                }
+                #ifdef ENABLE_TIMING
+                gettimeofday(&pdc_timer_end11, 0);
+                server_read_time_g += PDC_get_elapsed_time_double(&pdc_timer_start11, &pdc_timer_end11);
+                #endif
+            }
+            else {
+                // Now for each storage region that overlaps with request region,
+                // read with the corresponding offset and size
+                for (i = 0; i < region_elt->n_overlap_storage_region; i++) {
+
+                    if (is_debug_g == 1) {
+                        printf("==PDC_SERVER[%d]: Found overlapping storage regions %d\n",
+                                pdc_server_rank_g, n_storage_regions);
+                        /* printf("=========================================\n"); */
+                        /* PDC_print_storage_region_list(overlap_regions[i]); */
+                        /* printf("=========================================\n"); */
+                    }
+
+                    // If a new file needs to be opened
+                    if (prev_path == NULL || 
+                        strcmp(region_elt->overlap_storage_regions[i].storage_location, prev_path) != 0) {
+
+                        if (fp_read != NULL)  {
+                            fclose(fp_read);
+                            fp_read = NULL;
+                        }
+
+                        #ifdef ENABLE_TIMING
+                        struct timeval  pdc_timer_start2, pdc_timer_end2;
+                        gettimeofday(&pdc_timer_start2, 0);
+                        #endif
+
+                        /* printf("==PDC_SERVER[%d]: opening [%s]\n", pdc_server_rank_g, */ 
+                        /*                         overlap_regions[i]->storage_location); */
+                        /* fflush(stdout); */
+
+                        if (region_elt->overlap_storage_regions[i].storage_location != NULL) {
+                            fp_read = fopen(region_elt->overlap_storage_regions[i].storage_location, "rb");
+                            n_fopen_g++;
+                        }
+                        else {
+                            printf("==PDC_SERVER[%d]: %s - NULL storage location\n",
+                                    pdc_server_rank_g, __func__);
+                            fp_read = NULL;
+                        }
+
+                        #ifdef ENABLE_TIMING
+                        gettimeofday(&pdc_timer_end2, 0);
+                        server_fopen_time_g += PDC_get_elapsed_time_double(&pdc_timer_start2, &pdc_timer_end2);
+                        #endif
+
+                        if (fp_read == NULL) {
+                            printf("==PDC_SERVER[%d]: fopen failed [%s]\n",
+                                    pdc_server_rank_g, region_elt->storage_location);
+                            ret_value = FAIL;
+                            goto done;
+                        }
+                    }
+
+                    // Request: elt->start/count
+                    // Storage: region_elt->overlap_storage_regions[i]->start/count
+                    ret_value = PDC_Server_read_overlap_regions(region_elt->ndim, region_elt->start, 
+                                region_elt->count, region_elt->overlap_storage_regions[i].start, 
+                                region_elt->overlap_storage_regions[i].count, fp_read, 
+                                region_elt->overlap_storage_regions[i].offset, region_elt->buf, &read_bytes);
+
+                    if (ret_value != SUCCEED) {
+                        printf("==PDC_SERVER[%d]: error with PDC_Server_read_overlap_regions\n", pdc_server_rank_g);
                         fclose(fp_read);
                         fp_read = NULL;
-                    }
-
-                    #ifdef ENABLE_TIMING
-                    struct timeval  pdc_timer_start2, pdc_timer_end2;
-                    gettimeofday(&pdc_timer_start2, 0);
-                    #endif
-
-                    /* printf("==PDC_SERVER[%d]: opening [%s]\n", pdc_server_rank_g, */ 
-                    /*                         overlap_regions[i]->storage_location); */
-                    /* fflush(stdout); */
-
-                    if (region_elt->overlap_storage_regions[i].storage_location != NULL) {
-                        fp_read = fopen(region_elt->overlap_storage_regions[i].storage_location, "rb");
-                        n_fopen_g++;
-                    }
-                    else {
-                        printf("==PDC_SERVER[%d]: %s - NULL storage location\n",
-                                pdc_server_rank_g, __func__);
-                        fp_read = NULL;
-                    }
-
-                    #ifdef ENABLE_TIMING
-                    gettimeofday(&pdc_timer_end2, 0);
-                    server_fopen_time_g += PDC_get_elapsed_time_double(&pdc_timer_start2, &pdc_timer_end2);
-                    #endif
-
-                    if (fp_read == NULL) {
-                        printf("==PDC_SERVER[%d]: fopen failed [%s]\n",
-                                pdc_server_rank_g, region_elt->storage_location);
-                        ret_value = FAIL;
                         goto done;
                     }
+                    total_read_bytes += read_bytes;
+
+                    prev_path = region_elt->overlap_storage_regions[i].storage_location;
+                } // end of for all overlapping storage regions for one request region
+
+                if (is_debug_g == 1) {
+                    printf("==PDC_SERVER[%d]: Read data total size %" PRIu64 "\n",
+                            pdc_server_rank_g, total_read_bytes);
+                    fflush(stdout);
                 }
+                /* printf("Read iteration: size %" PRIu64 "\n", region_elt->data_size); */
 
-                // Request: elt->start/count
-                // Storage: region_elt->overlap_storage_regions[i]->start/count
-                ret_value = PDC_Server_read_overlap_regions(region_elt->ndim, region_elt->start, 
-                            region_elt->count, region_elt->overlap_storage_regions[i].start, 
-                            region_elt->overlap_storage_regions[i].count, fp_read, 
-                            region_elt->overlap_storage_regions[i].offset, region_elt->buf, &read_bytes);
+                /* region_elt->offset = offset; */
+                offset += total_read_bytes;
 
-                if (ret_value != SUCCEED) {
-                    printf("==PDC_SERVER[%d]: error with PDC_Server_read_overlap_regions\n",
-                            pdc_server_rank_g);
-                    fclose(fp_read);
-                    fp_read = NULL;
-
-                    goto done;
-                }
-                total_read_bytes += read_bytes;
-
-                prev_path = region_elt->overlap_storage_regions[i].storage_location;
-            } // end of for all overlapping storage regions for one request region
-
-            if (is_debug_g == 1) {
-                printf("==PDC_SERVER[%d]: Read data total size %" PRIu64 "\n",
-                        pdc_server_rank_g, total_read_bytes);
-                fflush(stdout);
-            }
-            /* printf("Read iteration: size %" PRIu64 "\n", region_elt->data_size); */
+            } // end else read from storage
 
             region_elt->is_data_ready = 1;
-            region_elt->offset = offset;
-            offset += total_read_bytes;
-
             region_elt->is_io_done = 1;
 
         } // end of READ
@@ -4689,7 +4870,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
             region_elt->is_data_ready = 1;
             region_elt->offset = offset;
 
-            ret_value = PDC_Server_update_region_storagelocation_offset(region_elt);
+            ret_value = PDC_Server_update_region_storagelocation_offset(region_elt, PDC_UPDATE_STORAGE);
             if (ret_value != SUCCEED) {
                 printf("==PDC_SERVER[%d]: failed to update region storage info!\n", pdc_server_rank_g);
                 goto done;
@@ -4741,15 +4922,6 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
     /*     DL_APPEND(pdc_update_storage_meta_list_head_g, tmp_alloc); */
     /*     pdc_nbuffered_bulk_update_g++; */
     /* } */
-
-    /* // FIXME: tmp fix for server direct IO */
-    /* int n_updated; */
-    /* if (is_server_direct_io_g) { */
-    /*     ret_value = PDC_Server_update_storage_meta(&n_updated); */
-    /*     if (ret_value != SUCCEED) { */
-    /*         printf("==PDC_SERVER[%d]: %s - FAILED to update storage meta\n", pdc_server_rank_g, __func__); */
-    /*     } */
-    /* } */
     /* int n_region = 0; */
     /* DL_COUNT(region_list_head, region_elt, n_region); */
     /* printf("==PDC_SERVER[%d]: after writes done, will update %d regions \n", pdc_server_rank_g, n_region); */
@@ -4770,19 +4942,6 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
         /*     printf("==PDC_SERVER[%d]: %s - update storage info FAILED!", pdc_server_rank_g, __func__); */
         /*     goto done; */
         /* } */
-// Debug
-/* if (pdc_server_rank_g == 0) { */
-/*     char hostname[128]; */
-/*     gethostname(hostname, 127); */
-/*     dbg_sleep_g = 1; */
-/*     printf("== %s attach %d\n", hostname, getpid()); */
-/*     fflush(stdout); */
-/*     while(dbg_sleep_g ==1) { */
-/*         dbg_sleep_g = 1; */
-/*         sleep(1); */
-/*     } */
-/* } */
-
 
         /* // Update all regions location info to the metadata server */
         /* DL_FOREACH(region_list_head, region_elt) { */
@@ -4794,7 +4953,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
         /*         /1*        "ndim: %" PRIu64 ", offset %" PRIu64 " \n", pdc_server_rank_g, *1/ */ 
         /*         /1*        region_elt->meta->obj_id, region_elt->ndim,  region_elt->start[0]); *1/ */     
 
-        /*         ret_value = PDC_Server_update_region_storagelocation_offset(region_elt); */
+        /*         ret_value = PDC_Server_update_region_storagelocation_offset(region_elt PDC_UPDATE_STORAGE); */
         /*         if (ret_value != SUCCEED) { */
         /*             printf("==PDC_SERVER[%d]: failed to update region storage info!\n", pdc_server_rank_g); */
         /*             goto done; */

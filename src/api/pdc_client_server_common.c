@@ -48,6 +48,7 @@
 #include "pdc_client_server_common.h"
 #include "../server/utlist.h"
 #include "../server/pdc_server.h"
+#include "../server/pdc_server_data.h"
 #include "pdc_malloc.h"
 
 #ifdef ENABLE_MULTITHREAD 
@@ -768,7 +769,7 @@ perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out,
 perr_t PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status) {return SUCCEED;}
 perr_t PDC_Server_local_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status) {return SUCCEED;}
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs) {return SUCCEED;}
-perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_t obj_id) {return SUCCEED;}
+perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_t obj_id, int type) {return SUCCEED;}
 perr_t PDC_Server_release_lock_request(uint64_t obj_id, struct PDC_region_info *region) {return SUCCEED;}
 perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
 perr_t PDC_Server_data_read_from(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
@@ -804,7 +805,7 @@ hg_class_t *hg_class_g;
  * Data server related
  */
 hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
-perr_t PDC_Server_read_check(data_server_read_check_in_t *in, data_server_read_check_out_t *out) {return SUCCEED;}
+perr_t PDC_Server_read_check(data_server_read_check_in_t *in, server_read_check_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_write_check_out_t *out) {return SUCCEED;}
 hg_return_t PDC_Server_s2s_work_done_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
 
@@ -817,6 +818,7 @@ hg_return_t PDC_Server_storage_meta_name_query_bulk_respond(const struct hg_cb_i
 perr_t PDC_Server_proc_storage_meta_bulk(int task_id, int n_regions, region_list_t *region_list_head) {return SUCCEED;}
 perr_t PDC_Server_add_client_shm_to_cache(int origin, int cnt, void *buf_cp){return SUCCEED;}
 perr_t PDC_Server_container_add_tags(uint64_t cont_id, char *tags){return SUCCEED;}
+hg_return_t PDC_cache_region_to_bb_cb (const struct hg_cb_info *callback_info)  {return HG_SUCCESS;}
 
 #else
 hg_return_t PDC_Client_work_done_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;};
@@ -2858,20 +2860,29 @@ HG_TEST_RPC_CB(data_server_read_check, handle)
     // Decode input
     data_server_read_check_in_t  in;
     data_server_read_check_out_t out;
-    out.shm_addr = NULL;
+    server_read_check_out_t     *read_out = calloc(1, sizeof(server_read_check_out_t));
 
     ret_value = HG_Get_input(handle, &in);
     /* printf("==PDC_SERVER[x]: Got data server read_check request from client %d for [%s] " */
     /*        "start %" PRIu64", count %" PRIu64"\n", */ 
     /*         in.client_id, in.meta.obj_name, in.region.start_0, in.region.count_0); */
 
-    PDC_Server_read_check(&in, &out);
+    PDC_Server_read_check(&in, read_out);
+    /* printf("==PDC_SERVER[x]: server read_check returning ret=%d, shm_addr=[%s]\n", out.ret, read_out->shm_addr); */
 
-    ret_value = HG_Respond(handle, NULL, NULL, &out);
-    /* printf("==PDC_SERVER[x]: server read_check returning ret=%d, shm_addr=%s\n", out.ret, out.shm_addr); */
+    out.ret = read_out->ret;
+    out.shm_addr = read_out->shm_addr;
+    if (out.ret == 1 && read_out->is_cache_to_bb == 1) {
+        // cache to bb with callback
+        out.ret = 111;      // tell client to close the shm region, as we will write it to BB
+        ret_value = HG_Respond(handle, PDC_cache_region_to_bb_cb, read_out, &out);
+    }
+    else {
+        ret_value = HG_Respond(handle, NULL, NULL, &out);
+    }
 
-    if (NULL != out.shm_addr && out.shm_addr[0] != ' ')
-        free(out.shm_addr);
+    /* if (NULL != out.shm_addr && out.shm_addr[0] != ' ') */
+    /*     free(out.shm_addr); */
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
     fflush(stdout);
@@ -2929,7 +2940,7 @@ HG_TEST_RPC_CB(update_region_loc, handle)
     /* fflush(stdout); */
 
     out.ret = 20171031;
-    ret_value = PDC_Server_update_local_region_storage_loc(input_region, in.obj_id);
+    ret_value = PDC_Server_update_local_region_storage_loc(input_region, in.obj_id, in.type);
     if (ret_value != SUCCEED) {
         out.ret = -1;
         printf("==PDC_SERVER: FAILED to update region location: obj_id=%" PRIu64 "\n", in.obj_id);

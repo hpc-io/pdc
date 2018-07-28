@@ -62,6 +62,9 @@ hg_thread_mutex_t meta_obj_map_mutex_g;
 #define PDC_MAX_TRIAL_NUM                   10
 #define PDC_STR_DELIM                       7
 #define PDC_SEQ_ID_INIT_VALUE               1000
+#define PDC_UPDATE_CACHE                    111
+#define PDC_UPDATE_STORAGE                  101
+
 
 /* #define pdc_server_tmp_dir_g  "./pdc_tmp" */
 /* extern char pdc_server_tmp_dir_g[ADDR_MAX]; */
@@ -1976,6 +1979,7 @@ typedef struct {
     hg_string_t                 storage_location;
     uint64_t                    offset;
     region_info_transfer_t      region;
+    int                         type;
 } update_region_loc_in_t;
 
 typedef struct {
@@ -1999,6 +2003,11 @@ hg_proc_update_region_loc_in_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->offset);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint32_t(proc, &struct_data->type);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
