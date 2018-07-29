@@ -3060,6 +3060,9 @@ perr_t PDC_Server_data_write_from_shm(region_list_t *region_list_head)
     DL_FOREACH(region_list_head, region_elt) {
         if (region_elt->is_io_done == 1) 
             continue;
+
+        if (region_elt->shm_fd > 0 && region_elt->buf!= NULL) 
+            continue;
         
         // Calculate io size
         if (region_elt->data_size == 0) {
@@ -4611,15 +4614,15 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
     // Iterate over all region IO requests and perform actual IO
     // We have all requests from node local clients, now read them from storage system
     DL_FOREACH(region_list_head, region_elt) {
-        if (region_elt->is_io_done == 1 && region_elt->is_shm_closed != 1) {
-            printf("==PDC_SERVER[%d]: found cached data!\n", pdc_server_rank_g);
-            if(region_elt->access_type == READ && current_read_from_cache_cnt_g < total_read_from_cache_cnt_g)
-                current_read_from_cache_cnt_g++;
-            else
-                continue;
-        }
-
         if (region_elt->access_type == READ) {
+            if (region_elt->is_io_done == 1 && region_elt->is_shm_closed != 1) {
+                printf("==PDC_SERVER[%d]: found cached data!\n", pdc_server_rank_g);
+                if(region_elt->access_type == READ && current_read_from_cache_cnt_g < total_read_from_cache_cnt_g)
+                    current_read_from_cache_cnt_g++;
+                else
+                    continue;
+            }
+
 
             // Prepare the shared memory for transfer back to client
             snprintf(region_elt->shm_addr, ADDR_MAX, "/PDC%d_%d", pdc_server_rank_g, rand());
@@ -4636,7 +4639,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
 
                 #ifdef ENABLE_TIMING
                 struct timeval  pdc_timer_start11, pdc_timer_end11;
-                gettimeofday(&pdc_timer_start11, 0);
+                gettimeofday(&pdc_timer_start1, 0);
                 #endif
                 if (prev_path == NULL || strcmp(region_elt->cache_location, prev_path) != 0) {
                     if (fp_read != NULL)  
@@ -4759,6 +4762,8 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
 
         } // end of READ
         else if (region_elt->access_type == WRITE) {
+            if (region_elt->is_io_done == 1) 
+                continue;
 
             // Assumes all regions are written to one file
             if (region_elt->storage_location[0] == 0) {
