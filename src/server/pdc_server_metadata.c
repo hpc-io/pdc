@@ -1036,6 +1036,7 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
     /* pdc_metadata_t *elt; */
     uint32_t *hash_key;
     pdc_metadata_t *target;
+    int unlocked = 0;
 
     FUNC_ENTER(NULL);
 
@@ -1060,7 +1061,6 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
     obj_id = in->obj_id;
 
 #ifdef ENABLE_MULTITHREAD 
-    int unlocked = 0;
     // Obtain lock for hash table
     hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
 #endif
@@ -1317,6 +1317,7 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
     perr_t ret_value;
     uint32_t *hash_key;
     pdc_metadata_t *target;
+    int unlocked = 0;
     
     FUNC_ENTER(NULL);
 
@@ -1353,7 +1354,6 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
 
 #ifdef ENABLE_MULTITHREAD 
     // Obtain lock for hash table
-    int unlocked = 0;
     hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
 #endif
 
@@ -1484,7 +1484,7 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     perr_t ret_value = SUCCEED;
     pdc_metadata_t *metadata;
     uint32_t *hash_key, i;
-    
+    int unlocked = 0; 
 
     FUNC_ENTER(NULL);
 
@@ -1555,7 +1555,6 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
 
 #ifdef ENABLE_MULTITHREAD 
     // Obtain lock for hash table
-    int unlocked = 0;
     hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
 #endif
 
@@ -2666,7 +2665,6 @@ perr_t PDC_Server_find_container_by_id(uint64_t cont_id, pdc_cont_hash_table_ent
 {
     perr_t ret_value = SUCCEED;
     pdc_cont_hash_table_entry_t *cont_entry;
-    pdc_metadata_t *elt;
     HashTableIterator hash_table_iter;
     int n_entry;
     HashTablePair pair;
@@ -2780,7 +2778,7 @@ perr_t PDC_Server_container_del_objs(int n_obj, uint64_t *obj_ids, uint64_t cont
 {
     perr_t ret_value = SUCCEED;
     pdc_cont_hash_table_entry_t *cont_entry = NULL;
-    int realloc_size = 0, i, j;
+    int i, j;
     int n_deletes = 0;
 
     FUNC_ENTER(NULL);
@@ -2842,7 +2840,6 @@ perr_t PDC_Server_container_add_tags(uint64_t cont_id, char *tags)
 {
     perr_t ret_value = SUCCEED;
     pdc_cont_hash_table_entry_t *cont_entry = NULL;
-    int realloc_size = 0;
 
     FUNC_ENTER(NULL);
     ret_value = PDC_Server_find_container_by_id(cont_id, &cont_entry);
@@ -2921,8 +2918,7 @@ static perr_t PDC_Server_get_storage_meta_by_names(query_read_names_args_t *args
     uint32_t client_id;
     char *obj_name;
     pdc_metadata_t *meta = NULL;
-    region_list_t *region_elt = NULL, *region_head = NULL, *res_region_list = NULL;
-    int region_count = 0, i = 0, j = 0;
+    int i = 0, j = 0;
     region_storage_meta_t **all_storage_meta;
     int *all_nregion, total_region;
     FUNC_ENTER(NULL);
