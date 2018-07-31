@@ -103,6 +103,7 @@ HG_TEST_RPC_CB(transform_ftn, handle)
     hg_return_t ret_value = HG_SUCCESS;
     transform_ftn_in_t in;
     transform_ftn_out_t out;
+    void *ftnHandle = NULL;
     void * (*ftnPtr)(pdcid_t) = NULL;
 
     HG_Get_input(handle, &in);
@@ -111,7 +112,7 @@ HG_TEST_RPC_CB(transform_ftn, handle)
 	   (in.ftn_name == NULL ? "unknown" : in.ftn_name),
 	   (in.loadpath == NULL ? "unknown" : in.loadpath));
 
-    if ((ftnPtr = get_ftnPtr_(in.ftn_name, in.loadpath))) {
+    if ( get_ftnPtr_(in.ftn_name, in.loadpath, &ftnHandle) >= 0) {
       out.ret = 0;
     }
     else {
