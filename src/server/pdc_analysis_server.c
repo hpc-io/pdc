@@ -115,7 +115,6 @@ PDC_Server_instantiate_data_iterator(obj_data_iterator_in_t *in, obj_data_iterat
     thisIter->storage_order = (PDC_major_type)((in->storageinfo >> 8) & 0xFF);
     region_reference = PDC_Server_get_obj_region(in->object_id);
     if (region_reference == NULL) {
-        data_server_region_t *new_obj_reg;
         printf("==PDC_ANALYSIS_SERVER: Unable to locate object region (id=%ld)\n", in->object_id);       
 	/* The most likely cause of this condition is that the client never
 	 * created an object mapping which would move the client data to the data-server.  
@@ -171,7 +170,6 @@ PDC_Server_instantiate_data_iterator(obj_data_iterator_in_t *in, obj_data_iterat
     out->server_iter_id = nextId;
     out->ret = 0;
     
-done:
     FUNC_LEAVE(ret_value);
 }
 

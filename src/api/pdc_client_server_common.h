@@ -2228,6 +2228,10 @@ hg_id_t cont_add_del_objs_rpc_register(hg_class_t *hg_class);
 hg_id_t query_read_obj_name_rpc_register(hg_class_t *hg_class);
 hg_id_t server_checkpoing_rpc_register(hg_class_t *hg_class);
 hg_id_t query_read_obj_name_client_rpc_register(hg_class_t *hg_class);
+hg_id_t cont_add_tags_rpc_register(hg_class_t *hg_class);
+hg_id_t obj_data_iterator_register(hg_class_t *hg_class);
+hg_id_t analysis_ftn_register(hg_class_t *hg_class);
+hg_id_t transform_ftn_register(hg_class_t *hg_class);
 
 //bulk
 hg_id_t query_partial_register(hg_class_t *hg_class);
@@ -2618,10 +2622,10 @@ typedef struct pdc_task_list_t {
     struct pdc_task_list_t *next;
 } pdc_task_list_t;
 
-//int PDC_add_task_to_list(pdc_task_list_t **target_list, perr_t (*cb)(), void *cb_args, int *curr_task_id, hg_thread_mutex_t *mutex);
-//perr_t PDC_del_task_from_list(pdc_task_list_t **target_list, pdc_task_list_t *del, hg_thread_mutex_t *mutex);
+int PDC_add_task_to_list(pdc_task_list_t **target_list, perr_t (*cb)(), void *cb_args, int *curr_task_id, hg_thread_mutex_t *mutex);
+perr_t PDC_del_task_from_list(pdc_task_list_t **target_list, pdc_task_list_t *del, hg_thread_mutex_t *mutex);
 //perr_t PDC_del_task_from_list_id(pdc_task_list_t **target_list, int id, hg_thread_mutex_t *mutex);
-//pdc_task_list_t *PDC_find_task_from_list(pdc_task_list_t** target_list, int id, hg_thread_mutex_t *mutex);
+pdc_task_list_t *PDC_find_task_from_list(pdc_task_list_t** target_list, int id, hg_thread_mutex_t *mutex);
 int PDC_is_valid_task_id(int id);
 int PDC_is_valid_obj_id(uint64_t id);
 

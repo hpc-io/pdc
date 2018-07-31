@@ -92,6 +92,7 @@ perr_t PDC_Server_init_hash_table();
 perr_t PDC_Server_hash_table_list_init(pdc_hash_table_entry_head *entry, uint32_t *hash_key);
 perr_t PDC_Server_hash_table_list_insert(pdc_hash_table_entry_head *head, pdc_metadata_t *new);
 pdc_metadata_t *find_metadata_by_id(uint64_t obj_id);
+perr_t PDC_Server_get_metadata_by_id_with_cb(uint64_t obj_id, perr_t (*cb)(), void *args);
 
 hg_return_t PDC_Server_query_read_names_clinet_cb(const struct hg_cb_info *callback_info);
 #endif /* PDC_SERVER_METADATA_H */

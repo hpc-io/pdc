@@ -558,7 +558,7 @@ PDC_Server_lookup_client_cb(const struct hg_cb_info *callback_info)
     server_lookup_args = (server_lookup_args_t*) callback_info->arg;
     client_id = server_lookup_args->client_id;
 
-    if (client_id >= pdc_client_num_g ) {
+    if (client_id >= (uint32_t)pdc_client_num_g ) {
         printf("==PDC_SERVER[%d]: invalid input client id %d\n", pdc_server_rank_g, client_id);
         goto done;
     }
@@ -1155,7 +1155,7 @@ done:
 }
 
 hg_return_t
-PDC_Server_checkpoint_cb(const struct hg_cb_info *callback_info)
+PDC_Server_checkpoint_cb()
 {
     PDC_Server_checkpoint();
 
@@ -1501,14 +1501,12 @@ static perr_t PDC_Server_multithread_loop(hg_context_t *context)
     perr_t ret_value = SUCCEED;
     hg_thread_t progress_thread;
     hg_return_t ret = HG_SUCCESS;
-    unsigned int actual_count;
     
     FUNC_ENTER(NULL);
     
     hg_thread_create(&progress_thread, hg_progress_thread, context);
 
     do {
-        actual_count = 0;
         if (hg_atomic_get32(&close_server_g)) break;
 
         /* printf("==PDC_SERVER[%d]: Before HG_Trigger()\n", pdc_server_rank_g); */
@@ -1570,10 +1568,10 @@ static perr_t PDC_Server_loop(hg_context_t *hg_context)
     FUNC_LEAVE(ret_value);
 }
 
+#ifdef ENABLE_TIMING
 static void PDC_print_IO_stats()
 {
     // Debug print
-#ifdef ENABLE_TIMING 
     double write_time_max, write_time_min, write_time_avg;
     double read_time_max,  read_time_min,  read_time_avg;
     double open_time_max,  open_time_min,  open_time_avg;
@@ -1655,9 +1653,8 @@ static void PDC_print_IO_stats()
                            update_time_min,   update_time_avg,   update_time_max,
                          get_info_time_min, get_info_time_avg, get_info_time_max);
     }
-#endif
-
 }
+#endif
 
 static void PDC_Server_mercury_register()
 {
