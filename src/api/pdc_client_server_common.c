@@ -155,7 +155,7 @@ static uint32_t pdc_hash_djb2(const char *pc)
     
     FUNC_ENTER(NULL);
     
-    while (c = *pc++)
+    while ((c = *pc++))
         hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
     /* if (hash < 0) */
     /*     hash *= -1; */
@@ -1425,11 +1425,12 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     region_lock_out_t out;
     const struct hg_info *hg_info = NULL;
     struct buf_map_release_bulk_args *bulk_args = NULL;
-    struct PDC_region_info *remote_reg_info = NULL;
     int error = 0;
 #ifdef ENABLE_MULTITHREAD
     data_server_region_t *target_reg = NULL;
     region_buf_map_t *elt;
+#else
+    struct PDC_region_info *remote_reg_info = NULL;
 #endif
 
     FUNC_ENTER(NULL);
