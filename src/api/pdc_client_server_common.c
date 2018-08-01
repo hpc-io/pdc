@@ -1485,7 +1485,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
 //enter this function, transfer is done, data is pushed to buffer
 static hg_return_t
 obj_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
@@ -1518,7 +1517,6 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
-*/
 
 //enter this function, transfer is done, data is pushed to mapping region
 /*
