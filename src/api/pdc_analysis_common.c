@@ -350,6 +350,7 @@ HG_TEST_RPC_CB(analysis_ftn, handle)
 	}
     }
 
+done:
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
