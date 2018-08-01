@@ -967,7 +967,7 @@ HG_TEST_RPC_CB(client_test_connect, handle)
 #endif
     args->client_id = in.client_id;
     args->nclient   = in.nclient;
-    sprintf(args->client_addr, in.client_addr);
+    sprintf(args->client_addr, "%s", in.client_addr);
 #ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_unlock(&pdc_client_info_mutex_g);
 #endif
@@ -2528,7 +2528,7 @@ HG_TEST_RPC_CB(query_partial, handle)
     }
 
     // Create bulk handle
-    hg_ret = HG_Bulk_create(hg_class_g, n_buf, buf_ptrs, buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
+    hg_ret = HG_Bulk_create(hg_class_g, n_buf, buf_ptrs, (hg_size_t *)buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "Could not create bulk data handle\n");
         return EXIT_FAILURE;

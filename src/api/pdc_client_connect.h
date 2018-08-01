@@ -448,5 +448,15 @@ perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct PDC_region_info *region, P
  */
 perr_t PDC_Client_write(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf);
 
+/**
+ * Generate container ID by server
+ *
+ * \param cont_name [IN]         Container name
+ * \param cont_create_prop [IN]  Container property ID
+ * \param cont_id [OUT]          Generated container ID
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_create_cont_id(const char *cont_name, pdcid_t cont_create_prop, pdcid_t *cont_id);
 
 #endif

@@ -34,6 +34,8 @@
 #include "pdc_interface.h"
 #include "pdc_transforms_pkg.h"
 #include "pdc_atomic.h"
+#include "pdc_client_connect.h"
+#include "pdc_analysis_common.h"
 
 static perr_t pdc_obj_close(struct PDC_obj_info *op);
 

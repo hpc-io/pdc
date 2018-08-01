@@ -1886,7 +1886,7 @@ perr_t PDC_Server_notify_client_multi_io_complete(uint32_t client_id, int client
     }
 
     // Send the shm_addr + total data size to client
-    buf_sizes = (size_t*)calloc(sizeof(size_t), n_completed*2);
+    buf_sizes = (hg_size_t*)calloc(sizeof(hg_size_t), n_completed*2);
     buf_ptrs  = (void**)calloc(sizeof(void*),  n_completed*2);
 
     i = 0;
@@ -3199,7 +3199,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
 
                 // If BB is enabled, then overwrite with BB path with the right number of servers
                 if (write_to_bb_percentage_g > 0 ) {
-                    if (io_list_elt->bb_path == NULL || io_list_elt->bb_path[0] == ' ') {
+                    if (strcmp(io_list_elt->bb_path, "") == 0 ||io_list_elt->bb_path[0] == 0) {
                         printf("==PDC_SERVER[%d]: Error with BB path [%s]!\n",
                                 pdc_server_rank_g, io_list_elt->bb_path);
                     }
@@ -4694,7 +4694,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
             } // end of for all overlapping storage regions for one request region
 
             if (is_debug_g == 1) {
-                printf("==PDC_SERVER[%d]: Read data total size %" PRIu64 "\n",
+                printf("==PDC_SERVER[%d]: Read data total size %zu\n",
                         pdc_server_rank_g, total_read_bytes);
                 fflush(stdout);
             }
@@ -4792,7 +4792,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
             write_bytes = fwrite(region_elt->buf, 1, region_elt->data_size, fp_write);
             if (write_bytes != region_elt->data_size) {
                 printf("==PDC_SERVER[%d]: fwrite to [%s] FAILED, region off %" PRIu64 ", size %" PRIu64 ", "
-                       "actual writeen %" PRIu64 "!\n",
+                       "actual writeen %zu!\n",
                             pdc_server_rank_g, region_elt->storage_location, offset, region_elt->data_size,
                             write_bytes);
                 ret_value= FAIL;
@@ -5681,7 +5681,7 @@ hg_return_t PDC_Server_storage_meta_name_query_bulk_respond(const struct hg_cb_i
     }
 
     int nbuf = 3*query_args->n_res + 1;
-    buf_sizes = (size_t*)calloc(sizeof(size_t), nbuf);
+    buf_sizes = (hg_size_t *)calloc(sizeof(hg_size_t), nbuf);
     buf_ptrs  = (void**)calloc(sizeof(void*),  nbuf);
     region_infos = (region_info_transfer_t**)calloc(sizeof(region_info_transfer_t*), query_args->n_res);
 
