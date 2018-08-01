@@ -31,7 +31,7 @@
 hg_thread_mutex_t  insert_iterator_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
 #endif
 
-static char *default_pdc_transform_lib = "libpdctransforms.so";
+//static char *default_pdc_transform_lib = "libpdctransforms.so";
 
 
 static HG_INLINE hg_return_t
@@ -120,8 +120,6 @@ HG_TEST_RPC_CB(transform_ftn, handle)
     }
 
     HG_Respond(handle, NULL, NULL, &out);
-
-done:
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);

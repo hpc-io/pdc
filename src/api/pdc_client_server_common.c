@@ -1322,25 +1322,17 @@ static hg_return_t
 obj_map_region_release_bulk_transfer_thread_cb(const struct hg_cb_info *hg_cb_info)
 {
     hg_return_t ret_value = HG_SUCCESS;
-    hg_handle_t handle;
     region_lock_out_t out;
-    const struct hg_info *hg_info = NULL;
     struct buf_map_release_bulk_args *bulk_args = NULL;
-    int error = 0;
     
     FUNC_ENTER(NULL);
 
     bulk_args = (struct buf_map_release_bulk_args *)hg_cb_info->arg;
-    handle = bulk_args->handle;
-    
-    hg_info = HG_Get_info(handle);
     
     if (hg_cb_info->ret == HG_CANCELED) {
-        error = 1;
         out.ret = 0;
         PGOTO_ERROR(HG_OTHER_ERROR, "HG_Bulk_transfer() was successfully canceled\n");
     } else if (hg_cb_info->ret != HG_SUCCESS) {
-        error = 1;
         out.ret = 0;
         PGOTO_ERROR(HG_PROTOCOL_ERROR, "Error in region_release_bulk_transfer_cb()");
     }
@@ -1421,11 +1413,8 @@ static hg_return_t
 buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
 {
     hg_return_t ret_value = HG_SUCCESS;
-    hg_handle_t handle;
     region_lock_out_t out;
-    const struct hg_info *hg_info = NULL;
     struct buf_map_release_bulk_args *bulk_args = NULL;
-    int error = 0;
 #ifdef ENABLE_MULTITHREAD
     data_server_region_t *target_reg = NULL;
     region_buf_map_t *elt;
@@ -1436,15 +1425,11 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     FUNC_ENTER(NULL);
 
     bulk_args = (struct buf_map_release_bulk_args *)hg_cb_info->arg;
-    handle = bulk_args->handle;
-    hg_info = HG_Get_info(handle);
    
     if (hg_cb_info->ret == HG_CANCELED) {
-        error = 1;
         out.ret = 0;
         PGOTO_ERROR(HG_OTHER_ERROR, "HG_Bulk_transfer() was successfully canceled\n");
     } else if (hg_cb_info->ret != HG_SUCCESS) {
-        error = 1;
         out.ret = 0;
         PGOTO_ERROR(HG_PROTOCOL_ERROR, "Error in region_release_bulk_transfer_cb()");
     }
@@ -1500,30 +1485,23 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+/*
 //enter this function, transfer is done, data is pushed to buffer
 static hg_return_t
 obj_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
 {
     hg_return_t ret_value = HG_SUCCESS;
-    hg_handle_t handle;
     region_lock_out_t out;
-    const struct hg_info *hg_info = NULL;
     struct buf_map_release_bulk_args *bulk_args = NULL;
-    int error = 0;
     
     FUNC_ENTER(NULL);
     
     bulk_args = (struct buf_map_release_bulk_args *)hg_cb_info->arg;
-    handle = bulk_args->handle;
-    
-    hg_info = HG_Get_info(handle);
     
     if (hg_cb_info->ret == HG_CANCELED) {
-        error = 1;
         out.ret = 0;
         PGOTO_ERROR(HG_OTHER_ERROR, "HG_Bulk_transfer() was successfully canceled\n");
     } else if (hg_cb_info->ret != HG_SUCCESS) {
-        error = 1;
         out.ret = 0;
         PGOTO_ERROR(HG_PROTOCOL_ERROR, "Error in region_release_bulk_transfer_cb()");
     }
@@ -1540,8 +1518,10 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
+*/
 
 //enter this function, transfer is done, data is pushed to mapping region
+/*
 static hg_return_t
 region_update_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
 {
@@ -1570,7 +1550,9 @@ region_update_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     
     FUNC_LEAVE(hg_ret);
 }
+*/
 
+/*
 //enter this function, transfer is done, data is ready in data server
 static hg_return_t
 region_release_bulk_transfer_cb (const struct hg_cb_info *hg_cb_info)
@@ -1589,12 +1571,12 @@ region_release_bulk_transfer_cb (const struct hg_cb_info *hg_cb_info)
     int lock_status;
     int region_locked;
     int all_reg_locked;
-/*
-void      **from_data_ptrs;
-void       *data_ptrs;
-hg_size_t  *data_size;
-hg_uint32_t count;
-*/
+
+//void      **from_data_ptrs;
+//void       *data_ptrs;
+//hg_size_t  *data_size;
+//hg_uint32_t count;
+
     FUNC_ENTER(NULL);
     
     bulk_args = (struct lock_bulk_args *)hg_cb_info->arg;
@@ -1614,7 +1596,6 @@ hg_uint32_t count;
     // Perform lock release function
     PDC_Data_Server_region_release(&(bulk_args->in), &out);
 //    HG_Respond(bulk_args->handle, NULL, NULL, &out);
-/*
     data_buf = (void *)malloc(size);
     server_region->ndim = 1;
     server_region->size = (uint64_t *)malloc(sizeof(uint64_t));
@@ -1631,7 +1612,6 @@ printf("next is %d\n", *(int *)(data_buf+12));
 printf("next is %d\n", *(int *)(data_buf+16));
 printf("next is %d\n", *(int *)(data_buf+20));
 fflush(stdout);
-*/
  
     update_bulk_args = (struct region_update_bulk_args *) malloc(sizeof(struct region_update_bulk_args));
 //    update_bulk_args->refcount = ATOMIC_VAR_INIT(0);
@@ -1663,7 +1643,7 @@ fflush(stdout);
                 update_bulk_args->remote_obj_id = mapped_region->remote_obj_id;
                 update_bulk_args->remote_reg_id = mapped_region->remote_reg_id;
                 update_bulk_args->remote_client_id = mapped_region->remote_client_id;
-/*
+
 count = HG_Bulk_get_segment_count(mapped_region->remote_bulk_handle);
 from_data_ptrs = (void **)malloc( count * sizeof(void *) );
 data_size = (hg_size_t *)malloc( count * sizeof(hg_size_t) );
@@ -1677,7 +1657,7 @@ printf("each size is %lld\n", data_size[0]);
 printf("each addr is %lld\n",from_data_ptrs[0]);
 printf("match addr %lld\n", bulk_args->data_buf);
 fflush(stdout);
-*/
+
                 //increase ref
 //                atomic_fetch_add(&(update_bulk_args->refcount), 1);
                 hg_atomic_incr32(&(update_bulk_args->refcount));
@@ -1702,16 +1682,6 @@ fflush(stdout);
     }
     // Tang: commented the following lines as PDC_Server_data_write_direct is executed as callback function
     //       after getting metadata from remote server in the next round of server_loop
-    /* free(bulk_args->server_region->size); */
-    /* free(bulk_args->server_region->offset); */
-    /* free(bulk_args->server_region); */
-
-/* //done: */
-/* //    out.ret = 1; */
-/* //    HG_Respond(bulk_args->handle, NULL, NULL, &out); */
-    /* /1* printf("==PDC_SERVER: region_release_bulk_transfer_cb(): returned %" PRIu64 "\n", out.ret); *1/ */
-
-    /* HG_Free_input(bulk_args->handle, &(bulk_args->in)); */
     
     if(all_reg_locked == 1) {
         HG_Respond(bulk_args->handle, NULL, NULL, &out);
@@ -1728,6 +1698,7 @@ fflush(stdout);
 
     FUNC_LEAVE(hg_ret);
 }
+*/
 
 static hg_return_t
 region_release_update_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
@@ -1769,7 +1740,6 @@ HG_TEST_RPC_CB(region_release, handle)
     const struct hg_info *hg_info = NULL;
     data_server_region_t *target_obj;
     int error = 0;
-    int found = 0;
     int dirty_reg = 0;
     hg_size_t   size;
     hg_op_id_t hg_bulk_op_id;
@@ -1786,9 +1756,6 @@ HG_TEST_RPC_CB(region_release, handle)
     hg_uint32_t remote_count;
     void **data_ptrs_to = NULL;
     size_t *data_size_to = NULL;
-#ifdef ENABLE_MULTITHREAD
-    data_server_region_t *target_reg = NULL;
-#endif
     
     FUNC_ENTER(NULL);
     
@@ -2224,14 +2191,12 @@ HG_TEST_RPC_CB(buf_unmap_server, handle)
     buf_unmap_in_t in;
     buf_unmap_out_t out;
     pdc_metadata_t *target_obj;
-    const struct hg_info *info;
     region_buf_map_t *tmp, *elt;
 
     FUNC_ENTER(NULL);
 
     // Decode input
     HG_Get_input(handle, &in);
-    info = HG_Get_info(handle);
 
     target_obj = PDC_Server_get_obj_metadata(in.remote_obj_id);
     if (target_obj == NULL) {
@@ -2270,7 +2235,6 @@ HG_TEST_RPC_CB(buf_map_server, handle)
     buf_map_in_t in;
     buf_map_out_t out;
     pdc_metadata_t *target_obj;
-    const struct hg_info *info;
     region_list_t *elt, *request_region;
     region_buf_map_t *buf_map_ptr;
 
@@ -3585,7 +3549,7 @@ cont_add_del_objs_bulk_cb(const struct hg_cb_info *hg_cb_info)
     struct bulk_args_t *bulk_args = (struct bulk_args_t *)hg_cb_info->arg;
     hg_bulk_t local_bulk_handle = hg_cb_info->info.bulk.local_handle;
     hg_return_t ret = HG_SUCCESS;
-    int cnt, i, op;
+    int cnt, op;
     cont_add_del_objs_rpc_out_t out_struct;
     uint64_t *obj_ids, cont_id;
 
@@ -3712,7 +3676,6 @@ HG_TEST_RPC_CB(cont_add_del_objs_rpc, handle)
 
     HG_Free_input(handle, &in_struct);
 
-done:
     FUNC_LEAVE(ret);
 }
 
@@ -3725,7 +3688,8 @@ query_read_obj_name_bulk_cb(const struct hg_cb_info *hg_cb_info)
     struct bulk_args_t *bulk_args = (struct bulk_args_t *)hg_cb_info->arg;
     hg_bulk_t local_bulk_handle = hg_cb_info->info.bulk.local_handle;
     hg_return_t ret = HG_SUCCESS;
-    int i, iter;
+    int iter;
+    size_t i;
     char* tmp_buf;
     query_read_obj_name_out_t out_struct;
     query_read_names_args_t *query_read_names_args;
@@ -3843,7 +3807,6 @@ HG_TEST_RPC_CB(query_read_obj_name_rpc, handle)
 
     HG_Free_input(handle, &in_struct);
 
-done:
     FUNC_LEAVE(ret);
 }
 
@@ -4046,9 +4009,8 @@ notify_client_multi_io_complete_bulk_cb(const struct hg_cb_info *hg_cb_info)
     struct bulk_args_t *bulk_args = (struct bulk_args_t *)hg_cb_info->arg;
     hg_bulk_t local_bulk_handle = hg_cb_info->info.bulk.local_handle;
     hg_return_t ret = HG_SUCCESS;
-    int i, task_id, n_shm;
+    int n_shm;
     void *buf;
-    char *char_ptr;
     char *buf_cp;
     pdc_int_ret_t out_struct;
 
@@ -4332,7 +4294,8 @@ query_read_obj_name_client_bulk_cb(const struct hg_cb_info *hg_cb_info)
     struct bulk_args_t *bulk_args = (struct bulk_args_t *)hg_cb_info->arg;
     hg_bulk_t local_bulk_handle = hg_cb_info->info.bulk.local_handle;
     hg_return_t ret = HG_SUCCESS;
-    int i, iter;
+    int iter;
+    size_t i;
     char* tmp_buf;
     query_read_obj_name_out_t out_struct;
     query_read_names_args_t *query_read_names_args;
@@ -4449,7 +4412,6 @@ HG_TEST_RPC_CB(query_read_obj_name_client_rpc, handle)
 
     HG_Free_input(handle, &in_struct);
 
-done:
     FUNC_LEAVE(ret);
 }
 
@@ -4461,8 +4423,6 @@ send_client_storage_meta_bulk_cb(const struct hg_cb_info *hg_cb_info)
     struct bulk_args_t *bulk_args = (struct bulk_args_t *)hg_cb_info->arg;
     hg_bulk_t local_bulk_handle = hg_cb_info->info.bulk.local_handle;
     hg_return_t ret = HG_SUCCESS;
-    int cnt, i;
-    uint64_t *obj_id_ptr;
     void *buf = NULL, *buf_cp = NULL;
     process_bulk_storage_meta_args_t *process_args = NULL;
 
@@ -5042,7 +5002,6 @@ cont_add_tags_rpc_register(hg_class_t *hg_class)
 
     FUNC_LEAVE(ret_value);
 }
-
 
 hg_id_t
 query_read_obj_name_rpc_register(hg_class_t *hg_class)
