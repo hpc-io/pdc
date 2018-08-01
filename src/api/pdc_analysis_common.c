@@ -241,39 +241,43 @@ get_execution_locus()
     return execution_locus;
 }
 
-void *
-get_ftnPtr_(char *ftn, char *loadpath)
+int
+get_ftnPtr_(char *ftn, char *loadpath, void **ftnPtr)
 {
-    static void *appHandle = NULL;
-    static char *lastopened = NULL;
-    void *ftnHandle = NULL;    
+  static void *appHandle = NULL;
+  static char *lastopened = NULL;
+  void *ftnHandle = NULL;    
 
-    if (lastopened && strcmp(lastopened, loadpath)) {
-        /* Rather than closing the previously opened library
-	 * we should record it as being opened and then
-	 * eventually close it when we know it's safe, e.g.
-	 * at shutdown?
-	 */
-        // dlclose(appHandle);
-        appHandle = NULL;
-        free(lastopened);
-    }
+  if (lastopened && strcmp(lastopened, loadpath)) {
+    /* Rather than closing the previously opened library
+     * we should record it as being opened and then
+     * eventually close it when we know it's safe, e.g.
+     * at shutdown?
+     */
+    // dlclose(appHandle);
+    appHandle = NULL;
+    free(lastopened);
+  }
 
-    if (appHandle == NULL) {
-      if ((appHandle = dlopen(loadpath,RTLD_NOW)) == NULL) {
-	  fprintf(stderr, "dlopen failed: %s\n", dlerror());
-	  fflush(stderr);
-      }
+  if (appHandle == NULL) {
+    if ((appHandle = dlopen(loadpath,RTLD_NOW)) == NULL) {
+      fprintf(stderr, "dlopen failed: %s\n", dlerror());
+      fflush(stderr);
+      return -1;
     }
-    ftnHandle = dlsym(appHandle, ftn);
-    if (ftnHandle == NULL) {
-        fprintf(stderr, "dlsym failed: %s\n", dlerror());
-	fflush(stderr);
-    } else {
-        lastopened = strdup(loadpath);
-    }
-    return ftnHandle;
+  }
+  ftnHandle = dlsym(appHandle, ftn);
+  if (ftnHandle == NULL) {
+    fprintf(stderr, "dlsym failed: %s\n", dlerror());
+    fflush(stderr);
+    return -1;
+  } else {
+    lastopened = strdup(loadpath);
+  }
+  *ftnPtr = ftnHandle;
+  return 0;
 }
+
 
 // analysis_ftn_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(analysis_ftn, handle)
@@ -285,6 +289,7 @@ HG_TEST_RPC_CB(analysis_ftn, handle)
     struct region_analysis_ftn_info *thisFtn = NULL;
     pdcid_t iterIn = -1, iterOut = -1;
     pdcid_t registrationId = -1;
+    void *ftnHandle = NULL;
     int (*ftnPtr)(pdcid_t, pdcid_t) = NULL;
     int result;
 
@@ -298,7 +303,13 @@ HG_TEST_RPC_CB(analysis_ftn, handle)
 	   (in.ftn_name == NULL ? "unknown" : in.ftn_name),
 	   (in.loadpath == NULL ? "unknown" : in.loadpath));
 
-    if ((ftnPtr = get_ftnPtr_(in.ftn_name, in.loadpath))) {
+    if (get_ftnPtr_(in.ftn_name, in.loadpath, &ftnHandle) < 0)
+      printf("get_ftnPtr_ returned an error!\n");
+
+    if ((ftnPtr = ftnHandle) == NULL)
+      PGOTO_ERROR(FAIL,"Transforms function lookup failed\n");
+    
+    if ( ftnPtr != NULL ) {
         if ((iterIn = in.iter_in) == 0) 
             printf("input is a NULL iterator\n");
         else if (execution_locus == SERVER_MEMORY) {

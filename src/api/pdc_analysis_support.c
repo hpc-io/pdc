@@ -449,6 +449,7 @@ perr_t
 PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
 {
     perr_t ret_value = SUCCEED;         /* Return value */
+    void *ftnHandle = NULL;
     int (*ftnPtr)(pdcid_t, pdcid_t) = NULL;
     struct region_analysis_ftn_info *thisFtn = NULL;
     struct PDC_iterator_info *i_in, *i_out;
@@ -478,8 +479,11 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
     //
     loadpath = get_realpath(analyislibrary, applicationDir);
 
-    if ((ftnPtr = get_ftnPtr_(userdefinedftn, loadpath)) == NULL)
-        PGOTO_ERROR(FAIL,"Analysis function lookup failed\n");
+    if (get_ftnPtr_(userdefinedftn, loadpath, &ftnHandle) < 0)
+      printf("get_ftnPtr_ returned an error!\n");
+    
+    if ((ftnPtr = ftnHandle) == NULL)
+      PGOTO_ERROR(FAIL,"Analysis function lookup failed\n");
 
     if ((thisFtn = PDC_MALLOC(struct region_analysis_ftn_info)) == NULL)
         PGOTO_ERROR(FAIL,"PDC register_obj_analysis memory allocation failed\n");

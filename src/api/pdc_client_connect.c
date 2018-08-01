@@ -3157,7 +3157,7 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
 	        (registry[k]->op_type == PDC_DATA_MAP) &&
                 (registry[k]->when == DATA_OUT) &&
                 (access_type == WRITE)) {
-                size_t (*this_transform)(void *, PDC_var_type_t , int , int , uint64_t *, void **) = registry[k]->ftnPtr;
+	        size_t (*this_transform)(void *, PDC_var_type_t , int , int , uint64_t *, void **) = registry[k]->ftnPtr;
                 transform_size = this_transform(registry[k]->data,registry[k]->type, registry[k]->type_extent,
 					  region_info->ndim, region_info->size, &transform_result);
             }
