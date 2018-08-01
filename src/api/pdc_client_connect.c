@@ -54,6 +54,7 @@
 
 
 #include "pdc_interface.h"
+#include "pdc_analysis_common.h"
 #include "pdc_client_connect.h"
 #include "pdc_client_public.h"
 #include "pdc_client_server_common.h"
@@ -672,7 +673,7 @@ client_region_lock_rpc_cb(const struct hg_cb_info *callback_info)
     FUNC_ENTER(NULL);
 
     /* printf("Entered client_region_lock_rpc_cb()\n"); */
-    client_lookup_args = (struct client_lookup_args*) callback_info->arg;
+    client_lookup_args = (struct region_lock_args*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
     /* Get output from server*/
@@ -1737,7 +1738,7 @@ perr_t PDC_Client_add_tag(pdc_metadata_t *old, const char *tag)
     in.hash_value = hash_name_value;
 
     if (tag != NULL && tag[0] != 0) {
-        in.new_tag            = tag;
+        in.new_tag            = (char *)tag;
     }
     else {
         printf("PDC_Client_add_tag(): invalid tag content!\n");
@@ -1844,17 +1845,17 @@ perr_t PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
     in.new_metadata.obj_id  = 0;
     in.new_metadata.obj_name= old->obj_name;
 
-    if (new->data_location == NULL ||new->data_location[0] == 0) 
+    if (strcmp(new->data_location, "") == 0 ||new->data_location[0] == 0)
         in.new_metadata.data_location   = " ";
     else 
         in.new_metadata.data_location   = new->data_location;
 
-    if (new->app_name == NULL ||new->app_name[0] == 0)
+    if (strcmp(new->app_name, "") == 0 ||new->app_name[0] == 0)
         in.new_metadata.app_name        = " ";
     else 
         in.new_metadata.app_name        = new->app_name;
 
-    if (new->tags == NULL || new->tags[0] == 0 || old->tags == new->tags) 
+    if (strcmp(new->tags, "") == 0 || new->tags[0] == 0 || old->tags == new->tags)
         in.new_metadata.tags            = " ";
     else 
         in.new_metadata.tags            = new->tags;
@@ -2029,7 +2030,7 @@ perr_t PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t 
     metadata_query_handle = (hg_handle_t*)malloc(sizeof(hg_handle_t)*pdc_server_num_g);
 
     // Fill input structure
-    in.obj_name   = obj_name;
+    in.obj_name   = (char *)obj_name;
     in.hash_value = PDC_get_hash_by_name(obj_name);
 
     /* printf("==PDC_CLIENT: partial search obj_name [%s], hash value %u\n", in.obj_name, in.hash_value); */
@@ -2120,7 +2121,7 @@ perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_st
               &metadata_query_handle);
 
     // Fill input structure
-    in.obj_name   = obj_name;
+    in.obj_name   = (char *)obj_name;
     in.hash_value = PDC_get_hash_by_name(obj_name);
     in.time_step  = time_step;
 
@@ -2227,7 +2228,7 @@ perr_t PDC_Client_create_cont_id(const char *cont_name, pdcid_t cont_create_prop
 
     hash_name_value = PDC_get_hash_by_name(cont_name);
     in.hash_value      = hash_name_value;
-    in.cont_name       = cont_name;
+    in.cont_name       = (char *)cont_name;
     /* printf("Hash(%s) = %d\n", cont_name, in.hash_value); */
 
     // Calculate server id
@@ -5450,7 +5451,7 @@ perr_t PDC_Client_read_with_storage_meta(int nobj, region_storage_meta_t **all_s
                                        fp_read, file_offset, (*buf_arr)[i], &read_bytes);
         size_arr[i] = read_bytes;
         if (read_bytes != buf_size) {
-            printf("==PDC_CLIENT[%d]: actual read size %" PRIu64 " is not expected %" PRIu64 "\n", 
+            printf("==PDC_CLIENT[%d]: actual read size %zu is not expected %" PRIu64 "\n",
                     pdc_client_mpi_rank_g, read_bytes, buf_size);
         }
         /* printf("==PDC_CLIENT[%d]:          read data to buf[%d] %lu bytes done\n\n", */ 
@@ -5715,7 +5716,7 @@ perr_t PDC_Client_query_name_read_entire_obj_client(int nobj, char **obj_names, 
     #endif
 
     /* // Now we have all the storage metadata of all requests, start reading them all */
-    ret_value = PDC_Client_read_with_storage_meta(nobj, all_storage_meta, out_buf, out_buf_sizes);
+    ret_value = PDC_Client_read_with_storage_meta(nobj, all_storage_meta, out_buf, (size_t *)out_buf_sizes);
 
     #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer1, 0);

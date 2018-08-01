@@ -162,7 +162,7 @@ typedef struct {
  */
 struct my_rpc_state
 {
-    hg_uint64_t value;
+    hg_int64_t value;
     hg_size_t   size;
     void      * buffer;
     hg_bulk_t   bulk_handle;

@@ -140,7 +140,7 @@ client_register_iterator_rpc_cb(const struct hg_cb_info *info)
 	  goto done;
       }
       my_rpc_state_p->value = output.server_iter_id;
-      printf("Server returned iterator index = 0x%lx\n", output.server_iter_id);
+      printf("Server returned iterator index = 0x%" PRIu64 "\n", output.server_iter_id);
     }
 
 done:
@@ -194,8 +194,8 @@ perr_t pdc_client_register_obj_analysis(const char *func, const char *loadpath, 
     }
 
     memset(&in,0,sizeof(in));
-    in.ftn_name = func;
-    in.loadpath = loadpath;
+    in.ftn_name = (char *)func;
+    in.loadpath = (char *)loadpath;
     in.iter_in  = iter_in;
     in.iter_out = iter_out;
 
@@ -237,7 +237,7 @@ client_register_analysis_rpc_cb(const struct hg_cb_info *info)
 	  goto done;
       }
       my_rpc_state_p->value = output.remote_ftn_id;
-      printf("Server returned analysis index = 0x%lx\n", output.remote_ftn_id);
+      printf("Server returned analysis index = 0x%" PRIu64 "\n", output.remote_ftn_id);
     }
 
 done:
@@ -268,8 +268,8 @@ perr_t pdc_client_register_obj_transform(const char *func, const char *loadpath,
     object_info = PDCobj_get_info(obj_id);
 
     memset(&in,0,sizeof(in));
-    in.ftn_name = func;
-    in.loadpath = loadpath;
+    in.ftn_name = (char *)func;
+    in.loadpath = (char *)loadpath;
     if (object_info != NULL) {
       in.object_id = object_info->meta_id;
     } else in.object_id = obj_id;
@@ -374,7 +374,7 @@ client_register_transform_rpc_cb(const struct hg_cb_info *info)
 	  goto done;
       }
       my_rpc_state_p->value = output.remote_ftn_id;
-      printf("Server returned transform index = 0x%lx\n", output.remote_ftn_id);
+      printf("Server returned transform index = 0x%" PRIu64 "\n", output.remote_ftn_id);
     }
 
 done:

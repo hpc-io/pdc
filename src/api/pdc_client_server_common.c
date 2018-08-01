@@ -38,11 +38,6 @@
 
 #include "config.h"
 
-#include "mercury.h"
-#include "mercury_thread_pool.h"
-#include "mercury_atomic.h"
-#include "mercury_thread_mutex.h"
-
 #include "pdc_interface.h"
 #include "pdc_client_connect.h"
 #include "pdc_client_server_common.h"

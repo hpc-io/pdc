@@ -43,6 +43,7 @@
 
 #include "pdc_obj_pkg.h"
 #include "pdc_analysis_and_transforms.h"
+#include "pdc_analysis_support.h"
 
 #ifdef ENABLE_MULTITHREAD 
 hg_thread_mutex_t pdc_client_info_mutex_g;
@@ -2374,7 +2375,7 @@ hg_id_t data_server_read_register(hg_class_t *hg_class);
 
 hg_id_t storage_meta_name_query_rpc_register(hg_class_t *hg_class);
 
-extern char *find_in_path(char *workingDir, char *application);
+//extern char *find_in_path(char *workingDir, char *application);
 
 
 int pdc_msleep(unsigned long milisec);

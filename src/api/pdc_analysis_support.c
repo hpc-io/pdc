@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <libgen.h>
+#include <inttypes.h>
 #include "../server/utlist.h"
 #include "pdc_obj.h"
 #include "pdc_malloc.h"
@@ -117,7 +118,7 @@ iterator_init(pdcid_t objectId, pdcid_t reg_id, int blocks, struct PDC_iterator_
            iter->dims[1] = 1;
         }
     } else {
-        printf("Error: object (%lu) has not been initalized correctly!\n", objectId);
+        printf("Error: object (%" PRIu64 ") has not been initalized correctly!\n", objectId);
         return -1;
     }
 
