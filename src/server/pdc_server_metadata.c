@@ -2968,7 +2968,7 @@ static perr_t PDC_Server_get_storage_meta_by_names(query_read_names_args_t *args
     // bulk transfer to args->origin_id
     // Prepare bulk ptrs, buf_ptrs[0] is task_id
     int nbuf  = total_region + 1;
-    buf_sizes = (size_t*)calloc(sizeof(size_t), nbuf);
+    buf_sizes = (hg_size_t *)calloc(sizeof(hg_size_t), nbuf);
     buf_ptrs  = (void**)calloc(sizeof(void*),  nbuf);
 
     buf_ptrs[0]  = &(args->client_seq_id);

@@ -37,6 +37,8 @@
 #include "pdc_interface.h"
 #include "pdc_transform_support.h"
 #include "pdc_atomic.h"
+#include "pdc_analysis_support.h"
+#include "pdc_analysis_common.h"
 
 extern int pdc_client_mpi_rank_g;
 extern int pdc_client_mpi_size_g;

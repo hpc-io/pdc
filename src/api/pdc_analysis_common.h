@@ -30,4 +30,6 @@ int pdc_get_transforms(struct region_transform_ftn_info ***registry);
 
 int check_transform(PDCobj_transform_t op_type, struct PDC_region_info *dest_region);
 
+int pdc_add_transform_ptr_to_registry_(struct region_transform_ftn_info *ftnPtr);
+
 #endif
