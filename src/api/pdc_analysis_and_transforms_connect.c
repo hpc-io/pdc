@@ -40,15 +40,14 @@ perr_t pdc_client_send_iter_recv_id(pdcid_t iter_id, pdcid_t *meta_id)
     uint64_t ret_value = SUCCEED;
     struct PDC_iterator_info *thisIter = NULL;
     struct my_rpc_state *my_rpc_state_p;
-    struct PDC_region_info *region_info = NULL;
 
     obj_data_iterator_in_t in;
-    hg_handle_t this_rpc_handle;
     hg_return_t hg_ret;
-    int server_id;
+    int server_id = 0;
     int n_retry = 0;
 
     FUNC_ENTER(NULL);
+
     my_rpc_state_p = (struct my_rpc_state *)calloc(1,sizeof(struct my_rpc_state));
     if (my_rpc_state_p == NULL) {
         fprintf(stderr, "pdc_client_send_iter_recv_id(): Could not allocate my_rpc_state\n");
@@ -155,8 +154,6 @@ perr_t pdc_client_register_obj_analysis(const char *func, const char *loadpath, 
     perr_t ret_value = SUCCEED;
     uint32_t server_id = 0;
     hg_return_t hg_ret;
-    hg_handle_t this_rpc_handle;
-    hg_handle_t iter_rpc_handle;
     analysis_ftn_in_t in;
     struct my_rpc_state *my_rpc_state_p;
 
@@ -194,14 +191,17 @@ perr_t pdc_client_register_obj_analysis(const char *func, const char *loadpath, 
     }
 
     memset(&in,0,sizeof(in));
-    in.ftn_name = (char *)func;
-    in.loadpath = (char *)loadpath;
+    in.ftn_name = func;
+    in.loadpath = loadpath;
     in.iter_in  = iter_in;
     in.iter_out = iter_out;
 
     // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, analysis_ftn_register_id_g, &my_rpc_state_p->handle);
     hg_ret = HG_Forward(my_rpc_state_p->handle, client_register_analysis_rpc_cb, my_rpc_state_p, &in);
+    if (hg_ret != HG_SUCCESS) {
+        PGOTO_ERROR(FAIL, "pdc_client_register_obj_analysis(): Could not start HG_Forward()");
+    }
 
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
@@ -268,8 +268,8 @@ perr_t pdc_client_register_obj_transform(const char *func, const char *loadpath,
     object_info = PDCobj_get_info(obj_id);
 
     memset(&in,0,sizeof(in));
-    in.ftn_name = (char *)func;
-    in.loadpath = (char *)loadpath;
+    in.ftn_name = func;
+    in.loadpath = loadpath;
     if (object_info != NULL) {
       in.object_id = object_info->meta_id;
     } else in.object_id = obj_id;
@@ -282,6 +282,9 @@ perr_t pdc_client_register_obj_transform(const char *func, const char *loadpath,
     // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, transform_ftn_register_id_g, &my_rpc_state_p->handle);
     hg_ret = HG_Forward(my_rpc_state_p->handle, client_register_transform_rpc_cb, my_rpc_state_p, &in);
+    if (hg_ret != HG_SUCCESS) {
+        PGOTO_ERROR(FAIL, "pdc_client_register_obj_transform(): Could not start HG_Forward()");
+    }
 
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
@@ -303,13 +306,14 @@ done:
 perr_t pdc_client_register_region_transform(const char *func, const char *loadpath, pdcid_t src_region_id, pdcid_t dest_region_id, int start_state, int next_state, int op_type, int when)
 {
     perr_t ret_value = SUCCEED;
-    uint32_t server_id = 0;
-    hg_return_t hg_ret;
-    transform_ftn_in_t in;
-    struct PDC_obj_info *object_info;
+    //uint32_t server_id = 0;
+    //hg_return_t hg_ret;
+    //transform_ftn_in_t in;
+    //struct PDC_obj_info *object_info;
     struct my_rpc_state *my_rpc_state_p;
 
     FUNC_ENTER(NULL);
+
     my_rpc_state_p = (struct my_rpc_state *)calloc(1,sizeof(struct my_rpc_state));
     if (my_rpc_state_p == NULL) {
         fprintf(stderr, "pdc_client_register_obj_analysis(): Could not allocate my_rpc_state\n");
@@ -317,7 +321,7 @@ perr_t pdc_client_register_region_transform(const char *func, const char *loadpa
 	goto done;
     }
     /* Find the server associated with the input object */
-    server_id = 0; // PDC_get_server_by_obj_id(obj_id, pdc_server_num_g);
+//    server_id = 0; // PDC_get_server_by_obj_id(obj_id, pdc_server_num_g);
 #if 0
     object_info = PDCobj_get_info(obj_id);
 
@@ -336,6 +340,9 @@ perr_t pdc_client_register_region_transform(const char *func, const char *loadpa
     // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, transform_ftn_register_id_g, &my_rpc_state_p->handle);
     hg_ret = HG_Forward(my_rpc_state_p->handle, client_register_transform_rpc_cb, my_rpc_state_p, &in);
+    if (hg_ret != HG_SUCCESS) {
+        PGOTO_ERROR(FAIL, "pdc_client_register_region_transform(): Could not start HG_Forward()");
+    }
 
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);

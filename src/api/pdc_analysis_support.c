@@ -38,8 +38,13 @@
 
 static char *default_pdc_analysis_lib = "libpdcanalysis.so";
 
+#define UNUSED(x) (void)(x)
+
 #ifndef IS_PDC_SERVER
-void * PDC_Server_get_region_data_ptr(pdcid_t object_id) {return NULL;}
+void * PDC_Server_get_region_data_ptr(pdcid_t object_id) {
+    UNUSED(object_id);
+    return NULL;
+}
 #endif
 
 int
@@ -453,7 +458,7 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
     void *ftnHandle = NULL;
     int (*ftnPtr)(pdcid_t, pdcid_t) = NULL;
     struct region_analysis_ftn_info *thisFtn = NULL;
-    struct PDC_iterator_info *i_in, *i_out;
+    struct PDC_iterator_info *i_in = NULL, *i_out = NULL;
     pdcid_t meta_id_in = 0, meta_id_out = 0;
     char *thisApp = NULL;
     char *colonsep = NULL; 

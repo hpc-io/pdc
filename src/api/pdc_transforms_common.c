@@ -39,12 +39,12 @@ hg_proc_transform_ftn_in_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret;
     transform_ftn_in_t *struct_data = (transform_ftn_in_t*) data;
-    ret = hg_proc_hg_string_t(proc, &struct_data->ftn_name);
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->ftn_name);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_string_t(proc, &struct_data->loadpath);
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->loadpath);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;

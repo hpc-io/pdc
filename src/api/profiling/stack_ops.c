@@ -190,7 +190,7 @@ int show_profile_info( void ** ht_live_entry)
     if (count == 0)
       puts(header);
     totalTime = thisEntry->totalTime;
-    printf("%s\n %d\t%-6lld %6lld,%6lld\t\t %s\n", LineBreak, ++count , totalCalls, totalTime.tv_sec/totalCalls, totalTime.tv_nsec/totalCalls, thisEntry->ftnkey);
+    printf("%s\n %d\t%-6ld %6ld,%6ld\t\t %s\n", LineBreak, ++count , totalCalls, totalTime.tv_sec/totalCalls, totalTime.tv_nsec/totalCalls, thisEntry->ftnkey);
   }
   
   return TRUE;

@@ -334,7 +334,7 @@ typedef struct {
 } data_server_io_info_t;
 
 typedef struct {
-    hg_string_t    obj_name;
+    hg_const_string_t    obj_name;
     uint32_t             hash_value;
     int32_t              time_step;
 } metadata_query_in_t;
@@ -346,7 +346,7 @@ typedef struct {
 typedef struct {
     uint64_t                obj_id;
     uint32_t                hash_value;
-    hg_string_t             new_tag;
+    hg_const_string_t       new_tag;
 } metadata_add_tag_in_t;
 
 typedef struct {
@@ -735,7 +735,7 @@ hg_proc_metadata_add_tag_in_t(hg_proc_t proc, void *data)
 	    HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_string_t(proc, &struct_data->new_tag);
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->new_tag);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -867,7 +867,7 @@ hg_proc_metadata_query_in_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     metadata_query_in_t *struct_data = (metadata_query_in_t*) data;
 
-    ret = hg_proc_hg_string_t(proc, &struct_data->obj_name);
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -900,8 +900,8 @@ hg_proc_metadata_query_out_t(hg_proc_t proc, void *data)
 }
 
 typedef struct {
-    hg_string_t cont_name;
-    uint32_t    hash_value;
+    hg_const_string_t cont_name;
+    uint32_t          hash_value;
 } gen_cont_id_in_t;
 
 typedef struct {
@@ -914,7 +914,7 @@ hg_proc_gen_cont_id_in_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     gen_cont_id_in_t *struct_data = (gen_cont_id_in_t*) data;
 
-    ret = hg_proc_hg_string_t(proc, &struct_data->cont_name);
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->cont_name);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;

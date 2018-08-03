@@ -41,7 +41,7 @@ extern int pdc_client_mpi_rank_g;
 extern int pdc_client_mpi_size_g;
 
 /* extern char pdc_server_tmp_dir_g[ADDR_MAX]; */
-hg_return_t PDC_Client_work_done_cb(const struct hg_cb_info *callback_info);
+hg_return_t PDC_Client_work_done_cb();
 hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *callback_info);
 
 typedef struct pdc_server_info_t {
@@ -147,7 +147,8 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdci
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *local_dims, uint64_t *local_offset, uint64_t *local_size, PDC_var_type_t local_type, void *local_data, uint64_t *remote_dims, uint64_t *remote_offset, uint64_t *remote_size, PDC_var_type_t remote_type, int32_t remote_client_id, void *remote_data, struct PDC_region_info *local_region, struct PDC_region_info *remote_region);
+//perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *local_dims, uint64_t *local_offset, uint64_t *local_size, PDC_var_type_t local_type, void *local_data, uint64_t *remote_dims, uint64_t *remote_offset, uint64_t *remote_size, PDC_var_type_t remote_type, int32_t remote_client_id, void *remote_data, struct PDC_region_info *local_region, struct PDC_region_info *remote_region);
+perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *local_dims, uint64_t *local_offset, uint64_t *local_size, PDC_var_type_t local_type, void *local_data, PDC_var_type_t remote_type, int32_t remote_client_id, struct PDC_region_info *local_region, struct PDC_region_info *remote_region);
 
 /**
  * Client request for object mapping
@@ -457,6 +458,7 @@ perr_t PDC_Client_write(pdc_metadata_t *meta, struct PDC_region_info *region, vo
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_create_cont_id(const char *cont_name, pdcid_t cont_create_prop, pdcid_t *cont_id);
+//perr_t PDC_Client_create_cont_id(const char *cont_name, pdcid_t cont_create_prop, pdcid_t *cont_id);
+perr_t PDC_Client_create_cont_id(const char *cont_name, pdcid_t *cont_id);
 
 #endif

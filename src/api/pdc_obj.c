@@ -639,7 +639,6 @@ perr_t PDCbuf_obj_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, p
     pdcid_t remote_meta_id;
 
     PDC_var_type_t remote_type;
-    void *remote_data;
     struct PDC_id_info *reginfo1, *reginfo2;
     struct PDC_region_info *reg1, *reg2;
     int32_t remote_client_id;
@@ -656,7 +655,6 @@ perr_t PDCbuf_obj_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, p
     remote_meta_id = obj2->meta_id;
     remote_client_id = obj2->client_id;
     remote_type = obj2->obj_pt->type;
-    remote_data = obj2->obj_pt->buf;
   
     reginfo2 = pdc_find_id(remote_reg);
     reg2 = (struct PDC_region_info *)(reginfo2->obj_ptr);
@@ -667,7 +665,9 @@ perr_t PDCbuf_obj_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, p
           if((obj2->obj_pt->dims)[i] < (reg2->size)[i])
             PGOTO_ERROR(FAIL, "remote object region size error");
 
-    ret_value = PDC_Client_buf_map(local_reg, remote_meta_id, remote_reg, reg1->ndim, reg1->size, reg1->offset, reg1->size, local_type, buf, obj2->obj_pt->dims, reg2->offset, reg2->size, remote_type, remote_client_id, remote_data, reg1, reg2);
+//    ret_value = PDC_Client_buf_map(local_reg, remote_meta_id, remote_reg, reg1->ndim, reg1->size, reg1->offset, reg1->size, local_type, buf, obj2->obj_pt->dims, reg2->offset, reg2->size, remote_type, remote_client_id, remote_data, reg1, reg2);
+    ret_value = PDC_Client_buf_map(local_reg, remote_meta_id, remote_reg, reg1->ndim, reg1->size, reg1->offset, reg1->size, local_type, buf, remote_type, remote_client_id, reg1, reg2);
+
     if(ret_value == SUCCEED) {
         /* 
 	 * For analysis and/or transforms, we only identify the target region as being mapped.

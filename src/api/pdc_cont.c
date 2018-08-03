@@ -63,7 +63,8 @@ pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_prop_id)
     id_info = pdc_find_id(cont_prop_id);
     p->cont_pt = (struct PDC_cont_prop *)(id_info->obj_ptr);
  
-    ret_value = PDC_Client_create_cont_id(cont_name, cont_prop_id, &(p->meta_id));
+    /* ret_value = PDC_Client_create_cont_id(cont_name, cont_prop_id, &(p->meta_id)); */
+    ret_value = PDC_Client_create_cont_id(cont_name, &(p->meta_id));
     if (ret_value == FAIL) {
         ret_value = -1;
         PGOTO_ERROR(FAIL,"Unable to create container object on server!\n");

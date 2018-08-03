@@ -114,7 +114,7 @@ static hg_id_t         data_server_read_register_id_g;
 static hg_id_t         data_server_read_check_register_id_g;
 static hg_id_t         data_server_write_check_register_id_g;
 static hg_id_t         data_server_write_register_id_g;
-static hg_id_t         aggregate_write_register_id_g;
+//static hg_id_t         aggregate_write_register_id_g;
 static hg_id_t         server_checkpoint_rpc_register_id_g;
 
 // bulk
@@ -128,7 +128,7 @@ static hg_id_t         buf_unmap_register_id_g;
 static hg_id_t         reg_unmap_register_id_g;
 
 // client direct
-static hg_id_t         client_direct_addr_register_id_g;
+//static hg_id_t         client_direct_addr_register_id_g;
 
 static hg_id_t         cont_add_del_objs_rpc_register_id_g;
 static hg_id_t         cont_add_tags_rpc_register_id_g;
@@ -557,7 +557,6 @@ perr_t PDC_Client_lookup_server(int server_id)
     struct client_lookup_args lookup_args;
     char self_addr[ADDR_MAX];
     char *target_addr_string;
-    int actual_count;
 
     FUNC_ENTER(NULL);
 
@@ -1157,7 +1156,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_destroy_all_handles(pdc_server_info_t *server_info)
+perr_t PDC_Client_destroy_all_handles()
 {
     perr_t ret_value = SUCCEED;
 
@@ -1465,7 +1464,8 @@ perr_t PDC_Client_query_tag(const char* tags, int *n_res, pdc_metadata_t ***out)
     perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
     int n_recv = 0;
-    uint32_t i, server_id = 0;
+    uint32_t i;
+    int server_id = 0;
     size_t out_size = 0;
     hg_handle_t query_partial_handle;
 
@@ -1713,6 +1713,7 @@ perr_t PDC_Client_add_tag(pdc_metadata_t *old, const char *tag)
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
     hg_handle_t  metadata_add_tag_handle;
+    metadata_add_tag_in_t in;
 
     uint32_t hash_name_value = PDC_get_hash_by_name(old->obj_name);
     uint32_t server_id = (hash_name_value + old->time_step);
@@ -1733,12 +1734,11 @@ perr_t PDC_Client_add_tag(pdc_metadata_t *old, const char *tag)
                 &metadata_add_tag_handle);
 
     // Fill input structure
-    metadata_add_tag_in_t in;
     in.obj_id     = old->obj_id;
     in.hash_value = hash_name_value;
 
     if (tag != NULL && tag[0] != 0) {
-        in.new_tag            = (char *)tag;
+        in.new_tag            = tag;
     }
     else {
         printf("PDC_Client_add_tag(): invalid tag content!\n");
@@ -2030,7 +2030,7 @@ perr_t PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t 
     metadata_query_handle = (hg_handle_t*)malloc(sizeof(hg_handle_t)*pdc_server_num_g);
 
     // Fill input structure
-    in.obj_name   = (char *)obj_name;
+    in.obj_name   = obj_name;
     in.hash_value = PDC_get_hash_by_name(obj_name);
 
     /* printf("==PDC_CLIENT: partial search obj_name [%s], hash value %u\n", in.obj_name, in.hash_value); */
@@ -2121,7 +2121,7 @@ perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_st
               &metadata_query_handle);
 
     // Fill input structure
-    in.obj_name   = (char *)obj_name;
+    in.obj_name   = obj_name;
     in.hash_value = PDC_get_hash_by_name(obj_name);
     in.time_step  = time_step;
 
@@ -2200,17 +2200,16 @@ perr_t PDC_Client_query_metadata_name_timestep_agg(const char *obj_name, int tim
 
 #endif
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
 // Send a name to server and receive an container (object) id
-perr_t PDC_Client_create_cont_id(const char *cont_name, pdcid_t cont_create_prop, pdcid_t *cont_id)
+//perr_t PDC_Client_create_cont_id(const char *cont_name, pdcid_t cont_create_prop, pdcid_t *cont_id)
+perr_t PDC_Client_create_cont_id(const char *cont_name, pdcid_t *cont_id)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
     uint32_t server_id = 0;
-    struct PDC_cont_prop *create_prop;
     gen_cont_id_in_t in;
     uint32_t hash_name_value;
     struct client_lookup_args lookup_args;
@@ -2228,7 +2227,7 @@ perr_t PDC_Client_create_cont_id(const char *cont_name, pdcid_t cont_create_prop
 
     hash_name_value = PDC_get_hash_by_name(cont_name);
     in.hash_value      = hash_name_value;
-    in.cont_name       = (char *)cont_name;
+    in.cont_name       = cont_name;
     /* printf("Hash(%s) = %d\n", cont_name, in.hash_value); */
 
     // Calculate server id
@@ -2425,7 +2424,6 @@ perr_t PDC_Client_close_all_server()
     uint32_t server_id = 0;
     uint32_t i;
     close_server_in_t in;
-    struct client_lookup_args lookup_args;
     hg_handle_t close_server_handle;
     
     FUNC_ENTER(NULL);
@@ -2599,7 +2597,6 @@ perr_t PDC_Client_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, struc
     /* hg_bulk_t bulk_handle; */
     uint32_t server_id;
     size_t unit;
-    int n_retry;
     struct region_unmap_args unmap_args;
     hg_handle_t client_send_region_unmap_handle;
     
@@ -2652,7 +2649,8 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *local_dims, uint64_t *local_offset, uint64_t *local_size, PDC_var_type_t local_type, void *local_data, uint64_t *remote_dims, uint64_t *remote_offset, uint64_t *remote_size, PDC_var_type_t remote_type, int32_t remote_client_id, void *remote_data, struct PDC_region_info *local_region, struct PDC_region_info *remote_region)
+//perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *local_dims, uint64_t *local_offset, uint64_t *local_size, PDC_var_type_t local_type, void *local_data, uint64_t *remote_dims, uint64_t *remote_offset, uint64_t *remote_size, PDC_var_type_t remote_type, int32_t remote_client_id, void *remote_data, struct PDC_region_info *local_region, struct PDC_region_info *remote_region)
+perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *local_dims, uint64_t *local_offset, uint64_t *local_size, PDC_var_type_t local_type, void *local_data, PDC_var_type_t remote_type, int32_t remote_client_id, struct PDC_region_info *local_region, struct PDC_region_info *remote_region)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = HG_SUCCESS;
@@ -2793,7 +2791,6 @@ perr_t PDC_Client_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdci
     reg_map_in_t in;
     uint32_t server_id;
     hg_class_t *hg_class;
-    int n_retry = 0;
     hg_uint32_t i, j;
     hg_uint32_t local_count, remote_count;
     void    **data_ptrs, **data_ptrs_to;
@@ -2977,7 +2974,6 @@ perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_in
     uint32_t server_id, meta_server_id;
     region_lock_in_t in;
     size_t  unit;
-    int n_retry = 0;
     struct region_lock_args lookup_args;
     hg_handle_t region_lock_handle;
     
@@ -3335,7 +3331,7 @@ hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *call
     /* data_server_read_check_in_t in; */
 
     int shm_fd = -1;        // file descriptor, from shm_open()
-    uint32_t i = 0, j = 0;
+    uint32_t i = 0;
     char *shm_base = NULL;    // base address, from mmap()
     char *shm_addr = NULL;
     uint64_t data_size = 1;
@@ -3874,14 +3870,12 @@ perr_t PDC_Client_data_server_write(PDC_Request_t *request)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
-    uint32_t i, j;
+    uint32_t i;
     uint64_t region_size = 1;
     struct client_lookup_args lookup_args;
     data_server_write_in_t in;
     int server_ret;
     hg_handle_t data_server_write_handle;
-    hg_handle_t aggregate_write_handle;
-    region_list_t* tmp_regions = NULL;
     int server_id, n_client, n_update; 
     pdc_metadata_t *meta; 
     struct PDC_region_info *region;
@@ -3967,7 +3961,6 @@ perr_t PDC_Client_data_server_write(PDC_Request_t *request)
     memcpy_time_g += PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
     #endif
 
-    int can_aggregate_send = 0;
     /* uint64_t same_node_ids[64]; */
     // Aggregate the send request when clients of same node are sending requests of same object
     // First check the obj ID are the same among the node local ranks
@@ -4227,10 +4220,6 @@ perr_t PDC_Client_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsign
     struct timeval  start_time;
     struct timeval  end_time;
     unsigned long elapsed_ms;
-    uint64_t total_size = 1;
-    long est_wait_time;
-    long est_write_rate = 500;
-    size_t i;
     int cnt = 0;
 
     FUNC_ENTER(NULL);
@@ -4315,7 +4304,7 @@ perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct PDC_region_info *region, P
     FUNC_LEAVE(ret_value);
 }
 
-hg_return_t PDC_Client_work_done_cb(const struct hg_cb_info *callback_info)
+hg_return_t PDC_Client_work_done_cb()
 {
     work_todo_g--;
 
@@ -5011,9 +5000,7 @@ done:
 perr_t PDC_Client_complete_read_request(int nbuf, PDC_Request_t *req)
 {
     perr_t      ret_value = SUCCEED;
-    int         i, cnt;
-    uint64_t      *sizet_ptr;
-    PDC_Request_t *request;
+    int         i;
 
     FUNC_ENTER(NULL);
 
@@ -5085,7 +5072,6 @@ perr_t PDC_Client_query_read_complete(char *shm_addrs, int size, int n_shm, int 
 {
     perr_t      ret_value = SUCCEED;
     int         i, cnt;
-    uint64_t      *sizet_ptr;
     PDC_Request_t *request;
 
     FUNC_ENTER(NULL);
@@ -5393,7 +5379,7 @@ perr_t PDC_Client_read_with_storage_meta(int nobj, region_storage_meta_t **all_s
 
 {
     perr_t ret_value;
-    int iter, i;
+    int i;
     char *fname, *prev_fname;
     FILE *fp_read = NULL;
     uint32_t ndim;
@@ -5476,10 +5462,9 @@ perr_t PDC_Client_query_multi_storage_info(int nobj, char **obj_names, region_st
     hg_bulk_t   bulk_handle;
     uint32_t    server_id;
     uint64_t    *buf_sizes = NULL, total_size;
-    int         i, j, iter, is_debug, *n_obj_name_by_server = NULL;
+    int         i, j, iter, *n_obj_name_by_server = NULL;
     int **obj_names_server_seq_mapping = NULL, *obj_names_server_seq_mapping_1d;
     int         send_n_request = 0;
-    int         i_have_query = 0, total_have_query = 1;
     char        ***obj_names_by_server = NULL;
     char        **obj_names_by_server_2d = NULL;
     query_read_obj_name_in_t bulk_rpc_in;
@@ -5607,7 +5592,7 @@ perr_t PDC_Client_query_multi_storage_info(int nobj, char **obj_names, region_st
 
     // Now we have all the storage meta stored in the requests structure
     // Reorgaze them and fill the output buffer
-    int n_region, loc;
+    int loc;
     (*all_storage_meta) = (region_storage_meta_t**)calloc(sizeof(region_storage_meta_t*), nobj);
     for (iter = 0; iter < pdc_server_num_g; iter++) {
         request = requests[iter];
@@ -5641,15 +5626,16 @@ done:
     FUNC_LEAVE(ret_value);
 } // end PDC_Client_query_multi_storage_info
 
+#if defined(ENABLE_MPI) && defined(ENABLE_TIMING)
 perr_t PDC_get_io_stats_mpi(double read_time, double query_time, int nfopen)
 {
     perr_t ret_value = SUCCEED;
     double read_time_max,  read_time_min,  read_time_avg, reduce_overhead;
     double query_time_max, query_time_min, query_time_avg;
     int    nfopen_min, nfopen_max, nfopen_avg;
+
     FUNC_ENTER(NULL);
 
-    #if defined(ENABLE_MPI) && defined(ENABLE_TIMING)
     reduce_overhead = MPI_Wtime();
     MPI_Reduce(&read_time, &read_time_max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     MPI_Reduce(&read_time, &read_time_min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
@@ -5677,10 +5663,10 @@ perr_t PDC_get_io_stats_mpi(double read_time, double query_time, int nfopen)
                                , query_time_min, query_time_avg, query_time_max 
                                , read_time_min, read_time_avg, read_time_max, reduce_overhead);
     }
-    #endif
 
     FUNC_LEAVE(ret_value);
 }
+#endif
 
 perr_t PDC_Client_query_name_read_entire_obj_client(int nobj, char **obj_names, void ***out_buf, 
                                              uint64_t *out_buf_sizes)
@@ -5739,9 +5725,7 @@ perr_t PDC_Client_query_name_read_entire_obj_client_agg(int my_nobj, char **my_o
     char      **all_names = my_obj_names;
     char       *local_names_1d, *all_names_1d = NULL;
     int        *total_obj = NULL, i, ntotal_obj = my_nobj, *recvcounts = NULL, *displs = NULL;
-    int         max_name_len = 64;
-    PDC_Request_t **requests = NULL;
-    int         n_requests;
+    size_t      max_name_len = 64;
     region_storage_meta_t **all_storage_meta = NULL, **my_storage_meta = NULL;
     region_storage_meta_t *my_storage_meta_1d = NULL, *res_storage_meta_1d = NULL;
 
@@ -5758,7 +5742,7 @@ perr_t PDC_Client_query_name_read_entire_obj_client_agg(int my_nobj, char **my_o
     local_names_1d = (char*)calloc(my_nobj, max_name_len);
     for (i = 0; i < my_nobj; i++) {
         if (strlen(my_obj_names[i]) > max_name_len) 
-            printf("==PDC_CLIENT[%2d]: object name longer than %d [%s]!\n", 
+            printf("==PDC_CLIENT[%2d]: object name longer than %lu [%s]!\n", 
                     pdc_client_mpi_rank_g, max_name_len, my_obj_names[i]);
         strncpy(local_names_1d+i*max_name_len, my_obj_names[i], max_name_len-1);
 
@@ -5898,7 +5882,8 @@ perr_t PDC_Client_recv_bulk_storage_meta(process_bulk_storage_meta_args_t *proce
 {
     perr_t      ret_value = SUCCEED;
     PDC_Request_t *request;
-    int i, nobj, origin_id;
+    /* int i, nobj, origin_id; */
+
     FUNC_ENTER(NULL);
 
     if (NULL == process_args) {
@@ -5907,8 +5892,8 @@ perr_t PDC_Client_recv_bulk_storage_meta(process_bulk_storage_meta_args_t *proce
         goto done;
     }
 
-    nobj      = process_args->n_storage_meta;
-    origin_id = process_args->origin_id;
+    /* nobj      = process_args->n_storage_meta; */
+    /* origin_id = process_args->origin_id; */
 
     // Now find the task and assign the storage meta to corresponding query request
     request = PDC_find_request_from_list_by_seq_id(&pdc_io_request_list_g, process_args->seq_id);

@@ -76,8 +76,8 @@ struct transform_ftn_info {
 };
 
 typedef struct {
-    hg_string_t                 ftn_name;
-    hg_string_t                 loadpath;
+    hg_const_string_t           ftn_name;
+    hg_const_string_t           loadpath;
     pdcid_t                     object_id;
     int32_t                     operation_type; /* When, e.g. during mapping */
     int32_t                     start_state;

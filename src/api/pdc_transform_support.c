@@ -52,7 +52,6 @@ PDCobj_transform_register(char *func, pdcid_t obj_id, int current_state, int nex
     void *ftnHandle = NULL;
     int (*ftnPtr)() = NULL;
     struct region_transform_ftn_info *thisFtn = NULL;
-    pdcid_t meta_id_in = 0, meta_id_out = 0;
     char *thisApp = NULL;
     char *colonsep = NULL; 
     char *transformslibrary = NULL;
@@ -117,7 +116,6 @@ PDCbuf_map_transform_register(char *func, void *buf, pdcid_t src_region_id, pdci
     struct region_transform_ftn_info *thisFtn = NULL;
     struct PDC_region_info *region_info;
     struct PDC_id_info *id_info;
-    pdcid_t meta_id_in = 0, meta_id_out = 0;
     char *thisApp = NULL;
     char *colonsep = NULL; 
     char *transformslibrary = NULL;
