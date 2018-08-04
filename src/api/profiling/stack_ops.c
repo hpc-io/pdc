@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "stack_ops.h"
 #include "hashtab.h"
@@ -190,7 +191,7 @@ int show_profile_info( void ** ht_live_entry)
     if (count == 0)
       puts(header);
     totalTime = thisEntry->totalTime;
-    printf("%s\n %d\t%-6ld %6ld,%6ld\t\t %s\n", LineBreak, ++count , totalCalls, totalTime.tv_sec/totalCalls, totalTime.tv_nsec/totalCalls, thisEntry->ftnkey);
+    printf("%s\n %d\t%-6" PRId64 " %6" PRId64 ",%6" PRId64 "\t\t %s\n", LineBreak, ++count , totalCalls, totalTime.tv_sec/totalCalls, totalTime.tv_nsec/totalCalls, thisEntry->ftnkey);
   }
   
   return TRUE;
