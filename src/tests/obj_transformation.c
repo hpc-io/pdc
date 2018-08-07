@@ -238,6 +238,7 @@ int main(int argc, char **argv)
     ret = PDCbuf_transform_register("pdc_transform_compress", &x[0], region_x, obj_xx, region_xx, 0, INCR_STATE, DATA_OUT);
     ret = PDCobj_transform_register("pdc_transform_compress", &x[0], region_x, obj_xx, region_xx, 0, INCR_STATE, DATA_OUT);
 #else
+    ret = PDCbuf_map_transform_register("pdc_transform_increment", &x[0], region_x, obj_xx, region_xx, 0, INCR_STATE, DATA_OUT);
     ret = PDCbuf_map_transform_register("pdc_transform_compress", &x[0], region_x, obj_xx, region_xx, 0, INCR_STATE, DATA_OUT);
 #endif
     if(ret < 0)
