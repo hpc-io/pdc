@@ -160,8 +160,10 @@ int main(int argc, char **argv)
         my_total_data_size += buf_sizes[i];
         /* printf("%d: read [%s], size %lu\n", rank, my_dset_names[i], buf_sizes[i]); */
     }
+#ifdef ENABLE_MPI
     /* printf("%d: my total read size = %lu\n", rank, my_total_data_size); */
     MPI_Reduce(&my_total_data_size, &all_total_data_size, 1, MPI_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+#endif
 
     if (rank == 0) {
         printf("Time to query and read %d obj of %.4f MB with %d ranks: %.4f\n", 

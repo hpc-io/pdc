@@ -114,6 +114,8 @@ int    n_fread_g                          = 0;
 int    n_fopen_g                          = 0;
 double fread_total_MB                     = 0;
 double fwrite_total_MB                    = 0;
+int    n_read_from_bb_g                   = 0;
+int    read_from_bb_size_g                = 0;
 
 double server_write_time_g                  = 0.0;
 double server_read_time_g                   = 0.0;
@@ -178,9 +180,9 @@ static perr_t PDC_Server_destroy_client_info(pdc_client_info_t *info)
     
     FUNC_ENTER(NULL);
 
-    if (is_debug_g == 1) {
-        printf("==PDC_SERVER[%d]: Destryoing %d client info\n", pdc_server_rank_g, pdc_client_num_g);
-    }
+    /* if (is_debug_g == 1) { */
+    /*     printf("==PDC_SERVER[%d]: Destryoing %d client info\n", pdc_server_rank_g, pdc_client_num_g); */
+    /* } */
 
     // Destroy addr and handle
     for (i = 0; i < pdc_client_num_g ; i++) {
@@ -280,21 +282,21 @@ hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info)
 
         for (i = 0; i < in->nclient; i++) 
             PDC_client_info_init(&pdc_client_info_g[i]);
-        if (is_debug_g == 1) { 
-            printf("==PDC_SERVER[%d]: finished init %d client info\n", pdc_server_rank_g, in->nclient);
-            fflush(stdout);
-        }
+        /* if (is_debug_g == 1) { */ 
+        /*     printf("==PDC_SERVER[%d]: finished init %d client info\n", pdc_server_rank_g, in->nclient); */
+        /*     fflush(stdout); */
+        /* } */
         
     }
 
     // Copy the client's address
     memcpy(pdc_client_info_g[in->client_id].addr_string, in->client_addr, sizeof(char)*ADDR_MAX);
 
-    if (is_debug_g) {
-        printf("==PDC_SERVER[%d]: got client addr: %s from client[%d], total: %d\n", 
-                pdc_server_rank_g, pdc_client_info_g[in->client_id].addr_string, in->client_id, pdc_client_num_g);
-        fflush(stdout);
-    }
+    /* if (is_debug_g) { */
+    /*     printf("==PDC_SERVER[%d]: got client addr: %s from client[%d], total: %d\n", */ 
+    /*             pdc_server_rank_g, pdc_client_info_g[in->client_id].addr_string, in->client_id, pdc_client_num_g); */
+    /*     fflush(stdout); */
+    /* } */
 #ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_unlock(&pdc_client_info_mutex_g);
 #endif
@@ -462,11 +464,11 @@ perr_t PDC_Server_lookup_server_id(int remote_server_id)
         return SUCCEED;
 
     lookup_args = (server_lookup_args_t*)calloc(1, sizeof(server_lookup_args_t));
-    if (is_debug_g == 1) {
-        printf("==PDC_SERVER[%d]: Testing connection to remote server %d: %s\n", 
-                pdc_server_rank_g, remote_server_id, pdc_remote_server_info_g[remote_server_id].addr_string);
-        fflush(stdout);
-    }
+    /* if (is_debug_g == 1) { */
+    /*     printf("==PDC_SERVER[%d]: Testing connection to remote server %d: %s\n", */ 
+    /*             pdc_server_rank_g, remote_server_id, pdc_remote_server_info_g[remote_server_id].addr_string); */
+    /*     fflush(stdout); */
+    /* } */
 
     lookup_args->server_id = remote_server_id;
     hg_ret = HG_Addr_lookup(hg_context_g, lookup_remote_server_cb, lookup_args, 
@@ -478,7 +480,7 @@ perr_t PDC_Server_lookup_server_id(int remote_server_id)
     }
 
     /* while(lookup_args->ret_int == 0) */
-        hg_ret = HG_Trigger(hg_context_g, 0/* timeout */, 1024/* max count */, &actual_count);
+        hg_ret = HG_Trigger(hg_context_g, 1024/* timeout */, 4096/* max count */, &actual_count);
     /* printf("==PDC_SERVER[%d]: connected to remote server %d\n", pdc_server_rank_g, remote_server_id); */
 
 done:
@@ -566,10 +568,10 @@ PDC_Server_lookup_client_cb(const struct hg_cb_info *callback_info)
     pdc_client_info_g[client_id].addr = callback_info->info.lookup.addr;
     pdc_client_info_g[client_id].addr_valid = 1;
 
-    if (is_debug_g == 1) {
-        printf("==PDC_SERVER[%d]: got client %d addr\n", pdc_server_rank_g, client_id);
-        fflush(stdout);
-    }
+    /* if (is_debug_g == 1) { */
+    /*     printf("==PDC_SERVER[%d]: got client %d addr\n", pdc_server_rank_g, client_id); */
+    /*     fflush(stdout); */
+    /* } */
 
 done:
     fflush(stdout);
@@ -610,11 +612,11 @@ perr_t PDC_Server_lookup_client(uint32_t client_id)
     lookup_args.server_addr = pdc_client_info_g[client_id].addr_string;
     target_addr_string = pdc_client_info_g[client_id].addr_string;
 
-    if (is_debug_g == 1) {
-        printf("==PDC_SERVER[%d]: Testing connection to client %d: %s\n", 
-                pdc_server_rank_g, client_id, target_addr_string);
-        fflush(stdout);
-    }
+    /* if (is_debug_g == 1) { */
+    /*     printf("==PDC_SERVER[%d]: Testing connection to client %d: %s\n", */ 
+    /*             pdc_server_rank_g, client_id, target_addr_string); */
+    /*     fflush(stdout); */
+    /* } */
 
     hg_ret = HG_Addr_lookup(hg_context_g, PDC_Server_lookup_client_cb, 
                             &lookup_args, target_addr_string, HG_OP_ID_IGNORE);
@@ -624,7 +626,7 @@ perr_t PDC_Server_lookup_client(uint32_t client_id)
         goto done;
     }
 
-    hg_ret = HG_Trigger(hg_context_g, 0/* timeout */, 1024/* max count */, &actual_count);
+    hg_ret = HG_Trigger(hg_context_g, 1024/* timeout */, 4096/* max count */, &actual_count);
 
     /* if (is_debug_g == 1) { */
     /*     printf("==PDC_SERVER[%d]: waiting for client %d\n", pdc_server_rank_g, client_id); */
@@ -1043,10 +1045,7 @@ perr_t PDC_Server_finalize()
     if(metadata_hash_table_g != NULL)
         hash_table_free(metadata_hash_table_g);
 
-    if(container_hash_table_g != NULL)
-        hash_table_free(container_hash_table_g);
-/* printf("hash table freed!\n"); */
-/* fflush(stdout); */
+    /* PDC_free_cont_hash_table(); */
 
     ret_value = PDC_Server_destroy_client_info(pdc_client_info_g);
     if (ret_value != SUCCEED) {
@@ -1534,7 +1533,7 @@ static perr_t PDC_Server_multithread_loop(hg_context_t *context)
         if (hg_atomic_get32(&close_server_g)) break;
 
         /* printf("==PDC_SERVER[%d]: Before HG_Trigger()\n", pdc_server_rank_g); */
-        ret = HG_Trigger(context, 1024, 4096, NULL);
+        ret = HG_Trigger(context, 1024, 32767, NULL);
         /* printf("==PDC_SERVER[%d]: After HG_Trigger()\n", pdc_server_rank_g); */
     } while (ret == HG_SUCCESS || ret == HG_TIMEOUT);
 
@@ -1564,24 +1563,14 @@ static perr_t PDC_Server_loop(hg_context_t *hg_context)
     do {
         actual_count = 0;
         do {
-            /* printf("==%d: Before Trigger\n", pdc_server_rank_g); */
-            /* fflush(stdout); */
-            hg_ret = HG_Trigger(hg_context, 1024/* timeout */, 4096/* max count */, &actual_count);
+            hg_ret = HG_Trigger(hg_context, 1024/* timeout */, 16384/* max count */, &actual_count);
             /* hg_ret = HG_Trigger(hg_context, 0/1* timeout *1/, 1 /1* max count *1/, &actual_count); */
-            /* printf("==%d: After Trigger\n", pdc_server_rank_g); */
-            /* fflush(stdout); */
         } while ((hg_ret == HG_SUCCESS) && actual_count);
 
         /* Do not try to make progress anymore if we're done */
         if (hg_atomic_cas32(&close_server_g, 1, 1)) break;
-        /* printf("==%d: Before Progress\n", pdc_server_rank_g); */
-        /* fflush(stdout); */
-        /* hg_ret = HG_Progress(hg_context, HG_MAX_IDLE_TIME); */
-        /* printf("==%d: After Progress\n", pdc_server_rank_g); */
-        /* fflush(stdout); */
-        hg_ret = HG_Progress(hg_context, 50000);
+        hg_ret = HG_Progress(hg_context, 30000);
 
-    /* } while (hg_ret == HG_SUCCESS); */
     } while (hg_ret == HG_SUCCESS || hg_ret == HG_TIMEOUT);
 
     if (hg_ret == HG_SUCCESS) 
@@ -1659,7 +1648,7 @@ static void PDC_print_IO_stats()
     #endif
 
     if (pdc_server_rank_g == 0) {
-        printf("==PDC_SERVER: IO STATS (MIN, AVG, MAX)\n"
+        printf("==PDC_SERVER[0]: IO STATS (MIN, AVG, MAX)\n"
                "              #fwrite %4d, Tfwrite (%6.2f, %6.2f, %6.2f), %.0f MB\n"
                "              #fread  %4d, Tfread  (%6.2f, %6.2f, %6.2f), %.0f MB\n"
                "              #fopen  %4d, Tfopen  (%6.2f, %6.2f, %6.2f)\n"
@@ -1667,7 +1656,8 @@ static void PDC_print_IO_stats()
                "              Ttotal_IO             (%6.2f, %6.2f, %6.2f)\n"
                "              Ttotal_IO_elapsed     (%6.2f, %6.2f, %6.2f)\n"
                "              Tregion_update        (%6.2f, %6.2f, %6.2f)\n"
-               "              Tget_region           (%6.2f, %6.2f, %6.2f)\n",  
+               "              Tget_region           (%6.2f, %6.2f, %6.2f)\n"
+               "              #read_bb %4d, size %d MB\n",  
                 n_fwrite_g, write_time_min,    write_time_avg,    write_time_max, fwrite_total_MB, 
                 n_fread_g ,  read_time_min,     read_time_avg,     read_time_max, fread_total_MB, 
                 n_fopen_g ,  open_time_min,     open_time_avg,     open_time_max, 
@@ -1675,7 +1665,8 @@ static void PDC_print_IO_stats()
                               total_io_min,      total_io_avg,      total_io_max,
                        io_elapsed_time_min, io_elapsed_time_avg, io_elapsed_time_max,
                            update_time_min,   update_time_avg,   update_time_max,
-                         get_info_time_min, get_info_time_avg, get_info_time_max);
+                         get_info_time_min, get_info_time_avg, get_info_time_max,
+                         n_read_from_bb_g, read_from_bb_size_g);
     }
 #endif
 

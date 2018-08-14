@@ -851,6 +851,9 @@ HG_TEST_RPC_CB(gen_obj_id, handle)
 
     HG_Get_input(handle, &in);
 
+    printf("==PDC_SERVER: received gen obj request\n");
+    fflush(stdout);
+
 #ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_lock(&insert_metadata_mutex_g);
 #endif
@@ -4387,7 +4390,6 @@ HG_TEST_RPC_CB(send_shm, handle)
 
     FUNC_LEAVE(ret_value);
 }
-
 
 static hg_return_t
 query_read_obj_name_client_bulk_cb(const struct hg_cb_info *hg_cb_info)

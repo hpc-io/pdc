@@ -195,7 +195,8 @@ static void
 PDC_Server_container_hash_value_free(void * value)
 {
     pdc_cont_hash_table_entry_t *head = (pdc_cont_hash_table_entry_t*) value;
-    free(head->obj_ids);
+    if (head->obj_ids != NULL) 
+        free(head->obj_ids);
 }
 
 /*
@@ -2453,12 +2454,6 @@ perr_t PDC_Server_create_container(gen_cont_id_in_t *in, gen_cont_id_out_t *out)
     /* printf("==PDC_SERVER[%d]: Got container creation request with name: %s\n", */
     /*         pdc_server_rank_g, in->cont_name); */
     /* fflush(stdout); */
-
-    hash_key = (uint32_t*)malloc(sizeof(uint32_t));
-    if (hash_key == NULL) {
-        printf("Cannot allocate hash_key!\n");
-        goto done;
-    }
 #ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_lock(&total_mem_usage_mutex_g);
 #endif
@@ -2466,7 +2461,6 @@ perr_t PDC_Server_create_container(gen_cont_id_in_t *in, gen_cont_id_out_t *out)
 #ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_unlock(&total_mem_usage_mutex_g);
 #endif
-    *hash_key = in->hash_value;
 
     pdc_cont_hash_table_entry_t *lookup_value;
 
@@ -2476,30 +2470,38 @@ perr_t PDC_Server_create_container(gen_cont_id_in_t *in, gen_cont_id_out_t *out)
 
     if (container_hash_table_g != NULL) {
         // lookup
-        lookup_value = hash_table_lookup(container_hash_table_g, hash_key);
+        lookup_value = hash_table_lookup(container_hash_table_g, &in->hash_value);
 
         // Is this hash value exist in the Hash table?
         if (lookup_value != NULL) {
             
             // Check if there exist container identical to current one
-            if (is_debug_g == 1)
-                printf("==PDC_SERVER[%d]: Found existing container with same name [%s]!\n", 
-                        pdc_server_rank_g, lookup_value->cont_name);
+            /* if (is_debug_g == 1) */
+            /*     printf("==PDC_SERVER[%d]: Found existing container with same name [%s]!\n", */ 
+            /*             pdc_server_rank_g, lookup_value->cont_name); */
             out->cont_id = lookup_value->cont_id;
-        
         }
         else {
+            hash_key = (uint32_t*)malloc(sizeof(uint32_t));
+            if (hash_key == NULL) {
+                printf("Cannot allocate hash_key!\n");
+                ret_value = FAIL;
+                goto done;
+            }
+            *hash_key = in->hash_value;
+
             pdc_cont_hash_table_entry_t *entry = (pdc_cont_hash_table_entry_t*)calloc(1, sizeof(pdc_cont_hash_table_entry_t));
             strcpy(entry->cont_name, in->cont_name);
-            entry->n_obj = 0;
-            entry->n_allocated = 128;
-            entry->obj_ids = (uint64_t*)calloc(entry->n_allocated, sizeof(uint64_t));
-            entry->cont_id = PDC_Server_gen_obj_id();
+            entry->n_obj        = 0;
+            entry->n_allocated  = 0;
+            entry->obj_ids      = NULL;
+            /* entry->obj_ids = (uint64_t*)calloc(entry->n_allocated, sizeof(uint64_t)); */
+            entry->cont_id      = PDC_Server_gen_obj_id();
 #ifdef ENABLE_MULTITHREAD
             hg_thread_mutex_lock(&total_mem_usage_mutex_g);
 #endif
             total_mem_usage_g += sizeof(pdc_cont_hash_table_entry_t);
-            total_mem_usage_g += sizeof(uint64_t)*entry->n_allocated;
+            /* total_mem_usage_g += sizeof(uint64_t)*entry->n_allocated; */
 #ifdef ENABLE_MULTITHREAD
             hg_thread_mutex_unlock(&total_mem_usage_mutex_g);
 #endif
@@ -2537,8 +2539,6 @@ perr_t PDC_Server_create_container(gen_cont_id_in_t *in, gen_cont_id_out_t *out)
     
 
 done:
-    /* if (hash_key != NULL) */ 
-    /*     free(hash_key); */
     FUNC_LEAVE(ret_value);
 } // end PDC_Server_create_container
 
@@ -2687,6 +2687,9 @@ perr_t PDC_Server_find_container_by_id(uint64_t cont_id, pdc_cont_hash_table_ent
         while (n_entry != 0 && hash_table_iter_has_more(&hash_table_iter)) {
             pair = hash_table_iter_next(&hash_table_iter);
             cont_entry = pair.value;
+            if (cont_entry == NULL) 
+                continue;
+            
             if (cont_entry->cont_id == cont_id) {
                 *out = cont_entry;
                 goto done;
@@ -2729,14 +2732,29 @@ perr_t PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint64_t cont
         if (cont_entry->n_allocated == 0) {
             cont_entry->n_allocated = PDC_ALLOC_BASE_NUM;
             cont_entry->obj_ids = (uint64_t*)calloc(sizeof(uint64_t), PDC_ALLOC_BASE_NUM);
+            total_mem_usage_g += sizeof(uint64_t)*cont_entry->n_allocated;
         }
         else if (cont_entry->n_allocated < cont_entry->n_obj + n_obj) {
             // Extend the allocated space by twice its original size 
             // or twice the n_obj size, whichever greater
             realloc_size = cont_entry->n_allocated > n_obj? cont_entry->n_allocated: n_obj;
             realloc_size *= (sizeof(uint64_t)*2);
+
+            if (is_debug_g == 1) {
+                printf("==PDC_SERVER[%d]: realloc from %d to %ld!\n", 
+                        pdc_server_rank_g, cont_entry->n_allocated, realloc_size/sizeof(uint64_t));
+            }
+
             cont_entry->obj_ids = (uint64_t*)realloc(cont_entry->obj_ids, realloc_size);
+            if (NULL == cont_entry->obj_ids) {
+                printf("==PDC_SERVER[%d]: %s - ERROR with realloc!\n", pdc_server_rank_g, __func__); 
+                ret_value = FAIL;
+                goto done;
+            }
+            total_mem_usage_g -= sizeof(uint64_t)*cont_entry->n_allocated;
+
             cont_entry->n_allocated = realloc_size / sizeof(uint64_t);
+            total_mem_usage_g += sizeof(uint64_t)*cont_entry->n_allocated;
         }
 
         // Append the new ids
@@ -2744,8 +2762,10 @@ perr_t PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint64_t cont
         cont_entry->n_obj += n_obj;
             
         // Debug prints
-        /* printf("==PDC_SERVER[%d]: add %d objects to container %" PRIu64 ", total %d !\n", */ 
-                /* pdc_server_rank_g, n_obj, cont_id, cont_entry->n_obj - cont_entry->n_deleted); */
+        if (is_debug_g == 1) {
+            printf("==PDC_SERVER[%d]: add %d objects to container %" PRIu64 ", total %d !\n", 
+                    pdc_server_rank_g, n_obj, cont_id, cont_entry->n_obj - cont_entry->n_deleted);
+        }
         
         /* int i; */
         /* for (i = 0; i < cont_entry->n_obj; i++) */ 
@@ -2850,7 +2870,9 @@ perr_t PDC_Server_container_add_tags(uint64_t cont_id, char *tags)
 
     if (cont_entry != NULL) {
            
-        strcat(cont_entry->tags, tags);
+        if (tags != NULL) {
+            strcat(cont_entry->tags, tags);
+        }
         // Debug prints
         /* printf("==PDC_SERVER[%d]: add [%s] tags to container %" PRIu64 "\n", */ 
         /*         pdc_server_rank_g, tags, cont_id); */
@@ -3053,4 +3075,10 @@ hg_return_t PDC_Server_query_read_names_clinet_cb(const struct hg_cb_info *callb
     return HG_SUCCESS;
 } // End PDC_Server_query_read_names_clinet_cb
 
+perr_t PDC_free_cont_hash_table()
+{
+    if(container_hash_table_g != NULL)
+        hash_table_free(container_hash_table_g);
+    return SUCCEED;
+}
 

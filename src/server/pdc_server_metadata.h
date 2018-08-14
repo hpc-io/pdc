@@ -45,7 +45,6 @@ extern int    pdc_server_size_g;
 extern char   pdc_server_tmp_dir_g[ADDR_MAX];
 extern uint32_t n_metadata_g;
 extern HashTable *metadata_hash_table_g;
-extern HashTable *container_hash_table_g;
 extern hg_class_t   *hg_class_g;
 extern hg_context_t *hg_context_g;
 extern int is_debug_g;
@@ -96,4 +95,5 @@ pdc_metadata_t *find_metadata_by_id(uint64_t obj_id);
 hg_return_t PDC_Server_query_read_names_clinet_cb(const struct hg_cb_info *callback_info);
 
 perr_t PDC_Server_container_add_tags(uint64_t cont_id, char *tags);
+perr_t PDC_free_cont_hash_table();
 #endif /* PDC_SERVER_METADATA_H */

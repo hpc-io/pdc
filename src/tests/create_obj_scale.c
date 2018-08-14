@@ -126,12 +126,14 @@ int main(int argc, char **argv)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     // create a container
-    cont = PDCcont_create("c1", cont_prop);
+    cont = PDCcont_create_col("c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
     char *cont_tags = "cont_tags0=123";
-    PDC_Client_add_tags_to_container(cont, cont_tags);
+    if (rank == 0) {
+        PDC_Client_add_tags_to_container(cont, cont_tags);
+    }
 
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);

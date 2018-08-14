@@ -43,6 +43,8 @@ typedef struct PDC_id_info cont_handle;
  */
 pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_create_prop);
 
+pdcid_t PDCcont_create_col(const char *cont_name, pdcid_t cont_prop_id);
+
 /**
  * Open a container
  *
