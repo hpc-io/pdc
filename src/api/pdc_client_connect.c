@@ -1157,9 +1157,9 @@ perr_t PDC_Client_init()
 
 #ifdef ENABLE_MPI
     // Split the MPI_COMM_WORLD communicator, MPI_Comm_split_type requires MPI-3
-    /* MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &PDC_SAME_NODE_COMM_g); */
-    same_node_color = pdc_client_mpi_rank_g / pdc_nclient_per_server_g;
-    MPI_Comm_split(MPI_COMM_WORLD, same_node_color, pdc_client_mpi_rank_g, &PDC_SAME_NODE_COMM_g);
+    MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &PDC_SAME_NODE_COMM_g);
+    /* same_node_color = pdc_client_mpi_rank_g / pdc_nclient_per_server_g; */
+    /* MPI_Comm_split(MPI_COMM_WORLD, same_node_color, pdc_client_mpi_rank_g, &PDC_SAME_NODE_COMM_g); */
 
     MPI_Comm_rank(PDC_SAME_NODE_COMM_g, &pdc_client_same_node_rank_g );
     MPI_Comm_size(PDC_SAME_NODE_COMM_g, &pdc_client_same_node_size_g );
@@ -1210,6 +1210,11 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 } // End PDC_Client_init
+
+int PDC_get_nproc_per_node()
+{
+    return pdc_client_same_node_size_g;
+}
 
 perr_t PDC_Client_destroy_all_handles(pdc_server_info_t *server_info)
 {

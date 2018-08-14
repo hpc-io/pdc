@@ -851,8 +851,8 @@ HG_TEST_RPC_CB(gen_obj_id, handle)
 
     HG_Get_input(handle, &in);
 
-    printf("==PDC_SERVER: received gen obj request\n");
-    fflush(stdout);
+    /* printf("==PDC_SERVER: received gen obj request\n"); */
+    /* fflush(stdout); */
 
 #ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_lock(&insert_metadata_mutex_g);
