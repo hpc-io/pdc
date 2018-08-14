@@ -1144,6 +1144,21 @@ perr_t PDC_Client_init()
         printf("==PDC_CLIENT[%d]: Error getting PDC Metadata servers info, exiting ...", pdc_server_num_g);
         exit(0);
     }
+
+#ifdef ENABLE_MPI
+    // Split the MPI_COMM_WORLD communicator, MPI_Comm_split_type requires MPI-3
+    MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &PDC_SAME_NODE_COMM_g);
+    /* pdc_nclient_per_server_g = pdc_client_mpi_size_g / pdc_server_num_g; */
+    /* same_node_color = pdc_client_mpi_rank_g / pdc_nclient_per_server_g; */
+    /* MPI_Comm_split(MPI_COMM_WORLD, same_node_color, pdc_client_mpi_rank_g, &PDC_SAME_NODE_COMM_g); */
+
+    MPI_Comm_rank(PDC_SAME_NODE_COMM_g, &pdc_client_same_node_rank_g );
+    MPI_Comm_size(PDC_SAME_NODE_COMM_g, &pdc_client_same_node_size_g );
+
+    pdc_nclient_per_server_g = pdc_client_same_node_size_g;
+    /* printf("==PDC_CLIENT[%d]: color %d, key %d, node rank %d!\n", */
+    /*         pdc_client_mpi_rank_g, same_node_color, pdc_client_mpi_rank_g, pdc_client_same_node_rank_g); */
+#else
     // Get the number of clients per server(node) through environment variable
     tmp_dir = getenv("PDC_NCLIENT_PER_SERVER");
     if (tmp_dir == NULL)
@@ -1153,20 +1168,6 @@ perr_t PDC_Client_init()
 
     if (pdc_nclient_per_server_g <= 0)
         pdc_nclient_per_server_g = 1;
-
-
-#ifdef ENABLE_MPI
-    // Split the MPI_COMM_WORLD communicator, MPI_Comm_split_type requires MPI-3
-    MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &PDC_SAME_NODE_COMM_g);
-    /* same_node_color = pdc_client_mpi_rank_g / pdc_nclient_per_server_g; */
-    /* MPI_Comm_split(MPI_COMM_WORLD, same_node_color, pdc_client_mpi_rank_g, &PDC_SAME_NODE_COMM_g); */
-
-    MPI_Comm_rank(PDC_SAME_NODE_COMM_g, &pdc_client_same_node_rank_g );
-    MPI_Comm_size(PDC_SAME_NODE_COMM_g, &pdc_client_same_node_size_g );
-
-    /* printf("==PDC_CLIENT[%d]: color %d, key %d, node rank %d!\n", */
-    /*         pdc_client_mpi_rank_g, same_node_color, pdc_client_mpi_rank_g, pdc_client_same_node_rank_g); */
-
 #endif
 
     set_execution_locus(CLIENT_MEMORY);
