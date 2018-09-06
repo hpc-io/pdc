@@ -136,17 +136,10 @@ int main() {
         printf("successfully retrieved a kvtag [%s] = [%s] from o1\n", value1->name, (char*)value1->value);
 
 
-    free(value1->name);
-    free(value1->value);
-    free(value1);
-    
-    free(value2->name);
-    free(value2->value);
-    free(value2);
+    PDC_free_kvtag(&value1);
+    PDC_free_kvtag(&value2);
+    PDC_free_kvtag(&value3);
 
-    free(value3->name);
-    free(value3->value);
-    free(value3);
     // close first object
     if(PDCobj_close(obj1) < 0)
         printf("fail to close object o1\n");
