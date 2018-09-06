@@ -127,9 +127,8 @@ int main() {
     else
         printf("successfully retrieved a kvtag [%s] = [%f] from o2\n", value3->name, *(double*)value3->value);
 
-    free(value1->name);
-    free(value1->value);
-    free(value1);
+    PDC_free_kvtag(&value1);
+
     if (PDC_get_kvtag(obj1, kvtag1.name, &value1) < 0)
         printf("fail to get a kvtag from o1\n");
     else
