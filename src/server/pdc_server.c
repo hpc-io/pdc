@@ -1190,8 +1190,9 @@ perr_t PDC_Server_checkpoint()
     perr_t ret_value = SUCCEED;
     pdc_metadata_t *elt;
     region_list_t  *region_elt;
+    pdc_kvtag_list_t *kvlist_elt;
     pdc_hash_table_entry_head *head;
-    int n_entry, metadata_size = 0, region_count = 0, n_region, n_write_region = 0;
+    int n_entry, metadata_size = 0, region_count = 0, n_region, n_write_region = 0, n_kvtag, key_len;
     uint32_t hash_key;
     HashTablePair pair;
     char checkpoint_file[ADDR_MAX];
@@ -1235,14 +1236,25 @@ perr_t PDC_Server_checkpoint()
         /* fflush(stdout); */
 
         fwrite(&head->n_obj, sizeof(int), 1, file);
-        // TODO: find a way to get hash_key from hash table istead of calculating again.
         hash_key = PDC_get_hash_by_name(head->metadata->obj_name);
         fwrite(&hash_key, sizeof(uint32_t), 1, file);
+
         // Iterate every metadata structure in current entry
         DL_FOREACH(head->metadata, elt) {
-            /* printf("==PDC_SERVER: Writing one metadata...\n"); */
-            /* PDC_print_metadata(elt); */
+            // Write entire metadata structure
             fwrite(elt, sizeof(pdc_metadata_t), 1, file);
+
+            // Write kv tags
+            DL_COUNT(elt->kvtag_list_head, kvlist_elt, n_kvtag);
+            fwrite(&n_kvtag, sizeof(int), 1, file);
+            DL_FOREACH(elt->kvtag_list_head, kvlist_elt) {
+                key_len = strlen(kvlist_elt->kvtag->name) + 1;
+                fwrite(&key_len, sizeof(int), 1, file);
+                fwrite(kvlist_elt->kvtag->name, key_len, 1, file);
+                fwrite(&kvlist_elt->kvtag->size, sizeof(uint32_t), 1, file);
+                fwrite(kvlist_elt->kvtag->value, kvlist_elt->kvtag->size, 1, file);
+            }
+
 
             // Write region info
             DL_COUNT(elt->storage_region_list_head, region_elt, n_region);
@@ -1290,7 +1302,7 @@ perr_t PDC_Server_checkpoint()
 
 done:
     FUNC_LEAVE(ret_value);
-}
+} // PDC_Server_checkpoint
 
 /*
  * Load metadata from checkpoint file in persistant storage
@@ -1302,11 +1314,12 @@ done:
 perr_t PDC_Server_restart(char *filename)
 {
     perr_t ret_value = SUCCEED;
-    int n_entry, count, i, j, nobj = 0, all_nobj = 0, all_n_region, n_region, total_region = 0;
+    int n_entry, count, i, j, nobj = 0, all_nobj = 0, all_n_region, n_region, total_region = 0, n_kvtag, key_len;
     pdc_metadata_t *metadata, *elt;
     region_list_t *region_list;
     pdc_hash_table_entry_head *entry;
     uint32_t *hash_key;
+    unsigned idx;
     
     FUNC_ENTER(NULL);
 
@@ -1353,9 +1366,7 @@ perr_t PDC_Server_restart(char *filename)
         // Init hash table metadata (w/ bloom) with first obj
         PDC_Server_hash_table_list_init(entry, hash_key);
 
-
         metadata = (pdc_metadata_t*)calloc(sizeof(pdc_metadata_t), count);
-
         for (i = 0; i < count; i++) {
             fread(metadata+i, sizeof(pdc_metadata_t), 1, file);
 
@@ -1366,6 +1377,21 @@ perr_t PDC_Server_restart(char *filename)
             (metadata+i)->bloom                    = NULL;
             (metadata+i)->prev                     = NULL;
             (metadata+i)->next                     = NULL;
+            (metadata+i)->kvtag_list_head          = NULL;
+
+            // Read kv tags
+            fread(&n_kvtag, sizeof(int), 1, file);
+            for (j = 0; j < n_kvtag; j++) {
+                pdc_kvtag_list_t *kvtag_list = (pdc_kvtag_list_t*)calloc(1, sizeof(pdc_kvtag_list_t));
+                kvtag_list->kvtag = (pdc_kvtag_t*)malloc(sizeof(pdc_kvtag_t));
+                fread(&key_len, sizeof(int), 1, file);
+                kvtag_list->kvtag->name = malloc(key_len);
+                fread(kvtag_list->kvtag->name, key_len, 1, file);
+                fread(&kvtag_list->kvtag->size, sizeof(uint32_t), 1, file);
+                kvtag_list->kvtag->value = malloc(kvtag_list->kvtag->size);
+                fread(kvtag_list->kvtag->value, kvtag_list->kvtag->size, 1, file);
+                DL_APPEND((metadata+i)->kvtag_list_head, kvtag_list);
+            }
 
             fread(&n_region, sizeof(int), 1, file);
             if (n_region < 0) {
@@ -1375,12 +1401,13 @@ perr_t PDC_Server_restart(char *filename)
                 goto done;
             }
 
+            if (n_region == 0) 
+                continue;
+
             total_region += n_region; 
             region_list = (region_list_t*)malloc(sizeof(region_list_t)* n_region);
-
             fread(region_list, sizeof(region_list_t), n_region, file);
 
-            unsigned idx;
             for (j = 0; j < n_region; j++) {
                 (region_list+j)->buf                        = NULL;
                 (region_list+j)->data_size                  = 1;
@@ -1428,8 +1455,8 @@ perr_t PDC_Server_restart(char *filename)
                 /*             pdc_server_rank_g, (metadata+i)->obj_name, (region_list+j)->storage_location); */
                 /* } */
                 DL_APPEND((metadata+i)->storage_region_list_head, region_list+j);
-            }
-        }
+            } // For j
+        } // For i
 
         nobj += count;
         total_mem_usage_g += sizeof(pdc_hash_table_entry_head);

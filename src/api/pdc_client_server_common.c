@@ -5787,5 +5787,13 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDC_free_kvtag(pdc_kvtag_t **kvtag)
+{
+    free((*kvtag)->name);
+    free((*kvtag)->value);
+    free(*kvtag);
+    *kvtag = NULL;
+}
+
 #include "pdc_analysis_common.c"
 #include "pdc_transforms_common.c"
