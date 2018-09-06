@@ -122,7 +122,7 @@ struct region_release_args {
 
 typedef struct pdc_get_kvtag_args_t{
     int ret;
-    pdc_var_value_t **var_value;
+    pdc_kvtag_t *kvtag;
 } pdc_get_kvtag_args_t;
 
 /**

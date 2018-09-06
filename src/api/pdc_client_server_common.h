@@ -94,17 +94,6 @@ typedef enum { NONE=0,
 typedef struct pdc_metadata_t pdc_metadata_t;
 typedef struct region_list_t region_list_t;
 
-/* typedef struct pdc_var_value_t { */
-/*     uint32_t        size; */
-/*     void            *value; */
-/* } pdc_var_value_t; */
-
-/* typedef struct pdc_kvtag_t { */
-/*     char            *name; */
-/*     pdc_var_value_t *var_value; */
-/* } pdc_kvtag_t; */
-
-
 typedef struct pdc_kvtag_list_t {
     pdc_kvtag_t *kvtag;
 
@@ -394,10 +383,16 @@ typedef struct {
     int32_t            ret;
 } metadata_add_tag_out_t;
 
+/* typedef struct pdc_kvtag_t { */
+/*     char            *name; */
+/*     uint32_t        size; */
+/*     void            *value; */
+/* } pdc_kvtag_t; */
+
 typedef struct {
     uint64_t                obj_id;
     uint32_t                hash_value;
-    pdc_kvtag_t             *kvtag;
+    pdc_kvtag_t             kvtag;
 } metadata_add_kvtag_in_t;
 
 typedef struct {
@@ -407,8 +402,8 @@ typedef struct {
 } metadata_get_kvtag_in_t;
 
 typedef struct {
-    uint32_t                ret;
-    pdc_var_value_t         *var_value;
+    int                     ret;
+    pdc_kvtag_t             kvtag;
 } metadata_get_kvtag_out_t;
 
 typedef struct {
@@ -433,43 +428,6 @@ typedef struct {
     int32_t            ret;
 } region_lock_out_t;
 
-static inline hg_return_t hg_proc_pdc_var_value_t(hg_proc_t proc, void *data)
-{
-    hg_return_t ret;
-    pdc_var_value_t *in = (pdc_var_value_t*)data;
-
-    ret = hg_proc_hg_size_t(proc, &in->size);
-    if (in->size) {
-        switch(hg_proc_get_op(proc)) {
-            /* ENCODE: taking a user-provided buffer and converting it to wire
-             * format */
-            case HG_ENCODE:
-                /* The prototype is
-                 * hg_proc_raw(hg_proc_t proc, void *data, hg_size_t data_size)
-                 * and moves 'data_size' bytes from the processing state into
-                 * 'data' */
-                ret = hg_proc_raw(proc, in->value, in->size);
-                break;
-            /* DECODE: the wire-formatted buffer is unpacked into a user's
-             * struct  */
-            case HG_DECODE:
-                /* we know 'size' because it was the first thing we operated
-                 * on before this switch statement */
-                in->value = malloc(in->size);
-                /* with space allocated, move 'in->size' bytes into it */
-                ret = hg_proc_raw(proc, in->value, in->size);
-                break;
-            /* FREE: anything we allocated gets cleaned up here */
-            case HG_FREE:
-                free(in->value);
-            default:
-                break;
-        }
-    }
-    return ret;
-}
-
-
 static hg_return_t
 hg_proc_pdc_kvtag_t(hg_proc_t proc, void *data)
 {
@@ -481,14 +439,30 @@ hg_proc_pdc_kvtag_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_pdc_var_value_t(proc, struct_data->var_value);
+
+    ret = hg_proc_uint32_t(proc, &struct_data->size);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
+
+    if (struct_data->size) {
+        switch(hg_proc_get_op(proc)) {
+            case HG_DECODE:
+                struct_data->value = malloc(struct_data->size);
+                HG_FALLTHROUGH();
+            case HG_ENCODE:
+                ret = hg_proc_raw(proc, struct_data->value, struct_data->size);
+                break;
+            case HG_FREE:
+                free(struct_data->value);
+            default:
+                break;
+        }
+    }
+
     return ret;
 }
-
 
 typedef struct {
     uint32_t                    client_id;
@@ -946,7 +920,7 @@ hg_proc_metadata_get_kvtag_out_t(hg_proc_t proc, void *data)
 	    HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_pdc_var_value_t(proc, &struct_data->var_value);
+    ret = hg_proc_pdc_kvtag_t(proc, &struct_data->kvtag);
     if (ret != HG_SUCCESS) {
 	    HG_LOG_ERROR("Proc error");
         return ret;
@@ -971,7 +945,13 @@ hg_proc_metadata_add_kvtag_in_t(hg_proc_t proc, void *data)
 	    HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_pdc_kvtag_t(proc, struct_data->kvtag);
+
+    /* switch(hg_proc_get_op(proc)) { */
+    /*     case HG_DECODE: */
+    /*         struct_data->kvtag = malloc(sizeof(pdc_kvtag_t)); */
+    /* } */
+ 
+    ret = hg_proc_pdc_kvtag_t(proc, &struct_data->kvtag);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -2881,5 +2861,6 @@ perr_t PDC_create_shm_segment_ind(uint64_t size, char *shm_addr, void **buf);
 
 
 hg_id_t cont_add_tags_rpc_register(hg_class_t *hg_class);
+perr_t PDC_kvtag_dup(pdc_kvtag_t *from, pdc_kvtag_t **to);
 
 #endif /* PDC_CLIENT_SERVER_COMMON_H */

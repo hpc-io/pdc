@@ -39,14 +39,10 @@ struct PDC_cont_prop {
     PDC_lifetime     cont_life;
 };
 
-typedef struct pdc_var_value_t {
-    uint32_t        size;
-    void            *value;
-} pdc_var_value_t;
-
 typedef struct pdc_kvtag_t {
     char            *name;
-    pdc_var_value_t *var_value;
+    uint32_t        size;
+    void            *value;
 } pdc_kvtag_t;
 
 

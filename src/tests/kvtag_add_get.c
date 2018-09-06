@@ -30,7 +30,7 @@
 #include "pdc.h"
 
 int main() {
-    pdcid_t pdc, cont_prop, cont, obj_prop, obj1, obj2;
+    pdcid_t pdc, cont_prop, cont, obj_prop1, obj_prop2, obj1, obj2;
     // create a pdc
 
     pdc = PDC_init("pdc");
@@ -51,21 +51,27 @@ int main() {
         printf("Fail to create container @ line  %d!\n", __LINE__);
     
     // create an object property
-    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
-    if(obj_prop > 0)
+    obj_prop1 = PDCprop_create(PDC_OBJ_CREATE, pdc);
+    if(obj_prop1 > 0)
+        printf("Create an object property\n");
+    else
+        printf("Fail to create object property @ line  %d!\n", __LINE__);
+
+    obj_prop2 = PDCprop_create(PDC_OBJ_CREATE, pdc);
+    if(obj_prop2 > 0)
         printf("Create an object property\n");
     else
         printf("Fail to create object property @ line  %d!\n", __LINE__);
     
     // create first object
-    obj1 = PDCobj_create(cont, "o1", obj_prop);
+    obj1 = PDCobj_create(cont, "o1", obj_prop1);
     if(obj1 > 0)
         printf("Create an object o1\n");
     else
         printf("Fail to create object @ line  %d!\n", __LINE__);
     
     // create second object
-    obj2 = PDCobj_create(cont, "o2", obj_prop);
+    obj2 = PDCobj_create(cont, "o2", obj_prop2);
     if(obj2 > 0)
         printf("Create an object o2\n");
     else
@@ -75,23 +81,18 @@ int main() {
     pdc_kvtag_t kvtag1, kvtag2, kvtag3;
     char *v1 = "value1";
     kvtag1.name = "key1string";
-    kvtag1.var_value = (pdc_var_value_t*)calloc(1, sizeof(pdc_var_value_t));
-    kvtag1.var_value->value = (void*)v1;
-    kvtag1.var_value->size  = strlen(v1)+1;
+    kvtag1.value = (void*)v1;
+    kvtag1.size  = strlen(v1)+1;
 
     int v2 = 2;
     kvtag2.name = "key2int";
-    kvtag2.var_value = (pdc_var_value_t*)calloc(1, sizeof(pdc_var_value_t));
-    kvtag2.var_value->value = (void*)malloc(sizeof(int));
-    kvtag2.var_value->value = (void*)&v2;
-    kvtag2.var_value->size  = sizeof(int);
+    kvtag2.value = (void*)&v2;
+    kvtag2.size  = sizeof(int);
 
-    double v3 = 3.0;
+    double v3 = 3.45;
     kvtag3.name = "key3double";
-    kvtag3.var_value = (pdc_var_value_t*)calloc(1, sizeof(pdc_var_value_t));
-    kvtag3.var_value->value = (void*)malloc(sizeof(double));
-    kvtag3.var_value->value = (void*)&v3;
-    kvtag3.var_value->size  = sizeof(double);
+    kvtag3.value = (void*)&v3;
+    kvtag3.size  = sizeof(double);
 
     if (PDC_add_kvtag(obj1, &kvtag1) < 0)
         printf("fail to add a kvtag to o1\n");
@@ -108,30 +109,44 @@ int main() {
     else
         printf("successfully added a kvtag to o1\n");
 
-    free(kvtag1.var_value);
-    free(kvtag2.var_value);
-    free(kvtag2.var_value->value);
-    free(kvtag3.var_value);
-    free(kvtag3.var_value->value);
 
-    pdc_var_value_t value1, value2, value3;
+    pdc_kvtag_t *value1, *value2, *value3;
 
-    if (PDC_get_kvtag(obj1, &kvtag1.name, &value1) < 0)
+    if (PDC_get_kvtag(obj1, kvtag1.name, &value1) < 0)
         printf("fail to get a kvtag from o1\n");
     else
-        printf("successfully retrieved a kvtag from o1\n");
+        printf("successfully retrieved a kvtag [%s] = [%s] from o1\n", value1->name, (char*)value1->value);
 
-    if (PDC_get_kvtag(obj2, &kvtag2.name, &value2) < 0)
+    if (PDC_get_kvtag(obj2, kvtag2.name, &value2) < 0)
         printf("fail to get a kvtag from o2\n");
     else
-        printf("successfully retrieved a kvtag from o2\n");
+        printf("successfully retrieved a kvtag [%s] = [%d] from o2\n", value2->name, *(int*)value2->value);
 
-    if (PDC_get_kvtag(obj2, &kvtag3.name, &value3) < 0)
+    if (PDC_get_kvtag(obj2, kvtag3.name, &value3) < 0)
         printf("fail to get a kvtag from o2\n");
     else
-        printf("successfully retrieved a kvtag from o2\n");
+        printf("successfully retrieved a kvtag [%s] = [%f] from o2\n", value3->name, *(double*)value3->value);
 
+    free(value1->name);
+    free(value1->value);
+    free(value1);
+    if (PDC_get_kvtag(obj1, kvtag1.name, &value1) < 0)
+        printf("fail to get a kvtag from o1\n");
+    else
+        printf("successfully retrieved a kvtag [%s] = [%s] from o1\n", value1->name, (char*)value1->value);
+
+
+    free(value1->name);
+    free(value1->value);
+    free(value1);
     
+    free(value2->name);
+    free(value2->value);
+    free(value2);
+
+    free(value3->name);
+    free(value3->value);
+    free(value3);
     // close first object
     if(PDCobj_close(obj1) < 0)
         printf("fail to close object o1\n");
@@ -151,6 +166,16 @@ int main() {
         printf("successfully close container c1\n");
     
     // close a container property
+    if(PDCprop_close(obj_prop1) < 0)
+        printf("Fail to close property @ line %d\n", __LINE__);
+    else
+        printf("successfully close object property\n");
+
+    if(PDCprop_close(obj_prop2) < 0)
+        printf("Fail to close property @ line %d\n", __LINE__);
+    else
+        printf("successfully close object property\n");
+
     if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
     else

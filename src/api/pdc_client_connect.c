@@ -6707,8 +6707,10 @@ perr_t PDC_add_kvtag(pdcid_t obj_id, pdc_kvtag_t *kvtag)
     in.obj_id     = meta_id;
     in.hash_value = PDC_get_hash_by_name(obj_prop->name);
 
-    if (kvtag != NULL && kvtag->var_value != NULL && kvtag->var_value->size != 0) {
-        in.kvtag            = kvtag;
+    if (kvtag != NULL && kvtag != NULL && kvtag->size != 0) {
+        in.kvtag.name  = kvtag->name;
+        in.kvtag.value = kvtag->value;
+        in.kvtag.size  = kvtag->size;
     }
     else {
         printf("==PDC_Client_add_kvtag(): invalid tag content!\n");
@@ -6744,10 +6746,10 @@ metadata_get_kvtag_rpc_cb(const struct hg_cb_info *callback_info)
     hg_return_t ret_value;
     pdc_get_kvtag_args_t *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
     hg_handle_t handle = callback_info->info.forward.handle;
+    metadata_get_kvtag_out_t output;
 
     FUNC_ENTER(NULL);
 
-    metadata_get_kvtag_out_t output;
     ret_value = HG_Get_output(handle, &output);
     if (ret_value !=  HG_SUCCESS) {
         printf("==PDC_CLIENT[%d]: metadata_add_tag_rpc_cb error with HG_Get_output\n", pdc_client_mpi_rank_g);
@@ -6756,8 +6758,7 @@ metadata_get_kvtag_rpc_cb(const struct hg_cb_info *callback_info)
     }
     /* printf("Return value=%" PRIu64 "\n", output.ret); */
     client_lookup_args->ret = output.ret;
-    client_lookup_args->var_value = output.var_value;
-
+    PDC_kvtag_dup(&(output.kvtag), client_lookup_args->kvtag);
 
 done:
     work_todo_g--;
@@ -6766,7 +6767,7 @@ done:
 }
 
 
-perr_t PDC_get_kvtag(pdcid_t obj_id, char *tag_name, pdc_var_value_t **var_value)
+perr_t PDC_get_kvtag(pdcid_t obj_id, char *tag_name, pdc_kvtag_t **kvtag)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
@@ -6774,6 +6775,7 @@ perr_t PDC_get_kvtag(pdcid_t obj_id, char *tag_name, pdc_var_value_t **var_value
     uint32_t server_id;
     hg_handle_t  metadata_get_kvtag_handle;
     metadata_get_kvtag_in_t in;
+    pdc_get_kvtag_args_t lookup_args;
 
     FUNC_ENTER(NULL);
 
@@ -6795,7 +6797,7 @@ perr_t PDC_get_kvtag(pdcid_t obj_id, char *tag_name, pdc_var_value_t **var_value
     in.obj_id     = meta_id;
     in.hash_value = PDC_get_hash_by_name(obj_prop->name);
 
-    if ( tag_name != NULL && var_value != NULL) {
+    if ( tag_name != NULL && kvtag != NULL) {
         in.key = tag_name;
     }
     else {
@@ -6804,10 +6806,8 @@ perr_t PDC_get_kvtag(pdcid_t obj_id, char *tag_name, pdc_var_value_t **var_value
         goto done;
     }
 
-
-    /* printf("Sending input to target\n"); */
-    pdc_get_kvtag_args_t lookup_args;
-    lookup_args.var_value = var_value;
+    *kvtag = (pdc_kvtag_t*)malloc(sizeof(pdc_kvtag_t));
+    lookup_args.kvtag = kvtag;
     hg_ret = HG_Forward(metadata_get_kvtag_handle, metadata_get_kvtag_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "PDC_Client_get_kvtag_metadata_with_name(): Could not start HG_Forward()\n");

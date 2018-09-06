@@ -3105,7 +3105,6 @@ static perr_t PDC_add_kvtag_to_list(pdc_kvtag_list_t **list_head, pdc_kvtag_t *t
     new_list_item->kvtag = newtag;
     DL_APPEND(*list_head, new_list_item);
 
-done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 } // end of PDC_add_kvtag_to_list
@@ -3151,9 +3150,11 @@ perr_t PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t 
         pdc_metadata_t *target;
         target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
         if (target != NULL) {
-            PDC_add_kvtag_to_list(&target->kvtag_list_head, in->kvtag);
+            PDC_add_kvtag_to_list(&target->kvtag_list_head, &in->kvtag);
             out->ret  = 1;
 
+            printf("==PDC_SERVER[%d]: added a kvtag [%s] \n",
+                    pdc_server_rank_g, target->kvtag_list_head->prev->kvtag->name);
         } // if (lookup_value != NULL) 
         else {
             // Object not found for deletion request
@@ -3210,22 +3211,22 @@ done:
     FUNC_LEAVE(ret_value);
 } // end of PDC_Server_add_kvtag
 
-static perr_t PDC_get_kvtag_value_from_list(pdc_kvtag_list_t **list_head, char *key, pdc_var_value_t **value)
+static perr_t PDC_get_kvtag_value_from_list(pdc_kvtag_list_t **list_head, char *key, metadata_get_kvtag_out_t *out)
 {
     perr_t ret_value = SUCCEED;
     pdc_kvtag_list_t *elt;
 
     FUNC_ENTER(NULL);
 
-    *value = NULL;
     DL_FOREACH(*list_head, elt) {
         if (strcmp(elt->kvtag->name, key) == 0) {
-            *value = elt->kvtag->var_value;
+            out->kvtag.name  = elt->kvtag->name;
+            out->kvtag.size  = elt->kvtag->size;
+            out->kvtag.value = elt->kvtag->value;
             break;
         }
     }
 
-done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 } // End PDC_get_kvtag_value_from_list
@@ -3271,7 +3272,7 @@ perr_t PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_
         pdc_metadata_t *target;
         target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
         if (target != NULL) {
-            PDC_get_kvtag_value_from_list(&target->kvtag_list_head, in->key, &(out->var_value));
+            PDC_get_kvtag_value_from_list(&target->kvtag_list_head, in->key, out);
             out->ret  = 1;
         } 
         else {

@@ -1140,6 +1140,8 @@ HG_TEST_RPC_CB(metadata_get_kvtag, handle)
 
     FUNC_ENTER(NULL);
 
+    memset(&out, 0, sizeof(metadata_get_kvtag_out_t));
+    memset(&out.kvtag, 0, sizeof(pdc_kvtag_t));
     HG_Get_input(handle, &in);
     PDC_Server_get_kvtag(&in, &out);
     ret_value = HG_Respond(handle, NULL, NULL, &out);
@@ -5774,13 +5776,12 @@ perr_t PDC_kvtag_dup(pdc_kvtag_t *from, pdc_kvtag_t **to)
         goto done;
     }
 
-    (*to)               = (pdc_kvtag_t*)calloc(1, sizeof(pdc_kvtag_t));
-    (*to)->name         = (char*)malloc(strlen(from->name)+1);
-    (*to)->var_value    = (pdc_var_value_t*)malloc(sizeof(pdc_var_value_t));
-    (*to)->var_value->size  = from->var_value->size;
-    (*to)->var_value->value = (void*)malloc(from->var_value->size);
+    (*to)        = (pdc_kvtag_t*)calloc(1, sizeof(pdc_kvtag_t));
+    (*to)->name  = (char*)malloc(strlen(from->name)+1);
+    (*to)->size  = from->size;
+    (*to)->value = (void*)malloc(from->size);
     memcpy((*to)->name, from->name, strlen(from->name)+1);
-    memcpy((*to)->var_value->value, from->var_value->value, from->var_value->size);
+    memcpy((*to)->value, from->value, from->size);
 
 done:
     FUNC_LEAVE(ret_value);

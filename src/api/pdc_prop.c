@@ -201,6 +201,7 @@ static perr_t pdc_prop_obj_close(struct PDC_obj_prop *cp)
     free(cp->app_name);
     free(cp->tags);
     free(cp->data_loc);
+    free(cp->metadata);
     cp = PDC_FREE(struct PDC_obj_prop, cp);
     
     FUNC_LEAVE(ret_value);
