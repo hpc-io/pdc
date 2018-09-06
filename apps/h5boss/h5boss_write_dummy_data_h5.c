@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <hdf5.h>
 
 #define ENABLE_MPI 1
@@ -135,6 +136,9 @@ int main(int argc, char *argv[])
 
     // Now all processes will create all datasets
     hsize_t dims[3] = {0};
+
+    clock_t before = clock();
+
     for (i = 0; i < n_write; i++) {
         dims[0] = all_dset_sizes[i];
         filespace = H5Screate_simple(1, dims, NULL); 
@@ -145,11 +149,22 @@ int main(int argc, char *argv[])
         H5Dclose(dset_id);
     }
 
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    clock_t difference = clock() - before;
+    double msec = difference * 1000 / CLOCKS_PER_SEC;
+    if (rank == 0) {
+        printf("Dset create: %f\n", msec / 1000.0);
+    }
+
+
     hsize_t count = 0;
     char *buf = NULL;
     int prev_buf_size;
     herr_t ret;
 
+    before = clock();
     for (i = 0; i < my_n_write; i++) {
         count = all_dset_sizes[i+my_write_start];
         dset_id = H5Dopen(file_id, all_dset_names[my_write_start+i], H5P_DEFAULT);
@@ -176,7 +191,7 @@ int main(int argc, char *argv[])
             H5Dclose(dset_id);
             continue;
         }
-        printf("Proc %d: written dset [%s]\n", rank, all_dset_names[my_write_start+i]);
+        /* printf("Proc %d: written dset [%s]\n", rank, all_dset_names[my_write_start+i]); */
         /* all_dset_names[my_write_start+i] */
         H5Dclose(dset_id);
     }
@@ -184,6 +199,13 @@ int main(int argc, char *argv[])
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
+
+    difference = clock() - before;
+    msec = difference * 1000 / CLOCKS_PER_SEC;
+    if (rank == 0) {
+        printf("Dset create: %f\n", msec / 1000.0);
+    }
+
 
     H5Fclose(file_id);
 

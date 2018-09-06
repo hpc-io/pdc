@@ -52,7 +52,6 @@
 #include "mercury_macros.h"
 #include "mercury_hl.h"
 
-
 #include "pdc_interface.h"
 #include "pdc_client_connect.h"
 #include "pdc_client_public.h"
@@ -109,6 +108,8 @@ static hg_id_t         metadata_delete_register_id_g;
 static hg_id_t         metadata_delete_by_id_register_id_g;
 static hg_id_t         metadata_update_register_id_g;
 static hg_id_t         metadata_add_tag_register_id_g;
+static hg_id_t         metadata_add_kvtag_register_id_g;
+static hg_id_t         metadata_get_kvtag_register_id_g;
 static hg_id_t         region_lock_register_id_g;
 static hg_id_t         region_release_register_id_g;
 static hg_id_t         data_server_read_register_id_g;
@@ -1023,6 +1024,8 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     metadata_delete_by_id_register_id_g       = metadata_delete_by_id_register(*hg_class);
     metadata_update_register_id_g             = metadata_update_register(*hg_class);
     metadata_add_tag_register_id_g            = metadata_add_tag_register(*hg_class);
+    metadata_add_kvtag_register_id_g          = metadata_add_kvtag_register(*hg_class);
+    metadata_get_kvtag_register_id_g          = metadata_get_kvtag_register(*hg_class);
     region_lock_register_id_g                 = region_lock_register(*hg_class);
     region_release_register_id_g              = region_release_register(*hg_class);
     data_server_read_register_id_g            = data_server_read_register(*hg_class);
@@ -2351,7 +2354,9 @@ perr_t PDC_Client_create_cont_id_mpi(const char *cont_name, pdcid_t cont_create_
     if (pdc_client_mpi_rank_g == 0) {
         ret_value = PDC_Client_create_cont_id(cont_name, cont_create_prop, cont_id);
     }
+#ifdef ENABLE_MPI
     MPI_Bcast(cont_id, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
+#endif
 
 done:
     FUNC_LEAVE(ret_value);
@@ -2405,10 +2410,12 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdci
         in.data.tags      = " ";
     else
         in.data.tags      = create_prop->tags;
+
     if (create_prop->app_name == NULL) 
         in.data.app_name  = "Noname";
     else
         in.data.app_name  = create_prop->app_name;
+
     if (create_prop->data_loc == NULL) 
         in.data.data_location = " ";
     else 
@@ -6665,4 +6672,158 @@ perr_t PDC_Client_query_name_read_entire_obj_client_agg_cache_iter(int my_nobj, 
 
     FUNC_LEAVE(ret_value);
 }
+
+perr_t PDC_add_kvtag(pdcid_t obj_id, pdc_kvtag_t *kvtag)
+{
+    perr_t ret_value = SUCCEED;
+    hg_return_t  hg_ret = 0;
+    uint64_t meta_id;
+    uint32_t server_id;
+    hg_handle_t  metadata_add_kvtag_handle;
+    metadata_add_kvtag_in_t in;
+
+    FUNC_ENTER(NULL);
+
+    struct PDC_obj_info *obj_prop = PDCobj_get_info(obj_id);
+    meta_id = obj_prop->meta_id;
+
+    server_id = PDC_get_server_by_obj_id(obj_id, pdc_server_num_g);
+
+    /* printf("==PDC_CLIENT: PDC_Client_add_tag_metadata() - hash(%s)=%u\n", old->obj_name, hash_name_value); */
+
+    // Debug statistics for counting number of messages sent to each server.
+    debug_server_id_count[server_id]++;
+
+    if( PDC_Client_try_lookup_server(server_id) != SUCCEED) {
+        printf("==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server\n", pdc_client_mpi_rank_g);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_add_kvtag_register_id_g, 
+                &metadata_add_kvtag_handle);
+
+    // Fill input structure
+    in.obj_id     = meta_id;
+    in.hash_value = PDC_get_hash_by_name(obj_prop->name);
+
+    if (kvtag != NULL && kvtag->var_value != NULL && kvtag->var_value->size != 0) {
+        in.kvtag            = kvtag;
+    }
+    else {
+        printf("==PDC_Client_add_kvtag(): invalid tag content!\n");
+        fflush(stdout);
+        goto done;
+    }
+
+
+    /* printf("Sending input to target\n"); */
+    struct client_lookup_args lookup_args;
+    hg_ret = HG_Forward(metadata_add_kvtag_handle, metadata_add_tag_rpc_cb, &lookup_args, &in);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "PDC_Client_add_kvtag_metadata_with_name(): Could not start HG_Forward()\n");
+        return FAIL;
+    }
+
+    // Wait for response from server
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+    if (lookup_args.ret != 1) 
+        printf("PDC_CLIENT: add kvtag NOT successful ... ret_value = %d\n", lookup_args.ret);
+
+done:
+    HG_Destroy(metadata_add_kvtag_handle);
+    FUNC_LEAVE(ret_value);
+} // End PDC_add_kvtag
+
+static hg_return_t
+metadata_get_kvtag_rpc_cb(const struct hg_cb_info *callback_info)
+{
+
+    hg_return_t ret_value;
+    pdc_get_kvtag_args_t *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
+    hg_handle_t handle = callback_info->info.forward.handle;
+
+    FUNC_ENTER(NULL);
+
+    metadata_get_kvtag_out_t output;
+    ret_value = HG_Get_output(handle, &output);
+    if (ret_value !=  HG_SUCCESS) {
+        printf("==PDC_CLIENT[%d]: metadata_add_tag_rpc_cb error with HG_Get_output\n", pdc_client_mpi_rank_g);
+        client_lookup_args->ret = -1;
+        goto done;
+    }
+    /* printf("Return value=%" PRIu64 "\n", output.ret); */
+    client_lookup_args->ret = output.ret;
+    client_lookup_args->var_value = output.var_value;
+
+
+done:
+    work_todo_g--;
+    HG_Free_output(handle, &output);
+    FUNC_LEAVE(ret_value);
+}
+
+
+perr_t PDC_get_kvtag(pdcid_t obj_id, char *tag_name, pdc_var_value_t **var_value)
+{
+    perr_t ret_value = SUCCEED;
+    hg_return_t  hg_ret = 0;
+    uint64_t meta_id;
+    uint32_t server_id;
+    hg_handle_t  metadata_get_kvtag_handle;
+    metadata_get_kvtag_in_t in;
+
+    FUNC_ENTER(NULL);
+
+    struct PDC_obj_info *obj_prop = PDCobj_get_info(obj_id);
+    meta_id = obj_prop->meta_id;
+    server_id = PDC_get_server_by_obj_id(obj_id, pdc_server_num_g);
+    debug_server_id_count[server_id]++;
+
+    if( PDC_Client_try_lookup_server(server_id) != SUCCEED) {
+        printf("==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server\n", pdc_client_mpi_rank_g);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_get_kvtag_register_id_g, 
+                &metadata_get_kvtag_handle);
+
+    // Fill input structure
+    in.obj_id     = meta_id;
+    in.hash_value = PDC_get_hash_by_name(obj_prop->name);
+
+    if ( tag_name != NULL && var_value != NULL) {
+        in.key = tag_name;
+    }
+    else {
+        printf("==PDC_Client_get_kvtag(): invalid tag content!\n");
+        fflush(stdout);
+        goto done;
+    }
+
+
+    /* printf("Sending input to target\n"); */
+    pdc_get_kvtag_args_t lookup_args;
+    lookup_args.var_value = var_value;
+    hg_ret = HG_Forward(metadata_get_kvtag_handle, metadata_get_kvtag_rpc_cb, &lookup_args, &in);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "PDC_Client_get_kvtag_metadata_with_name(): Could not start HG_Forward()\n");
+        return FAIL;
+    }
+
+    // Wait for response from server
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+    if (lookup_args.ret != 1) 
+        printf("PDC_CLIENT: get kvtag NOT successful ... ret_value = %d\n", lookup_args.ret);
+
+done:
+    HG_Destroy(metadata_get_kvtag_handle);
+    FUNC_LEAVE(ret_value);
+} // End PDC_get_kvtag
+
 #include "pdc_analysis_and_transforms_connect.c"

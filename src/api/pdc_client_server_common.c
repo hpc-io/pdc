@@ -302,6 +302,8 @@ perr_t PDC_metadata_init(pdc_metadata_t *a)
         printf("Unable to init NULL pdc_metadata_t\n");
         return FAIL;
     }
+    memset(a, 0, sizeof(pdc_metadata_t));
+
     a->user_id            = 0;
     a->time_step          = -1;
     a->obj_id             = 0;
@@ -760,6 +762,8 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
 perr_t PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_id_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *out) {return SUCCEED;}
+perr_t PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out) {return SUCCEED;}
+perr_t PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out) {return SUCCEED;}
 perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle) {return SUCCEED;}
 perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in) {return SUCCEED;}
 perr_t PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_ptr, hg_handle_t *handle) {return SUCCEED;}
@@ -854,14 +858,8 @@ HG_TEST_RPC_CB(gen_obj_id, handle)
     /* printf("==PDC_SERVER: received gen obj request\n"); */
     /* fflush(stdout); */
 
-#ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_lock(&insert_metadata_mutex_g);
-#endif
     // Insert to hash table
     ret_value = insert_metadata_to_hash_table(&in, &out);
-#ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_unlock(&insert_metadata_mutex_g);
-#endif
     /* printf("==PDC_SERVER: gen_obj_id_cb(): going to return %" PRIu64 "\n", out.obj_id); */
     /* fflush(stdout); */
 
@@ -1127,6 +1125,44 @@ HG_TEST_RPC_CB(metadata_add_tag, handle)
     ret_value = HG_SUCCESS;
 
 /* done: */
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+    FUNC_LEAVE(ret_value);
+}
+
+/* static hg_return_t */
+// metadata_get_kvtag_cb(hg_handle_t handle)
+HG_TEST_RPC_CB(metadata_get_kvtag, handle)
+{
+    hg_return_t ret_value;
+    metadata_get_kvtag_in_t  in;
+    metadata_get_kvtag_out_t out;
+
+    FUNC_ENTER(NULL);
+
+    HG_Get_input(handle, &in);
+    PDC_Server_get_kvtag(&in, &out);
+    ret_value = HG_Respond(handle, NULL, NULL, &out);
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+    FUNC_LEAVE(ret_value);
+}
+
+/* static hg_return_t */
+// metadata_add_kvtag_cb(hg_handle_t handle)
+HG_TEST_RPC_CB(metadata_add_kvtag, handle)
+{
+    hg_return_t ret_value;
+    metadata_add_kvtag_in_t  in;
+    metadata_add_tag_out_t   out;
+
+    FUNC_ENTER(NULL);
+
+    HG_Get_input(handle, &in);
+    PDC_Server_add_kvtag(&in, &out);
+    ret_value = HG_Respond(handle, NULL, NULL, &out);
+
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
@@ -4769,6 +4805,7 @@ HG_TEST_THREAD_CB(get_metadata_by_id)
 HG_TEST_THREAD_CB(aggregate_write)
 HG_TEST_THREAD_CB(region_release)
 HG_TEST_THREAD_CB(metadata_add_tag)
+HG_TEST_THREAD_CB(metadata_add_kvtag)
 HG_TEST_THREAD_CB(server_lookup_remote_server)
 HG_TEST_THREAD_CB(bulk_rpc)
 HG_TEST_THREAD_CB(buf_map)
@@ -4781,7 +4818,6 @@ HG_TEST_THREAD_CB(region_unmap)
 HG_TEST_THREAD_CB(get_reg_lock_status)
 HG_TEST_THREAD_CB(query_read_obj_name_client_rpc)
 HG_TEST_THREAD_CB(send_client_storage_meta_rpc)
-
 HG_TEST_THREAD_CB(send_shm_bulk_rpc)
 
 hg_id_t
@@ -4915,7 +4951,23 @@ metadata_add_tag_register(hg_class_t *hg_class)
     FUNC_LEAVE(ret_value);
 }
 
+hg_id_t
+metadata_add_kvtag_register(hg_class_t *hg_class)
+{
+    FUNC_ENTER(NULL);
+    hg_id_t ret_value;
+    ret_value = MERCURY_REGISTER(hg_class, "metadata_add_kvtag", metadata_add_kvtag_in_t, metadata_add_tag_out_t, metadata_add_kvtag_cb);
+    FUNC_LEAVE(ret_value);
+}
 
+hg_id_t
+metadata_get_kvtag_register(hg_class_t *hg_class)
+{
+    FUNC_ENTER(NULL);
+    hg_id_t ret_value;
+    ret_value = MERCURY_REGISTER(hg_class, "metadata_get_kvtag", metadata_get_kvtag_in_t, metadata_get_kvtag_out_t, metadata_get_kvtag_cb);
+    FUNC_LEAVE(ret_value);
+}
 hg_id_t
 metadata_update_register(hg_class_t *hg_class)
 {
@@ -5704,6 +5756,35 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_create_shm_segment
 
+/*
+ * Duplicate a kvtag
+ *
+ * \param  from[IN]      KV-tag to be dupilcated 
+ * \param  to[OUT]       Duplicated KV-tag
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_kvtag_dup(pdc_kvtag_t *from, pdc_kvtag_t **to)
+{
+    perr_t ret_value = SUCCEED;
+    FUNC_ENTER(NULL);
+ 
+    if (from == NULL || to == NULL) {
+        ret_value = FAIL;
+        goto done;
+    }
+
+    (*to)               = (pdc_kvtag_t*)calloc(1, sizeof(pdc_kvtag_t));
+    (*to)->name         = (char*)malloc(strlen(from->name)+1);
+    (*to)->var_value    = (pdc_var_value_t*)malloc(sizeof(pdc_var_value_t));
+    (*to)->var_value->size  = from->var_value->size;
+    (*to)->var_value->value = (void*)malloc(from->var_value->size);
+    memcpy((*to)->name, from->name, strlen(from->name)+1);
+    memcpy((*to)->var_value->value, from->var_value->value, from->var_value->size);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
 
 #include "pdc_analysis_common.c"
 #include "pdc_transforms_common.c"

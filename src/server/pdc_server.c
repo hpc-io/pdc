@@ -1686,6 +1686,8 @@ static void PDC_Server_mercury_register()
     region_lock_register(hg_class_g);
     region_release_register(hg_class_g);
     gen_cont_id_register(hg_class_g);
+    metadata_add_kvtag_register(hg_class_g);
+    metadata_get_kvtag_register(hg_class_g);
 
     // bulk
     query_partial_register(hg_class_g);

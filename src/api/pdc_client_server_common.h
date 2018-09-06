@@ -42,6 +42,7 @@
 #include "mercury_list.h"
 
 #include "pdc_obj_pkg.h"
+#include "pdc_prop_pkg.h"
 #include "pdc_analysis_and_transforms.h"
 
 #ifdef ENABLE_MULTITHREAD 
@@ -93,12 +94,23 @@ typedef enum { NONE=0,
 typedef struct pdc_metadata_t pdc_metadata_t;
 typedef struct region_list_t region_list_t;
 
-typedef struct pdc_tag_t {
-    char            *name;
-    void            *value;
-    size_t          value_size;
-    PDC_var_type_t  value_type;
-} pdc_tag_t;
+/* typedef struct pdc_var_value_t { */
+/*     uint32_t        size; */
+/*     void            *value; */
+/* } pdc_var_value_t; */
+
+/* typedef struct pdc_kvtag_t { */
+/*     char            *name; */
+/*     pdc_var_value_t *var_value; */
+/* } pdc_kvtag_t; */
+
+
+typedef struct pdc_kvtag_list_t {
+    pdc_kvtag_t *kvtag;
+
+    struct pdc_kvtag_list_t *prev;
+    struct pdc_kvtag_list_t *next;
+} pdc_kvtag_list_t;
 
 typedef struct get_storage_loc_args_t{
     perr_t        (*cb)();
@@ -187,6 +199,7 @@ typedef struct pdc_metadata_transfer_t {
 
     const char    *tags;
     const char    *data_location;
+
     /* time_t      create_time; */
     /* time_t      last_modified_time; */
 } pdc_metadata_transfer_t;
@@ -326,6 +339,7 @@ typedef struct pdc_metadata_t {
     time_t  last_modified_time;
 
     char    tags[TAG_LEN_MAX];
+    pdc_kvtag_list_t *kvtag_list_head;
     char    data_location[ADDR_MAX];
 
     size_t   ndim;
@@ -383,6 +397,23 @@ typedef struct {
 typedef struct {
     uint64_t                obj_id;
     uint32_t                hash_value;
+    pdc_kvtag_t             *kvtag;
+} metadata_add_kvtag_in_t;
+
+typedef struct {
+    uint64_t                obj_id;
+    uint32_t                hash_value;
+    hg_string_t             key;
+} metadata_get_kvtag_in_t;
+
+typedef struct {
+    uint32_t                ret;
+    pdc_var_value_t         *var_value;
+} metadata_get_kvtag_out_t;
+
+typedef struct {
+    uint64_t                obj_id;
+    uint32_t                hash_value;
     pdc_metadata_transfer_t new_metadata;
 } metadata_update_in_t;
 
@@ -401,6 +432,63 @@ typedef struct {
 typedef struct {
     int32_t            ret;
 } region_lock_out_t;
+
+static inline hg_return_t hg_proc_pdc_var_value_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    pdc_var_value_t *in = (pdc_var_value_t*)data;
+
+    ret = hg_proc_hg_size_t(proc, &in->size);
+    if (in->size) {
+        switch(hg_proc_get_op(proc)) {
+            /* ENCODE: taking a user-provided buffer and converting it to wire
+             * format */
+            case HG_ENCODE:
+                /* The prototype is
+                 * hg_proc_raw(hg_proc_t proc, void *data, hg_size_t data_size)
+                 * and moves 'data_size' bytes from the processing state into
+                 * 'data' */
+                ret = hg_proc_raw(proc, in->value, in->size);
+                break;
+            /* DECODE: the wire-formatted buffer is unpacked into a user's
+             * struct  */
+            case HG_DECODE:
+                /* we know 'size' because it was the first thing we operated
+                 * on before this switch statement */
+                in->value = malloc(in->size);
+                /* with space allocated, move 'in->size' bytes into it */
+                ret = hg_proc_raw(proc, in->value, in->size);
+                break;
+            /* FREE: anything we allocated gets cleaned up here */
+            case HG_FREE:
+                free(in->value);
+            default:
+                break;
+        }
+    }
+    return ret;
+}
+
+
+static hg_return_t
+hg_proc_pdc_kvtag_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    pdc_kvtag_t *struct_data = (pdc_kvtag_t*) data;
+
+    ret = hg_proc_hg_string_t(proc, &struct_data->name);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_pdc_var_value_t(proc, struct_data->var_value);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
 
 typedef struct {
     uint32_t                    client_id;
@@ -809,6 +897,30 @@ hg_proc_metadata_add_tag_in_t(hg_proc_t proc, void *data)
 }
 
 static HG_INLINE hg_return_t
+hg_proc_metadata_get_kvtag_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    metadata_get_kvtag_in_t *struct_data = (metadata_get_kvtag_in_t*) data;
+
+    ret = hg_proc_hg_uint64_t(proc, &struct_data->obj_id);
+    if (ret != HG_SUCCESS) {
+	    HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint32_t(proc, &struct_data->hash_value);
+    if (ret != HG_SUCCESS) {
+	    HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_string_t(proc, &struct_data->key);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
 hg_proc_metadata_add_tag_out_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret;
@@ -821,6 +933,52 @@ hg_proc_metadata_add_tag_out_t(hg_proc_t proc, void *data)
     }
     return ret;
 }
+
+
+static HG_INLINE hg_return_t
+hg_proc_metadata_get_kvtag_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    metadata_get_kvtag_out_t *struct_data = (metadata_get_kvtag_out_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+	    HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_pdc_var_value_t(proc, &struct_data->var_value);
+    if (ret != HG_SUCCESS) {
+	    HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_metadata_add_kvtag_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    metadata_add_kvtag_in_t *struct_data = (metadata_add_kvtag_in_t*) data;
+
+    ret = hg_proc_hg_uint64_t(proc, &struct_data->obj_id);
+    if (ret != HG_SUCCESS) {
+	    HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint32_t(proc, &struct_data->hash_value);
+    if (ret != HG_SUCCESS) {
+	    HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_pdc_kvtag_t(proc, struct_data->kvtag);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
 
 static HG_INLINE hg_return_t
 hg_proc_metadata_update_in_t(hg_proc_t proc, void *data)
@@ -2275,6 +2433,8 @@ hg_id_t metadata_delete_register(hg_class_t *hg_class);
 hg_id_t metadata_delete_by_id_register(hg_class_t *hg_class);
 hg_id_t metadata_update_register(hg_class_t *hg_class);
 hg_id_t metadata_add_tag_register(hg_class_t *hg_class);
+hg_id_t metadata_add_kvtag_register(hg_class_t *hg_class);
+hg_id_t metadata_get_kvtag_register(hg_class_t *hg_class);
 hg_id_t get_remote_metadata_register(hg_class_t *hg_class_g);
 hg_id_t region_lock_register(hg_class_t *hg_class);
 

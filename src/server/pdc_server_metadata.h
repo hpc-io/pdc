@@ -96,4 +96,7 @@ hg_return_t PDC_Server_query_read_names_clinet_cb(const struct hg_cb_info *callb
 
 perr_t PDC_Server_container_add_tags(uint64_t cont_id, char *tags);
 perr_t PDC_free_cont_hash_table();
+
+perr_t PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out);
+
 #endif /* PDC_SERVER_METADATA_H */

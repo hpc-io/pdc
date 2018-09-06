@@ -1530,11 +1530,14 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     for (i = metadata->ndim; i < DIM_MAX; i++) 
         metadata->dims[i] = 0;
     
-       
     strcpy(metadata->obj_name,      in->data.obj_name);
     strcpy(metadata->app_name,      in->data.app_name);
     strcpy(metadata->tags,          in->data.tags);
     strcpy(metadata->data_location, in->data.data_location);
+
+    // New kv tag
+    /* metadata->kvtag_list_head = (pdc_kvtag_list_t*)calloc(1, sizeof(pdc_kvtag_list_t)); */
+    /* PDC_kvtag_dup(in->data.kvtag, &(metadata->kvtag_list_head->kvtag)); */
        
     // DEBUG
     int debug_flag = 0;
@@ -3081,4 +3084,245 @@ perr_t PDC_free_cont_hash_table()
         hash_table_free(container_hash_table_g);
     return SUCCEED;
 }
+
+/*
+ * Add the kvtag received from one client to the corresponding metadata structure
+ *
+ * \param  in[IN]       Input structure received from client
+ * \param  out[OUT]     Output structure to be sent back to the client
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+static perr_t PDC_add_kvtag_to_list(pdc_kvtag_list_t **list_head, pdc_kvtag_t *tag)
+{
+    perr_t ret_value = SUCCEED;
+    pdc_kvtag_list_t *new_list_item;
+    pdc_kvtag_t *newtag;
+    FUNC_ENTER(NULL);
+
+    PDC_kvtag_dup(tag, &newtag);
+    new_list_item = (pdc_kvtag_list_t*)calloc(1, sizeof(pdc_kvtag_list_t));
+    new_list_item->kvtag = newtag;
+    DL_APPEND(*list_head, new_list_item);
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} // end of PDC_add_kvtag_to_list
+
+/*
+ * Add the kvtag received from one client to the corresponding metadata structure
+ *
+ * \param  in[IN]       Input structure received from client
+ * \param  out[OUT]     Output structure to be sent back to the client
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
+{
+
+    perr_t ret_value = SUCCEED;
+    uint32_t hash_key;
+    uint64_t obj_id;
+    int unlocked;
+    pdc_hash_table_entry_head *lookup_value;
+
+    FUNC_ENTER(NULL);
+
+#ifdef ENABLE_TIMING 
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
+    double ht_total_sec;
+    gettimeofday(&pdc_timer_start, 0);
+#endif
+
+    /* printf("==PDC_SERVER: Got add kvtag request: hash=%u, obj_id=%" PRIu64 "\n",in->hash_value,in->obj_id); */
+    hash_key = in->hash_value;
+    obj_id = in->obj_id;
+
+#ifdef ENABLE_MULTITHREAD 
+    // Obtain lock for hash table
+    unlocked = 0;
+    hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
+#endif
+
+    lookup_value = hash_table_lookup(metadata_hash_table_g, &hash_key);
+    if (lookup_value != NULL) {
+        pdc_metadata_t *target;
+        target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
+        if (target != NULL) {
+            PDC_add_kvtag_to_list(&target->kvtag_list_head, in->kvtag);
+            out->ret  = 1;
+
+        } // if (lookup_value != NULL) 
+        else {
+            // Object not found for deletion request
+            /* printf("==PDC_SERVER: add tag target not found!\n"); */
+            ret_value = FAIL;
+            out->ret  = -1;
+        }
+   
+    } // if lookup_value != NULL
+    else {
+        /* printf("==PDC_SERVER: add tag target not found!\n"); */
+        ret_value = FAIL;
+        out->ret = -1;
+    }
+
+    if (ret_value != SUCCEED) {
+        printf("==PDC_SERVER[%d]: PDC_Server_add_tag_metadata() - error \n",
+                pdc_server_rank_g);
+        goto done;
+    }
+
+
+#ifdef ENABLE_MULTITHREAD 
+    // ^ Release hash table lock
+    hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
+    unlocked = 1;
+#endif
+
+#ifdef ENABLE_TIMING 
+    // Timing
+    gettimeofday(&pdc_timer_end, 0);
+    ht_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+#endif   
+
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_lock(&pdc_time_mutex_g);
+#endif
+
+#ifdef ENABLE_TIMING 
+    server_update_time_g += ht_total_sec;
+#endif
+
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_unlock(&pdc_time_mutex_g);
+#endif
+    
+
+done:
+#ifdef ENABLE_MULTITHREAD 
+    if (unlocked == 0)
+        hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
+#endif
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} // end of PDC_Server_add_kvtag
+
+static perr_t PDC_get_kvtag_value_from_list(pdc_kvtag_list_t **list_head, char *key, pdc_var_value_t **value)
+{
+    perr_t ret_value = SUCCEED;
+    pdc_kvtag_list_t *elt;
+
+    FUNC_ENTER(NULL);
+
+    *value = NULL;
+    DL_FOREACH(*list_head, elt) {
+        if (strcmp(elt->kvtag->name, key) == 0) {
+            *value = elt->kvtag->var_value;
+            break;
+        }
+    }
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} // End PDC_get_kvtag_value_from_list
+
+/*
+ * Get the kvtag with the given key
+ *
+ * \param  in[IN]       Input structure received from client
+ * \param  out[OUT]     Output structure to be sent back to the client
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
+{
+
+    perr_t ret_value = SUCCEED;
+    uint32_t hash_key;
+    uint64_t obj_id;
+    int unlocked;
+    pdc_hash_table_entry_head *lookup_value;
+
+    FUNC_ENTER(NULL);
+
+#ifdef ENABLE_TIMING 
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
+    double ht_total_sec;
+    gettimeofday(&pdc_timer_start, 0);
+#endif
+
+    /* printf("==PDC_SERVER: Got add kvtag request: hash=%u, obj_id=%" PRIu64 "\n",in->hash_value,in->obj_id); */
+    hash_key = in->hash_value;
+    obj_id = in->obj_id;
+
+#ifdef ENABLE_MULTITHREAD 
+    // Obtain lock for hash table
+    unlocked = 0;
+    hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
+#endif
+
+    lookup_value = hash_table_lookup(metadata_hash_table_g, &hash_key);
+    if (lookup_value != NULL) {
+        pdc_metadata_t *target;
+        target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
+        if (target != NULL) {
+            PDC_get_kvtag_value_from_list(&target->kvtag_list_head, in->key, &(out->var_value));
+            out->ret  = 1;
+        } 
+        else {
+            ret_value = FAIL;
+            out->ret  = -1;
+        }
+    } 
+    else {
+        /* printf("==PDC_SERVER: add tag target not found!\n"); */
+        ret_value = FAIL;
+        out->ret = -1;
+    }
+
+    if (ret_value != SUCCEED) {
+        printf("==PDC_SERVER[%d]: PDC_Server_add_tag_metadata() - error \n",
+                pdc_server_rank_g);
+        goto done;
+    }
+
+#ifdef ENABLE_MULTITHREAD 
+    // ^ Release hash table lock
+    hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
+    unlocked = 1;
+#endif
+
+#ifdef ENABLE_TIMING 
+    // Timing
+    gettimeofday(&pdc_timer_end, 0);
+    ht_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+#endif   
+
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_lock(&pdc_time_mutex_g);
+#endif
+
+#ifdef ENABLE_TIMING 
+    server_update_time_g += ht_total_sec;
+#endif
+
+#ifdef ENABLE_MULTITHREAD 
+    hg_thread_mutex_unlock(&pdc_time_mutex_g);
+#endif
+    
+
+done:
+#ifdef ENABLE_MULTITHREAD 
+    if (unlocked == 0)
+        hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
+#endif
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} // end of PDC_Server_add_kvtag
+
 

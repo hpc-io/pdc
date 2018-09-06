@@ -119,6 +119,12 @@ struct region_release_args {
     pbool_t     *status;
     int         ret;
 };
+
+typedef struct pdc_get_kvtag_args_t{
+    int ret;
+    pdc_var_value_t **var_value;
+} pdc_get_kvtag_args_t;
+
 /**
  * Request from client to get address of the server
  *

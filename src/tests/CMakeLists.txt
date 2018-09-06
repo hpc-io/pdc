@@ -47,6 +47,7 @@ set(PROGRAMS
   write_1obj
   cont_add_del
   data_server_meta_test
+  kvtag_add_get
 #  obj_transformation
 #  obj_analysis
   )
