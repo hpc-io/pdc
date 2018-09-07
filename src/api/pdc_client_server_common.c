@@ -50,6 +50,7 @@
 #include "../server/pdc_server.h"
 #include "../server/pdc_server_data.h"
 #include "pdc_malloc.h"
+#include "pdc_client_public.h"
 
 #ifdef ENABLE_MULTITHREAD 
 // Mercury multithread
@@ -763,6 +764,7 @@ perr_t PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata
 perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out) {return SUCCEED;}
+perr_t PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t *out) {return SUCCEED;}
 perr_t PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out) {return SUCCEED;}
 perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle) {return SUCCEED;}
 perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in) {return SUCCEED;}
@@ -1150,6 +1152,27 @@ HG_TEST_RPC_CB(metadata_get_kvtag, handle)
     HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
 }
+
+/* static hg_return_t */
+// metadata_del_kvtag_cb(hg_handle_t handle)
+HG_TEST_RPC_CB(metadata_del_kvtag, handle)
+{
+    hg_return_t ret_value;
+    metadata_get_kvtag_in_t  in;
+    // Reuse
+    metadata_add_tag_out_t   out;
+
+    FUNC_ENTER(NULL);
+
+    HG_Get_input(handle, &in);
+    PDC_Server_del_kvtag(&in, &out);
+    ret_value = HG_Respond(handle, NULL, NULL, &out);
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+    FUNC_LEAVE(ret_value);
+}
+
 
 /* static hg_return_t */
 // metadata_add_kvtag_cb(hg_handle_t handle)
@@ -4808,6 +4831,7 @@ HG_TEST_THREAD_CB(aggregate_write)
 HG_TEST_THREAD_CB(region_release)
 HG_TEST_THREAD_CB(metadata_add_tag)
 HG_TEST_THREAD_CB(metadata_add_kvtag)
+HG_TEST_THREAD_CB(metadata_del_kvtag)
 HG_TEST_THREAD_CB(server_lookup_remote_server)
 HG_TEST_THREAD_CB(bulk_rpc)
 HG_TEST_THREAD_CB(buf_map)
@@ -4950,6 +4974,15 @@ metadata_add_tag_register(hg_class_t *hg_class)
     hg_id_t ret_value;
     ret_value = MERCURY_REGISTER(hg_class, "metadata_add_tag", metadata_add_tag_in_t, metadata_add_tag_out_t, metadata_add_tag_cb);
 
+    FUNC_LEAVE(ret_value);
+}
+
+hg_id_t
+metadata_del_kvtag_register(hg_class_t *hg_class)
+{
+    FUNC_ENTER(NULL);
+    hg_id_t ret_value;
+    ret_value = MERCURY_REGISTER(hg_class, "metadata_del_kvtag", metadata_get_kvtag_in_t, metadata_add_tag_out_t, metadata_del_kvtag_cb);
     FUNC_LEAVE(ret_value);
 }
 

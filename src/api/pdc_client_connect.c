@@ -109,6 +109,7 @@ static hg_id_t         metadata_delete_by_id_register_id_g;
 static hg_id_t         metadata_update_register_id_g;
 static hg_id_t         metadata_add_tag_register_id_g;
 static hg_id_t         metadata_add_kvtag_register_id_g;
+static hg_id_t         metadata_del_kvtag_register_id_g;
 static hg_id_t         metadata_get_kvtag_register_id_g;
 static hg_id_t         region_lock_register_id_g;
 static hg_id_t         region_release_register_id_g;
@@ -1025,6 +1026,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     metadata_update_register_id_g             = metadata_update_register(*hg_class);
     metadata_add_tag_register_id_g            = metadata_add_tag_register(*hg_class);
     metadata_add_kvtag_register_id_g          = metadata_add_kvtag_register(*hg_class);
+    metadata_del_kvtag_register_id_g          = metadata_del_kvtag_register(*hg_class);
     metadata_get_kvtag_register_id_g          = metadata_get_kvtag_register(*hg_class);
     region_lock_register_id_g                 = region_lock_register(*hg_class);
     region_release_register_id_g              = region_release_register(*hg_class);
@@ -6825,5 +6827,57 @@ done:
     HG_Destroy(metadata_get_kvtag_handle);
     FUNC_LEAVE(ret_value);
 } // End PDC_get_kvtag
+
+perr_t PDCtag_delete(pdcid_t obj_id, char *tag_name)
+{
+    perr_t ret_value = SUCCEED;
+    hg_return_t  hg_ret = 0;
+    uint64_t meta_id;
+    uint32_t server_id;
+    hg_handle_t  metadata_del_kvtag_handle;
+    metadata_get_kvtag_in_t in;
+
+    FUNC_ENTER(NULL);
+
+    struct PDC_obj_info *obj_prop = PDCobj_get_info(obj_id);
+    meta_id = obj_prop->meta_id;
+    server_id = PDC_get_server_by_obj_id(obj_id, pdc_server_num_g);
+
+    debug_server_id_count[server_id]++;
+
+    if( PDC_Client_try_lookup_server(server_id) != SUCCEED) {
+        printf("==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server\n", pdc_client_mpi_rank_g);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_del_kvtag_register_id_g, 
+                &metadata_del_kvtag_handle);
+
+    // Fill input structure
+    in.obj_id     = meta_id;
+    in.hash_value = PDC_get_hash_by_name(obj_prop->name);
+    in.key        = tag_name;
+
+    /* printf("Sending input to target\n"); */
+    struct client_lookup_args lookup_args;
+    hg_ret = HG_Forward(metadata_del_kvtag_handle, metadata_add_tag_rpc_cb/*reuse*/, &lookup_args, &in);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "PDC_Client_del_kvtag_metadata_with_name(): Could not start HG_Forward()\n");
+        return FAIL;
+    }
+
+    // Wait for response from server
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+    if (lookup_args.ret != 1) 
+        printf("PDC_CLIENT: del kvtag NOT successful ... ret_value = %d\n", lookup_args.ret);
+
+done:
+    HG_Destroy(metadata_del_kvtag_handle);
+    FUNC_LEAVE(ret_value);
+} // End PDCtag_delete
+
 
 #include "pdc_analysis_and_transforms_connect.c"

@@ -229,6 +229,7 @@ perr_t PDCprop_update(pdcid_t obj_id, pdcid_t prop_id);
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDCtag_create(pdcid_t obj_id, char *tag_name, void *tag_value, size_t value_len);
+perr_t PDC_add_kvtag(pdcid_t obj_id, pdc_kvtag_t *kvtag);
 
 /*
  * Delete a tag with a specific name and value
@@ -240,7 +241,7 @@ perr_t PDCtag_create(pdcid_t obj_id, char *tag_name, void *tag_value, size_t val
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCtag_delete(pdcid_t obj_id, char *tag_name, void *tag_value, size_t value_len);
+perr_t PDCtag_delete(pdcid_t obj_id, char *tag_name);
 
 /*
  * Get the size of the value of a specific tag name
@@ -263,7 +264,9 @@ perr_t PDCtag_getinfo(pdcid_t obj_id, char *tag_name, size_t *value_len);
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDCtag_get(pdcid_t obj_id, char *tag_name, void *tag_value);
+perr_t PDC_get_kvtag(pdcid_t obj_id, char *tag_name, pdc_kvtag_t **kvtag);
 
+perr_t PDC_free_kvtag(pdc_kvtag_t **kvtag);
 
 
 perr_t PDC_Client_add_tags_to_container(uint64_t cont_meta_id, char *tags);
@@ -273,6 +276,8 @@ perr_t PDC_query_name_timestep_agg(const char *obj_name, int time_step, void **o
 perr_t PDC_iwrite(void *meta, struct PDC_region_info *region, PDC_Request_t *request, void *buf);
 
 perr_t PDC_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsigned long check_interval_ms);
+
+
 
 int PDC_get_nproc_per_node();
 #endif

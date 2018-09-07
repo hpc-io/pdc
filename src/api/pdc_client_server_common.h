@@ -399,6 +399,12 @@ typedef struct {
     uint64_t                obj_id;
     uint32_t                hash_value;
     hg_string_t             key;
+} metadata_del_kvtag_in_t;
+
+typedef struct {
+    uint64_t                obj_id;
+    uint32_t                hash_value;
+    hg_string_t             key;
 } metadata_get_kvtag_in_t;
 
 typedef struct {
@@ -958,7 +964,6 @@ hg_proc_metadata_add_kvtag_in_t(hg_proc_t proc, void *data)
     }
     return ret;
 }
-
 
 static HG_INLINE hg_return_t
 hg_proc_metadata_update_in_t(hg_proc_t proc, void *data)
@@ -2414,6 +2419,7 @@ hg_id_t metadata_delete_by_id_register(hg_class_t *hg_class);
 hg_id_t metadata_update_register(hg_class_t *hg_class);
 hg_id_t metadata_add_tag_register(hg_class_t *hg_class);
 hg_id_t metadata_add_kvtag_register(hg_class_t *hg_class);
+hg_id_t metadata_del_kvtag_register(hg_class_t *hg_class);
 hg_id_t metadata_get_kvtag_register(hg_class_t *hg_class);
 hg_id_t get_remote_metadata_register(hg_class_t *hg_class_g);
 hg_id_t region_lock_register(hg_class_t *hg_class);

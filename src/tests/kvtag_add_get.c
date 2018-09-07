@@ -127,6 +127,19 @@ int main() {
     else
         printf("successfully retrieved a kvtag [%s] = [%f] from o2\n", value3->name, *(double*)value3->value);
 
+    if (PDCtag_delete(obj1, kvtag1.name) < 0)
+        printf("fail to delete a kvtag from o1\n");
+    else
+        printf("successfully deleted a kvtag [%s] from o1\n", value1->name);
+
+    v1 = "New Value After Delete";
+    kvtag1.value = (void*)v1;
+    kvtag1.size  = strlen(v1)+1;
+    if (PDC_add_kvtag(obj1, &kvtag1) < 0)
+        printf("fail to add a kvtag to o1\n");
+    else
+        printf("successfully added a kvtag to o1\n");
+
     PDC_free_kvtag(&value1);
 
     if (PDC_get_kvtag(obj1, kvtag1.name, &value1) < 0)
