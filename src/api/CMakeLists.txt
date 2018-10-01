@@ -87,6 +87,7 @@ set(PDC_HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_error.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_interface.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_malloc.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_mpi.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_id_pkg.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_linkedlist.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_prop.h

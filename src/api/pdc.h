@@ -34,15 +34,16 @@
 #include "pdc_prop_pkg.h"
 #include "pdc_cont.h"
 #include "pdc_cont_pkg.h"
+
+#ifdef ENABLE_MPI
+#include "pdc_mpi.h"
+#endif
+
 #include "pdc_obj.h"
 #include "pdc_obj_pkg.h"
 #include "pdc_client_public.h"
 #include "pdc_analysis_support.h"
 #include "pdc_transform_support.h"
-
-#ifdef ENABLE_MPI
-#include "pdc_mpi.h"
-#endif
 
 /**
  * Initialize the PDC layer
