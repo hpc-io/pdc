@@ -49,6 +49,8 @@ set(PROGRAMS
   data_server_meta_test
   kvtag_add_get
   kvtag_get
+  kvtag_add_get_scale
+  oldtag_add_get_scale
 #  obj_transformation
 #  obj_analysis
   )

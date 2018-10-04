@@ -312,12 +312,12 @@ perr_t PDC_Client_read_wait_notify(pdc_metadata_t *meta, struct PDC_region_info 
 /**
  * Request of PDC client to add a tag to metadata
  *
- * \param old [IN]              Pointer to pdc_metadata_t struct storing old infomation
+ * \param obj_id [IN]           Object ID
  * \param new_tag [IN]          Pointer to a string storing new tag to be added
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_add_tag(pdc_metadata_t *old, const char *new_tag);
+perr_t PDC_Client_add_tag(pdcid_t obj_id, const char *tag);
 
 
 /**

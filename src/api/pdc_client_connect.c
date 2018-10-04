@@ -1771,17 +1771,25 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_add_tag(pdc_metadata_t *old, const char *tag)
+perr_t PDC_Client_add_tag(pdcid_t obj_id, const char *tag)
 {
-    FUNC_ENTER(NULL);
-
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
     hg_handle_t  metadata_add_tag_handle;
+    uint64_t meta_id;
+    uint32_t server_id;
 
-    uint32_t hash_name_value = PDC_get_hash_by_name(old->obj_name);
-    uint32_t server_id = (hash_name_value + old->time_step);
-    server_id %= pdc_server_num_g;
+    FUNC_ENTER(NULL);
+
+    if (tag == NULL || tag[0] == 0) {
+        printf("==PDC_CLIENT[%d]: %s - invalid tag content!\n", pdc_client_mpi_rank_g, __func__);
+        fflush(stdout);
+        goto done;
+    }
+
+    struct PDC_obj_info *obj_prop = PDCobj_get_info(obj_id);
+    meta_id = obj_prop->meta_id;
+    server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
 
     /* printf("==PDC_CLIENT: PDC_Client_add_tag_metadata() - hash(%s)=%u\n", old->obj_name, hash_name_value); */
 
@@ -1799,24 +1807,16 @@ perr_t PDC_Client_add_tag(pdc_metadata_t *old, const char *tag)
 
     // Fill input structure
     metadata_add_tag_in_t in;
-    in.obj_id     = old->obj_id;
-    in.hash_value = hash_name_value;
-
-    if (tag != NULL && tag[0] != 0) {
-        in.new_tag            = tag;
-    }
-    else {
-        printf("PDC_Client_add_tag(): invalid tag content!\n");
-        fflush(stdout);
-        goto done;
-    }
+    in.obj_id     = meta_id;
+    in.hash_value = PDC_get_hash_by_name(obj_prop->name);
+    in.new_tag    = tag;
 
 
     /* printf("Sending input to target\n"); */
     struct client_lookup_args lookup_args;
     hg_ret = HG_Forward(metadata_add_tag_handle, metadata_add_tag_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
-        fprintf(stderr, "PDC_Client_add_tag_metadata_with_name(): Could not start HG_Forward()\n");
+        printf("==PDC_CLIENT[%d]: %s - HG_Forward Error!\n", pdc_client_mpi_rank_g, __func__);
         return FAIL;
     }
 
@@ -1825,7 +1825,8 @@ perr_t PDC_Client_add_tag(pdc_metadata_t *old, const char *tag)
     PDC_Client_check_response(&send_context_g);
 
     if (lookup_args.ret != 1) 
-        printf("PDC_CLIENT: add tag NOT successful ... ret_value = %d\n", lookup_args.ret);
+        printf("==PDC_CLIENT[%d]: %s - add tag NOT successful ... ret_value = %d\n", 
+                pdc_client_mpi_rank_g, __func__, lookup_args.ret);
 
 done:
     HG_Destroy(metadata_add_tag_handle);
@@ -6689,7 +6690,7 @@ perr_t PDC_add_kvtag(pdcid_t obj_id, pdc_kvtag_t *kvtag)
     struct PDC_obj_info *obj_prop = PDCobj_get_info(obj_id);
     meta_id = obj_prop->meta_id;
 
-    server_id = PDC_get_server_by_obj_id(obj_id, pdc_server_num_g);
+    server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
 
     /* printf("==PDC_CLIENT: PDC_Client_add_tag_metadata() - hash(%s)=%u\n", old->obj_name, hash_name_value); */
 
@@ -6783,7 +6784,7 @@ perr_t PDC_get_kvtag(pdcid_t obj_id, char *tag_name, pdc_kvtag_t **kvtag)
 
     struct PDC_obj_info *obj_prop = PDCobj_get_info(obj_id);
     meta_id = obj_prop->meta_id;
-    server_id = PDC_get_server_by_obj_id(obj_id, pdc_server_num_g);
+    server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
     debug_server_id_count[server_id]++;
 
     if( PDC_Client_try_lookup_server(server_id) != SUCCEED) {
@@ -6841,7 +6842,7 @@ perr_t PDCtag_delete(pdcid_t obj_id, char *tag_name)
 
     struct PDC_obj_info *obj_prop = PDCobj_get_info(obj_id);
     meta_id = obj_prop->meta_id;
-    server_id = PDC_get_server_by_obj_id(obj_id, pdc_server_num_g);
+    server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
 
     debug_server_id_count[server_id]++;
 

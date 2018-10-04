@@ -890,9 +890,9 @@ done:
 perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *out)
 {
 
-    FUNC_ENTER(NULL);
+    perr_t ret_value = SUCCEED;
 
-    perr_t ret_value;
+    FUNC_ENTER(NULL);
 
 #ifdef ENABLE_TIMING 
     // Timing
@@ -951,22 +951,21 @@ perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_o
                     target->tags[strlen(target->tags)] = ',';
                     strcat(target->tags, in->new_tag);
                     /* printf("Final tags: %s\n", target->tags); */
+                    out->ret  = 1;
                 }
+                else 
+                    out->ret  = -1;
 
-                out->ret  = 1;
-
-            } // if (lookup_value != NULL) 
+            } // end if (target != NULL) 
             else {
                 // Object not found for deletion request
-                /* printf("==PDC_SERVER: add tag target not found!\n"); */
-                ret_value = FAIL;
+                printf("==PDC_SERVER: add tag target not found 1!\n");
                 out->ret  = -1;
             }
        
-        } // if lookup_value != NULL
+        } // end if lookup_value != NULL
         else {
-            /* printf("==PDC_SERVER: add tag target not found!\n"); */
-            ret_value = FAIL;
+            printf("==PDC_SERVER: add tag target not found 2!\n");
             out->ret = -1;
         }
 
@@ -979,8 +978,7 @@ perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_o
     }
 
     if (ret_value != SUCCEED) {
-        printf("==PDC_SERVER[%d]: PDC_Server_add_tag_metadata() - error \n",
-                pdc_server_rank_g);
+        printf("==PDC_SERVER[%d]: %s - error \n", pdc_server_rank_g, __func__);
         goto done;
     }
 
@@ -3153,11 +3151,11 @@ perr_t PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t 
             PDC_add_kvtag_to_list(&target->kvtag_list_head, &in->kvtag);
             out->ret  = 1;
 
-            printf("==PDC_SERVER[%d]: added a kvtag [%s] \n",
-                    pdc_server_rank_g, target->kvtag_list_head->prev->kvtag->name);
+            /* printf("==PDC_SERVER[%d]: added a kvtag [%s] \n", */
+            /*         pdc_server_rank_g, target->kvtag_list_head->prev->kvtag->name); */
         } // if (lookup_value != NULL) 
         else {
-            // Object not found for deletion request
+            // Object not found 
             /* printf("==PDC_SERVER: add tag target not found!\n"); */
             ret_value = FAIL;
             out->ret  = -1;
@@ -3165,15 +3163,9 @@ perr_t PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t 
    
     } // if lookup_value != NULL
     else {
-        /* printf("==PDC_SERVER: add tag target not found!\n"); */
+        printf("==PDC_SERVER[%d]: add tag target %lu not found!\n", pdc_server_rank_g, obj_id);
         ret_value = FAIL;
         out->ret = -1;
-    }
-
-    if (ret_value != SUCCEED) {
-        printf("==PDC_SERVER[%d]: PDC_Server_add_tag_metadata() - error \n",
-                pdc_server_rank_g);
-        goto done;
     }
 
 
@@ -3287,8 +3279,7 @@ perr_t PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_
     }
 
     if (ret_value != SUCCEED) {
-        printf("==PDC_SERVER[%d]: PDC_Server_add_tag_metadata() - error \n",
-                pdc_server_rank_g);
+        printf("==PDC_SERVER[%d]: %s - error \n", pdc_server_rank_g, __func__);
         goto done;
     }
 
@@ -3404,8 +3395,7 @@ perr_t PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t 
     }
 
     if (ret_value != SUCCEED) {
-        printf("==PDC_SERVER[%d]: PDC_Server_add_tag_metadata() - error \n",
-                pdc_server_rank_g);
+        printf("==PDC_SERVER[%d]: %s - error \n", pdc_server_rank_g, __func__);
         goto done;
     }
 
