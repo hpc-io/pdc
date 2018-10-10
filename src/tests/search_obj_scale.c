@@ -182,7 +182,7 @@ int main(int argc, char **argv)
             ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
             ht_total_sec        = ht_total_elapsed / 1000000.0;
 
-            printf("%10d deleted ... %.2fs\n", i * size, ht_total_sec);
+            printf("%10d queried ... %.2fs\n", i * size, ht_total_sec);
             fflush(stdout);
         }
 
@@ -198,25 +198,6 @@ int main(int argc, char **argv)
         printf("Time to create %d obj/rank with %d ranks: %.6f\n", count, size, ht_total_sec);
         fflush(stdout);
     }
-
-    /* // Check for duplicate insertion */
-    /* int dup_obj_id; */
-    /* sprintf(obj_name, "%s_%d", obj_prefix[0], rank * 10000000); */
-    /* dup_obj_id = PDCobj_create(pdc, obj_name, NULL); */
-    /* int all_dup_obj_id; */
-
-/* #ifdef ENABLE_MPI */
-    /* MPI_Reduce(&dup_obj_id, &all_dup_obj_id, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD); */  
-/* #else */
-    /* all_dup_obj_id = dup_obj_id; */
-/* #endif */
-
-    /* if (rank == 0) { */
-    /*     if (all_dup_obj_id>=0 ) */ 
-    /*         printf("Duplicate insertion test failed!\n"); */
-    /*     else */ 
-    /*         printf("Duplicate insertion test succeed!\n"); */
-    /* } */
 
 done:
 

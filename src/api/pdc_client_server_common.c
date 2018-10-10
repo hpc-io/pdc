@@ -109,6 +109,31 @@ uint64_t pdc_id_seq_g = PDC_SERVER_ID_INTERVEL;
 
 #endif // End of ENABLE_MULTITHREAD
 
+static hg_return_t
+hg_proc_send_shm_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    send_shm_in_t *struct_data = (send_shm_in_t*) data;
+
+    ret = hg_proc_uint32_t(proc, &struct_data->client_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_hg_string_t(proc, &struct_data->shm_addr);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+ 
+    ret = hg_proc_uint64_t(proc, &struct_data->size);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
 double PDC_get_elapsed_time_double(struct timeval *tstart, struct timeval *tend)
 {
     return (double)(((tend->tv_sec-tstart->tv_sec)*1000000LL + tend->tv_usec-tstart->tv_usec) / 1000000.0);
@@ -775,6 +800,7 @@ perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out,
 perr_t PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status) {return SUCCEED;}
 perr_t PDC_Server_local_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_status) {return SUCCEED;}
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs) {return SUCCEED;}
+perr_t PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **buf_ptrs) {return SUCCEED;}
 perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_t obj_id, int type) {return SUCCEED;}
 perr_t PDC_Server_release_lock_request(uint64_t obj_id, struct PDC_region_info *region) {return SUCCEED;}
 perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
@@ -2598,7 +2624,7 @@ HG_TEST_RPC_CB(query_partial, handle)
     if (*n_meta_ptr == 0) {
         out.bulk_handle = HG_BULK_NULL;
         out.ret = 0;
-        printf("No objects returned for the query\n");
+        /* printf("No objects returned for the query\n"); */
         ret_value = HG_Respond(handle, NULL, NULL, &out);
         goto done;
     }
@@ -2663,6 +2689,66 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+/* query_kvtag_cb(hg_handle_t handle) */
+// Server execute
+HG_TEST_RPC_CB(query_kvtag, handle)
+{
+    hg_return_t ret_value;
+    hg_return_t hg_ret;
+    hg_bulk_t bulk_handle = HG_BULK_NULL;
+    uint32_t i;
+    uint64_t *buf_ptr;
+    size_t buf_size[1];
+    uint32_t nmeta;
+    pdc_kvtag_t in;
+    metadata_query_transfer_out_t out;
+    
+    FUNC_ENTER(NULL);
+
+    // Decode input
+    HG_Get_input(handle, &in);
+
+    /* printf("==PDC_SERVER[x]: %s - Received query [%s]\n", __func__, in.name); */
+    /* fflush(stdout); */
+
+    ret_value = PDC_Server_get_kvtag_query_result(&in, &nmeta, &buf_ptr);
+    if (ret_value != SUCCEED || nmeta == 0) {
+        out.bulk_handle = HG_BULK_NULL;
+        out.ret = 0;
+        printf("==PDC_SERVER[x]: %s - No objects returned for the kvtag query\n", __func__);
+        ret_value = HG_Respond(handle, NULL, NULL, &out);
+        goto done;
+    }
+
+    /* printf("==PDC_SERVER[x]: %s - Query result nobj=%u\n", __func__, nmeta); */
+    /* fflush(stdout); */
+
+    // Create bulk handle
+    buf_size[0] = nmeta * sizeof(uint64_t);
+    hg_ret = HG_Bulk_create(hg_class_g, 1, (void**)&buf_ptr, &buf_size, HG_BULK_READ_ONLY, &bulk_handle);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not create bulk data handle\n");
+        return EXIT_FAILURE;
+    }
+
+    // Fill bulk handle and return number of metadata that satisfy the query 
+    out.bulk_handle = bulk_handle;
+    out.ret = nmeta;
+
+    // Send bulk handle to client
+    /* printf("==PDC_SERVER[x]: %s - Sending bulk handle to client\n", __func__); */
+    /* fflush(stdout); */
+    ret_value = HG_Respond(handle, NULL, NULL, &out);
+
+    /* printf("==PDC_SERVER[x]: %s - bulk handle sent to client\n", __func__); */
+    /* fflush(stdout); */
+
+done:
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
 /*
  * Data server related
  */
@@ -4820,6 +4906,7 @@ HG_TEST_THREAD_CB(notify_region_update)
 HG_TEST_THREAD_CB(close_server)
 HG_TEST_THREAD_CB(region_lock)
 HG_TEST_THREAD_CB(query_partial)
+HG_TEST_THREAD_CB(query_kvtag)
 HG_TEST_THREAD_CB(data_server_read)
 HG_TEST_THREAD_CB(data_server_write)
 HG_TEST_THREAD_CB(data_server_read_check)
@@ -5171,6 +5258,14 @@ query_partial_register(hg_class_t *hg_class)
     FUNC_LEAVE(ret_value);
 }
 
+hg_id_t
+query_kvtag_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    FUNC_ENTER(NULL);
+    ret_value = MERCURY_REGISTER(hg_class, "query_kvtag", pdc_kvtag_t, metadata_query_transfer_out_t, query_kvtag_cb);
+    FUNC_LEAVE(ret_value);
+}
 
 /* hg_id_t */
 /* get_storage_info_register(hg_class_t *hg_class) */

@@ -79,6 +79,7 @@ int PDC_Server_is_contiguous_region_overlap(region_list_t *a, region_list_t *b);
 perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key, pdc_metadata_t** out);
 perr_t PDC_Server_search_with_name_timestep(const char *obj_name, uint32_t hash_key, uint32_t ts, pdc_metadata_t** out);
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs);
+perr_t PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **buf_ptrs);
 pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id);
 perr_t PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_id_out_t *out);
 perr_t PDC_Server_create_container(gen_cont_id_in_t *in, gen_cont_id_out_t *out);

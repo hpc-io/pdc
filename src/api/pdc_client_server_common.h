@@ -482,31 +482,7 @@ typedef struct {
     uint64_t                    size;
 } send_shm_in_t;
 
-static hg_return_t
-hg_proc_send_shm_in_t(hg_proc_t proc, void *data)
-{
-    hg_return_t ret;
-    send_shm_in_t *struct_data = (send_shm_in_t*) data;
 
-    ret = hg_proc_uint32_t(proc, &struct_data->client_id);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-
-    ret = hg_proc_hg_string_t(proc, &struct_data->shm_addr);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-        return ret;
-    }
- 
-    ret = hg_proc_uint64_t(proc, &struct_data->size);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    return ret;
-}
 
 static hg_return_t
 hg_proc_region_info_transfer_t(hg_proc_t proc, void *data)
@@ -2453,6 +2429,7 @@ hg_id_t send_shm_bulk_rpc_register(hg_class_t *hg_class);
 
 //bulk
 hg_id_t query_partial_register(hg_class_t *hg_class);
+hg_id_t query_kvtag_register(hg_class_t *hg_class);
 hg_id_t notify_io_complete_register(hg_class_t *hg_class);
 hg_id_t data_server_read_register(hg_class_t *hg_class);
 
@@ -2472,7 +2449,8 @@ struct bulk_args_t {
     hg_atomic_int32_t completed_transfers;
     size_t ret;
     pdc_metadata_t **meta_arr;
-    uint32_t        *n_meta;
+    uint32_t        n_meta;
+    uint64_t       *obj_ids;
     int client_seq_id;
 };
 

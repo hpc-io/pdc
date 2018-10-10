@@ -1934,6 +1934,96 @@ done:
 }
 
 /*
+ * Get the metadata that satisfies the query constraint
+ *
+ * \param  in[IN]           Input structure from client that contains the query constraint
+ * \param  n_meta[OUT]      Number of metadata that satisfies the query constraint
+ * \param  buf_ptrs[OUT]    Pointers to the found metadata
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_ids)
+{
+    perr_t ret_value = SUCCEED;
+    uint32_t i;
+    uint32_t iter = 0;
+    pdc_hash_table_entry_head *head;
+    pdc_metadata_t *elt;
+    pdc_kvtag_list_t *kvtag_list_elt;
+    HashTableIterator hash_table_iter;
+    int n_entry, is_name_match, is_value_match;
+    HashTablePair pair;
+    uint32_t alloc_size = 100;
+    
+    FUNC_ENTER(NULL);
+
+    *n_meta = 0;
+    // TODO: free obj_ids
+    *obj_ids = (void*)calloc(alloc_size, sizeof(uint64_t));
+
+    if (metadata_hash_table_g != NULL) {
+
+        n_entry = hash_table_num_entries(metadata_hash_table_g);
+        hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
+
+        while (n_entry != 0 && hash_table_iter_has_more(&hash_table_iter)) {
+            pair = hash_table_iter_next(&hash_table_iter);
+            head = pair.value;
+            DL_FOREACH(head->metadata, elt) {
+                DL_FOREACH(elt->kvtag_list_head, kvtag_list_elt) {
+                    is_name_match = 0;
+                    is_value_match = 0;
+                    if (in->name[0] != ' ') {
+                        if (strcmp(in->name, kvtag_list_elt->kvtag->name) == 0) 
+                            is_name_match = 1;
+                        else
+                            continue;
+                    }
+                    else
+                        is_name_match = 1;
+
+                    if (((char*)(in->value))[0] != ' ') {
+                        if (memcmp(in->value, kvtag_list_elt->kvtag->value, in->size) == 0) 
+                            is_value_match = 1;
+                        else
+                            continue;
+                    }
+                    else
+                        is_value_match = 1;
+
+                    if (is_name_match == 1 && is_value_match == 1) {
+                        /* printf("==PDC_SERVER[%d]: %s - Found kvtag [%s=] in obj [%s]:[%s=]\n", */ 
+                        /*         pdc_server_rank_g, __func__, in->name, elt->obj_name, */
+                        /*         kvtag_list_elt->kvtag->name); */
+                        if (iter >= alloc_size) {
+                            alloc_size *= 2;
+                            *obj_ids = (void*)realloc(*obj_ids, alloc_size * sizeof(uint64_t));
+                        }
+                        (*obj_ids)[iter++] = elt->obj_id;
+                        break;
+                    }
+
+                } // End for each kvtag
+            } // End for each metadata
+        } // End while
+        *n_meta = iter;
+
+        /* printf("%s: Total matching results: %d\n", __func__, *n_meta); */
+
+    }  // if (metadata_hash_table_g != NULL)
+    else {
+        printf("==PDC_SERVER: metadata_hash_table_g not initialized!\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} // PDC_Server_get_kvtag_query_result
+
+
+/*
  * Seach the hash table with object name and hash key
  *
  * \param  obj_name[IN]     Name of the object to be searched

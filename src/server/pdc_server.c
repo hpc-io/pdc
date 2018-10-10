@@ -1719,6 +1719,7 @@ static void PDC_Server_mercury_register()
 
     // bulk
     query_partial_register(hg_class_g);
+    query_kvtag_register(hg_class_g);
     cont_add_del_objs_rpc_register(hg_class_g);
     cont_add_tags_rpc_register(hg_class_g);
     query_read_obj_name_rpc_register(hg_class_g);
