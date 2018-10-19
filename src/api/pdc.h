@@ -29,6 +29,7 @@
 #include <stdbool.h>
 #include "pdc_public.h"
 #include "pdc_error.h"
+#include "pdc_malloc.h"
 #include "pdc_pkg.h"
 #include "pdc_prop.h"
 #include "pdc_prop_pkg.h"
