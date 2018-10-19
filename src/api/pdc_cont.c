@@ -146,7 +146,8 @@ pdcid_t PDCcont_open(const char *cont_name)
     // should wait for response from server 
     // look up in the list for now
     cont_id = pdc_find_byname(PDC_CONT, cont_name);
-    if(cont_id <= 0)
+    // if contained is closed locally, contact metadata server
+    if(cont_id == 0)
         PGOTO_ERROR(ret_value, "cannot locate container");
     pdc_inc_ref(cont_id);
     ret_value = cont_id;
@@ -154,6 +155,47 @@ pdcid_t PDCcont_open(const char *cont_name)
 done:
     FUNC_LEAVE(ret_value);
 } 
+
+struct PDC_cont_info *PDCcont_get_info(pdcid_t cont_id)
+{
+    struct PDC_cont_info *ret_value = NULL;
+    struct PDC_cont_info *info = NULL;
+    struct PDC_id_info *id_info = NULL;
+    
+    FUNC_ENTER(NULL);
+    
+    id_info = pdc_find_id(cont_id);
+    info = (struct PDC_cont_info *)(id_info->obj_ptr);
+    
+    ret_value = PDC_CALLOC(struct PDC_cont_info);
+    if(ret_value)
+        memcpy(ret_value, info, sizeof(struct PDC_cont_info));
+    else
+        PGOTO_ERROR(NULL, "cannot allocate ret_value");
+    if(info->name)
+        ret_value->name = strdup(info->name);
+    else
+        ret_value->name = NULL;
+    
+    ret_value->cont_pt = PDC_MALLOC(struct PDC_cont_prop);
+    if(ret_value->cont_pt)
+        memcpy(ret_value->cont_pt, info->cont_pt, sizeof(struct PDC_cont_prop));
+    else
+        PGOTO_ERROR(NULL, "cannot allocate ret_value->cont_pt");
+    ret_value->cont_pt->pdc = PDC_CALLOC(struct PDC_class);
+    if(ret_value->cont_pt->pdc) {
+        ret_value->cont_pt->pdc->local_id = info->cont_pt->pdc->local_id;
+        if(info->cont_pt->pdc->name)
+            ret_value->cont_pt->pdc->name = strdup(info->cont_pt->pdc->name);
+        else
+            ret_value->cont_pt->pdc->name = NULL;
+    }
+    else
+        PGOTO_ERROR(NULL, "cannot allocate ret_value->cont_pt->pdc");
+    
+done:
+    FUNC_LEAVE(ret_value);
+}
 
 cont_handle *PDCcont_iter_start()
 {
