@@ -77,7 +77,7 @@ perr_t PDC_register_type(PDC_type_t type_id, PDC_free_t free_func)
     /* Initialize the type */
     if(NULL == (pdc_id_list_g->PDC_id_type_list_g)[type_id]) {
         /* Allocate the type information for new type */
-        if(NULL == (type_ptr = PDC_CALLOC(struct PDC_id_type)))
+        if(NULL == (type_ptr = (struct PDC_id_type *)PDC_CALLOC(struct PDC_id_type)))
             PGOTO_ERROR(FAIL, "ID type allocation failed");
         (pdc_id_list_g->PDC_id_type_list_g)[type_id] = type_ptr;
     }

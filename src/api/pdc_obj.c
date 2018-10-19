@@ -263,17 +263,14 @@ pdcid_t PDCobj_open(const char *obj_name)
 {
     pdcid_t ret_value = 0;
     pdcid_t obj_id;
-    struct PDC_obj_info *object_info;
     
     FUNC_ENTER(NULL);
     
     // should wait for response from server
     // look up in the list for now
     obj_id = pdc_find_byname(PDC_OBJ, obj_name);
-    //
-    if(obj_id == 0)
+    if(obj_id <= 0)
         PGOTO_ERROR(ret_value, "cannot locate object");
-
     pdc_inc_ref(obj_id);
     ret_value = obj_id;
     
@@ -813,7 +810,6 @@ struct PDC_obj_info *PDCobj_get_info(pdcid_t obj_id)
     struct PDC_obj_info *ret_value = NULL;
     struct PDC_obj_info *info =  NULL;
     struct PDC_id_info *obj;
-    int i;
     
     FUNC_ENTER(NULL);
     
@@ -822,78 +818,7 @@ struct PDC_obj_info *PDCobj_get_info(pdcid_t obj_id)
         PGOTO_ERROR(NULL, "cannot locate object");
     
     info = (struct PDC_obj_info *)(obj->obj_ptr);
-    ret_value = PDC_CALLOC(struct PDC_obj_info);
-    if(ret_value)
-        memcpy(ret_value, info, sizeof(struct PDC_obj_info));
-    else
-        PGOTO_ERROR(NULL, "cannot allocate ret_value");
-    if(info->name)
-        ret_value->name = strdup(info->name);
-    else
-        ret_value->name = NULL;
-    
-    // fill in struct PDC_cont_info field
-    ret_value->cont = PDC_CALLOC(struct PDC_cont_info);
-    if(ret_value->cont)
-        memcpy(ret_value->cont, info->cont, sizeof(struct PDC_cont_info));
-    else
-        PGOTO_ERROR(NULL, "cannot allocate ret_value->cont");
-    if(info->cont->name)
-        ret_value->cont->name = strdup(info->cont->name);
-    else
-        ret_value->cont->name = NULL;
-    ret_value->cont->cont_pt = PDC_CALLOC(struct PDC_cont_prop);
-    if(ret_value->cont->cont_pt)
-        memcpy(ret_value->cont->cont_pt, info->cont->cont_pt, sizeof(struct PDC_cont_prop));
-    else
-        PGOTO_ERROR(NULL, "cannot allocate ret_value->cont->cont_pt");
-    ret_value->cont->cont_pt->pdc = PDC_CALLOC(struct PDC_class);
-    if(ret_value->cont->cont_pt->pdc) {
-        ret_value->cont->cont_pt->pdc->local_id = info->cont->cont_pt->pdc->local_id;
-        if(info->cont->cont_pt->pdc->name)
-            ret_value->cont->cont_pt->pdc->name = strdup(info->cont->cont_pt->pdc->name);
-        else
-            ret_value->cont->cont_pt->pdc->name = NULL;
-    }
-    else
-        PGOTO_ERROR(NULL, "cannot allocate ret_value->cont->cont_pt->pdc");
-    // fill in struct PDC_obj_prop field
-    ret_value->obj_pt = PDC_CALLOC(struct PDC_obj_prop);
-    if(ret_value->obj_pt)
-        memcpy(ret_value->obj_pt, info->obj_pt, sizeof(struct PDC_obj_prop));
-    else
-        PGOTO_ERROR(NULL, "cannot allocate ret_value->obj_pt");
-    ret_value->obj_pt->pdc = PDC_CALLOC(struct PDC_class);
-    if(ret_value->obj_pt->pdc) {
-        ret_value->obj_pt->pdc->local_id = info->obj_pt->pdc->local_id;
-        if(info->obj_pt->pdc->name)
-            ret_value->obj_pt->pdc->name = strdup(info->obj_pt->pdc->name);
-        else
-            ret_value->obj_pt->pdc->name = NULL;
-    }
-    else
-        PGOTO_ERROR(NULL, "cannot allocate ret_value->obj_pt->pdc");
-
-    ret_value->obj_pt->dims = malloc(ret_value->obj_pt->ndim*sizeof(uint64_t));
-    if(ret_value->obj_pt->dims) {
-        for(i=0; i<ret_value->obj_pt->ndim; i++) {
-            ret_value->obj_pt->dims[i] = info->obj_pt->dims[i];
-        }
-    }
-    else
-        PGOTO_ERROR(NULL, "cannot allocate ret_value->obj_pt->dims");
-    if(info->obj_pt->app_name)
-        ret_value->obj_pt->app_name = strdup(info->obj_pt->app_name);
-    else
-        ret_value->obj_pt->app_name = NULL;
-    if(info->obj_pt->data_loc)
-        ret_value->obj_pt->data_loc = strdup(info->obj_pt->data_loc);
-    else
-        ret_value->obj_pt->data_loc = NULL;
-    if(info->obj_pt->tags)
-        ret_value->obj_pt->tags = strdup(info->obj_pt->tags);
-    else
-        ret_value->obj_pt->tags = NULL;
+    ret_value = info;
     
 done:
     FUNC_LEAVE(ret_value);
