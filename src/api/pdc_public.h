@@ -37,18 +37,20 @@ typedef float                       PDC_float_t;
 typedef double                      PDC_double_t;
 
 
-perr_t PDCcont_put(const char *cont_name, pdcid_t *cont_id);
-perr_t PDCcont_get_obj(const pdcid_t cont_id, const int *nobj, const pdcid_t **obj_ids);
-perr_t PDCcont_add_obj(pdcid_t *cont_id, int nobj, pdcid_t *obj_ids);
-perr_t PDCcont_delete(const pdcid_t cont_id);
-perr_t PDCcont_put_tag(const pdcid_t cont_id, const char *tag_name, const void *tag_value, const uint64_t tag_size);
-perr_t PDCcont_get_tag(const pdcid_t cont_id, void **tag_value, uint64_t *tag_size);
-perr_t PDCcont_delete_tag(const pdcid_t cont_id, const char *tag_name);
+pdcid_t PDCcont_put(const char *cont_name, pdcid_t pdc);
+perr_t  PDCcont_get(pdcid_t cont_id, char **cont_name);
+perr_t  PDCcont_del(pdcid_t cont_id);
+perr_t  PDCcont_put_objids(pdcid_t cont_id, int nobj, pdcid_t *obj_ids);
+perr_t  PDCcont_get_objids(pdcid_t cont_id, int *nobj, pdcid_t **obj_ids);
+perr_t  PDCcont_del_objids(pdcid_t cont_id, const int nobj, const pdcid_t *obj_ids);
+perr_t  PDCcont_put_tag(pdcid_t cont_id, const char *tag_name, const void *tag_value, const uint64_t value_size);
+perr_t  PDCcont_get_tag(pdcid_t cont_id, const char *tag_name, void **tag_value, uint64_t *value_size);
+perr_t  PDCcont_del_tag(pdcid_t cont_id, const char *tag_name);
 
-perr_t PDCobj_put_data(const char *obj_name, const void *data, const uint64_t size, pdcid_t *obj_id);
-perr_t PDCobj_get_data(const pdcid_t obj_id, const void **data, const uint64_t *size);
-perr_t PDCobj_delete_data(const pdcid_t obj_id);
-perr_t PDCobj_put_tag(const pdcid_t obj_id, const char *tag_name, const void *tag_value, const uint64_t tag_size);
-perr_t PDCobj_get_tag(const pdcid_t obj_id, void **tag_value, uint64_t *tag_size);
-perr_t PDCobj_delete_tag(const pdcid_t obj_id, const char *tag_name);
+pdcid_t PDCobj_put_data(const char *obj_name, const void *data, uint64_t size, pdcid_t pdc_id, pdcid_t cont_id);
+perr_t  PDCobj_get_data(pdcid_t obj_id, void **data, uint64_t *size);
+perr_t  PDCobj_del_data(pdcid_t obj_id);
+perr_t  PDCobj_put_tag(pdcid_t obj_id, const char *tag_name, const void *tag_value, uint64_t value_size);
+perr_t  PDCobj_get_tag(pdcid_t obj_id, const char *tag_name, void **tag_value, uint64_t *value_size);
+perr_t  PDCobj_del_tag(pdcid_t obj_id, const char *tag_name);
 #endif

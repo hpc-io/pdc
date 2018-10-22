@@ -4191,6 +4191,14 @@ perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
         goto done;
     }
 
+    if (req_count && req_count[0] == 0) {
+        is_all_selected = 1;
+        req_start[0] = 0;
+        req_count[0] = storage_count[0];
+        total_bytes  = storage_count[0];
+        goto all_select;
+    }
+
     // Get the actual start and count of region in storage
     if (get_overlap_start_count(ndim, req_start, req_count, storage_start, storage_count,
                                 overlap_start, overlap_count) != SUCCEED ) {
@@ -4266,6 +4274,7 @@ perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
     /* #endif */
 
 
+all_select:
     // TODO: additional optimization to check if any dimension is entirely selected
     if (ndim == 1 || is_all_selected == 1) {
         // Can read the entire storage region at once

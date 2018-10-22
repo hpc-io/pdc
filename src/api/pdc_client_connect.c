@@ -7283,4 +7283,340 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+/* -------------------------------------------------------------------------------------------------- */
+/* New Simple Object Access Interface */
+
+// Create a container with specified name
+pdcid_t 
+PDCcont_put(const char *cont_name, pdcid_t pdc)
+{
+    perr_t ret_value;
+    pdcid_t cont_id = 0, cont_prop;
+
+    FUNC_ENTER(NULL);
+
+    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
+
+#ifdef ENABLE_MPI
+    ret_value = PDC_Client_create_cont_id_mpi(cont_name, cont_prop, &cont_id);
+#else
+    ret_value = PDC_Client_create_cont_id(cont_name, cont_prop, &cont_id);
+#endif
+    if (ret_value != SUCCEED) {
+        printf("==PDC_CLIENT[%d]: %s - error with PDC_Client_create_cont_id\n", 
+                pdc_client_mpi_rank_g, __func__);
+        cont_id = 0;
+        goto done;
+    }
+
+done:
+    FUNC_LEAVE(cont_id);
+}
+
+// Get container name
+perr_t  
+PDCcont_get(pdcid_t cont_id, char **cont_name)
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    // TODO
+    /* ret_value = PDC_Client_query_container_name(char *cont_name, pdc_metadata_t **out); */
+    /* if (ret_value != SUCCEED) { */
+    /*     printf("==PDC_CLIENT[%d]: %s - error with PDC_Client_create_cont_id\n", */ 
+    /*             pdc_client_mpi_rank_g, __func__); */
+    /*     cont_id = 0; */
+    /*     goto done; */
+    /* } */
+
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t  
+PDCcont_del(pdcid_t cont_id)
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    ret_value = PDCobj_del_data(cont_id);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_CLIENT[%d]: %s - error with PDC_Client_del_objects_to_container\n", 
+                pdc_client_mpi_rank_g, __func__);
+        goto done;
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+// Put a number of objects to a container
+perr_t  
+PDCcont_put_objids(pdcid_t cont_id, int nobj, pdcid_t *obj_ids)
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    ret_value = PDC_Client_add_objects_to_container(nobj, obj_ids, cont_id);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_CLIENT[%d]: %s - error with PDC_Client_add_objects_to_container\n", 
+                pdc_client_mpi_rank_g, __func__);
+        goto done;
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t  
+PDCcont_del_objids(pdcid_t cont_id, const int nobj, const pdcid_t *obj_ids)
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    ret_value = PDC_Client_del_objects_to_container(nobj, obj_ids, cont_id);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_CLIENT[%d]: %s - error with PDC_Client_del_objects_to_container\n", 
+                pdc_client_mpi_rank_g, __func__);
+        goto done;
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t  
+PDCcont_get_objids(pdcid_t cont_id, int *nobj, pdcid_t **obj_ids)
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    // TODO
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t  
+PDCcont_put_tag(pdcid_t cont_id, const char *tag_name, const void *tag_value, uint64_t value_size)
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    ret_value = PDCobj_put_tag(cont_id, tag_name, tag_value, value_size);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_CLIENT[%d]: %s - error with PDCobj_put_tag\n", 
+                pdc_client_mpi_rank_g, __func__);
+        goto done;
+    }
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t  
+PDCcont_get_tag(pdcid_t cont_id, const char *tag_name, void **tag_value, uint64_t *value_size)
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    ret_value = PDCobj_get_tag(cont_id, tag_name, tag_value, value_size);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_CLIENT[%d]: %s - error with PDCcont_get_tag\n", 
+                pdc_client_mpi_rank_g, __func__);
+        goto done;
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t  
+PDCcont_del_tag(pdcid_t cont_id, const char *tag_name)
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    ret_value = PDCobj_del_tag(cont_id, tag_name);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_CLIENT[%d]: %s - error with PDCobj_del_tag\n", 
+                pdc_client_mpi_rank_g, __func__);
+        goto done;
+    }
+
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+
+pdcid_t 
+PDCobj_put_data(const char *obj_name, const void *data, uint64_t size, pdcid_t pdc_id, pdcid_t cont_id)
+{
+    pdcid_t obj_id, obj_prop;
+    struct PDC_region_info obj_region;
+    perr_t ret;
+    pdc_metadata_t *meta;
+
+    FUNC_ENTER(NULL);
+
+    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
+    PDCprop_set_obj_dims(obj_prop, 1, &size);
+    PDCprop_set_obj_user_id(obj_prop, getuid());
+    PDCprop_set_obj_time_step(obj_prop, 0);
+
+    obj_id = PDCobj_create(cont_id, obj_name, obj_prop);
+    if (obj_id <= 0) {    
+        printf("==PDC_CLIENT[%d]: %s - Error creating object [%s]\n", 
+                pdc_client_mpi_rank_g, __func__, obj_name);
+        goto done;
+    }
+
+    obj_region.ndim   = 1;
+    obj_region.offset = 0;
+    obj_region.size   = size;
+
+    #ifdef ENABLE_MPI
+    ret = PDC_Client_query_metadata_name_timestep_agg(obj_name, 0, &meta);
+    #else
+    ret = PDC_Client_query_metadata_name_timestep(obj_name, 0, &meta);
+    #endif
+
+    ret = PDC_Client_write(meta, &obj_region, data);
+    if (ret != SUCCEED) {
+        printf("==PDC_CLIENT[%d]: %s - Error with PDC_Client_write_id for obj [%s]\n",
+                pdc_client_mpi_rank_g, __func__, obj_name);
+        obj_id = 0;
+        goto done;
+    }
+
+done:
+    FUNC_LEAVE(obj_id);
+}
+
+perr_t PDCobj_get_data(pdcid_t obj_id, void **data, uint64_t *size)
+{
+    struct PDC_region_info obj_region;
+    uint64_t meta_id;
+    perr_t ret_value;
+    char *obj_name;
+    pdc_metadata_t *meta;
+
+    FUNC_ENTER(NULL);
+
+    obj_region.ndim   = 1;
+    obj_region.offset = 0;
+    obj_region.size   = 0;  // TODO: size=0 means read entire object
+
+    struct PDC_obj_info *obj_prop = PDCobj_get_info(obj_id);
+    meta_id = obj_prop->meta_id;
+    obj_name = obj_prop->name;
+
+    #ifdef ENABLE_MPI
+    ret_value = PDC_Client_query_metadata_name_timestep_agg(obj_name, 0, &meta);
+    #else
+    ret_value = PDC_Client_query_metadata_name_timestep(obj_name, 0, &meta);
+    #endif
+
+    ret_value = PDC_Client_read(meta, &obj_region, data);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_CLIENT[%d]: %s - Error with PDC_Client_write_id for obj\n",
+                pdc_client_mpi_rank_g, __func__);
+        goto done;
+    }
+
+    free(meta);
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t  
+PDCobj_del_data(pdcid_t obj_id)
+{
+    perr_t ret_value = SUCCEED;
+    uint64_t meta_id;
+
+    FUNC_ENTER(NULL);
+
+    struct PDC_obj_info *obj_prop = PDCobj_get_info(obj_id);
+    meta_id = obj_prop->meta_id;
+
+    ret_value = PDC_Client_delete_metadata_by_id(meta_id);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_CLIENT[%d]: %s - Error with PDC_Client_delete_metadata_by_id\n",
+                pdc_client_mpi_rank_g, __func__);
+        goto done;
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t  
+PDCobj_put_tag(pdcid_t obj_id, const char *tag_name, const void *tag_value, uint64_t value_size)
+{
+    perr_t ret_value = SUCCEED;
+    pdc_kvtag_t kvtag;
+
+    FUNC_ENTER(NULL);
+
+    kvtag.name = (char*)tag_name;
+    kvtag.value = (void*)tag_value;
+    kvtag.size  = (uint64_t)value_size;
+
+    ret_value = PDC_add_kvtag(obj_id, &kvtag);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_CLIENT[%d]: %s - Error with PDC_add_kvtag\n", pdc_client_mpi_rank_g, __func__);
+        goto done;
+    }
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t  
+PDCobj_get_tag(pdcid_t obj_id, const char *tag_name, void **tag_value, uint64_t *value_size)
+{
+    perr_t ret_value = SUCCEED;
+    pdc_kvtag_t kvtag;
+
+    FUNC_ENTER(NULL);
+
+    ret_value = PDC_get_kvtag(obj_id, tag_name, &kvtag);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_CLIENT[%d]: %s - Error with PDC_get_kvtag\n", pdc_client_mpi_rank_g, __func__);
+        goto done;
+    }
+    *tag_value = kvtag.value;
+    *value_size = kvtag.size;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t  
+PDCobj_del_tag(pdcid_t obj_id, const char *tag_name)
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    ret_value = PDCtag_delete(obj_id, tag_name);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_CLIENT[%d]: %s - Error with PDC_del_kvtag\n", pdc_client_mpi_rank_g, __func__);
+        goto done;
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+
 #include "pdc_analysis_and_transforms_connect.c"
