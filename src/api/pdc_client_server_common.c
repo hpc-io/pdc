@@ -2715,7 +2715,7 @@ HG_TEST_RPC_CB(query_kvtag, handle)
     if (ret_value != SUCCEED || nmeta == 0) {
         out.bulk_handle = HG_BULK_NULL;
         out.ret = 0;
-        printf("==PDC_SERVER[x]: %s - No objects returned for the kvtag query\n", __func__);
+        /* printf("==PDC_SERVER[x]: %s - No objects returned for the kvtag query\n", __func__); */
         ret_value = HG_Respond(handle, NULL, NULL, &out);
         goto done;
     }

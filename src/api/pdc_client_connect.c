@@ -652,8 +652,8 @@ perr_t PDC_Client_try_lookup_server(int server_id)
     }
 
     // Add a delay when there are too many clients 
-    if (pdc_client_mpi_size_g > 1024) 
-        pdc_msleep(pdc_client_mpi_rank_g % 500);
+    /* if (pdc_client_mpi_size_g > 1024) */ 
+    /*     pdc_msleep(pdc_client_mpi_rank_g % 500); */
 
     while (pdc_server_info_g[server_id].addr_valid != 1) {
         if (n_retry > PDC_MAX_TRIAL_NUM) 
@@ -1078,6 +1078,19 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     // Client 0 looks up all servers, others only lookup their node local server
     char *client_lookup_env = getenv("PDC_CLIENT_LOOKUP");
     if (client_lookup_env != NULL && strcmp(client_lookup_env, "ALL") == 0) {
+        if (pdc_client_mpi_rank_g == 0) 
+            printf("==PDC_CLIENT[%d]: Client lookup all servers at start time!\n", pdc_client_mpi_rank_g);
+        for (local_server_id = 0; local_server_id < pdc_server_num_g; local_server_id++) {
+            if (pdc_client_mpi_size_g > 1000) 
+                pdc_msleep(pdc_client_mpi_rank_g % 300);
+            if (PDC_Client_try_lookup_server(local_server_id) != SUCCEED) {
+                printf("==PDC_CLIENT[%d]: ERROR lookup server %d\n", pdc_client_mpi_rank_g, local_server_id);
+                ret_value = FAIL;
+                goto done;
+            }
+        }
+    }
+    else if (client_lookup_env != NULL && strcmp(client_lookup_env, "NONE") == 0) {
         if (pdc_client_mpi_rank_g == 0) 
             printf("==PDC_CLIENT[%d]: Client lookup server at start time disabled!\n", pdc_client_mpi_rank_g);
     }

@@ -51,6 +51,7 @@ set(PROGRAMS
   kvtag_get
   kvtag_add_get_scale
   kvtag_query
+  kvtag_query_scale
 #  obj_transformation
 #  obj_analysis
   )

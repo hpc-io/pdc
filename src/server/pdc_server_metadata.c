@@ -1970,14 +1970,24 @@ perr_t PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in, uint32_t *n_meta, uint
             pair = hash_table_iter_next(&hash_table_iter);
             head = pair.value;
             DL_FOREACH(head->metadata, elt) {
+                /* if (elt->kvtag_list_head == NULL) { */
+                /*     printf("==PDC_SERVER[%d]: %s - obj %lu NULL kvtag list head\n", pdc_server_rank_g, __func__, elt->obj_id); */
+                /*     fflush(stdout); */
+                /* } */
+
                 DL_FOREACH(elt->kvtag_list_head, kvtag_list_elt) {
+                    /* printf("==PDC_SERVER[%d]: %s - checking tag\n", pdc_server_rank_g, __func__); */
+                    /* fflush(stdout); */
                     is_name_match = 0;
                     is_value_match = 0;
                     if (in->name[0] != ' ') {
                         if (strcmp(in->name, kvtag_list_elt->kvtag->name) == 0) 
                             is_name_match = 1;
-                        else
+                        else {
+                            /* printf("==PDC_SERVER[%d]: %s - checking obj %lu, name doesn't match %s\n", ) */
+                            /*         pdc_server_rank_g, __func__, elt->obj_id, kvtag_list_elt->kvtag->name); */
                             continue;
+                        }
                     }
                     else
                         is_name_match = 1;
@@ -1985,11 +1995,17 @@ perr_t PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in, uint32_t *n_meta, uint
                     if (((char*)(in->value))[0] != ' ') {
                         if (memcmp(in->value, kvtag_list_elt->kvtag->value, in->size) == 0) 
                             is_value_match = 1;
-                        else
+                        else {
+                            /* printf("==PDC_SERVER[%d]: %s - checking obj %lu, value doesn't match %d\n", */ 
+                            /*         pdc_server_rank_g, __func__, elt->obj_id, *((int*)(kvtag_list_elt->kvtag->value))); */
                             continue;
+                        }
                     }
                     else
                         is_value_match = 1;
+
+                    /* printf("==PDC_SERVER[%d]: %s - checking obj %lu, name match %d, value match %d\n", */ 
+                    /*         pdc_server_rank_g, __func__, elt->obj_id, is_name_match, is_value_match); */
 
                     if (is_name_match == 1 && is_value_match == 1) {
                         /* printf("==PDC_SERVER[%d]: %s - Found kvtag [%s=] in obj [%s]:[%s=]\n", */ 
@@ -2004,11 +2020,13 @@ perr_t PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in, uint32_t *n_meta, uint
                     }
 
                 } // End for each kvtag
+
             } // End for each metadata
         } // End while
+
         *n_meta = iter;
 
-        /* printf("%s: Total matching results: %d\n", __func__, *n_meta); */
+        /* printf("==PDC_SERVER[%d]: %s - Total matching results: %d\n", pdc_server_rank_g, __func__, *n_meta); */
 
     }  // if (metadata_hash_table_g != NULL)
     else {
@@ -3223,7 +3241,9 @@ perr_t PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t 
     gettimeofday(&pdc_timer_start, 0);
 #endif
 
-    /* printf("==PDC_SERVER: Got add kvtag request: hash=%u, obj_id=%" PRIu64 "\n",in->hash_value,in->obj_id); */
+    /* printf("==PDC_SERVER[%d]: Got add kvtag request: hash=%u, obj_id=%" PRIu64 "\n", */
+    /*         pdc_server_rank_g, in->hash_value,in->obj_id); */
+    /* fflush(stdout); */
     hash_key = in->hash_value;
     obj_id = in->obj_id;
 
@@ -3241,8 +3261,9 @@ perr_t PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t 
             PDC_add_kvtag_to_list(&target->kvtag_list_head, &in->kvtag);
             out->ret  = 1;
 
-            /* printf("==PDC_SERVER[%d]: added a kvtag [%s] \n", */
-            /*         pdc_server_rank_g, target->kvtag_list_head->prev->kvtag->name); */
+            /* printf("==PDC_SERVER[%d]: added a kvtag [%s] to %lu\n", */
+            /*         pdc_server_rank_g, target->kvtag_list_head->prev->kvtag->name, obj_id); */
+            /* fflush(stdout); */
         } // if (lookup_value != NULL) 
         else {
             // Object not found 
