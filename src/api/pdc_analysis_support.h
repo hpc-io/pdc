@@ -88,4 +88,9 @@ size_t PDCobj_data_getNextBlock(pdcid_t iter, void **nextBlock, size_t *dims);
 perr_t PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut);
 int get_datatype_size(PDC_var_type_t dtype);
 
+char *find_in_path(char *workingDir, char *application);
+
+char *pdc_get_argv0_();
+
+char *get_realpath( char *fname, char *app_path);
 #endif

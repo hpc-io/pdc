@@ -22,46 +22,10 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_H
-#define _pdc_H
 
-#include <stdint.h>
-#include <stdbool.h>
-#include "pdc_public.h"
-#include "pdc_error.h"
-#include "pdc_malloc.h"
-#include "pdc_pkg.h"
-#include "pdc_prop.h"
-#include "pdc_prop_pkg.h"
-#include "pdc_cont.h"
-#include "pdc_cont_pkg.h"
+#ifndef PDC_ANALYSIS_SERVER_H
+#define PDC_ANALYSIS_SERVER_H
 
-#ifdef ENABLE_MPI
-#include "pdc_mpi.h"
+perr_t PDC_Server_instantiate_data_iterator(obj_data_iterator_in_t *in, obj_data_iterator_out_t *out);
+
 #endif
-
-#include "pdc_obj.h"
-#include "pdc_obj_pkg.h"
-#include "pdc_client_public.h"
-#include "pdc_analysis_support.h"
-#include "pdc_transform_support.h"
-
-/**
- * Initialize the PDC layer
- *
- * \param pdc_name [IN]         Name of the PDC
- *
- * \return PDC id on success/Zero on failure
- */
-pdcid_t PDC_init(const char *pdc_name);
-
-/**
- * Close the PDC layer
- *
- * \param pdc_id [IN]          ID of the PDC
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDC_close(pdcid_t pdcid);
-
-#endif 

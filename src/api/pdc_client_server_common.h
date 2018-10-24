@@ -44,6 +44,7 @@
 #include "pdc_obj_pkg.h"
 #include "pdc_prop_pkg.h"
 #include "pdc_analysis_and_transforms.h"
+#include "pdc_analysis_support.h"
 
 #ifdef ENABLE_MULTITHREAD 
 hg_thread_mutex_t pdc_client_info_mutex_g;
@@ -364,7 +365,7 @@ typedef struct {
 } data_server_io_info_t;
 
 typedef struct {
-    hg_string_t    obj_name;
+    hg_const_string_t    obj_name;
     uint32_t             hash_value;
     int32_t              time_step;
 } metadata_query_in_t;
@@ -376,7 +377,7 @@ typedef struct {
 typedef struct {
     uint64_t                obj_id;
     uint32_t                hash_value;
-    hg_string_t             new_tag;
+    hg_const_string_t       new_tag;
 } metadata_add_tag_in_t;
 
 typedef struct {
@@ -844,7 +845,7 @@ hg_proc_metadata_add_tag_in_t(hg_proc_t proc, void *data)
 	    HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_string_t(proc, &struct_data->new_tag);
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->new_tag);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -1051,7 +1052,7 @@ hg_proc_metadata_query_in_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     metadata_query_in_t *struct_data = (metadata_query_in_t*) data;
 
-    ret = hg_proc_hg_string_t(proc, &struct_data->obj_name);
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -1084,8 +1085,8 @@ hg_proc_metadata_query_out_t(hg_proc_t proc, void *data)
 }
 
 typedef struct {
-    hg_string_t cont_name;
-    uint32_t    hash_value;
+    hg_const_string_t cont_name;
+    uint32_t          hash_value;
 } gen_cont_id_in_t;
 
 typedef struct {
@@ -1098,7 +1099,7 @@ hg_proc_gen_cont_id_in_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     gen_cont_id_in_t *struct_data = (gen_cont_id_in_t*) data;
 
-    ret = hg_proc_hg_string_t(proc, &struct_data->cont_name);
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->cont_name);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -2424,6 +2425,10 @@ hg_id_t query_read_obj_name_rpc_register(hg_class_t *hg_class);
 hg_id_t server_checkpoing_rpc_register(hg_class_t *hg_class);
 hg_id_t send_shm_register(hg_class_t *hg_class);
 hg_id_t query_read_obj_name_client_rpc_register(hg_class_t *hg_class);
+hg_id_t cont_add_tags_rpc_register(hg_class_t *hg_class);
+hg_id_t obj_data_iterator_register(hg_class_t *hg_class);
+hg_id_t analysis_ftn_register(hg_class_t *hg_class);
+hg_id_t transform_ftn_register(hg_class_t *hg_class);
 
 hg_id_t send_shm_bulk_rpc_register(hg_class_t *hg_class);
 
@@ -2570,7 +2575,7 @@ hg_id_t data_server_read_register(hg_class_t *hg_class);
 
 hg_id_t storage_meta_name_query_rpc_register(hg_class_t *hg_class);
 
-extern char *find_in_path(char *workingDir, char *application);
+//extern char *find_in_path(char *workingDir, char *application);
 
 
 int pdc_msleep(unsigned long milisec);
@@ -2817,10 +2822,9 @@ typedef struct pdc_task_list_t {
     struct pdc_task_list_t *next;
 } pdc_task_list_t;
 
-//int PDC_add_task_to_list(pdc_task_list_t **target_list, perr_t (*cb)(), void *cb_args, int *curr_task_id, hg_thread_mutex_t *mutex);
-//perr_t PDC_del_task_from_list(pdc_task_list_t **target_list, pdc_task_list_t *del, hg_thread_mutex_t *mutex);
-//perr_t PDC_del_task_from_list_id(pdc_task_list_t **target_list, int id, hg_thread_mutex_t *mutex);
-//pdc_task_list_t *PDC_find_task_from_list(pdc_task_list_t** target_list, int id, hg_thread_mutex_t *mutex);
+/* int PDC_add_task_to_list(pdc_task_list_t **target_list, perr_t (*cb)(), void *cb_args, int *curr_task_id, hg_thread_mutex_t *mutex); */
+/* perr_t PDC_del_task_from_list(pdc_task_list_t **target_list, pdc_task_list_t *del, hg_thread_mutex_t *mutex); */
+/* pdc_task_list_t *PDC_find_task_from_list(pdc_task_list_t** target_list, int id, hg_thread_mutex_t *mutex); */
 int PDC_is_valid_task_id(int id);
 int PDC_is_valid_obj_id(uint64_t id);
 

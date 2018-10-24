@@ -38,21 +38,6 @@
 
 #include "pdc.h"
 
-static char *rand_string(char *str, size_t size)
-{
-    const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    size_t n;
-    if (size) {
-        --size;
-        for (n = 0; n < size; n++) {
-            int key = rand() % (int) (sizeof(charset) - 1);
-            str[n] = charset[key];
-        }
-        str[size] = '\0';
-    }
-    return str;
-}
-
 
 /* Sum the elements of a row to produce a single output */
 
@@ -80,18 +65,18 @@ int demo_sum(pdcid_t iterIn, pdcid_t iterOut)
     return 0;
 }
 
-int simple_null_iterator_demo(pdcid_t iterIn , pdcid_t iterOut)
+/* int simple_null_iterator_demo(pdcid_t iterIn , pdcid_t iterOut)
 {
     printf("Hello from a simple server based analysis demo\n");
     return 666;
-}
+} */
 
-int check_mpi_access(pdcid_t iterIn , pdcid_t iterOut)
+/* int check_mpi_access(pdcid_t iterIn , pdcid_t iterOut) */
+int check_mpi_access()
 {
     int initialized = 0;
     MPI_Initialized(&initialized);
     if (initialized) {
-        pdcid_t pdc;
         int rank;
         int size;
 

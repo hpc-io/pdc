@@ -55,6 +55,15 @@ pdcid_t PDCcont_create_col(const char *cont_name, pdcid_t cont_prop_id);
 pdcid_t PDCcont_open(const char *cont_name);
 
 /**
+ * Return a container property
+ *
+ * \param cont_name [IN]        Name of the container
+ *
+ * \return Container struct on success/NULL on failure
+ */
+struct PDC_cont_info *PDCcont_get_info(pdcid_t cont_id);
+
+/**
  * Iterate over containers within a PDC
  *
  * \return Pointer to cont_handle struct/NULL on failure

@@ -21,47 +21,15 @@
  * reproduce, distribute copies to the public, prepare derivative works, and
  * perform publicly and display publicly, and to permit other to do so.
  */
+#ifndef PDC_ANALYSIS_COMMON_H
+#define PDC_ANALYSIS_COMMON_H
 
-#ifndef _pdc_H
-#define _pdc_H
+#include "pdc_transforms_pkg.h"
 
-#include <stdint.h>
-#include <stdbool.h>
-#include "pdc_public.h"
-#include "pdc_error.h"
-#include "pdc_malloc.h"
-#include "pdc_pkg.h"
-#include "pdc_prop.h"
-#include "pdc_prop_pkg.h"
-#include "pdc_cont.h"
-#include "pdc_cont_pkg.h"
+int pdc_get_transforms(struct region_transform_ftn_info ***registry);
 
-#ifdef ENABLE_MPI
-#include "pdc_mpi.h"
+int check_transform(PDCobj_transform_t op_type, struct PDC_region_info *dest_region);
+
+int pdc_add_transform_ptr_to_registry_(struct region_transform_ftn_info *ftnPtr);
+
 #endif
-
-#include "pdc_obj.h"
-#include "pdc_obj_pkg.h"
-#include "pdc_client_public.h"
-#include "pdc_analysis_support.h"
-#include "pdc_transform_support.h"
-
-/**
- * Initialize the PDC layer
- *
- * \param pdc_name [IN]         Name of the PDC
- *
- * \return PDC id on success/Zero on failure
- */
-pdcid_t PDC_init(const char *pdc_name);
-
-/**
- * Close the PDC layer
- *
- * \param pdc_id [IN]          ID of the PDC
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDC_close(pdcid_t pdcid);
-
-#endif 

@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <libgen.h>
+#include <inttypes.h>
 #include "../server/utlist.h"
 #include "pdc_obj.h"
 #include "pdc_malloc.h"
@@ -37,8 +38,13 @@
 
 static char *default_pdc_analysis_lib = "libpdcanalysis.so";
 
+#define UNUSED(x) (void)(x)
+
 #ifndef IS_PDC_SERVER
-void * PDC_Server_get_region_data_ptr(pdcid_t object_id) {return NULL;}
+void * PDC_Server_get_region_data_ptr(pdcid_t object_id) {
+    UNUSED(object_id);
+    return NULL;
+}
 #endif
 
 int
@@ -117,7 +123,7 @@ iterator_init(pdcid_t objectId, pdcid_t reg_id, int blocks, struct PDC_iterator_
            iter->dims[1] = 1;
         }
     } else {
-        printf("Error: object (%lu) has not been initalized correctly!\n", objectId);
+        printf("Error: object (%" PRIu64 ") has not been initalized correctly!\n", objectId);
         return -1;
     }
 
@@ -449,9 +455,10 @@ perr_t
 PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
 {
     perr_t ret_value = SUCCEED;         /* Return value */
+    void *ftnHandle = NULL;
     int (*ftnPtr)(pdcid_t, pdcid_t) = NULL;
     struct region_analysis_ftn_info *thisFtn = NULL;
-    struct PDC_iterator_info *i_in, *i_out;
+    struct PDC_iterator_info *i_in = NULL, *i_out = NULL;
     pdcid_t meta_id_in = 0, meta_id_out = 0;
     char *thisApp = NULL;
     char *colonsep = NULL; 
@@ -478,8 +485,11 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
     //
     loadpath = get_realpath(analyislibrary, applicationDir);
 
-    if ((ftnPtr = get_ftnPtr_(userdefinedftn, loadpath)) == NULL)
-        PGOTO_ERROR(FAIL,"Analysis function lookup failed\n");
+    if (get_ftnPtr_(userdefinedftn, loadpath, &ftnHandle) < 0)
+      printf("get_ftnPtr_ returned an error!\n");
+    
+    if ((ftnPtr = ftnHandle) == NULL)
+      PGOTO_ERROR(FAIL,"Analysis function lookup failed\n");
 
     if ((thisFtn = PDC_MALLOC(struct region_analysis_ftn_info)) == NULL)
         PGOTO_ERROR(FAIL,"PDC register_obj_analysis memory allocation failed\n");

@@ -37,6 +37,8 @@
 #include "pdc_interface.h"
 #include "pdc_transform_support.h"
 #include "pdc_atomic.h"
+#include "pdc_analysis_support.h"
+#include "pdc_analysis_common.h"
 
 extern int pdc_client_mpi_rank_g;
 extern int pdc_client_mpi_size_g;
@@ -47,9 +49,9 @@ perr_t
 PDCobj_transform_register(char *func, pdcid_t obj_id, int current_state, int next_state, PDCobj_transform_t op_type, PDCdata_movement_t when )
 {
     perr_t ret_value = SUCCEED;         /* Return value */
+    void *ftnHandle = NULL;
     int (*ftnPtr)() = NULL;
     struct region_transform_ftn_info *thisFtn = NULL;
-    pdcid_t meta_id_in = 0, meta_id_out = 0;
     char *thisApp = NULL;
     char *colonsep = NULL; 
     char *transformslibrary = NULL;
@@ -74,9 +76,12 @@ PDCobj_transform_register(char *func, pdcid_t obj_id, int current_state, int nex
     // Should probably validate the location of the "transformslibrary"
     //
     loadpath = get_realpath(transformslibrary, applicationDir);
+    
+    if (get_ftnPtr_(userdefinedftn, loadpath, &ftnHandle) < 0)
+      printf("get_ftnPtr_ returned an error!\n");      
 
-    if ((ftnPtr = get_ftnPtr_(userdefinedftn, loadpath)) == NULL)
-        PGOTO_ERROR(FAIL,"Transforms function lookup failed\n");
+    if ((ftnPtr = ftnHandle) == NULL)
+      PGOTO_ERROR(FAIL,"Transforms function lookup failed\n");
 
     if ((thisFtn = PDC_MALLOC(struct region_transform_ftn_info)) == NULL)
         PGOTO_ERROR(FAIL,"PDC register_obj_transforms memory allocation failed\n");
@@ -105,12 +110,12 @@ perr_t
 PDCbuf_map_transform_register(char *func, void *buf, pdcid_t src_region_id, pdcid_t dest_object_id, pdcid_t dest_region_id, int current_state, int next_state, PDCdata_movement_t when )
 {
     perr_t ret_value = SUCCEED;         /* Return value */
+    void *ftnHandle = NULL;
     int (*ftnPtr)() = NULL;
     struct PDC_obj_info *object1 = NULL;
     struct region_transform_ftn_info *thisFtn = NULL;
     struct PDC_region_info *region_info;
     struct PDC_id_info *id_info;
-    pdcid_t meta_id_in = 0, meta_id_out = 0;
     char *thisApp = NULL;
     char *colonsep = NULL; 
     char *transformslibrary = NULL;
@@ -136,8 +141,11 @@ PDCbuf_map_transform_register(char *func, void *buf, pdcid_t src_region_id, pdci
     //
     loadpath = get_realpath(transformslibrary, applicationDir);
 
-    if ((ftnPtr = get_ftnPtr_(userdefinedftn, loadpath)) == NULL)
-        PGOTO_ERROR(FAIL,"Transforms function lookup failed\n");
+    if (get_ftnPtr_(userdefinedftn, loadpath, &ftnHandle) < 0)
+      PGOTO_ERROR(FAIL,"get_ftnPtr_ returned an error!\n");
+
+    if ((ftnPtr = ftnHandle) == NULL)
+      PGOTO_ERROR(FAIL,"Transforms function lookup failed\n");
 
     if ((thisFtn = PDC_MALLOC(struct region_transform_ftn_info)) == NULL)
         PGOTO_ERROR(FAIL,"PDC register_obj_transforms memory allocation failed\n");

@@ -96,8 +96,8 @@ struct PDC_iterator_info {
 
 
 typedef struct {
-    hg_string_t                 ftn_name;
-    hg_string_t                 loadpath;
+    hg_const_string_t           ftn_name;
+    hg_const_string_t           loadpath;
     pdcid_t                     local_obj_id;
     pdcid_t                     iter_in;
     pdcid_t                     iter_out;
@@ -162,7 +162,7 @@ typedef struct {
  */
 struct my_rpc_state
 {
-    hg_uint64_t value;
+    hg_int64_t value;
     hg_size_t   size;
     void      * buffer;
     hg_bulk_t   bulk_handle;
@@ -175,7 +175,7 @@ extern perr_t pdc_client_send_iter_recv_id(pdcid_t iter_id, pdcid_t *meta_id);
 extern perr_t pdc_client_register_obj_analysis(const char *func, const char *loadpath, pdcid_t iter_in, pdcid_t iter_out);
 extern perr_t pdc_client_register_obj_transform(const char *func, const char *loadpath, pdcid_t obj_id, int start_state, int next_state, int op_type, int when);
 extern perr_t pdc_client_register_region_transform(const char *func, const char *loadpath, pdcid_t src_region_id, pdcid_t dest_region_id, int start_state, int next_state, int op_type, int when);
-extern void * get_ftnPtr_(char *ftn, char *loadpath);
+extern int get_ftnPtr_(char *ftn, char *loadpath, void **ftnPtr);
 extern void set_execution_locus(PDC_loci locus_identifier);
 extern PDC_loci get_execution_locus(void);
 
@@ -184,12 +184,12 @@ hg_proc_analysis_ftn_in_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret;
     analysis_ftn_in_t *struct_data = (analysis_ftn_in_t*) data;
-    ret = hg_proc_hg_string_t(proc, &struct_data->ftn_name);
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->ftn_name);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_string_t(proc, &struct_data->loadpath);
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->loadpath);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;

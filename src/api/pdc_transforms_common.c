@@ -31,7 +31,7 @@
 hg_thread_mutex_t  insert_iterator_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
 #endif
 
-static char *default_pdc_transform_lib = "libpdctransforms.so";
+//static char *default_pdc_transform_lib = "libpdctransforms.so";
 
 
 static HG_INLINE hg_return_t
@@ -39,12 +39,12 @@ hg_proc_transform_ftn_in_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret;
     transform_ftn_in_t *struct_data = (transform_ftn_in_t*) data;
-    ret = hg_proc_hg_string_t(proc, &struct_data->ftn_name);
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->ftn_name);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_string_t(proc, &struct_data->loadpath);
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->loadpath);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -103,6 +103,7 @@ HG_TEST_RPC_CB(transform_ftn, handle)
     hg_return_t ret_value = HG_SUCCESS;
     transform_ftn_in_t in;
     transform_ftn_out_t out;
+    void *ftnHandle = NULL;
     void * (*ftnPtr)(pdcid_t) = NULL;
 
     HG_Get_input(handle, &in);
@@ -111,7 +112,7 @@ HG_TEST_RPC_CB(transform_ftn, handle)
 	   (in.ftn_name == NULL ? "unknown" : in.ftn_name),
 	   (in.loadpath == NULL ? "unknown" : in.loadpath));
 
-    if ((ftnPtr = get_ftnPtr_(in.ftn_name, in.loadpath))) {
+    if ( get_ftnPtr_(in.ftn_name, in.loadpath, &ftnHandle) >= 0) {
       out.ret = 0;
     }
     else {
@@ -120,8 +121,6 @@ HG_TEST_RPC_CB(transform_ftn, handle)
     }
 
     HG_Respond(handle, NULL, NULL, &out);
-
-done:
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
