@@ -6985,8 +6985,8 @@ kvtag_query_bulk_cb(const struct hg_cb_info *hg_cb_info)
     
     bulk_args = (struct bulk_args_t *)hg_cb_info->arg;
 
-    printf("==PDC_CLIENT[%d]: %s - n_meta=%u\n", pdc_client_mpi_rank_g, __func__, bulk_args->n_meta);
-    fflush(stdout);
+    /* printf("==PDC_CLIENT[%d]: %s - n_meta=%u\n", pdc_client_mpi_rank_g, __func__, bulk_args->n_meta); */
+    /* fflush(stdout); */
     n_meta = bulk_args->n_meta;
 
     if (hg_cb_info->ret == HG_SUCCESS) {
@@ -7183,8 +7183,8 @@ PDC_Client_query_kvtag_server(uint32_t server_id, const pdc_kvtag_t *kvtag, int 
     *n_res   = bulk_arg->n_meta;
     *out     = bulk_arg->obj_ids;
 
-    printf("==PDC_CLIENT[%d]: %s - Received %u metadata from server %d\n", 
-            pdc_client_mpi_rank_g, __func__, bulk_arg->n_meta, server_id);
+    /* printf("==PDC_CLIENT[%d]: %s - Received %u metadata from server %d\n", */ 
+    /*         pdc_client_mpi_rank_g, __func__, bulk_arg->n_meta, server_id); */
 
     free(bulk_arg);
     
@@ -7205,7 +7205,7 @@ PDC_Client_query_kvtag(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids)
 {
     perr_t ret_value = SUCCEED;
     uint32_t i;
-    int nmeta, j;
+    int nmeta = 0, j;
 
     FUNC_ENTER(NULL);
 
@@ -7231,7 +7231,7 @@ PDC_Client_query_kvtag_col(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
     perr_t ret_value = SUCCEED;
     uint32_t my_server_start, my_server_end, my_server_count;
     uint32_t i, nalloc = 0;
-    int nmeta, j;
+    int nmeta = 0, j;
 
     FUNC_ENTER(NULL);
 
@@ -7247,7 +7247,7 @@ PDC_Client_query_kvtag_col(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
         my_server_start = pdc_client_mpi_rank_g;
         my_server_end   = my_server_start + 1;
         if (pdc_client_mpi_rank_g >= pdc_server_num_g) {
-            my_server_end = -1;
+            my_server_end = 0;
         }
     }
     /* printf("%d: start: %d, end: %d\n", pdc_client_mpi_rank_g, my_server_start, my_server_end); */
