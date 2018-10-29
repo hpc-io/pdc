@@ -24,6 +24,7 @@
 
 #ifndef _pdc_pkg_H
 #define _pdc_pkg_H
+#include "pdc_public.h"
 
 struct PDC_class {
     char        *name;

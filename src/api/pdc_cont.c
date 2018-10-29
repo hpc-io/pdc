@@ -104,6 +104,9 @@ static perr_t pdc_cont_close(struct PDC_cont_info *cp)
     FUNC_ENTER(NULL);
 
     free((void*)(cp->name));
+    free(cp->cont_pt->pdc->name);
+    cp->cont_pt->pdc = PDC_FREE(struct PDC_class, cp->cont_pt->pdc);
+    cp->cont_pt = PDC_FREE(struct PDC_cont_prop, cp->cont_pt);
     cp = PDC_FREE(struct PDC_cont_info, cp);
     
     FUNC_LEAVE(ret_value);
@@ -140,16 +143,33 @@ pdcid_t PDCcont_open(const char *cont_name)
 {
     pdcid_t ret_value = 0;
     pdcid_t cont_id;
+    pdcid_t new_id;
+    struct PDC_cont_info *open_p = NULL;
+    struct PDC_cont_info *p = NULL;
+    struct PDC_id_info *id_info = NULL;
+    pdc_metadata_t **out;
 
     FUNC_ENTER(NULL);
 
-    // should wait for response from server 
+    // should wait for response from server
     // look up in the list for now
     cont_id = pdc_find_byname(PDC_CONT, cont_name);
     // if contained is closed locally, contact metadata server
-    if(cont_id == 0)
-        PGOTO_ERROR(ret_value, "cannot locate container");
-    pdc_inc_ref(cont_id);
+    if(cont_id == 0) {
+//        PGOTO_ERROR(ret_value, "cannot locate container");
+        printf("container is locally closed, connecting to server now\n");
+        PDC_Client_query_container_name(cont_name, out);
+    }
+    
+    p = PDC_MALLOC(struct PDC_cont_info);
+    if(!p)
+        PGOTO_ERROR(FAIL,"PDC container memory allocation failed\n");
+    p->name = strdup(cont_name);
+    
+    open_p = PDCcont_get_info(cont_id);
+    id_info = pdc_find_id(open_p->cont_pt->cont_prop_id);
+    p->cont_pt = (struct PDC_cont_prop *)(id_info->obj_ptr);
+    
     ret_value = cont_id;
     
 done:
@@ -174,8 +194,6 @@ struct PDC_cont_info *PDCcont_get_info(pdcid_t cont_id)
         PGOTO_ERROR(NULL, "cannot allocate ret_value");
     if(info->name)
         ret_value->name = strdup(info->name);
-    else
-        ret_value->name = NULL;
     
     ret_value->cont_pt = PDC_MALLOC(struct PDC_cont_prop);
     if(ret_value->cont_pt)
@@ -187,8 +205,6 @@ struct PDC_cont_info *PDCcont_get_info(pdcid_t cont_id)
         ret_value->cont_pt->pdc->local_id = info->cont_pt->pdc->local_id;
         if(info->cont_pt->pdc->name)
             ret_value->cont_pt->pdc->name = strdup(info->cont_pt->pdc->name);
-        else
-            ret_value->cont_pt->pdc->name = NULL;
     }
     else
         PGOTO_ERROR(NULL, "cannot allocate ret_value->cont_pt->pdc");

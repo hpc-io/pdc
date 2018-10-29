@@ -23,6 +23,7 @@
  */
 
 #include <string.h>
+#include "pdc_pkg.h"
 #include "pdc_prop.h"
 #include "pdc_prop_private.h"
 #include "pdc_interface.h"
@@ -57,6 +58,7 @@ pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdcid)
     struct PDC_cont_prop *p = NULL;
     struct PDC_obj_prop *q = NULL;
     struct PDC_id_info *id_info = NULL;
+    struct PDC_class *pdc_class;
     pdcid_t new_id_c;
     pdcid_t new_id_o;
  
@@ -65,12 +67,19 @@ pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdcid)
     if (type == PDC_CONT_CREATE) {
         p = PDC_MALLOC(struct PDC_cont_prop);
         if(!p)
-            PGOTO_ERROR(ret_value, "PDC container property memory allocation failed\n");
+            PGOTO_ERROR(0, "PDC container property memory allocation failed\n");
         p->cont_life = PDC_PERSIST;
         new_id_c = pdc_id_register(PDC_CONT_PROP, p);
         p->cont_prop_id = new_id_c;
         id_info = pdc_find_id(pdcid);
-        p->pdc = (struct PDC_class *)(id_info->obj_ptr);
+        pdc_class = (struct PDC_class *)(id_info->obj_ptr);
+        p->pdc = PDC_CALLOC(struct PDC_class);
+        if(p->pdc == NULL)
+            PGOTO_ERROR(0, "PDC class allocation failed");
+        if(pdc_class->name)
+            p->pdc->name = strdup(pdc_class->name);
+        p->pdc->local_id = pdc_class->local_id;
+        
         ret_value = new_id_c;
     }
     if(type == PDC_OBJ_CREATE) {
@@ -89,11 +98,18 @@ pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdcid)
         new_id_o = pdc_id_register(PDC_OBJ_PROP, q);
         q->obj_prop_id = new_id_o;
         id_info = pdc_find_id(pdcid);
-        q->pdc = (struct PDC_class *)(id_info->obj_ptr);
-	q->type_extent = 0;
-	q->storage_order = 0;
-	q->locus = CLIENT_MEMORY;
-	q->data_state = 0;
+        pdc_class = (struct PDC_class *)(id_info->obj_ptr);
+        q->pdc = PDC_CALLOC(struct PDC_class);
+        if(q->pdc == NULL)
+            PGOTO_ERROR(0, "PDC class allocation failed");
+        if(pdc_class->name)
+            q->pdc->name = strdup(pdc_class->name);
+        q->pdc->local_id = pdc_class->local_id;
+        q->type_extent = 0;
+        q->storage_order = 0;
+        q->locus = CLIENT_MEMORY;
+        q->data_state = 0;
+        
         ret_value = new_id_o;
     }
     
@@ -114,20 +130,22 @@ pdcid_t PDCprop_obj_dup(pdcid_t prop_id)
 
     prop = pdc_find_id(prop_id);
     if(prop == NULL)
-        PGOTO_ERROR(ret_value, "cannot locate object property");
+        PGOTO_ERROR(0, "cannot locate object property");
     info = (struct PDC_obj_prop *)(prop->obj_ptr);
 
     q = PDC_MALLOC(struct PDC_obj_prop);
     if(!q)
-        PGOTO_ERROR(ret_value, "PDC object property memory allocation failed\n");
+        PGOTO_ERROR(0, "PDC object property memory allocation failed\n");
     q->obj_life = info->obj_life;
     q->ndim = info->ndim;
     q->dims = (uint64_t *)malloc(info->ndim * sizeof(uint64_t));
     for(i=0; i<info->ndim; i++)
         (q->dims)[i] = (info->dims)[i];
-    q->app_name = strdup(info->app_name);
+    if(info->app_name)
+        q->app_name = strdup(info->app_name);
     q->time_step = info->time_step;
-    q->tags = strdup(info->tags);
+    if(info->tags)
+        q->tags = strdup(info->tags);
     new_id = pdc_id_register(PDC_OBJ_PROP, q);
     q->obj_prop_id = new_id;
     q->pdc = info->pdc;
@@ -183,6 +201,8 @@ static perr_t pdc_prop_cont_close(struct PDC_cont_prop *cp)
 
     FUNC_ENTER(NULL);
 
+    free(cp->pdc->name);
+    cp->pdc = PDC_FREE(struct PDC_class, cp->pdc);
     cp = PDC_FREE(struct PDC_cont_prop, cp);
     
     FUNC_LEAVE(ret_value);
@@ -194,6 +214,8 @@ static perr_t pdc_prop_obj_close(struct PDC_obj_prop *cp)
 
     FUNC_ENTER(NULL);
 
+    free(cp->pdc->name);
+    cp->pdc = PDC_FREE(struct PDC_class, cp->pdc);
     if(cp->dims != NULL) {
         free(cp->dims);
         cp->dims = NULL;
@@ -246,10 +268,20 @@ struct PDC_cont_prop *PDCcont_prop_get_info(pdcid_t cont_prop)
     
     prop = pdc_find_id(cont_prop);
     if(prop == NULL)
-        PGOTO_ERROR(NULL, "cannot locate container property");
-    
+        PGOTO_ERROR(NULL, "cannot allocate container property");
     info = (struct PDC_cont_prop *)(prop->obj_ptr);
-    ret_value = info;
+    
+    ret_value = PDC_CALLOC(struct PDC_cont_prop);
+    if(!ret_value)
+        PGOTO_ERROR(NULL, "PDC container property memory allocation failed\n");
+    ret_value->cont_life = info->cont_life;
+    ret_value->cont_prop_id = info->cont_prop_id;
+    ret_value->pdc = PDC_CALLOC(struct PDC_class);
+    if(!ret_value->pdc)
+        PGOTO_ERROR(NULL, "cannot allocate ret_value->pdc");
+    if(info->pdc->name)
+        ret_value->pdc->name = strdup(info->pdc->name);
+    ret_value->pdc->local_id = info->pdc->local_id;
     
 done:
     FUNC_LEAVE(ret_value);
@@ -260,16 +292,43 @@ struct PDC_obj_prop *PDCobj_prop_get_info(pdcid_t obj_prop)
     struct PDC_obj_prop *ret_value = NULL;
     struct PDC_obj_prop *info =  NULL;
     struct PDC_id_info *prop;
+    int i;
     
     FUNC_ENTER(NULL);
     
     prop = pdc_find_id(obj_prop);
     if(prop == NULL)
         PGOTO_ERROR(NULL, "cannot locate object property");
-    
     info = (struct PDC_obj_prop *)(prop->obj_ptr);
-    ret_value = info;
-    
+
+    ret_value = PDC_CALLOC(struct PDC_obj_prop);
+    if(ret_value == NULL)
+        PGOTO_ERROR(NULL, "PDC object property memory allocation failed\n");
+    memcpy(ret_value, info, sizeof(struct PDC_obj_prop));
+
+    if(info->app_name)
+        ret_value->app_name = strdup(info->app_name);
+
+    ret_value->pdc = PDC_CALLOC(struct PDC_class);
+    if(ret_value->pdc == NULL)
+        PGOTO_ERROR(NULL, "cannot allocate ret_value->pdc");
+    if(info->pdc->name)
+        ret_value->pdc->name = strdup(info->pdc->name);
+    ret_value->pdc->local_id = info->pdc->local_id;
+
+    ret_value->dims = malloc(info->ndim*sizeof(uint64_t));
+    if(ret_value->dims == NULL)
+        PGOTO_ERROR(NULL, "cannot allocate ret_value->dims");
+    for(i=0; i<info->ndim; i++)
+        ret_value->dims[i] = info->dims[i];
+  
+    if(info->app_name)
+        ret_value->app_name = strdup(info->app_name);
+    if(info->data_loc)
+        ret_value->data_loc = strdup(info->data_loc);
+    if(info->tags)
+        ret_value->tags = strdup(info->tags);
+
 done:
     FUNC_LEAVE(ret_value);
 } 
