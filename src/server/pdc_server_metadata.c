@@ -1035,7 +1035,6 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
     /* pdc_metadata_t *elt; */
     uint32_t *hash_key;
     pdc_metadata_t *target;
-    int unlocked = 0;
 
     FUNC_ENTER(NULL);
 
@@ -1060,6 +1059,7 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
     obj_id = in->obj_id;
 
 #ifdef ENABLE_MULTITHREAD 
+    int unlocked = 0;
     // Obtain lock for hash table
     hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
 #endif
@@ -1316,7 +1316,6 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
     perr_t ret_value;
     uint32_t *hash_key;
     pdc_metadata_t *target;
-    int unlocked = 0;
     
     FUNC_ENTER(NULL);
 
@@ -1353,6 +1352,7 @@ perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete
 
 #ifdef ENABLE_MULTITHREAD 
     // Obtain lock for hash table
+    int unlocked = 0;
     hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
 #endif
 
@@ -1483,7 +1483,7 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     perr_t ret_value = SUCCEED;
     pdc_metadata_t *metadata;
     uint32_t *hash_key, i;
-    int unlocked = 0; 
+    
 
     FUNC_ENTER(NULL);
 
@@ -1557,6 +1557,7 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
 
 #ifdef ENABLE_MULTITHREAD 
     // Obtain lock for hash table
+    int unlocked = 0;
     hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
 #endif
 
@@ -1969,24 +1970,14 @@ perr_t PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in, uint32_t *n_meta, uint
             pair = hash_table_iter_next(&hash_table_iter);
             head = pair.value;
             DL_FOREACH(head->metadata, elt) {
-                /* if (elt->kvtag_list_head == NULL) { */
-                /*     printf("==PDC_SERVER[%d]: %s - obj %lu NULL kvtag list head\n", pdc_server_rank_g, __func__, elt->obj_id); */
-                /*     fflush(stdout); */
-                /* } */
-
                 DL_FOREACH(elt->kvtag_list_head, kvtag_list_elt) {
-                    /* printf("==PDC_SERVER[%d]: %s - checking tag\n", pdc_server_rank_g, __func__); */
-                    /* fflush(stdout); */
                     is_name_match = 0;
                     is_value_match = 0;
                     if (in->name[0] != ' ') {
                         if (strcmp(in->name, kvtag_list_elt->kvtag->name) == 0) 
                             is_name_match = 1;
-                        else {
-                            /* printf("==PDC_SERVER[%d]: %s - checking obj %lu, name doesn't match %s\n", ) */
-                            /*         pdc_server_rank_g, __func__, elt->obj_id, kvtag_list_elt->kvtag->name); */
+                        else
                             continue;
-                        }
                     }
                     else
                         is_name_match = 1;
@@ -1994,17 +1985,11 @@ perr_t PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in, uint32_t *n_meta, uint
                     if (((char*)(in->value))[0] != ' ') {
                         if (memcmp(in->value, kvtag_list_elt->kvtag->value, in->size) == 0) 
                             is_value_match = 1;
-                        else {
-                            /* printf("==PDC_SERVER[%d]: %s - checking obj %lu, value doesn't match %d\n", */ 
-                            /*         pdc_server_rank_g, __func__, elt->obj_id, *((int*)(kvtag_list_elt->kvtag->value))); */
+                        else
                             continue;
-                        }
                     }
                     else
                         is_value_match = 1;
-
-                    /* printf("==PDC_SERVER[%d]: %s - checking obj %lu, name match %d, value match %d\n", */ 
-                    /*         pdc_server_rank_g, __func__, elt->obj_id, is_name_match, is_value_match); */
 
                     if (is_name_match == 1 && is_value_match == 1) {
                         /* printf("==PDC_SERVER[%d]: %s - Found kvtag [%s=] in obj [%s]:[%s=]\n", */ 
@@ -2019,13 +2004,11 @@ perr_t PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in, uint32_t *n_meta, uint
                     }
 
                 } // End for each kvtag
-
             } // End for each metadata
         } // End while
-
         *n_meta = iter;
 
-        /* printf("==PDC_SERVER[%d]: %s - Total matching results: %d\n", pdc_server_rank_g, __func__, *n_meta); */
+        /* printf("%s: Total matching results: %d\n", __func__, *n_meta); */
 
     }  // if (metadata_hash_table_g != NULL)
     else {
@@ -2775,6 +2758,7 @@ perr_t PDC_Server_find_container_by_id(uint64_t cont_id, pdc_cont_hash_table_ent
 {
     perr_t ret_value = SUCCEED;
     pdc_cont_hash_table_entry_t *cont_entry;
+    pdc_metadata_t *elt;
     HashTableIterator hash_table_iter;
     int n_entry;
     HashTablePair pair;
@@ -2908,7 +2892,7 @@ perr_t PDC_Server_container_del_objs(int n_obj, uint64_t *obj_ids, uint64_t cont
 {
     perr_t ret_value = SUCCEED;
     pdc_cont_hash_table_entry_t *cont_entry = NULL;
-    int i, j;
+    int realloc_size = 0, i, j;
     int n_deletes = 0;
 
     FUNC_ENTER(NULL);
@@ -2970,6 +2954,7 @@ perr_t PDC_Server_container_add_tags(uint64_t cont_id, char *tags)
 {
     perr_t ret_value = SUCCEED;
     pdc_cont_hash_table_entry_t *cont_entry = NULL;
+    int realloc_size = 0;
 
     FUNC_ENTER(NULL);
     ret_value = PDC_Server_find_container_by_id(cont_id, &cont_entry);
@@ -3054,7 +3039,8 @@ static perr_t PDC_Server_get_storage_meta_by_names(query_read_names_args_t *args
     uint32_t client_id;
     char *obj_name;
     pdc_metadata_t *meta = NULL;
-    int i = 0, j = 0;
+    region_list_t *region_elt = NULL, *region_head = NULL, *res_region_list = NULL;
+    int region_count = 0, i = 0, j = 0;
     region_storage_meta_t **all_storage_meta;
     int *all_nregion, total_region;
     FUNC_ENTER(NULL);
@@ -3108,7 +3094,7 @@ static perr_t PDC_Server_get_storage_meta_by_names(query_read_names_args_t *args
     // bulk transfer to args->origin_id
     // Prepare bulk ptrs, buf_ptrs[0] is task_id
     int nbuf  = total_region + 1;
-    buf_sizes = (hg_size_t *)calloc(sizeof(hg_size_t), nbuf);
+    buf_sizes = (size_t*)calloc(sizeof(size_t), nbuf);
     buf_ptrs  = (void**)calloc(sizeof(void*),  nbuf);
 
     buf_ptrs[0]  = &(args->client_seq_id);
@@ -3237,9 +3223,7 @@ perr_t PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t 
     gettimeofday(&pdc_timer_start, 0);
 #endif
 
-    /* printf("==PDC_SERVER[%d]: Got add kvtag request: hash=%u, obj_id=%" PRIu64 "\n", */
-    /*         pdc_server_rank_g, in->hash_value,in->obj_id); */
-    /* fflush(stdout); */
+    /* printf("==PDC_SERVER: Got add kvtag request: hash=%u, obj_id=%" PRIu64 "\n",in->hash_value,in->obj_id); */
     hash_key = in->hash_value;
     obj_id = in->obj_id;
 
@@ -3257,9 +3241,8 @@ perr_t PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t 
             PDC_add_kvtag_to_list(&target->kvtag_list_head, &in->kvtag);
             out->ret  = 1;
 
-            /* printf("==PDC_SERVER[%d]: added a kvtag [%s] to %lu\n", */
-            /*         pdc_server_rank_g, target->kvtag_list_head->prev->kvtag->name, obj_id); */
-            /* fflush(stdout); */
+            /* printf("==PDC_SERVER[%d]: added a kvtag [%s] \n", */
+            /*         pdc_server_rank_g, target->kvtag_list_head->prev->kvtag->name); */
         } // if (lookup_value != NULL) 
         else {
             // Object not found 

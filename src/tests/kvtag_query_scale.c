@@ -172,7 +172,9 @@ int main(int argc, char *argv[])
             printf("fail to query kvtag [%s] with rank %d\n", kvtag.name, my_rank);
             break;
         }
-        /* printf("%d: received %d objids\n", my_rank, nres); */
+        /* if (nres != 0) { */
+        /*     printf("%d: received %d objids\n", my_rank, nres); */
+        /* } */
 
         MPI_Barrier(MPI_COMM_WORLD);
         MPI_Reduce(&nres, &ntotal, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);

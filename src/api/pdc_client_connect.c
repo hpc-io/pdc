@@ -4864,8 +4864,8 @@ perr_t PDC_Client_query_container_name(char *cont_name, pdc_metadata_t **out)
 {
     perr_t                ret_value = SUCCEED;
     hg_return_t           hg_ret    = 0;
-    uint32_t               hash_name_value, server_id;
-    container_query_in_t  in;
+    uint32_t              hash_name_value, server_id;
+    metadata_query_in_t   in;
     metadata_query_args_t lookup_args;
     hg_handle_t           metadata_query_handle;
     
@@ -4891,8 +4891,9 @@ perr_t PDC_Client_query_container_name(char *cont_name, pdc_metadata_t **out)
               &metadata_query_handle);
 
     // Fill input structure
-    in.cont_name  = cont_name;
+    in.obj_name   = cont_name;
     in.hash_value = hash_name_value;
+    in.time_step  = 0;
 
     hg_ret = HG_Forward(metadata_query_handle, metadata_query_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
@@ -7055,17 +7056,19 @@ kvtag_query_forward_cb(const struct hg_cb_info *callback_info)
     /*         pdc_client_mpi_rank_g, __func__, output.ret); */
     /* fflush(stdout); */
 
-    if (output.bulk_handle == HG_BULK_NULL) {
-        printf("==PDC_CLIENT[%d]: %s - bulk handle is NULL!\n", pdc_client_mpi_rank_g, __func__);
-        goto done;
+    if (output.bulk_handle == HG_BULK_NULL || output.ret == 0) {
+        bulk_todo_g = 0;
+        work_todo_g--;
+        bulk_arg->n_meta = 0;
+        bulk_arg->obj_ids = NULL;
+        HG_Free_output(handle, &output);
+        HG_Destroy(handle);
+        /* printf("==PDC_CLIENT[%d]: %s - bulk handle is NULL!\n", pdc_client_mpi_rank_g, __func__); */
+        return ret_value;
     }
 
     n_meta = output.ret;
     bulk_arg->n_meta = n_meta;
-    if (n_meta == 0) {
-        bulk_arg->obj_ids = NULL;
-        goto done;
-    }
 
     // We have received the bulk handle from server (server uses hg_respond)
     origin_bulk_handle = output.bulk_handle;
@@ -7255,6 +7258,9 @@ PDC_Client_query_kvtag_col(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
 
     *n_res = 0;
     for (i = my_server_start; i < my_server_end; i++) {
+        if (i >= pdc_server_num_g) {
+            break;
+        }
         ret_value = PDC_Client_query_kvtag_server(i, kvtag, &nmeta, pdc_ids);
         if (ret_value != SUCCEED) {
             printf("==PDC_CLIENT[%d]: %s - error with PDC_Client_query_kvtag_server to server %u\n", 
@@ -7263,6 +7269,9 @@ PDC_Client_query_kvtag_col(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
     }
 
     *n_res = nmeta;
+
+    /* printf("%d: done querying %d results\n", pdc_client_mpi_rank_g, nmeta); */
+    /* fflush(stdout); */
 
 done:
     FUNC_LEAVE(ret_value);
