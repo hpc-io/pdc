@@ -105,6 +105,7 @@ static hg_id_t         gen_obj_register_id_g;
 static hg_id_t         gen_cont_register_id_g;
 static hg_id_t         close_server_register_id_g;
 static hg_id_t         metadata_query_register_id_g;
+static hg_id_t         container_query_register_id_g;
 static hg_id_t         metadata_delete_register_id_g;
 static hg_id_t         metadata_delete_by_id_register_id_g;
 static hg_id_t         metadata_update_register_id_g;
@@ -1022,6 +1023,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     HG_Registered_disable_response(*hg_class, close_server_register_id_g, HG_TRUE);
 
     metadata_query_register_id_g              = metadata_query_register(*hg_class);
+    container_query_register_id_g             = container_query_register(*hg_class);
     metadata_delete_register_id_g             = metadata_delete_register(*hg_class);
     metadata_delete_by_id_register_id_g       = metadata_delete_by_id_register(*hg_class);
     metadata_update_register_id_g             = metadata_update_register(*hg_class);
@@ -2114,6 +2116,7 @@ perr_t PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t 
 
     // Fill input structure
     in.obj_name   = obj_name;
+    in.time_step  = 0;
     in.hash_value = PDC_get_hash_by_name(obj_name);
 
     /* printf("==PDC_CLIENT: partial search obj_name [%s], hash value %u\n", in.obj_name, in.hash_value); */
@@ -4858,16 +4861,42 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-
-// Query container with name, retrieve all metadata within that container
-perr_t PDC_Client_query_container_name(char *cont_name, pdc_metadata_t **out)
+static hg_return_t
+container_query_rpc_cb(const struct hg_cb_info *callback_info)
 {
-    perr_t                ret_value = SUCCEED;
-    hg_return_t           hg_ret    = 0;
-    uint32_t              hash_name_value, server_id;
-    metadata_query_in_t   in;
-    metadata_query_args_t lookup_args;
-    hg_handle_t           metadata_query_handle;
+    hg_return_t ret_value;
+    container_query_args_t *client_lookup_args;
+    hg_handle_t handle;
+    container_query_out_t output;
+    
+    FUNC_ENTER(NULL);
+
+    client_lookup_args = (container_query_args_t*) callback_info->arg;
+    handle = callback_info->info.forward.handle;
+
+    ret_value = HG_Get_output(handle, &output);
+    if (ret_value !=  HG_SUCCESS) {
+        printf("==PDC_CLIENT[%d]: %s error with HG_Get_output\n", pdc_client_mpi_rank_g, __func__);
+        goto done;
+    }
+
+    client_lookup_args->cont_id = output.cont_id;
+
+done:
+    work_todo_g--;
+    HG_Free_output(handle, &output);
+    FUNC_LEAVE(ret_value);
+}
+
+// Query container with name, retrieve container ID from server
+perr_t PDC_Client_query_container_name(char *cont_name, uint64_t *cont_meta_id)
+{
+    perr_t                 ret_value = SUCCEED;
+    hg_return_t            hg_ret    = 0;
+    uint32_t               hash_name_value, server_id;
+    container_query_in_t   in;
+    container_query_args_t lookup_args;
+    hg_handle_t            container_query_handle;
     
     FUNC_ENTER(NULL);
 
@@ -4887,17 +4916,16 @@ perr_t PDC_Client_query_container_name(char *cont_name, pdc_metadata_t **out)
         goto done;
     }
 
-    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_query_register_id_g, 
-              &metadata_query_handle);
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, container_query_register_id_g, 
+              &container_query_handle);
 
     // Fill input structure
-    in.obj_name   = cont_name;
+    in.cont_name   = cont_name;
     in.hash_value = hash_name_value;
-    in.time_step  = 0;
 
-    hg_ret = HG_Forward(metadata_query_handle, metadata_query_rpc_cb, &lookup_args, &in);
+    hg_ret = HG_Forward(container_query_handle, container_query_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
-        printf("==PDC_CLIENT[%d] - PDC_Client_query_metadata_with_name(): Could not start HG_Forward()\n",
+        printf("==PDC_CLIENT[%d] - PDC_Client_query_container_with_name(): Could not start HG_Forward()\n",
                 pdc_client_mpi_rank_g);
         ret_value = FAIL;
         goto done;
@@ -4908,11 +4936,10 @@ perr_t PDC_Client_query_container_name(char *cont_name, pdc_metadata_t **out)
     PDC_Client_check_response(&send_context_g);
 
     /* printf("==PDC_CLIENT[%d]: received container [%s] query result\n", pdc_client_mpi_rank_g, in.cont_name; */
-    *out = lookup_args.data;
-
+    *cont_meta_id = lookup_args.cont_id;
 
 done:
-    HG_Destroy(metadata_query_handle);
+    HG_Destroy(container_query_handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -6167,7 +6194,9 @@ perr_t PDC_Client_query_name_read_entire_obj_client(int nobj, char **obj_names, 
     read_time    = PDC_get_elapsed_time_double(&pdc_timer2, &pdc_timer1);
     read_time_g += read_time;
     /* printf("==PDC_CLIENT[%d]: read time %.4f\n", pdc_client_mpi_rank_g, read_time); */
-    PDC_get_io_stats_mpi(read_time, query_time, nfopen_g);
+        #ifdef ENABLE_MPI
+        PDC_get_io_stats_mpi(read_time, query_time, nfopen_g);
+        #endif
     #endif
 
     /* #ifdef ENABLE_CACHE */
@@ -6308,7 +6337,9 @@ perr_t PDC_Client_query_name_read_entire_obj_client_agg(int my_nobj, char **my_o
     read_time    = PDC_get_elapsed_time_double(&pdc_timer2, &pdc_timer1);
     read_time_g += read_time;
     /* printf("==PDC_CLIENT[%d]: read time %.4f\n", pdc_client_mpi_rank_g, read_time); */
-    PDC_get_io_stats_mpi(read_time, query_time, nfopen_g);
+        #ifdef ENABLE_MPI
+        PDC_get_io_stats_mpi(read_time, query_time, nfopen_g);
+        #endif
     #endif
 
     /* #ifdef ENABLE_CACHE */
@@ -7307,6 +7338,22 @@ done:
     FUNC_LEAVE(cont_id);
 }
 
+pdcid_t 
+PDCcont_get_id(const char *cont_name, pdcid_t pdc_id)
+{
+    pdcid_t  cont_id;
+    uint64_t cont_meta_id;
+
+    FUNC_ENTER(NULL);
+
+    PDC_Client_query_container_name(cont_name, &cont_meta_id);
+
+    cont_id = PDCcont_create_local(pdc_id, cont_name, &cont_meta_id);
+
+done:
+    FUNC_LEAVE(cont_id);
+}
+
 // Get container name
 perr_t  
 PDCcont_get(pdcid_t cont_id, char **cont_name)
@@ -7323,7 +7370,6 @@ PDCcont_get(pdcid_t cont_id, char **cont_name)
     /*     cont_id = 0; */
     /*     goto done; */
     /* } */
-
 
 done:
     FUNC_LEAVE(ret_value);

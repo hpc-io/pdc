@@ -88,6 +88,11 @@ typedef struct metadata_query_args_t {
     pdc_metadata_t *data;
 } metadata_query_args_t;
 
+typedef struct container_query_args_t {
+    uint64_t cont_id;
+} container_query_args_t;
+
+
 /* typedef struct client_name_cache_t { */
 /*     char                        name[ADDR_MAX]; */
 /*     struct client_name_cache_t *prev; */
@@ -408,7 +413,7 @@ perr_t PDC_Client_write_wait_notify(pdc_metadata_t *meta, struct PDC_region_info
 perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status, void *buf);
 
 
-perr_t PDC_Client_query_container_name(char *cont_name, pdc_metadata_t **out);
+perr_t PDC_Client_query_container_name(char *cont_name, uint64_t *cont_meta_id);
 /**
  * Async request send to server to read a region and put it in users buffer
  *

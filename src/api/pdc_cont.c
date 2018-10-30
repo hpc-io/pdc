@@ -78,6 +78,36 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+pdcid_t PDCcont_create_local(pdcid_t pdc, const char *cont_name, uint64_t cont_meta_id)
+{
+    pdcid_t ret_value = 0;
+    perr_t  ret;
+    pdcid_t new_id;
+    struct PDC_cont_info *p = NULL;
+    struct PDC_id_info *id_info = NULL;
+    pdcid_t cont_prop_id;
+
+    FUNC_ENTER(NULL);
+
+    p = PDC_MALLOC(struct PDC_cont_info);
+    if(!p)
+        PGOTO_ERROR(FAIL,"PDC container memory allocation failed\n");
+    p->name = strdup(cont_name);
+
+    cont_prop_id = PDCprop_create(PDC_CONT_CREATE, pdc);
+    
+    id_info = pdc_find_id(cont_prop_id);
+    p->cont_pt = (struct PDC_cont_prop *)(id_info->obj_ptr);
+    p->meta_id = cont_meta_id;
+
+    new_id = pdc_id_register(PDC_CONT, p);
+    p->local_id = new_id;
+    ret_value = new_id;
+
+    PDCprop_close(cont_prop_id);
+done:
+    FUNC_LEAVE(ret_value);
+}
 
 pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_prop_id)
 {

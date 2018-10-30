@@ -823,6 +823,7 @@ data_server_region_t *PDC_Server_get_obj_region(pdcid_t obj_id) {return NULL;}
 region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in_t *in, region_list_t *request_region, void *data_ptr) {return SUCCEED;}
 void *PDC_Server_get_region_buf_ptr(pdcid_t obj_id, region_info_transfer_t region) {return NULL;}
 void *PDC_Server_get_region_obj_ptr(pdcid_t obj_id, region_info_transfer_t region) {return NULL;}
+perr_t PDC_Server_find_container_by_name(const char *cont_name, pdc_cont_hash_table_entry_t **out) {return SUCCEED;};
 
 
 
@@ -1018,6 +1019,36 @@ HG_TEST_RPC_CB(client_test_connect, handle)
 
     FUNC_LEAVE(ret_value);
 }
+
+/* static hg_return_t */
+/* container_query_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(container_query, handle)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    container_query_in_t  in;
+    container_query_out_t out;
+    pdc_cont_hash_table_entry_t *cont_entry;
+    
+    FUNC_ENTER(NULL);
+
+    // Decode input
+    HG_Get_input(handle, &in);
+    /* printf("==PDC_SERVER: Received query with name: %s, hash value: %u\n", in.obj_name, in.hash_value); */
+    /* fflush(stdout); */
+
+    PDC_Server_find_container_by_name(in.cont_name, &cont_entry);
+    out.cont_id = cont_entry->cont_id;
+
+    HG_Respond(handle, NULL, NULL, &out);
+    /* printf("==PDC_SERVER: container_query_cb(): Returned obj_name=%s, obj_id=%" PRIu64 "\n", out.ret.obj_name, out.ret.obj_id); */
+    /* fflush(stdout); */
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+} // End container_query_cb
+
 
 /* static hg_return_t */
 /* metadata_query_cb(hg_handle_t handle) */
@@ -4852,6 +4883,7 @@ HG_TEST_THREAD_CB(server_checkpoint_rpc)
 HG_TEST_THREAD_CB(send_shm)
 HG_TEST_THREAD_CB(client_test_connect)
 HG_TEST_THREAD_CB(metadata_query)
+HG_TEST_THREAD_CB(container_query)
 HG_TEST_THREAD_CB(metadata_delete)
 HG_TEST_THREAD_CB(metadata_delete_by_id)
 HG_TEST_THREAD_CB(metadata_update)
@@ -5005,6 +5037,15 @@ metadata_query_register(hg_class_t *hg_class)
 
     ret_value = MERCURY_REGISTER(hg_class, "metadata_query", metadata_query_in_t, metadata_query_out_t, metadata_query_cb);
 
+    FUNC_LEAVE(ret_value);
+}
+
+hg_id_t
+container_query_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    FUNC_ENTER(NULL);
+    ret_value = MERCURY_REGISTER(hg_class, "container_query", container_query_in_t, container_query_out_t, container_query_cb);
     FUNC_LEAVE(ret_value);
 }
 

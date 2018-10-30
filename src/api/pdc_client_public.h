@@ -277,7 +277,32 @@ perr_t PDC_iwrite(void *meta, struct PDC_region_info *region, PDC_Request_t *req
 
 perr_t PDC_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsigned long check_interval_ms);
 
-
-
 int PDC_get_nproc_per_node();
+
+
+
+
+perr_t  PDCobj_get_id(const char *tag_name, void *tag_value, int value_size, int *n_res, uint64_t **pdc_ids); // TODO
+perr_t  PDCobj_get_name(const char *tag_name, void *tag_value, int value_size, int *n_res, char **obj_names); // TODO
+pdcid_t PDCobj_put_data(const char *obj_name, const void *data, uint64_t size, pdcid_t pdc_id, pdcid_t cont_id);
+perr_t  PDCobj_get_data(pdcid_t obj_id, void **data, uint64_t *size);
+perr_t  PDCobj_del_data(pdcid_t obj_id);
+perr_t  PDCobj_put_tag(pdcid_t obj_id, const char *tag_name, const void *tag_value, uint64_t value_size);
+perr_t  PDCobj_mod_tag(pdcid_t obj_id, const char *tag_name, const void *tag_value, uint64_t value_size);
+perr_t  PDCobj_get_tag(pdcid_t obj_id, const char *tag_name, void **tag_value, uint64_t *value_size);
+perr_t  PDCobj_del_tag(pdcid_t obj_id, const char *tag_name);
+
+
+pdcid_t PDCcont_create(const char *cont_name, pdcid_t pdc_id);
+perr_t  PDCcont_get_name(pdcid_t cont_id, char **cont_name);
+pdcid_t PDCcont_get_id(const char *cont_name, pdcid_t pdc_id);
+perr_t  PDCcont_del(pdcid_t cont_id);
+perr_t  PDCcont_put_tag(pdcid_t cont_id, const char *tag_name, const void *tag_value, const uint64_t value_size);
+perr_t  PDCcont_get_tag(pdcid_t cont_id, const char *tag_name, void **tag_value, uint64_t *value_size);
+perr_t  PDCcont_del_tag(pdcid_t cont_id, const char *tag_name);
+
+perr_t  PDCcont_put_objids(pdcid_t cont_id, int nobj, pdcid_t *obj_ids);
+perr_t  PDCcont_get_objids(pdcid_t cont_id, int *nobj, pdcid_t **obj_ids);
+perr_t  PDCcont_del_objids(pdcid_t cont_id, const int nobj, const pdcid_t *obj_ids);
+
 #endif

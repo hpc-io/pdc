@@ -128,6 +128,13 @@ int main(int argc, char **argv)
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
+    /* uint64_t cont_meta_id; */
+    /* pdcid_t cont_local_id; */
+    /* PDC_Client_query_container_name("c1", &cont_meta_id); */
+    /* printf("Queried container id is %lu\n", cont_meta_id); */
+    /* cont_local_id = PDCcont_get_id("c1", pdc); */
+    /* printf("Local container id is %lu\n", cont_local_id); */
+
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if(obj_prop <= 0)
@@ -173,6 +180,9 @@ int main(int argc, char **argv)
         PDC_Client_query_metadata_name_only(obj_name, &res);
         if (res == NULL) {
             printf("%d: Cannot find object [%s] ts=%d\n", rank, obj_name, ts);
+        }
+        else {
+            PDC_print_metadata(res);
         }
 
         // Print progress

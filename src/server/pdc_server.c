@@ -1703,6 +1703,7 @@ static void PDC_Server_mercury_register()
     gen_obj_id_register(hg_class_g);
     close_server_register(hg_class_g);
     metadata_query_register(hg_class_g);
+    container_query_register(hg_class_g);
     metadata_delete_register(hg_class_g);
     metadata_delete_by_id_register(hg_class_g);
     metadata_update_register(hg_class_g);

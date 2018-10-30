@@ -45,6 +45,8 @@ pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_create_prop);
 
 pdcid_t PDCcont_create_col(const char *cont_name, pdcid_t cont_prop_id);
 
+pdcid_t PDCcont_create_local(pdcid_t pdc, const char *cont_name, uint64_t cont_meta_id);
+
 /**
  * Open a container
  *

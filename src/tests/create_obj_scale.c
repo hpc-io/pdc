@@ -31,7 +31,7 @@
 #include <sys/time.h>
 #include <ctype.h>
 
-#define ENABLE_MPI 1
+/* #define ENABLE_MPI 1 */
 
 #ifdef ENABLE_MPI
   #include "mpi.h"
