@@ -1192,10 +1192,12 @@ perr_t PDC_Server_checkpoint()
     region_list_t  *region_elt;
     pdc_kvtag_list_t *kvlist_elt;
     pdc_hash_table_entry_head *head;
+    pdc_cont_hash_table_entry_t *cont_head;
     int n_entry, metadata_size = 0, region_count = 0, n_region, n_write_region = 0, n_kvtag, key_len;
     uint32_t hash_key;
     HashTablePair pair;
     char checkpoint_file[ADDR_MAX];
+    HashTableIterator hash_table_iter;
     
     FUNC_ENTER(NULL);
 
@@ -1221,12 +1223,26 @@ perr_t PDC_Server_checkpoint()
         goto done;
     }
 
+    // Checkpoint containers
+    n_entry = hash_table_num_entries(container_hash_table_g);
+    /* printf("%d container entries\n", n_entry); */
+    fwrite(&n_entry, sizeof(int), 1, file);
+
+    hash_table_iterate(container_hash_table_g, &hash_table_iter);
+    while (n_entry != 0 && hash_table_iter_has_more(&hash_table_iter)) {
+        pair = hash_table_iter_next(&hash_table_iter);
+        cont_head = pair.value;
+
+        hash_key = PDC_get_hash_by_name(cont_head->cont_name);
+        fwrite(&hash_key, sizeof(uint32_t), 1, file);
+        fwrite(cont_head, sizeof(pdc_cont_hash_table_entry_t), 1, file);
+    }
+
     // DHT
     n_entry = hash_table_num_entries(metadata_hash_table_g);
     /* printf("%d entries\n", n_entry); */
     fwrite(&n_entry, sizeof(int), 1, file);
 
-    HashTableIterator hash_table_iter;
     hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
 
     while (n_entry != 0 && hash_table_iter_has_more(&hash_table_iter)) {
@@ -1315,9 +1331,11 @@ perr_t PDC_Server_restart(char *filename)
 {
     perr_t ret_value = SUCCEED;
     int n_entry, count, i, j, nobj = 0, all_nobj = 0, all_n_region, n_region, total_region = 0, n_kvtag, key_len;
+    int n_cont, all_cont;
     pdc_metadata_t *metadata, *elt;
     region_list_t *region_list;
     pdc_hash_table_entry_head *entry;
+    pdc_cont_hash_table_entry_t *cont_entry;
     uint32_t *hash_key;
     unsigned idx;
     
@@ -1339,16 +1357,45 @@ perr_t PDC_Server_restart(char *filename)
         goto done;
     }
 
-    // init hash table
-    PDC_Server_init_hash_table();
-    fread(&n_entry, sizeof(int), 1, file);
-    /* printf("%d entries\n", n_entry); */
-
     char *slurm_jobid = getenv("SLURM_JOB_ID");
     if (slurm_jobid == NULL) {
         printf("Error getting slurm job id from SLURM_JOB_ID!\n");
     }
 
+    // init hash table
+    PDC_Server_init_hash_table();
+
+    fread(&n_cont, sizeof(int), 1, file);
+    all_cont = n_cont;
+    /* printf("%d cont entries\n", n_entry); */
+    while (n_cont>0) {
+        /* printf("Count:%d\n", count); */
+
+        hash_key = (uint32_t *)malloc(sizeof(uint32_t));
+        fread(hash_key, sizeof(uint32_t), 1, file);
+        /* printf("Hash key is %u\n", *hash_key); */
+        total_mem_usage_g += sizeof(uint32_t);
+
+        // Reconstruct hash table
+        cont_entry = (pdc_cont_hash_table_entry_t*)malloc(sizeof(pdc_cont_hash_table_entry_t));
+        total_mem_usage_g += sizeof(pdc_cont_hash_table_entry_t);
+        fread(cont_entry, sizeof(pdc_cont_hash_table_entry_t), 1, file);
+
+        #ifdef ENABLE_MULTITHREAD 
+        hg_thread_mutex_lock(&pdc_container_hash_table_mutex_g);
+        #endif
+        if (hash_table_insert(container_hash_table_g, hash_key, cont_entry) != 1) {
+            printf("==PDC_SERVER[%d]: %s - hash table insert failed\n", pdc_server_rank_g, __func__);
+            ret_value = FAIL;
+        }
+        #ifdef ENABLE_MULTITHREAD 
+        hg_thread_mutex_unlock(&pdc_container_hash_table_mutex_g);
+        #endif
+        
+        n_cont--;
+    } // End while 
+
+    fread(&n_entry, sizeof(int), 1, file);
     while (n_entry>0) {
         fread(&count, sizeof(int), 1, file);
         /* printf("Count:%d\n", count); */
@@ -1493,7 +1540,8 @@ perr_t PDC_Server_restart(char *filename)
 
     if (pdc_server_rank_g == 0) {
         printf("==PDC_SERVER[0]: Server restarted from saved session, "
-               "successfully loaded %d objects, %d regions...\n", all_nobj, all_n_region);
+               "successfully loaded %d containers, %d objects, %d regions...\n", 
+               all_cont, all_nobj, all_n_region);
     }
 
     // debug
