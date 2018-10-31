@@ -53,6 +53,15 @@ perr_t pdc_region_init();
 pdcid_t pdc_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, PDCobj_location location);
 
 /**
+ * Get object information
+ *
+ * \param obj_id [IN]           Id of the object
+ *
+ * \return Pointer to PDC_obj_info struct on success/Null on failure
+ */
+struct PDC_obj_info *PDC_obj_get_info(pdcid_t obj_id);
+
+/**
  * PDC object finalize
  *
  * \return Non-negative on success/Negative on failure

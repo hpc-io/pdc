@@ -59,7 +59,7 @@ pdcid_t PDCcont_open(const char *cont_name);
  *
  * \return Container struct on success/NULL on failure
  */
-struct PDC_cont_info *PDCcont_get_info(pdcid_t cont_id);
+struct PDC_cont_info *PDCcont_get_info(const char *cont_name);
 
 /**
  * Iterate over containers within a PDC

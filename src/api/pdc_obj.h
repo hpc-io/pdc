@@ -340,10 +340,10 @@ perr_t PDCregion_close(pdcid_t region_id);
 /**
  * Get object information
  *
- * \param obj_id [IN]           Id of the object
+ * \param obj_name [IN]         Name of the object
  *
  * \return Pointer to PDC_obj_info struct on success/Null on failure
  */
-struct PDC_obj_info *PDCobj_get_info(pdcid_t obj_id);
+struct PDC_obj_info *PDCobj_get_info(const char *obj_name);
 
 #endif

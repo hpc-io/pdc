@@ -133,7 +133,7 @@ pdcid_t PDCprop_obj_dup(pdcid_t prop_id)
         PGOTO_ERROR(0, "cannot locate object property");
     info = (struct PDC_obj_prop *)(prop->obj_ptr);
 
-    q = PDC_MALLOC(struct PDC_obj_prop);
+    q = PDC_CALLOC(struct PDC_obj_prop);
     if(!q)
         PGOTO_ERROR(0, "PDC object property memory allocation failed\n");
     q->obj_life = info->obj_life;
@@ -148,7 +148,12 @@ pdcid_t PDCprop_obj_dup(pdcid_t prop_id)
         q->tags = strdup(info->tags);
     new_id = pdc_id_register(PDC_OBJ_PROP, q);
     q->obj_prop_id = new_id;
-    q->pdc = info->pdc;
+    q->pdc = PDC_CALLOC(struct PDC_class);
+    if(!q->pdc)
+        PGOTO_ERROR(0, "PDC class memory allocation failed\n");
+    if(info->pdc->name)
+        q->pdc->name = strdup(info->pdc->name);
+    q->pdc->local_id = info->pdc->local_id;
     q->data_loc = NULL;
     q->type = PDC_UNKNOWN;
     q->buf = NULL;
