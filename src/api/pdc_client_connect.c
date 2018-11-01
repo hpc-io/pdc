@@ -7443,8 +7443,8 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t  
-PDCcont_put_tag(pdcid_t cont_id, const char *tag_name, const void *tag_value, uint64_t value_size)
+perr_t
+PDCcont_put_tag(pdcid_t cont_id, const char *tag_name, const void *tag_value, size_t value_size)
 {
     perr_t ret_value = SUCCEED;
 
@@ -7460,8 +7460,8 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t  
-PDCcont_get_tag(pdcid_t cont_id, const char *tag_name, void **tag_value, uint64_t *value_size)
+perr_t
+PDCcont_get_tag(pdcid_t cont_id, const char *tag_name, void **tag_value, size_t *value_size)
 {
     perr_t ret_value = SUCCEED;
 
@@ -7605,8 +7605,8 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t  
-PDCobj_put_tag(pdcid_t obj_id, const char *tag_name, const void *tag_value, uint64_t value_size)
+perr_t
+PDCobj_put_tag(pdcid_t obj_id, const char *tag_name, const void *tag_value, size_t value_size)
 {
     perr_t ret_value = SUCCEED;
     pdc_kvtag_t kvtag;
@@ -7626,8 +7626,8 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t  
-PDCobj_get_tag(pdcid_t obj_id, const char *tag_name, void **tag_value, uint64_t *value_size)
+perr_t
+PDCobj_get_tag(pdcid_t obj_id, const char *tag_name, void **tag_value, size_t *value_size)
 {
     perr_t ret_value = SUCCEED;
     pdc_kvtag_t kvtag;
