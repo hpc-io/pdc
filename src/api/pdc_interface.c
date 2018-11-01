@@ -167,7 +167,7 @@ int pdc_dec_ref(pdcid_t id)
     /* General lookup of the ID */
     if(NULL == (id_ptr = pdc_find_id(id)))
         PGOTO_ERROR(FAIL, "can't locate ID");
-
+    
 //    ret_value = atomic_fetch_sub(&(id_ptr->count), 1) - 1;
     ret_value = hg_atomic_decr32(&(id_ptr->count));
     if(ret_value == 0) {
@@ -206,14 +206,14 @@ pdcid_t pdc_find_byname(PDC_type_t type, const char *byname)
     FUNC_ENTER(NULL);
 
     if(type <= PDC_BADID || type >= PDC_next_type)
-        PGOTO_ERROR(FAIL, "invalid type number");
+        PGOTO_ERROR(0, "invalid type number");
 
     type_ptr = (pdc_id_list_g->PDC_id_type_list_g)[type];
 
     /* Locate the ID node for the ID */
     PDC_LIST_SEARCH_CONT_NAME(id_ptr, &type_ptr->ids, entry, obj_ptr, name, byname);
     if(id_ptr == NULL)
-        PGOTO_ERROR(FAIL, "cannot find the name");
+        PGOTO_ERROR(0, "cannot find the name");
     ret_value = id_ptr->id;
     
 done:

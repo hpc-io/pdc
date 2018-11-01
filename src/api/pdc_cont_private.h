@@ -42,6 +42,15 @@ perr_t pdc_cont_init();
 perr_t pdc_cont_list_null();
 
 /**
+ * Return a container property
+ *
+ * \param cont_name [IN]        Name of the container
+ *
+ * \return Container struct on success/NULL on failure
+ */
+struct PDC_cont_info *PDC_cont_get_info(pdcid_t cont_id);
+
+/**
  * PDC container finalize
  *
  * \return Non-negative on success/Negative on failure
