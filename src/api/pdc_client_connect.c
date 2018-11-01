@@ -7499,16 +7499,21 @@ done:
 
 
 pdcid_t 
-PDCobj_put_data(const char *obj_name, const void *data, uint64_t size, pdcid_t pdc_id, pdcid_t cont_id)
+PDCobj_put_data(const char *obj_name, const void *data, uint64_t size, pdcid_t cont_id)
 {
     pdcid_t obj_id, obj_prop;
     struct PDC_region_info obj_region;
     perr_t ret;
     pdc_metadata_t *meta;
+    struct PDC_cont_info *info = NULL;
+    struct PDC_id_info *id_info = NULL;
 
     FUNC_ENTER(NULL);
 
-    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
+    id_info = pdc_find_id(cont_id);
+    info = (struct PDC_cont_info *)(id_info->obj_ptr);
+
+    obj_prop = PDCprop_create(PDC_OBJ_CREATE, info->cont_pt->pdc->local_id);
     PDCprop_set_obj_dims(obj_prop, 1, &size);
     PDCprop_set_obj_user_id(obj_prop, getuid());
     PDCprop_set_obj_time_step(obj_prop, 0);

@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
     /* n_add_tag = atoi(argv[2]); */
     /* n_query  = atoi(argv[3]); */
 
-    n_obj     = 1000000;
+    n_obj     = 10000000;
     n_add_tag = n_obj / 100;
     int round = 7;
     /* n_obj     = 10000; */
