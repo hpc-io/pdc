@@ -85,6 +85,7 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id
     if(!p)
         PGOTO_ERROR(0, "PDC object memory allocation failed\n");
     p->name = strdup(obj_name);
+    p->metadata = NULL;
     p->client_id = 0;
     p->region_list_head = NULL;
 
@@ -142,7 +143,7 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id
     p->local_id = pdc_id_register(PDC_OBJ, p);
     ret_value = p->local_id;
 
-    PDC_Client_attach_metadata_to_local_obj(obj_name, p->meta_id, p->cont->meta_id, p->obj_pt);
+    PDC_Client_attach_metadata_to_local_obj(obj_name, p->meta_id, p->cont->meta_id, p);
 
 done:
     FUNC_LEAVE(ret_value);
@@ -164,6 +165,7 @@ pdcid_t pdc_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_i
     if(!p)
         PGOTO_ERROR(0, "PDC object memory allocation failed\n");
     p->name = strdup(obj_name);
+    p->metadata = NULL;
     p->location = location;
     p->region_list_head = NULL;
 
@@ -384,6 +386,7 @@ pdcid_t PDCobj_open(const char *obj_name)
     if(obj_id){
         obj_info = PDC_obj_get_info(obj_id);
         memcpy(p, obj_info, sizeof(struct PDC_obj_info));
+        p->metadata = NULL;
         if(obj_info->name)
             p->name = strdup(obj_info->name);
         
@@ -991,6 +994,8 @@ struct PDC_obj_info *PDC_obj_get_info(pdcid_t obj_id)
         ret_value->name = strdup(info->name);
     else
         ret_value->name = NULL;
+    // fill in by query function
+    ret_value->metadata = NULL;
     
     // fill in struct PDC_cont_info field in ret_value->cont
     ret_value->cont = PDC_CALLOC(struct PDC_cont_info);

@@ -275,7 +275,7 @@ perr_t PDC_Client_data_direct_init();
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_Client_attach_metadata_to_local_obj(char *obj_name, uint64_t obj_id, uint64_t cont_id, 
-                                               struct PDC_obj_prop *obj_prop);
+                                               struct PDC_obj_info *obj_info);
 
 
 /* perr_t PDCbuf_destroy(void *buf); */

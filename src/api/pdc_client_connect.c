@@ -4497,7 +4497,7 @@ perr_t PDC_Client_write_id(pdcid_t local_obj_id, struct PDC_region_info *region,
         goto done;
     }
     object = (struct PDC_obj_info *)(info->obj_ptr);
-    meta = object->obj_pt->metadata;
+    meta = object->metadata;
     if (meta == NULL) {
         printf("==PDC_CLIENT[%d]: %s - metadata is NULL!\n", pdc_client_mpi_rank_g, __func__);
         ret_value = FAIL;
@@ -5365,28 +5365,28 @@ done:
 }
 
 perr_t PDC_Client_attach_metadata_to_local_obj(char *obj_name, uint64_t obj_id, uint64_t cont_id, 
-                                               struct PDC_obj_prop *obj_prop)
+                                               struct PDC_obj_info *obj_info)
 {
     perr_t      ret_value = SUCCEED;
     
     FUNC_ENTER(NULL);
 
-    obj_prop->metadata = (pdc_metadata_t*)calloc(1, sizeof(pdc_metadata_t));
-    ((pdc_metadata_t*)obj_prop->metadata)->user_id = obj_prop->user_id;
-    if (NULL != obj_prop->app_name) 
-        strcpy(((pdc_metadata_t*)obj_prop->metadata)->app_name, obj_prop->app_name);
+    obj_info->metadata = (pdc_metadata_t*)calloc(1, sizeof(pdc_metadata_t));
+    ((pdc_metadata_t*)obj_info->metadata)->user_id = obj_info->obj_pt->user_id;
+    if (NULL != obj_info->obj_pt->app_name)
+        strcpy(((pdc_metadata_t*)obj_info->metadata)->app_name, obj_info->obj_pt->app_name);
     if (NULL != obj_name) 
-        strcpy(((pdc_metadata_t*)obj_prop->metadata)->obj_name, obj_name);
-    ((pdc_metadata_t*)obj_prop->metadata)->time_step = obj_prop->time_step;
-    ((pdc_metadata_t*)obj_prop->metadata)->obj_id  = obj_id;
-    ((pdc_metadata_t*)obj_prop->metadata)->cont_id = cont_id;
-    if (NULL != obj_prop->tags) 
-        strcpy(((pdc_metadata_t*)obj_prop->metadata)->tags, obj_prop->tags);
-    if (NULL != obj_prop->data_loc) 
-        strcpy(((pdc_metadata_t*)obj_prop->metadata)->data_location, obj_prop->data_loc);
-    ((pdc_metadata_t*)obj_prop->metadata)->ndim    = obj_prop->ndim;
-        if (NULL != obj_prop->dims) 
-    memcpy(((pdc_metadata_t*)obj_prop->metadata)->dims, obj_prop->dims, sizeof(uint64_t)*obj_prop->ndim);
+        strcpy(((pdc_metadata_t*)obj_info->metadata)->obj_name, obj_name);
+    ((pdc_metadata_t*)obj_info->metadata)->time_step = obj_info->obj_pt->time_step;
+    ((pdc_metadata_t*)obj_info->metadata)->obj_id  = obj_id;
+    ((pdc_metadata_t*)obj_info->metadata)->cont_id = cont_id;
+    if (NULL != obj_info->obj_pt->tags)
+        strcpy(((pdc_metadata_t*)obj_info->metadata)->tags, obj_info->obj_pt->tags);
+    if (NULL != obj_info->obj_pt->data_loc)
+        strcpy(((pdc_metadata_t*)obj_info->metadata)->data_location, obj_info->obj_pt->data_loc);
+    ((pdc_metadata_t*)obj_info->metadata)->ndim    = obj_info->obj_pt->ndim;
+        if (NULL != obj_info->obj_pt->dims)
+    memcpy(((pdc_metadata_t*)obj_info->metadata)->dims, obj_info->obj_pt->dims, sizeof(uint64_t)*obj_info->obj_pt->ndim);
 
     FUNC_LEAVE(ret_value);
 }

@@ -35,38 +35,37 @@ typedef enum {
 
 struct PDC_cont_prop {
     struct PDC_class *pdc;
-    pdcid_t          cont_prop_id;
-    PDC_lifetime     cont_life;
+    pdcid_t           cont_prop_id;
+    PDC_lifetime      cont_life;
 };
 
 typedef struct pdc_kvtag_t {
-    char            *name;
-    uint32_t        size;
-    void            *value;
+    char             *name;
+    uint32_t          size;
+    void             *value;
 } pdc_kvtag_t;
 
 
 struct PDC_obj_prop {
     struct PDC_class *pdc;
-    pdcid_t          obj_prop_id;
-    PDC_lifetime     obj_life;
-    size_t           ndim;
+    pdcid_t           obj_prop_id;
+    PDC_lifetime      obj_life;
+    size_t            ndim;
     uint64_t         *dims;
-    PDC_var_type_t   type;
-    uint32_t         user_id;
+    PDC_var_type_t    type;
+    uint32_t          user_id;
     char             *app_name;
-    uint32_t         time_step;
+    uint32_t          time_step;
     char             *data_loc;
     char             *tags;
     void             *buf;
-    void             *metadata;
     pdc_kvtag_t      *kvtag;
 
     /* The following have been added to support of PDC analysis and transforms */
-    size_t           type_extent;
-    PDC_major_type   storage_order;
-    uint64_t         locus;
-    uint32_t         data_state;
+    size_t            type_extent;
+    PDC_major_type    storage_order;
+    uint64_t          locus;
+    uint32_t          data_state;
 };
 
 #endif
