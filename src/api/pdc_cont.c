@@ -91,7 +91,6 @@ done:
 pdcid_t PDCcont_create_col(const char *cont_name, pdcid_t cont_prop_id)
 {
     pdcid_t ret_value = 0;
-    perr_t  ret;
     pdcid_t new_id;
     struct PDC_cont_info *p = NULL;
     struct PDC_cont_prop *cont_prop = NULL;

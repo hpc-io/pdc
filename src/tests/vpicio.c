@@ -119,7 +119,7 @@ int main(int argc, char **argv)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     // create a container
-    cont_id = PDCcont_create("c1", cont_prop);
+    cont_id = PDCcont_create_col("c1", cont_prop);
     if(cont_id <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
