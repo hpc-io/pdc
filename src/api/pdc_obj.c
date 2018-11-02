@@ -432,6 +432,8 @@ pdcid_t PDCobj_open(const char *obj_name)
             p->obj_pt->data_loc = strdup(obj_info->obj_pt->data_loc);
         if(obj_info->obj_pt->tags)
             p->obj_pt->tags = strdup(obj_info->obj_pt->tags);
+        
+        PDC_Client_attach_metadata_to_local_obj(obj_name, p->meta_id, p->cont->meta_id, p);
     }
     else {
         // contact metadata server
