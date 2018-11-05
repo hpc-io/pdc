@@ -33,6 +33,17 @@
 perr_t pdc_cont_init();
 
 /**
+ * Create a container locally
+ *
+ * \param pdc       [IN]        Id of pdc
+ * \param cont_name [IN]        Name of the container
+ * \param cont_meta_id [out]    Metadata id of container
+ *
+ * \return Container id on success/Zero on failure
+ */
+pdcid_t PDC_cont_create_local(pdcid_t pdc, const char *cont_name, uint64_t cont_meta_id);
+
+/**
  * Check if container list is empty
  *
  * \param pdc_id [IN]           Id of the PDC

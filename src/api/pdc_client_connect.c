@@ -59,6 +59,7 @@
 #include "pdc_client_server_common.h"
 #include "pdc_obj_pkg.h"
 #include "pdc_atomic.h"
+#include "pdc_cont_private.h"
 
 int is_client_debug_g = 0;
 
@@ -7348,7 +7349,7 @@ PDCcont_get_id(const char *cont_name, pdcid_t pdc_id)
 
     PDC_Client_query_container_name(cont_name, &cont_meta_id);
 
-    cont_id = PDCcont_create_local(pdc_id, cont_name, &cont_meta_id);
+    cont_id = PDC_cont_create_local(pdc_id, cont_name, &cont_meta_id);
 
 done:
     FUNC_LEAVE(cont_id);

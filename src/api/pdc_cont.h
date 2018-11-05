@@ -43,18 +43,29 @@ typedef struct PDC_id_info cont_handle;
  */
 pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_create_prop);
 
+
+/**
+ * Create a container, used when all ranks are trying to create the same
+   container
+ *
+ * \param cont_name [IN]        Name of the container
+ * \param cont_prop_id [IN]     Id of container property
+ *                              returned by PDCprop_create(PDC_CONT_CREATE)
+ *
+ * \return Container id on success/Zero on failure
+ */
 pdcid_t PDCcont_create_col(const char *cont_name, pdcid_t cont_prop_id);
 
-pdcid_t PDCcont_create_local(pdcid_t pdc, const char *cont_name, uint64_t cont_meta_id);
 
 /**
  * Open a container
  *
  * \param cont_name [IN]        Name of the container
+ * \param pdc_id    [IN]        Id of pdc
  *
  * \return Container id on success/Zero on failure
  */
-pdcid_t PDCcont_open(const char *cont_name);
+pdcid_t PDCcont_open(const char *cont_name, pdcid_t pdc_id);
 
 /**
  * Return a container property
