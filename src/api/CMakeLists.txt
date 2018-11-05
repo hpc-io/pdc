@@ -94,8 +94,10 @@ set(PDC_HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_prop_pkg.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_cont.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_cont_pkg.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_cont_private.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_obj.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_obj_pkg.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_obj_private.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_dt_conv.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_connect.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_server_common.h
