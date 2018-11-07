@@ -299,7 +299,9 @@ void PDC_print_metadata(pdc_metadata_t *a)
         return;
     }
     printf("================================\n");
+    printf("  data_type = [%d]\n",   a->data_type);
     printf("  obj_id    = %" PRIu64 "\n", a->obj_id);
+    printf("  cont_id   = %" PRIu64 "\n", a->cont_id);
     printf("  uid       = %d\n",   a->user_id);
     printf("  app_name  = [%s]\n",   a->app_name);
     printf("  obj_name  = [%s]\n",   a->obj_name);
@@ -327,7 +329,9 @@ perr_t PDC_metadata_init(pdc_metadata_t *a)
 
     a->user_id            = 0;
     a->time_step          = -1;
+    a->data_type          = -1;
     a->obj_id             = 0;
+    a->cont_id            = 0;
     a->create_time        = 0;
     a->last_modified_time = 0;
     a->ndim = 0;
@@ -734,6 +738,7 @@ perr_t pdc_metadata_t_to_transfer_t(pdc_metadata_t *meta, pdc_metadata_transfer_
     transfer->app_name      = meta->app_name     ;
     transfer->obj_name      = meta->obj_name     ;
     transfer->time_step     = meta->time_step    ;
+    transfer->data_type     = meta->data_type    ;
     transfer->obj_id        = meta->obj_id       ;
     transfer->cont_id       = meta->cont_id      ;
     transfer->ndim          = meta->ndim         ;
@@ -754,6 +759,7 @@ perr_t pdc_transfer_t_to_metadata_t(pdc_metadata_transfer_t *transfer, pdc_metad
         return FAIL;
     }
     meta->user_id       = transfer->user_id;
+    meta->data_type     = transfer->data_type;
     meta->obj_id        = transfer->obj_id;
     meta->cont_id       = transfer->cont_id;
     meta->time_step     = transfer->time_step;
@@ -1083,7 +1089,9 @@ HG_TEST_RPC_CB(metadata_query, handle)
     }
     else {
         out.ret.user_id        = -1;
+        out.ret.data_type      = -1;
         out.ret.obj_id         = 0;
+        out.ret.cont_id        = 0;
         out.ret.time_step      = -1;
         out.ret.obj_name       = "N/A";
         out.ret.app_name       = "N/A";
@@ -2287,6 +2295,7 @@ HG_TEST_RPC_CB(get_remote_metadata, handle)
         pdc_metadata_t_to_transfer_t(meta, &out.ret);
     else {
         out.ret.user_id        = -1;
+        out.ret.data_type      = -1;
         out.ret.obj_id         = 0;
         out.ret.time_step      = -1;
         out.ret.obj_name       = "N/A";
@@ -3133,6 +3142,8 @@ HG_TEST_RPC_CB(get_metadata_by_id, handle)
         printf("==PDC_SERVER: no matching metadata of obj_id=%" PRIu64 "\n", in.obj_id);
         out.res_meta.user_id        = -1;
         out.res_meta.obj_id         = 0;
+        out.res_meta.cont_id        = 0;
+        out.res_meta.data_type      = -1;
         out.res_meta.time_step      = -1;
         out.res_meta.obj_name       = "N/A";
         out.res_meta.app_name       = "N/A";
