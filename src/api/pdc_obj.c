@@ -223,10 +223,10 @@ pdcid_t pdc_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_i
 
     if(location == PDC_OBJ_GLOBAL) {
         ret = PDC_Client_send_name_recv_id(obj_name, p->cont->meta_id, obj_prop_id, &(p->meta_id));
+        if (ret == FAIL)
+            PGOTO_ERROR(0, "Unable to create object on server!\n");
         p->client_id = 0;
     }
-    if (ret == FAIL)
-        PGOTO_ERROR(0,"Unable to create object on server!\n");
     
     ret_value = p->local_id;
 
@@ -367,19 +367,37 @@ done:
     FUNC_LEAVE(ret_value);
 } 
 
-pdcid_t PDCobj_open(const char *obj_name)
+pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc)
 {
     pdcid_t ret_value = 0;
+    perr_t ret = SUCCEED;
     pdcid_t obj_id;
     struct PDC_obj_info *p = NULL;
     struct PDC_obj_info *obj_info;
+    pdc_metadata_t *out;
+    pdcid_t obj_prop;
     int i;
     
     FUNC_ENTER(NULL);
-    
+        
     p = PDC_MALLOC(struct PDC_obj_info);
     if(!p)
         PGOTO_ERROR(0, "PDC object memory allocation failed\n");
+    p->cont = PDC_CALLOC(struct PDC_cont_info);
+    if(!p->cont)
+        PGOTO_ERROR(0, "PDC object container memory allocation failed");
+    p->cont->cont_pt = PDC_CALLOC(struct PDC_cont_prop);
+    if(!p->cont->cont_pt)
+        PGOTO_ERROR(0, "PDC object container property memory allocation failed");
+    p->cont->cont_pt->pdc = PDC_CALLOC(struct PDC_class);
+    if(!p->cont->cont_pt->pdc)
+        PGOTO_ERROR(0, "PDC object container property pdc memory allocation failed\n");
+    p->obj_pt = PDC_CALLOC(struct PDC_obj_prop);
+    if(!p->obj_pt)
+        PGOTO_ERROR(0, "PDC object property memory allocation failed");
+    p->obj_pt->pdc = PDC_CALLOC(struct PDC_class);
+    if(!p->obj_pt->pdc)
+        PGOTO_ERROR(0, "cannot allocate ret_value->pdc");
     
     // look up in the local object list first
     obj_id = pdc_find_byname(PDC_OBJ, obj_name);
@@ -390,32 +408,17 @@ pdcid_t PDCobj_open(const char *obj_name)
         if(obj_info->name)
             p->name = strdup(obj_info->name);
         
-        p->cont = PDC_CALLOC(struct PDC_cont_info);
-        if(!p->cont)
-            PGOTO_ERROR(0, "PDC object container memory allocation failed");
         memcpy(p->cont, obj_info->cont, sizeof(struct PDC_cont_info));
         if(obj_info->cont->name)
             p->cont->name = strdup(obj_info->cont->name);
         
-        p->cont->cont_pt = PDC_CALLOC(struct PDC_cont_prop);
-        if(!p->cont->cont_pt)
-            PGOTO_ERROR(0, "PDC object container property memory allocation failed");
         memcpy(p->cont->cont_pt, obj_info->cont->cont_pt, sizeof(struct PDC_cont_prop));
-        p->cont->cont_pt->pdc = PDC_CALLOC(struct PDC_class);
-        if(!p->cont->cont_pt->pdc)
-            PGOTO_ERROR(0, "PDC object container property pdc memory allocation failed\n");
+        
         if(obj_info->cont->cont_pt->pdc->name)
             p->cont->cont_pt->pdc->name = strdup(obj_info->cont->cont_pt->pdc->name);
         p->cont->cont_pt->pdc->local_id = obj_info->cont->cont_pt->pdc->local_id;
         
-        p->obj_pt = PDC_CALLOC(struct PDC_obj_prop);
-        if(!p->obj_pt)
-            PGOTO_ERROR(0, "PDC object property memory allocation failed");
         memcpy(p->obj_pt, obj_info->obj_pt, sizeof(struct PDC_obj_prop));
-        
-        p->obj_pt->pdc = PDC_CALLOC(struct PDC_class);
-        if(!p->obj_pt->pdc)
-            PGOTO_ERROR(0, "cannot allocate ret_value->pdc");
         if(obj_info->obj_pt->pdc->name)
             p->obj_pt->pdc->name = strdup(obj_info->obj_pt->pdc->name);
         p->obj_pt->pdc->local_id = obj_info->obj_pt->pdc->local_id;
@@ -437,8 +440,33 @@ pdcid_t PDCobj_open(const char *obj_name)
     }
     else {
         // contact metadata server
+        ret = PDC_Client_query_metadata_name_only(obj_name, &out);
+        if(ret == FAIL)
+            PGOTO_ERROR(0, "query object failed");
+        
+        obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
+        PDCprop_set_obj_dims(obj_prop, out->ndim, out->dims);
+        PDCprop_set_obj_type(obj_prop, out->data_type);
+        
+        if(out->obj_name != NULL)
+            p->name = strdup(out->obj_name);
+        p->meta_id = out->obj_id;
+        p->client_id = 0;
+        
+        p->cont->meta_id = out->cont_id;
+        p->obj_pt->ndim = out->ndim;
+        p->obj_pt->dims = malloc(out->ndim*sizeof(uint64_t));
+        if(!p->obj_pt->dims)
+            PGOTO_ERROR(0, "cannot allocate ret_value->dims");
+        for(i=0; i<out->ndim; i++)
+            p->obj_pt->dims[i] = out->dims[i];
+        if(out->app_name != NULL)
+            p->obj_pt->app_name = strdup(out->app_name);
+        p->obj_pt->type = out->data_type;
+        p->obj_pt->time_step = out->time_step;
+        p->obj_pt->user_id = out->user_id;
     }
-
+    
     p->local_id = pdc_id_register(PDC_OBJ, p);
     ret_value = p->local_id;
     
@@ -1076,7 +1104,7 @@ struct PDC_obj_info *PDCobj_get_info(const char *obj_name)
     
     obj_id = pdc_find_byname(PDC_OBJ, obj_name);
     
-    ret_value = PDC_cont_get_info(obj_id);
+    ret_value = PDC_obj_get_info(obj_id);
     
 done:
     FUNC_LEAVE(ret_value);
