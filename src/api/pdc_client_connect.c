@@ -2415,8 +2415,6 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdci
     in.data.time_step = create_prop->time_step;
     in.data.user_id   = create_prop->user_id;
     in.data_type      = create_prop->type;
-//printf("data_type = %d\n", in.data_type);
-//fflush(stdout);
 
     if ((in.data.ndim = create_prop->ndim) > 0) {
       if(in.data.ndim >= 1)
