@@ -50,7 +50,6 @@ struct PDC_obj_info {
     char                   *name;
     pdcid_t                 meta_id;
     pdcid_t                 local_id;
-    int32_t                 client_id;
     PDCobj_location         location;
     void                   *metadata;
     struct PDC_cont_info   *cont;

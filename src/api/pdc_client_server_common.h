@@ -1208,8 +1208,6 @@ typedef struct {
     uint32_t        meta_server_id;
     uint64_t        local_reg_id;
     uint64_t        remote_obj_id;
-    uint64_t        remote_reg_id;
-    int32_t         remote_client_id;
     PDC_var_type_t  local_type;
     PDC_var_type_t  remote_type;
     size_t          ndim;
@@ -1228,8 +1226,6 @@ typedef struct {
     uint64_t                    local_obj_id;
     uint64_t                    local_reg_id;
     uint64_t                    remote_obj_id;
-    uint64_t                    remote_reg_id;
-    int32_t                     remote_client_id;
     PDC_var_type_t              local_type;
     PDC_var_type_t              remote_type;
     size_t                      ndim;
@@ -1610,16 +1606,6 @@ hg_proc_buf_map_in_t(hg_proc_t proc, void *data)
         HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_uint64_t(proc, &struct_data->remote_reg_id);
-    if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_int32_t(proc, &struct_data->remote_client_id);
-    if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
-        return ret;
-    }
     ret = hg_proc_uint8_t(proc, &struct_data->local_type);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
@@ -1694,16 +1680,6 @@ hg_proc_reg_map_in_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->remote_obj_id);
-    if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->remote_reg_id);
-    if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_int32_t(proc, &struct_data->remote_client_id);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;

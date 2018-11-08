@@ -86,7 +86,6 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id
         PGOTO_ERROR(0, "PDC object memory allocation failed\n");
     p->name = strdup(obj_name);
     p->metadata = NULL;
-    p->client_id = 0;
     p->region_list_head = NULL;
 
     id_info = pdc_find_id(cont_id);
@@ -225,7 +224,6 @@ pdcid_t pdc_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_i
         ret = PDC_Client_send_name_recv_id(obj_name, p->cont->meta_id, obj_prop_id, &(p->meta_id));
         if (ret == FAIL)
             PGOTO_ERROR(0, "Unable to create object on server!\n");
-        p->client_id = 0;
     }
     
     ret_value = p->local_id;
@@ -451,7 +449,6 @@ pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc)
         if(out->obj_name != NULL)
             p->name = strdup(out->obj_name);
         p->meta_id = out->obj_id;
-        p->client_id = 0;
         
         p->cont->meta_id = out->cont_id;
         p->obj_pt->ndim = out->ndim;
@@ -762,7 +759,6 @@ perr_t PDCobj_map(pdcid_t local_obj, pdcid_t local_reg, pdcid_t remote_obj, pdci
     struct PDC_id_info *reginfo1, *reginfo2;
     struct PDC_region_info *reg1, *reg2;
     size_t ndim;
-    int32_t remote_client_id;
     
     FUNC_ENTER(NULL);
     
@@ -790,7 +786,6 @@ perr_t PDCobj_map(pdcid_t local_obj, pdcid_t local_reg, pdcid_t remote_obj, pdci
         PGOTO_ERROR(FAIL, "cannot locate remote object ID");
     obj2 = (struct PDC_obj_info *)(objinfo2->obj_ptr);
     remote_meta_id = obj2->meta_id;
-    remote_client_id = obj2->client_id;
     remote_type = obj2->obj_pt->type;
     remote_data = obj2->obj_pt->buf;
   
@@ -807,7 +802,7 @@ perr_t PDCobj_map(pdcid_t local_obj, pdcid_t local_reg, pdcid_t remote_obj, pdci
     
     //TODO: assume type is the same
     // start mapping
-    ret_value = PDC_Client_region_map(local_meta_id, local_reg, remote_meta_id, remote_reg, ndim, obj1->obj_pt->dims, reg1->offset, reg1->size, local_type, local_data, obj2->obj_pt->dims, reg2->offset, reg2->size, remote_type, remote_client_id, remote_data, reg1, reg2);
+    ret_value = PDC_Client_region_map(local_meta_id, local_reg, remote_meta_id,  ndim, obj1->obj_pt->dims, reg1->offset, reg1->size, local_type, local_data, obj2->obj_pt->dims, reg2->offset, reg2->size, remote_type, remote_data, reg1, reg2);
     if(ret_value == SUCCEED) {
         // state in origin obj that there is mapping
 //        obj1->mapping = 1;
@@ -837,7 +832,6 @@ perr_t PDCbuf_obj_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, p
     PDC_var_type_t remote_type;
     struct PDC_id_info *reginfo1, *reginfo2;
     struct PDC_region_info *reg1, *reg2;
-    int32_t remote_client_id;
     
     FUNC_ENTER(NULL);
 
@@ -849,7 +843,6 @@ perr_t PDCbuf_obj_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, p
         PGOTO_ERROR(FAIL, "cannot locate remote object ID");
     obj2 = (struct PDC_obj_info *)(objinfo2->obj_ptr);
     remote_meta_id = obj2->meta_id;
-    remote_client_id = obj2->client_id;
     remote_type = obj2->obj_pt->type;
   
     reginfo2 = pdc_find_id(remote_reg);
@@ -862,7 +855,7 @@ perr_t PDCbuf_obj_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, p
             PGOTO_ERROR(FAIL, "remote object region size error");
 
 //    ret_value = PDC_Client_buf_map(local_reg, remote_meta_id, remote_reg, reg1->ndim, reg1->size, reg1->offset, reg1->size, local_type, buf, obj2->obj_pt->dims, reg2->offset, reg2->size, remote_type, remote_client_id, remote_data, reg1, reg2);
-    ret_value = PDC_Client_buf_map(local_reg, remote_meta_id, remote_reg, reg1->ndim, reg1->size, reg1->offset, reg1->size, local_type, buf, remote_type, remote_client_id, reg1, reg2);
+    ret_value = PDC_Client_buf_map(local_reg, remote_meta_id, reg1->ndim, reg1->size, reg1->offset, reg1->size, local_type, buf, remote_type, reg1, reg2);
 
     if(ret_value == SUCCEED) {
         /* 
