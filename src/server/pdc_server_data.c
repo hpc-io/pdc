@@ -1092,8 +1092,6 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
     buf_map_ptr->local_bulk_handle = in->local_bulk_handle;
 
     buf_map_ptr->remote_obj_id = in->remote_obj_id;
-    buf_map_ptr->remote_reg_id = in->remote_reg_id;
-    buf_map_ptr->remote_client_id = in->remote_client_id;
     buf_map_ptr->remote_ndim = in->ndim;
     buf_map_ptr->remote_unit = in->remote_unit;
     buf_map_ptr->remote_region_unit = in->remote_region_unit;
