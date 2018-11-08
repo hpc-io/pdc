@@ -99,7 +99,7 @@ int main(int argc, char **argv)
 
     // open a container
     cont_id = PDCcont_open("c1", pdc_id);
-    if(cont_id <= 0)
+    if(cont_id == 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
     // open objects
@@ -177,35 +177,35 @@ int main(int argc, char **argv)
 
     ret = PDCbuf_obj_map(&x[0], PDC_FLOAT, region_x, obj_xx, region_xx);
     if(ret < 0)
-        printf("Array x PDCobj_buf_map failed\n");
+        printf("Array x PDCbuf_obj_map failed\n");
 
     ret = PDCbuf_obj_map(&y[0], PDC_FLOAT, region_y, obj_yy, region_yy);
     if(ret < 0)
-        printf("Array y PDCobj_buf_map failed\n");
+        printf("Array y PDCbuf_obj_map failed\n");
 
     ret = PDCbuf_obj_map(&z[0], PDC_FLOAT, region_z, obj_zz, region_zz);
     if(ret < 0)
-        printf("Array z PDCobj_buf_map failed\n");
+        printf("Array z PDCbuf_obj_map failed\n");
 
     ret = PDCbuf_obj_map(&px[0], PDC_FLOAT, region_px, obj_pxx, region_pxx);
     if(ret < 0)
-        printf("Array px PDCobj_buf_map failed\n");
+        printf("Array px PDCbuf_obj_map failed\n");
 
     ret = PDCbuf_obj_map(&py[0], PDC_FLOAT, region_py, obj_pyy, region_pyy);
     if(ret < 0)
-        printf("Array py PDCobj_buf_map failed\n");
+        printf("Array py PDCbuf_obj_map failed\n");
 
     ret = PDCbuf_obj_map(&pz[0], PDC_FLOAT, region_pz, obj_pzz, region_pzz);
     if(ret < 0)
-        printf("Array pz PDCobj_buf_map failed\n");
+        printf("Array pz PDCbuf_obj_map failed\n");
 
     ret = PDCbuf_obj_map(&id1[0], PDC_INT, region_id1, obj_id11, region_id11);
     if(ret < 0)
-        printf("Array id1 PDCobj_buf_map failed\n");
+        printf("Array id1 PDCbuf_obj_map failed\n");
 
     ret = PDCbuf_obj_map(&id2[0], PDC_INT, region_id2, obj_id22, region_id22);
     if(ret < 0)
-        printf("Array id2 PDCobj_buf_map failed\n");
+        printf("Array id2 PDCbuf_obj_map failed\n");
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -442,14 +442,14 @@ int main(int argc, char **argv)
 
     /*
      for (uint64_t i=0; i<numparticles; i++) {
-     printf("id1[i] = %d\n", id1[i]);
-     printf("id2[i] = %d\n", id2[i]);
-     printf("x[i] = %f\n", x[i]);
-     printf("y[i] = %f\n", y[i]);
-     printf("z[i] = %f\n", z[i]);
-     printf("px[i] = %f\n", px[i]);
-     printf("py[i] = %f\n", py[i]);
-     printf("pz[i] = %f\n", pz[i]);
+        printf("id1[i] = %d\n", id1[i]);
+        printf("id2[i] = %d\n", id2[i]);
+        printf("x[i] = %f\n", x[i]);
+        printf("y[i] = %f\n", y[i]);
+        printf("z[i] = %f\n", z[i]);
+        printf("px[i] = %f\n", px[i]);
+        printf("py[i] = %f\n", py[i]);
+        printf("pz[i] = %f\n", pz[i]);
      }
      */
     
