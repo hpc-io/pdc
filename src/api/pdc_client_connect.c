@@ -1807,7 +1807,7 @@ perr_t PDC_Client_add_tag(pdcid_t obj_id, const char *tag)
         goto done;
     }
 
-    struct PDC_obj_info *obj_prop = PDCobj_get_info(obj_id);
+    struct PDC_obj_info *obj_prop = PDC_obj_get_info(obj_id);
     meta_id = obj_prop->meta_id;
     server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
 
@@ -3391,7 +3391,7 @@ perr_t PDC_Client_release_region_lock(pdcid_t meta_id, struct PDC_region_info *r
     FUNC_ENTER(NULL);
 
     /* uint64_t meta_id; */
-    /* PDC_obj_info *obj_prop = PDCobj_get_info(obj_id, pdc); */
+    /* PDC_obj_info *obj_prop = PDC_obj_get_info(obj_id, pdc); */
     /* meta_id = obj_prop->meta_id; */
     ret_value = PDC_Client_region_release(meta_id, region_info, access_type, data_type, released);
 
@@ -6721,7 +6721,7 @@ perr_t PDC_add_kvtag(pdcid_t obj_id, pdc_kvtag_t *kvtag)
 
     FUNC_ENTER(NULL);
 
-    struct PDC_obj_info *obj_prop = PDCobj_get_info(obj_id);
+    struct PDC_obj_info *obj_prop = PDC_obj_get_info(obj_id);
     meta_id = obj_prop->meta_id;
 
     server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
@@ -6816,7 +6816,7 @@ perr_t PDC_get_kvtag(pdcid_t obj_id, char *tag_name, pdc_kvtag_t **kvtag)
 
     FUNC_ENTER(NULL);
 
-    struct PDC_obj_info *obj_prop = PDCobj_get_info(obj_id);
+    struct PDC_obj_info *obj_prop = PDC_obj_get_info(obj_id);
     meta_id = obj_prop->meta_id;
     server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
     debug_server_id_count[server_id]++;
@@ -6874,7 +6874,7 @@ perr_t PDCtag_delete(pdcid_t obj_id, char *tag_name)
 
     FUNC_ENTER(NULL);
 
-    struct PDC_obj_info *obj_prop = PDCobj_get_info(obj_id);
+    struct PDC_obj_info *obj_prop = PDC_obj_get_info(obj_id);
     meta_id = obj_prop->meta_id;
     server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
 
@@ -7561,7 +7561,7 @@ perr_t PDCobj_get_data(pdcid_t obj_id, void **data, uint64_t *size)
     obj_region.offset = 0;
     obj_region.size   = 0;  // TODO: size=0 means read entire object
 
-    struct PDC_obj_info *obj_prop = PDCobj_get_info(obj_id);
+    struct PDC_obj_info *obj_prop = PDC_obj_get_info(obj_id);
     meta_id = obj_prop->meta_id;
     obj_name = obj_prop->name;
 
@@ -7591,7 +7591,7 @@ PDCobj_del_data(pdcid_t obj_id)
 
     FUNC_ENTER(NULL);
 
-    struct PDC_obj_info *obj_prop = PDCobj_get_info(obj_id);
+    struct PDC_obj_info *obj_prop = PDC_obj_get_info(obj_id);
     meta_id = obj_prop->meta_id;
 
     ret_value = PDC_Client_delete_metadata_by_id(meta_id);
