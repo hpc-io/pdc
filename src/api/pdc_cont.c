@@ -28,6 +28,7 @@
 #include "pdc_malloc.h"
 #include "pdc_prop_pkg.h"
 #include "pdc_atomic.h"
+#include "pdc_interface.h"
 #include "pdc_client_connect.h"
 
 static perr_t pdc_cont_close(struct PDC_cont_info *cp);

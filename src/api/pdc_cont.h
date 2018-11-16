@@ -27,7 +27,6 @@
 
 #include "pdc_error.h"
 #include "pdc_cont_pkg.h"
-#include "pdc_interface.h"
 #include "pdc_life.h"
 
 typedef struct PDC_id_info cont_handle;
