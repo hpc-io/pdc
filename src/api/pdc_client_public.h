@@ -284,7 +284,7 @@ int PDC_get_nproc_per_node();
 
 perr_t  PDCobj_get_id(const char *tag_name, void *tag_value, int value_size, int *n_res, uint64_t **pdc_ids); 
 perr_t  PDCobj_get_name(const char *tag_name, void *tag_value, int value_size, int *n_res, char **obj_names);
-pdcid_t PDCobj_put_data(const char *obj_name, const void *data, uint64_t size, /* pdcid_t pdc_id, */ pdcid_t cont_id);
+pdcid_t PDCobj_put_data(const char *obj_name, const void *data, uint64_t size, pdcid_t cont_id);
 perr_t  PDCobj_get_data(pdcid_t obj_id, void **data, uint64_t *size);
 perr_t  PDCobj_del_data(pdcid_t obj_id);
 perr_t  PDCobj_put_tag(pdcid_t obj_id, const char *tag_name, const void *tag_value, size_t value_size);

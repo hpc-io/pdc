@@ -999,7 +999,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
 #endif
 
 #ifndef PDC_HAS_CRAY_DRC
-    init_info.auto_sm = HG_TRUE;
+    /* init_info.auto_sm = HG_TRUE; */
 #endif
     *hg_class = HG_Init_opt(na_info_string, HG_TRUE, &init_info);
     if (*hg_class == NULL) {
@@ -4889,7 +4889,8 @@ done:
 }
 
 // Query container with name, retrieve container ID from server
-perr_t PDC_Client_query_container_name(char *cont_name, uint64_t *cont_meta_id)
+perr_t 
+PDC_Client_query_container_name(char *cont_name, uint64_t *cont_meta_id)
 {
     perr_t                 ret_value = SUCCEED;
     hg_return_t            hg_ret    = 0;
@@ -4942,6 +4943,42 @@ done:
     HG_Destroy(container_query_handle);
     FUNC_LEAVE(ret_value);
 }
+
+// All clients collectively query all servers
+perr_t 
+PDC_Client_query_container_name_col(const char *cont_name, uint64_t *cont_meta_id)
+{
+    perr_t ret_value = SUCCEED;
+    uint32_t my_server_start, my_server_end, my_server_count;
+    uint32_t i, nalloc = 0;
+    int nmeta = 0, j;
+
+    FUNC_ENTER(NULL);
+
+#ifdef ENABLE_MPI
+    if (pdc_client_mpi_rank_g == 0) {
+        ret_value = PDC_Client_query_container_name(cont_name, cont_meta_id);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_CLIENT[%d]: %s - error with PDC_Client_query_kvtag_server to server %u\n", 
+                    pdc_client_mpi_rank_g, __func__, i);
+        }
+
+    }
+
+    MPI_Bcast(cont_meta_id, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
+#else
+
+    printf("==PDC_CLIENT[%d]: Calling MPI collective operation without enabling MPI!\n", pdc_client_mpi_rank_g);
+
+#endif
+
+    /* printf("%d: done querying %d results\n", pdc_client_mpi_rank_g, nmeta); */
+    /* fflush(stdout); */
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 
 
 static hg_return_t
@@ -7257,6 +7294,7 @@ PDC_Client_query_kvtag(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids)
 done:
     FUNC_LEAVE(ret_value);
 }
+
 
 // All clients collectively query all servers
 perr_t 

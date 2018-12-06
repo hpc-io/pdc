@@ -479,4 +479,6 @@ perr_t PDC_Client_query_kvtag_col(const pdc_kvtag_t *kvtag, int *n_res, uint64_t
 perr_t PDC_Client_query_name_read_entire_obj_client_agg_cache_iter(int my_nobj, char **my_obj_names, 
                                                                    void ***out_buf, size_t *out_buf_sizes, 
                                                                    int cache_percentage);
+
+perr_t PDC_Client_query_container_name_col(const char *cont_name, uint64_t *cont_meta_id);
 #endif
