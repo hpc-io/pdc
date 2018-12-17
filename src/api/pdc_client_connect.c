@@ -999,7 +999,8 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     init_info.na_init_info.progress_mode = NA_NO_BLOCK;  //busy mode
 #endif
 
-#ifndef PDC_HAS_CRAY_DRC
+//#ifndef PDC_HAS_CRAY_DRC
+#ifdef PDC_HAS_SHARED_SERVER
     init_info.auto_sm = HG_TRUE;
 #endif
     *hg_class = HG_Init_opt(na_info_string, HG_TRUE, &init_info);
