@@ -77,7 +77,7 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id
     struct PDC_obj_info *p = NULL;
     struct PDC_id_info *id_info = NULL;
     perr_t ret;
-    int i;
+    size_t i;
 
     FUNC_ENTER(NULL);
 
@@ -155,7 +155,7 @@ pdcid_t pdc_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_i
     struct PDC_id_info *id_info = NULL;
     struct PDC_cont_info *cont_info = NULL;
     struct PDC_obj_prop *obj_prop;
-    int i;
+    size_t i;
     perr_t ret = SUCCEED;
 
     FUNC_ENTER(NULL);
@@ -369,12 +369,10 @@ pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc)
 {
     pdcid_t ret_value = 0;
     perr_t ret = SUCCEED;
-    pdcid_t obj_id;
     struct PDC_obj_info *p = NULL;
-    struct PDC_obj_info *obj_info;
     pdc_metadata_t *out;
     pdcid_t obj_prop;
-    int i;
+    size_t i;
     
     FUNC_ENTER(NULL);
         
@@ -397,72 +395,31 @@ pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc)
     if(!p->obj_pt->pdc)
         PGOTO_ERROR(0, "cannot allocate ret_value->pdc");
     
-    // look up in the local object list first
-    obj_id = pdc_find_byname(PDC_OBJ, obj_name);
-    if(obj_id){
-        obj_info = PDC_obj_get_info(obj_id);
-        memcpy(p, obj_info, sizeof(struct PDC_obj_info));
-        p->metadata = NULL;
-        if(obj_info->name)
-            p->name = strdup(obj_info->name);
+    // contact metadata server
+    ret = PDC_Client_query_metadata_name_timestep(obj_name, 0, &out);
+    if(ret == FAIL)
+        PGOTO_ERROR(0, "query object failed");
         
-        memcpy(p->cont, obj_info->cont, sizeof(struct PDC_cont_info));
-        if(obj_info->cont->name)
-            p->cont->name = strdup(obj_info->cont->name);
+    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
+    PDCprop_set_obj_dims(obj_prop, out->ndim, out->dims);
+    PDCprop_set_obj_type(obj_prop, out->data_type);
         
-        memcpy(p->cont->cont_pt, obj_info->cont->cont_pt, sizeof(struct PDC_cont_prop));
+    if(out->obj_name != NULL)
+        p->name = strdup(out->obj_name);
+    p->meta_id = out->obj_id;
         
-        if(obj_info->cont->cont_pt->pdc->name)
-            p->cont->cont_pt->pdc->name = strdup(obj_info->cont->cont_pt->pdc->name);
-        p->cont->cont_pt->pdc->local_id = obj_info->cont->cont_pt->pdc->local_id;
-        
-        memcpy(p->obj_pt, obj_info->obj_pt, sizeof(struct PDC_obj_prop));
-        if(obj_info->obj_pt->pdc->name)
-            p->obj_pt->pdc->name = strdup(obj_info->obj_pt->pdc->name);
-        p->obj_pt->pdc->local_id = obj_info->obj_pt->pdc->local_id;
-        
-        p->obj_pt->dims = malloc(obj_info->obj_pt->ndim*sizeof(uint64_t));
-        if(!p->obj_pt->dims)
-            PGOTO_ERROR(0, "cannot allocate ret_value->dims");
-        for(i=0; i<obj_info->obj_pt->ndim; i++)
-            p->obj_pt->dims[i] = obj_info->obj_pt->dims[i];
-        
-        if(obj_info->obj_pt->app_name)
-            p->obj_pt->app_name = strdup(obj_info->obj_pt->app_name);
-        if(obj_info->obj_pt->data_loc)
-            p->obj_pt->data_loc = strdup(obj_info->obj_pt->data_loc);
-        if(obj_info->obj_pt->tags)
-            p->obj_pt->tags = strdup(obj_info->obj_pt->tags);
-        
-        PDC_Client_attach_metadata_to_local_obj(obj_name, p->meta_id, p->cont->meta_id, p);
-    }
-    else {
-        // contact metadata server
-        ret = PDC_Client_query_metadata_name_only(obj_name, &out);
-        if(ret == FAIL)
-            PGOTO_ERROR(0, "query object failed");
-        
-        obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
-        PDCprop_set_obj_dims(obj_prop, out->ndim, out->dims);
-        PDCprop_set_obj_type(obj_prop, out->data_type);
-        
-        if(out->obj_name != NULL)
-            p->name = strdup(out->obj_name);
-        p->meta_id = out->obj_id;
-        
-        p->cont->meta_id = out->cont_id;
-        p->obj_pt->ndim = out->ndim;
-        p->obj_pt->dims = malloc(out->ndim*sizeof(uint64_t));
-        if(!p->obj_pt->dims)
-            PGOTO_ERROR(0, "cannot allocate ret_value->dims");
-        for(i=0; i<out->ndim; i++)
-            p->obj_pt->dims[i] = out->dims[i];
-        if(out->app_name != NULL)
-            p->obj_pt->app_name = strdup(out->app_name);
-        p->obj_pt->type = out->data_type;
-        p->obj_pt->time_step = out->time_step;
-        p->obj_pt->user_id = out->user_id;
-    }
+    p->cont->meta_id = out->cont_id;
+    p->obj_pt->ndim = out->ndim;
+    p->obj_pt->dims = malloc(out->ndim*sizeof(uint64_t));
+    if(!p->obj_pt->dims)
+        PGOTO_ERROR(0, "cannot allocate ret_value->dims");
+    for(i=0; i<out->ndim; i++)
+        p->obj_pt->dims[i] = out->dims[i];
+    if(out->app_name != NULL)
+        p->obj_pt->app_name = strdup(out->app_name);
+    p->obj_pt->type = out->data_type;
+    p->obj_pt->time_step = out->time_step;
+    p->obj_pt->user_id = out->user_id;
     
     p->local_id = pdc_id_register(PDC_OBJ, p);
     ret_value = p->local_id;
@@ -999,7 +956,7 @@ struct PDC_obj_info *PDC_obj_get_info(pdcid_t obj_id)
     struct PDC_obj_info *ret_value = NULL;
     struct PDC_obj_info *info =  NULL;
     struct PDC_id_info *obj;
-    int i;
+    size_t i;
     
     FUNC_ENTER(NULL);
     
@@ -1099,7 +1056,6 @@ struct PDC_obj_info *PDCobj_get_info(const char *obj_name)
     
     ret_value = PDC_obj_get_info(obj_id);
     
-done:
     FUNC_LEAVE(ret_value);
 }
 
