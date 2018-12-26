@@ -396,7 +396,7 @@ pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc)
         PGOTO_ERROR(0, "cannot allocate ret_value->pdc");
     
     // contact metadata server
-    ret = PDC_Client_query_metadata_name_timestep(obj_name, 0, &out);
+    ret = PDC_Client_query_metadata_name_timestep_agg(obj_name, 0, &out);
     if(ret == FAIL)
         PGOTO_ERROR(0, "query object failed");
         
