@@ -412,6 +412,7 @@ perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_
 
 
 perr_t PDC_Client_query_container_name(char *cont_name, uint64_t *cont_meta_id);
+perr_t PDC_Client_query_container_name_col(const char *cont_name, uint64_t *cont_meta_id);
 /**
  * Async request send to server to read a region and put it in users buffer
  *
