@@ -10,14 +10,14 @@ include_directories(
 # External dependencies
 #------------------------------------------------------------------------------
 # profiling
-set(PDC_EXT_LIB_DEPENDENCIES pdcprof ${PDC_EXT_LIB_DEPENDENCIES})
+#set(PDC_EXT_LIB_DEPENDENCIES pdcprof ${PDC_EXT_LIB_DEPENDENCIES})
 set(PDC_EXT_INCLUDE_DEPENDENCIES ${CMAKE_CURRENT_SOURCE_DIR}/profiling)
 set(PDC_EXPORTED_LIBS pdcprof)
 
 # Mercury
 find_package(MERCURY REQUIRED)
 if(MERCURY_FOUND)
-  message(STATUS "mercury include directory: ${MERCURY_INCLUDE_DIR}")
+  message(STATUS "mercury dir ${MERCURY_DIR}")
   set(PDC_EXT_INCLUDE_DEPENDENCIES ${MERCURY_INCLUDE_DIR}
     ${PDC_EXT_INCLUDE_DEPENDENCIES}
     )
@@ -70,7 +70,12 @@ set(PDC_SRCS
 #------------------------------------------------------------------------------
 # PDC
 add_library(pdc ${PDC_SRCS})
-target_link_libraries(pdc ${PDC_EXPORTED_LIBS} ${PDC_EXT_LIB_DEPENDENCIES} -ldl)
+
+target_link_libraries(pdc
+  ${PDC_EXPORTED_LIBS}
+  ${PDC_EXT_LIB_DEPENDENCIES}
+  -ldl
+)
 pdc_set_lib_options(pdc "pdc" ${PDC_LIBTYPE})
 
 set(PDC_EXPORTED_LIBS pdc ${PDC_EXPORTED_LIBS})
