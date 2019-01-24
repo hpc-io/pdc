@@ -61,6 +61,17 @@ foreach(program ${PROGRAMS})
   target_link_libraries(${program} pdc)
 endforeach(program)
 
+set(SCRIPTS
+  run_test.sh
+  )
+
+foreach(script ${SCRIPTS})
+  file(
+       COPY ${script} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+       FILE_PERMISSIONS WORLD_READ WORLD_EXECUTE
+    )
+endforeach(script)
+
 # *******************************************
 # Create a transform library which contains:
 #  1. compression/depression functions
@@ -77,3 +88,16 @@ endforeach(program)
 set(PDC_ANALYSIS_SRCS pdc_analysis_lib.c)
 add_library(pdcanalysis ${PDC_ANALYSIS_SRCS})
 target_link_libraries(pdcanalysis pdc)
+
+add_test(NAME pdc_init    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./pdc_init )
+add_test(NAME create_prop WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./create_prop )
+add_test(NAME create_cont WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./create_cont )
+add_test(NAME open_cont   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./open_cont )
+add_test(NAME cont_life   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./cont_life )
+add_test(NAME cont_iter   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./cont_iter )
+add_test(NAME create_obj  WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./create_obj )
+add_test(NAME open_obj    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./open_obj )
+add_test(NAME obj_iter    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_iter )
+add_test(NAME obj_life    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_life )
+add_test(NAME obj_dim     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_dim )
+add_test(NAME obj_buf     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_buf )
