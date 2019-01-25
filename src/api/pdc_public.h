@@ -45,9 +45,11 @@ typedef enum {
     PDC_COMPOUND     = 4,  /* compound types                             */
     PDC_ENUM         = 5,  /* enumeration types                          */
     PDC_ARRAY        = 6,  /* Array types                                */
-    PDC_INT64        = 7,  /* 64-bit integer types                       */
+    PDC_UINT         = 7,  /* unisgned integer types                     */
+    PDC_INT64        = 8,  /* 64-bit integer types                       */
+    PDC_UINT64       = 9,  /* 64-bit unsigned integer types              */
  
-    NCLASSES         = 8   /* this must be last                          */
+    NCLASSES         = 10  /* this must be last                          */
 } PDC_var_type_t;
 
 
