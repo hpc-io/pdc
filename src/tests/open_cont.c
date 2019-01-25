@@ -25,99 +25,74 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <getopt.h>
 
 #ifdef ENABLE_MPI
-#include "mpi.h"
+  #include "mpi.h"
 #endif
 
 #include "pdc.h"
 
-int main(int argc, char **argv) {
-    pdcid_t pdc, create_prop, cont1, cont2, cont1_cp, cont2_cp;
+int main(int argc, char **argv)
+{
     int rank = 0, size = 1;
-    
+    pdcid_t pdc_id, cont_prop, cont_id, cont_id2;
+
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
+
     // create a pdc
-    pdc = PDC_init("pdc");
-    printf("create a new pdc\n");
+    pdc_id = PDC_init("pdc");
+    /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
-    create_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
-    if(create_prop > 0)
-        printf("Create a container property\n");
-    else
+    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
+    if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     // create a container
-    cont1 = PDCcont_create("c1", create_prop);
-    if(cont1 > 0)
-        printf("Create a container c1\n");
-    else
-        printf("Fail to create container @ line  %d!\n", __LINE__);
-       
-    // create second container
-    cont2 = PDCcont_create("c2", create_prop);
-    if(cont2 > 0)
-        printf("Create a container c2\n");
-    else
+
+    cont_id = PDCcont_create_col("c1", cont_prop);
+    if(cont_id <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
-    // open 1st container
-    cont1_cp = PDCcont_open("c1");
-    if(cont1_cp == 0)
-        printf("Fail to open container c1\n");
-    else
-        printf("Open container c1\n");
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    if (rank == 0)
+        printf("%s:%u\n", __func__, __LINE__);
 
-    // open 2nd container
-    cont2_cp = PDCcont_open("c2");
-    if(cont2_cp == 0)
-        printf("Fail to open container c2\n");
-    else
-        printf("Open container c2 \n");
+    cont_id2 = PDCcont_open("c1", pdc_id);
+    if(cont_id2 == 0)
+        printf("Fail to open container @ line  %d!\n", __LINE__);
+#ifdef ENABLE_MPI
+MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    if (rank == 0)
+        printf("%s:%u\n", __func__, __LINE__);
 
-    // close cont1_cp
-    if(PDCcont_close(cont1_cp) < 0)
-        printf("fail to close container cont1_cp\n");
-    else
-        printf("successfully close container cont1_cp\n");
+    // close a container
+    if(PDCcont_close(cont_id) < 0)
+        printf("fail to close container cont_id1\n");
 
-    // close cont2_cp
-    if(PDCcont_close(cont2_cp) < 0)
-        printf("fail to close container cont2_cp\n");
-    else
-        printf("successfully close container cont2_cp\n");
-
-    // close cont1
-    if(PDCcont_close(cont1) < 0)
-        printf("fail to close container c1\n");
-    else
-        printf("successfully close container c1\n");
-
-    // close cont2
-    if(PDCcont_close(cont2) < 0)
-        printf("fail to close container c2\n");
-    else
-        printf("successfully close container c2\n");
+    if(PDCcont_close(cont_id2) < 0)
+        printf("fail to close container cont_id2\n");
 
     // close a container property
-    if(PDCprop_close(create_prop) < 0)
+    if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
-    else
-        printf("successfully close container property\n");
 
-    // close pdc
-    if(PDC_close(pdc) < 0)
+    if(PDC_close(pdc_id) < 0)
        printf("fail to close PDC\n");
-    else
-       printf("PDC is closed\n");
-    
+
 #ifdef ENABLE_MPI
-    MPI_Finalize();
+     MPI_Finalize();
 #endif
-    return 0;
+
+     return 0;
 }
+

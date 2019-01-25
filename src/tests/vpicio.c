@@ -71,8 +71,6 @@ int main(int argc, char **argv)
     int y_dim = 64;
     int z_dim = 64;
     uint64_t numparticles, i;
-//    int my_data_size;
-//    uint64_t dims[1] = {my_data_size};  // {8388608};
     uint64_t dims[1];
     int ndim = 1;
     uint64_t *offset;
@@ -119,7 +117,7 @@ int main(int argc, char **argv)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     // create a container
-    cont_id = PDCcont_create("c1", cont_prop);
+    cont_id = PDCcont_create_col("c1", cont_prop);
     if(cont_id <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
@@ -394,27 +392,6 @@ fflush(stdout);
         printf("Time to update data with %d ranks: %.6f\n", size, ht_total_sec);
         fflush(stdout);
     }
-    
-/*
-    for (int i=0; i<my_data_size/size; i++) {
-        if(xx[rank * my_data_size/size+i] != x[rank * my_data_size/size+i])
-            printf("== ERROR == rank %d: x data does not match\n", rank);
-        if(yy[rank * my_data_size/size+i] != y[rank * my_data_size/size+i])
-            printf("== ERROR == rank %d: y data does not match\n", rank);
-        if(zz[rank * my_data_size/size+i] != z[rank * my_data_size/size+i])
-            printf("== ERROR == rank %d: z data does not match\n", rank);
-        if(pxx[rank * my_data_size/size+i] != px[rank * my_data_size/size+i])
-            printf("== ERROR == rank %d: px data does not match\n", rank);
-        if(pyy[rank * my_data_size/size+i] != py[rank * my_data_size/size+i])
-            printf("== ERROR == rank %d: py data does not match\n", rank);
-        if(pzz[rank * my_data_size/size+i] != pz[rank * my_data_size/size+i])
-            printf("== ERROR == rank %d: pz data does not match\n", rank);
-        if(id11[rank * my_data_size/size+i] != id1[rank * my_data_size/size+i])
-            printf("== ERROR == rank %d: id1 data does not match\n", rank);
-        if(id22[rank * my_data_size/size+i] != id2[rank * my_data_size/size+i])
-            printf("== ERROR == rank %d: id2 data does not match\n", rank);
-    }
-*/
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);

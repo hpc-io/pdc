@@ -28,6 +28,7 @@
 #include "pdc_malloc.h"
 #include "pdc_prop_pkg.h"
 #include "pdc_atomic.h"
+#include "pdc_interface.h"
 #include "pdc_client_connect.h"
 
 static perr_t pdc_cont_close(struct PDC_cont_info *cp);
@@ -46,11 +47,49 @@ done:
     FUNC_LEAVE(ret_value); 
 } 
 
+pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_prop_id)
+{
+    pdcid_t ret_value = 0;
+    struct PDC_cont_info *p = NULL;
+    struct PDC_cont_prop *cont_prop = NULL;
+    struct PDC_id_info *id_info = NULL;
+    
+    FUNC_ENTER(NULL);
+    
+    p = PDC_MALLOC(struct PDC_cont_info);
+    if(!p)
+        PGOTO_ERROR(0, "PDC container memory allocation failed\n");
+    p->name = strdup(cont_name);
+    
+    id_info = pdc_find_id(cont_prop_id);
+    cont_prop = (struct PDC_cont_prop *)(id_info->obj_ptr);
+    
+    p->cont_pt = PDC_CALLOC(struct PDC_cont_prop);
+    if(!p->cont_pt)
+        PGOTO_ERROR(0, "PDC container prop memory allocation failed\n");
+    memcpy(p->cont_pt, cont_prop, sizeof(struct PDC_cont_prop));
+    
+    p->cont_pt->pdc = PDC_CALLOC(struct PDC_class);
+    if(!p->cont_pt->pdc)
+        PGOTO_ERROR(0, "PDC container pdc class memory allocation failed\n");
+    if(cont_prop->pdc->name)
+        p->cont_pt->pdc->name = strdup(cont_prop->pdc->name);
+    p->cont_pt->pdc->local_id = cont_prop->pdc->local_id;
+   
+    ret_value = PDC_Client_create_cont_id(cont_name, cont_prop_id, &(p->meta_id));
+    if (ret_value == FAIL)
+        PGOTO_ERROR(0, "Unable to create container on the server!\n");
+    
+    p->local_id = pdc_id_register(PDC_CONT, p);
+    ret_value = p->local_id;
+    
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 pdcid_t PDCcont_create_col(const char *cont_name, pdcid_t cont_prop_id)
 {
     pdcid_t ret_value = 0;
-    perr_t  ret;
-    pdcid_t new_id;
     struct PDC_cont_info *p = NULL;
     struct PDC_cont_prop *cont_prop = NULL;
     struct PDC_id_info *id_info = NULL;
@@ -78,77 +117,55 @@ pdcid_t PDCcont_create_col(const char *cont_name, pdcid_t cont_prop_id)
     p->cont_pt->pdc->local_id = cont_prop->pdc->local_id;
  
     ret_value = PDC_Client_create_cont_id_mpi(cont_name, cont_prop_id, &(p->meta_id));
-    /* ret_value = PDC_Client_create_cont_id(cont_name, &(p->meta_id)); */
     if (ret_value == FAIL)
         PGOTO_ERROR(0, "Unable to create container object on server!\n");
    
-    new_id = pdc_id_register(PDC_CONT, p);
-    p->local_id = new_id;
-    ret_value = new_id;
+    p->local_id = pdc_id_register(PDC_CONT, p);
+    ret_value = p->local_id;
 
 done:
     FUNC_LEAVE(ret_value);
 }
 
-pdcid_t PDCcont_create_local(pdcid_t pdc, const char *cont_name, uint64_t cont_meta_id)
+pdcid_t PDC_cont_create_local(pdcid_t pdc, const char *cont_name, uint64_t cont_meta_id)
 {
     pdcid_t ret_value = 0;
     perr_t  ret;
-    pdcid_t new_id;
     struct PDC_cont_info *p = NULL;
+    struct PDC_cont_prop *cont_prop = NULL;
     struct PDC_id_info *id_info = NULL;
     pdcid_t cont_prop_id;
-
+    
     FUNC_ENTER(NULL);
-
+    
     p = PDC_MALLOC(struct PDC_cont_info);
     if(!p)
-        PGOTO_ERROR(FAIL,"PDC container memory allocation failed\n");
+        PGOTO_ERROR(0, "PDC container memory allocation failed\n");
     p->name = strdup(cont_name);
-
+    p->meta_id = cont_meta_id;
+    
     cont_prop_id = PDCprop_create(PDC_CONT_CREATE, pdc);
     
     id_info = pdc_find_id(cont_prop_id);
-    p->cont_pt = (struct PDC_cont_prop *)(id_info->obj_ptr);
-    p->meta_id = cont_meta_id;
-
-    new_id = pdc_id_register(PDC_CONT, p);
-    p->local_id = new_id;
-    ret_value = new_id;
-
-    PDCprop_close(cont_prop_id);
-done:
-    FUNC_LEAVE(ret_value);
-}
-
-pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_prop_id)
-{
-    pdcid_t ret_value = 0;
-    perr_t  ret;
-    pdcid_t new_id;
-    struct PDC_cont_info *p = NULL;
-    struct PDC_id_info *id_info = NULL;
-
-    FUNC_ENTER(NULL);
-
-    p = PDC_MALLOC(struct PDC_cont_info);
-    if(!p)
-        PGOTO_ERROR(FAIL,"PDC container memory allocation failed\n");
-    p->name = strdup(cont_name);
+    cont_prop = (struct PDC_cont_prop *)(id_info->obj_ptr);
+    p->cont_pt = PDC_CALLOC(struct PDC_cont_prop);
+    if(!p->cont_pt)
+        PGOTO_ERROR(0, "PDC container prop memory allocation failed\n");
+    memcpy(p->cont_pt, cont_prop, sizeof(struct PDC_cont_prop));
     
-    id_info = pdc_find_id(cont_prop_id);
-    p->cont_pt = (struct PDC_cont_prop *)(id_info->obj_ptr);
- 
-    ret = PDC_Client_create_cont_id(cont_name, cont_prop_id, &(p->meta_id));
-    if (ret == FAIL) {
-        ret_value = -1;
-        PGOTO_ERROR(FAIL,"Unable to create container object on server!\n");
-    }
-   
-    new_id = pdc_id_register(PDC_CONT, p);
-    p->local_id = new_id;
-    ret_value = new_id;
+    p->cont_pt->pdc = PDC_CALLOC(struct PDC_class);
+    if(!p->cont_pt->pdc)
+        PGOTO_ERROR(0, "PDC container pdc class memory allocation failed\n");
+    
+    if(cont_prop->pdc->name)
+        p->cont_pt->pdc->name = strdup(cont_prop->pdc->name);
+    p->cont_pt->pdc->local_id = cont_prop->pdc->local_id;
 
+    p->local_id = pdc_id_register(PDC_CONT, p);
+    ret_value = p->local_id;
+    
+    PDCprop_close(cont_prop_id);
+    
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -213,51 +230,20 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-pdcid_t PDCcont_open(const char *cont_name)
+pdcid_t PDCcont_open(const char *cont_name, pdcid_t pdc)
 {
     pdcid_t ret_value = 0;
+    perr_t ret;
     pdcid_t cont_id;
-    struct PDC_cont_info *open_p = NULL;
-    struct PDC_cont_info *p = NULL;
-    struct PDC_id_info *id_info = NULL;
-    struct PDC_cont_prop *cont_pt = NULL;
-    pdc_metadata_t *out;
+    pdcid_t cont_meta_id;
 
     FUNC_ENTER(NULL);
-
-    p = PDC_MALLOC(struct PDC_cont_info);
-    if(!p)
-        PGOTO_ERROR(0, "PDC container memory allocation failed\n");
     
-    // look up in local container list first
-    cont_id = pdc_find_byname(PDC_CONT, cont_name);
-    if(cont_id) {
-        open_p = PDC_cont_get_info(cont_id);
-        memcpy(p, open_p, sizeof(struct PDC_cont_info));
-        p->name = strdup(cont_name);
- 
-        p->cont_pt = PDC_CALLOC(struct PDC_cont_prop);
-        if(!p->cont_pt)
-            PGOTO_ERROR(0, "PDC container property memory allocation failed\n");
-        memcpy(p->cont_pt, open_p->cont_pt, sizeof(struct PDC_cont_prop));
-        
-        p->cont_pt->pdc = PDC_CALLOC(struct PDC_class);
-        if(!p->cont_pt->pdc)
-            PGOTO_ERROR(0, "PDC class allocation failed");
-        if(open_p->cont_pt->pdc->name)
-            p->cont_pt->pdc->name = strdup(open_p->cont_pt->pdc->name);
-        p->cont_pt->pdc->local_id = open_p->cont_pt->pdc->local_id;
-    }
-    // if container is closed locally, contact metadata server
-    else {
-        // not done yet
-        printf("container is locally closed, connecting to server now\n");
-        out = PDC_CALLOC(pdc_metadata_t);
-        PDC_Client_query_container_name(cont_name, out);
-    }
-    
-    p->local_id = pdc_id_register(PDC_CONT, p);
-    ret_value = p->local_id;
+    ret = PDC_Client_query_container_name_col(cont_name, &cont_meta_id);
+    if(ret == FAIL)
+        PGOTO_ERROR(0, "query container name failed");
+    cont_id = PDC_cont_create_local(pdc, cont_name, cont_meta_id);
+    ret_value = cont_id;
     
 done:
     FUNC_LEAVE(ret_value);

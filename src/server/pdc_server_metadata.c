@@ -218,6 +218,7 @@ void PDC_Server_metadata_init(pdc_metadata_t* a)
     a->obj_name[0]          = 0;
 
     a->obj_id               = 0;
+    a->cont_id              = 0;
     a->ndim                 = 0;
     for (i = 0; i < DIM_MAX; i++) 
         a->dims[i] = 0;
@@ -1518,6 +1519,7 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     PDC_metadata_init(metadata);
 
     metadata->cont_id   = in->data.cont_id;
+    metadata->data_type = in->data_type;
     metadata->user_id   = in->data.user_id;
     metadata->time_step = in->data.time_step;
     metadata->ndim      = in->data.ndim;

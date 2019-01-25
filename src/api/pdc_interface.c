@@ -199,7 +199,7 @@ done:
 
 pdcid_t pdc_find_byname(PDC_type_t type, const char *byname)
 {
-    pdcid_t              ret_value = SUCCEED; 
+    pdcid_t              ret_value = 0;
     struct PDC_id_info   *id_ptr = NULL;     
     struct PDC_id_type   *type_ptr;         
     
@@ -212,9 +212,8 @@ pdcid_t pdc_find_byname(PDC_type_t type, const char *byname)
 
     /* Locate the ID node for the ID */
     PDC_LIST_SEARCH_CONT_NAME(id_ptr, &type_ptr->ids, entry, obj_ptr, name, byname);
-    if(id_ptr == NULL)
-        PGOTO_ERROR(0, "cannot find the name");
-    ret_value = id_ptr->id;
+    if(id_ptr != NULL)
+        ret_value = id_ptr->id;
     
 done:
     FUNC_LEAVE(ret_value);

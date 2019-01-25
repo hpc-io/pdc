@@ -59,6 +59,7 @@
 #include "pdc_client_server_common.h"
 #include "pdc_obj_pkg.h"
 #include "pdc_atomic.h"
+#include "pdc_cont_private.h"
 
 int is_client_debug_g = 0;
 
@@ -998,8 +999,9 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     init_info.na_init_info.progress_mode = NA_NO_BLOCK;  //busy mode
 #endif
 
-#ifndef PDC_HAS_CRAY_DRC
-    /* init_info.auto_sm = HG_TRUE; */
+//#ifndef PDC_HAS_CRAY_DRC
+#ifdef PDC_HAS_SHARED_SERVER
+    init_info.auto_sm = HG_TRUE;
 #endif
     *hg_class = HG_Init_opt(na_info_string, HG_TRUE, &init_info);
     if (*hg_class == NULL) {
@@ -2414,8 +2416,6 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdci
     in.data.time_step = create_prop->time_step;
     in.data.user_id   = create_prop->user_id;
     in.data_type      = create_prop->type;
-//printf("data_type = %d\n", in.data_type);
-//fflush(stdout);
 
     if ((in.data.ndim = create_prop->ndim) > 0) {
       if(in.data.ndim >= 1)
@@ -2765,7 +2765,7 @@ done:
 }
 
 //perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *local_dims, uint64_t *local_offset, uint64_t *local_size, PDC_var_type_t local_type, void *local_data, uint64_t *remote_dims, uint64_t *remote_offset, uint64_t *remote_size, PDC_var_type_t remote_type, int32_t remote_client_id, void *remote_data, struct PDC_region_info *local_region, struct PDC_region_info *remote_region)
-perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *local_dims, uint64_t *local_offset, uint64_t *local_size, PDC_var_type_t local_type, void *local_data, PDC_var_type_t remote_type, int32_t remote_client_id, struct PDC_region_info *local_region, struct PDC_region_info *remote_region)
+perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t ndim, uint64_t *local_dims, uint64_t *local_offset, uint64_t *local_size, PDC_var_type_t local_type, void *local_data, PDC_var_type_t remote_type, struct PDC_region_info *local_region, struct PDC_region_info *remote_region)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = HG_SUCCESS;
@@ -2784,8 +2784,6 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_
 
     in.local_reg_id = local_region_id;
     in.remote_obj_id = remote_obj_id;
-    in.remote_reg_id = remote_region_id;
-    in.remote_client_id = remote_client_id;
     in.local_type = local_type;
     in.remote_type = remote_type;
     in.ndim = ndim;
@@ -2899,7 +2897,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *local_dims, uint64_t *local_offset, uint64_t *local_size, PDC_var_type_t local_type, void *local_data, uint64_t *remote_dims, uint64_t *remote_offset, uint64_t *remote_size, PDC_var_type_t remote_type, int32_t remote_client_id, void *remote_data, struct PDC_region_info *local_region, struct PDC_region_info *remote_region)
+perr_t PDC_Client_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdcid_t remote_obj_id, size_t ndim, uint64_t *local_dims, uint64_t *local_offset, uint64_t *local_size, PDC_var_type_t local_type, void *local_data, uint64_t *remote_dims, uint64_t *remote_offset, uint64_t *remote_size, PDC_var_type_t remote_type, void *remote_data, struct PDC_region_info *local_region, struct PDC_region_info *remote_region)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = HG_SUCCESS;
@@ -2922,8 +2920,6 @@ perr_t PDC_Client_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdci
     in.local_obj_id = local_obj_id;
     in.local_reg_id = local_region_id;
     in.remote_obj_id = remote_obj_id;
-    in.remote_reg_id = remote_region_id;
-    in.remote_client_id = remote_client_id;
     in.local_type = local_type;
     in.remote_type = remote_type;
     in.ndim = ndim;
@@ -4497,7 +4493,7 @@ perr_t PDC_Client_write_id(pdcid_t local_obj_id, struct PDC_region_info *region,
         goto done;
     }
     object = (struct PDC_obj_info *)(info->obj_ptr);
-    meta = object->obj_pt->metadata;
+    meta = object->metadata;
     if (meta == NULL) {
         printf("==PDC_CLIENT[%d]: %s - metadata is NULL!\n", pdc_client_mpi_rank_g, __func__);
         ret_value = FAIL;
@@ -4944,17 +4940,14 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-// All clients collectively query all servers
-perr_t 
+perr_t
 PDC_Client_query_container_name_col(const char *cont_name, uint64_t *cont_meta_id)
 {
     perr_t ret_value = SUCCEED;
     uint32_t my_server_start, my_server_end, my_server_count;
     uint32_t i, nalloc = 0;
     int nmeta = 0, j;
-
-    FUNC_ENTER(NULL);
-
+   
 #ifdef ENABLE_MPI
     if (pdc_client_mpi_rank_g == 0) {
         ret_value = PDC_Client_query_container_name(cont_name, cont_meta_id);
@@ -4978,8 +4971,6 @@ PDC_Client_query_container_name_col(const char *cont_name, uint64_t *cont_meta_i
 done:
     FUNC_LEAVE(ret_value);
 }
-
-
 
 static hg_return_t
 PDC_Client_query_read_obj_name_cb(const struct hg_cb_info *callback_info)
@@ -5402,28 +5393,28 @@ done:
 }
 
 perr_t PDC_Client_attach_metadata_to_local_obj(char *obj_name, uint64_t obj_id, uint64_t cont_id, 
-                                               struct PDC_obj_prop *obj_prop)
+                                               struct PDC_obj_info *obj_info)
 {
     perr_t      ret_value = SUCCEED;
     
     FUNC_ENTER(NULL);
 
-    obj_prop->metadata = (pdc_metadata_t*)calloc(1, sizeof(pdc_metadata_t));
-    ((pdc_metadata_t*)obj_prop->metadata)->user_id = obj_prop->user_id;
-    if (NULL != obj_prop->app_name) 
-        strcpy(((pdc_metadata_t*)obj_prop->metadata)->app_name, obj_prop->app_name);
+    obj_info->metadata = (pdc_metadata_t*)calloc(1, sizeof(pdc_metadata_t));
+    ((pdc_metadata_t*)obj_info->metadata)->user_id = obj_info->obj_pt->user_id;
+    if (NULL != obj_info->obj_pt->app_name)
+        strcpy(((pdc_metadata_t*)obj_info->metadata)->app_name, obj_info->obj_pt->app_name);
     if (NULL != obj_name) 
-        strcpy(((pdc_metadata_t*)obj_prop->metadata)->obj_name, obj_name);
-    ((pdc_metadata_t*)obj_prop->metadata)->time_step = obj_prop->time_step;
-    ((pdc_metadata_t*)obj_prop->metadata)->obj_id  = obj_id;
-    ((pdc_metadata_t*)obj_prop->metadata)->cont_id = cont_id;
-    if (NULL != obj_prop->tags) 
-        strcpy(((pdc_metadata_t*)obj_prop->metadata)->tags, obj_prop->tags);
-    if (NULL != obj_prop->data_loc) 
-        strcpy(((pdc_metadata_t*)obj_prop->metadata)->data_location, obj_prop->data_loc);
-    ((pdc_metadata_t*)obj_prop->metadata)->ndim    = obj_prop->ndim;
-        if (NULL != obj_prop->dims) 
-    memcpy(((pdc_metadata_t*)obj_prop->metadata)->dims, obj_prop->dims, sizeof(uint64_t)*obj_prop->ndim);
+        strcpy(((pdc_metadata_t*)obj_info->metadata)->obj_name, obj_name);
+    ((pdc_metadata_t*)obj_info->metadata)->time_step = obj_info->obj_pt->time_step;
+    ((pdc_metadata_t*)obj_info->metadata)->obj_id  = obj_id;
+    ((pdc_metadata_t*)obj_info->metadata)->cont_id = cont_id;
+    if (NULL != obj_info->obj_pt->tags)
+        strcpy(((pdc_metadata_t*)obj_info->metadata)->tags, obj_info->obj_pt->tags);
+    if (NULL != obj_info->obj_pt->data_loc)
+        strcpy(((pdc_metadata_t*)obj_info->metadata)->data_location, obj_info->obj_pt->data_loc);
+    ((pdc_metadata_t*)obj_info->metadata)->ndim    = obj_info->obj_pt->ndim;
+        if (NULL != obj_info->obj_pt->dims)
+    memcpy(((pdc_metadata_t*)obj_info->metadata)->dims, obj_info->obj_pt->dims, sizeof(uint64_t)*obj_info->obj_pt->ndim);
 
     FUNC_LEAVE(ret_value);
 }
@@ -7386,7 +7377,7 @@ PDCcont_get_id(const char *cont_name, pdcid_t pdc_id)
 
     PDC_Client_query_container_name(cont_name, &cont_meta_id);
 
-    cont_id = PDCcont_create_local(pdc_id, cont_name, &cont_meta_id);
+    cont_id = PDC_cont_create_local(pdc_id, cont_name, &cont_meta_id);
 
 done:
     FUNC_LEAVE(cont_id);
@@ -7481,8 +7472,8 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t  
-PDCcont_put_tag(pdcid_t cont_id, const char *tag_name, const void *tag_value, uint64_t value_size)
+perr_t
+PDCcont_put_tag(pdcid_t cont_id, const char *tag_name, const void *tag_value, size_t value_size)
 {
     perr_t ret_value = SUCCEED;
 
@@ -7498,8 +7489,8 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t  
-PDCcont_get_tag(pdcid_t cont_id, const char *tag_name, void **tag_value, uint64_t *value_size)
+perr_t
+PDCcont_get_tag(pdcid_t cont_id, const char *tag_name, void **tag_value, size_t *value_size)
 {
     perr_t ret_value = SUCCEED;
 
@@ -7643,8 +7634,8 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t  
-PDCobj_put_tag(pdcid_t obj_id, const char *tag_name, const void *tag_value, uint64_t value_size)
+perr_t
+PDCobj_put_tag(pdcid_t obj_id, const char *tag_name, const void *tag_value, size_t value_size)
 {
     perr_t ret_value = SUCCEED;
     pdc_kvtag_t kvtag;
@@ -7664,8 +7655,8 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t  
-PDCobj_get_tag(pdcid_t obj_id, const char *tag_name, void **tag_value, uint64_t *value_size)
+perr_t
+PDCobj_get_tag(pdcid_t obj_id, const char *tag_name, void **tag_value, size_t *value_size)
 {
     perr_t ret_value = SUCCEED;
     pdc_kvtag_t kvtag;

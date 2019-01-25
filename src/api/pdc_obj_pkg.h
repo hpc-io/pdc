@@ -48,23 +48,23 @@ typedef enum { BLOCK=0, NOBLOCK=1 }    PDC_lock_mode_t;
 
 struct PDC_obj_info {
     char                   *name;
-    pdcid_t                meta_id;
-    pdcid_t                local_id;
-    int32_t                client_id;
-    PDCobj_location        location;
+    pdcid_t                 meta_id;
+    pdcid_t                 local_id;
+    PDCobj_location         location;
+    void                   *metadata;
     struct PDC_cont_info   *cont;
     struct PDC_obj_prop    *obj_pt;
     struct region_map_list *region_list_head;
 };
 
 struct PDC_region_info {
-    pdcid_t             local_id;
+    pdcid_t              local_id;
     struct PDC_obj_info *obj;
-    size_t              ndim;
+    size_t               ndim;
     uint64_t            *offset;
     uint64_t            *size;
-    bool                mapping;
-    bool                registered_transform;
+    bool                 mapping;
+    bool                 registered_transform;
     void                *buf;
 };
 

@@ -78,7 +78,7 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id
     struct PDC_obj_info *p = NULL;
     struct PDC_id_info *id_info = NULL;
     perr_t ret;
-    int i;
+    size_t i;
 
     FUNC_ENTER(NULL);
 
@@ -86,7 +86,7 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id
     if(!p)
         PGOTO_ERROR(0, "PDC object memory allocation failed\n");
     p->name = strdup(obj_name);
-    p->client_id = 0;
+    p->metadata = NULL;
     p->region_list_head = NULL;
 
     if (cont_id == 0) {
@@ -149,7 +149,7 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id
     p->local_id = pdc_id_register(PDC_OBJ, p);
     ret_value = p->local_id;
 
-    PDC_Client_attach_metadata_to_local_obj(obj_name, p->meta_id, meta_id, p->obj_pt);
+    PDC_Client_attach_metadata_to_local_obj(obj_name, p->meta_id, p->cont->meta_id, p);
 
 done:
     FUNC_LEAVE(ret_value);
@@ -172,6 +172,7 @@ pdcid_t pdc_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_i
     if(!p)
         PGOTO_ERROR(0, "PDC object memory allocation failed\n");
     p->name = strdup(obj_name);
+    p->metadata = NULL;
     p->location = location;
     p->region_list_head = NULL;
 
@@ -233,11 +234,10 @@ pdcid_t pdc_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_i
     p->local_id = pdc_id_register(PDC_OBJ, p);
 
     if(location == PDC_OBJ_GLOBAL) {
-        ret = PDC_Client_send_name_recv_id(obj_name, meta_id, obj_prop_id, &(p->meta_id));
-        p->client_id = 0;
+        ret = PDC_Client_send_name_recv_id(obj_name, p->cont->meta_id, obj_prop_id, &(p->meta_id));
+        if (ret == FAIL)
+            PGOTO_ERROR(0, "Unable to create object on server!\n");
     }
-    if (ret == FAIL)
-        PGOTO_ERROR(0,"Unable to create object on server!\n");
     
     PDC_Client_attach_metadata_to_local_obj(obj_name, p->meta_id, meta_id, p->obj_pt);
     ret_value = p->local_id;
@@ -379,75 +379,62 @@ done:
     FUNC_LEAVE(ret_value);
 } 
 
-pdcid_t PDCobj_open(const char *obj_name)
+pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc)
 {
     pdcid_t ret_value = 0;
-    pdcid_t obj_id;
+    perr_t ret = SUCCEED;
     struct PDC_obj_info *p = NULL;
-    struct PDC_obj_info *obj_info;
-    int i;
+    pdc_metadata_t *out;
+    pdcid_t obj_prop;
+    size_t i;
     
     FUNC_ENTER(NULL);
-    
+        
     p = PDC_MALLOC(struct PDC_obj_info);
     if(!p)
         PGOTO_ERROR(0, "PDC object memory allocation failed\n");
+    p->cont = PDC_CALLOC(struct PDC_cont_info);
+    if(!p->cont)
+        PGOTO_ERROR(0, "PDC object container memory allocation failed");
+    p->cont->cont_pt = PDC_CALLOC(struct PDC_cont_prop);
+    if(!p->cont->cont_pt)
+        PGOTO_ERROR(0, "PDC object container property memory allocation failed");
+    p->cont->cont_pt->pdc = PDC_CALLOC(struct PDC_class);
+    if(!p->cont->cont_pt->pdc)
+        PGOTO_ERROR(0, "PDC object container property pdc memory allocation failed\n");
+    p->obj_pt = PDC_CALLOC(struct PDC_obj_prop);
+    if(!p->obj_pt)
+        PGOTO_ERROR(0, "PDC object property memory allocation failed");
+    p->obj_pt->pdc = PDC_CALLOC(struct PDC_class);
+    if(!p->obj_pt->pdc)
+        PGOTO_ERROR(0, "cannot allocate ret_value->pdc");
     
-    // look up in the local object list first
-    obj_id = pdc_find_byname(PDC_OBJ, obj_name);
-    if(obj_id){
-        obj_info = PDC_obj_get_info(obj_id);
-        memcpy(p, obj_info, sizeof(struct PDC_obj_info));
-        if(obj_info->name)
-            p->name = strdup(obj_info->name);
+    // contact metadata server
+    ret = PDC_Client_query_metadata_name_timestep_agg(obj_name, 0, &out);
+    if(ret == FAIL)
+        PGOTO_ERROR(0, "query object failed");
         
-        p->cont = PDC_CALLOC(struct PDC_cont_info);
-        if(!p->cont)
-            PGOTO_ERROR(0, "PDC object container memory allocation failed");
-        memcpy(p->cont, obj_info->cont, sizeof(struct PDC_cont_info));
-        if(obj_info->cont->name)
-            p->cont->name = strdup(obj_info->cont->name);
+    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
+    PDCprop_set_obj_dims(obj_prop, out->ndim, out->dims);
+    PDCprop_set_obj_type(obj_prop, out->data_type);
         
-        p->cont->cont_pt = PDC_CALLOC(struct PDC_cont_prop);
-        if(!p->cont->cont_pt)
-            PGOTO_ERROR(0, "PDC object container property memory allocation failed");
-        memcpy(p->cont->cont_pt, obj_info->cont->cont_pt, sizeof(struct PDC_cont_prop));
-        p->cont->cont_pt->pdc = PDC_CALLOC(struct PDC_class);
-        if(!p->cont->cont_pt->pdc)
-            PGOTO_ERROR(0, "PDC object container property pdc memory allocation failed\n");
-        if(obj_info->cont->cont_pt->pdc->name)
-            p->cont->cont_pt->pdc->name = strdup(obj_info->cont->cont_pt->pdc->name);
-        p->cont->cont_pt->pdc->local_id = obj_info->cont->cont_pt->pdc->local_id;
+    if(out->obj_name != NULL)
+        p->name = strdup(out->obj_name);
+    p->meta_id = out->obj_id;
         
-        p->obj_pt = PDC_CALLOC(struct PDC_obj_prop);
-        if(!p->obj_pt)
-            PGOTO_ERROR(0, "PDC object property memory allocation failed");
-        memcpy(p->obj_pt, obj_info->obj_pt, sizeof(struct PDC_obj_prop));
-        
-        p->obj_pt->pdc = PDC_CALLOC(struct PDC_class);
-        if(!p->obj_pt->pdc)
-            PGOTO_ERROR(0, "cannot allocate ret_value->pdc");
-        if(obj_info->obj_pt->pdc->name)
-            p->obj_pt->pdc->name = strdup(obj_info->obj_pt->pdc->name);
-        p->obj_pt->pdc->local_id = obj_info->obj_pt->pdc->local_id;
-        
-        p->obj_pt->dims = malloc(obj_info->obj_pt->ndim*sizeof(uint64_t));
-        if(!p->obj_pt->dims)
-            PGOTO_ERROR(0, "cannot allocate ret_value->dims");
-        for(i=0; i<obj_info->obj_pt->ndim; i++)
-            p->obj_pt->dims[i] = obj_info->obj_pt->dims[i];
-        
-        if(obj_info->obj_pt->app_name)
-            p->obj_pt->app_name = strdup(obj_info->obj_pt->app_name);
-        if(obj_info->obj_pt->data_loc)
-            p->obj_pt->data_loc = strdup(obj_info->obj_pt->data_loc);
-        if(obj_info->obj_pt->tags)
-            p->obj_pt->tags = strdup(obj_info->obj_pt->tags);
-    }
-    else {
-        // contact metadata server
-    }
-
+    p->cont->meta_id = out->cont_id;
+    p->obj_pt->ndim = out->ndim;
+    p->obj_pt->dims = malloc(out->ndim*sizeof(uint64_t));
+    if(!p->obj_pt->dims)
+        PGOTO_ERROR(0, "cannot allocate ret_value->dims");
+    for(i=0; i<out->ndim; i++)
+        p->obj_pt->dims[i] = out->dims[i];
+    if(out->app_name != NULL)
+        p->obj_pt->app_name = strdup(out->app_name);
+    p->obj_pt->type = out->data_type;
+    p->obj_pt->time_step = out->time_step;
+    p->obj_pt->user_id = out->user_id;
+    
     p->local_id = pdc_id_register(PDC_OBJ, p);
     ret_value = p->local_id;
     
@@ -743,7 +730,6 @@ perr_t PDCobj_map(pdcid_t local_obj, pdcid_t local_reg, pdcid_t remote_obj, pdci
     struct PDC_id_info *reginfo1, *reginfo2;
     struct PDC_region_info *reg1, *reg2;
     size_t ndim;
-    int32_t remote_client_id;
     
     FUNC_ENTER(NULL);
     
@@ -771,7 +757,6 @@ perr_t PDCobj_map(pdcid_t local_obj, pdcid_t local_reg, pdcid_t remote_obj, pdci
         PGOTO_ERROR(FAIL, "cannot locate remote object ID");
     obj2 = (struct PDC_obj_info *)(objinfo2->obj_ptr);
     remote_meta_id = obj2->meta_id;
-    remote_client_id = obj2->client_id;
     remote_type = obj2->obj_pt->type;
     remote_data = obj2->obj_pt->buf;
   
@@ -788,7 +773,7 @@ perr_t PDCobj_map(pdcid_t local_obj, pdcid_t local_reg, pdcid_t remote_obj, pdci
     
     //TODO: assume type is the same
     // start mapping
-    ret_value = PDC_Client_region_map(local_meta_id, local_reg, remote_meta_id, remote_reg, ndim, obj1->obj_pt->dims, reg1->offset, reg1->size, local_type, local_data, obj2->obj_pt->dims, reg2->offset, reg2->size, remote_type, remote_client_id, remote_data, reg1, reg2);
+    ret_value = PDC_Client_region_map(local_meta_id, local_reg, remote_meta_id,  ndim, obj1->obj_pt->dims, reg1->offset, reg1->size, local_type, local_data, obj2->obj_pt->dims, reg2->offset, reg2->size, remote_type, remote_data, reg1, reg2);
     if(ret_value == SUCCEED) {
         // state in origin obj that there is mapping
 //        obj1->mapping = 1;
@@ -818,7 +803,6 @@ perr_t PDCbuf_obj_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, p
     PDC_var_type_t remote_type;
     struct PDC_id_info *reginfo1, *reginfo2;
     struct PDC_region_info *reg1, *reg2;
-    int32_t remote_client_id;
     
     FUNC_ENTER(NULL);
 
@@ -830,7 +814,6 @@ perr_t PDCbuf_obj_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, p
         PGOTO_ERROR(FAIL, "cannot locate remote object ID");
     obj2 = (struct PDC_obj_info *)(objinfo2->obj_ptr);
     remote_meta_id = obj2->meta_id;
-    remote_client_id = obj2->client_id;
     remote_type = obj2->obj_pt->type;
   
     reginfo2 = pdc_find_id(remote_reg);
@@ -843,7 +826,7 @@ perr_t PDCbuf_obj_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, p
             PGOTO_ERROR(FAIL, "remote object region size error");
 
 //    ret_value = PDC_Client_buf_map(local_reg, remote_meta_id, remote_reg, reg1->ndim, reg1->size, reg1->offset, reg1->size, local_type, buf, obj2->obj_pt->dims, reg2->offset, reg2->size, remote_type, remote_client_id, remote_data, reg1, reg2);
-    ret_value = PDC_Client_buf_map(local_reg, remote_meta_id, remote_reg, reg1->ndim, reg1->size, reg1->offset, reg1->size, local_type, buf, remote_type, remote_client_id, reg1, reg2);
+    ret_value = PDC_Client_buf_map(local_reg, remote_meta_id, reg1->ndim, reg1->size, reg1->offset, reg1->size, local_type, buf, remote_type, reg1, reg2);
 
     if(ret_value == SUCCEED) {
         /* 
@@ -987,7 +970,7 @@ struct PDC_obj_info *PDC_obj_get_info(pdcid_t obj_id)
     struct PDC_obj_info *ret_value = NULL;
     struct PDC_obj_info *info =  NULL;
     struct PDC_id_info *obj;
-    int i;
+    size_t i;
     
     FUNC_ENTER(NULL);
     
@@ -1005,6 +988,8 @@ struct PDC_obj_info *PDC_obj_get_info(pdcid_t obj_id)
         ret_value->name = strdup(info->name);
     else
         ret_value->name = NULL;
+    // fill in by query function
+    ret_value->metadata = NULL;
     
     // fill in struct PDC_cont_info field in ret_value->cont
     ret_value->cont = PDC_CALLOC(struct PDC_cont_info);
@@ -1083,9 +1068,8 @@ struct PDC_obj_info *PDCobj_get_info(const char *obj_name)
     
     obj_id = pdc_find_byname(PDC_OBJ, obj_name);
     
-    ret_value = PDC_cont_get_info(obj_id);
+    ret_value = PDC_obj_get_info(obj_id);
     
-done:
     FUNC_LEAVE(ret_value);
 }
 

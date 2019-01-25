@@ -54,8 +54,7 @@ void print_usage() {
 int main(int argc, char **argv)
 {
     int rank = 0, size = 1;
-    pdcid_t pdc_id, cont_prop, cont_id;
-    pdcid_t obj_prop_xx, obj_prop_yy, obj_prop_zz, obj_prop_pxx, obj_prop_pyy, obj_prop_pzz, obj_prop_id11, obj_prop_id22;
+    pdcid_t pdc_id, cont_id;
     pdcid_t obj_xx, obj_yy, obj_zz, obj_pxx, obj_pyy, obj_pzz, obj_id11, obj_id22;
     pdcid_t region_x, region_y, region_z, region_px, region_py, region_pz, region_id1, region_id2; 
     pdcid_t region_xx, region_yy, region_zz, region_pxx, region_pyy, region_pzz, region_id11, region_id22; 
@@ -98,87 +97,50 @@ int main(int argc, char **argv)
     pdc_id = PDC_init("pdc");
     /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
-    // create a container property
-    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
-    if(cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
-
-    // create a container
-    cont_id = PDCcont_create("c1", cont_prop);
-    if(cont_id <= 0)
+    // open a container
+    cont_id = PDCcont_open("c1", pdc_id);
+    if(cont_id == 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
-    // create an object property
-    obj_prop_xx = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
-
-    PDCprop_set_obj_dims(obj_prop_xx, 1, dims);
-    PDCprop_set_obj_type(obj_prop_xx, PDC_FLOAT);
-    PDCprop_set_obj_time_step(obj_prop_xx, 0       );
-    PDCprop_set_obj_user_id( obj_prop_xx, getuid()    );
-    PDCprop_set_obj_app_name(obj_prop_xx, "VPICIO"  );
-    PDCprop_set_obj_tags(    obj_prop_xx, "tag0=1"    );
-
-    obj_prop_yy = PDCprop_obj_dup(obj_prop_xx);
-    PDCprop_set_obj_type(obj_prop_yy, PDC_FLOAT);
-
-    obj_prop_zz = PDCprop_obj_dup(obj_prop_xx);
-    PDCprop_set_obj_type(obj_prop_zz, PDC_FLOAT);
-
-    obj_prop_pxx = PDCprop_obj_dup(obj_prop_xx);
-    PDCprop_set_obj_type(obj_prop_pxx, PDC_FLOAT);
-
-    obj_prop_pyy = PDCprop_obj_dup(obj_prop_xx);
-    PDCprop_set_obj_type(obj_prop_pyy, PDC_FLOAT);
-
-    obj_prop_pzz = PDCprop_obj_dup(obj_prop_xx);
-    PDCprop_set_obj_type(obj_prop_pzz, PDC_FLOAT);
-
-    obj_prop_id11 = PDCprop_obj_dup(obj_prop_xx);
-    PDCprop_set_obj_type(obj_prop_id11, PDC_INT);
-
-    obj_prop_id22 = PDCprop_obj_dup(obj_prop_xx);
-    PDCprop_set_obj_type(obj_prop_id22, PDC_INT);
-
-    obj_xx = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop_xx, 0);
-    if (obj_xx == 0) {    
-        printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
+    // open objects
+    obj_xx = PDCobj_open("obj-var-xx", pdc_id);
+    if (obj_xx == 0) {
+        printf("Error when open object %s\n", "obj-var-xx");
         exit(-1);
     }
-   
-    obj_yy = PDCobj_create_mpi(cont_id, "obj-var-yy", obj_prop_yy, 0);
+    obj_yy = PDCobj_open("obj-var-yy", pdc_id);
     if (obj_yy == 0) {
-        printf("Error getting an object id of %s from server, exit...\n", "obj-var-yy");
+        printf("Error when open object %s\n", "obj-var-yy");
         exit(-1);
     }
-    obj_zz = PDCobj_create_mpi(cont_id, "obj-var-zz", obj_prop_zz, 0);
+    obj_zz = PDCobj_open("obj-var-zz", pdc_id);
     if (obj_zz == 0) {
-        printf("Error getting an object id of %s from server, exit...\n", "obj-var-zz");
+        printf("Error when open object %s\n", "obj-var-zz");
         exit(-1);
     }
-    obj_pxx = PDCobj_create_mpi(cont_id, "obj-var-pxx", obj_prop_pxx, 0);
+    obj_pxx = PDCobj_open("obj-var-pxx", pdc_id);
     if (obj_pxx == 0) {
-        printf("Error getting an object id of %s from server, exit...\n", "obj-var-pxx");
+        printf("Error when open object %s\n", "obj-var-pxx");
         exit(-1);
     }
-    obj_pyy = PDCobj_create_mpi(cont_id, "obj-var-pyy", obj_prop_pyy, 0);
+    obj_pyy = PDCobj_open("obj-var-pyy", pdc_id);
     if (obj_pyy == 0) {
-        printf("Error getting an object id of %s from server, exit...\n", "obj-var-pyy");
+        printf("Error when open object %s\n", "obj-var-pyy");
         exit(-1);
     }
-    obj_pzz = PDCobj_create_mpi(cont_id, "obj-var-pzz", obj_prop_pzz, 0);
+    obj_pzz = PDCobj_open("obj-var-pzz", pdc_id);
     if (obj_pzz == 0) {
-        printf("Error getting an object id of %s from server, exit...\n", "obj-var-pzz");
+        printf("Error when open object %s\n", "obj-var-pzz");
         exit(-1);
     }
-
-    obj_id11 = PDCobj_create_mpi(cont_id, "id11", obj_prop_id11, 0);
+    obj_id11 = PDCobj_open("id11", pdc_id);
     if (obj_id11 == 0) {
-        printf("Error getting an object id of %s from server, exit...\n", "obj_id11");
+        printf("Error when open object %s\n", "id11");
         exit(-1);
     }
-    obj_id22 = PDCobj_create_mpi(cont_id, "id22", obj_prop_id22, 0);
+    obj_id22 = PDCobj_open("id22", pdc_id);
     if (obj_id22 == 0) {
-        printf("Error getting an object id of %s from server, exit...\n", "obj_id22");
+        printf("Error when open object %s\n", "id22");
         exit(-1);
     }
 
@@ -215,35 +177,35 @@ int main(int argc, char **argv)
 
     ret = PDCbuf_obj_map(&x[0], PDC_FLOAT, region_x, obj_xx, region_xx);
     if(ret < 0)
-        printf("Array x PDCobj_buf_map failed\n");
+        printf("Array x PDCbuf_obj_map failed\n");
 
     ret = PDCbuf_obj_map(&y[0], PDC_FLOAT, region_y, obj_yy, region_yy);
     if(ret < 0)
-        printf("Array y PDCobj_buf_map failed\n");
+        printf("Array y PDCbuf_obj_map failed\n");
 
     ret = PDCbuf_obj_map(&z[0], PDC_FLOAT, region_z, obj_zz, region_zz);
     if(ret < 0)
-        printf("Array z PDCobj_buf_map failed\n");
+        printf("Array z PDCbuf_obj_map failed\n");
 
     ret = PDCbuf_obj_map(&px[0], PDC_FLOAT, region_px, obj_pxx, region_pxx);
     if(ret < 0)
-        printf("Array px PDCobj_buf_map failed\n");
+        printf("Array px PDCbuf_obj_map failed\n");
 
     ret = PDCbuf_obj_map(&py[0], PDC_FLOAT, region_py, obj_pyy, region_pyy);
     if(ret < 0)
-        printf("Array py PDCobj_buf_map failed\n");
+        printf("Array py PDCbuf_obj_map failed\n");
 
     ret = PDCbuf_obj_map(&pz[0], PDC_FLOAT, region_pz, obj_pzz, region_pzz);
     if(ret < 0)
-        printf("Array pz PDCobj_buf_map failed\n");
+        printf("Array pz PDCbuf_obj_map failed\n");
 
     ret = PDCbuf_obj_map(&id1[0], PDC_INT, region_id1, obj_id11, region_id11);
     if(ret < 0)
-        printf("Array id1 PDCobj_buf_map failed\n");
+        printf("Array id1 PDCbuf_obj_map failed\n");
 
     ret = PDCbuf_obj_map(&id2[0], PDC_INT, region_id2, obj_id22, region_id22);
     if(ret < 0)
-        printf("Array id2 PDCobj_buf_map failed\n");
+        printf("Array id2 PDCbuf_obj_map failed\n");
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -260,7 +222,7 @@ int main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     gettimeofday(&ht_total_start, 0);
-    
+
     ret = PDCreg_obtain_lock(obj_xx, region_xx, READ, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_xx\n");
@@ -292,7 +254,7 @@ int main(int argc, char **argv)
     ret = PDCreg_obtain_lock(obj_id22, region_id22, READ, NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_id22\n");
-    
+
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -355,7 +317,7 @@ int main(int argc, char **argv)
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-    
+
     ret = PDCbuf_obj_unmap(obj_xx, region_xx);
     if (ret != SUCCEED)
         printf("region xx unmap failed\n");
@@ -398,18 +360,7 @@ int main(int argc, char **argv)
         printf("Time to read data with %d ranks: %.6f\n", size, ht_total_sec);
         fflush(stdout);
     }
-/*
-    for (uint64_t i=0; i<numparticles; i++) {
-        printf("id1[i] = %d\n", id1[i]);
-        printf("id2[i] = %d\n", id2[i]);
-        printf("x[i] = %f\n", x[i]);
-        printf("y[i] = %f\n", y[i]);
-        printf("z[i] = %f\n", z[i]);
-        printf("px[i] = %f\n", px[i]);
-        printf("py[i] = %f\n", py[i]);
-        printf("pz[i] = %f\n", pz[i]);
-    }
-*/
+
     if(PDCobj_close(obj_xx) < 0)
         printf("fail to close obj_xx\n");
 
@@ -433,30 +384,6 @@ int main(int argc, char **argv)
 
     if(PDCobj_close(obj_id22) < 0)
         printf("fail to close object obj_id22\n");
-
-    if(PDCprop_close(obj_prop_xx) < 0)
-        printf("Fail to close obj property obj_prop_xx\n");
-
-    if(PDCprop_close(obj_prop_yy) < 0)
-        printf("Fail to close obj property obj_prop_yy\n");
-
-    if(PDCprop_close(obj_prop_zz) < 0)
-        printf("Fail to close obj property obj_prop_zz\n");
-
-    if(PDCprop_close(obj_prop_pxx) < 0)
-        printf("Fail to close obj property obj_prop_pxx\n");
-
-    if(PDCprop_close(obj_prop_pyy) < 0)
-        printf("Fail to close obj property obj_prop_pyy\n");
-
-    if(PDCprop_close(obj_prop_pzz) < 0)
-        printf("Fail to close obj property obj_prop_pzz\n");
-
-    if(PDCprop_close(obj_prop_id11) < 0)
-        printf("Fail to close obj property obj_prop_id11\n");
-
-    if(PDCprop_close(obj_prop_id22) < 0)
-        printf("Fail to close obj property obj_prop_id22\n");
 
     if(PDCregion_close(region_x) < 0)
         printf("fail to close region region_x\n");
@@ -510,13 +437,22 @@ int main(int argc, char **argv)
     if(PDCcont_close(cont_id) < 0)
         printf("fail to close container c1\n");
 
-    // close a container property
-    if(PDCprop_close(cont_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
-
     if(PDC_close(pdc_id) < 0)
        printf("fail to close PDC\n");
 
+    /*
+     for (uint64_t i=0; i<numparticles; i++) {
+        printf("id1[i] = %d\n", id1[i]);
+        printf("id2[i] = %d\n", id2[i]);
+        printf("x[i] = %f\n", x[i]);
+        printf("y[i] = %f\n", y[i]);
+        printf("z[i] = %f\n", z[i]);
+        printf("px[i] = %f\n", px[i]);
+        printf("py[i] = %f\n", py[i]);
+        printf("pz[i] = %f\n", pz[i]);
+     }
+     */
+    
     free(x);
     free(y);
     free(z);
