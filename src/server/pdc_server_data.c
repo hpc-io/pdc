@@ -32,6 +32,8 @@
 #include <ctype.h>
 #include <fcntl.h>
 #include <inttypes.h>
+#include <limits.h>
+#include <float.h>
 #include <math.h>
 #include <sys/shm.h>
 #include <sys/mman.h>
@@ -43,6 +45,7 @@
 #endif
 
 #include "utlist.h"
+#include "pdc_public.h"
 #include "pdc_interface.h"
 #include "pdc_client_server_common.h"
 #include "pdc_server_data.h"
@@ -5908,3 +5911,346 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 } // End PDC_Server_add_client_shm_to_cache
+
+perr_t PDC_sample_min_max_int64(uint64_t n, int64_t *data, double sample_pct, double *min, double *max)
+{
+    perr_t ret_value = SUCCEED;
+    uint64_t i, sample_n, iter = 0;
+
+    *min     = data[0];
+    *max     = data[0];
+    sample_n = n * sample_pct;
+
+    for (i = 1; i < sample_n; i++) {
+        iter = (iter + rand()) % n;
+        if (data[iter] > *max) 
+            *max = data[iter];
+        else if (data[iter] < *min) 
+            *min = data[iter];
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_sample_min_max_double(uint64_t n, double *data, double sample_pct, double *min, double *max)
+{
+    perr_t ret_value = SUCCEED;
+    uint64_t i, sample_n, iter = 0;
+
+    *min     = data[0];
+    *max     = data[0];
+    sample_n = n * sample_pct;
+
+    for (i = 1; i < sample_n; i++) {
+        iter = (iter + rand()) % n;
+        if (data[iter] > *max) 
+            *max = data[iter];
+        else if (data[iter] < *min) 
+            *min = data[iter];
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_sample_min_max_float(uint64_t n, float *data, double sample_pct, double *min, double *max)
+{
+    perr_t ret_value = SUCCEED;
+    uint64_t i, sample_n, iter = 0;
+
+    *min     = data[0];
+    *max     = data[0];
+    sample_n = n * sample_pct;
+
+    for (i = 1; i < sample_n; i++) {
+        iter = (iter + rand()) % n;
+        if (data[iter] > *max) 
+            *max = data[iter];
+        else if (data[iter] < *min) 
+            *min = data[iter];
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_sample_min_max_uint32(uint64_t n, uint32_t *data, double sample_pct, double *min, double *max)
+{
+    perr_t ret_value = SUCCEED;
+    uint64_t i, sample_n, iter = 0;
+
+    if (NULL == data || NULL == min || NULL == max) {
+        ret_value = FAIL;
+        goto done;
+    }
+
+    *min     = data[0];
+    *max     = data[0];
+    sample_n = n * sample_pct;
+
+    for (i = 1; i < sample_n; i++) {
+        iter = (iter + rand()) % n;
+        if (data[iter] > *max) 
+            *max = data[iter];
+        else if (data[iter] < *min) 
+            *min = data[iter];
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_sample_min_max_uint64(uint64_t n, uint64_t *data, double sample_pct, double *min, double *max)
+{
+    perr_t ret_value = SUCCEED;
+    uint64_t i, sample_n, iter = 0;
+
+    *min     = data[0];
+    *max     = data[0];
+    sample_n = n * sample_pct;
+
+    for (i = 1; i < sample_n; i++) {
+        iter = (iter + rand()) % n;
+        if (data[iter] > *max) 
+            *max = data[iter];
+        else if (data[iter] < *min) 
+            *min = data[iter];
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_sample_min_max_int(uint64_t n, int *data, double sample_pct, double *min, double *max)
+{
+    perr_t ret_value = SUCCEED;
+    uint64_t i, sample_n, iter = 0;
+
+    *min     = data[0];
+    *max     = data[0];
+    sample_n = n * sample_pct;
+
+    for (i = 1; i < sample_n; i++) {
+        iter = (iter + rand()) % n;
+        if (data[iter] > *max) 
+            *max = data[iter];
+        else if (data[iter] < *min) 
+            *min = data[iter];
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_sample_min_max(PDC_var_type_t dtype, uint64_t n, void *data, double sample_pct, double *min, double *max)
+{
+    perr_t ret_value = SUCCEED;
+
+    if (NULL == data || NULL == min || NULL == max) {
+        ret_value = FAIL;
+        goto done;
+    }
+
+    if (PDC_INT == dtype) 
+        PDC_sample_min_max_int(n, (int*)data, sample_pct, min, max);
+    else if (PDC_FLOAT == dtype) 
+        PDC_sample_min_max_float(n, (float*)data, sample_pct, min, max);
+    else if (PDC_DOUBLE == dtype) 
+        PDC_sample_min_max_double(n, (double*)data, sample_pct, min, max);
+    else if (PDC_INT64 == dtype) 
+        PDC_sample_min_max_int64(n, (int64_t*)data, sample_pct, min, max);
+    else if (PDC_UINT64 == dtype) 
+        PDC_sample_min_max_uint64(n, (uint64_t*)data, sample_pct, min, max);
+    else if (PDC_UINT32 == dtype) 
+        PDC_sample_min_max_uint32(n, (uint32_t*)data, sample_pct, min, max);
+    else {
+        ret_value = FAIL;
+        printf("==PDC_SERVER[%d]: %s - datatype %d not supported!)\n", pdc_server_rank_g, __func__, dtype);
+        goto done;
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+pdc_histogram_t *PDC_create_hist(PDC_var_type_t dtype, int nbin, double min, double max)
+{
+    pdc_histogram_t *hist;
+    int i;
+    double bin_incr;
+
+    if (0 == nbin || min > max) {
+        return NULL;
+    }
+
+    hist = (pdc_histogram_t*)malloc(sizeof(pdc_histogram_t));
+    hist->dtype = dtype;
+    hist->n     = nbin;
+    hist->range = (double*)calloc(sizeof(double), nbin*2);  // extra two for below min and above max
+    hist->bin   = (uint64_t*)calloc(sizeof(uint64_t), nbin);
+
+    hist->range[0] = DBL_MIN;
+    hist->range[1] = min;
+
+    hist->range[nbin*2-1] = DBL_MAX;
+    hist->range[nbin*2-2] = max;
+
+    bin_incr = (max-min) / (nbin - 2);
+    hist->incr = bin_incr;
+
+    for (i = 2; i < nbin*2-2; i+=2) {
+        hist->range[i]   = hist->range[i-1];
+        hist->range[i+1] = hist->range[i] + bin_incr;
+    }
+
+    return hist;
+}
+
+void PDC_hist_incr_all_int(pdc_histogram_t *hist, uint64_t n, int *data)
+{
+    uint64_t i;
+    for (i = 0; i < n; i++) {
+        if (data[i] < hist->range[1]) 
+            hist->bin[0]++;
+        else if (data[i] >= hist->range[(hist->n*2)-2]) 
+            hist->bin[n-1]++;
+        else {
+            hist->bin[(int)((data[i] - hist->range[1]) / hist->incr + 1)]++;
+        }
+    }
+}
+
+void PDC_hist_incr_all_float(pdc_histogram_t *hist, uint64_t n, float *data)
+{
+    uint64_t i;
+    for (i = 0; i < n; i++) {
+        if (data[i] < hist->range[1]) 
+            hist->bin[0]++;
+        else if (data[i] >= hist->range[(hist->n*2)-2]) 
+            hist->bin[n-1]++;
+        else {
+            hist->bin[(int)((data[i] - hist->range[1]) / hist->incr + 1)]++;
+        }
+    }
+}
+
+void PDC_hist_incr_all_double(pdc_histogram_t *hist, uint64_t n, double *data)
+{
+    uint64_t i;
+    for (i = 0; i < n; i++) {
+        if (data[i] < hist->range[1]) 
+            hist->bin[0]++;
+        else if (data[i] >= hist->range[(hist->n*2)-2]) 
+            hist->bin[n-1]++;
+        else {
+            hist->bin[(int)((data[i] - hist->range[1]) / hist->incr + 1)]++;
+        }
+    }
+}
+
+void PDC_hist_incr_all_int64(pdc_histogram_t *hist, uint64_t n, int64_t *data)
+{
+    uint64_t i;
+    for (i = 0; i < n; i++) {
+        if (data[i] < hist->range[1]) 
+            hist->bin[0]++;
+        else if (data[i] >= hist->range[(hist->n*2)-2]) 
+            hist->bin[n-1]++;
+        else {
+            hist->bin[(int)((data[i] - hist->range[1]) / hist->incr + 1)]++;
+        }
+    }
+}
+
+void PDC_hist_incr_all_uint32(pdc_histogram_t *hist, uint64_t n, uint32_t *data)
+{
+    uint64_t i;
+    for (i = 0; i < n; i++) {
+        if (data[i] < hist->range[1]) 
+            hist->bin[0]++;
+        else if (data[i] >= hist->range[(hist->n*2)-2]) 
+            hist->bin[n-1]++;
+        else {
+            hist->bin[(int)((data[i] - hist->range[1]) / hist->incr + 1)]++;
+        }
+    }
+}
+
+void PDC_hist_incr_all_uint64(pdc_histogram_t *hist, uint64_t n, uint64_t *data)
+{
+    uint64_t i;
+    for (i = 0; i < n; i++) {
+        if (data[i] < hist->range[1]) 
+            hist->bin[0]++;
+        else if (data[i] >= hist->range[(hist->n*2)-2]) 
+            hist->bin[n-1]++;
+        else {
+            hist->bin[(int)((data[i] - hist->range[1]) / hist->incr + 1)]++;
+        }
+    }
+}
+
+perr_t PDC_hist_incr_all(pdc_histogram_t *hist, PDC_var_type_t dtype, uint64_t n, void *data)
+{
+    perr_t ret_value = SUCCEED;
+    if (dtype != hist->dtype || 0 == n || NULL == data) 
+        return FAIL;
+    
+    if (PDC_INT == dtype) 
+        PDC_hist_incr_all_int(hist, n, (int*)data);
+    else if (PDC_FLOAT == dtype) 
+        PDC_hist_incr_all_float(hist, n, (float*)data);
+    else if (PDC_DOUBLE == dtype) 
+        PDC_hist_incr_all_double(hist, n, (double*)data);
+    else if (PDC_INT64 == dtype) 
+        PDC_hist_incr_all_int64(hist, n, (int64_t*)data);
+    else if (PDC_UINT64 == dtype) 
+        PDC_hist_incr_all_uint64(hist, n, (uint64_t*)data);
+    else if (PDC_UINT32 == dtype) 
+        PDC_hist_incr_all_uint32(hist, n, (uint32_t*)data);
+    else {
+        ret_value = FAIL;
+        printf("==PDC_SERVER[%d]: %s - datatype %d not supported!)\n", pdc_server_rank_g, __func__, dtype);
+        goto done;
+    }
+
+
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+pdc_histogram_t *PDC_gen_hist(PDC_var_type_t dtype, uint64_t n, void *data)
+{
+    pdc_histogram_t *hist;
+    double min, max;
+
+    if (0 == n || NULL == data) {
+        return NULL;
+    }
+
+    PDC_sample_min_max(dtype, n, data, 0.2, &min, &max);
+
+    hist = PDC_create_hist(dtype, 100, min, max);
+    if (NULL == hist) {
+        printf("==PDC_SERVER[%d]: %s - error with PDC_create_hist!)\n", pdc_server_rank_g, __func__);
+        return NULL;
+    }
+
+    PDC_hist_incr_all(hist, dtype, n, data);
+
+    return hist;
+}
+
+void PDC_free_hist(pdc_histogram_t *hist)
+{
+    if (NULL == hist) 
+        return;
+    
+    free(hist->range);
+    free(hist->bin);
+    free(hist);
+}
+
+

@@ -303,5 +303,9 @@ perr_t PDC_Close_cache_file();
 
 hg_return_t PDC_cache_region_to_bb_cb (const struct hg_cb_info *callback_info) ;
 
+perr_t PDC_sample_min_max(PDC_var_type_t dtype, uint64_t n, void *data, double sample_pct, double *min, double *max);
+pdc_histogram_t *PDC_gen_hist(PDC_var_type_t dtype, uint64_t n, void *data);
+void PDC_free_hist(pdc_histogram_t *hist);
+pdc_histogram_t *PDC_create_hist(PDC_var_type_t dtype, int nbin, double min, double max);
 #endif /* PDC_SERVER_DATA_H */
 
