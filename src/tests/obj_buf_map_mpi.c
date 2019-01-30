@@ -50,6 +50,9 @@ int main(int argc, char **argv)
     pdcid_t obj2;
     pdcid_t r1, r2;
     perr_t ret;
+#ifdef ENABLE_MPI
+    MPI_Comm comm;
+#endif
     float *x;
     long numparticles = 4;
     uint64_t dims[1] = {numparticles};  // {8388608};
@@ -62,6 +65,7 @@ int main(int argc, char **argv)
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_dup(MPI_COMM_WORLD, &comm);
 #endif
 
     x = (float *)malloc(numparticles*sizeof(float));
@@ -90,7 +94,7 @@ int main(int argc, char **argv)
     PDCprop_set_obj_app_name(obj_prop2, "VPICIO"  );
     PDCprop_set_obj_tags(    obj_prop2, "tag0=1"    );
 
-    obj2 = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop2, 0);
+    obj2 = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop2, 0, comm);
     if (obj2 == 0) {    
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
         exit(-1);

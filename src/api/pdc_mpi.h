@@ -24,6 +24,7 @@
 
 #ifndef _pdc_mpi_H
 #define _pdc_mpi_H
+#include "mpi.h"
 
 /**
  * Create an object 
@@ -36,6 +37,6 @@
  *
  * \return Object id on success/Negative on failure 
  */
-pdcid_t PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop, int rank_id);
+pdcid_t PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop, int rank_id, MPI_Comm comm);
 
 #endif
