@@ -75,7 +75,7 @@ pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_prop_id)
     if(cont_prop->pdc->name)
         p->cont_pt->pdc->name = strdup(cont_prop->pdc->name);
     p->cont_pt->pdc->local_id = cont_prop->pdc->local_id;
-    
+   
     ret_value = PDC_Client_create_cont_id(cont_name, cont_prop_id, &(p->meta_id));
     if (ret_value == FAIL)
         PGOTO_ERROR(0, "Unable to create container on the server!\n");

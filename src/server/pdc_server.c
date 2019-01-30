@@ -803,7 +803,6 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     init_info.na_init_info.progress_mode = NA_NO_BLOCK;    // busy mode
 #endif
 
-//#ifndef PDC_HAS_CRAY_DRC
 #ifdef PDC_HAS_SHARED_SERVER
     init_info.auto_sm = HG_TRUE;
 #endif

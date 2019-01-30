@@ -60,7 +60,7 @@ int assign_work_to_rank(int rank, int size, int nwork, int *my_count, int *my_st
 
 void print_usage(char *name)
 {
-    printf("%s n_obj n_add_tag n_query\n", name); 
+    printf("%s n_obj n_query\n", name); 
 }
 
 int main(int argc, char *argv[])
@@ -78,16 +78,15 @@ int main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &proc_num);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
-    /* if (argc != 4) { */
-    /*     if (my_rank == 0) */ 
-    /*         print_usage(argv[0]); */
-    /*     goto done; */
-    /* } */
-    /* n_obj    = atoi(argv[1]); */
-    /* n_add_tag = atoi(argv[2]); */
-    /* n_query  = atoi(argv[3]); */
+    if (argc != 2) {
+        if (my_rank == 0) 
+            print_usage(argv[0]);
+        goto done;
+    }
+    n_obj    = atoi(argv[1]);
+    /* n_query  = atoi(argv[2]); */
 
-    n_obj     = 10000000;
+    /* n_obj     = 10000000; */
     n_add_tag = n_obj / 100;
     int round = 7;
     /* n_obj     = 10000; */
@@ -187,26 +186,26 @@ int main(int argc, char *argv[])
     }
 
 
-    // close objects
-    for (i = 0; i < my_obj; i++) {
-        if(PDCobj_close(obj_ids[i]) < 0)
-            printf("fail to close object o%d\n", i+my_obj_s);
-    }
+    /* // close objects */
+    /* for (i = 0; i < my_obj; i++) { */
+    /*     if(PDCobj_close(obj_ids[i]) < 0) */
+    /*         printf("fail to close object o%d\n", i+my_obj_s); */
+    /* } */
     
-    // close a container
-    if(PDCcont_close(cont) < 0)
-        printf("fail to close container c1\n");
+    /* // close a container */
+    /* if(PDCcont_close(cont) < 0) */
+    /*     printf("fail to close container c1\n"); */
     
-    // close a container property
-    if(PDCprop_close(obj_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+    /* // close a container property */
+    /* if(PDCprop_close(obj_prop) < 0) */
+    /*     printf("Fail to close property @ line %d\n", __LINE__); */
 
-    if(PDCprop_close(cont_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+    /* if(PDCprop_close(cont_prop) < 0) */
+    /*     printf("Fail to close property @ line %d\n", __LINE__); */
 
-    // close pdc
-    if(PDC_close(pdc) < 0)
-       printf("fail to close PDC\n");
+    /* // close pdc */
+    /* if(PDC_close(pdc) < 0) */
+    /*    printf("fail to close PDC\n"); */
 
 done:
     MPI_Finalize();

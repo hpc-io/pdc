@@ -71,6 +71,7 @@ done:
 
 pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id)
 {
+    uint64_t meta_id;
     pdcid_t ret_value = 0;
     struct PDC_cont_info *cont_info;
     struct PDC_obj_prop *obj_prop;
@@ -88,26 +89,32 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id
     p->metadata = NULL;
     p->region_list_head = NULL;
 
-    id_info = pdc_find_id(cont_id);
-    cont_info = (struct PDC_cont_info *)(id_info->obj_ptr);
-    p->cont = PDC_CALLOC(struct PDC_cont_info);
-    if(!p->cont)
-        PGOTO_ERROR(0, "PDC object container memory allocation failed\n");
-    memcpy(p->cont, cont_info, sizeof(struct PDC_cont_info));
-    if(cont_info->name)
-        p->cont->name = strdup(cont_info->name);
-    
-    p->cont->cont_pt = PDC_CALLOC(struct PDC_cont_prop);
-    if(!p->cont->cont_pt)
-        PGOTO_ERROR(0, "PDC object container property memory allocation failed\n");
-    memcpy(p->cont->cont_pt, cont_info->cont_pt, sizeof(struct PDC_cont_prop));
-    
-    p->cont->cont_pt->pdc = PDC_CALLOC(struct PDC_class);
-    if(!p->cont->cont_pt->pdc)
-        PGOTO_ERROR(0, "PDC object container property pdc memory allocation failed\n");
-    p->cont->cont_pt->pdc->name = strdup(cont_info->cont_pt->pdc->name);
-    p->cont->cont_pt->pdc->local_id = cont_info->cont_pt->pdc->local_id;
-    
+    if (cont_id == 0) {
+        meta_id = 0;
+    }
+    else {
+        id_info = pdc_find_id(cont_id);
+        cont_info = (struct PDC_cont_info *)(id_info->obj_ptr);
+        p->cont = PDC_CALLOC(struct PDC_cont_info);
+        if(!p->cont)
+            PGOTO_ERROR(0, "PDC object container memory allocation failed\n");
+        memcpy(p->cont, cont_info, sizeof(struct PDC_cont_info));
+        if(cont_info->name)
+            p->cont->name = strdup(cont_info->name);
+        
+        p->cont->cont_pt = PDC_CALLOC(struct PDC_cont_prop);
+        if(!p->cont->cont_pt)
+            PGOTO_ERROR(0, "PDC object container property memory allocation failed\n");
+        memcpy(p->cont->cont_pt, cont_info->cont_pt, sizeof(struct PDC_cont_prop));
+        
+        p->cont->cont_pt->pdc = PDC_CALLOC(struct PDC_class);
+        if(!p->cont->cont_pt->pdc)
+            PGOTO_ERROR(0, "PDC object container property pdc memory allocation failed\n");
+        p->cont->cont_pt->pdc->name = strdup(cont_info->cont_pt->pdc->name);
+        p->cont->cont_pt->pdc->local_id = cont_info->cont_pt->pdc->local_id;
+        meta_id = p->cont->meta_id;
+    }
+   
     id_info = pdc_find_id(obj_prop_id);
     obj_prop = (struct PDC_obj_prop *)(id_info->obj_ptr);
     p->obj_pt = PDC_CALLOC(struct PDC_obj_prop);
@@ -135,7 +142,7 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id
     if(obj_prop->tags)
         p->obj_pt->tags = strdup(obj_prop->tags);
 
-    ret = PDC_Client_send_name_recv_id(obj_name, p->cont->meta_id, obj_prop_id, &(p->meta_id));
+    ret = PDC_Client_send_name_recv_id(obj_name, meta_id, obj_prop_id, &(p->meta_id));
     if (ret == FAIL)
         PGOTO_ERROR(0, "Unable to create object on server!\n");
     
@@ -155,7 +162,8 @@ pdcid_t pdc_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_i
     struct PDC_id_info *id_info = NULL;
     struct PDC_cont_info *cont_info = NULL;
     struct PDC_obj_prop *obj_prop;
-    size_t i;
+    uint64_t meta_id;
+    int i;
     perr_t ret = SUCCEED;
 
     FUNC_ENTER(NULL);
@@ -168,26 +176,31 @@ pdcid_t pdc_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_i
     p->location = location;
     p->region_list_head = NULL;
 
-    id_info = pdc_find_id(cont_id);
-    cont_info = (struct PDC_cont_info *)(id_info->obj_ptr);
-    p->cont = PDC_CALLOC(struct PDC_cont_info);
-    if(!p->cont)
-        PGOTO_ERROR(0, "PDC object container memory allocation failed");
-    memcpy(p->cont, cont_info, sizeof(struct PDC_cont_info));
-    if(cont_info->name)
-        p->cont->name = strdup(cont_info->name);
-    
-    p->cont->cont_pt = PDC_CALLOC(struct PDC_cont_prop);
-    if(!p->cont->cont_pt)
-        PGOTO_ERROR(0, "PDC object container property memory allocation failed");
-    memcpy(p->cont->cont_pt, cont_info->cont_pt, sizeof(struct PDC_cont_prop));
-    
-    p->cont->cont_pt->pdc = PDC_CALLOC(struct PDC_class);
-    if(!p->cont->cont_pt->pdc)
-        PGOTO_ERROR(0, "PDC object container property pdc memory allocation failed\n");
-    if(cont_info->cont_pt->pdc->name)
-        p->cont->cont_pt->pdc->name = strdup(cont_info->cont_pt->pdc->name);
-    p->cont->cont_pt->pdc->local_id = cont_info->cont_pt->pdc->local_id;
+    if (cont_id == 0) {
+        meta_id = 0;
+    }
+    else {
+        id_info = pdc_find_id(cont_id);
+        cont_info = (struct PDC_cont_info *)(id_info->obj_ptr);
+            p->cont = PDC_CALLOC(struct PDC_cont_info);
+        if(!p->cont)
+            PGOTO_ERROR(0, "PDC object container memory allocation failed");
+        memcpy(p->cont, cont_info, sizeof(struct PDC_cont_info));
+        if(cont_info->name)
+            p->cont->name = strdup(cont_info->name);
+        
+        p->cont->cont_pt = PDC_CALLOC(struct PDC_cont_prop);
+        if(!p->cont->cont_pt)
+            PGOTO_ERROR(0, "PDC object container property memory allocation failed");
+        memcpy(p->cont->cont_pt, cont_info->cont_pt, sizeof(struct PDC_cont_prop));
+        
+        p->cont->cont_pt->pdc = PDC_CALLOC(struct PDC_class);
+        if(!p->cont->cont_pt->pdc)
+            PGOTO_ERROR(0, "PDC object container property pdc memory allocation failed\n");
+        if(cont_info->cont_pt->pdc->name)
+            p->cont->cont_pt->pdc->name = strdup(cont_info->cont_pt->pdc->name);
+        p->cont->cont_pt->pdc->local_id = cont_info->cont_pt->pdc->local_id;
+    }
     
     id_info = pdc_find_id(obj_prop_id);
     obj_prop = (struct PDC_obj_prop *)(id_info->obj_ptr);
@@ -226,6 +239,7 @@ pdcid_t pdc_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_i
             PGOTO_ERROR(0, "Unable to create object on server!\n");
     }
     
+    PDC_Client_attach_metadata_to_local_obj(obj_name, p->meta_id, meta_id, p->obj_pt);
     ret_value = p->local_id;
 
 done:

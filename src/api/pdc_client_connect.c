@@ -1809,7 +1809,7 @@ perr_t PDC_Client_add_tag(pdcid_t obj_id, const char *tag)
         goto done;
     }
 
-    struct PDC_obj_info *obj_prop = PDCobj_get_info(obj_id);
+    struct PDC_obj_info *obj_prop = PDC_obj_get_info(obj_id);
     meta_id = obj_prop->meta_id;
     server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
 
@@ -3387,7 +3387,7 @@ perr_t PDC_Client_release_region_lock(pdcid_t meta_id, struct PDC_region_info *r
     FUNC_ENTER(NULL);
 
     /* uint64_t meta_id; */
-    /* PDC_obj_info *obj_prop = PDCobj_get_info(obj_id, pdc); */
+    /* PDC_obj_info *obj_prop = PDC_obj_get_info(obj_id, pdc); */
     /* meta_id = obj_prop->meta_id; */
     ret_value = PDC_Client_region_release(meta_id, region_info, access_type, data_type, released);
 
@@ -4885,7 +4885,8 @@ done:
 }
 
 // Query container with name, retrieve container ID from server
-perr_t PDC_Client_query_container_name(char *cont_name, uint64_t *cont_meta_id)
+perr_t 
+PDC_Client_query_container_name(char *cont_name, uint64_t *cont_meta_id)
 {
     perr_t                 ret_value = SUCCEED;
     hg_return_t            hg_ret    = 0;
@@ -4946,29 +4947,27 @@ PDC_Client_query_container_name_col(const char *cont_name, uint64_t *cont_meta_i
     uint32_t my_server_start, my_server_end, my_server_count;
     uint32_t i, nalloc = 0;
     int nmeta = 0, j;
-    
-    FUNC_ENTER(NULL);
-    
+   
 #ifdef ENABLE_MPI
     if (pdc_client_mpi_rank_g == 0) {
         ret_value = PDC_Client_query_container_name(cont_name, cont_meta_id);
         if (ret_value != SUCCEED) {
-            printf("==PDC_CLIENT[%d]: %s - error with PDC_Client_query_kvtag_server to server %u\n",
-                   pdc_client_mpi_rank_g, __func__, i);
+            printf("==PDC_CLIENT[%d]: %s - error with PDC_Client_query_kvtag_server to server %u\n", 
+                    pdc_client_mpi_rank_g, __func__, i);
         }
-        
+
     }
-    
+
     MPI_Bcast(cont_meta_id, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
 #else
-    
+
     printf("==PDC_CLIENT[%d]: Calling MPI collective operation without enabling MPI!\n", pdc_client_mpi_rank_g);
-    
+
 #endif
-    
+
     /* printf("%d: done querying %d results\n", pdc_client_mpi_rank_g, nmeta); */
     /* fflush(stdout); */
-    
+
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -6750,7 +6749,7 @@ perr_t PDC_add_kvtag(pdcid_t obj_id, pdc_kvtag_t *kvtag)
 
     FUNC_ENTER(NULL);
 
-    struct PDC_obj_info *obj_prop = PDCobj_get_info(obj_id);
+    struct PDC_obj_info *obj_prop = PDC_obj_get_info(obj_id);
     meta_id = obj_prop->meta_id;
 
     server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
@@ -6845,7 +6844,7 @@ perr_t PDC_get_kvtag(pdcid_t obj_id, char *tag_name, pdc_kvtag_t **kvtag)
 
     FUNC_ENTER(NULL);
 
-    struct PDC_obj_info *obj_prop = PDCobj_get_info(obj_id);
+    struct PDC_obj_info *obj_prop = PDC_obj_get_info(obj_id);
     meta_id = obj_prop->meta_id;
     server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
     debug_server_id_count[server_id]++;
@@ -6903,7 +6902,7 @@ perr_t PDCtag_delete(pdcid_t obj_id, char *tag_name)
 
     FUNC_ENTER(NULL);
 
-    struct PDC_obj_info *obj_prop = PDCobj_get_info(obj_id);
+    struct PDC_obj_info *obj_prop = PDC_obj_get_info(obj_id);
     meta_id = obj_prop->meta_id;
     server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
 
@@ -7287,6 +7286,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+
 // All clients collectively query all servers
 perr_t 
 PDC_Client_query_kvtag_col(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids)
@@ -7590,7 +7590,7 @@ perr_t PDCobj_get_data(pdcid_t obj_id, void **data, uint64_t *size)
     obj_region.offset = 0;
     obj_region.size   = 0;  // TODO: size=0 means read entire object
 
-    struct PDC_obj_info *obj_prop = PDCobj_get_info(obj_id);
+    struct PDC_obj_info *obj_prop = PDC_obj_get_info(obj_id);
     meta_id = obj_prop->meta_id;
     obj_name = obj_prop->name;
 
@@ -7620,7 +7620,7 @@ PDCobj_del_data(pdcid_t obj_id)
 
     FUNC_ENTER(NULL);
 
-    struct PDC_obj_info *obj_prop = PDCobj_get_info(obj_id);
+    struct PDC_obj_info *obj_prop = PDC_obj_get_info(obj_id);
     meta_id = obj_prop->meta_id;
 
     ret_value = PDC_Client_delete_metadata_by_id(meta_id);
