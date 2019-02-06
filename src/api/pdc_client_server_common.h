@@ -137,6 +137,7 @@ typedef struct region_list_t {
     int      is_data_ready;
     char     shm_addr[ADDR_MAX];
     int      shm_fd;
+    pdc_histogram_t *hist;
     char    *buf;
     PDC_data_loc_t data_loc_type;
     char     storage_location[ADDR_MAX];
@@ -164,7 +165,7 @@ typedef struct region_list_t {
     int    seq_id;
     struct region_list_t *prev;
     struct region_list_t *next;
-    // 32 attributes, need to match init and deep_cp routines
+    // NOTE: when modified, need to change init and deep_cp routines
 } region_list_t;
 
 // Similar structure PDC_region_info_t defined in pdc_obj_pkg.h

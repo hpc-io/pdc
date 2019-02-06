@@ -1055,7 +1055,7 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
                 data_path = ".";
         }
         // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
-        snprintf(storage_location, ADDR_MAX, "%s/pdc_data/%" PRIu64 "/server%d/s%04d.bin",
+        snprintf(storage_location, ADDR_MAX, "%.200s/pdc_data/%" PRIu64 "/server%d/s%04d.bin",
             data_path, in->remote_obj_id, pdc_server_rank_g, pdc_server_rank_g);
         pdc_mkdir(storage_location);
 
@@ -3163,7 +3163,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
             buffer_write_request_total_g = io_info->nbuffer_request * io_info->nclient;
         buffer_write_request_num_g++;
         
-        /* printf("==PDC_SERVER[%d]: received %d/%d write requests\n", */ 
+        /* print("==PDC_SERVER[%d]: received %d/%d write requests\n", */ 
         /*         pdc_server_rank_g, buffer_write_request_num_g, buffer_write_request_total_g); */
     }
     else if (io_info->io_type == READ) {
@@ -3238,11 +3238,11 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
 
             bb_data_path = getenv("PDC_BB_LOC");
             if (bb_data_path != NULL)
-                snprintf(io_list_target->bb_path, ADDR_MAX, "%s/pdc_data/cont_%" PRIu64 "", 
+                snprintf(io_list_target->bb_path, ADDR_MAX, "%.200s/pdc_data/cont_%" PRIu64 "", 
                         bb_data_path, io_info->meta.cont_id);
 
             // Auto generate a data location path for storing the data
-            snprintf(io_list_target->path, ADDR_MAX, "%s/pdc_data/cont_%" PRIu64 "", data_path, io_info->meta.cont_id);
+            snprintf(io_list_target->path, ADDR_MAX, "%.200s/pdc_data/cont_%" PRIu64 "", data_path, io_info->meta.cont_id);
         }
 
         io_list_target->region_list_head = NULL;
@@ -3311,7 +3311,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
             fflush(stdout);
         }
 
-        // Perfor IO for all requests in each io_list (of unique obj_id)
+        // Perform IO for all requests in each io_list (of unique obj_id)
         DL_FOREACH(pdc_data_server_write_list_head_g, io_list_elt) {
 
             // Sort the list so it is ordered by client id
@@ -3326,7 +3326,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
             // Specify the location of data to be written to
             DL_FOREACH(io_list_elt->region_list_head, region_elt) {
 
-                snprintf(region_elt->storage_location, ADDR_MAX, "%s/server%d/s%04d.bin",
+                snprintf(region_elt->storage_location, ADDR_MAX, "%.200s/server%d/s%04d.bin",
                         io_list_elt->path, pdc_server_rank_g, pdc_server_rank_g);
                 real_lustre_cnt++;
                 /* PDC_print_region_list(region_elt); */
@@ -3341,7 +3341,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
                         if (pdc_server_rank_g % 2 == 0) {
                             // Half of the servers writes to BB first
                             if (curr_cnt < write_to_bb_cnt) {
-                                snprintf(region_elt->storage_location, ADDR_MAX, "%s/server%d/s%04d.bin",
+                                snprintf(region_elt->storage_location, ADDR_MAX, "%.200s/server%d/s%04d.bin",
                                         io_list_elt->bb_path, pdc_server_rank_g, pdc_server_rank_g);
                                 real_bb_cnt++;
                                 real_lustre_cnt--;
@@ -3350,7 +3350,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
                         else {
                             // Others write to Lustre first
                             if (curr_cnt >= io_list_elt->total - write_to_bb_cnt) {
-                                snprintf(region_elt->storage_location, ADDR_MAX, "%s/server%d/s%04d.bin",
+                                snprintf(region_elt->storage_location, ADDR_MAX, "%.200s/server%d/s%04d.bin",
                                         io_list_elt->bb_path, pdc_server_rank_g, pdc_server_rank_g);
                                 real_bb_cnt++;
                                 real_lustre_cnt--;
@@ -4599,9 +4599,8 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
         if (region_elt->access_type == READ) {
 
             /* #ifdef ENABLE_CACHE */
-            if (region_elt->is_io_done == 1) {
+            if (region_elt->is_io_done == 1) 
                 continue;
-            }
             /* #endif */
             ret_value = PDC_Server_get_storage_location_of_region_mpi(region_elt);
             if (ret_value != SUCCEED) {
@@ -4898,6 +4897,19 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
                 goto done;
             }
 
+            // Generate histogram of this region
+            if (NULL != region_elt->meta) {
+                uint64_t region_data_cnt = region_elt->data_size;
+                region_data_cnt /= PDC_get_var_type_size(region_elt->meta->data_type);
+                region_elt->hist = PDC_gen_hist(region_elt->meta->data_type, region_data_cnt, 
+                        region_elt->buf);
+                PDC_print_hist(region_elt->hist);
+            }
+            else {
+                printf("==PDC_SERVER[%d]: cannot generate histogram without valid metadata pointer in region\n", 
+                        pdc_server_rank_g);
+            }
+            
             // add current region to the update bulk buf
             /* if (NULL == bulk_data) { */
             /*     bulk_data = (bulk_xfer_data_t*)calloc(1, sizeof(bulk_xfer_data_t)); */
@@ -5161,7 +5173,7 @@ perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct P
     }
 
     // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
-    snprintf(io_region->storage_location, ADDR_MAX, "%s/pdc_data/%" PRIu64 "/server%d/s%04d.bin",
+    snprintf(io_region->storage_location, ADDR_MAX, "%.200s/pdc_data/%" PRIu64 "/server%d/s%04d.bin",
             data_path, obj_id, pdc_server_rank_g, pdc_server_rank_g);
     pdc_mkdir(io_region->storage_location);
 
@@ -5929,7 +5941,6 @@ perr_t PDC_sample_min_max_int64(uint64_t n, int64_t *data, double sample_pct, do
             *min = data[iter];
     }
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -5950,7 +5961,6 @@ perr_t PDC_sample_min_max_double(uint64_t n, double *data, double sample_pct, do
             *min = data[iter];
     }
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -5971,7 +5981,6 @@ perr_t PDC_sample_min_max_float(uint64_t n, float *data, double sample_pct, doub
             *min = data[iter];
     }
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -6018,7 +6027,6 @@ perr_t PDC_sample_min_max_uint64(uint64_t n, uint64_t *data, double sample_pct, 
             *min = data[iter];
     }
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -6039,7 +6047,6 @@ perr_t PDC_sample_min_max_int(uint64_t n, int *data, double sample_pct, double *
             *min = data[iter];
     }
 
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -6114,7 +6121,7 @@ void PDC_hist_incr_all_int(pdc_histogram_t *hist, uint64_t n, int *data)
         if (data[i] < hist->range[1]) 
             hist->bin[0]++;
         else if (data[i] >= hist->range[(hist->n*2)-2]) 
-            hist->bin[n-1]++;
+            hist->bin[hist->n-1]++;
         else {
             hist->bin[(int)((data[i] - hist->range[1]) / hist->incr + 1)]++;
         }
@@ -6128,7 +6135,7 @@ void PDC_hist_incr_all_float(pdc_histogram_t *hist, uint64_t n, float *data)
         if (data[i] < hist->range[1]) 
             hist->bin[0]++;
         else if (data[i] >= hist->range[(hist->n*2)-2]) 
-            hist->bin[n-1]++;
+            hist->bin[hist->n-1]++;
         else {
             hist->bin[(int)((data[i] - hist->range[1]) / hist->incr + 1)]++;
         }
@@ -6142,7 +6149,7 @@ void PDC_hist_incr_all_double(pdc_histogram_t *hist, uint64_t n, double *data)
         if (data[i] < hist->range[1]) 
             hist->bin[0]++;
         else if (data[i] >= hist->range[(hist->n*2)-2]) 
-            hist->bin[n-1]++;
+            hist->bin[hist->n-1]++;
         else {
             hist->bin[(int)((data[i] - hist->range[1]) / hist->incr + 1)]++;
         }
@@ -6156,7 +6163,7 @@ void PDC_hist_incr_all_int64(pdc_histogram_t *hist, uint64_t n, int64_t *data)
         if (data[i] < hist->range[1]) 
             hist->bin[0]++;
         else if (data[i] >= hist->range[(hist->n*2)-2]) 
-            hist->bin[n-1]++;
+            hist->bin[hist->n-1]++;
         else {
             hist->bin[(int)((data[i] - hist->range[1]) / hist->incr + 1)]++;
         }
@@ -6170,7 +6177,7 @@ void PDC_hist_incr_all_uint32(pdc_histogram_t *hist, uint64_t n, uint32_t *data)
         if (data[i] < hist->range[1]) 
             hist->bin[0]++;
         else if (data[i] >= hist->range[(hist->n*2)-2]) 
-            hist->bin[n-1]++;
+            hist->bin[hist->n-1]++;
         else {
             hist->bin[(int)((data[i] - hist->range[1]) / hist->incr + 1)]++;
         }
@@ -6184,7 +6191,7 @@ void PDC_hist_incr_all_uint64(pdc_histogram_t *hist, uint64_t n, uint64_t *data)
         if (data[i] < hist->range[1]) 
             hist->bin[0]++;
         else if (data[i] >= hist->range[(hist->n*2)-2]) 
-            hist->bin[n-1]++;
+            hist->bin[hist->n-1]++;
         else {
             hist->bin[(int)((data[i] - hist->range[1]) / hist->incr + 1)]++;
         }
@@ -6215,8 +6222,6 @@ perr_t PDC_hist_incr_all(pdc_histogram_t *hist, PDC_var_type_t dtype, uint64_t n
         goto done;
     }
 
-
-
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -6230,15 +6235,27 @@ pdc_histogram_t *PDC_gen_hist(PDC_var_type_t dtype, uint64_t n, void *data)
         return NULL;
     }
 
-    PDC_sample_min_max(dtype, n, data, 0.2, &min, &max);
+    #ifdef ENABLE_TIMING
+    struct timeval  pdc_timer_start, pdc_timer_end;
+    gettimeofday(&pdc_timer_start, 0);
+    #endif
 
-    hist = PDC_create_hist(dtype, 100, min, max);
+    PDC_sample_min_max(dtype, n, data, 0.1, &min, &max);
+
+    hist = PDC_create_hist(dtype, 10, min, max);
     if (NULL == hist) {
         printf("==PDC_SERVER[%d]: %s - error with PDC_create_hist!)\n", pdc_server_rank_g, __func__);
         return NULL;
     }
 
     PDC_hist_incr_all(hist, dtype, n, data);
+
+    #ifdef ENABLE_TIMING
+    gettimeofday(&pdc_timer_end, 0);
+    double gen_hist_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+    printf("==PDC_SERVER[%d]: generate histogram of %d elements with %d bins takes %.2fs\n", 
+            pdc_server_rank_g, n, hist->n, gen_hist_time);
+    #endif
 
     return hist;
 }
@@ -6253,4 +6270,40 @@ void PDC_free_hist(pdc_histogram_t *hist)
     free(hist);
 }
 
+void PDC_print_hist(pdc_histogram_t *hist)
+{
+    int i;
 
+    if (NULL == hist) 
+        return;
+    
+    for (i = 0; i < hist->n; i++) {
+        if (i == 0) 
+            printf("(MIN, %.2f): %lu\n", hist->range[i*2+1], hist->bin[i]);
+        else if (i == hist->n - 1) 
+            printf("[%.2f, MAX): %lu\n", hist->range[i*2], hist->bin[i]);
+        else
+            printf("[%.2f, %.2f): %lu\n", hist->range[i*2], hist->range[i*2+1], hist->bin[i]);
+    }
+    printf("\n\n");
+    fflush(stdout);
+}
+
+
+int PDC_get_var_type_size(PDC_var_type_t dtype)
+{
+    if (PDC_INT == dtype) 
+        return 4;
+    else if (PDC_FLOAT == dtype) 
+        return 4;
+    else if (PDC_DOUBLE == dtype) 
+        return 8;
+    else if (PDC_INT64 == dtype) 
+        return 8;
+    else if (PDC_UINT64 == dtype) 
+        return 8;
+    else if (PDC_UINT32 == dtype) 
+        return 4;
+    else 
+        return 1;
+}
