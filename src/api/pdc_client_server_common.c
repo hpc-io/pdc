@@ -1901,9 +1901,6 @@ HG_TEST_RPC_CB(region_release, handle)
         hg_thread_mutex_lock(&lock_list_mutex_g);
 #endif
         DL_FOREACH(target_obj->region_lock_head, elt) {
-#ifdef ENABLE_MULTITHREAD
-            hg_thread_mutex_unlock(&lock_list_mutex_g);
-#endif
             if (PDC_is_same_region_list(request_region, elt) == 1 && elt->reg_dirty_from_buf == 1 && hg_atomic_get32(&(elt->buf_map_refcount)) == 0) {
                 /* printf("==PDC SERVER: region_release start %" PRIu64 " \n", request_region->start[0]); */
                 dirty_reg = 1;
@@ -2019,9 +2016,6 @@ HG_TEST_RPC_CB(region_release, handle)
                 }
                 free(tmp);
             }
-#ifdef ENABLE_MULTITHREAD
-            hg_thread_mutex_lock(&lock_list_mutex_g);
-#endif
         }
 #ifdef ENABLE_MULTITHREAD
         hg_thread_mutex_unlock(&lock_list_mutex_g);
@@ -2046,9 +2040,6 @@ HG_TEST_RPC_CB(region_release, handle)
         hg_thread_mutex_lock(&lock_list_mutex_g);
 #endif
         DL_FOREACH(target_obj->region_lock_head, elt) {
-#ifdef ENABLE_MULTITHREAD
-            hg_thread_mutex_unlock(&lock_list_mutex_g);
-#endif
             if (PDC_is_same_region_list(request_region, elt) == 1 && elt->reg_dirty_from_buf == 1 && hg_atomic_get32(&(elt->buf_map_refcount)) > 0) {
                 dirty_reg = 1;
                 tmp = (region_list_t *)malloc(sizeof(region_list_t));
@@ -2137,9 +2128,6 @@ HG_TEST_RPC_CB(region_release, handle)
                 }
                 free(tmp);
             }
-#ifdef ENABLE_MULTITHREAD
-            hg_thread_mutex_lock(&lock_list_mutex_g);
-#endif
         }
 #ifdef ENABLE_MULTITHREAD
         hg_thread_mutex_unlock(&lock_list_mutex_g);
