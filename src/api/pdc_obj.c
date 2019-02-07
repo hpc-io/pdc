@@ -239,7 +239,7 @@ pdcid_t pdc_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_i
             PGOTO_ERROR(0, "Unable to create object on server!\n");
     }
     
-    PDC_Client_attach_metadata_to_local_obj(obj_name, p->meta_id, meta_id, p->obj_pt);
+    PDC_Client_attach_metadata_to_local_obj(obj_name, p->meta_id, meta_id, p);
     ret_value = p->local_id;
 
 done:

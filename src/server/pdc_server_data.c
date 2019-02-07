@@ -6290,20 +6290,3 @@ void PDC_print_hist(pdc_histogram_t *hist)
 }
 
 
-int PDC_get_var_type_size(PDC_var_type_t dtype)
-{
-    if (PDC_INT == dtype) 
-        return 4;
-    else if (PDC_FLOAT == dtype) 
-        return 4;
-    else if (PDC_DOUBLE == dtype) 
-        return 8;
-    else if (PDC_INT64 == dtype) 
-        return 8;
-    else if (PDC_UINT64 == dtype) 
-        return 8;
-    else if (PDC_UINT32 == dtype) 
-        return 4;
-    else 
-        return 1;
-}

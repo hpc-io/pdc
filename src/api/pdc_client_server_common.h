@@ -2830,4 +2830,5 @@ hg_id_t cont_add_tags_rpc_register(hg_class_t *hg_class);
 perr_t PDC_kvtag_dup(pdc_kvtag_t *from, pdc_kvtag_t **to);
 perr_t PDC_free_kvtag(pdc_kvtag_t **kvtag);
 
+int PDC_get_var_type_size(PDC_var_type_t dtype);
 #endif /* PDC_CLIENT_SERVER_COMMON_H */

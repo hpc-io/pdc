@@ -315,7 +315,6 @@ perr_t PDC_hist_incr_all(pdc_histogram_t *hist, PDC_var_type_t dtype, uint64_t n
 
 void PDC_print_hist(pdc_histogram_t *hist);
 
-int PDC_get_var_type_size(PDC_var_type_t dtype);
 
 #endif /* PDC_SERVER_DATA_H */
 
