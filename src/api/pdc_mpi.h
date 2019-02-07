@@ -25,6 +25,7 @@
 #ifndef _pdc_mpi_H
 #define _pdc_mpi_H
 #include "mpi.h"
+#include "pdc_client_connect.h"
 
 /**
  * Create an object 

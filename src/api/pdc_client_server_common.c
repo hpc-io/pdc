@@ -860,6 +860,11 @@ hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *call
 perr_t PDC_Client_query_read_complete(char *shm_addrs, int size, int n_shm, int seq_id) {return SUCCEED;}
 hg_return_t PDC_Client_recv_bulk_storage_meta_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
 perr_t PDC_Client_recv_bulk_storage_meta(process_bulk_storage_meta_args_t *process_args) {return HG_SUCCESS;}
+
+extern perr_t PDC_Server_find_container_by_name(const char *cont_name, pdc_cont_hash_table_entry_t **out);
+extern perr_t PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out);
+extern perr_t PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t *out);
+
 #endif
 
 
@@ -2717,7 +2722,7 @@ HG_TEST_RPC_CB(query_kvtag, handle)
 
     // Create bulk handle
     buf_size[0] = nmeta * sizeof(uint64_t);
-    hg_ret = HG_Bulk_create(hg_class_g, 1, (void**)&buf_ptr, &buf_size, HG_BULK_READ_ONLY, &bulk_handle);
+    hg_ret = HG_Bulk_create(hg_class_g, 1, (void**)&buf_ptr,(const hg_size_t *)&buf_size, HG_BULK_READ_ONLY, &bulk_handle);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "Could not create bulk data handle\n");
         return EXIT_FAILURE;
@@ -4334,9 +4339,13 @@ HG_TEST_RPC_CB(notify_client_multi_io_complete_rpc, handle)
  * \return Non-negative on success/Negative on failure
  */
 int PDC_add_task_to_list(pdc_task_list_t **target_list, perr_t (*cb)(), void *cb_args, int *curr_task_id, 
-                         hg_thread_mutex_t *mutex)
+                         void *_mutex)
 {
     pdc_task_list_t *new_task;
+
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_t *mutex = _mutex;
+#endif
 
     FUNC_ENTER(NULL);
     if (target_list == NULL ) {
@@ -4372,10 +4381,13 @@ int PDC_add_task_to_list(pdc_task_list_t **target_list, perr_t (*cb)(), void *cb
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_del_task_from_list(pdc_task_list_t **target_list, pdc_task_list_t *del, hg_thread_mutex_t *mutex) 
+perr_t PDC_del_task_from_list(pdc_task_list_t **target_list, pdc_task_list_t *del, void *mutex) 
 {
     perr_t ret_value;
     pdc_task_list_t *tmp;
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_t *mutex = _mutex;
+#endif
     FUNC_ENTER(NULL);
 
     if (target_list == NULL || del == NULL) {
@@ -4418,9 +4430,12 @@ int PDC_is_valid_task_id(int id)
  *
  * \return task pointer on success/NULL on failure
  */
-pdc_task_list_t *PDC_find_task_from_list(pdc_task_list_t** target_list, int id, hg_thread_mutex_t *mutex)
+pdc_task_list_t *PDC_find_task_from_list(pdc_task_list_t** target_list, int id, void *mutex)
 {
     pdc_task_list_t *tmp;
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_t *mutex = _mutex;
+#endif
     FUNC_ENTER(NULL);
 
     if (PDC_is_valid_task_id(id) != 1) {
@@ -5921,6 +5936,7 @@ perr_t PDC_free_kvtag(pdc_kvtag_t **kvtag)
     free((*kvtag)->value);
     free(*kvtag);
     *kvtag = NULL;
+    return 0;
 }
 
 #include "pdc_analysis_common.c"

@@ -58,6 +58,7 @@
 #include "pdc_client_public.h"
 #include "pdc_client_server_common.h"
 #include "pdc_obj_pkg.h"
+#include "pdc_obj_private.h"
 #include "pdc_atomic.h"
 #include "pdc_cont_private.h"
 
@@ -1357,12 +1358,12 @@ metadata_query_bulk_cb(const struct hg_cb_info *callback_info)
     /* fflush(stdout); */
 
     n_meta = output.ret;
-    client_lookup_args->n_meta = (uint32_t*)malloc(sizeof(uint32_t));
     client_lookup_args->n_meta = n_meta;
     if (n_meta == 0) {
         client_lookup_args->meta_arr = NULL;
         goto done;
     }
+    else client_lookup_args->meta_arr = (pdc_metadata_t **) calloc(n_meta, sizeof(pdc_metadata_t *));
 
     // We have received the bulk handle from server (server uses hg_respond)
     // Use this to initiate a bulk transfer
@@ -5613,7 +5614,7 @@ static region_list_t *PDC_get_storage_meta_from_io_list(pdc_data_server_io_list_
     pdc_data_server_io_list_t *io_list_elt, *io_list_target = NULL;
     region_list_t *new_region;
     int j;
-    perr_t ret_value = NULL;
+    region_list_t *ret_value = NULL;
 
     FUNC_ENTER(NULL);
 
@@ -5624,10 +5625,8 @@ static region_list_t *PDC_get_storage_meta_from_io_list(pdc_data_server_io_list_
         }
     }
 
-    if (NULL == io_list_target) 
-        return NULL;
-    else
-        return io_list_target->region_list_head;
+    if (io_list_target) 
+        ret_value = io_list_target->region_list_head;
 
     // TODO: currently assumes 1 region per object
     /* DL_FOREACH(io_list_target->region_list_head) { */
@@ -5715,7 +5714,7 @@ perr_t PDC_send_region_storage_meta_shm(uint32_t server_id, int n, region_storag
     }
 
     buf_sizes = n * sizeof(region_storage_meta_t);
-    hg_ret = HG_Bulk_create(send_class_g, 1, (void**)&storage_meta, &buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
+    hg_ret = HG_Bulk_create(send_class_g, 1, (void**)&storage_meta, (const hg_size_t *)&buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "Could not create bulk data handle\n");
         ret_value = FAIL;
@@ -6215,7 +6214,7 @@ perr_t PDC_Client_query_name_read_entire_obj_client(int nobj, char **obj_names, 
     #endif
 
     // Now we have all the storage metadata of all requests, start reading them all
-    ret_value = PDC_Client_read_with_storage_meta(nobj, all_storage_meta, out_buf, out_buf_sizes);
+    ret_value = PDC_Client_read_with_storage_meta(nobj, all_storage_meta, out_buf, (size_t *)out_buf_sizes);
 
     #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer1, 0);
@@ -6229,7 +6228,7 @@ perr_t PDC_Client_query_name_read_entire_obj_client(int nobj, char **obj_names, 
 
     /* #ifdef ENABLE_CACHE */
     if (cache_percentage_g == 100) 
-        ret_value = PDC_Client_cp_data_to_local_server(nobj, all_storage_meta, out_buf, out_buf_sizes);
+        ret_value = PDC_Client_cp_data_to_local_server(nobj, all_storage_meta, out_buf, (size_t *)out_buf_sizes);
     /* #endif */
 done:
     fflush(stdout);
@@ -6377,7 +6376,7 @@ perr_t PDC_Client_query_name_read_entire_obj_client_agg(int my_nobj, char **my_o
     /* #endif */
 #else
     // MPI is disabled
-    ret_value = PDC_Client_query_name_read_entire_obj_client(my_nobj, my_obj_names, out_buf, out_buf_sizes);
+    ret_value = PDC_Client_query_name_read_entire_obj_client(my_nobj, my_obj_names, out_buf, (uint64_t *)out_buf_sizes);
 #endif
 
 
@@ -6809,7 +6808,8 @@ metadata_get_kvtag_rpc_cb(const struct hg_cb_info *callback_info)
 {
 
     hg_return_t ret_value;
-    pdc_get_kvtag_args_t *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
+    pdc_get_kvtag_args_t *client_lookup_args = (pdc_get_kvtag_args_t *) callback_info->arg;
+    //    struct client_lookup_args  *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
     hg_handle_t handle = callback_info->info.forward.handle;
     metadata_get_kvtag_out_t output;
 
@@ -6823,7 +6823,7 @@ metadata_get_kvtag_rpc_cb(const struct hg_cb_info *callback_info)
     }
     /* printf("Return value=%" PRIu64 "\n", output.ret); */
     client_lookup_args->ret = output.ret;
-    PDC_kvtag_dup(&(output.kvtag), client_lookup_args->kvtag);
+    PDC_kvtag_dup(&(output.kvtag), &client_lookup_args->kvtag);
 
 done:
     work_todo_g--;
@@ -6872,7 +6872,7 @@ perr_t PDC_get_kvtag(pdcid_t obj_id, char *tag_name, pdc_kvtag_t **kvtag)
     }
 
     *kvtag = (pdc_kvtag_t*)malloc(sizeof(pdc_kvtag_t));
-    lookup_args.kvtag = kvtag;
+    lookup_args.kvtag = *kvtag;
     hg_ret = HG_Forward(metadata_get_kvtag_handle, metadata_get_kvtag_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "PDC_Client_get_kvtag_metadata_with_name(): Could not start HG_Forward()\n");
@@ -7375,9 +7375,8 @@ PDCcont_get_id(const char *cont_name, pdcid_t pdc_id)
 
     FUNC_ENTER(NULL);
 
-    PDC_Client_query_container_name(cont_name, &cont_meta_id);
-
-    cont_id = PDC_cont_create_local(pdc_id, cont_name, &cont_meta_id);
+    PDC_Client_query_container_name((char *)cont_name, &cont_meta_id);
+    cont_id = PDC_cont_create_local(pdc_id, cont_name, cont_meta_id);
 
 done:
     FUNC_LEAVE(cont_id);
@@ -7448,7 +7447,7 @@ PDCcont_del_objids(pdcid_t cont_id, const int nobj, const pdcid_t *obj_ids)
 
     FUNC_ENTER(NULL);
 
-    ret_value = PDC_Client_del_objects_to_container(nobj, obj_ids, cont_id);
+    ret_value = PDC_Client_del_objects_to_container(nobj, (pdcid_t *)obj_ids, cont_id);
     if (ret_value != SUCCEED) {
         printf("==PDC_CLIENT[%d]: %s - error with PDC_Client_del_objects_to_container\n", 
                 pdc_client_mpi_rank_g, __func__);
@@ -7556,7 +7555,7 @@ PDCobj_put_data(const char *obj_name, const void *data, uint64_t size, pdcid_t c
 
     obj_region.ndim   = 1;
     obj_region.offset = 0;
-    obj_region.size   = size;
+    obj_region.size   = &size;
 
     #ifdef ENABLE_MPI
     ret = PDC_Client_query_metadata_name_timestep_agg(obj_name, 0, &meta);
@@ -7564,7 +7563,7 @@ PDCobj_put_data(const char *obj_name, const void *data, uint64_t size, pdcid_t c
     ret = PDC_Client_query_metadata_name_timestep(obj_name, 0, &meta);
     #endif
 
-    ret = PDC_Client_write(meta, &obj_region, data);
+    ret = PDC_Client_write(meta, &obj_region, (void *)data);
     if (ret != SUCCEED) {
         printf("==PDC_CLIENT[%d]: %s - Error with PDC_Client_write_id for obj [%s]\n",
                 pdc_client_mpi_rank_g, __func__, obj_name);
@@ -7659,17 +7658,17 @@ perr_t
 PDCobj_get_tag(pdcid_t obj_id, const char *tag_name, void **tag_value, size_t *value_size)
 {
     perr_t ret_value = SUCCEED;
-    pdc_kvtag_t kvtag;
+    pdc_kvtag_t *kvtag = NULL;
 
     FUNC_ENTER(NULL);
 
-    ret_value = PDC_get_kvtag(obj_id, tag_name, &kvtag);
+    ret_value = PDC_get_kvtag(obj_id, (char *)tag_name, &kvtag);
     if (ret_value != SUCCEED) {
         printf("==PDC_CLIENT[%d]: %s - Error with PDC_get_kvtag\n", pdc_client_mpi_rank_g, __func__);
         goto done;
     }
-    *tag_value = kvtag.value;
-    *value_size = kvtag.size;
+    *tag_value = kvtag->value;
+    *value_size = kvtag->size;
 
 done:
     FUNC_LEAVE(ret_value);
@@ -7682,7 +7681,7 @@ PDCobj_del_tag(pdcid_t obj_id, const char *tag_name)
 
     FUNC_ENTER(NULL);
 
-    ret_value = PDCtag_delete(obj_id, tag_name);
+    ret_value = PDCtag_delete(obj_id, (char *)tag_name);
     if (ret_value != SUCCEED) {
         printf("==PDC_CLIENT[%d]: %s - Error with PDC_del_kvtag\n", pdc_client_mpi_rank_g, __func__);
         goto done;

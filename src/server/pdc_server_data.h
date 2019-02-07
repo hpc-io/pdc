@@ -303,5 +303,7 @@ perr_t PDC_Close_cache_file();
 
 hg_return_t PDC_cache_region_to_bb_cb (const struct hg_cb_info *callback_info) ;
 
+perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region, int type);
+
 #endif /* PDC_SERVER_DATA_H */
 

@@ -54,7 +54,7 @@ struct region_transform_ftn_info {
     pdcid_t object_id;
     struct PDC_region_info *src_region;
     struct PDC_region_info *dest_region;
-    void * (*ftnPtr)();
+    size_t (*ftnPtr)();
     int ftn_lastResult;
     int readyCount;
     int nextState;

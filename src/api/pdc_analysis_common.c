@@ -242,7 +242,7 @@ get_execution_locus()
 }
 
 int
-get_ftnPtr_(char *ftn, char *loadpath, void **ftnPtr)
+get_ftnPtr_(const char *ftn, char *loadpath, void **ftnPtr)
 {
   static void *appHandle = NULL;
   static char *lastopened = NULL;
@@ -303,7 +303,7 @@ HG_TEST_RPC_CB(analysis_ftn, handle)
 	   (in.ftn_name == NULL ? "unknown" : in.ftn_name),
 	   (in.loadpath == NULL ? "unknown" : in.loadpath));
 
-    if (get_ftnPtr_(in.ftn_name, in.loadpath, &ftnHandle) < 0)
+    if (get_ftnPtr_(in.ftn_name, (char *)in.loadpath, &ftnHandle) < 0)
       printf("get_ftnPtr_ returned an error!\n");
 
     if ((ftnPtr = ftnHandle) == NULL)
@@ -315,22 +315,23 @@ HG_TEST_RPC_CB(analysis_ftn, handle)
         else if (execution_locus == SERVER_MEMORY) {
             /* inputIter = &PDC_Block_iterator_cache[iterIn]; */
 	}
-        if ((iterOut = in.iter_out) == 0)
-            printf("output is a NULL iterator\n");
-        if ((thisFtn = (struct region_analysis_ftn_info *)calloc(sizeof(struct region_analysis_ftn_info), 1)) != NULL) {
-	    thisFtn->ftnPtr = (int (*)()) ftnPtr;
-	    thisFtn->n_args = 2;
-	    thisFtn->object_id = (pdcid_t *)calloc(2, sizeof(pdcid_t));
-	    registrationId = pdc_add_analysis_ptr_to_registry_(thisFtn);
-	    out.remote_ftn_id = registrationId;
-	} 
-	else {
-	  printf("Unable to allocate storage for the analysis function\n");
-	  out.remote_ftn_id = registrationId;
-	}
+    if ((iterOut = in.iter_out) == 0)
+        printf("output is a NULL iterator\n");
+        if ((thisFtn = (struct region_analysis_ftn_info *)
+            calloc(sizeof(struct region_analysis_ftn_info), 1)) != NULL) {
+	        thisFtn->ftnPtr = (int (*)()) ftnPtr;
+	        thisFtn->n_args = 2;
+	        thisFtn->object_id = (pdcid_t *)calloc(2, sizeof(pdcid_t));
+	        registrationId = pdc_add_analysis_ptr_to_registry_(thisFtn);
+	        out.remote_ftn_id = registrationId;
+	    }
+	    else {
+            printf("Unable to allocate storage for the analysis function\n");
+	        out.remote_ftn_id = registrationId;
+	    }
     } else {
         printf("Failed to resolve %s to a function pointer\n", in.ftn_name);
-	out.remote_ftn_id = registrationId;
+	    out.remote_ftn_id = registrationId;
     }
 
     HG_Respond(handle, NULL, NULL, &out);
@@ -339,15 +340,15 @@ HG_TEST_RPC_CB(analysis_ftn, handle)
         result = ftnPtr(iterIn,iterOut);
         printf("function call result was %d\n----------------\n", result);
 
-	/* FIXME:
-	 * We might consider adding the function result into 
-	 * thisFtn. Under that assumption, we might need to
-	 * somehow add a way to notify the invoking client
-	 * with an exception to handle computation errors...
-	 */
-	if (thisFtn) {
+	    /* FIXME:
+	     * We might consider adding the function result into
+	     * thisFtn. Under that assumption, we might need to
+	     * somehow add a way to notify the invoking client
+	     * with an exception to handle computation errors...
+	     */
+         if (thisFtn) {
             thisFtn->ftn_lastResult = result;
-	}
+	     }
     }
 
 done:
