@@ -6030,10 +6030,10 @@ pdc_histogram_t *PDC_create_hist(PDC_var_type_t dtype, int nbin, double min, dou
     max_bin = ceil(max);
     while(max_bin >= max) {max_bin -= bin_incr;}
 
-    hist->range[0] = DBL_MIN;
+    hist->range[0] = min_bin;
     hist->range[1] = min_bin;
 
-    hist->range[nbin*2-1] = DBL_MAX;
+    hist->range[nbin*2-1] = max_bin;
     hist->range[nbin*2-2] = max_bin;
 
     for (i = 2; i < nbin*2-2; i+=2) {
@@ -6050,10 +6050,16 @@ pdc_histogram_t *PDC_create_hist(PDC_var_type_t dtype, int nbin, double min, dou
     TYPE *ldata = (_data);                                                                  \
     if ((hist)->incr > 0) {                                                                 \
         for (i = 0; i < (n); i++) {                                                         \
-            if (ldata[i] < (hist)->range[1])                                                \
+            if (ldata[i] < (hist)->range[1]) {                                              \
                 (hist)->bin[0]++;                                                           \
-            else if (ldata[i] >= (hist)->range[((hist)->nbin*2)-2])                         \
+                if(ldata[i] < (hist)->range[0])                                             \
+                    (hist)->range[0] = ldata[i];                                            \
+            }                                                                               \
+            else if (ldata[i] >= (hist)->range[((hist)->nbin*2)-2]) {                       \
                 (hist)->bin[(hist)->nbin-1]++;                                              \
+                if(ldata[i] > (hist)->range[((hist)->nbin*2)-1])                            \
+                    (hist)->range[((hist)->nbin*2)-1] = ldata[i];                           \
+            }                                                                               \
             else {                                                                          \
                 (hist)->bin[(int)((ldata[i] - (hist)->range[1]) / (hist)->incr + 1)]++;     \
             }                                                                               \
@@ -6061,10 +6067,16 @@ pdc_histogram_t *PDC_create_hist(PDC_var_type_t dtype, int nbin, double min, dou
     }                                                                                       \
     else {                                                                                  \
         for (i = 0; i < (n); i++) {                                                         \
-            if (ldata[i] < (hist)->range[1])                                                \
+            if (ldata[i] < (hist)->range[1]) {                                              \
                 (hist)->bin[0]++;                                                           \
-            else if (ldata[i] >= (hist)->range[((hist)->nbin*2)-2])                         \
+                if(ldata[i] < (hist)->range[0])                                             \
+                    (hist)->range[0] = ldata[i];                                            \
+            }                                                                               \
+            else if (ldata[i] >= (hist)->range[((hist)->nbin*2)-2]) {                       \
                 (hist)->bin[(hist)->nbin-1]++;                                              \
+                if(ldata[i] > (hist)->range[((hist)->nbin*2)-1])                            \
+                    (hist)->range[((hist)->nbin*2)-1] = ldata[i];                           \
+            }                                                                               \
             else {                                                                          \
                 lo = 1;                                                                     \
                 hi = (hist)->nbin-2;                                                        \
@@ -6134,7 +6146,7 @@ pdc_histogram_t *PDC_gen_hist(PDC_var_type_t dtype, uint64_t n, void *data)
         return NULL;
     }
 
-    hist->incr = -1;
+    /* hist->incr = -1; */
     PDC_hist_incr_all(hist, dtype, n, data);
 
     #ifdef ENABLE_TIMING
@@ -6165,12 +6177,7 @@ void PDC_print_hist(pdc_histogram_t *hist)
         return;
     
     for (i = 0; i < hist->nbin; i++) {
-        if (i == 0) 
-            printf("(MIN, %.2f): %lu\n", hist->range[i*2+1], hist->bin[i]);
-        else if (i == hist->nbin - 1) 
-            printf("[%.2f, MAX): %lu\n", hist->range[i*2], hist->bin[i]);
-        else
-            printf("[%.2f, %.2f): %lu\n", hist->range[i*2], hist->range[i*2+1], hist->bin[i]);
+        printf("[%.2f, %.2f): %lu\n", hist->range[i*2], hist->range[i*2+1], hist->bin[i]);
     }
     printf("\n\n");
     fflush(stdout);
@@ -6178,8 +6185,8 @@ void PDC_print_hist(pdc_histogram_t *hist)
 
 pdc_histogram_t *PDC_merge_hist(PDC_var_type_t dtype, int n, pdc_histogram_t **hists)
 {
-    int i, tot_bin;
-    double tot_min, tot_max;
+    int i, tot_bin, idx, *my_iter;
+    double tot_min, tot_max, bin_min, bin_max;
     pdc_histogram_t *res;
 
     if (n == 0 || NULL == hists) 
@@ -6208,6 +6215,19 @@ pdc_histogram_t *PDC_merge_hist(PDC_var_type_t dtype, int n, pdc_histogram_t **h
     res->nbin  = tot_bin;
     res->incr  = -1.0;  // possibly variable bin boundry increment
 
+    my_iter = (int*)calloc(n, sizeof(int));
+    while (1) {
+        idx = 0;
+        bin_min = hists[0]->range[0];
+        bin_max = hists[0]->range[1];
+        for (i = 1; i < n; i++) {
+            if (hists[0]->range[0]) {
+            }
 
+        }
+    }
+
+    free(my_iter);
+    return res;
 }
 
