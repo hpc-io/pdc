@@ -5927,15 +5927,15 @@ done:
 #define MACRO_SAMPLE_MIN_MAX(TYPE, n, data, sample_pct, min, max) ({    \
     uint64_t i, sample_n, iter = 0;                                     \
     TYPE *ldata = data;                                                 \
-    min     = ldata[0];                                                 \
-    max     = ldata[0];                                                 \
-    sample_n = n * sample_pct;                                          \
+    (min)     = ldata[0];                                               \
+    (max)     = ldata[0];                                               \
+    sample_n = (n) * (sample_pct);                                      \
     for (i = 1; i < sample_n; i++) {                                    \
-        iter = (iter + rand()) % n;                                     \
-        if (ldata[iter] > max)                                          \
-            max = ldata[iter];                                          \
-        else if (ldata[iter] < min)                                     \
-            min = ldata[iter];                                          \
+        iter = (iter + rand()) % (n);                                   \
+        if (ldata[iter] > (max))                                        \
+            (max) = ldata[iter];                                        \
+        else if (ldata[iter] < (min))                                   \
+            (min) = ldata[iter];                                        \
     }                                                                   \
 })
 
@@ -6022,7 +6022,7 @@ pdc_histogram_t *PDC_create_hist(PDC_var_type_t dtype, int nbin, double min, dou
     hist->dtype = dtype;
     hist->range = (double*)calloc(sizeof(double), nbin*2);
     hist->bin   = (uint64_t*)calloc(sizeof(uint64_t), nbin);
-    hist->n     = nbin;
+    hist->nbin     = nbin;
 
     min_bin = floor(min);
     while(min_bin <= min) {min_bin += bin_incr;}
@@ -6044,44 +6044,44 @@ pdc_histogram_t *PDC_create_hist(PDC_var_type_t dtype, int nbin, double min, dou
     return hist;
 }
 
-#define MACRO_HIST_INCR_ALL(TYPE, hist, n, _data) ({                                \
-    uint64_t i, j;                                                                  \
-    int lo, mid, hi;                                                                \
-    TYPE *ldata = _data;                                                            \
-    if (hist->incr > 0) {                                                           \
-        for (i = 0; i < n; i++) {                                                   \
-            if (ldata[i] < hist->range[1])                                          \
-                hist->bin[0]++;                                                     \
-            else if (ldata[i] >= hist->range[(hist->n*2)-2])                        \
-                hist->bin[hist->n-1]++;                                             \
-            else {                                                                  \
-                hist->bin[(int)((ldata[i] - hist->range[1]) / hist->incr + 1)]++;   \
-            }                                                                       \
-        }                                                                           \
-    }                                                                               \
-    else {                                                                          \
-        for (i = 0; i < n; i++) {                                                   \
-            if (ldata[i] < hist->range[1])                                          \
-                hist->bin[0]++;                                                     \
-            else if (ldata[i] >= hist->range[(hist->n*2)-2])                        \
-                hist->bin[hist->n-1]++;                                             \
-            else {                                                                  \
-                lo = 1;                                                             \
-                hi = hist->n-2;                                                     \
-                while (lo <= hi) {                                                  \
-                    mid = lo + (hi - lo) / 2;                                       \
-                    if (ldata[i] >= hist->range[mid*2]) {                           \
-                        if (ldata[i] < hist->range[mid*2+1])                        \
-                            break;                                                  \
-                        lo = mid + 1;                                               \
-                    }                                                               \
-                    else                                                            \
-                        hi = mid - 1;                                               \
-                }                                                                   \
-                hist->bin[mid]++;                                                   \
-            }                                                                       \
-        }                                                                           \
-    }                                                                               \
+#define MACRO_HIST_INCR_ALL(TYPE, hist, n, _data) ({                                        \
+    uint64_t i, j;                                                                          \
+    int lo, mid, hi;                                                                        \
+    TYPE *ldata = (_data);                                                                  \
+    if ((hist)->incr > 0) {                                                                 \
+        for (i = 0; i < (n); i++) {                                                         \
+            if (ldata[i] < (hist)->range[1])                                                \
+                (hist)->bin[0]++;                                                           \
+            else if (ldata[i] >= (hist)->range[((hist)->nbin*2)-2])                         \
+                (hist)->bin[(hist)->nbin-1]++;                                              \
+            else {                                                                          \
+                (hist)->bin[(int)((ldata[i] - (hist)->range[1]) / (hist)->incr + 1)]++;     \
+            }                                                                               \
+        }                                                                                   \
+    }                                                                                       \
+    else {                                                                                  \
+        for (i = 0; i < (n); i++) {                                                         \
+            if (ldata[i] < (hist)->range[1])                                                \
+                (hist)->bin[0]++;                                                           \
+            else if (ldata[i] >= (hist)->range[((hist)->nbin*2)-2])                         \
+                (hist)->bin[(hist)->nbin-1]++;                                              \
+            else {                                                                          \
+                lo = 1;                                                                     \
+                hi = (hist)->nbin-2;                                                        \
+                while (lo <= hi) {                                                          \
+                    mid = lo + (hi - lo) / 2;                                               \
+                    if (ldata[i] >= (hist)->range[mid*2]) {                                 \
+                        if (ldata[i] < (hist)->range[mid*2+1])                              \
+                            break;                                                          \
+                        lo = mid + 1;                                                       \
+                    }                                                                       \
+                    else                                                                    \
+                        hi = mid - 1;                                                       \
+                }                                                                           \
+                (hist)->bin[mid]++;                                                         \
+            }                                                                               \
+        }                                                                                   \
+    }                                                                                       \
 })
 
 perr_t PDC_hist_incr_all(pdc_histogram_t *hist, PDC_var_type_t dtype, uint64_t n, void *data)
@@ -6141,7 +6141,7 @@ pdc_histogram_t *PDC_gen_hist(PDC_var_type_t dtype, uint64_t n, void *data)
     gettimeofday(&pdc_timer_end, 0);
     double gen_hist_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
     printf("==PDC_SERVER[%d]: generate histogram of %lu elements with %d bins takes %.2fs\n", 
-            pdc_server_rank_g, n, hist->n, gen_hist_time);
+            pdc_server_rank_g, n, hist->nbin, gen_hist_time);
     #endif
 
     return hist;
@@ -6164,10 +6164,10 @@ void PDC_print_hist(pdc_histogram_t *hist)
     if (NULL == hist) 
         return;
     
-    for (i = 0; i < hist->n; i++) {
+    for (i = 0; i < hist->nbin; i++) {
         if (i == 0) 
             printf("(MIN, %.2f): %lu\n", hist->range[i*2+1], hist->bin[i]);
-        else if (i == hist->n - 1) 
+        else if (i == hist->nbin - 1) 
             printf("[%.2f, MAX): %lu\n", hist->range[i*2], hist->bin[i]);
         else
             printf("[%.2f, %.2f): %lu\n", hist->range[i*2], hist->range[i*2+1], hist->bin[i]);
@@ -6185,7 +6185,7 @@ pdc_histogram_t *PDC_merge_hist(PDC_var_type_t dtype, int n, pdc_histogram_t **h
     if (n == 0 || NULL == hists) 
         return NULL;
 
-    tot_bin = hists[0]->n;
+    tot_bin = hists[0]->nbin;
     tot_min = hists[0]->range[1];
     tot_max = hists[0]->range[2*tot_bin-2];
 
@@ -6194,18 +6194,18 @@ pdc_histogram_t *PDC_merge_hist(PDC_var_type_t dtype, int n, pdc_histogram_t **h
             printf("==PDC_SERVER[%d]: %s histograms are of different types!\n", pdc_server_rank_g, __func__);
             return NULL;
         }
-        tot_bin += hists[i]->n; 
+        tot_bin += hists[i]->nbin; 
         if (hists[i]->range[1] < tot_min) 
             tot_min = hists[i]->range[1];
-        if (hists[i]->range[2*hists[i]->n - 2] > tot_max) 
-            tot_max = hists[i]->range[2*hists[i]->n - 2];
+        if (hists[i]->range[2*hists[i]->nbin - 2] > tot_max) 
+            tot_max = hists[i]->range[2*hists[i]->nbin - 2];
     }
 
     res        = (pdc_histogram_t*)malloc(sizeof(pdc_histogram_t));
     res->dtype = dtype;
     res->range = (double*)calloc(sizeof(double), tot_bin*2);
     res->bin   = (uint64_t*)calloc(sizeof(uint64_t), tot_bin);
-    res->n     = tot_bin;
+    res->nbin  = tot_bin;
     res->incr  = -1.0;  // possibly variable bin boundry increment
 
 
