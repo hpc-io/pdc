@@ -5924,131 +5924,20 @@ done:
     FUNC_LEAVE(ret_value);
 } // End PDC_Server_add_client_shm_to_cache
 
-perr_t PDC_sample_min_max_int64(uint64_t n, int64_t *data, double sample_pct, double *min, double *max)
-{
-    perr_t ret_value = SUCCEED;
-    uint64_t i, sample_n, iter = 0;
-
-    *min     = data[0];
-    *max     = data[0];
-    sample_n = n * sample_pct;
-
-    for (i = 1; i < sample_n; i++) {
-        iter = (iter + rand()) % n;
-        if (data[iter] > *max) 
-            *max = data[iter];
-        else if (data[iter] < *min) 
-            *min = data[iter];
-    }
-
-    FUNC_LEAVE(ret_value);
-}
-
-perr_t PDC_sample_min_max_double(uint64_t n, double *data, double sample_pct, double *min, double *max)
-{
-    perr_t ret_value = SUCCEED;
-    uint64_t i, sample_n, iter = 0;
-
-    *min     = data[0];
-    *max     = data[0];
-    sample_n = n * sample_pct;
-
-    for (i = 1; i < sample_n; i++) {
-        iter = (iter + rand()) % n;
-        if (data[iter] > *max) 
-            *max = data[iter];
-        else if (data[iter] < *min) 
-            *min = data[iter];
-    }
-
-    FUNC_LEAVE(ret_value);
-}
-
-perr_t PDC_sample_min_max_float(uint64_t n, float *data, double sample_pct, double *min, double *max)
-{
-    perr_t ret_value = SUCCEED;
-    uint64_t i, sample_n, iter = 0;
-
-    *min     = data[0];
-    *max     = data[0];
-    sample_n = n * sample_pct;
-
-    for (i = 1; i < sample_n; i++) {
-        iter = (iter + rand()) % n;
-        if (data[iter] > *max) 
-            *max = data[iter];
-        else if (data[iter] < *min) 
-            *min = data[iter];
-    }
-
-    FUNC_LEAVE(ret_value);
-}
-
-perr_t PDC_sample_min_max_uint32(uint64_t n, uint32_t *data, double sample_pct, double *min, double *max)
-{
-    perr_t ret_value = SUCCEED;
-    uint64_t i, sample_n, iter = 0;
-
-    if (NULL == data || NULL == min || NULL == max) {
-        ret_value = FAIL;
-        goto done;
-    }
-
-    *min     = data[0];
-    *max     = data[0];
-    sample_n = n * sample_pct;
-
-    for (i = 1; i < sample_n; i++) {
-        iter = (iter + rand()) % n;
-        if (data[iter] > *max) 
-            *max = data[iter];
-        else if (data[iter] < *min) 
-            *min = data[iter];
-    }
-
-done:
-    FUNC_LEAVE(ret_value);
-}
-
-perr_t PDC_sample_min_max_uint64(uint64_t n, uint64_t *data, double sample_pct, double *min, double *max)
-{
-    perr_t ret_value = SUCCEED;
-    uint64_t i, sample_n, iter = 0;
-
-    *min     = data[0];
-    *max     = data[0];
-    sample_n = n * sample_pct;
-
-    for (i = 1; i < sample_n; i++) {
-        iter = (iter + rand()) % n;
-        if (data[iter] > *max) 
-            *max = data[iter];
-        else if (data[iter] < *min) 
-            *min = data[iter];
-    }
-
-    FUNC_LEAVE(ret_value);
-}
-
-perr_t PDC_sample_min_max_int(uint64_t n, int *data, double sample_pct, double *min, double *max)
-{
-    perr_t ret_value = SUCCEED;
-    uint64_t i, sample_n, iter = 0;
-
-    *min     = data[0];
-    *max     = data[0];
-    sample_n = n * sample_pct;
-
-    for (i = 1; i < sample_n; i++) {
-        iter = (iter + rand()) % n;
-        if (data[iter] > *max) 
-            *max = data[iter];
-        else if (data[iter] < *min) 
-            *min = data[iter];
-    }
-
-    FUNC_LEAVE(ret_value);
-}
+#define MACRO_SAMPLE_MIN_MAX(TYPE, n, data, sample_pct, min, max) ({    \
+    uint64_t i, sample_n, iter = 0;                                     \
+    TYPE *ldata = data;                                                 \
+    min     = ldata[0];                                                 \
+    max     = ldata[0];                                                 \
+    sample_n = n * sample_pct;                                          \
+    for (i = 1; i < sample_n; i++) {                                    \
+        iter = (iter + rand()) % n;                                     \
+        if (ldata[iter] > max)                                          \
+            max = ldata[iter];                                          \
+        else if (ldata[iter] < min)                                     \
+            min = ldata[iter];                                          \
+    }                                                                   \
+})
 
 perr_t PDC_sample_min_max(PDC_var_type_t dtype, uint64_t n, void *data, double sample_pct, double *min, double *max)
 {
@@ -6060,17 +5949,17 @@ perr_t PDC_sample_min_max(PDC_var_type_t dtype, uint64_t n, void *data, double s
     }
 
     if (PDC_INT == dtype) 
-        PDC_sample_min_max_int(n, (int*)data, sample_pct, min, max);
+        MACRO_SAMPLE_MIN_MAX(int,      n, data, sample_pct, *min, *max);
     else if (PDC_FLOAT == dtype) 
-        PDC_sample_min_max_float(n, (float*)data, sample_pct, min, max);
+        MACRO_SAMPLE_MIN_MAX(float,    n, data, sample_pct, *min, *max);
     else if (PDC_DOUBLE == dtype) 
-        PDC_sample_min_max_double(n, (double*)data, sample_pct, min, max);
+        MACRO_SAMPLE_MIN_MAX(double ,  n, data, sample_pct, *min, *max);
     else if (PDC_INT64 == dtype) 
-        PDC_sample_min_max_int64(n, (int64_t*)data, sample_pct, min, max);
+        MACRO_SAMPLE_MIN_MAX(int64_t,  n, data, sample_pct, *min, *max);
     else if (PDC_UINT64 == dtype) 
-        PDC_sample_min_max_uint64(n, (uint64_t*)data, sample_pct, min, max);
+        MACRO_SAMPLE_MIN_MAX(uint64_t, n, data, sample_pct, *min, *max);
     else if (PDC_UINT32 == dtype) 
-        PDC_sample_min_max_uint32(n, (uint32_t*)data, sample_pct, min, max);
+        MACRO_SAMPLE_MIN_MAX(uint32_t, n, data, sample_pct, *min, *max);
     else {
         ret_value = FAIL;
         printf("==PDC_SERVER[%d]: %s - datatype %d not supported!)\n", pdc_server_rank_g, __func__, dtype);
@@ -6155,89 +6044,45 @@ pdc_histogram_t *PDC_create_hist(PDC_var_type_t dtype, int nbin, double min, dou
     return hist;
 }
 
-void PDC_hist_incr_all_int(pdc_histogram_t *hist, uint64_t n, int *data)
-{
-    uint64_t i;
-    for (i = 0; i < n; i++) {
-        if (data[i] < hist->range[1]) 
-            hist->bin[0]++;
-        else if (data[i] >= hist->range[(hist->n*2)-2]) 
-            hist->bin[hist->n-1]++;
-        else {
-            hist->bin[(int)((data[i] - hist->range[1]) / hist->incr + 1)]++;
-        }
-    }
-}
-
-void PDC_hist_incr_all_float(pdc_histogram_t *hist, uint64_t n, float *data)
-{
-    uint64_t i;
-    for (i = 0; i < n; i++) {
-        if (data[i] < hist->range[1]) 
-            hist->bin[0]++;
-        else if (data[i] >= hist->range[(hist->n*2)-2]) 
-            hist->bin[hist->n-1]++;
-        else {
-            hist->bin[(int)((data[i] - hist->range[1]) / hist->incr + 1)]++;
-        }
-    }
-}
-
-void PDC_hist_incr_all_double(pdc_histogram_t *hist, uint64_t n, double *data)
-{
-    uint64_t i;
-    for (i = 0; i < n; i++) {
-        if (data[i] < hist->range[1]) 
-            hist->bin[0]++;
-        else if (data[i] >= hist->range[(hist->n*2)-2]) 
-            hist->bin[hist->n-1]++;
-        else {
-            hist->bin[(int)((data[i] - hist->range[1]) / hist->incr + 1)]++;
-        }
-    }
-}
-
-void PDC_hist_incr_all_int64(pdc_histogram_t *hist, uint64_t n, int64_t *data)
-{
-    uint64_t i;
-    for (i = 0; i < n; i++) {
-        if (data[i] < hist->range[1]) 
-            hist->bin[0]++;
-        else if (data[i] >= hist->range[(hist->n*2)-2]) 
-            hist->bin[hist->n-1]++;
-        else {
-            hist->bin[(int)((data[i] - hist->range[1]) / hist->incr + 1)]++;
-        }
-    }
-}
-
-void PDC_hist_incr_all_uint32(pdc_histogram_t *hist, uint64_t n, uint32_t *data)
-{
-    uint64_t i;
-    for (i = 0; i < n; i++) {
-        if (data[i] < hist->range[1]) 
-            hist->bin[0]++;
-        else if (data[i] >= hist->range[(hist->n*2)-2]) 
-            hist->bin[hist->n-1]++;
-        else {
-            hist->bin[(int)((data[i] - hist->range[1]) / hist->incr + 1)]++;
-        }
-    }
-}
-
-void PDC_hist_incr_all_uint64(pdc_histogram_t *hist, uint64_t n, uint64_t *data)
-{
-    uint64_t i;
-    for (i = 0; i < n; i++) {
-        if (data[i] < hist->range[1]) 
-            hist->bin[0]++;
-        else if (data[i] >= hist->range[(hist->n*2)-2]) 
-            hist->bin[hist->n-1]++;
-        else {
-            hist->bin[(int)((data[i] - hist->range[1]) / hist->incr + 1)]++;
-        }
-    }
-}
+#define MACRO_HIST_INCR_ALL(TYPE, hist, n, _data) ({                                \
+    uint64_t i, j;                                                                  \
+    int lo, mid, hi;                                                                \
+    TYPE *ldata = _data;                                                            \
+    if (hist->incr > 0) {                                                           \
+        for (i = 0; i < n; i++) {                                                   \
+            if (ldata[i] < hist->range[1])                                          \
+                hist->bin[0]++;                                                     \
+            else if (ldata[i] >= hist->range[(hist->n*2)-2])                        \
+                hist->bin[hist->n-1]++;                                             \
+            else {                                                                  \
+                hist->bin[(int)((ldata[i] - hist->range[1]) / hist->incr + 1)]++;   \
+            }                                                                       \
+        }                                                                           \
+    }                                                                               \
+    else {                                                                          \
+        for (i = 0; i < n; i++) {                                                   \
+            if (ldata[i] < hist->range[1])                                          \
+                hist->bin[0]++;                                                     \
+            else if (ldata[i] >= hist->range[(hist->n*2)-2])                        \
+                hist->bin[hist->n-1]++;                                             \
+            else {                                                                  \
+                lo = 1;                                                             \
+                hi = hist->n-2;                                                     \
+                while (lo <= hi) {                                                  \
+                    mid = lo + (hi - lo) / 2;                                       \
+                    if (ldata[i] >= hist->range[mid*2]) {                           \
+                        if (ldata[i] < hist->range[mid*2+1])                        \
+                            break;                                                  \
+                        lo = mid + 1;                                               \
+                    }                                                               \
+                    else                                                            \
+                        hi = mid - 1;                                               \
+                }                                                                   \
+                hist->bin[mid]++;                                                   \
+            }                                                                       \
+        }                                                                           \
+    }                                                                               \
+})
 
 perr_t PDC_hist_incr_all(pdc_histogram_t *hist, PDC_var_type_t dtype, uint64_t n, void *data)
 {
@@ -6246,17 +6091,17 @@ perr_t PDC_hist_incr_all(pdc_histogram_t *hist, PDC_var_type_t dtype, uint64_t n
         return FAIL;
     
     if (PDC_INT == dtype) 
-        PDC_hist_incr_all_int(hist, n, (int*)data);
+        MACRO_HIST_INCR_ALL(int,      hist, n, data);
     else if (PDC_FLOAT == dtype) 
-        PDC_hist_incr_all_float(hist, n, (float*)data);
+        MACRO_HIST_INCR_ALL(float,    hist, n, data);
     else if (PDC_DOUBLE == dtype) 
-        PDC_hist_incr_all_double(hist, n, (double*)data);
+        MACRO_HIST_INCR_ALL(double,   hist, n, data);
     else if (PDC_INT64 == dtype) 
-        PDC_hist_incr_all_int64(hist, n, (int64_t*)data);
+        MACRO_HIST_INCR_ALL(int64_t,  hist, n, data);
     else if (PDC_UINT64 == dtype) 
-        PDC_hist_incr_all_uint64(hist, n, (uint64_t*)data);
+        MACRO_HIST_INCR_ALL(uint64_t, hist, n, data);
     else if (PDC_UINT32 == dtype) 
-        PDC_hist_incr_all_uint32(hist, n, (uint32_t*)data);
+        MACRO_HIST_INCR_ALL(uint32_t, hist, n, data);
     else {
         ret_value = FAIL;
         printf("==PDC_SERVER[%d]: %s - datatype %d not supported!)\n", pdc_server_rank_g, __func__, dtype);
@@ -6289,6 +6134,7 @@ pdc_histogram_t *PDC_gen_hist(PDC_var_type_t dtype, uint64_t n, void *data)
         return NULL;
     }
 
+    hist->incr = -1;
     PDC_hist_incr_all(hist, dtype, n, data);
 
     #ifdef ENABLE_TIMING
@@ -6328,5 +6174,40 @@ void PDC_print_hist(pdc_histogram_t *hist)
     }
     printf("\n\n");
     fflush(stdout);
+}
+
+pdc_histogram_t *PDC_merge_hist(PDC_var_type_t dtype, int n, pdc_histogram_t **hists)
+{
+    int i, tot_bin;
+    double tot_min, tot_max;
+    pdc_histogram_t *res;
+
+    if (n == 0 || NULL == hists) 
+        return NULL;
+
+    tot_bin = hists[0]->n;
+    tot_min = hists[0]->range[1];
+    tot_max = hists[0]->range[2*tot_bin-2];
+
+    for (i = 1; i < n; i++) {
+        if (hists[i]->dtype != hists[i-1]->dtype) {
+            printf("==PDC_SERVER[%d]: %s histograms are of different types!\n", pdc_server_rank_g, __func__);
+            return NULL;
+        }
+        tot_bin += hists[i]->n; 
+        if (hists[i]->range[1] < tot_min) 
+            tot_min = hists[i]->range[1];
+        if (hists[i]->range[2*hists[i]->n - 2] > tot_max) 
+            tot_max = hists[i]->range[2*hists[i]->n - 2];
+    }
+
+    res        = (pdc_histogram_t*)malloc(sizeof(pdc_histogram_t));
+    res->dtype = dtype;
+    res->range = (double*)calloc(sizeof(double), tot_bin*2);
+    res->bin   = (uint64_t*)calloc(sizeof(uint64_t), tot_bin);
+    res->n     = tot_bin;
+    res->incr  = -1.0;  // possibly variable bin boundry increment
+
+
 }
 
