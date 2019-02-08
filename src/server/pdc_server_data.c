@@ -6081,30 +6081,71 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+double ceil_power_of_2(double number)
+{
+    double res = 1.0;
+    double sign = number > 0 ? 1.0 : -1.0;
+    number *= sign;
+
+    if (number >= res) {
+        while(res < number) {res *= 2.0;}
+    }
+    else {
+        while(res >= number) {res /= 2.0;}
+        res *= 2.0;
+    }
+
+    return res*sign;
+}
+
+double floor_power_of_2(double number)
+{
+    double res = 1.0;
+    double sign = number > 0 ? 1.0 : -1.0;
+    number *= sign;
+
+    if (number >= res) {
+        while(res <= number) {res *= 2.0;}
+        res /= 2.0;
+    }
+    else {
+        while(res > number) {res /= 2.0;}
+    }
+
+    return res*sign;
+}
+
+// Generate histogram with at least nbin bins
 pdc_histogram_t *PDC_create_hist(PDC_var_type_t dtype, int nbin, double min, double max)
 {
     pdc_histogram_t *hist;
     int i;
-    double bin_incr;
+    double min_bin, max_bin, bin_incr;
 
-    if (0 == nbin || min > max) {
+    if (nbin < 4 || min > max) 
         return NULL;
-    }
 
-    hist = (pdc_histogram_t*)malloc(sizeof(pdc_histogram_t));
+    bin_incr    = floor_power_of_2((max-min) / (nbin - 2)); // Excluding first and last bin (open ended)
+    nbin        = ceil((max-min)/bin_incr);
+
+    hist        = (pdc_histogram_t*)malloc(sizeof(pdc_histogram_t));
+    hist->incr  = bin_incr;
     hist->dtype = dtype;
-    hist->n     = nbin;
-    hist->range = (double*)calloc(sizeof(double), nbin*2);  // extra two for below min and above max
+    hist->range = (double*)calloc(sizeof(double), nbin*2);
     hist->bin   = (uint64_t*)calloc(sizeof(uint64_t), nbin);
+    hist->n     = nbin;
+
+    min_bin = floor(min);
+    while(min_bin <= min) {min_bin += bin_incr;}
+
+    max_bin = ceil(max);
+    while(max_bin >= max) {max_bin -= bin_incr;}
 
     hist->range[0] = DBL_MIN;
-    hist->range[1] = min;
+    hist->range[1] = min_bin;
 
     hist->range[nbin*2-1] = DBL_MAX;
-    hist->range[nbin*2-2] = max;
-
-    bin_incr = (max-min) / (nbin - 2);
-    hist->incr = bin_incr;
+    hist->range[nbin*2-2] = max_bin;
 
     for (i = 2; i < nbin*2-2; i+=2) {
         hist->range[i]   = hist->range[i-1];
@@ -6253,7 +6294,7 @@ pdc_histogram_t *PDC_gen_hist(PDC_var_type_t dtype, uint64_t n, void *data)
     #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer_end, 0);
     double gen_hist_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-    printf("==PDC_SERVER[%d]: generate histogram of %d elements with %d bins takes %.2fs\n", 
+    printf("==PDC_SERVER[%d]: generate histogram of %lu elements with %d bins takes %.2fs\n", 
             pdc_server_rank_g, n, hist->n, gen_hist_time);
     #endif
 
@@ -6288,5 +6329,4 @@ void PDC_print_hist(pdc_histogram_t *hist)
     printf("\n\n");
     fflush(stdout);
 }
-
 
