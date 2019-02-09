@@ -25,6 +25,7 @@
 #include "pdc_obj.h"
 #include "pdc_obj_private.h"
 #include "pdc_interface.h"
+#include "pdc_client_connect.h"
 #include "pdc_atomic.h"
 #include "pdc_mpi.h"
 
@@ -47,10 +48,9 @@ pdcid_t PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_pro
     id_info = pdc_find_id(ret_value);
     p = (struct PDC_obj_info *)(id_info->obj_ptr);
 
-    MPI_Bcast(&(p->meta_id), 1, MPI_LONG_LONG, rank_id, MPI_COMM_WORLD);
+    MPI_Bcast(&(p->meta_id), 1, MPI_LONG_LONG, rank_id, comm);
 
-    PDC_Client_attach_metadata_to_local_obj((char *)obj_name, p->meta_id, p->cont->meta_id, p);
-    
+    // PDC_Client_attach_metadata_to_local_obj((char *)obj_name, p->meta_id, p->cont->meta_id, p);
     FUNC_LEAVE(ret_value);
 }
 
