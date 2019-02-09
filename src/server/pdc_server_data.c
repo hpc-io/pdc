@@ -6183,51 +6183,92 @@ void PDC_print_hist(pdc_histogram_t *hist)
     fflush(stdout);
 }
 
-pdc_histogram_t *PDC_merge_hist(PDC_var_type_t dtype, int n, pdc_histogram_t **hists)
+pdc_histogram_t *PDC_dup_hist(pdc_histogram_t *hist)
 {
-    int i, tot_bin, idx, *my_iter;
-    double tot_min, tot_max, bin_min, bin_max;
+    pdc_histogram_t *res;
+    int nbin;
+
+    if (NULL == hist) 
+        return NULL;
+
+    nbin       = hist->nbin;
+    res        = (pdc_histogram_t*)malloc(sizeof(pdc_histogram_t));
+    res->dtype = hist->dtype;
+    res->nbin  = nbin;
+    res->range = (double*)calloc(sizeof(double), nbin*2);
+    res->bin   = (uint64_t*)calloc(sizeof(uint64_t), nbin);
+    res->incr  = hist->incr;
+
+    memcpy(res->range, hist->range, sizeof(double)*nbin*2);
+    memcpy(res->bin,   hist->bin,   sizeof(double)*nbin);
+
+    return res;
+}
+
+pdc_histogram_t *PDC_merge_hist(int n, pdc_histogram_t **hists)
+{
+    int i, j, tot_bin, incr_max_idx, hi, lo, mid;
+    double tot_min, tot_max, incr_max;
     pdc_histogram_t *res;
 
     if (n == 0 || NULL == hists) 
         return NULL;
 
-    tot_bin = hists[0]->nbin;
-    tot_min = hists[0]->range[1];
-    tot_max = hists[0]->range[2*tot_bin-2];
+    tot_min  = hists[0]->range[1];
+    tot_max  = hists[0]->range[2*tot_bin-2];
+    incr_max = hists[0]->incr;
 
     for (i = 1; i < n; i++) {
         if (hists[i]->dtype != hists[i-1]->dtype) {
-            printf("==PDC_SERVER[%d]: %s histograms are of different types!\n", pdc_server_rank_g, __func__);
+            printf("==PDC_SERVER[%d]: %s cannot merge histograms of different types!\n", 
+                    pdc_server_rank_g, __func__);
             return NULL;
         }
-        tot_bin += hists[i]->nbin; 
-        if (hists[i]->range[1] < tot_min) 
-            tot_min = hists[i]->range[1];
-        if (hists[i]->range[2*hists[i]->nbin - 2] > tot_max) 
-            tot_max = hists[i]->range[2*hists[i]->nbin - 2];
+        if (hists[i]->incr > incr_max) {
+            incr_max = hists[i]->incr;
+            incr_max_idx = i;
+            tot_bin = hists[i]->nbin; 
+        }
+        if (hists[i]->range[0] < tot_min) 
+            tot_min = hists[i]->range[0];
+        if (hists[i]->range[2*hists[i]->nbin - 1] > tot_max) 
+            tot_max = hists[i]->range[2*hists[i]->nbin - 1];
     }
 
-    res        = (pdc_histogram_t*)malloc(sizeof(pdc_histogram_t));
-    res->dtype = dtype;
-    res->range = (double*)calloc(sizeof(double), tot_bin*2);
-    res->bin   = (uint64_t*)calloc(sizeof(uint64_t), tot_bin);
-    res->nbin  = tot_bin;
-    res->incr  = -1.0;  // possibly variable bin boundry increment
+    // Merge strategy: Use the histogram with largest incr as base and merge others to it
+    //                 TODO?: keep the non-overlapping histograms with smaller incr 
 
-    my_iter = (int*)calloc(n, sizeof(int));
-    while (1) {
-        idx = 0;
-        bin_min = hists[0]->range[0];
-        bin_max = hists[0]->range[1];
-        for (i = 1; i < n; i++) {
-            if (hists[0]->range[0]) {
+    // Duplicate the base hist to result
+    res = PDC_dup_hist(hists[incr_max_idx]);
+    if (NULL == res) {
+        printf("==PDC_SERVER[%d]: %s error with PDC_dup_hist!\n", pdc_server_rank_g, __func__);
+        return NULL;
+    }
+
+    res->range[0]               = tot_min;
+    res->range[(res->nbin)*2-1] = tot_max;
+
+    for (i = 0; i < n; i++) { // for each histogram
+        if (i == incr_max_idx)  // skip the base
+            continue;
+
+        for (j = 0; j < hists[i]->nbin; j++) {  // for each bin in a non-base hist 
+            lo = 0;
+            hi = res->nbin - 1;
+            while (lo <= hi) {
+                mid = lo + (hi-lo)/2;
+                if (hists[i]->range[2*j] >= res->range[2*mid]) {
+                    if (hists[i]->range[2*j+1] <= res->range[2*mid+1])
+                        break;
+                    lo = mid + 1;
+                }
+                else
+                    hi = mid - 1;
             }
-
+            res->bin[mid] += hists[i]->bin[j];
         }
     }
 
-    free(my_iter);
     return res;
 }
 
