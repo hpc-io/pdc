@@ -46,6 +46,7 @@
 #include "pdc_client_public.h"
 #include "pdc_analysis_support.h"
 #include "pdc_transform_support.h"
+#include "pdc_query.h"
 
 /**
  * Initialize the PDC layer
