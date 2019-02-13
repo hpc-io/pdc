@@ -83,7 +83,7 @@ iterator_init(pdcid_t objectId, pdcid_t reg_id, int blocks, struct PDC_iterator_
     size_t elementsPerBlock;
 
     struct PDC_region_info *region_info = NULL;
-    struct PDC_obj_info *object_info = PDCobj_get_info(objectId);
+    struct PDC_obj_info *object_info = PDC_obj_get_info(objectId);
     struct PDC_obj_prop *obj_prop_ptr;
 
     if ((obj_prop_ptr = object_info->obj_pt) != NULL) {
@@ -269,7 +269,7 @@ PDCobj_data_getNextBlock(pdcid_t iter, void **nextBlock, size_t *dims)
 		thisIter->srcNext += thisIter->startOffset + thisIter->skipCount;
 	    }
 	    else if (execution_locus == CLIENT_MEMORY) {
-                struct PDC_obj_info *object_info = PDCobj_get_info(thisIter->objectId);
+                struct PDC_obj_info *object_info = PDC_obj_get_info(thisIter->objectId);
                 struct PDC_obj_prop *obj_prop_ptr = object_info->obj_pt;
                 if (obj_prop_ptr) {
                     thisIter->srcNext = thisIter->srcStart = obj_prop_ptr->buf;
@@ -523,7 +523,7 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
     // Invoke the analysis function if the input data is local
     // to this client (CLIENT_MEMORY)
     if (i_in) {
-        struct PDC_obj_info *p = PDCobj_get_info(i_in->objectId);
+        struct PDC_obj_info *p = PDC_obj_get_info(i_in->objectId);
         struct PDC_obj_prop *q = p->obj_pt;
         if (q->locus == CLIENT_MEMORY) {       
             if (ftnPtr != NULL) {

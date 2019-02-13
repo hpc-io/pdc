@@ -178,7 +178,7 @@ void initialize_profile(void **hashtab, size_t size)
   }
 }
 
-int show_profile_info( void ** ht_live_entry)
+int show_profile_info( void ** ht_live_entry, void *extraInfo )
 {
   static int count=0;
   char *LineBreak = "------------------------------------------------------------------------------";

@@ -60,7 +60,7 @@ perr_t pdc_client_send_iter_recv_id(pdcid_t iter_id, pdcid_t *meta_id)
         thisIter = &PDC_Block_iterator_cache[iter_id];
 	/* Find the server association to the specific object */
 	server_id = PDC_get_server_by_obj_id(thisIter->objectId, pdc_server_num_g);
-	object_info = PDCobj_get_info(thisIter->objectId);
+	object_info = PDC_obj_get_info(thisIter->objectId);
 	in.client_iter_id = iter_id;
 	if (object_info != NULL) {
             in.object_id = object_info->meta_id;
@@ -265,7 +265,7 @@ perr_t pdc_client_register_obj_transform(const char *func, const char *loadpath,
     }
     /* Find the server associated with the input object */
     server_id = PDC_get_server_by_obj_id(obj_id, pdc_server_num_g);
-    object_info = PDCobj_get_info(obj_id);
+    object_info = PDC_obj_get_info(obj_id);
 
     memset(&in,0,sizeof(in));
     in.ftn_name = func;

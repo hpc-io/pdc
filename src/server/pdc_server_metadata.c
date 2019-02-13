@@ -3096,8 +3096,8 @@ static perr_t PDC_Server_get_storage_meta_by_names(query_read_names_args_t *args
     // bulk transfer to args->origin_id
     // Prepare bulk ptrs, buf_ptrs[0] is task_id
     int nbuf  = total_region + 1;
-    buf_sizes = (size_t*)calloc(sizeof(size_t), nbuf);
-    buf_ptrs  = (void**)calloc(sizeof(void*),  nbuf);
+    buf_sizes = (hg_size_t *)calloc(nbuf, sizeof(hg_size_t));
+    buf_ptrs  = (void**)calloc(nbuf, sizeof(void*));
 
     buf_ptrs[0]  = &(args->client_seq_id);
     buf_sizes[0] = sizeof(int);
@@ -3255,7 +3255,7 @@ perr_t PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t 
    
     } // if lookup_value != NULL
     else {
-        printf("==PDC_SERVER[%d]: add tag target %lu not found!\n", pdc_server_rank_g, obj_id);
+        printf("==PDC_SERVER[%d]: add tag target %llu not found!\n", pdc_server_rank_g, obj_id);
         ret_value = FAIL;
         out->ret = -1;
     }

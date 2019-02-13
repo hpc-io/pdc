@@ -175,7 +175,7 @@ extern perr_t pdc_client_send_iter_recv_id(pdcid_t iter_id, pdcid_t *meta_id);
 extern perr_t pdc_client_register_obj_analysis(const char *func, const char *loadpath, pdcid_t iter_in, pdcid_t iter_out);
 extern perr_t pdc_client_register_obj_transform(const char *func, const char *loadpath, pdcid_t obj_id, int start_state, int next_state, int op_type, int when);
 extern perr_t pdc_client_register_region_transform(const char *func, const char *loadpath, pdcid_t src_region_id, pdcid_t dest_region_id, int start_state, int next_state, int op_type, int when);
-extern int get_ftnPtr_(char *ftn, char *loadpath, void **ftnPtr);
+extern int get_ftnPtr_(const char *ftn, char *loadpath, void **ftnPtr);
 extern void set_execution_locus(PDC_loci locus_identifier);
 extern PDC_loci get_execution_locus(void);
 

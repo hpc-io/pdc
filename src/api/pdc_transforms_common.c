@@ -112,7 +112,7 @@ HG_TEST_RPC_CB(transform_ftn, handle)
 	   (in.ftn_name == NULL ? "unknown" : in.ftn_name),
 	   (in.loadpath == NULL ? "unknown" : in.loadpath));
 
-    if ( get_ftnPtr_(in.ftn_name, in.loadpath, &ftnHandle) >= 0) {
+    if ( get_ftnPtr_(in.ftn_name, (char *)in.loadpath, &ftnHandle) >= 0) {
       out.ret = 0;
     }
     else {

@@ -27,7 +27,9 @@ int main(int argc, char **argv)
     uint64_t size_MB, size_B;
     perr_t ret;
     int ndim = 1;
-
+#ifdef ENABLE_MPI
+    MPI_Comm comm;
+#endif
     struct timeval  pdc_timer_start;
     struct timeval  pdc_timer_end;
     double write_time = 0.0;
@@ -48,6 +50,7 @@ int main(int argc, char **argv)
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_dup(MPI_COMM_WORLD, &comm);
 #endif
 
     if (argc < 3) {
@@ -100,7 +103,7 @@ int main(int argc, char **argv)
     /* printf("Creating an object with name [%s]", obj_name); */
     /* fflush(stdout); */
     /* global_obj = PDCobj_create(cont, obj_name, obj_prop); */
-    global_obj = PDCobj_create_mpi(cont, obj_name, obj_prop, 0);
+    global_obj = PDCobj_create_mpi(cont, obj_name, obj_prop, 0, comm);
     if (global_obj <= 0) {
         printf("Error creating an object [%s], exit...\n", obj_name);
         exit(-1);

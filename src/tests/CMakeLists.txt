@@ -52,7 +52,7 @@ set(PROGRAMS
   kvtag_add_get_scale
   kvtag_query
   kvtag_query_scale
-#  obj_transformation
+  obj_transformation
 #  obj_analysis
   )
 
@@ -77,10 +77,10 @@ endforeach(script)
 #  1. compression/depression functions
 #  2. datatype conversion
 # *******************************************
-#FIND_LIBRARY(BLOSC_LIBRARY blosc $ENV{HOME}/Sandbox/c-blosc/build/blosc)
-#set(PDC_TRANSFORMS_SRCS pdc_transforms_lib.c)
-#add_library(pdctransforms  ${PDC_TRANSFORMS_SRCS})
-#target_link_libraries(pdctransforms pdc ${BLOSC_LIBRARY})
+FIND_LIBRARY(BLOSC_LIBRARY blosc $ENV{HOME}/Sandbox/c-blosc/build/blosc)
+set(PDC_TRANSFORMS_SRCS pdc_transforms_lib.c)
+add_library(pdctransforms  ${PDC_TRANSFORMS_SRCS})
+target_link_libraries(pdctransforms pdc ${BLOSC_LIBRARY})
 
 # *******************************************
 # Create a transform library for testing

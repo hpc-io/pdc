@@ -2800,9 +2800,9 @@ typedef struct pdc_task_list_t {
     struct pdc_task_list_t *next;
 } pdc_task_list_t;
 
-/* int PDC_add_task_to_list(pdc_task_list_t **target_list, perr_t (*cb)(), void *cb_args, int *curr_task_id, hg_thread_mutex_t *mutex); */
-/* perr_t PDC_del_task_from_list(pdc_task_list_t **target_list, pdc_task_list_t *del, hg_thread_mutex_t *mutex); */
-/* pdc_task_list_t *PDC_find_task_from_list(pdc_task_list_t** target_list, int id, hg_thread_mutex_t *mutex); */
+int PDC_add_task_to_list(pdc_task_list_t **target_list, perr_t (*cb)(), void *cb_args, int *curr_task_id, void *mutex);
+perr_t PDC_del_task_from_list(pdc_task_list_t **target_list, pdc_task_list_t *del, void *mutex);
+pdc_task_list_t *PDC_find_task_from_list(pdc_task_list_t** target_list, int id, void *mutex);
 int PDC_is_valid_task_id(int id);
 int PDC_is_valid_obj_id(uint64_t id);
 

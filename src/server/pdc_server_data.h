@@ -315,6 +315,7 @@ perr_t PDC_hist_incr_all(pdc_histogram_t *hist, PDC_var_type_t dtype, uint64_t n
 
 void PDC_print_hist(pdc_histogram_t *hist);
 
+perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region, int type);
 
 #endif /* PDC_SERVER_DATA_H */
 
