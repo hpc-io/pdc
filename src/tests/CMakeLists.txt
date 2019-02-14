@@ -5,7 +5,7 @@ include_directories(
 #  $ENV{HOME}/Sandbox/c-blosc/blosc
 )
 
-#add_definitions(-DENABLE_MPI=1)
+add_definitions(-DENABLE_MPI=1)
 
 set(PROGRAMS
   pdc_init

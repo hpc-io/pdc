@@ -69,6 +69,7 @@ int                    pdc_client_mpi_size_g = 1;
 
 #ifdef ENABLE_MPI
 MPI_Comm               PDC_SAME_NODE_COMM_g;
+MPI_Comm               PDC_CLIENT_COMM_WORLD_g;
 #endif
 int                    pdc_client_same_node_rank_g = 0;
 int                    pdc_client_same_node_size_g = 1;
@@ -243,7 +244,9 @@ hg_return_t pdc_client_check_int_ret_cb(const struct hg_cb_info *callback_info)
         goto done;
     }
 
-    client_lookup_args->ret = output.ret;
+    if (NULL != client_lookup_args) 
+        client_lookup_args->ret = output.ret;
+
     if (output.ret != 1) 
         printf("==%s() - Return value [%d] is NOT expected\n", __func__, output.ret);
     
@@ -298,7 +301,7 @@ perr_t PDC_Client_read_server_addr_from_file()
     }
 
 #ifdef ENABLE_MPI
-     MPI_Bcast(&pdc_server_num_g, 1, MPI_INT, 0, MPI_COMM_WORLD);
+     MPI_Bcast(&pdc_server_num_g, 1, MPI_INT, 0, PDC_CLIENT_COMM_WORLD_g);
      /* printf("[%d]: received server number %d\n", pdc_client_mpi_rank_g, pdc_server_num_g); */
      /* fflush(stdout); */
 #endif
@@ -322,7 +325,7 @@ perr_t PDC_Client_read_server_addr_from_file()
         }
 
         #ifdef ENABLE_MPI
-        MPI_Bcast(pdc_server_info_g[i].addr_string, ADDR_MAX, MPI_CHAR, 0, MPI_COMM_WORLD);
+        MPI_Bcast(pdc_server_info_g[i].addr_string, ADDR_MAX, MPI_CHAR, 0, PDC_CLIENT_COMM_WORLD_g);
         /* printf("[%d]: received server addr [%s]\n", pdc_client_mpi_rank_g, &pdc_server_info_g[i].addr_string);      */
         /* fflush(stdout); */
         #endif
@@ -972,7 +975,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     if (pdc_client_mpi_rank_g == 0) {
         credential = atoi(getenv("PDC_DRC_KEY")); 
     }
-    MPI_Bcast(&credential, 1, MPI_UINT32_T, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&credential, 1, MPI_UINT32_T, 0, PDC_CLIENT_COMM_WORLD_g);
     
     //printf("# Credential is %u\n", credential);
     //fflush(stdout);
@@ -1118,7 +1121,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
 
 /*
 #ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(PDC_CLIENT_COMM_WORLD_g);
 #endif
 */
     if (is_client_debug_g == 1 && pdc_client_mpi_rank_g == 0) {
@@ -1163,8 +1166,9 @@ perr_t PDC_Client_init()
     MPI_Initialized(&is_mpi_init);
     if (is_mpi_init != 1)
         MPI_Init(NULL, NULL);
-    MPI_Comm_rank(MPI_COMM_WORLD, &pdc_client_mpi_rank_g);
-    MPI_Comm_size(MPI_COMM_WORLD, &pdc_client_mpi_size_g);
+    MPI_Comm_dup(MPI_COMM_WORLD, &PDC_CLIENT_COMM_WORLD_g);
+    MPI_Comm_rank(PDC_CLIENT_COMM_WORLD_g, &pdc_client_mpi_rank_g);
+    MPI_Comm_size(PDC_CLIENT_COMM_WORLD_g, &pdc_client_mpi_size_g);
 #endif
 
     if (pdc_client_mpi_rank_g == 0)
@@ -1178,11 +1182,11 @@ perr_t PDC_Client_init()
     }
 
 #ifdef ENABLE_MPI
-    // Split the MPI_COMM_WORLD communicator, MPI_Comm_split_type requires MPI-3
-    MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &PDC_SAME_NODE_COMM_g);
+    // Split the PDC_CLIENT_COMM_WORLD_g communicator, MPI_Comm_split_type requires MPI-3
+    MPI_Comm_split_type(PDC_CLIENT_COMM_WORLD_g, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &PDC_SAME_NODE_COMM_g);
     /* pdc_nclient_per_server_g = pdc_client_mpi_size_g / pdc_server_num_g; */
     /* same_node_color = pdc_client_mpi_rank_g / pdc_nclient_per_server_g; */
-    /* MPI_Comm_split(MPI_COMM_WORLD, same_node_color, pdc_client_mpi_rank_g, &PDC_SAME_NODE_COMM_g); */
+    /* MPI_Comm_split(PDC_CLIENT_COMM_WORLD_g, same_node_color, pdc_client_mpi_rank_g, &PDC_SAME_NODE_COMM_g); */
 
     MPI_Comm_rank(PDC_SAME_NODE_COMM_g, &pdc_client_same_node_rank_g );
     MPI_Comm_size(PDC_SAME_NODE_COMM_g, &pdc_client_same_node_size_g );
@@ -1290,7 +1294,7 @@ perr_t PDC_Client_finalize()
 /*     fflush(stdout); */
 
     /* int *all_server_count = (int*)malloc(sizeof(int)*pdc_server_num_g); */
-    /* MPI_Reduce(debug_server_id_count, all_server_count, pdc_server_num_g, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD); */
+    /* MPI_Reduce(debug_server_id_count, all_server_count, pdc_server_num_g, MPI_INT, MPI_SUM, 0, PDC_CLIENT_COMM_WORLD_g); */
     /* if (pdc_client_mpi_rank_g == 0 && all_server_count[0] != 0) { */
     /*     printf("==PDC_CLIENT: server connection count:\n"); */
     /*     for (i = 0; i < pdc_server_num_g; i++) */ 
@@ -2387,7 +2391,7 @@ perr_t PDC_Client_create_cont_id_mpi(const char *cont_name, pdcid_t cont_create_
         ret_value = PDC_Client_create_cont_id(cont_name, cont_create_prop, cont_id);
     }
 #ifdef ENABLE_MPI
-    MPI_Bcast(cont_id, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
+    MPI_Bcast(cont_id, 1, MPI_LONG_LONG, 0, PDC_CLIENT_COMM_WORLD_g);
 #endif
 
 done:
@@ -4966,7 +4970,7 @@ PDC_Client_query_container_name_col(const char *cont_name, uint64_t *cont_meta_i
 
     }
 
-    MPI_Bcast(cont_meta_id, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
+    MPI_Bcast(cont_meta_id, 1, MPI_LONG_LONG, 0, PDC_CLIENT_COMM_WORLD_g);
 #else
 
     printf("==PDC_CLIENT[%d]: Calling MPI collective operation without enabling MPI!\n", pdc_client_mpi_rank_g);
@@ -5993,7 +5997,7 @@ perr_t PDC_Client_query_multi_storage_info(int nobj, char **obj_names, region_st
     /* if (nobj > 0) */ 
     /*     i_have_query = 1; */
     /* #ifdef ENABLE_MPI */
-    /* MPI_Reduce(&i_have_query, &total_have_query, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD); */
+    /* MPI_Reduce(&i_have_query, &total_have_query, 1, MPI_INT, MPI_SUM, 0, PDC_CLIENT_COMM_WORLD_g); */
     /* #endif */
 
     if (nobj == 0) {
@@ -6154,19 +6158,19 @@ perr_t PDC_get_io_stats_mpi(double read_time, double query_time, int nfopen)
     FUNC_ENTER(NULL);
 
     reduce_overhead = MPI_Wtime();
-    MPI_Reduce(&read_time, &read_time_max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&read_time, &read_time_min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&read_time, &read_time_avg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&read_time, &read_time_max, 1, MPI_DOUBLE, MPI_MAX, 0, PDC_CLIENT_COMM_WORLD_g);
+    MPI_Reduce(&read_time, &read_time_min, 1, MPI_DOUBLE, MPI_MIN, 0, PDC_CLIENT_COMM_WORLD_g);
+    MPI_Reduce(&read_time, &read_time_avg, 1, MPI_DOUBLE, MPI_SUM, 0, PDC_CLIENT_COMM_WORLD_g);
     read_time_avg /= pdc_client_mpi_size_g;
 
-    MPI_Reduce(&query_time, &query_time_max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&query_time, &query_time_min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&query_time, &query_time_avg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&query_time, &query_time_max, 1, MPI_DOUBLE, MPI_MAX, 0, PDC_CLIENT_COMM_WORLD_g);
+    MPI_Reduce(&query_time, &query_time_min, 1, MPI_DOUBLE, MPI_MIN, 0, PDC_CLIENT_COMM_WORLD_g);
+    MPI_Reduce(&query_time, &query_time_avg, 1, MPI_DOUBLE, MPI_SUM, 0, PDC_CLIENT_COMM_WORLD_g);
     query_time_avg /= pdc_client_mpi_size_g;
 
-    MPI_Reduce(&nfopen, &nfopen_max, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&nfopen, &nfopen_min, 1, MPI_INT, MPI_MIN, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&nfopen, &nfopen_avg, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&nfopen, &nfopen_max, 1, MPI_INT, MPI_MAX, 0, PDC_CLIENT_COMM_WORLD_g);
+    MPI_Reduce(&nfopen, &nfopen_min, 1, MPI_INT, MPI_MIN, 0, PDC_CLIENT_COMM_WORLD_g);
+    MPI_Reduce(&nfopen, &nfopen_avg, 1, MPI_INT, MPI_SUM, 0, PDC_CLIENT_COMM_WORLD_g);
     nfopen_avg /= pdc_client_mpi_size_g;
 
 
