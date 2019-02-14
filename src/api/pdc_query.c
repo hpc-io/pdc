@@ -26,90 +26,115 @@ pdcquery_t *PDCquery_create(pdcid_t obj_id, pdcquery_op_t op,
 
     FUNC_ENTER(NULL);
 
-    if (NULL == query || NULL == value) 
+    if (obj_id == 0 || op == PDC_QUERY_NONE || NULL == value) 
         return NULL;
-
+    query                       = (pdcquery_t*)calloc(1, sizeof(pdcquery_t));
     query->constraint           = (pdcquery_constraint_t*)calloc(1, sizeof(pdcquery_constraint_t));
     query->constraint->obj_id   = obj_id;
     query->constraint->op       = op;
     query->constraint->type     = type;
-    query->constraint->val_size = PDC_get_var_type_size(type);
-    query->constraint->val      = malloc(query->constraint->val_size);
-    memcpy(query->constraint->val, value, query->constraint->val_size);
+    type_size = PDC_get_var_type_size(type);
+    if (type_size > 8) {
+        printf("Cannot handle value larger than 8 bytes!\n");
+        return NULL;
+    }
+    memcpy(&query->constraint->value, value, type_size);
 
     return query;
 }
 
-perr_t PDCquery_and(pdcquery_t *constraint, pdcquery_t *constraint1, pdcquery_t *constraint2)
+pdcquery_t *PDCquery_and(pdcquery_t *q1, pdcquery_t *q2)
 {
-    perr_t ret_value = SUCCEED;
+    pdcquery_t *query;
 
     FUNC_ENTER(NULL);
 
-    if (NULL == constraint || NULL == constraint1 ||NULL == constraint2) {
-        ret_value = FAIL;
-        goto done;
-    }
+    if (NULL == q1 ||NULL == q2) 
+        return NULL;
 
-    constraint->left       = constraint1;
-    constraint->right      = constraint1;
-    constraint->constraint = NULL;
-    constraint->combine_op = PDC_QUERY_AND;
+    query             = (pdcquery_t*)malloc(sizeof(pdcquery_t));
+    query->left       = q1;
+    query->right      = q2;
+    query->constraint = NULL;
+    query->combine_op = PDC_QUERY_AND;
 
-done:
-    FUNC_LEAVE(ret_value);
+    return query;
 }
 
-perr_t PDCquery_or(pdcquery_t *constraint, pdcquery_t *constraint1, pdcquery_t *constraint2)
+pdcquery_t *PDCquery_or(pdcquery_t *q1, pdcquery_t *q2)
 {
-    perr_t ret_value = SUCCEED;
+    pdcquery_t *query;
 
     FUNC_ENTER(NULL);
 
-    if (NULL == constraint || NULL == constraint1 ||NULL == constraint2) {
-        ret_value = FAIL;
-        goto done;
-    }
+    if (NULL == q1 ||NULL == q2) 
+        return NULL;
 
-    constraint->left       = constraint1;
-    constraint->right      = constraint1;
-    constraint->constraint = NULL;
-    constraint->combine_op = PDC_QUERY_OR;
+    query             = (pdcquery_t*)malloc(sizeof(pdcquery_t));
+    query->left       = q1;
+    query->right      = q2;
+    query->constraint = NULL;
+    query->combine_op = PDC_QUERY_OR;
 
-done:
-    FUNC_LEAVE(ret_value);
+    return query;
 }
 
 void PDCquery_free(pdcquery_t *query)
 {
     if (NULL == query) 
         return;
-
-    if (NULL == query->left && NULL == query->right) {
-        if (query->constraint) 
-            free(query->constraint);
-    }
-    else {
-        if (NULL != query->left) 
-            PDCquery_free(query->left);
-        if (NULL != query->right) 
-            PDCquery_free(query->right);
-    }
+    if (query->constraint) 
+        free(query->constraint);
+    free(query);
 }
 
-perr_t PDCquery_get_nhits(pdcquery_t *constraint, int *n)
+void PDCquery_free_all(pdcquery_t *root)
+{
+    if (NULL == root) 
+        return;
+
+    if (root->left == NULL && root->right == NULL) {
+        if (root->constraint) 
+            free(root->constraint);
+    }
+
+    PDCquery_free_all(root->left);
+    PDCquery_free_all(root->right);
+
+    free(root);
+}
+
+perr_t PDC_send_query(pdcquery_t *query, pdcquery_get_op_t get_op)
 {
     perr_t ret_value = SUCCEED;
+    pdc_query_xfer_t *query_xfer;
 
     FUNC_ENTER(NULL);
 
+    /* print_query(query); */
+    /* printf("\n"); */
+
+    query_xfer = PDC_serialize_query(query, get_op);
 
 
 done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDCquery_get_selection(pdcquery_t *constraint, pdcselection_t *sel)
+perr_t PDCquery_get_nhits(pdcquery_t *query, int *n)
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    ret_value = PDC_send_query(query, PDC_QUERY_GET_NHITS);
+
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDCquery_get_selection(pdcquery_t *query, pdcselection_t *sel)
 {
     perr_t ret_value = SUCCEED;
 
@@ -133,7 +158,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDCquery_get_histogram(pdcid_t obj_id, pdcselection_t *sel, void *obj_hist)
+perr_t PDCquery_get_histogram(pdcid_t obj_id, void *hist)
 {
     perr_t ret_value = SUCCEED;
 

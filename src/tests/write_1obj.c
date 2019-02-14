@@ -29,6 +29,8 @@ int main(int argc, char **argv)
     int ndim = 1;
 #ifdef ENABLE_MPI
     MPI_Comm comm;
+#else
+    int comm = 1;
 #endif
     struct timeval  pdc_timer_start;
     struct timeval  pdc_timer_end;

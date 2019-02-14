@@ -52,6 +52,8 @@ int main(int argc, char **argv)
     perr_t ret;
 #ifdef ENABLE_MPI
     MPI_Comm comm;
+#else 
+    int comm = 1;
 #endif
     float *x;
     int x_dim = 64;

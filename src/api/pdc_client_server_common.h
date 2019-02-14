@@ -45,6 +45,7 @@
 #include "pdc_prop_pkg.h"
 #include "pdc_analysis_and_transforms.h"
 #include "pdc_analysis_support.h"
+#include "pdc_query.h"
 
 #ifdef ENABLE_MULTITHREAD 
 hg_thread_mutex_t pdc_client_info_mutex_g;
@@ -2831,4 +2832,90 @@ perr_t PDC_kvtag_dup(pdc_kvtag_t *from, pdc_kvtag_t **to);
 perr_t PDC_free_kvtag(pdc_kvtag_t **kvtag);
 
 int PDC_get_var_type_size(PDC_var_type_t dtype);
+
+
+// For query
+typedef struct pdc_query_xfer_t {
+    int      n_combine_ops;
+    int      *combine_ops;
+    int      n_constraints;
+    pdcquery_constraint_t *constraints;
+} pdc_query_xfer_t;
+
+static hg_return_t
+hg_proc_pdcquery_constraint_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    pdcquery_constraint_t *struct_data = (pdcquery_constraint_t*) data;
+
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_int32_t(proc, &struct_data->type);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_int32_t(proc, &struct_data->op);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_uint32_t(proc, &struct_data->value);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    return ret;
+}
+
+static hg_return_t
+hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    pdc_query_xfer_t *struct_data = (pdc_query_xfer_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->n_constraints);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_int32_t(proc, &struct_data->n_combine_ops);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    if (struct_data->n_constraints > 0) {
+        switch(hg_proc_get_op(proc)) {
+            case HG_DECODE:
+                struct_data->combine_ops    = malloc(struct_data->n_combine_ops * sizeof(int));
+                struct_data->constraints = malloc(struct_data->n_constraints * sizeof(pdcquery_constraint_t));
+                HG_FALLTHROUGH();
+            case HG_ENCODE:
+                ret = hg_proc_raw(proc, struct_data->combine_ops, struct_data->n_combine_ops * sizeof(int));
+                ret = hg_proc_raw(proc, struct_data->constraints, struct_data->n_constraints * sizeof(pdcquery_constraint_t));
+                break;
+            case HG_FREE:
+                free(struct_data->combine_ops);
+                free(struct_data->constraints);
+            default:
+                break;
+        }
+    }
+
+    return ret;
+}
+
+// Query related
+pdc_query_xfer_t *PDC_serialize_query(pdcquery_t *query, pdcquery_get_op_t get_op);
+
+void print_query(pdcquery_t *query);
 #endif /* PDC_CLIENT_SERVER_COMMON_H */

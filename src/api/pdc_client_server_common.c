@@ -46,6 +46,7 @@
 #include "../server/pdc_server_data.h"
 #include "pdc_malloc.h"
 #include "pdc_client_public.h"
+#include "pdc_query.h"
 
 #ifdef ENABLE_MULTITHREAD 
 // Mercury multithread
@@ -5944,5 +5945,140 @@ int PDC_get_var_type_size(PDC_var_type_t dtype)
     else 
         return 1;
 }
+
+// Query related
+int PDC_query_get_nnode(pdcquery_t *query)
+{
+    if (NULL == query) 
+        return 0;
+    return 1 + PDC_query_get_nnode(query->left) + PDC_query_get_nnode(query->right);
+}
+
+void PDC_query_get_nleaf(pdcquery_t *query, int *n)
+{
+    if (NULL == query) 
+        return;
+
+    if (NULL == query->left && NULL == query->right) {
+        (*n)++;
+        return;
+    }
+    PDC_query_get_nleaf(query->left, n);
+    PDC_query_get_nleaf(query->right, n);
+}
+
+void serialize(pdcquery_t *root, int *combine_ops, int *cnt, pdcquery_constraint_t *constraints, int *constraint_cnt) 
+{ 
+    if (root == NULL) { 
+        /* fprintf(fp, "%d ", MARKER); */ 
+        combine_ops[*cnt] = -1;
+        (*cnt)++;
+        return; 
+    } 
+
+    if (root->left == NULL && root->right == NULL) {
+        memcpy(&constraints[*constraint_cnt], root->constraint, sizeof(pdcquery_constraint_t)); 
+        (*constraint_cnt)++;
+    }
+  
+    combine_ops[*cnt] = root->combine_op;
+    (*cnt)++;
+    /* fprintf(fp, "%d ", root->key); */ 
+    serialize(root->left, combine_ops, cnt, constraints, constraint_cnt); 
+    serialize(root->right, combine_ops, cnt, constraints, constraint_cnt); 
+} 
+  
+void deSerialize(pdcquery_t **root, pdcquery_constraint_t *constraints, int *constraint_idx, int *combine_ops, int *order_idx) 
+{ 
+    int val; 
+    if (combine_ops[*order_idx] == -1) { 
+        (*order_idx)++;
+        return; 
+    }
+  
+    (*root) = (pdcquery_t*)calloc(1, sizeof(pdcquery_t)); 
+    (*root)->combine_op = combine_ops[*order_idx];
+
+    if (combine_ops[*order_idx] == 0) {
+        // Current node is leaf
+        (*root)->constraint = malloc(sizeof(pdcquery_constraint_t));
+        memcpy((*root)->constraint, &constraints[*constraint_idx], sizeof(pdcquery_constraint_t));
+        (*constraint_idx)++;
+    }
+
+    (*order_idx)++;
+
+    deSerialize(&(*root)->left,  constraints, constraint_idx, combine_ops, order_idx); 
+    deSerialize(&(*root)->right, constraints, constraint_idx, combine_ops, order_idx); 
+} 
+
+char pdcquery_combine_op_char_g[3][5] = {"NONE", "AND", "OR"};
+char pdcquery_op_char_g[6][5]         = {"NONE", ">", "<", ">=", "<=", "=="};
+
+void print_query(pdcquery_t *query)
+{
+    if (query == NULL) 
+        return;
+    if (query->left == NULL && query->right == NULL) {
+
+        printf(" (%" PRIu64 " %s", query->constraint->obj_id, 
+                pdcquery_op_char_g[query->constraint->op]);
+
+        if (query->constraint->type == PDC_FLOAT || query->constraint->type == PDC_DOUBLE) 
+            printf(" %.3f) ", *((float*)&query->constraint->value));
+        else if (query->constraint->type == PDC_INT) 
+            printf(" %d) ", *((int*)&query->constraint->value));
+        else if (query->constraint->type == PDC_UINT) 
+            printf(" %u) ", *((unsigned*)&query->constraint->value));
+        else if (query->constraint->type == PDC_INT64) 
+            printf(" %ld)" , *((int64_t*)&query->constraint->value));
+        else if (query->constraint->type == PDC_UINT64) 
+            printf(" %lu) ", *((uint64_t*)&query->constraint->value));
+        return;
+    }
+
+    printf("(");
+    print_query(query->left);
+
+    printf(" %s ", pdcquery_combine_op_char_g[query->combine_op]);
+
+    print_query(query->right);
+    printf(")");
+}
+
+
+pdc_query_xfer_t *PDC_serialize_query(pdcquery_t *query, pdcquery_get_op_t get_op)
+{
+    int nnode, nleaf, ops_cnt, constraint_cnt;
+    pdc_query_xfer_t *query_xfer;
+
+    if (NULL == query) 
+        return NULL;
+
+    query_xfer = (pdc_query_xfer_t*)calloc(1, sizeof(pdc_query_xfer_t));
+    nnode      = PDC_query_get_nnode(query);
+
+    nleaf = 0;
+    PDC_query_get_nleaf(query, &nleaf);
+
+    query_xfer->n_constraints = nleaf;
+    query_xfer->constraints   = (pdcquery_constraint_t*)calloc(nleaf, sizeof(pdcquery_constraint_t));
+
+    query_xfer->n_combine_ops = nnode;
+    query_xfer->combine_ops   = (int*)calloc(nnode*2+1, sizeof(int));
+
+    ops_cnt = constraint_cnt = 0;
+    serialize(query, query_xfer->combine_ops, &ops_cnt, query_xfer->constraints, &constraint_cnt);
+
+    pdcquery_t *new_root;
+    int constraint_idx = 0;
+    int order_idx = 0;
+    deSerialize(&new_root, query_xfer->constraints, &constraint_idx, query_xfer->combine_ops, &order_idx);
+
+    print_query(new_root);
+}
+
+
+
 #include "pdc_analysis_common.c"
 #include "pdc_transforms_common.c"
