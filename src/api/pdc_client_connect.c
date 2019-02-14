@@ -145,6 +145,9 @@ static hg_id_t         query_read_obj_name_register_id_g;
 static hg_id_t         query_read_obj_name_client_register_id_g;
 static hg_id_t         send_region_storage_meta_shm_bulk_rpc_register_id_g;
 
+// data query
+static hg_id_t         send_data_query_register_id_g;
+
 pdc_data_server_io_list_t *client_cache_list_head_g = NULL;
 int                    cache_percentage_g = 0;
 int                    cache_count_g      = 0;
@@ -229,10 +232,10 @@ hg_return_t pdc_client_check_int_ret_cb(const struct hg_cb_info *callback_info)
 {
     hg_return_t ret_value = HG_SUCCESS;
     pdc_int_ret_t output;
+    struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
+    hg_handle_t handle = callback_info->info.forward.handle;
 
     FUNC_ENTER(NULL);
-
-    hg_handle_t handle = callback_info->info.forward.handle;
 
     ret_value = HG_Get_output(handle, &output);
     if (ret_value != HG_SUCCESS) {
@@ -240,9 +243,10 @@ hg_return_t pdc_client_check_int_ret_cb(const struct hg_cb_info *callback_info)
         goto done;
     }
 
-    if (output.ret != 1) {
+    client_lookup_args->ret = output.ret;
+    if (output.ret != 1) 
         printf("==%s() - Return value [%d] is NOT expected\n", __func__, output.ret);
-    }
+    
 done:
     work_todo_g--;
     HG_Free_output(handle, &output);
@@ -1071,6 +1075,9 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
 
     // Server to client RPC register
     send_client_storage_meta_rpc_register(*hg_class);
+
+    // Data query
+    send_data_query_register_id_g = send_data_query_rpc_register(*hg_class);
 
 #ifdef ENABLE_MULTITHREAD
     /* Mutex initialization for the client versions of these... */
@@ -7286,6 +7293,24 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+void PDC_assign_server(uint32_t *my_server_start, uint32_t *my_server_end,uint32_t *my_server_count)
+{
+    if (pdc_server_num_g > pdc_client_mpi_size_g) {
+        *my_server_count = pdc_server_num_g / pdc_client_mpi_size_g;
+        *my_server_start = pdc_client_mpi_rank_g * (*my_server_count);
+        *my_server_end   = *my_server_start + (*my_server_count);
+        if (pdc_client_mpi_rank_g == pdc_client_mpi_size_g - 1) {
+            (*my_server_end) += pdc_server_num_g % pdc_client_mpi_size_g;
+        }
+    }
+    else {
+        *my_server_start = pdc_client_mpi_rank_g;
+        *my_server_end   = *my_server_start + 1;
+        if (pdc_client_mpi_rank_g >= pdc_server_num_g) {
+            *my_server_end = 0;
+        }
+    }
+}
 
 // All clients collectively query all servers
 perr_t 
@@ -7690,6 +7715,59 @@ PDCobj_del_tag(pdcid_t obj_id, const char *tag_name)
 done:
     FUNC_LEAVE(ret_value);
 }
+
+perr_t PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op)
+{
+    perr_t ret_value = SUCCEED;
+    hg_return_t  hg_ret = 0;
+    uint32_t server_id, my_server_start, my_server_end, my_server_count;
+    hg_handle_t  handle;
+    pdc_query_xfer_t *query_xfer;
+    struct client_lookup_args lookup_args;
+
+    FUNC_ENTER(NULL);
+
+    /* print_query(query); */
+    /* printf("\n"); */
+
+    query_xfer = PDC_serialize_query(query);
+
+    // Send data query to all servers
+
+    PDC_assign_server(&my_server_start, &my_server_end, &my_server_count);
+
+    for (server_id = my_server_start; server_id < my_server_end; server_id++) {
+        debug_server_id_count[server_id]++;
+
+        if( PDC_Client_try_lookup_server(server_id) != SUCCEED) {
+            printf("==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server\n", pdc_client_mpi_rank_g);
+            ret_value = FAIL;
+            goto done;
+        }
+
+        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, send_data_query_register_id_g, &handle);
+
+        hg_ret = HG_Forward(handle, pdc_client_check_int_ret_cb, &lookup_args, query_xfer);
+        if (hg_ret != HG_SUCCESS) {
+            fprintf(stderr, "PDC_Client_del_kvtag_metadata_with_name(): Could not start HG_Forward()\n");
+            return FAIL;
+        }
+
+        // Wait for response from server
+        work_todo_g = 1;
+        PDC_Client_check_response(&send_context_g);
+
+        if (lookup_args.ret != 1) 
+            printf("==PDC_CLIENT[%d]: send data query to server %u failed ... ret_value = %d\n", 
+                    pdc_client_mpi_rank_g, server_id, lookup_args.ret);
+    }
+
+
+done:
+    HG_Destroy(handle);
+    FUNC_LEAVE(ret_value);
+}
+
 
 
 #include "pdc_analysis_and_transforms_connect.c"

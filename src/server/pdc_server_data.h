@@ -317,5 +317,6 @@ void PDC_print_hist(pdc_histogram_t *hist);
 
 perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region, int type);
 
+hg_return_t PDC_Server_recv_data_query(const struct hg_cb_info *callback_info);
 #endif /* PDC_SERVER_DATA_H */
 

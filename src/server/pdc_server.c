@@ -1784,6 +1784,8 @@ static void PDC_Server_mercury_register()
     data_server_read_check_register(hg_class_g);
     data_server_write_check_register(hg_class_g);
 
+    send_data_query_rpc_register(hg_class_g);
+
     // Analysis and Transforms
     set_execution_locus(SERVER_MEMORY);
     obj_data_iterator_register(hg_class_g);
@@ -1812,6 +1814,8 @@ static void PDC_Server_mercury_register()
     send_shm_register_id_g                    = send_shm_register(hg_class_g);
 
     send_client_storage_meta_rpc_register_id_g= send_client_storage_meta_rpc_register(hg_class_g);
+
+
 }
 
 static void PDC_Server_get_env()

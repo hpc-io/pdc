@@ -18,19 +18,26 @@
 #include "pdc_query.h"
 
 
-pdcquery_t *PDCquery_create(pdcid_t obj_id, pdcquery_op_t op, 
-                               PDC_var_type_t type, void *value)
+pdcquery_t *PDCquery_create(pdcid_t obj_id, pdcquery_op_t op, PDC_var_type_t type, void *value)
 {
     pdcquery_t *query;
     int         type_size;
+    struct PDC_obj_info *obj_prop;
 
     FUNC_ENTER(NULL);
 
     if (obj_id == 0 || op == PDC_QUERY_NONE || NULL == value) 
         return NULL;
+
+    obj_prop = PDC_obj_get_info(obj_id);
+    if (obj_prop == NULL) {
+        printf("== %s: Invalid obj_id!\n");
+        return NULL;
+    }
+
     query                       = (pdcquery_t*)calloc(1, sizeof(pdcquery_t));
     query->constraint           = (pdcquery_constraint_t*)calloc(1, sizeof(pdcquery_constraint_t));
-    query->constraint->obj_id   = obj_id;
+    query->constraint->obj_id   = obj_prop->meta_id;    // Use global ID
     query->constraint->op       = op;
     query->constraint->type     = type;
     type_size = PDC_get_var_type_size(type);
@@ -79,47 +86,7 @@ pdcquery_t *PDCquery_or(pdcquery_t *q1, pdcquery_t *q2)
     return query;
 }
 
-void PDCquery_free(pdcquery_t *query)
-{
-    if (NULL == query) 
-        return;
-    if (query->constraint) 
-        free(query->constraint);
-    free(query);
-}
 
-void PDCquery_free_all(pdcquery_t *root)
-{
-    if (NULL == root) 
-        return;
-
-    if (root->left == NULL && root->right == NULL) {
-        if (root->constraint) 
-            free(root->constraint);
-    }
-
-    PDCquery_free_all(root->left);
-    PDCquery_free_all(root->right);
-
-    free(root);
-}
-
-perr_t PDC_send_query(pdcquery_t *query, pdcquery_get_op_t get_op)
-{
-    perr_t ret_value = SUCCEED;
-    pdc_query_xfer_t *query_xfer;
-
-    FUNC_ENTER(NULL);
-
-    /* print_query(query); */
-    /* printf("\n"); */
-
-    query_xfer = PDC_serialize_query(query, get_op);
-
-
-done:
-    FUNC_LEAVE(ret_value);
-}
 
 perr_t PDCquery_get_nhits(pdcquery_t *query, int *n)
 {
@@ -127,7 +94,7 @@ perr_t PDCquery_get_nhits(pdcquery_t *query, int *n)
 
     FUNC_ENTER(NULL);
 
-    ret_value = PDC_send_query(query, PDC_QUERY_GET_NHITS);
+    ret_value = PDC_send_data_query(query, PDC_QUERY_GET_NHITS);
 
 
 done:

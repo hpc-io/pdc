@@ -6177,7 +6177,10 @@ void PDC_print_hist(pdc_histogram_t *hist)
         return;
     
     for (i = 0; i < hist->nbin; i++) {
-        printf("[%.2f, %.2f): %lu\n", hist->range[i*2], hist->range[i*2+1], hist->bin[i]);
+        if (i != hist->nbin - 1) 
+            printf("[%.2f, %.2f): %lu\n", hist->range[i*2], hist->range[i*2+1], hist->bin[i]);
+        else
+            printf("[%.2f, %.2f]: %lu\n", hist->range[i*2], hist->range[i*2+1], hist->bin[i]);
     }
     printf("\n\n");
     fflush(stdout);
@@ -6207,7 +6210,7 @@ pdc_histogram_t *PDC_dup_hist(pdc_histogram_t *hist)
 
 pdc_histogram_t *PDC_merge_hist(int n, pdc_histogram_t **hists)
 {
-    int i, j, tot_bin, incr_max_idx, hi, lo, mid;
+    int i, j, incr_max_idx, hi, lo, mid;
     double tot_min, tot_max, incr_max;
     pdc_histogram_t *res;
 
@@ -6215,7 +6218,7 @@ pdc_histogram_t *PDC_merge_hist(int n, pdc_histogram_t **hists)
         return NULL;
 
     tot_min  = hists[0]->range[1];
-    tot_max  = hists[0]->range[2*tot_bin-2];
+    tot_max  = hists[0]->range[2*hists[0]->nbin-2];
     incr_max = hists[0]->incr;
 
     for (i = 1; i < n; i++) {
@@ -6227,7 +6230,6 @@ pdc_histogram_t *PDC_merge_hist(int n, pdc_histogram_t **hists)
         if (hists[i]->incr > incr_max) {
             incr_max = hists[i]->incr;
             incr_max_idx = i;
-            tot_bin = hists[i]->nbin; 
         }
         if (hists[i]->range[0] < tot_min) 
             tot_min = hists[i]->range[0];
@@ -6271,4 +6273,31 @@ pdc_histogram_t *PDC_merge_hist(int n, pdc_histogram_t **hists)
 
     return res;
 }
+
+// Data query
+hg_return_t PDC_Server_recv_data_query(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret = HG_SUCCESS;
+    hg_handle_t handle = callback_info->info.forward.handle;
+    pdc_query_xfer_t *query_xfer = (pdc_query_xfer_t*) callback_info->arg;
+
+    pdcquery_t *query = PDC_deserialize_query(query_xfer);
+    if (NULL == query) {
+        printf("==PDC_SERVER[%d]: deserialize query FAILED!\n", pdc_server_rank_g);
+        goto done;
+    }
+
+
+    printf("==PDC_SERVER[%d]: deserialized query:\n", pdc_server_rank_g);
+    print_query(query);
+    printf("\n");
+
+
+done:
+    PDC_query_xfer_free(query_xfer);
+    if(query) PDCquery_free_all(query);
+    fflush(stdout);
+    return ret;
+} // end PDC_Server_storage_meta_name_query_bulk_respond_cb
+
 

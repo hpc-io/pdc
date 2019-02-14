@@ -830,8 +830,9 @@ data_server_region_t *PDC_Server_get_obj_region(pdcid_t obj_id) {return NULL;}
 region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in_t *in, region_list_t *request_region, void *data_ptr) {return SUCCEED;}
 void *PDC_Server_get_region_buf_ptr(pdcid_t obj_id, region_info_transfer_t region) {return NULL;}
 void *PDC_Server_get_region_obj_ptr(pdcid_t obj_id, region_info_transfer_t region) {return NULL;}
-perr_t PDC_Server_find_container_by_name(const char *cont_name, pdc_cont_hash_table_entry_t **out) {return SUCCEED;};
+perr_t PDC_Server_find_container_by_name(const char *cont_name, pdc_cont_hash_table_entry_t **out) {return SUCCEED;}
 
+hg_return_t PDC_Server_recv_data_query(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
 
 
 hg_class_t *hg_class_g;
@@ -4877,6 +4878,37 @@ HG_TEST_RPC_CB(send_shm_bulk_rpc, handle)
     FUNC_LEAVE(ret);
 } // End send_shm_bulk_rpc_cb
 
+// Data query
+/* send_data_query_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(send_data_query, handle)
+{
+    pdc_query_xfer_t in, *query_xfer;
+    pdc_int_ret_t  out;
+    perr_t ret_value;
+
+    FUNC_ENTER(NULL);
+
+    HG_Get_input(handle, &in);
+
+    // Copy the received data
+    query_xfer = (pdc_query_xfer_t*)malloc(sizeof(pdc_query_xfer_t));
+    memcpy(query_xfer, &in, sizeof(pdc_query_xfer_t));
+
+    query_xfer->combine_ops = (int*)malloc(sizeof(int)*query_xfer->n_combine_ops);
+    memcpy(query_xfer->combine_ops, in.combine_ops, sizeof(int)*query_xfer->n_combine_ops);
+
+    query_xfer->constraints = (pdcquery_constraint_t*)malloc(sizeof(int)*query_xfer->n_constraints);
+    memcpy(query_xfer->constraints, in.constraints, sizeof(pdcquery_constraint_t)*query_xfer->n_constraints);
+
+    out.ret = 1;
+    ret_value = HG_Respond(handle, PDC_Server_recv_data_query, query_xfer, &out);
+
+    ret_value = HG_Free_input(handle, &in);
+    ret_value = HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
 
 
 HG_TEST_THREAD_CB(server_lookup_client)
@@ -4928,6 +4960,7 @@ HG_TEST_THREAD_CB(get_reg_lock_status)
 HG_TEST_THREAD_CB(query_read_obj_name_client_rpc)
 HG_TEST_THREAD_CB(send_client_storage_meta_rpc)
 HG_TEST_THREAD_CB(send_shm_bulk_rpc)
+HG_TEST_THREAD_CB(send_data_query)
 
 hg_id_t
 gen_obj_id_register(hg_class_t *hg_class)
@@ -5448,6 +5481,13 @@ send_client_storage_meta_rpc_register(hg_class_t *hg_class)
 {
     return  MERCURY_REGISTER(hg_class, "send_client_storage_meta_rpc_register", bulk_rpc_in_t, pdc_int_ret_t, send_client_storage_meta_rpc_cb);
 }
+
+hg_id_t
+send_data_query_rpc_register(hg_class_t *hg_class)
+{
+    return  MERCURY_REGISTER(hg_class, "send_data_query_rpc_register", pdc_query_xfer_t, pdc_int_ret_t, send_data_query_cb);
+}
+
 
 /* For 1D boxes (intervals) we have: */
 /* box1 = (xmin1, xmax1) */
@@ -6046,8 +6086,7 @@ void print_query(pdcquery_t *query)
     printf(")");
 }
 
-
-pdc_query_xfer_t *PDC_serialize_query(pdcquery_t *query, pdcquery_get_op_t get_op)
+pdc_query_xfer_t *PDC_serialize_query(pdcquery_t *query)
 {
     int nnode, nleaf, ops_cnt, constraint_cnt;
     pdc_query_xfer_t *query_xfer;
@@ -6064,20 +6103,62 @@ pdc_query_xfer_t *PDC_serialize_query(pdcquery_t *query, pdcquery_get_op_t get_o
     query_xfer->n_constraints = nleaf;
     query_xfer->constraints   = (pdcquery_constraint_t*)calloc(nleaf, sizeof(pdcquery_constraint_t));
 
-    query_xfer->n_combine_ops = nnode;
+    query_xfer->n_combine_ops = nnode*2+1;
     query_xfer->combine_ops   = (int*)calloc(nnode*2+1, sizeof(int));
 
     ops_cnt = constraint_cnt = 0;
     serialize(query, query_xfer->combine_ops, &ops_cnt, query_xfer->constraints, &constraint_cnt);
 
-    pdcquery_t *new_root;
-    int constraint_idx = 0;
-    int order_idx = 0;
-    deSerialize(&new_root, query_xfer->constraints, &constraint_idx, query_xfer->combine_ops, &order_idx);
-
-    print_query(new_root);
+    return query_xfer;
 }
 
+pdcquery_t *PDC_deserialize_query(pdc_query_xfer_t *query_xfer)
+{
+    int constraint_idx = 0, order_idx = 0;
+    pdcquery_t *new_root;
+
+    if (NULL == query_xfer) 
+        return NULL;
+
+    deSerialize(&new_root, query_xfer->constraints, &constraint_idx, query_xfer->combine_ops, &order_idx);
+
+    /* print_query(new_root); */
+
+    return new_root;
+}
+
+void PDCquery_free(pdcquery_t *query)
+{
+    if (NULL == query) 
+        return;
+    if (query->constraint) 
+        free(query->constraint);
+    free(query);
+}
+
+void PDCquery_free_all(pdcquery_t *root)
+{
+    if (NULL == root) 
+        return;
+
+    if (root->left == NULL && root->right == NULL) {
+        if (root->constraint) 
+            free(root->constraint);
+    }
+
+    PDCquery_free_all(root->left);
+    PDCquery_free_all(root->right);
+
+    free(root);
+}
+void PDC_query_xfer_free(pdc_query_xfer_t *query_xfer)
+{
+    if (NULL != query_xfer) {
+        free(query_xfer->combine_ops);
+        free(query_xfer->constraints);
+        free(query_xfer);
+    }
+}
 
 
 #include "pdc_analysis_common.c"

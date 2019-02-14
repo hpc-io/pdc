@@ -52,8 +52,6 @@ typedef struct pdcquery_selection_t {
 pdcquery_t *PDCquery_create(pdcid_t obj_id, pdcquery_op_t op, PDC_var_type_t type, void *value);
 pdcquery_t *PDCquery_and(pdcquery_t *query1, pdcquery_t *query2);
 pdcquery_t *PDCquery_or(pdcquery_t *query1, pdcquery_t *query2);
-void        PDCquery_free(pdcquery_t *query);
-void        PDCquery_free_all(pdcquery_t *query);
 
 perr_t      PDCquery_get_selection(pdcquery_t *query, pdcselection_t *sel);
 perr_t      PDCquery_get_nhits(pdcquery_t *query, int *n);
