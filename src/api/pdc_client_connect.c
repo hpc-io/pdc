@@ -4964,8 +4964,8 @@ PDC_Client_query_container_name_col(const char *cont_name, uint64_t *cont_meta_i
     if (pdc_client_mpi_rank_g == 0) {
         ret_value = PDC_Client_query_container_name(cont_name, cont_meta_id);
         if (ret_value != SUCCEED) {
-            printf("==PDC_CLIENT[%d]: %s - error with PDC_Client_query_kvtag_server to server %u\n", 
-                    pdc_client_mpi_rank_g, __func__, i);
+            printf("==PDC_CLIENT[%d]: %s - error with PDC_Client_query_container_name\n", 
+                    pdc_client_mpi_rank_g, __func__);
         }
 
     }
@@ -7720,11 +7720,36 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+void PDC_get_server_from_query(pdcquery_t *query, uint32_t *servers, uint32_t *n)
+{
+    uint32_t i, exist, id;
+    if (NULL == query) 
+        return;
+
+    if (NULL == query->left && NULL == query->right) {
+        exist = 0;
+        id = PDC_get_server_by_obj_id(query->constraint->obj_id, pdc_server_num_g);
+        for (i = 0; i < *n; i++) {
+            if (servers[i] == id) {
+                exist = 1;
+                break;
+            }
+        }
+        if (exist == 0) {
+            servers[*n] = id;
+            (*n)++;
+        }
+        return;
+    }
+    PDC_get_server_from_query(query->left, servers, n);
+    PDC_get_server_from_query(query->right, servers, n);
+}
+
 perr_t PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
-    uint32_t server_id, my_server_start, my_server_end, my_server_count;
+    uint32_t i, server_id, *target_servers = NULL, ntarget = 0;
     hg_handle_t  handle;
     pdc_query_xfer_t *query_xfer;
     struct client_lookup_args lookup_args;
@@ -7735,12 +7760,19 @@ perr_t PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op)
     /* printf("\n"); */
 
     query_xfer = PDC_serialize_query(query);
+    if (query_xfer == NULL) {
+        printf("==CLIENT[%d]: %s - ERROR with PDC_serialize_query\n", pdc_client_mpi_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
 
-    // Send data query to all servers
+    // Find unique server IDs that has metadata of the queried objects
+    target_servers = (uint32_t*)calloc(pdc_server_num_g, sizeof(uint32_t));
+    PDC_get_server_from_query(query, target_servers, &ntarget);
 
-    PDC_assign_server(&my_server_start, &my_server_end, &my_server_count);
-
-    for (server_id = my_server_start; server_id < my_server_end; server_id++) {
+    // Send data query to the found servers 
+    for (i = 0; i < ntarget; i++) {
+        server_id = target_servers[i];
         debug_server_id_count[server_id]++;
 
         if( PDC_Client_try_lookup_server(server_id) != SUCCEED) {
@@ -7764,14 +7796,15 @@ perr_t PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op)
         if (lookup_args.ret != 1) 
             printf("==PDC_CLIENT[%d]: send data query to server %u failed ... ret_value = %d\n", 
                     pdc_client_mpi_rank_g, server_id, lookup_args.ret);
+
     }
 
+    HG_Destroy(handle);
 
 done:
-    HG_Destroy(handle);
+    if(target_servers) free(target_servers);
     FUNC_LEAVE(ret_value);
 }
-
 
 
 #include "pdc_analysis_and_transforms_connect.c"

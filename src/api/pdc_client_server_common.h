@@ -2535,7 +2535,7 @@ perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to);
 
 perr_t pdc_region_info_t_to_transfer(struct PDC_region_info *region, region_info_transfer_t *transfer);
 perr_t pdc_region_info_t_to_transfer_unit(struct PDC_region_info *region, region_info_transfer_t *transfer, size_t unit);
-perr_t pdc_region_transfer_t_to_region_info(region_info_transfer_t *transfer, struct PDC_region_info *region);
+struct PDC_region_info *pdc_region_transfer_t_to_region_info(region_info_transfer_t *transfer);
 
 perr_t PDC_serialize_regions_lists(region_list_t** regions, uint32_t n_region, void *buf, uint32_t buf_size);
 perr_t PDC_unserialize_region_lists(void *buf, region_list_t** regions, uint32_t *n_region);
@@ -2844,6 +2844,7 @@ typedef struct pdc_query_xfer_t {
     int                   *combine_ops;
     int                    n_constraints;
     pdcquery_constraint_t *constraints;
+    region_info_transfer_t region;
 } pdc_query_xfer_t;
 
 /* static hg_return_t */
@@ -2903,12 +2904,19 @@ hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data)
         return ret;
     }
 
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->region);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
     if (struct_data->n_constraints > 0) {
         switch(hg_proc_get_op(proc)) {
             case HG_DECODE:
                 struct_data->combine_ops = malloc(struct_data->n_combine_ops * sizeof(int));
                 struct_data->constraints = malloc(struct_data->n_constraints * sizeof(pdcquery_constraint_t));
                 HG_FALLTHROUGH();
+
             case HG_ENCODE:
                 ret = hg_proc_raw(proc, struct_data->combine_ops, struct_data->n_combine_ops * sizeof(int));
                 ret = hg_proc_raw(proc, struct_data->constraints, struct_data->n_constraints * sizeof(pdcquery_constraint_t));
@@ -2924,12 +2932,16 @@ hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data)
     return ret;
 }
 
+struct PDC_region_info *pdc_region_transfer_t_to_region_info(region_info_transfer_t *transfer);
+
 // Query related
 pdc_query_xfer_t *PDC_serialize_query(pdcquery_t *query);
 pdcquery_t       *PDC_deserialize_query(pdc_query_xfer_t *query_xfer);
 void              PDC_query_xfer_free(pdc_query_xfer_t *query_xfer);
 void              PDCquery_free(pdcquery_t *query);
 void              PDCquery_free_all(pdcquery_t *query);
-void              print_query(pdcquery_t *query);
+void              PDCquery_print(pdcquery_t *query);
+void              PDCregion_free(struct PDC_region_info *region);
+
 
 #endif /* PDC_CLIENT_SERVER_COMMON_H */

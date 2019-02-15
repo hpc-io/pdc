@@ -693,13 +693,38 @@ perr_t pdc_region_info_t_to_transfer_unit(struct PDC_region_info *region, region
     return SUCCEED;
 }
 
-perr_t pdc_region_transfer_t_to_region_info(region_info_transfer_t *transfer, struct PDC_region_info *region)
+struct PDC_region_info *pdc_region_transfer_t_to_region_info(region_info_transfer_t *transfer)
 {
-    if (NULL==region || NULL==transfer ) {
+    int ndim;
+    struct PDC_region_info *region;
+    if (NULL == transfer) {
         printf("    pdc_region_transfer_t_to_region_info(): NULL input!\n");
-        return FAIL;
+        return NULL;
     }
-    return 0; 
+
+    region = (struct PDC_region_info *)calloc(1, sizeof(struct PDC_region_info ));
+    ndim = region->ndim = transfer->ndim;
+    region->offset = (uint64_t*)calloc(sizeof(uint64_t), ndim);
+    region->size = (uint64_t*)calloc(sizeof(uint64_t), ndim);
+
+    if (ndim > 0) {
+        region->offset[0] = transfer->start_0;
+        region->size[0]   = transfer->count_0;
+    }
+    if (ndim > 1) {
+        region->offset[1] = transfer->start_1;
+        region->size[1]   = transfer->count_1;
+    }
+    if (ndim > 2) {
+        region->offset[2] = transfer->start_2;
+        region->size[2]   = transfer->count_2;
+    }
+    if (ndim > 3) {
+        region->offset[3] = transfer->start_3;
+        region->size[3]   = transfer->count_3;
+    }
+
+    return region; 
 }
 
 perr_t pdc_region_list_t_to_transfer(region_list_t *region, region_info_transfer_t *transfer)
@@ -6036,7 +6061,7 @@ void deSerialize(pdcquery_t **root, pdcquery_constraint_t *constraints, int *con
         return; 
     }
   
-    (*root) = (pdcquery_t*)calloc(1, sizeof(pdcquery_t)); 
+    *root = (pdcquery_t*)calloc(1, sizeof(pdcquery_t)); 
     (*root)->combine_op = combine_ops[*order_idx];
 
     if (combine_ops[*order_idx] == 0) {
@@ -6086,6 +6111,24 @@ void print_query(pdcquery_t *query)
     printf(")");
 }
 
+void PDCquery_print(pdcquery_t *query)
+{
+    uint32_t i;
+
+    printf("Value selection: \n");
+    print_query(query);
+    printf("\n");
+    if (query->region) {
+        printf("Spatial selection: \n");
+        printf("  ndim      = %lu\n",   query->region->ndim);
+        printf("  start    count\n");
+        for (i = 0; i < query->region->ndim; i++) {
+            printf("  %5" PRIu64 "    %5" PRIu64 "\n", query->region->offset[i], query->region->size[i]);
+        }
+    }
+    printf("\n");
+}
+
 pdc_query_xfer_t *PDC_serialize_query(pdcquery_t *query)
 {
     int nnode, nleaf, ops_cnt, constraint_cnt;
@@ -6109,6 +6152,9 @@ pdc_query_xfer_t *PDC_serialize_query(pdcquery_t *query)
     ops_cnt = constraint_cnt = 0;
     serialize(query, query_xfer->combine_ops, &ops_cnt, query_xfer->constraints, &constraint_cnt);
 
+    if (NULL != query->region) 
+        pdc_region_info_t_to_transfer(query->region, &query_xfer->region);
+
     return query_xfer;
 }
 
@@ -6121,6 +6167,7 @@ pdcquery_t *PDC_deserialize_query(pdc_query_xfer_t *query_xfer)
         return NULL;
 
     deSerialize(&new_root, query_xfer->constraints, &constraint_idx, query_xfer->combine_ops, &order_idx);
+    new_root->region = pdc_region_transfer_t_to_region_info(&query_xfer->region);
 
     /* print_query(new_root); */
 
@@ -6160,6 +6207,12 @@ void PDC_query_xfer_free(pdc_query_xfer_t *query_xfer)
     }
 }
 
-
+void PDCregion_free(struct PDC_region_info *region)
+{
+    if (region) {
+        if (region->offset) free(region->offset);
+        if (region->size) free(region->size);
+    }
+}
 #include "pdc_analysis_common.c"
 #include "pdc_transforms_common.c"

@@ -6289,8 +6289,7 @@ hg_return_t PDC_Server_recv_data_query(const struct hg_cb_info *callback_info)
 
 
     printf("==PDC_SERVER[%d]: deserialized query:\n", pdc_server_rank_g);
-    print_query(query);
-    printf("\n");
+    PDCquery_print(query);
 
 
 done:

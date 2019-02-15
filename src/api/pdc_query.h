@@ -38,6 +38,7 @@ typedef struct pdcquery_t {
     struct pdcquery_t     *left;
     struct pdcquery_t     *right;
     pdcquery_combine_op_t combine_op;
+    struct PDC_region_info *region;
 } pdcquery_t;
 
 typedef struct pdcquery_selection_t {
@@ -52,6 +53,7 @@ typedef struct pdcquery_selection_t {
 pdcquery_t *PDCquery_create(pdcid_t obj_id, pdcquery_op_t op, PDC_var_type_t type, void *value);
 pdcquery_t *PDCquery_and(pdcquery_t *query1, pdcquery_t *query2);
 pdcquery_t *PDCquery_or(pdcquery_t *query1, pdcquery_t *query2);
+perr_t      PDCquery_sel_region(pdcquery_t *query, struct PDC_region_info *obj_region);
 
 perr_t      PDCquery_get_selection(pdcquery_t *query, pdcselection_t *sel);
 perr_t      PDCquery_get_nhits(pdcquery_t *query, int *n);

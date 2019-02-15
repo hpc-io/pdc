@@ -148,6 +148,7 @@ int main(int argc, char **argv)
     pdcquery_t *q0, *q1l, *q1h, *q1, *q2l, *q2h, *q2, *q, *q12;
 
     q0  = PDCquery_create(obj_id, PDC_LT, PDC_INT, &lo0);
+    PDCquery_sel_region(q0, &region);
 
     q1l = PDCquery_create(obj_id, PDC_GT, PDC_INT, &lo1);
     q1h = PDCquery_create(obj_id, PDC_LT, PDC_INT, &hi1);
@@ -168,6 +169,7 @@ int main(int argc, char **argv)
 
 
     PDCquery_free_all(q);
+    PDCregion_free(&region);
     /* PDCquery_free(q0); */
     /* PDCquery_free(q1l); */
     /* PDCquery_free(q1h); */

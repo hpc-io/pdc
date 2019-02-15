@@ -50,6 +50,16 @@ pdcquery_t *PDCquery_create(pdcid_t obj_id, pdcquery_op_t op, PDC_var_type_t typ
     return query;
 }
 
+perr_t PDCquery_sel_region(pdcquery_t *query, struct PDC_region_info *obj_region)
+{
+    if (NULL == query || NULL == obj_region) 
+        return FAIL;
+
+    query->region = obj_region;
+
+    return SUCCEED;
+}
+
 pdcquery_t *PDCquery_and(pdcquery_t *q1, pdcquery_t *q2)
 {
     pdcquery_t *query;
@@ -64,6 +74,8 @@ pdcquery_t *PDCquery_and(pdcquery_t *q1, pdcquery_t *q2)
     query->right      = q2;
     query->constraint = NULL;
     query->combine_op = PDC_QUERY_AND;
+
+    query->region = q1->region != NULL ? q1->region : q2->region;
 
     return query;
 }
@@ -82,6 +94,8 @@ pdcquery_t *PDCquery_or(pdcquery_t *q1, pdcquery_t *q2)
     query->right      = q2;
     query->constraint = NULL;
     query->combine_op = PDC_QUERY_OR;
+
+    query->region = q1->region != NULL ? q1->region : q2->region;
 
     return query;
 }
