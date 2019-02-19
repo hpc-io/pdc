@@ -974,7 +974,13 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     //fflush(stdout);
 
     rc = drc_access(credential, 0, &credential_info);
+
+drc_access_again:
     if (rc != DRC_SUCCESS) { /* failed to access credential */
+        if (rc == -DRC_EINVAL) {
+            sleep(1);
+            goto drc_access_again;
+        }
         printf("drc_access() failed (%d, %s)", rc,
             drc_strerror(-rc));
         fflush(stdout);
