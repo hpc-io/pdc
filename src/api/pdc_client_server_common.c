@@ -4369,7 +4369,7 @@ int PDC_add_task_to_list(pdc_task_list_t **target_list, perr_t (*cb)(), void *cb
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_del_task_from_list(pdc_task_list_t **target_list, pdc_task_list_t *del, void *mutex) 
+perr_t PDC_del_task_from_list(pdc_task_list_t **target_list, pdc_task_list_t *del, void *_mutex) 
 {
     perr_t ret_value;
     pdc_task_list_t *tmp;
@@ -4418,7 +4418,7 @@ int PDC_is_valid_task_id(int id)
  *
  * \return task pointer on success/NULL on failure
  */
-pdc_task_list_t *PDC_find_task_from_list(pdc_task_list_t** target_list, int id, void *mutex)
+pdc_task_list_t *PDC_find_task_from_list(pdc_task_list_t** target_list, int id, void *_mutex)
 {
     pdc_task_list_t *tmp;
 #ifdef ENABLE_MULTITHREAD
