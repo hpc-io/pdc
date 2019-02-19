@@ -122,11 +122,13 @@ int pdc_transform_decompress (pdcid_t objPropIn)
 
   dsize = blosc_decompress (((struct PDC_obj_prop *)(obj_prop))->buf, destBuff, destsize);
 
-  if (dsize <= 0)
-    fprintf (stdout, "[TRANSFORM] Error while decompressing data (errcode: %d)\n", dsize);
-
+  if (dsize <= 0) {
+    fprintf (stdout, "[TRANSFORM] Error while decompressing data (errcode: %zu)\n", dsize);
+    return -1;
+  }
   if (dsize > 0) {
     fprintf (stdout, "[TRANSFORM] Data sucessfully decompressed!\n");
     PDCprop_set_obj_buf (objPropIn, destBuff);
   }
+  return 0;
 }

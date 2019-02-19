@@ -50,8 +50,7 @@ pdcid_t PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_pro
 
     MPI_Bcast(&(p->meta_id), 1, MPI_LONG_LONG, rank_id, comm);
 
-//    PDC_Client_attach_metadata_to_local_obj(obj_name, p->meta_id, p->cont->meta_id, p);
-    
+    // PDC_Client_attach_metadata_to_local_obj((char *)obj_name, p->meta_id, p->cont->meta_id, p);
     FUNC_LEAVE(ret_value);
 }
 

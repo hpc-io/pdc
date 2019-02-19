@@ -148,8 +148,7 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id
     
     p->local_id = pdc_id_register(PDC_OBJ, p);
     ret_value = p->local_id;
-
-//    PDC_Client_attach_metadata_to_local_obj(obj_name, p->meta_id, p->cont->meta_id, p);
+//  PDC_Client_attach_metadata_to_local_obj((char *)obj_name, p->meta_id, p->cont->meta_id, p);
 
 done:
     FUNC_LEAVE(ret_value);
@@ -238,8 +237,8 @@ pdcid_t pdc_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_i
         if (ret == FAIL)
             PGOTO_ERROR(0, "Unable to create object on server!\n");
     }
-    
-//    PDC_Client_attach_metadata_to_local_obj(obj_name, p->meta_id, meta_id, p->obj_pt);
+
+//  PDC_Client_attach_metadata_to_local_obj((char *)obj_name, p->meta_id, meta_id, p /*p->obj_pt */);
     ret_value = p->local_id;
 
 done:
@@ -384,7 +383,7 @@ pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc)
     pdcid_t ret_value = 0;
     perr_t ret = SUCCEED;
     struct PDC_obj_info *p = NULL;
-    pdc_metadata_t *out;
+    pdc_metadata_t *out = NULL;
     pdcid_t obj_prop;
     size_t i;
     
@@ -417,8 +416,8 @@ pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc)
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     PDCprop_set_obj_dims(obj_prop, out->ndim, out->dims);
     PDCprop_set_obj_type(obj_prop, out->data_type);
-        
-    if(out->obj_name != NULL)
+    /* 'obj_name' is a char array */
+    if(strlen(out->obj_name) > 0)
         p->name = strdup(out->obj_name);
     p->meta_id = out->obj_id;
         
@@ -429,7 +428,8 @@ pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc)
         PGOTO_ERROR(0, "cannot allocate ret_value->dims");
     for(i=0; i<out->ndim; i++)
         p->obj_pt->dims[i] = out->dims[i];
-    if(out->app_name != NULL)
+    /* 'app_name' is a char array */
+    if(strlen(out->app_name) > 0)
         p->obj_pt->app_name = strdup(out->app_name);
     p->obj_pt->type = out->data_type;
     p->obj_pt->time_step = out->time_step;

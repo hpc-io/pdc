@@ -2164,11 +2164,12 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, server_read_check_
             out->is_cache_to_bb = 0;
             if (region_elt->is_data_ready == 1) {
                 out->shm_addr = calloc(sizeof(char), ADDR_MAX);
-                strcpy(out->shm_addr, region_elt->shm_addr);
+                if (strlen(region_elt->shm_addr) == 0)
+                    printf("==PDC_SERVER[%d]: %s - found shm_addr is NULL!\n", pdc_server_rank_g, __func__);
+		else strcpy(out->shm_addr, region_elt->shm_addr);
+
                 /* printf("==PDC_SERVER[%d]: %s - found shm_addr [%s]\n", */ 
                 /*         pdc_server_rank_g, __func__,region_elt->shm_addr); */
-                if (region_elt->shm_addr == NULL) 
-                    printf("==PDC_SERVER[%d]: %s - found shm_addr is NULL!\n", pdc_server_rank_g, __func__);
                 out->region = region_elt;
                 // If total cache in memory exceeds threshold, cache the data in BB when available
                 if (total_mem_cache_size_mb_g >= max_mem_cache_size_mb_g && 
@@ -2715,18 +2716,17 @@ perr_t PDC_Server_get_storage_location_of_region_mpi(region_list_t *regions_head
         all_requests = (region_info_transfer_t*)calloc(pdc_server_size_g, 
                                                    data_size*nrequest_per_server);
     }
+    else all_requests = local_region_transfer;
 
+#ifdef ENABLE_MPI
     /* printf("==PDC_SERVER[%d]: will MPI_Reduce update region to server %d, with data size %d\n", */
     /*         pdc_server_rank_g, server_id, data_size); */
     /* fflush(stdout); */
 
-#ifdef ENABLE_MPI
     // Gather the requests from all data servers to metadata server
     // equivalent to all data server send requests to metadata server
     MPI_Gather(&local_region_transfer, nrequest_per_server*data_size, MPI_CHAR, 
                all_requests, nrequest_per_server*data_size, MPI_CHAR, server_id, MPI_COMM_WORLD);
-#else
-    all_requests = &local_region_transfer;
 #endif
 
     // NOTE: Assumes all data server send equal number of requests
@@ -3391,7 +3391,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
         current_read_from_cache_cnt_g = 0;
         total_read_from_cache_cnt_g   = buffer_read_request_total_g * cache_percentage_g / 100;
         if (pdc_server_rank_g == 0) {
-            printf("==PDC_SERVER[%d]: cache percentage %d\%, read_from_cache %d/%d\n", 
+            printf("==PDC_SERVER[%d]: cache percentage %d%% read_from_cache %d/%d\n", 
                pdc_server_rank_g, cache_percentage_g, current_read_from_cache_cnt_g, total_read_from_cache_cnt_g);
         }
 
@@ -4710,7 +4710,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
                         /*                         overlap_regions[i]->storage_location); */
                         /* fflush(stdout); */
 
-                        if (region_elt->overlap_storage_regions[i].storage_location != NULL) {
+                        if (strlen(region_elt->overlap_storage_regions[i].storage_location) > 0) {
                             fp_read = fopen(region_elt->overlap_storage_regions[i].storage_location, "rb");
                             n_fopen_g++;
                         }
