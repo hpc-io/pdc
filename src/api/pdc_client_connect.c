@@ -981,7 +981,7 @@ drc_access_again:
             sleep(1);
             goto drc_access_again;
         }
-        printf("drc_access() failed (%d, %s)", rc,
+        printf("client drc_access() failed (%d, %s)", rc,
             drc_strerror(-rc));
         fflush(stdout);
         ret_value = FAIL;
