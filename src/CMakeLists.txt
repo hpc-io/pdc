@@ -268,6 +268,15 @@ if(PDC_ENABLE_CHECKPOINT)
 endif()
 
 #-----------------------------------------------------------------------------
+# Close server by application option
+#-----------------------------------------------------------------------------
+option(PDC_ENABLE_APP_CLOSE_SERVER
+    "Close pdc server at the end of application." OFF)
+if(PDC_ENABLE_APP_CLOSE_SERVER)
+  set(ENABLE_APP_CLOSE_SERVER 1)
+endif()
+
+#-----------------------------------------------------------------------------
 # MULTITHREAD option
 #-----------------------------------------------------------------------------
 option(PDC_ENABLE_MULTITHREAD "Enable multithreading." OFF)

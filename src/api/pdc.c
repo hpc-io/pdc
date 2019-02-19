@@ -154,6 +154,10 @@ perr_t PDC_close(pdcid_t pdcid)
 
     FUNC_ENTER(NULL);
 
+#ifdef ENABLE_APP_CLOSE_SERVER
+    PDC_Client_close_all_server();
+#endif
+
     // check every list before closing
     // container property
     if(pdc_prop_cont_list_null() < 0)
