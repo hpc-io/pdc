@@ -4910,20 +4910,24 @@ HG_TEST_RPC_CB(send_data_query, handle)
     pdc_query_xfer_t in, *query_xfer;
     pdc_int_ret_t  out;
     perr_t ret_value;
+    size_t size;
 
     FUNC_ENTER(NULL);
 
     HG_Get_input(handle, &in);
 
     // Copy the received data
-    query_xfer = (pdc_query_xfer_t*)malloc(sizeof(pdc_query_xfer_t));
-    memcpy(query_xfer, &in, sizeof(pdc_query_xfer_t));
+    size = sizeof(pdc_query_xfer_t);
+    query_xfer = (pdc_query_xfer_t*)malloc(size);
+    memcpy(query_xfer, &in, size);
 
-    query_xfer->combine_ops = (int*)malloc(sizeof(int)*query_xfer->n_combine_ops);
-    memcpy(query_xfer->combine_ops, in.combine_ops, sizeof(int)*query_xfer->n_combine_ops);
+    size = sizeof(int)*query_xfer->n_combine_ops;
+    query_xfer->combine_ops = (int*)malloc(size);
+    memcpy(query_xfer->combine_ops, in.combine_ops, size);
 
-    query_xfer->constraints = (pdcquery_constraint_t*)malloc(sizeof(int)*query_xfer->n_constraints);
-    memcpy(query_xfer->constraints, in.constraints, sizeof(pdcquery_constraint_t)*query_xfer->n_constraints);
+    size = sizeof(pdcquery_constraint_t)*query_xfer->n_constraints;
+    query_xfer->constraints = (pdcquery_constraint_t*)malloc(size);
+    memcpy(query_xfer->constraints, in.constraints, size);
 
     out.ret = 1;
     ret_value = HG_Respond(handle, PDC_Server_recv_data_query, query_xfer, &out);
@@ -6066,7 +6070,7 @@ void deSerialize(pdcquery_t **root, pdcquery_constraint_t *constraints, int *con
 
     if (combine_ops[*order_idx] == 0) {
         // Current node is leaf
-        (*root)->constraint = malloc(sizeof(pdcquery_constraint_t));
+        (*root)->constraint = (pdcquery_constraint_t*)calloc(1, sizeof(pdcquery_constraint_t));
         memcpy((*root)->constraint, &constraints[*constraint_idx], sizeof(pdcquery_constraint_t));
         (*constraint_idx)++;
     }
