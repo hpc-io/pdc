@@ -28,6 +28,7 @@
 
 #include "pdc_server_common.h"
 #include "pdc_client_server_common.h"
+#include "pdc_query.h"
 
 #define PDC_MAX_OVERLAP_REGION_NUM 8 // max number of regions for PDC_Server_get_storage_location_of_region() 
 #define PDC_BULK_XFER_INIT_NALLOC 128
@@ -182,6 +183,17 @@ typedef struct server_read_check_out_t {
     char            *shm_addr;
 } server_read_check_out_t; 
 
+// Data query
+typedef struct query_task_t {
+    int           query_id;
+    pdcquery_t    *query;
+    int           n_sent;
+    int           n_recv;
+
+    struct query_task_t *prev;
+    struct query_task_t *next;
+} query_task_t;
+
 extern int    pdc_server_rank_g;
 extern int    pdc_server_size_g;
 extern char   pdc_server_tmp_dir_g[ADDR_MAX];
@@ -243,6 +255,7 @@ extern hg_id_t bulk_rpc_register_id_g;
 extern hg_id_t storage_meta_name_query_register_id_g;
 extern hg_id_t get_storage_meta_name_query_bulk_result_rpc_register_id_g;
 extern hg_id_t notify_client_multi_io_complete_rpc_register_id_g;
+extern hg_id_t send_data_query_region_register_id_g;
 
 
 
@@ -318,5 +331,8 @@ void PDC_print_hist(pdc_histogram_t *hist);
 perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region, int type);
 
 hg_return_t PDC_Server_recv_data_query(const struct hg_cb_info *callback_info);
+
+hg_return_t PDC_Server_recv_data_query_region(const struct hg_cb_info *callback_info);
+
 #endif /* PDC_SERVER_DATA_H */
 

@@ -469,6 +469,21 @@ done:
 }
 
 /*
+ * Check if an object has metadata in current server
+ *
+ * \param  obj_id[IN]        Object ID
+ *
+ * \return 1 if metadata is stored locally
+ * \return -1 otherwise
+ */
+int PDC_Server_has_metadata(pdcid_t obj_id)
+{
+    if (obj_id % PDC_SERVER_ID_INTERVEL == pdc_server_rank_g) 
+        return 1;
+    return -1;
+}
+
+/*
  * Find if there is identical metadata exist in hash table
  *
  * \param  entry[IN]        Hash table entry of metadata

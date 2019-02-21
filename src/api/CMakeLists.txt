@@ -60,6 +60,7 @@ set(PDC_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_obj.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_mpi.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transform_support.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_hist.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_query.c
   )
 
@@ -113,6 +114,7 @@ set(PDC_HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transforms_pkg.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_atomic.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_public.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_hist.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_query.h
   )
 

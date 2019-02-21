@@ -2,6 +2,7 @@
 #define _pdc_query_H
 
 #include "pdc_public.h"
+#include "pdc_hist.h"
 
 typedef enum { 
     PDC_OP_NONE = 0, 
@@ -26,29 +27,36 @@ typedef enum {
     PDC_QUERY_GET_HIST  = 4
 } pdcquery_get_op_t; 
 
-typedef struct pdcquery_constraint_t {
-    pdcid_t            obj_id;
-    pdcquery_op_t      op;
-    PDC_var_type_t     type;
-    double             value;   // Use it as a generic 64bit value
-} pdcquery_constraint_t;
-
-typedef struct pdcquery_t {
-    pdcquery_constraint_t *constraint;
-    struct pdcquery_t     *left;
-    struct pdcquery_t     *right;
-    pdcquery_combine_op_t combine_op;
-    struct PDC_region_info *region;
-} pdcquery_t;
-
 typedef struct pdcquery_selection_t {
-    int      ndim;
     int      is_point_sel;
+    int      ndim;
     uint64_t start[4];  // DIM_MAX
     uint64_t count[4];
     uint64_t n_points;
     uint64_t *points;
 } pdcselection_t;
+
+typedef struct pdcquery_constraint_t {
+    pdcid_t            obj_id;
+    pdcquery_op_t      op;
+    PDC_var_type_t     type;
+    double             value;   // Use it as a generic 64bit value
+    pdcselection_t     *sel;
+
+    void               *storage_region_list_head;
+    pdcid_t            origin_server;
+    int                n_sent;
+    int                n_recv;
+} pdcquery_constraint_t;
+
+typedef struct pdcquery_t {
+    pdcquery_constraint_t  *constraint;
+    struct pdcquery_t      *left;
+    struct pdcquery_t      *right;
+    pdcquery_combine_op_t  combine_op;
+    struct PDC_region_info *region;
+    pdcselection_t         *sel;
+} pdcquery_t;
 
 pdcquery_t *PDCquery_create(pdcid_t obj_id, pdcquery_op_t op, PDC_var_type_t type, void *value);
 pdcquery_t *PDCquery_and(pdcquery_t *query1, pdcquery_t *query2);

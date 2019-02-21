@@ -147,6 +147,7 @@ int main(int argc, char **argv)
     int lo2 = 5000, hi2 = 7000;
     pdcquery_t *q0, *q1l, *q1h, *q1, *q2l, *q2h, *q2, *q, *q12;
 
+    // (obj < 1000) OR (obj > 2000 AND obj < 3000) OR (obj > 5000 AND obj < 7000)
     q0  = PDCquery_create(obj_id, PDC_LT, PDC_INT, &lo0);
     PDCquery_sel_region(q0, &region);
 

@@ -881,6 +881,7 @@ perr_t PDC_Server_add_client_shm_to_cache(int origin, int cnt, void *buf_cp){ret
 perr_t PDC_Server_container_add_tags(uint64_t cont_id, char *tags){return SUCCEED;}
 hg_return_t PDC_cache_region_to_bb_cb (const struct hg_cb_info *callback_info)  {return HG_SUCCESS;}
 
+hg_return_t PDC_Server_recv_data_query_region(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
 #else
 hg_return_t PDC_Client_work_done_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;};
 hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;};
@@ -4904,6 +4905,44 @@ HG_TEST_RPC_CB(send_shm_bulk_rpc, handle)
 } // End send_shm_bulk_rpc_cb
 
 // Data query
+/* send_data_query_region_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(send_data_query_region, handle)
+{
+    query_storage_region_transfer_t in;
+    region_list_t *storage_region;
+    storage_regions_args_t *args;
+    pdc_int_ret_t  out;
+    perr_t ret_value;
+
+    FUNC_ENTER(NULL);
+
+    HG_Get_input(handle, &in);
+
+    // Copy the received data
+    storage_region = (region_list_t*)calloc(1, sizeof(region_list_t));
+    pdc_region_transfer_t_to_list_t(&in.region_transfer, storage_region);
+    storage_region->obj_id = in.obj_id;
+    sprintf(storage_region->storage_location, in.storage_location);
+    storage_region->offset = in.offset;
+    storage_region->data_size = in.size;
+
+    if (in.has_hist == 1) 
+        storage_region->region_hist = PDC_dup_hist(in.hist);
+    
+    args = (storage_regions_args_t*)calloc(1, sizeof(storage_regions_args_t));
+    args->query_id = in.query_id;
+    args->storage_region = storage_region;
+
+    // Send confirmation
+    out.ret = 1;
+    ret_value = HG_Respond(handle, PDC_Server_recv_data_query_region, args, &out);
+
+    ret_value = HG_Free_input(handle, &in);
+    ret_value = HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
 /* send_data_query_cb(hg_handle_t handle) */
 HG_TEST_RPC_CB(send_data_query, handle)
 {
@@ -4990,6 +5029,7 @@ HG_TEST_THREAD_CB(query_read_obj_name_client_rpc)
 HG_TEST_THREAD_CB(send_client_storage_meta_rpc)
 HG_TEST_THREAD_CB(send_shm_bulk_rpc)
 HG_TEST_THREAD_CB(send_data_query)
+HG_TEST_THREAD_CB(send_data_query_region)
 
 hg_id_t
 gen_obj_id_register(hg_class_t *hg_class)
@@ -5515,6 +5555,12 @@ hg_id_t
 send_data_query_rpc_register(hg_class_t *hg_class)
 {
     return  MERCURY_REGISTER(hg_class, "send_data_query_rpc_register", pdc_query_xfer_t, pdc_int_ret_t, send_data_query_cb);
+}
+
+hg_id_t
+send_data_query_region_register(hg_class_t *hg_class)
+{
+    return  MERCURY_REGISTER(hg_class, "send_data_query_region_register", query_storage_region_transfer_t, pdc_int_ret_t, send_data_query_region_cb);
 }
 
 

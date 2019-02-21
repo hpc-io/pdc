@@ -51,6 +51,7 @@
 #include "pdc_server_data.h"
 #include "pdc_server_metadata.h"
 #include "pdc_server.h"
+#include "pdc_hist.h"
 
 // Global object region info list in local data server
 data_server_region_t *dataserver_region_g = NULL;
@@ -71,6 +72,8 @@ int current_read_from_cache_cnt_g    = 0;
 int total_read_from_cache_cnt_g      = 0;
 FILE *pdc_cache_file_ptr_g           = NULL;
 char pdc_cache_file_path_g[ADDR_MAX];
+
+query_task_t *query_task_list_head_g = NULL;
 
 /*
  * Callback function of the server to lookup clients, also gets the confirm message from client.
@@ -4901,9 +4904,9 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
             if (NULL != region_elt->meta) {
                 uint64_t region_data_cnt = region_elt->data_size;
                 region_data_cnt /= PDC_get_var_type_size(region_elt->meta->data_type);
-                region_elt->hist = PDC_gen_hist(region_elt->meta->data_type, region_data_cnt, 
+                region_elt->region_hist = PDC_gen_hist(region_elt->meta->data_type, region_data_cnt, 
                         region_elt->buf);
-                PDC_print_hist(region_elt->hist);
+                PDC_print_hist(region_elt->region_hist);
             }
             else {
                 printf("==PDC_SERVER[%d]: cannot generate histogram without valid metadata pointer in region\n", 
@@ -5924,362 +5927,226 @@ done:
     FUNC_LEAVE(ret_value);
 } // End PDC_Server_add_client_shm_to_cache
 
-#define MACRO_SAMPLE_MIN_MAX(TYPE, n, data, sample_pct, min, max) ({    \
-    uint64_t i, sample_n, iter = 0;                                     \
-    TYPE *ldata = data;                                                 \
-    (min)     = ldata[0];                                               \
-    (max)     = ldata[0];                                               \
-    sample_n = (n) * (sample_pct);                                      \
-    for (i = 1; i < sample_n; i++) {                                    \
-        iter = (iter + rand()) % (n);                                   \
-        if (ldata[iter] > (max))                                        \
-            (max) = ldata[iter];                                        \
-        else if (ldata[iter] < (min))                                   \
-            (min) = ldata[iter];                                        \
-    }                                                                   \
-})
-
-perr_t PDC_sample_min_max(PDC_var_type_t dtype, uint64_t n, void *data, double sample_pct, double *min, double *max)
-{
-    perr_t ret_value = SUCCEED;
-
-    if (NULL == data || NULL == min || NULL == max) {
-        ret_value = FAIL;
-        goto done;
-    }
-
-    if (PDC_INT == dtype) 
-        MACRO_SAMPLE_MIN_MAX(int,      n, data, sample_pct, *min, *max);
-    else if (PDC_FLOAT == dtype) 
-        MACRO_SAMPLE_MIN_MAX(float,    n, data, sample_pct, *min, *max);
-    else if (PDC_DOUBLE == dtype) 
-        MACRO_SAMPLE_MIN_MAX(double ,  n, data, sample_pct, *min, *max);
-    else if (PDC_INT64 == dtype) 
-        MACRO_SAMPLE_MIN_MAX(int64_t,  n, data, sample_pct, *min, *max);
-    else if (PDC_UINT64 == dtype) 
-        MACRO_SAMPLE_MIN_MAX(uint64_t, n, data, sample_pct, *min, *max);
-    else if (PDC_UINT == dtype) 
-        MACRO_SAMPLE_MIN_MAX(uint32_t, n, data, sample_pct, *min, *max);
-    else {
-        ret_value = FAIL;
-        printf("==PDC_SERVER[%d]: %s - datatype %d not supported!)\n", pdc_server_rank_g, __func__, dtype);
-        goto done;
-    }
-
-done:
-    FUNC_LEAVE(ret_value);
-}
-
-double ceil_power_of_2(double number)
-{
-    double res = 1.0;
-    double sign = number > 0 ? 1.0 : -1.0;
-    number *= sign;
-
-    if (number >= res) {
-        while(res < number) {res *= 2.0;}
-    }
-    else {
-        while(res >= number) {res /= 2.0;}
-        res *= 2.0;
-    }
-
-    return res*sign;
-}
-
-double floor_power_of_2(double number)
-{
-    double res = 1.0;
-    double sign = number > 0 ? 1.0 : -1.0;
-    number *= sign;
-
-    if (number >= res) {
-        while(res <= number) {res *= 2.0;}
-        res /= 2.0;
-    }
-    else {
-        while(res > number) {res /= 2.0;}
-    }
-
-    return res*sign;
-}
-
-// Generate histogram with at least nbin bins
-pdc_histogram_t *PDC_create_hist(PDC_var_type_t dtype, int nbin, double min, double max)
-{
-    pdc_histogram_t *hist;
-    int i;
-    double min_bin, max_bin, bin_incr;
-
-    if (nbin < 4 || min > max) 
-        return NULL;
-
-    bin_incr    = floor_power_of_2((max-min) / (nbin - 2)); // Excluding first and last bin (open ended)
-    nbin        = ceil((max-min)/bin_incr);
-
-    hist        = (pdc_histogram_t*)malloc(sizeof(pdc_histogram_t));
-    hist->incr  = bin_incr;
-    hist->dtype = dtype;
-    hist->range = (double*)calloc(sizeof(double), nbin*2);
-    hist->bin   = (uint64_t*)calloc(sizeof(uint64_t), nbin);
-    hist->nbin     = nbin;
-
-    min_bin = floor(min);
-    while(min_bin <= min) {min_bin += bin_incr;}
-
-    max_bin = ceil(max);
-    while(max_bin >= max) {max_bin -= bin_incr;}
-
-    hist->range[0] = min_bin;
-    hist->range[1] = min_bin;
-
-    hist->range[nbin*2-1] = max_bin;
-    hist->range[nbin*2-2] = max_bin;
-
-    for (i = 2; i < nbin*2-2; i+=2) {
-        hist->range[i]   = hist->range[i-1];
-        hist->range[i+1] = hist->range[i] + bin_incr;
-    }
-
-    return hist;
-}
-
-#define MACRO_HIST_INCR_ALL(TYPE, hist, n, _data) ({                                        \
-    uint64_t i, j;                                                                          \
-    int lo, mid, hi;                                                                        \
-    TYPE *ldata = (_data);                                                                  \
-    if ((hist)->incr > 0) {                                                                 \
-        for (i = 0; i < (n); i++) {                                                         \
-            if (ldata[i] < (hist)->range[1]) {                                              \
-                (hist)->bin[0]++;                                                           \
-                if(ldata[i] < (hist)->range[0])                                             \
-                    (hist)->range[0] = ldata[i];                                            \
-            }                                                                               \
-            else if (ldata[i] >= (hist)->range[((hist)->nbin*2)-2]) {                       \
-                (hist)->bin[(hist)->nbin-1]++;                                              \
-                if(ldata[i] > (hist)->range[((hist)->nbin*2)-1])                            \
-                    (hist)->range[((hist)->nbin*2)-1] = ldata[i];                           \
-            }                                                                               \
-            else {                                                                          \
-                (hist)->bin[(int)((ldata[i] - (hist)->range[1]) / (hist)->incr + 1)]++;     \
-            }                                                                               \
-        }                                                                                   \
-    }                                                                                       \
-    else {                                                                                  \
-        for (i = 0; i < (n); i++) {                                                         \
-            if (ldata[i] < (hist)->range[1]) {                                              \
-                (hist)->bin[0]++;                                                           \
-                if(ldata[i] < (hist)->range[0])                                             \
-                    (hist)->range[0] = ldata[i];                                            \
-            }                                                                               \
-            else if (ldata[i] >= (hist)->range[((hist)->nbin*2)-2]) {                       \
-                (hist)->bin[(hist)->nbin-1]++;                                              \
-                if(ldata[i] > (hist)->range[((hist)->nbin*2)-1])                            \
-                    (hist)->range[((hist)->nbin*2)-1] = ldata[i];                           \
-            }                                                                               \
-            else {                                                                          \
-                lo = 1;                                                                     \
-                hi = (hist)->nbin-2;                                                        \
-                while (lo <= hi) {                                                          \
-                    mid = lo + (hi - lo) / 2;                                               \
-                    if (ldata[i] >= (hist)->range[mid*2]) {                                 \
-                        if (ldata[i] < (hist)->range[mid*2+1])                              \
-                            break;                                                          \
-                        lo = mid + 1;                                                       \
-                    }                                                                       \
-                    else                                                                    \
-                        hi = mid - 1;                                                       \
-                }                                                                           \
-                (hist)->bin[mid]++;                                                         \
-            }                                                                               \
-        }                                                                                   \
-    }                                                                                       \
-})
-
-perr_t PDC_hist_incr_all(pdc_histogram_t *hist, PDC_var_type_t dtype, uint64_t n, void *data)
-{
-    perr_t ret_value = SUCCEED;
-    if (dtype != hist->dtype || 0 == n || NULL == data) 
-        return FAIL;
-    
-    if (PDC_INT == dtype) 
-        MACRO_HIST_INCR_ALL(int,      hist, n, data);
-    else if (PDC_FLOAT == dtype) 
-        MACRO_HIST_INCR_ALL(float,    hist, n, data);
-    else if (PDC_DOUBLE == dtype) 
-        MACRO_HIST_INCR_ALL(double,   hist, n, data);
-    else if (PDC_INT64 == dtype) 
-        MACRO_HIST_INCR_ALL(int64_t,  hist, n, data);
-    else if (PDC_UINT64 == dtype) 
-        MACRO_HIST_INCR_ALL(uint64_t, hist, n, data);
-    else if (PDC_UINT == dtype) 
-        MACRO_HIST_INCR_ALL(uint32_t, hist, n, data);
-    else {
-        ret_value = FAIL;
-        printf("==PDC_SERVER[%d]: %s - datatype %d not supported!)\n", pdc_server_rank_g, __func__, dtype);
-        goto done;
-    }
-
-done:
-    FUNC_LEAVE(ret_value);
-}
-
-pdc_histogram_t *PDC_gen_hist(PDC_var_type_t dtype, uint64_t n, void *data)
-{
-    pdc_histogram_t *hist;
-    double min, max;
-
-    if (0 == n || NULL == data) {
-        return NULL;
-    }
-
-    #ifdef ENABLE_TIMING
-    struct timeval  pdc_timer_start, pdc_timer_end;
-    gettimeofday(&pdc_timer_start, 0);
-    #endif
-
-    PDC_sample_min_max(dtype, n, data, 0.1, &min, &max);
-
-    hist = PDC_create_hist(dtype, 10, min, max);
-    if (NULL == hist) {
-        printf("==PDC_SERVER[%d]: %s - error with PDC_create_hist!)\n", pdc_server_rank_g, __func__);
-        return NULL;
-    }
-
-    /* hist->incr = -1; */
-    PDC_hist_incr_all(hist, dtype, n, data);
-
-    #ifdef ENABLE_TIMING
-    gettimeofday(&pdc_timer_end, 0);
-    double gen_hist_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-    printf("==PDC_SERVER[%d]: generate histogram of %lu elements with %d bins takes %.2fs\n", 
-            pdc_server_rank_g, n, hist->nbin, gen_hist_time);
-    #endif
-
-    return hist;
-}
-
-void PDC_free_hist(pdc_histogram_t *hist)
-{
-    if (NULL == hist) 
-        return;
-    
-    free(hist->range);
-    free(hist->bin);
-    free(hist);
-}
-
-void PDC_print_hist(pdc_histogram_t *hist)
-{
-    int i;
-
-    if (NULL == hist) 
-        return;
-    
-    for (i = 0; i < hist->nbin; i++) {
-        if (i != hist->nbin - 1) 
-            printf("[%.2f, %.2f): %lu\n", hist->range[i*2], hist->range[i*2+1], hist->bin[i]);
-        else
-            printf("[%.2f, %.2f]: %lu\n", hist->range[i*2], hist->range[i*2+1], hist->bin[i]);
-    }
-    printf("\n\n");
-    fflush(stdout);
-}
-
-pdc_histogram_t *PDC_dup_hist(pdc_histogram_t *hist)
-{
-    pdc_histogram_t *res;
-    int nbin;
-
-    if (NULL == hist) 
-        return NULL;
-
-    nbin       = hist->nbin;
-    res        = (pdc_histogram_t*)malloc(sizeof(pdc_histogram_t));
-    res->dtype = hist->dtype;
-    res->nbin  = nbin;
-    res->range = (double*)calloc(sizeof(double), nbin*2);
-    res->bin   = (uint64_t*)calloc(sizeof(uint64_t), nbin);
-    res->incr  = hist->incr;
-
-    memcpy(res->range, hist->range, sizeof(double)*nbin*2);
-    memcpy(res->bin,   hist->bin,   sizeof(double)*nbin);
-
-    return res;
-}
-
-pdc_histogram_t *PDC_merge_hist(int n, pdc_histogram_t **hists)
-{
-    int i, j, incr_max_idx, hi, lo, mid;
-    double tot_min, tot_max, incr_max;
-    pdc_histogram_t *res;
-
-    if (n == 0 || NULL == hists) 
-        return NULL;
-
-    tot_min  = hists[0]->range[1];
-    tot_max  = hists[0]->range[2*hists[0]->nbin-2];
-    incr_max = hists[0]->incr;
-
-    for (i = 1; i < n; i++) {
-        if (hists[i]->dtype != hists[i-1]->dtype) {
-            printf("==PDC_SERVER[%d]: %s cannot merge histograms of different types!\n", 
-                    pdc_server_rank_g, __func__);
-            return NULL;
-        }
-        if (hists[i]->incr > incr_max) {
-            incr_max = hists[i]->incr;
-            incr_max_idx = i;
-        }
-        if (hists[i]->range[0] < tot_min) 
-            tot_min = hists[i]->range[0];
-        if (hists[i]->range[2*hists[i]->nbin - 1] > tot_max) 
-            tot_max = hists[i]->range[2*hists[i]->nbin - 1];
-    }
-
-    // Merge strategy: Use the histogram with largest incr as base and merge others to it
-    //                 TODO?: keep the non-overlapping histograms with smaller incr 
-
-    // Duplicate the base hist to result
-    res = PDC_dup_hist(hists[incr_max_idx]);
-    if (NULL == res) {
-        printf("==PDC_SERVER[%d]: %s error with PDC_dup_hist!\n", pdc_server_rank_g, __func__);
-        return NULL;
-    }
-
-    res->range[0]               = tot_min;
-    res->range[(res->nbin)*2-1] = tot_max;
-
-    for (i = 0; i < n; i++) { // for each histogram
-        if (i == incr_max_idx)  // skip the base
-            continue;
-
-        for (j = 0; j < hists[i]->nbin; j++) {  // for each bin in a non-base hist 
-            lo = 0;
-            hi = res->nbin - 1;
-            while (lo <= hi) {
-                mid = lo + (hi-lo)/2;
-                if (hists[i]->range[2*j] >= res->range[2*mid]) {
-                    if (hists[i]->range[2*j+1] <= res->range[2*mid+1])
-                        break;
-                    lo = mid + 1;
-                }
-                else
-                    hi = mid - 1;
-            }
-            res->bin[mid] += hists[i]->bin[j];
-        }
-    }
-
-    return res;
-}
-
 // Data query
-hg_return_t PDC_Server_recv_data_query(const struct hg_cb_info *callback_info)
+static hg_return_t 
+send_query_storage_region_to_server_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    hg_handle_t handle;
+    pdc_int_ret_t out;
+
+    FUNC_ENTER(NULL);
+
+    handle = callback_info->info.forward.handle;
+    ret_value = HG_Get_output(handle, &out);
+    if (ret_value != HG_SUCCESS) {
+        printf("==PDC_SERVER[%d]: %s - error with HG_Get_output\n", pdc_server_rank_g, __func__);
+        goto done;
+    }
+
+done:
+    HG_Free_output(handle, &out);
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
+
+perr_t 
+send_query_storage_region_to_server(query_task_t *task, region_list_t *region, int server_id)
+{
+    perr_t ret_value = SUCCEED;
+    hg_return_t hg_ret;
+    hg_handle_t handle;
+    query_storage_region_transfer_t in;
+
+    in.query_id = task->query_id;
+    in.obj_id   = region->meta->obj_id;
+    pdc_region_list_t_to_transfer(region, &in.region_transfer);
+    in.storage_location = strdup(region->storage_location);
+    in.offset   = region->offset;
+    in.size     = region->data_size;
+    if (NULL != region->region_hist) {
+        in.hist     = PDC_dup_hist(region->region_hist);
+        in.has_hist = 1;
+    }
+    else {
+        in.has_hist = 0;
+        in.hist = NULL;
+    }
+
+    printf("==PDC_SERVER[%d]: sending storage region to server %d!\n", 
+            pdc_server_rank_g, server_id);
+
+    hg_ret = HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, 
+                       send_data_query_region_register_id_g, &handle);
+    if (hg_ret != HG_SUCCESS) {
+        printf("==PDC_SERVER[%d]: %s - HG_Create failed!\n", pdc_server_rank_g, __func__);
+        goto done;
+    }
+
+    hg_ret = HG_Forward(handle, send_query_storage_region_to_server_rpc_cb, NULL, &in);
+    if (hg_ret != HG_SUCCESS) {
+        printf("==PDC_SERVER[%d]: %s - HG_Forward failed!\n", pdc_server_rank_g, __func__);
+        HG_Destroy(handle);
+        goto done;
+    }
+
+
+    HG_Destroy(handle);
+
+done:
+    return ret_value;
+}
+
+perr_t 
+PDC_proces_query_storage_info(query_task_t *task, region_list_t *region)
+{
+    perr_t ret_value = SUCCEED;
+    printf("==PDC_SERVER[%d]: processing storage region!\n", pdc_server_rank_g);
+
+    return ret_value;
+}
+
+void
+send_query_storage_info(query_task_t *task, uint64_t obj_id, int *obj_idx, uint64_t *obj_ids)
+{
+    pdc_metadata_t *meta;
+    int i, found, server_id;
+    region_list_t *elt;
+
+    if (PDC_Server_has_metadata(obj_id)) {
+        // Check if a previous query condition has already send the storage regions
+        found = 0;
+        for (i = 0; i < *obj_idx; i++) {
+            if (obj_id == obj_ids[i]) {
+                found = 1;
+                printf("==PDC_SERVER[%d]: storage region already sent for %" PRIu64 " !\n", 
+                        pdc_server_rank_g, obj_id);
+                break;
+            }
+        }
+
+        if (0 == found) {
+            // there can be multiple pass to the same object, we only need to send it once
+            meta = PDC_Server_get_obj_metadata(obj_id);
+            if (NULL != meta) {
+                obj_ids[*obj_idx] = obj_id;
+                (*obj_idx)++;
+                printf("==PDC_SERVER[%d]: found metadata for %" PRIu64 "!\n", 
+                        pdc_server_rank_g, obj_id);
+                // Iterate over all storage regions and send one by on
+                server_id = 0;
+                DL_FOREACH(meta->storage_region_list_head, elt) {
+                    /* if (server_id == pdc_server_rank_g) { */
+                    /*     PDC_proces_query_storage_info(elt); */
+                    /* } */
+                    if (pdc_server_size_g == 1) {
+                        PDC_proces_query_storage_info(task, elt);
+                    }
+                    else if (server_id != pdc_server_rank_g) {
+                        // Skip myself if there are other servers
+                        send_query_storage_region_to_server(task, elt, server_id);
+                    }
+
+                    server_id++; 
+                    server_id %= pdc_server_size_g;
+                }
+
+            } // end if (NULL != meta)
+            else {
+                printf("==PDC_SERVER[%d]: %s - metadata not found for %" PRIu64 "!\n",
+                        pdc_server_rank_g, __func__, obj_id);
+            }
+        } // end if (0 == found)
+    }
+    /* else */
+    /*     printf("==PDC_SERVER[%d]: metadata not here for %" PRIu64 "!\n", pdc_server_rank_g, obj_id); */
+
+}
+
+void
+distribute_query_workload(query_task_t *task, pdcquery_t *query, int *obj_idx, uint64_t *obj_ids)
+{
+    
+    // Postorder tranversal
+    if (NULL != query) {
+        distribute_query_workload(task, query->left, obj_idx, obj_ids);
+        distribute_query_workload(task, query->right, obj_idx, obj_ids);
+
+        // Iterate over storage regions and prepare for their distribution to other servers
+        if (NULL == query->left && NULL == query->right) 
+            send_query_storage_info(task, query->constraint->obj_id, obj_idx, obj_ids);
+    }
+    return;
+}
+
+void attach_storage_region_to_query(pdcquery_t *query, region_list_t *region)
+{
+    region_list_t *head;
+    if (NULL == query) 
+        return;
+
+    attach_storage_region_to_query(query->left, region);
+    attach_storage_region_to_query(query->right, region);
+
+    if (NULL != query->constraint) {
+        if (query->constraint->obj_id == region->obj_id) 
+            if (query->constraint->storage_region_list_head == NULL) 
+                query->constraint->storage_region_list_head = region;
+            else {
+                head = (region_list_t*)query->constraint->storage_region_list_head;
+                DL_APPEND(head, region);
+            }
+    }
+}
+
+hg_return_t 
+PDC_Server_recv_data_query_region(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret = HG_SUCCESS;
+    hg_handle_t handle = callback_info->info.forward.handle;
+    storage_regions_args_t *args = (storage_regions_args_t*) callback_info->arg;
+    query_task_t *elt, *new_task;
+    region_list_t *region = args->storage_region;
+    int query_id_exist;
+
+    // Find query from query task list
+    query_id_exist = 0;
+    DL_FOREACH(query_task_list_head_g, elt) {
+        if (elt->query_id == args->query_id) {
+            query_id_exist = 1;
+            break;
+        }
+    }
+
+    // Creates a query task if it does not exist (in case a server has not received query from the client)
+    if (0 == query_id_exist) {
+        new_task = (query_task_t*)calloc(1, sizeof(query_task_t));
+        new_task->query_id = args->query_id;
+        DL_APPEND(query_task_list_head_g, new_task);
+    }
+
+    // Add this storage region to all query constraints that specifies the same object
+    attach_storage_region_to_query(elt->query, region); 
+
+
+done:
+    return ret;
+} // end PDC_Server_recv_data_query_region
+
+// TODO: optimization that support faster one pass processing with (x > a AND x < b) and (x < a OR x > b)
+
+hg_return_t 
+PDC_Server_recv_data_query(const struct hg_cb_info *callback_info)
 {
     hg_return_t ret = HG_SUCCESS;
     hg_handle_t handle = callback_info->info.forward.handle;
     pdc_query_xfer_t *query_xfer = (pdc_query_xfer_t*) callback_info->arg;
+    int found_region = 0, obj_idx = 0;
+    uint64_t *obj_ids;
+    query_task_t *new_task, *task_elt;
+    int query_id_exist;
 
     pdcquery_t *query = PDC_deserialize_query(query_xfer);
     if (NULL == query) {
@@ -6287,14 +6154,68 @@ hg_return_t PDC_Server_recv_data_query(const struct hg_cb_info *callback_info)
         goto done;
     }
 
+    // Add query to global task list
+    DL_FOREACH(query_task_list_head_g, task_elt) {
+        if (task_elt->query_id == query_xfer->query_id) {
+            query_id_exist = 1;
+            break;
+        }
+    }
+    if (0 == query_id_exist) {
+        new_task = (query_task_t*)calloc(1, sizeof(query_task_t));
+        new_task->query_id = query_xfer->query_id;
+        new_task->query    = query;
+        DL_APPEND(query_task_list_head_g, new_task);
+    }
+    else 
+        task_elt->query = query;
+
 
     printf("==PDC_SERVER[%d]: deserialized query:\n", pdc_server_rank_g);
     PDCquery_print(query);
 
+    // TODO: find metadata of all queried objects and distribute to other servers
+    // Traverse the query tree and process the query constraints that has metadata stored in here 
+    obj_ids = (uint64_t*)calloc(query_xfer->n_unique_obj, sizeof(uint64_t));
+    distribute_query_workload(new_task, query, &obj_idx, obj_ids); 
+
+    free(obj_ids);
+
+    // TODO: load data from storage if not already in memory
+    /* DL_FOREACH(io_target->region_list_head, region_elt) { */
+    /*     if (region_list_cmp(region_elt, &r_target) == 0) { */
+    /*         // Found previous io request */
+    /*         found_region = 1; */
+    /*         out->ret = region_elt->is_data_ready; */
+    /*         out->region = NULL; */
+    /*         out->is_cache_to_bb = 0; */
+    /*         if (region_elt->is_data_ready == 1) { */
+    /*             out->shm_addr = calloc(sizeof(char), ADDR_MAX); */
+    /*             if (strlen(region_elt->shm_addr) == 0) */
+    /*                 printf("==PDC_SERVER[%d]: %s - found shm_addr is NULL!\n", pdc_server_rank_g, __func__); */
+		/* else strcpy(out->shm_addr, region_elt->shm_addr); */
+
+    /*             /1* printf("==PDC_SERVER[%d]: %s - found shm_addr [%s]\n", *1/ */ 
+    /*             /1*         pdc_server_rank_g, __func__,region_elt->shm_addr); *1/ */
+    /*             out->region = region_elt; */
+    /*             // If total cache in memory exceeds threshold, cache the data in BB when available */
+    /*             if (total_mem_cache_size_mb_g >= max_mem_cache_size_mb_g && */ 
+    /*                     strstr(region_elt->cache_location, "PDCcacheBB") == NULL) */ 
+    /*                 out->is_cache_to_bb = 1; */
+    /*         } */
+    /*         ret_value = SUCCEED; */
+    /*         goto done; */
+    /*     } */
+    /* } */
+
+    /* if (found_region == 0) { */
+    /*     printf("==PDC_SERVER[%d]: %s -  No io request with same region found!\n", pdc_server_rank_g, __func__); */
+    /* } */
+
 
 done:
-    PDC_query_xfer_free(query_xfer);
-    if(query) PDCquery_free_all(query);
+    if(query_xfer) PDC_query_xfer_free(query_xfer);
+    if(query)      PDCquery_free_all(query);
     fflush(stdout);
     return ret;
 } // end PDC_Server_storage_meta_name_query_bulk_respond_cb

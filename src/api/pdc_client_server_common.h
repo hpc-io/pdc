@@ -45,6 +45,7 @@
 #include "pdc_prop_pkg.h"
 #include "pdc_analysis_and_transforms.h"
 #include "pdc_analysis_support.h"
+#include "pdc_hist.h"
 #include "pdc_query.h"
 
 #ifdef ENABLE_MULTITHREAD 
@@ -138,7 +139,7 @@ typedef struct region_list_t {
     int      is_data_ready;
     char     shm_addr[ADDR_MAX];
     int      shm_fd;
-    pdc_histogram_t *hist;
+    pdc_histogram_t *region_hist;
     char    *buf;
     PDC_data_loc_t data_loc_type;
     char     storage_location[ADDR_MAX];
@@ -350,6 +351,8 @@ typedef struct pdc_metadata_t {
 
     // For buf to obj map
     region_buf_map_t *region_buf_map_head;
+
+    pdc_histogram_t *obj_hist;
 
     // For hash table list
     struct pdc_metadata_t *prev;
@@ -2066,6 +2069,90 @@ typedef struct {
     uint64_t                    size;
 } region_storage_meta_t;
 
+static HG_INLINE hg_return_t
+hg_proc_region_storage_meta_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    region_storage_meta_t *struct_data = (region_storage_meta_t*) data;
+
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->region_transfer);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_hg_string_t(proc, &struct_data->storage_location);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_uint64_t(proc, &struct_data->offset);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_uint64_t(proc, &struct_data->size);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_pdc_histogram_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    pdc_histogram_t *struct_data = (pdc_histogram_t *) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->dtype);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_int32_t(proc, &struct_data->nbin);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_int64_t(proc, &struct_data->incr);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    if (struct_data->nbin> 0) {
+        switch(hg_proc_get_op(proc)) {
+            case HG_DECODE:
+                struct_data->range = malloc(struct_data->nbin * sizeof(double) * 2);
+                struct_data->bin   = malloc(struct_data->nbin * sizeof(uint64_t));
+                HG_FALLTHROUGH();
+
+            case HG_ENCODE:
+                ret = hg_proc_raw(proc, struct_data->range, struct_data->nbin * sizeof(double) * 2);
+                ret = hg_proc_raw(proc, struct_data->bin, struct_data->nbin * sizeof(uint64_t));
+                break;
+            case HG_FREE:
+                if (struct_data->range) free(struct_data->range); 
+                if (struct_data->bin)   free(struct_data->bin);
+            default:
+                break;
+        }
+    }
+
+    return ret;
+}
+
 typedef struct {
     region_info_transfer_t      region_transfer;
     char                        storage_location[ADDR_MAX];
@@ -2424,6 +2511,7 @@ hg_id_t send_client_storage_meta_rpc_register(hg_class_t *hg_class);
 
 // Data query
 hg_id_t send_data_query_rpc_register(hg_class_t *hg_class);
+hg_id_t send_data_query_region_register(hg_class_t *hg_class);
 
 struct bulk_args_t {
     int cnt;
@@ -2836,10 +2924,13 @@ perr_t PDC_free_kvtag(pdc_kvtag_t **kvtag);
 
 int PDC_get_var_type_size(PDC_var_type_t dtype);
 
+struct PDC_region_info *pdc_region_transfer_t_to_region_info(region_info_transfer_t *transfer);
 
-// For query
+// For data query
 typedef struct pdc_query_xfer_t {
-    int                    get_op;
+    int                    query_id;
+    int                    n_unique_obj;
+    int                    query_op;
     int                    n_combine_ops;
     int                   *combine_ops;
     int                    n_constraints;
@@ -2886,7 +2977,19 @@ hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data)
     hg_return_t ret;
     pdc_query_xfer_t *struct_data = (pdc_query_xfer_t*) data;
 
-    ret = hg_proc_int32_t(proc, &struct_data->get_op);
+    ret = hg_proc_int32_t(proc, &struct_data->query_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_int32_t(proc, &struct_data->n_unique_obj);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_int32_t(proc, &struct_data->query_op);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -2932,9 +3035,75 @@ hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data)
     return ret;
 }
 
-struct PDC_region_info *pdc_region_transfer_t_to_region_info(region_info_transfer_t *transfer);
+typedef struct query_storage_region_transfer_t {
+    uint64_t                  query_id;
+    uint64_t                  obj_id;
+    region_info_transfer_t    region_transfer;
+    char                      *storage_location;
+    uint64_t                  offset;
+    uint64_t                  size;
+    int                       has_hist;
+    pdc_histogram_t           *hist;
+} query_storage_region_transfer_t;
 
-// Query related
+typedef struct storage_regions_args_t {
+    int           query_id;
+    region_list_t *storage_region;
+} storage_regions_args_t;
+
+static HG_INLINE hg_return_t
+hg_proc_query_storage_region_transfer_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    query_storage_region_transfer_t *struct_data = (query_storage_region_transfer_t*) data;
+
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->region_transfer);
+    if (ret != HG_SUCCESS) {
+    HG_LOG_ERROR("Proc error");
+        return ret;
+    } 
+
+    ret = hg_proc_hg_string_t(proc, &struct_data->storage_location);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_uint64_t(proc, &struct_data->offset);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_uint64_t(proc, &struct_data->size);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_int32_t(proc, &struct_data->has_hist);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    if (struct_data->has_hist == 1) {
+        ret = hg_proc_pdc_histogram_t(proc, &struct_data->hist);
+        if (ret != HG_SUCCESS) {
+            HG_LOG_ERROR("Proc error");
+            return ret;
+        }
+    }
+
+    return ret;
+}
+
 pdc_query_xfer_t *PDC_serialize_query(pdcquery_t *query);
 pdcquery_t       *PDC_deserialize_query(pdc_query_xfer_t *query_xfer);
 void              PDC_query_xfer_free(pdc_query_xfer_t *query_xfer);
@@ -2942,6 +3111,5 @@ void              PDCquery_free(pdcquery_t *query);
 void              PDCquery_free_all(pdcquery_t *query);
 void              PDCquery_print(pdcquery_t *query);
 void              PDCregion_free(struct PDC_region_info *region);
-
 
 #endif /* PDC_CLIENT_SERVER_COMMON_H */

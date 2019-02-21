@@ -101,7 +101,7 @@ static int             work_todo_g = 0;
 /* hg_request_class_t    *request_class_g = NULL; */
 /* static int             request_progressed = 0; */
 /* static int             request_triggered = 0; */
-
+int                    query_id_g = 0;
 
 static hg_id_t         client_test_connect_register_id_g;
 static hg_id_t         gen_obj_register_id_g;
@@ -7745,6 +7745,14 @@ void PDC_get_server_from_query(pdcquery_t *query, uint32_t *servers, uint32_t *n
     PDC_get_server_from_query(query->right, servers, n);
 }
 
+int gen_query_id()
+{
+    if (query_id_g == 0) 
+        query_id_g = (pdc_client_mpi_rank_g+1) * 10000;
+
+    return query_id_g++;
+}
+
 perr_t PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op)
 {
     perr_t ret_value = SUCCEED;
@@ -7766,16 +7774,21 @@ perr_t PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op)
         goto done;
     }
 
+    /* // Send query to all servers */ 
+    /* for (server_id = 0; server_id < pdc_server_num_g; server_id++) { */
+
     // Find unique server IDs that has metadata of the queried objects
     target_servers = (uint32_t*)calloc(pdc_server_num_g, sizeof(uint32_t));
     PDC_get_server_from_query(query, target_servers, &ntarget);
+    query_xfer->n_unique_obj = ntarget;
+    query_xfer->query_id     = gen_query_id();
 
     // Send data query to the found servers 
     for (i = 0; i < ntarget; i++) {
         server_id = target_servers[i];
         debug_server_id_count[server_id]++;
 
-        if( PDC_Client_try_lookup_server(server_id) != SUCCEED) {
+        if (PDC_Client_try_lookup_server(server_id) != SUCCEED) {
             printf("==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server\n", pdc_client_mpi_rank_g);
             ret_value = FAIL;
             goto done;
