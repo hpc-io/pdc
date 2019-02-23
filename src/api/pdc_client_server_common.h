@@ -2131,7 +2131,7 @@ hg_proc_pdc_histogram_t(hg_proc_t proc, void *data)
         return ret;
     }
 
-    if (struct_data->nbin> 0) {
+    if (struct_data->nbin > 0) {
         switch(hg_proc_get_op(proc)) {
             case HG_DECODE:
                 struct_data->range = malloc(struct_data->nbin * sizeof(double) * 2);
@@ -3036,6 +3036,7 @@ hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data)
 }
 
 typedef struct query_storage_region_transfer_t {
+    int                       is_done;
     uint64_t                  query_id;
     uint64_t                  obj_id;
     region_info_transfer_t    region_transfer;
@@ -3043,10 +3044,11 @@ typedef struct query_storage_region_transfer_t {
     uint64_t                  offset;
     uint64_t                  size;
     int                       has_hist;
-    pdc_histogram_t           *hist;
+    pdc_histogram_t           hist;
 } query_storage_region_transfer_t;
 
 typedef struct storage_regions_args_t {
+    int           is_done;
     int           query_id;
     region_list_t *storage_region;
 } storage_regions_args_t;
@@ -3056,6 +3058,18 @@ hg_proc_query_storage_region_transfer_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret;
     query_storage_region_transfer_t *struct_data = (query_storage_region_transfer_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->is_done);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_uint64_t(proc, &struct_data->query_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
 
     ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
     if (ret != HG_SUCCESS) {

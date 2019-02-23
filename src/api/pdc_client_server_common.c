@@ -4927,11 +4927,14 @@ HG_TEST_RPC_CB(send_data_query_region, handle)
     storage_region->data_size = in.size;
 
     if (in.has_hist == 1) 
-        storage_region->region_hist = PDC_dup_hist(in.hist);
+        storage_region->region_hist = PDC_dup_hist(&in.hist);
     
     args = (storage_regions_args_t*)calloc(1, sizeof(storage_regions_args_t));
     args->query_id = in.query_id;
     args->storage_region = storage_region;
+    args->is_done = in.is_done;
+
+    printf("==%s: query id is %d\n", __func__, in.query_id);
 
     // Send confirmation
     out.ret = 1;
@@ -4967,6 +4970,8 @@ HG_TEST_RPC_CB(send_data_query, handle)
     size = sizeof(pdcquery_constraint_t)*query_xfer->n_constraints;
     query_xfer->constraints = (pdcquery_constraint_t*)malloc(size);
     memcpy(query_xfer->constraints, in.constraints, size);
+
+    printf("==%s: query id is %d\n", __func__, in.query_id);
 
     out.ret = 1;
     ret_value = HG_Respond(handle, PDC_Server_recv_data_query, query_xfer, &out);
@@ -6134,6 +6139,7 @@ void print_query(pdcquery_t *query)
 {
     if (query == NULL) 
         return;
+
     if (query->left == NULL && query->right == NULL) {
 
         printf(" (%" PRIu64 " %s", query->constraint->obj_id, 
@@ -6177,6 +6183,8 @@ void PDCquery_print(pdcquery_t *query)
         }
     }
     printf("\n");
+
+    fflush(stdout);
 }
 
 pdc_query_xfer_t *PDC_serialize_query(pdcquery_t *query)

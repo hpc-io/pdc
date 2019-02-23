@@ -7764,7 +7764,7 @@ perr_t PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op)
 
     FUNC_ENTER(NULL);
 
-    /* print_query(query); */
+    /* PDCquery_print(query); */
     /* printf("\n"); */
 
     query_xfer = PDC_serialize_query(query);
@@ -7774,8 +7774,6 @@ perr_t PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op)
         goto done;
     }
 
-    /* // Send query to all servers */ 
-    /* for (server_id = 0; server_id < pdc_server_num_g; server_id++) { */
 
     // Find unique server IDs that has metadata of the queried objects
     target_servers = (uint32_t*)calloc(pdc_server_num_g, sizeof(uint32_t));
@@ -7783,9 +7781,9 @@ perr_t PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op)
     query_xfer->n_unique_obj = ntarget;
     query_xfer->query_id     = gen_query_id();
 
-    // Send data query to the found servers 
-    for (i = 0; i < ntarget; i++) {
-        server_id = target_servers[i];
+    // Send query to all servers 
+    for (server_id = 0; server_id < pdc_server_num_g; server_id++) {
+        /* server_id = target_servers[i]; */
         debug_server_id_count[server_id]++;
 
         if (PDC_Client_try_lookup_server(server_id) != SUCCEED) {

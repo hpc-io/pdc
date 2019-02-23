@@ -188,7 +188,9 @@ typedef struct query_task_t {
     int           query_id;
     pdcquery_t    *query;
     int           n_sent;
+    int           n_unique_obj;
     int           n_recv;
+    int           n_recv_region;
 
     struct query_task_t *prev;
     struct query_task_t *next;
