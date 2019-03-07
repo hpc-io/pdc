@@ -778,9 +778,14 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
 //    printf("# Credential is %u\n", credential);
 //    fflush(stdout);
 
+drc_access_again:
     rc = drc_access(credential, 0, &credential_info);
     if (rc != DRC_SUCCESS) { /* failed to access credential */
-        printf("drc_access() failed (%d, %s)", rc,
+        if (rc == -DRC_EINVAL) {
+            sleep(1);
+            goto drc_access_again;
+        }
+        printf("server drc_access() failed (%d, %s)", rc,
             drc_strerror(-rc));
         ret_value = FAIL; 
         goto done;

@@ -23,3 +23,6 @@
 
 /* Define if use shared server */
 #cmakedefine PDC_HAS_SHARED_SERVER
+
+/* Define if closing server by application */
+#cmakedefine ENABLE_APP_CLOSE_SERVER
