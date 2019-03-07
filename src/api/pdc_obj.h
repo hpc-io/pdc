@@ -346,4 +346,13 @@ perr_t PDCregion_close(pdcid_t region_id);
  */
 struct PDC_obj_info *PDCobj_get_info(const char *obj_name);
 
+/**
+ * Get object information
+ *
+ * \param obj [IN]              Struct of the object info
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCobj_free_info(struct PDC_obj_info *obj);
+
 #endif

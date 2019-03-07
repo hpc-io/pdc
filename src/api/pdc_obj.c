@@ -1055,9 +1055,56 @@ struct PDC_obj_info *PDC_obj_get_info(pdcid_t obj_id)
     else
         ret_value->obj_pt->tags = NULL;
     
+    ret_value->region_list_head = NULL;
+    
 done:
     FUNC_LEAVE(ret_value);
 } 
+
+perr_t PDC_free_obj_info(struct PDC_obj_info *obj)
+{
+    perr_t ret_value = TRUE;
+    
+    assert(obj);
+    
+    if(obj->name != NULL)
+        free(obj->name);
+    
+    if(obj->metadata != NULL)
+        free(obj->metadata);
+    
+    if(obj->cont != NULL){
+        if(obj->cont->name != NULL)
+            free(obj->cont->name);
+        if(obj->cont->cont_pt->pdc->name != NULL)
+            free(obj->cont->cont_pt->pdc->name);
+        free(obj->cont->cont_pt->pdc);
+        free(obj->cont->cont_pt);
+        free(obj->cont);
+    }
+    
+    if(obj->obj_pt != NULL) {
+        if(obj->obj_pt->pdc != NULL) {
+            if(obj->obj_pt->pdc->name != NULL)
+                free(obj->obj_pt->pdc->name);
+            free(obj->obj_pt->pdc);
+        }
+        if(obj->obj_pt->dims != NULL)
+            free(obj->obj_pt->dims);
+        if(obj->obj_pt->app_name != NULL)
+            free(obj->obj_pt->app_name);
+        if(obj->obj_pt->data_loc != NULL)
+            free(obj->obj_pt->data_loc);
+        if(obj->obj_pt->tags != NULL)
+            free(obj->obj_pt->tags);
+        free(obj->obj_pt);
+    }
+    
+    if(obj->region_list_head != NULL)
+        free(obj->region_list_head);
+    
+    FUNC_LEAVE(ret_value);
+}
 
 struct PDC_obj_info *PDCobj_get_info(const char *obj_name)
 {
@@ -1069,6 +1116,15 @@ struct PDC_obj_info *PDCobj_get_info(const char *obj_name)
     obj_id = pdc_find_byname(PDC_OBJ, obj_name);
     
     ret_value = PDC_obj_get_info(obj_id);
+    
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDCobj_free_info(struct PDC_obj_info *obj)
+{
+    perr_t ret_value;
+    
+    ret_value = PDC_free_obj_info(obj);
     
     FUNC_LEAVE(ret_value);
 }
@@ -1108,6 +1164,8 @@ perr_t PDCreg_obtain_lock(pdcid_t obj_id, pdcid_t reg_id, PDC_access_t access_ty
 //    ret_value = PDC_Client_obtain_region_lock(meta_id, region_info, access_type, lock_mode, data_type, &obtained);
     ret_value = PDC_Client_region_lock(meta_id, region_info, access_type, lock_mode, data_type, &obtained);
 
+    PDC_free_obj_info(object_info);
+    
     FUNC_LEAVE(ret_value);
 }
 
@@ -1129,5 +1187,7 @@ perr_t PDCreg_release_lock(pdcid_t obj_id, pdcid_t reg_id, PDC_access_t access_t
     
     ret_value = PDC_Client_release_region_lock(meta_id, region_info, access_type, data_type, &released);
  
+    PDC_free_obj_info(object_info);
+    
     FUNC_LEAVE(ret_value);
 }
