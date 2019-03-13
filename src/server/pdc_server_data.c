@@ -2289,7 +2289,6 @@ done:
  *
  * \return Non-negative on success/Negative on failure
  */
-/* perr_t PDC_Server_data_read_to_shm(region_list_t *region_list_head, uint64_t obj_id) */
 perr_t PDC_Server_data_read_to_shm(region_list_t *region_list_head)
 {
     perr_t ret_value = FAIL;
@@ -5959,6 +5958,7 @@ void copy_hist(pdc_histogram_t *to, pdc_histogram_t *from)
     to->nbin  = from->nbin;
 }
 
+/* For data query */
 perr_t 
 send_query_storage_region_to_server(query_task_t *task, region_list_t *region, uint64_t obj_id, int server_id, int is_done)
 {
@@ -6036,7 +6036,7 @@ void
 send_query_storage_info(query_task_t *task, uint64_t obj_id, int *obj_idx, uint64_t *obj_ids)
 {
     pdc_metadata_t *meta;
-    int i, found, server_id, count, is_done;
+    int i, found, server_id, count, is_last;
     region_list_t *elt;
 
     if (1 == PDC_Server_has_metadata(obj_id)) {
@@ -6077,11 +6077,11 @@ send_query_storage_info(query_task_t *task, uint64_t obj_id, int *obj_idx, uint6
                     }
                     // Skip myself if there are other servers
                     else if (server_id != pdc_server_rank_g) {
-                        // mark is_done=1 when it's the last region to send to a server
-                        is_done = 0;
+                        // mark is_last=1 when it's the last region to send to a server
+                        is_last = 0;
                         if (i >= count - pdc_server_size_g) 
-                            is_done = 1;
-                        send_query_storage_region_to_server(task, elt, meta->obj_id, server_id, is_done);
+                            is_last = 1;
+                        send_query_storage_region_to_server(task, elt, meta->obj_id, server_id, is_last);
                     }
 
                     server_id++; 
@@ -6126,6 +6126,8 @@ void attach_storage_region_to_query(pdcquery_t *query, region_list_t *region)
     attach_storage_region_to_query(query->left, region);
     attach_storage_region_to_query(query->right, region);
 
+    // Note: currently attaches the received region to all query constraints of the same object,
+    //       and uses the same "prev" "next" pointers 
     if (NULL == query->left && NULL == query->right && NULL != query->constraint) {
         if (query->constraint->obj_id == region->obj_id) { 
             if (query->constraint->storage_region_list_head == NULL) 
@@ -6136,6 +6138,142 @@ void attach_storage_region_to_query(pdcquery_t *query, region_list_t *region)
             }
         }
     }
+}
+
+void
+PDC_query_iter_with_cb(pdcquery_t *query, void (*func)(pdcquery_t *arg))
+{
+    if (NULL == query) 
+        return;
+
+    PDC_query_constraint_iter_with_cb(query->left, func);
+    PDC_query_constraint_iter_with_cb(query->right, func);
+
+    if (NULL == query->left && NULL == query->right) 
+        func(query);
+    return;
+}
+
+// TODO: testing
+static perr_t
+PDC_Server_load_query_data(pdcquery_t *query)
+{
+    perr_t ret_value;
+    region_list_t *req_region, *region_tmp, *read_list_head = NULL, *storage_region_list_head;
+    pdc_data_server_io_list_t *io_list_elt, *io_list_target;
+    uint64_t obj_id;
+    int count;
+
+    pdcquery_constraint_t *constraint = query->constraint;
+    storage_region_list_head = constraint->storage_region_list_head;
+
+    if (NULL == constraint || NULL == storage_region_list_head) {
+        printf("==PDC_SERVER[%d]: %s -  NULL query constraint/storage region!\n", 
+                pdc_server_rank_g, __func__);
+        goto done;
+    }
+
+    obj_id = constraint->obj_id;
+
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_lock(&data_read_list_mutex_g);
+#endif
+
+    // Iterate io list, find the IO list of this obj
+    DL_FOREACH(pdc_data_server_read_list_head_g, io_list_elt) {
+        /* printf("io_list_elt obj id: %" PRIu64 "\n", io_list_elt->obj_id); */
+        /* fflush(stdout); */
+        if (obj_id == io_list_elt->obj_id) {
+            io_list_target = io_list_elt;
+            break;
+        }
+    }
+
+    // If not found, create and insert one to the list
+    if (NULL == io_list_target) {
+        // pdc_data_server_io_list_t maintains the request list for one object id,
+        // write and read are separate lists
+        io_list_target = (pdc_data_server_io_list_t*)calloc(1, sizeof(pdc_data_server_io_list_t));
+        if (NULL == io_list_target) {
+            printf("==PDC_SERVER[%d]: %s -  ERROR allocating pdc_data_server_io_list_t!\n", 
+                    pdc_server_rank_g, __func__);
+            ret_value = FAIL;
+            goto done;
+        }
+        io_list_target->obj_id = obj_id;
+        io_list_target->total  = 0;     // TODO
+        io_list_target->count  = 0;
+        io_list_target->ndim   = 0;
+        /* for (i = 0; i < meta.ndim; i++) */
+        /*     io_list_target->dims[i] = meta.dims[i]; */
+
+        io_list_target->region_list_head = NULL;
+
+        // Add to the io list
+        DL_APPEND(pdc_data_server_read_list_head_g, io_list_target);
+    }
+
+    io_list_target->count++;
+
+#ifdef ENABLE_MULTITHREAD
+    hg_thread_mutex_unlock(&data_read_list_mutex_g);
+#endif
+
+    // Iterate over current list and check for existing identical regions in the io list
+    DL_FOREACH(storage_region_list_head, req_region) {
+
+        DL_FOREACH(io_list_target->region_list_head, region_tmp) {
+            if (PDC_is_same_region_list(region_tmp, req_region) != 1) {
+                // append current request region to the io list
+                region_list_t *new_region = (region_list_t*)calloc(1, sizeof(region_list_t));
+                if (new_region == NULL) {
+                    printf("==PDC_SERVER: ERROR allocating new_region!\n");
+                    ret_value = FAIL;
+                    goto done;
+                }
+                req_region->io_cache_region = new_region;
+                pdc_region_list_t_deep_cp(&(io_info->region), new_region);
+                DL_APPEND(io_list_target->region_list_head, new_region);
+                if (is_debug_g == 1) {
+                    DL_COUNT(io_list_target->region_list_head, req_region, count);
+                    printf("==PDC_SERVER[%d]: Added 1 to IO request list, obj_id=%" PRIu64 ", %d total\n",
+                            pdc_server_rank_g, new_region->meta->obj_id, count);
+                    PDC_print_region_list(new_region);
+                }
+            }
+        }
+    }
+
+    // Read
+    #ifdef ENABLE_TIMING
+    struct timeval  pdc_timer_start, pdc_timer_end;
+    double cache_total_sec;
+    gettimeofday(&pdc_timer_start, 0);
+    #endif
+
+    // Currently reads all regions of a query constraint together
+    // TODO: potential optimization: aggregate all I/O requests
+    ret_value = PDC_Server_data_read_to_shm(io_list_target->region_list_head);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_SERVER[%d]: %s - PDC_Server_data_read_to_shm FAILED!\n", pdc_server_rank_g, __func__);
+        goto done;
+    }
+
+#ifdef ENABLE_TIMING
+    gettimeofday(&pdc_timer_end, 0);
+    server_io_elapsed_time_g += PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+#endif
+
+done:
+    fflush(stdout);
+    return ret_value;
+} // End PDC_Server_load_query_data
+
+// TODO: optimization that support faster one pass processing with (x > a AND x < b) and (x < a OR x > b)
+perr_t
+PDC_query_evaluate(pdcquery_t *query)
+{
+
 }
 
 hg_return_t 
@@ -6176,18 +6314,20 @@ PDC_Server_recv_data_query_region(const struct hg_cb_info *callback_info)
     // Add this storage region to all query constraints that specifies the same object
     attach_storage_region_to_query(query_task->query, region); 
     printf("==PDC_SERVER[%d]: attached storage region to query\n", pdc_server_rank_g);
+
     if (args->is_done == 1) {
         query_task->n_recv_region++;
         if (query_task->n_recv_region == query_task->n_unique_obj) {
             printf("==PDC_SERVER[%d]: Received all storage info from meta server!\n", pdc_server_rank_g);
+            // TODO: load data and start query evaluation
+            PDC_query_iter_with_cb(query, PDC_Server_load_query_data, query_task->query);
+            PDC_query_evaluate(query);
         }
     }
 done:
     fflush(stdout);
     return ret;
 } // end PDC_Server_recv_data_query_region
-
-// TODO: optimization that support faster one pass processing with (x > a AND x < b) and (x < a OR x > b)
 
 hg_return_t 
 PDC_Server_recv_data_query(const struct hg_cb_info *callback_info)
@@ -6240,42 +6380,9 @@ PDC_Server_recv_data_query(const struct hg_cb_info *callback_info)
 
     free(obj_ids);
 
-    // TODO: load data from storage if not already in memory
-    /* DL_FOREACH(io_target->region_list_head, region_elt) { */
-    /*     if (region_list_cmp(region_elt, &r_target) == 0) { */
-    /*         // Found previous io request */
-    /*         found_region = 1; */
-    /*         out->ret = region_elt->is_data_ready; */
-    /*         out->region = NULL; */
-    /*         out->is_cache_to_bb = 0; */
-    /*         if (region_elt->is_data_ready == 1) { */
-    /*             out->shm_addr = calloc(sizeof(char), ADDR_MAX); */
-    /*             if (strlen(region_elt->shm_addr) == 0) */
-    /*                 printf("==PDC_SERVER[%d]: %s - found shm_addr is NULL!\n", pdc_server_rank_g, __func__); */
-		/* else strcpy(out->shm_addr, region_elt->shm_addr); */
-
-    /*             /1* printf("==PDC_SERVER[%d]: %s - found shm_addr [%s]\n", *1/ */ 
-    /*             /1*         pdc_server_rank_g, __func__,region_elt->shm_addr); *1/ */
-    /*             out->region = region_elt; */
-    /*             // If total cache in memory exceeds threshold, cache the data in BB when available */
-    /*             if (total_mem_cache_size_mb_g >= max_mem_cache_size_mb_g && */ 
-    /*                     strstr(region_elt->cache_location, "PDCcacheBB") == NULL) */ 
-    /*                 out->is_cache_to_bb = 1; */
-    /*         } */
-    /*         ret_value = SUCCEED; */
-    /*         goto done; */
-    /*     } */
-    /* } */
-
-    /* if (found_region == 0) { */
-    /*     printf("==PDC_SERVER[%d]: %s -  No io request with same region found!\n", pdc_server_rank_g, __func__); */
-    /* } */
-
-
 done:
     if(query_xfer) PDC_query_xfer_free(query_xfer);
     fflush(stdout);
     return ret;
 } // end PDC_Server_storage_meta_name_query_bulk_respond_cb
-
 

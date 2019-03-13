@@ -144,6 +144,7 @@ typedef struct region_list_t {
     PDC_data_loc_t data_loc_type;
     char     storage_location[ADDR_MAX];
     uint64_t offset;
+    struct region_list_t *io_cache_region;
     struct region_list_t *overlap_storage_regions;
     uint32_t n_overlap_storage_region;
     hg_atomic_int32_t      buf_map_refcount;
