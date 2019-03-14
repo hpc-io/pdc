@@ -2460,8 +2460,8 @@ HG_TEST_RPC_CB(buf_map, handle)
     new_buf_map_ptr = PDC_Data_Server_buf_map(info, &in, request_region, data_ptr);
  
     if(new_buf_map_ptr == NULL) {
-        out.ret = 0;
-        printf("===PDC Data Server: insert region to local data server failed");
+        out.ret = 1;
+        free(data_ptr);
         HG_Respond(handle, NULL, NULL, &out);
         HG_Free_input(handle, &in);
         HG_Destroy(handle);

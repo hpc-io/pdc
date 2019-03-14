@@ -1019,6 +1019,8 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
     data_server_region_t *new_obj_reg = NULL;
     region_list_t *elt_reg;
     region_buf_map_t *buf_map_ptr = NULL;
+    region_buf_map_t *tmp;
+    int dup = 0;
     char *data_path = NULL;
     char *user_specified_data_path = NULL;
     char storage_location[ADDR_MAX];
@@ -1079,29 +1081,35 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
     hg_thread_mutex_unlock(&region_struct_mutex_g);
 #endif
 
-    buf_map_ptr = (region_buf_map_t *)malloc(sizeof(region_buf_map_t));
-    if(buf_map_ptr == NULL)
-        PGOTO_ERROR(NULL, "PDC_SERVER: PDC_Server_insert_buf_map_region() allocates region pointer failed");
-
-    buf_map_ptr->local_reg_id = in->local_reg_id;
-    buf_map_ptr->local_region = in->local_region;
-    buf_map_ptr->local_ndim = in->ndim;
-    buf_map_ptr->local_data_type = in->local_type;
-    HG_Addr_dup(info->hg_class, info->addr, &(buf_map_ptr->local_addr));
-    HG_Bulk_ref_incr(in->local_bulk_handle);
-    buf_map_ptr->local_bulk_handle = in->local_bulk_handle;
-
-    buf_map_ptr->remote_obj_id = in->remote_obj_id;
-    buf_map_ptr->remote_ndim = in->ndim;
-    buf_map_ptr->remote_unit = in->remote_unit;
-    buf_map_ptr->remote_region_unit = in->remote_region_unit;
-    buf_map_ptr->remote_region_nounit = in->remote_region_nounit;
-    buf_map_ptr->remote_data_ptr = data_ptr;
-
 #ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_lock(&data_buf_map_mutex_g);
 #endif
-    DL_APPEND(new_obj_reg->region_buf_map_head, buf_map_ptr);
+    DL_FOREACH(new_obj_reg->region_buf_map_head, tmp) {
+        if(tmp->remote_obj_id == in->remote_obj_id && in->remote_region_unit.start_0 == tmp->remote_region_unit.start_0 && in->remote_region_unit.count_0 == tmp->remote_region_unit.count_0 && in->local_region.start_0 == tmp->local_region.start_0 && in->local_region.count_0 == tmp->local_region.count_0)
+            dup = 1;
+    }
+    if(dup == 0) {
+        buf_map_ptr = (region_buf_map_t *)malloc(sizeof(region_buf_map_t));
+        if(buf_map_ptr == NULL)
+            PGOTO_ERROR(NULL, "PDC_SERVER: PDC_Server_insert_buf_map_region() allocates region pointer failed");
+
+        buf_map_ptr->local_reg_id = in->local_reg_id;
+        buf_map_ptr->local_region = in->local_region;
+        buf_map_ptr->local_ndim = in->ndim;
+        buf_map_ptr->local_data_type = in->local_type;
+        HG_Addr_dup(info->hg_class, info->addr, &(buf_map_ptr->local_addr));
+        HG_Bulk_ref_incr(in->local_bulk_handle);
+        buf_map_ptr->local_bulk_handle = in->local_bulk_handle;
+
+        buf_map_ptr->remote_obj_id = in->remote_obj_id;
+        buf_map_ptr->remote_ndim = in->ndim;
+        buf_map_ptr->remote_unit = in->remote_unit;
+        buf_map_ptr->remote_region_unit = in->remote_region_unit;
+        buf_map_ptr->remote_region_nounit = in->remote_region_nounit;
+        buf_map_ptr->remote_data_ptr = data_ptr;
+
+        DL_APPEND(new_obj_reg->region_buf_map_head, buf_map_ptr);
+    }
 #ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_unlock(&data_buf_map_mutex_g);
 #endif
