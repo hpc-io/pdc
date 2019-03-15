@@ -28,12 +28,10 @@ typedef enum {
 } pdcquery_get_op_t; 
 
 typedef struct pdcquery_selection_t {
-    int      is_point_sel;
     int      ndim;
-    uint64_t start[4];  // DIM_MAX
-    uint64_t count[4];
-    uint64_t n_points;
-    uint64_t *points;
+    uint64_t nhits;
+    uint64_t *coords;
+    uint64_t coords_alloc;
 } pdcselection_t;
 
 typedef struct pdcquery_constraint_t {
@@ -41,7 +39,7 @@ typedef struct pdcquery_constraint_t {
     pdcquery_op_t      op;
     PDC_var_type_t     type;
     double             value;   // Use it as a generic 64bit value
-    pdcselection_t     *sel;
+    pdcselection_t     sel;
 
     void               *storage_region_list_head;
     pdcid_t            origin_server;

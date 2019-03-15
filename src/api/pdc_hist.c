@@ -4,7 +4,7 @@
 
 #define MACRO_SAMPLE_MIN_MAX(TYPE, n, data, sample_pct, min, max) ({    \
     uint64_t i, sample_n, iter = 0;                                     \
-    TYPE *ldata = data;                                                 \
+    TYPE *ldata = (TYPE*)data;                                                 \
     (min)     = ldata[0];                                               \
     (max)     = ldata[0];                                               \
     sample_n = (n) * (sample_pct);                                      \
@@ -125,7 +125,7 @@ pdc_histogram_t *PDC_create_hist(PDC_var_type_t dtype, int nbin, double min, dou
 #define MACRO_HIST_INCR_ALL(TYPE, hist, n, _data) ({                                        \
     uint64_t i, j;                                                                          \
     int lo, mid, hi;                                                                        \
-    TYPE *ldata = (_data);                                                                  \
+    TYPE *ldata = (TYPE*)(_data);                                                                  \
     if ((hist)->incr > 0) {                                                                 \
         for (i = 0; i < (n); i++) {                                                         \
             if (ldata[i] < (hist)->range[1]) {                                              \

@@ -494,6 +494,8 @@ uint64_t pdc_get_region_size(region_list_t *a)
 {
     unsigned i;
     uint64_t size = 1;
+    /* if (a->meta) */ 
+    /*     size = PDC_get_var_type_size(a->meta->data_type); */
     for (i = 0; i < a->ndim; i++) 
         size *= a->count[i];
     
@@ -6145,16 +6147,18 @@ void print_query(pdcquery_t *query)
         printf(" (%" PRIu64 " %s", query->constraint->obj_id, 
                 pdcquery_op_char_g[query->constraint->op]);
 
-        if (query->constraint->type == PDC_FLOAT || query->constraint->type == PDC_DOUBLE) 
+        if (query->constraint->type == PDC_FLOAT) 
             printf(" %.3f) ", *((float*)&query->constraint->value));
+        else if (query->constraint->type == PDC_DOUBLE) 
+            printf(" %.3f) ", *((double*)&query->constraint->value));
         else if (query->constraint->type == PDC_INT) 
-            printf(" %d) ", *((int*)&query->constraint->value));
+            printf(" %d) "  , *((int*)&query->constraint->value));
         else if (query->constraint->type == PDC_UINT) 
-            printf(" %u) ", *((unsigned*)&query->constraint->value));
+            printf(" %u) "  , *((unsigned*)&query->constraint->value));
         else if (query->constraint->type == PDC_INT64) 
-            printf(" %ld)" , *((int64_t*)&query->constraint->value));
+            printf(" %ld)"  , *((int64_t*)&query->constraint->value));
         else if (query->constraint->type == PDC_UINT64) 
-            printf(" %lu) ", *((uint64_t*)&query->constraint->value));
+            printf(" %lu) " , *((uint64_t*)&query->constraint->value));
         return;
     }
 

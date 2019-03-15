@@ -62,9 +62,9 @@ int main(int argc, char **argv)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
 
     pdcid_t obj_id = -1;
-    const int my_data_size = size_MB / size;
+    const int my_data_count = size_MB / size;
 
-    uint64_t dims[1]={my_data_size};
+    uint64_t dims[1]={my_data_count};
     PDCprop_set_obj_dims(obj_prop, 1, dims);
     PDCprop_set_obj_user_id( obj_prop, getuid());
     PDCprop_set_obj_time_step( obj_prop, 0);
@@ -103,13 +103,13 @@ int main(int argc, char **argv)
     region.ndim = ndim;
     region.offset = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
     region.size = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
-    region.offset[0] = rank * my_data_size;
-    region.size[0] = my_data_size;
+    region.offset[0] = rank * my_data_count;
+    region.size[0] = my_data_count;
 
     uint64_t i;
-    int *mydata = (int *)malloc(my_data_size);
-    for (i = 0; i < my_data_size/sizeof(int); i++) 
-        mydata[i] = i * 1000 + rank;
+    int *mydata = (int *)malloc(my_data_count);
+    for (i = 0; i < my_data_count/sizeof(int); i++) 
+        mydata[i] = i + rank * 1000;
 
     /* printf("%d: writing to (%llu, %llu) of %llu bytes\n", rank, region.offset[0], region.offset[1], region.size[0]*region.size[1]); */
     struct timeval  ht_total_start;

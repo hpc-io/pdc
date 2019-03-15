@@ -478,7 +478,7 @@ done:
  */
 int PDC_Server_has_metadata(pdcid_t obj_id)
 {
-    if (obj_id % PDC_SERVER_ID_INTERVEL == pdc_server_rank_g) 
+    if (obj_id / PDC_SERVER_ID_INTERVEL == pdc_server_rank_g + 1) 
         return 1;
     return 0;
 }
