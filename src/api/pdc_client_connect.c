@@ -7780,6 +7780,8 @@ perr_t PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op)
     PDC_get_server_from_query(query, target_servers, &ntarget);
     query_xfer->n_unique_obj = ntarget;
     query_xfer->query_id     = gen_query_id();
+    query_xfer->client_id    = pdc_client_mpi_rank_g;
+    query_xfer->manager      = target_servers[0];
 
     // Send query to all servers 
     for (server_id = 0; server_id < pdc_server_num_g; server_id++) {

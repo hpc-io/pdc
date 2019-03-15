@@ -4933,6 +4933,7 @@ HG_TEST_RPC_CB(send_data_query_region, handle)
     
     args = (storage_regions_args_t*)calloc(1, sizeof(storage_regions_args_t));
     args->query_id = in.query_id;
+    args->manager  = in.manager;
     args->storage_region = storage_region;
     args->is_done = in.is_done;
 
@@ -4973,7 +4974,7 @@ HG_TEST_RPC_CB(send_data_query, handle)
     query_xfer->constraints = (pdcquery_constraint_t*)malloc(size);
     memcpy(query_xfer->constraints, in.constraints, size);
 
-    printf("==%s: query id is %d\n", __func__, in.query_id);
+    printf("==%s: query id is %d, manager is %d\n", __func__, in.query_id, in.manager);
 
     out.ret = 1;
     ret_value = HG_Respond(handle, PDC_Server_recv_data_query, query_xfer, &out);
@@ -6276,5 +6277,27 @@ void PDCregion_free(struct PDC_region_info *region)
         if (region->size) free(region->size);
     }
 }
+
+void PDCselection_print(pdcselection_t *sel)
+{
+    uint64_t i;
+    printf("== %" PRIu64 " hits, allocated %" PRIu64 " coordinates!\n", sel->nhits, sel->coords_alloc);
+    printf("== Coordinates:\n");
+
+    if (sel->nhits > 10) {
+        for (i = 0; i < 10; i++)
+            printf(" ,%" PRIu64 "", sel->coords[i]);
+        printf(" , ... ");
+        for (i = sel->nhits-10; i < sel->nhits; i++)
+            printf(" ,%" PRIu64 "", sel->coords[i]);
+    }
+    else {
+        for (i = 0; i < sel->nhits; i++)
+            printf(" ,%" PRIu64 "", sel->coords[i]);
+    }
+    printf("\n\n");
+
+}
+
 #include "pdc_analysis_common.c"
 #include "pdc_transforms_common.c"

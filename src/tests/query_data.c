@@ -147,15 +147,15 @@ int main(int argc, char **argv)
     int lo2 = 5000, hi2 = 7000;
     pdcquery_t *q0, *q1l, *q1h, *q1, *q2l, *q2h, *q2, *q, *q12;
 
-    // (obj < 1000) OR (obj > 2000 AND obj < 3000) OR (obj > 5000 AND obj < 7000)
+    // (obj < 1000) OR (obj >= 2000 AND obj < 3000) OR (obj >= 5000 AND obj < 7000)
     q0  = PDCquery_create(obj_id, PDC_LT, PDC_INT, &lo0);
     PDCquery_sel_region(q0, &region);
 
-    q1l = PDCquery_create(obj_id, PDC_GT, PDC_INT, &lo1);
+    q1l = PDCquery_create(obj_id, PDC_GTE, PDC_INT, &lo1);
     q1h = PDCquery_create(obj_id, PDC_LT, PDC_INT, &hi1);
     q1  = PDCquery_and(q1l, q1h);
 
-    q2l = PDCquery_create(obj_id, PDC_GT, PDC_INT, &lo2);
+    q2l = PDCquery_create(obj_id, PDC_GTE, PDC_INT, &lo2);
     q2h = PDCquery_create(obj_id, PDC_LT, PDC_INT, &hi2);
     q2  = PDCquery_and(q2l, q2h);
 

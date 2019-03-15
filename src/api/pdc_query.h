@@ -28,7 +28,7 @@ typedef enum {
 } pdcquery_get_op_t; 
 
 typedef struct pdcquery_selection_t {
-    int      ndim;
+    size_t   ndim;
     uint64_t nhits;
     uint64_t *coords;
     uint64_t coords_alloc;
@@ -53,7 +53,7 @@ typedef struct pdcquery_t {
     struct pdcquery_t      *right;
     pdcquery_combine_op_t  combine_op;
     struct PDC_region_info *region;
-    pdcselection_t         *sel;
+    pdcselection_t         sel;
 } pdcquery_t;
 
 pdcquery_t *PDCquery_create(pdcid_t obj_id, pdcquery_op_t op, PDC_var_type_t type, void *value);

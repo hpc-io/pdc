@@ -125,7 +125,7 @@ pdc_histogram_t *PDC_create_hist(PDC_var_type_t dtype, int nbin, double min, dou
 #define MACRO_HIST_INCR_ALL(TYPE, hist, n, _data) ({                                        \
     uint64_t i, j;                                                                          \
     int lo, mid, hi;                                                                        \
-    TYPE *ldata = (TYPE*)(_data);                                                                  \
+    TYPE *ldata = (TYPE*)(_data);                                                           \
     if ((hist)->incr > 0) {                                                                 \
         for (i = 0; i < (n); i++) {                                                         \
             if (ldata[i] < (hist)->range[1]) {                                              \

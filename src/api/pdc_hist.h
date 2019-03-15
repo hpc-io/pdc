@@ -2,6 +2,7 @@
 #define PDC_HIST_H
 
 #include "pdc_public.h"
+#include "math.h"
 #include <inttypes.h>
 
 pdc_histogram_t *PDC_gen_hist(PDC_var_type_t dtype, uint64_t n, void *data);

@@ -2930,6 +2930,8 @@ struct PDC_region_info *pdc_region_transfer_t_to_region_info(region_info_transfe
 // For data query
 typedef struct pdc_query_xfer_t {
     int                    query_id;
+    int                    manager;
+    int                    client_id;
     int                    n_unique_obj;
     int                    query_op;
     int                    n_combine_ops;
@@ -2979,6 +2981,18 @@ hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data)
     pdc_query_xfer_t *struct_data = (pdc_query_xfer_t*) data;
 
     ret = hg_proc_int32_t(proc, &struct_data->query_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    
+    ret = hg_proc_int32_t(proc, &struct_data->client_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_int32_t(proc, &struct_data->manager);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -3038,7 +3052,8 @@ hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data)
 
 typedef struct query_storage_region_transfer_t {
     int                       is_done;
-    uint64_t                  query_id;
+    int                       query_id;
+    int                       manager;
     uint64_t                  obj_id;
     region_info_transfer_t    region_transfer;
     char                      *storage_location;
@@ -3051,6 +3066,7 @@ typedef struct query_storage_region_transfer_t {
 typedef struct storage_regions_args_t {
     int           is_done;
     int           query_id;
+    int           manager;
     region_list_t *storage_region;
 } storage_regions_args_t;
 
@@ -3066,7 +3082,13 @@ hg_proc_query_storage_region_transfer_t(hg_proc_t proc, void *data)
         return ret;
     }
 
-    ret = hg_proc_uint64_t(proc, &struct_data->query_id);
+    ret = hg_proc_int32_t(proc, &struct_data->query_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_int32_t(proc, &struct_data->manager);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -3126,5 +3148,6 @@ void              PDCquery_free(pdcquery_t *query);
 void              PDCquery_free_all(pdcquery_t *query);
 void              PDCquery_print(pdcquery_t *query);
 void              PDCregion_free(struct PDC_region_info *region);
+void PDCselection_print(pdcselection_t *sel);
 
 #endif /* PDC_CLIENT_SERVER_COMMON_H */

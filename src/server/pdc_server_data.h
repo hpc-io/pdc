@@ -186,6 +186,8 @@ typedef struct server_read_check_out_t {
 // Data query
 typedef struct query_task_t {
     int           query_id;
+    int           manager;
+    int           client_id;
     pdcquery_t    *query;
     int           n_sent;
     int           n_unique_obj;

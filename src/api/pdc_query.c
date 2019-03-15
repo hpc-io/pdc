@@ -26,12 +26,12 @@ pdcquery_t *PDCquery_create(pdcid_t obj_id, pdcquery_op_t op, PDC_var_type_t typ
 
     FUNC_ENTER(NULL);
 
-    if (obj_id == 0 || op == PDC_QUERY_NONE || NULL == value) 
+    if (obj_id == 0 || op == PDC_OP_NONE || NULL == value) 
         return NULL;
 
     obj_prop = PDC_obj_get_info(obj_id);
     if (obj_prop == NULL) {
-        printf("== %s: Invalid obj_id!\n");
+        printf("== %s: Invalid obj_id!\n", __func__);
         return NULL;
     }
 
