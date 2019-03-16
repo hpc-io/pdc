@@ -1725,15 +1725,15 @@ static hg_return_t PDC_Server_notify_io_complete_cb(const struct hg_cb_info *cal
 
     ret_value = HG_Get_output(handle, &output);
     if (ret_value != HG_SUCCESS) {
-        printf("==PDC_SERVER[%d]: PDC_Server_notify_io_complete_cb to client %"PRIu32 " "
-                "- error with HG_Get_output\n", pdc_server_rank_g, lookup_args->client_id);
+        printf("==PDC_SERVER[%d]: %s - to client %"PRIu32 " "
+                "- error with HG_Get_output\n", pdc_server_rank_g, __func__, lookup_args->client_id);
         lookup_args->ret_int = -1;
         goto done;
     }
 
     /* if (is_debug_g ) { */
-    /*     printf("==PDC_SERVER[%d]: PDC_Server_notify_io_complete_cb - received from client %d with %d\n", */ 
-    /*             pdc_server_rank_g, lookup_args->client_id, output.ret); */
+    /*     printf("==PDC_SERVER[%d]: %s - received from client %d with %d\n", */ 
+    /*             pdc_server_rank_g, __func__, lookup_args->client_id, output.ret); */
     /* } */
     lookup_args->ret_int = output.ret;
 
@@ -1764,8 +1764,7 @@ perr_t PDC_Server_notify_io_complete_to_client(uint32_t client_id, uint64_t obj_
     FUNC_ENTER(NULL);
 
     if (client_id >= (uint32_t)pdc_client_num_g) {
-        printf("==PDC_SERVER[%d]: PDC_Server_notify_io_complete_to_client() - "
-                "client_id %d invalid)\n", pdc_server_rank_g, client_id);
+        printf("==PDC_SERVER[%d]: %s - client_id %d invalid\n", pdc_server_rank_g, __func__, client_id);
         ret_value = FAIL;
         goto done;
     }
@@ -1773,8 +1772,7 @@ perr_t PDC_Server_notify_io_complete_to_client(uint32_t client_id, uint64_t obj_
     if (pdc_client_info_g[client_id].addr_valid != 1) {
         ret_value = PDC_Server_lookup_client(client_id);
         if (ret_value != SUCCEED) {
-            printf("==PDC_SERVER[%d]: PDC_Server_notify_io_complete_to_client() - "
-                    "PDC_Server_lookup_client failed)\n", pdc_server_rank_g);
+            printf("==PDC_SERVER[%d]: %s - PDC_Server_lookup_client failed\n", pdc_server_rank_g, __func__);
             goto done;
         }
     }
@@ -1782,8 +1780,7 @@ perr_t PDC_Server_notify_io_complete_to_client(uint32_t client_id, uint64_t obj_
     hg_ret = HG_Create(hg_context_g, pdc_client_info_g[client_id].addr, 
                 notify_io_complete_register_id_g, &notify_io_complete_handle);
     if (hg_ret != HG_SUCCESS) {
-        printf("==PDC_SERVER[%d]: PDC_Server_notify_io_complete_to_client() - "
-                "HG_Create failed)\n", pdc_server_rank_g);
+        printf("==PDC_SERVER[%d]: %s - HG_Create failed\n", pdc_server_rank_g, __func__);
         ret_value = FAIL;
         goto done;
     }
@@ -1800,18 +1797,11 @@ perr_t PDC_Server_notify_io_complete_to_client(uint32_t client_id, uint64_t obj_
     else 
         in.shm_addr   = shm_addr;
 
-    /* if (is_debug_g ) { */
-        /* printf("==PDC_SERVER: PDC_Server_notify_io_complete_to_client shm_addr = [%s]\n", in.shm_addr); */
-        /* printf("==PDC_SERVER[%d]: PDC_Server_notify_io_complete_to_client %d \n", pdc_server_rank_g, client_id); */
-        /* fflush(stdout); */
-    /* } */
-    
     /* printf("Sending input to target\n"); */
     lookup_args.client_id = client_id;
     hg_ret = HG_Forward(notify_io_complete_handle, PDC_Server_notify_io_complete_cb, &lookup_args, &in);
-
     if (hg_ret != HG_SUCCESS) {
-        fprintf(stderr, "PDC_Server_notify_io_complete_to_client(): Could not start HG_Forward()\n");
+        printf("==PDC_SERVER[%d]: %s - HG_Forward failed\n", pdc_server_rank_g, __func__);
         ret_value = FAIL;
         goto done;
     }
@@ -1823,10 +1813,9 @@ perr_t PDC_Server_notify_io_complete_to_client(uint32_t client_id, uint64_t obj_
 done:
     fflush(stdout);
     hg_ret = HG_Destroy(notify_io_complete_handle);
-    if (hg_ret != HG_SUCCESS) {
-        printf("==PDC_SERVER[%d]: PDC_Server_notify_io_complete_to_client() - "
-                "HG_Destroy(notify_io_complete_handle) error!\n", pdc_server_rank_g);
-    }
+    if (hg_ret != HG_SUCCESS) 
+        printf("==PDC_SERVER[%d]: %s - HG_Destroy failed\n", pdc_server_rank_g, __func__);
+    
     FUNC_LEAVE(ret_value);
 }
 
@@ -6486,6 +6475,92 @@ PDC_Server_query_result_merge(pdcquery_t *query)
     return;
 } // PDC_Server_query_result_merge
 
+static perr_t 
+PDC_Server_send_nhits_to_client(query_task_t *task)
+{
+    perr_t ret_value = SUCCEED;
+    hg_return_t hg_ret;
+    send_nhits_t in;
+    hg_handle_t handle;
+    int client_id;
+
+    FUNC_ENTER(NULL);
+
+    client_id = task->client_id;
+    if (client_id >= (int32_t)pdc_client_num_g) {
+        printf("==PDC_SERVER[%d]: %s - client_id %d invalid!\n", pdc_server_rank_g, __func__, client_id);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    if (pdc_client_info_g == NULL) {
+        fprintf(stderr, "==PDC_SERVER[%d]: %s - pdc_client_info_g is NULL\n", pdc_server_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    if (pdc_client_info_g[client_id].addr_valid == 0) {
+        ret_value = PDC_Server_lookup_client(client_id);
+        if (ret_value != SUCCEED) {
+            fprintf(stderr, "==PDC_SERVER[%d]: %s - PDC_Server_lookup_client failed!\n", 
+                    pdc_server_rank_g, __func__);
+            ret_value = FAIL;
+            goto done;
+        }
+    }
+
+    hg_ret = HG_Create(hg_context_g, pdc_client_info_g[client_id].addr, send_nhits_register_id_g, &handle);
+    if (hg_ret != HG_SUCCESS) {
+        ret_value = FAIL;
+        goto done;
+    }
+
+    // Fill input structure
+    in.nhits = task->query->sel.nhits;
+    in.query_id = task->query_id;
+
+    hg_ret = HG_Forward(handle, pdc_check_int_ret_cb, NULL, &in);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "==PDC_SERVER[%d]: %s - HG_Forward failed!\n", pdc_server_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+done:
+    HG_Destroy(handle);
+    FUNC_LEAVE(ret_value);
+} // End PDC_Server_send_nhits_to_client
+
+static perr_t 
+PDC_Server_send_query_result_to_client(query_task_t *task)
+{
+    perr_t ret_value = SUCCEED;
+
+    if (task->get_op == PDC_QUERY_GET_NHITS) {
+        ret_value = PDC_Server_send_nhits_to_client(task);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_SERVER[%d]: %s - error with PDC_Server_send_nhits_to_client!\n", 
+                    pdc_server_rank_g, __func__);
+            goto done;
+        }
+    }
+    else if (task->get_op == PDC_QUERY_GET_SEL) {
+    }
+    else if (task->get_op == PDC_QUERY_GET_DATA) {
+    }
+    else {
+        printf("==PDC_SERVER[%d]: %s - Invalid get_op type!\n", pdc_server_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+
+    PDCquery_free_all(task->query);
+    DL_DELETE(query_task_list_head_g, task);
+
+done:
+    return ret_value;
+}
 
 void
 PDC_Server_send_query_storage_info(query_task_t *task, uint64_t obj_id, int *obj_idx, uint64_t *obj_ids)
@@ -6555,7 +6630,7 @@ PDC_Server_send_query_storage_info(query_task_t *task, uint64_t obj_id, int *obj
                     #endif
 
                     // TODO: send result back to client
-                    /* PDC_Server_send_query_result_to_client(task); */
+                    PDC_Server_send_query_result_to_client(task);
                 }
                 else {
                     avg_count = count / task->n_sent;
@@ -6708,6 +6783,7 @@ PDC_Server_recv_data_query_region(const struct hg_cb_info *callback_info)
             #endif
 
             // TODO: send the result to manager
+            /* PDC_Server_send_query_result_to_manager(query_task); */
         }
     }
 done:
@@ -6747,6 +6823,7 @@ PDC_Server_recv_data_query(const struct hg_cb_info *callback_info)
         new_task->manager      = query_xfer->manager;
         new_task->query        = query;
         new_task->n_unique_obj = query_xfer->n_unique_obj;
+        new_task->get_op       = query_xfer->get_op;
         DL_APPEND(query_task_list_head_g, new_task);
         printf("==PDC_SERVER[%d]: %s - appended new query task %d to list head\n", 
                 pdc_server_rank_g, __func__, new_task->query_id);

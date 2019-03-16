@@ -23,8 +23,7 @@ typedef enum {
     PDC_QUERY_GET_NONE  = 0, 
     PDC_QUERY_GET_NHITS = 1, 
     PDC_QUERY_GET_SEL   = 2, 
-    PDC_QUERY_GET_DATA  = 3, 
-    PDC_QUERY_GET_HIST  = 4
+    PDC_QUERY_GET_DATA  = 3
 } pdcquery_get_op_t; 
 
 typedef struct pdcquery_selection_t {
@@ -62,8 +61,9 @@ pdcquery_t *PDCquery_or(pdcquery_t *query1, pdcquery_t *query2);
 perr_t      PDCquery_sel_region(pdcquery_t *query, struct PDC_region_info *obj_region);
 
 perr_t      PDCquery_get_selection(pdcquery_t *query, pdcselection_t *sel);
-perr_t      PDCquery_get_nhits(pdcquery_t *query, int *n);
-perr_t      PDCquery_get_data(pdcid_t obj_id, pdcselection_t *sel, void *obj_data);
+perr_t      PDCquery_get_nhits(pdcquery_t *query, uint64_t *n);
+perr_t PDCquery_get_data(pdcid_t obj_id, pdcselection_t *sel, void *obj_data);
 perr_t      PDCquery_get_histogram(pdcid_t obj_id, void *hist);
+perr_t      PDCquery_get_sel_data(pdcquery_t *query, pdcselection_t *sel, void *data);
 
 #endif

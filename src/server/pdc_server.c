@@ -94,6 +94,7 @@ hg_id_t    server_checkpoint_rpc_register_id_g;
 hg_id_t    send_shm_register_id_g;
 hg_id_t    send_client_storage_meta_rpc_register_id_g;
 hg_id_t    send_data_query_region_register_id_g;
+hg_id_t    send_nhits_register_id_g;
 
 // Global thread pool
 extern hg_thread_pool_t *hg_test_thread_pool_g;
@@ -1796,6 +1797,7 @@ static void PDC_Server_mercury_register()
     // Server to client RPC
     server_lookup_client_register_id_g = server_lookup_client_register(hg_class_g);
     notify_io_complete_register_id_g   = notify_io_complete_register(hg_class_g);
+    send_nhits_register_id_g           = send_nhits_register(hg_class_g);
 
     // Server to server RPC
     get_remote_metadata_register_id_g         = get_remote_metadata_register(hg_class_g);  

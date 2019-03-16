@@ -895,6 +895,7 @@ extern perr_t PDC_Server_find_container_by_name(const char *cont_name, pdc_cont_
 extern perr_t PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out);
 extern perr_t PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t *out);
 
+hg_return_t PDC_Client_recv_nhits(const struct hg_cb_info *callback_info) {return HG_SUCCESS;};
 #endif
 
 
@@ -4082,7 +4083,8 @@ HG_TEST_RPC_CB(storage_meta_name_query_rpc, handle)
 } // end storage_meta_name_query_rpc_cb
 
 // Generic function to check the return value (RPC receipt) is 1
-hg_return_t pdc_check_int_ret_cb(const struct hg_cb_info *callback_info)
+hg_return_t 
+pdc_check_int_ret_cb(const struct hg_cb_info *callback_info)
 {
     hg_return_t ret_value = HG_SUCCESS;
     pdc_int_ret_t output;
@@ -4482,13 +4484,11 @@ done:
 
 perr_t PDC_del_task_from_list_id(pdc_task_list_t **target_list, int id, hg_thread_mutex_t *mutex)
 {
-    perr_t ret_value;
     pdc_task_list_t *tmp;
     FUNC_ENTER(NULL);
 
     if (target_list == NULL || PDC_is_valid_task_id(id) != 1) {
         printf("== %s - NULL input!\n", __func__);
-        ret_value = FAIL;
         goto done;
     }
 
@@ -4506,7 +4506,6 @@ perr_t PDC_del_task_from_list_id(pdc_task_list_t **target_list, int id, hg_threa
 
 done:
     fflush(stdout);
-    FUNC_LEAVE(ret_value);
 } // end PDC_del_task_from_list_id
 
 int PDC_is_valid_obj_id(uint64_t id)
@@ -4520,9 +4519,6 @@ int PDC_is_valid_obj_id(uint64_t id)
 /* server_checkpoint_rpc_cb(hg_handle_t handle) */
 HG_TEST_RPC_CB(server_checkpoint_rpc, handle)
 {
-    perr_t ret_value = HG_SUCCESS;
-    FUNC_ENTER(NULL);
-
     pdc_int_send_t in;
     pdc_int_ret_t  out;
 
@@ -4534,7 +4530,6 @@ HG_TEST_RPC_CB(server_checkpoint_rpc, handle)
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
-    FUNC_LEAVE(ret_value);
 }
 
 /* send_shm_cb(hg_handle_t handle) */
@@ -4542,10 +4537,7 @@ HG_TEST_RPC_CB(send_shm, handle)
 {
     send_shm_in_t in;
     pdc_int_ret_t  out;
-    perr_t ret_value = HG_SUCCESS;
     pdc_shm_info_t *shm_info;
-
-    FUNC_ENTER(NULL);
 
     HG_Get_input(handle, &in);
 
@@ -4560,7 +4552,6 @@ HG_TEST_RPC_CB(send_shm, handle)
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
-    FUNC_LEAVE(ret_value);
 }
 
 static hg_return_t
@@ -4914,7 +4905,6 @@ HG_TEST_RPC_CB(send_data_query_region, handle)
     region_list_t *storage_region;
     storage_regions_args_t *args;
     pdc_int_ret_t  out;
-    perr_t ret_value;
 
     FUNC_ENTER(NULL);
 
@@ -4941,12 +4931,11 @@ HG_TEST_RPC_CB(send_data_query_region, handle)
 
     // Send confirmation
     out.ret = 1;
-    ret_value = HG_Respond(handle, PDC_Server_recv_data_query_region, args, &out);
+    HG_Respond(handle, PDC_Server_recv_data_query_region, args, &out);
 
-    ret_value = HG_Free_input(handle, &in);
-    ret_value = HG_Destroy(handle);
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
 
-    FUNC_LEAVE(ret_value);
 }
 
 /* send_data_query_cb(hg_handle_t handle) */
@@ -4954,7 +4943,6 @@ HG_TEST_RPC_CB(send_data_query, handle)
 {
     pdc_query_xfer_t in, *query_xfer;
     pdc_int_ret_t  out;
-    perr_t ret_value;
     size_t size;
 
     FUNC_ENTER(NULL);
@@ -4977,15 +4965,32 @@ HG_TEST_RPC_CB(send_data_query, handle)
     printf("==%s: query id is %d, manager is %d\n", __func__, in.query_id, in.manager);
 
     out.ret = 1;
-    ret_value = HG_Respond(handle, PDC_Server_recv_data_query, query_xfer, &out);
+    HG_Respond(handle, PDC_Server_recv_data_query, query_xfer, &out);
 
-    ret_value = HG_Free_input(handle, &in);
-    ret_value = HG_Destroy(handle);
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
 
-    FUNC_LEAVE(ret_value);
 }
 
+/* send_nhits_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(send_nhits, handle)
+{
+    send_nhits_t   in, *in_cp;
+    pdc_int_ret_t  out;
 
+    in_cp = (send_nhits_t*)malloc(sizeof(send_nhits_t));
+
+    HG_Get_input(handle, &in);
+
+    in_cp->nhits = in.nhits;
+    in_cp->query_id = in.query_id;
+
+    out.ret = 1;
+    HG_Respond(handle, PDC_Client_recv_nhits, in_cp, &out);
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+}
 
 HG_TEST_THREAD_CB(server_lookup_client)
 HG_TEST_THREAD_CB(gen_obj_id)
@@ -5038,6 +5043,7 @@ HG_TEST_THREAD_CB(send_client_storage_meta_rpc)
 HG_TEST_THREAD_CB(send_shm_bulk_rpc)
 HG_TEST_THREAD_CB(send_data_query)
 HG_TEST_THREAD_CB(send_data_query_region)
+HG_TEST_THREAD_CB(send_nhits)
 
 hg_id_t
 gen_obj_id_register(hg_class_t *hg_class)
@@ -5569,6 +5575,12 @@ hg_id_t
 send_data_query_region_register(hg_class_t *hg_class)
 {
     return  MERCURY_REGISTER(hg_class, "send_data_query_region_register", query_storage_region_transfer_t, pdc_int_ret_t, send_data_query_region_cb);
+}
+
+hg_id_t
+send_nhits_register(hg_class_t *hg_class)
+{
+    return  MERCURY_REGISTER(hg_class, "send_nhits_register", send_nhits_t, pdc_int_ret_t, send_nhits_cb);
 }
 
 
@@ -6252,8 +6264,11 @@ void PDCquery_free_all(pdcquery_t *root)
         return;
 
     if (root->left == NULL && root->right == NULL) {
-        if (root->constraint) 
+        if (root->constraint) {
+            if (root->constraint->sel.coords_alloc > 0 && root->constraint->sel.coords != NULL) 
+                free(root->constraint->sel.coords);
             free(root->constraint);
+        }
     }
 
     PDCquery_free_all(root->left);
@@ -6298,6 +6313,7 @@ void PDCselection_print(pdcselection_t *sel)
     printf("\n\n");
 
 }
+
 
 #include "pdc_analysis_common.c"
 #include "pdc_transforms_common.c"

@@ -163,10 +163,10 @@ int main(int argc, char **argv)
     q   = PDCquery_or(q0, q12);
 
    
-    int nhits;
+    uint64_t nhits;
     PDCquery_get_nhits(q, &nhits);
 
-
+    printf("Query result: %" PRIu64 " hits\n", nhits);
 
 
     PDCquery_free_all(q);

@@ -102,13 +102,13 @@ pdcquery_t *PDCquery_or(pdcquery_t *q1, pdcquery_t *q2)
 
 
 
-perr_t PDCquery_get_nhits(pdcquery_t *query, int *n)
+perr_t PDCquery_get_nhits(pdcquery_t *query, uint64_t *n)
 {
     perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
 
-    ret_value = PDC_send_data_query(query, PDC_QUERY_GET_NHITS);
+    ret_value = PDC_send_data_query(query, PDC_QUERY_GET_NHITS, n, NULL, NULL);
 
 
 done:
@@ -121,7 +121,7 @@ perr_t PDCquery_get_selection(pdcquery_t *query, pdcselection_t *sel)
 
     FUNC_ENTER(NULL);
 
-
+    ret_value = PDC_send_data_query(query, PDC_QUERY_GET_NHITS, NULL, sel, NULL);
 
 done:
     FUNC_LEAVE(ret_value);
@@ -132,8 +132,6 @@ perr_t PDCquery_get_data(pdcid_t obj_id, pdcselection_t *sel, void *obj_data)
     perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
-
-
 
 done:
     FUNC_LEAVE(ret_value);

@@ -2937,6 +2937,7 @@ typedef struct pdc_query_xfer_t {
     int                    n_combine_ops;
     int                   *combine_ops;
     int                    n_constraints;
+    int                    get_op;
     pdcquery_constraint_t *constraints;
     region_info_transfer_t region;
 } pdc_query_xfer_t;
@@ -2987,6 +2988,12 @@ hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data)
     }
     
     ret = hg_proc_int32_t(proc, &struct_data->client_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_int32_t(proc, &struct_data->get_op);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -3062,6 +3069,32 @@ typedef struct query_storage_region_transfer_t {
     int                       has_hist;
     pdc_histogram_t           hist;
 } query_storage_region_transfer_t;
+
+typedef struct send_nhits_t {
+    int      query_id;
+    uint64_t nhits;
+} send_nhits_t;
+
+static HG_INLINE hg_return_t
+hg_proc_send_nhits_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    send_nhits_t *struct_data = (send_nhits_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->query_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_uint64_t(proc, &struct_data->nhits);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
 
 typedef struct storage_regions_args_t {
     int           is_done;
@@ -3148,6 +3181,8 @@ void              PDCquery_free(pdcquery_t *query);
 void              PDCquery_free_all(pdcquery_t *query);
 void              PDCquery_print(pdcquery_t *query);
 void              PDCregion_free(struct PDC_region_info *region);
+
 void PDCselection_print(pdcselection_t *sel);
 
+hg_return_t PDC_Client_recv_nhits(const struct hg_cb_info *callback_info);
 #endif /* PDC_CLIENT_SERVER_COMMON_H */

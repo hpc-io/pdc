@@ -86,6 +86,8 @@ static int            *debug_server_id_count = NULL;
 int                    pdc_io_request_seq_id = PDC_SEQ_ID_INIT_VALUE;
 PDC_Request_t         *pdc_io_request_list_g = NULL;
 
+pdcquery_result_list_t *pdcquery_result_list_head_g = NULL;
+
 double                 memcpy_time_g = 0.0;
 double                 read_time_g = 0.0;
 double                 query_time_g = 0.0;
@@ -199,6 +201,35 @@ static inline uint32_t get_server_id_by_obj_id(uint64_t obj_id)
     return (uint32_t)((obj_id / PDC_SERVER_ID_INTERVEL - 1) % pdc_server_num_g);
 }
 
+// Generic function to check the return value (RPC receipt) is 1
+hg_return_t 
+pdc_client_check_int_ret_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    pdc_int_ret_t output;
+
+    FUNC_ENTER(NULL);
+
+    hg_handle_t handle = callback_info->info.forward.handle;
+    struct client_lookup_args *lookup_args = (struct client_lookup_args*) callback_info->arg;
+
+    ret_value = HG_Get_output(handle, &output);
+    if (ret_value != HG_SUCCESS) {
+        printf("==%s() - Error with HG_Get_output\n", __func__);
+        goto done;
+    }
+
+    if (output.ret != 1) 
+        printf("==%s() - Return value [%d] is NOT expected\n", __func__, output.ret);
+
+    if (lookup_args != NULL) 
+        lookup_args->ret = output.ret;
+done:
+    work_todo_g--;
+    HG_Free_output(handle, &output);
+    FUNC_LEAVE(ret_value);
+}
+
 // Check if all work has been processed
 // Using global variable $mercury_work_todo_g
 perr_t PDC_Client_check_response(hg_context_t **hg_context)
@@ -225,34 +256,6 @@ perr_t PDC_Client_check_response(hg_context_t **hg_context)
 
     ret_value = SUCCEED;
 
-    FUNC_LEAVE(ret_value);
-}
-
-// Generic function to check the return value (RPC receipt) is 1
-hg_return_t pdc_client_check_int_ret_cb(const struct hg_cb_info *callback_info)
-{
-    hg_return_t ret_value = HG_SUCCESS;
-    pdc_int_ret_t output;
-    struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
-    hg_handle_t handle = callback_info->info.forward.handle;
-
-    FUNC_ENTER(NULL);
-
-    ret_value = HG_Get_output(handle, &output);
-    if (ret_value != HG_SUCCESS) {
-        printf("==%s() - Error with HG_Get_output\n", __func__);
-        goto done;
-    }
-
-    if (NULL != client_lookup_args) 
-        client_lookup_args->ret = output.ret;
-
-    if (output.ret != 1) 
-        printf("==%s() - Return value [%d] is NOT expected\n", __func__, output.ret);
-    
-done:
-    work_todo_g--;
-    HG_Free_output(handle, &output);
     FUNC_LEAVE(ret_value);
 }
 
@@ -1075,6 +1078,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     notify_io_complete_register(*hg_class);
     notify_region_update_register(*hg_class);
     notify_client_multi_io_complete_rpc_register(*hg_class);
+    send_nhits_register(*hg_class);
 
     // Server to client RPC register
     send_client_storage_meta_rpc_register(*hg_class);
@@ -7753,7 +7757,28 @@ int gen_query_id()
     return query_id_g++;
 }
 
-perr_t PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op)
+hg_return_t
+PDC_Client_recv_nhits(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret = HG_SUCCESS;
+    hg_handle_t handle = callback_info->info.forward.handle;
+    send_nhits_t *in = (send_nhits_t*) callback_info->arg;
+    pdcquery_result_list_t *result_elt;
+
+    DL_FOREACH(pdcquery_result_list_head_g, result_elt) {
+        if (result_elt->query_id == in->query_id) {
+            result_elt->nhits = in->nhits;
+            break;
+        }
+    }
+
+    work_todo_g--;
+    free(in);
+    return ret;
+}
+
+perr_t 
+PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op, uint64_t *nhits, pdcselection_t *sel, void *data)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
@@ -7761,6 +7786,7 @@ perr_t PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op)
     hg_handle_t  handle;
     pdc_query_xfer_t *query_xfer;
     struct client_lookup_args lookup_args;
+    pdcquery_result_list_t *result, *result_elt;
 
     FUNC_ENTER(NULL);
 
@@ -7782,6 +7808,11 @@ perr_t PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op)
     query_xfer->query_id     = gen_query_id();
     query_xfer->client_id    = pdc_client_mpi_rank_g;
     query_xfer->manager      = target_servers[0];
+    query_xfer->get_op       = (int)get_op;
+
+    result                   = (pdcquery_result_list_t*)calloc(1, sizeof(pdcquery_result_list_t));
+    result->query_id         = query_xfer->query_id;
+    DL_APPEND(pdcquery_result_list_head_g, result);
 
     // Send query to all servers 
     for (server_id = 0; server_id < pdc_server_num_g; server_id++) {
@@ -7812,12 +7843,24 @@ perr_t PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op)
 
     }
 
+    // Wait for server to send query result
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+    *nhits = 0;
+    DL_FOREACH(pdcquery_result_list_head_g, result_elt) {
+        if (result_elt->query_id == query_xfer->query_id) {
+            *nhits = result_elt->nhits;
+            break;
+        }
+    }
+
     HG_Destroy(handle);
 
 done:
     if(target_servers) free(target_servers);
     FUNC_LEAVE(ret_value);
-}
+} // End PDC_send_data_query
 
 
 #include "pdc_analysis_and_transforms_connect.c"

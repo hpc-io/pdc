@@ -194,6 +194,8 @@ typedef struct query_task_t {
     int           n_recv;
     int           n_recv_region;
 
+    pdcquery_get_op_t get_op;
+
     struct query_task_t *prev;
     struct query_task_t *next;
 } query_task_t;
@@ -260,6 +262,7 @@ extern hg_id_t storage_meta_name_query_register_id_g;
 extern hg_id_t get_storage_meta_name_query_bulk_result_rpc_register_id_g;
 extern hg_id_t notify_client_multi_io_complete_rpc_register_id_g;
 extern hg_id_t send_data_query_region_register_id_g;
+extern hg_id_t send_nhits_register_id_g;
 
 
 
