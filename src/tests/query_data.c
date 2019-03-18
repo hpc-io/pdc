@@ -164,13 +164,16 @@ int main(int argc, char **argv)
 
    
     uint64_t nhits;
-    PDCquery_get_nhits(q, &nhits);
+    pdcselection_t sel;
+    /* PDCquery_get_nhits(q, &nhits); */
+    /* printf("Query result: %" PRIu64 " hits\n", nhits); */
 
-    printf("Query result: %" PRIu64 " hits\n", nhits);
-
+    PDCquery_get_selection(q, &sel);
+    PDCselection_print(&sel);
 
     PDCquery_free_all(q);
     PDCregion_free(&region);
+    PDCselection_free(&sel);
     /* PDCquery_free(q0); */
     /* PDCquery_free(q1l); */
     /* PDCquery_free(q1h); */

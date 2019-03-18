@@ -5941,6 +5941,23 @@ void copy_hist(pdc_histogram_t *to, pdc_histogram_t *from)
 }
 
 /* For data query */
+void 
+PDC_Server_free_query_task(query_task_t *task)
+{
+    int i;
+    if (NULL != task->query) 
+        PDCquery_free_all(task->query);
+
+    if (task->coords) 
+        free(task->coords);
+
+    for (i = 0; i < task->n_recv; i++) {
+        if (task->data_arr && task->data_arr[i]) 
+            free(task->data_arr[i]);
+    }
+    free(task);
+}
+
 perr_t 
 send_query_storage_region_to_server(query_task_t *task, region_list_t *region, uint64_t obj_id, int server_id, int is_done)
 {
@@ -6476,6 +6493,61 @@ PDC_Server_query_result_merge(pdcquery_t *query)
 } // PDC_Server_query_result_merge
 
 static perr_t 
+PDC_Server_send_nhits_to_server(query_task_t *task)
+{
+    perr_t ret_value = SUCCEED;
+    hg_return_t hg_ret;
+    send_nhits_t in;
+    hg_handle_t handle;
+    int server_id;
+
+    FUNC_ENTER(NULL);
+
+    server_id = task->manager;
+    if (server_id >= (int32_t)pdc_server_size_g) {
+        printf("==PDC_SERVER[%d]: %s - server_id %d invalid!\n", pdc_server_rank_g, __func__, server_id);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    if (pdc_remote_server_info_g== NULL) {
+        fprintf(stderr, "==PDC_SERVER[%d]: %s - pdc_remote_server_info_g is NULL\n", pdc_server_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    if (pdc_remote_server_info_g[server_id].addr_valid == 0) {
+        ret_value = PDC_Server_lookup_server_id(server_id);
+        if (ret_value != SUCCEED) {
+            fprintf(stderr, "==PDC_SERVER[%d]: %s - PDC_Server_lookup failed!\n", 
+                    pdc_server_rank_g, __func__);
+            ret_value = FAIL;
+            goto done;
+        }
+    }
+
+    hg_ret = HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, send_nhits_register_id_g, &handle);
+    if (hg_ret != HG_SUCCESS) {
+        ret_value = FAIL;
+        goto done;
+    }
+
+    in.query_id = task->query_id;
+    in.nhits    = task->query->sel.nhits;
+
+    hg_ret = HG_Forward(handle, pdc_check_int_ret_cb, NULL, &in);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "==PDC_SERVER[%d]: %s - HG_Forward failed!\n", pdc_server_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+done:
+    HG_Destroy(handle);
+    FUNC_LEAVE(ret_value);
+} // End PDC_Server_send_nhits_to_server
+
+static perr_t 
 PDC_Server_send_nhits_to_client(query_task_t *task)
 {
     perr_t ret_value = SUCCEED;
@@ -6531,6 +6603,184 @@ done:
     FUNC_LEAVE(ret_value);
 } // End PDC_Server_send_nhits_to_client
 
+hg_return_t
+PDC_recv_nhits(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret = HG_SUCCESS;
+    hg_handle_t handle = callback_info->info.forward.handle;
+    send_nhits_t *in = (send_nhits_t*) callback_info->arg;
+    query_task_t *task_elt;
+
+    DL_FOREACH(query_task_list_head_g, task_elt) {
+        if (task_elt->query_id == in->query_id) {
+            task_elt->nhits += in->nhits;
+            task_elt->n_recv++;
+            break;
+        }
+    }
+
+    if (task_elt == NULL) {
+        printf("==PDC_SERVER[%d]: %s - Invalid task ID!\n", pdc_server_rank_g, __func__);
+        goto done;
+    }
+
+    // When received all results from the working servers, send the aggregated result back to client
+    if (task_elt->n_recv >= task_elt->n_sent_server) 
+        PDC_Server_send_nhits_to_client(task_elt);
+
+done:
+    free(in);
+    return ret;
+}
+static perr_t 
+PDC_Server_send_coords_to_client(query_task_t *task)
+{
+    perr_t ret_value = SUCCEED;
+    hg_return_t hg_ret;
+    hg_handle_t handle;
+    hg_bulk_t bulk_handle;
+    bulk_rpc_in_t in;
+    hg_size_t buf_sizes;
+    void     *buf;
+    int client_id;
+
+    FUNC_ENTER(NULL);
+
+    client_id = task->client_id;
+    if (client_id >= (int32_t)pdc_client_num_g) {
+        printf("==PDC_SERVER[%d]: %s - client_id %d invalid!\n", pdc_server_rank_g, __func__, client_id);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    if (pdc_client_info_g == NULL) {
+        fprintf(stderr, "==PDC_SERVER[%d]: %s - pdc_client_info_g is NULL\n", pdc_server_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    if (pdc_client_info_g[client_id].addr_valid == 0) {
+        ret_value = PDC_Server_lookup_client(client_id);
+        if (ret_value != SUCCEED) {
+            fprintf(stderr, "==PDC_SERVER[%d]: %s - PDC_Server_lookup_client failed!\n", 
+                    pdc_server_rank_g, __func__);
+            ret_value = FAIL;
+            goto done;
+        }
+    }
+
+    /* Register memory */
+    buf       = task->query->sel.coords;
+    buf_sizes = task->query->sel.nhits * sizeof(uint64_t) * task->query->sel.ndim;
+    hg_ret = HG_Bulk_create(hg_class_g, 1, &buf, &buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not create bulk data handle\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    // Fill input structure
+    in.ndim        = task->query->sel.ndim;
+    in.cnt         = task->query->sel.nhits;
+    in.seq_id      = task->query_id;
+    in.origin      = pdc_server_rank_g;
+    in.op_id       = PDC_BULK_QUERY_COORDS;
+    in.bulk_handle = bulk_handle;
+
+    hg_ret = HG_Create(hg_context_g, pdc_client_info_g[client_id].addr, send_bulk_rpc_register_id_g, &handle);
+    if (hg_ret != HG_SUCCESS) {
+        ret_value = FAIL;
+        goto done;
+    }
+
+    hg_ret = HG_Forward(handle, pdc_check_int_ret_cb, NULL, &in);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "==PDC_SERVER[%d]: %s - HG_Forward failed!\n", pdc_server_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+done:
+    HG_Destroy(handle);
+    FUNC_LEAVE(ret_value);
+} // End PDC_Server_send_coords_to_client
+
+
+
+// Receive coords from other servers
+hg_return_t
+PDC_recv_coords(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret = HG_SUCCESS;
+    hg_handle_t handle            = callback_info->info.forward.handle;
+    hg_bulk_t local_bulk_handle   = callback_info->info.bulk.local_handle;
+    struct bulk_args_t *bulk_args = (struct bulk_args_t *)callback_info->arg;
+    query_task_t *task_elt;
+    uint64_t nhits, *coords, unit_size;
+    uint32_t ndim;
+    int      query_id, origin;
+
+    pdc_int_ret_t out;
+
+    if (callback_info->ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Error in callback");
+        ret = HG_PROTOCOL_ERROR;
+        out.ret = -1;
+        goto done;
+    }
+    else {
+        nhits    = bulk_args->cnt;
+        ndim     = bulk_args->ndim;
+        query_id = bulk_args->query_id;
+        origin   = bulk_args->origin;
+        coords   = (uint64_t*)malloc(sizeof(uint64_t) * nhits * ndim);
+
+        ret = HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, &coords, NULL, NULL);
+
+        DL_FOREACH(query_task_list_head_g, task_elt) {
+            if (task_elt->query_id == query_id) {
+
+                if (NULL == task_elt->coords) {
+                    task_elt->coords = coords;
+                }
+                else {
+                    unit_size = ndim * sizeof(uint64_t);
+                    task_elt->coords = (uint64_t*)realloc(task_elt->coords, 
+                                                          (task_elt->nhits + nhits) * unit_size);
+                    memcpy(task_elt->coords + ndim*task_elt->nhits, coords, nhits * unit_size);
+                }
+                task_elt->nhits += nhits;
+                task_elt->n_recv++;
+                break;
+            }
+        }
+
+        if (task_elt == NULL) {
+            printf("==PDC_SERVER[%d]: %s - Invalid task ID!\n", pdc_server_rank_g, __func__);
+            goto done;
+        }
+
+        // When received all results from the working servers, send the aggregated result back to client
+        if (task_elt->n_recv >= task_elt->n_sent_server) 
+            PDC_Server_send_coords_to_client(task_elt);
+        out.ret = 1;
+    }// End else
+
+done:
+    ret = HG_Bulk_free(local_bulk_handle);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not free HG bulk handle\n");
+        return ret;
+    }
+
+    ret = HG_Respond(bulk_args->handle, NULL, NULL, &out);
+    if (ret != HG_SUCCESS) 
+        fprintf(stderr, "Could not respond\n");
+
+    free(bulk_args);
+    return ret;
+}
+
 static perr_t 
 PDC_Server_send_query_result_to_client(query_task_t *task)
 {
@@ -6538,8 +6788,39 @@ PDC_Server_send_query_result_to_client(query_task_t *task)
 
     if (task->get_op == PDC_QUERY_GET_NHITS) {
         ret_value = PDC_Server_send_nhits_to_client(task);
+    }
+    else if (task->get_op == PDC_QUERY_GET_SEL) {
+        ret_value = PDC_Server_send_coords_to_client(task);
+    }
+    else if (task->get_op == PDC_QUERY_GET_DATA) {
+    }
+    else {
+        printf("==PDC_SERVER[%d]: %s - Invalid get_op type!\n", pdc_server_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    if (ret_value != SUCCEED) {
+        printf("==PDC_SERVER[%d]: %s - error sending query result to client!\n", pdc_server_rank_g, __func__);
+        goto done;
+    }
+
+    DL_DELETE(query_task_list_head_g, task);
+    PDC_Server_free_query_task(task);
+
+done:
+    return ret_value;
+} // End PDC_Server_send_query_result_to_client
+
+static perr_t
+PDC_Server_send_query_result_to_manager(query_task_t *task)
+{
+    perr_t ret_value = SUCCEED;
+
+    if (task->get_op == PDC_QUERY_GET_NHITS) {
+        ret_value = PDC_Server_send_nhits_to_server(task);
         if (ret_value != SUCCEED) {
-            printf("==PDC_SERVER[%d]: %s - error with PDC_Server_send_nhits_to_client!\n", 
+            printf("==PDC_SERVER[%d]: %s - error with PDC_Server_send_nhits_to_server!\n", 
                     pdc_server_rank_g, __func__);
             goto done;
         }
@@ -6554,9 +6835,8 @@ PDC_Server_send_query_result_to_client(query_task_t *task)
         goto done;
     }
 
-
-    PDCquery_free_all(task->query);
     DL_DELETE(query_task_list_head_g, task);
+    PDC_Server_free_query_task(task);
 
 done:
     return ret_value;
@@ -6593,9 +6873,9 @@ PDC_Server_send_query_storage_info(query_task_t *task, uint64_t obj_id, int *obj
                 // Iterate over all storage regions and send one by on
                 DL_COUNT(meta->storage_region_list_head, elt, count);
                 if (count >= pdc_server_size_g) 
-                    task->n_sent = pdc_server_size_g - 1;
+                    task->n_sent_server = pdc_server_size_g - 1;
                 else
-                    task->n_sent = count;
+                    task->n_sent_server = count;
 
                 i = 0;
 
@@ -6633,7 +6913,7 @@ PDC_Server_send_query_storage_info(query_task_t *task, uint64_t obj_id, int *obj
                     PDC_Server_send_query_result_to_client(task);
                 }
                 else {
-                    avg_count = count / task->n_sent;
+                    avg_count = count / task->n_sent_server;
                     nsent        = 0;
                     nsent_server = 0;
                     server_id    = pdc_server_rank_g + 1;
@@ -6783,7 +7063,7 @@ PDC_Server_recv_data_query_region(const struct hg_cb_info *callback_info)
             #endif
 
             // TODO: send the result to manager
-            /* PDC_Server_send_query_result_to_manager(query_task); */
+            PDC_Server_send_query_result_to_manager(query_task);
         }
     }
 done:

@@ -94,6 +94,11 @@ typedef enum { NONE=0,
                MEM=3 
              } PDC_data_loc_t;
 
+typedef enum { PDC_BULK_OP_NONE=0, 
+               PDC_BULK_QUERY_COORDS=1, 
+             } PDC_bulk_op_t;
+
+
 typedef struct pdc_metadata_t pdc_metadata_t;
 typedef struct region_list_t region_list_t;
 
@@ -1506,10 +1511,12 @@ hg_proc_close_server_out_t(hg_proc_t proc, void *data)
 // Bulk
 /* Define bulk_rpc_in_t */
 typedef struct bulk_rpc_in_t {
-    hg_int32_t cnt;
-    hg_int32_t origin;
-    hg_int32_t seq_id;
-    hg_bulk_t bulk_handle;
+    hg_int32_t   cnt;
+    hg_int32_t   origin;
+    hg_int32_t   seq_id;
+    hg_int32_t   op_id;
+    hg_uint32_t  ndim;
+    hg_bulk_t    bulk_handle;
 } bulk_rpc_in_t;
 
 /* Define hg_proc_bulk_rpc_in_t */
@@ -1519,6 +1526,11 @@ hg_proc_bulk_rpc_in_t(hg_proc_t proc, void *data)
     hg_return_t ret = HG_SUCCESS;
     bulk_rpc_in_t *struct_data = (bulk_rpc_in_t *) data;
 
+    ret = hg_proc_int32_t(proc, &struct_data->ndim);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
     ret = hg_proc_int32_t(proc, &struct_data->cnt);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
@@ -1530,6 +1542,11 @@ hg_proc_bulk_rpc_in_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->origin);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->op_id);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -2515,19 +2532,24 @@ hg_id_t send_data_query_rpc_register(hg_class_t *hg_class);
 hg_id_t send_data_query_region_register(hg_class_t *hg_class);
 
 struct bulk_args_t {
-    int cnt;
-    int op;
-    uint64_t cont_id;
-    hg_handle_t handle;
-    hg_bulk_t   bulk_handle;
-    size_t nbytes;
-    int origin;
-    hg_atomic_int32_t completed_transfers;
-    size_t ret;
+    int            cnt;
+    int            op;
+    uint64_t       cont_id;
+    hg_handle_t    handle;
+    hg_bulk_t      bulk_handle;
+    size_t         nbytes;
+    int            origin;
+    size_t         ret;
     pdc_metadata_t **meta_arr;
-    uint32_t        n_meta;
+    uint32_t       n_meta;
     uint64_t       *obj_ids;
-    int client_seq_id;
+    int            client_seq_id;
+
+    int            query_id;
+    uint32_t       ndim;
+    uint64_t       *coords;
+
+    hg_atomic_int32_t completed_transfers;
 };
 
 struct buf_map_release_bulk_args {
@@ -2645,6 +2667,9 @@ hg_id_t data_server_read_register(hg_class_t *hg_class);
 
 
 hg_id_t storage_meta_name_query_rpc_register(hg_class_t *hg_class);
+
+hg_id_t send_nhits_register(hg_class_t *hg_class);
+hg_id_t send_bulk_rpc_register(hg_class_t *hg_class);
 
 //extern char *find_in_path(char *workingDir, char *application);
 
@@ -3181,8 +3206,10 @@ void              PDCquery_free(pdcquery_t *query);
 void              PDCquery_free_all(pdcquery_t *query);
 void              PDCquery_print(pdcquery_t *query);
 void              PDCregion_free(struct PDC_region_info *region);
+void              PDCselection_print(pdcselection_t *sel);
 
-void PDCselection_print(pdcselection_t *sel);
 
 hg_return_t PDC_Client_recv_nhits(const struct hg_cb_info *callback_info);
+
+
 #endif /* PDC_CLIENT_SERVER_COMMON_H */

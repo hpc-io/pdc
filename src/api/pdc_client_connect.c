@@ -1078,7 +1078,10 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
     notify_io_complete_register(*hg_class);
     notify_region_update_register(*hg_class);
     notify_client_multi_io_complete_rpc_register(*hg_class);
+
+    // Recv from server
     send_nhits_register(*hg_class);
+    send_bulk_rpc_register(*hg_class);
 
     // Server to client RPC register
     send_client_storage_meta_rpc_register(*hg_class);
@@ -7758,7 +7761,7 @@ int gen_query_id()
 }
 
 hg_return_t
-PDC_Client_recv_nhits(const struct hg_cb_info *callback_info)
+PDC_recv_nhits(const struct hg_cb_info *callback_info)
 {
     hg_return_t ret = HG_SUCCESS;
     hg_handle_t handle = callback_info->info.forward.handle;
@@ -7847,12 +7850,13 @@ PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op, uint64_t *nhits
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
 
-    *nhits = 0;
-    DL_FOREACH(pdcquery_result_list_head_g, result_elt) {
-        if (result_elt->query_id == query_xfer->query_id) {
-            *nhits = result_elt->nhits;
-            break;
-        }
+    if (nhits) 
+        *nhits = result->nhits;
+    if (sel) {
+        sel->nhits  = result->nhits;
+        sel->coords = result->coords;
+        sel->ndim   = result->ndim;
+        sel->coords_alloc = result->nhits * result->ndim * sizeof(uint64_t);
     }
 
     HG_Destroy(handle);
@@ -7862,5 +7866,72 @@ done:
     FUNC_LEAVE(ret_value);
 } // End PDC_send_data_query
 
+hg_return_t
+PDC_recv_coords(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret = HG_SUCCESS;
+    hg_handle_t handle            = callback_info->info.forward.handle;
+    hg_bulk_t local_bulk_handle   = callback_info->info.bulk.local_handle;
+    struct bulk_args_t *bulk_args = (struct bulk_args_t *)callback_info->arg;
+    pdcquery_result_list_t *result_elt;
+    uint64_t nhits, *coords;
+    uint32_t ndim;
+    int      query_id, origin;
 
+    pdc_int_ret_t out;
+
+    if (callback_info->ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Error in callback");
+        ret = HG_PROTOCOL_ERROR;
+        out.ret = -1;
+        goto done;
+    }
+    else {
+        nhits    = bulk_args->cnt;
+        ndim     = bulk_args->ndim;
+        query_id = bulk_args->query_id;
+        origin   = bulk_args->origin;
+        coords   = (uint64_t*)malloc(sizeof(uint64_t) * nhits * ndim);
+
+        ret = HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 
+                             1, (void**)&coords, NULL, NULL);
+
+        DL_FOREACH(pdcquery_result_list_head_g, result_elt) {
+            if (result_elt->query_id == query_id) {
+                result_elt->ndim   = ndim;
+                result_elt->nhits  = nhits;
+                result_elt->coords = coords;
+                break;
+            }
+        }
+
+        if (result_elt == NULL) {
+            printf("==PDC_CLIENT[%d]: %s - Invalid task ID!\n", pdc_client_mpi_rank_g, __func__);
+            goto done;
+        }
+        out.ret = 1;
+
+    }// End else
+
+done:
+    ret = HG_Bulk_free(local_bulk_handle);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not free HG bulk handle\n");
+        return ret;
+    }
+
+    ret = HG_Respond(bulk_args->handle, NULL, NULL, &out);
+    if (ret != HG_SUCCESS) 
+        fprintf(stderr, "Could not respond\n");
+
+    free(bulk_args);
+    return ret;
+}
+
+void 
+PDCselection_free(pdcselection_t *sel)
+{
+    if (sel->coords_alloc > 0 && sel->coords_alloc) 
+        free(sel->coords);
+}
 #include "pdc_analysis_and_transforms_connect.c"

@@ -62,7 +62,7 @@ perr_t      PDCquery_sel_region(pdcquery_t *query, struct PDC_region_info *obj_r
 
 perr_t      PDCquery_get_selection(pdcquery_t *query, pdcselection_t *sel);
 perr_t      PDCquery_get_nhits(pdcquery_t *query, uint64_t *n);
-perr_t PDCquery_get_data(pdcid_t obj_id, pdcselection_t *sel, void *obj_data);
+perr_t      PDCquery_get_data(pdcid_t obj_id, pdcselection_t *sel, void *obj_data);
 perr_t      PDCquery_get_histogram(pdcid_t obj_id, void *hist);
 perr_t      PDCquery_get_sel_data(pdcquery_t *query, pdcselection_t *sel, void *data);
 

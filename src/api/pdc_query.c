@@ -121,7 +121,7 @@ perr_t PDCquery_get_selection(pdcquery_t *query, pdcselection_t *sel)
 
     FUNC_ENTER(NULL);
 
-    ret_value = PDC_send_data_query(query, PDC_QUERY_GET_NHITS, NULL, sel, NULL);
+    ret_value = PDC_send_data_query(query, PDC_QUERY_GET_SEL, NULL, sel, NULL);
 
 done:
     FUNC_LEAVE(ret_value);

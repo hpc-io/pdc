@@ -185,16 +185,20 @@ typedef struct server_read_check_out_t {
 
 // Data query
 typedef struct query_task_t {
-    int           query_id;
-    int           manager;
-    int           client_id;
-    pdcquery_t    *query;
-    int           n_sent;
-    int           n_unique_obj;
-    int           n_recv;
-    int           n_recv_region;
-
+    int               query_id;
+    int               manager;
+    int               client_id;
+    pdcquery_t        *query;
+    int               n_sent_server;
+    int               n_unique_obj;
+    int               n_recv_region;
     pdcquery_get_op_t get_op;
+
+    // Result
+    int               n_recv;
+    uint64_t          nhits;
+    uint64_t          *coords;
+    void              **data_arr;
 
     struct query_task_t *prev;
     struct query_task_t *next;
@@ -263,6 +267,7 @@ extern hg_id_t get_storage_meta_name_query_bulk_result_rpc_register_id_g;
 extern hg_id_t notify_client_multi_io_complete_rpc_register_id_g;
 extern hg_id_t send_data_query_region_register_id_g;
 extern hg_id_t send_nhits_register_id_g;
+extern hg_id_t send_bulk_rpc_register_id_g;
 
 
 
@@ -340,6 +345,10 @@ perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region, in
 hg_return_t PDC_Server_recv_data_query(const struct hg_cb_info *callback_info);
 
 hg_return_t PDC_Server_recv_data_query_region(const struct hg_cb_info *callback_info);
+
+hg_return_t PDC_recv_nhits(const struct hg_cb_info *callback_info);
+
+hg_return_t PDC_recv_coords(const struct hg_cb_info *callback_info);
 
 #endif /* PDC_SERVER_DATA_H */
 
