@@ -173,7 +173,7 @@ int main(int argc, char **argv)
 
     PDCquery_free_all(q);
     PDCregion_free(&region);
-    /* PDCselection_free(&sel); */
+    PDCselection_free(&sel);
 
     // close a container
     if(PDCcont_close(cont) < 0)
