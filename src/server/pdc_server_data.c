@@ -6719,6 +6719,7 @@ PDC_recv_coords(const struct hg_cb_info *callback_info)
     uint64_t nhits, *coords, unit_size;
     uint32_t ndim;
     int      query_id, origin;
+    void *buf;
 
     pdc_int_ret_t out;
 
@@ -6733,21 +6734,21 @@ PDC_recv_coords(const struct hg_cb_info *callback_info)
         ndim     = bulk_args->ndim;
         query_id = bulk_args->query_id;
         origin   = bulk_args->origin;
-        coords   = (uint64_t*)malloc(sizeof(uint64_t) * nhits * ndim);
 
-        ret = HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, &coords, NULL, NULL);
+        ret = HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, (void**)&buf, NULL, NULL);
 
         DL_FOREACH(query_task_list_head_g, task_elt) {
             if (task_elt->query_id == query_id) {
 
                 if (NULL == task_elt->coords) {
-                    task_elt->coords = coords;
+                    task_elt->coords = (uint64_t*)malloc(sizeof(uint64_t) * nhits * ndim);
+                    memcpy(task_elt->coords, buf, sizeof(uint64_t) * nhits * ndim);
                 }
                 else {
                     unit_size = ndim * sizeof(uint64_t);
                     task_elt->coords = (uint64_t*)realloc(task_elt->coords, 
                                                           (task_elt->nhits + nhits) * unit_size);
-                    memcpy(task_elt->coords + ndim*task_elt->nhits, coords, nhits * unit_size);
+                    memcpy(task_elt->coords + ndim*task_elt->nhits, buf, nhits * unit_size);
                 }
                 task_elt->nhits += nhits;
                 task_elt->n_recv++;
@@ -6805,9 +6806,6 @@ PDC_Server_send_query_result_to_client(query_task_t *task)
         goto done;
     }
 
-    DL_DELETE(query_task_list_head_g, task);
-    PDC_Server_free_query_task(task);
-
 done:
     return ret_value;
 } // End PDC_Server_send_query_result_to_client
@@ -6835,8 +6833,9 @@ PDC_Server_send_query_result_to_manager(query_task_t *task)
         goto done;
     }
 
-    DL_DELETE(query_task_list_head_g, task);
-    PDC_Server_free_query_task(task);
+    // TODO: free the task_list at close time
+    /* DL_DELETE(query_task_list_head_g, task); */
+    /* PDC_Server_free_query_task(task); */
 
 done:
     return ret_value;

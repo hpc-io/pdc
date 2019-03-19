@@ -7856,7 +7856,7 @@ PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op, uint64_t *nhits
         sel->nhits  = result->nhits;
         sel->coords = result->coords;
         sel->ndim   = result->ndim;
-        sel->coords_alloc = result->nhits * result->ndim * sizeof(uint64_t);
+        sel->coords_alloc = result->nhits * result->ndim;
     }
 
     HG_Destroy(handle);
@@ -7877,6 +7877,7 @@ PDC_recv_coords(const struct hg_cb_info *callback_info)
     uint64_t nhits, *coords;
     uint32_t ndim;
     int      query_id, origin;
+    void *buf;
 
     pdc_int_ret_t out;
 
@@ -7891,16 +7892,16 @@ PDC_recv_coords(const struct hg_cb_info *callback_info)
         ndim     = bulk_args->ndim;
         query_id = bulk_args->query_id;
         origin   = bulk_args->origin;
-        coords   = (uint64_t*)malloc(sizeof(uint64_t) * nhits * ndim);
 
         ret = HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 
-                             1, (void**)&coords, NULL, NULL);
+                             1, (void**)&buf, NULL, NULL);
 
         DL_FOREACH(pdcquery_result_list_head_g, result_elt) {
             if (result_elt->query_id == query_id) {
                 result_elt->ndim   = ndim;
                 result_elt->nhits  = nhits;
-                result_elt->coords = coords;
+                result_elt->coords = (uint64_t*)malloc(nhits*ndim*sizeof(uint64_t));
+                memcpy(result_elt->coords, buf, nhits*ndim*sizeof(uint64_t));
                 break;
             }
         }
@@ -7914,6 +7915,7 @@ PDC_recv_coords(const struct hg_cb_info *callback_info)
     }// End else
 
 done:
+    work_todo_g--;
     ret = HG_Bulk_free(local_bulk_handle);
     if (ret != HG_SUCCESS) {
         fprintf(stderr, "Could not free HG bulk handle\n");
@@ -7924,6 +7926,7 @@ done:
     if (ret != HG_SUCCESS) 
         fprintf(stderr, "Could not respond\n");
 
+    HG_Destroy(bulk_args->handle);
     free(bulk_args);
     return ret;
 }
@@ -7931,7 +7934,7 @@ done:
 void 
 PDCselection_free(pdcselection_t *sel)
 {
-    if (sel->coords_alloc > 0 && sel->coords_alloc) 
+    if (sel->coords_alloc > 0 && sel->coords) 
         free(sel->coords);
 }
 #include "pdc_analysis_and_transforms_connect.c"
