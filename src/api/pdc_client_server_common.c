@@ -4926,6 +4926,7 @@ HG_TEST_RPC_CB(send_data_query_region, handle)
         storage_region->region_hist = PDC_dup_hist(&in.hist);
     
     args = (storage_regions_args_t*)calloc(1, sizeof(storage_regions_args_t));
+    args->total_region   = in.total_region;
     args->query_id       = in.query_id;
     args->manager        = in.manager;
     args->storage_region = storage_region;
@@ -4969,7 +4970,7 @@ HG_TEST_RPC_CB(send_data_query, handle)
     query_xfer->constraints = (pdcquery_constraint_t*)malloc(size);
     memcpy(query_xfer->constraints, in.constraints, size);
 
-    printf("==%s: query id is %d, manager is %d\n", __func__, in.query_id, in.manager);
+    /* printf("==%s: query id is %d, manager is %d\n", __func__, in.query_id, in.manager); */
 
     out.ret = 1;
     ret = HG_Respond(handle, PDC_Server_recv_data_query, query_xfer, &out);

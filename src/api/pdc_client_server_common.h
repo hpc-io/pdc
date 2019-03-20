@@ -3086,6 +3086,7 @@ hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data)
 }
 
 typedef struct query_storage_region_transfer_t {
+    int                       total_region;
     int                       is_done;
     int                       query_id;
     int                       manager;
@@ -3125,6 +3126,7 @@ hg_proc_send_nhits_t(hg_proc_t proc, void *data)
 
 
 typedef struct storage_regions_args_t {
+    int           total_region;
     int           is_done;
     int           ndim;
     int           query_id;
@@ -3137,6 +3139,12 @@ hg_proc_query_storage_region_transfer_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret;
     query_storage_region_transfer_t *struct_data = (query_storage_region_transfer_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->total_region);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
 
     ret = hg_proc_int32_t(proc, &struct_data->is_done);
     if (ret != HG_SUCCESS) {

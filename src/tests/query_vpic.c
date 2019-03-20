@@ -70,17 +70,19 @@ int main(int argc, char **argv)
 
     // Construct query constraints
     float x_lo0 = 0.05, x_hi0 = 200.05;
-    pdcquery_t *q0l, *q0h, *q1l, *q1h, *q1, *q2l, *q2h, *q2, *q, *q12;
+    pdcquery_t *q0l, *q0h, *q0, *q1l, *q1h, *q1, *q2l, *q2h, *q2, *q, *q12;
 
     q0l = PDCquery_create(x_id, PDC_GT, PDC_FLOAT, &x_lo0);
     q0h = PDCquery_create(x_id, PDC_LT, PDC_FLOAT, &x_hi0);
-    q   = PDCquery_and(q0l, q0h);
+    q0  = PDCquery_and(q0l, q0h);
 
-    /* PDCquery_sel_region(q0, &region); */
 
-    /* q1l = PDCquery_create(obj_id, PDC_GTE, PDC_INT, &lo1); */
-    /* q1h = PDCquery_create(obj_id, PDC_LT, PDC_INT, &hi1); */
-    /* q1  = PDCquery_and(q1l, q1h); */
+    int id2_lo = 0, id2_hi = 32;
+    q1l = PDCquery_create(id2_id, PDC_GTE, PDC_INT, &id2_lo);
+    q1h = PDCquery_create(id2_id, PDC_LTE, PDC_INT, &id2_hi);
+    q1  = PDCquery_and(q1l, q1h);
+
+    q   = PDCquery_and(q0, q1);
 
     /* q2l = PDCquery_create(obj_id, PDC_GTE, PDC_INT, &lo2); */
     /* q2h = PDCquery_create(obj_id, PDC_LT, PDC_INT, &hi2); */
@@ -89,6 +91,7 @@ int main(int argc, char **argv)
     /* q12 = PDCquery_or(q1, q2); */
     /* q   = PDCquery_or(q0, q12); */
 
+    /* PDCquery_sel_region(q, &region); */
    
     uint64_t nhits;
     pdcselection_t sel;
