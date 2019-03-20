@@ -7844,6 +7844,7 @@ PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op, uint64_t *nhits
             printf("==PDC_CLIENT[%d]: send data query to server %u failed ... ret_value = %d\n", 
                     pdc_client_mpi_rank_g, server_id, lookup_args.ret);
 
+        HG_Destroy(handle);
     }
 
     // Wait for server to send query result
@@ -7859,7 +7860,6 @@ PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op, uint64_t *nhits
         sel->coords_alloc = result->nhits * result->ndim;
     }
 
-    HG_Destroy(handle);
 
 done:
     if(target_servers) free(target_servers);

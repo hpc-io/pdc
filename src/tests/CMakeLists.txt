@@ -5,7 +5,7 @@ include_directories(
 #  $ENV{HOME}/Sandbox/c-blosc/blosc
 )
 
-#add_definitions(-DENABLE_MPI=1)
+add_definitions(-DENABLE_MPI=1)
 
 set(PROGRAMS
   pdc_init
@@ -54,6 +54,8 @@ set(PROGRAMS
   kvtag_query_scale
   obj_transformation
   query_data
+  query_vpic_create_data
+  query_vpic
 #  obj_analysis
   )
 

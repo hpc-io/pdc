@@ -4926,12 +4926,13 @@ HG_TEST_RPC_CB(send_data_query_region, handle)
         storage_region->region_hist = PDC_dup_hist(&in.hist);
     
     args = (storage_regions_args_t*)calloc(1, sizeof(storage_regions_args_t));
-    args->query_id = in.query_id;
-    args->manager  = in.manager;
+    args->query_id       = in.query_id;
+    args->manager        = in.manager;
     args->storage_region = storage_region;
-    args->is_done = in.is_done;
+    args->is_done        = in.is_done;
+    args->ndim           = storage_region->ndim;
 
-    printf("==%s: query id is %d\n", __func__, in.query_id);
+    /* printf("==%s: query id is %d\n", __func__, in.query_id); */
 
     // Send confirmation
     out.ret = 1;
@@ -5022,18 +5023,12 @@ HG_TEST_RPC_CB(send_bulk_rpc, handle)
     }
 
     bulk_arg = (struct bulk_args_t *)calloc(1, sizeof(struct bulk_args_t));
-    origin_bulk_handle = in_struct.bulk_handle;
     bulk_arg->handle   = handle;
-    bulk_arg->nbytes   = HG_Bulk_get_size(origin_bulk_handle);
     bulk_arg->origin   = in_struct.origin;
     bulk_arg->cnt      = in_struct.cnt;
     bulk_arg->ndim     = in_struct.ndim;
     bulk_arg->query_id = in_struct.seq_id;
 
-    hg_info = HG_Get_info(handle);
-    HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *) &bulk_arg->nbytes, HG_BULK_READWRITE, 
-                   &local_bulk_handle);
-    
     if (in_struct.op_id == PDC_BULK_QUERY_COORDS) {
         func_ptr = &PDC_recv_coords;
     }
@@ -5042,11 +5037,22 @@ HG_TEST_RPC_CB(send_bulk_rpc, handle)
         goto done;
     }
 
-    ret = HG_Bulk_transfer(hg_info->context, func_ptr, bulk_arg, HG_BULK_PULL, hg_info->addr, 
-                   origin_bulk_handle, 0, local_bulk_handle, 0, bulk_arg->nbytes, &hg_bulk_op_id);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not read bulk data\n");
-        return ret;
+    if (in_struct.cnt > 0) {
+        origin_bulk_handle = in_struct.bulk_handle;
+        bulk_arg->nbytes   = HG_Bulk_get_size(origin_bulk_handle);
+        hg_info            = HG_Get_info(handle);
+        HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *) &bulk_arg->nbytes, HG_BULK_READWRITE, 
+                       &local_bulk_handle);
+        
+        ret = HG_Bulk_transfer(hg_info->context, func_ptr, bulk_arg, HG_BULK_PULL, hg_info->addr, 
+                       origin_bulk_handle, 0, local_bulk_handle, 0, bulk_arg->nbytes, &hg_bulk_op_id);
+        if (ret != HG_SUCCESS) {
+            fprintf(stderr, "Could not read bulk data\n");
+            return ret;
+        }
+    }
+    else {
+        func_ptr(bulk_arg);
     }
 
     /* printf("==PDC_SERVER[x]: Pulled data from %d\n", in_struct.origin); */
@@ -5054,7 +5060,6 @@ HG_TEST_RPC_CB(send_bulk_rpc, handle)
 
 done:
     HG_Free_input(handle, &in_struct);
-
     FUNC_LEAVE(ret);
 } // End send_bulk_rpc_cb
 

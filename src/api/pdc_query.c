@@ -23,21 +23,23 @@ pdcquery_t *PDCquery_create(pdcid_t obj_id, pdcquery_op_t op, PDC_var_type_t typ
     pdcquery_t *query;
     int         type_size;
     struct PDC_obj_info *obj_prop;
+    uint64_t   meta_id;
 
     FUNC_ENTER(NULL);
 
     if (obj_id == 0 || op == PDC_OP_NONE || NULL == value) 
         return NULL;
 
-    obj_prop = PDC_obj_get_info(obj_id);
-    if (obj_prop == NULL) {
-        printf("== %s: Invalid obj_id!\n", __func__);
-        return NULL;
+    if (pdc_find_id(obj_id) != NULL) {
+        obj_prop = PDC_obj_get_info(obj_id);
+        meta_id = obj_prop->meta_id;
     }
+    else 
+        meta_id = obj_id;
 
     query                       = (pdcquery_t*)calloc(1, sizeof(pdcquery_t));
     query->constraint           = (pdcquery_constraint_t*)calloc(1, sizeof(pdcquery_constraint_t));
-    query->constraint->obj_id   = obj_prop->meta_id;    // Use global ID
+    query->constraint->obj_id   = meta_id;    // Use global ID
     query->constraint->op       = op;
     query->constraint->type     = type;
     type_size = PDC_get_var_type_size(type);

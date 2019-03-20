@@ -1551,10 +1551,13 @@ hg_proc_bulk_rpc_in_t(hg_proc_t proc, void *data)
         HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_bulk_t(proc, &struct_data->bulk_handle);
-    if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
-        return ret;
+
+    if (struct_data->cnt > 0) {
+        ret = hg_proc_hg_bulk_t(proc, &struct_data->bulk_handle);
+        if (ret != HG_SUCCESS) {
+            HG_LOG_ERROR("Proc error");
+            return ret;
+        }
     }
     return ret;
 }
@@ -3123,6 +3126,7 @@ hg_proc_send_nhits_t(hg_proc_t proc, void *data)
 
 typedef struct storage_regions_args_t {
     int           is_done;
+    int           ndim;
     int           query_id;
     int           manager;
     region_list_t *storage_region;

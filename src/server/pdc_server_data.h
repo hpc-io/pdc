@@ -191,7 +191,8 @@ typedef struct query_task_t {
     pdcquery_t        *query;
     int               n_sent_server;
     int               n_unique_obj;
-    int               n_recv_region;
+    int               n_recv_obj;
+    int               ndim;
     pdcquery_get_op_t get_op;
 
     // Result
