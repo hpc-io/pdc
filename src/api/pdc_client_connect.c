@@ -7880,6 +7880,7 @@ PDC_recv_coords(const struct hg_cb_info *callback_info)
     void *buf;
 
     pdc_int_ret_t out;
+    out.ret = 1;
 
     if (callback_info->ret != HG_SUCCESS) {
         HG_LOG_ERROR("Error in callback");
@@ -7893,8 +7894,10 @@ PDC_recv_coords(const struct hg_cb_info *callback_info)
         query_id = bulk_args->query_id;
         origin   = bulk_args->origin;
 
-        ret = HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 
-                             1, (void**)&buf, NULL, NULL);
+        if (nhits > 0) {
+            ret = HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 
+                                 1, (void**)&buf, NULL, NULL);
+        }
 
         DL_FOREACH(pdcquery_result_list_head_g, result_elt) {
             if (result_elt->query_id == query_id) {
@@ -7910,16 +7913,17 @@ PDC_recv_coords(const struct hg_cb_info *callback_info)
             printf("==PDC_CLIENT[%d]: %s - Invalid task ID!\n", pdc_client_mpi_rank_g, __func__);
             goto done;
         }
-        out.ret = 1;
 
     }// End else
 
 done:
     work_todo_g--;
-    ret = HG_Bulk_free(local_bulk_handle);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not free HG bulk handle\n");
-        return ret;
+    if (nhits > 0) {
+        ret = HG_Bulk_free(local_bulk_handle);
+        if (ret != HG_SUCCESS) {
+            fprintf(stderr, "Could not free HG bulk handle\n");
+            return ret;
+        }
     }
 
     ret = HG_Respond(bulk_args->handle, NULL, NULL, &out);

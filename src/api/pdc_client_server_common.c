@@ -5053,7 +5053,10 @@ HG_TEST_RPC_CB(send_bulk_rpc, handle)
         }
     }
     else {
-        func_ptr(bulk_arg);
+        struct hg_cb_info callback_info;
+        callback_info.arg = bulk_arg;
+        callback_info.ret = HG_SUCCESS;
+        func_ptr(&callback_info);
     }
 
     /* printf("==PDC_SERVER[x]: Pulled data from %d\n", in_struct.origin); */
@@ -6322,7 +6325,8 @@ pdcquery_t *PDC_deserialize_query(pdc_query_xfer_t *query_xfer)
         return NULL;
 
     deSerialize(&new_root, query_xfer->constraints, &constraint_idx, query_xfer->combine_ops, &order_idx);
-    new_root->region = pdc_region_transfer_t_to_region_info(&query_xfer->region);
+    new_root->region_constraint = (region_list_t *)malloc(sizeof(region_list_t));
+    pdc_region_transfer_t_to_list_t(&query_xfer->region, new_root->region_constraint);
 
     /* print_query(new_root); */
 

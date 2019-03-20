@@ -13,12 +13,13 @@ int main(int argc, char **argv)
 {
     int rank = 0, size = 1;
     pdcid_t obj_id;
-    /* struct PDC_region_info region; */
+    struct PDC_region_info region;
     uint64_t i;
     struct timeval  ht_total_start;
     struct timeval  ht_total_end;
     long long ht_total_elapsed;
     double ht_total_sec;
+    int ndim = 1;
 
     pdc_metadata_t *x_meta, *y_meta, *z_meta, *id1_meta, *id2_meta;
     pdcid_t pdc, x_id, y_id, z_id, id1_id, id2_id;
@@ -62,11 +63,11 @@ int main(int argc, char **argv)
     id2_id = id2_meta->obj_id;
  
 
-    /* region.ndim = ndim; */
-    /* region.offset = (uint64_t*)malloc(sizeof(uint64_t) * ndim); */
-    /* region.size = (uint64_t*)malloc(sizeof(uint64_t) * ndim); */
-    /* region.offset[0] = rank * my_data_count; */
-    /* region.size[0] = my_data_count; */
+    region.ndim = ndim;
+    region.offset = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
+    region.size = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
+    region.offset[0] = 0;
+    region.size[0]   = 10;
 
     // Construct query constraints
     float x_lo0 = 0.05, x_hi0 = 200.05;
@@ -91,7 +92,7 @@ int main(int argc, char **argv)
     /* q12 = PDCquery_or(q1, q2); */
     /* q   = PDCquery_or(q0, q12); */
 
-    /* PDCquery_sel_region(q, &region); */
+    PDCquery_sel_region(q, &region);
    
     uint64_t nhits;
     pdcselection_t sel;

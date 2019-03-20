@@ -134,8 +134,8 @@ typedef struct get_metadata_by_id_args_t{
 
 typedef struct region_list_t {
     size_t ndim;
-    uint64_t start[DIM_MAX];
-    uint64_t count[DIM_MAX];
+    uint64_t start[DIM_MAX];            // in bytes
+    uint64_t count[DIM_MAX];            // in bytes
     /* uint64_t stride[DIM_MAX]; */
 
     uint32_t client_ids[PDC_SERVER_MAX_PROC_PER_NODE];
