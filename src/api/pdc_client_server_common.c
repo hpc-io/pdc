@@ -860,6 +860,7 @@ void *PDC_Server_get_region_obj_ptr(pdcid_t obj_id, region_info_transfer_t regio
 perr_t PDC_Server_find_container_by_name(const char *cont_name, pdc_cont_hash_table_entry_t **out) {return SUCCEED;}
 
 hg_return_t PDC_Server_recv_data_query(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
+hg_return_t PDC_recv_read_coords(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
 
 
 hg_class_t *hg_class_g;
@@ -884,6 +885,7 @@ perr_t PDC_Server_container_add_tags(uint64_t cont_id, char *tags){return SUCCEE
 hg_return_t PDC_cache_region_to_bb_cb (const struct hg_cb_info *callback_info)  {return HG_SUCCESS;}
 
 hg_return_t PDC_Server_recv_data_query_region(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
+hg_return_t PDC_Server_recv_get_sel_data(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
 #else
 hg_return_t PDC_Client_work_done_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;};
 hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *callback_info) {return HG_SUCCESS;};
@@ -894,6 +896,8 @@ perr_t PDC_Client_recv_bulk_storage_meta(process_bulk_storage_meta_args_t *proce
 extern perr_t PDC_Server_find_container_by_name(const char *cont_name, pdc_cont_hash_table_entry_t **out);
 extern perr_t PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out);
 extern perr_t PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t *out);
+
+hg_return_t PDC_recv_read_coords_data(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
 
 #endif
 
@@ -5004,6 +5008,29 @@ HG_TEST_RPC_CB(send_nhits, handle)
     return ret;
 }
 
+/* get_sel_data_rpc_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(get_sel_data_rpc, handle)
+{
+    hg_return_t ret;
+    get_sel_data_rpc_in_t in, *in_cp;
+    pdc_int_ret_t  out;
+
+    FUNC_ENTER(NULL);
+
+    HG_Get_input(handle, &in);
+
+    in_cp = (get_sel_data_rpc_in_t*)malloc(sizeof(get_sel_data_rpc_in_t));
+    memcpy(in_cp, &in, sizeof(get_sel_data_rpc_in_t));
+
+    out.ret = 1;
+    ret = HG_Respond(handle, PDC_Server_recv_get_sel_data, in_cp, &out);
+
+    ret = HG_Free_input(handle, &in);
+    ret = HG_Destroy(handle);
+
+    return ret;
+}
+
 // Generic bulk transfer
 /* send_bulk_rpc_cb(hg_handle_t handle) */
 HG_TEST_RPC_CB(send_bulk_rpc, handle)
@@ -5029,9 +5056,18 @@ HG_TEST_RPC_CB(send_bulk_rpc, handle)
     bulk_arg->cnt      = in_struct.cnt;
     bulk_arg->ndim     = in_struct.ndim;
     bulk_arg->query_id = in_struct.seq_id;
+    bulk_arg->obj_id   = in_struct.obj_id;
+    bulk_arg->client_seq_id = in_struct.seq_id2;
+    bulk_arg->total    = in_struct.total;
 
     if (in_struct.op_id == PDC_BULK_QUERY_COORDS) {
         func_ptr = &PDC_recv_coords;
+    }
+    else if (in_struct.op_id == PDC_BULK_READ_COORDS) {
+        func_ptr = &PDC_recv_read_coords;
+    }
+    else if (in_struct.op_id == PDC_BULK_SEND_QUERY_DATA) {
+        func_ptr = &PDC_recv_read_coords_data;
     }
     else {
         fprintf(stderr, "== %s - Invalid bulk op ID!\n", __func__);
@@ -5121,6 +5157,7 @@ HG_TEST_THREAD_CB(send_data_query)
 HG_TEST_THREAD_CB(send_data_query_region)
 HG_TEST_THREAD_CB(send_nhits)
 HG_TEST_THREAD_CB(send_bulk_rpc)
+HG_TEST_THREAD_CB(get_sel_data_rpc)
 
 hg_id_t
 gen_obj_id_register(hg_class_t *hg_class)
@@ -5664,6 +5701,12 @@ hg_id_t
 send_bulk_rpc_register(hg_class_t *hg_class)
 {
     return  MERCURY_REGISTER(hg_class, "send_bulk_rpc_register", bulk_rpc_in_t, pdc_int_ret_t, send_bulk_rpc_cb);
+}
+
+hg_id_t
+get_sel_data_rpc_register(hg_class_t *hg_class)
+{
+    return  MERCURY_REGISTER(hg_class, "get_sel_data_rpc_register", get_sel_data_rpc_in_t, pdc_int_ret_t, get_sel_data_rpc_cb);
 }
 
 

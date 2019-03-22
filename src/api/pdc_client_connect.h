@@ -489,6 +489,9 @@ typedef struct pdcquery_result_list_t {
     uint64_t nhits;
     uint64_t *coords;
     void     *data;
+    void     **data_arr;
+    uint64_t *data_arr_size;
+    uint64_t recv_data_nhits;
 
     struct pdcquery_result_list_t *prev;
     struct pdcquery_result_list_t *next;
@@ -497,4 +500,7 @@ typedef struct pdcquery_result_list_t {
 hg_return_t PDC_recv_coords(const struct hg_cb_info *callback_info);
 void PDCselection_free(pdcselection_t *sel);
 
+perr_t PDC_Client_get_sel_data(pdcid_t obj_id, pdcselection_t *sel, void *data);
+
+hg_return_t PDC_recv_read_coords_data(const struct hg_cb_info *callback_info);
 #endif

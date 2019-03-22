@@ -185,10 +185,10 @@ typedef struct server_read_check_out_t {
 
 // Data query
 typedef struct query_task_t {
+    pdcquery_t        *query;
     int               query_id;
     int               manager;
     int               client_id;
-    pdcquery_t        *query;
     int               n_sent_server;
     int               n_unique_obj;
     int               n_recv_obj;
@@ -200,7 +200,18 @@ typedef struct query_task_t {
     int               n_recv;
     uint64_t          nhits;
     uint64_t          *coords;
+
+    uint64_t          *n_hits_from_server;
+    int               *coords_seq_server_id;       // mapping of coord seq to server_id 
+
+    // Data read
+    int               n_read_data_region;
     void              **data_arr;
+    uint64_t          *my_read_coords;
+    uint64_t          my_nread_coords;
+    uint64_t          my_read_obj_id;
+    void              *my_data;
+    int               client_seq_id;
 
     struct query_task_t *prev;
     struct query_task_t *next;
@@ -352,5 +363,8 @@ hg_return_t PDC_recv_nhits(const struct hg_cb_info *callback_info);
 
 hg_return_t PDC_recv_coords(const struct hg_cb_info *callback_info);
 
+hg_return_t PDC_Server_recv_get_sel_data(const struct hg_cb_info *callback_info);
+
+hg_return_t PDC_recv_read_coords(const struct hg_cb_info *callback_info);
 #endif /* PDC_SERVER_DATA_H */
 

@@ -1324,6 +1324,12 @@ done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_checkpoint
 
+int region_cmp(region_list_t *a, region_list_t *b)
+{
+    int unit_size = a->ndim * sizeof(uint64_t);
+    return memcmp(a->start, b->start, unit_size);
+}
+
 /*
  * Load metadata from checkpoint file in persistant storage
  *
@@ -1429,6 +1435,7 @@ perr_t PDC_Server_restart(char *filename)
             (metadata+i)->prev                     = NULL;
             (metadata+i)->next                     = NULL;
             (metadata+i)->kvtag_list_head          = NULL;
+            (metadata+i)->all_storage_region_distributed = 0;
 
             // Read kv tags
             fread(&n_kvtag, sizeof(int), 1, file);
@@ -1483,6 +1490,7 @@ perr_t PDC_Server_restart(char *filename)
                 (region_list+j)->is_io_done                 = 0;
                 (region_list+j)->is_shm_closed              = 0;
                 (region_list+j)->seq_id                     = 0;
+                (region_list+j)->sent_to_server             = 0;
 
                 memset((region_list+j)->shm_addr, 0, ADDR_MAX);
                 memset((region_list+j)->client_ids, 0, PDC_SERVER_MAX_PROC_PER_NODE*sizeof(uint32_t));
@@ -1507,6 +1515,7 @@ perr_t PDC_Server_restart(char *filename)
                 /* } */
                 DL_APPEND((metadata+i)->storage_region_list_head, region_list+j);
             } // For j
+            DL_SORT((metadata+i)->storage_region_list_head, region_cmp);
         } // For i
 
         nobj += count;
@@ -1789,6 +1798,7 @@ static void PDC_Server_mercury_register()
     data_server_write_check_register(hg_class_g);
 
     send_data_query_rpc_register(hg_class_g);
+    get_sel_data_rpc_register(hg_class_g);
 
     // Analysis and Transforms
     set_execution_locus(SERVER_MEMORY);

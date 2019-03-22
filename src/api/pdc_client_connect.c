@@ -150,6 +150,7 @@ static hg_id_t         send_region_storage_meta_shm_bulk_rpc_register_id_g;
 
 // data query
 static hg_id_t         send_data_query_register_id_g;
+static hg_id_t         get_sel_data_register_id_g;
 
 pdc_data_server_io_list_t *client_cache_list_head_g = NULL;
 int                    cache_percentage_g = 0;
@@ -1088,6 +1089,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
 
     // Data query
     send_data_query_register_id_g = send_data_query_rpc_register(*hg_class);
+    get_sel_data_register_id_g    = get_sel_data_rpc_register(*hg_class);
 
 #ifdef ENABLE_MULTITHREAD
     /* Mutex initialization for the client versions of these... */
@@ -7854,12 +7856,12 @@ PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op, uint64_t *nhits
     if (nhits) 
         *nhits = result->nhits;
     if (sel) {
+        sel->sel_id = query_xfer->query_id; 
         sel->nhits  = result->nhits;
         sel->coords = result->coords;
         sel->ndim   = result->ndim;
         sel->coords_alloc = result->nhits * result->ndim;
     }
-
 
 done:
     if(target_servers) free(target_servers);
@@ -7941,4 +7943,182 @@ PDCselection_free(pdcselection_t *sel)
     if (sel->coords_alloc > 0 && sel->coords) 
         free(sel->coords);
 }
+
+perr_t PDC_Client_get_sel_data(pdcid_t obj_id, pdcselection_t *sel, void *data)
+{
+    perr_t ret_value = SUCCEED;
+    hg_return_t hg_ret;
+    hg_handle_t handle;
+    uint32_t server_id, i;
+    uint64_t meta_id, off;
+    get_sel_data_rpc_in_t in;
+    struct client_lookup_args lookup_args;
+    struct PDC_obj_info *obj_prop;
+    pdcquery_result_list_t *result_elt;
+
+    FUNC_ENTER(NULL);
+
+    if (sel == NULL) {
+        printf("==PDC_CLIENT[%d]: %s - NULL input!\n", pdc_client_mpi_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    if (pdc_find_id(obj_id) != NULL) {
+        obj_prop = PDC_obj_get_info(obj_id);
+        meta_id = obj_prop->meta_id;
+    }
+    else 
+        meta_id = obj_id;
+
+
+    in.sel_id = sel->sel_id;
+    in.obj_id = meta_id;
+    server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
+    debug_server_id_count[server_id]++;
+
+    if (PDC_Client_try_lookup_server(server_id) != SUCCEED) {
+        printf("==PDC_CLIENT[%d]: ERROR with PDC_Client_try_lookup_server\n", pdc_client_mpi_rank_g);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, get_sel_data_register_id_g, &handle);
+
+    hg_ret = HG_Forward(handle, pdc_client_check_int_ret_cb, &lookup_args, &in);
+    if (hg_ret != HG_SUCCESS) {
+        printf("==PDC_CLIENT[%d]: %s - ERROR with HG_Forward\n", pdc_client_mpi_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    // Wait for response from server
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+    if (lookup_args.ret != 1) {
+        printf("==PDC_CLIENT[%d]: send data selection to server %u failed ... ret_value = %d\n", 
+                pdc_client_mpi_rank_g, server_id, lookup_args.ret);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    // Wait for server to send data 
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+    // Copy the result to user's buffer
+    DL_FOREACH(pdcquery_result_list_head_g, result_elt) {
+        if (result_elt->query_id == in.sel_id) {
+            off = 0;
+            for (i = 0; i < pdc_server_num_g; i++) {
+                if (result_elt->data_arr[i] != NULL) {
+                    memcpy(data + off, result_elt->data_arr[i], result_elt->data_arr_size[i]);
+                    off += result_elt->data_arr_size[i];
+                    free(result_elt->data_arr);
+                    result_elt->data_arr = NULL;
+                }
+            }
+            break;
+        }
+        result_elt->recv_data_nhits = 0;
+    }
+
+
+done:
+    HG_Destroy(handle);
+    FUNC_LEAVE(ret_value);
+}
+
+hg_return_t 
+PDC_recv_read_coords_data(const struct hg_cb_info *callback_info) 
+{
+    hg_return_t ret = HG_SUCCESS;
+    hg_handle_t handle            = callback_info->info.forward.handle;
+    hg_bulk_t local_bulk_handle   = callback_info->info.bulk.local_handle;
+    struct bulk_args_t *bulk_args = (struct bulk_args_t *)callback_info->arg;
+    pdcquery_result_list_t *result_elt;
+    uint64_t nhits, *coords, total_hits, total_size, off;
+    uint32_t ndim;
+    int      i, query_id, origin, seq_id;
+    void *buf;
+
+    pdc_int_ret_t out;
+    out.ret = 1;
+
+    if (callback_info->ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Error in callback");
+        ret = HG_PROTOCOL_ERROR;
+        out.ret = -1;
+        goto done;
+    }
+    else {
+        nhits      = bulk_args->cnt;
+        total_hits = bulk_args->total;
+        ndim       = bulk_args->ndim;
+        query_id   = bulk_args->query_id;
+        origin     = bulk_args->origin;
+        seq_id     = bulk_args->client_seq_id;
+
+        ret = HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 
+                             1, (void**)&buf, NULL, NULL);
+
+        DL_FOREACH(pdcquery_result_list_head_g, result_elt) {
+            if (result_elt->query_id == query_id) {
+                if (result_elt->data_arr == NULL) {
+                    result_elt->data_arr      = calloc(sizeof(void*), pdc_server_num_g);
+                    result_elt->data_arr_size = calloc(sizeof(uint64_t*), pdc_server_num_g);
+                }
+
+                result_elt->data_arr[seq_id] = malloc(bulk_args->nbytes);
+                memcpy(result_elt->data_arr[seq_id], buf, bulk_args->nbytes);
+                result_elt->data_arr_size[seq_id] = bulk_args->nbytes;
+                result_elt->recv_data_nhits += nhits;
+                break;
+            }
+        }
+        if (result_elt == NULL) {
+            printf("==PDC_CLIENT[%d]: %s - Invalid task ID!\n", pdc_client_mpi_rank_g, __func__);
+            goto done;
+        }
+
+        if (result_elt->recv_data_nhits >= total_hits) {
+            /* total_size = 0; */
+            /* for (i = 0; i < pdc_server_num_g; i++) */ 
+            /*     total_size += result_elt->data_arr_size[i]; */
+            
+            /* result_elt->data = malloc(total_size); */
+            /* off = 0; */
+            /* for (i = 0; i < pdc_server_num_g; i++) { */
+            /*     if (result_elt->data_arr[i] != NULL) { */
+            /*         memcpy(result_elt->data + off, result_elt->data_arr[i], result_elt->data_arr_size[i]); */
+            /*         off += result_elt->data_arr_size[i]; */
+            /*         free(result_elt->data_arr); */
+            /*         result_elt->data_arr = NULL; */
+            /*     } */
+            /* } */
+
+            /* result_elt->recv_data_nhits = 0; */
+            work_todo_g--;
+        }
+    }// End else
+
+done:
+    ret = HG_Bulk_free(local_bulk_handle);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not free HG bulk handle\n");
+        return ret;
+    }
+
+    ret = HG_Respond(bulk_args->handle, NULL, NULL, &out);
+    if (ret != HG_SUCCESS) 
+        fprintf(stderr, "Could not respond\n");
+
+    HG_Destroy(bulk_args->handle);
+    free(bulk_args);
+    return ret;
+}
+
+
+
 #include "pdc_analysis_and_transforms_connect.c"

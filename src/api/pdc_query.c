@@ -110,8 +110,13 @@ perr_t PDCquery_get_nhits(pdcquery_t *query, uint64_t *n)
 
     FUNC_ENTER(NULL);
 
-    ret_value = PDC_send_data_query(query, PDC_QUERY_GET_NHITS, n, NULL, NULL);
+    if (query == NULL || n == NULL) {
+        printf("==PDC %s - input NULL!\n");
+        ret_value = FAIL;
+        goto done;
+    }
 
+    ret_value = PDC_send_data_query(query, PDC_QUERY_GET_NHITS, n, NULL, NULL);
 
 done:
     FUNC_LEAVE(ret_value);
@@ -123,6 +128,13 @@ perr_t PDCquery_get_selection(pdcquery_t *query, pdcselection_t *sel)
 
     FUNC_ENTER(NULL);
 
+    if (query == NULL || sel == NULL) {
+        printf("==PDC_CLIENT[] %s - input NULL!\n", __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    memset(sel, 0, sizeof(pdcselection_t));
     ret_value = PDC_send_data_query(query, PDC_QUERY_GET_SEL, NULL, sel, NULL);
 
 done:
@@ -132,8 +144,25 @@ done:
 perr_t PDCquery_get_data(pdcid_t obj_id, pdcselection_t *sel, void *obj_data)
 {
     perr_t ret_value = SUCCEED;
+    struct PDC_obj_info *obj_prop;
+    uint64_t   meta_id;
 
     FUNC_ENTER(NULL);
+
+    if (obj_data == NULL || sel == NULL) {
+        printf("==PDC_CLIENT[] %s - input NULL!\n", __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    if (pdc_find_id(obj_id) != NULL) {
+        obj_prop = PDC_obj_get_info(obj_id);
+        meta_id = obj_prop->meta_id;
+    }
+    else 
+        meta_id = obj_id;
+
+    ret_value = PDC_Client_get_sel_data(meta_id, sel, obj_data);
 
 done:
     FUNC_LEAVE(ret_value);
@@ -142,10 +171,19 @@ done:
 perr_t PDCquery_get_histogram(pdcid_t obj_id, void *hist)
 {
     perr_t ret_value = SUCCEED;
+    struct PDC_obj_info *obj_prop;
+    uint64_t   meta_id;
 
     FUNC_ENTER(NULL);
 
+    if (pdc_find_id(obj_id) != NULL) {
+        obj_prop = PDC_obj_get_info(obj_id);
+        meta_id = obj_prop->meta_id;
+    }
+    else 
+        meta_id = obj_id;
 
+    /* ret_value = PDC_Client_get_sel_data(meta_id, sel, obj_data); */
 
 done:
     FUNC_LEAVE(ret_value);

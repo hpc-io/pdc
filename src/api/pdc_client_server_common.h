@@ -96,6 +96,8 @@ typedef enum { NONE=0,
 
 typedef enum { PDC_BULK_OP_NONE=0, 
                PDC_BULK_QUERY_COORDS=1, 
+               PDC_BULK_READ_COORDS=2, 
+               PDC_BULK_SEND_QUERY_DATA=3 
              } PDC_bulk_op_t;
 
 
@@ -167,6 +169,7 @@ typedef struct region_list_t {
 
     char      cache_location[ADDR_MAX];
     uint64_t  cache_offset;
+    int       sent_to_server;
 
     pdc_metadata_t *meta;
 
@@ -348,6 +351,7 @@ typedef struct pdc_metadata_t {
 
     // For region storage list
     region_list_t *storage_region_list_head;
+    int           all_storage_region_distributed;
 
     // For region lock list
     region_list_t *region_lock_head;
@@ -1511,11 +1515,14 @@ hg_proc_close_server_out_t(hg_proc_t proc, void *data)
 // Bulk
 /* Define bulk_rpc_in_t */
 typedef struct bulk_rpc_in_t {
-    hg_int32_t   cnt;
+    hg_uint64_t  cnt;
+    hg_uint64_t  total;
     hg_int32_t   origin;
     hg_int32_t   seq_id;
+    hg_int32_t   seq_id2;
     hg_int32_t   op_id;
     hg_uint32_t  ndim;
+    hg_uint64_t  obj_id;
     hg_bulk_t    bulk_handle;
 } bulk_rpc_in_t;
 
@@ -1526,17 +1533,33 @@ hg_proc_bulk_rpc_in_t(hg_proc_t proc, void *data)
     hg_return_t ret = HG_SUCCESS;
     bulk_rpc_in_t *struct_data = (bulk_rpc_in_t *) data;
 
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
     ret = hg_proc_int32_t(proc, &struct_data->ndim);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_int32_t(proc, &struct_data->cnt);
+    ret = hg_proc_uint64_t(proc, &struct_data->cnt);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->total);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->seq_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->seq_id2);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -2545,12 +2568,14 @@ struct bulk_args_t {
     size_t         ret;
     pdc_metadata_t **meta_arr;
     uint32_t       n_meta;
+    uint64_t       obj_id;
     uint64_t       *obj_ids;
     int            client_seq_id;
 
     int            query_id;
     uint32_t       ndim;
     uint64_t       *coords;
+    uint64_t       total;
 
     hg_atomic_int32_t completed_transfers;
 };
@@ -3098,6 +3123,31 @@ typedef struct query_storage_region_transfer_t {
     int                       has_hist;
     pdc_histogram_t           hist;
 } query_storage_region_transfer_t;
+
+typedef struct get_sel_data_rpc_in_t {
+    int      sel_id;
+    uint64_t obj_id;
+} get_sel_data_rpc_in_t;
+
+static HG_INLINE hg_return_t
+hg_proc_get_sel_data_rpc_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    get_sel_data_rpc_in_t *struct_data = (get_sel_data_rpc_in_t*) data;
+
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_int32_t(proc, &struct_data->sel_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
 
 typedef struct send_nhits_t {
     int      query_id;

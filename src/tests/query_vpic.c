@@ -92,7 +92,7 @@ int main(int argc, char **argv)
     /* q12 = PDCquery_or(q1, q2); */
     /* q   = PDCquery_or(q0, q12); */
 
-    PDCquery_sel_region(q, &region);
+    /* PDCquery_sel_region(q, &region); */
    
     uint64_t nhits;
     pdcselection_t sel;
@@ -101,6 +101,16 @@ int main(int argc, char **argv)
 
     PDCquery_get_selection(q, &sel);
     PDCselection_print(&sel);
+
+    int *x_data;
+    if (sel.nhits > 0) 
+        x_data = (int*)calloc(sel.nhits, sizeof(int));
+    PDCquery_get_data(x_id, &sel, x_data);
+
+    printf("Query result x data:\n");
+    for (i = 0; i < sel.nhits; i++) {
+        printf(" ,%d\n", x_data[i]);
+    }
 
     PDCquery_free_all(q);
     /* PDCregion_free(&region); */
