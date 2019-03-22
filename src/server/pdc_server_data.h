@@ -217,6 +217,14 @@ typedef struct query_task_t {
     struct query_task_t *next;
 } query_task_t;
 
+typedef struct cache_storage_region_t {
+    uint64_t          obj_id;
+    region_list_t     *storage_region_head;
+
+    struct cache_storage_region_t *prev;
+    struct cache_storage_region_t *next;
+} cache_storage_region_t;
+
 extern int    pdc_server_rank_g;
 extern int    pdc_server_size_g;
 extern char   pdc_server_tmp_dir_g[ADDR_MAX];

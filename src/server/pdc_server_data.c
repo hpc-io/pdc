@@ -74,6 +74,7 @@ FILE *pdc_cache_file_ptr_g           = NULL;
 char pdc_cache_file_path_g[ADDR_MAX];
 
 query_task_t *query_task_list_head_g = NULL;
+cache_storage_region_t *cache_storage_region_head_g = NULL;
 
 /*
  * Callback function of the server to lookup clients, also gets the confirm message from client.
@@ -7500,6 +7501,9 @@ PDC_Server_send_query_storage_info(query_task_t *task, uint64_t obj_id, int *obj
                     PDC_Server_send_query_result_to_client(task);
                 }
                 else {
+                    if (meta->all_storage_region_distributed == 1) 
+                        goto done;
+
                     // Need to distribute storage metadata to other servers
                     avg_count = ceil( (1.0 * count) / task->n_sent_server );
                     nsent        = 0;
@@ -7534,7 +7538,7 @@ PDC_Server_send_query_storage_info(query_task_t *task, uint64_t obj_id, int *obj
                     printf("==PDC_SERVER[%d]: distributed all storage meta of %" PRIu64 "!\n", 
                             pdc_server_rank_g, obj_id);
                     meta->all_storage_region_distributed = 1;
-                }
+                } // End else
 
             } // end if (NULL != meta)
             else {
@@ -7546,6 +7550,7 @@ PDC_Server_send_query_storage_info(query_task_t *task, uint64_t obj_id, int *obj
     /* else */
     /*     printf("==PDC_SERVER[%d]: metadata not here for %" PRIu64 "!\n", pdc_server_rank_g, obj_id); */
 
+done:
     fflush(stdout);
     return;
 }
@@ -7579,11 +7584,35 @@ void attach_storage_region_to_query(pdcquery_t *query, region_list_t *region)
     //       and uses the same "prev" "next" pointers 
     if (NULL == query->left && NULL == query->right && NULL != query->constraint) {
         if (query->constraint->obj_id == region->obj_id) {
-            region_list_t **head_ptr;
-            head_ptr = (region_list_t **)&query->constraint->storage_region_list_head;
-            DL_APPEND(*head_ptr, region);
+            query->constraint->storage_region_list_head = region;
         }
     }
+}
+
+perr_t
+add_to_cache_storage_region(uint64_t obj_id, region_list_t *region)
+{
+    cache_storage_region_t *elt, *new_cache_region;
+    int found = 0;
+
+    DL_FOREACH(cache_storage_region_head_g, elt) {
+        if (elt->obj_id == obj_id) {
+            found = 1;
+            break;
+        }
+    }
+
+    if (found == 0) {
+        new_cache_region = (cache_storage_region_t*)calloc(sizeof(cache_storage_region_t), 1);
+        new_cache_region->obj_id = obj_id;
+        DL_PREPEND(cache_storage_region_head_g, new_cache_region);
+        DL_PREPEND(new_cache_region->storage_region_head, region);
+    }
+    else {
+        DL_PREPEND(elt->storage_region_head, region);
+    }
+
+    return SUCCEED;
 }
 
 hg_return_t 
@@ -7625,13 +7654,14 @@ PDC_Server_recv_data_query_region(const struct hg_cb_info *callback_info)
     }
 
     query = query_task->query;
+    add_to_cache_storage_region(region->obj_id, region);
 
-    // Add this storage region to all query constraints that specifies the same object
-    attach_storage_region_to_query(query, region); 
-    printf("==PDC_SERVER[%d]: attached storage region to query\n", pdc_server_rank_g);
 
     if (args->is_done == 1) {
         query_task->n_recv_obj++;
+
+        // Add this storage region to all query constraints that specifies the same object
+        attach_storage_region_to_query(query, region); 
 
         printf("==PDC_SERVER[%d]: Received (%d/%d) storage regions of %d object from meta server!\n", 
                 pdc_server_rank_g, query_task->n_recv_obj, query_task->n_unique_obj, query_task->n_recv_obj);
@@ -7828,7 +7858,7 @@ PDC_Server_recv_get_sel_data(const struct hg_cb_info *callback_info)
     region_list_t *region_elt;
     pdc_metadata_t *meta;
     void *data;
-    uint64_t nhits, ncoords, coords_off, *coords = NULL, **coords_to_server = NULL, *cur_coord;
+    uint64_t nhits, ncoords, coords_off, *coords = NULL, *cur_coord;
     int    i, seq_id, ndim, server_id, query_id;
 
     printf("==PDC_SERVER[%d]: %s - received read selection request id = %d, obj = %" PRIu64 "\n", 
@@ -7847,14 +7877,14 @@ PDC_Server_recv_get_sel_data(const struct hg_cb_info *callback_info)
     // Find metadata object
     meta = PDC_Server_get_obj_metadata(in->obj_id);
     if (NULL == meta) {
+        // TODO: need to contact server that has metadata and let it distribute
         printf("==PDC_SERVER[%d]: %s - cannot find metadata object id=%" PRIu64 "\n", 
                 pdc_server_rank_g, __func__, in->obj_id);
         goto done;
     }
-    ndim             = meta->ndim;
+    ndim = meta->ndim;
 
     if (NULL != coords) {
-        coords_to_server = (uint64_t**)calloc(pdc_server_size_g, sizeof(uint64_t*));
 
         if (meta->all_storage_region_distributed == 1) {
             coords_off = 0;
@@ -7873,21 +7903,17 @@ PDC_Server_recv_get_sel_data(const struct hg_cb_info *callback_info)
             }
         }
         else {
-            // Need to distribute the storage data
-
+            printf("==PDC_SERVER[%d]: %s - storage metadata not ditributed!\n", pdc_server_rank_g, __func__);
+            goto done;
         }
     }
     else {
-
         printf("==PDC_SERVER[%d]: %s - cannot find previous query selection id=%d\n", 
                 pdc_server_rank_g, __func__, in->sel_id);
         goto done;
     }
 
 done:
-    if (coords_to_server) {
-        free(coords_to_server);
-    }
     return ret;
 }
 
