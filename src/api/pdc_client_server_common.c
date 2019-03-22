@@ -5058,7 +5058,6 @@ HG_TEST_RPC_CB(send_bulk_rpc, handle)
     bulk_arg->query_id = in_struct.seq_id;
     bulk_arg->obj_id   = in_struct.obj_id;
     bulk_arg->client_seq_id = in_struct.seq_id2;
-    bulk_arg->total    = in_struct.total;
 
     if (in_struct.op_id == PDC_BULK_QUERY_COORDS) {
         func_ptr = &PDC_recv_coords;

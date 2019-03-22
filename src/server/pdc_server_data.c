@@ -6999,7 +6999,7 @@ PDC_Server_get_constraint_from_query(pdcquery_t *query, uint64_t obj_id)
 }
 
 uint64_t 
-coord_to_offset(size_t ndim, uint64_t *coord, uint64_t *start, uint64_t *count)
+coord_to_offset(size_t ndim, uint64_t *coord, uint64_t *start, uint64_t *count, size_t unit_size)
 {
     size_t i;
     uint64_t off = 0;
@@ -7015,11 +7015,11 @@ coord_to_offset(size_t ndim, uint64_t *coord, uint64_t *start, uint64_t *count)
     }
 
     if (ndim == 3) 
-        off = (coord[2] - start[2]) * count[0] * count[1];
+        off = (coord[2]*unit_size - start[2]) * count[0] * count[1];
     if (ndim == 2) 
-        off += (coord[1] - start[1]) * count[0];
+        off += (coord[1]*unit_size - start[1]) * count[0];
 
-    off += (coord[0] - start[0]);
+    off += (coord[0]*unit_size - start[0]);
 
     return off;
 }
@@ -7144,15 +7144,16 @@ PDC_Server_read_coords(const struct hg_cb_info *callback_info)
             coord = &(task->my_read_coords[i*ndim]);
             DL_FOREACH(storage_region_head, region_elt) {
                 if (is_coord_in_region(ndim, coord, unit_size, region_elt) == 1) {
-                    buf_off  = coord_to_offset(ndim, coord, region_elt->start, region_elt->count);
-                    buf_off *= unit_size;
+                    buf_off  = coord_to_offset(ndim, coord, region_elt->start, region_elt->count, unit_size);
                     cache_region = region_elt;
                     if (region_elt->io_cache_region != NULL) 
                         cache_region = region_elt->io_cache_region;
                     if (cache_region->is_io_done != 1) {
                         PDC_Server_data_read_to_buf_1_region(cache_region);
                     }
+                    float *tmp = cache_region->buf + buf_off;
                     memcpy(task->my_data + data_off, cache_region->buf + buf_off, unit_size);
+                    data_off += unit_size;
                     break;
                 }
             }
@@ -7167,10 +7168,18 @@ PDC_Server_read_coords(const struct hg_cb_info *callback_info)
         goto done;
     }
 
+    /* float *data = (float*)task->my_data; */
+    /* printf("==PDC_SERVER[%d]: %s - going to send following %d data to client!\n", */ 
+    /*         pdc_server_rank_g, __func__, task->my_nread_coords); */
+    /* for (i = 0; i < task->my_nread_coords; i++) { */
+    /*     printf(" , %.2f", data[i]); */
+    /* } */
+
     PDC_send_data_to_client(task->client_id, task->my_data, ndim, unit_size, task->my_nread_coords, 
                             task->query_id, task->client_seq_id);
 
 done:
+    fflush(stdout);
     return ret;
 } // End PDC_Server_read_coords
 
@@ -7224,6 +7233,7 @@ PDC_recv_read_coords(const struct hg_cb_info *callback_info)
 
                 task_elt->my_read_obj_id  = obj_id;
                 task_elt->my_nread_coords = nhits;
+                task_elt->client_seq_id   = bulk_args->client_seq_id;
 
                 break;
             }
@@ -7736,7 +7746,7 @@ done:
 
 perr_t 
 PDC_Server_send_read_coords_to_server(int server_id, uint64_t *coord, uint64_t ncoords, int ndim, 
-                                      int query_id, uint64_t obj_id, uint64_t total_hits)
+                                      int query_id, int client_seq_id, uint64_t obj_id, uint64_t total_hits)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
@@ -7783,6 +7793,7 @@ PDC_Server_send_read_coords_to_server(int server_id, uint64_t *coord, uint64_t n
     in.ndim        = ndim;
     in.cnt         = ncoords;
     in.seq_id      = query_id;
+    in.seq_id2     = client_seq_id;
     in.obj_id      = obj_id;
     in.origin      = pdc_server_rank_g;
     in.op_id       = PDC_BULK_READ_COORDS;
@@ -7804,6 +7815,7 @@ PDC_Server_send_read_coords_to_server(int server_id, uint64_t *coord, uint64_t n
     }
 
 done:
+    HG_Destroy(handle);
     return ret_value;
 } // PDC_Server_send_read_coords_to_server
 
@@ -7825,8 +7837,8 @@ PDC_Server_recv_get_sel_data(const struct hg_cb_info *callback_info)
     DL_FOREACH(query_task_list_head_g, task_elt) {
         if (task_elt->query_id == in->sel_id) {
             // Now we found the coords from a previous query in coords
-            coords   = task_elt->query->sel.coords;
-            nhits    = task_elt->query->sel.nhits;
+            coords   = task_elt->coords;
+            nhits    = task_elt->nhits;
             query_id = task_elt->query_id;
             break;
         }
@@ -7854,7 +7866,7 @@ PDC_Server_recv_get_sel_data(const struct hg_cb_info *callback_info)
                     continue;
 
                 cur_coord = coords + coords_off;
-                PDC_Server_send_read_coords_to_server(server_id, cur_coord, ncoords, ndim, query_id, 
+                PDC_Server_send_read_coords_to_server(server_id, cur_coord, ncoords, ndim, query_id, i, 
                                                       in->obj_id, nhits);
 
                 coords_off += ncoords*ndim;

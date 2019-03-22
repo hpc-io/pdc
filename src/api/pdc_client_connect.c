@@ -8015,8 +8015,8 @@ perr_t PDC_Client_get_sel_data(pdcid_t obj_id, pdcselection_t *sel, void *data)
                 if (result_elt->data_arr[i] != NULL) {
                     memcpy(data + off, result_elt->data_arr[i], result_elt->data_arr_size[i]);
                     off += result_elt->data_arr_size[i];
-                    free(result_elt->data_arr);
-                    result_elt->data_arr = NULL;
+                    free(result_elt->data_arr[i]);
+                    result_elt->data_arr[i] = NULL;
                 }
             }
             break;
@@ -8082,7 +8082,7 @@ PDC_recv_read_coords_data(const struct hg_cb_info *callback_info)
             goto done;
         }
 
-        if (result_elt->recv_data_nhits >= total_hits) {
+        if (result_elt->recv_data_nhits >= result_elt->nhits) {
             /* total_size = 0; */
             /* for (i = 0; i < pdc_server_num_g; i++) */ 
             /*     total_size += result_elt->data_arr_size[i]; */

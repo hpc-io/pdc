@@ -102,15 +102,16 @@ int main(int argc, char **argv)
     PDCquery_get_selection(q, &sel);
     PDCselection_print(&sel);
 
-    int *x_data;
+    float *x_data;
     if (sel.nhits > 0) 
-        x_data = (int*)calloc(sel.nhits, sizeof(int));
+        x_data = (float*)calloc(sel.nhits, sizeof(float));
     PDCquery_get_data(x_id, &sel, x_data);
 
     printf("Query result x data:\n");
     for (i = 0; i < sel.nhits; i++) {
-        printf(" ,%d\n", x_data[i]);
+        printf(" ,%.4f", x_data[i]);
     }
+    printf("\n");
 
     PDCquery_free_all(q);
     /* PDCregion_free(&region); */
