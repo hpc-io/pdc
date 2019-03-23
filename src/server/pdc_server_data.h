@@ -200,9 +200,8 @@ typedef struct query_task_t {
     int               n_recv;
     uint64_t          nhits;
     uint64_t          *coords;
-
+    uint64_t          **coords_arr;
     uint64_t          *n_hits_from_server;
-    int               *coords_seq_server_id;       // mapping of coord seq to server_id 
 
     // Data read
     int               n_read_data_region;
@@ -219,6 +218,7 @@ typedef struct query_task_t {
 
 typedef struct cache_storage_region_t {
     uint64_t          obj_id;
+    PDC_var_type_t    data_type;
     region_list_t     *storage_region_head;
 
     struct cache_storage_region_t *prev;
@@ -287,6 +287,7 @@ extern hg_id_t storage_meta_name_query_register_id_g;
 extern hg_id_t get_storage_meta_name_query_bulk_result_rpc_register_id_g;
 extern hg_id_t notify_client_multi_io_complete_rpc_register_id_g;
 extern hg_id_t send_data_query_region_register_id_g;
+extern hg_id_t send_read_sel_obj_id_rpc_register_id_g;
 extern hg_id_t send_nhits_register_id_g;
 extern hg_id_t send_bulk_rpc_register_id_g;
 
@@ -374,5 +375,7 @@ hg_return_t PDC_recv_coords(const struct hg_cb_info *callback_info);
 hg_return_t PDC_Server_recv_get_sel_data(const struct hg_cb_info *callback_info);
 
 hg_return_t PDC_recv_read_coords(const struct hg_cb_info *callback_info);
+
+hg_return_t PDC_Server_recv_read_sel_obj_data(const struct hg_cb_info *callback_info);
 #endif /* PDC_SERVER_DATA_H */
 

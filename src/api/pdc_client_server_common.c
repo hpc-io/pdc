@@ -861,6 +861,7 @@ perr_t PDC_Server_find_container_by_name(const char *cont_name, pdc_cont_hash_ta
 
 hg_return_t PDC_Server_recv_data_query(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
 hg_return_t PDC_recv_read_coords(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
+hg_return_t PDC_Server_recv_read_sel_obj_data(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
 
 
 hg_class_t *hg_class_g;
@@ -4936,6 +4937,7 @@ HG_TEST_RPC_CB(send_data_query_region, handle)
     args->storage_region = storage_region;
     args->is_done        = in.is_done;
     args->ndim           = storage_region->ndim;
+    args->op             = in.op;
 
     /* printf("==%s: query id is %d\n", __func__, in.query_id); */
 
@@ -5007,6 +5009,30 @@ HG_TEST_RPC_CB(send_nhits, handle)
 
     return ret;
 }
+
+/* send_read_sel_obj_id_rpc_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(send_read_sel_obj_id_rpc, handle)
+{
+    hg_return_t ret;
+    get_sel_data_rpc_in_t in, *in_cp;
+    pdc_int_ret_t  out;
+
+    FUNC_ENTER(NULL);
+
+    HG_Get_input(handle, &in);
+
+    in_cp = (get_sel_data_rpc_in_t*)malloc(sizeof(get_sel_data_rpc_in_t));
+    memcpy(in_cp, &in, sizeof(get_sel_data_rpc_in_t));
+
+    out.ret = 1;
+    ret = HG_Respond(handle, PDC_Server_recv_read_sel_obj_data, in_cp, &out);
+
+    ret = HG_Free_input(handle, &in);
+    ret = HG_Destroy(handle);
+
+    return ret;
+}
+
 
 /* get_sel_data_rpc_cb(hg_handle_t handle) */
 HG_TEST_RPC_CB(get_sel_data_rpc, handle)
@@ -5157,6 +5183,7 @@ HG_TEST_THREAD_CB(send_data_query_region)
 HG_TEST_THREAD_CB(send_nhits)
 HG_TEST_THREAD_CB(send_bulk_rpc)
 HG_TEST_THREAD_CB(get_sel_data_rpc)
+HG_TEST_THREAD_CB(send_read_sel_obj_id_rpc)
 
 hg_id_t
 gen_obj_id_register(hg_class_t *hg_class)
@@ -5706,6 +5733,12 @@ hg_id_t
 get_sel_data_rpc_register(hg_class_t *hg_class)
 {
     return  MERCURY_REGISTER(hg_class, "get_sel_data_rpc_register", get_sel_data_rpc_in_t, pdc_int_ret_t, get_sel_data_rpc_cb);
+}
+
+hg_id_t
+send_read_sel_obj_id_rpc_register(hg_class_t *hg_class)
+{
+    return  MERCURY_REGISTER(hg_class, "send_query_obj_id_rpc_register", get_sel_data_rpc_in_t, pdc_int_ret_t, send_read_sel_obj_id_rpc_cb);
 }
 
 

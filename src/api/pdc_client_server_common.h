@@ -94,6 +94,11 @@ typedef enum { NONE=0,
                MEM=3 
              } PDC_data_loc_t;
 
+typedef enum { PDC_RECV_REGION_OP_NONE=0, 
+               PDC_RECV_REGION_DO_QUERY=1, 
+               PDC_RECV_REGION_DO_READ=2, 
+             } PDC_recv_region_op_t;
+
 typedef enum { PDC_BULK_OP_NONE=0, 
                PDC_BULK_QUERY_COORDS=1, 
                PDC_BULK_READ_COORDS=2, 
@@ -3121,12 +3126,15 @@ typedef struct query_storage_region_transfer_t {
     uint64_t                  offset;
     uint64_t                  size;
     int                       has_hist;
+    int                       data_type;
+    int                       op;
     pdc_histogram_t           hist;
 } query_storage_region_transfer_t;
 
 typedef struct get_sel_data_rpc_in_t {
-    int      sel_id;
+    int      query_id;
     uint64_t obj_id;
+    int      origin;
 } get_sel_data_rpc_in_t;
 
 static HG_INLINE hg_return_t
@@ -3141,7 +3149,13 @@ hg_proc_get_sel_data_rpc_in_t(hg_proc_t proc, void *data)
         return ret;
     }
 
-    ret = hg_proc_int32_t(proc, &struct_data->sel_id);
+    ret = hg_proc_int32_t(proc, &struct_data->origin);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_int32_t(proc, &struct_data->query_id);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
@@ -3181,6 +3195,7 @@ typedef struct storage_regions_args_t {
     int           ndim;
     int           query_id;
     int           manager;
+    int           op;
     region_list_t *storage_region;
 } storage_regions_args_t;
 
@@ -3196,7 +3211,19 @@ hg_proc_query_storage_region_transfer_t(hg_proc_t proc, void *data)
         return ret;
     }
 
+    ret = hg_proc_int32_t(proc, &struct_data->op);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
     ret = hg_proc_int32_t(proc, &struct_data->is_done);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_int32_t(proc, &struct_data->data_type);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;

@@ -94,6 +94,7 @@ hg_id_t    server_checkpoint_rpc_register_id_g;
 hg_id_t    send_shm_register_id_g;
 hg_id_t    send_client_storage_meta_rpc_register_id_g;
 hg_id_t    send_data_query_region_register_id_g;
+hg_id_t    send_read_sel_obj_id_rpc_register_id_g; 
 hg_id_t    send_nhits_register_id_g;
 hg_id_t    send_bulk_rpc_register_id_g;
 
@@ -1832,6 +1833,7 @@ static void PDC_Server_mercury_register()
     send_client_storage_meta_rpc_register_id_g= send_client_storage_meta_rpc_register(hg_class_g);
 
     send_data_query_region_register_id_g      = send_data_query_region_register(hg_class_g);
+    send_read_sel_obj_id_rpc_register_id_g    = send_read_sel_obj_id_rpc_register(hg_class_g);
 
 }
 

@@ -408,7 +408,7 @@ done:
  */
 pdc_metadata_t* find_metadata_by_id(uint64_t obj_id) 
 {
-    pdc_metadata_t *ret_value;
+    pdc_metadata_t *ret_value = NULL;
     pdc_hash_table_entry_head *head;
     pdc_metadata_t *elt;
     HashTableIterator hash_table_iter;
@@ -436,7 +436,6 @@ pdc_metadata_t* find_metadata_by_id(uint64_t obj_id)
     }  // if (metadata_hash_table_g != NULL)
     else {
         printf("==PDC_SERVER: metadata_hash_table_g not initialized!\n");
-        ret_value = NULL;
         goto done;
     }
 
@@ -458,11 +457,11 @@ pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id)
     FUNC_ENTER(NULL);
 
     ret_value = find_metadata_by_id(obj_id);
-    if (ret_value == NULL) {
-        printf("==PDC_SERVER[%d]: PDC_Server_get_obj_metadata() - cannot find meta with id %" PRIu64 "\n",
-                pdc_server_rank_g, obj_id);
-        goto done;
-    }
+    /* if (ret_value == NULL) { */
+    /*     printf("==PDC_SERVER[%d]: PDC_Server_get_obj_metadata() - cannot find meta with id %" PRIu64 "\n", */
+    /*             pdc_server_rank_g, obj_id); */
+    /*     goto done; */
+    /* } */
 
 done:
     FUNC_LEAVE(ret_value);

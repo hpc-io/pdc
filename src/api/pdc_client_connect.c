@@ -7856,7 +7856,7 @@ PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op, uint64_t *nhits
     if (nhits) 
         *nhits = result->nhits;
     if (sel) {
-        sel->sel_id = query_xfer->query_id; 
+        sel->query_id = query_xfer->query_id; 
         sel->nhits  = result->nhits;
         sel->coords = result->coords;
         sel->ndim   = result->ndim;
@@ -7972,9 +7972,10 @@ perr_t PDC_Client_get_sel_data(pdcid_t obj_id, pdcselection_t *sel, void *data)
         meta_id = obj_id;
 
 
-    in.sel_id = sel->sel_id;
-    in.obj_id = meta_id;
-    server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
+    in.query_id = sel->query_id;
+    in.obj_id   = meta_id;
+    in.origin   = pdc_client_mpi_rank_g;
+    server_id   = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
     debug_server_id_count[server_id]++;
 
     if (PDC_Client_try_lookup_server(server_id) != SUCCEED) {
@@ -8009,7 +8010,7 @@ perr_t PDC_Client_get_sel_data(pdcid_t obj_id, pdcselection_t *sel, void *data)
 
     // Copy the result to user's buffer
     DL_FOREACH(pdcquery_result_list_head_g, result_elt) {
-        if (result_elt->query_id == in.sel_id) {
+        if (result_elt->query_id == in.query_id) {
             off = 0;
             for (i = 0; i < pdc_server_num_g; i++) {
                 if (result_elt->data_arr[i] != NULL) {
@@ -8082,25 +8083,9 @@ PDC_recv_read_coords_data(const struct hg_cb_info *callback_info)
             goto done;
         }
 
-        if (result_elt->recv_data_nhits >= result_elt->nhits) {
-            /* total_size = 0; */
-            /* for (i = 0; i < pdc_server_num_g; i++) */ 
-            /*     total_size += result_elt->data_arr_size[i]; */
-            
-            /* result_elt->data = malloc(total_size); */
-            /* off = 0; */
-            /* for (i = 0; i < pdc_server_num_g; i++) { */
-            /*     if (result_elt->data_arr[i] != NULL) { */
-            /*         memcpy(result_elt->data + off, result_elt->data_arr[i], result_elt->data_arr_size[i]); */
-            /*         off += result_elt->data_arr_size[i]; */
-            /*         free(result_elt->data_arr); */
-            /*         result_elt->data_arr = NULL; */
-            /*     } */
-            /* } */
-
-            /* result_elt->recv_data_nhits = 0; */
+        if (result_elt->recv_data_nhits >= result_elt->nhits) 
             work_todo_g--;
-        }
+        
     }// End else
 
 done:
