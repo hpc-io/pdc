@@ -63,12 +63,6 @@ int main(int argc, char **argv)
     id2_id = id2_meta->obj_id;
  
 
-    region.ndim = ndim;
-    region.offset = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
-    region.size = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
-    region.offset[0] = 0;
-    region.size[0]   = 10;
-
     // Construct query constraints
     float x_lo0 = 0.05, x_hi0 = 200.05;
     pdcquery_t *q0l, *q0h, *q0, *q1l, *q1h, *q1, *q2l, *q2h, *q2, *q, *q12;
@@ -92,7 +86,12 @@ int main(int argc, char **argv)
     /* q12 = PDCquery_or(q1, q2); */
     /* q   = PDCquery_or(q0, q12); */
 
-    /* PDCquery_sel_region(q, &region); */
+    region.ndim = ndim;
+    region.offset = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
+    region.size = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
+    region.offset[0] = 100;
+    region.size[0]   = 100;
+    PDCquery_sel_region(q, &region);
    
     uint64_t nhits;
     pdcselection_t sel;
