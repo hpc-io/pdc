@@ -113,24 +113,24 @@ int main (int argc, char* argv[])
 
     for (i = 0; i < NVAR; i++) {
 
-        /* if (my_rank == 0) { */
-        /*     obj_ids[i] = PDCobj_create(cont_id, dset_names[i], obj_prop); */
-        /*     if (obj_ids[i] <= 0) { */    
-        /*         printf("Error getting an object %s from server, exit...\n", dset_names[i]); */
-        /*         goto done; */
-        /*     } */
-        /* } */
+        if (my_rank == 0) {
+            obj_ids[i] = PDCobj_create(cont_id, dset_names[i], obj_prop);
+            if (obj_ids[i] <= 0) {    
+                printf("Error getting an object %s from server, exit...\n", dset_names[i]);
+                goto done;
+            }
+        }
 
-        /* #ifdef ENABLE_MPI */
-        /* MPI_Barrier(MPI_COMM_WORLD); */
-        /* ret = PDC_Client_query_metadata_name_timestep_agg(dset_names[i], 0, &obj_meta); */
-        /* #else */
-        /* ret = PDC_Client_query_metadata_name_timestep(dset_names[i], 0, &obj_meta); */
-        /* #endif */
-        /* if (ret != SUCCEED || obj_meta == NULL || obj_meta->obj_id == 0) { */
-        /*     printf("Error with metadata!\n"); */
-        /*     exit(-1); */
-        /* } */
+        #ifdef ENABLE_MPI
+        MPI_Barrier(MPI_COMM_WORLD);
+        ret = PDC_Client_query_metadata_name_timestep_agg(dset_names[i], 0, &obj_meta);
+        #else
+        ret = PDC_Client_query_metadata_name_timestep(dset_names[i], 0, &obj_meta);
+        #endif
+        if (ret != SUCCEED || obj_meta == NULL || obj_meta->obj_id == 0) {
+            printf("Error with metadata!\n");
+            exit(-1);
+        }
 
         elem_count = region_size / sizeof(float);
         for (j = 0; j < my_nregion; j++) {
@@ -143,25 +143,25 @@ int main (int argc, char* argv[])
             if (elem_offset + elem_count > dims[0]) {
                 printf("%d ERROR - off %lu count %lu\n", my_rank, elem_offset, elem_count);
             }
-            /* hg_ret = H5Dread(dset_ids[i], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, data); */
+            hg_ret = H5Dread(dset_ids[i], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, data);
             H5Sclose(memspace);
 
             obj_region.offset[0] = elem_offset * sizeof(float);
             obj_region.size[0]   = elem_count * sizeof(float);
 
-            /* ret = PDC_Client_write(obj_meta, &obj_region, data); */
-            /* if (ret != SUCCEED) { */
-            /*     printf("Error with PDC_Client_write!\n"); */
-            /*     exit(-1); */
-            /* } */
+            ret = PDC_Client_write(obj_meta, &obj_region, data);
+            if (ret != SUCCEED) {
+                printf("Error with PDC_Client_write!\n");
+                exit(-1);
+            }
 
-            if (my_rank == 0) 
+            if (my_rank == 0 && j % 20 == 0) 
                 printf("Rank %d -  obj [%s] Imported %d/%d regions\n", my_rank, dset_names[i], j, my_nregion);
             
         } // End for j
 
-        /* if (my_rank == 0) */ 
-        /*     printf("Finished importing object %s\n", dset_names[i]); */
+        if (my_rank == 0) 
+            printf("Finished importing object %s\n", dset_names[i]);
     } // End for i
 
 
