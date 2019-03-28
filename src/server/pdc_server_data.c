@@ -6028,9 +6028,9 @@ send_query_storage_region_to_server(query_task_t *task, region_list_t *region, u
         in.has_hist = 0;
     }
 
-    printf("==PDC_SERVER[%d]: sending 1 storage region to server %d, is_done=%d!\n", 
-                        pdc_server_rank_g, server_id, is_done);
-    fflush(stdout);
+    /* printf("==PDC_SERVER[%d]: sending 1 storage region to server %d, is_done=%d!\n", */ 
+    /*                     pdc_server_rank_g, server_id, is_done); */
+    /* fflush(stdout); */
 
     hg_ret = HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, 
                        send_data_query_region_register_id_g, &handle);
@@ -6103,8 +6103,8 @@ PDC_Server_data_read_to_buf_1_region(region_list_t *region)
         goto done;
     }
 
-    printf("==PDC_SERVER[%d]: %s - read %" PRIu64 " bytes with offset %" PRIu64 " for object %" PRIu64 "\n", 
-            pdc_server_rank_g, __func__, read_bytes, region->offset, region->obj_id);
+    /* printf("==PDC_SERVER[%d]: %s - read %" PRIu64 " bytes with offset %" PRIu64 " for object %" PRIu64 "\n", */ 
+    /*         pdc_server_rank_g, __func__, read_bytes, region->offset, region->obj_id); */
 
     region->is_data_ready = 1;
     region->is_io_done = 1;
@@ -6159,8 +6159,8 @@ PDC_Server_data_read_to_buf(region_list_t *region_list_head)
             continue;
         }
 
-        printf("==PDC_SERVER[%d]: %s - read %" PRIu64 " bytes with offset %" PRIu64 " for object %" PRIu64 "\n", 
-                pdc_server_rank_g, __func__, read_bytes, region_elt->offset, region_elt->obj_id);
+        /* printf("==PDC_SERVER[%d]: %s - read %" PRIu64 " bytes with offset %" PRIu64 " for object %" PRIu64 "\n", */ 
+        /*         pdc_server_rank_g, __func__, read_bytes, region_elt->offset, region_elt->obj_id); */
 
         region_elt->is_data_ready = 1;
         region_elt->is_io_done = 1;
@@ -6292,7 +6292,10 @@ PDC_Server_load_query_data(pdcquery_t *query)
 
 #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer_end, 0);
-    server_io_elapsed_time_g += PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+    double read_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+    server_io_elapsed_time_g += read_time; 
+    printf("==PDC_SERVER[%d]: %s finished reading %d regions, time %.2f seconds!\n", 
+            pdc_server_rank_g, __func__, count, read_time);
 #endif
 
 done:
@@ -6437,6 +6440,11 @@ PDC_Server_query_evaluate(pdcquery_t *query, query_task_t *task)
     size_t i, unit_size;
 
     /* printf("==PDC_SERVER[%d]: %s - start query evaluation!\n", pdc_server_rank_g, __func__); */
+    #ifdef ENABLE_TIMING
+    struct timeval  pdc_timer_start, pdc_timer_end;
+    gettimeofday(&pdc_timer_start, 0);
+    #endif
+
 
     // Get the nhits and coords of query 
     region_list_head = (region_list_t*)query->constraint->storage_region_list_head;
@@ -6527,6 +6535,14 @@ PDC_Server_query_evaluate(pdcquery_t *query, query_task_t *task)
 
     } // End DL_FOREACH
 
+    #ifdef ENABLE_TIMING
+    gettimeofday(&pdc_timer_end, 0);
+    double query_eval_time= PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+    printf("==PDC_SERVER[%d]: query evaluation time %.4fs\n", 
+            pdc_server_rank_g, query_eval_time);
+    #endif
+
+
     /* printf("==PDC_SERVER[%d]: Selection\n", pdc_server_rank_g); */
     /* PDCselection_print(sel); */
 done:
@@ -6608,6 +6624,11 @@ PDC_Server_query_result_merge(pdcquery_t *query)
     uint64_t *left_coords, *right_coords;
     int is_same, res;
 
+    #ifdef ENABLE_TIMING
+    struct timeval  pdc_timer_start, pdc_timer_end;
+    gettimeofday(&pdc_timer_start, 0);
+    #endif
+
     if (NULL != query->left->constraint) 
         sel_left  = &query->left->constraint->sel;
     else 
@@ -6687,6 +6708,13 @@ PDC_Server_query_result_merge(pdcquery_t *query)
     free(sel_right->coords);
     memset(sel_left, 0, sizeof(pdcselection_t));
     memset(sel_right, 0, sizeof(pdcselection_t));
+
+    #ifdef ENABLE_TIMING
+    gettimeofday(&pdc_timer_end, 0);
+    double query_merge_time= PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+    printf("==PDC_SERVER[%d]: query merge time %.4fs\n", pdc_server_rank_g, query_merge_time);
+    #endif
+
 
     /* PDCselection_print(&query->sel); */
 
@@ -7498,8 +7526,7 @@ PDC_Server_do_query(query_task_t *task)
     #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer_end, 0);
     double query_process_time= PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-    printf("==PDC_SERVER[%d]: query processing time %.4fs\n", 
-            pdc_server_rank_g, query_process_time);
+    printf("==PDC_SERVER[%d]: query processing time %.4fs\n", pdc_server_rank_g, query_process_time);
     #endif
 
 
@@ -7519,8 +7546,8 @@ PDC_Server_distribute_query_storage_info(query_task_t *task, uint64_t obj_id,
     // there can be multiple pass to the same object, we only need to send it once
     for (i = 0; i < *obj_idx; i++) {
         if (obj_id == obj_ids[i]) {
-            printf("==PDC_SERVER[%d]: storage region already sent for %" PRIu64 " !\n", 
-                    pdc_server_rank_g, obj_id);
+            /* printf("==PDC_SERVER[%d]: storage region already sent for %" PRIu64 " !\n", */ 
+            /*         pdc_server_rank_g, obj_id); */
             goto done;
         }
     }
@@ -7558,8 +7585,8 @@ PDC_Server_distribute_query_storage_info(query_task_t *task, uint64_t obj_id,
             if (nsent_server >= avg_count-1 || nsent == count - 1) 
                 is_last = 1;
             
-            printf("==PDC_SERVER[%d]: sending 1 region to server %d\n", 
-                    pdc_server_rank_g, server_id);
+            /* printf("==PDC_SERVER[%d]: sending 1 region to server %d\n", */ 
+            /*         pdc_server_rank_g, server_id); */
 
             send_query_storage_region_to_server(task, elt, meta->obj_id, server_id, count, is_last, op);
             nsent++;
@@ -7577,15 +7604,15 @@ PDC_Server_distribute_query_storage_info(query_task_t *task, uint64_t obj_id,
             }
         } // End DL_FOREACH
 
-        printf("==PDC_SERVER[%d]: distributed all storage meta of %" PRIu64 "!\n", 
-                pdc_server_rank_g, obj_id);
+        /* printf("==PDC_SERVER[%d]: distributed all storage meta of %" PRIu64 "!\n", */ 
+        /*         pdc_server_rank_g, obj_id); */
         meta->all_storage_region_distributed = 1;
 
     } // end if (NULL != meta)
-    else {
-        printf("==PDC_SERVER[%d]: %s - metadata not found for %" PRIu64 "!\n",
-                pdc_server_rank_g, __func__, obj_id);
-    }
+    /* else { */
+    /*     printf("==PDC_SERVER[%d]: %s - metadata not found for %" PRIu64 "!\n", */
+    /*             pdc_server_rank_g, __func__, obj_id); */
+    /* } */
 
 done:
     fflush(stdout);
@@ -7664,8 +7691,8 @@ PDC_Server_recv_data_query_region(const struct hg_cb_info *callback_info)
     region_list_t *region = args->storage_region;
     int query_id_exist;
 
-    printf("==PDC_SERVER[%d]: received a query storage region!\n", pdc_server_rank_g);
-    fflush(stdout);
+    /* printf("==PDC_SERVER[%d]: received a query storage region!\n", pdc_server_rank_g); */
+    /* fflush(stdout); */
 
     if (args->op == PDC_RECV_REGION_DO_READ) {
         add_to_cache_storage_region(region->obj_id, region);
@@ -7704,8 +7731,8 @@ PDC_Server_recv_data_query_region(const struct hg_cb_info *callback_info)
         // Add this storage region to all query constraints that specifies the same object
         attach_storage_region_to_query(query, region); 
 
-        printf("==PDC_SERVER[%d]: Received (%d/%d) storage regions of %d object from meta server!\n", 
-                pdc_server_rank_g, query_task->n_recv_obj, query_task->n_unique_obj, query_task->n_recv_obj);
+        /* printf("==PDC_SERVER[%d]: Received (%d/%d) storage regions of %d object from meta server!\n", */ 
+        /*         pdc_server_rank_g, query_task->n_recv_obj, query_task->n_unique_obj, query_task->n_recv_obj); */
 
         if (query_task->n_recv_obj == query_task->n_unique_obj) {
 
@@ -7756,8 +7783,10 @@ PDC_Server_recv_data_query(const struct hg_cb_info *callback_info)
         new_task->get_op            = query_xfer->get_op;
         new_task->region_constraint = (region_list_t*)query->region_constraint;
         DL_APPEND(query_task_list_head_g, new_task);
-        printf("==PDC_SERVER[%d]: %s - appended new query task %d to list head\n", 
-                pdc_server_rank_g, __func__, new_task->query_id);
+        if (is_debug_g == 1) {
+            printf("==PDC_SERVER[%d]: %s - appended new query task %d to list head\n", 
+                    pdc_server_rank_g, __func__, new_task->query_id);
+        }
     }
     else {
         task_elt->query = query;
@@ -7932,8 +7961,8 @@ PDC_Server_recv_read_sel_obj_data(const struct hg_cb_info *callback_info)
     region_list_t *storage_region_head = NULL, *cache_region, *region_elt;
     PDC_var_type_t data_type;
 
-    printf("==PDC_SERVER[%d]: %s - received forwarded read selection request id = %d, obj = %" PRIu64 "\n", 
-            pdc_server_rank_g, __func__, in->query_id, in->obj_id);
+    /* printf("==PDC_SERVER[%d]: %s - received forwarded read selection request id = %d, obj = %" PRIu64 "\n", */ 
+    /*         pdc_server_rank_g, __func__, in->query_id, in->obj_id); */
 
     // find task
     DL_FOREACH(query_task_list_head_g, task_elt) {

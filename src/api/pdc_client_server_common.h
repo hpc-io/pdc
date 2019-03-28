@@ -3296,6 +3296,7 @@ void              PDCquery_free_all(pdcquery_t *query);
 void              PDCquery_print(pdcquery_t *query);
 void              PDCregion_free(struct PDC_region_info *region);
 void              PDCselection_print(pdcselection_t *sel);
+void              PDCselection_print_all(pdcselection_t *sel);
 
 
 hg_return_t PDC_Client_recv_nhits(const struct hg_cb_info *callback_info);

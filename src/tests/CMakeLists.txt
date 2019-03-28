@@ -56,6 +56,7 @@ set(PROGRAMS
   query_data
   query_vpic_create_data
   query_vpic
+  import_vpic
 #  obj_analysis
   )
 

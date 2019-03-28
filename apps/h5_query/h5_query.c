@@ -51,9 +51,77 @@ query_constraint_t query_constraints[] = {
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX
     },
-    // Energy > 1.7
+    // Energy > 1.55 && < 1.60 
     {
-        1.7,     FLT_MAX, 
+        1.55,     1.60, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+    },
+    // Energy > 1.55 && < 1.56 
+    {
+        1.55,     1.560, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+    },
+    // Energy > 1.555 && < 1.556 
+    {
+        1.555,     1.5560, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+    },
+    // Energy > 1.5555 && < 1.5556 
+    {
+        1.5555,   1.5556, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+    },
+    // Energy > 1.55555 && < 1.55556 
+    {
+        1.55555,  1.55556, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+    },
+    // Energy > 1.555555 && < 1.555556 
+    {
+        1.555555, 1.555556, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+    },
+    {
+        1.5555555, 1.5555556, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+    },
+    {
+        1.55555555, 1.55555556, 
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX, 
@@ -120,7 +188,7 @@ timeval_subtract (struct timeval *result, struct timeval *x, struct timeval *y)
 
 void print_usage(char *name)
 {
-    printf("Usage: %s /path/to/file [query_id]\n", name);
+    printf("Usage: %s /path/to/file query_id_from [query_id_to]\n", name);
 }
 
 
@@ -142,8 +210,13 @@ void do_query(int qid, vpic_data_t *vpic_data)
            ) {
             is_satisfy = 0;
         }
-        else
+        else {
+            //TMP
+            if (qid == 8) {
+                printf(" , %lu", i);
+            }
             nhits++;
+        }
     }
 
     printf("Query %d has %lu hits\n", qid, nhits);
@@ -151,7 +224,7 @@ void do_query(int qid, vpic_data_t *vpic_data)
 
 int main (int argc, char* argv[])
 {
-    int         my_rank = 0, num_procs = 1, i, ndim, query_id = 0;
+    int         my_rank = 0, num_procs = 1, i, ndim, query_id = 0, query_id2;
     char        *file_name, *group_name;
     char        *dset_names[NVAR] = {"Energy", "x", "y", "z", "Ux", "Uy", "Uz"};
     hid_t       file_id, group_id, dset_ids[NVAR], filespace, memspace, fapl;
@@ -175,11 +248,15 @@ int main (int argc, char* argv[])
 
     file_name  = argv[1];
     group_name = "Step#0";
-    if (argc == 3) 
+    if (argc >= 3) 
         query_id = atoi(argv[2]);
 
+    query_id2 = query_id;
+    if (argc >= 4) 
+        query_id2 = atoi(argv[3]);
+
     if (my_rank == 0) {
-        printf ("Query id = %d, reading from file [%s], \n", query_id, file_name);
+        printf ("Query id = %d to %d, reading from file [%s], \n", query_id, query_id2, file_name);
     }
 
     if((fapl = H5Pcreate(H5P_FILE_ACCESS)) < 0) {
@@ -213,7 +290,7 @@ int main (int argc, char* argv[])
 
     for (i = 0; i < NVAR; i++) {
         dset_ids[i] = H5Dopen(group_id, dset_names[i], H5P_DEFAULT);
-        if(group_id < 0) {
+        if(dset_ids[i] < 0) {
             printf("Error opening dataset [%s]!\n", dset_names[i]);
             goto error;
         }
@@ -223,22 +300,20 @@ int main (int argc, char* argv[])
     ndim      = H5Sget_simple_extent_ndims(filespace);
     H5Sget_simple_extent_dims(filespace, dims, NULL);
 
-    vpic_data.nparticle = dims[0];
-
-    vpic_data.energy = (float*)malloc(vpic_data.nparticle * sizeof(float));
-    vpic_data.x      = (float*)malloc(vpic_data.nparticle * sizeof(float));
-    vpic_data.y      = (float*)malloc(vpic_data.nparticle * sizeof(float));
-    vpic_data.z      = (float*)malloc(vpic_data.nparticle * sizeof(float));
-    vpic_data.ux     = (float*)malloc(vpic_data.nparticle * sizeof(float));
-    vpic_data.uy     = (float*)malloc(vpic_data.nparticle * sizeof(float));
-    vpic_data.uz     = (float*)malloc(vpic_data.nparticle * sizeof(float));
-
-
-    my_offset = my_rank * (vpic_data.nparticle / num_procs);
-    my_size   = vpic_data.nparticle / num_procs;
+    my_offset = my_rank * (dims[0] / num_procs);
+    my_size   = dims[0] / num_procs;
     if (my_rank == num_procs - 1) 
-        my_size += (vpic_data.nparticle % my_size);
+        my_size += (dims[0] % my_size);
     
+    vpic_data.nparticle = my_size;
+
+    vpic_data.energy = (float*)malloc(my_size * sizeof(float));
+    vpic_data.x      = (float*)malloc(my_size * sizeof(float));
+    vpic_data.y      = (float*)malloc(my_size * sizeof(float));
+    vpic_data.z      = (float*)malloc(my_size * sizeof(float));
+    vpic_data.ux     = (float*)malloc(my_size * sizeof(float));
+    vpic_data.uy     = (float*)malloc(my_size * sizeof(float));
+    vpic_data.uz     = (float*)malloc(my_size * sizeof(float));
 
     memspace =  H5Screate_simple(1, (hsize_t *) &my_size, NULL);
     H5Sselect_hyperslab(filespace, H5S_SELECT_SET, &my_offset, NULL, &my_size, NULL);
@@ -272,7 +347,10 @@ int main (int argc, char* argv[])
 
     if (my_rank == 0) 
         printf ("Processing query\n");
-    do_query(query_id, &vpic_data);
+
+    for (i = query_id; i <= query_id2; i++) {
+        do_query(i, &vpic_data);
+    }
 
     #ifdef ENABLE_MPI
     MPI_Barrier (MPI_COMM_WORLD);

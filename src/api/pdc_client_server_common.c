@@ -6476,6 +6476,19 @@ void PDCselection_print(pdcselection_t *sel)
 
 }
 
+void PDCselection_print_all(pdcselection_t *sel)
+{
+    uint64_t i;
+    printf("== %" PRIu64 " hits, allocated %" PRIu64 " coordinates!\n", sel->nhits, sel->coords_alloc);
+    printf("== Coordinates:\n");
+
+    for (i = 0; i < sel->nhits; i++)
+        printf(" ,%" PRIu64 "", sel->coords[i]);
+
+    printf("\n\n");
+
+}
+
 
 #include "pdc_analysis_common.c"
 #include "pdc_transforms_common.c"

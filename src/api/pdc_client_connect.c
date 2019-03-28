@@ -1101,7 +1101,7 @@ perr_t PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context,
 #endif
     // Client 0 looks up all servers, others only lookup their node local server
     char *client_lookup_env = getenv("PDC_CLIENT_LOOKUP");
-    if (client_lookup_env != NULL && strcmp(client_lookup_env, "ALL") == 0) {
+    if (client_lookup_env == NULL || strcmp(client_lookup_env, "ALL") == 0) {
         if (pdc_client_mpi_rank_g == 0) 
             printf("==PDC_CLIENT[%d]: Client lookup all servers at start time!\n", pdc_client_mpi_rank_g);
         for (local_server_id = 0; local_server_id < pdc_server_num_g; local_server_id++) {
@@ -7756,10 +7756,11 @@ void PDC_get_server_from_query(pdcquery_t *query, uint32_t *servers, uint32_t *n
 
 int gen_query_id()
 {
-    if (query_id_g == 0) 
-        query_id_g = (pdc_client_mpi_rank_g+1) * 10000;
+    /* if (query_id_g == 0) */ 
+    /*     query_id_g = (pdc_client_mpi_rank_g+1) * 10000; */
 
-    return query_id_g++;
+    srand(time(0));
+    return rand();
 }
 
 hg_return_t
