@@ -87,11 +87,11 @@ int main (int argc, char* argv[])
     total_elem   = dims[0];
     total_region = ceil(sizeof(float) * (1.0 * dims[0] / region_size));
     my_nregion   = ceil(1.0 * total_region / num_procs);
+    my_nelem     = my_nregion * (region_size/sizeof(float));
     if (my_rank == num_procs - 1) 
         my_nregion = total_region - my_nregion*(num_procs - 1);
 
-    my_nelem     = my_nregion * (region_size/sizeof(float));
-    my_elem_off  = my_rank * ceil(1.0*total_elem/num_procs);
+    my_elem_off  = my_rank * my_nelem;
     data         = (float*)malloc(region_size);
 
     // PDC
@@ -141,7 +141,7 @@ int main (int argc, char* argv[])
             memspace  = H5Screate_simple(1, &elem_count, NULL);
             H5Sselect_hyperslab(filespace, H5S_SELECT_SET, &elem_offset, NULL, &elem_count, NULL);
             if (elem_offset + elem_count > dims[0]) {
-                printf("%d ERROR - off %lu count %lu\n", my_rank, elem_offset, elem_count);
+                printf("%d ERROR - off %llu count %llu\n", my_rank, elem_offset, elem_count);
             }
             hg_ret = H5Dread(dset_ids[i], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, data);
             H5Sclose(memspace);
@@ -149,19 +149,28 @@ int main (int argc, char* argv[])
             obj_region.offset[0] = elem_offset * sizeof(float);
             obj_region.size[0]   = elem_count * sizeof(float);
 
+            /* printf("%d HDF5 off %llu count %llu, PDC off %lu count %lu\n", */ 
+            /*         my_rank, elem_offset, elem_count, obj_region.offset[0], obj_region.size[0]); */
+
             ret = PDC_Client_write(obj_meta, &obj_region, data);
             if (ret != SUCCEED) {
                 printf("Error with PDC_Client_write!\n");
                 exit(-1);
             }
 
-            if (my_rank == 0 && j % 20 == 0) 
-                printf("Rank %d -  obj [%s] Imported %d/%d regions\n", my_rank, dset_names[i], j, my_nregion);
+            if (my_rank == 0 && j % (my_nregion/10) == 0) 
+                printf("Rank %d -  obj [%s] Imported %lld/%lld regions\n", my_rank, dset_names[i], j, my_nregion);
             
         } // End for j
 
         if (my_rank == 0) 
-            printf("Finished importing object %s\n", dset_names[i]);
+            printf("\n\nFinished import object %s\n\n", dset_names[i]);
+
+        fflush(stdout);
+        #ifdef ENABLE_MPI
+        MPI_Barrier(MPI_COMM_WORLD);
+        #endif
+
     } // End for i
 
 
