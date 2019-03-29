@@ -51,6 +51,16 @@ query_constraint_t query_constraints[] = {
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX
     },
+    // Energy > 3.75 && < 4.00 
+    {
+        3.75,     4.00, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+    },
     // Energy > 1.55 && < 1.60 
     {
         1.55,     1.60, 

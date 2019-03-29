@@ -6185,7 +6185,102 @@ PDC_constraint_get_nhits_from_hist(pdcquery_constraint_t *constraint, pdc_histog
                                   uint64_t *min_hits, uint64_t *max_hits)
 {
     perr_t ret_value = SUCCEED;
+    pdcquery_op_t op, lop, rop;
+    double value, value2;
+    int    i, lidx, ridx;
 
+    if (constraint == NULL || region_hist == NULL || region_hist == NULL || max_hits == NULL) {
+        printf("==PDC_SERVER[%d]: %s -  NULL input!\n", pdc_server_rank_g, __func__);
+        goto done;
+    }
+
+    switch(constraint->type) {
+        case PDC_FLOAT :
+            value  = (double)(*((float*)&constraint->value));
+            value2 = (double)(*((float*)&constraint->value2));
+            break;
+        case PDC_DOUBLE:
+            value  = (double)(*((double*)&constraint->value));
+            value2 = (double)(*((double*)&constraint->value2));
+            break;
+        case PDC_INT:
+            value  = (double)(*((int*)&constraint->value));
+            value2 = (double)(*((int*)&constraint->value2));
+            break;
+        case PDC_UINT:
+            value  = (double)(*((uint32_t*)&constraint->value));
+            value2 = (double)(*((uint32_t*)&constraint->value2));
+            break;
+        case PDC_INT64:
+            value  = (double)(*((int64_t*)&constraint->value));
+            value2 = (double)(*((int64_t*)&constraint->value2));
+            break;
+        case PDC_UINT64:
+            value  = (double)(*((uint64_t*)&constraint->value));
+            value2 = (double)(*((uint64_t*)&constraint->value2));
+            break;
+        default:
+            printf("==PDC_SERVER[%d]: %s - error with operator type!\n", pdc_server_rank_g, __func__);
+            ret_value = FAIL;
+            goto done;
+    } 
+
+    lop = constraint->op;
+    rop = constraint->op2;
+    *min_hits = *max_hits = 0;
+    lidx = 0;
+    ridx = region_hist->nbin*2 - 1;
+
+    if (constraint->is_range == 1) {
+        // No overlap at all
+        if (value > region_hist->range[region_hist->nbin*2-1] || value2 < region_hist->range[0]) {
+            goto done;
+        }
+
+        // Find the value range in hist that includes the queried range
+        i = 0;
+        while (i < region_hist->nbin*2 && region_hist->range[i] < value) {
+            lidx = i;
+            i += 2;
+        }
+
+        i = region_hist->nbin*2 - 1;
+        while (i > 0 && region_hist->range[i] > value2) {
+            ridx = i;
+            i -= 2;
+        }
+    }
+    else {
+        // one sided
+        if (lop == PDC_LT || lop == PDC_LTE) {
+            i = region_hist->nbin*2 - 1;
+            while (i > 0 && region_hist->range[i] > value) {
+                ridx = i;
+                i -= 2;
+            }
+            lidx = 0;
+            value2 = value;
+            value = -DBL_MAX;
+        }
+        else if (lop == PDC_GT || lop == PDC_GTE) {
+            i = 0;
+            while (i < region_hist->nbin*2 && region_hist->range[i] < value) {
+                lidx = i;
+                i += 2;
+            }
+            ridx = region_hist->nbin*2 - 1;
+            value2 = DBL_MAX;
+        }
+    }
+
+    for (i = lidx/2; i <= ridx/2; i++) {
+        (*max_hits) += region_hist->bin[i];
+        if (region_hist->range[i*2] >= value && region_hist->range[i*2+1] <= value2) {
+            (*min_hits) += region_hist->bin[i];
+        }
+    }
+
+done:
     return ret_value;
 }
 
@@ -6255,10 +6350,22 @@ PDC_Server_load_query_data(pdcquery_t *query)
     // Iterate over current list and check for existing identical regions in the io list
     DL_FOREACH(storage_region_list_head, req_region) {
 
-        // TODO: use histogram to see if we need to read this region
+        // use histogram to see if we need to read this region
         if (gen_hist_g == 1) {
             uint64_t min_hits, max_hits;
-            /* PDC_constraint_get_nhits_from_hist(constraint, req_region->region_hist, min_hits, max_hits); */
+            PDC_constraint_get_nhits_from_hist(constraint, req_region->region_hist, &min_hits, &max_hits);
+
+            printf("==PDC_SERVER[%d]: Region [%" PRIu64 ", %" PRIu64 "]:\n", 
+                    pdc_server_rank_g, req_region->start[0], req_region->count[0]);
+            /* PDC_print_hist(req_region->region_hist); */
+            printf("==PDC_SERVER[%d]: min_hits=%" PRIu64 ", max_hits=%" PRIu64 "!\n", pdc_server_rank_g, 
+                                      min_hits, max_hits);
+            fflush(stdout);
+            if (max_hits == 0) {
+                printf("==PDC_SERVER[%d]: Skip reading this region as it has no hits from histogram\n", 
+                                          pdc_server_rank_g); 
+                continue;
+            }
         }
 
         is_same_region = 0;
