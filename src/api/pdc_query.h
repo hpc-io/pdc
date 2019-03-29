@@ -27,6 +27,8 @@ typedef enum {
 } pdcquery_get_op_t; 
 
 typedef struct pdcquery_selection_t {
+    int      is_evaluated;
+    int      is_merged;
     pdcid_t  query_id;
     size_t   ndim;
     uint64_t nhits;

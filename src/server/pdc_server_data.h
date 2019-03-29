@@ -264,6 +264,7 @@ extern pdc_remote_server_info_t *pdc_remote_server_info_g;
 extern int is_debug_g;
 extern int n_read_from_bb_g;
 extern int read_from_bb_size_g;
+extern int gen_hist_g;
 
 extern pdc_data_server_io_list_t  *pdc_data_server_read_list_head_g   ;
 extern pdc_data_server_io_list_t  *pdc_data_server_write_list_head_g  ;

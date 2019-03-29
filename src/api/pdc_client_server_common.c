@@ -3104,6 +3104,11 @@ HG_TEST_RPC_CB(update_region_loc, handle)
     strcpy(input_region->storage_location, in.storage_location);
     input_region->offset = in.offset;
 
+    if (in.has_hist == 1) {
+        input_region->region_hist = (pdc_histogram_t*)calloc(1, sizeof(pdc_histogram_t));
+        copy_hist(input_region->region_hist, &in.hist);
+    }
+
     /* PDC_print_region_list(input_region); */
     /* fflush(stdout); */
 
@@ -3120,6 +3125,8 @@ HG_TEST_RPC_CB(update_region_loc, handle)
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
+
+    free(input_region);
 
     FUNC_LEAVE(ret_value);
 }

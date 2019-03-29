@@ -100,7 +100,7 @@ pdc_histogram_t *PDC_create_hist(PDC_var_type_t dtype, int nbin, double min, dou
     hist->dtype = dtype;
     hist->range = (double*)calloc(sizeof(double), nbin*2);
     hist->bin   = (uint64_t*)calloc(sizeof(uint64_t), nbin);
-    hist->nbin     = nbin;
+    hist->nbin  = nbin;
 
     min_bin = floor(min);
     while(min_bin <= min) {min_bin += bin_incr;}
@@ -218,7 +218,7 @@ pdc_histogram_t *PDC_gen_hist(PDC_var_type_t dtype, uint64_t n, void *data)
 
     PDC_sample_min_max(dtype, n, data, 0.1, &min, &max);
 
-    hist = PDC_create_hist(dtype, 10, min, max);
+    hist = PDC_create_hist(dtype, 50, min, max);
     if (NULL == hist) {
         printf("== %s - error with PDC_create_hist!)\n", __func__);
         return NULL;
@@ -349,6 +349,21 @@ pdc_histogram_t *PDC_merge_hist(int n, pdc_histogram_t **hists)
     }
 
     return res;
+}
+
+void copy_hist(pdc_histogram_t *to, pdc_histogram_t *from)
+{
+    int nbin = from->nbin;
+
+    to->incr  = from->incr;
+    to->dtype = from->dtype;
+    if (NULL == to->range)
+        to->range = (double*)calloc(sizeof(double), nbin*2);
+    memcpy(to->range, from->range, sizeof(double)*nbin*2);
+    if (NULL == to->bin)
+        to->bin   = (uint64_t*)calloc(sizeof(uint64_t), nbin);
+    memcpy(to->bin, from->bin, sizeof(uint64_t)*nbin);
+    to->nbin  = from->nbin;
 }
 
 

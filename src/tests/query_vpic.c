@@ -70,7 +70,7 @@ int main(int argc, char **argv)
     q0h = PDCquery_create(energy_id, PDC_LTE, PDC_FLOAT, &energy_hi0);
     /* q0  = PDCquery_and(q0l, q0h); */
 
-    q  = PDCquery_and(q0l, q0h);
+    q  = PDCquery_and(q0h, q0l);
     /* int id2_lo = 0, id2_hi = 32; */
     /* q1l = PDCquery_create(id2_id, PDC_GTE, PDC_INT, &id2_lo); */
     /* q1h = PDCquery_create(id2_id, PDC_LTE, PDC_INT, &id2_hi); */

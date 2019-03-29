@@ -2214,6 +2214,8 @@ typedef struct {
     uint64_t                    offset;
     region_info_transfer_t      region;
     int                         type;
+    int                         has_hist;
+    pdc_histogram_t             hist;
 } update_region_loc_in_t;
 
 typedef struct {
@@ -2250,6 +2252,20 @@ hg_proc_update_region_loc_in_t(hg_proc_t proc, void *data)
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
+    }
+
+    ret = hg_proc_int32_t(proc, &struct_data->has_hist);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    if (struct_data->has_hist == 1) {
+        ret = hg_proc_pdc_histogram_t(proc, &struct_data->hist);
+        if (ret != HG_SUCCESS) {
+            HG_LOG_ERROR("Proc error");
+            return ret;
+        }
     }
     return ret;
 }
