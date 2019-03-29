@@ -28,7 +28,6 @@ typedef enum {
 
 typedef struct pdcquery_selection_t {
     int      is_evaluated;
-    int      is_merged;
     pdcid_t  query_id;
     size_t   ndim;
     uint64_t nhits;
@@ -42,6 +41,10 @@ typedef struct pdcquery_constraint_t {
     PDC_var_type_t     type;
     double             value;   // Use it as a generic 64bit value
     pdcselection_t     sel;
+
+    int                is_range;
+    pdcquery_op_t      op2;
+    double             value2;
 
     void               *storage_region_list_head;
     pdcid_t            origin_server;
