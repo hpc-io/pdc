@@ -1292,8 +1292,8 @@ perr_t PDC_Server_checkpoint()
                 if (has_hist == 1) {
                     fwrite(&region_elt->region_hist->dtype, sizeof(int), 1, file);
                     fwrite(&region_elt->region_hist->nbin, sizeof(int), 1, file);
-                    fwrite(&region_elt->region_hist->range, sizeof(double), region_elt->region_hist->nbin*2, file);
-                    fwrite(&region_elt->region_hist->bin, sizeof(uint64_t), region_elt->region_hist->nbin, file);
+                    fwrite(region_elt->region_hist->range, sizeof(double), region_elt->region_hist->nbin*2, file);
+                    fwrite(region_elt->region_hist->bin, sizeof(uint64_t), region_elt->region_hist->nbin, file);
                     fwrite(&region_elt->region_hist->incr, sizeof(double), 1, file);
                 }
             }
@@ -1487,11 +1487,13 @@ perr_t PDC_Server_restart(char *filename)
                     region_list->region_hist = (pdc_histogram_t*)malloc(sizeof(pdc_histogram_t));
                     fread(&region_list->region_hist->dtype, sizeof(int), 1, file);
                     fread(&region_list->region_hist->nbin, sizeof(int), 1, file);
+
                     region_list->region_hist->range = (double*)malloc(sizeof(double) *
                                                                       region_list->region_hist->nbin*2);
-                    fread(region_list->region_hist->range, sizeof(double),region_list->region_hist->nbin*2,file);
                     region_list->region_hist->bin = (uint64_t*)malloc(sizeof(uint64_t) *
                                                                       region_list->region_hist->nbin);
+
+                    fread(region_list->region_hist->range, sizeof(double),region_list->region_hist->nbin*2,file);
                     fread(region_list->region_hist->bin, sizeof(uint64_t), region_list->region_hist->nbin, file);
                     fread(&region_list->region_hist->incr, sizeof(double), 1, file);
                 }

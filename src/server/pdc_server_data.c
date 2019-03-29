@@ -7968,8 +7968,8 @@ PDC_Server_recv_data_query_region(const struct hg_cb_info *callback_info)
 
     /* printf("==PDC_SERVER[%d]: %s received region start %" PRIu64 " count %" PRIu64 "\n", */ 
     /*         pdc_server_rank_g, __func__, region->start[0], region->count[0]); */
-    printf("==PDC_SERVER[%d]: %s received region with hist:\n", pdc_server_rank_g, __func__);
-    PDC_print_hist(region->region_hist);
+    /* printf("==PDC_SERVER[%d]: %s received region with hist:\n", pdc_server_rank_g, __func__); */
+    /* PDC_print_hist(region->region_hist); */
 
     if (NULL == query_task || 0 == query_id_exist) {
         printf("==PDC_SERVER[%d]: query %d has not been received from client!\n", 
