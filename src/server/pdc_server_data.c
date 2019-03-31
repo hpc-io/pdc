@@ -6355,15 +6355,15 @@ PDC_Server_load_query_data(pdcquery_t *query)
             uint64_t min_hits, max_hits;
             PDC_constraint_get_nhits_from_hist(constraint, req_region->region_hist, &min_hits, &max_hits);
 
-            printf("==PDC_SERVER[%d]: Region [%" PRIu64 ", %" PRIu64 "]:\n", 
-                    pdc_server_rank_g, req_region->start[0], req_region->count[0]);
+            /* printf("==PDC_SERVER[%d]: Region [%" PRIu64 ", %" PRIu64 "]:\n", */ 
+            /*         pdc_server_rank_g, req_region->start[0], req_region->count[0]); */
             /* PDC_print_hist(req_region->region_hist); */
-            printf("==PDC_SERVER[%d]: min_hits=%" PRIu64 ", max_hits=%" PRIu64 "!\n", pdc_server_rank_g, 
-                                      min_hits, max_hits);
-            fflush(stdout);
+            /* printf("==PDC_SERVER[%d]: min_hits=%" PRIu64 ", max_hits=%" PRIu64 "!\n", pdc_server_rank_g, */ 
+            /*                           min_hits, max_hits); */
+            /* fflush(stdout); */
             if (max_hits == 0) {
-                printf("==PDC_SERVER[%d]: Skip reading this region as it has no hits from histogram\n", 
-                                          pdc_server_rank_g); 
+                printf("==PDC_SERVER[%d]: Region [%" PRIu64 ", %" PRIu64 "], skipped by checking histogram\n", 
+                        pdc_server_rank_g, req_region->start[0], req_region->count[0]);
                 continue;
             }
         }
@@ -6858,6 +6858,18 @@ PDC_query_visit_leaf_with_cb_arg(pdcquery_t *query, void (*func)(pdcquery_t *, v
     if (NULL == query->left && NULL == query->right) 
         func(query, arg);
     return;
+}
+
+void
+has_more_storage_region_to_recv(pdcquery_t *query, void *arg)
+{
+    int *has_more = (int*)arg;
+    if (query == NULL || query->constraint == NULL) {
+        return;
+    }
+
+    if (query->constraint->storage_region_list_head == NULL) 
+        *has_more = 1;
 }
 
 void
@@ -8057,8 +8069,9 @@ PDC_Server_recv_data_query_region(const struct hg_cb_info *callback_info)
         /* printf("==PDC_SERVER[%d]: Received (%d/%d) storage regions of %d object from meta server!\n", */ 
         /*         pdc_server_rank_g, query_task->n_recv_obj, query_task->n_unique_obj, query_task->n_recv_obj); */
 
-        if (query_task->n_recv_obj == query_task->n_unique_obj) {
-
+        int has_more = 0;
+        PDC_query_visit_leaf_with_cb_arg(query, has_more_storage_region_to_recv, &has_more);
+        if (has_more == 0) {
             // Process query
             PDC_Server_do_query(query_task);
 
@@ -8141,6 +8154,16 @@ PDC_Server_recv_data_query(const struct hg_cb_info *callback_info)
         obj_ids = (uint64_t*)calloc(query_xfer->n_unique_obj, sizeof(uint64_t));
         PDC_Server_distribute_query_workload(new_task, query, &obj_idx, obj_ids, PDC_RECV_REGION_DO_QUERY); 
         free(obj_ids);
+
+        int has_more = 0;
+        PDC_query_visit_leaf_with_cb_arg(new_task->query, has_more_storage_region_to_recv, &has_more);
+        if (has_more == 0) {
+            // Process query
+            PDC_Server_do_query(new_task);
+
+            // Send the result to manager
+            PDC_Server_send_query_result_to_manager(new_task);
+        }
     }
 
 done:
