@@ -73,7 +73,7 @@ int main(int argc, char **argv)
     float *energy_data;
 
     pdcquery_t *ql, *qh, *q;
-    for (j = 0; j < 10; j++) {
+    for (j = 0; j < 20; j++) {
         ql = PDCquery_create(energy_id, PDC_GTE, PDC_FLOAT, &energy_lo0);
         qh = PDCquery_create(energy_id, PDC_LTE, PDC_FLOAT, &energy_hi0);
         q  = PDCquery_and(ql, qh);
@@ -85,6 +85,7 @@ int main(int argc, char **argv)
 
         gettimeofday(&pdc_timer_end, 0);
         get_sel_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+        printf("Querying Energy in [%.2f, %.2f]\n", energy_lo0, energy_hi0);
         printf("Get selection time: %.4f\n", get_sel_time);
 
         if (sel.nhits > 0) {
@@ -112,8 +113,10 @@ int main(int argc, char **argv)
 
         free(energy_data);
         PDCquery_free_all(q);
-        energy_lo0 -= 0.1;
-        energy_hi0 -= 0.1;
+        if (j != 0) {
+            energy_lo0 -= 0.1;
+            energy_hi0 -= 0.1;
+        }
     }
 
 
