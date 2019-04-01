@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 
     // Construct query constraints
     float x_lo0 = 0.05, x_hi0 = 200.05;
-    float energy_lo0 = 3.75, energy_hi0 = 4.0;
+    float energy_lo0 = 3.95, energy_hi0 = 4.0;
     /* float energy_lo0 = 1.5555, energy_hi0 = 1.5556; */
     pdcquery_t *q0l, *q0h, *q0, *q1l, *q1h, *q1, *q2l, *q2h, *q2, *q, *q12;
 

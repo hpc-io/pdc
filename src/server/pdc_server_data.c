@@ -6362,8 +6362,8 @@ PDC_Server_load_query_data(pdcquery_t *query)
             /*                           min_hits, max_hits); */
             /* fflush(stdout); */
             if (max_hits == 0) {
-                printf("==PDC_SERVER[%d]: Region [%" PRIu64 ", %" PRIu64 "], skipped by checking histogram\n", 
-                        pdc_server_rank_g, req_region->start[0], req_region->count[0]);
+                /* printf("==PDC_SERVER[%d]: Region [%" PRIu64 ", %" PRIu64 "], skipped by checking histogram\n", */ 
+                /*         pdc_server_rank_g, req_region->start[0], req_region->count[0]); */
                 continue;
             }
         }
@@ -6404,7 +6404,7 @@ PDC_Server_load_query_data(pdcquery_t *query)
     #endif
 
     DL_COUNT(io_list_target->region_list_head, region_tmp, count);
-    printf("==PDC_SERVER[%d]: %s going to read %d regions!\n", pdc_server_rank_g, __func__, count);
+    /* printf("==PDC_SERVER[%d]: %s going to read %d regions!\n", pdc_server_rank_g, __func__, count); */
     
 
     // Currently reads all regions of a query constraint together
@@ -7461,12 +7461,19 @@ PDC_send_data_to_client(int client_id, void *buf, size_t ndim, size_t unit_size,
     }
 
     buf_sizes = count * unit_size;
-    hg_ret = HG_Bulk_create(hg_class_g, 1, &buf, &buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
-    if (hg_ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not create bulk data handle\n");
-        ret_value = FAIL;
-        goto done;
+
+    if (buf != NULL && buf_sizes != 0) {
+        hg_ret = HG_Bulk_create(hg_class_g, 1, &buf, &buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
+        if (hg_ret != HG_SUCCESS) {
+            fprintf(stderr, "Could not create bulk data handle\n");
+            ret_value = FAIL;
+            goto done;
+        }
     }
+    /* else { */
+    /*     fprintf(stderr, "==PDC_SERVER[%d]: %s sending %" PRIu64 " data elements to client!\n", */ 
+    /*             pdc_server_rank_g, __func__, in.cnt); */
+    /* } */
 
     in.ndim        = ndim;
     in.cnt         = count;
@@ -7543,6 +7550,9 @@ PDC_Server_read_coords(const struct hg_cb_info *callback_info)
             }
         } // End for
 
+        PDC_send_data_to_client(task->client_id, task->my_data, ndim, unit_size, task->my_nread_coords, 
+                                task->query_id, task->client_seq_id);
+
     }
     else {
         // Requested object is not part of query, need to find their storage data and then read from storage
@@ -7558,9 +7568,6 @@ PDC_Server_read_coords(const struct hg_cb_info *callback_info)
     /* for (i = 0; i < task->my_nread_coords; i++) { */
     /*     printf(" , %.2f", data[i]); */
     /* } */
-
-    PDC_send_data_to_client(task->client_id, task->my_data, ndim, unit_size, task->my_nread_coords, 
-                            task->query_id, task->client_seq_id);
 
 done:
     fflush(stdout);
@@ -7716,7 +7723,7 @@ PDC_recv_coords(const struct hg_cb_info *callback_info)
             goto done;
         }
 
-        fprintf(stderr, "==PDC_SERVER[%d]: received %" PRIu64 " query results (%d/%d) by server %d!\n", 
+        fprintf(stderr, "==PDC_SERVER[%d]: received %" PRIu64 " query results (%d/%d) from server %d!\n", 
                             pdc_server_rank_g, nhits, task_elt->n_recv, task_elt->n_sent_server, origin);
 
         // When received all results from the working servers, send the aggregated result back to client
@@ -7801,8 +7808,8 @@ PDC_Server_send_query_result_to_manager(query_task_t *task)
 {
     perr_t ret_value = SUCCEED;
 
-    fprintf(stderr, "==PDC_SERVER[%d]: sending query results to manager %d!\n", 
-                        pdc_server_rank_g, task->manager);
+    /* fprintf(stderr, "==PDC_SERVER[%d]: sending query results to manager %d!\n", */ 
+    /*                     pdc_server_rank_g, task->manager); */
 
     if (task->get_op == PDC_QUERY_GET_NHITS) {
         ret_value = PDC_Server_send_nhits_to_server(task);

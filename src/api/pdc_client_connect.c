@@ -8062,8 +8062,10 @@ PDC_recv_read_coords_data(const struct hg_cb_info *callback_info)
         origin     = bulk_args->origin;
         seq_id     = bulk_args->client_seq_id;
 
-        ret = HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 
-                             1, (void**)&buf, NULL, NULL);
+        if (nhits > 0) {
+            ret = HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 
+                                 1, (void**)&buf, NULL, NULL);
+        }
 
         DL_FOREACH(pdcquery_result_list_head_g, result_elt) {
             if (result_elt->query_id == query_id) {
@@ -8090,10 +8092,12 @@ PDC_recv_read_coords_data(const struct hg_cb_info *callback_info)
     }// End else
 
 done:
-    ret = HG_Bulk_free(local_bulk_handle);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not free HG bulk handle\n");
-        return ret;
+    if (nhits > 0) {
+        ret = HG_Bulk_free(local_bulk_handle);
+        if (ret != HG_SUCCESS) {
+            fprintf(stderr, "Could not free HG bulk handle\n");
+            return ret;
+        }
     }
 
     ret = HG_Respond(bulk_args->handle, NULL, NULL, &out);
