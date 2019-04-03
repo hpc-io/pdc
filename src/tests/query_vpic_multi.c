@@ -73,7 +73,7 @@ int main(int argc, char **argv)
     float *energy_data;
 
     pdcquery_t *ql, *qh, *q;
-    for (j = 0; j < 20; j++) {
+    for (j = 0; j < 15; j++) {
         ql = PDCquery_create(energy_id, PDC_GTE, PDC_FLOAT, &energy_lo0);
         qh = PDCquery_create(energy_id, PDC_LTE, PDC_FLOAT, &energy_hi0);
         q  = PDCquery_and(ql, qh);
@@ -108,6 +108,8 @@ int main(int argc, char **argv)
             }
             printf("Verified: all correct!\n");
             PDCselection_free(&sel);
+            fflush(stdout);
+            sleep(5);
         }
 
 
@@ -118,10 +120,6 @@ int main(int argc, char **argv)
             energy_hi0 -= 0.1;
         }
     }
-
-
-    /* PDCregion_free(&region); */
-
 
 done:
     if(PDC_close(pdc) < 0)

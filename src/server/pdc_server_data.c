@@ -6823,8 +6823,8 @@ done:
     #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer_end, 0);
     double query_eval_time= PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-    printf("==PDC_SERVER[%d]: query evaluation time %.4fs\n", 
-            pdc_server_rank_g, query_eval_time);
+    /* printf("==PDC_SERVER[%d]: query evaluation time %.4fs\n", */ 
+    /*         pdc_server_rank_g, query_eval_time); */
     #endif
 
     fflush(stdout);
@@ -7631,7 +7631,7 @@ PDC_recv_read_coords(const struct hg_cb_info *callback_info)
         }
 
         if (task_elt == NULL) {
-            printf("==PDC_SERVER[%d]: %s - Invalid task ID!\n", pdc_server_rank_g, __func__);
+            printf("==PDC_SERVER[%d]: %s - Invalid task ID %d!\n", pdc_server_rank_g, __func__, query_id);
             goto done;
         }
 
@@ -7670,7 +7670,7 @@ PDC_recv_coords(const struct hg_cb_info *callback_info)
     query_task_t *task_elt;
     uint64_t nhits = 0, *coords, total_hits;
     size_t ndim, unit_size;
-    int    i, query_id, origin;
+    int    i, query_id, origin, found_task;
     void   *buf;
 
     pdc_int_ret_t out;
@@ -7700,31 +7700,36 @@ PDC_recv_coords(const struct hg_cb_info *callback_info)
                                  1, (void**)&buf, NULL, NULL);
         }
 
+        found_task = 0;
         DL_FOREACH(query_task_list_head_g, task_elt) {
             if (task_elt->query_id == query_id) {
-                if (NULL == task_elt->coords_arr) 
-                    task_elt->coords_arr         = (uint64_t**)calloc(pdc_server_size_g, sizeof(uint64_t*));
-                if (NULL == task_elt->n_hits_from_server) 
-                    task_elt->n_hits_from_server = (uint64_t*)calloc(pdc_server_size_g, sizeof(uint64_t));
-                
-                if (nhits > 0) {
-                    task_elt->coords_arr[origin] = (uint64_t*)malloc(bulk_args->nbytes);
-                    memcpy(task_elt->coords_arr[origin], buf, bulk_args->nbytes);
-                    task_elt->n_hits_from_server[origin] = nhits;
-                }
-                task_elt->nhits += nhits;
-                task_elt->n_recv++;
+                found_task = 1;
                 break;
             }
         }
+        if (found_task == 0) {
+            // Need to create a task and insert to global list
+            task_elt = (query_task_t*)calloc(1, sizeof(query_task_t));
+            task_elt->query_id = query_id;
 
-        if (task_elt == NULL) {
-            printf("==PDC_SERVER[%d]: %s - Invalid task ID!\n", pdc_server_rank_g, __func__);
-            goto done;
+            DL_APPEND(query_task_list_head_g, task_elt);
         }
 
-        fprintf(stderr, "==PDC_SERVER[%d]: received %" PRIu64 " query results (%d/%d) from server %d!\n", 
-                            pdc_server_rank_g, nhits, task_elt->n_recv, task_elt->n_sent_server, origin);
+        if (NULL == task_elt->coords_arr) 
+            task_elt->coords_arr         = (uint64_t**)calloc(pdc_server_size_g, sizeof(uint64_t*));
+        if (NULL == task_elt->n_hits_from_server) 
+            task_elt->n_hits_from_server = (uint64_t*)calloc(pdc_server_size_g, sizeof(uint64_t));
+        
+        if (nhits > 0) {
+            task_elt->coords_arr[origin] = (uint64_t*)malloc(bulk_args->nbytes);
+            memcpy(task_elt->coords_arr[origin], buf, bulk_args->nbytes);
+            task_elt->n_hits_from_server[origin] = nhits;
+        }
+        task_elt->nhits += nhits;
+        task_elt->n_recv++;
+
+        fprintf(stderr, "==PDC_SERVER[%d]: received %" PRIu64 " query results (%d/%d) from s%d qid=%d!\n", 
+                pdc_server_rank_g, nhits, task_elt->n_recv, task_elt->n_sent_server, origin, query_id);
 
         // When received all results from the working servers, send the aggregated result back to client
         if (task_elt->n_recv == task_elt->n_sent_server) {
@@ -7869,7 +7874,7 @@ PDC_Server_do_query(query_task_t *task)
     #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer_end, 0);
     double query_process_time= PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-    printf("==PDC_SERVER[%d]: query processing time %.4fs\n", pdc_server_rank_g, query_process_time);
+    /* printf("==PDC_SERVER[%d]: query processing time %.4fs\n", pdc_server_rank_g, query_process_time); */
     #endif
 
 
@@ -8112,32 +8117,28 @@ PDC_Server_recv_data_query(const struct hg_cb_info *callback_info)
     DL_FOREACH(query_task_list_head_g, task_elt) {
         if (task_elt->query_id == query_xfer->query_id) {
             query_id_exist = 1;
+            new_task = task_elt;
             break;
         }
     }
 
     if (0 == query_id_exist) {
         new_task = (query_task_t*)calloc(1, sizeof(query_task_t));
-        new_task->query_id          = query_xfer->query_id;
-        new_task->client_id         = query_xfer->client_id;
-        new_task->manager           = query_xfer->manager;
-        new_task->query             = query;
-        new_task->n_unique_obj      = query_xfer->n_unique_obj;
-        new_task->get_op            = query_xfer->get_op;
-        new_task->region_constraint = (region_list_t*)query->region_constraint;
         DL_APPEND(query_task_list_head_g, new_task);
-        if (is_debug_g == 1) {
-            printf("==PDC_SERVER[%d]: %s - appended new query task %d to list head\n", 
-                    pdc_server_rank_g, __func__, new_task->query_id);
-        }
-    }
-    else {
-        printf("==PDC_SERVER[%d]: %s - query id %d existed, possible invalid query?\n", 
-                pdc_server_rank_g, __func__, query_xfer->query_id);
-        task_elt->query = query;
-        new_task = task_elt;
     }
 
+    new_task->query_id          = query_xfer->query_id;
+    new_task->client_id         = query_xfer->client_id;
+    new_task->manager           = query_xfer->manager;
+    new_task->query             = query;
+    new_task->n_unique_obj      = query_xfer->n_unique_obj;
+    new_task->get_op            = query_xfer->get_op;
+    new_task->region_constraint = (region_list_t*)query->region_constraint;
+
+    if (is_debug_g == 1) {
+        printf("==PDC_SERVER[%d]: %s - appended new query task %d to list head\n", 
+                pdc_server_rank_g, __func__, new_task->query_id);
+    }
     /* printf("==PDC_SERVER[%d]: %s - deserialized query:\n", pdc_server_rank_g, __func__); */
     /* PDCquery_print(query); */
     /* fflush(stdout); */
