@@ -49,7 +49,7 @@ pdc_transform_increment (void *dataIn, PDC_var_type_t srcType, int typesize, int
   *dataOut = destBuff;
 
   fprintf ( stdout, "\n[TRANSFORM] %d values successfully incremented\n", nval);
-  return 0;
+  return nval;
 }
 
 
@@ -57,15 +57,15 @@ pdc_transform_increment (void *dataIn, PDC_var_type_t srcType, int typesize, int
  *  https://github.com/Blosc/c-blosc/blob/master/blosc/blosc.h
  */
 size_t
-pdc_transform_compress (void *dataIn, PDC_var_type_t srcType, int typesize, int ndim, uint64_t *dims, void **dataOut)
+pdc_transform_compress (void *dataIn, PDC_var_type_t srcType __attribute__((unused)), int typesize, int ndim, uint64_t *dims, void **dataOut)
 {
   int clevel = 9;
   int doshuffle = BLOSC_BITSHUFFLE;
   int nval, i;
-  size_t destsize, nbytes, csize;
+  int64_t destsize, nbytes, csize;
   void *destBuff;
 
-  struct PDC_obj_prop *obj_prop;
+  /*  struct PDC_obj_prop *obj_prop; */
   
   fprintf ( stdout, "\n[TRANSFORM] Entering pdc_transform_compress\n");
   nval = 1;
@@ -93,42 +93,22 @@ pdc_transform_compress (void *dataIn, PDC_var_type_t srcType, int typesize, int 
   return csize;
 }
 
-int pdc_transform_decompress (pdcid_t objPropIn)
+size_t pdc_transform_decompress (void *dataIn, PDC_var_type_t srcType __attribute__((unused)), int typesize, int ndim, uint64_t *dims, void **dataOut)
 {
-  int ndim, nval, i;
-  uint64_t *dims;
-  PDC_var_type_t srcType;
-  size_t typesize, destsize, dsize;
-  void *destBuff;
+  int i;
+  size_t destsize, dsize;
+  void *destBuff = *dataOut;
   
-  struct PDC_obj_prop *obj_prop;
-  
-  fprintf ( stdout, "\n[TRANSFORM] Entering pdc_transform_decompress (%lld)\n", objPropIn);
+  fprintf ( stdout, "\n[TRANSFORM] Entering pdc_transform_decompress\n");
 
-  obj_prop = PDCobj_prop_get_info (objPropIn);
-  srcType = ((struct PDC_obj_prop *)(obj_prop))->type;
-  typesize = get_datatype_size (srcType);
-  
-  ndim = ((struct PDC_obj_prop *)(obj_prop))->ndim;
-  dims = (uint64_t *) malloc ( ndim * sizeof (uint64_t));
-  nval = 1;
-  for ( i = 0; i < ndim; i++ ) {
-    dims [i] = ((struct PDC_obj_prop *)(obj_prop))->dims [i];
-    nval *= dims [i];
-  }
+  /* destsize is the byte length of destBuff */
+  destsize = typesize;
+  for ( i = 0; i < ndim; i++ )
+      destsize *= dims [i];
 
-  destsize = nval * typesize;
-  destBuff = malloc (destsize);  
+  dsize = (size_t) blosc_decompress (dataIn, destBuff, destsize);
 
-  dsize = blosc_decompress (((struct PDC_obj_prop *)(obj_prop))->buf, destBuff, destsize);
-
-  if (dsize <= 0) {
-    fprintf (stdout, "[TRANSFORM] Error while decompressing data (errcode: %zu)\n", dsize);
-    return -1;
-  }
-  if (dsize > 0) {
-    fprintf (stdout, "[TRANSFORM] Data sucessfully decompressed!\n");
-    PDCprop_set_obj_buf (objPropIn, destBuff);
-  }
-  return 0;
+  if (dsize <= 0) fprintf (stdout, "[TRANSFORM] Error while decompressing data (errcode: %zu)\n", dsize);
+  else fprintf (stdout, "[TRANSFORM] Data sucessfully decompressed!\n");
+  return dsize;
 }

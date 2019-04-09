@@ -26,12 +26,15 @@
 
 /* Forward References:: */
 // Analysis and Transformations
+
 hg_id_t                analysis_ftn_register_id_g;
 hg_id_t                transform_ftn_register_id_g;
+hg_id_t                server_transform_ftn_register_id_g;
 hg_id_t                object_data_iterator_register_id_g;
 static hg_return_t     client_register_iterator_rpc_cb(const struct hg_cb_info *info);
 static hg_return_t     client_register_analysis_rpc_cb(const struct hg_cb_info *info);
 static hg_return_t     client_register_transform_rpc_cb(const struct hg_cb_info *info);
+static hg_return_t     client_forward_transform_rpc_cb(const struct hg_cb_info *info);
 
 /* Client APIs */
 // Registers an iterator
@@ -149,7 +152,7 @@ done:
 }
 
 /* Send a name to server and receive an obj id */
-perr_t pdc_client_register_obj_analysis(const char *func, const char *loadpath, pdcid_t iter_in, pdcid_t iter_out)
+perr_t pdc_client_register_obj_analysis(struct region_analysis_ftn_info *thisFtn, const char *func, const char *loadpath, pdcid_t iter_in, pdcid_t iter_out)
 {
     perr_t ret_value = SUCCEED;
     uint32_t server_id = 0;
@@ -171,6 +174,20 @@ perr_t pdc_client_register_obj_analysis(const char *func, const char *loadpath, 
      * (at a minimum) and/or with the out object.  Question: is
      * it possible or even likely that the input and output
      * objects can be co-located???
+     *
+     * One thing to remember is that when an object/region gets
+     * mapped, there is a BULK descriptor created and exchanged
+     * at that time.  In the case mentioned above, when the source
+     * is of the mapping operation is directed to the same server
+     * (the server selection is the result of a hashing function)
+     * as the target, we choose the target server for analysis
+     * and in doing so, we can communicate the pre-existing bulk
+     * descriptor as part of the analysis callback.  We do something
+     * similar for transforms, e.g. the source "size" may change from
+     * the original region due to compression or possibly datatype
+     * conversion; and the client creates a NEW bulk descriptor to
+     * send to the server at the time of the lock release (and
+     * after the local transform has taken place).
      *
      * Special case:  If NO input or output iterators
      * are defined (NULL iterators), then this client should
@@ -211,6 +228,7 @@ perr_t pdc_client_register_obj_analysis(const char *func, const char *loadpath, 
         goto done;
     }
     // Here, we should update the local analysis registry with the returned valued from my_rpc_state_p;
+    thisFtn->meta_index = my_rpc_state_p->value;
     ret_value = SUCCEED;
 
 done:
@@ -303,13 +321,15 @@ done:
 }
 
 /* Send a name to server and receive an obj id */
-perr_t pdc_client_register_region_transform(const char *func, const char *loadpath, pdcid_t src_region_id, pdcid_t dest_region_id, int start_state, int next_state, int op_type, int when)
+perr_t pdc_client_register_region_transform(const char *func, const char *loadpath,
+					    pdcid_t src_region_id, pdcid_t dest_region_id, pdcid_t obj_id,
+					    int start_state, int next_state, int op_type, int when, int client_index)
 {
     perr_t ret_value = SUCCEED;
-    //uint32_t server_id = 0;
-    //hg_return_t hg_ret;
-    //transform_ftn_in_t in;
-    //struct PDC_obj_info *object_info;
+    uint32_t server_id = 0;
+    hg_return_t hg_ret;
+    transform_ftn_in_t in;
+    struct PDC_obj_info *object_info;
     struct my_rpc_state *my_rpc_state_p;
 
     FUNC_ENTER(NULL);
@@ -321,10 +341,8 @@ perr_t pdc_client_register_region_transform(const char *func, const char *loadpa
 	goto done;
     }
     /* Find the server associated with the input object */
-//    server_id = 0; // PDC_get_server_by_obj_id(obj_id, pdc_server_num_g);
-#if 0
-    object_info = PDCobj_get_info(obj_id);
-
+    server_id = PDC_get_server_by_obj_id(obj_id, pdc_server_num_g);
+    object_info = PDC_obj_get_info(obj_id);
     memset(&in,0,sizeof(in));
     in.ftn_name = func;
     in.loadpath = loadpath;
@@ -336,6 +354,7 @@ perr_t pdc_client_register_region_transform(const char *func, const char *loadpa
     in.next_state = next_state;
     in.op_type = op_type & 0xFF;
     in.when = when & 0xFF;
+    in.client_index = client_index;
 
     // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, transform_ftn_register_id_g, &my_rpc_state_p->handle);
@@ -354,10 +373,8 @@ perr_t pdc_client_register_region_transform(const char *func, const char *loadpa
     // Here, we should update the local registry with the returned valued from my_rpc_state_p;
     ret_value = SUCCEED;
 
-#endif
 done:
-    //    HG_Destroy(my_rpc_state_p->handle);
-
+    HG_Destroy(my_rpc_state_p->handle);
     free(my_rpc_state_p);
     FUNC_LEAVE(ret_value);
 }
@@ -370,18 +387,51 @@ client_register_transform_rpc_cb(const struct hg_cb_info *info)
 {
     hg_return_t ret_value = HG_SUCCESS;
     struct my_rpc_state *my_rpc_state_p = info->arg;
-    analysis_ftn_out_t output;
-    
+    transform_ftn_out_t output;
+    // analysis_ftn_out_t output;
+
     FUNC_ENTER(NULL);
 
+    printf("Entered: %s\n", __FUNCTION__);
     if (info->ret == HG_SUCCESS) {
       ret_value = HG_Get_output(info->info.forward.handle, &output);
       if (ret_value != HG_SUCCESS) {
 	  printf("PDC_CLIENT: register_analysis_rpc_cb(): Unable to read the server return values\n");
 	  goto done;
       }
-      my_rpc_state_p->value = output.remote_ftn_id;
-      printf("Server returned transform index = 0x%" PRIu64 "\n", output.remote_ftn_id);
+
+      printf("Server returned transform index = 0x%x, client_index = 0x%x\n", output.ret, output.client_index);
+      pdc_update_transform_server_meta_index(output.client_index, output.ret);
+    }
+
+done:
+    work_todo_g--;
+    HG_Free_output(info->info.forward.handle, &output);
+    FUNC_LEAVE(ret_value);
+}
+
+// Callback function for  HG_Forward()
+// Gets executed after a call to HG_Trigger and the RPC has completed
+static hg_return_t
+client_forward_transform_rpc_cb(const struct hg_cb_info *info)
+{
+    hg_return_t ret_value = HG_SUCCESS;
+    struct my_rpc_state *my_rpc_state_p = info->arg;
+    transform_ftn_out_t output;
+    // analysis_ftn_out_t output;
+
+    FUNC_ENTER(NULL);
+
+    printf("Entered: %s\n", __FUNCTION__);
+    if (info->ret == HG_SUCCESS) {
+      ret_value = HG_Get_output(info->info.forward.handle, &output);
+      if (ret_value != HG_SUCCESS) {
+	  printf("PDC_CLIENT: register_analysis_rpc_cb(): Unable to read the server return values\n");
+	  goto done;
+      }
+
+      printf("Server returned transform index = 0x%x, client_index = 0x%x\n", output.ret, output.client_index);
+      pdc_update_transform_server_meta_index(output.client_index, output.ret);
     }
 
 done:

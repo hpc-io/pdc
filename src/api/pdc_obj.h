@@ -140,6 +140,19 @@ perr_t PDCprop_set_obj_dims(pdcid_t obj_prop, PDC_int_t ndim, uint64_t *dims);
 perr_t PDCprop_set_obj_type(pdcid_t obj_prop, PDC_var_type_t type);
 
 /**
+ * Set object type extent
+ *
+ * \param obj_prop [IN]         Id of object property,
+ *                              returned by PDCprop_create(PDC_OBJ_CREATE)
+ * \param extent [IN]           extent of the variable type (size_t) 
+ *                              i.e. sizeof(int64_t), etc.
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+
+perr_t PDCprop_set_obj_type_extent(pdcid_t obj_prop, size_t type_extent);
+
+/**
  * Set an object buffer 
  *
  * \param obj_prop [IN]         Id of object property, 

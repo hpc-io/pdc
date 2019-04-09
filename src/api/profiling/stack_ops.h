@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <time.h>
+#include "config.h"
 
 typedef void *hash_table_t;
 
@@ -59,12 +60,12 @@ extern bool_t enableProfiling;
 #endif
 
 #ifdef __cplusplus
-#   define ATTR_UNUSED       /*void*/
+#   define ATTRIBUTE(a)
 #else /* __cplusplus */
-#if defined(HAVE_ATTRIBUTE) && !defined(__SUNPRO_C)
-#   define ATTR_UNUSED       __attribute__((unused))
+#if defined(HAVE_ATTRIBUTE)
+#   define ATTRIBUTE(a)     __attribute__((a))
 #else
-#   define ATTR_UNUSED       /*void*/
+#   define ATTRIBUTE(a)
 #endif
 #endif /* __cplusplus */
 

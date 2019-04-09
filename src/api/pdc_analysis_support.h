@@ -27,11 +27,8 @@
 
 #include "pdc_obj_pkg.h"
 #include "pdc_error.h"
-/* #include "pdc_interface.h" */
 #include "pdc_life.h"
 #include "pdc_analysis_and_transforms.h"
-/* #include "pdc_client_connect.h" */
-/* #include "pdc_client_server_common.h" */
 
 /**
  * Create a PDC iterator (general form)
@@ -52,7 +49,7 @@ pdcid_t PDCobj_data_block_iterator_create(pdcid_t obj_id, pdcid_t reg_id, int co
  *
  * \return Iterator id on success/Zero on failure
  */
-pdcid_t PDCobj_data_iterator_create(pdcid_t obj_id, pdcid_t reg_id);
+pdcid_t PDCobj_data_iter_create(pdcid_t obj_id, pdcid_t reg_id);
 
 /**
  * Use a PDC data iterator to retrieve object data for PDC in-locus Analysis
@@ -93,4 +90,7 @@ char *find_in_path(char *workingDir, char *application);
 char *pdc_get_argv0_();
 
 char *get_realpath( char *fname, char *app_path);
+
+pdcid_t PDCobj_create_data_iterator(pdcid_t obj_id, pdcid_t reg_id);
+
 #endif

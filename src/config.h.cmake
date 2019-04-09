@@ -26,3 +26,6 @@
 
 /* Define if closing server by application */
 #cmakedefine ENABLE_APP_CLOSE_SERVER
+
+/* Define if your compiler supports attributes */
+#cmakedefine HAVE_ATTRIBUTE

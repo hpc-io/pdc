@@ -159,8 +159,8 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdci
  *
  * \return Non-negative on success/Negative on failure
  */
-//perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *local_dims, uint64_t *local_offset, uint64_t *local_size, PDC_var_type_t local_type, void *local_data, uint64_t *remote_dims, uint64_t *remote_offset, uint64_t *remote_size, PDC_var_type_t remote_type, int32_t remote_client_id, void *remote_data, struct PDC_region_info *local_region, struct PDC_region_info *remote_region);
-perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t ndim, uint64_t *local_dims, uint64_t *local_offset, uint64_t *local_size, PDC_var_type_t local_type, void *local_data, PDC_var_type_t remote_type, struct PDC_region_info *local_region, struct PDC_region_info *remote_region);
+
+perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t ndim, uint64_t *local_dims, uint64_t *local_offset, uint64_t *local_size, PDC_var_type_t local_type, void *local_data, PDC_var_type_t remote_type, struct PDC_obj_info *remote_obj_info, struct PDC_region_info *local_region, struct PDC_region_info *remote_region);
 
 /**
  * Client request for object mapping
@@ -412,7 +412,7 @@ perr_t PDC_Client_write_wait_notify(pdc_metadata_t *meta, struct PDC_region_info
 perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status, void *buf);
 
 
-perr_t PDC_Client_query_container_name(char *cont_name, uint64_t *cont_meta_id);
+perr_t PDC_Client_query_container_name(const char *cont_name, uint64_t *cont_meta_id);
 perr_t PDC_Client_query_container_name_col(const char *cont_name, uint64_t *cont_meta_id);
 /**
  * Async request send to server to read a region and put it in users buffer

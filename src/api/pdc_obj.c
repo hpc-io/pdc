@@ -649,6 +649,24 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDCprop_set_obj_type_extent(pdcid_t obj_prop, size_t type_extent)
+{
+    perr_t ret_value = SUCCEED;         /* Return value */
+    struct PDC_id_info *info;
+    struct PDC_obj_prop *prop;
+
+    FUNC_ENTER(NULL);
+
+    info = pdc_find_id(obj_prop);
+    if(info == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object property ID");
+    prop = (struct PDC_obj_prop *)(info->obj_ptr);
+    prop->type_extent = type_extent;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 perr_t PDCprop_set_obj_buf(pdcid_t obj_prop, void *buf)
 {
     perr_t ret_value = SUCCEED;
@@ -704,6 +722,7 @@ pdcid_t PDCregion_create(size_t ndims, uint64_t *offset, uint64_t *size)
     p->size = (uint64_t *)malloc(ndims * sizeof(uint64_t));
     p->mapping = 0;
     p->local_id = 0;
+    p->registered_op = 0;
     for(i=0; i<ndims; i++) {
         (p->offset)[i] = offset[i];
         (p->size)[i] = size[i];
@@ -796,7 +815,7 @@ perr_t PDCbuf_obj_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, p
 {
     pdcid_t ret_value = SUCCEED;    
     size_t i;
-    struct PDC_id_info *objinfo2;
+    struct PDC_id_info *objinfo1, *objinfo2;
     struct PDC_obj_info *obj2;
     pdcid_t remote_meta_id;
 
@@ -825,8 +844,7 @@ perr_t PDCbuf_obj_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, p
           if((obj2->obj_pt->dims)[i] < (reg2->size)[i])
             PGOTO_ERROR(FAIL, "remote object region size error");
 
-//    ret_value = PDC_Client_buf_map(local_reg, remote_meta_id, remote_reg, reg1->ndim, reg1->size, reg1->offset, reg1->size, local_type, buf, obj2->obj_pt->dims, reg2->offset, reg2->size, remote_type, remote_client_id, remote_data, reg1, reg2);
-    ret_value = PDC_Client_buf_map(local_reg, remote_meta_id, reg1->ndim, reg1->size, reg1->offset, reg1->size, local_type, buf, remote_type, reg1, reg2);
+    ret_value = PDC_Client_buf_map(local_reg, remote_meta_id, reg1->ndim, reg1->size, reg1->offset, reg1->size, local_type, buf, remote_type, obj2, reg1, reg2);
 
     if(ret_value == SUCCEED) {
         /* 
@@ -835,6 +853,11 @@ perr_t PDCbuf_obj_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, p
 	 * more than one source.
 	 */
         check_transform(PDC_DATA_MAP, reg2);
+	/* For Analysis, we tag the source region rather than the target
+	 * FIXME:  Should we tag both?
+	 */
+	check_analysis(PDC_DATA_MAP, reg1);
+
         pdc_inc_ref(remote_obj);
         pdc_inc_ref(remote_reg);
     }

@@ -31,9 +31,10 @@
 
 typedef enum {
     PDC_TESTING = 0,
-    PDC_DATA_MAP,
-    PDC_PRE_ANALYSIS,
-    PDC_POST_ANALYSIS
+    PDC_FILE_IO = 1,
+    PDC_DATA_MAP = 2,
+    PDC_PRE_ANALYSIS = 4,
+    PDC_POST_ANALYSIS = 8
 } PDCobj_transform_t;
 
 typedef enum {
@@ -52,6 +53,9 @@ typedef enum {
 
 struct region_transform_ftn_info {
     pdcid_t object_id;
+    pdcid_t region_id;
+    int local_regIndex;    
+    int meta_index;
     struct PDC_region_info *src_region;
     struct PDC_region_info *dest_region;
     size_t (*ftnPtr)();
@@ -59,7 +63,7 @@ struct region_transform_ftn_info {
     int readyCount;
     int nextState;
     int client_id;
-    int type_extent;
+    size_t type_extent;
     PDC_var_type_t   type;
     PDCobj_transform_t op_type;
     PDCdata_movement_t when;
@@ -72,13 +76,15 @@ struct transform_ftn_info {
     int transform_state;
     pdcid_t *object_id;
     pdcid_t *region_id;
-    int (*ftnPtr)();
+    size_t (*ftnPtr)();
 };
 
 typedef struct {
     hg_const_string_t           ftn_name;
     hg_const_string_t           loadpath;
     pdcid_t                     object_id;
+    pdcid_t                     region_id;
+    int32_t                     client_index;
     int32_t                     operation_type; /* When, e.g. during mapping */
     int32_t                     start_state;
     int32_t                     next_state;
@@ -87,6 +93,9 @@ typedef struct {
 } transform_ftn_in_t;
 
 typedef struct {
+    pdcid_t                     object_id;
+    pdcid_t                     region_id;
+    int32_t                     client_index;
     int32_t                     ret;
 } transform_ftn_out_t;
 

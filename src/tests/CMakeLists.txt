@@ -2,7 +2,8 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
   ${PDC_INCLUDES_BUILD_TIME}
-#  $ENV{HOME}/Sandbox/c-blosc/blosc
+  $ENV{HOME}/Sandbox/c-blosc/blosc
+  $ENV{HOME}/hdf5/include
 )
 
 add_definitions(-DENABLE_MPI=1)
@@ -53,13 +54,25 @@ set(PROGRAMS
   kvtag_query
   kvtag_query_scale
   obj_transformation
-#  obj_analysis
+  obj_analysis
+  )
+
+set(EXAMPLES
+  pdc-neon
   )
 
 foreach(program ${PROGRAMS})
   add_executable(${program} ${program}.c)
   target_link_libraries(${program} pdc)
 endforeach(program)
+
+foreach(example ${EXAMPLES})
+# See the compilation notes in pdc-neon.c
+# set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+  add_executable(${example} ${example}.c)
+  target_compile_options(${example} PUBLIC -fPIE)
+  target_link_libraries(${example} -pie -export-dynamic -ldl pdc ${HDF5_LIBRARY})
+endforeach(example)
 
 set(SCRIPTS
   run_test.sh
@@ -71,6 +84,11 @@ foreach(script ${SCRIPTS})
        FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE WORLD_READ WORLD_EXECUTE
     )
 endforeach(script)
+
+# *******************************************
+# Add the HDF5 library for pdc-neon
+# *******************************************
+FIND_LIBRARY(HDF5_LIBRARY NAMES hdf5_debug PATHS $ENV{HOME}/hdf5/lib)
 
 # *******************************************
 # Create a transform library which contains:

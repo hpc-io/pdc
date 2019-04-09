@@ -749,7 +749,14 @@ perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
 #endif
             free(elt->remote_data_ptr);  
             HG_Addr_free(info->hg_class, elt->local_addr);
+
+	    /* This is a cached copy of the CLIENT bulk_handle. 
+             * The client should be responsible for freeing this...
+             */
+#if 0
             HG_Bulk_free(elt->local_bulk_handle);
+#endif
+
 #ifdef ENABLE_MULTITHREAD
             hg_thread_mutex_destroy(&(elt->bulk_args->work_mutex));
             hg_thread_cond_destroy(&(elt->bulk_args->work_cond)); 
@@ -1100,7 +1107,6 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
         HG_Addr_dup(info->hg_class, info->addr, &(buf_map_ptr->local_addr));
         HG_Bulk_ref_incr(in->local_bulk_handle);
         buf_map_ptr->local_bulk_handle = in->local_bulk_handle;
-
         buf_map_ptr->remote_obj_id = in->remote_obj_id;
         buf_map_ptr->remote_ndim = in->ndim;
         buf_map_ptr->remote_unit = in->remote_unit;

@@ -50,7 +50,7 @@ PDCobj_transform_register(char *func, pdcid_t obj_id, int current_state, int nex
 {
     perr_t ret_value = SUCCEED;         /* Return value */
     void *ftnHandle = NULL;
-    int (*ftnPtr)() = NULL;
+    size_t (*ftnPtr)() = NULL;
     struct region_transform_ftn_info *thisFtn = NULL;
     char *thisApp = NULL;
     char *colonsep = NULL; 
@@ -106,12 +106,16 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+
 perr_t
-PDCbuf_map_transform_register(char *func, void *buf, pdcid_t src_region_id, pdcid_t dest_object_id, pdcid_t dest_region_id, int current_state, int next_state, PDCdata_movement_t when )
+PDCbuf_map_transform_register(char *func, void *buf,
+			      pdcid_t src_region_id, pdcid_t dest_object_id, pdcid_t dest_region_id,
+			      int current_state, int next_state,
+			      PDCdata_movement_t when )
 {
     perr_t ret_value = SUCCEED;         /* Return value */
     void *ftnHandle = NULL;
-    int (*ftnPtr)() = NULL;
+    size_t (*ftnPtr)() = NULL;
     struct PDC_obj_info *object1 = NULL;
     struct region_transform_ftn_info *thisFtn = NULL;
     struct PDC_region_info *region_info;
@@ -122,6 +126,7 @@ PDCbuf_map_transform_register(char *func, void *buf, pdcid_t src_region_id, pdci
     char *applicationDir = NULL;
     char *userdefinedftn = NULL;
     char *loadpath = NULL;
+    int local_regIndex;
 
     FUNC_ENTER(NULL);
 
@@ -179,18 +184,20 @@ PDCbuf_map_transform_register(char *func, void *buf, pdcid_t src_region_id, pdci
         thisFtn->nextState = current_state -1;
     else thisFtn->nextState = current_state;
 
+    // Add to our own list of transforms functions
+    if ((local_regIndex = pdc_add_transform_ptr_to_registry_(thisFtn)) < 0)
+        PGOTO_ERROR(FAIL,"PDC unable to register transform function!\n");
+
     pdc_client_register_region_transform(userdefinedftn, 
        	       	                         loadpath,
        	       	                         src_region_id,
        	       	                         dest_region_id,
+                                         dest_object_id,
        	       	                         current_state,
        	       	                         thisFtn->nextState,
        	       	                         (int)PDC_DATA_MAP,
-       	       	                         (int)when);
-
-    // Add to our own list of transforms functions
-    if (pdc_add_transform_ptr_to_registry_(thisFtn) < 0)
-        PGOTO_ERROR(FAIL,"PDC unable to register transform function!\n");
+       	       	                         (int)when,
+					 local_regIndex);
 
 done:
     if (applicationDir) free(applicationDir);
@@ -199,3 +206,33 @@ done:
     FUNC_LEAVE(ret_value);
 }
   
+perr_t
+PDCbuf_io_transform_register(char *func, void *buf,
+                             pdcid_t src_region_id, int current_state, int next_state,
+                             PDCdata_movement_t when )
+{
+    perr_t ret_value = FAIL;         /* Return value (not implemented) */
+    void *ftnHandle = NULL;
+    size_t (*ftnPtr)() = NULL;
+    struct PDC_obj_info *object1 = NULL;
+    struct region_transform_ftn_info *thisFtn = NULL;
+    struct PDC_region_info *region_info;
+    struct PDC_id_info *id_info;
+    char *thisApp = NULL;
+    char *colonsep = NULL; 
+    char *transformslibrary = NULL;
+    char *applicationDir = NULL;
+    char *userdefinedftn = NULL;
+    char *loadpath = NULL;
+    int local_regIndex;
+
+    FUNC_ENTER(NULL);
+    printf("IO transforms are not currently supported!\n");
+done:
+    if (applicationDir) free(applicationDir);
+    if (userdefinedftn) free(userdefinedftn);
+
+    FUNC_LEAVE(ret_value);
+
+}
+

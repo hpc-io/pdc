@@ -123,6 +123,7 @@ endif()
 #------------------------------------------------------------------------------
 # Set a default build type if none was specified
 #------------------------------------------------------------------------------
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "Setting build type to 'RelWithDebInfo' as none was specified.")
   set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Choose the type of build." FORCE)
@@ -300,6 +301,14 @@ endif()
 option(PDC_ENABLE_CACHE "Enable data caching." OFF)
 if(PDC_ENABLE_CACHE)
   set(ENABLE_CACHE 1)
+endif()
+
+#-----------------------------------------------------------------------------
+# ATTRIBUTE option
+#-----------------------------------------------------------------------------
+option(PDC_HAVE_ATTRIBUTE_UNUSED "Use compiler attribute" ON)
+if(PDC_HAVE_ATTRIBUTE_UNUSED)
+  set(HAVE_ATTRIBUTE 1)
 endif()
 
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${PROJECT_BINARY_DIR}/config.h)

@@ -45,6 +45,7 @@
 #include "pdc_prop_pkg.h"
 #include "pdc_analysis_and_transforms.h"
 #include "pdc_analysis_support.h"
+#include "pdc_analysis_common.h"
 
 #ifdef ENABLE_MULTITHREAD 
 hg_thread_mutex_t pdc_client_info_mutex_g;
@@ -262,6 +263,8 @@ typedef struct region_buf_map_t {
     int32_t                          remote_client_id;
     size_t                           remote_ndim;
     size_t                           remote_unit;
+    size_t                           remote_type_extent;
+    PDC_var_type_t                   remote_data_type;
     region_info_transfer_t           remote_region_unit;
     region_info_transfer_t           remote_region_nounit;
     struct buf_map_release_bulk_args *bulk_args;
@@ -272,6 +275,7 @@ typedef struct region_buf_map_t {
     uint64_t                        *local_reg_size;
     hg_addr_t                        local_addr;
     hg_bulk_t                        local_bulk_handle;
+    size_t                           local_type_extent;
     PDC_var_type_t                   local_data_type;
 
     struct region_buf_map_t         *prev;
@@ -640,6 +644,190 @@ hg_proc_region_lock_out_t(hg_proc_t proc, void *data)
     ret = hg_proc_uint32_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
 	    HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+/* FIXME:  The bulk_args->in structure (shown below) appears is defined as a 
+ * superset of the region_lock_in_t structure.  That way, we can simply pass
+ * a pointer to our version into the PDC_Data_Server_release function...
+ */
+typedef struct {
+    uint32_t                    meta_server_id;
+    uint64_t                    obj_id;
+//    int32_t                     lock_op;
+    uint8_t                     access_type;
+    pdcid_t                     local_reg_id;
+    region_info_transfer_t      region;
+    uint8_t                     mapping;
+    uint8_t                     data_type;
+    uint8_t                     lock_mode;
+  /* The following are unique to the transform portion of the lock */
+    int32_t                     transform_id;
+    hg_bulk_t                   local_bulk_handle;
+    int64_t                     transform_data_size;
+    uint64_t                    client_data_ptr;
+
+} region_transform_and_lock_in_t;
+
+static HG_INLINE hg_return_t
+hg_proc_region_transform_and_lock_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    region_transform_and_lock_in_t *struct_data = (region_transform_and_lock_in_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->meta_server_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
+    if (ret != HG_SUCCESS) {
+	    HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint8_t(proc, &struct_data->access_type);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->local_reg_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->region);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint8_t(proc, &struct_data->mapping);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint8_t(proc, &struct_data->data_type);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint8_t(proc, &struct_data->lock_mode);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->transform_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_bulk_t(proc, &struct_data->local_bulk_handle);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int64_t(proc, &struct_data->transform_data_size);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->client_data_ptr);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    return ret;
+}
+
+/* FIXME:  The region_analysis structure (shown below) is defined as a 
+ * superset of the region_lock_in_t structure.  That way, we can simply pass
+ * a pointer to our version into the PDC_Data_Server_release function...
+ */
+typedef struct {
+    uint32_t                    meta_server_id;
+    uint64_t                    obj_id;
+//    int32_t                     lock_op;
+    uint8_t                     access_type;
+    pdcid_t                     local_reg_id;
+    region_info_transfer_t      region;
+    uint8_t                     mapping;
+    uint8_t                     data_type;
+    uint8_t                     lock_mode;
+    /* -------------------------------------------------------------
+     * The following are unique to the analysis portion of the lock 
+     * -------------------------------------------------------------
+     */
+    int32_t                     analysis_meta_index;
+    pdcid_t                     input_iter;
+    pdcid_t                     output_iter;
+} region_analysis_and_lock_in_t;
+
+static HG_INLINE hg_return_t
+hg_proc_region_analysis_and_lock_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+    region_analysis_and_lock_in_t *struct_data = (region_analysis_and_lock_in_t*) data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->meta_server_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
+    if (ret != HG_SUCCESS) {
+	    HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+/*
+    ret = hg_proc_uint32_t(proc, &struct_data->lock_op);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+    }
+*/
+    ret = hg_proc_uint8_t(proc, &struct_data->access_type);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->local_reg_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->region);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint8_t(proc, &struct_data->mapping);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint8_t(proc, &struct_data->data_type);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint8_t(proc, &struct_data->lock_mode);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->analysis_meta_index);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->input_iter);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->output_iter);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
         return ret;
     }
     return ret;
@@ -1210,6 +1398,7 @@ typedef struct {
     uint64_t        remote_obj_id;
     PDC_var_type_t  local_type;
     PDC_var_type_t  remote_type;
+    size_t          remote_type_extent;
     size_t          ndim;
     size_t          remote_unit;
     hg_bulk_t       local_bulk_handle;
@@ -1606,12 +1795,12 @@ hg_proc_buf_map_in_t(hg_proc_t proc, void *data)
         HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_uint8_t(proc, &struct_data->local_type);
+    ret = hg_proc_uint8_t(proc, &struct_data->remote_type);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_uint8_t(proc, &struct_data->remote_type);
+    ret = hg_proc_hg_size_t(proc, &struct_data->remote_type_extent);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -2383,6 +2572,8 @@ hg_id_t obj_unmap_register(hg_class_t *hg_class);
 hg_id_t data_server_write_register(hg_class_t *hg_class);
 hg_id_t notify_region_update_register(hg_class_t *hg_class);
 hg_id_t region_release_register(hg_class_t *hg_class);
+hg_id_t transform_region_release_register(hg_class_t *hg_class);
+hg_id_t region_analysis_release_register(hg_class_t *hg_class);
 hg_id_t buf_map_server_register(hg_class_t *hg_class);
 hg_id_t buf_unmap_server_register(hg_class_t *hg_class);
 hg_id_t obj_map_server_register(hg_class_t *hg_class);
@@ -2434,6 +2625,44 @@ struct bulk_args_t {
     uint32_t        n_meta;
     uint64_t       *obj_ids;
     int client_seq_id;
+};
+
+struct buf_map_transform_and_release_bulk_args {
+    hg_handle_t handle;
+    void  *data_buf;
+    /* region_transform_and_lock_in_t is a superset of region_lock_in_t */
+    region_transform_and_lock_in_t in;
+    pdcid_t remote_obj_id;         /* target of object id */
+    pdcid_t remote_reg_id;         /* target of region id */
+    int32_t remote_client_id;
+    struct PDC_region_info *remote_reg_info;  //
+    region_info_transfer_t remote_region;
+    hg_bulk_t remote_bulk_handle;
+    hg_bulk_t local_bulk_handle;    //
+    hg_addr_t local_addr;          //
+    struct hg_thread_work work;
+    hg_thread_mutex_t work_mutex;
+    hg_thread_cond_t work_cond;
+    int work_completed;
+};
+
+struct buf_map_analysis_and_release_bulk_args {
+    hg_handle_t handle;
+    void  *data_buf;
+    /* region_analysis_and_lock_in_t is a superset of region_lock_in_t */
+    region_analysis_and_lock_in_t in;
+    pdcid_t remote_obj_id;         /* target of object id */
+    pdcid_t remote_reg_id;         /* target of region id */
+    int32_t remote_client_id;
+    struct PDC_region_info *remote_reg_info;  //
+    region_info_transfer_t remote_region;
+    hg_bulk_t remote_bulk_handle;
+    hg_bulk_t local_bulk_handle;    //
+    hg_addr_t local_addr;          //
+    struct hg_thread_work work;
+    hg_thread_mutex_t work_mutex;
+    hg_thread_cond_t work_cond;
+    int work_completed;
 };
 
 struct buf_map_release_bulk_args {

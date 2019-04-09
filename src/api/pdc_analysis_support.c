@@ -35,6 +35,10 @@
 #include "pdc_prop_pkg.h"
 #include "pdc_obj_private.h"
 #include "pdc_analysis_support.h"
+#include "mercury_atomic.h"
+
+static int compare_gt(int *a, int b) { return (*a) > (b); }
+
 
 static char *default_pdc_analysis_lib = "libpdcanalysis.so";
 
@@ -47,30 +51,6 @@ void * PDC_Server_get_region_data_ptr(pdcid_t object_id) {
 }
 #endif
 
-int
-get_datatype_size(PDC_var_type_t dtype)
-{
-  /* TODO: How to determine the size of compound types and or
-   * the other enumerated types currently handled by the default
-   * case which returns 0.
-   */
-    switch(dtype) {
-    case PDC_INT:
-      return sizeof(int);
-      break;
-    case PDC_FLOAT:
-      return sizeof(float);
-      break;
-    case PDC_DOUBLE:
-      return sizeof(double);
-      break;
-    case PDC_UNKNOWN:
-    default:
-      printf("get_datatype_size: WARNING - Using an unknown datatype\n");
-      break;
-    }
-    return 0;   /* Probably a poor default */
-}
 
 static int
 iterator_init(pdcid_t objectId, pdcid_t reg_id, int blocks, struct PDC_iterator_info *iter )
@@ -445,8 +425,10 @@ get_realpath( char *fname, char *app_path)
 	  app_path = NULL;
 	}
 	notreadable = access(fullPath, R_OK);
-	if (notreadable && (app_path == NULL))
+	if (notreadable && (app_path == NULL)) {
 	    perror("access");
+	    return NULL;
+	}
     } while(notreadable);
     return strdup(fullPath);
 }
@@ -456,7 +438,7 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
 {
     perr_t ret_value = SUCCEED;         /* Return value */
     void *ftnHandle = NULL;
-    int (*ftnPtr)(pdcid_t, pdcid_t) = NULL;
+    size_t (*ftnPtr)(pdcid_t, pdcid_t) = NULL;
     struct region_analysis_ftn_info *thisFtn = NULL;
     struct PDC_iterator_info *i_in = NULL, *i_out = NULL;
     pdcid_t meta_id_in = 0, meta_id_out = 0;
@@ -470,8 +452,9 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
     FUNC_ENTER(NULL);
 
     thisApp = pdc_get_argv0_();
-    if (thisApp) 
+    if (thisApp) {
       applicationDir = dirname(strdup(thisApp));
+    }
     userdefinedftn = strdup(func);
 
     if ((colonsep = strrchr(userdefinedftn, ':')) != NULL) {
@@ -494,12 +477,16 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
     if ((thisFtn = PDC_MALLOC(struct region_analysis_ftn_info)) == NULL)
         PGOTO_ERROR(FAIL,"PDC register_obj_analysis memory allocation failed\n");
 
-    thisFtn->ftnPtr = (int (*)()) ftnPtr;
+    thisFtn->ftnPtr = (size_t (*)()) ftnPtr;
     thisFtn->n_args = 2;
-    if ((thisFtn->object_id = (pdcid_t *)calloc(2, sizeof(pdcid_t))) != NULL) {
+    /* Allocate for iterator ids and region ids */
+    if ((thisFtn->object_id = (pdcid_t *)calloc(4, sizeof(pdcid_t))) != NULL) {
         thisFtn->object_id[0] = iterIn;
         thisFtn->object_id[1] = iterOut;
     }
+    else PGOTO_ERROR(FAIL,"PDC register_obj_analysis memory allocation failed - object_ids\n");
+
+    thisFtn->region_id = (pdcid_t *)&thisFtn->object_id[2];
 
     thisFtn->lang = C_lang;
 
@@ -514,7 +501,11 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
         }
     }
 
-    pdc_client_register_obj_analysis(userdefinedftn, loadpath, meta_id_in, meta_id_out);
+    pdc_client_register_obj_analysis(thisFtn, userdefinedftn, loadpath, meta_id_in, meta_id_out);
+
+    // Add region IDs
+    thisFtn->region_id[0] = i_in->reg_id;
+    thisFtn->region_id[1] = i_out->reg_id;
 
     // Add to our own list of analysis functions
     if (pdc_add_analysis_ptr_to_registry_(thisFtn) < 0)
@@ -541,3 +532,41 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+#if 0				/* Deprecated:  See PDCobj_data_iter_create() */
+pdcid_t PDCobj_create_data_iterator(pdcid_t obj_id, pdcid_t reg_id)
+{
+    size_t nextId = 0;
+    pdcid_t index = 0;
+
+    if (PDC_Block_iterator_cache == NULL) {
+        PDC_Block_iterator_cache = (iterator_info_t *)calloc(iterator_cache_entries, sizeof(iterator_info_t));
+        i_cache_freed = (int *) calloc(iterator_cache_entries, sizeof(int));
+        /* Index 0 is NOT-USED other than to indicate an empty iterator */
+        hg_atomic_init32(&i_cache_index,1);
+        hg_atomic_init32(&i_cache_freed,0);
+    }
+    if (compare_gt((void *)&i_cache_freed, 0)) {
+        int next_free = hg_atomic_decr32(&i_cache_freed);
+        nextId = i_cache_freed[next_free];
+    }
+    else {
+        int next_free = hg_atomic_incr32(&i_cache_index);
+        nextId = next_free -1;        /* use the "current" index */
+    }
+    if (nextId == iterator_cache_entries) {
+        /* Realloc the cache and free list */
+        int *previous_i_cache_freed = i_cache_freed;
+        iterator_info_t * previous_state = PDC_Block_iterator_cache;
+        PDC_Block_iterator_cache = (iterator_info_t *)calloc(iterator_cache_entries *2, sizeof(iterator_info_t));
+        memcpy(PDC_Block_iterator_cache, previous_state, iterator_cache_entries * sizeof(iterator_info_t));
+        i_cache_freed = (int *)calloc(iterator_cache_entries * 2, sizeof(int));
+        memcpy(i_cache_freed, previous_i_cache_freed, iterator_cache_entries * sizeof(int));
+        iterator_cache_entries *= 2;
+        free( previous_i_cache_freed );
+        free( previous_state );
+    }
+    if ((index = (pdcid_t)nextId) > 0)
+        iterator_init(obj_id, reg_id, 1, &PDC_Block_iterator_cache[nextId]);
+    return index;
+}
+#endif
