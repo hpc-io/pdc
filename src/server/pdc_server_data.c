@@ -51,6 +51,7 @@
 
 // Global object region info list in local data server
 data_server_region_t *dataserver_region_g = NULL;
+data_server_region_unmap_t *dataserver_region_unmap = NULL;
 
 int pdc_buffered_bulk_update_total_g = 0;
 int pdc_nbuffered_bulk_update_g      = 0;
@@ -725,6 +726,7 @@ int region_list_cmp_by_client_id(region_list_t *a, region_list_t *b)
 perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
 {
     perr_t ret_value = SUCCEED;
+    int ret = HG_UTIL_SUCCESS;
     region_buf_map_t *tmp, *elt;
     data_server_region_t *target_obj;
     
@@ -742,21 +744,48 @@ perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
 #ifdef ENABLE_MULTITHREAD
             // wait for work to be done, then free
             hg_thread_mutex_lock(&(elt->bulk_args->work_mutex));
+#ifdef ENABLE_WAIT_DATA
             while (!elt->bulk_args->work_completed)
                 hg_thread_cond_wait(&(elt->bulk_args->work_cond), &(elt->bulk_args->work_mutex));
             elt->bulk_args->work_completed = 0;
+            ret = HG_UTIL_SUCCESS;
+#else
+            if (!elt->bulk_args->work_completed)
+                ret = hg_thread_cond_timedwait(&(elt->bulk_args->work_cond), &(elt->bulk_args->work_mutex), 100);
+            // free resource if work is done
+            if(ret == HG_UTIL_SUCCESS) 
+                elt->bulk_args->work_completed = 0;
+#endif
             hg_thread_mutex_unlock(&(elt->bulk_args->work_mutex));  //per bulk_args
 #endif
-            free(elt->remote_data_ptr);  
-            HG_Addr_free(info->hg_class, elt->local_addr);
-            HG_Bulk_free(elt->local_bulk_handle);
+            if(ret == HG_UTIL_SUCCESS) {
+            	free(elt->remote_data_ptr);  
+            	HG_Addr_free(info->hg_class, elt->local_addr);
+//            	HG_Bulk_free(elt->local_bulk_handle);
 #ifdef ENABLE_MULTITHREAD
-            hg_thread_mutex_destroy(&(elt->bulk_args->work_mutex));
-            hg_thread_cond_destroy(&(elt->bulk_args->work_cond)); 
-            free(elt->bulk_args); 
+            	hg_thread_mutex_destroy(&(elt->bulk_args->work_mutex));
+            	hg_thread_cond_destroy(&(elt->bulk_args->work_cond)); 
+            	free(elt->bulk_args); 
 #endif
-            DL_DELETE(target_obj->region_buf_map_head, elt);
-            free(elt);
+            	DL_DELETE(target_obj->region_buf_map_head, elt);
+            	free(elt);
+            }
+#ifndef ENABLE_WAIT_DATA   
+            // timeout, append the global list for unmap
+            else {
+                data_server_region_unmap_t *region;
+                region->obj_id = in->remote_obj_id;
+                region->unmap_region = in->remote_region;
+                region->info = info;
+#ifdef ENABLE_MULTITHREAD
+                hg_thread_mutex_lock(&data_buf_unmap_mutex_g);
+#endif
+                DL_APPEND(dataserver_region_unmap, region);
+#ifdef ENABLE_MULTITHREAD
+                hg_thread_mutex_unlock(&data_buf_unmap_mutex_g);
+#endif
+            }
+#endif         
             
         }
     }
@@ -767,6 +796,70 @@ perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
     hg_thread_mutex_unlock(&data_buf_map_mutex_g);
 #endif
 
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_Data_Server_check_unmap()
+{
+    perr_t ret_value = SUCCEED;
+    int ret = HG_UTIL_SUCCESS;
+    pdcid_t remote_obj_id;
+    region_buf_map_t *tmp, *elt;
+    data_server_region_unmap_t *tmp1, *elt1;
+    data_server_region_t *target_obj;
+    int done = 0;
+    
+    FUNC_ENTER(NULL);
+    
+    DL_FOREACH_SAFE(dataserver_region_unmap, elt1, tmp1) {
+        remote_obj_id = elt1->obj_id;
+        target_obj = PDC_Server_get_obj_region(remote_obj_id);
+        if (target_obj == NULL) {
+            PGOTO_ERROR(FAIL, "===PDC_DATA_SERVER: PDC_Data_Server_check_unmap() - requested object does not exist");
+        }
+        done = 0;
+#ifdef ENABLE_MULTITHREAD
+        hg_thread_mutex_lock(&data_buf_map_mutex_g);
+#endif
+        DL_FOREACH_SAFE(target_obj->region_buf_map_head, elt, tmp) {
+            if(remote_obj_id==elt->remote_obj_id && region_is_identical(elt1->unmap_region, elt->remote_region_unit)) {
+#ifdef ENABLE_MULTITHREAD
+                hg_thread_mutex_lock(&(elt->bulk_args->work_mutex));
+                if (!elt->bulk_args->work_completed)
+                    // wait for 100ms for work done
+                    ret = hg_thread_cond_timedwait(&(elt->bulk_args->work_cond), &(elt->bulk_args->work_mutex), 100);
+                // free resource if work is done
+                if(ret == HG_UTIL_SUCCESS) {
+                    done = 1;
+                    elt->bulk_args->work_completed = 0;
+                    hg_thread_mutex_unlock(&(elt->bulk_args->work_mutex));  //per bulk_args
+#endif
+                    free(elt->remote_data_ptr);
+                    HG_Addr_free(elt1->info->hg_class, elt->local_addr);
+//                    HG_Bulk_free(elt->local_bulk_handle);
+#ifdef ENABLE_MULTITHREAD
+                    hg_thread_mutex_destroy(&(elt->bulk_args->work_mutex));
+                    hg_thread_cond_destroy(&(elt->bulk_args->work_cond));
+                    free(elt->bulk_args);
+#endif
+                    DL_DELETE(target_obj->region_buf_map_head, elt);
+                    free(elt);
+                }
+            }
+        }
+        if(target_obj->region_buf_map_head == NULL && pdc_server_rank_g == 0) {
+            close(target_obj->fd);
+        }
+#ifdef ENABLE_MULTITHREAD
+        hg_thread_mutex_unlock(&data_buf_map_mutex_g);
+#endif
+        if(done == 1) {
+            DL_DELETE(dataserver_region_unmap, elt1);
+            free(elt1);
+        }
+    }
+    
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -845,8 +938,6 @@ buf_unmap_lookup_remote_server_cb(const struct hg_cb_info *callback_info)
     }
 done:
     if(error == 1) {
-        out.ret = 0;
-        HG_Respond(handle, NULL, NULL, &out);
         HG_Free_input(handle, &(lookup_args->buf_unmap_args->in));
         HG_Destroy(handle);
         free(tranx_args);
@@ -889,8 +980,6 @@ perr_t PDC_Server_buf_unmap_lookup_server_id(int remote_server_id, struct transf
 done:
     fflush(stdout);
     if(error == 1) {
-        out.ret = 0;
-        HG_Respond(handle, NULL, NULL, &out);
         HG_Free_input(handle, &(transfer_args->in));
         HG_Destroy(handle);
         free(transfer_args);
@@ -922,7 +1011,6 @@ static hg_return_t server_send_buf_unmap_rpc_cb(const struct hg_cb_info *callbac
     tranx_args->ret = output.ret;
 
 done:
-    HG_Respond(tranx_args->handle, NULL, NULL, &output);
     HG_Free_input(tranx_args->handle, &(tranx_args->in));
     HG_Destroy(tranx_args->handle);
     HG_Free_output(handle, &output);
@@ -967,8 +1055,6 @@ perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle)
 #ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_unlock(&meta_buf_map_mutex_g);
 #endif
-        out.ret = 1;
-        HG_Respond(*handle, NULL, NULL, &out);
         HG_Free_input(*handle, in);
         HG_Destroy(*handle);
     }
@@ -1004,8 +1090,6 @@ perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle)
 
 done:
     if(error == 1) {
-        out.ret = 0;
-        HG_Respond(*handle, NULL, NULL, &out);
         HG_Free_input(*handle, in);
         HG_Destroy(*handle);
     }
@@ -1215,7 +1299,6 @@ static hg_return_t server_send_buf_map_addr_rpc_cb(const struct hg_cb_info *call
     }
 
 done:
-    HG_Respond(tranx_args->handle, NULL, NULL, &out);
     HG_Free_input(tranx_args->handle, &(tranx_args->in));
     HG_Destroy(tranx_args->handle);
     HG_Free_output(handle, &out);
@@ -1270,8 +1353,6 @@ buf_map_lookup_remote_server_cb(const struct hg_cb_info *callback_info)
 
 done:
     if(error == 1) {
-        out.ret = 0;
-        HG_Respond(handle, NULL, NULL, &out);
         HG_Free_input(handle, &(lookup_args->buf_map_args->in));
         HG_Destroy(handle);
         free(tranx_args);
@@ -1312,8 +1393,6 @@ perr_t PDC_Server_buf_map_lookup_server_id(int remote_server_id, struct transfer
 done:
     fflush(stdout);
     if(error == 1) {
-        out.ret = 0;
-        HG_Respond(handle, NULL, NULL, &out);
         HG_Free_input(handle, &(transfer_args->in));
         HG_Destroy(handle); 
         free(transfer_args);
@@ -1341,10 +1420,8 @@ static hg_return_t server_send_buf_map_rpc_cb(const struct hg_cb_info *callback_
         tranx_args->ret = -1;
         goto done;
     }
-    tranx_args->ret = out.ret;
 
 done:
-    HG_Respond(tranx_args->handle, NULL, NULL, &out);
     HG_Free_input(tranx_args->handle, &(tranx_args->in));
     HG_Destroy(tranx_args->handle);
     HG_Free_output(handle, &out);
@@ -1385,8 +1462,6 @@ perr_t PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_p
         buf_map_ptr->local_region = new_buf_map_ptr->local_region;
         buf_map_ptr->local_ndim = new_buf_map_ptr->local_ndim;
         buf_map_ptr->local_data_type = new_buf_map_ptr->local_data_type;
-//        buf_map_ptr->local_addr = new_buf_map_ptr->local_addr;
-//        buf_map_ptr->local_bulk_handle = new_buf_map_ptr->local_bulk_handle;
 
         buf_map_ptr->remote_obj_id = new_buf_map_ptr->remote_obj_id;
         buf_map_ptr->remote_reg_id = new_buf_map_ptr->remote_reg_id;
@@ -1405,8 +1480,6 @@ perr_t PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_p
     hg_thread_mutex_unlock(&meta_buf_map_mutex_g);
 #endif
 
-        out.ret = 1;
-        HG_Respond(*handle, NULL, NULL, &out);
         HG_Free_input(*handle, in);
         HG_Destroy(*handle);
     }
@@ -1442,8 +1515,6 @@ perr_t PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_p
 
 done:
     if(error == 1) {
-        out.ret = 0;
-        HG_Respond(*handle, NULL, NULL, &out);
         HG_Free_input(*handle, in);
         HG_Destroy(*handle);
         if((uint32_t)pdc_server_rank_g != in->meta_server_id && tranx_args != NULL)

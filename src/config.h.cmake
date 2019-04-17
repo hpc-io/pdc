@@ -26,3 +26,6 @@
 
 /* Define if closing server by application */
 #cmakedefine ENABLE_APP_CLOSE_SERVER
+
+/* Define if wait for data to be fanalized when closing dataset */
+#cmakedefine ENABLE_WAIT_DATA
