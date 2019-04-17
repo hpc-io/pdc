@@ -41,6 +41,7 @@ typedef struct pdcquery_constraint_t {
     PDC_var_type_t     type;
     double             value;   // Use it as a generic 64bit value
     pdcselection_t     sel;
+    pdc_histogram_t    *hist;
 
     int                is_range;
     pdcquery_op_t      op2;

@@ -81,65 +81,67 @@ pdcquery_t *PDCquery_and(pdcquery_t *q1, pdcquery_t *q2)
         return NULL;
 
     // must be same obj, same type, lvalue < rvalue
-    while (q1->constraint->obj_id == q2->constraint->obj_id && q1->constraint->type == q2->constraint->type) {
+    if (q1->constraint && q2->constraint) {
+        while (q1->constraint->obj_id == q2->constraint->obj_id && q1->constraint->type == q2->constraint->type) {
 
-        // Switch the two constraints and make q1 to be GT or GTE when possible                       
-        if ( (q2->constraint->op == PDC_GT || q2->constraint->op == PDC_GTE) &&
-             (q1->constraint->op == PDC_LT || q1->constraint->op == PDC_LTE) ) {
-            tmp = q2;
-            q2  = q1;
-            q1  = tmp;
-        }
+            // Switch the two constraints and make q1 to be GT or GTE when possible                       
+            if ( (q2->constraint->op == PDC_GT || q2->constraint->op == PDC_GTE) &&
+                 (q1->constraint->op == PDC_LT || q1->constraint->op == PDC_LTE) ) {
+                tmp = q2;
+                q2  = q1;
+                q1  = tmp;
+            }
 
-        // Check if left is gt and right is lt
-        if ( !((q1->constraint->op == PDC_GT || q1->constraint->op == PDC_GTE) &&
-              (q2->constraint->op  == PDC_LT || q2->constraint->op == PDC_LTE)) ) {
+            // Check if left is gt and right is lt
+            if ( !((q1->constraint->op == PDC_GT || q1->constraint->op == PDC_GTE) &&
+                  (q2->constraint->op  == PDC_LT || q2->constraint->op == PDC_LTE)) ) {
+                break;
+            }
+
+            switch(q1->constraint->type) {
+                case PDC_FLOAT :
+                    flo = *((float*)&q1->constraint->value);
+                    fhi = *((float*)&q2->constraint->value);
+                    if (flo <= fhi)
+                        can_combine = 1;
+                    break;
+                case PDC_DOUBLE:
+                    dlo = *((double*)&q1->constraint->value);
+                    dhi = *((double*)&q2->constraint->value);
+                    if (dlo <= dhi)
+                        can_combine = 1;
+                    break;
+                case PDC_INT:
+                    ilo = *((int*)&q1->constraint->value);
+                    ihi = *((int*)&q2->constraint->value);
+                    if (ilo <= ihi)
+                        can_combine = 1;
+                    break;
+                case PDC_UINT:
+                    ulo = *((uint32_t*)&q1->constraint->value);
+                    uhi = *((uint32_t*)&q2->constraint->value);
+                    if (ulo <= uhi)
+                        can_combine = 1;
+                    break;
+                case PDC_INT64:
+                    i64lo = *((int64_t*)&q1->constraint->value);
+                    i64hi = *((int64_t*)&q2->constraint->value);
+                    if (i64lo <= i64hi)
+                        can_combine = 1;
+                    break;
+                case PDC_UINT64:
+                    ui64lo = *((uint64_t*)&q1->constraint->value);
+                    ui64hi = *((uint64_t*)&q2->constraint->value);
+                    if (ui64lo <= ui64hi)
+                        can_combine = 1;
+                    break;
+                default:
+                    printf("== %s - error with operator type!\n", __func__);
+                    break;
+            } // End switch        
+
             break;
         }
-
-        switch(q1->constraint->type) {
-            case PDC_FLOAT :
-                flo = *((float*)&q1->constraint->value);
-                fhi = *((float*)&q2->constraint->value);
-                if (flo <= fhi)
-                    can_combine = 1;
-                break;
-            case PDC_DOUBLE:
-                dlo = *((double*)&q1->constraint->value);
-                dhi = *((double*)&q2->constraint->value);
-                if (dlo <= dhi)
-                    can_combine = 1;
-                break;
-            case PDC_INT:
-                ilo = *((int*)&q1->constraint->value);
-                ihi = *((int*)&q2->constraint->value);
-                if (ilo <= ihi)
-                    can_combine = 1;
-                break;
-            case PDC_UINT:
-                ulo = *((uint32_t*)&q1->constraint->value);
-                uhi = *((uint32_t*)&q2->constraint->value);
-                if (ulo <= uhi)
-                    can_combine = 1;
-                break;
-            case PDC_INT64:
-                i64lo = *((int64_t*)&q1->constraint->value);
-                i64hi = *((int64_t*)&q2->constraint->value);
-                if (i64lo <= i64hi)
-                    can_combine = 1;
-                break;
-            case PDC_UINT64:
-                ui64lo = *((uint64_t*)&q1->constraint->value);
-                ui64hi = *((uint64_t*)&q2->constraint->value);
-                if (ui64lo <= ui64hi)
-                    can_combine = 1;
-                break;
-            default:
-                printf("== %s - error with operator type!\n", __func__);
-                break;
-        } // End switch        
-
-        break;
     }
 
     query         = (pdcquery_t*)calloc(1, sizeof(pdcquery_t));

@@ -72,8 +72,8 @@ int main(int argc, char **argv)
     float *energy_data;
     pdcquery_t *ql, *qh, *q;
 
-    /* float energy_lo0 = 3.9, energy_hi0 = 4.0; */
-    float energy_lo0 = 2.0, energy_hi0 = 2.1;
+    float energy_lo0 = 3.9, energy_hi0 = 4.0;
+    /* float energy_lo0 = 2.0, energy_hi0 = 2.1; */
     for (j = 0; j < 21; j++) {
         ql = PDCquery_create(energy_id, PDC_GTE, PDC_FLOAT, &energy_lo0);
         qh = PDCquery_create(energy_id, PDC_LTE, PDC_FLOAT, &energy_hi0);
@@ -116,12 +116,10 @@ int main(int argc, char **argv)
 
         free(energy_data);
         PDCquery_free_all(q);
-        if (j != 0) {
-            energy_lo0 += 0.1;
-            energy_hi0 += 0.1;
-            /* energy_lo0 -= 0.1; */
-            /* energy_hi0 -= 0.1; */
-        }
+        /* energy_lo0 += 0.1; */
+        /* energy_hi0 += 0.1; */
+        energy_lo0 -= 0.1;
+        energy_hi0 -= 0.1;
     }
 
 done:

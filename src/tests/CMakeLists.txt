@@ -58,6 +58,12 @@ set(PROGRAMS
   query_vpic
   import_vpic
   query_vpic_multi
+  query_vpic_multi_preload
+  query_vpic_multi_nopreload
+  query_vpic_bin_sds_preload
+  query_vpic_bin_sds_nopreload
+  query_vpic_bin_sds1_preload
+  query_vpic_bin_sds1_nopreload
 #  obj_analysis
   )
 

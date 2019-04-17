@@ -5,5 +5,7 @@ CFLAGS = -dynamic  -fPIC
 
 all:
 	cc vpic_sort.c -o vpic_sort $(INCLUDES) $(LIB_FLAGS) $(CFLAGS) -g
+	cc h5group-sorter.c -o h5group-sorter $(INCLUDES) $(LIB_FLAGS) $(CFLAGS) -g
+	cc vpic-energy-sorter.c -o vpic-energy-sorter $(INCLUDES) $(LIB_FLAGS) $(CFLAGS) -g
 clean:
 	rm -rf ./*.o ./vpic_sort

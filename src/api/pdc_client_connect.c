@@ -7850,7 +7850,7 @@ PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op, uint64_t *nhits
         HG_Destroy(handle);
     }
 
-    printf("==PDC_CLIENT[%d]: send data query id = %d\n", pdc_client_mpi_rank_g, server_id, result->query_id);
+    /* printf("==PDC_CLIENT[%d]: send data query id = %d\n", pdc_client_mpi_rank_g, server_id, result->query_id); */
 
     // Wait for server to send query result
     work_todo_g = 1;

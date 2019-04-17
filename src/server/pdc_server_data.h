@@ -272,6 +272,7 @@ extern update_storage_meta_list_t *pdc_update_storage_meta_list_head_g;
 extern pdc_client_info_t        *pdc_client_info_g;
 extern int pdc_client_num_g;
 extern double total_mem_usage_g;
+extern int lustre_stripe_size_mb_g;
 
 extern hg_id_t get_remote_metadata_register_id_g;
 extern hg_id_t buf_map_server_register_id_g;

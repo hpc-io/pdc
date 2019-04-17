@@ -158,19 +158,18 @@ int main (int argc, char* argv[])
                 exit(-1);
             }
 
-            if (my_rank == 0 && j % (my_nregion/10) == 0) 
+            if ((my_rank == 0 || my_rank == num_procs-1) && j > 0 && j % (my_nregion/10) == 0) 
                 printf("Rank %d -  obj [%s] Imported %lld/%lld regions\n", my_rank, dset_names[i], j, my_nregion);
             
         } // End for j
 
-        if (my_rank == 0) 
-            printf("\n\nFinished import object %s\n\n", dset_names[i]);
-
-        fflush(stdout);
         #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
         #endif
 
+        if (my_rank == 0) 
+            printf("\n\nFinished import object %s\n\n", dset_names[i]);
+        fflush(stdout);
     } // End for i
 
 

@@ -74,6 +74,7 @@ char                     *all_addr_strings_1d_g    = NULL;
 char                    **all_addr_strings_g       = NULL;
 int                       is_all_client_connected_g  = 0;
 int                       is_hash_table_init_g = 0;
+int                       lustre_stripe_size_mb_g  = 16;
 
 hg_id_t    get_remote_metadata_register_id_g;
 hg_id_t    buf_map_server_register_id_g;
@@ -1513,6 +1514,7 @@ perr_t PDC_Server_restart(char *filename)
                 region_list->reg_dirty_from_buf         = 0;
                 region_list->access_type                = NA;
                 region_list->bulk_handle                = NULL;
+                region_list->lock_handle                = NULL;
                 region_list->addr                       = NULL;
                 region_list->obj_id                     = (metadata+i)->obj_id;
                 region_list->reg_id                     = 0;
@@ -1522,6 +1524,7 @@ perr_t PDC_Server_restart(char *filename)
                 region_list->is_shm_closed              = 0;
                 region_list->seq_id                     = 0;
                 region_list->sent_to_server             = 0;
+                region_list->io_cache_region            = NULL;
 
                 memset(region_list->shm_addr, 0, ADDR_MAX);
                 memset(region_list->client_ids, 0, PDC_SERVER_MAX_PROC_PER_NODE*sizeof(uint32_t));
@@ -1889,6 +1892,14 @@ static void PDC_Server_get_env()
         }
     }
 
+    tmp_env_char = getenv("PDC_LUSTRE_STRIPE_SIZE");
+    if (tmp_env_char!= NULL) {
+        lustre_stripe_size_mb_g = atoi(tmp_env_char);
+        // Make sure it is a sane value
+        if (lustre_stripe_size_mb_g  < 1 || lustre_stripe_size_mb_g  > 128) {
+            lustre_stripe_size_mb_g  = 16;
+        }
+    }
     // Get number of clients per node
     tmp_env_char = (getenv("NCLIENT"));
     if (tmp_env_char == NULL)

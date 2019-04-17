@@ -9,20 +9,23 @@
 #include "dtcmp.h"
 
 #define ENABLE_MPI 1
-#define NVAR 7
+
+/* #define SORTALL 1 */
+#define NSORT   4
 
 struct timeval start_time[5];
 float          elapse[5];
 
 typedef struct vpic_data_t {
-    size_t nparticle;
     float  *energy;
     float  *x;
     float  *y;
     float  *z;
+#ifdef SORTALL
     float  *ux;
     float  *uy;
     float  *uz;
+#endif
 } vpic_data_t;
 
 typedef struct vpic_aos_data_t {
@@ -30,9 +33,11 @@ typedef struct vpic_aos_data_t {
     float  x;
     float  y;
     float  z;
+#ifdef SORTALL
     float  ux;
     float  uy;
     float  uz;
+#endif
 } vpic_aos_data_t;
 
 
@@ -80,11 +85,11 @@ int main (int argc, char* argv[])
 {
     int         my_rank = 0, num_procs = 1, ndim;
     char        *file_name, *group_name, *out_fname;
-    char        *dset_names[NVAR] = {"Energy", "x", "y", "z", "Ux", "Uy", "Uz"};
-    hid_t       file_id, group_id, dset_ids[NVAR], filespace, memspace, fapl;
-    hid_t       out_file_id, out_group_id, out_dset_ids[NVAR], out_filespace, out_memspace;
+    char        *dset_names[7] = {"Energy", "x", "y", "z", "Ux", "Uy", "Uz"};
+    hid_t       file_id, group_id, dset_ids[NSORT], filespace, memspace, fapl;
+    hid_t       out_file_id, out_group_id, out_dset_ids[NSORT], out_filespace, out_memspace;
     vpic_data_t vpic_data;
-    hsize_t     dims[1], my_offset, my_size, i;
+    hsize_t     dims[1], my_offset, my_size, avg_size, i;
 
     memset(&vpic_data, 0, sizeof(vpic_data_t));
 
@@ -139,7 +144,7 @@ int main (int argc, char* argv[])
         goto error;
     }
 
-    for (i = 0; i < NVAR; i++) {
+    for (i = 0; i < NSORT; i++) {
         dset_ids[i] = H5Dopen(group_id, dset_names[i], H5P_DEFAULT);
         if(dset_ids[i] < 0) {
             printf("Error opening dataset [%s]!\n", dset_names[i]);
@@ -151,20 +156,23 @@ int main (int argc, char* argv[])
     ndim      = H5Sget_simple_extent_ndims(filespace);
     H5Sget_simple_extent_dims(filespace, dims, NULL);
 
-    my_offset = my_rank * (dims[0] / num_procs);
-    my_size   = dims[0] / num_procs;
-    if (my_rank == num_procs - 1) 
-        my_size += (dims[0] % my_size);
+    my_size   = ceil(1.0 * dims[0] / num_procs);
+    my_offset = my_rank * my_size;
+    avg_size  = my_size;
+    if (my_rank == num_procs - 1 && dims[0] % avg_size != 0) {
+        my_size = dims[0] - (num_procs - 1)*avg_size;
+        printf("%d: my_size is %lu, avg_size is %lu\n", my_rank, my_size, avg_size);
+    }
     
-    vpic_data.nparticle = my_size;
-
     vpic_data.energy = (float*)malloc(my_size * sizeof(float));
     vpic_data.x      = (float*)malloc(my_size * sizeof(float));
     vpic_data.y      = (float*)malloc(my_size * sizeof(float));
     vpic_data.z      = (float*)malloc(my_size * sizeof(float));
+    #ifdef SORTALL
     vpic_data.ux     = (float*)malloc(my_size * sizeof(float));
     vpic_data.uy     = (float*)malloc(my_size * sizeof(float));
     vpic_data.uz     = (float*)malloc(my_size * sizeof(float));
+    #endif
 
     memspace =  H5Screate_simple(1, (hsize_t *) &my_size, NULL);
     H5Sselect_hyperslab(filespace, H5S_SELECT_SET, &my_offset, NULL, &my_size, NULL);
@@ -180,55 +188,103 @@ int main (int argc, char* argv[])
     }
 
     H5Dread(dset_ids[0], H5T_IEEE_F32LE, memspace, filespace, H5P_DEFAULT, vpic_data.energy);
+    if (my_rank == 0) {
+        printf("Finished reading Energy\n");
+        fflush(stdout);
+    }
     H5Dread(dset_ids[1], H5T_IEEE_F32LE, memspace, filespace, H5P_DEFAULT, vpic_data.x);
+    if (my_rank == 0) {
+        printf("Finished reading x\n");
+        fflush(stdout);
+    }
     H5Dread(dset_ids[2], H5T_IEEE_F32LE, memspace, filespace, H5P_DEFAULT, vpic_data.y);
+    if (my_rank == 0) {
+        printf("Finished reading y\n");
+        fflush(stdout);
+    }
     H5Dread(dset_ids[3], H5T_IEEE_F32LE, memspace, filespace, H5P_DEFAULT, vpic_data.z);
+    if (my_rank == 0) {
+        printf("Finished reading z\n");
+        fflush(stdout);
+    }
+    #ifdef SORTALL
     H5Dread(dset_ids[4], H5T_IEEE_F32LE, memspace, filespace, H5P_DEFAULT, vpic_data.ux);
+    if (my_rank == 0) 
+        printf("Finished reading ux\n");
     H5Dread(dset_ids[5], H5T_IEEE_F32LE, memspace, filespace, H5P_DEFAULT, vpic_data.uy);
+    if (my_rank == 0) 
+        printf("Finished reading uy\n");
     H5Dread(dset_ids[6], H5T_IEEE_F32LE, memspace, filespace, H5P_DEFAULT, vpic_data.uz);
+    if (my_rank == 0) 
+        printf("Finished reading uz\n");
+    #endif
 
     #ifdef ENABLE_MPI
     MPI_Barrier (MPI_COMM_WORLD);
     #endif
     timer_off(1);
 
+    if (my_rank == 0) { 
+        printf ("Done reading data \n");
+        fflush(stdout);
+    }
 
     H5Sclose(memspace);
     H5Sclose(filespace);
 
-    for (i = 0; i < NVAR; i++) 
+    for (i = 0; i < NSORT; i++) 
         H5Dclose(dset_ids[i]);
     H5Gclose(group_id);
     H5Fclose(file_id);
 
 
-    vpic_aos_data_t *aos_data = (vpic_aos_data_t*)malloc(my_size * sizeof(vpic_aos_data_t));
+    vpic_aos_data_t *aos_data = (vpic_aos_data_t*)malloc(avg_size * sizeof(vpic_aos_data_t));
     if (aos_data == NULL) {
         printf("Error with malloc!\n");
     }
+
+    // Last rank gets less data than average, need padding
+    if (my_rank == num_procs - 1) {
+        for (i = my_size - 1; i < avg_size; i++) {
+            aos_data[i].energy = FLT_MAX;
+            aos_data[i].x      = FLT_MAX;
+            aos_data[i].y      = FLT_MAX;
+            aos_data[i].z      = FLT_MAX;
+            #ifdef SORTALL
+            aos_data[i].ux     = FLT_MAX;
+            aos_data[i].uy     = FLT_MAX;
+            aos_data[i].uz     = FLT_MAX;
+            #endif
+        }
+    }
+
     for (i = 0; i < my_size; i++) {
         aos_data[i].energy = vpic_data.energy[i];
         aos_data[i].x      = vpic_data.x[i];
         aos_data[i].y      = vpic_data.y[i];
         aos_data[i].z      = vpic_data.z[i];
+        #ifdef SORTALL
         aos_data[i].ux     = vpic_data.ux[i];
         aos_data[i].uy     = vpic_data.uy[i];
         aos_data[i].uz     = vpic_data.uz[i];
+        #endif
     }
 
-    free(vpic_data.energy);
-    free(vpic_data.x);     
-    free(vpic_data.y);     
-    free(vpic_data.z);     
-    free(vpic_data.ux);    
-    free(vpic_data.uy);    
-    free(vpic_data.uz);    
 
+    if(vpic_data.energy) free(vpic_data.energy);
+    if(vpic_data.x) free(vpic_data.x);     
+    if(vpic_data.y) free(vpic_data.y);     
+    if(vpic_data.z) free(vpic_data.z);     
+    #ifdef SORTALL
+    if(vpic_data.ux) free(vpic_data.ux);    
+    if(vpic_data.uy) free(vpic_data.uy);    
+    if(vpic_data.uz) free(vpic_data.uz);    
+    #endif
 
     vpic_aos_data_t *out= (vpic_aos_data_t*)malloc(my_size * sizeof(vpic_aos_data_t));
 
     MPI_Datatype sort_dtype;
-    MPI_Type_contiguous(7, MPI_FLOAT, &sort_dtype);
+    MPI_Type_contiguous(NSORT, MPI_FLOAT, &sort_dtype);
     MPI_Type_commit(&sort_dtype);
 
     if (my_rank == 0) {
@@ -241,8 +297,7 @@ int main (int argc, char* argv[])
     #endif
     timer_on(2);
 
-
-    DTCMP_Sortv(aos_data, out, my_size, MPI_FLOAT, sort_dtype,
+    DTCMP_Sort(aos_data, out, avg_size, MPI_FLOAT, sort_dtype,
                DTCMP_OP_FLOAT_ASCEND, DTCMP_FLAG_NONE, MPI_COMM_WORLD);
 
     #ifdef ENABLE_MPI
@@ -250,6 +305,10 @@ int main (int argc, char* argv[])
     #endif
     timer_off(2);
 
+    if (my_rank == 0) { 
+        printf ("Done sorting data \n");
+        fflush(stdout);
+    }
 
     free(aos_data);
     MPI_Type_free(&sort_dtype);
@@ -258,18 +317,22 @@ int main (int argc, char* argv[])
     vpic_data.x      = (float*)malloc(my_size * sizeof(float));
     vpic_data.y      = (float*)malloc(my_size * sizeof(float));
     vpic_data.z      = (float*)malloc(my_size * sizeof(float));
+    #ifdef SORTALL
     vpic_data.ux     = (float*)malloc(my_size * sizeof(float));
     vpic_data.uy     = (float*)malloc(my_size * sizeof(float));
     vpic_data.uz     = (float*)malloc(my_size * sizeof(float));
+    #endif
 
     for (i = 0; i < my_size; i++) {
         vpic_data.energy[i] = out[i].energy; 
         vpic_data.x[i]      = out[i].x; 
         vpic_data.y[i]      = out[i].y; 
         vpic_data.z[i]      = out[i].z; 
+        #ifdef SORTALL
         vpic_data.ux[i]     = out[i].ux;
         vpic_data.uy[i]     = out[i].uy;
         vpic_data.uz[i]     = out[i].uz;
+        #endif
     }
 
 
@@ -292,7 +355,7 @@ int main (int argc, char* argv[])
     }
 
     out_filespace = H5Screate_simple(1, dims, NULL);
-    for (i = 0; i < NVAR; i++) {
+    for (i = 0; i < NSORT; i++) {
         out_dset_ids[i] = H5Dcreate(out_group_id, dset_names[i], H5T_IEEE_F32LE, out_filespace, 
                                     H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
         if(out_dset_ids[i] < 0) {
@@ -309,27 +372,36 @@ int main (int argc, char* argv[])
     #endif
     timer_on(3);
 
-    if (my_rank == 0) 
-        printf ("Reading data \n");
+    if (my_rank == 0) { 
+        printf ("Start writing data \n");
+        fflush(stdout);
+    }
 
     H5Dwrite(out_dset_ids[0], H5T_IEEE_F32LE, out_memspace, out_filespace, H5P_DEFAULT, vpic_data.energy);
     H5Dwrite(out_dset_ids[1], H5T_IEEE_F32LE, out_memspace, out_filespace, H5P_DEFAULT, vpic_data.x);
     H5Dwrite(out_dset_ids[2], H5T_IEEE_F32LE, out_memspace, out_filespace, H5P_DEFAULT, vpic_data.y);
     H5Dwrite(out_dset_ids[3], H5T_IEEE_F32LE, out_memspace, out_filespace, H5P_DEFAULT, vpic_data.z);
+    #ifdef SORTALL
     H5Dwrite(out_dset_ids[4], H5T_IEEE_F32LE, out_memspace, out_filespace, H5P_DEFAULT, vpic_data.ux);
     H5Dwrite(out_dset_ids[5], H5T_IEEE_F32LE, out_memspace, out_filespace, H5P_DEFAULT, vpic_data.uy);
     H5Dwrite(out_dset_ids[6], H5T_IEEE_F32LE, out_memspace, out_filespace, H5P_DEFAULT, vpic_data.uz);
+    #endif
 
     #ifdef ENABLE_MPI
     MPI_Barrier (MPI_COMM_WORLD);
     #endif
     timer_off(3);
 
+    if (my_rank == 0) { 
+        printf ("Done writing data \n");
+        fflush(stdout);
+    }
+
     H5Pclose(fapl);
     H5Sclose(out_memspace);
     H5Sclose(out_filespace);
 
-    for (i = 0; i < NVAR; i++) 
+    for (i = 0; i < NSORT; i++) 
         H5Dclose(out_dset_ids[i]);
     H5Gclose(out_group_id);
     H5Fclose(out_file_id);
@@ -359,10 +431,12 @@ done:
     if(vpic_data.x) free(vpic_data.x);
     if(vpic_data.y) free(vpic_data.y);
     if(vpic_data.z) free(vpic_data.z);
+    #ifdef SORTALL
     if(vpic_data.ux) free(vpic_data.ux);
     if(vpic_data.uy) free(vpic_data.uy);
     if(vpic_data.uz) free(vpic_data.uz);
     if(vpic_data.energy) free(vpic_data.energy);
+    #endif
 
     H5close();
 

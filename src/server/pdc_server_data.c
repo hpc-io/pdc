@@ -1068,7 +1068,7 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
             stripe_count = 248 / pdc_server_size_g;
         else
             stripe_count = pdc_nost_per_file_g;
-        stripe_size  = 16;           //MB
+        stripe_size  = lustre_stripe_size_mb_g;
         PDC_Server_set_lustre_stripe(storage_location, stripe_count, stripe_size);
 
         if (is_debug_g == 1 && pdc_server_rank_g == 0) {
@@ -4815,7 +4815,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
                         stripe_count = 248 / pdc_server_size_g;
                     else
                         stripe_count = pdc_nost_per_file_g;
-                    stripe_size  = 16;                      // MB
+                    stripe_size  = lustre_stripe_size_mb_g;                      // MB
                     PDC_Server_set_lustre_stripe(region_elt->storage_location, stripe_count, stripe_size);
                 }
                 #endif
@@ -5179,7 +5179,7 @@ perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct P
 
 #ifdef ENABLE_LUSTRE
     stripe_count = 248 / pdc_server_size_g;
-    stripe_size  = 16;                      // MB
+    stripe_size  = lustre_stripe_size_mb_g;                      // MB
     PDC_Server_set_lustre_stripe(io_region->storage_location, stripe_count, stripe_size);
 
     if (is_debug_g == 1 && pdc_server_rank_g == 0) {
@@ -5970,7 +5970,7 @@ send_query_storage_region_to_server(query_task_t *task, region_list_t *region, u
 {
     perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
-    hg_handle_t handle;
+    hg_handle_t handle = NULL;
     query_storage_region_transfer_t in;
 
     in.query_id     = task->query_id;
@@ -5984,18 +5984,6 @@ send_query_storage_region_to_server(query_task_t *task, region_list_t *region, u
     pdc_region_list_t_to_transfer(region, &in.region_transfer);
     in.storage_location = strdup(region->storage_location);
     in.op           = op;
-
-
-    /* // for test purpose  generate histogram of this region */
-    /* { */
-    /*     region->region_hist = PDC_create_hist(PDC_FLOAT, 10, 0.0, 100.0); */
-    /*     region->region_hist->bin[0] = 1; */
-    /*     region->region_hist->bin[5] = 11; */
-    /*     region->region_hist->bin[9] = 111; */
-
-    /*     printf("==PDC_SERVER[%d]: generated a test histogram!\n", pdc_server_rank_g); */
-    /*     PDC_print_hist(region->region_hist); */
-    /* } */
 
     if (server_id == pdc_server_rank_g) {
         region_list_t *cp_region = (region_list_t*)calloc(1, sizeof(region_list_t));
@@ -6052,7 +6040,9 @@ send_query_storage_region_to_server(query_task_t *task, region_list_t *region, u
     region->sent_to_server = server_id;
 
 done:
-    HG_Destroy(handle);
+    if (handle != NULL) 
+        HG_Destroy(handle);
+    
     return ret_value;
 } // End send_query_storage_region_to_server
 
@@ -6180,6 +6170,73 @@ PDC_Server_data_read_to_buf(region_list_t *region_list_head)
     return ret_value;
 } // End PDC_Server_data_read_to_buf
 
+static int 
+PDC_region_has_hits_from_hist(pdcquery_constraint_t *constraint, pdc_histogram_t *region_hist)
+{
+    pdcquery_op_t op, lop, rop;
+    double value, value2;
+    int    i, lidx, ridx;
+
+    if (constraint == NULL || region_hist == NULL) {
+        printf("==PDC_SERVER[%d]: %s -  NULL input!\n", pdc_server_rank_g, __func__);
+        return -1;
+    }
+
+    switch(constraint->type) {
+        case PDC_FLOAT :
+            value  = (double)(*((float*)&constraint->value));
+            value2 = (double)(*((float*)&constraint->value2));
+            break;
+        case PDC_DOUBLE:
+            value  = (double)(*((double*)&constraint->value));
+            value2 = (double)(*((double*)&constraint->value2));
+            break;
+        case PDC_INT:
+            value  = (double)(*((int*)&constraint->value));
+            value2 = (double)(*((int*)&constraint->value2));
+            break;
+        case PDC_UINT:
+            value  = (double)(*((uint32_t*)&constraint->value));
+            value2 = (double)(*((uint32_t*)&constraint->value2));
+            break;
+        case PDC_INT64:
+            value  = (double)(*((int64_t*)&constraint->value));
+            value2 = (double)(*((int64_t*)&constraint->value2));
+            break;
+        case PDC_UINT64:
+            value  = (double)(*((uint64_t*)&constraint->value));
+            value2 = (double)(*((uint64_t*)&constraint->value2));
+            break;
+        default:
+            printf("==PDC_SERVER[%d]: %s - error with operator type!\n", pdc_server_rank_g, __func__);
+            return -1;
+    } 
+
+    lop = constraint->op;
+    rop = constraint->op2;
+    lidx = 0;
+    ridx = region_hist->nbin*2 - 1;
+
+    if (constraint->is_range == 1) {
+        if (value > region_hist->range[region_hist->nbin*2-1] || value2 < region_hist->range[0]) {
+            return 0;
+        }
+    }
+    else {
+        // one sided
+        if (lop == PDC_LT || lop == PDC_LTE) {
+            if (value < region_hist->range[0]) 
+                return 0;
+        }
+        else if (lop == PDC_GT || lop == PDC_GTE) {
+            if (value > region_hist->range[region_hist->nbin*2-1]) 
+                return 0;
+        }
+    }
+
+    return 1;
+} // End PDC_region_has_hits_from_hist
+
 static perr_t
 PDC_constraint_get_nhits_from_hist(pdcquery_constraint_t *constraint, pdc_histogram_t *region_hist, 
                                   uint64_t *min_hits, uint64_t *max_hits)
@@ -6189,7 +6246,7 @@ PDC_constraint_get_nhits_from_hist(pdcquery_constraint_t *constraint, pdc_histog
     double value, value2;
     int    i, lidx, ridx;
 
-    if (constraint == NULL || region_hist == NULL || region_hist == NULL || max_hits == NULL) {
+    if (constraint == NULL || region_hist == NULL || min_hits == NULL || max_hits == NULL) {
         printf("==PDC_SERVER[%d]: %s -  NULL input!\n", pdc_server_rank_g, __func__);
         goto done;
     }
@@ -6419,8 +6476,8 @@ PDC_Server_load_query_data(pdcquery_t *query)
     gettimeofday(&pdc_timer_end, 0);
     double read_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
     server_io_elapsed_time_g += read_time; 
-    printf("==PDC_SERVER[%d]: %s finished reading %d regions, time %.2f seconds!\n", 
-            pdc_server_rank_g, __func__, count, read_time);
+    printf("==PDC_SERVER[%d]: %s finished reading obj %" PRIu64 " of %d regions, %.2f seconds!\n", 
+            pdc_server_rank_g, __func__, obj_id, count, read_time);
 #endif
 
 done:
@@ -6477,8 +6534,6 @@ is_within_region(uint64_t idx, region_list_t *region, region_list_t *region_cons
     return 1;
 }
 
-// TODO: optimization that support faster one pass processing with (x > a AND x < b)
-/* static perr_t */
 /* PDC_Server_evaluate_scan(uint64_t _n, void *_data, pdcquery_op_t _op, void *_value, */ 
 /*                          pdcselection_t *_sel, region_list_t *_region) */
 /* { */
@@ -6616,8 +6671,9 @@ is_within_region(uint64_t idx, region_list_t *region, region_list_t *region_cons
     ((_sel)->nhits) += cur_count;                                                                           \
 })
 
+// TODO
 static perr_t
-PDC_Server_query_evaluate(pdcquery_t *query, query_task_t *task)
+PDC_Server_query_evaluate_merge_opt(pdcquery_t *query, query_task_t *task, pdcquery_t *left, pdcquery_combine_op_t combine_op)
 {
     perr_t ret_value = SUCCEED;
     region_list_t *region_elt, *region_list_head, *cache_region, tmp_region, *region_constraint = NULL;
@@ -6633,9 +6689,9 @@ PDC_Server_query_evaluate(pdcquery_t *query, query_task_t *task)
     uint64_t ui64lo, ui64hi;
     void *value, *buf;
 
-
     #ifdef ENABLE_TIMING
     struct timeval  pdc_timer_start, pdc_timer_end;
+    struct timeval  pdc_timer_start1, pdc_timer_end1;
     gettimeofday(&pdc_timer_start, 0);
     #endif
 
@@ -6724,6 +6780,7 @@ PDC_Server_query_evaluate(pdcquery_t *query, query_task_t *task)
     }
 
 
+    int n_eval_region = 0;
     DL_FOREACH(region_list_head, region_elt) {
         // Skip non-overlap regions with the region constraint
         if (region_constraint && region_constraint->ndim > 0) {
@@ -6739,6 +6796,12 @@ PDC_Server_query_evaluate(pdcquery_t *query, query_task_t *task)
         if (cache_region->is_data_ready != 1) 
             continue;
 
+        // Skip region based on histogram
+        if (gen_hist_g == 1) {
+            if (PDC_region_has_hits_from_hist(query->constraint, region_elt->region_hist) != 1)
+                continue;
+        }
+
         buf   = cache_region->buf;
         nelem = cache_region->count[0];
         for (i = 1; i < cache_region->ndim; i++) 
@@ -6748,6 +6811,11 @@ PDC_Server_query_evaluate(pdcquery_t *query, query_task_t *task)
 
         switch(query->constraint->type) {
             case PDC_FLOAT :
+                /* #ifdef ENABLE_TIMING */
+                /* if (pdc_server_rank_g == 0 || pdc_server_rank_g == 1) */ 
+                /*     gettimeofday(&pdc_timer_start1, 0); */
+                /* #endif */
+
                 if (query->constraint->is_range == 1) {
                     MACRO_QUERY_RANGE_EVALUATE_SCAN(float, nelem, buf, lop, flo, rop, fhi, sel, 
                                                     region_elt, unit_size, region_constraint);
@@ -6756,6 +6824,15 @@ PDC_Server_query_evaluate(pdcquery_t *query, query_task_t *task)
                     MACRO_QUERY_EVALUATE_SCAN(float, nelem, buf, op, value, sel, region_elt, 
                                               unit_size, region_constraint);
                 }
+                /* #ifdef ENABLE_TIMING */
+                /* if (pdc_server_rank_g == 0 || pdc_server_rank_g == 1) { */
+                /*     gettimeofday(&pdc_timer_end1, 0); */
+                /*     double query_eval_time= PDC_get_elapsed_time_double(&pdc_timer_start1, &pdc_timer_end1); */
+                /*     printf("==PDC_SERVER[%d]: evaluated region %d, %" PRIu64 " hits, time %.4fs\n", */ 
+                /*             pdc_server_rank_g, n_eval_region, sel->nhits, query_eval_time); */
+                /* } */
+                /* #endif */
+
                 break;
             case PDC_DOUBLE:
                 if (query->constraint->is_range == 1) {
@@ -6813,6 +6890,7 @@ PDC_Server_query_evaluate(pdcquery_t *query, query_task_t *task)
                 goto done;
         } // End switch
 
+        n_eval_region++;
     } // End DL_FOREACH
 
     sel->is_evaluated = 1;
@@ -6823,8 +6901,247 @@ done:
     #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer_end, 0);
     double query_eval_time= PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-    /* printf("==PDC_SERVER[%d]: query evaluation time %.4fs\n", */ 
-    /*         pdc_server_rank_g, query_eval_time); */
+    /* printf("==PDC_SERVER[%d]: evaluated %d regions, %" PRIu64 " hits, time %.4fs\n", */ 
+    /*         pdc_server_rank_g, n_eval_region, sel->nhits, query_eval_time); */
+    #endif
+
+    fflush(stdout);
+    return ret_value;
+} // End PDC_Server_query_evaluate
+
+
+static perr_t
+PDC_Server_query_evaluate(pdcquery_t *query, query_task_t *task)
+{
+    perr_t ret_value = SUCCEED;
+    region_list_t *region_elt, *region_list_head, *cache_region, tmp_region, *region_constraint = NULL;
+    pdcselection_t *sel = NULL;
+    uint64_t nelem;
+    size_t i, unit_size;
+    pdcquery_op_t op, lop, rop;
+    float flo, fhi;
+    double dlo, dhi;
+    int ilo, ihi;
+    uint32_t ulo, uhi;
+    int64_t i64lo, i64hi;
+    uint64_t ui64lo, ui64hi;
+    void *value, *buf;
+
+
+    #ifdef ENABLE_TIMING
+    struct timeval  pdc_timer_start, pdc_timer_end;
+    struct timeval  pdc_timer_start1, pdc_timer_end1;
+    gettimeofday(&pdc_timer_start, 0);
+    #endif
+
+    /* printf("==PDC_SERVER[%d]: %s - start query evaluation!\n", pdc_server_rank_g, __func__); */
+    if (query == NULL) 
+        goto done;
+
+    // Skip the non-leaf query nodes
+    if (query->constraint == NULL) 
+        goto done;
+       
+    if (query->constraint->sel.is_evaluated == 1) 
+        goto done;
+
+    region_list_head = (region_list_t*)query->constraint->storage_region_list_head;
+    if (NULL == region_list_head) {
+        printf("==PDC_SERVER[%d]: %s - error with storage_region_list_head!\n", 
+            pdc_server_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+    unit_size = PDC_get_var_type_size(query->constraint->type);
+    memset(&tmp_region, 0, sizeof(region_list_t));
+    region_constraint = NULL;
+    if (task->region_constraint->ndim > 0) {
+        // Convert logical tmp_region to bytes
+        pdc_region_list_t_deep_cp(task->region_constraint, &tmp_region);
+        for (i = 0; i <task->region_constraint->ndim ; i++) {
+            tmp_region.start[i] *= unit_size;
+            tmp_region.count[i] *= unit_size;
+        }
+        region_constraint = &tmp_region;
+    }
+
+    sel = &(query->constraint->sel);
+    sel->ndim         = region_list_head->ndim;
+    sel->nhits        = 0;
+    sel->coords_alloc = 100;
+    sel->coords       = (uint64_t*)malloc(sel->coords_alloc * sizeof(uint64_t));
+    if (NULL == sel->coords) {
+        printf("==PDC_SERVER[%d]: %s - error with malloc!\n", pdc_server_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+
+    // Check if there is a range query that we can combine the evaluation
+    if (query->constraint->is_range == 1) {
+        switch(query->constraint->type) {
+            case PDC_FLOAT :
+                flo = *((float*)&query->constraint->value);
+                fhi = *((float*)&query->constraint->value2);
+                break;
+            case PDC_DOUBLE:
+                dlo = *((double*)&query->constraint->value);
+                dhi = *((double*)&query->constraint->value2);
+                break;
+            case PDC_INT:
+                ilo = *((int*)&query->constraint->value);
+                ihi = *((int*)&query->constraint->value2);
+                break;
+            case PDC_UINT:
+                ulo = *((uint32_t*)&query->constraint->value);
+                uhi = *((uint32_t*)&query->constraint->value2);
+                break;
+            case PDC_INT64:
+                i64lo = *((int64_t*)&query->constraint->value);
+                i64hi = *((int64_t*)&query->constraint->value2);
+                break;
+            case PDC_UINT64:
+                ui64lo = *((uint64_t*)&query->constraint->value);
+                ui64hi = *((uint64_t*)&query->constraint->value2);
+                break;
+            default:
+                printf("==PDC_SERVER[%d]: %s - error with operator type!\n", pdc_server_rank_g, __func__);
+                ret_value = FAIL;
+                goto done;
+        } // End switch
+
+        lop = query->constraint->op;
+        rop = query->constraint->op2;
+    }
+    else {
+        op    = query->constraint->op;
+        value = &(query->constraint->value); 
+    }
+
+
+    int n_eval_region = 0;
+    DL_FOREACH(region_list_head, region_elt) {
+        // Skip non-overlap regions with the region constraint
+        if (region_constraint && region_constraint->ndim > 0) {
+            if (is_contiguous_region_overlap(region_elt, region_constraint) != 1)
+                continue;
+        }
+
+        cache_region = region_elt;
+        if (cache_region->io_cache_region != NULL ) 
+            cache_region = cache_region->io_cache_region;
+
+        // Skip regions that has no data (skipped at data load phase when we know it has no hits)
+        if (cache_region->is_data_ready != 1) 
+            continue;
+
+        // Skip region based on histogram
+        if (gen_hist_g == 1) {
+            if (PDC_region_has_hits_from_hist(query->constraint, region_elt->region_hist) != 1)
+                continue;
+        }
+
+        buf   = cache_region->buf;
+        nelem = cache_region->count[0];
+        for (i = 1; i < cache_region->ndim; i++) 
+            nelem *= cache_region->count[i];
+        nelem /= unit_size;
+
+
+        switch(query->constraint->type) {
+            case PDC_FLOAT :
+                /* #ifdef ENABLE_TIMING */
+                /* if (pdc_server_rank_g == 0 || pdc_server_rank_g == 1) */ 
+                /*     gettimeofday(&pdc_timer_start1, 0); */
+                /* #endif */
+
+                if (query->constraint->is_range == 1) {
+                    MACRO_QUERY_RANGE_EVALUATE_SCAN(float, nelem, buf, lop, flo, rop, fhi, sel, 
+                                                    region_elt, unit_size, region_constraint);
+                }
+                else {
+                    MACRO_QUERY_EVALUATE_SCAN(float, nelem, buf, op, value, sel, region_elt, 
+                                              unit_size, region_constraint);
+                }
+                /* #ifdef ENABLE_TIMING */
+                /* if (pdc_server_rank_g == 0 || pdc_server_rank_g == 1) { */
+                /*     gettimeofday(&pdc_timer_end1, 0); */
+                /*     double query_eval_time= PDC_get_elapsed_time_double(&pdc_timer_start1, &pdc_timer_end1); */
+                /*     printf("==PDC_SERVER[%d]: evaluated region %d, %" PRIu64 " hits, time %.4fs\n", */ 
+                /*             pdc_server_rank_g, n_eval_region, sel->nhits, query_eval_time); */
+                /* } */
+                /* #endif */
+
+                break;
+            case PDC_DOUBLE:
+                if (query->constraint->is_range == 1) {
+                    MACRO_QUERY_RANGE_EVALUATE_SCAN(double, nelem, buf, lop, dlo, rop, dhi, sel, 
+                                                    region_elt, unit_size, region_constraint);
+                }
+                else {
+                    MACRO_QUERY_EVALUATE_SCAN(double, nelem, buf, op, value, sel, region_elt, 
+                                              unit_size, region_constraint);
+                }
+                break;
+            case PDC_INT:
+                if (query->constraint->is_range == 1) {
+                    MACRO_QUERY_RANGE_EVALUATE_SCAN(int, nelem, buf, lop, ilo, rop, ihi, sel, 
+                                                    region_elt, unit_size, region_constraint);
+                }
+                else {
+                    MACRO_QUERY_EVALUATE_SCAN(int, nelem, buf, op, value, sel, region_elt, 
+                                              unit_size, region_constraint);
+                }
+                break;
+            case PDC_UINT:
+                if (query->constraint->is_range == 1) {
+                    MACRO_QUERY_RANGE_EVALUATE_SCAN(uint32_t, nelem, buf, lop, ulo, rop, uhi, sel, 
+                                                    region_elt, unit_size, region_constraint);
+                }
+                else {
+                    MACRO_QUERY_EVALUATE_SCAN(uint32_t, nelem, buf, op, value, sel, region_elt, 
+                                              unit_size, region_constraint);
+                }
+                break;
+            case PDC_INT64:
+                if (query->constraint->is_range == 1) {
+                    MACRO_QUERY_RANGE_EVALUATE_SCAN(int64_t, nelem, buf, lop, i64lo, rop, i64hi, sel, 
+                                                    region_elt, unit_size, region_constraint);
+                }
+                else {
+                    MACRO_QUERY_EVALUATE_SCAN(int64_t, nelem, buf, op, value, sel, region_elt, 
+                                              unit_size, region_constraint);
+                }
+                break;
+            case PDC_UINT64:
+                if (query->constraint->is_range == 1) {
+                    MACRO_QUERY_RANGE_EVALUATE_SCAN(uint64_t, nelem, buf, lop, ui64lo, rop, ui64hi, sel, 
+                                                    region_elt, unit_size, region_constraint);
+                }
+                else {
+                    MACRO_QUERY_EVALUATE_SCAN(uint64_t, nelem, buf, op, value, sel, region_elt, 
+                                              unit_size, region_constraint);
+                }
+                break;
+            default:
+                printf("==PDC_SERVER[%d]: %s - error with operator type!\n", pdc_server_rank_g, __func__);
+                ret_value = FAIL;
+                goto done;
+        } // End switch
+
+        n_eval_region++;
+    } // End DL_FOREACH
+
+    sel->is_evaluated = 1;
+
+    /* printf("==PDC_SERVER[%d]: Selection\n", pdc_server_rank_g); */
+    /* PDCselection_print(sel); */
+done:
+    #ifdef ENABLE_TIMING
+    gettimeofday(&pdc_timer_end, 0);
+    double query_eval_time= PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+    /* printf("==PDC_SERVER[%d]: evaluated %d regions, %" PRIu64 " hits, time %.4fs\n", */ 
+    /*         pdc_server_rank_g, n_eval_region, sel->nhits, query_eval_time); */
     #endif
 
     fflush(stdout);
@@ -6845,6 +7162,21 @@ PDC_query_visit_all_with_cb_arg(pdcquery_t *query, void (*func)(pdcquery_t *, vo
 
     return;
 }
+
+/* void */
+/* PDC_query_eval_visit(pdcquery_t *query, void (*func)(pdcquery_t *, void *, pdcquery_t *, pdcquery_combine_op_t), */ 
+/*                      void *arg, pdcquery_t *left, pdcquery_combine_op_t combine_op) */
+/* { */
+/*     if (NULL == query) */ 
+/*         return; */
+
+/*     PDC_query_eval_visit(query->left, func, arg, NULL, PDC_QUERY_NONE); */
+/*     PDC_query_eval_visit(query->right, func, arg, query->left, query->combine_op); */
+
+/*     if (NULL == query->left && NULL == query->right) */ 
+/*         func(query, arg); */
+/*     return; */
+/* } */
 
 void
 PDC_query_visit_leaf_with_cb_arg(pdcquery_t *query, void (*func)(pdcquery_t *, void *), void *arg)
@@ -6977,21 +7309,28 @@ PDC_Server_query_result_merge(pdcquery_t *query)
     query->sel.ndim         = ndim;
     ntotal                  = sel_left->nhits + sel_right->nhits;
 
-    // TODO: maybe this is not necessary for all merges?
-    if (ndim == 1) {
-        qsort(sel_left->coords,  sel_left->nhits,  unit_size, compare_coords_1d);
-        qsort(sel_right->coords, sel_right->nhits, unit_size, compare_coords_1d);
-    }
-    else if (ndim == 2) {
-        qsort(sel_left->coords,  sel_left->nhits,  unit_size, compare_coords_2d);
-        qsort(sel_right->coords, sel_right->nhits, unit_size, compare_coords_2d);
-    }
-    else if (ndim == 3) {
-        qsort(sel_left->coords,  sel_left->nhits,  unit_size, compare_coords_3d);
-        qsort(sel_right->coords, sel_right->nhits, unit_size, compare_coords_3d);
-    }
-
     if (query->combine_op == PDC_QUERY_AND) {
+
+        // Only leaf query needs to be sorted
+        if (ndim == 1) {
+            if (query->left->left == NULL) 
+                qsort(sel_left->coords,  sel_left->nhits,  unit_size, compare_coords_1d);
+            if (query->right->right == NULL) 
+                qsort(sel_right->coords, sel_right->nhits, unit_size, compare_coords_1d);
+        }
+        else if (ndim == 2) {
+            if (query->left->left == NULL) 
+                qsort(sel_left->coords,  sel_left->nhits,  unit_size, compare_coords_2d);
+            if (query->right->right == NULL) 
+                qsort(sel_right->coords, sel_right->nhits, unit_size, compare_coords_2d);
+        }
+        else if (ndim == 3) {
+            if (query->left->left == NULL) 
+                qsort(sel_left->coords,  sel_left->nhits,  unit_size, compare_coords_3d);
+            if (query->right->right == NULL) 
+                qsort(sel_right->coords, sel_right->nhits, unit_size, compare_coords_3d);
+        }
+
         query->sel.coords_alloc = PDC_MIN(sel_left->nhits, sel_right->nhits);
         query->sel.coords       = (uint64_t*)malloc(query->sel.coords_alloc * unit_size);
         i = j = 0;
@@ -7040,7 +7379,8 @@ PDC_Server_query_result_merge(pdcquery_t *query)
     #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer_end, 0);
     double query_merge_time= PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-    printf("==PDC_SERVER[%d]: query merge time %.4fs\n", pdc_server_rank_g, query_merge_time);
+    printf("==PDC_SERVER[%d]: query merge time %.4fs, %" PRIu64 " elements\n", 
+            pdc_server_rank_g, query_merge_time, query->sel.nhits);
     #endif
 
 
@@ -7270,8 +7610,8 @@ PDC_Server_send_coords_to_client(query_task_t *task)
     }
 
     
-    fprintf(stderr, "==PDC_SERVER[%d]: %s sending %" PRIu64 " coords to client!\n", 
-            pdc_server_rank_g, __func__, in.cnt);
+    /* fprintf(stderr, "==PDC_SERVER[%d]: %s sending %" PRIu64 " coords to client!\n", */ 
+    /*         pdc_server_rank_g, __func__, in.cnt); */
 
     hg_ret = HG_Forward(handle, pdc_check_int_ret_cb, NULL, &in);
     if (hg_ret != HG_SUCCESS) {
@@ -7728,8 +8068,8 @@ PDC_recv_coords(const struct hg_cb_info *callback_info)
         task_elt->nhits += nhits;
         task_elt->n_recv++;
 
-        fprintf(stderr, "==PDC_SERVER[%d]: received %" PRIu64 " query results (%d/%d) from s%d qid=%d!\n", 
-                pdc_server_rank_g, nhits, task_elt->n_recv, task_elt->n_sent_server, origin, query_id);
+        /* fprintf(stderr, "==PDC_SERVER[%d]: received %" PRIu64 " query results (%d/%d) from s%d qid=%d!\n", */ 
+        /*         pdc_server_rank_g, nhits, task_elt->n_recv, task_elt->n_sent_server, origin, query_id); */
 
         // When received all results from the working servers, send the aggregated result back to client
         if (task_elt->n_recv == task_elt->n_sent_server) {
@@ -7853,6 +8193,10 @@ PDC_Server_do_query(query_task_t *task)
     struct timeval  pdc_timer_start, pdc_timer_end;
     gettimeofday(&pdc_timer_start, 0);
     #endif
+
+    printf("==PDC_SERVER[%d]: start processing query:!\n", pdc_server_rank_g);
+    PDCquery_print(task->query);
+
     // Load data and start query evaluation
     PDC_query_visit_leaf_with_cb(task->query, PDC_Server_load_query_data);
 
@@ -8422,8 +8766,8 @@ PDC_Server_recv_get_sel_data(const struct hg_cb_info *callback_info)
     /* size_t unit_size; */
     struct hg_cb_info fake_callback_info;
 
-    printf("==PDC_SERVER[%d]: %s - received read selection request id = %d, obj = %" PRIu64 "\n", 
-            pdc_server_rank_g, __func__, in->query_id, in->obj_id);
+    /* printf("==PDC_SERVER[%d]: %s - received read selection request id = %d, obj = %" PRIu64 "\n", */ 
+    /*         pdc_server_rank_g, __func__, in->query_id, in->obj_id); */
 
     DL_FOREACH(query_task_list_head_g, task_elt) {
         if (task_elt->query_id == in->query_id) {
