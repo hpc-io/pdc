@@ -723,7 +723,7 @@ int region_list_cmp_by_client_id(region_list_t *a, region_list_t *b)
     return (a->client_ids[0] - b->client_ids[0]);
 }
 
-perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
+perr_t PDC_Data_Server_buf_unmap()
 {
     perr_t ret_value = SUCCEED;
     int ret = HG_UTIL_SUCCESS;

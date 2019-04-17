@@ -1062,11 +1062,11 @@ perr_t PDC_Server_finalize()
 /* printf("client info destroyed!\n"); */
 /* fflush(stdout); */
 
-//    ret_value = PDC_Server_destroy_remote_server_info();
-//    if (ret_value != SUCCEED) {
-//        printf("==PDC_SERVER[%d]: Error with PDC_Server_destroy_client_info\n", pdc_server_rank_g);
-//        goto done;
-//    }
+    ret_value = PDC_Server_destroy_remote_server_info();
+    if (ret_value != SUCCEED) {
+        printf("==PDC_SERVER[%d]: Error with PDC_Server_destroy_client_info\n", pdc_server_rank_g);
+        goto done;
+    }
 
     PDC_Close_cache_file();
 /* printf("server info destroyed!"\n); */

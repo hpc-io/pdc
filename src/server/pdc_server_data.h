@@ -251,7 +251,7 @@ perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
 perr_t PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_ptr, hg_handle_t *handle);
 perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle);
 
-perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in);
+perr_t PDC_Data_Server_buf_unmap();
 perr_t PDC_Data_Server_check_unmap();
 perr_t PDC_Data_Server_region_release(region_lock_in_t *in, region_lock_out_t *out);
 perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out, hg_handle_t *handle);
