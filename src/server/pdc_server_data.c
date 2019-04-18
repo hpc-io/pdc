@@ -6173,9 +6173,9 @@ PDC_Server_data_read_to_buf(region_list_t *region_list_head)
 static int 
 PDC_region_has_hits_from_hist(pdcquery_constraint_t *constraint, pdc_histogram_t *region_hist)
 {
-    pdcquery_op_t op, lop, rop;
+    pdcquery_op_t op, lop/*, rop*/;
     double value, value2;
-    int    i, lidx, ridx;
+    int    i;
 
     if (constraint == NULL || region_hist == NULL) {
         printf("==PDC_SERVER[%d]: %s -  NULL input!\n", pdc_server_rank_g, __func__);
@@ -6213,9 +6213,7 @@ PDC_region_has_hits_from_hist(pdcquery_constraint_t *constraint, pdc_histogram_t
     } 
 
     lop = constraint->op;
-    rop = constraint->op2;
-    lidx = 0;
-    ridx = region_hist->nbin*2 - 1;
+    /* rop = constraint->op2; */
 
     if (constraint->is_range == 1) {
         if (value > region_hist->range[region_hist->nbin*2-1] || value2 < region_hist->range[0]) {
@@ -6242,7 +6240,7 @@ PDC_constraint_get_nhits_from_hist(pdcquery_constraint_t *constraint, pdc_histog
                                   uint64_t *min_hits, uint64_t *max_hits)
 {
     perr_t ret_value = SUCCEED;
-    pdcquery_op_t op, lop, rop;
+    pdcquery_op_t op, lop/*, rop*/;
     double value, value2;
     int    i, lidx, ridx;
 
@@ -6283,7 +6281,7 @@ PDC_constraint_get_nhits_from_hist(pdcquery_constraint_t *constraint, pdc_histog
     } 
 
     lop = constraint->op;
-    rop = constraint->op2;
+    /* rop = constraint->op2; */
     *min_hits = *max_hits = 0;
     lidx = 0;
     ridx = region_hist->nbin*2 - 1;
@@ -6486,7 +6484,7 @@ done:
 } // End PDC_Server_load_query_data
 
 perr_t 
-index_to_coord(int ndim, uint64_t idx, uint64_t *sizes, uint64_t *coord)
+region_index_to_coord(int ndim, uint64_t idx, uint64_t *sizes, uint64_t *coord)
 {
     if (sizes == NULL || coord == NULL) {
         printf("==PDC_SERVER[%d]: %s - input NULL!\n", pdc_server_rank_g, __func__);
@@ -6511,8 +6509,54 @@ index_to_coord(int ndim, uint64_t idx, uint64_t *sizes, uint64_t *coord)
     return SUCCEED;
 }
 
+uint64_t 
+coord_to_region_index(size_t ndim, uint64_t *coord, region_list_t *region)
+{
+    size_t i;
+    uint64_t off = 0;
+
+    if (ndim == 0 || coord == NULL || region == NULL || region->start == NULL || region->count == NULL) {
+        printf("==PDC_SERVER[%d]: %s - input NULL!\n", pdc_server_rank_g, __func__);
+        return -1;
+    }
+
+    if (ndim > 3) {
+        printf("==PDC_SERVER[%d]: %s - cannot handle dim > 3!\n", pdc_server_rank_g, __func__);
+        return 0;
+    }
+
+    if (ndim == 3) 
+        off = (coord[2] - region->start[2]) * region->count[0] * region->count[1];
+    if (ndim == 2) 
+        off += (coord[1] - region->start[1]) * region->count[0];
+
+    off += (coord[0] - region->start[0]);
+
+    return off;
+}
+
 static int
-is_within_region(uint64_t idx, region_list_t *region, region_list_t *region_constraint, int unit_size)
+is_coord_within_region(int ndim, uint64_t *coords, region_list_t *region_constraint, int unit_size)
+{
+    int i; 
+    uint64_t coord[3];
+
+    if (coord == NULL || region_constraint == NULL || ndim > 3) 
+        return -1;
+
+    for (i = 0; i < ndim; i++) {
+        coord[i]  = coords[i];
+        coord[i] *= unit_size;
+        if (coord[i] < region_constraint->start[i] || 
+            coord[i] > region_constraint->start[i] + region_constraint->count[i]) {
+            return -1;
+        }
+    }
+    return 1;
+}
+
+static int
+is_idx_within_region(uint64_t idx, region_list_t *region, region_list_t *region_constraint, int unit_size)
 {
     size_t i, ndim; 
     uint64_t coord[DIM_MAX];
@@ -6521,7 +6565,7 @@ is_within_region(uint64_t idx, region_list_t *region, region_list_t *region_cons
         return -1;
 
     ndim = region->ndim;
-    index_to_coord(ndim, idx, region->count, (uint64_t*)&coord);
+    region_index_to_coord(ndim, idx, region->count, (uint64_t*)&coord);
 
     for (i = 0; i < ndim; i++) {
         coord[i] *= unit_size;
@@ -6546,7 +6590,7 @@ is_within_region(uint64_t idx, region_list_t *region, region_list_t *region_cons
     istart = (_sel)->nhits * _ndim;                                                                         \
     for (iii = 0; iii < (_n); iii++) {                                                                      \
         is_good = 0;                                                                                        \
-        if ( (_region_constraint) && is_within_region(iii,(_region),(_region_constraint),                   \
+        if ( (_region_constraint) && is_idx_within_region(iii,(_region),(_region_constraint),               \
                                                       (_unit_size)) != 1 ) continue;                        \
         if ((_lo_op) == PDC_GT && (_hi_op) == PDC_LT) {                                                     \
             if (edata[iii] >  (_lo) && edata[iii] <  (_hi)) is_good = 1;                                    \
@@ -6598,6 +6642,247 @@ is_within_region(uint64_t idx, region_list_t *region, region_list_t *region_cons
     ((_sel)->nhits) += cur_count;                                                                           \
 })
 
+#define MACRO_QUERY_RANGE_EVALUATE_SCAN_OPT(TYPE, _n, _data, _lo_op, _lo, _hi_op, _hi, _sel,                \
+                                  _region, _unit_size, _region_constraint, _combine_op) ({                  \
+    uint64_t idx, iii, jjj, ttt, cur_count = 0, istart;                                                     \
+    int is_good, _ndim;                                                                                     \
+    TYPE *edata = (TYPE*)(_data);                                                                           \
+    _ndim  = (_region)->ndim;                                                                               \
+    istart = (_sel)->nhits * _ndim;                                                                         \
+    if (_ndim > 3) {                                                                                        \
+        printf("==PDC_SERVER[%d]: %s - dimension > 3 not supported!\n",                                     \
+                            pdc_server_rank_g, __func__);                                                   \
+        ret_value = FAIL;                                                                                   \
+        goto done;                                                                                          \
+    }                                                                                                       \
+    if ((_combine_op) == PDC_QUERY_NONE || (_combine_op) == PDC_QUERY_OR) {                                 \
+      for (iii = 0; iii < (_n); iii++) {                                                                    \
+        is_good = 0;                                                                                        \
+        if ( (_region_constraint) && is_idx_within_region(iii,(_region),(_region_constraint),               \
+                                                      (_unit_size)) != 1 ) continue;                        \
+        if ((_lo_op) == PDC_GT && (_hi_op) == PDC_LT) {                                                     \
+            if (edata[iii] >  (_lo) && edata[iii] <  (_hi)) is_good = 1;                                    \
+        }                                                                                                   \
+        else if ((_lo_op) == PDC_GTE && (_hi_op) == PDC_LT) {                                               \
+            if (edata[iii] >= (_lo) && edata[iii] <  (_hi)) is_good = 1;                                    \
+        }                                                                                                   \
+        else if ((_lo_op) == PDC_GT && (_hi_op) == PDC_LTE) {                                               \
+            if (edata[iii] >  (_lo) && edata[iii] <= (_hi)) is_good = 1;                                    \
+        }                                                                                                   \
+        else if ((_lo_op) == PDC_GTE && (_hi_op) == PDC_LTE) {                                              \
+            if (edata[iii] >= (_lo) && edata[iii] <= (_hi)) is_good = 1;                                    \
+        }                                                                                                   \
+        else {                                                                                              \
+            printf("==PDC_SERVER[%d]: %s - error with range op! \n", pdc_server_rank_g, __func__);          \
+            ret_value = FAIL;                                                                               \
+            goto done;                                                                                      \
+        }                                                                                                   \
+        if (is_good == 1) {                                                                                 \
+            if ( (istart+cur_count+1)*_ndim > ((_sel)->coords_alloc) ) {                                    \
+                ((_sel)->coords_alloc) *= 2;                                                                \
+                ((_sel)->coords) = (uint64_t*)realloc(((_sel)->coords),                                     \
+                                                   (_sel)->coords_alloc * sizeof(uint64_t));                \
+                if (NULL == ((_sel)->coords)) {                                                             \
+                    printf("==PDC_SERVER[%d]: %s - error with malloc!\n",                                   \
+                                        pdc_server_rank_g, __func__);                                       \
+                    ret_value = FAIL;                                                                       \
+                    goto done;                                                                              \
+                }                                                                                           \
+            }                                                                                               \
+            ttt = iii;                                                                                      \
+            if (_ndim == 3) {                                                                               \
+                (_sel)->coords[istart + cur_count * _ndim + 2] = ttt /                                      \
+                    ((_region)->count[1]/(_unit_size))*((_region)->count[0]/(_unit_size)) +                 \
+                                    (_region)->start[2]/(_unit_size);                                       \
+                ttt -= (_sel)->coords[istart + cur_count * _ndim + 2] *                                     \
+                         ((_region)->count[1]/(_unit_size))*((_region)->count[0]/(_unit_size));             \
+            }                                                                                               \
+            if (_ndim == 2) {                                                                               \
+                (_sel)->coords[istart + cur_count*_ndim + 1] = ttt /                                        \
+                         ((_region)->count[0]/(_unit_size)) + (_region)->start[1]/(_unit_size);             \
+                ttt -= (_sel)->coords[istart + cur_count * _ndim + 1]*((_region)->count[0]/(_unit_size));   \
+            }                                                                                               \
+            (_sel)->coords[istart + cur_count*_ndim] = ttt + (_region)->start[0]/(_unit_size);              \
+            cur_count++;                                                                                    \
+        }                                                                                                   \
+      }                                                                                                     \
+      ((_sel)->nhits) += cur_count;                                                                         \
+    } /* End if left is NULL */                                                                             \
+    else if ((_combine_op) == PDC_QUERY_AND) {                                                              \
+        for (idx = 0; idx < (_sel)->nhits; idx++) {                                                         \
+            if ((_sel)->coords[idx*(_ndim)] == ULLONG_MAX ) {                                               \
+                continue;                                                                                   \
+            }                                                                                               \
+            if (is_coord_within_region(_ndim, &(_sel)->coords[idx*(_ndim)], _region, _unit_size) != 1) {    \
+                continue;                                                                                   \
+            }                                                                                               \
+            iii = coord_to_region_index(_ndim, &(_sel)->coords[idx*(_ndim)], _region);                      \
+            is_good = 0;                                                                                    \
+            /* No need to check for region constraint as a query has one region constraint only */          \
+            if ((_lo_op) == PDC_GT && (_hi_op) == PDC_LT) {                                                 \
+                if (edata[iii] >  (_lo) && edata[iii] <  (_hi)) is_good = 1;                                \
+            }                                                                                               \
+            else if ((_lo_op) == PDC_GTE && (_hi_op) == PDC_LT) {                                           \
+                if (edata[iii] >= (_lo) && edata[iii] <  (_hi)) is_good = 1;                                \
+            }                                                                                               \
+            else if ((_lo_op) == PDC_GT && (_hi_op) == PDC_LTE) {                                           \
+                if (edata[iii] >  (_lo) && edata[iii] <= (_hi)) is_good = 1;                                \
+            }                                                                                               \
+            else if ((_lo_op) == PDC_GTE && (_hi_op) == PDC_LTE) {                                          \
+                if (edata[iii] >= (_lo) && edata[iii] <= (_hi)) is_good = 1;                                \
+            }                                                                                               \
+            else {                                                                                          \
+                printf("==PDC_SERVER[%d]: %s - error with range op! \n", pdc_server_rank_g, __func__);      \
+                ret_value = FAIL;                                                                           \
+                goto done;                                                                                  \
+            }                                                                                               \
+            if (is_good != 1) {                                                                             \
+                /* Invalidate the coord by setting it to max value */                                       \
+                (_sel)->coords[idx*(_ndim)] = ULLONG_MAX;                                                   \
+            }                                                                                               \
+        }                                                                                                   \
+        /* Now get rid of the invalidated elements */                                                       \
+        iii = jjj = 0;                                                                                      \
+        for (idx = 0; idx < (_sel)->nhits; idx++) {                                                         \
+            while ((_sel)->coords[idx*(_ndim)] == ULLONG_MAX ) {                                            \
+                iii++;                                                                                      \
+                idx++;                                                                                      \
+            }                                                                                               \
+            if (idx != jjj) {                                                                               \
+                memcpy(&(_sel)->coords[jjj*(_ndim)], &(_sel)->coords[idx*(_ndim)], _ndim*sizeof(uint64_t)); \
+            }                                                                                               \
+            jjj++;                                                                                          \
+        }                                                                                                   \
+        ((_sel)->nhits) -= iii;                                                                             \
+    }                                                                                                       \
+})                                                                                                          \
+
+
+#define MACRO_QUERY_EVALUATE_SCAN_OPT(TYPE, _n, _data, _op, _value, _sel,                                   \
+                                  _region, _unit_size, _region_constraint, _combine_op) ({                  \
+    uint64_t idx, iii, jjj, ttt, cur_count = 0, istart;                                                     \
+    int is_good, _ndim;                                                                                     \
+    TYPE *edata = (TYPE*)(_data);                                                                           \
+    _ndim  = (_region)->ndim;                                                                               \
+    istart = (_sel)->nhits * _ndim;                                                                         \
+    if (_ndim > 3) {                                                                                        \
+        printf("==PDC_SERVER[%d]: %s - dimension > 3 not supported!\n",                                     \
+                            pdc_server_rank_g, __func__);                                                   \
+        ret_value = FAIL;                                                                                   \
+        goto done;                                                                                          \
+    }                                                                                                       \
+    if ((_combine_op) == PDC_QUERY_NONE || (_combine_op) == PDC_QUERY_OR) {                                 \
+      for (iii = 0; iii < (_n); iii++) {                                                                    \
+          is_good = 0;                                                                                      \
+          if ( (_region_constraint) && is_idx_within_region(iii,(_region),(_region_constraint),             \
+                                                        (_unit_size)) != 1 ) continue;                      \
+          switch(_op) {                                                                                     \
+              case PDC_GT :                                                                                 \
+                  if (edata[iii]  > *((TYPE*)(_value))) is_good = 1;                                        \
+                  break;                                                                                    \
+              case PDC_LT :                                                                                 \
+                  if (edata[iii]  < *((TYPE*)(_value))) is_good = 1;                                        \
+                  break;                                                                                    \
+              case PDC_GTE :                                                                                \
+                  if (edata[iii] >= *((TYPE*)(_value))) is_good = 1;                                        \
+                  break;                                                                                    \
+              case PDC_LTE :                                                                                \
+                  if (edata[iii] <= *((TYPE*)(_value))) is_good = 1;                                        \
+                  break;                                                                                    \
+              case PDC_EQ :                                                                                 \
+                  if (edata[iii] == *((TYPE*)(_value))) is_good = 1;                                        \
+                  break;                                                                                    \
+              default:                                                                                      \
+                  printf("==PDC_SERVER[%d]: %s - error with operator type!\n",                              \
+                          pdc_server_rank_g, __func__);                                                     \
+                  ret_value = FAIL;                                                                         \
+                  goto done;                                                                                \
+          }                                                                                                 \
+          if (is_good == 1) {                                                                               \
+              if ( (istart+cur_count+1)*_ndim > ((_sel)->coords_alloc) ) {                                  \
+                  ((_sel)->coords_alloc) *= 2;                                                              \
+                  ((_sel)->coords) = (uint64_t*)realloc(((_sel)->coords),                                   \
+                                                     (_sel)->coords_alloc * sizeof(uint64_t));              \
+                  if (NULL == ((_sel)->coords)) {                                                           \
+                      printf("==PDC_SERVER[%d]: %s - error with malloc!\n",                                 \
+                                          pdc_server_rank_g, __func__);                                     \
+                      ret_value = FAIL;                                                                     \
+                      goto done;                                                                            \
+                  }                                                                                         \
+              }                                                                                             \
+              ttt = iii;                                                                                    \
+              if (_ndim == 3) {                                                                             \
+                  (_sel)->coords[istart + cur_count * _ndim + 2] = ttt /                                    \
+                      ((_region)->count[1]/(_unit_size))*((_region)->count[0]/(_unit_size)) +               \
+                                      (_region)->start[2]/(_unit_size);                                     \
+                  ttt -= (_sel)->coords[istart + cur_count * _ndim + 2] *                                   \
+                           ((_region)->count[1]/(_unit_size))*((_region)->count[0]/(_unit_size));           \
+              }                                                                                             \
+              if (_ndim == 2) {                                                                             \
+                  (_sel)->coords[istart + cur_count*_ndim + 1] = ttt /                                      \
+                           ((_region)->count[0]/(_unit_size)) + (_region)->start[1]/(_unit_size);           \
+                  ttt -= (_sel)->coords[istart + cur_count * _ndim + 1]*((_region)->count[0]/(_unit_size)); \
+              }                                                                                             \
+              (_sel)->coords[istart + cur_count*_ndim] = ttt + (_region)->start[0]/(_unit_size);            \
+              cur_count++;                                                                                  \
+          }                                                                                                 \
+      }                                                                                                     \
+      ((_sel)->nhits) += cur_count;                                                                         \
+    }                                                                                                       \
+    else if ((_combine_op) == PDC_QUERY_AND) {                                                              \
+        for (idx = 0; idx < (_sel)->nhits; idx++) {                                                         \
+            if ((_sel)->coords[idx*(_ndim)] == ULLONG_MAX ) {                                               \
+                continue;                                                                                   \
+            }                                                                                               \
+            if (is_coord_within_region(_ndim, &(_sel)->coords[idx*(_ndim)], _region, _unit_size) != 1) {    \
+                continue;                                                                                   \
+            }                                                                                               \
+            iii = coord_to_region_index(_ndim, &(_sel)->coords[idx*(_ndim)], _region);                      \
+            is_good = 0;                                                                                    \
+            /* No need to check for region constraint as a query has one region constraint only */          \
+            switch(_op) {                                                                                   \
+                case PDC_GT :                                                                               \
+                    if (edata[iii]  > *((TYPE*)(_value))) is_good = 1;                                      \
+                    break;                                                                                  \
+                case PDC_LT :                                                                               \
+                    if (edata[iii]  < *((TYPE*)(_value))) is_good = 1;                                      \
+                    break;                                                                                  \
+                case PDC_GTE :                                                                              \
+                    if (edata[iii] >= *((TYPE*)(_value))) is_good = 1;                                      \
+                    break;                                                                                  \
+                case PDC_LTE :                                                                              \
+                    if (edata[iii] <= *((TYPE*)(_value))) is_good = 1;                                      \
+                    break;                                                                                  \
+                case PDC_EQ :                                                                               \
+                    if (edata[iii] == *((TYPE*)(_value))) is_good = 1;                                      \
+                    break;                                                                                  \
+                default:                                                                                    \
+                    printf("==PDC_SERVER[%d]: %s - error with operator type!\n",                            \
+                            pdc_server_rank_g, __func__);                                                   \
+                    ret_value = FAIL;                                                                       \
+                    goto done;                                                                              \
+            }                                                                                               \
+            if (is_good != 1) {                                                                             \
+                /* Invalidate the coord by setting it to max value */                                       \
+                (_sel)->coords[idx*(_ndim)] = ULLONG_MAX;                                                   \
+            }                                                                                               \
+        }                                                                                                   \
+        /* Now get rid of the invalidated elements */                                                       \
+        iii = jjj = 0;                                                                                      \
+        for (idx = 0; idx < (_sel)->nhits; idx++) {                                                         \
+            while ((_sel)->coords[idx*(_ndim)] == ULLONG_MAX ) {                                            \
+                iii++;                                                                                      \
+                idx++;                                                                                      \
+            }                                                                                               \
+            if (idx != jjj) {                                                                               \
+                memcpy(&(_sel)->coords[jjj*(_ndim)], &(_sel)->coords[idx*(_ndim)], _ndim*sizeof(uint64_t)); \
+            }                                                                                               \
+            jjj++;                                                                                          \
+        }                                                                                                   \
+        ((_sel)->nhits) -= iii;                                                                             \
+    }                                                                                                       \
+})
+
 
 #define MACRO_QUERY_EVALUATE_SCAN(TYPE, _n, _data, _op, _value, _sel,                                       \
                                   _region, _unit_size, _region_constraint) ({                               \
@@ -6608,7 +6893,7 @@ is_within_region(uint64_t idx, region_list_t *region, region_list_t *region_cons
     istart = (_sel)->nhits * _ndim;                                                                         \
     for (iii = 0; iii < (_n); iii++) {                                                                      \
         is_good = 0;                                                                                        \
-        if ( (_region_constraint) && is_within_region(iii,(_region),(_region_constraint),                   \
+        if ( (_region_constraint) && is_idx_within_region(iii,(_region),(_region_constraint),               \
                                                       (_unit_size)) != 1 ) continue;                        \
         switch(_op) {                                                                                       \
             case PDC_GT :                                                                                   \
@@ -6671,19 +6956,35 @@ is_within_region(uint64_t idx, region_list_t *region, region_list_t *region_cons
     ((_sel)->nhits) += cur_count;                                                                           \
 })
 
+int compare_coords_1d (const void * a, const void * b)
+{
+  return (memcmp(a, b, sizeof(uint64_t)));
+}
+
+int compare_coords_2d (const void * a, const void * b)
+{
+  return (memcmp(a, b, sizeof(uint64_t) * 2));
+}
+
+int compare_coords_3d (const void * a, const void * b)
+{
+  return (memcmp(a, b, sizeof(uint64_t) * 3));
+}
+
 // TODO
 static perr_t
-PDC_Server_query_evaluate_merge_opt(pdcquery_t *query, query_task_t *task, pdcquery_t *left, pdcquery_combine_op_t combine_op)
+PDC_Server_query_evaluate_merge_opt(pdcquery_t *query, query_task_t *task, pdcquery_t *left, 
+                                    pdcquery_combine_op_t combine_op)
 {
     perr_t ret_value = SUCCEED;
     region_list_t *region_elt, *region_list_head, *cache_region, tmp_region, *region_constraint = NULL;
-    pdcselection_t *sel = NULL;
+    pdcselection_t *sel = query->sel;
     uint64_t nelem;
-    size_t i, unit_size;
+    size_t i, j, unit_size, k;
     pdcquery_op_t op, lop, rop;
     float flo, fhi;
     double dlo, dhi;
-    int ilo, ihi;
+    int ilo, ihi, ndim;
     uint32_t ulo, uhi;
     int64_t i64lo, i64hi;
     uint64_t ui64lo, ui64hi;
@@ -6695,17 +6996,15 @@ PDC_Server_query_evaluate_merge_opt(pdcquery_t *query, query_task_t *task, pdcqu
     gettimeofday(&pdc_timer_start, 0);
     #endif
 
+    // query is guarenteed to be non-leaf nodes
+    
     /* printf("==PDC_SERVER[%d]: %s - start query evaluation!\n", pdc_server_rank_g, __func__); */
-    if (query == NULL) 
+    if (query == NULL) {
+        printf("==PDC_SERVER[%d]: %s - input query NULL!\n", pdc_server_rank_g, __func__);
         goto done;
+    }
 
-    // Skip the non-leaf query nodes
-    if (query->constraint == NULL) 
-        goto done;
-       
-    if (query->constraint->sel.is_evaluated == 1) 
-        goto done;
-
+    // Need to go through each region for query evaluation, so get region head
     region_list_head = (region_list_t*)query->constraint->storage_region_list_head;
     if (NULL == region_list_head) {
         printf("==PDC_SERVER[%d]: %s - error with storage_region_list_head!\n", 
@@ -6714,6 +7013,14 @@ PDC_Server_query_evaluate_merge_opt(pdcquery_t *query, query_task_t *task, pdcqu
         goto done;
     }
     unit_size = PDC_get_var_type_size(query->constraint->type);
+    ndim = task->ndim;
+    if (ndim <= 0 || ndim > 3) {
+        printf("==PDC_SERVER[%d]: %s - error with ndim = %d!\n", pdc_server_rank_g, __func__, ndim);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    // Set up region constraint if the query has one
     memset(&tmp_region, 0, sizeof(region_list_t));
     region_constraint = NULL;
     if (task->region_constraint->ndim > 0) {
@@ -6725,18 +7032,6 @@ PDC_Server_query_evaluate_merge_opt(pdcquery_t *query, query_task_t *task, pdcqu
         }
         region_constraint = &tmp_region;
     }
-
-    sel = &(query->constraint->sel);
-    sel->ndim         = region_list_head->ndim;
-    sel->nhits        = 0;
-    sel->coords_alloc = 100;
-    sel->coords       = (uint64_t*)malloc(sel->coords_alloc * sizeof(uint64_t));
-    if (NULL == sel->coords) {
-        printf("==PDC_SERVER[%d]: %s - error with malloc!\n", pdc_server_rank_g, __func__);
-        ret_value = FAIL;
-        goto done;
-    }
-
 
     // Check if there is a range query that we can combine the evaluation
     if (query->constraint->is_range == 1) {
@@ -6817,12 +7112,12 @@ PDC_Server_query_evaluate_merge_opt(pdcquery_t *query, query_task_t *task, pdcqu
                 /* #endif */
 
                 if (query->constraint->is_range == 1) {
-                    MACRO_QUERY_RANGE_EVALUATE_SCAN(float, nelem, buf, lop, flo, rop, fhi, sel, 
-                                                    region_elt, unit_size, region_constraint);
+                    MACRO_QUERY_RANGE_EVALUATE_SCAN_OPT(float, nelem, buf, lop, flo, rop, fhi, sel, 
+                                                    region_elt, unit_size, region_constraint, combine_op);
                 }
                 else {
-                    MACRO_QUERY_EVALUATE_SCAN(float, nelem, buf, op, value, sel, region_elt, 
-                                              unit_size, region_constraint);
+                    MACRO_QUERY_EVALUATE_SCAN_OPT(float, nelem, buf, op, value, sel, region_elt, 
+                                              unit_size, region_constraint, combine_op);
                 }
                 /* #ifdef ENABLE_TIMING */
                 /* if (pdc_server_rank_g == 0 || pdc_server_rank_g == 1) { */
@@ -6836,52 +7131,52 @@ PDC_Server_query_evaluate_merge_opt(pdcquery_t *query, query_task_t *task, pdcqu
                 break;
             case PDC_DOUBLE:
                 if (query->constraint->is_range == 1) {
-                    MACRO_QUERY_RANGE_EVALUATE_SCAN(double, nelem, buf, lop, dlo, rop, dhi, sel, 
-                                                    region_elt, unit_size, region_constraint);
+                    MACRO_QUERY_RANGE_EVALUATE_SCAN_OPT(double, nelem, buf, lop, dlo, rop, dhi, sel, 
+                                                    region_elt, unit_size, region_constraint, combine_op);
                 }
                 else {
-                    MACRO_QUERY_EVALUATE_SCAN(double, nelem, buf, op, value, sel, region_elt, 
-                                              unit_size, region_constraint);
+                    MACRO_QUERY_EVALUATE_SCAN_OPT(double, nelem, buf, op, value, sel, region_elt, 
+                                              unit_size, region_constraint, combine_op);
                 }
                 break;
             case PDC_INT:
                 if (query->constraint->is_range == 1) {
-                    MACRO_QUERY_RANGE_EVALUATE_SCAN(int, nelem, buf, lop, ilo, rop, ihi, sel, 
-                                                    region_elt, unit_size, region_constraint);
+                    MACRO_QUERY_RANGE_EVALUATE_SCAN_OPT(int, nelem, buf, lop, ilo, rop, ihi, sel, 
+                                                    region_elt, unit_size, region_constraint, combine_op);
                 }
                 else {
-                    MACRO_QUERY_EVALUATE_SCAN(int, nelem, buf, op, value, sel, region_elt, 
-                                              unit_size, region_constraint);
+                    MACRO_QUERY_EVALUATE_SCAN_OPT(int, nelem, buf, op, value, sel, region_elt, 
+                                              unit_size, region_constraint, combine_op);
                 }
                 break;
             case PDC_UINT:
                 if (query->constraint->is_range == 1) {
-                    MACRO_QUERY_RANGE_EVALUATE_SCAN(uint32_t, nelem, buf, lop, ulo, rop, uhi, sel, 
-                                                    region_elt, unit_size, region_constraint);
+                    MACRO_QUERY_RANGE_EVALUATE_SCAN_OPT(uint32_t, nelem, buf, lop, ulo, rop, uhi, sel, 
+                                                    region_elt, unit_size, region_constraint, combine_op);
                 }
                 else {
-                    MACRO_QUERY_EVALUATE_SCAN(uint32_t, nelem, buf, op, value, sel, region_elt, 
-                                              unit_size, region_constraint);
+                    MACRO_QUERY_EVALUATE_SCAN_OPT(uint32_t, nelem, buf, op, value, sel, region_elt, 
+                                              unit_size, region_constraint, combine_op);
                 }
                 break;
             case PDC_INT64:
                 if (query->constraint->is_range == 1) {
-                    MACRO_QUERY_RANGE_EVALUATE_SCAN(int64_t, nelem, buf, lop, i64lo, rop, i64hi, sel, 
-                                                    region_elt, unit_size, region_constraint);
+                    MACRO_QUERY_RANGE_EVALUATE_SCAN_OPT(int64_t, nelem, buf, lop, i64lo, rop, i64hi, sel, 
+                                                    region_elt, unit_size, region_constraint, combine_op);
                 }
                 else {
-                    MACRO_QUERY_EVALUATE_SCAN(int64_t, nelem, buf, op, value, sel, region_elt, 
-                                              unit_size, region_constraint);
+                    MACRO_QUERY_EVALUATE_SCAN_OPT(int64_t, nelem, buf, op, value, sel, region_elt, 
+                                              unit_size, region_constraint, combine_op);
                 }
                 break;
             case PDC_UINT64:
                 if (query->constraint->is_range == 1) {
-                    MACRO_QUERY_RANGE_EVALUATE_SCAN(uint64_t, nelem, buf, lop, ui64lo, rop, ui64hi, sel, 
-                                                    region_elt, unit_size, region_constraint);
+                    MACRO_QUERY_RANGE_EVALUATE_SCAN_OPT(uint64_t, nelem, buf, lop, ui64lo, rop, ui64hi, sel, 
+                                                    region_elt, unit_size, region_constraint, combine_op);
                 }
                 else {
-                    MACRO_QUERY_EVALUATE_SCAN(uint64_t, nelem, buf, op, value, sel, region_elt, 
-                                              unit_size, region_constraint);
+                    MACRO_QUERY_EVALUATE_SCAN_OPT(uint64_t, nelem, buf, op, value, sel, region_elt, 
+                                              unit_size, region_constraint, combine_op);
                 }
                 break;
             default:
@@ -6893,10 +7188,34 @@ PDC_Server_query_evaluate_merge_opt(pdcquery_t *query, query_task_t *task, pdcqu
         n_eval_region++;
     } // End DL_FOREACH
 
-    sel->is_evaluated = 1;
 
-    /* printf("==PDC_SERVER[%d]: Selection\n", pdc_server_rank_g); */
-    /* PDCselection_print(sel); */
+    // Remove duplicates
+    if (combine_op == PDC_QUERY_OR && sel->nhits > 1 && left->constraint->obj_id != query->constraint->obj_id) {
+        if (ndim == 1) {
+            qsort(sel->coords, sel->nhits, sizeof(uint64_t), compare_coords_1d);
+        }
+        else if (ndim == 2) {
+            qsort(sel->coords, sel->nhits, sizeof(uint64_t)*2, compare_coords_2d);
+        }
+        else if (ndim == 3) {
+            qsort(sel->coords, sel->nhits, sizeof(uint64_t)*3, compare_coords_3d);
+        }
+
+        j = 0;
+        for (i = 0; i < sel->nhits - 1; i++) {
+            if (memcmp(&sel->coords[i*ndim], &sel->coords[(i+1)*ndim], ndim * sizeof(uint64_t)) != 0 ) {
+                memcpy(&sel->coords[j*ndim], &sel->coords[(i+1)*ndim], ndim * sizeof(uint64_t)); 
+                j++;
+            }
+        }
+        memcpy(&sel->coords[j*ndim], &sel->coords[(sel->nhits-1)*ndim], ndim * sizeof(uint64_t)); 
+        j++;
+        sel->nhits = j;
+
+    }
+
+    printf("==PDC_SERVER[%d]: Selection\n", pdc_server_rank_g);
+    PDCselection_print(sel);
 done:
     #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer_end, 0);
@@ -6907,246 +7226,241 @@ done:
 
     fflush(stdout);
     return ret_value;
-} // End PDC_Server_query_evaluate
+} // End PDC_Server_query_evaluate_merge_opt
 
 
-static perr_t
-PDC_Server_query_evaluate(pdcquery_t *query, query_task_t *task)
-{
-    perr_t ret_value = SUCCEED;
-    region_list_t *region_elt, *region_list_head, *cache_region, tmp_region, *region_constraint = NULL;
-    pdcselection_t *sel = NULL;
-    uint64_t nelem;
-    size_t i, unit_size;
-    pdcquery_op_t op, lop, rop;
-    float flo, fhi;
-    double dlo, dhi;
-    int ilo, ihi;
-    uint32_t ulo, uhi;
-    int64_t i64lo, i64hi;
-    uint64_t ui64lo, ui64hi;
-    void *value, *buf;
+/* static perr_t */
+/* PDC_Server_query_evaluate(pdcquery_t *query, query_task_t *task) */
+/* { */
+/*     perr_t ret_value = SUCCEED; */
+/*     region_list_t *region_elt, *region_list_head, *cache_region, tmp_region, *region_constraint = NULL; */
+/*     pdcselection_t *sel = NULL; */
+/*     uint64_t nelem; */
+/*     size_t i, unit_size; */
+/*     pdcquery_op_t op, lop, rop; */
+/*     float flo, fhi; */
+/*     double dlo, dhi; */
+/*     int ilo, ihi; */
+/*     uint32_t ulo, uhi; */
+/*     int64_t i64lo, i64hi; */
+/*     uint64_t ui64lo, ui64hi; */
+/*     void *value, *buf; */
 
 
-    #ifdef ENABLE_TIMING
-    struct timeval  pdc_timer_start, pdc_timer_end;
-    struct timeval  pdc_timer_start1, pdc_timer_end1;
-    gettimeofday(&pdc_timer_start, 0);
-    #endif
+/*     #ifdef ENABLE_TIMING */
+/*     struct timeval  pdc_timer_start, pdc_timer_end; */
+/*     struct timeval  pdc_timer_start1, pdc_timer_end1; */
+/*     gettimeofday(&pdc_timer_start, 0); */
+/*     #endif */
 
-    /* printf("==PDC_SERVER[%d]: %s - start query evaluation!\n", pdc_server_rank_g, __func__); */
-    if (query == NULL) 
-        goto done;
+/*     /1* printf("==PDC_SERVER[%d]: %s - start query evaluation!\n", pdc_server_rank_g, __func__); *1/ */
+/*     if (query == NULL) */ 
+/*         goto done; */
 
-    // Skip the non-leaf query nodes
-    if (query->constraint == NULL) 
-        goto done;
+/*     // Skip the non-leaf query nodes */
+/*     if (query->constraint == NULL) */ 
+/*         goto done; */
        
-    if (query->constraint->sel.is_evaluated == 1) 
-        goto done;
+/*     region_list_head = (region_list_t*)query->constraint->storage_region_list_head; */
+/*     if (NULL == region_list_head) { */
+/*         printf("==PDC_SERVER[%d]: %s - error with storage_region_list_head!\n", */ 
+/*             pdc_server_rank_g, __func__); */
+/*         ret_value = FAIL; */
+/*         goto done; */
+/*     } */
+/*     unit_size = PDC_get_var_type_size(query->constraint->type); */
+/*     memset(&tmp_region, 0, sizeof(region_list_t)); */
+/*     region_constraint = NULL; */
+/*     if (task->region_constraint->ndim > 0) { */
+/*         // Convert logical tmp_region to bytes */
+/*         pdc_region_list_t_deep_cp(task->region_constraint, &tmp_region); */
+/*         for (i = 0; i <task->region_constraint->ndim ; i++) { */
+/*             tmp_region.start[i] *= unit_size; */
+/*             tmp_region.count[i] *= unit_size; */
+/*         } */
+/*         region_constraint = &tmp_region; */
+/*     } */
 
-    region_list_head = (region_list_t*)query->constraint->storage_region_list_head;
-    if (NULL == region_list_head) {
-        printf("==PDC_SERVER[%d]: %s - error with storage_region_list_head!\n", 
-            pdc_server_rank_g, __func__);
-        ret_value = FAIL;
-        goto done;
-    }
-    unit_size = PDC_get_var_type_size(query->constraint->type);
-    memset(&tmp_region, 0, sizeof(region_list_t));
-    region_constraint = NULL;
-    if (task->region_constraint->ndim > 0) {
-        // Convert logical tmp_region to bytes
-        pdc_region_list_t_deep_cp(task->region_constraint, &tmp_region);
-        for (i = 0; i <task->region_constraint->ndim ; i++) {
-            tmp_region.start[i] *= unit_size;
-            tmp_region.count[i] *= unit_size;
-        }
-        region_constraint = &tmp_region;
-    }
-
-    sel = &(query->constraint->sel);
-    sel->ndim         = region_list_head->ndim;
-    sel->nhits        = 0;
-    sel->coords_alloc = 100;
-    sel->coords       = (uint64_t*)malloc(sel->coords_alloc * sizeof(uint64_t));
-    if (NULL == sel->coords) {
-        printf("==PDC_SERVER[%d]: %s - error with malloc!\n", pdc_server_rank_g, __func__);
-        ret_value = FAIL;
-        goto done;
-    }
+/*     sel = &(query->constraint->sel); */
+/*     sel->ndim         = region_list_head->ndim; */
+/*     sel->nhits        = 0; */
+/*     sel->coords_alloc = 100; */
+/*     sel->coords       = (uint64_t*)malloc(sel->coords_alloc * sizeof(uint64_t)); */
+/*     if (NULL == sel->coords) { */
+/*         printf("==PDC_SERVER[%d]: %s - error with malloc!\n", pdc_server_rank_g, __func__); */
+/*         ret_value = FAIL; */
+/*         goto done; */
+/*     } */
 
 
-    // Check if there is a range query that we can combine the evaluation
-    if (query->constraint->is_range == 1) {
-        switch(query->constraint->type) {
-            case PDC_FLOAT :
-                flo = *((float*)&query->constraint->value);
-                fhi = *((float*)&query->constraint->value2);
-                break;
-            case PDC_DOUBLE:
-                dlo = *((double*)&query->constraint->value);
-                dhi = *((double*)&query->constraint->value2);
-                break;
-            case PDC_INT:
-                ilo = *((int*)&query->constraint->value);
-                ihi = *((int*)&query->constraint->value2);
-                break;
-            case PDC_UINT:
-                ulo = *((uint32_t*)&query->constraint->value);
-                uhi = *((uint32_t*)&query->constraint->value2);
-                break;
-            case PDC_INT64:
-                i64lo = *((int64_t*)&query->constraint->value);
-                i64hi = *((int64_t*)&query->constraint->value2);
-                break;
-            case PDC_UINT64:
-                ui64lo = *((uint64_t*)&query->constraint->value);
-                ui64hi = *((uint64_t*)&query->constraint->value2);
-                break;
-            default:
-                printf("==PDC_SERVER[%d]: %s - error with operator type!\n", pdc_server_rank_g, __func__);
-                ret_value = FAIL;
-                goto done;
-        } // End switch
+/*     // Check if there is a range query that we can combine the evaluation */
+/*     if (query->constraint->is_range == 1) { */
+/*         switch(query->constraint->type) { */
+/*             case PDC_FLOAT : */
+/*                 flo = *((float*)&query->constraint->value); */
+/*                 fhi = *((float*)&query->constraint->value2); */
+/*                 break; */
+/*             case PDC_DOUBLE: */
+/*                 dlo = *((double*)&query->constraint->value); */
+/*                 dhi = *((double*)&query->constraint->value2); */
+/*                 break; */
+/*             case PDC_INT: */
+/*                 ilo = *((int*)&query->constraint->value); */
+/*                 ihi = *((int*)&query->constraint->value2); */
+/*                 break; */
+/*             case PDC_UINT: */
+/*                 ulo = *((uint32_t*)&query->constraint->value); */
+/*                 uhi = *((uint32_t*)&query->constraint->value2); */
+/*                 break; */
+/*             case PDC_INT64: */
+/*                 i64lo = *((int64_t*)&query->constraint->value); */
+/*                 i64hi = *((int64_t*)&query->constraint->value2); */
+/*                 break; */
+/*             case PDC_UINT64: */
+/*                 ui64lo = *((uint64_t*)&query->constraint->value); */
+/*                 ui64hi = *((uint64_t*)&query->constraint->value2); */
+/*                 break; */
+/*             default: */
+/*                 printf("==PDC_SERVER[%d]: %s - error with operator type!\n", pdc_server_rank_g, __func__); */
+/*                 ret_value = FAIL; */
+/*                 goto done; */
+/*         } // End switch */
 
-        lop = query->constraint->op;
-        rop = query->constraint->op2;
-    }
-    else {
-        op    = query->constraint->op;
-        value = &(query->constraint->value); 
-    }
-
-
-    int n_eval_region = 0;
-    DL_FOREACH(region_list_head, region_elt) {
-        // Skip non-overlap regions with the region constraint
-        if (region_constraint && region_constraint->ndim > 0) {
-            if (is_contiguous_region_overlap(region_elt, region_constraint) != 1)
-                continue;
-        }
-
-        cache_region = region_elt;
-        if (cache_region->io_cache_region != NULL ) 
-            cache_region = cache_region->io_cache_region;
-
-        // Skip regions that has no data (skipped at data load phase when we know it has no hits)
-        if (cache_region->is_data_ready != 1) 
-            continue;
-
-        // Skip region based on histogram
-        if (gen_hist_g == 1) {
-            if (PDC_region_has_hits_from_hist(query->constraint, region_elt->region_hist) != 1)
-                continue;
-        }
-
-        buf   = cache_region->buf;
-        nelem = cache_region->count[0];
-        for (i = 1; i < cache_region->ndim; i++) 
-            nelem *= cache_region->count[i];
-        nelem /= unit_size;
+/*         lop = query->constraint->op; */
+/*         rop = query->constraint->op2; */
+/*     } */
+/*     else { */
+/*         op    = query->constraint->op; */
+/*         value = &(query->constraint->value); */ 
+/*     } */
 
 
-        switch(query->constraint->type) {
-            case PDC_FLOAT :
-                /* #ifdef ENABLE_TIMING */
-                /* if (pdc_server_rank_g == 0 || pdc_server_rank_g == 1) */ 
-                /*     gettimeofday(&pdc_timer_start1, 0); */
-                /* #endif */
+/*     int n_eval_region = 0; */
+/*     DL_FOREACH(region_list_head, region_elt) { */
+/*         // Skip non-overlap regions with the region constraint */
+/*         if (region_constraint && region_constraint->ndim > 0) { */
+/*             if (is_contiguous_region_overlap(region_elt, region_constraint) != 1) */
+/*                 continue; */
+/*         } */
 
-                if (query->constraint->is_range == 1) {
-                    MACRO_QUERY_RANGE_EVALUATE_SCAN(float, nelem, buf, lop, flo, rop, fhi, sel, 
-                                                    region_elt, unit_size, region_constraint);
-                }
-                else {
-                    MACRO_QUERY_EVALUATE_SCAN(float, nelem, buf, op, value, sel, region_elt, 
-                                              unit_size, region_constraint);
-                }
-                /* #ifdef ENABLE_TIMING */
-                /* if (pdc_server_rank_g == 0 || pdc_server_rank_g == 1) { */
-                /*     gettimeofday(&pdc_timer_end1, 0); */
-                /*     double query_eval_time= PDC_get_elapsed_time_double(&pdc_timer_start1, &pdc_timer_end1); */
-                /*     printf("==PDC_SERVER[%d]: evaluated region %d, %" PRIu64 " hits, time %.4fs\n", */ 
-                /*             pdc_server_rank_g, n_eval_region, sel->nhits, query_eval_time); */
-                /* } */
-                /* #endif */
+/*         cache_region = region_elt; */
+/*         if (cache_region->io_cache_region != NULL ) */ 
+/*             cache_region = cache_region->io_cache_region; */
 
-                break;
-            case PDC_DOUBLE:
-                if (query->constraint->is_range == 1) {
-                    MACRO_QUERY_RANGE_EVALUATE_SCAN(double, nelem, buf, lop, dlo, rop, dhi, sel, 
-                                                    region_elt, unit_size, region_constraint);
-                }
-                else {
-                    MACRO_QUERY_EVALUATE_SCAN(double, nelem, buf, op, value, sel, region_elt, 
-                                              unit_size, region_constraint);
-                }
-                break;
-            case PDC_INT:
-                if (query->constraint->is_range == 1) {
-                    MACRO_QUERY_RANGE_EVALUATE_SCAN(int, nelem, buf, lop, ilo, rop, ihi, sel, 
-                                                    region_elt, unit_size, region_constraint);
-                }
-                else {
-                    MACRO_QUERY_EVALUATE_SCAN(int, nelem, buf, op, value, sel, region_elt, 
-                                              unit_size, region_constraint);
-                }
-                break;
-            case PDC_UINT:
-                if (query->constraint->is_range == 1) {
-                    MACRO_QUERY_RANGE_EVALUATE_SCAN(uint32_t, nelem, buf, lop, ulo, rop, uhi, sel, 
-                                                    region_elt, unit_size, region_constraint);
-                }
-                else {
-                    MACRO_QUERY_EVALUATE_SCAN(uint32_t, nelem, buf, op, value, sel, region_elt, 
-                                              unit_size, region_constraint);
-                }
-                break;
-            case PDC_INT64:
-                if (query->constraint->is_range == 1) {
-                    MACRO_QUERY_RANGE_EVALUATE_SCAN(int64_t, nelem, buf, lop, i64lo, rop, i64hi, sel, 
-                                                    region_elt, unit_size, region_constraint);
-                }
-                else {
-                    MACRO_QUERY_EVALUATE_SCAN(int64_t, nelem, buf, op, value, sel, region_elt, 
-                                              unit_size, region_constraint);
-                }
-                break;
-            case PDC_UINT64:
-                if (query->constraint->is_range == 1) {
-                    MACRO_QUERY_RANGE_EVALUATE_SCAN(uint64_t, nelem, buf, lop, ui64lo, rop, ui64hi, sel, 
-                                                    region_elt, unit_size, region_constraint);
-                }
-                else {
-                    MACRO_QUERY_EVALUATE_SCAN(uint64_t, nelem, buf, op, value, sel, region_elt, 
-                                              unit_size, region_constraint);
-                }
-                break;
-            default:
-                printf("==PDC_SERVER[%d]: %s - error with operator type!\n", pdc_server_rank_g, __func__);
-                ret_value = FAIL;
-                goto done;
-        } // End switch
+/*         // Skip regions that has no data (skipped at data load phase when we know it has no hits) */
+/*         if (cache_region->is_data_ready != 1) */ 
+/*             continue; */
 
-        n_eval_region++;
-    } // End DL_FOREACH
+/*         // Skip region based on histogram */
+/*         if (gen_hist_g == 1) { */
+/*             if (PDC_region_has_hits_from_hist(query->constraint, region_elt->region_hist) != 1) */
+/*                 continue; */
+/*         } */
 
-    sel->is_evaluated = 1;
+/*         buf   = cache_region->buf; */
+/*         nelem = cache_region->count[0]; */
+/*         for (i = 1; i < cache_region->ndim; i++) */ 
+/*             nelem *= cache_region->count[i]; */
+/*         nelem /= unit_size; */
 
-    /* printf("==PDC_SERVER[%d]: Selection\n", pdc_server_rank_g); */
-    /* PDCselection_print(sel); */
-done:
-    #ifdef ENABLE_TIMING
-    gettimeofday(&pdc_timer_end, 0);
-    double query_eval_time= PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-    /* printf("==PDC_SERVER[%d]: evaluated %d regions, %" PRIu64 " hits, time %.4fs\n", */ 
-    /*         pdc_server_rank_g, n_eval_region, sel->nhits, query_eval_time); */
-    #endif
 
-    fflush(stdout);
-    return ret_value;
-} // End PDC_Server_query_evaluate
+/*         switch(query->constraint->type) { */
+/*             case PDC_FLOAT : */
+/*                 /1* #ifdef ENABLE_TIMING *1/ */
+/*                 /1* if (pdc_server_rank_g == 0 || pdc_server_rank_g == 1) *1/ */ 
+/*                 /1*     gettimeofday(&pdc_timer_start1, 0); *1/ */
+/*                 /1* #endif *1/ */
+
+/*                 if (query->constraint->is_range == 1) { */
+/*                     MACRO_QUERY_RANGE_EVALUATE_SCAN(float, nelem, buf, lop, flo, rop, fhi, sel, */ 
+/*                                                     region_elt, unit_size, region_constraint); */
+/*                 } */
+/*                 else { */
+/*                     MACRO_QUERY_EVALUATE_SCAN(float, nelem, buf, op, value, sel, region_elt, */ 
+/*                                               unit_size, region_constraint); */
+/*                 } */
+/*                 /1* #ifdef ENABLE_TIMING *1/ */
+/*                 /1* if (pdc_server_rank_g == 0 || pdc_server_rank_g == 1) { *1/ */
+/*                 /1*     gettimeofday(&pdc_timer_end1, 0); *1/ */
+/*                 /1*     double query_eval_time= PDC_get_elapsed_time_double(&pdc_timer_start1, &pdc_timer_end1); *1/ */
+/*                 /1*     printf("==PDC_SERVER[%d]: evaluated region %d, %" PRIu64 " hits, time %.4fs\n", *1/ */ 
+/*                 /1*             pdc_server_rank_g, n_eval_region, sel->nhits, query_eval_time); *1/ */
+/*                 /1* } *1/ */
+/*                 /1* #endif *1/ */
+
+/*                 break; */
+/*             case PDC_DOUBLE: */
+/*                 if (query->constraint->is_range == 1) { */
+/*                     MACRO_QUERY_RANGE_EVALUATE_SCAN(double, nelem, buf, lop, dlo, rop, dhi, sel, */ 
+/*                                                     region_elt, unit_size, region_constraint); */
+/*                 } */
+/*                 else { */
+/*                     MACRO_QUERY_EVALUATE_SCAN(double, nelem, buf, op, value, sel, region_elt, */ 
+/*                                               unit_size, region_constraint); */
+/*                 } */
+/*                 break; */
+/*             case PDC_INT: */
+/*                 if (query->constraint->is_range == 1) { */
+/*                     MACRO_QUERY_RANGE_EVALUATE_SCAN(int, nelem, buf, lop, ilo, rop, ihi, sel, */ 
+/*                                                     region_elt, unit_size, region_constraint); */
+/*                 } */
+/*                 else { */
+/*                     MACRO_QUERY_EVALUATE_SCAN(int, nelem, buf, op, value, sel, region_elt, */ 
+/*                                               unit_size, region_constraint); */
+/*                 } */
+/*                 break; */
+/*             case PDC_UINT: */
+/*                 if (query->constraint->is_range == 1) { */
+/*                     MACRO_QUERY_RANGE_EVALUATE_SCAN(uint32_t, nelem, buf, lop, ulo, rop, uhi, sel, */ 
+/*                                                     region_elt, unit_size, region_constraint); */
+/*                 } */
+/*                 else { */
+/*                     MACRO_QUERY_EVALUATE_SCAN(uint32_t, nelem, buf, op, value, sel, region_elt, */ 
+/*                                               unit_size, region_constraint); */
+/*                 } */
+/*                 break; */
+/*             case PDC_INT64: */
+/*                 if (query->constraint->is_range == 1) { */
+/*                     MACRO_QUERY_RANGE_EVALUATE_SCAN(int64_t, nelem, buf, lop, i64lo, rop, i64hi, sel, */ 
+/*                                                     region_elt, unit_size, region_constraint); */
+/*                 } */
+/*                 else { */
+/*                     MACRO_QUERY_EVALUATE_SCAN(int64_t, nelem, buf, op, value, sel, region_elt, */ 
+/*                                               unit_size, region_constraint); */
+/*                 } */
+/*                 break; */
+/*             case PDC_UINT64: */
+/*                 if (query->constraint->is_range == 1) { */
+/*                     MACRO_QUERY_RANGE_EVALUATE_SCAN(uint64_t, nelem, buf, lop, ui64lo, rop, ui64hi, sel, */ 
+/*                                                     region_elt, unit_size, region_constraint); */
+/*                 } */
+/*                 else { */
+/*                     MACRO_QUERY_EVALUATE_SCAN(uint64_t, nelem, buf, op, value, sel, region_elt, */ 
+/*                                               unit_size, region_constraint); */
+/*                 } */
+/*                 break; */
+/*             default: */
+/*                 printf("==PDC_SERVER[%d]: %s - error with operator type!\n", pdc_server_rank_g, __func__); */
+/*                 ret_value = FAIL; */
+/*                 goto done; */
+/*         } // End switch */
+
+/*         n_eval_region++; */
+/*     } // End DL_FOREACH */
+
+/*     /1* printf("==PDC_SERVER[%d]: Selection\n", pdc_server_rank_g); *1/ */
+/*     /1* PDCselection_print(sel); *1/ */
+/* done: */
+/*     #ifdef ENABLE_TIMING */
+/*     gettimeofday(&pdc_timer_end, 0); */
+/*     double query_eval_time= PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end); */
+/*     /1* printf("==PDC_SERVER[%d]: evaluated %d regions, %" PRIu64 " hits, time %.4fs\n", *1/ */ 
+/*     /1*         pdc_server_rank_g, n_eval_region, sel->nhits, query_eval_time); *1/ */
+/*     #endif */
+
+/*     fflush(stdout); */
+/*     return ret_value; */
+/* } // End PDC_Server_query_evaluate */
 
 void
 PDC_query_visit_all_with_cb_arg(pdcquery_t *query, void (*func)(pdcquery_t *, void *), void *arg)
@@ -7163,20 +7477,21 @@ PDC_query_visit_all_with_cb_arg(pdcquery_t *query, void (*func)(pdcquery_t *, vo
     return;
 }
 
-/* void */
-/* PDC_query_eval_visit(pdcquery_t *query, void (*func)(pdcquery_t *, void *, pdcquery_t *, pdcquery_combine_op_t), */ 
-/*                      void *arg, pdcquery_t *left, pdcquery_combine_op_t combine_op) */
-/* { */
-/*     if (NULL == query) */ 
-/*         return; */
+void
+PDC_query_visit(pdcquery_t *query, 
+               void (*func)(pdcquery_t *, void *, pdcquery_t *, pdcquery_combine_op_t), 
+               void *arg, pdcquery_t *left, pdcquery_combine_op_t combine_op)
+{
+    if (NULL == query) 
+        return;
 
-/*     PDC_query_eval_visit(query->left, func, arg, NULL, PDC_QUERY_NONE); */
-/*     PDC_query_eval_visit(query->right, func, arg, query->left, query->combine_op); */
+    PDC_query_visit(query->left,  func, arg, left, combine_op);
+    PDC_query_visit(query->right, func, arg, query->left, query->combine_op);
 
-/*     if (NULL == query->left && NULL == query->right) */ 
-/*         func(query, arg); */
-/*     return; */
-/* } */
+    if (NULL == query->left && NULL == query->right) 
+        func(query, arg, left, combine_op);
+    return;
+}
 
 void
 PDC_query_visit_leaf_with_cb_arg(pdcquery_t *query, void (*func)(pdcquery_t *, void *), void *arg)
@@ -7225,6 +7540,14 @@ attach_cache_storage_region_to_query(pdcquery_t *query)
 }
 
 void
+attach_sel_to_query(pdcquery_t *query, pdcselection_t *sel)
+{
+    if (query != NULL)
+        query->sel = sel;
+}
+
+
+void
 attach_local_storage_region_to_query(pdcquery_t *query)
 {
     pdc_metadata_t *meta;
@@ -7260,134 +7583,119 @@ PDC_query_visit_nonleaf_with_cb(pdcquery_t *query, void (*func)(pdcquery_t *) )
     return;
 }
 
-int compare_coords_1d (const void * a, const void * b)
-{
-  return (memcmp(a, b, sizeof(uint64_t)));
-}
+/* static void */
+/* PDC_Server_query_result_merge(pdcquery_t *query) */
+/* { */
+/*     pdcselection_t *sel_left, *sel_right; */
+/*     size_t ndim, k; */
+/*     uint64_t i, j, left_size, right_size, off, unit_size, ntotal; */
+/*     uint64_t *left_coords, *right_coords; */
+/*     int is_same, res; */
 
-int compare_coords_2d (const void * a, const void * b)
-{
-  return (memcmp(a, b, sizeof(uint64_t) * 2));
-}
+/*     #ifdef ENABLE_TIMING */
+/*     struct timeval  pdc_timer_start, pdc_timer_end; */
+/*     gettimeofday(&pdc_timer_start, 0); */
+/*     #endif */
 
-int compare_coords_3d (const void * a, const void * b)
-{
-  return (memcmp(a, b, sizeof(uint64_t) * 3));
-}
+/*     if (NULL != query->left->constraint) */ 
+/*         sel_left  = &query->left->constraint->sel; */
+/*     else */ 
+/*         sel_left  = &query->left->sel; */
 
-static void
-PDC_Server_query_result_merge(pdcquery_t *query)
-{
-    pdcselection_t *sel_left, *sel_right;
-    size_t ndim, k;
-    uint64_t i, j, left_size, right_size, off, unit_size, ntotal;
-    uint64_t *left_coords, *right_coords;
-    int is_same, res;
+/*     if (NULL != query->right->constraint) */ 
+/*         sel_right = &query->right->constraint->sel; */
+/*     else */
+/*         sel_right = &query->right->sel; */
 
-    #ifdef ENABLE_TIMING
-    struct timeval  pdc_timer_start, pdc_timer_end;
-    gettimeofday(&pdc_timer_start, 0);
-    #endif
+/*     ndim = sel_left->ndim; */
+/*     if (sel_right->ndim != ndim) { */
+/*         printf("==PDC_SERVER[%d]: %s - left and right dimension not match!\n", pdc_server_rank_g, __func__); */
+/*         return; */
+/*     } */
+/*     unit_size = ndim * sizeof(uint64_t); */
 
-    if (NULL != query->left->constraint) 
-        sel_left  = &query->left->constraint->sel;
-    else 
-        sel_left  = &query->left->sel;
+/*     query->sel.ndim         = ndim; */
+/*     ntotal                  = sel_left->nhits + sel_right->nhits; */
 
-    if (NULL != query->right->constraint) 
-        sel_right = &query->right->constraint->sel;
-    else
-        sel_right = &query->right->sel;
+/*     if (query->combine_op == PDC_QUERY_AND) { */
 
-    ndim = sel_left->ndim;
-    if (sel_right->ndim != ndim) {
-        printf("==PDC_SERVER[%d]: %s - left and right dimension not match!\n", pdc_server_rank_g, __func__);
-        return;
-    }
-    unit_size = ndim * sizeof(uint64_t);
+/*         // Only leaf query needs to be sorted */
+/*         if (ndim == 1) { */
+/*             if (query->left->left == NULL) */ 
+/*                 qsort(sel_left->coords,  sel_left->nhits,  unit_size, compare_coords_1d); */
+/*             if (query->right->right == NULL) */ 
+/*                 qsort(sel_right->coords, sel_right->nhits, unit_size, compare_coords_1d); */
+/*         } */
+/*         else if (ndim == 2) { */
+/*             if (query->left->left == NULL) */ 
+/*                 qsort(sel_left->coords,  sel_left->nhits,  unit_size, compare_coords_2d); */
+/*             if (query->right->right == NULL) */ 
+/*                 qsort(sel_right->coords, sel_right->nhits, unit_size, compare_coords_2d); */
+/*         } */
+/*         else if (ndim == 3) { */
+/*             if (query->left->left == NULL) */ 
+/*                 qsort(sel_left->coords,  sel_left->nhits,  unit_size, compare_coords_3d); */
+/*             if (query->right->right == NULL) */ 
+/*                 qsort(sel_right->coords, sel_right->nhits, unit_size, compare_coords_3d); */
+/*         } */
 
-    query->sel.ndim         = ndim;
-    ntotal                  = sel_left->nhits + sel_right->nhits;
+/*         query->sel.coords_alloc = PDC_MIN(sel_left->nhits, sel_right->nhits); */
+/*         query->sel.coords       = (uint64_t*)malloc(query->sel.coords_alloc * unit_size); */
+/*         i = j = 0; */
+/*         left_coords  = sel_left->coords; */
+/*         right_coords = sel_right->coords; */
 
-    if (query->combine_op == PDC_QUERY_AND) {
+/*         off = 0; */
+/*         // Set interaction */
+/*         while (i < sel_left->nhits && j < sel_right->nhits) { */
+/*             res = memcmp(&left_coords[i*ndim], &right_coords[j*ndim], unit_size); */
+/*             if (res == 0) { */
+/*                 memcpy(&query->sel.coords[off*ndim], &left_coords[i*ndim], unit_size); */
+/*                 i++; */
+/*                 j++; */
+/*                 off++; */
+/*             } */
+/*             else if (res < 0) { */
+/*                 i++; */
+/*             } */
+/*             else { */
+/*                 j++; */
+/*             } */
+/*         } */
+/*         query->sel.nhits        = off; */
+/*     } */
+/*     else if (query->combine_op == PDC_QUERY_OR) { */
+/*         query->sel.nhits        = ntotal; */
+/*         query->sel.coords       = (uint64_t*)malloc(query->sel.nhits * unit_size); */
+/*         query->sel.coords_alloc = query->sel.nhits; */
+/*         left_size               = sel_left->nhits  * unit_size; */
+/*         right_size              = sel_right->nhits * unit_size; */
+/*         memcpy(query->sel.coords, sel_left->coords, left_size); */
+/*         memcpy(query->sel.coords+sel_left->nhits, sel_right->coords, right_size); */
+/*     } */
+/*     else { */
+/*         printf("==PDC_SERVER[%d]: %s - query combine op not recognized !\n", pdc_server_rank_g, __func__); */
+/*         return; */
+/*     } */
 
-        // Only leaf query needs to be sorted
-        if (ndim == 1) {
-            if (query->left->left == NULL) 
-                qsort(sel_left->coords,  sel_left->nhits,  unit_size, compare_coords_1d);
-            if (query->right->right == NULL) 
-                qsort(sel_right->coords, sel_right->nhits, unit_size, compare_coords_1d);
-        }
-        else if (ndim == 2) {
-            if (query->left->left == NULL) 
-                qsort(sel_left->coords,  sel_left->nhits,  unit_size, compare_coords_2d);
-            if (query->right->right == NULL) 
-                qsort(sel_right->coords, sel_right->nhits, unit_size, compare_coords_2d);
-        }
-        else if (ndim == 3) {
-            if (query->left->left == NULL) 
-                qsort(sel_left->coords,  sel_left->nhits,  unit_size, compare_coords_3d);
-            if (query->right->right == NULL) 
-                qsort(sel_right->coords, sel_right->nhits, unit_size, compare_coords_3d);
-        }
+/*     // Free and reset children selection */
+/*     free(sel_left->coords); */
+/*     free(sel_right->coords); */
+/*     memset(sel_left, 0, sizeof(pdcselection_t)); */
+/*     memset(sel_right, 0, sizeof(pdcselection_t)); */
 
-        query->sel.coords_alloc = PDC_MIN(sel_left->nhits, sel_right->nhits);
-        query->sel.coords       = (uint64_t*)malloc(query->sel.coords_alloc * unit_size);
-        i = j = 0;
-        left_coords  = sel_left->coords;
-        right_coords = sel_right->coords;
-
-        off = 0;
-        // Set interaction
-        while (i < sel_left->nhits && j < sel_right->nhits) {
-            res = memcmp(&left_coords[i*ndim], &right_coords[j*ndim], unit_size);
-            if (res == 0) {
-                memcpy(&query->sel.coords[off*ndim], &left_coords[i*ndim], unit_size);
-                i++;
-                j++;
-                off++;
-            }
-            else if (res < 0) {
-                i++;
-            }
-            else {
-                j++;
-            }
-        }
-        query->sel.nhits        = off;
-    }
-    else if (query->combine_op == PDC_QUERY_OR) {
-        query->sel.nhits        = ntotal;
-        query->sel.coords       = (uint64_t*)malloc(query->sel.nhits * unit_size);
-        query->sel.coords_alloc = query->sel.nhits;
-        left_size               = sel_left->nhits  * unit_size;
-        right_size              = sel_right->nhits * unit_size;
-        memcpy(query->sel.coords, sel_left->coords, left_size);
-        memcpy(query->sel.coords+sel_left->nhits, sel_right->coords, right_size);
-    }
-    else {
-        printf("==PDC_SERVER[%d]: %s - query combine op not recognized !\n", pdc_server_rank_g, __func__);
-        return;
-    }
-
-    // Free and reset children selection
-    free(sel_left->coords);
-    free(sel_right->coords);
-    memset(sel_left, 0, sizeof(pdcselection_t));
-    memset(sel_right, 0, sizeof(pdcselection_t));
-
-    #ifdef ENABLE_TIMING
-    gettimeofday(&pdc_timer_end, 0);
-    double query_merge_time= PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-    printf("==PDC_SERVER[%d]: query merge time %.4fs, %" PRIu64 " elements\n", 
-            pdc_server_rank_g, query_merge_time, query->sel.nhits);
-    #endif
+/*     #ifdef ENABLE_TIMING */
+/*     gettimeofday(&pdc_timer_end, 0); */
+/*     double query_merge_time= PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end); */
+/*     printf("==PDC_SERVER[%d]: query merge time %.4fs, %" PRIu64 " elements\n", */ 
+/*             pdc_server_rank_g, query_merge_time, query->sel.nhits); */
+/*     #endif */
 
 
-    /* PDCselection_print(&query->sel); */
+/*     /1* PDCselection_print(&query->sel); *1/ */
 
-    return;
-} // PDC_Server_query_result_merge
+/*     return; */
+/* } // PDC_Server_query_result_merge */
 
 static perr_t 
 PDC_Server_send_nhits_to_server(query_task_t *task)
@@ -7430,7 +7738,7 @@ PDC_Server_send_nhits_to_server(query_task_t *task)
     }
 
     in.query_id = task->query_id;
-    in.nhits    = task->query->sel.nhits;
+    in.nhits    = task->query->sel->nhits;
 
     hg_ret = HG_Forward(handle, pdc_check_int_ret_cb, NULL, &in);
     if (hg_ret != HG_SUCCESS) {
@@ -7454,6 +7762,7 @@ PDC_Server_send_nhits_to_client(query_task_t *task)
     int client_id;
 
     FUNC_ENTER(NULL);
+
 
     client_id = task->client_id;
     if (client_id >= (int32_t)pdc_client_num_g) {
@@ -7485,8 +7794,11 @@ PDC_Server_send_nhits_to_client(query_task_t *task)
     }
 
     // Fill input structure
-    in.nhits = task->query->sel.nhits;
+    in.nhits    = task->nhits;
     in.query_id = task->query_id;
+
+    printf("==PDC_SERVER[%d]: %s - sending nhits to client!\n", pdc_server_rank_g, __func__, in.nhits);
+    fflush(stdout);
 
     hg_ret = HG_Forward(handle, pdc_check_int_ret_cb, NULL, &in);
     if (hg_ret != HG_SUCCESS) {
@@ -7568,10 +7880,10 @@ PDC_Server_send_coords_to_client(query_task_t *task)
     }
 
     if (pdc_server_size_g == 1) {
-        buf       = task->query->sel.coords;
-        buf_sizes = task->query->sel.nhits * sizeof(uint64_t) * task->query->sel.ndim;
-        in.ndim   = task->query->sel.ndim;
-        in.cnt    = task->query->sel.nhits;
+        buf       = task->query->sel->coords;
+        buf_sizes = task->query->sel->nhits * sizeof(uint64_t) * task->ndim;
+        in.ndim   = task->ndim;
+        in.cnt    = task->query->sel->nhits;
     }
     else {
         buf       = task->coords;
@@ -7663,9 +7975,9 @@ PDC_Server_send_coords_to_server(query_task_t *task)
     }
 
 
-    if (task->query->sel.nhits > 0) {
-        buf       = task->query->sel.coords;
-        buf_sizes = task->query->sel.nhits * sizeof(uint64_t) * task->query->sel.ndim;
+    if (task->query->sel->nhits > 0) {
+        buf       = task->query->sel->coords;
+        buf_sizes = task->query->sel->nhits * sizeof(uint64_t) * task->ndim;
         hg_ret = HG_Bulk_create(hg_class_g, 1, &buf, &buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
         if (hg_ret != HG_SUCCESS) {
             fprintf(stderr, "Could not create bulk data handle\n");
@@ -7675,8 +7987,8 @@ PDC_Server_send_coords_to_server(query_task_t *task)
     }
 
     // Fill input structure
-    in.ndim        = task->query->sel.ndim;
-    in.cnt         = task->query->sel.nhits;
+    in.ndim        = task->ndim;
+    in.cnt         = task->query->sel->nhits;
     in.seq_id      = task->query_id;
     in.origin      = pdc_server_rank_g;
     in.op_id       = PDC_BULK_QUERY_COORDS;
@@ -8153,26 +8465,27 @@ PDC_Server_send_query_result_to_manager(query_task_t *task)
 {
     perr_t ret_value = SUCCEED;
 
-    /* fprintf(stderr, "==PDC_SERVER[%d]: sending query results to manager %d!\n", */ 
-    /*                     pdc_server_rank_g, task->manager); */
+    printf("==PDC_SERVER[%d]: sending query results to manager %d!\n", pdc_server_rank_g, task->manager);
 
     if (task->get_op == PDC_QUERY_GET_NHITS) {
         ret_value = PDC_Server_send_nhits_to_server(task);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_SERVER[%d]: %s - error with PDC_Server_send_nhits_to_server!\n", 
+                    pdc_server_rank_g, __func__);
+            goto done;
+        }
     }
     else if (task->get_op == PDC_QUERY_GET_SEL) {
         ret_value = PDC_Server_send_coords_to_server(task);
-    }
-    else if (task->get_op == PDC_QUERY_GET_DATA) {
+        if (ret_value != SUCCEED) {
+            printf("==PDC_SERVER[%d]: %s - error with PDC_Server_send_coords_to_server!\n", 
+                    pdc_server_rank_g, __func__);
+            goto done;
+        }
     }
     else {
         printf("==PDC_SERVER[%d]: %s - Invalid get_op type!\n", pdc_server_rank_g, __func__);
         ret_value = FAIL;
-        goto done;
-    }
-
-    if (ret_value != SUCCEED) {
-        printf("==PDC_SERVER[%d]: %s - error with PDC_Server_send_nhits_to_server!\n", 
-                pdc_server_rank_g, __func__);
         goto done;
     }
 
@@ -8181,6 +8494,7 @@ PDC_Server_send_query_result_to_manager(query_task_t *task)
     /* PDC_Server_free_query_task(task); */
 
 done:
+    fflush(stdout);
     return ret_value;
 }
 
@@ -8201,28 +8515,37 @@ PDC_Server_do_query(query_task_t *task)
     PDC_query_visit_leaf_with_cb(task->query, PDC_Server_load_query_data);
 
     // Evaluate query 
-    PDC_query_visit_leaf_with_cb_arg(task->query, PDC_Server_query_evaluate, (void*)task);
+    PDC_query_visit(task->query, PDC_Server_query_evaluate_merge_opt, (void*)task, NULL, PDC_QUERY_NONE);
+    /* PDC_query_visit_leaf_with_cb_arg(task->query, PDC_Server_query_evaluate, (void*)task); */
 
-    // Merge result
-    if (task->query && task->query->constraint && task->query->left == NULL && task->query->right == NULL) {
-        // For one constraint query
-        memcpy(&task->query->sel, &task->query->constraint->sel, sizeof(pdcselection_t));     
-    }
-    else {
-        PDC_query_visit_nonleaf_with_cb(task->query, PDC_Server_query_result_merge);
-    }
+    /* // Merge result */
+    /* if (task->query && task->query->constraint && task->query->left == NULL && task->query->right == NULL) { */
+    /*     // For one constraint query */
+    /*     memcpy(&task->query->sel, &task->query->sel, sizeof(pdcselection_t)); */     
+    /* } */
+    /* else { */
+    /*     PDC_query_visit_nonleaf_with_cb(task->query, PDC_Server_query_result_merge); */
+    /* } */
 
     /* printf("==PDC_SERVER[%d]: Selection\n", pdc_server_rank_g); */
     /* PDCselection_print_all(&task->query->sel); */
 
+    // No need to store the coords for nhits
+    if (task->get_op == PDC_QUERY_GET_NHITS) {
+        if (task->query && task->query->sel && task->query->sel->coords_alloc > 0 && task->query->sel->coords) {
+            free(task->query->sel->coords);
+            task->query->sel->coords = 0;
+            task->query->sel->coords_alloc = 0;
+        }
+    }
+
+
     #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer_end, 0);
     double query_process_time= PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-    /* printf("==PDC_SERVER[%d]: query processing time %.4fs\n", pdc_server_rank_g, query_process_time); */
+    printf("==PDC_SERVER[%d]: query processing time %.4fs\n", pdc_server_rank_g, query_process_time);
     #endif
 
-
-done:
     return ret_value;
 }
 
@@ -8450,12 +8773,25 @@ PDC_Server_recv_data_query(const struct hg_cb_info *callback_info)
     uint64_t *obj_ids;
     query_task_t *new_task, *task_elt;
     int query_id_exist;
+    pdcquery_t *query;
 
-    pdcquery_t *query = PDC_deserialize_query(query_xfer);
+    query = PDC_deserialize_query(query_xfer);
     if (NULL == query) {
         printf("==PDC_SERVER[%d]: deserialize query FAILED!\n", pdc_server_rank_g);
         goto done;
     }
+
+    query->sel               = (pdcselection_t*)calloc(1, sizeof(pdcselection_t));
+    query->sel->nhits        = 0;
+    query->sel->coords_alloc = 100;
+    query->sel->coords       = (uint64_t*)calloc(query->sel->coords_alloc, sizeof(uint64_t));
+    if (NULL == query->sel->coords) {
+        printf("==PDC_SERVER[%d]: %s - error with calloc!\n", pdc_server_rank_g, __func__);
+        goto done;
+    }
+
+    // Attach the query sel to all query nodes
+    PDC_query_visit_all_with_cb_arg(query, attach_sel_to_query, query->sel);
 
     // Add query to global task list
     DL_FOREACH(query_task_list_head_g, task_elt) {
@@ -8494,7 +8830,7 @@ PDC_Server_recv_data_query(const struct hg_cb_info *callback_info)
     if (pdc_server_size_g == 1) {
 
         // Attach local storage region to query
-        PDC_query_visit_leaf_with_cb(new_task->query, attach_local_storage_region_to_query);
+        PDC_query_visit_leaf_with_cb(query, attach_local_storage_region_to_query);
 
         PDC_Server_do_query(new_task);
 
@@ -8502,13 +8838,13 @@ PDC_Server_recv_data_query(const struct hg_cb_info *callback_info)
 
     }
     else {
-        PDC_query_visit_leaf_with_cb(new_task->query, attach_cache_storage_region_to_query);
+        PDC_query_visit_leaf_with_cb(query, attach_cache_storage_region_to_query);
         obj_ids = (uint64_t*)calloc(query_xfer->n_unique_obj, sizeof(uint64_t));
         PDC_Server_distribute_query_workload(new_task, query, &obj_idx, obj_ids, PDC_RECV_REGION_DO_QUERY); 
         free(obj_ids);
 
         int has_more = 0;
-        PDC_query_visit_leaf_with_cb_arg(new_task->query, has_more_storage_region_to_recv, &has_more);
+        PDC_query_visit_leaf_with_cb_arg(query, has_more_storage_region_to_recv, &has_more);
         if (has_more == 0) {
             // Process query
             PDC_Server_do_query(new_task);
@@ -8656,7 +8992,7 @@ PDC_Server_recv_read_sel_obj_data(const struct hg_cb_info *callback_info)
     get_sel_data_rpc_in_t *in = (get_sel_data_rpc_in_t*) callback_info->arg;
     query_task_t *task_elt, *task = NULL;
     uint64_t nhits, coords_off, *coord, *coords = NULL, *cur_coord, obj_id, count, buf_off, my_size, data_off, i;
-    /* int client_id, query_id; */
+    /* int cloent_id, query_id; */
     size_t ndim, unit_size;
     cache_storage_region_t *cache_region_elt;
     region_list_t *storage_region_head = NULL, *cache_region, *region_elt;
@@ -8678,8 +9014,8 @@ PDC_Server_recv_read_sel_obj_data(const struct hg_cb_info *callback_info)
                 pdc_server_rank_g, __func__, in->query_id, in->obj_id);
         goto done;
     }
-    coords    = task->query->sel.coords;
-    nhits     = task->query->sel.nhits;
+    coords    = task->query->sel->coords;
+    nhits     = task->query->sel->nhits;
     /* query_id  = task->query_id; */
     ndim      = task->ndim;
     /* client_id = in->origin; */

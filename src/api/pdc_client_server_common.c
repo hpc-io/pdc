@@ -6457,12 +6457,14 @@ void PDCquery_free_all(pdcquery_t *root)
     if (NULL == root) 
         return;
 
+    if (root->sel && root->sel->coords_alloc > 0 && root->sel->coords != NULL) {
+        free(root->sel->coords);
+        root->sel->coords_alloc = 0;
+        root->sel->coords = NULL;
+    }
+
     if (root->left == NULL && root->right == NULL) {
         if (root->constraint) {
-            if (root->constraint->sel.coords_alloc > 0 && root->constraint->sel.coords != NULL) {
-                free(root->constraint->sel.coords);
-                root->constraint->sel.coords = NULL;
-            }
             free(root->constraint);
             root->constraint = NULL;
         }

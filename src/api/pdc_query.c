@@ -177,7 +177,7 @@ pdcquery_t *PDCquery_or(pdcquery_t *q1, pdcquery_t *q2)
     if (NULL == q1 ||NULL == q2) 
         return NULL;
 
-    query             = (pdcquery_t*)malloc(sizeof(pdcquery_t));
+    query             = (pdcquery_t*)calloc(1, sizeof(pdcquery_t));
     query->left       = q1;
     query->right      = q2;
     query->constraint = NULL;
