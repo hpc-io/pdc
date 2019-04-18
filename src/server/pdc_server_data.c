@@ -773,8 +773,11 @@ perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
 #ifndef ENABLE_WAIT_DATA   
             // timeout, append the global list for unmap
             else {
-                data_server_region_unmap_t *region;
+                data_server_region_unmap_t *region = NULL;
+                region = (data_server_region_unmap_t *)malloc(sizeof(struct data_server_region_unmap_t));
                 region->obj_id = in->remote_obj_id;
+                printf("append obj %lld\n", in->remote_obj_id);
+                fflush(stdout);
                 region->unmap_region = in->remote_region;
                 region->info = info;
 #ifdef ENABLE_MULTITHREAD
