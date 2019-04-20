@@ -81,10 +81,12 @@ int main(int argc, char **argv)
     printf("Preload data, total %" PRIu64 " elements\n", nhits);
     PDCquery_free_all(qpreload);
 
-    float energy_lo0 = 1.3;
+    float energy_lo0 = 2.3;
+    /* float energy_lo0 = 1.3; */
     pdcquery_t *ql = PDCquery_create(energy_id, PDC_GT, PDC_FLOAT, &energy_lo0);
 
-    float x_lo = 300, x_hi = 309;
+    float x_lo = 100, x_hi = 109;
+    /* float x_lo = 300, x_hi = 309; */
     pdcquery_t *q2_lo = PDCquery_create(x_id, PDC_GT, PDC_FLOAT, &x_lo);
     pdcquery_t *q2_hi = PDCquery_create(x_id, PDC_LT, PDC_FLOAT, &x_hi);
     pdcquery_t *q2    = PDCquery_and(q2_lo, q2_hi);
@@ -98,7 +100,8 @@ int main(int argc, char **argv)
     pdcquery_t *q3    = PDCquery_and(q3_lo, q3_hi);
 
     pdcquery_t *q = PDCquery_and(q12, q3);
-    printf("Query: Energy > 1:3&&300 < X < 310&&140 < Y < 150\n");
+    printf("Query: Energy > %.1f && %.1f < X < %.1f && %.1f < Y < .%1f\n", 
+            energy_lo0, x_lo, x_hi, y_lo, y_hi);
 
     // Get selection
     gettimeofday(&pdc_timer_start, 0);

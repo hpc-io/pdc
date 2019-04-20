@@ -56,8 +56,8 @@ typedef struct pdcquery_t {
     struct pdcquery_t      *left;
     struct pdcquery_t      *right;
     pdcquery_combine_op_t  combine_op;
-    struct PDC_region_info *region;
-    void                   *region_constraint;
+    struct PDC_region_info *region;             // used only on client
+    void                   *region_constraint;  // used only on server
     pdcselection_t         *sel;
 } pdcquery_t;
 

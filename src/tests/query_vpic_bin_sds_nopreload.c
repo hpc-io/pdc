@@ -85,7 +85,8 @@ int main(int argc, char **argv)
 
     pdcquery_t *q = PDCquery_and(q12, q3);
 
-    printf("Query: Energy < 1.3 && 308 < X < 309 && 149 < Y < 150\n");
+    printf("Query: Energy < %.1f && %.1f < X < %.1f && %.1f < Y < .%1f\n", 
+            energy_lo0, x_lo, x_hi, y_lo, y_hi);
 
     // Get selection
     gettimeofday(&pdc_timer_start, 0);

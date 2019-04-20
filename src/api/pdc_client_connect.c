@@ -7771,6 +7771,9 @@ PDC_recv_nhits(const struct hg_cb_info *callback_info)
     send_nhits_t *in = (send_nhits_t*) callback_info->arg;
     pdcquery_result_list_t *result_elt;
 
+    printf("==PDC_CLIENT[%d]: %s - received %" PRIu64 " hits from server\n", 
+            pdc_client_mpi_rank_g, __func__, in->nhits);
+
     DL_FOREACH(pdcquery_result_list_head_g, result_elt) {
         if (result_elt->query_id == in->query_id) {
             result_elt->nhits = in->nhits;
@@ -7899,6 +7902,9 @@ PDC_recv_coords(const struct hg_cb_info *callback_info)
         query_id = bulk_args->query_id;
         origin   = bulk_args->origin;
 
+        printf("==PDC_CLIENT[%d]: %s - received %" PRIu64 " coords from server %d\n", 
+                pdc_client_mpi_rank_g, __func__, nhits, origin);
+
         if (nhits > 0) {
             ret = HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 
                                  1, (void**)&buf, NULL, NULL);
@@ -8023,9 +8029,9 @@ perr_t PDC_Client_get_sel_data(pdcid_t obj_id, pdcselection_t *sel, void *data)
                     result_elt->data_arr[i] = NULL;
                 }
             }
+            result_elt->recv_data_nhits = 0;
             break;
         }
-        result_elt->recv_data_nhits = 0;
     }
 
 
@@ -8064,6 +8070,9 @@ PDC_recv_read_coords_data(const struct hg_cb_info *callback_info)
         origin     = bulk_args->origin;
         seq_id     = bulk_args->client_seq_id;
 
+        printf("==PDC_CLIENT[%d]: %s - received %" PRIu64 " data from server %d\n", 
+                pdc_client_mpi_rank_g, __func__, nhits, origin);
+
         if (nhits > 0) {
             ret = HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 
                                  1, (void**)&buf, NULL, NULL);
@@ -8088,8 +8097,14 @@ PDC_recv_read_coords_data(const struct hg_cb_info *callback_info)
             goto done;
         }
 
-        if (result_elt->recv_data_nhits >= result_elt->nhits) 
+        if (result_elt->recv_data_nhits == result_elt->nhits) {
             work_todo_g--;
+        }
+        else if (result_elt->recv_data_nhits > result_elt->nhits) {
+            printf("==PDC_CLIENT[%d]: %s - received more results data than expected!\n", 
+                    pdc_client_mpi_rank_g, __func__);
+            work_todo_g--;
+        }
         
     }// End else
 

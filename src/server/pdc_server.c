@@ -1488,6 +1488,10 @@ perr_t PDC_Server_restart(char *filename)
                     region_list->region_hist = (pdc_histogram_t*)malloc(sizeof(pdc_histogram_t));
                     fread(&region_list->region_hist->dtype, sizeof(int), 1, file);
                     fread(&region_list->region_hist->nbin, sizeof(int), 1, file);
+                    if (region_list->region_hist->nbin == 0) {
+                        printf("==PDC_SERVER[%d]: %s -  Checkpoint file histogram size is 0!", 
+                                pdc_server_rank_g, __func__); 
+                    }
 
                     region_list->region_hist->range = (double*)malloc(sizeof(double) *
                                                                       region_list->region_hist->nbin*2);

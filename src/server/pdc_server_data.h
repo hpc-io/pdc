@@ -195,6 +195,7 @@ typedef struct query_task_t {
     int               ndim;
     pdcquery_get_op_t get_op;
     region_list_t     *region_constraint;
+    uint64_t          total_elem;
 
     // Result
     int               n_recv;

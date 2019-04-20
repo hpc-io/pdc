@@ -4936,6 +4936,10 @@ HG_TEST_RPC_CB(send_data_query_region, handle)
 
     if (in.has_hist == 1) 
         storage_region->region_hist = PDC_dup_hist(&in.hist);
+
+    if (storage_region->region_hist->nbin == 0) {
+        printf("==%s: histogram has 0 bin\n", __func__);
+    }
     
     args = (storage_regions_args_t*)calloc(1, sizeof(storage_regions_args_t));
     args->total_region   = in.total_region;
