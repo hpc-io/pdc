@@ -2806,7 +2806,19 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
                             data_ptrs_to[0] = data_buf + eltt->remote_unit*(res_meta->dims[1]*(eltt->remote_region_nounit).start_0 + (eltt->remote_region_nounit).start_1);
                             data_size_to[0] = (eltt->remote_region_unit).count_1;
                             for(k=1; k<remote_count; k++) {
-                                data_ptrs_to[k] = data_ptrs_to[k-1] + eltt->remote_unit*res_meta->dims[1];
+                                data_ptrs_to[k] = data_ptrs_to[k-1] + data_size_to[0];
+                                data_size_to[k] = data_size_to[0];
+                            }
+                        }
+                        else if (in.lock_release.region.ndim == 3) {
+                            buf_size = res_meta->dims[0] * res_meta->dims[1] * res_meta->dims[2] * type_size;
+                            remote_count = (eltt->remote_region_nounit).count_0;
+                            data_ptrs_to = (void **)malloc( remote_count * sizeof(void *) );
+                            data_size_to = (size_t *)malloc( remote_count * sizeof(size_t) );
+                            data_ptrs_to[0] = data_buf + eltt->remote_unit*(res_meta->dims[1]*(eltt->remote_region_nounit).start_0 + (eltt->remote_region_nounit).start_1);
+                            data_size_to[0] = eltt->remote_unit * (eltt->remote_region_nounit).count_2 * (eltt->remote_region_nounit).count_1;
+                            for(k=1; k<remote_count; k++) {
+                                data_ptrs_to[k] = data_ptrs_to[k-1] + data_size_to[0];
                                 data_size_to[k] = data_size_to[0];
                             }
                         }

@@ -52,6 +52,11 @@ pdcid_t PDCobj_data_block_iterator_create(pdcid_t obj_id, pdcid_t reg_id, int co
 pdcid_t PDCobj_data_iter_create(pdcid_t obj_id, pdcid_t reg_id);
 
 /**
+ * \return Total number of slices that PDCobj_data_getNextBlock can return
+ */
+size_t PDCobj_data_getSliceCount(pdcid_t iter);
+
+/**
  * Use a PDC data iterator to retrieve object data for PDC in-locus Analysis
  *
  * \param iter [IN]             PDC iterator id

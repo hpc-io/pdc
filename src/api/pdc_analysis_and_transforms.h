@@ -90,25 +90,25 @@ struct region_analysis_ftn_info {
  */
 
 typedef struct PDC_iterator_info {
-    void   *srcStart;                /* Constant that points to the data buffer  */
-    void   *srcNext;                 /* Updated data pointer for each iteration  */
-    void   *copy_region;             /* Normally unused (see special cases)      */
-    size_t  sliceCount;              /* Total # of slices to return              */
+    void   *srcStart;              /**** Constant that points to the data buffer  */
+    void   *srcNext;               /**** Updated data pointer for each iteration  */
+    void   *copy_region;             /* Normally unused (see special cases)         */
+    size_t  sliceCount;            /**** Total # of slices to return              */
     size_t  sliceNext;               /* Current count that we are going to return */
     size_t  sliceResetCount;         /* For 3d, when to recalculate 'srcNext'    */
-    size_t  elementsPerSlice;        /* Dimension 1 (elements/row) of the data   */
-    size_t  slicePerBlock;           /* Dimension 2 (number of rows) in region   */
-    size_t  elementsPerPlane;        /* elementsPerSlice * slicePerBlock */
-    size_t  elementsPerBlock;        /* Total elements in user specified block (rows * cols) */
-    size_t  skipCount;               /* Offset from the start of a new plane     */
+    size_t  elementsPerSlice;        /* # of elements in a slice the data   */
+    size_t  slicePerBlock;           /* # of slices to be returned to the user   */
+    size_t  elementsPerPlane;        /* rows * columns */
+    size_t  elementsPerBlock;      /**** Total elements in a block (return value?) */
+    size_t  skipCount;             /**** Offset from the start of a new plane  (Used to initialize srcNext) */
     size_t  element_size;            /* Byte length of a single object element   */
     size_t  srcBlockCount;           /* Current count of 2d blocks               */
-    size_t  contigBlockSize;         /* Number of elements in each slice (bytes) */
+    size_t  contigBlockSize;       /**** Number of elements in each slice (bytes) (Used to move to the next Block) */
     size_t  totalElements;
-    size_t  dims[2];                 /* [rows,columns] */
+    size_t  dims[4];                 /* [ planes, rows,columns] */
     size_t *srcDims;                 /* Values passed into create_iterator */
     size_t  ndim;                    /* number of values in srcDims */
-    size_t  startOffset;
+    size_t  startOffset;	   /**** Used to initialize the srcNext field  */
     PDC_var_type_t pdc_datatype;
     PDC_major_type storage_order;    /* Copied from the object storage order */
     pdcid_t objectId;                /* Reference object ID */
@@ -147,6 +147,11 @@ typedef struct {
     uint64_t                    srcBlockCount;
     uint64_t                    contigBlockSize;
     uint64_t                    totalElements;
+    uint64_t                    ndim;
+    uint64_t                    dims_0;
+    uint64_t                    dims_1;
+    uint64_t                    dims_2;
+    uint64_t                    dims_3;
     /* 
      * The datatype isn't strictly needed but it can be nice
      * to have if we eventually provide a default 'fill value'.
@@ -325,6 +330,31 @@ hg_proc_obj_data_iterator_in_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->totalElements);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->ndim);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->dims_0);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->dims_1);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->dims_2);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->dims_3);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;

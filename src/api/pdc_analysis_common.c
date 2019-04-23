@@ -319,7 +319,7 @@ get_ftnPtr_(const char *ftn, char *loadpath, void **ftnPtr)
     fflush(stderr);
     return -1;
   } else {
-    lastopened = strdup(loadpath);
+    if (loadpath != NULL) lastopened = strdup(loadpath);
   }
   *ftnPtr = ftnHandle;
   return 0;

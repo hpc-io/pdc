@@ -112,6 +112,11 @@ PDC_Server_instantiate_data_iterator(obj_data_iterator_in_t *in, obj_data_iterat
     thisIter->srcBlockCount = in->srcBlockCount;
     thisIter->contigBlockSize = in->contigBlockSize;
     thisIter->totalElements = in->totalElements;
+    thisIter->ndim    = in->ndim;;
+    thisIter->dims[0] = in->dims_0;
+    thisIter->dims[1] = in->dims_1;
+    thisIter->dims[2] = in->dims_2;
+    thisIter->dims[3] = in->dims_3;
     thisIter->pdc_datatype = (PDC_var_type_t)(in->storageinfo & 0x0FF);
     thisIter->storage_order = (PDC_major_type)((in->storageinfo >> 8) & 0xFF);
     obj_metadata_reference = find_metadata_by_id(in->object_id);

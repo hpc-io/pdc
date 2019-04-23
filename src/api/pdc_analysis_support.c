@@ -51,7 +51,6 @@ void * PDC_Server_get_region_data_ptr(pdcid_t object_id) {
 }
 #endif
 
-
 static int
 iterator_init(pdcid_t objectId, pdcid_t reg_id, int blocks, struct PDC_iterator_info *iter )
 {
@@ -59,24 +58,40 @@ iterator_init(pdcid_t objectId, pdcid_t reg_id, int blocks, struct PDC_iterator_
     char *data = NULL;
     size_t sliceCount = 1;
     size_t slicePerBlock = 1;
-    size_t elementsPerSlice;
+    size_t obj_slicePerBlock = 1;
+    size_t elementsPerSlice = 1;
     size_t elementsPerBlock;
+    size_t obj_elementsPerSlice;
 
     struct PDC_region_info *region_info = NULL;
     struct PDC_obj_info *object_info = PDC_obj_get_info(objectId);
     struct PDC_obj_prop *obj_prop_ptr;
 
+    /* Gather Information about the underlying object, e.g.
+     * the object data type, object size, etc. refers to the 
+     * containing array. These are for the most part, applicable
+     * by the iterator for managing a potentially smaller region
+     * (see region size info).
+     */
     if ((obj_prop_ptr = object_info->obj_pt) != NULL) {
-        if ((iter->storage_order = 
-	     obj_prop_ptr->storage_order) == ROW_major) {
-            elementsPerSlice = obj_prop_ptr->dims[obj_prop_ptr->ndim-1];
-            if (obj_prop_ptr->ndim > 1)
-                slicePerBlock = obj_prop_ptr->dims[obj_prop_ptr->ndim-2];
+        if ((iter->storage_order = obj_prop_ptr->storage_order) == ROW_major) {
+            obj_elementsPerSlice = obj_prop_ptr->dims[obj_prop_ptr->ndim-1];
+            if (obj_prop_ptr->ndim > 1) {
+                obj_slicePerBlock = obj_prop_ptr->dims[obj_prop_ptr->ndim-2];
+	    }
+            if (obj_prop_ptr->ndim > 2) {
+                obj_elementsPerSlice *= obj_prop_ptr->dims[obj_prop_ptr->ndim-2];
+                obj_slicePerBlock = obj_prop_ptr->dims[obj_prop_ptr->ndim-3];
+	    }
         } else {
 	    /* Is this ok for Fortran? */
-            elementsPerSlice = obj_prop_ptr->dims[0]; 
+            obj_elementsPerSlice = obj_prop_ptr->dims[0]; 
             if (obj_prop_ptr->ndim > 1)
-                slicePerBlock = obj_prop_ptr->dims[1];
+                obj_slicePerBlock = obj_prop_ptr->dims[1];
+            if (obj_prop_ptr->ndim > 2) {
+                obj_elementsPerSlice *= obj_prop_ptr->dims[1];
+                obj_slicePerBlock = obj_prop_ptr->dims[2];
+	    }
         }
         iter->totalElements = 1;
         if ((iter->srcDims = (size_t *)
@@ -88,20 +103,17 @@ iterator_init(pdcid_t objectId, pdcid_t reg_id, int blocks, struct PDC_iterator_
             }
         }
 
-        iter->elementsPerBlock = elementsPerBlock = elementsPerSlice;
-        iter->slicePerBlock = slicePerBlock;
+	/* Data TYPE and SIZE */
         iter->pdc_datatype = obj_prop_ptr->type;
 
         if ((element_size = obj_prop_ptr->type_extent) == 0)
             element_size = get_datatype_size(obj_prop_ptr->type); 
-        // data = obj_prop_ptr->buf;
-        if (iter->storage_order == ROW_major) {
-           iter->dims[0] = 1;
-           iter->dims[1] = elementsPerSlice;
-        } else {
-           iter->dims[0] = elementsPerSlice;
-           iter->dims[1] = 1;
-        }
+
+        /* 'contigBlockSize' is the increment amount to move from
+         * the current data pointer to the start of the next slice.
+         */
+	iter->contigBlockSize = obj_elementsPerSlice * element_size;
+
     } else {
         printf("Error: object (%" PRIu64 ") has not been initalized correctly!\n", objectId);
         return -1;
@@ -111,19 +123,20 @@ iterator_init(pdcid_t objectId, pdcid_t reg_id, int blocks, struct PDC_iterator_
     iter->objectId = objectId;
     iter->reg_id   = reg_id;
 
-    if (reg_id == PDC_REGION_ALL) {       /* Special handling:: We'll provide entire rows */
-        iter->srcStart = data;            /* (or columns) for each successive call of     */
-        iter->srcNext = data;             /* pdc_getNextBlock.                            */
+
+    if (reg_id == PDC_REGION_ALL) {       /* Special handling:: We'll provide entire slices */
+        iter->srcStart = data;            /* (rows,columns,planes) for each successive call */
+        iter->srcNext = data;             /* of pdc_getNextBlock.                           */
 
         iter->elementsPerSlice = 
-	  iter->slicePerBlock             /* values are those signifying a single row     */
+	  iter->slicePerBlock             /* values are those signifying a single slice     */
 	  = iter->contigBlockSize
-	  = elementsPerSlice;
+	  = obj_elementsPerSlice;
         iter->contigBlockSize 
 	  *= element_size;                /* Increment value that is used to increment    */
                                           /* the data pointer to the next row...          */
 
-        sliceCount = iter->totalElements / elementsPerSlice;
+        sliceCount = iter->totalElements / obj_elementsPerSlice;
         iter->sliceCount = sliceCount;
         iter->sliceResetCount = sliceCount +1;   /* Never */
 
@@ -159,23 +172,40 @@ iterator_init(pdcid_t objectId, pdcid_t reg_id, int blocks, struct PDC_iterator_
          *
          */
 
-        iter->elementsPerSlice = elementsPerSlice;
-        iter->contigBlockSize = elementsPerSlice * element_size;
         region_info = PDCregion_get_info(reg_id);
-
+	
         /* How many rows in the selected region? */
-        totalElements = region_info->size[0];
-        for(i=1; i < region_info->ndim; i++) {
-            sliceCount *= region_info->size[i];
-            totalElements *= region_info->size[i];
-        }
+	if (iter->storage_order == ROW_major) {
+            iter->dims[0] = 1;
+            sliceCount = region_info->size[0];
+            totalElements = sliceCount;
+	    for(i=1; i < region_info->ndim; i++) {
+               iter->dims[i] = region_info->size[i];
+	       elementsPerSlice *= region_info->size[i];
+	    }
+	    totalElements = elementsPerSlice * region_info->size[0];
+	}
+	else {
+            int k = (int)iter->ndim -1;
+            iter->dims[k] = 1;
+            sliceCount = region_info->size[k];
+	    totalElements = sliceCount;
+	    for( ; k >= 0; k--) {
+               iter->dims[k] = region_info->size[k];
+	       elementsPerSlice *= region_info->size[k];
+	    }
+	    totalElements = elementsPerSlice * region_info->size[iter->ndim -1];
+	}
 
+	if (totalElements == iter->totalElements) {
+            iter->elementsPerBlock = elementsPerSlice;
+	}
         /* For regions, the total element count is that of the region
          * not the size of the containing object...
          */
         iter->totalElements = totalElements;
         if (region_info->ndim > 1) {
-            iter->elementsPerBlock = region_info->size[1];
+
             skipCount = ((region_info->offset[1] * obj_prop_ptr->dims[0])
 			 + region_info->offset[0]) * element_size;
             iter->sliceResetCount
@@ -197,7 +227,6 @@ iterator_init(pdcid_t objectId, pdcid_t reg_id, int blocks, struct PDC_iterator_
             }
         }
         else {
-            iter->elementsPerBlock = region_info->size[0];
             skipCount = region_info->offset[0] * element_size;
         }
 	/* These next should be filled in at the first call
@@ -221,6 +250,23 @@ iterator_init(pdcid_t objectId, pdcid_t reg_id, int blocks, struct PDC_iterator_
             iter->dims[0]       = blocks;
         else iter->dims[1]      = blocks;
 
+    }
+    return 0;
+}
+
+
+size_t
+PDCobj_data_getSliceCount(pdcid_t iter)
+{
+    struct PDC_iterator_info *thisIter = NULL;
+    /* Special case to handle a NULL iterator */
+    if (iter == 0) return 0;
+    /* FIXME: Should add another check to see that the input
+     *        iter id is in the range of cached values...
+     */
+    if ((PDC_Block_iterator_cache != NULL) && (iter > 0)) {
+        thisIter = &PDC_Block_iterator_cache[iter];
+        return thisIter->sliceCount;
     }
     return 0;
 }
@@ -258,46 +304,51 @@ PDCobj_data_getNextBlock(pdcid_t iter, void **nextBlock, size_t *dims)
 	    }
 	}
         if (thisIter->srcNext != NULL) {
-        
-        if (thisIter->sliceNext == thisIter->sliceCount) {
-            /* May need to adjust the elements in this last
-             * block...
-             */
-             size_t current_total = thisIter->sliceCount * thisIter->elementsPerBlock;
-             size_t remaining = 0;
+            if (thisIter->sliceNext == thisIter->sliceCount) {
+                /* May need to adjust the elements in this last
+                 * block...
+                 */
+                 size_t current_total = thisIter->sliceCount * thisIter->elementsPerBlock;
+                 size_t remaining = 0;
 
-             if (current_total == thisIter->totalElements) {
-                 if (nextBlock) *nextBlock = NULL;
-                 thisIter->sliceNext = 0;
+                 if (current_total == thisIter->totalElements) {
+                     if (nextBlock) *nextBlock = NULL;
+                     thisIter->sliceNext = 0;
+                     thisIter->srcNext = NULL;
+                     goto done;
+                 }
+                 if (nextBlock) *nextBlock = thisIter->srcNext;
                  thisIter->srcNext = NULL;
-                 goto done;
-             }
-             if (nextBlock) *nextBlock = thisIter->srcNext;
-             thisIter->srcNext = NULL;
-             remaining = thisIter->totalElements - current_total;
-             if (dims) {
-                 if (thisIter->storage_order == ROW_major)
-                    dims[0] = remaining / thisIter->elementsPerSlice;
-                 else dims[1] = remaining / thisIter->elementsPerSlice;
-             }
-             return remaining;
-        } else if (thisIter->sliceNext && (thisIter->sliceNext % thisIter->sliceResetCount) == 0) {
-            size_t offset = ++thisIter->srcBlockCount * thisIter->elementsPerBlock;
-            thisIter->srcNext = thisIter->srcStart + offset + thisIter->skipCount;
-            if (nextBlock) *nextBlock = thisIter->srcNext;
+                 remaining = thisIter->totalElements - current_total;
+                 if (dims) {
+                     if (thisIter->storage_order == ROW_major)
+                        dims[0] = remaining / thisIter->elementsPerSlice;
+                     else dims[1] = remaining / thisIter->elementsPerSlice;
+                 }
+                 return remaining;
+            } else if (thisIter->sliceNext && (thisIter->sliceNext % thisIter->sliceResetCount) == 0) {
+                size_t offset = ++thisIter->srcBlockCount * thisIter->elementsPerBlock;
+                thisIter->srcNext = thisIter->srcStart + offset + thisIter->skipCount;
+                if (nextBlock) *nextBlock = thisIter->srcNext;
+            }
+            else {
+                *nextBlock = thisIter->srcNext;
+                thisIter->srcNext += thisIter->contigBlockSize;
+            }
+            thisIter->sliceNext += 1;
+            if (dims != NULL) {
+                dims[0] = thisIter->dims[0];
+		if (thisIter->ndim > 1) 
+		  dims[1] = thisIter->dims[1];
+		if (thisIter->ndim > 2) 
+		  dims[2] = thisIter->dims[2];
+		if (thisIter->ndim > 3) 
+		  dims[2] = thisIter->dims[3];
+            }
+            return thisIter->elementsPerBlock;
         }
-        else {
-            *nextBlock = thisIter->srcNext;
-            thisIter->srcNext += thisIter->contigBlockSize;
-        }
-        thisIter->sliceNext += 1;
-        if (dims != NULL) {
-            dims[0] = thisIter->dims[0];
-            dims[1] = thisIter->dims[1];
-        }
-        return thisIter->elementsPerBlock;
-      }
     }
+
 done:
     if (dims) dims[0] = dims[1] = 0;
     if (nextBlock) *nextBlock = NULL;
@@ -448,7 +499,6 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
     char *applicationDir = NULL;
     char *userdefinedftn = NULL;
     char *loadpath = NULL;
-
     FUNC_ENTER(NULL);
 
     thisApp = pdc_get_argv0_();
@@ -467,7 +517,6 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
     // Should probably validate the location of the "analysislibrary"
     //
     loadpath = get_realpath(analyislibrary, applicationDir);
-
     if (get_ftnPtr_(userdefinedftn, loadpath, &ftnHandle) < 0)
       printf("get_ftnPtr_ returned an error!\n");
     

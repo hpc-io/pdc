@@ -82,6 +82,11 @@ perr_t pdc_client_send_iter_recv_id(pdcid_t iter_id, pdcid_t *meta_id)
 	in.srcBlockCount = thisIter->srcBlockCount;
 	in.contigBlockSize = thisIter->contigBlockSize;
 	in.totalElements = thisIter->totalElements;
+        in.ndim   = thisIter->ndim;
+        in.dims_0 = thisIter->dims[0];
+        in.dims_1 = thisIter->dims[1];
+        in.dims_2 = thisIter->dims[2];
+        in.dims_3 = thisIter->dims[3];
         in.storageinfo = (int)((thisIter->storage_order << 8) | thisIter->pdc_datatype);
     }
 
