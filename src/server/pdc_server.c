@@ -894,6 +894,7 @@ drc_access_again:
     hg_thread_mutex_init(&pdc_server_task_mutex_g);
     hg_thread_mutex_init(&region_struct_mutex_g);
     hg_thread_mutex_init(&data_buf_map_mutex_g);
+    hg_thread_mutex_init(&data_buf_unmap_mutex_g);
     hg_thread_mutex_init(&meta_buf_map_mutex_g);
     hg_thread_mutex_init(&data_obj_map_mutex_g);
     hg_thread_mutex_init(&meta_obj_map_mutex_g);
@@ -1131,6 +1132,7 @@ perr_t PDC_Server_finalize()
     hg_thread_mutex_destroy(&pdc_server_task_mutex_g);
     hg_thread_mutex_destroy(&region_struct_mutex_g);
     hg_thread_mutex_destroy(&data_buf_map_mutex_g);
+    hg_thread_mutex_destroy(&data_buf_unmap_mutex_g);
     hg_thread_mutex_destroy(&meta_buf_map_mutex_g);
     hg_thread_mutex_destroy(&data_obj_map_mutex_g);
     hg_thread_mutex_destroy(&meta_obj_map_mutex_g);
@@ -1583,6 +1585,9 @@ hg_progress_thread(void *arg)
 
         /* printf("==PDC_SERVER[%d]: Before HG_Progress()\n", pdc_server_rank_g); */
         ret = HG_Progress(context, 100);
+#ifndef ENABLE_WAIT_DATA
+        PDC_Data_Server_check_unmap();
+#endif
         /* printf("==PDC_SERVER[%d]: After HG_Progress()\n", pdc_server_rank_g); */
         /* printf("thread [%d]\n", tid); */
     } while (ret == HG_SUCCESS || ret == HG_TIMEOUT);

@@ -278,6 +278,20 @@ if(PDC_ENABLE_APP_CLOSE_SERVER)
 endif()
 
 #-----------------------------------------------------------------------------
+# 
+#-----------------------------------------------------------------------------
+option(PDC_ENABLE_WAIT_DATA 
+    "Wait for data fanalized in FS when object unmap is called." OFF)
+if(PDC_ENABLE_WAIT_DATA)
+  set(ENABLE_WAIT_DATA 1)
+endif()
+
+if(PDC_ENABLE_APP_CLOSE_SERVER AND NOT PDC_ENABLE_WAIT_DATA) 
+  message("WARNING: data tranx may be not done when closing server by application")
+  message("Wait for data, or close the server later")
+endif()
+
+#-----------------------------------------------------------------------------
 # MULTITHREAD option
 #-----------------------------------------------------------------------------
 option(PDC_ENABLE_MULTITHREAD "Enable multithreading." OFF)
