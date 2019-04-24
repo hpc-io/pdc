@@ -8070,8 +8070,8 @@ PDC_recv_read_coords_data(const struct hg_cb_info *callback_info)
         origin     = bulk_args->origin;
         seq_id     = bulk_args->client_seq_id;
 
-        printf("==PDC_CLIENT[%d]: %s - received %" PRIu64 " data from server %d\n", 
-                pdc_client_mpi_rank_g, __func__, nhits, origin);
+        /* printf("==PDC_CLIENT[%d]: %s - received %" PRIu64 " data from server %d\n", */ 
+        /*         pdc_client_mpi_rank_g, __func__, nhits, origin); */
 
         if (nhits > 0) {
             ret = HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 

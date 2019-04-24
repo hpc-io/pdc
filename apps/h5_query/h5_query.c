@@ -8,9 +8,9 @@
 
 #include <hdf5.h>
 
-#define ENABLE_MPI 1
+/* #define ENABLE_MPI 1 */
 #define NVAR 7
-#define QUERY_ENERGY_ONLY 1
+/* #define QUERY_ENERGY_ONLY 1 */
 
 struct timeval start_time[5];
 float          elapse[5];
@@ -48,6 +48,174 @@ typedef struct query_constraint_t {
 } query_constraint_t;
 
 query_constraint_t query_constraints[] = {
+    {
+        1.3, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+        100, 109, 
+        -150, -140, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.6, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+        100, 109, 
+        -150, -140, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.7, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+        100, 109, 
+        -150, -140, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.8, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+        100, 109, 
+        -150, -140, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.4, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+        100, 109, 
+        -150, -140, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.5, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+        100, 109, 
+        -150, -140, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.6, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+        100, 109, 
+        -150, -140, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.7, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+        100, 109, 
+        -150, -140, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.8, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+        100, 109, 
+        -150, -140, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.9, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+        100, 109, 
+        -150, -140, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.0, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+        -120, -100, 
+        -150, -100, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.0, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+        -120, -110, 
+        -150, -140, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.0, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+        -120, -110, 
+        -150, -140, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        3.0, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+        -120, -110, 
+        -150, -100, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        3.0, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+        -120, -110, 
+        -150, -140, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+
+
+
     {
         -FLT_MAX, FLT_MAX, 
         #ifndef QUERY_ENERGY_ONLY
@@ -239,6 +407,27 @@ void print_usage(char *name)
     printf("Usage: %s /path/to/file query_id_from [query_id_to]\n", name);
 }
 
+void print_query_constraint(query_constraint_t *constraint)
+{
+    if (constraint == NULL) 
+        return;
+
+    printf("Query constraint:\n");
+    if (constraint->energy_lo != -FLT_MAX || constraint->energy_hi != FLT_MAX) 
+        printf("  %f < Energy < %f\n", constraint->energy_lo, constraint->energy_hi);
+    #ifndef QUERY_ENERGY_ONLY
+    if (constraint->x_lo != -FLT_MAX || constraint->x_hi != FLT_MAX) 
+        printf("  %f < x < %f\n", constraint->x_lo, constraint->x_hi);
+
+    if (constraint->y_lo != -FLT_MAX || constraint->y_hi != FLT_MAX) 
+        printf("  %f < y < %f\n", constraint->y_lo, constraint->y_hi);
+
+    if (constraint->z_lo != -FLT_MAX || constraint->z_hi != FLT_MAX) 
+        printf("  %f < z < %f\n", constraint->z_lo, constraint->z_hi);
+
+    #endif
+    printf("\n");
+}
 
 int do_query(int qid, vpic_data_t *vpic_data, uint64_t **coords)
 {
@@ -246,18 +435,20 @@ int do_query(int qid, vpic_data_t *vpic_data, uint64_t **coords)
     int    is_satisfy;
     query_constraint_t *constraint = &query_constraints[qid];
 
+    print_query_constraint(constraint);
+
     alloc_cnt = 100;
     *coords = (uint64_t*)malloc(alloc_cnt * sizeof(uint64_t));
     for (i = 0; i < vpic_data->nparticle; i++) {
         is_satisfy = 1;
         #ifndef QUERY_ENERGY_ONLY
-        if (vpic_data->energy[i] < constraint->energy_lo || vpic_data->energy[i] > constraint->energy_hi ||
-            vpic_data->x[i] < constraint->x_lo || vpic_data->x[i] > constraint->x_hi     ||
-            vpic_data->y[i] < constraint->y_lo || vpic_data->y[i] > constraint->y_hi     ||
-            vpic_data->z[i] < constraint->z_lo || vpic_data->z[i] > constraint->z_hi     ||
-            vpic_data->ux[i] < constraint->ux_lo || vpic_data->ux[i] > constraint->ux_hi ||
-            vpic_data->uy[i] < constraint->uy_lo || vpic_data->uy[i] > constraint->uy_hi ||
-            vpic_data->uz[i] < constraint->uz_lo || vpic_data->uz[i] > constraint->uz_hi 
+        if (vpic_data->energy[i] <= constraint->energy_lo || vpic_data->energy[i] > constraint->energy_hi ||
+            vpic_data->x[i]  <= constraint->x_lo  || vpic_data->x[i]  >= constraint->x_hi  ||
+            vpic_data->y[i]  <= constraint->y_lo  || vpic_data->y[i]  >= constraint->y_hi  ||
+            vpic_data->z[i]  <= constraint->z_lo  || vpic_data->z[i]  >= constraint->z_hi  ||
+            vpic_data->ux[i] <= constraint->ux_lo || vpic_data->ux[i] >= constraint->ux_hi ||
+            vpic_data->uy[i] <= constraint->uy_lo || vpic_data->uy[i] >= constraint->uy_hi ||
+            vpic_data->uz[i] <= constraint->uz_lo || vpic_data->uz[i] >= constraint->uz_hi 
            ) {
             is_satisfy = 0;
         }
@@ -269,7 +460,7 @@ int do_query(int qid, vpic_data_t *vpic_data, uint64_t **coords)
         else {
             //TMP
             /* if (qid == 8) { */
-            /*     printf(" , %lu", i); */
+                /* printf(" , %lu", i); */
             /* } */
             if (nhits + 2 > alloc_cnt) {
                 alloc_cnt *= 2;

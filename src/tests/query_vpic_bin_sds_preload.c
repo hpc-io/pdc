@@ -86,12 +86,13 @@ int main(int argc, char **argv)
     float energy_lo0 = 1.3;
     pdcquery_t *ql = PDCquery_create(energy_id, PDC_LT, PDC_FLOAT, &energy_lo0);
 
-    float x_lo = 308, x_hi = 309;
+    float x_lo = 108, x_hi = 109;
+    /* float x_lo = 308, x_hi = 309; */
     pdcquery_t *q2_lo = PDCquery_create(x_id, PDC_GT, PDC_FLOAT, &x_lo);
     pdcquery_t *q2_hi = PDCquery_create(x_id, PDC_LT, PDC_FLOAT, &x_hi);
     pdcquery_t *q2    = PDCquery_and(q2_lo, q2_hi);
 
-    pdcquery_t *q12 = PDCquery_and(ql, q2);
+    pdcquery_t *q12 = PDCquery_and(q2, ql);
 
     float y_lo = 149, y_hi = 150;
     pdcquery_t *q3_lo = PDCquery_create(y_id, PDC_GT, PDC_FLOAT, &y_lo);
@@ -99,9 +100,9 @@ int main(int argc, char **argv)
     
     pdcquery_t *q3    = PDCquery_and(q3_lo, q3_hi);
 
-    pdcquery_t *q = PDCquery_and(q12, q3);
+    pdcquery_t *q = PDCquery_and(q3, q12);
 
-    printf("Query: Energy < %.1f && %.1f < X < %.1f && %.1f < Y < .%1f\n", 
+    printf("Query: Energy < %.1f && %.1f < X < %.1f && %.1f < Y < %.1f\n", 
             energy_lo0, x_lo, x_hi, y_lo, y_hi);
 
     // Get selection
@@ -134,9 +135,9 @@ int main(int argc, char **argv)
     }
 
     PDCselection_free(&sel);
-    if (energy_data) free(energy_data);
-    if (y_data) free(y_data);
-    if (x_data) free(x_data);
+    if(energy_data) if (energy_data) free(energy_data);
+    if(y_data)      if (y_data) free(y_data);
+    if(x_data)      if (x_data) free(x_data);
 
     PDCquery_free_all(q);
 
