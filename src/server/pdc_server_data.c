@@ -775,6 +775,8 @@ perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
             else {
                 data_server_region_unmap_t *region = NULL;
                 region = (data_server_region_unmap_t *)malloc(sizeof(struct data_server_region_unmap_t));
+                if(region == NULL)
+                    PGOTO_ERROR(FAIL, "===PDC_DATA_SERVER: PDC_Data_Server_buf_unmap() - cannot allocate region");
                 region->obj_id = in->remote_obj_id;
                 printf("append obj %lld\n", in->remote_obj_id);
                 fflush(stdout);
@@ -831,11 +833,11 @@ perr_t PDC_Data_Server_check_unmap()
                 if (!elt->bulk_args->work_completed)
                     // wait for 100ms for work completed
                     ret = hg_thread_cond_timedwait(&(elt->bulk_args->work_cond), &(elt->bulk_args->work_mutex), 100);
+                hg_thread_mutex_unlock(&(elt->bulk_args->work_mutex));  //per bulk_args
                 // free resource if work is completed
                 if(ret == HG_UTIL_SUCCESS) {
                     completed = 1;
                     elt->bulk_args->work_completed = 0;
-                    hg_thread_mutex_unlock(&(elt->bulk_args->work_mutex));  //per bulk_args
                     free(elt->remote_data_ptr);
                     HG_Addr_free(elt1->info->hg_class, elt->local_addr);
 //                  HG_Bulk_free(elt->local_bulk_handle);
