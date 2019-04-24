@@ -803,6 +803,8 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+// This function is called when multhread is enabled
+#ifdef ENABLE_MULTITHREAD
 perr_t PDC_Data_Server_check_unmap()
 {
     perr_t ret_value = SUCCEED;
@@ -822,14 +824,10 @@ perr_t PDC_Data_Server_check_unmap()
             PGOTO_ERROR(FAIL, "===PDC_DATA_SERVER: PDC_Data_Server_check_unmap() - requested object does not exist");
         }
         completed = 0;
-#ifdef ENABLE_MULTITHREAD
         hg_thread_mutex_lock(&data_buf_map_mutex_g);
-#endif
         DL_FOREACH_SAFE(target_obj->region_buf_map_head, elt, tmp) {
             if(remote_obj_id==elt->remote_obj_id && region_is_identical(elt1->unmap_region, elt->remote_region_unit)) {
-#ifdef ENABLE_MULTITHREAD
                 hg_thread_mutex_lock(&(elt->bulk_args->work_mutex));
-#endif
                 if (!elt->bulk_args->work_completed)
                     // wait for 100ms for work completed
                     ret = hg_thread_cond_timedwait(&(elt->bulk_args->work_cond), &(elt->bulk_args->work_mutex), 100);
@@ -837,16 +835,12 @@ perr_t PDC_Data_Server_check_unmap()
                 if(ret == HG_UTIL_SUCCESS) {
                     completed = 1;
                     elt->bulk_args->work_completed = 0;
-#ifdef ENABLE_MULTITHREAD
                     hg_thread_mutex_unlock(&(elt->bulk_args->work_mutex));  //per bulk_args
-#endif
                     free(elt->remote_data_ptr);
                     HG_Addr_free(elt1->info->hg_class, elt->local_addr);
 //                  HG_Bulk_free(elt->local_bulk_handle);
-#ifdef ENABLE_MULTITHREAD
                     hg_thread_mutex_destroy(&(elt->bulk_args->work_mutex));
                     hg_thread_cond_destroy(&(elt->bulk_args->work_cond));
-#endif
                     free(elt->bulk_args);
 
                     DL_DELETE(target_obj->region_buf_map_head, elt);
@@ -857,9 +851,7 @@ perr_t PDC_Data_Server_check_unmap()
         if(target_obj->region_buf_map_head == NULL && pdc_server_rank_g == 0) {
             close(target_obj->fd);
         }
-#ifdef ENABLE_MULTITHREAD
         hg_thread_mutex_unlock(&data_buf_map_mutex_g);
-#endif
         if(completed == 1) {
             DL_DELETE(dataserver_region_unmap, elt1);
             free(elt1);
@@ -869,6 +861,7 @@ perr_t PDC_Data_Server_check_unmap()
 done:
     FUNC_LEAVE(ret_value);
 }
+#endif
 
 static hg_return_t server_send_buf_unmap_addr_rpc_cb(const struct hg_cb_info *callback_info)
 {
