@@ -778,8 +778,6 @@ perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
                 if(region == NULL)
                     PGOTO_ERROR(FAIL, "===PDC_DATA_SERVER: PDC_Data_Server_buf_unmap() - cannot allocate region");
                 region->obj_id = in->remote_obj_id;
-                printf("append obj %lld\n", in->remote_obj_id);
-                fflush(stdout);
                 region->unmap_region = in->remote_region;
                 region->info = info;
 #ifdef ENABLE_MULTITHREAD
