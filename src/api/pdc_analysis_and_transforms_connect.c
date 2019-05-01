@@ -120,6 +120,7 @@ perr_t pdc_client_send_iter_recv_id(pdcid_t iter_id, pdcid_t *meta_id)
         *meta_id = 0;
         goto done;
      }
+
     *meta_id = my_rpc_state_p->value;
     ret_value = SUCCEED;
 
@@ -147,7 +148,7 @@ client_register_iterator_rpc_cb(const struct hg_cb_info *info)
 	  goto done;
       }
       my_rpc_state_p->value = output.server_iter_id;
-      printf("Server returned iterator index = 0x%" PRIu64 "\n", output.server_iter_id);
+      // printf("Server returned iterator index = 0x%" PRIu64 "\n", output.server_iter_id);
     }
 
 done:
@@ -260,7 +261,7 @@ client_register_analysis_rpc_cb(const struct hg_cb_info *info)
 	  goto done;
       }
       my_rpc_state_p->value = output.remote_ftn_id;
-      printf("Server returned analysis index = 0x%" PRIu64 "\n", output.remote_ftn_id);
+      // printf("Server returned analysis index = 0x%" PRIu64 "\n", output.remote_ftn_id);
     }
 
 done:
@@ -405,7 +406,7 @@ client_register_transform_rpc_cb(const struct hg_cb_info *info)
 	  goto done;
       }
 
-      printf("Server returned transform index = 0x%x, client_index = 0x%x\n", output.ret, output.client_index);
+      // printf("Server returned transform index = 0x%x, client_index = 0x%x\n", output.ret, output.client_index);
       pdc_update_transform_server_meta_index(output.client_index, output.ret);
     }
 
@@ -435,7 +436,7 @@ client_forward_transform_rpc_cb(const struct hg_cb_info *info)
 	  goto done;
       }
 
-      printf("Server returned transform index = 0x%x, client_index = 0x%x\n", output.ret, output.client_index);
+      // printf("Server returned transform index = 0x%x, client_index = 0x%x\n", output.ret, output.client_index);
       pdc_update_transform_server_meta_index(output.client_index, output.ret);
     }
 

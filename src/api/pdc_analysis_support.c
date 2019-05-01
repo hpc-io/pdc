@@ -560,12 +560,14 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
     if (pdc_add_analysis_ptr_to_registry_(thisFtn) < 0)
         PGOTO_ERROR(FAIL,"PDC unable to register analysis function!\n");
 
+#if 0
     // Invoke the analysis function if the input data is local
     // to this client (CLIENT_MEMORY)
     if (i_in) {
         struct PDC_obj_info *p = PDC_obj_get_info(i_in->objectId);
         struct PDC_obj_prop *q = p->obj_pt;
         if (q->locus == CLIENT_MEMORY) {       
+            puts("CLIENT_MEMORY: analysis");
             if (ftnPtr != NULL) {
                 int result = ftnPtr(iterIn,iterOut);
                 if (result < 0) {
@@ -574,6 +576,7 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
             }
         }
     }
+#endif
 done:
     if (applicationDir) free(applicationDir);
     if (userdefinedftn) free(userdefinedftn);

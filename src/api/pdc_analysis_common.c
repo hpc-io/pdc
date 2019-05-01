@@ -345,7 +345,7 @@ HG_TEST_RPC_CB(analysis_ftn, handle)
     memset(&in,0,sizeof(in));
     // Decode input
     HG_Get_input(handle, &in);
-    printf("analysis_ftn_cb entered!\n");
+    // printf("analysis_ftn_cb entered!\n");
 
     printf("func = %s\nloadpath = %s\n", 
 	   (in.ftn_name == NULL ? "unknown" : in.ftn_name),
@@ -433,7 +433,7 @@ HG_TEST_RPC_CB(obj_data_iterator, handle)
     memset(&in,0,sizeof(in));
     // Decode input
     HG_Get_input(handle, &in);
-    printf("obj_data_iterator_cb entered!\n");
+    // printf("obj_data_iterator_cb entered!\n");
 #ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_lock(&insert_iterator_mutex_g);
 #endif

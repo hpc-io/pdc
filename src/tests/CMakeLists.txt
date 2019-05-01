@@ -59,6 +59,7 @@ set(PROGRAMS
   )
 
 set(EXAMPLES
+  read3d
   pdc-neon
   arrayudf_example
   )

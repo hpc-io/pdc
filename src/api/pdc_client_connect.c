@@ -764,7 +764,7 @@ client_region_release_rpc_cb(const struct hg_cb_info *callback_info)
 
     FUNC_ENTER(NULL);
 
-    printf("Entered client_region_release_rpc_cb()\n");
+    /* printf("Entered client_region_release_rpc_cb()\n");*/
     client_lookup_args = (struct client_lookup_args*) callback_info->arg;
     handle = callback_info->info.forward.handle;
 
@@ -774,7 +774,7 @@ client_region_release_rpc_cb(const struct hg_cb_info *callback_info)
         printf("==PDC_CLIENT: client_region_release_rpc_cb - HG_Get_output error!\n");
         goto done;
     }
-    printf("Return value=%d\n", output.ret);
+    /* printf("Return value=%d\n", output.ret); */
 
     client_lookup_args->ret = output.ret;
 
@@ -821,7 +821,7 @@ hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
 
     if (hg_cb_info->ret == HG_SUCCESS) {
         HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, &buf, buf_sizes, &actual_cnt);
-        printf("received bulk transfer, buf_sizes: %ld %ld, actual_cnt=%d\n", buf_sizes[0], buf_sizes[1], actual_cnt);
+        /* printf("received bulk transfer, buf_sizes: %ld %ld, actual_cnt=%d\n", buf_sizes[0], buf_sizes[1], actual_cnt); */
         /* fflush(stdout); */
 
         meta_ptr = (pdc_metadata_t*)(buf);
@@ -2501,7 +2501,7 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdci
         goto done;
     }
 
-    printf("Received obj.meta_id=%" PRIu64 "\n", lookup_args.obj_id);
+    /* printf("Received obj.meta_id=%" PRIu64 "\n", lookup_args.obj_id); */
 
     *meta_id = lookup_args.obj_id;
     ret_value = SUCCEED;
@@ -3114,11 +3114,10 @@ perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_in
     srand(pdc_client_mpi_rank_g);
     int delay = rand() % 500;
     usleep(delay);
-
-
+    /*
     printf("==PDC_CLIENT[%d]: lock going to server %u\n", pdc_client_mpi_rank_g, server_id);
     fflush(stdout);
-
+    */
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
@@ -3361,11 +3360,22 @@ perr_t pdc_region_release_with_server_analysis(pdcid_t meta_id, struct PDC_regio
     uint32_t server_id, meta_server_id;
     region_analysis_and_lock_in_t in;
     struct client_lookup_args lookup_args;
+    struct PDC_iterator_info *inputIter, *outputIter;
     hg_handle_t region_release_handle = HG_HANDLE_NULL;
 
     FUNC_ENTER(NULL);
     server_id = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
     meta_server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
+
+    /* If the server_id and meta_server_id don't match, we can
+     * provide our client copy of the meta_data rather than relying on
+     * the server.  This should be relatively ok, because the region
+     * metadata should be small compared to the actual data. Let us try
+     * to provide the neccesary info as part of server analysis kickoff...
+     */
+    if (server_id != meta_server_id) {
+      
+    }
 
     in.meta_server_id = meta_server_id;
     in.obj_id = meta_id;
@@ -3374,6 +3384,7 @@ perr_t pdc_region_release_with_server_analysis(pdcid_t meta_id, struct PDC_regio
     in.mapping = region_info->mapping;
     in.data_type = data_type;
     in.lock_mode = 0;
+
 
     if(data_type == PDC_DOUBLE)
         unit = sizeof(double);
@@ -3387,8 +3398,10 @@ perr_t pdc_region_release_with_server_analysis(pdcid_t meta_id, struct PDC_regio
     pdc_region_info_t_to_transfer_unit(region_info, &(in.region), unit);
 
     in.analysis_meta_index = registry->meta_index;
-    in.input_iter = registry->object_id[0];
-    in.output_iter = registry->object_id[1];
+    inputIter = &PDC_Block_iterator_cache[registry->object_id[0]];
+    in.input_iter = inputIter->meta_id;
+    outputIter = &PDC_Block_iterator_cache[registry->object_id[1]];
+    in.output_iter = outputIter->meta_id;
 
     hg_class = HG_Context_get_class(send_context_g);
 
@@ -3453,8 +3466,8 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
 	        size_t (*this_transform)(void *, PDC_var_type_t , int , int , uint64_t *, void **) = registry[k]->ftnPtr;
                 transform_size = this_transform(registry[k]->data,registry[k]->type, registry[k]->type_extent,
 					  region_info->ndim, region_info->size, &transform_result);
-                printf("this_transform(meta_id=0x%lx) returned:  transform_size = %ld\n", meta_id, transform_size);
-		puts("----------------\n");
+                // printf("this_transform(meta_id=0x%lx) returned:  transform_size = %ld\n", meta_id, transform_size);
+		// puts("----------------\n");
             }
         }
 	/* Check next for SERVER (post-data-xfer) transforms */
@@ -3462,7 +3475,7 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
 	    if ((registry[k]->dest_region == region_info) &&
 	        (registry[k]->op_type == PDC_DATA_MAP) &&
                 (registry[k]->when == DATA_IN)) {
-                printf("Found matching transformation with meta_id=0x%0x\n", registry[k]->meta_index);
+                // printf("Found matching transformation with meta_id=0x%0x\n", registry[k]->meta_index);
 		if ((transform_size > 0) && (transform_result != NULL)) {
                     ret_value =
                         pdc_region_release_with_server_transform(meta_id, region_info, access_type,
@@ -3475,7 +3488,7 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
       if (region_info->registered_op & PDC_ANALYSIS) {
           struct region_analysis_ftn_info **registry;
           int k, registered_count = pdc_get_analysis_registry(&registry);
-          printf("Need to invoke analysis function on the server\n");
+          // printf("Need to invoke analysis function on the server\n");
           for(k=0; k < registered_count; k++) {
 	    if (registry[k]->region_id[0] == region_info->local_id) {
 	      ret_value = pdc_region_release_with_server_analysis(meta_id, region_info, access_type,
@@ -4801,7 +4814,7 @@ perr_t PDC_Client_write_wait_notify(pdc_metadata_t *meta, struct PDC_region_info
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
 
-    printf("==PDC_CLIENT[%d]: received write finish notification\n", pdc_client_mpi_rank_g);
+    /* printf("==PDC_CLIENT[%d]: received write finish notification\n", pdc_client_mpi_rank_g); */
     fflush(stdout);
 
 done:

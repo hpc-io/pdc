@@ -771,6 +771,7 @@ typedef struct {
     int32_t                     analysis_meta_index;
     pdcid_t                     input_iter;
     pdcid_t                     output_iter;
+    
 } region_analysis_and_lock_in_t;
 
 static HG_INLINE hg_return_t

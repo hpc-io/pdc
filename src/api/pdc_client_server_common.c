@@ -2162,6 +2162,8 @@ HG_TEST_RPC_CB(region_release, handle)
     hg_uint32_t k, remote_count;
     void **data_ptrs_to = NULL;
     size_t *data_size_to = NULL;
+    size_t type_size = 0;;
+    size_t dims[4] = {0,0,0,0};
 
     FUNC_ENTER(NULL);
 
@@ -2328,12 +2330,14 @@ HG_TEST_RPC_CB(region_release, handle)
                 DL_FOREACH(target_obj->region_buf_map_head, eltt) {
                     pdc_region_transfer_t_to_list_t(&(eltt->remote_region_unit), tmp);
                     if(PDC_is_same_region_list(tmp, request_region) == 1) {
-                        pdc_metadata_t *res_meta = NULL;
-			if (PDC_Server_get_local_metadata_by_id(in.obj_id, &res_meta) < 0)
-                            PGOTO_ERROR(FAIL, "Unable to find object metadata");
+		      /*   pdc_metadata_t *res_meta = NULL; */
+                      /* if (PDC_Server_get_local_metadata_by_id(in.obj_id, &res_meta) < 0) 
+			 PGOTO_ERROR(FAIL, "Unable to find object metadata"); */
                         // get remote object memory addr
+                        type_size = eltt->remote_unit;
                         data_buf = PDC_Server_get_region_buf_ptr(in.obj_id, in.region);
                         if(in.region.ndim == 1) {
+                            dims[0] = (eltt->remote_region_unit).count_0 / type_size;
                             remote_count = 1;
                             data_ptrs_to = (void **)malloc( sizeof(void *) );
                             data_size_to = (size_t *)malloc( sizeof(size_t) );
@@ -2341,13 +2345,14 @@ HG_TEST_RPC_CB(region_release, handle)
                             *data_size_to = (eltt->remote_region_unit).count_0;
                         }
                         else if (in.region.ndim == 2) {
+                            dims[1] = (eltt->remote_region_unit).count_1 / type_size;
                             remote_count = (eltt->remote_region_nounit).count_0;
                             data_ptrs_to = (void **)malloc( remote_count * sizeof(void *) );
                             data_size_to = (size_t *)malloc( remote_count * sizeof(size_t) );
-                            data_ptrs_to[0] = data_buf + eltt->remote_unit*(res_meta->dims[1]*(eltt->remote_region_nounit).start_0 + (eltt->remote_region_nounit).start_1);
+                            data_ptrs_to[0] = data_buf + type_size * dims[1]*(eltt->remote_region_nounit).start_0 + (eltt->remote_region_nounit).start_1;
                             data_size_to[0] = (eltt->remote_region_unit).count_1;
                             for(k=1; k<remote_count; k++) {
-                                data_ptrs_to[k] = data_ptrs_to[k-1] + eltt->remote_unit*res_meta->dims[1];
+                                data_ptrs_to[k] = data_ptrs_to[k-1] + eltt->remote_unit * dims[1];
                                 data_size_to[k] = data_size_to[0];
                             }
                         }
@@ -2609,6 +2614,8 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
     hg_uint32_t k, remote_count;
     void **data_ptrs_to = NULL;
     size_t *data_size_to = NULL;
+    size_t type_size = 0;;
+    size_t dims[4] = {0,0,0,0};
     
     FUNC_ENTER(NULL);
     
@@ -2760,7 +2767,7 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
     // write lock release with mapping case
     // do data transfer if it is write lock release with mapping.
     else {
-        printf("region_release_cb: release obj_id=%" PRIu64 " access_type==WRITE\n", in.lock_release.obj_id);
+      // printf("region_analysis_release_cb: release obj_id=%" PRIu64 " access_type==WRITE\n", in.lock_release.obj_id);
         request_region = (region_list_t *)malloc(sizeof(region_list_t));
         pdc_region_transfer_t_to_list_t(&in.lock_release.region, request_region);
         target_obj = PDC_Server_get_obj_region(in.lock_release.obj_id);
@@ -2774,12 +2781,12 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
                 DL_FOREACH(target_obj->region_buf_map_head, eltt) {
                     pdc_region_transfer_t_to_list_t(&(eltt->remote_region_unit), tmp);
                     if(PDC_is_same_region_list(tmp, request_region) == 1) {
-                        size_t buf_size, type_size = 0;
-                        pdc_metadata_t *res_meta = NULL;
-			if (PDC_Server_get_local_metadata_by_id(in.lock_release.obj_id, &res_meta) < 0)
-                            PGOTO_ERROR(FAIL, "Unable to find object metadata");
+  	                size_t buf_size;
+                        /* pdc_metadata_t *res_meta = NULL; */
+                        /* if (PDC_Server_get_local_metadata_by_id(in.lock_release.obj_id, &res_meta) < 0)
+			   PGOTO_ERROR(FAIL, "Unable to find object metadata"); */
 
-                        type_size = get_datatype_size(res_meta->data_type);
+                        type_size = get_datatype_size(in.analysis.data_type);
                                                 
                         // get remote object memory addr
                         // NOTE:  In this scenario, the 'target' is going to be the
@@ -2791,7 +2798,9 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
                         data_buf = PDC_Server_get_region_buf_ptr(in.lock_release.obj_id, in.lock_release.region);
 
                         if(in.lock_release.region.ndim == 1) {
-                            buf_size = res_meta->dims[0] * type_size;
+                         /* buf_size = res_meta->dims[0] * type_size; */
+                            dims[0] = in.analysis.region.count_0 / type_size;
+                            buf_size = in.analysis.region.count_0;
                             remote_count = 1;
                             data_ptrs_to = (void **)malloc( sizeof(void *) );
                             data_size_to = (size_t *)malloc( sizeof(size_t) );
@@ -2799,11 +2808,14 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
                             *data_size_to = (eltt->remote_region_unit).count_0;
                         }
                         else if (in.lock_release.region.ndim == 2) {
-                            buf_size = res_meta->dims[0] * res_meta->dims[1] * type_size;
+                         /* buf_size = res_meta->dims[0] * res_meta->dims[1] * type_size; */
+                            dims[0] = in.analysis.region.count_0 / type_size;
+                            dims[1] = in.analysis.region.count_1 / type_size;
+                            buf_size = in.analysis.region.count_0 * dims[1];
                             remote_count = (eltt->remote_region_nounit).count_0;
                             data_ptrs_to = (void **)malloc( remote_count * sizeof(void *) );
                             data_size_to = (size_t *)malloc( remote_count * sizeof(size_t) );
-                            data_ptrs_to[0] = data_buf + eltt->remote_unit*(res_meta->dims[1]*(eltt->remote_region_nounit).start_0 + (eltt->remote_region_nounit).start_1);
+                            data_ptrs_to[0] = data_buf + eltt->remote_unit*(dims[1]*(eltt->remote_region_nounit).start_0 + (eltt->remote_region_nounit).start_1);
                             data_size_to[0] = (eltt->remote_region_unit).count_1;
                             for(k=1; k<remote_count; k++) {
                                 data_ptrs_to[k] = data_ptrs_to[k-1] + data_size_to[0];
@@ -2811,11 +2823,15 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
                             }
                         }
                         else if (in.lock_release.region.ndim == 3) {
-                            buf_size = res_meta->dims[0] * res_meta->dims[1] * res_meta->dims[2] * type_size;
+                          /*  buf_size = res_meta->dims[0] * res_meta->dims[1] * res_meta->dims[2] * type_size; */
+                            dims[0] = in.analysis.region.count_0 / type_size;
+                            dims[1] = in.analysis.region.count_1 / type_size;
+                            dims[2] = in.analysis.region.count_2 / type_size;
+                            buf_size = in.analysis.region.count_0 * dims[1] * dims[2];;
                             remote_count = (eltt->remote_region_nounit).count_0;
                             data_ptrs_to = (void **)malloc( remote_count * sizeof(void *) );
                             data_size_to = (size_t *)malloc( remote_count * sizeof(size_t) );
-                            data_ptrs_to[0] = data_buf + eltt->remote_unit*(res_meta->dims[1]*(eltt->remote_region_nounit).start_0 + (eltt->remote_region_nounit).start_1);
+                            data_ptrs_to[0] = data_buf + eltt->remote_unit*(dims[1]*(eltt->remote_region_nounit).start_0 + (eltt->remote_region_nounit).start_1);
                             data_size_to[0] = eltt->remote_unit * (eltt->remote_region_nounit).count_2 * (eltt->remote_region_nounit).count_1;
                             for(k=1; k<remote_count; k++) {
                                 data_ptrs_to[k] = data_ptrs_to[k-1] + data_size_to[0];
