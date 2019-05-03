@@ -347,13 +347,17 @@ HG_TEST_RPC_CB(analysis_ftn, handle)
     HG_Get_input(handle, &in);
     // printf("analysis_ftn_cb entered!\n");
 
+    /*
     printf("func = %s\nloadpath = %s\n", 
 	   (in.ftn_name == NULL ? "unknown" : in.ftn_name),
 	   (in.loadpath == NULL ? "unknown" : in.loadpath));
+    */
 
     if (get_ftnPtr_(in.ftn_name, (char *)in.loadpath, &ftnHandle) < 0)
         printf("get_ftnPtr_ returned an error!\n");
+    /*
     else printf("loaded function pointer to %s from loadpath %s\n", in.ftn_name, (char *)in.loadpath);
+    */
 
     if ((ftnPtr = ftnHandle) == NULL)
         PGOTO_ERROR(FAIL,"Transforms function lookup failed\n");
