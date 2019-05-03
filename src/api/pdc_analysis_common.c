@@ -36,7 +36,7 @@ hg_atomic_int32_t          registered_transform_ftn_count_g;
 struct PDC_iterator_info * PDC_Block_iterator_cache = NULL;
 int                      * i_cache_freed = NULL;
 
-size_t                     iterator_cache_entries = 256;
+size_t                     iterator_cache_entries = 4096;
 hg_atomic_int32_t          i_cache_index;
 hg_atomic_int32_t          i_free_index;
 PDC_loci                   execution_locus = UNKNOWN;
@@ -176,6 +176,10 @@ int PDCiter_get_nextId(void)
     size_t nextId = 0;
     if (PDC_Block_iterator_cache == NULL) {
         PDC_Block_iterator_cache = (struct PDC_iterator_info *)calloc(iterator_cache_entries, sizeof(struct PDC_iterator_info));
+        if (PDC_Block_iterator_cache == NULL) {
+            perror("calloc failed\n");
+            return -1;
+	}
         i_cache_freed = (int *) calloc(iterator_cache_entries, sizeof(int));
         /* Index 0 is NOT-USED other than to indicate an empty iterator */
         hg_atomic_init32(&i_cache_index,1);
