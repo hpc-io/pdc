@@ -94,7 +94,7 @@ PDC_Server_instantiate_data_iterator(obj_data_iterator_in_t *in, obj_data_iterat
     hg_thread_mutex_lock(&insert_iterator_mutex_g);
 #endif    
     int nextId = PDCiter_get_nextId();
-    if (nextid < 0) {
+    if (nextId < 0) {
        out->client_iter_id = in->client_iter_id;
        out->server_iter_id = nextId;
        out->ret = -1;
