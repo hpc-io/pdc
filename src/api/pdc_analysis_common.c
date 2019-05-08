@@ -33,10 +33,10 @@ size_t                     analysis_registry_size = 0;
 size_t                     transform_registry_size = 0;
 hg_atomic_int32_t          registered_analysis_ftn_count_g;
 hg_atomic_int32_t          registered_transform_ftn_count_g;
-struct PDC_iterator_info * PDC_Block_iterator_cache = NULL;
+struct PDC_iterator_info   PDC_Block_iterator_cache[CACHE_SIZE];
 int                      * i_cache_freed = NULL;
 
-size_t                     iterator_cache_entries = 4096;
+size_t                     iterator_cache_entries = CACHE_SIZE;
 hg_atomic_int32_t          i_cache_index;
 hg_atomic_int32_t          i_free_index;
 PDC_loci                   execution_locus = UNKNOWN;
@@ -174,6 +174,18 @@ int pdc_add_analysis_ptr_to_registry_(struct region_analysis_ftn_info *ftn_infoP
 int PDCiter_get_nextId(void)
 {
     size_t nextId = 0;
+#if 1
+    if (i_cache_freed == NULL) {
+        i_cache_freed = (int *) calloc(iterator_cache_entries, sizeof(int));
+        if (i_cache_freed == NULL) {
+            perror("calloc failed\n");
+	    return -1;
+	}
+        /* Index 0 is NOT-USED other than to indicate an empty iterator */
+        hg_atomic_init32(&i_cache_index,1);
+        hg_atomic_init32(&i_free_index,0);
+    }
+#else
     if (PDC_Block_iterator_cache == NULL) {
         PDC_Block_iterator_cache = (struct PDC_iterator_info *)calloc(iterator_cache_entries, sizeof(struct PDC_iterator_info));
         if (PDC_Block_iterator_cache == NULL) {
@@ -185,6 +197,7 @@ int PDCiter_get_nextId(void)
         hg_atomic_init32(&i_cache_index,1);
         hg_atomic_init32(&i_free_index,0);
     }
+#endif
     if (compare_gt((void *)&i_free_index, 0)) {
         int next_free = hg_atomic_decr32(&i_free_index);
         nextId = i_cache_freed[next_free];
@@ -193,6 +206,12 @@ int PDCiter_get_nextId(void)
         int next_free = hg_atomic_incr32(&i_cache_index);
         nextId = next_free -1;        /* use the "current" index */
     }
+#if 1
+    if (nextId == iterator_cache_entries) {
+        printf("ERROR! Out of Iterator space!\n");
+        nextId = -1;
+    }
+#else
     if (nextId == iterator_cache_entries) {
         /* Realloc the cache and free list */
         int *previous_i_cache_freed = i_cache_freed;
@@ -205,6 +224,7 @@ int PDCiter_get_nextId(void)
         free( previous_i_cache_freed );
         free( previous_state );
     }
+#endif
     return nextId;
 }  
 

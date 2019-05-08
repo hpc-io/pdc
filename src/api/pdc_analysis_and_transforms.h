@@ -198,7 +198,8 @@ struct my_rpc_state
 };
 
 // Analysis
-extern struct PDC_iterator_info * PDC_Block_iterator_cache;
+#define CACHE_SIZE         65536
+extern struct PDC_iterator_info PDC_Block_iterator_cache[];
 extern int                      * i_cache_freed;
 extern size_t                     iterator_cache_entries;
 extern hg_atomic_int32_t          i_cache_index;
