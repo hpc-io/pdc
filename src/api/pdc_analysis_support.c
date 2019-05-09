@@ -255,106 +255,6 @@ iterator_init(pdcid_t objectId, pdcid_t reg_id, int blocks, struct PDC_iterator_
 }
 
 
-size_t
-PDCobj_data_getSliceCount(pdcid_t iter)
-{
-    struct PDC_iterator_info *thisIter = NULL;
-    /* Special case to handle a NULL iterator */
-    if (iter == 0) return 0;
-    /* FIXME: Should add another check to see that the input
-     *        iter id is in the range of cached values...
-     */
-    if ((PDC_Block_iterator_cache != NULL) && (iter > 0)) {
-        thisIter = &PDC_Block_iterator_cache[iter];
-        return thisIter->sliceCount;
-    }
-    return 0;
-}
-
-size_t
-PDCobj_data_getNextBlock(pdcid_t iter, void **nextBlock, size_t *dims)
-{
-    struct PDC_iterator_info *thisIter = NULL;
-    /* Special case to handle a NULL iterator */
-    if (iter == 0) {
-        if (nextBlock != NULL) *nextBlock = NULL;
-        if (dims != NULL) *dims = 0;
-        return 0;
-    }
-
-    if ((PDC_Block_iterator_cache != NULL) && (iter > 0)) {
-        thisIter = &PDC_Block_iterator_cache[iter];
-        if (thisIter->srcStart == NULL) {
-            if (execution_locus == SERVER_MEMORY) {
-	        if ((thisIter->srcNext = PDC_Server_get_region_data_ptr(thisIter->objectId)) == NULL)
-		    thisIter->srcNext = malloc(thisIter->totalElements * thisIter->element_size);
-	        if ((thisIter->srcStart = thisIter->srcNext) == NULL) {
-                    printf("==PDC_ANALYSIS_SERVER: Unable to allocate iterator storage\n");
-                    return 0;
-                }
-		thisIter->srcNext += thisIter->startOffset + thisIter->skipCount;
-	    }
-	    else if (execution_locus == CLIENT_MEMORY) {
-                struct PDC_obj_info *object_info = PDC_obj_get_info(thisIter->objectId);
-                struct PDC_obj_prop *obj_prop_ptr = object_info->obj_pt;
-                if (obj_prop_ptr) {
-                    thisIter->srcNext = thisIter->srcStart = obj_prop_ptr->buf;
-		    thisIter->srcNext += thisIter->startOffset + thisIter->skipCount;
-		}
-	    }
-	}
-        if (thisIter->srcNext != NULL) {
-            if (thisIter->sliceNext == thisIter->sliceCount) {
-                /* May need to adjust the elements in this last
-                 * block...
-                 */
-                 size_t current_total = thisIter->sliceCount * thisIter->elementsPerBlock;
-                 size_t remaining = 0;
-
-                 if (current_total == thisIter->totalElements) {
-                     if (nextBlock) *nextBlock = NULL;
-                     thisIter->sliceNext = 0;
-                     thisIter->srcNext = NULL;
-                     goto done;
-                 }
-                 if (nextBlock) *nextBlock = thisIter->srcNext;
-                 thisIter->srcNext = NULL;
-                 remaining = thisIter->totalElements - current_total;
-                 if (dims) {
-                     if (thisIter->storage_order == ROW_major)
-                        dims[0] = remaining / thisIter->elementsPerSlice;
-                     else dims[1] = remaining / thisIter->elementsPerSlice;
-                 }
-                 return remaining;
-            } else if (thisIter->sliceNext && (thisIter->sliceNext % thisIter->sliceResetCount) == 0) {
-                size_t offset = ++thisIter->srcBlockCount * thisIter->elementsPerBlock;
-                thisIter->srcNext = thisIter->srcStart + offset + thisIter->skipCount;
-                if (nextBlock) *nextBlock = thisIter->srcNext;
-            }
-            else {
-                *nextBlock = thisIter->srcNext;
-                thisIter->srcNext += thisIter->contigBlockSize;
-            }
-            thisIter->sliceNext += 1;
-            if (dims != NULL) {
-                dims[0] = thisIter->dims[0];
-		if (thisIter->ndim > 1) 
-		  dims[1] = thisIter->dims[1];
-		if (thisIter->ndim > 2) 
-		  dims[2] = thisIter->dims[2];
-		if (thisIter->ndim > 3) 
-		  dims[2] = thisIter->dims[3];
-            }
-            return thisIter->elementsPerBlock;
-        }
-    }
-
-done:
-    if (dims) dims[0] = dims[1] = 0;
-    if (nextBlock) *nextBlock = NULL;
-    return 0;
-}
-
 
 pdcid_t
 PDCobj_data_block_iterator_create(pdcid_t obj_id, pdcid_t reg_id, int contig_blocks)
@@ -622,3 +522,105 @@ pdcid_t PDCobj_create_data_iterator(pdcid_t obj_id, pdcid_t reg_id)
     return index;
 }
 #endif
+
+size_t
+PDCobj_data_getSliceCount(pdcid_t iter)
+{
+    struct PDC_iterator_info *thisIter = NULL;
+    /* Special case to handle a NULL iterator */
+    if (iter == 0) return 0;
+    /* FIXME: Should add another check to see that the input
+     *        iter id is in the range of cached values...
+     */
+    if ((PDC_Block_iterator_cache != NULL) && (iter > 0)) {
+        thisIter = &PDC_Block_iterator_cache[iter];
+        return thisIter->sliceCount;
+    }
+    return 0;
+}
+
+size_t
+PDCobj_data_getNextBlock(pdcid_t iter, void **nextBlock, size_t *dims)
+{
+    struct PDC_iterator_info *thisIter = NULL;
+    /* Special case to handle a NULL iterator */
+    if (iter == 0) {
+        if (nextBlock != NULL) *nextBlock = NULL;
+        if (dims != NULL) *dims = 0;
+        return 0;
+    }
+
+    if ((PDC_Block_iterator_cache != NULL) && (iter > 0)) {
+        thisIter = &PDC_Block_iterator_cache[iter];
+        if (thisIter->srcStart == NULL) {
+            if (execution_locus == SERVER_MEMORY) {
+	        if ((thisIter->srcNext = PDC_Server_get_region_data_ptr(thisIter->objectId)) == NULL)
+		    thisIter->srcNext = malloc(thisIter->totalElements * thisIter->element_size);
+	        if ((thisIter->srcStart = thisIter->srcNext) == NULL) {
+                    printf("==PDC_ANALYSIS_SERVER: Unable to allocate iterator storage\n");
+                    return 0;
+                }
+		thisIter->srcNext += thisIter->startOffset + thisIter->skipCount;
+	    }
+	    else if (execution_locus == CLIENT_MEMORY) {
+                struct PDC_obj_info *object_info = PDC_obj_get_info(thisIter->objectId);
+                struct PDC_obj_prop *obj_prop_ptr = object_info->obj_pt;
+                if (obj_prop_ptr) {
+                    thisIter->srcNext = thisIter->srcStart = obj_prop_ptr->buf;
+		    thisIter->srcNext += thisIter->startOffset + thisIter->skipCount;
+		}
+	    }
+	}
+        if (thisIter->srcNext != NULL) {
+            if (thisIter->sliceNext == thisIter->sliceCount) {
+                /* May need to adjust the elements in this last
+                 * block...
+                 */
+                 size_t current_total = thisIter->sliceCount * thisIter->elementsPerBlock;
+                 size_t remaining = 0;
+
+                 if (current_total == thisIter->totalElements) {
+                     if (nextBlock) *nextBlock = NULL;
+                     thisIter->sliceNext = 0;
+                     thisIter->srcNext = NULL;
+                     goto done;
+                 }
+                 if (nextBlock) *nextBlock = thisIter->srcNext;
+                 thisIter->srcNext = NULL;
+                 remaining = thisIter->totalElements - current_total;
+                 if (dims) {
+                     if (thisIter->storage_order == ROW_major)
+                        dims[0] = remaining / thisIter->elementsPerSlice;
+                     else dims[1] = remaining / thisIter->elementsPerSlice;
+                 }
+                 return remaining;
+            } else if (thisIter->sliceNext && (thisIter->sliceNext % thisIter->sliceResetCount) == 0) {
+                size_t offset = ++thisIter->srcBlockCount * thisIter->elementsPerBlock;
+                thisIter->srcNext = thisIter->srcStart + offset + thisIter->skipCount;
+                if (nextBlock) *nextBlock = thisIter->srcNext;
+            }
+            else {
+                *nextBlock = thisIter->srcNext;
+                thisIter->srcNext += thisIter->contigBlockSize;
+            }
+            thisIter->sliceNext += 1;
+            if (dims != NULL) {
+                dims[0] = thisIter->dims[0];
+		if (thisIter->ndim > 1) 
+		  dims[1] = thisIter->dims[1];
+		if (thisIter->ndim > 2) 
+		  dims[2] = thisIter->dims[2];
+		if (thisIter->ndim > 3) 
+		  dims[2] = thisIter->dims[3];
+            }
+            return thisIter->elementsPerBlock;
+        }
+    }
+
+done:
+    if (dims) dims[0] = dims[1] = 0;
+    if (nextBlock) *nextBlock = NULL;
+    return 0;
+}
+
+

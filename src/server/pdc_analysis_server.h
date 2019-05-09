@@ -27,5 +27,6 @@
 #define PDC_ANALYSIS_SERVER_H
 
 perr_t PDC_Server_instantiate_data_iterator(obj_data_iterator_in_t *in, obj_data_iterator_out_t *out);
+void * PDC_Server_get_ftn_reference(char *ftn);
 
 #endif

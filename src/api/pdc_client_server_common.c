@@ -1755,12 +1755,13 @@ analysis_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info
     data_buf = PDC_Server_get_region_buf_ptr(bulk_args->in.obj_id, bulk_args->in.region);
     if (data_buf != NULL) {
         struct region_analysis_ftn_info **registry = NULL;
+        iterator_cbs_t iter_cbs = {PDCobj_data_getSliceCount, PDCobj_data_getNextBlock};
 	int analysis_meta_index = bulk_args->in.analysis_meta_index;
         int registered_count = pdc_get_analysis_registry(&registry);
 	if ((registered_count >= analysis_meta_index) && (registry != NULL)) {
-	  size_t (*analysis_ftn)(pdcid_t iterIn, pdcid_t iterOut)
+	  size_t (*analysis_ftn)(pdcid_t iterIn, pdcid_t iterOut, iterator_cbs_t *_cbs)
 	    = registry[analysis_meta_index]->ftnPtr;
-	  size_t result = analysis_ftn(bulk_args->in.input_iter, bulk_args->in.output_iter);
+	  size_t result = analysis_ftn(bulk_args->in.input_iter, bulk_args->in.output_iter, &iter_cbs);
 
 	  printf("==PDC_SERVER: Analysis returned %ld\n", result);
 	  puts("----------------\n");

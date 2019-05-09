@@ -97,7 +97,7 @@ size_t myfunc3(float *stencil[3], float *out, size_t dims[2])
  * Creates the halo structure and then calls the PDC equivalents to the
  * ArrayUDF 'myfunc' example stencil codes.
  */
-size_t arrayudf_stencils(pdcid_t iterIn, pdcid_t iterOut)
+size_t arrayudf_stencils(pdcid_t iterIn, pdcid_t iterOut, iterator_cbs_t *callbacks)
 {
     float *dataIn = NULL;
     float *dataOut = NULL;
@@ -110,7 +110,12 @@ size_t arrayudf_stencils(pdcid_t iterIn, pdcid_t iterOut)
 
     start = MPI_Wtime();
     // printf("Entered: %s\n----------------\n", __func__);
-    number_of_slices = PDCobj_data_getSliceCount(iterOut);
+    if (callbacks) {
+      number_of_slices = (*callbacks->getSliceCount)(iterOut);
+    } else {
+      puts("NULL callbacks");
+      number_of_slices = PDCobj_data_getSliceCount(iterOut);
+    }
     // printf("Total # of slices available = %ld\n",number_of_slices);
     if ((blockLengthIn = PDCobj_data_getNextBlock(iterIn, (void **)&dataIn, dimsIn)) == 0)
       printf("arrayudf_stencils:Empty Input!\n");
@@ -170,7 +175,7 @@ size_t cortad_avg_func(float *stencil[4], float *out, size_t elements)
  *   3rd dimension (historial data) is the collection of NextBlocks... ]
  * 
  */
-size_t neon_stencil(pdcid_t iterIn, pdcid_t iterOut)
+size_t neon_stencil(pdcid_t iterIn, pdcid_t iterOut, iterator_cbs_t *callbacks)
 {
     float *dataIn = NULL;
     float *dataOut = NULL;
@@ -183,7 +188,12 @@ size_t neon_stencil(pdcid_t iterIn, pdcid_t iterOut)
 
     start = MPI_Wtime();
     // printf("Entered: %s\n----------------\n", __func__);
-    number_of_slices = PDCobj_data_getSliceCount(iterOut);
+    if (callbacks) {
+      number_of_slices = (*callbacks->getSliceCount)(iterOut);
+    } else {
+      puts("NULL callbacks");
+      number_of_slices = PDCobj_data_getSliceCount(iterOut);
+    }
     if ((blockLengthIn = PDCobj_data_getNextBlock(iterIn, (void **)&dataIn, dimsIn)) == 0)
       printf("neon_stencil: Empty Input!\n");
     else {

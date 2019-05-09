@@ -197,9 +197,15 @@ struct my_rpc_state
     hg_handle_t handle;
 };
 
+typedef struct {
+    size_t (*getSliceCount)(pdcid_t);
+    size_t  (*getNextBlock)(pdcid_t , void **, size_t *);
+} iterator_cbs_t;
+
+
 // Analysis
-#define CACHE_SIZE         65536
-extern struct PDC_iterator_info PDC_Block_iterator_cache[];
+#define CACHE_SIZE                65536
+extern struct PDC_iterator_info * PDC_Block_iterator_cache;
 extern int                      * i_cache_freed;
 extern size_t                     iterator_cache_entries;
 extern hg_atomic_int32_t          i_cache_index;
@@ -211,6 +217,8 @@ extern hg_id_t                    transform_ftn_register_id_g;
 extern hg_id_t                    server_transform_ftn_register_id_g;
 extern hg_id_t                    object_data_iterator_register_id_g;
 
+extern size_t PDCobj_data_getSliceCount(pdcid_t iter_id);
+extern size_t PDCobj_data_getNextBlock(pdcid_t iter, void **nextBlock, size_t *dims);
 extern int PDCiter_get_nextId(void);
 extern int pdc_add_analysis_ptr_to_registry_(struct region_analysis_ftn_info *ftnPtr);
 extern perr_t pdc_client_send_iter_recv_id(pdcid_t iter_id, pdcid_t *meta_id);
@@ -221,6 +229,7 @@ extern int get_ftnPtr_(const char *ftn, char *loadpath, void **ftnPtr);
 extern void set_execution_locus(PDC_loci locus_identifier);
 extern PDC_loci get_execution_locus(void);
 extern hg_id_t server_transform_ftn_register(hg_class_t *hg_class);
+extern void *PDC_Server_get_ftn_reference(char *ftn);
 
 static HG_INLINE hg_return_t
 hg_proc_analysis_ftn_in_t(hg_proc_t proc, void *data)

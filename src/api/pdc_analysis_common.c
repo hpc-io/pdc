@@ -28,12 +28,13 @@
 
 #include "pdc_analysis_and_transforms.h"
 #include "../server/pdc_analysis_server.h"
+#include "pdc_obj_private.h"
 
 size_t                     analysis_registry_size = 0;
 size_t                     transform_registry_size = 0;
 hg_atomic_int32_t          registered_analysis_ftn_count_g;
 hg_atomic_int32_t          registered_transform_ftn_count_g;
-struct PDC_iterator_info   PDC_Block_iterator_cache[CACHE_SIZE];
+struct PDC_iterator_info *  PDC_Block_iterator_cache = NULL;
 int                      * i_cache_freed = NULL;
 
 size_t                     iterator_cache_entries = CACHE_SIZE;
@@ -50,6 +51,7 @@ struct region_transform_ftn_info **pdc_region_transform_registry = NULL;
 #ifndef IS_PDC_SERVER
 // Dummy function for client to compile, real function is used only by server and code is in pdc_server.c
 perr_t PDC_Server_instantiate_data_iterator(obj_data_iterator_in_t *in ATTRIBUTE(unused), obj_data_iterator_out_t *out ATTRIBUTE(unused)) {return SUCCEED;}
+void *PDC_Server_get_ftn_reference(char *ftn ATTRIBUTE(unused)) {return NULL;}
 #endif
 
 /* Internal support functions */
@@ -174,7 +176,7 @@ int pdc_add_analysis_ptr_to_registry_(struct region_analysis_ftn_info *ftn_infoP
 int PDCiter_get_nextId(void)
 {
     size_t nextId = 0;
-#if 1
+#if 0
     if (i_cache_freed == NULL) {
         i_cache_freed = (int *) calloc(iterator_cache_entries, sizeof(int));
         if (i_cache_freed == NULL) {
@@ -206,7 +208,7 @@ int PDCiter_get_nextId(void)
         int next_free = hg_atomic_incr32(&i_cache_index);
         nextId = next_free -1;        /* use the "current" index */
     }
-#if 1
+#if 0
     if (nextId == iterator_cache_entries) {
         printf("ERROR! Out of Iterator space!\n");
         nextId = -1;
