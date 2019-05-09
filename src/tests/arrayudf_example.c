@@ -110,19 +110,14 @@ size_t arrayudf_stencils(pdcid_t iterIn, pdcid_t iterOut, iterator_cbs_t *callba
 
     start = MPI_Wtime();
     // printf("Entered: %s\n----------------\n", __func__);
-    if (callbacks) {
-      number_of_slices = (*callbacks->getSliceCount)(iterOut);
-    } else {
-      puts("NULL callbacks");
-      number_of_slices = PDCobj_data_getSliceCount(iterOut);
-    }
+    number_of_slices = (*callbacks->getSliceCount)(iterOut);
     // printf("Total # of slices available = %ld\n",number_of_slices);
-    if ((blockLengthIn = PDCobj_data_getNextBlock(iterIn, (void **)&dataIn, dimsIn)) == 0)
+    if ((blockLengthIn = (*callbacks->getNextBlock)(iterIn, (void **)&dataIn, dimsIn)) == 0)
       printf("arrayudf_stencils:Empty Input!\n");
     stencil[0] = stencil[1] = dataIn;
     for (k=0; k< number_of_slices; k++) {
-      if ((blockLengthOut = PDCobj_data_getNextBlock(iterOut, (void **)&dataOut, dimsOut)) > 0) {
-	if ((blockLengthIn = PDCobj_data_getNextBlock(iterIn, (void **)&dataIn, dimsIn)) > 0) {
+      if ((blockLengthOut = (*callbacks->getNextBlock)(iterOut, (void **)&dataOut, dimsOut)) > 0) {
+	if ((blockLengthIn = (*callbacks->getNextBlock)(iterIn, (void **)&dataIn, dimsIn)) > 0) {
             stencil[2] = dataIn;
 	    if (myfunc3(stencil,dataOut,dimsIn) == 0) {
 	      stencil[0] = stencil[1];
@@ -188,25 +183,20 @@ size_t neon_stencil(pdcid_t iterIn, pdcid_t iterOut, iterator_cbs_t *callbacks)
 
     start = MPI_Wtime();
     // printf("Entered: %s\n----------------\n", __func__);
-    if (callbacks) {
-      number_of_slices = (*callbacks->getSliceCount)(iterOut);
-    } else {
-      puts("NULL callbacks");
-      number_of_slices = PDCobj_data_getSliceCount(iterOut);
-    }
-    if ((blockLengthIn = PDCobj_data_getNextBlock(iterIn, (void **)&dataIn, dimsIn)) == 0)
+    number_of_slices = (*callbacks->getSliceCount)(iterOut);
+    if ((blockLengthIn = (*callbacks->getNextBlock)(iterIn, (void **)&dataIn, dimsIn)) == 0)
       printf("neon_stencil: Empty Input!\n");
     else {
       // printf("Total # Slices = %ld, Size of each slice = %ld elements = (%ld x %ld)\n",number_of_slices, blockLengthIn, dimsIn[2], dimsIn[1]);
         stencil[0] = stencil[1] = stencil[2] = stencil[3] = dataIn;
         for (k=0; k< number_of_slices; k++) {
-          if ((blockLengthOut = PDCobj_data_getNextBlock(iterOut, (void **)&dataOut, dimsOut)) > 0) {
+          if ((blockLengthOut = (*callbacks->getNextBlock)(iterOut, (void **)&dataOut, dimsOut)) > 0) {
              if (cortad_avg_func(stencil,dataOut,blockLengthIn) == 0) {
                 stencil[0] = stencil[1];
                 stencil[1] = stencil[2];
                 stencil[2] = stencil[3];
              }
-             blockLengthIn = PDCobj_data_getNextBlock(iterIn, (void **)&dataIn, NULL);
+             blockLengthIn = (*callbacks->getNextBlock)(iterIn, (void **)&dataIn, NULL);
              stencil[3] = dataIn;
           }
         }
