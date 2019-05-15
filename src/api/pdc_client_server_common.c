@@ -522,6 +522,8 @@ perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to)
     memcpy(to->shm_addr, from->shm_addr, sizeof(char) * ADDR_MAX);
     memcpy(to->storage_location, from->storage_location, ADDR_MAX);
     memcpy(to->cache_location, from->cache_location, ADDR_MAX);
+    to->prev = NULL;
+    to->next = NULL;
 
     return SUCCEED;
 }

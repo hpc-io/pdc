@@ -79,7 +79,7 @@ int main(int argc, char **argv)
     /* float energy_lo = 1.2, energy_hi = 1.3; */
     /* float x_lo = 308, x_hi = 309; */
     /* float y_lo = 149, y_hi = 150; */
-    float energy_lo = 1.3, energy_hi = 130;
+    float energy_lo = 1.7, energy_hi = 130;
     float x_lo = 100, x_hi = 109;
     float y_lo = -150, y_hi = -140;
 
