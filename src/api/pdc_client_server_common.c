@@ -862,6 +862,7 @@ perr_t PDC_Server_find_container_by_name(const char *cont_name, pdc_cont_hash_ta
 hg_return_t PDC_Server_recv_data_query(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
 hg_return_t PDC_recv_read_coords(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
 hg_return_t PDC_Server_recv_read_sel_obj_data(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
+hg_return_t PDC_recv_query_metadata_bulk(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
 
 
 hg_class_t *hg_class_g;
@@ -4949,6 +4950,7 @@ HG_TEST_RPC_CB(send_data_query_region, handle)
     args->is_done        = in.is_done;
     args->ndim           = storage_region->ndim;
     args->op             = in.op;
+    args->origin         = in.origin;
 
     /* printf("==%s: query id is %d\n", __func__, in.query_id); */
 
@@ -5087,14 +5089,23 @@ HG_TEST_RPC_CB(send_bulk_rpc, handle)
         return ret;
     }
 
+    
+    /* printf("==PDC_SERVER[x]: received bulk rpc from server %d\n", in_struct.origin); */
+    /* fflush(stdout); */
+
     bulk_arg = (struct bulk_args_t *)calloc(1, sizeof(struct bulk_args_t));
-    bulk_arg->handle   = handle;
-    bulk_arg->origin   = in_struct.origin;
-    bulk_arg->cnt      = in_struct.cnt;
-    bulk_arg->ndim     = in_struct.ndim;
-    bulk_arg->query_id = in_struct.seq_id;
-    bulk_arg->obj_id   = in_struct.obj_id;
+    bulk_arg->cnt           = in_struct.cnt;
+    bulk_arg->total         = in_struct.total;
+    bulk_arg->origin        = in_struct.origin;
+    bulk_arg->query_id      = in_struct.seq_id;
     bulk_arg->client_seq_id = in_struct.seq_id2;
+    bulk_arg->op            = in_struct.op_id;
+    bulk_arg->ndim          = in_struct.ndim;
+    bulk_arg->obj_id        = in_struct.obj_id;
+    bulk_arg->data_type     = in_struct.data_type;
+    origin_bulk_handle      = in_struct.bulk_handle;
+
+    bulk_arg->handle        = handle;
 
     if (in_struct.op_id == PDC_BULK_QUERY_COORDS) {
         func_ptr = &PDC_recv_coords;
@@ -5105,13 +5116,15 @@ HG_TEST_RPC_CB(send_bulk_rpc, handle)
     else if (in_struct.op_id == PDC_BULK_SEND_QUERY_DATA) {
         func_ptr = &PDC_recv_read_coords_data;
     }
+    else if (in_struct.op_id == PDC_BULK_QUERY_METADATA) {
+        func_ptr = &PDC_recv_query_metadata_bulk;
+    }
     else {
         fprintf(stderr, "== %s - Invalid bulk op ID!\n", __func__);
         goto done;
     }
 
     if (in_struct.cnt > 0) {
-        origin_bulk_handle = in_struct.bulk_handle;
         bulk_arg->nbytes   = HG_Bulk_get_size(origin_bulk_handle);
         hg_info            = HG_Get_info(handle);
         HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *) &bulk_arg->nbytes, HG_BULK_READWRITE, 
@@ -5130,9 +5143,6 @@ HG_TEST_RPC_CB(send_bulk_rpc, handle)
         callback_info.ret = HG_SUCCESS;
         func_ptr(&callback_info);
     }
-
-    /* printf("==PDC_SERVER[x]: Pulled data from %d\n", in_struct.origin); */
-    /* fflush(stdout); */
 
 done:
     HG_Free_input(handle, &in_struct);

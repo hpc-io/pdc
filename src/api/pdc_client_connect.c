@@ -7792,6 +7792,7 @@ PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op, uint64_t *nhits
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
     uint32_t i, server_id, *target_servers = NULL, ntarget = 0;
+    int next_server, prev_server;
     hg_handle_t  handle;
     pdc_query_xfer_t *query_xfer;
     struct client_lookup_args lookup_args;
@@ -7827,6 +7828,20 @@ PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op, uint64_t *nhits
     for (server_id = 0; server_id < pdc_server_num_g; server_id++) {
         /* server_id = target_servers[i]; */
         debug_server_id_count[server_id]++;
+
+        for (i = 0; i < ntarget; i++) {
+            if (server_id == target_servers[i]) {
+                if (i > 0) 
+                    prev_server = target_servers[i-1];
+                if (i < ntarget - 1)
+                    next_server = target_servers[i+1];
+                break;
+            }
+            next_server = -1;
+            prev_server = -1;
+        }
+        query_xfer->next_server_id = next_server;
+        query_xfer->prev_server_id = prev_server;
 
         if (PDC_Client_try_lookup_server(server_id) != SUCCEED) {
             printf("==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server\n", pdc_client_mpi_rank_g);

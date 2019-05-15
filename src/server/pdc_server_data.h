@@ -191,6 +191,7 @@ typedef struct query_task_t {
     int               client_id;
     int               n_sent_server;
     int               n_unique_obj;
+    uint64_t          *obj_ids;
     int               n_recv_obj;
     int               ndim;
     pdcquery_get_op_t get_op;
@@ -198,8 +199,11 @@ typedef struct query_task_t {
     uint64_t          total_elem;
     int               *invalid_region_ids;
     int               ninvalid_region;
+    int               prev_server_id;
+    int               next_server_id;
 
     // Result
+    int               is_done;
     int               n_recv;
     uint64_t          nhits;
     uint64_t          *coords;
@@ -376,6 +380,7 @@ hg_return_t PDC_Server_recv_data_query_region(const struct hg_cb_info *callback_
 hg_return_t PDC_recv_nhits(const struct hg_cb_info *callback_info);
 
 hg_return_t PDC_recv_coords(const struct hg_cb_info *callback_info);
+hg_return_t PDC_recv_query_metadata_bulk(const struct hg_cb_info *callback_info);
 
 hg_return_t PDC_Server_recv_get_sel_data(const struct hg_cb_info *callback_info);
 

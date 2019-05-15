@@ -67,13 +67,13 @@ int main(int argc, char **argv)
     double get_sel_time, get_data_time;
     float *energy_data = NULL, *x_data = NULL, *y_data = NULL;
 
-    /* float energy_lo0 = 3.0; */
-    /* float x_lo = 300, x_hi = 310; */
-    /* float y_lo = 140, y_hi = 150; */
+    float energy_lo0 = 3.0;
+    float x_lo = 300, x_hi = 310;
+    float y_lo = 140, y_hi = 150;
 
-    float energy_lo0 = 1.6;
-    float x_lo = 100, x_hi = 109;
-    float y_lo = -150, y_hi = -140;
+    /* float energy_lo0 = 1.6; */
+    /* float x_lo = 100, x_hi = 109; */
+    /* float y_lo = -150, y_hi = -140; */
 
     pdcquery_t *ql = PDCquery_create(energy_id, PDC_GT, PDC_FLOAT, &energy_lo0);
 

@@ -55,9 +55,9 @@ typedef enum {
 typedef struct pdc_histogram_t {
     PDC_var_type_t dtype;
     int      nbin;
+    double   incr;
     double *range;
     uint64_t *bin;      // [ , )
-    double   incr;
 } pdc_histogram_t;
 
 #endif

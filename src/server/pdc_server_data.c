@@ -5978,24 +5978,14 @@ send_query_storage_region_to_server(query_task_t *task, region_list_t *region, u
     hg_return_t hg_ret;
     hg_handle_t handle = NULL;
     query_storage_region_transfer_t in;
-
-    in.query_id     = task->query_id;
-    in.obj_id       = obj_id;
-    in.manager      = task->manager;
-    in.offset       = region->offset;
-    in.size         = region->data_size;
-    in.is_done      = is_done;
-    in.total_region = count;
-    in.data_type    = (int)region->meta->data_type;
-    pdc_region_list_t_to_transfer(region, &in.region_transfer);
-    in.storage_location = strdup(region->storage_location);
-    in.op           = op;
+    storage_regions_args_t *storage_region;
+    region_list_t *cp_region;
+    struct hg_cb_info callback_info;
 
     if (server_id == pdc_server_rank_g) {
-        region_list_t *cp_region = (region_list_t*)calloc(1, sizeof(region_list_t));
-        storage_regions_args_t storage_region;
-        struct hg_cb_info callback_info;
-        callback_info.arg = &storage_region;
+        cp_region         = (region_list_t*)calloc(1, sizeof(region_list_t));
+        storage_region    = (storage_regions_args_t*)calloc(1, sizeof(storage_regions_args_t));
+        callback_info.arg = storage_region;
         callback_info.ret = HG_SUCCESS;
         pdc_region_list_t_deep_cp(region, cp_region);
         if (NULL != region->region_hist) 
@@ -6003,18 +5993,31 @@ send_query_storage_region_to_server(query_task_t *task, region_list_t *region, u
         else
             cp_region->region_hist = NULL;
 
-        storage_region.total_region   = count;
-        storage_region.is_done        = is_done;
-        storage_region.ndim           = region->ndim;
-        storage_region.query_id       = task->query_id;
-        storage_region.manager        = task->manager;
-        storage_region.storage_region = cp_region;
-        storage_region.op             = PDC_RECV_REGION_DO_QUERY;
+        storage_region->total_region   = count;
+        storage_region->is_done        = is_done;
+        storage_region->ndim           = region->ndim;
+        storage_region->query_id       = task->query_id;
+        storage_region->manager        = task->manager;
+        storage_region->storage_region = cp_region;
+        storage_region->op             = PDC_RECV_REGION_DO_QUERY;
+        region->sent_to_server         = server_id;
         ret_value = PDC_Server_recv_data_query_region(&callback_info);
 
         goto done;
     }
                 
+    in.origin           = pdc_server_rank_g;
+    in.query_id         = task->query_id;
+    in.obj_id           = obj_id;
+    in.manager          = task->manager;
+    in.offset           = region->offset;
+    in.size             = region->data_size;
+    in.is_done          = is_done;
+    in.total_region     = count;
+    in.data_type        = (int)region->meta->data_type;
+    in.storage_location = strdup(region->storage_location);
+    in.op               = op;
+    pdc_region_list_t_to_transfer(region, &in.region_transfer);
 
     if (NULL != region->region_hist) {
         in.has_hist = 1;
@@ -6930,6 +6933,7 @@ PDC_Server_query_evaluate_merge_opt(pdcquery_t *query, query_task_t *task, pdcqu
     int64_t i64lo, i64hi;
     uint64_t ui64lo, ui64hi;
     void *value, *buf;
+    int n_eval_region = 0;
 
     #ifdef ENABLE_TIMING
     struct timeval  pdc_timer_start, pdc_timer_end;
@@ -6938,9 +6942,6 @@ PDC_Server_query_evaluate_merge_opt(pdcquery_t *query, query_task_t *task, pdcqu
     #endif
 
     // query is guarenteed to be non-leaf nodes
-
-  
-    /* printf("==PDC_SERVER[%d]: %s - start query evaluation!\n", pdc_server_rank_g, __func__); */
     if (query == NULL) {
         printf("==PDC_SERVER[%d]: %s - input query NULL!\n", pdc_server_rank_g, __func__);
         goto done;
@@ -7037,9 +7038,13 @@ PDC_Server_query_evaluate_merge_opt(pdcquery_t *query, query_task_t *task, pdcqu
     }
 
     // Load data 
+    printf("==PDC_SERVER[%d]: %s - start loading data!\n", pdc_server_rank_g, __func__);
+    fflush(stdout);
     PDC_Server_load_query_data(task, query, combine_op);
  
-    int n_eval_region = 0;
+
+    printf("==PDC_SERVER[%d]: %s - start query evaluation!\n", pdc_server_rank_g, __func__);
+    fflush(stdout);
     DL_FOREACH(region_list_head, region_elt) {
         // Skip non-overlap regions with the region constraint
         if (region_constraint && region_constraint->ndim > 0) {
@@ -7161,6 +7166,14 @@ PDC_Server_query_evaluate_merge_opt(pdcquery_t *query, query_task_t *task, pdcqu
         n_eval_region++;
     } // End DL_FOREACH
 
+    if (n_eval_region == 0 && combine_op == PDC_QUERY_AND) {
+        if (sel->nhits > 0) {
+            sel->nhits = 0;
+            free(sel->coords);
+            sel->coords_alloc = 0;
+            sel->coords = NULL;
+        }
+    }
 
     #ifdef ENABLE_TIMING
     if (pdc_server_rank_g == 0 || pdc_server_rank_g == 1) 
@@ -8227,7 +8240,8 @@ PDC_Server_send_query_result_to_manager(query_task_t *task)
 {
     perr_t ret_value = SUCCEED;
 
-    /* printf("==PDC_SERVER[%d]: sending query results to manager %d!\n", pdc_server_rank_g, task->manager); */
+    printf("==PDC_SERVER[%d]: sending query results to manager %d!\n", pdc_server_rank_g, task->manager);
+    fflush(stdout);
 
     if (task->get_op == PDC_QUERY_GET_NHITS) {
         ret_value = PDC_Server_send_nhits_to_server(task);
@@ -8265,12 +8279,17 @@ PDC_Server_do_query(query_task_t *task)
 {
     perr_t ret_value = SUCCEED;
 
+    if (task->is_done == 1) {
+        goto done;
+    }
+
     #ifdef ENABLE_TIMING
     struct timeval  pdc_timer_start, pdc_timer_end;
     gettimeofday(&pdc_timer_start, 0);
     #endif
 
-    /* printf("==PDC_SERVER[%d]: start processing query:!\n", pdc_server_rank_g); */
+    printf("==PDC_SERVER[%d]: start processing query:!\n", pdc_server_rank_g);
+    fflush(stdout);
     /* PDCquery_print(task->query); */
 
     // Evaluate query 
@@ -8305,8 +8324,349 @@ PDC_Server_do_query(query_task_t *task)
     printf("==PDC_SERVER[%d]: query processing time %.4fs\n", pdc_server_rank_g, query_process_time);
     #endif
 
+    task->is_done = 1;
+done:
     return ret_value;
 }
+
+perr_t add_storage_region_to_buf(void **in_buf, uint64_t *buf_alloc, uint64_t *buf_off, region_list_t *region)
+{
+    perr_t ret_value = SUCCEED;
+    void *buf = *in_buf;
+    uint64_t my_size, tmp_size;
+    size_t i;
+
+    if (in_buf == NULL || *in_buf == NULL || region == NULL || buf_alloc == NULL || buf_off == NULL) {
+        printf("==PDC_SERVER[%d]: %s - ERROR! NULL input!\n", pdc_server_rank_g, __func__);
+        goto done;
+    }
+
+    my_size = 4 + strlen(region->storage_location)+1 + sizeof(region_info_transfer_t) + 20;
+    if (region->region_hist != NULL) {
+        my_size += (8 * (region->region_hist->nbin) * 3);
+    }
+
+    if (*buf_off + my_size + 1024 > *buf_alloc) {
+        (*buf_alloc) *= 2;
+        buf = realloc(buf, *buf_alloc);
+    }
+
+    int *loc_len = (int*)(buf + *buf_off);
+    *loc_len = strlen(region->storage_location) + 1;
+    (*buf_off) += sizeof(int);
+
+    char *storage_location = (char*)(buf + *buf_off);
+    sprintf(storage_location, "%s", region->storage_location);
+    (*buf_off) += (*loc_len);
+
+    region_info_transfer_t *region_info = (region_info_transfer_t*)(buf + *buf_off);
+    region_info->ndim = region->ndim;
+    if (region->ndim >= 3) {
+        region_info->start_2 = region->start[2];
+        region_info->count_2 = region->count[2];
+    }
+    if (region->ndim >= 2) {
+        region_info->start_1 = region->start[1];
+        region_info->count_1 = region->count[1];
+    }
+    region_info->start_0 = region->start[0];
+    region_info->count_0 = region->count[0];
+    (*buf_off) += sizeof(region_info_transfer_t);
+
+    uint64_t *offset = (uint64_t*)(buf + *buf_off);
+    *offset = region->offset;
+    (*buf_off) += sizeof(uint64_t);
+
+    uint64_t *size = (uint64_t*)(buf + *buf_off);
+    *size= region->data_size;
+    (*buf_off) += sizeof(uint64_t);
+
+    int *has_hist = (int*)(buf + *buf_off);
+    if (region->region_hist != NULL) {
+        *has_hist = 1;
+        (*buf_off) += sizeof(int);
+
+        pdc_histogram_t *hist = (pdc_histogram_t*)(buf + *buf_off);
+        hist->dtype = region->region_hist->dtype;
+        hist->nbin = region->region_hist->nbin;
+        hist->incr = region->region_hist->incr;
+        (*buf_off) += (sizeof(PDC_var_type_t) + sizeof(int) + sizeof(uint64_t));
+
+        double *range = (double*)(buf + *buf_off);
+        tmp_size = region->region_hist->nbin * 2 * sizeof(double);
+        memcpy(range, region->region_hist->range, tmp_size);
+        (*buf_off) += tmp_size;
+
+        uint64_t *bin = (uint64_t*)(buf + *buf_off);
+        tmp_size = region->region_hist->nbin * sizeof(uint64_t);
+        memcpy(bin, region->region_hist->bin, tmp_size);
+        (*buf_off) += tmp_size;
+    }
+    else {
+        *has_hist = 0;
+        (*buf_off) += sizeof(int);
+    }
+
+done:
+    return ret_value;
+}
+
+hg_return_t
+PDC_recv_query_metadata_bulk(const struct hg_cb_info *callback_info)
+{
+    hg_return_t ret = HG_SUCCESS;
+    hg_handle_t handle            = callback_info->info.forward.handle;
+    hg_bulk_t local_bulk_handle   = callback_info->info.bulk.local_handle;
+    struct bulk_args_t *bulk_args = (struct bulk_args_t *)callback_info->arg;
+    void   *buf;
+    region_list_t *regions, *region_list_head = NULL;
+    int i, nregion, *loc_len_ptr, *has_hist_ptr, found_task;
+    uint64_t buf_off, *offset_ptr, *size_ptr;
+    char *loc_ptr;
+    region_info_transfer_t *region_info_ptr;
+    pdc_histogram_t *hist_ptr;
+    query_task_t *task_elt;
+    pdcquery_t *query;
+
+    pdc_int_ret_t out;
+    out.ret = 1;
+
+    printf("==PDC_SERVER[%d]: %s - received %d query metadata!\n", pdc_server_rank_g, __func__, bulk_args->cnt);
+    fflush(stdout);
+
+    // TODO: test
+    if (callback_info->ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Error in callback");
+        ret = HG_PROTOCOL_ERROR;
+        out.ret = -1;
+        goto done;
+    }
+    else {
+
+        nregion = bulk_args->cnt;
+
+        if (nregion <= 0) {
+            printf("==PDC_SERVER[%d]: %s - ERROR! 0 query metadata received!\n", 
+                    pdc_server_rank_g, __func__);
+            goto done;
+        }
+        ret = HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 
+                             1, (void**)&buf, NULL, NULL);
+
+        regions = (region_list_t*)calloc(nregion, sizeof(region_list_t));
+
+        buf_off = 0;
+        for (i = 0; i < nregion; i++) {
+            if (buf_off > bulk_args->nbytes) {
+                printf("==PDC_SERVER[%d]: %s - ERROR! buf overflow %d! 1\n", pdc_server_rank_g, __func__, i);
+                fflush(stdout);
+            }
+            loc_len_ptr = (int*)(buf + buf_off);
+            buf_off += sizeof(int);
+
+            loc_ptr = (char*)(buf + buf_off);
+            strncpy(regions[i].storage_location, loc_ptr, *loc_len_ptr);
+            buf_off += (*loc_len_ptr);
+
+            region_info_ptr = (region_info_transfer_t*)(buf + buf_off);
+            pdc_region_transfer_t_to_list_t(region_info_ptr, &regions[i]);
+            buf_off += sizeof(region_info_transfer_t);
+
+            offset_ptr = (uint64_t*)(buf + buf_off);
+            regions[i].offset = *offset_ptr;
+            buf_off += sizeof(uint64_t);
+
+            size_ptr = (uint64_t*)(buf + buf_off);
+            regions[i].data_size= *size_ptr;
+            buf_off += sizeof(uint64_t);
+
+            has_hist_ptr = (int*)(buf + buf_off);
+            buf_off += sizeof(int);
+
+            if (buf_off > bulk_args->nbytes) {
+                printf("==PDC_SERVER[%d]: %s - ERROR! buf overflow %d!2\n", pdc_server_rank_g, __func__, i);
+                fflush(stdout);
+            }
+
+            if (*has_hist_ptr == 1) {
+                hist_ptr = (pdc_histogram_t*)(buf + buf_off);
+                buf_off += (sizeof(PDC_var_type_t) + sizeof(int) + sizeof(uint64_t));
+                hist_ptr->range = (double*)(buf + buf_off);
+                buf_off += (hist_ptr->nbin * 2 * sizeof(double));
+                hist_ptr->bin   = (uint64_t*)(buf + buf_off);
+                buf_off += (hist_ptr->nbin * sizeof(uint64_t));
+
+                regions[i].region_hist = (pdc_histogram_t*)calloc(1, sizeof(pdc_histogram_t));
+                copy_hist(regions[i].region_hist, hist_ptr);
+
+                if (regions[i].region_hist->nbin == 0 || regions[i].region_hist->nbin > 1000) {
+                    printf("==PDC_SERVER[%d]: %s ERROR received hist nbin=%d\n", 
+                            pdc_server_rank_g, __func__, regions[i].region_hist->nbin);
+                }
+            }
+
+            if (buf_off > bulk_args->nbytes) {
+                printf("==PDC_SERVER[%d]: %s - ERROR! buf overflow %d! 3\n", pdc_server_rank_g, __func__, i);
+                fflush(stdout);
+            }
+            regions[i].obj_id = bulk_args->obj_id;
+            regions[i].ndim   = bulk_args->ndim;
+            /* regions[i].data_type = bulk_args->data_type; */
+        }
+
+        if (buf_off > bulk_args->nbytes) {
+            printf("==PDC_SERVER[%d]: %s - ERROR! buf overflow after!\n", pdc_server_rank_g, __func__);
+            fflush(stdout);
+        }
+
+        found_task = 0;
+        DL_FOREACH(query_task_list_head_g, task_elt) {
+            if (task_elt->query_id == bulk_args->query_id) {
+                found_task = 1;
+                task_elt->ndim = bulk_args->ndim;
+                break;
+            }
+        }
+
+        if (found_task == 0) {
+            // Need to create a task and insert to global list
+            task_elt = (query_task_t*)calloc(1, sizeof(query_task_t));
+            task_elt->query_id = bulk_args->query_id;
+            task_elt->ndim = bulk_args->ndim;
+
+            DL_APPEND(query_task_list_head_g, task_elt);
+        }
+
+        query = task_elt->query;
+        task_elt->n_recv_obj++;
+
+        for (i = 0; i < nregion; i++) 
+            add_to_cache_storage_region(bulk_args->obj_id, &regions[i]);
+
+        if (bulk_args->op == PDC_RECV_REGION_DO_READ) {
+            goto done;
+        }
+
+        attach_storage_region_to_query(query, &regions[nregion-1]); 
+
+        /* printf("==PDC_SERVER[%d]: %s received region start %" PRIu64 " count %" PRIu64 "\n", */ 
+        /*         pdc_server_rank_g, __func__, region->start[0], region->count[0]); */
+        /* printf("==PDC_SERVER[%d]: %s received region with hist:\n", pdc_server_rank_g, __func__); */
+        /* PDC_print_hist(region->region_hist); */
+
+    }// End else
+
+done:
+    ret = HG_Bulk_free(local_bulk_handle);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not free HG bulk handle\n");
+        return ret;
+    }
+
+    ret = HG_Respond(bulk_args->handle, NULL, NULL, &out);
+    if (ret != HG_SUCCESS) 
+        fprintf(stderr, "Could not respond\n");
+
+    ret = HG_Destroy(bulk_args->handle);
+    if (ret != HG_SUCCESS) 
+        fprintf(stderr, "Could not destroy handle\n");
+
+
+    if (bulk_args->op == PDC_RECV_REGION_DO_READ) 
+        return ret;
+
+    if (bulk_args->origin == task_elt->prev_server_id || task_elt->prev_server_id == -1) {
+        uint64_t *obj_ids = (uint64_t*)calloc(pdc_server_size_g, sizeof(uint64_t));
+        int obj_idx = 0;
+        PDC_Server_distribute_query_workload(task_elt, query, &obj_idx, obj_ids, PDC_RECV_REGION_DO_QUERY); 
+        free(obj_ids);
+    }
+
+    int has_more = 0;
+    PDC_query_visit_leaf_with_cb_arg(query, has_more_storage_region_to_recv, &has_more);
+    if (has_more == 0) {
+        // Process query
+        PDC_Server_do_query(task_elt);
+
+        // Send the result to manager
+        PDC_Server_send_query_result_to_manager(task_elt);
+    }
+
+    free(bulk_args);
+    return ret;
+} // End PDC_recv_query_metadata_bulk
+
+perr_t 
+PDC_send_query_metadata_bulk(bulk_rpc_in_t *in, void *buf, uint64_t buf_sizes, int server_id)
+{
+
+    perr_t ret_value = SUCCEED;
+    hg_return_t hg_ret;
+    hg_handle_t handle;
+    hg_bulk_t bulk_handle = NULL;
+
+    FUNC_ENTER(NULL);
+
+    if (buf == NULL || buf_sizes == 0 || server_id < 0) {
+        printf("==PDC_SERVER[%d]: %s - ERROR with input!\n", pdc_server_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    if (server_id >= (int32_t)pdc_server_size_g) {
+        printf("==PDC_SERVER[%d]: %s - server_id %d invalid!\n", pdc_server_rank_g, __func__, server_id);
+        ret_value = FAIL;
+        goto done;
+    }
+
+
+    if (pdc_remote_server_info_g == NULL) {
+        fprintf(stderr, "==PDC_SERVER[%d]: %s - pdc_server_info_g is NULL\n", pdc_server_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    if (pdc_remote_server_info_g[server_id].addr_valid == 0) {
+        ret_value = PDC_Server_lookup_server_id(server_id);
+        if (ret_value != SUCCEED) {
+            fprintf(stderr, "==PDC_SERVER[%d]: %s - PDC_Server_lookup_server_id failed!\n", 
+                    pdc_server_rank_g, __func__);
+            ret_value = FAIL;
+            goto done;
+        }
+    }
+
+
+    hg_ret = HG_Bulk_create(hg_class_g, 1, &buf, &buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not create bulk data handle\n");
+        ret_value = FAIL;
+        goto done;
+    }
+
+    in->bulk_handle = bulk_handle;
+
+    hg_ret = HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, 
+                       send_bulk_rpc_register_id_g, &handle);
+    if (hg_ret != HG_SUCCESS) {
+        ret_value = FAIL;
+        goto done;
+    }
+
+    printf("==PDC_SERVER[%d]: %s - sending %d meta to server %d!\n", 
+            pdc_server_rank_g, __func__, in->cnt, server_id);
+    fflush(stdout);
+
+    hg_ret = HG_Forward(handle, pdc_check_int_ret_cb, NULL, in);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "==PDC_SERVER[%d]: %s - HG_Forward failed!\n", pdc_server_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+done:
+    HG_Destroy(handle);
+    FUNC_LEAVE(ret_value);
+} // End PDC_send_query_metadata_bulk
 
 void
 PDC_Server_distribute_query_storage_info(query_task_t *task, uint64_t obj_id, 
@@ -8315,6 +8675,9 @@ PDC_Server_distribute_query_storage_info(query_task_t *task, uint64_t obj_id,
     pdc_metadata_t *meta;
     int i, server_id, count, avg_count, nsent, nsent_server, is_last;
     region_list_t *elt;
+    void *region_bulk_buf;
+    uint64_t buf_alloc = 0, buf_off = 0;
+    bulk_rpc_in_t header;
 
     // Check if a previous query condition has already send the storage regions
     // there can be multiple pass to the same object, we only need to send it once
@@ -8328,65 +8691,121 @@ PDC_Server_distribute_query_storage_info(query_task_t *task, uint64_t obj_id,
 
     meta = PDC_Server_get_obj_metadata(obj_id);
     if (NULL != meta) {
+        if (meta->all_storage_region_distributed == 1) 
+            goto done;
 
         task->ndim = meta->ndim;
         obj_ids[*obj_idx] = obj_id;
         (*obj_idx)++;
-        /* printf("==PDC_SERVER[%d]: found metadata for %" PRIu64 "!\n", */ 
-        /*         pdc_server_rank_g, obj_id); */
-        // Iterate over all storage regions and send one by on
 
+        DL_COUNT(meta->storage_region_list_head, elt, count);
         if (task->n_sent_server == 0) {
-            DL_COUNT(meta->storage_region_list_head, elt, count);
             if (count >= pdc_server_size_g) 
                 task->n_sent_server = pdc_server_size_g - 1;    // Exclude manager
             else
                 task->n_sent_server = count;
         }
 
-        if (meta->all_storage_region_distributed == 1) 
-            goto done;
+        printf("==PDC_SERVER[%d]: found metadata for %" PRIu64 ", %d regions!\n", 
+                pdc_server_rank_g, obj_id, count);
 
         // Need to distribute storage metadata to other servers
         avg_count = ceil( (1.0 * count) / task->n_sent_server );
         nsent        = 0;
         nsent_server = 0;
         server_id    = 0;
-        is_last      = 0;
+        /* is_last      = 0; */
         task->n_sent_server = ceil( (1.0 *count) / avg_count );
+
+        buf_alloc = 1048576;
+        region_bulk_buf = calloc(buf_alloc, 1);
+
+        memset(&header, 0, sizeof(bulk_rpc_in_t));
+        header.seq_id    = task->query_id;
+        header.op_id     = op;
+        header.origin    = pdc_server_rank_g;
+        header.obj_id    = obj_id;
+        header.data_type = meta->data_type;
+        header.cnt       = avg_count;
+        header.ndim      = meta->ndim;
+        header.op_id     = PDC_BULK_QUERY_METADATA;
+
+
+        // Iterate over all storage regions and send one by on
         DL_FOREACH(meta->storage_region_list_head, elt) {
+            if (nsent > count) {
+                printf("==PDC_SERVER[%d]: ERROR sending more storage meta (%d) than expected (%d)!\n", 
+                        pdc_server_rank_g, nsent, count);
+                fflush(stdout);
+            }
 
-            if (nsent_server >= avg_count-1 || nsent == count - 1) 
-                is_last = 1;
-            
-            /* printf("==PDC_SERVER[%d]: sending 1 region to server %d\n", */ 
-            /*         pdc_server_rank_g, server_id); */
+            // Do not send to manager
+            if (server_id == task->manager ) {
+                server_id++; 
+                server_id %= pdc_server_size_g;
+            }
 
-            send_query_storage_region_to_server(task, elt, meta->obj_id, server_id, count, is_last, op);
+            /* send_query_storage_region_to_server(task, elt, meta->obj_id, server_id, count, is_last, op); */
+            if (server_id == pdc_server_rank_g) {
+                region_list_t *new_region = (region_list_t*)calloc(1, sizeof(region_list_t));
+                pdc_region_list_t_deep_cp(elt, new_region);
+
+                add_to_cache_storage_region(obj_id, new_region);
+                attach_storage_region_to_query(task->query, new_region); 
+            }
+            else {
+                add_storage_region_to_buf(&region_bulk_buf, &buf_alloc, &buf_off, elt);
+            }
+
             nsent++;
             nsent_server++;
 
-            if (nsent_server >= avg_count) {
+            if (nsent_server >= avg_count || nsent == count ) {
+                /* is_last = 1; */
+
+                /* printf("==PDC_SERVER[%d]: sending %d obj %" PRIu64 " region meta to server %d, %d left\n", */ 
+                /*         pdc_server_rank_g, nsent_server, meta->obj_id, server_id, header.cnt); */
+                /* fflush(stdout); */
+
+                // Last server may get less than average
+                if (nsent == count)
+                    header.cnt = count - avg_count * (task->n_sent_server - 1);
+ 
+                if (server_id != pdc_server_rank_g) {
+                    PDC_send_query_metadata_bulk(&header, region_bulk_buf, buf_off, server_id);
+                    // new buf for another server
+                    buf_alloc = 1048576;
+                    buf_off = 0;
+                    region_bulk_buf = calloc(buf_alloc, 1);
+                }
+                else
+                    task->n_recv_obj++;
+
+
                 nsent_server = 0;
                 server_id++; 
                 server_id %= pdc_server_size_g;
-                // Do not send to manager
-                if (server_id == task->manager) 
-                    server_id++; 
-                server_id %= pdc_server_size_g;
-                is_last = 0;
+                /* is_last = 0; */
+
+                /* // Skip the metadata server */
+                /* if (server_id == task->next_server_id && nsent != count-((task->n_sent_server-1)*avg_count)) { */
+                /*     server_id++; */ 
+                /*     server_id %= pdc_server_size_g; */
+                /* } */
+
+                /* // Send the last few meta to the previously skipped server */ 
+                /* if(task->next_server_id >= 0 && nsent >= (task->n_sent_server-1)*avg_count) { */
+                /*     server_id = task->next_server_id; */
+                /* } */
             }
         } // End DL_FOREACH
 
-        /* printf("==PDC_SERVER[%d]: distributed all storage meta of %" PRIu64 "!\n", */ 
-        /*         pdc_server_rank_g, obj_id); */
+        printf("==PDC_SERVER[%d]: distributed all storage meta of %" PRIu64 "!\n", 
+                pdc_server_rank_g, obj_id);
+        fflush(stdout);
         meta->all_storage_region_distributed = 1;
 
     } // end if (NULL != meta)
-    /* else { */
-    /*     printf("==PDC_SERVER[%d]: %s - metadata not found for %" PRIu64 "!\n", */
-    /*             pdc_server_rank_g, __func__, obj_id); */
-    /* } */
 
 done:
     fflush(stdout);
@@ -8463,7 +8882,8 @@ PDC_Server_recv_data_query_region(const struct hg_cb_info *callback_info)
     query_task_t *query_task;
     pdcquery_t *query;
     region_list_t *region = args->storage_region;
-    int query_id_exist;
+    int query_id_exist, obj_idx;
+    uint64_t *obj_ids;
 
     /* printf("==PDC_SERVER[%d]: received a query storage region!\n", pdc_server_rank_g); */
     /* fflush(stdout); */
@@ -8504,14 +8924,22 @@ PDC_Server_recv_data_query_region(const struct hg_cb_info *callback_info)
     query = query_task->query;
     add_to_cache_storage_region(region->obj_id, region);
 
+
     if (args->is_done == 1) {
         query_task->n_recv_obj++;
 
         // Add this storage region to all query constraints that specifies the same object
         attach_storage_region_to_query(query, region); 
 
-        /* printf("==PDC_SERVER[%d]: Received (%d/%d) storage regions of %d object from meta server!\n", */ 
-        /*         pdc_server_rank_g, query_task->n_recv_obj, query_task->n_unique_obj, query_task->n_recv_obj); */
+        printf("==PDC_SERVER[%d]: Received (%d/%d) storage regions of object %" PRIu64 " from meta server %d!\n", 
+            pdc_server_rank_g, query_task->n_recv_obj, query_task->n_unique_obj, region->obj_id, args->origin);
+
+        if (args->origin == query_task->prev_server_id || query_task->prev_server_id == -1) {
+            obj_ids = (uint64_t*)calloc(pdc_server_size_g, sizeof(uint64_t));
+            obj_idx = 0;
+            PDC_Server_distribute_query_workload(query_task, query, &obj_idx, obj_ids, PDC_RECV_REGION_DO_QUERY); 
+            free(obj_ids);
+        }
 
         int has_more = 0;
         PDC_query_visit_leaf_with_cb_arg(query, has_more_storage_region_to_recv, &has_more);
@@ -8527,6 +8955,12 @@ done:
     fflush(stdout);
     return ret;
 } // end PDC_Server_recv_data_query_region
+
+/* perr_t PDC_get_obj_ids_from_query(pdcquery_t *query, uint64_t *n_unique_obj) */
+/* { */
+/*     // TODO */
+
+/* } */
 
 hg_return_t 
 PDC_Server_recv_data_query(const struct hg_cb_info *callback_info)
@@ -8577,14 +9011,19 @@ PDC_Server_recv_data_query(const struct hg_cb_info *callback_info)
     new_task->manager           = query_xfer->manager;
     new_task->query             = query;
     new_task->n_unique_obj      = query_xfer->n_unique_obj;
+    new_task->obj_ids           = (uint64_t*)calloc(query_xfer->n_unique_obj, sizeof(uint64_t));
     new_task->get_op            = query_xfer->get_op;
     new_task->region_constraint = (region_list_t*)query->region_constraint;
+    new_task->next_server_id    = query_xfer->next_server_id;
+    new_task->prev_server_id    = query_xfer->prev_server_id;
+
+    /* PDC_get_obj_ids_from_query(query, new_task->n_unique_obj); */
 
     if (is_debug_g == 1) {
         printf("==PDC_SERVER[%d]: %s - appended new query task %d to list head\n", 
                 pdc_server_rank_g, __func__, new_task->query_id);
     }
-    /* printf("==PDC_SERVER[%d]: %s - deserialized query:\n", pdc_server_rank_g, __func__); */
+    /* printf("==PDC_SERVER[%d]: %s - received a query\n", pdc_server_rank_g, __func__); */
     /* PDCquery_print(query); */
     /* fflush(stdout); */
 
@@ -8604,9 +9043,14 @@ PDC_Server_recv_data_query(const struct hg_cb_info *callback_info)
     }
     else {
         PDC_query_visit_leaf_with_cb(query, attach_cache_storage_region_to_query);
-        obj_ids = (uint64_t*)calloc(query_xfer->n_unique_obj, sizeof(uint64_t));
-        PDC_Server_distribute_query_workload(new_task, query, &obj_idx, obj_ids, PDC_RECV_REGION_DO_QUERY); 
-        free(obj_ids);
+
+        // Manager distributes data first
+        if (pdc_server_rank_g == new_task->manager) {
+            obj_ids = (uint64_t*)calloc(query_xfer->n_unique_obj, sizeof(uint64_t));
+            obj_idx = 0;
+            PDC_Server_distribute_query_workload(new_task, query, &obj_idx, obj_ids, PDC_RECV_REGION_DO_QUERY); 
+            free(obj_ids);
+        }
 
         int has_more = 0;
         PDC_query_visit_leaf_with_cb_arg(query, has_more_storage_region_to_recv, &has_more);
@@ -8851,6 +9295,7 @@ PDC_Server_recv_read_sel_obj_data(const struct hg_cb_info *callback_info)
     PDC_send_data_to_client(task->client_id, task->my_data, ndim, unit_size, nhits, 
                             task->query_id, pdc_server_rank_g);
 done:
+    fflush(stdout);
     return ret;
 } // End PDC_Server_recv_read_sel_obj_data
 
