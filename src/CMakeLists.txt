@@ -293,6 +293,15 @@ if(PDC_ENABLE_CACHE)
   set(ENABLE_CACHE 1)
 endif()
 
+#-----------------------------------------------------------------------------
+# Query with Fastbit option
+#-----------------------------------------------------------------------------
+option(PDC_ENABLE_FASTBIT "Enable Fastbit." OFF)
+if(PDC_ENABLE_FASTBIT)
+    find_library(FASTBIT fastbit)
+    set(ENABLE_FASTBIT 1)
+endif()
+
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${PROJECT_BINARY_DIR}/config.h)
 
 #---------------------- end of generating config.h ---------------------------

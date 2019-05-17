@@ -94,7 +94,7 @@ hg_id_t    notify_client_multi_io_complete_rpc_register_id_g;
 hg_id_t    server_checkpoint_rpc_register_id_g;
 hg_id_t    send_shm_register_id_g;
 hg_id_t    send_client_storage_meta_rpc_register_id_g;
-hg_id_t    send_data_query_region_register_id_g;
+/* hg_id_t    send_data_query_region_register_id_g; */
 hg_id_t    send_read_sel_obj_id_rpc_register_id_g; 
 hg_id_t    send_nhits_register_id_g;
 hg_id_t    send_bulk_rpc_register_id_g;
@@ -122,6 +122,9 @@ double fwrite_total_MB                    = 0;
 int    n_read_from_bb_g                   = 0;
 int    read_from_bb_size_g                = 0;
 int    gen_hist_g                         = 0;
+int    gen_fastbit_idx_g                  = 0;
+int    use_fastbit_idx_g                  = 0;
+char   *gBinningOption                    = NULL;
 
 double server_write_time_g                  = 0.0;
 double server_read_time_g                   = 0.0;
@@ -1869,7 +1872,7 @@ static void PDC_Server_mercury_register()
 
     send_client_storage_meta_rpc_register_id_g= send_client_storage_meta_rpc_register(hg_class_g);
 
-    send_data_query_region_register_id_g      = send_data_query_region_register(hg_class_g);
+    /* send_data_query_region_register_id_g      = send_data_query_region_register(hg_class_g); */
     send_read_sel_obj_id_rpc_register_id_g    = send_read_sel_obj_id_rpc_register(hg_class_g);
 
 }
@@ -1933,6 +1936,14 @@ static void PDC_Server_get_env()
     if (tmp_env_char != NULL) 
         gen_hist_g = 1;
 
+    tmp_env_char = getenv("PDC_GEN_FASTBIT_IDX");
+    if (tmp_env_char != NULL) 
+        gen_fastbit_idx_g = 1;
+
+
+    tmp_env_char = getenv("PDC_USE_FASTBIT_IDX");
+    if (tmp_env_char != NULL) 
+        use_fastbit_idx_g = 1;
 
     if (pdc_server_rank_g == 0) {
         printf("\n==PDC_SERVER[%d]: using [%s] as tmp dir. %d OSTs per data file, %d%% to BB\n", 

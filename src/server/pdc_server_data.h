@@ -30,6 +30,10 @@
 #include "pdc_client_server_common.h"
 #include "pdc_query.h"
 
+#ifdef ENABLE_FASTBIT
+    #include "iapi.h"
+#endif
+
 #define PDC_MAX_OVERLAP_REGION_NUM 8 // max number of regions for PDC_Server_get_storage_location_of_region() 
 #define PDC_BULK_XFER_INIT_NALLOC 128
 
@@ -299,6 +303,9 @@ extern hg_id_t send_data_query_region_register_id_g;
 extern hg_id_t send_read_sel_obj_id_rpc_register_id_g;
 extern hg_id_t send_nhits_register_id_g;
 extern hg_id_t send_bulk_rpc_register_id_g;
+extern char   *gBinningOption;
+extern int    gen_fastbit_idx_g;
+extern int    use_fastbit_idx_g;
 
 
 
@@ -387,5 +394,12 @@ hg_return_t PDC_Server_recv_get_sel_data(const struct hg_cb_info *callback_info)
 hg_return_t PDC_recv_read_coords(const struct hg_cb_info *callback_info);
 
 hg_return_t PDC_Server_recv_read_sel_obj_data(const struct hg_cb_info *callback_info);
+
+#ifdef ENABLE_FASTBIT
+int bmreader(void *ctx, uint64_t start, uint64_t count, uint32_t *buf);
+int load_fastbit_index(char *idx_name, uint64_t obj_id, FastBitDataType dtype, int timestep, uint64_t ndim, uint64_t *dims, uint64_t *start, uint64_t *count, uint32_t **bms, double **keys, int64_t **offsets);
+
+#endif
+
 #endif /* PDC_SERVER_DATA_H */
 

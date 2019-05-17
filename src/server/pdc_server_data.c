@@ -5970,95 +5970,95 @@ PDC_Server_free_query_task(query_task_t *task)
     free(task);
 }
 
-perr_t 
-send_query_storage_region_to_server(query_task_t *task, region_list_t *region, uint64_t obj_id, 
-                                    int server_id, int count, int is_done, int op)
-{
-    perr_t ret_value = SUCCEED;
-    hg_return_t hg_ret;
-    hg_handle_t handle = NULL;
-    query_storage_region_transfer_t in;
-    storage_regions_args_t *storage_region;
-    region_list_t *cp_region;
-    struct hg_cb_info callback_info;
+/* perr_t */ 
+/* send_query_storage_region_to_server(query_task_t *task, region_list_t *region, uint64_t obj_id, */ 
+/*                                     int server_id, int count, int is_done, int op) */
+/* { */
+/*     perr_t ret_value = SUCCEED; */
+/*     hg_return_t hg_ret; */
+/*     hg_handle_t handle = NULL; */
+/*     query_storage_region_transfer_t in; */
+/*     storage_regions_args_t *storage_region; */
+/*     region_list_t *cp_region; */
+/*     struct hg_cb_info callback_info; */
 
-    if (server_id == pdc_server_rank_g) {
-        cp_region         = (region_list_t*)calloc(1, sizeof(region_list_t));
-        storage_region    = (storage_regions_args_t*)calloc(1, sizeof(storage_regions_args_t));
-        callback_info.arg = storage_region;
-        callback_info.ret = HG_SUCCESS;
-        pdc_region_list_t_deep_cp(region, cp_region);
-        if (NULL != region->region_hist) 
-            cp_region->region_hist = PDC_dup_hist(region->region_hist);
-        else
-            cp_region->region_hist = NULL;
+/*     if (server_id == pdc_server_rank_g) { */
+/*         cp_region         = (region_list_t*)calloc(1, sizeof(region_list_t)); */
+/*         storage_region    = (storage_regions_args_t*)calloc(1, sizeof(storage_regions_args_t)); */
+/*         callback_info.arg = storage_region; */
+/*         callback_info.ret = HG_SUCCESS; */
+/*         pdc_region_list_t_deep_cp(region, cp_region); */
+/*         if (NULL != region->region_hist) */ 
+/*             cp_region->region_hist = PDC_dup_hist(region->region_hist); */
+/*         else */
+/*             cp_region->region_hist = NULL; */
 
-        storage_region->total_region   = count;
-        storage_region->is_done        = is_done;
-        storage_region->ndim           = region->ndim;
-        storage_region->query_id       = task->query_id;
-        storage_region->manager        = task->manager;
-        storage_region->storage_region = cp_region;
-        storage_region->op             = PDC_RECV_REGION_DO_QUERY;
-        region->sent_to_server         = server_id;
-        ret_value = PDC_Server_recv_data_query_region(&callback_info);
+/*         storage_region->total_region   = count; */
+/*         storage_region->is_done        = is_done; */
+/*         storage_region->ndim           = region->ndim; */
+/*         storage_region->query_id       = task->query_id; */
+/*         storage_region->manager        = task->manager; */
+/*         storage_region->storage_region = cp_region; */
+/*         storage_region->op             = PDC_RECV_REGION_DO_QUERY; */
+/*         region->sent_to_server         = server_id; */
+/*         ret_value = PDC_Server_recv_data_query_region(&callback_info); */
 
-        goto done;
-    }
+/*         goto done; */
+/*     } */
                 
-    in.origin           = pdc_server_rank_g;
-    in.query_id         = task->query_id;
-    in.obj_id           = obj_id;
-    in.manager          = task->manager;
-    in.offset           = region->offset;
-    in.size             = region->data_size;
-    in.is_done          = is_done;
-    in.total_region     = count;
-    in.data_type        = (int)region->meta->data_type;
-    in.storage_location = strdup(region->storage_location);
-    in.op               = op;
-    pdc_region_list_t_to_transfer(region, &in.region_transfer);
+/*     in.origin           = pdc_server_rank_g; */
+/*     in.query_id         = task->query_id; */
+/*     in.obj_id           = obj_id; */
+/*     in.manager          = task->manager; */
+/*     in.offset           = region->offset; */
+/*     in.size             = region->data_size; */
+/*     in.is_done          = is_done; */
+/*     in.total_region     = count; */
+/*     in.data_type        = (int)region->meta->data_type; */
+/*     in.storage_location = strdup(region->storage_location); */
+/*     in.op               = op; */
+/*     pdc_region_list_t_to_transfer(region, &in.region_transfer); */
 
-    if (NULL != region->region_hist) {
-        in.has_hist = 1;
-        memset(&in.hist, 0, sizeof(pdc_histogram_t));
-        copy_hist(&in.hist, region->region_hist);
+/*     if (NULL != region->region_hist) { */
+/*         in.has_hist = 1; */
+/*         memset(&in.hist, 0, sizeof(pdc_histogram_t)); */
+/*         copy_hist(&in.hist, region->region_hist); */
 
-        if (in.hist.nbin == 0) {
-            printf("==PDC_SERVER[%d]: %s - ERROR sending hist to server %d with 0 bins\n",
-                    pdc_server_rank_g, __func__, server_id);
-        }
-    }
-    else {
-        in.has_hist = 0;
-    }
+/*         if (in.hist.nbin == 0) { */
+/*             printf("==PDC_SERVER[%d]: %s - ERROR sending hist to server %d with 0 bins\n", */
+/*                     pdc_server_rank_g, __func__, server_id); */
+/*         } */
+/*     } */
+/*     else { */
+/*         in.has_hist = 0; */
+/*     } */
 
-    /* printf("==PDC_SERVER[%d]: sending 1 storage region to server %d, is_done=%d!\n", */ 
-    /*                     pdc_server_rank_g, server_id, is_done); */
-    /* fflush(stdout); */
+/*     /1* printf("==PDC_SERVER[%d]: sending 1 storage region to server %d, is_done=%d!\n", *1/ */ 
+/*     /1*                     pdc_server_rank_g, server_id, is_done); *1/ */
+/*     /1* fflush(stdout); *1/ */
 
-    hg_ret = HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, 
-                       send_data_query_region_register_id_g, &handle);
-    if (hg_ret != HG_SUCCESS) {
-        printf("==PDC_SERVER[%d]: %s - HG_Create failed!\n", pdc_server_rank_g, __func__);
-        return FAIL;
-    }
+/*     hg_ret = HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, */ 
+/*                        send_data_query_region_register_id_g, &handle); */
+/*     if (hg_ret != HG_SUCCESS) { */
+/*         printf("==PDC_SERVER[%d]: %s - HG_Create failed!\n", pdc_server_rank_g, __func__); */
+/*         return FAIL; */
+/*     } */
     
 
-    hg_ret = HG_Forward(handle, send_query_storage_region_to_server_rpc_cb, NULL, &in);
-    if (hg_ret != HG_SUCCESS) {
-        printf("==PDC_SERVER[%d]: %s - HG_Forward failed!\n", pdc_server_rank_g, __func__);
-        HG_Destroy(handle);
-        goto done;
-    }
+/*     hg_ret = HG_Forward(handle, send_query_storage_region_to_server_rpc_cb, NULL, &in); */
+/*     if (hg_ret != HG_SUCCESS) { */
+/*         printf("==PDC_SERVER[%d]: %s - HG_Forward failed!\n", pdc_server_rank_g, __func__); */
+/*         HG_Destroy(handle); */
+/*         goto done; */
+/*     } */
 
-    region->sent_to_server = server_id;
+/*     region->sent_to_server = server_id; */
 
-    HG_Destroy(handle);
+/*     HG_Destroy(handle); */
 
-done:
-    return ret_value;
-} // End send_query_storage_region_to_server
+/* done: */
+/*     return ret_value; */
+/* } // End send_query_storage_region_to_server */
 
 void
 PDC_query_visit_leaf_with_cb(pdcquery_t *query, perr_t (*func)(pdcquery_t *arg))
@@ -6914,6 +6914,132 @@ int compare_coords_3d (const void * a, const void * b)
 /*     return ret_value; */
 /* } */                                                                                                          
 
+perr_t 
+PDC_query_fastbit_idx(region_list_t *region, pdcquery_constraint_t *constraint, uint64_t *nhit, uint64_t **coords)
+{
+    perr_t ret_value = SUCCEED;
+    FastBitDataType ft = 0;
+    uint64_t dataCount, type_size;
+    uint32_t *bms = NULL;
+    double *keys = NULL;
+    int64_t *offsets = NULL;
+    int timestep;
+    double v1, v2;
+    int ndim, i;
+    uint64_t start[DIM_MAX], count[DIM_MAX];
+    PDC_var_type_t dtype;
+
+
+    FUNC_ENTER(NULL);
+
+    if (region == NULL || constraint == NULL || coords == NULL || nhit == NULL) {
+        printf("==PDC_SERVER[%d]: %s - ERROR with input!\n", pdc_server_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    dtype = constraint->type;
+    if (PDC_INT == dtype)
+        ft = FastBitDataTypeInt;
+    else if (PDC_INT64 == dtype)
+        ft = FastBitDataTypeLong;
+    else if (PDC_UINT64 == dtype)
+        ft = FastBitDataTypeULong;
+    else if (PDC_UINT == dtype)
+        ft = FastBitDataTypeUInt;
+    else if (PDC_FLOAT == dtype)
+        ft = FastBitDataTypeFloat;
+    else if (PDC_DOUBLE == dtype)
+        ft = FastBitDataTypeDouble;
+
+    type_size = PDC_get_var_type_size(dtype);
+
+    for (i = 0; i < region->ndim; i++) {
+        start[i] = region->start[i] / type_size;
+        count[i] = region->count[i] / type_size;
+    }
+
+    timestep = 0;
+    char idx_name[128];
+    gen_fastbit_idx_name(idx_name, "bms", region->obj_id, timestep, region->ndim, start, count);
+    load_fastbit_index(idx_name, region->obj_id, ft, timestep, region->ndim, count, start, count, &bms, &keys, &offsets);
+
+    FastBitSelectionHandle sel, sel1, sel2;
+    FastBitCompareType ct1, ct2;
+
+    switch(constraint->type) {
+        case PDC_FLOAT :
+            v1 = (double)(*((float*)&constraint->value));
+            v2 = (double)(*((float*)&constraint->value2));
+            break;
+        case PDC_DOUBLE:
+            v1 = *((double*)&constraint->value);
+            v2 = *((double*)&constraint->value2);
+            break;
+        case PDC_INT:
+            v1 = (double)(*((int*)&constraint->value));
+            v2 = (double)(*((int*)&constraint->value2));
+            break;
+        case PDC_UINT:
+            v1 = (double)(*((uint32_t*)&constraint->value));
+            v2 = (double)(*((uint32_t*)&constraint->value2));
+            break;
+        case PDC_INT64:
+            v1 = (double)(*((int64_t*)&constraint->value));
+            v2 = (double)(*((int64_t*)&constraint->value2));
+            break;
+        case PDC_UINT64:
+            v1 = (double)(*((uint64_t*)&constraint->value));
+            v2 = (double)(*((uint64_t*)&constraint->value2));
+            break;
+        default:
+            printf("==PDC_SERVER[%d]: %s - error with operator type!\n", pdc_server_rank_g, __func__);
+            ret_value = FAIL;
+            goto done;
+    } // End switch
+
+
+    if (constraint->op == PDC_GT) 
+        ct1 = FastBitCompareGreater;
+    else if (constraint->op == PDC_GTE) 
+        ct1 = FastBitCompareGreaterEqual;
+    else if (constraint->op == PDC_LT) 
+        ct1 = FastBitCompareLess;
+    else if (constraint->op == PDC_LTE) 
+        ct1 = FastBitCompareLessEqual;
+
+    if (constraint->is_range == 1) {
+        if (constraint->op2 == PDC_GT) 
+            ct2 = FastBitCompareGreater;
+        else if (constraint->op2 == PDC_GTE) 
+            ct2 = FastBitCompareGreaterEqual;
+        if (constraint->op2 == PDC_LT) 
+            ct2 = FastBitCompareLess;
+        else if (constraint->op2 == PDC_LTE) 
+            ct2 = FastBitCompareLessEqual;
+
+        sel1 = fastbit_selection_osr(idx_name, ct1, v1);
+        sel2 = fastbit_selection_osr(idx_name, ct2, v2);
+        sel = fastbit_selection_combine(sel1, FastBitCombineAnd, sel2);
+    }
+    else {
+        sel = fastbit_selection_osr(idx_name, ct1, v1);
+    }
+    *nhit = fastbit_selection_evaluate(sel);
+    if (*nhit > 0) {
+        *coords = malloc(*nhit * sizeof(uint64_t));
+        fastbit_selection_get_coordinates(sel, *coords, *nhit, 0);
+    }
+
+    free(bms); 
+    free(keys);
+    free(offsets);
+    fastbit_iapi_free_all();
+done:
+    if (ret_value == FAIL) 
+        *nhit = 0;
+    FUNC_LEAVE(ret_value);
+}
 
 // TODO
 static perr_t
@@ -7037,134 +7163,180 @@ PDC_Server_query_evaluate_merge_opt(pdcquery_t *query, query_task_t *task, pdcqu
         value = &(query->constraint->value); 
     }
 
-    // Load data 
-    printf("==PDC_SERVER[%d]: %s - start loading data!\n", pdc_server_rank_g, __func__);
-    fflush(stdout);
-    PDC_Server_load_query_data(task, query, combine_op);
- 
+    if (use_fastbit_idx_g == 1) {
+        printf("==PDC_SERVER[%d]: %s - start query evaluation with Fastbit!\n", pdc_server_rank_g, __func__);
+        fflush(stdout);
+        DL_FOREACH(region_list_head, region_elt) {
+            // Skip non-overlap regions with the region constraint
+            if (region_constraint && region_constraint->ndim > 0) {
+                if (is_contiguous_region_overlap(region_elt, region_constraint) != 1)
+                    continue;
+            }
 
-    printf("==PDC_SERVER[%d]: %s - start query evaluation!\n", pdc_server_rank_g, __func__);
-    fflush(stdout);
-    DL_FOREACH(region_list_head, region_elt) {
-        // Skip non-overlap regions with the region constraint
-        if (region_constraint && region_constraint->ndim > 0) {
-            if (is_contiguous_region_overlap(region_elt, region_constraint) != 1)
-                continue;
+            // Skip region based on histogram
+            if (gen_hist_g == 1) {
+                if (PDC_region_has_hits_from_hist(query->constraint, region_elt->region_hist) != 1)
+                    continue;
+            }
+
+            uint64_t idx_nhits, *idx_coords, tmp_coord[DIM_MAX];
+            PDC_query_fastbit_idx(region_elt, query->constraint, &idx_nhits, &idx_coords);
+
+            if (idx_nhits > 0) {
+                if ((idx_nhits + sel->nhits)*ndim >= sel->coords_alloc) {
+                    sel->coords_alloc *= 2;
+                    sel->coords = (uint64_t*)realloc(sel->coords, sel->coords_alloc * sizeof(uint64_t));
+                }
+                for (i = 0; i < idx_nhits; i++) {
+                    region_index_to_coord(ndim, idx_coords[i], region_elt->count, tmp_coord);
+                    for (j = 0; j < ndim; j++) {
+                        sel->coords[(sel->nhits+i)*ndim + j] = tmp_coord[j] + region_elt->start[j];
+                    }
+                }
+                /* memcpy(sel->coords+sel->nhits*ndim, idx_coords, idx_nhits * sizeof(uint64_t)); */
+                sel->nhits += idx_nhits;
+            
+                free(idx_coords);
+            }
+
+            n_eval_region++;
         }
+    }
+    else {
+        // Load data 
+        printf("==PDC_SERVER[%d]: %s - start loading data!\n", pdc_server_rank_g, __func__);
+        fflush(stdout);
+        PDC_Server_load_query_data(task, query, combine_op);
+     
 
-        cache_region = region_elt;
-        if (cache_region->io_cache_region != NULL ) 
-            cache_region = cache_region->io_cache_region;
+        printf("==PDC_SERVER[%d]: %s - start query evaluation!\n", pdc_server_rank_g, __func__);
+        fflush(stdout);
+        DL_FOREACH(region_list_head, region_elt) {
+            // Skip non-overlap regions with the region constraint
+            if (region_constraint && region_constraint->ndim > 0) {
+                if (is_contiguous_region_overlap(region_elt, region_constraint) != 1)
+                    continue;
+            }
 
-        // Skip regions that has no data (skipped at data load phase when we know it has no hits)
-        if (cache_region->is_data_ready != 1) 
-            continue;
+            cache_region = region_elt;
+            if (cache_region->io_cache_region != NULL ) 
+                cache_region = cache_region->io_cache_region;
 
-        // Skip region based on histogram
-        if (gen_hist_g == 1) {
-            if (PDC_region_has_hits_from_hist(query->constraint, region_elt->region_hist) != 1)
+            // Skip regions that has no data (skipped at data load phase when we know it has no hits)
+            if (cache_region->is_data_ready != 1) 
                 continue;
-        }
 
-        buf   = cache_region->buf;
-        nelem = cache_region->count[0];
-        for (i = 1; i < cache_region->ndim; i++) 
-            nelem *= cache_region->count[i];
-        nelem /= unit_size;
+            // Skip region based on histogram
+            if (gen_hist_g == 1) {
+                if (PDC_region_has_hits_from_hist(query->constraint, region_elt->region_hist) != 1)
+                    continue;
+            }
 
+#ifdef ENABLE_FASTBIT
+            if (gen_fastbit_idx_g == 1) {
+                PDC_gen_fastbit_idx(cache_region, query->constraint->type);
+            }
+#endif
 
-        switch(query->constraint->type) {
-            case PDC_FLOAT :
-                /* #ifdef ENABLE_TIMING */
-                /* if (pdc_server_rank_g == 0 || pdc_server_rank_g == 1) */ 
-                /*     gettimeofday(&pdc_timer_start1, 0); */
-                /* #endif */
+            buf   = cache_region->buf;
+            nelem = cache_region->count[0];
+            for (i = 1; i < cache_region->ndim; i++) 
+                nelem *= cache_region->count[i];
+            nelem /= unit_size;
 
-                /* if (query->constraint->is_range == 1) { */
-                /*     QUERY_RANGE_EVALUATE_SCAN_OPT(nelem, buf, lop, flo, rop, fhi, sel, */ 
-                /*                                     region_elt, unit_size, region_constraint, combine_op); */
-                /* } */
-                /* else { */
-                /*     QUERY_EVALUATE_SCAN_OPT(nelem, buf, op, value, sel, region_elt, */ 
-                /*                               unit_size, region_constraint, combine_op); */
-                /* } */
+            switch(query->constraint->type) {
+                case PDC_FLOAT :
+                    /* #ifdef ENABLE_TIMING */
+                    /* if (pdc_server_rank_g == 0 || pdc_server_rank_g == 1) */ 
+                    /*     gettimeofday(&pdc_timer_start1, 0); */
+                    /* #endif */
 
-                if (query->constraint->is_range == 1) {
-                    MACRO_QUERY_RANGE_EVALUATE_SCAN_OPT(float, nelem, buf, lop, flo, rop, fhi, sel, 
-                                                    region_elt, unit_size, region_constraint, combine_op);
-                }
-                else {
-                    MACRO_QUERY_EVALUATE_SCAN_OPT(float, nelem, buf, op, value, sel, region_elt, 
-                                              unit_size, region_constraint, combine_op);
-                }
-                /* #ifdef ENABLE_TIMING */
-                /* if (pdc_server_rank_g == 0 || pdc_server_rank_g == 1) { */
-                /*     gettimeofday(&pdc_timer_end1, 0); */
-                /*     double query_eval_time= PDC_get_elapsed_time_double(&pdc_timer_start1, &pdc_timer_end1); */
-                /*     printf("==PDC_SERVER[%d]: evaluated region %d, %" PRIu64 " hits, time %.4fs\n", */ 
-                /*             pdc_server_rank_g, n_eval_region, sel->nhits, query_eval_time); */
-                /* } */
-                /* #endif */
+                    /* if (query->constraint->is_range == 1) { */
+                    /*     QUERY_RANGE_EVALUATE_SCAN_OPT(nelem, buf, lop, flo, rop, fhi, sel, */ 
+                    /*                                  region_elt, unit_size, region_constraint, combine_op); */
+                    /* } */
+                    /* else { */
+                    /*     QUERY_EVALUATE_SCAN_OPT(nelem, buf, op, value, sel, region_elt, */ 
+                    /*                               unit_size, region_constraint, combine_op); */
+                    /* } */
 
-                break;
-            case PDC_DOUBLE:
-                if (query->constraint->is_range == 1) {
-                    MACRO_QUERY_RANGE_EVALUATE_SCAN_OPT(double, nelem, buf, lop, dlo, rop, dhi, sel, 
-                                                    region_elt, unit_size, region_constraint, combine_op);
-                }
-                else {
-                    MACRO_QUERY_EVALUATE_SCAN_OPT(double, nelem, buf, op, value, sel, region_elt, 
-                                              unit_size, region_constraint, combine_op);
-                }
-                break;
-            case PDC_INT:
-                if (query->constraint->is_range == 1) {
-                    MACRO_QUERY_RANGE_EVALUATE_SCAN_OPT(int, nelem, buf, lop, ilo, rop, ihi, sel, 
-                                                    region_elt, unit_size, region_constraint, combine_op);
-                }
-                else {
-                    MACRO_QUERY_EVALUATE_SCAN_OPT(int, nelem, buf, op, value, sel, region_elt, 
-                                              unit_size, region_constraint, combine_op);
-                }
-                break;
-            case PDC_UINT:
-                if (query->constraint->is_range == 1) {
-                    MACRO_QUERY_RANGE_EVALUATE_SCAN_OPT(uint32_t, nelem, buf, lop, ulo, rop, uhi, sel, 
-                                                    region_elt, unit_size, region_constraint, combine_op);
-                }
-                else {
-                    MACRO_QUERY_EVALUATE_SCAN_OPT(uint32_t, nelem, buf, op, value, sel, region_elt, 
-                                              unit_size, region_constraint, combine_op);
-                }
-                break;
-            case PDC_INT64:
-                if (query->constraint->is_range == 1) {
-                    MACRO_QUERY_RANGE_EVALUATE_SCAN_OPT(int64_t, nelem, buf, lop, i64lo, rop, i64hi, sel, 
-                                                    region_elt, unit_size, region_constraint, combine_op);
-                }
-                else {
-                    MACRO_QUERY_EVALUATE_SCAN_OPT(int64_t, nelem, buf, op, value, sel, region_elt, 
-                                              unit_size, region_constraint, combine_op);
-                }
-                break;
-            case PDC_UINT64:
-                if (query->constraint->is_range == 1) {
-                    MACRO_QUERY_RANGE_EVALUATE_SCAN_OPT(uint64_t, nelem, buf, lop, ui64lo, rop, ui64hi, sel, 
-                                                    region_elt, unit_size, region_constraint, combine_op);
-                }
-                else {
-                    MACRO_QUERY_EVALUATE_SCAN_OPT(uint64_t, nelem, buf, op, value, sel, region_elt, 
-                                              unit_size, region_constraint, combine_op);
-                }
-                break;
-            default:
-                printf("==PDC_SERVER[%d]: %s - error with operator type!\n", pdc_server_rank_g, __func__);
-                ret_value = FAIL;
-                goto done;
-        } // End switch
+                    if (query->constraint->is_range == 1) {
+                        MACRO_QUERY_RANGE_EVALUATE_SCAN_OPT(float, nelem, buf, lop, flo, rop, fhi, sel, 
+                                                        region_elt, unit_size, region_constraint, combine_op);
+                    }
+                    else {
+                        MACRO_QUERY_EVALUATE_SCAN_OPT(float, nelem, buf, op, value, sel, region_elt, 
+                                                  unit_size, region_constraint, combine_op);
+                    }
+                    /* #ifdef ENABLE_TIMING */
+                    /* if (pdc_server_rank_g == 0 || pdc_server_rank_g == 1) { */
+                    /*     gettimeofday(&pdc_timer_end1, 0); */
+                    /*     double query_eval_time=PDC_get_elapsed_time_double(&pdc_timer_start1, &pdc_timer_end1); */
+                    /*     printf("==PDC_SERVER[%d]: evaluated region %d, %" PRIu64 " hits, time %.4fs\n", */ 
+                    /*             pdc_server_rank_g, n_eval_region, sel->nhits, query_eval_time); */
+                    /* } */
+                    /* #endif */
 
-        n_eval_region++;
-    } // End DL_FOREACH
+                    break;
+                case PDC_DOUBLE:
+                    if (query->constraint->is_range == 1) {
+                        MACRO_QUERY_RANGE_EVALUATE_SCAN_OPT(double, nelem, buf, lop, dlo, rop, dhi, sel, 
+                                                        region_elt, unit_size, region_constraint, combine_op);
+                    }
+                    else {
+                        MACRO_QUERY_EVALUATE_SCAN_OPT(double, nelem, buf, op, value, sel, region_elt, 
+                                                  unit_size, region_constraint, combine_op);
+                    }
+                    break;
+                case PDC_INT:
+                    if (query->constraint->is_range == 1) {
+                        MACRO_QUERY_RANGE_EVALUATE_SCAN_OPT(int, nelem, buf, lop, ilo, rop, ihi, sel, 
+                                                        region_elt, unit_size, region_constraint, combine_op);
+                    }
+                    else {
+                        MACRO_QUERY_EVALUATE_SCAN_OPT(int, nelem, buf, op, value, sel, region_elt, 
+                                                  unit_size, region_constraint, combine_op);
+                    }
+                    break;
+                case PDC_UINT:
+                    if (query->constraint->is_range == 1) {
+                        MACRO_QUERY_RANGE_EVALUATE_SCAN_OPT(uint32_t, nelem, buf, lop, ulo, rop, uhi, sel, 
+                                                        region_elt, unit_size, region_constraint, combine_op);
+                    }
+                    else {
+                        MACRO_QUERY_EVALUATE_SCAN_OPT(uint32_t, nelem, buf, op, value, sel, region_elt, 
+                                                  unit_size, region_constraint, combine_op);
+                    }
+                    break;
+                case PDC_INT64:
+                    if (query->constraint->is_range == 1) {
+                        MACRO_QUERY_RANGE_EVALUATE_SCAN_OPT(int64_t, nelem, buf, lop, i64lo, rop, i64hi, sel, 
+                                                        region_elt, unit_size, region_constraint, combine_op);
+                    }
+                    else {
+                        MACRO_QUERY_EVALUATE_SCAN_OPT(int64_t, nelem, buf, op, value, sel, region_elt, 
+                                                  unit_size, region_constraint, combine_op);
+                    }
+                    break;
+                case PDC_UINT64:
+                    if (query->constraint->is_range == 1) {
+                        MACRO_QUERY_RANGE_EVALUATE_SCAN_OPT(uint64_t, nelem, buf, lop, ui64lo, rop, ui64hi, sel, 
+                                                        region_elt, unit_size, region_constraint, combine_op);
+                    }
+                    else {
+                        MACRO_QUERY_EVALUATE_SCAN_OPT(uint64_t, nelem, buf, op, value, sel, region_elt, 
+                                                  unit_size, region_constraint, combine_op);
+                    }
+                    break;
+                default:
+                    printf("==PDC_SERVER[%d]: %s - error with operator type!\n", pdc_server_rank_g, __func__);
+                    ret_value = FAIL;
+                    goto done;
+            } // End switch
+
+            n_eval_region++;
+        } // End DL_FOREACH
+    } // End not use fastbit
 
     if (n_eval_region == 0 && combine_op == PDC_QUERY_AND) {
         if (sel->nhits > 0) {
@@ -8877,88 +9049,88 @@ done:
     return ret;
 } // End PDC_recv_query_metadata_bulk
 
-hg_return_t 
-PDC_Server_recv_data_query_region(const struct hg_cb_info *callback_info)
-{
-    hg_return_t ret = HG_SUCCESS;
-    hg_handle_t handle = callback_info->info.forward.handle;
-    storage_regions_args_t *args = (storage_regions_args_t*) callback_info->arg;
-    query_task_t *query_task;
-    pdcquery_t *query;
-    region_list_t *region = args->storage_region;
-    int query_id_exist, obj_idx;
-    uint64_t *obj_ids;
+/* hg_return_t */ 
+/* PDC_Server_recv_data_query_region(const struct hg_cb_info *callback_info) */
+/* { */
+/*     hg_return_t ret = HG_SUCCESS; */
+/*     hg_handle_t handle = callback_info->info.forward.handle; */
+/*     storage_regions_args_t *args = (storage_regions_args_t*) callback_info->arg; */
+/*     query_task_t *query_task; */
+/*     pdcquery_t *query; */
+/*     region_list_t *region = args->storage_region; */
+/*     int query_id_exist, obj_idx; */
+/*     uint64_t *obj_ids; */
 
-    /* printf("==PDC_SERVER[%d]: received a query storage region!\n", pdc_server_rank_g); */
-    /* fflush(stdout); */
+/*     /1* printf("==PDC_SERVER[%d]: received a query storage region!\n", pdc_server_rank_g); *1/ */
+/*     /1* fflush(stdout); *1/ */
 
-    if (args->op == PDC_RECV_REGION_DO_READ) {
-        add_to_cache_storage_region(region->obj_id, region);
-        goto done;
-    }
+/*     if (args->op == PDC_RECV_REGION_DO_READ) { */
+/*         add_to_cache_storage_region(region->obj_id, region); */
+/*         goto done; */
+/*     } */
 
-    // Find query from query task list
-    query_id_exist = 0;
-    DL_FOREACH(query_task_list_head_g, query_task) {
-        if (query_task->query_id == args->query_id) {
-            query_id_exist = 1;
-            query_task->manager = args->manager;
-            query_task->ndim    = args->ndim;
-            break;
-        }
-    }
+/*     // Find query from query task list */
+/*     query_id_exist = 0; */
+/*     DL_FOREACH(query_task_list_head_g, query_task) { */
+/*         if (query_task->query_id == args->query_id) { */
+/*             query_id_exist = 1; */
+/*             query_task->manager = args->manager; */
+/*             query_task->ndim    = args->ndim; */
+/*             break; */
+/*         } */
+/*     } */
 
-    if (region->region_hist) {
-        if (region->region_hist->nbin == 0) {
-            printf("==PDC_SERVER[%d]: %s ERROR received hist nbin=0\n", pdc_server_rank_g, __func__);
-        }
-    }
+/*     if (region->region_hist) { */
+/*         if (region->region_hist->nbin == 0) { */
+/*             printf("==PDC_SERVER[%d]: %s ERROR received hist nbin=0\n", pdc_server_rank_g, __func__); */
+/*         } */
+/*     } */
 
-    /* printf("==PDC_SERVER[%d]: %s received region start %" PRIu64 " count %" PRIu64 "\n", */ 
-    /*         pdc_server_rank_g, __func__, region->start[0], region->count[0]); */
-    /* printf("==PDC_SERVER[%d]: %s received region with hist:\n", pdc_server_rank_g, __func__); */
-    /* PDC_print_hist(region->region_hist); */
+/*     /1* printf("==PDC_SERVER[%d]: %s received region start %" PRIu64 " count %" PRIu64 "\n", *1/ */ 
+/*     /1*         pdc_server_rank_g, __func__, region->start[0], region->count[0]); *1/ */
+/*     /1* printf("==PDC_SERVER[%d]: %s received region with hist:\n", pdc_server_rank_g, __func__); *1/ */
+/*     /1* PDC_print_hist(region->region_hist); *1/ */
 
-    if (NULL == query_task || 0 == query_id_exist) {
-        printf("==PDC_SERVER[%d]: query %d has not been received from client!\n", 
-                pdc_server_rank_g, args->query_id);
-        goto done;
-    }
+/*     if (NULL == query_task || 0 == query_id_exist) { */
+/*         printf("==PDC_SERVER[%d]: query %d has not been received from client!\n", */ 
+/*                 pdc_server_rank_g, args->query_id); */
+/*         goto done; */
+/*     } */
 
-    query = query_task->query;
-    add_to_cache_storage_region(region->obj_id, region);
+/*     query = query_task->query; */
+/*     add_to_cache_storage_region(region->obj_id, region); */
 
 
-    if (args->is_done == 1) {
-        query_task->n_recv_obj++;
+/*     if (args->is_done == 1) { */
+/*         query_task->n_recv_obj++; */
 
-        // Add this storage region to all query constraints that specifies the same object
-        attach_storage_region_to_query(query, region); 
+/*         // Add this storage region to all query constraints that specifies the same object */
+/*         attach_storage_region_to_query(query, region); */ 
 
-        printf("==PDC_SERVER[%d]: Received (%d/%d) storage regions of object %" PRIu64 " from meta server %d!\n", 
-            pdc_server_rank_g, query_task->n_recv_obj, query_task->n_unique_obj, region->obj_id, args->origin);
+/*         printf("==PDC_SERVER[%d]: Received (%d/%d) storage regions of object %" PRIu64 " from meta server %d!\n", */ 
+/*             pdc_server_rank_g, query_task->n_recv_obj, query_task->n_unique_obj, region->obj_id, args->origin); */
 
-        if (args->origin == query_task->prev_server_id || query_task->prev_server_id == -1) {
-            obj_ids = (uint64_t*)calloc(pdc_server_size_g, sizeof(uint64_t));
-            obj_idx = 0;
-            PDC_Server_distribute_query_workload(query_task, query, &obj_idx, obj_ids, PDC_RECV_REGION_DO_QUERY); 
-            free(obj_ids);
-        }
+/*         if (args->origin == query_task->prev_server_id || query_task->prev_server_id == -1) { */
+/*             obj_ids = (uint64_t*)calloc(pdc_server_size_g, sizeof(uint64_t)); */
+/*             obj_idx = 0; */
+/*             PDC_Server_distribute_query_workload(query_task, query, &obj_idx, obj_ids, PDC_RECV_REGION_DO_QUERY); */ 
+/*             free(obj_ids); */
+/*         } */
 
-        int has_more = 0;
-        PDC_query_visit_leaf_with_cb_arg(query, has_more_storage_region_to_recv, &has_more);
-        if (has_more == 0) {
-            // Process query
-            PDC_Server_do_query(query_task);
+/*         int has_more = 0; */
+/*         PDC_query_visit_leaf_with_cb_arg(query, has_more_storage_region_to_recv, &has_more); */
+/*         if (has_more == 0) { */
+/*             // Process query */
+/*             PDC_Server_do_query(query_task); */
 
-            // Send the result to manager
-            PDC_Server_send_query_result_to_manager(query_task);
-        }
-    }
-done:
-    fflush(stdout);
-    return ret;
-} // end PDC_Server_recv_data_query_region
+/*             // Send the result to manager */
+/*             PDC_Server_send_query_result_to_manager(query_task); */
+/*         } */
+/*     } */
+/* done: */
+/*     fflush(stdout); */
+/*     return ret; */
+/* } // end PDC_Server_recv_data_query_region */
 
 /* perr_t PDC_get_obj_ids_from_query(pdcquery_t *query, uint64_t *n_unique_obj) */
 /* { */
@@ -8975,7 +9147,7 @@ PDC_Server_recv_data_query(const struct hg_cb_info *callback_info)
     int found_region = 0, obj_idx = 0, i;
     uint64_t *obj_ids;
     query_task_t *new_task, *task_elt;
-    int query_id_exist;
+    int query_id_exist = 0;
     pdcquery_t *query;
 
     query = PDC_deserialize_query(query_xfer);
@@ -9374,4 +9546,272 @@ done:
     return ret;
 }
 
+#ifdef ENABLE_FASTBIT
+void
+gen_fastbit_idx_name(char *out, char *prefix, uint64_t obj_id, int timestep, int ndim, uint64_t *start, uint64_t *count)
+{
+    if (ndim == 1) {
+        sprintf(out, "%s-%" PRIu64 "-%d-%" PRIu64 "-%" PRIu64 "", prefix, obj_id, timestep, start[0], count[0]);
+    }
+    else if (ndim == 2) {
+        sprintf(out, "%s-%" PRIu64 "-%d-%" PRIu64 "-%" PRIu64 "-%" PRIu64 "-%" PRIu64 "", 
+                prefix, obj_id, timestep, start[0], start[1], count[0], count[1]);
+    }
+    else if (ndim == 3) {
+        sprintf(out, "%s-%" PRIu64 "-%d-%" PRIu64 "-%" PRIu64 "-%" PRIu64 "-%" PRIu64 "-%" PRIu64 "-%" PRIu64 "", 
+                prefix, obj_id, timestep, start[0], start[1], start[2], count[0], count[1], count[2]);
+    }
+}
 
+perr_t
+generate_write_fastbit_idx(uint64_t obj_id, void* data, uint64_t dataCount, FastBitDataType ft, int timestep, int ndim, uint64_t *start, uint64_t *count)
+{
+    perr_t ret_value = SUCCEED;
+    long int fastbitErr;
+    char bmsName[128];
+    char keyName[128];
+    char offName[128];
+    char out_name[256];
+    double* keys = NULL;
+    int64_t *offsets = NULL;
+    uint32_t *bms = NULL;
+    uint64_t nk=0, no=0, nb=0;
+    FILE *fp;
+
+    FUNC_ENTER(NULL);
+
+    gen_fastbit_idx_name(bmsName, "bms", obj_id, timestep, ndim, start, count);
+    gen_fastbit_idx_name(keyName, "key", obj_id, timestep, ndim, start, count);
+    gen_fastbit_idx_name(offName, "off", obj_id, timestep, ndim, start, count);
+
+    /* fastbitIndex(bmsName, data, dataCount, ft, &keys, &nk, &offsets, &no, &bms, &nb); */
+    fastbitErr = fastbit_iapi_register_array(bmsName, ft, data, dataCount);
+    if (fastbitErr < 0) {
+        printf("==PDC_SERVER[%d]: %s - ERROR with fastbit_iapi_register_array\n", pdc_server_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+    
+    fastbitErr = fastbit_iapi_build_index(bmsName, (const char*)gBinningOption);
+    if (fastbitErr < 0) {
+        printf("==PDC_SERVER[%d]: %s - ERROR with fastbit_iapi_build_index\n", pdc_server_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+    
+    fastbitErr = fastbit_iapi_deconstruct_index(bmsName, &keys, &nk, &offsets, &no, &bms, &nb);
+    if (fastbitErr < 0) {
+        printf("==PDC_SERVER[%d]: %s - ERROR with fastbit_iapi_deconstruct_index\n", pdc_server_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+    
+    /* printf("==PDC_SERVER[%d]: %s - created Fastbit index for region\n", pdc_server_rank_g, __func__); */
+    /* printf("nb=%" PRIu64 ", bms[0] = %" PRIu32 ", bms[1]=%" PRIu32 " \n", nb, bms[0], bms[1]); */
+    /* printf("nk=%" PRIu64 ", key[0] = %f, key[1]=%f \n", nk, keys[0], keys[1]); */
+    /* printf("no=%" PRIu64 ", off[0] = %" PRIu64 ", off[1]=%" PRIu64 " \n", no, offsets[0], offsets[1]); */
+
+    // Need to write out bms, key, and offset
+    char storage_location[256];
+    char *data_path;
+    char *user_specified_data_path = getenv("PDC_DATA_LOC");
+    if (user_specified_data_path != NULL)
+        data_path = user_specified_data_path;
+    else {
+        data_path = getenv("SCRATCH");
+        if (data_path == NULL)
+            data_path = ".";
+    }
+
+    sprintf(storage_location, "%s/fastbit_idx/%" PRIu64 "/", data_path, obj_id);
+    pdc_mkdir(storage_location);
+
+    sprintf(out_name, "%s/%s", storage_location, bmsName);
+    fp = fopen(out_name, "w");
+    fwrite(bms, nb, sizeof(uint32_t), fp);
+    fclose(fp);
+
+    sprintf(out_name, "%s/%s", storage_location, keyName);
+    fp = fopen(out_name, "w");
+    fwrite(keys, nk, sizeof(double), fp);
+    fclose(fp);
+
+    sprintf(out_name, "%s/%s", storage_location, offName);
+    fp = fopen(out_name, "w");
+    fwrite(offsets, no, sizeof(int64_t), fp);
+    fclose(fp);
+
+    /* printf("==PDC_SERVER[%d]: %s - created and written a Fastbit index [%s]\n", */ 
+    /*         pdc_server_rank_g, __func__, out_name); */
+
+    free(bms); 
+    free(keys);
+    free(offsets);
+
+done:
+    fastbit_iapi_free_all();
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDC_gen_fastbit_idx(region_list_t *region, PDC_var_type_t dtype)
+{
+    perr_t ret_value = SUCCEED;
+    int i;
+    FastBitDataType ft;
+    uint64_t dataCount, start[DIM_MAX], count[DIM_MAX], type_size;
+
+    FUNC_ENTER(NULL);
+
+    if (region == NULL || region->buf == NULL) {
+        printf("==PDC_SERVER[%d]: %s - ERROR with input!\n", pdc_server_rank_g, __func__);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    if (PDC_INT == dtype)
+        ft = FastBitDataTypeInt;
+    else if (PDC_INT64 == dtype)
+        ft = FastBitDataTypeLong;
+    else if (PDC_UINT64 == dtype)
+        ft = FastBitDataTypeULong;
+    else if (PDC_UINT == dtype)
+        ft = FastBitDataTypeUInt;
+    else if (PDC_FLOAT == dtype)
+        ft = FastBitDataTypeFloat;
+    else if (PDC_DOUBLE == dtype)
+        ft = FastBitDataTypeDouble;
+
+    type_size = PDC_get_var_type_size(dtype);
+    dataCount = region->data_size / type_size;
+
+    for (i = 0; i < region->ndim; i++) {
+        count[i] = region->count[i] / type_size;
+        start[i] = region->start[i] / type_size;
+    }
+
+    generate_write_fastbit_idx(region->obj_id, (void*)region->buf, dataCount, ft, 0, region->ndim, start, count);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+int bmreader(void *ctx, uint64_t start, uint64_t count, uint32_t *buf)
+{
+    const uint32_t *bms = (uint32_t*)ctx + start;
+    unsigned j;
+    for (j = 0; j < count; ++ j) {
+      buf[j] = bms[j];
+    }
+
+    return 0;
+}
+
+int queryData(const char *name)
+{
+    uint64_t nhits, i;
+    uint64_t *buf, nbuf, skip;
+    double val1 = 0.0, val2 = 10.0;
+    FastBitSelectionHandle sel1 = fastbit_selection_osr(name, FastBitCompareGreater, val1);
+    FastBitSelectionHandle sel2 = fastbit_selection_osr(name, FastBitCompareLess, val2);
+    FastBitSelectionHandle sel  = fastbit_selection_combine(sel1, FastBitCombineAnd, sel2);
+
+
+    nhits = fastbit_selection_evaluate(sel);
+    printf("Query has %" PRIu64" hits\n", nhits);
+
+    buf = (uint64_t*)calloc(nhits, sizeof(uint64_t));
+
+    nhits = fastbit_selection_get_coordinates(sel, buf, nhits, 0);
+
+    printf("Coordinates:\n");
+    for (i = 0; i < nhits; i++) {
+        printf(", %" PRIu64 "", buf[i]);
+    }
+    printf("\n");
+
+    free(buf);
+
+    fastbit_iapi_free_all();
+}
+
+int 
+load_fastbit_index(char *idx_name, uint64_t obj_id, FastBitDataType dtype, int timestep, uint64_t ndim, uint64_t *dims, uint64_t *start, uint64_t *count, uint32_t **bms, double **keys, int64_t **offsets)
+{
+    char bmsName[128];
+    char keyName[128];
+    char offName[128];
+    char out_name[256];
+    uint64_t nk=0, no=0, nb=0, size;
+    FILE *fp;
+
+    gen_fastbit_idx_name(bmsName, "bms", obj_id, timestep, ndim, start, count);
+    gen_fastbit_idx_name(keyName, "key", obj_id, timestep, ndim, start, count);
+    gen_fastbit_idx_name(offName, "off", obj_id, timestep, ndim, start, count);
+
+    char storage_location[256];
+    char *data_path;
+    char *user_specified_data_path = getenv("PDC_DATA_LOC");
+    if (user_specified_data_path != NULL)
+        data_path = user_specified_data_path;
+    else {
+        data_path = getenv("SCRATCH");
+        if (data_path == NULL)
+            data_path = ".";
+    }
+
+    sprintf(storage_location, "%s/fastbit_idx/%" PRIu64 "/", data_path, obj_id);
+
+    sprintf(out_name, "%s/%s", storage_location, bmsName);
+    fp = fopen(out_name, "r");
+    if (fp == NULL) {
+        printf("==PDC_SERVER[%d]: %s - ERROR opening file [%s]!\n", pdc_server_rank_g, __func__, out_name);
+        return -1;
+    }
+    fseek(fp, 0, SEEK_END);
+    size = ftell(fp);
+    nb   = size / sizeof(uint32_t);
+    *bms  = (uint32_t*)calloc(nb, sizeof(uint32_t));
+    fseek(fp, 0, SEEK_SET); 
+    fread(*bms, nb, sizeof(uint32_t), fp);
+    fclose(fp);
+
+
+    sprintf(out_name, "%s/%s", storage_location, keyName);
+    fp = fopen(out_name, "r");
+    if (fp == NULL) {
+        printf("==PDC_SERVER[%d]: %s - ERROR opening file [%s]!\n", pdc_server_rank_g, __func__, out_name);
+        return -1;
+    }
+    fseek(fp, 0, SEEK_END);
+    size = ftell(fp);
+    nk   = size / sizeof(double);
+    *keys = (double*)calloc(nk, sizeof(double));
+    fseek(fp, 0, SEEK_SET); 
+    fread(*keys, nk, sizeof(double), fp);
+    fclose(fp);
+
+
+    sprintf(out_name, "%s/%s", storage_location, offName);
+    fp = fopen(out_name, "r");
+    if (fp == NULL) {
+        printf("==PDC_SERVER[%d]: %s - ERROR opening file [%s]!\n", pdc_server_rank_g, __func__, out_name);
+        return -1;
+    }
+    fseek(fp, 0, SEEK_END);
+    size = ftell(fp);
+    no   = size / sizeof(int64_t);
+    *offsets = (int64_t*)calloc(no, sizeof(int64_t));
+    fseek(fp, 0, SEEK_SET); 
+    fread(*offsets, no, sizeof(int64_t), fp);
+    fclose(fp);
+
+    /* printf("nb=%" PRIu64 ", bms[0] = %" PRIu32 ", bms[1]=%" PRIu32 " \n", nb, (*bms)[0], (*bms)[1]); */
+    /* printf("nk=%" PRIu64 ", key[0] = %f, key[1]=%f \n", nk, (*keys)[0], (*keys)[1]); */
+    /* printf("no=%" PRIu64 ", off[0] = %" PRIu64 ", off[1]=%" PRIu64 " \n", no, (*offsets)[0], (*offsets)[1]); */
+
+    fastbit_iapi_register_array_index_only(idx_name, dtype, dims, ndim, *keys, nk, *offsets, no, *bms, bmreader);
+
+    return 1;
+}
+#endif

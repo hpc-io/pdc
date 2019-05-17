@@ -4917,54 +4917,54 @@ HG_TEST_RPC_CB(send_shm_bulk_rpc, handle)
 
 // Data query
 /* send_data_query_region_cb(hg_handle_t handle) */
-HG_TEST_RPC_CB(send_data_query_region, handle)
-{
-    hg_return_t ret;
-    query_storage_region_transfer_t in;
-    region_list_t *storage_region;
-    storage_regions_args_t *args;
-    pdc_int_ret_t  out;
+/* HG_TEST_RPC_CB(send_data_query_region, handle) */
+/* { */
+/*     hg_return_t ret; */
+/*     query_storage_region_transfer_t in; */
+/*     region_list_t *storage_region; */
+/*     storage_regions_args_t *args; */
+/*     pdc_int_ret_t  out; */
 
-    FUNC_ENTER(NULL);
+/*     FUNC_ENTER(NULL); */
 
-    HG_Get_input(handle, &in);
+/*     HG_Get_input(handle, &in); */
 
-    // Copy the received data
-    storage_region = (region_list_t*)calloc(1, sizeof(region_list_t));
-    pdc_region_transfer_t_to_list_t(&in.region_transfer, storage_region);
-    storage_region->obj_id = in.obj_id;
-    sprintf(storage_region->storage_location, in.storage_location);
-    storage_region->offset = in.offset;
-    storage_region->data_size = in.size;
+/*     // Copy the received data */
+/*     storage_region = (region_list_t*)calloc(1, sizeof(region_list_t)); */
+/*     pdc_region_transfer_t_to_list_t(&in.region_transfer, storage_region); */
+/*     storage_region->obj_id = in.obj_id; */
+/*     sprintf(storage_region->storage_location, in.storage_location); */
+/*     storage_region->offset = in.offset; */
+/*     storage_region->data_size = in.size; */
 
-    if (in.has_hist == 1) 
-        storage_region->region_hist = PDC_dup_hist(&in.hist);
+/*     if (in.has_hist == 1) */ 
+/*         storage_region->region_hist = PDC_dup_hist(&in.hist); */
 
-    if (storage_region->region_hist->nbin == 0) {
-        printf("==%s: histogram has 0 bin\n", __func__);
-    }
+/*     if (storage_region->region_hist->nbin == 0) { */
+/*         printf("==%s: histogram has 0 bin\n", __func__); */
+/*     } */
     
-    args = (storage_regions_args_t*)calloc(1, sizeof(storage_regions_args_t));
-    args->total_region   = in.total_region;
-    args->query_id       = in.query_id;
-    args->manager        = in.manager;
-    args->storage_region = storage_region;
-    args->is_done        = in.is_done;
-    args->ndim           = storage_region->ndim;
-    args->op             = in.op;
-    args->origin         = in.origin;
+/*     args = (storage_regions_args_t*)calloc(1, sizeof(storage_regions_args_t)); */
+/*     args->total_region   = in.total_region; */
+/*     args->query_id       = in.query_id; */
+/*     args->manager        = in.manager; */
+/*     args->storage_region = storage_region; */
+/*     args->is_done        = in.is_done; */
+/*     args->ndim           = storage_region->ndim; */
+/*     args->op             = in.op; */
+/*     args->origin         = in.origin; */
 
-    /* printf("==%s: query id is %d\n", __func__, in.query_id); */
+/*     /1* printf("==%s: query id is %d\n", __func__, in.query_id); *1/ */
 
-    // Send confirmation
-    out.ret = 1;
-    ret = HG_Respond(handle, PDC_Server_recv_data_query_region, args, &out);
+/*     // Send confirmation */
+/*     out.ret = 1; */
+/*     ret = HG_Respond(handle, PDC_Server_recv_data_query_region, args, &out); */
 
-    ret = HG_Free_input(handle, &in);
-    ret = HG_Destroy(handle);
+/*     ret = HG_Free_input(handle, &in); */
+/*     ret = HG_Destroy(handle); */
 
-    return ret;
-}
+/*     return ret; */
+/* } */
 
 /* send_data_query_cb(hg_handle_t handle) */
 HG_TEST_RPC_CB(send_data_query, handle)
@@ -5734,11 +5734,11 @@ send_data_query_rpc_register(hg_class_t *hg_class)
     return  MERCURY_REGISTER(hg_class, "send_data_query_rpc_register", pdc_query_xfer_t, pdc_int_ret_t, send_data_query_cb);
 }
 
-hg_id_t
-send_data_query_region_register(hg_class_t *hg_class)
-{
-    return  MERCURY_REGISTER(hg_class, "send_data_query_region_register", query_storage_region_transfer_t, pdc_int_ret_t, send_data_query_region_cb);
-}
+/* hg_id_t */
+/* send_data_query_region_register(hg_class_t *hg_class) */
+/* { */
+/*     return  MERCURY_REGISTER(hg_class, "send_data_query_region_register", query_storage_region_transfer_t, pdc_int_ret_t, send_data_query_region_cb); */
+/* } */
 
 hg_id_t
 send_nhits_register(hg_class_t *hg_class)

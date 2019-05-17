@@ -69,14 +69,13 @@ int main(int argc, char **argv)
 
 
     printf("Preload the data\n");
-    float preload_value = 0;
-    int preload_int = 0;
+    float preload_value = -10000000.0;
     pdcquery_t *qpreload_energy = PDCquery_create(energy_id, PDC_GT, PDC_FLOAT, &preload_value);
-    pdcquery_t *qpreload_x = PDCquery_create(x_id, PDC_GT, PDC_FLOAT, &preload_int);
-    pdcquery_t *qpreload_y = PDCquery_create(y_id, PDC_GT, PDC_FLOAT, &preload_int);
+    pdcquery_t *qpreload_x = PDCquery_create(x_id, PDC_GT, PDC_FLOAT, &preload_value);
+    pdcquery_t *qpreload_y = PDCquery_create(y_id, PDC_GT, PDC_FLOAT, &preload_value);
 
-    pdcquery_t *qpreload_xy = PDCquery_or(qpreload_x, qpreload_y);
-    pdcquery_t *qpreload   = PDCquery_or(qpreload_energy, qpreload_xy);
+    pdcquery_t *qpreload_xy = PDCquery_or(qpreload_y, qpreload_x);
+    pdcquery_t *qpreload   = PDCquery_or(qpreload_xy, qpreload_energy);
 
 
     PDCquery_get_nhits(qpreload, &nhits);
