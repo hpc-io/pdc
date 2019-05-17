@@ -7190,7 +7190,7 @@ PDC_Server_query_evaluate_merge_opt(pdcquery_t *query, query_task_t *task, pdcqu
                 for (i = 0; i < idx_nhits; i++) {
                     region_index_to_coord(ndim, idx_coords[i], region_elt->count, tmp_coord);
                     for (j = 0; j < ndim; j++) {
-                        sel->coords[(sel->nhits+i)*ndim + j] = tmp_coord[j] + region_elt->start[j];
+                        sel->coords[(sel->nhits+i)*ndim + j] = tmp_coord[j] + region_elt->start[j]/ unit_size;
                     }
                 }
                 /* memcpy(sel->coords+sel->nhits*ndim, idx_coords, idx_nhits * sizeof(uint64_t)); */
