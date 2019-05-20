@@ -4662,6 +4662,10 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
                     if (fp_read != NULL)  
                         fclose(fp_read);
                     fp_read = fopen(region_elt->cache_location, "rb");
+                    if (fp_read == NULL) {
+                        printf("==PDC_SERVER[%d]: %s - unable to open file [%s]\n", 
+                                pdc_server_rank_g, __func__, region_elt->cache_location);
+                    }
                     n_fopen_g++;
                 }
                 offset = ftell(fp_read);
@@ -6086,6 +6090,11 @@ PDC_Server_data_read_to_buf_1_region(region_list_t *region)
         return SUCCEED;
 
     fp_read = fopen(region->storage_location, "rb");
+    if (NULL == fp_read) {
+        printf("==PDC_SERVER[%d]: fopen failed [%s]\n", pdc_server_rank_g, region->storage_location);
+        ret_value = FAIL;
+        goto done;
+    }
     n_fopen_g++;
 
     offset = ftell(fp_read);
@@ -6144,6 +6153,9 @@ PDC_Server_data_read_to_buf(region_list_t *region_list_head)
             if (fp_read != NULL)  
                 fclose(fp_read);
             fp_read = fopen(region_elt->storage_location, "rb");
+            if (NULL == fp_read) {
+                printf("==PDC_SERVER[%d]: fopen failed [%s]\n", pdc_server_rank_g, region_elt->storage_location);
+            }
             n_fopen_g++;
         }
 
@@ -6964,7 +6976,7 @@ PDC_query_fastbit_idx(region_list_t *region, pdcquery_constraint_t *constraint, 
     gen_fastbit_idx_name(idx_name, "bms", region->obj_id, timestep, region->ndim, start, count);
     load_fastbit_index(idx_name, region->obj_id, ft, timestep, region->ndim, count, start, count, &bms, &keys, &offsets);
 
-    FastBitSelectionHandle sel, sel1, sel2;
+    FastBitSelectionHandle sel = NULL, sel1, sel2;
     FastBitCompareType ct1, ct2;
 
     switch(constraint->type) {
@@ -7031,9 +7043,10 @@ PDC_query_fastbit_idx(region_list_t *region, pdcquery_constraint_t *constraint, 
         fastbit_selection_get_coordinates(sel, *coords, *nhit, 0);
     }
 
-    free(bms); 
-    free(keys);
-    free(offsets);
+    if (bms) free(bms); 
+    if (keys) free(keys);
+    if (offsets) free(offsets);
+    if (sel) fastbit_selection_free(sel);
     fastbit_iapi_free_all();
 done:
     if (ret_value == FAIL) 
@@ -7049,7 +7062,7 @@ PDC_Server_query_evaluate_merge_opt(pdcquery_t *query, query_task_t *task, pdcqu
     perr_t ret_value = SUCCEED;
     region_list_t *region_elt, *region_list_head, *cache_region, tmp_region, *region_constraint = NULL;
     pdcselection_t *sel = query->sel;
-    uint64_t nelem;
+    uint64_t nelem, iter, tmp;
     size_t i, j, unit_size, k;
     pdcquery_op_t op, lop, rop;
     float flo, fhi;
@@ -7164,8 +7177,8 @@ PDC_Server_query_evaluate_merge_opt(pdcquery_t *query, query_task_t *task, pdcqu
     }
 
     if (use_fastbit_idx_g == 1) {
-        printf("==PDC_SERVER[%d]: %s - start query evaluation with Fastbit!\n", pdc_server_rank_g, __func__);
-        fflush(stdout);
+        /* printf("==PDC_SERVER[%d]: %s - start query evaluation with Fastbit!\n",pdc_server_rank_g,__func__); */
+        /* fflush(stdout); */
         DL_FOREACH(region_list_head, region_elt) {
             // Skip non-overlap regions with the region constraint
             if (region_constraint && region_constraint->ndim > 0) {
@@ -7179,24 +7192,38 @@ PDC_Server_query_evaluate_merge_opt(pdcquery_t *query, query_task_t *task, pdcqu
                     continue;
             }
 
-            uint64_t idx_nhits, *idx_coords, tmp_coord[DIM_MAX];
+            uint64_t idx_nhits = 0, *idx_coords = NULL, tmp_coord[DIM_MAX];
             PDC_query_fastbit_idx(region_elt, query->constraint, &idx_nhits, &idx_coords);
+            if (idx_nhits > region_elt->data_size / unit_size) {
+                printf("==PDC_SERVER[%d]: %s - idx_nhits = %" PRIu64 " may be too large!\n",
+                        pdc_server_rank_g, __func__, tmp, sel->coords_alloc);
+            }
 
             if (idx_nhits > 0) {
-                if ((idx_nhits + sel->nhits)*ndim >= sel->coords_alloc) {
-                    sel->coords_alloc *= 2;
+                if ((idx_nhits + sel->nhits + 10)*ndim >= sel->coords_alloc) {
+                    if (sel->coords_alloc < idx_nhits) 
+                        sel->coords_alloc = 2 * idx_nhits;
+                    else
+                        sel->coords_alloc *= 2;
                     sel->coords = (uint64_t*)realloc(sel->coords, sel->coords_alloc * sizeof(uint64_t));
                 }
-                for (i = 0; i < idx_nhits; i++) {
-                    region_index_to_coord(ndim, idx_coords[i], region_elt->count, tmp_coord);
+                for (iter = 0; iter < idx_nhits; iter++) {
+                    region_index_to_coord(ndim, idx_coords[iter], region_elt->count, tmp_coord);
                     for (j = 0; j < ndim; j++) {
-                        sel->coords[(sel->nhits+i)*ndim + j] = tmp_coord[j] + region_elt->start[j]/ unit_size;
+                        tmp = (sel->nhits+iter)*ndim + j;
+                        if (tmp > sel->coords_alloc) {
+                            printf("==PDC_SERVER[%d]: %s - coord array overflow %" PRIu64 "/ %" PRIu64 "!\n",
+                                    pdc_server_rank_g, __func__, tmp, sel->coords_alloc);
+                        }
+                        else 
+                            sel->coords[tmp] = tmp_coord[j] + region_elt->start[j]/ unit_size;
                     }
                 }
                 /* memcpy(sel->coords+sel->nhits*ndim, idx_coords, idx_nhits * sizeof(uint64_t)); */
                 sel->nhits += idx_nhits;
             
-                free(idx_coords);
+                if (idx_coords) 
+                    free(idx_coords);
             }
 
             n_eval_region++;
@@ -8413,8 +8440,8 @@ PDC_Server_send_query_result_to_manager(query_task_t *task)
 {
     perr_t ret_value = SUCCEED;
 
-    printf("==PDC_SERVER[%d]: sending query results to manager %d!\n", pdc_server_rank_g, task->manager);
-    fflush(stdout);
+    /* printf("==PDC_SERVER[%d]: sending query results to manager %d!\n", pdc_server_rank_g, task->manager); */
+    /* fflush(stdout); */
 
     if (task->get_op == PDC_QUERY_GET_NHITS) {
         ret_value = PDC_Server_send_nhits_to_server(task);
@@ -8462,8 +8489,8 @@ PDC_Server_do_query(query_task_t *task)
     gettimeofday(&pdc_timer_start, 0);
     #endif
 
-    printf("==PDC_SERVER[%d]: start processing query:!\n", pdc_server_rank_g);
-    fflush(stdout);
+    /* printf("==PDC_SERVER[%d]: start processing query:!\n", pdc_server_rank_g); */
+    /* fflush(stdout); */
     /* PDCquery_print(task->query); */
 
     // Evaluate query 
@@ -9158,7 +9185,7 @@ PDC_Server_recv_data_query(const struct hg_cb_info *callback_info)
 
     query->sel               = (pdcselection_t*)calloc(1, sizeof(pdcselection_t));
     query->sel->nhits        = 0;
-    query->sel->coords_alloc = 100;
+    query->sel->coords_alloc = 8192;
     query->sel->coords       = (uint64_t*)calloc(query->sel->coords_alloc, sizeof(uint64_t));
     if (NULL == query->sel->coords) {
         printf("==PDC_SERVER[%d]: %s - error with calloc!\n", pdc_server_rank_g, __func__);
@@ -9628,27 +9655,39 @@ generate_write_fastbit_idx(uint64_t obj_id, void* data, uint64_t dataCount, Fast
 
     sprintf(out_name, "%s/%s", storage_location, bmsName);
     fp = fopen(out_name, "w");
+    if (fp == NULL) {
+        printf("==PDC_SERVER[%d]: %s - unable to open file [%s]\n", pdc_server_rank_g, __func__, out_name);
+        goto done;
+    }
     fwrite(bms, nb, sizeof(uint32_t), fp);
     fclose(fp);
 
     sprintf(out_name, "%s/%s", storage_location, keyName);
     fp = fopen(out_name, "w");
+    if (fp == NULL) {
+        printf("==PDC_SERVER[%d]: %s - unable to open file [%s]\n", pdc_server_rank_g, __func__, out_name);
+        goto done;
+    }
     fwrite(keys, nk, sizeof(double), fp);
     fclose(fp);
 
     sprintf(out_name, "%s/%s", storage_location, offName);
     fp = fopen(out_name, "w");
+    if (fp == NULL) {
+        printf("==PDC_SERVER[%d]: %s - unable to open file [%s]\n", pdc_server_rank_g, __func__, out_name);
+        goto done;
+    }
     fwrite(offsets, no, sizeof(int64_t), fp);
     fclose(fp);
 
     /* printf("==PDC_SERVER[%d]: %s - created and written a Fastbit index [%s]\n", */ 
     /*         pdc_server_rank_g, __func__, out_name); */
 
-    free(bms); 
-    free(keys);
-    free(offsets);
 
 done:
+    if (bms) free(bms); 
+    if (keys) free(keys);
+    if (offsets) free(offsets);
     fastbit_iapi_free_all();
     FUNC_LEAVE(ret_value);
 }
