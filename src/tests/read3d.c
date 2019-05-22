@@ -244,6 +244,7 @@ read_client_data(int grank, int gsize, char *filename, char *datasetID)
 
     /* for hyperslab settings */
     hsize_t slice_elements = 0;
+    hsize_t last_slice = 0;
     hsize_t start[3] = {0,0,0};
     hsize_t count[3] = {0,0,0};
     hsize_t stride[3] = {0,0,0};
@@ -330,10 +331,28 @@ read_client_data(int grank, int gsize, char *filename, char *datasetID)
     if (gsize > 1) {
         MPI_Barrier(MPI_COMM_WORLD);
     }
+    /* Possible client selections for the 1522 x 540 x 540 input::
+     *   nclients  size
+     *     2       270
+     *     3       180
+     *     4       135
+     *     5       108
+     *     9       60
+     *     15      36
+     *     30      18
+     *     60      9
+     *    135      4
+     */
+    if (gsize > 1) {
+        slice_elements = ds_dimensions[1] / gsize;
+	if ((total_elements = gsize * slice_elements) > 540) {
+            hsize_t diff = total_elements - 540;
+	    slice_elements -= diff;
+	}
+	total_elements = ds_dimensions[0] * slice_elements * ds_dimensions[2];
+    }
+
     if (ds_ndims == 3) {
-	printf("Reading a portion (1/2) of the 3D input data\n");
-	slice_elements = ds_dimensions[0] * (ds_dimensions[1]/2) * ds_dimensions[2];
-	total_elements = slice_elements * 2;
 	start[0] = 0;
 	start[1] = 0;
 	start[2] = 0;		/* Maybe 'grank' * 2 (desired row length) */
@@ -341,26 +360,26 @@ read_client_data(int grank, int gsize, char *filename, char *datasetID)
 	stride[1] = 1;
 	stride[2] = 1;
 	count[0] = ds_dimensions[0];		/* Full full rows x count[0] planes */
-	count[1] = 270;
+	count[1] = slice_elements;
 	count[2] = 540;
 	block[0] = 1;		/* Describe a single plane */
-        block[1] = 270;
+        block[1] = slice_elements;
 	block[2] = 540;
 
         if (grank == 0) {
-            printf("Number of elements in this slice = %lld of %lld\n", slice_elements, total_elements);
+            printf("Number of elements in this slice(0) = %lld\n", total_elements);
 	}
         /*
          * Define the memory dataspace.
          */
 	dimsm[0] = ds_dimensions[0];
-	dimsm[1] = 270;
+	dimsm[1] = slice_elements;
 	dimsm[2] = 540;
 
 	/* For 2 ranks... */
 	if (gsize > 1) {
 	  if (grank == 1)
-	     start[1] = 270;
+             start[1] = slice_elements * grank;
 	}
 	memspace = H5Screate_simple (3, dimsm, NULL);
 
@@ -370,7 +389,7 @@ read_client_data(int grank, int gsize, char *filename, char *datasetID)
 	    goto done;
         }
 
-	data_out = (short *)malloc(slice_elements * type_size);
+	data_out = (short *)malloc(total_elements * type_size);
 	if (data_out == NULL) {
             perror("malloc failure!\n");
             goto done;
@@ -385,6 +404,7 @@ read_client_data(int grank, int gsize, char *filename, char *datasetID)
 	printf("IO time using H5Dread = %lf seconds\n", total_t);
 	i = 0;
 
+#if 0
 	for(k=0; k<10; k++) {
             printf("[%4d] %hd %hd %hd %hd %hd %hd %hd %hd %hd %hd\n", i,
 		     data_out[i],data_out[i+1],data_out[i+2],data_out[i+3],
@@ -393,6 +413,7 @@ read_client_data(int grank, int gsize, char *filename, char *datasetID)
 		     );
             i +=10;
 	}
+#endif
 
 	do_pdc_analysis_for_output(data_out, dimsm, PDC_INT16, grank);
     }
