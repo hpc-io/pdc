@@ -37,6 +37,7 @@
 
 
 extern int pdc_server_num_g;
+extern PDC_server_selection_t pdc_server_selection_g;
 
 extern int pdc_client_mpi_rank_g;
 extern int pdc_client_mpi_size_g;
@@ -131,6 +132,10 @@ typedef struct pdc_get_kvtag_args_t{
     pdc_kvtag_t *kvtag;
 } pdc_get_kvtag_args_t;
 
+
+#define PDC_CLIENT_DATA_SERVER() ((pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g)
+
+
 /**
  * Request from client to get address of the server
  *
@@ -145,10 +150,11 @@ perr_t PDC_Client_read_server_addr_from_file();
  * \param cont_id[IN]           Container ID (obtained from metadata server)
  * \param obj_create_prop [IN]  Id of the object property
  * \param meta_id [OUT]         Pointer to medadata id
+ * \param server_id [OUT]       Pointer to server_id
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj_create_prop, pdcid_t *meta_id);
+perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj_create_prop, pdcid_t *meta_id, int *server_id);
 /**
  * Apply a map from buffer to object
  *
@@ -183,7 +189,7 @@ perr_t PDC_Client_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdci
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct PDC_region_info *reginfo, PDC_var_type_t data_type);
+perr_t PDC_Client_buf_unmap(struct PDC_obj_info *object_info, pdcid_t remote_reg_id, struct PDC_region_info *reginfo, PDC_var_type_t data_type);
 
 /**
  * Client request for object to buffer unmapping
@@ -228,7 +234,7 @@ perr_t PDC_Client_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, struc
  * \return Non-negative on success/Negative on failure
  */
 //perr_t PDC_Client_obtain_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_lock_mode_t lock_mode, PDC_var_type_t data_type, pbool_t *obtained);
-perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_lock_mode_t lock_mode, PDC_var_type_t data_type, pbool_t *obtained);
+perr_t PDC_Client_region_lock(struct PDC_obj_info *object_info, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_lock_mode_t lock_mode, PDC_var_type_t data_type, pbool_t *obtained);
 
 /**
  * Request of PDC client to get region lock
@@ -240,7 +246,7 @@ perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_in
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_release_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_var_type_t data_type, pbool_t *released);
+perr_t PDC_Client_release_region_lock(struct PDC_obj_info *object_info, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_var_type_t data_type, size_t type_extent, pbool_t *released);
 
 /**
  * PDC client initialization

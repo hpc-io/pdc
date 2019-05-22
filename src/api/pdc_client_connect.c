@@ -64,6 +64,7 @@
 #include "pdc_cont_private.h"
 
 int is_client_debug_g = 0;
+PDC_server_selection_t pdc_server_selection_g = PDC_SERVER_DEFAULT;
 
 int                    pdc_client_mpi_rank_g = 0;
 int                    pdc_client_mpi_size_g = 1;
@@ -1159,6 +1160,17 @@ perr_t PDC_Client_init()
         is_client_debug_g = atoi(is_debug_env);
     }
 
+    // Get server_selection environment var
+    // This is probably specific to analysis operation
+    // where we want to co-locate objects.  So this "hack"
+    // puts all objects onto the same server per client.
+
+    char *server_selection_env = getenv("PDC_SERVER_SELECTION");
+    if (server_selection_env != NULL) {
+      if (strncasecmp(server_selection_env,"SERVER_PER_CLIENT", 17) == 0)
+         pdc_server_selection_g = PDC_SERVER_PER_CLIENT;
+    }
+
     pdc_client_mpi_rank_g       = 0;
     pdc_client_mpi_size_g       = 1;
 
@@ -1176,7 +1188,6 @@ perr_t PDC_Client_init()
     if (pdc_client_mpi_rank_g == 0)
         printf("==PDC_CLIENT: PDC_DEBUG set to %d!\n", is_client_debug_g);
 
-
     // get server address and fill in $pdc_server_info_g
     if (PDC_Client_read_server_addr_from_file() != SUCCEED) {
         printf("==PDC_CLIENT[%d]: Error getting PDC Metadata servers info, exiting ...", pdc_server_num_g);
@@ -1193,15 +1204,17 @@ perr_t PDC_Client_init()
     MPI_Comm_rank(PDC_SAME_NODE_COMM_g, &pdc_client_same_node_rank_g );
     MPI_Comm_size(PDC_SAME_NODE_COMM_g, &pdc_client_same_node_size_g );
 
-    pdc_nclient_per_server_g = pdc_client_same_node_size_g;
+    // pdc_nclient_per_server_g = pdc_client_same_node_size_g;
+    if ((pdc_nclient_per_server_g = pdc_client_mpi_size_g / pdc_server_num_g) == 0)
+        pdc_nclient_per_server_g = 1;
+
     /* printf("==PDC_CLIENT[%d]: color %d, key %d, node rank %d!\n", */
     /*         pdc_client_mpi_rank_g, same_node_color, pdc_client_mpi_rank_g, pdc_client_same_node_rank_g); */
+
 #else
     // Get the number of clients per server(node) through environment variable
     tmp_dir = getenv("PDC_NCLIENT_PER_SERVER");
-    if (tmp_dir == NULL)
-        pdc_nclient_per_server_g = pdc_client_mpi_size_g / pdc_server_num_g;
-    else
+    if (tmp_dir)
         pdc_nclient_per_server_g = atoi(tmp_dir);
 
     if (pdc_nclient_per_server_g <= 0)
@@ -2398,11 +2411,11 @@ perr_t PDC_Client_create_cont_id_mpi(const char *cont_name, pdcid_t cont_create_
     FUNC_LEAVE(ret_value);
 }
 // Send a name to server and receive an obj id
-perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj_create_prop, pdcid_t *meta_id)
+perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj_create_prop, pdcid_t *meta_id, int *object_server)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
-    uint32_t server_id = 0;
+    uint32_t server_id;
     /* PDC_lifetime obj_life; */
     struct PDC_obj_prop *create_prop;
     gen_obj_id_in_t in;
@@ -2452,17 +2465,23 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdci
 
     if (create_prop->data_loc == NULL) 
         in.data.data_location = " ";
-    else 
+    else
         in.data.data_location = create_prop->data_loc;
 
     hash_name_value = PDC_get_hash_by_name(obj_name);
-    in.hash_value      = hash_name_value;
-    /* printf("Hash(%s) = %lu\n", obj_name, in.hash_value); */
+    in.hash_value   = hash_name_value;
 
-    // Compute server id
-    server_id       = (hash_name_value + in.data.time_step);
-    server_id      %= pdc_server_num_g; 
+    if (pdc_server_selection_g != PDC_SERVER_DEFAULT) {
+        /* Choose a client specific server for all objects */
+        server_id = pdc_client_mpi_rank_g % pdc_server_num_g;
+    }
+    else {
+        /* printf("Hash(%s) = %lu\n", obj_name, in.hash_value); */
+        // Compute metadata server id
+        server_id = (hash_name_value + in.data.time_step) % pdc_server_num_g;
+    }
 
+    if (object_server != NULL) *object_server = server_id;
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
@@ -2655,7 +2674,7 @@ done:
 }
 */
 
-perr_t PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct PDC_region_info *reginfo, PDC_var_type_t data_type)
+perr_t PDC_Client_buf_unmap(struct PDC_obj_info *object_info, pdcid_t remote_reg_id, struct PDC_region_info *reginfo, PDC_var_type_t data_type)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = HG_SUCCESS;
@@ -2664,29 +2683,31 @@ perr_t PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct
     uint32_t data_server_id, meta_server_id;
     struct region_unmap_args unmap_args;
     hg_handle_t client_send_buf_unmap_handle;
+    pdcid_t remote_obj_id;
 
     FUNC_ENTER(NULL); 
   
     // Fill input structure
-    in.remote_obj_id = remote_obj_id;
+    in.remote_obj_id = remote_obj_id = object_info->meta_id;
     in.remote_reg_id = remote_reg_id;
 
-    if(data_type == PDC_DOUBLE)
-        unit = sizeof(double);
-    else if(data_type == PDC_FLOAT)
-        unit = sizeof(float);
-    else if(data_type == PDC_INT)
-        unit = sizeof(int);
-    else
+    unit = get_datatype_size(data_type);
+    if (unit == 0)
         PGOTO_ERROR(FAIL, "data type is not supported yet");
+
     pdc_region_info_t_to_transfer_unit(reginfo, &(in.remote_region), unit);
 
-    // Compute metadata server id
-    meta_server_id = PDC_get_server_by_obj_id(remote_obj_id, pdc_server_num_g);
+    if (pdc_server_selection_g != PDC_SERVER_DEFAULT) {
+        data_server_id = object_info->server_id;
+        meta_server_id = data_server_id;
+    }
+    else {
+        // Compute metadata server id
+        meta_server_id = PDC_get_server_by_obj_id(remote_obj_id, pdc_server_num_g);
+        // Compute local data server id
+        data_server_id = PDC_CLIENT_DATA_SERVER();
+    }
     in.meta_server_id = meta_server_id;
-
-    // Compute local data server id
-    data_server_id = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[data_server_id]++;
@@ -2733,21 +2754,20 @@ perr_t PDC_Client_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, struc
     in.local_obj_id = local_obj_id;
     in.local_reg_id = local_reg_id;
    
-    if(data_type == PDC_DOUBLE)
-        unit = sizeof(double);
-    else if(data_type == PDC_FLOAT)
-        unit = sizeof(float);
-    else if(data_type == PDC_INT)
-        unit = sizeof(int);
-    else
+    unit = get_datatype_size(data_type);
+    if (unit == 0)
         PGOTO_ERROR(FAIL, "data type is not supported yet");
     pdc_region_info_t_to_transfer_unit(reginfo, &(in.local_region), unit);
 
     // Create a bulk descriptor
     /* bulk_handle = HG_BULK_NULL; */
 
-    server_id = PDC_get_server_by_obj_id(local_obj_id, pdc_server_num_g);
-
+    if (pdc_server_selection_g != PDC_SERVER_DEFAULT) {
+        server_id = pdc_client_mpi_rank_g % pdc_server_num_g;
+    }
+    else {
+        server_id = PDC_get_server_by_obj_id(local_obj_id, pdc_server_num_g);
+    }
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
@@ -2800,36 +2820,31 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t
     in.remote_type = remote_type;
     in.ndim = ndim;
 
-    // Compute metadata server id
-    meta_server_id = PDC_get_server_by_obj_id(remote_obj_id, pdc_server_num_g);
+    if (pdc_server_selection_g != PDC_SERVER_DEFAULT) {
+        data_server_id = remote_obj_info->server_id;
+        meta_server_id = data_server_id;
+    }
+    else {
+        // Compute metadata server id
+        meta_server_id = PDC_get_server_by_obj_id(remote_obj_id, pdc_server_num_g);
+        // Compute local data server id
+        data_server_id = PDC_CLIENT_DATA_SERVER();
+    }
     in.meta_server_id = meta_server_id;
-
-    // Compute data server id
-    data_server_id = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[data_server_id]++;
     
     hg_class = HG_Context_get_class(send_context_g);
  
-    if(local_type == PDC_DOUBLE)
-        unit = sizeof(double);
-    else if(local_type == PDC_FLOAT) 
-        unit = sizeof(float);
-    else if(local_type == PDC_INT)
-        unit = sizeof(int);
-    else
+    unit = get_datatype_size(local_type);
+    if (unit == 0)
         PGOTO_ERROR(FAIL, "local data type is not supported yet");
     pdc_region_info_t_to_transfer_unit(local_region, &(in.local_region), unit);
 
-    if(remote_type == PDC_DOUBLE)
-        unit_to = sizeof(double);
-    else if(remote_type == PDC_FLOAT)
-        unit_to = sizeof(float);
-    else if(remote_type == PDC_INT)
-        unit_to = sizeof(int);
-    else
-        PGOTO_ERROR(FAIL, "local data type is not supported yet");
+    unit_to = get_datatype_size(remote_type);
+    if (unit_to == 0)
+        PGOTO_ERROR(FAIL, "remote data type is not supported yet");
 
     in.remote_type_extent = remote_obj_info->obj_pt->type_extent = unit_to;
     pdc_region_info_t_to_transfer_unit(remote_region, &(in.remote_region_unit), unit_to);
@@ -2928,6 +2943,7 @@ perr_t PDC_Client_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdci
     hg_bulk_t remote_bulk_handle = HG_BULK_NULL;
     hg_handle_t client_send_region_map_handle;
  
+    struct PDC_obj_info *object_info;
     FUNC_ENTER(NULL);
     
     // Fill input structure
@@ -2938,32 +2954,29 @@ perr_t PDC_Client_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdci
     in.remote_type = remote_type;
     in.ndim = ndim;
 
+    object_info = PDC_obj_get_info(local_obj_id);
     // Compute server id
-    server_id = PDC_get_server_by_obj_id(local_obj_id, pdc_server_num_g);
+    if (pdc_server_selection_g != PDC_SERVER_DEFAULT) {
+        server_id = object_info->server_id;
+    }
+    else {
+        // Compute metadata server id
+        server_id = PDC_get_server_by_obj_id(local_obj_id, pdc_server_num_g);
+    }
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
     
     hg_class = HG_Context_get_class(send_context_g);
 
-    if(local_type == PDC_DOUBLE)
-        unit = sizeof(double);
-    else if(local_type == PDC_FLOAT) 
-        unit = sizeof(float);
-    else if(local_type == PDC_INT)
-        unit = sizeof(int);
-    else
+    unit = get_datatype_size(local_type);
+    if (unit == 0)
         PGOTO_ERROR(FAIL, "local data type is not supported yet");
     pdc_region_info_t_to_transfer_unit(local_region, &(in.local_region), unit);
 
-    if(remote_type == PDC_DOUBLE)
-        unit_to = sizeof(double);
-    else if(remote_type == PDC_FLOAT)
-        unit_to = sizeof(float);
-    else if(remote_type == PDC_INT)
-        unit_to = sizeof(int);
-    else
-        PGOTO_ERROR(FAIL, "local data type is not supported yet");
+    unit = get_datatype_size(remote_type);
+    if (unit == 0)
+        PGOTO_ERROR(FAIL, "remote data type is not supported yet");
     pdc_region_info_t_to_transfer_unit(remote_region, &(in.remote_region), unit_to);
 
     if(ndim == 1) {
@@ -3092,7 +3105,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_lock_mode_t lock_mode, PDC_var_type_t data_type, pbool_t *status)
+perr_t PDC_Client_region_lock(struct PDC_obj_info *object_info, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_lock_mode_t lock_mode, PDC_var_type_t data_type, pbool_t *status)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
@@ -3105,8 +3118,16 @@ perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_in
     FUNC_ENTER(NULL);
     
     // Compute local data server id
-    server_id = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
-    meta_server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
+    if (pdc_server_selection_g != PDC_SERVER_DEFAULT) {
+        server_id = object_info->server_id;
+        meta_server_id = server_id;
+    }
+    else {
+        // Compute metadata server id
+        meta_server_id = PDC_get_server_by_obj_id(object_info->meta_id, pdc_server_num_g);
+        // Compute local data server id
+        server_id = PDC_CLIENT_DATA_SERVER();
+    }
     in.meta_server_id = meta_server_id;
     in.lock_mode = lock_mode;
 
@@ -3122,7 +3143,7 @@ perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_in
     debug_server_id_count[server_id]++;
 
     // Fill input structure
-    in.obj_id = meta_id;
+    in.obj_id = object_info->meta_id;
 //    in.lock_op = lock_op;
     in.access_type = access_type;
     in.mapping = region_info->mapping;
@@ -3130,7 +3151,7 @@ perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_in
 //    in.region.ndim   = region_info->ndim;
     size_t ndim = region_info->ndim;
     in.data_type = data_type;
-    /* printf("==PDC_CLINET: lock dim=%u\n", ndim); */
+    /* printf("==PDC_CLIENT: lock dim=%u\n", ndim); */
 
     if (ndim >= 4 || ndim <=0) {
         printf("Dimension %lu is not supported\n", ndim);
@@ -3138,13 +3159,8 @@ perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_in
         goto done;
     }
 
-    if(data_type == PDC_DOUBLE)
-        unit = sizeof(double);
-    else if(data_type == PDC_FLOAT)
-        unit = sizeof(float);
-    else if(data_type == PDC_INT)
-        unit = sizeof(int);
-    else
+    unit = get_datatype_size(data_type);
+    if (unit == 0)
         PGOTO_ERROR(FAIL, "data type is not supported yet");
 
     pdc_region_info_t_to_transfer_unit(region_info, &(in.region), unit);
@@ -3258,8 +3274,15 @@ done:
 */
 
 static
-perr_t pdc_region_release_with_server_transform(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_var_type_t data_type,
-                                                int server_transform_id, size_t client_transform_size, void *client_transform_result, pbool_t *status)
+perr_t pdc_region_release_with_server_transform(struct PDC_obj_info *object_info,
+                                                struct PDC_region_info *region_info,
+                                                PDC_access_t access_type,
+                                                PDC_var_type_t data_type,
+                                                size_t type_extent,
+                                                int server_transform_id,
+                                                size_t client_transform_size,
+                                                void *client_transform_result,
+                                                pbool_t *status)
 {
     perr_t ret_value = SUCCEED;
     void    **data_ptrs = NULL;
@@ -3274,17 +3297,25 @@ perr_t pdc_region_release_with_server_transform(pdcid_t meta_id, struct PDC_regi
 
     FUNC_ENTER(NULL);
     // Compute local data server id
-    server_id = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
-    meta_server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
+    if (pdc_server_selection_g != PDC_SERVER_DEFAULT) {
+        server_id = object_info->server_id;
+        meta_server_id = server_id;
+    }
+    else {
+        // Compute metadata server id
+        meta_server_id = PDC_get_server_by_obj_id(object_info->meta_id, pdc_server_num_g);
+        // Compute local data server id
+        server_id = PDC_CLIENT_DATA_SERVER();
+    }
     in.transform_id = server_transform_id;
     in.meta_server_id = meta_server_id;
-    in.obj_id = meta_id;
+    in.obj_id = object_info->meta_id;
     in.access_type = access_type;
     in.mapping = region_info->mapping;
     in.local_reg_id = region_info->local_id;
     in.transform_data_size = client_transform_size;
     in.client_data_ptr = (uint64_t)client_transform_result;
-    printf("Client data[0-7] = %02X %02X %02X %02X %02X %02X %02X %02X\n", buf[0],buf[1],buf[2],buf[3],buf[4],buf[5],buf[6],buf[7]);
+    // printf("Client data[0-7] = %02X %02X %02X %02X %02X %02X %02X %02X\n", buf[0],buf[1],buf[2],buf[3],buf[4],buf[5],buf[6],buf[7]);
 
     data_ptrs = (void **)malloc( sizeof(void *) );
     data_size = (size_t *)malloc( sizeof(size_t) );
@@ -3293,14 +3324,7 @@ perr_t pdc_region_release_with_server_transform(pdcid_t meta_id, struct PDC_regi
 
     hg_class = HG_Context_get_class(send_context_g);
 
-    if(data_type == PDC_DOUBLE)
-        unit = sizeof(double);
-    else if(data_type == PDC_FLOAT)
-        unit = sizeof(float);
-    else if(data_type == PDC_INT)
-        unit = sizeof(int);
-    else
-        PGOTO_ERROR(FAIL, "data type is not supported yet");
+    unit = type_extent;
 
     pdc_region_info_t_to_transfer_unit(region_info, &(in.region), unit);
 
@@ -3348,13 +3372,17 @@ done:
 }
 
 static
-perr_t pdc_region_release_with_server_analysis(pdcid_t meta_id, struct PDC_region_info *region_info,
-					       PDC_access_t access_type, PDC_var_type_t data_type,
-                                               struct region_analysis_ftn_info *registry,  pbool_t *status)
+perr_t pdc_region_release_with_server_analysis(struct PDC_obj_info *object_info,
+                                               struct PDC_region_info *region_info,
+                                               PDC_access_t access_type, PDC_var_type_t data_type,
+                                               size_t type_extent, struct region_analysis_ftn_info *registry,
+                                               pbool_t *status)
 {
     perr_t ret_value = SUCCEED;
     void    **data_ptrs = NULL;
     size_t  unit, *data_size = NULL;
+    size_t output_extent;
+    PDC_var_type_t output_datatype;
     hg_class_t *hg_class = NULL;
     hg_return_t hg_ret;
     uint32_t server_id, meta_server_id;
@@ -3362,47 +3390,46 @@ perr_t pdc_region_release_with_server_analysis(pdcid_t meta_id, struct PDC_regio
     struct client_lookup_args lookup_args;
     struct PDC_iterator_info *inputIter, *outputIter;
     hg_handle_t region_release_handle = HG_HANDLE_NULL;
+    pdcid_t result_obj = 0;
+    struct PDC_id_info *obj_info;
+    struct PDC_obj_prop *obj_prop;
 
     FUNC_ENTER(NULL);
-    server_id = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
-    meta_server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
-
-    /* If the server_id and meta_server_id don't match, we can
-     * provide our client copy of the meta_data rather than relying on
-     * the server.  This should be relatively ok, because the region
-     * metadata should be small compared to the actual data. Let us try
-     * to provide the neccesary info as part of server analysis kickoff...
-     */
-    if (server_id != meta_server_id) {
-      
+    if (pdc_server_selection_g != PDC_SERVER_DEFAULT) {
+        server_id = object_info->server_id;
+        meta_server_id = server_id;
     }
-
+    else {
+        // Compute metadata server id
+        meta_server_id = PDC_get_server_by_obj_id(object_info->meta_id, pdc_server_num_g);
+        // Compute local data server id
+        server_id = PDC_CLIENT_DATA_SERVER();
+    }
     in.meta_server_id = meta_server_id;
-    in.obj_id = meta_id;
+    in.obj_id = object_info->meta_id;
     in.access_type = access_type;
     in.local_reg_id = region_info->local_id;
     in.mapping = region_info->mapping;
     in.data_type = data_type;
     in.lock_mode = 0;
-
-
-    if(data_type == PDC_DOUBLE)
-        unit = sizeof(double);
-    else if(data_type == PDC_FLOAT)
-        unit = sizeof(float);
-    else if(data_type == PDC_INT)
-        unit = sizeof(int);
-    else
-        PGOTO_ERROR(FAIL, "data type is not supported yet");
+    unit = type_extent;
 
     pdc_region_info_t_to_transfer_unit(region_info, &(in.region), unit);
-
+    in.type_extent = unit;
     in.analysis_meta_index = registry->meta_index;
     inputIter = &PDC_Block_iterator_cache[registry->object_id[0]];
     in.input_iter = inputIter->meta_id;
-    outputIter = &PDC_Block_iterator_cache[registry->object_id[1]];
-    in.output_iter = outputIter->meta_id;
+    in.n_args = registry->n_args;
+    outputIter = &PDC_Block_iterator_cache[registry->object_id[registry->n_args -1]];
+    output_datatype = PDC_Block_iterator_cache[registry->object_id[registry->n_args -1]].pdc_datatype;
+    output_extent = get_datatype_size(output_datatype);
+    in.output_type_extent = output_extent;
 
+    result_obj = outputIter->objectId;
+    obj_info = pdc_find_id(result_obj);
+    obj_prop = (struct PDC_obj_prop *)(obj_info->obj_ptr);
+    in.output_obj_id = obj_prop->obj_prop_id;
+    in.output_iter = outputIter->meta_id;
     hg_class = HG_Context_get_class(send_context_g);
 
     if( PDC_Client_try_lookup_server(server_id) != SUCCEED) {
@@ -3441,7 +3468,7 @@ done:
 }
 
 
-static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_var_type_t data_type, pbool_t *status)
+static perr_t PDC_Client_region_release(struct PDC_obj_info *object_info, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_var_type_t data_type, size_t type_extent, pbool_t *status)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
@@ -3478,8 +3505,8 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
                 // printf("Found matching transformation with meta_id=0x%0x\n", registry[k]->meta_index);
 		if ((transform_size > 0) && (transform_result != NULL)) {
                     ret_value =
-                        pdc_region_release_with_server_transform(meta_id, region_info, access_type,
-                        data_type, registry[k]->meta_index, transform_size, transform_result, status);
+                        pdc_region_release_with_server_transform(object_info, region_info, access_type,
+                        data_type, type_extent, registry[k]->meta_index, transform_size, transform_result, status);
                     goto done;
 		}
 	    }
@@ -3487,12 +3514,12 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
       }
       if (region_info->registered_op & PDC_ANALYSIS) {
           struct region_analysis_ftn_info **registry;
+          iterator_info_t *output_iterator = NULL;
           int k, registered_count = pdc_get_analysis_registry(&registry);
-          // printf("Need to invoke analysis function on the server\n");
           for(k=0; k < registered_count; k++) {
 	    if (registry[k]->region_id[0] == region_info->local_id) {
-	      ret_value = pdc_region_release_with_server_analysis(meta_id, region_info, access_type,
-                      data_type, registry[k], status);
+	      ret_value = pdc_region_release_with_server_analysis(object_info, region_info, access_type,
+			  data_type, type_extent, registry[k], status);
 	      goto done;
 	    }
 	  }
@@ -3500,8 +3527,17 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
     }
 
     // Compute local data server id
-    server_id = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
-    meta_server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
+    // Compute local data server id
+    if (pdc_server_selection_g != PDC_SERVER_DEFAULT) {
+        server_id = object_info->server_id;
+        meta_server_id = server_id;
+    }
+    else {
+        // Compute metadata server id
+        meta_server_id = PDC_get_server_by_obj_id(object_info->meta_id, pdc_server_num_g);
+        // Compute local data server id
+        server_id = PDC_CLIENT_DATA_SERVER();
+    }
     in.meta_server_id = meta_server_id;
 
     /* // Delay test */
@@ -3517,14 +3553,14 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
     debug_server_id_count[server_id]++;
 
     // Fill input structure
-    in.obj_id = meta_id;
+    in.obj_id = object_info->meta_id;
 //    in.lock_op = lock_op;
     in.access_type = access_type;
     in.mapping = region_info->mapping;
     in.local_reg_id = region_info->local_id;
 //    in.region.ndim   = region_info->ndim;
     size_t ndim = region_info->ndim;
-    /* printf("==PDC_CLINET: lock dim=%u\n", ndim); */
+    /* printf("==PDC_CLIENT: lock dim=%u\n", ndim); */
  
     if (ndim >= 4 || ndim <=0) {
         printf("Dimension %lu is not supported\n", ndim);
@@ -3532,13 +3568,9 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
         goto done;
     }
 
-    if(data_type == PDC_DOUBLE)
-        unit = sizeof(double);
-    else if(data_type == PDC_FLOAT)
-        unit = sizeof(float);
-    else if(data_type == PDC_INT)
-        unit = sizeof(int);
-    else
+
+    unit = get_datatype_size(data_type);
+    if (unit == 0)
         PGOTO_ERROR(FAIL, "data type is not supported yet");
 
     pdc_region_info_t_to_transfer_unit(region_info, &(in.region), unit);
@@ -3601,7 +3633,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_release_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_var_type_t data_type, pbool_t *released)
+perr_t PDC_Client_release_region_lock(struct PDC_obj_info *object_info, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_var_type_t data_type, size_t type_extent, pbool_t *released)
 {
     perr_t ret_value = SUCCEED;
     
@@ -3610,7 +3642,7 @@ perr_t PDC_Client_release_region_lock(pdcid_t meta_id, struct PDC_region_info *r
     /* uint64_t meta_id; */
     /* PDC_obj_info *obj_prop = PDC_obj_get_info(obj_id, pdc); */
     /* meta_id = obj_prop->meta_id; */
-    ret_value = PDC_Client_region_release(meta_id, region_info, access_type, data_type, released);
+    ret_value = PDC_Client_region_release(object_info, region_info, access_type, data_type, type_extent, released);
 
     FUNC_LEAVE(ret_value);
 }

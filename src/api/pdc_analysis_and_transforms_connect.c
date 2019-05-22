@@ -62,13 +62,15 @@ perr_t pdc_client_send_iter_recv_id(pdcid_t iter_id, pdcid_t *meta_id)
         struct PDC_obj_info *object_info;
         thisIter = &PDC_Block_iterator_cache[iter_id];
 	/* Find the server association to the specific object */
-	server_id = PDC_get_server_by_obj_id(thisIter->objectId, pdc_server_num_g);
-	object_info = PDC_obj_get_info(thisIter->objectId);
 	in.client_iter_id = iter_id;
+	object_info = PDC_obj_get_info(thisIter->objectId);
+
+	/* Co-locate iterator info with the actual object */
 	if (object_info != NULL) {
+            server_id = object_info->server_id;
             in.object_id = object_info->meta_id;
 	}
-	else in.object_id = thisIter->objectId;
+	else in.object_id = thisIter->objectId; /* Is this ok? */
 	in.reg_id = thisIter->reg_id;
 	in.sliceCount = thisIter->sliceCount;
 	in.sliceNext = thisIter->sliceNext;
@@ -158,13 +160,17 @@ done:
 }
 
 /* Send a name to server and receive an obj id */
-perr_t pdc_client_register_obj_analysis(struct region_analysis_ftn_info *thisFtn, const char *func, const char *loadpath, pdcid_t iter_in, pdcid_t iter_out)
+perr_t pdc_client_register_obj_analysis(struct region_analysis_ftn_info *thisFtn, const char *func, const char *loadpath,
+                                        pdcid_t in_local, pdcid_t out_local, pdcid_t in_meta, pdcid_t out_meta)
 {
     perr_t ret_value = SUCCEED;
     uint32_t server_id = 0;
     hg_return_t hg_ret;
     analysis_ftn_in_t in;
     struct my_rpc_state *my_rpc_state_p;
+    struct PDC_obj_info *object_info;
+    struct PDC_iterator_info *thisIter;
+
 
     FUNC_ENTER(NULL);
     my_rpc_state_p = (struct my_rpc_state *)calloc(1,sizeof(struct my_rpc_state));
@@ -175,6 +181,7 @@ perr_t pdc_client_register_obj_analysis(struct region_analysis_ftn_info *thisFtn
     }
 
     int n_retry = 0;
+    int input_server =-1, output_server = -1;
     /* FIXME!
      * The server lookup should be associated with the input object 
      * (at a minimum) and/or with the out object.  Question: is
@@ -202,6 +209,33 @@ perr_t pdc_client_register_obj_analysis(struct region_analysis_ftn_info *thisFtn
      * approach is to select the server number based on our
      * client MPI rank modulo the number of servers.
      */
+    if (pdc_server_selection_g != PDC_SERVER_DEFAULT) {
+//        thisIter = &PDC_Block_iterator_cache[iter_out];
+        thisIter = &PDC_Block_iterator_cache[in_local];
+        struct PDC_obj_info *obj_prop = PDC_obj_get_info(thisIter->objectId);
+        input_server = obj_prop->server_id;
+	output_server = input_server;
+    }
+    else {
+        if (in_local > 0) {
+            thisIter = &PDC_Block_iterator_cache[in_local];
+            input_server = PDC_get_server_by_obj_id(thisIter->objectId, pdc_server_num_g);
+        }
+        if (out_local > 0) {
+            thisIter = &PDC_Block_iterator_cache[out_local];
+            output_server = PDC_get_server_by_obj_id(thisIter->objectId, pdc_server_num_g);
+        }
+    }
+
+    if (input_server < 0) {
+        if (output_server < 0) {
+           server_id = pdc_client_mpi_rank_g % pdc_server_num_g;
+        }
+        else server_id = output_server;
+    } else {
+        server_id = input_server;
+    }
+
     while (pdc_server_info_g[server_id].addr_valid != 1) {
         if (n_retry > 0)
             break;
@@ -216,8 +250,8 @@ perr_t pdc_client_register_obj_analysis(struct region_analysis_ftn_info *thisFtn
     memset(&in,0,sizeof(in));
     in.ftn_name = func;
     in.loadpath = loadpath;
-    in.iter_in  = iter_in;
-    in.iter_out = iter_out;
+    in.iter_in  = in_meta;
+    in.iter_out = out_meta;
 
     // We have already filled in the pdc_server_info_g[server_id].addr in previous client_test_connect_lookup_cb
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, analysis_ftn_register_id_g, &my_rpc_state_p->handle);

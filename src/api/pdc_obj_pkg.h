@@ -58,6 +58,7 @@ struct PDC_obj_info {
     pdcid_t                 meta_id;
     pdcid_t                 local_id;
     PDCobj_location         location;
+    int                     server_id;
     void                   *metadata;
     struct PDC_cont_info   *cont;
     struct PDC_obj_prop    *obj_pt;

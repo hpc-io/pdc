@@ -393,6 +393,7 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
     struct region_analysis_ftn_info *thisFtn = NULL;
     struct PDC_iterator_info *i_in = NULL, *i_out = NULL;
     pdcid_t meta_id_in = 0, meta_id_out = 0;
+    pdcid_t local_id_in = 0, local_id_out = 0;
     char *thisApp = NULL;
     char *colonsep = NULL; 
     char *analyislibrary = NULL;
@@ -443,14 +444,16 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
         if (iterIn != 0) {
             i_in  = &PDC_Block_iterator_cache[iterIn];
             meta_id_in = i_in->meta_id;
+	    local_id_in = i_in->local_id;
 	}
         if (iterOut != 0) {
             i_out = &PDC_Block_iterator_cache[iterOut];
             meta_id_out = i_out->meta_id;
+	    local_id_out = i_out->local_id;
         }
     }
 
-    pdc_client_register_obj_analysis(thisFtn, userdefinedftn, loadpath, meta_id_in, meta_id_out);
+    pdc_client_register_obj_analysis(thisFtn, userdefinedftn, loadpath, local_id_in, local_id_out, meta_id_in, meta_id_out);
 
     // Add region IDs
     thisFtn->region_id[0] = i_in->reg_id;

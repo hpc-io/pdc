@@ -157,7 +157,7 @@ int main(int argc, char **argv)
      */
     PDCobj_analysis_register("demo_sum", input1_iter, result1_iter);
 
-    ret = PDCbuf_obj_map(&myArray1[0], PDC_INT, r1, obj1, r2);
+    ret = PDCbuf_obj_map(&myArray1[0], PDC_INT, r1, obj2, r2);
 
 //  Simple test of invoking a function dynamically
 

@@ -204,7 +204,7 @@ typedef struct {
 
 
 // Analysis
-#define CACHE_SIZE                65536
+#define CACHE_SIZE                8192
 extern struct PDC_iterator_info * PDC_Block_iterator_cache;
 extern int                      * i_cache_freed;
 extern size_t                     iterator_cache_entries;
@@ -222,7 +222,7 @@ extern size_t PDCobj_data_getNextBlock(pdcid_t iter, void **nextBlock, size_t *d
 extern int PDCiter_get_nextId(void);
 extern int pdc_add_analysis_ptr_to_registry_(struct region_analysis_ftn_info *ftnPtr);
 extern perr_t pdc_client_send_iter_recv_id(pdcid_t iter_id, pdcid_t *meta_id);
-extern perr_t pdc_client_register_obj_analysis(struct region_analysis_ftn_info *thisFtn, const char *func, const char *loadpath, pdcid_t iter_in, pdcid_t iter_out);
+extern perr_t pdc_client_register_obj_analysis(struct region_analysis_ftn_info *thisFtn, const char *func, const char *loadpath, pdcid_t ilocal, pdcid_t olocal, pdcid_t imeta, pdcid_t ometa);
 extern perr_t pdc_client_register_obj_transform(const char *func, const char *loadpath, pdcid_t obj_id, int start_state, int next_state, int op_type, int when);
 extern perr_t pdc_client_register_region_transform(const char *func, const char *loadpath, pdcid_t src_region_id, pdcid_t dest_region_id, pdcid_t dest_obj_id, int start_state, int next_state, int op_type, int when, int client_regIndex);
 extern int get_ftnPtr_(const char *ftn, char *loadpath, void **ftnPtr);

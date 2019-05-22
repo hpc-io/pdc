@@ -87,3 +87,78 @@ int check_mpi_access()
 
     return 0;
 }
+
+
+/*
+ * ArrayUDF:: neon/ running average application
+ * For each point, create the average of the current point value 
+ * and the 3 previous values.  The input data is a 3D array,
+ * but to ease the computing in PDC, we treat each 2D (X,Y) plane
+ * as a vector of (X * Y) points.
+ * Because we need to access the 3 previous values in each column,
+ * we define the stencil as having 4 values where:
+ *   1.  The current point at index (3,0,0).
+ *   2.  The average is thus ((3,0,0) + (2,0,0, +(1,0,0, + (0,0,0))/4.
+ * -------------------------------------------------
+ inline float myfunc1(const SDSArrayCell<float> &c){
+	  return (c(0,0,0)+c(-1,0,0)+c(-2,0, 0)+c(-3,0,0))/4;
+}
+*/
+
+size_t cortad_avg_func(short *stencil[4], float *out, size_t elements)
+{
+    int k;
+    for(k = 0; k < elements; k++) {
+      out[k] = (float)((stencil[0][k] + stencil[1][k] + stencil[2][k] + stencil[3][k]) / 4.0);
+    }
+    return 0;
+}
+
+/* PDC analysis entrypoint:
+ * This calls the cortad running average function on
+ * each PDC array slice as returned from the PDCobj_data_getNextBlock();
+ * We treat the 2D array as a contiguous vector of points
+ * which is then presented as a series of 4 historical datapoints.
+ * [ the grid of 2D geographic points is "flattened" into 1D and the
+ *   3rd dimension (historial data) is the collection of NextBlocks... ]
+ * 
+ */
+size_t neon_stencil(pdcid_t iterIn, pdcid_t iterOut, iterator_cbs_t *callbacks)
+{
+    short *dataIn = NULL;
+    short *stencil[4] = {NULL, NULL, NULL, NULL};
+
+    float *dataOut = NULL;
+    size_t dimsIn[3] = {0,};
+    size_t dimsOut[3] = {0,};
+    size_t k, blockLengthOut, blockLengthIn, number_of_slices;
+    size_t result = 0;
+    double start, end, total;
+
+    start = MPI_Wtime();
+    printf("Entered: %s\n----------------\n", __func__);
+    number_of_slices = (*callbacks->getSliceCount)(iterOut);
+    if ((blockLengthIn = (*callbacks->getNextBlock)(iterIn, (void **)&dataIn, dimsIn)) == 0)
+      printf("neon_stencil: Empty Input!\n");
+    else {
+        printf("Total # Slices = %ld, Size of each slice = %ld elements = (%ld x %ld)\n",number_of_slices, blockLengthIn, dimsIn[2], dimsIn[1]);
+        stencil[0] = stencil[1] = stencil[2] = stencil[3] = dataIn;
+        for (k=0; k< number_of_slices; k++) {
+          if ((blockLengthOut = (*callbacks->getNextBlock)(iterOut, (void **)&dataOut, dimsOut)) > 0) {
+             if (cortad_avg_func(stencil,dataOut,blockLengthIn) == 0) {
+                stencil[0] = stencil[1];
+                stencil[1] = stencil[2];
+                stencil[2] = stencil[3];
+             }
+             blockLengthIn = (*callbacks->getNextBlock)(iterIn, (void **)&dataIn, NULL);
+             stencil[3] = dataIn;
+          }
+        }
+    }
+    end = MPI_Wtime();
+    total = end-start;
+
+    printf("Leaving: %s execution time = %lf seconds\n----------------\n", __func__, total);
+    return result;
+}
+

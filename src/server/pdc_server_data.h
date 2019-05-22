@@ -261,6 +261,7 @@ perr_t PDC_Server_get_local_storage_location_of_region(uint64_t obj_id, region_l
 perr_t PDC_Server_regions_io(region_list_t *region_list_head, PDC_io_plugin_t plugin);
 data_server_region_t *PDC_Server_get_obj_region(pdcid_t obj_id);
 region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in_t *in, region_list_t *request_region, void *data_ptr);
+void *PDC_Server_maybe_allocate_region_buf_ptr(pdcid_t obj_id, region_info_transfer_t region, size_t type_size);
 void *PDC_Server_get_region_buf_ptr(pdcid_t obj_id, region_info_transfer_t region);
 hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info);
 hg_return_t PDC_Server_count_write_check_update_storage_meta_cb (const struct hg_cb_info *callback_info);

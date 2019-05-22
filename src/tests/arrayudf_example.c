@@ -153,11 +153,12 @@ size_t arrayudf_stencils(pdcid_t iterIn, pdcid_t iterOut, iterator_cbs_t *callba
 }
 */
 
-size_t cortad_avg_func(float *stencil[4], float *out, size_t elements)
+size_t cortad_avg_func(short *stencil[4], float *out, size_t elements)
 {
-    size_t k; elements;
-    for(k = 0; k < elements; k++) 
-      out[k] = (stencil[0][k] + stencil[1][k] + stencil[2][k] + stencil[3][k]) / 4.0;
+    int k;
+    for(k = 0; k < elements; k++) {
+      out[k] = (float)((stencil[0][k] + stencil[1][k] + stencil[2][k] + stencil[3][k]) / 4.0);
+    }
     return 0;
 }
 
@@ -172,9 +173,10 @@ size_t cortad_avg_func(float *stencil[4], float *out, size_t elements)
  */
 size_t neon_stencil(pdcid_t iterIn, pdcid_t iterOut, iterator_cbs_t *callbacks)
 {
-    float *dataIn = NULL;
+    short *dataIn = NULL;
+    short *stencil[4] = {NULL, NULL, NULL, NULL};
+
     float *dataOut = NULL;
-    float *stencil[4] = {NULL, NULL, NULL, NULL};
     size_t dimsIn[3] = {0,};
     size_t dimsOut[3] = {0,};
     size_t k, blockLengthOut, blockLengthIn, number_of_slices;
@@ -182,12 +184,12 @@ size_t neon_stencil(pdcid_t iterIn, pdcid_t iterOut, iterator_cbs_t *callbacks)
     double start, end, total;
 
     start = MPI_Wtime();
-    // printf("Entered: %s\n----------------\n", __func__);
+    printf("Entered: %s\n----------------\n", __func__);
     number_of_slices = (*callbacks->getSliceCount)(iterOut);
     if ((blockLengthIn = (*callbacks->getNextBlock)(iterIn, (void **)&dataIn, dimsIn)) == 0)
       printf("neon_stencil: Empty Input!\n");
     else {
-      // printf("Total # Slices = %ld, Size of each slice = %ld elements = (%ld x %ld)\n",number_of_slices, blockLengthIn, dimsIn[2], dimsIn[1]);
+        // printf("Total # Slices = %ld, Size of each slice = %ld elements = (%ld x %ld)\n",number_of_slices, blockLengthIn, dimsIn[2], dimsIn[1]);
         stencil[0] = stencil[1] = stencil[2] = stencil[3] = dataIn;
         for (k=0; k< number_of_slices; k++) {
           if ((blockLengthOut = (*callbacks->getNextBlock)(iterOut, (void **)&dataOut, dimsOut)) > 0) {
@@ -254,7 +256,10 @@ int main(int argc, char **argv)
 
     uint64_t offsets3d[3] = {0, 0, 0};
     uint64_t my3D_dims[3] = {10, 10, 10};
-    float my3DTestArray[10][10][10] =
+    int i,j,k, total_3D_elems = 1000;
+    float my3DFloatArray[10][10][10];
+
+    short my3DShortArray[10][10][10] =
       {
        /* 0 */
        {
@@ -419,6 +424,7 @@ int main(int argc, char **argv)
     strcpy(app_name, "arrayudf_example");
 #endif
 
+#if 0
     PDCprop_set_obj_dims     (obj1_prop, 2, myTestArray_dims);
     PDCprop_set_obj_type     (obj1_prop, PDC_FLOAT );
     PDCprop_set_obj_time_step(obj1_prop, 0       );
@@ -467,17 +473,18 @@ int main(int argc, char **argv)
 
     ret = PDCreg_obtain_lock(obj1, r1, WRITE, NOBLOCK);
     ret = PDCreg_release_lock(obj1, r1, WRITE);
+#endif
 
 //   3D properties for input and results
     obj3_prop = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
 
     PDCprop_set_obj_dims     (obj3_prop, 3, my3D_dims);
-    PDCprop_set_obj_type     (obj3_prop, PDC_FLOAT );
+    PDCprop_set_obj_type     (obj3_prop, PDC_INT16 );
     PDCprop_set_obj_time_step(obj3_prop, 0       );
     PDCprop_set_obj_user_id  (obj3_prop, getuid());
     PDCprop_set_obj_app_name (obj3_prop, app_name );
     PDCprop_set_obj_tags     (obj3_prop, "tag0=1");
-    PDCprop_set_obj_buf      (obj3_prop, &my3DTestArray[0][0][0]);
+    PDCprop_set_obj_buf      (obj3_prop, &my3DShortArray[0][0][0]);
 
     // Duplicate the properties from 'obj1_prop' into 'obj2_prop'
     obj4_prop = PDCprop_obj_dup(obj3_prop);
@@ -506,9 +513,11 @@ int main(int argc, char **argv)
 
     PDCobj_analysis_register("neon_stencil:arrayudf_example", input3d_iter, output3d_iter);
 
-    ret = PDCbuf_obj_map(my3DTestArray, PDC_FLOAT, r3, obj3, r4);
+    ret = PDCbuf_obj_map(my3DShortArray, PDC_INT16, r3, obj4, r4);
     ret = PDCreg_obtain_lock(obj3, r3, WRITE, NOBLOCK);
     ret = PDCreg_release_lock(obj3, r3, WRITE);
+
+    PDCbuf_obj_unmap(obj4, r4);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);

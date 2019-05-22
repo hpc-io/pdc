@@ -142,10 +142,12 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id
     if(obj_prop->tags)
         p->obj_pt->tags = strdup(obj_prop->tags);
 
-    ret = PDC_Client_send_name_recv_id(obj_name, meta_id, obj_prop_id, &(p->meta_id));
+    ret = PDC_Client_send_name_recv_id(obj_name, meta_id, obj_prop_id, &(p->meta_id), &(p->server_id));
     if (ret == FAIL)
         PGOTO_ERROR(0, "Unable to create object on server!\n");
     
+    // printf("PDCobj_create: server returned (%s) id = %ld\n", obj_name, p->meta_id);
+
     p->local_id = pdc_id_register(PDC_OBJ, p);
     ret_value = p->local_id;
 //  PDC_Client_attach_metadata_to_local_obj((char *)obj_name, p->meta_id, p->cont->meta_id, p);
@@ -233,7 +235,7 @@ pdcid_t pdc_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_i
     p->local_id = pdc_id_register(PDC_OBJ, p);
 
     if(location == PDC_OBJ_GLOBAL) {
-        ret = PDC_Client_send_name_recv_id(obj_name, p->cont->meta_id, obj_prop_id, &(p->meta_id));
+        ret = PDC_Client_send_name_recv_id(obj_name, p->cont->meta_id, obj_prop_id, &(p->meta_id), &(p->server_id));
         if (ret == FAIL)
             PGOTO_ERROR(0, "Unable to create object on server!\n");
     }
@@ -644,7 +646,8 @@ perr_t PDCprop_set_obj_type(pdcid_t obj_prop, PDC_var_type_t type)
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
     prop = (struct PDC_obj_prop *)(info->obj_ptr);
     prop->type = type;
-    
+    if (prop->type_extent == 0)
+        prop->type_extent = (size_t) get_datatype_size(type);
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -905,7 +908,7 @@ perr_t PDCbuf_obj_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id)
         PGOTO_ERROR(FAIL, "cannot locate region ID");
     reginfo = (struct PDC_region_info *)(info1->obj_ptr);
 
-    ret_value = PDC_Client_buf_unmap(object1->meta_id, remote_reg_id, reginfo, data_type);
+    ret_value = PDC_Client_buf_unmap(object1, remote_reg_id, reginfo, data_type);
 
     if(ret_value == SUCCEED) { 
         pdc_dec_ref(remote_obj_id);  
@@ -1185,7 +1188,7 @@ perr_t PDCreg_obtain_lock(pdcid_t obj_id, pdcid_t reg_id, PDC_access_t access_ty
     region_info = PDCregion_get_info(reg_id);
     
 //    ret_value = PDC_Client_obtain_region_lock(meta_id, region_info, access_type, lock_mode, data_type, &obtained);
-    ret_value = PDC_Client_region_lock(meta_id, region_info, access_type, lock_mode, data_type, &obtained);
+    ret_value = PDC_Client_region_lock(object_info, region_info, access_type, lock_mode, data_type, &obtained);
 
     PDC_free_obj_info(object_info);
     
@@ -1200,15 +1203,17 @@ perr_t PDCreg_release_lock(pdcid_t obj_id, pdcid_t reg_id, PDC_access_t access_t
     struct PDC_obj_info *object_info;
     struct PDC_region_info *region_info;
     PDC_var_type_t data_type;
+    size_t type_extent;
  
     FUNC_ENTER(NULL);
     
     object_info = PDC_obj_get_info(obj_id);
     meta_id = object_info->meta_id;
     data_type = object_info->obj_pt->type;
+    type_extent = object_info->obj_pt->type_extent;
     region_info = PDCregion_get_info(reg_id);
     
-    ret_value = PDC_Client_release_region_lock(meta_id, region_info, access_type, data_type, &released);
+    ret_value = PDC_Client_release_region_lock(object_info, region_info, access_type, data_type, type_extent, &released);
  
     PDC_free_obj_info(object_info);
     

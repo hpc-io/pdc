@@ -769,6 +769,10 @@ typedef struct {
      * -------------------------------------------------------------
      */
     int32_t                     analysis_meta_index;
+    int32_t                     n_args;
+    uint64_t                    output_obj_id;
+    uint64_t                    type_extent;
+    uint64_t                    output_type_extent;
     pdcid_t                     input_iter;
     pdcid_t                     output_iter;
     
@@ -827,6 +831,26 @@ hg_proc_region_analysis_and_lock_in_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->analysis_meta_index);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->n_args);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->output_obj_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->type_extent);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->output_type_extent);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -1802,6 +1826,11 @@ hg_proc_buf_map_in_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->remote_obj_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint8_t(proc, &struct_data->local_type);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;

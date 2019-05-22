@@ -190,6 +190,12 @@ get_datatype_size(PDC_var_type_t dtype)
     case PDC_DOUBLE:
       return sizeof(double);
       break;
+    case PDC_INT16:
+      return sizeof(short);
+      break;
+    case PDC_INT8:
+      return 1;
+      break;
     case PDC_UNKNOWN:
     default:
       printf("get_datatype_size: WARNING - Using an unknown datatype\n");
@@ -391,6 +397,33 @@ perr_t PDC_init_region_list(region_list_t *a)
     a->reg_dirty_from_buf     = 0;
     a->lock_handle   = NULL;
     a->access_type   = NA;
+    return ret_value;
+}
+
+// currently assumes both region are of same object, so only compare ndim, start, and count.
+int PDC_is_same_region_shape(region_list_t *a, size_t extent_a, region_list_t *b, size_t extent_b)
+{
+    int ret_value = 1;
+    size_t i = 0;
+
+    if (NULL == a || NULL == b) {
+        printf("==Empty region_list_t structure\n");
+        return -1;
+    }
+
+    if (a->ndim != b->ndim)
+        return -1;
+
+    for (i = 0; i < a->ndim; i++) {
+
+        if (a->start[i] != b->start[i])
+            return -1;
+
+        if ((a->count[i]/extent_a) != (b->count[i]/extent_b))
+            return -1;
+    }
+
+/* done: */
     return ret_value;
 }
 
@@ -870,6 +903,7 @@ hg_return_t PDC_Server_recv_shm_cb(const struct hg_cb_info *callback_info ATTRIB
 
 data_server_region_t *PDC_Server_get_obj_region(pdcid_t obj_id ATTRIBUTE(unused)) {return NULL;}
 region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info ATTRIBUTE(unused), buf_map_in_t *in ATTRIBUTE(unused), region_list_t *request_region ATTRIBUTE(unused), void *data_ptr ATTRIBUTE(unused)) {return SUCCEED;}
+void *PDC_Server_maybe_allocate_region_buf_ptr(pdcid_t obj_id ATTRIBUTE(unused), region_info_transfer_t region ATTRIBUTE(unused), size_t type_size ATTRIBUTE(unused)) {return NULL;}
 void *PDC_Server_get_region_buf_ptr(pdcid_t obj_id ATTRIBUTE(unused), region_info_transfer_t region ATTRIBUTE(unused)) {return NULL;}
 void *PDC_Server_get_region_obj_ptr(pdcid_t obj_id ATTRIBUTE(unused), region_info_transfer_t region ATTRIBUTE(unused)) {return NULL;}
 perr_t PDC_Server_find_container_by_name(const char *cont_name ATTRIBUTE(unused), pdc_cont_hash_table_entry_t **out ATTRIBUTE(unused)) {return SUCCEED;};
@@ -1711,12 +1745,14 @@ analysis_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info
     void *data_buf;
     char *buf;
     int  ndim;
+    size_t type_extent, output_type_extent;
     uint64_t *dims = NULL;
 #ifdef ENABLE_MULTITHREAD
     data_server_region_t *target_reg = NULL;
     region_buf_map_t *elt;
 #else
     struct PDC_region_info *remote_reg_info = NULL;
+    struct PDC_region_info *local_reg_info = NULL;
 #endif
 
     FUNC_ENTER(NULL);
@@ -1735,13 +1771,14 @@ analysis_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info
     /* Prepare for the transform */
     ndim = bulk_args->remote_region.ndim;
     dims = (uint64_t *)calloc(ndim, sizeof(uint64_t));
-
+    type_extent = bulk_args->in.type_extent;
+    output_type_extent = bulk_args->in.output_type_extent;
     /* Support ONLY up to 4 dimensions */
     if (dims) {
-       if (ndim >= 1) dims[0] = bulk_args->remote_region.count_0;
-       if (ndim >= 2) dims[1] = bulk_args->remote_region.count_1;
-       if (ndim >= 3) dims[2] = bulk_args->remote_region.count_2;
-       if (ndim == 4) dims[3] = bulk_args->remote_region.count_3;
+       if (ndim >= 1) dims[0] = bulk_args->in.region.count_0/type_extent;
+       if (ndim >= 2) dims[1] = bulk_args->in.region.count_1/type_extent;
+       if (ndim >= 3) dims[2] = bulk_args->in.region.count_2/type_extent;
+       if (ndim == 4) dims[3] = bulk_args->in.region.count_3/type_extent;
     }
 
     out.ret = 1;
@@ -1752,7 +1789,8 @@ analysis_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info
      * The output of the transform is used to fill the
      * actual region data store...
      */
-    data_buf = PDC_Server_get_region_buf_ptr(bulk_args->in.obj_id, bulk_args->in.region);
+
+    data_buf = PDC_Server_get_region_buf_ptr(bulk_args->remote_obj_id, bulk_args->remote_region);
     if (data_buf != NULL) {
         struct region_analysis_ftn_info **registry = NULL;
         iterator_cbs_t iter_cbs = {PDCobj_data_getSliceCount, PDCobj_data_getNextBlock};
@@ -1767,7 +1805,6 @@ analysis_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info
 	  puts("----------------\n");
 	}
     }
-
 
 #ifdef ENABLE_MULTITHREAD
     bulk_args->work.func = pdc_region_write_out_progress;
@@ -1786,16 +1823,58 @@ analysis_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info
     if(remote_reg_info == NULL) {
         PGOTO_ERROR(HG_OTHER_ERROR, "remote_reg_info memory allocation failed\n");
     }
+    /* Here' we prepare to write the output data to disk...
+     * NOTE: I'll leave this "as is" for now, but the PDC_Server_data_write_out()
+     * function seems to only deal with 1D arrays.  Internally, I'll convert
+     * the region size info into a 1D byte length to write the entire result.
+     * Note that size[0] retains the n_elements * type_extent;
+     * all other size arguments contain the number of elements without type_extent
+     * adjustments. In this way, the PDC_Server_data_write_out function can simply
+     * multiply all size argments to find the byte length of the data_buf...
+     */
     remote_reg_info->ndim = (bulk_args->remote_region).ndim;
-    remote_reg_info->offset = (uint64_t *)malloc(sizeof(uint64_t));
-    remote_reg_info->size = (uint64_t *)malloc(sizeof(uint64_t));
+    remote_reg_info->offset = (uint64_t *)calloc(remote_reg_info->ndim, sizeof(uint64_t));
+    remote_reg_info->size = (uint64_t *)calloc(remote_reg_info->ndim, sizeof(uint64_t));
     (remote_reg_info->offset)[0] = (bulk_args->remote_region).start_0;
     (remote_reg_info->size)[0] = (bulk_args->remote_region).count_0;
+    if (remote_reg_info->ndim > 1) {
+      (remote_reg_info->offset)[1] = bulk_args->remote_region.start_1;
+      (remote_reg_info->size)[1] = dims[1];
+    }
+    if (remote_reg_info->ndim > 2) {
+      (remote_reg_info->offset)[2] = bulk_args->remote_region.start_2;
+      (remote_reg_info->size)[2] = dims[2];
+    }
+    if (remote_reg_info->ndim > 3) {
+      (remote_reg_info->offset)[3] = bulk_args->remote_region.start_3;
+      (remote_reg_info->size)[3] = dims[3];
+    }
 
-    PDC_Server_data_write_out(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf);
+    /* Write the analysis results... */
+    PDC_Server_data_write_out(bulk_args->remote_obj_id, remote_reg_info, data_buf);
     PDC_Data_Server_region_release((region_lock_in_t *)&bulk_args->in, &out);
-
-    PDC_Server_release_lock_request(bulk_args->remote_obj_id, remote_reg_info);
+    local_reg_info = (struct PDC_region_info *)malloc(sizeof(struct PDC_region_info));
+    if(local_reg_info == NULL) {
+        PGOTO_ERROR(HG_OTHER_ERROR, "local_reg_info memory allocation failed\n");
+    }
+    local_reg_info->ndim = bulk_args->in.region.ndim;
+    local_reg_info->offset = (uint64_t *)calloc(local_reg_info->ndim,sizeof(uint64_t));
+    local_reg_info->size = (uint64_t *)calloc(local_reg_info->ndim,sizeof(uint64_t));
+    (local_reg_info->offset)[0] = bulk_args->in.region.start_0;
+    (local_reg_info->size)[0] = bulk_args->in.region.count_0;
+    if (local_reg_info->ndim > 1) {
+      (local_reg_info->offset)[1] = bulk_args->in.region.start_1;
+      (local_reg_info->size)[1] = bulk_args->in.region.count_1;
+    }
+    if (local_reg_info->ndim > 2) {
+      (local_reg_info->offset)[2] = bulk_args->in.region.start_2;
+      (local_reg_info->size)[2] = bulk_args->in.region.count_2;
+    }
+    if (local_reg_info->ndim > 3) {
+      (local_reg_info->offset)[3] = bulk_args->in.region.start_3;
+      (local_reg_info->size)[3] = bulk_args->in.region.count_3;
+    }
+    PDC_Server_release_lock_request(bulk_args->in.obj_id, local_reg_info);
 #endif
 
 done:
@@ -1805,6 +1884,10 @@ done:
     free(remote_reg_info->offset);
     free(remote_reg_info->size);
     free(remote_reg_info);
+
+    free(local_reg_info->offset);
+    free(local_reg_info->size);
+    free(local_reg_info);
 
     HG_Bulk_free(bulk_args->remote_bulk_handle);
     HG_Free_input(bulk_args->handle, &(bulk_args->in));
@@ -2597,6 +2680,7 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
     region_lock_out_t out;
     const struct hg_info *hg_info = NULL;
     data_server_region_t *target_obj;
+    data_server_region_t *lock_obj;
     int error = 0;
     int dirty_reg = 0;
     hg_size_t   size;
@@ -2615,7 +2699,7 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
     hg_uint32_t k, remote_count;
     void **data_ptrs_to = NULL;
     size_t *data_size_to = NULL;
-    size_t type_size = 0;;
+    size_t type_size = 0;
     size_t dims[4] = {0,0,0,0};
     
     FUNC_ENTER(NULL);
@@ -2626,8 +2710,6 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
     hg_info = HG_Get_info(handle);
     
     if(in.lock_release.access_type==READ) {
-        printf("release 0x%0lx access_type==READ\n", in.lock_release.obj_id);
-
         // check region is dirty or not, if dirty transfer data
         request_region = (region_list_t *)malloc(sizeof(region_list_t));
         pdc_region_transfer_t_to_list_t(&in.lock_release.region, request_region);
@@ -2676,7 +2758,8 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
                 tmp = (region_list_t *)malloc(sizeof(region_list_t));
                 DL_FOREACH(target_obj->region_buf_map_head, eltt2) {
                     pdc_region_transfer_t_to_list_t(&(eltt2->remote_region_unit), tmp);
-                    if(PDC_is_same_region_list(tmp, request_region) == 1) {
+                    if(PDC_is_same_region_shape(tmp, in.analysis.output_type_extent,
+						request_region, in.analysis.type_extent) == 1) {
                         // get remote object memory addr
                         data_buf = PDC_Server_get_region_buf_ptr(in.lock_release.obj_id, in.lock_release.region);
                         if(in.lock_release.region.ndim == 1) {
@@ -2768,26 +2851,32 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
     // write lock release with mapping case
     // do data transfer if it is write lock release with mapping.
     else {
-      // printf("region_analysis_release_cb: release obj_id=%" PRIu64 " access_type==WRITE\n", in.lock_release.obj_id);
         request_region = (region_list_t *)malloc(sizeof(region_list_t));
         pdc_region_transfer_t_to_list_t(&in.lock_release.region, request_region);
-        target_obj = PDC_Server_get_obj_region(in.lock_release.obj_id);
+        lock_obj = PDC_Server_get_obj_region(in.lock_release.obj_id);
+        target_obj = PDC_Server_get_obj_region(in.analysis.output_obj_id);
 #ifdef ENABLE_MULTITHREAD
         hg_thread_mutex_lock(&lock_list_mutex_g);
 #endif
-        DL_FOREACH(target_obj->region_lock_head, elt) {
-            if (PDC_is_same_region_list(request_region, elt) == 1 && elt->reg_dirty_from_buf == 1 && hg_atomic_get32(&(elt->buf_map_refcount)) > 0) {
+        DL_FOREACH(lock_obj->region_lock_head, elt) {
+	  if (PDC_is_same_region_list(request_region, elt) == 1 && elt->obj_id == in.analysis.obj_id) {
                 dirty_reg = 1;
                 tmp = (region_list_t *)malloc(sizeof(region_list_t));
                 DL_FOREACH(target_obj->region_buf_map_head, eltt) {
                     pdc_region_transfer_t_to_list_t(&(eltt->remote_region_unit), tmp);
-                    if(PDC_is_same_region_list(tmp, request_region) == 1) {
+                    if(PDC_is_same_region_shape(tmp, in.analysis.output_type_extent,
+						request_region,in.analysis.type_extent) == 1) {
   	                size_t buf_size;
                         /* pdc_metadata_t *res_meta = NULL; */
                         /* if (PDC_Server_get_local_metadata_by_id(in.lock_release.obj_id, &res_meta) < 0)
 			   PGOTO_ERROR(FAIL, "Unable to find object metadata"); */
 
+#if 0
                         type_size = get_datatype_size(in.analysis.data_type);
+#else
+                        type_size = in.analysis.type_extent;
+                        eltt->local_type_extent = type_size;
+#endif
                                                 
                         // get remote object memory addr
                         // NOTE:  In this scenario, the 'target' is going to be the
@@ -2796,8 +2885,7 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
                         // currently resides on client and has been locked, updated, then
                         // unlocked to prompt the mapping data transfer.
 
-                        data_buf = PDC_Server_get_region_buf_ptr(in.lock_release.obj_id, in.lock_release.region);
-
+                        data_buf = PDC_Server_maybe_allocate_region_buf_ptr(in.lock_release.obj_id, in.lock_release.region, type_size);
                         if(in.lock_release.region.ndim == 1) {
                          /* buf_size = res_meta->dims[0] * type_size; */
                             dims[0] = in.analysis.region.count_0 / type_size;
@@ -2806,18 +2894,19 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
                             data_ptrs_to = (void **)malloc( sizeof(void *) );
                             data_size_to = (size_t *)malloc( sizeof(size_t) );
                             *data_ptrs_to = data_buf;
-                            *data_size_to = (eltt->remote_region_unit).count_0;
+                            *data_size_to = eltt->local_region.count_0;
                         }
                         else if (in.lock_release.region.ndim == 2) {
                          /* buf_size = res_meta->dims[0] * res_meta->dims[1] * type_size; */
+			  /* dims can be set directly from local_region_nunit!! */
                             dims[0] = in.analysis.region.count_0 / type_size;
                             dims[1] = in.analysis.region.count_1 / type_size;
                             buf_size = in.analysis.region.count_0 * dims[1];
-                            remote_count = (eltt->remote_region_nounit).count_0;
+                            remote_count = dims[0];
                             data_ptrs_to = (void **)malloc( remote_count * sizeof(void *) );
                             data_size_to = (size_t *)malloc( remote_count * sizeof(size_t) );
-                            data_ptrs_to[0] = data_buf + eltt->remote_unit*(dims[1]*(eltt->remote_region_nounit).start_0 + (eltt->remote_region_nounit).start_1);
-                            data_size_to[0] = (eltt->remote_region_unit).count_1;
+                            data_ptrs_to[0] = data_buf + type_size * dims[1] *((eltt->local_region.start_0/type_size) + (eltt->local_region.start_1/type_size));
+                            data_size_to[0] = eltt->local_region.count_1;
                             for(k=1; k<remote_count; k++) {
                                 data_ptrs_to[k] = data_ptrs_to[k-1] + data_size_to[0];
                                 data_size_to[k] = data_size_to[0];
@@ -2825,15 +2914,16 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
                         }
                         else if (in.lock_release.region.ndim == 3) {
                           /*  buf_size = res_meta->dims[0] * res_meta->dims[1] * res_meta->dims[2] * type_size; */
+			  /* dims can be set directly from local_region_nunit!! */
                             dims[0] = in.analysis.region.count_0 / type_size;
                             dims[1] = in.analysis.region.count_1 / type_size;
                             dims[2] = in.analysis.region.count_2 / type_size;
                             buf_size = in.analysis.region.count_0 * dims[1] * dims[2];;
-                            remote_count = (eltt->remote_region_nounit).count_0;
+                            remote_count = dims[0];
                             data_ptrs_to = (void **)malloc( remote_count * sizeof(void *) );
                             data_size_to = (size_t *)malloc( remote_count * sizeof(size_t) );
-                            data_ptrs_to[0] = data_buf + eltt->remote_unit*(dims[1]*(eltt->remote_region_nounit).start_0 + (eltt->remote_region_nounit).start_1);
-                            data_size_to[0] = eltt->remote_unit * (eltt->remote_region_nounit).count_2 * (eltt->remote_region_nounit).count_1;
+                            data_ptrs_to[0] = data_buf + type_size * dims[1] *((eltt->local_region.start_0/type_size) + (eltt->local_region.start_1/type_size));
+                            data_size_to[0] = eltt->local_region.count_2 * (eltt->local_region.count_1/type_size);
                             for(k=1; k<remote_count; k++) {
                                 data_ptrs_to[k] = data_ptrs_to[k-1] + data_size_to[0];
                                 data_size_to[k] = data_size_to[0];
@@ -2909,6 +2999,7 @@ done:
 }
 
 
+/* region_lock_cb */
 HG_TEST_RPC_CB(region_lock, handle)
 {
     hg_return_t ret_value = HG_SUCCESS;

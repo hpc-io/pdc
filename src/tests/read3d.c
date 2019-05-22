@@ -121,22 +121,135 @@ create_faccess_plist(MPI_Comm comm, MPI_Info info, int l_facc_type)
 }
 
 
-static int
+int
+do_pdc_analysis_for_output(short *data, size_t dims[3], PDC_var_type_t data_type, int mpi_rank)
+{
+    perr_t ret = SUCCEED;
+    pdcid_t pdc_id, cont_prop, cont_id;
+    pdcid_t weeklysst_prop, weeklysst_average_prop;
+    pdcid_t input_object, output_object;
+    pdcid_t input3d_iter, output3d_iter;
+    pdcid_t rin, rout;
+
+    uint64_t offsets3d[3] = {0, 0, 0};
+
+    char app_name[256];
+    char obj_name[256];
+
+
+    // initialize pdc
+    pdc_id = PDC_init("pdc");
+
+    // create a container property
+    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
+
+    // create a container (collectively)
+    cont_id = PDCcont_create_col("c1", cont_prop);
+    if(cont_id <= 0)
+        printf("Fail to create container @ line  %d!\n", __LINE__);
+
+    // create object properties for input and results
+    weeklysst_prop = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
+
+#ifdef ENABLE_MPI
+    sprintf(app_name, "neon_CoRTAD_analysis_example.%d", mpi_rank);
+#else
+    strcpy(app_name, "arrayudf_example");
+#endif
+
+    PDCprop_set_obj_dims     (weeklysst_prop, 3, dims);
+    PDCprop_set_obj_type     (weeklysst_prop, data_type);
+    PDCprop_set_obj_time_step(weeklysst_prop, 0       );
+    PDCprop_set_obj_user_id  (weeklysst_prop, getuid());
+    PDCprop_set_obj_app_name (weeklysst_prop, app_name );
+    PDCprop_set_obj_tags     (weeklysst_prop, "weeklysst");
+    PDCprop_set_obj_buf      (weeklysst_prop, data);
+
+    // Duplicate the properties from 'weeklysst_prop' into 'weeklysst_average_prop'
+    weeklysst_average_prop = PDCprop_obj_dup(weeklysst_prop);
+    /* Dup doesn't replicate the datatype, but we need to set it in any event
+     * to capture the float datatype results.
+     */
+    PDCprop_set_obj_type(weeklysst_average_prop, PDC_FLOAT);
+
+    sprintf(obj_name, "din.%d", mpi_rank);
+    input_object = PDCobj_create(cont_id, obj_name, weeklysst_prop);
+    if (input_object == 0) {
+        printf("Error getting an object id of %s from server, exit...\n", obj_name);
+	exit(-1);
+    }
+
+    sprintf(obj_name, "dout.%d", mpi_rank);
+    output_object = PDCobj_create(cont_id, obj_name, weeklysst_average_prop);
+    if (output_object == 0) {
+        printf("Error getting an object id of %s from server, exit...\n", obj_name);
+	exit(-1);
+    }
+
+    // create regions                                                                                                                                       
+    rin = PDCregion_create(3, offsets3d, dims);
+    rout = PDCregion_create(3, offsets3d, dims);
+
+    input3d_iter = PDCobj_data_iter_create(input_object, rin);
+    output3d_iter = PDCobj_data_iter_create(output_object, rout);
+
+    /* The neon stencil can be found in the pdc_analysis_lib.c source file
+     * which generates the default analysis library: libpdcanalysis.so
+     */
+    PDCobj_analysis_register("neon_stencil", input3d_iter, output3d_iter);
+
+    ret = PDCbuf_obj_map(data, PDC_INT16, rin, output_object, rout);
+    ret = PDCreg_obtain_lock(input_object, rin, WRITE, NOBLOCK);
+    ret = PDCreg_release_lock(input_object, rin, WRITE);
+    PDCbuf_obj_unmap(output_object, rout);
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
+    // Close our regions;
+    if (PDCregion_close(rin) < 0)
+      printf("Failed to close region(rin)!\n");
+    if (PDCregion_close(rout) < 0)
+      printf("Failed to close region(rout)!\n");
+
+    // close a container
+    if(PDCcont_close(cont_id) < 0)
+        printf("fail to close container %ld\n", cont_id);
+
+    // close a container property
+    if(PDCprop_close(cont_prop) < 0)
+        printf("Fail to close property @ line %d\n", __LINE__);
+
+    if(PDC_close(pdc_id) < 0)
+       printf("fail to close PDC\n");
+
+    return 0;
+}
+
+int
 read_client_data(int grank, int gsize, char *filename, char *datasetID)
 {
-    int i, errors = 0;
+    int i,k, errors = 0;
     int ds_ndims = 0;
-    int facc_type = FACC_MPIO;
+
+    short *data_out = NULL;
+    double start_t, end_t, total_t;
+    size_t dimsm[3] = {0,0,0};
+
     size_t type_size = 0;
     hsize_t ds_dimensions[3] = {0,0,0};
+    /* for parallel IO */
+    int facc_type = FACC_MPIO;
 
     /* for hyperslab settings */
-    hsize_t size2d = 0;
-    hsize_t start[3] = {0,};
-    hsize_t count[3] = {0,};
-    hsize_t stride[3] = {0,};
-    hsize_t block[3] = {0,};
+    hsize_t slice_elements = 0;
+    hsize_t start[3] = {0,0,0};
+    hsize_t count[3] = {0,0,0};
+    hsize_t stride[3] = {0,0,0};
+    hsize_t block[3] = {0,0,0};
     hsize_t total_elements = 0;
+
     void *data_array = NULL;
     void *result_array = NULL;
 
@@ -154,7 +267,6 @@ read_client_data(int grank, int gsize, char *filename, char *datasetID)
     MPI_Comm mpi_comm = MPI_COMM_WORLD;
 
     H5open();
-
     acc_tpl = create_faccess_plist(mpi_comm, mpi_info, facc_type);
     /* Make the file access collective */
     if (acc_tpl >= 0) H5Pset_fapl_mpio(acc_tpl, mpi_comm, mpi_info );
@@ -218,126 +330,72 @@ read_client_data(int grank, int gsize, char *filename, char *datasetID)
     if (gsize > 1) {
         MPI_Barrier(MPI_COMM_WORLD);
     }
-
-    /* For this test, we want each process to return a full column of data.
-     * For a 10,8,6 for example, each column should be (10,rowsize,colsize)
-     * Calulate (rows*cols) / mpi_ranks = elements in a single slice. 
-     * EXAMPLE: 2 mpi_ranks => 48/2 = 24 elements/RANK = (4 x 6) or (8 x 3)
-     *          4 mpi_ranks => 48/4 = 12 elements/RANK = (4 x 3) or (2 x 6)
-     *          6 mpi_ranks => 48/6 = 8  elements/RANK = (4 x 2) or (8 x 1)
-     *          8 mpi_ranks => 48/8 = 6  elements/RANK = (3 x 2) or (2 x 3) or (1 x 6)
-     *         12 mpi_ranks => 48/12 = 4 elements/RANK = (x x 2) or (4 x 1)
-     *         24 mpi_ranks => 48/24 = 2
-     *         48 mpi_ranks => 48/48 = 1
-     */
-
     if (ds_ndims == 3) {
-        int j,k;
-        int perranksize;
-	int data_out[2][2][8];
-	size_t dimsm[3] = {0,};
-        size2d = ds_dimensions[2] * ds_dimensions[1];
-	perranksize = (int)(size2d/gsize);
+	printf("Reading a portion (1/2) of the 3D input data\n");
+	slice_elements = ds_dimensions[0] * (ds_dimensions[1]/2) * ds_dimensions[2];
+	total_elements = slice_elements * 2;
 	start[0] = 0;
 	start[1] = 0;
 	start[2] = 0;		/* Maybe 'grank' * 2 (desired row length) */
         stride[0] = 1;
 	stride[1] = 1;
 	stride[2] = 1;
-	count[0] = 2;		/* Full full rows x count[0] planes */
-	count[1] = 2;
-	count[2] = 8;
+	count[0] = ds_dimensions[0];		/* Full full rows x count[0] planes */
+	count[1] = 270;
+	count[2] = 540;
 	block[0] = 1;		/* Describe a single plane */
-        block[1] = 2;
-	block[2] = 2;
+        block[1] = 270;
+	block[2] = 540;
+
+        if (grank == 0) {
+            printf("Number of elements in this slice = %lld of %lld\n", slice_elements, total_elements);
+	}
         /*
          * Define the memory dataspace.
          */
 	dimsm[0] = ds_dimensions[0];
-	dimsm[1] = 2;
-	dimsm[2] = 8;
+	dimsm[1] = 270;
+	dimsm[2] = 540;
 
+	/* For 2 ranks... */
+	if (gsize > 1) {
+	  if (grank == 1)
+	     start[1] = 270;
+	}
 	memspace = H5Screate_simple (3, dimsm, NULL);
+
         if (H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, start, stride, count, NULL) < 0) {
             fprintf(stderr,
             "H5Sselect_hyperslab returned an error\n");
 	    goto done;
         }
 
-
-	status = H5Dread (dset, H5T_NATIVE_INT, memspace, dataspace,
-			  H5P_DEFAULT, &data_out[0][0][0]);
-	
-	if (status < 0) {
-	  puts("H5Dread failed!");
-	  goto done;
-	}
-	for(i=0; i < dimsm[0]; i++) {
-	  printf("data(%d,%d,%d):\n", i, start[1],start[2]);
-	  for(j=0; j < dimsm[1]; j++) {
-	    for(k=0; k < dimsm[2]; k++) {
-	      printf(" %3.2d", data_out[i][j][k]);
-	    }
-	    puts("");
-	  }
-	}
-    }
-    
-#if 0
-        if (H5Sselect_hyperslab(memspace, H5S_SELECT_SET, start, stride, count, block) < 0) {
-            fprintf(stderr,
-            "H5Sselect_hyperslab returned an error\n");
-            errors += 1;
+	data_out = (short *)malloc(slice_elements * type_size);
+	if (data_out == NULL) {
+            perror("malloc failure!\n");
             goto done;
-        }    
+	}
+
+        start_t = MPI_Wtime();
+	status = H5Dread (dset, H5T_NATIVE_INT16, memspace, dataspace,
+			  H5P_DEFAULT, data_out);
+	
+        end_t = MPI_Wtime();
+	total_t = end_t - start_t;
+	printf("IO time using H5Dread = %lf seconds\n", total_t);
+	i = 0;
+
+	for(k=0; k<10; k++) {
+            printf("[%4d] %hd %hd %hd %hd %hd %hd %hd %hd %hd %hd\n", i,
+		     data_out[i],data_out[i+1],data_out[i+2],data_out[i+3],
+                     data_out[i+4],data_out[i+5],data_out[i+6],data_out[i+7],
+                     data_out[i+8],data_out[i+9]
+		     );
+            i +=10;
+	}
+
+	do_pdc_analysis_for_output(data_out, dimsm, PDC_INT16, grank);
     }
-
-
-
-
-#if defined(SHOW_PROGRESS)
-    total_elements = block[0];
-    printf("[%d] block[0] = %lld, block[1] = %lld, block[2] = %lld\n", grank, block[0], block[1], block[2] );
-    fflush(stdout);
-    for (i=1; i< ds_ndims; i++) {
-        total_elements *= block[i];
-    }
-    printf("[%d] total_elements this rank = %lld\n", grank, total_elements);
-    MPI_Barrier(MPI_COMM_WORLD);
-#else
-    total_elements = block[0];
-    for (i=1; i< ds_ndims; i++) {
-        total_elements *= block[i];
-    }
-#endif 
-    data_array = calloc(total_elements, type_size);
-    if (data_array == NULL) {
-        fprintf(stderr,
-       	"There was a problem allocating memory to read the dataset\n");
-	errors += 1;
-	goto done;
-    }
-    result_array = calloc(total_elements, sizeof(float));
-    if (result_array == NULL) {
-        fprintf(stderr,
-       	"There was a problem allocating memory to save the analysis results\n");
-	errors += 1;
-	goto done;
-    }
-
-    /* Integer class and type size == 2 */
-    if ( H5Dread(dset, H5T_NATIVE_INT16, mem_dataspace, file_dataspace,
-		 H5P_DEFAULT, data_array) < 0) {
-        fprintf(stderr,
-       	"There was a problem reading the dataset\n");
-	errors += 1;
-	goto done;
-    }
-
-    do_pdc_analysis(data_array, result_array, (uint64_t *)block, ds_ndims, PDC_INT, type_size, grank, datasetID);    
-    // do_pdc_analysis(data_array, result_array, (uint64_t *)ds_dimensions, ds_ndims, PDC_INT, type_size, grank, datasetID);
-
-#endif	/* #if 0 */
 
  done:
 
@@ -348,7 +406,8 @@ read_client_data(int grank, int gsize, char *filename, char *datasetID)
     if (fid >= 0) H5Fclose(fid);
 
     H5close();
-    return errors;
+
+    return 0;
 }
 
 int
