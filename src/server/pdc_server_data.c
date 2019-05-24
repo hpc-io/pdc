@@ -724,6 +724,8 @@ int region_list_cmp_by_client_id(region_list_t *a, region_list_t *b)
     return (a->client_ids[0] - b->client_ids[0]);
 }
 
+// #define ENABLE_LOCKS 1
+
 perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
 {
     perr_t ret_value = SUCCEED;
@@ -737,12 +739,12 @@ perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
     if (target_obj == NULL) {
         PGOTO_ERROR(FAIL, "===PDC_DATA_SERVER: PDC_Data_Server_buf_unmap() - requested object does not exist");
     }
-#ifdef ENABLE_MULTITHREAD
+#if defined(ENABLE_MULTITHREAD) && defined(ENABLE_LOCKS)
     hg_thread_mutex_lock(&data_buf_map_mutex_g);
 #endif
     DL_FOREACH_SAFE(target_obj->region_buf_map_head, elt, tmp) {
         if(in->remote_obj_id==elt->remote_obj_id && region_is_identical(in->remote_region, elt->remote_region_unit)) {
-#ifdef ENABLE_MULTITHREAD
+#if defined(ENABLE_MULTITHREAD) && defined(ENABLE_LOCKS)
             // wait for work to be done, then free
             hg_thread_mutex_lock(&(elt->bulk_args->work_mutex));
 #ifdef ENABLE_WAIT_DATA
@@ -763,7 +765,7 @@ perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
                 free(elt->remote_data_ptr);
                 HG_Addr_free(info->hg_class, elt->local_addr);
 //              HG_Bulk_free(elt->local_bulk_handle);
-#ifdef ENABLE_MULTITHREAD
+#if defined(ENABLE_MULTITHREAD) && defined(ENABLE_LOCKS)
                 hg_thread_mutex_destroy(&(elt->bulk_args->work_mutex));
                 hg_thread_cond_destroy(&(elt->bulk_args->work_cond));
                 free(elt->bulk_args);
@@ -781,11 +783,11 @@ perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
                 region->obj_id = in->remote_obj_id;
                 region->unmap_region = in->remote_region;
                 region->info = info;
-#ifdef ENABLE_MULTITHREAD
+#if defined(ENABLE_MULTITHREAD) && defined(ENABLE_LOCKS)
                 hg_thread_mutex_lock(&data_buf_unmap_mutex_g);
 #endif
                 DL_APPEND(dataserver_region_unmap, region);
-#ifdef ENABLE_MULTITHREAD
+#if defined(ENABLE_MULTITHREAD) && defined(ENABLE_LOCKS)
                 hg_thread_mutex_unlock(&data_buf_unmap_mutex_g);
 #endif
             }
@@ -796,7 +798,7 @@ perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
     if(target_obj->region_buf_map_head == NULL && pdc_server_rank_g == 0) {
         close(target_obj->fd);
     }
-#ifdef ENABLE_MULTITHREAD
+#if defined(ENABLE_MULTITHREAD) && defined(ENABLE_LOCKS)
     hg_thread_mutex_unlock(&data_buf_map_mutex_g);
 #endif
 
@@ -5378,9 +5380,7 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region
        region_size *= region_info->size[i];
     }
 
-    // write_bytes = pwrite(region->fd, buf, region_info->size[0], region_info->offset[0]-pdc_server_rank_g*nclient_per_node*region_info->size[0]);
     write_bytes = pwrite(region->fd, buf, region_size, region_offset);
-    // printf("server %d calls pwrite, offset = %lld, size = %lld\n", pdc_server_rank_g, region_info->offset[0]-pdc_server_rank_g*nclient_per_node*region_info->size[0], region_info->size[0]);
     if(write_bytes == -1){
         printf("==PDC_SERVER[%d]: pwrite %d failed\n", pdc_server_rank_g, region->fd);
         goto done;

@@ -1093,6 +1093,7 @@ drc_access_again:
     hg_thread_mutex_init(&lock_list_mutex_g);
     hg_thread_mutex_init(&meta_buf_map_mutex_g);
     hg_thread_mutex_init(&meta_obj_map_mutex_g);
+    hg_thread_mutex_init(&insert_iterator_mutex_g);
 #endif
     // Client 0 looks up all servers, others only lookup their node local server
     char *client_lookup_env = getenv("PDC_CLIENT_LOOKUP");

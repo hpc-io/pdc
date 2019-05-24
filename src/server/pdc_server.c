@@ -903,6 +903,7 @@ drc_access_again:
     hg_thread_mutex_init(&lock_request_mutex_g);
     hg_thread_mutex_init(&addr_valid_mutex_g);
     hg_thread_mutex_init(&update_remote_server_addr_mutex_g);
+    hg_thread_mutex_init(&insert_iterator_mutex_g);
 #else
     if (pdc_server_rank_g == 0) 
         printf("==PDC_SERVER[%d]: without multi-thread!\n", pdc_server_rank_g);

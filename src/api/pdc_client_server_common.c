@@ -1747,13 +1747,8 @@ analysis_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info
     int  ndim;
     size_t type_extent, output_type_extent;
     uint64_t *dims = NULL;
-#ifdef ENABLE_MULTITHREAD
-    data_server_region_t *target_reg = NULL;
-    region_buf_map_t *elt;
-#else
     struct PDC_region_info *remote_reg_info = NULL;
     struct PDC_region_info *local_reg_info = NULL;
-#endif
 
     FUNC_ENTER(NULL);
 
@@ -1806,19 +1801,6 @@ analysis_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info
 	}
     }
 
-#ifdef ENABLE_MULTITHREAD
-    bulk_args->work.func = pdc_region_write_out_progress;
-    bulk_args->work.args = bulk_args;
-
-    target_reg = PDC_Server_get_obj_region(bulk_args->remote_obj_id);
-    DL_FOREACH(target_reg->region_buf_map_head, elt) {
-        if((bulk_args->remote_region).start_0 == elt->remote_region_unit.start_0 &&
-            (bulk_args->remote_region).count_0 == elt->remote_region_unit.count_0)
-            elt->bulk_args = bulk_args;
-    }
-
-    hg_thread_pool_post(hg_test_thread_pool_fs_g, &(bulk_args->work));
-#else
     remote_reg_info = (struct PDC_region_info *)malloc(sizeof(struct PDC_region_info));
     if(remote_reg_info == NULL) {
         PGOTO_ERROR(HG_OTHER_ERROR, "remote_reg_info memory allocation failed\n");
@@ -1875,7 +1857,6 @@ analysis_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info
       (local_reg_info->size)[3] = bulk_args->in.region.count_3;
     }
     PDC_Server_release_lock_request(bulk_args->in.obj_id, local_reg_info);
-#endif
 
 done:
     fflush(stdout);
@@ -5773,6 +5754,8 @@ HG_TEST_THREAD_CB(get_metadata_by_id)
 /* HG_TEST_THREAD_CB(get_storage_info) */
 HG_TEST_THREAD_CB(aggregate_write)
 HG_TEST_THREAD_CB(region_release)
+HG_TEST_THREAD_CB(transform_region_release)
+HG_TEST_THREAD_CB(region_analysis_release)
 HG_TEST_THREAD_CB(metadata_add_tag)
 HG_TEST_THREAD_CB(metadata_add_kvtag)
 HG_TEST_THREAD_CB(metadata_get_kvtag)

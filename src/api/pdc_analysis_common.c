@@ -464,14 +464,7 @@ HG_TEST_RPC_CB(obj_data_iterator, handle)
     // Decode input
     HG_Get_input(handle, &in);
     // printf("obj_data_iterator_cb entered!\n");
-#ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_lock(&insert_iterator_mutex_g);
-#endif
     ret_value = PDC_Server_instantiate_data_iterator(&in, &out);
-
-#ifdef ENABLE_MULTITHREAD 
-    hg_thread_mutex_unlock(&insert_iterator_mutex_g);
-#endif
 
     HG_Respond(handle, NULL, NULL, &out);
 
@@ -481,7 +474,9 @@ HG_TEST_RPC_CB(obj_data_iterator, handle)
 }
 
 
+
 HG_TEST_THREAD_CB(obj_data_iterator)
+
 HG_TEST_THREAD_CB(analysis_ftn)
 
 

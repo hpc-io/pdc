@@ -27,9 +27,9 @@
  ************************************************************************ */
 #include "pdc_transforms_pkg.h"
 
-#ifdef ENABLE_MULTITHREAD 
-hg_thread_mutex_t  insert_iterator_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
-#endif
+// #ifdef ENABLE_MULTITHREAD 
+// hg_thread_mutex_t  insert_iterator_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
+// #endif
 
 //static char *default_pdc_transform_lib = "libpdctransforms.so";
 
@@ -203,7 +203,7 @@ transform_ftn_register(hg_class_t *hg_class)
     FUNC_LEAVE(ret_value);
 }
 
-HG_TEST_THREAD_CB(server_transform_ftn)
+// HG_TEST_THREAD_CB(server_transform_ftn)
 
 hg_id_t
 server_transform_ftn_register(hg_class_t *hg_class)

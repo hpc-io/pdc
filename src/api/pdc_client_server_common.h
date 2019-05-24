@@ -52,6 +52,7 @@ hg_thread_mutex_t pdc_client_info_mutex_g;
 hg_thread_mutex_t lock_list_mutex_g;
 hg_thread_mutex_t meta_buf_map_mutex_g;
 hg_thread_mutex_t meta_obj_map_mutex_g;
+hg_thread_mutex_t insert_iterator_mutex_g;
 #endif
 
 #define PAGE_SIZE                           4096
