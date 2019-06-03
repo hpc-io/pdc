@@ -210,7 +210,6 @@ perr_t pdc_client_register_obj_analysis(struct region_analysis_ftn_info *thisFtn
      * client MPI rank modulo the number of servers.
      */
     if (pdc_server_selection_g != PDC_SERVER_DEFAULT) {
-//        thisIter = &PDC_Block_iterator_cache[iter_out];
         thisIter = &PDC_Block_iterator_cache[in_local];
         struct PDC_obj_info *obj_prop = PDC_obj_get_info(thisIter->objectId);
         input_server = obj_prop->server_id;

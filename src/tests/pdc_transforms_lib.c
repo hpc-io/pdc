@@ -2,13 +2,23 @@
 #include <blosc.h>
 
 /*
- * >> pdc_private.h
+ * >> pdc_public.h
  *
  *  typedef enum {
  *      PDC_UNKNOWN      = -1, 
  *      PDC_INT          = 0,  
  *      PDC_FLOAT        = 1,
  *      PDC_DOUBLE       = 2,
+ *      PDC_STRING       = 3,
+ *      PDC_COMPOUND     = 4,
+ *      PDC_ENUM         = 5,
+ *      PDC_ARRAY        = 6,  
+ *      PDC_UINT         = 7,
+ *      PDC_INT64        = 8,
+ *      PDC_UINT64       = 9,
+ *      PDC_INT16        = 10, 
+ *      PDC_INT8         = 11,
+ *      NCLASSES         = 12
  *  } PDC_var_type_t;
  */
 int

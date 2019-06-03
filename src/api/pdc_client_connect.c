@@ -2474,7 +2474,14 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdci
 
     if (pdc_server_selection_g != PDC_SERVER_DEFAULT) {
         /* Choose a client specific server for all objects */
-        server_id = pdc_client_mpi_rank_g % pdc_server_num_g;
+        // server_id = pdc_client_mpi_rank_g % pdc_server_num_g;
+        /* The following assumes that client ranks are block assigned, i.e.
+	 * a set of consecutive ranks per node.  A similar statement goes
+	 * for server allocations as well.  Under these conditions, the
+	 * lowest number group, e.g. 0-15 (for nclient_per_server = 16) will
+	 * choose server_id == 0; 16-31 -> server_id = 1, etc..
+	 */
+        server_id = pdc_client_mpi_rank_g / pdc_nclient_per_server_g;
     }
     else {
         /* printf("Hash(%s) = %lu\n", obj_name, in.hash_value); */
@@ -2764,7 +2771,8 @@ perr_t PDC_Client_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, struc
     /* bulk_handle = HG_BULK_NULL; */
 
     if (pdc_server_selection_g != PDC_SERVER_DEFAULT) {
-        server_id = pdc_client_mpi_rank_g % pdc_server_num_g;
+        server_id = pdc_client_mpi_rank_g / pdc_nclient_per_server_g;
+        // server_id = pdc_client_mpi_rank_g % pdc_server_num_g;
     }
     else {
         server_id = PDC_get_server_by_obj_id(local_obj_id, pdc_server_num_g);

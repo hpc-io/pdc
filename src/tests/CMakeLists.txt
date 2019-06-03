@@ -60,8 +60,10 @@ set(PROGRAMS
 
 set(EXAMPLES
   read3d
-  pdc-neon
   arrayudf_example
+  s3d-read3d
+  openmsi-read3d
+  neon-read3d
   )
 
 foreach(program ${PROGRAMS})

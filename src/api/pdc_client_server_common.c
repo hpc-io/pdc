@@ -1749,6 +1749,8 @@ analysis_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info
     uint64_t *dims = NULL;
     struct PDC_region_info *remote_reg_info = NULL;
     struct PDC_region_info *local_reg_info = NULL;
+    double start_t, end_t, analysis_t, io_t;
+    double averages[4];
 
     FUNC_ENTER(NULL);
 
@@ -1786,6 +1788,7 @@ analysis_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info
      */
 
     data_buf = PDC_Server_get_region_buf_ptr(bulk_args->remote_obj_id, bulk_args->remote_region);
+    start_t = MPI_Wtime();
     if (data_buf != NULL) {
         struct region_analysis_ftn_info **registry = NULL;
         iterator_cbs_t iter_cbs = {PDCobj_data_getSliceCount, PDCobj_data_getNextBlock};
@@ -1796,10 +1799,14 @@ analysis_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info
 	    = registry[analysis_meta_index]->ftnPtr;
 	  size_t result = analysis_ftn(bulk_args->in.input_iter, bulk_args->in.output_iter, &iter_cbs);
 
-	  printf("==PDC_SERVER: Analysis returned %ld\n", result);
-	  puts("----------------\n");
+	  // printf("==PDC_SERVER: Analysis returned %ld\n", result);
+	  // puts("----------------\n");
 	}
     }
+
+    end_t = MPI_Wtime();
+    analysis_t = end_t - start_t;
+    start_t = end_t;
 
     remote_reg_info = (struct PDC_region_info *)malloc(sizeof(struct PDC_region_info));
     if(remote_reg_info == NULL) {
@@ -1834,6 +1841,8 @@ analysis_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info
 
     /* Write the analysis results... */
     PDC_Server_data_write_out(bulk_args->remote_obj_id, remote_reg_info, data_buf);
+    end_t = MPI_Wtime();
+    io_t = end_t - start_t;
     PDC_Data_Server_region_release((region_lock_in_t *)&bulk_args->in, &out);
     local_reg_info = (struct PDC_region_info *)malloc(sizeof(struct PDC_region_info));
     if(local_reg_info == NULL) {
@@ -1857,6 +1866,18 @@ analysis_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info
       (local_reg_info->size)[3] = bulk_args->in.region.count_3;
     }
     PDC_Server_release_lock_request(bulk_args->in.obj_id, local_reg_info);
+
+    averages[0] = analysis_t;
+    averages[1] = io_t;
+    if (MPI_Reduce(&averages[0], &averages[2], 2, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD) == 0) {
+      int mpi_rank, mpi_size;
+      MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+      MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+      if (mpi_rank == 0) {
+	printf("Analysis avg time = %lf seconds\nIO avg time = %lf\n", averages[2]/mpi_size, averages[3]/mpi_size);
+      }
+    }
+      
 
 done:
     fflush(stdout);

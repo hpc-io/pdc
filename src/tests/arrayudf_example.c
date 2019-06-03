@@ -40,20 +40,20 @@
 
 #include "pdc.h"
 
-static char *rand_string(char *str, size_t size)
-{
-    const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    size_t n;
-    if (size) {
-        --size;
-        for (n = 0; n < size; n++) {
-            int key = rand() % (int) (sizeof(charset) - 1);
-            str[n] = charset[key];
-        }
-        str[size] = '\0';
-    }
-    return str;
-}
+
+/// UDF Two: replace one (X) with the sum of left-top corner
+///         and right-bottem corner
+///     +-----+-----+-----+
+///     |-1,-1|-1,0 |-1,1 |
+///     +-----+-----+-----+
+///     | 0,-1|  X  | 0,1 |
+///     +-----+-----+-----+
+///     | 1,-1| 1,0 | 1,1 |
+///     +-----+-----+-----+
+///
+//  inline float myfunc2(const Stencil<float> &c){
+//     return c(-1,-1) + c(1,1);
+//  }
 
 size_t myfunc2(float *stencil[3], float *out, size_t dims[2])
 {
@@ -73,7 +73,15 @@ size_t myfunc2(float *stencil[3], float *out, size_t dims[2])
     return 0;
 }
 
-//  ArrayUDF::
+/// UDF Three: five point stencil 
+///     +-----+-----+-----+
+///     |-1,-1|-1,0 |-1,1 |
+///     +-----+-----+-----+
+///     | 0,-1|  X  | 0,1 |
+///     +-----+-----+-----+
+///     | 1,-1| 1,0 | 1,1 |
+///     +-----+-----+-----+
+///
 //   return (c(0,0)+c(0,-1)+c(0,1)+c(1,0)+c(-1,0)) * 5.0;
 size_t myfunc3(float *stencil[3], float *out, size_t dims[2])
 {
@@ -93,6 +101,65 @@ size_t myfunc3(float *stencil[3], float *out, size_t dims[2])
     return 0;
 }
 
+
+/// ArrayUDF::
+/// udf-neon
+///           
+///                         +-------+-------+-------+
+///                         |-3...  |-3...  |-3...  |
+///                         +-------+-------+-------+
+///                         |-3...  |-3,0,0 |-3...  |     
+///                         +-------+-------+-------+
+///                  +-------+-------+-------+
+///                  |-2...  |-2...  |-2...  |
+///                  +-------+-------+-------+
+///                  |-2...  |-2,0,0 |-2...  |     
+///                  +-------+-------+-------+
+///           +-------+-------+-------+      |
+///           |-1...  |-1...  |-1...  |------+
+///           +-------+-------+-------+
+///           |-1...  |-1,0,0 |-1...  |     
+///           +-------+-------+-------+
+///     +-------+-------+-------+     |
+///     |0,-1,-1|0,-1,0 |0,-1,1 |-----+
+///     +-------+-------+-------+
+///     |0, 0,-1|   X   |0, 1,0 |    X = (0,0,0)
+///     +-------+-------+-------+
+///     |0, 1,-1|0, 1,0 |0, 1,1 |
+///     +-------+-------+-------+
+///
+/// New X value is the sum of current X, plus the same X in the adjacent slices
+//  return (c(0,0,0)+c(-1,0,0)+c(-2,0, 0)+c(-3,0,0))/4;
+
+
+/// ArrayUDF::
+/// udf-openmsi
+///           
+///                  +-------+-------+-------+
+///                  |-1...  |-1,-1,0|-1...  |
+///                  +-------+-------+-------+
+///                  |-1...  |-1,0,0 |-1...  |     
+///                  +-------+-------+-------+
+///           +-------+-------+-------+      |
+///           |0 ...  | 0,-1,0|0,-1,1 |------+
+///           +-------+-------+-------+
+///           |0,0,-1 | 0,0,0 |0, 1,0 |   X = (0,0,0)
+///           +-------+-------+-------+
+///     +-------+-------+-------+     |
+///     |1,-1,-1|1,-1,0 |0,-1,1 |-----+
+///     +-------+-------+-------+
+///     |1, 0,-1|1, 0,0 |1, 1,0 |   
+///     +-------+-------+-------+
+///     |1, 1,-1|1, 1,0 |1, 1,1 |
+///     +-------+-------+-------+
+///
+///
+/// New X is 7 time current X - 6 adjacent points in 3D.
+/// (CURRENT_X * 7) minus (same plane: right, left, above, below), - (next plane X) - (prev plane X) 
+///
+//  return (c(0,0,0)*7.0 - c(0,0,1) - c(0,0,-1) - c(0,1,0) - c(0,-1,0) - c(1,0,0) - c(-1,0,0));
+
+
 /* PDC analysis entrypoint:
  * Creates the halo structure and then calls the PDC equivalents to the
  * ArrayUDF 'myfunc' example stencil codes.
@@ -111,10 +178,11 @@ size_t arrayudf_stencils(pdcid_t iterIn, pdcid_t iterOut, iterator_cbs_t *callba
     start = MPI_Wtime();
     // printf("Entered: %s\n----------------\n", __func__);
     number_of_slices = (*callbacks->getSliceCount)(iterOut);
-    // printf("Total # of slices available = %ld\n",number_of_slices);
     if ((blockLengthIn = (*callbacks->getNextBlock)(iterIn, (void **)&dataIn, dimsIn)) == 0)
       printf("arrayudf_stencils:Empty Input!\n");
     stencil[0] = stencil[1] = dataIn;
+    printf("Total # of slices available = %ld, blockLengthIn = %ld, dims[0] = %ld dims[1] = %ld\n", number_of_slices, blockLengthIn, dimsIn[0], dimsIn[1]);
+
     for (k=0; k< number_of_slices; k++) {
       if ((blockLengthOut = (*callbacks->getNextBlock)(iterOut, (void **)&dataOut, dimsOut)) > 0) {
 	if ((blockLengthIn = (*callbacks->getNextBlock)(iterIn, (void **)&dataIn, dimsIn)) > 0) {
@@ -189,7 +257,7 @@ size_t neon_stencil(pdcid_t iterIn, pdcid_t iterOut, iterator_cbs_t *callbacks)
     if ((blockLengthIn = (*callbacks->getNextBlock)(iterIn, (void **)&dataIn, dimsIn)) == 0)
       printf("neon_stencil: Empty Input!\n");
     else {
-        // printf("Total # Slices = %ld, Size of each slice = %ld elements = (%ld x %ld)\n",number_of_slices, blockLengthIn, dimsIn[2], dimsIn[1]);
+        printf("Total # Slices = %ld, Size of each slice = %ld elements = (%ld x %ld)\n",number_of_slices, blockLengthIn, dimsIn[2], dimsIn[1]);
         stencil[0] = stencil[1] = stencil[2] = stencil[3] = dataIn;
         for (k=0; k< number_of_slices; k++) {
           if ((blockLengthOut = (*callbacks->getNextBlock)(iterOut, (void **)&dataOut, dimsOut)) > 0) {
@@ -209,6 +277,7 @@ size_t neon_stencil(pdcid_t iterIn, pdcid_t iterOut, iterator_cbs_t *callbacks)
     printf("Leaving: %s execution time = %lf seconds\n----------------\n", __func__, total);
     return result;
 }
+
 
 
 
@@ -257,7 +326,140 @@ int main(int argc, char **argv)
     uint64_t offsets3d[3] = {0, 0, 0};
     uint64_t my3D_dims[3] = {10, 10, 10};
     int i,j,k, total_3D_elems = 1000;
-    float my3DFloatArray[10][10][10];
+    float my3DFloatArray[10][10][10] = 
+      {
+       /* 0 */
+       {
+	{83.5, 86.5, 77.5, 15.5, 93.5, 35.5, 86.5, 92.5, 49.5, 21.5},
+	{62.5, 27.5, 90.5, 59.5, 63.5, 26.5, 40.5, 26.5, 72.5, 36.5},
+	{11.5, 68.5, 67.5, 29.5, 82.5, 30.5, 62.5, 23.5, 67.5, 35.5},
+	{29.5, 2.5, 22.5, 58.5, 69.5, 67.5, 93.5, 56.5, 11.5, 42.5},
+	{29.5, 73.5, 21.5, 19.5, 84.5, 37.5, 98.5, 24.5, 15.5, 70.5},
+	{13.5, 26.5, 91.5, 80.5, 56.5, 73.5, 62.5, 70.5, 96.5, 81.5},
+	{5.5, 25.5, 84.5, 27.5, 36.5, 5.5, 46.5, 29.5, 13.5, 57.5},
+	{24.5, 95.5, 82.5, 45.5, 14.5, 67.5, 34.5, 64.5, 43.5, 50.5},
+	{87.5, 8.5, 76.5, 78.5, 88.5, 84.5, 3.5, 51.5, 54.5, 99.5},
+	{32.5, 60.5, 76.5, 68.5, 39.5, 12.5, 26.5, 86.5, 94.5, 39.5}
+       },
+       /* 1 */
+       {
+	{95.5, 70.5, 34.5, 78.5, 67.5, 1.5, 97.5, 2.5, 17.5, 92.5},
+	{52.5, 56.5, 1.5, 80.5, 86.5, 41.5, 65.5, 89.5, 44.5, 19.5},
+	{40.5, 29.5, 31.5, 17.5, 97.5, 71.5, 81.5, 75.5, 9.5, 27.5},
+	{67.5, 56.5, 97.5, 53.5, 86.5, 65.5, 6.5, 83.5, 19.5, 24.5},
+	{28.5, 71.5, 32.5, 29.5, 3.5, 19.5, 70.5, 68.5, 8.5, 15.5},
+	{40.5, 49.5, 96.5, 23.5, 18.5, 45.5, 46.5, 51.5, 21.5, 55.5},
+	{79.5, 88.5, 64.5, 28.5, 41.5, 50.5, 93.5, 0.5, 34.5, 64.5},
+	{24.5, 14.5, 87.5, 56.5, 43.5, 91.5, 27.5, 65.5, 59.5, 36.5},
+	{32.5, 51.5, 37.5, 28.5, 75.5, 7.5, 74.5, 21.5, 58.5, 95.5},
+	{29.5, 37.5, 35.5, 93.5, 18.5, 28.5, 43.5, 11.5, 28.5, 29.5}
+       },
+       /* 2 */
+       {
+	{76.5, 4.5, 43.5, 63.5, 13.5, 38.5, 6.5, 40.5, 4.5, 18.5},
+	{28.5, 88.5, 69.5, 17.5, 17.5, 96.5, 24.5, 43.5, 70.5, 83.5},
+	{90.5, 99.5, 72.5, 25.5, 44.5, 90.5, 5.5, 39.5, 54.5, 86.5},
+	{69.5, 82.5, 42.5, 64.5, 97.5, 7.5, 55.5, 4.5, 48.5, 11.5},
+	{22.5, 28.5, 99.5, 43.5, 46.5, 68.5, 40.5, 22.5, 11.5, 10.5},
+	{5.5, 1.5, 61.5, 30.5, 78.5, 5.5, 20.5, 36.5, 44.5, 26.5},
+	{22.5, 65.5, 8.5, 16.5, 82.5, 58.5, 24.5, 37.5, 62.5, 24.5},
+	{0.5, 36.5, 52.5, 99.5, 79.5, 50.5, 68.5, 71.5, 73.5, 31.5},
+	{81.5, 30.5, 33.5, 94.5, 60.5, 63.5, 99.5, 81.5, 99.5, 96.5},
+	{59.5, 73.5, 13.5, 68.5, 90.5, 95.5, 26.5, 66.5, 84.5, 40.5}
+       },
+       /* 3 */
+       {
+	{90.5, 84.5, 76.5, 42.5, 36.5, 7.5, 45.5, 56.5, 79.5, 18.5},
+	{87.5, 12.5, 48.5, 72.5, 59.5, 9.5, 36.5, 10.5, 42.5, 87.5},
+	{6.5, 1.5, 13.5, 72.5, 21.5, 55.5, 19.5, 99.5, 21.5, 4.5},
+	{39.5, 11.5, 40.5, 67.5, 5.5, 28.5, 27.5, 50.5, 84.5, 58.5},
+	{20.5, 24.5, 22.5, 69.5, 96.5, 81.5, 30.5, 84.5, 92.5, 72.5},
+	{72.5, 50.5, 25.5, 85.5, 22.5, 99.5, 40.5, 42.5, 98.5, 13.5},
+	{98.5, 90.5, 24.5, 90.5, 9.5, 81.5, 19.5, 36.5, 32.5, 55.5},
+	{94.5, 4.5, 79.5, 69.5, 73.5, 76.5, 50.5, 55.5, 60.5, 42.5},
+	{79.5, 84.5, 93.5, 5.5, 21.5, 67.5, 4.5, 13.5, 61.5, 54.5},
+	{26.5, 59.5, 44.5, 2.5, 2.5, 6.5, 84.5, 21.5, 42.5, 68.5}
+       },
+       /* 4 */
+       {
+	{28.5, 89.5, 72.5, 8.5, 58.5, 98.5, 36.5, 8.5, 53.5, 48.5},
+	{3.5, 33.5, 33.5, 48.5, 90.5, 54.5, 67.5, 46.5, 68.5, 29.5},
+	{0.5, 46.5, 88.5, 97.5, 49.5, 90.5, 3.5, 33.5, 63.5, 97.5},
+	{53.5, 92.5, 86.5, 25.5, 52.5, 96.5, 75.5, 88.5, 57.5, 29.5},
+	{36.5, 60.5, 14.5, 21.5, 60.5, 4.5, 28.5, 27.5, 50.5, 48.5},
+	{56.5, 2.5, 94.5, 97.5, 99.5, 43.5, 39.5, 2.5, 28.5, 3.5},
+	{0.5, 81.5, 47.5, 38.5, 59.5, 51.5, 35.5, 34.5, 39.5, 92.5},
+	{15.5, 27.5, 4.5, 29.5, 49.5, 64.5, 85.5, 29.5, 43.5, 35.5},
+	{77.5, 0.5, 38.5, 71.5, 49.5, 89.5, 67.5, 88.5, 92.5, 95.5},
+	{43.5, 44.5, 29.5, 90.5, 82.5, 40.5, 41.5, 69.5, 26.5, 32.5}
+       },
+       /* 5 */
+       {
+	{61.5, 42.5, 60.5, 17.5, 23.5, 61.5, 81.5, 9.5, 90.5, 25.5},
+	{96.5, 67.5, 77.5, 34.5, 90.5, 26.5, 24.5, 57.5, 14.5, 68.5},
+	{5.5, 58.5, 12.5, 86.5, 0.5, 46.5, 26.5, 94.5, 16.5, 52.5},
+	{78.5, 29.5, 46.5, 90.5, 47.5, 70.5, 51.5, 80.5, 31.5, 93.5},
+	{57.5, 27.5, 12.5, 86.5, 14.5, 55.5, 12.5, 90.5, 12.5, 79.5},
+	{10.5, 69.5, 89.5, 74.5, 55.5, 41.5, 20.5, 33.5, 87.5, 88.5},
+	{38.5, 66.5, 70.5, 84.5, 56.5, 17.5, 6.5, 60.5, 49.5, 37.5},
+	{5.5, 59.5, 17.5, 18.5, 45.5, 83.5, 73.5, 58.5, 73.5, 37.5},
+	{89.5, 83.5, 7.5, 78.5, 57.5, 14.5, 71.5, 29.5, 0.5, 59.5},
+	{18.5, 38.5, 25.5, 88.5, 74.5, 33.5, 57.5, 81.5, 93.5, 58.5}
+       },
+       /* 6 */
+       {
+	{70.5, 99.5, 17.5, 39.5, 69.5, 63.5, 22.5, 94.5, 73.5, 47.5},
+	{31.5, 62.5, 82.5, 90.5, 92.5, 91.5, 57.5, 15.5, 21.5, 57.5},
+	{74.5, 91.5, 47.5, 51.5, 31.5, 21.5, 37.5, 40.5, 54.5, 30.5},
+	{98.5, 25.5, 81.5, 16.5, 16.5, 2.5, 31.5, 39.5, 96.5, 4.5},
+	{38.5, 80.5, 18.5, 21.5, 70.5, 62.5, 12.5, 79.5, 77.5, 85.5},
+	{36.5, 4.5, 76.5, 83.5, 7.5, 59.5, 57.5, 44.5, 99.5, 11.5},
+	{27.5, 50.5, 36.5, 60.5, 18.5, 5.5, 63.5, 49.5, 44.5, 11.5},
+	{5.5, 34.5, 91.5, 75.5, 55.5, 14.5, 89.5, 68.5, 93.5, 18.5},
+	{5.5, 82.5, 22.5, 82.5, 17.5, 30.5, 93.5, 74.5, 26.5, 93.5},
+	{86.5, 53.5, 43.5, 74.5, 14.5, 13.5, 79.5, 77.5, 62.5, 75.5}
+       },
+       /* 7 */
+       {
+	{88.5, 19.5, 10.5, 32.5, 94.5, 17.5, 46.5, 35.5, 37.5, 91.5},
+	{53.5, 43.5, 73.5, 28.5, 25.5, 91.5, 10.5, 18.5, 17.5, 36.5},
+	{63.5, 55.5, 90.5, 58.5, 30.5, 4.5, 71.5, 61.5, 33.5, 85.5},
+	{89.5, 73.5, 4.5, 51.5, 5.5, 50.5, 68.5, 3.5, 85.5, 6.5},
+	{95.5, 39.5, 49.5, 20.5, 67.5, 26.5, 63.5, 77.5, 96.5, 81.5},
+	{65.5, 60.5, 36.5, 55.5, 70.5, 18.5, 11.5, 42.5, 32.5, 96.5},
+	{79.5, 21.5, 70.5, 84.5, 72.5, 27.5, 34.5, 40.5, 83.5, 72.5},
+	{98.5, 30.5, 63.5, 47.5, 50.5, 30.5, 73.5, 14.5, 59.5, 22.5},
+	{47.5, 24.5, 82.5, 35.5, 32.5, 4.5, 54.5, 43.5, 98.5, 86.5},
+	{40.5, 78.5, 59.5, 62.5, 62.5, 83.5, 41.5, 48.5, 23.5, 24.5}
+       },
+       /* 8 */
+       {
+	{72.5, 22.5, 54.5, 35.5, 21.5, 57.5, 65.5, 47.5, 71.5, 76.5},
+	{69.5, 18.5, 1.5, 3.5, 53.5, 33.5, 7.5, 59.5, 28.5, 6.5},
+	{97.5, 20.5, 84.5, 8.5, 34.5, 98.5, 91.5, 76.5, 98.5, 15.5},
+	{52.5, 71.5, 89.5, 59.5, 6.5, 10.5, 16.5, 24.5, 9.5, 39.5},
+	{0.5, 78.5, 9.5, 53.5, 81.5, 14.5, 38.5, 89.5, 26.5, 67.5},
+	{47.5, 23.5, 87.5, 31.5, 32.5, 22.5, 81.5, 75.5, 50.5, 79.5},
+	{90.5, 54.5, 50.5, 31.5, 13.5, 57.5, 94.5, 81.5, 81.5, 3.5},
+	{20.5, 33.5, 82.5, 81.5, 87.5, 15.5, 96.5, 25.5, 4.5, 22.5},
+	{92.5, 51.5, 97.5, 32.5, 34.5, 81.5, 6.5, 15.5, 57.5, 8.5},
+	{95.5, 99.5, 62.5, 97.5, 83.5, 76.5, 54.5, 77.5, 9.5, 87.5}
+       },
+       /* 9 */
+       {
+	{32.5, 82.5, 21.5, 66.5, 63.5, 60.5, 82.5, 11.5, 85.5, 86.5},
+	{85.5, 30.5, 90.5, 83.5, 14.5, 76.5, 16.5, 20.5, 92.5, 25.5},
+	{28.5, 39.5, 25.5, 90.5, 36.5, 60.5, 18.5, 43.5, 37.5, 28.5},
+	{82.5, 21.5, 10.5, 55.5, 88.5, 25.5, 15.5, 70.5, 37.5, 53.5},
+	{8.5, 22.5, 83.5, 50.5, 57.5, 97.5, 27.5, 26.5, 69.5, 71.5},
+	{51.5, 49.5, 10.5, 28.5, 39.5, 98.5, 88.5, 10.5, 93.5, 77.5},
+	{90.5, 76.5, 99.5, 52.5, 31.5, 87.5, 77.5, 99.5, 57.5, 66.5},
+	{52.5, 17.5, 41.5, 35.5, 68.5, 98.5, 84.5, 95.5, 76.5, 5.5},
+	{66.5, 28.5, 54.5, 28.5, 8.5, 93.5, 78.5, 97.5, 55.5, 72.5},
+	{74.5, 45.5, 0.5, 25.5, 97.5, 83.5, 12.5, 27.5, 82.5, 21.5}
+       }
+      };
+
 
     short my3DShortArray[10][10][10] =
       {
@@ -424,67 +626,16 @@ int main(int argc, char **argv)
     strcpy(app_name, "arrayudf_example");
 #endif
 
-#if 0
-    PDCprop_set_obj_dims     (obj1_prop, 2, myTestArray_dims);
-    PDCprop_set_obj_type     (obj1_prop, PDC_FLOAT );
-    PDCprop_set_obj_time_step(obj1_prop, 0       );
-    PDCprop_set_obj_user_id  (obj1_prop, getuid());
-    PDCprop_set_obj_app_name (obj1_prop, app_name );
-    PDCprop_set_obj_tags     (obj1_prop, "tag0=1");
-    PDCprop_set_obj_buf      (obj1_prop, &myTestArray[0][0]);
-
-    // Duplicate the properties from 'obj1_prop' into 'obj2_prop'
-    obj2_prop = PDCprop_obj_dup(obj1_prop);
-    PDCprop_set_obj_type(obj2_prop, PDC_FLOAT); /* Dup doesn't replicate the datatype */
-
-    sprintf(obj_name, "obj-var-array1.%d", rank);
-    // obj1 = PDCobj_create_mpi(cont_id, obj_name, obj1_prop, rank, comm);
-    obj1 = PDCobj_create(cont_id, obj_name, obj1_prop);
-    if (obj1 == 0) {
-        printf("Error getting an object id of %s from server, exit...\n", "obj-var-array1");
-        exit(-1);
-    }
-
-    sprintf(obj_name, "obj-var-result1.%d", rank);
-    // obj2 = PDCobj_create_mpi(cont_id, obj_name, obj2_prop, rank, comm);
-    obj2 = PDCobj_create(cont_id, obj_name, obj2_prop);
-    if (obj2 == 0) {
-        printf("Error getting an object id of %s from server, exit...\n", "obj-var-result1");
-        exit(-1);
-    }
-
-    // create regions
-    r1 = PDCregion_create(2, offset0, myTestArray_dims);
-    r2 = PDCregion_create(2, offset0, myTestArray_dims);
-
-    input1_iter = PDCobj_data_iter_create(obj1, r1);
-    result1_iter = PDCobj_data_iter_create(obj2, r2);
-
-    /* Need to register the analysis function PRIOR TO establishing
-     * the region mapping.  The obj_mapping will update the region
-     * structures to indicate that an analysis operation has been
-     * added to the lock release...
-     */
-    PDCobj_analysis_register("arrayudf_stencils:arrayudf_example", input1_iter, result1_iter);
-
-    ret = PDCbuf_obj_map(myTestArray, PDC_FLOAT, r1, obj1, r2);
-
-//  Simple test of invoking a function dynamically
-
-    ret = PDCreg_obtain_lock(obj1, r1, WRITE, NOBLOCK);
-    ret = PDCreg_release_lock(obj1, r1, WRITE);
-#endif
-
 //   3D properties for input and results
     obj3_prop = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
 
     PDCprop_set_obj_dims     (obj3_prop, 3, my3D_dims);
-    PDCprop_set_obj_type     (obj3_prop, PDC_INT16 );
+    PDCprop_set_obj_type     (obj3_prop, PDC_FLOAT );
     PDCprop_set_obj_time_step(obj3_prop, 0       );
     PDCprop_set_obj_user_id  (obj3_prop, getuid());
     PDCprop_set_obj_app_name (obj3_prop, app_name );
     PDCprop_set_obj_tags     (obj3_prop, "tag0=1");
-    PDCprop_set_obj_buf      (obj3_prop, &my3DShortArray[0][0][0]);
+    PDCprop_set_obj_buf      (obj3_prop, &my3DFloatArray[0][0][0]);
 
     // Duplicate the properties from 'obj1_prop' into 'obj2_prop'
     obj4_prop = PDCprop_obj_dup(obj3_prop);
@@ -511,9 +662,9 @@ int main(int argc, char **argv)
     input3d_iter = PDCobj_data_iter_create(obj3, r3);
     output3d_iter = PDCobj_data_iter_create(obj4, r4);
 
-    PDCobj_analysis_register("neon_stencil:arrayudf_example", input3d_iter, output3d_iter);
+    PDCobj_analysis_register("openmsi_stencil", input3d_iter, output3d_iter);
 
-    ret = PDCbuf_obj_map(my3DShortArray, PDC_INT16, r3, obj4, r4);
+    ret = PDCbuf_obj_map(my3DFloatArray, PDC_FLOAT, r3, obj4, r4);
     ret = PDCreg_obtain_lock(obj3, r3, WRITE, NOBLOCK);
     ret = PDCreg_release_lock(obj3, r3, WRITE);
 
