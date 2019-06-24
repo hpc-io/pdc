@@ -233,7 +233,7 @@ int main(int argc, char **argv)
 #endif
     gettimeofday(&ht_total_start, 0);
 
-    ret = PDCbuf_map_transform_register("pdc_transform_increment", &x[0], region_x, obj_xx, region_xx, 0, INCR_STATE, DATA_OUT);
+//    ret = PDCbuf_map_transform_register("pdc_transform_increment", &x[0], region_x, obj_xx, region_xx, 0, INCR_STATE, DATA_OUT);
     ret = PDCbuf_map_transform_register("pdc_transform_compress", &x[0], region_x, obj_xx, region_xx, 0, INCR_STATE, DATA_OUT);
 
     if(ret < 0)

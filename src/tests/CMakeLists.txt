@@ -79,6 +79,16 @@ foreach(example ${EXAMPLES})
   target_link_libraries(${example} -pie -export-dynamic dl pdc ${HDF5_LIBRARY})
 endforeach(example)
 
+set(TESTS
+  pdc_typecast
+  pdc_typecast_int2double
+  )
+
+foreach(testcode ${TESTS})
+  add_executable(${testcode} ${testcode}.c)
+  target_link_libraries(${testcode} mpi pdctransforms)
+endforeach(testcode)
+  
 set(SCRIPTS
   run_test.sh
   )

@@ -174,9 +174,10 @@ PDCbuf_map_transform_register(char *func, void *buf,
     thisFtn->data = buf;
     id_info = pdc_find_id(dest_object_id);
     if (id_info) object1 = (struct PDC_obj_info *)(id_info->obj_ptr);
-    if (object1 && object1->obj_pt->type_extent == 0) {
+    if (object1) {
         thisFtn->type = object1->obj_pt->type;
-        thisFtn->type_extent = get_datatype_size(object1->obj_pt->type);
+	if ((thisFtn->type_extent = object1->obj_pt->type_extent) == 0)
+            thisFtn->type_extent = get_datatype_size(object1->obj_pt->type);
     }    
     if (next_state == INCR_STATE)
         thisFtn->nextState = current_state +1;

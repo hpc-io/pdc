@@ -197,7 +197,7 @@ do_pdc_analysis_for_output(float *data, size_t dims[3], PDC_var_type_t data_type
     /* The openmsi stencil can be found in the pdc_analysis_lib.c source file
      * which generates the default analysis library: libpdcanalysis.so
      */
-    PDCobj_analysis_register("s3d_stencil", input3d_iter, output3d_iter);
+    PDCobj_analysis_register("openmsi_stencil", input3d_iter, output3d_iter);
 
     ret = PDCbuf_obj_map(data, PDC_FLOAT, rin, output_object, rout);
     ret = PDCreg_obtain_lock(input_object, rin, WRITE, NOBLOCK);
