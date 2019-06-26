@@ -64,11 +64,14 @@ struct region_transform_ftn_info {
     int nextState;
     int client_id;
     size_t type_extent;
+    size_t dest_extent;
     PDC_var_type_t   type;
+    PDC_var_type_t   dest_type;
     PDCobj_transform_t op_type;
     PDCdata_movement_t when;
     PDC_Analysis_language lang;
     void *data;
+    void *result;
 };
 
 struct transform_ftn_info {

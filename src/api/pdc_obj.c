@@ -319,8 +319,12 @@ perr_t pdc_region_close(struct PDC_region_info *op)
     
     free(op->size);
     free(op->offset);
+#if 0
+    // This is a cached entry; not the actual
+    // malloc'ed memory for the object!
     if(op->obj!=NULL)
         op->obj = PDC_FREE(struct PDC_obj_info, op->obj);
+#endif
     op = PDC_FREE(struct PDC_region_info, op);
     
     FUNC_LEAVE(ret_value);
@@ -771,8 +775,15 @@ perr_t PDCobj_map(pdcid_t local_obj, pdcid_t local_reg, pdcid_t remote_obj, pdci
     if(obj1->obj_pt->ndim != reg1->ndim)
         PGOTO_ERROR(FAIL, "local object dimension and region dimension does not match");
     for(i=0; i<reg1->ndim; i++)
-        if((obj1->obj_pt->dims)[i] < ((reg1->size)[i] + (reg1->offset)[i]))
+        if(obj1->obj_pt->dims[i] < reg1->size[i])
             PGOTO_ERROR(FAIL, "local object region size error");
+
+    // Cache the actual object pointer
+    // into the region meta-data.
+    // This is done to help mapping operations decide whether
+    // they need to add type transforms...
+    if (reg1->obj == NULL) 
+        reg1->obj = obj1;
 
     objinfo2 = pdc_find_id(remote_obj);
     if(objinfo2 == NULL)
@@ -790,24 +801,28 @@ perr_t PDCobj_map(pdcid_t local_obj, pdcid_t local_reg, pdcid_t remote_obj, pdci
         if((obj2->obj_pt->dims)[i] < ((reg2->size)[i] + (reg2->offset)[i]))
             PGOTO_ERROR(FAIL, "remote object region size error");
 
+    // Same rationale as with obj1/reg1
+    if (reg2->obj == NULL)
+        reg2->obj = obj2;
+
     // TODO: assume ndim is the same
     ndim = reg1->ndim;
     
     //TODO: assume type is the same
     // start mapping
-    ret_value = PDC_Client_region_map(local_meta_id, local_reg, remote_meta_id,  ndim, obj1->obj_pt->dims, reg1->offset, reg1->size, local_type, local_data, obj2->obj_pt->dims, reg2->offset, reg2->size, remote_type, remote_data, reg1, reg2);
+    ret_value = PDC_Client_buf_map(local_reg, remote_meta_id, reg1->ndim, reg1->size, reg1->offset, reg1->size, local_type, local_data, remote_type, obj2, reg1, reg2);
     if(ret_value == SUCCEED) {
-        // state in origin obj that there is mapping
-//        obj1->mapping = 1;
-        reg1->mapping = 1;
-        pdc_inc_ref(local_obj);
-        pdc_inc_ref(local_reg);
-        // update region map list
-        struct region_map_list *new_map = malloc(sizeof(struct region_map_list));
-        new_map->orig_reg_id = local_reg;
-        new_map->des_obj_id  = remote_obj;
-        new_map->des_reg_id  = remote_reg;
-        DL_APPEND(obj1->region_list_head, new_map);
+        if (check_transform(PDC_DATA_MAP, reg1) == 0) {
+            reg1->mapping = 1;
+            // update region map list
+            struct region_map_list *new_map = malloc(sizeof(struct region_map_list));
+            new_map->orig_reg_id = local_reg;
+            new_map->des_obj_id  = remote_obj;
+            new_map->des_reg_id  = remote_reg;
+            DL_APPEND(obj1->region_list_head, new_map);
+	}
+	pdc_inc_ref(remote_obj);
+	pdc_inc_ref(remote_reg);
     }
     
 done:

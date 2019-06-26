@@ -675,6 +675,7 @@ typedef struct {
     uint8_t                     data_type;
     uint8_t                     lock_mode;
   /* The following are unique to the transform portion of the lock */
+    uint8_t                     dest_type;
     int32_t                     transform_id;
     hg_bulk_t                   local_bulk_handle;
     int64_t                     transform_data_size;
@@ -724,6 +725,11 @@ hg_proc_region_transform_and_lock_in_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_uint8_t(proc, &struct_data->lock_mode);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint8_t(proc, &struct_data->dest_type);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;

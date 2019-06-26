@@ -52,12 +52,18 @@ PDCobj_transform_register(char *func, pdcid_t obj_id, int current_state, int nex
     void *ftnHandle = NULL;
     size_t (*ftnPtr)() = NULL;
     struct region_transform_ftn_info *thisFtn = NULL;
+    struct PDC_obj_info *obj1, *obj2;
+    struct PDC_id_info *objinfo1, *objinfo2;
+    struct PDC_region_info *reg1, *reg2;
+    pdcid_t src_region_id, dest_region_id;
+    pdcid_t src_object_id, dest_object_id;
     char *thisApp = NULL;
     char *colonsep = NULL; 
     char *transformslibrary = NULL;
     char *applicationDir = NULL;
     char *userdefinedftn = NULL;
     char *loadpath = NULL;
+    int local_regIndex;
 
     FUNC_ENTER(NULL);
 
@@ -86,18 +92,71 @@ PDCobj_transform_register(char *func, pdcid_t obj_id, int current_state, int nex
     if ((thisFtn = PDC_MALLOC(struct region_transform_ftn_info)) == NULL)
         PGOTO_ERROR(FAIL,"PDC register_obj_transforms memory allocation failed\n");
 
+    memset(thisFtn,0, sizeof(struct region_transform_ftn_info));
     thisFtn->ftnPtr = (size_t (*)()) ftnPtr;
     thisFtn->object_id = obj_id;
     thisFtn->op_type = op_type;
     thisFtn->when = when;
     thisFtn->lang = C_lang;
-    pdc_client_register_obj_transform(userdefinedftn, loadpath, obj_id, current_state, next_state, (int)op_type, (int)when);
+    thisFtn->dest_type = PDC_UNKNOWN;
 
-#if 0
-    // Add to our own list of transforms functions
-    if (pdc_add_transform_ptr_to_registry_(thisFtn) < 0)
+    // Add to our own list of transform functions
+    if ((local_regIndex = pdc_add_transform_ptr_to_registry_(thisFtn)) < 0)
         PGOTO_ERROR(FAIL,"PDC unable to register transform function!\n");
-#endif
+
+    // pdc_client_register_obj_transform(userdefinedftn, loadpath, obj_id, current_state, next_state, (int)op_type, (int)when);
+
+    // Flag the transform as being active on mapping operations
+    if (op_type == PDC_DATA_MAP) {
+        objinfo1 = pdc_find_id(obj_id);
+        if(objinfo1 == NULL)
+           PGOTO_ERROR(FAIL, "cannot locate local object ID");
+        obj1 = (struct PDC_obj_info *)(objinfo1->obj_ptr);
+	/* See if any mapping operations are defined */
+	if (obj1 && (obj1->region_list_head != NULL)) {
+	    struct PDC_id_info *id_info = pdc_find_id(obj1->region_list_head->orig_reg_id);
+            struct PDC_obj_prop *prop;
+	    src_region_id = obj1->region_list_head->orig_reg_id;
+	    dest_region_id = obj1->region_list_head->des_reg_id;
+            // mapping is already defined...
+            if (id_info && ((reg1 = (struct PDC_region_info *)id_info->obj_ptr) != NULL)) {
+                thisFtn->src_region = reg1;
+                obj1 = reg1->obj;
+		// Requires that the PDCprop_set_obj_buf function be used...
+		if (obj1 && ((prop = obj1->obj_pt) != NULL)) {
+                    thisFtn->data = prop->buf;
+		    thisFtn->type = prop->type;
+                    thisFtn->type_extent = prop->type_extent;
+                }
+            }
+	    id_info = pdc_find_id(dest_region_id);
+	    if (id_info && ((reg2 = (struct PDC_region_info *)id_info->obj_ptr) != NULL)) {
+                thisFtn->dest_region = reg2;
+                obj2 = reg2->obj;
+		dest_object_id = obj2->local_id;
+		if (obj2 && ((prop = obj2->obj_pt) != NULL)) {
+                    thisFtn->result = prop->buf;                   
+                    thisFtn->dest_type = prop->type;
+                    thisFtn->dest_extent = prop->type_extent;
+		}
+	    }
+	    // Flag the destination region with the transform
+	    reg2->registered_op |= PDC_TRANSFORM;
+	}
+	pdc_client_register_region_transform(userdefinedftn, 
+       	       	                         loadpath,
+       	       	                         src_region_id,
+       	       	                         dest_region_id,
+                                         dest_object_id,
+       	       	                         current_state,
+       	       	                         thisFtn->nextState,
+       	       	                         (int)PDC_DATA_MAP,
+       	       	                         (int)when,
+					 local_regIndex);
+
+
+    }
+
 
 done:
     if (applicationDir) free(applicationDir);

@@ -259,7 +259,7 @@ perr_t PDCbuf_obj_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, p
  *
  * \return Non-negative on success/Negative on failure
  */
-//perr_t PDCobj_map(pdcid_t from_obj, pdcid_t from_reg, pdcid_t to_obj, pdcid_t to_reg);
+perr_t PDCobj_map(pdcid_t from_obj, pdcid_t from_reg, pdcid_t to_obj, pdcid_t to_reg);
 
 /**
  * Get object information

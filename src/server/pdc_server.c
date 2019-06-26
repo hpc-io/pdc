@@ -1801,7 +1801,9 @@ static void PDC_Server_mercury_register()
     analysis_ftn_register(hg_class_g);
     transform_ftn_register(hg_class_g);
     transform_region_release_register(hg_class_g);
+    region_transform_release_register(hg_class_g);
     region_analysis_release_register(hg_class_g);
+
 
     // Server to client RPC
     server_lookup_client_register_id_g = server_lookup_client_register(hg_class_g);
