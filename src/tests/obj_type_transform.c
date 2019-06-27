@@ -75,6 +75,7 @@ int main(int argc, char **argv)
     uint64_t *offset;
     uint64_t *offset_remote;
     uint64_t *mysize;
+    char obj_name[64];
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -125,13 +126,14 @@ int main(int argc, char **argv)
     PDCprop_set_obj_buf(obj_prop_dx, dx);
     PDCprop_set_obj_buf(obj_prop_ix, ix);
 
-    obj_dx = PDCobj_create_mpi(cont_id, "obj-var-dx", obj_prop_dx, 0, MPI_COMM_WORLD);
+    sprintf(obj_name, "obj-var-dx-%d", rank);
+    obj_dx = PDCobj_create(cont_id, obj_name, obj_prop_dx);
     if (obj_dx == 0) {    
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-dx");
         exit(-1);
     }
-   
-    obj_ix = PDCobj_create_mpi(cont_id, "obj-var-ix", obj_prop_ix, 0, MPI_COMM_WORLD);
+    sprintf(obj_name, "obj-var-ix-%d", rank);
+    obj_ix = PDCobj_create(cont_id, obj_name, obj_prop_ix);
     if (obj_ix == 0) {
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-ix");
         exit(-1);
@@ -147,6 +149,11 @@ int main(int argc, char **argv)
     // create regions
     region_dx = PDCregion_create(ndim, offset, mysize);
     region_ix = PDCregion_create(ndim, offset, mysize);
+
+    for (i=0; i<numparticles; i++) {
+        dx[i] = uniform_random_number();
+        ix[i] = i;
+    }
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -191,11 +198,6 @@ int main(int argc, char **argv)
     if (rank == 0) {
         printf("Time to lock with %d ranks: %.6f\n", size, ht_total_sec);
         fflush(stdout);
-    }
-
-    for (i=0; i<numparticles; i++) {
-        dx[i] = uniform_random_number();
-        ix[i] = i;
     }
 
 #ifdef SHOW_PROGRESS

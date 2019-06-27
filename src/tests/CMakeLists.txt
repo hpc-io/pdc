@@ -65,6 +65,7 @@ set(EXAMPLES
   openmsi-read3d
   neon-read3d
   obj_type_transform
+  obj_server_transform
   )
 
 foreach(program ${PROGRAMS})

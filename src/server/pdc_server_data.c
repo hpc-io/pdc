@@ -5365,7 +5365,7 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region
     data_server_region_t *region = NULL;
 
     FUNC_ENTER(NULL);
-
+#if 0
     region = PDC_Server_get_obj_region(obj_id);
     if(region == NULL) {
         printf("cannot locate file handle\n");
@@ -5385,6 +5385,7 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region
         printf("==PDC_SERVER[%d]: pwrite %d failed\n", pdc_server_rank_g, region->fd);
         goto done;
     }
+#endif
 
 done:
     fflush(stdout);

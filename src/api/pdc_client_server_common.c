@@ -1507,7 +1507,7 @@ pdc_region_write_out_progress(void *arg)
     // Perform lock release function
     PDC_Data_Server_region_release(&(bulk_args->in), &out);
 
-    PDC_Server_release_lock_request(bulk_args->remote_obj_id, remote_reg_info);
+    // PDC_Server_release_lock_request(bulk_args->remote_obj_id, remote_reg_info);
 
     free(remote_reg_info->offset);
     free(remote_reg_info->size);
