@@ -90,6 +90,12 @@ typedef struct H5VL_pdc_dset_t {
     H5_LIST_ENTRY(H5VL_pdc_dset_t) entry;
 } H5VL_pdc_dset_t;
 
+/* PDC-specific file access properties */
+typedef struct H5VL_pdc_info_t {
+    MPI_Comm            comm;           /*communicator                  */
+    MPI_Info            info;           /*file information              */
+} H5VL_pdc_info_t;
+
 /********************/
 /* Local Prototypes */
 /********************/
@@ -261,8 +267,6 @@ H5VL_pdc_init(hid_t H5VL_ATTR_UNUSED vipl_id)
     FUNC_ENTER_VOL(herr_t, SUCCEED)
     
     /* Check whether initialized */
-    printf("enter H5VL_pdc_init, H5VL_pdc_init_g = %d\n", H5VL_pdc_init_g);
-    fflush(stdout);
     if(H5VL_pdc_init_g)
         HGOTO_ERROR(H5E_VOL, H5E_CANTINIT, FAIL, "attempting to initialize connector twice");
     
@@ -414,8 +418,8 @@ H5VL__pdc_file_init(const char *name, unsigned flags, H5VL_pdc_info_t *info)
     
     /* Obtain the process rank and size from the communicator attached to the
      * fapl ID */
-    MPI_Comm_rank(info->comm, &file->my_rank);
-    MPI_Comm_size(info->comm, &file->num_procs);
+    MPI_Comm_rank(file->comm, &file->my_rank);
+    MPI_Comm_size(file->comm, &file->num_procs);
     
     file->nobj = 0;
     

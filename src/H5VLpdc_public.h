@@ -26,12 +26,6 @@
 extern "C" {
 #endif
 
-/* PDC-specific file access properties */
-typedef struct H5VL_pdc_info_t {
-    MPI_Comm            comm;           /*communicator                  */
-    MPI_Info            info;           /*file information              */
-} H5VL_pdc_info_t;
-
 /**
  * Initialize the PDC VOL connector.
  *

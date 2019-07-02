@@ -4,7 +4,6 @@
 #include <mpi.h>
 #include <unistd.h>
 #include <hdf5.h>
-#include <H5VLpdc_public.h>
 
 double uniform_random_number()
 {
@@ -12,13 +11,12 @@ double uniform_random_number()
 }
 
 int main(int argc, char *argv[]) {
-    hid_t pdc_vol_id, file_id, fapl_id;
+    hid_t file_id, fapl_id;
     hid_t dset_id1, dset_id2, dset_id3, dset_id4, dset_id5, dset_id6, dset_id7, dset_id8;
     hid_t filespace, memspace;
     herr_t ierr;
     MPI_Comm comm;
     int my_rank, num_procs;
-    H5VL_pdc_info_t pdc_vol;
     
     // Variables and dimensions
 //    long numparticles = 8388608;    // 8  meg particles per process
@@ -35,7 +33,6 @@ int main(int argc, char *argv[]) {
     
     MPI_Init(&argc, &argv);
     MPI_Comm_dup(MPI_COMM_WORLD, &comm);
-    MPI_Comm_dup(MPI_COMM_WORLD, &(pdc_vol.comm));
     
     MPI_Comm_rank (comm, &my_rank);
     MPI_Comm_size (comm, &num_procs);
@@ -75,11 +72,8 @@ int main(int argc, char *argv[]) {
         printf("H5Pcreate() error\n");
 
     /* Initialize VOL */
-    pdc_vol_id = H5VLregister_connector_by_name("pdc", H5P_DEFAULT);
-//    pdc_vol_id = H5VLregister_connector(&H5VL_pdc_g, H5P_DEFAULT);
+//    pdc_vol_id = H5VLregister_connector_by_name("pdc", H5P_DEFAULT);   // not used if choosing to use environmental variable
 
-    H5Pset_vol(fapl_id, pdc_vol_id, &pdc_vol);
- 
     /* Create file */
     if((file_id = H5Fcreate(argv[1], H5F_ACC_TRUNC, H5P_DEFAULT, fapl_id)) < 0)
         printf("H5Fcreate() error\n");

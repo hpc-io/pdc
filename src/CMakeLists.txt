@@ -20,10 +20,10 @@ option(HDF5_VOL_PDC_USE_SYSTEM_HDF5 "Use system-installed HDF5." ON)
   find_package(HDF5 1.11 NO_MODULE NAMES hdf5 COMPONENTS C shared)
   if(HDF5_FOUND)
     set(HDF5_C_SHARED_LIBRARY hdf5-shared)
-    if(NOT TARGET ${HDF5_C_SHARED_LIBRARY})
-      message(FATAL_ERROR "Could not find hdf5 shared target, please make "
-"sure that HDF5 has ben compiled with shared libraries enabled.")
-    endif()
+#    if(NOT TARGET ${HDF5_C_SHARED_LIBRARY})
+#      message(FATAL_ERROR "Could not find hdf5 shared target, please make "
+#"sure that HDF5 has ben compiled with shared libraries enabled.")
+#    endif()
     set(HDF5_VOL_PDC_EXT_INCLUDE_DEPENDENCIES
         ${HDF5_VOL_PDC_EXT_INCLUDE_DEPENDENCIES}
         ${HDF5_INCLUDE_DIR}
@@ -32,7 +32,6 @@ option(HDF5_VOL_PDC_USE_SYSTEM_HDF5 "Use system-installed HDF5." ON)
       ${HDF5_VOL_PDC_EXT_PKG_DEPENDENCIES}
       ${HDF5_C_SHARED_LIBRARY}
     )
-message("HDF5_C_SHARED_LIBRARY is ${HDF5_C_SHARED_LIBRARY}")
   else()
     # Allow for HDF5 autotools builds
     find_package(HDF5 1.11 MODULE REQUIRED)
