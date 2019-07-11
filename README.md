@@ -1,7 +1,7 @@
 
 Required libraries
 ======
-1 BMI 
+1. BMI 
 ```sh
     git clone git://git.mcs.anl.gov/bmi && cd bmi
     # If you are building BMI on an OSX platform, then apply the following patch:
@@ -10,7 +10,7 @@ Required libraries
     make && make install
 ```
 
-2 Mercury 
+2. Mercury 
 ```sh
     git clone https://github.com/mercury-hpc/mercury && cd mercury
     git submodule update --init
@@ -57,7 +57,7 @@ To test Mercury is successfully built, run
 Look for Test  #1: mercury_rpc_bmi_tcp, Test  #2: mercury_bulk_bmi_tcp, etc.
 
 
-3 OpenPA (Optional)
+3. OpenPA (Optional)
 ```sh
     wget https://trac.mpich.org/projects/openpa/raw-attachment/wiki/Downloads/openpa-1.0.4.tar.gz
     tar xzvf openpa-1.0.4.tar.gz && cd openpa-1.0.4 
@@ -66,7 +66,7 @@ Look for Test  #1: mercury_rpc_bmi_tcp, Test  #2: mercury_bulk_bmi_tcp, etc.
 
 ```
 
-4 CCI (Optional)
+4. CCI (Optional)
 ```sh
     git clone https://github.com/CCI/cci && cd cci
     ./autogen.pl
@@ -107,7 +107,7 @@ Once you exit the CMake configuration screen and are ready to build the targets,
 
 Testing
 ====
-On NERSC machines (e.g. Cori), do the following
+On NERSC machines (e.g. Cori), do the following:
 ----
 * Job allocation (e.g. use 4 nodes)
 ```sh
