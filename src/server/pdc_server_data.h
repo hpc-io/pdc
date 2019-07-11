@@ -398,7 +398,7 @@ hg_return_t PDC_Server_recv_read_sel_obj_data(const struct hg_cb_info *callback_
 #ifdef ENABLE_FASTBIT
 int bmreader(void *ctx, uint64_t start, uint64_t count, uint32_t *buf);
 int load_fastbit_index(char *idx_name, uint64_t obj_id, FastBitDataType dtype, int timestep, uint64_t ndim, uint64_t *dims, uint64_t *start, uint64_t *count, uint32_t **bms, double **keys, int64_t **offsets);
-
+void gen_fastbit_idx_name(char *out, char *prefix, uint64_t obj_id, int timestep, int ndim, uint64_t *start, uint64_t *count);
 #endif
 
 #endif /* PDC_SERVER_DATA_H */

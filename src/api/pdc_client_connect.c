@@ -3118,7 +3118,6 @@ perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_in
     in.lock_mode = lock_mode;
 
     // Delay test
-    srand(pdc_client_mpi_rank_g);
     int delay = rand() % 500;
     usleep(delay);
 
@@ -3306,7 +3305,6 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
     in.meta_server_id = meta_server_id;
 
     /* // Delay test */
-    /* srand(pdc_client_mpi_rank_g); */
     /* int delay = rand() % 500; */
     /* usleep(delay); */
 
@@ -7759,8 +7757,9 @@ int gen_query_id()
     /* if (query_id_g == 0) */ 
     /*     query_id_g = (pdc_client_mpi_rank_g+1) * 10000; */
 
-    srand(time(0));
-    return rand();
+    int ret_val = rand();
+    /* int ret_val = rand() + query_id_g++; */
+    return ret_val;
 }
 
 hg_return_t
@@ -7868,7 +7867,7 @@ PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op, uint64_t *nhits
         HG_Destroy(handle);
     }
 
-    /* printf("==PDC_CLIENT[%d]: send data query id = %d\n", pdc_client_mpi_rank_g, server_id, result->query_id); */
+    /* printf("==PDC_CLIENT[%d]: send data query id = %d\n", pdc_client_mpi_rank_g, query_xfer->query_id); */
 
     // Wait for server to send query result
     work_todo_g = 1;
@@ -8063,7 +8062,7 @@ PDC_recv_read_coords_data(const struct hg_cb_info *callback_info)
     hg_bulk_t local_bulk_handle   = callback_info->info.bulk.local_handle;
     struct bulk_args_t *bulk_args = (struct bulk_args_t *)callback_info->arg;
     pdcquery_result_list_t *result_elt;
-    uint64_t nhits, *coords, total_hits, total_size, off;
+    uint64_t nhits, total_hits;
     uint32_t ndim;
     int      i, query_id, origin, seq_id;
     void *buf;

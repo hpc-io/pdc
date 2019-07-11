@@ -48,12 +48,13 @@ typedef struct query_constraint_t {
 } query_constraint_t;
 
 query_constraint_t query_constraints[] = {
+
     {
         1.2, FLT_MAX, 
         #ifndef QUERY_ENERGY_ONLY
-        -200, -100, 
-           0,  100,
-        -100,    0, 
+             100,     120,
+            -166,     166,
+             -67,      67,
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX
@@ -62,9 +63,9 @@ query_constraint_t query_constraints[] = {
     {
         1.4, FLT_MAX, 
         #ifndef QUERY_ENERGY_ONLY
-        -200, -100, 
-           0,  100,
-        -100,    0, 
+             100,     120,
+            -166,     166,
+             -67,      67,
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX
@@ -73,9 +74,9 @@ query_constraint_t query_constraints[] = {
     {
         1.6, FLT_MAX, 
         #ifndef QUERY_ENERGY_ONLY
-        -200, -100, 
-           0,  100,
-        -100,    0, 
+             100,     120,
+            -166,     166,
+             -67,      67,
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX
@@ -84,9 +85,9 @@ query_constraint_t query_constraints[] = {
     {
         1.8, FLT_MAX, 
         #ifndef QUERY_ENERGY_ONLY
-        -200, -100, 
-           0,  100,
-        -100,    0, 
+             100,     120,
+            -166,     166,
+             -67,      67,
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX
@@ -95,9 +96,9 @@ query_constraint_t query_constraints[] = {
     {
         2.0, FLT_MAX, 
         #ifndef QUERY_ENERGY_ONLY
-        -200, -100, 
-           0,  100,
-        -100,    0, 
+             100,     120,
+            -166,     166,
+             -67,      67,
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX
@@ -106,9 +107,9 @@ query_constraint_t query_constraints[] = {
     {
         2.2, FLT_MAX, 
         #ifndef QUERY_ENERGY_ONLY
-        -200, -100, 
-           0,  100,
-        -100,    0, 
+             100,     120,
+            -166,     166,
+             -67,      67,
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX
@@ -117,9 +118,9 @@ query_constraint_t query_constraints[] = {
     {
         2.4, FLT_MAX, 
         #ifndef QUERY_ENERGY_ONLY
-        -200, -100, 
-           0,  100,
-        -100,    0, 
+             100,     120,
+            -166,     166,
+             -67,      67,
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX
@@ -131,81 +132,75 @@ query_constraint_t query_constraints[] = {
     {
         1.2, FLT_MAX, 
         #ifndef QUERY_ENERGY_ONLY
-        -180, -120,
-          20,   80, 
-         -80,  -20, 
+             120,     130,
+            -166,     166,
+             -67,      67,
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX
         #endif
     },
-
     {
         1.4, FLT_MAX, 
         #ifndef QUERY_ENERGY_ONLY
-        -180, -120,
-          20,   80, 
-         -80,  -20, 
+             120,     130,
+            -166,     166,
+             -67,      67,
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX
         #endif
     },
-
     {
         1.6, FLT_MAX, 
         #ifndef QUERY_ENERGY_ONLY
-        -180, -120,
-          20,   80, 
-         -80,  -20, 
+             120,     130,
+            -166,     166,
+             -67,      67,
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX
         #endif
     },
-
     {
         1.8, FLT_MAX, 
         #ifndef QUERY_ENERGY_ONLY
-        -180, -120,
-          20,   80, 
-         -80,  -20, 
+             120,     130,
+            -166,     166,
+             -67,      67,
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX
         #endif
     },
-
     {
         2.0, FLT_MAX, 
         #ifndef QUERY_ENERGY_ONLY
-        -180, -120,
-          20,   80, 
-         -80,  -20, 
+             120,     130,
+            -166,     166,
+             -67,      67,
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX
         #endif
     },
-
     {
         2.2, FLT_MAX, 
         #ifndef QUERY_ENERGY_ONLY
-        -180, -120,
-          20,   80, 
-         -80,  -20, 
+             120,     130,
+            -166,     166,
+             -67,      67,
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX
         #endif
     },
-
     {
         2.4, FLT_MAX, 
         #ifndef QUERY_ENERGY_ONLY
-        -180, -120,
-          20,   80, 
-         -80,  -20, 
+             120,     130,
+            -166,     166,
+             -67,      67,
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX
@@ -218,9 +213,743 @@ query_constraint_t query_constraints[] = {
     {
         1.2, FLT_MAX, 
         #ifndef QUERY_ENERGY_ONLY
-         -60,    0, 
-          40,  100, 
-        -160, -100, 
+             130,     135,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.4, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             130,     135,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.6, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             130,     135,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.8, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             130,     135,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.0, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             130,     135,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.2, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             130,     135,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.4, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             130,     135,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+
+
+
+
+
+
+
+    {
+        1.2, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             135,     137.5,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.4, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             135,     137.5,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.6, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             135,     137.5,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.8, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             135,     137.5,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.0, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             135,     137.5,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.2, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             135,     137.5,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.4, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             135,     137.5,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+
+
+
+
+
+
+    {
+        1.2, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             138,     139,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.4, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.6, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             138,     139,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.8, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             138,     139,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.0, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             138,     139,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.2, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             138,     139,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.4, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             138,     139,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+
+
+
+
+    {
+        1.2, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             139,   139.5,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.4, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             139,   139.5,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.6, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             139,   139.5,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.8, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             139,   139.5,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.0, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             139,   139.5,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.2, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             139,   139.5,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.4, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             139,   139.5,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+
+
+
+
+    {
+        1.2, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             140,     160,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.4, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             140,     160,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.6, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             140,     160,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.8, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             140,     160,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.0, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             140,     160,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.2, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             140,     160,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.4, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             140,     160,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+
+
+
+
+
+
+    {
+        1.2, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             160,     170,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.4, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             160,     170,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.6, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             160,     170,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.8, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             160,     170,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.0, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             160,     170,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.2, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             160,     170,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.4, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             160,     170,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+
+
+
+
+    {
+        1.2, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             200,     220,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.4, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             200,     220,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.6, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             200,     220,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.8, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             200,     220,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.0, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             200,     220,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.2, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             200,     220,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.4, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             200,     220,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+
+
+
+
+    {
+        1.2, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             220,     230,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.4, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             220,     230,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.6, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             220,     230,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.8, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             220,     230,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.0, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             220,     230,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.2, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             220,     230,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.4, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             220,     230,
+            -166,     166,
+             -67,      67,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+
+
+
+
+    {
+        1.2, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             100,     200,
+             -90,       0,
+               0,      40,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.4, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             100,     200,
+             -90,       0,
+               0,      40,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.6, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             100,     200,
+             -90,       0,
+               0,      40,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        1.8, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             100,     200,
+             -90,       0,
+               0,      40,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.0, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             100,     200,
+             -90,       0,
+               0,      40,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.2, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             100,     200,
+             -90,       0,
+               0,      40,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+    {
+        2.4, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             100,     200,
+             -90,       0,
+               0,      40,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+
+
+
+    {
+        1.2, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             100,     200,
+             -80,       0,
+               0,      30,
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX
@@ -230,9 +959,9 @@ query_constraint_t query_constraints[] = {
     {
         1.4, FLT_MAX, 
         #ifndef QUERY_ENERGY_ONLY
-         -60,    0, 
-          40,  100, 
-        -160, -100, 
+             100,     200,
+             -80,       0,
+               0,      30,
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX
@@ -242,9 +971,9 @@ query_constraint_t query_constraints[] = {
     {
         1.6, FLT_MAX, 
         #ifndef QUERY_ENERGY_ONLY
-         -60,    0, 
-          40,  100, 
-        -160, -100, 
+             100,     200,
+             -80,       0,
+               0,      30,
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX
@@ -254,9 +983,9 @@ query_constraint_t query_constraints[] = {
     {
         1.8, FLT_MAX, 
         #ifndef QUERY_ENERGY_ONLY
-         -60,    0, 
-          40,  100, 
-        -160, -100, 
+             100,     200,
+             -80,       0,
+               0,      30,
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX
@@ -266,9 +995,9 @@ query_constraint_t query_constraints[] = {
     {
         2.0, FLT_MAX, 
         #ifndef QUERY_ENERGY_ONLY
-         -60,    0, 
-          40,  100, 
-        -160, -100, 
+             100,     200,
+             -80,       0,
+               0,      30,
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX
@@ -278,9 +1007,9 @@ query_constraint_t query_constraints[] = {
     {
         2.2, FLT_MAX, 
         #ifndef QUERY_ENERGY_ONLY
-         -60,    0, 
-          40,  100, 
-        -160, -100, 
+             100,     200,
+             -80,       0,
+               0,      30,
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX
@@ -290,9 +1019,96 @@ query_constraint_t query_constraints[] = {
     {
         2.4, FLT_MAX, 
         #ifndef QUERY_ENERGY_ONLY
-         -60,    0, 
-          40,  100, 
-        -160, -100, 
+             100,     200,
+             -80,       0,
+               0,      30,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+
+
+
+
+    {
+        1.2, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             100,     200,
+             -70,       0,
+               0,      20,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+
+    {
+        1.4, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             100,     200,
+             -70,       0,
+               0,      20,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+
+    {
+        1.6, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             100,     200,
+             -70,       0,
+               0,      20,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+
+    {
+        1.8, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             100,     200,
+             -70,       0,
+               0,      20,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+
+    {
+        2.0, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             100,     200,
+             -70,       0,
+               0,      20,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+
+    {
+        2.2, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             100,     200,
+             -70,       0,
+               0,      20,
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX, 
+        -FLT_MAX, FLT_MAX
+        #endif
+    },
+
+    {
+        2.4, FLT_MAX, 
+        #ifndef QUERY_ENERGY_ONLY
+             100,     200,
+             -70,       0,
+               0,      20,
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX, 
         -FLT_MAX, FLT_MAX

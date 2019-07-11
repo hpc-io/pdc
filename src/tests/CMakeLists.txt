@@ -66,6 +66,8 @@ set(PROGRAMS
   query_vpic_bin_sds1_nopreload
   query_vpic_multi_nopreload1
   gen_fastbit_idx
+  query_vpic_exyz_nopreload
+  query_vpic_exyz_preload
 #  obj_analysis
   )
 
