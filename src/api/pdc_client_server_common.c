@@ -1605,10 +1605,10 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
         out.ret = 0;
         PGOTO_ERROR(HG_PROTOCOL_ERROR, "Error in region_release_bulk_transfer_cb()");
     }
-   
+
     out.ret = 1;
     HG_Respond(bulk_args->handle, NULL, NULL, &out);
-
+ 
 #ifdef ENABLE_MULTITHREAD
     bulk_args->work.func = pdc_region_write_out_progress;
     bulk_args->work.args = bulk_args; 
@@ -2166,7 +2166,7 @@ HG_TEST_RPC_CB(region_release, handle)
                         if (hg_ret != HG_SUCCESS) {
                             error = 1;
                             printf("===PDC SERVER: HG_TEST_RPC_CB(region_release, handle) buf map Could not read bulk data\n");
-                        }
+                        } 
                     }
                 }
                 free(tmp);
@@ -2288,20 +2288,25 @@ HG_TEST_RPC_CB(buf_unmap, handle)
     // Decode input
     HG_Get_input(handle, &in);
     info = HG_Get_info(handle);
-    out.ret = 0;
+    out.ret = 1;
 
     ret = PDC_Data_Server_buf_unmap(info, &in);
     if(ret != SUCCEED) {
         out.ret = 0;
         printf("===PDC_DATA_SERVER: HG_TEST_RPC_CB(buf_unmap, handle) - PDC_Data_Server_buf_unmap() failed"); 
+        fflush(stdout);
         HG_Respond(handle, NULL, NULL, &out);
         HG_Free_input(handle, &in);
         HG_Destroy(handle);
     }
-
+    else {
+       out.ret = 1;
+       HG_Respond(handle, NULL, NULL, &out);
+    }
     ret = PDC_Meta_Server_buf_unmap(&in, &handle);
     if(ret != SUCCEED) {
         printf("===PDC_DATA_SERVER: HG_TEST_RPC_CB(buf_unmap, handle) - PDC_Meta_Server_buf_unmap() failed");
+        fflush(stdout);
     }
 
     FUNC_LEAVE(ret_value);
@@ -2363,13 +2368,12 @@ HG_TEST_RPC_CB(buf_unmap_server, handle)
         PGOTO_ERROR(HG_OTHER_ERROR, "==PDC_SERVER: HG_TEST_RPC_CB(buf_unmap_server, handle) - requested object does not exist\n");
     }
 
+    out.ret = 1;
 #ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_lock(&meta_buf_map_mutex_g);
 #endif
     DL_FOREACH_SAFE(target_obj->region_buf_map_head, elt, tmp) {
         if(in.remote_obj_id==elt->remote_obj_id && region_is_identical(in.remote_region, elt->remote_region_unit)) {
-//            HG_Bulk_free(elt->local_bulk_handle);
-//            HG_Addr_free(info->hg_class, elt->local_addr);
             DL_DELETE(target_obj->region_buf_map_head, elt);
             free(elt);
             out.ret = 1;
@@ -2498,13 +2502,15 @@ HG_TEST_RPC_CB(buf_map, handle)
     new_buf_map_ptr = PDC_Data_Server_buf_map(info, &in, request_region, data_ptr);
  
     if(new_buf_map_ptr == NULL) {
-        out.ret = 0;
-        printf("===PDC Data Server: insert region to local data server failed");
+        out.ret = 1;
+        free(data_ptr);
         HG_Respond(handle, NULL, NULL, &out);
         HG_Free_input(handle, &in);
         HG_Destroy(handle);
     }
     else {
+        out.ret = 1;
+        HG_Respond(handle, NULL, NULL, &out);
         ret = PDC_Meta_Server_buf_map(&in, new_buf_map_ptr, &handle);
         if(ret != SUCCEED)
             printf("===PDC Data Server: PDC_Meta_Server_buf_map() failed");
@@ -4413,7 +4419,7 @@ int PDC_add_task_to_list(pdc_task_list_t **target_list, perr_t (*cb)(), void *cb
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_del_task_from_list(pdc_task_list_t **target_list, pdc_task_list_t *del, void *mutex) 
+perr_t PDC_del_task_from_list(pdc_task_list_t **target_list, pdc_task_list_t *del, void *_mutex) 
 {
     perr_t ret_value;
     pdc_task_list_t *tmp;
@@ -4462,7 +4468,7 @@ int PDC_is_valid_task_id(int id)
  *
  * \return task pointer on success/NULL on failure
  */
-pdc_task_list_t *PDC_find_task_from_list(pdc_task_list_t** target_list, int id, void *mutex)
+pdc_task_list_t *PDC_find_task_from_list(pdc_task_list_t** target_list, int id, void *_mutex)
 {
     pdc_task_list_t *tmp;
 #ifdef ENABLE_MULTITHREAD

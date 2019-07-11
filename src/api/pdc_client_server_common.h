@@ -334,6 +334,16 @@ typedef struct data_server_region_t {
     struct data_server_region_t *next;
 } data_server_region_t;
 
+typedef struct data_server_region_unmap_t {
+    uint64_t obj_id;
+    
+    region_info_transfer_t      unmap_region;
+    const struct hg_info       *info;
+    
+    struct data_server_region_unmap_t *prev;
+    struct data_server_region_unmap_t *next;
+} data_server_region_unmap_t;
+
 // For storing metadata
 typedef struct pdc_metadata_t {
     int     user_id;                // Both server and client gets it and do security check

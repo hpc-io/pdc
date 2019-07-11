@@ -787,9 +787,14 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
 //    printf("# Credential is %u\n", credential);
 //    fflush(stdout);
 
+drc_access_again:
     rc = drc_access(credential, 0, &credential_info);
     if (rc != DRC_SUCCESS) { /* failed to access credential */
-        printf("drc_access() failed (%d, %s)", rc,
+        if (rc == -DRC_EINVAL) {
+            sleep(1);
+            goto drc_access_again;
+        }
+        printf("server drc_access() failed (%d, %s)", rc,
             drc_strerror(-rc));
         ret_value = FAIL; 
         goto done;
@@ -898,6 +903,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     hg_thread_mutex_init(&pdc_server_task_mutex_g);
     hg_thread_mutex_init(&region_struct_mutex_g);
     hg_thread_mutex_init(&data_buf_map_mutex_g);
+    hg_thread_mutex_init(&data_buf_unmap_mutex_g);
     hg_thread_mutex_init(&meta_buf_map_mutex_g);
     hg_thread_mutex_init(&data_obj_map_mutex_g);
     hg_thread_mutex_init(&meta_obj_map_mutex_g);
@@ -1136,6 +1142,7 @@ perr_t PDC_Server_finalize()
     hg_thread_mutex_destroy(&pdc_server_task_mutex_g);
     hg_thread_mutex_destroy(&region_struct_mutex_g);
     hg_thread_mutex_destroy(&data_buf_map_mutex_g);
+    hg_thread_mutex_destroy(&data_buf_unmap_mutex_g);
     hg_thread_mutex_destroy(&meta_buf_map_mutex_g);
     hg_thread_mutex_destroy(&data_obj_map_mutex_g);
     hg_thread_mutex_destroy(&meta_obj_map_mutex_g);
@@ -1632,6 +1639,9 @@ hg_progress_thread(void *arg)
 
         /* printf("==PDC_SERVER[%d]: Before HG_Progress()\n", pdc_server_rank_g); */
         ret = HG_Progress(context, 100);
+#ifndef ENABLE_WAIT_DATA
+        PDC_Data_Server_check_unmap();
+#endif
         /* printf("==PDC_SERVER[%d]: After HG_Progress()\n", pdc_server_rank_g); */
         /* printf("thread [%d]\n", tid); */
     } while (ret == HG_SUCCESS || ret == HG_TIMEOUT);

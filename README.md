@@ -107,7 +107,7 @@ Once you exit the CMake configuration screen and are ready to build the targets,
 
 Testing
 ====
-On NERSC machines (e.g. Cori), do the following
+On NERSC machines (e.g. Cori), do the following:
 ----
 * Job allocation (e.g. use 4 nodes)
 ```sh
