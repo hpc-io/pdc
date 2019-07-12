@@ -241,7 +241,7 @@ perr_t PDC_add_kvtag(pdcid_t obj_id, pdc_kvtag_t *kvtag);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCtag_delete(pdcid_t obj_id, char *tag_name);
+perr_t PDCtag_delete(pdcid_t obj_id, const char *tag_name);
 
 /*
  * Get the size of the value of a specific tag name
@@ -264,7 +264,7 @@ perr_t PDCtag_getinfo(pdcid_t obj_id, char *tag_name, size_t *value_len);
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDCtag_get(pdcid_t obj_id, char *tag_name, void *tag_value);
-perr_t PDC_get_kvtag(pdcid_t obj_id, char *tag_name, pdc_kvtag_t **kvtag);
+perr_t PDC_get_kvtag(pdcid_t obj_id, const char *tag_name, pdc_kvtag_t **kvtag);
 
 perr_t PDC_free_kvtag(pdc_kvtag_t **kvtag);
 
@@ -284,10 +284,10 @@ int PDC_get_nproc_per_node();
 
 perr_t  PDCobj_get_id(const char *tag_name, void *tag_value, int value_size, int *n_res, uint64_t **pdc_ids); 
 perr_t  PDCobj_get_name(const char *tag_name, void *tag_value, int value_size, int *n_res, char **obj_names);
-pdcid_t PDCobj_put_data(const char *obj_name, const void *data, uint64_t size, pdcid_t cont_id);
+pdcid_t PDCobj_put_data(const char *obj_name, void *data, uint64_t size, pdcid_t cont_id);
 perr_t  PDCobj_get_data(pdcid_t obj_id, void **data, uint64_t *size);
 perr_t  PDCobj_del_data(pdcid_t obj_id);
-perr_t  PDCobj_put_tag(pdcid_t obj_id, const char *tag_name, const void *tag_value, size_t value_size);
+perr_t  PDCobj_put_tag(pdcid_t obj_id, const char *tag_name, void *tag_value, size_t value_size);
 perr_t  PDCobj_mod_tag(pdcid_t obj_id, const char *tag_name, const void *tag_value, size_t value_size);
 perr_t  PDCobj_get_tag(pdcid_t obj_id, const char *tag_name, void **tag_value, size_t *value_size);
 perr_t  PDCobj_del_tag(pdcid_t obj_id, const char *tag_name);
@@ -298,12 +298,12 @@ perr_t  PDCcont_get_name(pdcid_t cont_id, char **cont_name);
 pdcid_t PDCcont_get_id(const char *cont_name, pdcid_t pdc_id);
 perr_t  PDCcont_del(pdcid_t cont_id);
 
-perr_t  PDCcont_put_tag(pdcid_t cont_id, const char *tag_name, const void *tag_value, size_t value_size);
+perr_t  PDCcont_put_tag(pdcid_t cont_id, const char *tag_name, void *tag_value, size_t value_size);
 perr_t  PDCcont_get_tag(pdcid_t cont_id, const char *tag_name, void **tag_value, size_t *value_size);
 perr_t  PDCcont_del_tag(pdcid_t cont_id, const char *tag_name);
 
 perr_t  PDCcont_put_objids(pdcid_t cont_id, int nobj, pdcid_t *obj_ids);
 perr_t  PDCcont_get_objids(pdcid_t cont_id, int *nobj, pdcid_t **obj_ids);
-perr_t  PDCcont_del_objids(pdcid_t cont_id, int nobj, const pdcid_t *obj_ids);
+perr_t  PDCcont_del_objids(pdcid_t cont_id, int nobj, pdcid_t *obj_ids);
 
 #endif

@@ -45,12 +45,18 @@ typedef enum {
     PDC_COMPOUND     = 4,  /* compound types                             */
     PDC_ENUM         = 5,  /* enumeration types                          */
     PDC_ARRAY        = 6,  /* Array types                                */
-    PDC_UINT         = 7,  /* unisgned integer types                     */
+    PDC_UINT         = 7,  /* unsigned integer types                     */
     PDC_INT64        = 8,  /* 64-bit integer types                       */
     PDC_UINT64       = 9,  /* 64-bit unsigned integer types              */
- 
-    NCLASSES         = 10  /* this must be last                          */
+    PDC_INT16        = 10, 
+    PDC_INT8         = 11,
+    NCLASSES         = 12  /* this must be last                          */
 } PDC_var_type_t;
+
+typedef enum {
+    PDC_SERVER_DEFAULT    = 0,
+    PDC_SERVER_PER_CLIENT = 1
+} PDC_server_selection_t;
 
 
 #endif

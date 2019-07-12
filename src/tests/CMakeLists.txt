@@ -2,7 +2,7 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
   ${PDC_INCLUDES_BUILD_TIME}
-#  $ENV{HOME}/Sandbox/c-blosc/blosc
+  $ENV{HOME}/Sandbox/c-blosc/blosc
 )
 
 add_definitions(-DENABLE_MPI=1)
@@ -38,6 +38,7 @@ set(PROGRAMS
   buf_obj_map_mpi
   vpicio
   bdcats
+  vpicio_v2
   data_server_write_vpic
   data_server_write_vpic_multits
   data_server_read_vpic

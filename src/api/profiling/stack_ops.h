@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <time.h>
+#include "config.h"
+#include "pdc_private.h"
 
 typedef void *hash_table_t;
 
@@ -57,16 +59,6 @@ extern bool_t enableProfiling;
   } \
 } 
 #endif
-
-#ifdef __cplusplus
-#   define ATTR_UNUSED       /*void*/
-#else /* __cplusplus */
-#if defined(HAVE_ATTRIBUTE) && !defined(__SUNPRO_C)
-#   define ATTR_UNUSED       __attribute__((unused))
-#else
-#   define ATTR_UNUSED       /*void*/
-#endif
-#endif /* __cplusplus */
 
 void initialize_profile(void **table, size_t tabsize);
 void finalize_profile();

@@ -35,6 +35,10 @@
 #include "pdc_prop_pkg.h"
 #include "pdc_obj_private.h"
 #include "pdc_analysis_support.h"
+#include "mercury_atomic.h"
+
+/* static int compare_gt(int *a, int b) { return (*a) > (b); } */
+
 
 static char *default_pdc_analysis_lib = "libpdcanalysis.so";
 
@@ -47,56 +51,49 @@ void * PDC_Server_get_region_data_ptr(pdcid_t object_id) {
 }
 #endif
 
-int
-get_datatype_size(PDC_var_type_t dtype)
-{
-  /* TODO: How to determine the size of compound types and or
-   * the other enumerated types currently handled by the default
-   * case which returns 0.
-   */
-    switch(dtype) {
-    case PDC_INT:
-      return sizeof(int);
-      break;
-    case PDC_FLOAT:
-      return sizeof(float);
-      break;
-    case PDC_DOUBLE:
-      return sizeof(double);
-      break;
-    case PDC_UNKNOWN:
-    default:
-      printf("get_datatype_size: WARNING - Using an unknown datatype\n");
-      break;
-    }
-    return 0;   /* Probably a poor default */
-}
-
 static int
 iterator_init(pdcid_t objectId, pdcid_t reg_id, int blocks, struct PDC_iterator_info *iter )
 {
     size_t i, element_size = 0;
     char *data = NULL;
     size_t sliceCount = 1;
-    size_t slicePerBlock = 1;
-    size_t elementsPerSlice;
+    size_t elementsPerSlice = 1;
     size_t elementsPerBlock;
+    /* size_t obj_slicePerBlock; */
+    size_t obj_elementsPerSlice;
 
     struct PDC_region_info *region_info = NULL;
     struct PDC_obj_info *object_info = PDC_obj_get_info(objectId);
     struct PDC_obj_prop *obj_prop_ptr;
 
+    /* Gather Information about the underlying object, e.g.
+     * the object data type, object size, etc. refers to the 
+     * containing array. These are for the most part, applicable
+     * by the iterator for managing a potentially smaller region
+     * (see region size info).
+     */
     if ((obj_prop_ptr = object_info->obj_pt) != NULL) {
-        if ((iter->storage_order = 
-	     obj_prop_ptr->storage_order) == ROW_major) {
-            elementsPerSlice = obj_prop_ptr->dims[obj_prop_ptr->ndim-1];
-            if (obj_prop_ptr->ndim > 1)
-                slicePerBlock = obj_prop_ptr->dims[obj_prop_ptr->ndim-2];
+        if ((iter->storage_order = obj_prop_ptr->storage_order) == ROW_major) {
+            obj_elementsPerSlice = obj_prop_ptr->dims[obj_prop_ptr->ndim-1];
+            /*
+            if (obj_prop_ptr->ndim > 1) {
+                obj_slicePerBlock = obj_prop_ptr->dims[obj_prop_ptr->ndim-2];
+            } */
+            if (obj_prop_ptr->ndim > 2) {
+                obj_elementsPerSlice *= obj_prop_ptr->dims[obj_prop_ptr->ndim-2];
+            /*
+                obj_slicePerBlock = obj_prop_ptr->dims[obj_prop_ptr->ndim-3]; */
+	    }
         } else {
 	    /* Is this ok for Fortran? */
-            elementsPerSlice = obj_prop_ptr->dims[0]; 
+            obj_elementsPerSlice = obj_prop_ptr->dims[0]; 
+            /*
             if (obj_prop_ptr->ndim > 1)
-                slicePerBlock = obj_prop_ptr->dims[1];
+                obj_slicePerBlock = obj_prop_ptr->dims[1]; */
+            if (obj_prop_ptr->ndim > 2) {
+                obj_elementsPerSlice *= obj_prop_ptr->dims[1];
+            /*  obj_slicePerBlock = obj_prop_ptr->dims[2]; */
+	    }
         }
         iter->totalElements = 1;
         if ((iter->srcDims = (size_t *)
@@ -108,20 +105,17 @@ iterator_init(pdcid_t objectId, pdcid_t reg_id, int blocks, struct PDC_iterator_
             }
         }
 
-        iter->elementsPerBlock = elementsPerBlock = elementsPerSlice;
-        iter->slicePerBlock = slicePerBlock;
+	/* Data TYPE and SIZE */
         iter->pdc_datatype = obj_prop_ptr->type;
 
         if ((element_size = obj_prop_ptr->type_extent) == 0)
             element_size = get_datatype_size(obj_prop_ptr->type); 
-        // data = obj_prop_ptr->buf;
-        if (iter->storage_order == ROW_major) {
-           iter->dims[0] = 1;
-           iter->dims[1] = elementsPerSlice;
-        } else {
-           iter->dims[0] = elementsPerSlice;
-           iter->dims[1] = 1;
-        }
+
+        /* 'contigBlockSize' is the increment amount to move from
+         * the current data pointer to the start of the next slice.
+         */
+	iter->contigBlockSize = obj_elementsPerSlice * element_size;
+
     } else {
         printf("Error: object (%" PRIu64 ") has not been initalized correctly!\n", objectId);
         return -1;
@@ -131,19 +125,20 @@ iterator_init(pdcid_t objectId, pdcid_t reg_id, int blocks, struct PDC_iterator_
     iter->objectId = objectId;
     iter->reg_id   = reg_id;
 
-    if (reg_id == PDC_REGION_ALL) {       /* Special handling:: We'll provide entire rows */
-        iter->srcStart = data;            /* (or columns) for each successive call of     */
-        iter->srcNext = data;             /* pdc_getNextBlock.                            */
+
+    if (reg_id == PDC_REGION_ALL) {       /* Special handling:: We'll provide entire slices */
+        iter->srcStart = data;            /* (rows,columns,planes) for each successive call */
+        iter->srcNext = data;             /* of pdc_getNextBlock.                           */
 
         iter->elementsPerSlice = 
-	  iter->slicePerBlock             /* values are those signifying a single row     */
+	  iter->slicePerBlock             /* values are those signifying a single slice     */
 	  = iter->contigBlockSize
-	  = elementsPerSlice;
+	  = obj_elementsPerSlice;
         iter->contigBlockSize 
 	  *= element_size;                /* Increment value that is used to increment    */
                                           /* the data pointer to the next row...          */
 
-        sliceCount = iter->totalElements / elementsPerSlice;
+        sliceCount = iter->totalElements / obj_elementsPerSlice;
         iter->sliceCount = sliceCount;
         iter->sliceResetCount = sliceCount +1;   /* Never */
 
@@ -179,23 +174,40 @@ iterator_init(pdcid_t objectId, pdcid_t reg_id, int blocks, struct PDC_iterator_
          *
          */
 
-        iter->elementsPerSlice = elementsPerSlice;
-        iter->contigBlockSize = elementsPerSlice * element_size;
         region_info = PDCregion_get_info(reg_id);
-
+	
         /* How many rows in the selected region? */
-        totalElements = region_info->size[0];
-        for(i=1; i < region_info->ndim; i++) {
-            sliceCount *= region_info->size[i];
-            totalElements *= region_info->size[i];
-        }
+	if (iter->storage_order == ROW_major) {
+            iter->dims[0] = 1;
+            sliceCount = region_info->size[0];
+            totalElements = sliceCount;
+	    for(i=1; i < region_info->ndim; i++) {
+               iter->dims[i] = region_info->size[i];
+	       elementsPerSlice *= region_info->size[i];
+	    }
+	    totalElements = elementsPerSlice * region_info->size[0];
+	}
+	else {
+            int k = (int)iter->ndim -1;
+            iter->dims[k] = 1;
+            sliceCount = region_info->size[k];
+	    totalElements = sliceCount;
+	    for( ; k >= 0; k--) {
+               iter->dims[k] = region_info->size[k];
+	       elementsPerSlice *= region_info->size[k];
+	    }
+	    totalElements = elementsPerSlice * region_info->size[iter->ndim -1];
+	}
 
+	if (totalElements == iter->totalElements) {
+            iter->elementsPerBlock = elementsPerSlice;
+	}
         /* For regions, the total element count is that of the region
          * not the size of the containing object...
          */
         iter->totalElements = totalElements;
         if (region_info->ndim > 1) {
-            iter->elementsPerBlock = region_info->size[1];
+
             skipCount = ((region_info->offset[1] * obj_prop_ptr->dims[0])
 			 + region_info->offset[0]) * element_size;
             iter->sliceResetCount
@@ -217,7 +229,6 @@ iterator_init(pdcid_t objectId, pdcid_t reg_id, int blocks, struct PDC_iterator_
             }
         }
         else {
-            iter->elementsPerBlock = region_info->size[0];
             skipCount = region_info->offset[0] * element_size;
         }
 	/* These next should be filled in at the first call
@@ -245,84 +256,6 @@ iterator_init(pdcid_t objectId, pdcid_t reg_id, int blocks, struct PDC_iterator_
     return 0;
 }
 
-size_t
-PDCobj_data_getNextBlock(pdcid_t iter, void **nextBlock, size_t *dims)
-{
-    struct PDC_iterator_info *thisIter = NULL;
-    /* Special case to handle a NULL iterator */
-    if (iter == 0) {
-        if (nextBlock != NULL) *nextBlock = NULL;
-        if (dims != NULL) *dims = 0;
-        return 0;
-    }
-
-    if ((PDC_Block_iterator_cache != NULL) && (iter > 0)) {
-        thisIter = &PDC_Block_iterator_cache[iter];
-        if (thisIter->srcStart == NULL) {
-            if (execution_locus == SERVER_MEMORY) {
-	        if ((thisIter->srcNext = PDC_Server_get_region_data_ptr(thisIter->objectId)) == NULL)
-		    thisIter->srcNext = malloc(thisIter->totalElements * thisIter->element_size);
-	        if ((thisIter->srcStart = thisIter->srcNext) == NULL) {
-                    printf("==PDC_ANALYSIS_SERVER: Unable to allocate iterator storage\n");
-                    return 0;
-                }
-		thisIter->srcNext += thisIter->startOffset + thisIter->skipCount;
-	    }
-	    else if (execution_locus == CLIENT_MEMORY) {
-                struct PDC_obj_info *object_info = PDC_obj_get_info(thisIter->objectId);
-                struct PDC_obj_prop *obj_prop_ptr = object_info->obj_pt;
-                if (obj_prop_ptr) {
-                    thisIter->srcNext = thisIter->srcStart = obj_prop_ptr->buf;
-		    thisIter->srcNext += thisIter->startOffset + thisIter->skipCount;
-		}
-	    }
-	}
-        if (thisIter->srcNext != NULL) {
-        
-        if (thisIter->sliceNext == thisIter->sliceCount) {
-            /* May need to adjust the elements in this last
-             * block...
-             */
-             size_t current_total = thisIter->sliceCount * thisIter->elementsPerBlock;
-             size_t remaining = 0;
-
-             if (current_total == thisIter->totalElements) {
-                 if (nextBlock) *nextBlock = NULL;
-                 thisIter->sliceNext = 0;
-                 thisIter->srcNext = NULL;
-                 goto done;
-             }
-             if (nextBlock) *nextBlock = thisIter->srcNext;
-             thisIter->srcNext = NULL;
-             remaining = thisIter->totalElements - current_total;
-             if (dims) {
-                 if (thisIter->storage_order == ROW_major)
-                    dims[0] = remaining / thisIter->elementsPerSlice;
-                 else dims[1] = remaining / thisIter->elementsPerSlice;
-             }
-             return remaining;
-        } else if (thisIter->sliceNext && (thisIter->sliceNext % thisIter->sliceResetCount) == 0) {
-            size_t offset = ++thisIter->srcBlockCount * thisIter->elementsPerBlock;
-            thisIter->srcNext = thisIter->srcStart + offset + thisIter->skipCount;
-            if (nextBlock) *nextBlock = thisIter->srcNext;
-        }
-        else {
-            *nextBlock = thisIter->srcNext;
-            thisIter->srcNext += thisIter->contigBlockSize;
-        }
-        thisIter->sliceNext += 1;
-        if (dims != NULL) {
-            dims[0] = thisIter->dims[0];
-            dims[1] = thisIter->dims[1];
-        }
-        return thisIter->elementsPerBlock;
-      }
-    }
-done:
-    if (dims) dims[0] = dims[1] = 0;
-    if (nextBlock) *nextBlock = NULL;
-    return 0;
-}
 
 
 pdcid_t
@@ -445,8 +378,10 @@ get_realpath( char *fname, char *app_path)
 	  app_path = NULL;
 	}
 	notreadable = access(fullPath, R_OK);
-	if (notreadable && (app_path == NULL))
+	if (notreadable && (app_path == NULL)) {
 	    perror("access");
+	    return NULL;
+	}
     } while(notreadable);
     return strdup(fullPath);
 }
@@ -456,22 +391,23 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
 {
     perr_t ret_value = SUCCEED;         /* Return value */
     void *ftnHandle = NULL;
-    int (*ftnPtr)(pdcid_t, pdcid_t) = NULL;
+    size_t (*ftnPtr)(pdcid_t, pdcid_t) = NULL;
     struct region_analysis_ftn_info *thisFtn = NULL;
     struct PDC_iterator_info *i_in = NULL, *i_out = NULL;
     pdcid_t meta_id_in = 0, meta_id_out = 0;
+    pdcid_t local_id_in = 0, local_id_out = 0;
     char *thisApp = NULL;
     char *colonsep = NULL; 
     char *analyislibrary = NULL;
     char *applicationDir = NULL;
     char *userdefinedftn = NULL;
     char *loadpath = NULL;
-
     FUNC_ENTER(NULL);
 
     thisApp = pdc_get_argv0_();
-    if (thisApp) 
+    if (thisApp) {
       applicationDir = dirname(strdup(thisApp));
+    }
     userdefinedftn = strdup(func);
 
     if ((colonsep = strrchr(userdefinedftn, ':')) != NULL) {
@@ -484,7 +420,6 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
     // Should probably validate the location of the "analysislibrary"
     //
     loadpath = get_realpath(analyislibrary, applicationDir);
-
     if (get_ftnPtr_(userdefinedftn, loadpath, &ftnHandle) < 0)
       printf("get_ftnPtr_ returned an error!\n");
     
@@ -494,12 +429,16 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
     if ((thisFtn = PDC_MALLOC(struct region_analysis_ftn_info)) == NULL)
         PGOTO_ERROR(FAIL,"PDC register_obj_analysis memory allocation failed\n");
 
-    thisFtn->ftnPtr = (int (*)()) ftnPtr;
+    thisFtn->ftnPtr = (size_t (*)()) ftnPtr;
     thisFtn->n_args = 2;
-    if ((thisFtn->object_id = (pdcid_t *)calloc(2, sizeof(pdcid_t))) != NULL) {
+    /* Allocate for iterator ids and region ids */
+    if ((thisFtn->object_id = (pdcid_t *)calloc(4, sizeof(pdcid_t))) != NULL) {
         thisFtn->object_id[0] = iterIn;
         thisFtn->object_id[1] = iterOut;
     }
+    else PGOTO_ERROR(FAIL,"PDC register_obj_analysis memory allocation failed - object_ids\n");
+
+    thisFtn->region_id = (pdcid_t *)&thisFtn->object_id[2];
 
     thisFtn->lang = C_lang;
 
@@ -507,25 +446,33 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
         if (iterIn != 0) {
             i_in  = &PDC_Block_iterator_cache[iterIn];
             meta_id_in = i_in->meta_id;
+	    local_id_in = i_in->local_id;
 	}
         if (iterOut != 0) {
             i_out = &PDC_Block_iterator_cache[iterOut];
             meta_id_out = i_out->meta_id;
+	    local_id_out = i_out->local_id;
         }
     }
 
-    pdc_client_register_obj_analysis(userdefinedftn, loadpath, meta_id_in, meta_id_out);
+    pdc_client_register_obj_analysis(thisFtn, userdefinedftn, loadpath, local_id_in, local_id_out, meta_id_in, meta_id_out);
+
+    // Add region IDs
+    thisFtn->region_id[0] = i_in->reg_id;
+    thisFtn->region_id[1] = i_out->reg_id;
 
     // Add to our own list of analysis functions
     if (pdc_add_analysis_ptr_to_registry_(thisFtn) < 0)
         PGOTO_ERROR(FAIL,"PDC unable to register analysis function!\n");
 
+#if 0
     // Invoke the analysis function if the input data is local
     // to this client (CLIENT_MEMORY)
     if (i_in) {
         struct PDC_obj_info *p = PDC_obj_get_info(i_in->objectId);
         struct PDC_obj_prop *q = p->obj_pt;
         if (q->locus == CLIENT_MEMORY) {       
+            puts("CLIENT_MEMORY: analysis");
             if (ftnPtr != NULL) {
                 int result = ftnPtr(iterIn,iterOut);
                 if (result < 0) {
@@ -534,10 +481,151 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
             }
         }
     }
+#endif
 done:
     if (applicationDir) free(applicationDir);
     if (userdefinedftn) free(userdefinedftn);
 
     FUNC_LEAVE(ret_value);
 }
+
+#if 0				/* Deprecated:  See PDCobj_data_iter_create() */
+pdcid_t PDCobj_create_data_iterator(pdcid_t obj_id, pdcid_t reg_id)
+{
+    size_t nextId = 0;
+    pdcid_t index = 0;
+
+    if (PDC_Block_iterator_cache == NULL) {
+        PDC_Block_iterator_cache = (iterator_info_t *)calloc(iterator_cache_entries, sizeof(iterator_info_t));
+        i_cache_freed = (int *) calloc(iterator_cache_entries, sizeof(int));
+        /* Index 0 is NOT-USED other than to indicate an empty iterator */
+        hg_atomic_init32(&i_cache_index,1);
+        hg_atomic_init32(&i_cache_freed,0);
+    }
+    if (compare_gt((void *)&i_cache_freed, 0)) {
+        int next_free = hg_atomic_decr32(&i_cache_freed);
+        nextId = i_cache_freed[next_free];
+    }
+    else {
+        int next_free = hg_atomic_incr32(&i_cache_index);
+        nextId = next_free -1;        /* use the "current" index */
+    }
+    if (nextId == iterator_cache_entries) {
+        /* Realloc the cache and free list */
+        int *previous_i_cache_freed = i_cache_freed;
+        iterator_info_t * previous_state = PDC_Block_iterator_cache;
+        PDC_Block_iterator_cache = (iterator_info_t *)calloc(iterator_cache_entries *2, sizeof(iterator_info_t));
+        memcpy(PDC_Block_iterator_cache, previous_state, iterator_cache_entries * sizeof(iterator_info_t));
+        i_cache_freed = (int *)calloc(iterator_cache_entries * 2, sizeof(int));
+        memcpy(i_cache_freed, previous_i_cache_freed, iterator_cache_entries * sizeof(int));
+        iterator_cache_entries *= 2;
+        free( previous_i_cache_freed );
+        free( previous_state );
+    }
+    if ((index = (pdcid_t)nextId) > 0)
+        iterator_init(obj_id, reg_id, 1, &PDC_Block_iterator_cache[nextId]);
+    return index;
+}
+#endif
+
+size_t
+PDCobj_data_getSliceCount(pdcid_t iter)
+{
+    struct PDC_iterator_info *thisIter = NULL;
+    /* Special case to handle a NULL iterator */
+    if (iter == 0) return 0;
+    /* FIXME: Should add another check to see that the input
+     *        iter id is in the range of cached values...
+     */
+    if ((PDC_Block_iterator_cache != NULL) && (iter > 0)) {
+        thisIter = &PDC_Block_iterator_cache[iter];
+        return thisIter->sliceCount;
+    }
+    return 0;
+}
+
+size_t
+PDCobj_data_getNextBlock(pdcid_t iter, void **nextBlock, size_t *dims)
+{
+    struct PDC_iterator_info *thisIter = NULL;
+    /* Special case to handle a NULL iterator */
+    if (iter == 0) {
+        if (nextBlock != NULL) *nextBlock = NULL;
+        if (dims != NULL) *dims = 0;
+        return 0;
+    }
+
+    if ((PDC_Block_iterator_cache != NULL) && (iter > 0)) {
+        thisIter = &PDC_Block_iterator_cache[iter];
+        if (thisIter->srcStart == NULL) {
+            if (execution_locus == SERVER_MEMORY) {
+	        if ((thisIter->srcNext = PDC_Server_get_region_data_ptr(thisIter->objectId)) == NULL)
+		    thisIter->srcNext = malloc(thisIter->totalElements * thisIter->element_size);
+	        if ((thisIter->srcStart = thisIter->srcNext) == NULL) {
+                    printf("==PDC_ANALYSIS_SERVER: Unable to allocate iterator storage\n");
+                    return 0;
+                }
+		thisIter->srcNext += thisIter->startOffset + thisIter->skipCount;
+	    }
+	    else if (execution_locus == CLIENT_MEMORY) {
+                struct PDC_obj_info *object_info = PDC_obj_get_info(thisIter->objectId);
+                struct PDC_obj_prop *obj_prop_ptr = object_info->obj_pt;
+                if (obj_prop_ptr) {
+                    thisIter->srcNext = thisIter->srcStart = obj_prop_ptr->buf;
+		    thisIter->srcNext += thisIter->startOffset + thisIter->skipCount;
+		}
+	    }
+	}
+        if (thisIter->srcNext != NULL) {
+            if (thisIter->sliceNext == thisIter->sliceCount) {
+                /* May need to adjust the elements in this last
+                 * block...
+                 */
+                 size_t current_total = thisIter->sliceCount * thisIter->elementsPerBlock;
+                 size_t remaining = 0;
+
+                 if (current_total == thisIter->totalElements) {
+                     if (nextBlock) *nextBlock = NULL;
+                     thisIter->sliceNext = 0;
+                     thisIter->srcNext = NULL;
+                     goto done;
+                 }
+                 if (nextBlock) *nextBlock = thisIter->srcNext;
+                 thisIter->srcNext = NULL;
+                 remaining = thisIter->totalElements - current_total;
+                 if (dims) {
+                     if (thisIter->storage_order == ROW_major)
+                        dims[0] = remaining / thisIter->elementsPerSlice;
+                     else dims[1] = remaining / thisIter->elementsPerSlice;
+                 }
+                 return remaining;
+            } else if (thisIter->sliceNext && (thisIter->sliceNext % thisIter->sliceResetCount) == 0) {
+                size_t offset = ++thisIter->srcBlockCount * thisIter->elementsPerBlock;
+                thisIter->srcNext = thisIter->srcStart + offset + thisIter->skipCount;
+                if (nextBlock) *nextBlock = thisIter->srcNext;
+            }
+            else {
+                *nextBlock = thisIter->srcNext;
+                thisIter->srcNext += thisIter->contigBlockSize;
+            }
+            thisIter->sliceNext += 1;
+            if (dims != NULL) {
+                dims[0] = thisIter->dims[0];
+		if (thisIter->ndim > 1) 
+		  dims[1] = thisIter->dims[1];
+		if (thisIter->ndim > 2) 
+		  dims[2] = thisIter->dims[2];
+		if (thisIter->ndim > 3) 
+		  dims[2] = thisIter->dims[3];
+            }
+            return thisIter->elementsPerBlock;
+        }
+    }
+
+done:
+    if (dims) dims[0] = dims[1] = 0;
+    if (nextBlock) *nextBlock = NULL;
+    return 0;
+}
+
 

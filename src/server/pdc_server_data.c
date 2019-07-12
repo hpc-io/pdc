@@ -794,6 +794,8 @@ perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
     }
     if(target_obj->region_buf_map_head == NULL && pdc_server_rank_g == 0) {
         close(target_obj->fd);
+	printf("closed object file: fd = %d\n", target_obj->fd);
+	target_obj->fd = -1;
     }
 #ifdef ENABLE_MULTITHREAD 
     hg_thread_mutex_unlock(&data_buf_map_mutex_g);
@@ -850,6 +852,8 @@ perr_t PDC_Data_Server_check_unmap()
         }
         if(target_obj->region_buf_map_head == NULL && pdc_server_rank_g == 0) {
             close(target_obj->fd);
+            printf("closed object file: fd = %d\n", target_obj->fd);
+	    target_obj->fd = -1;
         }
         hg_thread_mutex_unlock(&data_buf_map_mutex_g);
         if(completed == 1) {
@@ -1096,6 +1100,44 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+static int
+server_open_storage(char *storage_location, pdcid_t obj_id)
+{
+
+#ifdef ENABLE_LUSTRE
+    int stripe_count, stripe_size;
+#endif
+    // Generate a location for data storage for data server to write
+    char *data_path = NULL;
+    char *user_specified_data_path = getenv("PDC_DATA_LOC");
+
+    if (user_specified_data_path != NULL)
+        data_path = user_specified_data_path;
+    else {
+        data_path = getenv("SCRATCH");
+        if (data_path == NULL)
+            data_path = ".";
+    }
+    // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
+    snprintf(storage_location, ADDR_MAX, "%s/pdc_data/%" PRIu64 "/server%d/s%04d.bin",
+        data_path, obj_id, pdc_server_rank_g, pdc_server_rank_g);
+    pdc_mkdir(storage_location);
+
+#ifdef ENABLE_LUSTRE
+    if (pdc_nost_per_file_g != 1)
+        stripe_count = 248 / pdc_server_size_g;
+    else
+        stripe_count = pdc_nost_per_file_g;
+    stripe_size  = 16;           //MB
+    PDC_Server_set_lustre_stripe(storage_location, stripe_count, stripe_size);
+
+    if (is_debug_g == 1 && pdc_server_rank_g == 0) {
+        printf("storage_location is %s\n", storage_location);
+    }
+#endif
+    return open(storage_location, O_RDWR|O_CREAT, 0666);
+}
+
 region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in_t *in, region_list_t *request_region, void *data_ptr)
 {
     region_buf_map_t *ret_value = NULL;
@@ -1127,6 +1169,8 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
         new_obj_reg->region_lock_request_head = NULL;
 //        new_obj_reg->region_storage_head = NULL;
 
+	new_obj_reg->fd = server_open_storage(storage_location, in->remote_obj_id);
+#if 0	
         // Generate a location for data storage for data server to write
         user_specified_data_path = getenv("PDC_DATA_LOC");
         if (user_specified_data_path != NULL)
@@ -1154,10 +1198,13 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
         }
 #endif
         new_obj_reg->fd = open(storage_location, O_RDWR|O_CREAT, 0666);
+#endif
         if(new_obj_reg->fd == -1){
             printf("==PDC_SERVER[%d]: open %s failed\n", pdc_server_rank_g, storage_location);
             goto done;
         }
+	new_obj_reg->storage_location = strdup(storage_location);
+	printf("==PDC_SERVER[%d]: open obj_id = %lu succeeded: fd = %d\n", pdc_server_rank_g, in->remote_obj_id, new_obj_reg->fd);
         DL_APPEND(dataserver_region_g, new_obj_reg);
     }
 #ifdef ENABLE_MULTITHREAD 
@@ -5291,6 +5338,7 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region
 {
     perr_t ret_value = SUCCEED;
     ssize_t write_bytes; 
+    off_t file_offset;
     data_server_region_t *region = NULL;
 
     FUNC_ENTER(NULL);
@@ -5300,13 +5348,20 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region
         printf("cannot locate file handle\n");
         goto done;
     }
-
-    write_bytes = pwrite(region->fd, buf, region_info->size[0], region_info->offset[0]-pdc_server_rank_g*nclient_per_node*region_info->size[0]);
+    // Was opened previously and closed.
+    // The location string is cached, so we utilize
+    // that to reopen the file.
+    if ((region->fd < 0) && region->storage_location) {
+        region->fd = open(region->storage_location, O_RDWR, 0666);
+    }
+    file_offset = region_info->offset[0] - (pdc_server_rank_g*nclient_per_node*region_info->size[0]);
+    write_bytes = pwrite(region->fd, buf, region_info->size[0], file_offset);
     // printf("server %d calls pwrite, offset = %lld, size = %lld\n", pdc_server_rank_g, region_info->offset[0]-pdc_server_rank_g*nclient_per_node*region_info->size[0], region_info->size[0]);
     if(write_bytes == -1){
         printf("==PDC_SERVER[%d]: pwrite %d failed\n", pdc_server_rank_g, region->fd);
         goto done;
     }
+    printf("==PDC_SERVER[%d]: obj_id = %lu , offset = %ld pwrite %d succeeded\n", pdc_server_rank_g, obj_id, file_offset, region->fd);
 
 done:
     fflush(stdout);
@@ -5316,6 +5371,7 @@ done:
 perr_t PDC_Server_data_read_from(uint64_t obj_id, struct PDC_region_info *region_info, void *buf)
 {
     perr_t ret_value = SUCCEED;
+    off_t file_offset;
     ssize_t read_bytes;
     data_server_region_t *region = NULL;
     
@@ -5326,13 +5382,22 @@ perr_t PDC_Server_data_read_from(uint64_t obj_id, struct PDC_region_info *region
         printf("cannot locate file handle\n");
         goto done;
     }
-    
-    read_bytes = pread(region->fd, buf, region_info->size[0], region_info->offset[0]-pdc_server_rank_g*nclient_per_node*region_info->size[0]);
+
+    // Was opened previously and closed.
+    // The location string is cached, so we utilize
+    // that to reopen the file.
+    if (region->fd < 0) {
+        region->fd = open(region->storage_location, O_RDWR, 0666);
+    }
+    file_offset = region_info->offset[0] - (pdc_server_rank_g*nclient_per_node*region_info->size[0]);
+    read_bytes = pread(region->fd, buf, region_info->size[0], file_offset);
     /* printf("server %d calls pread, offset = %lld, size = %lld\n", pdc_server_rank_g, region_info->offset[0]-pdc_server_rank_g*nclient_per_node*region_info->size[0], region_info->size[0]); */
     if(read_bytes == -1){
-        printf("==PDC_SERVER[%d]: pread %d failed\n", pdc_server_rank_g, region->fd);
+        int thiserr = errno;
+        printf("==PDC_SERVER[%d]: pread %d failed (%s)\n", pdc_server_rank_g, region->fd, sys_errlist[errno]);
         goto done;
     }
+    printf("==PDC_SERVER[%d]: obj_id = %lu , offset = %ld pread %d succeeded\n", pdc_server_rank_g, obj_id, file_offset, region->fd);
     
 done:
     fflush(stdout);

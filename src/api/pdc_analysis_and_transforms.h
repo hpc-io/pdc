@@ -27,26 +27,13 @@
 #include <dlfcn.h>
 #include "mercury.h"
 #include "mercury_proc_string.h"
+#include "mercury_atomic.h"
 
 #define PDC_REGION_ALL (pdcid_t)(-1)
-
-// Analysis
-extern size_t                     analysis_registry_size;
-/* extern hg_atomic_int32_t          registered_ftn_count_g; */
-extern struct PDC_iterator_info * PDC_Block_iterator_cache;
-extern int                      * i_cache_freed;
-extern size_t                     iterator_cache_entries;
-/* extern hg_atomic_int32_t          i_cache_index; */
-/* extern hg_atomic_int32_t          i_free_index; */
-extern PDC_loci                   execution_locus;
-
-extern hg_id_t                    analysis_ftn_register_id_g;
-extern hg_id_t                    transform_ftn_register_id_g;
-extern hg_id_t                    object_data_iterator_register_id_g;
-/* extern hg_thread_mutex_t          insert_iterator_mutex_g; */
+#define PDC_ITER_NULL (pdcid_t)(0)
 
 struct analysis_ftn_info {
-    int (*ftnPtr)(void *, size_t *, size_t);
+    size_t (*ftnPtr)();
     pdcid_t object_id;
     PDC_Analysis_language lang;
     struct analysis_ftn_info *prev;
@@ -54,10 +41,11 @@ struct analysis_ftn_info {
 };
 
 struct region_analysis_ftn_info {
+    int meta_index;
     int n_args;
     pdcid_t *object_id;
     pdcid_t *region_id;
-    int (*ftnPtr)();
+    size_t (*ftnPtr)();
     int readyCount;
     int client_id;
     int ftn_lastResult;
@@ -66,33 +54,68 @@ struct region_analysis_ftn_info {
 //  PDC_LIST_ENTRY(region_analysis_ftn_info) entry;
 };
 
-struct PDC_iterator_info {
-    void   *srcStart;                /* Constant that points to the data buffer  */
-    void   *srcNext;                 /* Updated data pointer for each iteration  */
-    void   *copy_region;             /* Normally unused (see special cases)      */
-    size_t  startOffset;	     /* The first data pointer gets this offset  */
-    size_t  skipCount;               /* Offset from the start of a new plane     */
-    size_t  sliceCount;              /* Total # of slices to return              */
-    size_t  sliceNext;               /* Count that we are going to return        */
+
+/*
+ *  The basic idea for introducing an iterator data structure is that
+ *  this approach allows "lazy" processing for accessing sub-regions.
+ *  The tradeoff is that by introducing temp arrays to either capture
+ *  an input region or an output region one allows user code
+ *  to have illusion of continguous storage.  The price to paid however,
+ *  is that for input data the object content needs to be copied from the
+ *  base data container into the temp storage.  On output, the problem
+ *  is somewhat exasperated by the fact that post execution (which may
+ *  be asynchronous), the generated output data needs to be copied back
+ *  into the actual object storage.
+ *
+ *  Design of these simple iterators is straight forward; we maintain
+ *  the iterator 'state' within the interator_info struct (shown
+ *  below), which we index using the pdcid_t that was returned when the
+ *  iterator was initialized.  There's enough info contained within to
+ *  structure allow a reset operation if required. Upon free'ing the struct,
+ *  we enter the free index into a second cache which we access in a
+ *  LIFO manner.  Eventually, if a free index cannot be found, we
+ *  reallocate a larger iterator cache, copy the state contained in the old,
+ *  to the new and then fill the next new entry and continue.
+ *
+ *  Special cases:
+ *  We've added "block" iterators which are a convenient mechanism for
+ *  thread parallelism. The basic idea is that we can farm out some number of
+ *  data blocks to new threads for analysis. This provides a basic control
+ *  mechanism to avoid creating and possibly destroying threads for each
+ *  row or column.
+ *  Expanding on the above capability, when users specify block iterators
+ *  in conjunction with subregions, then we alloc a temporary data buffer
+ *  which is subsequently filled from the specified subregion.
+ *  CAUTION: the copy_region needs to be managed on a per-thread basis!
+ */
+
+typedef struct PDC_iterator_info {
+    void   *srcStart;              /**** Constant that points to the data buffer  */
+    void   *srcNext;               /**** Updated data pointer for each iteration  */
+    void   *copy_region;             /* Normally unused (see special cases)         */
+    size_t  sliceCount;            /**** Total # of slices to return              */
+    size_t  sliceNext;               /* Current count that we are going to return */
     size_t  sliceResetCount;         /* For 3d, when to recalculate 'srcNext'    */
-    size_t  elementsPerSlice;        /* Dimension 1 (elements/row) of the data   */
-    size_t  slicePerBlock;           /* Dimension 2 (number of rows) in region   */
-    size_t  elementsPerPlane;        /* elementsPerSlice * slicePerBlock         */
-    size_t  elementsPerBlock;        /* elements in block (rows * cols)          */
+    size_t  elementsPerSlice;        /* # of elements in a slice the data   */
+    size_t  slicePerBlock;           /* # of slices to be returned to the user   */
+    size_t  elementsPerPlane;        /* rows * columns */
+    size_t  elementsPerBlock;      /**** Total elements in a block (return value?) */
+    size_t  skipCount;             /**** Offset from the start of a new plane  (Used to initialize srcNext) */
     size_t  element_size;            /* Byte length of a single object element   */
     size_t  srcBlockCount;           /* Current count of 2d blocks               */
-    size_t  contigBlockSize;         /* Number of elements in each slice (bytes) */
+    size_t  contigBlockSize;       /**** Number of elements in each slice (bytes) (Used to move to the next Block) */
     size_t  totalElements;
-    size_t  dims[2];                 /* [rows,columns]                           */
-    size_t *srcDims;                 /* Values passed into create_iterator       */
-    size_t  ndim;                    /* number of values in srcDims              */
-    PDC_var_type_t pdc_datatype;     /* Copied from the object type              */
-    PDC_major_type storage_order;    /* Copied from the object storage order     */
-    pdcid_t objectId;                /* object ID Reference  */
-    pdcid_t reg_id;                  /* region ID Reference  */
-    pdcid_t meta_id;		     /* Server reference */
-    pdcid_t local_id;		     /* Local reference */
-};
+    size_t  dims[4];                 /* [ planes, rows,columns] */
+    size_t *srcDims;                 /* Values passed into create_iterator */
+    size_t  ndim;                    /* number of values in srcDims */
+    size_t  startOffset;	   /**** Used to initialize the srcNext field  */
+    PDC_var_type_t pdc_datatype;
+    PDC_major_type storage_order;    /* Copied from the object storage order */
+    pdcid_t objectId;                /* Reference object ID */
+    pdcid_t reg_id;                  /* Reference region ID */
+    pdcid_t local_id;                /* Our local reference id */
+    pdcid_t meta_id;                 /* The server registration id */
+} iterator_info_t;
 
 
 typedef struct {
@@ -124,6 +147,11 @@ typedef struct {
     uint64_t                    srcBlockCount;
     uint64_t                    contigBlockSize;
     uint64_t                    totalElements;
+    uint64_t                    ndim;
+    uint64_t                    dims_0;
+    uint64_t                    dims_1;
+    uint64_t                    dims_2;
+    uint64_t                    dims_3;
     /* 
      * The datatype isn't strictly needed but it can be nice
      * to have if we eventually provide a default 'fill value'.
@@ -169,15 +197,39 @@ struct my_rpc_state
     hg_handle_t handle;
 };
 
+typedef struct {
+    size_t (*getSliceCount)(pdcid_t);
+    size_t  (*getNextBlock)(pdcid_t , void **, size_t *);
+} iterator_cbs_t;
+
+
+// Analysis
+#define CACHE_SIZE                8192
+extern struct PDC_iterator_info * PDC_Block_iterator_cache;
+extern int                      * i_cache_freed;
+extern size_t                     iterator_cache_entries;
+extern hg_atomic_int32_t          i_cache_index;
+extern hg_atomic_int32_t          i_free_index;
+
+extern PDC_loci                   execution_locus;
+extern hg_id_t                    analysis_ftn_register_id_g;
+extern hg_id_t                    transform_ftn_register_id_g;
+extern hg_id_t                    server_transform_ftn_register_id_g;
+extern hg_id_t                    object_data_iterator_register_id_g;
+
+extern size_t PDCobj_data_getSliceCount(pdcid_t iter_id);
+extern size_t PDCobj_data_getNextBlock(pdcid_t iter, void **nextBlock, size_t *dims);
 extern int PDCiter_get_nextId(void);
 extern int pdc_add_analysis_ptr_to_registry_(struct region_analysis_ftn_info *ftnPtr);
 extern perr_t pdc_client_send_iter_recv_id(pdcid_t iter_id, pdcid_t *meta_id);
-extern perr_t pdc_client_register_obj_analysis(const char *func, const char *loadpath, pdcid_t iter_in, pdcid_t iter_out);
+extern perr_t pdc_client_register_obj_analysis(struct region_analysis_ftn_info *thisFtn, const char *func, const char *loadpath, pdcid_t ilocal, pdcid_t olocal, pdcid_t imeta, pdcid_t ometa);
 extern perr_t pdc_client_register_obj_transform(const char *func, const char *loadpath, pdcid_t obj_id, int start_state, int next_state, int op_type, int when);
-extern perr_t pdc_client_register_region_transform(const char *func, const char *loadpath, pdcid_t src_region_id, pdcid_t dest_region_id, int start_state, int next_state, int op_type, int when);
+extern perr_t pdc_client_register_region_transform(const char *func, const char *loadpath, pdcid_t src_region_id, pdcid_t dest_region_id, pdcid_t dest_obj_id, int start_state, int next_state, int op_type, int when, int client_regIndex);
 extern int get_ftnPtr_(const char *ftn, char *loadpath, void **ftnPtr);
 extern void set_execution_locus(PDC_loci locus_identifier);
 extern PDC_loci get_execution_locus(void);
+extern hg_id_t server_transform_ftn_register(hg_class_t *hg_class);
+extern void *PDC_Server_get_ftn_reference(char *ftn);
 
 static HG_INLINE hg_return_t
 hg_proc_analysis_ftn_in_t(hg_proc_t proc, void *data)
@@ -288,6 +340,31 @@ hg_proc_obj_data_iterator_in_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->totalElements);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->ndim);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->dims_0);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->dims_1);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->dims_2);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->dims_3);
     if (ret != HG_SUCCESS) {
 	HG_LOG_ERROR("Proc error");
         return ret;
