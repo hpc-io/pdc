@@ -45,6 +45,10 @@
     #include "mpi.h"
 #endif
 
+#ifdef ENABLE_FASTBIT
+    #include "iapi.h"
+#endif
+
 #ifdef ENABLE_MULTITHREAD 
 // Mercury multithread
 #include "mercury_thread.h"

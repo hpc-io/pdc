@@ -62,6 +62,8 @@ int main(int argc, char **argv)
     perr_t ret;
 #ifdef ENABLE_MPI
     MPI_Comm comm;
+#else
+    int comm = 1;
 #endif
     struct timeval  ht_total_start;
     struct timeval  ht_total_end;

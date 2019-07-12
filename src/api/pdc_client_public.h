@@ -57,7 +57,6 @@ typedef struct PDC_Request_t {
     struct PDC_Request_t      *next;
 } PDC_Request_t;
 
-
 /*
  * Data Server related
  */

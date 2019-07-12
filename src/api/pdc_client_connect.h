@@ -484,4 +484,26 @@ perr_t PDC_Client_query_name_read_entire_obj_client_agg_cache_iter(int my_nobj, 
                                                                    int cache_percentage);
 
 perr_t PDC_Client_query_container_name_col(const char *cont_name, uint64_t *cont_meta_id);
+perr_t PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op, uint64_t *nhits, pdcselection_t *sel, void *data);
+
+typedef struct pdcquery_result_list_t {
+    uint32_t ndim;
+    int      query_id;
+    uint64_t nhits;
+    uint64_t *coords;
+    void     *data;
+    void     **data_arr;
+    uint64_t *data_arr_size;
+    uint64_t recv_data_nhits;
+
+    struct pdcquery_result_list_t *prev;
+    struct pdcquery_result_list_t *next;
+} pdcquery_result_list_t;
+
+hg_return_t PDC_recv_coords(const struct hg_cb_info *callback_info);
+void PDCselection_free(pdcselection_t *sel);
+
+perr_t PDC_Client_get_sel_data(pdcid_t obj_id, pdcselection_t *sel, void *data);
+
+hg_return_t PDC_recv_read_coords_data(const struct hg_cb_info *callback_info);
 #endif

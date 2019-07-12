@@ -54,6 +54,21 @@ set(PROGRAMS
   kvtag_query
   kvtag_query_scale
   obj_transformation
+  query_data
+  query_vpic_create_data
+  query_vpic
+  import_vpic
+  query_vpic_multi
+  query_vpic_multi_preload
+  query_vpic_multi_nopreload
+  query_vpic_bin_sds_preload
+  query_vpic_bin_sds_nopreload
+  query_vpic_bin_sds1_preload
+  query_vpic_bin_sds1_nopreload
+  query_vpic_multi_nopreload1
+  gen_fastbit_idx
+  query_vpic_exyz_nopreload
+  query_vpic_exyz_preload
 #  obj_analysis
   )
 

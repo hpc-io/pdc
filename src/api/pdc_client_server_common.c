@@ -46,6 +46,7 @@
 #include "../server/pdc_server_data.h"
 #include "pdc_malloc.h"
 #include "pdc_client_public.h"
+#include "pdc_query.h"
 
 #ifdef ENABLE_MULTITHREAD 
 // Mercury multithread
@@ -493,6 +494,8 @@ uint64_t pdc_get_region_size(region_list_t *a)
 {
     unsigned i;
     uint64_t size = 1;
+    /* if (a->meta) */ 
+    /*     size = PDC_get_var_type_size(a->meta->data_type); */
     for (i = 0; i < a->ndim; i++) 
         size *= a->count[i];
     
@@ -519,6 +522,8 @@ perr_t pdc_region_list_t_deep_cp(region_list_t *from, region_list_t *to)
     memcpy(to->shm_addr, from->shm_addr, sizeof(char) * ADDR_MAX);
     memcpy(to->storage_location, from->storage_location, ADDR_MAX);
     memcpy(to->cache_location, from->cache_location, ADDR_MAX);
+    to->prev = NULL;
+    to->next = NULL;
 
     return SUCCEED;
 }
@@ -692,13 +697,38 @@ perr_t pdc_region_info_t_to_transfer_unit(struct PDC_region_info *region, region
     return SUCCEED;
 }
 
-perr_t pdc_region_transfer_t_to_region_info(region_info_transfer_t *transfer, struct PDC_region_info *region)
+struct PDC_region_info *pdc_region_transfer_t_to_region_info(region_info_transfer_t *transfer)
 {
-    if (NULL==region || NULL==transfer ) {
+    int ndim;
+    struct PDC_region_info *region;
+    if (NULL == transfer) {
         printf("    pdc_region_transfer_t_to_region_info(): NULL input!\n");
-        return FAIL;
+        return NULL;
     }
-    return 0; 
+
+    region = (struct PDC_region_info *)calloc(1, sizeof(struct PDC_region_info ));
+    ndim = region->ndim = transfer->ndim;
+    region->offset = (uint64_t*)calloc(sizeof(uint64_t), ndim);
+    region->size = (uint64_t*)calloc(sizeof(uint64_t), ndim);
+
+    if (ndim > 0) {
+        region->offset[0] = transfer->start_0;
+        region->size[0]   = transfer->count_0;
+    }
+    if (ndim > 1) {
+        region->offset[1] = transfer->start_1;
+        region->size[1]   = transfer->count_1;
+    }
+    if (ndim > 2) {
+        region->offset[2] = transfer->start_2;
+        region->size[2]   = transfer->count_2;
+    }
+    if (ndim > 3) {
+        region->offset[3] = transfer->start_3;
+        region->size[3]   = transfer->count_3;
+    }
+
+    return region; 
 }
 
 perr_t pdc_region_list_t_to_transfer(region_list_t *region, region_info_transfer_t *transfer)
@@ -831,6 +861,17 @@ void *PDC_Server_get_region_buf_ptr(pdcid_t obj_id ATTRIBUTE(unused), region_inf
 void *PDC_Server_get_region_obj_ptr(pdcid_t obj_id ATTRIBUTE(unused), region_info_transfer_t region ATTRIBUTE(unused)) {return NULL;}
 perr_t PDC_Server_find_container_by_name(const char *cont_name ATTRIBUTE(unused), pdc_cont_hash_table_entry_t **out ATTRIBUTE(unused)) {return SUCCEED;};
 
+data_server_region_t *PDC_Server_get_obj_region(pdcid_t obj_id ATTRIBUTE(unused)) {return NULL;}
+region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info ATTRIBUTE(unused), buf_map_in_t *in ATTRIBUTE(unused), region_list_t *request_region ATTRIBUTE(unused), void *data_ptr ATTRIBUTE(unused)) {return SUCCEED;}
+void *PDC_Server_get_region_buf_ptr(pdcid_t obj_id ATTRIBUTE(unused), region_info_transfer_t region ATTRIBUTE(unused)) {return NULL;}
+void *PDC_Server_get_region_obj_ptr(pdcid_t obj_id ATTRIBUTE(unused), region_info_transfer_t region ATTRIBUTE(unused)) {return NULL;}
+perr_t PDC_Server_find_container_by_name(const char *cont_name ATTRIBUTE(unused), pdc_cont_hash_table_entry_t **out ATTRIBUTE(unused)) {return SUCCEED;}
+
+
+hg_return_t PDC_Server_recv_data_query(const struct hg_cb_info *callback_info ATTRIBUTE(unused)) {return HG_SUCCESS;}
+hg_return_t PDC_recv_read_coords(const struct hg_cb_info *callback_info ATTRIBUTE(unused)) {return HG_SUCCESS;}
+hg_return_t PDC_Server_recv_read_sel_obj_data(const struct hg_cb_info *callback_info ATTRIBUTE(unused)) {return HG_SUCCESS;}
+hg_return_t PDC_recv_query_metadata_bulk(const struct hg_cb_info *callback_info ATTRIBUTE(unused)) {return HG_SUCCESS;}
 
 
 hg_class_t *hg_class_g;
@@ -854,6 +895,8 @@ perr_t PDC_Server_add_client_shm_to_cache(int origin ATTRIBUTE(unused), int cnt 
 perr_t PDC_Server_container_add_tags(uint64_t cont_id ATTRIBUTE(unused), char *tags ATTRIBUTE(unused)){return SUCCEED;}
 hg_return_t PDC_cache_region_to_bb_cb (const struct hg_cb_info *callback_info ATTRIBUTE(unused))  {return HG_SUCCESS;}
 
+hg_return_t PDC_Server_recv_data_query_region(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
+hg_return_t PDC_Server_recv_get_sel_data(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
 #else
 hg_return_t PDC_Client_work_done_cb(const struct hg_cb_info *callback_info ATTRIBUTE(unused)) {return HG_SUCCESS;};
 hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *callback_info ATTRIBUTE(unused)) {return HG_SUCCESS;};
@@ -864,6 +907,8 @@ perr_t PDC_Client_recv_bulk_storage_meta(process_bulk_storage_meta_args_t *proce
 extern perr_t PDC_Server_find_container_by_name(const char *cont_name, pdc_cont_hash_table_entry_t **out);
 extern perr_t PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out);
 extern perr_t PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t *out);
+
+hg_return_t PDC_recv_read_coords_data(const struct hg_cb_info *callback_info) {return HG_SUCCESS;}
 
 #endif
 
@@ -3471,7 +3516,6 @@ done:
     return ret;
 }
 
-/* static hg_return_t */
 /* bulk_rpc_cb(hg_handle_t handle) */
 // Server execute after receives the bulk_rpc from another server
 HG_TEST_RPC_CB(bulk_rpc, handle)
@@ -3534,7 +3578,6 @@ HG_TEST_RPC_CB(bulk_rpc, handle)
 
     FUNC_LEAVE(ret);
 }
-
 
 
 // READ
@@ -3721,6 +3764,11 @@ HG_TEST_RPC_CB(update_region_loc, handle)
     strcpy(input_region->storage_location, in.storage_location);
     input_region->offset = in.offset;
 
+    if (in.has_hist == 1) {
+        input_region->region_hist = (pdc_histogram_t*)calloc(1, sizeof(pdc_histogram_t));
+        copy_hist(input_region->region_hist, &in.hist);
+    }
+
     /* PDC_print_region_list(input_region); */
     /* fflush(stdout); */
 
@@ -3737,6 +3785,8 @@ HG_TEST_RPC_CB(update_region_loc, handle)
 
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
+
+    free(input_region);
 
     FUNC_LEAVE(ret_value);
 }
@@ -4702,7 +4752,8 @@ HG_TEST_RPC_CB(storage_meta_name_query_rpc, handle)
 } // end storage_meta_name_query_rpc_cb
 
 // Generic function to check the return value (RPC receipt) is 1
-hg_return_t pdc_check_int_ret_cb(const struct hg_cb_info *callback_info)
+hg_return_t 
+pdc_check_int_ret_cb(const struct hg_cb_info *callback_info)
 {
     hg_return_t ret_value = HG_SUCCESS;
     pdc_int_ret_t output;
@@ -4713,13 +4764,13 @@ hg_return_t pdc_check_int_ret_cb(const struct hg_cb_info *callback_info)
 
     ret_value = HG_Get_output(handle, &output);
     if (ret_value != HG_SUCCESS) {
-        printf("==%s() - Error with HG_Get_output\n", __func__);
+        printf("== %s - Error with HG_Get_output\n", __func__);
         goto done;
     }
 
-    if (output.ret != 1) {
-        printf("==%s() - Return value [%d] is NOT expected\n", __func__, output.ret);
-    }
+    if (output.ret != 1) 
+        printf("== %s - Return value [%d] is NOT expected\n", __func__, output.ret);
+    
 done:
     HG_Free_output(handle, &output);
     FUNC_LEAVE(ret_value);
@@ -5116,13 +5167,11 @@ done:
 
 perr_t PDC_del_task_from_list_id(pdc_task_list_t **target_list, int id, hg_thread_mutex_t *mutex)
 {
-    perr_t ret_value;
     pdc_task_list_t *tmp;
     FUNC_ENTER(NULL);
 
     if (target_list == NULL || PDC_is_valid_task_id(id) != 1) {
         printf("== %s - NULL input!\n", __func__);
-        ret_value = FAIL;
         goto done;
     }
 
@@ -5140,7 +5189,7 @@ perr_t PDC_del_task_from_list_id(pdc_task_list_t **target_list, int id, hg_threa
 
 done:
     fflush(stdout);
-    FUNC_LEAVE(ret_value);
+    return SUCCEED;
 } // end PDC_del_task_from_list_id
 
 int PDC_is_valid_obj_id(uint64_t id)
@@ -5151,35 +5200,32 @@ int PDC_is_valid_obj_id(uint64_t id)
     }
     return 1;
 }
+
 /* server_checkpoint_rpc_cb(hg_handle_t handle) */
 HG_TEST_RPC_CB(server_checkpoint_rpc, handle)
 {
-    perr_t ret_value = HG_SUCCESS;
-    FUNC_ENTER(NULL);
-
+    hg_return_t ret;
     pdc_int_send_t in;
     pdc_int_ret_t  out;
 
     HG_Get_input(handle, &in);
 
     out.ret = 1;
-    HG_Respond(handle, PDC_Server_checkpoint_cb, &in, &out);
+    ret = HG_Respond(handle, PDC_Server_checkpoint_cb, &in, &out);
 
-    HG_Free_input(handle, &in);
-    HG_Destroy(handle);
+    ret = HG_Free_input(handle, &in);
+    ret = HG_Destroy(handle);
 
-    FUNC_LEAVE(ret_value);
+    return ret;
 }
 
 /* send_shm_cb(hg_handle_t handle) */
 HG_TEST_RPC_CB(send_shm, handle)
 {
+    hg_return_t ret;
     send_shm_in_t in;
     pdc_int_ret_t  out;
-    perr_t ret_value = HG_SUCCESS;
     pdc_shm_info_t *shm_info;
-
-    FUNC_ENTER(NULL);
 
     HG_Get_input(handle, &in);
 
@@ -5189,12 +5235,12 @@ HG_TEST_RPC_CB(send_shm, handle)
     strcpy(shm_info->shm_addr, in.shm_addr);
 
     out.ret = 1;
-    HG_Respond(handle, PDC_Server_recv_shm_cb, shm_info, &out);
+    ret = HG_Respond(handle, PDC_Server_recv_shm_cb, shm_info, &out);
 
-    HG_Free_input(handle, &in);
-    HG_Destroy(handle);
+    ret = HG_Free_input(handle, &in);
+    ret = HG_Destroy(handle);
 
-    FUNC_LEAVE(ret_value);
+    return ret;
 }
 
 static hg_return_t
@@ -5538,6 +5584,241 @@ HG_TEST_RPC_CB(send_shm_bulk_rpc, handle)
     FUNC_LEAVE(ret);
 } // End send_shm_bulk_rpc_cb
 
+// Data query
+/* send_data_query_region_cb(hg_handle_t handle) */
+/* HG_TEST_RPC_CB(send_data_query_region, handle) */
+/* { */
+/*     hg_return_t ret; */
+/*     query_storage_region_transfer_t in; */
+/*     region_list_t *storage_region; */
+/*     storage_regions_args_t *args; */
+/*     pdc_int_ret_t  out; */
+
+/*     FUNC_ENTER(NULL); */
+
+/*     HG_Get_input(handle, &in); */
+
+/*     // Copy the received data */
+/*     storage_region = (region_list_t*)calloc(1, sizeof(region_list_t)); */
+/*     pdc_region_transfer_t_to_list_t(&in.region_transfer, storage_region); */
+/*     storage_region->obj_id = in.obj_id; */
+/*     sprintf(storage_region->storage_location, in.storage_location); */
+/*     storage_region->offset = in.offset; */
+/*     storage_region->data_size = in.size; */
+
+/*     if (in.has_hist == 1) */ 
+/*         storage_region->region_hist = PDC_dup_hist(&in.hist); */
+
+/*     if (storage_region->region_hist->nbin == 0) { */
+/*         printf("==%s: histogram has 0 bin\n", __func__); */
+/*     } */
+    
+/*     args = (storage_regions_args_t*)calloc(1, sizeof(storage_regions_args_t)); */
+/*     args->total_region   = in.total_region; */
+/*     args->query_id       = in.query_id; */
+/*     args->manager        = in.manager; */
+/*     args->storage_region = storage_region; */
+/*     args->is_done        = in.is_done; */
+/*     args->ndim           = storage_region->ndim; */
+/*     args->op             = in.op; */
+/*     args->origin         = in.origin; */
+
+/*     /1* printf("==%s: query id is %d\n", __func__, in.query_id); *1/ */
+
+/*     // Send confirmation */
+/*     out.ret = 1; */
+/*     ret = HG_Respond(handle, PDC_Server_recv_data_query_region, args, &out); */
+
+/*     ret = HG_Free_input(handle, &in); */
+/*     ret = HG_Destroy(handle); */
+
+/*     return ret; */
+/* } */
+
+/* send_data_query_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(send_data_query, handle)
+{
+    hg_return_t ret;
+    pdc_query_xfer_t in, *query_xfer;
+    pdc_int_ret_t  out;
+    size_t size;
+
+    FUNC_ENTER(NULL);
+
+    HG_Get_input(handle, &in);
+
+    // Copy the received data
+    size = sizeof(pdc_query_xfer_t);
+    query_xfer = (pdc_query_xfer_t*)malloc(size);
+    memcpy(query_xfer, &in, size);
+
+    size = sizeof(int)*query_xfer->n_combine_ops;
+    query_xfer->combine_ops = (int*)malloc(size);
+    memcpy(query_xfer->combine_ops, in.combine_ops, size);
+
+    size = sizeof(pdcquery_constraint_t)*query_xfer->n_constraints;
+    query_xfer->constraints = (pdcquery_constraint_t*)malloc(size);
+    memcpy(query_xfer->constraints, in.constraints, size);
+
+    /* printf("==%s: query id is %d, manager is %d\n", __func__, in.query_id, in.manager); */
+
+    out.ret = 1;
+    ret = HG_Respond(handle, PDC_Server_recv_data_query, query_xfer, &out);
+
+    ret = HG_Free_input(handle, &in);
+    ret = HG_Destroy(handle);
+
+    return ret;
+}
+
+/* send_nhits_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(send_nhits, handle)
+{
+    hg_return_t ret;
+    send_nhits_t   in, *in_cp;
+    pdc_int_ret_t  out;
+
+    in_cp = (send_nhits_t*)malloc(sizeof(send_nhits_t));
+
+    HG_Get_input(handle, &in);
+
+    in_cp->nhits = in.nhits;
+    in_cp->query_id = in.query_id;
+
+    out.ret = 1;
+    ret = HG_Respond(handle, PDC_recv_nhits, in_cp, &out);
+
+    ret = HG_Free_input(handle, &in);
+    ret = HG_Destroy(handle);
+
+    return ret;
+}
+
+/* send_read_sel_obj_id_rpc_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(send_read_sel_obj_id_rpc, handle)
+{
+    hg_return_t ret;
+    get_sel_data_rpc_in_t in, *in_cp;
+    pdc_int_ret_t  out;
+
+    FUNC_ENTER(NULL);
+
+    HG_Get_input(handle, &in);
+
+    in_cp = (get_sel_data_rpc_in_t*)malloc(sizeof(get_sel_data_rpc_in_t));
+    memcpy(in_cp, &in, sizeof(get_sel_data_rpc_in_t));
+
+    out.ret = 1;
+    ret = HG_Respond(handle, PDC_Server_recv_read_sel_obj_data, in_cp, &out);
+
+    ret = HG_Free_input(handle, &in);
+    ret = HG_Destroy(handle);
+
+    return ret;
+}
+
+
+/* get_sel_data_rpc_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(get_sel_data_rpc, handle)
+{
+    hg_return_t ret;
+    get_sel_data_rpc_in_t in, *in_cp;
+    pdc_int_ret_t  out;
+
+    FUNC_ENTER(NULL);
+
+    HG_Get_input(handle, &in);
+
+    in_cp = (get_sel_data_rpc_in_t*)malloc(sizeof(get_sel_data_rpc_in_t));
+    memcpy(in_cp, &in, sizeof(get_sel_data_rpc_in_t));
+
+    out.ret = 1;
+    ret = HG_Respond(handle, PDC_Server_recv_get_sel_data, in_cp, &out);
+
+    ret = HG_Free_input(handle, &in);
+    ret = HG_Destroy(handle);
+
+    return ret;
+}
+
+// Generic bulk transfer
+/* send_bulk_rpc_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(send_bulk_rpc, handle)
+{
+    const struct hg_info *hg_info = NULL;
+    hg_bulk_t origin_bulk_handle = HG_BULK_NULL;
+    hg_bulk_t local_bulk_handle = HG_BULK_NULL;
+    struct bulk_args_t *bulk_arg = NULL;
+    bulk_rpc_in_t in_struct;
+    hg_return_t ret = HG_SUCCESS;
+    hg_return_t (*func_ptr)(const struct hg_cb_info *hg_cb_info);
+    hg_op_id_t hg_bulk_op_id;
+
+    ret = HG_Get_input(handle, &in_struct);
+    if (ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not get input\n");
+        return ret;
+    }
+
+    
+    /* printf("==PDC_SERVER[x]: received bulk rpc from server %d\n", in_struct.origin); */
+    /* fflush(stdout); */
+
+    bulk_arg = (struct bulk_args_t *)calloc(1, sizeof(struct bulk_args_t));
+    bulk_arg->cnt           = in_struct.cnt;
+    bulk_arg->total         = in_struct.total;
+    bulk_arg->origin        = in_struct.origin;
+    bulk_arg->query_id      = in_struct.seq_id;
+    bulk_arg->client_seq_id = in_struct.seq_id2;
+    bulk_arg->op            = in_struct.op_id;
+    bulk_arg->ndim          = in_struct.ndim;
+    bulk_arg->obj_id        = in_struct.obj_id;
+    bulk_arg->data_type     = in_struct.data_type;
+    origin_bulk_handle      = in_struct.bulk_handle;
+
+    bulk_arg->handle        = handle;
+
+    if (in_struct.op_id == PDC_BULK_QUERY_COORDS) {
+        func_ptr = &PDC_recv_coords;
+    }
+    else if (in_struct.op_id == PDC_BULK_READ_COORDS) {
+        func_ptr = &PDC_recv_read_coords;
+    }
+    else if (in_struct.op_id == PDC_BULK_SEND_QUERY_DATA) {
+        func_ptr = &PDC_recv_read_coords_data;
+    }
+    else if (in_struct.op_id == PDC_BULK_QUERY_METADATA) {
+        func_ptr = &PDC_recv_query_metadata_bulk;
+    }
+    else {
+        fprintf(stderr, "== %s - Invalid bulk op ID!\n", __func__);
+        goto done;
+    }
+
+    if (in_struct.cnt > 0) {
+        bulk_arg->nbytes   = HG_Bulk_get_size(origin_bulk_handle);
+        hg_info            = HG_Get_info(handle);
+        HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *) &bulk_arg->nbytes, HG_BULK_READWRITE, 
+                       &local_bulk_handle);
+        
+        ret = HG_Bulk_transfer(hg_info->context, func_ptr, bulk_arg, HG_BULK_PULL, hg_info->addr, 
+                       origin_bulk_handle, 0, local_bulk_handle, 0, bulk_arg->nbytes, &hg_bulk_op_id);
+        if (ret != HG_SUCCESS) {
+            fprintf(stderr, "Could not read bulk data\n");
+            return ret;
+        }
+    }
+    else {
+        struct hg_cb_info callback_info;
+        callback_info.arg = bulk_arg;
+        callback_info.ret = HG_SUCCESS;
+        func_ptr(&callback_info);
+    }
+
+done:
+    HG_Free_input(handle, &in_struct);
+    FUNC_LEAVE(ret);
+} // End send_bulk_rpc_cb
 
 
 HG_TEST_THREAD_CB(server_lookup_client)
@@ -5592,6 +5873,12 @@ HG_TEST_THREAD_CB(get_reg_lock_status)
 HG_TEST_THREAD_CB(query_read_obj_name_client_rpc)
 HG_TEST_THREAD_CB(send_client_storage_meta_rpc)
 HG_TEST_THREAD_CB(send_shm_bulk_rpc)
+HG_TEST_THREAD_CB(send_data_query)
+HG_TEST_THREAD_CB(send_data_query_region)
+HG_TEST_THREAD_CB(send_nhits)
+HG_TEST_THREAD_CB(send_bulk_rpc)
+HG_TEST_THREAD_CB(get_sel_data_rpc)
+HG_TEST_THREAD_CB(send_read_sel_obj_id_rpc)
 
 hg_id_t
 gen_obj_id_register(hg_class_t *hg_class)
@@ -6173,6 +6460,43 @@ send_client_storage_meta_rpc_register(hg_class_t *hg_class)
     return  MERCURY_REGISTER(hg_class, "send_client_storage_meta_rpc_register", bulk_rpc_in_t, pdc_int_ret_t, send_client_storage_meta_rpc_cb);
 }
 
+hg_id_t
+send_data_query_rpc_register(hg_class_t *hg_class)
+{
+    return  MERCURY_REGISTER(hg_class, "send_data_query_rpc_register", pdc_query_xfer_t, pdc_int_ret_t, send_data_query_cb);
+}
+
+/* hg_id_t */
+/* send_data_query_region_register(hg_class_t *hg_class) */
+/* { */
+/*     return  MERCURY_REGISTER(hg_class, "send_data_query_region_register", query_storage_region_transfer_t, pdc_int_ret_t, send_data_query_region_cb); */
+/* } */
+
+hg_id_t
+send_nhits_register(hg_class_t *hg_class)
+{
+    return  MERCURY_REGISTER(hg_class, "send_nhits_register", send_nhits_t, pdc_int_ret_t, send_nhits_cb);
+}
+
+hg_id_t
+send_bulk_rpc_register(hg_class_t *hg_class)
+{
+    return  MERCURY_REGISTER(hg_class, "send_bulk_rpc_register", bulk_rpc_in_t, pdc_int_ret_t, send_bulk_rpc_cb);
+}
+
+hg_id_t
+get_sel_data_rpc_register(hg_class_t *hg_class)
+{
+    return  MERCURY_REGISTER(hg_class, "get_sel_data_rpc_register", get_sel_data_rpc_in_t, pdc_int_ret_t, get_sel_data_rpc_cb);
+}
+
+hg_id_t
+send_read_sel_obj_id_rpc_register(hg_class_t *hg_class)
+{
+    return  MERCURY_REGISTER(hg_class, "send_query_obj_id_rpc_register", get_sel_data_rpc_in_t, pdc_int_ret_t, send_read_sel_obj_id_rpc_cb);
+}
+
+
 /* For 1D boxes (intervals) we have: */
 /* box1 = (xmin1, xmax1) */
 /* box2 = (xmin2, xmax2) */
@@ -6651,6 +6975,305 @@ perr_t PDC_free_kvtag(pdc_kvtag_t **kvtag)
     *kvtag = NULL;
     return 0;
 }
+
+int PDC_get_var_type_size(PDC_var_type_t dtype)
+{
+    if (PDC_INT == dtype) 
+        return 4;
+    else if (PDC_FLOAT == dtype) 
+        return 4;
+    else if (PDC_DOUBLE == dtype) 
+        return 8;
+    else if (PDC_INT64 == dtype) 
+        return 8;
+    else if (PDC_UINT64 == dtype) 
+        return 8;
+    else if (PDC_UINT == dtype) 
+        return 4;
+    else 
+        return 1;
+}
+
+// Query related
+int PDC_query_get_nnode(pdcquery_t *query)
+{
+    if (NULL == query) 
+        return 0;
+    return 1 + PDC_query_get_nnode(query->left) + PDC_query_get_nnode(query->right);
+}
+
+void PDC_query_get_nleaf(pdcquery_t *query, int *n)
+{
+    if (NULL == query) 
+        return;
+
+    if (NULL == query->left && NULL == query->right) {
+        (*n)++;
+        return;
+    }
+    PDC_query_get_nleaf(query->left, n);
+    PDC_query_get_nleaf(query->right, n);
+}
+
+void serialize(pdcquery_t *root, int *combine_ops, int *cnt, pdcquery_constraint_t *constraints, int *constraint_cnt) 
+{ 
+    if (root == NULL) { 
+        /* fprintf(fp, "%d ", MARKER); */ 
+        combine_ops[*cnt] = -1;
+        (*cnt)++;
+        return; 
+    } 
+
+    if (root->left == NULL && root->right == NULL) {
+        memcpy(&constraints[*constraint_cnt], root->constraint, sizeof(pdcquery_constraint_t)); 
+        (*constraint_cnt)++;
+    }
+  
+    combine_ops[*cnt] = root->combine_op;
+    (*cnt)++;
+    /* fprintf(fp, "%d ", root->key); */ 
+    serialize(root->left, combine_ops, cnt, constraints, constraint_cnt); 
+    serialize(root->right, combine_ops, cnt, constraints, constraint_cnt); 
+} 
+  
+void deSerialize(pdcquery_t **root, pdcquery_constraint_t *constraints, int *constraint_idx, int *combine_ops, int *order_idx) 
+{ 
+    int val; 
+    if (combine_ops[*order_idx] == -1) { 
+        (*order_idx)++;
+        return; 
+    }
+  
+    *root = (pdcquery_t*)calloc(1, sizeof(pdcquery_t)); 
+    (*root)->combine_op = combine_ops[*order_idx];
+
+    if (combine_ops[*order_idx] == 0) {
+        // Current node is leaf
+        (*root)->constraint = (pdcquery_constraint_t*)calloc(1, sizeof(pdcquery_constraint_t));
+        memcpy((*root)->constraint, &constraints[*constraint_idx], sizeof(pdcquery_constraint_t));
+        (*constraint_idx)++;
+    }
+
+    (*order_idx)++;
+
+    deSerialize(&(*root)->left,  constraints, constraint_idx, combine_ops, order_idx); 
+    deSerialize(&(*root)->right, constraints, constraint_idx, combine_ops, order_idx); 
+} 
+
+char pdcquery_combine_op_char_g[3][5] = {"NONE", "AND", "OR"};
+char pdcquery_op_char_g[6][5]         = {"NONE", ">", "<", ">=", "<=", "=="};
+
+void print_query(pdcquery_t *query)
+{
+    if (query == NULL) 
+        return;
+
+    if (query->left == NULL && query->right == NULL) {
+
+        printf(" (%" PRIu64 " %s", query->constraint->obj_id, 
+                pdcquery_op_char_g[query->constraint->op]);
+
+        if (query->constraint->is_range == 1) {
+            if (query->constraint->type == PDC_FLOAT) 
+                printf(" %.6f %s %.6f) ", *((float*)&query->constraint->value), 
+                                          pdcquery_op_char_g[query->constraint->op2],
+                                          *((float*)&query->constraint->value2));
+            else if (query->constraint->type == PDC_DOUBLE) 
+                printf(" %.6f %s %.6f) ", *((double*)&query->constraint->value),
+                                          pdcquery_op_char_g[query->constraint->op2],
+                                          *((double*)&query->constraint->value2));
+            else if (query->constraint->type == PDC_INT) 
+                printf(" %d %s %d) "  , *((int*)&query->constraint->value),
+                                         pdcquery_op_char_g[query->constraint->op2],
+                                        *((int*)&query->constraint->value2));
+            else if (query->constraint->type == PDC_UINT) 
+                printf(" %u %s %u) "  , *((unsigned*)&query->constraint->value),
+                                         pdcquery_op_char_g[query->constraint->op2],
+                                        *((unsigned*)&query->constraint->value2));
+            else if (query->constraint->type == PDC_INT64) 
+                printf(" %ld %s %ld)"  , *((int64_t*)&query->constraint->value),
+                                         pdcquery_op_char_g[query->constraint->op2],
+                                         *((int64_t*)&query->constraint->value2));
+            else if (query->constraint->type == PDC_UINT64) 
+                printf(" %lu %s %lu) " , *((uint64_t*)&query->constraint->value),
+                                         pdcquery_op_char_g[query->constraint->op2],
+                                         *((uint64_t*)&query->constraint->value2));
+        }
+        else {
+            if (query->constraint->type == PDC_FLOAT) 
+                printf(" %.6f) ", *((float*)&query->constraint->value));
+            else if (query->constraint->type == PDC_DOUBLE) 
+                printf(" %.6f) ", *((double*)&query->constraint->value));
+            else if (query->constraint->type == PDC_INT) 
+                printf(" %d) "  , *((int*)&query->constraint->value));
+            else if (query->constraint->type == PDC_UINT) 
+                printf(" %u) "  , *((unsigned*)&query->constraint->value));
+            else if (query->constraint->type == PDC_INT64) 
+                printf(" %ld)"  , *((int64_t*)&query->constraint->value));
+            else if (query->constraint->type == PDC_UINT64) 
+                printf(" %lu) " , *((uint64_t*)&query->constraint->value));
+        }
+        return;
+    }
+
+    printf("(");
+    print_query(query->left);
+
+    printf(" %s ", pdcquery_combine_op_char_g[query->combine_op]);
+
+    print_query(query->right);
+    printf(")");
+}
+
+void PDCquery_print(pdcquery_t *query)
+{
+    uint32_t i;
+
+    printf("Value selection: \n");
+    print_query(query);
+    printf("\n");
+    if (query->region) {
+        printf("Spatial selection: \n");
+        printf("  ndim      = %lu\n",   query->region->ndim);
+        printf("  start    count\n");
+        for (i = 0; i < query->region->ndim; i++) {
+            printf("  %5" PRIu64 "    %5" PRIu64 "\n", query->region->offset[i], query->region->size[i]);
+        }
+    }
+    printf("\n");
+
+    fflush(stdout);
+}
+
+pdc_query_xfer_t *PDC_serialize_query(pdcquery_t *query)
+{
+    int nnode, nleaf, ops_cnt, constraint_cnt;
+    pdc_query_xfer_t *query_xfer;
+
+    if (NULL == query) 
+        return NULL;
+
+    query_xfer = (pdc_query_xfer_t*)calloc(1, sizeof(pdc_query_xfer_t));
+    nnode      = PDC_query_get_nnode(query);
+
+    nleaf = 0;
+    PDC_query_get_nleaf(query, &nleaf);
+
+    query_xfer->n_constraints = nleaf;
+    query_xfer->constraints   = (pdcquery_constraint_t*)calloc(nleaf, sizeof(pdcquery_constraint_t));
+
+    query_xfer->n_combine_ops = nnode*2+1;
+    query_xfer->combine_ops   = (int*)calloc(nnode*2+1, sizeof(int));
+
+    ops_cnt = constraint_cnt = 0;
+    serialize(query, query_xfer->combine_ops, &ops_cnt, query_xfer->constraints, &constraint_cnt);
+
+    if (NULL != query->region) 
+        pdc_region_info_t_to_transfer(query->region, &query_xfer->region);
+
+    return query_xfer;
+}
+
+pdcquery_t *PDC_deserialize_query(pdc_query_xfer_t *query_xfer)
+{
+    int constraint_idx = 0, order_idx = 0;
+    pdcquery_t *new_root;
+
+    if (NULL == query_xfer) 
+        return NULL;
+
+    deSerialize(&new_root, query_xfer->constraints, &constraint_idx, query_xfer->combine_ops, &order_idx);
+    new_root->region_constraint = (region_list_t *)malloc(sizeof(region_list_t));
+    pdc_region_transfer_t_to_list_t(&query_xfer->region, new_root->region_constraint);
+
+    /* print_query(new_root); */
+
+    return new_root;
+}
+
+void PDCquery_free(pdcquery_t *query)
+{
+    if (NULL == query) 
+        return;
+    if (query->constraint) 
+        free(query->constraint);
+    free(query);
+}
+
+void PDCquery_free_all(pdcquery_t *root)
+{
+    if (NULL == root) 
+        return;
+
+    if (root->sel && root->sel->coords_alloc > 0 && root->sel->coords != NULL) {
+        free(root->sel->coords);
+        root->sel->coords_alloc = 0;
+        root->sel->coords = NULL;
+    }
+
+    if (root->left == NULL && root->right == NULL) {
+        if (root->constraint) {
+            free(root->constraint);
+            root->constraint = NULL;
+        }
+    }
+
+    PDCquery_free_all(root->left);
+    PDCquery_free_all(root->right);
+
+    free(root);
+}
+void PDC_query_xfer_free(pdc_query_xfer_t *query_xfer)
+{
+    if (NULL != query_xfer) {
+        free(query_xfer->combine_ops);
+        free(query_xfer->constraints);
+        free(query_xfer);
+    }
+}
+
+void PDCregion_free(struct PDC_region_info *region)
+{
+    if (region) {
+        if (region->offset) free(region->offset);
+        if (region->size) free(region->size);
+    }
+}
+
+void PDCselection_print(pdcselection_t *sel)
+{
+    uint64_t i;
+    printf("== %" PRIu64 " hits, allocated %" PRIu64 " coordinates!\n", sel->nhits, sel->coords_alloc);
+    printf("== Coordinates:\n");
+
+    if (sel->nhits > 10) {
+        for (i = 0; i < 10; i++)
+            printf(" ,%" PRIu64 "", sel->coords[i]);
+        printf(" , ... ");
+        for (i = sel->nhits-10; i < sel->nhits; i++)
+            printf(" ,%" PRIu64 "", sel->coords[i]);
+    }
+    else {
+        for (i = 0; i < sel->nhits; i++)
+            printf(" ,%" PRIu64 "", sel->coords[i]);
+    }
+    printf("\n\n");
+
+}
+
+void PDCselection_print_all(pdcselection_t *sel)
+{
+    uint64_t i;
+    printf("== %" PRIu64 " hits, allocated %" PRIu64 " coordinates!\n", sel->nhits, sel->coords_alloc);
+    printf("== Coordinates:\n");
+
+    for (i = 0; i < sel->nhits; i++)
+        printf(" ,%" PRIu64 "", sel->coords[i]);
+
+    printf("\n\n");
+
+}
+
 
 #include "pdc_analysis_common.c"
 #include "pdc_transforms_common.c"

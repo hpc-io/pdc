@@ -58,5 +58,12 @@ typedef enum {
     PDC_SERVER_PER_CLIENT = 1
 } PDC_server_selection_t;
 
+typedef struct pdc_histogram_t {
+    PDC_var_type_t dtype;
+    int      nbin;
+    double   incr;
+    double *range;
+    uint64_t *bin;      // [ , )
+} pdc_histogram_t;
 
 #endif

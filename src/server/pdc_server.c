@@ -74,6 +74,7 @@ char                     *all_addr_strings_1d_g    = NULL;
 char                    **all_addr_strings_g       = NULL;
 int                       is_all_client_connected_g  = 0;
 int                       is_hash_table_init_g = 0;
+int                       lustre_stripe_size_mb_g  = 16;
 
 hg_id_t    get_remote_metadata_register_id_g;
 hg_id_t    buf_map_server_register_id_g;
@@ -93,6 +94,10 @@ hg_id_t    notify_client_multi_io_complete_rpc_register_id_g;
 hg_id_t    server_checkpoint_rpc_register_id_g;
 hg_id_t    send_shm_register_id_g;
 hg_id_t    send_client_storage_meta_rpc_register_id_g;
+/* hg_id_t    send_data_query_region_register_id_g; */
+hg_id_t    send_read_sel_obj_id_rpc_register_id_g; 
+hg_id_t    send_nhits_register_id_g;
+hg_id_t    send_bulk_rpc_register_id_g;
 
 // Global thread pool
 extern hg_thread_pool_t *hg_test_thread_pool_g;
@@ -116,6 +121,10 @@ double fread_total_MB                     = 0;
 double fwrite_total_MB                    = 0;
 int    n_read_from_bb_g                   = 0;
 int    read_from_bb_size_g                = 0;
+int    gen_hist_g                         = 0;
+int    gen_fastbit_idx_g                  = 0;
+int    use_fastbit_idx_g                  = 0;
+char   *gBinningOption                    = NULL;
 
 double server_write_time_g                  = 0.0;
 double server_read_time_g                   = 0.0;
@@ -1037,7 +1046,8 @@ perr_t PDC_Server_finalize()
     DL_FOREACH(pdc_data_server_read_list_head_g, io_elt) {
         // remove IO request and its shm of perviously used obj
         DL_FOREACH_SAFE(io_elt->region_list_head, region_elt, region_tmp) {
-            ret_value = PDC_Server_close_shm(region_elt, 1);
+            if (region_elt->shm_fd > 0) 
+                ret_value = PDC_Server_close_shm(region_elt, 1);
             /* if (ret_value != SUCCEED) */ 
             /*     printf("==PDC_SERVER: error closing shared memory\n"); */
             /* fflush(stdout); */
@@ -1286,6 +1296,17 @@ perr_t PDC_Server_checkpoint()
             DL_FOREACH(elt->storage_region_list_head, region_elt) {
                 fwrite(region_elt, sizeof(region_list_t), 1, file);
                 n_write_region++;
+                int has_hist = 0;
+                if (region_elt->region_hist != NULL) 
+                    has_hist = 1;
+                fwrite(&has_hist, sizeof(int), 1, file);
+                if (has_hist == 1) {
+                    fwrite(&region_elt->region_hist->dtype, sizeof(int), 1, file);
+                    fwrite(&region_elt->region_hist->nbin, sizeof(int), 1, file);
+                    fwrite(region_elt->region_hist->range, sizeof(double), region_elt->region_hist->nbin*2, file);
+                    fwrite(region_elt->region_hist->bin, sizeof(uint64_t), region_elt->region_hist->nbin, file);
+                    fwrite(&region_elt->region_hist->incr, sizeof(double), 1, file);
+                }
             }
 
             if (n_write_region != n_region) {
@@ -1326,6 +1347,12 @@ perr_t PDC_Server_checkpoint()
 done:
     FUNC_LEAVE(ret_value);
 } // PDC_Server_checkpoint
+
+int region_cmp(region_list_t *a, region_list_t *b)
+{
+    int unit_size = a->ndim * sizeof(uint64_t);
+    return memcmp(a->start, b->start, unit_size);
+}
 
 /*
  * Load metadata from checkpoint file in persistant storage
@@ -1432,6 +1459,7 @@ perr_t PDC_Server_restart(char *filename)
             (metadata+i)->prev                     = NULL;
             (metadata+i)->next                     = NULL;
             (metadata+i)->kvtag_list_head          = NULL;
+            (metadata+i)->all_storage_region_distributed = 0;
 
             // Read kv tags
             fread(&n_kvtag, sizeof(int), 1, file);
@@ -1459,57 +1487,83 @@ perr_t PDC_Server_restart(char *filename)
                 continue;
 
             total_region += n_region; 
-            region_list = (region_list_t*)malloc(sizeof(region_list_t)* n_region);
-            fread(region_list, sizeof(region_list_t), n_region, file);
 
             for (j = 0; j < n_region; j++) {
-                (region_list+j)->buf                        = NULL;
-                (region_list+j)->data_size                  = 1;
-                for (idx = 0; idx < (region_list+j)->ndim; idx++) 
-                    (region_list+j)->data_size *= (region_list+j)->count[idx];
-                (region_list+j)->is_data_ready              = 0;
-                (region_list+j)->shm_fd                     = 0;
-                (region_list+j)->meta                       = (metadata+i);
-                (region_list+j)->prev                       = NULL;
-                (region_list+j)->next                       = NULL;
-                (region_list+j)->overlap_storage_regions    = NULL;
-                (region_list+j)->n_overlap_storage_region   = 0;
-		hg_atomic_init32(&((region_list+j)->buf_map_refcount), 0);
-                (region_list+j)->reg_dirty_from_buf         = 0;
-                (region_list+j)->access_type                = NA;
-                (region_list+j)->bulk_handle                = NULL;
-                (region_list+j)->addr                       = NULL;
-                (region_list+j)->obj_id                     = (metadata+i)->obj_id;
-                (region_list+j)->reg_id                     = 0;
-                (region_list+j)->from_obj_id                = 0;
-                (region_list+j)->client_id                  = 0;
-                (region_list+j)->is_io_done                 = 0;
-                (region_list+j)->is_shm_closed              = 0;
-                (region_list+j)->seq_id                     = 0;
+                region_list = (region_list_t*)malloc(sizeof(region_list_t));
+                fread(region_list, sizeof(region_list_t), 1, file);
 
-                memset((region_list+j)->shm_addr, 0, ADDR_MAX);
-                memset((region_list+j)->client_ids, 0, PDC_SERVER_MAX_PROC_PER_NODE*sizeof(uint32_t));
-                /* // Check if data is in persistent BB, change path if so */
-                /* if (strstr( (region_list+j)->storage_location, "/var/opt/cray/dws/mounts/batch") != NULL) { */
-                /*     (region_list+j)->data_loc_type = BB; */
-                /*     // find job id and replace it with current one */
-                /*     for (idx = 0; idx < strlen((region_list+j)->storage_location); idx++) */ 
-                /*         if (isdigit((region_list+j)->storage_location[idx])) */ 
-                /*             break; */
-                /*     if ( NULL != slurm_jobid) */ 
-                /*         strncpy(&((region_list+j)->storage_location[idx]), slurm_jobid, strlen(slurm_jobid)); */
-                /* } */
-                /* else if (strstr( (region_list+j)->storage_location, "/global/cscratch") != NULL) { */
-                if (strstr( (region_list+j)->storage_location, "/global/cscratch") != NULL) {
-                    (region_list+j)->data_loc_type = LUSTRE;
+                int has_hist = 0;
+                fread(&has_hist, sizeof(int), 1, file);
+                if (has_hist == 1) {
+                    region_list->region_hist = (pdc_histogram_t*)malloc(sizeof(pdc_histogram_t));
+                    fread(&region_list->region_hist->dtype, sizeof(int), 1, file);
+                    fread(&region_list->region_hist->nbin, sizeof(int), 1, file);
+                    if (region_list->region_hist->nbin == 0) {
+                        printf("==PDC_SERVER[%d]: %s -  Checkpoint file histogram size is 0!", 
+                                pdc_server_rank_g, __func__); 
+                    }
+
+                    region_list->region_hist->range = (double*)malloc(sizeof(double) *
+                                                                      region_list->region_hist->nbin*2);
+                    region_list->region_hist->bin = (uint64_t*)malloc(sizeof(uint64_t) *
+                                                                      region_list->region_hist->nbin);
+
+                    fread(region_list->region_hist->range, sizeof(double),region_list->region_hist->nbin*2,file);
+                    fread(region_list->region_hist->bin, sizeof(uint64_t), region_list->region_hist->nbin, file);
+                    fread(&region_list->region_hist->incr, sizeof(double), 1, file);
                 }
 
-                /* if ((region_list+j)->storage_location[1] != 'g') { */
-                /*     printf("==PDC_SERVER[%d]: Error with region storage location [%s] [%s]!\n", */
-                /*             pdc_server_rank_g, (metadata+i)->obj_name, (region_list+j)->storage_location); */
+                region_list->buf                        = NULL;
+                region_list->data_size                  = 1;
+                for (idx = 0; idx < region_list->ndim; idx++) 
+                    region_list->data_size *= region_list->count[idx];
+                region_list->is_data_ready              = 0;
+                region_list->shm_fd                     = 0;
+                region_list->meta                       = (metadata+i);
+                region_list->prev                       = NULL;
+                region_list->next                       = NULL;
+                region_list->overlap_storage_regions    = NULL;
+                region_list->n_overlap_storage_region   = 0;
+		hg_atomic_init32(&(region_list->buf_map_refcount), 0);
+                region_list->reg_dirty_from_buf         = 0;
+                region_list->access_type                = NA;
+                region_list->bulk_handle                = NULL;
+                region_list->lock_handle                = NULL;
+                region_list->addr                       = NULL;
+                region_list->obj_id                     = (metadata+i)->obj_id;
+                region_list->reg_id                     = 0;
+                region_list->from_obj_id                = 0;
+                region_list->client_id                  = 0;
+                region_list->is_io_done                 = 0;
+                region_list->is_shm_closed              = 0;
+                region_list->seq_id                     = 0;
+                region_list->sent_to_server             = 0;
+                region_list->io_cache_region            = NULL;
+
+                memset(region_list->shm_addr, 0, ADDR_MAX);
+                memset(region_list->client_ids, 0, PDC_SERVER_MAX_PROC_PER_NODE*sizeof(uint32_t));
+                /* // Check if data is in persistent BB, change path if so */
+                /* if (strstr( region_list->storage_location, "/var/opt/cray/dws/mounts/batch") != NULL) { */
+                /*     region_list->data_loc_type = BB; */
+                /*     // find job id and replace it with current one */
+                /*     for (idx = 0; idx < strlen(region_list->storage_location); idx++) */ 
+                /*         if (isdigit(region_list->storage_location[idx])) */ 
+                /*             break; */
+                /*     if ( NULL != slurm_jobid) */ 
+                /*         strncpy(&(region_list->storage_location[idx]), slurm_jobid, strlen(slurm_jobid)); */
                 /* } */
-                DL_APPEND((metadata+i)->storage_region_list_head, region_list+j);
+                /* else if (strstr( region_list->storage_location, "/global/cscratch") != NULL) { */
+                if (strstr( region_list->storage_location, "/global/cscratch") != NULL) {
+                    region_list->data_loc_type = LUSTRE;
+                }
+
+                /* if (region_list->storage_location[1] != 'g') { */
+                /*     printf("==PDC_SERVER[%d]: Error with region storage location [%s] [%s]!\n", */
+                /*             pdc_server_rank_g, (metadata+i)->obj_name, region_list->storage_location); */
+                /* } */
+                DL_APPEND((metadata+i)->storage_region_list_head, region_list);
             } // For j
+            DL_SORT((metadata+i)->storage_region_list_head, region_cmp);
         } // For i
 
         nobj += count;
@@ -1794,6 +1848,9 @@ static void PDC_Server_mercury_register()
     data_server_read_check_register(hg_class_g);
     data_server_write_check_register(hg_class_g);
 
+    send_data_query_rpc_register(hg_class_g);
+    get_sel_data_rpc_register(hg_class_g);
+
     // Analysis and Transforms
     set_execution_locus(SERVER_MEMORY);
     obj_data_iterator_register(hg_class_g);
@@ -1803,6 +1860,8 @@ static void PDC_Server_mercury_register()
     // Server to client RPC
     server_lookup_client_register_id_g = server_lookup_client_register(hg_class_g);
     notify_io_complete_register_id_g   = notify_io_complete_register(hg_class_g);
+    send_nhits_register_id_g           = send_nhits_register(hg_class_g);
+    send_bulk_rpc_register_id_g        = send_bulk_rpc_register(hg_class_g);
 
     // Server to server RPC
     get_remote_metadata_register_id_g         = get_remote_metadata_register(hg_class_g);  
@@ -1822,6 +1881,10 @@ static void PDC_Server_mercury_register()
     send_shm_register_id_g                    = send_shm_register(hg_class_g);
 
     send_client_storage_meta_rpc_register_id_g= send_client_storage_meta_rpc_register(hg_class_g);
+
+    /* send_data_query_region_register_id_g      = send_data_query_region_register(hg_class_g); */
+    send_read_sel_obj_id_rpc_register_id_g    = send_read_sel_obj_id_rpc_register(hg_class_g);
+
 }
 
 static void PDC_Server_get_env()
@@ -1846,6 +1909,14 @@ static void PDC_Server_get_env()
         }
     }
 
+    tmp_env_char = getenv("PDC_LUSTRE_STRIPE_SIZE");
+    if (tmp_env_char!= NULL) {
+        lustre_stripe_size_mb_g = atoi(tmp_env_char);
+        // Make sure it is a sane value
+        if (lustre_stripe_size_mb_g  < 1 || lustre_stripe_size_mb_g  > 128) {
+            lustre_stripe_size_mb_g  = 16;
+        }
+    }
     // Get number of clients per node
     tmp_env_char = (getenv("NCLIENT"));
     if (tmp_env_char == NULL)
@@ -1870,6 +1941,19 @@ static void PDC_Server_get_env()
         if (pdc_server_rank_g == 0)
             printf("==PDC_SERVER[%d]: PDC_DEBUG set to %d!\n", pdc_server_rank_g, is_debug_g);
     }
+
+    tmp_env_char = getenv("PDC_GEN_HIST");
+    if (tmp_env_char != NULL) 
+        gen_hist_g = 1;
+
+    tmp_env_char = getenv("PDC_GEN_FASTBIT_IDX");
+    if (tmp_env_char != NULL) 
+        gen_fastbit_idx_g = 1;
+
+
+    tmp_env_char = getenv("PDC_USE_FASTBIT_IDX");
+    if (tmp_env_char != NULL) 
+        use_fastbit_idx_g = 1;
 
     if (pdc_server_rank_g == 0) {
         printf("\n==PDC_SERVER[%d]: using [%s] as tmp dir. %d OSTs per data file, %d%% to BB\n", 

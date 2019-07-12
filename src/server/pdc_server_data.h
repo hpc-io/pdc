@@ -28,6 +28,11 @@
 
 #include "pdc_server_common.h"
 #include "pdc_client_server_common.h"
+#include "pdc_query.h"
+
+#ifdef ENABLE_FASTBIT
+    #include "iapi.h"
+#endif
 
 #define PDC_MAX_OVERLAP_REGION_NUM 8 // max number of regions for PDC_Server_get_storage_location_of_region() 
 #define PDC_BULK_XFER_INIT_NALLOC 128
@@ -182,6 +187,55 @@ typedef struct server_read_check_out_t {
     char            *shm_addr;
 } server_read_check_out_t; 
 
+// Data query
+typedef struct query_task_t {
+    pdcquery_t        *query;
+    int               query_id;
+    int               manager;
+    int               client_id;
+    int               n_sent_server;
+    int               n_unique_obj;
+    uint64_t          *obj_ids;
+    int               n_recv_obj;
+    int               ndim;
+    pdcquery_get_op_t get_op;
+    region_list_t     *region_constraint;
+    uint64_t          total_elem;
+    int               *invalid_region_ids;
+    int               ninvalid_region;
+    int               prev_server_id;
+    int               next_server_id;
+
+    // Result
+    int               is_done;
+    int               n_recv;
+    uint64_t          nhits;
+    uint64_t          *coords;
+    uint64_t          **coords_arr;
+    uint64_t          *n_hits_from_server;
+
+    // Data read
+    int               n_read_data_region;
+    void              **data_arr;
+    uint64_t          *my_read_coords;
+    uint64_t          my_nread_coords;
+    uint64_t          my_read_obj_id;
+    void              *my_data;
+    int               client_seq_id;
+
+    struct query_task_t *prev;
+    struct query_task_t *next;
+} query_task_t;
+
+typedef struct cache_storage_region_t {
+    uint64_t          obj_id;
+    PDC_var_type_t    data_type;
+    region_list_t     *storage_region_head;
+
+    struct cache_storage_region_t *prev;
+    struct cache_storage_region_t *next;
+} cache_storage_region_t;
+
 extern int    pdc_server_rank_g;
 extern int    pdc_server_size_g;
 extern char   pdc_server_tmp_dir_g[ADDR_MAX];
@@ -221,6 +275,7 @@ extern pdc_remote_server_info_t *pdc_remote_server_info_g;
 extern int is_debug_g;
 extern int n_read_from_bb_g;
 extern int read_from_bb_size_g;
+extern int gen_hist_g;
 
 extern pdc_data_server_io_list_t  *pdc_data_server_read_list_head_g   ;
 extern pdc_data_server_io_list_t  *pdc_data_server_write_list_head_g  ;
@@ -228,6 +283,7 @@ extern update_storage_meta_list_t *pdc_update_storage_meta_list_head_g;
 extern pdc_client_info_t        *pdc_client_info_g;
 extern int pdc_client_num_g;
 extern double total_mem_usage_g;
+extern int lustre_stripe_size_mb_g;
 
 extern hg_id_t get_remote_metadata_register_id_g;
 extern hg_id_t buf_map_server_register_id_g;
@@ -243,6 +299,13 @@ extern hg_id_t bulk_rpc_register_id_g;
 extern hg_id_t storage_meta_name_query_register_id_g;
 extern hg_id_t get_storage_meta_name_query_bulk_result_rpc_register_id_g;
 extern hg_id_t notify_client_multi_io_complete_rpc_register_id_g;
+extern hg_id_t send_data_query_region_register_id_g;
+extern hg_id_t send_read_sel_obj_id_rpc_register_id_g;
+extern hg_id_t send_nhits_register_id_g;
+extern hg_id_t send_bulk_rpc_register_id_g;
+extern char   *gBinningOption;
+extern int    gen_fastbit_idx_g;
+extern int    use_fastbit_idx_g;
 
 
 
@@ -304,7 +367,40 @@ perr_t PDC_Close_cache_file();
 
 hg_return_t PDC_cache_region_to_bb_cb (const struct hg_cb_info *callback_info) ;
 
+perr_t PDC_sample_min_max(PDC_var_type_t dtype, uint64_t n, void *data, double sample_pct, double *min, double *max);
+
+pdc_histogram_t *PDC_gen_hist(PDC_var_type_t dtype, uint64_t n, void *data);
+
+void PDC_free_hist(pdc_histogram_t *hist);
+
+pdc_histogram_t *PDC_create_hist(PDC_var_type_t dtype, int nbin, double min, double max);
+
+perr_t PDC_hist_incr_all(pdc_histogram_t *hist, PDC_var_type_t dtype, uint64_t n, void *data);
+
+void PDC_print_hist(pdc_histogram_t *hist);
+
 perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region, int type);
+
+hg_return_t PDC_Server_recv_data_query(const struct hg_cb_info *callback_info);
+
+hg_return_t PDC_Server_recv_data_query_region(const struct hg_cb_info *callback_info);
+
+hg_return_t PDC_recv_nhits(const struct hg_cb_info *callback_info);
+
+hg_return_t PDC_recv_coords(const struct hg_cb_info *callback_info);
+hg_return_t PDC_recv_query_metadata_bulk(const struct hg_cb_info *callback_info);
+
+hg_return_t PDC_Server_recv_get_sel_data(const struct hg_cb_info *callback_info);
+
+hg_return_t PDC_recv_read_coords(const struct hg_cb_info *callback_info);
+
+hg_return_t PDC_Server_recv_read_sel_obj_data(const struct hg_cb_info *callback_info);
+
+#ifdef ENABLE_FASTBIT
+int bmreader(void *ctx, uint64_t start, uint64_t count, uint32_t *buf);
+int load_fastbit_index(char *idx_name, uint64_t obj_id, FastBitDataType dtype, int timestep, uint64_t ndim, uint64_t *dims, uint64_t *start, uint64_t *count, uint32_t **bms, double **keys, int64_t **offsets);
+void gen_fastbit_idx_name(char *out, char *prefix, uint64_t obj_id, int timestep, int ndim, uint64_t *start, uint64_t *count);
+#endif
 
 #endif /* PDC_SERVER_DATA_H */
 
