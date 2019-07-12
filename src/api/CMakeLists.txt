@@ -71,7 +71,17 @@ set(PDC_SRCS
 # Libraries
 #------------------------------------------------------------------------------
 # PDC
+set(PDC_BUILD_INCLUDE_DEPENDENCIES
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_BINARY_DIR}
+)
+
 add_library(pdc ${PDC_SRCS})
+
+target_include_directories(pdc
+  PUBLIC  "$<BUILD_INTERFACE:${PDC_BUILD_INCLUDE_DEPENDENCIES}>"
+          $<INSTALL_INTERFACE:${PDC_INSTALL_INCLUDE_INTERFACE}>
+)
 
 target_link_libraries(pdc
   ${PDC_EXPORTED_LIBS}
