@@ -280,6 +280,7 @@ typedef struct region_buf_map_t {
     int32_t                          remote_client_id;
     size_t                           remote_ndim;
     size_t                           remote_unit;
+    PDC_var_type_t                   remote_data_type;
     region_info_transfer_t           remote_region_unit;
     region_info_transfer_t           remote_region_nounit;
     struct buf_map_release_bulk_args *bulk_args;
@@ -2844,6 +2845,44 @@ struct buf_map_release_bulk_args {
     hg_handle_t handle;
     void  *data_buf;
     region_lock_in_t in;
+    pdcid_t remote_obj_id;         /* target of object id */
+    pdcid_t remote_reg_id;         /* target of region id */
+    int32_t remote_client_id;
+    struct PDC_region_info *remote_reg_info;  //
+    region_info_transfer_t remote_region;
+    hg_bulk_t remote_bulk_handle;
+    hg_bulk_t local_bulk_handle;    //
+    hg_addr_t local_addr;          //
+    struct hg_thread_work work;
+    hg_thread_mutex_t work_mutex;
+    hg_thread_cond_t work_cond;
+    int work_completed;
+};
+
+struct buf_map_transform_and_release_bulk_args {
+    hg_handle_t handle;
+    void  *data_buf;
+    /* region_transform_and_lock_in_t is a superset of region_lock_in_t */
+    region_transform_and_lock_in_t in;
+    pdcid_t remote_obj_id;         /* target of object id */
+    pdcid_t remote_reg_id;         /* target of region id */
+    int32_t remote_client_id;
+    struct PDC_region_info *remote_reg_info;  //
+    region_info_transfer_t remote_region;
+    hg_bulk_t remote_bulk_handle;
+    hg_bulk_t local_bulk_handle;    //
+    hg_addr_t local_addr;          //
+    struct hg_thread_work work;
+    hg_thread_mutex_t work_mutex;
+    hg_thread_cond_t work_cond;
+    int work_completed;
+};
+
+struct buf_map_analysis_and_release_bulk_args {
+    hg_handle_t handle;
+    void  *data_buf;
+    /* region_analysis_and_lock_in_t is a superset of region_lock_in_t */
+    region_analysis_and_lock_in_t in;
     pdcid_t remote_obj_id;         /* target of object id */
     pdcid_t remote_reg_id;         /* target of region id */
     int32_t remote_client_id;
