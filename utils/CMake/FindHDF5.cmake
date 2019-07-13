@@ -10,11 +10,11 @@ endif()
 
 find_path(HDF5_INCLUDE_DIR hdf5.h
   HINTS ${PC_HDF5_INCLUDEDIR} ${PC_HDF5_INCLUDE_DIRS}
-  PATHS /usr/local/include /usr/include /Users/kmu/Research/PDC/tools/HDF5_Jerome/include ${HDF5_DIR}/include)
+  PATHS /usr/local/include /usr/include ${HDF5_DIR}/include)
 
 find_library(HDF5_LIBRARY NAMES hdf5
   HINTS ${PC_HDF5_LIBDIR} ${PC_HDF5_LIBRARY_DIRS}
-  PATHS /usr/local/lib64 /usr/local/lib /usr/lib64 /usr/lib /Users/kmu/Research/PDC/tools/HDF5_Jerome/lib ${HDF5_DIR}/lib)
+  PATHS /usr/local/lib64 /usr/local/lib /usr/lib64 /usr/lib ${HDF5_DIR}/lib)
 
 set(HDF5_INCLUDE_DIRS ${HDF5_INCLUDE_DIR})
 set(HDF5_LIBRARIES ${HDF5_LIBRARY})
