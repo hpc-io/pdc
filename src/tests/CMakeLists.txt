@@ -56,7 +56,7 @@ set(PROGRAMS
   query_data
   query_vpic_create_data
   query_vpic
-  import_vpic
+  #import_vpic
   query_vpic_multi
   query_vpic_multi_preload
   query_vpic_multi_nopreload
