@@ -799,6 +799,7 @@ perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
             
         }
     }
+
     if(target_obj->region_buf_map_head == NULL && pdc_server_rank_g == 0) {
         close(target_obj->fd);
     }
@@ -5304,10 +5305,10 @@ perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct P
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region_info, void *buf)
+perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region_info, void *buf, size_t unit)
 {
     perr_t ret_value = SUCCEED;
-    ssize_t write_bytes; 
+    ssize_t write_bytes = -1;
     data_server_region_t *region = NULL;
 
     FUNC_ENTER(NULL);
@@ -5318,8 +5319,12 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region
         goto done;
     }
 
-    write_bytes = pwrite(region->fd, buf, region_info->size[0], region_info->offset[0]-pdc_server_rank_g*nclient_per_node*region_info->size[0]);
-    // printf("server %d calls pwrite, offset = %lld, size = %lld\n", pdc_server_rank_g, region_info->offset[0]-pdc_server_rank_g*nclient_per_node*region_info->size[0], region_info->size[0]);
+    if(region_info->ndim == 1)
+        write_bytes = pwrite(region->fd, buf, unit*(region_info->size[0]), (pdc_server_rank_g%nclient_per_node)*unit*region_info->size[0]);
+    else if(region_info->ndim == 2)
+        write_bytes = pwrite(region->fd, buf, unit*(region_info->size[0])*(region_info->size[1]), (pdc_server_rank_g%nclient_per_node)*unit*region_info->size[0]*region_info->size[1]);
+    else if(region_info->ndim == 3)
+        write_bytes = pwrite(region->fd, buf, unit*(region_info->size[0])*(region_info->size[1]*region_info->size[2]), (pdc_server_rank_g%nclient_per_node)*unit*region_info->size[0]*region_info->size[1]*region_info->size[2]);
     if(write_bytes == -1){
         printf("==PDC_SERVER[%d]: pwrite %d failed\n", pdc_server_rank_g, region->fd);
         goto done;
@@ -5330,7 +5335,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Server_data_read_from(uint64_t obj_id, struct PDC_region_info *region_info, void *buf)
+perr_t PDC_Server_data_read_from(uint64_t obj_id, struct PDC_region_info *region_info, void *buf, size_t unit)
 {
     perr_t ret_value = SUCCEED;
     ssize_t read_bytes;
@@ -5343,6 +5348,13 @@ perr_t PDC_Server_data_read_from(uint64_t obj_id, struct PDC_region_info *region
         printf("cannot locate file handle\n");
         goto done;
     }
+    
+    if(region_info->ndim == 1)
+        read_bytes = pread(region->fd, buf, unit*(region_info->size[0]), (pdc_server_rank_g%nclient_per_node)*unit*region_info->size[0]);
+    else if(region_info->ndim == 2)
+        read_bytes = pread(region->fd, buf, unit*(region_info->size[0])*(region_info->size[1]), (pdc_server_rank_g%nclient_per_node)*unit*region_info->size[0]*region_info->size[1]);
+    else if(region_info->ndim == 3)
+        read_bytes = pread(region->fd, buf, unit*(region_info->size[0])*(region_info->size[1]*region_info->size[2]), (pdc_server_rank_g%nclient_per_node)*unit*region_info->size[0]*region_info->size[1]*region_info->size[2]);
     
     read_bytes = pread(region->fd, buf, region_info->size[0], region_info->offset[0]-pdc_server_rank_g*nclient_per_node*region_info->size[0]);
     /* printf("server %d calls pread, offset = %lld, size = %lld\n", pdc_server_rank_g, region_info->offset[0]-pdc_server_rank_g*nclient_per_node*region_info->size[0], region_info->size[0]); */

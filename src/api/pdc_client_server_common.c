@@ -834,8 +834,8 @@ perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uin
 perr_t PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **buf_ptrs) {return SUCCEED;}
 perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_t obj_id, int type) {return SUCCEED;}
 perr_t PDC_Server_release_lock_request(uint64_t obj_id, struct PDC_region_info *region) {return SUCCEED;}
-perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
-perr_t PDC_Server_data_read_from(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
+perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region_info, void *buf, size_t unit) {return SUCCEED;}
+perr_t PDC_Server_data_read_from(uint64_t obj_id, struct PDC_region_info *region_info, void *buf, size_t unit) {return SUCCEED;}
 perr_t PDC_Server_data_read_in(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
 perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
 perr_t PDC_Server_data_read_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf) {return SUCCEED;}
@@ -1457,13 +1457,23 @@ pdc_region_write_out_progress(void *arg)
         printf("pdc_region_write_out_progress: remote_reg_info memory allocation failed\n");
         goto done;
     }
-    remote_reg_info->ndim = (bulk_args->remote_region).ndim;
+    remote_reg_info->ndim = (bulk_args->remote_region_nounit).ndim;
     remote_reg_info->offset = (uint64_t *)malloc(sizeof(uint64_t));
     remote_reg_info->size = (uint64_t *)malloc(sizeof(uint64_t));
-    (remote_reg_info->offset)[0] = (bulk_args->remote_region).start_0;
-    (remote_reg_info->size)[0] = (bulk_args->remote_region).count_0;
+    if(remote_reg_info->ndim >= 1) {
+        (remote_reg_info->offset)[0] = (bulk_args->remote_region_nounit).start_0;
+        (remote_reg_info->size)[0] = (bulk_args->remote_region_nounit).count_0;
+    }
+    if(remote_reg_info->ndim >= 2) {
+        (remote_reg_info->offset)[1] = (bulk_args->remote_region_nounit).start_1;
+        (remote_reg_info->size)[1] = (bulk_args->remote_region_nounit).count_1;
+    }
+    if(remote_reg_info->ndim >= 3) {
+        (remote_reg_info->offset)[2] = (bulk_args->remote_region_nounit).start_2;
+        (remote_reg_info->size)[2] = (bulk_args->remote_region_nounit).count_2;
+    }
 
-    PDC_Server_data_write_out(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf);
+    PDC_Server_data_write_out(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf, (bulk_args->in).data_unit);
 
     // Perform lock release function
     PDC_Data_Server_region_release(&(bulk_args->in), &out);
@@ -1548,7 +1558,7 @@ pdc_region_read_from_progress(void *arg)
     
     hg_info = HG_Get_info(bulk_args->handle);
     
-    PDC_Server_data_read_from(bulk_args->remote_obj_id, bulk_args->remote_reg_info, bulk_args->data_buf);
+    PDC_Server_data_read_from(bulk_args->remote_obj_id, bulk_args->remote_reg_info, bulk_args->data_buf, (bulk_args->in).data_unit);
     
     /* Push bulk data */
     size = HG_Bulk_get_size(bulk_args->local_bulk_handle);
@@ -1615,9 +1625,23 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
 
     target_reg = PDC_Server_get_obj_region(bulk_args->remote_obj_id);
     DL_FOREACH(target_reg->region_buf_map_head, elt) {
-        if((bulk_args->remote_region).start_0 == elt->remote_region_unit.start_0 &&
-            (bulk_args->remote_region).count_0 == elt->remote_region_unit.count_0)
-            elt->bulk_args = bulk_args;
+        if((bulk_args->remote_region_unit).ndim == 1) {
+            if((bulk_args->remote_region_unit).start_0 == elt->remote_region_unit.start_0 &&
+            (bulk_args->remote_region_unit).count_0 == elt->remote_region_unit.count_0)
+                elt->bulk_args = bulk_args;
+        }
+        else if((bulk_args->remote_region_unit).ndim == 2) {
+            if((bulk_args->remote_region_unit).start_0 == elt->remote_region_unit.start_0 &&
+               (bulk_args->remote_region_unit).count_0 == elt->remote_region_unit.count_0 && (bulk_args->remote_region_unit).start_1 == elt->remote_region_unit.start_1 &&
+               (bulk_args->remote_region_unit).count_1 == elt->remote_region_unit.count_1)
+                elt->bulk_args = bulk_args;
+        }
+        else if((bulk_args->remote_region_unit).ndim == 3)
+            if((bulk_args->remote_region_unit).start_0 == elt->remote_region_unit.start_0 &&
+               (bulk_args->remote_region_unit).count_0 == elt->remote_region_unit.count_0 && (bulk_args->remote_region_unit).start_1 == elt->remote_region_unit.start_1 &&
+               (bulk_args->remote_region_unit).count_1 == elt->remote_region_unit.count_1 && (bulk_args->remote_region_unit).start_2 == elt->remote_region_unit.start_2 &&
+               (bulk_args->remote_region_unit).count_2 == elt->remote_region_unit.count_2)
+                elt->bulk_args = bulk_args;
     }
 
     hg_thread_pool_post(hg_test_thread_pool_fs_g, &(bulk_args->work));
@@ -1626,14 +1650,24 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     if(remote_reg_info == NULL) {
         PGOTO_ERROR(HG_OTHER_ERROR, "remote_reg_info memory allocation failed\n");
     }
-    remote_reg_info->ndim = (bulk_args->remote_region).ndim;
+    remote_reg_info->ndim = (bulk_args->remote_region_nounit).ndim;
     remote_reg_info->offset = (uint64_t *)malloc(sizeof(uint64_t));
     remote_reg_info->size = (uint64_t *)malloc(sizeof(uint64_t));
-    (remote_reg_info->offset)[0] = (bulk_args->remote_region).start_0;
-    (remote_reg_info->size)[0] = (bulk_args->remote_region).count_0;
-
-    PDC_Server_data_write_out(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf);
-
+    if(remote_reg_info->ndim >= 1) {
+        (remote_reg_info->offset)[0] = (bulk_args->remote_region_nounit).start_0;
+        (remote_reg_info->size)[0] = (bulk_args->remote_region_nounit).count_0;
+    }
+    if(remote_reg_info->ndim >= 2) {
+        (remote_reg_info->offset)[1] = (bulk_args->remote_region_nounit).start_1;
+        (remote_reg_info->size)[1] = (bulk_args->remote_region_nounit).count_1;
+    }
+    if(remote_reg_info->ndim >= 3) {
+        (remote_reg_info->offset)[2] = (bulk_args->remote_region_nounit).start_2;
+        (remote_reg_info->size)[2] = (bulk_args->remote_region_nounit).count_2;
+    }
+    
+    PDC_Server_data_write_out(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf, (bulk_args->in).data_unit);
+    
     // Perform lock release function
     PDC_Data_Server_region_release(&(bulk_args->in), &out);
 
@@ -1923,9 +1957,11 @@ HG_TEST_RPC_CB(region_release, handle)
     hg_bulk_t remote_bulk_handle = HG_BULK_NULL;
     struct PDC_region_info *remote_reg_info;
     region_buf_map_t *eltt, *eltt2;
-    hg_uint32_t remote_count;
+    hg_uint32_t k, m, remote_count;
     void **data_ptrs_to = NULL;
     size_t *data_size_to = NULL;
+    size_t type_size = 0;
+    size_t dims[4] = {0,0,0,0};
     
     FUNC_ENTER(NULL);
     
@@ -2017,17 +2053,28 @@ HG_TEST_RPC_CB(region_release, handle)
                         obj_map_bulk_args->remote_obj_id = eltt2->remote_obj_id;
                         obj_map_bulk_args->remote_reg_id = eltt2->remote_reg_id;
                         obj_map_bulk_args->remote_reg_info = remote_reg_info;
-                        obj_map_bulk_args->remote_region = eltt2->remote_region_unit;
+                        obj_map_bulk_args->remote_region_unit = eltt2->remote_region_unit;
+                        obj_map_bulk_args->remote_region_nounit = eltt2->remote_region_nounit;
                         obj_map_bulk_args->remote_client_id = eltt2->remote_client_id;
                         obj_map_bulk_args->remote_bulk_handle = remote_bulk_handle;
                         obj_map_bulk_args->local_bulk_handle = eltt2->local_bulk_handle;
                         obj_map_bulk_args->local_addr = eltt2->local_addr;
                         
-                        remote_reg_info->ndim = (obj_map_bulk_args->remote_region).ndim;
+                        remote_reg_info->ndim = (obj_map_bulk_args->remote_region_unit).ndim;
                         remote_reg_info->offset = (uint64_t *)malloc(sizeof(uint64_t));
                         remote_reg_info->size = (uint64_t *)malloc(sizeof(uint64_t));
-                        (remote_reg_info->offset)[0] = (obj_map_bulk_args->remote_region).start_0;
-                        (remote_reg_info->size)[0] = (obj_map_bulk_args->remote_region).count_0;
+                        if(remote_reg_info->ndim >= 1) {
+                            (remote_reg_info->offset)[0] = (obj_map_bulk_args->remote_region_nounit).start_0;
+                            (remote_reg_info->size)[0] = (obj_map_bulk_args->remote_region_nounit).count_0;
+                        }
+                        if(remote_reg_info->ndim >= 2) {
+                            (remote_reg_info->offset)[1] = (obj_map_bulk_args->remote_region_nounit).start_1;
+                            (remote_reg_info->size)[1] = (obj_map_bulk_args->remote_region_nounit).count_1;
+                        }
+                        if(remote_reg_info->ndim >= 3) {
+                            (remote_reg_info->offset)[2] = (obj_map_bulk_args->remote_region_nounit).start_2;
+                            (remote_reg_info->size)[2] = (obj_map_bulk_args->remote_region_nounit).count_2;
+                        }
 #ifdef ENABLE_MULTITHREAD
                         hg_thread_mutex_init(&(obj_map_bulk_args->work_mutex));
                         hg_thread_cond_init(&(obj_map_bulk_args->work_cond));
@@ -2041,7 +2088,7 @@ HG_TEST_RPC_CB(region_release, handle)
                         out.ret = 1;
                         HG_Respond(handle, NULL, NULL, &out);
 #else
-                        PDC_Server_data_read_from(obj_map_bulk_args->remote_obj_id, remote_reg_info, data_buf);
+                        PDC_Server_data_read_from(obj_map_bulk_args->remote_obj_id, remote_reg_info, data_buf, in.data_unit);
                         
                         size = HG_Bulk_get_size(eltt2->local_bulk_handle);
                         if(size != HG_Bulk_get_size(remote_bulk_handle)) {
@@ -2090,6 +2137,7 @@ HG_TEST_RPC_CB(region_release, handle)
                     pdc_region_transfer_t_to_list_t(&(eltt->remote_region_unit), tmp);
                     if(PDC_is_same_region_list(tmp, request_region) == 1) {
                         // get remote object memory addr
+                        type_size = eltt->remote_unit;
                         data_buf = PDC_Server_get_region_buf_ptr(in.obj_id, in.region);
                         if(in.region.ndim == 1) {
                             remote_count = 1;
@@ -2098,37 +2146,41 @@ HG_TEST_RPC_CB(region_release, handle)
                             *data_ptrs_to = data_buf;
                             *data_size_to = (eltt->remote_region_unit).count_0;
                         }
-                        /*                            else if(in.region.ndim == 2) {
-                         remote_count = (eltt->remote_region_nounit).count_0;
-                         data_ptrs_to = (void **)malloc( remote_count * sizeof(void *) );
-                         data_size_to = (size_t *)malloc( remote_count * sizeof(size_t) );
-                         data_ptrs_to[0] = data_buf + eltt->remote_unit*(res_meta->dims[1]*(eltt->remote_region_nounit).start_0 + (eltt->remote_region_nounit).start_1);
-                         data_size_to[0] = (eltt->remote_region_unit).count_1;
-                         for(i=1; i<remote_count; i++) {
-                         data_ptrs_to[i] = data_ptrs_to[i-1] + eltt->remote_unit*res_meta->dims[1];
-                         data_size_to[i] = data_size_to[0];
-                         }
+                        else if(in.region.ndim == 2) {
+                            dims[1] = (eltt->remote_region_nounit).count_1;
+                            remote_count = (eltt->remote_region_nounit).count_0;
+                            data_ptrs_to = (void **)malloc( remote_count * sizeof(void *) );
+                            data_size_to = (size_t *)malloc( remote_count * sizeof(size_t) );
+                            data_ptrs_to[0] = data_buf + type_size * (dims[1]*(eltt->remote_region_nounit).start_0 + (eltt->remote_region_nounit).start_1);
+                            data_size_to[0] = (eltt->remote_region_unit).count_1;
+                            for(k=1; k<remote_count; k++) {
+                                data_ptrs_to[k] = data_ptrs_to[k-1] + type_size * dims[1];
+                                data_size_to[k] = data_size_to[0];
+                             }
                          }
                          else if(in.region.ndim == 3) {
-                         remote_count = (eltt->remote_region_nounit).count_0 * (eltt->remote_region_nounit).count_1;
-                         data_ptrs_to = (void **)malloc( remote_count * sizeof(void *) );
-                         data_size_to = (size_t *)malloc( remote_count * sizeof(size_t) );
-                         data_ptrs_to[0] = data_buf + eltt->remote_unit*(res_meta->dims[2]*res_meta->dims[1]*(eltt->remote_region_nounit).start_0 + res_meta->dims[2]*(eltt->remote_region_nounit).start_1 + (eltt->remote_region_nounit).start_2);
-                         data_size_to[0] = (eltt->remote_region_unit).count_2;
-                         for(i=0; i<(eltt->remote_region_nounit).count_0-1; i++) {
-                         for(j=0; j<(eltt->remote_region_nounit).count_1-1; j++) {
-                         data_ptrs_to[i*(eltt->remote_region_nounit).count_1+j+1] = data_ptrs_to[i*(eltt->remote_region_nounit).count_1+j] + eltt->remote_unit*res_meta->dims[2];
-                         data_size_to[i*(eltt->remote_region_nounit).count_1+j+1] = data_size_to[0];
+                             dims[1] = (eltt->remote_region_nounit).count_1;
+                             dims[2] = (eltt->remote_region_nounit).count_2;
+                             remote_count = (eltt->remote_region_nounit).count_0 * (eltt->remote_region_nounit).count_1;
+                             data_ptrs_to = (void **)malloc( remote_count * sizeof(void *) );
+                             data_size_to = (size_t *)malloc( remote_count * sizeof(size_t) );
+                             data_ptrs_to[0] = data_buf + type_size*(dims[2]*dims[1]*(eltt->remote_region_nounit).start_0 + dims[2]*(eltt->remote_region_nounit).start_1 + (eltt->remote_region_nounit).start_2);
+                             data_size_to[0] = (eltt->remote_region_unit).count_2;
+                             for(k=0; k<(eltt->remote_region_nounit).count_0-1; k++) {
+                                 for(m=0; m<(eltt->remote_region_nounit).count_1-1; m++) {
+                                     data_ptrs_to[k*(eltt->remote_region_nounit).count_1+m+1] = data_ptrs_to[k*(eltt->remote_region_nounit).count_1+m] + type_size*dims[2];
+                                     data_size_to[k*(eltt->remote_region_nounit).count_1+m+1] = data_size_to[0];
+                                 }
+                                 data_ptrs_to[k*(eltt->remote_region_nounit).count_1+(eltt->remote_region_nounit).count_1] = data_ptrs_to[k*(eltt->remote_region_nounit).count_1] + type_size*dims[2]*dims[1];
+                                 data_size_to[k*(eltt->remote_region_nounit).count_1+(eltt->remote_region_nounit).count_1] = data_size_to[0];
+                             }
+                             k = (eltt->remote_region_nounit).count_0 - 1;
+                             for(m=0; m<(eltt->remote_region_nounit).count_1-1; m++) {
+                                 data_ptrs_to[k*(eltt->remote_region_nounit).count_1+m+1] = data_ptrs_to[k*(eltt->remote_region_nounit).count_1+m] + type_size*dims[2];
+                                 data_size_to[k*(eltt->remote_region_nounit).count_1+m+1] = data_size_to[0];
+                             }
                          }
-                         data_ptrs_to[i*(eltt->remote_region_nounit).count_1+(eltt->remote_region_nounit).count_1] = data_ptrs_to[i*(eltt->remote_region_nounit).count_1] + eltt->remote_unit*res_meta->dims[2]*res_meta->dims[1];
-                         data_size_to[i*(eltt->remote_region_nounit).count_1+(eltt->remote_region_nounit).count_1] = data_size_to[0];
-                         }
-                         i = (eltt->remote_region_nounit).count_0 - 1;
-                         for(j=0; j<(eltt->remote_region_nounit).count_1-1; j++) {
-                         data_ptrs_to[i*(eltt->remote_region_nounit).count_1+j+1] = data_ptrs_to[i*(eltt->remote_region_nounit).count_1+j] + eltt->remote_unit*res_meta->dims[2];
-                         data_size_to[i*(eltt->remote_region_nounit).count_1+j+1] = data_size_to[0];
-                         }
-                         }*/
+                         
                         /* Create a new block handle to read the data */
                         hg_ret = HG_Bulk_create(hg_info->hg_class, remote_count, data_ptrs_to, (hg_size_t *)data_size_to, HG_BULK_READWRITE, &remote_bulk_handle);
                         if (hg_ret != HG_SUCCESS) {
@@ -2149,7 +2201,8 @@ HG_TEST_RPC_CB(region_release, handle)
                         buf_map_bulk_args->in = in;
                         buf_map_bulk_args->remote_obj_id = eltt->remote_obj_id;
                         buf_map_bulk_args->remote_reg_id = eltt->remote_reg_id;
-                        buf_map_bulk_args->remote_region = eltt->remote_region_unit;
+                        buf_map_bulk_args->remote_region_unit = eltt->remote_region_unit;
+                        buf_map_bulk_args->remote_region_nounit = eltt->remote_region_nounit;
                         buf_map_bulk_args->remote_client_id = eltt->remote_client_id;
                         buf_map_bulk_args->remote_bulk_handle = remote_bulk_handle;
 #ifdef ENABLE_MULTITHREAD
@@ -2162,11 +2215,12 @@ HG_TEST_RPC_CB(region_release, handle)
                             error = 1;
                             printf("===PDC SERVER: HG_TEST_RPC_CB(region_release, handle) local and remote bulk size does not match\n");
                         }
+
                         hg_ret = HG_Bulk_transfer(hg_info->context, buf_map_region_release_bulk_transfer_cb, buf_map_bulk_args, HG_BULK_PULL, eltt->local_addr, eltt->local_bulk_handle, 0, remote_bulk_handle, 0, size, &hg_bulk_op_id);
                         if (hg_ret != HG_SUCCESS) {
                             error = 1;
                             printf("===PDC SERVER: HG_TEST_RPC_CB(region_release, handle) buf map Could not read bulk data\n");
-                        } 
+                        }
                     }
                 }
                 free(tmp);

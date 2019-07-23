@@ -3111,7 +3111,6 @@ perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_in
     hg_return_t hg_ret;
     uint32_t server_id, meta_server_id;
     region_lock_in_t in;
-    size_t  unit;
     struct region_lock_args lookup_args;
     hg_handle_t region_lock_handle;
     
@@ -3136,14 +3135,11 @@ perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_in
 
     // Fill input structure
     in.obj_id = meta_id;
-//    in.lock_op = lock_op;
     in.access_type = access_type;
     in.mapping = region_info->mapping;
     in.local_reg_id = region_info->local_id;
-//    in.region.ndim   = region_info->ndim;
     size_t ndim = region_info->ndim;
     in.data_type = data_type;
-    /* printf("==PDC_CLINET: lock dim=%u\n", ndim); */
 
     if (ndim >= 4 || ndim <=0) {
         printf("Dimension %lu is not supported\n", ndim);
@@ -3152,36 +3148,15 @@ perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_in
     }
 
     if(data_type == PDC_DOUBLE)
-        unit = sizeof(double);
+        in.data_unit = sizeof(double);
     else if(data_type == PDC_FLOAT)
-        unit = sizeof(float);
+        in.data_unit = sizeof(float);
     else if(data_type == PDC_INT)
-        unit = sizeof(int);
+        in.data_unit = sizeof(int);
     else
         PGOTO_ERROR(FAIL, "data type is not supported yet");
 
-    pdc_region_info_t_to_transfer_unit(region_info, &(in.region), unit);
-//    if (ndim >=1) {
-//        in.region.start_0  = unit * region_info->offset[0];
-//        in.region.count_0  = unit * region_info->size[0];
-        /* in.region.stride_0 = 0; */
-        // TODO current stride is not included in pdc.
-//    }
-//    if (ndim >=2) {
-//        in.region.start_1  = unit * region_info->offset[1];
-//        in.region.count_1  = unit * region_info->size[1];
-        /* in.region.stride_1 = 0; */
-//    }
-//    if (ndim >=3) {
-//        in.region.start_2  = unit * region_info->offset[2];
-//        in.region.count_2  = unit * region_info->size[2];
-        /* in.region.stride_2 = 0; */
-//    }
-    /* if (ndim >=4) { */
-    /*     in.region.start_3  = region_info->offset[3]; */
-    /*     in.region.count_3  = region_info->size[3]; */
-    /*     /1* in.region.stride_3 = 0; *1/ */
-    /* } */
+    pdc_region_info_t_to_transfer_unit(region_info, &(in.region), in.data_unit);
 
     if( PDC_Client_try_lookup_server(server_id) != SUCCEED) {
         printf("==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server\n", pdc_client_mpi_rank_g);
@@ -3276,7 +3251,6 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
     hg_return_t hg_ret;
     uint32_t server_id, meta_server_id;
     region_lock_in_t in;
-    size_t unit;
     struct client_lookup_args lookup_args;
     hg_handle_t region_release_handle;
 
@@ -3323,11 +3297,9 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
 
     // Fill input structure
     in.obj_id = meta_id;
-//    in.lock_op = lock_op;
     in.access_type = access_type;
     in.mapping = region_info->mapping;
     in.local_reg_id = region_info->local_id;
-//    in.region.ndim   = region_info->ndim;
     size_t ndim = region_info->ndim;
     /* printf("==PDC_CLINET: lock dim=%u\n", ndim); */
  
@@ -3338,38 +3310,16 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
     }
 
     if(data_type == PDC_DOUBLE)
-        unit = sizeof(double);
+        in.data_unit = sizeof(double);
     else if(data_type == PDC_FLOAT)
-        unit = sizeof(float);
+        in.data_unit = sizeof(float);
     else if(data_type == PDC_INT)
-        unit = sizeof(int);
+        in.data_unit = sizeof(int);
     else
         PGOTO_ERROR(FAIL, "data type is not supported yet");
 
-    pdc_region_info_t_to_transfer_unit(region_info, &(in.region), unit);
-//    if (ndim >=1) {
-//        in.region.start_0  = unit * region_info->offset[0];
-//        in.region.count_0  = unit * region_info->size[0];
-//        in.region.stride_0 = 0;
-        // TODO current stride is not included in pdc.
-//    }
-//    if (ndim >=2) {
-//        in.region.start_1  = unit * region_info->offset[1];
-//        in.region.count_1  = unit * region_info->size[1];
-//        in.region.stride_1 = 0;
-//    }
-//    if (ndim >=3) {
-//        in.region.start_2  = unit * region_info->offset[2];
-//        in.region.count_2  = unit * region_info->size[2];
-//        in.region.stride_2 = 0;
-//    }
-/*
-    if (ndim >=4) {
-        in.region.start_3  = region_info->offset[3];
-        in.region.count_3  = region_info->size[3];
-        in.region.stride_3 = 0;
-    }
-*/
+    pdc_region_info_t_to_transfer_unit(region_info, &(in.region), in.data_unit);
+
     if( PDC_Client_try_lookup_server(server_id) != SUCCEED) {
         printf("==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server\n", pdc_client_mpi_rank_g);
         ret_value = FAIL;
