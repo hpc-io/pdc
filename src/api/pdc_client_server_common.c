@@ -1458,8 +1458,8 @@ pdc_region_write_out_progress(void *arg)
         goto done;
     }
     remote_reg_info->ndim = (bulk_args->remote_region_nounit).ndim;
-    remote_reg_info->offset = (uint64_t *)malloc(sizeof(uint64_t));
-    remote_reg_info->size = (uint64_t *)malloc(sizeof(uint64_t));
+    remote_reg_info->offset = (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
+    remote_reg_info->size = (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
     if(remote_reg_info->ndim >= 1) {
         (remote_reg_info->offset)[0] = (bulk_args->remote_region_nounit).start_0;
         (remote_reg_info->size)[0] = (bulk_args->remote_region_nounit).count_0;
@@ -1651,8 +1651,8 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
         PGOTO_ERROR(HG_OTHER_ERROR, "remote_reg_info memory allocation failed\n");
     }
     remote_reg_info->ndim = (bulk_args->remote_region_nounit).ndim;
-    remote_reg_info->offset = (uint64_t *)malloc(sizeof(uint64_t));
-    remote_reg_info->size = (uint64_t *)malloc(sizeof(uint64_t));
+    remote_reg_info->offset = (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
+    remote_reg_info->size = (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
     if(remote_reg_info->ndim >= 1) {
         (remote_reg_info->offset)[0] = (bulk_args->remote_region_nounit).start_0;
         (remote_reg_info->size)[0] = (bulk_args->remote_region_nounit).count_0;
@@ -2061,8 +2061,8 @@ HG_TEST_RPC_CB(region_release, handle)
                         obj_map_bulk_args->local_addr = eltt2->local_addr;
                         
                         remote_reg_info->ndim = (obj_map_bulk_args->remote_region_unit).ndim;
-                        remote_reg_info->offset = (uint64_t *)malloc(sizeof(uint64_t));
-                        remote_reg_info->size = (uint64_t *)malloc(sizeof(uint64_t));
+                        remote_reg_info->offset = (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
+                        remote_reg_info->size = (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
                         if(remote_reg_info->ndim >= 1) {
                             (remote_reg_info->offset)[0] = (obj_map_bulk_args->remote_region_nounit).start_0;
                             (remote_reg_info->size)[0] = (obj_map_bulk_args->remote_region_nounit).count_0;
