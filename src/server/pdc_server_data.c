@@ -799,6 +799,7 @@ perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
             
         }
     }
+
     if(target_obj->region_buf_map_head == NULL && pdc_server_rank_g == 0) {
         close(target_obj->fd);
 	// printf("closed object file: fd = %d\n", target_obj->fd);
@@ -5407,11 +5408,10 @@ perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct P
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region_info, void *buf)
+perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region_info, void *buf, size_t unit)
 {
     perr_t ret_value = SUCCEED;
     ssize_t write_bytes; 
-    off_t file_offset;
     data_server_region_t *region = NULL;
 
     FUNC_ENTER(NULL);
@@ -5421,15 +5421,20 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region
         printf("cannot locate file handle\n");
         goto done;
     }
+
     // Was opened previously and closed.
     // The location string is cached, so we utilize
     // that to reopen the file.
     if ((region->fd < 0) && region->storage_location) {
         region->fd = open(region->storage_location, O_RDWR, 0666);
     }
-    file_offset = region_info->offset[0] - (pdc_server_rank_g*nclient_per_node*region_info->size[0]);
-    write_bytes = pwrite(region->fd, buf, region_info->size[0], file_offset);
-    // printf("server %d calls pwrite, offset = %lld, size = %lld\n", pdc_server_rank_g, region_info->offset[0]-pdc_server_rank_g*nclient_per_node*region_info->size[0], region_info->size[0]);
+    if(region_info->ndim == 1)
+        write_bytes = pwrite(region->fd, buf, unit*(region_info->size[0]), (pdc_server_rank_g%nclient_per_node)*unit*region_info->size[0]);
+    else if(region_info->ndim == 2)
+        write_bytes = pwrite(region->fd, buf, unit*(region_info->size[0])*(region_info->size[1]), (pdc_server_rank_g%nclient_per_node)*unit*region_info->size[0]*region_info->size[1]);
+    else if(region_info->ndim == 3)
+        write_bytes = pwrite(region->fd, buf, unit*(region_info->size[0])*(region_info->size[1]*region_info->size[2]), (pdc_server_rank_g%nclient_per_node)*unit*region_info->size[0]*region_info->size[1]*region_info->size[2]);
+
     if(write_bytes == -1){
         printf("==PDC_SERVER[%d]: pwrite %d failed\n", pdc_server_rank_g, region->fd);
         goto done;
@@ -5441,10 +5446,9 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Server_data_read_from(uint64_t obj_id, struct PDC_region_info *region_info, void *buf)
+perr_t PDC_Server_data_read_from(uint64_t obj_id, struct PDC_region_info *region_info, void *buf, size_t unit)
 {
     perr_t ret_value = SUCCEED;
-    off_t file_offset;
     ssize_t read_bytes;
     data_server_region_t *region = NULL;
     
@@ -5455,22 +5459,25 @@ perr_t PDC_Server_data_read_from(uint64_t obj_id, struct PDC_region_info *region
         printf("cannot locate file handle\n");
         goto done;
     }
-
     // Was opened previously and closed.
     // The location string is cached, so we utilize
     // that to reopen the file.
     if (region->fd < 0) {
         region->fd = open(region->storage_location, O_RDWR, 0666);
     }
-    file_offset = region_info->offset[0] - (pdc_server_rank_g*nclient_per_node*region_info->size[0]);
-    read_bytes = pread(region->fd, buf, region_info->size[0], file_offset);
+    if(region_info->ndim == 1)
+        read_bytes = pread(region->fd, buf, unit*(region_info->size[0]), (pdc_server_rank_g%nclient_per_node)*unit*region_info->size[0]);
+    else if(region_info->ndim == 2)
+        read_bytes = pread(region->fd, buf, unit*(region_info->size[0])*(region_info->size[1]), (pdc_server_rank_g%nclient_per_node)*unit*region_info->size[0]*region_info->size[1]);
+    else if(region_info->ndim == 3)
+        read_bytes = pread(region->fd, buf, unit*(region_info->size[0])*(region_info->size[1]*region_info->size[2]), (pdc_server_rank_g%nclient_per_node)*unit*region_info->size[0]*region_info->size[1]*region_info->size[2]);
+    
     /* printf("server %d calls pread, offset = %lld, size = %lld\n", pdc_server_rank_g, region_info->offset[0]-pdc_server_rank_g*nclient_per_node*region_info->size[0], region_info->size[0]); */
     if(read_bytes == -1){
         char errmsg[256];
         printf("==PDC_SERVER[%d]: pread %d failed (%s)\n", pdc_server_rank_g, region->fd, strerror_r(errno, errmsg, sizeof(errmsg)));
         goto done;
     }
-    // printf("==PDC_SERVER[%d]: obj_id = %lu , offset = %ld pread %d succeeded\n", pdc_server_rank_g, obj_id, file_offset, region->fd);
     
 done:
     fflush(stdout);

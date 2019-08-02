@@ -612,12 +612,12 @@ hg_proc_region_info_transfer_t(hg_proc_t proc, void *data)
 typedef struct {
     uint32_t                    meta_server_id;
     uint64_t                    obj_id;
-//    int32_t                     lock_op;
     uint8_t                     access_type;
     pdcid_t                     local_reg_id;
     region_info_transfer_t      region;
     uint8_t                     mapping;
     uint8_t                     data_type;
+    size_t                      data_unit;
     uint8_t                     lock_mode;
 } region_lock_in_t;
 
@@ -637,12 +637,6 @@ hg_proc_region_lock_in_t(hg_proc_t proc, void *data)
 	    HG_LOG_ERROR("Proc error");
         return ret;
     }
-/*
-    ret = hg_proc_uint32_t(proc, &struct_data->lock_op);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-    }
-*/
     ret = hg_proc_uint8_t(proc, &struct_data->access_type);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
@@ -664,6 +658,11 @@ hg_proc_region_lock_in_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_uint8_t(proc, &struct_data->data_type);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_size_t(proc, &struct_data->data_unit);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -958,7 +957,6 @@ hg_proc_metadata_query_transfer_in_t(hg_proc_t proc, void *data)
 	    HG_LOG_ERROR("Proc error");
         return ret;
     }
-
     ret = hg_proc_hg_size_t(proc, &struct_data->ndim);
     if (ret != HG_SUCCESS) {
 	    HG_LOG_ERROR("Proc error");
