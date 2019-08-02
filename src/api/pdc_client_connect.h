@@ -82,9 +82,21 @@ struct client_lookup_args {
     int                  time_step;
     uint32_t             hash_value;
     const char          *tags;
-
     hg_request_t        *request;
 };
+
+struct client_transform_args {
+    size_t               size;
+    void                *data;
+    void                *transform_result;
+    struct region_transform_ftn_info *this_transform;    
+    struct PDC_region_info *region_info;
+    int                  type_extent;
+    int                  transform_state;
+    int                  ret;
+    hg_bulk_t            local_bulk_handle;
+};
+
 
 typedef struct metadata_query_args_t {
     pdc_metadata_t *data;
@@ -231,7 +243,7 @@ perr_t PDC_Client_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, struc
  * \return Non-negative on success/Negative on failure
  */
 //perr_t PDC_Client_obtain_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_lock_mode_t lock_mode, PDC_var_type_t data_type, pbool_t *obtained);
-perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_lock_mode_t lock_mode, PDC_var_type_t data_type, pbool_t *obtained);
+perr_t PDC_Client_region_lock(struct PDC_obj_info *object_info, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_lock_mode_t lock_mode, PDC_var_type_t data_type, pbool_t *obtained);
 
 /**
  * Request of PDC client to get region lock
@@ -276,7 +288,7 @@ perr_t PDC_Client_data_direct_init();
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_attach_metadata_to_local_obj(char *obj_name, uint64_t obj_id, uint64_t cont_id, 
+perr_t PDC_Client_attach_metadata_to_local_obj(const char *obj_name, uint64_t obj_id, uint64_t cont_id, 
                                                struct PDC_obj_info *obj_info);
 
 
@@ -506,4 +518,7 @@ void PDCselection_free(pdcselection_t *sel);
 perr_t PDC_Client_get_sel_data(pdcid_t obj_id, pdcselection_t *sel, void *data);
 
 hg_return_t PDC_recv_read_coords_data(const struct hg_cb_info *callback_info);
+
+perr_t pdc_obj_prop_free(struct PDC_obj_prop *cp);
+
 #endif

@@ -60,7 +60,7 @@ struct region_transform_ftn_info {
     struct PDC_region_info *dest_region;
     size_t (*ftnPtr)();
     int ftn_lastResult;
-    int readyCount;
+    int readyState;
     int nextState;
     int client_id;
     size_t type_extent;

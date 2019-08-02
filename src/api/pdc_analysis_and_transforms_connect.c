@@ -34,7 +34,8 @@ hg_id_t                object_data_iterator_register_id_g;
 static hg_return_t     client_register_iterator_rpc_cb(const struct hg_cb_info *info);
 static hg_return_t     client_register_analysis_rpc_cb(const struct hg_cb_info *info);
 static hg_return_t     client_register_transform_rpc_cb(const struct hg_cb_info *info);
-static hg_return_t     client_forward_transform_rpc_cb(const struct hg_cb_info *info);
+
+perr_t PDC_free_obj_info(struct PDC_obj_info *obj);
 
 /* Client APIs */
 // Registers an iterator
@@ -301,6 +302,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+#if 0
 /* Send a name to server and receive an obj id */
 perr_t pdc_client_register_obj_transform(const char *func, const char *loadpath, pdcid_t obj_id, int start_state, int next_state, int op_type, int when)
 {
@@ -314,7 +316,7 @@ perr_t pdc_client_register_obj_transform(const char *func, const char *loadpath,
     FUNC_ENTER(NULL);
     my_rpc_state_p = (struct my_rpc_state *)calloc(1,sizeof(struct my_rpc_state));
     if (my_rpc_state_p == NULL) {
-        fprintf(stderr, "pdc_client_register_obj_analysis(): Could not allocate my_rpc_state\n");
+        fprintf(stderr, "%s: Could not allocate my_rpc_state\n", __func__);
         ret_value = FAIL;
 	goto done;
     }
@@ -338,7 +340,7 @@ perr_t pdc_client_register_obj_transform(const char *func, const char *loadpath,
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, transform_ftn_register_id_g, &my_rpc_state_p->handle);
     hg_ret = HG_Forward(my_rpc_state_p->handle, client_register_transform_rpc_cb, my_rpc_state_p, &in);
     if (hg_ret != HG_SUCCESS) {
-        PGOTO_ERROR(FAIL, "pdc_client_register_obj_transform(): Could not start HG_Forward()");
+        PGOTO_ERROR(FAIL, "%s: Could not start HG_Forward()", __func__);
     }
 
     work_todo_g = 1;
@@ -356,25 +358,27 @@ done:
     free(my_rpc_state_p);
     FUNC_LEAVE(ret_value);
 }
+#endif
 
 /* Send a name to server and receive an obj id */
 perr_t pdc_client_register_region_transform(const char *func, const char *loadpath,
 					    pdcid_t src_region_id ATTRIBUTE(unused),
-					    pdcid_t dest_region_id ATTRIBUTE(unused), pdcid_t obj_id,
+					    pdcid_t dest_region_id,
+					    pdcid_t obj_id,
 					    int start_state, int next_state, int op_type, int when, int client_index)
 {
     perr_t ret_value = SUCCEED;
     uint32_t server_id = 0;
     hg_return_t hg_ret;
     transform_ftn_in_t in;
-    struct PDC_obj_info *object_info;
+    struct PDC_obj_info *object_info = NULL;
     struct my_rpc_state *my_rpc_state_p;
 
     FUNC_ENTER(NULL);
 
     my_rpc_state_p = (struct my_rpc_state *)calloc(1,sizeof(struct my_rpc_state));
     if (my_rpc_state_p == NULL) {
-        fprintf(stderr, "pdc_client_register_obj_analysis(): Could not allocate my_rpc_state\n");
+        fprintf(stderr, "%s: Could not allocate my_rpc_state\n", __func__);
         ret_value = FAIL;
 	goto done;
     }
@@ -387,6 +391,8 @@ perr_t pdc_client_register_region_transform(const char *func, const char *loadpa
     if (object_info != NULL) {
       in.object_id = object_info->meta_id;
     } else in.object_id = obj_id;
+    in.region_id = dest_region_id;
+
     in.operation_type = when;
     in.start_state = start_state;
     in.next_state = next_state;
@@ -398,7 +404,7 @@ perr_t pdc_client_register_region_transform(const char *func, const char *loadpa
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, transform_ftn_register_id_g, &my_rpc_state_p->handle);
     hg_ret = HG_Forward(my_rpc_state_p->handle, client_register_transform_rpc_cb, my_rpc_state_p, &in);
     if (hg_ret != HG_SUCCESS) {
-        PGOTO_ERROR(FAIL, "pdc_client_register_region_transform(): Could not start HG_Forward()");
+        PGOTO_ERROR(FAIL, "%s: Could not start HG_Forward()", __func__);
     }
 
     work_todo_g = 1;
@@ -412,6 +418,7 @@ perr_t pdc_client_register_region_transform(const char *func, const char *loadpa
     ret_value = SUCCEED;
 
 done:
+    if (object_info) PDC_free_obj_info(object_info);
     HG_Destroy(my_rpc_state_p->handle);
     free(my_rpc_state_p);
     FUNC_LEAVE(ret_value);
@@ -428,11 +435,11 @@ client_register_transform_rpc_cb(const struct hg_cb_info *info)
 
     FUNC_ENTER(NULL);
 
-    printf("Entered: %s\n", __FUNCTION__);
+    // printf("Entered: %s\n", __func__);
     if (info->ret == HG_SUCCESS) {
       ret_value = HG_Get_output(info->info.forward.handle, &output);
       if (ret_value != HG_SUCCESS) {
-	  printf("PDC_CLIENT: register_analysis_rpc_cb(): Unable to read the server return values\n");
+	  printf("PDC_CLIENT: %s: Unable to read the server return values\n", __func__);
 	  goto done;
       }
       pdc_update_transform_server_meta_index(output.client_index, output.ret);
@@ -444,6 +451,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+#if 0
 // Callback function for  HG_Forward()
 // Gets executed after a call to HG_Trigger and the RPC has completed
 static hg_return_t
@@ -471,5 +479,6 @@ done:
     HG_Free_output(info->info.forward.handle, &output);
     FUNC_LEAVE(ret_value);
 }
+#endif
 
 

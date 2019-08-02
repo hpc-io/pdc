@@ -33,7 +33,7 @@
 #define PDC_ITER_NULL (pdcid_t)(0)
 
 struct analysis_ftn_info {
-    size_t (*ftnPtr)();
+    int (*ftnPtr)();
     pdcid_t object_id;
     PDC_Analysis_language lang;
     struct analysis_ftn_info *prev;
@@ -45,7 +45,7 @@ struct region_analysis_ftn_info {
     int n_args;
     pdcid_t *object_id;
     pdcid_t *region_id;
-    size_t (*ftnPtr)();
+    int (*ftnPtr)();
     int readyCount;
     int client_id;
     int ftn_lastResult;
@@ -225,7 +225,7 @@ extern perr_t pdc_client_send_iter_recv_id(pdcid_t iter_id, pdcid_t *meta_id);
 extern perr_t pdc_client_register_obj_analysis(struct region_analysis_ftn_info *thisFtn, const char *func, const char *loadpath, pdcid_t ilocal, pdcid_t olocal, pdcid_t imeta, pdcid_t ometa);
 extern perr_t pdc_client_register_obj_transform(const char *func, const char *loadpath, pdcid_t obj_id, int start_state, int next_state, int op_type, int when);
 extern perr_t pdc_client_register_region_transform(const char *func, const char *loadpath, pdcid_t src_region_id, pdcid_t dest_region_id, pdcid_t dest_obj_id, int start_state, int next_state, int op_type, int when, int client_regIndex);
-extern int get_ftnPtr_(const char *ftn, char *loadpath, void **ftnPtr);
+extern int get_ftnPtr_(const char *ftn, const char *loadpath, void **ftnPtr);
 extern void set_execution_locus(PDC_loci locus_identifier);
 extern PDC_loci get_execution_locus(void);
 extern hg_id_t server_transform_ftn_register(hg_class_t *hg_class);

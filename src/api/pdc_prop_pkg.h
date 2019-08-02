@@ -46,6 +46,14 @@ typedef struct pdc_kvtag_t {
 } pdc_kvtag_t;
 
 
+typedef struct pdc_transform_state {
+    PDC_major_type    storage_order;
+    PDC_var_type_t    dtype;
+    size_t            ndim;
+    uint64_t          dims[4];
+    int               meta_index; /* transform to this state */
+} PDC_transform_state_t;
+
 struct PDC_obj_prop {
     struct PDC_class *pdc;
     pdcid_t           obj_prop_id;
@@ -63,9 +71,9 @@ struct PDC_obj_prop {
 
     /* The following have been added to support of PDC analysis and transforms */
     size_t            type_extent;
-    PDC_major_type    storage_order;
     uint64_t          locus;
     uint32_t          data_state;
+    PDC_transform_state_t transform_prop;
 };
 
 #endif

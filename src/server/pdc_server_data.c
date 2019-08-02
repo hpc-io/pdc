@@ -801,7 +801,7 @@ perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
     }
     if(target_obj->region_buf_map_head == NULL && pdc_server_rank_g == 0) {
         close(target_obj->fd);
-	printf("closed object file: fd = %d\n", target_obj->fd);
+	// printf("closed object file: fd = %d\n", target_obj->fd);
 	target_obj->fd = -1;
     }
 #ifdef ENABLE_MULTITHREAD 
@@ -859,7 +859,7 @@ perr_t PDC_Data_Server_check_unmap()
         }
         if(target_obj->region_buf_map_head == NULL && pdc_server_rank_g == 0) {
             close(target_obj->fd);
-            printf("closed object file: fd = %d\n", target_obj->fd);
+            // printf("closed object file: fd = %d\n", target_obj->fd);
 	    target_obj->fd = -1;
         }
         hg_thread_mutex_unlock(&data_buf_map_mutex_g);
@@ -1211,7 +1211,7 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
             goto done;
         }
 	new_obj_reg->storage_location = strdup(storage_location);
-	printf("==PDC_SERVER[%d]: open obj_id = %lu succeeded: fd = %d\n", pdc_server_rank_g, in->remote_obj_id, new_obj_reg->fd);
+	// printf("==PDC_SERVER[%d]: open obj_id = %lu succeeded: fd = %d\n", pdc_server_rank_g, in->remote_obj_id, new_obj_reg->fd);
         DL_APPEND(dataserver_region_g, new_obj_reg);
     }
 #ifdef ENABLE_MULTITHREAD 
@@ -1301,6 +1301,62 @@ static int is_region_transfer_t_identical(region_info_transfer_t *a, region_info
 done:
     FUNC_LEAVE(ret_value);
 }
+
+void *PDC_Server_maybe_allocate_region_buf_ptr(pdcid_t obj_id, region_info_transfer_t region, size_t type_size)
+{
+    void *ret_value = NULL;
+    data_server_region_t *target_obj = NULL, *elt = NULL;
+    region_buf_map_t *tmp;
+
+    FUNC_ENTER(NULL);
+
+    if(dataserver_region_g == NULL)
+        PGOTO_ERROR(NULL, "===PDC SERVER: PDC_Server_get_region_buf_ptr() - object list is NULL");
+    DL_FOREACH(dataserver_region_g, elt) {
+        if(obj_id == elt->obj_id)
+            target_obj = elt;
+    }
+    if(target_obj == NULL)
+        PGOTO_ERROR(NULL, "===PDC SERVER: PDC_Server_get_region_buf_ptr() - cannot locate object");
+
+    DL_FOREACH(target_obj->region_buf_map_head, tmp) {
+        if (is_region_transfer_t_identical(&region, &(tmp->remote_region_unit)) == 1) {
+            ret_value = tmp->remote_data_ptr;
+            break;
+        }
+    }
+    /* We don't currently have a buffer to receive data */
+    if (ret_value == NULL) {
+        int i;
+	size_t region_size = region.count_0;
+	region_buf_map_t *buf_map_ptr = NULL;
+        for(i=1; i < region.ndim; i++) {
+	  if (i == 1) region_size *= (region.count_1/type_size);
+	  else if (i==2) region_size *= (region.count_2/type_size);
+	  else if (i==3) region_size *= (region.count_3/type_size);
+	}
+	ret_value = malloc(region_size);
+
+        buf_map_ptr = (region_buf_map_t *)malloc(sizeof(region_buf_map_t));
+        buf_map_ptr->remote_obj_id = obj_id;
+	buf_map_ptr->remote_ndim = region.ndim;
+        buf_map_ptr->remote_data_ptr = ret_value;
+        buf_map_ptr->remote_region_unit =  region;
+	buf_map_ptr->remote_region_nounit = region;
+	buf_map_ptr->remote_region_nounit.count_0 /= type_size;
+	buf_map_ptr->remote_region_nounit.count_1 /= type_size;
+	buf_map_ptr->remote_region_nounit.count_2 /= type_size;
+	buf_map_ptr->remote_region_nounit.count_3 /= type_size;
+	DL_APPEND(target_obj->region_buf_map_head, buf_map_ptr);
+
+    }
+    if(ret_value == NULL)
+        PGOTO_ERROR(NULL, "===PDC SERVER: PDC_Server_get_region_buf_ptr() - region data pointer is NULL");
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 
 void *PDC_Server_get_region_buf_ptr(pdcid_t obj_id, region_info_transfer_t region)
 {
@@ -5378,7 +5434,7 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region
         printf("==PDC_SERVER[%d]: pwrite %d failed\n", pdc_server_rank_g, region->fd);
         goto done;
     }
-    printf("==PDC_SERVER[%d]: obj_id = %lu , offset = %ld pwrite %d succeeded\n", pdc_server_rank_g, obj_id, file_offset, region->fd);
+    // printf("==PDC_SERVER[%d]: obj_id = %lu , offset = %ld pwrite %d succeeded (%ld bytes)\n", pdc_server_rank_g, obj_id, file_offset, region->fd, write_bytes);
 
 done:
     fflush(stdout);
@@ -5410,11 +5466,11 @@ perr_t PDC_Server_data_read_from(uint64_t obj_id, struct PDC_region_info *region
     read_bytes = pread(region->fd, buf, region_info->size[0], file_offset);
     /* printf("server %d calls pread, offset = %lld, size = %lld\n", pdc_server_rank_g, region_info->offset[0]-pdc_server_rank_g*nclient_per_node*region_info->size[0], region_info->size[0]); */
     if(read_bytes == -1){
-        int thiserr = errno;
-        printf("==PDC_SERVER[%d]: pread %d failed (%s)\n", pdc_server_rank_g, region->fd, sys_errlist[errno]);
+        char errmsg[256];
+        printf("==PDC_SERVER[%d]: pread %d failed (%s)\n", pdc_server_rank_g, region->fd, strerror_r(errno, errmsg, sizeof(errmsg)));
         goto done;
     }
-    printf("==PDC_SERVER[%d]: obj_id = %lu , offset = %ld pread %d succeeded\n", pdc_server_rank_g, obj_id, file_offset, region->fd);
+    // printf("==PDC_SERVER[%d]: obj_id = %lu , offset = %ld pread %d succeeded\n", pdc_server_rank_g, obj_id, file_offset, region->fd);
     
 done:
     fflush(stdout);

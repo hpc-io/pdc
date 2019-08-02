@@ -40,6 +40,7 @@
 #include "pdc_analysis_support.h"
 #include "pdc_analysis_common.h"
 
+extern int get_datatype_size(PDC_var_type_t dtype);
 extern int pdc_client_mpi_rank_g;
 extern int pdc_client_mpi_size_g;
 
@@ -53,10 +54,10 @@ PDCobj_transform_register(char *func, pdcid_t obj_id, int current_state, int nex
     size_t (*ftnPtr)() = NULL;
     struct region_transform_ftn_info *thisFtn = NULL;
     struct PDC_obj_info *obj1, *obj2;
-    struct PDC_id_info *objinfo1, *objinfo2;
+    struct PDC_id_info *objinfo1;
     struct PDC_region_info *reg1, *reg2;
     pdcid_t src_region_id, dest_region_id;
-    pdcid_t src_object_id, dest_object_id;
+    pdcid_t dest_object_id;
     char *thisApp = NULL;
     char *colonsep = NULL; 
     char *transformslibrary = NULL;
@@ -98,13 +99,12 @@ PDCobj_transform_register(char *func, pdcid_t obj_id, int current_state, int nex
     thisFtn->op_type = op_type;
     thisFtn->when = when;
     thisFtn->lang = C_lang;
+    thisFtn->nextState = next_state;
     thisFtn->dest_type = PDC_UNKNOWN;
 
     // Add to our own list of transform functions
     if ((local_regIndex = pdc_add_transform_ptr_to_registry_(thisFtn)) < 0)
         PGOTO_ERROR(FAIL,"PDC unable to register transform function!\n");
-
-    // pdc_client_register_obj_transform(userdefinedftn, loadpath, obj_id, current_state, next_state, (int)op_type, (int)when);
 
     // Flag the transform as being active on mapping operations
     if (op_type == PDC_DATA_MAP) {
@@ -224,19 +224,29 @@ PDCbuf_map_transform_register(char *func, void *buf,
     if (id_info && ((region_info = (struct PDC_region_info *)id_info->obj_ptr) != NULL))
         thisFtn->dest_region = region_info;
 
+    // Flag the destination region with the transform
+    // We do this here because the target region is what
+    // will eventually be locked and then unlocked to enable
+    // a mapping data transfer.  
+    region_info->registered_op |= PDC_TRANSFORM;
+
     thisFtn->op_type = PDC_DATA_MAP;
     thisFtn->when = when;
     thisFtn->lang = C_lang;
     thisFtn->client_id = pdc_client_mpi_rank_g;
-    thisFtn->readyCount = current_state;
+    thisFtn->readyState = current_state;
     thisFtn->ftn_lastResult = 0;
     thisFtn->data = buf;
     id_info = pdc_find_id(dest_object_id);
     if (id_info) object1 = (struct PDC_obj_info *)(id_info->obj_ptr);
     if (object1) {
         thisFtn->type = object1->obj_pt->type;
-	if ((thisFtn->type_extent = object1->obj_pt->type_extent) == 0)
-            thisFtn->type_extent = get_datatype_size(object1->obj_pt->type);
+	if (object1->obj_pt->type_extent == 0) {
+	    object1->obj_pt->type_extent = get_datatype_size(object1->obj_pt->type);
+	}
+	thisFtn->type_extent = object1->obj_pt->type_extent;
+	thisFtn->dest_extent = object1->obj_pt->type_extent;
+	thisFtn->dest_type = object1->obj_pt->type;
     }    
     if (next_state == INCR_STATE)
         thisFtn->nextState = current_state +1;
@@ -262,16 +272,18 @@ PDCbuf_map_transform_register(char *func, void *buf,
 done:
     if (applicationDir) free(applicationDir);
     if (userdefinedftn) free(userdefinedftn);
+    if (loadpath) free(loadpath);
 
     FUNC_LEAVE(ret_value);
 }
   
 perr_t
-PDCbuf_io_transform_register(char *func, void *buf,
-                             pdcid_t src_region_id, int current_state, int next_state,
-                             PDCdata_movement_t when )
+PDCbuf_io_transform_register(char *func ATTRIBUTE(unused), void *buf ATTRIBUTE(unused),
+                             pdcid_t src_region_id ATTRIBUTE(unused), int current_state ATTRIBUTE(unused),
+			     int next_state ATTRIBUTE(unused), PDCdata_movement_t when ATTRIBUTE(unused))
 {
     perr_t ret_value = FAIL;         /* Return value (not implemented) */
+#if 0
     void *ftnHandle = NULL;
     size_t (*ftnPtr)() = NULL;
     struct PDC_obj_info *object1 = NULL;
@@ -285,14 +297,22 @@ PDCbuf_io_transform_register(char *func, void *buf,
     char *userdefinedftn = NULL;
     char *loadpath = NULL;
     int local_regIndex;
-
+#endif
     FUNC_ENTER(NULL);
     printf("IO transforms are not currently supported!\n");
-done:
-    if (applicationDir) free(applicationDir);
-    if (userdefinedftn) free(userdefinedftn);
+// done:
+//    if (applicationDir) free(applicationDir);
+//    if (userdefinedftn) free(userdefinedftn);
 
     FUNC_LEAVE(ret_value);
 
 }
 
+perr_t
+pdc_transform_end()
+{
+    perr_t ret_value = SUCCEED;         /* Return value */
+    FUNC_ENTER(NULL);
+    free_transform_registry();
+    FUNC_LEAVE(ret_value);
+}

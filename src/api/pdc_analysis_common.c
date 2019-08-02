@@ -34,7 +34,7 @@ size_t                     analysis_registry_size = 0;
 size_t                     transform_registry_size = 0;
 hg_atomic_int32_t          registered_analysis_ftn_count_g;
 hg_atomic_int32_t          registered_transform_ftn_count_g;
-struct PDC_iterator_info *  PDC_Block_iterator_cache = NULL;
+struct PDC_iterator_info * PDC_Block_iterator_cache = NULL;
 int                      * i_cache_freed = NULL;
 
 size_t                     iterator_cache_entries = CACHE_SIZE;
@@ -278,7 +278,8 @@ int pdc_add_transform_ptr_to_registry_(struct region_transform_ftn_info *ftn_inf
      * simply return the OLD index.
      */
     for(i=0; i < currentCount; i++) {
-        if (ftn_infoPtr->ftnPtr == pdc_region_transform_registry[i]->ftnPtr)
+      if ((ftn_infoPtr->ftnPtr == pdc_region_transform_registry[i]->ftnPtr) &&
+	  (ftn_infoPtr->object_id == pdc_region_transform_registry[i]->object_id))
             return (int)i;	/* Found match */
     }
 
@@ -295,7 +296,7 @@ int pdc_update_transform_server_meta_index(int client_index, int meta_index)
         struct region_transform_ftn_info *ftnPtr = pdc_region_transform_registry[client_index];
         ftnPtr->meta_index = meta_index;
     } else {
-        printf("pdc_update_transform_server_index: Bad client index(%d)\n", client_index);
+        printf("%s: Bad client index(%d)\n", __func__, client_index);
         return -1;
     }
     return 0;
@@ -314,22 +315,10 @@ get_execution_locus()
 }
 
 int
-get_ftnPtr_(const char *ftn, char *loadpath, void **ftnPtr)
+get_ftnPtr_(const char *ftn, const char *loadpath, void **ftnPtr)
 {
   static void *appHandle = NULL;
-  static char *lastopened = NULL;
   void *ftnHandle = NULL;    
-
-  if (lastopened && strcmp(lastopened, loadpath)) {
-    /* Rather than closing the previously opened library
-     * we should record it as being opened and then
-     * eventually close it when we know it's safe, e.g.
-     * at shutdown?
-     */
-    // dlclose(appHandle);
-    appHandle = NULL;
-    free(lastopened);
-  }
 
   if (appHandle == NULL) {
     if ((appHandle = dlopen(loadpath,RTLD_NOW)) == NULL) {
@@ -344,9 +333,12 @@ get_ftnPtr_(const char *ftn, char *loadpath, void **ftnPtr)
     fprintf(stderr, "dlsym failed: %s\n", dlerror());
     fflush(stderr);
     return -1;
-  } else {
+  }
+#if 0
+  else {
     if (loadpath != NULL) lastopened = strdup(loadpath);
   }
+#endif
   *ftnPtr = ftnHandle;
   return 0;
 }
@@ -379,7 +371,7 @@ HG_TEST_RPC_CB(analysis_ftn, handle)
 	   (in.loadpath == NULL ? "unknown" : in.loadpath));
     */
 
-    if (get_ftnPtr_(in.ftn_name, (char *)in.loadpath, &ftnHandle) < 0)
+    if (get_ftnPtr_(in.ftn_name, in.loadpath, &ftnHandle) < 0)
         printf("get_ftnPtr_ returned an error!\n");
     /*
     else printf("loaded function pointer to %s from loadpath %s\n", in.ftn_name, (char *)in.loadpath);
@@ -500,5 +492,40 @@ obj_data_iterator_register(hg_class_t *hg_class)
     ret_value = MERCURY_REGISTER(hg_class, "obj_data_iterator", obj_data_iterator_in_t, obj_data_iterator_out_t, obj_data_iterator_cb);
 
     FUNC_LEAVE(ret_value);
+}
+
+void
+free_analysis_registry()
+{
+    int index;
+    if (pdc_region_analysis_registry && (registered_analysis_ftn_count_g > 0)) {
+        for(index = 0; index < registered_analysis_ftn_count_g; index++) {
+            free(pdc_region_analysis_registry[index]);
+        }
+        free(pdc_region_analysis_registry);
+        pdc_region_analysis_registry = NULL;
+    }
+}
+
+
+void
+free_transform_registry()
+{
+    int index;
+    if (pdc_region_transform_registry && (registered_transform_ftn_count_g > 0)) {
+        for(index = 0; index < registered_transform_ftn_count_g; index++) {
+            free(pdc_region_transform_registry[index]);
+        }
+        free(pdc_region_transform_registry);
+	pdc_region_transform_registry = NULL;
+    }
+}
+
+void
+free_iterator_cache()
+{
+    if (PDC_Block_iterator_cache != NULL)
+        free(PDC_Block_iterator_cache);
+    PDC_Block_iterator_cache = NULL;
 }
 

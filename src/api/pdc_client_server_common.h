@@ -209,6 +209,15 @@ typedef struct pdc_metadata_transfer_t {
     const char    *tags;
     const char    *data_location;
 
+    // The following support state changes to objects
+    // as a result of a transform.
+
+    int32_t        current_state;
+    int8_t         t_storage_order;
+    int8_t         t_dtype;
+    size_t         t_ndim;
+    uint64_t       t_dims0, t_dims1, t_dims2, t_dims3;
+    int            t_meta_index;
     /* time_t      create_time; */
     /* time_t      last_modified_time; */
 } pdc_metadata_transfer_t;
@@ -378,6 +387,10 @@ typedef struct pdc_metadata_t {
 
     // For buf to obj map
     region_buf_map_t *region_buf_map_head;
+
+    // For transforms
+    int transform_state;
+    PDC_transform_state_t current_state;
 
     pdc_histogram_t *obj_hist;
 
@@ -684,16 +697,17 @@ hg_proc_region_lock_out_t(hg_proc_t proc, void *data)
 typedef struct {
     uint32_t                    meta_server_id;
     uint64_t                    obj_id;
-//    int32_t                     lock_op;
+//  int32_t                     lock_op;
     uint8_t                     access_type;
     pdcid_t                     local_reg_id;
     region_info_transfer_t      region;
     uint8_t                     mapping;
     uint8_t                     data_type;
     uint8_t                     lock_mode;
-  /* The following are unique to the transform portion of the lock */
+/* The following are unique to the transform portion of the lock */
     uint8_t                     dest_type;
     int32_t                     transform_id;
+    int32_t                     transform_state;
     hg_bulk_t                   local_bulk_handle;
     int64_t                     transform_data_size;
     uint64_t                    client_data_ptr;
@@ -752,6 +766,11 @@ hg_proc_region_transform_and_lock_in_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->transform_id);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->transform_state);
     if (ret != HG_SUCCESS) {
         HG_LOG_ERROR("Proc error");
         return ret;
@@ -1072,6 +1091,52 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
     ret = hg_proc_hg_string_t(proc, &struct_data->tags);
     if (ret != HG_SUCCESS) {
 	    HG_LOG_ERROR("Proc tags error");
+        return ret;
+    }
+    // Added to support transforms
+    ret = hg_proc_int32_t(proc, &struct_data->current_state);
+    if (ret != HG_SUCCESS) {
+	    HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int8_t(proc, &struct_data->t_storage_order);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int8_t(proc, &struct_data->t_dtype);
+    if (ret != HG_SUCCESS) {
+        HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_size_t(proc, &struct_data->t_ndim);
+    if (ret != HG_SUCCESS) {
+	    HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->t_dims0);
+    if (ret != HG_SUCCESS) {
+	    HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->t_dims1);
+    if (ret != HG_SUCCESS) {
+	    HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->t_dims2);
+    if (ret != HG_SUCCESS) {
+	    HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->t_dims3);
+    if (ret != HG_SUCCESS) {
+	    HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->t_meta_index);
+    if (ret != HG_SUCCESS) {
+	    HG_LOG_ERROR("Proc error");
         return ret;
     }
     return ret;
@@ -2844,7 +2909,6 @@ struct bulk_args_t {
 struct buf_map_release_bulk_args {
     hg_handle_t handle;
     void  *data_buf;
-    region_lock_in_t in;
     pdcid_t remote_obj_id;         /* target of object id */
     pdcid_t remote_reg_id;         /* target of region id */
     int32_t remote_client_id;
@@ -2857,13 +2921,21 @@ struct buf_map_release_bulk_args {
     hg_thread_mutex_t work_mutex;
     hg_thread_cond_t work_cond;
     int work_completed;
+    region_lock_in_t in;
 };
+
+//  The following two tructures are the same as: buf_map_release_bulk_args
+//  (above) with one modified field, i.e. the region_transform_and_lock_in_t
+//  and the region_analysis_and_lock_in_t rather than region_lock_in_t.
+//  This should allow the normal thread processing for IO operations
+//  to work correctly.  N.B. I moved the region_lock_in_t structure in
+//  the struct buf_map_release_bulk_args above, to be the last element.
+//  Thus, the size difference in the last element shouldn't matter
+//  to normal processing of things...
 
 struct buf_map_transform_and_release_bulk_args {
     hg_handle_t handle;
     void  *data_buf;
-    /* region_transform_and_lock_in_t is a superset of region_lock_in_t */
-    region_transform_and_lock_in_t in;
     pdcid_t remote_obj_id;         /* target of object id */
     pdcid_t remote_reg_id;         /* target of region id */
     int32_t remote_client_id;
@@ -2876,13 +2948,13 @@ struct buf_map_transform_and_release_bulk_args {
     hg_thread_mutex_t work_mutex;
     hg_thread_cond_t work_cond;
     int work_completed;
+    /* region_transform_and_lock_in_t is a superset of region_lock_in_t */
+    region_transform_and_lock_in_t in;
 };
 
 struct buf_map_analysis_and_release_bulk_args {
     hg_handle_t handle;
     void  *data_buf;
-    /* region_analysis_and_lock_in_t is a superset of region_lock_in_t */
-    region_analysis_and_lock_in_t in;
     pdcid_t remote_obj_id;         /* target of object id */
     pdcid_t remote_reg_id;         /* target of region id */
     int32_t remote_client_id;
@@ -2895,6 +2967,9 @@ struct buf_map_analysis_and_release_bulk_args {
     hg_thread_mutex_t work_mutex;
     hg_thread_cond_t work_cond;
     int work_completed;
+    /* region_analysis_and_lock_in_t is a superset of region_lock_in_t */
+    region_analysis_and_lock_in_t in;
+
 };
 
 struct lock_bulk_args {
@@ -2997,6 +3072,8 @@ hg_id_t storage_meta_name_query_rpc_register(hg_class_t *hg_class);
 
 hg_id_t send_nhits_register(hg_class_t *hg_class);
 hg_id_t send_bulk_rpc_register(hg_class_t *hg_class);
+hg_id_t get_sel_data_rpc_register(hg_class_t *hg_class);
+
 
 //extern char *find_in_path(char *workingDir, char *application);
 
@@ -3756,6 +3833,8 @@ void              PDCquery_print(pdcquery_t *query);
 void              PDCregion_free(struct PDC_region_info *region);
 void              PDCselection_print(pdcselection_t *sel);
 void              PDCselection_print_all(pdcselection_t *sel);
+int               get_datatype_size(PDC_var_type_t dtype);
+
 
 
 hg_return_t PDC_Client_recv_nhits(const struct hg_cb_info *callback_info);

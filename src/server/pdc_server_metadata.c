@@ -233,6 +233,8 @@ void PDC_Server_metadata_init(pdc_metadata_t* a)
     a->region_buf_map_head  = NULL;
     a->prev                 = NULL;
     a->next                 = NULL;
+    a->transform_state      = 0;
+    memset(&a->current_state, 0, sizeof(PDC_transform_state_t));
 }
 // ^ hash table
 
@@ -462,8 +464,7 @@ pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id)
     /*             pdc_server_rank_g, obj_id); */
     /*     goto done; */
     /* } */
-
-done:
+/* done: */
     FUNC_LEAVE(ret_value);
 }
 
@@ -1117,6 +1118,16 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
                     strcat(target->tags, in->new_metadata.tags);
                     /* printf("Final tags: %s\n", target->tags); */
                 }
+		if (in->new_metadata.current_state != 0) {
+                    target->transform_state = in->new_metadata.current_state;
+                    target->current_state.dtype = in->new_metadata.t_dtype;
+                    target->current_state.ndim = in->new_metadata.t_ndim;
+                    target->current_state.dims[0] = in->new_metadata.t_dims0;
+                    target->current_state.dims[1] = in->new_metadata.t_dims1;
+                    target->current_state.dims[2] = in->new_metadata.t_dims2;
+                    target->current_state.dims[3] = in->new_metadata.t_dims3;
+                    target->current_state.meta_index = in->new_metadata.t_meta_index;
+		}
 
                 out->ret  = 1;
             } // if (lookup_value != NULL) 
@@ -1961,7 +1972,6 @@ done:
 perr_t PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_ids)
 {
     perr_t ret_value = SUCCEED;
-    uint32_t i;
     uint32_t iter = 0;
     pdc_hash_table_entry_head *head;
     pdc_metadata_t *elt;
@@ -2774,7 +2784,7 @@ perr_t PDC_Server_find_container_by_id(uint64_t cont_id, pdc_cont_hash_table_ent
 {
     perr_t ret_value = SUCCEED;
     pdc_cont_hash_table_entry_t *cont_entry;
-    pdc_metadata_t *elt;
+    // pdc_metadata_t *elt;
     HashTableIterator hash_table_iter;
     int n_entry;
     HashTablePair pair;
@@ -2908,7 +2918,7 @@ perr_t PDC_Server_container_del_objs(int n_obj, uint64_t *obj_ids, uint64_t cont
 {
     perr_t ret_value = SUCCEED;
     pdc_cont_hash_table_entry_t *cont_entry = NULL;
-    int realloc_size = 0, i, j;
+    int i, j;
     int n_deletes = 0;
 
     FUNC_ENTER(NULL);
@@ -2970,7 +2980,6 @@ perr_t PDC_Server_container_add_tags(uint64_t cont_id, char *tags)
 {
     perr_t ret_value = SUCCEED;
     pdc_cont_hash_table_entry_t *cont_entry = NULL;
-    int realloc_size = 0;
 
     FUNC_ENTER(NULL);
     ret_value = PDC_Server_find_container_by_id(cont_id, &cont_entry);
@@ -3055,8 +3064,8 @@ static perr_t PDC_Server_get_storage_meta_by_names(query_read_names_args_t *args
     uint32_t client_id;
     char *obj_name;
     pdc_metadata_t *meta = NULL;
-    region_list_t *region_elt = NULL, *region_head = NULL, *res_region_list = NULL;
-    int region_count = 0, i = 0, j = 0;
+    // region_list_t *region_elt = NULL, *region_head = NULL, *res_region_list = NULL;
+    int i = 0, j = 0;
     region_storage_meta_t **all_storage_meta;
     int *all_nregion, total_region;
     FUNC_ENTER(NULL);
@@ -3227,7 +3236,9 @@ perr_t PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t 
     perr_t ret_value = SUCCEED;
     uint32_t hash_key;
     uint64_t obj_id;
+#ifdef ENABLE_MULTITHREAD
     int unlocked;
+#endif
     pdc_hash_table_entry_head *lookup_value;
 
     FUNC_ENTER(NULL);
@@ -3269,7 +3280,7 @@ perr_t PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t 
    
     } // if lookup_value != NULL
     else {
-        printf("==PDC_SERVER[%d]: add tag target %llu not found!\n", pdc_server_rank_g, obj_id);
+        printf("==PDC_SERVER[%d]: add tag target %lu not found!\n", pdc_server_rank_g, obj_id);
         ret_value = FAIL;
         out->ret = -1;
     }
@@ -3300,7 +3311,7 @@ perr_t PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t 
 #endif
     
 
-done:
+
 #ifdef ENABLE_MULTITHREAD 
     if (unlocked == 0)
         hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
@@ -3343,7 +3354,9 @@ perr_t PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_
     perr_t ret_value = SUCCEED;
     uint32_t hash_key;
     uint64_t obj_id;
+#ifdef ENABLE_MULTITHREAD 
     int unlocked;
+#endif
     pdc_hash_table_entry_head *lookup_value;
 
     FUNC_ENTER(NULL);
@@ -3459,7 +3472,9 @@ perr_t PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t 
     perr_t ret_value = SUCCEED;
     uint32_t hash_key;
     uint64_t obj_id;
+#ifdef ENABLE_MULTITHREAD 
     int unlocked;
+#endif
     pdc_hash_table_entry_head *lookup_value;
 
     FUNC_ENTER(NULL);

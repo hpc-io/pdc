@@ -581,15 +581,23 @@ pdc_transform_increment (void *dataIn, PDC_var_type_t srcType, int ndim, uint64_
  *  https://github.com/Blosc/c-blosc/blob/master/blosc/blosc.h
  */
 size_t
-pdc_transform_compress (void *dataIn, PDC_var_type_t srcType __attribute__((unused)), int typesize, int ndim, uint64_t *dims, void **dataOut)
+pdc_transform_compress (void *dataIn, PDC_var_type_t srcType, int ndim, uint64_t *dims, void **dataOut, PDC_var_type_t destType)
 {
   int clevel = 9;
   int doshuffle = BLOSC_BITSHUFFLE;
-  int nval, i;
+  int nval, i, typesize;
   int64_t destsize, nbytes, csize;
   void *destBuff;
 
-  /*  struct PDC_obj_prop *obj_prop; */
+  if ((srcType == PDC_INT) || (srcType == PDC_UINT) || (srcType == PDC_FLOAT))
+      typesize = sizeof(int);
+  else if ((srcType == PDC_DOUBLE) || (srcType == PDC_INT64) || (srcType == PDC_UINT64))
+      typesize = sizeof(double);
+  else if (srcType == PDC_INT16)
+      typesize = sizeof(short);
+  else if (srcType == PDC_INT8)
+      typesize = 1;
+  
   
   fprintf ( stdout, "\n[TRANSFORM] Entering pdc_transform_compress\n");
   nval = 1;
@@ -617,13 +625,24 @@ pdc_transform_compress (void *dataIn, PDC_var_type_t srcType __attribute__((unus
   return csize;
 }
 
-size_t pdc_transform_decompress (void *dataIn, PDC_var_type_t srcType __attribute__((unused)), int typesize, int ndim, uint64_t *dims, void **dataOut)
+size_t
+pdc_transform_decompress (void *dataIn, PDC_var_type_t srcType, int ndim, uint64_t *dims, void **dataOut, PDC_var_type_t destType)
 {
   int i;
-  size_t destsize, dsize;
+  size_t typesize, destsize, dsize;
   void *destBuff = *dataOut;
   
   fprintf ( stdout, "\n[TRANSFORM] Entering pdc_transform_decompress\n");
+
+  if ((destType == PDC_INT) || (destType == PDC_UINT) || (destType == PDC_FLOAT))
+      typesize = sizeof(int);
+  else if ((destType == PDC_DOUBLE) || (destType == PDC_INT64) || (destType == PDC_UINT64))
+      typesize = sizeof(double);
+  else if (destType == PDC_INT16)
+      typesize = sizeof(short);
+  else if (destType == PDC_INT8)
+      typesize = 1;
+
 
   /* destsize is the byte length of destBuff */
   destsize = typesize;

@@ -182,8 +182,16 @@ perr_t PDC_close(pdcid_t pdcid)
     if(pdc_obj_end() < 0)
         PGOTO_ERROR(FAIL, "fail to destroy object");
     if(pdc_region_end() < 0)
-        PGOTO_ERROR(FAIL, "fail to destroy object");
-    
+        PGOTO_ERROR(FAIL, "fail to destroy region");
+
+    if(pdc_iterator_end() < 0)
+        PGOTO_ERROR(FAIL, "fail to destroy iterator");
+    if(pdc_analysis_end() < 0)
+        PGOTO_ERROR(FAIL, "fail to destroy analysis");
+    if(pdc_transform_end() < 0)
+        PGOTO_ERROR(FAIL, "fail to destroy transform");
+
+
     pdc_class_close(pdcid);
     
     pdc_class_end();

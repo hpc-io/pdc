@@ -61,4 +61,6 @@ perr_t PDCobj_transform_register(char *func, pdcid_t obj_id, int current_state, 
  */
 perr_t PDCbuf_map_transform_register(char *func, void *buf, pdcid_t src_region_id, pdcid_t dest_object_id, pdcid_t dest_region_id, int current_state, int next_state, PDCdata_movement_t when );
 
+perr_t pdc_transform_end();
+
 #endif

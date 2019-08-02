@@ -37,8 +37,9 @@
 #include "pdc_analysis_support.h"
 #include "mercury_atomic.h"
 
-/* static int compare_gt(int *a, int b) { return (*a) > (b); } */
+/* static inline int compare_gt(int *a, int b) { return (*a) > (b); } */
 
+extern int get_datatype_size(PDC_var_type_t dtype);
 
 static char *default_pdc_analysis_lib = "libpdcanalysis.so";
 
@@ -73,7 +74,7 @@ iterator_init(pdcid_t objectId, pdcid_t reg_id, int blocks, struct PDC_iterator_
      * (see region size info).
      */
     if ((obj_prop_ptr = object_info->obj_pt) != NULL) {
-        if ((iter->storage_order = obj_prop_ptr->storage_order) == ROW_major) {
+        if ((iter->storage_order = obj_prop_ptr->transform_prop.storage_order) == ROW_major) {
             obj_elementsPerSlice = obj_prop_ptr->dims[obj_prop_ptr->ndim-1];
             /*
             if (obj_prop_ptr->ndim > 1) {
@@ -334,6 +335,7 @@ char *pdc_get_argv0_()
        }
        else {
           size_t cmdLength = fread(fullPath, 1, sizeof(fullPath), shellcmd);
+	  if (procpath) free(procpath);
           if (cmdLength > 0) {
             _argv0 = strdup(fullPath);
             /* truncate the cmdline if any whitespace (space or tab) */
@@ -391,7 +393,7 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
 {
     perr_t ret_value = SUCCEED;         /* Return value */
     void *ftnHandle = NULL;
-    size_t (*ftnPtr)(pdcid_t, pdcid_t) = NULL;
+    int (*ftnPtr)(pdcid_t, pdcid_t) = NULL;
     struct region_analysis_ftn_info *thisFtn = NULL;
     struct PDC_iterator_info *i_in = NULL, *i_out = NULL;
     pdcid_t meta_id_in = 0, meta_id_out = 0;
@@ -420,7 +422,7 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
     // Should probably validate the location of the "analysislibrary"
     //
     loadpath = get_realpath(analyislibrary, applicationDir);
-    if (get_ftnPtr_(userdefinedftn, loadpath, &ftnHandle) < 0)
+    if (get_ftnPtr_((const char *)userdefinedftn, (const char *)loadpath, &ftnHandle) < 0)
       printf("get_ftnPtr_ returned an error!\n");
     
     if ((ftnPtr = ftnHandle) == NULL)
@@ -429,7 +431,7 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
     if ((thisFtn = PDC_MALLOC(struct region_analysis_ftn_info)) == NULL)
         PGOTO_ERROR(FAIL,"PDC register_obj_analysis memory allocation failed\n");
 
-    thisFtn->ftnPtr = (size_t (*)()) ftnPtr;
+    thisFtn->ftnPtr = (int (*)()) ftnPtr;
     thisFtn->n_args = 2;
     /* Allocate for iterator ids and region ids */
     if ((thisFtn->object_id = (pdcid_t *)calloc(4, sizeof(pdcid_t))) != NULL) {
@@ -465,68 +467,13 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
     if (pdc_add_analysis_ptr_to_registry_(thisFtn) < 0)
         PGOTO_ERROR(FAIL,"PDC unable to register analysis function!\n");
 
-#if 0
-    // Invoke the analysis function if the input data is local
-    // to this client (CLIENT_MEMORY)
-    if (i_in) {
-        struct PDC_obj_info *p = PDC_obj_get_info(i_in->objectId);
-        struct PDC_obj_prop *q = p->obj_pt;
-        if (q->locus == CLIENT_MEMORY) {       
-            puts("CLIENT_MEMORY: analysis");
-            if (ftnPtr != NULL) {
-                int result = ftnPtr(iterIn,iterOut);
-                if (result < 0) {
-                   PGOTO_ERROR(FAIL,"Analysis function failed\n");
-                }
-            }
-        }
-    }
-#endif
 done:
     if (applicationDir) free(applicationDir);
     if (userdefinedftn) free(userdefinedftn);
+    if (loadpath) free(loadpath);
 
     FUNC_LEAVE(ret_value);
 }
-
-#if 0				/* Deprecated:  See PDCobj_data_iter_create() */
-pdcid_t PDCobj_create_data_iterator(pdcid_t obj_id, pdcid_t reg_id)
-{
-    size_t nextId = 0;
-    pdcid_t index = 0;
-
-    if (PDC_Block_iterator_cache == NULL) {
-        PDC_Block_iterator_cache = (iterator_info_t *)calloc(iterator_cache_entries, sizeof(iterator_info_t));
-        i_cache_freed = (int *) calloc(iterator_cache_entries, sizeof(int));
-        /* Index 0 is NOT-USED other than to indicate an empty iterator */
-        hg_atomic_init32(&i_cache_index,1);
-        hg_atomic_init32(&i_cache_freed,0);
-    }
-    if (compare_gt((void *)&i_cache_freed, 0)) {
-        int next_free = hg_atomic_decr32(&i_cache_freed);
-        nextId = i_cache_freed[next_free];
-    }
-    else {
-        int next_free = hg_atomic_incr32(&i_cache_index);
-        nextId = next_free -1;        /* use the "current" index */
-    }
-    if (nextId == iterator_cache_entries) {
-        /* Realloc the cache and free list */
-        int *previous_i_cache_freed = i_cache_freed;
-        iterator_info_t * previous_state = PDC_Block_iterator_cache;
-        PDC_Block_iterator_cache = (iterator_info_t *)calloc(iterator_cache_entries *2, sizeof(iterator_info_t));
-        memcpy(PDC_Block_iterator_cache, previous_state, iterator_cache_entries * sizeof(iterator_info_t));
-        i_cache_freed = (int *)calloc(iterator_cache_entries * 2, sizeof(int));
-        memcpy(i_cache_freed, previous_i_cache_freed, iterator_cache_entries * sizeof(int));
-        iterator_cache_entries *= 2;
-        free( previous_i_cache_freed );
-        free( previous_state );
-    }
-    if ((index = (pdcid_t)nextId) > 0)
-        iterator_init(obj_id, reg_id, 1, &PDC_Block_iterator_cache[nextId]);
-    return index;
-}
-#endif
 
 size_t
 PDCobj_data_getSliceCount(pdcid_t iter)
@@ -629,3 +576,21 @@ done:
 }
 
 
+perr_t
+pdc_analysis_end()
+{
+    perr_t ret_value = SUCCEED;         /* Return value */
+    FUNC_ENTER(NULL);
+    free_analysis_registry();
+    FUNC_LEAVE(ret_value);
+}
+
+
+perr_t
+pdc_iterator_end()
+{
+    perr_t ret_value = SUCCEED;         /* Return value */
+    FUNC_ENTER(NULL);
+    free_iterator_cache();
+    FUNC_LEAVE(ret_value);
+}

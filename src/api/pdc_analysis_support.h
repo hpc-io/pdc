@@ -88,7 +88,6 @@ size_t PDCobj_data_getNextBlock(pdcid_t iter, void **nextBlock, size_t *dims);
  * snapshots, etc.
  */
 perr_t PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut);
-int get_datatype_size(PDC_var_type_t dtype);
 
 char *find_in_path(char *workingDir, char *application);
 
@@ -97,5 +96,14 @@ char *pdc_get_argv0_();
 char *get_realpath( char *fname, char *app_path);
 
 pdcid_t PDCobj_create_data_iterator(pdcid_t obj_id, pdcid_t reg_id);
+
+perr_t pdc_iterator_end();
+
+perr_t pdc_analysis_end();
+
+void free_analysis_registry();
+void free_transform_registry();
+void free_iterator_cache();
+
 
 #endif

@@ -50,6 +50,7 @@ done:
 pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_prop_id)
 {
     pdcid_t ret_value = 0;
+    perr_t  ret = SUCCEED;
     struct PDC_cont_info *p = NULL;
     struct PDC_cont_prop *cont_prop = NULL;
     struct PDC_id_info *id_info = NULL;
@@ -76,8 +77,8 @@ pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_prop_id)
         p->cont_pt->pdc->name = strdup(cont_prop->pdc->name);
     p->cont_pt->pdc->local_id = cont_prop->pdc->local_id;
    
-    ret_value = PDC_Client_create_cont_id(cont_name, cont_prop_id, &(p->meta_id));
-    if (ret_value == FAIL)
+    ret = PDC_Client_create_cont_id(cont_name, cont_prop_id, &(p->meta_id));
+    if (ret == FAIL)
         PGOTO_ERROR(0, "Unable to create container on the server!\n");
     
     p->local_id = pdc_id_register(PDC_CONT, p);
@@ -90,6 +91,7 @@ done:
 pdcid_t PDCcont_create_col(const char *cont_name, pdcid_t cont_prop_id)
 {
     pdcid_t ret_value = 0;
+    perr_t  ret = SUCCEED;
     struct PDC_cont_info *p = NULL;
     struct PDC_cont_prop *cont_prop = NULL;
     struct PDC_id_info *id_info = NULL;
@@ -116,8 +118,8 @@ pdcid_t PDCcont_create_col(const char *cont_name, pdcid_t cont_prop_id)
         p->cont_pt->pdc->name = strdup(cont_prop->pdc->name);
     p->cont_pt->pdc->local_id = cont_prop->pdc->local_id;
  
-    ret_value = PDC_Client_create_cont_id_mpi(cont_name, cont_prop_id, &(p->meta_id));
-    if (ret_value == FAIL)
+    ret = PDC_Client_create_cont_id_mpi(cont_name, cont_prop_id, &(p->meta_id));
+    if (ret == FAIL)
         PGOTO_ERROR(0, "Unable to create container object on server!\n");
    
     p->local_id = pdc_id_register(PDC_CONT, p);
@@ -130,7 +132,6 @@ done:
 pdcid_t PDC_cont_create_local(pdcid_t pdc, const char *cont_name, uint64_t cont_meta_id)
 {
     pdcid_t ret_value = 0;
-    perr_t  ret;
     struct PDC_cont_info *p = NULL;
     struct PDC_cont_prop *cont_prop = NULL;
     struct PDC_id_info *id_info = NULL;
@@ -296,8 +297,7 @@ struct PDC_cont_info *PDCcont_get_info(const char *cont_name)
     cont_id = pdc_find_byname(PDC_CONT, cont_name);
     
     ret_value = PDC_cont_get_info(cont_id);
-    
-done:
+
     FUNC_LEAVE(ret_value);
 }
 
