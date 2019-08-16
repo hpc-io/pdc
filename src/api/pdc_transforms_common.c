@@ -54,6 +54,16 @@ hg_proc_transform_ftn_in_t(hg_proc_t proc, void *data)
 	HG_LOG_ERROR("Proc error");
         return ret;
     }
+    ret = hg_proc_uint64_t(proc, &struct_data->region_id);
+    if (ret != HG_SUCCESS) {
+	HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->client_index);
+    if (ret != HG_SUCCESS) {
+	    HG_LOG_ERROR("Proc error");
+        return ret;
+    }
     ret = hg_proc_int32_t(proc, &struct_data->operation_type);
     if (ret != HG_SUCCESS) {
 	    HG_LOG_ERROR("Proc error");
@@ -88,7 +98,23 @@ hg_proc_transform_ftn_out_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret;
     transform_ftn_out_t *struct_data = (transform_ftn_out_t *) data;
+    ret = hg_proc_uint64_t(proc, &struct_data->object_id);
+    if (ret != HG_SUCCESS) {
+	    HG_LOG_ERROR("Proc error");
+        return ret;
+    }
 
+    ret = hg_proc_uint64_t(proc, &struct_data->region_id);
+    if (ret != HG_SUCCESS) {
+	    HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_int32_t(proc, &struct_data->client_index);
+    if (ret != HG_SUCCESS) {
+	    HG_LOG_ERROR("Proc error");
+        return ret;
+    }
     ret = hg_proc_int32_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
 	    HG_LOG_ERROR("Proc error");
@@ -102,26 +128,59 @@ HG_TEST_RPC_CB(transform_ftn, handle)
 {
     hg_return_t ret_value = HG_SUCCESS;
     transform_ftn_in_t in;
-    transform_ftn_out_t out;
+    transform_ftn_out_t out = {0,0,0,-1};
+    struct region_transform_ftn_info *thisFtn = NULL;
     void *ftnHandle = NULL;
-    void * (*ftnPtr)(pdcid_t) = NULL;
 
     HG_Get_input(handle, &in);
-    printf("transform_ftn_cb entered!\n");
+
+#if 0
+    printf("%s entered!\n", __func__);
     printf("func = %s\nloadpath = %s\n----------------\n",
 	   (in.ftn_name == NULL ? "unknown" : in.ftn_name),
 	   (in.loadpath == NULL ? "unknown" : in.loadpath));
-
-    if ( get_ftnPtr_(in.ftn_name, (char *)in.loadpath, &ftnHandle) >= 0) {
-      out.ret = 0;
+#endif
+    if ( get_ftnPtr_(in.ftn_name, in.loadpath, &ftnHandle) >= 0) {
+        thisFtn = malloc(sizeof(struct region_transform_ftn_info));
+        if (thisFtn == NULL) {
+            printf("transform_ftn_cb: Memory allocation failed\n");
+            goto done;
+        }	    
+	/* This sets up the index return for the client!
+	 * We probably need to add more info to the
+	 * 'thisFtn' structure, but this should be a
+	 * decent start.
+	 *
+	 * TODO:  Add more info.
+	 * Note that we (the server in this case) may not
+	 * have the actual object or region.  The mapping
+	 * protocal is that the server gets a copy of the
+	 * data once a WRITE-UNLOCK happens.  At that point
+	 * the server may get an indication that it has a
+	 * transform to perform upon receipt of the data,
+	 * e.g. uncompress.
+	 * The client return contains the storage index of
+	 * the transform; which it should cache as part of
+	 * client data structures.  This should allow it
+	 * the client to include the cached index value
+	 * as part of a future data movement request.
+	 */
+        thisFtn->ftnPtr = (size_t (*)()) ftnHandle;
+        thisFtn->object_id = in.object_id;
+	thisFtn->region_id = in.region_id;
+	thisFtn->op_type = (PDCobj_transform_t)in.op_type;
+	out.ret = pdc_add_transform_ptr_to_registry_(thisFtn);
+        out.client_index = in.client_index;
+        out.object_id = in.object_id;
+	out.region_id = in.region_id;
     }
     else {
-      printf("Unable to resolve transform function pointer\n");
-      out.ret = -1;
+        printf("Unable to resolve transform function pointer\n");
+        out.ret = -1;
     }
 
+done:
     HG_Respond(handle, NULL, NULL, &out);
-
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
     FUNC_LEAVE(ret_value);

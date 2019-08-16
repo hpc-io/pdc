@@ -106,9 +106,9 @@ pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdcid)
             q->pdc->name = strdup(pdc_class->name);
         q->pdc->local_id = pdc_class->local_id;
         q->type_extent = 0;
-        q->storage_order = 0;
-        q->locus = CLIENT_MEMORY;
         q->data_state = 0;
+        q->locus = CLIENT_MEMORY;
+        memset(&q->transform_prop, 0, sizeof(PDC_transform_state_t));
         
         ret_value = new_id_o;
     }
@@ -337,3 +337,11 @@ struct PDC_obj_prop *PDCobj_prop_get_info(pdcid_t obj_prop)
 done:
     FUNC_LEAVE(ret_value);
 } 
+
+
+// Utility function for internal use.
+perr_t
+pdc_obj_prop_free(struct PDC_obj_prop *cp)
+{
+    return pdc_prop_obj_close(cp);
+}

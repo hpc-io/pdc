@@ -27,11 +27,8 @@
 
 #include "pdc_obj_pkg.h"
 #include "pdc_error.h"
-/* #include "pdc_interface.h" */
 #include "pdc_life.h"
 #include "pdc_analysis_and_transforms.h"
-/* #include "pdc_client_connect.h" */
-/* #include "pdc_client_server_common.h" */
 
 /**
  * Create a PDC iterator (general form)
@@ -52,7 +49,12 @@ pdcid_t PDCobj_data_block_iterator_create(pdcid_t obj_id, pdcid_t reg_id, int co
  *
  * \return Iterator id on success/Zero on failure
  */
-pdcid_t PDCobj_data_iterator_create(pdcid_t obj_id, pdcid_t reg_id);
+pdcid_t PDCobj_data_iter_create(pdcid_t obj_id, pdcid_t reg_id);
+
+/**
+ * \return Total number of slices that PDCobj_data_getNextBlock can return
+ */
+size_t PDCobj_data_getSliceCount(pdcid_t iter);
 
 /**
  * Use a PDC data iterator to retrieve object data for PDC in-locus Analysis
@@ -86,11 +88,22 @@ size_t PDCobj_data_getNextBlock(pdcid_t iter, void **nextBlock, size_t *dims);
  * snapshots, etc.
  */
 perr_t PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut);
-int get_datatype_size(PDC_var_type_t dtype);
 
 char *find_in_path(char *workingDir, char *application);
 
 char *pdc_get_argv0_();
 
 char *get_realpath( char *fname, char *app_path);
+
+pdcid_t PDCobj_create_data_iterator(pdcid_t obj_id, pdcid_t reg_id);
+
+perr_t pdc_iterator_end();
+
+perr_t pdc_analysis_end();
+
+void free_analysis_registry();
+void free_transform_registry();
+void free_iterator_cache();
+
+
 #endif

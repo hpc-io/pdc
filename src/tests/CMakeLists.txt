@@ -2,7 +2,8 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
   ${PDC_INCLUDES_BUILD_TIME}
-#  $ENV{HOME}/Sandbox/c-blosc/blosc
+  $ENV{HOME}/Sandbox/c-blosc/blosc
+  $ENV{HOME}/include
 )
 
 add_definitions(-DENABLE_MPI=1)
@@ -38,6 +39,8 @@ set(PROGRAMS
   buf_obj_map_mpi
   vpicio
   bdcats
+  vpicio_v2
+  bdcats_v2
   data_server_write_vpic
   data_server_write_vpic_multits
   data_server_read_vpic
@@ -56,7 +59,7 @@ set(PROGRAMS
   query_data
   query_vpic_create_data
   query_vpic
-  #import_vpic
+#  import_vpic
   query_vpic_multi
   query_vpic_multi_preload
   query_vpic_multi_nopreload
@@ -78,6 +81,7 @@ endforeach(program)
 
 set(SCRIPTS
   run_test.sh
+  run_multiple_test.sh
   )
 
 foreach(script ${SCRIPTS})
@@ -86,6 +90,13 @@ foreach(script ${SCRIPTS})
        FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE WORLD_READ WORLD_EXECUTE
     )
 endforeach(script)
+
+
+# *******************************************
+# Add the HDF5 library for pdc-neon
+# *******************************************
+FIND_LIBRARY(HDF5_LIBRARY NAMES hdf5_debug PATHS $ENV{HOME}/lib)
+
 
 # *******************************************
 # Create a transform library which contains:
@@ -116,3 +127,5 @@ add_test(NAME obj_iter    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} CO
 add_test(NAME obj_life    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_life )
 add_test(NAME obj_dim     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_dim )
 add_test(NAME obj_buf     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_buf )
+add_test(NAME vpicio_bdcats WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio ./bdcats )
+

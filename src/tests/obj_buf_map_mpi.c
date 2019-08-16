@@ -71,6 +71,17 @@ int main(int argc, char **argv)
 #endif
 
     x = (float *)malloc(numparticles*sizeof(float));
+    if (x != NULL) {
+      int i;
+      for(i=0; i< (int)numparticles; i++) {
+          x[i] = (float)i;
+      }
+    }
+    else {
+      puts("malloc failure!");
+      exit(-1);
+    }
+      
 
     // create a pdc
     pdc_id = PDC_init("pdc");
@@ -96,10 +107,13 @@ int main(int argc, char **argv)
     PDCprop_set_obj_app_name(obj_prop2, "VPICIO"  );
     PDCprop_set_obj_tags(    obj_prop2, "tag0=1"    );
 
-    obj2 = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop2, 0, comm);
-    if (obj2 == 0) {    
-        printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
-        exit(-1);
+    obj2 = PDCobj_open("obj-var-xx", pdc_id);
+    if (obj2 == 0) {
+        obj2 = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop2, 0, comm);
+        if (obj2 == 0) {    
+            printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
+            exit(-1);
+        }
     }
 
     offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim);

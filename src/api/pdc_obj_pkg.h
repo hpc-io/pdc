@@ -46,11 +46,19 @@ typedef enum {
 typedef enum { NA=0, READ=1, WRITE=2 } PDC_access_t;
 typedef enum { BLOCK=0, NOBLOCK=1 }    PDC_lock_mode_t;
 
+typedef enum {
+              PDC_NOP = 0,
+	      PDC_TRANSFORM = 1,
+	      PDC_ANALYSIS  = 2
+} PDCobj_op_type;
+  
+
 struct PDC_obj_info {
     char                   *name;
     pdcid_t                 meta_id;
     pdcid_t                 local_id;
     PDCobj_location         location;
+    int                     server_id;
     void                   *metadata;
     struct PDC_cont_info   *cont;
     struct PDC_obj_prop    *obj_pt;
@@ -64,7 +72,7 @@ struct PDC_region_info {
     uint64_t            *offset;
     uint64_t            *size;
     bool                 mapping;
-    bool                 registered_transform;
+    int                  registered_op;
     void                *buf;
 };
 

@@ -27,6 +27,7 @@
 
 #include "stdint.h"
 
+
 typedef enum {
     UNKNOWN =0,
     SERVER_MEMORY =1,
@@ -74,6 +75,27 @@ typedef enum {
 
 #define SUCCEED    0
 #define FAIL    (-1)
+
+
+#ifdef __cplusplus
+#   define ATTRIBUTE(a)
+#else /* __cplusplus */
+#if defined(HAVE_ATTRIBUTE)
+#   define ATTRIBUTE(a)     __attribute__((a))
+#else
+#   define ATTRIBUTE(a)
+#endif
+#endif /* __cplusplus */
+
+#ifdef __cplusplus
+#   define ATTR_UNUSED       /*void*/
+#else /* __cplusplus */
+#if defined(HAVE_ATTRIBUTE) && !defined(__SUNPRO_C)
+#   define ATTR_UNUSED       __attribute__((unused))
+#else
+#   define ATTR_UNUSED       /*void*/
+#endif
+#endif /* __cplusplus */
 
 #define PDCmemset(X,C,Z)     memset((void*)(X),C,Z)
 /* Include a basic profiling interface */

@@ -162,7 +162,7 @@ pdcid_t pdc_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_i
     struct PDC_cont_info *cont_info = NULL;
     struct PDC_obj_prop *obj_prop;
     uint64_t meta_id;
-    int i;
+    size_t i;
     perr_t ret = SUCCEED;
 
     FUNC_ENTER(NULL);
@@ -304,6 +304,7 @@ perr_t pdc_obj_close(struct PDC_obj_info *op)
     free(op->obj_pt->data_loc);
     free(op->obj_pt->tags);
     op->obj_pt = PDC_FREE(struct PDC_obj_prop, op->obj_pt);
+    if (op->metadata != NULL) free(op->metadata);
 
     op = PDC_FREE(struct PDC_obj_info, op);
     
@@ -417,11 +418,12 @@ pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc)
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     PDCprop_set_obj_dims(obj_prop, out->ndim, out->dims);
     PDCprop_set_obj_type(obj_prop, out->data_type);
+
     /* 'obj_name' is a char array */
     if(strlen(out->obj_name) > 0)
         p->name = strdup(out->obj_name);
     p->meta_id = out->obj_id;
-        
+
     p->cont->meta_id = out->cont_id;
     p->obj_pt->ndim = out->ndim;
     p->obj_pt->dims = malloc(out->ndim*sizeof(uint64_t));
@@ -436,10 +438,21 @@ pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc)
     p->obj_pt->time_step = out->time_step;
     p->obj_pt->user_id = out->user_id;
     
+    if (out->transform_state > 0) {
+        p->obj_pt->locus = SERVER_MEMORY;
+        p->obj_pt->data_state = out->transform_state;
+        p->obj_pt->transform_prop.storage_order = out->current_state.storage_order;
+        p->obj_pt->transform_prop.dtype = out->current_state.dtype;
+        p->obj_pt->transform_prop.ndim = out->current_state.ndim;
+	for(i=0; i < out->current_state.ndim; i++)
+            p->obj_pt->transform_prop.dims[i] = out->current_state.dims[i];
+    }
+    p->metadata = out;
     p->local_id = pdc_id_register(PDC_OBJ, p);
     ret_value = p->local_id;
-    
+
 done:
+
     FUNC_LEAVE(ret_value);
 } 
 
@@ -1103,6 +1116,8 @@ perr_t PDC_free_obj_info(struct PDC_obj_info *obj)
     
     if(obj->region_list_head != NULL)
         free(obj->region_list_head);
+
+    PDC_FREE(struct PDC_obj_info, obj);
     
     FUNC_LEAVE(ret_value);
 }
@@ -1149,7 +1164,7 @@ done:
 perr_t PDCreg_obtain_lock(pdcid_t obj_id, pdcid_t reg_id, PDC_access_t access_type, PDC_lock_mode_t lock_mode)
 {
     perr_t ret_value = SUCCEED;         /* Return value */
-    pdcid_t meta_id;
+    // pdcid_t meta_id;
     struct PDC_obj_info *object_info;
     struct PDC_region_info *region_info;
     PDC_var_type_t data_type;
@@ -1158,12 +1173,10 @@ perr_t PDCreg_obtain_lock(pdcid_t obj_id, pdcid_t reg_id, PDC_access_t access_ty
     FUNC_ENTER(NULL);
     
     object_info = PDC_obj_get_info(obj_id);
-    meta_id = object_info->meta_id;
+    // meta_id = object_info->meta_id;
     data_type = object_info->obj_pt->type;
     region_info = PDCregion_get_info(reg_id);
-    
-//    ret_value = PDC_Client_obtain_region_lock(meta_id, region_info, access_type, lock_mode, data_type, &obtained);
-    ret_value = PDC_Client_region_lock(meta_id, region_info, access_type, lock_mode, data_type, &obtained);
+    ret_value = PDC_Client_region_lock(object_info, region_info, access_type, lock_mode, data_type, &obtained);
 
     PDC_free_obj_info(object_info);
     
@@ -1174,19 +1187,21 @@ perr_t PDCreg_release_lock(pdcid_t obj_id, pdcid_t reg_id, PDC_access_t access_t
 {
     perr_t ret_value = SUCCEED;      
     pbool_t released;
-    pdcid_t meta_id;
+    // pdcid_t meta_id;
     struct PDC_obj_info *object_info;
     struct PDC_region_info *region_info;
     PDC_var_type_t data_type;
+    size_t type_extent;
  
     FUNC_ENTER(NULL);
     
     object_info = PDC_obj_get_info(obj_id);
-    meta_id = object_info->meta_id;
+    // meta_id = object_info->meta_id;
     data_type = object_info->obj_pt->type;
+    type_extent = object_info->obj_pt->type_extent;
     region_info = PDCregion_get_info(reg_id);
     
-    ret_value = PDC_Client_release_region_lock(meta_id, region_info, access_type, data_type, &released);
+    ret_value = PDC_Client_region_release(object_info, region_info, access_type, data_type, type_extent, &released);
  
     PDC_free_obj_info(object_info);
     

@@ -2,6 +2,7 @@
 # Include source and build directories
 #------------------------------------------------------------------------------
 include_directories(
+  ${CMAKE_ROOT}
   ${CMAKE_CURRENT_SOURCE_DIR}
 )
 

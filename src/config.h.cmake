@@ -18,6 +18,9 @@
 /* Define if you want to enable multithread */
 #cmakedefine ENABLE_MULTITHREAD
 
+/* Define if compiler supports attributes */
+#cmakedefine HAVE_ATTRIBUTE
+
 /* Define if has Cray DRC */
 #cmakedefine PDC_HAS_CRAY_DRC
 

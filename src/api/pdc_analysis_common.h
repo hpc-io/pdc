@@ -25,11 +25,16 @@
 #define PDC_ANALYSIS_COMMON_H
 
 #include "pdc_transforms_pkg.h"
+#include "pdc_analysis_and_transforms.h"
 
 int pdc_get_transforms(struct region_transform_ftn_info ***registry);
+int pdc_get_analysis_registry(struct region_analysis_ftn_info ***registry);
 
 int check_transform(PDCobj_transform_t op_type, struct PDC_region_info *dest_region);
+int check_analysis(PDCobj_transform_t op_type, struct PDC_region_info *dest_region);
 
 int pdc_add_transform_ptr_to_registry_(struct region_transform_ftn_info *ftnPtr);
+
+int pdc_update_transform_server_meta_index(int client_index, int meta_index);
 
 #endif
