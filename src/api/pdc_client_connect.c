@@ -2692,6 +2692,8 @@ perr_t PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct
         unit = sizeof(float);
     else if(data_type == PDC_INT)
         unit = sizeof(int);
+    else if(data_type == PDC_CHAR)
+        unit = sizeof(char);
     else
         PGOTO_ERROR(FAIL, "data type is not supported yet");
     pdc_region_info_t_to_transfer_unit(reginfo, &(in.remote_region), unit);
@@ -2754,6 +2756,8 @@ perr_t PDC_Client_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, struc
         unit = sizeof(float);
     else if(data_type == PDC_INT)
         unit = sizeof(int);
+    else if(data_type == PDC_CHAR)
+        unit = sizeof(char);
     else
         PGOTO_ERROR(FAIL, "data type is not supported yet");
     pdc_region_info_t_to_transfer_unit(reginfo, &(in.local_region), unit);
@@ -2833,6 +2837,8 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t
         unit = sizeof(float);
     else if(local_type == PDC_INT)
         unit = sizeof(int);
+    else if(local_type == PDC_CHAR)
+        unit = sizeof(char);
     else
         PGOTO_ERROR(FAIL, "local data type is not supported yet");
     pdc_region_info_t_to_transfer_unit(local_region, &(in.local_region), unit);
@@ -2843,6 +2849,8 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t
         unit_to = sizeof(float);
     else if(remote_type == PDC_INT)
         unit_to = sizeof(int);
+    else if(remote_type == PDC_CHAR)
+        unit_to = sizeof(char);
     else
         PGOTO_ERROR(FAIL, "local data type is not supported yet");
     pdc_region_info_t_to_transfer_unit(remote_region, &(in.remote_region_unit), unit_to);
@@ -2965,6 +2973,10 @@ perr_t PDC_Client_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdci
         unit = sizeof(float);
     else if(local_type == PDC_INT)
         unit = sizeof(int);
+    else if(local_type == PDC_CHAR)
+        unit = sizeof(char);
+    else if(remote_type == PDC_CHAR)
+        unit_to = sizeof(char);
     else
         PGOTO_ERROR(FAIL, "local data type is not supported yet");
     pdc_region_info_t_to_transfer_unit(local_region, &(in.local_region), unit);
@@ -3153,6 +3165,8 @@ perr_t PDC_Client_region_lock(pdcid_t meta_id, struct PDC_region_info *region_in
         in.data_unit = sizeof(float);
     else if(data_type == PDC_INT)
         in.data_unit = sizeof(int);
+    else if(data_type == PDC_CHAR)
+        in.data_unit = sizeof(char);
     else
         PGOTO_ERROR(FAIL, "data type is not supported yet");
 
@@ -3315,6 +3329,8 @@ static perr_t PDC_Client_region_release(pdcid_t meta_id, struct PDC_region_info 
         in.data_unit = sizeof(float);
     else if(data_type == PDC_INT)
         in.data_unit = sizeof(int);
+    else if(data_type == PDC_CHAR)
+        in.data_unit = sizeof(char);
     else
         PGOTO_ERROR(FAIL, "data type is not supported yet");
 
