@@ -2085,7 +2085,7 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     if(remote_reg_info == NULL) {
         PGOTO_ERROR(HG_OTHER_ERROR, "remote_reg_info memory allocation failed\n");
     }
-    remote_reg_info->ndim = (bulk_args->remote_region).ndim;
+    remote_reg_info->ndim = (bulk_args->remote_region_nounit).ndim;
     remote_reg_info->offset = (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
     remote_reg_info->size = (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
     if(remote_reg_info->ndim >= 1) {
