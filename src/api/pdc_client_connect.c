@@ -3049,8 +3049,6 @@ perr_t PDC_Client_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdci
         unit = sizeof(int);
     else if(local_type == PDC_CHAR)
         unit = sizeof(char);
-    else if(remote_type == PDC_CHAR)
-        unit_to = sizeof(char);
     else
         PGOTO_ERROR(FAIL, "local data type is not supported yet");
     pdc_region_info_t_to_transfer_unit(local_region, &(in.local_region), unit);
@@ -3061,6 +3059,8 @@ perr_t PDC_Client_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdci
         unit_to = sizeof(float);
     else if(remote_type == PDC_INT)
         unit_to = sizeof(int);
+    else if(remote_type == PDC_CHAR)
+        unit_to = sizeof(char);
     else
         PGOTO_ERROR(FAIL, "local data type is not supported yet");
     pdc_region_info_t_to_transfer_unit(remote_region, &(in.remote_region), unit_to);
