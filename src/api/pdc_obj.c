@@ -1191,7 +1191,6 @@ perr_t PDCreg_release_lock(pdcid_t obj_id, pdcid_t reg_id, PDC_access_t access_t
     struct PDC_obj_info *object_info;
     struct PDC_region_info *region_info;
     PDC_var_type_t data_type;
-    size_t type_extent;
  
     FUNC_ENTER(NULL);
     
@@ -1201,7 +1200,7 @@ perr_t PDCreg_release_lock(pdcid_t obj_id, pdcid_t reg_id, PDC_access_t access_t
     type_extent = object_info->obj_pt->type_extent;
     region_info = PDCregion_get_info(reg_id);
     
-    ret_value = PDC_Client_region_release(object_info, region_info, access_type, data_type, type_extent, &released);
+    ret_value = PDC_Client_region_release(object_info, region_info, access_type, data_type, &released);
  
     PDC_free_obj_info(object_info);
     

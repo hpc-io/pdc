@@ -255,7 +255,7 @@ perr_t PDC_Client_region_lock(struct PDC_obj_info *object_info, struct PDC_regio
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_region_release(struct PDC_obj_info *object_info, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_var_type_t data_type, size_t type_extent, pbool_t *released);
+perr_t PDC_Client_region_release(struct PDC_obj_info *object_info, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_var_type_t data_type, pbool_t *released);
 
 /**
  * PDC client initialization

@@ -725,6 +725,7 @@ client_rpc_cb(const struct hg_cb_info *callback_info)
     ret_value = HG_Get_output(handle, &output);
     if (ret_value != HG_SUCCESS) {
         printf("PDC_CLIENT[%d]: client_rpc_cb error with HG_Get_output\n", pdc_client_mpi_rank_g);
+        fflush(stdout);
         client_lookup_args->obj_id = 0;
         goto done;
     }
@@ -3865,18 +3866,20 @@ hg_return_t maybe_run_transform(struct PDC_obj_info *object_info, struct PDC_reg
 }
 
 
-perr_t PDC_Client_region_release(struct PDC_obj_info *object_info, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_var_type_t data_type, size_t type_extent, pbool_t *status)
+perr_t PDC_Client_region_release(struct PDC_obj_info *object_info, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_var_type_t data_type, pbool_t *status)
 {
     perr_t ret_value = SUCCEED;
     int readyState = 0, currentState;
     hg_return_t hg_ret;
     uint32_t server_id, meta_server_id;
     region_lock_in_t in;
+    size_t type_extent;
     struct client_lookup_args lookup_args;
     hg_handle_t region_release_handle = HG_HANDLE_NULL;
     void *transform_result = NULL;
     size_t unit, transform_size = 0;
 
+    type_extent = object_info->obj_pt->type_extent;
     if (region_info->registered_op & PDC_TRANSFORM) {
         int transform_index = -1;
 	struct region_transform_ftn_info **registry = NULL;
