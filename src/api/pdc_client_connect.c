@@ -2977,7 +2977,7 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t
 
     HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr, buf_map_register_id_g, &client_send_buf_map_handle);
 
-    // Create bulk handle
+    // Create bulk handle and release in PDC_Data_Server_buf_unmap()
     hg_ret = HG_Bulk_create(hg_class, local_count, (void**)data_ptrs, (hg_size_t *)data_size, HG_BULK_READWRITE, &(in.local_bulk_handle));
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "PDC_Client_buf_map(): Could not create local bulk data handle\n");
@@ -2992,9 +2992,6 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t
     // Wait for response from server
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
-
-    // Free the bulk handle that we allocated above.
-    HG_Bulk_free(in.local_bulk_handle);
 
     if (map_args.ret != 1) 
         PGOTO_ERROR(FAIL,"PDC_CLIENT: buf map failed...");

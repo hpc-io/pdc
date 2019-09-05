@@ -768,7 +768,7 @@ perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
             if(ret == HG_UTIL_SUCCESS) {
             	free(elt->remote_data_ptr);  
             	HG_Addr_free(info->hg_class, elt->local_addr);
-//            	HG_Bulk_free(elt->local_bulk_handle);
+            	HG_Bulk_free(elt->local_bulk_handle);
 #ifdef ENABLE_MULTITHREAD
             	hg_thread_mutex_destroy(&(elt->bulk_args->work_mutex));
             	hg_thread_cond_destroy(&(elt->bulk_args->work_cond)); 
@@ -1177,8 +1177,7 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
         new_obj_reg->region_lock_request_head = NULL;
 //        new_obj_reg->region_storage_head = NULL;
 
-	new_obj_reg->fd = server_open_storage(storage_location, in->remote_obj_id);
-#if 0	
+        new_obj_reg->fd = server_open_storage(storage_location, in->remote_obj_id);
         // Generate a location for data storage for data server to write
         user_specified_data_path = getenv("PDC_DATA_LOC");
         if (user_specified_data_path != NULL)
@@ -1206,13 +1205,11 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
         }
 #endif
         new_obj_reg->fd = open(storage_location, O_RDWR|O_CREAT, 0666);
-#endif
         if(new_obj_reg->fd == -1){
             printf("==PDC_SERVER[%d]: open %s failed\n", pdc_server_rank_g, storage_location);
             goto done;
         }
-	new_obj_reg->storage_location = strdup(storage_location);
-	// printf("==PDC_SERVER[%d]: open obj_id = %lu succeeded: fd = %d\n", pdc_server_rank_g, in->remote_obj_id, new_obj_reg->fd);
+        new_obj_reg->storage_location = strdup(storage_location);
         DL_APPEND(dataserver_region_g, new_obj_reg);
     }
 #ifdef ENABLE_MULTITHREAD 
@@ -5439,7 +5436,6 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region
         printf("==PDC_SERVER[%d]: pwrite %d failed\n", pdc_server_rank_g, region->fd);
         goto done;
     }
-    // printf("==PDC_SERVER[%d]: obj_id = %lu , offset = %ld pwrite %d succeeded (%ld bytes)\n", pdc_server_rank_g, obj_id, file_offset, region->fd, write_bytes);
 
 done:
     fflush(stdout);

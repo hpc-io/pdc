@@ -2445,7 +2445,7 @@ HG_TEST_RPC_CB(region_release, handle)
                 
                 hg_ret = HG_Bulk_transfer(hg_info->context, region_release_update_bulk_transfer_cb, lock_update_bulk_args, HG_BULK_PUSH, elt->addr, elt->bulk_handle, 0, lock_local_bulk_handle, 0, size, HG_OP_ID_IGNORE);
                 if (hg_ret != HG_SUCCESS) {
-                    printf("==PDC SERVER ERROR: region_release_bulk_transfer_cb() could not write bulk data\n");
+                    printf("==PDC SERVER ERROR: HG_TEST_RPC_CB(region_release, handle) could not write bulk data\n");
                 }
                 
             }
@@ -2956,15 +2956,15 @@ HG_TEST_RPC_CB(transform_region_release, handle)
                         free(data_size_to);
 
                         /* Pull bulk data */
-			size = in.transform_data_size;
+			            size = in.transform_data_size;
                         hg_ret = HG_Bulk_transfer(hg_info->context, /* Context */
-						  transform_and_region_release_bulk_transfer_cb, /* Callback */
-						  buf_map_bulk_args, /* args */
-						  HG_BULK_PULL, /* OP */
-						  hg_info->addr, /* Origin addr */
-						  in.local_bulk_handle, 0, /* Origin handle and offset */
-						  remote_bulk_handle, 0, /* Local handle and offset */
-						  size, HG_OP_ID_IGNORE); /*  */
+						transform_and_region_release_bulk_transfer_cb, /* Callback */
+						buf_map_bulk_args, /* args */
+						HG_BULK_PULL, /* OP */
+						hg_info->addr, /* Origin addr */
+						in.local_bulk_handle, 0, /* Origin handle and offset */
+						remote_bulk_handle, 0, /* Local handle and offset */
+						size, HG_OP_ID_IGNORE); /*  */
                         if (hg_ret != HG_SUCCESS) {
                             error = 1;
                             printf("===PDC SERVER: HG_TEST_RPC_CB(region_release, handle) buf map Could not read bulk data\n");
