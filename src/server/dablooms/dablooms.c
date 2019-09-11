@@ -28,65 +28,12 @@ const char *dablooms_version(void)
 
 void free_bitmap(bitmap_t *bitmap)
 {
-    /* if ((munmap(bitmap->array, bitmap->bytes)) < 0) { */
-    /*     perror("Error, unmapping memory"); */
-    /* } */
-    /* close(bitmap->fd); */
     free(bitmap);
 }
 
 bitmap_t *bitmap_resize(bitmap_t *bitmap, size_t old_size, size_t new_size)
 {
-    /* int fd = bitmap->fd; */
-    /* struct stat fileStat; */
-    
-    /* fstat(fd, &fileStat); */
-    /* size_t size = fileStat.st_size; */
-    
-    /* grow file if necessary */
-    /* if (size < new_size) { */
-    /*     if (ftruncate(fd, new_size) < 0) { */
-    /*         perror("Error increasing file size with ftruncate"); */
-    /*         free_bitmap(bitmap); */
-    /*         close(fd); */
-    /*         return NULL; */
-    /*     } */
-    /* } */
-    /* lseek(fd, 0, SEEK_SET); */
-    
-    /* /1* resize if mmap exists and possible on this os, else new mmap *1/ */
-    /* if (bitmap->array != NULL) { */
-/* #if __linux */
-    /*     bitmap->array = mremap(bitmap->array, old_size, new_size, MREMAP_MAYMOVE); */
-    /*     if (bitmap->array == MAP_FAILED) { */
-    /*         perror("Error resizing mmap"); */
-    /*         free_bitmap(bitmap); */
-    /*         close(fd); */
-    /*         return NULL; */
-    /*     } */
-/* #else */
-    /*     if (munmap(bitmap->array, bitmap->bytes) < 0) { */
-    /*         perror("Error unmapping memory"); */
-    /*         free_bitmap(bitmap); */
-    /*         close(fd); */
-    /*         return NULL; */
-    /*     } */
-    /*     bitmap->array = NULL; */
-/* #endif */
-    /* } */
-    /* if (bitmap->array == NULL) { */
-    /*     bitmap->array = mmap(0, new_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0); */
-    /*     if (bitmap->array == MAP_FAILED) { */
-    /*         perror("Error init mmap"); */
-    /*         free_bitmap(bitmap); */
-    /*         close(fd); */
-    /*         return NULL; */
-    /*     } */
-    /* } */
-
-    // Tang
     bitmap->array = malloc(new_size);
-    
     bitmap->bytes = new_size;
     return bitmap;
 }
@@ -103,7 +50,6 @@ bitmap_t *new_bitmap(size_t bytes)
     }
     
     bitmap->bytes = bytes;
-    /* bitmap->fd = fd; */
     bitmap->array = NULL;
     
     if ((bitmap = bitmap_resize(bitmap, 0, bytes)) == NULL) {
@@ -135,29 +81,6 @@ int bitmap_increment(bitmap_t *bitmap, unsigned int index, long offset)
     return 0;
 }
 
-// Changed to 8 bit counter
-/* int bitmap_increment(bitmap_t *bitmap, unsigned int index, long offset) */
-/* { */
-/*     long access = index / 2 + offset; */
-/*     uint16_t temp; */
-/*     uint16_t n = bitmap->array[access]; */
-/*     if (index % 2 != 0) { */
-/*         temp = (n & 0x00ff); */
-/*         n = (n & 0xff00) + ((n & 0x00ff) + 0x0001); */
-/*     } else { */
-/*         temp = (n & 0xff00) >> 8; */
-/*         n = (n & 0x00ff) + ((n & 0xff00) + 0x0100); */
-/*     } */
-    
-/*     if (temp == 0x00ff) { */
-/*         fprintf(stderr, "Error, 8 bit int Overflow\n"); */
-/*         return -1; */
-/*     } */
-    
-/*     bitmap->array[access] = n; */
-/*     return 0; */
-/* } */
-
 /* increments the four bit counter */
 int bitmap_decrement(bitmap_t *bitmap, unsigned int index, long offset)
 {
@@ -182,31 +105,6 @@ int bitmap_decrement(bitmap_t *bitmap, unsigned int index, long offset)
     return 0;
 }
 
-
-/* increments the four bit counter */
-/* int bitmap_decrement(bitmap_t *bitmap, unsigned int index, long offset) */
-/* { */
-/*     long access = index / 2 + offset; */
-/*     uint16_t temp; */
-/*     uint16_t n = bitmap->array[access]; */
-    
-/*     if (index % 2 != 0) { */
-/*         temp = (n & 0x00ff); */
-/*         n = (n & 0xff00) + ((n & 0x00ff) - 0x0001); */
-/*     } else { */
-/*         temp = (n & 0xff00) >> 8; */
-/*         n = (n & 0x00ff) + ((n & 0xff00) - 0x0100); */
-/*     } */
-    
-/*     if (temp == 0x0000) { */
-/*         fprintf(stderr, "Error, Decrementing zero\n"); */
-/*         return -1; */
-/*     } */
-    
-/*     bitmap->array[access] = n; */
-/*     return 0; */
-/* } */
-
 /* decrements the four bit counter */
 int bitmap_check(bitmap_t *bitmap, unsigned int index, long offset)
 {
@@ -217,17 +115,6 @@ int bitmap_check(bitmap_t *bitmap, unsigned int index, long offset)
         return bitmap->array[access] & 0xf0;
     }
 }
-
-/* decrements the four bit counter */
-/* int bitmap_check(bitmap_t *bitmap, unsigned int index, long offset) */
-/* { */
-/*     long access = index / 2 + offset; */
-/*     if (index % 2 != 0 ) { */
-/*         return bitmap->array[access] & 0x00ff; */
-/*     } else { */
-/*         return bitmap->array[access] & 0xff00; */
-/*     } */
-/* } */
 
 int bitmap_flush(bitmap_t *bitmap)
 {
@@ -297,20 +184,10 @@ counting_bloom_t *counting_bloom_init(unsigned int capacity, double error_rate, 
 }
 
 counting_bloom_t *new_counting_bloom(unsigned int capacity, double error_rate)
-/* counting_bloom_t *new_counting_bloom(unsigned int capacity, double error_rate, const char *filename) */
 {
     counting_bloom_t *cur_bloom;
-    /* int fd; */
-    
-    /* if ((fd = open(filename, O_RDWR | O_CREAT | O_TRUNC, (mode_t)0600)) < 0) { */
-    /*     perror("Error, Opening File Failed"); */
-    /*     fprintf(stderr, " %s \n", filename); */
-    /*     return NULL; */
-    /* } */
     
     cur_bloom = counting_bloom_init(capacity, error_rate, 0);
-    // Tang
-    /* cur_bloom->bitmap = new_bitmap(fd, cur_bloom->num_bytes); */
     cur_bloom->bitmap = new_bitmap(cur_bloom->num_bytes);
     cur_bloom->header = (counting_bloom_header_t *)(cur_bloom->bitmap->array);
     return cur_bloom;
@@ -418,64 +295,9 @@ counting_bloom_t *new_counting_bloom_from_scale(scaling_bloom_t *bloom)
     return cur_bloom;
 }
 
-/* counting_bloom_t *new_counting_bloom_from_file(unsigned int capacity, double error_rate, const char *filename) */
-/* { */
-/*     int fd; */
-/*     off_t size; */
-    
-/*     counting_bloom_t *bloom; */
-    
-/*     if ((fd = open(filename, O_RDWR, (mode_t)0600)) < 0) { */
-/*         fprintf(stderr, "Error, Could not open file %s: %s\n", filename, strerror(errno)); */
-/*         return NULL; */
-/*     } */
-/*     if ((size = lseek(fd, 0, SEEK_END)) < 0) { */
-/*         perror("Error, calling lseek() to tell file size"); */
-/*         close(fd); */
-/*         return NULL; */
-/*     } */
-/*     if (size == 0) { */
-/*         fprintf(stderr, "Error, File size zero\n"); */
-/*     } */
-    
-/*     bloom = counting_bloom_init(capacity, error_rate, 0); */
-    
-/*     if (size != bloom->num_bytes) { */
-/*         free_counting_bloom(bloom); */
-/*         fprintf(stderr, "Error, Actual filesize and expected filesize are not equal\n"); */
-/*         return NULL; */
-/*     } */
-/*     // Tang */
-/*     if ((bloom->bitmap = new_bitmap(size)) == NULL) { */
-/*     /1* if ((bloom->bitmap = new_bitmap(fd, size)) == NULL) { *1/ */
-/*         fprintf(stderr, "Error, Could not create bitmap with file\n"); */
-/*         free_counting_bloom(bloom); */
-/*         return NULL; */
-/*     } */
-    
-/*     bloom->header = (counting_bloom_header_t *)(bloom->bitmap->array); */
-    
-/*     return bloom; */
-/* } */
-
-/* uint64_t scaling_bloom_clear_seqnums(scaling_bloom_t *bloom) */
-/* { */
-/*     uint64_t seqnum; */
-    
-/*     if (bloom->header->disk_seqnum != 0) { */
-/*         // disk_seqnum cleared on disk before any other changes */
-/*         bloom->header->disk_seqnum = 0; */
-/*         bitmap_flush(bloom->bitmap); */
-/*     } */
-/*     seqnum = bloom->header->mem_seqnum; */
-/*     bloom->header->mem_seqnum = 0; */
-/*     return seqnum; */
-/* } */
-
 int scaling_bloom_add(scaling_bloom_t *bloom, const char *s, size_t len, uint64_t id)
 {
     int i;
-    /* uint64_t seqnum; */
     
     counting_bloom_t *cur_bloom = NULL;
     for (i = bloom->num_blooms - 1; i >= 0; i--) {
@@ -484,8 +306,6 @@ int scaling_bloom_add(scaling_bloom_t *bloom, const char *s, size_t len, uint64_
             break;
         }
     }
-    
-    /* seqnum = scaling_bloom_clear_seqnums(bloom); */
     
     if ((id > bloom->header->max_id) && (cur_bloom->header->count >= cur_bloom->capacity - 1)) {
         cur_bloom = new_counting_bloom_from_scale(bloom);
@@ -497,8 +317,6 @@ int scaling_bloom_add(scaling_bloom_t *bloom, const char *s, size_t len, uint64_
     }
     counting_bloom_add(cur_bloom, s, len);
     
-    /* bloom->header->mem_seqnum = seqnum + 1; */
-    
     return 1;
 }
 
@@ -506,16 +324,11 @@ int scaling_bloom_remove(scaling_bloom_t *bloom, const char *s, size_t len, uint
 {
     counting_bloom_t *cur_bloom;
     int i;
-    /* uint64_t seqnum; */
     
     for (i = bloom->num_blooms - 1; i >= 0; i--) {
         cur_bloom = bloom->blooms[i];
         if (id >= cur_bloom->header->id) {
-            /* seqnum = scaling_bloom_clear_seqnums(bloom); */
-            
             counting_bloom_remove(cur_bloom, s, len);
-            
-            /* bloom->header->mem_seqnum = seqnum + 1; */
             return 1;
         }
     }
@@ -535,31 +348,6 @@ int scaling_bloom_check(scaling_bloom_t *bloom, const char *s, size_t len)
     return 0;
 }
 
-/* int scaling_bloom_flush(scaling_bloom_t *bloom) */
-/* { */
-/*     if (bitmap_flush(bloom->bitmap) != 0) { */
-/*         return -1; */
-/*     } */
-/*     // all changes written to disk before disk_seqnum set */
-/*     if (bloom->header->disk_seqnum == 0) { */
-/*         bloom->header->disk_seqnum = bloom->header->mem_seqnum; */
-/*         return bitmap_flush(bloom->bitmap); */
-/*     } */
-/*     return 0; */
-/* } */
-
-/* uint64_t scaling_bloom_mem_seqnum(scaling_bloom_t *bloom) */
-/* { */
-/*     return bloom->header->mem_seqnum; */
-/* } */
-
-/* uint64_t scaling_bloom_disk_seqnum(scaling_bloom_t *bloom) */
-/* { */
-/*     return bloom->header->disk_seqnum; */
-/* } */
-
-// Tang
-/* scaling_bloom_t *scaling_bloom_init(unsigned int capacity, double error_rate, const char *filename, int fd) */
 scaling_bloom_t *scaling_bloom_init(unsigned int capacity, double error_rate)
 {
     scaling_bloom_t *bloom;
@@ -567,8 +355,6 @@ scaling_bloom_t *scaling_bloom_init(unsigned int capacity, double error_rate)
     if ((bloom = malloc(sizeof(scaling_bloom_t))) == NULL) {
         return NULL;
     }
-    // Tang
-    /* if ((bloom->bitmap = new_bitmap(fd, sizeof(scaling_bloom_header_t))) == NULL) { */
     if ((bloom->bitmap = new_bitmap(sizeof(scaling_bloom_header_t))) == NULL) {
         fprintf(stderr, "Error, Could not create bitmap with file\n");
         free_scaling_bloom(bloom);
@@ -580,26 +366,16 @@ scaling_bloom_t *scaling_bloom_init(unsigned int capacity, double error_rate)
     bloom->error_rate = error_rate;
     bloom->num_blooms = 0;
     bloom->num_bytes = sizeof(scaling_bloom_header_t);
-    /* bloom->fd = fd; */
     bloom->blooms = NULL;
     
     return bloom;
 }
 
-// Tang
-/* scaling_bloom_t *new_scaling_bloom(unsigned int capacity, double error_rate, const char *filename) */
 scaling_bloom_t *new_scaling_bloom(unsigned int capacity, double error_rate)
 {
 
     scaling_bloom_t *bloom;
     counting_bloom_t *cur_bloom;
-    /* int fd; */
-    
-    /* if ((fd = open(filename, O_RDWR | O_CREAT | O_TRUNC, (mode_t)0600)) < 0) { */
-    /*     perror("Error, Opening File Failed"); */
-    /*     fprintf(stderr, " %s \n", filename); */
-    /*     return NULL; */
-    /* } */
     
     bloom = scaling_bloom_init(capacity, error_rate);
     
@@ -611,44 +387,5 @@ scaling_bloom_t *new_scaling_bloom(unsigned int capacity, double error_rate)
     cur_bloom->header->count = 0;
     cur_bloom->header->id = 0;
     
-    /* bloom->header->mem_seqnum = 1; */
     return bloom;
 }
-
-/* scaling_bloom_t *new_scaling_bloom_from_file(unsigned int capacity, double error_rate, const char *filename) */
-/* { */
-/*     int fd; */
-/*     off_t size; */
-    
-/*     scaling_bloom_t *bloom; */
-/*     counting_bloom_t *cur_bloom; */
-    
-/*     if ((fd = open(filename, O_RDWR, (mode_t)0600)) < 0) { */
-/*         fprintf(stderr, "Error, Could not open file %s: %s\n", filename, strerror(errno)); */
-/*         return NULL; */
-/*     } */
-/*     if ((size = lseek(fd, 0, SEEK_END)) < 0) { */
-/*         perror("Error, calling lseek() to tell file size"); */
-/*         close(fd); */
-/*         return NULL; */
-/*     } */
-/*     if (size == 0) { */
-/*         fprintf(stderr, "Error, File size zero\n"); */
-/*     } */
-    
-/*     /1* bloom = scaling_bloom_init(capacity, error_rate, filename, fd); *1/ */
-/*     bloom = scaling_bloom_init(capacity, error_rate); */
-    
-/*     size -= sizeof(scaling_bloom_header_t); */
-/*     while (size) { */
-/*         cur_bloom = new_counting_bloom_from_scale(bloom); */
-/*         // leave count and id as they were set in the file */
-/*         size -= cur_bloom->num_bytes; */
-/*         if (size < 0) { */
-/*             free_scaling_bloom(bloom); */
-/*             fprintf(stderr, "Error, Actual filesize and expected filesize are not equal\n"); */
-/*             return NULL; */
-/*         } */
-/*     } */
-/*     return bloom; */
-/* } */

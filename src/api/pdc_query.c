@@ -12,13 +12,12 @@
 #include <inttypes.h>
 #include <math.h>
 
-
 #include "pdc_public.h"
 #include "pdc_interface.h"
 #include "pdc_client_server_common.h"
 #include "pdc_client_connect.h"
 #include "pdc_query.h"
-
+#include "pdc_obj_private.h"
 
 pdcquery_t *PDCquery_create(pdcid_t obj_id, pdcquery_op_t op, PDC_var_type_t type, void *value)
 {

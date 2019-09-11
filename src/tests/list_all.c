@@ -30,13 +30,6 @@
 #include <time.h>
 #include <sys/time.h>
 #include <ctype.h>
-
-/* #define ENABLE_MPI 1 */
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 #include "pdc_client_connect.h"
 #include "pdc_client_server_common.h"
@@ -159,7 +152,6 @@ int main(int argc, char **argv)
         if (use_name == -1) {
             sprintf(obj_name, "%s", rand_string(tmp_str, 16));
             PDCprop_set_obj_time_step(obj_prop, i);
-            /* sprintf(obj_name[i], "%s_%d", rand_string(tmp_str, 16), i + rank * count); */
         }
         else if (use_name == 1) {
             sprintf(obj_name, "%s", obj_prefix[0]);
@@ -177,30 +169,11 @@ int main(int argc, char **argv)
         PDCprop_set_obj_app_name(obj_prop, "test_app"  );
         PDCprop_set_obj_tags(    obj_prop, "tag0=1"    );
 
-        /* if (count < 4) { */
-        /*     printf("Proc %d Name: %s\n", rank, obj_name); */
-        /* } */
         test_obj = PDCobj_create(cont, obj_name, obj_prop);
         if (test_obj == 0) { 
             printf("Error getting an object id of %s from server, exit...\n", obj_name);
             exit(-1);
         }
-
-        // Print progress
-        /* int progress_factor = count < 10 ? 1 : 10; */
-        /* if (i > 0 && i % (count/progress_factor) == 0) { */
-        /*     gettimeofday(&ht_total_end, 0); */
-        /*     ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec; */
-        /*     ht_total_sec        = ht_total_elapsed / 1000000.0; */
-        /*     if (rank == 0) { */
-        /*         printf("%10d created ... %.4f s\n", i * size, ht_total_sec); */
-        /*         fflush(stdout); */
-        /*     } */
-        /*     #ifdef ENABLE_MPI */
-        /*     MPI_Barrier(MPI_COMM_WORLD); */
-        /*     #endif */
-        /* } */
-
     }
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -240,7 +213,6 @@ int main(int argc, char **argv)
         PDC_print_metadata(out[i]);
     }
     
-
 done:
     // close a container
     if(PDCcont_close(cont) < 0)

@@ -30,11 +30,6 @@
 #include <time.h>
 #include <sys/time.h>
 #include <math.h>
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 
 double uniform_random_number()
@@ -156,12 +151,7 @@ int main(int argc, char **argv)
     ret = PDCbuf_obj_unmap(obj2, r2);
     if (ret != SUCCEED)
         printf("region unmap failed\n");
-/*
-    for (i=0; i<numparticles; i++) {
-        printf("x = %f\n", x[i]);
-        fflush(stdout);
-    }
-*/
+
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -172,7 +162,6 @@ int main(int argc, char **argv)
     // close a container
     if(PDCcont_close(cont_id) < 0)
         printf("fail to close container\n");
-
 
     // close a container property
     if(PDCprop_close(cont_prop) < 0)

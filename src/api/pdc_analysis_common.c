@@ -26,32 +26,38 @@
  * This file includes the functionality to support PDC in-locus analysis
  ************************************************************************ */
 
-#include "pdc_analysis_and_transforms.h"
-#include "../server/pdc_analysis_server.h"
+#include "config.h"
+#include "mercury.h"
+#include "../server/pdc_server_analysis.h"
 #include "pdc_obj_private.h"
+#include "pdc_transforms_pkg.h"
+#include "pdc_analysis_and_transforms.h"
+#include "pdc_client_server_common.h"
+#include "pdc_analysis_common.h"
 
 size_t                     analysis_registry_size = 0;
 size_t                     transform_registry_size = 0;
-hg_atomic_int32_t          registered_analysis_ftn_count_g;
 hg_atomic_int32_t          registered_transform_ftn_count_g;
-struct PDC_iterator_info * PDC_Block_iterator_cache = NULL;
 int                      * i_cache_freed = NULL;
-
 size_t                     iterator_cache_entries = CACHE_SIZE;
 hg_atomic_int32_t          i_cache_index;
 hg_atomic_int32_t          i_free_index;
 PDC_loci                   execution_locus = UNKNOWN;
 
-extern hg_thread_mutex_t          insert_iterator_mutex_g;
+#ifdef ENABLE_MULTITHREAD
+extern hg_thread_pool_t *hg_test_thread_pool_g;
+extern hg_thread_pool_t *hg_test_thread_pool_fs_g;
+#endif
 
 static inline int compare_gt(int *a, int b) { return (*a) > (b); }
-struct region_analysis_ftn_info **pdc_region_analysis_registry = NULL; 
+struct region_analysis_ftn_info **pdc_region_analysis_registry = NULL;
 struct region_transform_ftn_info **pdc_region_transform_registry = NULL; 
 
 #ifndef IS_PDC_SERVER
 // Dummy function for client to compile, real function is used only by server and code is in pdc_server.c
 perr_t PDC_Server_instantiate_data_iterator(obj_data_iterator_in_t *in ATTRIBUTE(unused), obj_data_iterator_out_t *out ATTRIBUTE(unused)) {return SUCCEED;}
 void *PDC_Server_get_ftn_reference(char *ftn ATTRIBUTE(unused)) {return NULL;}
+int pdc_get_analysis_registry(struct region_analysis_ftn_info ***registry ATTRIBUTE(unused)) {return 0;};
 #endif
 
 /* Internal support functions */
@@ -59,15 +65,15 @@ static int pdc_analysis_registry_init_(size_t newSize)
 {
     struct region_analysis_ftn_info **new_registry;
     if (pdc_region_analysis_registry == NULL) {
-	new_registry = (struct region_analysis_ftn_info **)calloc(sizeof(void *),newSize);
+        new_registry = (struct region_analysis_ftn_info **)calloc(sizeof(void *),newSize);
         if (new_registry) {
             hg_atomic_init32(&registered_analysis_ftn_count_g, 0);
             pdc_region_analysis_registry = new_registry;
             return analysis_registry_size = newSize;
-	}
+        }
     }
     else if (newSize > analysis_registry_size) {
-	new_registry = (struct region_analysis_ftn_info **)calloc(sizeof(void *),newSize);
+        new_registry = (struct region_analysis_ftn_info **)calloc(sizeof(void *),newSize);
         if (new_registry) {
             size_t copysize = analysis_registry_size * sizeof(void *);
             memcpy(new_registry, pdc_region_analysis_registry, copysize);
@@ -83,12 +89,12 @@ static int pdc_transform_registry_init_(size_t newSize)
 {
     struct region_transform_ftn_info **new_registry;
     if (pdc_region_transform_registry == NULL) {
-	new_registry = (struct region_transform_ftn_info **)calloc(sizeof(void *),newSize);
+        new_registry = (struct region_transform_ftn_info **)calloc(sizeof(void *),newSize);
         if (new_registry) {
             hg_atomic_init32(&registered_transform_ftn_count_g, 0);
             pdc_region_transform_registry = new_registry;
             return transform_registry_size = newSize;
-	}
+        }
     }
     else if (newSize > transform_registry_size) {
 	new_registry = (struct region_transform_ftn_info **)calloc(sizeof(void *),newSize);
@@ -133,15 +139,6 @@ int check_analysis(PDCobj_transform_t op_type ATTRIBUTE(unused), struct PDC_regi
     return 0;
 }
 
-int pdc_get_analysis_registry(struct region_analysis_ftn_info ***registry)
-{
-    if(registry) {
-       *registry = pdc_region_analysis_registry;
-       return hg_atomic_get32(&registered_analysis_ftn_count_g);
-    }
-    return 0;
-}
-
 int pdc_add_analysis_ptr_to_registry_(struct region_analysis_ftn_info *ftn_infoPtr)
 {
     size_t initial_registry_size = 64;
@@ -176,30 +173,19 @@ int pdc_add_analysis_ptr_to_registry_(struct region_analysis_ftn_info *ftn_infoP
 int PDCiter_get_nextId(void)
 {
     size_t nextId = 0;
-#if 0
-    if (i_cache_freed == NULL) {
-        i_cache_freed = (int *) calloc(iterator_cache_entries, sizeof(int));
-        if (i_cache_freed == NULL) {
-            perror("calloc failed\n");
-	    return -1;
-	}
-        /* Index 0 is NOT-USED other than to indicate an empty iterator */
-        hg_atomic_init32(&i_cache_index,1);
-        hg_atomic_init32(&i_free_index,0);
-    }
-#else
+
     if (PDC_Block_iterator_cache == NULL) {
         PDC_Block_iterator_cache = (struct PDC_iterator_info *)calloc(iterator_cache_entries, sizeof(struct PDC_iterator_info));
         if (PDC_Block_iterator_cache == NULL) {
             perror("calloc failed\n");
             return -1;
-	}
+        }
         i_cache_freed = (int *) calloc(iterator_cache_entries, sizeof(int));
         /* Index 0 is NOT-USED other than to indicate an empty iterator */
         hg_atomic_init32(&i_cache_index,1);
         hg_atomic_init32(&i_free_index,0);
     }
-#endif
+
     if (compare_gt((void *)&i_free_index, 0)) {
         int next_free = hg_atomic_decr32(&i_free_index);
         nextId = i_cache_freed[next_free];
@@ -208,12 +194,7 @@ int PDCiter_get_nextId(void)
         int next_free = hg_atomic_incr32(&i_cache_index);
         nextId = next_free -1;        /* use the "current" index */
     }
-#if 0
-    if (nextId == iterator_cache_entries) {
-        printf("ERROR! Out of Iterator space!\n");
-        nextId = -1;
-    }
-#else
+
     if (nextId == iterator_cache_entries) {
         /* Realloc the cache and free list */
         int *previous_i_cache_freed = i_cache_freed;
@@ -226,7 +207,7 @@ int PDCiter_get_nextId(void)
         free( previous_i_cache_freed );
         free( previous_state );
     }
-#endif
+
     return nextId;
 }  
 
@@ -245,6 +226,7 @@ int check_transform(PDCobj_transform_t op_type, struct PDC_region_info *dest_reg
            }
        }
     }
+    
     return 0;
 }
 
@@ -254,6 +236,7 @@ int pdc_get_transforms(struct region_transform_ftn_info ***registry)
        *registry = pdc_region_transform_registry;
        return hg_atomic_get32(&registered_transform_ftn_count_g);
     }
+    
     return 0;
 }
 
@@ -299,6 +282,7 @@ int pdc_update_transform_server_meta_index(int client_index, int meta_index)
         printf("%s: Bad client index(%d)\n", __func__, client_index);
         return -1;
     }
+    
     return 0;
 }
 
@@ -317,30 +301,27 @@ get_execution_locus()
 int
 get_ftnPtr_(const char *ftn, const char *loadpath, void **ftnPtr)
 {
-  static void *appHandle = NULL;
-  void *ftnHandle = NULL;    
+    static void *appHandle = NULL;
+    void *ftnHandle = NULL;
 
-  if (appHandle == NULL) {
-    if ((appHandle = dlopen(loadpath,RTLD_NOW)) == NULL) {
-        char *this_error = dlerror();
-	fprintf(stderr, "dlopen failed: %s\n", this_error);
-	fflush(stderr);
-	return -1;
+    if (appHandle == NULL) {
+        if ((appHandle = dlopen(loadpath,RTLD_NOW)) == NULL) {
+            char *this_error = dlerror();
+            fprintf(stderr, "dlopen failed: %s\n", this_error);
+            fflush(stderr);
+            return -1;
+        }
     }
-  }
-  ftnHandle = dlsym(appHandle, ftn);
-  if (ftnHandle == NULL) {
-    fprintf(stderr, "dlsym failed: %s\n", dlerror());
-    fflush(stderr);
-    return -1;
-  }
-#if 0
-  else {
-    if (loadpath != NULL) lastopened = strdup(loadpath);
-  }
-#endif
-  *ftnPtr = ftnHandle;
-  return 0;
+    ftnHandle = dlsym(appHandle, ftn);
+    if (ftnHandle == NULL) {
+        fprintf(stderr, "dlsym failed: %s\n", dlerror());
+        fflush(stderr);
+        return -1;
+    }
+
+    *ftnPtr = ftnHandle;
+    
+    return 0;
 }
 
 
@@ -350,7 +331,6 @@ HG_TEST_RPC_CB(analysis_ftn, handle)
     hg_return_t ret_value = HG_SUCCESS;
     analysis_ftn_in_t in;
     analysis_ftn_out_t out;
-    //struct PDC_iterator_info *inputIter = NULL;
     struct region_analysis_ftn_info *thisFtn = NULL;
     int nulliter_count = 0;
     pdcid_t iterIn = -1, iterOut = -1;
@@ -360,22 +340,13 @@ HG_TEST_RPC_CB(analysis_ftn, handle)
     int result;
 
     FUNC_ENTER(NULL);
+
     memset(&in,0,sizeof(in));
     // Decode input
     HG_Get_input(handle, &in);
-    // printf("analysis_ftn_cb entered!\n");
-
-    /*
-    printf("func = %s\nloadpath = %s\n", 
-	   (in.ftn_name == NULL ? "unknown" : in.ftn_name),
-	   (in.loadpath == NULL ? "unknown" : in.loadpath));
-    */
 
     if (get_ftnPtr_(in.ftn_name, in.loadpath, &ftnHandle) < 0)
         printf("get_ftnPtr_ returned an error!\n");
-    /*
-    else printf("loaded function pointer to %s from loadpath %s\n", in.ftn_name, (char *)in.loadpath);
-    */
 
     if ((ftnPtr = ftnHandle) == NULL)
         PGOTO_ERROR(FAIL,"Transforms function lookup failed\n");
@@ -387,7 +358,7 @@ HG_TEST_RPC_CB(analysis_ftn, handle)
         }
         else if (execution_locus == SERVER_MEMORY) {
             /* inputIter = &PDC_Block_iterator_cache[iterIn]; */
-	}
+        }
         if ((iterOut = in.iter_out) == 0) {
             nulliter_count += 1;
             printf("output is a NULL iterator\n");
@@ -398,7 +369,7 @@ HG_TEST_RPC_CB(analysis_ftn, handle)
          * we will only invoke the function ONCE (see below).
          * Otherwise, go ahead and register...
          */
-	if (nulliter_count < 2) {
+        if (nulliter_count < 2) {
             if ((thisFtn = (struct region_analysis_ftn_info *)
                 calloc(sizeof(struct region_analysis_ftn_info), 1)) != NULL) {
                     thisFtn->ftnPtr = (int (*)()) ftnPtr;
@@ -407,10 +378,10 @@ HG_TEST_RPC_CB(analysis_ftn, handle)
                     registrationId = pdc_add_analysis_ptr_to_registry_(thisFtn);
                     out.remote_ftn_id = registrationId;
             }
-	    else {
+            else {
                 printf("Unable to allocate storage for the analysis function\n");
-	        out.remote_ftn_id = registrationId;
-	    }
+                out.remote_ftn_id = registrationId;
+            }
         }
     } else {
         printf("Failed to resolve %s to a function pointer\n", in.ftn_name);
@@ -452,6 +423,7 @@ HG_TEST_RPC_CB(obj_data_iterator, handle)
     obj_data_iterator_out_t out;
     
     FUNC_ENTER(NULL);
+
     memset(&in,0,sizeof(in));
     // Decode input
     HG_Get_input(handle, &in);
@@ -465,12 +437,8 @@ HG_TEST_RPC_CB(obj_data_iterator, handle)
     FUNC_LEAVE(ret_value);
 }
 
-
-
 HG_TEST_THREAD_CB(obj_data_iterator)
-
 HG_TEST_THREAD_CB(analysis_ftn)
-
 
 hg_id_t
 analysis_ftn_register(hg_class_t *hg_class)
@@ -478,6 +446,7 @@ analysis_ftn_register(hg_class_t *hg_class)
     hg_id_t ret_value;
 
     FUNC_ENTER(NULL);
+    
     ret_value = MERCURY_REGISTER(hg_class, "analysis_ftn", analysis_ftn_in_t, analysis_ftn_out_t, analysis_ftn_cb);
 
     FUNC_LEAVE(ret_value);
@@ -517,7 +486,7 @@ free_transform_registry()
             free(pdc_region_transform_registry[index]);
         }
         free(pdc_region_transform_registry);
-	pdc_region_transform_registry = NULL;
+        pdc_region_transform_registry = NULL;
     }
 }
 

@@ -54,9 +54,11 @@
 #include "mercury_hash_table.h"
 #include "mercury_list.h"
 
+#include "config.h"
 #include "pdc_interface.h"
 #include "pdc_client_server_common.h"
 #include "pdc_server.h"
+#include "pdc_analysis_common.h"
 
 #ifdef PDC_HAS_CRAY_DRC
 # include <rdmacred.h>
@@ -69,7 +71,9 @@
 #define BLOOM_REMOVE counting_bloom_remove
 #define BLOOM_FREE   free_counting_bloom
 
-extern hg_thread_mutex_t          insert_iterator_mutex_g;
+#ifdef ENABLE_MULTITHREAD
+hg_thread_mutex_t insert_iterator_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
+#endif
 
 /*
  * Insert an iterator received from client into a collection
@@ -197,7 +201,6 @@ PDC_Server_get_region_data_ptr(pdcid_t object_id)
     return NULL;
 }
 
-
 void *
 PDC_Server_get_ftn_reference(char *ftn)
 {
@@ -247,15 +250,15 @@ PDCobj_data_getNextBlock(pdcid_t iter, void **nextBlock, size_t *dims)
         thisIter = &PDC_Block_iterator_cache[iter];
         if (thisIter->srcStart == NULL) {
             if (execution_locus == SERVER_MEMORY) {
-	        if ((thisIter->srcNext = PDC_Server_get_region_data_ptr(thisIter->objectId)) == NULL)
-		    thisIter->srcNext = malloc(thisIter->totalElements * thisIter->element_size);
-	        if ((thisIter->srcStart = thisIter->srcNext) == NULL) {
+                if ((thisIter->srcNext = PDC_Server_get_region_data_ptr(thisIter->objectId)) == NULL)
+                    thisIter->srcNext = malloc(thisIter->totalElements * thisIter->element_size);
+                if ((thisIter->srcStart = thisIter->srcNext) == NULL) {
                     printf("==PDC_ANALYSIS_SERVER: Unable to allocate iterator storage\n");
                     return 0;
                 }
-		thisIter->srcNext += thisIter->startOffset + thisIter->skipCount;
-	    }
-	}
+                thisIter->srcNext += thisIter->startOffset + thisIter->skipCount;
+            }
+        }
         if (thisIter->srcNext != NULL) {
             if (thisIter->sliceNext == thisIter->sliceCount) {
                 /* May need to adjust the elements in this last
@@ -291,12 +294,12 @@ PDCobj_data_getNextBlock(pdcid_t iter, void **nextBlock, size_t *dims)
             thisIter->sliceNext += 1;
             if (dims != NULL) {
                 dims[0] = thisIter->dims[0];
-		if (thisIter->ndim > 1) 
-		  dims[1] = thisIter->dims[1];
-		if (thisIter->ndim > 2) 
-		  dims[2] = thisIter->dims[2];
-		if (thisIter->ndim > 3) 
-		  dims[2] = thisIter->dims[3];
+                if (thisIter->ndim > 1)
+                    dims[1] = thisIter->dims[1];
+                if (thisIter->ndim > 2)
+                    dims[2] = thisIter->dims[2];
+                if (thisIter->ndim > 3)
+                    dims[2] = thisIter->dims[3];
             }
             return thisIter->elementsPerBlock;
         }
@@ -305,5 +308,14 @@ PDCobj_data_getNextBlock(pdcid_t iter, void **nextBlock, size_t *dims)
 done:
     if (dims) dims[0] = dims[1] = 0;
     if (nextBlock) *nextBlock = NULL;
+    return 0;
+}
+
+int pdc_get_analysis_registry(struct region_analysis_ftn_info ***registry)
+{
+    if(registry) {
+        *registry = pdc_region_analysis_registry;
+        return hg_atomic_get32(&registered_analysis_ftn_count_g);
+    }
     return 0;
 }

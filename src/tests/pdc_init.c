@@ -25,13 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#ifdef ENABLE_MPI
-#include "mpi.h"
-#endif
-
 #include "pdc.h"
-
 
 int main() {
     pdcid_t pdc;

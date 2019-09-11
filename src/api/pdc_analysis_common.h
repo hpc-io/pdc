@@ -27,8 +27,15 @@
 #include "pdc_transforms_pkg.h"
 #include "pdc_analysis_and_transforms.h"
 
+hg_id_t                           analysis_ftn_register_id_g;
+hg_id_t                           transform_ftn_register_id_g;
+hg_id_t                           object_data_iterator_register_id_g;
+hg_atomic_int32_t                 registered_analysis_ftn_count_g;
+extern struct region_analysis_ftn_info **pdc_region_analysis_registry;
+
+int PDCiter_get_nextId(void);
+
 int pdc_get_transforms(struct region_transform_ftn_info ***registry);
-int pdc_get_analysis_registry(struct region_analysis_ftn_info ***registry);
 
 int check_transform(PDCobj_transform_t op_type, struct PDC_region_info *dest_region);
 int check_analysis(PDCobj_transform_t op_type, struct PDC_region_info *dest_region);
@@ -36,5 +43,9 @@ int check_analysis(PDCobj_transform_t op_type, struct PDC_region_info *dest_regi
 int pdc_add_transform_ptr_to_registry_(struct region_transform_ftn_info *ftnPtr);
 
 int pdc_update_transform_server_meta_index(int client_index, int meta_index);
+
+int pdc_get_analysis_registry(struct region_analysis_ftn_info ***registry);
+
+void set_execution_locus(PDC_loci locus_identifier);
 
 #endif

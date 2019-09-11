@@ -28,13 +28,6 @@
 #include <getopt.h>
 #include <sys/time.h>
 #include <ctype.h>
-
-/* #define ENABLE_MPI 1 */
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 #include "pdc_client_connect.h"
 #include "pdc_client_server_common.h"
@@ -58,6 +51,7 @@ int main(int argc, char **argv)
     double ht_total_sec;
     
     char **obj_names;
+    char *env_str;
     int  *obj_ts;
     char name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name", "INVALID!", "INVALID!", "Four Obj Names"};
     char filename[128], pdc_server_tmp_dir_g[128];
@@ -122,7 +116,7 @@ int main(int argc, char **argv)
     if(obj_prop <= 0)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
 
-    char *env_str = getenv("PDC_OBJ_NAME");
+    env_str = getenv("PDC_OBJ_NAME");
     if (env_str != NULL) {
         use_name = atoi(env_str);
     }
@@ -147,20 +141,16 @@ int main(int argc, char **argv)
         strcpy(pdc_server_tmp_dir_g, tmp_dir);
 
     sprintf(filename, "%s/metadata_checkpoint.%d", pdc_server_tmp_dir_g, rank);
-    /* printf("file name: %s\n", filename); */
     FILE *file = fopen(filename, "r");
     if (file==NULL) {fputs("Checkpoint file not available\n", stderr); return -1;}
 
     fread(&n_entry, sizeof(int), 1, file);
-    /* printf("%d entries\n", n_entry); */
 
     while (n_entry>0) {
         fread(&tmp_count, sizeof(int), 1, file);
-        /* printf("Count:%d\n", tmp_count); */
 
         hash_key = (uint32_t *)malloc(sizeof(uint32_t));
         fread(hash_key, sizeof(uint32_t), 1, file);
-        /* printf("Hash key is %u\n", *hash_key); */
 
         // read each metadata
         for (j = 0; j < tmp_count; j++) {
@@ -171,7 +161,6 @@ int main(int argc, char **argv)
             fread(&entry, sizeof(pdc_metadata_t), 1, file);
             sprintf(obj_names[read_count], "%s", entry.obj_name);
             obj_ts[read_count] = entry.time_step;
-            /* printf("Read name %s\n", obj_names[read_count]); */
             read_count++;
 
         }
@@ -179,10 +168,6 @@ int main(int argc, char **argv)
     }
 
     fclose(file);
-    /* printf("Finished read\n"); */
-    /* fflush(stdout); */
-
-    /* count = read_count; */
 
     if (rank == 0) 
         printf("Stating %d objects per MPI rank\n", count);
@@ -196,17 +181,10 @@ int main(int argc, char **argv)
 
     for (i = 0; i < count; i++) {
         res = NULL;
-        /* printf("Proc %d search %s\n", rank, obj_names[i]); */
-        /* PDC_Client_query_metadata_partial(obj_names[0], &res); */
         PDC_Client_query_metadata_name_timestep(obj_names[i], obj_ts[i], &res);
         if (res == NULL) {
             printf("No result found for current partial query with name [%s]\n", obj_names[i]);
         }
-        /* else { */
-        /*     printf("Got response from server.\n"); */
-        /*     PDC_print_metadata(res); */
-        /*     fflush(stdout); */
-        /* } */
 
         // Print progress
         progress_factor = count < 20 ? 1 : 20;
@@ -234,7 +212,6 @@ int main(int argc, char **argv)
     ht_total_sec        = ht_total_elapsed / 1000000.0;
     if (rank == 0) { 
         printf("Time to stat %d obj/rank with %d ranks: %.6f\n", count, size, ht_total_sec);
-        /* printf("Time to partial query %d obj/rank with %d ranks: %.6f\n", count, size, ht_total_sec); */
         fflush(stdout);
     }
 

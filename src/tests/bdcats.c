@@ -31,13 +31,6 @@
 #include <sys/time.h>
 #include <math.h>
 #include <inttypes.h>
-
-/* #define ENABLE_MPI 1 */
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 
 #define NPARTICLES      8388608
@@ -439,19 +432,6 @@ int main(int argc, char **argv)
 
     if(PDC_close(pdc_id) < 0)
        printf("fail to close PDC\n");
-
-    /*
-     for (uint64_t i=0; i<numparticles; i++) {
-        printf("id1[i] = %d\n", id1[i]);
-        printf("id2[i] = %d\n", id2[i]);
-        printf("x[i] = %f\n", x[i]);
-        printf("y[i] = %f\n", y[i]);
-        printf("z[i] = %f\n", z[i]);
-        printf("px[i] = %f\n", px[i]);
-        printf("py[i] = %f\n", py[i]);
-        printf("pz[i] = %f\n", pz[i]);
-     }
-     */
     
     free(x);
     free(y);

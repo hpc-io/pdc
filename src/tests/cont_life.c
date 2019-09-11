@@ -25,16 +25,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#ifdef ENABLE_MPI
-#include "mpi.h"
-#endif
-
 #include "pdc.h"
 
 int main(int argc, char **argv) 
 {
-    pdcid_t pdc, cont;
+    pdcid_t pdc, create_prop, cont;
+    struct PDC_cont_prop *prop;
     int rank = 0, size = 1;
 
 #ifdef ENABLE_MPI
@@ -47,14 +43,14 @@ int main(int argc, char **argv)
     printf("create a new pdc\n");
 
     // create a container property
-    pdcid_t create_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
+    create_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if(create_prop > 0)
         printf("Create a container property\n");
     else
         printf("Fail to create container property @ line  %d!\n", __LINE__);
     
     // print default container lifetime (persistent)
-    struct PDC_cont_prop *prop = PDCcont_prop_get_info(create_prop);
+    prop = PDCcont_prop_get_info(create_prop);
     if(prop->cont_life == PDC_PERSIST)
         printf("container property default lifetime is persistent\n");
     else
@@ -98,12 +94,11 @@ int main(int argc, char **argv)
     // close pdc
     if(PDC_close(pdc) < 0)
        printf("fail to close PDC\n");
-    else
-       printf("PDC is closed\n");
    
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
+    
     return 0;
 }
 

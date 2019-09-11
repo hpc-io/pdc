@@ -29,13 +29,6 @@
 #include <getopt.h>
 #include <time.h>
 #include <sys/time.h>
-
-/* #define ENABLE_MPI 1 */
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 
 static char *rand_string(char *str, size_t size)

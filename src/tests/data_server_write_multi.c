@@ -6,14 +6,8 @@
 #include <unistd.h> 
 #include <sys/types.h>
 #include <sys/time.h>
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 #include "pdc_client_connect.h"
-/* #include "pdc_client_server_common.h" */
 
 void print_usage() {
     printf("Usage: srun -n ./data_server_write obj_name size_MB n_timestep sleepseconds\n");

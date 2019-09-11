@@ -25,13 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#ifdef ENABLE_MPI
-#include "mpi.h"
-#endif
-
 #include "pdc.h"
-
 
 int main(int argc, char **argv) {
     pdcid_t pdc, create_prop1, create_prop2, create_prop;

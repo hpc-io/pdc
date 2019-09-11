@@ -30,11 +30,6 @@
 #include <time.h>
 #include <sys/time.h>
 #include <ctype.h>
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 
 #define NCONT 10
@@ -155,9 +150,9 @@ int main(int argc, char **argv)
 
     srand(rank+1);
 
-    #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
-    #endif
+#endif
 
     gettimeofday(&ht_total_start, 0);
 
@@ -166,7 +161,6 @@ int main(int argc, char **argv)
         if (use_name == -1) {
             sprintf(obj_name, "%s", rand_string(tmp_str, 16));
             PDCprop_set_obj_time_step(obj_prop, rank);
-            /* sprintf(obj_name[i], "%s_%d", rand_string(tmp_str, 16), i + rank * count); */
         }
         else if (use_name == 1) {
             sprintf(obj_name, "%s", obj_prefix[0]);
@@ -203,11 +197,10 @@ int main(int argc, char **argv)
                 printf("%10d created ... %.4f s\n", i * size, ht_total_sec);
                 fflush(stdout);
             }
-            #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
             MPI_Barrier(MPI_COMM_WORLD);
-            #endif
+#endif
         }
-
     }
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -226,25 +219,6 @@ int main(int argc, char **argv)
 
     // Delete object to container
     PDC_Client_del_objects_to_container(count, obj_ids, cont[0]);
-
-    /* // Check for duplicate insertion */
-    /* int dup_obj_id; */
-    /* sprintf(obj_name, "%s_%d", obj_prefix[0], rank * 10000000); */
-    /* dup_obj_id = PDCobj_create(pdc, obj_name, NULL); */
-    /* int all_dup_obj_id; */
-
-/* #ifdef ENABLE_MPI */
-    /* MPI_Reduce(&dup_obj_id, &all_dup_obj_id, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD); */  
-/* #else */
-    /* all_dup_obj_id = dup_obj_id; */
-/* #endif */
-
-    /* if (rank == 0) { */
-    /*     if (all_dup_obj_id>=0 ) */ 
-    /*         printf("Duplicate insertion test failed!\n"); */
-    /*     else */ 
-    /*         printf("Duplicate insertion test succeed!\n"); */
-    /* } */
 
 done:
     // close all container

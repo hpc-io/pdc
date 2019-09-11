@@ -28,13 +28,6 @@
 #include <getopt.h>
 #include <sys/time.h>
 #include <ctype.h>
-
-/* #define ENABLE_MPI 1 */
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 #include "pdc_client_connect.h"
 #include "pdc_client_server_common.h"

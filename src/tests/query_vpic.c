@@ -59,51 +59,17 @@ int main(int argc, char **argv)
     }
     energy_id = energy_meta->obj_id;
 
-
-
     // Construct query constraints
     float x_lo0 = 0.05, x_hi0 = 200.05;
     float energy_lo0 = 3.75, energy_hi0 = 4.0;
-    /* float energy_lo0 = 1.5555, energy_hi0 = 1.5556; */
     pdcquery_t *q0l, *q0h, *q0, *q1l, *q1h, *q1, *q2l, *q2h, *q2, *q, *q12;
 
     q0l = PDCquery_create(energy_id, PDC_GTE, PDC_FLOAT, &energy_lo0);
     q0h = PDCquery_create(energy_id, PDC_LTE, PDC_FLOAT, &energy_hi0);
     q  = PDCquery_and(q0l, q0h);
-    /* q0  = PDCquery_and(q0h, q0l); */
-
-    /* float energy_lo1 = 1.55, energy_hi1 = 1.77; */
-    /* q1l = PDCquery_create(energy_id, PDC_LT,  PDC_FLOAT, &energy_lo1); */
-    /* q1h = PDCquery_create(energy_id, PDC_GTE, PDC_FLOAT, &energy_hi1); */
-    /* q1  = PDCquery_and(q1l, q1h); */
-
-    /* q  = PDCquery_or(q0, q1); */
-
-    /* int id2_lo = 0, id2_hi = 32; */
-    /* q1l = PDCquery_create(id2_id, PDC_GTE, PDC_INT, &id2_lo); */
-    /* q1h = PDCquery_create(id2_id, PDC_LTE, PDC_INT, &id2_hi); */
-    /* q1  = PDCquery_and(q1l, q1h); */
-
-    /* q   = PDCquery_and(q0, q1); */
-
-    /* q2l = PDCquery_create(obj_id, PDC_GTE, PDC_INT, &lo2); */
-    /* q2h = PDCquery_create(obj_id, PDC_LT, PDC_INT, &hi2); */
-    /* q2  = PDCquery_and(q2l, q2h); */
-
-    /* q12 = PDCquery_or(q1, q2); */
-    /* q   = PDCquery_or(q0, q12); */
-
-    /* region.ndim = ndim; */
-    /* region.offset = (uint64_t*)malloc(sizeof(uint64_t) * ndim); */
-    /* region.size = (uint64_t*)malloc(sizeof(uint64_t) * ndim); */
-    /* region.offset[0] = 100; */
-    /* region.size[0]   = 100; */
-    /* PDCquery_sel_region(q, &region); */
    
     uint64_t nhits;
     pdcselection_t sel;
-    /* PDCquery_get_nhits(q, &nhits); */
-    /* printf("Query result: %" PRIu64 " hits\n", nhits); */
 
     // Get selection
     gettimeofday(&pdc_timer_start, 0);
@@ -135,18 +101,14 @@ int main(int argc, char **argv)
 
     printf("Query result energy data (%" PRIu64 " hits):\n", sel.nhits);
     for (i = 0; i < sel.nhits; i++) {
-        /* printf(" , %.3f", energy_data[i]); */
         if (energy_data[i] > energy_hi0 || energy_data[i] < energy_lo0) {
             printf("Error with result %" PRIu64 ": %.4f\n", i, energy_data[i]);
         }
     }
     printf("Verified: all correct!\n");
 
-
     PDCquery_free_all(q);
-    /* PDCregion_free(&region); */
     PDCselection_free(&sel);
-
 
 done:
     if(PDC_close(pdc) < 0)

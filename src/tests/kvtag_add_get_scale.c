@@ -27,9 +27,8 @@
 #include <string.h>
 #include <getopt.h>
 #include <time.h>
-#include <mpi.h>
-
 #include "pdc.h"
+#include "pdc_client_connect.h"
 
 int assign_work_to_rank(int rank, int size, int nwork, int *my_count, int *my_start)
 {

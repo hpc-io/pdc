@@ -30,11 +30,6 @@
 #include <time.h>
 #include <sys/time.h>
 #include <ctype.h>
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 
 #define NCONT 10

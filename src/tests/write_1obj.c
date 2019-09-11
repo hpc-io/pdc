@@ -4,13 +4,6 @@
 #include <getopt.h>
 #include <time.h>
 #include <inttypes.h>
-
-/* #define ENABLE_MPI 1 */
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include <unistd.h>
 #include <sys/time.h>
 #include "pdc.h"
@@ -70,7 +63,6 @@ int main(int argc, char **argv)
 
     // create a pdc
     pdcid_t pdc = PDC_init("pdc");
-    /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
     pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
@@ -101,33 +93,12 @@ int main(int argc, char **argv)
     PDCprop_set_obj_app_name(obj_prop, "DataServerTest");
     PDCprop_set_obj_tags(    obj_prop, "tag0=1");
 
-    // Create a object 
-    /* printf("Creating an object with name [%s]", obj_name); */
-    /* fflush(stdout); */
-    /* global_obj = PDCobj_create(cont, obj_name, obj_prop); */
+    // Create a object
     global_obj = PDCobj_create_mpi(cont, obj_name, obj_prop, 0, comm);
     if (global_obj <= 0) {
         printf("Error creating an object [%s], exit...\n", obj_name);
         exit(-1);
     }
-
-    /* printf("%d: object created.\n", rank); */
-/* #ifdef ENABLE_MPI */
-/*     MPI_Barrier(MPI_COMM_WORLD); */
-/* #endif */
-
-/*     // Query the created object */
-/*     /1* printf("%d: Start to query object just created.\n", rank); *1/ */
-/*     pdc_metadata_t *metadata; */
-/*     PDC_Client_query_metadata_name_timestep_agg(obj_name, 0, &metadata); */
-/*     /1* PDC_Client_query_metadata_name_timestep( obj_name, 0, &metadata); *1/ */
-/*     /1* if (rank == 1) { *1/ */
-/*     /1*     PDC_print_metadata(metadata); *1/ */
-/*     /1* } *1/ */
-/*     if (metadata == NULL || metadata->obj_id == 0) { */
-/*         printf("Error with metadata!\n"); */
-/*         exit(-1); */
-/*     } */
 
     offset = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
     mysize = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
@@ -142,7 +113,6 @@ int main(int argc, char **argv)
         printf("PDCbuf_obj_map failed\n");
         exit(-1);
     }
-    /* printf("%d: writing to (%llu, %llu) of %llu bytes\n", rank, region.offset[0], region.offset[1], region.size[0]*region.size[1]); */
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -176,9 +146,6 @@ int main(int argc, char **argv)
         printf("Failed to release lock for region\n");
         goto done;
     }
-
-    /* PDC_Client_write(metadata, &region, mydata); */
-    /* PDC_Client_write_wait_notify(metadata, &region, mydata); */
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);

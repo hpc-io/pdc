@@ -26,11 +26,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
-
-#ifdef ENABLE_MPI
-#include "mpi.h"
-#endif
-
 #include "pdc.h"
 
 int main(int argc, char **argv) {
@@ -81,7 +76,6 @@ int main(int argc, char **argv) {
     while(!PDCcont_iter_null(ch)) {
         struct PDC_cont_info *info = PDCcont_iter_get_info(ch);
         printf("container name is: %s\n", info->name);
-//        printf("container is in pdc %lld\n", info->pdc);
         printf("container property id is ");
         printf("%" PRId64 "\n", info->cont_pt->cont_prop_id);
         
@@ -121,5 +115,6 @@ int main(int argc, char **argv) {
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
+    
     return 0;
 }

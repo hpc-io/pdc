@@ -25,7 +25,6 @@ if(MERCURY_FOUND)
 endif()
 
 include_directories(${PDC_EXT_INCLUDE_DEPENDENCIES})
-#include_directories(${CMAKE_INSTALL_PREFIX}/skiplist/include/)
 
 #------------------------------------------------------------------------------
 # Configure module header files
@@ -49,23 +48,25 @@ configure_file(
 #------------------------------------------------------------------------------
 set(PDC_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_analysis_and_transforms_connect.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_analysis_common.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_analysis_support.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_connect.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_server_common.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_cont.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_error.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_hist.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_interface.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_malloc.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_mpi.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_prop.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_obj.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_mpi.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transform_support.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_hist.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_query.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transform_support.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transforms_common.c
   )
 
   add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/profiling)
-  #add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/server)
 
 #------------------------------------------------------------------------------
 # Libraries
@@ -97,35 +98,37 @@ set(PDC_EXPORTED_LIBS pdc ${PDC_EXPORTED_LIBS})
 #-----------------------------------------------------------------------------
 set(PDC_HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_private.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_public.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_pkg.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_life.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_error.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_interface.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_malloc.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_mpi.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_id_pkg.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_linkedlist.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_prop.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_prop_pkg.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_analysis_and_transforms.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_analysis_common.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_analysis_support.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_atomic.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_connect.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_public.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_server_common.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_cont.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_cont_pkg.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_cont_private.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_error.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_hist.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_id_pkg.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_interface.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_life.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_linkedlist.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_malloc.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_mpi.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_obj.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_obj_pkg.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_obj_private.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_dt_conv.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_connect.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_server_common.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_analysis_support.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transform_support.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_analysis_and_transforms.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transforms_pkg.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_atomic.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_public.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_hist.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_pkg.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_private.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_prop.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_prop_pkg.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_prop_private.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_public.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_query.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transform_support.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transforms_common.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transforms_pkg.h
   )
 
 #-----------------------------------------------------------------------------

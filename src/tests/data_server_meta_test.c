@@ -5,11 +5,6 @@
 #include <sys/time.h>
 #include <inttypes.h>
 #include <unistd.h>
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 #include "pdc_client_connect.h"
 
@@ -33,17 +28,17 @@ int main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    /* if (size <= 1) { */
-    /*     print_usage(); */
-    /*     return 0; */
-    /* } */
-
     pdc_metadata_t *metadata[NOBJ];
     char *obj_names[NOBJ];
     const int my_data_size = 1048576;
     int ndim = 1;
     uint64_t dims[1]={my_data_size};
     char *write_data = (char*)malloc(my_data_size);
+    
+    int my_read_obj = NOBJ / size;
+    int my_read_obj_start = my_read_obj * rank;
+    uint64_t *out_buf_sizes = (uint64_t*)calloc(sizeof(uint64_t), my_read_obj);
+    void **out_buf;
 
     write_region.ndim = ndim;
     write_region.offset = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
@@ -89,9 +84,6 @@ int main(int argc, char **argv)
                 printf("Error getting an object id of %s from server, exit...\n", "DataServerTestBin");
                 goto done;
             }
-
-            /* printf("%d - Created an object name: %s, ts: %d\n", rank, obj_names[i], i); */
-            /* fflush(stdout); */
         }
     }
 
@@ -102,7 +94,6 @@ int main(int argc, char **argv)
     // Query and write the created object
     for (i = 0; i < NOBJ; i++) {
         PDC_Client_query_metadata_name_timestep(obj_names[i], 0, &metadata[i]);
-        /* PDC_print_metadata(metadata); */
         if (metadata[i]->obj_id == 0) {
             printf("Error with metadata!\n");
             goto done;
@@ -129,14 +120,7 @@ int main(int argc, char **argv)
         read_region.offset[0] = 0;
     read_region.size[0] = my_data_size;
 
-
     // Read two regions
-    int my_read_obj = NOBJ / size;
-    int my_read_obj_start = my_read_obj * rank;
-    uint64_t *out_buf_sizes = (uint64_t*)calloc(sizeof(uint64_t), my_read_obj);
-    void **out_buf;
-
-
     for (i = 0; i < my_read_obj; i++) {
         sprintf(obj_names[i], "TestObj%d", i+my_read_obj_start);
     }
@@ -152,8 +136,6 @@ int main(int argc, char **argv)
     #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     #endif
-    /* printf("%d - Finished reading a region, data[0]=%c.\n", rank, read_data[0]); */
-    /* fflush(stdout); */
 
     if (rank == 0) {
         PDC_Client_all_server_checkpoint();

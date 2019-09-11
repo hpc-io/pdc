@@ -27,7 +27,6 @@ int main(int argc, char **argv)
 
     double query_time = 0.0;
 
-
     pdc = PDC_init("pdc");
 
     // Query the created object
@@ -59,8 +58,6 @@ int main(int argc, char **argv)
     }
     energy_id = energy_meta->obj_id;
 
-
-
     // Construct query constraints
     uint64_t nhits;
     pdcselection_t sel;
@@ -84,11 +81,6 @@ int main(int argc, char **argv)
     float energy_lo0 = 3.0;
     float x_lo = 300, x_hi = 310;
     float y_lo = 140, y_hi = 150;
-
-    /* float energy_lo0 = 1.6; */
-    /* float x_lo = 100, x_hi = 109; */
-    /* float y_lo = -150, y_hi = -140; */
-
 
     pdcquery_t *ql = PDCquery_create(energy_id, PDC_GT, PDC_FLOAT, &energy_lo0);
 

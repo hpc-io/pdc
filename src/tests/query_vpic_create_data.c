@@ -30,11 +30,6 @@
 #include <time.h>
 #include <sys/time.h>
 #include <math.h>
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 #include "pdc_client_server_common.h"
 #include "pdc_client_connect.h"
@@ -223,14 +218,6 @@ int main(int argc, char **argv)
 
 
 done:
-    /* for (i = 0; i < NUM_VAR; i++) { */
-        /* if(PDCobj_close(obj_ids[i]) < 0) */
-        /*     printf("Fail to close %s\n", obj_names[i]); */
-
-        /* if(PDCregion_close(obj_regions[i]) < 0) */
-        /*     printf("Fail to close region %s\n", obj_names[i]); */
-    /* } */
-    
     if(PDCprop_close(obj_prop_float) < 0)
         printf("Fail to close float obj property \n");
 

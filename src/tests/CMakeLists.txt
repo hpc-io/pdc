@@ -6,8 +6,6 @@ include_directories(
   $ENV{HOME}/include
 )
 
-add_definitions(-DENABLE_MPI=1)
-
 set(PROGRAMS
   pdc_init
   create_prop
@@ -59,7 +57,6 @@ set(PROGRAMS
   query_data
   query_vpic_create_data
   query_vpic
-#  import_vpic
   query_vpic_multi
   query_vpic_multi_preload
   query_vpic_multi_nopreload
@@ -71,7 +68,6 @@ set(PROGRAMS
   gen_fastbit_idx
   query_vpic_exyz_nopreload
   query_vpic_exyz_preload
-#  obj_analysis
   )
 
 foreach(program ${PROGRAMS})
@@ -103,10 +99,13 @@ FIND_LIBRARY(HDF5_LIBRARY NAMES hdf5_debug PATHS $ENV{HOME}/lib)
 #  1. compression/depression functions
 #  2. datatype conversion
 # *******************************************
-FIND_LIBRARY(BLOSC_LIBRARY blosc $ENV{HOME}/Sandbox/c-blosc/build/blosc)
-set(PDC_TRANSFORMS_SRCS pdc_transforms_lib.c)
-add_library(pdctransforms  ${PDC_TRANSFORMS_SRCS})
-target_link_libraries(pdctransforms pdc ${BLOSC_LIBRARY})
+OPTION(GEN_TRANSFORM_LIB "Create a transform library" OFF)
+if(GEN_TRANSFORM_LIB)
+  FIND_LIBRARY(BLOSC_LIBRARY blosc $ENV{HOME}/Sandbox/c-blosc/build/blosc)
+  set(PDC_TRANSFORMS_SRCS pdc_transforms_lib.c)
+  add_library(pdctransforms  ${PDC_TRANSFORMS_SRCS})
+  target_link_libraries(pdctransforms pdc ${BLOSC_LIBRARY})
+endif()
 
 # *******************************************
 # Create a transform library for testing

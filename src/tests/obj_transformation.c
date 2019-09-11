@@ -31,13 +31,6 @@
 #include <sys/time.h>
 #include <math.h>
 #include <inttypes.h>
-
-#define ENABLE_MPI 1
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 #include "pdc_transform_support.h"
 
@@ -72,8 +65,6 @@ int main(int argc, char **argv)
     int y_dim = 64;
     int z_dim = 64;
     uint64_t numparticles, i;
-//    int my_data_size;
-//    uint64_t dims[1] = {my_data_size};  // {8388608};
     uint64_t dims[1];
     int ndim = 1;
     uint64_t *offset;
@@ -86,16 +77,6 @@ int main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-/*
-    if (argc < 2) {
-        print_usage();
-        return 0;
-    }
-    numparticles = atoll(argv[1]) * 1024 * 1024;
-    if (rank == 0) {
-        printf("Writing %" PRIu64 " number of particles with %d clients.\n", numparticles, size);
-    }
-*/
     numparticles = NPARTICLES;
     dims[0] = numparticles;
 
@@ -112,7 +93,6 @@ int main(int argc, char **argv)
 
     // create a pdc
     pdc_id = PDC_init("pdc");
-    /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
@@ -186,7 +166,6 @@ int main(int argc, char **argv)
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-pzz");
         exit(-1);
     }
-
     obj_id11 = PDCobj_create_mpi(cont_id, "id11", obj_prop_id11, 0, MPI_COMM_WORLD);
     if (obj_id11 == 0) {
         printf("Error getting an object id of %s from server, exit...\n", "obj_id11");
@@ -197,10 +176,6 @@ int main(int argc, char **argv)
         printf("Error getting an object id of %s from server, exit...\n", "obj_id22");
         exit(-1);
     }
-
-//    pdc_metadata_t *res = NULL;
-//    PDC_Client_query_metadata_name_only("obj-var-xx", &res);
-//    printf("rank %d: meta id is %lld\n", rank, res->obj_id);
 
     offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
     offset_remote = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
@@ -348,19 +323,6 @@ int main(int argc, char **argv)
         px[i]  = uniform_random_number() * x_dim;
         py[i]  = uniform_random_number() * y_dim;
         pz[i]  = ((float)id2[i]/numparticles) * z_dim;
-#if 0
-	if(rank == 0) {
-	  printf("\tx = %f\n", x[i]);
-	  printf("\ty = %f\n", y[i]);
-	  printf("\tz = %f\n", z[i]);
-	  printf("\tpx = %f\n", px[i]);
-	  printf("\tpy = %f\n", py[i]);
-	  printf("\tpz = %f\n", pz[i]);
-	  printf("\tid1 = %d\n", id1[i]);
-	  printf("\tid2 = %d\n", id2[i]);
-	  fflush(stdout);
-	}
-#endif
     }
 
 #ifdef ENABLE_MPI
@@ -413,32 +375,9 @@ int main(int argc, char **argv)
         printf("Time to update data with %d ranks: %.6f\n", size, ht_total_sec);
         fflush(stdout);
     }
-    
-/*
-    for (int i=0; i<my_data_size/size; i++) {
-        if(xx[rank * my_data_size/size+i] != x[rank * my_data_size/size+i])
-            printf("== ERROR == rank %d: x data does not match\n", rank);
-        if(yy[rank * my_data_size/size+i] != y[rank * my_data_size/size+i])
-            printf("== ERROR == rank %d: y data does not match\n", rank);
-        if(zz[rank * my_data_size/size+i] != z[rank * my_data_size/size+i])
-            printf("== ERROR == rank %d: z data does not match\n", rank);
-        if(pxx[rank * my_data_size/size+i] != px[rank * my_data_size/size+i])
-            printf("== ERROR == rank %d: px data does not match\n", rank);
-        if(pyy[rank * my_data_size/size+i] != py[rank * my_data_size/size+i])
-            printf("== ERROR == rank %d: py data does not match\n", rank);
-        if(pzz[rank * my_data_size/size+i] != pz[rank * my_data_size/size+i])
-            printf("== ERROR == rank %d: pz data does not match\n", rank);
-        if(id11[rank * my_data_size/size+i] != id1[rank * my_data_size/size+i])
-            printf("== ERROR == rank %d: id1 data does not match\n", rank);
-        if(id22[rank * my_data_size/size+i] != id2[rank * my_data_size/size+i])
-            printf("== ERROR == rank %d: id2 data does not match\n", rank);
-    }
-*/
-
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-
 
     ret = PDCbuf_obj_unmap(obj_xx, region_xx);
     if (ret != SUCCEED)

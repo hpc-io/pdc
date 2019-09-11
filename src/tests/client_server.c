@@ -26,19 +26,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* #define ENABLE_MPI 1 */
-#ifdef ENABLE_MPI
-    #include "mpi.h"
-#endif
-
-#define MAX_SERVER_NUM 1024
-
 #include "mercury.h"
 #include "mercury_macros.h"
 #include "mercury_time.h"
 
+#include "pdc.h"
 #include "pdc_client_connect.h"
 #include "pdc_client_server_common.h"
+
+#define MAX_SERVER_NUM 1024
 
 static hg_id_t gen_obj_id_client_id_g;
 static int work_todo_g = 0;

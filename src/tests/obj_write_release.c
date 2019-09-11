@@ -28,13 +28,6 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <sys/time.h>
-
-/* #define ENABLE_MPI 1 */
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 
 int main(int argc, char **argv)

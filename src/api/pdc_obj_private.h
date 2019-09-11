@@ -25,6 +25,8 @@
 #ifndef _pdc_obj_object_H
 #define _pdc_obj_object_H
 
+#include "pdc_obj_pkg.h"
+
 /**
  * PDC object initialization
  *

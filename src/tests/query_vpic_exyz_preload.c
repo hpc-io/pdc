@@ -73,19 +73,11 @@ int main(int argc, char **argv)
     }
     energy_id = energy_meta->obj_id;
 
-
-
     // Construct query constraints
     printf("Preload the data\n");
     float preload_value = -10000.0;
     pdcquery_t *qpreload_energy = PDCquery_create(energy_id, PDC_GT, PDC_FLOAT, &preload_value);
     pdcquery_t *qpreload_x      = PDCquery_create(x_id, PDC_GT, PDC_FLOAT, &preload_value);
-    /* pdcquery_t *qpreload_y      = PDCquery_create(y_id, PDC_GT, PDC_FLOAT, &preload_value); */
-    /* pdcquery_t *qpreload_z      = PDCquery_create(z_id, PDC_GT, PDC_FLOAT, &preload_value); */
-
-    /* pdcquery_t *qpreload_ex     = PDCquery_or(qpreload_x, qpreload_energy); */
-    /* pdcquery_t *qpreload_exy    = PDCquery_or(qpreload_y, qpreload_ex); */
-    /* pdcquery_t *qpreload        = PDCquery_or(qpreload_z, qpreload_exy); */
 
     pdcquery_t *qpreload        = PDCquery_or(qpreload_x, qpreload_energy);
 
@@ -100,20 +92,6 @@ int main(int argc, char **argv)
     pdcquery_t *q2_lo = PDCquery_create(x_id, PDC_GT, PDC_FLOAT, &x_lo);
     pdcquery_t *q2_hi = PDCquery_create(x_id, PDC_LT, PDC_FLOAT, &x_hi);
     pdcquery_t *q2    = PDCquery_and(q2_lo, q2_hi);
-
-    /* pdcquery_t *q12 = PDCquery_and(q2, q1); */
-
-    /* pdcquery_t *q3_lo = PDCquery_create(y_id, PDC_GT, PDC_FLOAT, &y_lo); */
-    /* pdcquery_t *q3_hi = PDCquery_create(y_id, PDC_LT, PDC_FLOAT, &y_hi); */
-    /* pdcquery_t *q3    = PDCquery_and(q3_lo, q3_hi); */
-
-    /* pdcquery_t *q123 = PDCquery_and(q3, q12); */
-
-    /* pdcquery_t *q4_lo = PDCquery_create(z_id, PDC_GT, PDC_FLOAT, &z_lo); */
-    /* pdcquery_t *q4_hi = PDCquery_create(z_id, PDC_LT, PDC_FLOAT, &z_hi); */
-    /* pdcquery_t *q4    = PDCquery_and(q4_lo, q4_hi); */
-
-    /* pdcquery_t *q = PDCquery_and(q4, q123); */
 
     pdcquery_t *q = PDCquery_and(q2, q1);
 
@@ -134,16 +112,12 @@ int main(int argc, char **argv)
     if (sel.nhits > 0) {
         energy_data = (float*)calloc(sel.nhits, sizeof(float));
         x_data      = (float*)calloc(sel.nhits, sizeof(float));
-        /* y_data      = (float*)calloc(sel.nhits, sizeof(float)); */
-        /* z_data      = (float*)calloc(sel.nhits, sizeof(float)); */
 
         // Get data
         gettimeofday(&pdc_timer_start, 0);
 
         PDCquery_get_data(energy_id, &sel, energy_data);
         PDCquery_get_data(x_id, &sel, x_data);
-        /* PDCquery_get_data(y_id, &sel, y_data); */
-        /* PDCquery_get_data(z_id, &sel, z_data); */
 
         gettimeofday(&pdc_timer_end, 0);
         get_data_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);

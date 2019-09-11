@@ -30,11 +30,6 @@
 #include <time.h>
 #include <sys/time.h>
 #include <math.h>
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 
 double uniform_random_number()
@@ -75,7 +70,6 @@ int main(int argc, char **argv)
 
     // create a pdc
     pdc_id = PDC_init("pdc");
-    /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
@@ -134,8 +128,6 @@ int main(int argc, char **argv)
 
     for (i=0; i<numparticles; i++) {
         x[i]   = uniform_random_number() * x_dim;
-//      printf("x = %f\n", x[i]);
-//      fflush(stdout);
     }
 
     ret = PDCreg_release_lock(obj2, r2, WRITE);
@@ -178,6 +170,6 @@ int main(int argc, char **argv)
     free(offset_remote);
     free(mysize);
 
-     return 0;
+    return 0;
 }
 

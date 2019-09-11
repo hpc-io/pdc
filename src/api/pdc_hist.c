@@ -224,7 +224,6 @@ pdc_histogram_t *PDC_gen_hist(PDC_var_type_t dtype, uint64_t n, void *data)
         return NULL;
     }
 
-    /* hist->incr = -1; */
     PDC_hist_incr_all(hist, dtype, n, data);
 
     #ifdef ENABLE_TIMING

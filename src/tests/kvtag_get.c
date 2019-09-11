@@ -31,8 +31,9 @@
 
 int main() {
     pdcid_t pdc, cont_prop, cont, obj_prop1, obj_prop2, obj1, obj2;
+    pdc_kvtag_t *value1, *value2, *value3;
+    
     // create a pdc
-
     pdc = PDC_init("pdc");
     printf("create a new pdc\n");
 
@@ -76,8 +77,6 @@ int main() {
         printf("Create an object o2\n");
     else
         printf("Fail to create object @ line  %d!\n", __LINE__);
-
-    pdc_kvtag_t *value1, *value2, *value3;
 
     if (PDC_get_kvtag(obj1, "key1string", &value1) < 0)
         printf("fail to get a kvtag from o1\n");
@@ -142,8 +141,6 @@ int main() {
     // close pdc
     if(PDC_close(pdc) < 0)
        printf("fail to close PDC\n");
-    /* else */
-    /*    printf("PDC is closed\n"); */
 
      return 0;
 }

@@ -31,13 +31,6 @@
 #include <sys/time.h>
 #include <math.h>
 #include <inttypes.h>
-
-/* #define ENABLE_MPI 1 */
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 
 #define NPARTICLES      8388608
@@ -115,7 +108,6 @@ int main(int argc, char **argv)
 
     // create a pdc
     pdc_id = PDC_init("pdc");
-    /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
@@ -332,19 +324,6 @@ int main(int argc, char **argv)
         px[i]  = uniform_random_number() * x_dim;
         py[i]  = uniform_random_number() * y_dim;
         pz[i]  = ((float)id2[i]/numparticles) * z_dim;
-/*
-if(rank == 0) {
-printf("x = %f\n", x[i]);
-printf("y = %f\n", y[i]);
-printf("z = %f\n", z[i]);
-printf("px = %f\n", px[i]);
-printf("py = %f\n", py[i]);
-printf("pz = %f\n", pz[i]);
-printf("id1 = %d\n", id1[i]);
-printf("id2 = %d\n", id2[i]);
-fflush(stdout);
-    }
-*/
     }
 
 #ifdef ENABLE_MPI
@@ -398,7 +377,6 @@ fflush(stdout);
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-
 
     ret = PDCbuf_obj_unmap(obj_xx, region_xx);
     if (ret != SUCCEED)

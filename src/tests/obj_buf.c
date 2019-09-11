@@ -25,11 +25,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#ifdef ENABLE_MPI
-#include "mpi.h"
-#endif
-
 #include "pdc.h"
 
 int main(int argc, char **argv) {
@@ -99,7 +94,6 @@ int main(int argc, char **argv) {
     else
         printf("successfully close container c1\n");
     
-
     // close a container property
     if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);

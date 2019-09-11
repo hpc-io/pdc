@@ -27,11 +27,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <getopt.h>
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 
 int main(int argc, char **argv)
@@ -47,7 +42,6 @@ int main(int argc, char **argv)
 
     // create a pdc
     pdc_id = PDC_init("pdc");
-    /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
@@ -55,7 +49,6 @@ int main(int argc, char **argv)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     // create a container
-
     cont_id = PDCcont_create_col("c1", cont_prop);
     if(cont_id <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
@@ -63,17 +56,13 @@ int main(int argc, char **argv)
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-    if (rank == 0)
-        printf("%s:%u\n", __func__, __LINE__);
 
     cont_id2 = PDCcont_open("c1", pdc_id);
     if(cont_id2 == 0)
         printf("Fail to open container @ line  %d!\n", __LINE__);
 #ifdef ENABLE_MPI
-MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
 #endif
-    if (rank == 0)
-        printf("%s:%u\n", __func__, __LINE__);
 
     // close a container
     if(PDCcont_close(cont_id) < 0)

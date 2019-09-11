@@ -29,13 +29,6 @@
 #include <sys/time.h>
 #include <ctype.h>
 #include <unistd.h>
-
-/* #define ENABLE_MPI 1 */
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 #include "pdc_client_server_common.h"
 #include "pdc_client_connect.h"
@@ -65,6 +58,7 @@ int main(int argc, char **argv)
     int rank = 0, size = 1, count = -1, i;
     perr_t ret;
     char c;
+    pdcid_t pdc, cont_prop, cont, obj_prop;
     struct timeval  ht_total_start;
     struct timeval  ht_total_end;
     long long ht_total_elapsed;
@@ -74,6 +68,8 @@ int main(int argc, char **argv)
     char tmp_str[128];
     int use_name = -1;
     int progress_factor;
+    char *env_str;
+    char name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name", "INVALID!", "INVALID!", "Four Obj Names"};
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -112,48 +108,37 @@ int main(int argc, char **argv)
     fflush(stdout);
 
     // create a pdc
-    pdcid_t pdc = PDC_init("pdc");
-    /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
+    pdc = PDC_init("pdc");
 
     // create a container property
-    pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
+    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
-    /* else */
-    /*     if (rank == 0) */ 
-    /*         printf("Create a container property, id is %lld\n", cont_prop); */
-
+    
     // create a container
-    pdcid_t cont = PDCcont_create("c1", cont_prop);
+    cont = PDCcont_create("c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
-    /* else */
-    /*     if (rank == 0) */ 
-    /*         printf("Create a container, id is %lld\n", cont); */
-
+   
     // create an object property
-    pdcid_t obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
+    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if(obj_prop <= 0)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
-    /* else */
-    /*     if (rank == 0) */ 
-    /*         printf("Create an object property, id is %lld\n", obj_prop); */
 
-    char *env_str = getenv("PDC_OBJ_NAME");
+    env_str = getenv("PDC_OBJ_NAME");
     if (env_str != NULL) {
         use_name = atoi(env_str);
     }
 
-    char name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name", "INVALID!", "INVALID!", "Four Obj Names"}; 
     if (rank == 0) {
         printf("Using %s\n", name_mode[use_name+1]);
     }
 
     srand(rank+1);
 
-    #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
-    #endif
+#endif
 
     gettimeofday(&ht_total_start, 0);
 
@@ -162,7 +147,6 @@ int main(int argc, char **argv)
         if (use_name == -1) {
             sprintf(obj_name, "%s", rand_string(tmp_str, 16));
             PDCprop_set_obj_time_step(obj_prop, rank);
-            /* sprintf(obj_name[i], "%s_%d", rand_string(tmp_str, 16), i + rank * count); */
         }
         else if (use_name == 1) {
             sprintf(obj_name, "%s", obj_prefix[0]);
@@ -180,17 +164,9 @@ int main(int argc, char **argv)
         PDCprop_set_obj_app_name(obj_prop, "test_app"  );
         PDCprop_set_obj_tags(    obj_prop, "tag0=1"    );
 
-        /* pdc_metadata_t *res = NULL; */
-        /* PDC_Client_query_metadata_with_name(obj_name, &res); */
-        /* if (res == NULL) { */
-        /*     printf("%d: Cannot find object [%s]\n", rank, obj_name); */
-        /* } */
-        /* else { */
-            ret = PDC_Client_delete_metadata(obj_name, obj_prop);
-            if (ret != SUCCEED) {
-                printf("%d: Cannot delete object [%s]\n", rank, obj_name);
-            }
-        /* } */
+        ret = PDC_Client_delete_metadata(obj_name, obj_prop);
+        if (ret != SUCCEED)
+            printf("%d: Cannot delete object [%s]\n", rank, obj_name);
 
         // Print progress
         progress_factor = count < 10 ? 1 : 10;
@@ -215,25 +191,6 @@ int main(int argc, char **argv)
         printf("Time to create %d obj/rank with %d ranks: %.6f\n", count, size, ht_total_sec);
         fflush(stdout);
     }
-
-    /* // Check for duplicate insertion */
-    /* int dup_obj_id; */
-    /* sprintf(obj_name, "%s_%d", obj_prefix[0], rank * 10000000); */
-    /* dup_obj_id = PDCobj_create(pdc, obj_name, NULL); */
-    /* int all_dup_obj_id; */
-
-/* #ifdef ENABLE_MPI */
-    /* MPI_Reduce(&dup_obj_id, &all_dup_obj_id, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD); */  
-/* #else */
-    /* all_dup_obj_id = dup_obj_id; */
-/* #endif */
-
-    /* if (rank == 0) { */
-    /*     if (all_dup_obj_id>=0 ) */ 
-    /*         printf("Duplicate insertion test failed!\n"); */
-    /*     else */ 
-    /*         printf("Duplicate insertion test succeed!\n"); */
-    /* } */
 
 done:
 

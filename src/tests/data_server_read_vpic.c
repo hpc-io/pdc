@@ -30,19 +30,10 @@
 #include <time.h>
 #include <sys/time.h>
 #include <math.h>
-
-/* #define ENABLE_MPI 1 */
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 #include "pdc_client_server_common.h"
 #include "pdc_client_connect.h"
 
-/* #define NUM_VAR         2 */
-/* #define NUM_FLOAT_VAR   2 */
 #define NUM_VAR         8
 #define NUM_FLOAT_VAR   6
 #define NUM_INT_VAR     2
@@ -66,20 +57,25 @@ int main(int argc, char **argv)
 
     char *obj_names[] = {"x", "y", "z", "px", "py", "pz", "id1", "id2"};
 
-//    pdcid_t         obj_ids[NUM_VAR];
     struct PDC_region_info obj_regions[NUM_VAR];
     pdc_metadata_t *obj_metas[NUM_VAR];
 
     uint64_t float_bytes  = NPARTICLES * sizeof(float);
     uint64_t int_bytes    = NPARTICLES * sizeof(int);
-
-//    uint64_t float_dims[NDIM] = {float_bytes*size};
-//    uint64_t int_dims[NDIM] = {int_bytes*size};
-
     uint64_t myoffset[NDIM], mysize[NDIM];
     void *mydata[NUM_VAR];
 
     int read_var = NUM_VAR;
+    
+    PDC_Request_t request[NUM_VAR];
+    
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
+    struct timeval  pdc_timer_start_1;
+    struct timeval  pdc_timer_end_1;
+    
+    double sent_time = 0.0, sent_time_total = 0.0, wait_time = 0.0, wait_time_total = 0.0;
+    double read_time = 0.0, total_size = 0.0;
 
     // Float vars are first in the array follow by int vars
     for (i = 0; i < NUM_FLOAT_VAR; i++) 
@@ -87,16 +83,6 @@ int main(int argc, char **argv)
 
     for (; i < NUM_VAR; i++) 
         mydata[i] = (void*)malloc(int_bytes);
-
-    PDC_Request_t request[NUM_VAR];
-
-    struct timeval  pdc_timer_start;
-    struct timeval  pdc_timer_end;
-    struct timeval  pdc_timer_start_1;
-    struct timeval  pdc_timer_end_1;
-
-    double sent_time = 0.0, sent_time_total = 0.0, wait_time = 0.0, wait_time_total = 0.0;
-    double read_time = 0.0, total_size = 0.0;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -110,7 +96,6 @@ int main(int argc, char **argv)
     if (read_var < 0 || read_var > 8) 
         read_var = NUM_VAR;
     
-
     // create a pdc
     pdc_id = PDC_init("pdc");
 
@@ -123,7 +108,6 @@ int main(int argc, char **argv)
     cont_id = PDCcont_create("VPIC_cont", cont_prop);
     if(cont_id <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
-
 
     // Query obj metadata and create read region one by one
     for (i = 0; i < NUM_VAR; i++) {
@@ -183,26 +167,6 @@ int main(int argc, char **argv)
         gettimeofday(&pdc_timer_end_1, 0);
         sent_time = PDC_get_elapsed_time_double(&pdc_timer_start_1, &pdc_timer_end_1);
         sent_time_total += sent_time;
-
-        /* // Timing */
-        /* gettimeofday(&pdc_timer_start_1, 0); */
-
-        /* /1* ret = PDC_Client_wait(&request[i], 30000000, 100); *1/ */
-        /* ret = PDC_Client_wait(&request[i], 60000, 100); */
-        /* if (ret != SUCCEED) { */
-        /*     printf("Error with PDC_Client_wait!\n"); */
-        /*     goto done; */
-        /* } */
-
-        /* #ifdef ENABLE_MPI */
-        /* MPI_Barrier(MPI_COMM_WORLD); */
-        /* #endif */
-        /* gettimeofday(&pdc_timer_end_1, 0); */
-        /* wait_time = PDC_get_elapsed_time_double(&pdc_timer_start_1, &pdc_timer_end_1); */
-        /* wait_time_total += wait_time; */
-
-        /* if (rank == 0) */ 
-        /*     printf("Sent time %.2f, wait time %.2f\n", sent_time, wait_time); */
     }
 
     if (rank == 0) 
@@ -224,7 +188,6 @@ int main(int argc, char **argv)
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-
 
     gettimeofday(&pdc_timer_end, 0);
     read_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
@@ -260,14 +223,6 @@ int main(int argc, char **argv)
 
 done:
     fflush(stdout);
-    /* for (i = 0; i < NUM_VAR; i++) { */
-        /* if(PDCobj_close(obj_ids[i]) < 0) */
-        /*     printf("Fail to close %s\n", obj_names[i]); */
-
-        /* if(PDCregion_close(obj_regions[i]) < 0) */
-        /*     printf("Fail to close region %s\n", obj_names[i]); */
-    /* } */
-    
 
     if(PDCcont_close(cont_id) < 0)
         printf("Fail to close container\n");

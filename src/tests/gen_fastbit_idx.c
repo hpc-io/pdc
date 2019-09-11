@@ -14,20 +14,19 @@ int main(int argc, char **argv)
     int rank = 0, size = 1;
     pdcid_t obj_id;
     struct PDC_region_info region;
-    uint64_t i, j;
+    uint64_t i, j, nhits;
     int ndim = 1;
     char* var_name = argv[1];
-
+    pdcquery_t *qpreload_x;
     pdc_metadata_t *meta;
     pdcid_t pdc, id;
+    double query_time = 0.0;
+    float preload_value = -2000000000.0;
 
     struct timeval  pdc_timer_start;
     struct timeval  pdc_timer_end;
     struct timeval  pdc_timer_start_1;
     struct timeval  pdc_timer_end_1;
-
-    double query_time = 0.0;
-
 
     pdc = PDC_init("pdc");
 
@@ -39,10 +38,8 @@ int main(int argc, char **argv)
     }
     id = meta->obj_id;
 
-    float preload_value = -2000000000.0;
-    pdcquery_t *qpreload_x = PDCquery_create(id, PDC_GT, PDC_FLOAT, &preload_value);
+    qpreload_x = PDCquery_create(id, PDC_GT, PDC_FLOAT, &preload_value);
 
-    uint64_t nhits;
     PDCquery_get_nhits(qpreload_x, &nhits);
     printf("Generated Fastbit index for [%s], total %" PRIu64 " elements\n", var_name, nhits);
     PDCquery_free_all(qpreload_x);

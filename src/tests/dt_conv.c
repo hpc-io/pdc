@@ -27,10 +27,6 @@
 #include <string.h>
 #include "pdc.h"
 
-#ifdef ENABLE_MPI
-#include "mpi.h"
-#endif
-
 int main(int argc, char **argv)
 {
     int rank = 0, size = 1;

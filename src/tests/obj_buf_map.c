@@ -28,11 +28,6 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <sys/time.h>
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 
 int main(int argc, char **argv)
@@ -46,15 +41,7 @@ int main(int argc, char **argv)
     uint64_t offset1[2] = {0, 0};
     uint64_t rdims[2] = {3, 2};
     char obj_name2[512];
-    
-//    int myArray1[4][4] = {{101, 102, 103, 104}, {105,106, 107, 108}, {109, 110, 111, 112}, {113, 114, 115, 116}};
     int myArray1[3][2] = {{107, 108}, {111, 112}, {115, 116}};
-//    int myArray2[4][4];
-    
-//    struct timeval  start_time;
-//    struct timeval  end;
-//    long long elapsed;
-//    double total_lock_overhead;
     
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -80,7 +67,6 @@ int main(int argc, char **argv)
 
     PDCprop_set_obj_dims(obj_prop2, 2, dims);
     PDCprop_set_obj_type(obj_prop2, PDC_INT);
-//	PDCprop_set_obj_buf(obj_prop2, &myArray2[0]     );
     PDCprop_set_obj_time_step(obj_prop2, 0          );
     PDCprop_set_obj_user_id( obj_prop2, getuid()    );
     PDCprop_set_obj_app_name(obj_prop2, "test_app"  );
@@ -91,11 +77,7 @@ int main(int argc, char **argv)
 
     // create a region
     r1 = PDCregion_create(2, offset1, rdims);
-//    printf("first region id: %lld\n", r1);
     r2 = PDCregion_create(2, offset, rdims);
-//    printf("second region id: %lld\n", r2);
-//    r3 = PDCregion_create(2, offset, rdims);
-//    printf("second region id: %lld\n", r3);
     
     ret = PDCbuf_obj_map(&myArray1[0], PDC_INT, r1, obj2, r2);
     if(ret < 0)
@@ -112,18 +94,6 @@ int main(int argc, char **argv)
     ret = PDCreg_release_lock(obj2, r2, WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region\n");
-
-/*
-    printf("mapped region2 is updated to: \n");
-    printf("%d, %d\n", myArray2[1][2], myArray2[1][3]);
-    printf("%d, %d\n", myArray2[2][2], myArray2[2][3]);
-    printf("%d, %d\n", myArray2[3][2], myArray2[3][3]);
-
-    printf("mapped region3 is updated to: \n");
-    printf("%d, %d\n", myArray3[1][2], myArray3[1][3]);
-    printf("%d, %d\n", myArray3[2][2], myArray3[2][3]);
-    printf("%d, %d\n", myArray3[3][2], myArray3[3][3]);
-*/
     
     PDCbuf_obj_unmap(obj2, r2);
 

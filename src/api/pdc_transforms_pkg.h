@@ -82,25 +82,4 @@ struct transform_ftn_info {
     size_t (*ftnPtr)();
 };
 
-typedef struct {
-    hg_const_string_t           ftn_name;
-    hg_const_string_t           loadpath;
-    pdcid_t                     object_id;
-    pdcid_t                     region_id;
-    int32_t                     client_index;
-    int32_t                     operation_type; /* When, e.g. during mapping */
-    int32_t                     start_state;
-    int32_t                     next_state;
-    int8_t                      op_type;
-    int8_t                      when;
-} transform_ftn_in_t;
-
-typedef struct {
-    pdcid_t                     object_id;
-    pdcid_t                     region_id;
-    int32_t                     client_index;
-    int32_t                     ret;
-} transform_ftn_out_t;
-
-
 #endif

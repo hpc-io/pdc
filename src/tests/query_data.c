@@ -5,11 +5,6 @@
 #include <sys/time.h>
 #include <inttypes.h>
 #include <unistd.h>
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 #include "pdc_client_connect.h"
 #include "pdc_client_server_common.h"
@@ -22,6 +17,25 @@ int main(int argc, char **argv)
 {
     int rank = 0, size = 1;
     uint64_t size_MB;
+    pdcid_t obj_id = -1;
+    struct PDC_region_info region;
+    uint64_t nhits, i, dims[1];
+    pdcselection_t sel;
+    char *obj_name;
+    int my_data_count;
+    pdc_metadata_t *metadata;
+    pdcid_t pdc, cont_prop, cont, obj_prop;
+    int ndim = 1;
+    int *mydata;
+    int lo0 = 1000;
+    int lo1 = 2000, hi1 = 3000;
+    int lo2 = 5000, hi2 = 7000;
+    pdcquery_t *q0, *q1l, *q1h, *q1, *q2l, *q2h, *q2, *q, *q12;
+    
+    struct timeval  ht_total_start;
+    struct timeval  ht_total_end;
+    long long ht_total_elapsed;
+    double ht_total_sec;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -34,7 +48,7 @@ int main(int argc, char **argv)
         return 0;
     }
 
-    char *obj_name = argv[1];
+    obj_name = argv[1];
     size_MB = atoi(argv[2]);
 
     if (rank == 0) {
@@ -43,36 +57,31 @@ int main(int argc, char **argv)
     size_MB *= 1048576;
 
     // create a pdc
-    pdcid_t pdc = PDC_init("pdc");
-    /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
+    pdc = PDC_init("pdc");
 
     // create a container property
-    pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
+    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     // create a container
-    pdcid_t cont = PDCcont_create("c1", cont_prop);
+    cont = PDCcont_create("c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
     // create an object property
-    pdcid_t obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
+    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if(obj_prop <= 0)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
 
-    pdcid_t obj_id = -1;
-    const int my_data_count = size_MB / size;
-
-    uint64_t dims[1]={my_data_count};
+    my_data_count = size_MB / size;
+    dims[0] = my_data_count;
     PDCprop_set_obj_dims(obj_prop, 1, dims);
     PDCprop_set_obj_user_id( obj_prop, getuid());
     PDCprop_set_obj_time_step( obj_prop, 0);
     PDCprop_set_obj_app_name(obj_prop, "DataServerTest");
     PDCprop_set_obj_tags(    obj_prop, "tag0=1");
     PDCprop_set_obj_type(obj_prop, PDC_INT);
-
-    struct PDC_region_info region;
 
     // Create a object with only rank 0
     if (rank == 0) {
@@ -90,42 +99,27 @@ int main(int argc, char **argv)
 #endif
 
     // Query the created object
-    pdc_metadata_t *metadata;
     PDC_Client_query_metadata_name_timestep( obj_name, 0, &metadata);
-    /* if (rank == 1) { */
-    /*     PDC_print_metadata(metadata); */
-    /* } */
     if (metadata == NULL || metadata->obj_id == 0) {
         printf("Error with metadata!\n");
     }
 
-    int ndim = 1;
     region.ndim = ndim;
     region.offset = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
     region.size = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
     region.offset[0] = rank * my_data_count;
     region.size[0] = my_data_count;
 
-    uint64_t i;
-    int *mydata = (int *)malloc(my_data_count);
+    mydata = (int *)malloc(my_data_count);
     for (i = 0; i < my_data_count/sizeof(int); i++) 
         mydata[i] = i + rank * 1000;
-
-    /* printf("%d: writing to (%llu, %llu) of %llu bytes\n", rank, region.offset[0], region.offset[1], region.size[0]*region.size[1]); */
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
-    double ht_total_sec;
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     gettimeofday(&ht_total_start, 0);
 
-
-    /* PDC_Client_data_server_write(0, size, metadata, &region, mydata); */
     PDC_Client_write(metadata, &region, mydata);
-    /* PDC_Client_write_wait_notify(metadata, &region, mydata); */
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -139,15 +133,7 @@ int main(int argc, char **argv)
         fflush(stdout);
     }
 
-
-
     // Construct query constraints
-    int lo0 = 1000;
-    int lo1 = 2000, hi1 = 3000;
-    int lo2 = 5000, hi2 = 7000;
-    pdcquery_t *q0, *q1l, *q1h, *q1, *q2l, *q2h, *q2, *q, *q12;
-
-    // (obj < 1000) OR (obj >= 2000 AND obj < 3000) OR (obj >= 5000 AND obj < 7000)
     q0  = PDCquery_create(obj_id, PDC_LT, PDC_INT, &lo0);
     PDCquery_sel_region(q0, &region);
 
@@ -161,12 +147,6 @@ int main(int argc, char **argv)
 
     q12 = PDCquery_or(q1, q2);
     q   = PDCquery_or(q0, q12);
-
-   
-    uint64_t nhits;
-    pdcselection_t sel;
-    /* PDCquery_get_nhits(q, &nhits); */
-    /* printf("Query result: %" PRIu64 " hits\n", nhits); */
 
     PDCquery_get_selection(q, &sel);
     PDCselection_print(&sel);

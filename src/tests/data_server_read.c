@@ -3,13 +3,6 @@
 #include <string.h>
 #include <getopt.h>
 #include <sys/time.h>
-
-/* #define ENABLE_MPI 1 */
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 #include "pdc_client_connect.h"
 #include "pdc_client_server_common.h"
@@ -22,6 +15,17 @@ int main(int argc, char **argv)
 {
     int rank = 0, size = 1;
     uint64_t readsize;
+    pdcid_t pdc, cont_prop, cont;
+    struct PDC_region_info region;
+    pdc_metadata_t *metadata;
+    uint64_t my_readsize;
+    int ndim = 1;
+    void *buf;
+    
+    struct timeval  ht_total_start;
+    struct timeval  ht_total_end;
+    long long ht_total_elapsed;
+    double ht_total_sec;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -36,58 +40,39 @@ int main(int argc, char **argv)
 
     readsize = atoi(argv[2]);
     readsize *= 1048567;
+    my_readsize = readsize / size;
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     // create a pdc
-    pdcid_t pdc = PDC_init("pdc");
+    pdc = PDC_init("pdc");
 
     // create a container property
-    pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
+    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     // create a container
-    pdcid_t cont = PDCcont_create("c1", cont_prop);
+    cont = PDCcont_create("c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
-    double ht_total_sec;
-
-    struct PDC_region_info region;
-
-    pdc_metadata_t *metadata;
     PDC_Client_query_metadata_name_timestep( argv[1], 0, &metadata);
-    // Debug print
-    /* if (rank == 0) { */
-    /*     PDC_print_metadata(metadata); */
-    /* } */
 
-    uint64_t my_readsize = readsize / size;
-    int ndim = 1;
     region.ndim = ndim;
     region.offset = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
     region.size = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
     region.offset[0] = rank*(my_readsize);
     region.size[0] = my_readsize;
 
-    void *buf = (void*)malloc(region.size[0] + 1);
-    /* printf("%d: reading start (%llu, %llu) count (%llu, %llu)\n", rank, region.offset[0], region.offset[1], */
-    /*         region.size[0], region.size[1]); */
-
-    /* PDC_Client_data_server_read(0, size, metadata, &region); */
-    /* PDC_Client_data_server_read_check(0, rank, metadata, &region, &io_status, buf); */
+    buf = (void*)malloc(region.size[0] + 1);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     gettimeofday(&ht_total_start, 0);
 
-    /* PDC_Client_read(metadata, &region, buf); */
     PDC_Client_read_wait_notify(metadata, &region, buf);
 
 #ifdef ENABLE_MPI
@@ -106,18 +91,6 @@ int main(int argc, char **argv)
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-    // Data verification
-    /* printf("%d buf:\n%s\n", rank, (char*)buf); */
-    /* printf("%d buf:\n%.10s\n", rank, (char*)buf); */
-    /* ((char*)buf)[region.size[0]] = 0; */
-    /* if ( ((char*)buf)[0] != ('A' + rank%26)) { */
-    /*     printf("Proc%d: Data correctness verification FAILED '%c'(%c)!!!\n", rank, ((char*)buf)[0], 'A' + rank%26); */
-    /* } */
-    /* else { */
-    /*     if (rank == 0) { */
-    /*         printf("Data read successfully!\n"); */
-    /*     } */
-    /* } */
 
     // close a container
     if(PDCcont_close(cont) < 0)

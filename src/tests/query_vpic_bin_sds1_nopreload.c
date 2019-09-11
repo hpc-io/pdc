@@ -19,14 +19,20 @@ int main(int argc, char **argv)
 
     pdc_metadata_t *x_meta, *y_meta, *z_meta, *energy_meta;
     pdcid_t pdc, x_id, y_id, z_id, energy_id;
-
+    pdcquery_t *ql, *q2_lo, *q2_hi, *q2, *q12, *q3_lo, *q3_hi, *q3, *q;
+    uint64_t nhits;
+    pdcselection_t sel;
+    double get_sel_time, get_data_time;
+    float *energy_data = NULL, *x_data = NULL, *y_data = NULL;
+    float energy_lo0 = 3.0;
+    float x_lo = 300, x_hi = 310;
+    float y_lo = 140, y_hi = 150;
+    double query_time = 0.0;
+    
     struct timeval  pdc_timer_start;
     struct timeval  pdc_timer_end;
     struct timeval  pdc_timer_start_1;
     struct timeval  pdc_timer_end_1;
-
-    double query_time = 0.0;
-
 
     pdc = PDC_init("pdc");
 
@@ -59,36 +65,21 @@ int main(int argc, char **argv)
     }
     energy_id = energy_meta->obj_id;
 
-
-
     // Construct query constraints
-    uint64_t nhits;
-    pdcselection_t sel;
-    double get_sel_time, get_data_time;
-    float *energy_data = NULL, *x_data = NULL, *y_data = NULL;
+    ql = PDCquery_create(energy_id, PDC_GT, PDC_FLOAT, &energy_lo0);
 
-    float energy_lo0 = 3.0;
-    float x_lo = 300, x_hi = 310;
-    float y_lo = 140, y_hi = 150;
+    q2_lo = PDCquery_create(x_id, PDC_GT, PDC_FLOAT, &x_lo);
+    q2_hi = PDCquery_create(x_id, PDC_LT, PDC_FLOAT, &x_hi);
+    q2    = PDCquery_and(q2_lo, q2_hi);
 
-    /* float energy_lo0 = 1.6; */
-    /* float x_lo = 100, x_hi = 109; */
-    /* float y_lo = -150, y_hi = -140; */
+    q12 = PDCquery_and(q2, ql);
 
-    pdcquery_t *ql = PDCquery_create(energy_id, PDC_GT, PDC_FLOAT, &energy_lo0);
-
-    pdcquery_t *q2_lo = PDCquery_create(x_id, PDC_GT, PDC_FLOAT, &x_lo);
-    pdcquery_t *q2_hi = PDCquery_create(x_id, PDC_LT, PDC_FLOAT, &x_hi);
-    pdcquery_t *q2    = PDCquery_and(q2_lo, q2_hi);
-
-    pdcquery_t *q12 = PDCquery_and(q2, ql);
-
-    pdcquery_t *q3_lo = PDCquery_create(y_id, PDC_GT, PDC_FLOAT, &y_lo);
-    pdcquery_t *q3_hi = PDCquery_create(y_id, PDC_LT, PDC_FLOAT, &y_hi);
+    q3_lo = PDCquery_create(y_id, PDC_GT, PDC_FLOAT, &y_lo);
+    q3_hi = PDCquery_create(y_id, PDC_LT, PDC_FLOAT, &y_hi);
     
-    pdcquery_t *q3    = PDCquery_and(q3_lo, q3_hi);
+    q3    = PDCquery_and(q3_lo, q3_hi);
 
-    pdcquery_t *q = PDCquery_and(q3, q12);
+    q = PDCquery_and(q3, q12);
     printf("Query: Energy > %.1f && %.1f < X < %.1f && %.1f < Y < %.1f\n", 
             energy_lo0, x_lo, x_hi, y_lo, y_hi);
 

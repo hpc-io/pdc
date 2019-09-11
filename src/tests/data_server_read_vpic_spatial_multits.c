@@ -30,20 +30,14 @@
 #include <time.h>
 #include <sys/time.h>
 #include <math.h>
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 #include "pdc_client_server_common.h"
 #include "pdc_client_connect.h"
 
-/* #define NPARTICLES      8388608 */
 #define NUM_VAR_MAX         8
 #define NUM_FLOAT_VAR_MAX   6
 #define NUM_INT_VAR_MAX     2
-#define TS_MAX            100
+#define TS_MAX              100
 #define NDIM                1
 #define XDIM                64
 #define YDIM                64
@@ -80,6 +74,24 @@ int main(int argc, char **argv)
     int size_per_proc_var_MB = 32;            // Default value to read 8388608 particles
     double selectivity;
 
+    int n_particles;
+    uint64_t float_bytes, int_bytes;
+    uint64_t myoffset[NDIM], mysize[NDIM];
+    void *mydata[NUM_VAR_MAX];
+    
+    struct PDC_region_info obj_regions[TS_MAX][NUM_VAR_MAX];
+    pdc_metadata_t *obj_metas[TS_MAX][NUM_VAR_MAX];
+    PDC_Request_t request[TS_MAX][NUM_VAR_MAX];
+    
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
+    struct timeval  pdc_timer_start_1;
+    struct timeval  pdc_timer_end_1;
+    
+    double read_time = 0.0, read_time_total = 0.0, wait_time = 0.0, wait_time_total = 0.0;
+    double query_time = 0.0, query_time_total = 0.0;
+    double total_time = 0.0, total_size = 0.0;
+
     if (argc > 5) { 
         n_var = atoi(argv[1]);
         size_per_proc_var_MB = atoi(argv[2]);
@@ -92,6 +104,10 @@ int main(int argc, char **argv)
             usage(argv[0]);
         goto exit;
     }
+    // In VPIC-IO, each client reads 32MB per variable, 8 var per client, so 256MB per client
+    n_particles = size_per_proc_var_MB * 262144;   // Convert to number of particles
+    float_bytes  = n_particles * sizeof(float);
+    int_bytes    = n_particles * sizeof(int);
 
     if (n_var < 0 || n_var > 8) 
         n_var = NUM_VAR_MAX;
@@ -115,35 +131,6 @@ int main(int argc, char **argv)
         fflush(stdout);
     }
 
-    // In VPIC-IO, each client reads 32MB per variable, 8 var per client, so 256MB per client
-    int n_particles = size_per_proc_var_MB * 262144;   // Convert to number of particles
-    uint64_t float_bytes  = n_particles * sizeof(float);
-    uint64_t int_bytes    = n_particles * sizeof(int);
-
-//    uint64_t float_dims[NDIM] = {float_bytes*size};
-//    uint64_t int_dims[NDIM] = {int_bytes*size};
-    uint64_t myoffset[NDIM], mysize[NDIM];
-    void *mydata[NUM_VAR_MAX];
-
-//    pdcid_t         obj_prop_float, obj_prop_int;
-
-//    pdcid_t         obj_ids[TS_MAX][NUM_VAR_MAX];
-    struct PDC_region_info obj_regions[TS_MAX][NUM_VAR_MAX];
-    pdc_metadata_t *obj_metas[TS_MAX][NUM_VAR_MAX];
-    PDC_Request_t request[TS_MAX][NUM_VAR_MAX];
-
-    struct timeval  pdc_timer_start;
-    struct timeval  pdc_timer_end;
-    struct timeval  pdc_timer_start_1;
-//    struct timeval  pdc_timer_start_2;
-    struct timeval  pdc_timer_end_1;
-//    struct timeval  pdc_timer_end_2;
-
-    double read_time = 0.0, read_time_total = 0.0, wait_time = 0.0, wait_time_total = 0.0;
-    double query_time = 0.0, query_time_total = 0.0;
-    double total_time = 0.0, total_size = 0.0;
-
-
     // create a pdc
     pdc_id = PDC_init("pdc");
 
@@ -156,22 +143,6 @@ int main(int argc, char **argv)
     cont_id = PDCcont_create("VPIC_cont", cont_prop);
     if(cont_id <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
-
-    /* // create object property for float and int */
-    /* obj_prop_float = PDCprop_create(PDC_OBJ_CREATE, pdc_id); */
-    /* obj_prop_int   = PDCprop_create(PDC_OBJ_CREATE, pdc_id); */
-
-    /* PDCprop_set_obj_dims(obj_prop_float, 1, float_dims); */
-    /* PDCprop_set_obj_type(obj_prop_float, PDC_FLOAT); */
-    /* PDCprop_set_obj_user_id( obj_prop_float, getuid()); */
-    /* PDCprop_set_obj_app_name(obj_prop_float, "VPICIO"); */
-    /* PDCprop_set_obj_tags(    obj_prop_float, "tag0=1"); */
-
-    /* PDCprop_set_obj_dims(obj_prop_int, 1, int_dims); */
-    /* PDCprop_set_obj_type(obj_prop_int, PDC_INT); */
-    /* PDCprop_set_obj_user_id( obj_prop_int, getuid()); */
-    /* PDCprop_set_obj_app_name(obj_prop_int, "VPICIO"); */
-    /* PDCprop_set_obj_tags(    obj_prop_int, "tag0=1"); */
 
     // Float vars are first in the array follow by int vars
     for (i = 0; i < n_var; i++) {
@@ -193,8 +164,6 @@ int main(int argc, char **argv)
     for (ts = 0; ts < n_ts; ts++) {
 
         // Create query region one by one
-        /* PDCprop_set_obj_time_step(obj_prop_float, ts); */
-        /* PDCprop_set_obj_time_step(obj_prop_int, ts); */
         for (i = 0; i < n_var; i++) {
             if (i < NUM_FLOAT_VAR_MAX) {
                 myoffset[0] = rank * float_bytes * selectivity;
@@ -220,9 +189,6 @@ int main(int argc, char **argv)
                 printf("Error with metadata! ts=%d\n", ts);
                 exit(-1);
             }
-            /* if (rank == 1) { */
-            /*     PDC_print_metadata(obj_metas[ts][i]); */
-            /* } */
         }
 
     } // end of for ts
@@ -238,7 +204,6 @@ int main(int argc, char **argv)
     if (rank == 0) 
         printf("Query done!\n");
     fflush(stdout);
-    
 
     for (ts = 0; ts < n_ts; ts++) {
 
@@ -264,9 +229,9 @@ int main(int argc, char **argv)
                 }
             } // end of for
 
-            #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
             MPI_Barrier(MPI_COMM_WORLD);
-            #endif
+#endif
             gettimeofday(&pdc_timer_end_1, 0);
             read_time = PDC_get_elapsed_time_double(&pdc_timer_start_1, &pdc_timer_end_1);
             wait_time = read_time;
@@ -361,9 +326,9 @@ int main(int argc, char **argv)
                     ts, query_time, read_time, wait_time, true_sleep_time);
     } // end of for ts
 
-    #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
-    #endif
+#endif
     gettimeofday(&pdc_timer_end, 0);
     total_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
     total_size = n_particles * selectivity * 4.0 * 8 * size / 1024.0 / 1024.0; 
@@ -381,22 +346,7 @@ int main(int argc, char **argv)
             free(mydata[i]);
     }
 
-
 done:
-    /* for (i = 0; i < NUM_VAR_MAX; i++) { */
-        /* if(PDCobj_close(obj_ids[i]) < 0) */
-        /*     printf("Fail to close %s\n", obj_names[i]); */
-
-        /* if(PDCregion_close(obj_regions[i]) < 0) */
-        /*     printf("Fail to close region %s\n", obj_names[i]); */
-    /* } */
-    
-    /* if(PDCprop_close(obj_prop_float) < 0) */
-    /*     printf("Fail to close float obj property \n"); */
-
-    /* if(PDCprop_close(obj_prop_int) < 0) */
-    /*     printf("Fail to close int obj property \n"); */
-
     if(PDCcont_close(cont_id) < 0)
         printf("Fail to close container\n");
 

@@ -236,7 +236,6 @@ option(PDC_ENABLE_MPI "Enable MPI." OFF)
 if(PDC_ENABLE_MPI)
   find_package(MPI)
   if(MPI_FOUND)
-#    set(PDC_HAS_MPI 1)
     set(ENABLE_MPI 1)
   endif()
 endif()
@@ -246,7 +245,6 @@ endif()
 #-----------------------------------------------------------------------------
 option(PDC_ENABLE_LUSTRE "Enable Lustre." OFF)
 if(PDC_ENABLE_LUSTRE)
-#  set(PDC_HAS_LUSTRE 1)
   set(ENABLE_LUSTRE 1)
 endif()
 
@@ -255,7 +253,6 @@ endif()
 #-----------------------------------------------------------------------------
 option(PDC_ENABLE_TIMING "Enable timing." OFF)
 if(PDC_ENABLE_TIMING)
-#  set(PDC_HAS_TIMING 1)
   set(ENABLE_TIMING 1)
 endif()
 
@@ -264,7 +261,6 @@ endif()
 #-----------------------------------------------------------------------------
 option(PDC_ENABLE_CHECKPOINT "Enable checkpointing." OFF)
 if(PDC_ENABLE_CHECKPOINT)
-#  set(PDC_HAS_CHECKPOINT 1)
   set(ENABLE_CHECKPOINT 1)
 endif()
 
@@ -296,7 +292,6 @@ endif()
 #-----------------------------------------------------------------------------
 option(PDC_ENABLE_MULTITHREAD "Enable multithreading." OFF)
 if(PDC_ENABLE_MULTITHREAD)
-#  set(PDC_HAS_MULTITHREAD 1)
   set(ENABLE_MULTITHREAD 1)
 endif()
 
@@ -305,7 +300,6 @@ endif()
 #-----------------------------------------------------------------------------
 option(PDC_ENABLE_PROFILING "Enable profiling." OFF)
 if(PDC_ENABLE_PROFILING)
-#  set(PDC_HAS_PROFILING 1)
   set(ENABLE_PROFILING 1)
 endif()
 
@@ -405,7 +399,6 @@ install(
 #-----------------------------------------------------------------------------
 if(NOT PDC_EXTERNALLY_CONFIGURED)
   set(CPACK_PACKAGE_DESCRIPTION_FILE ${PDC_SOURCE_DIR}/README.md)
-#  set(CPACK_RESOURCE_FILE_LICENSE ${PDC_SOURCE_DIR}/COPYING)
   set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Proactive Data Containers")
   set(CPACK_PACKAGE_NAME "PDC")
   set(CPACK_PACKAGE_VENDOR "LBNL / The HDF Group / ANL")

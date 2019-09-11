@@ -26,7 +26,7 @@
 #define _pdc_private_H 
 
 #include "stdint.h"
-
+#include "config.h"
 
 typedef enum {
     UNKNOWN =0,

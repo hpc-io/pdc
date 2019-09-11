@@ -31,10 +31,6 @@
 #include <inttypes.h>
 #include "pdc.h"
 
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 static char *rand_string(char *str, size_t size)
 {
     const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -107,9 +103,9 @@ int main(int argc, char **argv)
 
     srand(rank+1);
     sprintf(srank, "%d", rank);
-	sprintf(obj_name1, "%s%s", rand_string(tmp_str, 16), srank);
-	sprintf(obj_name2, "%s%s", rand_string(tmp_str, 16), srank);
-	sprintf(obj_name3, "%s%s", rand_string(tmp_str, 16), srank);
+    sprintf(obj_name1, "%s%s", rand_string(tmp_str, 16), srank);
+    sprintf(obj_name2, "%s%s", rand_string(tmp_str, 16), srank);
+    sprintf(obj_name3, "%s%s", rand_string(tmp_str, 16), srank);
 
     PDCprop_set_obj_dims(obj_prop1, 2, dims);
     PDCprop_set_obj_dims(obj_prop2, 2, dims);
@@ -125,13 +121,13 @@ int main(int argc, char **argv)
     PDCprop_set_obj_app_name(obj_prop1, "test_app"  );
     PDCprop_set_obj_tags(    obj_prop1, "tag0=1"    );
 
-	PDCprop_set_obj_buf(obj_prop2, &myArray2[0][0]  );
+    PDCprop_set_obj_buf(obj_prop2, &myArray2[0][0]  );
     PDCprop_set_obj_time_step(obj_prop2, 0       );
     PDCprop_set_obj_user_id( obj_prop2, getuid()    );
     PDCprop_set_obj_app_name(obj_prop2, "test_app"  );
     PDCprop_set_obj_tags(    obj_prop2, "tag0=1"    );
 
-	PDCprop_set_obj_buf(obj_prop3, &myArray3[0][0]  );
+    PDCprop_set_obj_buf(obj_prop3, &myArray3[0][0]  );
     PDCprop_set_obj_time_step(obj_prop3, 0       );
     PDCprop_set_obj_user_id( obj_prop3, getuid()    );
     PDCprop_set_obj_app_name(obj_prop3, "test_app"  );

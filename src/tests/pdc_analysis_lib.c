@@ -30,14 +30,7 @@
 #include <time.h>
 #include <sys/time.h>
 
-#define ENABLE_MPI 1
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
-
 
 /* Sum the elements of a row to produce a single output */
 
@@ -64,12 +57,6 @@ int demo_sum(pdcid_t iterIn, pdcid_t iterOut)
     printf("Leaving: %s\n----------------\n", __func__);
     return 0;
 }
-
-/* int simple_null_iterator_demo(pdcid_t iterIn , pdcid_t iterOut)
-{
-    printf("Hello from a simple server based analysis demo\n");
-    return 666;
-} */
 
 /* int check_mpi_access(pdcid_t iterIn , pdcid_t iterOut) */
 int check_mpi_access()

@@ -31,13 +31,6 @@
 #include <sys/time.h>
 #include <math.h>
 #include <inttypes.h>
-
-/* #define ENABLE_MPI 1 */
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 
 #define NPARTICLES      8388608
@@ -67,7 +60,6 @@ int main(int argc, char **argv)
     float *px, *py, *pz;
     int *id1, *id2;
     uint64_t numparticles;
-    // uint64_t dims[1];
     int ndim = 1;
     uint64_t *offset;
     uint64_t *offset_remote;
@@ -80,7 +72,6 @@ int main(int argc, char **argv)
 #endif
 
     numparticles = NPARTICLES;
-    // dims[0] = numparticles;
 
     x = (float *)malloc(numparticles*sizeof(float));
     y = (float *)malloc(numparticles*sizeof(float));
@@ -95,7 +86,6 @@ int main(int argc, char **argv)
 
     // create a pdc
     pdc_id = PDC_init("pdc");
-    /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // open a container
     cont_id = PDCcont_open("c1", pdc_id);
@@ -194,13 +184,11 @@ int main(int argc, char **argv)
     ret = PDCbuf_map_transform_register("pdc_transform_decompress",
         &z[0], region_z, obj_zz, region_zz, 1, DECR_STATE, DATA_IN);
 
-
     ret = PDCbuf_obj_map(&px[0], PDC_FLOAT, region_px, obj_pxx, region_pxx);
     if(ret < 0)
         printf("Array px PDCbuf_obj_map failed\n");
     ret = PDCbuf_map_transform_register("pdc_transform_decompress",
         &px[0], region_px, obj_pxx, region_pxx, 1, DECR_STATE, DATA_IN);
-
 
     ret = PDCbuf_obj_map(&py[0], PDC_FLOAT, region_py, obj_pyy, region_pyy);
     if(ret < 0)
@@ -208,13 +196,11 @@ int main(int argc, char **argv)
     ret = PDCbuf_map_transform_register("pdc_transform_decompress",
         &py[0], region_py, obj_pyy, region_pyy, 1, DECR_STATE, DATA_IN);
 
-
     ret = PDCbuf_obj_map(&pz[0], PDC_FLOAT, region_pz, obj_pzz, region_pzz);
     if(ret < 0)
         printf("Array pz PDCbuf_obj_map failed\n");
     ret = PDCbuf_map_transform_register("pdc_transform_decompress",
         &pz[0], region_pz, obj_pzz, region_pzz, 1, DECR_STATE, DATA_IN);
-
 
     ret = PDCbuf_obj_map(&id1[0], PDC_INT, region_id1, obj_id11, region_id11);
     if(ret < 0)
@@ -222,13 +208,11 @@ int main(int argc, char **argv)
     ret = PDCbuf_map_transform_register("pdc_transform_decompress",
         &id1[0], region_id1, obj_id11, region_id11, 1, DECR_STATE, DATA_IN);
 
-
     ret = PDCbuf_obj_map(&id2[0], PDC_INT, region_id2, obj_id22, region_id22);
     if(ret < 0)
         printf("Array id2 PDCbuf_obj_map failed\n");
     ret = PDCbuf_map_transform_register("pdc_transform_decompress",
         &id2[0], region_id2, obj_id22, region_id22, 1, DECR_STATE, DATA_IN);
-
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -462,19 +446,6 @@ int main(int argc, char **argv)
 
     if(PDC_close(pdc_id) < 0)
        printf("fail to close PDC\n");
-
-    /*
-     for (uint64_t i=0; i<numparticles; i++) {
-        printf("id1[i] = %d\n", id1[i]);
-        printf("id2[i] = %d\n", id2[i]);
-        printf("x[i] = %f\n", x[i]);
-        printf("y[i] = %f\n", y[i]);
-        printf("z[i] = %f\n", z[i]);
-        printf("px[i] = %f\n", px[i]);
-        printf("py[i] = %f\n", py[i]);
-        printf("pz[i] = %f\n", pz[i]);
-     }
-     */
     
     free(x);
     free(y);

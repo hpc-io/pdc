@@ -5,11 +5,6 @@
 #include <time.h>
 #include <inttypes.h>
 #include <unistd.h>
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 #include "pdc_client_connect.h"
 #include "pdc_client_server_common.h"
@@ -143,8 +138,13 @@ int test1d(char *obj_name)
     struct PDC_region_info read_region;
     uint64_t storage_offset_a, storage_offset_b, storage_offset_c, storage_offset_d, read_offset;
     uint64_t storage_size_a, storage_size_b, storage_size_c, storage_size_d, read_size;
-
     uint32_t ndim = 1;
+    uint64_t total_size;
+    char *data, *data0, *data1, *data2, *data3, *read_data;
+    uint64_t data_offset_real[3];
+    uint64_t data_start[3] = {0, 0, 0};
+    int is_correct = 0, is_all_correct = 0;
+    
     dims[0] = 120;
     dims[1] =   0;
     dims[2] =   0;
@@ -157,8 +157,6 @@ int test1d(char *obj_name)
 #ifdef ENABLE_MPI
      MPI_Barrier(MPI_COMM_WORLD);
 #endif
-
-    /* sleep(rank*3); */
 
     // Query the created object
     PDC_Client_query_metadata_name_timestep(obj_name, 0, &metadata);
@@ -192,13 +190,13 @@ int test1d(char *obj_name)
     region_c.size = &storage_size_c;
     region_d.size = &storage_size_d;
 
-    uint64_t total_size = storage_size_a + storage_size_b + storage_size_c + storage_size_d;
-    char *data  = (char*)calloc(total_size, sizeof(char));
+    total_size = storage_size_a + storage_size_b + storage_size_c + storage_size_d;
+    data  = (char*)calloc(total_size, sizeof(char));
 
-    char *data0 = data;
-    char *data1 = data + storage_size_a;
-    char *data2 = data + storage_size_a + storage_size_b;
-    char *data3 = data + storage_size_a + storage_size_b + storage_size_c;
+    data0 = data;
+    data1 = data + storage_size_a;
+    data2 = data + storage_size_a + storage_size_b;
+    data3 = data + storage_size_a + storage_size_b + storage_size_c;
 
     for (i = 0; i < total_size; i++) {
         if (i < storage_size_a) 
@@ -222,34 +220,14 @@ int test1d(char *obj_name)
     read_region.offset = &read_offset;
     read_region.size   = &read_size;
 
-
-    /* printf("proc%d: write data [%s]\n", rank, data); */
-
-    /* printf("proc%d: read data region: %" PRIu64 " size: %" PRIu64 "\n", rank, read_offset, read_size); */
-
-
-    char *read_data = (char*)calloc(sizeof(char), read_size + 1);
+    read_data = (char*)calloc(sizeof(char), read_size + 1);
 
     PDC_Client_read_wait_notify(metadata, &read_region, read_data);
 
     read_data[read_size] = 0;
 
-    uint64_t data_offset_real[3];
     data_offset_real[0] = read_region.offset[0] - region_a.offset[0];
 
-    /* if (rank == 1) { */
-    /*     printf("Correct data to be read:\n"); */
-    /*     printf("===\nproc%d: ", rank); */
-    /*     print_data(ndim, data_offset_real, read_region.size, data); */
-
-    /*     printf("Actual data read:\n"); */
-    /*     printf("===\nproc%d: read data:\n%s\n===\n", rank, read_data); */
-    /*     fflush(stdout); */
-    /* } */
-
-    uint64_t data_start[3] = {0, 0, 0};
-
-    int is_correct = 0, is_all_correct = 0;
     is_correct = data_verify(ndim, data_start, read_region.size, read_data, data_offset_real, data);  
     if (is_correct != 1) 
         printf("proc %d: verification failed!\n", rank);
@@ -267,8 +245,6 @@ int test1d(char *obj_name)
         else
             printf("SUCCEED!\n");
     }
-    
-
     free(data);
 
     return 1;
@@ -276,7 +252,6 @@ int test1d(char *obj_name)
 
 int test2d(char *obj_name)
 {
-
     pdcid_t obj_id;
     pdc_metadata_t *metadata;
     struct PDC_region_info region_a;
@@ -287,9 +262,14 @@ int test2d(char *obj_name)
     uint64_t storage_offset_a[3], storage_offset_b[3], storage_offset_c[3], storage_offset_d[3], read_offset[3];
     uint64_t storage_size_a[3], storage_size_b[3], storage_size_c[3], storage_size_d[3], read_size[3];
     uint64_t prob_domain[3], storage_domain[3];
-    uint64_t i,j;
-
+    uint64_t i,j, data_total_size;
+    uint64_t data_start[3] = {0, 0, 0};
+    uint64_t data_offset_real[3];
+    int is_correct = 0, is_all_correct = 0;
+    char *data, *read_data;
+    char **data_2d, **data_a_2d, **data_b_2d, **data_c_2d, **data_d_2d, **read_data_2d;
     uint32_t ndim = 2;
+    
     prob_domain[0] = 25 * size;
     prob_domain[1] = 25 * size;
     prob_domain[2] =  0;
@@ -303,8 +283,6 @@ int test2d(char *obj_name)
 #ifdef ENABLE_MPI
      MPI_Barrier(MPI_COMM_WORLD);
 #endif
-
-    /* sleep(rank*3); */
 
     // Query the created object
     PDC_Client_query_metadata_name_timestep(obj_name, 0, &metadata);
@@ -370,16 +348,16 @@ int test2d(char *obj_name)
     region_c.size       = storage_size_c;
     region_d.size       = storage_size_d;
 
-    uint64_t data_total_size = storage_domain[0] * storage_domain[1];
-    char *data          = ( char*)calloc(sizeof(char) , data_total_size);
-    char **data_2d      = (char**)calloc(sizeof(char*), storage_domain[1]);
+    data_total_size = storage_domain[0] * storage_domain[1];
+    data            = ( char*)calloc(sizeof(char) , data_total_size);
+    data_2d         = (char**)calloc(sizeof(char*), storage_domain[1]);
     for (i = 0; i < storage_domain[1]; i++) 
         data_2d[i] = data + i * storage_domain[0];
    
-    char **data_a_2d = (char**)calloc(sizeof(char*), storage_size_a[1]); 
-    char **data_b_2d = (char**)calloc(sizeof(char*), storage_size_b[1]); 
-    char **data_c_2d = (char**)calloc(sizeof(char*), storage_size_c[1]); 
-    char **data_d_2d = (char**)calloc(sizeof(char*), storage_size_d[1]); 
+    data_a_2d = (char**)calloc(sizeof(char*), storage_size_a[1]);
+    data_b_2d = (char**)calloc(sizeof(char*), storage_size_b[1]);
+    data_c_2d = (char**)calloc(sizeof(char*), storage_size_c[1]);
+    data_d_2d = (char**)calloc(sizeof(char*), storage_size_d[1]);
 
     for (i = 0; i < storage_size_a[1]; i++) {
         data_a_2d[i] = data_2d[i];
@@ -404,24 +382,6 @@ int test2d(char *obj_name)
         for (j = 0; j < storage_size_d[0]; j++) 
             data_d_2d[i][j] = (i+j) % 5 + 'A' + 20;
     }
-
-    // Debug print
-    /* printf("Linearized Data:\n"); */
-    /* for (i = 0; i < storage_domain[1]; i++) */ 
-    /*     printf("%.2" PRIu64 " (%.2" PRIu64 "): %.*s\n", i, storage_domain[0], storage_domain[0], data_2d[i]); */
-
-    /* printf("\n\n2D Data by region:\na:\n"); */
-    /* for (i = 0; i < storage_size_a[1]; i++) */ 
-    /*     printf("%.*s\n", storage_size_a[0], data_a_2d[i]); */
-    /* printf("\nb:\n"); */
-    /* for (i = 0; i < storage_size_b[1]; i++) */ 
-    /*     printf("%.*s\n", storage_size_b[0], data_b_2d[i]); */
-    /* printf("\nc:\n"); */
-    /* for (i = 0; i < storage_size_c[1]; i++) */ 
-    /*     printf("%.*s\n", storage_size_c[0], data_c_2d[i]); */
-    /* printf("\nd:\n"); */
-    /* for (i = 0; i < storage_size_d[1]; i++) */ 
-    /*     printf("%.*s\n", storage_size_d[0], data_d_2d[i]); */
     
     PDC_Client_write_wait_notify(metadata, &region_a, data_a_2d);
     PDC_Client_write_wait_notify(metadata, &region_b, data_b_2d);
@@ -436,14 +396,8 @@ int test2d(char *obj_name)
     read_region.offset = read_offset;
     read_region.size   = read_size;
 
-
-/*     /1* printf("proc%d: write data [%s]\n", rank, data); *1/ */
-
-/*     /1* printf("proc%d: read data region: %" PRIu64 " size: %" PRIu64 "\n", rank, read_offset, read_size); *1/ */
-
-
-    char *read_data     = (char*)calloc(sizeof(char), read_size[0]*read_size[1] + 1);
-    char **read_data_2d = (char**)calloc(sizeof(char*), storage_domain[1]);
+    read_data     = (char*)calloc(sizeof(char), read_size[0]*read_size[1] + 1);
+    read_data_2d  = (char**)calloc(sizeof(char*), storage_domain[1]);
     for (i = 0; i < read_size[1]; i++) 
         read_data_2d[i] = read_data + i * read_size[0];
 
@@ -451,14 +405,9 @@ int test2d(char *obj_name)
 
     read_data[read_size[0]*read_size[1]] = 0;
 
- 
-    uint64_t data_start[3] = {0, 0, 0};
-    uint64_t data_offset_real[3];
     data_offset_real[0] = read_region.offset[0] - region_a.offset[0];
     data_offset_real[1] = read_region.offset[1] - region_a.offset[1];
 
-
-    int is_correct = 0, is_all_correct = 0;
     is_correct = data_verify(ndim, data_start, read_region.size, read_data_2d, data_offset_real, data_2d);
     if (is_correct != 1) 
         printf("proc %d: verification failed!\n", rank);
@@ -476,18 +425,6 @@ int test2d(char *obj_name)
         else
             printf("SUCCEED!\n");
     }
-    
-
-/*     printf("Correct data to be read:\n"); */
-/*     printf("===\nproc%d: ", rank); */
-/*     print_data(ndim, data_offset_real, read_region.size, data); */
-
-/*     printf("Actual data read:\n"); */
-/*     printf("===\nproc%d: read data:\n%s\n===\n", rank, read_data); */
-/*     fflush(stdout); */
-
-
-         
 
     free(data);
     free(data_2d);
@@ -522,8 +459,13 @@ int test3d(char *obj_name)
 
     uint64_t read_offset[3], read_size[3];
     uint64_t prob_domain[3], storage_domain[3];
-
-    uint64_t i, j;
+    uint64_t data_start[3] = {0, 0, 0};
+    uint64_t data_offset_real[3];
+    uint64_t i, j, data_total_size;
+    
+    char ***data_3d, ***data_a_3d, ***data_b_3d, ***data_c_3d, ***data_d_3d, ***data_e_3d, ***data_f_3d, ***data_g_3d, ***data_h_3d, ***read_data_3d;
+    char *read_data, *data;
+    int is_correct = 0, is_all_correct = 0;
 
     prob_domain[0] = 22 * size;
     prob_domain[1] = 21 * size;
@@ -538,8 +480,6 @@ int test3d(char *obj_name)
 #ifdef ENABLE_MPI
      MPI_Barrier(MPI_COMM_WORLD);
 #endif
-
-    /* sleep(rank*3); */
 
     // Query the created object
     PDC_Client_query_metadata_name_timestep(obj_name, 0, &metadata);
@@ -671,22 +611,15 @@ int test3d(char *obj_name)
     storage_domain[1]   = (storage_size_a[1] + storage_size_c[1]) * size; // 17
     storage_domain[2]   = (storage_size_a[2] + storage_size_e[2]) * size; // 15
 
-    uint64_t  data_total_size = storage_domain[0] * storage_domain[1] * storage_domain[2];
+    data_total_size = storage_domain[0] * storage_domain[1] * storage_domain[2];
     
-    char   *data    = (  char*)calloc(sizeof(char) ,    data_total_size);
+    data = (char*)calloc(sizeof(char), data_total_size);
 
     for (i = 0; i < data_total_size; i++) {
         data[i] = i % 26 + 'A';
-        /* if (i % storage_domain[0] == 0) */ 
-        /*     printf("\n"); */
-        /* /1* if (i % storage_domain[0] * storage_domain[1] == 0) *1/ */ 
-        /* /1*     printf("\n"); *1/ */
-        /* printf("%c", data[i]); */
-        
     }
 
-
-    char ***data_3d = (char***)calloc(sizeof(char**),  storage_domain[2]);
+    data_3d = (char***)calloc(sizeof(char**),  storage_domain[2]);
 
     for (j = 0; j < storage_domain[2]; j++) {
         data_3d[j] = ( char**)calloc(sizeof(char*),   storage_domain[1]);
@@ -694,103 +627,73 @@ int test3d(char *obj_name)
             data_3d[j][i] = data + i*storage_domain[0] + j*storage_domain[0]*storage_domain[1];
         }
     }
-
-/*     printf("\n\nConverted 3D data\n"); */
-/*     for (j = 0; j < storage_domain[2]; j++) { */
-/*         for (i = 0; i < storage_domain[1]; i++) { */
-/*             printf("%.*s\n", storage_domain[0], data_3d[j][i]); */
-/*         } */
-/*         printf("\n"); */
-/*     } */
    
-    char ***data_a_3d = (char***)calloc(sizeof(char**), storage_size_a[1] * storage_size_a[2]); 
-    char ***data_b_3d = (char***)calloc(sizeof(char**), storage_size_b[1] * storage_size_b[2]); 
-    char ***data_c_3d = (char***)calloc(sizeof(char**), storage_size_c[1] * storage_size_c[2]); 
-    char ***data_d_3d = (char***)calloc(sizeof(char**), storage_size_d[1] * storage_size_d[2]); 
-    char ***data_e_3d = (char***)calloc(sizeof(char**), storage_size_e[1] * storage_size_e[2]); 
-    char ***data_f_3d = (char***)calloc(sizeof(char**), storage_size_f[1] * storage_size_f[2]); 
-    char ***data_g_3d = (char***)calloc(sizeof(char**), storage_size_g[1] * storage_size_g[2]); 
-    char ***data_h_3d = (char***)calloc(sizeof(char**), storage_size_h[1] * storage_size_h[2]); 
+    data_a_3d = (char***)calloc(sizeof(char**), storage_size_a[1] * storage_size_a[2]);
+    data_b_3d = (char***)calloc(sizeof(char**), storage_size_b[1] * storage_size_b[2]);
+    data_c_3d = (char***)calloc(sizeof(char**), storage_size_c[1] * storage_size_c[2]);
+    data_d_3d = (char***)calloc(sizeof(char**), storage_size_d[1] * storage_size_d[2]);
+    data_e_3d = (char***)calloc(sizeof(char**), storage_size_e[1] * storage_size_e[2]);
+    data_f_3d = (char***)calloc(sizeof(char**), storage_size_f[1] * storage_size_f[2]);
+    data_g_3d = (char***)calloc(sizeof(char**), storage_size_g[1] * storage_size_g[2]);
+    data_h_3d = (char***)calloc(sizeof(char**), storage_size_h[1] * storage_size_h[2]);
 
-    /* printf("Region A:\n"); */
     for (i = 0; i < storage_size_a[2]; i++) {
         data_a_3d[i] = ( char**)calloc(sizeof(char*), storage_size_a[1]);
         for (j = 0; j < storage_size_a[1]; j++) {
             data_a_3d[i][j] = data + j*storage_domain[0] + i*storage_domain[0]*storage_domain[1];
-            /* printf("%.*s\n", storage_size_a[0], data_a_3d[i][j]); */
         }
-        /* printf("\n"); */
     }
 
-    /* printf("Region B:\n"); */
     for (i = 0; i < storage_size_b[2]; i++) {
         data_b_3d[i] = ( char**)calloc(sizeof(char*), storage_size_b[1]);
         for (j = 0; j < storage_size_b[1]; j++) {
             data_b_3d[i][j] = data + j*storage_domain[0] + i*storage_domain[0]*storage_domain[1] 
                                    + storage_size_a[0];
-            /* printf("%.*s\n", storage_size_b[0], data_b_3d[i][j]); */
         }
-        /* printf("\n"); */
     }
 
-    /* printf("Region C:\n"); */
     for (i = 0; i < storage_size_c[2]; i++) {
         data_c_3d[i] = ( char**)calloc(sizeof(char*), storage_size_c[1]);
         for (j = 0; j < storage_size_c[1]; j++) {
             data_c_3d[i][j] = data + j*storage_domain[0] + i*storage_domain[0]*storage_domain[1]
                                    + storage_size_a[1]*storage_domain[0];
-            /* printf("%.*s\n", storage_size_c[0], data_c_3d[i][j]); */
         }
-        /* printf("\n"); */
     }
 
-    /* printf("Region D:\n"); */
     for (i = 0; i < storage_size_d[2]; i++) {
         data_d_3d[i] = ( char**)calloc(sizeof(char*), storage_size_d[1]);
         for (j = 0; j < storage_size_d[1]; j++) {
             data_d_3d[i][j] = data + j*storage_domain[0] + i*storage_domain[0]*storage_domain[1]
                                    + storage_size_a[0]   + storage_size_a[1]*storage_domain[0];
-            /* printf("%.*s\n", storage_size_d[0], data_d_3d[i][j]); */
         }
-        /* printf("\n"); */
     }
 
-    /* printf("Region E:\n"); */
     for (i = 0; i < storage_size_e[2]; i++) {
         data_e_3d[i] = ( char**)calloc(sizeof(char*), storage_size_e[1]);
         for (j = 0; j < storage_size_e[1]; j++) {
             data_e_3d[i][j] = data + j*storage_domain[0] + i*storage_domain[0]*storage_domain[1]
                                    + storage_size_a[2]*storage_domain[0]*storage_domain[1];
-            /* printf("%.*s\n", storage_size_e[0], data_e_3d[i][j]); */
         }
-        /* printf("\n"); */
     }
 
-    /* printf("Region F:\n"); */
     for (i = 0; i < storage_size_f[2]; i++) {
         data_f_3d[i] = ( char**)calloc(sizeof(char*), storage_size_f[1]);
         for (j = 0; j < storage_size_f[1]; j++) {
             data_f_3d[i][j] = data + j*storage_domain[0] + i*storage_domain[0]*storage_domain[1]
                                    + storage_size_a[2]*storage_domain[0]*storage_domain[1]
                                    + storage_size_a[0];
-            /* printf("%.*s\n", storage_size_f[0], data_f_3d[i][j]); */
         }
-        /* printf("\n"); */
     }
 
-    /* printf("Region G:\n"); */
     for (i = 0; i < storage_size_g[2]; i++) {
         data_g_3d[i] = ( char**)calloc(sizeof(char*), storage_size_g[1]);
         for (j = 0; j < storage_size_g[1]; j++) {
             data_g_3d[i][j] = data + j*storage_domain[0] + i*storage_domain[0]*storage_domain[1]
                                    + storage_size_a[2]*storage_domain[0]*storage_domain[1]
                                    + storage_size_a[1]*storage_domain[0];
-            /* printf("%.*s\n", storage_size_g[0], data_g_3d[i][j]); */
         }
-        /* printf("\n"); */
     }
 
-    /* printf("Region H:\n"); */
     for (i = 0; i < storage_size_h[2]; i++) {
         data_h_3d[i] = ( char**)calloc(sizeof(char*), storage_size_h[1]);
         for (j = 0; j < storage_size_h[1]; j++) {
@@ -798,11 +701,8 @@ int test3d(char *obj_name)
                                    + storage_size_a[2]*storage_domain[0]*storage_domain[1]
                                    + storage_size_a[1]*storage_domain[0]
                                    + storage_size_a[0];
-            /* printf("%.*s\n", storage_size_h[0], data_h_3d[i][j]); */
         }
-        /* printf("\n"); */
     }
-
    
     PDC_Client_write_wait_notify(metadata, &region_a, data_a_3d);
     PDC_Client_write_wait_notify(metadata, &region_b, data_b_3d);
@@ -825,17 +725,10 @@ int test3d(char *obj_name)
     read_region.offset = read_offset;
     read_region.size   = read_size;
 
-    /* read_region.offset = region_g.offset; */
-    /* read_region.size   = region_g.size; */
-
-    /* printf("proc%d: write data [%s]\n", rank, data); */
-    /* printf("proc%d: read data region: %" PRIu64 " size: %" PRIu64 "\n", rank, read_offset, read_size); */
-
-    
-    char   *read_data    = (char*)calloc(sizeof(char), 
+    read_data = (char*)calloc(sizeof(char),
                             read_region.size[0]*read_region.size[1]*read_region.size[2] +1);
 
-    char ***read_data_3d = (char***)calloc(sizeof(char**), read_region.size[0]*read_region.size[1]); 
+    read_data_3d = (char***)calloc(sizeof(char**), read_region.size[0]*read_region.size[1]);
 
     for (j = 0; j < read_region.size[2]; j++) {
         read_data_3d[j] = ( char**)calloc(sizeof(char*), read_region.size[1]);
@@ -844,27 +737,13 @@ int test3d(char *obj_name)
         }
     }
 
-
     PDC_Client_read_wait_notify(metadata, &read_region, read_data_3d);
     read_data[read_size[0]*read_size[1]*read_size[2]] = 0;
 
-
-    /* printf("\n\nRead 3D data\n"); */
-    /* for (j = 0; j < read_region.size[2]; j++) { */
-    /*     for (i = 0; i < read_region.size[1]; i++) { */
-    /*         printf("[%.*s]\n", read_region.size[0], read_data_3d[j][i]); */
-    /*     } */
-    /*     printf("\n"); */
-    /* } */
-
-
-    uint64_t data_start[3] = {0, 0, 0};
-    uint64_t data_offset_real[3];
     data_offset_real[0] = read_region.offset[0] - region_a.offset[0]; 
     data_offset_real[1] = read_region.offset[1] - region_a.offset[1];
     data_offset_real[2] = read_region.offset[2] - region_a.offset[2];
 
-    int is_correct = 0, is_all_correct = 0;
     is_correct = data_verify(ndim, data_start, read_region.size, read_data_3d, data_offset_real, data_3d);
     if (is_correct != 1) 
         printf("proc %d: verification failed!\n", rank);
@@ -884,8 +763,6 @@ int test3d(char *obj_name)
             printf("SUCCEED!\n");
     }
  
-   
-
     free(data);
     for (j = 0; j < storage_domain[2]; j++) 
         free(data_3d[j]);
@@ -928,14 +805,11 @@ int test3d(char *obj_name)
     for (j = 0; j < read_region.size[2]; j++) 
         free(read_data_3d[j]);
 
-    /* free(read_data_3d); */
-
     return 1;
 }
 
 int main(int argc, char **argv)
 {
-
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -955,7 +829,6 @@ int main(int argc, char **argv)
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
-
     test1d("test_obj_1d");
 
 #ifdef ENABLE_MPI
@@ -973,9 +846,6 @@ int main(int argc, char **argv)
     if (rank == 0) 
         printf("\n\n");
     
-
-
-
     // close a container property
     if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);

@@ -28,9 +28,15 @@
 #include "mercury.h"
 #include "mercury_proc_string.h"
 #include "mercury_atomic.h"
+#include "pdc_public.h"
+#include "pdc_private.h"
 
 #define PDC_REGION_ALL (pdcid_t)(-1)
 #define PDC_ITER_NULL (pdcid_t)(0)
+
+extern int pdc_server_num_g;
+extern int pdc_client_mpi_rank_g;
+extern struct pdc_server_info_t *pdc_server_info_g;
 
 struct analysis_ftn_info {
     int (*ftnPtr)();
@@ -206,30 +212,7 @@ typedef struct {
 // Analysis
 #define CACHE_SIZE                8192
 extern struct PDC_iterator_info * PDC_Block_iterator_cache;
-extern int                      * i_cache_freed;
-extern size_t                     iterator_cache_entries;
-extern hg_atomic_int32_t          i_cache_index;
-extern hg_atomic_int32_t          i_free_index;
-
 extern PDC_loci                   execution_locus;
-extern hg_id_t                    analysis_ftn_register_id_g;
-extern hg_id_t                    transform_ftn_register_id_g;
-extern hg_id_t                    server_transform_ftn_register_id_g;
-extern hg_id_t                    object_data_iterator_register_id_g;
-
-extern size_t PDCobj_data_getSliceCount(pdcid_t iter_id);
-extern size_t PDCobj_data_getNextBlock(pdcid_t iter, void **nextBlock, size_t *dims);
-extern int PDCiter_get_nextId(void);
-extern int pdc_add_analysis_ptr_to_registry_(struct region_analysis_ftn_info *ftnPtr);
-extern perr_t pdc_client_send_iter_recv_id(pdcid_t iter_id, pdcid_t *meta_id);
-extern perr_t pdc_client_register_obj_analysis(struct region_analysis_ftn_info *thisFtn, const char *func, const char *loadpath, pdcid_t ilocal, pdcid_t olocal, pdcid_t imeta, pdcid_t ometa);
-extern perr_t pdc_client_register_obj_transform(const char *func, const char *loadpath, pdcid_t obj_id, int start_state, int next_state, int op_type, int when);
-extern perr_t pdc_client_register_region_transform(const char *func, const char *loadpath, pdcid_t src_region_id, pdcid_t dest_region_id, pdcid_t dest_obj_id, int start_state, int next_state, int op_type, int when, int client_regIndex);
-extern int get_ftnPtr_(const char *ftn, const char *loadpath, void **ftnPtr);
-extern void set_execution_locus(PDC_loci locus_identifier);
-extern PDC_loci get_execution_locus(void);
-extern hg_id_t server_transform_ftn_register(hg_class_t *hg_class);
-extern void *PDC_Server_get_ftn_reference(char *ftn);
 
 static HG_INLINE hg_return_t
 hg_proc_analysis_ftn_in_t(hg_proc_t proc, void *data)

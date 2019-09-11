@@ -84,114 +84,114 @@ bool_t enableProfiling = FALSE;
 
 void push(const char *ftnkey, const char *tags)
 {
-  profileEntry_t *thisEntry;
-  if (freelist != NULL) {
-    thisEntry = freelist;
-    freelist = thisEntry->next;
-  }
-  else {
-    if ((thisEntry = (profileEntry_t *)malloc(sizeof(profileEntry_t))) == NULL) {
-      perror("malloc");
-      profilerrors++;
+    profileEntry_t *thisEntry;
+    if (freelist != NULL) {
+        thisEntry = freelist;
+        freelist = thisEntry->next;
     }
-  }
+    else {
+        if ((thisEntry = (profileEntry_t *)malloc(sizeof(profileEntry_t))) == NULL) {
+            perror("malloc");
+            profilerrors++;
+        }
+    }
 
-  if (profilerrors) return;
-  thisEntry->ftnkey = ftnkey;
-  thisEntry->tags = tags;
-  thisEntry->prev = calltree;
-  thisEntry->next = NULL;
-  calltree = thisEntry;
+    if (profilerrors) return;
+    thisEntry->ftnkey = ftnkey;
+    thisEntry->tags = tags;
+    thisEntry->prev = calltree;
+    thisEntry->next = NULL;
+    calltree = thisEntry;
   
-  /* Timing */
-  clock_gettime(CLOCK_REALTIME, &thisEntry->startTime);
-  RESET_TIMER(thisEntry->callTime);
-  return;
+    /* Timing */
+    clock_gettime(CLOCK_REALTIME, &thisEntry->startTime);
+    RESET_TIMER(thisEntry->callTime);
+    return;
 }
 
 
 void pop()
 {
-  struct timespec current_time;
-  profileEntry_t *master;
-  profileEntry_t *thisEntry = calltree;
-  int update_entry = TRUE;
-  if (thisEntry == NULL) return; /* This shouldn't happen */
+    struct timespec current_time;
+    profileEntry_t *master;
+    profileEntry_t *thisEntry = calltree;
+    int update_entry = TRUE;
+    if (thisEntry == NULL) return; /* This shouldn't happen */
 
-  /* Timing */
-  clock_gettime(CLOCK_REALTIME, &current_time);
-  TIMER_DIFF(thisEntry->totalTime, current_time, thisEntry->startTime);
-  TIMER_DIFF(thisEntry->selfTime, thisEntry->totalTime, thisEntry->callTime);
-  calltree = thisEntry->prev;
-  if (calltree != NULL) {
-    TIMER_ADD(calltree->callTime, thisEntry->totalTime);
-  }
-  /* Check to see if this function has already been added to the hashtable */
-  void **tableEntry = htab_find_slot(thisHashTable,thisEntry, INSERT);
-  if (*tableEntry == NULL) {
-    /* No table entry found so add it now ... */
-    master = (profileEntry_t *)malloc(sizeof(profileEntry_t));
-    if (master) {
-      thisEntry->count = 1;
-      memcpy(master, thisEntry, sizeof(profileEntry_t));
-      *tableEntry = master;
+    /* Timing */
+    clock_gettime(CLOCK_REALTIME, &current_time);
+    TIMER_DIFF(thisEntry->totalTime, current_time, thisEntry->startTime);
+    TIMER_DIFF(thisEntry->selfTime, thisEntry->totalTime, thisEntry->callTime);
+    calltree = thisEntry->prev;
+    if (calltree != NULL) {
+        TIMER_ADD(calltree->callTime, thisEntry->totalTime);
     }
-    update_entry = FALSE;
-  }
+    /* Check to see if this function has already been added to the hashtable */
+    void **tableEntry = htab_find_slot(thisHashTable,thisEntry, INSERT);
+    if (*tableEntry == NULL) {
+        /* No table entry found so add it now ... */
+        master = (profileEntry_t *)malloc(sizeof(profileEntry_t));
+        if (master) {
+            thisEntry->count = 1;
+            memcpy(master, thisEntry, sizeof(profileEntry_t));
+            *tableEntry = master;
+        }
+        update_entry = FALSE;
+    }
 
-  if (update_entry) {
-    master = *(profileEntry_t **)tableEntry;
-    master->count++;
-    TIMER_ADD(master->totalTime, thisEntry->totalTime);
-    TIMER_ADD(master->selfTime, thisEntry->selfTime);
-  }
+    if (update_entry) {
+        master = *(profileEntry_t **)tableEntry;
+        master->count++;
+        TIMER_ADD(master->totalTime, thisEntry->totalTime);
+        TIMER_ADD(master->selfTime, thisEntry->selfTime);
+    }
 
-  /* Rather than freeing the container, we add the 
-   * current entry onto the freelist.
-   */
-  thisEntry->next = freelist;
-  freelist = thisEntry;
+    /* Rather than freeing the container, we add the
+     * current entry onto the freelist.
+     */
+    thisEntry->next = freelist;
+    freelist = thisEntry;
 }
 
 hashval_t hash_profile_entry(const void *p)
 {
-  const profileEntry_t *thisEntry = (const profileEntry_t *) p;
-  return htab_hash_string(thisEntry->ftnkey);
+    const profileEntry_t *thisEntry = (const profileEntry_t *) p;
+    return htab_hash_string(thisEntry->ftnkey);
 }
 
 int eq_profile_entry(const void *a, const void *b)
 {
-  const profileEntry_t *tp_a = (const profileEntry_t *) a;
-  const profileEntry_t *tp_b = (const profileEntry_t *) b;
-  return (tp_a->ftnkey == tp_b->ftnkey);
+    const profileEntry_t *tp_a = (const profileEntry_t *) a;
+    const profileEntry_t *tp_b = (const profileEntry_t *) b;
+    return (tp_a->ftnkey == tp_b->ftnkey);
 }
 
 
 void initialize_profile(void **hashtab, size_t size)
 {
-  if (*hashtab == NULL) {
-    if ((thisHashTable = htab_try_create(size, hash_profile_entry , eq_profile_entry, free)) == NULL) {
-      return;
+    if (*hashtab == NULL) {
+        if ((thisHashTable = htab_try_create(size, hash_profile_entry , eq_profile_entry, free)) == NULL) {
+            return;
+        }
+        *hashtab = thisHashTable;
     }
-    *hashtab = thisHashTable;
-  }
 }
 
 int show_profile_info( void ** ht_live_entry, void *extraInfo ATTRIBUTE(unused) )
 {
-  static int count=0;
-  char *LineBreak = "------------------------------------------------------------------------------";
-  char *header = " item  calls Time/call [Sec,nSec]\tftn_name";
-  const profileEntry_t *thisEntry = *(const profileEntry_t **) ht_live_entry;
+    static int count=0;
+    char *LineBreak = "------------------------------------------------------------------------------";
+    char *header = " item  calls Time/call [Sec,nSec]\tftn_name";
+    const profileEntry_t *thisEntry = *(const profileEntry_t **) ht_live_entry;
 
-  if (thisEntry) {
-    struct timespec totalTime;
-    int64_t totalCalls = thisEntry->count;
-    if (count == 0)
-      puts(header);
-    totalTime = thisEntry->totalTime;
-    printf("%s\n %d\t%-6" PRId64 " %6" PRId64 ",%6" PRId64 "\t\t %s\n", LineBreak, ++count , totalCalls, totalTime.tv_sec/totalCalls, totalTime.tv_nsec/totalCalls, thisEntry->ftnkey);
-  }
+    if (thisEntry) {
+        struct timespec totalTime;
+        int64_t totalCalls = thisEntry->count;
+        if (count == 0)
+            puts(header);
+        totalTime = thisEntry->totalTime;
+        printf("%s\n %d\t%-6" PRId64 " %6" PRId64 ",%6" PRId64 "\t\t %s\n", LineBreak, ++count , totalCalls, totalTime.tv_sec/totalCalls, totalTime.tv_nsec/totalCalls, thisEntry->ftnkey);
+    }
   
   return TRUE;
 }
@@ -201,11 +201,12 @@ int show_profile_info( void ** ht_live_entry, void *extraInfo ATTRIBUTE(unused) 
  */
 int toggle_profile_enable()
 {
-  if (enableProfiling == FALSE)
-    enableProfiling=TRUE;
-  else 
-    enableProfiling=FALSE;
-  return (enableProfiling ? 1 : 0);
+    if (enableProfiling == FALSE)
+        enableProfiling=TRUE;
+    else
+        enableProfiling=FALSE;
+    
+    return (enableProfiling ? 1 : 0);
 }
 
 /* These functions should be used when we've actually built the profiler as a shared library.

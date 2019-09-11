@@ -3,11 +3,6 @@
 #include <string.h>
 #include <getopt.h>
 #include <time.h>
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 
 void print_usage() {

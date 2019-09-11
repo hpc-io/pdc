@@ -26,7 +26,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "config.h"
 #include "pdc.h"
 #include "pdc_private.h"
 #include "pdc_prop_private.h"
@@ -36,10 +35,6 @@
 #include "pdc_interface.h"
 #include "pdc_client_connect.h"
 
-#ifdef ENABLE_MPI
-    #include "mpi.h"
-#endif
-
 perr_t pdc_class__close(struct PDC_class *p);
 
 static perr_t pdc_class_init()
@@ -47,6 +42,7 @@ static perr_t pdc_class_init()
     perr_t ret_value = SUCCEED;         /* Return value */
     
     FUNC_ENTER(NULL);
+    
     /* Initialize the atom group for the container property IDs */
     if(PDC_register_type(PDC_CLASS, (PDC_free_t)pdc_class__close) < 0)
         PGOTO_ERROR(FAIL, "unable to initialize pdc class interface");
@@ -102,7 +98,6 @@ pdcid_t PDC_init(const char *pdc_name)
     // PDC Client Server connection init
     PDC_Client_init();
 
-    // create pdc id
     ret_value = pdcid;
     
 done:

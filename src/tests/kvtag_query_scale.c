@@ -27,9 +27,8 @@
 #include <string.h>
 #include <getopt.h>
 #include <time.h>
-#include <mpi.h>
-
 #include "pdc.h"
+#include "pdc_client_connect.h"
 
 int assign_work_to_rank(int rank, int size, int nwork, int *my_count, int *my_start)
 {
@@ -73,27 +72,24 @@ int main(int argc, char *argv[])
     double stime, total_time;
     char tag[128];
     pdc_kvtag_t kvtag;
+    uint64_t *pdc_ids;
+    int nres, ntotal;
 
+#ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &proc_num);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-
+#endif
+    
     if (argc != 2) {
         if (my_rank == 0) 
             print_usage(argv[0]);
         goto done;
     }
     n_obj    = atoi(argv[1]);
-    /* n_query  = atoi(argv[2]); */
-
-    /* n_obj     = 10000000; */
     n_add_tag = n_obj / 100;
     int round = 7;
-    /* n_obj     = 10000; */
-    /* n_add_tag = 100; */
-    /* int round = 7; */
-    /* n_query   = 10000; */
-
+    
     // create a pdc
     pdc = PDC_init("pdc");
 
@@ -129,7 +125,6 @@ int main(int argc, char *argv[])
         printf("Created %d objects\n", n_obj);
     fflush(stdout);
 
-
     // Add tags
     kvtag.name = "Group";
     kvtag.value = (void*)&v;
@@ -147,15 +142,13 @@ int main(int argc, char *argv[])
         if (my_rank == 0) 
             printf("Rank %d: Added a kvtag to %d objects\n", my_rank, my_add_tag);
         fflush(stdout);
-
+        
+#ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
+#endif
+        
         n_add_tag *= 2;
     }
-
-
-
-    uint64_t *pdc_ids;
-    int nres, ntotal;
 
     kvtag.name = "Group";
     kvtag.value = (void*)&v;
@@ -164,50 +157,32 @@ int main(int argc, char *argv[])
     for (iter = 0; iter < round; iter++) {
         v = iter;
 
+#ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
+#endif
+        
         stime = MPI_Wtime();
 
         if (PDC_Client_query_kvtag_col(&kvtag, &nres, &pdc_ids) < 0) {
             printf("fail to query kvtag [%s] with rank %d\n", kvtag.name, my_rank);
             break;
         }
-        /* if (nres != 0) { */
-        /*     printf("%d: received %d objids\n", my_rank, nres); */
-        /* } */
-
+        
+#ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
         MPI_Reduce(&nres, &ntotal, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+#endif
         total_time = MPI_Wtime() - stime;
 
         if (my_rank == 0) 
             printf("Total time to query %d objects with tag: %.4f\n", ntotal, total_time);
-
         fflush(stdout);
     }
 
-
-    /* // close objects */
-    /* for (i = 0; i < my_obj; i++) { */
-    /*     if(PDCobj_close(obj_ids[i]) < 0) */
-    /*         printf("fail to close object o%d\n", i+my_obj_s); */
-    /* } */
-    
-    /* // close a container */
-    /* if(PDCcont_close(cont) < 0) */
-    /*     printf("fail to close container c1\n"); */
-    
-    /* // close a container property */
-    /* if(PDCprop_close(obj_prop) < 0) */
-    /*     printf("Fail to close property @ line %d\n", __LINE__); */
-
-    /* if(PDCprop_close(cont_prop) < 0) */
-    /*     printf("Fail to close property @ line %d\n", __LINE__); */
-
-    /* // close pdc */
-    /* if(PDC_close(pdc) < 0) */
-    /*    printf("fail to close PDC\n"); */
-
 done:
+#ifdef ENABLE_MPI
     MPI_Finalize();
+#endif
+    
     return 0;
 }

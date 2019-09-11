@@ -29,6 +29,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include "config.h"
 #include "pdc_linkedlist.h"
 #include "pdc_private.h"
 #include "mercury.h"
@@ -85,6 +86,51 @@ extern int pdc_server_rank_g;
 
 #define PDC_MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define PDC_MIN(x, y) (((x) < (y)) ? (x) : (y))
+
+#if defined(IS_PDC_SERVER) && defined(ENABLE_MULTITHREAD)
+
+// Macros for multi-thread callback, grabbed from Mercury/Testing/mercury_rpc_cb.c
+#define HG_TEST_RPC_CB(func_name, handle) \
+    static hg_return_t \
+    func_name ## _thread_cb(hg_handle_t handle)
+
+/* Assuming func_name_cb is defined, calling HG_TEST_THREAD_CB(func_name)
+ * will define func_name_thread and func_name_thread_cb that can be used
+ * to execute RPC callback from a thread
+ */
+#define HG_TEST_THREAD_CB(func_name) \
+        static HG_INLINE HG_THREAD_RETURN_TYPE \
+        func_name ## _thread \
+        (void *arg) \
+        { \
+            hg_handle_t handle = (hg_handle_t) arg; \
+            hg_thread_ret_t thread_ret = (hg_thread_ret_t) 0; \
+            \
+            func_name ## _thread_cb(handle); \
+            \
+            return thread_ret; \
+        } \
+        hg_return_t \
+        func_name ## _cb(hg_handle_t handle) \
+        { \
+            struct hg_thread_work *work = HG_Get_data(handle); \
+            hg_return_t ret = HG_SUCCESS; \
+            \
+            work->func = func_name ## _thread; \
+            work->args = handle; \
+            hg_thread_pool_post(hg_test_thread_pool_g, work); \
+            \
+            return ret; \
+        }
+#else
+#define HG_TEST_RPC_CB(func_name, handle) \
+        hg_return_t \
+        func_name ## _cb(hg_handle_t handle)
+#define HG_TEST_THREAD_CB(func_name)
+
+#endif // End of ENABLE_MULTITHREAD
+
+struct PDC_iterator_info * PDC_Block_iterator_cache;
 
 typedef enum { POSIX=0, DAOS=1 }       PDC_io_plugin_t;
 
@@ -2860,8 +2906,6 @@ hg_id_t send_shm_register(hg_class_t *hg_class);
 hg_id_t query_read_obj_name_client_rpc_register(hg_class_t *hg_class);
 hg_id_t cont_add_tags_rpc_register(hg_class_t *hg_class);
 hg_id_t obj_data_iterator_register(hg_class_t *hg_class);
-hg_id_t analysis_ftn_register(hg_class_t *hg_class);
-hg_id_t transform_ftn_register(hg_class_t *hg_class);
 
 hg_id_t send_shm_bulk_rpc_register(hg_class_t *hg_class);
 
@@ -2875,6 +2919,7 @@ hg_id_t get_storage_meta_name_query_bulk_result_rpc_register(hg_class_t *hg_clas
 hg_id_t notify_client_multi_io_complete_rpc_register(hg_class_t *hg_class);
 
 hg_id_t send_client_storage_meta_rpc_register(hg_class_t *hg_class);
+hg_id_t send_read_sel_obj_id_rpc_register(hg_class_t *hg_class);
 
 // Data query
 hg_id_t send_data_query_rpc_register(hg_class_t *hg_class);

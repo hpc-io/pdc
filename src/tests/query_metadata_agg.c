@@ -3,13 +3,6 @@
 #include <string.h>
 #include <getopt.h>
 #include <time.h>
-
-/* #define ENABLE_MPI 1 */
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 #include "pdc_client_connect.h"
 #include "pdc_client_server_common.h"
@@ -29,19 +22,6 @@ int main(int argc, const char *argv[])
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
-
-    /* if (argc < 3) { */
-    /*     print_usage(); */
-    /*     return 0; */
-    /* } */
-
-    /* obj_name = argv[1]; */
-    /* size_MB = atoi(argv[2]); */
-
-    /* if (rank == 0) { */
-    /*     printf("Writing a %llu MB object [%s] with %d clients.\n", size_MB, obj_name, size); */
-    /* } */
-    /* size_MB *= 1048576; */
 
     // create a pdc
     pdcid_t pdc = PDC_init("pdc");

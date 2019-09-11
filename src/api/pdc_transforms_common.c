@@ -25,121 +25,27 @@
 /************************************************************************
  * This file includes the functionality to support PDC transforms
  ************************************************************************ */
+
+#include "config.h"
 #include "pdc_transforms_pkg.h"
+#include "pdc_transforms_common.h"
+#include "pdc_client_server_common.h"
 
-#ifdef ENABLE_MULTITHREAD 
-hg_thread_mutex_t  insert_iterator_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
+#ifdef ENABLE_MULTITHREAD
+extern hg_thread_pool_t *hg_test_thread_pool_g;
 #endif
-
-//static char *default_pdc_transform_lib = "libpdctransforms.so";
-
-
-static HG_INLINE hg_return_t
-hg_proc_transform_ftn_in_t(hg_proc_t proc, void *data)
-{
-    hg_return_t ret;
-    transform_ftn_in_t *struct_data = (transform_ftn_in_t*) data;
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->ftn_name);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->loadpath);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->object_id);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->region_id);
-    if (ret != HG_SUCCESS) {
-	HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_int32_t(proc, &struct_data->client_index);
-    if (ret != HG_SUCCESS) {
-	    HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_int32_t(proc, &struct_data->operation_type);
-    if (ret != HG_SUCCESS) {
-	    HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_int32_t(proc, &struct_data->start_state);
-    if (ret != HG_SUCCESS) {
-	    HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_int32_t(proc, &struct_data->next_state);
-    if (ret != HG_SUCCESS) {
-	    HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_int8_t(proc, &struct_data->op_type);
-    if (ret != HG_SUCCESS) {
-	    HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_int8_t(proc, &struct_data->when);
-    if (ret != HG_SUCCESS) {
-	    HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-
-    return ret;
-}
-
-static HG_INLINE hg_return_t
-hg_proc_transform_ftn_out_t(hg_proc_t proc, void *data)
-{
-    hg_return_t ret;
-    transform_ftn_out_t *struct_data = (transform_ftn_out_t *) data;
-    ret = hg_proc_uint64_t(proc, &struct_data->object_id);
-    if (ret != HG_SUCCESS) {
-	    HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-
-    ret = hg_proc_uint64_t(proc, &struct_data->region_id);
-    if (ret != HG_SUCCESS) {
-	    HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-
-    ret = hg_proc_int32_t(proc, &struct_data->client_index);
-    if (ret != HG_SUCCESS) {
-	    HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_int32_t(proc, &struct_data->ret);
-    if (ret != HG_SUCCESS) {
-	    HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    return ret;
-}
 
 // transform_ftn_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(transform_ftn, handle)
 {
     hg_return_t ret_value = HG_SUCCESS;
     transform_ftn_in_t in;
-    transform_ftn_out_t out = {0,0,0,-1};
+    transform_ftn_out_t out = {0, 0, 0, -1};
     struct region_transform_ftn_info *thisFtn = NULL;
     void *ftnHandle = NULL;
 
     HG_Get_input(handle, &in);
 
-#if 0
-    printf("%s entered!\n", __func__);
-    printf("func = %s\nloadpath = %s\n----------------\n",
-	   (in.ftn_name == NULL ? "unknown" : in.ftn_name),
-	   (in.loadpath == NULL ? "unknown" : in.loadpath));
-#endif
     if ( get_ftnPtr_(in.ftn_name, in.loadpath, &ftnHandle) >= 0) {
         thisFtn = malloc(sizeof(struct region_transform_ftn_info));
         if (thisFtn == NULL) {
@@ -167,12 +73,12 @@ HG_TEST_RPC_CB(transform_ftn, handle)
 	 */
         thisFtn->ftnPtr = (size_t (*)()) ftnHandle;
         thisFtn->object_id = in.object_id;
-	thisFtn->region_id = in.region_id;
-	thisFtn->op_type = (PDCobj_transform_t)in.op_type;
-	out.ret = pdc_add_transform_ptr_to_registry_(thisFtn);
+        thisFtn->region_id = in.region_id;
+        thisFtn->op_type = (PDCobj_transform_t)in.op_type;
+        out.ret = pdc_add_transform_ptr_to_registry_(thisFtn);
         out.client_index = in.client_index;
         out.object_id = in.object_id;
-	out.region_id = in.region_id;
+        out.region_id = in.region_id;
     }
     else {
         printf("Unable to resolve transform function pointer\n");
@@ -192,10 +98,10 @@ hg_id_t
 transform_ftn_register(hg_class_t *hg_class)
 {
     hg_id_t ret_value;
-
+    
     FUNC_ENTER(NULL);
+    
     ret_value = MERCURY_REGISTER(hg_class, "transform_ftn", transform_ftn_in_t, transform_ftn_out_t, transform_ftn_cb);
-
+    
     FUNC_LEAVE(ret_value);
 }
-

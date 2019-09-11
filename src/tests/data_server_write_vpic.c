@@ -30,13 +30,6 @@
 #include <time.h>
 #include <sys/time.h>
 #include <math.h>
-
-/* #define ENABLE_MPI 1 */
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 #include "pdc_client_server_common.h"
 #include "pdc_client_connect.h"
@@ -89,6 +82,17 @@ int main(int argc, char **argv)
     void *mydata[NUM_VAR];
 
     int write_var = NUM_VAR;
+    
+    PDC_Request_t request[NUM_VAR];
+    
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
+    struct timeval  pdc_timer_start_1;
+    struct timeval  pdc_timer_end_1;
+    
+    double sent_time = 0.0, sent_time_total = 0.0, wait_time = 0.0, wait_time_total = 0.0;
+    double write_time = 0.0, total_size = 0.0;
+
 
     // Float vars are first in the array follow by int vars
     for (i = 0; i < NUM_FLOAT_VAR; i++) 
@@ -97,23 +101,12 @@ int main(int argc, char **argv)
     for (; i < NUM_VAR; i++) 
         mydata[i] = (void*)malloc(int_bytes);
 
-    PDC_Request_t request[NUM_VAR];
-
-    struct timeval  pdc_timer_start;
-    struct timeval  pdc_timer_end;
-    struct timeval  pdc_timer_start_1;
-    struct timeval  pdc_timer_end_1;
-
-    double sent_time = 0.0, sent_time_total = 0.0, wait_time = 0.0, wait_time_total = 0.0;
-    double write_time = 0.0, total_size = 0.0;
-
     if (argc > 1) 
         write_var = atoi(argv[1]);
 
     if (write_var < 0 || write_var > 8) 
         write_var = NUM_VAR;
     
-
     // create a pdc
     pdc_id = PDC_init("pdc");
 
@@ -144,7 +137,6 @@ int main(int argc, char **argv)
     PDCprop_set_obj_user_id( obj_prop_int, getuid());
     PDCprop_set_obj_app_name(obj_prop_int, "VPICIO");
     PDCprop_set_obj_tags(    obj_prop_int, "tag0=1");
-
 
     // Create obj and region one by one
     for (i = 0; i < NUM_FLOAT_VAR; i++) {
@@ -192,13 +184,9 @@ int main(int argc, char **argv)
             printf("Error with metadata!\n");
             exit(-1);
         }
-        /* if (rank == 1) { */
-        /*     PDC_print_metadata(obj_metas[i]); */
-        /* } */
     }
 
     for (i = 0; i < NPARTICLES; i++) {
-        /* ((float*)mydata[0])[i] = i + 0.89;          // x */
         ((float*)mydata[0])[i] = uniform_random_number() * XDIM;          // x
         ((float*)mydata[1])[i] = uniform_random_number() * YDIM;          // y
         ((float*)mydata[2])[i] = (i*1.0/NPARTICLES) * ZDIM; // z
@@ -231,31 +219,9 @@ int main(int argc, char **argv)
             goto done;
         }
 
-        /* #ifdef ENABLE_MPI */
-        /* MPI_Barrier(MPI_COMM_WORLD); */
-        /* #endif */
         gettimeofday(&pdc_timer_end_1, 0);
         sent_time = PDC_get_elapsed_time_double(&pdc_timer_start_1, &pdc_timer_end_1);
         sent_time_total += sent_time;
-
-        /* // Timing */
-        /* gettimeofday(&pdc_timer_start_1, 0); */
-
-        /* ret = PDC_Client_wait(&request[i], 30000, 100); */
-        /* if (ret != SUCCEED) { */
-        /*     printf("Error with PDC_Client_wait!\n"); */
-        /*     goto done; */
-        /* } */
-
-        /* #ifdef ENABLE_MPI */
-        /* MPI_Barrier(MPI_COMM_WORLD); */
-        /* #endif */
-        /* gettimeofday(&pdc_timer_end_1, 0); */
-        /* wait_time = PDC_get_elapsed_time_double(&pdc_timer_start_1, &pdc_timer_end_1); */
-        /* wait_time_total += wait_time; */
-
-        /* if (rank == 0) */ 
-        /*     printf("Sent time %.2f, wait time %.2f\n", sent_time, wait_time); */
     }
 
     if (rank == 0) 
@@ -274,7 +240,6 @@ int main(int argc, char **argv)
     wait_time = PDC_get_elapsed_time_double(&pdc_timer_start_1, &pdc_timer_end_1);
     wait_time_total += wait_time;
 
-
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -290,14 +255,6 @@ int main(int argc, char **argv)
 
 
 done:
-    /* for (i = 0; i < NUM_VAR; i++) { */
-        /* if(PDCobj_close(obj_ids[i]) < 0) */
-        /*     printf("Fail to close %s\n", obj_names[i]); */
-
-        /* if(PDCregion_close(obj_regions[i]) < 0) */
-        /*     printf("Fail to close region %s\n", obj_names[i]); */
-    /* } */
-    
     if(PDCprop_close(obj_prop_float) < 0)
         printf("Fail to close float obj property \n");
 

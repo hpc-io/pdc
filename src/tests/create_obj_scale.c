@@ -30,13 +30,6 @@
 #include <time.h>
 #include <sys/time.h>
 #include <ctype.h>
-
-/* #define ENABLE_MPI 1 */
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 
 static char *rand_string(char *str, size_t size)
@@ -165,7 +158,6 @@ int main(int argc, char **argv)
         if (use_name == -1) {
             sprintf(obj_name, "%s", rand_string(tmp_str, 16));
             PDCprop_set_obj_time_step(obj_prop, rank);
-            /* sprintf(obj_name[i], "%s_%d", rand_string(tmp_str, 16), i + rank * count); */
         }
         else if (use_name == 1) {
             sprintf(obj_name, "%s", obj_prefix[0]);
@@ -183,9 +175,6 @@ int main(int argc, char **argv)
         PDCprop_set_obj_app_name(obj_prop, "test_app"  );
         PDCprop_set_obj_tags(    obj_prop, "tag0=1"    );
 
-        /* if (count < 4) { */
-        /*     printf("Proc %d Name: %s\n", rank, obj_name); */
-        /* } */
         if (count < 20) {
             printf("[%d] create obj with name %s\n", rank, obj_name);
         }
@@ -222,25 +211,6 @@ int main(int argc, char **argv)
         printf("Time to create %d obj/rank with %d ranks: %.6f\n", count, size, ht_total_sec);
         fflush(stdout);
     }
-
-    /* // Check for duplicate insertion */
-    /* int dup_obj_id; */
-    /* sprintf(obj_name, "%s_%d", obj_prefix[0], rank * 10000000); */
-    /* dup_obj_id = PDCobj_create(pdc, obj_name, NULL); */
-    /* int all_dup_obj_id; */
-
-/* #ifdef ENABLE_MPI */
-    /* MPI_Reduce(&dup_obj_id, &all_dup_obj_id, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD); */  
-/* #else */
-    /* all_dup_obj_id = dup_obj_id; */
-/* #endif */
-
-    /* if (rank == 0) { */
-    /*     if (all_dup_obj_id>=0 ) */ 
-    /*         printf("Duplicate insertion test failed!\n"); */
-    /*     else */ 
-    /*         printf("Duplicate insertion test succeed!\n"); */
-    /* } */
 
 done:
     // close a container

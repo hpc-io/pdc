@@ -29,17 +29,9 @@
 #include <sys/time.h>
 #include <ctype.h>
 #include <unistd.h>
-
-/* #define ENABLE_MPI 1 */
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 #include "pdc_client_connect.h"
 #include "pdc_client_server_common.h"
-
 
 static char *rand_string(char *str, size_t size)
 {
@@ -73,6 +65,7 @@ int main(int argc, char **argv)
     char *env_str;
     char name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name", "INVALID!", "INVALID!", "Four Obj Names"};
     char obj_name[32];
+    perr_t ret;
     
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -112,7 +105,6 @@ int main(int argc, char **argv)
 
     // create a pdc
     pdc = PDC_init("pdc");
-    /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
@@ -154,7 +146,6 @@ MPI_Barrier(MPI_COMM_WORLD);
         if (use_name == -1) {
             sprintf(obj_name, "%s", rand_string(tmp_str, 16));
             PDCprop_set_obj_time_step(obj_prop, rank);
-            /* sprintf(obj_name[i], "%s_%d", rand_string(tmp_str, 16), i + rank * count); */
         }
         else if (use_name == 1) {
             sprintf(obj_name, "%s", obj_prefix[0]);
@@ -185,24 +176,12 @@ MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
     // Delete and check if success
-    /* for (i = 0; i < count/2; i++) { */
     for (i = 0; i < count; i++) {
-        /* printf("Proc %d: deleting metadata\n", rank); */
-        /* fflush(stdout); */
-        perr_t ret;
         ret = PDC_Client_delete_metadata_by_id(create_obj_ids[i]);
         if (ret != SUCCEED) {
             printf("Delete fail with process %d, exiting\n", rank);
             goto done;
         }
-        /* // Check by querying */
-        /* pdc_metadata_t *res = NULL; */
-        /* /1* printf("Proc %d: querying metadata with name [%s]\n", rank, obj_name); *1/ */
-        /* PDC_Client_query_metadata_with_name(obj_names[i], &res); */
-        /* if (res != NULL) { */
-        /*     printf("Deletion FAIL! Metadata of [%s] still exist in server\n", res->obj_names); */
-        /*     fflush(stdout); */
-        /* } */
     }
     if (rank == 0) {
         printf("Delete test SUCCEED.\n");

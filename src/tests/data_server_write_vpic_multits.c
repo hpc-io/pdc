@@ -30,16 +30,10 @@
 #include <time.h>
 #include <sys/time.h>
 #include <math.h>
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 #include "pdc_client_server_common.h"
 #include "pdc_client_connect.h"
 
-/* #define NPARTICLES      8388608 */
 #define NUM_VAR_MAX         8
 #define NUM_FLOAT_VAR_MAX   6
 #define NUM_INT_VAR_MAX     2
@@ -77,8 +71,31 @@ int main(int argc, char **argv)
     int n_var = NUM_VAR_MAX, n_ts = 1;
     double sleep_time = 0, true_sleep_time;
     double compute_total = 0.0, gen_time = 0.0; 
-    int size_per_proc_var_MB = 32;            // Default value to write 8388608 particles
-
+    int size_per_proc_var_MB = 32;    // Default value to write 8388608 particles
+    int n_particles;
+    uint64_t float_bytes, int_bytes;
+    uint64_t float_dims[NDIM] = {float_bytes*size};
+    uint64_t int_dims[NDIM] = {int_bytes*size};
+    uint64_t myoffset[NDIM], mysize[NDIM];
+    void *mydata[NUM_VAR_MAX];
+    
+    pdcid_t         obj_prop_float, obj_prop_int;
+    pdcid_t         obj_ids[TS_MAX][NUM_VAR_MAX];
+    struct PDC_region_info obj_regions[TS_MAX][NUM_VAR_MAX];
+    pdc_metadata_t *obj_metas[TS_MAX][NUM_VAR_MAX];
+    PDC_Request_t request[TS_MAX][NUM_VAR_MAX];
+    
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
+    struct timeval  pdc_timer_start_1;
+    struct timeval  pdc_timer_start_2;
+    struct timeval  pdc_timer_end_1;
+    struct timeval  pdc_timer_end_2;
+    
+    double write_time = 0.0, write_time_total = 0.0, wait_time = 0.0, wait_time_total = 0.0;
+    double create_time = 0.0, create_time_total = 0.0, query_time = 0.0, query_time_total = 0.0;
+    double total_time = 0.0, total_size = 0.0;
+    
     if (argc > 4) { 
         n_var = atoi(argv[1]);
         size_per_proc_var_MB = atoi(argv[2]);
@@ -90,6 +107,10 @@ int main(int argc, char **argv)
             usage(argv[0]);
         goto exit;
     }
+    // In VPIC-IO, each client writes 32MB per variable, 8 var per client, so 256MB per client
+    n_particles = size_per_proc_var_MB * 262144;   // Convert to number of particles
+    float_bytes  = n_particles * sizeof(float);
+    int_bytes    = n_particles * sizeof(int);
 
     if (n_var < 0 || n_var > 8) 
         n_var = NUM_VAR_MAX;
@@ -108,35 +129,6 @@ int main(int argc, char **argv)
                 n_var, size_per_proc_var_MB, n_ts, sleep_time);
         fflush(stdout);
     }
-
-    // In VPIC-IO, each client writes 32MB per variable, 8 var per client, so 256MB per client
-    int n_particles = size_per_proc_var_MB * 262144;   // Convert to number of particles
-    uint64_t float_bytes  = n_particles * sizeof(float);
-    uint64_t int_bytes    = n_particles * sizeof(int);
-
-    uint64_t float_dims[NDIM] = {float_bytes*size};
-    uint64_t int_dims[NDIM] = {int_bytes*size};
-    uint64_t myoffset[NDIM], mysize[NDIM];
-    void *mydata[NUM_VAR_MAX];
-
-    pdcid_t         obj_prop_float, obj_prop_int;
-
-    pdcid_t         obj_ids[TS_MAX][NUM_VAR_MAX];
-    struct PDC_region_info obj_regions[TS_MAX][NUM_VAR_MAX];
-    pdc_metadata_t *obj_metas[TS_MAX][NUM_VAR_MAX];
-    PDC_Request_t request[TS_MAX][NUM_VAR_MAX];
-
-    struct timeval  pdc_timer_start;
-    struct timeval  pdc_timer_end;
-    struct timeval  pdc_timer_start_1;
-    struct timeval  pdc_timer_start_2;
-    struct timeval  pdc_timer_end_1;
-    struct timeval  pdc_timer_end_2;
-
-    double write_time = 0.0, write_time_total = 0.0, wait_time = 0.0, wait_time_total = 0.0;
-    double create_time = 0.0, create_time_total = 0.0, query_time = 0.0, query_time_total = 0.0;
-    double total_time = 0.0, total_size = 0.0;
-
 
     // create a pdc
     pdc_id = PDC_init("pdc");

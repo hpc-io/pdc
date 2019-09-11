@@ -28,17 +28,9 @@
 #include <getopt.h>
 #include <sys/time.h>
 #include <ctype.h>
-
-/* #define ENABLE_MPI 1 */
-
-#ifdef ENABLE_MPI
-  #include "mpi.h"
-#endif
-
 #include "pdc.h"
 #include "pdc_client_server_common.h"
 #include "pdc_client_connect.h"
-
 
 static char *rand_string(char *str, size_t size)
 {
@@ -76,6 +68,7 @@ int main(int argc, char **argv)
     char *env_str;
     pdc_metadata_t *res = NULL;
     int progress_factor;
+    char name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name", "INVALID!", "INVALID!", "Four Obj Names"}; 
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -128,13 +121,6 @@ int main(int argc, char **argv)
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
-    /* uint64_t cont_meta_id; */
-    /* pdcid_t cont_local_id; */
-    /* PDC_Client_query_container_name("c1", &cont_meta_id); */
-    /* printf("Queried container id is %lu\n", cont_meta_id); */
-    /* cont_local_id = PDCcont_get_id("c1", pdc); */
-    /* printf("Local container id is %lu\n", cont_local_id); */
-
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if(obj_prop <= 0)
@@ -145,17 +131,15 @@ int main(int argc, char **argv)
         use_name = atoi(env_str);
     }
 
-    char name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name", "INVALID!", "INVALID!", "Four Obj Names"}; 
     if (rank == 0) {
         printf("Using %s\n", name_mode[use_name+1]);
     }
 
     srand(rank+1);
 
-
-    #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
-    #endif
+#endif
 
     gettimeofday(&ht_total_start, 0);
 

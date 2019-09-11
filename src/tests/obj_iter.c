@@ -26,11 +26,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
-
-#ifdef ENABLE_MPI
-#include "mpi.h"
-#endif
-
 #include "pdc.h"
 
 int main(int argc, char **argv) {
@@ -101,7 +96,6 @@ int main(int argc, char **argv) {
         oh = PDCobj_iter_next(oh, cont);
     }
 
-    
     // close first object
     if(PDCobj_close(obj1) < 0)
         printf("fail to close object o1\n");
@@ -131,7 +125,6 @@ int main(int argc, char **argv) {
         printf("fail to close container c1\n");
     else
         printf("successfully close container c1\n");
-    
 
     // close a container property
     if(PDCprop_close(cont_prop) < 0)

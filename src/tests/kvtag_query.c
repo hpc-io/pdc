@@ -34,8 +34,14 @@ int main() {
 
     int i;
     pdcid_t pdc, cont_prop, cont, obj_prop1, obj_prop2, obj1, obj2;
+    uint64_t *obj_ids = NULL, *obj_ids1 = NULL, *obj_ids2 = NULL;
+    int nobj;
+    pdc_kvtag_t kvtag1, kvtag2, kvtag3;
+    char *v1 = "value1";
+    int v2 = 2;
+    double v3 = 3.45;
+    
     // create a pdc
-
     pdc = PDC_init("pdc");
     printf("create a new pdc\n");
 
@@ -80,19 +86,14 @@ int main() {
     else
         printf("Fail to create object @ line  %d!\n", __LINE__);
 
-
-    pdc_kvtag_t kvtag1, kvtag2, kvtag3;
-    char *v1 = "value1";
     kvtag1.name = "key1string";
     kvtag1.value = (void*)v1;
     kvtag1.size  = strlen(v1)+1;
 
-    int v2 = 2;
     kvtag2.name = "key2int";
     kvtag2.value = (void*)&v2;
     kvtag2.size  = sizeof(int);
 
-    double v3 = 3.45;
     kvtag3.name = "key3double";
     kvtag3.value = (void*)&v3;
     kvtag3.size  = sizeof(double);
@@ -116,9 +117,6 @@ int main() {
         printf("fail to add a kvtag to o2\n");
     else
         printf("successfully added a kvtag to o2\n");
-
-    uint64_t *obj_ids = NULL, *obj_ids1 = NULL, *obj_ids2 = NULL;
-    int nobj;
 
     if (PDC_Client_query_kvtag(&kvtag1, &nobj, &obj_ids) < 0)
         printf("fail to query a kvtag\n");
@@ -148,8 +146,8 @@ int main() {
             printf("%llu, ", obj_ids1[i]);
         printf("\n\n");
     }
-    if (obj_ids1!= NULL) free(obj_ids1);
-
+    if (obj_ids1!= NULL)
+        free(obj_ids1);
 
     // close first object
     if(PDCobj_close(obj1) < 0)
@@ -188,8 +186,6 @@ int main() {
     // close pdc
     if(PDC_close(pdc) < 0)
        printf("fail to close PDC\n");
-    /* else */
-    /*    printf("PDC is closed\n"); */
 
      return 0;
 }

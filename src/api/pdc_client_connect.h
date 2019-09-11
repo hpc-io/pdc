@@ -35,14 +35,11 @@
 #include "pdc_client_server_common.h"
 #include "pdc_client_public.h"
 
-
 extern int pdc_server_num_g;
-
-extern PDC_server_selection_t pdc_server_selection_g;
 extern int pdc_client_mpi_rank_g;
 extern int pdc_client_mpi_size_g;
+extern PDC_server_selection_t pdc_server_selection_g;
 
-/* extern char pdc_server_tmp_dir_g[ADDR_MAX]; */
 hg_return_t PDC_Client_work_done_cb();
 hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *callback_info);
 
@@ -174,7 +171,6 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdci
  *
  * \return Non-negative on success/Negative on failure
  */
-//perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, pdcid_t remote_region_id, size_t ndim, uint64_t *local_dims, uint64_t *local_offset, uint64_t *local_size, PDC_var_type_t local_type, void *local_data, uint64_t *remote_dims, uint64_t *remote_offset, uint64_t *remote_size, PDC_var_type_t remote_type, int32_t remote_client_id, void *remote_data, struct PDC_region_info *local_region, struct PDC_region_info *remote_region);
 perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t ndim, uint64_t *local_dims, uint64_t *local_offset, uint64_t *local_size, PDC_var_type_t local_type, void *local_data, PDC_var_type_t remote_type, struct PDC_region_info *local_region, struct PDC_region_info *remote_region);
 
 /**
@@ -291,10 +287,6 @@ perr_t PDC_Client_data_direct_init();
 perr_t PDC_Client_attach_metadata_to_local_obj(const char *obj_name, uint64_t obj_id, uint64_t cont_id, 
                                                struct PDC_obj_info *obj_info);
 
-
-/* perr_t PDCbuf_destroy(void *buf); */
-/* perr_t PDClocidx_destroy(void *loc_idx); */
-
 hg_return_t PDC_Client_recv_bulk_storage_meta_cb(const struct hg_cb_info *callback_info);
 perr_t PDC_Client_recv_bulk_storage_meta(process_bulk_storage_meta_args_t *process_args);
 perr_t PDC_Client_query_name_read_entire_obj_client(int nobj, char **obj_names, void ***out_buf, 
@@ -380,7 +372,7 @@ perr_t PDC_Client_query_tag(const char* tags, int *n_res, pdc_metadata_t ***out)
 perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_step, pdc_metadata_t **out);
 perr_t PDC_Client_query_metadata_name_timestep_agg(const char *obj_name, int time_step, pdc_metadata_t **out);
 
-
+perr_t PDC_Client_query_kvtag_col(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids);
 
 /**
  * Listing all objects on the client
@@ -497,6 +489,9 @@ perr_t PDC_Client_query_name_read_entire_obj_client_agg_cache_iter(int my_nobj, 
 
 perr_t PDC_Client_query_container_name_col(const char *cont_name, uint64_t *cont_meta_id);
 perr_t PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op, uint64_t *nhits, pdcselection_t *sel, void *data);
+
+perr_t PDC_Client_lookup_server(int server_id);
+perr_t PDC_Client_check_response(hg_context_t **hg_context);
 
 typedef struct pdcquery_result_list_t {
     uint32_t ndim;
