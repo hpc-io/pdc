@@ -2322,16 +2322,7 @@ perr_t PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct
     in.remote_obj_id = remote_obj_id;
     in.remote_reg_id = remote_reg_id;
 
-    if(data_type == PDC_DOUBLE)
-        unit = sizeof(double);
-    else if(data_type == PDC_FLOAT)
-        unit = sizeof(float);
-    else if(data_type == PDC_INT)
-        unit = sizeof(int);
-    else if(data_type == PDC_CHAR)
-        unit = sizeof(char);
-    else
-        PGOTO_ERROR(FAIL, "data type is not supported yet");
+    unit = PDC_get_var_type_size(data_type);
     pdc_region_info_t_to_transfer_unit(reginfo, &(in.remote_region), unit);
 
     // Compute metadata server id
@@ -2385,16 +2376,7 @@ perr_t PDC_Client_region_unmap(pdcid_t local_obj_id, pdcid_t local_reg_id, struc
     in.local_obj_id = local_obj_id;
     in.local_reg_id = local_reg_id;
    
-    if(data_type == PDC_DOUBLE)
-        unit = sizeof(double);
-    else if(data_type == PDC_FLOAT)
-        unit = sizeof(float);
-    else if(data_type == PDC_INT)
-        unit = sizeof(int);
-    else if(data_type == PDC_CHAR)
-        unit = sizeof(char);
-    else
-        PGOTO_ERROR(FAIL, "data type is not supported yet");
+    unit = PDC_get_var_type_size(data_type);
     pdc_region_info_t_to_transfer_unit(reginfo, &(in.local_region), unit);
 
     server_id = PDC_get_server_by_obj_id(local_obj_id, pdc_server_num_g);
@@ -2460,28 +2442,10 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t
     
     hg_class = HG_Context_get_class(send_context_g);
  
-    if(local_type == PDC_DOUBLE)
-        unit = sizeof(double);
-    else if(local_type == PDC_FLOAT) 
-        unit = sizeof(float);
-    else if(local_type == PDC_INT)
-        unit = sizeof(int);
-    else if(local_type == PDC_CHAR)
-        unit = sizeof(char);
-    else
-        PGOTO_ERROR(FAIL, "local data type is not supported yet");
+    unit = PDC_get_var_type_size(local_type);
     pdc_region_info_t_to_transfer_unit(local_region, &(in.local_region), unit);
 
-    if(remote_type == PDC_DOUBLE)
-        unit_to = sizeof(double);
-    else if(remote_type == PDC_FLOAT)
-        unit_to = sizeof(float);
-    else if(remote_type == PDC_INT)
-        unit_to = sizeof(int);
-    else if(remote_type == PDC_CHAR)
-        unit_to = sizeof(char);
-    else
-        PGOTO_ERROR(FAIL, "local data type is not supported yet");
+    unit_to = PDC_get_var_type_size(remote_type);
     pdc_region_info_t_to_transfer_unit(remote_region, &(in.remote_region_unit), unit_to);
     pdc_region_info_t_to_transfer(remote_region, &(in.remote_region_nounit));
     in.remote_unit = unit_to;
@@ -2596,28 +2560,10 @@ perr_t PDC_Client_region_map(pdcid_t local_obj_id, pdcid_t local_region_id, pdci
     
     hg_class = HG_Context_get_class(send_context_g);
 
-    if(local_type == PDC_DOUBLE)
-        unit = sizeof(double);
-    else if(local_type == PDC_FLOAT) 
-        unit = sizeof(float);
-    else if(local_type == PDC_INT)
-        unit = sizeof(int);
-    else if(local_type == PDC_CHAR)
-        unit = sizeof(char);
-    else
-        PGOTO_ERROR(FAIL, "local data type is not supported yet");
+    unit = PDC_get_var_type_size(local_type);
     pdc_region_info_t_to_transfer_unit(local_region, &(in.local_region), unit);
 
-    if(remote_type == PDC_DOUBLE)
-        unit_to = sizeof(double);
-    else if(remote_type == PDC_FLOAT)
-        unit_to = sizeof(float);
-    else if(remote_type == PDC_INT)
-        unit_to = sizeof(int);
-    else if(remote_type == PDC_CHAR)
-        unit_to = sizeof(char);
-    else
-        PGOTO_ERROR(FAIL, "local data type is not supported yet");
+    unit_to = PDC_get_var_type_size(remote_type);
     pdc_region_info_t_to_transfer_unit(remote_region, &(in.remote_region), unit_to);
 
     if(ndim == 1) {
@@ -2780,17 +2726,7 @@ perr_t PDC_Client_region_lock(struct PDC_obj_info *object_info, struct PDC_regio
         goto done;
     }
 
-    if(data_type == PDC_DOUBLE)
-        in.data_unit = sizeof(double);
-    else if(data_type == PDC_FLOAT)
-        in.data_unit = sizeof(float);
-    else if(data_type == PDC_INT)
-        in.data_unit = sizeof(int);
-    else if(data_type == PDC_CHAR)
-        in.data_unit = sizeof(char);
-    else
-        PGOTO_ERROR(FAIL, "data type is not supported yet");
-
+    in.data_unit = PDC_get_var_type_size(data_type);
     pdc_region_info_t_to_transfer_unit(region_info, &(in.region), in.data_unit);
 
     if( PDC_Client_try_lookup_server(server_id) != SUCCEED) {
@@ -2993,7 +2929,7 @@ perr_t pdc_region_release_with_server_analysis(struct PDC_obj_info *object_info,
     in.n_args = registry->n_args;
     outputIter = &PDC_Block_iterator_cache[registry->object_id[registry->n_args -1]];
     output_datatype = PDC_Block_iterator_cache[registry->object_id[registry->n_args -1]].pdc_datatype;
-    output_extent = get_datatype_size(output_datatype);
+    output_extent = PDC_get_var_type_size(output_datatype);
     in.output_type_extent = output_extent;
 
     result_obj = outputIter->objectId;
@@ -3236,7 +3172,7 @@ static
 size_t get_transform_size(PDC_transform_state_t *transform_state)
 {
     size_t i, transform_size;
-    int type_size = get_datatype_size(transform_state->dtype);
+    int type_size = PDC_get_var_type_size(transform_state->dtype);
     transform_size = transform_state->dims[0] * type_size;
     for(i=1; i< transform_state->ndim; i++)
         transform_size *= transform_state->dims[i];
@@ -3300,7 +3236,7 @@ hg_return_t maybe_run_transform(struct PDC_obj_info *object_info, struct PDC_reg
             }
         }
 
-        type_size = get_datatype_size(registry[*transform_index]->type);
+        type_size = PDC_get_var_type_size(registry[*transform_index]->type);
 
         /* Client side transform only */
         if ((client_transform_size > 0) && (server_transform_size == 0)) {
@@ -3336,7 +3272,7 @@ hg_return_t maybe_run_transform(struct PDC_obj_info *object_info, struct PDC_reg
                 (registry[k]->when == DATA_IN) &&
                 (registry[k]->readyState == *readyState)) {
 
-                type_size = get_datatype_size(registry[k]->type);
+                type_size = PDC_get_var_type_size(registry[k]->type);
                 *transform_result = registry[k]->data;
                 *transform_size = get_transform_size(&object_info->obj_pt->transform_prop);
                 ret_value = pdc_region_release_with_client_transform(object_info, region_info, access_type,
@@ -3363,7 +3299,7 @@ perr_t PDC_Client_region_release(struct PDC_obj_info *object_info, struct PDC_re
     struct client_lookup_args lookup_args;
     hg_handle_t region_release_handle = HG_HANDLE_NULL;
     void *transform_result = NULL;
-    size_t unit, transform_size = 0;
+    size_t transform_size = 0;
     struct region_transform_ftn_info **registry = NULL;
 
     type_extent = object_info->obj_pt->type_extent;
@@ -3424,12 +3360,8 @@ perr_t PDC_Client_region_release(struct PDC_obj_info *object_info, struct PDC_re
         goto done;
     }
 
-    unit = get_datatype_size(data_type);
-    in.data_unit = unit;
-    if (unit == 0)
-        PGOTO_ERROR(FAIL, "data type is not supported yet");
-
-    pdc_region_info_t_to_transfer_unit(region_info, &(in.region), unit);
+    in.data_unit = PDC_get_var_type_size(data_type);
+    pdc_region_info_t_to_transfer_unit(region_info, &(in.region), in.data_unit);
     if( PDC_Client_try_lookup_server(server_id) != SUCCEED) {
         printf("==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server\n", pdc_client_mpi_rank_g);
         ret_value = FAIL;

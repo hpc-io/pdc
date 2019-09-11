@@ -126,35 +126,45 @@ uint32_t PDC_get_server_by_obj_id(uint64_t obj_id, int n_server)
     FUNC_LEAVE(ret_value);
 }
 
-int get_datatype_size(PDC_var_type_t dtype)
+int PDC_get_var_type_size(PDC_var_type_t dtype)
 {
   /* TODO: How to determine the size of compound types and or                                                                                    
    * the other enumerated types currently handled by the default                                                                                 
    * case which returns 0.                                                                                                                       
    */
     switch(dtype) {
-    case PDC_INT:
-      return sizeof(int);
-      break;
-    case PDC_FLOAT:
-      return sizeof(float);
-      break;
-    case PDC_DOUBLE:
-      return sizeof(double);
-      break;
-    case PDC_INT16:
-      return sizeof(short);
-      break;
-    case PDC_CHAR:
-      return sizeof(char);
-      break;
-    case PDC_INT8:
-      return 1;
-      break;
-    case PDC_UNKNOWN:
-    default:
-      printf("get_datatype_size: WARNING - Using an unknown datatype\n");
-      break;
+        case PDC_INT:
+            return sizeof(int);
+            break;
+        case PDC_FLOAT:
+            return sizeof(float);
+            break;
+        case PDC_DOUBLE:
+            return sizeof(double);
+            break;
+        case PDC_CHAR:
+            return sizeof(char);
+            break;
+        case PDC_INT16:
+            return sizeof(short);
+            break;
+        case PDC_INT8:
+            return 1;
+            break;
+        case PDC_INT64:
+            return 8;
+            break;
+        case PDC_UINT64:
+            return 8;
+            break;
+        case PDC_UINT:
+            return 4;
+            break;
+        case PDC_UNKNOWN:
+        default:
+            printf("PDC_get_var_type_size: WARNING - Using an unknown datatype\n");
+            fflush(stdout);
+            break;
     }
     return 0;   /* Probably a poor default */
 }
@@ -2953,7 +2963,7 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
                     pdc_region_transfer_t_to_list_t(&(eltt->remote_region_unit), tmp);
                     if(PDC_is_same_region_shape(tmp, in.analysis.output_type_extent,
 						request_region,in.analysis.type_extent) == 1) {
-                        type_size = get_datatype_size(in.analysis.data_type);
+                        type_size = PDC_get_var_type_size(in.analysis.data_type);
                         eltt->local_data_type = in.analysis.data_type;
                                                 
                         // get remote object memory addr
@@ -6397,26 +6407,6 @@ perr_t PDC_free_kvtag(pdc_kvtag_t **kvtag)
     free((void *)*kvtag);
     *kvtag = NULL;
     return 0;
-}
-
-int PDC_get_var_type_size(PDC_var_type_t dtype)
-{
-    if (PDC_INT == dtype) 
-        return 4;
-    else if (PDC_FLOAT == dtype) 
-        return 4;
-    else if (PDC_DOUBLE == dtype) 
-        return 8;
-    if (PDC_CHAR == dtype)
-        return 1;
-    else if (PDC_INT64 == dtype) 
-        return 8;
-    else if (PDC_UINT64 == dtype) 
-        return 8;
-    else if (PDC_UINT == dtype) 
-        return 4;
-    else 
-        return 1;
 }
 
 // Query related

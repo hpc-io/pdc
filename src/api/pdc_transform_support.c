@@ -39,8 +39,8 @@
 #include "pdc_atomic.h"
 #include "pdc_analysis_support.h"
 #include "pdc_analysis_common.h"
+#include "pdc_client_server_common.h"
 
-extern int get_datatype_size(PDC_var_type_t dtype);
 extern int pdc_client_mpi_rank_g;
 extern int pdc_client_mpi_size_g;
 
@@ -242,7 +242,7 @@ PDCbuf_map_transform_register(char *func, void *buf,
     if (object1) {
         thisFtn->type = object1->obj_pt->type;
 	if (object1->obj_pt->type_extent == 0) {
-	    object1->obj_pt->type_extent = get_datatype_size(object1->obj_pt->type);
+	    object1->obj_pt->type_extent = PDC_get_var_type_size(object1->obj_pt->type);
 	}
 	thisFtn->type_extent = object1->obj_pt->type_extent;
 	thisFtn->dest_extent = object1->obj_pt->type_extent;

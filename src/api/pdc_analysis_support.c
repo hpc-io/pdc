@@ -41,8 +41,6 @@
 
 /* static inline int compare_gt(int *a, int b) { return (*a) > (b); } */
 
-extern int get_datatype_size(PDC_var_type_t dtype);
-
 static char *default_pdc_analysis_lib = "libpdcanalysis.so";
 
 #define UNUSED(x) (void)(x)
@@ -104,7 +102,7 @@ iterator_init(pdcid_t objectId, pdcid_t reg_id, int blocks, struct PDC_iterator_
         iter->pdc_datatype = obj_prop_ptr->type;
 
         if ((element_size = obj_prop_ptr->type_extent) == 0)
-            element_size = get_datatype_size(obj_prop_ptr->type); 
+            element_size = PDC_get_var_type_size(obj_prop_ptr->type); 
 
         /* 'contigBlockSize' is the increment amount to move from
          * the current data pointer to the start of the next slice.
