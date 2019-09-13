@@ -47,6 +47,7 @@
 #include "mercury_macros.h"
 
 #include "pdc_interface.h"
+#include "pdc_analysis_common.h"
 #include "pdc_client_server_common.h"
 #include "pdc_transforms_common.h"
 #include "pdc_server.h"
@@ -1245,16 +1246,16 @@ perr_t PDC_Server_restart(char *filename)
         total_mem_usage_g += sizeof(pdc_cont_hash_table_entry_t);
         fread(cont_entry, sizeof(pdc_cont_hash_table_entry_t), 1, file);
 
-        #ifdef ENABLE_MULTITHREAD 
+#ifdef ENABLE_MULTITHREAD
         hg_thread_mutex_lock(&pdc_container_hash_table_mutex_g);
-        #endif
+#endif
         if (hash_table_insert(container_hash_table_g, hash_key, cont_entry) != 1) {
             printf("==PDC_SERVER[%d]: %s - hash table insert failed\n", pdc_server_rank_g, __func__);
             ret_value = FAIL;
         }
-        #ifdef ENABLE_MULTITHREAD 
+#ifdef ENABLE_MULTITHREAD
         hg_thread_mutex_unlock(&pdc_container_hash_table_mutex_g);
-        #endif
+#endif
         
         n_cont--;
     } // End while 
@@ -1296,7 +1297,7 @@ perr_t PDC_Server_restart(char *filename)
                 kvtag_list->kvtag = (pdc_kvtag_t*)malloc(sizeof(pdc_kvtag_t));
                 fread(&key_len, sizeof(int), 1, file);
                 kvtag_list->kvtag->name = malloc(key_len);
-                fread(kvtag_list->kvtag->name, key_len, 1, file);
+                fread((void *)(kvtag_list->kvtag->name), key_len, 1, file);
                 fread(&kvtag_list->kvtag->size, sizeof(uint32_t), 1, file);
                 kvtag_list->kvtag->value = malloc(kvtag_list->kvtag->size);
                 fread(kvtag_list->kvtag->value, kvtag_list->kvtag->size, 1, file);
@@ -1649,7 +1650,7 @@ static void PDC_Server_mercury_register()
     get_sel_data_rpc_register(hg_class_g);
 
     // Analysis and Transforms
-    set_execution_locus(SERVER_MEMORY);
+    PDC_set_execution_locus(SERVER_MEMORY);
     obj_data_iterator_register(hg_class_g);
     analysis_ftn_register(hg_class_g);
     transform_ftn_register(hg_class_g);

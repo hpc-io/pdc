@@ -228,7 +228,7 @@ pdcid_t pdc_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_i
     if(obj_prop->tags)
         p->obj_pt->tags = strdup(obj_prop->tags);
 
-    p->obj_pt->locus = get_execution_locus();
+    p->obj_pt->locus = PDC_get_execution_locus();
     p->meta_id = 0;
     p->local_id = pdc_id_register(PDC_OBJ, p);
 

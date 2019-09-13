@@ -50,7 +50,7 @@ perr_t PDC_free_obj_info(struct PDC_obj_info *obj);
 
 /* Client APIs */
 // Registers an iterator
-perr_t pdc_client_send_iter_recv_id(pdcid_t iter_id, pdcid_t *meta_id)
+perr_t PDC_client_send_iter_recv_id(pdcid_t iter_id, pdcid_t *meta_id)
 {
     uint64_t ret_value = SUCCEED;
     struct PDC_iterator_info *thisIter = NULL;
@@ -65,7 +65,7 @@ perr_t pdc_client_send_iter_recv_id(pdcid_t iter_id, pdcid_t *meta_id)
 
     my_rpc_state_p = (struct my_rpc_state *)calloc(1,sizeof(struct my_rpc_state));
     if (my_rpc_state_p == NULL) {
-        fprintf(stderr, "pdc_client_send_iter_recv_id(): Could not allocate my_rpc_state\n");
+        fprintf(stderr, "PDC_client_send_iter_recv_id(): Could not allocate my_rpc_state\n");
         ret_value = FAIL;
 	goto done;
     }
@@ -120,7 +120,7 @@ perr_t pdc_client_send_iter_recv_id(pdcid_t iter_id, pdcid_t *meta_id)
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, object_data_iterator_register_id_g, &my_rpc_state_p->handle );
     hg_ret = HG_Forward(my_rpc_state_p->handle, client_register_iterator_rpc_cb , my_rpc_state_p , &in);
     if (hg_ret != HG_SUCCESS) {
-        fprintf(stderr, "pdc_client_send_iter_recv_id(): Could not start HG_Forward()\n");
+        fprintf(stderr, "PDC_client_send_iter_recv_id(): Could not start HG_Forward()\n");
 	fflush(stderr);
         ret_value = FAIL;
 	goto done;
@@ -171,7 +171,7 @@ done:
 }
 
 /* Send a name to server and receive an obj id */
-perr_t pdc_client_register_obj_analysis(struct region_analysis_ftn_info *thisFtn, const char *func, const char *loadpath,
+perr_t PDC_client_register_obj_analysis(struct region_analysis_ftn_info *thisFtn, const char *func, const char *loadpath,
                                         pdcid_t in_local, pdcid_t out_local, pdcid_t in_meta, pdcid_t out_meta)
 {
     perr_t ret_value = SUCCEED;
@@ -187,7 +187,7 @@ perr_t pdc_client_register_obj_analysis(struct region_analysis_ftn_info *thisFtn
     
     my_rpc_state_p = (struct my_rpc_state *)calloc(1,sizeof(struct my_rpc_state));
     if (my_rpc_state_p == NULL) {
-        fprintf(stderr, "pdc_client_register_obj_analysis(): Could not allocate my_rpc_state\n");
+        fprintf(stderr, "PDC_client_register_obj_analysis(): Could not allocate my_rpc_state\n");
         ret_value = FAIL;
 	goto done;
     }
@@ -196,7 +196,7 @@ perr_t pdc_client_register_obj_analysis(struct region_analysis_ftn_info *thisFtn
         thisIter = &PDC_Block_iterator_cache[in_local];
         struct PDC_obj_info *obj_prop = PDC_obj_get_info(thisIter->objectId);
         input_server = obj_prop->server_id;
-	output_server = input_server;
+        output_server = input_server;
     }
     else {
         if (in_local > 0) {
@@ -239,7 +239,7 @@ perr_t pdc_client_register_obj_analysis(struct region_analysis_ftn_info *thisFtn
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, analysis_ftn_register_id_g, &my_rpc_state_p->handle);
     hg_ret = HG_Forward(my_rpc_state_p->handle, client_register_analysis_rpc_cb, my_rpc_state_p, &in);
     if (hg_ret != HG_SUCCESS) {
-        PGOTO_ERROR(FAIL, "pdc_client_register_obj_analysis(): Could not start HG_Forward()");
+        PGOTO_ERROR(FAIL, "PDC_client_register_obj_analysis(): Could not start HG_Forward()");
     }
 
     work_todo_g = 1;
@@ -286,7 +286,7 @@ done:
 }
 
 /* Send a name to server and receive an obj id */
-perr_t pdc_client_register_region_transform(const char *func, const char *loadpath,
+perr_t PDC_client_register_region_transform(const char *func, const char *loadpath,
 					    pdcid_t src_region_id ATTRIBUTE(unused),
 					    pdcid_t dest_region_id,
 					    pdcid_t obj_id,

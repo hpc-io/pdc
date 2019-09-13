@@ -139,7 +139,7 @@ int check_analysis(PDCobj_transform_t op_type ATTRIBUTE(unused), struct PDC_regi
     return 0;
 }
 
-int pdc_add_analysis_ptr_to_registry_(struct region_analysis_ftn_info *ftn_infoPtr)
+int PDC_add_analysis_ptr_to_registry_(struct region_analysis_ftn_info *ftn_infoPtr)
 {
     size_t initial_registry_size = 64;
     size_t i, currentCount = (size_t) hg_atomic_get32(&registered_analysis_ftn_count_g);
@@ -240,7 +240,7 @@ int pdc_get_transforms(struct region_transform_ftn_info ***registry)
     return 0;
 }
 
-int pdc_add_transform_ptr_to_registry_(struct region_transform_ftn_info *ftn_infoPtr)
+int PDC_add_transform_ptr_to_registry_(struct region_transform_ftn_info *ftn_infoPtr)
 {
     size_t initial_registry_size = 64;
     size_t i, currentCount = (size_t) hg_atomic_get32(&registered_transform_ftn_count_g);
@@ -287,19 +287,19 @@ int pdc_update_transform_server_meta_index(int client_index, int meta_index)
 }
 
 void
-set_execution_locus(PDC_loci locus_identifier)
+PDC_set_execution_locus(PDC_loci locus_identifier)
 {
     execution_locus = locus_identifier;
 }
 
 PDC_loci
-get_execution_locus()
+PDC_get_execution_locus()
 {
     return execution_locus;
 }
 
 int
-get_ftnPtr_(const char *ftn, const char *loadpath, void **ftnPtr)
+PDC_get_ftnPtr_(const char *ftn, const char *loadpath, void **ftnPtr)
 {
     static void *appHandle = NULL;
     void *ftnHandle = NULL;
@@ -345,8 +345,8 @@ HG_TEST_RPC_CB(analysis_ftn, handle)
     // Decode input
     HG_Get_input(handle, &in);
 
-    if (get_ftnPtr_(in.ftn_name, in.loadpath, &ftnHandle) < 0)
-        printf("get_ftnPtr_ returned an error!\n");
+    if (PDC_get_ftnPtr_(in.ftn_name, in.loadpath, &ftnHandle) < 0)
+        printf("PDC_get_ftnPtr_ returned an error!\n");
 
     if ((ftnPtr = ftnHandle) == NULL)
         PGOTO_ERROR(FAIL,"Transforms function lookup failed\n");
@@ -375,7 +375,7 @@ HG_TEST_RPC_CB(analysis_ftn, handle)
                     thisFtn->ftnPtr = (int (*)()) ftnPtr;
                     thisFtn->n_args = 2;
                     thisFtn->object_id = (pdcid_t *)calloc(2, sizeof(pdcid_t));
-                    registrationId = pdc_add_analysis_ptr_to_registry_(thisFtn);
+                    registrationId = PDC_add_analysis_ptr_to_registry_(thisFtn);
                     out.remote_ftn_id = registrationId;
             }
             else {

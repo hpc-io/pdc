@@ -2345,7 +2345,7 @@ region_read_transform_release (region_transform_and_lock_in_t *in, hg_handle_t h
         if ((PDC_is_same_region_list(request_region, elt)) == 1 &&
             (elt->reg_dirty_from_buf == 1) &&
             (hg_atomic_get32(&(elt->buf_map_refcount)) == 0)) {
-            printf("==PDC SERVER: release 0x%0lx access_type==READ (dirty) NOT SUPPORTED YET!\n",
+            printf("==PDC SERVER: release %" PRId64 " access_type==READ (dirty) NOT SUPPORTED YET!\n",
                    in->obj_id);
             goto done;
         }
@@ -2642,8 +2642,8 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     /* Get info from handle */
     hg_info = HG_Get_info(handle);
 
-    if(in.access_type==READ) {
-        printf("release 0x%0lx access_type==READ NOT SUPPORTED YET!\n", in.obj_id);
+    if(in.access_type == READ) {
+        printf("release %" PRId64 " access_type==READ NOT SUPPORTED YET!\n", in.obj_id);
     }
     // ************************************************************
     // write lock release with mapping case
@@ -6504,11 +6504,11 @@ void print_query(pdcquery_t *query)
                                          pdcquery_op_char_g[query->constraint->op2],
                                         *((unsigned*)&query->constraint->value2));
             else if (query->constraint->type == PDC_INT64) 
-                printf(" %ld %s %ld)"  , *((int64_t*)&query->constraint->value),
+                printf(" %lld %s %lld)"  , *((int64_t*)&query->constraint->value),
                                          pdcquery_op_char_g[query->constraint->op2],
                                          *((int64_t*)&query->constraint->value2));
             else if (query->constraint->type == PDC_UINT64) 
-                printf(" %lu %s %lu) " , *((uint64_t*)&query->constraint->value),
+                printf(" %llu %s %llu) " , *((uint64_t*)&query->constraint->value),
                                          pdcquery_op_char_g[query->constraint->op2],
                                          *((uint64_t*)&query->constraint->value2));
         }
@@ -6522,9 +6522,9 @@ void print_query(pdcquery_t *query)
             else if (query->constraint->type == PDC_UINT) 
                 printf(" %u) "  , *((unsigned*)&query->constraint->value));
             else if (query->constraint->type == PDC_INT64) 
-                printf(" %ld)"  , *((int64_t*)&query->constraint->value));
+                printf(" %lld)"  , *((int64_t*)&query->constraint->value));
             else if (query->constraint->type == PDC_UINT64) 
-                printf(" %lu) " , *((uint64_t*)&query->constraint->value));
+                printf(" %llu) " , *((uint64_t*)&query->constraint->value));
         }
         return;
     }

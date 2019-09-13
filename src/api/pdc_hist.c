@@ -255,9 +255,9 @@ void PDC_print_hist(pdc_histogram_t *hist)
     
     for (i = 0; i < hist->nbin; i++) {
         if (i != hist->nbin - 1) 
-            printf("[%.2f, %.2f): %lu\n", hist->range[i*2], hist->range[i*2+1], hist->bin[i]);
+            printf("[%.2f, %.2f): %llu\n", hist->range[i*2], hist->range[i*2+1], hist->bin[i]);
         else
-            printf("[%.2f, %.2f]: %lu\n", hist->range[i*2], hist->range[i*2+1], hist->bin[i]);
+            printf("[%.2f, %.2f]: %llu\n", hist->range[i*2], hist->range[i*2+1], hist->bin[i]);
     }
     printf("\n\n");
     fflush(stdout);

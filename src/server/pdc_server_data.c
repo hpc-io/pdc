@@ -4091,7 +4091,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
                 }
                 read_bytes = fread(region_elt->buf, 1, region_elt->data_size, fp_read);
                 if (read_bytes != region_elt->data_size) {
-                    printf("==PDC_SERVER[%d]: %s - read size %" PRIu64 " is not expected %" PRIu64 "\n", 
+                    printf("==PDC_SERVER[%d]: %s - read size %zu is not expected %" PRIu64 "\n",
                             pdc_server_rank_g, __func__, read_bytes, region_elt->data_size);
                     continue;
                 }
@@ -4163,7 +4163,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
                 } // end of for all overlapping storage regions for one request region
 
                 if (is_debug_g == 1) {
-                    printf("==PDC_SERVER[%d]: Read data total size %" PRIu64 "\n",
+                    printf("==PDC_SERVER[%d]: Read data total size %zu\n",
                             pdc_server_rank_g, total_read_bytes);
                     fflush(stdout);
                 }
@@ -4450,11 +4450,10 @@ perr_t PDC_Server_data_read_from(uint64_t obj_id, struct PDC_region_info *region
         read_bytes = pread(region->fd, buf, unit*(region_info->size[0])*(region_info->size[1]), (pdc_server_rank_g%nclient_per_node)*unit*region_info->size[0]*region_info->size[1]);
     else if(region_info->ndim == 3)
         read_bytes = pread(region->fd, buf, unit*(region_info->size[0])*(region_info->size[1]*region_info->size[2]), (pdc_server_rank_g%nclient_per_node)*unit*region_info->size[0]*region_info->size[1]*region_info->size[2]);
-    
-    /* printf("server %d calls pread, offset = %lld, size = %lld\n", pdc_server_rank_g, region_info->offset[0]-pdc_server_rank_g*nclient_per_node*region_info->size[0], region_info->size[0]); */
+
     if(read_bytes == -1){
         char errmsg[256];
-        printf("==PDC_SERVER[%d]: pread %d failed (%s)\n", pdc_server_rank_g, region->fd, strerror_r(errno, errmsg, sizeof(errmsg)));
+        printf("==PDC_SERVER[%d]: pread %d failed (%d)\n", pdc_server_rank_g, region->fd, strerror_r(errno, errmsg, sizeof(errmsg)));
         goto done;
     }
     
@@ -5580,7 +5579,7 @@ coord_to_region_index(size_t ndim, uint64_t *coord, region_list_t *region, int u
 {
     uint64_t off = 0;
 
-    if (ndim == 0 || coord == NULL || region == NULL || region->start == NULL || region->count == NULL) {
+    if (ndim == 0 || coord == NULL || region == NULL || region->start[0] == 0 || region->count[0] == 0) {
         printf("==PDC_SERVER[%d]: %s - input NULL!\n", pdc_server_rank_g, __func__);
         return 0;
     }
@@ -5606,7 +5605,7 @@ is_coord_within_region(int ndim, uint64_t *coords, region_list_t *region_constra
     int i; 
     uint64_t coord[3];
 
-    if (coord == NULL || region_constraint == NULL || ndim > 3) 
+    if (coords == NULL || region_constraint == NULL || ndim > 3)
         return -1;
 
     for (i = 0; i < ndim; i++) {
@@ -6743,8 +6742,8 @@ PDC_query_visit_all_with_cb_arg(pdcquery_t *query, void (*func)(pdcquery_t *, vo
 
 void
 PDC_query_visit(pdcquery_t *query, 
-               perr_t (*func)(pdcquery_t *, void *, pdcquery_t *, pdcquery_combine_op_t), 
-               void *arg, pdcquery_t *left, pdcquery_combine_op_t combine_op)
+               perr_t (*func)(pdcquery_t *, query_task_t *, pdcquery_t *, pdcquery_combine_op_t),
+               query_task_t *arg, pdcquery_t *left, pdcquery_combine_op_t combine_op)
 {
     if (NULL == query) 
         return;
@@ -7376,7 +7375,7 @@ PDC_recv_read_coords(const struct hg_cb_info *callback_info)
             goto done;
         }
         if (nhits * ndim * sizeof(uint64_t) != bulk_args->nbytes) {
-            printf("==PDC_SERVER[%d]: %s - receive buf size not expected %" PRIu64 " / %" PRIu64 "!\n", 
+            printf("==PDC_SERVER[%d]: %s - receive buf size not expected %llu / %zu!\n",
                     pdc_server_rank_g, __func__, nhits * ndim * sizeof(uint64_t), bulk_args->nbytes);
         }
 
@@ -7623,7 +7622,7 @@ PDC_Server_do_query(query_task_t *task)
 #endif
 
     // Evaluate query 
-    PDC_query_visit(task->query, PDC_Server_query_evaluate_merge_opt, (void*)task, NULL, PDC_QUERY_NONE);
+    PDC_query_visit(task->query, PDC_Server_query_evaluate_merge_opt, task, NULL, PDC_QUERY_NONE);
 
     // No need to store the coords for nhits
     if (task->get_op == PDC_QUERY_GET_NHITS) {
@@ -7654,7 +7653,7 @@ add_storage_region_to_buf(void **in_buf, uint64_t *buf_alloc, uint64_t *buf_off,
     uint64_t my_size, tmp_size;
 
     if (in_buf == NULL || *in_buf == NULL || region == NULL || buf_alloc == NULL || buf_off == NULL 
-            || region->storage_location == NULL) {
+            || region->storage_location[0] == '\0') {
         printf("==PDC_SERVER[%d]: %s - ERROR! NULL input!\n", pdc_server_rank_g, __func__);
         goto done;
     }
@@ -7811,7 +7810,7 @@ PDC_send_query_metadata_bulk(bulk_rpc_in_t *in, void *buf, uint64_t buf_sizes, i
         goto done;
     }
 
-    printf("==PDC_SERVER[%d]: %s - sending %ld meta to server %d!\n", 
+    printf("==PDC_SERVER[%d]: %s - sending %llu meta to server %d!\n",
             pdc_server_rank_g, __func__, in->cnt, server_id);
     fflush(stdout);
 

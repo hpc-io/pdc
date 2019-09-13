@@ -27,6 +27,7 @@
  ************************************************************************ */
 
 #include "config.h"
+#include "pdc_analysis_common.h"
 #include "pdc_transforms_pkg.h"
 #include "pdc_transforms_common.h"
 #include "pdc_client_server_common.h"
@@ -46,7 +47,7 @@ HG_TEST_RPC_CB(transform_ftn, handle)
 
     HG_Get_input(handle, &in);
 
-    if ( get_ftnPtr_(in.ftn_name, in.loadpath, &ftnHandle) >= 0) {
+    if (PDC_get_ftnPtr_(in.ftn_name, in.loadpath, &ftnHandle) >= 0) {
         thisFtn = malloc(sizeof(struct region_transform_ftn_info));
         if (thisFtn == NULL) {
             printf("transform_ftn_cb: Memory allocation failed\n");
@@ -75,7 +76,7 @@ HG_TEST_RPC_CB(transform_ftn, handle)
         thisFtn->object_id = in.object_id;
         thisFtn->region_id = in.region_id;
         thisFtn->op_type = (PDCobj_transform_t)in.op_type;
-        out.ret = pdc_add_transform_ptr_to_registry_(thisFtn);
+        out.ret = PDC_add_transform_ptr_to_registry_(thisFtn);
         out.client_index = in.client_index;
         out.object_id = in.object_id;
         out.region_id = in.region_id;

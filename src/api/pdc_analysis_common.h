@@ -40,12 +40,18 @@ int pdc_get_transforms(struct region_transform_ftn_info ***registry);
 int check_transform(PDCobj_transform_t op_type, struct PDC_region_info *dest_region);
 int check_analysis(PDCobj_transform_t op_type, struct PDC_region_info *dest_region);
 
-int pdc_add_transform_ptr_to_registry_(struct region_transform_ftn_info *ftnPtr);
+int PDC_add_transform_ptr_to_registry_(struct region_transform_ftn_info *ftnPtr);
 
 int pdc_update_transform_server_meta_index(int client_index, int meta_index);
 
 int pdc_get_analysis_registry(struct region_analysis_ftn_info ***registry);
 
-void set_execution_locus(PDC_loci locus_identifier);
+void PDC_set_execution_locus(PDC_loci locus_identifier);
+
+int PDC_add_analysis_ptr_to_registry_(struct region_analysis_ftn_info *ftn_infoPtr);
+
+int PDC_get_ftnPtr_(const char *ftn, const char *loadpath, void **ftnPtr);
+
+PDC_loci PDC_get_execution_locus();
 
 #endif

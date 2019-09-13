@@ -57,7 +57,6 @@ struct region_analysis_ftn_info {
     int ftn_lastResult;
     PDC_Analysis_language lang;
     void *data;
-//  PDC_LIST_ENTRY(region_analysis_ftn_info) entry;
 };
 
 
@@ -410,4 +409,14 @@ hg_proc_obj_data_iterator_out_t(hg_proc_t proc, void *data)
     return ret;
 }
 
+perr_t PDC_client_send_iter_recv_id(pdcid_t iter_id, pdcid_t *meta_id);
+
+perr_t PDC_client_register_obj_analysis(struct region_analysis_ftn_info *thisFtn, const char *func, const char *loadpath,
+                                        pdcid_t in_local, pdcid_t out_local, pdcid_t in_meta, pdcid_t out_meta);
+
+perr_t PDC_client_register_region_transform(const char *func, const char *loadpath,
+                                            pdcid_t src_region_id ATTRIBUTE(unused),
+                                            pdcid_t dest_region_id,
+                                            pdcid_t obj_id,
+                                            int start_state, int next_state, int op_type, int when, int client_index);
 #endif

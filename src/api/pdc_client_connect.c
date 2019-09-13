@@ -1089,7 +1089,7 @@ perr_t PDC_Client_init()
         pdc_nclient_per_server_g = 1;
 #endif
 
-    set_execution_locus(CLIENT_MEMORY);
+    PDC_set_execution_locus(CLIENT_MEMORY);
 
     if (pdc_client_mpi_rank_g == 0) {
         printf("==PDC_CLIENT[0]: Found %d PDC Metadata servers, running with %d PDC clients\n",
@@ -6223,7 +6223,6 @@ metadata_get_kvtag_rpc_cb(const struct hg_cb_info *callback_info)
 
     hg_return_t ret_value;
     pdc_get_kvtag_args_t *client_lookup_args = (pdc_get_kvtag_args_t *) callback_info->arg;
-    //    struct client_lookup_args  *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
     hg_handle_t handle = callback_info->info.forward.handle;
     metadata_get_kvtag_out_t output;
 
@@ -6245,7 +6244,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_get_kvtag(pdcid_t obj_id, const char *tag_name, pdc_kvtag_t **kvtag)
+perr_t PDC_get_kvtag(pdcid_t obj_id, char *tag_name, pdc_kvtag_t **kvtag)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
@@ -6305,7 +6304,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDCtag_delete(pdcid_t obj_id, const char *tag_name)
+perr_t PDCtag_delete(pdcid_t obj_id, char *tag_name)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
@@ -6768,7 +6767,7 @@ PDCcont_get_objids(pdcid_t cont_id ATTRIBUTE(unused), int *nobj ATTRIBUTE(unused
 }
 
 perr_t
-PDCcont_put_tag(pdcid_t cont_id, const char *tag_name, void *tag_value, size_t value_size)
+PDCcont_put_tag(pdcid_t cont_id, char *tag_name, void *tag_value, size_t value_size)
 {
     perr_t ret_value = SUCCEED;
 
@@ -6786,7 +6785,7 @@ done:
 }
 
 perr_t
-PDCcont_get_tag(pdcid_t cont_id, const char *tag_name, void **tag_value, size_t *value_size)
+PDCcont_get_tag(pdcid_t cont_id, char *tag_name, void **tag_value, size_t *value_size)
 {
     perr_t ret_value = SUCCEED;
 
@@ -6804,7 +6803,7 @@ done:
 }
 
 perr_t  
-PDCcont_del_tag(pdcid_t cont_id, const char *tag_name)
+PDCcont_del_tag(pdcid_t cont_id, char *tag_name)
 {
     perr_t ret_value = SUCCEED;
 
@@ -6930,7 +6929,7 @@ done:
 }
 
 perr_t
-PDCobj_put_tag(pdcid_t obj_id, const char *tag_name, void *tag_value, size_t value_size)
+PDCobj_put_tag(pdcid_t obj_id, char *tag_name, void *tag_value, size_t value_size)
 {
     perr_t ret_value = SUCCEED;
     pdc_kvtag_t kvtag;
@@ -6952,7 +6951,7 @@ done:
 }
 
 perr_t
-PDCobj_get_tag(pdcid_t obj_id, const char *tag_name, void **tag_value, size_t *value_size)
+PDCobj_get_tag(pdcid_t obj_id, char *tag_name, void **tag_value, size_t *value_size)
 {
     perr_t ret_value = SUCCEED;
     pdc_kvtag_t *kvtag = NULL;
@@ -6972,7 +6971,7 @@ done:
 }
 
 perr_t  
-PDCobj_del_tag(pdcid_t obj_id, const char *tag_name)
+PDCobj_del_tag(pdcid_t obj_id, char *tag_name)
 {
     perr_t ret_value = SUCCEED;
 

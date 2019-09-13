@@ -190,7 +190,6 @@ typedef struct region_list_t {
     size_t ndim;
     uint64_t start[DIM_MAX];            // in bytes
     uint64_t count[DIM_MAX];            // in bytes
-    /* uint64_t stride[DIM_MAX]; */
 
     uint32_t client_ids[PDC_SERVER_MAX_PROC_PER_NODE];
 
@@ -498,7 +497,7 @@ typedef struct {
 typedef struct {
     uint64_t                obj_id;
     uint32_t                hash_value;
-    hg_const_string_t       key;
+    hg_string_t             key;
 } metadata_get_kvtag_in_t;
 
 typedef struct {
@@ -2992,7 +2991,6 @@ struct buf_map_transform_and_release_bulk_args {
     hg_thread_mutex_t work_mutex;
     hg_thread_cond_t work_cond;
     int work_completed;
-    /* region_transform_and_lock_in_t is a superset of region_lock_in_t */
     region_transform_and_lock_in_t in;
 };
 

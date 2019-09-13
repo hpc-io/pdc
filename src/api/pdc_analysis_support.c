@@ -38,8 +38,9 @@
 #include "pdc_analysis_support.h"
 #include "pdc_analysis_common.h"
 #include "pdc_analysis_and_transforms.h"
+#include "pdc_client_server_common.h"
+//#include "pdc_analysis_and_transforms_connect.h"
 
-/* static inline int compare_gt(int *a, int b) { return (*a) > (b); } */
 
 static char *default_pdc_analysis_lib = "libpdcanalysis.so";
 
@@ -262,7 +263,7 @@ PDCobj_data_block_iterator_create(pdcid_t obj_id, pdcid_t reg_id, int contig_blo
         PGOTO_ERROR(FAIL,"PDC iterator_init returned an error\n");
 
     ret_value = p->local_id = iterId;
-    if (pdc_client_send_iter_recv_id(iterId, &p->meta_id) != SUCCEED)
+    if (PDC_client_send_iter_recv_id(iterId, &p->meta_id) != SUCCEED)
         PGOTO_ERROR(FAIL,"Unable to register a new iterator\n");
     
 done:
@@ -413,8 +414,8 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
     // Should probably validate the location of the "analysislibrary"
     //
     loadpath = get_realpath(analyislibrary, applicationDir);
-    if (get_ftnPtr_((const char *)userdefinedftn, (const char *)loadpath, &ftnHandle) < 0)
-      printf("get_ftnPtr_ returned an error!\n");
+    if (PDC_get_ftnPtr_((const char *)userdefinedftn, (const char *)loadpath, &ftnHandle) < 0)
+      printf("PDC_get_ftnPtr_ returned an error!\n");
     
     if ((ftnPtr = ftnHandle) == NULL)
       PGOTO_ERROR(FAIL,"Analysis function lookup failed\n");
@@ -448,14 +449,14 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
         }
     }
 
-    pdc_client_register_obj_analysis(thisFtn, userdefinedftn, loadpath, local_id_in, local_id_out, meta_id_in, meta_id_out);
+    PDC_client_register_obj_analysis(thisFtn, userdefinedftn, loadpath, local_id_in, local_id_out, meta_id_in, meta_id_out);
 
     // Add region IDs
     thisFtn->region_id[0] = i_in->reg_id;
     thisFtn->region_id[1] = i_out->reg_id;
 
     // Add to our own list of analysis functions
-    if (pdc_add_analysis_ptr_to_registry_(thisFtn) < 0)
+    if (PDC_add_analysis_ptr_to_registry_(thisFtn) < 0)
         PGOTO_ERROR(FAIL,"PDC unable to register analysis function!\n");
 
 done:
