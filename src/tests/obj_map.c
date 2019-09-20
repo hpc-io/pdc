@@ -158,9 +158,8 @@ int main(int argc, char **argv)
 
     gettimeofday(&ht_total_start, 0);
 
-	PDCobj_map(obj1, r1, obj2, r2);
-	PDCobj_map(obj1, r1, obj3, r3);
-//	PDCobj_map(obj2, r2, obj3, r3);
+    PDCobj_map(obj1, r1, obj2, r2);
+    PDCobj_map(obj1, r1, obj3, r3);
 
     gettimeofday(&ht_total_end, 0);
     ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;

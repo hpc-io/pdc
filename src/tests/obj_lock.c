@@ -59,7 +59,7 @@ int main(int argc, char **argv)
 #endif
 
     // create a pdc
-    pdc = PDC_init("pdc");
+    pdc = PDCinit("pdc");
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
@@ -161,7 +161,7 @@ int main(int argc, char **argv)
         printf("Fail to close property @ line %d\n", __LINE__);
 
     // close pdc
-    if(PDC_close(pdc) < 0)
+    if(PDCclose(pdc) < 0)
        printf("fail to close PDC\n");
 
 #ifdef ENABLE_MPI
