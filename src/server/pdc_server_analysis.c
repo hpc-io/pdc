@@ -311,7 +311,7 @@ done:
     return 0;
 }
 
-int pdc_get_analysis_registry(struct region_analysis_ftn_info ***registry)
+int PDC_get_analysis_registry(struct region_analysis_ftn_info ***registry)
 {
     if(registry) {
         *registry = pdc_region_analysis_registry;

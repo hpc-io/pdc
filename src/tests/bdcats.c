@@ -87,8 +87,7 @@ int main(int argc, char **argv)
     id2 = (int *)malloc(numparticles*sizeof(int));
 
     // create a pdc
-    pdc_id = PDC_init("pdc");
-    /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
+    pdc_id = PDCinit("pdc");
 
     // open a container
     cont_id = PDCcont_open("c1", pdc_id);
@@ -430,7 +429,7 @@ int main(int argc, char **argv)
     if(PDCcont_close(cont_id) < 0)
         printf("fail to close container c1\n");
 
-    if(PDC_close(pdc_id) < 0)
+    if(PDCclose(pdc_id) < 0)
        printf("fail to close PDC\n");
     
     free(x);

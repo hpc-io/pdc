@@ -22,14 +22,38 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_obj_pkg_H
-#define _pdc_obj_pkg_H
+#ifndef PDC_OBJ_PKG_H
+#define PDC_OBJ_PKG_H
 
 #include <stdbool.h>
 #include <stddef.h>
+
 #include "pdc_public.h"
 #include "pdc_private.h"
 
+/*******************/
+/* Public Typedefs */
+/*******************/
+typedef enum { NA=0, READ=1, WRITE=2 } PDC_access_t;
+typedef enum { BLOCK=0, NOBLOCK=1 }    PDC_lock_mode_t;
+
+/****************************/
+/* Library Private Typedefs */
+/****************************/
+typedef enum {
+    PDC_OBJ_GLOBAL,
+    PDC_OBJ_LOCAL
+} PDCobj_location;
+
+typedef enum {
+    PDC_NOP = 0,
+    PDC_TRANSFORM = 1,
+    PDC_ANALYSIS  = 2
+} PDCobj_op_type;
+
+/**************************/
+/* Library Private Struct */
+/**************************/
 struct region_map_list{
     pdcid_t                orig_reg_id;
     pdcid_t                des_obj_id;
@@ -37,21 +61,6 @@ struct region_map_list{
     struct region_map_list *prev;
     struct region_map_list *next;
 };
-
-typedef enum {
-    PDC_OBJ_GLOBAL,
-    PDC_OBJ_LOCAL
-} PDCobj_location;
-
-typedef enum { NA=0, READ=1, WRITE=2 } PDC_access_t;
-typedef enum { BLOCK=0, NOBLOCK=1 }    PDC_lock_mode_t;
-
-typedef enum {
-              PDC_NOP = 0,
-	      PDC_TRANSFORM = 1,
-	      PDC_ANALYSIS  = 2
-} PDCobj_op_type;
-  
 
 struct PDC_obj_info {
     char                   *name;
@@ -76,4 +85,4 @@ struct PDC_region_info {
     void                *buf;
 };
 
-#endif
+#endif /* PDC_OBJ_PKG_H */

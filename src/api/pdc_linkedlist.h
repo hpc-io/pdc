@@ -40,12 +40,13 @@
  *  @(#)queue.h 8.5 (Berkeley) 8/20/94
  */
 
-#ifndef _pdc_linkedlist_H
-#define _pdc_linkedlist_H
+#ifndef PDC_LINKEDLIST_H
+#define PDC_LINKEDLIST_H
+
+#include <string.h>
 
 #include "mercury_thread_mutex.h"
 #include "pdc_cont_pkg.h"
-#include <string.h>
 
 #define PDC_LIST_HEAD_INITIALIZER(name)  { NULL }
 
@@ -120,4 +121,4 @@
         ((var) && strcmp(((struct PDC_cont_info *)((var)->member))->n, name) != 0);                             \
         (var) = ((var)->entry_field_name.next))
 
-#endif
+#endif /* PDC_LINKEDLIST_H */

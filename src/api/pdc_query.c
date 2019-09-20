@@ -31,7 +31,7 @@ pdcquery_t *PDCquery_create(pdcid_t obj_id, pdcquery_op_t op, PDC_var_type_t typ
     if (obj_id == 0 || op == PDC_OP_NONE || NULL == value) 
         return NULL;
 
-    if (pdc_find_id(obj_id) != NULL) {
+    if (PDC_find_id(obj_id) != NULL) {
         obj_prop = PDC_obj_get_info(obj_id);
         meta_id = obj_prop->meta_id;
     }
@@ -240,7 +240,7 @@ perr_t PDCquery_get_data(pdcid_t obj_id, pdcselection_t *sel, void *obj_data)
         goto done;
     }
 
-    if (pdc_find_id(obj_id) != NULL) {
+    if (PDC_find_id(obj_id) != NULL) {
         obj_prop = PDC_obj_get_info(obj_id);
         meta_id = obj_prop->meta_id;
     }
@@ -261,15 +261,13 @@ perr_t PDCquery_get_histogram(pdcid_t obj_id, void *hist)
 
     FUNC_ENTER(NULL);
 
-    if (pdc_find_id(obj_id) != NULL) {
+    if (PDC_find_id(obj_id) != NULL) {
         obj_prop = PDC_obj_get_info(obj_id);
         meta_id = obj_prop->meta_id;
     }
     else 
         meta_id = obj_id;
-
-    /* ret_value = PDC_Client_get_sel_data(meta_id, sel, obj_data); */
-
+    
 done:
     FUNC_LEAVE(ret_value);
 }

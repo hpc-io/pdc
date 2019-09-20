@@ -118,7 +118,7 @@ int main(int argc, char **argv)
 #endif
 
     // create a pdc
-    pdc_id = PDC_init("pdc");
+    pdc_id = PDCinit("pdc");
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
@@ -219,7 +219,7 @@ done:
     if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close container property\n");
 
-    if(PDC_close(pdc_id) < 0)
+    if(PDCclose(pdc_id) < 0)
        printf("Fail to close PDC\n");
 exit:
 

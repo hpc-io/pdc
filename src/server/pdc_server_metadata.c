@@ -75,7 +75,7 @@ double   server_bloom_init_time_g       = 0.0;
 uint32_t n_metadata_g                   = 0;
 
 
-pbool_t region_is_identical(region_info_transfer_t reg1, region_info_transfer_t reg2)
+pbool_t PDC_region_is_identical(region_info_transfer_t reg1, region_info_transfer_t reg2)
 {
     pbool_t ret_value = 0;
 
@@ -273,13 +273,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Get the metadata with the specified object ID by iteration of all metadata in the hash table
- *
- * \param  obj_id[IN]        Object ID
- *
- * \return NULL if no match is found/pointer to the found metadata otherwise
- */
 pdc_metadata_t* find_metadata_by_id(uint64_t obj_id) 
 {
     pdc_metadata_t *ret_value = NULL;
@@ -317,13 +310,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Wrapper function of find_metadata_by_id().
- *
- * \param  obj_id[IN]        Object ID
- *
- * \return NULL if no match is found/pointer to the found metadata otherwise
- */
 pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id)
 {
     pdc_metadata_t *ret_value = NULL;
@@ -335,14 +321,6 @@ pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id)
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Check if an object has metadata in current server
- *
- * \param  obj_id[IN]        Object ID
- *
- * \return 1 if metadata is stored locally
- * \return -1 otherwise
- */
 int PDC_Server_has_metadata(pdcid_t obj_id)
 {
     if (obj_id / PDC_SERVER_ID_INTERVEL == pdc_server_rank_g + 1) 
@@ -458,11 +436,6 @@ static uint64_t PDC_Server_gen_obj_id()
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Init the hash table for metadata storage
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_init_hash_table()
 {
     perr_t ret_value = SUCCEED;
@@ -604,14 +577,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Insert a metadata to the metadata hash table
- *
- * \param  head[IN]      Head of the hash table
- * \param  new[IN]       Metadata pointer to be inserted
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_hash_table_list_insert(pdc_hash_table_entry_head *head, pdc_metadata_t *new)
 {
     perr_t ret_value = SUCCEED;
@@ -658,14 +623,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Init a metadata list (doubly linked) under the given hash table entry
- *
- * \param  entry[IN]        An entry pointer of the hash table
- * \param  hash_key[IN]     Hash key of the entry
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_hash_table_list_init(pdc_hash_table_entry_head *entry, uint32_t *hash_key)
 {
     
@@ -703,14 +660,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Add the tag received from one client to the corresponding metadata structure
- *
- * \param  in[IN]       Input structure received from client
- * \param  out[OUT]     Output structure to be sent back to the client
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *out)
 {
 
@@ -831,14 +780,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Update the metadata received from one client to the corresponding metadata structure
- *
- * \param  in[IN]       Input structure received from client
- * \param  out[OUT]     Output structure to be sent back to the client
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out)
 {
     perr_t ret_value = SUCCEED;
@@ -857,8 +798,6 @@ perr_t PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_
     
     gettimeofday(&pdc_timer_start, 0);
 #endif
-
-    /* printf("==PDC_SERVER: Got update request: hash=%u, obj_id=%" PRIu64 "\n", in->hash_value, in->obj_id); */
 
     hash_key = (uint32_t*)malloc(sizeof(uint32_t));
     if (hash_key == NULL) {
@@ -968,14 +907,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Delete metdata with the ID received from a client
- *
- * \param  in[IN]       Input structure received from client, conatins object ID
- * \param  out[OUT]     Output structure to be sent back to the client
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete_by_id_out_t *out)
 {
     perr_t ret_value = FAIL;
@@ -1094,16 +1025,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-
-/*
- * Delete metdata from hash table with the ID received from a client
- *
- * \param  in[IN]       Input structure received from client, conatins object ID
- * \param  out[OUT]     Output structure to be sent back to the client
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out)
+perr_t PDC_delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_out_t *out)
 {
     perr_t ret_value = SUCCEED;
     uint32_t *hash_key = NULL;
@@ -1231,15 +1153,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Insert the metdata received from client to the hash table
- *
- * \param  in[IN]       Input structure received from client, conatins metadata 
- * \param  out[OUT]     Output structure to be sent back to the client
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
+perr_t PDC_insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
 {
     perr_t ret_value = SUCCEED;
     pdc_metadata_t *metadata;
@@ -1406,11 +1320,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Print all existing metadata in the hash table
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_print_all_metadata()
 {
     perr_t ret_value = SUCCEED;
@@ -1432,11 +1341,6 @@ perr_t PDC_Server_print_all_metadata()
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Print all existing container in the hash table
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_print_all_containers()
 {
     int i;
@@ -1463,11 +1367,6 @@ perr_t PDC_Server_print_all_containers()
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Check for duplicates in the hash table
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_metadata_duplicate_check()
 {
     perr_t ret_value = SUCCEED;
@@ -1587,15 +1486,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Get the metadata that satisfies the query constraint
- *
- * \param  in[IN]           Input structure from client that contains the query constraint
- * \param  n_meta[OUT]      Number of metadata that satisfies the query constraint
- * \param  buf_ptrs[OUT]    Pointers to the found metadata
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_get_partial_query_result(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs)
 {
     perr_t ret_value = FAIL;
@@ -1651,15 +1541,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Get the metadata that satisfies the query constraint
- *
- * \param  in[IN]           Input structure from client that contains the query constraint
- * \param  n_meta[OUT]      Number of metadata that satisfies the query constraint
- * \param  buf_ptrs[OUT]    Pointers to the found metadata
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_ids)
 {
     perr_t ret_value = SUCCEED;
@@ -1734,16 +1615,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Seach the hash table with object name and hash key
- *
- * \param  obj_name[IN]     Name of the object to be searched
- * \param  hash_key[IN]     Hash value of the name string
- * \param  ts[IN]           Timestep value
- * \param  out[OUT]         Pointers to the found metadata
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_search_with_name_timestep(const char *obj_name, uint32_t hash_key, uint32_t ts, 
                                             pdc_metadata_t **out)
 {
@@ -1795,15 +1666,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Seach the hash table with object name and hash key
- *
- * \param  obj_name[IN]     Name of the object to be searched
- * \param  hash_key[IN]     Hash value of the name string
- * \param  out[OUT]         Pointers to the found metadata
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_search_with_name_hash(const char *obj_name, uint32_t hash_key, pdc_metadata_t** out)
 {
     perr_t ret_value = SUCCEED;
@@ -1856,14 +1718,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Get metadata of the object ID received from client from local metadata hash table
- *
- * \param  obj_id[IN]           Object ID
- * \param  res_meta_ptrdata[IN]     Pointer of metadata of the specified object ID
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_get_local_metadata_by_id(uint64_t obj_id, pdc_metadata_t **res_meta_ptr)
 {
     perr_t ret_value = SUCCEED;
@@ -1937,7 +1791,7 @@ PDC_Server_get_metadata_by_id_cb(const struct hg_cb_info *callback_info)
     if (output.res_meta.obj_id != 0) {
         // TODO free metdata
         meta = (pdc_metadata_t*)malloc(sizeof(pdc_metadata_t));
-        pdc_transfer_t_to_metadata_t(&output.res_meta, meta);
+        PDC_transfer_t_to_metadata_t(&output.res_meta, meta);
     }
     else {
         printf("==PDC_SERVER[%d]: %s - no valid metadata is retrieved\n", pdc_server_rank_g, __func__);
@@ -1962,16 +1816,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Get metadata of the object ID received from client from (possibly remtoe) metadata hash table
- *
- * \param  obj_id[IN]           Object ID
- * \param  res_meta_ptr[IN/OUT]     Pointer of metadata of the specified object ID
- * \param  cb[IN]               Callback function needs to be executed after getting the metadata
- * \param  args[IN]             Callback function input parameters
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_get_metadata_by_id_with_cb(uint64_t obj_id, perr_t (*cb)(), void *args)
 {
     pdc_metadata_t             *res_meta_ptr = NULL;
@@ -2031,14 +1875,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Create a container
- *
- * \param  in[IN]       Input structure received from client, conatins metadata 
- * \param  out[OUT]     Output structure to be sent back to the client
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_create_container(gen_cont_id_in_t *in, gen_cont_id_out_t *out)
 {
     perr_t ret_value = SUCCEED;
@@ -2200,16 +2036,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Search a container by name
- *
- * \param  cont_name[IN]       Container name
- * \param  hash_key[IN]       Hash value of container name
- * \param  out[OUT]           Pointer to the result container
- *
- * \return Non-negative on success/Negative on failure
- */
-
 perr_t PDC_Server_find_container_by_name(const char *cont_name, pdc_cont_hash_table_entry_t **out)
 {
     perr_t ret_value = SUCCEED;
@@ -2255,7 +2081,7 @@ done:
  * \return Non-negative on success/Negative on failure
  */
 
-perr_t PDC_Server_find_container_by_id(uint64_t cont_id, pdc_cont_hash_table_entry_t **out)
+static perr_t PDC_Server_find_container_by_id(uint64_t cont_id, pdc_cont_hash_table_entry_t **out)
 {
     perr_t ret_value = SUCCEED;
     pdc_cont_hash_table_entry_t *cont_entry;
@@ -2300,15 +2126,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Add objects to a container 
- *
- * \param  n_obj[IN]           Number of objects to be added/deleted
- * \param  obj_ids[IN]        Pointer to object array with nobj objects
- * \param  cont_id[IN]        Container ID
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint64_t cont_id)
 {
     perr_t ret_value = SUCCEED;
@@ -2373,16 +2190,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Delete objects to a container 
- *
- * \param  n_obj[IN]           Number of objects to be added/deleted
- * \param  obj_ids[IN]        Pointer to object array with n_obj objects
- * \param  cont_id[IN]        Container ID
- *
- * \return Non-negative on success/Negative on failure
- */
-
 perr_t PDC_Server_container_del_objs(int n_obj, uint64_t *obj_ids, uint64_t cont_id)
 {
     perr_t ret_value = SUCCEED;
@@ -2425,15 +2232,6 @@ done:
     
     FUNC_LEAVE(ret_value);
 }
-
-/*
- * Add tags to a container 
- *
- * \param  cont_id[IN]        Container ID
- * \param  tags[IN]           Pointer to the tags string
- *
- * \return Non-negative on success/Negative on failure
- */
 
 perr_t PDC_Server_container_add_tags(uint64_t cont_id, char *tags)
 {
@@ -2484,7 +2282,7 @@ static perr_t PDC_copy_all_storage_meta(pdc_metadata_t *meta, region_storage_met
     DL_FOREACH(region_head, region_elt) {
         (*storage_meta)[i].obj_id = meta->obj_id;
         (*storage_meta)[i].size   = region_elt->data_size;
-        pdc_region_list_t_to_transfer(region_elt, &((*storage_meta)[i].region_transfer));
+        PDC_region_list_t_to_transfer(region_elt, &((*storage_meta)[i].region_transfer));
 
         // Check if cache available
         if (strstr(region_elt->cache_location, "PDCcache") != NULL ) {
@@ -2606,7 +2404,7 @@ static perr_t PDC_Server_get_storage_meta_by_names(query_read_names_args_t *args
     bulk_rpc_in.origin      = pdc_server_rank_g;
     bulk_rpc_in.bulk_handle = bulk_handle;
 
-    hg_ret = HG_Forward(rpc_handle, pdc_check_int_ret_cb, NULL, &bulk_rpc_in);
+    hg_ret = HG_Forward(rpc_handle, PDC_check_int_ret_cb, NULL, &bulk_rpc_in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "Could not forward call\n");
         ret_value = FAIL;
@@ -2666,14 +2464,6 @@ static perr_t PDC_add_kvtag_to_list(pdc_kvtag_list_t **list_head, pdc_kvtag_t *t
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Add the kvtag received from one client to the corresponding metadata structure
- *
- * \param  in[IN]       Input structure received from client
- * \param  out[OUT]     Output structure to be sent back to the client
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
 {
 
@@ -2779,14 +2569,6 @@ static perr_t PDC_get_kvtag_value_from_list(pdc_kvtag_list_t **list_head, char *
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Get the kvtag with the given key
- *
- * \param  in[IN]       Input structure received from client
- * \param  out[OUT]     Output structure to be sent back to the client
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
 {
 
@@ -2896,14 +2678,6 @@ static perr_t PDC_del_kvtag_value_from_list(pdc_kvtag_list_t **list_head, char *
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Delete the kvtag with the given key
- *
- * \param  in[IN]       Input structure received from client
- * \param  out[OUT]     Output structure to be sent back to the client
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t *out)
 {
 

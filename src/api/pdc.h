@@ -48,7 +48,11 @@
 #include "pdc_analysis_support.h"
 #include "pdc_transform_support.h"
 #include "pdc_query.h"
+#include "pdc_client_public.h"
 
+/*********************/
+/* Public Prototypes */
+/*********************/
 /**
  * Initialize the PDC layer
  *
@@ -56,15 +60,15 @@
  *
  * \return PDC id on success/Zero on failure
  */
-pdcid_t PDC_init(const char *pdc_name);
+pdcid_t PDCinit(const char *pdc_name);
 
 /**
  * Close the PDC layer
  *
- * \param pdc_id [IN]          ID of the PDC
+ * \param pdc_id [IN]           ID of the PDC
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_close(pdcid_t pdcid);
+perr_t PDCclose(pdcid_t pdcid);
 
 #endif 

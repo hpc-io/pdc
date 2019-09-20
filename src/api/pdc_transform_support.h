@@ -22,11 +22,14 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_transform_support_H
-#define _pdc_transform_support_H
+#ifndef PDC_TRANSFORM_SUPPORT_H
+#define PDC_TRANSFORM_SUPPORT_H
 
 #include "pdc_transforms_pkg.h"
 
+/*********************/
+/* Public Prototypes */
+/*********************/
 /**
  * Register a function to be invoked at a specified point during execution
  * to transform the supplied data.
@@ -61,6 +64,14 @@ perr_t PDCobj_transform_register(char *func, pdcid_t obj_id, int current_state, 
  */
 perr_t PDCbuf_map_transform_register(char *func, void *buf, pdcid_t src_region_id, pdcid_t dest_object_id, pdcid_t dest_region_id, int current_state, int next_state, PDCdata_movement_t when );
 
-perr_t pdc_transform_end();
+/***************************************/
+/* Library-private Function Prototypes */
+/***************************************/
+/**
+ * To end PDC transform
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_transform_end();
 
-#endif
+#endif /* PDC_TRANSFORM_SUPPORT_H */

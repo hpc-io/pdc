@@ -22,16 +22,18 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_obj_H
-#define _pdc_obj_H
+#ifndef PDC_OBJ_H
+#define PDC_OBJ_H
 
 #include "pdc_obj_pkg.h"
 #include "pdc_error.h"
 #include "pdc_life.h"
-/* #include "pdc_atomic.h" */
 
 typedef struct PDC_id_info obj_handle;
 
+/*********************/
+/* Public Prototypes */
+/*********************/
 /**
  * Create a region
  *
@@ -58,7 +60,7 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_
 /**
  * Set object lifetime 
  *
- * \param obj_prop [IN]         Id of object property, 
+ * \param obj_prop [IN]         ID of object property,
  *                              returned by PDCprop_create(PDC_OBJ_CREATE)
  * \param obj_lifetime [IN]     Object lifetime (enum type), PDC_PERSIST or PDC_TRANSIENT
  *
@@ -69,7 +71,7 @@ perr_t PDCprop_set_obj_lifetime(pdcid_t obj_prop, PDC_lifetime obj_lifetime);
 /**
  * Set object user id
  *
- * \param obj_prop [IN]         Id of object property, returned by PDCprop_create(PDC_OBJ_CREATE)
+ * \param obj_prop [IN]         ID of object property, returned by PDCprop_create(PDC_OBJ_CREATE)
  * \param user_id [IN]          User id
  *
  * \return Non-negative on success/Negative on failure
@@ -79,7 +81,7 @@ perr_t PDCprop_set_obj_user_id(pdcid_t obj_prop, uint32_t user_id);
 /**
  * Set object data location 
  *
- * \param obj_prop [IN]         Id of object property, returned by PDCprop_create(PDC_OBJ_CREATE)
+ * \param obj_prop [IN]         ID of object property, returned by PDCprop_create(PDC_OBJ_CREATE)
  * \param app_name [IN]         Data location path 
  *
  * \return Non-negative on success/Negative on failure
@@ -89,7 +91,7 @@ perr_t PDCprop_set_obj_data_loc(pdcid_t obj_prop, char *app_name);
 /**
  * Set object application name
  *
- * \param obj_prop [IN]         Id of object property, returned by PDCprop_create(PDC_OBJ_CREATE)
+ * \param obj_prop [IN]         ID of object property, returned by PDCprop_create(PDC_OBJ_CREATE)
  * \param app_name [IN]         Application name
  *
  * \return Non-negative on success/Negative on failure
@@ -99,7 +101,7 @@ perr_t PDCprop_set_obj_app_name(pdcid_t obj_prop, char *app_name);
 /**
  * Set object time step
  *
- * \param obj_prop [IN]         Id of object property, returned by PDCprop_create(PDC_OBJ_CREATE)
+ * \param obj_prop [IN]         ID of object property, returned by PDCprop_create(PDC_OBJ_CREATE)
  * \param time_step [IN]        Time step
  *
  * \return Non-negative on success/Negative on failure
@@ -109,7 +111,7 @@ perr_t PDCprop_set_obj_time_step(pdcid_t obj_prop, uint32_t time_step);
 /**
  * Set object tag
  *
- * \param obj_prop [IN]         Id of object property, returned by PDCprop_create(PDC_OBJ_CREATE)
+ * \param obj_prop [IN]         ID of object property, returned by PDCprop_create(PDC_OBJ_CREATE)
  * \param tags [IN]             Tags
  *
  * \return Non-negative on success/Negative on failure
@@ -119,7 +121,7 @@ perr_t PDCprop_set_obj_tags(pdcid_t obj_prop, char *tags);
 /**
  * Set object dimension
  *
- * \param obj_prop [IN]         Id of object property, returned by PDCprop_create(PDC_OBJ_CREATE)
+ * \param obj_prop [IN]         ID of object property, returned by PDCprop_create(PDC_OBJ_CREATE)
  * \param ndim [IN]             Number of dimensions
  * \param dims [IN]             Size of each dimension
  *
@@ -130,7 +132,7 @@ perr_t PDCprop_set_obj_dims(pdcid_t obj_prop, PDC_int_t ndim, uint64_t *dims);
 /**
  * Set object type
  * 
- * \param obj_prop [IN]         Id of object property, 
+ * \param obj_prop [IN]         ID of object property,
  *                              returned by PDCprop_create(PDC_OBJ_CREATE)
  * \param type [IN]             Object variable type (enum type), 
  *                              i.e. PDC_int_t, PDC_float_t
@@ -142,7 +144,7 @@ perr_t PDCprop_set_obj_type(pdcid_t obj_prop, PDC_var_type_t type);
 /**
  * Set an object buffer 
  *
- * \param obj_prop [IN]         Id of object property, 
+ * \param obj_prop [IN]         ID of object property,
  *                              returned by PDCprop_create(PDC_OBJ_CREATE)
  * \param buf [IN]              Starting point of object storage
  *
@@ -153,7 +155,7 @@ perr_t PDCprop_set_obj_buf(pdcid_t obj_prop, void *buf);
 /**
  * Retrieve the buffer of an object 
  *
- * \param obj_id [IN]           Id of the object
+ * \param obj_id [IN]           ID of the object
  *
  * \return Address of object buffer on success/Null on failure
  */
@@ -162,7 +164,7 @@ void ** PDCobj_buf_retrieve(pdcid_t obj_id);
 /**
  * Open an object within a container
  *
- * \param pdc_id [IN]           Id of pdc
+ * \param pdc_id [IN]           ID of pdc
  * \param obj_name [IN]         Name of the object
  *
  * \return Object id on success/Zero on failure
@@ -172,7 +174,7 @@ pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc_id);
 /**
  * Iterate over objects in a container
  *
- * \param cont_id [IN]          Container id, returned by 
+ * \param cont_id [IN]          Container ID, returned by
  *                              PDCobj_open(pdcid_t pdc_id, const char *cont_name)
  *
  * \return A pointer to object handle struct on success/NULL on failure
@@ -212,47 +214,31 @@ struct PDC_obj_info * PDCobj_iter_get_info(obj_handle *ohandle);
 /**
  * View query result
  *
- * \param view_id [IN]          Query id, returned by PDCquery_obj
+ * \param view_id [IN]          Query ID, returned by PDCquery_obj
  *                              e.g. pdcid_t pdc_id, PDC_match_op_t match_op, ...
  *
  * \return Object handle on success/Null on failure
  */
 obj_handle *PDCview_iter_start(pdcid_t view_id);
 
-//perr_t PDCobj_encode(pdcid_t obj_id, pdcid_t *meta_id);
-
-//pdcid_t PDCobj_decode(pdcid_t obj_id, pdcid_t meta_id);
-
 /**
  * Map an application buffer to an object
  *
  * \param buf [IN]              Start point of an application buffer
  * \param local_type [IN]       Data type of data in memory
- * \param local_reg  [IN]       Id of the source region
- * \param remote_obj [IN]       Id of the target object
- * \param remote_reg [IN]       Id of the target region
+ * \param local_reg  [IN]       ID of the source region
+ * \param remote_obj [IN]       ID of the target object
+ * \param remote_reg [IN]       ID of the target region
  *
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDCbuf_obj_map(void *buf, PDC_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg);
 
 /**
- * Map an object to another object
- *
- * \param from_obj [IN]         Id of the source object
- * \param from_reg [IN]         Id of the source region
- * \param from_obj [IN]         Id of the target object
- * \param from_reg [IN]         Id of the target region
- *
- * \return Non-negative on success/Negative on failure
- */
-//perr_t PDCobj_map(pdcid_t from_obj, pdcid_t from_reg, pdcid_t to_obj, pdcid_t to_reg);
-
-/**
  * Get object information
  *
- * \param reg_id [IN]           Id of the region
- * \param obj_id [IN]           Id of the object
+ * \param reg_id [IN]           ID of the region
+ * \param obj_id [IN]           ID of the object
  *
  * \return Pointer to PDC_obj_info struct on success/Null on failure
  */
@@ -261,37 +247,18 @@ struct PDC_region_info *PDCregion_get_info(pdcid_t reg_id);
 /**
  * Unmap all regions within the object from a buffer (write unmap)
  *
- * \param remote_obj_id [IN]    Id of the target object
- * \param remote_reg_id [IN]    Id of the target region
+ * \param remote_obj_id [IN]    ID of the target object
+ * \param remote_reg_id [IN]    ID of the target region
  *
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDCbuf_obj_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id);
 
 /**
- * Unmap all regions within the object 
- *
- * \param obj_id [IN]           Id of the object
- *
- * \return Non-negative on success/Negative on failure
- */
-//perr_t PDCobj_unmap(pdcid_t obj_id);
-
-/**
- * Unmap the region 
- *
- * \param obj_id [IN]           Id of the object
- * \param reg_id [IN]           Id of the region
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDCreg_unmap(pdcid_t obj_id, pdcid_t reg_id);
-
-/**
  * Obtain the region lock
  *
- * \param obj_id [IN]           Id of the object
- * \param reg_id [IN]           Id of the region
+ * \param obj_id [IN]           ID of the object
+ * \param reg_id [IN]           ID of the region
  * \param access_type [IN]      Region access type: READ or WRITE
  * \param lock_mode [IN]        Lock mode of the region: BLOCK or NOBLOCK
  *
@@ -302,8 +269,8 @@ perr_t PDCreg_obtain_lock(pdcid_t obj_id, pdcid_t reg_id, PDC_access_t access_ty
 /**
  * Release the region lock
  *
- * \param obj_id [IN]           Id of the object
- * \param reg_id [IN]           Id of the region
+ * \param obj_id [IN]           ID of the object
+ * \param reg_id [IN]           ID of the region
  * \param access_type [IN]      Region access type
  *
  * \return Non-negative on success/Negative on failure
@@ -313,7 +280,7 @@ perr_t PDCreg_release_lock(pdcid_t obj_id, pdcid_t reg_id, PDC_access_t access_t
 /**
  * Release memory buffers from one memory object 
  *
- * \param obj_id [IN]           Id of the object
+ * \param obj_id [IN]           ID of the object
  *
  * \return Non-negative on success/Negative on failure
  */
@@ -322,7 +289,7 @@ perr_t PDCobj_release(pdcid_t obj_id);
 /**
  * Close an object 
  *
- * \param obj_id [IN]           Id of the object
+ * \param obj_id [IN]           ID of the object
  *
  * \return Non-negative on success/Negative on failure
  */
@@ -331,7 +298,7 @@ perr_t PDCobj_close(pdcid_t obj_id);
 /**
  * Close a region
  *
- * \param region_id [IN]        Id of the object
+ * \param region_id [IN]        ID of the object
  *
  * \return Non-negative on success/Negative on failure
  */
@@ -355,4 +322,4 @@ struct PDC_obj_info *PDCobj_get_info(const char *obj_name);
  */
 perr_t PDCobj_free_info(struct PDC_obj_info *obj);
 
-#endif
+#endif /* PDC_OBJ_H */

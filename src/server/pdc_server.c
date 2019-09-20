@@ -87,7 +87,6 @@ hg_id_t    notify_io_complete_register_id_g;
 hg_id_t    update_region_loc_register_id_g;
 hg_id_t    notify_region_update_register_id_g;
 hg_id_t    get_metadata_by_id_register_id_g;
-hg_id_t    get_reg_lock_register_id_g;
 hg_id_t    bulk_rpc_register_id_g;
 hg_id_t    storage_meta_name_query_register_id_g;
 hg_id_t    get_storage_meta_name_query_bulk_result_rpc_register_id_g;
@@ -665,7 +664,7 @@ perr_t PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_contex
     pdc_id_seq_g = pdc_id_seq_g * (pdc_server_rank_g+1);
 
     // Create server tmp dir
-    pdc_mkdir(pdc_server_tmp_dir_g);
+    PDC_mkdir(pdc_server_tmp_dir_g);
 
     all_addr_strings_1d_g = (char* )calloc(sizeof(char ), pdc_server_size_g * ADDR_MAX);
     all_addr_strings_g    = (char**)calloc(sizeof(char*), pdc_server_size_g );
@@ -1636,9 +1635,7 @@ static void PDC_Server_mercury_register()
 
     // Mapping
     buf_map_register(hg_class_g);
-    reg_map_register(hg_class_g);
     buf_unmap_register(hg_class_g);
-    reg_unmap_register(hg_class_g);
 
     // Data server
     data_server_read_register(hg_class_g);
@@ -1672,7 +1669,6 @@ static void PDC_Server_mercury_register()
     update_region_loc_register_id_g           = update_region_loc_register(hg_class_g);
     notify_region_update_register_id_g        = notify_region_update_register(hg_class_g);
     get_metadata_by_id_register_id_g          = get_metadata_by_id_register(hg_class_g);
-    get_reg_lock_register_id_g                = get_reg_lock_register(hg_class_g);
     bulk_rpc_register_id_g                    = bulk_rpc_register(hg_class_g);
     storage_meta_name_query_register_id_g     = storage_meta_name_query_rpc_register(hg_class_g);
     get_storage_meta_name_query_bulk_result_rpc_register_id_g = get_storage_meta_name_query_bulk_result_rpc_register(hg_class_g);

@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
     int round = 7;
     
     // create a pdc
-    pdc = PDC_init("pdc");
+    pdc = PDCinit("pdc");
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
@@ -107,7 +107,6 @@ int main(int argc, char *argv[])
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if(obj_prop <= 0)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
-
 
     // Create a number of objects, add at least one tag to that object
     assign_work_to_rank(my_rank, proc_num, n_obj, &my_obj, &my_obj_s);
@@ -180,6 +179,28 @@ int main(int argc, char *argv[])
     }
 
 done:
+    // close a container
+    if(PDCcont_close(cont) < 0)
+        printf("fail to close container c1\n");
+    else
+        printf("successfully close container c1\n");
+    
+    // close an object property
+    if(PDCprop_close(obj_prop) < 0)
+        printf("Fail to close property @ line %d\n", __LINE__);
+    else
+        printf("successfully close object property\n");
+    
+    // close a container property
+    if(PDCprop_close(cont_prop) < 0)
+        printf("Fail to close property @ line %d\n", __LINE__);
+    else
+        printf("successfully close container property\n");
+    
+    // close pdc
+    if(PDCclose(pdc) < 0)
+        printf("fail to close PDC\n");
+    
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif

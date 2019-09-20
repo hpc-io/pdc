@@ -57,7 +57,8 @@ int main(int argc, char **argv)
     uint64_t nparticles = NPARTICLES;
     int write_var = NUM_VAR;
     char *obj_names[] = {"x", "y", "z", "px", "py", "pz", "id1", "id2"};
-
+    uint64_t float_bytes, int_bytes;
+    
     pdcid_t         obj_ids[NUM_VAR];
     struct PDC_region_info obj_regions[NUM_VAR];
     pdc_metadata_t *obj_metas[NUM_VAR];
@@ -87,8 +88,8 @@ int main(int argc, char **argv)
     if (argc == 3) 
         nparticles = (uint64_t)atoll(argv[2]);
 
-    uint64_t float_bytes  = nparticles * sizeof(float);
-    uint64_t int_bytes    = nparticles * sizeof(int);
+    float_bytes  = nparticles * sizeof(float);
+    int_bytes    = nparticles * sizeof(int);
 
     uint64_t float_dims[NDIM] = {float_bytes*size};
     uint64_t int_dims[NDIM] = {int_bytes*size};
@@ -103,7 +104,7 @@ int main(int argc, char **argv)
     for (; i < NUM_VAR; i++) 
         mydata[i] = (void*)malloc(int_bytes);
 
-    pdc_id    = PDC_init("pdc");
+    pdc_id    = PDCinit("pdc");
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
     if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
@@ -165,11 +166,11 @@ int main(int argc, char **argv)
 #endif
 
     for (i = 0; i < NUM_VAR; i++) {
-        #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
         ret = PDC_Client_query_metadata_name_timestep_agg(obj_names[i], 0, &obj_metas[i]);
-        #else
+#else
         ret = PDC_Client_query_metadata_name_timestep(obj_names[i], 0, &obj_metas[i]);
-        #endif
+#endif
         if (ret != SUCCEED || obj_metas[i] == NULL || obj_metas[i]->obj_id == 0) {
             printf("Error with metadata!\n");
             exit(-1);
@@ -230,7 +231,7 @@ done:
     if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close container property\n");
 
-    if(PDC_close(pdc_id) < 0)
+    if(PDCclose(pdc_id) < 0)
        printf("Fail to close PDC\n");
 
 #ifdef ENABLE_MPI

@@ -22,8 +22,8 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_error_H
-#define _pdc_error_H
+#ifndef PDC_ERROR_H
+#define PDC_ERROR_H
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -65,4 +65,4 @@ extern pbool_t err_occurred;
     PGOTO_DONE(ret_val);                                     \
 }  while (0)
 
-#endif 
+#endif  /* PDC_ERROR_H */

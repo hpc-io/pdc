@@ -128,7 +128,7 @@ int main(int argc, char **argv)
     int_bytes    = n_particles * sizeof(int);
 
     // create a pdc
-    pdc_id = PDC_init("pdc");
+    pdc_id = PDCinit("pdc");
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
@@ -151,17 +151,15 @@ int main(int argc, char **argv)
     /*
      * QUERY
      */
-    #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
-    #endif
+#endif
     gettimeofday(&pdc_timer_start, 0);
 
     // Query all metadata first, offset and size are same for all timesteps
     for (ts = 0; ts < n_ts; ts++) {
 
         // Create query region one by one
-        /* PDCprop_set_obj_time_step(obj_prop_float, ts); */
-        /* PDCprop_set_obj_time_step(obj_prop_int, ts); */
         for (i = 0; i < n_var; i++) {
             if (i < NUM_FLOAT_VAR_MAX) {
                 myoffset[0] = rank * float_bytes;
@@ -187,28 +185,22 @@ int main(int argc, char **argv)
                 printf("Error with metadata! ts=%d\n", ts);
                 exit(-1);
             }
-            /* if (rank == 1) { */
-            /*     PDC_print_metadata(obj_metas[ts][i]); */
-            /* } */
         }
-
     } // end of for ts
 
-
-    #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
-    #endif
+#endif
     gettimeofday(&pdc_timer_end_1, 0);
     query_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end_1);
     query_time_total += query_time;
 
-    if (rank == 0) 
+    if (rank == 0) {
         printf("Query done!\n");
-    fflush(stdout);
+        fflush(stdout);
+    }
     
-
     for (ts = 0; ts < n_ts; ts++) {
-
         /*
          * READ
          */
@@ -231,26 +223,27 @@ int main(int argc, char **argv)
                 }
             } // end of for
 
-            #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
             MPI_Barrier(MPI_COMM_WORLD);
-            #endif
+#endif
             gettimeofday(&pdc_timer_end_1, 0);
             read_time = PDC_get_elapsed_time_double(&pdc_timer_start_1, &pdc_timer_end_1);
             wait_time = read_time;
             wait_time_total += wait_time;
 
-            if (rank == 0) 
+            if (rank == 0) {
                 printf("sync read done\n");
-            fflush(stdout);
+                fflush(stdout);
+            }
         }
         else {
             /*
              * WAIT
              */
             // Check if prefetch is done
-            #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
             MPI_Barrier(MPI_COMM_WORLD);
-            #endif
+#endif
             gettimeofday(&pdc_timer_start_1, 0);
 
             if (rank == 0) {
@@ -266,9 +259,9 @@ int main(int argc, char **argv)
                     goto done;
                 }
             }
-            #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
             MPI_Barrier(MPI_COMM_WORLD);
-            #endif
+#endif
             gettimeofday(&pdc_timer_end_1, 0);
             wait_time = PDC_get_elapsed_time_double(&pdc_timer_start_1, &pdc_timer_end_1);
             wait_time_total += wait_time;
@@ -296,9 +289,9 @@ int main(int argc, char **argv)
                 }
             } // end of for
 
-            #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
             MPI_Barrier(MPI_COMM_WORLD);
-            #endif
+#endif
             gettimeofday(&pdc_timer_end_1, 0);
             read_time += PDC_get_elapsed_time_double(&pdc_timer_end_1, &pdc_timer_end_1);
             read_time_total += read_time;
@@ -317,20 +310,20 @@ int main(int argc, char **argv)
         }
        
         // Sleep to fake compute time
-        pdc_msleep((unsigned long)(true_sleep_time*1000));
+        PDC_msleep((unsigned long)(true_sleep_time*1000));
         compute_total += read_time + query_time + true_sleep_time;
 
-        #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
-        #endif
+#endif
         if (rank == 0) 
             printf("Timestep %d: query time %.4f, read time %.4f, wait time %.4f, compute time %.4f\n", 
                     ts, query_time, read_time, wait_time, true_sleep_time);
     } // end of for ts
 
-    #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
-    #endif
+#endif
     gettimeofday(&pdc_timer_end, 0);
     total_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
     total_size = n_particles * 4.0 * 8 * size / 1024.0 / 1024.0; 
@@ -350,27 +343,13 @@ int main(int argc, char **argv)
 
 
 done:
-    /* for (i = 0; i < NUM_VAR_MAX; i++) { */
-        /* if(PDCobj_close(obj_ids[i]) < 0) */
-        /*     printf("Fail to close %s\n", obj_names[i]); */
-
-        /* if(PDCregion_close(obj_regions[i]) < 0) */
-        /*     printf("Fail to close region %s\n", obj_names[i]); */
-    /* } */
-    
-    /* if(PDCprop_close(obj_prop_float) < 0) */
-    /*     printf("Fail to close float obj property \n"); */
-
-    /* if(PDCprop_close(obj_prop_int) < 0) */
-    /*     printf("Fail to close int obj property \n"); */
-
     if(PDCcont_close(cont_id) < 0)
         printf("Fail to close container\n");
 
     if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close container property\n");
 
-    if(PDC_close(pdc_id) < 0)
+    if(PDCclose(pdc_id) < 0)
        printf("Fail to close PDC\n");
 
 exit:

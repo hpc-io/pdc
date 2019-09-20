@@ -25,10 +25,13 @@
 #define PDC_TRANSFORMS_H
 
 #include "pdc_obj.h"
-#include "pdc_private.h"
 #include "pdc_prop.h"
-#include "mercury_proc_string.h"
 
+#define  DATA_ANY  7
+
+/****************************/
+/* Library Private Typedefs */
+/****************************/
 typedef enum {
     PDC_TESTING = 0,
     PDC_FILE_IO = 1,
@@ -48,9 +51,10 @@ typedef enum {
     DATA_OUT = 2,
     DATA_RELOCATION = 4
 } PDCdata_movement_t;
-	      
-#define  DATA_ANY  7
 
+/***************************/
+/* Library Private Structs */
+/***************************/
 struct region_transform_ftn_info {
     pdcid_t object_id;
     pdcid_t region_id;
@@ -82,4 +86,4 @@ struct transform_ftn_info {
     size_t (*ftnPtr)();
 };
 
-#endif
+#endif /* PDC_TRANSFORMS_H */

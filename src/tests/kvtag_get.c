@@ -28,13 +28,14 @@
 #include <getopt.h>
 #include <time.h>
 #include "pdc.h"
+#include "pdc_client_connect.h"
 
 int main() {
     pdcid_t pdc, cont_prop, cont, obj_prop1, obj_prop2, obj1, obj2;
     pdc_kvtag_t *value1, *value2, *value3;
     
     // create a pdc
-    pdc = PDC_init("pdc");
+    pdc = PDCinit("pdc");
     printf("create a new pdc\n");
 
     // create a container property
@@ -139,7 +140,7 @@ int main() {
         printf("successfully close container property\n");
 
     // close pdc
-    if(PDC_close(pdc) < 0)
+    if(PDCclose(pdc) < 0)
        printf("fail to close PDC\n");
 
      return 0;

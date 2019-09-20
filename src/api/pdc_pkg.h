@@ -22,8 +22,9 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_pkg_H
-#define _pdc_pkg_H
+#ifndef PDC_PKG_H
+#define PDC_PKG_H
+
 #include "pdc_public.h"
 
 struct PDC_class {
@@ -31,4 +32,4 @@ struct PDC_class {
     pdcid_t     local_id;
 };
 
-#endif
+#endif /* PDC_PKG_H */

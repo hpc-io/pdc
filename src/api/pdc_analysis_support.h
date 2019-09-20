@@ -22,19 +22,32 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_analysis_support_H
-#define _pdc_analysis_support_H
+#ifndef PDC_ANALYSIS_SUPPORT_H
+#define PDC_ANALYSIS_SUPPORT_H
 
 #include "pdc_obj_pkg.h"
 #include "pdc_error.h"
 #include "pdc_life.h"
 #include "pdc_analysis_and_transforms.h"
 
+/*********************/
+/* Public Prototypes */
+/*********************/
 /**
  * Create a PDC iterator (general form)
  *
- * \param obj_id [IN]           PDC object id
- * \param reg_id [IN]           PDC region_id
+ * \param obj_id [IN]           PDC object ID
+ * \param reg_id [IN]           PDC region ID
+ *
+ * \return Iterator id on success/Zero on failure
+ */
+pdcid_t PDCobj_create_data_iterator(pdcid_t obj_id, pdcid_t reg_id);
+
+/**
+ * Create a PDC iterator (general form)
+ *
+ * \param obj_id [IN]           PDC object ID
+ * \param reg_id [IN]           PDC region ID
  * \param contig_blocks [IN]    How many rows or columns the iterator should return
  *
  * \return Iterator id on success/Zero on failure
@@ -44,15 +57,19 @@ pdcid_t PDCobj_data_block_iterator_create(pdcid_t obj_id, pdcid_t reg_id, int co
 /**
  * Create a PDC iterator (basic form which internally calls the block version with contig_blocks = 1)
  *
- * \param obj_id [IN]           PDC object id
- * \param reg_id [IN]           PDC region_id
+ * \param obj_id [IN]           PDC object ID
+ * \param reg_id [IN]           PDC region ID
  *
  * \return Iterator id on success/Zero on failure
  */
 pdcid_t PDCobj_data_iter_create(pdcid_t obj_id, pdcid_t reg_id);
 
 /**
- * \return Total number of slices that PDCobj_data_getNextBlock can return
+ * *****
+ *
+ * \param iter [IN]             The number iteration
+ *
+ * \return ********
  */
 size_t PDCobj_data_getSliceCount(pdcid_t iter);
 
@@ -77,7 +94,7 @@ size_t PDCobj_data_getNextBlock(pdcid_t iter, void **nextBlock, size_t *dims);
  *                              (may be a NULL iterator == 0).
  * \param dims [IN]             PDC iterator id containing the output data
  *                              (may be a NULL iterator == 0).
-
+ *
  * \return Non-negative on success/Negative on failure
  * NOTES:
  * In the use case where null iterators are supplied, the function will always be
@@ -89,21 +106,63 @@ size_t PDCobj_data_getNextBlock(pdcid_t iter, void **nextBlock, size_t *dims);
  */
 perr_t PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut);
 
-char *find_in_path(char *workingDir, char *application);
+/***************************************/
+/* Library-private Function Prototypes */
+/***************************************/
+/**
+ * ********
+ *
+ * \param workingDir [IN]       Path of working directory
+ * \param application [IN]      Name of the application
+ *
+ * \return ****
+ */
+char *PDC_find_in_path(char *workingDir, char *application);
 
-char *pdc_get_argv0_();
+/**
+ * ********
+ *
+ * \return ****
+ */
+char *PDC_get_argv0_();
 
-char *get_realpath( char *fname, char *app_path);
+/**
+ * ********
+ *
+ * \param fname [IN]            Path of working directory
+ * \param app_path [IN]         Name of the application
+ *
+ * \return ****
+ */
+char *PDC_get_realpath(char *fname, char *app_path);
 
-pdcid_t PDCobj_create_data_iterator(pdcid_t obj_id, pdcid_t reg_id);
+/**
+ * ********
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_iterator_end();
 
-perr_t pdc_iterator_end();
+/**
+ * ********
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_analysis_end();
 
-perr_t pdc_analysis_end();
+/**
+ * ********
+ */
+void PDC_free_analysis_registry();
 
-void free_analysis_registry();
-void free_transform_registry();
-void free_iterator_cache();
+/**
+ * ********
+ */
+void PDC_free_transform_registry();
 
+/**
+ * ********
+ */
+void PDC_free_iterator_cache();
 
-#endif
+#endif /* PDC_ANALYSIS_SUPPORT_H */

@@ -41,34 +41,44 @@ int main(int argc, char **argv)
 {
     int rank = 0, size = 1;
     pdcid_t pdc_id, cont_prop, cont_id;
-    pdcid_t obj_prop1, obj_prop2;
-    pdcid_t obj1, obj2;
+    pdcid_t obj_prop2;
+    pdcid_t obj2;
     pdcid_t r1, r2;
     perr_t ret;
-    float *x, *xx;
-    int x_dim = 64;
+#ifdef ENABLE_MPI
+    MPI_Comm comm;
+#else
+    int comm = 1;
+#endif
+    float *x;
     long numparticles = 4;
-    const int my_data_size = 4;
-    uint64_t dims[1] = {my_data_size};  // {8388608};
+    uint64_t dims[1] = {numparticles};  // {8388608};
     int ndim = 1;
     uint64_t *offset;
+    uint64_t *offset_remote;
     uint64_t *mysize;
-//    struct timeval  ht_total_start;
-//    struct timeval  ht_total_end;
-//    long long ht_total_elapsed;
-//    double ht_total_sec;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_dup(MPI_COMM_WORLD, &comm);
 #endif
 
     x = (float *)malloc(numparticles*sizeof(float));
-    xx = (float *)malloc(numparticles*sizeof(float));
-
+    if (x != NULL) {
+      int i;
+      for(i=0; i< (int)numparticles; i++) {
+          x[i] = (float)i;
+      }
+    }
+    else {
+      puts("malloc failure!");
+      exit(-1);
+    }
+    
     // create a pdc
-    pdc_id = PDC_init("pdc");
+    pdc_id = PDCinit("pdc");
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
@@ -81,111 +91,92 @@ int main(int argc, char **argv)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
     // create an object property
-    obj_prop1 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
     obj_prop2 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
 
-    PDCprop_set_obj_dims(obj_prop1, 1, dims);
     PDCprop_set_obj_dims(obj_prop2, 1, dims);
-
-    PDCprop_set_obj_type(obj_prop1, PDC_FLOAT);
     PDCprop_set_obj_type(obj_prop2, PDC_FLOAT);
-
-    PDCprop_set_obj_buf(obj_prop1, &x[0]  );
-    PDCprop_set_obj_time_step(obj_prop1, 0       );
-    PDCprop_set_obj_user_id( obj_prop1, getuid()    );
-    PDCprop_set_obj_app_name(obj_prop1, "VPICIO"  );
-    PDCprop_set_obj_tags(    obj_prop1, "tag0=1"    );
-
-	PDCprop_set_obj_buf(obj_prop2, &xx[0]  );
     PDCprop_set_obj_time_step(obj_prop2, 0       );
     PDCprop_set_obj_user_id( obj_prop2, getuid()    );
     PDCprop_set_obj_app_name(obj_prop2, "VPICIO"  );
     PDCprop_set_obj_tags(    obj_prop2, "tag0=1"    );
 
-    obj1 = PDCobj_create_mpi(cont_id, "obj-var-x", obj_prop1, 0);
-    if (obj1 == 0) { 
-        printf("Error getting an object id of %s from server, exit...\n", "obj-var-x");
-        exit(-1);
+    obj2 = PDCobj_open("obj-var-xx", pdc_id);
+    if (obj2 == 0) {
+        obj2 = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop2, 0, comm);
+        if (obj2 == 0) {    
+            printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
+            exit(-1);
+        }
     }
-
-    obj2 = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop2, 0);
-    if (obj2 == 0) {    
-        printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
-        exit(-1);
-    }
-
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
 
     offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
+    offset_remote = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
     mysize = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
-    offset[0] = rank * my_data_size/size;
-    mysize[0] = my_data_size/size;
+    offset[0] = 0;
+    offset_remote[0] = rank*numparticles; 
+    mysize[0] = numparticles;
 
     // create a region
     r1 = PDCregion_create(1, offset, mysize);
-    r2 = PDCregion_create(1, offset, mysize);
+    r2 = PDCregion_create(1, offset_remote, mysize);
+
+    ret = PDCbuf_obj_map(&x[0], PDC_FLOAT, r1, obj2, r2);
+    if(ret < 0) {
+        printf("PDCbuf_obj_map failed\n");
+        exit(-1);
+    }
+    
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
+    ret = PDCreg_obtain_lock(obj2, r2, READ, NOBLOCK);
+    if (ret != SUCCEED)
+        printf("Failed to obtain lock for r2\n");
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-	PDCobj_map(obj1, r1, obj2, r2);
-
-    ret = PDCreg_obtain_lock(obj1, r1, WRITE, NOBLOCK);
+    ret = PDCreg_release_lock(obj2, r2, READ);
     if (ret != SUCCEED)
-        printf("Failed to obtain lock for r1\n");
+        printf("Failed to release lock for r2\n");
+  
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
-    for (int i=0; i<numparticles; i++) {
-        x[i]   = uniform_random_number() * x_dim;
-        xx[i]  = 0;
-// printf("x = %f\n", x[i]);
-    }
-
-//    ret = PDCreg_obtain_lock(obj2, r2, WRITE, NOBLOCK);
-//    if (ret != SUCCEED)
-//        printf("Failed to obtain lock for r2\n");
-
-    ret = PDCreg_release_lock(obj1, r1, WRITE);
-    if (ret != SUCCEED)
-        printf("Failed to release lock for region_x\n");
-//    ret = PDCreg_release_lock(obj2, r2, WRITE);
-//    if (ret != SUCCEED)
-//        printf("Failed to release lock for region_y\n");
-
-/*
-for (int i=0; i<numparticles; i++) {
-printf("xx = %f\n", xx[i]);
-    }
-*/
-    
-    ret = PDCreg_unmap(obj1, r1);
-//    ret = PDCreg_unmap(obj1);
+    ret = PDCbuf_obj_unmap(obj2, r2);
     if (ret != SUCCEED)
         printf("region unmap failed\n");
 
-    if(PDCobj_close(obj1) < 0)
-        printf("fail to close obj1 o1\n");
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
     if(PDCobj_close(obj2) < 0)
-        printf("fail to close obj2 o2\n");
+        printf("fail to close obj2\n");
 
     // close a container
     if(PDCcont_close(cont_id) < 0)
-        printf("fail to close container c1\n");
-
+        printf("fail to close container\n");
 
     // close a container property
     if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
 
-    if(PDC_close(pdc_id) < 0)
+    if(PDCclose(pdc_id) < 0)
        printf("fail to close PDC\n");
 
 #ifdef ENABLE_MPI
      MPI_Finalize();
 #endif
+    
+    free(x);
+    free(offset);
+    free(offset_remote);
+    free(mysize);
 
-     return 0;
+    return 0;
 }
+

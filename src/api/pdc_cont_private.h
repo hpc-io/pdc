@@ -22,20 +22,25 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_cont_private_H
-#define _pdc_cont_private_H
+#ifndef PDC_CONT_PRIVATE_H
+#define PDC_CONT_PRIVATE_H
 
+#include "pdc_public.h"
+
+/***************************************/
+/* Library-private Function Prototypes */
+/***************************************/
 /**
  * container initialization
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t pdc_cont_init();
+perr_t PDC_cont_init();
 
 /**
  * Create a container locally
  *
- * \param pdc       [IN]        Id of pdc
+ * \param pdc       [IN]        PDC ID
  * \param cont_name [IN]        Name of the container
  * \param cont_meta_id [out]    Metadata id of container
  *
@@ -46,11 +51,11 @@ pdcid_t PDC_cont_create_local(pdcid_t pdc, const char *cont_name, uint64_t cont_
 /**
  * Check if container list is empty
  *
- * \param pdc_id [IN]           Id of the PDC
+ * \param pdc_id [IN]           ID of the PDC
  *
  * \return SUCCEED if empty/FAIL if not empty
  */
-perr_t pdc_cont_list_null();
+perr_t PDC_cont_list_null();
 
 /**
  * Return a container property
@@ -68,4 +73,4 @@ struct PDC_cont_info *PDC_cont_get_info(pdcid_t cont_id);
  */
 perr_t pdc_cont_end();
 
-#endif 
+#endif /* PDC_CONT_PRIVATE_H */

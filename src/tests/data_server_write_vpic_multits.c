@@ -37,7 +37,7 @@
 #define NUM_VAR_MAX         8
 #define NUM_FLOAT_VAR_MAX   6
 #define NUM_INT_VAR_MAX     2
-#define TS_MAX            100
+#define TS_MAX              100
 #define NDIM                1
 #define XDIM                64
 #define YDIM                64
@@ -131,7 +131,7 @@ int main(int argc, char **argv)
     }
 
     // create a pdc
-    pdc_id = PDC_init("pdc");
+    pdc_id = PDCinit("pdc");
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
@@ -212,7 +212,7 @@ int main(int argc, char **argv)
         fflush(stdout);
 
         // Sleep to fake compute time
-        pdc_msleep((unsigned long)(true_sleep_time*1000));
+        PDC_msleep((unsigned long)(true_sleep_time*1000));
         compute_total += gen_time+true_sleep_time;
 
         #ifdef ENABLE_MPI
@@ -258,9 +258,9 @@ int main(int argc, char **argv)
 
         } // end of for
 
-        #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
-        #endif
+#endif
         gettimeofday(&pdc_timer_end_1, 0);
         create_time = PDC_get_elapsed_time_double(&pdc_timer_start_1, &pdc_timer_end_1);
         create_time_total += create_time;
@@ -276,18 +276,15 @@ int main(int argc, char **argv)
                 printf("Error with metadata! ts=%d\n", ts);
                 exit(-1);
             }
-            /* if (rank == 1) { */
-            /*     PDC_print_metadata(obj_metas[ts][i]); */
-            /* } */
         }
 
         gettimeofday(&pdc_timer_end_2, 0);
         query_time = PDC_get_elapsed_time_double(&pdc_timer_end_1, &pdc_timer_end_2);
         query_time_total += query_time;
 
-        #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
-        #endif
+#endif
         if (rank == 0) {
             printf("%d: querying done\n", rank);
             fflush(stdout);
@@ -295,7 +292,6 @@ int main(int argc, char **argv)
 
         // Wait for the previous request to finish
         if (ts > 0 && ts != n_ts - 1) {
-
             // Timing
             gettimeofday(&pdc_timer_start_1, 0);
 
@@ -306,24 +302,23 @@ int main(int argc, char **argv)
                     goto done;
                 }
             }
-            #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
             MPI_Barrier(MPI_COMM_WORLD);
-            #endif
+#endif
             gettimeofday(&pdc_timer_end_1, 0);
             wait_time = PDC_get_elapsed_time_double(&pdc_timer_start_1, &pdc_timer_end_1);
             wait_time_total += wait_time;
         }
         
-
         if (rank == 0) 
             printf("Timestep %d: start to write.\n", ts);
         fflush(stdout);
 
         // Last ts is sync IO
         if (ts != n_ts - 1) {
-            #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
             MPI_Barrier(MPI_COMM_WORLD);
-            #endif
+#endif
             // Timing
             gettimeofday(&pdc_timer_start_1, 0);
 
@@ -336,9 +331,9 @@ int main(int argc, char **argv)
                 }
             } // end of for
 
-            #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
             MPI_Barrier(MPI_COMM_WORLD);
-            #endif
+#endif
             gettimeofday(&pdc_timer_end_1, 0);
             write_time = PDC_get_elapsed_time_double(&pdc_timer_start_1, &pdc_timer_end_1);
             write_time_total += write_time;
@@ -350,9 +345,9 @@ int main(int argc, char **argv)
     }
 
     // Perform last timestep write
-    #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
-    #endif
+#endif
     // Timing
     gettimeofday(&pdc_timer_start_1, 0);
 
@@ -364,9 +359,9 @@ int main(int argc, char **argv)
         }
     } // end of for
 
-    #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
-    #endif
+#endif
     gettimeofday(&pdc_timer_end_1, 0);
     write_time = PDC_get_elapsed_time_double(&pdc_timer_start_1, &pdc_timer_end_1);
     write_time_total += write_time;
@@ -393,16 +388,7 @@ int main(int argc, char **argv)
             free(mydata[i]);
     }
 
-
 done:
-    /* for (i = 0; i < NUM_VAR_MAX; i++) { */
-        /* if(PDCobj_close(obj_ids[i]) < 0) */
-        /*     printf("Fail to close %s\n", obj_names[i]); */
-
-        /* if(PDCregion_close(obj_regions[i]) < 0) */
-        /*     printf("Fail to close region %s\n", obj_names[i]); */
-    /* } */
-    
     if(PDCprop_close(obj_prop_float) < 0)
         printf("Fail to close float obj property \n");
 
@@ -415,7 +401,7 @@ done:
     if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close container property\n");
 
-    if(PDC_close(pdc_id) < 0)
+    if(PDCclose(pdc_id) < 0)
        printf("Fail to close PDC\n");
 
 exit:

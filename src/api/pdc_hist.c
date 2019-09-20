@@ -350,7 +350,7 @@ pdc_histogram_t *PDC_merge_hist(int n, pdc_histogram_t **hists)
     return res;
 }
 
-void copy_hist(pdc_histogram_t *to, pdc_histogram_t *from)
+void PDC_copy_hist(pdc_histogram_t *to, pdc_histogram_t *from)
 {
     int nbin = from->nbin;
 

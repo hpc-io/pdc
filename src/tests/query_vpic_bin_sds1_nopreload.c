@@ -34,7 +34,7 @@ int main(int argc, char **argv)
     struct timeval  pdc_timer_start_1;
     struct timeval  pdc_timer_end_1;
 
-    pdc = PDC_init("pdc");
+    pdc = PDCinit("pdc");
 
     // Query the created object
     PDC_Client_query_metadata_name_timestep("x", 0, &x_meta);
@@ -124,7 +124,7 @@ int main(int argc, char **argv)
     PDCquery_free_all(q);
 
 done:
-    if(PDC_close(pdc) < 0)
+    if(PDCclose(pdc) < 0)
        printf("fail to close PDC\n");
 
      return 0;

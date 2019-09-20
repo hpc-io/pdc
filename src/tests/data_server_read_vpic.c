@@ -97,7 +97,7 @@ int main(int argc, char **argv)
         read_var = NUM_VAR;
     
     // create a pdc
-    pdc_id = PDC_init("pdc");
+    pdc_id = PDCinit("pdc");
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
@@ -149,7 +149,6 @@ int main(int argc, char **argv)
     gettimeofday(&pdc_timer_start, 0);
 
     for (i = 0; i < read_var; i++) {
-
         // Timing
         gettimeofday(&pdc_timer_start_1, 0);
 
@@ -161,9 +160,9 @@ int main(int argc, char **argv)
             goto done;
         }
 
-        #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
-        #endif
+#endif
         gettimeofday(&pdc_timer_end_1, 0);
         sent_time = PDC_get_elapsed_time_double(&pdc_timer_start_1, &pdc_timer_end_1);
         sent_time_total += sent_time;
@@ -230,7 +229,7 @@ done:
     if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close container property\n");
 
-    if(PDC_close(pdc_id) < 0)
+    if(PDCclose(pdc_id) < 0)
        printf("Fail to close PDC\n");
 
 #ifdef ENABLE_MPI

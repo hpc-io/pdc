@@ -22,12 +22,15 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_prop_pkg_H
-#define _pdc_prop_pkg_H
+#ifndef PDC_PROP_PKG_H
+#define PDC_PROP_PKG_H
 
 #include "pdc_life.h"
 #include "pdc_private.h"
 
+/*******************/
+/* Public Typedefs */
+/*******************/
 typedef enum {
     PDC_CONT_CREATE = 0,
     PDC_OBJ_CREATE
@@ -44,7 +47,6 @@ typedef struct pdc_kvtag_t {
     uint32_t          size;
     void             *value;
 } pdc_kvtag_t;
-
 
 typedef struct pdc_transform_state {
     PDC_major_type    storage_order;
@@ -76,4 +78,4 @@ struct PDC_obj_prop {
     PDC_transform_state_t transform_prop;
 };
 
-#endif
+#endif /* PDC_PROP_PKG_H */

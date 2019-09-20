@@ -12,6 +12,7 @@ void print_usage() {
 int main(int argc, char **argv)
 {
     int rank = 0, size = 1;
+    pdcid_t pdc, cont_prop, cont;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -20,15 +21,15 @@ int main(int argc, char **argv)
 #endif
 
     // create a pdc
-    pdcid_t pdc = PDC_init("pdc");
+    pdc = PDCinit("pdc");
 
     // create a container property
-    pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
+    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     // create a container
-    pdcid_t cont = PDCcont_create("c1", cont_prop);
+    cont = PDCcont_create("c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
@@ -42,7 +43,7 @@ int main(int argc, char **argv)
     if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
 
-    if(PDC_close(pdc) < 0)
+    if(PDCclose(pdc) < 0)
        printf("fail to close PDC\n");
 
 #ifdef ENABLE_MPI

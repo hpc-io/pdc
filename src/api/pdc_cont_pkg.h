@@ -22,9 +22,12 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_cont_pkg_H
-#define _pdc_cont_pkg_H
+#ifndef PDC_CONT_PKG_H
+#define PDC_CONT_PKG_H
 
+/**************************/
+/* Library Private Struct */
+/**************************/
 struct PDC_cont_info {
     char                   *name;
     pdcid_t                 local_id;
@@ -32,4 +35,4 @@ struct PDC_cont_info {
     struct PDC_cont_prop   *cont_pt;
 };
 
-#endif
+#endif /* PDC_CONT_PKG_H */

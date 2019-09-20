@@ -22,37 +22,38 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_prop_private_H
-#define _pdc_prop_private_H
+#ifndef PDC_PROP_PRIVATE_H
+#define PDC_PROP_PRIVATE_H
 
+/***************************************/
+/* Library-private Function Prototypes */
+/***************************************/
 /**
  * PDC container and object property initialization
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t pdc_prop_init();
+perr_t PDC_prop_init();
 
 /**
  * PDC container and object property finalize
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t pdc_prop_end();
-
-/* private functions */
+perr_t PDC_prop_end();
 
 /**
  * Check if object property list is empty
  *
  * \return SUCCEED if empty/FAIL if not empty
  */
-perr_t pdc_prop_obj_list_null();
+perr_t PDC_prop_obj_list_null();
 
 /**
  * Check if container property list is empty
  *
  * \return SUCCEED if empty/FAIL if not empty
  */
-perr_t pdc_prop_cont_list_null();
+perr_t PDC_prop_cont_list_null();
 
-#endif /* end of _pdc_prop_private_H */
+#endif /* PDC_PROP_PRIVATE_H */

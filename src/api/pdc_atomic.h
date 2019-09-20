@@ -22,8 +22,8 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_atomic_H
-#define _pdc_atomic_H
+#ifndef PDC_ATOMIC_H
+#define PDC_ATOMIC_H
 
 #include "mercury_atomic.h"
 #include "pdc_public.h"
@@ -32,6 +32,9 @@
 #include "pdc_linkedlist.h"
 #include "pdc_id_pkg.h"
 
+/***************************/
+/* Library Private Structs */
+/***************************/
 /* Atom information structure used */
 struct PDC_id_info {
     pdcid_t             id;             /* ID for this info                 */
@@ -40,4 +43,4 @@ struct PDC_id_info {
     PDC_LIST_ENTRY(PDC_id_info) entry;
 };
 
-#endif
+#endif /* PDC_ATOMIC_H */

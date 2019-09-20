@@ -32,9 +32,9 @@ set(PROGRAMS
   data_server_write
   data_rw_test
   init_only
-  obj_buf_map
-  obj_buf_map_mpi
+  buf_obj_map
   buf_obj_map_mpi
+  buf_map_mpi_v2
   vpicio
   bdcats
   vpicio_v2

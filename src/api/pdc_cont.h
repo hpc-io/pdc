@@ -22,8 +22,8 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_cont_H
-#define _pdc_cont_H
+#ifndef PDC_CONT_H
+#define PDC_CONT_H
 
 #include "pdc_error.h"
 #include "pdc_cont_pkg.h"
@@ -31,36 +31,37 @@
 
 typedef struct PDC_id_info cont_handle;
 
+/*********************/
+/* Public Prototypes */
+/*********************/
 /**
  * Create a container
  *
  * \param cont_name [IN]        Name of the container
- * \param cont_create_prop [IN] Id of container property
+ * \param cont_create_prop [IN] ID of container property
  *                              returned by PDCprop_create(PDC_CONT_CREATE)
  *
  * \return Container id on success/Zero on failure
  */
 pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_create_prop);
 
-
 /**
  * Create a container, used when all ranks are trying to create the same
    container
  *
  * \param cont_name [IN]        Name of the container
- * \param cont_prop_id [IN]     Id of container property
+ * \param cont_prop_id [IN]     ID of container property
  *                              returned by PDCprop_create(PDC_CONT_CREATE)
  *
  * \return Container id on success/Zero on failure
  */
 pdcid_t PDCcont_create_col(const char *cont_name, pdcid_t cont_prop_id);
 
-
 /**
  * Open a container
  *
  * \param cont_name [IN]        Name of the container
- * \param pdc_id    [IN]        Id of pdc
+ * \param pdc_id    [IN]        ID of pdc
  *
  * \return Container id on success/Zero on failure
  */
@@ -94,6 +95,7 @@ pbool_t PDCcont_iter_null(cont_handle *chandle);
 
 /**
  * Move to the next container within a PDC
+ *
  * \param chandle [IN]          Pointer to cont_handle struct, returned by
  *                              PDCcont_iter_start(pdcid_t pdc_id)
  *
@@ -143,4 +145,4 @@ perr_t PDCprop_set_cont_lifetime(pdcid_t cont_create_prop, PDC_lifetime cont_lif
  */
 perr_t PDCcont_close(pdcid_t cont_id);
 
-#endif 
+#endif /* PDC_CONT_H */

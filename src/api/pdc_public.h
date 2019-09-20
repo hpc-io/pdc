@@ -22,11 +22,14 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_public_H
-#define _pdc_public_H
+#ifndef PDC_PUBLIC_H
+#define PDC_PUBLIC_H
 #include <stdint.h>
 #include <stdbool.h>
 
+/*******************/
+/* Public Typedefs */
+/*******************/
 typedef int                         perr_t;
 typedef uint64_t                    pdcid_t;
 typedef unsigned long long          psize_t;
@@ -60,10 +63,10 @@ typedef enum {
 
 typedef struct pdc_histogram_t {
     PDC_var_type_t dtype;
-    int      nbin;
-    double   incr;
-    double *range;
-    uint64_t *bin;      // [ , )
+    int            nbin;
+    double         incr;
+    double        *range;
+    uint64_t      *bin;
 } pdc_histogram_t;
 
-#endif
+#endif /* PDC_PUBLIC_H */

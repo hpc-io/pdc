@@ -57,7 +57,7 @@ struct region_transform_ftn_info **pdc_region_transform_registry = NULL;
 // Dummy function for client to compile, real function is used only by server and code is in pdc_server.c
 perr_t PDC_Server_instantiate_data_iterator(obj_data_iterator_in_t *in ATTRIBUTE(unused), obj_data_iterator_out_t *out ATTRIBUTE(unused)) {return SUCCEED;}
 void *PDC_Server_get_ftn_reference(char *ftn ATTRIBUTE(unused)) {return NULL;}
-int pdc_get_analysis_registry(struct region_analysis_ftn_info ***registry ATTRIBUTE(unused)) {return 0;};
+int PDC_get_analysis_registry(struct region_analysis_ftn_info ***registry ATTRIBUTE(unused)) {return 0;};
 #endif
 
 /* Internal support functions */
@@ -214,7 +214,7 @@ int PDCiter_get_nextId(void)
 /* 
  * Analysis and Transform
  */
-int check_transform(PDCobj_transform_t op_type, struct PDC_region_info *dest_region)
+int PDC_check_transform(PDCobj_transform_t op_type, struct PDC_region_info *dest_region)
 {
     if (transform_registry_size > 0) {
        int i, count = hg_atomic_get32(&registered_transform_ftn_count_g);
@@ -230,7 +230,7 @@ int check_transform(PDCobj_transform_t op_type, struct PDC_region_info *dest_reg
     return 0;
 }
 
-int pdc_get_transforms(struct region_transform_ftn_info ***registry)
+int PDC_get_transforms(struct region_transform_ftn_info ***registry)
 {
     if(registry) {
        *registry = pdc_region_transform_registry;
@@ -273,7 +273,7 @@ int PDC_add_transform_ptr_to_registry_(struct region_transform_ftn_info *ftn_inf
     return registry_index;
 }
 
-int pdc_update_transform_server_meta_index(int client_index, int meta_index)
+int PDC_update_transform_server_meta_index(int client_index, int meta_index)
 {
     if (client_index < registered_transform_ftn_count_g) {
         struct region_transform_ftn_info *ftnPtr = pdc_region_transform_registry[client_index];
@@ -458,13 +458,14 @@ obj_data_iterator_register(hg_class_t *hg_class)
     hg_id_t ret_value;
 
     FUNC_ENTER(NULL);
+    
     ret_value = MERCURY_REGISTER(hg_class, "obj_data_iterator", obj_data_iterator_in_t, obj_data_iterator_out_t, obj_data_iterator_cb);
 
     FUNC_LEAVE(ret_value);
 }
 
 void
-free_analysis_registry()
+PDC_free_analysis_registry()
 {
     int index;
     if (pdc_region_analysis_registry && (registered_analysis_ftn_count_g > 0)) {
@@ -476,11 +477,11 @@ free_analysis_registry()
     }
 }
 
-
 void
-free_transform_registry()
+PDC_free_transform_registry()
 {
     int index;
+    
     if (pdc_region_transform_registry && (registered_transform_ftn_count_g > 0)) {
         for(index = 0; index < registered_transform_ftn_count_g; index++) {
             free(pdc_region_transform_registry[index]);
@@ -491,7 +492,7 @@ free_transform_registry()
 }
 
 void
-free_iterator_cache()
+PDC_free_iterator_cache()
 {
     if (PDC_Block_iterator_cache != NULL)
         free(PDC_Block_iterator_cache);

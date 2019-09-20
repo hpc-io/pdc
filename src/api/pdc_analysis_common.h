@@ -27,31 +27,119 @@
 #include "pdc_transforms_pkg.h"
 #include "pdc_analysis_and_transforms.h"
 
+/*****************************/
+/* Library-private Variables */
+/*****************************/
 hg_id_t                           analysis_ftn_register_id_g;
 hg_id_t                           transform_ftn_register_id_g;
 hg_id_t                           object_data_iterator_register_id_g;
 hg_atomic_int32_t                 registered_analysis_ftn_count_g;
+
 extern struct region_analysis_ftn_info **pdc_region_analysis_registry;
 
+/*********************/
+/* Public Prototypes */
+/*********************/
+
+/**
+ * ****
+ *
+ * \return ****
+ */
 int PDCiter_get_nextId(void);
 
-int pdc_get_transforms(struct region_transform_ftn_info ***registry);
+/***************************************/
+/* Library-private Function Prototypes */
+/***************************************/
+/**
+ * *****
+ *
+ * \param registry [IN]         *******
+ *
+ * \return ******
+ */
+int PDC_get_transforms(struct region_transform_ftn_info ***registry);
 
-int check_transform(PDCobj_transform_t op_type, struct PDC_region_info *dest_region);
-int check_analysis(PDCobj_transform_t op_type, struct PDC_region_info *dest_region);
+/**
+ * *****
+ *
+ * \param op_type [IN]          The type of transformation
+ * \param dest_region [IN]      The struct pointing to destination region
+ *
+ * \return ********
+ */
+int PDC_check_transform(PDCobj_transform_t op_type, struct PDC_region_info *dest_region);
 
+/**
+ * ********
+ *
+ * \param op_type [IN]          The type of transformation
+ * \param dest_region [IN]      The struct pointing to destination region
+ *
+ * \return ********
+ */
+int PDC_check_analysis(PDCobj_transform_t op_type, struct PDC_region_info *dest_region);
+
+/**
+ * ********
+ *
+ * \param op_type [IN]          ***********
+ *
+ * \return ********
+ */
 int PDC_add_transform_ptr_to_registry_(struct region_transform_ftn_info *ftnPtr);
 
-int pdc_update_transform_server_meta_index(int client_index, int meta_index);
+/**
+ * ********
+ *
+ * \param client_index [IN]     The index of the client
+ * \param meta_index [IN]       *************
+ *
+ * \return
+ */
+int PDC_update_transform_server_meta_index(int client_index, int meta_index);
 
-int pdc_get_analysis_registry(struct region_analysis_ftn_info ***registry);
+/**
+ * *******
+ *
+ * \param registry [IN]         ************
+ *
+ * \return
+ */
+int PDC_get_analysis_registry(struct region_analysis_ftn_info ***registry);
 
+/**
+ * *******
+ *
+ * \param locus_identifier [IN] **********
+ */
 void PDC_set_execution_locus(PDC_loci locus_identifier);
 
+/**
+ * *****
+ *
+ * \param ftn_infoPtr [IN]      *********
+ *
+ * \return *****
+ */
 int PDC_add_analysis_ptr_to_registry_(struct region_analysis_ftn_info *ftn_infoPtr);
 
+/**
+ * *****
+ *
+ * \param ftn [IN]              *******
+ * \param loadpath [IN]         *******
+ * \param ftnPtr [IN]           *******
+ *
+ * \return *****
+ */
 int PDC_get_ftnPtr_(const char *ftn, const char *loadpath, void **ftnPtr);
 
+/**
+ * *****
+ *
+ * \return
+ */
 PDC_loci PDC_get_execution_locus();
 
-#endif
+#endif /* PDC_ANALYSIS_COMMON_H */

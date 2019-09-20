@@ -27,46 +27,27 @@
 #include <string.h>
 #include <unistd.h>
 #include <getopt.h>
-#include <time.h>
 #include <sys/time.h>
-#include <math.h>
 #include "pdc.h"
-
-double uniform_random_number()
-{
-    return (((double)rand())/((double)(RAND_MAX)));
-}
 
 int main(int argc, char **argv)
 {
-  int rank = 0, size = 1, i;
-    pdcid_t pdc_id, cont_prop, cont_id;
-    pdcid_t obj_prop2;
-    pdcid_t obj2;
-    pdcid_t r1, r2;
+    int rank = 0, size = 1;
     perr_t ret;
-#ifdef ENABLE_MPI
-    MPI_Comm comm;
-#else 
-    int comm = 1;
-#endif
-    float *x;
-    int x_dim = 64;
-    long numparticles = 4;
-    uint64_t dims[1] = {numparticles};  // {8388608};
-    int ndim = 1;
-    uint64_t *offset;
-    uint64_t *offset_remote;
-    uint64_t *mysize;
-
+    pdcid_t pdc_id, cont_prop, cont_id, obj_prop2;
+    pdcid_t obj2 = 0, r1, r2;
+    uint64_t dims[2] = {4,4};
+    uint64_t offset[2] = {1, 2};
+    uint64_t offset1[2] = {0, 0};
+    uint64_t rdims[2] = {3, 2};
+    char obj_name2[512];
+    int myArray1[3][2] = {{107, 108}, {111, 112}, {115, 116}};
+    
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-    MPI_Comm_dup(MPI_COMM_WORLD, &comm);
 #endif
-
-    x = (float *)malloc(numparticles*sizeof(float));
 
     // create a pdc
     pdc_id = PDCinit("pdc");
@@ -84,74 +65,52 @@ int main(int argc, char **argv)
     // create an object property
     obj_prop2 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
 
-    PDCprop_set_obj_dims(obj_prop2, 1, dims);
-    PDCprop_set_obj_type(obj_prop2, PDC_FLOAT);
-    PDCprop_set_obj_time_step(obj_prop2, 0       );
+    PDCprop_set_obj_dims(obj_prop2, 2, dims);
+    PDCprop_set_obj_type(obj_prop2, PDC_INT);
+    PDCprop_set_obj_time_step(obj_prop2, 0          );
     PDCprop_set_obj_user_id( obj_prop2, getuid()    );
-    PDCprop_set_obj_app_name(obj_prop2, "VPICIO"  );
+    PDCprop_set_obj_app_name(obj_prop2, "test_app"  );
     PDCprop_set_obj_tags(    obj_prop2, "tag0=1"    );
 
-    obj2 = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop2, 0, comm);
-    if (obj2 == 0) {    
-        printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
-        exit(-1);
-    }
-
-    offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
-    offset_remote = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
-    mysize = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
-    offset[0] = 0;
-    offset_remote[0] = rank*numparticles; 
-    mysize[0] = numparticles;
+    sprintf(obj_name2, "test_obj2");
+    obj2 = PDCobj_create(cont_id, obj_name2, obj_prop2);
 
     // create a region
-    r1 = PDCregion_create(1, offset, mysize);
-    r2 = PDCregion_create(1, offset_remote, mysize);
-
-    ret = PDCbuf_obj_map(&x[0], PDC_FLOAT, r1, obj2, r2);
-    if(ret < 0) {
-        printf("PDCbuf_obj_map failed\n");
-        exit(-1);
-    }
+    r1 = PDCregion_create(2, offset1, rdims);
+    r2 = PDCregion_create(2, offset, rdims);
     
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
+    ret = PDCbuf_obj_map(&myArray1[0], PDC_INT, r1, obj2, r2);
+    if(ret < 0)
+        printf("PDCbuf_obj_map failed\n");
 
     ret = PDCreg_obtain_lock(obj2, r2, WRITE, NOBLOCK);
     if (ret != SUCCEED)
-        printf("Failed to obtain lock for r2\n");
+        printf("Failed to obtain lock for region\n");
 
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-
-    for (i=0; i<numparticles; i++) {
-        x[i] = uniform_random_number() * x_dim;
-    }
+    // update buffer
+    myArray1[0][0] = 117;
+    myArray1[0][1] = 118; 
 
     ret = PDCreg_release_lock(obj2, r2, WRITE);
     if (ret != SUCCEED)
-        printf("Failed to release lock for r2\n");
-  
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
+        printf("Failed to release lock for region\n");
+    
+    PDCbuf_obj_unmap(obj2, r2);
 
-    ret = PDCbuf_obj_unmap(obj2, r2);
-    if (ret != SUCCEED)
-        printf("region unmap failed\n");
+    // close region
+    if(PDCregion_close(r1) < 0)
+        printf("fail to close region r1\n");
 
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
+    if(PDCregion_close(r2) < 0)
+        printf("fail to close region r2\n");
 
+    // close object
     if(PDCobj_close(obj2) < 0)
         printf("fail to close obj2\n");
 
     // close a container
     if(PDCcont_close(cont_id) < 0)
-        printf("fail to close container\n");
+        printf("fail to close container c1\n");
 
     // close a container property
     if(PDCprop_close(cont_prop) < 0)
@@ -163,12 +122,6 @@ int main(int argc, char **argv)
 #ifdef ENABLE_MPI
      MPI_Finalize();
 #endif
-    
-    free(x);
-    free(offset);
-    free(offset_remote);
-    free(mysize);
 
-    return 0;
+     return 0;
 }
-

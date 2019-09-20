@@ -20,6 +20,13 @@ int main(int argc, char **argv)
     pdc_metadata_t *x_meta, *y_meta, *z_meta, *energy_meta;
     pdcid_t pdc, x_id, y_id, z_id, energy_id;
 
+    // Construct query constraints
+    float x_lo0 = 0.05, x_hi0 = 200.05;
+    float energy_lo0 = 3.75, energy_hi0 = 4.0;
+    pdcquery_t *q0l, *q0h, *q0, *q1l, *q1h, *q1, *q2l, *q2h, *q2, *q, *q12;
+    uint64_t nhits;
+    pdcselection_t sel;
+    
     struct timeval  pdc_timer_start;
     struct timeval  pdc_timer_end;
     struct timeval  pdc_timer_start_1;
@@ -27,8 +34,7 @@ int main(int argc, char **argv)
 
     double query_time = 0.0;
 
-
-    pdc = PDC_init("pdc");
+    pdc = PDCinit("pdc");
 
     // Query the created object
     PDC_Client_query_metadata_name_timestep("x", 0, &x_meta);
@@ -59,17 +65,9 @@ int main(int argc, char **argv)
     }
     energy_id = energy_meta->obj_id;
 
-    // Construct query constraints
-    float x_lo0 = 0.05, x_hi0 = 200.05;
-    float energy_lo0 = 3.75, energy_hi0 = 4.0;
-    pdcquery_t *q0l, *q0h, *q0, *q1l, *q1h, *q1, *q2l, *q2h, *q2, *q, *q12;
-
     q0l = PDCquery_create(energy_id, PDC_GTE, PDC_FLOAT, &energy_lo0);
     q0h = PDCquery_create(energy_id, PDC_LTE, PDC_FLOAT, &energy_hi0);
     q  = PDCquery_and(q0l, q0h);
-   
-    uint64_t nhits;
-    pdcselection_t sel;
 
     // Get selection
     gettimeofday(&pdc_timer_start, 0);
@@ -111,7 +109,7 @@ int main(int argc, char **argv)
     PDCselection_free(&sel);
 
 done:
-    if(PDC_close(pdc) < 0)
+    if(PDCclose(pdc) < 0)
        printf("fail to close PDC\n");
 
      return 0;

@@ -56,6 +56,9 @@
 #include "mercury_thread_mutex.h"
 #include "mercury_thread_condition.h"
 
+/*****************************/
+/* Library-private Variables */
+/*****************************/
 hg_thread_mutex_t hash_table_new_mutex_g;
 hg_thread_mutex_t pdc_client_addr_mutex_g;
 hg_thread_mutex_t pdc_metadata_hash_table_mutex_g;
@@ -92,22 +95,103 @@ extern double   server_hash_insert_time_g ;
 extern double   server_bloom_init_time_g  ;
 extern uint32_t n_metadata_g              ;
 
+/***************************************/
+/* Library-private Function Prototypes */
+/***************************************/
+/**
+ * ***********
+ *
+ * \param remote_server_id [IN] Remote server ID
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_lookup_server_id(int remote_server_id);
-perr_t PDC_Server_set_close(void);
-perr_t PDC_Server_checkpoint();
-perr_t PDC_Server_restart(char *filename);
-hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info);
-/* perr_t PDC_Server_get_total_str_len(region_list_t** regions, uint32_t n_region, uint32_t *len); */
-/* perr_t PDC_Server_serialize_regions_info(region_list_t** regions, uint32_t n_region, void *buf); */
-/* perr_t PDC_Server_unserialize_regions_info(void *buf, region_list_t** regions, uint32_t *n_region); */
 
-hg_return_t PDC_Server_work_done_cb(const struct hg_cb_info *callback_info);
-hg_return_t PDC_Server_s2s_send_work_done_cb(const struct hg_cb_info *callback_info);
-hg_return_t PDC_Server_s2s_recv_work_done_cb(const struct hg_cb_info *callback_info);
-hg_return_t PDC_Server_checkpoint_cb(const struct hg_cb_info *callback_info);
-hg_return_t PDC_Server_recv_shm_cb(const struct hg_cb_info *callback_info);
-
+/**
+ * ***********
+ *
+ * \param client_id [IN]        Client ID
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Server_lookup_client(uint32_t client_id);
+
+/**
+ * ***********
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Server_set_close(void);
+
+/**
+ * ***********
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Server_checkpoint();
+
+/**
+ * ***********
+ *
+ * \param filename [IN]         Remote server ID
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Server_restart(char *filename);
+
+/**
+ * ***********
+ *
+ * \param callback_info [IN]    Remote server ID
+ *
+ * \return HG_SUCCESS or corresponding HG error code
+ */
+hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info);
+
+/**
+ * ***********
+ *
+ * \param callback_info [IN]    Remote server ID
+ *
+ * \return HG_SUCCESS or corresponding HG error code
+ */
+hg_return_t PDC_Server_work_done_cb(const struct hg_cb_info *callback_info);
+
+/**
+ * ***********
+ *
+ * \param callback_info [IN]    Remote server ID
+ *
+ * \return HG_SUCCESS or corresponding HG error code
+ */
+hg_return_t PDC_Server_s2s_send_work_done_cb(const struct hg_cb_info *callback_info);
+
+/**
+ * ***********
+ *
+ * \param callback_info [IN]    Remote server ID
+ *
+ * \return HG_SUCCESS or corresponding HG error code
+ */
+hg_return_t PDC_Server_s2s_recv_work_done_cb(const struct hg_cb_info *callback_info);
+
+/**
+ * ***********
+ *
+ * \param callback_info [IN]    Remote server ID
+ *
+ * \return HG_SUCCESS or corresponding HG error code
+ */
+hg_return_t PDC_Server_checkpoint_cb(const struct hg_cb_info *callback_info);
+
+/**
+ * ***********
+ *
+ * \param callback_info [IN]    Remote server ID
+ *
+ * \return HG_SUCCESS or corresponding HG error code
+ */
+hg_return_t PDC_Server_recv_shm_cb(const struct hg_cb_info *callback_info);
 
 #endif /* PDC_SERVER_H */
 

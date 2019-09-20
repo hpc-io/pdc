@@ -31,6 +31,6 @@
 
 perr_t PDC_Server_instantiate_data_iterator(obj_data_iterator_in_t *in, obj_data_iterator_out_t *out);
 
-int pdc_get_analysis_registry(struct region_analysis_ftn_info ***registry);
+int PDC_get_analysis_registry(struct region_analysis_ftn_info ***registry);
 
 #endif

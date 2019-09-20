@@ -40,12 +40,12 @@ pdcid_t PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_pro
 
     MPI_Comm_rank(comm, &rank);
     if(rank == rank_id) {
-        ret_value = pdc_obj_create(cont_id, obj_name, obj_prop_id, PDC_OBJ_GLOBAL);
+        ret_value = PDC_obj_create(cont_id, obj_name, obj_prop_id, PDC_OBJ_GLOBAL);
     }
     else
-        ret_value = pdc_obj_create(cont_id, obj_name, obj_prop_id, PDC_OBJ_LOCAL);
+        ret_value = PDC_obj_create(cont_id, obj_name, obj_prop_id, PDC_OBJ_LOCAL);
 
-    id_info = pdc_find_id(ret_value);
+    id_info = PDC_find_id(ret_value);
     p = (struct PDC_obj_info *)(id_info->obj_ptr);
 
     MPI_Bcast(&(p->meta_id), 1, MPI_LONG_LONG, rank_id, comm);
@@ -70,7 +70,7 @@ perr_t PDCobj_encode(pdcid_t obj_id, pdcid_t *meta_id)
     MPI_Comm_rank(MPI_COMM_WORLD, &client_rank);
 
     if(client_rank == 0) {
-        objinfo = pdc_find_id(obj_id);
+        objinfo = PDC_find_id(obj_id);
         if(objinfo == NULL)
             PGOTO_ERROR(ret_value, "cannot locate object ID");
         obj = (struct PDC_obj_info *)(objinfo->obj_ptr);
@@ -98,7 +98,7 @@ pdcid_t PDCobj_decode(pdcid_t obj_id, pdcid_t meta_id)
     }
     MPI_Comm_rank(MPI_COMM_WORLD, &client_rank);
     if(client_rank != 0) {
-        objinfo = pdc_find_id(obj_id);
+        objinfo = PDC_find_id(obj_id);
         if(objinfo == NULL)
             PGOTO_ERROR(ret_value, "cannot locate object ID");
         obj = (struct PDC_obj_info *)(objinfo->obj_ptr);

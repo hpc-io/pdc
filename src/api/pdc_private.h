@@ -22,12 +22,15 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_private_H
-#define _pdc_private_H 
+#ifndef PDC_PRIVATE_H
+#define PDC_PRIVATE_H
 
 #include "stdint.h"
 #include "config.h"
 
+/****************************/
+/* Library Private Typedefs */
+/****************************/
 typedef enum {
     UNKNOWN =0,
     SERVER_MEMORY =1,
@@ -76,7 +79,6 @@ typedef enum {
 #define SUCCEED    0
 #define FAIL    (-1)
 
-
 #ifdef __cplusplus
 #   define ATTRIBUTE(a)
 #else /* __cplusplus */
@@ -120,4 +122,4 @@ typedef enum {
 } while(0)
 #endif
 
-#endif 
+#endif /* PDC_PRIVATE_H */

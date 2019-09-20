@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
 #endif
 
     // create a pdc
-    pdc = PDC_init("pdc");
+    pdc = PDCinit("pdc");
     printf("create a new pdc\n");
 
     // create a container property
@@ -101,10 +101,8 @@ int main(int argc, char **argv) {
         printf("successfully close container property\n");
 
     // close pdc
-    if(PDC_close(pdc) < 0)
+    if(PDCclose(pdc) < 0)
        printf("fail to close PDC\n");
-    else
-       printf("PDC is closed\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

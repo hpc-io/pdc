@@ -132,7 +132,7 @@ int main(int argc, char **argv)
     }
 
     // create a pdc
-    pdc_id = PDC_init("pdc");
+    pdc_id = PDCinit("pdc");
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
@@ -193,10 +193,9 @@ int main(int argc, char **argv)
 
     } // end of for ts
 
-
-    #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
-    #endif
+#endif
     gettimeofday(&pdc_timer_end_1, 0);
     query_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end_1);
     query_time_total += query_time;
@@ -206,7 +205,6 @@ int main(int argc, char **argv)
     fflush(stdout);
 
     for (ts = 0; ts < n_ts; ts++) {
-
         /*
          * READ
          */
@@ -246,9 +244,9 @@ int main(int argc, char **argv)
              * WAIT
              */
             // Check if prefetch is done
-            #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
             MPI_Barrier(MPI_COMM_WORLD);
-            #endif
+#endif
             gettimeofday(&pdc_timer_start_1, 0);
 
             if (rank == 0) {
@@ -264,9 +262,9 @@ int main(int argc, char **argv)
                     goto done;
                 }
             }
-            #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
             MPI_Barrier(MPI_COMM_WORLD);
-            #endif
+#endif
             gettimeofday(&pdc_timer_end_1, 0);
             wait_time = PDC_get_elapsed_time_double(&pdc_timer_start_1, &pdc_timer_end_1);
             wait_time_total += wait_time;
@@ -294,9 +292,9 @@ int main(int argc, char **argv)
                 }
             } // end of for
 
-            #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
             MPI_Barrier(MPI_COMM_WORLD);
-            #endif
+#endif
             gettimeofday(&pdc_timer_end_1, 0);
             read_time += PDC_get_elapsed_time_double(&pdc_timer_end_1, &pdc_timer_end_1);
             read_time_total += read_time;
@@ -315,12 +313,12 @@ int main(int argc, char **argv)
         }
        
         // Sleep to fake compute time
-        pdc_msleep((unsigned long)(true_sleep_time*1000));
+        PDC_msleep((unsigned long)(true_sleep_time*1000));
         compute_total += read_time + query_time + true_sleep_time;
 
-        #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
-        #endif
+#endif
         if (rank == 0) 
             printf("Timestep %d: query time %.4f, read time %.4f, wait time %.4f, compute time %.4f\n", 
                     ts, query_time, read_time, wait_time, true_sleep_time);
@@ -353,7 +351,7 @@ done:
     if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close container property\n");
 
-    if(PDC_close(pdc_id) < 0)
+    if(PDCclose(pdc_id) < 0)
        printf("Fail to close PDC\n");
 
 exit:

@@ -22,19 +22,38 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_malloc_H
-#define _pdc_malloc_H
+#ifndef PDC_MALLOC_H
+#define PDC_MALLOC_H
 
 #include <stdlib.h>
 
+/***************************************/
+/* Library-private Function Prototypes */
+/***************************************/
+/**
+ * Create an object
+ *
+ * \param size [IN]             Size of the struct to be malloced
+ */
 void * PDC_malloc(size_t size);
 
+/**
+ * Create an object
+ *
+ * \param size [IN]             Size of the struct to be calloced
+ */
 void * PDC_calloc(size_t size);
 
+/**
+ * Create an object
+ *
+ * \param mem [IN]              Starting address of memory
+ */
 void * PDC_free(void *mem);
 
 #define PDC_MALLOC(t) (t *)PDC_malloc(sizeof(t))
 #define PDC_CALLOC(t) (t *)PDC_calloc(sizeof(t))
 
 #define PDC_FREE(t,obj) (t *)(intptr_t)PDC_free(obj)
-#endif
+
+#endif /* PDC_MALLOC_H */

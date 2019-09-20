@@ -93,7 +93,6 @@ int main(int argc, char **argv)
     double sent_time = 0.0, sent_time_total = 0.0, wait_time = 0.0, wait_time_total = 0.0;
     double write_time = 0.0, total_size = 0.0;
 
-
     // Float vars are first in the array follow by int vars
     for (i = 0; i < NUM_FLOAT_VAR; i++) 
         mydata[i] = (void*)malloc(float_bytes);
@@ -108,7 +107,7 @@ int main(int argc, char **argv)
         write_var = NUM_VAR;
     
     // create a pdc
-    pdc_id = PDC_init("pdc");
+    pdc_id = PDCinit("pdc");
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
@@ -175,11 +174,11 @@ int main(int argc, char **argv)
 #endif
 
     for (i = 0; i < NUM_VAR; i++) {
-        #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
         ret = PDC_Client_query_metadata_name_timestep_agg(obj_names[i], 0, &obj_metas[i]);
-        #else
+#else
         ret = PDC_Client_query_metadata_name_timestep(obj_names[i], 0, &obj_metas[i]);
-        #endif
+#endif
         if (ret != SUCCEED || obj_metas[i] == NULL || obj_metas[i]->obj_id == 0) {
             printf("Error with metadata!\n");
             exit(-1);
@@ -253,7 +252,6 @@ int main(int argc, char **argv)
         fflush(stdout);
     }
 
-
 done:
     if(PDCprop_close(obj_prop_float) < 0)
         printf("Fail to close float obj property \n");
@@ -267,7 +265,7 @@ done:
     if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close container property\n");
 
-    if(PDC_close(pdc_id) < 0)
+    if(PDCclose(pdc_id) < 0)
        printf("Fail to close PDC\n");
 
 #ifdef ENABLE_MPI

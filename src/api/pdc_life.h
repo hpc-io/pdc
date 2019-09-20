@@ -22,12 +22,15 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_life_H
-#define _pdc_life_H
+#ifndef PDC_LIFE_H
+#define PDC_LIFE_H
 
+/*******************/
+/* Public Typedefs */
+/*******************/
 typedef enum {
     PDC_PERSIST,
     PDC_TRANSIENT
 } PDC_lifetime;
 
-#endif
+#endif /* PDC_LIFE_H */

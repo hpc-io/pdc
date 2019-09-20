@@ -22,8 +22,8 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_id_pkg_H
-#define _pdc_id_pkg_H
+#ifndef PDC_ID_PKG_H
+#define PDC_ID_PKG_H
 
 #include "pdc_private.h"
 /*
@@ -45,4 +45,4 @@
 /* Map an atom to an ID type number */
 #define PDC_TYPE(a) ((PDC_type_t)(((pdcid_t)(a) >> ID_BITS) & TYPE_MASK))
 
-#endif 
+#endif /* PDC_ID_PKG_H */

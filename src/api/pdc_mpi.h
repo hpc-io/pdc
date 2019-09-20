@@ -22,10 +22,14 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_mpi_H
-#define _pdc_mpi_H
+#ifndef PDC_MPI_H
+#define PDC_MPI_H
+
 #include "mpi.h"
 
+/*********************/
+/* Public Prototypes */
+/*********************/
 /**
  * Create an object 
  * 
@@ -35,8 +39,8 @@
  *                              returned by PDCprop_create(PDC_OBJ_CREATE)
  * \param rank_id [IN]          MPI process rank
  *
- * \return Object id on success/Negative on failure 
+ * \return Object ID on success/Negative on failure 
  */
 pdcid_t PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop, int rank_id, MPI_Comm comm);
 
-#endif
+#endif /* PDC_MPI_H */

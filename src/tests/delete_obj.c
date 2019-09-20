@@ -104,7 +104,7 @@ int main(int argc, char **argv)
     fflush(stdout);
 
     // create a pdc
-    pdc = PDC_init("pdc");
+    pdc = PDCinit("pdc");
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
@@ -135,14 +135,12 @@ int main(int argc, char **argv)
 
     srand(rank+1);
 
-
 #ifdef ENABLE_MPI
-MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
     // This test first creates a number of objects, then delete them one by one.
     for (i = 0; i < count; i++) {
-
         if (use_name == -1) {
             sprintf(obj_name, "%s", rand_string(tmp_str, 16));
             PDCprop_set_obj_time_step(obj_prop, rank);
@@ -172,7 +170,7 @@ MPI_Barrier(MPI_COMM_WORLD);
     }
 
 #ifdef ENABLE_MPI
-MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
     // Delete and check if success
@@ -196,7 +194,7 @@ done:
     if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
 
-    if(PDC_close(pdc) < 0)
+    if(PDCclose(pdc) < 0)
        printf("fail to close PDC\n");
 
 #ifdef ENABLE_MPI

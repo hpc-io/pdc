@@ -37,8 +37,9 @@ int main(int argc, char **argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
+    
     // create a pdc
-    pdc = PDC_init("pdc");
+    pdc = PDCinit("pdc");
 
     // create an object property
     create_prop1 = PDCprop_create(PDC_OBJ_CREATE, pdc);
@@ -78,11 +79,9 @@ int main(int argc, char **argv) {
        printf("successfully close property\n");
 
     // close a pdc
-    if(PDC_close(pdc) < 0)
+    if(PDCclose(pdc) < 0)
        printf("fail to close PDC\n");
-    else
-       printf("PDC is closed\n");
-
+    
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif

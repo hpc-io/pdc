@@ -33,14 +33,13 @@
 
 int main()
 {
-//    int rank = 0, size = 1;
     pdcid_t pdc;
 
-    pdc = PDC_init("pdc");
+    pdc = PDCinit("pdc");
 
     PDC_Client_close_all_server();
 
-    if(PDC_close(pdc) < 0)
+    if(PDCclose(pdc) < 0)
         printf("fail to close PDC\n");
 
      return 0;

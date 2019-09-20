@@ -22,10 +22,9 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_interface_H
-#define _pdc_interface_H
+#ifndef PDC_INTERFACE_H
+#define PDC_INTERFACE_H
 
-/* #include "mercury_atomic.h" */
 #include "pdc_public.h"
 #include "pdc_private.h"
 #include "pdc_error.h"
@@ -38,6 +37,9 @@
 #define PDC_MUTEX_LOCK(this) hg_thread_mutex_lock(&(this).lock)
 #define PDC_MUTEX_UNLOCK(this) hg_thread_mutex_unlock(&(this).lock)
 
+/****************************/
+/* Library Private Typedefs */
+/****************************/
 /*
  * Function for freeing objects. This function will be called with an object
  * ID type number and a pointer to the object. The function should free the
@@ -58,14 +60,9 @@ typedef enum {
     PDC_NTYPES       = 7    /* number of library types, MUST BE LAST!      */
 } PDC_type_t;
 
-/* Atom information structure used */
-/* struct PDC_id_info { */
-/*     pdcid_t             id;             /1* ID for this info                 *1/ */
-/*     hg_atomic_int32_t   count;          /1* ref. count for this atom         *1/ */
-/*     void                *obj_ptr;       /1* pointer associated with the atom *1/ */
-/*     PDC_LIST_ENTRY(PDC_id_info) entry; */
-/* }; */
-
+/***************************/
+/* Library Private Structs */
+/***************************/
 /* ID type structure used */
 struct PDC_id_type {
     PDC_free_t                  free_func;         /* Free function for object's of this type    */
@@ -83,6 +80,9 @@ struct pdc_id_list {
 
 struct pdc_id_list *pdc_id_list_g;
 
+/***************************************/
+/* Library-private Function Prototypes */
+/***************************************/
 /**
  * Creates a new type of ID's to give out.
  * The class is initialized or its reference count is incremented
@@ -96,18 +96,6 @@ struct pdc_id_list *pdc_id_list_g;
 perr_t PDC_register_type(PDC_type_t type_id, PDC_free_t free_func);
 
 /**
- * Public interface to PDCid_register.
- *
- * \param type [IN]             A enum type PDC_type_t, e.g. PDC_CONT, PDC_OBJ
- * \param object [IN]           Pointer to an object storage
- *
- * \return Type id on success/Negative on failure
- */
-/*
-pdcid_t PDCid_register(PDC_type_t type, const void *object);
-*/
-
-/**
  * Registers an OBJECT in a TYPE and returns an ID for it.
  * This routine does not check for uniqueness of the objects,
  * if you register an object twice, you will get two different
@@ -116,27 +104,27 @@ pdcid_t PDCid_register(PDC_type_t type, const void *object);
  * \param type [IN]             A enum type PDC_type_t, e.g. PDC_CONT, PDC_OBJ
  * \param object [IN]           Pointer to an object storage
  *
- * \return Type id on success/Negative on failure
+ * \return Type ID on success/Negative on failure
  */
-pdcid_t pdc_id_register(PDC_type_t type, void *object);
+pdcid_t PDC_id_register(PDC_type_t type, void *object);
 
 /**
  * Increment the number of references outstanding for an ID.
  *
- * \param id [IN]               Id of type to decrease
+ * \param id [IN]               ID of type to decrease
  *
  * \return New reference count on success/Negative on failure
  */
-int pdc_inc_ref(pdcid_t id);
+int PDC_inc_ref(pdcid_t id);
 
 /**
  * Decrement the number of references outstanding for an ID.
  *
- * \param id [IN]               Id of type to decrease
+ * \param id [IN]               ID of type to decrease
  *
  * \return New reference count on success/Negative on failure
  */
-int pdc_dec_ref(pdcid_t id);
+int PDC_dec_ref(pdcid_t id);
 
 /**
  *  Check if PDC_type_t id list is empty
@@ -145,8 +133,7 @@ int pdc_dec_ref(pdcid_t id);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t pdc_id_list_null(PDC_type_t type);
-
+perr_t PDC_id_list_null(PDC_type_t type);
 
 /**
  * Clear the list of a PDC_type_t type
@@ -155,7 +142,7 @@ perr_t pdc_id_list_null(PDC_type_t type);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t pdc_id_list_clear(PDC_type_t type);
+perr_t PDC_id_list_clear(PDC_type_t type);
 
 /**
  * To destroy ID types
@@ -164,16 +151,16 @@ perr_t pdc_id_list_clear(PDC_type_t type);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t pdc_destroy_type(PDC_type_t type);
+perr_t PDC_destroy_type(PDC_type_t type);
 
 /**
  * Given an object ID find the info struct that describes the object
  *
- * \param idid [IN]             Id to look up
+ * \param idid [IN]             ID to look up
  *
  * \return Pointer to the object's info struct on success/Null on failure
  */
-struct PDC_id_info *pdc_find_id(pdcid_t idid);
+struct PDC_id_info *PDC_find_id(pdcid_t idid);
 
 /**
  * Given an object ID find the info struct that describes the object
@@ -183,6 +170,6 @@ struct PDC_id_info *pdc_find_id(pdcid_t idid);
  *
  * \return Id of the object on success/Negative on failure
  */
-pdcid_t pdc_find_byname(PDC_type_t type, const char *byname);
+pdcid_t PDC_find_byname(PDC_type_t type, const char *byname);
 
-#endif
+#endif /* PDC_INTERFACE_H */

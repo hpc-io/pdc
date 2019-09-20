@@ -19,6 +19,7 @@ int main(int argc, char **argv)
     int rank = 0, size = 1;
     int i;
     pdcid_t obj_ids[NOBJ];
+    pdcid_t pdc, cont_prop, cont, obj_prop;
     struct PDC_region_info write_region;
     struct PDC_region_info read_region;
 
@@ -48,20 +49,20 @@ int main(int argc, char **argv)
 
 
     // create a pdc
-    pdcid_t pdc = PDC_init("pdc");
+    pdc = PDCinit("pdc");
 
     // create a container property
-    pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
+    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     // create a container
-    pdcid_t cont = PDCcont_create("c1", cont_prop);
+    cont = PDCcont_create("c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
     // create an object property
-    pdcid_t obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
+    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if(obj_prop <= 0)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
 
@@ -87,9 +88,9 @@ int main(int argc, char **argv)
         }
     }
 
-    #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
-    #endif
+#endif
 
     // Query and write the created object
     for (i = 0; i < NOBJ; i++) {
@@ -107,9 +108,9 @@ int main(int argc, char **argv)
     printf("%d - Finished writing %d regions. \n", rank, NOBJ);
     fflush(stdout);
 
-    #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
-    #endif
+#endif
 
     // Each rank tries to read its next rank's written region
     read_region.ndim = ndim;
@@ -133,9 +134,9 @@ int main(int argc, char **argv)
         fflush(stdout);
     }
 
-    #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
-    #endif
+#endif
 
     if (rank == 0) {
         PDC_Client_all_server_checkpoint();
@@ -150,7 +151,7 @@ done:
     if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
 
-    if(PDC_close(pdc) < 0)
+    if(PDCclose(pdc) < 0)
        printf("fail to close PDC\n");
 
 #ifdef ENABLE_MPI

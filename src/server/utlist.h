@@ -86,7 +86,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define UTLIST_SV(elt,list) _tmp = (char*)(list); {char **_alias = (char**)&(list); *_alias = (elt); }
 #define UTLIST_NEXT(elt,list,next) ((char*)((list)->next))
 #define UTLIST_NEXTASGN(elt,list,to,next) { char **_alias = (char**)&((list)->next); *_alias=(char*)(to); }
-/* #define UTLIST_PREV(elt,list,prev) ((char*)((list)->prev)) */
 #define UTLIST_PREVASGN(elt,list,to,prev) { char **_alias = (char**)&((list)->prev); *_alias=(char*)(to); }
 #define UTLIST_RS(list) { char **_alias = (char**)&(list); *_alias=_tmp; }
 #define UTLIST_CASTASGN(a,b) { char **_alias = (char**)&(a); *_alias=(char*)(b); }
@@ -95,7 +94,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define UTLIST_SV(elt,list)
 #define UTLIST_NEXT(elt,list,next) ((elt)->next)
 #define UTLIST_NEXTASGN(elt,list,to,next) ((elt)->next)=(to)
-/* #define UTLIST_PREV(elt,list,prev) ((elt)->prev) */
 #define UTLIST_PREVASGN(elt,list,to,prev) ((elt)->prev)=(to)
 #define UTLIST_RS(list)
 #define UTLIST_CASTASGN(a,b) (a)=(b)

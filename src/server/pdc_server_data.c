@@ -48,6 +48,7 @@
 #include "pdc_public.h"
 #include "pdc_interface.h"
 #include "pdc_client_server_common.h"
+#include "pdc_client_public.h"
 #include "pdc_server_data.h"
 #include "pdc_server_metadata.h"
 #include "pdc_server.h"
@@ -77,15 +78,6 @@ char pdc_cache_file_path_g[ADDR_MAX];
 query_task_t *query_task_list_head_g = NULL;
 cache_storage_region_t *cache_storage_region_head_g = NULL;
 
-/*
- * Set the Lustre stripe count/size of a given path
- *
- * \param  path[IN]             Directory to be set with Lustre stripe/count
- * \param  stripe_count[IN]     Stripe count
- * \param  stripe_size_MB[IN]   Stripe size in MB
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_set_lustre_stripe(const char *path, int stripe_count, int stripe_size_MB)
 {
     perr_t ret_value = SUCCEED;
@@ -141,7 +133,7 @@ done:
  *
  * \return 1 if they are the same/-1 otherwise
  */
-int is_region_identical(region_list_t *a, region_list_t *b)
+static int is_region_identical(region_list_t *a, region_list_t *b)
 {
     int ret_value = -1;
     uint32_t i;
@@ -183,7 +175,7 @@ perr_t PDC_Server_local_region_lock_status(PDC_mapping_info_t *mapped_region, in
     // Check if the region lock info is on current server
     *lock_status = 0;
     request_region = (region_list_t *)malloc(sizeof(region_list_t));
-    pdc_region_transfer_t_to_list_t(&(mapped_region->remote_region), request_region);
+    PDC_region_transfer_t_to_list_t(&(mapped_region->remote_region), request_region);
     res_meta = find_metadata_by_id(mapped_region->remote_obj_id);
     if (res_meta == NULL || res_meta->region_lock_head == NULL) {
         printf("==PDC_SERVER[%d]: PDC_Server_region_lock_status - metadata/region_lock is NULL!\n",
@@ -220,7 +212,7 @@ perr_t PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *loc
 
     *lock_status = 0;
     request_region = (region_list_t *)malloc(sizeof(region_list_t));
-    pdc_region_transfer_t_to_list_t(&(mapped_region->remote_region), request_region);
+    PDC_region_transfer_t_to_list_t(&(mapped_region->remote_region), request_region);
 
     server_id = PDC_get_server_by_obj_id(mapped_region->remote_obj_id, pdc_server_size_g);
     if (server_id == (uint32_t)pdc_server_rank_g) {
@@ -251,14 +243,6 @@ data_server_region_t *PDC_Server_get_obj_region(pdcid_t obj_id)
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Lock a reigon.
- *
- * \param  in[IN]       Lock region information received from the client
- * \param  out[OUT]     Output stucture to be sent back to the client
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out, hg_handle_t *handle)
 {
     perr_t ret_value = SUCCEED;
@@ -340,7 +324,7 @@ perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out,
     // check if the lock region is used in buf map function 
     tmp = (region_list_t *)malloc(sizeof(region_list_t));
     DL_FOREACH(new_obj_reg->region_buf_map_head, eltt) {
-        pdc_region_transfer_t_to_list_t(&(eltt->remote_region_unit), tmp);
+        PDC_region_transfer_t_to_list_t(&(eltt->remote_region_unit), tmp);
         if(PDC_is_same_region_list(tmp, request_region) == 1) {
             request_region->reg_dirty_from_buf = 1;
             hg_atomic_incr32(&(request_region->buf_map_refcount));
@@ -381,7 +365,7 @@ perr_t PDC_Server_release_lock_request(uint64_t obj_id, struct PDC_region_info *
 
     request_region = (region_list_t *)malloc(sizeof(region_list_t));
     PDC_init_region_list(request_region);
-    pdc_region_info_to_list_t(region, request_region);
+    PDC_region_info_to_list_t(region, request_region);
 
     new_obj_reg = PDC_Server_get_obj_region(obj_id);
     if(new_obj_reg == NULL) {
@@ -492,7 +476,7 @@ done:
  *
  * \return 1 if same/0 otherwise
  */
-int region_list_cmp(region_list_t *a, region_list_t *b) 
+static int region_list_cmp(region_list_t *a, region_list_t *b)
 {
     if (a->ndim != b->ndim) {
         printf("  region_list_cmp(): not equal ndim! \n");
@@ -516,7 +500,7 @@ int region_list_cmp(region_list_t *a, region_list_t *b)
  *
  * \return 1 if same/0 otherwise
  */
-int region_list_path_offset_cmp(region_list_t *a, region_list_t *b) 
+static int region_list_path_offset_cmp(region_list_t *a, region_list_t *b)
 {
     int ret_value;
     if (NULL == a || NULL == b) {
@@ -539,7 +523,7 @@ int region_list_path_offset_cmp(region_list_t *a, region_list_t *b)
  *
  * \return 1 if same/0 otherwise
  */
-int region_list_cmp_by_client_id(region_list_t *a, region_list_t *b) 
+static int region_list_cmp_by_client_id(region_list_t *a, region_list_t *b)
 {
     if (a->ndim != b->ndim) {
         printf("  region_list_cmp_by_client_id(): not equal ndim! \n");
@@ -566,7 +550,7 @@ perr_t PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
     hg_thread_mutex_lock(&data_buf_map_mutex_g);
 #endif
     DL_FOREACH_SAFE(target_obj->region_buf_map_head, elt, tmp) {
-        if(in->remote_obj_id==elt->remote_obj_id && region_is_identical(in->remote_region, elt->remote_region_unit)) {
+        if(in->remote_obj_id==elt->remote_obj_id && PDC_region_is_identical(in->remote_region, elt->remote_region_unit)) {
 #ifdef ENABLE_MULTITHREAD
             // wait for work to be done, then free
             hg_thread_mutex_lock(&(elt->bulk_args->work_mutex));
@@ -654,7 +638,7 @@ perr_t PDC_Data_Server_check_unmap()
         completed = 0;
         hg_thread_mutex_lock(&data_buf_map_mutex_g);
         DL_FOREACH_SAFE(target_obj->region_buf_map_head, elt, tmp) {
-            if(remote_obj_id==elt->remote_obj_id && region_is_identical(elt1->unmap_region, elt->remote_region_unit)) {
+            if(remote_obj_id==elt->remote_obj_id && PDC_region_is_identical(elt1->unmap_region, elt->remote_region_unit)) {
                 hg_thread_mutex_lock(&(elt->bulk_args->work_mutex));
                 if (!elt->bulk_args->work_completed)
                     // wait for 100ms for work completed
@@ -780,7 +764,6 @@ perr_t PDC_Server_buf_unmap_lookup_server_id(int remote_server_id, struct transf
     hg_return_t hg_ret    = HG_SUCCESS;
     struct buf_unmap_server_lookup_args_t *lookup_args;
     hg_handle_t handle;
-    buf_unmap_out_t out;
     int error = 0;
 
     FUNC_ENTER(NULL);
@@ -863,7 +846,7 @@ perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle)
 #endif
         DL_FOREACH_SAFE(target_meta->region_buf_map_head, elt, tmp) {
 
-            if(in->remote_obj_id==elt->remote_obj_id && region_is_identical(in->remote_region, elt->remote_region_unit)) {
+            if(in->remote_obj_id==elt->remote_obj_id && PDC_region_is_identical(in->remote_region, elt->remote_region_unit)) {
                 DL_DELETE(target_meta->region_buf_map_head, elt);
                 free(elt);
             }
@@ -934,7 +917,7 @@ server_open_storage(char *storage_location, pdcid_t obj_id)
     // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
     snprintf(storage_location, ADDR_MAX, "%s/pdc_data/%" PRIu64 "/server%d/s%04d.bin",
         data_path, obj_id, pdc_server_rank_g, pdc_server_rank_g);
-    pdc_mkdir(storage_location);
+    PDC_mkdir(storage_location);
 
 #ifdef ENABLE_LUSTRE
     if (pdc_nost_per_file_g != 1)
@@ -994,7 +977,7 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
         // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
         snprintf(storage_location, ADDR_MAX, "%.200s/pdc_data/%" PRIu64 "/server%d/s%04d.bin",
             data_path, in->remote_obj_id, pdc_server_rank_g, pdc_server_rank_g);
-        pdc_mkdir(storage_location);
+        PDC_mkdir(storage_location);
 
 #ifdef ENABLE_LUSTRE
         if (pdc_nost_per_file_g != 1)
@@ -1430,7 +1413,7 @@ done:
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_merge_region_list_naive(region_list_t *list, region_list_t **merged)
+static perr_t PDC_Server_merge_region_list_naive(region_list_t *list, region_list_t **merged)
 {
     perr_t ret_value = FAIL;
 
@@ -1549,16 +1532,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Callback function for the notify region update
- *
- * \param  meta_id[OUT]      Metadata ID
- * \param  reg_id[OUT]       Object ID
- * \param  client_id[OUT]    Client's MPI rank
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDC_SERVER_notify_region_update_to_client(uint64_t obj_id, uint64_t reg_id, int32_t client_id)
+perr_t PDC_Server_notify_region_update_to_client(uint64_t obj_id, uint64_t reg_id, int32_t client_id)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
@@ -1567,7 +1541,7 @@ perr_t PDC_SERVER_notify_region_update_to_client(uint64_t obj_id, uint64_t reg_i
 
     FUNC_ENTER(NULL);
 
-    if (client_id >= (int32_t)pdc_client_num_g) {
+    if (client_id >= pdc_client_num_g) {
         printf("==PDC_SERVER[%d]: PDC_SERVER_notify_region_update_to_client() - "
                 "client_id %d invalid)\n", pdc_server_rank_g, client_id);
         ret_value = FAIL;
@@ -1614,13 +1588,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Close the shared memory
- *
- * \param  region[OUT]    Pointer to region
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_close_shm(region_list_t *region, int is_remove)
 {
     perr_t ret_value = SUCCEED;
@@ -1715,7 +1682,7 @@ done:
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_notify_io_complete_to_client(uint32_t client_id, uint64_t obj_id, 
+static perr_t PDC_Server_notify_io_complete_to_client(uint32_t client_id, uint64_t obj_id,
         char* shm_addr, PDC_access_t io_type)
 {
     char tmp_shm[ADDR_MAX];
@@ -1812,17 +1779,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Callback function for IO complete notification send to client
- *
- * \param  client_id[IN]    Target client's MPI rank
- * \param  obj_id[IN]       Object ID 
- * \param  shm_addr[IN]     Server's shared memory address  
- * \param  io_typ[IN]       IO type (read/write)
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDC_Server_notify_client_multi_io_complete(uint32_t client_id, int client_seq_id, int n_completed, 
+perr_t PDC_Server_notify_client_multi_io_complete(uint32_t client_id, int client_seq_id, int n_completed,
                                                   region_list_t *completed_region_list)
 {
     perr_t                ret_value     = SUCCEED;
@@ -1921,7 +1878,7 @@ perr_t PDC_Close_cache_file()
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_cache_region_to_BB(region_list_t *region)
+static perr_t PDC_Server_cache_region_to_BB(region_list_t *region)
 {
     perr_t ret_value = SUCCEED;
     uint64_t write_bytes, offset;
@@ -2031,14 +1988,6 @@ hg_return_t PDC_cache_region_to_bb_cb (const struct hg_cb_info *callback_info)
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Check if a previous read request has been completed
- *
- * \param  in[IN]       Input structure received from client containing the IO request info
- * \param  out[OUT]     Output structure to be sent back to the client
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_read_check(data_server_read_check_in_t *in, server_read_check_out_t *out)
 {
     perr_t ret_value = SUCCEED;
@@ -2051,10 +2000,10 @@ perr_t PDC_Server_read_check(data_server_read_check_in_t *in, server_read_check_
 
     pdc_metadata_t meta;
     PDC_metadata_init(&meta);
-    pdc_transfer_t_to_metadata_t(&in->meta, &meta);
+    PDC_transfer_t_to_metadata_t(&in->meta, &meta);
 
     PDC_init_region_list(&r_target);
-    pdc_region_transfer_t_to_list_t(&(in->region), &r_target);
+    PDC_region_transfer_t_to_list_t(&(in->region), &r_target);
 
 #ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_lock(&data_read_list_mutex_g);
@@ -2119,14 +2068,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Check if a previous write request has been completed
- *
- * \param  in[IN]       Input structure received from client containing the IO request info
- * \param  out[OUT]     Output structure to be sent back to the client
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_write_check_out_t *out)
 {
     perr_t ret_value = FAIL;
@@ -2138,11 +2079,11 @@ perr_t PDC_Server_write_check(data_server_write_check_in_t *in, data_server_writ
 
     pdc_metadata_t meta;
     PDC_metadata_init(&meta);
-    pdc_transfer_t_to_metadata_t(&in->meta, &meta);
+    PDC_transfer_t_to_metadata_t(&in->meta, &meta);
 
     region_list_t r_target;
     PDC_init_region_list(&r_target);
-    pdc_region_transfer_t_to_list_t(&(in->region), &r_target);
+    PDC_region_transfer_t_to_list_t(&(in->region), &r_target);
 
 #ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_lock(&data_write_list_mutex_g);
@@ -2203,7 +2144,7 @@ done:
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_data_read_to_shm(region_list_t *region_list_head)
+static perr_t PDC_Server_data_read_to_shm(region_list_t *region_list_head)
 {
     perr_t ret_value = FAIL;
 
@@ -2229,16 +2170,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Get the storage location of a region from local metadata hash table
- *
- * \param  obj_id[IN]               Object ID of the request
- * \param  region[IN]               Request region
- * \param  n_loc[OUT]               Number of storage locations of the target region
- * \param  overlap_region_loc[OUT]  List of region locations
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_get_local_storage_location_of_region(uint64_t obj_id, region_list_t *region,
         uint32_t *n_loc, region_list_t **overlap_region_loc)
 {
@@ -2257,7 +2188,7 @@ perr_t PDC_Server_get_local_storage_location_of_region(uint64_t obj_id, region_l
         goto done;
     }
     DL_FOREACH(target_meta->storage_region_list_head, region_elt) {
-        if (is_contiguous_region_overlap(region_elt, region) == 1) {
+        if (PDC_is_contiguous_region_overlap(region_elt, region) == 1) {
             // No need to make a copy here, but need to make sure we won't change it
             overlap_region_loc[*n_loc] = region_elt;
             *n_loc += 1;
@@ -2288,7 +2219,7 @@ done:
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t update_region_storage_meta_bulk_cleanup_cb(update_storage_meta_list_t *meta_list_target, int *n_updated)
+static perr_t update_region_storage_meta_bulk_cleanup_cb(update_storage_meta_list_t *meta_list_target, int *n_updated)
 {
     perr_t ret_value = SUCCEED;
     
@@ -2341,14 +2272,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-
-/*
- * Callback function for get storage info.
- *
- * \param  callback_info[IN]         Mercury callback info
- *
- * \return Non-negative on success/Negative on failure
- */
 hg_return_t PDC_Server_count_write_check_update_storage_meta_cb (const struct hg_cb_info *callback_info)
 {
     hg_return_t ret_value = HG_SUCCESS;
@@ -2402,7 +2325,7 @@ done:
  */
 // Note: one request region can spread across multiple regions in storage
 // Need to allocate **overlap_region_loc with PDC_MAX_OVERLAP_REGION_NUM before calling this 
-perr_t PDC_Server_get_storage_location_of_region_mpi(region_list_t *regions_head)
+static perr_t PDC_Server_get_storage_location_of_region_mpi(region_list_t *regions_head)
 {
     perr_t ret_value = SUCCEED;
     uint32_t server_id = 0;
@@ -2458,7 +2381,7 @@ perr_t PDC_Server_get_storage_location_of_region_mpi(region_list_t *regions_head
             }
             else {
                 // After saninty check, add the current request to gather send buffer
-                pdc_region_list_t_to_transfer(region_elt, &local_region_transfer[nrequest_per_server]);
+                PDC_region_list_t_to_transfer(region_elt, &local_region_transfer[nrequest_per_server]);
                 nrequest_per_server++;
             }
         }
@@ -2510,7 +2433,7 @@ perr_t PDC_Server_get_storage_location_of_region_mpi(region_list_t *regions_head
                 goto done;
             }
             memset(&req_region, 0, sizeof(region_list_t));
-            pdc_region_transfer_t_to_list_t(&all_requests[i], &req_region);
+            PDC_region_transfer_t_to_list_t(&all_requests[i], &req_region);
             ret_value = PDC_Server_get_local_storage_location_of_region(region_meta->obj_id, &req_region, 
                                                                         &overlap_cnt, overlap_regions_2d);
             if (ret_value != SUCCEED) {
@@ -2537,7 +2460,7 @@ perr_t PDC_Server_get_storage_location_of_region_mpi(region_list_t *regions_head
                 displs[server_idx] = displs[server_idx-1] + send_bytes[server_idx-1];
             // for each request, copy all overlap storage meta to send buf 
             for (j = 0; j < overlap_cnt; j++) {
-                pdc_region_list_t_to_transfer(overlap_regions_2d[j], &send_buf[found_cnt].region_transfer);
+                PDC_region_list_t_to_transfer(overlap_regions_2d[j], &send_buf[found_cnt].region_transfer);
                 strcpy(send_buf[found_cnt].storage_location, overlap_regions_2d[j]->storage_location);
                 send_buf[found_cnt].offset = overlap_regions_2d[j]->offset;
                 found_cnt++;
@@ -2579,7 +2502,7 @@ perr_t PDC_Server_get_storage_location_of_region_mpi(region_list_t *regions_head
             region_elt->overlap_storage_regions = (region_list_t*)calloc(sizeof(region_list_t), 
                                                           region_elt->n_overlap_storage_region);
             for (i = 0; i < region_elt->n_overlap_storage_region; i++) {
-                pdc_region_transfer_t_to_list_t(&result_storage_meta[result_idx].region_transfer, 
+                PDC_region_transfer_t_to_list_t(&result_storage_meta[result_idx].region_transfer, 
                                                 &region_elt->overlap_storage_regions[i]);
                 strcpy(region_elt->overlap_storage_regions[i].storage_location, 
                         result_storage_meta[result_idx].storage_location);
@@ -2614,15 +2537,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Perform the IO request with different IO system
- * after the server has accumulated requests from all node local clients
- *
- * \param  region_list_head[IN]     List of IO requests
- * \param  plugin[IN]               IO system to be used
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_regions_io(region_list_t *region_list_head, PDC_io_plugin_t plugin)
 {
     perr_t ret_value = SUCCEED;
@@ -2672,7 +2586,7 @@ done:
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_data_write_from_shm(region_list_t *region_list_head)
+static perr_t PDC_Server_data_write_from_shm(region_list_t *region_list_head)
 {
     perr_t ret_value = SUCCEED;
     region_list_t *region_elt;
@@ -2696,7 +2610,7 @@ perr_t PDC_Server_data_write_from_shm(region_list_t *region_list_head)
         
         // Calculate io size
         if (region_elt->data_size == 0) 
-            region_elt->data_size = pdc_get_region_size(region_elt);
+            region_elt->data_size = PDC_get_region_size(region_elt);
 
         // Open shared memory and map to data buf
         region_elt->shm_fd = shm_open(region_elt->shm_addr, O_RDONLY, 0666);
@@ -2736,13 +2650,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Perform the IO request via shared memory
- *
- * \param  callback_info[IN]     Mercury callback info
- *
- * \return Non-negative on success/Negative on failure
- */
 hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
 {
     perr_t ret_value = SUCCEED;
@@ -2892,7 +2799,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
             ret_value = FAIL;
             goto done;
         }
-        pdc_region_list_t_deep_cp(&(io_info->region), new_region);
+        PDC_region_list_t_deep_cp(&(io_info->region), new_region);
         DL_APPEND(io_list_target->region_list_head, new_region);
         if (is_debug_g == 1) {
             DL_COUNT(io_list_target->region_list_head, region_elt, count);
@@ -3021,13 +2928,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Update the storage location information of the corresponding metadata that is stored locally
- *
- * \param  region[IN]     Region info of the data that's been written by server 
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_t obj_id, int type)
 {
     perr_t ret_value = SUCCEED;
@@ -3073,7 +2973,7 @@ perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_
             }
 
             if (region_elt->data_size == 0) 
-                region_elt->data_size = pdc_get_region_size(region_elt);
+                region_elt->data_size = PDC_get_region_size(region_elt);
             
             update_success = 1;
 
@@ -3086,7 +2986,7 @@ perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_
 
         // Create the region list
         new_region = (region_list_t*)calloc(1, sizeof(region_list_t));
-        if (pdc_region_list_t_deep_cp(region, new_region) != SUCCEED) {
+        if (PDC_region_list_t_deep_cp(region, new_region) != SUCCEED) {
             printf("==PDC_SERVER[%d]: %s - deep copy FAILED!\n", pdc_server_rank_g, __func__);
             ret_value = FAIL;
             goto done;
@@ -3095,7 +2995,7 @@ perr_t PDC_Server_update_local_region_storage_loc(region_list_t *region, uint64_
         new_region->meta        = target_meta;
         new_region->region_hist = region->region_hist;
         if (new_region->data_size == 0) 
-            new_region->data_size = pdc_get_region_size(new_region);
+            new_region->data_size = PDC_get_region_size(new_region);
         DL_APPEND(target_meta->storage_region_list_head, new_region);
     }
 
@@ -3142,14 +3042,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Update the storage location information of the corresponding metadata that may be stored in a
- * remote server.
- *
- * \param  callback_info[IN]     Mercury callback info
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region, int type)
 {
     hg_return_t hg_ret;
@@ -3220,12 +3112,12 @@ perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region, in
         in.storage_location = region->storage_location;
         in.type             = type;
         in.has_hist         = 0;
-        pdc_region_list_t_to_transfer(region, &(in.region));
+        PDC_region_list_t_to_transfer(region, &(in.region));
 
         if (region->region_hist != NULL) {
             in.has_hist = 1;
             memset(&in.hist, 0, sizeof(pdc_histogram_t));
-            copy_hist(&in.hist, region->region_hist);
+            PDC_copy_hist(&in.hist, region->region_hist);
         }
 
         if (in.hist.nbin == 0) {
@@ -3251,15 +3143,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Update the storage location information of the corresponding metadata that may be stored in a
- * remote server, using Mercury bulk transfer.
- *
- * \param  region_ptrs[IN]     Pointers to the regions that need to be updated
- * \param  cnt        [IN]     Number of pointers in region_ptrs
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bulk_xfer_data_t *bulk_data)
 {
     perr_t ret_value = SUCCEED;
@@ -3341,7 +3224,7 @@ perr_t PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bul
 
     // Copy data from region to corresponding buf ptr in bulk_data
     curr_buf_ptr = (update_region_storage_meta_bulk_t*)(bulk_data->buf_ptrs[idx]);
-    pdc_region_list_t_to_transfer(region, &curr_buf_ptr->region_transfer);
+    PDC_region_list_t_to_transfer(region, &curr_buf_ptr->region_transfer);
     strcpy(curr_buf_ptr->storage_location, region->storage_location);
     curr_buf_ptr->offset = region->offset;
 
@@ -3350,14 +3233,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Callback function for server to update the metadata stored locally, 
- * can be called by the server itself, or through bulk transfer callback.
- *
- * \param  update_region_storage_meta_bulk_t
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_update_region_storage_meta_bulk_local(update_region_storage_meta_bulk_t **bulk_ptrs, int cnt)
 {
     perr_t ret_value = SUCCEED;
@@ -3386,8 +3261,8 @@ perr_t PDC_Server_update_region_storage_meta_bulk_local(update_region_storage_me
 
         // Create a new region for each and copy the data from bulk data
         new_region = (region_list_t*)calloc(1, sizeof(region_list_t));
-        pdc_region_transfer_t_to_list_t(&bulk_ptr->region_transfer, new_region);
-        new_region->data_size = pdc_get_region_size(new_region);
+        PDC_region_transfer_t_to_list_t(&bulk_ptr->region_transfer, new_region);
+        new_region->data_size = PDC_get_region_size(new_region);
         strcpy(new_region->storage_location, bulk_ptr->storage_location);
         new_region->offset = bulk_ptr->offset;
 
@@ -3474,14 +3349,6 @@ done:
     return ret;
 }
 
-/*
- * MPI VERSION. Update the storage location information of the corresponding metadata that may be stored in a
- * remote server, using Mercury bulk transfer.
- *
- * \param  bulk_data[IN]     Bulk data ptr, obtained with PDC_Server_add_region_storage_meta_to_bulk_buf
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_update_region_storage_meta_bulk_mpi(bulk_xfer_data_t *bulk_data)
 {
     perr_t ret_value = SUCCEED;
@@ -3542,15 +3409,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-
-/*
- * Update the storage location information of the corresponding metadata that may be stored in a
- * remote server, using Mercury bulk transfer.
- *
- * \param  bulk_data[IN]     Bulk data ptr, obtained with PDC_Server_add_region_storage_meta_to_bulk_buf
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_update_region_storage_meta_bulk_with_cb(bulk_xfer_data_t *bulk_data, perr_t (*cb)(), update_storage_meta_list_t *meta_list_target, int *n_updated)
 {
     hg_return_t hg_ret;
@@ -3654,7 +3512,7 @@ done:
  */
 // For each intersecteed region in storage, calculate the actual overlapping regions'
 // start[] and count[], then read into the buffer with correct offset
-perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint64_t *req_count,
+static perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint64_t *req_count,
                                        uint64_t *storage_start, uint64_t *storage_count,
                                        FILE *fp, uint64_t file_offset, void *buf,  size_t *total_read_bytes)
 {
@@ -3687,9 +3545,9 @@ perr_t PDC_Server_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint6
     }
 
     // Get the actual start and count of region in storage
-    if (get_overlap_start_count(ndim, req_start, req_count, storage_start, storage_count,
+    if (PDC_get_overlap_start_count(ndim, req_start, req_count, storage_start, storage_count,
                                 overlap_start, overlap_count) != SUCCEED ) {
-        printf("==PDC_SERVER[%d]: get_overlap_start_count FAILED!\n", pdc_server_rank_g);
+        printf("==PDC_SERVER[%d]: PDC_get_overlap_start_count FAILED!\n", pdc_server_rank_g);
         ret_value = FAIL;
         goto done;
     }
@@ -3865,7 +3723,7 @@ void PDC_init_bulk_xfer_data_t(bulk_xfer_data_t* a)
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_read_one_region(region_list_t *read_region)
+static perr_t PDC_Server_read_one_region(region_list_t *read_region)
 {
     perr_t ret_value = SUCCEED;
     size_t read_bytes = 0;
@@ -4197,9 +4055,9 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
                     || strcmp(region_elt->storage_location, previous_region->storage_location) != 0) {
 
                 // Only need to mkdir once
-                pdc_mkdir(region_elt->storage_location);
+                PDC_mkdir(region_elt->storage_location);
 
-                #ifdef ENABLE_LUSTRE
+#ifdef ENABLE_LUSTRE
                 // Set Lustre stripe only if this is Lustre
                 // NOTE: this only applies to NERSC Lustre on Cori and Edison
                 if (strstr(region_elt->storage_location, "/global/cscratch") != NULL      ||
@@ -4214,7 +4072,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
                     stripe_size  = lustre_stripe_size_mb_g;                      // MB
                     PDC_Server_set_lustre_stripe(region_elt->storage_location, stripe_count, stripe_size);
                 }
-                #endif
+#endif
 
                 // Close previous file
                 if (fp_write != NULL) {
@@ -4337,7 +4195,7 @@ done:
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct PDC_region_info *region_info, void *buf)
+static perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct PDC_region_info *region_info, void *buf)
 {
     perr_t ret_value = SUCCEED;
     region_list_t *io_region = NULL;
@@ -4347,7 +4205,7 @@ perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct P
     is_server_direct_io_g = 1;
     io_region = (region_list_t*)calloc(1, sizeof(region_list_t));
     PDC_init_region_list(io_region);
-    pdc_region_info_to_list_t(region_info, io_region);
+    PDC_region_info_to_list_t(region_info, io_region);
 
     // Generate a location for data storage for data server to write
     char *data_path = NULL;
@@ -4363,7 +4221,7 @@ perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct P
     // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
     snprintf(io_region->storage_location, ADDR_MAX, "%.200s/pdc_data/%" PRIu64 "/server%d/s%04d.bin",
             data_path, obj_id, pdc_server_rank_g, pdc_server_rank_g);
-    pdc_mkdir(io_region->storage_location);
+    PDC_mkdir(io_region->storage_location);
 
 
 #ifdef ENABLE_LUSTRE
@@ -4378,7 +4236,7 @@ perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct P
 #endif
 
     io_region->access_type = io_type;
-    io_region->data_size   = pdc_get_region_size(io_region);
+    io_region->data_size   = PDC_get_region_size(io_region);
     io_region->buf         = buf;
 
     // Need to get the metadata
@@ -4462,16 +4320,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Server writes buffer to storage of one region without client involvement
- * Read with POSIX within one file
- *
- * \param  obj_id[IN]            Object ID
- * \param  region_info[IN]       Region info of IO request
- * \param  buf[IN]               Data buffer
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf)
 {
     perr_t ret_value = SUCCEED;
@@ -4489,15 +4337,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Server reads buffer from storage of one region without client involvement
- *
- * \param  obj_id[IN]            Object ID
- * \param  region_info[IN]       Region info of IO request
- * \param  buf[OUT]              Data buffer
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_data_read_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf)
 {
     perr_t ret_value = SUCCEED;
@@ -4547,7 +4386,7 @@ perr_t PDC_Server_get_local_storage_meta_with_one_name(storage_meta_query_one_na
             ret_value = FAIL;
             goto done;
         }
-        pdc_region_list_t_deep_cp(region_elt, &res_region_list[i]);
+        PDC_region_list_t_deep_cp(region_elt, &res_region_list[i]);
         res_region_list[i].prev = NULL;
         res_region_list[i].next = NULL;
         DL_APPEND(args->overlap_storage_region_list, &res_region_list[i]);
@@ -4567,7 +4406,7 @@ done:
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_get_all_storage_meta_with_one_name(storage_meta_query_one_name_args_t *args)
+static perr_t PDC_Server_get_all_storage_meta_with_one_name(storage_meta_query_one_name_args_t *args)
 {
     hg_return_t hg_ret;
     perr_t ret_value = SUCCEED;
@@ -4621,7 +4460,7 @@ perr_t PDC_Server_get_all_storage_meta_with_one_name(storage_meta_query_one_name
         hg_ret = HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, 
                            storage_meta_name_query_register_id_g, &rpc_handle);
 
-        hg_ret = HG_Forward(rpc_handle, pdc_check_int_ret_cb, NULL, &in);
+        hg_ret = HG_Forward(rpc_handle, PDC_check_int_ret_cb, NULL, &in);
         if (hg_ret != HG_SUCCESS) {
             printf("==PDC_SERVER[%d]: %s - Could not start HG_Forward to server %u\n",
                     pdc_server_rank_g, __func__, server_id);
@@ -4644,7 +4483,7 @@ done:
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_accumulate_storage_meta_then_read(storage_meta_query_one_name_args_t *in)
+static perr_t PDC_Server_accumulate_storage_meta_then_read(storage_meta_query_one_name_args_t *in)
 {
     perr_t ret_value = SUCCEED;
     accumulate_storage_meta_t *accu_meta;
@@ -4730,13 +4569,6 @@ perr_t PDC_Server_accumulate_storage_meta_then_read(storage_meta_query_one_name_
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Query and read entire objects with a list of object names, received from a client
- *
- * \param  query_args[IN]              Query info
- *
- * \return Non-negative on success/Negative on failure
- */
 perr_t PDC_Server_query_read_names(query_read_names_args_t *query_read_args)
 {
     perr_t ret_value = SUCCEED;
@@ -4783,13 +4615,6 @@ perr_t PDC_Server_query_read_names(query_read_names_args_t *query_read_args)
     FUNC_LEAVE(ret_value);
 }
 
-/*
- * Wrapper function for callback
- *
- * \param  callback_info[IN]              Callback info pointer
- *
- * \return Non-negative on success/Negative on failure
- */
 hg_return_t PDC_Server_query_read_names_cb(const struct hg_cb_info *callback_info)
 {
     PDC_Server_query_read_names((query_read_names_args_t*) callback_info->arg);
@@ -4883,7 +4708,7 @@ hg_return_t PDC_Server_storage_meta_name_query_bulk_respond(const struct hg_cb_i
     j = 0;
     DL_FOREACH(query_args->overlap_storage_region_list, region_elt) {
         region_infos[j] = (region_info_transfer_t*)calloc(sizeof(region_info_transfer_t), 1);
-        pdc_region_list_t_to_transfer(region_elt, region_infos[j]);
+        PDC_region_list_t_to_transfer(region_elt, region_infos[j]);
         
         if (region_elt->cache_location[0] != 0) {
             buf_ptrs[i  ]  = region_elt->cache_location;
@@ -5009,7 +4834,7 @@ perr_t PDC_Server_add_client_shm_to_cache(int origin, int cnt, void *buf_cp)
         io_list_target->count++;
 
         new_region = (region_list_t*)calloc(1, sizeof(region_list_t));
-        pdc_region_transfer_t_to_list_t(&storage_metas[i].region_transfer, new_region);
+        PDC_region_transfer_t_to_list_t(&storage_metas[i].region_transfer, new_region);
         strcpy(new_region->shm_addr, storage_metas[i].storage_location);
         new_region->offset = storage_metas[i].offset;
         new_region->data_size   = storage_metas[i].size;
@@ -5523,7 +5348,7 @@ PDC_Server_load_query_data(query_task_t *task, pdcquery_t *query, pdcquery_combi
                 goto done;
             }
             req_region->io_cache_region = new_region;
-            pdc_region_list_t_deep_cp(req_region, new_region);
+            PDC_region_list_t_deep_cp(req_region, new_region);
             new_region->is_data_ready = 0;
             memset(new_region->shm_addr, 0, sizeof(char) * ADDR_MAX);
             new_region->buf = NULL;
@@ -5919,7 +5744,7 @@ int compare_coords_3d (const void * a, const void * b)
 
 #ifdef ENABLE_FASTBIT
 void
-gen_fastbit_idx_name(char *out, char *prefix, uint64_t obj_id, int timestep, int ndim, uint64_t *start, uint64_t *count)
+PDC_gen_fastbit_idx_name(char *out, char *prefix, uint64_t obj_id, int timestep, int ndim, uint64_t *start, uint64_t *count)
 {
     if (ndim == 1) {
         sprintf(out, "%s-%" PRIu64 "-%d-%" PRIu64 "-%" PRIu64 "", prefix, obj_id, timestep, start[0], count[0]);
@@ -5951,9 +5776,9 @@ generate_write_fastbit_idx(uint64_t obj_id, void* data, uint64_t dataCount, Fast
 
     FUNC_ENTER(NULL);
 
-    gen_fastbit_idx_name(bmsName, "bms", obj_id, timestep, ndim, start, count);
-    gen_fastbit_idx_name(keyName, "key", obj_id, timestep, ndim, start, count);
-    gen_fastbit_idx_name(offName, "off", obj_id, timestep, ndim, start, count);
+    PDC_gen_fastbit_idx_name(bmsName, "bms", obj_id, timestep, ndim, start, count);
+    PDC_gen_fastbit_idx_name(keyName, "key", obj_id, timestep, ndim, start, count);
+    PDC_gen_fastbit_idx_name(offName, "off", obj_id, timestep, ndim, start, count);
 
     fastbitErr = fastbit_iapi_register_array(bmsName, ft, data, dataCount);
     if (fastbitErr < 0) {
@@ -5989,7 +5814,7 @@ generate_write_fastbit_idx(uint64_t obj_id, void* data, uint64_t dataCount, Fast
     }
 
     sprintf(storage_location, "%s/fastbit_idx/%" PRIu64 "/", data_path, obj_id);
-    pdc_mkdir(storage_location);
+    PDC_mkdir(storage_location);
 
     sprintf(out_name, "%s/%s", storage_location, bmsName);
     fp = fopen(out_name, "w");
@@ -6026,7 +5851,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-int bmreader(void *ctx, uint64_t start, uint64_t count, uint32_t *buf)
+int PDC_bmreader(void *ctx, uint64_t start, uint64_t count, uint32_t *buf)
 {
     const uint32_t *bms = (uint32_t*)ctx + start;
     unsigned j;
@@ -6067,7 +5892,7 @@ int queryData(const char *name)
 }
 
 int 
-load_fastbit_index(char *idx_name, uint64_t obj_id, FastBitDataType dtype, int timestep, uint64_t ndim, uint64_t *dims, uint64_t *start, uint64_t *count, uint32_t **bms, double **keys, int64_t **offsets)
+PDC_load_fastbit_index(char *idx_name, uint64_t obj_id, FastBitDataType dtype, int timestep, uint64_t ndim, uint64_t *dims, uint64_t *start, uint64_t *count, uint32_t **bms, double **keys, int64_t **offsets)
 {
     char bmsName[128];
     char keyName[128];
@@ -6076,9 +5901,9 @@ load_fastbit_index(char *idx_name, uint64_t obj_id, FastBitDataType dtype, int t
     uint64_t nk=0, no=0, nb=0, size;
     FILE *fp;
 
-    gen_fastbit_idx_name(bmsName, "bms", obj_id, timestep, ndim, start, count);
-    gen_fastbit_idx_name(keyName, "key", obj_id, timestep, ndim, start, count);
-    gen_fastbit_idx_name(offName, "off", obj_id, timestep, ndim, start, count);
+    PDC_gen_fastbit_idx_name(bmsName, "bms", obj_id, timestep, ndim, start, count);
+    PDC_gen_fastbit_idx_name(keyName, "key", obj_id, timestep, ndim, start, count);
+    PDC_gen_fastbit_idx_name(offName, "off", obj_id, timestep, ndim, start, count);
 
     char storage_location[256];
     char *data_path;
@@ -6136,7 +5961,7 @@ load_fastbit_index(char *idx_name, uint64_t obj_id, FastBitDataType dtype, int t
     fread(*offsets, no, sizeof(int64_t), fp);
     fclose(fp);
 
-    fastbit_iapi_register_array_index_only(idx_name, dtype, dims, ndim, *keys, nk, *offsets, no, *bms, bmreader);
+    fastbit_iapi_register_array_index_only(idx_name, dtype, dims, ndim, *keys, nk, *offsets, no, *bms, PDC_bmreader);
 
     return 1;
 }
@@ -6188,8 +6013,8 @@ PDC_query_fastbit_idx(region_list_t *region, pdcquery_constraint_t *constraint, 
 
     timestep = 0;
     char idx_name[128];
-    gen_fastbit_idx_name(idx_name, "bms", region->obj_id, timestep, region->ndim, start, count);
-    load_fastbit_index(idx_name, region->obj_id, ft, timestep, region->ndim, count, start, count, &bms, &keys, &offsets);
+    PDC_gen_fastbit_idx_name(idx_name, "bms", region->obj_id, timestep, region->ndim, start, count);
+    PDC_load_fastbit_index(idx_name, region->obj_id, ft, timestep, region->ndim, count, start, count, &bms, &keys, &offsets);
 
     FastBitSelectionHandle sel = NULL, sel1, sel2;
     FastBitCompareType ct1, ct2;
@@ -6389,7 +6214,7 @@ PDC_Server_query_evaluate_merge_opt(pdcquery_t *query, query_task_t *task, pdcqu
     region_constraint = NULL;
     if (task->region_constraint->ndim > 0) {
         // Convert logical tmp_region to bytes
-        pdc_region_list_t_deep_cp(task->region_constraint, &tmp_region);
+        PDC_region_list_t_deep_cp(task->region_constraint, &tmp_region);
         for (i = 0; i <task->region_constraint->ndim ; i++) {
             tmp_region.start[i] *= unit_size;
             tmp_region.count[i] *= unit_size;
@@ -6460,7 +6285,7 @@ PDC_Server_query_evaluate_merge_opt(pdcquery_t *query, query_task_t *task, pdcqu
 
             // Skip non-overlap regions with the region constraint
             if (region_constraint && region_constraint->ndim > 0) {
-                if (is_contiguous_region_overlap(region_elt, region_constraint) != 1)
+                if (PDC_is_contiguous_region_overlap(region_elt, region_constraint) != 1)
                     continue;
             }
 
@@ -6549,7 +6374,7 @@ PDC_Server_query_evaluate_merge_opt(pdcquery_t *query, query_task_t *task, pdcqu
  
             // Skip non-overlap regions with the region constraint
             if (region_constraint && region_constraint->ndim > 0) {
-                if (is_contiguous_region_overlap(region_elt, region_constraint) != 1)
+                if (PDC_is_contiguous_region_overlap(region_elt, region_constraint) != 1)
                     continue;
             }
 
@@ -6875,7 +6700,7 @@ PDC_Server_send_nhits_to_server(query_task_t *task)
     in.query_id = task->query_id;
     in.nhits    = task->query->sel->nhits;
 
-    hg_ret = HG_Forward(handle, pdc_check_int_ret_cb, NULL, &in);
+    hg_ret = HG_Forward(handle, PDC_check_int_ret_cb, NULL, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "==PDC_SERVER[%d]: %s - HG_Forward failed!\n", pdc_server_rank_g, __func__);
         ret_value = FAIL;
@@ -6937,7 +6762,7 @@ PDC_Server_send_nhits_to_client(query_task_t *task)
             pdc_server_rank_g, __func__, in.nhits);
     fflush(stdout);
 
-    hg_ret = HG_Forward(handle, pdc_check_int_ret_cb, NULL, &in);
+    hg_ret = HG_Forward(handle, PDC_check_int_ret_cb, NULL, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "==PDC_SERVER[%d]: %s - HG_Forward failed!\n", pdc_server_rank_g, __func__);
         ret_value = FAIL;
@@ -7051,7 +6876,7 @@ PDC_Server_send_coords_to_client(query_task_t *task)
         goto done;
     }
 
-    hg_ret = HG_Forward(handle, pdc_check_int_ret_cb, NULL, &in);
+    hg_ret = HG_Forward(handle, PDC_check_int_ret_cb, NULL, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "==PDC_SERVER[%d]: %s - HG_Forward failed!\n", pdc_server_rank_g, __func__);
         ret_value = FAIL;
@@ -7127,7 +6952,7 @@ PDC_Server_send_coords_to_server(query_task_t *task)
         goto done;
     }
 
-    hg_ret = HG_Forward(handle, pdc_check_int_ret_cb, NULL, &in);
+    hg_ret = HG_Forward(handle, PDC_check_int_ret_cb, NULL, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "==PDC_SERVER[%d]: %s - HG_Forward failed!\n", pdc_server_rank_g, __func__);
         ret_value = FAIL;
@@ -7264,7 +7089,7 @@ PDC_send_data_to_client(int client_id, void *buf, size_t ndim, size_t unit_size,
         goto done;
     }
 
-    hg_ret = HG_Forward(handle, pdc_check_int_ret_cb, NULL, &in);
+    hg_ret = HG_Forward(handle, PDC_check_int_ret_cb, NULL, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "==PDC_SERVER[%d]: %s - HG_Forward failed!\n", pdc_server_rank_g, __func__);
         ret_value = FAIL;
@@ -7814,7 +7639,7 @@ PDC_send_query_metadata_bulk(bulk_rpc_in_t *in, void *buf, uint64_t buf_sizes, i
             pdc_server_rank_g, __func__, in->cnt, server_id);
     fflush(stdout);
 
-    hg_ret = HG_Forward(handle, pdc_check_int_ret_cb, NULL, in);
+    hg_ret = HG_Forward(handle, PDC_check_int_ret_cb, NULL, in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "==PDC_SERVER[%d]: %s - HG_Forward failed!\n", pdc_server_rank_g, __func__);
         ret_value = FAIL;
@@ -7921,7 +7746,7 @@ PDC_Server_distribute_query_storage_info(query_task_t *task, uint64_t obj_id,
             if (server_id == pdc_server_rank_g) {
                 // If needs to send to self, make a copy of the storage metadata
                 new_region = (region_list_t*)calloc(1, sizeof(region_list_t));
-                pdc_region_list_t_deep_cp(elt, new_region);
+                PDC_region_list_t_deep_cp(elt, new_region);
 
                 add_to_cache_storage_region(obj_id, new_region);
             }
@@ -8042,7 +7867,7 @@ PDC_recv_query_metadata_bulk(const struct hg_cb_info *callback_info)
             buf_off += (*loc_len_ptr);
 
             region_info_ptr = (region_info_transfer_t*)(buf + buf_off);
-            pdc_region_transfer_t_to_list_t(region_info_ptr, &regions[i]);
+            PDC_region_transfer_t_to_list_t(region_info_ptr, &regions[i]);
             buf_off += sizeof(region_info_transfer_t);
 
             offset_ptr = (uint64_t*)(buf + buf_off);
@@ -8070,7 +7895,7 @@ PDC_recv_query_metadata_bulk(const struct hg_cb_info *callback_info)
                 buf_off += (hist_ptr->nbin * sizeof(uint64_t));
 
                 regions[i].region_hist = (pdc_histogram_t*)calloc(1, sizeof(pdc_histogram_t));
-                copy_hist(regions[i].region_hist, hist_ptr);
+                PDC_copy_hist(regions[i].region_hist, hist_ptr);
 
                 if (regions[i].region_hist->nbin == 0 || regions[i].region_hist->nbin > 1000) {
                     printf("==PDC_SERVER[%d]: %s ERROR received hist nbin=%d\n", 
@@ -8329,7 +8154,7 @@ PDC_Server_send_read_coords_to_server(int server_id, uint64_t *coord, uint64_t n
         goto done;
     }
 
-    hg_ret = HG_Forward(handle, pdc_check_int_ret_cb, NULL, &in);
+    hg_ret = HG_Forward(handle, PDC_check_int_ret_cb, NULL, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "==PDC_SERVER[%d]: %s - HG_Forward failed!\n", pdc_server_rank_g, __func__);
         ret_value = FAIL;

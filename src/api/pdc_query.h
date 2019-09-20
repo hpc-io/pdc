@@ -1,9 +1,12 @@
-#ifndef _pdc_query_H
-#define _pdc_query_H
+#ifndef PDC_QUERY_H
+#define PDC_QUERY_H
 
 #include "pdc_public.h"
 #include "pdc_hist.h"
 
+/*************************************/
+/* Public Type and Struct Definition */
+/*************************************/
 typedef enum { 
     PDC_OP_NONE = 0, 
     PDC_GT      = 1, 
@@ -61,15 +64,101 @@ typedef struct pdcquery_t {
     pdcselection_t         *sel;
 } pdcquery_t;
 
+/*********************/
+/* Public Prototypes */
+/*********************/
+/**
+ * Create a PDC query
+ *
+ * \param obj_id [IN]            *********
+ * \param op [IN]                *********
+ * \param type [OUT]             *********
+ * \param value [OUT]            *********
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 pdcquery_t *PDCquery_create(pdcid_t obj_id, pdcquery_op_t op, PDC_var_type_t type, void *value);
+
+/**
+ * *********
+ *
+ * \param query1 [IN]            *********
+ * \param query2 [IN]            *********
+ *
+ * \return ******
+ */
 pdcquery_t *PDCquery_and(pdcquery_t *query1, pdcquery_t *query2);
+
+/**
+ * *********
+ *
+ * \param query1 [IN]            *********
+ * \param query2 [IN]            *********
+ *
+ * \return ******
+ */
 pdcquery_t *PDCquery_or(pdcquery_t *query1, pdcquery_t *query2);
-perr_t      PDCquery_sel_region(pdcquery_t *query, struct PDC_region_info *obj_region);
 
-perr_t      PDCquery_get_selection(pdcquery_t *query, pdcselection_t *sel);
-perr_t      PDCquery_get_nhits(pdcquery_t *query, uint64_t *n);
-perr_t      PDCquery_get_data(pdcid_t obj_id, pdcselection_t *sel, void *obj_data);
-perr_t      PDCquery_get_histogram(pdcid_t obj_id, void *hist);
-perr_t      PDCquery_get_sel_data(pdcquery_t *query, pdcselection_t *sel, void *data);
+/**
+ * *********
+ *
+ * \param query [IN]             *********
+ * \param obj_region [IN]        Object region information
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCquery_sel_region(pdcquery_t *query, struct PDC_region_info *obj_region);
 
-#endif
+/**
+ * *********
+ *
+ * \param query [IN]             *********
+ * \param sel [IN]               *********
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCquery_get_selection(pdcquery_t *query, pdcselection_t *sel);
+
+/**
+ * *********
+ *
+ * \param query [IN]             *********
+ * \param n [IN]                 *********
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCquery_get_nhits(pdcquery_t *query, uint64_t *n);
+
+/**
+ * *********
+ *
+ * \param query [IN]             *********
+ * \param sel [IN]               *********
+ * \param obj_data [IN]          ********
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCquery_get_data(pdcid_t obj_id, pdcselection_t *sel, void *obj_data);
+
+/**
+ * *********
+ *
+ * \param query [IN]             *********
+ * \param n [IN]                 *********
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCquery_get_histogram(pdcid_t obj_id, void *hist);
+
+/**
+ * *********
+ *
+ * \param query [IN]             *********
+ * \param n [IN]                 *********
+ * \param data [IN]              *********
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCquery_get_sel_data(pdcquery_t *query, pdcselection_t *sel, void *data);
+
+#endif /* PDC_QUERY_H */

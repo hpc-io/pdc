@@ -22,24 +22,27 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_obj_object_H
-#define _pdc_obj_object_H
+#ifndef PDC_OBJ_OBJECT_H
+#define PDC_OBJ_OBJECT_H
 
 #include "pdc_obj_pkg.h"
 
+/***************************************/
+/* Library-private Function Prototypes */
+/***************************************/
 /**
  * PDC object initialization
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t pdc_obj_init();
+perr_t PDC_obj_init();
 
 /**
  * PDC region initialization
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t pdc_region_init();
+perr_t PDC_region_init();
 
 /**
  * Create an object
@@ -52,12 +55,12 @@ perr_t pdc_region_init();
  *
  * \return Object id on success/Negative on failure
  */
-pdcid_t pdc_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, PDCobj_location location);
+pdcid_t PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, PDCobj_location location);
 
 /**
  * Get object information
  *
- * \param obj_id [IN]           Id of the object
+ * \param obj_id [IN]           ID of the object
  *
  * \return Pointer to PDC_obj_info struct on success/Null on failure
  */
@@ -68,27 +71,27 @@ struct PDC_obj_info *PDC_obj_get_info(pdcid_t obj_id);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t pdc_obj_end();
+perr_t PDC_obj_end();
 
 /**
  * PDC region finalize
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t pdc_region_end();
+perr_t PDC_region_end();
 
 /**
  * Check if object list is empty
  *
  * \return SUCCEED if empty/FAIL if not empty
  */
-perr_t pdc_obj_list_null();
+perr_t PDC_obj_list_null();
 
 /**
  * Check if region list is empty
  *
  * \return SUCCEED if empty/FAIL if not empty
  */
-perr_t pdc_region_list_null();
+perr_t PDC_region_list_null();
 
-#endif
+#endif /* PDC_OBJ_OBJECT_H */

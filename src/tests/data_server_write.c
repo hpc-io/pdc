@@ -19,6 +19,7 @@ int main(int argc, char **argv)
     uint64_t size_MB;
     char *obj_name;
     pdcid_t test_obj = -1;
+    pdcid_t pdc, cont_prop, cont, obj_prop;
     struct PDC_region_info region;
     int my_data_size;
     uint64_t dims[1];
@@ -51,20 +52,20 @@ int main(int argc, char **argv)
     size_MB *= 1048576;
 
     // create a pdc
-    pdcid_t pdc = PDC_init("pdc");
+    pdc = PDCinit("pdc");
 
     // create a container property
-    pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
+    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     // create a container
-    pdcid_t cont = PDCcont_create("c1", cont_prop);
+    cont = PDCcont_create("c1", cont_prop);
     if(cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
     // create an object property
-    pdcid_t obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
+    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if(obj_prop <= 0)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
 
@@ -131,7 +132,7 @@ int main(int argc, char **argv)
     if(PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
 
-    if(PDC_close(pdc) < 0)
+    if(PDCclose(pdc) < 0)
        printf("fail to close PDC\n");
 
 #ifdef ENABLE_MPI

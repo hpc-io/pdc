@@ -28,9 +28,16 @@
 #include "mercury.h"
 #include "pdc_public.h"
 
+/***************************************/
+/* Library-private Function Prototypes */
+/***************************************/
 hg_id_t analysis_ftn_register(hg_class_t *hg_class);
 hg_id_t transform_ftn_register(hg_class_t *hg_class);
 
+/************************************/
+/* Local Type and Struct Definition */
+/************************************/
+/* Define transform_ftn_in_t */
 typedef struct transform_ftn_in_t{
     hg_const_string_t           ftn_name;
     hg_const_string_t           loadpath;
@@ -44,6 +51,7 @@ typedef struct transform_ftn_in_t{
     int8_t                      when;
 } transform_ftn_in_t;
 
+/* Define transform_ftn_out_t */
 typedef struct transform_ftn_out_t{
     pdcid_t                     object_id;
     pdcid_t                     region_id;
@@ -51,6 +59,7 @@ typedef struct transform_ftn_out_t{
     int32_t                     ret;
 } transform_ftn_out_t;
 
+/* Define hg_proc_transform_ftn_in_t */
 static HG_INLINE hg_return_t
 hg_proc_transform_ftn_in_t(hg_proc_t proc, void *data)
 {
@@ -110,6 +119,7 @@ hg_proc_transform_ftn_in_t(hg_proc_t proc, void *data)
     return ret;
 }
 
+/* Define hg_proc_transform_ftn_out_t */
 static HG_INLINE hg_return_t
 hg_proc_transform_ftn_out_t(hg_proc_t proc, void *data)
 {
@@ -138,4 +148,4 @@ hg_proc_transform_ftn_out_t(hg_proc_t proc, void *data)
     return ret;
 }
 
-#endif
+#endif /* PDC_TRANSFORMS_COMMON_H */

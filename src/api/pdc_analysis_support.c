@@ -263,7 +263,7 @@ PDCobj_data_block_iterator_create(pdcid_t obj_id, pdcid_t reg_id, int contig_blo
         PGOTO_ERROR(FAIL,"PDC iterator_init returned an error\n");
 
     ret_value = p->local_id = iterId;
-    if (PDC_client_send_iter_recv_id(iterId, &p->meta_id) != SUCCEED)
+    if (PDC_Client_send_iter_recv_id(iterId, &p->meta_id) != SUCCEED)
         PGOTO_ERROR(FAIL,"Unable to register a new iterator\n");
     
 done:
@@ -294,7 +294,7 @@ PDCobj_data_iter_create(pdcid_t obj_id, pdcid_t reg_id)
  *         environment variables.
  */
 
-char *pdc_get_argv0_()
+char *PDC_get_argv0_()
 {
     static char *_argv0 = NULL;
 
@@ -339,7 +339,7 @@ char *pdc_get_argv0_()
         }
         if (_argv0[0] != '/') {
             getcwd(currentDir,sizeof(currentDir));
-            next = find_in_path(currentDir, _argv0);
+            next = PDC_find_in_path(currentDir, _argv0);
             if (next == NULL) {
                 printf("WARNING: Unable to locate application (%s) in user $PATH\n", _argv0);
             }
@@ -360,7 +360,7 @@ char *pdc_get_argv0_()
 }
 
 char *
-get_realpath( char *fname, char *app_path)
+PDC_get_realpath( char *fname, char *app_path)
 {
     int notreadable;
     char fullPath[PATH_MAX] = {0,};
@@ -398,7 +398,7 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
     
     FUNC_ENTER(NULL);
 
-    thisApp = pdc_get_argv0_();
+    thisApp = PDC_get_argv0_();
     if (thisApp) {
       applicationDir = dirname(strdup(thisApp));
     }
@@ -413,12 +413,12 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
     // TODO:
     // Should probably validate the location of the "analysislibrary"
     //
-    loadpath = get_realpath(analyislibrary, applicationDir);
+    loadpath = PDC_get_realpath(analyislibrary, applicationDir);
     if (PDC_get_ftnPtr_((const char *)userdefinedftn, (const char *)loadpath, &ftnHandle) < 0)
-      printf("PDC_get_ftnPtr_ returned an error!\n");
+        printf("PDC_get_ftnPtr_ returned an error!\n");
     
     if ((ftnPtr = ftnHandle) == NULL)
-      PGOTO_ERROR(FAIL,"Analysis function lookup failed\n");
+        PGOTO_ERROR(FAIL,"Analysis function lookup failed\n");
 
     if ((thisFtn = PDC_MALLOC(struct region_analysis_ftn_info)) == NULL)
         PGOTO_ERROR(FAIL,"PDC register_obj_analysis memory allocation failed\n");
@@ -449,7 +449,7 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
         }
     }
 
-    PDC_client_register_obj_analysis(thisFtn, userdefinedftn, loadpath, local_id_in, local_id_out, meta_id_in, meta_id_out);
+    PDC_Client_register_obj_analysis(thisFtn, userdefinedftn, loadpath, local_id_in, local_id_out, meta_id_in, meta_id_out);
 
     // Add region IDs
     thisFtn->region_id[0] = i_in->reg_id;
@@ -569,26 +569,26 @@ done:
 
 
 perr_t
-pdc_analysis_end()
+PDC_analysis_end()
 {
     perr_t ret_value = SUCCEED;         /* Return value */
     
     FUNC_ENTER(NULL);
     
-    free_analysis_registry();
+    PDC_free_analysis_registry();
     
     FUNC_LEAVE(ret_value);
 }
 
 
 perr_t
-pdc_iterator_end()
+PDC_iterator_end()
 {
     perr_t ret_value = SUCCEED;         /* Return value */
     
     FUNC_ENTER(NULL);
     
-    free_iterator_cache();
+    PDC_free_iterator_cache();
     
     FUNC_LEAVE(ret_value);
 }

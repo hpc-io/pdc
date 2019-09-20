@@ -19,6 +19,17 @@ int main(int argc, char **argv)
 
     pdc_metadata_t *x_meta, *y_meta, *z_meta, *energy_meta;
     pdcid_t pdc, x_id, y_id, z_id, energy_id;
+    
+    uint64_t nhits;
+    pdcselection_t sel;
+    double get_sel_time, get_data_time;
+    float *energy_data = NULL, *x_data = NULL, *y_data = NULL;
+    float preload_value = 0;
+    int preload_int = 0;
+    pdcquery_t *qpreload_energy, *qpreload_x, *qpreload, *q1_lo, *q1_hi, *ql, *q2_lo, *q2_hi, *q2, *q3_lo, *q3_hi, *q3, *q, *q12, *qpreload_y, *qpreload_xy;
+    float energy_lo0 = 3.0;
+    float x_lo = 300, x_hi = 310;
+    float y_lo = 140, y_hi = 150;
 
     struct timeval  pdc_timer_start;
     struct timeval  pdc_timer_end;
@@ -27,7 +38,7 @@ int main(int argc, char **argv)
 
     double query_time = 0.0;
 
-    pdc = PDC_init("pdc");
+    pdc = PDCinit("pdc");
 
     // Query the created object
     PDC_Client_query_metadata_name_timestep("x", 0, &x_meta);
@@ -59,43 +70,32 @@ int main(int argc, char **argv)
     energy_id = energy_meta->obj_id;
 
     // Construct query constraints
-    uint64_t nhits;
-    pdcselection_t sel;
-    double get_sel_time, get_data_time;
-    float *energy_data = NULL, *x_data = NULL, *y_data = NULL;
-
     printf("Preload the data\n");
-    float preload_value = 0;
-    int preload_int = 0;
-    pdcquery_t *qpreload_energy = PDCquery_create(energy_id, PDC_GT, PDC_FLOAT, &preload_value);
-    pdcquery_t *qpreload_x = PDCquery_create(x_id, PDC_GT, PDC_FLOAT, &preload_int);
-    pdcquery_t *qpreload_y = PDCquery_create(y_id, PDC_GT, PDC_FLOAT, &preload_int);
+    qpreload_energy = PDCquery_create(energy_id, PDC_GT, PDC_FLOAT, &preload_value);
+    qpreload_x = PDCquery_create(x_id, PDC_GT, PDC_FLOAT, &preload_int);
+    qpreload_y = PDCquery_create(y_id, PDC_GT, PDC_FLOAT, &preload_int);
 
-    pdcquery_t *qpreload_xy = PDCquery_or(qpreload_x, qpreload_y);
-    pdcquery_t *qpreload   = PDCquery_or(qpreload_energy, qpreload_xy);
+    qpreload_xy = PDCquery_or(qpreload_x, qpreload_y);
+    qpreload   = PDCquery_or(qpreload_energy, qpreload_xy);
 
     PDCquery_get_nhits(qpreload, &nhits);
     printf("Preload data, total %" PRIu64 " elements\n", nhits);
     PDCquery_free_all(qpreload);
 
-    float energy_lo0 = 3.0;
-    float x_lo = 300, x_hi = 310;
-    float y_lo = 140, y_hi = 150;
+    ql = PDCquery_create(energy_id, PDC_GT, PDC_FLOAT, &energy_lo0);
 
-    pdcquery_t *ql = PDCquery_create(energy_id, PDC_GT, PDC_FLOAT, &energy_lo0);
+    q2_lo = PDCquery_create(x_id, PDC_GT, PDC_FLOAT, &x_lo);
+    q2_hi = PDCquery_create(x_id, PDC_LT, PDC_FLOAT, &x_hi);
+    q2    = PDCquery_and(q2_lo, q2_hi);
 
-    pdcquery_t *q2_lo = PDCquery_create(x_id, PDC_GT, PDC_FLOAT, &x_lo);
-    pdcquery_t *q2_hi = PDCquery_create(x_id, PDC_LT, PDC_FLOAT, &x_hi);
-    pdcquery_t *q2    = PDCquery_and(q2_lo, q2_hi);
+    q12 = PDCquery_and(q2, ql);
 
-    pdcquery_t *q12 = PDCquery_and(q2, ql);
-
-    pdcquery_t *q3_lo = PDCquery_create(y_id, PDC_GT, PDC_FLOAT, &y_lo);
-    pdcquery_t *q3_hi = PDCquery_create(y_id, PDC_LT, PDC_FLOAT, &y_hi);
+    q3_lo = PDCquery_create(y_id, PDC_GT, PDC_FLOAT, &y_lo);
+    q3_hi = PDCquery_create(y_id, PDC_LT, PDC_FLOAT, &y_hi);
     
-    pdcquery_t *q3    = PDCquery_and(q3_lo, q3_hi);
+    q3    = PDCquery_and(q3_lo, q3_hi);
 
-    pdcquery_t *q = PDCquery_and(q3, q12);
+    q = PDCquery_and(q3, q12);
     printf("Query: Energy > %.1f && %.1f < X < %.1f && %.1f < Y < %.1f\n", 
             energy_lo0, x_lo, x_hi, y_lo, y_hi);
 
@@ -136,7 +136,7 @@ int main(int argc, char **argv)
     PDCquery_free_all(q);
 
 done:
-    if(PDC_close(pdc) < 0)
+    if(PDCclose(pdc) < 0)
        printf("fail to close PDC\n");
 
      return 0;

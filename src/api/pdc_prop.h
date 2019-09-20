@@ -22,18 +22,21 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_prop_H
-#define _pdc_prop_H
+#ifndef PDC_PROP_H
+#define PDC_PROP_H
 
 #include "pdc_error.h"
 #include "pdc_prop_pkg.h"
 
+/*********************/
+/* Public Prototypes */
+/*********************/
 /**
  * Create PDC property 
  *
  * \param type [IN]             PDC property creation type (enum type), 
  *                              PDC_CONT_CREATE or PDC_OBJ_CREATE
- * \param id [IN]               Id of the PDC
+ * \param id [IN]               ID of the PDC
  *
  * \return PDC property id on success/Zero on failure
  */
@@ -45,7 +48,7 @@ pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdc_id);
  *
  * \param type [IN]             PDC property creation type (enum type), 
  *                              PDC_CONT_CREATE or PDC_OBJ_CREATE
- * \param id [IN]               Id of the PDC
+ * \param id [IN]               ID of the PDC
  *
  * \return PDC property id on success/Zero on failure
  */
@@ -54,7 +57,7 @@ pdcid_t PDCprop_obj_dup(pdcid_t prop_id);
 /**
  * Close property
  *
- * \param id [IN]               Id of the property
+ * \param id [IN]               ID of the property
  *
  * \return Non-negative on success/Negative on failure
  */
@@ -63,7 +66,7 @@ perr_t PDCprop_close(pdcid_t id);
 /**
  * Get container property infomation
  *
- * \param prop_id [IN]          Id of the property
+ * \param prop_id [IN]          ID of the property
  *
  * \return Pointer to PDC_cont_prop struct/Null on failure
  */
@@ -72,10 +75,10 @@ struct PDC_cont_prop *PDCcont_prop_get_info(pdcid_t prop_id);
 /**
  * Get object property infomation
  *
- * \param prop_id [IN]          Id of the object property
+ * \param prop_id [IN]          ID of the object property
  *
  * \return Pointer to PDC_obj_prop struct/Null on failure
  */
 struct PDC_obj_prop *PDCobj_prop_get_info(pdcid_t prop_id);
 
-#endif
+#endif /* PDC_PROP_H */
