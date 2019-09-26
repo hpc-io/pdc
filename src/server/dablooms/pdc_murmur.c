@@ -11,6 +11,12 @@
 
 #define	FORCE_INLINE inline static
 
+#if defined(__GNUC__) && __GNUC__ >= 7
+ #define FALL_THROUGH __attribute__ ((fallthrough))
+#else
+ #define FALL_THROUGH ((void)0)
+#endif /* __GNUC__ >= 7 */
+
 FORCE_INLINE uint64_t rotl64 ( uint64_t x, int8_t r )
 {
 	return (x << r) | (x >> (64 - r));
@@ -80,37 +86,37 @@ void MurmurHash3_x64_128 ( const void * key, const int len,
 
 	switch(len & 15) {
 		case 15: k2 ^= ((uint64_t)tail[14]) << 48;
-                 __attribute__ ((fallthrough));
+                         FALL_THROUGH;
 		case 14: k2 ^= ((uint64_t)tail[13]) << 40;
-                 __attribute__ ((fallthrough));
+                         FALL_THROUGH;
 		case 13: k2 ^= ((uint64_t)tail[12]) << 32;
-                 __attribute__ ((fallthrough));
+                         FALL_THROUGH;
 		case 12: k2 ^= ((uint64_t)tail[11]) << 24;
-                 __attribute__ ((fallthrough));
+                         FALL_THROUGH;
 		case 11: k2 ^= ((uint64_t)tail[10]) << 16;
-                 __attribute__ ((fallthrough));
+                         FALL_THROUGH;
 		case 10: k2 ^= ((uint64_t)tail[ 9]) << 8;
-                 __attribute__ ((fallthrough));
+                         FALL_THROUGH;
 		case  9: k2 ^= ((uint64_t)tail[ 8]) << 0;
 				 k2 *= c2; k2  = ROTL64(k2,33); k2 *= c1; h2 ^= k2;
-                 __attribute__ ((fallthrough));
+                         FALL_THROUGH;
 		case  8: k1 ^= ((uint64_t)tail[ 7]) << 56;
-                 __attribute__ ((fallthrough));
+                         FALL_THROUGH;
 		case  7: k1 ^= ((uint64_t)tail[ 6]) << 48;
-                 __attribute__ ((fallthrough));
+                         FALL_THROUGH;
 		case  6: k1 ^= ((uint64_t)tail[ 5]) << 40;
-                  __attribute__ ((fallthrough));
+                         FALL_THROUGH;
 		case  5: k1 ^= ((uint64_t)tail[ 4]) << 32;
-                 __attribute__ ((fallthrough));
+                         FALL_THROUGH;
 		case  4: k1 ^= ((uint64_t)tail[ 3]) << 24;
-                 __attribute__ ((fallthrough));
+                         FALL_THROUGH;
 		case  3: k1 ^= ((uint64_t)tail[ 2]) << 16;
-                 __attribute__ ((fallthrough));
+                         FALL_THROUGH;
 		case  2: k1 ^= ((uint64_t)tail[ 1]) << 8;
-                 __attribute__ ((fallthrough));
+                         FALL_THROUGH;
 		case  1: k1 ^= ((uint64_t)tail[ 0]) << 0;
 				 k1 *= c1; k1  = ROTL64(k1,31); k1 *= c2; h1 ^= k1;
-                 __attribute__ ((fallthrough));
+                         FALL_THROUGH;
 	}
 
 	//----------
