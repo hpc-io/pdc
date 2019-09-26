@@ -7184,7 +7184,7 @@ PDC_recv_read_coords(const struct hg_cb_info *callback_info)
             goto done;
         }
         if (nhits * ndim * sizeof(uint64_t) != bulk_args->nbytes) {
-            printf("==PDC_SERVER[%d]: %s - receive buf size not expected %lu / %zu!\n",
+            printf("==PDC_SERVER[%d]: %s - receive buf size not expected %" PRIu64 " / %zu!\n",
                     pdc_server_rank_g, __func__, nhits * ndim * sizeof(uint64_t), bulk_args->nbytes);
         }
 
@@ -7619,7 +7619,7 @@ PDC_send_query_metadata_bulk(bulk_rpc_in_t *in, void *buf, uint64_t buf_sizes, i
         goto done;
     }
 
-    printf("==PDC_SERVER[%d]: %s - sending %lu meta to server %d!\n",
+    printf("==PDC_SERVER[%d]: %s - sending %" PRIu64 " meta to server %d!\n",
             pdc_server_rank_g, __func__, in->cnt, server_id);
     fflush(stdout);
 
