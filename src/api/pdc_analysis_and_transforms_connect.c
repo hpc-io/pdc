@@ -31,7 +31,6 @@
 #include "pdc_analysis_common.h"
 #include "pdc_transforms_common.h"
 
-static hg_class_t     *send_class_g = NULL;
 static hg_context_t   *send_context_g = NULL;
 static int             work_todo_g = 0;
 

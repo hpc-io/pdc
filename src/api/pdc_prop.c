@@ -296,7 +296,7 @@ struct PDC_obj_prop *PDCobj_prop_get_info(pdcid_t obj_prop)
     struct PDC_obj_prop *ret_value = NULL;
     struct PDC_obj_prop *info =  NULL;
     struct PDC_id_info *prop;
-    int i;
+    size_t i;
     
     FUNC_ENTER(NULL);
     

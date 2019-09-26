@@ -34,7 +34,7 @@
 #include "mercury_atomic.h"
 #include "mercury_list.h"
 
-#include "hash-table.h"
+#include "pdc_hash-table.h"
 
 #include "pdc_client_server_common.h"
 #include "pdc_server_common.h"
@@ -133,7 +133,7 @@ perr_t PDC_Server_checkpoint();
 /**
  * ***********
  *
- * \param filename [IN]         Remote server ID
+ * \param filename [IN]         File name
  *
  * \return Non-negative on success/Negative on failure
  */
@@ -142,7 +142,7 @@ perr_t PDC_Server_restart(char *filename);
 /**
  * ***********
  *
- * \param callback_info [IN]    Remote server ID
+ * \param callback_info [IN]    Mercury callback info
  *
  * \return HG_SUCCESS or corresponding HG error code
  */
@@ -151,7 +151,7 @@ hg_return_t PDC_Server_get_client_addr(const struct hg_cb_info *callback_info);
 /**
  * ***********
  *
- * \param callback_info [IN]    Remote server ID
+ * \param callback_info [IN]    Mercury callback info
  *
  * \return HG_SUCCESS or corresponding HG error code
  */
@@ -160,7 +160,7 @@ hg_return_t PDC_Server_work_done_cb(const struct hg_cb_info *callback_info);
 /**
  * ***********
  *
- * \param callback_info [IN]    Remote server ID
+ * \param callback_info [IN]    Mercury callback info
  *
  * \return HG_SUCCESS or corresponding HG error code
  */
@@ -169,7 +169,7 @@ hg_return_t PDC_Server_s2s_send_work_done_cb(const struct hg_cb_info *callback_i
 /**
  * ***********
  *
- * \param callback_info [IN]    Remote server ID
+ * \param callback_info [IN]    Mercury callback info
  *
  * \return HG_SUCCESS or corresponding HG error code
  */
@@ -178,16 +178,14 @@ hg_return_t PDC_Server_s2s_recv_work_done_cb(const struct hg_cb_info *callback_i
 /**
  * ***********
  *
- * \param callback_info [IN]    Remote server ID
- *
  * \return HG_SUCCESS or corresponding HG error code
  */
-hg_return_t PDC_Server_checkpoint_cb(const struct hg_cb_info *callback_info);
+hg_return_t PDC_Server_checkpoint_cb();
 
 /**
  * ***********
  *
- * \param callback_info [IN]    Remote server ID
+ * \param callback_info [IN]    Mercury callback info
  *
  * \return HG_SUCCESS or corresponding HG error code
  */

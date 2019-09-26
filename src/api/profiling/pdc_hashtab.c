@@ -35,8 +35,8 @@ Boston, MA 02111-1307, USA.  */
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "config.h"
-#include "hashtab.h"
+#include "pdc_config.h"
+#include "pdc_hashtab.h"
 
 /* This macro defines reserved value for empty table entry. */
 
@@ -209,14 +209,14 @@ void
 htab_delete (htab)
      htab_t htab;
 {
-  int i;
+    int i;
 
-  if (htab->del_f)
-    for (i = htab->size - 1; i >= 0; i--)
-      if (htab->entries[i] != EMPTY_ENTRY
-	  && htab->entries[i] != DELETED_ENTRY)
-          (*htab->del_f) (htab->entries[i]);
-
+    if (htab->del_f) {
+        for (i = htab->size - 1; i >= 0; i--)
+            if (htab->entries[i] != EMPTY_ENTRY
+	            && htab->entries[i] != DELETED_ENTRY)
+                (*htab->del_f) (htab->entries[i]);
+    }
     if (htab->free_f != NULL) {
         (*htab->free_f) (htab->entries);
         (*htab->free_f) (htab);

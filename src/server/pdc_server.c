@@ -38,14 +38,12 @@
 #include <sys/shm.h>
 #include <sys/mman.h>
 
-#include "config.h"
-
-#include "utlist.h"
-#include "hash-table.h"
-
 #include "mercury.h"
 #include "mercury_macros.h"
 
+#include "pdc_config.h"
+#include "pdc_utlist.h"
+#include "pdc_hash-table.h"
 #include "pdc_interface.h"
 #include "pdc_analysis_common.h"
 #include "pdc_client_server_common.h"
@@ -1027,7 +1025,7 @@ PDC_Server_recv_shm_cb(const struct hg_cb_info *callback_info)
 }
 
 hg_return_t
-PDC_Server_checkpoint_cb(const struct hg_cb_info *callback_info)
+PDC_Server_checkpoint_cb()
 {
     PDC_Server_checkpoint();
 
@@ -1486,6 +1484,7 @@ static perr_t PDC_Server_multithread_loop(hg_context_t *context)
  *
  * \return Non-negative on success/Negative on failure
  */
+#ifndef ENABLE_MULTITHREAD
 static perr_t PDC_Server_loop(hg_context_t *hg_context)
 {
     perr_t ret_value = SUCCEED;;
@@ -1514,6 +1513,7 @@ static perr_t PDC_Server_loop(hg_context_t *hg_context)
 
     FUNC_LEAVE(ret_value);
 }
+#endif
 
 #ifdef ENABLE_TIMING
 static void PDC_print_IO_stats()

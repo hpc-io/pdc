@@ -51,11 +51,11 @@ float uniform_random_number()
 
 int main(int argc, char **argv)
 {
-    int rank = 0, size = 1, i;
+    int rank = 0, size = 1;
     perr_t ret;
     pdcid_t pdc_id, cont_prop, cont_id;
-    uint64_t nparticles = NPARTICLES;
-    int write_var = NUM_VAR;
+    uint64_t nparticles = NPARTICLES, j;
+    int write_var = NUM_VAR, i;
     char *obj_names[] = {"x", "y", "z", "px", "py", "pz", "id1", "id2"};
     uint64_t float_bytes, int_bytes;
     
@@ -177,15 +177,15 @@ int main(int argc, char **argv)
         }
     }
 
-    for (i = 0; i < nparticles; i++) {
-        ((float*)mydata[0])[i] = i * 0.001 + rank * nparticles;           // x
-        ((float*)mydata[1])[i] = uniform_random_number();                 // y
-        ((float*)mydata[2])[i] = (i*1.0/nparticles) * ZDIM;               // z
-        ((float*)mydata[3])[i] = uniform_random_number() * XDIM;          // px
-        ((float*)mydata[4])[i] = uniform_random_number() * YDIM;          // py
-        ((float*)mydata[5])[i] = (i*2.0/nparticles) * ZDIM;               // pz
-        ((int*)mydata[6])[i]   = i+rank*nparticles;                       // id1
-        ((int*)mydata[7])[i]   = i;                                       // id2
+    for (j = 0; j < nparticles; j++) {
+        ((float*)mydata[0])[j] = j * 0.001 + rank * nparticles;           // x
+        ((float*)mydata[1])[j] = uniform_random_number();                 // y
+        ((float*)mydata[2])[j] = (j*1.0/nparticles) * ZDIM;               // z
+        ((float*)mydata[3])[j] = uniform_random_number() * XDIM;          // px
+        ((float*)mydata[4])[j] = uniform_random_number() * YDIM;          // py
+        ((float*)mydata[5])[j] = (j*2.0/nparticles) * ZDIM;               // pz
+        ((int*)mydata[6])[j]   = j+rank*nparticles;                       // id1
+        ((int*)mydata[7])[j]   = j;                                       // id2
     }
 
     if (rank == 0) 

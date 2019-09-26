@@ -26,8 +26,9 @@
  * This file includes the functionality to support PDC in-locus analysis
  ************************************************************************ */
 
-#include "config.h"
+#include "pdc_config.h"
 #include "mercury.h"
+#include "pdc_atomic.h"
 #include "../server/pdc_server_analysis.h"
 #include "pdc_obj_private.h"
 #include "pdc_transforms_pkg.h"
@@ -111,17 +112,21 @@ static int pdc_transform_registry_init_(size_t newSize)
 
 int pdc_analysis_registry_finalize_()
 {
+    hg_atomic_int32_t i;
+
     if ((pdc_region_analysis_registry != NULL) &&
         (analysis_registry_size > 0)) {
-        int i;
-        for(i=0; compare_gt((void *)&registered_analysis_ftn_count_g, i); i++) {
-            if (pdc_region_analysis_registry[i]) free(pdc_region_analysis_registry[i]);
-            pdc_region_analysis_registry[i] = NULL;
-        }
+        while (hg_atomic_get32(&i) > 0 ) {
+            if (pdc_region_analysis_registry[i-1])
+                free(pdc_region_analysis_registry[i-1]);
+            pdc_region_analysis_registry[i-1] = NULL;
+            hg_atomic_decr32(&i);
+        } 
         free(pdc_region_analysis_registry);
         analysis_registry_size = 0;
         hg_atomic_init32(&registered_analysis_ftn_count_g,0);
     }
+
     return 0;
 }
 
@@ -132,7 +137,7 @@ int check_analysis(PDCobj_transform_t op_type ATTRIBUTE(unused), struct PDC_regi
        for(i=0; i<count; i++) {
            if (pdc_region_analysis_registry[i]->region_id[0] == dest_region->local_id) {
                dest_region->registered_op |= PDC_ANALYSIS;
-	       return 1;
+	           return 1;
            }
        }
     }
@@ -186,7 +191,7 @@ int PDCiter_get_nextId(void)
         hg_atomic_init32(&i_free_index,0);
     }
 
-    if (compare_gt((void *)&i_free_index, 0)) {
+    if (hg_atomic_get32(&i_free_index) > 0) {
         int next_free = hg_atomic_decr32(&i_free_index);
         nextId = i_cache_freed[next_free];
     }

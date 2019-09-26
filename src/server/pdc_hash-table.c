@@ -22,7 +22,7 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <stdlib.h>
 #include <string.h>
-#include "hash-table.h"
+#include "pdc_hash-table.h"
 
 #ifdef ALLOC_TESTING
 #include "alloc-testing.h"

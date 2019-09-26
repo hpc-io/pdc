@@ -11,22 +11,18 @@
 
 int main(int argc, char **argv)
 {
-    int rank = 0, size = 1;
-    pdcid_t obj_id;
-    struct PDC_region_info region;
-    uint64_t i, j, nhits;
-    int ndim = 1;
-    char* var_name = argv[1];
+    uint64_t nhits;
+    char* var_name;
     pdcquery_t *qpreload_x;
     pdc_metadata_t *meta;
     pdcid_t pdc, id;
-    double query_time = 0.0;
     float preload_value = -2000000000.0;
 
-    struct timeval  pdc_timer_start;
-    struct timeval  pdc_timer_end;
-    struct timeval  pdc_timer_start_1;
-    struct timeval  pdc_timer_end_1;
+    if(argc < 2) {
+        printf("Please enter var name as input!\n");
+        fflush(stdout);
+    }
+    var_name = argv[1];
 
     pdc = PDCinit("pdc");
 

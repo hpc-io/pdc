@@ -48,9 +48,9 @@ pdcid_t PDCregion_create(size_t ndims, uint64_t *offset, uint64_t *size);
 /**
  * Create an object 
  * 
- * \param cont_id [IN]          Id of the container
+ * \param cont_id [IN]          ID of the container
  * \param obj_name [IN]         Name of the object
- * \param obj_create_prop [IN]  Id of object property, 
+ * \param obj_create_prop [IN]  ID of object property, 
  *                              returned by PDCprop_create(PDC_OBJ_CREATE)
  *
  * \return Object id on success/Zero on failure 
@@ -195,7 +195,7 @@ pbool_t PDCobj_iter_null(obj_handle *ohandle);
  *
  * \param ohandle [IN]          A obj_handle struct, returned by 
  *                              PDCobj_iter_start(pdcid_t cont_id)
- * \param cont_id [IN]          Id of the container
+ * \param cont_id [IN]          ID of the container
  *
  * \return A pointer to object handle struct on success/Zero on failure
  */

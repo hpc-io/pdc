@@ -33,7 +33,6 @@
 #include "pdc_prop.h"
 #include "pdc_obj_pkg.h"
 #include "pdc_client_server_common.h"
-#include "pdc_client_public.h"
 
 extern int pdc_server_num_g;
 extern int pdc_client_mpi_rank_g;

@@ -696,13 +696,12 @@ perr_t PDC_Server_release_lock_request(uint64_t obj_id, struct PDC_region_info *
 /**
  * ********
  *
- * \param origin [IN]           ********
  * \param cnt [IN]              ********
  * \param buf_cp [IN]           ********
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_add_client_shm_to_cache(int origin, int cnt, void *buf_cp);
+perr_t PDC_Server_add_client_shm_to_cache(int cnt, void *buf_cp);
 
 /**
  * *******

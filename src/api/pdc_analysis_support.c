@@ -22,14 +22,16 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#include "config.h"
 #include <time.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <libgen.h>
 #include <inttypes.h>
+
 #include "mercury_atomic.h"
-#include "../server/utlist.h"
+
+#include "pdc_config.h"
+#include "../server/pdc_utlist.h"
 #include "pdc_obj.h"
 #include "pdc_malloc.h"
 #include "pdc_private.h"

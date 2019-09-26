@@ -74,8 +74,8 @@ int main(int argc, char **argv)
     int size_per_proc_var_MB = 32;    // Default value to write 8388608 particles
     int n_particles;
     uint64_t float_bytes, int_bytes;
-    uint64_t float_dims[NDIM] = {float_bytes*size};
-    uint64_t int_dims[NDIM] = {int_bytes*size};
+    uint64_t float_dims[NDIM];
+    uint64_t int_dims[NDIM];
     uint64_t myoffset[NDIM], mysize[NDIM];
     void *mydata[NUM_VAR_MAX];
     
@@ -111,6 +111,8 @@ int main(int argc, char **argv)
     n_particles = size_per_proc_var_MB * 262144;   // Convert to number of particles
     float_bytes  = n_particles * sizeof(float);
     int_bytes    = n_particles * sizeof(int);
+    float_dims[0] = float_bytes*size;
+    int_dims[0] = int_bytes*size;
 
     if (n_var < 0 || n_var > 8) 
         n_var = NUM_VAR_MAX;

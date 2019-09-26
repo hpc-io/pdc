@@ -253,11 +253,11 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDCquery_get_histogram(pdcid_t obj_id, void *hist)
+perr_t PDCquery_get_histogram(pdcid_t obj_id)
 {
     perr_t ret_value = SUCCEED;
     struct PDC_obj_info *obj_prop;
-    uint64_t   meta_id;
+    uint64_t   meta_id = 0;
 
     FUNC_ENTER(NULL);
 
@@ -268,7 +268,6 @@ perr_t PDCquery_get_histogram(pdcid_t obj_id, void *hist)
     else 
         meta_id = obj_id;
     
-done:
     FUNC_LEAVE(ret_value);
 }
 

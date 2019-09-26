@@ -123,7 +123,7 @@ int main() {
     else {
         printf("successfully queried a tag, nres=%d\n", nobj);
         for (i = 0; i < nobj; i++) 
-            printf("%llu, ", obj_ids[i]);
+            printf("%" PRIu64 ", ", obj_ids[i]);
         printf("\n\n");
     }
     if (obj_ids!= NULL) free(obj_ids);
@@ -133,7 +133,7 @@ int main() {
     else {
         printf("successfully queried a tag, nres=%d\n", nobj);
         for (i = 0; i < nobj; i++) 
-            printf("%llu, ", obj_ids2[i]);
+            printf("%" PRIu64 ", ", obj_ids2[i]);
         printf("\n\n");
     }
     if (obj_ids2!= NULL) free(obj_ids2);
@@ -143,7 +143,7 @@ int main() {
     else {
         printf("successfully queried a tag, nres=%d\n", nobj);
         for (i = 0; i < nobj; i++) 
-            printf("%llu, ", obj_ids1[i]);
+            printf("%" PRIu64 ", ", obj_ids1[i]);
         printf("\n\n");
     }
     if (obj_ids1!= NULL)

@@ -22,7 +22,6 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,7 +33,11 @@
 #include <sys/mman.h>
 #include <inttypes.h>
 
-#include "config.h"
+#include "mercury.h"
+#include "mercury_macros.h"
+#include "mercury_hl.h"
+
+#include "pdc_config.h"
 
 #ifdef ENABLE_MPI
     #include "mpi.h"
@@ -44,12 +47,7 @@
     # include <rdmacred.h>
 #endif
 
-#include "../server/utlist.h"
-
-#include "mercury.h"
-#include "mercury_macros.h"
-#include "mercury_hl.h"
-
+#include "../server/pdc_utlist.h"
 #include "pdc_interface.h"
 #include "pdc_analysis_common.h"
 #include "pdc_transforms_common.h"
@@ -4437,42 +4435,6 @@ PDC_Client_query_container_name_col(const char *cont_name, uint64_t *cont_meta_i
 
 static hg_return_t
 PDC_Client_query_read_obj_name_cb(const struct hg_cb_info *callback_info)
-{
-    hg_handle_t handle = callback_info->info.forward.handle;
-    pdc_int_ret_t bulk_rpc_ret;
-    hg_return_t ret = HG_SUCCESS;
-    update_region_storage_meta_bulk_args_t *cb_args = (update_region_storage_meta_bulk_args_t*)callback_info->arg;
-
-    // Sent the bulk handle with rpc and get a response
-    ret = HG_Get_output(handle, &bulk_rpc_ret);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not get output\n");
-        goto done;
-    }
-
-    ret = HG_Free_output(handle, &bulk_rpc_ret);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not free output\n");
-        goto done;
-    }
-
-    /* Free memory handle */
-    ret = HG_Bulk_free(cb_args->bulk_handle);
-    if (ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not free bulk data handle\n");
-        goto done;
-    }
-
-    /* Free other malloced resources*/
-    HG_Destroy(cb_args->rpc_handle);
-    
-done:
-    work_todo_g--;
-    return ret;
-}
-
-static hg_return_t
-PDC_Client_send_shm_bulk_rpc_cb(const struct hg_cb_info *callback_info)
 {
     hg_handle_t handle = callback_info->info.forward.handle;
     pdc_int_ret_t bulk_rpc_ret;

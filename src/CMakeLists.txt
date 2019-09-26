@@ -328,7 +328,7 @@ if(PDC_ENABLE_FASTBIT)
     set(ENABLE_FASTBIT 1)
 endif()
 
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${PROJECT_BINARY_DIR}/config.h)
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/pdc_config.h.cmake ${PROJECT_BINARY_DIR}/pdc_config.h)
 
 #---------------------- end of generating config.h ---------------------------
 

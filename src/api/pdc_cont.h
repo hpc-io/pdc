@@ -116,7 +116,7 @@ struct PDC_cont_info * PDCcont_iter_get_info(cont_handle *chandle);
 /**
  * Persist a transient container
  *
- * \param cont_id [IN]          Id of the container, returned by
+ * \param cont_id [IN]          ID of the container, returned by
  *                              PDCcont_open(pdcid_t pdc_id, const char *cont_name)
  *
  * \return Non-negative on success/Negative on failure
@@ -126,7 +126,7 @@ perr_t PDCcont_persist(pdcid_t cont_id);
 /**
  * Set container lifetime
  *
- * \param cont_create_prop [IN] Id of container property, returned by
+ * \param cont_create_prop [IN] ID of container property, returned by
  *                              PDCprop_create(PDC_CONT_CREATE)
  * \param cont_lifetime [IN]    container lifetime (enum type), PDC_PERSIST or
  *                              PDC_TRANSIENT

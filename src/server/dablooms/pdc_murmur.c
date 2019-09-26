@@ -7,7 +7,7 @@
 // compile and run any of them on any platform, but your performance with the
 // non-native version will be less than optimal.
 
-#include "murmur.h"
+#include "pdc_murmur.h"
 
 #define	FORCE_INLINE inline static
 
@@ -80,23 +80,37 @@ void MurmurHash3_x64_128 ( const void * key, const int len,
 
 	switch(len & 15) {
 		case 15: k2 ^= ((uint64_t)tail[14]) << 48;
+                 __attribute__ ((fallthrough));
 		case 14: k2 ^= ((uint64_t)tail[13]) << 40;
+                 __attribute__ ((fallthrough));
 		case 13: k2 ^= ((uint64_t)tail[12]) << 32;
+                 __attribute__ ((fallthrough));
 		case 12: k2 ^= ((uint64_t)tail[11]) << 24;
+                 __attribute__ ((fallthrough));
 		case 11: k2 ^= ((uint64_t)tail[10]) << 16;
+                 __attribute__ ((fallthrough));
 		case 10: k2 ^= ((uint64_t)tail[ 9]) << 8;
+                 __attribute__ ((fallthrough));
 		case  9: k2 ^= ((uint64_t)tail[ 8]) << 0;
 				 k2 *= c2; k2  = ROTL64(k2,33); k2 *= c1; h2 ^= k2;
-
+                 __attribute__ ((fallthrough));
 		case  8: k1 ^= ((uint64_t)tail[ 7]) << 56;
+                 __attribute__ ((fallthrough));
 		case  7: k1 ^= ((uint64_t)tail[ 6]) << 48;
+                 __attribute__ ((fallthrough));
 		case  6: k1 ^= ((uint64_t)tail[ 5]) << 40;
+                  __attribute__ ((fallthrough));
 		case  5: k1 ^= ((uint64_t)tail[ 4]) << 32;
+                 __attribute__ ((fallthrough));
 		case  4: k1 ^= ((uint64_t)tail[ 3]) << 24;
+                 __attribute__ ((fallthrough));
 		case  3: k1 ^= ((uint64_t)tail[ 2]) << 16;
+                 __attribute__ ((fallthrough));
 		case  2: k1 ^= ((uint64_t)tail[ 1]) << 8;
+                 __attribute__ ((fallthrough));
 		case  1: k1 ^= ((uint64_t)tail[ 0]) << 0;
 				 k1 *= c1; k1  = ROTL64(k1,31); k1 *= c2; h1 ^= k1;
+                 __attribute__ ((fallthrough));
 	}
 
 	//----------

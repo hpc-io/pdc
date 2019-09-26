@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
-#include "stack_ops.h"
-#include "hashtab.h"
+#include "pdc_stack_ops.h"
+#include "pdc_hashtab.h"
 
 profileEntry_t *calltree = NULL;
 profileEntry_t *freelist = NULL;

@@ -168,7 +168,7 @@ struct PDC_id_info *PDC_find_id(pdcid_t idid);
  * \param type [IN]             A enum type PDC_type_t, e.g. PDC_CONT, PDC_OBJ
  * \param byname [IN]           Name of the object to look up
  *
- * \return Id of the object on success/Negative on failure
+ * \return ID of the object on success/Negative on failure
  */
 pdcid_t PDC_find_byname(PDC_type_t type, const char *byname);
 

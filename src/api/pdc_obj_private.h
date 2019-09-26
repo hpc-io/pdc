@@ -47,9 +47,9 @@ perr_t PDC_region_init();
 /**
  * Create an object
  *
- * \param cont_id [IN]          Id of the container
+ * \param cont_id [IN]          ID of the container
  * \param obj_name [IN]         Name of the object
- * \param obj_create_prop [IN]  Id of object property,
+ * \param obj_create_prop [IN]  ID of object property,
  *                              returned by PDCprop_create(PDC_OBJ_CREATE)
  * \param location [IN]         PDC_OBJ_GLOBAL/PDC_OBJ_LOCAL
  *

@@ -129,6 +129,7 @@ set(PDC_HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transform_support.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transforms_common.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transforms_pkg.h
+  ${CMAKE_BINARY_DIR}/pdc_config.h
   )
 
 #-----------------------------------------------------------------------------

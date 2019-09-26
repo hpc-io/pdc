@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
     pdcid_t pdc, cont_prop, cont, obj_prop;
     pdcid_t *obj_ids;
     int n_obj, n_add_tag, n_query, my_obj, my_obj_s, my_add_tag, my_query, my_add_tag_s, my_query_s;
-    int proc_num, my_rank, i, j, v;
+    int proc_num, my_rank, i, v;
     char obj_name[128];
     double stime, total_time;
     char tag[128];

@@ -35,16 +35,15 @@
 #include <inttypes.h>
 #include <math.h>
 
-#include "config.h"
+#include "pdc_config.h"
 
 #ifdef ENABLE_MPI
 #include "mpi.h"
 #endif
 
-#include "utlist.h"
-#include "hash-table.h"
-#include "dablooms.h"
-
+#include "pdc_utlist.h"
+#include "pdc_hash-table.h"
+#include "pdc_dablooms.h"
 #include "pdc_interface.h"
 #include "pdc_client_server_common.h"
 #include "pdc_server_metadata.h"
@@ -323,7 +322,7 @@ pdc_metadata_t *PDC_Server_get_obj_metadata(pdcid_t obj_id)
 
 int PDC_Server_has_metadata(pdcid_t obj_id)
 {
-    if (obj_id / PDC_SERVER_ID_INTERVEL == pdc_server_rank_g + 1) 
+    if (obj_id / PDC_SERVER_ID_INTERVEL == (pdcid_t)pdc_server_rank_g + 1) 
         return 1;
     return 0;
 }
@@ -386,7 +385,6 @@ static pdc_metadata_t * find_identical_metadata(pdc_hash_table_entry_head *entry
         else {
             // bloom filter says maybe, so need to check entire list
             n_bloom_maybe_g++;
-            pdc_metadata_t *elt;
             DL_FOREACH(entry->metadata, elt) {
                 if (PDC_metadata_cmp(elt, a) == 0) {
                     ret_value = elt;
@@ -2509,7 +2507,7 @@ perr_t PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t 
    
     } // if lookup_value != NULL
     else {
-        printf("==PDC_SERVER[%d]: add tag target %llu not found!\n", pdc_server_rank_g, obj_id);
+        printf("==PDC_SERVER[%d]: add tag target %" PRIu64 " not found!\n", pdc_server_rank_g, obj_id);
         ret_value = FAIL;
         out->ret = -1;
     }

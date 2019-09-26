@@ -26,7 +26,7 @@
 #define PDC_PRIVATE_H
 
 #include "stdint.h"
-#include "config.h"
+#include "pdc_config.h"
 
 /****************************/
 /* Library Private Typedefs */

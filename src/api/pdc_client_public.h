@@ -26,7 +26,6 @@
 #define PDC_CLIENT_PUBLIC_H
 
 #include "pdc_query.h"
-#include "pdc_client_server_common.h"
 
 enum pdc_prop_name_t {PDC_OBJ_NAME, PDC_CONT_NAME, PDC_APP_NAME, PDC_USER_ID};
 

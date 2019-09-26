@@ -22,12 +22,13 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef _pdc_H
-#define _pdc_H
+#ifndef PDC_H
+#define PDC_H
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "config.h"
+
+#include "pdc_config.h"
 #include "pdc_public.h"
 #include "pdc_error.h"
 #include "pdc_malloc.h"

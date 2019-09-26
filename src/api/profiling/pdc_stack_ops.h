@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <time.h>
-#include "config.h"
+#include "pdc_config.h"
 #include "pdc_private.h"
 
 typedef void *hash_table_t;

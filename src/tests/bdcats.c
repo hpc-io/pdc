@@ -60,7 +60,6 @@ int main(int argc, char **argv)
     float *px, *py, *pz;
     int *id1, *id2;
     uint64_t numparticles;
-    uint64_t dims[1];
     int ndim = 1;
     uint64_t *offset;
     uint64_t *offset_remote;
@@ -73,7 +72,6 @@ int main(int argc, char **argv)
 #endif
 
     numparticles = NPARTICLES;
-    dims[0] = numparticles;
 
     x = (float *)malloc(numparticles*sizeof(float));
     y = (float *)malloc(numparticles*sizeof(float));

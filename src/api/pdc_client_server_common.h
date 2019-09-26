@@ -29,19 +29,18 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "config.h"
-#include "pdc_linkedlist.h"
-#include "pdc_private.h"
 #include "mercury.h"
 #include "mercury_macros.h"
 #include "mercury_proc_string.h"
-
 #include "mercury_thread_pool.h"
 #include "mercury_thread_condition.h"
 #include "mercury_atomic.h"
 #include "mercury_thread_mutex.h"
 #include "mercury_list.h"
 
+#include "pdc_config.h"
+#include "pdc_linkedlist.h"
+#include "pdc_private.h"
 #include "pdc_obj_pkg.h"
 #include "pdc_prop_pkg.h"
 #include "pdc_analysis_and_transforms.h"

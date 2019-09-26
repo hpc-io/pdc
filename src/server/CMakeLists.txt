@@ -26,9 +26,9 @@ add_executable(pdc_server.exe
                ../api/pdc_client_server_common.c
                ../api/pdc_analysis_common.c
                ../api/pdc_transforms_common.c
-               dablooms/dablooms.c
-               dablooms/murmur.c
-               hash-table.c
+               dablooms/pdc_dablooms.c
+               dablooms/pdc_murmur.c
+               pdc_hash-table.c
                ../api/pdc_hist.c
 )
 

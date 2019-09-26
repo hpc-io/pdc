@@ -30,8 +30,8 @@ endif()
 # Set sources
 #------------------------------------------------------------------------------
 set(PDC_PROF_SRCS
-  ${CMAKE_CURRENT_SOURCE_DIR}/hashtab.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/stack_ops.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_hashtab.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_stack_ops.c
   )
 
 #------------------------------------------------------------------------------

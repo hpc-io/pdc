@@ -13,8 +13,8 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "murmur.h"
-#include "dablooms.h"
+#include "pdc_murmur.h"
+#include "pdc_dablooms.h"
 
 #define DABLOOMS_VERSION "0.9.1"
 
@@ -31,7 +31,7 @@ void free_bitmap(bitmap_t *bitmap)
     free(bitmap);
 }
 
-bitmap_t *bitmap_resize(bitmap_t *bitmap, size_t old_size, size_t new_size)
+bitmap_t *bitmap_resize(bitmap_t *bitmap, size_t new_size)
 {
     bitmap->array = malloc(new_size);
     bitmap->bytes = new_size;
@@ -52,7 +52,7 @@ bitmap_t *new_bitmap(size_t bytes)
     bitmap->bytes = bytes;
     bitmap->array = NULL;
     
-    if ((bitmap = bitmap_resize(bitmap, 0, bytes)) == NULL) {
+    if ((bitmap = bitmap_resize(bitmap, bytes)) == NULL) {
         return NULL;
     }
     
@@ -137,7 +137,7 @@ int bitmap_flush(bitmap_t *bitmap)
  */
 void hash_func(counting_bloom_t *bloom, const char *key, size_t key_len, uint32_t *hashes)
 {
-    int i;
+    size_t i;
     uint32_t checksum[4];
     
     MurmurHash3_x64_128(key, key_len, SALT_CONSTANT, checksum);
@@ -262,7 +262,7 @@ int free_scaling_bloom(scaling_bloom_t *bloom)
 /* creates a new counting bloom filter from a given scaling bloom filter, with count and id */
 counting_bloom_t *new_counting_bloom_from_scale(scaling_bloom_t *bloom)
 {
-    int i;
+    unsigned int i;
     long offset;
     double error_rate;
     counting_bloom_t *cur_bloom;
@@ -277,7 +277,7 @@ counting_bloom_t *new_counting_bloom_from_scale(scaling_bloom_t *bloom)
     cur_bloom = counting_bloom_init(bloom->capacity, error_rate, bloom->num_bytes);
     bloom->blooms[bloom->num_blooms] = cur_bloom;
     
-    bloom->bitmap = bitmap_resize(bloom->bitmap, bloom->num_bytes, bloom->num_bytes + cur_bloom->num_bytes);
+    bloom->bitmap = bitmap_resize(bloom->bitmap, bloom->num_bytes + cur_bloom->num_bytes);
     
     /* reset header pointer, as mmap may have moved */
     bloom->header = (scaling_bloom_header_t *) bloom->bitmap->array;

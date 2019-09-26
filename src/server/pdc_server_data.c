@@ -38,13 +38,13 @@
 #include <sys/shm.h>
 #include <sys/mman.h>
 
-#include "config.h"
+#include "pdc_config.h"
 
 #ifdef ENABLE_MPI
 #include "mpi.h"
 #endif
 
-#include "utlist.h"
+#include "pdc_utlist.h"
 #include "pdc_public.h"
 #include "pdc_interface.h"
 #include "pdc_client_server_common.h"
@@ -1110,7 +1110,7 @@ void *PDC_Server_maybe_allocate_region_buf_ptr(pdcid_t obj_id, region_info_trans
     }
     /* We don't currently have a buffer to receive data */
     if (ret_value == NULL) {
-        int i;
+        size_t i;
         size_t region_size = region.count_0;
         region_buf_map_t *buf_map_ptr = NULL;
         for(i=1; i < region.ndim; i++) {
@@ -1413,6 +1413,7 @@ done:
  *
  * \return Non-negative on success/Negative on failure
  */
+/*
 static perr_t PDC_Server_merge_region_list_naive(region_list_t *list, region_list_t **merged)
 {
     perr_t ret_value = FAIL;
@@ -1459,7 +1460,6 @@ static perr_t PDC_Server_merge_region_list_naive(region_list_t *list, region_lis
         tmp_merge->ndim = list->ndim;
         for (i = 0; i < list->ndim; i++) {
             tmp_merge->start[i]  = elt->start[i];
-            /* tmp_merge->stride[i] = elt->stride[i]; */
             tmp_merge->count[i]  = elt->count[i];
         }
         is_merged[pos] = 1;
@@ -1497,6 +1497,7 @@ done:
     free(is_merged);
     FUNC_LEAVE(ret_value);
 }
+*/
 
 /*
  * Callback function for the region update, gets output from client
@@ -1682,6 +1683,7 @@ done:
  *
  * \return Non-negative on success/Negative on failure
  */
+/*
 static perr_t PDC_Server_notify_io_complete_to_client(uint32_t client_id, uint64_t obj_id,
         char* shm_addr, PDC_access_t io_type)
 {
@@ -1722,7 +1724,6 @@ static perr_t PDC_Server_notify_io_complete_to_client(uint32_t client_id, uint64
     if (shm_addr[0] == 0) {
         snprintf(tmp_shm, ADDR_MAX, "%d", client_id * 10);
         in.shm_addr   = tmp_shm;
-        /* in.shm_addr   = " "; */
     }
     else 
         in.shm_addr   = shm_addr;
@@ -1743,6 +1744,7 @@ done:
     
     FUNC_LEAVE(ret_value);
 }
+*/
 
 // Generic function to check the return value (RPC receipt) is 1
 hg_return_t PDC_Server_notify_client_multi_io_complete_cb(const struct hg_cb_info *callback_info)
@@ -3864,6 +3866,9 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
     region_list_t *region_elt = NULL, *previous_region = NULL;
     FILE *fp_read = NULL, *fp_write = NULL;
     char *prev_path = NULL;
+#ifdef ENABLE_LUSTRE
+    int stripe_count, stripe_size;
+#endif
 
     FUNC_ENTER(NULL);
 
@@ -4199,7 +4204,9 @@ static perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, s
 {
     perr_t ret_value = SUCCEED;
     region_list_t *io_region = NULL;
-
+#ifdef ENABLE_LUSTRE
+    int stripe_count, stripe_size;
+#endif
     FUNC_ENTER(NULL);
 
     is_server_direct_io_g = 1;
@@ -4222,7 +4229,6 @@ static perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, s
     snprintf(io_region->storage_location, ADDR_MAX, "%.200s/pdc_data/%" PRIu64 "/server%d/s%04d.bin",
             data_path, obj_id, pdc_server_rank_g, pdc_server_rank_g);
     PDC_mkdir(io_region->storage_location);
-
 
 #ifdef ENABLE_LUSTRE
     stripe_count = 248 / pdc_server_size_g;
@@ -4794,7 +4800,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Server_add_client_shm_to_cache(int origin, int cnt, void *buf_cp)
+perr_t PDC_Server_add_client_shm_to_cache(int cnt, void *buf_cp)
 {
     perr_t ret_value = SUCCEED;
     int i, j;
@@ -4804,9 +4810,9 @@ perr_t PDC_Server_add_client_shm_to_cache(int origin, int cnt, void *buf_cp)
 
     FUNC_ENTER(NULL);
 
-    #ifdef ENABLE_MULTITHREAD
+#ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_lock(&data_read_list_mutex_g);
-    #endif
+#endif
     // Have the server update the metadata or write to burst buffer
     for (i = 0; i < cnt; i++) {
         // Find existing io_list target for this object
@@ -4863,34 +4869,10 @@ perr_t PDC_Server_add_client_shm_to_cache(int origin, int cnt, void *buf_cp)
     } // End for each cache entry
     
 done:
-    #ifdef ENABLE_MULTITHREAD
+#ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_unlock(&data_read_list_mutex_g);
-    #endif
+#endif
     fflush(stdout);
-    FUNC_LEAVE(ret_value);
-}
-
-// Data query
-static hg_return_t 
-send_query_storage_region_to_server_rpc_cb(const struct hg_cb_info *callback_info)
-{
-    hg_return_t ret_value = HG_SUCCESS;
-    hg_handle_t handle;
-    pdc_int_ret_t out;
-
-    FUNC_ENTER(NULL);
-
-    handle = callback_info->info.forward.handle;
-    ret_value = HG_Get_output(handle, &out);
-    if (ret_value != HG_SUCCESS) {
-        printf("==PDC_SERVER[%d]: %s - error with HG_Get_output\n", pdc_server_rank_g, __func__);
-        goto done;
-    }
-
-done:
-    HG_Free_output(handle, &out);
-    HG_Destroy(handle);
-
     FUNC_LEAVE(ret_value);
 }
 
@@ -5114,6 +5096,7 @@ PDC_region_has_hits_from_hist(pdcquery_constraint_t *constraint, pdc_histogram_t
     return 1;
 }
 
+/*
 static perr_t
 PDC_constraint_get_nhits_from_hist(pdcquery_constraint_t *constraint, pdc_histogram_t *region_hist, 
                                   uint64_t *min_hits, uint64_t *max_hits)
@@ -5216,6 +5199,7 @@ PDC_constraint_get_nhits_from_hist(pdcquery_constraint_t *constraint, pdc_histog
 done:
     return ret_value;
 }
+*/
 
 static perr_t
 PDC_Server_load_query_data(query_task_t *task, pdcquery_t *query, pdcquery_combine_op_t combine_op)
@@ -6362,7 +6346,7 @@ PDC_Server_query_evaluate_merge_opt(pdcquery_t *query, query_task_t *task, pdcqu
 
             if (combine_op == PDC_QUERY_AND && task->invalid_region_ids != NULL) {
                 can_skip = 0;
-                for (i = 0; i < task->ninvalid_region; i++) {
+                for (i = 0; (int)i < task->ninvalid_region; i++) {
                     if (region_iter == task->invalid_region_ids[i]) {
                         can_skip = 1;
                         break;
@@ -6393,7 +6377,7 @@ PDC_Server_query_evaluate_merge_opt(pdcquery_t *query, query_task_t *task, pdcqu
                         task->invalid_region_ids = (int*)calloc(count, sizeof(int));
 
                     can_skip = 0;
-                    for (i = 0; i < task->ninvalid_region; i++) {
+                    for (i = 0; (int)i < task->ninvalid_region; i++) {
                         if (task->invalid_region_ids[i] == region_iter) {
                             can_skip = 1;
                             break;
@@ -7200,7 +7184,7 @@ PDC_recv_read_coords(const struct hg_cb_info *callback_info)
             goto done;
         }
         if (nhits * ndim * sizeof(uint64_t) != bulk_args->nbytes) {
-            printf("==PDC_SERVER[%d]: %s - receive buf size not expected %llu / %zu!\n",
+            printf("==PDC_SERVER[%d]: %s - receive buf size not expected %lu / %zu!\n",
                     pdc_server_rank_g, __func__, nhits * ndim * sizeof(uint64_t), bulk_args->nbytes);
         }
 
@@ -7635,7 +7619,7 @@ PDC_send_query_metadata_bulk(bulk_rpc_in_t *in, void *buf, uint64_t buf_sizes, i
         goto done;
     }
 
-    printf("==PDC_SERVER[%d]: %s - sending %llu meta to server %d!\n",
+    printf("==PDC_SERVER[%d]: %s - sending %lu meta to server %d!\n",
             pdc_server_rank_g, __func__, in->cnt, server_id);
     fflush(stdout);
 

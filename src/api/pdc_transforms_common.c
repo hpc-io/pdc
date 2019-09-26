@@ -26,7 +26,7 @@
  * This file includes the functionality to support PDC transforms
  ************************************************************************ */
 
-#include "config.h"
+#include "pdc_config.h"
 #include "pdc_analysis_common.h"
 #include "pdc_transforms_pkg.h"
 #include "pdc_transforms_common.h"

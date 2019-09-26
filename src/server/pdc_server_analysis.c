@@ -38,15 +38,6 @@
 #include <sys/shm.h>
 #include <sys/mman.h>
 
-#include "config.h"
-
-#ifdef ENABLE_MPI
-    #include "mpi.h"
-#endif
-
-#include "utlist.h"
-#include "dablooms.h"
-
 #include "mercury.h"
 #include "mercury_macros.h"
 
@@ -54,7 +45,14 @@
 #include "mercury_hash_table.h"
 #include "mercury_list.h"
 
-#include "config.h"
+#include "pdc_config.h"
+
+#ifdef ENABLE_MPI
+    #include "mpi.h"
+#endif
+
+#include "pdc_utlist.h"
+#include "pdc_dablooms.h"
 #include "pdc_interface.h"
 #include "pdc_client_server_common.h"
 #include "pdc_server.h"

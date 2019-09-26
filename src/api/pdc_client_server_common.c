@@ -45,7 +45,7 @@
 #include "pdc_query.h"
 #include "pdc_transforms_pkg.h"
 #include "pdc_analysis_common.h"
-#include "../server/utlist.h"
+#include "../server/pdc_utlist.h"
 #include "../server/pdc_server.h"
 #include "../server/pdc_server_data.h"
 
@@ -862,7 +862,7 @@ hg_return_t PDC_Server_query_read_names_clinet_cb(const struct hg_cb_info *callb
 
 hg_return_t PDC_Server_storage_meta_name_query_bulk_respond(const struct hg_cb_info *callback_info ATTRIBUTE(unused))  {return HG_SUCCESS;};
 perr_t PDC_Server_proc_storage_meta_bulk(int task_id ATTRIBUTE(unused), int n_regions ATTRIBUTE(unused), region_list_t *region_list_head ATTRIBUTE(unused)) {return SUCCEED;}
-perr_t PDC_Server_add_client_shm_to_cache(int origin ATTRIBUTE(unused), int cnt ATTRIBUTE(unused), void *buf_cp ATTRIBUTE(unused)){return SUCCEED;}
+perr_t PDC_Server_add_client_shm_to_cache(int cnt ATTRIBUTE(unused), void *buf_cp ATTRIBUTE(unused)){return SUCCEED;}
 perr_t PDC_Server_container_add_tags(uint64_t cont_id ATTRIBUTE(unused), char *tags ATTRIBUTE(unused)){return SUCCEED;}
 hg_return_t PDC_cache_region_to_bb_cb (const struct hg_cb_info *callback_info ATTRIBUTE(unused))  {return HG_SUCCESS;}
 
@@ -1922,6 +1922,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+#ifndef ENABLE_MULTITHREAD
 //enter this function, transfer is done, data is pushed to buffer
 static hg_return_t
 obj_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
@@ -1954,6 +1955,7 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
+#endif
 
 static hg_return_t
 region_release_update_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
@@ -2316,7 +2318,6 @@ region_read_transform_release (region_transform_and_lock_in_t *in, hg_handle_t h
     const struct hg_info *hg_info = NULL;
     hg_bulk_t remote_bulk_handle = HG_BULK_NULL;
     hg_uint32_t remote_count;
-    hg_size_t size;
 
     void *data_buf = NULL;;
     void **data_ptrs_to = NULL;
@@ -2362,17 +2363,17 @@ region_read_transform_release (region_transform_and_lock_in_t *in, hg_handle_t h
                     data_buf = PDC_Server_get_region_buf_ptr(in->obj_id, in->region);
                     data_ptrs_to = (void **)malloc( sizeof(void *) );
                     data_size_to = (size_t *)malloc( sizeof(size_t) );
-		    if ((data_ptrs_to == NULL) || (data_size_to == NULL)) {
+		            if ((data_ptrs_to == NULL) || (data_size_to == NULL)) {
                         PGOTO_ERROR(HG_OTHER_ERROR, "==PDC SERVER: %s - Memory allocation failed\n", __func__);
-		    }
+		            }
                     data_ptrs_to[0] = data_buf;
 
                     // See whether the transfer size is that of the region
                     // or whether we use the transform size.
                     if(in->transform_state && (in->transform_data_size > 0)) {
-                          data_size_to[0] = in->transform_data_size;
-			  unit = 1;
-		    }
+                        data_size_to[0] = in->transform_data_size;
+			            unit = 1;
+		            }
                     else data_size_to[0] = (eltt2->remote_region_unit).count_0;
                         
                     hg_ret = HG_Bulk_create(hg_info->hg_class,
@@ -2472,8 +2473,8 @@ done:
         HG_Free_input(handle, &in);
         HG_Destroy(handle);
     }
+
     return ret_value;
-    
 }
 
 /* transform_region_release_cb */
@@ -4930,7 +4931,7 @@ server_recv_shm_bulk_cb(const struct hg_cb_info *hg_cb_info)
 
         // TODO now we have all storage info (region, shm_addr, offset, etc.) of data read by client
         // Insert them to the request list, and mark io_done
-        PDC_Server_add_client_shm_to_cache(bulk_args->origin, bulk_args->cnt, buf_cp);
+        PDC_Server_add_client_shm_to_cache(bulk_args->cnt, buf_cp);
 
     } // end else
 
@@ -6222,11 +6223,11 @@ void print_query(pdcquery_t *query)
                                          pdcquery_op_char_g[query->constraint->op2],
                                         *((unsigned*)&query->constraint->value2));
             else if (query->constraint->type == PDC_INT64) 
-                printf(" %lld %s %lld)"  , *((int64_t*)&query->constraint->value),
+                printf(" %" PRId64 " %s %" PRId64 ")"  , *((int64_t*)&query->constraint->value),
                                          pdcquery_op_char_g[query->constraint->op2],
                                          *((int64_t*)&query->constraint->value2));
             else if (query->constraint->type == PDC_UINT64) 
-                printf(" %llu %s %llu) " , *((uint64_t*)&query->constraint->value),
+                printf(" %" PRId64 " %s %" PRId64 ") " , *((uint64_t*)&query->constraint->value),
                                          pdcquery_op_char_g[query->constraint->op2],
                                          *((uint64_t*)&query->constraint->value2));
         }
@@ -6240,9 +6241,9 @@ void print_query(pdcquery_t *query)
             else if (query->constraint->type == PDC_UINT) 
                 printf(" %u) "  , *((unsigned*)&query->constraint->value));
             else if (query->constraint->type == PDC_INT64) 
-                printf(" %lld)"  , *((int64_t*)&query->constraint->value));
+                printf(" %" PRId64 ")"  , *((int64_t*)&query->constraint->value));
             else if (query->constraint->type == PDC_UINT64) 
-                printf(" %llu) " , *((uint64_t*)&query->constraint->value));
+                printf(" %" PRIu64 ") " , *((uint64_t*)&query->constraint->value));
         }
         return;
     }

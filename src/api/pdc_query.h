@@ -132,7 +132,7 @@ perr_t PDCquery_get_nhits(pdcquery_t *query, uint64_t *n);
 /**
  * *********
  *
- * \param query [IN]             *********
+ * \param obj_id [IN]            Object ID
  * \param sel [IN]               *********
  * \param obj_data [IN]          ********
  *
@@ -143,18 +143,17 @@ perr_t PDCquery_get_data(pdcid_t obj_id, pdcselection_t *sel, void *obj_data);
 /**
  * *********
  *
- * \param query [IN]             *********
- * \param n [IN]                 *********
+ * \param obj_id [IN]            Object ID
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCquery_get_histogram(pdcid_t obj_id, void *hist);
+perr_t PDCquery_get_histogram(pdcid_t obj_id);
 
 /**
  * *********
  *
  * \param query [IN]             *********
- * \param n [IN]                 *********
+ * \param sel [IN]               *********
  * \param data [IN]              *********
  *
  * \return Non-negative on success/Negative on failure

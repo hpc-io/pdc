@@ -19,7 +19,7 @@ int main(int argc, char **argv)
     uint64_t size_MB;
     pdcid_t obj_id = -1;
     struct PDC_region_info region;
-    uint64_t nhits, i, dims[1];
+    uint64_t i, dims[1];
     pdcselection_t sel;
     char *obj_name;
     int my_data_count;

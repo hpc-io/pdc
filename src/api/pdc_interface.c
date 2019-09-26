@@ -72,7 +72,7 @@ perr_t PDC_register_type(PDC_type_t type_id, PDC_free_t free_func)
     FUNC_ENTER(NULL);
 
     /* Sanity check */
-    assert(type_id > 0 && type_id < PDC_MAX_NUM_TYPES);
+    assert(type_id > 0 && type_id < (int)PDC_MAX_NUM_TYPES);
 
     /* Initialize the type */
     if(NULL == (pdc_id_list_g->PDC_id_type_list_g)[type_id]) {
@@ -147,9 +147,6 @@ int PDC_dec_ref(pdcid_t id)
     
     FUNC_ENTER(NULL);
 
-    /* Sanity check */
-    assert(id >= 0);
-
     /* General lookup of the ID */
     if(NULL == (id_ptr = PDC_find_id(id)))
         PGOTO_ERROR(FAIL, "can't locate ID");
@@ -210,9 +207,6 @@ int PDC_inc_ref(pdcid_t id)
     struct PDC_id_info *id_ptr;  
     
     FUNC_ENTER(NULL);
-
-    /* Sanity check */
-    assert(id >= 0);
 
     /* General lookup of the ID */
     if(NULL == (id_ptr = PDC_find_id(id)))

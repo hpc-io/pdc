@@ -123,7 +123,7 @@ pdc_histogram_t *PDC_create_hist(PDC_var_type_t dtype, int nbin, double min, dou
 }
 
 #define MACRO_HIST_INCR_ALL(TYPE, hist, n, _data) ({                                        \
-    uint64_t i, j;                                                                          \
+    uint64_t i ;                                                                          \
     int lo, mid, hi;                                                                        \
     TYPE *ldata = (TYPE*)(_data);                                                           \
     if ((hist)->incr > 0) {                                                                 \
@@ -255,9 +255,9 @@ void PDC_print_hist(pdc_histogram_t *hist)
     
     for (i = 0; i < hist->nbin; i++) {
         if (i != hist->nbin - 1) 
-            printf("[%.2f, %.2f): %llu\n", hist->range[i*2], hist->range[i*2+1], hist->bin[i]);
+            printf("[%.2f, %.2f): %" PRIu64 "\n", hist->range[i*2], hist->range[i*2+1], hist->bin[i]);
         else
-            printf("[%.2f, %.2f]: %llu\n", hist->range[i*2], hist->range[i*2+1], hist->bin[i]);
+            printf("[%.2f, %.2f]: %" PRIu64 "\n", hist->range[i*2], hist->range[i*2+1], hist->bin[i]);
     }
     printf("\n\n");
     fflush(stdout);

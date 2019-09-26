@@ -9,30 +9,20 @@
 #include "pdc.h"
 #include "pdc_client_connect.h"
 
-int main(int argc, char **argv)
+int main(void)
 {
-    int rank = 0, size = 1;
-    pdcid_t obj_id;
-    struct PDC_region_info region;
-    uint64_t i, j;
-    int ndim = 1;
-
-    pdc_metadata_t *x_meta, *y_meta, *z_meta, *energy_meta;
-    pdcid_t pdc, x_id, y_id, z_id, energy_id;
+    pdc_metadata_t *x_meta, *y_meta, *energy_meta;
+    pdcid_t pdc, x_id, y_id, energy_id;
     pdcquery_t *ql, *q2_lo, *q2_hi, *q2, *q12, *q3_lo, *q3_hi, *q3, *q;
-    uint64_t nhits;
     pdcselection_t sel;
     double get_sel_time, get_data_time;
     float *energy_data = NULL, *x_data = NULL, *y_data = NULL;
     float energy_lo0 = 3.0;
     float x_lo = 300, x_hi = 310;
     float y_lo = 140, y_hi = 150;
-    double query_time = 0.0;
     
     struct timeval  pdc_timer_start;
     struct timeval  pdc_timer_end;
-    struct timeval  pdc_timer_start_1;
-    struct timeval  pdc_timer_end_1;
 
     pdc = PDCinit("pdc");
 
@@ -50,13 +40,6 @@ int main(int argc, char **argv)
         goto done;
     }
     y_id = y_meta->obj_id;
-
-    PDC_Client_query_metadata_name_timestep("z", 0, &z_meta);
-    if (z_meta == NULL || z_meta->obj_id == 0) {
-        printf("Error with z metadata!\n");
-        goto done;
-    }
-    z_id = z_meta->obj_id;
 
     PDC_Client_query_metadata_name_timestep("Energy", 0, &energy_meta);
     if (energy_meta == NULL || energy_meta->obj_id == 0) {

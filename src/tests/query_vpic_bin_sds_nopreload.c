@@ -9,19 +9,14 @@
 #include "pdc.h"
 #include "pdc_client_connect.h"
 
-int main(int argc, char **argv)
+int main(void)
 {
-    int rank = 0, size = 1;
-    pdcid_t obj_id;
-    struct PDC_region_info region;
-    uint64_t i, j;
-    int ndim = 1;
+    int rank = 0;
 
     pdc_metadata_t *x_meta, *y_meta, *z_meta, *energy_meta;
     pdcid_t pdc, x_id, y_id, z_id, energy_id;
     
     // Construct query constraints
-    uint64_t nhits;
     pdcselection_t sel;
     double get_sel_time, get_data_time;
     float *energy_data = NULL, *x_data = NULL, *y_data = NULL;
@@ -34,10 +29,6 @@ int main(int argc, char **argv)
 
     struct timeval  pdc_timer_start;
     struct timeval  pdc_timer_end;
-    struct timeval  pdc_timer_start_1;
-    struct timeval  pdc_timer_end_1;
-
-    double query_time = 0.0;
 
     pdc = PDCinit("pdc");
 
