@@ -1619,7 +1619,7 @@ transform_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_inf
                (bulk_args->remote_region).count_0 = transform_size;
                (bulk_args->remote_region).ndim = 1;
             }
-            elt->bulk_args = bulk_args;
+            elt->bulk_args = (struct buf_map_release_bulk_args *)bulk_args;
         }
     }
 
@@ -2323,6 +2323,9 @@ region_read_transform_release (region_transform_and_lock_in_t *in, hg_handle_t h
     void **data_ptrs_to = NULL;
     size_t *data_size_to = NULL;
     size_t unit;
+#ifndef ENABLE_MULTITHREAD
+    size_t size;
+#endif
     int dirty_reg = 0;
 
     struct PDC_region_info *remote_reg_info = NULL;
@@ -2429,7 +2432,7 @@ region_read_transform_release (region_transform_and_lock_in_t *in, hg_handle_t h
                     transform_release_bulk_args->work.func = pdc_region_read_from_progress;
                     transform_release_bulk_args->work.args = transform_release_bulk_args;
                         
-                    eltt2->bulk_args = transform_release_bulk_args;
+                    eltt2->bulk_args = (struct buf_map_release_bulk_args *)transform_release_bulk_args;
                         
                     hg_thread_pool_post(hg_test_thread_pool_fs_g, &(transform_release_bulk_args->work));
                     out.ret = 1;
@@ -2757,7 +2760,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-
 /* region_analysis_release_cb */
 HG_TEST_RPC_CB(region_analysis_release, handle)
 {
@@ -2906,7 +2908,7 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
                         obj_map_bulk_args->work.func = pdc_region_read_from_progress;
                         obj_map_bulk_args->work.args = obj_map_bulk_args;
                         
-                        eltt2->bulk_args = obj_map_bulk_args;
+                        eltt2->bulk_args = (struct buf_map_release_bulk_args *)obj_map_bulk_args;
                         
                         hg_thread_pool_post(hg_test_thread_pool_fs_g, &(obj_map_bulk_args->work));
                         
