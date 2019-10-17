@@ -25,35 +25,11 @@
 #ifndef PDC_ANALYSIS_SUPPORT_H
 #define PDC_ANALYSIS_SUPPORT_H
 
-#include "pdc_obj_pkg.h"
-#include "pdc_error.h"
-#include "pdc_life.h"
-#include "pdc_analysis_and_transforms.h"
+#include "pdc_public.h"
 
 /*********************/
 /* Public Prototypes */
 /*********************/
-/**
- * Create a PDC iterator (general form)
- *
- * \param obj_id [IN]           PDC object ID
- * \param reg_id [IN]           PDC region ID
- *
- * \return Iterator id on success/Zero on failure
- */
-pdcid_t PDCobj_create_data_iterator(pdcid_t obj_id, pdcid_t reg_id);
-
-/**
- * Create a PDC iterator (general form)
- *
- * \param obj_id [IN]           PDC object ID
- * \param reg_id [IN]           PDC region ID
- * \param contig_blocks [IN]    How many rows or columns the iterator should return
- *
- * \return Iterator id on success/Zero on failure
- */
-pdcid_t PDCobj_data_block_iterator_create(pdcid_t obj_id, pdcid_t reg_id, int contig_blocks);
-
 /**
  * Create a PDC iterator (basic form which internally calls the block version with contig_blocks = 1)
  *
@@ -63,6 +39,17 @@ pdcid_t PDCobj_data_block_iterator_create(pdcid_t obj_id, pdcid_t reg_id, int co
  * \return Iterator id on success/Zero on failure
  */
 pdcid_t PDCobj_data_iter_create(pdcid_t obj_id, pdcid_t reg_id);
+
+/**
+ * Create a PDC block iterator (general form)
+ *
+ * \param obj_id [IN]           PDC object ID
+ * \param reg_id [IN]           PDC region ID
+ * \param contig_blocks [IN]    How many rows or columns the iterator should return
+ *
+ * \return Iterator id on success/Zero on failure
+ */
+pdcid_t PDCobj_data_block_iterator_create(pdcid_t obj_id, pdcid_t reg_id, int contig_blocks);
 
 /**
  * *****
@@ -106,63 +93,11 @@ size_t PDCobj_data_getNextBlock(pdcid_t iter, void **nextBlock, size_t *dims);
  */
 perr_t PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut);
 
-/***************************************/
-/* Library-private Function Prototypes */
-/***************************************/
 /**
- * ********
- *
- * \param workingDir [IN]       Path of working directory
- * \param application [IN]      Name of the application
+ * ****
  *
  * \return ****
  */
-char *PDC_find_in_path(char *workingDir, char *application);
-
-/**
- * ********
- *
- * \return ****
- */
-char *PDC_get_argv0_();
-
-/**
- * ********
- *
- * \param fname [IN]            Path of working directory
- * \param app_path [IN]         Name of the application
- *
- * \return ****
- */
-char *PDC_get_realpath(char *fname, char *app_path);
-
-/**
- * ********
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDC_iterator_end();
-
-/**
- * ********
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDC_analysis_end();
-
-/**
- * ********
- */
-void PDC_free_analysis_registry();
-
-/**
- * ********
- */
-void PDC_free_transform_registry();
-
-/**
- * ********
- */
-void PDC_free_iterator_cache();
+int PDCiter_get_nextId(void);
 
 #endif /* PDC_ANALYSIS_SUPPORT_H */

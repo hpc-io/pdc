@@ -29,7 +29,7 @@
 
 int main(int argc, char **argv) {
     pdcid_t pdc, create_prop1, create_prop2, create_prop;
-    PDC_prop_type type = PDC_CONT_CREATE;
+    pdc_prop_type_t type = PDC_CONT_CREATE;
     int rank = 0, size = 1;
     
 #ifdef ENABLE_MPI

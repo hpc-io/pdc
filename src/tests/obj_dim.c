@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
     pdcid_t pdc,cont_prop, cont, obj_prop, obj1;
     int rank = 0, size = 1;
     uint64_t d[3] = {10, 20, 30};
-    struct PDC_obj_prop *op;
+    struct _pdc_obj_prop *op;
     size_t i;
     
 #ifdef ENABLE_MPI
@@ -67,10 +67,6 @@ int main(int argc, char **argv) {
     // set object dimension
     PDCprop_set_obj_dims(obj_prop, 3, d);
     op = PDCobj_prop_get_info(obj_prop);
-    printf("# of dim = %zu\n", op->ndim);
-    for(i=0; i<op->ndim; i++) {
-        printf("dim%zu: %" PRIu64 "\n", i, (op->dims)[i]);
-    }
     
     // create object
     obj1 = PDCobj_create(cont, "o1", obj_prop);

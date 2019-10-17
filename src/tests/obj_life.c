@@ -54,41 +54,6 @@ int main(int argc, char **argv) {
     else
         printf("Fail to create container @ line  %d!\n", __LINE__);
     
-    // create an object property
-    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
-    if(obj_prop > 0)
-        printf("Create an object property\n");
-    else
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
-    
-    // print default object lifetime (transient)
-    op = PDCobj_prop_get_info(obj_prop);
-    if(op->obj_life == PDC_PERSIST)
-        printf("object property default lifetime is persistent\n");
-    else
-        printf("object property default lifetime is transient\n");
-    
-    // create first object
-    obj1 = PDCobj_create(cont, "o1", obj_prop);
-    if(obj1 > 0)
-        printf("Create an object o1\n");
-    else
-        printf("Fail to create object @ line  %d!\n", __LINE__);
-    
-    // set object lifetime to persistent
-    PDCprop_set_obj_lifetime(obj_prop, PDC_PERSIST);
-    op = PDCobj_prop_get_info(obj_prop);
-    if(op->obj_life == PDC_PERSIST)
-        printf("modify object property lifetime to persistent\n");
-    else
-        printf("failed to modify object property lifetime\n");
-    
-    // close first object
-    if(PDCobj_close(obj1) < 0)
-        printf("fail to close object o1\n");
-    else
-        printf("successfully close object o1\n");
-       
     // close a container
     if(PDCcont_close(cont) < 0)
         printf("fail to close container c1\n");

@@ -27,40 +27,44 @@
 #include <string.h>
 
 #include "pdc.h"
-#include "pdc_private.h"
-#include "pdc_prop_private.h"
-#include "pdc_cont_private.h"
-#include "pdc_obj_private.h"
 #include "pdc_malloc.h"
+#include "pdc_prop_pkg.h"
+#include "pdc_cont_pkg.h"
+#include "pdc_obj_pkg.h"
+#include "pdc_region_pkg.h"
+#include "pdc_analysis_pkg.h"
 #include "pdc_interface.h"
 #include "pdc_client_connect.h"
 
-perr_t pdc_class__close(struct PDC_class *p);
+pbool_t err_occurred = FALSE;
 
-static perr_t pdc_class_init()
+perr_t PDC_class__close(struct _pdc_class *p);
+
+static perr_t PDC_class_init()
 {
-    perr_t ret_value = SUCCEED;         /* Return value */
+    perr_t ret_value = SUCCEED;
     
     FUNC_ENTER(NULL);
     
     /* Initialize the atom group for the container property IDs */
-    if(PDC_register_type(PDC_CLASS, (PDC_free_t)pdc_class__close) < 0)
+    if (PDC_register_type(PDC_CLASS, (PDC_free_t)PDC_class__close) < 0)
         PGOTO_ERROR(FAIL, "unable to initialize pdc class interface");
     
 done:
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 } 
 
 static pdcid_t pdc_class_create(const char *pdc_name)
 {
-    pdcid_t ret_value = SUCCEED;         /* Return value */
+    pdcid_t ret_value = SUCCEED;
     pdcid_t pdcid;
-    struct PDC_class *p = NULL;
+    struct _pdc_class *p = NULL;
     
     FUNC_ENTER(NULL);
     
-    p = PDC_MALLOC(struct PDC_class);
-    if(!p)
+    p = PDC_MALLOC(struct _pdc_class);
+    if (!p)
         PGOTO_ERROR(FAIL, "PDC class property memory allocation failed\n");
 
     p->name = strdup(pdc_name);
@@ -69,6 +73,7 @@ static pdcid_t pdc_class_create(const char *pdc_name)
     ret_value = pdcid;
     
 done:
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
@@ -79,20 +84,20 @@ pdcid_t PDCinit(const char *pdc_name)
     
     FUNC_ENTER(NULL);
     
-    if(NULL == (pdc_id_list_g = PDC_CALLOC(struct pdc_id_list)))
+    if (NULL == (pdc_id_list_g = PDC_CALLOC(struct pdc_id_list)))
         PGOTO_ERROR(FAIL, "PDC global id list: memory allocation failed");
     
-    if(pdc_class_init() < 0)
+    if (PDC_class_init() < 0)
         PGOTO_ERROR(FAIL, "PDC class init error");
     pdcid = pdc_class_create(pdc_name);
     
-    if(PDC_prop_init() < 0)
+    if (PDC_prop_init() < 0)
         PGOTO_ERROR(FAIL, "PDC property init error");
-    if(PDC_cont_init() < 0)
+    if (PDC_cont_init() < 0)
         PGOTO_ERROR(FAIL, "PDC container init error");
-    if(PDC_obj_init() < 0)
+    if (PDC_obj_init() < 0)
         PGOTO_ERROR(FAIL, "PDC object init error");
-    if(PDC_region_init() < 0)
+    if (PDC_region_init() < 0)
         PGOTO_ERROR(FAIL, "PDC object init error");
 
     // PDC Client Server connection init
@@ -101,45 +106,48 @@ pdcid_t PDCinit(const char *pdc_name)
     ret_value = pdcid;
     
 done:
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 } 
 
-perr_t pdc_class__close(struct PDC_class *p)
+perr_t PDC_class__close(struct _pdc_class *p)
 {
     perr_t ret_value = SUCCEED;         
     
     FUNC_ENTER(NULL);
     
     free(p->name);
-    p = PDC_FREE(struct PDC_class, p);
+    p = PDC_FREE(struct _pdc_class, p);
     
     FUNC_LEAVE(ret_value);
 }
 
-perr_t pdc_class_close(pdcid_t pdc)
+perr_t PDC_class_close(pdcid_t pdc)
 {
     perr_t ret_value = SUCCEED;   
     
     FUNC_ENTER(NULL);
     
     /* When the reference count reaches zero the resources are freed */
-    if(PDC_dec_ref(pdc) < 0)
+    if (PDC_dec_ref(pdc) < 0)
         PGOTO_ERROR(FAIL, "PDC: problem of freeing id");
     
 done:
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
-perr_t pdc_class_end()
+perr_t PDC_class_end()
 {
     perr_t ret_value = SUCCEED;
     
     FUNC_ENTER(NULL);
     
-    if(PDC_destroy_type(PDC_CLASS) < 0)
+    if (PDC_destroy_type(PDC_CLASS) < 0)
         PGOTO_ERROR(FAIL, "unable to destroy pdc class interface");
     
 done:
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
@@ -155,41 +163,40 @@ perr_t PDCclose(pdcid_t pdcid)
 
     // check every list before closing
     // container property
-    if(PDC_prop_cont_list_null() < 0)
+    if (PDC_prop_cont_list_null() < 0)
         PGOTO_ERROR(FAIL, "fail to close container property");
     // object property
-    if(PDC_prop_obj_list_null() < 0)
+    if (PDC_prop_obj_list_null() < 0)
         PGOTO_ERROR(FAIL, "fail to close object property");
     // container
-    if(PDC_cont_list_null() < 0)
+    if (PDC_cont_list_null() < 0)
         PGOTO_ERROR(FAIL, "fail to close container");
     // object
-    if(PDC_obj_list_null() < 0)
+    if (PDC_obj_list_null() < 0)
         PGOTO_ERROR(FAIL, "fail to close object");
     // region
-    if(PDC_region_list_null() < 0)
+    if (PDC_region_list_null() < 0)
         PGOTO_ERROR(FAIL, "fail to close region");
     
-    if(PDC_prop_end() < 0)
+    if (PDC_prop_end() < 0)
         PGOTO_ERROR(FAIL, "fail to destroy property");
-    if(pdc_cont_end() < 0)
+    if (PDC_cont_end() < 0)
         PGOTO_ERROR(FAIL, "fail to destroy container");
-    if(PDC_obj_end() < 0)
+    if (PDC_obj_end() < 0)
         PGOTO_ERROR(FAIL, "fail to destroy object");
-    if(PDC_region_end() < 0)
+    if (PDC_region_end() < 0)
         PGOTO_ERROR(FAIL, "fail to destroy region");
 
-    if(PDC_iterator_end() < 0)
+    if (PDC_iterator_end() < 0)
         PGOTO_ERROR(FAIL, "fail to destroy iterator");
-    if(PDC_analysis_end() < 0)
+    if (PDC_analysis_end() < 0)
         PGOTO_ERROR(FAIL, "fail to destroy analysis");
-    if(PDC_transform_end() < 0)
+    if (PDC_transform_end() < 0)
         PGOTO_ERROR(FAIL, "fail to destroy transform");
 
-
-    pdc_class_close(pdcid);
+    PDC_class_close(pdcid);
     
-    pdc_class_end();
+    PDC_class_end();
     
     pdc_id_list_g = PDC_FREE(struct pdc_id_list, pdc_id_list_g);
 
@@ -197,5 +204,6 @@ perr_t PDCclose(pdcid_t pdcid)
     PDC_Client_finalize();
 
 done:
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 } 

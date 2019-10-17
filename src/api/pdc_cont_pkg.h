@@ -25,14 +25,62 @@
 #ifndef PDC_CONT_PKG_H
 #define PDC_CONT_PKG_H
 
+#include "pdc_public.h"
+
 /**************************/
 /* Library Private Struct */
 /**************************/
-struct PDC_cont_info {
+struct _pdc_cont_info {
     char                   *name;
     pdcid_t                 local_id;
     uint64_t                meta_id;
-    struct PDC_cont_prop   *cont_pt;
+    struct _pdc_cont_prop   *cont_pt;
 };
+
+/***************************************/
+/* Library-private Function Prototypes */
+/***************************************/
+/**
+ * container initialization
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_cont_init();
+
+/**
+ * Create a container locally
+ *
+ * \param pdc       [IN]        PDC ID
+ * \param cont_name [IN]        Name of the container
+ * \param cont_meta_id [out]    Metadata id of container
+ *
+ * \return Container id on success/Zero on failure
+ */
+pdcid_t PDC_cont_create_local(pdcid_t pdc, const char *cont_name, uint64_t cont_meta_id);
+
+/**
+ * Check if container list is empty
+ *
+ * \param pdc_id [IN]           ID of the PDC
+ *
+ * \return SUCCEED if empty/FAIL if not empty
+ */
+perr_t PDC_cont_list_null();
+
+/**
+ * Return a container property
+ *
+ * \param cont_name [IN]        Name of the container
+ *
+ * \return Container struct on success/NULL on failure
+ */
+struct _pdc_cont_info *PDC_cont_get_info(pdcid_t cont_id);       
+
+/**
+ * PDC container finalize
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_cont_end();
 
 #endif /* PDC_CONT_PKG_H */

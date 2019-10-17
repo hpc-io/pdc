@@ -47,12 +47,12 @@
 #include "pdc_utlist.h"
 #include "pdc_public.h"
 #include "pdc_interface.h"
+#include "pdc_region.h"
 #include "pdc_client_server_common.h"
-#include "pdc_client_public.h"
 #include "pdc_server_data.h"
 #include "pdc_server_metadata.h"
 #include "pdc_server.h"
-#include "pdc_hist.h"
+#include "pdc_hist_pkg.h"
 
 // Global object region info list in local data server
 data_server_region_t *dataserver_region_g = NULL;
@@ -307,7 +307,7 @@ perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out,
     DL_FOREACH(new_obj_reg->region_lock_head, elt1) {
         if (PDC_is_same_region_list(elt1, request_region) == 1) {
             found_lock = 1;
-            if(in->lock_mode == BLOCK) {
+            if(in->lock_mode == PDC_BLOCK) {
                 ret_value = FAIL;
                 request_region->lock_handle = *handle;
                 DL_APPEND(new_obj_reg->region_lock_request_head, request_region);
@@ -353,7 +353,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Server_release_lock_request(uint64_t obj_id, struct PDC_region_info *region) 
+perr_t PDC_Server_release_lock_request(uint64_t obj_id, struct pdc_region_info *region)
 {
     perr_t ret_value = SUCCEED;
     region_list_t *request_region;
@@ -2159,7 +2159,7 @@ static perr_t PDC_Server_data_read_to_shm(region_list_t *region_list_head)
     // so just read one by one
 
     // POSIX read for now
-    ret_value = PDC_Server_regions_io(region_list_head, POSIX);
+    ret_value = PDC_Server_regions_io(region_list_head, PDC_POSIX);
     if (ret_value != SUCCEED) {
         printf("==PDC_SERVER[%d]: error reading data from storage and create shared memory\n", pdc_server_rank_g);
         goto done;
@@ -2356,7 +2356,7 @@ static perr_t PDC_Server_get_storage_location_of_region_mpi(region_list_t *regio
     nrequest_per_server = 0;
     region_meta_prev = regions_head->meta;
     DL_FOREACH(regions_head, region_elt) {
-        if (region_elt->access_type == READ) {
+        if (region_elt->access_type == PDC_READ) {
         
             region_meta = region_elt->meta;
             // All requests should point to the same metadata
@@ -2499,7 +2499,7 @@ static perr_t PDC_Server_get_storage_location_of_region_mpi(region_list_t *regio
     int result_idx = 0;
     // We will have the same linked list traversal order as before, so no need to check region match
     DL_FOREACH(regions_head, region_elt) {
-        if (region_elt->access_type == READ) {
+        if (region_elt->access_type == PDC_READ) {
             region_elt->n_overlap_storage_region = request_overlap_cnt[overlap_idx + region_idx];
             region_elt->overlap_storage_regions = (region_list_t*)calloc(sizeof(region_list_t), 
                                                           region_elt->n_overlap_storage_region);
@@ -2539,7 +2539,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Server_regions_io(region_list_t *region_list_head, PDC_io_plugin_t plugin)
+perr_t PDC_Server_regions_io(region_list_t *region_list_head, _pdc_io_plugin_t plugin)
 {
     perr_t ret_value = SUCCEED;
 
@@ -2552,14 +2552,14 @@ perr_t PDC_Server_regions_io(region_list_t *region_list_head, PDC_io_plugin_t pl
 
 
     // If read, need to get locations from metadata server
-    if (plugin == POSIX) {
+    if (plugin == PDC_POSIX) {
         ret_value = PDC_Server_posix_one_file_io(region_list_head);
         if (ret_value !=  SUCCEED) {
             printf("==PDC_SERVER[%d]: %s-error with PDC_Server_posix_one_file_io\n", pdc_server_rank_g, __func__);
             goto done;
         }
     }
-    else if (plugin == DAOS) {
+    else if (plugin == PDC_DAOS) {
         printf("DAOS plugin in under development, switch to POSIX instead.\n");
         ret_value = PDC_Server_posix_one_file_io(region_list_head);
     }
@@ -2633,7 +2633,7 @@ static perr_t PDC_Server_data_write_from_shm(region_list_t *region_list_head)
     }
 
     // POSIX write
-    ret_value = PDC_Server_regions_io(region_list_head, POSIX);
+    ret_value = PDC_Server_regions_io(region_list_head, PDC_POSIX);
     if (ret_value != SUCCEED) {
         printf("==PDC_SERVER: PDC_Server_regions_io ERROR!\n");
         goto done;
@@ -2672,7 +2672,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
 
     data_server_io_info_t *io_info = (data_server_io_info_t*) callback_info->arg;
 
-    if (io_info->io_type == WRITE) {
+    if (io_info->io_type == PDC_WRITE) {
         // Set the number of storage metadta update to be buffered, number is relative to 
         // write requests from all node local clients for one object
         if (pdc_buffered_bulk_update_total_g == 0) {
@@ -2684,7 +2684,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
             buffer_write_request_total_g = io_info->nbuffer_request * io_info->nclient;
         buffer_write_request_num_g++;
     }
-    else if (io_info->io_type == READ) {
+    else if (io_info->io_type == PDC_READ) {
         if (buffer_read_request_total_g == 0) 
             buffer_read_request_total_g = io_info->nbuffer_request * io_info->nclient;
         buffer_read_request_num_g++;
@@ -2697,15 +2697,15 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
     fflush(stdout);
 
 #ifdef ENABLE_MULTITHREAD
-    if (io_info->io_type == WRITE) 
+    if (io_info->io_type == PDC_WRITE)
         hg_thread_mutex_lock(&data_write_list_mutex_g);
-    else if (io_info->io_type == READ)
+    else if (io_info->io_type == PDC_READ)
         hg_thread_mutex_lock(&data_read_list_mutex_g);
 #endif
     // Iterate io list, find the IO list of this obj
-    if (io_info->io_type == WRITE) 
+    if (io_info->io_type == PDC_WRITE)
         io_list = pdc_data_server_write_list_head_g;
-    else if (io_info->io_type == READ)
+    else if (io_info->io_type == PDC_READ)
         io_list = pdc_data_server_read_list_head_g;
 
     DL_FOREACH(io_list, io_list_elt) {
@@ -2715,9 +2715,9 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
         }
     }
 #ifdef ENABLE_MULTITHREAD
-    if (io_info->io_type == WRITE) 
+    if (io_info->io_type == PDC_WRITE)
         hg_thread_mutex_unlock(&data_write_list_mutex_g);
-    else if (io_info->io_type == READ)
+    else if (io_info->io_type == PDC_READ)
         hg_thread_mutex_unlock(&data_read_list_mutex_g);
 #endif
 
@@ -2738,7 +2738,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
         for (i = 0; i < io_info->meta.ndim; i++)
             io_list_target->dims[i] = io_info->meta.dims[i];
 
-        if (io_info->io_type == WRITE) {
+        if (io_info->io_type == PDC_WRITE) {
             char *data_path = NULL;
             char *bb_data_path = NULL;
             char *user_specified_data_path = getenv("PDC_DATA_LOC");
@@ -2762,9 +2762,9 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
         io_list_target->region_list_head = NULL;
 
         // Add to the io list
-        if (io_info->io_type == WRITE)
+        if (io_info->io_type == PDC_WRITE)
             DL_APPEND(pdc_data_server_write_list_head_g, io_list_target);
-        else if (io_info->io_type == READ)
+        else if (io_info->io_type == PDC_READ)
             DL_APPEND(pdc_data_server_read_list_head_g, io_list_target);
     }
 
@@ -2772,7 +2772,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
     if (is_debug_g == 1) {
         printf("==PDC_SERVER[%d]: received %d/%d data %s requests of [%s]\n",
                 pdc_server_rank_g, io_list_target->count, io_list_target->total,
-                io_info->io_type == READ? "read": "write", io_info->meta.obj_name);
+                io_info->io_type == PDC_READ? "read": "write", io_info->meta.obj_name);
         fflush(stdout);
     }
 
@@ -2782,7 +2782,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
         // Only compares the start and count to see if two are identical
         if (PDC_is_same_region_list(&(io_info->region), region_elt) == 1) {
             // free the shm if read
-            if (io_info->io_type == READ) {
+            if (io_info->io_type == PDC_READ) {
                 has_read_cache = 1;
             }
             else {
@@ -2812,7 +2812,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
     }
 
     // Write
-    if (io_info->io_type == WRITE && buffer_write_request_num_g >= buffer_write_request_total_g &&
+    if (io_info->io_type == PDC_WRITE && buffer_write_request_num_g >= buffer_write_request_total_g &&
         buffer_write_request_total_g != 0) {
 
         if (is_debug_g) {
@@ -2879,7 +2879,7 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
         buffer_write_request_num_g = 0;
         buffer_write_request_total_g = 0;
     } // End write
-    else if (io_info->io_type == READ && buffer_read_request_num_g == buffer_read_request_total_g &&
+    else if (io_info->io_type == PDC_READ && buffer_read_request_num_g == buffer_read_request_total_g &&
         buffer_read_request_total_g != 0) {
         // Read
         // TODO TEMPWORK
@@ -3741,7 +3741,7 @@ static perr_t PDC_Server_read_one_region(region_list_t *read_region)
 
     FUNC_ENTER(NULL);
 
-    if (read_region->access_type != READ || read_region->n_overlap_storage_region == 0 ||
+    if (read_region->access_type != PDC_READ || read_region->n_overlap_storage_region == 0 ||
         read_region->overlap_storage_regions == NULL ) {
 
         printf("==PDC_SERVER[%d]: %s - Error with input\n", pdc_server_rank_g, __func__);
@@ -3886,7 +3886,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
     #endif
 
     DL_FOREACH(region_list_head, region_elt) {
-        if (region_elt->access_type == READ) {
+        if (region_elt->access_type == PDC_READ) {
 
             if (region_elt->is_io_done == 1)
                 continue;
@@ -3907,10 +3907,10 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
     // Iterate over all region IO requests and perform actual IO
     // We have all requests from node local clients, now read them from storage system
     DL_FOREACH(region_list_head, region_elt) {
-        if (region_elt->access_type == READ) {
+        if (region_elt->access_type == PDC_READ) {
             if (region_elt->is_io_done == 1 && region_elt->is_shm_closed != 1) {
                 printf("==PDC_SERVER[%d]: found cached data!\n", pdc_server_rank_g);
-                if(region_elt->access_type == READ && current_read_from_cache_cnt_g < total_read_from_cache_cnt_g)
+                if(region_elt->access_type == PDC_READ && current_read_from_cache_cnt_g < total_read_from_cache_cnt_g)
                     current_read_from_cache_cnt_g++;
                 else
                     continue;
@@ -4042,7 +4042,7 @@ perr_t PDC_Server_posix_one_file_io(region_list_t* region_list_head)
             region_elt->is_io_done = 1;
 
         } // end of READ
-        else if (region_elt->access_type == WRITE) {
+        else if (region_elt->access_type == PDC_WRITE) {
             if (region_elt->is_io_done == 1) 
                 continue;
 
@@ -4200,7 +4200,7 @@ done:
  *
  * \return Non-negative on success/Negative on failure
  */
-static perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, struct PDC_region_info *region_info, void *buf)
+static perr_t PDC_Server_data_io_direct(pdc_access_t io_type, uint64_t obj_id, struct pdc_region_info *region_info, void *buf)
 {
     perr_t ret_value = SUCCEED;
     region_list_t *io_region = NULL;
@@ -4252,7 +4252,7 @@ static perr_t PDC_Server_data_io_direct(PDC_access_t io_type, uint64_t obj_id, s
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region_info, void *buf, size_t unit)
+perr_t PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
     perr_t ret_value = SUCCEED;
     ssize_t write_bytes = -1; 
@@ -4289,7 +4289,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Server_data_read_from(uint64_t obj_id, struct PDC_region_info *region_info, void *buf, size_t unit)
+perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
     perr_t ret_value = SUCCEED;
     ssize_t read_bytes;
@@ -4326,12 +4326,12 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf)
+perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct pdc_region_info *region_info, void *buf)
 {
     perr_t ret_value = SUCCEED;
     FUNC_ENTER(NULL);
 
-    ret_value = PDC_Server_data_io_direct(WRITE, obj_id, region_info, buf);
+    ret_value = PDC_Server_data_io_direct(PDC_WRITE, obj_id, region_info, buf);
     if (ret_value != SUCCEED) {
         printf("==PDC_SERVER[%d]: PDC_Server_data_write_direct() "
                 "error with PDC_Server_data_io_direct()\n", pdc_server_rank_g);
@@ -4343,12 +4343,12 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Server_data_read_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf)
+perr_t PDC_Server_data_read_direct(uint64_t obj_id, struct pdc_region_info *region_info, void *buf)
 {
     perr_t ret_value = SUCCEED;
     FUNC_ENTER(NULL);
 
-    ret_value = PDC_Server_data_io_direct(READ, obj_id, region_info, buf);
+    ret_value = PDC_Server_data_io_direct(PDC_READ, obj_id, region_info, buf);
     if (ret_value != SUCCEED) {
         printf("==PDC_SERVER[%d]: PDC_Server_data_read_direct() "
                 "error with PDC_Server_data_io_direct()\n", pdc_server_rank_g);
@@ -4602,7 +4602,7 @@ perr_t PDC_Server_query_read_names(query_read_names_args_t *query_read_args)
         query_name_args->seq_id         = i; 
         query_name_args->req_region     = (region_list_t*)calloc(1, sizeof(region_list_t));
         PDC_init_region_list(query_name_args->req_region);
-        query_name_args->req_region->access_type = READ;
+        query_name_args->req_region->access_type = PDC_READ;
         // TODO: if requesting partial data, adjust the actual region info accordingly
         query_name_args->name           = query_read_args->obj_names[i];
         query_name_args->cb             = PDC_Server_accumulate_storage_meta_then_read;
@@ -4898,7 +4898,7 @@ PDC_Server_free_query_task(query_task_t *task)
 }
 
 void
-PDC_query_visit_leaf_with_cb(pdcquery_t *query, perr_t (*func)(pdcquery_t *arg))
+PDC_query_visit_leaf_with_cb(pdc_query_t *query, perr_t (*func)(pdc_query_t *arg))
 {
     if (NULL == query) 
         return;
@@ -5034,9 +5034,9 @@ PDC_Server_data_read_to_buf(region_list_t *region_list_head)
 }
 
 static int 
-PDC_region_has_hits_from_hist(pdcquery_constraint_t *constraint, pdc_histogram_t *region_hist)
+PDC_region_has_hits_from_hist(pdc_query_constraint_t *constraint, pdc_histogram_t *region_hist)
 {
-    pdcquery_op_t lop;
+    pdc_query_op_t lop;
     double value, value2;
 
     if (constraint == NULL || region_hist == NULL) {
@@ -5098,11 +5098,11 @@ PDC_region_has_hits_from_hist(pdcquery_constraint_t *constraint, pdc_histogram_t
 
 /*
 static perr_t
-PDC_constraint_get_nhits_from_hist(pdcquery_constraint_t *constraint, pdc_histogram_t *region_hist, 
+PDC_constraint_get_nhits_from_hist(pdc_query_constraint_t *constraint, pdc_histogram_t *region_hist, 
                                   uint64_t *min_hits, uint64_t *max_hits)
 {
     perr_t ret_value = SUCCEED;
-    pdcquery_op_t lop;
+    pdc_query_op_t lop;
     double value, value2;
     int    i, lidx, ridx;
 
@@ -5202,7 +5202,7 @@ done:
 */
 
 static perr_t
-PDC_Server_load_query_data(query_task_t *task, pdcquery_t *query, pdcquery_combine_op_t combine_op)
+PDC_Server_load_query_data(query_task_t *task, pdc_query_t *query, pdc_query_combine_op_t combine_op)
 {
     perr_t ret_value = SUCCEED;
     region_list_t *req_region = NULL, *region_tmp = NULL;
@@ -5211,7 +5211,7 @@ PDC_Server_load_query_data(query_task_t *task, pdcquery_t *query, pdcquery_combi
     uint64_t obj_id;
     int iter, count, is_same_region, i, can_skip;
 
-    pdcquery_constraint_t *constraint = query->constraint;
+    pdc_query_constraint_t *constraint = query->constraint;
     storage_region_list_head = constraint->storage_region_list_head;
 
     if (NULL == constraint || NULL == storage_region_list_head) {
@@ -5338,7 +5338,7 @@ PDC_Server_load_query_data(query_task_t *task, pdcquery_t *query, pdcquery_combi
             new_region->buf = NULL;
             new_region->shm_fd = 0;
             new_region->io_cache_region = NULL;
-            new_region->access_type = READ;
+            new_region->access_type = PDC_READ;
 
             DL_APPEND(io_list_target->region_list_head, new_region);
         }
@@ -5466,9 +5466,9 @@ int compare_coords_3d (const void * a, const void * b)
   return (memcmp(a, b, sizeof(uint64_t) * 3));
 }
 
-/* perr_t QUERY_EVALUATE_SCAN_OPT(uint64_t _n, float *_data, pdcquery_op_t _op, void *_value, */ 
-/*                                pdcselection_t *_sel, region_list_t *_region, int _unit_size, */ 
-/*                                region_list_t *_region_constraint, pdcquery_combine_op_t _combine_op) */ 
+/* perr_t QUERY_EVALUATE_SCAN_OPT(uint64_t _n, float *_data, pdc_query_op_t _op, void *_value, */ 
+/*                                pdc_selection_t *_sel, region_list_t *_region, int _unit_size, */
+/*                                region_list_t *_region_constraint, pdc_query_combine_op_t _combine_op) */
 /* { */
 /*     perr_t ret_value; */
 #define MACRO_QUERY_EVALUATE_SCAN_OPT(TYPE, _n, _data, _op, _value, _sel,                                   \
@@ -5951,7 +5951,7 @@ PDC_load_fastbit_index(char *idx_name, uint64_t obj_id, FastBitDataType dtype, i
 }
 
 perr_t 
-PDC_query_fastbit_idx(region_list_t *region, pdcquery_constraint_t *constraint, uint64_t *nhit, uint64_t **coords)
+PDC_query_fastbit_idx(region_list_t *region, pdc_query_constraint_t *constraint, uint64_t *nhit, uint64_t **coords)
 {
     perr_t ret_value = SUCCEED;
     FastBitDataType ft = 0;
@@ -5963,7 +5963,7 @@ PDC_query_fastbit_idx(region_list_t *region, pdcquery_constraint_t *constraint, 
     double v1, v2;
     size_t i;
     uint64_t start[DIM_MAX], count[DIM_MAX];
-    PDC_var_type_t dtype;
+    pdc_var_type_t dtype;
 
 
     FUNC_ENTER(NULL);
@@ -6079,7 +6079,7 @@ done:
 }
 
 perr_t
-PDC_gen_fastbit_idx(region_list_t *region, PDC_var_type_t dtype)
+PDC_gen_fastbit_idx(region_list_t *region, pdc_var_type_t dtype)
 {
     perr_t ret_value = SUCCEED;
     int i;
@@ -6124,15 +6124,15 @@ done:
 #endif
 
 static perr_t
-PDC_Server_query_evaluate_merge_opt(pdcquery_t *query, query_task_t *task, pdcquery_t *left, 
-                                    pdcquery_combine_op_t combine_op)
+PDC_Server_query_evaluate_merge_opt(pdc_query_t *query, query_task_t *task, pdc_query_t *left,
+                                    pdc_query_combine_op_t combine_op)
 {
     perr_t ret_value = SUCCEED;
     region_list_t *region_elt, *region_list_head, *cache_region, tmp_region, *region_constraint = NULL;
-    pdcselection_t *sel = query->sel;
+    pdc_selection_t *sel = query->sel;
     uint64_t nelem;
     size_t i, j, unit_size;
-    pdcquery_op_t op, lop, rop;
+    pdc_query_op_t op, lop, rop;
     float flo, fhi;
     double dlo, dhi;
     int ilo, ihi, ndim, count = 0;
@@ -6536,7 +6536,7 @@ done:
 
 
 void
-PDC_query_visit_all_with_cb_arg(pdcquery_t *query, void (*func)(pdcquery_t *, void *), void *arg)
+PDC_query_visit_all_with_cb_arg(pdc_query_t *query, void (*func)(pdc_query_t *, void *), void *arg)
 {
     if (NULL == query) 
         return;
@@ -6550,9 +6550,9 @@ PDC_query_visit_all_with_cb_arg(pdcquery_t *query, void (*func)(pdcquery_t *, vo
 }
 
 void
-PDC_query_visit(pdcquery_t *query, 
-               perr_t (*func)(pdcquery_t *, query_task_t *, pdcquery_t *, pdcquery_combine_op_t),
-               query_task_t *arg, pdcquery_t *left, pdcquery_combine_op_t combine_op)
+PDC_query_visit(pdc_query_t *query,
+               perr_t (*func)(pdc_query_t *, query_task_t *, pdc_query_t *, pdc_query_combine_op_t),
+               query_task_t *arg, pdc_query_t *left, pdc_query_combine_op_t combine_op)
 {
     if (NULL == query) 
         return;
@@ -6567,7 +6567,7 @@ PDC_query_visit(pdcquery_t *query,
 }
 
 void
-PDC_query_visit_leaf_with_cb_arg(pdcquery_t *query, void (*func)(pdcquery_t *, void *), void *arg)
+PDC_query_visit_leaf_with_cb_arg(pdc_query_t *query, void (*func)(pdc_query_t *, void *), void *arg)
 {
     if (NULL == query) 
         return;
@@ -6582,7 +6582,7 @@ PDC_query_visit_leaf_with_cb_arg(pdcquery_t *query, void (*func)(pdcquery_t *, v
 }
 
 void
-has_more_storage_region_to_recv(pdcquery_t *query, void *arg)
+has_more_storage_region_to_recv(pdc_query_t *query, void *arg)
 {
     int *has_more = (int*)arg;
     if (query == NULL || query->constraint == NULL) {
@@ -6594,7 +6594,7 @@ has_more_storage_region_to_recv(pdcquery_t *query, void *arg)
 }
 
 perr_t
-attach_cache_storage_region_to_query(pdcquery_t *query)
+attach_cache_storage_region_to_query(pdc_query_t *query)
 {
     cache_storage_region_t *cache_region_elt;
 
@@ -6614,14 +6614,14 @@ attach_cache_storage_region_to_query(pdcquery_t *query)
 }
 
 void
-attach_sel_to_query(pdcquery_t *query, void *sel)
+attach_sel_to_query(pdc_query_t *query, void *sel)
 {
     if (query != NULL)
         query->sel = sel;
 }
 
 perr_t
-attach_local_storage_region_to_query(pdcquery_t *query)
+attach_local_storage_region_to_query(pdc_query_t *query)
 {
     pdc_metadata_t *meta;
 
@@ -6948,10 +6948,10 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-pdcquery_constraint_t*
-PDC_Server_get_constraint_from_query(pdcquery_t *query, uint64_t obj_id)
+pdc_query_constraint_t*
+PDC_Server_get_constraint_from_query(pdc_query_t *query, uint64_t obj_id)
 {
-    pdcquery_constraint_t *constraint;
+    pdc_query_constraint_t *constraint;
     if (query == NULL) 
         return NULL;
 
@@ -7092,7 +7092,7 @@ PDC_Server_read_coords(const struct hg_cb_info *callback_info)
 {
     hg_return_t   ret   = HG_SUCCESS;
     query_task_t  *task = (query_task_t*)callback_info->arg;
-    pdcquery_constraint_t *constraint;
+    pdc_query_constraint_t *constraint;
     region_list_t *storage_region_head, *region_elt, *cache_region;
     size_t        ndim, unit_size;
     uint64_t      i, *coord, data_off, buf_off, my_size;
@@ -7636,7 +7636,7 @@ done:
 }
 
 void 
-attach_storage_region_to_query(pdcquery_t *query, region_list_t *region)
+attach_storage_region_to_query(pdc_query_t *query, region_list_t *region)
 {
     if (NULL == query) 
         return;
@@ -7777,7 +7777,7 @@ done:
 
 
 void
-PDC_Server_distribute_query_workload(query_task_t *task, pdcquery_t *query, 
+PDC_Server_distribute_query_workload(query_task_t *task, pdc_query_t *query, 
                                      int *obj_idx, uint64_t *obj_ids, int op)
 {
     // Postorder tranversal
@@ -7807,7 +7807,7 @@ PDC_recv_query_metadata_bulk(const struct hg_cb_info *callback_info)
     region_info_transfer_t *region_info_ptr;
     pdc_histogram_t *hist_ptr;
     query_task_t *task_elt;
-    pdcquery_t *query;
+    pdc_query_t *query;
 
     pdc_int_ret_t out;
     out.ret = 1;
@@ -7980,7 +7980,7 @@ PDC_Server_recv_data_query(const struct hg_cb_info *callback_info)
     uint64_t *obj_ids;
     query_task_t *new_task = NULL, *task_elt;
     int query_id_exist = 0;
-    pdcquery_t *query;
+    pdc_query_t *query;
 
     query = PDC_deserialize_query(query_xfer);
     if (NULL == query) {
@@ -7988,7 +7988,7 @@ PDC_Server_recv_data_query(const struct hg_cb_info *callback_info)
         goto done;
     }
 
-    query->sel               = (pdcselection_t*)calloc(1, sizeof(pdcselection_t));
+    query->sel               = (pdc_selection_t*)calloc(1, sizeof(pdc_selection_t));
     query->sel->nhits        = 0;
     query->sel->coords_alloc = 8192;
     query->sel->coords       = (uint64_t*)calloc(query->sel->coords_alloc, sizeof(uint64_t));
@@ -8203,7 +8203,7 @@ PDC_Server_recv_read_sel_obj_data(const struct hg_cb_info *callback_info)
     size_t ndim, unit_size;
     cache_storage_region_t *cache_region_elt;
     region_list_t *storage_region_head = NULL, *cache_region, *region_elt;
-    PDC_var_type_t data_type;
+    pdc_var_type_t data_type;
 
     // find task
     DL_FOREACH(query_task_list_head_g, task_elt) {
@@ -8232,7 +8232,7 @@ PDC_Server_recv_read_sel_obj_data(const struct hg_cb_info *callback_info)
     DL_FOREACH(cache_storage_region_head_g, cache_region_elt) {
         if (cache_region_elt->obj_id == obj_id) {
             storage_region_head = cache_region_elt->storage_region_head;
-            data_type = (PDC_var_type_t)cache_region_elt->data_type;
+            data_type = (pdc_var_type_t)cache_region_elt->data_type;
             break;
         }
     }

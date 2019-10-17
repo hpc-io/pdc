@@ -24,6 +24,7 @@
 
 #ifndef PDC_PUBLIC_H
 #define PDC_PUBLIC_H
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -54,19 +55,27 @@ typedef enum {
     PDC_INT16        = 10, 
     PDC_INT8         = 11,
     NCLASSES         = 12  /* this must be last                          */
-} PDC_var_type_t;
+} pdc_var_type_t;
+
+typedef enum {
+    PDC_PERSIST,
+    PDC_TRANSIENT
+} pdc_lifetime_t;
 
 typedef enum {
     PDC_SERVER_DEFAULT    = 0,
     PDC_SERVER_PER_CLIENT = 1
-} PDC_server_selection_t;
+} pdc_server_selection_t;
 
-typedef struct pdc_histogram_t {
-    PDC_var_type_t dtype;
+typedef struct pdc_histogram_t {    //?????????
+    pdc_var_type_t dtype;
     int            nbin;
     double         incr;
     double        *range;
     uint64_t      *bin;
 } pdc_histogram_t;
+
+#define SUCCEED    0
+#define FAIL    (-1)
 
 #endif /* PDC_PUBLIC_H */

@@ -17,7 +17,7 @@ int main(void)
     struct timeval  pdc_timer_start;
     struct timeval  pdc_timer_end;
     uint64_t nhits;
-    pdcselection_t sel;
+    pdc_selection_t sel;
     double get_sel_time, get_data_time;
     float *energy_data = NULL, *x_data = NULL, *y_data = NULL;
     float energy_lo = 1.2, energy_hi = 1.3;
@@ -25,8 +25,8 @@ int main(void)
     float y_lo = 149, y_hi = 150;
     
     float preload_value = -10000000.0;
-    pdcquery_t *qpreload_energy, *qpreload_x, *qpreload_y, *qpreload, *qpreload_xy;
-    pdcquery_t *q1_lo, *q1_hi, *q1, *q2_lo, *q2_hi, *q2, *q12, *q3_lo, *q3_hi, *q3, *q;
+    pdc_query_t *qpreload_energy, *qpreload_x, *qpreload_y, *qpreload, *qpreload_xy;
+    pdc_query_t *q1_lo, *q1_hi, *q1, *q2_lo, *q2_hi, *q2, *q12, *q3_lo, *q3_hi, *q3, *q;
 
     pdc = PDCinit("pdc");
 

@@ -32,7 +32,6 @@
 #include <math.h>
 #include <inttypes.h>
 #include "pdc.h"
-#include "pdc_transform_support.h"
 
 #define NPARTICLES      8388608
 
@@ -271,35 +270,35 @@ int main(int argc, char **argv)
 #endif
     gettimeofday(&ht_total_start, 0);
     
-    ret = PDCreg_obtain_lock(obj_xx, region_xx, WRITE, NOBLOCK);
-    if (ret != SUCCEED)
+    ret = PDCreg_obtain_lock(obj_xx, region_xx, PDC_WRITE, PDC_NOBLOCK);
+    if (ret < 0)
         printf("Failed to obtain lock for region_xx\n");
 
-    ret = PDCreg_obtain_lock(obj_yy, region_yy, WRITE, NOBLOCK);
-    if (ret != SUCCEED)
+    ret = PDCreg_obtain_lock(obj_yy, region_yy, PDC_WRITE, PDC_NOBLOCK);
+    if (ret < 0)
         printf("Failed to obtain lock for region_yy\n");
 
-    ret = PDCreg_obtain_lock(obj_zz, region_zz, WRITE, NOBLOCK);
+    ret = PDCreg_obtain_lock(obj_zz, region_zz, PDC_WRITE, PDC_NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_zz\n");
 
-    ret = PDCreg_obtain_lock(obj_pxx, region_pxx, WRITE, NOBLOCK);
+    ret = PDCreg_obtain_lock(obj_pxx, region_pxx, PDC_WRITE, PDC_NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_pxx\n");
 
-    ret = PDCreg_obtain_lock(obj_pyy, region_pyy, WRITE, NOBLOCK);
+    ret = PDCreg_obtain_lock(obj_pyy, region_pyy, PDC_WRITE, PDC_NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_pyy\n");
 
-    ret = PDCreg_obtain_lock(obj_pzz, region_pzz, WRITE, NOBLOCK);
+    ret = PDCreg_obtain_lock(obj_pzz, region_pzz, PDC_WRITE, PDC_NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_pzz\n");
 
-    ret = PDCreg_obtain_lock(obj_id11, region_id11, WRITE, NOBLOCK);
+    ret = PDCreg_obtain_lock(obj_id11, region_id11, PDC_WRITE, PDC_NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_id11\n");
 
-    ret = PDCreg_obtain_lock(obj_id22, region_id22, WRITE, NOBLOCK);
+    ret = PDCreg_obtain_lock(obj_id22, region_id22, PDC_WRITE, PDC_NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_id22\n");
     
@@ -333,35 +332,35 @@ int main(int argc, char **argv)
     x[0] = 1.0;
     x[1] = 2.0;
 
-    ret = PDCreg_release_lock(obj_xx, region_xx, WRITE);
+    ret = PDCreg_release_lock(obj_xx, region_xx, PDC_WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_xx\n");
 
-    ret = PDCreg_release_lock(obj_yy, region_yy, WRITE);
+    ret = PDCreg_release_lock(obj_yy, region_yy, PDC_WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_yy\n");
 
-    ret = PDCreg_release_lock(obj_zz, region_zz, WRITE);
+    ret = PDCreg_release_lock(obj_zz, region_zz, PDC_WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_zz\n");
 
-    ret = PDCreg_release_lock(obj_pxx, region_pxx, WRITE);
+    ret = PDCreg_release_lock(obj_pxx, region_pxx, PDC_WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_pxx\n");
 
-    ret = PDCreg_release_lock(obj_pyy, region_pyy, WRITE);
+    ret = PDCreg_release_lock(obj_pyy, region_pyy, PDC_WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_pyy\n");
 
-    ret = PDCreg_release_lock(obj_pzz, region_pzz, WRITE);
+    ret = PDCreg_release_lock(obj_pzz, region_pzz, PDC_WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_pzz\n");
 
-    ret = PDCreg_release_lock(obj_id11, region_id11, WRITE);
+    ret = PDCreg_release_lock(obj_id11, region_id11, PDC_WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_id11\n");
 
-    ret = PDCreg_release_lock(obj_id22, region_id22, WRITE);
+    ret = PDCreg_release_lock(obj_id22, region_id22, PDC_WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_id22\n");
 

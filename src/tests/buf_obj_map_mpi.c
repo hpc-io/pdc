@@ -118,7 +118,7 @@ int main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-    ret = PDCreg_obtain_lock(obj2, r2, WRITE, NOBLOCK);
+    ret = PDCreg_obtain_lock(obj2, r2, PDC_WRITE, PDC_NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for r2\n");
 
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
         x[i] = uniform_random_number() * x_dim;
     }
 
-    ret = PDCreg_release_lock(obj2, r2, WRITE);
+    ret = PDCreg_release_lock(obj2, r2, PDC_WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for r2\n");
   

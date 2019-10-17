@@ -20,8 +20,8 @@ int main(int argc, char **argv)
     int i;
     pdcid_t obj_ids[NOBJ];
     pdcid_t pdc, cont_prop, cont, obj_prop;
-    struct PDC_region_info write_region;
-    struct PDC_region_info read_region;
+    struct pdc_region_info write_region;
+    struct pdc_region_info read_region;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);

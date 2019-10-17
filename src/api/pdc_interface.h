@@ -25,9 +25,7 @@
 #ifndef PDC_INTERFACE_H
 #define PDC_INTERFACE_H
 
-#include "pdc_public.h"
 #include "pdc_private.h"
-#include "pdc_error.h"
 #include "pdc_linkedlist.h"
 #include "pdc_id_pkg.h"
 
@@ -71,7 +69,7 @@ struct PDC_id_type {
     unsigned                    init_count;        /* # of times this type has been initialized  */
     unsigned                    id_count;          /* Current number of IDs held                 */
     pdcid_t                     nextid;            /* ID to use for the next atom                */
-    PDC_LIST_HEAD(PDC_id_info)  ids;               /* Head of list of IDs                        */
+    PDC_LIST_HEAD(_pdc_id_info)  ids;               /* Head of list of IDs                        */
 };
 
 struct pdc_id_list {
@@ -160,7 +158,7 @@ perr_t PDC_destroy_type(PDC_type_t type);
  *
  * \return Pointer to the object's info struct on success/Null on failure
  */
-struct PDC_id_info *PDC_find_id(pdcid_t idid);
+struct _pdc_id_info *PDC_find_id(pdcid_t idid);
 
 /**
  * Given an object ID find the info struct that describes the object

@@ -20,7 +20,7 @@ int main(int argc, char **argv)
     char *obj_name;
     pdcid_t test_obj = -1;
     pdcid_t pdc, cont_prop, cont, obj_prop;
-    struct PDC_region_info region;
+    struct pdc_region_info region;
     int my_data_size;
     uint64_t dims[1];
     int ndim = 1;

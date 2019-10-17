@@ -1,13 +1,13 @@
 #ifndef _STACK_OPS_H
-
 #define _STACK_OPS_H
+
+#include "pdc_config.h"
+#include "pdc_private.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <time.h>
-#include "pdc_config.h"
-#include "pdc_private.h"
 
 typedef void *hash_table_t;
 
@@ -30,8 +30,8 @@ typedef struct profileEntry {
   struct profileEntry *parent;
 } profileEntry_t;
 
-typedef enum _boolean {FALSE = 0, TRUE} bool_t;
-extern bool_t enableProfiling;
+//typedef enum _boolean {FALSE = 0, TRUE} bool_t;
+extern pbool_t enableProfiling;
 
 #ifndef RESET_TIMER
 #define RESET_TIMER(x) (x).tv_sec = (x).tv_nsec = 0;

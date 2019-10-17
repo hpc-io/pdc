@@ -57,7 +57,7 @@ int main(int argc, char **argv)
 
     char *obj_names[] = {"x", "y", "z", "px", "py", "pz", "id1", "id2"};
 
-    struct PDC_region_info obj_regions[NUM_VAR];
+    struct pdc_region_info obj_regions[NUM_VAR];
     pdc_metadata_t *obj_metas[NUM_VAR];
 
     uint64_t float_bytes  = NPARTICLES * sizeof(float);
@@ -67,7 +67,7 @@ int main(int argc, char **argv)
 
     int read_var = NUM_VAR;
     
-    PDC_Request_t request[NUM_VAR];
+    struct pdc_request_t request[NUM_VAR];
     
     struct timeval  pdc_timer_start;
     struct timeval  pdc_timer_end;

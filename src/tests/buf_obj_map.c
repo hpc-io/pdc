@@ -83,7 +83,7 @@ int main(int argc, char **argv)
     if(ret < 0)
         printf("PDCbuf_obj_map failed\n");
 
-    ret = PDCreg_obtain_lock(obj2, r2, WRITE, NOBLOCK);
+    ret = PDCreg_obtain_lock(obj2, r2, PDC_WRITE, PDC_NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region\n");
 
@@ -91,7 +91,7 @@ int main(int argc, char **argv)
     myArray1[0][0] = 117;
     myArray1[0][1] = 118; 
 
-    ret = PDCreg_release_lock(obj2, r2, WRITE);
+    ret = PDCreg_release_lock(obj2, r2, PDC_WRITE);
     if (ret != SUCCEED)
         printf("Failed to release lock for region\n");
     

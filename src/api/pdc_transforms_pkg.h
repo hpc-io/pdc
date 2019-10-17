@@ -24,44 +24,21 @@
 #ifndef PDC_TRANSFORMS_H
 #define PDC_TRANSFORMS_H
 
-#include "pdc_obj.h"
-#include "pdc_prop.h"
+#include "pdc_private.h"
+#include "pdc_transform.h"
 
 #define  DATA_ANY  7
-
-/****************************/
-/* Library Private Typedefs */
-/****************************/
-typedef enum {
-    PDC_TESTING = 0,
-    PDC_FILE_IO = 1,
-    PDC_DATA_MAP = 2,
-    PDC_PRE_ANALYSIS = 4,
-    PDC_POST_ANALYSIS = 8
-} PDCobj_transform_t;
-
-typedef enum {
-    DECR_STATE = -100,
-    INCR_STATE = 100,
-   _STATIC_STATE = 0
-} PDCstate_next_t;
-
-typedef enum {
-    DATA_IN = 1,
-    DATA_OUT = 2,
-    DATA_RELOCATION = 4
-} PDCdata_movement_t;
 
 /***************************/
 /* Library Private Structs */
 /***************************/
-struct region_transform_ftn_info {
+struct _pdc_region_transform_ftn_info {
     pdcid_t object_id;
     pdcid_t region_id;
     int local_regIndex;    
     int meta_index;
-    struct PDC_region_info *src_region;
-    struct PDC_region_info *dest_region;
+    struct pdc_region_info *src_region;
+    struct pdc_region_info *dest_region;
     size_t (*ftnPtr)();
     int ftn_lastResult;
     int readyState;
@@ -69,21 +46,23 @@ struct region_transform_ftn_info {
     int client_id;
     size_t type_extent;
     size_t dest_extent;
-    PDC_var_type_t   type;
-    PDC_var_type_t   dest_type;
-    PDCobj_transform_t op_type;
-    PDCdata_movement_t when;
-    PDC_Analysis_language lang;
+    pdc_var_type_t   type;
+    pdc_var_type_t   dest_type;
+    pdc_obj_transform_t op_type;
+    pdc_data_movement_t when;
+    _pdc_analysis_language_t lang;
     void *data;
     void *result;
 };
 
-struct transform_ftn_info {
-    int current_state;
-    int transform_state;
-    pdcid_t *object_id;
-    pdcid_t *region_id;
-    size_t (*ftnPtr)();
-};
+/***************************************/
+/* Library-private Function Prototypes */
+/***************************************/
+/**
+ * To end PDC transform
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_transform_end();
 
 #endif /* PDC_TRANSFORMS_H */

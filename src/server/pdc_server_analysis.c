@@ -56,7 +56,8 @@
 #include "pdc_interface.h"
 #include "pdc_client_server_common.h"
 #include "pdc_server.h"
-#include "pdc_analysis_common.h"
+#include "pdc_analysis_pkg.h"
+#include "pdc_analysis.h"
 
 #ifdef PDC_HAS_CRAY_DRC
 # include <rdmacred.h>
@@ -87,7 +88,7 @@ PDC_Server_instantiate_data_iterator(obj_data_iterator_in_t *in, obj_data_iterat
 {
     perr_t ret_value = SUCCEED;
     data_server_region_t *region_reference = NULL;
-    struct PDC_iterator_info *thisIter;
+    struct _pdc_iterator_info *thisIter;
 
     FUNC_ENTER(NULL);
 
@@ -113,8 +114,8 @@ PDC_Server_instantiate_data_iterator(obj_data_iterator_in_t *in, obj_data_iterat
     thisIter->srcBlockCount = in->srcBlockCount;
     thisIter->contigBlockSize = in->contigBlockSize;
     thisIter->totalElements = in->totalElements;
-    thisIter->pdc_datatype = (PDC_var_type_t)(in->storageinfo & 0x0FF);
-    thisIter->storage_order = (PDC_major_type)((in->storageinfo >> 8) & 0xFF);
+    thisIter->pdc_datatype = (pdc_var_type_t)(in->storageinfo & 0x0FF);
+    thisIter->storage_order = (_pdc_major_type_t)((in->storageinfo >> 8) & 0xFF);
     region_reference = PDC_Server_get_obj_region(in->object_id);
     if (region_reference == NULL) {
         printf("==PDC_ANALYSIS_SERVER: Unable to locate object region (id=%" PRIu64 ")\n", in->object_id);
@@ -220,7 +221,7 @@ PDC_Server_get_ftn_reference(char *ftn)
 size_t
 PDCobj_data_getSliceCount(pdcid_t iter)
 {
-    struct PDC_iterator_info *thisIter = NULL;
+    struct _pdc_iterator_info *thisIter = NULL;
     /* Special case to handle a NULL iterator */
     if (iter == 0) return 0;
     /* FIXME: Should add another check to see that the input
@@ -236,7 +237,7 @@ PDCobj_data_getSliceCount(pdcid_t iter)
 size_t
 PDCobj_data_getNextBlock(pdcid_t iter, void **nextBlock, size_t *dims)
 {
-    struct PDC_iterator_info *thisIter = NULL;
+    struct _pdc_iterator_info *thisIter = NULL;
     /* Special case to handle a NULL iterator */
     if (iter == 0) {
         if (nextBlock != NULL) *nextBlock = NULL;
@@ -309,7 +310,7 @@ done:
     return 0;
 }
 
-int PDC_get_analysis_registry(struct region_analysis_ftn_info ***registry)
+int PDC_get_analysis_registry(struct _pdc_region_analysis_ftn_info ***registry)
 {
     if(registry) {
         *registry = pdc_region_analysis_registry;

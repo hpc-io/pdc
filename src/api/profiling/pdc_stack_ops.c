@@ -17,7 +17,7 @@ htab_t thisHashTable;
  * Note that one can always ENABLE it by set the
  * environment variable "PROFILE_ENABLE=true"
  */
-bool_t enableProfiling = FALSE;
+pbool_t enableProfiling = FALSE;
 
 /* 
  *  The idea of this implementation is to simulate the call stack

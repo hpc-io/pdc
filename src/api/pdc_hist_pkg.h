@@ -25,9 +25,10 @@
 #ifndef PDC_HIST_H
 #define PDC_HIST_H
 
-#include <inttypes.h>
-#include "math.h"
 #include "pdc_public.h"
+#include "math.h"
+#include <inttypes.h>
+#include <string.h>
 
 /**
  * ********
@@ -38,7 +39,7 @@
  *
  * \return ********
  */
-pdc_histogram_t *PDC_gen_hist(PDC_var_type_t dtype, uint64_t n, void *data);
+pdc_histogram_t *PDC_gen_hist(pdc_var_type_t dtype, uint64_t n, void *data);
 
 /**
  * ********

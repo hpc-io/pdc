@@ -223,7 +223,7 @@ void PDC_Server_metadata_init(pdc_metadata_t* a)
     a->prev                 = NULL;
     a->next                 = NULL;
     a->transform_state      = 0;
-    memset(&a->current_state, 0, sizeof(PDC_transform_state_t));
+    memset(&a->current_state, 0, sizeof(struct _pdc_transform_state));
 }
 // ^ hash table
 
@@ -1799,7 +1799,7 @@ PDC_Server_get_metadata_by_id_cb(const struct hg_cb_info *callback_info)
     // Execute the callback function 
     if (NULL != cb_args->cb) {
         ((region_list_t*)(cb_args->args))->meta = meta;
-        cb_args->cb(cb_args->args, POSIX);
+        cb_args->cb(cb_args->args, PDC_POSIX);
     }
     else {
         printf("==PDC_SERVER[%d]: %s NULL callback ptr\n", pdc_server_rank_g, __func__);
@@ -1837,7 +1837,7 @@ perr_t PDC_Server_get_metadata_by_id_with_cb(uint64_t obj_id, perr_t (*cb)(), vo
 
         ((region_list_t*)args)->meta = res_meta_ptr;
         // Call the callback function directly and pass in the result metadata ptr
-        cb(args, POSIX);
+        cb(args, PDC_POSIX);
     }
     else {
         if (PDC_Server_lookup_server_id(server_id) != SUCCEED) {

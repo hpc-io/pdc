@@ -32,3 +32,39 @@
 
 /* Define if wait for data to be fanalized when closing dataset */
 #cmakedefine ENABLE_WAIT_DATA
+
+/* Define size of float type */
+#cmakedefine VAR_SIZE_FLOAT @VAR_SIZE_FLOAT@
+
+/* Define size of double type */
+#cmakedefine VAR_SIZE_DOUBLE @VAR_SIZE_DOUBLE@
+
+/* Define size of char type */
+#cmakedefine VAR_SIZE_CHAR @VAR_SIZE_CHAR@
+
+/* Define size of short int type */
+#cmakedefine VAR_SIZE_SINT @VAR_SIZE_SINT@
+
+/* Define size of int type */
+#cmakedefine VAR_SIZE_INT @VAR_SIZE_INT@
+
+/* Define size of long int type */
+#cmakedefine VAR_SIZE_LINT @VAR_SIZE_LINT@
+
+/* Define size of long long int type */
+#cmakedefine VAR_SIZE_LLINT @VAR_SIZE_LLINT@
+
+/* Define size of unsigned int type */
+#cmakedefine VAR_SIZE_UINT @VAR_SIZE_UINT@
+
+/* Define size of unsigned long int type */
+#cmakedefine VAR_SIZE_ULINT @VAR_SIZE_ULINT@
+
+/* Define size of unsigned long long int type */
+#cmakedefine VAR_SIZE_ULLINT @VAR_SIZE_ULLINT@
+
+/* Define size of int64_t int type */
+#cmakedefine VAR_SIZE_64INT @VAR_SIZE_64INT@
+
+/* Define size of uint64_t int type */
+#cmakedefine VAR_SIZE_U64INT @VAR_SIZE_U64INT@

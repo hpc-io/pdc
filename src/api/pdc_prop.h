@@ -25,8 +25,15 @@
 #ifndef PDC_PROP_H
 #define PDC_PROP_H
 
-#include "pdc_error.h"
-#include "pdc_prop_pkg.h"
+#include "pdc_public.h"
+
+/*******************/
+/* Public Typedefs */
+/*******************/
+typedef enum {
+    PDC_CONT_CREATE = 0,
+    PDC_OBJ_CREATE
+} pdc_prop_type_t;
 
 /*********************/
 /* Public Prototypes */
@@ -40,7 +47,16 @@
  *
  * \return PDC property id on success/Zero on failure
  */
-pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdc_id);
+pdcid_t PDCprop_create(pdc_prop_type_t type, pdcid_t pdc_id);
+
+/**
+ * Close property
+ *
+ * \param id [IN]               ID of the property
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCprop_close(pdcid_t id);
 
 /**
  * Quickly create object property from an existing object property 
@@ -55,30 +71,52 @@ pdcid_t PDCprop_create(PDC_prop_type type, pdcid_t pdc_id);
 pdcid_t PDCprop_obj_dup(pdcid_t prop_id);
 
 /**
- * Close property
- *
- * \param id [IN]               ID of the property
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDCprop_close(pdcid_t id);
-
-/**
  * Get container property infomation
  *
  * \param prop_id [IN]          ID of the property
  *
- * \return Pointer to PDC_cont_prop struct/Null on failure
+ * \return Pointer to _pdc_cont_prop struct/Null on failure
  */
-struct PDC_cont_prop *PDCcont_prop_get_info(pdcid_t prop_id);
+struct _pdc_cont_prop *PDCcont_prop_get_info(pdcid_t prop_id);
 
 /**
  * Get object property infomation
  *
  * \param prop_id [IN]          ID of the object property
  *
- * \return Pointer to PDC_obj_prop struct/Null on failure
+ * \return Pointer to _pdc_obj_prop struct/Null on failure
  */
-struct PDC_obj_prop *PDCobj_prop_get_info(pdcid_t prop_id);
+struct _pdc_obj_prop *PDCobj_prop_get_info(pdcid_t prop_id);
+
+/**
+ * Send updated metadata (stored as property) to metadata server
+ *
+ * \param obj_id[IN]            Object ID
+ * \param prop_id[IN]           Object property
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCprop_update(pdcid_t obj_id, pdcid_t prop_id);
+
+/**
+ * Delete a tag with a specific name and value
+ *
+ * \param obj_id[IN]            Object ID
+ * \param tag_name [IN]         Metadta field name
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCtag_delete(pdcid_t obj_id, char *tag_name);
+
+/**
+ * **********
+ *
+ * \param obj_id[IN]            Object ID
+ * \param tag_name [IN]         Metadta field name
+ * \param tag_value [IN]        Metadta field value
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCtag_get(pdcid_t obj_id, char *tag_name, void *tag_value);
 
 #endif /* PDC_PROP_H */

@@ -29,7 +29,7 @@ add_executable(pdc_server.exe
                dablooms/pdc_dablooms.c
                dablooms/pdc_murmur.c
                pdc_hash-table.c
-               ../api/pdc_hist.c
+               ../api/pdc_hist_pkg.c
 )
 
 if(PDC_ENABLE_FASTBIT)

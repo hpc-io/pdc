@@ -131,11 +131,7 @@ int test1d(char *obj_name)
     uint64_t i = 0;
     pdcid_t obj_id;
     pdc_metadata_t *metadata;
-    struct PDC_region_info region_a;
-    struct PDC_region_info region_b;
-    struct PDC_region_info region_c;
-    struct PDC_region_info region_d;
-    struct PDC_region_info read_region;
+    struct pdc_region_info region_a, region_b, region_c, region_d, read_region;
     uint64_t storage_offset_a, storage_offset_b, storage_offset_c, storage_offset_d, read_offset;
     uint64_t storage_size_a, storage_size_b, storage_size_c, storage_size_d, read_size;
     uint32_t ndim = 1;
@@ -254,11 +250,7 @@ int test2d(char *obj_name)
 {
     pdcid_t obj_id;
     pdc_metadata_t *metadata;
-    struct PDC_region_info region_a;
-    struct PDC_region_info region_b;
-    struct PDC_region_info region_c;
-    struct PDC_region_info region_d;
-    struct PDC_region_info read_region;
+    struct pdc_region_info region_a, region_b, region_c, region_d, read_region;
     uint64_t storage_offset_a[3], storage_offset_b[3], storage_offset_c[3], storage_offset_d[3], read_offset[3];
     uint64_t storage_size_a[3], storage_size_b[3], storage_size_c[3], storage_size_d[3], read_size[3];
     uint64_t prob_domain[3], storage_domain[3];
@@ -441,15 +433,15 @@ int test3d(char *obj_name)
 
     pdcid_t obj_id;
     pdc_metadata_t *metadata;
-    struct PDC_region_info region_a;
-    struct PDC_region_info region_b;
-    struct PDC_region_info region_c;
-    struct PDC_region_info region_d;
-    struct PDC_region_info region_e;
-    struct PDC_region_info region_f;
-    struct PDC_region_info region_g;
-    struct PDC_region_info region_h;
-    struct PDC_region_info read_region;
+    struct pdc_region_info region_a;
+    struct pdc_region_info region_b;
+    struct pdc_region_info region_c;
+    struct pdc_region_info region_d;
+    struct pdc_region_info region_e;
+    struct pdc_region_info region_f;
+    struct pdc_region_info region_g;
+    struct pdc_region_info region_h;
+    struct pdc_region_info read_region;
     uint64_t storage_offset_a[3], storage_offset_b[3], storage_offset_c[3], storage_offset_d[3];
     uint64_t storage_offset_e[3], storage_offset_f[3], storage_offset_g[3], storage_offset_h[3];
     uint64_t storage_size_a[3], storage_size_b[3], storage_size_c[3], storage_size_d[3];

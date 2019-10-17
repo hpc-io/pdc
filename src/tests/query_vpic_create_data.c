@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include <string.h>
 #include <unistd.h>
 #include <getopt.h>
@@ -60,7 +61,7 @@ int main(int argc, char **argv)
     uint64_t float_bytes, int_bytes;
     
     pdcid_t         obj_ids[NUM_VAR];
-    struct PDC_region_info obj_regions[NUM_VAR];
+    struct pdc_region_info obj_regions[NUM_VAR];
     pdc_metadata_t *obj_metas[NUM_VAR];
     pdcid_t         obj_prop_float, obj_prop_int;
 

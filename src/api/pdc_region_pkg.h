@@ -22,56 +22,31 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef PDC_OBJ_OBJECT_H
-#define PDC_OBJ_OBJECT_H
+#ifndef PDC_REGION_PKG_H
+#define PDC_REGION_PKG_H
 
-#include "pdc_obj_pkg.h"
+#include "pdc_private.h"
+
+/**************************/
+/* Library Private Struct */
+/**************************/
+struct region_map_list{
+    pdcid_t                orig_reg_id;
+    pdcid_t                des_obj_id;
+    pdcid_t                des_reg_id;
+    struct region_map_list *prev;
+    struct region_map_list *next;
+};
 
 /***************************************/
 /* Library-private Function Prototypes */
 /***************************************/
-/**
- * PDC object initialization
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDC_obj_init();
-
 /**
  * PDC region initialization
  *
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_region_init();
-
-/**
- * Create an object
- *
- * \param cont_id [IN]          ID of the container
- * \param obj_name [IN]         Name of the object
- * \param obj_create_prop [IN]  ID of object property,
- *                              returned by PDCprop_create(PDC_OBJ_CREATE)
- * \param location [IN]         PDC_OBJ_GLOBAL/PDC_OBJ_LOCAL
- *
- * \return Object id on success/Negative on failure
- */
-pdcid_t PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, PDCobj_location location);
-
-/**
- * Get object information
- *
- * \param obj_id [IN]           ID of the object
- *
- * \return Pointer to PDC_obj_info struct on success/Null on failure
- */
-struct PDC_obj_info *PDC_obj_get_info(pdcid_t obj_id);
-
-/**
- * PDC object finalize
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDC_obj_end();
 
 /**
  * PDC region finalize
@@ -81,17 +56,10 @@ perr_t PDC_obj_end();
 perr_t PDC_region_end();
 
 /**
- * Check if object list is empty
- *
- * \return SUCCEED if empty/FAIL if not empty
- */
-perr_t PDC_obj_list_null();
-
-/**
  * Check if region list is empty
  *
  * \return SUCCEED if empty/FAIL if not empty
  */
 perr_t PDC_region_list_null();
 
-#endif /* PDC_OBJ_OBJECT_H */
+#endif /* PDC_REGION_PKG_H */

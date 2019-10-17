@@ -130,7 +130,7 @@ int main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-    ret = PDCreg_obtain_lock(obj2, r2, READ, NOBLOCK);
+    ret = PDCreg_obtain_lock(obj2, r2, PDC_READ, PDC_NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for r2\n");
 
@@ -138,7 +138,7 @@ int main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-    ret = PDCreg_release_lock(obj2, r2, READ);
+    ret = PDCreg_release_lock(obj2, r2, PDC_READ);
     if (ret != SUCCEED)
         printf("Failed to release lock for r2\n");
   

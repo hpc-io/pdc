@@ -25,31 +25,20 @@
 #ifndef PDC_H
 #define PDC_H
 
-#include <stdint.h>
-#include <stdbool.h>
-
 #include "pdc_config.h"
 #include "pdc_public.h"
-#include "pdc_error.h"
-#include "pdc_malloc.h"
-#include "pdc_pkg.h"
 #include "pdc_prop.h"
-#include "pdc_prop_pkg.h"
 #include "pdc_cont.h"
-#include "pdc_cont_pkg.h"
 
 #ifdef ENABLE_MPI
 #include "pdc_mpi.h"
 #endif
 
 #include "pdc_obj.h"
-#include "pdc_obj_pkg.h"
-#include "pdc_linkedlist.h"
-#include "pdc_client_public.h"
-#include "pdc_analysis_support.h"
-#include "pdc_transform_support.h"
+#include "pdc_region.h"
 #include "pdc_query.h"
-#include "pdc_client_public.h"
+#include "pdc_analysis.h"
+#include "pdc_transform.h"
 
 /*********************/
 /* Public Prototypes */

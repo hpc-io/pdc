@@ -189,39 +189,39 @@ typedef struct server_read_check_out_t {
 
 // Data query
 typedef struct query_task_t {
-    pdcquery_t        *query;
-    int               query_id;
-    int               manager;
-    int               client_id;
-    int               n_sent_server;
-    int               n_unique_obj;
+    pdc_query_t       *query;
+    int                query_id;
+    int                manager;
+    int                client_id;
+    int                n_sent_server;
+    int                n_unique_obj;
     uint64_t          *obj_ids;
-    int               n_recv_obj;
-    int               ndim;
-    pdcquery_get_op_t get_op;
+    int                n_recv_obj;
+    int                ndim;
+    pdc_query_get_op_t get_op;
     region_list_t     *region_constraint;
     uint64_t          total_elem;
     int               *invalid_region_ids;
-    int               ninvalid_region;
-    int               prev_server_id;
-    int               next_server_id;
+    int                ninvalid_region;
+    int                prev_server_id;
+    int                next_server_id;
 
     // Result
-    int               is_done;
-    int               n_recv;
-    uint64_t          nhits;
+    int                is_done;
+    int                n_recv;
+    uint64_t           nhits;
     uint64_t          *coords;
-    uint64_t          **coords_arr;
+    uint64_t         **coords_arr;
     uint64_t          *n_hits_from_server;
 
     // Data read
-    int               n_read_data_region;
-    void              **data_arr;
+    int                n_read_data_region;
+    void             **data_arr;
     uint64_t          *my_read_coords;
-    uint64_t          my_nread_coords;
-    uint64_t          my_read_obj_id;
+    uint64_t           my_nread_coords;
+    uint64_t           my_read_obj_id;
     void              *my_data;
-    int               client_seq_id;
+    int                client_seq_id;
 
     struct query_task_t *prev;
     struct query_task_t *next;
@@ -229,7 +229,7 @@ typedef struct query_task_t {
 
 typedef struct cache_storage_region_t {
     uint64_t          obj_id;
-    PDC_var_type_t    data_type;
+    pdc_var_type_t    data_type;
     region_list_t     *storage_region_head;
 
     struct cache_storage_region_t *prev;
@@ -393,7 +393,7 @@ perr_t PDC_Server_get_local_storage_location_of_region(uint64_t obj_id, region_l
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_regions_io(region_list_t *region_list_head, PDC_io_plugin_t plugin);
+perr_t PDC_Server_regions_io(region_list_t *region_list_head, _pdc_io_plugin_t plugin);
 
 /**
  * Server retrieves region struct by object ID
@@ -449,7 +449,7 @@ hg_return_t PDC_Server_count_write_check_update_storage_meta_cb (const struct hg
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region_info, void *buf, size_t unit);
+perr_t PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit);
 
 /**
  * Read data from desired storage
@@ -461,7 +461,7 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct PDC_region_info *region
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_data_read_from(uint64_t obj_id, struct PDC_region_info *region_info, void *buf, size_t unit);
+perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit);
 
 /**
  * Read data from desired storage
@@ -472,7 +472,7 @@ perr_t PDC_Server_data_read_from(uint64_t obj_id, struct PDC_region_info *region
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_data_read_in(uint64_t obj_id, struct PDC_region_info *region_info, void *buf);
+perr_t PDC_Server_data_read_in(uint64_t obj_id, struct pdc_region_info *region_info, void *buf);
 
 /**
  * Server writes buffer to storage of one region without client involvement
@@ -484,7 +484,7 @@ perr_t PDC_Server_data_read_in(uint64_t obj_id, struct PDC_region_info *region_i
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf);
+perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct pdc_region_info *region_info, void *buf);
 
 /**
  * Server reads buffer from storage of one region without client involvement
@@ -495,7 +495,7 @@ perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct PDC_region_info *reg
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_data_read_direct(uint64_t obj_id, struct PDC_region_info *region_info, void *buf);
+perr_t PDC_Server_data_read_direct(uint64_t obj_id, struct pdc_region_info *region_info, void *buf);
 
 /**
  * Callback function for the notify region update
@@ -691,7 +691,7 @@ perr_t PDC_Server_notify_client_multi_io_complete(uint32_t client_id, int client
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_release_lock_request(uint64_t obj_id, struct PDC_region_info *region);
+perr_t PDC_Server_release_lock_request(uint64_t obj_id, struct pdc_region_info *region);
 
 /**
  * ********
@@ -731,7 +731,7 @@ hg_return_t PDC_cache_region_to_bb_cb (const struct hg_cb_info *callback_info) ;
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_sample_min_max(PDC_var_type_t dtype, uint64_t n, void *data, double sample_pct, double *min, double *max);
+perr_t PDC_sample_min_max(pdc_var_type_t dtype, uint64_t n, void *data, double sample_pct, double *min, double *max);
 
 /**
  * *******
@@ -742,7 +742,7 @@ perr_t PDC_sample_min_max(PDC_var_type_t dtype, uint64_t n, void *data, double s
  *
  * \return *******
  */
-pdc_histogram_t *PDC_gen_hist(PDC_var_type_t dtype, uint64_t n, void *data);
+pdc_histogram_t *PDC_gen_hist(pdc_var_type_t dtype, uint64_t n, void *data);
 
 /**
  * ******
@@ -761,7 +761,7 @@ void PDC_free_hist(pdc_histogram_t *hist);
  *
  * \return ********
  */
-pdc_histogram_t *PDC_create_hist(PDC_var_type_t dtype, int nbin, double min, double max);
+pdc_histogram_t *PDC_create_hist(pdc_var_type_t dtype, int nbin, double min, double max);
 
 /**
  * Insert the metdata received from client to the hash table
@@ -773,7 +773,7 @@ pdc_histogram_t *PDC_create_hist(PDC_var_type_t dtype, int nbin, double min, dou
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_hist_incr_all(pdc_histogram_t *hist, PDC_var_type_t dtype, uint64_t n, void *data);
+perr_t PDC_hist_incr_all(pdc_histogram_t *hist, pdc_var_type_t dtype, uint64_t n, void *data);
 
 /**
  * ********

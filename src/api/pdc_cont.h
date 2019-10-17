@@ -25,11 +25,9 @@
 #ifndef PDC_CONT_H
 #define PDC_CONT_H
 
-#include "pdc_error.h"
-#include "pdc_cont_pkg.h"
-#include "pdc_life.h"
+#include "pdc_public.h"
 
-typedef struct PDC_id_info cont_handle;
+typedef struct _pdc_id_info cont_handle;  //??????????
 
 /*********************/
 /* Public Prototypes */
@@ -61,11 +59,21 @@ pdcid_t PDCcont_create_col(const char *cont_name, pdcid_t cont_prop_id);
  * Open a container
  *
  * \param cont_name [IN]        Name of the container
- * \param pdc_id    [IN]        ID of pdc
+ * \param pdc_id [IN]           ID of pdc
  *
  * \return Container id on success/Zero on failure
  */
 pdcid_t PDCcont_open(const char *cont_name, pdcid_t pdc_id);
+
+/**
+ * Close a container
+ *
+ * \param cont_id [IN]          Container id, returned by
+ *                              PDCcont_open(pdcid_t pdc_id, const char *cont_name)
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCcont_close(pdcid_t cont_id);
 
 /**
  * Return a container property
@@ -74,7 +82,39 @@ pdcid_t PDCcont_open(const char *cont_name, pdcid_t pdc_id);
  *
  * \return Container struct on success/NULL on failure
  */
-struct PDC_cont_info *PDCcont_get_info(const char *cont_name);
+struct _pdc_cont_info *PDCcont_get_info(const char *cont_name);
+
+/**
+ * Persist a transient container
+ *
+ * \param cont_id [IN]          ID of the container, returned by
+ *                              PDCcont_open(pdcid_t pdc_id, const char *cont_name)
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCcont_persist(pdcid_t cont_id);
+
+/**
+ * Set container lifetime
+ *
+ * \param cont_create_prop [IN] ID of container property, returned by
+ *                              PDCprop_create(PDC_CONT_CREATE)
+ * \param cont_lifetime [IN]    container lifetime (enum type), PDC_PERSIST or
+ *                              PDC_TRANSIENT
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCprop_set_cont_lifetime(pdcid_t cont_create_prop, pdc_lifetime_t cont_lifetime);
+
+/**
+ * Get container ID by its name
+ *
+ * \param cont_name [IN]        Container name
+ * \param pdc_id [IN]           PDC ID
+ *
+ * \return Container ID
+ */
+pdcid_t PDCcont_get_id(const char *cont_name, pdcid_t pdc_id);
 
 /**
  * Iterate over containers within a PDC
@@ -111,38 +151,82 @@ cont_handle *PDCcont_iter_next(cont_handle *chandle);
  *
  * \return Pointer to a PDC_cont_info struct/NULL on failure
  */
-struct PDC_cont_info * PDCcont_iter_get_info(cont_handle *chandle);
+struct _pdc_cont_info * PDCcont_iter_get_info(cont_handle *chandle);
 
 /**
- * Persist a transient container
+ * ************
  *
- * \param cont_id [IN]          ID of the container, returned by
- *                              PDCcont_open(pdcid_t pdc_id, const char *cont_name)
+ * \param cont_id [IN]          Container ID
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCcont_persist(pdcid_t cont_id);
+perr_t PDCcont_del(pdcid_t cont_id);
 
 /**
- * Set container lifetime
+ * ***********
  *
- * \param cont_create_prop [IN] ID of container property, returned by
- *                              PDCprop_create(PDC_CONT_CREATE)
- * \param cont_lifetime [IN]    container lifetime (enum type), PDC_PERSIST or
- *                              PDC_TRANSIENT
+ * \param cont_id [IN]          Container ID
+ * \param tag_name [IN]         Metadta field name
+ * \param tag_value [IN]        Metadta field value
+ * \param value_size [IN]       ******
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCprop_set_cont_lifetime(pdcid_t cont_create_prop, PDC_lifetime cont_lifetime);
+perr_t PDCcont_put_tag(pdcid_t cont_id, char *tag_name, void *tag_value, psize_t value_size);
 
 /**
- * Close a container
+ * ***********
  *
- * \param cont_id [IN]          Container id, returned by
- *                              PDCcont_open(pdcid_t pdc_id, const char *cont_name)
+ * \param cont_id [IN]          Container ID
+ * \param tag_name [IN]         Metadta field name
+ * \param tag_value [IN]        Metadta field value
+ * \param value_size [IN]       ******
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCcont_close(pdcid_t cont_id);
+perr_t PDCcont_get_tag(pdcid_t cont_id, char *tag_name, void **tag_value, psize_t *value_size);
+
+/**
+ * Deleta a tag from a container
+ *
+ * \param cont_id [IN]          Container ID
+ * \param tag_name [IN]         Metadta field name
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCcont_del_tag(pdcid_t cont_id, char *tag_name);
+
+/**
+ * ********
+ *
+ * \param cont_id [IN]          Container ID
+ * \param nobj [IN]             ******
+ * \param obj_ids [IN]          ******
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCcont_put_objids(pdcid_t cont_id, int nobj, pdcid_t *obj_ids);
+
+/**
+ * *********
+ *
+ * \param cont_id [IN]          Container ID
+ * \param nobj [IN]             ******
+ * \param obj_ids [IN]          ******
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCcont_get_objids(pdcid_t cont_id, int *nobj, pdcid_t **obj_ids);
+
+/**
+ * **********
+ *
+ * \param cont_id [IN]          Container ID
+ * \param nobj [IN]             ******
+ * \param obj_ids [IN]          ******
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCcont_del_objids(pdcid_t cont_id, int nobj, pdcid_t *obj_ids);
 
 #endif /* PDC_CONT_H */

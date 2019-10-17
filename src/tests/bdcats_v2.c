@@ -230,35 +230,35 @@ int main(int argc, char **argv)
 #endif
     gettimeofday(&ht_total_start, 0);
 
-    ret = PDCreg_obtain_lock(obj_xx, region_xx, READ, NOBLOCK);
+    ret = PDCreg_obtain_lock(obj_xx, region_xx, PDC_READ, PDC_NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_xx\n");
 
-    ret = PDCreg_obtain_lock(obj_yy, region_yy, READ, NOBLOCK);
+    ret = PDCreg_obtain_lock(obj_yy, region_yy, PDC_READ, PDC_NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_yy\n");
 
-    ret = PDCreg_obtain_lock(obj_zz, region_zz, READ, NOBLOCK);
+    ret = PDCreg_obtain_lock(obj_zz, region_zz, PDC_READ, PDC_NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_zz\n");
 
-    ret = PDCreg_obtain_lock(obj_pxx, region_pxx, READ, NOBLOCK);
+    ret = PDCreg_obtain_lock(obj_pxx, region_pxx, PDC_READ, PDC_NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_pxx\n");
 
-    ret = PDCreg_obtain_lock(obj_pyy, region_pyy, READ, NOBLOCK);
+    ret = PDCreg_obtain_lock(obj_pyy, region_pyy, PDC_READ, PDC_NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_pyy\n");
 
-    ret = PDCreg_obtain_lock(obj_pzz, region_pzz, READ, NOBLOCK);
+    ret = PDCreg_obtain_lock(obj_pzz, region_pzz, PDC_READ, PDC_NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_pzz\n");
 
-    ret = PDCreg_obtain_lock(obj_id11, region_id11, READ, NOBLOCK);
+    ret = PDCreg_obtain_lock(obj_id11, region_id11, PDC_READ, PDC_NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_id11\n");
 
-    ret = PDCreg_obtain_lock(obj_id22, region_id22, READ, NOBLOCK);
+    ret = PDCreg_obtain_lock(obj_id22, region_id22, PDC_READ, PDC_NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_id22\n");
 
@@ -278,35 +278,35 @@ int main(int argc, char **argv)
 #endif
     gettimeofday(&ht_total_start, 0);
 
-    ret = PDCreg_release_lock(obj_xx, region_xx, READ);
+    ret = PDCreg_release_lock(obj_xx, region_xx, PDC_READ);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_xx\n");
 
-    ret = PDCreg_release_lock(obj_yy, region_yy, READ);
+    ret = PDCreg_release_lock(obj_yy, region_yy, PDC_READ);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_yy\n");
 
-    ret = PDCreg_release_lock(obj_zz, region_zz, READ);
+    ret = PDCreg_release_lock(obj_zz, region_zz, PDC_READ);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_zz\n");
 
-    ret = PDCreg_release_lock(obj_pxx, region_pxx, READ);
+    ret = PDCreg_release_lock(obj_pxx, region_pxx, PDC_READ);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_pxx\n");
 
-    ret = PDCreg_release_lock(obj_pyy, region_pyy, READ);
+    ret = PDCreg_release_lock(obj_pyy, region_pyy, PDC_READ);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_pyy\n");
 
-    ret = PDCreg_release_lock(obj_pzz, region_pzz, READ);
+    ret = PDCreg_release_lock(obj_pzz, region_pzz, PDC_READ);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_pzz\n");
 
-    ret = PDCreg_release_lock(obj_id11, region_id11, READ);
+    ret = PDCreg_release_lock(obj_id11, region_id11, PDC_READ);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_id11\n");
 
-    ret = PDCreg_release_lock(obj_id22, region_id22, READ);
+    ret = PDCreg_release_lock(obj_id22, region_id22, PDC_READ);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_id22\n");
 

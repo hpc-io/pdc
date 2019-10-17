@@ -38,9 +38,8 @@ int main(int argc, char **argv)
     uint64_t d[3] = {10, 20, 30};
     char obj_name[64];
     
-    struct PDC_region_info *region = NULL;
-    
-    struct PDC_region_info region_info_no_overlap;
+    struct pdc_region_info *region = NULL;
+    struct pdc_region_info region_info_no_overlap;
     uint64_t start_no_overlap[3] = {1,1,1};
     uint64_t count_no_overlap[3] = {1,1,1};
     
@@ -101,7 +100,7 @@ int main(int argc, char **argv)
     gettimeofday(&start_time, 0);
     
     reg = PDCregion_create(region_info_no_overlap.ndim, start_no_overlap, count_no_overlap);
-    ret = PDCreg_obtain_lock(obj1, reg, WRITE, NOBLOCK);
+    ret = PDCreg_obtain_lock(obj1, reg, PDC_WRITE, PDC_NOBLOCK);
     
     if (ret != SUCCEED)
         printf("[%d] Failed to obtain lock for region (%" PRIu64 ",%" PRIu64 ",%" PRIu64 ") (%" PRIu64 ",%" PRIu64 ",%" PRIu64 ") ... error\n", rank,
@@ -124,7 +123,7 @@ int main(int argc, char **argv)
 #endif
     gettimeofday(&start_time, 0);
     
-    ret = PDCreg_release_lock(obj1, reg, WRITE);
+    ret = PDCreg_release_lock(obj1, reg, PDC_WRITE);
     if (ret != SUCCEED)
         printf("[%d] Failed to release lock for region (%" PRIu64 ",%" PRIu64 ",%" PRIu64 ") (%" PRIu64 ",%" PRIu64 ",%" PRIu64 ") ... error\n", rank, 
                 region->offset[0], region->offset[1], region->offset[2], region->size[0], region->size[1], region->size[2]);

@@ -42,7 +42,7 @@ void *PDC_malloc(size_t size)
         ret_value = NULL;
 
     FUNC_LEAVE(ret_value);
-} /* end PDC_malloc() */
+}
 
 
 void *PDC_calloc(size_t size)
@@ -59,7 +59,7 @@ void *PDC_calloc(size_t size)
         ret_value = NULL;
 
     FUNC_LEAVE(ret_value);
-} /* end PDC_calloc() */
+}
 
 
 void *PDC_free(void *mem)
@@ -71,5 +71,6 @@ void *PDC_free(void *mem)
     if(mem) {
         free(mem);
     }
+    
     FUNC_LEAVE(ret_value);
-} /* end PDC_free() */
+}

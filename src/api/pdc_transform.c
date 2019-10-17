@@ -22,26 +22,23 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
+#include "pdc_malloc.h"
+#include "pdc_private.h"
+#include "pdc_id_pkg.h"
+#include "pdc_prop.h"
+#include "pdc_obj.h"
+#include "pdc_obj_pkg.h"
+#include "pdc_region_pkg.h"
+#include "pdc_region.h"
+#include "pdc_interface.h"
+#include "pdc_transform.h"
+#include "pdc_analysis_pkg.h"
+#include "pdc_client_server_common.h"
+#include "../server/pdc_utlist.h"
 #include <time.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <libgen.h>
-
-#include "pdc_config.h"
-#include "../server/pdc_utlist.h"
-#include "pdc_obj.h"
-#include "pdc_obj_pkg.h"
-#include "pdc_malloc.h"
-#include "pdc_private.h"
-#include "pdc_prop.h"
-#include "pdc_obj_private.h"
-#include "pdc_interface.h"
-#include "pdc_transform_support.h"
-#include "pdc_atomic.h"
-#include "pdc_analysis_support.h"
-#include "pdc_analysis_common.h"
-#include "pdc_client_server_common.h"
-#include "pdc_analysis_and_transforms.h"
 
 extern int pdc_client_mpi_rank_g;
 extern int pdc_client_mpi_size_g;
@@ -49,16 +46,16 @@ extern int pdc_client_mpi_size_g;
 static char *default_pdc_transforms_lib = "libpdctransforms.so";
 
 perr_t
-PDCobj_transform_register(char *func, pdcid_t obj_id, int current_state, int next_state, PDCobj_transform_t op_type, PDCdata_movement_t when )
+PDCobj_transform_register(char *func, pdcid_t obj_id, int current_state, int next_state, pdc_obj_transform_t op_type, pdc_data_movement_t when )
 {
-    perr_t ret_value = SUCCEED;         /* Return value */
+    perr_t ret_value = SUCCEED;
     void *ftnHandle = NULL;
     size_t (*ftnPtr)() = NULL;
-    struct region_transform_ftn_info *thisFtn = NULL;
-    struct PDC_obj_info *obj1, *obj2;
-    struct PDC_id_info *objinfo1;
-    struct PDC_obj_prop *prop;
-    struct PDC_region_info *reg1, *reg2;
+    struct _pdc_region_transform_ftn_info *thisFtn = NULL;
+    struct _pdc_obj_info *obj1, *obj2;
+    struct _pdc_id_info *objinfo1;
+    struct _pdc_obj_prop *prop;
+    struct pdc_region_info *reg1, *reg2;
     pdcid_t src_region_id, dest_region_id;
     pdcid_t dest_object_id;
     char *thisApp = NULL;
@@ -68,6 +65,7 @@ PDCobj_transform_register(char *func, pdcid_t obj_id, int current_state, int nex
     char *userdefinedftn = NULL;
     char *loadpath = NULL;
     int local_regIndex;
+    struct _pdc_id_info *id_info;
 
     FUNC_ENTER(NULL);
 
@@ -88,15 +86,15 @@ PDCobj_transform_register(char *func, pdcid_t obj_id, int current_state, int nex
     loadpath = PDC_get_realpath(transformslibrary, applicationDir);
     
     if (PDC_get_ftnPtr_(userdefinedftn, loadpath, &ftnHandle) < 0)
-      printf("PDC_get_ftnPtr_ returned an error!\n");
+        PGOTO_ERROR(FAIL, "PDC_get_ftnPtr_ returned an error!\n");
 
     if ((ftnPtr = ftnHandle) == NULL)
-      PGOTO_ERROR(FAIL,"Transforms function lookup failed\n");
+        PGOTO_ERROR(FAIL, "Transforms function lookup failed");
 
-    if ((thisFtn = PDC_MALLOC(struct region_transform_ftn_info)) == NULL)
-        PGOTO_ERROR(FAIL,"PDC register_obj_transforms memory allocation failed\n");
+    if ((thisFtn = PDC_MALLOC(struct _pdc_region_transform_ftn_info)) == NULL)
+        PGOTO_ERROR(FAIL, "PDC register_obj_transforms memory allocation failed");
 
-    memset(thisFtn,0, sizeof(struct region_transform_ftn_info));
+    memset(thisFtn,0, sizeof(struct _pdc_region_transform_ftn_info));
     thisFtn->ftnPtr = (size_t (*)()) ftnPtr;
     thisFtn->object_id = obj_id;
     thisFtn->op_type = op_type;
@@ -107,21 +105,21 @@ PDCobj_transform_register(char *func, pdcid_t obj_id, int current_state, int nex
 
     // Add to our own list of transform functions
     if ((local_regIndex = PDC_add_transform_ptr_to_registry_(thisFtn)) < 0)
-        PGOTO_ERROR(FAIL,"PDC unable to register transform function!\n");
+        PGOTO_ERROR(FAIL, "PDC unable to register transform function!");
 
     // Flag the transform as being active on mapping operations
     if (op_type == PDC_DATA_MAP) {
         objinfo1 = PDC_find_id(obj_id);
         if(objinfo1 == NULL)
            PGOTO_ERROR(FAIL, "cannot locate local object ID");
-        obj1 = (struct PDC_obj_info *)(objinfo1->obj_ptr);
+        obj1 = (struct _pdc_obj_info *)(objinfo1->obj_ptr);
 	/* See if any mapping operations are defined */
 	if (obj1 && (obj1->region_list_head != NULL)) {
-	    struct PDC_id_info *id_info = PDC_find_id(obj1->region_list_head->orig_reg_id);
+	    id_info = PDC_find_id(obj1->region_list_head->orig_reg_id);
 	    src_region_id = obj1->region_list_head->orig_reg_id;
 	    dest_region_id = obj1->region_list_head->des_reg_id;
             // mapping is already defined...
-        if (id_info && ((reg1 = (struct PDC_region_info *)id_info->obj_ptr) != NULL)) {
+        if (id_info && ((reg1 = (struct pdc_region_info *)id_info->obj_ptr) != NULL)) {
             thisFtn->src_region = reg1;
             obj1 = reg1->obj;
             
@@ -133,7 +131,7 @@ PDCobj_transform_register(char *func, pdcid_t obj_id, int current_state, int nex
             }
         }
 	    id_info = PDC_find_id(dest_region_id);
-	    if (id_info && ((reg2 = (struct PDC_region_info *)id_info->obj_ptr) != NULL)) {
+	    if (id_info && ((reg2 = (struct pdc_region_info *)id_info->obj_ptr) != NULL)) {
             thisFtn->dest_region = reg2;
             obj2 = reg2->obj;
             dest_object_id = obj2->local_id;
@@ -155,13 +153,14 @@ PDCobj_transform_register(char *func, pdcid_t obj_id, int current_state, int nex
        	       	                         thisFtn->nextState,
        	       	                         (int)PDC_DATA_MAP,
        	       	                         (int)when,
-					 local_regIndex);
+					                     local_regIndex);
 
 
     }
 
 
 done:
+    fflush(stdout);
     if (applicationDir) free(applicationDir);
     if (userdefinedftn) free(userdefinedftn);
 
@@ -173,15 +172,15 @@ perr_t
 PDCbuf_map_transform_register(char *func, void *buf,
 			      pdcid_t src_region_id, pdcid_t dest_object_id, pdcid_t dest_region_id,
 			      int current_state, int next_state,
-			      PDCdata_movement_t when )
+			      pdc_data_movement_t when )
 {
     perr_t ret_value = SUCCEED;         /* Return value */
     void *ftnHandle = NULL;
     size_t (*ftnPtr)() = NULL;
-    struct PDC_obj_info *object1 = NULL;
-    struct region_transform_ftn_info *thisFtn = NULL;
-    struct PDC_region_info *region_info;
-    struct PDC_id_info *id_info;
+    struct _pdc_obj_info *object1 = NULL;
+    struct _pdc_region_transform_ftn_info *thisFtn = NULL;
+    struct pdc_region_info *region_info;
+    struct _pdc_id_info *id_info;
     char *thisApp = NULL;
     char *colonsep = NULL; 
     char *transformslibrary = NULL;
@@ -193,8 +192,8 @@ PDCbuf_map_transform_register(char *func, void *buf,
     FUNC_ENTER(NULL);
 
     thisApp = PDC_get_argv0_();
-    if (thisApp) 
-      applicationDir = dirname(strdup(thisApp));
+    if (thisApp)
+        applicationDir = dirname(strdup(thisApp));
     userdefinedftn = strdup(func);
 
     if ((colonsep = strrchr(userdefinedftn, ':')) != NULL) {
@@ -209,22 +208,22 @@ PDCbuf_map_transform_register(char *func, void *buf,
     loadpath = PDC_get_realpath(transformslibrary, applicationDir);
 
     if (PDC_get_ftnPtr_(userdefinedftn, loadpath, &ftnHandle) < 0)
-      PGOTO_ERROR(FAIL,"PDC_get_ftnPtr_ returned an error!\n");
+        PGOTO_ERROR(FAIL,"PDC_get_ftnPtr_ returned an error!");
 
     if ((ftnPtr = ftnHandle) == NULL)
-      PGOTO_ERROR(FAIL,"Transforms function lookup failed\n");
+        PGOTO_ERROR(FAIL,"Transforms function lookup failed\n");
 
-    if ((thisFtn = PDC_MALLOC(struct region_transform_ftn_info)) == NULL)
-        PGOTO_ERROR(FAIL,"PDC register_obj_transforms memory allocation failed\n");
+    if ((thisFtn = PDC_MALLOC(struct _pdc_region_transform_ftn_info)) == NULL)
+        PGOTO_ERROR(FAIL,"PDC register_obj_transforms memory allocation failed");
 
     thisFtn->ftnPtr = (size_t (*)()) ftnPtr;
     thisFtn->object_id = dest_object_id;
     id_info = PDC_find_id(src_region_id);
-    if (id_info && ((region_info = (struct PDC_region_info *)id_info->obj_ptr) != NULL))
+    if (id_info && ((region_info = (struct pdc_region_info *)id_info->obj_ptr) != NULL))
         thisFtn->src_region = region_info;
 
     id_info = PDC_find_id(dest_region_id);
-    if (id_info && ((region_info = (struct PDC_region_info *)id_info->obj_ptr) != NULL))
+    if (id_info && ((region_info = (struct pdc_region_info *)id_info->obj_ptr) != NULL))
         thisFtn->dest_region = region_info;
 
     // Flag the destination region with the transform
@@ -241,7 +240,7 @@ PDCbuf_map_transform_register(char *func, void *buf,
     thisFtn->ftn_lastResult = 0;
     thisFtn->data = buf;
     id_info = PDC_find_id(dest_object_id);
-    if (id_info) object1 = (struct PDC_obj_info *)(id_info->obj_ptr);
+    if (id_info) object1 = (struct _pdc_obj_info *)(id_info->obj_ptr);
     if (object1) {
         thisFtn->type = object1->obj_pt->type;
 	if (object1->obj_pt->type_extent == 0) {
@@ -259,7 +258,7 @@ PDCbuf_map_transform_register(char *func, void *buf,
 
     // Add to our own list of transforms functions
     if ((local_regIndex = PDC_add_transform_ptr_to_registry_(thisFtn)) < 0)
-        PGOTO_ERROR(FAIL,"PDC unable to register transform function!\n");
+        PGOTO_ERROR(FAIL,"PDC unable to register transform function!");
 
     PDC_Client_register_region_transform(userdefinedftn, 
        	       	                         loadpath,
@@ -270,9 +269,10 @@ PDCbuf_map_transform_register(char *func, void *buf,
        	       	                         thisFtn->nextState,
        	       	                         (int)PDC_DATA_MAP,
        	       	                         (int)when,
-					 local_regIndex);
+					                     local_regIndex);
 
 done:
+    fflush(stdout);
     if (applicationDir) free(applicationDir);
     if (userdefinedftn) free(userdefinedftn);
     if (loadpath) free(loadpath);
@@ -283,16 +283,16 @@ done:
 perr_t
 PDCbuf_io_transform_register(char *func ATTRIBUTE(unused), void *buf ATTRIBUTE(unused),
                              pdcid_t src_region_id ATTRIBUTE(unused), int current_state ATTRIBUTE(unused),
-			     int next_state ATTRIBUTE(unused), PDCdata_movement_t when ATTRIBUTE(unused))
+			     int next_state ATTRIBUTE(unused), pdc_data_movement_t when ATTRIBUTE(unused))
 {
     perr_t ret_value = FAIL;         /* Return value (not implemented) */
 #if 0
     void *ftnHandle = NULL;
     size_t (*ftnPtr)() = NULL;
-    struct PDC_obj_info *object1 = NULL;
-    struct region_transform_ftn_info *thisFtn = NULL;
-    struct PDC_region_info *region_info;
-    struct PDC_id_info *id_info;
+    struct _pdc_obj_info *object1 = NULL;
+    struct _pdc_region_transform_ftn_info *thisFtn = NULL;
+    struct pdc_region_info *region_info;
+    struct _pdc_id_info *id_info;
     char *thisApp = NULL;
     char *colonsep = NULL; 
     char *transformslibrary = NULL;
@@ -314,8 +314,11 @@ PDCbuf_io_transform_register(char *func ATTRIBUTE(unused), void *buf ATTRIBUTE(u
 perr_t
 PDC_transform_end()
 {
-    perr_t ret_value = SUCCEED;         /* Return value */
+    perr_t ret_value = SUCCEED;
+    
     FUNC_ENTER(NULL);
+    
     PDC_free_transform_registry();
+    
     FUNC_LEAVE(ret_value);
 }

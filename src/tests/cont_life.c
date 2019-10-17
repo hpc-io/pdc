@@ -30,7 +30,7 @@
 int main(int argc, char **argv) 
 {
     pdcid_t pdc, create_prop, cont;
-    struct PDC_cont_prop *prop;
+    struct _pdc_cont_prop *prop;
     int rank = 0, size = 1;
 
 #ifdef ENABLE_MPI
@@ -51,10 +51,6 @@ int main(int argc, char **argv)
     
     // print default container lifetime (persistent)
     prop = PDCcont_prop_get_info(create_prop);
-    if(prop->cont_life == PDC_PERSIST)
-        printf("container property default lifetime is persistent\n");
-    else
-        printf("container property default lifetime is transient\n");
     
     // create a container
     cont = PDCcont_create("c1", create_prop);
@@ -66,18 +62,10 @@ int main(int argc, char **argv)
     // set container lifetime to transient
     PDCprop_set_cont_lifetime(create_prop, PDC_TRANSIENT);
     prop = PDCcont_prop_get_info(create_prop);
-    if(prop->cont_life == PDC_PERSIST)
-        printf("container property lifetime is persistent\n");
-    else
-        printf("container property lifetime is transient\n");
     
     // set container lifetime to persistent
     PDCcont_persist(cont);
     prop = PDCcont_prop_get_info(create_prop);
-    if(prop->cont_life == PDC_PERSIST)
-        printf("container property lifetime is persistent\n");
-    else
-        printf("container property lifetime is transient\n");
 
     // close a container
     if(PDCcont_close(cont) < 0)

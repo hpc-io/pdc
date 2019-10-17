@@ -17,8 +17,8 @@ int main(void)
 
     // Construct query constraints
     float energy_lo0 = 3.75, energy_hi0 = 4.0;
-    pdcquery_t *q0l, *q0h, *q;
-    pdcselection_t sel;
+    pdc_query_t *q0l, *q0h, *q;
+    pdc_selection_t sel;
     
     struct timeval  pdc_timer_start;
     struct timeval  pdc_timer_end;

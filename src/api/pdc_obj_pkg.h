@@ -25,17 +25,7 @@
 #ifndef PDC_OBJ_PKG_H
 #define PDC_OBJ_PKG_H
 
-#include <stdbool.h>
-#include <stddef.h>
-
-#include "pdc_public.h"
 #include "pdc_private.h"
-
-/*******************/
-/* Public Typedefs */
-/*******************/
-typedef enum { NA=0, READ=1, WRITE=2 } PDC_access_t;
-typedef enum { BLOCK=0, NOBLOCK=1 }    PDC_lock_mode_t;
 
 /****************************/
 /* Library Private Typedefs */
@@ -43,46 +33,82 @@ typedef enum { BLOCK=0, NOBLOCK=1 }    PDC_lock_mode_t;
 typedef enum {
     PDC_OBJ_GLOBAL,
     PDC_OBJ_LOCAL
-} PDCobj_location;
+} _pdc_obj_location_t;
 
 typedef enum {
     PDC_NOP = 0,
     PDC_TRANSFORM = 1,
     PDC_ANALYSIS  = 2
-} PDCobj_op_type;
+} _pdc_obj_op_type_t;
 
 /**************************/
 /* Library Private Struct */
 /**************************/
-struct region_map_list{
-    pdcid_t                orig_reg_id;
-    pdcid_t                des_obj_id;
-    pdcid_t                des_reg_id;
-    struct region_map_list *prev;
-    struct region_map_list *next;
-};
-
-struct PDC_obj_info {
+struct _pdc_obj_info {
     char                   *name;
     pdcid_t                 meta_id;
     pdcid_t                 local_id;
-    PDCobj_location         location;
+    _pdc_obj_location_t     location;
     int                     server_id;
     void                   *metadata;
-    struct PDC_cont_info   *cont;
-    struct PDC_obj_prop    *obj_pt;
+    struct _pdc_cont_info  *cont;
+    struct _pdc_obj_prop   *obj_pt;
     struct region_map_list *region_list_head;
 };
 
-struct PDC_region_info {
-    pdcid_t              local_id;
-    struct PDC_obj_info *obj;
-    size_t               ndim;
-    uint64_t            *offset;
-    uint64_t            *size;
-    bool                 mapping;
-    int                  registered_op;
-    void                *buf;
-};
+/***************************************/
+/* Library-private Function Prototypes */
+/***************************************/
+/**
+ * PDC object initialization
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_obj_init();
+
+/**
+ * Create an object
+ *
+ * \param cont_id [IN]          ID of the container
+ * \param obj_name [IN]         Name of the object
+ * \param obj_create_prop [IN]  ID of object property,
+ *                              returned by PDCprop_create(PDC_OBJ_CREATE)
+ * \param location [IN]         PDC_OBJ_GLOBAL/PDC_OBJ_LOCAL
+ *
+ * \return Object id on success/Negative on failure
+ */
+pdcid_t PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_obj_location_t location);
+
+/**
+ * Get object information
+ *
+ * \param obj_id [IN]           ID of the object
+ *
+ * \return Pointer to _pdc_obj_info struct on success/Null on failure
+ */
+struct _pdc_obj_info *PDC_obj_get_info(pdcid_t obj_id);
+
+/**
+ * Free object information
+ *
+ * \param obj_id [IN]           ID of the object
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_free_obj_info(struct _pdc_obj_info *obj);
+
+/**
+ * PDC object finalize
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_obj_end();
+
+/**
+ * Check if object list is empty
+ *
+ * \return SUCCEED if empty/FAIL if not empty
+ */
+perr_t PDC_obj_list_null();
 
 #endif /* PDC_OBJ_PKG_H */

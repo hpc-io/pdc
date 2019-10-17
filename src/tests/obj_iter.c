@@ -90,9 +90,6 @@ int main(int argc, char **argv) {
     
     while(!PDCobj_iter_null(oh)) {
         info = PDCobj_iter_get_info(oh);
-        printf("object name is: %s\n", info->name);
-        printf("object property id is %" PRIu64 "\n", info->obj_pt->obj_prop_id);
-        
         oh = PDCobj_iter_next(oh, cont);
     }
 

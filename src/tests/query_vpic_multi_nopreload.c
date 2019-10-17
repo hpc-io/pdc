@@ -17,10 +17,10 @@ int main(void)
     pdcid_t pdc, energy_id;
     
     // Construct query constraints
-    pdcselection_t sel;
+    pdc_selection_t sel;
     double get_sel_time, get_data_time;
     float *energy_data;
-    pdcquery_t *ql, *qh, *q;
+    pdc_query_t *ql, *qh, *q;
     float energy_lo0 = 3.9, energy_hi0 = 4.0;
 
     struct timeval  pdc_timer_start;

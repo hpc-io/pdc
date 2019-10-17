@@ -79,9 +79,9 @@ int main(int argc, char **argv)
     uint64_t myoffset[NDIM], mysize[NDIM];
     void *mydata[NUM_VAR_MAX];
     
-    struct PDC_region_info obj_regions[TS_MAX][NUM_VAR_MAX];
+    struct pdc_region_info obj_regions[TS_MAX][NUM_VAR_MAX];
     pdc_metadata_t *obj_metas[TS_MAX][NUM_VAR_MAX];
-    PDC_Request_t request[TS_MAX][NUM_VAR_MAX];
+    struct pdc_request_t request[TS_MAX][NUM_VAR_MAX];
     
     struct timeval  pdc_timer_start;
     struct timeval  pdc_timer_end;

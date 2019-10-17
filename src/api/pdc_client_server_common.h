@@ -25,28 +25,25 @@
 #ifndef PDC_CLIENT_SERVER_COMMON_H
 #define PDC_CLIENT_SERVER_COMMON_H
 
+#include "pdc_config.h"
+#include "pdc_linkedlist.h"
+#include "pdc_prop_pkg.h"
+#include "pdc_analysis_and_transforms_common.h"
+#include "pdc_query.h"
+
+#include "mercury_macros.h"
+#include "mercury_proc_string.h"
+#include "mercury_list.h"
+
+#ifdef ENABLE_MULTITHREAD
+#include "mercury_thread_pool.h"
+#include "mercury_thread_condition.h"
+#include "mercury_thread_mutex.h"
+#endif
+
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
-#include "mercury.h"
-#include "mercury_macros.h"
-#include "mercury_proc_string.h"
-#include "mercury_thread_pool.h"
-#include "mercury_thread_condition.h"
-#include "mercury_atomic.h"
-#include "mercury_thread_mutex.h"
-#include "mercury_list.h"
-
-#include "pdc_config.h"
-#include "pdc_linkedlist.h"
-#include "pdc_private.h"
-#include "pdc_obj_pkg.h"
-#include "pdc_prop_pkg.h"
-#include "pdc_analysis_and_transforms.h"
-#include "pdc_analysis_support.h"
-#include "pdc_hist.h"
-#include "pdc_query.h"
 
 #ifdef ENABLE_MULTITHREAD 
 hg_thread_mutex_t pdc_client_info_mutex_g;
@@ -130,30 +127,30 @@ extern hg_atomic_int32_t  close_server_g;
 
 #endif // End of ENABLE_MULTITHREAD
 
-struct PDC_iterator_info * PDC_Block_iterator_cache;
+struct _pdc_iterator_info * PDC_Block_iterator_cache;
 
 /****************************/
 /* Library Private Typedefs */
 /****************************/
-typedef enum { POSIX=0, DAOS=1 }       PDC_io_plugin_t;
+typedef enum { PDC_POSIX=0, PDC_DAOS=1 }       _pdc_io_plugin_t;
 
-typedef enum { NONE=0, 
-               LUSTRE=1, 
-               BB=2, 
-               MEM=3 
-             } PDC_data_loc_t;
+typedef enum { PDC_NONE=0,
+               PDC_LUSTRE=1,
+               PDC_BB=2,
+               PDC_MEM=3 
+             } _pdc_data_loc_t;
 
 typedef enum { PDC_RECV_REGION_OP_NONE=0, 
                PDC_RECV_REGION_DO_QUERY=1, 
                PDC_RECV_REGION_DO_READ=2, 
-             } PDC_recv_region_op_t;
+             } _pdc_recv_region_op_t;
 
 typedef enum { PDC_BULK_OP_NONE=0, 
                PDC_BULK_QUERY_COORDS=1, 
                PDC_BULK_READ_COORDS=2, 
                PDC_BULK_SEND_QUERY_DATA=3,
                PDC_BULK_QUERY_METADATA=4 
-             } PDC_bulk_op_t;
+             } _pdc_bulk_op_t;
 
 
 typedef struct pdc_metadata_t pdc_metadata_t;
@@ -202,7 +199,7 @@ typedef struct region_list_t {
     int      shm_fd;
     pdc_histogram_t *region_hist;
     char    *buf;
-    PDC_data_loc_t data_loc_type;
+    _pdc_data_loc_t data_loc_type;
     char     storage_location[ADDR_MAX];
     uint64_t offset;
     struct region_list_t *io_cache_region;
@@ -211,7 +208,7 @@ typedef struct region_list_t {
     hg_atomic_int32_t      buf_map_refcount;
     int      reg_dirty_from_buf;
     hg_handle_t lock_handle;
-    PDC_access_t access_type;
+    pdc_access_t access_type;
     hg_bulk_t bulk_handle;
     hg_addr_t addr;
     uint64_t  obj_id;
@@ -300,7 +297,7 @@ typedef struct region_map_t {
     uint64_t                        *local_reg_size;
     hg_addr_t                        local_addr;
     hg_bulk_t                        local_bulk_handle;
-    PDC_var_type_t                   local_data_type;
+    pdc_var_type_t                   local_data_type;
     PDC_LIST_HEAD(PDC_mapping_info)  ids;                  /* Head of list of IDs */
 
     struct region_map_t             *prev;
@@ -314,7 +311,7 @@ typedef struct region_buf_map_t {
     int32_t                          remote_client_id;
     size_t                           remote_ndim;
     size_t                           remote_unit;
-    PDC_var_type_t                   remote_data_type;
+    pdc_var_type_t                   remote_data_type;
     region_info_transfer_t           remote_region_unit;
     region_info_transfer_t           remote_region_nounit;
     struct buf_map_release_bulk_args *bulk_args;
@@ -325,7 +322,7 @@ typedef struct region_buf_map_t {
     uint64_t                        *local_reg_size;
     hg_addr_t                        local_addr;
     hg_bulk_t                        local_bulk_handle;
-    PDC_var_type_t                   local_data_type;
+    pdc_var_type_t                   local_data_type;
 
     struct region_buf_map_t         *prev;
     struct region_buf_map_t         *next;
@@ -385,7 +382,7 @@ typedef struct pdc_metadata_t {
     int     time_step;
     // Above four are the unique identifier for objects
 
-    PDC_var_type_t data_type;
+    pdc_var_type_t data_type;
     uint64_t obj_id;
     uint64_t cont_id;
     time_t  create_time;
@@ -413,7 +410,7 @@ typedef struct pdc_metadata_t {
 
     // For transforms
     int transform_state;
-    PDC_transform_state_t current_state;
+    struct _pdc_transform_state current_state;
 
     pdc_histogram_t *obj_hist;
 
@@ -425,7 +422,7 @@ typedef struct pdc_metadata_t {
 } pdc_metadata_t;
 
 typedef struct {
-    PDC_access_t                io_type;   
+    pdc_access_t                io_type;   
     uint32_t                    client_id;
     int32_t                     nclient;
     int32_t                     nbuffer_request;
@@ -731,8 +728,8 @@ typedef struct {
     uint32_t        meta_server_id;
     uint64_t        local_reg_id;
     uint64_t        remote_obj_id;
-    PDC_var_type_t  local_type;
-    PDC_var_type_t  remote_type;
+    pdc_var_type_t  local_type;
+    pdc_var_type_t  remote_type;
     size_t          ndim;
     size_t          remote_unit;
     hg_bulk_t       local_bulk_handle;
@@ -979,19 +976,19 @@ typedef struct {
 // For data query
 /* Define pdc_query_xfer_t */
 typedef struct pdc_query_xfer_t {
-    int                    query_id;
-    int                    manager;
-    int                    client_id;
-    int                    n_unique_obj;
-    int                    query_op;
-    int                    n_combine_ops;
-    int                   *combine_ops;
-    int                    n_constraints;
-    int                    get_op;
-    int                    next_server_id;
-    int                    prev_server_id;
-    pdcquery_constraint_t *constraints;
-    region_info_transfer_t region;
+    int                     query_id;
+    int                     manager;
+    int                     client_id;
+    int                     n_unique_obj;
+    int                     query_op;
+    int                     n_combine_ops;
+    int                    *combine_ops;
+    int                     n_constraints;
+    int                     get_op;
+    int                     next_server_id;
+    int                     prev_server_id;
+    pdc_query_constraint_t *constraints;
+    region_info_transfer_t  region;
 } pdc_query_xfer_t;
 
 /* Define get_sel_data_rpc_in_t */
@@ -1030,7 +1027,7 @@ static hg_return_t
 hg_proc_pdc_kvtag_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret;
-    pdc_kvtag_t *struct_data = (pdc_kvtag_t*) data;
+    pdc_kvtag_t *struct_data = (pdc_kvtag_t *) data;
     
     ret = hg_proc_hg_string_t(proc, &struct_data->name);
     if (ret != HG_SUCCESS) {
@@ -3056,12 +3053,12 @@ hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data)
         switch(hg_proc_get_op(proc)) {
             case HG_DECODE:
                 struct_data->combine_ops = malloc(struct_data->n_combine_ops * sizeof(int));
-                struct_data->constraints = malloc(struct_data->n_constraints * sizeof(pdcquery_constraint_t));
+                struct_data->constraints = malloc(struct_data->n_constraints * sizeof(pdc_query_constraint_t));
                 HG_FALLTHROUGH();
                 
             case HG_ENCODE:
                 ret = hg_proc_raw(proc, struct_data->combine_ops, struct_data->n_combine_ops * sizeof(int));
-                ret = hg_proc_raw(proc, struct_data->constraints, struct_data->n_constraints * sizeof(pdcquery_constraint_t));
+                ret = hg_proc_raw(proc, struct_data->constraints, struct_data->n_constraints * sizeof(pdc_query_constraint_t));
                 break;
             case HG_FREE:
                 /* free(struct_data->combine_ops); // Something is wrong with these 2 free */
@@ -3236,7 +3233,7 @@ struct buf_map_release_bulk_args {
     pdcid_t remote_obj_id;         /* target of object id */
     pdcid_t remote_reg_id;         /* target of region id */
     int32_t remote_client_id;
-    struct PDC_region_info *remote_reg_info;  //
+    struct pdc_region_info *remote_reg_info;  //
     region_info_transfer_t remote_region_unit;
     region_info_transfer_t remote_region_nounit;
     hg_bulk_t remote_bulk_handle;
@@ -3264,7 +3261,7 @@ struct buf_map_transform_and_release_bulk_args {
     pdcid_t remote_obj_id;         /* target of object id */
     pdcid_t remote_reg_id;         /* target of region id */
     int32_t remote_client_id;
-    struct PDC_region_info *remote_reg_info;
+    struct pdc_region_info *remote_reg_info;
     region_info_transfer_t remote_region;
     hg_bulk_t remote_bulk_handle;
     hg_bulk_t local_bulk_handle;
@@ -3282,7 +3279,7 @@ struct buf_map_analysis_and_release_bulk_args {
     pdcid_t remote_obj_id;         /* target of object id */
     pdcid_t remote_reg_id;         /* target of region id */
     int32_t remote_client_id;
-    struct PDC_region_info *remote_reg_info;
+    struct pdc_region_info *remote_reg_info;
     region_info_transfer_t remote_region;
     hg_bulk_t remote_bulk_handle;
     hg_bulk_t local_bulk_handle;
@@ -3298,7 +3295,7 @@ struct buf_map_analysis_and_release_bulk_args {
 struct lock_bulk_args {
     hg_handle_t handle;
     region_lock_in_t in;
-    struct PDC_region_info *server_region;
+    struct pdc_region_info *server_region;
     void  *data_buf;
     region_map_t *mapping_list;
     hg_addr_t addr;
@@ -3311,7 +3308,7 @@ struct region_lock_update_bulk_args {
     pdcid_t remote_reg_id;
     int32_t remote_client_id;
     void  *data_buf;
-    struct PDC_region_info *server_region;
+    struct pdc_region_info *server_region;
 };
 
 struct region_update_bulk_args {
@@ -3386,75 +3383,75 @@ typedef struct storage_regions_args_t {
 /***************************************/
 /* Library-private Function Prototypes */
 /***************************************/
-hg_id_t gen_obj_id_register(hg_class_t *hg_class);
-hg_id_t client_test_connect_register(hg_class_t *hg_class);
-hg_id_t get_remote_metadata_register(hg_class_t *hg_class_g);
-hg_id_t server_lookup_client_register(hg_class_t *hg_class);
-hg_id_t close_server_register(hg_class_t *hg_class);
+hg_id_t PDC_gen_obj_id_register(hg_class_t *hg_class);
+hg_id_t PDC_client_test_connect_register(hg_class_t *hg_class);
+hg_id_t PDC_get_remote_metadata_register(hg_class_t *hg_class_g);
+hg_id_t PDC_server_lookup_client_register(hg_class_t *hg_class);
+hg_id_t PDC_close_server_register(hg_class_t *hg_class);
 
-hg_id_t metadata_query_register(hg_class_t *hg_class);
-hg_id_t metadata_delete_register(hg_class_t *hg_class);
-hg_id_t metadata_delete_by_id_register(hg_class_t *hg_class);
-hg_id_t metadata_update_register(hg_class_t *hg_class);
-hg_id_t metadata_add_tag_register(hg_class_t *hg_class);
-hg_id_t metadata_add_kvtag_register(hg_class_t *hg_class);
-hg_id_t metadata_del_kvtag_register(hg_class_t *hg_class);
-hg_id_t metadata_get_kvtag_register(hg_class_t *hg_class);
+hg_id_t PDC_metadata_query_register(hg_class_t *hg_class);
+hg_id_t PDC_metadata_delete_register(hg_class_t *hg_class);
+hg_id_t PDC_metadata_delete_by_id_register(hg_class_t *hg_class);
+hg_id_t PDC_metadata_update_register(hg_class_t *hg_class);
+hg_id_t PDC_metadata_add_tag_register(hg_class_t *hg_class);
+hg_id_t PDC_metadata_add_kvtag_register(hg_class_t *hg_class);
+hg_id_t PDC_metadata_del_kvtag_register(hg_class_t *hg_class);
+hg_id_t PDC_metadata_get_kvtag_register(hg_class_t *hg_class);
 
-hg_id_t buf_map_register(hg_class_t *hg_class);
-hg_id_t buf_unmap_register(hg_class_t *hg_class);
-hg_id_t region_lock_register(hg_class_t *hg_class);
-hg_id_t data_server_write_register(hg_class_t *hg_class);
-hg_id_t notify_region_update_register(hg_class_t *hg_class);
-hg_id_t region_release_register(hg_class_t *hg_class);
-hg_id_t region_analysis_release_register(hg_class_t *hg_class);
-hg_id_t region_transform_release_register(hg_class_t *hg_class);
-hg_id_t transform_region_release_register(hg_class_t *hg_class);
-hg_id_t buf_map_server_register(hg_class_t *hg_class);
-hg_id_t buf_unmap_server_register(hg_class_t *hg_class);
+hg_id_t PDC_buf_map_register(hg_class_t *hg_class);
+hg_id_t PDC_buf_unmap_register(hg_class_t *hg_class);
+hg_id_t PDC_region_lock_register(hg_class_t *hg_class);
+hg_id_t PDC_data_server_write_register(hg_class_t *hg_class);
+hg_id_t PDC_notify_region_update_register(hg_class_t *hg_class);
+hg_id_t PDC_region_release_register(hg_class_t *hg_class);
+hg_id_t PDC_region_analysis_release_register(hg_class_t *hg_class);
+hg_id_t PDC_region_transform_release_register(hg_class_t *hg_class);
+hg_id_t PDC_transform_region_release_register(hg_class_t *hg_class);
+hg_id_t PDC_buf_map_server_register(hg_class_t *hg_class);
+hg_id_t PDC_buf_unmap_server_register(hg_class_t *hg_class);
 
-hg_id_t test_bulk_xfer_register(hg_class_t *hg_class);
-hg_id_t server_lookup_remote_server_register(hg_class_t *hg_class);
-hg_id_t update_region_loc_register(hg_class_t *hg_class);
-hg_id_t get_metadata_by_id_register(hg_class_t *hg_class);
-hg_id_t get_storage_info_register(hg_class_t *hg_class);
-hg_id_t bulk_rpc_register(hg_class_t *hg_class);
-hg_id_t gen_cont_id_register(hg_class_t *hg_class);
-hg_id_t cont_add_del_objs_rpc_register(hg_class_t *hg_class);
-hg_id_t query_read_obj_name_rpc_register(hg_class_t *hg_class);
-hg_id_t server_checkpoing_rpc_register(hg_class_t *hg_class);
-hg_id_t send_shm_register(hg_class_t *hg_class);
-hg_id_t send_shm_bulk_rpc_register(hg_class_t *hg_class);
-hg_id_t query_read_obj_name_client_rpc_register(hg_class_t *hg_class);
-hg_id_t container_query_register(hg_class_t *hg_class);
-hg_id_t cont_add_tags_rpc_register(hg_class_t *hg_class);
-hg_id_t obj_data_iterator_register(hg_class_t *hg_class);
+hg_id_t PDC_test_bulk_xfer_register(hg_class_t *hg_class);
+hg_id_t PDC_server_lookup_remote_server_register(hg_class_t *hg_class);
+hg_id_t PDC_update_region_loc_register(hg_class_t *hg_class);
+hg_id_t PDC_get_metadata_by_id_register(hg_class_t *hg_class);
+hg_id_t PDC_get_storage_info_register(hg_class_t *hg_class);
+hg_id_t PDC_bulk_rpc_register(hg_class_t *hg_class);
+hg_id_t PDC_gen_cont_id_register(hg_class_t *hg_class);
+hg_id_t PDC_cont_add_del_objs_rpc_register(hg_class_t *hg_class);
+hg_id_t PDC_query_read_obj_name_rpc_register(hg_class_t *hg_class);
+hg_id_t PDC_server_checkpoing_rpc_register(hg_class_t *hg_class);
+hg_id_t PDC_send_shm_register(hg_class_t *hg_class);
+hg_id_t PDC_send_shm_bulk_rpc_register(hg_class_t *hg_class);
+hg_id_t PDC_query_read_obj_name_client_rpc_register(hg_class_t *hg_class);
+hg_id_t PDC_container_query_register(hg_class_t *hg_class);
+hg_id_t PDC_cont_add_tags_rpc_register(hg_class_t *hg_class);
+hg_id_t PDC_obj_data_iterator_register(hg_class_t *hg_class);
 
 //bulk
-hg_id_t query_partial_register(hg_class_t *hg_class);
-hg_id_t query_kvtag_register(hg_class_t *hg_class);
-hg_id_t notify_io_complete_register(hg_class_t *hg_class);
-hg_id_t data_server_read_register(hg_class_t *hg_class);
+hg_id_t PDC_query_partial_register(hg_class_t *hg_class);
+hg_id_t PDC_query_kvtag_register(hg_class_t *hg_class);
+hg_id_t PDC_notify_io_complete_register(hg_class_t *hg_class);
+hg_id_t PDC_data_server_read_register(hg_class_t *hg_class);
 
-hg_id_t get_storage_meta_name_query_bulk_result_rpc_register(hg_class_t *hg_class);
-hg_id_t storage_meta_name_query_rpc_register(hg_class_t *hg_class);
-hg_id_t notify_client_multi_io_complete_rpc_register(hg_class_t *hg_class);
+hg_id_t PDC_get_storage_meta_name_query_bulk_result_rpc_register(hg_class_t *hg_class);
+hg_id_t PDC_storage_meta_name_query_rpc_register(hg_class_t *hg_class);
+hg_id_t PDC_notify_client_multi_io_complete_rpc_register(hg_class_t *hg_class);
 
-hg_id_t send_client_storage_meta_rpc_register(hg_class_t *hg_class);
-hg_id_t send_read_sel_obj_id_rpc_register(hg_class_t *hg_class);
+hg_id_t PDC_send_client_storage_meta_rpc_register(hg_class_t *hg_class);
+hg_id_t PDC_send_read_sel_obj_id_rpc_register(hg_class_t *hg_class);
 
-hg_id_t data_server_write_check_register(hg_class_t *hg_class);
-hg_id_t data_server_read_register(hg_class_t *hg_class);
-hg_id_t data_server_read_check_register(hg_class_t *hg_class);
-hg_id_t data_server_read_register(hg_class_t *hg_class);
+hg_id_t PDC_data_server_write_check_register(hg_class_t *hg_class);
+hg_id_t PDC_data_server_read_register(hg_class_t *hg_class);
+hg_id_t PDC_data_server_read_check_register(hg_class_t *hg_class);
+hg_id_t PDC_data_server_read_register(hg_class_t *hg_class);
 
-hg_id_t send_nhits_register(hg_class_t *hg_class);
-hg_id_t send_bulk_rpc_register(hg_class_t *hg_class);
-hg_id_t get_sel_data_rpc_register(hg_class_t *hg_class);
+hg_id_t PDC_send_nhits_register(hg_class_t *hg_class);
+hg_id_t PDC_send_bulk_rpc_register(hg_class_t *hg_class);
+hg_id_t PDC_get_sel_data_rpc_register(hg_class_t *hg_class);
 
 // Data query
-hg_id_t send_data_query_rpc_register(hg_class_t *hg_class);
-hg_id_t send_data_query_region_register(hg_class_t *hg_class);
+hg_id_t PDC_send_data_query_rpc_register(hg_class_t *hg_class);
+hg_id_t PDC_send_data_query_region_register(hg_class_t *hg_class);
 
 /**
  * Calculate time from start to end
@@ -3652,7 +3649,7 @@ perr_t PDC_transfer_t_to_metadata_t(pdc_metadata_transfer_t *transfer, pdc_metad
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_region_info_to_list_t(struct PDC_region_info *region, region_list_t *list);
+perr_t PDC_region_info_to_list_t(struct pdc_region_info *region, region_list_t *list);
 
 /**
  * Region struct type conversion
@@ -3682,7 +3679,7 @@ perr_t PDC_region_list_t_to_transfer(region_list_t *region, region_info_transfer
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_region_info_t_to_transfer(struct PDC_region_info *region, region_info_transfer_t *transfer);
+perr_t PDC_region_info_t_to_transfer(struct pdc_region_info *region, region_info_transfer_t *transfer);
 
 /**
  * Region struct type conversion considering data type
@@ -3693,7 +3690,7 @@ perr_t PDC_region_info_t_to_transfer(struct PDC_region_info *region, region_info
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_region_info_t_to_transfer_unit(struct PDC_region_info *region, region_info_transfer_t *transfer, size_t unit);
+perr_t PDC_region_info_t_to_transfer_unit(struct pdc_region_info *region, region_info_transfer_t *transfer, size_t unit);
 
 /**
  * Region struct type conversion
@@ -3702,7 +3699,7 @@ perr_t PDC_region_info_t_to_transfer_unit(struct PDC_region_info *region, region
  *
  * \return Converted region type
  */
-struct PDC_region_info *PDC_region_transfer_t_to_region_info(region_info_transfer_t *transfer);
+struct pdc_region_info *PDC_region_transfer_t_to_region_info(region_info_transfer_t *transfer);
 
 /**
  * Region struct copy
@@ -3954,7 +3951,7 @@ perr_t PDC_free_kvtag(pdc_kvtag_t **kvtag);
  *
  * \return Size of the data type
  */
-int PDC_get_var_type_size(PDC_var_type_t dtype);
+int PDC_get_var_type_size(pdc_var_type_t dtype);
 
 /**
  * *********
@@ -3963,7 +3960,7 @@ int PDC_get_var_type_size(PDC_var_type_t dtype);
  *
  * \return *********
  */
-pdc_query_xfer_t *PDC_serialize_query(pdcquery_t *query);
+pdc_query_xfer_t *PDC_serialize_query(pdc_query_t *query);
 
 /**
  * *********
@@ -3972,7 +3969,7 @@ pdc_query_xfer_t *PDC_serialize_query(pdcquery_t *query);
  *
  * \return *********
  */
-pdcquery_t *PDC_deserialize_query(pdc_query_xfer_t *query_xfer);
+pdc_query_t *PDC_deserialize_query(pdc_query_xfer_t *query_xfer);
 
 /**
  * *********

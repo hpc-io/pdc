@@ -15,12 +15,12 @@ int main(void)
     pdcid_t pdc, x_id, y_id, energy_id;
     
     uint64_t nhits;
-    pdcselection_t sel;
+    pdc_selection_t sel;
     double get_sel_time, get_data_time;
     float *energy_data = NULL, *x_data = NULL, *y_data = NULL;
     float preload_value = 0;
     int preload_int = 0;
-    pdcquery_t *qpreload_energy, *qpreload_x, *qpreload, *ql, *q2_lo, *q2_hi, *q2, *q3_lo, *q3_hi, *q3, *q, *q12, *qpreload_y, *qpreload_xy;
+    pdc_query_t *qpreload_energy, *qpreload_x, *qpreload, *ql, *q2_lo, *q2_hi, *q2, *q3_lo, *q3_hi, *q3, *q, *q12, *qpreload_y, *qpreload_xy;
     float energy_lo0 = 3.0;
     float x_lo = 300, x_hi = 310;
     float y_lo = 140, y_hi = 150;

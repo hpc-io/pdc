@@ -27,10 +27,10 @@
 #define PDC_ANALYSIS_SERVER_H
 
 #include "pdc_public.h"
-#include "pdc_analysis_and_transforms.h"
+#include "pdc_analysis_and_transforms_common.h"
 
 perr_t PDC_Server_instantiate_data_iterator(obj_data_iterator_in_t *in, obj_data_iterator_out_t *out);
 
-int PDC_get_analysis_registry(struct region_analysis_ftn_info ***registry);
+int PDC_get_analysis_registry(struct _pdc_region_analysis_ftn_info ***registry);
 
 #endif

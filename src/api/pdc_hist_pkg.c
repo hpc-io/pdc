@@ -1,6 +1,7 @@
+#include "pdc_hist_pkg.h"
+#include "pdc_private.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "pdc.h" 
 
 #define MACRO_SAMPLE_MIN_MAX(TYPE, n, data, sample_pct, min, max) ({    \
     uint64_t i, sample_n, iter = 0;                                     \
@@ -17,14 +18,14 @@
     }                                                                   \
 })
 
-perr_t PDC_sample_min_max(PDC_var_type_t dtype, uint64_t n, void *data, double sample_pct, double *min, double *max)
+perr_t PDC_sample_min_max(pdc_var_type_t dtype, uint64_t n, void *data, double sample_pct, double *min, double *max)
 {
     perr_t ret_value = SUCCEED;
+    
+    FUNC_ENTER(NULL);
 
-    if (NULL == data || NULL == min || NULL == max) {
-        ret_value = FAIL;
-        goto done;
-    }
+    if (NULL == data || NULL == min || NULL == max)
+        PGOTO_DONE(FAIL);
 
     if (PDC_INT == dtype) 
         MACRO_SAMPLE_MIN_MAX(int,      n, data, sample_pct, *min, *max);
@@ -39,19 +40,22 @@ perr_t PDC_sample_min_max(PDC_var_type_t dtype, uint64_t n, void *data, double s
     else if (PDC_UINT == dtype) 
         MACRO_SAMPLE_MIN_MAX(uint32_t, n, data, sample_pct, *min, *max);
     else {
-        ret_value = FAIL;
-        printf("== %s - datatype %d not supported!)\n", __func__, dtype);
-        goto done;
+        PGOTO_ERROR(FAIL, "== datatype %d not supported!", dtype);
     }
 
 done:
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
 double ceil_power_of_2(double number)
 {
+    double ret_value = 0;
     double res = 1.0;
     double sign = number > 0 ? 1.0 : -1.0;
+    
+    FUNC_ENTER(NULL);
+    
     number *= sign;
 
     if (number >= res) {
@@ -62,13 +66,19 @@ double ceil_power_of_2(double number)
         res *= 2.0;
     }
 
-    return res*sign;
+    ret_value = res*sign;
+    
+    FUNC_LEAVE(ret_value);
 }
 
 double floor_power_of_2(double number)
 {
+    double ret_value = 0;
     double res = 1.0;
     double sign = number > 0 ? 1.0 : -1.0;
+    
+    FUNC_ENTER(NULL);
+    
     number *= sign;
 
     if (number >= res) {
@@ -79,18 +89,23 @@ double floor_power_of_2(double number)
         while(res > number) {res /= 2.0;}
     }
 
-    return res*sign;
+    ret_value = res*sign;
+    
+    FUNC_LEAVE(ret_value);
 }
 
 // Generate histogram with at least nbin bins
-pdc_histogram_t *PDC_create_hist(PDC_var_type_t dtype, int nbin, double min, double max)
+pdc_histogram_t *PDC_create_hist(pdc_var_type_t dtype, int nbin, double min, double max)
 {
+    pdc_histogram_t *ret_value = NULL;
     pdc_histogram_t *hist;
     int i;
     double min_bin, max_bin, bin_incr;
 
+    FUNC_ENTER(NULL);
+    
     if (nbin < 4 || min > max) 
-        return NULL;
+        PGOTO_DONE(NULL);
 
     bin_incr    = floor_power_of_2((max-min) / (nbin - 2)); // Excluding first and last bin (open ended)
     nbin        = ceil((max-min)/bin_incr);
@@ -103,10 +118,10 @@ pdc_histogram_t *PDC_create_hist(PDC_var_type_t dtype, int nbin, double min, dou
     hist->nbin  = nbin;
 
     min_bin = floor(min);
-    while(min_bin <= min) {min_bin += bin_incr;}
+    while (min_bin <= min) {min_bin += bin_incr;}
 
     max_bin = ceil(max);
-    while(max_bin >= max) {max_bin -= bin_incr;}
+    while (max_bin >= max) {max_bin -= bin_incr;}
 
     hist->range[0] = min_bin;
     hist->range[1] = min_bin;
@@ -119,7 +134,11 @@ pdc_histogram_t *PDC_create_hist(PDC_var_type_t dtype, int nbin, double min, dou
         hist->range[i+1] = hist->range[i] + bin_incr;
     }
 
-    return hist;
+    ret_value = hist;
+    
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
 }
 
 #define MACRO_HIST_INCR_ALL(TYPE, hist, n, _data) ({                                        \
@@ -174,9 +193,12 @@ pdc_histogram_t *PDC_create_hist(PDC_var_type_t dtype, int nbin, double min, dou
     }                                                                                       \
 })
 
-perr_t PDC_hist_incr_all(pdc_histogram_t *hist, PDC_var_type_t dtype, uint64_t n, void *data)
+perr_t PDC_hist_incr_all(pdc_histogram_t *hist, pdc_var_type_t dtype, uint64_t n, void *data)
 {
     perr_t ret_value = SUCCEED;
+    
+    FUNC_ENTER(NULL);
+    
     if (dtype != hist->dtype || 0 == n || NULL == data) 
         return FAIL;
     
@@ -192,66 +214,80 @@ perr_t PDC_hist_incr_all(pdc_histogram_t *hist, PDC_var_type_t dtype, uint64_t n
         MACRO_HIST_INCR_ALL(uint64_t, hist, n, data);
     else if (PDC_UINT == dtype) 
         MACRO_HIST_INCR_ALL(uint32_t, hist, n, data);
-    else {
-        ret_value = FAIL;
-        printf("== %s - datatype %d not supported!)\n", __func__, dtype);
-        goto done;
-    }
+    else
+        PGOTO_ERROR(FAIL, "== datatype %d not supported!", dtype);
 
 done:
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
-pdc_histogram_t *PDC_gen_hist(PDC_var_type_t dtype, uint64_t n, void *data)
+pdc_histogram_t *PDC_gen_hist(pdc_var_type_t dtype, uint64_t n, void *data)
 {
+    pdc_histogram_t *ret_value = NULL;
     pdc_histogram_t *hist;
     double min, max;
+#ifdef ENABLE_TIMING
+    double gen_hist_time;
+    struct timeval  pdc_timer_start, pdc_timer_end;
+#endif
+    
+    FUNC_ENTER(NULL);
 
     if (0 == n || NULL == data) {
-        return NULL;
+        PGOTO_DONE(NULL);
     }
 
-    #ifdef ENABLE_TIMING
-    struct timeval  pdc_timer_start, pdc_timer_end;
+#ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer_start, 0);
-    #endif
+#endif
 
     PDC_sample_min_max(dtype, n, data, 0.1, &min, &max);
 
     hist = PDC_create_hist(dtype, 50, min, max);
-    if (NULL == hist) {
-        printf("== %s - error with PDC_create_hist!)\n", __func__);
-        return NULL;
-    }
+    if (NULL == hist)
+        PGOTO_ERROR(NULL, "== error with PDC_create_hist!");
 
     PDC_hist_incr_all(hist, dtype, n, data);
 
-    #ifdef ENABLE_TIMING
+#ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer_end, 0);
-    double gen_hist_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-    printf("== generate histogram of %lu elements with %d bins takes %.2fs\n", 
+    gen_hist_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+    printf("== generate histogram of %lu elements with %d bins takes %.2fs\n",
             n, hist->nbin, gen_hist_time);
-    #endif
+#endif
 
-    return hist;
+    ret_value = hist;
+    
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
 }
 
 void PDC_free_hist(pdc_histogram_t *hist)
 {
+    FUNC_ENTER(NULL);
+    
     if (NULL == hist) 
-        return;
+        PGOTO_DONE_VOID;
     
     free(hist->range);
     free(hist->bin);
     free(hist);
+    
+done:
+    fflush(stdout);
+    FUNC_LEAVE_VOID;
 }
 
 void PDC_print_hist(pdc_histogram_t *hist)
 {
     int i;
 
+    FUNC_ENTER(NULL);
+    
     if (NULL == hist) 
-        return;
+        PGOTO_DONE_VOID;
     
     for (i = 0; i < hist->nbin; i++) {
         if (i != hist->nbin - 1) 
@@ -260,16 +296,22 @@ void PDC_print_hist(pdc_histogram_t *hist)
             printf("[%.2f, %.2f]: %" PRIu64 "\n", hist->range[i*2], hist->range[i*2+1], hist->bin[i]);
     }
     printf("\n\n");
+    
+done:
     fflush(stdout);
+    FUNC_LEAVE_VOID;
 }
 
 pdc_histogram_t *PDC_dup_hist(pdc_histogram_t *hist)
 {
+    pdc_histogram_t *ret_value = NULL;
     pdc_histogram_t *res;
     int nbin;
 
+    FUNC_ENTER(NULL);
+    
     if (NULL == hist) 
-        return NULL;
+        PGOTO_DONE(NULL);
 
     nbin       = hist->nbin;
     res        = (pdc_histogram_t*)malloc(sizeof(pdc_histogram_t));
@@ -282,17 +324,24 @@ pdc_histogram_t *PDC_dup_hist(pdc_histogram_t *hist)
     memcpy(res->range, hist->range, sizeof(double)*nbin*2);
     memcpy(res->bin,   hist->bin,   sizeof(double)*nbin);
 
-    return res;
+    ret_value = res;
+    
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
 }
 
 pdc_histogram_t *PDC_merge_hist(int n, pdc_histogram_t **hists)
 {
+    pdc_histogram_t *ret_value = NULL;
     int i, j, incr_max_idx, hi, lo, mid;
     double tot_min, tot_max, incr_max;
     pdc_histogram_t *res;
 
+    FUNC_ENTER(NULL);
+    
     if (n == 0 || NULL == hists) 
-        return NULL;
+        PGOTO_DONE(NULL);
 
     tot_min  = hists[0]->range[1];
     tot_max  = hists[0]->range[2*hists[0]->nbin-2];
@@ -300,8 +349,7 @@ pdc_histogram_t *PDC_merge_hist(int n, pdc_histogram_t **hists)
 
     for (i = 1; i < n; i++) {
         if (hists[i]->dtype != hists[i-1]->dtype) {
-            printf("== %s cannot merge histograms of different types!\n", __func__);
-            return NULL;
+            PGOTO_ERROR(NULL, "== cannot merge histograms of different types!");
         }
         if (hists[i]->incr > incr_max) {
             incr_max = hists[i]->incr;
@@ -318,10 +366,8 @@ pdc_histogram_t *PDC_merge_hist(int n, pdc_histogram_t **hists)
 
     // Duplicate the base hist to result
     res = PDC_dup_hist(hists[incr_max_idx]);
-    if (NULL == res) {
-        printf("== %s error with PDC_dup_hist!\n", __func__);
-        return NULL;
-    }
+    if (NULL == res)
+        PGOTO_ERROR(NULL, "== error with PDC_dup_hist!");
 
     res->range[0]               = tot_min;
     res->range[(res->nbin)*2-1] = tot_max;
@@ -347,13 +393,19 @@ pdc_histogram_t *PDC_merge_hist(int n, pdc_histogram_t **hists)
         }
     }
 
-    return res;
+    ret_value = res;
+    
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
 }
 
 void PDC_copy_hist(pdc_histogram_t *to, pdc_histogram_t *from)
 {
     int nbin = from->nbin;
 
+    FUNC_ENTER(NULL);
+    
     to->incr  = from->incr;
     to->dtype = from->dtype;
     if (NULL == to->range)
@@ -363,6 +415,8 @@ void PDC_copy_hist(pdc_histogram_t *to, pdc_histogram_t *from)
         to->bin   = (uint64_t*)calloc(sizeof(uint64_t), nbin);
     memcpy(to->bin, from->bin, sizeof(uint64_t)*nbin);
     to->nbin  = from->nbin;
+    
+    FUNC_LEAVE_VOID;
 }
 
 

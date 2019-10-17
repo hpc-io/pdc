@@ -16,7 +16,7 @@ int main(int argc, char **argv)
     int rank = 0, size = 1;
     uint64_t readsize;
     pdcid_t pdc, cont_prop, cont;
-    struct PDC_region_info region;
+    struct pdc_region_info region;
     pdc_metadata_t *metadata;
     uint64_t my_readsize;
     int ndim = 1;

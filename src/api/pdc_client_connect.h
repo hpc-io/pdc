@@ -25,43 +25,29 @@
 #ifndef PDC_CLIENT_CONNECT_H
 #define PDC_CLIENT_CONNECT_H
 
+#include "pdc_prop.h"
+#include "pdc_obj_pkg.h"
+#include "pdc_client_server_common.h"
 #include "mercury.h"
 #include "mercury_proc_string.h"
 #include "mercury_request.h"
 
-#include "pdc.h"
-#include "pdc_prop.h"
-#include "pdc_obj_pkg.h"
-#include "pdc_client_server_common.h"
-
 extern int pdc_server_num_g;
 extern int pdc_client_mpi_rank_g;
 extern int pdc_client_mpi_size_g;
-extern PDC_server_selection_t pdc_server_selection_g;
-extern struct pdc_server_info_t *pdc_server_info_g;
+extern pdc_server_selection_t pdc_server_selection_g;
+extern struct _pdc_server_info *pdc_server_info_g;
 
 /****************************/
 /* Library Private Typedefs */
 /****************************/
-typedef struct pdc_server_info_t {
+struct _pdc_server_info {
     char            addr_string[ADDR_MAX];
     int             addr_valid;
     hg_addr_t       addr;
-} pdc_server_info_t;
+};
 
-typedef struct pdc_client {
-    pdcid_t         pdc;
-    int             client_rank;
-    int             client_port;
-    char         *  client_addr;
-/*  Some Mercury related info  */
-    hg_class_t   *  hg_class;
-    hg_context_t *  hg_context;
-    hg_addr_t       hg_addr;
-    hg_handle_t     client_handle;
-} pdc_client_t;
-
-struct client_lookup_args {
+struct _pdc_client_lookup_args {
     const char          *obj_name;
     uint64_t             obj_id;
     uint32_t             server_id;
@@ -78,58 +64,41 @@ struct client_lookup_args {
     hg_request_t        *request;
 };
 
-struct client_transform_args {
+struct _pdc_client_transform_args {
     size_t               size;
     void                *data;
     void                *transform_result;
-    struct region_transform_ftn_info *this_transform;    
-    struct PDC_region_info *region_info;
+    struct _pdc_region_transform_ftn_info *this_transform;    
+    struct pdc_region_info *region_info;
     int                  type_extent;
     int                  transform_state;
     int                  ret;
     hg_bulk_t            local_bulk_handle;
 };
 
-typedef struct metadata_query_args_t {
+struct _pdc_metadata_query_args {
     pdc_metadata_t *data;
-} metadata_query_args_t;
+};
 
-typedef struct container_query_args_t {
+struct _pdc_container_query_args {
     uint64_t cont_id;
-} container_query_args_t;
+};
 
-struct buf_map_args {
+struct _pdc_buf_map_args {
     int32_t     ret;
 };
 
-struct region_map_args {
-	int         ret;
-};
-
-struct region_unmap_args {
-    int         ret;
-};
-
-struct object_unmap_args {
-    int32_t     ret;
-};
-
-struct region_lock_args {
+struct _pdc_region_lock_args {
     pbool_t     *status;
     int         ret;
 };
 
-struct region_release_args {
-    pbool_t     *status;
-    int         ret;
-};
-
-typedef struct pdc_get_kvtag_args_t{
+struct _pdc_get_kvtag_args {
     int ret;
     pdc_kvtag_t *kvtag;
-} pdc_get_kvtag_args_t;
+};
 
-typedef struct pdcquery_result_list_t {
+struct _pdc_query_result_list {
     uint32_t ndim;
     int      query_id;
     uint64_t nhits;
@@ -139,9 +108,9 @@ typedef struct pdcquery_result_list_t {
     uint64_t *data_arr_size;
     uint64_t recv_data_nhits;
     
-    struct pdcquery_result_list_t *prev;
-    struct pdcquery_result_list_t *next;
-} pdcquery_result_list_t;
+    struct _pdc_query_result_list *prev;
+    struct _pdc_query_result_list *next;
+};
 
 #define PDC_CLIENT_DATA_SERVER() ((pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g)
 
@@ -183,7 +152,7 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdci
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t ndim, uint64_t *local_dims, uint64_t *local_offset, PDC_var_type_t local_type, void *local_data, PDC_var_type_t remote_type, struct PDC_region_info *local_region, struct PDC_region_info *remote_region);
+perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t ndim, uint64_t *local_dims, uint64_t *local_offset, pdc_var_type_t local_type, void *local_data, pdc_var_type_t remote_type, struct pdc_region_info *local_region, struct pdc_region_info *remote_region);
 
 /**
  * Client request for buffer to object unmap
@@ -195,32 +164,32 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct PDC_region_info *reginfo, PDC_var_type_t data_type);
+perr_t PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct pdc_region_info *reginfo, pdc_var_type_t data_type);
 
 /**
  * Request of PDC client to get region lock
  *
  * \param obj_id [IN]           ID of the metadata
- * \param region_info [IN]      Pointer to PDC_region_info struct
+ * \param region_info [IN]      Pointer to pdc_region_info struct
  * \param access_type [IN]      Access type (enum)
  * \param lock_mode [IN]        Lock mode
  * \param obtained [OUT]        Lock granted or not
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_region_lock(struct PDC_obj_info *object_info, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_lock_mode_t lock_mode, PDC_var_type_t data_type, pbool_t *obtained);
+perr_t PDC_Client_region_lock(struct _pdc_obj_info *object_info, struct pdc_region_info *region_info, pdc_access_t access_type, pdc_lock_mode_t lock_mode, pdc_var_type_t data_type, pbool_t *obtained);
 
 /**
  * Request of PDC client to get region release
  *
  * \param obj_id [IN]           ID of the metadata
- * \param region_info [IN]      Pointer to PDC_region_info struct
+ * \param region_info [IN]      Pointer to pdc_region_info struct
  * \param access_type [IN]      Access type (enum)
  * \param released [OUT]        Lock released or not
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_region_release(struct PDC_obj_info *object_info, struct PDC_region_info *region_info, PDC_access_t access_type, PDC_var_type_t data_type, pbool_t *released);
+perr_t PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_region_info *region_info, pdc_access_t access_type, pdc_var_type_t data_type, pbool_t *released);
 
 /**
  * PDC client initialization
@@ -256,7 +225,7 @@ perr_t PDC_Client_data_direct_init();
 perr_t PDC_Client_attach_metadata_to_local_obj(const char *obj_name,
                                                uint64_t obj_id,
                                                uint64_t cont_id,
-                                               struct PDC_obj_info *obj_info);
+                                               struct _pdc_obj_info *obj_info);
 
 /**
  * ****************
@@ -326,7 +295,7 @@ perr_t PDC_Client_read_overlap_regions(uint32_t ndim,
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_write_wait_notify(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf);
+perr_t PDC_Client_write_wait_notify(pdc_metadata_t *meta, struct pdc_region_info *region, void *buf);
 
 /**
  * Sync request send to server to read a region of object with users buffer
@@ -338,7 +307,7 @@ perr_t PDC_Client_write_wait_notify(pdc_metadata_t *meta, struct PDC_region_info
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_read_wait_notify(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf);
+perr_t PDC_Client_read_wait_notify(pdc_metadata_t *meta, struct pdc_region_info *region, void *buf);
 
 /**
  * Request of PDC client to add a tag to metadata
@@ -435,7 +404,7 @@ perr_t PDC_partial_query(int is_list_all, int user_id, const char* app_name, con
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_write_wait_notify(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf);
+perr_t PDC_Client_write_wait_notify(pdc_metadata_t *meta, struct pdc_region_info *region, void *buf);
 
 /**
  * Client request server to check IO status of a previous IO request
@@ -449,7 +418,7 @@ perr_t PDC_Client_write_wait_notify(pdc_metadata_t *meta, struct PDC_region_info
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_metadata_t *meta, struct PDC_region_info *region, int *status, void *buf);
+perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_metadata_t *meta, struct pdc_region_info *region, int *status, void *buf);
 
 /**
  * Client request server to return container ID by sending container name
@@ -481,7 +450,7 @@ perr_t PDC_Client_query_container_name_col(const char *cont_name, uint64_t *cont
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_iread(pdc_metadata_t *meta, struct PDC_region_info *region, PDC_Request_t *request, void *buf);
+perr_t PDC_Client_iread(pdc_metadata_t *meta, struct pdc_region_info *region, struct pdc_request_t *request, void *buf);
 
 /**
  * Sync request send to server to read a region and put it in users buffer
@@ -492,7 +461,7 @@ perr_t PDC_Client_iread(pdc_metadata_t *meta, struct PDC_region_info *region, PD
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_read(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf);
+perr_t PDC_Client_read(pdc_metadata_t *meta, struct pdc_region_info *region, void *buf);
 
 /**
  * Sync request send to server to write a region of object with users buffer
@@ -504,7 +473,7 @@ perr_t PDC_Client_read(pdc_metadata_t *meta, struct PDC_region_info *region, voi
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct PDC_region_info *region, PDC_Request_t *request, void *buf);
+perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct pdc_region_info *region, struct pdc_request_t *request, void *buf);
 
 /**
  * Sync request send to server to write a region of object with users buffer
@@ -515,7 +484,7 @@ perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct PDC_region_info *region, P
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_write(pdc_metadata_t *meta, struct PDC_region_info *region, void *buf);
+perr_t PDC_Client_write(pdc_metadata_t *meta, struct pdc_region_info *region, void *buf);
 
 /**
  * Generate container ID by server
@@ -588,7 +557,7 @@ perr_t PDC_Client_query_name_read_entire_obj_client_agg_cache_iter(int my_nobj,
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_send_data_query(pdcquery_t *query, pdcquery_get_op_t get_op, uint64_t *nhits, pdcselection_t *sel, void *data);
+perr_t PDC_send_data_query(pdc_query_t *query, pdc_query_get_op_t get_op, uint64_t *nhits, pdc_selection_t *sel, void *data);
 
 /**
  * ********
@@ -608,7 +577,7 @@ hg_return_t PDC_recv_coords(const struct hg_cb_info *callback_info);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_get_sel_data(pdcid_t obj_id, pdcselection_t *sel, void *data);
+perr_t PDC_Client_get_sel_data(pdcid_t obj_id, pdc_selection_t *sel, void *data);
 
 /**
  * ********
@@ -626,7 +595,7 @@ hg_return_t PDC_recv_read_coords_data(const struct hg_cb_info *callback_info);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_obj_prop_free(struct PDC_obj_prop *cp);
+perr_t PDC_obj_prop_free(struct _pdc_obj_prop *cp);
 
 /**
  * ********
@@ -669,7 +638,7 @@ hg_return_t PDC_Client_work_done_cb();
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_data_server_read(PDC_Request_t *request);
+perr_t PDC_Client_data_server_read(struct pdc_request_t *request);
 
 /**
  * *******
@@ -678,7 +647,7 @@ perr_t PDC_Client_data_server_read(PDC_Request_t *request);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_data_server_write(PDC_Request_t *request);
+perr_t PDC_Client_data_server_write(struct pdc_request_t *request);
 
 /**
  * Client request server to check IO status of a previous IO request
@@ -688,7 +657,7 @@ perr_t PDC_Client_data_server_write(PDC_Request_t *request);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_data_server_write_check(PDC_Request_t *request, int *status);
+perr_t PDC_Client_data_server_write_check(struct pdc_request_t *request, int *status);
 
 /**
  * Client request server to check IO status of a previous IO request
@@ -699,7 +668,7 @@ perr_t PDC_Client_data_server_write_check(PDC_Request_t *request, int *status);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_write_id(pdcid_t local_obj_id, struct PDC_region_info *region, void *buf);
+perr_t PDC_Client_write_id(pdcid_t local_obj_id, struct pdc_region_info *region, void *buf);
 
 /**
  * Send a checkpoint metadata to all servers
@@ -742,7 +711,7 @@ perr_t PDC_Client_close_all_server();
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_test(PDC_Request_t *request, int *completed);
+perr_t PDC_Client_test(struct pdc_request_t *request, int *completed);
 
 /**
  * Wait for a previous IO request to be completed by server, or exit after timeout
@@ -753,7 +722,7 @@ perr_t PDC_Client_test(PDC_Request_t *request, int *completed);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsigned long check_interval_ms);
+perr_t PDC_Client_wait(struct pdc_request_t *request, unsigned long max_wait_ms, unsigned long check_interval_ms);
 
 /**
  * Wait for a previous IO request to be completed by server, or exit after timeout
@@ -832,7 +801,7 @@ perr_t PDC_query_name_timestep_agg(const char *obj_name, int time_step, void **o
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_iwrite(void *meta, struct PDC_region_info *region, PDC_Request_t *request, void *buf);
+perr_t PDC_iwrite(void *meta, struct pdc_region_info *region, struct pdc_request_t *request, void *buf);
 
 /**
  * *********
@@ -843,7 +812,7 @@ perr_t PDC_iwrite(void *meta, struct PDC_region_info *region, PDC_Request_t *req
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_wait(PDC_Request_t *request, unsigned long max_wait_ms, unsigned long check_inter_ms);
+perr_t PDC_wait(struct pdc_request_t *request, unsigned long max_wait_ms, unsigned long check_inter_ms);
 
 /**
  * Get number of processes on each node

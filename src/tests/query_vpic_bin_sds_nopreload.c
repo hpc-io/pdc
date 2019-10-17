@@ -17,7 +17,7 @@ int main(void)
     pdcid_t pdc, x_id, y_id, z_id, energy_id;
     
     // Construct query constraints
-    pdcselection_t sel;
+    pdc_selection_t sel;
     double get_sel_time, get_data_time;
     float *energy_data = NULL, *x_data = NULL, *y_data = NULL;
     
@@ -25,7 +25,7 @@ int main(void)
     float x_lo = 308, x_hi = 309;
     float y_lo = 149, y_hi = 150;
     
-    pdcquery_t *q1_lo, *q1_hi, *q1, *q2_lo, *q2_hi, *q2, *q12, *q3_lo, *q3_hi, *q3, *q;
+    pdc_query_t *q1_lo, *q1_hi, *q1, *q2_lo, *q2_hi, *q2, *q12, *q3_lo, *q3_hi, *q3, *q;
 
     struct timeval  pdc_timer_start;
     struct timeval  pdc_timer_end;

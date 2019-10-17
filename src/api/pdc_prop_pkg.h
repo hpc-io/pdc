@@ -25,44 +25,37 @@
 #ifndef PDC_PROP_PKG_H
 #define PDC_PROP_PKG_H
 
-#include "pdc_life.h"
 #include "pdc_private.h"
 
 /*******************/
-/* Public Typedefs */
+/* Private Typedefs */
 /*******************/
-typedef enum {
-    PDC_CONT_CREATE = 0,
-    PDC_OBJ_CREATE
-} PDC_prop_type;
-
-struct PDC_cont_prop {
-    struct PDC_class *pdc;
+struct _pdc_cont_prop {
+    struct _pdc_class *pdc;
     pdcid_t           cont_prop_id;
-    PDC_lifetime      cont_life;
+    pdc_lifetime_t    cont_life;
 };
 
 typedef struct pdc_kvtag_t {
     char             *name;
     uint32_t          size;
     void             *value;
-} pdc_kvtag_t;
+} pdc_kvtag_t;     // ?????????????
 
-typedef struct pdc_transform_state {
-    PDC_major_type    storage_order;
-    PDC_var_type_t    dtype;
+struct _pdc_transform_state {
+    _pdc_major_type_t storage_order;
+    pdc_var_type_t    dtype;
     size_t            ndim;
     uint64_t          dims[4];
     int               meta_index; /* transform to this state */
-} PDC_transform_state_t;
+};
 
-struct PDC_obj_prop {
-    struct PDC_class *pdc;
+struct _pdc_obj_prop {
+    struct _pdc_class *pdc;
     pdcid_t           obj_prop_id;
-    PDC_lifetime      obj_life;
     size_t            ndim;
     uint64_t         *dims;
-    PDC_var_type_t    type;
+    pdc_var_type_t    type;
     uint32_t          user_id;
     char             *app_name;
     uint32_t          time_step;
@@ -75,7 +68,38 @@ struct PDC_obj_prop {
     size_t            type_extent;
     uint64_t          locus;
     uint32_t          data_state;
-    PDC_transform_state_t transform_prop;
+    struct _pdc_transform_state transform_prop;
 };
+
+/***************************************/
+/* Library-private Function Prototypes */
+/***************************************/
+/**
+ * PDC container and object property initialization
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_prop_init();
+
+/**
+ * PDC container and object property finalize
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_prop_end();
+
+/**
+ * Check if object property list is empty
+ *
+ * \return SUCCEED if empty/FAIL if not empty
+ */
+perr_t PDC_prop_obj_list_null();
+
+/**
+ * Check if container property list is empty
+ *
+ * \return SUCCEED if empty/FAIL if not empty
+ */
+perr_t PDC_prop_cont_list_null();
 
 #endif /* PDC_PROP_PKG_H */

@@ -26,9 +26,7 @@
  * This file includes the functionality to support PDC transforms
  ************************************************************************ */
 
-#include "pdc_config.h"
-#include "pdc_analysis_common.h"
-#include "pdc_transforms_pkg.h"
+#include "pdc_analysis_pkg.h"
 #include "pdc_transforms_common.h"
 #include "pdc_client_server_common.h"
 
@@ -42,17 +40,17 @@ HG_TEST_RPC_CB(transform_ftn, handle)
     hg_return_t ret_value = HG_SUCCESS;
     transform_ftn_in_t in;
     transform_ftn_out_t out = {0, 0, 0, -1};
-    struct region_transform_ftn_info *thisFtn = NULL;
+    struct _pdc_region_transform_ftn_info *thisFtn = NULL;
     void *ftnHandle = NULL;
+    
+    FUNC_ENTER(NULL);
 
     HG_Get_input(handle, &in);
 
     if (PDC_get_ftnPtr_(in.ftn_name, in.loadpath, &ftnHandle) >= 0) {
-        thisFtn = malloc(sizeof(struct region_transform_ftn_info));
-        if (thisFtn == NULL) {
-            printf("transform_ftn_cb: Memory allocation failed\n");
-            goto done;
-        }	    
+        thisFtn = malloc(sizeof(struct _pdc_region_transform_ftn_info));
+        if (thisFtn == NULL)
+            PGOTO_ERROR(HG_OTHER_ERROR, "transform_ftn_cb: Memory allocation failed");
 	/* This sets up the index return for the client!
 	 * We probably need to add more info to the
 	 * 'thisFtn' structure, but this should be a
@@ -75,7 +73,7 @@ HG_TEST_RPC_CB(transform_ftn, handle)
         thisFtn->ftnPtr = (size_t (*)()) ftnHandle;
         thisFtn->object_id = in.object_id;
         thisFtn->region_id = in.region_id;
-        thisFtn->op_type = (PDCobj_transform_t)in.op_type;
+        thisFtn->op_type = (pdc_obj_transform_t)in.op_type;
         out.ret = PDC_add_transform_ptr_to_registry_(thisFtn);
         out.client_index = in.client_index;
         out.object_id = in.object_id;
@@ -87,16 +85,18 @@ HG_TEST_RPC_CB(transform_ftn, handle)
     }
 
 done:
+    fflush(stdout);
     HG_Respond(handle, NULL, NULL, &out);
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
+    
     FUNC_LEAVE(ret_value);
 }
 
 HG_TEST_THREAD_CB(transform_ftn)
 
 hg_id_t
-transform_ftn_register(hg_class_t *hg_class)
+PDC_transform_ftn_register(hg_class_t *hg_class)
 {
     hg_id_t ret_value;
     

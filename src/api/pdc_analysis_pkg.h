@@ -25,7 +25,9 @@
 #define PDC_ANALYSIS_COMMON_H
 
 #include "pdc_transforms_pkg.h"
-#include "pdc_analysis_and_transforms.h"
+#include "mercury.h"
+#include "mercury_proc_string.h"
+#include "mercury_atomic.h"
 
 /*****************************/
 /* Library-private Variables */
@@ -35,18 +37,7 @@ hg_id_t                           transform_ftn_register_id_g;
 hg_id_t                           object_data_iterator_register_id_g;
 hg_atomic_int32_t                 registered_analysis_ftn_count_g;
 
-extern struct region_analysis_ftn_info **pdc_region_analysis_registry;
-
-/*********************/
-/* Public Prototypes */
-/*********************/
-
-/**
- * ****
- *
- * \return ****
- */
-int PDCiter_get_nextId(void);
+extern struct _pdc_region_analysis_ftn_info **pdc_region_analysis_registry;
 
 /***************************************/
 /* Library-private Function Prototypes */
@@ -58,7 +49,7 @@ int PDCiter_get_nextId(void);
  *
  * \return ******
  */
-int PDC_get_transforms(struct region_transform_ftn_info ***registry);
+int PDC_get_transforms(struct _pdc_region_transform_ftn_info ***registry);
 
 /**
  * *****
@@ -68,7 +59,7 @@ int PDC_get_transforms(struct region_transform_ftn_info ***registry);
  *
  * \return ********
  */
-int PDC_check_transform(PDCobj_transform_t op_type, struct PDC_region_info *dest_region);
+int PDC_check_transform(pdc_obj_transform_t op_type, struct pdc_region_info *dest_region);
 
 /**
  * ********
@@ -78,7 +69,7 @@ int PDC_check_transform(PDCobj_transform_t op_type, struct PDC_region_info *dest
  *
  * \return ********
  */
-int PDC_check_analysis(PDCobj_transform_t op_type, struct PDC_region_info *dest_region);
+int PDC_check_analysis(pdc_obj_transform_t op_type, struct pdc_region_info *dest_region);
 
 /**
  * ********
@@ -87,7 +78,7 @@ int PDC_check_analysis(PDCobj_transform_t op_type, struct PDC_region_info *dest_
  *
  * \return ********
  */
-int PDC_add_transform_ptr_to_registry_(struct region_transform_ftn_info *ftnPtr);
+int PDC_add_transform_ptr_to_registry_(struct _pdc_region_transform_ftn_info *ftnPtr);
 
 /**
  * ********
@@ -106,14 +97,14 @@ int PDC_update_transform_server_meta_index(int client_index, int meta_index);
  *
  * \return
  */
-int PDC_get_analysis_registry(struct region_analysis_ftn_info ***registry);
+int PDC_get_analysis_registry(struct _pdc_region_analysis_ftn_info ***registry);
 
 /**
  * *******
  *
  * \param locus_identifier [IN] **********
  */
-void PDC_set_execution_locus(PDC_loci locus_identifier);
+void PDC_set_execution_locus(_pdc_loci_t locus_identifier);
 
 /**
  * *****
@@ -122,7 +113,7 @@ void PDC_set_execution_locus(PDC_loci locus_identifier);
  *
  * \return *****
  */
-int PDC_add_analysis_ptr_to_registry_(struct region_analysis_ftn_info *ftn_infoPtr);
+int PDC_add_analysis_ptr_to_registry_(struct _pdc_region_analysis_ftn_info *ftn_infoPtr);
 
 /**
  * *****
@@ -140,6 +131,62 @@ int PDC_get_ftnPtr_(const char *ftn, const char *loadpath, void **ftnPtr);
  *
  * \return
  */
-PDC_loci PDC_get_execution_locus();
+_pdc_loci_t PDC_get_execution_locus();
+
+/**
+ * ********
+ *
+ * \param workingDir [IN]       Path of working directory
+ * \param application [IN]      Name of the application
+ *
+ * \return ****
+ */
+char *PDC_find_in_path(char *workingDir, char *application);
+
+/**
+ * ********
+ *
+ * \return ****
+ */
+char *PDC_get_argv0_();
+
+/**
+ * ********
+ *
+ * \param fname [IN]            Path of working directory
+ * \param app_path [IN]         Name of the application
+ *
+ * \return ****
+ */
+char *PDC_get_realpath(char *fname, char *app_path);
+
+/**
+ * ********
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_iterator_end();
+
+/**
+ * ********
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_analysis_end();
+
+/**
+ * ********
+ */
+void PDC_free_analysis_registry();
+
+/**
+ * ********
+ */
+void PDC_free_transform_registry();
+
+/**
+ * ********
+ */
+void PDC_free_iterator_cache();
 
 #endif /* PDC_ANALYSIS_COMMON_H */

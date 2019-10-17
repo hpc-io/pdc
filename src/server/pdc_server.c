@@ -45,7 +45,7 @@
 #include "pdc_utlist.h"
 #include "pdc_hash-table.h"
 #include "pdc_interface.h"
-#include "pdc_analysis_common.h"
+#include "pdc_analysis_pkg.h"
 #include "pdc_client_server_common.h"
 #include "pdc_transforms_common.h"
 #include "pdc_server.h"
@@ -1352,7 +1352,7 @@ perr_t PDC_Server_restart(char *filename)
                 region_list->n_overlap_storage_region   = 0;
                 hg_atomic_init32(&(region_list->buf_map_refcount), 0);
                 region_list->reg_dirty_from_buf         = 0;
-                region_list->access_type                = NA;
+                region_list->access_type                = PDC_NA;
                 region_list->bulk_handle                = NULL;
                 region_list->lock_handle                = NULL;
                 region_list->addr                       = NULL;
@@ -1370,7 +1370,7 @@ perr_t PDC_Server_restart(char *filename)
                 memset(region_list->client_ids, 0, PDC_SERVER_MAX_PROC_PER_NODE*sizeof(uint32_t));
                 
                 if (strstr( region_list->storage_location, "/global/cscratch") != NULL) {
-                    region_list->data_loc_type = LUSTRE;
+                    region_list->data_loc_type = PDC_LUSTRE;
                 }
 
                 DL_APPEND((metadata+i)->storage_region_list_head, region_list);
@@ -1608,76 +1608,75 @@ static void PDC_print_IO_stats()
 static void PDC_Server_mercury_register()
 {
     // Register RPC, metadata related
-    client_test_connect_register(hg_class_g);
-    gen_obj_id_register(hg_class_g);
-    close_server_register(hg_class_g);
-    metadata_query_register(hg_class_g);
-    container_query_register(hg_class_g);
-    metadata_delete_register(hg_class_g);
-    metadata_delete_by_id_register(hg_class_g);
-    metadata_update_register(hg_class_g);
-    metadata_add_tag_register(hg_class_g);
-    region_lock_register(hg_class_g);
-    region_release_register(hg_class_g);
-    gen_cont_id_register(hg_class_g);
-    metadata_add_kvtag_register(hg_class_g);
-    metadata_get_kvtag_register(hg_class_g);
-    metadata_del_kvtag_register(hg_class_g);
+    PDC_client_test_connect_register(hg_class_g);
+    PDC_gen_obj_id_register(hg_class_g);
+    PDC_close_server_register(hg_class_g);
+    PDC_metadata_query_register(hg_class_g);
+    PDC_container_query_register(hg_class_g);
+    PDC_metadata_delete_register(hg_class_g);
+    PDC_metadata_delete_by_id_register(hg_class_g);
+    PDC_metadata_update_register(hg_class_g);
+    PDC_metadata_add_tag_register(hg_class_g);
+    PDC_region_lock_register(hg_class_g);
+    PDC_region_release_register(hg_class_g);
+    PDC_gen_cont_id_register(hg_class_g);
+    PDC_metadata_add_kvtag_register(hg_class_g);
+    PDC_metadata_get_kvtag_register(hg_class_g);
+    PDC_metadata_del_kvtag_register(hg_class_g);
 
     // bulk
-    query_partial_register(hg_class_g);
-    query_kvtag_register(hg_class_g);
-    cont_add_del_objs_rpc_register(hg_class_g);
-    cont_add_tags_rpc_register(hg_class_g);
-    query_read_obj_name_rpc_register(hg_class_g);
-    query_read_obj_name_client_rpc_register(hg_class_g);
-    send_shm_bulk_rpc_register(hg_class_g);
+    PDC_query_partial_register(hg_class_g);
+    PDC_query_kvtag_register(hg_class_g);
+    PDC_cont_add_del_objs_rpc_register(hg_class_g);
+    PDC_cont_add_tags_rpc_register(hg_class_g);
+    PDC_query_read_obj_name_rpc_register(hg_class_g);
+    PDC_query_read_obj_name_client_rpc_register(hg_class_g);
+    PDC_send_shm_bulk_rpc_register(hg_class_g);
 
     // Mapping
-    buf_map_register(hg_class_g);
-    buf_unmap_register(hg_class_g);
+    PDC_buf_map_register(hg_class_g);
+    PDC_buf_unmap_register(hg_class_g);
 
     // Data server
-    data_server_read_register(hg_class_g);
-    data_server_write_register(hg_class_g);
-    data_server_read_check_register(hg_class_g);
-    data_server_write_check_register(hg_class_g);
+    PDC_data_server_read_register(hg_class_g);
+    PDC_data_server_write_register(hg_class_g);
+    PDC_data_server_read_check_register(hg_class_g);
+    PDC_data_server_write_check_register(hg_class_g);
 
-    send_data_query_rpc_register(hg_class_g);
-    get_sel_data_rpc_register(hg_class_g);
+    PDC_send_data_query_rpc_register(hg_class_g);
+    PDC_get_sel_data_rpc_register(hg_class_g);
 
     // Analysis and Transforms
     PDC_set_execution_locus(SERVER_MEMORY);
-    obj_data_iterator_register(hg_class_g);
-    analysis_ftn_register(hg_class_g);
-    transform_ftn_register(hg_class_g);
-    transform_region_release_register(hg_class_g);
-    region_transform_release_register(hg_class_g);
-    region_analysis_release_register(hg_class_g);
+    PDC_obj_data_iterator_register(hg_class_g);
+    PDC_analysis_ftn_register(hg_class_g);
+    PDC_transform_ftn_register(hg_class_g);
+    PDC_transform_region_release_register(hg_class_g);
+    PDC_region_transform_release_register(hg_class_g);
+    PDC_region_analysis_release_register(hg_class_g);
 
     // Server to client RPC
-    server_lookup_client_register_id_g = server_lookup_client_register(hg_class_g);
-    notify_io_complete_register_id_g   = notify_io_complete_register(hg_class_g);
-    send_nhits_register_id_g           = send_nhits_register(hg_class_g);
-    send_bulk_rpc_register_id_g        = send_bulk_rpc_register(hg_class_g);
+    server_lookup_client_register_id_g = PDC_server_lookup_client_register(hg_class_g);
+    notify_io_complete_register_id_g   = PDC_notify_io_complete_register(hg_class_g);
+    send_nhits_register_id_g           = PDC_send_nhits_register(hg_class_g);
+    send_bulk_rpc_register_id_g        = PDC_send_bulk_rpc_register(hg_class_g);
 
     // Server to server RPC
-    get_remote_metadata_register_id_g         = get_remote_metadata_register(hg_class_g);  
-    buf_map_server_register_id_g              = buf_map_server_register(hg_class_g);
-    buf_unmap_server_register_id_g            = buf_unmap_server_register(hg_class_g);
-    server_lookup_remote_server_register_id_g = server_lookup_remote_server_register(hg_class_g);
-    update_region_loc_register_id_g           = update_region_loc_register(hg_class_g);
-    notify_region_update_register_id_g        = notify_region_update_register(hg_class_g);
-    get_metadata_by_id_register_id_g          = get_metadata_by_id_register(hg_class_g);
-    bulk_rpc_register_id_g                    = bulk_rpc_register(hg_class_g);
-    storage_meta_name_query_register_id_g     = storage_meta_name_query_rpc_register(hg_class_g);
-    get_storage_meta_name_query_bulk_result_rpc_register_id_g = get_storage_meta_name_query_bulk_result_rpc_register(hg_class_g);
-    notify_client_multi_io_complete_rpc_register_id_g = notify_client_multi_io_complete_rpc_register(hg_class_g);
-    server_checkpoint_rpc_register_id_g       = server_checkpoing_rpc_register(hg_class_g);
-    send_shm_register_id_g                    = send_shm_register(hg_class_g);
-    send_client_storage_meta_rpc_register_id_g= send_client_storage_meta_rpc_register(hg_class_g);
-    send_read_sel_obj_id_rpc_register_id_g    = send_read_sel_obj_id_rpc_register(hg_class_g);
-
+    get_remote_metadata_register_id_g         = PDC_get_remote_metadata_register(hg_class_g);
+    buf_map_server_register_id_g              = PDC_buf_map_server_register(hg_class_g);
+    buf_unmap_server_register_id_g            = PDC_buf_unmap_server_register(hg_class_g);
+    server_lookup_remote_server_register_id_g = PDC_server_lookup_remote_server_register(hg_class_g);
+    update_region_loc_register_id_g           = PDC_update_region_loc_register(hg_class_g);
+    notify_region_update_register_id_g        = PDC_notify_region_update_register(hg_class_g);
+    get_metadata_by_id_register_id_g          = PDC_get_metadata_by_id_register(hg_class_g);
+    bulk_rpc_register_id_g                    = PDC_bulk_rpc_register(hg_class_g);
+    storage_meta_name_query_register_id_g     = PDC_storage_meta_name_query_rpc_register(hg_class_g);
+    get_storage_meta_name_query_bulk_result_rpc_register_id_g = PDC_get_storage_meta_name_query_bulk_result_rpc_register(hg_class_g);
+    notify_client_multi_io_complete_rpc_register_id_g = PDC_notify_client_multi_io_complete_rpc_register(hg_class_g);
+    server_checkpoint_rpc_register_id_g       = PDC_server_checkpoing_rpc_register(hg_class_g);
+    send_shm_register_id_g                    = PDC_send_shm_register(hg_class_g);
+    send_client_storage_meta_rpc_register_id_g= PDC_send_client_storage_meta_rpc_register(hg_class_g);
+    send_read_sel_obj_id_rpc_register_id_g    = PDC_send_read_sel_obj_id_rpc_register(hg_class_g);
 }
 
 static void PDC_Server_get_env()

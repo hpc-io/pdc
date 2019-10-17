@@ -74,10 +74,8 @@ int main(int argc, char **argv) {
     ch = PDCcont_iter_start(pdc);
 
     while(!PDCcont_iter_null(ch)) {
-        struct PDC_cont_info *info = PDCcont_iter_get_info(ch);
-        printf("container name is: %s\n", info->name);
+        struct _pdc_cont_info *info = PDCcont_iter_get_info(ch);
         printf("container property id is ");
-        printf("%" PRId64 "\n", info->cont_pt->cont_prop_id);
         
         ch = PDCcont_iter_next(ch);
     }

@@ -328,6 +328,23 @@ if(PDC_ENABLE_FASTBIT)
     set(ENABLE_FASTBIT 1)
 endif()
 
+#------------------------------------------------------------------------------
+# Data type
+#------------------------------------------------------------------------------
+include(CheckTypeSize)
+check_type_size("float" VAR_SIZE_FLOAT)
+check_type_size("double" VAR_SIZE_DOUBLE)
+check_type_size("char" VAR_SIZE_CHAR)
+check_type_size("short" VAR_SIZE_SINT)
+check_type_size("int" VAR_SIZE_INT)
+check_type_size("long" VAR_SIZE_LINT)
+check_type_size("long long" VAR_SIZE_LLINT)
+check_type_size("unsigned" VAR_SIZE_UINT)
+check_type_size("unsigned long" VAR_SIZE_ULINT)
+check_type_size("unsigned long long" VAR_SIZE_ULLINT)
+check_type_size("int64_t" VAR_SIZE_64INT)
+check_type_size("uint64_t" VAR_SIZE_U64INT)
+ 
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/pdc_config.h.cmake ${PROJECT_BINARY_DIR}/pdc_config.h)
 
 #---------------------- end of generating config.h ---------------------------

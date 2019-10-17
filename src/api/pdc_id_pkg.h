@@ -26,6 +26,8 @@
 #define PDC_ID_PKG_H
 
 #include "pdc_private.h"
+#include "pdc_linkedlist.h"
+#include "mercury_atomic.h"
 /*
  * Number of bits to use for ID Type in each atom. Increase if more types
  * are needed (though this will decrease the number of available IDs per
@@ -44,5 +46,12 @@
 
 /* Map an atom to an ID type number */
 #define PDC_TYPE(a) ((PDC_type_t)(((pdcid_t)(a) >> ID_BITS) & TYPE_MASK))
+
+struct _pdc_id_info {
+    pdcid_t             id;             /* ID for this info                 */
+    hg_atomic_int32_t   count;          /* ref. count for this atom         */
+    void                *obj_ptr;       /* pointer associated with the atom */
+    PDC_LIST_ENTRY(_pdc_id_info) entry;
+};
 
 #endif /* PDC_ID_PKG_H */

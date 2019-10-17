@@ -120,13 +120,13 @@ int main(int argc, char **argv)
 #endif
     gettimeofday(&pdc_timer_start, 0);
 
-    ret = PDCreg_obtain_lock(local_obj, local_region, WRITE, NOBLOCK);
+    ret = PDCreg_obtain_lock(local_obj, local_region, PDC_WRITE, PDC_NOBLOCK);
     if (ret != SUCCEED) {
         printf("Failed to obtain lock for region\n");
         goto done;
     }
 
-    ret = PDCreg_obtain_lock(global_obj, global_region, WRITE, NOBLOCK);
+    ret = PDCreg_obtain_lock(global_obj, global_region, PDC_WRITE, PDC_NOBLOCK);
     if (ret != SUCCEED) {
         printf("Failed to obtain lock for region\n");
         goto done;
@@ -136,13 +136,13 @@ int main(int argc, char **argv)
         mydata[i] = i * 1.01;
     }
 
-    ret = PDCreg_release_lock(local_obj, local_region, WRITE);
+    ret = PDCreg_release_lock(local_obj, local_region, PDC_WRITE);
     if (ret != SUCCEED) {
         printf("Failed to release lock for region\n");
         goto done;
     }
 
-    ret = PDCreg_release_lock(global_obj, global_region, WRITE);
+    ret = PDCreg_release_lock(global_obj, global_region, PDC_WRITE);
     if (ret != SUCCEED) {
         printf("Failed to release lock for region\n");
         goto done;

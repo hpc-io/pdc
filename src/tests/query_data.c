@@ -18,9 +18,9 @@ int main(int argc, char **argv)
     int rank = 0, size = 1;
     uint64_t size_MB;
     pdcid_t obj_id = -1;
-    struct PDC_region_info region;
+    struct pdc_region_info region;
     uint64_t i, dims[1];
-    pdcselection_t sel;
+    pdc_selection_t sel;
     char *obj_name;
     int my_data_count;
     pdc_metadata_t *metadata;
@@ -30,7 +30,7 @@ int main(int argc, char **argv)
     int lo0 = 1000;
     int lo1 = 2000, hi1 = 3000;
     int lo2 = 5000, hi2 = 7000;
-    pdcquery_t *q0, *q1l, *q1h, *q1, *q2l, *q2h, *q2, *q, *q12;
+    pdc_query_t *q0, *q1l, *q1h, *q1, *q2l, *q2h, *q2, *q, *q12;
     
     struct timeval  ht_total_start;
     struct timeval  ht_total_end;
