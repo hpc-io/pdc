@@ -67,7 +67,7 @@ int main(int argc, char **argv)
 
     int read_var = NUM_VAR;
     
-    struct pdc_request_t request[NUM_VAR];
+    struct pdc_request request[NUM_VAR];
     
     struct timeval  pdc_timer_start;
     struct timeval  pdc_timer_end;

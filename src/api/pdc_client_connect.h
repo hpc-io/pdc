@@ -450,7 +450,7 @@ perr_t PDC_Client_query_container_name_col(const char *cont_name, uint64_t *cont
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_iread(pdc_metadata_t *meta, struct pdc_region_info *region, struct pdc_request_t *request, void *buf);
+perr_t PDC_Client_iread(pdc_metadata_t *meta, struct pdc_region_info *region, struct pdc_request *request, void *buf);
 
 /**
  * Sync request send to server to read a region and put it in users buffer
@@ -473,7 +473,7 @@ perr_t PDC_Client_read(pdc_metadata_t *meta, struct pdc_region_info *region, voi
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct pdc_region_info *region, struct pdc_request_t *request, void *buf);
+perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct pdc_region_info *region, struct pdc_request *request, void *buf);
 
 /**
  * Sync request send to server to write a region of object with users buffer
@@ -638,7 +638,7 @@ hg_return_t PDC_Client_work_done_cb();
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_data_server_read(struct pdc_request_t *request);
+perr_t PDC_Client_data_server_read(struct pdc_request *request);
 
 /**
  * *******
@@ -647,7 +647,7 @@ perr_t PDC_Client_data_server_read(struct pdc_request_t *request);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_data_server_write(struct pdc_request_t *request);
+perr_t PDC_Client_data_server_write(struct pdc_request *request);
 
 /**
  * Client request server to check IO status of a previous IO request
@@ -657,7 +657,7 @@ perr_t PDC_Client_data_server_write(struct pdc_request_t *request);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_data_server_write_check(struct pdc_request_t *request, int *status);
+perr_t PDC_Client_data_server_write_check(struct pdc_request *request, int *status);
 
 /**
  * Client request server to check IO status of a previous IO request
@@ -711,7 +711,7 @@ perr_t PDC_Client_close_all_server();
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_test(struct pdc_request_t *request, int *completed);
+perr_t PDC_Client_test(struct pdc_request *request, int *completed);
 
 /**
  * Wait for a previous IO request to be completed by server, or exit after timeout
@@ -722,7 +722,7 @@ perr_t PDC_Client_test(struct pdc_request_t *request, int *completed);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_wait(struct pdc_request_t *request, unsigned long max_wait_ms, unsigned long check_interval_ms);
+perr_t PDC_Client_wait(struct pdc_request *request, unsigned long max_wait_ms, unsigned long check_interval_ms);
 
 /**
  * Wait for a previous IO request to be completed by server, or exit after timeout
@@ -801,7 +801,7 @@ perr_t PDC_query_name_timestep_agg(const char *obj_name, int time_step, void **o
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_iwrite(void *meta, struct pdc_region_info *region, struct pdc_request_t *request, void *buf);
+perr_t PDC_iwrite(void *meta, struct pdc_region_info *region, struct pdc_request *request, void *buf);
 
 /**
  * *********
@@ -812,7 +812,7 @@ perr_t PDC_iwrite(void *meta, struct pdc_region_info *region, struct pdc_request
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_wait(struct pdc_request_t *request, unsigned long max_wait_ms, unsigned long check_inter_ms);
+perr_t PDC_wait(struct pdc_request *request, unsigned long max_wait_ms, unsigned long check_inter_ms);
 
 /**
  * Get number of processes on each node

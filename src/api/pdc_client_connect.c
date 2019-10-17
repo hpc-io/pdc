@@ -76,7 +76,7 @@ struct _pdc_server_info    *pdc_server_info_g = NULL;
 static int                *debug_server_id_count = NULL;
 
 int                        pdc_io_request_seq_id = PDC_SEQ_ID_INIT_VALUE;
-struct pdc_request_t      *pdc_io_request_list_g = NULL;
+struct pdc_request      *pdc_io_request_list_g = NULL;
 
 struct _pdc_query_result_list *pdcquery_result_list_head_g = NULL;
 
@@ -3075,7 +3075,7 @@ hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *call
     char *shm_addr = NULL;
     uint64_t data_size = 1;
     client_read_info_t *read_info = NULL;
-    struct pdc_request_t *elt = NULL;
+    struct pdc_request *elt = NULL;
     struct pdc_region_info *target_region = NULL;
 #ifdef ENABLE_TIMING
     struct timeval  pdc_timer_start;
@@ -3288,7 +3288,7 @@ done:
 }
 
 
-perr_t PDC_Client_data_server_read(struct pdc_request_t *request)
+perr_t PDC_Client_data_server_read(struct pdc_request *request)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
@@ -3359,7 +3359,7 @@ done:
 /*
  * Close the shared memory
  */
-perr_t PDC_Client_close_shm(struct pdc_request_t *req)
+perr_t PDC_Client_close_shm(struct pdc_request *req)
 {
     perr_t ret_value = SUCCEED;
 
@@ -3414,7 +3414,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_data_server_write_check(struct pdc_request_t *request, int *status)
+perr_t PDC_Client_data_server_write_check(struct pdc_request *request, int *status)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
@@ -3510,7 +3510,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_data_server_write(struct pdc_request_t *request)
+perr_t PDC_Client_data_server_write(struct pdc_request *request)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t hg_ret;
@@ -3632,7 +3632,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_test(struct pdc_request_t *request, int *completed)
+perr_t PDC_Client_test(struct pdc_request *request, int *completed)
 {
     perr_t ret_value = SUCCEED;
 
@@ -3660,7 +3660,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_wait(struct pdc_request_t *request, unsigned long max_wait_ms, unsigned long check_interval_ms)
+perr_t PDC_Client_wait(struct pdc_request *request, unsigned long max_wait_ms, unsigned long check_interval_ms)
 {
     perr_t ret_value = SUCCEED;
     int completed = 0;
@@ -3695,7 +3695,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_wait(struct pdc_request_t *request, unsigned long max_wait_ms, unsigned long check_interval_ms)
+perr_t PDC_wait(struct pdc_request *request, unsigned long max_wait_ms, unsigned long check_interval_ms)
 {
     perr_t ret_value = SUCCEED;
     
@@ -3706,7 +3706,7 @@ perr_t PDC_wait(struct pdc_request_t *request, unsigned long max_wait_ms, unsign
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct pdc_region_info *region, struct pdc_request_t *request, void *buf)
+perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct pdc_region_info *region, struct pdc_request *request, void *buf)
 {
     perr_t ret_value = SUCCEED;
 
@@ -3727,7 +3727,7 @@ perr_t PDC_Client_iwrite(pdc_metadata_t *meta, struct pdc_region_info *region, s
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_iwrite(void *meta, struct pdc_region_info *region, struct pdc_request_t *request, void *buf)
+perr_t PDC_iwrite(void *meta, struct pdc_region_info *region, struct pdc_request *request, void *buf)
 {
     perr_t ret_value = SUCCEED;
     
@@ -3749,7 +3749,7 @@ hg_return_t PDC_Client_work_done_cb(const struct hg_cb_info *callback_info ATTRI
 // PDC_Client_write is done using PDC_Client_iwrite and PDC_Client_wait
 perr_t PDC_Client_write(pdc_metadata_t *meta, struct pdc_region_info *region, void *buf)
 {
-    struct pdc_request_t request;
+    struct pdc_request request;
     perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
@@ -3772,7 +3772,7 @@ done:
 // PDC_Client_write is done using PDC_Client_iwrite and PDC_Client_wait
 perr_t PDC_Client_write_id(pdcid_t local_obj_id, struct pdc_region_info *region, void *buf)
 {
-    struct pdc_request_t request;
+    struct pdc_request request;
     struct _pdc_id_info *info;
     struct _pdc_obj_info *object;
     pdc_metadata_t *meta;
@@ -3805,7 +3805,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Client_iread(pdc_metadata_t *meta, struct pdc_region_info *region, struct pdc_request_t *request, void *buf)
+perr_t PDC_Client_iread(pdc_metadata_t *meta, struct pdc_region_info *region, struct pdc_request *request, void *buf)
 {
     perr_t ret_value = SUCCEED;
 
@@ -3833,7 +3833,7 @@ done:
 perr_t PDC_Client_read(pdc_metadata_t *meta, struct pdc_region_info *region, void *buf)
 {
     perr_t ret_value = SUCCEED;
-    struct pdc_request_t request;
+    struct pdc_request request;
 
     FUNC_ENTER(NULL);
 
@@ -3856,7 +3856,7 @@ done:
 perr_t PDC_Client_write_wait_notify(pdc_metadata_t *meta, struct pdc_region_info *region, void *buf)
 {
     perr_t ret_value = SUCCEED;
-    struct pdc_request_t *request = (struct pdc_request_t *)malloc(sizeof(struct pdc_request_t));
+    struct pdc_request *request = (struct pdc_request *)malloc(sizeof(struct pdc_request));
 
     FUNC_ENTER(NULL);
 
@@ -3883,7 +3883,7 @@ done:
 perr_t PDC_Client_read_wait_notify(pdc_metadata_t *meta, struct pdc_region_info *region, void *buf)
 {
     perr_t ret_value = SUCCEED;
-    struct pdc_request_t *request = (struct pdc_request_t *)malloc(sizeof(struct pdc_request_t));
+    struct pdc_request *request = (struct pdc_request *)malloc(sizeof(struct pdc_request));
 
     FUNC_ENTER(NULL);
 
@@ -4237,7 +4237,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_add_request_to_list(struct pdc_request_t **list_head, struct pdc_request_t *request)
+perr_t PDC_add_request_to_list(struct pdc_request **list_head, struct pdc_request *request)
 {
     perr_t ret_value = SUCCEED;
 
@@ -4254,7 +4254,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_del_request_from_list(struct pdc_request_t **list_head, struct pdc_request_t *request)
+perr_t PDC_del_request_from_list(struct pdc_request **list_head, struct pdc_request *request)
 {
     perr_t ret_value = SUCCEED;
 
@@ -4271,10 +4271,10 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-struct pdc_request_t *PDC_find_request_from_list_by_seq_id(struct pdc_request_t **list_head, int seq_id)
+struct pdc_request *PDC_find_request_from_list_by_seq_id(struct pdc_request **list_head, int seq_id)
 {
-    struct pdc_request_t *ret_value = NULL;
-    struct pdc_request_t *elt;
+    struct pdc_request *ret_value = NULL;
+    struct pdc_request *elt;
 
     FUNC_ENTER(NULL);
 
@@ -4304,7 +4304,7 @@ perr_t PDC_Client_query_name_read_entire_obj(int nobj, char **obj_names, void **
     query_read_obj_name_in_t bulk_rpc_in;
     // Reuse the existing args structure
     update_region_storage_meta_bulk_args_t cb_args;
-    struct pdc_request_t *request;
+    struct pdc_request *request;
 
     FUNC_ENTER(NULL);
 
@@ -4338,7 +4338,7 @@ perr_t PDC_Client_query_name_read_entire_obj(int nobj, char **obj_names, void **
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "Could not create bulk data handle");
 
-    request = (struct pdc_request_t*)calloc(1, sizeof(struct pdc_request_t));
+    request = (struct pdc_request *)calloc(1, sizeof(struct pdc_request));
     request->server_id    = server_id;
     request->access_type  = PDC_READ;
     request->n_buf_arr    = nobj;
@@ -4376,7 +4376,7 @@ done:
 
 // Copies the data from server's shm to user buffer
 // Assumes the shm_addrs are avialable
-perr_t PDC_Client_complete_read_request(int nbuf, struct pdc_request_t *req)
+perr_t PDC_Client_complete_read_request(int nbuf, struct pdc_request *req)
 {
     perr_t ret_value = SUCCEED;
     int i;
@@ -4446,7 +4446,7 @@ perr_t PDC_Client_query_read_complete(char *shm_addrs, int size, int n_shm, int 
 {
     perr_t      ret_value = SUCCEED;
     int         i, cnt;
-    struct pdc_request_t *request;
+    struct pdc_request *request;
 
     FUNC_ENTER(NULL);
 
@@ -4948,7 +4948,7 @@ perr_t PDC_Client_query_multi_storage_info(int nobj, char **obj_names, region_st
     char        **obj_names_by_server_2d = NULL;
     query_read_obj_name_in_t bulk_rpc_in;
     update_region_storage_meta_bulk_args_t cb_args;
-    struct pdc_request_t **requests, *request;
+    struct pdc_request **requests, *request;
 
     FUNC_ENTER(NULL);
 
@@ -4958,7 +4958,7 @@ perr_t PDC_Client_query_multi_storage_info(int nobj, char **obj_names, region_st
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: invalid input", pdc_client_mpi_rank_g);
 
     // One request to each metadata server
-    requests = (struct pdc_request_t **)calloc(sizeof(struct pdc_request_t *), pdc_server_num_g);
+    requests = (struct pdc_request **)calloc(sizeof(struct pdc_request *), pdc_server_num_g);
 
     obj_names_by_server             = (char***)calloc(sizeof(char**), pdc_server_num_g);
     n_obj_name_by_server            = (int*)calloc(sizeof(int), pdc_server_num_g);
@@ -5010,7 +5010,7 @@ perr_t PDC_Client_query_multi_storage_info(int nobj, char **obj_names, region_st
         if (hg_ret != HG_SUCCESS)
             PGOTO_ERROR(FAIL, "Could not create bulk data handle");
 
-        requests[server_id] = (struct pdc_request_t *)calloc(1, sizeof(struct pdc_request_t));
+        requests[server_id] = (struct pdc_request *)calloc(1, sizeof(struct pdc_request));
         requests[server_id]->server_id    = server_id;
         requests[server_id]->access_type  = PDC_READ;
         requests[server_id]->n_buf_arr    = n_obj_name_by_server[server_id];
@@ -5305,7 +5305,7 @@ perr_t PDC_Client_query_name_read_entire_obj_client_agg(int my_nobj, char **my_o
 perr_t PDC_Client_recv_bulk_storage_meta(process_bulk_storage_meta_args_t *process_args)
 {
     perr_t ret_value = SUCCEED;
-    struct pdc_request_t *request;
+    struct pdc_request *request;
 
     FUNC_ENTER(NULL);
 

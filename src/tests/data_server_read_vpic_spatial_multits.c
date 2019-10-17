@@ -81,7 +81,7 @@ int main(int argc, char **argv)
     
     struct pdc_region_info obj_regions[TS_MAX][NUM_VAR_MAX];
     pdc_metadata_t *obj_metas[TS_MAX][NUM_VAR_MAX];
-    struct pdc_request_t request[TS_MAX][NUM_VAR_MAX];
+    struct pdc_request request[TS_MAX][NUM_VAR_MAX];
     
     struct timeval  pdc_timer_start;
     struct timeval  pdc_timer_end;

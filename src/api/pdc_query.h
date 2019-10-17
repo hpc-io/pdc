@@ -67,7 +67,7 @@ typedef struct pdc_query_t {
 } pdc_query_t;
 
 // Request structure for async read/write
-struct pdc_request_t {
+struct pdc_request {
     int                      seq_id;
     int                      server_id;
     int                      n_client;
@@ -92,8 +92,8 @@ struct pdc_request_t {
     
     void                   *storage_meta;
     
-    struct pdc_request_t      *prev;
-    struct pdc_request_t      *next;
+    struct pdc_request      *prev;
+    struct pdc_request      *next;
 };
 
 /*********************/
