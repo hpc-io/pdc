@@ -45,11 +45,8 @@ typedef enum {
 /* Library Private Struct */
 /**************************/
 struct _pdc_obj_info {
-    char                   *name;
-    pdcid_t                 meta_id;
-    pdcid_t                 local_id;
+    struct pdc_obj_info    *obj_info_pub;
     _pdc_obj_location_t     location;
-    int                     server_id;
     void                   *metadata;
     struct _pdc_cont_info  *cont;
     struct _pdc_obj_prop   *obj_pt;

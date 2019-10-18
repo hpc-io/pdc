@@ -36,6 +36,7 @@
 #include "pdc_malloc.h"
 #include "pdc_prop_pkg.h"
 #include "pdc_obj_pkg.h"
+#include "pdc_prop.h"
 #include "pdc_region.h"
 #include "pdc_analysis.h"
 #include "pdc_analysis_pkg.h"
@@ -81,34 +82,34 @@ iterator_init(pdcid_t objectId, pdcid_t reg_id, int blocks, struct _pdc_iterator
      */
     if ((obj_prop_ptr = object_info->obj_pt) != NULL) {
         if ((iter->storage_order = obj_prop_ptr->transform_prop.storage_order) == ROW_major) {
-            obj_elementsPerSlice = obj_prop_ptr->dims[obj_prop_ptr->ndim-1];
-            if (obj_prop_ptr->ndim > 2) {
-                obj_elementsPerSlice *= obj_prop_ptr->dims[obj_prop_ptr->ndim-2];
+            obj_elementsPerSlice = obj_prop_ptr->obj_prop_pub->dims[obj_prop_ptr->obj_prop_pub->ndim-1];
+            if (obj_prop_ptr->obj_prop_pub->ndim > 2) {
+                obj_elementsPerSlice *= obj_prop_ptr->obj_prop_pub->dims[obj_prop_ptr->obj_prop_pub->ndim-2];
             }
         } else {
 	    /* Is this ok for Fortran? */
-            obj_elementsPerSlice = obj_prop_ptr->dims[0]; 
+            obj_elementsPerSlice = obj_prop_ptr->obj_prop_pub->dims[0];
             /*
             if (obj_prop_ptr->ndim > 1)
                 obj_slicePerBlock = obj_prop_ptr->dims[1]; */
-            if (obj_prop_ptr->ndim > 2) {
-                obj_elementsPerSlice *= obj_prop_ptr->dims[1];
+            if (obj_prop_ptr->obj_prop_pub->ndim > 2) {
+                obj_elementsPerSlice *= obj_prop_ptr->obj_prop_pub->dims[1];
             }
         }
         iter->totalElements = 1;
-        if ((iter->srcDims = (size_t *)calloc(obj_prop_ptr->ndim, sizeof(size_t))) != NULL) {
-            iter->ndim = obj_prop_ptr->ndim;
+        if ((iter->srcDims = (size_t *)calloc(obj_prop_ptr->obj_prop_pub->ndim, sizeof(size_t))) != NULL) {
+            iter->ndim = obj_prop_ptr->obj_prop_pub->ndim;
             for (i=0; i<iter->ndim; i++) {
-                iter->srcDims[i] = (size_t)obj_prop_ptr->dims[i];
+                iter->srcDims[i] = (size_t)obj_prop_ptr->obj_prop_pub->dims[i];
                 iter->totalElements *= iter->srcDims[i];
             }
         }
 
         /* Data TYPE and SIZE */
-        iter->pdc_datatype = obj_prop_ptr->type;
+        iter->pdc_datatype = obj_prop_ptr->obj_prop_pub->type;
 
         if ((element_size = obj_prop_ptr->type_extent) == 0)
-            element_size = PDC_get_var_type_size(obj_prop_ptr->type); 
+            element_size = PDC_get_var_type_size(obj_prop_ptr->obj_prop_pub->type);
 
         /* 'contigBlockSize' is the increment amount to move from
          * the current data pointer to the start of the next slice.
@@ -199,13 +200,13 @@ iterator_init(pdcid_t objectId, pdcid_t reg_id, int blocks, struct _pdc_iterator
          */
         iter->totalElements = totalElements;
         if (region_info->ndim > 1) {
-            skipCount = ((region_info->offset[1] * obj_prop_ptr->dims[0])
+            skipCount = ((region_info->offset[1] * obj_prop_ptr->obj_prop_pub->dims[0])
 			 + region_info->offset[0]) * element_size;
             iter->sliceResetCount = iter->slicePerBlock = region_info->size[1] + 1;
-            elementsPerBlock = obj_prop_ptr->dims[0] * obj_prop_ptr->dims[1] * element_size;
+            elementsPerBlock = obj_prop_ptr->obj_prop_pub->dims[0] * obj_prop_ptr->obj_prop_pub->dims[1] * element_size;
 
             if (region_info->ndim > 2) {
-                d_offset = obj_prop_ptr->dims[0] * obj_prop_ptr->dims[1];
+                d_offset = obj_prop_ptr->obj_prop_pub->dims[0] * obj_prop_ptr->obj_prop_pub->dims[1];
                 iter->sliceResetCount = region_info->size[1];
                 for (i=2; i<region_info->ndim; i++) {
                     if (region_info->offset[i] > 0) {

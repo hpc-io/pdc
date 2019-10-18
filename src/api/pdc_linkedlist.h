@@ -44,6 +44,7 @@
 #define PDC_LINKEDLIST_H
 
 #include "pdc_cont_pkg.h"
+#include "pdc_cont.h"
 #include "mercury_thread_mutex.h"
 #include <string.h>
 
@@ -117,7 +118,7 @@
 
 #define PDC_LIST_SEARCH_CONT_NAME(var, head_ptr, entry_field_name, member, n, name)  \
     for ((var) = ((head_ptr)->head);                                  \
-        ((var) && strcmp(((struct _pdc_cont_info *)((var)->member))->n, name) != 0);                             \
+        ((var) && strcmp(((struct _pdc_cont_info *)((var)->member))->cont_info_pub->n, name) != 0);                             \
         (var) = ((var)->entry_field_name.next))
 
 #endif /* PDC_LINKEDLIST_H */

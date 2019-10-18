@@ -47,8 +47,8 @@ set(PDC_EXPORTED_LIBS pdcprof ${PDC_EXPORTED_LIBS})
 # Specify project header files to be installed
 #-----------------------------------------------------------------------------
 set(PDC_PROF_HEADERS
-  ${CMAKE_CURRENT_SOURCE_DIR}/hashtab.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/stack_ops.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_hashtab.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_stack_ops.h
   )
 
 #-----------------------------------------------------------------------------

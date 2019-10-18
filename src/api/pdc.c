@@ -55,7 +55,7 @@ done:
     FUNC_LEAVE(ret_value);
 } 
 
-static pdcid_t pdc_class_create(const char *pdc_name)
+static pdcid_t PDC_class_create(const char *pdc_name)
 {
     pdcid_t ret_value = SUCCEED;
     pdcid_t pdcid;
@@ -89,7 +89,7 @@ pdcid_t PDCinit(const char *pdc_name)
     
     if (PDC_class_init() < 0)
         PGOTO_ERROR(FAIL, "PDC class init error");
-    pdcid = pdc_class_create(pdc_name);
+    pdcid = PDC_class_create(pdc_name);
     
     if (PDC_prop_init() < 0)
         PGOTO_ERROR(FAIL, "PDC property init error");

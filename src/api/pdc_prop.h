@@ -28,6 +28,16 @@
 #include "pdc_public.h"
 
 /*******************/
+/* Public Structs */
+/*******************/
+struct pdc_obj_prop {
+    pdcid_t           obj_prop_id;
+    size_t            ndim;
+    uint64_t         *dims;
+    pdc_var_type_t    type;
+};
+
+/*******************/
 /* Public Typedefs */
 /*******************/
 typedef enum {
@@ -84,9 +94,9 @@ struct _pdc_cont_prop *PDCcont_prop_get_info(pdcid_t prop_id);
  *
  * \param prop_id [IN]          ID of the object property
  *
- * \return Pointer to _pdc_obj_prop struct/Null on failure
+ * \return Pointer to pdc_obj_prop struct/Null on failure
  */
-struct _pdc_obj_prop *PDCobj_prop_get_info(pdcid_t prop_id);
+struct pdc_obj_prop *PDCobj_prop_get_info(pdcid_t prop_id);
 
 /**
  * Send updated metadata (stored as property) to metadata server

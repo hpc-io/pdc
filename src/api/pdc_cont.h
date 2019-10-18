@@ -27,7 +27,16 @@
 
 #include "pdc_public.h"
 
-typedef struct _pdc_id_info cont_handle;  //??????????
+typedef struct _pdc_id_info cont_handle;
+
+/**************************/
+/* Library Public Struct */
+/**************************/
+struct pdc_cont_info {
+    char                   *name;
+    pdcid_t                 local_id;
+    uint64_t                meta_id;
+};
 
 /*********************/
 /* Public Prototypes */
@@ -82,7 +91,7 @@ perr_t PDCcont_close(pdcid_t cont_id);
  *
  * \return Container struct on success/NULL on failure
  */
-struct _pdc_cont_info *PDCcont_get_info(const char *cont_name);
+struct pdc_cont_info *PDCcont_get_info(const char *cont_name);
 
 /**
  * Persist a transient container
@@ -151,7 +160,7 @@ cont_handle *PDCcont_iter_next(cont_handle *chandle);
  *
  * \return Pointer to a PDC_cont_info struct/NULL on failure
  */
-struct _pdc_cont_info * PDCcont_iter_get_info(cont_handle *chandle);
+struct pdc_cont_info * PDCcont_iter_get_info(cont_handle *chandle);
 
 /**
  * ************

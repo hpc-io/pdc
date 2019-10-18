@@ -172,15 +172,15 @@ perr_t PDCbuf_obj_map(void *buf, pdc_var_type_t local_type, pdcid_t local_reg, p
     if (objinfo2 == NULL)
         PGOTO_ERROR(FAIL, "cannot locate remote object ID");
     obj2 = (struct _pdc_obj_info *)(objinfo2->obj_ptr);
-    remote_meta_id = obj2->meta_id;
-    remote_type = obj2->obj_pt->type;
+    remote_meta_id = obj2->obj_info_pub->meta_id;
+    remote_type = obj2->obj_pt->obj_prop_pub->type;
   
     reginfo2 = PDC_find_id(remote_reg);
     reg2 = (struct pdc_region_info *)(reginfo2->obj_ptr);
-    if (obj2->obj_pt->ndim != reg2->ndim)
+    if (obj2->obj_pt->obj_prop_pub->ndim != reg2->ndim)
         PGOTO_ERROR(FAIL, "remote object dimension and region dimension does not match");
     for (i=0; i<reg2->ndim; i++)
-          if ((obj2->obj_pt->dims)[i] < (reg2->size)[i])
+          if ((obj2->obj_pt->obj_prop_pub->dims)[i] < (reg2->size)[i])
             PGOTO_ERROR(FAIL, "remote object region size error");
 
     ret_value = PDC_Client_buf_map(local_reg, remote_meta_id, reg1->ndim, reg1->size, reg1->offset, local_type, buf, remote_type, reg1, reg2);
@@ -235,14 +235,14 @@ perr_t PDCbuf_obj_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id)
     if (info1 == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object ID");
     object1 = (struct _pdc_obj_info *)(info1->obj_ptr);
-    data_type = object1->obj_pt->type;
+    data_type = object1->obj_pt->obj_prop_pub->type;
 
     info1 = PDC_find_id(remote_reg_id);
     if (info1 == NULL)
         PGOTO_ERROR(FAIL, "cannot locate region ID");
     reginfo = (struct pdc_region_info *)(info1->obj_ptr);
 
-    ret_value = PDC_Client_buf_unmap(object1->meta_id, remote_reg_id, reginfo, data_type);
+    ret_value = PDC_Client_buf_unmap(object1->obj_info_pub->meta_id, remote_reg_id, reginfo, data_type);
 
     if (ret_value == SUCCEED) {
         PDC_dec_ref(remote_obj_id);
@@ -265,7 +265,7 @@ perr_t PDCreg_obtain_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_ty
     FUNC_ENTER(NULL);
     
     object_info = PDC_obj_get_info(obj_id);
-    data_type = object_info->obj_pt->type;
+    data_type = object_info->obj_pt->obj_prop_pub->type;
     region_info = PDCregion_get_info(reg_id);
     ret_value = PDC_Client_region_lock(object_info, region_info, access_type, lock_mode, data_type, &obtained);
 
@@ -285,7 +285,7 @@ perr_t PDCreg_release_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_t
     FUNC_ENTER(NULL);
     
     object_info = PDC_obj_get_info(obj_id);
-    data_type = object_info->obj_pt->type;
+    data_type = object_info->obj_pt->obj_prop_pub->type;
     region_info = PDCregion_get_info(reg_id);
     
     ret_value = PDC_Client_region_release(object_info, region_info, access_type, data_type, &released);

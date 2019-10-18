@@ -48,7 +48,7 @@ pdcid_t PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_pro
     id_info = PDC_find_id(ret_value);
     p = (struct _pdc_obj_info *)(id_info->obj_ptr);
 
-    MPI_Bcast(&(p->meta_id), 1, MPI_LONG_LONG, rank_id, comm);
+    MPI_Bcast(&(p->obj_info_pub->meta_id), 1, MPI_LONG_LONG, rank_id, comm);
 
     // PDC_Client_attach_metadata_to_local_obj((char *)obj_name, p->meta_id, p->cont->meta_id, p);
     FUNC_LEAVE(ret_value);
@@ -76,7 +76,7 @@ perr_t PDCobj_encode(pdcid_t obj_id, pdcid_t *meta_id)
         obj = (struct _pdc_obj_info *)(objinfo->obj_ptr);
         if (obj->location == PDC_OBJ_LOCAL)
             PGOTO_ERROR(FAIL, "trying to encode local object");
-        *meta_id = obj->meta_id;
+        *meta_id = obj->obj_info_pub->meta_id;
     }
 
 done:
@@ -102,7 +102,7 @@ pdcid_t PDCobj_decode(pdcid_t obj_id, pdcid_t meta_id)
         if (objinfo == NULL)
             PGOTO_ERROR(ret_value, "cannot locate object ID");
         obj = (struct _pdc_obj_info *)(objinfo->obj_ptr);
-        obj->meta_id = meta_id;
+        obj->obj_info_pub->meta_id = meta_id;
     }
 
 done:

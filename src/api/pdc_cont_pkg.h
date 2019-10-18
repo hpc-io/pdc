@@ -31,9 +31,7 @@
 /* Library Private Struct */
 /**************************/
 struct _pdc_cont_info {
-    char                   *name;
-    pdcid_t                 local_id;
-    uint64_t                meta_id;
+    struct pdc_cont_info    *cont_info_pub;
     struct _pdc_cont_prop   *cont_pt;
 };
 

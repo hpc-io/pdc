@@ -28,11 +28,12 @@
 #include <inttypes.h>
 #include "pdc.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     pdcid_t pdc, cont_prop, cont, obj_prop, obj1, obj2, obj3;
     int rank = 0, size = 1;
     obj_handle *oh;
-    struct PDC_obj_info *info;
+    struct pdc_obj_info *info;
     
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);

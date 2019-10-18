@@ -98,31 +98,16 @@ set(PDC_EXPORTED_LIBS pdc ${PDC_EXPORTED_LIBS})
 #-----------------------------------------------------------------------------
 set(PDC_HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_analysis_and_transforms_common.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_analysis_pkg.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_analysis.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_connect.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_server_common.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_cont.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_cont_pkg.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_hist_pkg.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_id_pkg.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_interface.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_linkedlist.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_malloc.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_mpi.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_obj.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_obj_pkg.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_private.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_region.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_prop.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_prop_pkg.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_public.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_query.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_region.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_region_pkg.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transform_support.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transforms_common.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transforms_pkg.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transform.h
   ${CMAKE_BINARY_DIR}/pdc_config.h
   )
 

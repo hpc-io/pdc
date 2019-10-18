@@ -126,7 +126,7 @@ PDCobj_transform_register(char *func, pdcid_t obj_id, int current_state, int nex
             // Requires that the PDCprop_set_obj_buf function be used...
             if (obj1 && ((prop = obj1->obj_pt) != NULL)) {
                 thisFtn->data = prop->buf;
-                thisFtn->type = prop->type;
+                thisFtn->type = prop->obj_prop_pub->type;
                 thisFtn->type_extent = prop->type_extent;
             }
         }
@@ -134,10 +134,10 @@ PDCobj_transform_register(char *func, pdcid_t obj_id, int current_state, int nex
 	    if (id_info && ((reg2 = (struct pdc_region_info *)id_info->obj_ptr) != NULL)) {
             thisFtn->dest_region = reg2;
             obj2 = reg2->obj;
-            dest_object_id = obj2->local_id;
+            dest_object_id = obj2->obj_info_pub->local_id;
             if (obj2 && ((prop = obj2->obj_pt) != NULL)) {
                 thisFtn->result = prop->buf;
-                thisFtn->dest_type = prop->type;
+                thisFtn->dest_type = prop->obj_prop_pub->type;
                 thisFtn->dest_extent = prop->type_extent;
             }
 	    }
@@ -242,13 +242,13 @@ PDCbuf_map_transform_register(char *func, void *buf,
     id_info = PDC_find_id(dest_object_id);
     if (id_info) object1 = (struct _pdc_obj_info *)(id_info->obj_ptr);
     if (object1) {
-        thisFtn->type = object1->obj_pt->type;
+        thisFtn->type = object1->obj_pt->obj_prop_pub->type;
 	if (object1->obj_pt->type_extent == 0) {
-	    object1->obj_pt->type_extent = PDC_get_var_type_size(object1->obj_pt->type);
+	    object1->obj_pt->type_extent = PDC_get_var_type_size(object1->obj_pt->obj_prop_pub->type);
 	}
 	thisFtn->type_extent = object1->obj_pt->type_extent;
 	thisFtn->dest_extent = object1->obj_pt->type_extent;
-	thisFtn->dest_type = object1->obj_pt->type;
+	thisFtn->dest_type = object1->obj_pt->obj_prop_pub->type;
     }    
     if (next_state == INCR_STATE)
         thisFtn->nextState = current_state +1;

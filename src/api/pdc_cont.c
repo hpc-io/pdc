@@ -32,7 +32,7 @@
 #include "pdc_client_connect.h"
 #include <string.h>
 
-static perr_t pdc_cont_close(struct _pdc_cont_info *cp);
+static perr_t PDC_cont_close(struct _pdc_cont_info *cp);
 
 perr_t PDC_cont_init()
 {
@@ -41,7 +41,7 @@ perr_t PDC_cont_init()
     FUNC_ENTER(NULL);
 
     /* Initialize the atom group for the container IDs */
-    if (PDC_register_type(PDC_CONT, (PDC_free_t)pdc_cont_close) < 0)
+    if (PDC_register_type(PDC_CONT, (PDC_free_t)PDC_cont_close) < 0)
         PGOTO_ERROR(FAIL, "unable to initialize container interface");
 
 done:
@@ -62,7 +62,11 @@ pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_prop_id)
     p = PDC_MALLOC(struct _pdc_cont_info);
     if (!p)
         PGOTO_ERROR(0, "PDC container memory allocation failed");
-    p->name = strdup(cont_name);
+    
+    p->cont_info_pub = PDC_MALLOC(struct pdc_cont_info);
+    if (!p->cont_info_pub)
+        PGOTO_ERROR(0, "PDC pub container memory allocation failed");
+    p->cont_info_pub->name = strdup(cont_name);
     
     id_info = PDC_find_id(cont_prop_id);
     cont_prop = (struct _pdc_cont_prop *)(id_info->obj_ptr);
@@ -79,12 +83,13 @@ pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_prop_id)
         p->cont_pt->pdc->name = strdup(cont_prop->pdc->name);
     p->cont_pt->pdc->local_id = cont_prop->pdc->local_id;
    
-    ret = PDC_Client_create_cont_id(cont_name, cont_prop_id, &(p->meta_id));
+    ret = PDC_Client_create_cont_id(cont_name, cont_prop_id, &(p->cont_info_pub->meta_id));
     if (ret == FAIL)
         PGOTO_ERROR(0, "Unable to create container on the server!");
     
-    p->local_id = PDC_id_register(PDC_CONT, p);
-    ret_value = p->local_id;
+    p->cont_info_pub->local_id = PDC_id_register(PDC_CONT, p);
+    
+    ret_value = p->cont_info_pub->local_id;
     
 done:
     fflush(stdout);
@@ -104,7 +109,11 @@ pdcid_t PDCcont_create_col(const char *cont_name, pdcid_t cont_prop_id)
     p = PDC_MALLOC(struct _pdc_cont_info);
     if (!p)
         PGOTO_ERROR(0, "PDC container memory allocation failed");
-    p->name = strdup(cont_name);
+    
+    p->cont_info_pub = PDC_MALLOC(struct pdc_cont_info);
+    if (!p->cont_info_pub)
+        PGOTO_ERROR(0, "PDC pub container memory allocation failed");
+    p->cont_info_pub->name = strdup(cont_name);
     
     id_info = PDC_find_id(cont_prop_id);
     cont_prop = (struct _pdc_cont_prop *)(id_info->obj_ptr);
@@ -121,12 +130,12 @@ pdcid_t PDCcont_create_col(const char *cont_name, pdcid_t cont_prop_id)
         p->cont_pt->pdc->name = strdup(cont_prop->pdc->name);
     p->cont_pt->pdc->local_id = cont_prop->pdc->local_id;
  
-    ret = PDC_Client_create_cont_id_mpi(cont_name, cont_prop_id, &(p->meta_id));
+    ret = PDC_Client_create_cont_id_mpi(cont_name, cont_prop_id, &(p->cont_info_pub->meta_id));
     if (ret == FAIL)
         PGOTO_ERROR(0, "Unable to create container object on server!");
    
-    p->local_id = PDC_id_register(PDC_CONT, p);
-    ret_value = p->local_id;
+    p->cont_info_pub->local_id = PDC_id_register(PDC_CONT, p);
+    ret_value = p->cont_info_pub->local_id;
 
 done:
     fflush(stdout);
@@ -146,8 +155,12 @@ pdcid_t PDC_cont_create_local(pdcid_t pdc, const char *cont_name, uint64_t cont_
     p = PDC_MALLOC(struct _pdc_cont_info);
     if (!p)
         PGOTO_ERROR(0, "PDC container memory allocation failed");
-    p->name = strdup(cont_name);
-    p->meta_id = cont_meta_id;
+    
+    p->cont_info_pub = PDC_MALLOC(struct pdc_cont_info);
+    if (!p)
+        PGOTO_ERROR(0, "PDC container memory allocation failed");
+    p->cont_info_pub->name = strdup(cont_name);
+    p->cont_info_pub->meta_id = cont_meta_id;
     
     cont_prop_id = PDCprop_create(PDC_CONT_CREATE, pdc);
     
@@ -166,8 +179,8 @@ pdcid_t PDC_cont_create_local(pdcid_t pdc, const char *cont_name, uint64_t cont_
         p->cont_pt->pdc->name = strdup(cont_prop->pdc->name);
     p->cont_pt->pdc->local_id = cont_prop->pdc->local_id;
 
-    p->local_id = PDC_id_register(PDC_CONT, p);
-    ret_value = p->local_id;
+    p->cont_info_pub->local_id = PDC_id_register(PDC_CONT, p);
+    ret_value = p->cont_info_pub->local_id;
     
     PDCprop_close(cont_prop_id);
     
@@ -195,13 +208,14 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-static perr_t pdc_cont_close(struct _pdc_cont_info *cp)
+static perr_t PDC_cont_close(struct _pdc_cont_info *cp)
 {
     perr_t ret_value = SUCCEED;     
 
     FUNC_ENTER(NULL);
 
-    free((void*)(cp->name));
+    free((void*)(cp->cont_info_pub->name));
+    cp->cont_info_pub = PDC_FREE(struct pdc_cont_info, cp->cont_info_pub);
     free(cp->cont_pt->pdc->name);
     cp->cont_pt->pdc = PDC_FREE(struct _pdc_class, cp->cont_pt->pdc);
     cp->cont_pt = PDC_FREE(struct _pdc_cont_prop, cp->cont_pt);
@@ -275,8 +289,14 @@ struct _pdc_cont_info *PDC_cont_get_info(pdcid_t cont_id)
         memcpy(ret_value, info, sizeof(struct _pdc_cont_info));
     else
         PGOTO_ERROR(NULL, "cannot allocate ret_value");
-    if (info->name)
-        ret_value->name = strdup(info->name);
+    
+    ret_value->cont_info_pub = PDC_CALLOC(struct pdc_cont_info);
+    if (ret_value->cont_info_pub)
+        memcpy(ret_value, info, sizeof(struct pdc_cont_info));
+    else
+        PGOTO_ERROR(NULL, "cannot allocate ret_value->cont_info_pub");
+    if (info->cont_info_pub->name)
+        ret_value->cont_info_pub->name = strdup(info->cont_info_pub->name);
     
     ret_value->cont_pt = PDC_MALLOC(struct _pdc_cont_prop);
     if (ret_value->cont_pt)
@@ -297,17 +317,26 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-struct _pdc_cont_info *PDCcont_get_info(const char *cont_name)
+struct pdc_cont_info *PDCcont_get_info(const char *cont_name)
 {
-    struct _pdc_cont_info *ret_value = NULL;
+    struct pdc_cont_info *ret_value = NULL;
+    struct _pdc_cont_info *tmp = NULL;
     pdcid_t cont_id;
     
     FUNC_ENTER(NULL);
     
     cont_id = PDC_find_byname(PDC_CONT, cont_name);
     
-    ret_value = PDC_cont_get_info(cont_id);
+    tmp = PDC_cont_get_info(cont_id);
+    
+    ret_value = PDC_CALLOC(struct pdc_cont_info);
+    if (!ret_value)
+        PGOTO_ERROR(NULL, "cannot allocate memory");
+    
+    ret_value = tmp->cont_info_pub;
 
+done:
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
@@ -359,9 +388,9 @@ done:
     FUNC_LEAVE(ret_value);
 } 
 
-struct _pdc_cont_info *PDCcont_iter_get_info(cont_handle *chandle)
+struct pdc_cont_info *PDCcont_iter_get_info(cont_handle *chandle)
 {
-    struct _pdc_cont_info *ret_value = NULL;
+    struct pdc_cont_info *ret_value = NULL;
     struct _pdc_cont_info *info = NULL;
 
     FUNC_ENTER(NULL);
@@ -370,7 +399,11 @@ struct _pdc_cont_info *PDCcont_iter_get_info(cont_handle *chandle)
     if (info == NULL)
         PGOTO_ERROR(NULL, "PDC container info memory allocation failed");
     
-    ret_value = info;
+    ret_value = PDC_CALLOC(struct pdc_cont_info);
+    if (!ret_value)
+        PGOTO_ERROR(NULL, "failed to allocate memory");
+    
+    ret_value = info->cont_info_pub;
     
 done:
     fflush(stdout);

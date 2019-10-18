@@ -71,8 +71,8 @@ perr_t PDC_Client_send_iter_recv_id(pdcid_t iter_id, pdcid_t *meta_id)
 
         /* Co-locate iterator info with the actual object */
         if (object_info != NULL) {
-            server_id = object_info->server_id;
-            in.object_id = object_info->meta_id;
+            server_id = object_info->obj_info_pub->server_id;
+            in.object_id = object_info->obj_info_pub->meta_id;
         }
         else
             in.object_id = thisIter->objectId; /* Is this ok? */
@@ -180,7 +180,7 @@ perr_t PDC_Client_register_obj_analysis(struct _pdc_region_analysis_ftn_info *th
     if (pdc_server_selection_g != PDC_SERVER_DEFAULT) {
         thisIter = &PDC_Block_iterator_cache[in_local];
         obj_prop = PDC_obj_get_info(thisIter->objectId);
-        input_server = obj_prop->server_id;
+        input_server = obj_prop->obj_info_pub->server_id;
         output_server = input_server;
     }
     else {
@@ -294,7 +294,7 @@ perr_t PDC_Client_register_region_transform(const char *func, const char *loadpa
     in.ftn_name = func;
     in.loadpath = loadpath;
     if (object_info != NULL)
-        in.object_id = object_info->meta_id;
+        in.object_id = object_info->obj_info_pub->meta_id;
     else
         in.object_id = obj_id;
     in.region_id = dest_region_id;

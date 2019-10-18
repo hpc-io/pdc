@@ -33,7 +33,9 @@
 
 #include "../server/pdc_utlist.h"
 #include "pdc_id_pkg.h"
+#include "pdc_prop_pkg.h"
 #include "pdc_obj_pkg.h"
+#include "pdc_cont.h"
 #include "pdc_region.h"
 #include "pdc_interface.h"
 #include "pdc_analysis_pkg.h"
@@ -1525,7 +1527,7 @@ perr_t PDC_Client_add_tag(pdcid_t obj_id, const char *tag)
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: - invalid tag content!", pdc_client_mpi_rank_g);
 
     obj_prop = PDC_obj_get_info(obj_id);
-    meta_id = obj_prop->meta_id;
+    meta_id = obj_prop->obj_info_pub->meta_id;
     server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
 
     // Debug statistics for counting number of messages sent to each server.
@@ -1539,7 +1541,7 @@ perr_t PDC_Client_add_tag(pdcid_t obj_id, const char *tag)
 
     // Fill input structure
     in.obj_id     = meta_id;
-    in.hash_value = PDC_get_hash_by_name(obj_prop->name);
+    in.hash_value = PDC_get_hash_by_name(obj_prop->obj_info_pub->name);
     in.new_tag    = tag;
 
     hg_ret = HG_Forward(metadata_add_tag_handle, metadata_add_tag_rpc_cb, &lookup_args, &in);
@@ -1742,7 +1744,7 @@ perr_t PDC_Client_delete_metadata(char *delete_name, pdcid_t obj_delete_prop)
     
     FUNC_ENTER(NULL);
 
-    delete_prop = PDCobj_prop_get_info(obj_delete_prop);
+    delete_prop = PDC_obj_prop_get_info(obj_delete_prop);
     // Fill input structure
     in.obj_name = delete_name;
     in.time_step = delete_prop->time_step;
@@ -2027,7 +2029,7 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdci
     
     FUNC_ENTER(NULL);
     
-    create_prop = PDCobj_prop_get_info(obj_create_prop);
+    create_prop = PDC_obj_prop_get_info(obj_create_prop);
     
     if (obj_name == NULL)
         PGOTO_ERROR(FAIL, "Cannot create object with empty object name");
@@ -2038,17 +2040,17 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdci
     in.data.cont_id   = cont_id;
     in.data.time_step = create_prop->time_step;
     in.data.user_id   = create_prop->user_id;
-    in.data_type      = create_prop->type;
+    in.data_type      = create_prop->obj_prop_pub->type;
 
-    if ((in.data.ndim = create_prop->ndim) > 0) {
+    if ((in.data.ndim = create_prop->obj_prop_pub->ndim) > 0) {
       if (in.data.ndim >= 1)
-          in.data.dims0     = create_prop->dims[0];
+          in.data.dims0     = create_prop->obj_prop_pub->dims[0];
       if (in.data.ndim >= 2)
-          in.data.dims1     = create_prop->dims[1];
+          in.data.dims1     = create_prop->obj_prop_pub->dims[1];
       if (in.data.ndim >= 3)
-          in.data.dims2     = create_prop->dims[2];
+          in.data.dims2     = create_prop->obj_prop_pub->dims[2];
       if (in.data.ndim >= 4)
-          in.data.dims3     = create_prop->dims[3];
+          in.data.dims3     = create_prop->obj_prop_pub->dims[3];
     }
    
     if (create_prop->tags == NULL) 
@@ -2331,12 +2333,12 @@ perr_t PDC_Client_region_lock(struct _pdc_obj_info *object_info, struct pdc_regi
     
     // Compute local data server id
     if (pdc_server_selection_g != PDC_SERVER_DEFAULT) {
-        server_id = object_info->server_id;
+        server_id = object_info->obj_info_pub->server_id;
         meta_server_id = server_id;
     }
     else {
         // Compute metadata server id
-        meta_server_id = PDC_get_server_by_obj_id(object_info->meta_id, pdc_server_num_g);
+        meta_server_id = PDC_get_server_by_obj_id(object_info->obj_info_pub->meta_id, pdc_server_num_g);
         // Compute local data server id
         server_id = PDC_CLIENT_DATA_SERVER();
     }
@@ -2348,7 +2350,7 @@ perr_t PDC_Client_region_lock(struct _pdc_obj_info *object_info, struct pdc_regi
     debug_server_id_count[server_id]++;
 
     // Fill input structure
-    in.obj_id = object_info->meta_id;
+    in.obj_id = object_info->obj_info_pub->meta_id;
     in.access_type = access_type;
     in.mapping = region_info->mapping;
     in.local_reg_id = region_info->local_id;
@@ -2418,12 +2420,12 @@ perr_t pdc_region_release_with_server_transform(struct _pdc_obj_info *object_inf
     
     // Compute local data server id
     if (pdc_server_selection_g != PDC_SERVER_DEFAULT) {
-        server_id = object_info->server_id;
+        server_id = object_info->obj_info_pub->server_id;
         meta_server_id = server_id;
     }
     else {
         // Compute metadata server id
-        meta_server_id = PDC_get_server_by_obj_id(object_info->meta_id, pdc_server_num_g);
+        meta_server_id = PDC_get_server_by_obj_id(object_info->obj_info_pub->meta_id, pdc_server_num_g);
         // Compute local data server id
         server_id = PDC_CLIENT_DATA_SERVER();
     }
@@ -2435,7 +2437,7 @@ perr_t pdc_region_release_with_server_transform(struct _pdc_obj_info *object_inf
     }
     in.dest_type = data_type;
     in.meta_server_id = meta_server_id;
-    in.obj_id = object_info->meta_id;
+    in.obj_id = object_info->obj_info_pub->meta_id;
     in.access_type = access_type;
     in.mapping = region_info->mapping;
     in.local_reg_id = region_info->local_id;
@@ -2527,17 +2529,17 @@ perr_t pdc_region_release_with_server_analysis(struct _pdc_obj_info *object_info
     FUNC_ENTER(NULL);
     
     if (pdc_server_selection_g != PDC_SERVER_DEFAULT) {
-        server_id = object_info->server_id;
+        server_id = object_info->obj_info_pub->server_id;
         meta_server_id = server_id;
     }
     else {
         // Compute metadata server id
-        meta_server_id = PDC_get_server_by_obj_id(object_info->meta_id, pdc_server_num_g);
+        meta_server_id = PDC_get_server_by_obj_id(object_info->obj_info_pub->meta_id, pdc_server_num_g);
         // Compute local data server id
         server_id = PDC_CLIENT_DATA_SERVER();
     }
     in.meta_server_id = meta_server_id;
-    in.obj_id = object_info->meta_id;
+    in.obj_id = object_info->obj_info_pub->meta_id;
     in.access_type = access_type;
     in.local_reg_id = region_info->local_id;
     in.mapping = region_info->mapping;
@@ -2559,7 +2561,7 @@ perr_t pdc_region_release_with_server_analysis(struct _pdc_obj_info *object_info
     result_obj = outputIter->objectId;
     obj_info = PDC_find_id(result_obj);
     obj_prop = (struct _pdc_obj_prop *)(obj_info->obj_ptr);
-    in.output_obj_id = obj_prop->obj_prop_id;
+    in.output_obj_id = obj_prop->obj_prop_pub->obj_prop_id;
     in.output_iter = outputIter->meta_id;
 
     if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
@@ -2622,12 +2624,12 @@ perr_t pdc_region_release_with_client_transform(struct _pdc_obj_info *object_inf
     
     // Compute local data server id
     if (pdc_server_selection_g != PDC_SERVER_DEFAULT) {
-        server_id = object_info->server_id;
+        server_id = object_info->obj_info_pub->server_id;
         meta_server_id = server_id;
     }
     else {
         // Compute metadata server id
-        meta_server_id = PDC_get_server_by_obj_id(object_info->meta_id, pdc_server_num_g);
+        meta_server_id = PDC_get_server_by_obj_id(object_info->obj_info_pub->meta_id, pdc_server_num_g);
         // Compute local data server id
         server_id = PDC_CLIENT_DATA_SERVER();
     }
@@ -2642,7 +2644,7 @@ perr_t pdc_region_release_with_client_transform(struct _pdc_obj_info *object_inf
     else in.dest_type = object_info->obj_pt->transform_prop.dtype;
 
     in.meta_server_id = meta_server_id;
-    in.obj_id = object_info->meta_id;
+    in.obj_id = object_info->obj_info_pub->meta_id;
     in.access_type = access_type;
     in.mapping = region_info->mapping;
     in.local_reg_id = region_info->local_id;
@@ -2740,25 +2742,25 @@ update_metadata(struct _pdc_obj_info *object_info, pdc_var_type_t data_type, siz
     
     if (pdc_client_mpi_rank_g == 0) {
         PDC_metadata_init(&meta);
-        strcpy(meta.obj_name, object_info->name);
+        strcpy(meta.obj_name, object_info->obj_info_pub->name);
         meta.time_step = object_info->obj_pt->time_step;
-        meta.obj_id = object_info->meta_id;
-        meta.cont_id = object_info->cont->meta_id;
+        meta.obj_id = object_info->obj_info_pub->meta_id;
+        meta.cont_id = object_info->cont->cont_info_pub->meta_id;
         meta.data_type = data_type;
-        meta.ndim = object_info->obj_pt->ndim;
+        meta.ndim = object_info->obj_pt->obj_prop_pub->ndim;
 
-        meta.dims[0] = object_info->obj_pt->dims[0];
+        meta.dims[0] = object_info->obj_pt->obj_prop_pub->dims[0];
         expected_size = (size_t)meta.dims[0] * type_extent;
         if (meta.ndim > 1) {
-            meta.dims[1] = object_info->obj_pt->dims[1];
+            meta.dims[1] = object_info->obj_pt->obj_prop_pub->dims[1];
             expected_size *= (size_t)meta.dims[1];
         }
         if (meta.ndim > 2) {
-            meta.dims[2] = object_info->obj_pt->dims[2];
+            meta.dims[2] = object_info->obj_pt->obj_prop_pub->dims[2];
             expected_size *= (size_t)meta.dims[2];
         }
         if (meta.ndim > 3) {
-            meta.dims[3] = object_info->obj_pt->dims[3];
+            meta.dims[3] = object_info->obj_pt->obj_prop_pub->dims[3];
             expected_size *= (size_t)meta.dims[3];
         }
 
@@ -2964,12 +2966,12 @@ perr_t PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_r
 
     // Compute data server and metadata server ids.
     if (pdc_server_selection_g != PDC_SERVER_DEFAULT) {
-        server_id = object_info->server_id;
+        server_id = object_info->obj_info_pub->server_id;
         meta_server_id = server_id;
     }
     else {
         // Compute metadata server id
-        meta_server_id = PDC_get_server_by_obj_id(object_info->meta_id, pdc_server_num_g);
+        meta_server_id = PDC_get_server_by_obj_id(object_info->obj_info_pub->meta_id, pdc_server_num_g);
         // Compute local data server id
         server_id = PDC_CLIENT_DATA_SERVER();
     }
@@ -2979,7 +2981,7 @@ perr_t PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_r
     debug_server_id_count[server_id]++;
 
     // Fill input structure
-    in.obj_id = object_info->meta_id;
+    in.obj_id = object_info->obj_info_pub->meta_id;
     in.access_type = access_type;
     in.mapping = region_info->mapping;
     in.local_reg_id = region_info->local_id;
@@ -4009,11 +4011,11 @@ perr_t PDC_Client_add_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdc
     obj_ids = (uint64_t*)malloc(sizeof(uint64_t)*nobj);
     for (i = 0; i < nobj; i++) {
         id_info = PDC_find_id(local_obj_ids[i]);
-        obj_ids[i] = ((struct _pdc_obj_info *)(id_info->obj_ptr))->meta_id;
+        obj_ids[i] = ((struct _pdc_obj_info *)(id_info->obj_ptr))->obj_info_pub->meta_id;
     }
 
     id_info = PDC_find_id(local_cont_id);
-    cont_meta_id = ((struct _pdc_cont_info *)(id_info->obj_ptr))->meta_id;
+    cont_meta_id = ((struct _pdc_cont_info *)(id_info->obj_ptr))->cont_info_pub->meta_id;
  
     ret_value = PDC_Client_add_del_objects_to_container(nobj, obj_ids, cont_meta_id, ADD_OBJ);
 
@@ -4034,11 +4036,11 @@ perr_t PDC_Client_del_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdc
     obj_ids = (uint64_t*)malloc(sizeof(uint64_t)*nobj);
     for (i = 0; i < nobj; i++) {
         id_info = PDC_find_id(local_obj_ids[i]);
-        obj_ids[i] = ((struct _pdc_obj_info *)(id_info->obj_ptr))->meta_id;
+        obj_ids[i] = ((struct _pdc_obj_info *)(id_info->obj_ptr))->obj_info_pub->meta_id;
     }
 
     id_info = PDC_find_id(local_cont_id);
-    cont_meta_id = ((struct _pdc_cont_info *)(id_info->obj_ptr))->meta_id;
+    cont_meta_id = ((struct _pdc_cont_info *)(id_info->obj_ptr))->cont_info_pub->meta_id;
  
     ret_value = PDC_Client_add_del_objects_to_container(nobj, obj_ids, cont_meta_id, DEL_OBJ);
 
@@ -4065,7 +4067,7 @@ perr_t PDC_Client_add_tags_to_container(pdcid_t cont_id, char *tags)
                 pdc_client_mpi_rank_g, cont_id);
 
     object = (struct _pdc_cont_info*)(info->obj_ptr);
-    cont_meta_id = object->meta_id;
+    cont_meta_id = object->cont_info_pub->meta_id;
 
     server_id = PDC_get_server_by_obj_id(cont_meta_id, pdc_server_num_g);
 
@@ -4558,9 +4560,9 @@ perr_t PDC_Client_attach_metadata_to_local_obj(const char *obj_name, uint64_t ob
         strcpy(((pdc_metadata_t*)obj_info->metadata)->tags, obj_info->obj_pt->tags);
     if (NULL != obj_info->obj_pt->data_loc)
         strcpy(((pdc_metadata_t*)obj_info->metadata)->data_location, obj_info->obj_pt->data_loc);
-    ((pdc_metadata_t*)obj_info->metadata)->ndim    = obj_info->obj_pt->ndim;
-        if (NULL != obj_info->obj_pt->dims)
-    memcpy(((pdc_metadata_t*)obj_info->metadata)->dims, obj_info->obj_pt->dims, sizeof(uint64_t)*obj_info->obj_pt->ndim);
+    ((pdc_metadata_t*)obj_info->metadata)->ndim = obj_info->obj_pt->obj_prop_pub->ndim;
+        if (NULL != obj_info->obj_pt->obj_prop_pub->dims)
+    memcpy(((pdc_metadata_t*)obj_info->metadata)->dims, obj_info->obj_pt->obj_prop_pub->dims, sizeof(uint64_t)*obj_info->obj_pt->obj_prop_pub->ndim);
 
     FUNC_LEAVE(ret_value);
 }
@@ -5530,7 +5532,7 @@ perr_t PDC_add_kvtag(pdcid_t obj_id, pdc_kvtag_t *kvtag)
     FUNC_ENTER(NULL);
 
     obj_prop = PDC_obj_get_info(obj_id);
-    meta_id = obj_prop->meta_id;
+    meta_id = obj_prop->obj_info_pub->meta_id;
 
     server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
 
@@ -5545,7 +5547,7 @@ perr_t PDC_add_kvtag(pdcid_t obj_id, pdc_kvtag_t *kvtag)
 
     // Fill input structure
     in.obj_id     = meta_id;
-    in.hash_value = PDC_get_hash_by_name(obj_prop->name);
+    in.hash_value = PDC_get_hash_by_name(obj_prop->obj_info_pub->name);
 
     if (kvtag != NULL && kvtag != NULL && kvtag->size != 0) {
         in.kvtag.name  = kvtag->name;
@@ -5614,7 +5616,7 @@ perr_t PDC_get_kvtag(pdcid_t obj_id, char *tag_name, pdc_kvtag_t **kvtag)
     FUNC_ENTER(NULL);
 
     obj_prop = PDC_obj_get_info(obj_id);
-    meta_id = obj_prop->meta_id;
+    meta_id = obj_prop->obj_info_pub->meta_id;
     server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
     debug_server_id_count[server_id]++;
 
@@ -5626,7 +5628,7 @@ perr_t PDC_get_kvtag(pdcid_t obj_id, char *tag_name, pdc_kvtag_t **kvtag)
 
     // Fill input structure
     in.obj_id     = meta_id;
-    in.hash_value = PDC_get_hash_by_name(obj_prop->name);
+    in.hash_value = PDC_get_hash_by_name(obj_prop->obj_info_pub->name);
 
     if ( tag_name != NULL && kvtag != NULL) {
         in.key = tag_name;
@@ -5668,7 +5670,7 @@ perr_t PDCtag_delete(pdcid_t obj_id, char *tag_name)
     FUNC_ENTER(NULL);
 
     obj_prop = PDC_obj_get_info(obj_id);
-    meta_id = obj_prop->meta_id;
+    meta_id = obj_prop->obj_info_pub->meta_id;
     server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
 
     debug_server_id_count[server_id]++;
@@ -5681,7 +5683,7 @@ perr_t PDCtag_delete(pdcid_t obj_id, char *tag_name)
 
     // Fill input structure
     in.obj_id     = meta_id;
-    in.hash_value = PDC_get_hash_by_name(obj_prop->name);
+    in.hash_value = PDC_get_hash_by_name(obj_prop->obj_info_pub->name);
     in.key        = tag_name;
 
     hg_ret = HG_Forward(metadata_del_kvtag_handle, metadata_add_tag_rpc_cb/*reuse*/, &lookup_args, &in);
@@ -6202,7 +6204,7 @@ perr_t PDCobj_get_data(pdcid_t obj_id, void **data, uint64_t *size ATTRIBUTE(unu
     obj_region.size   = 0;  // TODO: size=0 means read entire object
 
     obj_prop = PDC_obj_get_info(obj_id);
-    obj_name = obj_prop->name;
+    obj_name = obj_prop->obj_info_pub->name;
 
 #ifdef ENABLE_MPI
     ret_value = PDC_Client_query_metadata_name_timestep_agg(obj_name, 0, &meta);
@@ -6232,7 +6234,7 @@ PDCobj_del_data(pdcid_t obj_id)
     FUNC_ENTER(NULL);
 
     obj_prop = PDC_obj_get_info(obj_id);
-    meta_id = obj_prop->meta_id;
+    meta_id = obj_prop->obj_info_pub->meta_id;
 
     ret_value = PDC_Client_delete_metadata_by_id(meta_id);
     if (ret_value != SUCCEED)
@@ -6559,11 +6561,10 @@ perr_t PDC_Client_get_sel_data(pdcid_t obj_id, pdc_selection_t *sel, void *data)
 
     if (PDC_find_id(obj_id) != NULL) {
         obj_prop = PDC_obj_get_info(obj_id);
-        meta_id = obj_prop->meta_id;
+        meta_id = obj_prop->obj_info_pub->meta_id;
     }
     else 
         meta_id = obj_id;
-
 
     in.query_id = sel->query_id;
     in.obj_id   = meta_id;

@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
     pdcid_t pdc,cont_prop, cont, obj_prop, obj1;
     int rank = 0, size = 1;
     uint64_t d[3] = {10, 20, 30};
-    struct _pdc_obj_prop *op;
+    struct pdc_obj_prop *op;
     size_t i;
     
 #ifdef ENABLE_MPI

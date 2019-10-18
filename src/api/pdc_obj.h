@@ -34,6 +34,17 @@ typedef enum { PDC_NA=0, PDC_READ=1, PDC_WRITE=2 } pdc_access_t;
 typedef enum { PDC_BLOCK=0, PDC_NOBLOCK=1 } pdc_lock_mode_t;
 typedef struct _pdc_id_info obj_handle;
 
+/*******************/
+/* Public Structs */
+/*******************/
+struct pdc_obj_info {
+    char                   *name;
+    pdcid_t                 meta_id;
+    pdcid_t                 local_id;
+    int                     server_id;
+    struct pdc_obj_prop    *obj_pt;
+};
+
 /*********************/
 /* Public Prototypes */
 /*********************/
@@ -73,9 +84,9 @@ perr_t PDCobj_close(pdcid_t obj_id);
  *
  * \param obj_name [IN]         Name of the object
  *
- * \return Pointer to _pdc_obj_info struct on success/Null on failure
+ * \return Pointer to pdc_obj_info struct on success/Null on failure
  */
-struct _pdc_obj_info *PDCobj_get_info(const char *obj_name);
+struct pdc_obj_info *PDCobj_get_info(const char *obj_name);
 
 /**
  * ***********
@@ -232,9 +243,9 @@ obj_handle *PDCobj_iter_next(obj_handle *ohandle, pdcid_t cont_id);
  * \param ohandle [IN]          A pointer to obj_handle struct, 
  *                              returned by PDCobj_iter_start(pdcid_t cont_id)
  *
- * \return Pointer to a _pdc_obj_info struct on success/NULL on failure
+ * \return Pointer to a pdc_obj_info struct on success/NULL on failure
  */
-struct _pdc_obj_info * PDCobj_iter_get_info(obj_handle *ohandle);
+struct pdc_obj_info * PDCobj_iter_get_info(obj_handle *ohandle);
 
 /**
  * View query result

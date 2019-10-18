@@ -40,7 +40,7 @@ typedef struct pdc_kvtag_t {
     char             *name;
     uint32_t          size;
     void             *value;
-} pdc_kvtag_t;     // ?????????????
+} pdc_kvtag_t;
 
 struct _pdc_transform_state {
     _pdc_major_type_t storage_order;
@@ -51,18 +51,15 @@ struct _pdc_transform_state {
 };
 
 struct _pdc_obj_prop {
-    struct _pdc_class *pdc;
-    pdcid_t           obj_prop_id;
-    size_t            ndim;
-    uint64_t         *dims;
-    pdc_var_type_t    type;
-    uint32_t          user_id;
-    char             *app_name;
-    uint32_t          time_step;
-    char             *data_loc;
-    char             *tags;
-    void             *buf;
-    pdc_kvtag_t      *kvtag;
+    struct pdc_obj_prop *obj_prop_pub;
+    struct _pdc_class   *pdc;
+    uint32_t             user_id;
+    char                *app_name;
+    uint32_t             time_step;
+    char                *data_loc;
+    char                *tags;
+    void                *buf;
+    pdc_kvtag_t         *kvtag;
 
     /* The following have been added to support of PDC analysis and transforms */
     size_t            type_extent;
@@ -101,5 +98,14 @@ perr_t PDC_prop_obj_list_null();
  * \return SUCCEED if empty/FAIL if not empty
  */
 perr_t PDC_prop_cont_list_null();
+
+/**
+ * Get object property infomation
+ *
+ * \param prop_id [IN]          ID of the object property
+ *
+ * \return Pointer to _pdc_obj_prop struct/Null on failure
+ */
+struct _pdc_obj_prop *PDC_obj_prop_get_info(pdcid_t obj_prop);
 
 #endif /* PDC_PROP_PKG_H */
