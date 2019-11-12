@@ -40,6 +40,8 @@
 
 #include "mercury.h"
 #include "mercury_macros.h"
+#include "mercury_thread_pool.h"
+#include "mercury_config.h"
 
 #include "pdc_config.h"
 #include "pdc_utlist.h"

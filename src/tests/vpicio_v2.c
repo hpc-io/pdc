@@ -138,6 +138,7 @@ int main(int argc, char **argv)
     obj_prop_id22 = PDCprop_obj_dup(obj_prop_xx);
     PDCprop_set_obj_type(obj_prop_id22, PDC_INT);
 
+#ifdef ENABLE_MPI
     obj_xx = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop_xx, 0, comm);
     if (obj_xx == 0) {    
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
@@ -180,6 +181,7 @@ int main(int argc, char **argv)
         printf("Error getting an object id of %s from server, exit...\n", "obj_id22");
         exit(-1);
     }
+#endif
 
     offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
     offset_remote = (uint64_t *)malloc(sizeof(uint64_t) * ndim);

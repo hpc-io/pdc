@@ -1884,6 +1884,7 @@ analysis_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info
 
     averages[0] = analysis_t;
     averages[1] = io_t;
+#ifdef ENABLE_MPI
     if (MPI_Reduce(&averages[0], &averages[2], 2, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD) == 0) {
         int mpi_rank, mpi_size;
         MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
@@ -1892,6 +1893,7 @@ analysis_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info
             printf("Analysis avg time = %lf seconds\nIO avg time = %lf\n", averages[2]/mpi_size, averages[3]/mpi_size);
         }
     }
+#endif
 
 done:
     fflush(stdout);
@@ -2421,11 +2423,9 @@ region_read_transform_release (region_transform_and_lock_in_t *in, hg_handle_t h
     size_t *data_size_to = NULL;
     region_buf_map_t *eltt2;
     region_lock_out_t out;
-#ifndef ENABLE_MULTITHREAD
+
     size_t size;
-#else
     size_t unit;
-#endif
     int dirty_reg = 0;
 
     struct buf_map_transform_and_release_bulk_args * transform_release_bulk_args = NULL;

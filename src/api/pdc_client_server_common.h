@@ -34,6 +34,8 @@
 #include "mercury_macros.h"
 #include "mercury_proc_string.h"
 #include "mercury_list.h"
+#include "mercury_config.h"
+#include "mercury_thread_pool.h"
 
 #ifdef ENABLE_MULTITHREAD
 #include "mercury_thread_pool.h"
@@ -1043,7 +1045,7 @@ hg_proc_pdc_kvtag_t(hg_proc_t proc, void *data)
         switch(hg_proc_get_op(proc)) {
             case HG_DECODE:
                 struct_data->value = malloc(struct_data->size);
-                HG_FALLTHROUGH();
+                /* HG_FALLTHROUGH(); */
             case HG_ENCODE:
                 ret = hg_proc_raw(proc, struct_data->value, struct_data->size);
                 break;
@@ -2589,7 +2591,7 @@ hg_proc_pdc_histogram_t(hg_proc_t proc, void *data)
             case HG_DECODE:
                 struct_data->range = malloc(struct_data->nbin * sizeof(double) * 2);
                 struct_data->bin   = malloc(struct_data->nbin * sizeof(uint64_t));
-                HG_FALLTHROUGH();
+                /* HG_FALLTHROUGH(); */
 
             case HG_ENCODE:
                 ret = hg_proc_raw(proc, struct_data->range, struct_data->nbin * sizeof(double) * 2);
@@ -3054,7 +3056,7 @@ hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data)
             case HG_DECODE:
                 struct_data->combine_ops = malloc(struct_data->n_combine_ops * sizeof(int));
                 struct_data->constraints = malloc(struct_data->n_constraints * sizeof(pdc_query_constraint_t));
-                HG_FALLTHROUGH();
+                /* HG_FALLTHROUGH(); */
                 
             case HG_ENCODE:
                 ret = hg_proc_raw(proc, struct_data->combine_ops, struct_data->n_combine_ops * sizeof(int));
