@@ -1,13 +1,10 @@
 
 Required libraries
 ======
-1 BMI 
+1 libfabric
 ```sh
-    git clone git://git.mcs.anl.gov/bmi && cd bmi
-    # If you are building BMI on an OSX platform, then apply the following patch:
-    # patch -p1 < patches/bmi-osx.patch
-    ./prepare && ./configure --enable-shared --enable-bmi-only
-    make && make install
+    Download libfabric library from https://ofiwg.github.io/libfabric/
+    Compile and install following the instructions from https://github.com/ofiwg/libfabric
 ```
 
 2 Mercury 
@@ -29,14 +26,14 @@ Type 'c' multiple times and choose suitable options. Recommended options are:
     MERCURY_USE_BOOST_PP             OFF
     MERCURY_USE_XDR                  OFF
     MERCURY_USE_OPA                  OFF
-    NA_USE_BMI                       ON
-    NA_USE_OFI                       OFF (ON if you need libfabric)
+    NA_USE_BMI                       OFF
+    NA_USE_OFI                       ON
     NA_USE_MPI                       OFF
     NA_USE_CCI                       OFF
     NA_USE_SM                        OFF
     
-    BMI_INCLUDE_DIR                  BMI_PATH/include
-    BMI_LIBRARY                      BMI_PATH/libbmi.so  
+    OFI_INCLUDE_DIR                  LIBFABRIC_PATH/include
+    OFI_LIBRARY                      LIBFABRIC_PATH/libbmi.so  
 
     CMAKE_C_FLAGS                    for both FLAGS, add -dynamic on NERSC machines 
     CMAKE_CXX_FLAGS                  if there you see errors: "/usr/bin/ld: attempted 
@@ -54,16 +51,15 @@ To test Mercury is successfully built, run
 
     make test
 
-Look for Test  #1: mercury_rpc_bmi_tcp, Test  #2: mercury_bulk_bmi_tcp, etc.
+Look for Test  #1: mercury_rpc_ofi_tcp, Test  #2: mercury_bulk_ofi_tcp, etc.
 
-
-3 OpenPA (Optional)
+3 BMI (Optional)
 ```sh
-    wget https://trac.mpich.org/projects/openpa/raw-attachment/wiki/Downloads/openpa-1.0.4.tar.gz
-    tar xzvf openpa-1.0.4.tar.gz && cd openpa-1.0.4 
-    ./configure --enable-shared
+    git clone git://git.mcs.anl.gov/bmi && cd bmi
+    # If you are building BMI on an OSX platform, then apply the following patch:
+    # patch -p1 < patches/bmi-osx.patch
+    ./prepare && ./configure --enable-shared --enable-bmi-only
     make && make install
-
 ```
 
 4 CCI (Optional)
