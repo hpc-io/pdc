@@ -74,10 +74,7 @@ Look for Test  #1: mercury_rpc_ofi_tcp, Test  #2: mercury_bulk_ofi_tcp, etc.
 Building
 ====
     git clone git@bitbucket.org:berkeleylab/pdc.git
-    cd pdc
-    git fetch
-    git checkout Metadata
-    cd api
+    cd pdc/src
     mkdir build
     cd build
     ccmake .. (where ".." is the relative path to the PDC directory)
