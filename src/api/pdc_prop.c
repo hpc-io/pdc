@@ -377,7 +377,7 @@ struct _pdc_obj_prop *PDC_obj_prop_get_info(pdcid_t obj_prop)
     ret_value->obj_prop_pub = PDC_CALLOC(struct pdc_obj_prop);
     if (ret_value->obj_prop_pub == NULL)
         PGOTO_ERROR(NULL, "PDC object pub property memory allocation failed");
-    memcpy(ret_value, info->obj_prop_pub, sizeof(struct pdc_obj_prop));
+    memcpy(ret_value->obj_prop_pub, info->obj_prop_pub, sizeof(struct pdc_obj_prop));
     ret_value->obj_prop_pub->dims = malloc(info->obj_prop_pub->ndim*sizeof(uint64_t));
     if (ret_value->obj_prop_pub->dims == NULL)
         PGOTO_ERROR(NULL, "cannot allocate ret_value->obj_prop_pub->dims");
