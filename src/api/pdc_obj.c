@@ -127,6 +127,7 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id
     p->obj_pt->obj_prop_pub = PDC_CALLOC(struct pdc_obj_prop);
     if (!p->obj_pt->obj_prop_pub)
         PGOTO_ERROR(0, "cannot allocate ret_value->obj_pt->obj_prop_pub");
+    p->obj_pt->obj_prop_pub->ndim = obj_prop->obj_prop_pub->ndim;
     p->obj_pt->obj_prop_pub->dims = malloc(obj_prop->obj_prop_pub->ndim*sizeof(uint64_t));
     if (!p->obj_pt->obj_prop_pub->dims)
         PGOTO_ERROR(0, "cannot allocate ret_value->dims");
@@ -154,6 +155,7 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id
     if (!p->obj_info_pub->obj_pt)
         PGOTO_ERROR(0, "PDC object prop memory allocation failed");
     memcpy(p->obj_info_pub->obj_pt, p->obj_pt->obj_prop_pub, sizeof(struct pdc_obj_prop));
+    p->obj_info_pub->obj_pt->ndim = obj_prop->obj_prop_pub->ndim;
     p->obj_info_pub->obj_pt->dims = malloc(obj_prop->obj_prop_pub->ndim*sizeof(uint64_t));
     if (!p->obj_info_pub->obj_pt->dims)
         PGOTO_ERROR(0, "failed to allocate obj pub property memory");
@@ -251,6 +253,7 @@ pdcid_t PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_i
     p->obj_pt->obj_prop_pub = PDC_CALLOC(struct pdc_obj_prop);
     if (!p->obj_pt->obj_prop_pub)
         PGOTO_ERROR(0, "cannot allocate ret_value->obj_pt->obj_prop_pub");
+    p->obj_pt->obj_prop_pub->ndim = obj_prop->obj_prop_pub->ndim;
     p->obj_pt->obj_prop_pub->dims = malloc(obj_prop->obj_prop_pub->ndim*sizeof(uint64_t));
     if (!p->obj_pt->obj_prop_pub->dims)
         PGOTO_ERROR(0, "cannot allocate ret_value->dims");
@@ -277,6 +280,7 @@ pdcid_t PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_i
     if (!p->obj_info_pub->obj_pt)
         PGOTO_ERROR(0, "PDC object prop memory allocation failed");
     memcpy(p->obj_info_pub->obj_pt, p->obj_pt->obj_prop_pub, sizeof(struct pdc_obj_prop));
+    p->obj_info_pub->obj_pt->ndim = obj_prop->obj_prop_pub->ndim;
     p->obj_info_pub->obj_pt->dims = malloc(obj_prop->obj_prop_pub->ndim*sizeof(uint64_t));
     if (!p->obj_info_pub->obj_pt->dims)
         PGOTO_ERROR(0, "failed to allocate obj pub property memory");
