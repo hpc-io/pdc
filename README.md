@@ -1,3 +1,13 @@
+What is PDC?
+============
+
+Proactive Data Containers (PDC) is a Novel data abstraction for storing data in an 
+object-centric manner, where data objects are first-class citizens. 
+
+Visit https://sdm.lbl.gov/pdc for full details and publications discussing the 
+PDC concepts and designs. The remainder of this README discusses software dependencies
+and installation.  
+
 
 Required libraries
 ======
