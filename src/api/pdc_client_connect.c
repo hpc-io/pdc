@@ -56,7 +56,6 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <inttypes.h>
-#include <errno.h>
 
 int                        is_client_debug_g = 0;
 pdc_server_selection_t     pdc_server_selection_g = PDC_SERVER_DEFAULT;
@@ -3117,7 +3116,7 @@ hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *call
     /* map the shared memory segment to the address space of the process */
     shm_base = mmap(0, data_size, PROT_READ, MAP_SHARED, shm_fd, 0);
     if (shm_base == MAP_FAILED) {
-        printf("==PDC_CLIENT: Map failed: %s\n", strerror(errno));
+        //printf("==PDC_CLIENT: Map failed: %s\n", strerror(errno));
         ret_value = FAIL;
         goto close;
     }
@@ -3135,8 +3134,10 @@ hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *call
 #endif
 
     /* remove the mapped shared memory segment from the address space of the process */
-    if (munmap(shm_base, data_size) == -1)
-        PGOTO_ERROR(FAIL, "==PDC_CLIENT: Unmap failed: %s", strerror(errno));
+    if (munmap(shm_base, data_size) == -1){
+
+    }
+    //   PGOTO_ERROR(FAIL, "==PDC_CLIENT: Unmap failed: %s", strerror(errno));
 
 close:
     /* close the shared memory segment as if it was a file */
@@ -3226,8 +3227,9 @@ perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_
 
         /* map the shared memory segment to the address space of the process */
         shm_base = mmap(0, read_size, PROT_READ, MAP_SHARED, shm_fd, 0);
-        if (shm_base == MAP_FAILED)
-            PGOTO_ERROR(FAIL, "==PDC_CLIENT: Map failed: %s", strerror(errno));
+        if (shm_base == MAP_FAILED) {
+            //PGOTO_ERROR(FAIL, "==PDC_CLIENT: Map failed: %s", strerror(errno));
+        }
             // close and unlink?
 
 #ifdef ENABLE_TIMING
@@ -3243,9 +3245,9 @@ perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_
 #endif
 
         /* remove the mapped shared memory segment from the address space of the process */
-        if (munmap(shm_base, read_size) == -1)
-            PGOTO_ERROR(FAIL, "==PDC_CLIENT: Unmap failed: %s", strerror(errno));
-
+        if (munmap(shm_base, read_size) == -1) {
+            //PGOTO_ERROR(FAIL, "==PDC_CLIENT: Unmap failed: %s", strerror(errno));
+        }
         HG_Destroy(data_server_read_check_handle);
     } // end of check io
 
@@ -4406,7 +4408,7 @@ perr_t PDC_Client_complete_read_request(int nbuf, struct pdc_request *req)
         /* map the shared memory segment to the address space of the process */
         req->shm_base_arr[i] = mmap(0, (req->shm_size_arr)[i], PROT_READ, MAP_SHARED, req->shm_fd_arr[i], 0);
         if (req->shm_base_arr[i] == MAP_FAILED) {
-            printf("==PDC_CLIENT: Map failed: %s\n", strerror(errno));
+            //printf("==PDC_CLIENT: Map failed: %s\n", strerror(errno));
             continue;
         }
 
@@ -4424,8 +4426,10 @@ perr_t PDC_Client_complete_read_request(int nbuf, struct pdc_request *req)
 #endif
 
         /* remove the mapped shared memory segment from the address space of the process */
-        if (munmap(req->shm_base_arr[i], (req->shm_size_arr)[i]) == -1)
-            PGOTO_ERROR(FAIL, "==PDC_CLIENT: Unmap failed: %s", strerror(errno));
+        if (munmap(req->shm_base_arr[i], (req->shm_size_arr)[i]) == -1) {
+
+        }
+            //PGOTO_ERROR(FAIL, "==PDC_CLIENT: Unmap failed: %s", strerror(errno));
 
         /* close the shared memory segment as if it was a file */
         if (close(req->shm_fd_arr[i]) == -1) {
