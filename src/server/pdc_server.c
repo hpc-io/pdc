@@ -577,7 +577,7 @@ PDC_hg_handle_create_cb(hg_handle_t handle, void *arg)
     hg_return_t ret = HG_SUCCESS;
 
     if (!hg_thread_work) {
-        HG_LOG_ERROR("Could not allocate hg_thread_work");
+        //HG_LOG_ERROR("Could not allocate hg_thread_work");
         ret = HG_NOMEM_ERROR;
         goto done;
     }

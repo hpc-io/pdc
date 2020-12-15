@@ -7167,7 +7167,7 @@ PDC_recv_read_coords(const struct hg_cb_info *callback_info)
     out.ret = 1;
 
     if (callback_info->ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Error in callback");
+        //HG_LOG_ERROR("Error in callback");
         ret = HG_PROTOCOL_ERROR;
         out.ret = -1;
         goto done;
@@ -7250,7 +7250,7 @@ PDC_recv_coords(const struct hg_cb_info *callback_info)
     out.ret = 1;
 
     if (callback_info->ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Error in callback");
+        //HG_LOG_ERROR("Error in callback");
         ret = HG_PROTOCOL_ERROR;
         out.ret = -1;
         goto done;
@@ -7818,7 +7818,7 @@ PDC_recv_query_metadata_bulk(const struct hg_cb_info *callback_info)
 
     // TODO: test
     if (callback_info->ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Error in callback");
+        //HG_LOG_ERROR("Error in callback");
         ret = HG_PROTOCOL_ERROR;
         out.ret = -1;
         goto done;
