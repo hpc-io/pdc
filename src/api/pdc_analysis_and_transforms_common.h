@@ -205,27 +205,27 @@ hg_proc_analysis_ftn_in_t(hg_proc_t proc, void *data)
     analysis_ftn_in_t *struct_data = (analysis_ftn_in_t*) data;
     ret = hg_proc_hg_const_string_t(proc, &struct_data->ftn_name);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_hg_const_string_t(proc, &struct_data->loadpath);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->local_obj_id);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->iter_in);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->iter_out);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     return ret;
@@ -238,112 +238,112 @@ hg_proc_obj_data_iterator_in_t(hg_proc_t proc, void *data)
     obj_data_iterator_in_t *struct_data = (obj_data_iterator_in_t*) data;
     ret = hg_proc_uint64_t(proc, &struct_data->client_iter_id);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->object_id);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->reg_id);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->sliceCount);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->sliceNext);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->sliceResetCount);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->elementsPerSlice);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->slicePerBlock);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->elementsPerPlane);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->elementsPerBlock);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->skipCount);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->element_size);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->srcBlockCount);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->contigBlockSize);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->totalElements);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->ndim);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->dims_0);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->dims_1);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->dims_2);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->dims_3);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->storageinfo);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->server_id);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        //HG_LOG_ERROR("Proc error");
         return ret;
     }
     return ret;
@@ -357,7 +357,7 @@ hg_proc_analysis_ftn_out_t(hg_proc_t proc, void *data)
 
     ret = hg_proc_uint64_t(proc, &struct_data->remote_ftn_id);
     if (ret != HG_SUCCESS) {
-	    HG_LOG_ERROR("Proc error");
+	    //HG_LOG_ERROR("Proc error");
         return ret;
     }
     return ret;
@@ -371,22 +371,22 @@ hg_proc_obj_data_iterator_out_t(hg_proc_t proc, void *data)
 
     ret = hg_proc_uint64_t(proc, &struct_data->server_iter_id);
     if (ret != HG_SUCCESS) {
-	    HG_LOG_ERROR("Proc error");
+	    //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->client_iter_id);
     if (ret != HG_SUCCESS) {
-	    HG_LOG_ERROR("Proc error");
+	    //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->server_region_id);
     if (ret != HG_SUCCESS) {
-	    HG_LOG_ERROR("Proc error");
+	    //HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
-	    HG_LOG_ERROR("Proc error");
+	    //HG_LOG_ERROR("Proc error");
         return ret;
     }
     return ret;

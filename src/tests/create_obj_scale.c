@@ -81,28 +81,34 @@ int main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    while ((c = getopt (argc, argv, "r:")) != -1)
-        switch (c)
+    while ((i = getopt (argc, argv, "r:")) != EOF)
+        switch (i)
         {
          case 'r':
            count = atoi(optarg);
            break;
          case '?':
            if (optopt == 'r')
-             fprintf (stderr, "Option -%c requires an argument.\n", optopt);
-           else if (isprint (optopt))
-             fprintf (stderr, "Unknown option `-%c'.\n", optopt);
+             fprintf (stderr, "Option -%c requires an argument.\n", i);
+           else if (isprint (i))
+             fprintf (stderr, "Unknown option `-%c'.\n", i);
            else
-             fprintf (stderr, "Unknown option character `\\x%x'.\n", optopt);
+             fprintf (stderr, "Unknown option character `\\x%x'.\n", i);
            return 1;
          default:
            print_usage();
-           exit(-1);
+#ifdef ENABLE_MPI
+            MPI_Finalize();
+            return 1;
+#endif
         }
 
     if (count == -1) {
         print_usage();
-        exit(-1);
+#ifdef ENABLE_MPI
+        MPI_Finalize();
+        return 1;
+#endif
     }
 
     count /= size;

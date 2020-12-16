@@ -2625,7 +2625,7 @@ static perr_t PDC_Server_data_write_from_shm(region_list_t *region_list_head)
 
         region_elt->buf= mmap(0, region_elt->data_size, PROT_READ, MAP_SHARED, region_elt->shm_fd, 0);
         if (region_elt->buf== MAP_FAILED) {
-            printf("==PDC_SERVER[%d]: Map failed: %s\n", pdc_server_rank_g, strerror(errno));
+            //printf("==PDC_SERVER[%d]: Map failed: %s\n", pdc_server_rank_g, strerror(errno));
             // close and unlink?
             ret_value = FAIL;
             goto done;
@@ -4317,7 +4317,7 @@ perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region
 
     if(read_bytes == -1){
         char errmsg[256];
-        printf("==PDC_SERVER[%d]: pread %d failed (%d)\n", pdc_server_rank_g, region->fd, strerror_r(errno, errmsg, sizeof(errmsg)));
+        //printf("==PDC_SERVER[%d]: pread %d failed (%d)\n", pdc_server_rank_g, region->fd, strerror_r(errno, errmsg, sizeof(errmsg)));
         goto done;
     }
     
@@ -4857,7 +4857,7 @@ perr_t PDC_Server_add_client_shm_to_cache(int cnt, void *buf_cp)
         new_region->buf= mmap(0, new_region->data_size, PROT_READ, MAP_SHARED, 
                 new_region->shm_fd, new_region->offset);
         if (new_region->buf== MAP_FAILED) {
-            printf("==PDC_SERVER[%d]: Map failed: %s\n", pdc_server_rank_g, strerror(errno));
+            //printf("==PDC_SERVER[%d]: Map failed: %s\n", pdc_server_rank_g, strerror(errno));
             ret_value = FAIL;
             goto done;
         }
@@ -7167,7 +7167,7 @@ PDC_recv_read_coords(const struct hg_cb_info *callback_info)
     out.ret = 1;
 
     if (callback_info->ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Error in callback");
+        //HG_LOG_ERROR("Error in callback");
         ret = HG_PROTOCOL_ERROR;
         out.ret = -1;
         goto done;
@@ -7250,7 +7250,7 @@ PDC_recv_coords(const struct hg_cb_info *callback_info)
     out.ret = 1;
 
     if (callback_info->ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Error in callback");
+        //HG_LOG_ERROR("Error in callback");
         ret = HG_PROTOCOL_ERROR;
         out.ret = -1;
         goto done;
@@ -7818,7 +7818,7 @@ PDC_recv_query_metadata_bulk(const struct hg_cb_info *callback_info)
 
     // TODO: test
     if (callback_info->ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Error in callback");
+        //HG_LOG_ERROR("Error in callback");
         ret = HG_PROTOCOL_ERROR;
         out.ret = -1;
         goto done;
