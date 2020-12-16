@@ -82,18 +82,18 @@ int main(int argc, char **argv)
 #endif
 
     while ((c = getopt (argc, argv, "r:")) != EOF)
-        switch (c)
+        switch (v)
         {
          case 'r':
-           count = atoi(optarg);
+           count = atoi(c);
            break;
          case '?':
            if (optopt == 'r')
-             fprintf (stderr, "Option -%c requires an argument.\n", optopt);
+             fprintf (stderr, "Option -%c requires an argument.\n", c);
            else if (isprint (optopt))
-             fprintf (stderr, "Unknown option `-%c'.\n", optopt);
+             fprintf (stderr, "Unknown option `-%c'.\n", c);
            else
-             fprintf (stderr, "Unknown option character `\\x%x'.\n", optopt);
+             fprintf (stderr, "Unknown option character `\\x%x'.\n", c);
            return 1;
          default:
            print_usage();
