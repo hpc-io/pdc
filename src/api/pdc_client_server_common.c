@@ -5325,47 +5325,54 @@ PDC_##x##_register(hg_class_t *hg_class) {                                      
     FUNC_LEAVE(ret_value);                                                                                 \
 }
 
+#define PDC_FUNC_DECLARE_REGISTER_IN_OUT(x,y,z) \
+hg_id_t \
+PDC_##x##_register(hg_class_t *hg_class) {                                                   \
+    hg_id_t ret_value;                                                                                     \
+    FUNC_ENTER(NULL);                                                                                      \
+    ret_value = MERCURY_REGISTER(hg_class, "x", y, z, x##_cb);\
+    FUNC_LEAVE(ret_value);                                                                                 \
+
+}
+
 PDC_FUNC_DECLARE_REGISTER(gen_obj_id)
 PDC_FUNC_DECLARE_REGISTER(gen_cont_id)
 PDC_FUNC_DECLARE_REGISTER(server_lookup_client)
 PDC_FUNC_DECLARE_REGISTER(server_lookup_remote_server)
 PDC_FUNC_DECLARE_REGISTER(client_test_connect)
 PDC_FUNC_DECLARE_REGISTER(notify_io_complete)
-PDC_FUNC_DECLARE_REGISTER(send_shm_bulk_rpc)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(send_shm_bulk_rpc,bulk_rpc,bulk_rpc)
 PDC_FUNC_DECLARE_REGISTER(query_read_obj_name_client_rpc)
 PDC_FUNC_DECLARE_REGISTER(notify_region_update)
 PDC_FUNC_DECLARE_REGISTER(metadata_query)
 PDC_FUNC_DECLARE_REGISTER(container_query)
 PDC_FUNC_DECLARE_REGISTER(metadata_add_tag)
-PDC_FUNC_DECLARE_REGISTER(metadata_del_kvtag)
-PDC_FUNC_DECLARE_REGISTER(metadata_add_kvtag)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_del_kvtag, metadata_get_kvtag_in_t, metadata_add_tag_out_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_add_kvtag, metadata_add_kvtag_in_t, metadata_add_tag_out_t)
 PDC_FUNC_DECLARE_REGISTER(metadata_get_kvtag)
 PDC_FUNC_DECLARE_REGISTER(metadata_update)
 PDC_FUNC_DECLARE_REGISTER(metadata_delete_by_id)
 PDC_FUNC_DECLARE_REGISTER(metadata_delete)
 PDC_FUNC_DECLARE_REGISTER(close_server)
 PDC_FUNC_DECLARE_REGISTER(get_remote_metadata)
-PDC_FUNC_DECLARE_REGISTER(buf_map_server)
-PDC_FUNC_DECLARE_REGISTER(buf_unmap_server)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(buf_map_server, buf_map, buf_map)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(buf_unmap_server, buf_unmap, buf_unmap)
 PDC_FUNC_DECLARE_REGISTER(buf_unmap)
 PDC_FUNC_DECLARE_REGISTER(region_lock)
-PDC_FUNC_DECLARE_REGISTER(region_release)
-PDC_FUNC_DECLARE_REGISTER(transform_region_release)
-PDC_FUNC_DECLARE_REGISTER(region_transform_release)
-PDC_FUNC_DECLARE_REGISTER(region_analysis_release)
-PDC_FUNC_DECLARE_REGISTER(query_partial)
-PDC_FUNC_DECLARE_REGISTER(query_kvtag)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(region_release, region_lock_in_t, region_lock_out_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(transform_region_release, region_transform_and_lock_in_t, region_lock_out_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(region_transform_release, region_transform_and_lock_in_t, region_lock_out_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(region_analysis_release, region_analysis_and_lock_in_t, region_lock_out_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(query_partial, metadata_query_transfer_in_t, metadata_query_transfer_out_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(query_kvtag, pdc_kvtag_t, metadata_query_transfer_out_t)
 PDC_FUNC_DECLARE_REGISTER(bulk_rpc)
 PDC_FUNC_DECLARE_REGISTER(data_server_read)
 PDC_FUNC_DECLARE_REGISTER(data_server_write)
 PDC_FUNC_DECLARE_REGISTER(data_server_read_check)
-PDC_FUNC_DECLARE_REGISTER(data_server_write_check)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(data_server_write_check, data_server_write_check_in_t, data_server_write_check_out_t)
 PDC_FUNC_DECLARE_REGISTER(update_region_loc)
 PDC_FUNC_DECLARE_REGISTER(get_metadata_by_id)
-PDC_FUNC_DECLARE_REGISTER(server_checkpoing_rpc_register)
-//PDC_FUNC_DECLARE_REGISTER(buf_map)
-//PDC_FUNC_DECLARE_REGISTER(buf_map)
-//PDC_FUNC_DECLARE_REGISTER(buf_map)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(server_checkpoing_rpc_register, pdc_int_send_t, pdc_int_ret_t)
 #if 0
 /*
 hg_id_t
