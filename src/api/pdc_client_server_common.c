@@ -5371,7 +5371,132 @@ PDC_FUNC_DECLARE_REGISTER(data_server_read_check)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(data_server_write_check, data_server_write_check_in_t, data_server_write_check_out_t)
 PDC_FUNC_DECLARE_REGISTER(update_region_loc)
 PDC_FUNC_DECLARE_REGISTER(get_metadata_by_id)
-PDC_FUNC_DECLARE_REGISTER_IN_OUT(server_checkpoing_rpc_register, pdc_int_send_t, pdc_int_ret_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(server_checkpoing_rpc, pdc_int_send_t, pdc_int_ret_t)
+PDC_FUNC_DECLARE_REGISTER(cont_add_tags_rpc, cont_add_tags_rpc_in_t, pdc_int_ret_t)
+PDC_FUNC_DECLARE_REGISTER(cont_add_tags_rpc_in_t, pdc_int_ret_t, query_read_obj_name_in_t, query_read_obj_name_out_t)
+PDC_FUNC_DECLARE_REGISTER(storage_meta_name_query_rpc, query_read_obj_name_in_t, query_read_obj_name_out_t)
+PDC_FUNC_DECLARE_REGISTER(get_storage_meta_name_query_bulk_result_rpc, bulk_rpc_in_t, pdc_int_ret_t)
+
+hg_id_t
+PDC_server_checkpoing_rpc_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+    
+    ret_value = MERCURY_REGISTER(hg_class, "server_checkpoing_rpc_register", pdc_int_send_t, pdc_int_ret_t, server_checkpoint_rpc_cb);
+    
+    FUNC_LEAVE(ret_value);
+}
+
+hg_id_t
+PDC_send_shm_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+    
+    ret_value = MERCURY_REGISTER(hg_class, "send_shm_register", send_shm_in_t, pdc_int_ret_t, send_shm_cb);
+    
+    FUNC_LEAVE(ret_value);
+}
+
+hg_id_t
+PDC_cont_add_tags_rpc_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+    
+    ret_value = MERCURY_REGISTER(hg_class, "cont_add_tag_rpc", cont_add_tags_rpc_in_t, pdc_int_ret_t, cont_add_tag_rpc_cb);
+    
+
+    FUNC_LEAVE(ret_value);
+}
+
+hg_id_t
+PDC_notify_client_multi_io_complete_rpc_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+    
+    ret_value = MERCURY_REGISTER(hg_class, "notify_client_multi_io_complete_rpc_register", bulk_rpc_in_t, pdc_int_ret_t, notify_client_multi_io_complete_rpc_cb);
+    
+    FUNC_LEAVE(ret_value);
+}
+
+hg_id_t
+PDC_send_client_storage_meta_rpc_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+    
+    ret_value = MERCURY_REGISTER(hg_class, "send_client_storage_meta_rpc_register", bulk_rpc_in_t, pdc_int_ret_t, send_client_storage_meta_rpc_cb);
+    
+    FUNC_LEAVE(ret_value);
+}
+
+hg_id_t
+PDC_send_data_query_rpc_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+    
+    ret_value = MERCURY_REGISTER(hg_class, "send_data_query_rpc_register", pdc_query_xfer_t, pdc_int_ret_t, send_data_query_cb);
+    
+    FUNC_LEAVE(ret_value);
+}
+
+hg_id_t
+PDC_send_nhits_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+    
+    ret_value = MERCURY_REGISTER(hg_class, "send_nhits_register", send_nhits_t, pdc_int_ret_t, send_nhits_cb);
+    
+    FUNC_LEAVE(ret_value);
+}
+
+hg_id_t
+PDC_send_bulk_rpc_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+    
+    ret_value = MERCURY_REGISTER(hg_class, "send_bulk_rpc_register", bulk_rpc_in_t, pdc_int_ret_t, send_bulk_rpc_cb);
+    
+    FUNC_LEAVE(ret_value);
+}
+
+hg_id_t
+PDC_get_sel_data_rpc_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+    
+    ret_value = MERCURY_REGISTER(hg_class, "get_sel_data_rpc_register", get_sel_data_rpc_in_t, pdc_int_ret_t, get_sel_data_rpc_cb);
+    
+    FUNC_LEAVE(ret_value);
+}
+
+hg_id_t
+PDC_send_read_sel_obj_id_rpc_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    
+    FUNC_ENTER(NULL);
+    
+    ret_value = MERCURY_REGISTER(hg_class, "send_query_obj_id_rpc_register", get_sel_data_rpc_in_t, pdc_int_ret_t, send_read_sel_obj_id_rpc_cb);
+    
+    FUNC_LEAVE(ret_value);
+}
 #if 0
 /*
 hg_id_t
@@ -5843,7 +5968,7 @@ PDC_server_checkpoing_rpc_register(hg_class_t *hg_class)
     
     FUNC_LEAVE(ret_value);
 }
-#endif
+
 hg_id_t
 PDC_send_shm_register(hg_class_t *hg_class)
 {
@@ -5998,7 +6123,7 @@ PDC_send_read_sel_obj_id_rpc_register(hg_class_t *hg_class)
     
     FUNC_LEAVE(ret_value);
 }
-
+#endif
 /*
  * Check if two 1D segments overlaps
  *
