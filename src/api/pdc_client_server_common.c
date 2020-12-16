@@ -5323,6 +5323,7 @@ PDC_##x##_register(hg_class_t *hg_class) {                                      
     FUNC_ENTER(NULL);                                                                                      \
     ret_value = MERCURY_REGISTER(hg_class, "x", x##_in_t, x##_out_t, x##_cb);\
     FUNC_LEAVE(ret_value);                                                                                 \
+    return ret_value;                                                                                 \
 }
 
 #define PDC_FUNC_DECLARE_REGISTER_IN_OUT(x,y,z) \
@@ -5332,6 +5333,7 @@ PDC_##x##_register(hg_class_t *hg_class) {                                      
     FUNC_ENTER(NULL);                                                                                      \
     ret_value = MERCURY_REGISTER(hg_class, "x", y, z, x##_cb);\
     FUNC_LEAVE(ret_value);                                                                                 \
+    return ret_value;                                                                                 \
 }
 
 PDC_FUNC_DECLARE_REGISTER(gen_obj_id)
@@ -5372,7 +5374,7 @@ PDC_FUNC_DECLARE_REGISTER_IN_OUT(data_server_write_check, data_server_write_chec
 PDC_FUNC_DECLARE_REGISTER(update_region_loc)
 PDC_FUNC_DECLARE_REGISTER(get_metadata_by_id)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(cont_add_tags_rpc, cont_add_tags_rpc_in_t, pdc_int_ret_t)
-PDC_FUNC_DECLARE_REGISTER_IN_OUT(cont_add_tags_rpc_in_t, pdc_int_ret_t, query_read_obj_name_in_t, query_read_obj_name_out_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(query_read_obj_name_rpc, query_read_obj_name_in_t, query_read_obj_name_out_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(storage_meta_name_query_rpc, query_read_obj_name_in_t, query_read_obj_name_out_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(get_storage_meta_name_query_bulk_result_rpc, bulk_rpc_in_t, pdc_int_ret_t)
 
