@@ -5316,16 +5316,16 @@ HG_TEST_THREAD_CB(send_bulk_rpc)
 HG_TEST_THREAD_CB(get_sel_data_rpc)
 HG_TEST_THREAD_CB(send_read_sel_obj_id_rpc)
 
-#define PDC_FUNC_DECLARE(func_name) {\
-hg_id_t PDC_ func_name _register(hg_class_t *hg_class) {\
-    hg_id_t ret_value;\
-    FUNC_ENTER(NULL);\
+#define PDC_FUNC_DECLARE(func_name) {                                                                      \
+hg_id_t PDC_ func_name _register(hg_class_t *hg_class) {                                                   \
+    hg_id_t ret_value;                                                                                     \
+    FUNC_ENTER(NULL);                                                                                      \
     ret_value = MERCURY_REGISTER(hg_class, "gen_obj_id", func_name _in_t, func_name _out_t, func_name _cb);\
-    FUNC_LEAVE(ret_value);\
-}\
+    FUNC_LEAVE(ret_value);                                                                                 \
+}                                                                                                          \
 }
 
-PDC_FUNC_DECLARE(gen_obj_id)
+//PDC_FUNC_DECLARE(gen_obj_id)
 /*
 hg_id_t
 PDC_gen_obj_id_register(hg_class_t *hg_class)
