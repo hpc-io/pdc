@@ -5316,30 +5316,26 @@ HG_TEST_THREAD_CB(send_bulk_rpc)
 HG_TEST_THREAD_CB(get_sel_data_rpc)
 HG_TEST_THREAD_CB(send_read_sel_obj_id_rpc)
 
-#define PDC_FUNC_DECLARE(func_name) {                                                                      \
-hg_id_t PDC_func_name_register(hg_class_t *hg_class) {                                                   \
+#define PDC_FUNC_DECLARE_REGISTER(x) \
+hg_id_t \
+PDC_##x##_register(hg_class_t *hg_class) {                                                   \
     hg_id_t ret_value;                                                                                     \
     FUNC_ENTER(NULL);                                                                                      \
-    ret_value = MERCURY_REGISTER(hg_class, "gen_obj_id", func_name_in_t, func_name_out_t, func_name_cb);\
+    ret_value = MERCURY_REGISTER(hg_class, "x", x##_in_t, x##_out_t, x##_cb);\
     FUNC_LEAVE(ret_value);                                                                                 \
-}                                                                                                          \
 }
 
-PDC_FUNC_DECLARE(gen_obj_id)
+PDC_FUNC_DECLARE_REGISTER(gen_obj_id)
 /*
 hg_id_t
 PDC_gen_obj_id_register(hg_class_t *hg_class)
 {
-    hg_id_t ret_value;
-    
+    hg_id_t ret_value;    
     FUNC_ENTER(NULL);
-
     ret_value = MERCURY_REGISTER(hg_class, "gen_obj_id", gen_obj_id_in_t, gen_obj_id_out_t, gen_obj_id_cb);
-
     FUNC_LEAVE(ret_value);
 }
 */
-
 
 /* query_read_obj_name_rpc_cb(hg_handle_t handle) */
 hg_id_t
