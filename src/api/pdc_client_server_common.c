@@ -5332,7 +5332,6 @@ PDC_##x##_register(hg_class_t *hg_class) {                                      
     FUNC_ENTER(NULL);                                                                                      \
     ret_value = MERCURY_REGISTER(hg_class, "x", y, z, x##_cb);\
     FUNC_LEAVE(ret_value);                                                                                 \
-
 }
 
 PDC_FUNC_DECLARE_REGISTER(gen_obj_id)
