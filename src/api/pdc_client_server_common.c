@@ -5326,6 +5326,47 @@ PDC_##x##_register(hg_class_t *hg_class) {                                      
 }
 
 PDC_FUNC_DECLARE_REGISTER(gen_obj_id)
+PDC_FUNC_DECLARE_REGISTER(gen_cont_id)
+PDC_FUNC_DECLARE_REGISTER(server_lookup_client)
+PDC_FUNC_DECLARE_REGISTER(server_lookup_remote_server)
+PDC_FUNC_DECLARE_REGISTER(client_test_connect)
+PDC_FUNC_DECLARE_REGISTER(notify_io_complete)
+PDC_FUNC_DECLARE_REGISTER(send_shm_bulk_rpc)
+PDC_FUNC_DECLARE_REGISTER(query_read_obj_name_client_rpc)
+PDC_FUNC_DECLARE_REGISTER(notify_region_update)
+PDC_FUNC_DECLARE_REGISTER(metadata_query)
+PDC_FUNC_DECLARE_REGISTER(container_query)
+PDC_FUNC_DECLARE_REGISTER(metadata_add_tag)
+PDC_FUNC_DECLARE_REGISTER(metadata_del_kvtag)
+PDC_FUNC_DECLARE_REGISTER(metadata_add_kvtag)
+PDC_FUNC_DECLARE_REGISTER(metadata_get_kvtag)
+PDC_FUNC_DECLARE_REGISTER(metadata_update)
+PDC_FUNC_DECLARE_REGISTER(metadata_delete_by_id)
+PDC_FUNC_DECLARE_REGISTER(metadata_delete)
+PDC_FUNC_DECLARE_REGISTER(close_server)
+PDC_FUNC_DECLARE_REGISTER(get_remote_metadata)
+PDC_FUNC_DECLARE_REGISTER(buf_map_server)
+PDC_FUNC_DECLARE_REGISTER(buf_unmap_server)
+PDC_FUNC_DECLARE_REGISTER(buf_unmap)
+PDC_FUNC_DECLARE_REGISTER(region_lock)
+PDC_FUNC_DECLARE_REGISTER(region_release)
+PDC_FUNC_DECLARE_REGISTER(transform_region_release)
+PDC_FUNC_DECLARE_REGISTER(region_transform_release)
+PDC_FUNC_DECLARE_REGISTER(region_analysis_release)
+PDC_FUNC_DECLARE_REGISTER(query_partial)
+PDC_FUNC_DECLARE_REGISTER(query_kvtag)
+PDC_FUNC_DECLARE_REGISTER(bulk_rpc)
+PDC_FUNC_DECLARE_REGISTER(data_server_read)
+PDC_FUNC_DECLARE_REGISTER(data_server_write)
+PDC_FUNC_DECLARE_REGISTER(data_server_read_check)
+PDC_FUNC_DECLARE_REGISTER(data_server_write_check)
+PDC_FUNC_DECLARE_REGISTER(update_region_loc)
+PDC_FUNC_DECLARE_REGISTER(get_metadata_by_id)
+PDC_FUNC_DECLARE_REGISTER(server_checkpoing_rpc_register)
+//PDC_FUNC_DECLARE_REGISTER(buf_map)
+//PDC_FUNC_DECLARE_REGISTER(buf_map)
+//PDC_FUNC_DECLARE_REGISTER(buf_map)
+#if 0
 /*
 hg_id_t
 PDC_gen_obj_id_register(hg_class_t *hg_class)
@@ -5796,7 +5837,7 @@ PDC_server_checkpoing_rpc_register(hg_class_t *hg_class)
     
     FUNC_LEAVE(ret_value);
 }
-
+#endif
 hg_id_t
 PDC_send_shm_register(hg_class_t *hg_class)
 {
