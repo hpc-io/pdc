@@ -5325,7 +5325,7 @@ hg_id_t PDC_ func_name _register(hg_class_t *hg_class) {\
 }\
 }
 
-PDC_FUNC_DECLARE(func_name)
+PDC_FUNC_DECLARE(gen_obj_id)
 /*
 hg_id_t
 PDC_gen_obj_id_register(hg_class_t *hg_class)
