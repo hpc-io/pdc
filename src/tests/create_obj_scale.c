@@ -81,7 +81,7 @@ int main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    while ((c = getopt (argc, argv, "r:")) != -1)
+    while ((c = getopt (argc, argv, "r:")) != EOF)
         switch (c)
         {
          case 'r':
@@ -97,12 +97,18 @@ int main(int argc, char **argv)
            return 1;
          default:
            print_usage();
-           exit(-1);
+#ifdef ENABLE_MPI
+            MPI_Finalize();
+            return 1;
+#endif
         }
 
     if (count == -1) {
         print_usage();
-        exit(-1);
+#ifdef ENABLE_MPI
+        MPI_Finalize();
+        return 1;
+#endif
     }
 
     count /= size;
