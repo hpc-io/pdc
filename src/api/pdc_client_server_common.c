@@ -5335,10 +5335,11 @@ PDC_##x##_register(hg_class_t *hg_class) {                                      
     FUNC_LEAVE(ret_value);                                                                                 \
     return ret_value;                                                                                 \
 }
-/*
+
 PDC_FUNC_DECLARE_REGISTER(gen_obj_id)
 PDC_FUNC_DECLARE_REGISTER(gen_cont_id)
 PDC_FUNC_DECLARE_REGISTER(server_lookup_client)
+/*
 PDC_FUNC_DECLARE_REGISTER(server_lookup_remote_server)
 PDC_FUNC_DECLARE_REGISTER(client_test_connect)
 PDC_FUNC_DECLARE_REGISTER(notify_io_complete)
@@ -5390,7 +5391,7 @@ PDC_FUNC_DECLARE_REGISTER_IN_OUT(send_bulk_rpc, bulk_rpc_in_t, pdc_int_ret_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(get_sel_data_rpc, get_sel_data_rpc_in_t, pdc_int_ret_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(send_read_sel_obj_id_rpc, get_sel_data_rpc_in_t, pdc_int_ret_t)
 */
-
+#if 0
 hg_id_t
 PDC_gen_obj_id_register(hg_class_t *hg_class)
 {
@@ -5427,7 +5428,7 @@ PDC_server_lookup_client_register(hg_class_t *hg_class)
 
     FUNC_LEAVE(ret_value);
 }
-
+#endif
 hg_id_t
 PDC_server_lookup_remote_server_register(hg_class_t *hg_class)
 {
