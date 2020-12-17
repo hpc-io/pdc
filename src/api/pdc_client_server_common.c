@@ -5085,8 +5085,8 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/* send_data_query_rpc_cb(hg_handle_t handle) */
-HG_TEST_RPC_CB(send_data_query_rpc, handle)
+/* send_data_query_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(send_data_query, handle)
 {
     hg_return_t ret_value = HG_SUCCESS;
     pdc_query_xfer_t in, *query_xfer;
