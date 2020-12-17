@@ -1675,7 +1675,7 @@ static void PDC_Server_mercury_register()
     storage_meta_name_query_register_id_g     = PDC_storage_meta_name_query_rpc_register(hg_class_g);
     get_storage_meta_name_query_bulk_result_rpc_register_id_g = PDC_get_storage_meta_name_query_bulk_result_rpc_register(hg_class_g);
     notify_client_multi_io_complete_rpc_register_id_g = PDC_notify_client_multi_io_complete_rpc_register(hg_class_g);
-    server_checkpoint_rpc_register_id_g       = PDC_server_checkpoing_rpc_register(hg_class_g);
+    server_checkpoint_rpc_register_id_g       = PDC_server_checkpoint_rpc_register(hg_class_g);
     send_shm_register_id_g                    = PDC_send_shm_register(hg_class_g);
     send_client_storage_meta_rpc_register_id_g= PDC_send_client_storage_meta_rpc_register(hg_class_g);
     send_read_sel_obj_id_rpc_register_id_g    = PDC_send_read_sel_obj_id_rpc_register(hg_class_g);
