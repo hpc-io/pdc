@@ -5858,7 +5858,7 @@ PDC_server_checkpoint_rpc_register(hg_class_t *hg_class)
     
     FUNC_ENTER(NULL);
     
-    ret_value = MERCURY_REGISTER(hg_class, "server_checkpoing_rpc_register", pdc_int_send_t, pdc_int_ret_t, server_checkpoint_rpc_cb);
+    ret_value = MERCURY_REGISTER(hg_class, "server_checkpoint_rpc_register", pdc_int_send_t, pdc_int_ret_t, server_checkpoint_rpc_cb);
     
     FUNC_LEAVE(ret_value);
 }
@@ -5894,7 +5894,7 @@ PDC_cont_add_tags_rpc_register(hg_class_t *hg_class)
     
     FUNC_ENTER(NULL);
     
-    ret_value = MERCURY_REGISTER(hg_class, "cont_add_tag_rpc", cont_add_tags_rpc_in_t, pdc_int_ret_t, cont_add_tags_rpc_cb);
+    ret_value = MERCURY_REGISTER(hg_class, "cont_add_tags_rpc", cont_add_tags_rpc_in_t, pdc_int_ret_t, cont_add_tags_rpc_cb);
     
     FUNC_LEAVE(ret_value);
 }
