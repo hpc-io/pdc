@@ -77,9 +77,8 @@ int main(int argc, char **argv)
 #endif
 
     int count = -1;
-    char c;
-    while ((c = getopt (argc, argv, "r:")) != -1)
-        switch (c)
+    while ((i = getopt (argc, argv, "r:")) != EOF)
+        switch (i)
         {
          case 'r':
            count = atoi(optarg);

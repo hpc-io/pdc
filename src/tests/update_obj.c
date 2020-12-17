@@ -40,7 +40,6 @@ int main(int argc, char **argv)
 {
     int rank = 0, size = 1;
     int count = -1;
-    char c;
     int i;
     pdcid_t pdc, cont_prop, cont, obj_prop;
     struct timeval  ht_total_start;
@@ -68,8 +67,8 @@ int main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    while ((c = getopt (argc, argv, "r:")) != -1)
-        switch (c)
+    while ((i = getopt (argc, argv, "r:")) != EOF)
+        switch (i)
         {
          case 'r':
            count = atoi(optarg);
