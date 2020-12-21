@@ -4152,8 +4152,8 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/* cont_add_tag_rpc_cb*/
-HG_TEST_RPC_CB(cont_add_tag_rpc, handle)
+/* cont_add_tags_rpc_cb*/
+HG_TEST_RPC_CB(cont_add_tags_rpc, handle)
 {
     hg_return_t ret_value = HG_SUCCESS;
     cont_add_tags_rpc_in_t in;
@@ -5085,8 +5085,8 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-/* send_data_query_cb(hg_handle_t handle) */
-HG_TEST_RPC_CB(send_data_query, handle)
+/* send_data_query_rpc_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(send_data_query_rpc, handle)
 {
     hg_return_t ret_value = HG_SUCCESS;
     pdc_query_xfer_t in, *query_xfer;
@@ -5266,7 +5266,7 @@ HG_TEST_THREAD_CB(server_lookup_client)
 HG_TEST_THREAD_CB(gen_obj_id)
 HG_TEST_THREAD_CB(gen_cont_id)
 HG_TEST_THREAD_CB(cont_add_del_objs_rpc)
-HG_TEST_THREAD_CB(cont_add_tag_rpc)
+HG_TEST_THREAD_CB(cont_add_tags_rpc)
 HG_TEST_THREAD_CB(query_read_obj_name_rpc)
 HG_TEST_THREAD_CB(storage_meta_name_query_rpc)
 HG_TEST_THREAD_CB(get_storage_meta_name_query_bulk_result_rpc)
@@ -5310,638 +5310,83 @@ HG_TEST_THREAD_CB(buf_unmap)
 HG_TEST_THREAD_CB(query_read_obj_name_client_rpc)
 HG_TEST_THREAD_CB(send_client_storage_meta_rpc)
 HG_TEST_THREAD_CB(send_shm_bulk_rpc)
-HG_TEST_THREAD_CB(send_data_query)
+HG_TEST_THREAD_CB(send_data_query_rpc)
 HG_TEST_THREAD_CB(send_nhits)
 HG_TEST_THREAD_CB(send_bulk_rpc)
 HG_TEST_THREAD_CB(get_sel_data_rpc)
 HG_TEST_THREAD_CB(send_read_sel_obj_id_rpc)
 
-hg_id_t
-PDC_gen_obj_id_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "gen_obj_id", gen_obj_id_in_t, gen_obj_id_out_t, gen_obj_id_cb);
-
-    FUNC_LEAVE(ret_value);
+#define PDC_FUNC_DECLARE_REGISTER(x)                                        \
+hg_id_t PDC_##x##_register(hg_class_t *hg_class) {                          \
+    hg_id_t ret_value;                                                      \
+    FUNC_ENTER(NULL);                                                       \
+    ret_value = MERCURY_REGISTER(hg_class, #x, x##_in_t, x##_out_t, x##_cb);\
+    FUNC_LEAVE(ret_value);                                                  \
+    return ret_value;                                                       \
 }
 
-/* query_read_obj_name_rpc_cb(hg_handle_t handle) */
-hg_id_t
-PDC_gen_cont_id_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "gen_cont_id", gen_cont_id_in_t, gen_cont_id_out_t, gen_cont_id_cb);
-
-    FUNC_LEAVE(ret_value);
+#define PDC_FUNC_DECLARE_REGISTER_IN_OUT(x,y,z)               \
+hg_id_t PDC_##x##_register(hg_class_t *hg_class) {            \
+    hg_id_t ret_value;                                        \
+    FUNC_ENTER(NULL);                                         \
+    ret_value = MERCURY_REGISTER(hg_class, #x, y, z, x##_cb); \
+    FUNC_LEAVE(ret_value);                                    \
+    return ret_value;                                         \
 }
 
-hg_id_t
-PDC_server_lookup_client_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "server_lookup_client", server_lookup_client_in_t, server_lookup_client_out_t, server_lookup_client_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_server_lookup_remote_server_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "server_lookup_remote_server", server_lookup_remote_server_in_t, server_lookup_remote_server_out_t, server_lookup_remote_server_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_client_test_connect_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "client_test_connect", client_test_connect_in_t, client_test_connect_out_t, client_test_connect_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_notify_io_complete_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "notify_io_complete", notify_io_complete_in_t, notify_io_complete_out_t, notify_io_complete_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_send_shm_bulk_rpc_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-    
-    ret_value = MERCURY_REGISTER(hg_class, "send_shm_bulk_rpc", bulk_rpc_in_t, bulk_rpc_out_t, send_shm_bulk_rpc_cb);
-    
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_query_read_obj_name_client_rpc_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-    
-    ret_value = MERCURY_REGISTER(hg_class, "query_read_obj_name_client_rpc", query_read_obj_name_in_t, query_read_obj_name_out_t, query_read_obj_name_client_rpc_cb);
-    
-    FUNC_LEAVE(ret_value);
-}
-
-// Receives the query with one name, return all storage metadata of the corresponding object with bulk transfer
-hg_id_t
-PDC_notify_region_update_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "notify_region_update", notify_region_update_in_t,  notify_region_update_out_t,  notify_region_update_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_metadata_query_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "metadata_query", metadata_query_in_t, metadata_query_out_t, metadata_query_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_container_query_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-    
-    ret_value = MERCURY_REGISTER(hg_class, "container_query", container_query_in_t, container_query_out_t, container_query_cb);
-    
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_metadata_add_tag_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-    
-    ret_value = MERCURY_REGISTER(hg_class, "metadata_add_tag", metadata_add_tag_in_t, metadata_add_tag_out_t, metadata_add_tag_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_metadata_del_kvtag_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-    
-    ret_value = MERCURY_REGISTER(hg_class, "metadata_del_kvtag", metadata_get_kvtag_in_t, metadata_add_tag_out_t, metadata_del_kvtag_cb);
-    
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_metadata_add_kvtag_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-    
-    ret_value = MERCURY_REGISTER(hg_class, "metadata_add_kvtag", metadata_add_kvtag_in_t, metadata_add_tag_out_t, metadata_add_kvtag_cb);
-    
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_metadata_get_kvtag_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-    
-    ret_value = MERCURY_REGISTER(hg_class, "metadata_get_kvtag", metadata_get_kvtag_in_t, metadata_get_kvtag_out_t, metadata_get_kvtag_cb);
-    
-    FUNC_LEAVE(ret_value);
-}
-hg_id_t
-PDC_metadata_update_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "metadata_update", metadata_update_in_t, metadata_update_out_t, metadata_update_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_metadata_delete_by_id_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "metadata_delete_by_id", metadata_delete_by_id_in_t, metadata_delete_by_id_out_t, metadata_delete_by_id_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_metadata_delete_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "metadata_delete", metadata_delete_in_t, metadata_delete_out_t, metadata_delete_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_close_server_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "close_server", close_server_in_t, close_server_out_t, close_server_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_buf_map_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "buf_map", buf_map_in_t, buf_map_out_t, buf_map_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_get_remote_metadata_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "get_remote_metadata", get_remote_metadata_in_t, get_remote_metadata_out_t, get_remote_metadata_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_buf_map_server_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "buf_map_server", buf_map_in_t, buf_map_out_t, buf_map_server_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_buf_unmap_server_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "buf_unmap_server", buf_unmap_in_t, buf_unmap_out_t, buf_unmap_server_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_buf_unmap_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "buf_unmap", buf_unmap_in_t, buf_unmap_out_t, buf_unmap_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_region_lock_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "region_lock", region_lock_in_t, region_lock_out_t, region_lock_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_region_release_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "region_release", region_lock_in_t, region_lock_out_t, region_release_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_transform_region_release_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "transform_region_release", region_transform_and_lock_in_t, region_lock_out_t, transform_region_release_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_region_transform_release_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "region_transform_release", region_transform_and_lock_in_t, region_lock_out_t, region_transform_release_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_region_analysis_release_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "region_analysis_release", region_analysis_and_lock_in_t, region_lock_out_t, region_analysis_release_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_query_partial_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "query_partial", metadata_query_transfer_in_t, metadata_query_transfer_out_t, query_partial_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_query_kvtag_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-    
-    ret_value = MERCURY_REGISTER(hg_class, "query_kvtag", pdc_kvtag_t, metadata_query_transfer_out_t, query_kvtag_cb);
-    
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_bulk_rpc_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-    
-    ret_value = MERCURY_REGISTER(hg_class, "bulk_rpc", bulk_rpc_in_t, bulk_rpc_out_t, bulk_rpc_cb);
-    
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_data_server_read_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "data_server_read", data_server_read_in_t, data_server_read_out_t, data_server_read_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_data_server_write_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "data_server_write", data_server_write_in_t, data_server_write_out_t, data_server_write_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_data_server_read_check_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "data_server_read_check", data_server_read_check_in_t, data_server_read_check_out_t, data_server_read_check_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_data_server_write_check_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "data_server_write_check", data_server_write_check_in_t, data_server_write_check_out_t, data_server_write_check_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_update_region_loc_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "update_region_loc", update_region_loc_in_t, 
-                                 update_region_loc_out_t, update_region_loc_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_get_metadata_by_id_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "get_metadata_by_id", get_metadata_by_id_in_t, 
-                                 get_metadata_by_id_out_t, get_metadata_by_id_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-
-hg_id_t
-PDC_server_checkpoing_rpc_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-    
-    ret_value = MERCURY_REGISTER(hg_class, "server_checkpoing_rpc_register", pdc_int_send_t, pdc_int_ret_t, server_checkpoint_rpc_cb);
-    
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_send_shm_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-    
-    ret_value = MERCURY_REGISTER(hg_class, "send_shm_register", send_shm_in_t, pdc_int_ret_t, send_shm_cb);
-    
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_cont_add_del_objs_rpc_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "cont_add_del_objs_rpc", cont_add_del_objs_rpc_in_t, cont_add_del_objs_rpc_out_t, cont_add_del_objs_rpc_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_cont_add_tags_rpc_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-    
-    ret_value = MERCURY_REGISTER(hg_class, "cont_add_tag_rpc", cont_add_tags_rpc_in_t, pdc_int_ret_t, cont_add_tag_rpc_cb);
-    
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_query_read_obj_name_rpc_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-
-    ret_value = MERCURY_REGISTER(hg_class, "query_read_obj_name_rpc", query_read_obj_name_in_t, query_read_obj_name_out_t, query_read_obj_name_rpc_cb);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_storage_meta_name_query_rpc_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-    
-    ret_value = MERCURY_REGISTER(hg_class, "storage_meta_name_query_rpc", storage_meta_name_query_in_t, pdc_int_ret_t, storage_meta_name_query_rpc_cb);
-    
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_get_storage_meta_name_query_bulk_result_rpc_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-    
-    ret_value = MERCURY_REGISTER(hg_class, "get_storage_meta_name_query_bulk_result_rpc", bulk_rpc_in_t, pdc_int_ret_t, get_storage_meta_name_query_bulk_result_rpc_cb);
-    
-    FUNC_LEAVE(ret_value);
-}
-hg_id_t
-PDC_notify_client_multi_io_complete_rpc_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-    
-    ret_value = MERCURY_REGISTER(hg_class, "notify_client_multi_io_complete_rpc_register", bulk_rpc_in_t, pdc_int_ret_t, notify_client_multi_io_complete_rpc_cb);
-    
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_send_client_storage_meta_rpc_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-    
-    ret_value = MERCURY_REGISTER(hg_class, "send_client_storage_meta_rpc_register", bulk_rpc_in_t, pdc_int_ret_t, send_client_storage_meta_rpc_cb);
-    
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_send_data_query_rpc_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-    
-    ret_value = MERCURY_REGISTER(hg_class, "send_data_query_rpc_register", pdc_query_xfer_t, pdc_int_ret_t, send_data_query_cb);
-    
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_send_nhits_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-    
-    ret_value = MERCURY_REGISTER(hg_class, "send_nhits_register", send_nhits_t, pdc_int_ret_t, send_nhits_cb);
-    
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_send_bulk_rpc_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-    
-    ret_value = MERCURY_REGISTER(hg_class, "send_bulk_rpc_register", bulk_rpc_in_t, pdc_int_ret_t, send_bulk_rpc_cb);
-    
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_get_sel_data_rpc_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-    
-    ret_value = MERCURY_REGISTER(hg_class, "get_sel_data_rpc_register", get_sel_data_rpc_in_t, pdc_int_ret_t, get_sel_data_rpc_cb);
-    
-    FUNC_LEAVE(ret_value);
-}
-
-hg_id_t
-PDC_send_read_sel_obj_id_rpc_register(hg_class_t *hg_class)
-{
-    hg_id_t ret_value;
-    
-    FUNC_ENTER(NULL);
-    
-    ret_value = MERCURY_REGISTER(hg_class, "send_query_obj_id_rpc_register", get_sel_data_rpc_in_t, pdc_int_ret_t, send_read_sel_obj_id_rpc_cb);
-    
-    FUNC_LEAVE(ret_value);
-}
+PDC_FUNC_DECLARE_REGISTER(gen_obj_id)
+PDC_FUNC_DECLARE_REGISTER(gen_cont_id)
+PDC_FUNC_DECLARE_REGISTER(server_lookup_client)
+PDC_FUNC_DECLARE_REGISTER(server_lookup_remote_server)
+PDC_FUNC_DECLARE_REGISTER(client_test_connect)
+PDC_FUNC_DECLARE_REGISTER(notify_io_complete)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(send_shm_bulk_rpc, bulk_rpc_in_t, bulk_rpc_out_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(query_read_obj_name_client_rpc, query_read_obj_name_in_t, query_read_obj_name_out_t)
+PDC_FUNC_DECLARE_REGISTER(notify_region_update)
+PDC_FUNC_DECLARE_REGISTER(metadata_query)
+PDC_FUNC_DECLARE_REGISTER(container_query)
+PDC_FUNC_DECLARE_REGISTER(metadata_add_tag)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_del_kvtag, metadata_get_kvtag_in_t, metadata_add_tag_out_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_add_kvtag, metadata_add_kvtag_in_t, metadata_add_tag_out_t)
+PDC_FUNC_DECLARE_REGISTER(metadata_get_kvtag)
+PDC_FUNC_DECLARE_REGISTER(metadata_update)
+PDC_FUNC_DECLARE_REGISTER(metadata_delete_by_id)
+PDC_FUNC_DECLARE_REGISTER(metadata_delete)
+PDC_FUNC_DECLARE_REGISTER(close_server)
+PDC_FUNC_DECLARE_REGISTER(buf_map)
+PDC_FUNC_DECLARE_REGISTER(get_remote_metadata)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(buf_map_server, buf_map_in_t, buf_map_out_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(buf_unmap_server, buf_unmap_in_t, buf_unmap_out_t)
+PDC_FUNC_DECLARE_REGISTER(buf_unmap)
+PDC_FUNC_DECLARE_REGISTER(region_lock)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(region_release, region_lock_in_t, region_lock_out_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(transform_region_release, region_transform_and_lock_in_t, region_lock_out_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(region_transform_release, region_transform_and_lock_in_t, region_lock_out_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(region_analysis_release, region_analysis_and_lock_in_t, region_lock_out_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(query_partial, metadata_query_transfer_in_t, metadata_query_transfer_out_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(query_kvtag, pdc_kvtag_t, metadata_query_transfer_out_t)
+PDC_FUNC_DECLARE_REGISTER(bulk_rpc)
+PDC_FUNC_DECLARE_REGISTER(data_server_read)
+PDC_FUNC_DECLARE_REGISTER(data_server_write)
+PDC_FUNC_DECLARE_REGISTER(data_server_read_check)
+PDC_FUNC_DECLARE_REGISTER(data_server_write_check)
+PDC_FUNC_DECLARE_REGISTER(update_region_loc)
+PDC_FUNC_DECLARE_REGISTER(get_metadata_by_id)
+PDC_FUNC_DECLARE_REGISTER(cont_add_del_objs_rpc)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(query_read_obj_name_rpc, query_read_obj_name_in_t, query_read_obj_name_out_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(storage_meta_name_query_rpc, storage_meta_name_query_in_t, pdc_int_ret_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(get_storage_meta_name_query_bulk_result_rpc, bulk_rpc_in_t, pdc_int_ret_t)
+
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(server_checkpoint_rpc, pdc_int_send_t, pdc_int_ret_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(send_shm, send_shm_in_t, pdc_int_ret_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(cont_add_tags_rpc, cont_add_tags_rpc_in_t, pdc_int_ret_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(notify_client_multi_io_complete_rpc, bulk_rpc_in_t, pdc_int_ret_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(send_client_storage_meta_rpc, bulk_rpc_in_t, pdc_int_ret_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(send_data_query_rpc, pdc_query_xfer_t, pdc_int_ret_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(send_nhits, send_nhits_t, pdc_int_ret_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(send_bulk_rpc, bulk_rpc_in_t, pdc_int_ret_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(get_sel_data_rpc, get_sel_data_rpc_in_t, pdc_int_ret_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(send_read_sel_obj_id_rpc, get_sel_data_rpc_in_t, pdc_int_ret_t)
 
 /*
  * Check if two 1D segments overlaps

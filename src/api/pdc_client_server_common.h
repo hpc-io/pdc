@@ -3421,7 +3421,7 @@ hg_id_t PDC_bulk_rpc_register(hg_class_t *hg_class);
 hg_id_t PDC_gen_cont_id_register(hg_class_t *hg_class);
 hg_id_t PDC_cont_add_del_objs_rpc_register(hg_class_t *hg_class);
 hg_id_t PDC_query_read_obj_name_rpc_register(hg_class_t *hg_class);
-hg_id_t PDC_server_checkpoing_rpc_register(hg_class_t *hg_class);
+hg_id_t PDC_server_checkpoint_rpc_register(hg_class_t *hg_class);
 hg_id_t PDC_send_shm_register(hg_class_t *hg_class);
 hg_id_t PDC_send_shm_bulk_rpc_register(hg_class_t *hg_class);
 hg_id_t PDC_query_read_obj_name_client_rpc_register(hg_class_t *hg_class);

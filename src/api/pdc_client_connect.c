@@ -852,7 +852,7 @@ drc_access_again:
     data_server_read_check_register_id_g      = PDC_data_server_read_check_register(*hg_class);
     data_server_write_check_register_id_g     = PDC_data_server_write_check_register(*hg_class);
     data_server_write_register_id_g           = PDC_data_server_write_register(*hg_class);
-    server_checkpoint_rpc_register_id_g       = PDC_server_checkpoing_rpc_register(*hg_class);
+    server_checkpoint_rpc_register_id_g       = PDC_server_checkpoint_rpc_register(*hg_class);
     send_shm_register_id_g                    = PDC_send_shm_register(*hg_class);
 
     // bulk
