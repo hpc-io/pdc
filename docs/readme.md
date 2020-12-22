@@ -1,12 +1,12 @@
 ## Developers' note for PDC
   + This note is for developers. It helps developers to understand the code structure of PDC code as fast as possible.
-  + PDC core data structure
+  + PDC core classes.
     - Property
       * Property in PDC serves as hint and metadata storage purposes.
       * Different types of object has different classes (struct) of properties.
       * See pdc_prop.c, pdc_prop.h and pdc_prop_pkg.h for details.
     - Container
-      * Unwrap the container property struct into basic types.
+      * Container property
       ```
       struct _pdc_cont_prop {
           /* This class ID is returned from PDC_find_id with an input of ID returned from PDC init. This is true for both object and container. 
@@ -23,7 +23,7 @@
           /* Not very important */          pdc_lifetime_t    cont_life;
       };
       ```
-      * Container structure
+      * Container structure (pdc_cont_pkg.h and pdc_cont.h)
       ```
       struct _pdc_cont_info {
           struct pdc_cont_info    *cont_info_pub {
@@ -40,7 +40,7 @@
       };
       ```
     - Object
-      * Here is what an object property looks like unwrapped to basic types.
+      * Object property
       ```
       struct _pdc_obj_prop {
           /* Suffix _pub probably means public attributes to be accessed. */
@@ -82,7 +82,7 @@
           };
       };
       ```
-      * Object structure
+      * Object structure (pdc_obj_pkg.h and pdc_obj.h)
       ```
       struct _pdc_obj_info {
           /* Public properties */
