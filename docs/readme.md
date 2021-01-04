@@ -1,3 +1,24 @@
+## PDC user APIs
+  + pdcid_t PDCinit(const char *pdc_name)
+    - Input: pdc_name is the reference for PDC class. Recommended use "pdc"
+    - Output: pdc_id used for future reference.
+    - All PDC client applications must call PDCinit before using it.
+    - This function will setup connections from clients to servers.
+    - A valid PDC server must be running.
+    - For developers: currently implemented in pdc.c.
+  + perr_t PDCclose(pdcid_t pdcid)
+    - Input: pdc_id returned from PDCinit.
+    - Ouput: SUCCEED if no error.
+    - This is a proper way to end a client-server connection for PDC.
+    - A PDCinit must correspond to one PDCclose.
+    - For developers: currently implemented in pdc.c.
+  + pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_prop_id)
+    - Input: 
+      + cont_name: the name of container. e.g "c1", "c2"
+      + cont_prop_id: property's ID for inheriting a PDC property for container.
+    - Output: pdc_id for future referencing.
+    - For developers: currently implemented in pdc_cont.c.
+    
 ## Developers' note for PDC
   + This note is for developers. It helps developers to understand the code structure of PDC code as fast as possible.
   + PDC internal data structure
