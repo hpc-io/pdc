@@ -1,4 +1,5 @@
 # PDC user APIs
+  ## PDC general functions
   + pdcid_t PDCinit(const char *pdc_name)
     - Input: 
       + pdc_name is the reference for PDC class. Recommended use "pdc"
