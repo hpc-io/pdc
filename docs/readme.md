@@ -1,42 +1,86 @@
 ## PDC user APIs
   + pdcid_t PDCinit(const char *pdc_name)
-    - Input: pdc_name is the reference for PDC class. Recommended use "pdc"
-    - Output: pdc_id used for future reference.
+    - Input: 
+      + pdc_name is the reference for PDC class. Recommended use "pdc"
+    - Output: 
+      + PDC class ID used for future reference.
     - All PDC client applications must call PDCinit before using it.
     - This function will setup connections from clients to servers. A valid PDC server must be running.
     - For developers: currently implemented in pdc.c.
   + perr_t PDCclose(pdcid_t pdcid)
-    - Input: pdc_id returned from PDCinit.
-    - Ouput: SUCCEED if no error, otherwise FAIL.
+    - Input: 
+      + PDC class ID returned from PDCinit.
+    - Ouput: 
+      + SUCCEED if no error, otherwise FAIL.
     - This is a proper way to end a client-server connection for PDC. A PDCinit must correspond to one PDCclose.
     - For developers: currently implemented in pdc.c.
   + pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_prop_id)
     - Input: 
       + cont_name: the name of container. e.g "c1", "c2"
-      + cont_prop_id: property's ID for inheriting a PDC property for container.
-    - Output: pdc_id for future referencing, returned from PDC servers.
+      + cont_prop_id: property ID for inheriting a PDC property for container.
+    - Output: pdc_id for future referencing of this container, returned from PDC servers.
     - Create a PDC container for future use. 
     - For developers: currently implemented in pdc_cont.c. This function will send a name to server and receive an container id. This function will allocate necessary memories and initialize properties for a container.
   + pdcid_t PDCcont_create_col(const char *cont_name, pdcid_t cont_prop_id)
     - Input: 
-      + cont_name: the name of container. e.g "c1", "c2"
-      + cont_prop_id: property's ID for inheriting a PDC property for container.
+      + cont_name: the name to be assigned to a container. e.g "c1", "c2"
+      + cont_prop_id: property ID for inheriting a PDC property for container.
     - Output: pdc_id for future referencing.
     - Exactly the same as PDCcont_create, except all processes must call this function collectively. Create a PDC container for future use collectively.
     - For developers: currently implemented in pdc_cont.c.
   + pdcid_t PDCcont_open(const char *cont_name, pdcid_t pdc)
     - Input: 
       + cont_name: the name of container used for PDCcont_create.
-      + pdc: the pdc_id returned from PDCinit.
+      + pdc: PDC class ID returned from PDCinit.
     - Output:
       + error code. FAIL OR SUCCESS
     - Open a container. Must make sure a container named cont_name is properly created (registered by PDCcont_create at remote servers).
     - For developers: currently implemented in pdc_cont.c. This function will make sure the metadata for a container is returned from servers. For collective operations, rank 0 is going to broadcast this metadata ID to the rest of processes. A struct _pdc_cont_info is created locally for future reference.
    + perr_t PDCcont_close(pdcid_t id)
-     - Input: pdc_id for a container.
-     - Output: error code, SUCCESS or FAIL.
+     - Input: 
+       + container ID, returned from PDCcont_create.
+     - Output: 
+       + error code, SUCCESS or FAIL.
      - Correspond to PDCcont_open. Must be called only once when a container is no longer used in the future.
      - For developers: currently implemented in pdc_cont.c. The reference counter of a container is decremented. When the counter reaches zero, the memory of the container is freed.
+   + struct pdc_cont_info *PDCcont_get_info(const char *cont_name)
+     - Input: 
+       + name for the container
+     - Output: 
+       + Pointer to a new structure that contains the container information
+     ```
+     struct pdc_cont_info {
+          /*Inherited from property*/
+          char                   *name;
+          /*Registered using PDC_id_register */
+          pdcid_t                 local_id;
+          /* Need to register at server using function PDC_Client_create_cont_id */
+          uint64_t                meta_id;
+     };
+     ```
+     - Correspond to PDCcont_open. Must be called only once when a container is no longer used in the future.
+     - For developers: See pdc_cont.c. Use name to search for pdc_id first by linked list lookup. Make a copy of the metadata to the newly malloced structure.
+   + perr_t PDCcont_persist(pdcid_t cont_id)
+     - Input:
+       + cont_id: container ID, returned from PDCcont_create.
+     - Output: 
+       + error code, SUCCESS or FAIL.
+     - Make a PDC container persist.
+     - For developers, see pdc_cont.c. Set the container life field PDC_PERSIST.
+   + perr_t PDCprop_set_cont_lifetime(pdcid_t cont_prop, pdc_lifetime_t cont_lifetime)
+     - Input:
+       + cont_prop: Container property pdc_id
+       + cont_lifetime: See below
+       ```
+       typedef enum {
+          PDC_PERSIST,
+          PDC_TRANSIENT
+       } pdc_lifetime_t;
+       ```
+     - Output: 
+       + error code, SUCCESS or FAIL.
+     - Set container life time for a property.
+     - For developers, see pdc_cont.c.
 ## Developers' note for PDC
   + This note is for developers. It helps developers to understand the code structure of PDC code as fast as possible.
   + PDC internal data structure
