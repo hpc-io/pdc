@@ -3,14 +3,12 @@
     - Input: pdc_name is the reference for PDC class. Recommended use "pdc"
     - Output: pdc_id used for future reference.
     - All PDC client applications must call PDCinit before using it.
-    - This function will setup connections from clients to servers.
-    - A valid PDC server must be running.
+    - This function will setup connections from clients to servers. A valid PDC server must be running.
     - For developers: currently implemented in pdc.c.
   + perr_t PDCclose(pdcid_t pdcid)
     - Input: pdc_id returned from PDCinit.
     - Ouput: SUCCEED if no error, otherwise FAIL.
-    - This is a proper way to end a client-server connection for PDC.
-    - A PDCinit must correspond to one PDCclose.
+    - This is a proper way to end a client-server connection for PDC. A PDCinit must correspond to one PDCclose.
     - For developers: currently implemented in pdc.c.
   + pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_prop_id)
     - Input: 
@@ -24,8 +22,7 @@
       + cont_name: the name of container. e.g "c1", "c2"
       + cont_prop_id: property's ID for inheriting a PDC property for container.
     - Output: pdc_id for future referencing.
-    - Exactly the same as PDCcont_create, except all processes must call this function collectively.
-    - Create a PDC container for future use collectively.
+    - Exactly the same as PDCcont_create, except all processes must call this function collectively. Create a PDC container for future use collectively.
     - For developers: currently implemented in pdc_cont.c.
   + pdcid_t PDCcont_open(const char *cont_name, pdcid_t pdc)
     - Input: 
@@ -33,10 +30,13 @@
       + pdc: the pdc_id returned from PDCinit.
     - Output:
       + error code. FAIL OR SUCCESS
-    - Open a container. Must make sure a container named cont_name is properly created. 
-    - For developers: currently implemented in pdc_cont.c. This function will make sure the metadata for a container is returned from servers. For collective operations, rank 0 is going to broadcast this metadata ID to the rest of processes. A struct _pdc_cont_info is created internally for future reference.
+    - Open a container. Must make sure a container named cont_name is properly created (registered by PDCcont_create at remote servers).
+    - For developers: currently implemented in pdc_cont.c. This function will make sure the metadata for a container is returned from servers. For collective operations, rank 0 is going to broadcast this metadata ID to the rest of processes. A struct _pdc_cont_info is created locally for future reference.
    + perr_t PDCcont_close(pdcid_t id)
-     - Input: 
+     - Input: pdc_id for a container.
+     - Output: error code, SUCCESS or FAIL.
+     - Correspond to PDCcont_open. Must be called only once when a container is no longer used in the future.
+     - For developers: currently implemented in pdc_cont.c. The reference counter of a container is decremented. When the counter reaches zero, the memory of the container is freed.
 ## Developers' note for PDC
   + This note is for developers. It helps developers to understand the code structure of PDC code as fast as possible.
   + PDC internal data structure
