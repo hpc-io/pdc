@@ -1,5 +1,5 @@
 # PDC user APIs
-  ## PDC general functions
+  ## PDC general APIs
   + pdcid_t PDCinit(const char *pdc_name)
     - Input: 
       + pdc_name is the reference for PDC class. Recommended use "pdc"
@@ -14,6 +14,7 @@
       + SUCCEED if no error, otherwise FAIL.
     - This is a proper way to end a client-server connection for PDC. A PDCinit must correspond to one PDCclose.
     - For developers: currently implemented in pdc.c.
+  ## PDC container APIs
   + pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_prop_id)
     - Input: 
       + cont_name: the name of container. e.g "c1", "c2"
@@ -68,84 +69,92 @@
     - Make a PDC container persist.
     - For developers, see pdc_cont.c. Set the container life field PDC_PERSIST.
   + perr_t PDCprop_set_cont_lifetime(pdcid_t cont_prop, pdc_lifetime_t cont_lifetime)
-   - Input:
-     + cont_prop: Container property pdc_id
-     + cont_lifetime: See below
-     ```
-     typedef enum {
-       PDC_PERSIST,
-       PDC_TRANSIENT
-     } pdc_lifetime_t;
-     ```
-   - Output: 
-     + error code, SUCCESS or FAIL.
-   - Set container life time for a property.
-   - For developers, see pdc_cont.c.
+    - Input:
+      + cont_prop: Container property pdc_id
+      + cont_lifetime: See below
+      ```
+      typedef enum {
+        PDC_PERSIST,
+        PDC_TRANSIENT
+      } pdc_lifetime_t;
+      ```
+    - Output: 
+      + error code, SUCCESS or FAIL.
+    - Set container life time for a property.
+    - For developers, see pdc_cont.c.
   + pdcid_t PDCcont_get_id(const char *cont_name, pdcid_t pdc_id)
-     - Input:
-       + cont_name: Name of the container
-       + pdc_id: PDC class ID, returned by PDCinit
-     - Output: 
-       + container ID created locally
-     - Get container ID by name.
-     - For developers, see pdc_client_connect.c. It will query the servers for container information and create a container structure locally.
+    - Input:
+      + cont_name: Name of the container
+      + pdc_id: PDC class ID, returned by PDCinit
+    - Output: 
+      + container ID created locally
+    - Get container ID by name.
+    - For developers, see pdc_client_connect.c. It will query the servers for container information and create a container structure locally.
   + perr_t PDCcont_del(pdcid_t cont_id)
-     - Input:
-       + cont_id: container ID, returned from PDCcont_create.
-     - Output: 
-       + error code, SUCCESS or FAIL.
-     - Deleta a container
-     - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata update.
+    - Input:
+      + cont_id: container ID, returned from PDCcont_create.
+    - Output: 
+      + error code, SUCCESS or FAIL.
+    - Deleta a container
+    - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata update.
   + perr_t PDCcont_put_tag(pdcid_t cont_id, char *tag_name, void *tag_value, psize_t value_size)
-     - Input:
-       + cont_id: Container ID, returned from PDCcont_create.
-       + tag_name: Name of the tag
-       + tag_value: Value to be written under the tag
-       + value_size: Number of bytes for the tag_value (tag_size may be more informative)
-     - Output: 
-       + error code, SUCCESS or FAIL.
-     - Record a tag_value under the name tag_name for the container referenced by cont_id.
-     - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata update.
+    - Input:
+      + cont_id: Container ID, returned from PDCcont_create.
+      + tag_name: Name of the tag
+      + tag_value: Value to be written under the tag
+      + value_size: Number of bytes for the tag_value (tag_size may be more informative)
+    - Output: 
+      + error code, SUCCESS or FAIL.
+    - Record a tag_value under the name tag_name for the container referenced by cont_id.
+    - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata update.
   + perr_t PDCcont_get_tag(pdcid_t cont_id, char *tag_name, void **tag_value, psize_t *value_size)
-     - Input:
-       + cont_id: Container ID, returned from PDCcont_create.
-       + tag_name: Name of the tag
-       + tag_value: Pointer to the value to be read under the tag
-       + value_size: Number of bytes for the tag_value (tag_size may be more informative)
-     - Output: 
-       + error code, SUCCESS or FAIL.
-     - Retrieve a tag value to the memory space pointed by the tag_value under the name tag_name for the container referenced by cont_id.
-     - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata retrival.
+    - Input:
+      + cont_id: Container ID, returned from PDCcont_create.
+      + tag_name: Name of the tag
+      + tag_value: Pointer to the value to be read under the tag
+      + value_size: Number of bytes for the tag_value (tag_size may be more informative)
+    - Output: 
+      + error code, SUCCESS or FAIL.
+    - Retrieve a tag value to the memory space pointed by the tag_value under the name tag_name for the container referenced by cont_id.
+    - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata retrival.
   + perr_t PDCcont_del_tag(pdcid_t cont_id, char *tag_name)
-     - Input:
-       + cont_id: Container ID, returned from PDCcont_create.
-       + tag_name: Name of the tag
-     - Output: 
-       + error code, SUCCESS or FAIL.
-     - Delete a tag for a container by name
-     - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata update.
+    - Input:
+      + cont_id: Container ID, returned from PDCcont_create.
+      + tag_name: Name of the tag
+    - Output: 
+      + error code, SUCCESS or FAIL.
+    - Delete a tag for a container by name
+    - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata update.
   + perr_t PDCcont_put_objids(pdcid_t cont_id, int nobj, pdcid_t *obj_ids)
-     - Input:
-       + cont_id: Container ID, returned from PDCcont_create.
-       + nobj: Number of objects to be written
-       + obj_ids: Pointers to the object IDs
-     - Output: 
-       + error code, SUCCESS or FAIL.
-     - Put an array of objects to a container.
-     - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata update.
+    - Input:
+      + cont_id: Container ID, returned from PDCcont_create.
+      + nobj: Number of objects to be written
+      + obj_ids: Pointers to the object IDs
+    - Output: 
+      + error code, SUCCESS or FAIL.
+    - Put an array of objects to a container.
+    - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata update.
   + perr_t PDCcont_get_objids(pdcid_t cont_id ATTRIBUTE(unused), int *nobj ATTRIBUTE(unused), pdcid_t **obj_ids ATTRIBUTE(unused) )
      TODO:
   + perr_t PDCcont_del_objids(pdcid_t cont_id, int nobj, pdcid_t *obj_ids)
-     - Input:
-       + cont_id: Container ID, returned from PDCcont_create.
-       + nobj: Number of objects to be deleted
-       + obj_ids: Pointers to the object IDs
-     - Output: 
-       + error code, SUCCESS or FAIL.
-     - Delete an array of objects to a container.
-     - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata update.
-     
+    - Input:
+      + cont_id: Container ID, returned from PDCcont_create.
+      + nobj: Number of objects to be deleted
+      + obj_ids: Pointers to the object IDs
+    - Output: 
+      + error code, SUCCESS or FAIL.
+    - Delete an array of objects to a container.
+    - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata update.
+  ## PDC object APIs
   + PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, int rank_id, MPI_Comm comm)
+    - Input:
+      + cont_id: Container ID, returned from PDCcont_create.
+      + nobj: Number of objects to be deleted
+      + obj_ids: Pointers to the object IDs
+    - Output: 
+      + error code, SUCCESS or FAIL.
+    - Delete an array of objects to a container.
+    - For developers: see pdc_mpi.c. Need to send RPCs to servers for metadata update.
 # Developers' note for PDC
   + This note is for developers. It helps developers to understand the code structure of PDC code as fast as possible.
   + PDC internal data structure
