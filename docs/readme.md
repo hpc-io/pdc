@@ -314,6 +314,127 @@
       + Region ID
     - Create a region with ndims offset/length pairs
     - For developers: see pdc_region.c. Need to use PDC_get_kvtag to submit RPCs to the servers for metadata update.
+## PDC property APIs
+  + pdcid_t PDCprop_create(pdc_prop_type_t type, pdcid_t pdcid)
+    - Input:
+      + type: one of the followings
+      ```
+      typedef enum {
+          PDC_CONT_CREATE = 0,
+          PDC_OBJ_CREATE
+      } pdc_prop_type_t;
+      ```
+      - pdcid: PDC class ID, returned by PDCInit.
+    - Output:
+      + PDC property ID
+    - Initialize a property structure.
+    - For developers: see pdc_prop.c.
+  + perr_t PDCprop_close(pdcid_t id)
+    - Input:
+      + id: PDC property ID
+    - Output:
+      + error code, SUCCESS or FAIL.
+    - Close a PDC property after openning.
+    - For developers: see pdc_prop.c. Decrease reference counter for this property.
+  + perr_t PDCprop_set_obj_user_id(pdcid_t obj_prop, uint32_t user_id)
+    - Input:
+      + obj_prop: PDC property ID (has to be an object)
+      + user_id: PDC user ID
+    - Output:
+      + error code, SUCCESS or FAIL.
+    - Set the user ID of an object.
+    - For developers: see pdc_obj.c. Update the user_id field under struct _pdc_obj_prop. See developer's note for more details about this structure.
+  + perr_t PDCprop_set_obj_data_loc(pdcid_t obj_prop, char *loc) 
+    - Input:
+      + obj_prop: PDC property ID (has to be an object)
+      + loc: location
+    - Output:
+      + error code, SUCCESS or FAIL.
+    - Set the location of an object.
+    - For developers: see pdc_obj.c. Update the data_loc field under struct _pdc_obj_prop. See developer's note for more details about this structure.
+  + perr_t PDCprop_set_obj_app_name(pdcid_t obj_prop, char *app_name)
+    - Input:
+      + obj_prop: PDC property ID (has to be an object)
+      + app_name: application name
+    - Output:
+      + error code, SUCCESS or FAIL.
+    - Set the application name of an object.
+    - For developers: see pdc_obj.c. Update the app_name field under struct _pdc_obj_prop. See developer's note for more details about this structure.
+  + perr_t PDCprop_set_obj_time_step(pdcid_t obj_prop, uint32_t time_step)
+    - Input:
+      + obj_prop: PDC property ID (has to be an object)
+      + time_step: time step
+    - Output:
+      + error code, SUCCESS or FAIL.
+    - Set the time step of an object.
+    - For developers: see pdc_obj.c. Update the time_step field under struct _pdc_obj_prop. See developer's note for more details about this structure.
+  + perr_t PDCprop_set_obj_tags(pdcid_t obj_prop, char *tags)
+    - Input:
+      + obj_prop: PDC property ID (has to be an object)
+      + tags: tags
+    - Output:
+      + error code, SUCCESS or FAIL.
+    - Set the tags of an object.
+    - For developers: see pdc_obj.c. Update the tags field under struct _pdc_obj_prop. See developer's note for more details about this structure.
+  + perr_t PDCprop_set_obj_dims(pdcid_t obj_prop, PDC_int_t ndim, uint64_t *dims)
+    - Input:
+      + obj_prop: PDC property ID (has to be an object)
+      + ndim: number of dimensions
+      + dims: array of dimensions
+    - Output:
+      + error code, SUCCESS or FAIL.
+    - Set the dimensions of an object.
+    - For developers: see pdc_obj.c. Update the obj_prop_pub field under struct _pdc_obj_prop. See developer's note for more details about this structure.
+  + perr_t PDCprop_set_obj_dims(pdcid_t obj_prop, PDC_int_t ndim, uint64_t *dims)
+    - Input:
+      + obj_prop: PDC property ID (has to be an object)
+      + ndim: number of dimensions
+      + dims: array of dimensions
+    - Output:
+      + error code, SUCCESS or FAIL.
+    - Set the dimensions of an object.
+    - For developers: see pdc_obj.c. Update the obj_prop_pub->ndim and obj_prop_pub->dims fields under struct _pdc_obj_prop. See developer's note for more details about this structure.
+  + perr_t PDCprop_set_obj_type(pdcid_t obj_prop, pdc_var_type_t type)
+    - Input:
+      + obj_prop: PDC property ID (has to be an object)
+      + type: one of the followings
+      ```
+      typedef enum {
+        PDC_UNKNOWN      = -1, /* error                                      */
+        PDC_INT          = 0,  /* integer types                              */
+        PDC_FLOAT        = 1,  /* floating-point types                       */
+        PDC_DOUBLE       = 2,  /* double types                               */
+        PDC_CHAR         = 3,  /* character types                            */
+        PDC_COMPOUND     = 4,  /* compound types                             */
+        PDC_ENUM         = 5,  /* enumeration types                          */
+        PDC_ARRAY        = 6,  /* Array types                                */
+        PDC_UINT         = 7,  /* unsigned integer types                     */
+        PDC_INT64        = 8,  /* 64-bit integer types                       */
+        PDC_UINT64       = 9,  /* 64-bit unsigned integer types              */
+        PDC_INT16        = 10, 
+        PDC_INT8         = 11,
+        NCLASSES         = 12  /* this must be last                          */
+      } pdc_var_type_t;
+      ```
+    - Output:
+      + error code, SUCCESS or FAIL.
+    - Set the type of an object.
+    - For developers: see pdc_obj.c. Update the obj_prop_pub->type field under struct _pdc_obj_prop. See developer's note for more details about this structure.
+  + perr_t PDCprop_set_obj_buf(pdcid_t obj_prop, void *buf)
+    - Input:
+      + obj_prop: PDC property ID (has to be an object)
+      + buf: user memory buffer
+    - Output:
+      + error code, SUCCESS or FAIL.
+    - Set the user memory buffer of an object.
+    - For developers: see pdc_obj.c. Update the buf field under struct _pdc_obj_prop. See developer's note for more details about this structure.
+  + pdcid_t PDCprop_obj_dup(pdcid_t prop_id)
+    - Input:
+      + prop_id: PDC property ID (has to be an object)
+    - Output:
+      + a new property ID copied.
+    - Duplicate an object property
+    - For developers: see pdc_prop.c. Update the buf field under struct _pdc_obj_prop. See developer's note for more details about this structure.
 # Developers' note for PDC
   + This note is for developers. It helps developers to understand the code structure of PDC code as fast as possible.
   + PDC internal data structure
