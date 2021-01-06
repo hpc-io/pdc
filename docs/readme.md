@@ -111,9 +111,9 @@
     - Input:
       + cont_id: Container ID, returned from PDCcont_create.
       + tag_name: Name of the tag
-      + tag_value: Pointer to the value to be read under the tag
       + value_size: Number of bytes for the tag_value (tag_size may be more informative)
-    - Output: 
+    - Output:
+      + tag_value: Pointer to the value to be read under the tag
       + error code, SUCCESS or FAIL.
     - Retrieve a tag value to the memory space pointed by the tag_value under the name tag_name for the container referenced by cont_id.
     - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata retrival.
@@ -202,7 +202,52 @@
       ```
     - Get a pointer to a structure that describes the object metadata.
     - For developers: see pdc_obj.c. Local linked list search for object ID first. Then pull out local object metadata by ID.
-
+  + pdcid_t PDCobj_put_data(const char *obj_name, void *data, uint64_t size, pdcid_t cont_id)
+    - Input:
+      + obj_name: Name of object
+      + data: Pointer to data memory
+      + size: Size of data
+      + cont_id: Container ID of this object
+    - Output:
+      + error code, SUCCESS or FAIL.
+    - Write data to an object.
+    - For developers: see pdc_client_connect.c. Nedd to send RPCs to servers for this request.
+  + perr_t PDCobj_get_data(pdcid_t obj_id, void **data, uint64_t *size)
+    - Input:
+      + obj_id: Local object ID
+      + size: Size of data
+    - Output:
+      + data: Pointer to data to be filled
+      + error code, SUCCESS or FAIL.
+    - Read data from an object.
+    - For developers: see pdc_client_connect.c. Use PDC_obj_get_info to retrieve name. Then forward name to servers to fulfill requests.
+  + perr_t PDCobj_del_data(pdcid_t obj_id)
+    - Input:
+      + obj_id: Local object ID
+    - Output:
+      + error code, SUCCESS or FAIL.
+    - Delete data from an object.
+    - For developers: see pdc_client_connect.c. Use PDC_obj_get_info to retrieve name. Then forward name to servers to fulfill requests.
+  perr_t PDCobj_put_tag(pdcid_t obj_id, char *tag_name, void *tag_value, psize_t value_size)
+    - Input:
+      + obj_id: Local object ID
+      + tag_name: Name of the tag to be entered
+      + tag_value: Value of the tag
+      + value_size: Number of bytes for the tag_value
+    - Output:
+      + error code, SUCCESS or FAIL.
+    - Set the tag value for a tag
+    - For developers: see pdc_client_connect.c. Need to use PDC_add_kvtag to submit RPCs to the servers for metadata update.
+  perr_t PDCobj_get_tag(pdcid_t obj_id, char *tag_name, void **tag_value, psize_t *value_size)
+    - Input:
+      + obj_id: Local object ID
+      + tag_name: Name of the tag to be entered
+      + tag_value: Value of the tag
+      + value_size: Number of bytes for the tag_value
+    - Output:
+      + error code, SUCCESS or FAIL.
+    - Get the tag value for a tag
+    - For developers: see pdc_client_connect.c. Need to use PDC_add_kvtag to submit RPCs to the servers for metadata update.
 # Developers' note for PDC
   + This note is for developers. It helps developers to understand the code structure of PDC code as fast as possible.
   + PDC internal data structure
