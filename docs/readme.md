@@ -38,12 +38,12 @@
     - Open a container. Must make sure a container named cont_name is properly created (registered by PDCcont_create at remote servers).
     - For developers: currently implemented in pdc_cont.c. This function will make sure the metadata for a container is returned from servers. For collective operations, rank 0 is going to broadcast this metadata ID to the rest of processes. A struct _pdc_cont_info is created locally for future reference.
   + perr_t PDCcont_close(pdcid_t id)
-   - Input: 
-     + container ID, returned from PDCcont_create.
-   - Output: 
-     + error code, SUCCESS or FAIL.
-   - Correspond to PDCcont_open. Must be called only once when a container is no longer used in the future.
-   - For developers: currently implemented in pdc_cont.c. The reference counter of a container is decremented. When the counter reaches zero, the memory of the container can be freed later.
+    - Input: 
+      + container ID, returned from PDCcont_create.
+    - Output: 
+      + error code, SUCCESS or FAIL.
+    - Correspond to PDCcont_open. Must be called only once when a container is no longer used in the future.
+    - For developers: currently implemented in pdc_cont.c. The reference counter of a container is decremented. When the counter reaches zero, the memory of the container can be freed later.
   + struct pdc_cont_info *PDCcont_get_info(const char *cont_name)
      - Input: 
        + name of the container
