@@ -228,7 +228,7 @@
       + error code, SUCCESS or FAIL.
     - Delete data from an object.
     - For developers: see pdc_client_connect.c. Use PDC_obj_get_info to retrieve name. Then forward name to servers to fulfill requests.
-  perr_t PDCobj_put_tag(pdcid_t obj_id, char *tag_name, void *tag_value, psize_t value_size)
+  + perr_t PDCobj_put_tag(pdcid_t obj_id, char *tag_name, void *tag_value, psize_t value_size)
     - Input:
       + obj_id: Local object ID
       + tag_name: Name of the tag to be entered
@@ -238,7 +238,7 @@
       + error code, SUCCESS or FAIL.
     - Set the tag value for a tag
     - For developers: see pdc_client_connect.c. Need to use PDC_add_kvtag to submit RPCs to the servers for metadata update.
-  perr_t PDCobj_get_tag(pdcid_t obj_id, char *tag_name, void **tag_value, psize_t *value_size)
+  + perr_t PDCobj_get_tag(pdcid_t obj_id, char *tag_name, void **tag_value, psize_t *value_size)
     - Input:
       + obj_id: Local object ID
       + tag_name: Name of the tag to be entered
@@ -247,7 +247,73 @@
     - Output:
       + error code, SUCCESS or FAIL.
     - Get the tag value for a tag
-    - For developers: see pdc_client_connect.c. Need to use PDC_add_kvtag to submit RPCs to the servers for metadata update.
+    - For developers: see pdc_client_connect.c. Need to use PDC_get_kvtag to submit RPCs to the servers for metadata update.
+  + perr_t PDCobj_del_tag(pdcid_t obj_id, char *tag_name)
+    - Input:
+      + obj_id: Local object ID
+      + tag_name: Name of the tag to be entered
+    - Output:
+      + error code, SUCCESS or FAIL.
+    - Delete a tag.
+    - For developers: see pdc_client_connect.c. Need to use PDCtag_delete to submit RPCs to the servers for metadata update.
+  ## PDC region APIs
+  + pdcid_t PDCregion_create(psize_t ndims, uint64_t *offset, uint64_t *size)
+    - Input:
+      + ndims: Number of dimensions
+      + offset: Array of offsets
+      + size: Array of offset length
+    - Output:
+      + Region ID
+    - Create a region with ndims offset/length pairs
+    - For developers: see pdc_region.c. Need to use PDC_get_kvtag to submit RPCs to the servers for metadata update.
+  + void PDCregion_free(struct pdc_region_info *region)
+    - Input:
+      + region_id: PDC region info
+      ```
+      struct pdc_region_info {
+        pdcid_t               local_id;
+        struct _pdc_obj_info *obj;
+        size_t                ndim;
+        uint64_t             *offset;
+        uint64_t             *size;
+        bool                  mapping;
+        int                   registered_op;
+        void                 *buf;
+      };
+      ```
+    - Output:
+      + None
+    - Close a PDC region
+    - For developers: see pdc_client_server_common.c. Free offset and size arrays.
+  + perr_t PDCbuf_obj_map(void *buf, pdc_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg)
+    - Input:
+      + buf: Memory buffer
+      + local_type: One of the followings
+      ```
+      typedef enum {
+        PDC_UNKNOWN      = -1, /* error                                      */
+        PDC_INT          = 0,  /* integer types                              */
+        PDC_FLOAT        = 1,  /* floating-point types                       */
+        PDC_DOUBLE       = 2,  /* double types                               */
+        PDC_CHAR         = 3,  /* character types                            */
+        PDC_COMPOUND     = 4,  /* compound types                             */
+        PDC_ENUM         = 5,  /* enumeration types                          */
+        PDC_ARRAY        = 6,  /* Array types                                */
+        PDC_UINT         = 7,  /* unsigned integer types                     */
+        PDC_INT64        = 8,  /* 64-bit integer types                       */
+        PDC_UINT64       = 9,  /* 64-bit unsigned integer types              */
+        PDC_INT16        = 10, 
+        PDC_INT8         = 11,
+        NCLASSES         = 12  /* this must be last                          */
+      } pdc_var_type_t;
+      ```
+      + local_reg: Local region ID
+      + remote_obj: Remote object ID
+      + remote_reg: Remote region ID
+    - Output:
+      + Region ID
+    - Create a region with ndims offset/length pairs
+    - For developers: see pdc_region.c. Need to use PDC_get_kvtag to submit RPCs to the servers for metadata update.
 # Developers' note for PDC
   + This note is for developers. It helps developers to understand the code structure of PDC code as fast as possible.
   + PDC internal data structure
