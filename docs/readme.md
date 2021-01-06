@@ -146,15 +146,63 @@
     - Delete an array of objects to a container.
     - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata update.
   ## PDC object APIs
+  + pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id)
+    - Input:
+      + cont_id: Container ID, returned from PDCcont_create.
+      + obj_name: Name of objects to be created
+      + obj_prop_id: Property ID to be inherited from.
+    - Output: 
+      + Local object ID
+    - Create a PDC object.
+    - For developers: see pdc_obj.c. This process need to send the name of the object to be created to the servers. Then it will receive an object ID. The object structure will inherit attributes from its container and  input object properties.
   + PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, int rank_id, MPI_Comm comm)
     - Input:
       + cont_id: Container ID, returned from PDCcont_create.
-      + nobj: Number of objects to be deleted
-      + obj_ids: Pointers to the object IDs
+      + obj_name: Name of objects to be created
+      + rank_id: Which rank ID the object is placed to
+      + comm: MPI communicator for the rank_id
     - Output: 
+      + Local object ID
+    - Create a PDC object at the rank_id in the communicator comm. This function is a colllective operation.
+    - For developers: see pdc_mpi.c. If rank_id equals local process rank, then a local object is created. Otherwise we create a global object. The object metadata ID is broadcasted to all processes if a global object is created using MPI_Bcast.
+  + pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc)
+    - Input:
+      + obj_name: Name of objects to be created
+      + pdc: PDC class ID, returned from PDCInit
+    - Output: 
+      + Local object ID
+    - Open a PDC ID created previously by name.
+    - For developers: see pdc_obj.c. Need to communicate with servers for metadata of the object.
+  + perr_t PDCobj_close(pdcid_t obj_id)
+    - Input:
+      + obj_id: Local object ID to be closed.
+    - Output:
       + error code, SUCCESS or FAIL.
-    - Delete an array of objects to a container.
-    - For developers: see pdc_mpi.c. Need to send RPCs to servers for metadata update.
+    - Close an object. Must do this after open an object.
+    - For developers: see pdc_obj.c. Dereference an object by reducing its reference counter.
+  + struct pdc_obj_info *PDCobj_get_info(const char *obj_name)
+    - Input:
+      + obj_name: Name of object
+    - Output:
+      + object information
+      ```
+      struct pdc_obj_info  {
+          /* Directly coped from user argument at object creation. */
+          char                   *name;
+          /* 0 for location = PDC_OBJ_LOAL. 
+           * When PDC_OBJ_GLOBAL = 1, use PDC_Client_send_name_recv_id to retrieve ID. */
+          pdcid_t                 meta_id;
+          /* Registered using PDC_id_register */
+          pdcid_t                 local_id;
+          /* Set to 0 at creation time. *
+          int                     server_id;
+          /* Object property. Directly copy from user argument at object creation. */
+          struct pdc_obj_prop    *obj_pt;
+      };
+      ```
+    - Get a pointer to a structure that describes the object metadata.
+    - For developers: see pdc_obj.c. Local linked list search for object ID first. Then pull out local object metadata by ID.
+
 # Developers' note for PDC
   + This note is for developers. It helps developers to understand the code structure of PDC code as fast as possible.
   + PDC internal data structure
