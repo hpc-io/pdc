@@ -472,8 +472,24 @@
     - Output:
       + a new query
       ```
+  
       typedef struct pdc_query_t {
-          pdc_query_constraint_t *constraint;
+          pdc_query_constraint_t *constraint{
+            pdcid_t            obj_id;
+            pdc_query_op_t     op;
+            pdc_var_type_t     type;
+            double             value;   // Use it as a generic 64bit value
+            pdc_histogram_t    *hist;
+
+            int                is_range;
+            pdc_query_op_t     op2;
+            double             value2;
+
+            void               *storage_region_list_head;
+            pdcid_t            origin_server;
+            int                n_sent;
+            int                n_recv;
+        }
           struct pdc_query_t     *left;
           struct pdc_query_t     *right;
           pdc_query_combine_op_t  combine_op;
@@ -483,11 +499,27 @@
       } pdc_query_t;
       ```
     - Create a PDC query.
-    - For developers, see pdc_query.c. The new query structure is filled. The constraint->value field is copied from the value argument.
+    - For developers, see pdc_query.c. The constraint field of the new query structure is filled with the input arguments. Need to search for the metadata ID using object ID.
   + void PDCquery_free(pdc_query_t *query)
     - Input:
       + query: PDC query from PDCquery_create
-    - Free a query structure
+    - Free a query structure.
+    - For developers, see pdc_client_server_common.c.
+  + void PDCquery_free_all(pdc_query_t *root)
+    - Input:
+      + root: root of queries to be freed
+    - Output:
+      + error code, SUCCESS or FAIL.
+    - Free all queries from a root.
+    - For developers, see pdc_client_server_common.c. Recursively free left and right branches.
+  + pdc_query_t *PDCquery_and(pdc_query_t *q1, pdc_query_t *q2)
+    - Input:
+      + q1: First query
+      + q2: Second query
+    - Ouput:
+      + A new query after and operator.
+    - Perform and operator on the two queries.
+    - For developers, see pdc_query.c
 # Developers' note for PDC
   + This note is for developers. It helps developers to understand the code structure of PDC code as fast as possible.
   + PDC internal data structure
