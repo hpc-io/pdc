@@ -53,8 +53,7 @@
      - Input: 
        + name of the container
      - Output: 
-       + Pointer to a new structure that contains the container information
-       [See container info](## Container info)
+       + Pointer to a new structure that contains the container information [See container info](##Container info)
      - Correspond to PDCcont_open. Must be called only once when a container is no longer used in the future.
      - For developers: See pdc_cont.c. Use name to search for pdc_id first by linked list lookup. Make a copy of the metadata to the newly malloced structure.
   + perr_t PDCcont_persist(pdcid_t cont_id)
