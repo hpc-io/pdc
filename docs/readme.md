@@ -54,16 +54,7 @@
        + name of the container
      - Output: 
        + Pointer to a new structure that contains the container information
-     ```
-     struct pdc_cont_info {
-          /*Inherited from property*/
-          char                   *name;
-          /*Registered using PDC_id_register */
-          pdcid_t                 local_id;
-          /* Need to register at server using function PDC_Client_create_cont_id */
-          uint64_t                meta_id;
-     };
-     ```
+       [See container info](## Container info)
      - Correspond to PDCcont_open. Must be called only once when a container is no longer used in the future.
      - For developers: See pdc_cont.c. Use name to search for pdc_id first by linked list lookup. Make a copy of the metadata to the newly malloced structure.
   + perr_t PDCcont_persist(pdcid_t cont_id)
@@ -603,6 +594,65 @@
       + None
     - Print the details of a PDC selection structure.
     - For developers, see pdc_client_server_common.c.
+  ## PDC hist APIs
+  + pdc_histogram_t *PDC_gen_hist(pdc_var_type_t dtype, uint64_t n, void *data)
+    - Input:
+      + dtype: One of the PDC basic types
+      ```
+      typedef enum {
+        PDC_UNKNOWN      = -1, /* error                                      */
+        PDC_INT          = 0,  /* integer types                              */
+        PDC_FLOAT        = 1,  /* floating-point types                       */
+        PDC_DOUBLE       = 2,  /* double types                               */
+        PDC_CHAR         = 3,  /* character types                            */
+        PDC_COMPOUND     = 4,  /* compound types                             */
+        PDC_ENUM         = 5,  /* enumeration types                          */
+        PDC_ARRAY        = 6,  /* Array types                                */
+        PDC_UINT         = 7,  /* unsigned integer types                     */
+        PDC_INT64        = 8,  /* 64-bit integer types                       */
+        PDC_UINT64       = 9,  /* 64-bit unsigned integer types              */
+        PDC_INT16        = 10, 
+        PDC_INT8         = 11,
+        NCLASSES         = 12  /* this must be last                          */
+      } pdc_var_type_t;
+      ```
+      + n: number of values with the basic types.
+      + data: pointer to the data buffer.
+    - Output:
+      + see pdc_public.h.
+      ```
+      typedef struct pdc_histogram_t {
+          pdc_var_type_t dtype;
+          int            nbin;
+          double         incr;
+          double        *range;
+          uint64_t      *bin;
+     } pdc_histogram_t;
+     ```
+     - Generate a PDC histogram from data. This can be used to optimize performance.
+
+# PDC type categories
+  ## PDC basic types
+  ```
+  typedef struct pdc_histogram_t {
+     pdc_var_type_t dtype;
+     int            nbin;
+     double         incr;
+     double        *range;
+     uint64_t      *bin;
+  } pdc_histogram_t;
+  ```
+  ## Container info
+  ```
+     struct pdc_cont_info {
+      /*Inherited from property*/
+      char                   *name;
+      /*Registered using PDC_id_register */
+      pdcid_t                 local_id;
+      /* Need to register at server using function PDC_Client_create_cont_id */
+      uint64_t                meta_id;
+  };
+  ```
 # Developers' note for PDC
   + This note is for developers. It helps developers to understand the code structure of PDC code as fast as possible.
   + PDC internal data structure
