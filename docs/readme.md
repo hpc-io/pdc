@@ -435,6 +435,7 @@
       + a new property ID copied.
     - Duplicate an object property
     - For developers: see pdc_prop.c. Update the buf field under struct _pdc_obj_prop. See developer's note for more details about this structure.
+## PDC general APIs
   + pdc_query_t *PDCquery_create(pdcid_t obj_id, pdc_query_op_t op, pdc_var_type_t type, void *value)
     - Input:
       + obj_id: local PDC object ID
