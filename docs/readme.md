@@ -53,7 +53,7 @@
      - Input: 
        + name of the container
      - Output: 
-       + Pointer to a new structure that contains the container information [See container info](##container-info)
+       + Pointer to a new structure that contains the container information [See container info](#container-info)
      - Correspond to PDCcont_open. Must be called only once when a container is no longer used in the future.
      - For developers: See pdc_cont.c. Use name to search for pdc_id first by linked list lookup. Make a copy of the metadata to the newly malloced structure.
   + perr_t PDCcont_persist(pdcid_t cont_id)
@@ -66,13 +66,7 @@
   + perr_t PDCprop_set_cont_lifetime(pdcid_t cont_prop, pdc_lifetime_t cont_lifetime)
     - Input:
       + cont_prop: Container property pdc_id
-      + cont_lifetime: See below
-      ```
-      typedef enum {
-        PDC_PERSIST,
-        PDC_TRANSIENT
-      } pdc_lifetime_t;
-      ```
+      + cont_lifetime: See [container life time](#container-life-time)
     - Output: 
       + error code, SUCCESS or FAIL.
     - Set container life time for a property.
@@ -179,22 +173,7 @@
     - Input:
       + obj_name: Name of object
     - Output:
-      + object information
-      ```
-      struct pdc_obj_info  {
-          /* Directly coped from user argument at object creation. */
-          char                   *name;
-          /* 0 for location = PDC_OBJ_LOAL. 
-           * When PDC_OBJ_GLOBAL = 1, use PDC_Client_send_name_recv_id to retrieve ID. */
-          pdcid_t                 meta_id;
-          /* Registered using PDC_id_register */
-          pdcid_t                 local_id;
-          /* Set to 0 at creation time. *
-          int                     server_id;
-          /* Object property. Directly copy from user argument at object creation. */
-          struct pdc_obj_prop    *obj_pt;
-      };
-      ```
+      + object information see [object information](#object-info)
     - Get a pointer to a structure that describes the object metadata.
     - For developers: see pdc_obj.c. Local linked list search for object ID first. Then pull out local object metadata by ID.
   + pdcid_t PDCobj_put_data(const char *obj_name, void *data, uint64_t size, pdcid_t cont_id)
@@ -263,19 +242,7 @@
     - For developers: see pdc_region.c. Need to use PDC_get_kvtag to submit RPCs to the servers for metadata update.
   + void PDCregion_free(struct pdc_region_info *region)
     - Input:
-      + region_id: PDC region info
-      ```
-      struct pdc_region_info {
-        pdcid_t               local_id;
-        struct _pdc_obj_info *obj;
-        size_t                ndim;
-        uint64_t             *offset;
-        uint64_t             *size;
-        bool                  mapping;
-        int                   registered_op;
-        void                 *buf;
-      };
-      ```
+      + region_id: PDC region info, see [PDC region info](#region-info)
     - Output:
       + None
     - Close a PDC region
@@ -283,25 +250,7 @@
   + perr_t PDCbuf_obj_map(void *buf, pdc_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg)
     - Input:
       + buf: Memory buffer
-      + local_type: One of the followings
-      ```
-      typedef enum {
-        PDC_UNKNOWN      = -1, /* error                                      */
-        PDC_INT          = 0,  /* integer types                              */
-        PDC_FLOAT        = 1,  /* floating-point types                       */
-        PDC_DOUBLE       = 2,  /* double types                               */
-        PDC_CHAR         = 3,  /* character types                            */
-        PDC_COMPOUND     = 4,  /* compound types                             */
-        PDC_ENUM         = 5,  /* enumeration types                          */
-        PDC_ARRAY        = 6,  /* Array types                                */
-        PDC_UINT         = 7,  /* unsigned integer types                     */
-        PDC_INT64        = 8,  /* 64-bit integer types                       */
-        PDC_UINT64       = 9,  /* 64-bit unsigned integer types              */
-        PDC_INT16        = 10, 
-        PDC_INT8         = 11,
-        NCLASSES         = 12  /* this must be last                          */
-      } pdc_var_type_t;
-      ```
+      + local_type: one of PDC basic types, see [PDC basic types](#basic-types)
       + local_reg: Local region ID
       + remote_obj: Remote object ID
       + remote_reg: Remote region ID
@@ -392,25 +341,7 @@
   + perr_t PDCprop_set_obj_type(pdcid_t obj_prop, pdc_var_type_t type)
     - Input:
       + obj_prop: PDC property ID (has to be an object)
-      + type: one of the followings
-      ```
-      typedef enum {
-        PDC_UNKNOWN      = -1, /* error                                      */
-        PDC_INT          = 0,  /* integer types                              */
-        PDC_FLOAT        = 1,  /* floating-point types                       */
-        PDC_DOUBLE       = 2,  /* double types                               */
-        PDC_CHAR         = 3,  /* character types                            */
-        PDC_COMPOUND     = 4,  /* compound types                             */
-        PDC_ENUM         = 5,  /* enumeration types                          */
-        PDC_ARRAY        = 6,  /* Array types                                */
-        PDC_UINT         = 7,  /* unsigned integer types                     */
-        PDC_INT64        = 8,  /* 64-bit integer types                       */
-        PDC_UINT64       = 9,  /* 64-bit unsigned integer types              */
-        PDC_INT16        = 10, 
-        PDC_INT8         = 11,
-        NCLASSES         = 12  /* this must be last                          */
-      } pdc_var_type_t;
-      ```
+      + type: one of PDC basic types, see [PDC basic types](#basic-types)
     - Output:
       + error code, SUCCESS or FAIL.
     - Set the type of an object.
@@ -434,66 +365,11 @@
   + pdc_query_t *PDCquery_create(pdcid_t obj_id, pdc_query_op_t op, pdc_var_type_t type, void *value)
     - Input:
       + obj_id: local PDC object ID
-      + op: one of the followings
-      ```
-      typedef enum { 
-          PDC_OP_NONE = 0, 
-          PDC_GT      = 1, 
-          PDC_LT      = 2, 
-          PDC_GTE     = 3, 
-          PDC_LTE     = 4, 
-          PDC_EQ      = 5
-      } pdc_query_op_t;
-      ```
-      + type: one of the followings
-      ```
-      typedef enum {
-        PDC_UNKNOWN      = -1, /* error                                      */
-        PDC_INT          = 0,  /* integer types                              */
-        PDC_FLOAT        = 1,  /* floating-point types                       */
-        PDC_DOUBLE       = 2,  /* double types                               */
-        PDC_CHAR         = 3,  /* character types                            */
-        PDC_COMPOUND     = 4,  /* compound types                             */
-        PDC_ENUM         = 5,  /* enumeration types                          */
-        PDC_ARRAY        = 6,  /* Array types                                */
-        PDC_UINT         = 7,  /* unsigned integer types                     */
-        PDC_INT64        = 8,  /* 64-bit integer types                       */
-        PDC_UINT64       = 9,  /* 64-bit unsigned integer types              */
-        PDC_INT16        = 10, 
-        PDC_INT8         = 11,
-        NCLASSES         = 12  /* this must be last                          */
-      } pdc_var_type_t;
-      ```
+      + op: one of the followings, see [PDC query operators](#query-operators)
+      + type: one of PDC basic types, see [PDC basic types](#basic-types)
       + value: constraint value.
     - Output:
-      + a new query
-      ```
-  
-      typedef struct pdc_query_t {
-          pdc_query_constraint_t *constraint{
-            pdcid_t            obj_id;
-            pdc_query_op_t     op;
-            pdc_var_type_t     type;
-            double             value;   // Use it as a generic 64bit value
-            pdc_histogram_t    *hist;
-
-            int                is_range;
-            pdc_query_op_t     op2;
-            double             value2;
-
-            void               *storage_region_list_head;
-            pdcid_t            origin_server;
-            int                n_sent;
-            int                n_recv;
-        }
-          struct pdc_query_t     *left;
-          struct pdc_query_t     *right;
-          pdc_query_combine_op_t  combine_op;
-          struct pdc_region_info *region;             // used only on client
-          void                   *region_constraint;  // used only on server
-          pdc_selection_t        *sel;
-      } pdc_query_t;
-      ```
+      + a new query structure, see [PDC query structure](#query-structure)
     - Create a PDC query.
     - For developers, see pdc_query.c. The constraint field of the new query structure is filled with the input arguments. Need to search for the metadata ID using object ID.
   + void PDCquery_free(pdc_query_t *query)
@@ -536,16 +412,7 @@
     - Input:    
       + query: Query to get the selection
     - Ouput:
-      + sel: PDC selection defined as the following. This selection describes the query shape.
-      ```
-      typedef struct pdcquery_selection_t {
-          pdcid_t  query_id;
-          size_t   ndim;
-          uint64_t nhits;
-          uint64_t *coords;
-          uint64_t coords_alloc;
-      } pdc_selection_t;
-      ```
+      + sel: PDC selection defined as the following. This selection describes the query shape, see [PDC selection structure](#selection-structure)
       + error code, SUCCESS or FAIL.
     - Get the selection information of a PDC query.
     - For developers, see pdc_query.c and PDC_send_data_query in pdc_client_connect.c. Copy the selection structure received from servers to the sel pointer.
@@ -596,42 +463,34 @@
   ## PDC hist APIs
   + pdc_histogram_t *PDC_gen_hist(pdc_var_type_t dtype, uint64_t n, void *data)
     - Input:
-      + dtype: One of the PDC basic types
-      ```
-      typedef enum {
-        PDC_UNKNOWN      = -1, /* error                                      */
-        PDC_INT          = 0,  /* integer types                              */
-        PDC_FLOAT        = 1,  /* floating-point types                       */
-        PDC_DOUBLE       = 2,  /* double types                               */
-        PDC_CHAR         = 3,  /* character types                            */
-        PDC_COMPOUND     = 4,  /* compound types                             */
-        PDC_ENUM         = 5,  /* enumeration types                          */
-        PDC_ARRAY        = 6,  /* Array types                                */
-        PDC_UINT         = 7,  /* unsigned integer types                     */
-        PDC_INT64        = 8,  /* 64-bit integer types                       */
-        PDC_UINT64       = 9,  /* 64-bit unsigned integer types              */
-        PDC_INT16        = 10, 
-        PDC_INT8         = 11,
-        NCLASSES         = 12  /* this must be last                          */
-      } pdc_var_type_t;
-      ```
+      + dtype: One of the PDC basic types see [PDC basic types](#basic-types)
       + n: number of values with the basic types.
       + data: pointer to the data buffer.
     - Output:
-      + see pdc_public.h.
-      ```
-      typedef struct pdc_histogram_t {
-          pdc_var_type_t dtype;
-          int            nbin;
-          double         incr;
-          double        *range;
-          uint64_t      *bin;
-     } pdc_histogram_t;
-     ```
-     - Generate a PDC histogram from data. This can be used to optimize performance.
+      + see [PDC histogram structure](#histogram-structure)
+    - Generate a PDC histogram from data. This can be used to optimize performance.
 
 # PDC type categories
-  ## PDC basic types
+  ## basic types
+  ```
+  typedef enum {
+    PDC_UNKNOWN      = -1, /* error                                      */
+    PDC_INT          = 0,  /* integer types                              */
+    PDC_FLOAT        = 1,  /* floating-point types                       */
+    PDC_DOUBLE       = 2,  /* double types                               */
+    PDC_CHAR         = 3,  /* character types                            */
+    PDC_COMPOUND     = 4,  /* compound types                             */
+    PDC_ENUM         = 5,  /* enumeration types                          */
+    PDC_ARRAY        = 6,  /* Array types                                */
+    PDC_UINT         = 7,  /* unsigned integer types                     */
+    PDC_INT64        = 8,  /* 64-bit integer types                       */
+    PDC_UINT64       = 9,  /* 64-bit unsigned integer types              */
+    PDC_INT16        = 10, 
+    PDC_INT8         = 11,
+    NCLASSES         = 12  /* this must be last                          */
+  } pdc_var_type_t;
+  ```
+  ## Histogram structure
   ```
   typedef struct pdc_histogram_t {
      pdc_var_type_t dtype;
@@ -652,6 +511,100 @@
       uint64_t                meta_id;
   };
   ```
+  ## Container life time
+  ```
+  typedef enum {
+    PDC_PERSIST,
+    PDC_TRANSIENT
+  } pdc_lifetime_t;
+  ```
+  ## Object info
+  ```
+  struct pdc_obj_info  {
+      /* Directly coped from user argument at object creation. */
+      char                   *name;
+      /* 0 for location = PDC_OBJ_LOAL. 
+       * When PDC_OBJ_GLOBAL = 1, use PDC_Client_send_name_recv_id to retrieve ID. */
+      pdcid_t                 meta_id;
+      /* Registered using PDC_id_register */
+      pdcid_t                 local_id;
+      /* Set to 0 at creation time. *
+      int                     server_id;
+      /* Object property. Directly copy from user argument at object creation. */
+      struct pdc_obj_prop    *obj_pt;
+  };
+  ```
+  ## Region info
+  ```
+  struct pdc_region_info {
+    pdcid_t               local_id;
+    struct _pdc_obj_info *obj;
+    size_t                ndim;
+    uint64_t             *offset;
+    uint64_t             *size;
+    bool                  mapping;
+    int                   registered_op;
+    void                 *buf;
+  };
+  ```
+  ## Query operators
+  ```
+  typedef enum { 
+      PDC_OP_NONE = 0, 
+      PDC_GT      = 1, 
+      PDC_LT      = 2, 
+      PDC_GTE     = 3, 
+      PDC_LTE     = 4, 
+      PDC_EQ      = 5
+  } pdc_query_op_t;
+  ```
+  ## Query structures
+  ```
+  typedef struct pdc_query_t {
+      pdc_query_constraint_t *constraint{
+        pdcid_t            obj_id;
+        pdc_query_op_t     op;
+        pdc_var_type_t     type;
+        double             value;   // Use it as a generic 64bit value
+        pdc_histogram_t    *hist;
+
+        int                is_range;
+        pdc_query_op_t     op2;
+        double             value2;
+
+        void               *storage_region_list_head;
+        pdcid_t            origin_server;
+        int                n_sent;
+        int                n_recv;
+    }
+      struct pdc_query_t     *left;
+      struct pdc_query_t     *right;
+      pdc_query_combine_op_t  combine_op;
+      struct pdc_region_info *region;             // used only on client
+      void                   *region_constraint;  // used only on server
+      pdc_selection_t        *sel;
+  } pdc_query_t;
+  ```
+  ## Selection structure
+  ```
+  typedef struct pdcquery_selection_t {
+      pdcid_t  query_id;
+      size_t   ndim;
+      uint64_t nhits;
+      uint64_t *coords;
+      uint64_t coords_alloc;
+  } pdc_selection_t;
+  ```
+  ## Histogram structure
+  ```
+  typedef struct pdc_histogram_t {
+      pdc_var_type_t dtype;
+      int            nbin;
+      double         incr;
+      double        *range;
+      uint64_t      *bin;
+ } pdc_histogram_t;
+ ```
 # Developers' note for PDC
   + This note is for developers. It helps developers to understand the code structure of PDC code as fast as possible.
   + PDC internal data structure
