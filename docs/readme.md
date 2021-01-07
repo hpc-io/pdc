@@ -435,6 +435,59 @@
       + a new property ID copied.
     - Duplicate an object property
     - For developers: see pdc_prop.c. Update the buf field under struct _pdc_obj_prop. See developer's note for more details about this structure.
+  + pdc_query_t *PDCquery_create(pdcid_t obj_id, pdc_query_op_t op, pdc_var_type_t type, void *value)
+    - Input:
+      + obj_id: local PDC object ID
+      + op: one of the followings
+      ```
+      typedef enum { 
+          PDC_OP_NONE = 0, 
+          PDC_GT      = 1, 
+          PDC_LT      = 2, 
+          PDC_GTE     = 3, 
+          PDC_LTE     = 4, 
+          PDC_EQ      = 5
+      } pdc_query_op_t;
+      ```
+      + type: one of the followings
+      ```
+      typedef enum {
+        PDC_UNKNOWN      = -1, /* error                                      */
+        PDC_INT          = 0,  /* integer types                              */
+        PDC_FLOAT        = 1,  /* floating-point types                       */
+        PDC_DOUBLE       = 2,  /* double types                               */
+        PDC_CHAR         = 3,  /* character types                            */
+        PDC_COMPOUND     = 4,  /* compound types                             */
+        PDC_ENUM         = 5,  /* enumeration types                          */
+        PDC_ARRAY        = 6,  /* Array types                                */
+        PDC_UINT         = 7,  /* unsigned integer types                     */
+        PDC_INT64        = 8,  /* 64-bit integer types                       */
+        PDC_UINT64       = 9,  /* 64-bit unsigned integer types              */
+        PDC_INT16        = 10, 
+        PDC_INT8         = 11,
+        NCLASSES         = 12  /* this must be last                          */
+      } pdc_var_type_t;
+      ```
+      + value: constraint value.
+    - Output:
+      + a new query
+      ```
+      typedef struct pdc_query_t {
+          pdc_query_constraint_t *constraint;
+          struct pdc_query_t     *left;
+          struct pdc_query_t     *right;
+          pdc_query_combine_op_t  combine_op;
+          struct pdc_region_info *region;             // used only on client
+          void                   *region_constraint;  // used only on server
+          pdc_selection_t        *sel;
+      } pdc_query_t;
+      ```
+    - Create a PDC query.
+    - For developers, see pdc_query.c. The new query structure is filled. The constraint->value field is copied from the value argument.
+  + void PDCquery_free(pdc_query_t *query)
+    - Input:
+      + query: PDC query from PDCquery_create
+    - Free a query structure
 # Developers' note for PDC
   + This note is for developers. It helps developers to understand the code structure of PDC code as fast as possible.
   + PDC internal data structure
