@@ -467,9 +467,37 @@
       + n: number of values with the basic types.
       + data: pointer to the data buffer.
     - Output:
-      + see [PDC histogram structure](#histogram-structure)
+      + a new [PDC histogram structure](#histogram-structure)
     - Generate a PDC histogram from data. This can be used to optimize performance.
-
+    - For developers, see pdc_hist_pkg.c
+  + pdc_histogram_t *PDC_dup_hist(pdc_histogram_t *hist)
+    - Input:
+      + hist: [PDC histogram structure](#histogram-structure)
+    - Output:
+      + a copied [PDC histogram structure](#histogram-structure)
+    - Copy a histogram from an existing one
+    - For developers, see pdc_hist_pkg.c
+  + pdc_histogram_t *PDC_merge_hist(int n, pdc_histogram_t **hists)
+    - Input:
+      + hists: an array of [PDC histogram structure](#histogram-structure) to be merged
+    - Output
+      + A merged [PDC histogram structure](#histogram-structure)
+    - Merge multiple PDC histograms into one
+    - For developers, see pdc_hist_pkg.c
+  + void PDC_free_hist(pdc_histogram_t *hist)
+    - Input:
+      + hist: the [PDC histogram structure](#histogram-structure) to be freed.
+    - Output:
+      + None
+    - Delete a histogram       
+    - For developers, see pdc_hist_pkg.c, free structure's internal arrays.
+  + void PDC_print_hist(pdc_histogram_t *hist)
+    - Input:
+      + hist: the [PDC histogram structure](#histogram-structure) to be printed.
+    - Output:
+      + None:
+    - Print a PDC histogram's information. The counter for every bin is displayed.
+    - For developers, see pdc_hist_pkg.c.
 # PDC type categories
   ## basic types
   ```
