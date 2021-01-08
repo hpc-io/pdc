@@ -1,7 +1,22 @@
 # PDC Documentations
   + [PDC user APIs](pdc-user-apis)
     - [PDC general APIs](pdc-general-apis)
-
+    - [PDC container APIs](pdc-container-apis)
+    - [PDC object APIs](pdc-object-apis)
+    - [PDC region APIs](pdc-region-apis)
+    - [PDC property APIs](pdc-property-apis)
+    - [PDC query APIs](pdc-query-apis)
+  + [PDC user type categories](PDC-type-categories)
+    - [Basic types](basic-types)
+    - [Histogram structure](histogram-structure)
+    - [Container info](container-info)
+    - [Container life time](container-life-time)
+    - [Object info](object-info)
+    - [Region info](region-info)
+    - [Query operators](query-operators)
+    - [Query structures](query-structures)
+    - [Selection structure](selection-structure)
+  + [Developers notes](developer-notes)
 # PDC user APIs
   ## PDC general APIs
   + pdcid_t PDCinit(const char *pdc_name)
@@ -503,7 +518,7 @@
     - Print a PDC histogram's information. The counter for every bin is displayed.
     - For developers, see pdc_hist_pkg.c.
 # PDC type categories
-  ## basic types
+  ## Basic types
   ```
   typedef enum {
     PDC_UNKNOWN      = -1, /* error                                      */
@@ -627,17 +642,7 @@
       uint64_t coords_alloc;
   } pdc_selection_t;
   ```
-  ## Histogram structure
-  ```
-  typedef struct pdc_histogram_t {
-      pdc_var_type_t dtype;
-      int            nbin;
-      double         incr;
-      double        *range;
-      uint64_t      *bin;
- } pdc_histogram_t;
- ```
-# Developers' note for PDC
+# Developers notes
   + This note is for developers. It helps developers to understand the code structure of PDC code as fast as possible.
   + PDC internal data structure
     - Linkedlist
