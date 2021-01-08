@@ -97,7 +97,7 @@
       + cont_name: Name of the container
       + pdc_id: PDC class ID, returned by PDCinit
     - Output: 
-      + container ID created locally
+      + container ID
     - Get container ID by name.
     - For developers, see pdc_client_connect.c. It will query the servers for container information and create a container structure locally.
   + perr_t PDCcont_del(pdcid_t cont_id)
