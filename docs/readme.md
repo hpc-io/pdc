@@ -1,22 +1,24 @@
 # PDC Documentations
-  + [PDC user APIs](pdc-user-apis)
-    - [PDC general APIs](pdc-general-apis)
-    - [PDC container APIs](pdc-container-apis)
-    - [PDC object APIs](pdc-object-apis)
-    - [PDC region APIs](pdc-region-apis)
-    - [PDC property APIs](pdc-property-apis)
-    - [PDC query APIs](pdc-query-apis)
-  + [PDC user type categories](PDC-type-categories)
-    - [Basic types](basic-types)
-    - [Histogram structure](histogram-structure)
-    - [Container info](container-info)
-    - [Container life time](container-life-time)
-    - [Object info](object-info)
-    - [Region info](region-info)
-    - [Query operators](query-operators)
-    - [Query structures](query-structures)
-    - [Selection structure](selection-structure)
-  + [Developers notes](developer-notes)
+  + [PDC user APIs](#pdc-user-apis)
+    - [PDC general APIs](#pdc-general-apis)
+    - [PDC container APIs](#pdc-container-apis)
+    - [PDC object APIs](#pdc-object-apis)
+    - [PDC region APIs](#pdc-region-apis)
+    - [PDC property APIs](#pdc-property-apis)
+    - [PDC query APIs](#pdc-query-apis)
+  + [PDC user types](#PDC-type-categories)
+    - [Basic types](#basic-types)
+    - [Histogram structure](#histogram-structure)
+    - [Container info](#container-info)
+    - [Container life time](#container-life-time)
+    - [Object property](#object-property)
+    - [Object info](#object-info)
+    - [Object structure](#object-structure)
+    - [Region info](#region-info)
+    - [Query operators](#query-operators)
+    - [Query structures](#query-structures)
+    - [Selection structure](#selection-structure)
+  + [Developers notes](#developer-notes)
 # PDC user APIs
   ## PDC general APIs
   + pdcid_t PDCinit(const char *pdc_name)
@@ -517,7 +519,7 @@
       + None:
     - Print a PDC histogram's information. The counter for every bin is displayed.
     - For developers, see pdc_hist_pkg.c.
-# PDC type categories
+# PDC user types
   ## Basic types
   ```
   typedef enum {
@@ -565,6 +567,17 @@
     PDC_TRANSIENT
   } pdc_lifetime_t;
   ```
+  ## Object property
+  ```
+  struct pdc_obj_prop *obj_prop_pub {
+      /* This ID is the one returned from PDC_id_register . This is a property ID*/
+      pdcid_t           obj_prop_id;
+      /* object dimensions */
+      size_t            ndim;
+      uint64_t         *dims;
+      pdc_var_type_t    type;
+  };
+  ```
   ## Object info
   ```
   struct pdc_obj_info  {
@@ -579,6 +592,46 @@
       int                     server_id;
       /* Object property. Directly copy from user argument at object creation. */
       struct pdc_obj_prop    *obj_pt;
+  };
+  ```
+  ## Object structure
+  ```
+  struct _pdc_obj_info {
+      /* Public properties */
+      struct pdc_obj_info    *obj_info_pub {
+          /* Directly copied from user argument at object creation. */
+          char                   *name;
+          /* 0 for location = PDC_OBJ_LOAL. 
+          * When PDC_OBJ_GLOBAL = 1, use PDC_Client_send_name_recv_id to retrieve ID. */
+          pdcid_t                 meta_id;
+          /* Registered using PDC_id_register */
+          pdcid_t                 local_id;
+          /* Set to 0 at creation time. *
+          int                     server_id;
+          /* Object property. Directly copy from user argument at object creation. */
+          struct pdc_obj_prop    *obj_pt;
+      };
+      /* Argument passed to obj create*/
+      _pdc_obj_location_t     location enum {
+          /* Either local or global */
+          PDC_OBJ_GLOBAL,
+          PDC_OBJ_LOCAL
+      }
+      /* May be used or not used depending on which creation function called. */
+      void                   *metadata;
+      /* The container pointer this object sits in. Copied*/
+      struct _pdc_cont_info  *cont;
+      /* Pointer to object property. Copied*/
+      struct _pdc_obj_prop   *obj_pt;
+      /* Linked list for region, initialized with NULL at create time.*/
+      struct region_map_list *region_list_head {
+          pdcid_t                orig_reg_id;
+          pdcid_t                des_obj_id;
+          pdcid_t                des_reg_id;
+          /* Double linked list usage*/
+          struct region_map_list *prev;
+          struct region_map_list *next;
+      };
   };
   ```
   ## Region info
@@ -782,43 +835,4 @@
       };
       ```
       * Object structure (pdc_obj_pkg.h and pdc_obj.h)
-      ```
-      struct _pdc_obj_info {
-          /* Public properties */
-          struct pdc_obj_info    *obj_info_pub {
-              /* Directly copied from user argument at object creation. */
-              char                   *name;
-              /* 0 for location = PDC_OBJ_LOAL. 
-               * When PDC_OBJ_GLOBAL = 1, use PDC_Client_send_name_recv_id to retrieve ID. */
-              pdcid_t                 meta_id;
-              /* Registered using PDC_id_register */
-              pdcid_t                 local_id;
-              /* Set to 0 at creation time. *
-              int                     server_id;
-              /* Object property. Directly copy from user argument at object creation. */
-              struct pdc_obj_prop    *obj_pt;
-          };
-          /* Argument passed to obj create*/
-          _pdc_obj_location_t     location enum {
-              /* Either local or global */
-              PDC_OBJ_GLOBAL,
-              PDC_OBJ_LOCAL
-          }
-          /* May be used or not used depending on which creation function called. */
-          void                   *metadata;
-          /* The container pointer this object sits in. Copied*/
-          struct _pdc_cont_info  *cont;
-          /* Pointer to object property. Copied*/
-          struct _pdc_obj_prop   *obj_pt;
-          /* Linked list for region, initialized with NULL at create time.*/
-          struct region_map_list *region_list_head {
-              pdcid_t                orig_reg_id;
-              pdcid_t                des_obj_id;
-              pdcid_t                des_reg_id;
-              /* Double linked list usage*/
-              struct region_map_list *prev;
-              struct region_map_list *next;
-          };
-      };
-      ```
-      
+      See [Object structure](#object-structure)
