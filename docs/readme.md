@@ -340,16 +340,7 @@
     - Output:
       + error code, SUCCESS or FAIL.
     - Set the tags of an object.
-    - For developers: see pdc_obj.c. Update the tags field under [object property](#object-property). See developer's note for more details about this structure.
-  + perr_t PDCprop_set_obj_dims(pdcid_t obj_prop, PDC_int_t ndim, uint64_t *dims)
-    - Input:
-      + obj_prop: PDC property ID (has to be an object)
-      + ndim: number of dimensions
-      + dims: array of dimensions
-    - Output:
-      + error code, SUCCESS or FAIL.
-    - Set the dimensions of an object.
-    - For developers: see pdc_obj.c. Update the obj_prop_pub field under [object property](#object-property). See developer's note for more details about this structure.
+    - For developers: see pdc_obj.c. Update the tags field under [object property](#object-property). See developer's note for more details about this structure. 
   + perr_t PDCprop_set_obj_dims(pdcid_t obj_prop, PDC_int_t ndim, uint64_t *dims)
     - Input:
       + obj_prop: PDC property ID (has to be an object)
