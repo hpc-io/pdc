@@ -308,7 +308,7 @@
     - Output:
       + error code, SUCCESS or FAIL.
     - Set the user ID of an object.
-    - For developers: see pdc_obj.c. Update the user_id field under struct _pdc_obj_prop. See developer's note for more details about this structure.
+    - For developers: see pdc_obj.c. Update the user_id field under [object property](#object-property). See developer's note for more details about this structure.
   + perr_t PDCprop_set_obj_data_loc(pdcid_t obj_prop, char *loc) 
     - Input:
       + obj_prop: PDC property ID (has to be an object)
@@ -316,7 +316,7 @@
     - Output:
       + error code, SUCCESS or FAIL.
     - Set the location of an object.
-    - For developers: see pdc_obj.c. Update the data_loc field under struct _pdc_obj_prop. See developer's note for more details about this structure.
+    - For developers: see pdc_obj.c. Update the data_loc field under [object property](#object-property). See developer's note for more details about this structure.
   + perr_t PDCprop_set_obj_app_name(pdcid_t obj_prop, char *app_name)
     - Input:
       + obj_prop: PDC property ID (has to be an object)
@@ -324,7 +324,7 @@
     - Output:
       + error code, SUCCESS or FAIL.
     - Set the application name of an object.
-    - For developers: see pdc_obj.c. Update the app_name field under struct _pdc_obj_prop. See developer's note for more details about this structure.
+    - For developers: see pdc_obj.c. Update the app_name field under [object property](#object-property). See developer's note for more details about this structure.
   + perr_t PDCprop_set_obj_time_step(pdcid_t obj_prop, uint32_t time_step)
     - Input:
       + obj_prop: PDC property ID (has to be an object)
@@ -332,7 +332,7 @@
     - Output:
       + error code, SUCCESS or FAIL.
     - Set the time step of an object.
-    - For developers: see pdc_obj.c. Update the time_step field under struct _pdc_obj_prop. See developer's note for more details about this structure.
+    - For developers: see pdc_obj.c. Update the time_step field under [object property](#object-property). See developer's note for more details about this structure.
   + perr_t PDCprop_set_obj_tags(pdcid_t obj_prop, char *tags)
     - Input:
       + obj_prop: PDC property ID (has to be an object)
@@ -340,7 +340,7 @@
     - Output:
       + error code, SUCCESS or FAIL.
     - Set the tags of an object.
-    - For developers: see pdc_obj.c. Update the tags field under struct _pdc_obj_prop. See developer's note for more details about this structure.
+    - For developers: see pdc_obj.c. Update the tags field under [object property](#object-property). See developer's note for more details about this structure.
   + perr_t PDCprop_set_obj_dims(pdcid_t obj_prop, PDC_int_t ndim, uint64_t *dims)
     - Input:
       + obj_prop: PDC property ID (has to be an object)
@@ -349,7 +349,7 @@
     - Output:
       + error code, SUCCESS or FAIL.
     - Set the dimensions of an object.
-    - For developers: see pdc_obj.c. Update the obj_prop_pub field under struct _pdc_obj_prop. See developer's note for more details about this structure.
+    - For developers: see pdc_obj.c. Update the obj_prop_pub field under [object property](#object-property). See developer's note for more details about this structure.
   + perr_t PDCprop_set_obj_dims(pdcid_t obj_prop, PDC_int_t ndim, uint64_t *dims)
     - Input:
       + obj_prop: PDC property ID (has to be an object)
@@ -358,7 +358,7 @@
     - Output:
       + error code, SUCCESS or FAIL.
     - Set the dimensions of an object.
-    - For developers: see pdc_obj.c. Update the obj_prop_pub->ndim and obj_prop_pub->dims fields under struct _pdc_obj_prop. See developer's note for more details about this structure.
+    - For developers: see pdc_obj.c. Update the obj_prop_pub->ndim and obj_prop_pub->dims fields under [object property public](#object-property-public). See developer's note for more details about this structure.
   + perr_t PDCprop_set_obj_type(pdcid_t obj_prop, pdc_var_type_t type)
     - Input:
       + obj_prop: PDC property ID (has to be an object)
@@ -366,7 +366,7 @@
     - Output:
       + error code, SUCCESS or FAIL.
     - Set the type of an object.
-    - For developers: see pdc_obj.c. Update the obj_prop_pub->type field under struct _pdc_obj_prop. See developer's note for more details about this structure.
+    - For developers: see pdc_obj.c. Update the obj_prop_pub->type field under [object property public](#object-property-public). See developer's note for more details about this structure.
   + perr_t PDCprop_set_obj_buf(pdcid_t obj_prop, void *buf)
     - Input:
       + obj_prop: PDC property ID (has to be an object)
@@ -374,14 +374,14 @@
     - Output:
       + error code, SUCCESS or FAIL.
     - Set the user memory buffer of an object.
-    - For developers: see pdc_obj.c. Update the buf field under struct _pdc_obj_prop. See developer's note for more details about this structure.
+    - For developers: see pdc_obj.c. Update the buf field under [object property public](#object-property-public). See developer's note for more details about this structure.
   + pdcid_t PDCprop_obj_dup(pdcid_t prop_id)
     - Input:
       + prop_id: PDC property ID (has to be an object)
     - Output:
       + a new property ID copied.
     - Duplicate an object property
-    - For developers: see pdc_prop.c. Update the buf field under struct _pdc_obj_prop. See developer's note for more details about this structure.
+    - For developers: see pdc_prop.c. Duplicate the buf field under [object property public](#object-property-public). See developer's note for more details about this structure.
 ## PDC query APIs
   + pdc_query_t *PDCquery_create(pdcid_t obj_id, pdc_query_op_t op, pdc_var_type_t type, void *value)
     - Input:
@@ -567,7 +567,7 @@
     PDC_TRANSIENT
   } pdc_lifetime_t;
   ```
-  ## Object property
+  ## Object property public
   ```
   struct pdc_obj_prop *obj_prop_pub {
       /* This ID is the one returned from PDC_id_register . This is a property ID*/
@@ -576,6 +576,48 @@
       size_t            ndim;
       uint64_t         *dims;
       pdc_var_type_t    type;
+  };
+  ```
+  ## Object property
+  ```
+  struct _pdc_obj_prop {
+      /* Suffix _pub probably means public attributes to be accessed. */
+      struct pdc_obj_prop *obj_prop_pub {
+          /* This ID is the one returned from PDC_id_register . This is a property ID*/
+          pdcid_t           obj_prop_id;
+          /* object dimensions */
+          size_t            ndim;
+          uint64_t         *dims;
+          pdc_var_type_t    type;
+      };
+      /* This ID is returned from PDC_find_id with an input of ID returned from PDC init. 
+       * This is true for both object and container. 
+       * I think it is referencing the global PDC engine through its ID (or name). */
+      struct _pdc_class   *pdc{
+          char        *name;
+          pdcid_t     local_id;
+      };
+      /* The following are created with NULL values in the PDC_obj_create function. */
+      uint32_t             user_id;
+      char                *app_name;
+      uint32_t             time_step;
+      char                *data_loc;
+      char                *tags;
+      void                *buf;
+      pdc_kvtag_t         *kvtag;
+
+      /* The following have been added to support of PDC analysis and transforms.
+         Will add meanings to them later, they are not critical. */
+      size_t            type_extent;
+      uint64_t          locus;
+      uint32_t          data_state;
+      struct _pdc_transform_state transform_prop{
+          _pdc_major_type_t storage_order;
+          pdc_var_type_t    dtype;
+          size_t            ndim;
+          uint64_t          dims[4];
+          int               meta_index; /* transform to this state */
+      };
   };
   ```
   ## Object info
@@ -793,46 +835,6 @@
       ```
     - Object
       * Object property
-      ```
-      struct _pdc_obj_prop {
-          /* Suffix _pub probably means public attributes to be accessed. */
-          struct pdc_obj_prop *obj_prop_pub {
-              /* This ID is the one returned from PDC_id_register . This is a property ID*/
-              pdcid_t           obj_prop_id;
-              /* object dimensions */
-              size_t            ndim;
-              uint64_t         *dims;
-              pdc_var_type_t    type;
-          };
-          /* This ID is returned from PDC_find_id with an input of ID returned from PDC init. 
-           * This is true for both object and container. 
-           * I think it is referencing the global PDC engine through its ID (or name). */
-          struct _pdc_class   *pdc{
-              char        *name;
-              pdcid_t     local_id;
-          };
-          /* The following are created with NULL values in the PDC_obj_create function. */
-          uint32_t             user_id;
-          char                *app_name;
-          uint32_t             time_step;
-          char                *data_loc;
-          char                *tags;
-          void                *buf;
-          pdc_kvtag_t         *kvtag;
-
-          /* The following have been added to support of PDC analysis and transforms.
-             Will add meanings to them later, they are not critical. */
-          size_t            type_extent;
-          uint64_t          locus;
-          uint32_t          data_state;
-          struct _pdc_transform_state transform_prop{
-              _pdc_major_type_t storage_order;
-              pdc_var_type_t    dtype;
-              size_t            ndim;
-              uint64_t          dims[4];
-              int               meta_index; /* transform to this state */
-          };
-      };
-      ```
+      See [object property](#object-property)
       * Object structure (pdc_obj_pkg.h and pdc_obj.h)
       See [Object structure](#object-structure)
