@@ -372,7 +372,7 @@
     - Output:
       + a new property ID copied.
     - Duplicate an object property
-    - For developers: see pdc_prop.c. Duplicate the buf field under [object property public](#object-property-public). See developer's note for more details about this structure.
+    - For developers: see pdc_prop.c. Duplicate the property structure. The ID will be registered with the PDC class. Similar to create and set all the fields.
 ## PDC query APIs
   + pdc_query_t *PDCquery_create(pdcid_t obj_id, pdc_query_op_t op, pdc_var_type_t type, void *value)
     - Input:
