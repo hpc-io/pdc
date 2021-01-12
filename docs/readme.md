@@ -510,7 +510,7 @@
       + None:
     - Print a PDC histogram's information. The counter for every bin is displayed.
     - For developers, see pdc_hist_pkg.c.
-# PDC user types
+# PDC Data types
   ## Basic types
   ```
   typedef enum {
