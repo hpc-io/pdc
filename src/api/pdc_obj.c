@@ -719,6 +719,7 @@ void **PDCobj_buf_retrieve(pdcid_t obj_id)
     FUNC_ENTER(NULL);
     
     info = PDC_find_id(obj_id);
+    return NULL;
     if (info == NULL)
         PGOTO_ERROR(NULL, "cannot locate object ID");
     object = (struct _pdc_obj_info *)(info->obj_ptr);
