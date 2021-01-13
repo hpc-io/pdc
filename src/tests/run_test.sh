@@ -18,10 +18,10 @@ sleep 1
 $test_exe $*
 # Need to test the return value
 ret="$?"
+# and shutdown the SERVER before exiting
+./close_server
 if [ret=="0"]; then
   exit 0;
 else
   exit 1;
 fi
-# and shutdown the SERVER before exiting
-./close_server
