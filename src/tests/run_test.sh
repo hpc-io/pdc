@@ -16,5 +16,12 @@ if [ -x $test_exe ]; then echo "testing: $test_exe"; else echo "test: $test_exe 
 sleep 1
 # RUN the actual test
 $test_exe $*
+# Need to test the return value
+ret="$?"
+if [ret=="0"]; then
+  exit 0;
+else
+  exit 1;
+fi
 # and shutdown the SERVER before exiting
 ./close_server

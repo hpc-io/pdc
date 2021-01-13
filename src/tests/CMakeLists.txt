@@ -9,6 +9,8 @@ include_directories(
 set(PROGRAMS
   pdc_init
   create_prop
+  set_prop
+  dup_prop
   create_cont
   open_cont
   cont_life
@@ -116,6 +118,8 @@ target_link_libraries(pdcanalysis pdc)
 
 add_test(NAME pdc_init    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./pdc_init )
 add_test(NAME create_prop WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./create_prop )
+add_test(NAME create_prop WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./set_prop )
+add_test(NAME create_prop WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./dup_prop )
 add_test(NAME create_cont WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./create_cont )
 add_test(NAME open_cont   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./open_cont )
 add_test(NAME cont_life   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./cont_life )
