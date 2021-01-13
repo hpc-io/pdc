@@ -73,9 +73,10 @@ int main(int argc, char **argv) {
     
     // set and retrieve the object buffer
     PDCprop_set_obj_buf(obj_prop, myArray);
+/*
     rbuf = PDCobj_buf_retrieve(obj1);
     printf("first number to retrieve is: %d\n", *((int *)*rbuf));
-    
+*/    
     // close object
     if(PDCobj_close(obj1) < 0)
         printf("fail to close object o1\n");
