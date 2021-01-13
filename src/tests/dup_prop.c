@@ -56,21 +56,23 @@ int main(int argc, char **argv) {
         printf("Fail to create @ line %d\n", __LINE__);
     }
 
-    if(PDCprop_close(create_prop1)<0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
-    } else {
-        printf("successfully close first property\n");
-    }
-    if(PDCprop_close(create_prop2)<0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
-    } else {
-        printf("successfully close second property\n");
-    }
     dup_prop = PDCprop_obj_dup(create_prop2);
     if(PDCprop_close(dup_prop)<0) {
         printf("Fail to close property @ line %d\n", __LINE__);
     } else {
         printf("successfully close first property\n");
+    }
+
+    if(PDCprop_close(create_prop1)<0) {
+        printf("Fail to close property @ line %d\n", __LINE__);
+    } else {
+        printf("successfully close first property\n");
+    }
+
+    if(PDCprop_close(create_prop2)<0) {
+        printf("Fail to close property @ line %d\n", __LINE__);
+    } else {
+        printf("successfully close second property\n");
     }
     // close a pdc
     if(PDCclose(pdc) < 0) {

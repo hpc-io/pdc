@@ -57,16 +57,6 @@ int main(int argc, char **argv) {
         printf("Fail to create @ line %d\n", __LINE__);
     }
 
-    if(PDCprop_close(create_prop1)<0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
-    } else {
-        printf("successfully close first property\n");
-    }
-    if(PDCprop_close(create_prop2)<0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
-    } else {
-        printf("successfully close second property\n");
-    }
     ret = PDCprop_set_obj_user_id(create_prop2, 666);
     if ( ret != SUCCEED ) {
         printf("Fail to set obj user id @ line %d\n", __LINE__);
@@ -98,6 +88,17 @@ int main(int argc, char **argv) {
     ret = PDCprop_set_obj_buf(create_prop2, NULL);
     if ( ret != SUCCEED ) {
         printf("Fail to set obj time step @ line %d\n", __LINE__);
+    }
+
+    if(PDCprop_close(create_prop1)<0) {
+        printf("Fail to close property @ line %d\n", __LINE__);
+    } else {
+        printf("successfully close first property\n");
+    }
+    if(PDCprop_close(create_prop2)<0) {
+        printf("Fail to close property @ line %d\n", __LINE__);
+    } else {
+        printf("successfully close second property\n");
     }
     // close a pdc
     if(PDCclose(pdc) < 0) {
