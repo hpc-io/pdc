@@ -29,13 +29,7 @@
 
 int main(int argc, char **argv) {
     pdcid_t pdc, create_prop1, create_prop2, dup_prop;
-    pdc_prop_type_t type = PDC_CONT_CREATE;
     int rank = 0, size = 1;
-    PDC_int_t ndim = 3;
-    uint64_t dims[3];
-    dims[0] = 64;
-    dims[1] = 3;
-    dims[2] = 4;    
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
