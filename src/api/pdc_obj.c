@@ -534,7 +534,7 @@ struct pdc_obj_info *PDCobj_iter_get_info(obj_handle *ohandle)
 {
     struct pdc_obj_info *ret_value = NULL;
     struct _pdc_obj_info *info = NULL;
-    int i;
+    unsigned i;
     
     FUNC_ENTER(NULL);
     
@@ -717,9 +717,8 @@ void **PDCobj_buf_retrieve(pdcid_t obj_id)
     void **buffer;
     
     FUNC_ENTER(NULL);
-    
-    info = PDC_find_id(obj_id);
     return NULL;
+    info = PDC_find_id(obj_id);
     if (info == NULL)
         PGOTO_ERROR(NULL, "cannot locate object ID");
     object = (struct _pdc_obj_info *)(info->obj_ptr);
