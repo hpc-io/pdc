@@ -17,11 +17,7 @@ sleep 1
 # RUN the actual test
 $test_exe $*
 # Need to test the return value
-ret=$?
+ret="$?"
 # and shutdown the SERVER before exiting
 ./close_server
-if [ret==0]; then
-  exit 0;
-else
-  exit -1;
-fi
+exit $ret
