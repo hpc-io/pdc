@@ -28,7 +28,7 @@
 #include "pdc.h"
 
 int main(int argc, char **argv) {
-    pdcid_t pdc, cont_prop, cont, obj_prop, obj1;
+    pdcid_t pdc, cont_prop, cont, obj1;
     struct PDC_obj_prop *op;
     int rank = 0, size = 1;
     
@@ -62,13 +62,6 @@ int main(int argc, char **argv) {
         return 1;
     } else {
         printf("successfully close container c1\n");
-    }
-    // close an object property
-    if(PDCprop_close(obj_prop) < 0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
-        return 1;
-    } else {
-        printf("successfully close object property\n");
     }
     // close a container property
     if(PDCprop_close(cont_prop) < 0) {
