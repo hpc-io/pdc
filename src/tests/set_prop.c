@@ -60,49 +60,60 @@ int main(int argc, char **argv) {
     ret = PDCprop_set_obj_user_id(create_prop2, 666);
     if ( ret != SUCCEED ) {
         printf("Fail to set obj user id @ line %d\n", __LINE__);
+        return 1;
     }
     ret = PDCprop_set_obj_data_loc(create_prop2, "somewhere");
     if ( ret != SUCCEED ) {
         printf("Fail to set obj user id @ line %d\n", __LINE__);
+        return 1;
     }
     ret = PDCprop_set_obj_app_name(create_prop2, "someapp name");
     if ( ret != SUCCEED ) {
         printf("Fail to set obj user id @ line %d\n", __LINE__);
+        return 1;
     }
     ret = PDCprop_set_obj_time_step(create_prop2, 666);
     if ( ret != SUCCEED ) {
         printf("Fail to set obj time step @ line %d\n", __LINE__);
+        return 1;
     }
     ret = PDCprop_set_obj_tags(create_prop2, "sometag");
     if ( ret != SUCCEED ) {
         printf("Fail to set obj time step @ line %d\n", __LINE__);
+        return 1;
     }
     ret = PDCprop_set_obj_dims(create_prop2, ndim, dims);
     if ( ret != SUCCEED ) {
         printf("Fail to set obj time step @ line %d\n", __LINE__);
+        return 1;
     }
     ret = PDCprop_set_obj_type(create_prop2, PDC_DOUBLE);
     if ( ret != SUCCEED ) {
         printf("Fail to set obj time step @ line %d\n", __LINE__);
+        return 1;
     }
     ret = PDCprop_set_obj_buf(create_prop2, NULL);
     if ( ret != SUCCEED ) {
         printf("Fail to set obj time step @ line %d\n", __LINE__);
+        return 1;
     }
 
     if(PDCprop_close(create_prop1)<0) {
         printf("Fail to close property @ line %d\n", __LINE__);
+        return 1;
     } else {
         printf("successfully close first property\n");
     }
     if(PDCprop_close(create_prop2)<0) {
         printf("Fail to close property @ line %d\n", __LINE__);
+        return 1;
     } else {
         printf("successfully close second property\n");
     }
     // close a pdc
     if(PDCclose(pdc) < 0) {
        printf("fail to close PDC\n");
+        return 1;
     }
 #ifdef ENABLE_MPI
     MPI_Finalize();

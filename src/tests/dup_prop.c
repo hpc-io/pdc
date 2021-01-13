@@ -43,34 +43,40 @@ int main(int argc, char **argv) {
     create_prop1 = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if(create_prop1 <= 0) {
         printf("Fail to create @ line %d\n", __LINE__);
+        return 1;
     }
     // create another object property
     create_prop2 = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if(create_prop2 <= 0) {
         printf("Fail to create @ line %d\n", __LINE__);
+        return 1;
     }
 
     dup_prop = PDCprop_obj_dup(create_prop2);
     if(PDCprop_close(dup_prop)<0) {
         printf("Fail to close property @ line %d\n", __LINE__);
+        return 1;
     } else {
         printf("successfully close first property\n");
     }
 
     if(PDCprop_close(create_prop1)<0) {
         printf("Fail to close property @ line %d\n", __LINE__);
+        return 1;
     } else {
         printf("successfully close first property\n");
     }
 
     if(PDCprop_close(create_prop2)<0) {
         printf("Fail to close property @ line %d\n", __LINE__);
+        return 1;
     } else {
         printf("successfully close second property\n");
     }
     // close a pdc
     if(PDCclose(pdc) < 0) {
        printf("fail to close PDC\n");
+        return 1;
     }
 #ifdef ENABLE_MPI
     MPI_Finalize();
