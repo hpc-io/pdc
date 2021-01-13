@@ -717,7 +717,6 @@ void **PDCobj_buf_retrieve(pdcid_t obj_id)
     void **buffer;
     
     FUNC_ENTER(NULL);
-    return NULL;
     info = PDC_find_id(obj_id);
     if (info == NULL)
         PGOTO_ERROR(NULL, "cannot locate object ID");

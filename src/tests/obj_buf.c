@@ -51,7 +51,6 @@ int main(int argc, char **argv) {
         printf("Fail to create container property @ line  %d!\n", __LINE__);
         return 1;
     }
-    PDCprop_set_obj_buf(obj_prop, myArray);
     // create a container
     cont = PDCcont_create("c1", cont_prop);
     if(cont > 0) {
@@ -68,6 +67,8 @@ int main(int argc, char **argv) {
         printf("Fail to create object property @ line  %d!\n", __LINE__);
         return 1;
     }
+    PDCprop_set_obj_buf(obj_prop, myArray);
+
     // create object
     obj1 = PDCobj_create(cont, "o1", obj_prop);
     if(obj1 > 0) {
