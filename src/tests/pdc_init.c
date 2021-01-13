@@ -35,9 +35,10 @@ int main() {
     printf("generated new pdc\n");
 
     // close pdc
-    if(PDCclose(pdc) < 0)
+    if(PDCclose(pdc) < 0) {
        printf("fail to close PDC\n");
-
+       return 1;
+    }
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
