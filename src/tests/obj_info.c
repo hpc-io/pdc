@@ -133,7 +133,26 @@ int main(int argc, char **argv) {
         printf("Object 2 name is wrong\n");
         return 1;
     }
-    
+    if (obj2_info->obj_prop_pub->type != PDC_DOUBLE) {
+        printf("Type is not properly inherited from object property.\n");
+        return 1;
+    }
+    if (obj2_info->obj_prop_pub->ndim != ndim) {
+        printf("Number of dimensions is not properly inherited from object property.\n");
+        return 1;
+    }
+    if (obj2_info->obj_prop_pub->dims[0] != dims[0]) {
+        printf("First dimension is not properly inherited from object property.\n");
+        return 1;
+    }
+    if (obj2_info->obj_prop_pub->dims[1] != dims[1]) {
+        printf("Second dimension is not properly inherited from object property.\n");
+        return 1;
+    }
+    if (obj2_info->obj_prop_pub->dims[2] != dims[2]) {
+        printf("Third dimension is not properly inherited from object property.\n");
+        return 1;
+    }
 
     // close object
     if(PDCobj_close(obj1) < 0) {
