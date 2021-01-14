@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
 
     int rank = 0, size = 1;
 
-    PDC_int_t ndim = 3;
+    size_t ndim = 3;
     uint64_t dims[3];
     dims[0] = 64;
     dims[1] = 3;
