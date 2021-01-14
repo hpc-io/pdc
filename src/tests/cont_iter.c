@@ -82,7 +82,6 @@ int main(int argc, char **argv) {
         printf("container property id is ");
         
         ch = PDCcont_iter_next(ch);
-        free(info);
     }
     
     // close cont1
