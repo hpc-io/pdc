@@ -109,12 +109,12 @@ int main(int argc, char **argv) {
         printf("Object 1 name is wrong\n");
         return 1;
     }
-/*
+
     if (obj1_info->obj_pt->type != PDC_DOUBLE) {
         printf("Type is not properly inherited from object property.\n");
         return 1;
     }
-*/
+
     if (obj1_info->obj_pt->ndim != ndim) {
         printf("Number of dimensions is not properly inherited from object property.\n");
         return 1;
@@ -136,12 +136,12 @@ int main(int argc, char **argv) {
         printf("Object 2 name is wrong\n");
         return 1;
     }
-/*
+
     if (obj2_info->obj_pt->type != PDC_DOUBLE) {
         printf("Type is not properly inherited from object property.\n");
         return 1;
     }
-*/
+
 
     if (obj2_info->obj_pt->ndim != ndim) {
         printf("Number of dimensions is not properly inherited from object property.\n");

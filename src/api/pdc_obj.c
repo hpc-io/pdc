@@ -140,6 +140,7 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id
         p->obj_pt->data_loc = strdup(obj_prop->data_loc);
     if (obj_prop->tags)
         p->obj_pt->tags = strdup(obj_prop->tags);
+    p->obj_pt->type = strdup(obj_prop->type);
 
     p->obj_info_pub = PDC_MALLOC(struct pdc_obj_info);
     if (!p->obj_info_pub)
