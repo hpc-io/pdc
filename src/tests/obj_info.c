@@ -27,12 +27,20 @@
 #include <string.h>
 #include "pdc.h"
 
+
 int main(int argc, char **argv) {
     pdcid_t pdc, cont_prop, cont, obj_prop;
+    perr_t ret;
     pdcid_t obj1, obj2;
     struct pdc_obj_info *obj1_info, *obj2_info;
 
     int rank = 0, size = 1;
+
+    PDC_int_t ndim = 3;
+    uint64_t dims[3];
+    dims[0] = 64;
+    dims[1] = 3;
+    dims[2] = 4;  
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -67,6 +75,18 @@ int main(int argc, char **argv) {
         printf("Fail to create object property @ line  %d!\n", __LINE__);
         return 1;
     }
+    ret = PDCprop_set_obj_dims(obj_prop, ndim, dims);
+    if ( ret != SUCCEED ) {
+        printf("Fail to set obj time step @ line %d\n", __LINE__);
+        return 1;
+    }
+    ret = PDCprop_set_obj_type(obj_prop, PDC_DOUBLE);
+    if ( ret != SUCCEED ) {
+        printf("Fail to set obj time step @ line %d\n", __LINE__);
+        return 1;
+    }
+
+
     // create first object
     obj1 = PDCobj_create(cont, "o1", obj_prop);
     if(obj1 > 0) {
@@ -89,10 +109,31 @@ int main(int argc, char **argv) {
         printf("Object 1 name is wrong\n");
         return 1;
     }
+    if (obj1_info->obj_prop_pub->type != PDC_DOUBLE) {
+        printf("Type is not properly inherited from object property.\n");
+        return 1;
+    }
+    if (obj1_info->obj_prop_pub->ndim != ndim) {
+        printf("Number of dimensions is not properly inherited from object property.\n");
+        return 1;
+    }
+    if (obj1_info->obj_prop_pub->dims[0] != dims[0]) {
+        printf("First dimension is not properly inherited from object property.\n");
+        return 1;
+    }
+    if (obj1_info->obj_prop_pub->dims[1] != dims[1]) {
+        printf("Second dimension is not properly inherited from object property.\n");
+        return 1;
+    }
+    if (obj1_info->obj_prop_pub->dims[2] != dims[2]) {
+        printf("Third dimension is not properly inherited from object property.\n");
+        return 1;
+    }
     if ( strcmp(obj2_info->name, "o2") != 0 ) {
         printf("Object 2 name is wrong\n");
         return 1;
     }
+    
 
     // close object
     if(PDCobj_close(obj1) < 0) {
