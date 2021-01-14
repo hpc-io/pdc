@@ -141,7 +141,7 @@ int main(int argc, char **argv) {
         printf("Number of dimensions is not properly inherited from object property.\n");
         return 1;
     }
-    if (obj2_inf->obj_pt->dims[0] != dims[0]) {
+    if (obj2_info->obj_pt->dims[0] != dims[0]) {
         printf("First dimension is not properly inherited from object property.\n");
         return 1;
     }
