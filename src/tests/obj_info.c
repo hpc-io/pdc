@@ -109,23 +109,23 @@ int main(int argc, char **argv) {
         printf("Object 1 name is wrong\n");
         return 1;
     }
-    if (obj1_info->type != PDC_DOUBLE) {
+    if (obj1_info->obj_pt->type != PDC_DOUBLE) {
         printf("Type is not properly inherited from object property.\n");
         return 1;
     }
-    if (obj1_info->ndim != ndim) {
+    if (obj1_info->obj_pt->ndim != ndim) {
         printf("Number of dimensions is not properly inherited from object property.\n");
         return 1;
     }
-    if (obj1_info->dims[0] != dims[0]) {
+    if (obj1_info->obj_pt->dims[0] != dims[0]) {
         printf("First dimension is not properly inherited from object property.\n");
         return 1;
     }
-    if (obj1_info->dims[1] != dims[1]) {
+    if (obj1_info->obj_pt->dims[1] != dims[1]) {
         printf("Second dimension is not properly inherited from object property.\n");
         return 1;
     }
-    if (obj1_info->dims[2] != dims[2]) {
+    if (obj1_info->obj_pt->dims[2] != dims[2]) {
         printf("Third dimension is not properly inherited from object property.\n");
         return 1;
     }
@@ -133,23 +133,23 @@ int main(int argc, char **argv) {
         printf("Object 2 name is wrong\n");
         return 1;
     }
-    if (obj2_info->type != PDC_DOUBLE) {
+    if (obj2_info->obj_pt->type != PDC_DOUBLE) {
         printf("Type is not properly inherited from object property.\n");
         return 1;
     }
-    if (obj2_info->ndim != ndim) {
+    if (obj2_info->obj_pt->ndim != ndim) {
         printf("Number of dimensions is not properly inherited from object property.\n");
         return 1;
     }
-    if (obj2_inf->dims[0] != dims[0]) {
+    if (obj2_inf->obj_pt->dims[0] != dims[0]) {
         printf("First dimension is not properly inherited from object property.\n");
         return 1;
     }
-    if (obj2_info->dims[1] != dims[1]) {
+    if (obj2_info->obj_pt->dims[1] != dims[1]) {
         printf("Second dimension is not properly inherited from object property.\n");
         return 1;
     }
-    if (obj2_info->dims[2] != dims[2]) {
+    if (obj2_info->obj_pt->dims[2] != dims[2]) {
         printf("Third dimension is not properly inherited from object property.\n");
         return 1;
     }
