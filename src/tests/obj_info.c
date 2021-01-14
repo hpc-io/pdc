@@ -142,7 +142,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 */
-/*
+
     if (obj2_info->obj_pt->ndim != ndim) {
         printf("Number of dimensions is not properly inherited from object property.\n");
         return 1;
@@ -159,7 +159,7 @@ int main(int argc, char **argv) {
         printf("Third dimension is not properly inherited from object property.\n");
         return 1;
     }
-*/
+
     // close object
     if(PDCobj_close(obj1) < 0) {
         printf("fail to close object o1\n");
