@@ -134,7 +134,7 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id
     for (i=0; i<obj_prop->obj_prop_pub->ndim; i++)
         p->obj_pt->obj_prop_pub->dims[i] = obj_prop->obj_prop_pub->dims[i];
 
-    p->obj_pt->type = obj_prop->obj_prop_pub->type;
+    p->obj_pt->obj_prop_pub->type = obj_prop->obj_prop_pub->type;
     if (obj_prop->app_name)
         p->obj_pt->app_name = strdup(obj_prop->app_name);
     if (obj_prop->data_loc)
