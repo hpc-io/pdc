@@ -65,7 +65,7 @@ int main(int argc, char **argv)
 #endif
 
     cont_id3 = PDCcont_get_id("c1", pdc_id);
-    if(PDCcont_close(cont_id) < 0) {
+    if(PDCcont_close(cont_id3) < 0) {
         printf("fail to close container cont_id3\n");
         return 1;
     }
