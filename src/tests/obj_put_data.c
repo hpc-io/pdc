@@ -32,7 +32,6 @@ int main(int argc, char **argv) {
     pdcid_t pdc, cont_prop, cont, obj_prop;
     perr_t ret;
     pdcid_t obj1, obj2;
-    struct pdc_obj_info *obj1_info, *obj2_info;
 
     int rank = 0, size = 1;
 
@@ -106,8 +105,9 @@ int main(int argc, char **argv) {
         return 1;
     }
     /* Need to change return value of the put function, it should not be an ID.*/
-/*
+
     ret = (perr_t) PDCobj_put_data("o1", (void*)data, 128, cont);
+/*
     if(ret != SUCCEED) {
         printf("Put data to o1\n");
     } else {
