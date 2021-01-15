@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
     }
     /* Need to change return value of the put function, it should not be an ID.*/
 
-    ret = (perr_t) PDCobj_put_data("o1", (void*)data, 128, cont);
+    ret = (perr_t) PDCobj_put_data("o3", (void*)data, 128, cont);
 /*
     if(ret != SUCCEED) {
         printf("Put data to o1\n");
