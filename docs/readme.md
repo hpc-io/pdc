@@ -75,7 +75,7 @@
        + name of the container
      - Output: 
        + Pointer to a new structure that contains the container information [See container info](#container-info)
-     - Correspond to PDCcont_open. Must be called only once when a container is no longer used in the future.
+     - Get container information
      - For developers: See pdc_cont.c. Use name to search for pdc_id first by linked list lookup. Make a copy of the metadata to the newly malloced structure.
   + perr_t PDCcont_persist(pdcid_t cont_id)
     - Input:
@@ -98,7 +98,7 @@
       + pdc_id: PDC class ID, returned by PDCinit
     - Output: 
       + container ID
-    - Get container ID by name.
+    - Get container ID by name. This function is similar to open.
     - For developers, see pdc_client_connect.c. It will query the servers for container information and create a container structure locally.
   + perr_t PDCcont_del(pdcid_t cont_id)
     - Input:
@@ -206,7 +206,7 @@
     - Output:
       + error code, SUCCESS or FAIL.
     - Write data to an object.
-    - For developers: see pdc_client_connect.c. Nedd to send RPCs to servers for this request.
+    - For developers: see pdc_client_connect.c. Nedd to send RPCs to servers for this request. (TODO: change return value to perr_t)
   + perr_t PDCobj_get_data(pdcid_t obj_id, void **data, uint64_t *size)
     - Input:
       + obj_id: Local object ID
