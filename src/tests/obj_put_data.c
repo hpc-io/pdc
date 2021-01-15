@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    PDCobj_put_data('o1', (void*)data, 128, cont_prop);
+    PDCobj_put_data("o1", (void*)data, 128, cont_prop);
 
     // close object
     if(PDCobj_close(obj1) < 0) {
