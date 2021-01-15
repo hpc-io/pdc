@@ -40,8 +40,8 @@ int main(int argc, char **argv) {
     dims[0] = 64;
     dims[1] = 3;
     dims[2] = 4;
-    char data[128];
-    memset(data, 1, 128);
+    double *data = (double*)malloc(sizeof(double)*128);
+    memset(data, 1, 128 * sizeof(double));
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
