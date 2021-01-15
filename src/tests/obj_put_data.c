@@ -105,9 +105,16 @@ int main(int argc, char **argv) {
         printf("Fail to create object @ line  %d!\n", __LINE__);
         return 1;
     }
-
-    PDCobj_put_data("o1", (void*)data, 128, cont_prop);
-
+    /* Need to change return value of the put function, it should not be an ID.*/
+/*
+    ret = (perr_t) PDCobj_put_data("o1", (void*)data, 128, cont);
+    if(ret != SUCCEED) {
+        printf("Put data to o1\n");
+    } else {
+        printf("Fail to put data into object @ line  %d!\n", __LINE__);
+        return 1;
+    }
+*/
     // close object
     if(PDCobj_close(obj1) < 0) {
         printf("fail to close object o1\n");
