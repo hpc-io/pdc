@@ -78,12 +78,12 @@ int main(int argc, char **argv) {
     }
     ret = PDCprop_set_obj_dims(obj_prop, ndim, dims);
     if ( ret != SUCCEED ) {
-        printf("Fail to set obj time step @ line %d\n", __LINE__);
+        printf("Fail to set obj dim @ line %d\n", __LINE__);
         return 1;
     }
     ret = PDCprop_set_obj_type(obj_prop, PDC_DOUBLE);
     if ( ret != SUCCEED ) {
-        printf("Fail to set obj time step @ line %d\n", __LINE__);
+        printf("Fail to set obj type @ line %d\n", __LINE__);
         return 1;
     }
 
