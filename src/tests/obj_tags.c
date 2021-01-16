@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
     dims[2] = 4;
     char tag_value[128], tag_value2[128], tag_value_ret[128], tag_value_ret2[128];
     strcpy(tag_value, "some tag value");
-    strcpy(tag_value2, "some tag value 2")
+    strcpy(tag_value2, "some tag value 2");
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
