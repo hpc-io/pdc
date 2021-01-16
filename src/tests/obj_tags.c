@@ -40,7 +40,8 @@ int main(int argc, char **argv) {
     dims[0] = 64;
     dims[1] = 3;
     dims[2] = 4;
-    char tag_value[128], tag_value2[128], tag_value_ret[128], tag_value_ret2[128];
+    char tag_value[128], tag_value2[128], tag_value_ret[128];
+    psize_t value_size;
     strcpy(tag_value, "some tag value");
     strcpy(tag_value2, "some tag value 2");
 
@@ -109,26 +110,67 @@ int main(int argc, char **argv) {
 
     ret = PDCobj_put_tag(obj1, "some tag", tag_value, 128);
     if ( ret != SUCCEED ) {
-        printf("Put tag failed\n");
+        printf("Put tag failed at object 1\n");
         return 1;
     }
     ret = PDCobj_put_tag(obj1, "some tag 2", tag_value2, 128);
     if ( ret != SUCCEED ) {
-        printf("Put tag failed\n");
+        printf("Put tag failed at object 1\n");
         return 1;
     }
 
     ret = PDCobj_put_tag(obj2, "some tag", tag_value, 128);
     if ( ret != SUCCEED ) {
-        printf("Put tag failed\n");
+        printf("Put tag failed at object 2\n");
         return 1;
     }
 
     ret = PDCobj_put_tag(obj2, "some tag 2", tag_value2, 128);
     if ( ret != SUCCEED ) {
-        printf("Put tag failed\n");
+        printf("Put tag failed at object 2\n");
         return 1;
     }
+
+    ret = PDCobj_get_tag(obj1, "some tag", &tag_value_ret, &value_size);
+    if ( ret != SUCCEED ) {
+        printf("Get tag failed at object 1\n");
+        return 1;
+    }
+    if (strcmp(tag_value, tag_value_ret) != 0) {
+        printf("Wrong tag value at object 1\n");
+        return 1;
+    }
+
+    ret = PDCobj_get_tag(obj1, "some tag 2", &tag_value_ret, &value_size);
+    if ( ret != SUCCEED ) {
+        printf("Get tag failed at object 1\n");
+        return 1;
+    }
+    if (strcmp(tag_value2, tag_value_ret) != 0) {
+        printf("Wrong tag value at object 1\n");
+        return 1;
+    }
+
+    ret = PDCobj_get_tag(obj2, "some tag", &tag_value_ret, &value_size);
+    if ( ret != SUCCEED ) {
+        printf("Get tag failed at object 2\n");
+        return 1;
+    }
+    if (strcmp(tag_value, tag_value_ret) != 0) {
+        printf("Wrong tag value at object 2\n");
+        return 1;
+    }
+
+    ret = PDCobj_get_tag(obj2, "some tag 2", &tag_value_ret, &value_size);
+    if ( ret != SUCCEED ) {
+        printf("Get tag failed at object 2\n");
+        return 1;
+    }
+    if (strcmp(tag_value2, tag_value_ret) != 0) {
+        printf("Wrong tag value at object 2\n");
+        return 1;
+    }
+    
 
     // close object
     if(PDCobj_close(obj1) < 0) {
