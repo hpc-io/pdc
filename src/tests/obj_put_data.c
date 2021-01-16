@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
         printf("Fail to create object property @ line  %d!\n", __LINE__);
         return 1;
     }
-/*
+
     ret = PDCprop_set_obj_dims(obj_prop, ndim, dims);
     if ( ret != SUCCEED ) {
         printf("Fail to set obj dim @ line %d\n", __LINE__);
@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
         printf("Fail to set obj type @ line %d\n", __LINE__);
         return 1;
     }
-*/
+
 
     // create first object
     obj1 = PDCobj_create(cont, "o1", obj_prop);
@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
     }
     /* Need to change return value of the put function, it should not be an ID.*/
 
-    ret = (perr_t) PDCobj_put_data("o2", (void*)data, 128, cont);
+    //ret = (perr_t) PDCobj_put_data("o2", (void*)data, 128, cont);
 /*
     if(ret != SUCCEED) {
         printf("Put data to o1\n");
