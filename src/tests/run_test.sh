@@ -10,6 +10,7 @@ shift
 # copy the remaining test input arguments (if any)
 test_args="$*"
 if [ -x $test_exe ]; then echo "testing: $test_exe"; else echo "test: $test_exe not found or not and executable" && exit -2; fi
+rm -rf pdc_tmp
 # START the server (in the background)
 ./pdc_server.exe &
 # WAIT a bit...

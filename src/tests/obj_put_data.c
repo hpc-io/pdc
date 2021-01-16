@@ -76,6 +76,7 @@ int main(int argc, char **argv) {
         printf("Fail to create object property @ line  %d!\n", __LINE__);
         return 1;
     }
+/*
     ret = PDCprop_set_obj_dims(obj_prop, ndim, dims);
     if ( ret != SUCCEED ) {
         printf("Fail to set obj dim @ line %d\n", __LINE__);
@@ -86,7 +87,7 @@ int main(int argc, char **argv) {
         printf("Fail to set obj type @ line %d\n", __LINE__);
         return 1;
     }
-
+*/
 
     // create first object
     obj1 = PDCobj_create(cont, "o1", obj_prop);
