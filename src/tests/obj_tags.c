@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
     dims[0] = 64;
     dims[1] = 3;
     dims[2] = 4;
-    char tag_value[128], tag_value2[128], tag_value_ret[128];
+    char tag_value[128], tag_value2[128], *tag_value_ret;
     psize_t value_size;
     strcpy(tag_value, "some tag value");
     strcpy(tag_value2, "some tag value 2");
@@ -137,7 +137,7 @@ int main(int argc, char **argv) {
         return 1;
     }
     if (strcmp(tag_value, tag_value_ret) != 0) {
-        printf("Wrong tag value at object 1\n");
+        printf("Wrong tag value at object 1, expected = %s, get %s\n", tag_value, tag_value_ret);
         return 1;
     }
 
@@ -147,7 +147,7 @@ int main(int argc, char **argv) {
         return 1;
     }
     if (strcmp(tag_value2, tag_value_ret) != 0) {
-        printf("Wrong tag value at object 1\n");
+        printf("Wrong tag value at object 1, expected = %s, get %s\n", tag_value, tag_value_ret);
         return 1;
     }
 
@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
         return 1;
     }
     if (strcmp(tag_value, tag_value_ret) != 0) {
-        printf("Wrong tag value at object 2\n");
+        printf("Wrong tag value at object 2, expected = %s, get %s\n", tag_value, tag_value_ret);
         return 1;
     }
 
@@ -167,7 +167,7 @@ int main(int argc, char **argv) {
         return 1;
     }
     if (strcmp(tag_value2, tag_value_ret) != 0) {
-        printf("Wrong tag value at object 2\n");
+        printf("Wrong tag value at object 2, expected = %s, get %s\n", tag_value, tag_value_ret);
         return 1;
     }
     
