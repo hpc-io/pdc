@@ -6,7 +6,7 @@
     - [PDC region APIs](#pdc-region-apis)
     - [PDC property APIs](#pdc-property-apis)
     - [PDC query APIs](#pdc-query-apis)
-  + [PDC user types](#PDC-type-categories)
+  + [PDC data types](#PDC-type-categories)
     - [Basic types](#basic-types)
     - [Histogram structure](#histogram-structure)
     - [Container info](#container-info)
