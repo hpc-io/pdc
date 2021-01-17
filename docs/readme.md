@@ -15,6 +15,7 @@
     - [Object info](#object-info)
     - [Object structure](#object-structure)
     - [Region info](#region-info)
+    - [Access type](#access-type)
     - [Query operators](#query-operators)
     - [Query structures](#query-structures)
     - [Selection structure](#selection-structure)
@@ -237,9 +238,9 @@
     - Input:
       + obj_id: Local object ID
       + tag_name: Name of the tag to be entered
+    - Output:
       + tag_value: Value of the tag
       + value_size: Number of bytes for the tag_value
-    - Output:
       + error code, SUCCESS or FAIL.
     - Get the tag value for a tag
     - For developers: see pdc_client_connect.c. Need to use PDC_get_kvtag to submit RPCs to the servers for metadata update.
@@ -279,6 +280,33 @@
       + Region ID
     - Create a region with ndims offset/length pairs
     - For developers: see pdc_region.c. Need to use PDC_get_kvtag to submit RPCs to the servers for metadata update.
+  + perr_t PDCbuf_obj_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id)
+    - Input:
+      + remote_obj_id: remote object ID
+      + remote_reg_id: remote region ID
+    - Output:
+      + error code, SUCCESS or FAIL.
+    - Unmap a region to the user buffer. PDCbuf_obj_map must be called previously.
+    - For developers: see pdc_region.c.
+  + perr_t PDCreg_obtain_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type, pdc_lock_mode_t lock_mode)
+    - Input:
+      + obj_id: local object ID
+      + reg_id: local region ID
+      + access_type: [PDC access type](#access-type)
+      + lock_mode:  PDC_BLOCK or PDC_NOBLOCK
+    - Output:
+      + error code, SUCCESS or FAIL.
+    - Obtain the lock to access a region in an object.
+    - For developers: see pdc_region.c.
+  + perr_t PDCreg_release_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type)
+    - Input:
+      + obj_id: local object ID
+      + reg_id: local region ID
+      + access_type: [PDC access type](#access-type)
+    - Output:
+      + error code, SUCCESS or FAIL.
+    - Release the lock to access a region in an object.
+    - For developers: see pdc_region.c.
 ## PDC property APIs
   + pdcid_t PDCprop_create(pdc_prop_type_t type, pdcid_t pdcid)
     - Input:
@@ -679,6 +707,10 @@
     int                   registered_op;
     void                 *buf;
   };
+  ```
+  ## Access type
+  ```
+  typedef enum { PDC_NA=0, PDC_READ=1, PDC_WRITE=2 }
   ```
   ## Query operators
   ```
