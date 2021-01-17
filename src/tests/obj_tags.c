@@ -136,12 +136,13 @@ int main(int argc, char **argv) {
         printf("Get tag failed at object 1\n");
         return 1;
     }
-/*
+
     if (strcmp(tag_value, tag_value_ret) != 0) {
-        printf("Wrong tag value at object 1, expected = %s, get %s\n", tag_value, tag_value_ret);
+        printf("data size get %d, expected %d\n", (int)value_size, (int) strlen(tag_value);
+        //printf("Wrong tag value at object 1, expected = %s, get %s\n", tag_value, tag_value_ret);
         return 1;
     }
-*/
+
     ret = PDCobj_get_tag(obj1, "some tag 2", (void **)&tag_value_ret, &value_size);
     if ( ret != SUCCEED ) {
         printf("Get tag failed at object 1\n");
