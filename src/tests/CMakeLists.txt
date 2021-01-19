@@ -12,7 +12,7 @@ set(PROGRAMS
   create_region
   set_prop
   dup_prop
-  write_1obj
+  write_obj
   create_cont
   open_cont
   cont_life
@@ -145,6 +145,6 @@ add_test(NAME obj_info   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COM
 add_test(NAME obj_put_data   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_put_data )
 add_test(NAME create_region WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./create_region )
 add_test(NAME region_obj_map WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_obj_map )
-add_test(NAME write_1obj WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./write_1obj )
+add_test(NAME write_obj WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./write_1obj )
 add_test(NAME vpicio_bdcats WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio ./bdcats )
 
