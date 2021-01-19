@@ -25,7 +25,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
+#include <time.h>
+#include <inttypes.h>
+#include <unistd.h>
+#include <sys/time.h>
 #include "pdc.h"
+#include "pdc_client_connect.h"
+#include "pdc_client_server_common.h"
 
 
 int main(int argc, char **argv) {
@@ -36,6 +43,7 @@ int main(int argc, char **argv) {
     int rank = 0, size = 1;
 
     uint64_t offset[3], offset_length[3];
+    uint64_t dims[1];
     offset[0] = 0;
     offset[1] = 2;
     offset[2] = 5;
@@ -46,6 +54,7 @@ int main(int argc, char **argv) {
     double *data = (double*)malloc(sizeof(double)*128);
     double *obj_data = (double *)calloc(128, sizeof(double));
     memset(data, 1, 128 * sizeof(double));
+    dims[0] = sizeof(double)*128;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
