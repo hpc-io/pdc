@@ -38,9 +38,6 @@ set(PROGRAMS
   search_obj_scale
   obj_lock 
   list_all
-  data_server_read
-  data_server_write
-  data_rw_test
   init_only
   buf_obj_map
   buf_obj_map_mpi
@@ -49,13 +46,6 @@ set(PROGRAMS
   bdcats
   vpicio_v2
   bdcats_v2
-  data_server_write_vpic
-  data_server_write_vpic_multits
-  data_server_read_vpic
-  data_server_read_vpic_multits
-  data_server_read_vpic_spatial
-  data_server_read_vpic_spatial_multits
-  write_1obj
   cont_add_del
   data_server_meta_test
   kvtag_add_get
