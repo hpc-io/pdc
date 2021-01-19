@@ -120,11 +120,17 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    reg = PDCregion_create(3, offset, offset_length);
-    reg_global = PDCregion_create(3, offset, offset_length);
+    reg = PDCregion_create(1, offset, offset_length);
+    reg_global = PDCregion_create(1, offset, offset_length);
 
 
     ret = PDCbuf_obj_map(data, PDC_DOUBLE, reg, obj1, reg_global);
+    if(ret != SUCCEED) {
+        printf("PDCbuf_obj_map failed\n");
+        exit(-1);
+    }
+
+    ret = PDCbuf_obj_unmap(obj1, reg_global);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_map failed\n");
         exit(-1);
