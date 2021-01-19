@@ -87,7 +87,9 @@ int main() {
     }
 
     reg1 = PDCregion_create(3, offset, size);
-    //PDCregion_free(reg1);
+    if (reg1 < 0) {
+        printf("fail to create a region. \n");
+    }
 
     // close first object
     if(PDCobj_close(obj1) < 0) {
