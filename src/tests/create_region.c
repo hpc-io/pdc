@@ -30,7 +30,7 @@
 #include "pdc.h"
 
 int main() {
-    pdcid_t pdc, cont_prop, cont, obj_prop, obj1, obj2, reg1;
+    pdcid_t pdc, cont_prop, cont, obj_prop, obj1, obj2, reg1, reg2;
 
     uint64_t offset[3], size[3];
     offset[0] = 0;
@@ -45,80 +45,12 @@ int main() {
     pdc = PDCinit("pdc");
     printf("create a new pdc\n");
 
-    // create a container property
-    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
-    if(cont_prop > 0) {
-        printf("Create a container property\n");
-    } else {
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
-        return 1;
-    }
-    // create a container
-    cont = PDCcont_create("c1", cont_prop);
-    if(cont > 0) {
-        printf("Create a container c1\n");
-    } else {
-        printf("Fail to create container @ line  %d!\n", __LINE__);
-        return 1;
-    }
-    // create an object property
-    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
-    if(obj_prop > 0) {
-        printf("Create an object property\n");
-    } else {
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
-        return 1;
-    }
-    // create first object
-    obj1 = PDCobj_create(cont, "o1", obj_prop);
-    if(obj1 > 0) {
-        printf("Create an object o1\n");
-    } else {
-        printf("Fail to create object @ line  %d!\n", __LINE__);
-        return 1;
-    }
-    // create second object
-    obj2 = PDCobj_create(cont, "o2", obj_prop);
-    if(obj2 > 0) {
-        printf("Create an object o2\n");
-    } else {
-        printf("Fail to create object @ line  %d!\n", __LINE__);
-        return 1;
-    }
+    PDCregion_create(3, offset, size);
 
-    reg1 = PDCregion_create(3, offset, size);
-    if (reg1 < 0) {
-        printf("fail to create a region. \n");
-    }
+    PDCregion_create(2, offset, size);
 
-    // close first object
-    if(PDCobj_close(obj1) < 0) {
-        printf("fail to close object o1\n");
-        return 1;
-    } else {
-        printf("successfully close object o1\n");
-    }
-    // close second object
-    if(PDCobj_close(obj2) < 0) {
-        printf("fail to close object o2\n");
-        return 1;
-    } else {
-        printf("successfully close object o2\n");
-    }
-    // close a container
-    if(PDCcont_close(cont) < 0) {
-        printf("fail to close container c1\n");
-        return 1;
-    } else {
-        printf("successfully close container c1\n");
-    }
-    // close a container property
-    if(PDCprop_close(cont_prop) < 0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
-        return 1;
-    } else {
-        printf("successfully close container property\n");
-    }
+    PDCregion_create(1, offset, size);
+
     // close pdc
     if(PDCclose(pdc) < 0) {
         printf("fail to close PDC\n");
