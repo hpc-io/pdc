@@ -30,7 +30,7 @@
 #include "pdc.h"
 
 int main() {
-    pdcid_t pdc, cont_prop, cont, obj_prop, obj1, obj2, reg1, reg2;
+    pdcid_t pdc;
 
     uint64_t offset[3], size[3];
     offset[0] = 0;
