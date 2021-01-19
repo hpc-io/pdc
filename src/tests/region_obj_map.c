@@ -129,10 +129,21 @@ int main(int argc, char **argv) {
         printf("PDCbuf_obj_map failed\n");
         exit(-1);
     }
+    ret = PDCreg_obtain_lock(obj1, reg, PDC_WRITE, PDC_BLOCK)
+    if(ret != SUCCEED) {
+        printf("PDCreg_obtain_lock failed\n");
+        exit(-1);
+    }
+
+    ret = PDCreg_release_lock(obj_id, reg, PDC_BLOCK);
+    if(ret != SUCCEED) {
+        printf("PDCreg_release_lock failed\n");
+        exit(-1);
+    }
 
     ret = PDCbuf_obj_unmap(obj1, reg_global);
     if(ret != SUCCEED) {
-        printf("PDCbuf_obj_map failed\n");
+        printf("PDCbuf_obj_unmap failed\n");
         exit(-1);
     }
 
