@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
         printf("PDCbuf_obj_map failed\n");
         exit(-1);
     }
-    ret = PDCreg_obtain_lock(obj1, reg, PDC_WRITE, PDC_BLOCK)
+    ret = PDCreg_obtain_lock(obj1, reg, PDC_WRITE, PDC_BLOCK);
     if(ret != SUCCEED) {
         printf("PDCreg_obtain_lock failed\n");
         exit(-1);
