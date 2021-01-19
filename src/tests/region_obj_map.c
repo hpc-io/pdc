@@ -44,6 +44,7 @@ int main(int argc, char **argv) {
     offset_length[2] = 5;
 
     double *data = (double*)malloc(sizeof(double)*128);
+    double *obj_data = (double *)calloc(128, sizeof(double));
     memset(data, 1, 128 * sizeof(double));
 
 #ifdef ENABLE_MPI
@@ -85,6 +86,12 @@ int main(int argc, char **argv) {
         printf("Fail to set obj type @ line %d\n", __LINE__);
         return 1;
     }
+    PDCprop_set_obj_buf(obj_prop, obj_data);
+    PDCprop_set_obj_dims(obj_prop, 1, dims);
+    PDCprop_set_obj_user_id( obj_prop, getuid());
+    PDCprop_set_obj_time_step( obj_prop, 0);
+    PDCprop_set_obj_app_name(obj_prop, "DataServerTest");
+    PDCprop_set_obj_tags(    obj_prop, "tag0=1");
 
 
     // create first object
@@ -107,7 +114,7 @@ int main(int argc, char **argv) {
     reg = PDCregion_create(3, offset, offset_length);
     reg_global = PDCregion_create(3, offset, offset_length);
 
-    //ret = PDCbuf_obj_map(data, PDC_DOUBLE, reg, obj1, reg_global);
+    ret = PDCbuf_obj_map(data, PDC_DOUBLE, reg, obj1, reg_global);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_map failed\n");
         exit(-1);
