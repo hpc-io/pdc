@@ -35,13 +35,13 @@ int main(int argc, char **argv) {
 
     int rank = 0, size = 1;
 
-    uint64_t offset[3], size[3];
+    uint64_t offset[3], offset_length[3];
     offset[0] = 0;
     offset[1] = 2;
     offset[2] = 5;
-    size[0] = 2;
-    size[1] = 3;
-    size[2] = 5;
+    offset_length[0] = 2;
+    offset_length[1] = 3;
+    offset_length[2] = 5;
 
     double *data = (double*)malloc(sizeof(double)*128);
     memset(data, 1, 128 * sizeof(double));
@@ -104,10 +104,10 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    reg = PDCregion_create(3, offset, size);
-    reg_global = PDCregion_create(3, offset, size);
+    reg = PDCregion_create(3, offset, offset_length);
+    reg_global = PDCregion_create(3, offset, offset_length);
 
-    ret = PDCbuf_obj_map(data, PDC_DOUBLE, reg, obj, reg_global);
+    ret = PDCbuf_obj_map(data, PDC_DOUBLE, reg, obj1, reg_global);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_map failed\n");
         exit(-1);
