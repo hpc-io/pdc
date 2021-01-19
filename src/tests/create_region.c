@@ -27,6 +27,10 @@
 #include <string.h>
 #include <getopt.h>
 #include <time.h>
+#include <inttypes.h>
+#include <unistd.h>
+#include <sys/time.h>
+
 #include "pdc.h"
 
 int main() {
