@@ -86,8 +86,8 @@ int main() {
         return 1;
     }
 
-    reg1 = PDCregion_create(1, offset, size);
-    PDCregion_free(reg1);
+    reg1 = PDCregion_create(3, offset, size);
+    //PDCregion_free(reg1);
 
     // close first object
     if(PDCobj_close(obj1) < 0) {
