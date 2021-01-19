@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
         exit(-1);
     }
 
-    ret = PDCreg_release_lock(obj_id, reg, PDC_BLOCK);
+    ret = PDCreg_release_lock(obj1, reg, PDC_BLOCK);
     if(ret != SUCCEED) {
         printf("PDCreg_release_lock failed\n");
         exit(-1);
