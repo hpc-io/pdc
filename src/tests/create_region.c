@@ -36,14 +36,14 @@
 int main(int argc, char **argv) {
     pdcid_t pdc;
     int ret_value = 0;
-    uint64_t offset[3], size[3];
+    uint64_t offset[3], offset_length[3];
     int rank = 0, size = 1;
     offset[0] = 0;
     offset[1] = 2;
     offset[2] = 5;
-    size[0] = 2;
-    size[1] = 3;
-    size[2] = 5;
+    offset_length[0] = 2;
+    offset_length[1] = 3;
+    offset_length[2] = 5;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -56,11 +56,11 @@ int main(int argc, char **argv) {
     pdc = PDCinit("pdc");
     printf("create a new pdc\n");
 
-    PDCregion_create(3, offset, size);
+    PDCregion_create(3, offset, offset_length);
 
-    PDCregion_create(2, offset, size);
+    PDCregion_create(2, offset, offset_length);
 
-    PDCregion_create(1, offset, size);
+    PDCregion_create(1, offset, offset_length);
 
     // close pdc
     if(PDCclose(pdc) < 0) {
