@@ -37,6 +37,7 @@ int main(int argc, char **argv) {
     pdcid_t pdc;
     int ret_value = 0;
     uint64_t offset[3], size[3];
+    int rank = 0, size = 1;
     offset[0] = 0;
     offset[1] = 2;
     offset[2] = 5;
