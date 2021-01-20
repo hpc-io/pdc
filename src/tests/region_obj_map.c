@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
     perr_t ret;
     pdcid_t obj1, obj2;
 
-    int rank = 0, size = 1;
+    int rank = 0, size = 1, i;
 
     uint64_t offset[3], offset_length[3];
     uint64_t dims[1];
