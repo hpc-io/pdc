@@ -33,6 +33,7 @@
 #include "pdc.h"
 #include "pdc_client_connect.h"
 #include "pdc_client_server_common.h"
+#define BUF_LEN 128
 
 
 int main(int argc, char **argv) {
@@ -51,10 +52,10 @@ int main(int argc, char **argv) {
     offset_length[1] = 3;
     offset_length[2] = 5;
 
-    double *data = (double*)malloc(sizeof(double)*128);
-    double *obj_data = (double *)calloc(128, sizeof(double));
-    memset(data, 1, 128 * sizeof(double));
-    dims[0] = sizeof(double)*128;
+    double *data = (double*)malloc(sizeof(double)*BUF_LEN);
+    double *data_read = (double*)malloc(sizeof(double)*BUF_LEN);
+    double *obj_data = (double *)calloc(BUF_LEN, sizeof(double));
+    dims[0] = sizeof(double)*BUF_LEN;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -135,6 +136,10 @@ int main(int argc, char **argv) {
         exit(-1);
     }
 
+    for ( i = 0; i < BUF_LEN; ++i ) {
+        data[i] = i;
+    }
+
     ret = PDCreg_release_lock(obj1, reg, PDC_BLOCK);
     if(ret != SUCCEED) {
         printf("PDCreg_release_lock failed\n");
@@ -146,6 +151,40 @@ int main(int argc, char **argv) {
         printf("PDCbuf_obj_unmap failed\n");
         exit(-1);
     }
+
+    reg = PDCregion_create(1, offset, offset_length);
+    reg_global = PDCregion_create(1, offset, offset_length);
+    ret = PDCbuf_obj_map(data2, PDC_DOUBLE, reg, obj1, reg_global);
+    if(ret != SUCCEED) {
+        printf("PDCbuf_obj_map failed\n");
+        exit(-1);
+    }
+
+    ret = PDCreg_obtain_lock(obj1, reg, PDC_READ, PDC_BLOCK);
+    if(ret != SUCCEED) {
+        printf("PDCreg_obtain_lock failed\n");
+        exit(-1);
+    }
+
+    for ( i = 0; i < BUF_LEN; ++i ) {
+        if ( data2[i] != i ) {
+            printf("wrong value %lf!=%lf\n", data[i], i);
+            return 1;
+        }
+    }
+
+    ret = PDCreg_release_lock(obj1, reg, PDC_BLOCK);
+    if(ret != SUCCEED) {
+        printf("PDCreg_release_lock failed\n");
+        exit(-1);
+    }
+
+    ret = PDCbuf_obj_unmap(obj1, reg_global);
+    if(ret != SUCCEED) {
+        printf("PDCbuf_obj_unmap failed\n");
+        exit(-1);
+    }
+
 
 
     // close object
