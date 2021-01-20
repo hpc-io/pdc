@@ -52,10 +52,10 @@ int main(int argc, char **argv) {
     offset_length[1] = 3;
     offset_length[2] = 5;
 
-    double *data = (double*)malloc(sizeof(double)*BUF_LEN);
-    double *data_read = (double*)malloc(sizeof(double)*BUF_LEN);
-    double *obj_data = (double *)calloc(BUF_LEN, sizeof(double));
-    dims[0] = sizeof(double)*BUF_LEN;
+    int *data = (int*)malloc(sizeof(int)*BUF_LEN);
+    int *data_read = (int*)malloc(sizeof(int)*BUF_LEN);
+    int *obj_data = (int *)calloc(BUF_LEN, sizeof(int));
+    dims[0] = sizeof(int)*BUF_LEN;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    ret = PDCprop_set_obj_type(obj_prop, PDC_DOUBLE);
+    ret = PDCprop_set_obj_type(obj_prop, PDC_INT);
     if ( ret != SUCCEED ) {
         printf("Fail to set obj type @ line %d\n", __LINE__);
         return 1;
@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
     reg_global = PDCregion_create(1, offset, offset_length);
 
 
-    ret = PDCbuf_obj_map(data, PDC_DOUBLE, reg, obj1, reg_global);
+    ret = PDCbuf_obj_map(data, PDC_INT, reg, obj1, reg_global);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_map failed\n");
         exit(-1);
@@ -154,7 +154,7 @@ int main(int argc, char **argv) {
 
     reg = PDCregion_create(1, offset, offset_length);
     reg_global = PDCregion_create(1, offset, offset_length);
-    ret = PDCbuf_obj_map(data_read, PDC_DOUBLE, reg, obj1, reg_global);
+    ret = PDCbuf_obj_map(data_read, PDC_INT, reg, obj1, reg_global);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_map failed\n");
         exit(-1);
@@ -168,7 +168,7 @@ int main(int argc, char **argv) {
 
     for ( i = 0; i < BUF_LEN; ++i ) {
         if ( (int) data_read[i] != i ) {
-            printf("wrong value %lf!=%d\n", data[i], i);
+            printf("wrong value %d!=%d\n", data[i], i);
             return 1;
         }
     }
