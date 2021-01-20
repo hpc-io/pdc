@@ -33,7 +33,7 @@
 
 #include "pdc.h"
 
-int main() {
+int main(int argc, char **argv) {
     pdcid_t pdc;
     int ret_value = 0;
     uint64_t offset[3], size[3];
