@@ -32,6 +32,7 @@ int main(int argc, char **argv)
     pdcid_t pdc, create_prop, cont;
     struct _pdc_cont_prop *prop;
     int rank = 0, size = 1;
+    int ret_value = 0;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -48,7 +49,7 @@ int main(int argc, char **argv)
         printf("Create a container property\n");
     } else {
         printf("Fail to create container property @ line  %d!\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
     // print default container lifetime (persistent)
     prop = PDCcont_prop_get_info(create_prop);
@@ -59,7 +60,7 @@ int main(int argc, char **argv)
         printf("Create a container, c1\n");
     } else {
         printf("Fail to create container @ line  %d!\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
     // set container lifetime to transient
     PDCprop_set_cont_lifetime(create_prop, PDC_TRANSIENT);
@@ -72,26 +73,26 @@ int main(int argc, char **argv)
     // close a container
     if(PDCcont_close(cont) < 0) {
         printf("fail to close container c1\n");
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close container c1\n");
     }
     // close a container property
     if(PDCprop_close(create_prop) < 0) {
         printf("Fail to close property @ line %d\n", __LINE__);
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close container property\n");
     }
     // close pdc
     if(PDCclose(pdc) < 0) {
         printf("fail to close PDC\n");
-        return 1;
+        ret_value = 1;
     }
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
     
-    return 0;
+    return ret_value;
 }
 

@@ -31,6 +31,7 @@ int main(int argc, char **argv) {
     pdcid_t pdc, create_prop1, create_prop2, create_prop;
     pdc_prop_type_t type = PDC_CONT_CREATE;
     int rank = 0, size = 1;
+    int ret_value = 0;
     
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -45,24 +46,24 @@ int main(int argc, char **argv) {
     create_prop1 = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if(create_prop1 <= 0) {
         printf("Fail to create @ line %d\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
     // create another object property
     create_prop2 = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if(create_prop2 <= 0) {
         printf("Fail to create @ line %d\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
 
     if(PDCprop_close(create_prop1)<0) {
         printf("Fail to close property @ line %d\n", __LINE__);
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close first property\n");
     }
     if(PDCprop_close(create_prop2)<0) {
         printf("Fail to close property @ line %d\n", __LINE__);
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close second property\n");
     }
@@ -76,22 +77,22 @@ int main(int argc, char **argv) {
     }
     else {
         printf("Fail to create @ line  %d!\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
     // close property
     if(PDCprop_close(create_prop)<0) {
-       printf("Fail to close property @ line %d\n", __LINE__);
-       return 1;
+        printf("Fail to close property @ line %d\n", __LINE__);
+        ret_value = 1;
     } else {
-       printf("successfully close property\n");
+        printf("successfully close property\n");
     }
     // close a pdc
     if(PDCclose(pdc) < 0) {
         printf("fail to close PDC\n");
-        return 1;
+        ret_value = 1;
     }
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
-    return 0;
+    return ret_value;
 }

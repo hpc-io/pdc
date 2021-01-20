@@ -35,7 +35,7 @@
 
 int main() {
     pdcid_t pdc;
-
+    int ret_value = 0;
     uint64_t offset[3], size[3];
     offset[0] = 0;
     offset[1] = 2;
@@ -43,6 +43,12 @@ int main() {
     size[0] = 2;
     size[1] = 3;
     size[2] = 5;
+
+#ifdef ENABLE_MPI
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+#endif
 
     // create a pdc
 
@@ -58,7 +64,11 @@ int main() {
     // close pdc
     if(PDCclose(pdc) < 0) {
         printf("fail to close PDC\n");
-        return 1;
+        ret_value = 1;
     }
-    return 0;
+
+#ifdef ENABLE_MPI
+    MPI_Finalize();
+#endif
+    return ret_value;
 }

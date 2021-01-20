@@ -33,6 +33,7 @@ int main(int argc, char **argv)
 {
     int rank = 0, size = 1;
     pdcid_t pdc_id, cont_prop, cont_id, cont_id2, cont_id3;
+    int ret_value = 0;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -45,21 +46,25 @@ int main(int argc, char **argv)
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
-    if(cont_prop <= 0)
+    if(cont_prop <= 0) {
         printf("Fail to create container property @ line  %d!\n", __LINE__);
-
+        ret_value = 1;
+    }
     // create a container
     cont_id = PDCcont_create_col("c1", cont_prop);
-    if(cont_id <= 0)
+    if(cont_id <= 0) {
         printf("Fail to create container @ line  %d!\n", __LINE__);
-
+        ret_value = 1;
+    }
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
     cont_id2 = PDCcont_open("c1", pdc_id);
-    if(cont_id2 == 0)
+    if(cont_id2 == 0) {
         printf("Fail to open container @ line  %d!\n", __LINE__);
+        ret_value = 1;
+    }
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -67,30 +72,30 @@ int main(int argc, char **argv)
     cont_id3 = PDCcont_get_id("c1", pdc_id);
     if(PDCcont_close(cont_id3) < 0) {
         printf("fail to close container cont_id3\n");
-        return 1;
+        ret_value = 1;
     }
     // close a container
     if(PDCcont_close(cont_id) < 0) {
         printf("fail to close container cont_id1\n");
-        return 1;
+        ret_value = 1;
     }
     if(PDCcont_close(cont_id2) < 0) {
         printf("fail to close container cont_id2\n");
-        return 1;
+        ret_value = 1;
     }
     // close a container property
     if(PDCprop_close(cont_prop) < 0) {
         printf("Fail to close property @ line %d\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
     if(PDCclose(pdc_id) < 0) {
-       printf("fail to close PDC\n");
-       return 1;
+        printf("fail to close PDC\n");
+        ret_value = 1;
     }
 #ifdef ENABLE_MPI
      MPI_Finalize();
 #endif
 
-     return 0;
+     return ret_value;
 }
 

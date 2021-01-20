@@ -42,6 +42,7 @@ int main(int argc, char **argv) {
     pdcid_t obj1, obj2;
 
     int rank = 0, size = 1, i;
+    int ret_value = 0;
 
     uint64_t offset[3], offset_length[3];
     uint64_t dims[1];
@@ -72,7 +73,7 @@ int main(int argc, char **argv) {
         printf("Create a container property\n");
     } else {
         printf("Fail to create container property @ line  %d!\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
     // create a container
     cont = PDCcont_create("c1", cont_prop);
@@ -80,7 +81,7 @@ int main(int argc, char **argv) {
         printf("Create a container c1\n");
     } else {
         printf("Fail to create container @ line  %d!\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
@@ -88,13 +89,13 @@ int main(int argc, char **argv) {
         printf("Create an object property\n");
     } else {
         printf("Fail to create object property @ line  %d!\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
 
     ret = PDCprop_set_obj_type(obj_prop, PDC_INT);
     if ( ret != SUCCEED ) {
         printf("Fail to set obj type @ line %d\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
     PDCprop_set_obj_buf(obj_prop, obj_data);
     PDCprop_set_obj_dims(obj_prop, 1, dims);
@@ -110,7 +111,7 @@ int main(int argc, char **argv) {
         printf("Create an object o1\n");
     } else {
         printf("Fail to create object @ line  %d!\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
     // create second object
     obj2 = PDCobj_create(cont, "o2", obj_prop);
@@ -118,7 +119,7 @@ int main(int argc, char **argv) {
         printf("Create an object o2\n");
     } else {
         printf("Fail to create object @ line  %d!\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
 
     reg = PDCregion_create(1, offset, offset_length);
@@ -128,7 +129,7 @@ int main(int argc, char **argv) {
     ret = PDCbuf_obj_map(data, PDC_INT, reg, obj1, reg_global);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_map failed\n");
-        exit(-1);
+        ret_value = 1;
     }
     ret = PDCreg_obtain_lock(obj1, reg, PDC_WRITE, PDC_BLOCK);
     if(ret != SUCCEED) {
@@ -143,13 +144,13 @@ int main(int argc, char **argv) {
     ret = PDCreg_release_lock(obj1, reg, PDC_BLOCK);
     if(ret != SUCCEED) {
         printf("PDCreg_release_lock failed\n");
-        exit(-1);
+        ret_value = 1;
     }
 
     ret = PDCbuf_obj_unmap(obj1, reg_global);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_unmap failed\n");
-        exit(-1);
+        ret_value = 1;
     }
 
     reg = PDCregion_create(1, offset, offset_length);
@@ -157,32 +158,33 @@ int main(int argc, char **argv) {
     ret = PDCbuf_obj_map(data_read, PDC_INT, reg, obj1, reg_global);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_map failed\n");
-        exit(-1);
+        ret_value = 1;
     }
 
     ret = PDCreg_obtain_lock(obj1, reg, PDC_READ, PDC_BLOCK);
     if(ret != SUCCEED) {
         printf("PDCreg_obtain_lock failed\n");
-        exit(-1);
+        ret_value = 1;
     }
 
     for ( i = 0; i < BUF_LEN; ++i ) {
         if ( data_read[i] != i ) {
             printf("wrong value %d!=%d\n", data_read[i], i);
-            return 1;
+            ret_value = 1;
+            break;
         }
     }
 
     ret = PDCreg_release_lock(obj1, reg, PDC_BLOCK);
     if(ret != SUCCEED) {
         printf("PDCreg_release_lock failed\n");
-        exit(-1);
+        ret_value = 1;
     }
 
     ret = PDCbuf_obj_unmap(obj1, reg_global);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_unmap failed\n");
-        exit(-1);
+        ret_value = 1;
     }
 
 
@@ -190,44 +192,44 @@ int main(int argc, char **argv) {
     // close object
     if(PDCobj_close(obj1) < 0) {
         printf("fail to close object o1\n");
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close object o1\n");
     }
     if(PDCobj_close(obj2) < 0) {
         printf("fail to close object o2\n");
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close object o2\n");
     }
     // close a container
     if(PDCcont_close(cont) < 0) {
         printf("fail to close container c1\n");
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close container c1\n");
     }
     // close a object property
     if(PDCprop_close(obj_prop) < 0) {
         printf("Fail to close property @ line %d\n", __LINE__);
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close object property\n");
     }
     // close a container property
     if(PDCprop_close(cont_prop) < 0) {
         printf("Fail to close property @ line %d\n", __LINE__);
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close container property\n");
     }
     // close pdc
     if(PDCclose(pdc) < 0) {
-       printf("fail to close PDC\n");
-       return 1;
+        printf("fail to close PDC\n");
+        ret_value = 1;
     }
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
-    return 0;
+    return ret_value;
 }

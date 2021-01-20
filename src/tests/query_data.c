@@ -31,6 +31,7 @@ int main(int argc, char **argv)
     int lo1 = 2000, hi1 = 3000;
     int lo2 = 5000, hi2 = 7000;
     pdc_query_t *q0, *q1l, *q1h, *q1, *q2l, *q2h, *q2, *q, *q12;
+    int ret_value = 0;
     
     struct timeval  ht_total_start;
     struct timeval  ht_total_end;
@@ -45,7 +46,10 @@ int main(int argc, char **argv)
 
     if (argc < 3) {
         print_usage();
-        return 0;
+#ifdef ENABLE_MPI
+        MPI_Finalize();
+#endif
+        return 1;
     }
 
     obj_name = argv[1];
@@ -61,19 +65,22 @@ int main(int argc, char **argv)
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
-    if(cont_prop <= 0)
+    if(cont_prop <= 0) {
         printf("Fail to create container property @ line  %d!\n", __LINE__);
-
+        ret_value = 1;
+    }
     // create a container
     cont = PDCcont_create("c1", cont_prop);
-    if(cont <= 0)
+    if(cont <= 0) {
         printf("Fail to create container @ line  %d!\n", __LINE__);
-
+        ret_value = 1;
+    }
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
-    if(obj_prop <= 0)
+    if(obj_prop <= 0) {
         printf("Fail to create object property @ line  %d!\n", __LINE__);
-
+        ret_value = 1;
+    }
     my_data_count = size_MB / size;
     dims[0] = my_data_count;
     PDCprop_set_obj_dims(obj_prop, 1, dims);
@@ -90,7 +97,7 @@ int main(int argc, char **argv)
         obj_id = PDCobj_create(cont, obj_name, obj_prop);
         if (obj_id <= 0) {
             printf("Error getting an object id of %s from server, exit...\n", "DataServerTestBin");
-            exit(-1);
+            ret_value = 1;
         }
     }
 
@@ -102,6 +109,7 @@ int main(int argc, char **argv)
     PDC_Client_query_metadata_name_timestep( obj_name, 0, &metadata);
     if (metadata == NULL || metadata->obj_id == 0) {
         printf("Error with metadata!\n");
+        ret_value = 1;
     }
 
     region.ndim = ndim;
@@ -156,19 +164,22 @@ int main(int argc, char **argv)
     PDCselection_free(&sel);
 
     // close a container
-    if(PDCcont_close(cont) < 0)
+    if(PDCcont_close(cont) < 0) {
         printf("fail to close container c1\n");
-
+        ret_value = 1;
+    }
     // close a container property
-    if(PDCprop_close(cont_prop) < 0)
+    if(PDCprop_close(cont_prop) < 0) {
         printf("Fail to close property @ line %d\n", __LINE__);
-
-    if(PDCclose(pdc) < 0)
-       printf("fail to close PDC\n");
-
+        ret_value = 1;
+    }
+    if(PDCclose(pdc) < 0) {
+        printf("fail to close PDC\n");
+        ret_value = 1;
+    }
 #ifdef ENABLE_MPI
      MPI_Finalize();
 #endif
 
-     return 0;
+     return ret_value;
 }

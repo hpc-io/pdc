@@ -31,12 +31,12 @@ int main(int argc, char **argv) {
     pdcid_t pdc, cont_prop, cont, obj_prop;
     pdcid_t obj1, obj2, open11, open12, open21;
     int rank = 0, size = 1;
+    int ret_value = 0;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-    printf("MPI enabled\n");
 #endif
     // create a pdc
     pdc = PDCinit("pdc");
@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
         printf("Create a container property\n");
     } else {
         printf("Fail to create container property @ line  %d!\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
     // create a container
     cont = PDCcont_create("c1", cont_prop);
@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
         printf("Create a container c1\n");
     } else {
         printf("Fail to create container @ line  %d!\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
@@ -64,7 +64,7 @@ int main(int argc, char **argv) {
         printf("Create an object property\n");
     } else {
         printf("Fail to create object property @ line  %d!\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
     // create first object
     obj1 = PDCobj_create(cont, "o1", obj_prop);
@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
         printf("Create an object o1\n");
     } else {
         printf("Fail to create object @ line  %d!\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
     // create second object
     obj2 = PDCobj_create(cont, "o2", obj_prop);
@@ -80,20 +80,20 @@ int main(int argc, char **argv) {
         printf("Create an object o2\n");
     } else {
         printf("Fail to create object @ line  %d!\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
     // open first object twice
     open11 = PDCobj_open("o1", pdc);
     if(open11 == 0) {
         printf("Fail to open object o1\n");
-        return 1;
+        ret_value = 1;
     } else {
         printf("Open object o1\n");
     }
     open12 = PDCobj_open("o1", pdc);
     if(open12 == 0) {
         printf("Fail to open object o1\n");
-        return 1;
+        ret_value = 1;
     } else {
         printf("Open object o1\n");
     }
@@ -101,69 +101,69 @@ int main(int argc, char **argv) {
     open21 = PDCobj_open("o2", pdc);
     if(open21 == 0) {
         printf("Fail to open object o2\n");
-        return 1;
+        ret_value = 1;
     } else {
         printf("Open object o2\n");
     }
     // close object
     if(PDCobj_close(obj1) < 0) {
         printf("fail to close object o1\n");
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close object o1\n");
     }
     if(PDCobj_close(open11) < 0) {
         printf("fail to close object open11\n");
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close object open11\n");
     }
     if(PDCobj_close(open12) < 0) {
         printf("fail to close object open12\n");
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close object open12\n");
     }
     if(PDCobj_close(obj2) < 0) {
         printf("fail to close object o2\n");
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close object o2\n");
     }
     if(PDCobj_close(open21) < 0) {
         printf("fail to close object open21\n");
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close object open21\n"); 
     }
     // close a container
     if(PDCcont_close(cont) < 0) {
         printf("fail to close container c1\n");
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close container c1\n");
     }
     // close a object property
     if(PDCprop_close(obj_prop) < 0) {
         printf("Fail to close property @ line %d\n", __LINE__);
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close object property\n");
     }
     // close a container property
     if(PDCprop_close(cont_prop) < 0) {
         printf("Fail to close property @ line %d\n", __LINE__);
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close container property\n");
     }
     // close pdc
     if(PDCclose(pdc) < 0) {
        printf("fail to close PDC\n");
-       return 1;
+        ret_value = 1;
     }
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
-    return 0;
+    return ret_value;
 }

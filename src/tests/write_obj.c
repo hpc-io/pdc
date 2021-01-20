@@ -20,6 +20,7 @@ int main(int argc, char **argv)
     uint64_t size_MB, size_B;
     perr_t ret;
     int ndim = 1;
+    int ret_value = 0;
 #ifdef ENABLE_MPI
     MPI_Comm comm;
 #else
@@ -51,7 +52,11 @@ int main(int argc, char **argv)
 
     if (argc < 3) {
         print_usage();
-        return 0;
+        ret_value = 1;
+#ifdef ENABLE_MPI
+        MPI_Finalize();
+#endif
+        return ret_value;
     }
 
     obj_name = argv[1];
@@ -67,19 +72,22 @@ int main(int argc, char **argv)
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
-    if(cont_prop <= 0)
+    if(cont_prop <= 0) {
         printf("Fail to create container property @ line  %d!\n", __LINE__);
-
+        ret_value = 1;
+    }
     // create a container
     cont = PDCcont_create("c1", cont_prop);
-    if(cont <= 0)
+    if(cont <= 0) {
         printf("Fail to create container @ line  %d!\n", __LINE__);
-
+        ret_value = 1;
+    }
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
-    if(obj_prop <= 0)
+    if(obj_prop <= 0) {
         printf("Fail to create object property @ line  %d!\n", __LINE__);
-
+        ret_value = 1;
+    }
     dims[0] = size_B;
     my_data_size = size_B / size;
 
@@ -98,7 +106,7 @@ int main(int argc, char **argv)
     global_obj = PDCobj_create_mpi(cont, obj_name, obj_prop, 0, comm);
     if (global_obj <= 0) {
         printf("Error creating an object [%s], exit...\n", obj_name);
-        exit(-1);
+        ret_value = 1;
     }
 
     offset = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
@@ -112,7 +120,7 @@ int main(int argc, char **argv)
     ret = PDCbuf_obj_map(mydata, PDC_FLOAT, local_region, global_obj, global_region);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_map failed\n");
-        exit(-1);
+        ret_value = 1;
     }
 
 #ifdef ENABLE_MPI
@@ -123,12 +131,14 @@ int main(int argc, char **argv)
     ret = PDCreg_obtain_lock(local_obj, local_region, PDC_WRITE, PDC_NOBLOCK);
     if (ret != SUCCEED) {
         printf("Failed to obtain lock for region\n");
+        ret_value = 1;
         goto done;
     }
 
     ret = PDCreg_obtain_lock(global_obj, global_region, PDC_WRITE, PDC_NOBLOCK);
     if (ret != SUCCEED) {
         printf("Failed to obtain lock for region\n");
+        ret_value = 1;
         goto done;
     }
 
@@ -139,12 +149,14 @@ int main(int argc, char **argv)
     ret = PDCreg_release_lock(local_obj, local_region, PDC_WRITE);
     if (ret != SUCCEED) {
         printf("Failed to release lock for region\n");
+        ret_value = 1;
         goto done;
     }
 
     ret = PDCreg_release_lock(global_obj, global_region, PDC_WRITE);
     if (ret != SUCCEED) {
         printf("Failed to release lock for region\n");
+        ret_value = 1;
         goto done;
     }
 
@@ -160,30 +172,37 @@ int main(int argc, char **argv)
     }
 
 done:
-    if(PDCobj_close(local_obj) < 0)
+    if(PDCobj_close(local_obj) < 0) {
         printf("fail to close local obj\n");
-
-    if(PDCobj_close(global_obj) < 0)
+        ret_value = 1;
+    }
+    if(PDCobj_close(global_obj) < 0) {
         printf("fail to close global obj\n");
-
-    if(PDCregion_close(local_region) < 0)
+        ret_value = 1;
+    }
+    if(PDCregion_close(local_region) < 0) {
         printf("fail to close local region\n");
-
-    if(PDCregion_close(global_region) < 0)
+        ret_value = 1;
+    }
+    if(PDCregion_close(global_region) < 0) {
         printf("fail to close global region\n");
-
-    if(PDCcont_close(cont) < 0)
+        ret_value = 1;
+    }
+    if(PDCcont_close(cont) < 0) {
         printf("fail to close container\n");
-
-    if(PDCprop_close(cont_prop) < 0)
+        ret_value = 1;
+    }
+    if(PDCprop_close(cont_prop) < 0) {
         printf("Fail to close property @ line %d\n", __LINE__);
-
-    if(PDCclose(pdc) < 0)
-       printf("fail to close PDC\n");
-
+        ret_value = 1;
+    }
+    if(PDCclose(pdc) < 0) {
+        printf("fail to close PDC\n");
+        ret_value = 1;
+    }
 #ifdef ENABLE_MPI
      MPI_Finalize();
 #endif
 
-     return 0;
+     return ret_value;
 }

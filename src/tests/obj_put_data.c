@@ -34,6 +34,7 @@ int main(int argc, char **argv) {
     pdcid_t obj1, obj2;
 
     int rank = 0, size = 1;
+    int ret_value = 0;
 
     size_t ndim = 3;
     uint64_t dims[3];
@@ -58,7 +59,7 @@ int main(int argc, char **argv) {
         printf("Create a container property\n");
     } else {
         printf("Fail to create container property @ line  %d!\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
     // create a container
     cont = PDCcont_create("c1", cont_prop);
@@ -66,7 +67,7 @@ int main(int argc, char **argv) {
         printf("Create a container c1\n");
     } else {
         printf("Fail to create container @ line  %d!\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
@@ -74,18 +75,18 @@ int main(int argc, char **argv) {
         printf("Create an object property\n");
     } else {
         printf("Fail to create object property @ line  %d!\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
 
     ret = PDCprop_set_obj_dims(obj_prop, ndim, dims);
     if ( ret != SUCCEED ) {
         printf("Fail to set obj dim @ line %d\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
     ret = PDCprop_set_obj_type(obj_prop, PDC_DOUBLE);
     if ( ret != SUCCEED ) {
         printf("Fail to set obj type @ line %d\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
 
 
@@ -95,7 +96,7 @@ int main(int argc, char **argv) {
         printf("Create an object o1\n");
     } else {
         printf("Fail to create object @ line  %d!\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
     // create second object
     obj2 = PDCobj_create(cont, "o2", obj_prop);
@@ -103,7 +104,7 @@ int main(int argc, char **argv) {
         printf("Create an object o2\n");
     } else {
         printf("Fail to create object @ line  %d!\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
     /* Need to change return value of the put function, it should not be an ID.*/
 
@@ -113,50 +114,50 @@ int main(int argc, char **argv) {
         printf("Put data to o1\n");
     } else {
         printf("Fail to put data into object @ line  %d!\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
 */
     // close object
     if(PDCobj_close(obj1) < 0) {
         printf("fail to close object o1\n");
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close object o1\n");
     }
     if(PDCobj_close(obj2) < 0) {
         printf("fail to close object o2\n");
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close object o2\n");
     }
     // close a container
     if(PDCcont_close(cont) < 0) {
         printf("fail to close container c1\n");
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close container c1\n");
     }
     // close a object property
     if(PDCprop_close(obj_prop) < 0) {
         printf("Fail to close property @ line %d\n", __LINE__);
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close object property\n");
     }
     // close a container property
     if(PDCprop_close(cont_prop) < 0) {
         printf("Fail to close property @ line %d\n", __LINE__);
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close container property\n");
     }
     // close pdc
     if(PDCclose(pdc) < 0) {
-       printf("fail to close PDC\n");
-       return 1;
+        printf("fail to close PDC\n");
+        ret_value = 1;
     }
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
-    return 0;
+    return ret_value;
 }

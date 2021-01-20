@@ -34,7 +34,8 @@ int main(int argc, char **argv)
     int rank = 0, size = 1;
     obj_handle *oh;
     struct pdc_obj_info *info;
-    
+    int ret_value = 0;
+
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -50,7 +51,7 @@ int main(int argc, char **argv)
         printf("Create a container property\n");
     } else {
         printf("Fail to create container property @ line  %d!\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
     // create a container
     cont = PDCcont_create("c1", cont_prop);
@@ -58,7 +59,7 @@ int main(int argc, char **argv)
         printf("Create a container c1\n");
     } else {
         printf("Fail to create container @ line  %d!\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
@@ -66,7 +67,7 @@ int main(int argc, char **argv)
         printf("Create an object property\n");
     } else {
         printf("Fail to create object property @ line  %d!\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
     // create first object
     obj1 = PDCobj_create(cont, "o1", obj_prop);
@@ -74,7 +75,7 @@ int main(int argc, char **argv)
         printf("Create an object o1\n");
     } else {
         printf("Fail to create object @ line  %d!\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
     // create second object
     obj2 = PDCobj_create(cont, "o2", obj_prop);
@@ -82,7 +83,7 @@ int main(int argc, char **argv)
         printf("Create an object o2\n");
     } else {
         printf("Fail to create object @ line  %d!\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
     // create third object
     obj3 = PDCobj_create(cont, "o3", obj_prop);
@@ -90,7 +91,7 @@ int main(int argc, char **argv)
         printf("Create an object o3\n");
     } else {
         printf("Fail to create object @ line  %d!\n", __LINE__);
-        return 1;
+        ret_value = 1;
     }
     // start object iteration
     oh = PDCobj_iter_start(cont);
@@ -103,53 +104,53 @@ int main(int argc, char **argv)
     // close first object
     if(PDCobj_close(obj1) < 0) {
         printf("fail to close object o1\n");
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close object o1\n");
     }
     // close second object
     if(PDCobj_close(obj2) < 0) {
         printf("fail to close object o2\n");
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close object o2\n");
     }
     // close third object
     if(PDCobj_close(obj3) < 0) {
         printf("fail to close object o3\n");
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close object o3\n");
     }
     // close a object property
     if(PDCprop_close(obj_prop) < 0) {
         printf("Fail to close property @ line %d\n", __LINE__);
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close object property\n");
     }
     // close a container
     if(PDCcont_close(cont) < 0) {
         printf("fail to close container c1\n");
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close container c1\n");
     }
     // close a container property
     if(PDCprop_close(cont_prop) < 0) {
         printf("Fail to close property @ line %d\n", __LINE__);
-        return 1;
+        ret_value = 1;
     } else {
         printf("successfully close container property\n");
     }
     // close pdc
     if(PDCclose(pdc) < 0) {
         printf("fail to close PDC\n");
-        return 1;
+        ret_value = 1;
     }
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
 
-    return 0;
+    return ret_value;
 }
