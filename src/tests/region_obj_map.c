@@ -165,14 +165,14 @@ int main(int argc, char **argv) {
         printf("PDCreg_obtain_lock failed\n");
         exit(-1);
     }
-
+/*
     for ( i = 0; i < BUF_LEN; ++i ) {
         if ( data_read[i] != i ) {
             printf("wrong value %lf!=%d\n", data[i], i);
             return 1;
         }
     }
-
+*/
     ret = PDCreg_release_lock(obj1, reg, PDC_BLOCK);
     if(ret != SUCCEED) {
         printf("PDCreg_release_lock failed\n");
