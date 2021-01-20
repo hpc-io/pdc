@@ -168,7 +168,7 @@ int main(int argc, char **argv) {
 
     for ( i = 0; i < BUF_LEN; ++i ) {
         if ( data_read[i] != i ) {
-            printf("wrong value %lf!=%lf\n", data[i], i);
+            printf("wrong value %lf!=%d\n", data[i], i);
             return 1;
         }
     }
