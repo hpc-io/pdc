@@ -143,27 +143,31 @@ int main(int argc, char **argv)
 
     // Construct query constraints
     q0  = PDCquery_create(obj_id, PDC_LT, PDC_INT, &lo0);
-    printf("checkpoint 1\n");
+
     PDCquery_sel_region(q0, &region);
-    printf("checkpoint 2\n");
+
     q1l = PDCquery_create(obj_id, PDC_GTE, PDC_INT, &lo1);
     q1h = PDCquery_create(obj_id, PDC_LT, PDC_INT, &hi1);
     q1  = PDCquery_and(q1l, q1h);
-    printf("checkpoint 3\n");
+
     q2l = PDCquery_create(obj_id, PDC_GTE, PDC_INT, &lo2);
     q2h = PDCquery_create(obj_id, PDC_LT, PDC_INT, &hi2);
     q2  = PDCquery_and(q2l, q2h);
-    printf("checkpoint 4\n");
+
     q12 = PDCquery_or(q1, q2);
     q   = PDCquery_or(q0, q12);
     printf("checkpoint 5\n");
     PDCquery_get_selection(q, &sel);
+    printf("checkpoint 6\n");
     PDCselection_print(&sel);
+    printf("checkpoint 7\n");
 
     PDCquery_free_all(q);
+    printf("checkpoint 8\n");
     PDCregion_free(&region);
+    printf("checkpoint 9\n");
     PDCselection_free(&sel);
-
+    printf("checkpoint 10\n");
     // close a container
     if(PDCcont_close(cont) < 0) {
         printf("fail to close container c1\n");
