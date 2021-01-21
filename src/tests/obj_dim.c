@@ -33,7 +33,6 @@ int main(int argc, char **argv) {
     int rank = 0, size = 1;
     uint64_t d[3] = {10, 20, 30};
     struct pdc_obj_prop *op;
-    size_t i;
     int ret_value = 0;
     
 #ifdef ENABLE_MPI

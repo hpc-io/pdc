@@ -143,19 +143,20 @@ int main(int argc, char **argv)
 
     // Construct query constraints
     q0  = PDCquery_create(obj_id, PDC_LT, PDC_INT, &lo0);
+    printf("checkpoint 1\n");
     PDCquery_sel_region(q0, &region);
-
+    printf("checkpoint 2\n");
     q1l = PDCquery_create(obj_id, PDC_GTE, PDC_INT, &lo1);
     q1h = PDCquery_create(obj_id, PDC_LT, PDC_INT, &hi1);
     q1  = PDCquery_and(q1l, q1h);
-
+    printf("checkpoint 3\n");
     q2l = PDCquery_create(obj_id, PDC_GTE, PDC_INT, &lo2);
     q2h = PDCquery_create(obj_id, PDC_LT, PDC_INT, &hi2);
     q2  = PDCquery_and(q2l, q2h);
-
+    printf("checkpoint 4\n");
     q12 = PDCquery_or(q1, q2);
     q   = PDCquery_or(q0, q12);
-
+    printf("checkpoint 5\n");
     PDCquery_get_selection(q, &sel);
     PDCselection_print(&sel);
 
