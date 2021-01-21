@@ -262,13 +262,13 @@
       + Region ID
     - Create a region with ndims offset/length pairs
     - For developers: see pdc_region.c. Need to use PDC_get_kvtag to submit RPCs to the servers for metadata update.
-  + void PDCregion_free(struct pdc_region_info *region)
+  + perr_t PDCregion_close(pdcid_t region_id)
     - Input:
-      + region_id: PDC region info, see [PDC region info](#region-info)
+      + region_id: PDC ID returned from PDCregion_create
     - Output:
       + None
     - Close a PDC region
-    - For developers: see pdc_client_server_common.c. Free offset and size arrays.
+    - For developers: see pdc_region.c. Free offset and size arrays.
   + perr_t PDCbuf_obj_map(void *buf, pdc_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg)
     - Input:
       + buf: Memory buffer
