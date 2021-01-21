@@ -156,18 +156,14 @@ int main(int argc, char **argv)
 
     q12 = PDCquery_or(q1, q2);
     q   = PDCquery_or(q0, q12);
-    printf("checkpoint 5\n");
+
     PDCquery_get_selection(q, &sel);
-    printf("checkpoint 6\n");
+
     PDCselection_print(&sel);
-    printf("checkpoint 7\n");
 
     PDCquery_free_all(q);
-    printf("checkpoint 8\n");
     PDCregion_free(&region);
-    printf("checkpoint 9\n");
     PDCselection_free(&sel);
-    printf("checkpoint 10\n");
     // close a container
     if(PDCcont_close(cont) < 0) {
         printf("fail to close container c1\n");
