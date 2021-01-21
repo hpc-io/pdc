@@ -175,6 +175,12 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
+    ret = PDCbuf_obj_unmap(obj1, reg_global);
+    if(ret != SUCCEED) {
+        printf("PDCbuf_obj_unmap failed\n");
+        ret_value = 1;
+    }
+
     for ( i = 0; i < BUF_LEN; ++i ) {
         if ( data_read[i] != i ) {
             printf("wrong value %d!=%d\n", data_read[i], i);
@@ -182,13 +188,6 @@ int main(int argc, char **argv) {
             break;
         }
     }
-
-    ret = PDCbuf_obj_unmap(obj1, reg_global);
-    if(ret != SUCCEED) {
-        printf("PDCbuf_obj_unmap failed\n");
-        ret_value = 1;
-    }
-
 
 
     // close object
