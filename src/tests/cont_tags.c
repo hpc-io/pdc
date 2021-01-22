@@ -71,43 +71,6 @@ int main(int argc, char **argv) {
         printf("Fail to create container @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
-    // create an object property
-    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
-    if(obj_prop > 0) {
-        printf("Create an object property\n");
-    } else {
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
-        ret_value = 1;
-    }
-
-    ret = PDCprop_set_obj_dims(obj_prop, ndim, dims);
-    if ( ret != SUCCEED ) {
-        printf("Fail to set obj dim @ line %d\n", __LINE__);
-        ret_value = 1;
-    }
-    ret = PDCprop_set_obj_type(obj_prop, PDC_DOUBLE);
-    if ( ret != SUCCEED ) {
-        printf("Fail to set obj type @ line %d\n", __LINE__);
-        ret_value = 1;
-    }
-
-
-    // create first object
-    obj1 = PDCobj_create(cont, "o1", obj_prop);
-    if(obj1 > 0) {
-        printf("Create an object o1\n");
-    } else {
-        printf("Fail to create object @ line  %d!\n", __LINE__);
-        ret_value = 1;
-    }
-    // create second object
-    obj2 = PDCobj_create(cont, "o2", obj_prop);
-    if(obj2 > 0) {
-        printf("Create an object o2\n");
-    } else {
-        printf("Fail to create object @ line  %d!\n", __LINE__);
-        ret_value = 1;
-    }
 
     ret = PDCobj_put_tag(obj1, "some tag", tag_value, strlen(tag_value) + 1);
     if ( ret != SUCCEED ) {
@@ -150,7 +113,7 @@ int main(int argc, char **argv) {
     }
 
     if (strcmp(tag_value2, tag_value_ret) != 0) {
-        printf("Wrong tag value 2 at object 1, expected = %s, get %s\n", tag_value, tag_value_ret);
+        printf("Wrong tag value at object 1, expected = %s, get %s\n", tag_value, tag_value_ret);
         ret_value = 1;
     }
 
@@ -172,37 +135,17 @@ int main(int argc, char **argv) {
     }
 
     if (strcmp(tag_value2, tag_value_ret) != 0) {
-        printf("Wrong tag value 2 at object 2, expected = %s, get %s\n", tag_value, tag_value_ret);
+        printf("Wrong tag value at object 2, expected = %s, get %s\n", tag_value, tag_value_ret);
         ret_value = 1;
     }
 
 
-    // close object
-    if(PDCobj_close(obj1) < 0) {
-        printf("fail to close object o1\n");
-        ret_value = 1;
-    } else {
-        printf("successfully close object o1\n");
-    }
-    if(PDCobj_close(obj2) < 0) {
-        printf("fail to close object o2\n");
-        ret_value = 1;
-    } else {
-        printf("successfully close object o2\n");
-    }
     // close a container
     if(PDCcont_close(cont) < 0) {
         printf("fail to close container c1\n");
         ret_value = 1;
     } else {
         printf("successfully close container c1\n");
-    }
-    // close a object property
-    if(PDCprop_close(obj_prop) < 0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
-        ret_value = 1;
-    } else {
-        printf("successfully close object property\n");
     }
     // close a container property
     if(PDCprop_close(cont_prop) < 0) {
