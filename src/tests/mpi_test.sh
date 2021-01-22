@@ -6,18 +6,17 @@
 if [ $# -lt 1 ]; then echo "missing test argument" && exit -1 ; fi
 # check the test to be run:
 test_exe="$1"
-mpi_cmd="$2"
 shift
 # copy the remaining test input arguments (if any)
 test_args="$*"
 if [ -x $test_exe ]; then echo "testing: $test_exe"; else echo "test: $test_exe not found or not and executable" && exit -2; fi
 rm -rf pdc_tmp
 # START the server (in the background)
-$mpi_cmd -n 4 ./pdc_server.exe &
+mpiexec -n 4 ./pdc_server.exe &
 # WAIT a bit...
 sleep 1
 # RUN the actual test
-$mpi_cmd -n 4 $test_exe $test_args
+mpiexec -n 4 $test_exe $test_args
 # Need to test the return value
 ret="$?"
 # and shutdown the SERVER before exiting
