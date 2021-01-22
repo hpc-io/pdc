@@ -29,7 +29,7 @@
 
 
 int main(int argc, char **argv) {
-    pdcid_t pdc, cont_prop, cont, obj_prop;
+    pdcid_t pdc, cont_prop, cont, cont2, obj_prop;
     perr_t ret;
     pdcid_t obj1, obj2;
     int ret_value = 0;
@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
     char tag_value[128], tag_value2[128], *tag_value_ret;
     psize_t value_size;
     strcpy(tag_value, "some tag value");
-    strcpy(tag_value2, "some tag value 2");
+    strcpy(tag_value2, "some tag value 2 is longer than tag 1");
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -72,52 +72,59 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    ret = PDCobj_put_tag(obj1, "some tag", tag_value, strlen(tag_value) + 1);
+    cont2 = PDCcont_create("c2", cont_prop);
+    if(cont > 0) {
+        printf("Create a container c2\n");
+    } else {
+        printf("Fail to create container @ line  %d!\n", __LINE__);
+        ret_value = 1;
+    }
+
+    ret = PDCcont_put_tag(cont1, "some tag", tag_value, strlen(tag_value) + 1);
     if ( ret != SUCCEED ) {
         printf("Put tag failed at object 1\n");
         ret_value = 1;
     }
-    ret = PDCobj_put_tag(obj1, "some tag 2", tag_value2, strlen(tag_value) + 1);
+    ret = PDCcont_put_tag(cont1, "some tag 2", tag_value, strlen(tag_value2) + 1);
     if ( ret != SUCCEED ) {
         printf("Put tag failed at object 1\n");
         ret_value = 1;
     }
 
-    ret = PDCobj_put_tag(obj2, "some tag", tag_value, strlen(tag_value) + 1);
+    ret = PDCcont_put_tag(cont2, "some tag", tag_value, strlen(tag_value) + 1);
     if ( ret != SUCCEED ) {
         printf("Put tag failed at object 2\n");
         ret_value = 1;
     }
 
-    ret = PDCobj_put_tag(obj2, "some tag 2", tag_value2, strlen(tag_value) + 1);
+    ret = PDCcont_put_tag(cont2, "some tag 2", tag_value, strlen(tag_value2) + 1);
     if ( ret != SUCCEED ) {
         printf("Put tag failed at object 2\n");
         ret_value = 1;
     }
 
-    ret = PDCobj_get_tag(obj1, "some tag", (void **)&tag_value_ret, &value_size);
+    ret = PDCcont_get_tag(cont, "some tag", (void **)&tag_value_ret, &value_size);
     if ( ret != SUCCEED ) {
         printf("Get tag failed at object 1\n");
         ret_value = 1;
     }
-    printf("data size get %d, expected %d\n", (int)value_size, (int) strlen(tag_value));
     if (strcmp(tag_value, tag_value_ret) != 0) {
         printf("Wrong tag value at object 1, expected = %s, get %s\n", tag_value, tag_value_ret);
         ret_value = 1;
     }
 
-    ret = PDCobj_get_tag(obj1, "some tag 2", (void **)&tag_value_ret, &value_size);
+    ret = PDCcont_get_tag(cont, "some tag 2", (void **)&tag_value_ret, &value_size);
     if ( ret != SUCCEED ) {
         printf("Get tag failed at object 1\n");
         ret_value = 1;
     }
 
     if (strcmp(tag_value2, tag_value_ret) != 0) {
-        printf("Wrong tag value at object 1, expected = %s, get %s\n", tag_value, tag_value_ret);
+        printf("Wrong tag value at object 1, expected = %s, get %s\n", tag_value2, tag_value_ret);
         ret_value = 1;
     }
 
-    ret = PDCobj_get_tag(obj2, "some tag", (void **)&tag_value_ret, &value_size);
+    ret = PDCcont_get_tag(cont2, "some tag", (void **)&tag_value_ret, &value_size);
     if ( ret != SUCCEED ) {
         printf("Get tag failed at object 2\n");
         ret_value = 1;
@@ -128,14 +135,14 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    ret = PDCobj_get_tag(obj2, "some tag 2", (void **)&tag_value_ret, &value_size);
+    ret = PDCcont_get_tag(cont2, "some tag 2", (void **)&tag_value_ret, &value_size);
     if ( ret != SUCCEED ) {
         printf("Get tag failed at object 2\n");
         ret_value = 1;
     }
 
     if (strcmp(tag_value2, tag_value_ret) != 0) {
-        printf("Wrong tag value at object 2, expected = %s, get %s\n", tag_value, tag_value_ret);
+        printf("Wrong tag value at object 2, expected = %s, get %s\n", tag_value2, tag_value_ret);
         ret_value = 1;
     }
 

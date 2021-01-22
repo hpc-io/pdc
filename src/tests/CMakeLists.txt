@@ -19,6 +19,7 @@ set(PROGRAMS
   cont_iter
   cont_info
   cont_getid
+  cont_tags
   create_obj
   open_obj
   obj_info
@@ -124,6 +125,7 @@ add_test(NAME cont_life   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} CO
 add_test(NAME cont_iter   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./cont_iter )
 add_test(NAME cont_info   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./cont_info )
 add_test(NAME cont_getid   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./cont_getid )
+add_test(NAME cont_tags   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./cont_tags )
 add_test(NAME create_obj  WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./create_obj )
 add_test(NAME open_obj    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./open_obj )
 add_test(NAME obj_iter    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_iter )
