@@ -78,7 +78,7 @@ endforeach(program)
 
 set(SCRIPTS
   run_test.sh
-  run_mpi.sh
+  mpi_test.sh
   run_multiple_test.sh
   )
 
