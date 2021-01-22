@@ -16,7 +16,7 @@ mpiexec -n 4 ./pdc_server.exe &
 # WAIT a bit...
 sleep 1
 # RUN the actual test
-mpiexec -n 4 $test_exe $test_args
+mpiexec -n 4 $test_exe $*
 # Need to test the return value
 ret="$?"
 # and shutdown the SERVER before exiting
