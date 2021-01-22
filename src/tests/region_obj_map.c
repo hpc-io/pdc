@@ -167,13 +167,7 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    for ( i = 0; i < BUF_LEN; ++i ) {
-        if ( data_read[i] != i ) {
-            printf("wrong value %d!=%d\n", data_read[i], i);
-            ret_value = 1;
-            break;
-        }
-    }
+
 
     ret = PDCreg_release_lock(obj1, reg, PDC_BLOCK);
     if(ret != SUCCEED) {
@@ -187,6 +181,13 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
+    for ( i = 0; i < BUF_LEN; ++i ) {
+        if ( data_read[i] != i ) {
+            printf("wrong value %d!=%d\n", data_read[i], i);
+            ret_value = 1;
+            break;
+        }
+    }
 
 
     // close object
