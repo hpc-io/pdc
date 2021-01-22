@@ -69,80 +69,30 @@ int main(int argc, char **argv) {
         printf("Fail to create container @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
-    // create an object property
-    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
-    if(obj_prop > 0) {
-        printf("Create an object property\n");
-    } else {
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
-        ret_value = 1;
-    }
 
-    ret = PDCprop_set_obj_dims(obj_prop, ndim, dims);
-    if ( ret != SUCCEED ) {
-        printf("Fail to set obj dim @ line %d\n", __LINE__);
-        ret_value = 1;
-    }
-    ret = PDCprop_set_obj_type(obj_prop, PDC_DOUBLE);
-    if ( ret != SUCCEED ) {
-        printf("Fail to set obj type @ line %d\n", __LINE__);
-        ret_value = 1;
-    }
-
-
-    // create first object
-    obj1 = PDCobj_create(cont, "o1", obj_prop);
-    if(obj1 > 0) {
-        printf("Create an object o1\n");
-    } else {
-        printf("Fail to create object @ line  %d!\n", __LINE__);
-        ret_value = 1;
-    }
-    // create second object
-    obj2 = PDCobj_create(cont, "o2", obj_prop);
-    if(obj2 > 0) {
-        printf("Create an object o2\n");
-    } else {
-        printf("Fail to create object @ line  %d!\n", __LINE__);
-        ret_value = 1;
-    }
-    /* Need to change return value of the put function, it should not be an ID.*/
-
-    //ret = (perr_t) PDCobj_put_data("o2", (void*)data, 128, cont);
-/*
-    if(ret != SUCCEED) {
+    obj1 = PDCobj_put_data("o1", (void*)data, 16*sizeof(double), cont);
+    if(obj1 <= 0) {
         printf("Put data to o1\n");
     } else {
         printf("Fail to put data into object @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
-*/
-    // close object
-    if(PDCobj_close(obj1) < 0) {
-        printf("fail to close object o1\n");
-        ret_value = 1;
+
+    obj2 = PDCobj_put_data("o2", (void*)data, 128*sizeof(double), cont);
+    if(obj2 <= 0) {
+        printf("Put data to o2\n");
     } else {
-        printf("successfully close object o1\n");
-    }
-    if(PDCobj_close(obj2) < 0) {
-        printf("fail to close object o2\n");
+        printf("Fail to put data into object @ line  %d!\n", __LINE__);
         ret_value = 1;
-    } else {
-        printf("successfully close object o2\n");
     }
+
+
     // close a container
     if(PDCcont_close(cont) < 0) {
         printf("fail to close container c1\n");
         ret_value = 1;
     } else {
         printf("successfully close container c1\n");
-    }
-    // close a object property
-    if(PDCprop_close(obj_prop) < 0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
-        ret_value = 1;
-    } else {
-        printf("successfully close object property\n");
     }
     // close a container property
     if(PDCprop_close(cont_prop) < 0) {

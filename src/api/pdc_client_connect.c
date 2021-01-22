@@ -56,6 +56,8 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <inttypes.h>
+#include <math.h>
+#include <sys/time.h>
 
 int                        is_client_debug_g = 0;
 pdc_server_selection_t     pdc_server_selection_g = PDC_SERVER_DEFAULT;
@@ -6172,22 +6174,23 @@ PDCobj_put_data(const char *obj_name, void *data, uint64_t size, pdcid_t cont_id
     PDCprop_set_obj_user_id(obj_prop, getuid());
     PDCprop_set_obj_time_step(obj_prop, 0);
 
-    obj_id = PDCobj_create(cont_id, obj_name, obj_prop);
+    obj_id = PDC_obj_create(cont_id, obj_name, obj_prop, PDC_OBJ_GLOBAL);
     if (obj_id <= 0)
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Error creating object [%s]",
                 pdc_client_mpi_rank_g, obj_name);
 
     int ndim = 1;
     uint64_t offset = 0;
+    size = ceil(size/sizeof(int));
     obj_region = PDCregion_create(ndim, &offset, &size);
 
-    ret = PDCbuf_obj_map(data, PDC_CHAR, obj_region, obj_id, obj_region);
+    ret = PDCbuf_obj_map(data, PDC_INT, obj_region, obj_id, obj_region);
     if(ret != SUCCEED) {
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Error with PDCbuf_obj_map for obj [%s]",
                 pdc_client_mpi_rank_g, obj_name);
     }
 
-    ret = PDCreg_obtain_lock(obj_id, obj_region, PDC_WRITE, PDC_NOBLOCK);
+    ret = PDCreg_obtain_lock(obj_id, obj_region, PDC_WRITE, PDC_BLOCK);
     if (ret != SUCCEED) {
         PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with PDCreg_obtain_lock for obj [%s]",
                 pdc_client_mpi_rank_g, obj_name);
