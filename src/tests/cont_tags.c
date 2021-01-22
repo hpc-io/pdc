@@ -35,11 +35,6 @@ int main(int argc, char **argv) {
 
     int rank = 0, size = 1;
 
-    size_t ndim = 3;
-    uint64_t dims[3];
-    dims[0] = 64;
-    dims[1] = 3;
-    dims[2] = 4;
     char tag_value[128], tag_value2[128], *tag_value_ret;
     psize_t value_size;
     strcpy(tag_value, "some tag value");
