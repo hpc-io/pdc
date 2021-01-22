@@ -5597,7 +5597,11 @@ metadata_get_kvtag_rpc_cb(const struct hg_cb_info *callback_info)
         PGOTO_ERROR(ret_value, "==PDC_CLIENT[%d]: metadata_add_tag_rpc_cb error with HG_Get_output", pdc_client_mpi_rank_g);
     }
     client_lookup_args->ret = output.ret;
-    PDC_kvtag_dup(&(output.kvtag), &client_lookup_args->kvtag);
+    client_lookup_args->kvtag->name = strdup(output.kvtag.name);
+    client_lookup_args->kvtag->size = output.kvtag.size;
+    client_lookup_args->kvtag->value = malloc(output.kvtag.size);
+    memcpy(client_lookup_args->kvtag->value, output.kvtag.value, output.kvtag.size);
+    /* PDC_kvtag_dup(&(output.kvtag), &client_lookup_args->kvtag); */
 
 done:
     fflush(stdout);
