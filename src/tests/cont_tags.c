@@ -73,9 +73,9 @@ int main(int argc, char **argv) {
         printf("Fail to create container @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
-    printf("checkpoint 1\n");
+
     ret = PDCcont_put_tag(cont, "some tag", tag_value, strlen(tag_value) + 1);
-    printf("checkpoint 2\n");
+
     if ( ret != SUCCEED ) {
         printf("Put tag failed at container 1\n");
         ret_value = 1;
