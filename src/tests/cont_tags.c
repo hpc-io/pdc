@@ -29,9 +29,8 @@
 
 
 int main(int argc, char **argv) {
-    pdcid_t pdc, cont_prop, cont, cont2, obj_prop;
+    pdcid_t pdc, cont_prop, cont, cont2;
     perr_t ret;
-    pdcid_t obj1, obj2;
     int ret_value = 0;
 
     int rank = 0, size = 1;
@@ -80,12 +79,12 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    ret = PDCcont_put_tag(cont1, "some tag", tag_value, strlen(tag_value) + 1);
+    ret = PDCcont_put_tag(cont, "some tag", tag_value, strlen(tag_value) + 1);
     if ( ret != SUCCEED ) {
         printf("Put tag failed at object 1\n");
         ret_value = 1;
     }
-    ret = PDCcont_put_tag(cont1, "some tag 2", tag_value, strlen(tag_value2) + 1);
+    ret = PDCcont_put_tag(cont, "some tag 2", tag_value, strlen(tag_value2) + 1);
     if ( ret != SUCCEED ) {
         printf("Put tag failed at object 1\n");
         ret_value = 1;
