@@ -6156,8 +6156,7 @@ pdcid_t
 PDCobj_put_data(const char *obj_name, void *data, uint64_t size, pdcid_t cont_id)
 {
     pdcid_t ret_value = 0;
-    pdcid_t obj_id, obj_prop;
-    struct pdc_region_info obj_region;
+    pdcid_t obj_id, obj_prop, obj_region;
     perr_t ret;
     pdc_metadata_t *meta;
     struct _pdc_cont_info *info = NULL;
@@ -6178,20 +6177,51 @@ PDCobj_put_data(const char *obj_name, void *data, uint64_t size, pdcid_t cont_id
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Error creating object [%s]",
                 pdc_client_mpi_rank_g, obj_name);
 
-    obj_region.ndim   = 1;
-    obj_region.offset = 0;
-    obj_region.size   = &size;
+    int ndim = 1;
+    uint64_t offset = 0;
+    obj_region = PDCregion_create(ndim, &offset, &size);
 
-#ifdef ENABLE_MPI
-    ret = PDC_Client_query_metadata_name_timestep_agg(obj_name, 0, &meta);
-#else
-    ret = PDC_Client_query_metadata_name_timestep(obj_name, 0, &meta);
-#endif
-
-    ret = PDC_Client_write(meta, &obj_region, (void *)data);
-    if (ret != SUCCEED)
-        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with PDC_Client_write_id for obj [%s]",
+    ret = PDCbuf_obj_map(data, PDC_CHAR, obj_region, obj_id, obj_region);
+    if(ret != SUCCEED) {
+        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Error with PDCbuf_obj_map for obj [%s]",
                 pdc_client_mpi_rank_g, obj_name);
+    }
+
+    ret = PDCreg_obtain_lock(obj_id, obj_region, PDC_WRITE, PDC_NOBLOCK);
+    if (ret != SUCCEED) {
+        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with PDCreg_obtain_lock for obj [%s]",
+                pdc_client_mpi_rank_g, obj_name);
+    }
+
+    ret = PDCreg_release_lock(obj_id, obj_region, PDC_WRITE);
+    if (ret != SUCCEED) {
+        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with PDCreg_release_lock for obj [%s]",
+                pdc_client_mpi_rank_g, obj_name);
+    }
+
+    ret = PDCbuf_obj_unmap(obj_id, obj_region);
+    if (ret != SUCCEED) {
+        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with PDCbuf_obj_unmap for obj [%s]",
+                pdc_client_mpi_rank_g, obj_name);
+    }
+
+    ret = PDCobj_close(obj_id);
+    if (ret != SUCCEED) {
+        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with PDCobj_close for obj [%s]",
+                pdc_client_mpi_rank_g, obj_name);
+    }
+
+    ret = PDCregion_close(obj_region);
+    if (ret != SUCCEED) {
+        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with PDCregion_close for obj [%s]",
+                pdc_client_mpi_rank_g, obj_name);
+    }
+
+    ret = PDCprop_close(obj_prop);
+    if (ret != SUCCEED) {
+        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with PDCprop_close for obj [%s]",
+                pdc_client_mpi_rank_g, obj_name);
+    }
 
 done:
     fflush(stdout);
