@@ -137,7 +137,7 @@ int main(int argc, char **argv) {
         printf("Get tag failed at object 1\n");
         ret_value = 1;
     }
-    printf("data size get %d, expected %d\n", (int)value_size, (int) strlen(tag_value));
+
     if (strcmp(tag_value, tag_value_ret) != 0) {
         printf("Wrong tag value at object 1, expected = %s, get %s\n", tag_value, tag_value_ret);
         ret_value = 1;
