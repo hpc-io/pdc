@@ -13,7 +13,7 @@ if [ -x $test_exe ]; then echo "testing: $test_exe"; else echo "test: $test_exe 
 rm -rf pdc_tmp
 # START the server (in the background)
 mpiexec -n 4 ./pdc_server.exe &
-# WAIT a bit...
+# WAIT a bit, for 1 second
 sleep 1
 # RUN the actual test
 mpiexec -n 4 $test_exe $*
