@@ -135,7 +135,7 @@ int main(int argc, char **argv)
         ret_value = 1;
         goto done;
     }
-
+    printf("checkpoint 3\n");
     ret = PDCreg_obtain_lock(global_obj, global_region, PDC_WRITE, PDC_NOBLOCK);
     if (ret != SUCCEED) {
         printf("Failed to obtain lock for region\n");
@@ -146,14 +146,14 @@ int main(int argc, char **argv)
     for (i = 0; i < 5; i++) {
         mydata[i] = i * 1.01;
     }
-
+    printf("checkpoint 4\n");
     ret = PDCreg_release_lock(local_obj, local_region, PDC_WRITE);
     if (ret != SUCCEED) {
         printf("Failed to release lock for region\n");
         ret_value = 1;
         goto done;
     }
-
+    printf("checkpoint 5\n");
     ret = PDCreg_release_lock(global_obj, global_region, PDC_WRITE);
     if (ret != SUCCEED) {
         printf("Failed to release lock for region\n");
