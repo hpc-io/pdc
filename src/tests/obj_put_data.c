@@ -29,19 +29,13 @@
 
 
 int main(int argc, char **argv) {
-    pdcid_t pdc, cont_prop, cont, obj_prop;
-    perr_t ret;
+    pdcid_t pdc, cont_prop, cont;
     pdcid_t obj1, obj2;
     char cont_name[128], obj_name1[128], obj_name2[128], obj_name3[128];
 
     int rank = 0, size = 1;
     int ret_value = 0;
 
-    size_t ndim = 3;
-    uint64_t dims[3];
-    dims[0] = 64;
-    dims[1] = 3;
-    dims[2] = 4;
     double *data = (double*)malloc(sizeof(double)*128);
     memset(data, 1, 128 * sizeof(double));
 
