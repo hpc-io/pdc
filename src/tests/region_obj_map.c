@@ -37,7 +37,7 @@
 
 
 int main(int argc, char **argv) {
-    pdcid_t pdc, cont_prop, cont, obj_prop, reg, reg_global, global_obj;
+    pdcid_t pdc, cont_prop, cont, obj_prop, reg, reg_global;
     perr_t ret;
     pdcid_t obj1, obj2;
     char cont_name[128], obj_name1[128], obj_name2[128];

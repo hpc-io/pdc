@@ -38,7 +38,7 @@ int main(int argc, char **argv)
     uint64_t *mysize; 
     int i;
     float *mydata, *obj_data;
-    char *obj_name;
+    char obj_name[128], cont_name[128];
 
     uint64_t my_data_size;
     uint64_t dims[1];
@@ -59,7 +59,7 @@ int main(int argc, char **argv)
         return ret_value;
     }
 
-    obj_name = argv[1];
+    sprintf(obj_name, "%s_%d", argv[1], rank);
     size_MB = atoi(argv[2]);
 
     if (rank == 0) {
@@ -77,7 +77,8 @@ int main(int argc, char **argv)
         ret_value = 1;
     }
     // create a container
-    cont = PDCcont_create("c1", cont_prop);
+    sprintf(cont_name, "c%d", rank);
+    cont = PDCcont_create(cont_name, cont_prop);
     if(cont <= 0) {
         printf("Fail to create container @ line  %d!\n", __LINE__);
         ret_value = 1;
