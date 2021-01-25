@@ -32,10 +32,11 @@
 int main(int argc, char **argv) {
     pdcid_t pdc, cont_prop, cont, obj_prop, obj1, obj2;
     int ret_value = 0;
-    int rank = 0, size = 1;
+    int rank = 0;
     char cont_name[128], obj_name1[128], obj_name2[128];
     // create a pdc
 #ifdef ENABLE_MPI
+    int size;
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -80,7 +81,7 @@ int main(int argc, char **argv) {
     }
     // create second object
     sprintf(obj_name2, "o2_%d", rank);
-    obj2 = PDCobj_create(cont, cont_name2, obj_prop);
+    obj2 = PDCobj_create(cont, obj_name2, obj_prop);
     if(obj2 > 0) {
         printf("Create an object o2\n");
     } else {
