@@ -32,6 +32,7 @@ int main(int argc, char **argv) {
     pdcid_t pdc, cont_prop, cont, obj_prop;
     perr_t ret;
     pdcid_t obj1, obj2;
+    char cont_name[128], obj_name1[128], obj_name2[128], obj_name3[128];
 
     int rank = 0, size = 1;
     int ret_value = 0;
@@ -62,7 +63,8 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
     // create a container
-    cont = PDCcont_create("c1", cont_prop);
+    sprintf(cont_name, "c%d", rank);
+    cont = PDCcont_create(cont_name, cont_prop);
     if(cont > 0) {
         printf("Create a container c1\n");
     } else {
@@ -70,7 +72,8 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    obj1 = PDCobj_put_data("o1", (void*)data, 16*sizeof(double), cont);
+    sprintf(obj_name1, "o1_%d", rank);
+    obj1 = PDCobj_put_data(obj_name1, (void*)data, 16*sizeof(double), cont);
     if(obj1 <= 0) {
         printf("Put data to o1\n");
     } else {
@@ -78,7 +81,8 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    obj2 = PDCobj_put_data("o2", (void*)data, 128*sizeof(double), cont);
+    sprintf(obj_name2, "o2_%d", rank);
+    obj2 = PDCobj_put_data(obj_name2, (void*)data, 128*sizeof(double), cont);
     if(obj2 <= 0) {
         printf("Put data to o2\n");
     } else {
