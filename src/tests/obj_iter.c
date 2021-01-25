@@ -35,6 +35,7 @@ int main(int argc, char **argv)
     obj_handle *oh;
     struct pdc_obj_info *info;
     int ret_value = 0;
+    char cont_name[128], obj_name1[128], obj_name2[128], obj_name3[128];
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -54,7 +55,8 @@ int main(int argc, char **argv)
         ret_value = 1;
     }
     // create a container
-    cont = PDCcont_create("c1", cont_prop);
+    sprintf(cont_name, "c%d", rank);
+    cont = PDCcont_create(cont_name, cont_prop);
     if(cont > 0) {
         printf("Create a container c1\n");
     } else {
@@ -70,7 +72,8 @@ int main(int argc, char **argv)
         ret_value = 1;
     }
     // create first object
-    obj1 = PDCobj_create(cont, "o1", obj_prop);
+    sprintf(obj_name1, "o1_%d", rank);
+    obj1 = PDCobj_create(cont, obj_name1, obj_prop);
     if(obj1 > 0) {
         printf("Create an object o1\n");
     } else {
@@ -78,7 +81,8 @@ int main(int argc, char **argv)
         ret_value = 1;
     }
     // create second object
-    obj2 = PDCobj_create(cont, "o2", obj_prop);
+    sprintf(obj_name2, "o2_%d", rank);
+    obj2 = PDCobj_create(cont, obj_name2, obj_prop);
     if(obj2 > 0) {
         printf("Create an object o2\n");
     } else {
@@ -86,7 +90,8 @@ int main(int argc, char **argv)
         ret_value = 1;
     }
     // create third object
-    obj3 = PDCobj_create(cont, "o3", obj_prop);
+    sprintf(obj_name2, "o3_%d", rank);
+    obj3 = PDCobj_create(cont, obj_name3, obj_prop);
     if(obj3 > 0) {
         printf("Create an object o3\n");
     } else {
