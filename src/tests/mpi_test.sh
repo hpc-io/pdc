@@ -11,16 +11,18 @@ n_servers="$3"
 n_client="$4"
 shift
 # copy the remaining test input arguments (if any)
-test_args="$*"
+test_args="${3,4}"
 echo $test_args
 if [ -x $test_exe ]; then echo "testing: $test_exe"; else echo "test: $test_exe not found or not and executable" && exit -2; fi
 rm -rf pdc_tmp
 # START the server (in the background)
+echo "$mpi_cmd -n $n_servers ./pdc_server.exe &"
 $mpi_cmd -n $n_servers ./pdc_server.exe &
 # WAIT a bit, for 1 second
 sleep 1
 # RUN the actual test
-$mpi_cmd -n $n_client $test_exe $*
+echo "$mpi_cmd -n $n_client $test_exe"
+$mpi_cmd -n $n_client $test_exe
 # Need to test the return value
 ret="$?"
 # and shutdown the SERVER before exiting
