@@ -90,7 +90,7 @@ int main(int argc, char **argv)
         ret_value = 1;
     }
     // create third object
-    sprintf(obj_name2, "o3_%d", rank);
+    sprintf(obj_name3, "o3_%d", rank);
     obj3 = PDCobj_create(cont, obj_name3, obj_prop);
     if(obj3 > 0) {
         printf("Create an object o3\n");
