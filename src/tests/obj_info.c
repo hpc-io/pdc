@@ -33,6 +33,7 @@ int main(int argc, char **argv) {
     perr_t ret;
     pdcid_t obj1, obj2;
     struct pdc_obj_info *obj1_info, *obj2_info;
+    char cont_name[128], obj_name1[128], obj_name2[128];
 
     int rank = 0, size = 1;
     int ret_value = 0;
@@ -61,7 +62,8 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
     // create a container
-    cont = PDCcont_create("c1", cont_prop);
+    sprintf(cont_name, "c%d", rank);
+    cont = PDCcont_create(cont_name, cont_prop);
     if(cont > 0) {
         printf("Create a container c1\n");
     } else {
@@ -89,7 +91,8 @@ int main(int argc, char **argv) {
 
 
     // create first object
-    obj1 = PDCobj_create(cont, "o1", obj_prop);
+    sprintf(obj_name1, "o1_%d", rank);
+    obj1 = PDCobj_create(cont, obj_name1, obj_prop);
     if(obj1 > 0) {
         printf("Create an object o1\n");
     } else {
@@ -97,16 +100,17 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
     // create second object
-    obj2 = PDCobj_create(cont, "o2", obj_prop);
+    sprintf(obj_name2, "o1_%d", rank);
+    obj1 = PDCobj_create(cont, obj_name2, obj_prop);
     if(obj2 > 0) {
         printf("Create an object o2\n");
     } else {
         printf("Fail to create object @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
-    obj1_info = PDCobj_get_info("o1");
-    obj2_info = PDCobj_get_info("o2");
-    if ( strcmp(obj1_info->name, "o1") != 0 ) {
+    obj1_info = PDCobj_get_info(obj_name1);
+    obj2_info = PDCobj_get_info(obj_name2);
+    if ( strcmp(obj1_info->name, obj_name1) != 0 ) {
         printf("Object 1 name is wrong\n");
         ret_value = 1;
     }
@@ -133,7 +137,7 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    if ( strcmp(obj2_info->name, "o2") != 0 ) {
+    if ( strcmp(obj2_info->name, obj_name2) != 0 ) {
         printf("Object 2 name is wrong\n");
         ret_value = 1;
     }
