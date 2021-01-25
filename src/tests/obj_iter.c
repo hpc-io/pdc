@@ -34,8 +34,14 @@ int main(int argc, char **argv)
     int rank = 0, size = 1;
     obj_handle *oh;
     struct pdc_obj_info *info;
-    int ret_value = 0;
+    int ret_value = 0, ret;
     char cont_name[128], obj_name1[128], obj_name2[128], obj_name3[128];
+
+    size_t ndim = 3;
+    uint64_t dims[3];
+    dims[0] = 64;
+    dims[1] = 3;
+    dims[2] = 4;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -71,6 +77,18 @@ int main(int argc, char **argv)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
+    ret = PDCprop_set_obj_dims(obj_prop, ndim, dims);
+    if ( ret != SUCCEED ) {
+        printf("Fail to set obj time step @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    ret = PDCprop_set_obj_type(obj_prop, PDC_DOUBLE);
+    if ( ret != SUCCEED ) {
+        printf("Fail to set obj time step @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+
+
     // create first object
     sprintf(obj_name1, "o1_%d", rank);
     obj1 = PDCobj_create(cont, obj_name1, obj_prop);
@@ -103,6 +121,27 @@ int main(int argc, char **argv)
     
     while(!PDCobj_iter_null(oh)) {
         info = PDCobj_iter_get_info(oh);
+        if (info->obj_pt->type != PDC_DOUBLE) {
+            printf("Type is not properly inherited from object property.\n");
+            ret_value = 1;
+        }
+        if (info->obj_pt->ndim != ndim) {
+            printf("Number of dimensions is not properly inherited from object property.\n");
+            ret_value = 1;
+        }
+        if (info->obj_pt->dims[0] != dims[0]) {
+            printf("First dimension is not properly inherited from object property.\n");
+            ret_value = 1;
+        }
+        if (info->obj_pt->dims[1] != dims[1]) {
+            printf("Second dimension is not properly inherited from object property.\n");
+            ret_value = 1;
+        }
+        if (info->obj_pt->dims[2] != dims[2]) {
+            printf("Third dimension is not properly inherited from object property.\n");
+            ret_value = 1;
+        }
+
         oh = PDCobj_iter_next(oh, cont);
     }
 
