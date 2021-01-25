@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
     uint64_t d[3] = {10, 20, 30};
     struct pdc_obj_prop *op;
     int ret_value = 0;
-    char cont_name[128], obj_name1[128]
+    char cont_name[128], obj_name1[128];
     
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
