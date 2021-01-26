@@ -116,25 +116,23 @@ int main(int argc, char **argv)
 
     local_region  = PDCregion_create(ndim, offset, mysize);
     global_region = PDCregion_create(ndim, offset, mysize);
-    printf("checkpoint 1\n");
     ret = PDCbuf_obj_map(mydata, PDC_FLOAT, local_region, global_obj, global_region);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_map failed\n");
         ret_value = 1;
     }
-    printf("checkpoint 2\n");
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     gettimeofday(&pdc_timer_start, 0);
-
+/*
     ret = PDCreg_obtain_lock(global_obj, global_region, PDC_WRITE, PDC_NOBLOCK);
     if (ret != SUCCEED) {
         printf("Failed to obtain lock for region\n");
         ret_value = 1;
         goto done;
     }
-
+*/
     ret = PDCreg_obtain_lock(global_obj, local_region, PDC_WRITE, PDC_NOBLOCK);
     if (ret != SUCCEED) {
         printf("Failed to obtain lock for region\n");
@@ -152,14 +150,14 @@ int main(int argc, char **argv)
         ret_value = 1;
         goto done;
     }
-
+/*
     ret = PDCreg_release_lock(global_obj, global_region, PDC_WRITE);
     if (ret != SUCCEED) {
         printf("Failed to release lock for region\n");
         ret_value = 1;
         goto done;
     }
-
+*/
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
