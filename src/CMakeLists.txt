@@ -360,6 +360,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/server)
 #-----------------------------------------------------------------------------
 option(BUILD_TESTING "Build testing." OFF)
 option(BUILD_MPI_TESTING "Build MPI testing." OFF)
+set(MPI_RUN_CMD mpiexec)
 if(NOT PDC_EXTERNALLY_CONFIGURED AND BUILD_TESTING)
   enable_testing()
   include(CTest)
