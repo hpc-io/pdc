@@ -10,6 +10,7 @@ set(PROGRAMS
   pdc_init
   create_prop
   create_region
+  create_obj_coll
   set_prop
   dup_prop
   write_obj
@@ -142,6 +143,7 @@ add_test(NAME write_obj WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMM
 add_test(NAME query_data WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./query_data )
 add_test(NAME vpicio_bdcats WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio ./bdcats )
 
+add_test(NAME create_obj_coll    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./create_obj_coll mpiexec 2 4 )
 add_test(NAME pdc_init_mpi    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./pdc_init mpiexec 2 4 )
 add_test(NAME create_prop_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./create_prop mpiexec 2 4 )
 add_test(NAME set_prop_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./set_prop mpiexec 2 4 )
@@ -166,4 +168,3 @@ add_test(NAME create_region_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTO
 add_test(NAME region_obj_map_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_obj_map mpiexec 2 4 )
 add_test(NAME write_obj_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./write_obj mpiexec 2 4 1 o)
 add_test(NAME query_data_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./query_data mpiexec 2 4 )
-add_test(NAME vpicio_bdcats_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_multiple_test.sh ./vpicio ./bdcats )
