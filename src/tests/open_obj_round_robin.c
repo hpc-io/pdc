@@ -169,15 +169,15 @@ int main(int argc, char **argv) {
             printf("Number of dimensions is not properly inherited from object property at rank %d.\n", rank);
             ret_value = 1;
         }
-        if (obj1_info->obj_pt->dims[0] != (i + rank) % size * 2 + 1) {
+        if (obj1_info->obj_pt->dims[0] != (unsigned) (i + rank) % size * 2 + 1) {
             printf("First dimension is not properly inherited from object property at rank %d.\n", rank);
             ret_value = 1;
         }
-        if (obj1_info->obj_pt->dims[1] != (i + rank) % size * 3 + 2) {
+        if (obj1_info->obj_pt->dims[1] != (unsigned) (i + rank) % size * 3 + 2) {
             printf("Second dimension is not properly inherited from object property at rank %d.\n", rank);
             ret_value = 1;
         }
-        if (obj1_info->obj_pt->dims[2] != (i + rank) % size * 5 + 3) {
+        if (obj1_info->obj_pt->dims[2] != (unsigned) (i + rank) % size * 5 + 3) {
             printf("Third dimension is not properly inherited from object property at rank %d.\n", rank);
             ret_value = 1;
         }
