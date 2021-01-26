@@ -137,14 +137,14 @@ int main(int argc, char **argv)
         mydata[i] = i * 1.01;
     }
 
-    ret = PDCreg_release_lock(global_obj, local_region, PDC_WRITE);
+    ret = PDCreg_release_lock(local_obj, local_region, PDC_WRITE);
     if (ret != SUCCEED) {
         printf("Failed to release lock for region\n");
         ret_value = 1;
         goto done;
     }
 
-    ret = PDCbuf_obj_unmap(global_obj, global_region);
+    ret = PDCbuf_obj_unmap(local_obj, global_region);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_unmap failed\n");
         ret_value = 1;
