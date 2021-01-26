@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if(obj_prop > 0) {
-        printf("Rank %d Create an object property\n");
+        printf("Rank %d Create an object property\n", rank);
     } else {
         printf("Rank %d Fail to create object property @ line  %d!\n", rank, __LINE__);
         ret_value = 1;
