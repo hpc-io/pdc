@@ -60,10 +60,11 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
     // create a container
-    sprintf(cont_name, "c%d", rank);
-    cont = PDCcont_create(cont_name, cont_prop);
+    sprintf(cont_name, "c", rank);
+    cont = PDCcont_create_col(cont_name, cont_prop);
+    //cont = PDCcont_create(cont_name, cont_prop);
     if(cont > 0) {
-        printf("Rank %d Create a container c1\n", rank);
+        printf("Rank %d Create a container %s\n", rank, cont_name);
     } else {
         printf("Rank %d Fail to create container @ line  %d!\n", rank, __LINE__);
         ret_value = 1;
@@ -91,7 +92,7 @@ int main(int argc, char **argv) {
     sprintf(obj_name1, "o1_%d", rank);
     obj1 = PDCobj_create(cont, obj_name1, obj_prop);
     if(obj1 > 0) {
-        printf("Rank %d Create an object o1\n", rank);
+        printf("Rank %d Create an object %s\n", rank, obj_name1);
     } else {
         printf("Rank %d Fail to create object @ line  %d!\n", rank, __LINE__);
         ret_value = 1;
@@ -101,7 +102,7 @@ int main(int argc, char **argv) {
     sprintf(obj_name2, "o2_%d", rank);
     obj2 = PDCobj_create(cont, obj_name2, obj_prop);
     if(obj2 > 0) {
-        printf("Rank %d Create an object o2\n", rank);
+        printf("Rank %d Create an object %s\n", rank, obj_name2);
     } else {
         printf("Rank %d Fail to create object @ line  %d!\n", rank, __LINE__);
         ret_value = 1;
