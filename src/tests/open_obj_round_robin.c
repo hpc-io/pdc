@@ -30,7 +30,7 @@
 int main(int argc, char **argv) {
     pdcid_t pdc, cont_prop, cont, obj_prop;
     pdcid_t obj1, obj2, open11, open12, open21;
-    int rank = 0, size = 1, i;
+    int rank = 0, size = 1, i, ret;
     int ret_value = 0;
     char cont_name[128], obj_name1[128], obj_name2[128];
 
