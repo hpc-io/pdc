@@ -125,39 +125,39 @@ int main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     gettimeofday(&pdc_timer_start, 0);
-/*
+
     ret = PDCreg_obtain_lock(global_obj, global_region, PDC_WRITE, PDC_NOBLOCK);
     if (ret != SUCCEED) {
         printf("Failed to obtain lock for region\n");
         ret_value = 1;
         goto done;
     }
-*/
+/*
     ret = PDCreg_obtain_lock(global_obj, local_region, PDC_WRITE, PDC_NOBLOCK);
     if (ret != SUCCEED) {
         printf("Failed to obtain lock for region\n");
         ret_value = 1;
         goto done;
     }
-
+*/
     for (i = 0; i < 5; i++) {
         mydata[i] = i * 1.01;
     }
-
+/*
     ret = PDCreg_release_lock(global_obj, local_region, PDC_WRITE);
     if (ret != SUCCEED) {
         printf("Failed to release lock for region\n");
         ret_value = 1;
         goto done;
     }
-/*
+*/
     ret = PDCreg_release_lock(global_obj, global_region, PDC_WRITE);
     if (ret != SUCCEED) {
         printf("Failed to release lock for region\n");
         ret_value = 1;
         goto done;
     }
-*/
+
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
