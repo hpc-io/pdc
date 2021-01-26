@@ -144,7 +144,7 @@ int main(int argc, char **argv)
         goto done;
     }
 
-    ret = PDCbuf_obj_unmap(global_obj, local_region);
+    ret = PDCbuf_obj_unmap(global_obj, global_region);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_unmap failed\n");
         ret_value = 1;
