@@ -183,10 +183,12 @@ done:
         printf("fail to close global obj\n");
         ret_value = 1;
     }
+/*
     if(PDCregion_close(local_region) < 0) {
         printf("fail to close local region\n");
         ret_value = 1;
     }
+*/
     if(PDCregion_close(global_region) < 0) {
         printf("fail to close global region\n");
         ret_value = 1;
