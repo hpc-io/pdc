@@ -142,7 +142,6 @@ int main(int argc, char **argv) {
         } else {
             printf("Rank %d Open object %s\n", rank, obj_name2);
         }
-        if(!rank) {
         obj1_info = PDCobj_get_info(obj_name1);
         obj2_info = PDCobj_get_info(obj_name2);
         if ( strcmp(obj1_info->name, obj_name1) != 0 ) {
@@ -208,7 +207,6 @@ int main(int argc, char **argv) {
             ret_value = 1;
         } else {
             printf("Rank %d successfully close object %s\n", rank, obj_name2);
-        }
         }
     }
 
