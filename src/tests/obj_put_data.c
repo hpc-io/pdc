@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
     }
 
     obj1 = PDCobj_put_data("o1", (void*)data, 16*sizeof(double), cont);
-    if(obj1 <= 0) {
+    if(obj1 > 0) {
         printf("Put data to o1\n");
     } else {
         printf("Fail to put data into object @ line  %d!\n", __LINE__);
@@ -79,13 +79,26 @@ int main(int argc, char **argv) {
     }
 
     obj2 = PDCobj_put_data("o2", (void*)data, 128*sizeof(double), cont);
-    if(obj2 <= 0) {
+    if(obj2 > 0) {
         printf("Put data to o2\n");
     } else {
         printf("Fail to put data into object @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
 
+    // close object
+    if(PDCobj_close(obj1) < 0) {
+        printf("fail to close object o1\n");
+        ret_value = 1;
+    } else {
+        printf("successfully close object o1\n");
+    }
+    if(PDCobj_close(obj2) < 0) {
+        printf("fail to close object o2\n");
+        ret_value = 1;
+    } else {
+        printf("successfully close object o2\n");
+    }
 
     // close a container
     if(PDCcont_close(cont) < 0) {
