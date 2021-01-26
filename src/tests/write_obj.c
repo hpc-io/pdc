@@ -126,7 +126,6 @@ int main(int argc, char **argv)
 #endif
     gettimeofday(&pdc_timer_start, 0);
     ret = PDCreg_obtain_lock(global_obj, local_region, PDC_WRITE, PDC_BLOCK);
-    printf("checkpoint %d\n", rank);
     if (ret != SUCCEED) {
         printf("Failed to obtain lock for region\n");
         ret_value = 1;
@@ -138,6 +137,7 @@ int main(int argc, char **argv)
     }
 
     ret = PDCreg_release_lock(global_obj, local_region, PDC_WRITE);
+    printf("checkpoint %d\n", rank);
     if (ret != SUCCEED) {
         printf("Failed to release lock for region\n");
         ret_value = 1;
