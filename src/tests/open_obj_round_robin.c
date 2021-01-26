@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
     // create a container
-    sprintf(cont_name, "c", rank);
+    sprintf(cont_name, "c");
     cont = PDCcont_create_col(cont_name, cont_prop);
     //cont = PDCcont_create(cont_name, cont_prop);
     if(cont > 0) {
