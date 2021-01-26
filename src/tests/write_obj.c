@@ -129,7 +129,7 @@ int main(int argc, char **argv)
 #endif
     gettimeofday(&pdc_timer_start, 0);
 
-    ret = PDCreg_obtain_lock(global_obj, local_region, PDC_WRITE, PDC_NOBLOCK);
+    ret = PDCreg_obtain_lock(global_obj, global_region, PDC_WRITE, PDC_NOBLOCK);
     if (ret != SUCCEED) {
         printf("Failed to obtain lock for region\n");
         ret_value = 1;
@@ -173,10 +173,12 @@ int main(int argc, char **argv)
     }
 
 done:
+/*
     if(PDCobj_close(local_obj) < 0) {
         printf("fail to close local obj\n");
         ret_value = 1;
     }
+*/
     if(PDCobj_close(global_obj) < 0) {
         printf("fail to close global obj\n");
         ret_value = 1;
