@@ -30,7 +30,6 @@ int main(int argc, char **argv)
     struct timeval  pdc_timer_end;
     double write_time = 0.0;
     pdcid_t global_obj = 0;
-    pdcid_t local_obj = 0;
     pdcid_t local_region, global_region;
     pdcid_t pdc, cont_prop, cont, obj_prop;
 
@@ -136,7 +135,7 @@ int main(int argc, char **argv)
         goto done;
     }
 
-    ret = PDCreg_obtain_lock(global_obj, global_region, PDC_WRITE, PDC_NOBLOCK);
+    ret = PDCreg_obtain_lock(global_obj, local_region, PDC_WRITE, PDC_NOBLOCK);
     if (ret != SUCCEED) {
         printf("Failed to obtain lock for region\n");
         ret_value = 1;
@@ -173,22 +172,16 @@ int main(int argc, char **argv)
     }
 
 done:
-/*
-    if(PDCobj_close(local_obj) < 0) {
-        printf("fail to close local obj\n");
-        ret_value = 1;
-    }
-*/
     if(PDCobj_close(global_obj) < 0) {
         printf("fail to close global obj\n");
         ret_value = 1;
     }
-/*
+
     if(PDCregion_close(local_region) < 0) {
         printf("fail to close local region\n");
         ret_value = 1;
     }
-*/
+
     if(PDCregion_close(global_region) < 0) {
         printf("fail to close global region\n");
         ret_value = 1;
