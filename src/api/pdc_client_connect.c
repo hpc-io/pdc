@@ -6176,7 +6176,7 @@ PDCobj_put_data(const char *obj_name, void *data, uint64_t size, pdcid_t cont_id
 
     obj_id = PDC_obj_create(cont_id, obj_name, obj_prop, PDC_OBJ_GLOBAL);
     if (obj_id <= 0)
-        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Error creating object [%s]",
+        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error creating object [%s]",
                 pdc_client_mpi_rank_g, obj_name);
 
     int ndim = 1;
@@ -6186,7 +6186,7 @@ PDCobj_put_data(const char *obj_name, void *data, uint64_t size, pdcid_t cont_id
 
     ret = PDCbuf_obj_map(data, PDC_INT, obj_region, obj_id, obj_region);
     if(ret != SUCCEED) {
-        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Error with PDCbuf_obj_map for obj [%s]",
+        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with PDCbuf_obj_map for obj [%s]",
                 pdc_client_mpi_rank_g, obj_name);
     }
 
@@ -6208,12 +6208,6 @@ PDCobj_put_data(const char *obj_name, void *data, uint64_t size, pdcid_t cont_id
                 pdc_client_mpi_rank_g, obj_name);
     }
 
-    ret = PDCobj_close(obj_id);
-    if (ret != SUCCEED) {
-        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with PDCobj_close for obj [%s]",
-                pdc_client_mpi_rank_g, obj_name);
-    }
-
     ret = PDCregion_close(obj_region);
     if (ret != SUCCEED) {
         PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with PDCregion_close for obj [%s]",
@@ -6226,6 +6220,7 @@ PDCobj_put_data(const char *obj_name, void *data, uint64_t size, pdcid_t cont_id
                 pdc_client_mpi_rank_g, obj_name);
     }
 
+    ret_value = obj_id;
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
