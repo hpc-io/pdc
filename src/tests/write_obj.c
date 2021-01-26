@@ -125,7 +125,7 @@ int main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     gettimeofday(&pdc_timer_start, 0);
-
+    printf("checkpoint rank %d\n", rank);
     ret = PDCreg_obtain_lock(global_obj, local_region, PDC_WRITE, PDC_NOBLOCK);
     if (ret != SUCCEED) {
         printf("Failed to obtain lock for region\n");
@@ -160,7 +160,6 @@ int main(int argc, char **argv)
         printf("Time to lock and release data with %d ranks: %.6f\n", size, write_time);
         fflush(stdout);
     }
-    printf("checkpoint rank %d\n", rank);
 done:
     if(PDCobj_close(global_obj) < 0) {
         printf("fail to close global obj\n");
