@@ -126,36 +126,28 @@ int main(int argc, char **argv)
 #endif
     gettimeofday(&pdc_timer_start, 0);
 
-    ret = PDCreg_obtain_lock(global_obj, global_region, PDC_WRITE, PDC_NOBLOCK);
-    if (ret != SUCCEED) {
-        printf("Failed to obtain lock for region\n");
-        ret_value = 1;
-        goto done;
-    }
-/*
     ret = PDCreg_obtain_lock(global_obj, local_region, PDC_WRITE, PDC_NOBLOCK);
     if (ret != SUCCEED) {
         printf("Failed to obtain lock for region\n");
         ret_value = 1;
         goto done;
     }
-*/
+
     for (i = 0; i < 5; i++) {
         mydata[i] = i * 1.01;
     }
-/*
+
     ret = PDCreg_release_lock(global_obj, local_region, PDC_WRITE);
     if (ret != SUCCEED) {
         printf("Failed to release lock for region\n");
         ret_value = 1;
         goto done;
     }
-*/
-    ret = PDCreg_release_lock(global_obj, global_region, PDC_WRITE);
-    if (ret != SUCCEED) {
-        printf("Failed to release lock for region\n");
+
+    ret = PDCbuf_obj_unmap(obj1, reg_global);
+    if(ret != SUCCEED) {
+        printf("PDCbuf_obj_unmap failed\n");
         ret_value = 1;
-        goto done;
     }
 
 #ifdef ENABLE_MPI
