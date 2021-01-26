@@ -128,18 +128,18 @@ int main(int argc, char **argv) {
         sprintf(obj_name1, "o1_%d", (rank + i) % size);
         obj1 = PDCobj_open(obj_name1, pdc);
         if(obj1 == 0) {
-            printf("Rank %d Fail to open object o1\n", rank);
+            printf("Rank %d Fail to open object %s\n", rank, obj_name1);
             ret_value = 1;
         } else {
-            printf("Rank %d Open object o1\n", rank);
+            printf("Rank %d Open object %s\n", rank, obj_name1);
         }
         sprintf(obj_name2, "o2_%d", (rank + i) % size);
         obj2 = PDCobj_open(obj_name2, pdc);
         if(obj2 == 0) {
-            printf("Rank %d Fail to open object o2\n", rank);
+            printf("Rank %d Fail to open object %s\n", rank, obj_name2);
             ret_value = 1;
         } else {
-            printf("Rank %d Open object o1\n", rank);
+            printf("Rank %d Open object %s\n", rank, obj_name2);
         }
         obj1_info = PDCobj_get_info(obj_name1);
         obj2_info = PDCobj_get_info(obj_name2);
