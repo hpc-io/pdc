@@ -77,6 +77,7 @@ int main(int argc, char **argv) {
         printf("Rank %d Fail to create object @ line  %d!\n", rank, __LINE__);
         ret_value = 1;
     }
+    printf("checkpoint 1 rank %d\n", rank);
     // create second object
     sprintf(obj_name2, "o2");
     obj1 = PDCobj_create_mpi(cont, obj_name2, obj_prop, 0, MPI_COMM_WORLD);
@@ -86,7 +87,7 @@ int main(int argc, char **argv) {
         printf("Rank %d Fail to create object @ line  %d!\n", rank, __LINE__);
         ret_value = 1;
     }
-
+    printf("checkpoint 2 rank %d\n", rank);
     // open first object twice
     open11 = PDCobj_open(obj_name1, pdc);
     if(open11 == 0) {
