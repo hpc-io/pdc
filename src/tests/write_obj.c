@@ -58,7 +58,7 @@ int main(int argc, char **argv)
         return ret_value;
     }
 
-    sprintf(obj_name, "%s_%d", argv[1], rank);
+    sprintf(obj_name, "%s", argv[1]);
     size_MB = atoi(argv[2]);
 
     if (rank == 0) {
@@ -126,6 +126,7 @@ int main(int argc, char **argv)
 #endif
     gettimeofday(&pdc_timer_start, 0);
     ret = PDCreg_obtain_lock(global_obj, local_region, PDC_WRITE, PDC_BLOCK);
+    printf("checkpoint %d\n", rank);
     if (ret != SUCCEED) {
         printf("Failed to obtain lock for region\n");
         ret_value = 1;
