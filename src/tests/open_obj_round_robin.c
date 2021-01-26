@@ -33,6 +33,7 @@ int main(int argc, char **argv) {
     int rank = 0, size = 1, i, ret;
     int ret_value = 0;
     char cont_name[128], obj_name1[128], obj_name2[128];
+    struct pdc_obj_info *obj1_info, *obj2_info;
 
     size_t ndim = 3;
     uint64_t dims[3];
