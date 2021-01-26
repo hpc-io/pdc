@@ -34,6 +34,7 @@ int main(int argc, char **argv) {
     uint64_t d[3] = {10, 20, 30};
     struct pdc_obj_prop *op;
     int ret_value = 0;
+    char cont_name[128], obj_name1[128];
     
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -52,9 +53,10 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
     // create a container
-    cont = PDCcont_create("c1", cont_prop);
+    sprintf(cont_name, "c%d", rank);
+    cont = PDCcont_create(cont_name, cont_prop);
     if(cont > 0) {
-        printf("Create a container c1\n");
+        printf("Create a container c%d\n", rank);
     } else {
         printf("Fail to create container @ line  %d!\n", __LINE__);
         ret_value = 1;
@@ -72,7 +74,8 @@ int main(int argc, char **argv) {
     op = PDCobj_prop_get_info(obj_prop);
     
     // create object
-    obj1 = PDCobj_create(cont, "o1", obj_prop);
+    sprintf(obj_name1, "o1_%d", rank);
+    obj1 = PDCobj_create(cont, obj_name1, obj_prop);
     if(obj1 > 0) {
         printf("Create an objec o1\n");
     } else {

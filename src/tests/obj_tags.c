@@ -42,9 +42,11 @@ int main(int argc, char **argv) {
     dims[1] = 3;
     dims[2] = 4;
     char tag_value[128], tag_value2[128], *tag_value_ret;
+    char cont_name[128], obj_name1[128], obj_name2[128];
     psize_t value_size;
+
     strcpy(tag_value, "some tag value");
-    strcpy(tag_value2, "some tag value 2");
+    strcpy(tag_value2, "some tag value 2 is longer");
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -64,7 +66,8 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
     // create a container
-    cont = PDCcont_create("c1", cont_prop);
+    sprintf(cont_name, "c%d", rank);
+    cont = PDCcont_create(cont_name, cont_prop);
     if(cont > 0) {
         printf("Create a container c1\n");
     } else {
@@ -93,7 +96,8 @@ int main(int argc, char **argv) {
 
 
     // create first object
-    obj1 = PDCobj_create(cont, "o1", obj_prop);
+    sprintf(obj_name1, "o1_%d", rank);
+    obj1 = PDCobj_create(cont, obj_name1, obj_prop);
     if(obj1 > 0) {
         printf("Create an object o1\n");
     } else {
@@ -101,7 +105,8 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
     // create second object
-    obj2 = PDCobj_create(cont, "o2", obj_prop);
+    sprintf(obj_name2, "o2_%d", rank);
+    obj2 = PDCobj_create(cont, obj_name2, obj_prop);
     if(obj2 > 0) {
         printf("Create an object o2\n");
     } else {
@@ -114,7 +119,7 @@ int main(int argc, char **argv) {
         printf("Put tag failed at object 1\n");
         ret_value = 1;
     }
-    ret = PDCobj_put_tag(obj1, "some tag 2", tag_value2, strlen(tag_value) + 1);
+    ret = PDCobj_put_tag(obj1, "some tag 2", tag_value2, strlen(tag_value2) + 1);
     if ( ret != SUCCEED ) {
         printf("Put tag failed at object 1\n");
         ret_value = 1;
@@ -126,7 +131,7 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    ret = PDCobj_put_tag(obj2, "some tag 2", tag_value2, strlen(tag_value) + 1);
+    ret = PDCobj_put_tag(obj2, "some tag 2", tag_value2, strlen(tag_value2) + 1);
     if ( ret != SUCCEED ) {
         printf("Put tag failed at object 2\n");
         ret_value = 1;
@@ -137,7 +142,7 @@ int main(int argc, char **argv) {
         printf("Get tag failed at object 1\n");
         ret_value = 1;
     }
-    printf("data size get %d, expected %d\n", (int)value_size, (int) strlen(tag_value));
+
     if (strcmp(tag_value, tag_value_ret) != 0) {
         printf("Wrong tag value at object 1, expected = %s, get %s\n", tag_value, tag_value_ret);
         ret_value = 1;
@@ -150,7 +155,7 @@ int main(int argc, char **argv) {
     }
 
     if (strcmp(tag_value2, tag_value_ret) != 0) {
-        printf("Wrong tag value at object 1, expected = %s, get %s\n", tag_value, tag_value_ret);
+        printf("Wrong tag value 2 at object 1, expected = %s, get %s\n", tag_value2, tag_value_ret);
         ret_value = 1;
     }
 
@@ -172,7 +177,7 @@ int main(int argc, char **argv) {
     }
 
     if (strcmp(tag_value2, tag_value_ret) != 0) {
-        printf("Wrong tag value at object 2, expected = %s, get %s\n", tag_value, tag_value_ret);
+        printf("Wrong tag value 2 at object 2, expected = %s, get %s\n", tag_value2, tag_value_ret);
         ret_value = 1;
     }
 

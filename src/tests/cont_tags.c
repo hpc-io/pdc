@@ -25,23 +25,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
-#include <time.h>
 #include "pdc.h"
 
+
 int main(int argc, char **argv) {
-    pdcid_t pdc, cont_prop, cont, obj_prop, obj1, obj2;
+    pdcid_t pdc, cont_prop, cont, cont2;
+    perr_t ret;
     int ret_value = 0;
-    int rank = 0;
-    char cont_name[128], obj_name1[128], obj_name2[128];
-    // create a pdc
+
+    int rank = 0, size = 1;
+
+    char tag_value[128], tag_value2[128], *tag_value_ret;
+    psize_t value_size;
+    strcpy(tag_value, "some tag value");
+    strcpy(tag_value2, "some tag value 2 is longer than tag 1");
+
 #ifdef ENABLE_MPI
-    int size;
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
-
+    // create a pdc
     pdc = PDCinit("pdc");
     printf("create a new pdc\n");
 
@@ -54,54 +58,90 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
     // create a container
-    sprintf(cont_name, "c%d", rank);
-    cont = PDCcont_create(cont_name, cont_prop);
+    cont = PDCcont_create("c1", cont_prop);
     if(cont > 0) {
         printf("Create a container c1\n");
     } else {
         printf("Fail to create container @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
-    // create an object property
-    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
-    if(obj_prop > 0) {
-        printf("Create an object property\n");
+
+    cont2 = PDCcont_create("c2", cont_prop);
+    if(cont > 0) {
+        printf("Create a container c2\n");
     } else {
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
+        printf("Fail to create container @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
-    // create first object
-    sprintf(obj_name1, "o1_%d", rank);
-    obj1 = PDCobj_create(cont, obj_name1, obj_prop);
-    if(obj1 > 0) {
-        printf("Create an object o1\n");
-    } else {
-        printf("Fail to create object @ line  %d!\n", __LINE__);
+
+    ret = PDCcont_put_tag(cont, "some tag", tag_value, strlen(tag_value) + 1);
+
+    if ( ret != SUCCEED ) {
+        printf("Put tag failed at container 1\n");
         ret_value = 1;
     }
-    // create second object
-    sprintf(obj_name2, "o2_%d", rank);
-    obj2 = PDCobj_create(cont, obj_name2, obj_prop);
-    if(obj2 > 0) {
-        printf("Create an object o2\n");
-    } else {
-        printf("Fail to create object @ line  %d!\n", __LINE__);
+    ret = PDCcont_put_tag(cont, "some tag 2", tag_value, strlen(tag_value2) + 1);
+    if ( ret != SUCCEED ) {
+        printf("Put tag failed at container 1\n");
         ret_value = 1;
     }
-    // close first object
-    if(PDCobj_close(obj1) < 0) {
-        printf("fail to close object o1\n");
+
+    ret = PDCcont_put_tag(cont2, "some tag", tag_value, strlen(tag_value) + 1);
+    if ( ret != SUCCEED ) {
+        printf("Put tag failed at container 2\n");
         ret_value = 1;
-    } else {
-        printf("successfully close object o1\n");
     }
-    // close second object
-    if(PDCobj_close(obj2) < 0) {
-        printf("fail to close object o2\n");
+
+    ret = PDCcont_put_tag(cont2, "some tag 2", tag_value, strlen(tag_value2) + 1);
+    if ( ret != SUCCEED ) {
+        printf("Put tag failed at container 2\n");
         ret_value = 1;
-    } else {
-        printf("successfully close object o2\n");
     }
+
+    ret = PDCcont_get_tag(cont, "some tag", (void **)&tag_value_ret, &value_size);
+    if ( ret != SUCCEED ) {
+        printf("Get tag failed at container 1\n");
+        ret_value = 1;
+    }
+    if (strcmp(tag_value, tag_value_ret) != 0) {
+        printf("Wrong tag value at container 1, expected = %s, get %s\n", tag_value, tag_value_ret);
+        ret_value = 1;
+    }
+
+    ret = PDCcont_get_tag(cont, "some tag 2", (void **)&tag_value_ret, &value_size);
+    if ( ret != SUCCEED ) {
+        printf("Get tag failed at container 1\n");
+        ret_value = 1;
+    }
+
+    if (strcmp(tag_value2, tag_value_ret) != 0) {
+        printf("Wrong tag value at container 1, expected = %s, get %s\n", tag_value2, tag_value_ret);
+        ret_value = 1;
+    }
+
+    ret = PDCcont_get_tag(cont2, "some tag", (void **)&tag_value_ret, &value_size);
+    if ( ret != SUCCEED ) {
+        printf("Get tag failed at container 2\n");
+        ret_value = 1;
+    }
+
+    if (strcmp(tag_value, tag_value_ret) != 0) {
+        printf("Wrong tag value at container 2, expected = %s, get %s\n", tag_value, tag_value_ret);
+        ret_value = 1;
+    }
+
+    ret = PDCcont_get_tag(cont2, "some tag 2", (void **)&tag_value_ret, &value_size);
+    if ( ret != SUCCEED ) {
+        printf("Get tag failed at container 2\n");
+        ret_value = 1;
+    }
+
+    if (strcmp(tag_value2, tag_value_ret) != 0) {
+        printf("Wrong tag value at container 2, expected = %s, get %s\n", tag_value2, tag_value_ret);
+        ret_value = 1;
+    }
+
+
     // close a container
     if(PDCcont_close(cont) < 0) {
         printf("fail to close container c1\n");
@@ -118,7 +158,7 @@ int main(int argc, char **argv) {
     }
     // close pdc
     if(PDCclose(pdc) < 0) {
-        printf("fail to close PDC\n");
+       printf("fail to close PDC\n");
         ret_value = 1;
     }
 #ifdef ENABLE_MPI

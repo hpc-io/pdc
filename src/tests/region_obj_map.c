@@ -37,9 +37,10 @@
 
 
 int main(int argc, char **argv) {
-    pdcid_t pdc, cont_prop, cont, obj_prop, reg, reg_global, global_obj;
+    pdcid_t pdc, cont_prop, cont, obj_prop, reg, reg_global;
     perr_t ret;
     pdcid_t obj1, obj2;
+    char cont_name[128], obj_name1[128], obj_name2[128];
 
     int rank = 0, size = 1, i;
     int ret_value = 0;
@@ -76,7 +77,8 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
     // create a container
-    cont = PDCcont_create("c1", cont_prop);
+    sprintf(cont_name, "c%d", rank);
+    cont = PDCcont_create(cont_name, cont_prop);
     if(cont > 0) {
         printf("Create a container c1\n");
     } else {
@@ -106,7 +108,8 @@ int main(int argc, char **argv) {
 
 
     // create first object
-    obj1 = PDCobj_create(cont, "o1", obj_prop);
+    sprintf(obj_name1, "o1_%d", rank);
+    obj1 = PDCobj_create(cont, obj_name1, obj_prop);
     if(obj1 > 0) {
         printf("Create an object o1\n");
     } else {
@@ -114,7 +117,8 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
     // create second object
-    obj2 = PDCobj_create(cont, "o2", obj_prop);
+    sprintf(obj_name2, "o2_%d", rank);
+    obj2 = PDCobj_create(cont, obj_name2, obj_prop);
     if(obj2 > 0) {
         printf("Create an object o2\n");
     } else {
