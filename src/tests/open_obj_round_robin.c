@@ -197,16 +197,16 @@ int main(int argc, char **argv) {
             ret_value = 1;
         }
         if(PDCobj_close(obj1) < 0) {
-            printf("Rank %d fail to close object o1\n", rank);
+            printf("Rank %d fail to close object %s\n", rank, obj_name1);
             ret_value = 1;
         } else {
-            printf("Rank %d successfully close object o1\n", rank);
+            printf("Rank %d successfully close object %s\n", rank, obj_name1);
         }
         if(PDCobj_close(obj2) < 0) {
-            printf("Rank %d fail to close object o2\n", rank);
+            printf("Rank %d fail to close object %s\n", rank, obj_name2);
             ret_value = 1;
         } else {
-            printf("Rank %d successfully close object o2\n", rank);
+            printf("Rank %d successfully close object %s\n", rank, obj_name2);
         }
     }
 
