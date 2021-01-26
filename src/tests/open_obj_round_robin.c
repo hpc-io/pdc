@@ -141,18 +141,6 @@ int main(int argc, char **argv) {
         } else {
             printf("Rank %d Open object o1\n", rank);
         }
-        if(PDCobj_close(obj1) < 0) {
-            printf("Rank %d fail to close object o1\n", rank);
-            ret_value = 1;
-        } else {
-            printf("Rank %d successfully close object o1\n", rank);
-        }
-        if(PDCobj_close(obj2) < 0) {
-            printf("Rank %d fail to close object o2\n", rank);
-            ret_value = 1;
-        } else {
-            printf("Rank %d successfully close object o2\n", rank);
-        }
         obj1_info = PDCobj_get_info(obj_name1);
         obj2_info = PDCobj_get_info(obj_name2);
         if ( strcmp(obj1_info->name, obj_name1) != 0 ) {
@@ -206,6 +194,18 @@ int main(int argc, char **argv) {
         if (obj2_info->obj_pt->dims[2] != (unsigned) (i + rank) % size * 5 + 3) {
             printf("Third dimension is not properly inherited from object property at rank %d.\n", rank);
             ret_value = 1;
+        }
+        if(PDCobj_close(obj1) < 0) {
+            printf("Rank %d fail to close object o1\n", rank);
+            ret_value = 1;
+        } else {
+            printf("Rank %d successfully close object o1\n", rank);
+        }
+        if(PDCobj_close(obj2) < 0) {
+            printf("Rank %d fail to close object o2\n", rank);
+            ret_value = 1;
+        } else {
+            printf("Rank %d successfully close object o2\n", rank);
         }
     }
 
