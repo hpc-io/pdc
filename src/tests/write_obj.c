@@ -104,7 +104,6 @@ int main(int argc, char **argv)
 
     // Create a object
     global_obj = PDCobj_create_mpi(cont, obj_name, obj_prop, 0, comm);
-    printf("checkpoint rank %d\n", rank);
     if (global_obj <= 0) {
         printf("Error creating an object [%s], exit...\n", obj_name);
         ret_value = 1;
@@ -161,7 +160,7 @@ int main(int argc, char **argv)
         printf("Time to lock and release data with %d ranks: %.6f\n", size, write_time);
         fflush(stdout);
     }
-
+    printf("checkpoint rank %d\n", rank);
 done:
     if(PDCobj_close(global_obj) < 0) {
         printf("fail to close global obj\n");
