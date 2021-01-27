@@ -58,7 +58,7 @@ int main(int argc, char **argv)
         return ret_value;
     }
 
-    sprintf(obj_name, "%s", argv[1]);
+    sprintf(obj_name, "%s_%d", argv[1], rank);
     size_MB = atoi(argv[2]);
 
     if (rank == 0) {
@@ -69,6 +69,7 @@ int main(int argc, char **argv)
 
     // create a pdc
     pdc = PDCinit("pdc");
+    printf("create a new pdc\n");
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
@@ -93,8 +94,8 @@ int main(int argc, char **argv)
     my_data_size = size_B / size;
     printf("my_data_size at rank %d is %llu\n", rank, (long long unsigned)my_data_size);
 
-    obj_data = (float*)malloc(sizeof(float)*128);
-    mydata = (float*)malloc(sizeof(float)*128);
+    obj_data = (float*)malloc(sizeof(float)*my_data_size);
+    mydata = (float*)malloc(sizeof(float)*my_data_size);
 
     PDCprop_set_obj_type(obj_prop, PDC_FLOAT);
     PDCprop_set_obj_buf(obj_prop, obj_data);
@@ -106,7 +107,6 @@ int main(int argc, char **argv)
 
     // Create a object
     //global_obj = PDCobj_create_mpi(cont, obj_name, obj_prop, 0, comm);
-    sprintf(obj_name, "o1_%d", rank);
     global_obj = PDCobj_create(cont, obj_name, obj_prop);
 
     if (global_obj <= 0) {
@@ -118,6 +118,7 @@ int main(int argc, char **argv)
     mysize = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
     offset[0] = rank * my_data_size;
     mysize[0] = my_data_size;
+    printf("rank %d offset = %llu, length = %llu\n", rank, offset[0], mysize[0]);
 
     local_region  = PDCregion_create(ndim, offset, mysize);
     global_region = PDCregion_create(ndim, offset, mysize);
