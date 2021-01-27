@@ -91,8 +91,8 @@ int main(int argc, char **argv)
     dims[0] = size_B;
     my_data_size = size_B / size;
 
-    obj_data = (float *)calloc(1, my_data_size);
-    mydata = (float *)calloc(1, my_data_size);
+    obj_data = (float *)calloc(my_data_size, sizeof(float));
+    mydata = (float *)calloc(my_data_size, sizeof(float));
 
     PDCprop_set_obj_type(obj_prop, PDC_FLOAT);
     PDCprop_set_obj_buf(obj_prop, obj_data);
@@ -135,7 +135,7 @@ int main(int argc, char **argv)
         goto done;
     }
 
-    for (i = 0; i < 5; i++) {
+    for (i = 0; i < my_data_size; i++) {
         mydata[i] = i * 1.01;
     }
 
