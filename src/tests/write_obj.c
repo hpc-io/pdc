@@ -36,11 +36,13 @@ int main(int argc, char **argv)
     uint64_t *offset; 
     uint64_t *mysize; 
     int i;
-    int *mydata, *obj_data;
+    char *mydata, *obj_data;
     char obj_name[128], cont_name[128];
 
     uint64_t my_data_size;
     uint64_t dims[1];
+
+    pdc_var_type_t var_type = PDC_UNKNOWN;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -49,7 +51,7 @@ int main(int argc, char **argv)
     MPI_Comm_dup(MPI_COMM_WORLD, &comm);
 #endif
 
-    if (argc < 3) {
+    if (argc != 4) {
         print_usage();
         ret_value = 1;
 #ifdef ENABLE_MPI
@@ -61,11 +63,16 @@ int main(int argc, char **argv)
     sprintf(obj_name, "%s_%d", argv[1], rank);
     size_MB = atoi(argv[2]);
 
+    if (!strcmp(argv[3], "float")){
+        var_type = PDC_FLOAT;
+    } else if (!strcmp(argv[3], "int")){
+        var_type = PDC_INT;
+    }
+
     if (rank == 0) {
         printf("Writing a %" PRIu64 " MB object [%s] with %d clients.\n", size_MB, obj_name, size);
     }
-    //size_B = size_MB * 1048576;
-    size_B = size_MB;
+    size_B = size_MB * 1048576;
 
     // create a pdc
     pdc = PDCinit("pdc");
@@ -94,10 +101,11 @@ int main(int argc, char **argv)
     my_data_size = size_B / size;
     printf("my_data_size at rank %d is %llu\n", rank, (long long unsigned)my_data_size);
 
-    obj_data = (int*)malloc(sizeof(int)*my_data_size);
-    mydata = (int*)malloc(sizeof(int)*my_data_size);
+    obj_data = (char*)malloc(my_data_size);
+    mydata = (char*)malloc(my_data_size);
 
-    PDCprop_set_obj_type(obj_prop, PDC_INT);
+
+    PDCprop_set_obj_type(obj_prop, var_type);
     PDCprop_set_obj_buf(obj_prop, obj_data);
     PDCprop_set_obj_dims(obj_prop, 1, dims);
     PDCprop_set_obj_user_id( obj_prop, getuid());
@@ -122,7 +130,7 @@ int main(int argc, char **argv)
 
     local_region  = PDCregion_create(ndim, offset, mysize);
     global_region = PDCregion_create(ndim, offset, mysize);
-    ret = PDCbuf_obj_map(mydata, PDC_INT, local_region, global_obj, global_region);
+    ret = PDCbuf_obj_map(mydata, var_type, local_region, global_obj, global_region);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_map failed\n");
         ret_value = 1;
@@ -131,20 +139,16 @@ int main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     gettimeofday(&pdc_timer_start, 0);
-    printf("checkpoint 0 %d\n", rank);
     ret = PDCreg_obtain_lock(global_obj, local_region, PDC_WRITE, PDC_BLOCK);
     if (ret != SUCCEED) {
         printf("Failed to obtain lock for region\n");
         ret_value = 1;
         goto done;
     }
-    printf("checkpoint 1 %d\n", rank);
     for (i = 0; i < (int)my_data_size; i++) {
         mydata[i] = i;
     }
-    printf("checkpoint 2 %d\n", rank);
     ret = PDCreg_release_lock(global_obj, local_region, PDC_WRITE);
-    printf("checkpoint 3 %d\n", rank);
     if (ret != SUCCEED) {
         printf("Failed to release lock for region\n");
         ret_value = 1;
