@@ -93,8 +93,8 @@ int main(int argc, char **argv)
     my_data_size = size_B / size;
     printf("my_data_size at rank %d is %llu\n", rank, (long long unsigned)my_data_size);
 
-    obj_data = (float*)malloc(sizeof(float)*my_data_size);
-    mydata = (float*)malloc(sizeof(float)*my_data_size);
+    obj_data = (float*)malloc(sizeof(float)*128);
+    mydata = (float*)malloc(sizeof(float)*128);
 
     PDCprop_set_obj_type(obj_prop, PDC_FLOAT);
     PDCprop_set_obj_buf(obj_prop, obj_data);
@@ -138,7 +138,7 @@ int main(int argc, char **argv)
         goto done;
     }
     printf("checkpoint 1 %d\n", rank);
-    for (i = 0; i < my_data_size; i++) {
+    for (i = 0; i < (int)my_data_size; i++) {
         mydata[i] = i * 1.01;
     }
     printf("checkpoint 2 %d\n", rank);
