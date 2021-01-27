@@ -11,7 +11,7 @@
 #include "pdc_client_server_common.h"
 
 void print_usage() {
-    printf("Usage: srun -n ./data_server_read obj_name size_MB\n");
+    printf("Usage: srun -n ./write_obj obj_name size_MB type\n");
 }
 
 int main(int argc, char **argv)
@@ -106,8 +106,8 @@ int main(int argc, char **argv)
     PDCprop_set_obj_tags(    obj_prop, "tag0=1");
 
     // Create a object
-    //global_obj = PDCobj_create_mpi(cont, obj_name, obj_prop, 0, comm);
-    global_obj = PDCobj_create(cont, obj_name, obj_prop);
+    global_obj = PDCobj_create_mpi(cont, obj_name, obj_prop, 0, comm);
+    //global_obj = PDCobj_create(cont, obj_name, obj_prop);
 
     if (global_obj <= 0) {
         printf("Error creating an object [%s], exit...\n", obj_name);
@@ -118,7 +118,7 @@ int main(int argc, char **argv)
     mysize = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
     offset[0] = rank * my_data_size;
     mysize[0] = my_data_size;
-    printf("rank %d offset = %llu, length = %llu\n", rank, offset[0], mysize[0]);
+    printf("rank %d offset = %lu, length = %lu\n", rank, offset[0], mysize[0]);
 
     local_region  = PDCregion_create(ndim, offset, mysize);
     global_region = PDCregion_create(ndim, offset, mysize);
@@ -140,7 +140,7 @@ int main(int argc, char **argv)
     }
     printf("checkpoint 1 %d\n", rank);
     for (i = 0; i < (int)my_data_size; i++) {
-        mydata[i] = i * 1.01;
+        mydata[i] = i;
     }
     printf("checkpoint 2 %d\n", rank);
     ret = PDCreg_release_lock(global_obj, local_region, PDC_WRITE);
