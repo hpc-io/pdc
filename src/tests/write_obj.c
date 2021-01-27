@@ -36,7 +36,7 @@ int main(int argc, char **argv)
     uint64_t *offset; 
     uint64_t *mysize; 
     int i;
-    float *mydata, *obj_data;
+    int *mydata, *obj_data;
     char obj_name[128], cont_name[128];
 
     uint64_t my_data_size;
@@ -94,10 +94,10 @@ int main(int argc, char **argv)
     my_data_size = size_B / size;
     printf("my_data_size at rank %d is %llu\n", rank, (long long unsigned)my_data_size);
 
-    obj_data = (float*)malloc(sizeof(float)*my_data_size);
-    mydata = (float*)malloc(sizeof(float)*my_data_size);
+    obj_data = (int*)malloc(sizeof(int)*my_data_size);
+    mydata = (int*)malloc(sizeof(int)*my_data_size);
 
-    PDCprop_set_obj_type(obj_prop, PDC_FLOAT);
+    PDCprop_set_obj_type(obj_prop, PDC_INT);
     PDCprop_set_obj_buf(obj_prop, obj_data);
     PDCprop_set_obj_dims(obj_prop, 1, dims);
     PDCprop_set_obj_user_id( obj_prop, getuid());
@@ -122,7 +122,7 @@ int main(int argc, char **argv)
 
     local_region  = PDCregion_create(ndim, offset, mysize);
     global_region = PDCregion_create(ndim, offset, mysize);
-    ret = PDCbuf_obj_map(mydata, PDC_FLOAT, local_region, global_obj, global_region);
+    ret = PDCbuf_obj_map(mydata, PDC_INT, local_region, global_obj, global_region);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_map failed\n");
         ret_value = 1;
