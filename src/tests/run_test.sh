@@ -6,7 +6,7 @@
 if [ $# -lt 1 ]; then echo "missing test argument" && exit -1 ; fi
 # check the test to be run:
 test_exe="$1"
-test_args="$2 $3"
+test_args="$2 $3 $4"
 shift
 # copy the remaining test input arguments (if any)
 if [ -x $test_exe ]; then echo "testing: $test_exe"; else echo "test: $test_exe not found or not and executable" && exit -2; fi
