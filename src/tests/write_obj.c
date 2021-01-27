@@ -128,19 +128,20 @@ int main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     gettimeofday(&pdc_timer_start, 0);
+    printf("checkpoint 0 %d\n", rank);
     ret = PDCreg_obtain_lock(global_obj, local_region, PDC_WRITE, PDC_BLOCK);
     if (ret != SUCCEED) {
         printf("Failed to obtain lock for region\n");
         ret_value = 1;
         goto done;
     }
-
+    printf("checkpoint 1 %d\n", rank);
     for (i = 0; i < my_data_size; i++) {
         mydata[i] = i * 1.01;
     }
-
+    printf("checkpoint 2 %d\n", rank);
     ret = PDCreg_release_lock(global_obj, local_region, PDC_WRITE);
-    printf("checkpoint %d\n", rank);
+    printf("checkpoint 3 %d\n", rank);
     if (ret != SUCCEED) {
         printf("Failed to release lock for region\n");
         ret_value = 1;
