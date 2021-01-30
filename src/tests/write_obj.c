@@ -151,7 +151,7 @@ int main(int argc, char **argv)
     mysize = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
     offset[0] = rank * my_data_size;
     mysize[0] = my_data_size;
-    printf("rank %d offset = %lu, length = %lu\n", rank, offset[0], mysize[0]);
+    printf("rank %d offset = %lu, length = %lu, unit size = %ld\n", rank, offset[0], mysize[0], type_size);
 
     local_region  = PDCregion_create(ndim, offset, mysize);
     global_region = PDCregion_create(ndim, offset, mysize);
