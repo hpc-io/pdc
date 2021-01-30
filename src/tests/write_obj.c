@@ -172,8 +172,8 @@ int main(int argc, char **argv)
         goto done;
     }
 
-    for (i = 0; i < (int)my_data_size; i++) {
-        for ( j = 0; j < type_size; ++j ) {
+    for (i = 0; i < (int) my_data_size; i++) {
+        for ( j = 0; j < (int) type_size; ++j ) {
             mydata[i * type_size + j] = i;
         }
     }
