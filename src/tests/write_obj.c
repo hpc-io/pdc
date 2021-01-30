@@ -170,9 +170,11 @@ int main(int argc, char **argv)
         ret_value = 1;
         goto done;
     }
+/*
     for (i = 0; i < (int)my_data_size; i++) {
         mydata[i] = i;
     }
+*/
     ret = PDCreg_release_lock(global_obj, local_region, PDC_WRITE);
     if (ret != SUCCEED) {
         printf("Failed to release lock for region\n");
