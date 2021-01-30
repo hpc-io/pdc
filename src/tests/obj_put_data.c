@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
     sprintf(cont_name, "c%d", rank);
     cont = PDCcont_create(cont_name, cont_prop);
     if(cont > 0) {
-        printf("Create a container c1\n");
+        printf("Rank %d Create a container %s\n", rank, cont_name);
     } else {
         printf("Fail to create container @ line  %d!\n", __LINE__);
         ret_value = 1;
@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
     sprintf(obj_name1, "o1_%d", rank);
     obj1 = PDCobj_put_data(obj_name1, (void*)data, 16*sizeof(double), cont);
     if(obj1 > 0) {
-        printf("Put data to o1\n");
+        printf("Rank %d Put data to %s\n", rank, obj_name);
     } else {
         printf("Fail to put data into object @ line  %d!\n", __LINE__);
         ret_value = 1;
@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
     sprintf(obj_name2, "o2_%d", rank);
     obj2 = PDCobj_put_data(obj_name2, (void*)data, 128*sizeof(double), cont);
     if(obj2 > 0) {
-        printf("Put data to o2\n");
+        printf("Rank %d Put data to %s\n", rank, obj_name2);
     } else {
         printf("Fail to put data into object @ line  %d!\n", __LINE__);
         ret_value = 1;
