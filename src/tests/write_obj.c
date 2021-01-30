@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 
     uint64_t *offset; 
     uint64_t *mysize; 
-    int i;
+    int i, j;
     char *mydata, *obj_data;
     char obj_name[128], cont_name[128];
 
@@ -171,11 +171,13 @@ int main(int argc, char **argv)
         ret_value = 1;
         goto done;
     }
-/*
+
     for (i = 0; i < (int)my_data_size; i++) {
-        mydata[i] = i;
+        for ( j = 0; j < type_size; ++j ) {
+            mydata[i * type_size + j] = i;
+        }
     }
-*/
+
     ret = PDCreg_release_lock(global_obj, local_region, PDC_BLOCK);
     if (ret != SUCCEED) {
         printf("Failed to release lock for region\n");
