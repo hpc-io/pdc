@@ -126,8 +126,8 @@ int main(int argc, char **argv)
     my_data_size = size_B / size;
     printf("my_data_size at rank %d is %llu\n", rank, (long long unsigned)my_data_size);
 
-    obj_data = (char*)malloc(my_data_size*type_size);
-    mydata = (char*)malloc(my_data_size*type_size);
+    obj_data = (char*)malloc(my_data_size*type_size*10);
+    mydata = (char*)malloc(my_data_size*type_size*10);
 
 
     PDCprop_set_obj_type(obj_prop, var_type);
