@@ -70,7 +70,29 @@ int main(int argc, char **argv)
     } else if (!strcmp(argv[3], "int")){
         var_type = PDC_INT;
         type_size = sizeof(int);
+    } else if (!strcmp(argv[3], "double")){
+        var_type = PDC_DOUBLE;
+        type_size = sizeof(double);
+    } else if (!strcmp(argv[3], "char")){
+        var_type = PDC_CHAR;
+        type_size = sizeof(char);
+    } else if (!strcmp(argv[3], "uint")){
+        var_type = PDC_UINT;
+        type_size = sizeof(unsigned);
+    } else if (!strcmp(argv[3], "int64")){
+        var_type = PDC_INT64;
+        type_size = sizeof(int64_t);
+    } else if (!strcmp(argv[3], "uint64")){
+        var_type = PDC_UINT64;
+        type_size = sizeof(uint64_t);
+    } else if (!strcmp(argv[3], "int16")){
+        var_type = PDC_INT16;
+        type_size = sizeof(int16_t);
+    } else if (!strcmp(argv[3], "int8")){
+        var_type = PDC_INT8;
+        type_size = sizeof(int8_t);
     }
+
 
     if (rank == 0) {
         printf("Writing a %" PRIu64 " MB object [%s] with %d clients.\n", size_MB, obj_name, size);
