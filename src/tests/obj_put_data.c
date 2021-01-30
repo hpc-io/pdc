@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
     sprintf(obj_name1, "o1_%d", rank);
     obj1 = PDCobj_put_data(obj_name1, (void*)data, 16*sizeof(double), cont);
     if(obj1 > 0) {
-        printf("Rank %d Put data to %s\n", rank, obj_name);
+        printf("Rank %d Put data to %s\n", rank, obj_name1);
     } else {
         printf("Fail to put data into object @ line  %d!\n", __LINE__);
         ret_value = 1;
