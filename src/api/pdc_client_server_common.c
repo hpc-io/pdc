@@ -2364,9 +2364,11 @@ HG_TEST_RPC_CB(region_release, handle)
                             error = 1;
                             PGOTO_ERROR(hg_ret, "===PDC SERVER: HG_TEST_RPC_CB(region_release, handle) buf map Could not read bulk data");
                         } 
+                        break;
                     }
                 }
                 free(tmp);
+                break;
             }
         }
 #ifdef ENABLE_MULTITHREAD
@@ -5734,7 +5736,8 @@ int PDC_query_get_nnode(pdc_query_t *query)
     
     if (NULL == query) 
         ret_value = 0;
-    ret_value = 1 + PDC_query_get_nnode(query->left) + PDC_query_get_nnode(query->right);
+    else
+        ret_value = 1 + PDC_query_get_nnode(query->left) + PDC_query_get_nnode(query->right);
     
     FUNC_LEAVE(ret_value);
 }
