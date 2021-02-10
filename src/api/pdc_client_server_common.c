@@ -1804,7 +1804,9 @@ analysis_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info
      */
 
     data_buf = PDC_Server_get_region_buf_ptr(bulk_args->remote_obj_id, bulk_args->remote_region);
-    //start_t = MPI_Wtime();
+#ifdef ENABLE_MPI
+    start_t = MPI_Wtime();
+#endif
     if (data_buf != NULL) {
         struct _pdc_region_analysis_ftn_info **registry = NULL;
         struct _pdc_iterator_cbs_t iter_cbs = {PDCobj_data_getSliceCount, PDCobj_data_getNextBlock};
@@ -1818,11 +1820,11 @@ analysis_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info
             puts("----------------\n");
         }
     }
-
-    //end_t = MPI_Wtime();
-    //analysis_t = end_t - start_t;
+#ifdef ENABLE_MPI
+    end_t = MPI_Wtime();
+    analysis_t = end_t - start_t;
     start_t = end_t;
-
+#endif
     remote_reg_info = (struct pdc_region_info *)malloc(sizeof(struct pdc_region_info));
     if (remote_reg_info == NULL)
         PGOTO_ERROR(HG_OTHER_ERROR, "remote_reg_info memory allocation failed");
@@ -1856,8 +1858,10 @@ analysis_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info
 
     /* Write the analysis results... */
     PDC_Server_data_write_out(bulk_args->remote_obj_id, remote_reg_info, data_buf, (size_t)type_extent);
-    //end_t = MPI_Wtime();
-    //io_t = end_t - start_t;
+#ifdef ENABLE_MPI
+    end_t = MPI_Wtime();
+    io_t = end_t - start_t;
+#endif
     PDC_Data_Server_region_release((region_lock_in_t *)&bulk_args->in, &out);
     local_reg_info = (struct pdc_region_info *)malloc(sizeof(struct pdc_region_info));
     if (local_reg_info == NULL)
