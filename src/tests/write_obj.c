@@ -178,7 +178,7 @@ int main(int argc, char **argv)
         }
     }
 
-    ret = PDCreg_release_lock(global_obj, local_region, PDC_BLOCK);
+    ret = PDCreg_release_lock(global_obj, local_region, PDC_WRITE);
     if (ret != SUCCEED) {
         printf("Failed to release lock for region\n");
         ret_value = 1;
