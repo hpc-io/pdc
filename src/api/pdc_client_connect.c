@@ -58,6 +58,7 @@
 #include <inttypes.h>
 #include <math.h>
 #include <sys/time.h>
+#define PDC_ANALYSIS 0
 
 int                        is_client_debug_g = 0;
 pdc_server_selection_t     pdc_server_selection_g = PDC_SERVER_DEFAULT;
