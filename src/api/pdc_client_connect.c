@@ -6197,7 +6197,7 @@ PDCobj_put_data(const char *obj_name, void *data, uint64_t size, pdcid_t cont_id
                 pdc_client_mpi_rank_g, obj_name);
     }
 
-    ret = PDCreg_release_lock(obj_id, obj_region, PDC_WRITE);
+    ret = PDCreg_release_lock(obj_id, obj_region, PDC_BLOCK);
     if (ret != SUCCEED) {
         PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with PDCreg_release_lock for obj [%s]",
                 pdc_client_mpi_rank_g, obj_name);
