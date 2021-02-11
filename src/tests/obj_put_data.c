@@ -67,7 +67,9 @@ int main(int argc, char **argv) {
     }
 
     sprintf(obj_name1, "o1_%d", rank);
+    printf("trying to put o1\n");
     obj1 = PDCobj_put_data(obj_name1, (void*)data, 16*sizeof(double), cont);
+    printf("finishing put o1\n");
     if(obj1 > 0) {
         printf("Rank %d Put data to %s\n", rank, obj_name1);
     } else {
