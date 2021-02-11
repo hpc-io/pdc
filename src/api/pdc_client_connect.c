@@ -58,7 +58,6 @@
 #include <inttypes.h>
 #include <math.h>
 #include <sys/time.h>
-#define PDC_ANALYSIS 0
 
 int                        is_client_debug_g = 0;
 pdc_server_selection_t     pdc_server_selection_g = PDC_SERVER_DEFAULT;
@@ -2941,6 +2940,7 @@ perr_t PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_r
     FUNC_ENTER(NULL);
     
     type_extent = object_info->obj_pt->type_extent;
+/*
     if (region_info->registered_op & PDC_TRANSFORM) {
         transform_index = -1;
         PDC_get_transforms(&registry);
@@ -2966,7 +2966,7 @@ perr_t PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_r
             }
         }
     }
-
+*/
     // Compute data server and metadata server ids.
     if (pdc_server_selection_g != PDC_SERVER_DEFAULT) {
         server_id = object_info->obj_info_pub->server_id;
