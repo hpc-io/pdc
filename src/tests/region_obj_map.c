@@ -145,7 +145,7 @@ int main(int argc, char **argv) {
         data[i] = i;
     }
 
-    ret = PDCreg_release_lock(obj1, reg, PDC_BLOCK);
+    ret = PDCreg_release_lock(obj1, reg, PDC_WRITE);
     if(ret != SUCCEED) {
         printf("PDCreg_release_lock failed\n");
         ret_value = 1;
@@ -173,7 +173,7 @@ int main(int argc, char **argv) {
 
 
 
-    ret = PDCreg_release_lock(obj1, reg, PDC_BLOCK);
+    ret = PDCreg_release_lock(obj1, reg, PDC_READ);
     if(ret != SUCCEED) {
         printf("PDCreg_release_lock failed\n");
         ret_value = 1;
