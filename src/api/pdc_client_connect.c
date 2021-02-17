@@ -2257,6 +2257,7 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t
         data_size = (size_t *)malloc( sizeof(size_t) );
         *data_ptrs = local_data + unit*local_offset[0];
         *data_size = unit*local_dims[0];
+        printf("offset size = %d\n", (int)local_offset[0]);
     }
     else if (ndim == 2) {
         local_count = local_dims[0];
