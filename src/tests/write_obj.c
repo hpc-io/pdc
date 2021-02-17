@@ -95,9 +95,7 @@ int main(int argc, char **argv)
     }
 
 
-    if (rank == 0) {
-        printf("Writing a %" PRIu64 " MB object [%s] with %d clients.\n", size_MB, obj_name, size);
-    }
+    printf("Writing a %" PRIu64 " MB object [%s] with %d clients.\n", size_MB, obj_name, size);
     size_B = 1;
     //size_B = size_MB * 1048576;
 
@@ -151,7 +149,7 @@ int main(int argc, char **argv)
 
     offset = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
     mysize = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
-    offset[0] = rank * my_data_size;
+    offset[0] = 0 * my_data_size;
     mysize[0] = my_data_size;
     printf("rank %d offset = %lu, length = %lu, unit size = %ld\n", rank, offset[0], mysize[0], type_size);
 
