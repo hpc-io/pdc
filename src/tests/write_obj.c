@@ -61,7 +61,7 @@ int main(int argc, char **argv)
         return ret_value;
     }
 
-    sprintf(obj_name, "%s_%d", argv[1], rank);
+    sprintf(obj_name, "%s", argv[1]);
 
     size_MB = atoi(argv[2]);
 
@@ -139,8 +139,8 @@ int main(int argc, char **argv)
     PDCprop_set_obj_tags(    obj_prop, "tag0=1");
 
     // Create a object
-    //global_obj = PDCobj_create_mpi(cont, obj_name, obj_prop, 0, comm);
-    global_obj = PDCobj_create(cont, obj_name, obj_prop);
+    global_obj = PDCobj_create_mpi(cont, obj_name, obj_prop, 0, comm);
+    //global_obj = PDCobj_create(cont, obj_name, obj_prop);
 
     if (global_obj <= 0) {
         printf("Error creating an object [%s], exit...\n", obj_name);
@@ -149,7 +149,7 @@ int main(int argc, char **argv)
 
     offset = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
     mysize = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
-    offset[0] = 0 * my_data_size;
+    offset[0] = rank * my_data_size;
     mysize[0] = my_data_size;
     printf("rank %d offset = %lu, length = %lu, unit size = %ld\n", rank, offset[0], mysize[0], type_size);
 
