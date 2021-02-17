@@ -61,7 +61,8 @@ int main(int argc, char **argv)
         return ret_value;
     }
 
-    sprintf(obj_name, "%s", argv[1]);
+    sprintf(obj_name, "%s_%d", argv[1], rank);
+
     size_MB = atoi(argv[2]);
 
     if (!strcmp(argv[3], "float")){
@@ -156,6 +157,12 @@ int main(int argc, char **argv)
 
     local_region  = PDCregion_create(ndim, offset, mysize);
     global_region = PDCregion_create(ndim, offset, mysize);
+
+    for (i = 0; i < (int) my_data_size; i++) {
+        for ( j = 0; j < (int) type_size; ++j ) {
+            mydata[i * type_size + j] = i;
+        }
+    }
     ret = PDCbuf_obj_map(mydata, var_type, local_region, global_obj, global_region);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_map failed\n");
@@ -170,12 +177,6 @@ int main(int argc, char **argv)
         printf("Failed to obtain lock for region\n");
         ret_value = 1;
         goto done;
-    }
-
-    for (i = 0; i < (int) my_data_size; i++) {
-        for ( j = 0; j < (int) type_size; ++j ) {
-            mydata[i * type_size + j] = i;
-        }
     }
 
     ret = PDCreg_release_lock(global_obj, local_region, PDC_WRITE);
