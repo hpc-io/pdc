@@ -129,6 +129,9 @@ int main(int argc, char **argv) {
     reg = PDCregion_create(1, offset, offset_length);
     reg_global = PDCregion_create(1, offset, offset_length);
 
+    for ( i = 0; i < BUF_LEN; ++i ) {
+        data[i] = i;
+    }
 
     ret = PDCbuf_obj_map(data, PDC_INT, reg, obj1, reg_global);
     if(ret != SUCCEED) {
@@ -139,10 +142,6 @@ int main(int argc, char **argv) {
     if(ret != SUCCEED) {
         printf("PDCreg_obtain_lock failed\n");
         exit(-1);
-    }
-
-    for ( i = 0; i < BUF_LEN; ++i ) {
-        data[i] = i;
     }
 
     ret = PDCreg_release_lock(obj1, reg, PDC_WRITE);
