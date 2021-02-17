@@ -96,8 +96,8 @@ int main(int argc, char **argv)
 
 
     printf("Writing a %" PRIu64 " MB object [%s] with %d clients.\n", size_MB, obj_name, size);
-    size_B = 1;
-    //size_B = size_MB * 1048576;
+    //size_B = 1;
+    size_B = size_MB * 1048576;
 
     // create a pdc
     pdc = PDCinit("pdc");
