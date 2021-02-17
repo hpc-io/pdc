@@ -9,9 +9,9 @@ test_exe="$1"
 mpi_cmd="$2"
 n_servers="$3"
 n_client="$4"
-shift
 # copy the remaining test input arguments (if any)
 test_args="$5 $6 $7"
+shift
 echo "Input arguments are the followings"
 echo $test_args
 if [ -x $test_exe ]; then echo "testing: $test_exe"; else echo "test: $test_exe not found or not and executable" && exit -2; fi
