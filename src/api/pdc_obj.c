@@ -235,6 +235,7 @@ pdcid_t PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_i
     if (!p->obj_pt)
         PGOTO_ERROR(0, "PDC object property memory allocation failed");
     memcpy(p->obj_pt, obj_prop, sizeof(struct _pdc_obj_prop));
+    p->obj_pt->obj_prop_pub->type = obj_prop->obj_prop_pub->type;
     if (obj_prop->app_name)
         p->obj_pt->app_name = strdup(obj_prop->app_name);
     if (obj_prop->data_loc)
