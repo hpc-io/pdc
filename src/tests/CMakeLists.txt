@@ -14,6 +14,7 @@ set(PROGRAMS
   set_prop
   dup_prop
   write_obj
+  write_obj_shared
   create_cont
   open_cont
   cont_life
@@ -153,6 +154,7 @@ add_test(NAME query_data WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COM
 add_test(NAME vpicio_bdcats WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio ./bdcats )
 
 if(BUILD_MPI_TESTING)
+    add_test(NAME write_obj_int WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./write_obj_shared ${MPI_RUN_CMD} 2 4 o 1 int)
     add_test(NAME create_obj_coll    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./create_obj_coll ${MPI_RUN_CMD} 2 4 )
     add_test(NAME open_obj_round_robin    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./open_obj_round_robin ${MPI_RUN_CMD} 2 4 )
     add_test(NAME pdc_init_mpi    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./pdc_init ${MPI_RUN_CMD} 2 4 )
