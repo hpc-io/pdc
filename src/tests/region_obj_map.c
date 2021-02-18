@@ -129,15 +129,15 @@ int main(int argc, char **argv) {
     reg = PDCregion_create(1, offset, offset_length);
     reg_global = PDCregion_create(1, offset, offset_length);
 
+    for ( i = 0; i < BUF_LEN; ++i ) {
+        data[i] = i;
+    }
     ret = PDCbuf_obj_map(data, PDC_INT, reg, obj1, reg_global);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_map failed\n");
         ret_value = 1;
     }
 
-    for ( i = 0; i < BUF_LEN; ++i ) {
-        data[i] = i;
-    }
     ret = PDCreg_obtain_lock(obj1, reg, PDC_WRITE, PDC_BLOCK);
     if(ret != SUCCEED) {
         printf("PDCreg_obtain_lock failed\n");
