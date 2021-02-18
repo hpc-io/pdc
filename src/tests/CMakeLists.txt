@@ -156,7 +156,7 @@ add_test(NAME vpicio_bdcats WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} 
 if(BUILD_MPI_TESTING)
     add_test(NAME write_obj_shared_int WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./write_obj_shared ${MPI_RUN_CMD} 2 4 o 1 int)
     add_test(NAME write_obj_shared_float WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./write_obj_shared ${MPI_RUN_CMD} 2 4 o 1 float)
-    add_test(NAME write_obj_shared double WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./write_obj_shared ${MPI_RUN_CMD} 2 4 o 1 double)
+    add_test(NAME write_obj_shared_double WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./write_obj_shared ${MPI_RUN_CMD} 2 4 o 1 double)
     add_test(NAME write_obj_shared_char WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./write_obj_shared ${MPI_RUN_CMD} 2 4 o 1 char)
     add_test(NAME write_obj_shared_uint WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./write_obj_shared ${MPI_RUN_CMD} 2 4 o 1 uint)
     add_test(NAME write_obj_shared_int64 WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./write_obj_shared ${MPI_RUN_CMD} 2 4 o 1 int64)
