@@ -61,7 +61,7 @@ int main(int argc, char **argv)
         return ret_value;
     }
 
-    sprintf(obj_name, "%s", argv[1]);
+    sprintf(obj_name, "%s_%d", argv[1],rank);
 
     size_MB = atoi(argv[2]);
 
