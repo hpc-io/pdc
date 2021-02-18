@@ -10,7 +10,7 @@
 #include "pdc_client_server_common.h"
 
 void print_usage() {
-    printf("Usage: srun -n ./data_server_read obj_name size_MB\n");
+    printf("Usage: srun -n ./query_data obj_name size_MB\n");
 }
 
 int main(int argc, char **argv)
