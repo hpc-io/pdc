@@ -6180,6 +6180,7 @@ PDCobj_put_data(const char *obj_name, void *data, uint64_t size, pdcid_t cont_id
     info = (struct _pdc_cont_info *)(id_info->obj_ptr);
 
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, info->cont_pt->pdc->local_id);
+    PDCprop_set_obj_type(obj_prop, PDC_CHAR);
     PDCprop_set_obj_dims(obj_prop, 1, &size);
     PDCprop_set_obj_user_id(obj_prop, getuid());
     PDCprop_set_obj_time_step(obj_prop, 0);
