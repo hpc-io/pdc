@@ -6192,10 +6192,10 @@ PDCobj_put_data(const char *obj_name, void *data, uint64_t size, pdcid_t cont_id
 
     int ndim = 1;
     uint64_t offset = 0;
-    size = ceil(size/sizeof(int));
+    //size = ceil(size/sizeof(int));
     obj_region = PDCregion_create(ndim, &offset, &size);
 
-    ret = PDCbuf_obj_map(data, PDC_INT, obj_region, obj_id, obj_region);
+    ret = PDCbuf_obj_map(data, PDC_CHAR, obj_region, obj_id, obj_region);
     if(ret != SUCCEED) {
         PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with PDCbuf_obj_map for obj [%s]",
                 pdc_client_mpi_rank_g, obj_name);
