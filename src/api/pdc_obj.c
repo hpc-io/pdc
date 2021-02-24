@@ -163,7 +163,7 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id
     for (i=0; i<obj_prop->obj_prop_pub->ndim; i++)
         p->obj_info_pub->obj_pt->dims[i] = obj_prop->obj_prop_pub->dims[i];
     
-  PDC_Client_attach_metadata_to_local_obj((char *)obj_name, p->meta_id, p->cont->meta_id, p);
+    //PDC_Client_attach_metadata_to_local_obj((char *)obj_name, p->meta_id, p->cont->meta_id, p);
 
     ret_value = p->obj_info_pub->local_id;
     
