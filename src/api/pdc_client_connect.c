@@ -2257,24 +2257,28 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t
         data_size = (size_t *)malloc( sizeof(size_t) );
         *data_ptrs = local_data + unit*local_offset[0];
         *data_size = unit*local_dims[0];
-        //printf("offset size = %d, local dim = %d, unit = %d, data_ptrs[0] = %d, data_ptrs[1] = %d\n", (int)local_offset[0], (int) local_dims[0], (int) unit, ((int*)data_ptrs)[0], ((int*)data_ptrs)[1] );
+        printf("offset size = %d, local dim = %d, unit = %d, data_ptrs[0] = %d, data_ptrs[1] = %d\n", (int)local_offset[0], (int) local_dims[0], (int) unit, ((int*)data_ptrs)[0], ((int*)data_ptrs)[1] );
     }
     else if (ndim == 2) {
         local_count = local_dims[0];
         data_ptrs = (void **)malloc( local_count * sizeof(void *) );
         data_size = (size_t *)malloc( local_count * sizeof(size_t) );
         data_ptrs[0] = local_data + unit*(local_dims[1]*local_offset[0] + local_offset[1]);
+        data_size[0] = local_dims[1];
         data_size[0] = unit*local_dims[1];
         for (i=1; i<local_dims[0]; i++) {
             data_ptrs[i] = data_ptrs[i-1] + unit*local_dims[1]; 
             data_size[i] = data_size[0];
         }
+        /* data_size[0] *= unit; */
+        printf("offset size = %d, local dim = %d %d, unit = %d, data_size = %d %d\n", (int)local_offset[0], (int) local_dims[0], (int) local_dims[1], (int) unit, (int)data_size[0], (int)data_size[1] );
     }
     else if (ndim == 3) {
         local_count = local_dims[0]*local_dims[1];
         data_ptrs = (void **)malloc( local_count * sizeof(void *) );
         data_size = (size_t *)malloc( local_count * sizeof(size_t) );
         data_ptrs[0] = local_data + unit*(local_dims[2]*local_dims[1]*local_offset[0] + local_dims[2]*local_offset[1] + local_offset[2]);
+        data_size[0] = local_dims[2];
         data_size[0] = unit*local_dims[2];
         for (i=0; i<local_dims[0]-1; i++) {
             for (j=0; j<local_dims[1]-1; j++) {
@@ -2289,6 +2293,8 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t
              data_ptrs[i*local_dims[1]+j+1] = data_ptrs[i*local_dims[1]+j]+unit*local_dims[2];
              data_size[i*local_dims[1]+j+1] = data_size[0];
         }
+        /* data_size[0] *= unit; */
+        /* printf("offset size = %d, local dim = %d %d %d, unit = %d, data_size = %d %d %d\n", (int)local_offset[0], (int)local_dims[0], (int)local_dims[1], (int) local_dims[2], (int) unit, (int)data_size[0], (int)data_size[1] , (int)data_size[2]); */
     }
     else
         PGOTO_ERROR(FAIL, "mapping for array of dimension greater than 4 is not supproted");
@@ -2297,6 +2303,7 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr, buf_map_register_id_g, &client_send_buf_map_handle);
+
 
     // Create bulk handle and release in PDC_Data_Server_buf_unmap()
     hg_ret = HG_Bulk_create(hg_class, local_count, (void**)data_ptrs, (hg_size_t *)data_size, HG_BULK_READWRITE, &(in.local_bulk_handle));
