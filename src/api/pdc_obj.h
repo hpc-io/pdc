@@ -86,7 +86,7 @@ perr_t PDCobj_close(pdcid_t obj_id);
  *
  * \return Pointer to pdc_obj_info struct on success/Null on failure
  */
-struct pdc_obj_info *PDCobj_get_info(const char *obj_name);
+struct pdc_obj_info *PDCobj_get_info(pdcid_t obj_id);
 
 /**
  * ***********

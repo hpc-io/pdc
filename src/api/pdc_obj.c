@@ -427,7 +427,7 @@ pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc)
         PGOTO_ERROR(0, "cannot allocate ret_value->pdc");
     
     // contact metadata server
-    ret = PDC_Client_query_metadata_name_timestep_agg(obj_name, 0, &out);
+    ret = PDC_Client_query_metadata_name_timestep(obj_name, 0, &out);
     if (ret == FAIL)
         PGOTO_ERROR(0, "query object failed");
         
@@ -917,15 +917,15 @@ perr_t PDC_free_obj_info(struct _pdc_obj_info *obj)
     FUNC_LEAVE(ret_value);
 }
 
-struct pdc_obj_info *PDCobj_get_info(const char *obj_name)
+struct pdc_obj_info *PDCobj_get_info(pdcid_t obj_id)
 {
     struct pdc_obj_info *ret_value = NULL;
     struct _pdc_obj_info *tmp = NULL;
-    pdcid_t obj_id;
+    /* pdcid_t obj_id; */
     
     FUNC_ENTER(NULL);
     
-    obj_id = PDC_find_byname(PDC_OBJ, obj_name);
+    /* obj_id = PDC_find_byname(PDC_OBJ, obj_name); */
     
     tmp = PDC_obj_get_info(obj_id);
     

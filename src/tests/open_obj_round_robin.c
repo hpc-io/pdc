@@ -132,7 +132,7 @@ int main(int argc, char **argv) {
             printf("Rank %d Fail to open object %s\n", rank, obj_name1);
             ret_value = 1;
         } else {
-            printf("Rank %d Open object %s\n", rank, obj_name1);
+            printf("Rank %d Opened object %s\n", rank, obj_name1);
         }
         sprintf(obj_name2, "o2_%d", (rank + i) % size);
         obj2 = PDCobj_open(obj_name2, pdc);
@@ -142,36 +142,36 @@ int main(int argc, char **argv) {
         } else {
             printf("Rank %d Open object %s\n", rank, obj_name2);
         }
-        obj1_info = PDCobj_get_info(obj_name1);
-        obj2_info = PDCobj_get_info(obj_name2);
+        obj1_info = PDCobj_get_info(obj1);
+        obj2_info = PDCobj_get_info(obj2);
         if ( strcmp(obj1_info->name, obj_name1) != 0 ) {
-            printf("Object 1 name is wrong\n");
+            printf("Object 1 name is wrong at rank %d\n", rank);
             ret_value = 1;
         }
 
         if (obj1_info->obj_pt->type != PDC_DOUBLE) {
-            printf("Type is not properly inherited from object property.\n");
+            printf("Type is not properly inherited from object 1 property at rank %d.\n", rank);
             ret_value = 1;
         }
 
         if (obj1_info->obj_pt->ndim != ndim) {
-            printf("Number of dimensions is not properly inherited from object property at rank %d.\n", rank);
+            printf("Number of dimensions is not properly inherited from object 1 property at rank %d.\n", rank);
             ret_value = 1;
         }
         if (obj1_info->obj_pt->dims[0] != (unsigned) (i + rank) % size * 2 + 1) {
-            printf("First dimension is not properly inherited from object property at rank %d.\n", rank);
+            printf("First dimension is not properly inherited from object 1 property at rank %d.\n", rank);
             ret_value = 1;
         }
         if (obj1_info->obj_pt->dims[1] != (unsigned) (i + rank) % size * 3 + 2) {
-            printf("Second dimension is not properly inherited from object property at rank %d.\n", rank);
+            printf("Second dimension is not properly inherited from object 1 property at rank %d.\n", rank);
             ret_value = 1;
         }
         if (obj1_info->obj_pt->dims[2] != (unsigned) (i + rank) % size * 5 + 3) {
-            printf("Third dimension is not properly inherited from object property at rank %d.\n", rank);
+            printf("Third dimension is not properly inherited from object 1 property at rank %d.\n", rank);
             ret_value = 1;
         }
         if ( strcmp(obj2_info->name, obj_name2) != 0 ) {
-            printf("Object 1 name is wrong\n");
+            printf("Object 2 name is wrong\n");
             ret_value = 1;
         }
 
