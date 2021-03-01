@@ -14,7 +14,7 @@ rm -rf pdc_tmp
 # START the server (in the background)
 ./pdc_server.exe &
 # WAIT a bit...
-sleep 2
+sleep 1
 # RUN the actual test
 echo "$test_exe $test_args"
 $test_exe $test_args
