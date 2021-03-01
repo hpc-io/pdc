@@ -108,8 +108,8 @@ int main(int argc, char **argv) {
         printf("Fail to create object @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
-    obj1_info = PDCobj_get_info(obj_name1);
-    obj2_info = PDCobj_get_info(obj_name2);
+    obj1_info = PDCobj_get_info(obj1);
+    obj2_info = PDCobj_get_info(obj2);
     if ( strcmp(obj1_info->name, obj_name1) != 0 ) {
         printf("Object 1 name is wrong\n");
         ret_value = 1;
