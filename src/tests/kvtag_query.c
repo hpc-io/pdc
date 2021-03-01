@@ -99,22 +99,22 @@ int main() {
     kvtag3.value = (void*)&v3;
     kvtag3.size  = sizeof(double);
 
-    if (PDC_add_kvtag(obj1, &kvtag1) < 0)
+    if (PDCobj_put_tag(obj1, kvtag1.name, kvtag1.value, kvtag1.size) < 0)
         printf("fail to add a kvtag to o1\n");
     else
         printf("successfully added a kvtag to o1\n");
 
-    if (PDC_add_kvtag(obj1, &kvtag2) < 0)
+    if (PDCobj_put_tag(obj1, kvtag2.name, kvtag2.value, kvtag2.size) < 0)
         printf("fail to add a kvtag to o1\n");
     else
         printf("successfully added a kvtag to o1\n");
 
-    if (PDC_add_kvtag(obj2, &kvtag2) < 0)
+    if (PDCobj_put_tag(obj2, kvtag2.name, kvtag2.value, kvtag2.size) < 0)
         printf("fail to add a kvtag to o2\n");
     else
         printf("successfully added a kvtag to o2\n");
 
-    if (PDC_add_kvtag(obj2, &kvtag3) < 0)
+    if (PDCobj_put_tag(obj2, kvtag3.name, kvtag3.value, kvtag3.size) < 0)
         printf("fail to add a kvtag to o2\n");
     else
         printf("successfully added a kvtag to o2\n");

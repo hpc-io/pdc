@@ -73,6 +73,7 @@ int main(int argc, char *argv[])
     char tag[128];
     pdc_kvtag_t kvtag;
     pdc_kvtag_t **values;
+    size_t value_size;
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &proc_num);
@@ -142,7 +143,7 @@ int main(int argc, char *argv[])
 #endif
     for (i = 0; i < my_add_tag; i++) {
         v = i+my_add_tag_s;
-        if (PDC_add_kvtag(obj_ids[i], &kvtag) < 0)
+        if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.size) < 0)
             printf("fail to add a kvtag to o%d\n", i+my_obj_s);
     }
     
@@ -160,7 +161,7 @@ int main(int argc, char *argv[])
     stime = MPI_Wtime();
 #endif
     for (i = 0; i < my_query; i++) {
-        if (PDC_get_kvtag(obj_ids[i], kvtag.name, &values[i]) < 0)
+        if (PDCobj_get_tag(obj_ids[i], kvtag.name, &values[i], &value_size) < 0)
             printf("fail to get a kvtag from o%d\n", i+my_query_s);
     }
     
@@ -173,24 +174,6 @@ int main(int argc, char *argv[])
 
     fflush(stdout);
 
-    // Add old format tags
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-    stime = MPI_Wtime();
-#endif
-    for (i = 0; i < my_add_tag; i++) {
-        sprintf(tag, "Group=%d", i+my_add_tag_s);
-        if (PDC_Client_add_tag(obj_ids[i], tag) < 0)
-            printf("fail to add a tag to o%d\n", i+my_obj_s);
-    }
-    
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-    total_time = MPI_Wtime() - stime;
-#endif
-    if (my_rank == 0) 
-        printf("Total time to add tags (old format) to %d objects: %.4f\n", n_add_tag, total_time);
-    
     for (i = 0; i < my_query; i++) {
         if (*(int*)(values[i]->value) != i+my_add_tag_s) 
             printf("Error with retrieved tag from o%d\n", i+my_query_s);
