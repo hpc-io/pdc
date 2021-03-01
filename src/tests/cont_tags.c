@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
         printf("Put tag failed at container 1\n");
         ret_value = 1;
     }
-    ret = PDCcont_put_tag(cont, "some tag 2", tag_value, strlen(tag_value2) + 1);
+    ret = PDCcont_put_tag(cont, "some tag 2", tag_value2, strlen(tag_value2) + 1);
     if ( ret != SUCCEED ) {
         printf("Put tag failed at container 1\n");
         ret_value = 1;
@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    ret = PDCcont_put_tag(cont2, "some tag 2", tag_value, strlen(tag_value2) + 1);
+    ret = PDCcont_put_tag(cont2, "some tag 2", tag_value2, strlen(tag_value2) + 1);
     if ( ret != SUCCEED ) {
         printf("Put tag failed at container 2\n");
         ret_value = 1;
@@ -104,7 +104,7 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
     if (strcmp(tag_value, tag_value_ret) != 0) {
-        printf("Wrong tag value at container 1, expected = %s, get %s\n", tag_value, tag_value_ret);
+        printf("Wrong tag value at container 1, expected = [%s], get [%s]\n", tag_value, tag_value_ret);
         ret_value = 1;
     }
 
@@ -115,7 +115,7 @@ int main(int argc, char **argv) {
     }
 
     if (strcmp(tag_value2, tag_value_ret) != 0) {
-        printf("Wrong tag value at container 1, expected = %s, get %s\n", tag_value2, tag_value_ret);
+        printf("Wrong tag value at container 1, expected = [%s], get [%s]\n", tag_value2, tag_value_ret);
         ret_value = 1;
     }
 
@@ -126,7 +126,7 @@ int main(int argc, char **argv) {
     }
 
     if (strcmp(tag_value, tag_value_ret) != 0) {
-        printf("Wrong tag value at container 2, expected = %s, get %s\n", tag_value, tag_value_ret);
+        printf("Wrong tag value at container 2, expected = [%s], get [%s]\n", tag_value, tag_value_ret);
         ret_value = 1;
     }
 
@@ -137,7 +137,7 @@ int main(int argc, char **argv) {
     }
 
     if (strcmp(tag_value2, tag_value_ret) != 0) {
-        printf("Wrong tag value at container 2, expected = %s, get %s\n", tag_value2, tag_value_ret);
+        printf("Wrong tag value at container 2, expected = [%s], get [%s]\n", tag_value2, tag_value_ret);
         ret_value = 1;
     }
 
