@@ -191,13 +191,13 @@
       + error code, SUCCESS or FAIL.
     - Close an object. Must do this after open an object.
     - For developers: see pdc_obj.c. Dereference an object by reducing its reference counter.
-  + struct pdc_obj_info *PDCobj_get_info(const char *obj_name)
+  + struct pdc_obj_info *PDCobj_get_info(pdcid_t obj)
     - Input:
-      + obj_name: Name of object
+      + obj_name: Local object ID
     - Output:
       + object information see [object information](#object-info)
     - Get a pointer to a structure that describes the object metadata.
-    - For developers: see pdc_obj.c. Local linked list search for object ID first. Then pull out local object metadata by ID.
+    - For developers: see pdc_obj.c. Pull out local object metadata by ID.
   + pdcid_t PDCobj_put_data(const char *obj_name, void *data, uint64_t size, pdcid_t cont_id)
     - Input:
       + obj_name: Name of object
