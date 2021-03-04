@@ -99,7 +99,7 @@ int main(int argc, char **argv) {
 
     for (i = 0; i < (int) my_data_size; i++) {
         for ( j = 0; j < (int) type_size; ++j ) {
-            mydata[i * type_size + j] = i;
+            mydata[i * type_size + j] = (char) (i * type_size + j);
         }
     }
 
@@ -278,7 +278,7 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    for ( i = 0; i < (int)my_data_size; ++i ) {
+    for ( i = 0; i < (int) (my_data_size * type_size); ++i ) {
         if ( data_read[i] != i ) {
             printf("wrong value %d!=%d\n", data_read[i], i);
             ret_value = 1;
