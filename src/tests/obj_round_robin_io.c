@@ -322,6 +322,7 @@ int main(int argc, char **argv) {
             if ( data_read[j] != (char) (j + ((rank + i) % size) * 5 + 3) ) {
                 printf("rank %d, i = %d, j = %d, wrong value %d!=%d %d\n", rank, i, j, data_read[j], (char)(j + ((rank + i) % size) * 5 + 3), __LINE__);
                 ret_value = 1;
+                break;
             }
         }
         free(data_read);
