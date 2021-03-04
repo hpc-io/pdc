@@ -30,7 +30,7 @@
 int main(int argc, char **argv) {
     pdcid_t pdc, cont_prop, cont, obj_prop;
     pdcid_t obj1, obj2;
-    int rank = 0, size = 1, i, ret;
+    int rank = 0, size = 1, i, j, ret;
     int ret_value = 0;
     char cont_name[128], obj_name1[128], obj_name2[128];
     struct pdc_obj_info *obj1_info, *obj2_info;
@@ -49,7 +49,6 @@ int main(int argc, char **argv) {
     char *obj_data;
     char *mydata;
 
-    pdcid_t global_obj = 0;
     pdcid_t local_region, global_region;
 
 #ifdef ENABLE_MPI
@@ -91,11 +90,11 @@ int main(int argc, char **argv) {
     dims[1] = rank*3+16;
     dims[2] = rank*5+16;
     my_data_size = 1;
-    for ( i = 0; i < ndim; ++i ) {
+    for ( i = 0; i < (int)ndim; ++i ) {
         my_data_size *= dims[i];
     }
 
-    mydata = (char*)malloc(my_data_size*type_size)
+    mydata = (char*)malloc(my_data_size*type_size);
     obj_data = (char*)malloc(my_data_size*type_size);
 
     for (i = 0; i < (int) my_data_size; i++) {
@@ -148,6 +147,11 @@ int main(int argc, char **argv) {
     PDCprop_set_obj_type(obj_prop, var_type);
     if ( ret != SUCCEED ) {
         printf("Fail to set obj time step @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    ret = PDCprop_set_obj_buf(obj_prop, obj_data);
+    if ( ret != SUCCEED ) {
+        printf("Fail to set obj data @ line %d\n", __LINE__);
         ret_value = 1;
     }
 
@@ -375,6 +379,7 @@ int main(int argc, char **argv) {
        printf("Rank %d fail to close PDC\n", rank);
         ret_value = 1;
     }
+  done:
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
