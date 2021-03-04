@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
 
     uint64_t my_data_size;
 
-    char *obj_data, *mydata, data_read;
+    char *obj_data, *mydata, *data_read;
 
     pdcid_t local_region, global_region;
 
@@ -247,27 +247,27 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    reg_local = PDCregion_create(1, offset, offset_length);
-    reg_global = PDCregion_create(1, offset, offset_length);
-    ret = PDCbuf_obj_map(data_read, PDC_INT, reg_local, obj1, reg_global);
+    local_region = PDCregion_create(1, offset, offset_length);
+    global_region = PDCregion_create(1, offset, offset_length);
+    ret = PDCbuf_obj_map(data_read, PDC_INT, local_region, obj1, global_region);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_map failed\n");
         ret_value = 1;
     }
 
-    ret = PDCreg_obtain_lock(obj1, reg_local, PDC_READ, PDC_BLOCK);
+    ret = PDCreg_obtain_lock(obj1, local_region, PDC_READ, PDC_BLOCK);
     if(ret != SUCCEED) {
         printf("PDCreg_obtain_lock failed\n");
         ret_value = 1;
     }
 
-    ret = PDCreg_release_lock(obj1, reg_local, PDC_READ);
+    ret = PDCreg_release_lock(obj1, local_region, PDC_READ);
     if(ret != SUCCEED) {
         printf("PDCreg_release_lock failed\n");
         ret_value = 1;
     }
 
-    ret = PDCbuf_obj_unmap(obj1, reg_global);
+    ret = PDCbuf_obj_unmap(obj1, global_region);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_unmap failed\n");
         ret_value = 1;
