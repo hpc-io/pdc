@@ -2941,7 +2941,7 @@ perr_t PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_r
     //void *transform_result = NULL;
     //size_t transform_size = 0;
     struct _pdc_region_transform_ftn_info **registry = NULL;
-    int transform_index;
+    //int transform_index;
     //int k, registered_count;
     //struct _pdc_region_analysis_ftn_info **analysis_registry;
 
