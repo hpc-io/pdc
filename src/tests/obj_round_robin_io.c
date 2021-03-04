@@ -351,6 +351,9 @@ int main(int argc, char **argv) {
         } else {
             printf("Rank %d successfully close object %s\n", rank, obj_name2);
         }
+        #ifdef ENABLE_MPI
+        MPI_Barrier(MPI_COMM_WORLD);
+        #endif
     }
     printf("------------------------------rank %d checkpoint\n", rank);
 
