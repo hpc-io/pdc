@@ -45,19 +45,21 @@ int main(int argc, char **argv) {
     int rank = 0, size = 1, i;
     int ret_value = 0;
 
-    uint64_t offset[2], offset_length[2];
-    int ndim = 2;
-    uint64_t dims[2];
+    uint64_t offset[3], offset_length[3];
+    uint64_t dims[3];
     offset[0] = 0;
     offset[1] = 0;
-    offset_length[0] = BUF_LEN/2;
+    offset[2] = 0;
+    offset_length[0] = BUF_LEN/4;
     offset_length[1] = 2;
+    offset_length[2] = 2;
 
     int *data = (int*)malloc(sizeof(int)*BUF_LEN);
     int *data_read = (int*)malloc(sizeof(int)*BUF_LEN);
     int *obj_data = (int *)calloc(BUF_LEN, sizeof(int));
-    dims[0] = BUF_LEN / 2;
+    dims[0] = BUF_LEN / 4;
     dims[1] = 2;
+    dims[2] = 2;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -100,7 +102,7 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
     PDCprop_set_obj_buf(obj_prop, obj_data);
-    PDCprop_set_obj_dims(obj_prop, ndim, dims);
+    PDCprop_set_obj_dims(obj_prop, 3, dims);
     PDCprop_set_obj_user_id( obj_prop, getuid());
     PDCprop_set_obj_time_step( obj_prop, 0);
     PDCprop_set_obj_app_name(obj_prop, "DataServerTest");
@@ -128,8 +130,8 @@ int main(int argc, char **argv) {
 
     //reg = PDCregion_create(1, offset, offset_length);
     //reg_global = PDCregion_create(1, offset, offset_length);
-    reg = PDCregion_create(ndim, offset, offset_length);
-    reg_global = PDCregion_create(ndim, offset, offset_length);
+    reg = PDCregion_create(3, offset, offset_length);
+    reg_global = PDCregion_create(3, offset, offset_length);
 
     for ( i = 0; i < BUF_LEN; ++i ) {
         data[i] = i;
@@ -164,8 +166,8 @@ int main(int argc, char **argv) {
 
     //reg = PDCregion_create(1, offset, offset_length);
     //reg_global = PDCregion_create(1, offset, offset_length);
-    reg = PDCregion_create(ndim, offset, offset_length);
-    reg_global = PDCregion_create(ndim, offset, offset_length);
+    reg = PDCregion_create(3, offset, offset_length);
+    reg_global = PDCregion_create(3, offset, offset_length);
 
     ret = PDCbuf_obj_map(data_read, PDC_INT, reg, obj1, reg_global);
     if(ret != SUCCEED) {
