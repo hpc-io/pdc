@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
     offset[0] = 0;
     offset[1] = 0;
     offset[2] = 0;
-    offset_length[0] = BUF_LEN;
+    offset_length[0] = BUF_LEN/4;
     offset_length[1] = 2;
     offset_length[2] = 2;
 
