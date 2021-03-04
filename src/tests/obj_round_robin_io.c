@@ -247,8 +247,8 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    local_region = PDCregion_create(1, offset, offset_length);
-    global_region = PDCregion_create(1, offset, offset_length);
+    local_region = PDCregion_create(1, offset, mysize);
+    global_region = PDCregion_create(1, offset, mysize);
     ret = PDCbuf_obj_map(data_read, PDC_INT, local_region, obj1, global_region);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_map failed\n");
@@ -273,7 +273,7 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    for ( i = 0; i < my_data_size; ++i ) {
+    for ( i = 0; i < (int)my_data_size; ++i ) {
         if ( data_read[i] != i ) {
             printf("wrong value %d!=%d\n", data_read[i], i);
             ret_value = 1;
