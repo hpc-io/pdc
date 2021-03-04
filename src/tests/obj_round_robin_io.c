@@ -304,7 +304,7 @@ int main(int argc, char **argv) {
 
         ret = PDCbuf_obj_map(data_read, var_type, local_region, obj2, global_region);
         if(ret != SUCCEED) {
-            printf("PDCbuf_obj_map failed\n");
+            printf("PDCbuf_obj_map for read obj2 failed\n");
             ret_value = 1;
             goto done;
         }
