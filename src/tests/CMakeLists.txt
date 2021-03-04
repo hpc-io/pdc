@@ -140,6 +140,7 @@ add_test(NAME obj_buf     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} CO
 add_test(NAME obj_tags   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_tags )
 add_test(NAME obj_info   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_info )
 add_test(NAME obj_put_data   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_put_data )
+add_test(NAME kvtag_add_get   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./kvtag_add_get )
 add_test(NAME create_region WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./create_region )
 add_test(NAME region_obj_map WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_obj_map )
 add_test(NAME write_obj_int WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./write_obj o 1 int)
