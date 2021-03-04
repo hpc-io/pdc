@@ -97,11 +97,6 @@ int main(int argc, char **argv) {
     obj_data = (char*)malloc(my_data_size*type_size);
     data_read = (char*)malloc(my_data_size*type_size);
 
-    for (i = 0; i < (int) my_data_size; i++) {
-        for ( j = 0; j < (int) type_size; ++j ) {
-            mydata[i * type_size + j] = (char) (i * type_size + j);
-        }
-    }
 
     offset = (uint64_t*)malloc(sizeof(uint64_t));
     mysize = (uint64_t*)malloc(sizeof(uint64_t));
@@ -166,12 +161,18 @@ int main(int argc, char **argv) {
     } else {
         printf("Rank %d Fail to create object @ line  %d!\n", rank, __LINE__);
         ret_value = 1;
+        goto done;
     }
-
+    for (i = 0; i < (int) my_data_size; i++) {
+        for ( j = 0; j < (int) type_size; ++j ) {
+            mydata[i * type_size + j] = (char) (i * type_size + j + rank);
+        }
+    }
     ret = PDCbuf_obj_map(mydata, var_type, local_region, obj1, global_region);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_map failed\n");
         ret_value = 1;
+        goto done;
     }
     ret = PDCreg_obtain_lock(obj1, local_region, PDC_WRITE, PDC_BLOCK);
     if (ret != SUCCEED) {
@@ -189,17 +190,20 @@ int main(int argc, char **argv) {
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_unmap failed\n");
         ret_value = 1;
+        goto done;
     }
 
 
     if(PDCregion_close(local_region) < 0) {
         printf("fail to close local region\n");
         ret_value = 1;
+        goto done;
     }
 
     if(PDCregion_close(global_region) < 0) {
         printf("fail to close global region\n");
         ret_value = 1;
+        goto done;
     }
 
     // create second object
@@ -214,6 +218,11 @@ int main(int argc, char **argv) {
         printf("Rank %d Fail to create object @ line  %d!\n", rank, __LINE__);
         ret_value = 1;
         goto done;
+    }
+    for (i = 0; i < (int) my_data_size; i++) {
+        for ( j = 0; j < (int) type_size; ++j ) {
+            mydata[i * type_size + j] = (char) (i * type_size + j + rank * 5 + 3);
+        }
     }
     ret = PDCbuf_obj_map(mydata, var_type, local_region, obj2, global_region);
     if(ret != SUCCEED) {
@@ -252,40 +261,6 @@ int main(int argc, char **argv) {
         goto done;
     }
 
-    local_region = PDCregion_create(1, offset, mysize);
-    global_region = PDCregion_create(1, offset, mysize);
-    ret = PDCbuf_obj_map(data_read, PDC_INT, local_region, obj2, global_region);
-    if(ret != SUCCEED) {
-        printf("PDCbuf_obj_map failed\n");
-        ret_value = 1;
-    }
-
-    ret = PDCreg_obtain_lock(obj2, local_region, PDC_READ, PDC_BLOCK);
-    if(ret != SUCCEED) {
-        printf("PDCreg_obtain_lock failed\n");
-        ret_value = 1;
-    }
-
-    ret = PDCreg_release_lock(obj2, local_region, PDC_READ);
-    if(ret != SUCCEED) {
-        printf("PDCreg_release_lock failed\n");
-        ret_value = 1;
-    }
-
-    ret = PDCbuf_obj_unmap(obj2, global_region);
-    if(ret != SUCCEED) {
-        printf("PDCbuf_obj_unmap failed\n");
-        ret_value = 1;
-    }
-
-    for ( i = 0; i < (int) (my_data_size * type_size); ++i ) {
-        if ( data_read[i] != (char)i ) {
-            printf("wrong value %d!=%d\n", data_read[i], i);
-            ret_value = 1;
-            break;
-        }
-    }
-
 
     // close created objects
     if(PDCobj_close(obj1) < 0) {
@@ -310,6 +285,7 @@ int main(int argc, char **argv) {
         if(obj1 == 0) {
             printf("Rank %d Fail to open object %s\n", rank, obj_name1);
             ret_value = 1;
+            goto done;
         } else {
             printf("Rank %d Opened object %s\n", rank, obj_name1);
         }
@@ -318,19 +294,64 @@ int main(int argc, char **argv) {
         if(obj2 == 0) {
             printf("Rank %d Fail to open object %s\n", rank, obj_name2);
             ret_value = 1;
+            goto done;
         } else {
             printf("Rank %d Open object %s\n", rank, obj_name2);
+        }
+
+        local_region  = PDCregion_create(1, offset, mysize);
+        global_region = PDCregion_create(1, offset, mysize);
+
+        local_region = PDCregion_create(1, offset, mysize);
+        global_region = PDCregion_create(1, offset, mysize);
+        ret = PDCbuf_obj_map(data_read, PDC_INT, local_region, obj2, global_region);
+        if(ret != SUCCEED) {
+            printf("PDCbuf_obj_map failed\n");
+            ret_value = 1;
+            goto done;
+        }
+
+        ret = PDCreg_obtain_lock(obj2, local_region, PDC_READ, PDC_BLOCK);
+        if(ret != SUCCEED) {
+            printf("PDCreg_obtain_lock failed\n");
+            ret_value = 1;
+            goto done;
+        }
+
+        ret = PDCreg_release_lock(obj2, local_region, PDC_READ);
+        if(ret != SUCCEED) {
+            printf("PDCreg_release_lock failed\n");
+            ret_value = 1;
+            goto done;
+        }
+
+        ret = PDCbuf_obj_unmap(obj2, global_region);
+        if(ret != SUCCEED) {
+            printf("PDCbuf_obj_unmap failed\n");
+            ret_value = 1;
+            goto done;
+        }
+
+        for ( j = 0; j < (int) (my_data_size * type_size); ++j ) {
+            if ( data_read[j] != (char)(j + (rank + i) % size) ) {
+                printf("wrong value %d!=%d\n", data_read[i], (char)(j + ((rank + i) % size) * 5 + 3));
+                ret_value = 1;
+                goto done;
+                break;
+            }
         }
 
         if(PDCobj_close(obj1) < 0) {
             printf("Rank %d fail to close object %s\n", rank, obj_name1);
             ret_value = 1;
+            goto done;
         } else {
             printf("Rank %d successfully close object %s\n", rank, obj_name1);
         }
         if(PDCobj_close(obj2) < 0) {
             printf("Rank %d fail to close object %s\n", rank, obj_name2);
             ret_value = 1;
+            goto done;
         } else {
             printf("Rank %d successfully close object %s\n", rank, obj_name2);
         }
