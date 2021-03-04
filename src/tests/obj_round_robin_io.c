@@ -294,7 +294,7 @@ int main(int argc, char **argv) {
         local_region  = PDCregion_create(1, offset, mysize);
         global_region = PDCregion_create(1, offset, mysize);
         data_read = (char*)malloc(my_data_size*type_size);
-/*
+
         ret = PDCbuf_obj_map(data_read, var_type, local_region, obj2, global_region);
         if(ret != SUCCEED) {
             printf("PDCbuf_obj_map for read obj2 failed %d\n",__LINE__);
@@ -318,7 +318,7 @@ int main(int argc, char **argv) {
             printf("PDCbuf_obj_unmap failed %d\n", __LINE__);
             ret_value = 1;
         }
-
+/*
         for ( j = 0; j < (int) (my_data_size * type_size); ++j ) {
             if ( data_read[j] != (char) (j + target_rank * 5 + 3) ) {
                 printf("rank %d, i = %d, j = %d, wrong value %d!=%d %d\n", rank, i, j, data_read[j], (char)(j + target_rank * 5 + 3), __LINE__);
