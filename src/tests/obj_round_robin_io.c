@@ -138,8 +138,8 @@ int main(int argc, char **argv) {
         printf("Rank %d Fail to create object property @ line  %d!\n", rank, __LINE__);
         ret_value = 1;
     }
-    dims[0] = my_data_size;
-    ret = PDCprop_set_obj_dims(obj_prop, 1, dims);
+    //dims[0] = my_data_size;
+    ret = PDCprop_set_obj_dims(obj_prop, ndim, dims);
     if ( ret != SUCCEED ) {
         printf("Fail to set obj time step @ line %d\n", __LINE__);
         ret_value = 1;
@@ -206,8 +206,8 @@ int main(int argc, char **argv) {
     sprintf(obj_name2, "o2_%d", rank);
     obj2 = PDCobj_create(cont, obj_name2, obj_prop);
 
-    local_region  = PDCregion_create(1, offset, mysize);
-    global_region = PDCregion_create(1, offset, mysize);
+    local_region  = PDCregion_create(ndim, offset, mysize);
+    global_region = PDCregion_create(ndim, offset, mysize);
     if(obj2 > 0) {
         printf("Rank %d Create an object %s\n", rank, obj_name2);
     } else {
@@ -249,25 +249,25 @@ int main(int argc, char **argv) {
 
     local_region = PDCregion_create(1, offset, mysize);
     global_region = PDCregion_create(1, offset, mysize);
-    ret = PDCbuf_obj_map(data_read, PDC_INT, local_region, obj1, global_region);
+    ret = PDCbuf_obj_map(data_read, PDC_INT, local_region, obj2, global_region);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_map failed\n");
         ret_value = 1;
     }
 
-    ret = PDCreg_obtain_lock(obj1, local_region, PDC_READ, PDC_BLOCK);
+    ret = PDCreg_obtain_lock(obj2, local_region, PDC_READ, PDC_BLOCK);
     if(ret != SUCCEED) {
         printf("PDCreg_obtain_lock failed\n");
         ret_value = 1;
     }
 
-    ret = PDCreg_release_lock(obj1, local_region, PDC_READ);
+    ret = PDCreg_release_lock(obj2, local_region, PDC_READ);
     if(ret != SUCCEED) {
         printf("PDCreg_release_lock failed\n");
         ret_value = 1;
     }
 
-    ret = PDCbuf_obj_unmap(obj1, global_region);
+    ret = PDCbuf_obj_unmap(obj2, global_region);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_unmap failed\n");
         ret_value = 1;
