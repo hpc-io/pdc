@@ -30,7 +30,7 @@
 int main(int argc, char **argv) {
     pdcid_t pdc, cont_prop, cont, obj_prop;
     pdcid_t obj1, obj2;
-    int rank = 0, size = 1, i, j, ret;
+    int rank = 0, size = 1, i, j, ret, target_rank;
     int ret_value = 0;
     char cont_name[128], obj_name1[128], obj_name2[128];
     //struct pdc_obj_info *obj1_info, *obj2_info;
@@ -264,7 +264,8 @@ int main(int argc, char **argv) {
     MPI_Barrier(MPI_COMM_WORLD);
     #endif
     for ( i = 1; i < size; ++i ) {
-        sprintf(obj_name1, "o1_%d", (rank + i) % size);
+        target_rank = (rank + i) % size;
+        sprintf(obj_name1, "o1_%d", target_rank);
         obj1 = PDCobj_open(obj_name1, pdc);
         if(obj1 == 0) {
             printf("Rank %d Fail to open object %s %d\n", rank, obj_name1, __LINE__);
@@ -272,7 +273,7 @@ int main(int argc, char **argv) {
         } else {
             printf("Rank %d Opened object %s\n", rank, obj_name1);
         }
-        sprintf(obj_name2, "o2_%d", (rank + i) % size);
+        sprintf(obj_name2, "o2_%d", target_rank);
         obj2 = PDCobj_open(obj_name2, pdc);
         if(obj2 == 0) {
             printf("Rank %d Fail to open object %s %d\n", rank, obj_name2, __LINE__);
@@ -281,9 +282,9 @@ int main(int argc, char **argv) {
             printf("Rank %d Open object %s\n", rank, obj_name2);
         }
 
-        dims[0] = ((rank + i) % size)*2+16;
-        dims[1] = ((rank + i) % size)*3+16;
-        dims[2] = ((rank + i) % size)*5+16;
+        dims[0] = target_rank*2+16;
+        dims[1] = target_rank*3+16;
+        dims[2] = target_rank*5+16;
         my_data_size = 1;
         for ( j = 0; j < (int)ndim; ++j ) {
             my_data_size *= dims[j];
@@ -319,8 +320,8 @@ int main(int argc, char **argv) {
         }
 
         for ( j = 0; j < (int) (my_data_size * type_size); ++j ) {
-            if ( data_read[j] != (char) (j + ((rank + i) % size) * 5 + 3) ) {
-                printf("rank %d, i = %d, j = %d, wrong value %d!=%d %d\n", rank, i, j, data_read[j], (char)(j + ((rank + i) % size) * 5 + 3), __LINE__);
+            if ( data_read[j] != (char) (j + target_rank * 5 + 3) ) {
+                printf("rank %d, i = %d, j = %d, wrong value %d!=%d %d\n", rank, i, j, data_read[j], (char)(j + target_rank * 5 + 3), __LINE__);
                 ret_value = 1;
                 break;
             }
@@ -341,7 +342,7 @@ int main(int argc, char **argv) {
             printf("Rank %d fail to close object %s %d\n", rank, obj_name1, __LINE__);
             ret_value = 1;
         } else {
-            printf("Rank %d successfully close object %s %s\n", rank, obj_name1);
+            printf("Rank %d successfully close object %s\n", rank, obj_name1);
         }
         if(PDCobj_close(obj2) < 0) {
             printf("Rank %d fail to close object %s %d\n", rank, obj_name2, __LINE__);
