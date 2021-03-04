@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
     dims[0] = my_data_size;
-    ret = PDCprop_set_obj_dims(obj_prop, ndim, dims);
+    ret = PDCprop_set_obj_dims(obj_prop, 1, dims);
     if ( ret != SUCCEED ) {
         printf("Fail to set obj time step @ line %d\n", __LINE__);
         ret_value = 1;
