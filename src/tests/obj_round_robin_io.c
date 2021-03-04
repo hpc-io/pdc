@@ -299,6 +299,15 @@ int main(int argc, char **argv) {
             printf("Rank %d Open object %s\n", rank, obj_name2);
         }
 
+        dims[0] = ((rank + i) % size)*2+16;
+        dims[1] = ((rank + i) % size)*3+16;
+        dims[2] = ((rank + i) % size)*5+16;
+        my_data_size = 1;
+        for ( i = 0; i < (int)ndim; ++i ) {
+            my_data_size *= dims[i];
+        }
+        offset[0] = 0;
+        mysize[0] = my_data_size;
         local_region  = PDCregion_create(1, offset, mysize);
         global_region = PDCregion_create(1, offset, mysize);
 
