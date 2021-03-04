@@ -279,7 +279,7 @@ int main(int argc, char **argv) {
     }
 
     for ( i = 0; i < (int) (my_data_size * type_size); ++i ) {
-        if ( data_read[i] != i ) {
+        if ( data_read[i] != (char)i ) {
             printf("wrong value %d!=%d\n", data_read[i], i);
             ret_value = 1;
             break;
