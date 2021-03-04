@@ -277,7 +277,7 @@ int main(int argc, char **argv) {
     #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     #endif
-    for ( i = 1; i < 3; ++i ) {
+    for ( i = 1; i < size; ++i ) {
         sprintf(obj_name1, "o1_%d", (rank + i) % size);
         obj1 = PDCobj_open(obj_name1, pdc);
         if(obj1 == 0) {
@@ -301,8 +301,8 @@ int main(int argc, char **argv) {
         dims[1] = ((rank + i) % size)*3+16;
         dims[2] = ((rank + i) % size)*5+16;
         my_data_size = 1;
-        for ( i = 0; i < (int)ndim; ++i ) {
-            my_data_size *= dims[i];
+        for ( j = 0; j < (int)ndim; ++j ) {
+            my_data_size *= dims[j];
         }
         offset[0] = 0;
         mysize[0] = my_data_size;
