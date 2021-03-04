@@ -318,15 +318,15 @@ int main(int argc, char **argv) {
             printf("PDCbuf_obj_unmap failed %d\n", __LINE__);
             ret_value = 1;
         }
-/*
+
         for ( j = 0; j < (int) (my_data_size * type_size); ++j ) {
             if ( data_read[j] != (char) (j + target_rank * 5 + 3) ) {
-                printf("rank %d, i = %d, j = %d, wrong value %d!=%d %d\n", rank, i, j, data_read[j], (char)(j + target_rank * 5 + 3), __LINE__);
+                printf("----------------------------------rank %d, i = %d, j = %d, wrong value %d!=%d %d\n", rank, i, j, data_read[j], (char)(j + target_rank * 5 + 3), __LINE__);
                 ret_value = 1;
                 break;
             }
         }
-*/
+
         free(data_read);
 
         if(PDCregion_close(local_region) < 0) {
@@ -355,7 +355,6 @@ int main(int argc, char **argv) {
         MPI_Barrier(MPI_COMM_WORLD);
         #endif
     }
-    printf("------------------------------rank %d checkpoint\n", rank);
 
     // close a container
     if(PDCcont_close(cont) < 0) {
