@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
     }
 
     for ( i = 0; i < BUF_LEN; ++i ) {
-        data[i] = -i;
+        data[i] = i;
     }
 
     ret = PDCreg_obtain_lock(obj1, reg, PDC_WRITE, PDC_BLOCK);
