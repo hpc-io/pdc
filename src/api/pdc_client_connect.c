@@ -4456,7 +4456,7 @@ perr_t PDC_Client_complete_read_request(int nbuf, struct pdc_request *req)
         }
     }
 
-done:
+//done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
