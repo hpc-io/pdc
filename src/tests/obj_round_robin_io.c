@@ -277,7 +277,7 @@ int main(int argc, char **argv) {
     #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     #endif
-    for ( i = 1; i < size; ++i ) {
+    for ( i = 1; i < 3; ++i ) {
         sprintf(obj_name1, "o1_%d", (rank + i) % size);
         obj1 = PDCobj_open(obj_name1, pdc);
         if(obj1 == 0) {
@@ -339,11 +339,10 @@ int main(int argc, char **argv) {
         }
 
         for ( j = 0; j < (int) (my_data_size * type_size); ++j ) {
-            if ( data_read[j] != (char)(j + ((rank + i) % size) * 5 + 3) ) {
+            if ( data_read[j] != (char) (j + ((rank + i) % size) * 5 + 3) ) {
                 printf("rank %d, i = %d, j = %d, wrong value %d!=%d\n", rank, i, j, data_read[j], (char)(j + ((rank + i) % size) * 5 + 3));
                 ret_value = 1;
                 goto done;
-                break;
             }
         }
         free(data_read);
