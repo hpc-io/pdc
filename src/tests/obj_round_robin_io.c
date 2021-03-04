@@ -300,7 +300,7 @@ int main(int argc, char **argv) {
             printf("PDCbuf_obj_map for read obj2 failed %d\n",__LINE__);
             ret_value = 1;
         }
-
+/*
         ret = PDCreg_obtain_lock(obj2, local_region, PDC_READ, PDC_BLOCK);
         if(ret != SUCCEED) {
             printf("PDCreg_obtain_lock failed %d\n", __LINE__);
@@ -312,7 +312,7 @@ int main(int argc, char **argv) {
             printf("PDCreg_release_lock failed %d\n", __LINE__);
             ret_value = 1;
         }
-
+*/
         ret = PDCbuf_obj_unmap(obj2, global_region);
         if(ret != SUCCEED) {
             printf("PDCbuf_obj_unmap failed %d\n", __LINE__);
@@ -352,7 +352,7 @@ int main(int argc, char **argv) {
             printf("Rank %d successfully close object %s\n", rank, obj_name2);
         }
         #ifdef ENABLE_MPI
-        MPI_Barrier(MPI_COMM_WORLD);
+        //MPI_Barrier(MPI_COMM_WORLD);
         #endif
     }
 
