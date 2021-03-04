@@ -32,6 +32,7 @@ set(PROGRAMS
   obj_tags
   obj_put_data
   open_obj_round_robin
+  obj_round_robin_io
   region_obj_map
   create_obj_scale
   close_server
