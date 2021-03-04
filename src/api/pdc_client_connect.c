@@ -2935,7 +2935,7 @@ perr_t PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_r
     hg_return_t hg_ret;
     uint32_t server_id, meta_server_id;
     region_lock_in_t in;
-    //size_t type_extent;
+    size_t type_extent;
     struct _pdc_client_lookup_args lookup_args;
     hg_handle_t region_release_handle = HG_HANDLE_NULL;
     //void *transform_result = NULL;
