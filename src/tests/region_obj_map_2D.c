@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
 
     //reg = PDCregion_create(1, offset, offset_length);
     //reg_global = PDCregion_create(1, offset, offset_length);
-    reg = PDCregion_create(dim, offset, offset_length);
+    reg = PDCregion_create(dims, offset, offset_length);
     reg_global = PDCregion_create(dims, offset, offset_length);
 
     for ( i = 0; i < BUF_LEN; ++i ) {
@@ -166,8 +166,9 @@ int main(int argc, char **argv) {
 
     //reg = PDCregion_create(1, offset, offset_length);
     //reg_global = PDCregion_create(1, offset, offset_length);
-    reg = PDCregion_create(dim, offset, offset_length);
+    reg = PDCregion_create(dims, offset, offset_length);
     reg_global = PDCregion_create(dims, offset, offset_length);
+
     ret = PDCbuf_obj_map(data_read, PDC_INT, reg, obj1, reg_global);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_map failed\n");
