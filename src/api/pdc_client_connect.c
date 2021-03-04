@@ -2257,7 +2257,7 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t
         data_size = (size_t *)malloc( sizeof(size_t) );
         *data_ptrs = local_data + unit*local_offset[0];
         *data_size = unit*local_dims[0];
-        printf("offset size = %d, local dim = %d, unit = %d, data_ptrs[0] = %d, data_ptrs[1] = %d\n", (int)local_offset[0], (int) local_dims[0], (int) unit, ((int*)data_ptrs)[0], ((int*)data_ptrs)[1] );
+        //printf("offset size = %d, local dim = %d, unit = %d, data_ptrs[0] = %d, data_ptrs[1] = %d\n", (int)local_offset[0], (int) local_dims[0], (int) unit, ((int*)data_ptrs)[0], ((int*)data_ptrs)[1] );
     }
     else if (ndim == 2) {
         local_count = local_dims[0];
@@ -2271,7 +2271,7 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t
             data_size[i] = data_size[0];
         }
         /* data_size[0] *= unit; */
-        printf("offset size = %d, local dim = %d %d, unit = %d, data_size = %d %d\n", (int)local_offset[0], (int) local_dims[0], (int) local_dims[1], (int) unit, (int)data_size[0], (int)data_size[1] );
+        //printf("offset size = %d, local dim = %d %d, unit = %d, data_size = %d %d\n", (int)local_offset[0], (int) local_dims[0], (int) local_dims[1], (int) unit, (int)data_size[0], (int)data_size[1] );
     }
     else if (ndim == 3) {
         local_count = local_dims[0]*local_dims[1];
