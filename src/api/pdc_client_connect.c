@@ -2931,19 +2931,19 @@ hg_return_t maybe_run_transform(struct _pdc_obj_info *object_info, struct pdc_re
 perr_t PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_region_info *region_info, pdc_access_t access_type, pdc_var_type_t data_type, pbool_t *status)
 {
     perr_t ret_value = SUCCEED;
-    int readyState = 0, currentState;
+    //int readyState = 0, currentState;
     hg_return_t hg_ret;
     uint32_t server_id, meta_server_id;
     region_lock_in_t in;
-    size_t type_extent;
+    //size_t type_extent;
     struct _pdc_client_lookup_args lookup_args;
     hg_handle_t region_release_handle = HG_HANDLE_NULL;
-    void *transform_result = NULL;
-    size_t transform_size = 0;
+    //void *transform_result = NULL;
+    //size_t transform_size = 0;
     struct _pdc_region_transform_ftn_info **registry = NULL;
     int transform_index;
-    int k, registered_count;
-    struct _pdc_region_analysis_ftn_info **analysis_registry;
+    //int k, registered_count;
+    //struct _pdc_region_analysis_ftn_info **analysis_registry;
 
     FUNC_ENTER(NULL);
     
@@ -3262,7 +3262,7 @@ perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_
         HG_Destroy(data_server_read_check_handle);
     } // end of check io
 
-close:
+//close:
     /* close the shared memory segment as if it was a file */
     if (close(shm_fd) == -1)
         PGOTO_ERROR(FAIL, "==PDC_CLIENT: Close failed!");
@@ -6196,7 +6196,7 @@ PDCobj_put_data(const char *obj_name, void *data, uint64_t size, pdcid_t cont_id
     pdcid_t ret_value = 0;
     pdcid_t obj_id, obj_prop, obj_region;
     perr_t ret;
-    pdc_metadata_t *meta;
+    //pdc_metadata_t *meta;
     struct _pdc_cont_info *info = NULL;
     struct _pdc_id_info *id_info = NULL;
 
@@ -6451,7 +6451,7 @@ PDC_send_data_query(pdc_query_t *query, pdc_query_get_op_t get_op, uint64_t *nhi
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
     uint32_t *target_servers = NULL;
-    int i, server_id, next_server, prev_server, ntarget = 0;
+    int i, server_id, next_server = 0, prev_server = 0, ntarget = 0;
     hg_handle_t  handle;
     pdc_query_xfer_t *query_xfer;
     struct _pdc_client_lookup_args lookup_args;
@@ -6542,7 +6542,7 @@ PDC_recv_coords(const struct hg_cb_info *callback_info)
     hg_bulk_t local_bulk_handle   = callback_info->info.bulk.local_handle;
     struct bulk_args_t *bulk_args = (struct bulk_args_t *)callback_info->arg;
     struct _pdc_query_result_list *result_elt;
-    uint64_t nhits;
+    uint64_t nhits = 0;
     uint32_t ndim;
     int      query_id, origin;
     void *buf;
@@ -6697,7 +6697,7 @@ PDC_recv_read_coords_data(const struct hg_cb_info *callback_info)
     hg_bulk_t local_bulk_handle   = callback_info->info.bulk.local_handle;
     struct bulk_args_t *bulk_args = (struct bulk_args_t *)callback_info->arg;
     struct _pdc_query_result_list *result_elt;
-    uint64_t nhits;
+    uint64_t nhits = 0;
     int  query_id, seq_id;
     void *buf;
     pdc_int_ret_t out;
