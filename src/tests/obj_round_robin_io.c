@@ -382,7 +382,6 @@ int main(int argc, char **argv) {
     free(obj_data);
     free(offset);
     free(mysize);
-  done:
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
