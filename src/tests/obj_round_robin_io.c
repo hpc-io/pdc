@@ -340,7 +340,7 @@ int main(int argc, char **argv) {
 
         for ( j = 0; j < (int) (my_data_size * type_size); ++j ) {
             if ( data_read[j] != (char)(j + ((rank + i) % size) * 5 + 3) ) {
-                printf("wrong value %d!=%d\n", data_read[i], (char)(j + ((rank + i) % size) * 5 + 3));
+                printf("rank %d, i = %d, j = %d, wrong value %d!=%d\n", rank, i, j, data_read[j], (char)(j + ((rank + i) % size) * 5 + 3));
                 ret_value = 1;
                 goto done;
                 break;
