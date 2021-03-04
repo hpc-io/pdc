@@ -302,8 +302,6 @@ int main(int argc, char **argv) {
         local_region  = PDCregion_create(1, offset, mysize);
         global_region = PDCregion_create(1, offset, mysize);
 
-        local_region = PDCregion_create(1, offset, mysize);
-        global_region = PDCregion_create(1, offset, mysize);
         ret = PDCbuf_obj_map(data_read, PDC_INT, local_region, obj2, global_region);
         if(ret != SUCCEED) {
             printf("PDCbuf_obj_map failed\n");
@@ -339,6 +337,18 @@ int main(int argc, char **argv) {
                 goto done;
                 break;
             }
+        }
+
+        if(PDCregion_close(local_region) < 0) {
+            printf("fail to close local region\n");
+            ret_value = 1;
+            goto done;
+        }
+
+        if(PDCregion_close(global_region) < 0) {
+            printf("fail to close global region\n");
+            ret_value = 1;
+            goto done;
         }
 
         if(PDCobj_close(obj1) < 0) {
