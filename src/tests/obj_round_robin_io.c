@@ -365,14 +365,14 @@ int main(int argc, char **argv) {
             ret_value = 1;
             goto done;
         } else {
-            printf("Rank %d successfully close object %s %d\n", rank, obj_name1);
+            printf("Rank %d successfully close object %s\n", rank, obj_name1);
         }
         if(PDCobj_close(obj2) < 0) {
             printf("Rank %d fail to close object %s %d\n", rank, obj_name2, __LINE__);
             ret_value = 1;
             goto done;
         } else {
-            printf("Rank %d successfully close object %s %d\n", rank, obj_name2);
+            printf("Rank %d successfully close object %s\n", rank, obj_name2);
         }
     }
     printf("------------------------------rank %d checkpoint\n", rank);
