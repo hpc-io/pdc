@@ -153,7 +153,7 @@ add_test(NAME write_obj_int16 WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY
 add_test(NAME write_obj_int8 WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./write_obj o 1 int8)
 add_test(NAME query_data WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./query_data o 1)
 add_test(NAME vpicio_bdcats WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio ./bdcats )
-add_test(NAME vpicio_bdcats WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio ./query_vpic )
+add_test(NAME vpicio_query_vpic WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio ./query_vpic )
 
 if(BUILD_MPI_TESTING)
     add_test(NAME write_obj_shared_int WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./write_obj_shared ${MPI_RUN_CMD} 2 4 o 1 int)
