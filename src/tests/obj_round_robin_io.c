@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
 
     offset = (uint64_t*)malloc(sizeof(uint64_t));
     mysize = (uint64_t*)malloc(sizeof(uint64_t));
-    offset[0] = rank * my_data_size;
+    offset[0] = 0;
     mysize[0] = my_data_size;
 
     // create a pdc
@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
         printf("Rank %d Fail to create object property @ line  %d!\n", rank, __LINE__);
         ret_value = 1;
     }
-    //dims[0] = my_data_size;
+    dims[0] = my_data_size;
     ret = PDCprop_set_obj_dims(obj_prop, ndim, dims);
     if ( ret != SUCCEED ) {
         printf("Fail to set obj time step @ line %d\n", __LINE__);
@@ -206,8 +206,8 @@ int main(int argc, char **argv) {
     sprintf(obj_name2, "o2_%d", rank);
     obj2 = PDCobj_create(cont, obj_name2, obj_prop);
 
-    local_region  = PDCregion_create(ndim, offset, mysize);
-    global_region = PDCregion_create(ndim, offset, mysize);
+    local_region  = PDCregion_create(1, offset, mysize);
+    global_region = PDCregion_create(1, offset, mysize);
     if(obj2 > 0) {
         printf("Rank %d Create an object %s\n", rank, obj_name2);
     } else {
@@ -252,8 +252,8 @@ int main(int argc, char **argv) {
         goto done;
     }
 
-    local_region = PDCregion_create(ndim, offset, mysize);
-    global_region = PDCregion_create(ndim, offset, mysize);
+    local_region = PDCregion_create(1, offset, mysize);
+    global_region = PDCregion_create(1, offset, mysize);
     ret = PDCbuf_obj_map(data_read, PDC_INT, local_region, obj2, global_region);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_map failed\n");
