@@ -46,8 +46,7 @@ int main(int argc, char **argv) {
 
     uint64_t my_data_size;
 
-    char *obj_data;
-    char *mydata;
+    char *obj_data, *mydata, data_read;
 
     pdcid_t local_region, global_region;
 
@@ -96,6 +95,7 @@ int main(int argc, char **argv) {
 
     mydata = (char*)malloc(my_data_size*type_size);
     obj_data = (char*)malloc(my_data_size*type_size);
+    data_read = (char*)malloc(my_data_size*type_size);
 
     for (i = 0; i < (int) my_data_size; i++) {
         for ( j = 0; j < (int) type_size; ++j ) {
@@ -245,6 +245,40 @@ int main(int argc, char **argv) {
     if(PDCregion_close(global_region) < 0) {
         printf("fail to close global region\n");
         ret_value = 1;
+    }
+
+    reg_local = PDCregion_create(1, offset, offset_length);
+    reg_global = PDCregion_create(1, offset, offset_length);
+    ret = PDCbuf_obj_map(data_read, PDC_INT, reg_local, obj1, reg_global);
+    if(ret != SUCCEED) {
+        printf("PDCbuf_obj_map failed\n");
+        ret_value = 1;
+    }
+
+    ret = PDCreg_obtain_lock(obj1, reg_local, PDC_READ, PDC_BLOCK);
+    if(ret != SUCCEED) {
+        printf("PDCreg_obtain_lock failed\n");
+        ret_value = 1;
+    }
+
+    ret = PDCreg_release_lock(obj1, reg_local, PDC_READ);
+    if(ret != SUCCEED) {
+        printf("PDCreg_release_lock failed\n");
+        ret_value = 1;
+    }
+
+    ret = PDCbuf_obj_unmap(obj1, reg_global);
+    if(ret != SUCCEED) {
+        printf("PDCbuf_obj_unmap failed\n");
+        ret_value = 1;
+    }
+
+    for ( i = 0; i < my_data_size; ++i ) {
+        if ( data_read[i] != i ) {
+            printf("wrong value %d!=%d\n", data_read[i], i);
+            ret_value = 1;
+            break;
+        }
     }
 
 
