@@ -365,23 +365,24 @@ int main(int argc, char **argv) {
             ret_value = 1;
             goto done;
         } else {
-            printf("Rank %d successfully close object %s %d\n", rank, obj_name1, __LINE__);
+            printf("Rank %d successfully close object %s %d\n", rank, obj_name1);
         }
         if(PDCobj_close(obj2) < 0) {
             printf("Rank %d fail to close object %s %d\n", rank, obj_name2, __LINE__);
             ret_value = 1;
             goto done;
         } else {
-            printf("Rank %d successfully close object %s %d\n", rank, obj_name2, __LINE__);
+            printf("Rank %d successfully close object %s %d\n", rank, obj_name2);
         }
     }
+    printf("------------------------------rank %d checkpoint\n", rank);
 
     // close a container
     if(PDCcont_close(cont) < 0) {
         printf("Rank %d fail to close container c %d\n", rank, __LINE__);
         ret_value = 1;
     } else {
-        printf("Rank %d successfully close container c1\n", rank);
+        printf("Rank %d successfully close container c\n", rank);
     }
     // close a object property
     if(PDCprop_close(obj_prop) < 0) {
