@@ -95,8 +95,6 @@ int main(int argc, char **argv) {
 
     mydata = (char*)malloc(my_data_size*type_size);
     obj_data = (char*)malloc(my_data_size*type_size);
-    data_read = (char*)malloc(my_data_size*type_size);
-
 
     offset = (uint64_t*)malloc(sizeof(uint64_t));
     mysize = (uint64_t*)malloc(sizeof(uint64_t));
@@ -310,6 +308,7 @@ int main(int argc, char **argv) {
         mysize[0] = my_data_size;
         local_region  = PDCregion_create(1, offset, mysize);
         global_region = PDCregion_create(1, offset, mysize);
+        data_read = (char*)malloc(my_data_size*type_size);
 
         ret = PDCbuf_obj_map(data_read, var_type, local_region, obj2, global_region);
         if(ret != SUCCEED) {
@@ -347,6 +346,7 @@ int main(int argc, char **argv) {
                 break;
             }
         }
+        free(data_read);
 
         if(PDCregion_close(local_region) < 0) {
             printf("fail to close local region\n");
@@ -402,6 +402,11 @@ int main(int argc, char **argv) {
        printf("Rank %d fail to close PDC\n", rank);
         ret_value = 1;
     }
+
+    free(mydata);
+    free(obj_data);
+    free(offset);
+    free(mysize);
   done:
 #ifdef ENABLE_MPI
     MPI_Finalize();
