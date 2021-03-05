@@ -205,7 +205,7 @@
       + size: Size of data
       + cont_id: Container ID of this object
     - Output:
-      + error code, SUCCESS or FAIL.
+      + Local object ID created locally with the input name
     - Write data to an object.
     - For developers: see pdc_client_connect.c. Nedd to send RPCs to servers for this request. (TODO: change return value to perr_t)
   + perr_t PDCobj_get_data(pdcid_t obj_id, void **data, uint64_t *size)
