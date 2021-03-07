@@ -1,134 +1,48 @@
-What is PDC?
-============
-
-Proactive Data Containers (PDC) is a Novel data abstraction for storing data in an 
-object-centric manner, where data objects are first-class citizens. 
-
-Visit https://sdm.lbl.gov/pdc for full details and publications discussing the 
-PDC concepts and designs. The remainder of this README discusses software dependencies
-and installation.  
-
-
-Required libraries
-======
-1 libfabric
-```sh
-    Download libfabric library from https://ofiwg.github.io/libfabric/
-    Compile and install following the instructions from https://github.com/ofiwg/libfabric
+## Installation for PDC
+This instruction is for installing PDC on Linux and Cray machines. Make sure you have GCC version at least 7 and MPI installed before you proceed.
+For MPI, I would recommend MPICH. Follow the procedures in https://www.mpich.org/downloads/.
+PDC depends on libfabric and mercury. We are going to install libfabric, mercury, and PDC step by step.
+Make sure you record the environmental variables (lines that contains the export commands). They are needed for running PDC and make the libraries again.
+# Install libfabric
 ```
-
-2 Mercury 
-```sh
-    git clone https://github.com/mercury-hpc/mercury && cd mercury
-    git submodule update --init
-    mkdir build
-    cd build
-    ccmake .. (where ".." is the relative path to the mercury-X directory)
+0. wget https://github.com/ofiwg/libfabric/archive/v1.11.2.tar.gz
+1. tar xvzf v1.11.2.tar.gz
+2. cd libfabric-1.11.2
+3. mkdir install
+4. export LIBFABRIC_DIR=$(pwd)/install
+5. ./autogen.sh
+6. ./configure --prefix=$LIBFABRIC_DIR CC=gcc CFLAG="-O2"
+7. make -j8
+8. make install
+9. export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$LD_LIBRARY_PATH"
+10. export PATH="$LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$PATH"
 ```
-
-Type 'c' multiple times and choose suitable options. Recommended options are:
-
-    BUILD_SHARED_LIBS                ON (or OFF if the library you link
-                                     against requires static libraries)
-    BUILD_TESTING                    ON
-    CMAKE_INSTALL_PREFIX             /path/to/install/directory
-    MERCURY_ENABLE_PARALLEL_TESTING  OFF (ON requires running on HPC compute nodes)
-    MERCURY_USE_BOOST_PP             OFF
-    MERCURY_USE_XDR                  OFF
-    MERCURY_USE_OPA                  OFF
-    NA_USE_BMI                       OFF
-    NA_USE_OFI                       ON
-    NA_USE_MPI                       OFF
-    NA_USE_CCI                       OFF
-    NA_USE_SM                        OFF
-    
-    OFI_INCLUDE_DIR                  LIBFABRIC_PATH/include
-    OFI_LIBRARY                      LIBFABRIC_PATH/libbmi.so  
-
-    CMAKE_C_FLAGS                    for both FLAGS, add -dynamic on NERSC machines 
-    CMAKE_CXX_FLAGS                  if there you see errors: "/usr/bin/ld: attempted 
-                                     static link of dynamic object `../bin/libmercury_hl.so' "
-
-
-Setting include directory and library paths may require you to toggle to
-the advanced mode by typing 't'. Once you are done and do not see any
-errors, type 'g' to generate makefiles. Once you exit the CMake
-configuration screen and are ready to build the targets, do:
-
-    make
-
-To test Mercury is successfully built, run
-
-    make test
-
-Look for Test  #1: mercury_rpc_ofi_tcp, Test  #2: mercury_bulk_ofi_tcp, etc.
-
-3 BMI (Optional)
-```sh
-    git clone git://git.mcs.anl.gov/bmi && cd bmi
-    # If you are building BMI on an OSX platform, then apply the following patch:
-    # patch -p1 < patches/bmi-osx.patch
-    ./prepare && ./configure --enable-shared --enable-bmi-only
-    make && make install
+# Install mercury
+Make sure the ctest passes at step 7.Otherwise PDC will not work.
 ```
-
-4 CCI (Optional)
-```sh
-    git clone https://github.com/CCI/cci && cd cci
-    ./autogen.pl
-    ./configure (on Cori add --without-verbs for successful make)
-    make && make install
+0. git clone https://github.com/mercury-hpc/mercury.git
+1. cd mercury
+2. export MERCURY_DIR=$(pwd)/install
+3. mkdir install
+4. cd install
+5. cmake ../ -DCMAKE_INSTALL_PREFIX=$MERCURY_DIR -DCMAKE_C_COMPILER=gcc -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DNA_USE_OFI=ON -DNA_USE_SM=OFF
+6. make
+7. make install
+8. ctest
+9. export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+10. export PATH="$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH"
 ```
-
-
-Building
-====
-    git clone git@bitbucket.org:berkeleylab/pdc.git
-    cd pdc/src
-    mkdir build
-    cd build
-    ccmake .. (where ".." is the relative path to the PDC directory)
-
-Similar to previous Mercury building process, type 'c' multiple times and choose 
-suitable options, and toggle to advanced mode by typing 't'. Recommended options are:
-
-    BUILD_SHARED_LIBS                ON (or OFF if the library you link
-                                     against requires static libraries)
-    CFLAGS                           -dynamic (this is required on NERSC machines)
-    ENABLE_CHECKPOINT                ON (or OFF if no metadata checkpoint is needed)
-    ENABLE_LUSTRE                    ON
-    ENABLE_MPI                       ON (or OFF if only used in serial mode)
-    ENABLE_MULTITHREAD               OFF
-    ENABLE_TIMING                    OFF (or ON to enable PDC timer)
-
-
-Once you are done and do not see any errors, type 'g' to generate makefiles. 
-Once you exit the CMake configuration screen and are ready to build the targets, do:
-
-    make
-
-
-Testing
-====
-On NERSC machines (e.g. Cori), do the following:
-----
-* Job allocation (e.g. use 4 nodes)
-```sh
-    salloc -C haswell -N 4 -t 01:00:00 -q interactive --gres=craynetwork:2
+# Install PDC
 ```
-Run PDC create object test
-----
-* Set pdc temporary directory for server config file and checkpoint file (optional, if not set, the server and client will create and write/read under ./pdc_tmp)
-```sh
-        export PDC_TMPDIR=/path/to/the/pdc/tmp/dir
-```
-
-* Run 4 server processes, each on one node in background:
-```sh
-        srun -N 4 -n  4 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 ./bin/pdc_server.exe &
-```
-
-* Run 64 client processes that concurrently create 1000 objects in total:
-```sh
-        srun -N 4 -n 64 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 ./bin/create_obj_scale -r 1000
+0. git clone https://github.com/hpc-io/pdc.git
+1. cd pdc
+2. git checkout qiao_develop
+3. cd src
+4. mkdir install
+5. cd install
+6. export PDC_DIR=$(pwd)
+7. cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=mpicc
+8. make
+9. make -j8
+10. ctest
 ```
