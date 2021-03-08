@@ -76,7 +76,7 @@ cd $PDC_DIR/bin
 This is test will start 2 processes for PDC servers. The client program ./pdc_init will start 4 processes. Similarly, you can run any of the client examples in ctest.
 These source code will provide you some knowledge of how to use PDC. For more reference, you may check the documentation folder in this repository.
 # PDC on Cori.
-Installation on Cori is not very different from a regular linux machine. Simply replace all gcc/mpicc with the default cc compiler on Cori.
+Installation on Cori is not very different from a regular linux machine. Simply replace all gcc/mpicc with the default cc compiler on Cori. Sometimes you may need to unload darshan before installation.
 
 
 
