@@ -28,7 +28,7 @@ Step 2 is not required. It is a stable commit I am using when I write this instr
 4. export MERCURY_DIR=$(pwd)/install
 5. mkdir install
 6. cd install
-7. cmake ../ -DCMAKE_INSTALL_PREFIX=$MERCURY_DIR -DCMAKE_C_COMPILER=gcc -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DNA_USE_OFI=ON -DNA_USE_SM=OFF -DCMAKE_C_FLAGS="-dynamic" -DCMAKE_CXX_FLAGS="-dynamic"
+7. cmake ../ -DCMAKE_INSTALL_PREFIX=$MERCURY_DIR -DCMAKE_C_COMPILER=gcc -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DNA_USE_OFI=ON -DNA_USE_SM=OFF
 8. make
 9. make install
 10. ctest
@@ -46,7 +46,7 @@ The ctest contains both sequential and MPI tests for our settings. These regress
 4. mkdir install
 5. cd install
 6. export PDC_DIR=$(pwd)
-7. cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=mpicc -DCMAKE_C_FLAGS="-dynamic"
+7. cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=mpicc"
 8. make
 9. make -j8
 10. ctest
@@ -76,7 +76,6 @@ cd $PDC_DIR/bin
 This is test will start 2 processes for PDC servers. The client program ./pdc_init will start 4 processes. Similarly, you can run any of the client examples in ctest.
 These source code will provide you some knowledge of how to use PDC. For more reference, you may check the documentation folder in this repository.
 # PDC on Cori.
-Installation on Cori is not very different from a regular linux machine. Simply replace all gcc/mpicc with the default cc compiler on Cori.
-
+Installation on Cori is not very different from a regular linux machine. Simply replace all gcc/mpicc with the default cc compiler on Cori. Add options -DCMAKE_C_FLAGS="-dynamic" to the cmake line of PDC. Add -DCMAKE_C_FLAGS="-dynamic" -DCMAKE_CXX_FLAGS="-dynamic" at the end of the cmake line for mercury as well. Sometimes you may need to unload darshan before installation.
 
 
