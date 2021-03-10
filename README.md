@@ -1,6 +1,6 @@
 ## Installation for PDC
 This instruction is for installing PDC on Linux and Cray machines. Make sure you have GCC version at least 7 and MPI installed before you proceed.
-For MPI, I would recommend MPICH. Follow the procedures in https://www.mpich.org/downloads/.
+For MPI, the recommended version is MPICH. Follow the procedures in https://www.mpich.org/static/downloads/3.4.1/mpich-3.4.1-installguide.pdf
 PDC depends on libfabric and mercury. We are going to install libfabric, mercury, and PDC step by step.
 Make sure you record the environmental variables (lines that contains the export commands). They are needed for running PDC and make the libraries again.
 # Install libfabric
@@ -71,11 +71,11 @@ PDC needs to run at least two applications. First, you need to start servers. Th
 For example, you can do the following. On Cori, you need to change the mpiexec argument to srun. On Theta, it is aprun. On Summit, it is jsrun.
 ```
 cd $PDC_DIR/bin
-./mpi_test ./pdc_init mpiexec 2 4
+./mpi_test.sh ./pdc_init mpiexec 2 4
 ```
 This is test will start 2 processes for PDC servers. The client program ./pdc_init will start 4 processes. Similarly, you can run any of the client examples in ctest.
 These source code will provide you some knowledge of how to use PDC. For more reference, you may check the documentation folder in this repository.
 # PDC on Cori.
-Installation on Cori is not very different from a regular linux machine. Simply replace all gcc/mpicc with the default cc compiler on Cori. Add options -DCMAKE_C_FLAGS="-dynamic" to the cmake line of PDC. Add -DCMAKE_C_FLAGS="-dynamic" -DCMAKE_CXX_FLAGS="-dynamic" at the end of the cmake line for mercury as well. Sometimes you may need to unload darshan before installation.
+Installation on Cori is not very different from a regular linux machine. Simply replace all gcc/mpicc with the default cc compiler on Cori. Add options -DCMAKE_C_FLAGS="-dynamic" to the cmake line of PDC. Add -DCMAKE_C_FLAGS="-dynamic" -DCMAKE_CXX_FLAGS="-dynamic" at the end of the cmake line for mercury as well. Finally, "-DMPI_RUN_CMD=srun" is needed for ctest command later. Sometimes you may need to unload darshan before installation.
 
 
