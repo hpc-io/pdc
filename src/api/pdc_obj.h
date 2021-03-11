@@ -279,7 +279,7 @@ pdcid_t PDCobj_put_data(const char *obj_name, void *data, uint64_t size, pdcid_t
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCobj_get_data(pdcid_t obj_id, void **data, uint64_t *size);
+perr_t PDCobj_get_data(pdcid_t obj_id, void *data, uint64_t size);
 
 /**
  * ***********

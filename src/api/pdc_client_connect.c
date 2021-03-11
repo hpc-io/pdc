@@ -6262,36 +6262,42 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDCobj_get_data(pdcid_t obj_id, void **data, uint64_t *size ATTRIBUTE(unused) )
+perr_t PDCobj_get_data(pdcid_t obj_id, void *data, uint64_t size)
 {
     perr_t ret_value = SUCCEED;
-    struct pdc_region_info obj_region;
-    char *obj_name;
-    pdc_metadata_t *meta;
-    struct _pdc_obj_info *obj_prop;
+    uint64_t offset = 0;
+    pdcid_t reg, reg_global;
+    reg = PDCregion_create(1, &offset, &size);
+    reg_global = PDCregion_create(1, &offset, &size);
 
-    FUNC_ENTER(NULL);
+    ret_value = PDCbuf_obj_map(data, PDC_CHAR, reg, obj_id, reg_global);
+    if (ret_value != SUCCEED) {
+        goto done;
+    }
 
-    obj_region.ndim   = 1;
-    obj_region.offset = 0;
-    obj_region.size   = 0;  // TODO: size=0 means read entire object
+    ret_value = PDCreg_obtain_lock(obj_id, reg_global, PDC_READ, PDC_BLOCK);
+    if (ret_value != SUCCEED) {
+        goto done;
+    }
 
-    obj_prop = PDC_obj_get_info(obj_id);
-    obj_name = obj_prop->obj_info_pub->name;
+    ret_value = PDCreg_release_lock(obj_id, reg_global, PDC_READ);
+    if (ret_value != SUCCEED) {
+        goto done;
+    }
 
-#ifdef ENABLE_MPI
-    ret_value = PDC_Client_query_metadata_name_timestep_agg(obj_name, 0, &meta);
-#else
-    ret_value = PDC_Client_query_metadata_name_timestep(obj_name, 0, &meta);
-#endif
+    ret_value = PDCbuf_obj_unmap(obj_id, reg_global);
+    if (ret_value != SUCCEED) {
+        goto done;
+    }
 
-    ret_value = PDC_Client_read(meta, &obj_region, data);
-    if (ret_value != SUCCEED)
-        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Error with PDC_Client_write_id for obj",
-                pdc_client_mpi_rank_g);
-
-    free(meta);
-    
+    ret_value = PDCregion_close(reg);
+    if (ret_value != SUCCEED) {
+        goto done;
+    }
+    ret_value = PDCregion_close(reg_global);
+    if (ret_value != SUCCEED) {
+        goto done;
+    }
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
