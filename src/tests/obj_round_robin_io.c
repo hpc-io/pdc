@@ -170,12 +170,12 @@ int main(int argc, char **argv) {
         printf("PDCbuf_obj_map failed\n");
         ret_value = 1;
     }
-    ret = PDCreg_obtain_lock(obj1, local_region, PDC_WRITE, PDC_BLOCK);
+    ret = PDCreg_obtain_lock(obj1, global_region, PDC_WRITE, PDC_BLOCK);
     if (ret != SUCCEED) {
         printf("Failed to obtain lock for region\n");
         ret_value = 1;
     }
-    ret = PDCreg_release_lock(obj1, local_region, PDC_WRITE);
+    ret = PDCreg_release_lock(obj1, global_region, PDC_WRITE);
     if (ret != SUCCEED) {
         printf("Failed to release lock for region\n");
         ret_value = 1;
@@ -219,12 +219,12 @@ int main(int argc, char **argv) {
         printf("PDCbuf_obj_map failed %d\n", __LINE__);
         ret_value = 1;
     }
-    ret = PDCreg_obtain_lock(obj2, local_region, PDC_WRITE, PDC_BLOCK);
+    ret = PDCreg_obtain_lock(obj2, global_region, PDC_WRITE, PDC_BLOCK);
     if (ret != SUCCEED) {
         printf("Failed to obtain lock for region %d\n", __LINE__);
         ret_value = 1;
     }
-    ret = PDCreg_release_lock(obj2, local_region, PDC_WRITE);
+    ret = PDCreg_release_lock(obj2, global_region, PDC_WRITE);
     if (ret != SUCCEED) {
         printf("Failed to release lock for region %d\n", __LINE__);
         ret_value = 1;
@@ -301,13 +301,13 @@ int main(int argc, char **argv) {
             ret_value = 1;
         }
 
-        ret = PDCreg_obtain_lock(obj2, local_region, PDC_READ, PDC_BLOCK);
+        ret = PDCreg_obtain_lock(obj2, global_region, PDC_READ, PDC_BLOCK);
         if(ret != SUCCEED) {
             printf("PDCreg_obtain_lock failed %d\n", __LINE__);
             ret_value = 1;
         }
 
-        ret = PDCreg_release_lock(obj2, local_region, PDC_READ);
+        ret = PDCreg_release_lock(obj2, global_region, PDC_READ);
         if(ret != SUCCEED) {
             printf("PDCreg_release_lock failed %d\n", __LINE__);
             ret_value = 1;
