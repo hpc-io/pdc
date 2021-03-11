@@ -291,7 +291,7 @@
   + perr_t PDCreg_obtain_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type, pdc_lock_mode_t lock_mode)
     - Input:
       + obj_id: local object ID
-      + reg_id: global region ID
+      + reg_id: remote region ID
       + access_type: [PDC access type](#access-type)
       + lock_mode:  PDC_BLOCK or PDC_NOBLOCK
     - Output:
@@ -301,7 +301,7 @@
   + perr_t PDCreg_release_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type)
     - Input:
       + obj_id: local object ID
-      + reg_id: global region ID
+      + reg_id: remote region ID
       + access_type: [PDC access type](#access-type)
     - Output:
       + error code, SUCCESS or FAIL.
