@@ -78,6 +78,7 @@ typedef struct pdc_cont_hash_table_entry_t {
     int       n_allocated;
     uint64_t *obj_ids;
     char      tags[TAG_LEN_MAX];
+    pdc_kvtag_list_t *kvtag_list_head;
 } pdc_cont_hash_table_entry_t;
 
 /***************************************/

@@ -69,24 +69,25 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
     // create first object
-    sprintf(obj_name1, "o1_%d", rank);
-    obj1 = PDCobj_create(cont, obj_name1, obj_prop);
+    sprintf(obj_name1, "o1");
+    obj1 = PDCobj_create_mpi(cont, obj_name1, obj_prop, 0, MPI_COMM_WORLD);
     if(obj1 > 0) {
         printf("Rank %d Create an object o1\n", rank);
     } else {
         printf("Rank %d Fail to create object @ line  %d!\n", rank, __LINE__);
         ret_value = 1;
     }
+    printf("checkpoint 1 rank %d\n", rank);
     // create second object
-    sprintf(obj_name2, "o2_%d", rank);
-    obj2 = PDCobj_create(cont, obj_name2, obj_prop);
+    sprintf(obj_name2, "o2");
+    obj2 = PDCobj_create_mpi(cont, obj_name2, obj_prop, 0, MPI_COMM_WORLD);
     if(obj2 > 0) {
         printf("Rank %d Create an object o2\n", rank);
     } else {
         printf("Rank %d Fail to create object @ line  %d!\n", rank, __LINE__);
         ret_value = 1;
     }
-
+    printf("checkpoint 2 rank %d\n", rank);
     // open first object twice
     open11 = PDCobj_open(obj_name1, pdc);
     if(open11 == 0) {
@@ -108,7 +109,7 @@ int main(int argc, char **argv) {
         printf("Rank %d Fail to open object o2\n", rank);
         ret_value = 1;
     } else {
-        printf("Rank %d Open object o2\n");
+        printf("Rank %d Open object o2\n", rank);
     }
     // close object
     if(PDCobj_close(obj1) < 0) {

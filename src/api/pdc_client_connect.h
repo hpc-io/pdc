@@ -822,26 +822,6 @@ perr_t PDC_wait(struct pdc_request *request, unsigned long max_wait_ms, unsigned
 int PDC_get_nproc_per_node();
 
 /**
- * Create a tag with a specific name and value
- *
- * \param obj_id[IN]            Object ID
- * \param kvtag [IN]            *********
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDC_add_kvtag(pdcid_t obj_id, pdc_kvtag_t *kvtag);
-
-/**
- * *******
- *
- * \param obj_id[IN]            Object ID
- * \param kvtag [IN]            *********
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDC_get_kvtag(pdcid_t obj_id, char *tag_name, pdc_kvtag_t **kvtag);
-
-/**
  * *******
  *
  * \param kvtag [IN]             ******

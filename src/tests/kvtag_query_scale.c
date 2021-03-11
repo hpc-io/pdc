@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
 
         v = iter;
         for (i = 0; i < my_add_tag; i++) {
-            if (PDC_add_kvtag(obj_ids[i], &kvtag) < 0)
+            if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.size) < 0)
                 printf("fail to add a kvtag to o%d\n", i+my_obj_s);
         }
 

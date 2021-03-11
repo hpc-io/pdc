@@ -25,58 +25,51 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
+#include <time.h>
+#include <inttypes.h>
+#include <unistd.h>
+#include <sys/time.h>
+
 #include "pdc.h"
 
 int main(int argc, char **argv) {
-    pdcid_t pdc, cont_prop, cont, obj1;
-    struct PDC_obj_prop *op;
+    pdcid_t pdc;
+    int ret_value = 0;
+    uint64_t offset[3], offset_length[3];
     int rank = 0, size = 1;
-    
+    offset[0] = 0;
+    offset[1] = 2;
+    offset[2] = 5;
+    offset_length[0] = 2;
+    offset_length[1] = 3;
+    offset_length[2] = 5;
+
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
+
     // create a pdc
+
     pdc = PDCinit("pdc");
-    
-    // create a container property
-    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
-    if(cont_prop > 0) {
-        printf("Create a container property\n");
-    } else {
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
-        return 1;
-    }
-    // create a container
-    cont = PDCcont_create("c1", cont_prop);
-    if(cont > 0) {
-        printf("Create a container c1\n");
-    } else {
-        printf("Fail to create container @ line  %d!\n", __LINE__);
-        return 1;
-    }
-    // close a container
-    if(PDCcont_close(cont) < 0) {
-        printf("fail to close container c1\n");
-        return 1;
-    } else {
-        printf("successfully close container c1\n");
-    }
-    // close a container property
-    if(PDCprop_close(cont_prop) < 0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
-        return 1;
-    } else {
-        printf("successfully close container property\n");
-    }
+    printf("create a new pdc\n");
+
+    PDCregion_create(3, offset, offset_length);
+
+    PDCregion_create(2, offset, offset_length);
+
+    PDCregion_create(1, offset, offset_length);
+
     // close pdc
     if(PDCclose(pdc) < 0) {
         printf("fail to close PDC\n");
-        return 1;
+        ret_value = 1;
     }
+
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
-    return 0;
+    return ret_value;
 }

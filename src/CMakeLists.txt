@@ -42,7 +42,9 @@ set(PDC_PACKAGE_VERSION_MAJOR "${PDC_VERSION_MAJOR}.${PDC_VERSION_MINOR}")
 set(PDC_PACKAGE_VERSION_MINOR "${PDC_VERSION_PATCH}")
 set(PDC_PACKAGE_STRING "${PDC_PACKAGE_NAME} ${PDC_PACKAGE_VERSION}")
 set(PDC_PACKAGE_TARNAME "${PDC_PACKAGE}")
-
+if(NOT MPI_RUN_CMD)
+    set(MPI_RUN_CMD mpiexec)
+endif()
 #------------------------------------------------------------------------------
 # Setup install and output Directories
 #------------------------------------------------------------------------------
@@ -359,6 +361,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/server)
 # Testing
 #-----------------------------------------------------------------------------
 option(BUILD_TESTING "Build testing." OFF)
+option(BUILD_MPI_TESTING "Build MPI testing." OFF)
 if(NOT PDC_EXTERNALLY_CONFIGURED AND BUILD_TESTING)
   enable_testing()
   include(CTest)

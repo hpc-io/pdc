@@ -56,6 +56,8 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <inttypes.h>
+#include <math.h>
+#include <sys/time.h>
 
 int                        is_client_debug_g = 0;
 pdc_server_selection_t     pdc_server_selection_g = PDC_SERVER_DEFAULT;
@@ -2255,23 +2257,28 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t
         data_size = (size_t *)malloc( sizeof(size_t) );
         *data_ptrs = local_data + unit*local_offset[0];
         *data_size = unit*local_dims[0];
+        //printf("offset size = %d, local dim = %d, unit = %d, data_ptrs[0] = %d, data_ptrs[1] = %d\n", (int)local_offset[0], (int) local_dims[0], (int) unit, ((int*)data_ptrs)[0], ((int*)data_ptrs)[1] );
     }
     else if (ndim == 2) {
         local_count = local_dims[0];
         data_ptrs = (void **)malloc( local_count * sizeof(void *) );
         data_size = (size_t *)malloc( local_count * sizeof(size_t) );
         data_ptrs[0] = local_data + unit*(local_dims[1]*local_offset[0] + local_offset[1]);
+        data_size[0] = local_dims[1];
         data_size[0] = unit*local_dims[1];
         for (i=1; i<local_dims[0]; i++) {
             data_ptrs[i] = data_ptrs[i-1] + unit*local_dims[1]; 
             data_size[i] = data_size[0];
         }
+        /* data_size[0] *= unit; */
+        //printf("offset size = %d, local dim = %d %d, unit = %d, data_size = %d %d\n", (int)local_offset[0], (int) local_dims[0], (int) local_dims[1], (int) unit, (int)data_size[0], (int)data_size[1] );
     }
     else if (ndim == 3) {
         local_count = local_dims[0]*local_dims[1];
         data_ptrs = (void **)malloc( local_count * sizeof(void *) );
         data_size = (size_t *)malloc( local_count * sizeof(size_t) );
         data_ptrs[0] = local_data + unit*(local_dims[2]*local_dims[1]*local_offset[0] + local_dims[2]*local_offset[1] + local_offset[2]);
+        data_size[0] = local_dims[2];
         data_size[0] = unit*local_dims[2];
         for (i=0; i<local_dims[0]-1; i++) {
             for (j=0; j<local_dims[1]-1; j++) {
@@ -2286,6 +2293,8 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t
              data_ptrs[i*local_dims[1]+j+1] = data_ptrs[i*local_dims[1]+j]+unit*local_dims[2];
              data_size[i*local_dims[1]+j+1] = data_size[0];
         }
+        /* data_size[0] *= unit; */
+        /* printf("offset size = %d, local dim = %d %d %d, unit = %d, data_size = %d %d %d\n", (int)local_offset[0], (int)local_dims[0], (int)local_dims[1], (int) local_dims[2], (int) unit, (int)data_size[0], (int)data_size[1] , (int)data_size[2]); */
     }
     else
         PGOTO_ERROR(FAIL, "mapping for array of dimension greater than 4 is not supproted");
@@ -2294,6 +2303,7 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr, buf_map_register_id_g, &client_send_buf_map_handle);
+
 
     // Create bulk handle and release in PDC_Data_Server_buf_unmap()
     hg_ret = HG_Bulk_create(hg_class, local_count, (void**)data_ptrs, (hg_size_t *)data_size, HG_BULK_READWRITE, &(in.local_bulk_handle));
@@ -2921,23 +2931,24 @@ hg_return_t maybe_run_transform(struct _pdc_obj_info *object_info, struct pdc_re
 perr_t PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_region_info *region_info, pdc_access_t access_type, pdc_var_type_t data_type, pbool_t *status)
 {
     perr_t ret_value = SUCCEED;
-    int readyState = 0, currentState;
+    //int readyState = 0, currentState;
     hg_return_t hg_ret;
     uint32_t server_id, meta_server_id;
     region_lock_in_t in;
     size_t type_extent;
     struct _pdc_client_lookup_args lookup_args;
     hg_handle_t region_release_handle = HG_HANDLE_NULL;
-    void *transform_result = NULL;
-    size_t transform_size = 0;
+    //void *transform_result = NULL;
+    //size_t transform_size = 0;
     struct _pdc_region_transform_ftn_info **registry = NULL;
-    int transform_index;
-    int k, registered_count;
-    struct _pdc_region_analysis_ftn_info **analysis_registry;
+    //int transform_index;
+    //int k, registered_count;
+    //struct _pdc_region_analysis_ftn_info **analysis_registry;
 
     FUNC_ENTER(NULL);
     
     type_extent = object_info->obj_pt->type_extent;
+/*
     if (region_info->registered_op & PDC_TRANSFORM) {
         transform_index = -1;
         PDC_get_transforms(&registry);
@@ -2963,7 +2974,7 @@ perr_t PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_r
             }
         }
     }
-
+*/
     // Compute data server and metadata server ids.
     if (pdc_server_selection_g != PDC_SERVER_DEFAULT) {
         server_id = object_info->obj_info_pub->server_id;
@@ -3251,7 +3262,7 @@ perr_t PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_
         HG_Destroy(data_server_read_check_handle);
     } // end of check io
 
-close:
+//close:
     /* close the shared memory segment as if it was a file */
     if (close(shm_fd) == -1)
         PGOTO_ERROR(FAIL, "==PDC_CLIENT: Close failed!");
@@ -3382,8 +3393,9 @@ perr_t PDC_Client_close_shm(struct pdc_request *req)
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: close shm failed", pdc_client_mpi_rank_g);
 
     /* remove the shared memory segment from the file system */
-    if (shm_unlink(req->shm_addr) == -1)
-        PGOTO_ERROR(FAIL, "==PDC_CLIENT: Error removing %s", req->shm_addr);
+    // TODO: fix error 
+    /* if (shm_unlink(req->shm_addr) == -1) */
+    /*     PGOTO_ERROR(FAIL, "==PDC_CLIENT: Error removing %s", req->shm_addr); */
 
 done:
     fflush(stdout);
@@ -4444,7 +4456,7 @@ perr_t PDC_Client_complete_read_request(int nbuf, struct pdc_request *req)
         }
     }
 
-done:
+//done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
@@ -5523,7 +5535,7 @@ perr_t PDC_Client_query_name_read_entire_obj_client_agg_cache_iter(int my_nobj, 
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_add_kvtag(pdcid_t obj_id, pdc_kvtag_t *kvtag)
+static perr_t PDC_add_kvtag(pdcid_t obj_id, pdc_kvtag_t *kvtag, int is_cont)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
@@ -5532,12 +5544,23 @@ perr_t PDC_add_kvtag(pdcid_t obj_id, pdc_kvtag_t *kvtag)
     hg_handle_t  metadata_add_kvtag_handle;
     metadata_add_kvtag_in_t in;
     struct _pdc_obj_info *obj_prop;
+    struct _pdc_cont_info *cont_prop;
     struct _pdc_client_lookup_args lookup_args;
 
     FUNC_ENTER(NULL);
 
-    obj_prop = PDC_obj_get_info(obj_id);
-    meta_id = obj_prop->obj_info_pub->meta_id;
+    if (is_cont == 0) {
+        obj_prop = PDC_obj_get_info(obj_id);
+        meta_id = obj_prop->obj_info_pub->meta_id;
+        in.obj_id     = meta_id;
+        in.hash_value = PDC_get_hash_by_name(obj_prop->obj_info_pub->name);
+    }
+    else {
+        cont_prop = PDC_cont_get_info(obj_id);
+        meta_id = cont_prop->cont_info_pub->meta_id;
+        in.obj_id     = meta_id;
+        in.hash_value = PDC_get_hash_by_name(cont_prop->cont_info_pub->name);
+    }
 
     server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
 
@@ -5551,8 +5574,6 @@ perr_t PDC_add_kvtag(pdcid_t obj_id, pdc_kvtag_t *kvtag)
                 &metadata_add_kvtag_handle);
 
     // Fill input structure
-    in.obj_id     = meta_id;
-    in.hash_value = PDC_get_hash_by_name(obj_prop->obj_info_pub->name);
 
     if (kvtag != NULL && kvtag != NULL && kvtag->size != 0) {
         in.kvtag.name  = kvtag->name;
@@ -5597,7 +5618,11 @@ metadata_get_kvtag_rpc_cb(const struct hg_cb_info *callback_info)
         PGOTO_ERROR(ret_value, "==PDC_CLIENT[%d]: metadata_add_tag_rpc_cb error with HG_Get_output", pdc_client_mpi_rank_g);
     }
     client_lookup_args->ret = output.ret;
-    PDC_kvtag_dup(&(output.kvtag), &client_lookup_args->kvtag);
+    client_lookup_args->kvtag->name = strdup(output.kvtag.name);
+    client_lookup_args->kvtag->size = output.kvtag.size;
+    client_lookup_args->kvtag->value = malloc(output.kvtag.size);
+    memcpy(client_lookup_args->kvtag->value, output.kvtag.value, output.kvtag.size);
+    /* PDC_kvtag_dup(&(output.kvtag), &client_lookup_args->kvtag); */
 
 done:
     fflush(stdout);
@@ -5607,7 +5632,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_get_kvtag(pdcid_t obj_id, char *tag_name, pdc_kvtag_t **kvtag)
+static perr_t PDC_get_kvtag(pdcid_t obj_id, char *tag_name, pdc_kvtag_t **kvtag, int is_cont)
 {
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
@@ -5617,11 +5642,23 @@ perr_t PDC_get_kvtag(pdcid_t obj_id, char *tag_name, pdc_kvtag_t **kvtag)
     metadata_get_kvtag_in_t in;
     struct _pdc_get_kvtag_args lookup_args;
     struct _pdc_obj_info *obj_prop;
+    struct _pdc_cont_info *cont_prop;
 
     FUNC_ENTER(NULL);
 
-    obj_prop = PDC_obj_get_info(obj_id);
-    meta_id = obj_prop->obj_info_pub->meta_id;
+    if (is_cont == 0) {
+        obj_prop = PDC_obj_get_info(obj_id);
+        meta_id = obj_prop->obj_info_pub->meta_id;
+        in.obj_id     = meta_id;
+        in.hash_value = PDC_get_hash_by_name(obj_prop->obj_info_pub->name);
+    }
+    else {
+        cont_prop = PDC_cont_get_info(obj_id);
+        meta_id = cont_prop->cont_info_pub->meta_id;
+        in.obj_id     = meta_id;
+        in.hash_value = PDC_get_hash_by_name(cont_prop->cont_info_pub->name);
+    }
+
     server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
     debug_server_id_count[server_id]++;
 
@@ -5630,10 +5667,6 @@ perr_t PDC_get_kvtag(pdcid_t obj_id, char *tag_name, pdc_kvtag_t **kvtag)
 
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_get_kvtag_register_id_g, 
                 &metadata_get_kvtag_handle);
-
-    // Fill input structure
-    in.obj_id     = meta_id;
-    in.hash_value = PDC_get_hash_by_name(obj_prop->obj_info_pub->name);
 
     if ( tag_name != NULL && kvtag != NULL) {
         in.key = tag_name;
@@ -6101,13 +6134,18 @@ perr_t
 PDCcont_put_tag(pdcid_t cont_id, char *tag_name, void *tag_value, psize_t value_size)
 {
     perr_t ret_value = SUCCEED;
+    pdc_kvtag_t kvtag;
 
     FUNC_ENTER(NULL);
 
-    ret_value = PDCobj_put_tag(cont_id, tag_name, tag_value, value_size);
+    kvtag.name = tag_name;
+    kvtag.value = (void*)tag_value;
+    kvtag.size  = (uint64_t)value_size;
+
+    ret_value = PDC_add_kvtag(cont_id, &kvtag, 1);
     if (ret_value != SUCCEED)
-        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error with PDCobj_put_tag",
-                pdc_client_mpi_rank_g);
+        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Error with PDCcont_put_tag", pdc_client_mpi_rank_g);
+ 
     
 done:
     fflush(stdout);
@@ -6118,13 +6156,17 @@ perr_t
 PDCcont_get_tag(pdcid_t cont_id, char *tag_name, void **tag_value, psize_t *value_size)
 {
     perr_t ret_value = SUCCEED;
+    pdc_kvtag_t *kvtag = NULL;
 
     FUNC_ENTER(NULL);
 
-    ret_value = PDCobj_get_tag(cont_id, tag_name, tag_value, value_size);
+    ret_value = PDC_get_kvtag(cont_id, tag_name, &kvtag, 1);
     if (ret_value != SUCCEED)
-        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error with PDCcont_get_tag",
-                pdc_client_mpi_rank_g);
+        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Error with PDC_get_kvtag", pdc_client_mpi_rank_g);
+
+    *tag_value = kvtag->value;
+    *value_size = kvtag->size;
+
 
 done:
     fflush(stdout);
@@ -6152,10 +6194,9 @@ pdcid_t
 PDCobj_put_data(const char *obj_name, void *data, uint64_t size, pdcid_t cont_id)
 {
     pdcid_t ret_value = 0;
-    pdcid_t obj_id, obj_prop;
-    struct pdc_region_info obj_region;
+    pdcid_t obj_id, obj_prop, obj_region;
     perr_t ret;
-    pdc_metadata_t *meta;
+    //pdc_metadata_t *meta;
     struct _pdc_cont_info *info = NULL;
     struct _pdc_id_info *id_info = NULL;
 
@@ -6165,30 +6206,57 @@ PDCobj_put_data(const char *obj_name, void *data, uint64_t size, pdcid_t cont_id
     info = (struct _pdc_cont_info *)(id_info->obj_ptr);
 
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, info->cont_pt->pdc->local_id);
+    PDCprop_set_obj_type(obj_prop, PDC_CHAR);
     PDCprop_set_obj_dims(obj_prop, 1, &size);
     PDCprop_set_obj_user_id(obj_prop, getuid());
     PDCprop_set_obj_time_step(obj_prop, 0);
 
-    obj_id = PDCobj_create(cont_id, obj_name, obj_prop);
+    obj_id = PDC_obj_create(cont_id, obj_name, obj_prop, PDC_OBJ_GLOBAL);
     if (obj_id <= 0)
-        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Error creating object [%s]",
+        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error creating object [%s]",
                 pdc_client_mpi_rank_g, obj_name);
 
-    obj_region.ndim   = 1;
-    obj_region.offset = 0;
-    obj_region.size   = &size;
+    int ndim = 1;
+    uint64_t offset = 0;
+    //size = ceil(size/sizeof(int));
+    obj_region = PDCregion_create(ndim, &offset, &size);
 
-#ifdef ENABLE_MPI
-    ret = PDC_Client_query_metadata_name_timestep_agg(obj_name, 0, &meta);
-#else
-    ret = PDC_Client_query_metadata_name_timestep(obj_name, 0, &meta);
-#endif
-
-    ret = PDC_Client_write(meta, &obj_region, (void *)data);
-    if (ret != SUCCEED)
-        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with PDC_Client_write_id for obj [%s]",
+    ret = PDCbuf_obj_map(data, PDC_CHAR, obj_region, obj_id, obj_region);
+    if(ret != SUCCEED) {
+        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with PDCbuf_obj_map for obj [%s]",
                 pdc_client_mpi_rank_g, obj_name);
+    }
 
+    ret = PDCreg_obtain_lock(obj_id, obj_region, PDC_WRITE, PDC_BLOCK);
+    if (ret != SUCCEED) {
+        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with PDCreg_obtain_lock for obj [%s]",
+                pdc_client_mpi_rank_g, obj_name);
+    }
+    ret = PDCreg_release_lock(obj_id, obj_region, PDC_WRITE);
+    if (ret != SUCCEED) {
+        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with PDCreg_release_lock for obj [%s]",
+                pdc_client_mpi_rank_g, obj_name);
+    }
+
+    ret = PDCbuf_obj_unmap(obj_id, obj_region);
+    if (ret != SUCCEED) {
+        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with PDCbuf_obj_unmap for obj [%s]",
+                pdc_client_mpi_rank_g, obj_name);
+    }
+
+    ret = PDCregion_close(obj_region);
+    if (ret != SUCCEED) {
+        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with PDCregion_close for obj [%s]",
+                pdc_client_mpi_rank_g, obj_name);
+    }
+
+    ret = PDCprop_close(obj_prop);
+    if (ret != SUCCEED) {
+        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with PDCprop_close for obj [%s]",
+                pdc_client_mpi_rank_g, obj_name);
+    }
+
+    ret_value = obj_id;
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -6263,7 +6331,7 @@ PDCobj_put_tag(pdcid_t obj_id, char *tag_name, void *tag_value, psize_t value_si
     kvtag.value = (void*)tag_value;
     kvtag.size  = (uint64_t)value_size;
 
-    ret_value = PDC_add_kvtag(obj_id, &kvtag);
+    ret_value = PDC_add_kvtag(obj_id, &kvtag, 0);
     if (ret_value != SUCCEED)
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Error with PDC_add_kvtag", pdc_client_mpi_rank_g);
     
@@ -6280,7 +6348,7 @@ PDCobj_get_tag(pdcid_t obj_id, char *tag_name, void **tag_value, psize_t *value_
 
     FUNC_ENTER(NULL);
 
-    ret_value = PDC_get_kvtag(obj_id, tag_name, &kvtag);
+    ret_value = PDC_get_kvtag(obj_id, tag_name, &kvtag, 0);
     if (ret_value != SUCCEED)
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Error with PDC_get_kvtag", pdc_client_mpi_rank_g);
 
@@ -6383,7 +6451,7 @@ PDC_send_data_query(pdc_query_t *query, pdc_query_get_op_t get_op, uint64_t *nhi
     perr_t ret_value = SUCCEED;
     hg_return_t  hg_ret = 0;
     uint32_t *target_servers = NULL;
-    int i, server_id, next_server, prev_server, ntarget = 0;
+    int i, server_id, next_server = 0, prev_server = 0, ntarget = 0;
     hg_handle_t  handle;
     pdc_query_xfer_t *query_xfer;
     struct _pdc_client_lookup_args lookup_args;
@@ -6474,7 +6542,7 @@ PDC_recv_coords(const struct hg_cb_info *callback_info)
     hg_bulk_t local_bulk_handle   = callback_info->info.bulk.local_handle;
     struct bulk_args_t *bulk_args = (struct bulk_args_t *)callback_info->arg;
     struct _pdc_query_result_list *result_elt;
-    uint64_t nhits;
+    uint64_t nhits = 0;
     uint32_t ndim;
     int      query_id, origin;
     void *buf;
@@ -6629,7 +6697,7 @@ PDC_recv_read_coords_data(const struct hg_cb_info *callback_info)
     hg_bulk_t local_bulk_handle   = callback_info->info.bulk.local_handle;
     struct bulk_args_t *bulk_args = (struct bulk_args_t *)callback_info->arg;
     struct _pdc_query_result_list *result_elt;
-    uint64_t nhits;
+    uint64_t nhits = 0;
     int  query_id, seq_id;
     void *buf;
     pdc_int_ret_t out;

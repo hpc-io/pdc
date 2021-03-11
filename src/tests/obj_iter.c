@@ -34,7 +34,15 @@ int main(int argc, char **argv)
     int rank = 0, size = 1;
     obj_handle *oh;
     struct pdc_obj_info *info;
-    
+    int ret_value = 0, ret;
+    char cont_name[128], obj_name1[128], obj_name2[128], obj_name3[128];
+
+    size_t ndim = 3;
+    uint64_t dims[3];
+    dims[0] = 64;
+    dims[1] = 3;
+    dims[2] = 4;
+
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -46,97 +54,147 @@ int main(int argc, char **argv)
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
-    if(cont_prop > 0)
+    if(cont_prop > 0) {
         printf("Create a container property\n");
-    else
+    } else {
         printf("Fail to create container property @ line  %d!\n", __LINE__);
-
+        ret_value = 1;
+    }
     // create a container
-    cont = PDCcont_create("c1", cont_prop);
-    if(cont > 0)
+    sprintf(cont_name, "c%d", rank);
+    cont = PDCcont_create(cont_name, cont_prop);
+    if(cont > 0) {
         printf("Create a container c1\n");
-    else
+    } else {
         printf("Fail to create container @ line  %d!\n", __LINE__);
-    
+        ret_value = 1;
+    }
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
-    if(obj_prop > 0)
+    if(obj_prop > 0) {
         printf("Create an object property\n");
-    else
+    } else {
         printf("Fail to create object property @ line  %d!\n", __LINE__);
-    
+        ret_value = 1;
+    }
+    ret = PDCprop_set_obj_dims(obj_prop, ndim, dims);
+    if ( ret != SUCCEED ) {
+        printf("Fail to set obj time step @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    ret = PDCprop_set_obj_type(obj_prop, PDC_DOUBLE);
+    if ( ret != SUCCEED ) {
+        printf("Fail to set obj time step @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+
+
     // create first object
-    obj1 = PDCobj_create(cont, "o1", obj_prop);
-    if(obj1 > 0)
+    sprintf(obj_name1, "o1_%d", rank);
+    obj1 = PDCobj_create(cont, obj_name1, obj_prop);
+    if(obj1 > 0) {
         printf("Create an object o1\n");
-    else
+    } else {
         printf("Fail to create object @ line  %d!\n", __LINE__);
-    
+        ret_value = 1;
+    }
     // create second object
-    obj2 = PDCobj_create(cont, "o2", obj_prop);
-    if(obj2 > 0)
+    sprintf(obj_name2, "o2_%d", rank);
+    obj2 = PDCobj_create(cont, obj_name2, obj_prop);
+    if(obj2 > 0) {
         printf("Create an object o2\n");
-    else
+    } else {
         printf("Fail to create object @ line  %d!\n", __LINE__);
-    
+        ret_value = 1;
+    }
     // create third object
-    obj3 = PDCobj_create(cont, "o3", obj_prop);
-    if(obj3 > 0)
+    sprintf(obj_name3, "o3_%d", rank);
+    obj3 = PDCobj_create(cont, obj_name3, obj_prop);
+    if(obj3 > 0) {
         printf("Create an object o3\n");
-    else
+    } else {
         printf("Fail to create object @ line  %d!\n", __LINE__);
-    
+        ret_value = 1;
+    }
     // start object iteration
     oh = PDCobj_iter_start(cont);
     
     while(!PDCobj_iter_null(oh)) {
         info = PDCobj_iter_get_info(oh);
+        if (info->obj_pt->type != PDC_DOUBLE) {
+            printf("Type is not properly inherited from object property.\n");
+            ret_value = 1;
+        }
+        if (info->obj_pt->ndim != ndim) {
+            printf("Number of dimensions is not properly inherited from object property.\n");
+            ret_value = 1;
+        }
+        if (info->obj_pt->dims[0] != dims[0]) {
+            printf("First dimension is not properly inherited from object property.\n");
+            ret_value = 1;
+        }
+        if (info->obj_pt->dims[1] != dims[1]) {
+            printf("Second dimension is not properly inherited from object property.\n");
+            ret_value = 1;
+        }
+        if (info->obj_pt->dims[2] != dims[2]) {
+            printf("Third dimension is not properly inherited from object property.\n");
+            ret_value = 1;
+        }
+
         oh = PDCobj_iter_next(oh, cont);
     }
 
     // close first object
-    if(PDCobj_close(obj1) < 0)
+    if(PDCobj_close(obj1) < 0) {
         printf("fail to close object o1\n");
-    else
+        ret_value = 1;
+    } else {
         printf("successfully close object o1\n");
-    
+    }
     // close second object
-    if(PDCobj_close(obj2) < 0)
+    if(PDCobj_close(obj2) < 0) {
         printf("fail to close object o2\n");
-    else
+        ret_value = 1;
+    } else {
         printf("successfully close object o2\n");
-    
+    }
     // close third object
-    if(PDCobj_close(obj3) < 0)
+    if(PDCobj_close(obj3) < 0) {
         printf("fail to close object o3\n");
-    else
+        ret_value = 1;
+    } else {
         printf("successfully close object o3\n");
-    
+    }
     // close a object property
-    if(PDCprop_close(obj_prop) < 0)
+    if(PDCprop_close(obj_prop) < 0) {
         printf("Fail to close property @ line %d\n", __LINE__);
-    else
+        ret_value = 1;
+    } else {
         printf("successfully close object property\n");
-       
+    }
     // close a container
-    if(PDCcont_close(cont) < 0)
+    if(PDCcont_close(cont) < 0) {
         printf("fail to close container c1\n");
-    else
+        ret_value = 1;
+    } else {
         printf("successfully close container c1\n");
-
+    }
     // close a container property
-    if(PDCprop_close(cont_prop) < 0)
+    if(PDCprop_close(cont_prop) < 0) {
         printf("Fail to close property @ line %d\n", __LINE__);
-    else
+        ret_value = 1;
+    } else {
         printf("successfully close container property\n");
-
+    }
     // close pdc
-    if(PDCclose(pdc) < 0)
-       printf("fail to close PDC\n");
-
+    if(PDCclose(pdc) < 0) {
+        printf("fail to close PDC\n");
+        ret_value = 1;
+    }
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
 
-    return 0;
+    return ret_value;
 }

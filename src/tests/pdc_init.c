@@ -27,19 +27,28 @@
 #include <string.h>
 #include "pdc.h"
 
-int main() {
+int main(int argc, char **argv) {
     pdcid_t pdc;
-    
+    int rank = 0, size = 1;
+    int ret_value = 0;
+
     // create a pdc
+#ifdef ENABLE_MPI
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+#endif
+
     pdc = PDCinit("pdc");
     printf("generated new pdc\n");
 
     // close pdc
-    if(PDCclose(pdc) < 0)
+    if(PDCclose(pdc) < 0) {
        printf("fail to close PDC\n");
-
+       ret_value = 1;
+    }
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
-    return 0;
+    return ret_value;
 }

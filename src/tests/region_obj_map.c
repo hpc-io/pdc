@@ -27,21 +27,44 @@
 #include <string.h>
 #include <getopt.h>
 #include <time.h>
+#include <inttypes.h>
+#include <unistd.h>
+#include <sys/time.h>
 #include "pdc.h"
+#include "pdc_client_connect.h"
+#include "pdc_client_server_common.h"
+#define BUF_LEN 128
+
 
 int main(int argc, char **argv) {
-    pdcid_t pdc, cont_prop, cont, obj_prop, obj1, obj2;
-    int ret_value = 0;
-    int rank = 0;
+    pdcid_t pdc, cont_prop, cont, obj_prop, reg, reg_global;
+    perr_t ret;
+    pdcid_t obj1, obj2;
     char cont_name[128], obj_name1[128], obj_name2[128];
-    // create a pdc
+
+    int rank = 0, size = 1, i;
+    int ret_value = 0;
+
+    uint64_t offset[3], offset_length[3];
+    uint64_t dims[1];
+    offset[0] = 0;
+    offset[1] = 2;
+    offset[2] = 5;
+    offset_length[0] = BUF_LEN;
+    offset_length[1] = 3;
+    offset_length[2] = 5;
+
+    int *data = (int*)malloc(sizeof(int)*BUF_LEN);
+    int *data_read = (int*)malloc(sizeof(int)*BUF_LEN);
+    int *obj_data = (int *)calloc(BUF_LEN, sizeof(int));
+    dims[0] = BUF_LEN;
+
 #ifdef ENABLE_MPI
-    int size;
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
-
+    // create a pdc
     pdc = PDCinit("pdc");
     printf("create a new pdc\n");
 
@@ -70,6 +93,20 @@ int main(int argc, char **argv) {
         printf("Fail to create object property @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
+
+    ret = PDCprop_set_obj_type(obj_prop, PDC_INT);
+    if ( ret != SUCCEED ) {
+        printf("Fail to set obj type @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    PDCprop_set_obj_buf(obj_prop, obj_data);
+    PDCprop_set_obj_dims(obj_prop, 1, dims);
+    PDCprop_set_obj_user_id( obj_prop, getuid());
+    PDCprop_set_obj_time_step( obj_prop, 0);
+    PDCprop_set_obj_app_name(obj_prop, "DataServerTest");
+    PDCprop_set_obj_tags(    obj_prop, "tag0=1");
+
+
     // create first object
     sprintf(obj_name1, "o1_%d", rank);
     obj1 = PDCobj_create(cont, obj_name1, obj_prop);
@@ -88,14 +125,85 @@ int main(int argc, char **argv) {
         printf("Fail to create object @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
-    // close first object
+
+    reg = PDCregion_create(1, offset, offset_length);
+    reg_global = PDCregion_create(1, offset, offset_length);
+
+    for ( i = 0; i < BUF_LEN; ++i ) {
+        data[i] = i;
+    }
+    ret = PDCbuf_obj_map(data, PDC_INT, reg, obj1, reg_global);
+    if(ret != SUCCEED) {
+        printf("PDCbuf_obj_map failed\n");
+        ret_value = 1;
+    }
+
+    for ( i = 0; i < BUF_LEN; ++i ) {
+        data[i] = -i;
+    }
+
+    ret = PDCreg_obtain_lock(obj1, reg, PDC_WRITE, PDC_BLOCK);
+    if(ret != SUCCEED) {
+        printf("PDCreg_obtain_lock failed\n");
+        exit(-1);
+    }
+
+    ret = PDCreg_release_lock(obj1, reg, PDC_WRITE);
+    if(ret != SUCCEED) {
+        printf("PDCreg_release_lock failed\n");
+        ret_value = 1;
+    }
+
+    ret = PDCbuf_obj_unmap(obj1, reg_global);
+    if(ret != SUCCEED) {
+        printf("PDCbuf_obj_unmap failed\n");
+        ret_value = 1;
+    }
+
+    reg = PDCregion_create(1, offset, offset_length);
+    reg_global = PDCregion_create(1, offset, offset_length);
+    ret = PDCbuf_obj_map(data_read, PDC_INT, reg, obj1, reg_global);
+    if(ret != SUCCEED) {
+        printf("PDCbuf_obj_map failed\n");
+        ret_value = 1;
+    }
+
+    ret = PDCreg_obtain_lock(obj1, reg, PDC_READ, PDC_BLOCK);
+    if(ret != SUCCEED) {
+        printf("PDCreg_obtain_lock failed\n");
+        ret_value = 1;
+    }
+
+
+
+    ret = PDCreg_release_lock(obj1, reg, PDC_READ);
+    if(ret != SUCCEED) {
+        printf("PDCreg_release_lock failed\n");
+        ret_value = 1;
+    }
+
+    ret = PDCbuf_obj_unmap(obj1, reg_global);
+    if(ret != SUCCEED) {
+        printf("PDCbuf_obj_unmap failed\n");
+        ret_value = 1;
+    }
+
+    for ( i = 0; i < BUF_LEN; ++i ) {
+        if ( data_read[i] != i ) {
+            printf("wrong value %d!=%d\n", data_read[i], i);
+            ret_value = 1;
+            break;
+        }
+    }
+
+
+    // close object
     if(PDCobj_close(obj1) < 0) {
         printf("fail to close object o1\n");
         ret_value = 1;
     } else {
         printf("successfully close object o1\n");
     }
-    // close second object
     if(PDCobj_close(obj2) < 0) {
         printf("fail to close object o2\n");
         ret_value = 1;
@@ -108,6 +216,13 @@ int main(int argc, char **argv) {
         ret_value = 1;
     } else {
         printf("successfully close container c1\n");
+    }
+    // close a object property
+    if(PDCprop_close(obj_prop) < 0) {
+        printf("Fail to close property @ line %d\n", __LINE__);
+        ret_value = 1;
+    } else {
+        printf("successfully close object property\n");
     }
     // close a container property
     if(PDCprop_close(cont_prop) < 0) {

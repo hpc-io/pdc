@@ -28,11 +28,17 @@
 #include "pdc.h"
 
 int main(int argc, char **argv) {
-    pdcid_t pdc, create_prop1, create_prop2, create_prop;
+    pdcid_t pdc, create_prop1, create_prop2;
+    perr_t ret;
     pdc_prop_type_t type = PDC_CONT_CREATE;
     int rank = 0, size = 1;
+    PDC_int_t ndim = 3;
+    uint64_t dims[3];
     int ret_value = 0;
-    
+
+    dims[0] = 64;
+    dims[1] = 3;
+    dims[2] = 4;    
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -55,6 +61,47 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
+    ret = PDCprop_set_obj_user_id(create_prop2, 666);
+    if ( ret != SUCCEED ) {
+        printf("Fail to set obj user id @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    ret = PDCprop_set_obj_data_loc(create_prop2, "somewhere");
+    if ( ret != SUCCEED ) {
+        printf("Fail to set obj user id @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    ret = PDCprop_set_obj_app_name(create_prop2, "someapp name");
+    if ( ret != SUCCEED ) {
+        printf("Fail to set obj user id @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    ret = PDCprop_set_obj_time_step(create_prop2, 666);
+    if ( ret != SUCCEED ) {
+        printf("Fail to set obj time step @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    ret = PDCprop_set_obj_tags(create_prop2, "sometag");
+    if ( ret != SUCCEED ) {
+        printf("Fail to set obj time step @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    ret = PDCprop_set_obj_dims(create_prop2, ndim, dims);
+    if ( ret != SUCCEED ) {
+        printf("Fail to set obj time step @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    ret = PDCprop_set_obj_type(create_prop2, PDC_DOUBLE);
+    if ( ret != SUCCEED ) {
+        printf("Fail to set obj time step @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    ret = PDCprop_set_obj_buf(create_prop2, NULL);
+    if ( ret != SUCCEED ) {
+        printf("Fail to set obj time step @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+
     if(PDCprop_close(create_prop1)<0) {
         printf("Fail to close property @ line %d\n", __LINE__);
         ret_value = 1;
@@ -66,25 +113,6 @@ int main(int argc, char **argv) {
         ret_value = 1;
     } else {
         printf("successfully close second property\n");
-    }
-    // create a container property
-    create_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
-    if(create_prop > 0) {
-        if(type == PDC_CONT_CREATE)
-            printf("Create a container property\n");
-        else if(type == PDC_OBJ_CREATE)
-            printf("Create an object property\n");
-    }
-    else {
-        printf("Fail to create @ line  %d!\n", __LINE__);
-        ret_value = 1;
-    }
-    // close property
-    if(PDCprop_close(create_prop)<0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
-        ret_value = 1;
-    } else {
-        printf("successfully close property\n");
     }
     // close a pdc
     if(PDCclose(pdc) < 0) {

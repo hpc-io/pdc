@@ -25,58 +25,70 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <getopt.h>
 #include "pdc.h"
 
-int main(int argc, char **argv) {
-    pdcid_t pdc, cont_prop, cont, obj1;
-    struct PDC_obj_prop *op;
+int main(int argc, char **argv)
+{
     int rank = 0, size = 1;
-    
+    pdcid_t pdc_id, cont_prop, cont_id, cont_id2;
+    struct pdc_cont_info *cont_info;
+
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
+
     // create a pdc
-    pdc = PDCinit("pdc");
-    
+    pdc_id = PDCinit("pdc");
+
     // create a container property
-    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
-    if(cont_prop > 0) {
-        printf("Create a container property\n");
-    } else {
+    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
+    if(cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
-        return 1;
-    }
+
     // create a container
-    cont = PDCcont_create("c1", cont_prop);
-    if(cont > 0) {
-        printf("Create a container c1\n");
-    } else {
+    cont_id = PDCcont_create_col("c1", cont_prop);
+    if(cont_id <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
-        return 1;
-    }
-    // close a container
-    if(PDCcont_close(cont) < 0) {
-        printf("fail to close container c1\n");
-        return 1;
-    } else {
-        printf("successfully close container c1\n");
-    }
-    // close a container property
-    if(PDCprop_close(cont_prop) < 0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
-        return 1;
-    } else {
-        printf("successfully close container property\n");
-    }
-    // close pdc
-    if(PDCclose(pdc) < 0) {
-        printf("fail to close PDC\n");
-        return 1;
-    }
+
 #ifdef ENABLE_MPI
-    MPI_Finalize();
+    MPI_Barrier(MPI_COMM_WORLD);
 #endif
-    return 0;
+
+    cont_id2 = PDCcont_open("c1", pdc_id);
+    if(cont_id2 == 0)
+        printf("Fail to open container @ line  %d!\n", __LINE__);
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
+    cont_info = PDCcont_get_info("c1");
+    if (strcmp(cont_info->name, "c1")) {
+        printf("container get info with wrong name\n");
+        return 1;
+    }
+
+    // close a container
+    if(PDCcont_close(cont_id) < 0)
+        printf("fail to close container cont_id1\n");
+
+    if(PDCcont_close(cont_id2) < 0)
+        printf("fail to close container cont_id2\n");
+
+    // close a container property
+    if(PDCprop_close(cont_prop) < 0)
+        printf("Fail to close property @ line %d\n", __LINE__);
+
+    if(PDCclose(pdc_id) < 0)
+       printf("fail to close PDC\n");
+
+#ifdef ENABLE_MPI
+     MPI_Finalize();
+#endif
+
+     return 0;
 }
+

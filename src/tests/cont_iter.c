@@ -32,6 +32,7 @@ int main(int argc, char **argv) {
     pdcid_t pdc, create_prop, cont1, cont2, cont3;
     cont_handle *ch;
     int rank = 0, size = 1;
+    int ret_value = 0;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -44,32 +45,36 @@ int main(int argc, char **argv) {
 
     // create a container property
     create_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
-    if(create_prop > 0)
+    if(create_prop > 0) {
         printf("Create a container property\n");
-    else
+    } else {
         printf("Fail to create container property @ line  %d!\n", __LINE__);
-
+        ret_value = 1;
+    }
     // create a container
     cont1 = PDCcont_create("c1", create_prop);
-    if(cont1 > 0)
+    if(cont1 > 0) {
         printf("Create a container c1\n");
-    else
+    } else {
         printf("Fail to create container @ line  %d!\n", __LINE__);
-       
+        ret_value = 1;
+    }
     // create second container
     cont2 = PDCcont_create("c2", create_prop);
-    if(cont2 > 0)
+    if(cont2 > 0) {
         printf("Create a container c2\n");
-    else
+    } else {
         printf("Fail to create container @ line  %d!\n", __LINE__);
-
+        ret_value = 1;
+    }
     // create third container
     cont3 = PDCcont_create("c3", create_prop);
-    if(cont3 > 0)
+    if(cont3 > 0) {
         printf("Create a container c3\n");
-    else
+    } else {
         printf("Fail to create container @ line  %d!\n", __LINE__);
-
+        ret_value = 1;
+    }
     // start container iteration
     ch = PDCcont_iter_start(pdc);
 
@@ -81,36 +86,41 @@ int main(int argc, char **argv) {
     }
     
     // close cont1
-    if(PDCcont_close(cont1) < 0)
+    if(PDCcont_close(cont1) < 0) {
         printf("fail to close container c1\n");
-    else
+        ret_value = 1;
+    } else {
         printf("successfully close container c1\n");
-
+    }
     // close cont2
-    if(PDCcont_close(cont2) < 0)
+    if(PDCcont_close(cont2) < 0) {
         printf("fail to close container c2\n");
-    else
+        ret_value = 1;
+    } else {
         printf("successfully close container c2\n");
-
+    }
     // close cont3
-    if(PDCcont_close(cont3) < 0)
+    if(PDCcont_close(cont3) < 0) {
         printf("fail to close container c3\n");
-    else
+        ret_value = 1;
+    } else {
         printf("successfully close container c3\n");
-
+    }
     // close a container property
-    if(PDCprop_close(create_prop) < 0)
+    if(PDCprop_close(create_prop) < 0) {
         printf("Fail to close property @ line %d\n", __LINE__);
-    else
+        ret_value = 1;
+    } else {
         printf("successfully close container property\n");
-
+    }
     // close pdc
-    if(PDCclose(pdc) < 0)
-       printf("fail to close PDC\n");
-    
+    if(PDCclose(pdc) < 0) {
+        printf("fail to close PDC\n");
+        ret_value = 1;
+    }
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
     
-    return 0;
+    return ret_value;
 }

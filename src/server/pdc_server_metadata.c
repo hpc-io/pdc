@@ -2472,6 +2472,7 @@ perr_t PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t 
     int unlocked;
 #endif
     pdc_hash_table_entry_head *lookup_value;
+    pdc_cont_hash_table_entry_t *cont_lookup_value;
 
     FUNC_ENTER(NULL);
 
@@ -2506,10 +2507,18 @@ perr_t PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t 
         }
    
     } // if lookup_value != NULL
-    else {
-        printf("==PDC_SERVER[%d]: add tag target %" PRIu64 " not found!\n", pdc_server_rank_g, obj_id);
-        ret_value = FAIL;
-        out->ret = -1;
+    else { // look for containers
+        cont_lookup_value = hash_table_lookup(container_hash_table_g, &hash_key);
+        if (cont_lookup_value != NULL) {
+            PDC_add_kvtag_to_list(&cont_lookup_value->kvtag_list_head, &in->kvtag);
+            out->ret  = 1;
+      
+        } 
+        else {
+            printf("==PDC_SERVER[%d]: add tag target %" PRIu64 " not found!\n", pdc_server_rank_g, obj_id);
+            ret_value = FAIL;
+            out->ret = -1;
+        }
     }
 
 
@@ -2577,6 +2586,7 @@ perr_t PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_
     int unlocked;
 #endif
     pdc_hash_table_entry_head *lookup_value;
+    pdc_cont_hash_table_entry_t *cont_lookup_value;
 
     FUNC_ENTER(NULL);
 
@@ -2610,8 +2620,16 @@ perr_t PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_
         }
     } 
     else {
-        ret_value = FAIL;
-        out->ret = -1;
+
+        cont_lookup_value = hash_table_lookup(container_hash_table_g, &hash_key);
+        if (cont_lookup_value != NULL) {
+            PDC_get_kvtag_value_from_list(&cont_lookup_value->kvtag_list_head, in->key, out);
+            out->ret  = 1;
+        }
+        else {
+            ret_value = FAIL;
+            out->ret = -1;
+        }
     }
 
     if (ret_value != SUCCEED) {
