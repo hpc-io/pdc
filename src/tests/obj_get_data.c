@@ -34,7 +34,8 @@ int main(int argc, char **argv) {
     perr_t error_code;
     char cont_name[128], obj_name1[128], obj_name2[128];
 
-    int rank = 0, size = 1, i;
+    int rank = 0, size = 1;
+    unsigned i;
     int ret_value = 0;
 
     char *data = (char*)malloc(sizeof(double)*128);
@@ -87,7 +88,7 @@ int main(int argc, char **argv) {
     }
 
     memset(data, 0, 128 * sizeof(double));
-    error_code = PDCobj_get_data(obj1, &data, 128);
+    error_code = PDCobj_get_data(obj1, (void**)(&data), 128);
     if (error_code!= SUCCEED) {
         printf("Fail to get obj 1 data\n");
         ret_value = 1;
@@ -100,7 +101,7 @@ int main(int argc, char **argv) {
         }
     }
     memset(data, 0, 128 * sizeof(double));
-    error_code = PDCobj_get_data(obj1, &data, 128);
+    error_code = PDCobj_get_data(obj1, (void**)(&data), 128);
     if (error_code!= SUCCEED) {
         printf("Fail to get obj 1 data\n");
         ret_value = 1;
