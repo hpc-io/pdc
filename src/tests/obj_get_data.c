@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
 
     memset(data, 0, 128 * sizeof(double));
     error_code = PDCobj_get_data(obj1, &data, 128);
-    if (error_code!= SUCCESS) {
+    if (error_code!= SUCCEED) {
         printf("Fail to get obj 1 data\n");
         ret_value = 1;
     }
@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
     }
     memset(data, 0, 128 * sizeof(double));
     error_code = PDCobj_get_data(obj1, &data, 128);
-    if (error_code!= SUCCESS) {
+    if (error_code!= SUCCEED) {
         printf("Fail to get obj 1 data\n");
         ret_value = 1;
     }
