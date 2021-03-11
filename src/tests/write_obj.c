@@ -33,7 +33,7 @@ int main(int argc, char **argv)
     pdcid_t local_region, global_region;
     pdcid_t pdc, cont_prop, cont, obj_prop;
 
-    uint64_t *offset; 
+    uint64_t *offset, *local_offset; 
     uint64_t *mysize; 
     int i, j;
     char *mydata, *obj_data;
@@ -139,8 +139,11 @@ int main(int argc, char **argv)
     PDCprop_set_obj_tags(    obj_prop, "tag0=1");
 
     // Create a object
-    //global_obj = PDCobj_create_mpi(cont, obj_name, obj_prop, 0, comm);
+#ifdef ENABLE_MPI
+    global_obj = PDCobj_create_mpi(cont, obj_name, obj_prop, 0, comm);
+#else
     global_obj = PDCobj_create(cont, obj_name, obj_prop);
+#endif
 
     if (global_obj <= 0) {
         printf("Error creating an object [%s], exit...\n", obj_name);
@@ -148,12 +151,14 @@ int main(int argc, char **argv)
     }
 
     offset = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
+    local_offset = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
     mysize = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
     offset[0] = rank * my_data_size;
+    local_offset[0] = 0;
     mysize[0] = my_data_size;
     printf("rank %d offset = %lu, length = %lu, unit size = %ld\n", rank, offset[0], mysize[0], type_size);
 
-    local_region  = PDCregion_create(ndim, offset, mysize);
+    local_region  = PDCregion_create(ndim, local_offset, mysize);
     global_region = PDCregion_create(ndim, offset, mysize);
 
     for (i = 0; i < (int) my_data_size; i++) {
@@ -166,23 +171,27 @@ int main(int argc, char **argv)
         printf("PDCbuf_obj_map failed\n");
         ret_value = 1;
     }
+    /* fprintf(stderr, "rank %d done PDCbuf_obj_map\n", rank); */
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     gettimeofday(&pdc_timer_start, 0);
-    ret = PDCreg_obtain_lock(global_obj, local_region, PDC_WRITE, PDC_BLOCK);
+    ret = PDCreg_obtain_lock(global_obj, global_region, PDC_WRITE, PDC_BLOCK);
     if (ret != SUCCEED) {
         printf("Failed to obtain lock for region\n");
         ret_value = 1;
         goto done;
     }
+    /* fprintf(stderr, "rank %d done PDCreg_obtain_lock\n", rank); */
 
-    ret = PDCreg_release_lock(global_obj, local_region, PDC_WRITE);
+    ret = PDCreg_release_lock(global_obj, global_region, PDC_WRITE);
     if (ret != SUCCEED) {
         printf("Failed to release lock for region\n");
         ret_value = 1;
         goto done;
     }
+
+    /* fprintf(stderr, "rank %d done PDCreg_release_lock\n", rank); */
 
     ret = PDCbuf_obj_unmap(global_obj, global_region);
     if(ret != SUCCEED) {
@@ -190,6 +199,7 @@ int main(int argc, char **argv)
         ret_value = 1;
     }
 
+    /* fprintf(stderr, "rank %d done PDCbuf_obj_unmap\n", rank); */
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -200,6 +210,12 @@ int main(int argc, char **argv)
         printf("Time to lock and release data with %d ranks: %.6f\n", size, write_time);
         fflush(stdout);
     }
+
+    free(offset);
+    free(local_offset);
+    free(mysize);
+    free(obj_data);
+    free(mydata);
 done:
     if(PDCobj_close(global_obj) < 0) {
         printf("fail to close global obj\n");
