@@ -371,10 +371,10 @@ endif()
 #-----------------------------------------------------------------------------
 # Build doxygen documentation.
 #-----------------------------------------------------------------------------
-option(BUILD_DOCUMENTATION "Build documentation." OFF)
-if(BUILD_DOCUMENTATION)
-  add_subdirectory(doc/doxygen)
-endif()
+# option(BUILD_DOCUMENTATION "Build documentation." OFF)
+# if(BUILD_DOCUMENTATION)
+#   add_subdirectory(doc/doxygen)
+# endif()
 
 #-----------------------------------------------------------------------------
 # Configure the config.cmake file for the build directory
