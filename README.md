@@ -1,8 +1,14 @@
-## Installation for PDC
-This instruction is for installing PDC on Linux and Cray machines. Make sure you have GCC version at least 7 and MPI installed before you proceed.
-For MPI, the recommended version is MPICH. Follow the procedures in https://www.mpich.org/static/downloads/3.4.1/mpich-3.4.1-installguide.pdf
-PDC depends on libfabric and mercury. We are going to install libfabric, mercury, and PDC step by step.
-Make sure you record the environmental variables (lines that contains the export commands). They are needed for running PDC and make the libraries again.
+## Proactive Data Containers (PDC)
+Proactive Data Containers (PDC) provides an object-centric API and a runtime system with a set of services that make intelligent data placement decisions in the memory and storage hierarchy and provide scalable metadata operations. Using object-centric abstractions to represent data that moves in the high-performance computing (HPC) memory and storage subsystems, PDC revolutionizes how scientific data is stored and accessed. PDC manages extensive metadata describing data objects, which allows finding desired data efficiently.
+
+PDC API, data types, and developer notes are available in docs/readme.md. 
+
+## Installation 
+The following instructions are for installing PDC on Linux and Cray machines. 
+GCC version 7 or newer and a version of MPI are needed to install PDC. 
+Current PDC tests have been verified with MPICH. To install MPICH, follow the documentation in https://www.mpich.org/static/downloads/3.4.1/mpich-3.4.1-installguide.pdf
+PDC also depends on libfabric and Mercury. We provide detailed instructions for installing libfabric, Mercury, and PDC below.
+Make sure to record the environmental variables (lines that contains the "export" commands). They are needed for running PDC and to use the libraries again.
 # Install libfabric
 ```
 0. wget https://github.com/ofiwg/libfabric/archive/v1.11.2.tar.gz
@@ -17,8 +23,8 @@ Make sure you record the environmental variables (lines that contains the export
 9. export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$LD_LIBRARY_PATH"
 10. export PATH="$LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$PATH"
 ```
-# Install mercury
-Make sure the ctest passes. Otherwise PDC will not work.
+# Install Mercury
+Make sure the ctest passes. PDC may not work without passing all the tests of Mercury.
 Step 2 is not required. It is a stable commit I am using when I write this instruction. You may skip it if you believe the current master branch of mercury works.
 ```
 0. git clone https://github.com/mercury-hpc/mercury.git
