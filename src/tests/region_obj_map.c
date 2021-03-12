@@ -45,8 +45,9 @@ int main(int argc, char **argv) {
     int rank = 0, size = 1, i;
     int ret_value = 0;
 
-    uint64_t offset[3], offset_length[3];
+    uint64_t offset[3], offset_length[3], local_offset[1];
     uint64_t dims[1];
+    local_offset[0] = 0;
     offset[0] = 0;
     offset[1] = 2;
     offset[2] = 5;
@@ -142,13 +143,13 @@ int main(int argc, char **argv) {
         data[i] = -i;
     }
 
-    ret = PDCreg_obtain_lock(obj1, reg, PDC_WRITE, PDC_BLOCK);
+    ret = PDCreg_obtain_lock(obj1, reg_global, PDC_WRITE, PDC_BLOCK);
     if(ret != SUCCEED) {
         printf("PDCreg_obtain_lock failed\n");
         exit(-1);
     }
 
-    ret = PDCreg_release_lock(obj1, reg, PDC_WRITE);
+    ret = PDCreg_release_lock(obj1, reg_global, PDC_WRITE);
     if(ret != SUCCEED) {
         printf("PDCreg_release_lock failed\n");
         ret_value = 1;
@@ -160,7 +161,7 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    reg = PDCregion_create(1, offset, offset_length);
+    reg = PDCregion_create(1, local_offset, offset_length);
     reg_global = PDCregion_create(1, offset, offset_length);
     ret = PDCbuf_obj_map(data_read, PDC_INT, reg, obj1, reg_global);
     if(ret != SUCCEED) {
@@ -168,7 +169,7 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    ret = PDCreg_obtain_lock(obj1, reg, PDC_READ, PDC_BLOCK);
+    ret = PDCreg_obtain_lock(obj1, reg_global, PDC_READ, PDC_BLOCK);
     if(ret != SUCCEED) {
         printf("PDCreg_obtain_lock failed\n");
         ret_value = 1;
@@ -176,7 +177,7 @@ int main(int argc, char **argv) {
 
 
 
-    ret = PDCreg_release_lock(obj1, reg, PDC_READ);
+    ret = PDCreg_release_lock(obj1, reg_global, PDC_READ);
     if(ret != SUCCEED) {
         printf("PDCreg_release_lock failed\n");
         ret_value = 1;
@@ -194,6 +195,20 @@ int main(int argc, char **argv) {
             ret_value = 1;
             break;
         }
+    }
+
+    if(PDCregion_close(reg) < 0) {
+        printf("fail to close local region\n");
+        ret_value = 1;
+    } else {
+        printf("successfully local region\n");
+    }
+
+    if(PDCregion_close(reg_global) < 0) {
+        printf("fail to close global region\n");
+        ret_value = 1;
+    } else {
+        printf("successfully global region\n");
     }
 
 

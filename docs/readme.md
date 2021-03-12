@@ -278,7 +278,7 @@
       + remote_reg: Remote region ID
     - Output:
       + Region ID
-    - Create a region with ndims offset/length pairs
+    - Create a region with ndims offset/length pairs. At this stage of PDC development, the buffer has to be filled if you are performing PDC_WRITE with lock and release functions.
     - For developers: see pdc_region.c. Need to use PDC_get_kvtag to submit RPCs to the servers for metadata update.
   + perr_t PDCbuf_obj_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id)
     - Input:
@@ -291,7 +291,7 @@
   + perr_t PDCreg_obtain_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type, pdc_lock_mode_t lock_mode)
     - Input:
       + obj_id: local object ID
-      + reg_id: local region ID
+      + reg_id: remote region ID
       + access_type: [PDC access type](#access-type)
       + lock_mode:  PDC_BLOCK or PDC_NOBLOCK
     - Output:
@@ -301,11 +301,11 @@
   + perr_t PDCreg_release_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type)
     - Input:
       + obj_id: local object ID
-      + reg_id: local region ID
+      + reg_id: remote region ID
       + access_type: [PDC access type](#access-type)
     - Output:
-      + error code, SUCCEED or FAIL.
-    - Release the lock to access a region in an object.
+      + error code, SUCCESS or FAIL.
+    - Release the lock to access a region in an object. PDC_READ data is available after this lock release.
     - For developers: see pdc_region.c.
 ## PDC property APIs
   + pdcid_t PDCprop_create(pdc_prop_type_t type, pdcid_t pdcid)

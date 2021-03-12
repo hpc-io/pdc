@@ -33,7 +33,7 @@ int main(int argc, char **argv)
     pdcid_t local_region, global_region;
     pdcid_t pdc, cont_prop, cont, obj_prop;
 
-    uint64_t *offset; 
+    uint64_t *offset, *local_offset; 
     uint64_t *mysize; 
     int i, j;
     char *mydata, *obj_data;
@@ -61,7 +61,7 @@ int main(int argc, char **argv)
         return ret_value;
     }
 
-    sprintf(obj_name, "%s", argv[1],rank);
+    sprintf(obj_name, "%s", argv[1]);
 
     size_MB = atoi(argv[2]);
 
@@ -149,11 +149,14 @@ int main(int argc, char **argv)
 
     offset = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
     mysize = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
+    local_offset = (uint64_t*)malloc(sizeof(uint64_t) * ndim);
+
     offset[0] = rank * my_data_size;
+    local_offset[0] = 0;
     mysize[0] = my_data_size;
     printf("rank %d offset = %lu, length = %lu, unit size = %ld\n", rank, offset[0], mysize[0], type_size);
 
-    local_region  = PDCregion_create(ndim, offset, mysize);
+    local_region  = PDCregion_create(ndim, local_offset, mysize);
     global_region = PDCregion_create(ndim, offset, mysize);
 
     for (i = 0; i < (int) my_data_size; i++) {
@@ -170,14 +173,14 @@ int main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     gettimeofday(&pdc_timer_start, 0);
-    ret = PDCreg_obtain_lock(global_obj, local_region, PDC_WRITE, PDC_BLOCK);
+    ret = PDCreg_obtain_lock(global_obj, global_region, PDC_WRITE, PDC_BLOCK);
     if (ret != SUCCEED) {
         printf("Failed to obtain lock for region\n");
         ret_value = 1;
         goto done;
     }
 
-    ret = PDCreg_release_lock(global_obj, local_region, PDC_WRITE);
+    ret = PDCreg_release_lock(global_obj, global_region, PDC_WRITE);
     if (ret != SUCCEED) {
         printf("Failed to release lock for region\n");
         ret_value = 1;
@@ -227,6 +230,12 @@ done:
         printf("fail to close PDC\n");
         ret_value = 1;
     }
+    free(obj_data);
+    free(mydata);
+    free(offset);
+    free(local_offset);
+    free(mysize);
+
 #ifdef ENABLE_MPI
      MPI_Finalize();
 #endif
