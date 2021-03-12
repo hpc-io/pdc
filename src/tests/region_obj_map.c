@@ -149,6 +149,11 @@ int main(int argc, char **argv) {
         exit(-1);
     }
 
+    for ( i = 0; i < BUF_LEN; ++i ) {
+        data[i] = -i;
+    }
+
+
     ret = PDCreg_release_lock(obj1, reg_global, PDC_WRITE);
     if(ret != SUCCEED) {
         printf("PDCreg_release_lock failed\n");
