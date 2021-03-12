@@ -61,14 +61,14 @@
       + cont_name: the name of container used for PDCcont_create.
       + pdc: PDC class ID returned from PDCinit.
     - Output:
-      + error code. FAIL OR SUCCESS
+      + error code. FAIL OR SUCCEED
     - Open a container. Must make sure a container named cont_name is properly created (registered by PDCcont_create at remote servers).
     - For developers: currently implemented in pdc_cont.c. This function will make sure the metadata for a container is returned from servers. For collective operations, rank 0 is going to broadcast this metadata ID to the rest of processes. A struct _pdc_cont_info is created locally for future reference.
   + perr_t PDCcont_close(pdcid_t id)
     - Input: 
       + container ID, returned from PDCcont_create.
     - Output: 
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Correspond to PDCcont_open. Must be called only once when a container is no longer used in the future.
     - For developers: currently implemented in pdc_cont.c. The reference counter of a container is decremented. When the counter reaches zero, the memory of the container can be freed later.
   + struct pdc_cont_info *PDCcont_get_info(const char *cont_name)
@@ -82,7 +82,7 @@
     - Input:
       + cont_id: container ID, returned from PDCcont_create.
     - Output: 
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Make a PDC container persist.
     - For developers, see pdc_cont.c. Set the container life field PDC_PERSIST.
   + perr_t PDCprop_set_cont_lifetime(pdcid_t cont_prop, pdc_lifetime_t cont_lifetime)
@@ -90,7 +90,7 @@
       + cont_prop: Container property pdc_id
       + cont_lifetime: See [container life time](#container-life-time)
     - Output: 
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Set container life time for a property.
     - For developers, see pdc_cont.c.
   + pdcid_t PDCcont_get_id(const char *cont_name, pdcid_t pdc_id)
@@ -105,7 +105,7 @@
     - Input:
       + cont_id: container ID, returned from PDCcont_create.
     - Output: 
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Deleta a container
     - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata update.
   + perr_t PDCcont_put_tag(pdcid_t cont_id, char *tag_name, void *tag_value, psize_t value_size)
@@ -115,7 +115,7 @@
       + tag_value: Value to be written under the tag
       + value_size: Number of bytes for the tag_value (tag_size may be more informative)
     - Output: 
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Record a tag_value under the name tag_name for the container referenced by cont_id.
     - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata update.
   + perr_t PDCcont_get_tag(pdcid_t cont_id, char *tag_name, void **tag_value, psize_t *value_size)
@@ -125,7 +125,7 @@
       + value_size: Number of bytes for the tag_value (tag_size may be more informative)
     - Output:
       + tag_value: Pointer to the value to be read under the tag
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Retrieve a tag value to the memory space pointed by the tag_value under the name tag_name for the container referenced by cont_id.
     - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata retrival.
   + perr_t PDCcont_del_tag(pdcid_t cont_id, char *tag_name)
@@ -133,7 +133,7 @@
       + cont_id: Container ID, returned from PDCcont_create.
       + tag_name: Name of the tag
     - Output: 
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Delete a tag for a container by name
     - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata update.
   + perr_t PDCcont_put_objids(pdcid_t cont_id, int nobj, pdcid_t *obj_ids)
@@ -142,7 +142,7 @@
       + nobj: Number of objects to be written
       + obj_ids: Pointers to the object IDs
     - Output: 
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Put an array of objects to a container.
     - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata update.
   + perr_t PDCcont_get_objids(pdcid_t cont_id ATTRIBUTE(unused), int *nobj ATTRIBUTE(unused), pdcid_t **obj_ids ATTRIBUTE(unused) )
@@ -153,7 +153,7 @@
       + nobj: Number of objects to be deleted
       + obj_ids: Pointers to the object IDs
     - Output: 
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Delete an array of objects to a container.
     - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata update.
   ## PDC object APIs
@@ -188,7 +188,7 @@
     - Input:
       + obj_id: Local object ID to be closed.
     - Output:
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Close an object. Must do this after open an object.
     - For developers: see pdc_obj.c. Dereference an object by reducing its reference counter.
   + struct pdc_obj_info *PDCobj_get_info(pdcid_t obj)
@@ -214,14 +214,14 @@
       + size: Size of data
     - Output:
       + data: Pointer to data to be filled
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Read data from an object.
     - For developers: see pdc_client_connect.c. Use PDC_obj_get_info to retrieve name. Then forward name to servers to fulfill requests.
   + perr_t PDCobj_del_data(pdcid_t obj_id)
     - Input:
       + obj_id: Local object ID
     - Output:
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Delete data from an object.
     - For developers: see pdc_client_connect.c. Use PDC_obj_get_info to retrieve name. Then forward name to servers to fulfill requests.
   + perr_t PDCobj_put_tag(pdcid_t obj_id, char *tag_name, void *tag_value, psize_t value_size)
@@ -231,7 +231,7 @@
       + tag_value: Value of the tag
       + value_size: Number of bytes for the tag_value
     - Output:
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Set the tag value for a tag
     - For developers: see pdc_client_connect.c. Need to use PDC_add_kvtag to submit RPCs to the servers for metadata update.
   + perr_t PDCobj_get_tag(pdcid_t obj_id, char *tag_name, void **tag_value, psize_t *value_size)
@@ -241,7 +241,7 @@
     - Output:
       + tag_value: Value of the tag
       + value_size: Number of bytes for the tag_value
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Get the tag value for a tag
     - For developers: see pdc_client_connect.c. Need to use PDC_get_kvtag to submit RPCs to the servers for metadata update.
   + perr_t PDCobj_del_tag(pdcid_t obj_id, char *tag_name)
@@ -249,7 +249,7 @@
       + obj_id: Local object ID
       + tag_name: Name of the tag to be entered
     - Output:
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Delete a tag.
     - For developers: see pdc_client_connect.c. Need to use PDCtag_delete to submit RPCs to the servers for metadata update.
   ## PDC region APIs
@@ -285,7 +285,7 @@
       + remote_obj_id: remote object ID
       + remote_reg_id: remote region ID
     - Output:
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Unmap a region to the user buffer. PDCbuf_obj_map must be called previously.
     - For developers: see pdc_region.c.
   + perr_t PDCreg_obtain_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type, pdc_lock_mode_t lock_mode)
@@ -295,7 +295,7 @@
       + access_type: [PDC access type](#access-type)
       + lock_mode:  PDC_BLOCK or PDC_NOBLOCK
     - Output:
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Obtain the lock to access a region in an object.
     - For developers: see pdc_region.c.
   + perr_t PDCreg_release_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type)
@@ -326,7 +326,7 @@
     - Input:
       + id: PDC property ID
     - Output:
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Close a PDC property after openning.
     - For developers: see pdc_prop.c. Decrease reference counter for this property.
   + perr_t PDCprop_set_obj_user_id(pdcid_t obj_prop, uint32_t user_id)
@@ -334,7 +334,7 @@
       + obj_prop: PDC property ID (has to be an object)
       + user_id: PDC user ID
     - Output:
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Set the user ID of an object.
     - For developers: see pdc_obj.c. Update the user_id field under [object property](#object-property). See developer's note for more details about this structure.
   + perr_t PDCprop_set_obj_data_loc(pdcid_t obj_prop, char *loc) 
@@ -342,7 +342,7 @@
       + obj_prop: PDC property ID (has to be an object)
       + loc: location
     - Output:
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Set the location of an object.
     - For developers: see pdc_obj.c. Update the data_loc field under [object property](#object-property). See developer's note for more details about this structure.
   + perr_t PDCprop_set_obj_app_name(pdcid_t obj_prop, char *app_name)
@@ -350,7 +350,7 @@
       + obj_prop: PDC property ID (has to be an object)
       + app_name: application name
     - Output:
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Set the application name of an object.
     - For developers: see pdc_obj.c. Update the app_name field under [object property](#object-property). See developer's note for more details about this structure.
   + perr_t PDCprop_set_obj_time_step(pdcid_t obj_prop, uint32_t time_step)
@@ -358,7 +358,7 @@
       + obj_prop: PDC property ID (has to be an object)
       + time_step: time step
     - Output:
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Set the time step of an object.
     - For developers: see pdc_obj.c. Update the time_step field under [object property](#object-property). See developer's note for more details about this structure.
   + perr_t PDCprop_set_obj_tags(pdcid_t obj_prop, char *tags)
@@ -366,7 +366,7 @@
       + obj_prop: PDC property ID (has to be an object)
       + tags: tags
     - Output:
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Set the tags of an object.
     - For developers: see pdc_obj.c. Update the tags field under [object property](#object-property). See developer's note for more details about this structure. 
   + perr_t PDCprop_set_obj_dims(pdcid_t obj_prop, PDC_int_t ndim, uint64_t *dims)
@@ -375,7 +375,7 @@
       + ndim: number of dimensions
       + dims: array of dimensions
     - Output:
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Set the dimensions of an object.
     - For developers: see pdc_obj.c. Update the obj_prop_pub->ndim and obj_prop_pub->dims fields under [object property public](#object-property-public). See developer's note for more details about this structure.
   + perr_t PDCprop_set_obj_type(pdcid_t obj_prop, pdc_var_type_t type)
@@ -383,7 +383,7 @@
       + obj_prop: PDC property ID (has to be an object)
       + type: one of PDC basic types, see [PDC basic types](#basic-types)
     - Output:
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Set the type of an object.
     - For developers: see pdc_obj.c. Update the obj_prop_pub->type field under [object property public](#object-property-public). See developer's note for more details about this structure.
   + perr_t PDCprop_set_obj_buf(pdcid_t obj_prop, void *buf)
@@ -391,7 +391,7 @@
       + obj_prop: PDC property ID (has to be an object)
       + buf: user memory buffer
     - Output:
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Set the user memory buffer of an object.
     - For developers: see pdc_obj.c. Update the buf field under [object property public](#object-property-public). See developer's note for more details about this structure.
   + pdcid_t PDCprop_obj_dup(pdcid_t prop_id)
@@ -421,7 +421,7 @@
     - Input:
       + root: root of queries to be freed
     - Output:
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Free all queries from a root.
     - For developers, see pdc_client_server_common.c. Recursively free left and right branches.
   + pdc_query_t *PDCquery_and(pdc_query_t *q1, pdc_query_t *q2)
@@ -445,7 +445,7 @@
       + query: Query to select the region
       + obj_region: An object region
     - Ouput:
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Select a region for a PDC query.
     - For developers, see pdc_query.c. Set the region pointer of the query structure to the obj_region pointer.
   + perr_t PDCquery_get_selection(pdc_query_t *query, pdc_selection_t *sel)
@@ -453,7 +453,7 @@
       + query: Query to get the selection
     - Ouput:
       + sel: PDC selection defined as the following. This selection describes the query shape, see [PDC selection structure](#selection-structure)
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Get the selection information of a PDC query.
     - For developers, see pdc_query.c and PDC_send_data_query in pdc_client_connect.c. Copy the selection structure received from servers to the sel pointer.
   + perr_t PDCquery_get_nhits(pdc_query_t *query, uint64_t *n)
@@ -461,7 +461,7 @@
       + query: Query to calculate the number of hits
     - Ouput:
       + n: number of hits
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Get the number of hits for a PDC query
     - For developers, see pdc_query.c and PDC_send_data_query in pdc_client_connect.c. Copy the selection structure received from servers to the sel pointer.
   + perr_t PDCquery_get_data(pdcid_t obj_id, pdc_selection_t *sel, void *obj_data)
@@ -476,7 +476,7 @@
     - Input:
       + obj_id: The object for query
     - Output:
-      + error code, SUCCESS or FAIL.
+      + error code, SUCCEED or FAIL.
     - Retrieve histogram from a query for a PDC object.
     - For developers, see pdc_query.c. This is a local operation that does not really do anything.
   + void PDCselection_free(pdc_selection_t *sel)
