@@ -987,7 +987,6 @@ perr_t PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata
             cont_entry = pair.value;
 
             if (cont_entry->cont_id == target_obj_id) {
-                uint32_t hash_key = PDC_get_hash_by_name(elt->obj_name);
                 hash_table_remove(metadata_hash_table_g, &pair.key);
                 out->ret  = 1;
                 ret_value = SUCCEED;
