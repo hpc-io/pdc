@@ -19,6 +19,8 @@
     - [Query operators](#query-operators)
     - [Query structures](#query-structures)
     - [Selection structure](#selection-structure)
+  + [PDC examples](#pdc-examples)
+    - [VPIC I/O and BDCats](#vipic-i/o-and-bdcats)
   + [Developers notes](#developer-notes)
 # PDC user APIs
   ## PDC general APIs
@@ -760,6 +762,17 @@
       uint64_t coords_alloc;
   } pdc_selection_t;
   ```
+# PDC Examples
+  + Examples for PDC programs can be found in https://github.com/hpc-io/pdc/tree/stable/src/tests.
+  ## VPIC I/O and BDCats
+      + To run: Go to the bin folder first after make. Then type ./run_multiple_test.sh ./vpicio ./bdcats
+      + VPIC I/O: 
+        - https://github.com/hpc-io/pdc/blob/stable/src/tests/vpicio.c
+        - VPIC I/O is an example for writing multiple objects using PDC.
+        - We collectively create containers and objects. PDC region map is used to write data to individual objects.
+      + BDCats: 
+        - https://github.com/hpc-io/pdc/blob/stable/src/tests/bdcats.c
+        - BDcats is an example for reading data written by VIPIC I/O.
 # Developers notes
   + This note is for developers. It helps developers to understand the code structure of PDC code as fast as possible.
   + PDC internal data structure
