@@ -20,7 +20,7 @@
     - [Query structures](#query-structures)
     - [Selection structure](#selection-structure)
   + [PDC examples](#pdc-examples)
-    - [VPIC I/O and BDCats](#vipic-and-bdcats)
+    - [VPIC I/O and BDCats](#vpic-and-bdcats)
   + [Developers notes](#developer-notes)
 # PDC user APIs
   ## PDC general APIs
