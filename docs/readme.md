@@ -119,6 +119,7 @@
     - Output: 
       + error code, SUCCEED or FAIL.
     - Deleta a container
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/cont_del.c
     - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata update.
   + perr_t PDCcont_put_tag(pdcid_t cont_id, char *tag_name, void *tag_value, psize_t value_size)
     - Input:
@@ -149,6 +150,7 @@
     - Output: 
       + error code, SUCCEED or FAIL.
     - Delete a tag for a container by name
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/cont_tags.c
     - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata update.
   ## PDC object APIs
   + pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id)
@@ -170,6 +172,7 @@
     - Output: 
       + Local object ID
     - Create a PDC object at the rank_id in the communicator comm. This function is a colllective operation.
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/create_obj_coll.c
     - For developers: see pdc_mpi.c. If rank_id equals local process rank, then a local object is created. Otherwise we create a global object. The object metadata ID is broadcasted to all processes if a global object is created using MPI_Bcast.
   + pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc)
     - Input:
@@ -223,6 +226,7 @@
     - Output:
       + error code, SUCCEED or FAIL.
     - Delete data from an object.
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/obj_del.c
     - For developers: see pdc_client_connect.c. Use PDC_obj_get_info to retrieve name. Then forward name to servers to fulfill requests.
   + perr_t PDCobj_put_tag(pdcid_t obj_id, char *tag_name, void *tag_value, psize_t value_size)
     - Input:
