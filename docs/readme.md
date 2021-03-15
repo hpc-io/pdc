@@ -26,6 +26,8 @@ developers of PDC.
     - [Query structures](#query-structures)
     - [Selection structure](#selection-structure)
   + [PDC examples](#pdc-examples)
+    - [Simple I-O](#simple-I-O)
+    - [I-O with region mapping](#I-O-with-region-mapping)
     - [VPIC I/O and BD-CATS I/O](#vpic-and-bdcats)
   + [Developers notes](#developer-notes)
 # PDC user APIs
@@ -782,6 +784,15 @@ developers of PDC.
   ```
 # PDC Examples
   + Examples for PDC programs can be found in https://github.com/hpc-io/pdc/tree/stable/src/tests.
+  ## Simple I-O
+  + Functions PDCobj_put_data and PDCobj_get_data are the easist way to write/read data from/to a contiguous memory buffer.
+  + An example can be found in https://github.com/hpc-io/pdc/blob/stable/src/tests/obj_get_data.c
+  + This example writes different size of data to two objects. It then read back the data to check whether the data is correct or not.
+  + To run the test, use command "./run_test ./obj_get_data".
+  ## I-O with region mapping.
+  + The simple I/O can only handles 1D data that is contiguous. PDC supports data dimension up to 3. Simple I/O functions PDCobj_put_data and PDCobj_get_data is a wrapper for object create, region mapping, I/O, and object close. The examples in this section breakdowns the wrapper, which allows more flexibility.
+  + Check https://github.com/hpc-io/pdc/blob/stable/src/tests/region_obj_map_2D.c and https://github.com/hpc-io/pdc/blob/stable/src/tests/region_obj_map_3D.c for how to write 2D and 3D data.
+  + Generally, PDC perform I/O with the PDCbuf_obj_map, PDCreg_obtain_lock, PDCreg_release_lock, and PDCbuf_obj_unmap. The logic is similar to HDF5 dataspace and memory space. In PDC language, they are remote region and local region. The lock functions for remote regions allow PDC servers to handle concurrent requests from different clients without undefined behaviors.
   ## VPIC-IO and BD-CATS-IO
   + VPIC is a particle simulation code developed at Los Alamos National Laboratory (LANL). 
     VPIC-IO benchmark is an I/O kernel representing the I/O pattern of a space weather simulation
