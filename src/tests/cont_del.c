@@ -31,6 +31,7 @@ int main(int argc, char **argv)
 {
     pdcid_t pdc, create_prop, cont;
     int rank = 0, size = 1;
+    perr_t ret;
 
     int ret_value = 0;
     char cont_name[128];
@@ -59,6 +60,11 @@ int main(int argc, char **argv)
         printf("Create a container c1\n");
     } else {
         printf("Fail to create container @ line  %d!\n", __LINE__);
+        ret_value = 1;
+    }
+    ret = PDCcont_del(cont);
+    if (ret != SUCCEED) {
+        printf("Fail to delete container @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
     // close a container
