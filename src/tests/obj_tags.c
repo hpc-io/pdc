@@ -181,6 +181,28 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
+    ret = PDCobj_del_tag(obj1, "some tag");
+    if ( ret != SUCCEED ) {
+        printf("Del tag failed at object 1\n");
+        ret_value = 1;
+    }
+    ret = PDCobj_del_tag(obj1, "some tag 2");
+    if ( ret != SUCCEED ) {
+        printf("Del tag failed at object 1\n");
+        ret_value = 1;
+    }
+
+    ret = PDCobj_del_tag(obj2, "some tag");
+    if ( ret != SUCCEED ) {
+        printf("Del tag failed at object 2\n");
+        ret_value = 1;
+    }
+    ret = PDCobj_del_tag(obj2, "some tag 2");
+    if ( ret != SUCCEED ) {
+        printf("Del tag failed at object 2\n");
+        ret_value = 1;
+    }
+
 
     // close object
     if(PDCobj_close(obj1) < 0) {

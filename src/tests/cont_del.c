@@ -67,7 +67,6 @@ int main(int argc, char **argv)
         printf("Fail to delete container @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
-/*
     // close a container
     if(PDCcont_close(cont) < 0) {
         printf("fail to close container c1\n");
@@ -75,7 +74,7 @@ int main(int argc, char **argv)
     } else {
         printf("successfully close container c1\n");
     }
-*/
+
     // close a container property
     if(PDCprop_close(create_prop) < 0) {
         printf("Fail to close property @ line %d\n", __LINE__);
