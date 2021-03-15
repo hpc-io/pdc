@@ -6070,13 +6070,17 @@ perr_t
 PDCcont_del(pdcid_t cont_id)
 {
     perr_t ret_value = SUCCEED;
+    uint64_t meta_id;
+    struct _pdc_cont_info *cont_prop;
 
     FUNC_ENTER(NULL);
 
-    ret_value = PDCobj_del_data(cont_id);
+    cont_prop = PDC_cont_get_info(cont_id);
+    meta_id = cont_prop->cont_info_pub->meta_id;
+
+    ret_value = PDC_Client_delete_metadata_by_id(meta_id);
     if (ret_value != SUCCEED)
-        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error with PDC_Client_del_objects_to_container",
-                pdc_client_mpi_rank_g);
+        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error with PDCcont_del", pdc_client_mpi_rank_g);
 
 done:
     fflush(stdout);

@@ -2598,7 +2598,7 @@ region_read_transform_release (region_transform_and_lock_in_t *in, hg_handle_t h
                         size = in->transform_data_size;
                     else size = HG_Bulk_get_size(eltt2->local_bulk_handle);
                     if (size != HG_Bulk_get_size(remote_bulk_handle))
-                        PGOTO_ERROR(HG_OTHER_ERROR, "===PDC SERVER: %s - local and remote bulk size does not match");
+                        PGOTO_ERROR(HG_OTHER_ERROR, "===PDC SERVER: %s - local and remote bulk size does not match", __func__);
                         
                     hg_ret = HG_Bulk_transfer(hg_info->context, 
                                               obj_map_region_release_bulk_transfer_cb,

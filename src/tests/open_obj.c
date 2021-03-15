@@ -108,7 +108,7 @@ int main(int argc, char **argv) {
         printf("Rank %d Fail to open object o2\n", rank);
         ret_value = 1;
     } else {
-        printf("Rank %d Open object o2\n");
+        printf("Rank %d Open object o2\n", rank);
     }
     // close object
     if(PDCobj_close(obj1) < 0) {
