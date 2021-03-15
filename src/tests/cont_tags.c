@@ -140,7 +140,7 @@ int main(int argc, char **argv) {
         printf("Wrong tag value at container 2, expected = [%s], get [%s]\n", tag_value2, tag_value_ret);
         ret_value = 1;
     }
-/*
+
     ret = PDCcont_del_tag(cont, "some tag");
     if ( ret != SUCCEED ) {
         printf("Del tag failed at container 1\n");
@@ -162,7 +162,7 @@ int main(int argc, char **argv) {
         printf("Del tag failed at container 2\n");
         ret_value = 1;
     }
-*/
+
     // close a container
     if(PDCcont_close(cont) < 0) {
         printf("fail to close container c1\n");
