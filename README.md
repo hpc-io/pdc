@@ -52,7 +52,7 @@ ctest contains both sequential and MPI tests for the PDC settings. These can be 
 ```
 0. git clone https://github.com/hpc-io/pdc.git
 1. cd pdc
-2. git checkout qiao_develop
+2. git checkout stable   // Use the qiao_develop branch for testing any features in develop
 3. cd src
 4. mkdir install
 5. cd install
