@@ -418,7 +418,7 @@ install(
 # CPack
 #-----------------------------------------------------------------------------
 if(NOT PDC_EXTERNALLY_CONFIGURED)
-  set(CPACK_PACKAGE_DESCRIPTION_FILE ${PDC_SOURCE_DIR}/README.md)
+# set(CPACK_PACKAGE_DESCRIPTION_FILE ${PDC_SOURCE_DIR}/README.md)
   set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Proactive Data Containers")
   set(CPACK_PACKAGE_NAME "PDC")
   set(CPACK_PACKAGE_VENDOR "LBNL / The HDF Group / ANL")
