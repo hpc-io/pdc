@@ -6181,7 +6181,7 @@ PDCcont_del_tag(pdcid_t cont_id, char *tag_name)
     FUNC_ENTER(NULL);
 
     //ret_value = PDCobj_del_tag(cont_id, tag_name);
-    ret_value = PDCtag_delete(obj_id, tag_name);
+    ret_value = PDCtag_delete(cont_id, tag_name);
     if (ret_value != SUCCEED)
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error with PDCcont_del_tag",
                 pdc_client_mpi_rank_g);
