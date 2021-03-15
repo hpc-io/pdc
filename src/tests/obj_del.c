@@ -89,6 +89,11 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
+    if (PDCcont_del(cont) != SUCCEED) {
+        printf("Fail to delete container @ line  %d!\n", __LINE__);
+        ret_value = 1;
+    }
+/*
     if (PDCobj_del_data(obj1) != SUCCEED) {
         printf("Fail to delete object @ line  %d!\n", __LINE__);
     }
@@ -96,6 +101,7 @@ int main(int argc, char **argv) {
     if (PDCobj_del_data(obj2) != SUCCEED) {
         printf("Fail to delete object @ line  %d!\n", __LINE__);
     }
+*/
     // close first object
     if(PDCobj_close(obj1) < 0) {
         printf("fail to close object o1\n");
