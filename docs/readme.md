@@ -30,6 +30,7 @@
     - Output: 
       + PDC class ID used for future reference.
     - All PDC client applications must call PDCinit before using it. This function will setup connections from clients to servers. A valid PDC server must be running.
+    - Test: https://github.com/hpc-io/pdc/blob/stable/src/tests/pdc_init.c
     - For developers: currently implemented in pdc.c.
   + perr_t PDCclose(pdcid_t pdcid)
     - Input: 
@@ -37,11 +38,13 @@
     - Ouput: 
       + SUCCEED if no error, otherwise FAIL.
     - This is a proper way to end a client-server connection for PDC. A PDCinit must correspond to one PDCclose.
+    - Test: https://github.com/hpc-io/pdc/blob/stable/src/tests/pdc_init.c
     - For developers: currently implemented in pdc.c.
   + perr_t PDC_Client_close_all_server()
     - Ouput: 
       + SUCCEED if no error, otherwise FAIL.
     - Close all PDC servers that running.
+    - Test: https://github.com/hpc-io/pdc/blob/stable/src/tests/close_server.c
     - For developers: see PDC_client_connect.c
   ## PDC container APIs
   + pdcid_t PDCcont_create(const char *cont_name, pdcid_t cont_prop_id)
@@ -50,12 +53,14 @@
       + cont_prop_id: property ID for inheriting a PDC property for container.
     - Output: pdc_id for future referencing of this container, returned from PDC servers.
     - Create a PDC container for future use. 
+    - Test: https://github.com/hpc-io/pdc/blob/stable/src/tests/create_cont.c
     - For developers: currently implemented in pdc_cont.c. This function will send a name to server and receive an container id. This function will allocate necessary memories and initialize properties for a container.
   + pdcid_t PDCcont_create_col(const char *cont_name, pdcid_t cont_prop_id)
     - Input: 
       + cont_name: the name to be assigned to a container. e.g "c1", "c2"
       + cont_prop_id: property ID for inheriting a PDC property for container.
     - Output: pdc_id for future referencing.
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/create_cont_coll.c
     - Exactly the same as PDCcont_create, except all processes must call this function collectively. Create a PDC container for future use collectively.
     - For developers: currently implemented in pdc_cont.c.
   + pdcid_t PDCcont_open(const char *cont_name, pdcid_t pdc)
@@ -65,6 +70,7 @@
     - Output:
       + error code. FAIL OR SUCCEED
     - Open a container. Must make sure a container named cont_name is properly created (registered by PDCcont_create at remote servers).
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/open_cont.c
     - For developers: currently implemented in pdc_cont.c. This function will make sure the metadata for a container is returned from servers. For collective operations, rank 0 is going to broadcast this metadata ID to the rest of processes. A struct _pdc_cont_info is created locally for future reference.
   + perr_t PDCcont_close(pdcid_t id)
     - Input: 
@@ -72,13 +78,15 @@
     - Output: 
       + error code, SUCCEED or FAIL.
     - Correspond to PDCcont_open. Must be called only once when a container is no longer used in the future.
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/create_cont.c
     - For developers: currently implemented in pdc_cont.c. The reference counter of a container is decremented. When the counter reaches zero, the memory of the container can be freed later.
   + struct pdc_cont_info *PDCcont_get_info(const char *cont_name)
      - Input: 
        + name of the container
      - Output: 
        + Pointer to a new structure that contains the container information [See container info](#container-info)
-     - Get container information
+     - Get container information.
+     - Tes: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/cont_info.c
      - For developers: See pdc_cont.c. Use name to search for pdc_id first by linked list lookup. Make a copy of the metadata to the newly malloced structure.
   + perr_t PDCcont_persist(pdcid_t cont_id)
     - Input:
@@ -94,6 +102,7 @@
     - Output: 
       + error code, SUCCEED or FAIL.
     - Set container life time for a property.
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/cont_life.c
     - For developers, see pdc_cont.c.
   + pdcid_t PDCcont_get_id(const char *cont_name, pdcid_t pdc_id)
     - Input:
@@ -102,6 +111,7 @@
     - Output: 
       + container ID
     - Get container ID by name. This function is similar to open.
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/cont_getid.c
     - For developers, see pdc_client_connect.c. It will query the servers for container information and create a container structure locally.
   + perr_t PDCcont_del(pdcid_t cont_id)
     - Input:
@@ -119,6 +129,7 @@
     - Output: 
       + error code, SUCCEED or FAIL.
     - Record a tag_value under the name tag_name for the container referenced by cont_id.
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/cont_tags.c
     - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata update.
   + perr_t PDCcont_get_tag(pdcid_t cont_id, char *tag_name, void **tag_value, psize_t *value_size)
     - Input:
@@ -129,6 +140,7 @@
       + tag_value: Pointer to the value to be read under the tag
       + error code, SUCCEED or FAIL.
     - Retrieve a tag value to the memory space pointed by the tag_value under the name tag_name for the container referenced by cont_id.
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/cont_tags.c
     - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata retrival.
   + perr_t PDCcont_del_tag(pdcid_t cont_id, char *tag_name)
     - Input:
@@ -137,26 +149,6 @@
     - Output: 
       + error code, SUCCEED or FAIL.
     - Delete a tag for a container by name
-    - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata update.
-  + perr_t PDCcont_put_objids(pdcid_t cont_id, int nobj, pdcid_t *obj_ids)
-    - Input:
-      + cont_id: Container ID, returned from PDCcont_create.
-      + nobj: Number of objects to be written
-      + obj_ids: Pointers to the object IDs
-    - Output: 
-      + error code, SUCCEED or FAIL.
-    - Put an array of objects to a container.
-    - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata update.
-  + perr_t PDCcont_get_objids(pdcid_t cont_id ATTRIBUTE(unused), int *nobj ATTRIBUTE(unused), pdcid_t **obj_ids ATTRIBUTE(unused) )
-     TODO:
-  + perr_t PDCcont_del_objids(pdcid_t cont_id, int nobj, pdcid_t *obj_ids)
-    - Input:
-      + cont_id: Container ID, returned from PDCcont_create.
-      + nobj: Number of objects to be deleted
-      + obj_ids: Pointers to the object IDs
-    - Output: 
-      + error code, SUCCEED or FAIL.
-    - Delete an array of objects to a container.
     - For developers: see pdc_client_connect.c. Need to send RPCs to servers for metadata update.
   ## PDC object APIs
   + pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id)
@@ -167,6 +159,7 @@
     - Output: 
       + Local object ID
     - Create a PDC object.
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/create_obj.c
     - For developers: see pdc_obj.c. This process need to send the name of the object to be created to the servers. Then it will receive an object ID. The object structure will inherit attributes from its container and  input object properties.
   + PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, int rank_id, MPI_Comm comm)
     - Input:
@@ -185,6 +178,7 @@
     - Output: 
       + Local object ID
     - Open a PDC ID created previously by name.
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/open_obj.c
     - For developers: see pdc_obj.c. Need to communicate with servers for metadata of the object.
   + perr_t PDCobj_close(pdcid_t obj_id)
     - Input:
@@ -192,6 +186,7 @@
     - Output:
       + error code, SUCCEED or FAIL.
     - Close an object. Must do this after open an object.
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/create_obj.c
     - For developers: see pdc_obj.c. Dereference an object by reducing its reference counter.
   + struct pdc_obj_info *PDCobj_get_info(pdcid_t obj)
     - Input:
@@ -199,6 +194,7 @@
     - Output:
       + object information see [object information](#object-info)
     - Get a pointer to a structure that describes the object metadata.
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/obj_info.c
     - For developers: see pdc_obj.c. Pull out local object metadata by ID.
   + pdcid_t PDCobj_put_data(const char *obj_name, void *data, uint64_t size, pdcid_t cont_id)
     - Input:
@@ -209,6 +205,7 @@
     - Output:
       + Local object ID created locally with the input name
     - Write data to an object.
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/obj_put_data.c
     - For developers: see pdc_client_connect.c. Nedd to send RPCs to servers for this request. (TODO: change return value to perr_t)
   + perr_t PDCobj_get_data(pdcid_t obj_id, void *data, uint64_t size)
     - Input:
@@ -218,6 +215,7 @@
       + data: Pointer to data to be filled
       + error code, SUCCEED or FAIL.
     - Read data from an object.
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/obj_get_data.c
     - For developers: see pdc_client_connect.c. Use PDC_obj_get_info to retrieve name. Then forward name to servers to fulfill requests.
   + perr_t PDCobj_del_data(pdcid_t obj_id)
     - Input:
@@ -235,6 +233,7 @@
     - Output:
       + error code, SUCCEED or FAIL.
     - Set the tag value for a tag
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/obj_tags.c
     - For developers: see pdc_client_connect.c. Need to use PDC_add_kvtag to submit RPCs to the servers for metadata update.
   + perr_t PDCobj_get_tag(pdcid_t obj_id, char *tag_name, void **tag_value, psize_t *value_size)
     - Input:
@@ -245,6 +244,7 @@
       + value_size: Number of bytes for the tag_value
       + error code, SUCCEED or FAIL.
     - Get the tag value for a tag
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/obj_tags.c
     - For developers: see pdc_client_connect.c. Need to use PDC_get_kvtag to submit RPCs to the servers for metadata update.
   + perr_t PDCobj_del_tag(pdcid_t obj_id, char *tag_name)
     - Input:
@@ -253,6 +253,7 @@
     - Output:
       + error code, SUCCEED or FAIL.
     - Delete a tag.
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/obj_tags.c
     - For developers: see pdc_client_connect.c. Need to use PDCtag_delete to submit RPCs to the servers for metadata update.
   ## PDC region APIs
   + pdcid_t PDCregion_create(psize_t ndims, uint64_t *offset, uint64_t *size)
@@ -263,6 +264,7 @@
     - Output:
       + Region ID
     - Create a region with ndims offset/length pairs
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/create_region.c
     - For developers: see pdc_region.c. Need to use PDC_get_kvtag to submit RPCs to the servers for metadata update.
   + perr_t PDCregion_close(pdcid_t region_id)
     - Input:
@@ -270,6 +272,7 @@
     - Output:
       + None
     - Close a PDC region
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/create_region.c
     - For developers: see pdc_region.c. Free offset and size arrays.
   + perr_t PDCbuf_obj_map(void *buf, pdc_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg)
     - Input:
@@ -281,6 +284,7 @@
     - Output:
       + Region ID
     - Create a region with ndims offset/length pairs. At this stage of PDC development, the buffer has to be filled if you are performing PDC_WRITE with lock and release functions.
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/region_obj_map.c
     - For developers: see pdc_region.c. Need to use PDC_get_kvtag to submit RPCs to the servers for metadata update.
   + perr_t PDCbuf_obj_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id)
     - Input:
@@ -289,6 +293,7 @@
     - Output:
       + error code, SUCCEED or FAIL.
     - Unmap a region to the user buffer. PDCbuf_obj_map must be called previously.
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/region_obj_map.c
     - For developers: see pdc_region.c.
   + perr_t PDCreg_obtain_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type, pdc_lock_mode_t lock_mode)
     - Input:
@@ -299,6 +304,7 @@
     - Output:
       + error code, SUCCEED or FAIL.
     - Obtain the lock to access a region in an object.
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/region_obj_map.c
     - For developers: see pdc_region.c.
   + perr_t PDCreg_release_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type)
     - Input:
@@ -308,6 +314,7 @@
     - Output:
       + error code, SUCCESS or FAIL.
     - Release the lock to access a region in an object. PDC_READ data is available after this lock release.
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/region_obj_map.c
     - For developers: see pdc_region.c.
 ## PDC property APIs
   + pdcid_t PDCprop_create(pdc_prop_type_t type, pdcid_t pdcid)
@@ -330,6 +337,7 @@
     - Output:
       + error code, SUCCEED or FAIL.
     - Close a PDC property after openning.
+    - Test: https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/create_prop.c
     - For developers: see pdc_prop.c. Decrease reference counter for this property.
   + perr_t PDCprop_set_obj_user_id(pdcid_t obj_prop, uint32_t user_id)
     - Input:
