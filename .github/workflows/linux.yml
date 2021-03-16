@@ -29,4 +29,4 @@ jobs:
 
       - name: Test PDC
         working-directory: ./src/build
-        run: ctest
+        run: ctest -L serial
