@@ -72,6 +72,11 @@ int main(int argc, char **argv)
 #endif
 
     numparticles = NPARTICLES;
+    if (argc == 2) {
+        numparticles = atoll(argv[1]);
+        if (rank == 0)
+            printf("Writing %" PRIu64 " number of particles with %d clients.\n", numparticles, size);
+    }
 
     x = (float *)malloc(numparticles*sizeof(float));
     y = (float *)malloc(numparticles*sizeof(float));

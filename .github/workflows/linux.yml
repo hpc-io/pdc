@@ -1,0 +1,32 @@
+name: linux 
+
+on:
+  # push:
+  #   branches: [ stable ]
+  pull_request:
+    branches: [ stable ]
+
+  # Allows to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  PDC:
+    runs-on: ubuntu-latest
+    # timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Dependencies
+        run: .github/workflows/dependencies-linux.sh
+
+      - name: Build PDC
+        working-directory: ./src
+        run: |
+          mkdir build && cd build
+          cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=mpicc
+          make -j2
+
+      - name: Test PDC
+        working-directory: ./src/build
+        run: ctest -L serial

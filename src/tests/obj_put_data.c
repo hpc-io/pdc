@@ -27,6 +27,8 @@
 #include <string.h>
 #include "pdc.h"
 
+#define BUF_LEN 16
+
 
 int main(int argc, char **argv) {
     pdcid_t pdc, cont_prop, cont;
@@ -36,8 +38,8 @@ int main(int argc, char **argv) {
     int rank = 0, size = 1;
     int ret_value = 0;
 
-    double *data = (double*)malloc(sizeof(double)*128);
-    memset(data, 1, 128 * sizeof(double));
+    double *data = (double*)malloc(sizeof(double)*BUF_LEN);
+    memset(data, 1, BUF_LEN * sizeof(double));
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -67,7 +69,7 @@ int main(int argc, char **argv) {
     }
 
     sprintf(obj_name1, "o1_%d", rank);
-    obj1 = PDCobj_put_data(obj_name1, (void*)data, 16*sizeof(double), cont);
+    obj1 = PDCobj_put_data(obj_name1, (void*)data, BUF_LEN*sizeof(double), cont);
     if(obj1 > 0) {
         printf("Rank %d Put data to %s\n", rank, obj_name1);
     } else {
@@ -76,7 +78,7 @@ int main(int argc, char **argv) {
     }
 
     sprintf(obj_name2, "o2_%d", rank);
-    obj2 = PDCobj_put_data(obj_name2, (void*)data, 128*sizeof(double), cont);
+    obj2 = PDCobj_put_data(obj_name2, (void*)data, BUF_LEN*sizeof(double), cont);
     if(obj2 > 0) {
         printf("Rank %d Put data to %s\n", rank, obj_name2);
     } else {
