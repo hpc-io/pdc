@@ -82,18 +82,13 @@ int main(int argc, char **argv)
     MPI_Comm_dup(MPI_COMM_WORLD, &comm);
 #endif
 
-/*
-    if (argc < 2) {
-        print_usage();
-        return 0;
-    }
-    numparticles = atoll(argv[1]) * 1024 * 1024;
-    if (rank == 0) {
-        printf("Writing %" PRIu64 " number of particles with %d clients.\n", numparticles, size);
-    }
-*/
-
     numparticles = NPARTICLES;
+    if (argc == 2) {
+        numparticles = atoll(argv[1]);
+        if (rank == 0)
+            printf("Writing %" PRIu64 " number of particles with %d clients.\n", numparticles, size);
+    }
+
     dims[0] = numparticles;
 
     x = (float *)malloc(numparticles*sizeof(float));

@@ -33,7 +33,7 @@
 #include "pdc.h"
 #include "pdc_client_connect.h"
 #include "pdc_client_server_common.h"
-#define BUF_LEN 128
+#define BUF_LEN 32
 
 
 int main(int argc, char **argv) {

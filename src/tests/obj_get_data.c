@@ -27,6 +27,7 @@
 #include <string.h>
 #include "pdc.h"
 
+#define BUF_LEN 16
 
 int main(int argc, char **argv) {
     pdcid_t pdc, cont_prop, cont;
@@ -38,7 +39,7 @@ int main(int argc, char **argv) {
     unsigned i;
     int ret_value = 0;
 
-    char *data = (char*)malloc(sizeof(double)*128);
+    char *data = (char*)malloc(sizeof(double)*BUF_LEN);
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -67,9 +68,9 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    memset(data, 1, 128 * sizeof(double));
+    memset(data, 1, BUF_LEN * sizeof(double));
     sprintf(obj_name1, "o1_%d", rank);
-    obj1 = PDCobj_put_data(obj_name1, (void*)data, 16*sizeof(double), cont);
+    obj1 = PDCobj_put_data(obj_name1, (void*)data, BUF_LEN*sizeof(double), cont);
     if(obj1 > 0) {
         printf("Rank %d Put data to %s\n", rank, obj_name1);
     } else {
@@ -77,9 +78,9 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    memset(data, 2, 128 * sizeof(double));
+    memset(data, 2, BUF_LEN * sizeof(double));
     sprintf(obj_name2, "o2_%d", rank);
-    obj2 = PDCobj_put_data(obj_name2, (void*)data, 128*sizeof(double), cont);
+    obj2 = PDCobj_put_data(obj_name2, (void*)data, BUF_LEN*sizeof(double), cont);
     if(obj2 > 0) {
         printf("Rank %d Put data to %s\n", rank, obj_name2);
     } else {
@@ -87,26 +88,26 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    memset(data, 0, 128 * sizeof(double));
-    error_code = PDCobj_get_data(obj1, (void*)(data), 16 * sizeof(double));
+    memset(data, 0, BUF_LEN * sizeof(double));
+    error_code = PDCobj_get_data(obj1, (void*)(data), BUF_LEN * sizeof(double));
     if (error_code!= SUCCEED) {
         printf("Fail to get obj 1 data\n");
         ret_value = 1;
     }
-    for ( i = 0; i < 16*sizeof(double); ++i ) {
+    for ( i = 0; i < BUF_LEN*sizeof(double); ++i ) {
         if (data[i] != 1) {
             printf("wrong value at obj 1\n");
             ret_value = 1;
             break;
         }
     }
-    memset(data, 0, 128 * sizeof(double));
-    error_code = PDCobj_get_data(obj2, (void*)(data), 128 * sizeof(double));
+    memset(data, 0, BUF_LEN * sizeof(double));
+    error_code = PDCobj_get_data(obj2, (void*)(data), BUF_LEN * sizeof(double));
     if (error_code!= SUCCEED) {
         printf("Fail to get obj 1 data\n");
         ret_value = 1;
     }
-    for ( i = 0; i < 128*sizeof(double); ++i ) {
+    for ( i = 0; i < BUF_LEN*sizeof(double); ++i ) {
         if (data[i] != 2) {
             printf("wrong value at obj 2\n");
             ret_value = 1;
