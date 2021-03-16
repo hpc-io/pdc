@@ -1,4 +1,10 @@
-# PDC Documentations
+# PDC Documentation
+
+In this guide, we will provide a brief summary of PDC user APIs and data types supported in PDC. 
+We also provide two examples, one for a large-scale simulation to write data to PDC objects, and
+another to read the objects written by the simulation. We also provide a set of notes for any
+developers of PDC. 
+
   + [PDC user APIs](#pdc-user-apis)
     - [PDC general APIs](#pdc-general-apis)
     - [PDC container APIs](#pdc-container-apis)
@@ -20,7 +26,9 @@
     - [Query structures](#query-structures)
     - [Selection structure](#selection-structure)
   + [PDC examples](#pdc-examples)
-    - [VPIC I/O and BDCats](#vpic-and-bdcats)
+    - [Simple I-O](#simple-I-O)
+    - [I-O with region mapping](#I-O-with-region-mapping)
+    - [VPIC I/O and BD-CATS I/O](#vpic-and-bdcats)
   + [Developers notes](#developer-notes)
 # PDC user APIs
   ## PDC general APIs
@@ -776,15 +784,33 @@
   ```
 # PDC Examples
   + Examples for PDC programs can be found in https://github.com/hpc-io/pdc/tree/stable/src/tests.
-  ## VPIC and BDCats
-  + To run: Go to the bin folder first after make. Then type ./run_multiple_test.sh ./vpicio ./bdcats
-  + VPIC I/O: 
+  ## Simple I-O
+  + Functions PDCobj_put_data and PDCobj_get_data are the easist way to write/read data from/to a contiguous memory buffer.
+  + An example can be found in https://github.com/hpc-io/pdc/blob/stable/src/tests/obj_get_data.c
+  + This example writes different size of data to two objects. It then read back the data to check whether the data is correct or not.
+  + To run the test, use command "./run_test ./obj_get_data".
+  ## I-O with region mapping.
+  + The simple I/O can only handles 1D data that is contiguous. PDC supports data dimension up to 3. Simple I/O functions PDCobj_put_data and PDCobj_get_data are wrappers for object create, region mapping, I/O, and object close. The examples in this section breakdowns the wrappers, which allows more flexibility.
+  + Check https://github.com/hpc-io/pdc/blob/stable/src/tests/region_obj_map_2D.c and https://github.com/hpc-io/pdc/blob/stable/src/tests/region_obj_map_3D.c for how to write 2D and 3D data.
+  + Generally, PDC perform I/O with the PDCbuf_obj_map, PDCreg_obtain_lock, PDCreg_release_lock, and PDCbuf_obj_unmap. The logic is similar to HDF5 dataspace and memory space. In PDC language, they are remote region and local region. The lock functions for remote regions allow PDC servers to handle concurrent requests from different clients without undefined behaviors.
+  ## VPIC-IO and BD-CATS-IO
+  + VPIC is a particle simulation code developed at Los Alamos National Laboratory (LANL). 
+    VPIC-IO benchmark is an I/O kernel representing the I/O pattern of a space weather simulation
+    exploring the magnetic reconnection phenomenon. More details of the simulation itself can be 
+    found at https://sdm.lbl.gov/~sbyna/research/papers/vpic.pdf . 
+  + BD-CATS is a Big Data clustering (DBSCAN) algorithm that uses HPC systems to analyze trillions of
+    particles. BD-CATS typically analyze data produced by simulations such as VPIC. 
+    BD-CATS-IO represents the I/O kernel of the clustering algorithm. More details of BD-CATS
+    can be found at https://sdm.lbl.gov/~sbyna/research/papers/201511-SC15-BD-CATS.pdf . 
+  + To run VPIC-IO and BD-CATS-IO together: Go to the bin folder first after make. 
+    Then type ./run_multiple_test.sh ./vpicio ./bdcats
+  + VPIC-IO: 
     - https://github.com/hpc-io/pdc/blob/stable/src/tests/vpicio.c
-    - VPIC I/O is an example for writing multiple objects using PDC.
+    - VPIC I/O is an example for writing multiple objects using PDC, where each object is a variable of particles.
     - We collectively create containers and objects. PDC region map is used to write data to individual objects.
-  + BDCats: 
+  + BD-CATS-IO: 
     - https://github.com/hpc-io/pdc/blob/stable/src/tests/bdcats.c
-    - BDcats is an example for reading data written by VIPIC I/O.
+    - BD-CATS-IO is an example for reading data written by VIPIC I/O.
 # Developers notes
   + This note is for developers. It helps developers to understand the code structure of PDC code as fast as possible.
   + PDC internal data structure

@@ -5742,6 +5742,54 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDCcont_tag_delete(pdcid_t cont_id, char *tag_name)
+{
+    perr_t ret_value = SUCCEED;
+    hg_return_t  hg_ret = 0;
+    uint64_t meta_id;
+    uint32_t server_id;
+    hg_handle_t  metadata_del_kvtag_handle;
+    metadata_get_kvtag_in_t in;
+    struct _pdc_cont_info *cont_prop;
+    struct _pdc_client_lookup_args lookup_args;
+
+    FUNC_ENTER(NULL);
+
+    cont_prop = PDC_cont_get_info(cont_id);
+    meta_id = cont_prop->cont_info_pub->meta_id;
+    server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
+
+    debug_server_id_count[server_id]++;
+
+    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+        PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
+
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_del_kvtag_register_id_g, 
+                &metadata_del_kvtag_handle);
+
+    // Fill input structure
+    in.obj_id     = meta_id;
+    in.hash_value = PDC_get_hash_by_name(cont_prop->cont_info_pub->name);
+    in.key        = tag_name;
+
+    hg_ret = HG_Forward(metadata_del_kvtag_handle, metadata_add_tag_rpc_cb/*reuse*/, &lookup_args, &in);
+    if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(FAIL, "PDC_Client_del_kvtag_metadata_with_name(): Could not start HG_Forward()");
+
+    // Wait for response from server
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+    if (lookup_args.ret != 1) 
+        printf("PDC_CLIENT: del kvtag NOT successful ... ret_value = %d\n", lookup_args.ret);
+
+done:
+    fflush(stdout);
+    HG_Destroy(metadata_del_kvtag_handle);
+    
+    FUNC_LEAVE(ret_value);
+}
+
 static hg_return_t
 kvtag_query_bulk_cb(const struct hg_cb_info *hg_cb_info)
 {
@@ -6070,13 +6118,17 @@ perr_t
 PDCcont_del(pdcid_t cont_id)
 {
     perr_t ret_value = SUCCEED;
+    uint64_t meta_id;
+    struct _pdc_cont_info *cont_prop;
 
     FUNC_ENTER(NULL);
 
-    ret_value = PDCobj_del_data(cont_id);
+    cont_prop = PDC_cont_get_info(cont_id);
+    meta_id = cont_prop->cont_info_pub->meta_id;
+
+    ret_value = PDC_Client_delete_metadata_by_id(meta_id);
     if (ret_value != SUCCEED)
-        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error with PDC_Client_del_objects_to_container",
-                pdc_client_mpi_rank_g);
+        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error with PDCcont_del", pdc_client_mpi_rank_g);
 
 done:
     fflush(stdout);
@@ -6180,7 +6232,7 @@ PDCcont_del_tag(pdcid_t cont_id, char *tag_name)
 
     FUNC_ENTER(NULL);
 
-    ret_value = PDCobj_del_tag(cont_id, tag_name);
+    ret_value = PDCcont_tag_delete(cont_id, tag_name);
     if (ret_value != SUCCEED)
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error with PDCcont_del_tag",
                 pdc_client_mpi_rank_g);

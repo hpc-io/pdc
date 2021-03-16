@@ -157,9 +157,8 @@ int main(int argc, char *argv[])
 
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
-#endif
-        
         stime = MPI_Wtime();
+#endif
 
         if (PDC_Client_query_kvtag_col(&kvtag, &nres, &pdc_ids) < 0) {
             printf("fail to query kvtag [%s] with rank %d\n", kvtag.name, my_rank);
@@ -169,8 +168,8 @@ int main(int argc, char *argv[])
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
         MPI_Reduce(&nres, &ntotal, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-#endif
         total_time = MPI_Wtime() - stime;
+#endif
 
         if (my_rank == 0) 
             printf("Total time to query %d objects with tag: %.4f\n", ntotal, total_time);

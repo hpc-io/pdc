@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
     char tag[128];
     pdc_kvtag_t kvtag;
     pdc_kvtag_t **values;
-    size_t value_size;
+    psize_t value_size;
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &proc_num);
@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
     stime = MPI_Wtime();
 #endif
     for (i = 0; i < my_query; i++) {
-        if (PDCobj_get_tag(obj_ids[i], kvtag.name, &values[i], &value_size) < 0)
+        if (PDCobj_get_tag(obj_ids[i], kvtag.name, (void**)&values[i], &value_size) < 0)
             printf("fail to get a kvtag from o%d\n", i+my_query_s);
     }
     

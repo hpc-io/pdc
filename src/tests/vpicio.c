@@ -153,44 +153,76 @@ int main(int argc, char **argv)
     obj_prop_id22 = PDCprop_obj_dup(obj_prop_xx);
     PDCprop_set_obj_type(obj_prop_id22, PDC_INT);
 
+#ifdef ENABLE_MPI
     obj_xx = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop_xx, 0, comm);
+#else
+    obj_xx = PDCobj_create(cont_id, "obj-var-xx", obj_prop_xx);
+#endif
     if (obj_xx == 0) {    
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
         exit(-1);
     }
    
+#ifdef ENABLE_MPI
     obj_yy = PDCobj_create_mpi(cont_id, "obj-var-yy", obj_prop_yy, 0, comm);
+#else
+    obj_yy = PDCobj_create(cont_id, "obj-var-yy", obj_prop_yy);
+#endif
     if (obj_yy == 0) {
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-yy");
         exit(-1);
     }
+#ifdef ENABLE_MPI
     obj_zz = PDCobj_create_mpi(cont_id, "obj-var-zz", obj_prop_zz, 0, comm);
+#else
+    obj_zz = PDCobj_create(cont_id, "obj-var-zz", obj_prop_zz);
+#endif
     if (obj_zz == 0) {
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-zz");
         exit(-1);
     }
+#ifdef ENABLE_MPI
     obj_pxx = PDCobj_create_mpi(cont_id, "obj-var-pxx", obj_prop_pxx, 0, comm);
+#else
+    obj_pxx = PDCobj_create(cont_id, "obj-var-pxx", obj_prop_pxx);
+#endif
     if (obj_pxx == 0) {
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-pxx");
         exit(-1);
     }
+#ifdef ENABLE_MPI
     obj_pyy = PDCobj_create_mpi(cont_id, "obj-var-pyy", obj_prop_pyy, 0, comm);
+#else
+    obj_pyy = PDCobj_create(cont_id, "obj-var-pyy", obj_prop_pyy);
+#endif
     if (obj_pyy == 0) {
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-pyy");
         exit(-1);
     }
+#ifdef ENABLE_MPI
     obj_pzz = PDCobj_create_mpi(cont_id, "obj-var-pzz", obj_prop_pzz, 0, comm);
+#else
+    obj_pzz = PDCobj_create(cont_id, "obj-var-pzz", obj_prop_pzz);
+#endif
     if (obj_pzz == 0) {
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-pzz");
         exit(-1);
     }
 
+#ifdef ENABLE_MPI
     obj_id11 = PDCobj_create_mpi(cont_id, "id11", obj_prop_id11, 0, comm);
+#else
+    obj_id11 = PDCobj_create(cont_id, "id11", obj_prop_id11);
+#endif
     if (obj_id11 == 0) {
         printf("Error getting an object id of %s from server, exit...\n", "obj_id11");
         exit(-1);
     }
+#ifdef ENABLE_MPI
     obj_id22 = PDCobj_create_mpi(cont_id, "id22", obj_prop_id22, 0, comm);
+#else
+    obj_id22 = PDCobj_create(cont_id, "id22", obj_prop_id22);
+#endif
     if (obj_id22 == 0) {
         printf("Error getting an object id of %s from server, exit...\n", "obj_id22");
         exit(-1);

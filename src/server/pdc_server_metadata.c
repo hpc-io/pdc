@@ -935,11 +935,11 @@ perr_t PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata
     hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
 #endif
 
+    pdc_hash_table_entry_head *head; 
+
     if (metadata_hash_table_g != NULL) {
 
         // Since we only have the obj id, need to iterate the entire hash table
-        pdc_hash_table_entry_head *head; 
-
         n_entry = hash_table_num_entries(metadata_hash_table_g);
         hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
 
@@ -974,6 +974,25 @@ perr_t PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata
             } // DL_FOREACH
         }  // while 
     } // if (metadata_hash_table_g != NULL)
+    if (out->ret != 1) {
+        // Check container list
+
+        n_entry = hash_table_num_entries(container_hash_table_g);
+        hash_table_iterate(container_hash_table_g, &hash_table_iter);
+
+        pdc_cont_hash_table_entry_t *cont_entry = NULL;
+
+        while (hash_table_iter_has_more(&hash_table_iter)) {
+            pair = hash_table_iter_next(&hash_table_iter);
+            cont_entry = pair.value;
+
+            if (cont_entry->cont_id == target_obj_id) {
+                hash_table_remove(container_hash_table_g, &pair.key);
+                out->ret  = 1;
+                ret_value = SUCCEED;
+            }
+        }  // while 
+    }
     else {
         printf("==PDC_SERVER: metadata_hash_table_g not initialized!\n");
         ret_value = FAIL;
@@ -2704,6 +2723,7 @@ perr_t PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t 
     int unlocked;
 #endif
     pdc_hash_table_entry_head *lookup_value;
+    pdc_cont_hash_table_entry_t *cont_lookup_value;
 
     FUNC_ENTER(NULL);
 
@@ -2736,9 +2756,17 @@ perr_t PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t 
             out->ret  = -1;
         }
     } 
-    else {
-        ret_value = FAIL;
-        out->ret = -1;
+    else { // look for containers
+        cont_lookup_value = hash_table_lookup(container_hash_table_g, &hash_key);
+        if (cont_lookup_value != NULL) {
+            PDC_del_kvtag_value_from_list(&cont_lookup_value->kvtag_list_head, in->key);
+            out->ret  = 1;
+        } 
+        else {
+            printf("==PDC_SERVER[%d]: add tag target %" PRIu64 " not found!\n", pdc_server_rank_g, obj_id);
+            ret_value = FAIL;
+            out->ret = -1;
+        }
     }
 
     if (ret_value != SUCCEED) {
