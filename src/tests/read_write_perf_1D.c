@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
         printf("usage: ./read_write_perf_1D data_size n_objects @ line %d\n", __LINE__);
     }
 
-    data_size = atoi(argv[1]);
+    data_size = atoi(argv[1]) * 1048576;
     n_objects = atoi(argv[2]);
     offset_length[0] = data_size;
 
