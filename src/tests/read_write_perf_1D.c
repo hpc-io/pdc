@@ -72,7 +72,6 @@ int main(int argc, char **argv) {
 #endif
     // create a pdc
     pdc = PDCinit("pdc");
-    printf("create a new pdc\n");
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
