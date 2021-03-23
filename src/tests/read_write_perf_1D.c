@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
     offset[0] = 0;
 
     if ( argc != 3 ) {
-        printf("usage: ./read_write_perf_1D data_size n_objects @ line %d\n", __LINE__");
+        printf("usage: ./read_write_perf_1D data_size n_objects @ line %d\n", __LINE__);
     }
 
     data_size = atoi(argv[1]);
