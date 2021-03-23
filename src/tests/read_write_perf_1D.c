@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
     pdcid_t pdc, cont_prop, cont, obj_prop, reg, reg_global;
     perr_t ret;
     pdcid_t obj1;
-    char cont_name[128], obj_name1[128], obj_name2[128];
+    char cont_name[128], obj_name1[128];
 
     int rank = 0, size = 1, i;
     int ret_value = 0;
@@ -58,6 +58,7 @@ int main(int argc, char **argv) {
     }
 
     data_size = atoi(argv[1]);
+    n_objects = atoi(argv[2]);
     offset_length[0] = data_size;
 
     int *data = (int*)malloc(sizeof(int)*data_size);
@@ -170,7 +171,7 @@ int main(int argc, char **argv) {
     for ( i = 0; i < n_objects; ++i ) {
         sprintf(obj_name1, "o1_%d_%d", rank, i);
         obj1 = PDCobj_open(obj_name1, pdc);
-        if(obj1 < 0) {
+        if(obj1 <= 0) {
             printf("Fail to open object @ line  %d!\n", __LINE__);
             ret_value = 1;
         }
