@@ -253,47 +253,47 @@ int main(int argc, char **argv) {
     MPI_Reduce(&write_buf_map_time, &start, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     write_buf_map_time = start;
     if (!rank) {
-        printf("write buf map obj time: %lf", write_buf_map_time);
+        printf("write buf map obj time: %lf\n", write_buf_map_time);
     }
     MPI_Reduce(&write_lock_time, &start, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     write_lock_time = start;
     if (!rank) {
-        printf("write lock obtain time: %lf", write_lock_time);
+        printf("write lock obtain time: %lf\n", write_lock_time);
     }
 
     MPI_Reduce(&write_release_time, &start, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     write_release_time = start;
     if (!rank) {
-        printf("write lock release time: %lf", write_release_time);
+        printf("write lock release time: %lf\n", write_release_time);
     }
 
     MPI_Reduce(&write_unbuf_map_time, &start, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     write_unbuf_map_time = start;
     if (!rank) {
-        printf("write buf unmap obj time: %lf", write_unbuf_map_time);
+        printf("write buf unmap obj time: %lf\n", write_unbuf_map_time);
     }
 
     MPI_Reduce(&read_buf_map_time, &start, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     read_buf_map_time = start;
     if (!rank) {
-        printf("read buf map obj time: %lf", read_buf_map_time);
+        printf("read buf map obj time: %lf\n", read_buf_map_time);
     }
     MPI_Reduce(&read_lock_time, &start, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     read_lock_time = start;
     if (!rank) {
-        printf("read lock obtain time: %lf", read_lock_time);
+        printf("read lock obtain time: %lf\n", read_lock_time);
     }
 
     MPI_Reduce(&read_release_time, &start, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     read_release_time = start;
     if (!rank) {
-        printf("read lock release time: %lf", read_release_time);
+        printf("read lock release time: %lf\n", read_release_time);
     }
 
     MPI_Reduce(&read_unbuf_map_time, &start, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     read_unbuf_map_time = start;
     if (!rank) {
-        printf("read buf unmap obj time: %lf", read_unbuf_map_time);
+        printf("read buf unmap obj time: %lf\n", read_unbuf_map_time);
     }
 #ifdef ENABLE_MPI
     MPI_Finalize();
