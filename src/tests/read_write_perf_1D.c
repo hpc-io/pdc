@@ -75,20 +75,20 @@ int main(int argc, char **argv) {
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
-    if(cont_prop < 0) {
+    if(cont_prop <= 0) {
         printf("Fail to create container property @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
     // create a container
     sprintf(cont_name, "c%d", rank);
     cont = PDCcont_create(cont_name, cont_prop);
-    if(cont < 0) {
+    if(cont <= 0) {
         printf("Fail to create container @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
-    if(obj_prop < 0) {
+    if(obj_prop <= 0) {
         printf("Fail to create object property @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
         // create first object
         sprintf(obj_name1, "o1_%d_%d", rank, i);
         obj1 = PDCobj_create(cont, obj_name1, obj_prop);
-        if(obj1< 0) {
+        if(obj1<= 0) {
             printf("Fail to create object @ line  %d!\n", __LINE__);
             ret_value = 1;
         }
