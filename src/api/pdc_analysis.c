@@ -55,7 +55,7 @@ void * PDC_Server_get_region_data_ptr(pdcid_t object_id) {
 #endif
 
 
-
+#if PDC_TIMING == 1
 
 #include <mpi.h>
 
