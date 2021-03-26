@@ -80,23 +80,19 @@ int PDC_timing_report() {
 
     MPI_Reduce(&(timings->PDCbuf_obj_map_rpc), &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     if (rank == 0) {
-        timings->PDCbuf_obj_map_rpc = max_time;
-        printf("PDCbuf_obj_map_rpc = %lf\n", timings->PDCbuf_obj_map_rpc);
+        printf("PDCbuf_obj_map_rpc = %lf\n", max_time);
     }
     MPI_Reduce(&(timings->PDCreg_obtain_lock_rpc), &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     if (rank == 0) {
-        timings->PDCreg_obtain_lock_rpc = max_time;
-        printf("PDCreg_obtain_lock_rpc = %lf\n", timings->PDCreg_obtain_lock_rpc);
+        printf("PDCreg_obtain_lock_rpc = %lf\n", max_time);
     }
     MPI_Reduce(&(timings->PDCreg_release_lock_rpc), &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     if (rank == 0) {
-        timings->PDCreg_release_lock_rpc = max_time;
-        printf("PDCreg_release_lock_rpc = %lf\n", timings->PDCreg_release_lock_rpc);
+        printf("PDCreg_release_lock_rpc = %lf\n", max_time);
     }
     MPI_Reduce(&(timings->PDCbuf_obj_unmap_rpc), &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     if (rank == 0) {
-        timings->PDCbuf_obj_unmap_rpc = max_time;
-        printf("PDCbuf_obj_unmap_rpc = %lf\n", timings->PDCbuf_obj_unmap_rpc);
+        printf("PDCbuf_obj_unmap_rpc = %lf\n", max_time);
     }
 
     free(timings);
