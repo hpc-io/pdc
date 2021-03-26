@@ -30,6 +30,9 @@
 #define PDC_TIMING 1
 
 #if PDC_TIMING == 1
+
+#include <mpi.h>
+
 typedef struct pdc_timing {
     double PDCbuf_obj_map_rpc;
     double PDCbuf_obj_unmap_rpc;
