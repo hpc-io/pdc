@@ -43,11 +43,11 @@ typedef struct pdc_timing {
 
 pdc_timing *timings;
 
-int PDC_Timing_Init() {
+int PDC_timing_init() {
     timings = calloc(1, sizeof(pdc_timing));
 }
 
-int PDC_Timing_Report() {
+int PDC_timing_report() {
     double max_time;
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
