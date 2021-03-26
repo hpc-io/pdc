@@ -67,7 +67,7 @@ typedef struct pdc_timing {
 } pdc_timing;
 
 
-pdc_timing *timings;
+static pdc_timing *timings;
 
 int PDC_timing_init() {
     timings = calloc(1, sizeof(pdc_timing));
