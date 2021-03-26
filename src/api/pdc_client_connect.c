@@ -2393,7 +2393,7 @@ perr_t PDC_Client_region_lock(struct _pdc_obj_info *object_info, struct pdc_regi
 #endif
     hg_ret = HG_Forward(region_lock_handle, client_region_lock_rpc_cb, &lookup_args, &in);
 #if PDC_TIMING == 1
-    timings->PDCreg_obtain_lock += MPI_Wtime() - start;
+    timings->PDCreg_obtain_lock_rpc += MPI_Wtime() - start;
 #endif
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_name_to_server(): Could not start HG_Forward()");
@@ -3029,7 +3029,7 @@ perr_t PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_r
 #endif
     hg_ret = HG_Forward(region_release_handle, client_region_release_rpc_cb, &lookup_args, &in);
 #if PDC_TIMING == 1
-    timings->PDCreg_release_lock = MPI_Wtime() - start;
+    timings->PDCreg_release_lock_rpc = MPI_Wtime() - start;
 #endif
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_name_to_server(): Could not start HG_Forward()");
