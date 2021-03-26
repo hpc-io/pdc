@@ -55,19 +55,10 @@ void * PDC_Server_get_region_data_ptr(pdcid_t object_id) {
 #endif
 
 
-#if PDC_TIMING == 1
+
 
 #include <mpi.h>
 
-typedef struct pdc_timing {
-    double PDCbuf_obj_map_rpc;
-    double PDCbuf_obj_unmap_rpc;
-    double PDCreg_obtain_lock_rpc;
-    double PDCreg_release_lock_rpc;
-} pdc_timing;
-
-
-static pdc_timing *timings;
 
 int PDC_timing_init() {
     timings = calloc(1, sizeof(pdc_timing));

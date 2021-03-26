@@ -29,9 +29,21 @@
 
 #define PDC_TIMING 1
 
+#if PDC_TIMING == 1
+
+typedef struct pdc_timing {
+    double PDCbuf_obj_map_rpc;
+    double PDCbuf_obj_unmap_rpc;
+    double PDCreg_obtain_lock_rpc;
+    double PDCreg_release_lock_rpc;
+} pdc_timing;
+
+
+pdc_timing *timings;
+
 int PDC_timing_init();
 int PDC_timing_report();
-
+#endif
 
 /*********************/
 /* Public Prototypes */

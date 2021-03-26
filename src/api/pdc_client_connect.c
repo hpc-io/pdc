@@ -38,6 +38,7 @@
 #include "pdc_cont.h"
 #include "pdc_region.h"
 #include "pdc_interface.h"
+#include "pdc_analysis.h"
 #include "pdc_analysis_pkg.h"
 #include "pdc_transforms_common.h"
 #include "pdc_client_connect.h"
