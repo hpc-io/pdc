@@ -2194,7 +2194,7 @@ perr_t PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct
 #endif
     hg_ret = HG_Forward(client_send_buf_unmap_handle, client_send_buf_unmap_rpc_cb, &unmap_args, &in);
 #if PDC_TIMING == 1
-    timings->PDCbuf_obj_unmap_rpc += MPI_Wtime() - start;
+    timings->PDCbuf_obj_unmap_rpc += 10;
 #endif
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_buf_unmap(): Could not start HG_Forward()");
