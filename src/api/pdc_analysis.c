@@ -54,6 +54,56 @@ void * PDC_Server_get_region_data_ptr(pdcid_t object_id) {
 }
 #endif
 
+
+#if PDC_TIMING == 1
+
+#include <mpi.h>
+
+typedef struct pdc_timing {
+    double PDCbuf_obj_map_rpc;
+    double PDCbuf_obj_unmap_rpc;
+    double PDCreg_obtain_lock_rpc;
+    double PDCreg_release_lock_rpc;
+} pdc_timing;
+
+
+pdc_timing *timings;
+
+int PDC_timing_init() {
+    timings = calloc(1, sizeof(pdc_timing));
+}
+
+int PDC_timing_report() {
+    double max_time;
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    MPI_Reduce(&(timings->PDCbuf_obj_map_rpc), &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    if (rank == 0) {
+        timings->PDCbuf_obj_map_rpc = max_time;
+        printf("PDCbuf_obj_map_rpc = %lf\n", timings->PDCbuf_obj_map_rpc);
+    }
+    MPI_Reduce(&(timings->PDCreg_obtain_lock_rpc), &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    if (rank == 0) {
+        timings->PDCreg_obtain_lock_rpc = max_time;
+        printf("PDCreg_obtain_lock_rpc = %lf\n", timings->PDCreg_obtain_lock_rpc);
+    }
+    MPI_Reduce(&(timings->PDCreg_release_lock_rpc), &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    if (rank == 0) {
+        timings->PDCreg_release_lock_rpc = max_time;
+        printf("PDCreg_release_lock_rpc = %lf\n", timings->PDCreg_release_lock_rpc);
+    }
+    MPI_Reduce(&(timings->PDCbuf_obj_unmap_rpc), &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    if (rank == 0) {
+        timings->PDCbuf_obj_unmap_rpc = max_time;
+        printf("PDCbuf_obj_unmap_rpc = %lf\n", timings->PDCbuf_obj_unmap_rpc);
+    }
+
+    free(timings);
+}
+#endif
+
+
 static int
 iterator_init(pdcid_t objectId, pdcid_t reg_id, int blocks, struct _pdc_iterator_info *iter )
 {
