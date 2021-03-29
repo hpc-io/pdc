@@ -48,7 +48,10 @@ int main(int argc, char **argv) {
     uint64_t offset[3], offset_length[3], local_offset[3], dims[3];
     int data_size, data_size_array[3], n_objects;
     double start, write_buf_map_time = 0, write_lock_time = 0, write_release_time = 0, write_unbuf_map_time = 0, read_buf_map_time = 0, read_lock_time = 0, read_release_time = 0, read_unbuf_map_time = 0;
-
+    data_size_array[0] = 0;
+    data_size_array[1] = 0;
+    data_size_array[2] = 0;
+ 
     if ( argc == 3 ) {
         ndim = 1;
     } else if (argc == 4) {
