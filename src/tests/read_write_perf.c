@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
     } else if (argc == 5) {
         ndim = 3;
     } else {
-        printf("usage: ./read_write_perf_1D n_objects data_size1 datasize2 datasize3 @ line %d\n", __LINE__);
+        printf("usage: ./read_write_perf n_objects data_size1 datasize2 datasize3 @ line %d\n", __LINE__);
     }
 
     local_offset[0] = 0;
@@ -86,6 +86,16 @@ int main(int argc, char **argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
+    if ( rank == 0 ) {
+        printf("number of dimensions in this test is %d\n", ndim);
+        printf("first dim has size %d\n", data_size_array[0]);
+        if ( ndim == 2 ) {
+            printf("second dim has size %d\n", data_size_array[1]);
+        } else if ( ndim == 3) {
+            printf("third dim has size %d\n", data_size_array[2]);
+        }
+    }
+
     // create a pdc
     pdc = PDCinit("pdc");
 
