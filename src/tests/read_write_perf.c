@@ -102,7 +102,7 @@ int main(int argc, char **argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
     if ( rank == 0 ) {
-        printf("number of dimensions in this test is %d\n", ndim);
+        printf("number of dimensions in this test is %d, argc=%d\n", ndim,argc);
         printf("data size = %llu\n", (long long unsigned) data_size );
         printf("first dim has size %d\n", data_size_array[0]);
         if ( ndim >= 2 ) {
