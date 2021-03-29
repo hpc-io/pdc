@@ -48,6 +48,13 @@ int main(int argc, char **argv) {
     uint64_t offset[3], offset_length[3], local_offset[3], dims[3];
     int data_size, data_size_array[3], n_objects;
     double start, write_buf_map_time = 0, write_lock_time = 0, write_release_time = 0, write_unbuf_map_time = 0, read_buf_map_time = 0, read_lock_time = 0, read_release_time = 0, read_unbuf_map_time = 0;
+
+#ifdef ENABLE_MPI
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+#endif
+
     data_size_array[0] = 0;
     data_size_array[1] = 0;
     data_size_array[2] = 0;
@@ -97,11 +104,7 @@ int main(int argc, char **argv) {
     int *obj_data = (int *)calloc(data_size, sizeof(int));
     
     memcpy(dims, offset_length, sizeof(uint64_t) * ndim);
-#ifdef ENABLE_MPI
-    MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-#endif
+
     if ( rank == 0 ) {
         printf("number of dimensions in this test is %d\n", ndim);
         printf("data size = %llu\n", (long long unsigned) data_size );
