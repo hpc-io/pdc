@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
         printf("number of dimensions in this test is %d\n", ndim);
         printf("data size = %llu\n", (long long unsigned) data_size );
         printf("first dim has size %d\n", data_size_array[0]);
-        if ( ndim == 2 ) {
+        if ( ndim >= 2 ) {
             printf("second dim has size %d\n", data_size_array[1]);
         }
         if ( ndim == 3) {
