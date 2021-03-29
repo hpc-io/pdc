@@ -221,7 +221,7 @@ int main(int argc, char **argv) {
 
     PDC_timing_init();
     for ( i = 0; i < n_objects; ++i ) {
-        sprintf(obj_name1, "o1_%d_%d", rank, i);
+        sprintf(obj_name1, "o1_%d", i);
         obj1 = PDCobj_open(obj_name1, pdc);
         if(obj1 <= 0) {
             printf("Fail to open object @ line  %d!\n", __LINE__);
