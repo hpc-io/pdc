@@ -93,10 +93,12 @@ int main(int argc, char **argv) {
 #endif
     if ( rank == 0 ) {
         printf("number of dimensions in this test is %d\n", ndim);
+        printf("data size = %llu\n", (long long unsigned) data_size );
         printf("first dim has size %d\n", data_size_array[0]);
         if ( ndim == 2 ) {
             printf("second dim has size %d\n", data_size_array[1]);
-        } else if ( ndim == 3) {
+        }
+        if ( ndim == 3) {
             printf("third dim has size %d\n", data_size_array[2]);
         }
     }
