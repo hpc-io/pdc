@@ -36,6 +36,11 @@ typedef struct pdc_timing {
     double PDCbuf_obj_unmap_rpc;
     double PDCreg_obtain_lock_rpc;
     double PDCreg_release_lock_rpc;
+
+    double PDCbuf_obj_map_rpc_wait;
+    double PDCbuf_obj_unmap_rpc_wait;
+    double PDCreg_obtain_lock_rpc_wait;
+    double PDCreg_release_lock_rpc_wait;
 } pdc_timing;
 
 

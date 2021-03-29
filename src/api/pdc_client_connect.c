@@ -2195,15 +2195,20 @@ perr_t PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct
 #endif
     hg_ret = HG_Forward(client_send_buf_unmap_handle, client_send_buf_unmap_rpc_cb, &unmap_args, &in);
 #if PDC_TIMING == 1
-    timings->PDCbuf_obj_unmap_rpc += 10;
+    timings->PDCbuf_obj_unmap_rpc += MPI_Wtime() - start;
 #endif
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_buf_unmap(): Could not start HG_Forward()");
 
     // Wait for response from server
     work_todo_g = 1;
+#if PDC_TIMING == 1
+    start = MPI_Wtime();
+#endif
     PDC_Client_check_response(&send_context_g); 
-    
+#if PDC_TIMING == 1
+    timings->PDCbuf_obj_unmap_rpc_wait += MPI_Wtime() - start;
+#endif    
     if (unmap_args.ret != 1) 
         PGOTO_ERROR(FAIL, "PDC_CLIENT: buf unmap failed...");
 
@@ -2327,8 +2332,13 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t
 
     // Wait for response from server
     work_todo_g = 1;
+#if PDC_TIMING == 1
+    start = MPI_Wtime();
+#endif
     PDC_Client_check_response(&send_context_g);
-
+#if PDC_TIMING == 1
+    timings->PDCbuf_obj_map_rpc_wait += MPI_Wtime() - start;
+#endif
     if (map_args.ret != 1) 
         PGOTO_ERROR(FAIL,"PDC_CLIENT: buf map failed...");
 
@@ -2401,8 +2411,13 @@ perr_t PDC_Client_region_lock(struct _pdc_obj_info *object_info, struct pdc_regi
 
     // Wait for response from server
     work_todo_g = 1;
+#if PDC_TIMING == 1
+    start = MPI_Wtime();
+#endif
     PDC_Client_check_response(&send_context_g);
-
+#if PDC_TIMING == 1
+    timings->PDCreg_obtain_lock_rpc_wait += MPI_Wtime() - start;
+#endif
     // Now the return value is stored in lookup_args.ret
     if (lookup_args.ret == 1) {
         *status = TRUE;
@@ -3037,8 +3052,13 @@ perr_t PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_r
 
     // Wait for response from server
     work_todo_g = 1;
+#if PDC_TIMING == 1
+    start = MPI_Wtime();
+#endif
     PDC_Client_check_response(&send_context_g);
-
+#if PDC_TIMING == 1
+    timings->PDCreg_release_lock_rpc_wait = MPI_Wtime() - start;
+#endif
     // Now the return value is stored in lookup_args.ret
     if (lookup_args.ret == 1) {
         *status = TRUE;

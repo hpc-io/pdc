@@ -65,27 +65,17 @@ int PDC_timing_init() {
 }
 
 int PDC_timing_report() {
-    double max_time;
+    pdc_timing max_timings;
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    MPI_Reduce(&(timings->PDCbuf_obj_map_rpc), &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&timings, &max_timings, sizeof(pdc_timing), MPI_BYTE, MPI_MAX, 0, MPI_COMM_WORLD);
     if (rank == 0) {
-        printf("PDCbuf_obj_map_rpc = %lf\n", max_time);
+        printf("PDCbuf_obj_map_rpc = %lf, wait = %lf\n", max_timings->PDCbuf_obj_map_rpc, max_timings->PDCbuf_obj_map_rpc_wait);
+        printf("PDCreg_obtain_lock_rpc = %lf, wait = %lf\n", max_timings->PDCreg_obtain_lock_rpc, max_timings->PDCreg_obtain_lock_rpc_wait);
+        printf("PDCreg_release_lock_rpc = %lf, wait = %lf\n", max_timings->PDCreg_release_lock_rpc, max_timings->PDCreg_release_lock_rpc_wait);
+        printf("PDCbuf_obj_unmap_rpc = %lf, wait = %lf\n", max_timings->PDCbuf_obj_unmap_rpc, max_timings->PDCbuf_obj_unmap_rpc_wait);
     }
-    MPI_Reduce(&(timings->PDCreg_obtain_lock_rpc), &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    if (rank == 0) {
-        printf("PDCreg_obtain_lock_rpc = %lf\n", max_time);
-    }
-    MPI_Reduce(&(timings->PDCreg_release_lock_rpc), &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    if (rank == 0) {
-        printf("PDCreg_release_lock_rpc = %lf\n", max_time);
-    }
-    MPI_Reduce(&(timings->PDCbuf_obj_unmap_rpc), &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    if (rank == 0) {
-        printf("PDCbuf_obj_unmap_rpc = %lf\n", max_time);
-    }
-
     free(timings);
 }
 #endif
