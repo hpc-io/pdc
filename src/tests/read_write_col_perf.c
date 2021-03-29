@@ -155,7 +155,7 @@ int main(int argc, char **argv) {
     PDC_timing_init();
     for ( i = 0; i < n_objects; ++i ) {
         // create first object
-        sprintf(obj_name1, "o1_%d_%d", rank, i);
+        sprintf(obj_name1, "o1_%d", i);
 
         //obj1 = PDCobj_create(cont, obj_name1, obj_prop);
         obj1 = PDCobj_create_mpi(cont, obj_name1, obj_prop, 0, MPI_COMM_WORLD);
