@@ -10,7 +10,7 @@ mpi_cmd="$2"
 n_servers="$3"
 n_client="$4"
 # copy the remaining test input arguments (if any)
-test_args="$5 $6 $7"
+test_args="$5 $6 $7 $8"
 shift
 echo "Input arguments are the followings"
 echo $test_args
