@@ -65,20 +65,30 @@ int main(int argc, char **argv) {
     local_offset[0] = 0;
     offset[0] = 0;
     data_size_array[0] = atoi(argv[2]);
-    offset_length[0] = data_size_array[0] * 1048576;
-    data_size = data_size_array[0] * 1048576;
+    if ( ndim == 1 ) {
+        offset_length[0] = data_size_array[0] * 1048576;
+        data_size = data_size_array[0] * 1048576;
+    } else {
+        offset_length[0] = data_size_array[0];
+        data_size = data_size_array[0];
+    }
     if ( ndim == 2 ) {
+        local_offset[1] = 0;
+        offset[1] = 0;
+        data_size_array[1] = atoi(argv[3]) * 1048576;
+        offset_length[1] = data_size_array[1] * 1048576;
+        data_size *= data_size_array[1] * 1048576;
+    } else if ( ndim == 3 ) {
         local_offset[1] = 0;
         offset[1] = 0;
         data_size_array[1] = atoi(argv[3]);
         offset_length[1] = data_size_array[1];
-        data_size *= data_size_array[1];
-    } else if ( ndim == 3 ) {
+
         local_offset[2] = 0;
         offset[2] = 0;
-        data_size_array[2] = atoi(argv[4]);
-        offset_length[2] = data_size_array[2];
-        data_size *= (data_size_array[1] * data_size_array[2]);
+        data_size_array[2] = atoi(argv[4]) * 1048576;
+        offset_length[2] = data_size_array[2] * 1048576;
+        data_size *= (data_size_array[1] * data_size_array[2]) * 1048576;
     }
     n_objects = atoi(argv[1]);
     int *data = (int*)malloc(sizeof(int)*data_size);
