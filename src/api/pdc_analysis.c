@@ -69,7 +69,7 @@ int PDC_timing_report() {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    MPI_Reduce(&timings, &max_timings, sizeof(pdc_timing), MPI_BYTE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&timings, &max_timings, sizeof(pdc_timing)/sizeof(double), MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     if (rank == 0) {
         printf("PDCbuf_obj_map_rpc = %lf, wait = %lf\n", max_timings.PDCbuf_obj_map_rpc, max_timings.PDCbuf_obj_map_rpc_wait);
         printf("PDCreg_obtain_lock_rpc = %lf, wait = %lf\n", max_timings.PDCreg_obtain_lock_rpc, max_timings.PDCreg_obtain_lock_rpc_wait);
