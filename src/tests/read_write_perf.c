@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
     pdcid_t obj1;
     char cont_name[128], obj_name1[128];
 
-    int rank = 0, size = 1, i, ndim, ret_value = 0;
+    int rank = 0, size = 1, i, ndim = 0, ret_value = 0;
 
     uint64_t offset[3], offset_length[3], local_offset[3], dims[3];
     int data_size, data_size_array[3], n_objects;
@@ -63,18 +63,20 @@ int main(int argc, char **argv) {
     offset[0] = 0;
     data_size_array[0] = atoi(argv[2]);
     offset_length[0] = data_size_array[0] * 1048576;
+    data_size = data_size_array[0] * 1048576;
     if ( ndim == 2 ) {
         local_offset[1] = 0;
         offset[1] = 0;
         data_size_array[1] = atoi(argv[3]);
         offset_length[1] = data_size_array[1];
+        data_size *= data_size_array[1];
     } else if ( ndim == 3 ) {
         local_offset[2] = 0;
         offset[2] = 0;
         data_size_array[2] = atoi(argv[4]);
         offset_length[2] = data_size_array[2];
+        data_size *= (data_size_array[1] * data_size_array[2]);
     }
-    data_size = data_size_array[0] * data_size_array[1] * data_size_array[2] * 1048576;
     n_objects = atoi(argv[1]);
     int *data = (int*)malloc(sizeof(int)*data_size);
     int *data_read = (int*)malloc(sizeof(int)*data_size);
