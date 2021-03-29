@@ -43,30 +43,44 @@ int main(int argc, char **argv) {
     pdcid_t obj1;
     char cont_name[128], obj_name1[128];
 
-    int rank = 0, size = 1, i;
-    int ret_value = 0;
+    int rank = 0, size = 1, i, ndim, ret_value = 0;
 
-    uint64_t offset[1], offset_length[1], local_offset[1];
-    uint64_t dims[1];
-    int data_size, n_objects;
+    uint64_t offset[3], offset_length[3], local_offset[3], dims[3];
+    int data_size, data_size_array[3], n_objects;
     double start, write_buf_map_time = 0, write_lock_time = 0, write_release_time = 0, write_unbuf_map_time = 0, read_buf_map_time = 0, read_lock_time = 0, read_release_time = 0, read_unbuf_map_time = 0;
+
+    if ( argc == 3 ) {
+        ndim = 1;
+    } else if (argc == 4) {
+        ndim = 2;
+    } else if (argc == 5) {
+        ndim = 3;
+    } else {
+        printf("usage: ./read_write_perf_1D n_objects data_size1 datasize2 datasize3 @ line %d\n", __LINE__);
+    }
 
     local_offset[0] = 0;
     offset[0] = 0;
-
-    if ( argc != 3 ) {
-        printf("usage: ./read_write_perf_1D data_size n_objects @ line %d\n", __LINE__);
+    data_size_array[0] = atoi(argv[2]);
+    offset_length[0] = data_size_array[0] * 1048576;
+    if ( ndim == 2 ) {
+        local_offset[1] = 0;
+        offset[1] = 0;
+        data_size_array[1] = atoi(argv[3]);
+        offset_length[1] = data_size_array[1];
+    } else if ( ndim == 3 ) {
+        local_offset[2] = 0;
+        offset[2] = 0;
+        data_size_array[2] = atoi(argv[4]);
+        offset_length[2] = data_size_array[2];
     }
-
-    data_size = atoi(argv[1]) * 1048576;
-    n_objects = atoi(argv[2]);
-    offset_length[0] = data_size;
-
+    data_size = data_size_array[0] * data_size_array[1] * data_size_array[2] * 1048576;
+    n_objects = atoi(argv[1]);
     int *data = (int*)malloc(sizeof(int)*data_size);
     int *data_read = (int*)malloc(sizeof(int)*data_size);
     int *obj_data = (int *)calloc(data_size, sizeof(int));
-    dims[0] = data_size;
-
+    
+    memcpy(dims, offset_length, sizeof(uint64_t) * ndim);
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -101,7 +115,7 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
     PDCprop_set_obj_buf(obj_prop, obj_data);
-    PDCprop_set_obj_dims(obj_prop, 1, dims);
+    PDCprop_set_obj_dims(obj_prop, ndim, dims);
     PDCprop_set_obj_user_id( obj_prop, getuid());
     PDCprop_set_obj_time_step( obj_prop, 0);
     PDCprop_set_obj_app_name(obj_prop, "DataServerTest");
@@ -117,8 +131,8 @@ int main(int argc, char **argv) {
             ret_value = 1;
         }
 
-        reg = PDCregion_create(1, offset, offset_length);
-        reg_global = PDCregion_create(1, offset, offset_length);
+        reg = PDCregion_create(ndim, offset, offset_length);
+        reg_global = PDCregion_create(ndim, offset, offset_length);
 
 
         memset(data, (char) i, sizeof(int) * data_size);
@@ -180,8 +194,8 @@ int main(int argc, char **argv) {
             ret_value = 1;
         }
 
-        reg = PDCregion_create(1, local_offset, offset_length);
-        reg_global = PDCregion_create(1, offset, offset_length);
+        reg = PDCregion_create(ndim, local_offset, offset_length);
+        reg_global = PDCregion_create(ndim, offset, offset_length);
 
         memset(data, 0, sizeof(int) * data_size);
         MPI_Barrier(MPI_COMM_WORLD);
