@@ -3391,6 +3391,7 @@ HG_TEST_RPC_CB(buf_map_server, handle)
 
     FUNC_ENTER(NULL);
 
+    printf("entered function buf_map server\n");
     // Decode input
     HG_Get_input(handle, &in);
 
