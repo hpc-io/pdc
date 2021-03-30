@@ -3454,7 +3454,8 @@ HG_TEST_RPC_CB(buf_map, handle)
 
     FUNC_ENTER(NULL);
 
-    printf("entered function buf_map %lf\n", MPI_Wtime());
+    printf("entered buf_map\n");
+
     // Decode input
     HG_Get_input(handle, &in);
 
@@ -3498,8 +3499,6 @@ HG_TEST_RPC_CB(buf_map, handle)
         if (ret != SUCCEED)
             PGOTO_ERROR(HG_OTHER_ERROR, "===PDC Data Server: PDC_Meta_Server_buf_map() failed");
     }
-    printf("exited function buf_map %lf\n", MPI_Wtime());
-
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
