@@ -64,6 +64,10 @@ int PDC_timing_init() {
     timings = calloc(1, sizeof(pdc_timing));
 }
 
+int PDC_server_timing_init() {
+    server_timings = calloc(1, sizeof(pdc_server_timing));
+}
+
 int PDC_timing_report() {
     pdc_timing max_timings;
     int rank;
@@ -75,6 +79,20 @@ int PDC_timing_report() {
         printf("PDCreg_obtain_lock_rpc = %lf, wait = %lf\n", max_timings.PDCreg_obtain_lock_rpc, max_timings.PDCreg_obtain_lock_rpc_wait);
         printf("PDCreg_release_lock_rpc = %lf, wait = %lf\n", max_timings.PDCreg_release_lock_rpc, max_timings.PDCreg_release_lock_rpc_wait);
         printf("PDCbuf_obj_unmap_rpc = %lf, wait = %lf\n", max_timings.PDCbuf_obj_unmap_rpc, max_timings.PDCbuf_obj_unmap_rpc_wait);
+    }
+    free(timings);
+}
+
+int PDC_server_timing_report() {
+    pdc_server_timing max_timings;
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    printf("rank = %d, PDCbuf_obj_map_rpc = %lf, PDCreg_obtain_lock_rpc = %lf, PDCreg_release_lock_rpc = %lf, PDCbuf_obj_unmap_rpc = %lf\n", rank, server_timings->PDCbuf_obj_map_rpc, server_timings->PDCreg_obtain_lock_rpc, server_timings->PDCreg_release_lock_rpc, server_timings->PDCbuf_obj_unmap_rpc);
+
+    MPI_Reduce(server_timings, &max_timings, sizeof(pdc_timing)/sizeof(double), MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    if (rank == 0) {
+        printf("rank = %d, PDCbuf_obj_map_rpc = %lf, PDCreg_obtain_lock_rpc = %lf, PDCreg_release_lock_rpc = %lf, PDCbuf_obj_unmap_rpc = %lf\n", rank, max_timings.PDCbuf_obj_map_rpc, max_timings.PDCreg_obtain_lock_rpc, max_timings.PDCreg_release_lock_rpc, max_timings.PDCbuf_obj_unmap_rpc);
     }
     free(timings);
 }
