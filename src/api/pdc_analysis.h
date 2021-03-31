@@ -52,7 +52,7 @@ typedef struct pdc_server_timing {
 
 
 pdc_timing *timings;
-pdc_server_timing *server_timings;
+extern pdc_server_timing *server_timings;
 
 int PDC_timing_init();
 int PDC_timing_report();
