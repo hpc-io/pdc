@@ -59,6 +59,8 @@
 #include "pdc_analysis_pkg.h"
 #include "pdc_analysis.h"
 
+#include "pdc_server_analysis.h"
+
 #ifdef PDC_HAS_CRAY_DRC
 # include <rdmacred.h>
 #endif
