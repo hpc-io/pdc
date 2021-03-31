@@ -152,7 +152,9 @@ int main(int argc, char **argv) {
     PDCprop_set_obj_app_name(obj_prop, "DataServerTest");
     PDCprop_set_obj_tags(    obj_prop, "tag0=1");
 
+#if PDC_TIMING == 1
     PDC_timing_init();
+#endif
     for ( i = 0; i < n_objects; ++i ) {
         // create first object
         sprintf(obj_name1, "o1_%d", i);
@@ -217,9 +219,10 @@ int main(int argc, char **argv) {
             ret_value = 1;
         }
     }
+#if PDC_TIMING == 1
     PDC_timing_report();
-
     PDC_timing_init();
+#endif
     for ( i = 0; i < n_objects; ++i ) {
         sprintf(obj_name1, "o1_%d", i);
         obj1 = PDCobj_open(obj_name1, pdc);
@@ -281,8 +284,9 @@ int main(int argc, char **argv) {
             ret_value = 1;
         }
     }
+#if PDC_TIMING == 1
     PDC_timing_report();
-
+#endif
     // close a container
     if(PDCcont_close(cont) < 0) {
         printf("fail to close container c1 @ line %d\n", __LINE__);
