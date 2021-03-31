@@ -90,7 +90,7 @@ int PDC_server_timing_report() {
 
     printf("rank = %d, PDCbuf_obj_map_rpc = %lf, PDCreg_obtain_lock_rpc = %lf, PDCreg_release_lock_rpc = %lf, PDCbuf_obj_unmap_rpc = %lf\n", rank, server_timings->PDCbuf_obj_map_rpc, server_timings->PDCreg_obtain_lock_rpc, server_timings->PDCreg_release_lock_rpc, server_timings->PDCbuf_obj_unmap_rpc);
 
-    MPI_Reduce(server_timings, &max_timings, sizeof(pdc_timing)/sizeof(double), MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(server_timings, &max_timings, sizeof(pdc_server_timing)/sizeof(double), MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     if (rank == 0) {
         printf("rank = %d, PDCbuf_obj_map_rpc = %lf, PDCreg_obtain_lock_rpc = %lf, PDCreg_release_lock_rpc = %lf, PDCbuf_obj_unmap_rpc = %lf\n", rank, max_timings.PDCbuf_obj_map_rpc, max_timings.PDCreg_obtain_lock_rpc, max_timings.PDCreg_release_lock_rpc, max_timings.PDCbuf_obj_unmap_rpc);
     }
