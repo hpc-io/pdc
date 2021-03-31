@@ -34,6 +34,7 @@
 #include "../server/pdc_utlist.h"
 #include "../server/pdc_server.h"
 #include "../server/pdc_server_data.h"
+#include "../server/pdc_server_analysis.h"
 
 #include <stdio.h>
 #include <stdlib.h>

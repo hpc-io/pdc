@@ -43,22 +43,10 @@ typedef struct pdc_timing {
     double PDCreg_release_lock_rpc_wait;
 } pdc_timing;
 
-typedef struct pdc_server_timing {
-    double PDCbuf_obj_map_rpc;
-    double PDCbuf_obj_unmap_rpc;
-    double PDCreg_obtain_lock_rpc;
-    double PDCreg_release_lock_rpc;
-} pdc_server_timing;
-
-
 pdc_timing *timings;
-extern pdc_server_timing *server_timings;
 
 int PDC_timing_init();
 int PDC_timing_report();
-
-int PDC_server_timing_init();
-int PDC_server_timing_report();
 #endif
 
 /*********************/
