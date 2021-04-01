@@ -1801,7 +1801,7 @@ int main(int argc, char *argv[])
         goto done;
     }
 
-    //PDC_server_timing_init();
+    PDC_server_timing_init();
     // Register Mercury RPC/bulk
     PDC_Server_mercury_register();
 
@@ -1845,7 +1845,7 @@ int main(int argc, char *argv[])
 #endif
 
 
-    //PDC_server_timing_report();
+    PDC_server_timing_report();
     // Exit from the loop, start finalize process
 #ifdef ENABLE_CHECKPOINT
     char *tmp_env_char = getenv("PDC_DISABLE_CHECKPOINT");
