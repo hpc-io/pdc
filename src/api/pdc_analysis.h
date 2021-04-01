@@ -27,7 +27,7 @@
 
 #include "pdc_public.h"
 
-#define PDC_TIMING 0
+#define PDC_TIMING 1
 
 #if PDC_TIMING == 1
 
