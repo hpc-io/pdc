@@ -29,7 +29,7 @@
 #include "pdc_public.h"
 #include "pdc_analysis_and_transforms_common.h"
 
-#define PDC_TIMING 1
+#define PDC_TIMING 0
 
 #if PDC_TIMING == 1
 typedef struct pdc_server_timing {
