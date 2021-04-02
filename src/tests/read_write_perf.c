@@ -101,6 +101,9 @@ int main(int argc, char **argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
+    char hostname[256];
+    gethostname(hostname, 256);
+    printf("Clienyt program read_write_perf Rank %d at hostname %s\n", rank, hostname);
     if ( rank == 0 ) {
         printf("number of dimensions in this test is %d\n", ndim);
         printf("data size = %llu\n", (long long unsigned) data_size );

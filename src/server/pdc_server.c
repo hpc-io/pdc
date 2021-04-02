@@ -1802,6 +1802,9 @@ int main(int argc, char *argv[])
     }
 
     PDC_server_timing_init();
+    char hostname[256];
+    gethostname(hostname, 256);
+    printf("Starting PDC server rank %d at host name %s\n", pdc_server_rank_g, hostname);
     // Register Mercury RPC/bulk
     PDC_Server_mercury_register();
 
