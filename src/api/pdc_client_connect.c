@@ -3045,7 +3045,7 @@ perr_t PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_r
 #endif
     hg_ret = HG_Forward(region_release_handle, client_region_release_rpc_cb, &lookup_args, &in);
 #if PDC_TIMING == 1
-    timings->PDCreg_release_lock_rpc = MPI_Wtime() - start;
+    timings->PDCreg_release_lock_rpc += MPI_Wtime() - start;
 #endif
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_name_to_server(): Could not start HG_Forward()");
@@ -3057,7 +3057,7 @@ perr_t PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_r
 #endif
     PDC_Client_check_response(&send_context_g);
 #if PDC_TIMING == 1
-    timings->PDCreg_release_lock_rpc_wait = MPI_Wtime() - start;
+    timings->PDCreg_release_lock_rpc_wait += MPI_Wtime() - start;
 #endif
     // Now the return value is stored in lookup_args.ret
     if (lookup_args.ret == 1) {
