@@ -2195,7 +2195,7 @@ perr_t PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct
 #endif
     hg_ret = HG_Forward(client_send_buf_unmap_handle, client_send_buf_unmap_rpc_cb, &unmap_args, &in);
 #if PDC_TIMING == 1
-    timings->PDCbuf_obj_unmap_rpc += MPI_Wtime() - start;
+    timings.PDCbuf_obj_unmap_rpc += MPI_Wtime() - start;
 #endif
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_buf_unmap(): Could not start HG_Forward()");
@@ -2207,7 +2207,7 @@ perr_t PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct
 #endif
     PDC_Client_check_response(&send_context_g); 
 #if PDC_TIMING == 1
-    timings->PDCbuf_obj_unmap_rpc_wait += MPI_Wtime() - start;
+    timings.PDCbuf_obj_unmap_rpc_wait += MPI_Wtime() - start;
 #endif    
     if (unmap_args.ret != 1) 
         PGOTO_ERROR(FAIL, "PDC_CLIENT: buf unmap failed...");
@@ -2325,7 +2325,7 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t
 #endif
     hg_ret = HG_Forward(client_send_buf_map_handle, client_send_buf_map_rpc_cb, &map_args, &in);
 #if PDC_TIMING == 1
-    timings->PDCbuf_obj_map_rpc += MPI_Wtime() - start;
+    timings.PDCbuf_obj_map_rpc += MPI_Wtime() - start;
 #endif
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_buf_map(): Could not start HG_Forward()");
@@ -2337,7 +2337,7 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t
 #endif
     PDC_Client_check_response(&send_context_g);
 #if PDC_TIMING == 1
-    timings->PDCbuf_obj_map_rpc_wait += MPI_Wtime() - start;
+    timings.PDCbuf_obj_map_rpc_wait += MPI_Wtime() - start;
 #endif
     if (map_args.ret != 1) 
         PGOTO_ERROR(FAIL,"PDC_CLIENT: buf map failed...");
@@ -2404,7 +2404,7 @@ perr_t PDC_Client_region_lock(struct _pdc_obj_info *object_info, struct pdc_regi
 #endif
     hg_ret = HG_Forward(region_lock_handle, client_region_lock_rpc_cb, &lookup_args, &in);
 #if PDC_TIMING == 1
-    timings->PDCreg_obtain_lock_rpc += MPI_Wtime() - start;
+    timings.PDCreg_obtain_lock_rpc += MPI_Wtime() - start;
 #endif
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_name_to_server(): Could not start HG_Forward()");
@@ -2416,7 +2416,7 @@ perr_t PDC_Client_region_lock(struct _pdc_obj_info *object_info, struct pdc_regi
 #endif
     PDC_Client_check_response(&send_context_g);
 #if PDC_TIMING == 1
-    timings->PDCreg_obtain_lock_rpc_wait += MPI_Wtime() - start;
+    timings.PDCreg_obtain_lock_rpc_wait += MPI_Wtime() - start;
 #endif
     // Now the return value is stored in lookup_args.ret
     if (lookup_args.ret == 1) {
@@ -3045,7 +3045,7 @@ perr_t PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_r
 #endif
     hg_ret = HG_Forward(region_release_handle, client_region_release_rpc_cb, &lookup_args, &in);
 #if PDC_TIMING == 1
-    timings->PDCreg_release_lock_rpc += MPI_Wtime() - start;
+    timings.PDCreg_release_lock_rpc += MPI_Wtime() - start;
 #endif
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_name_to_server(): Could not start HG_Forward()");
@@ -3057,7 +3057,7 @@ perr_t PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_r
 #endif
     PDC_Client_check_response(&send_context_g);
 #if PDC_TIMING == 1
-    timings->PDCreg_release_lock_rpc_wait += MPI_Wtime() - start;
+    timings.PDCreg_release_lock_rpc_wait += MPI_Wtime() - start;
 #endif
     // Now the return value is stored in lookup_args.ret
     if (lookup_args.ret == 1) {
