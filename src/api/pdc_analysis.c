@@ -61,7 +61,7 @@ void * PDC_Server_get_region_data_ptr(pdcid_t object_id) {
 
 
 int PDC_timing_init() {
-    memset(&timings, 0, sizeof(timing));
+    memset(&timings, 0, sizeof(pdc_timing));
 }
 
 
