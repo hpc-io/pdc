@@ -18,8 +18,8 @@
 # -- Project information -----------------------------------------------------
 
 project = 'PDC'
-copyright = '2021, Houjun Tang, Qiao Kang, Bin Dong, Quincey Koziol, Suren Byna, Kimmy Mu, Richard Warren, Jerome Soumagne, François Tessier, François Tessier'
-author = 'Houjun Tang, Qiao Kang, Bin Dong, Quincey Koziol, Suren Byna, Kimmy Mu, Richard Warren, Jerome Soumagne, François Tessier, François Tessier'
+copyright = '2021, Houjun Tang, Qiao Kang, Bin Dong, Quincey Koziol, Suren Byna, Kimmy Mu, Richard Warren, Jerome Soumagne, François Tessier,Venkat Vishwanath'
+author = 'Houjun Tang, Qiao Kang, Bin Dong, Quincey Koziol, Suren Byna, Kimmy Mu, Richard Warren, Jerome Soumagne, François Tessier,Venkat Vishwanath'
 
 
 # -- General configuration ---------------------------------------------------
