@@ -102,10 +102,11 @@ int PDC_server_timestamp_register(pdc_server_timestamp *timestamp, double start,
         timestamp->end = timestamp->start + timestamp->timestamp_max_size;
     } else if (timestamp->timestamp_size == timestamp->timestamp_max_size) {
         temp = (double *) malloc(sizeof(double) * timestamp->timestamp_max_size * 4);
-        memcpy(temp, timestamp->start, sizeof(double) * timestamp->timestamp_max_size * 2);
-        timestamp->timestamp_max_size *= 2;
+        memcpy(temp, timestamp->start, sizeof(double) * timestamp->timestamp_max_size);
+        memcpy(temp + timestamp->timestamp_max_size * 2, timestamp->end, sizeof(double) * timestamp->timestamp_max_size);
         timestamp->start = temp;
-        timestamp->end = temp + timestamp->timestamp_max_size;
+        timestamp->end = temp + timestamp->timestamp_max_size * 2;
+        timestamp->timestamp_max_size *= 2;
     }
     timestamp->start[timestamp->timestamp_size] = start;
     timestamp->end[timestamp->timestamp_size] = end;
