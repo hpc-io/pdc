@@ -24,6 +24,7 @@
 
 #include <time.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <libgen.h>
 #include <inttypes.h>
@@ -53,35 +54,6 @@ void * PDC_Server_get_region_data_ptr(pdcid_t object_id) {
     return NULL;
 }
 #endif
-
-
-#if PDC_TIMING == 1
-
-#include <mpi.h>
-
-
-int PDC_timing_init() {
-    memset(&timings, 0, sizeof(pdc_timing));
-}
-
-
-int PDC_timing_report() {
-    pdc_timing max_timings;
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-    MPI_Reduce(&timings, &max_timings, sizeof(pdc_timing)/sizeof(double), MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    if (rank == 0) {
-        printf("PDCbuf_obj_map_rpc = %lf, wait = %lf\n", max_timings.PDCbuf_obj_map_rpc, max_timings.PDCbuf_obj_map_rpc_wait);
-        printf("PDCreg_obtain_lock_rpc = %lf, wait = %lf\n", max_timings.PDCreg_obtain_lock_rpc, max_timings.PDCreg_obtain_lock_rpc_wait);
-        printf("PDCreg_release_lock_rpc = %lf, wait = %lf\n", max_timings.PDCreg_release_lock_rpc, max_timings.PDCreg_release_lock_rpc_wait);
-        printf("PDCbuf_obj_unmap_rpc = %lf, wait = %lf\n", max_timings.PDCbuf_obj_unmap_rpc, max_timings.PDCbuf_obj_unmap_rpc_wait);
-    }
-    //free(timings);
-}
-
-#endif
-
 
 static int
 iterator_init(pdcid_t objectId, pdcid_t reg_id, int blocks, struct _pdc_iterator_info *iter )

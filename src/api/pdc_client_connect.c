@@ -60,6 +60,8 @@
 #include <math.h>
 #include <sys/time.h>
 
+#include "pdc_timing.h"
+
 int                        is_client_debug_g = 0;
 pdc_server_selection_t     pdc_server_selection_g = PDC_SERVER_DEFAULT;
 int                        pdc_client_mpi_rank_g = 0;

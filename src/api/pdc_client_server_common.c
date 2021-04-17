@@ -51,6 +51,8 @@
 #include <sys/shm.h>
 #include <sys/mman.h>
 
+#include "pdc_timing.h"
+
 #ifdef ENABLE_MULTITHREAD
 hg_thread_mutex_t insert_metadata_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
 
