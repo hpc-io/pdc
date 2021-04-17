@@ -55,7 +55,7 @@ double base_time;
 
 int PDC_server_timing_init();
 int PDC_server_timing_report();
-PDC_server_timestamp_register(pdc_server_timestamp *timestamp, double start, double end);
+int PDC_server_timestamp_register(pdc_server_timestamp *timestamp, double start, double end);
 
 #endif
 
