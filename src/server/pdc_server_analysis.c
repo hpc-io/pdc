@@ -127,7 +127,7 @@ int PDC_server_timestamp_clean(pdc_server_timestamp *timestamp) {
 int server_log(FILE *stream, char* header, pdc_server_timestamp *timestamp) {
     size_t i;
     fprintf(stream, "%s" ,header);
-    for ( i = 0; i < timestamp->time_stamp_size; ++i ) {
+    for ( i = 0; i < timestamp->timestamp_size; ++i ) {
         fprintf(stream, ",%4f-%4f", timestamp->start[i], timestamp->end[i]);
     }
     fprintf(stream, "\n");
