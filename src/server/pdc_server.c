@@ -1848,8 +1848,9 @@ int main(int argc, char *argv[])
     PDC_Server_loop(hg_context_g);
 #endif
 
-
+#if PDC_TIMING == 1
     PDC_server_timing_report();
+#endif
     // Exit from the loop, start finalize process
 #ifdef ENABLE_CHECKPOINT
     char *tmp_env_char = getenv("PDC_DISABLE_CHECKPOINT");
