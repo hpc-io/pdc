@@ -42,11 +42,6 @@ typedef struct pdc_timing {
     double PDCreg_obtain_lock_rpc_wait;
     double PDCreg_release_lock_rpc_wait;
 } pdc_timing;
-
-pdc_timing timings;
-
-int PDC_timing_init();
-int PDC_timing_report();
 #endif
 
 /*********************/
