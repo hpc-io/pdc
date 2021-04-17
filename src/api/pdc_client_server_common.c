@@ -2116,7 +2116,7 @@ HG_TEST_RPC_CB(region_release, handle)
     size_t *data_size_to = NULL;
     size_t type_size = 0;
     size_t dims[4] = {0,0,0,0};
-    double start;
+    double start, end;
     
     FUNC_ENTER(NULL);
 #if PDC_TIMING == 1
@@ -2445,7 +2445,9 @@ HG_TEST_RPC_CB(region_release, handle)
         }
     }
 #if PDC_TIMING == 1
-    server_timings->PDCreg_release_lock_rpc += MPI_Wtime() - start;
+    end = MPI_Wtime();
+    server_timings->PDCreg_release_lock_rpc += end - start;
+    PDC_server_timestamp_register(release_lock_timestamps, start, end);
 #endif
 done:
     if (error == 1) {
@@ -3250,7 +3252,7 @@ HG_TEST_RPC_CB(region_lock, handle)
     region_lock_in_t in;
     region_lock_out_t out;
 
-    double start;
+    double start, end;
 
     FUNC_ENTER(NULL);
 #if PDC_TIMING == 1
@@ -3267,7 +3269,9 @@ HG_TEST_RPC_CB(region_lock, handle)
         HG_Destroy(handle);
     }
 #if PDC_TIMING == 1
-    server_timings->PDCreg_obtain_lock_rpc += MPI_Wtime() - start;
+    end = MPI_Wtime();
+    server_timings->PDCreg_obtain_lock_rpc += end - start;
+    PDC_server_timestamp_register(obtain_lock_timestamps, start, end);
 #endif
     FUNC_LEAVE(ret_value);
 }
@@ -3281,7 +3285,7 @@ HG_TEST_RPC_CB(buf_unmap, handle)
     buf_unmap_in_t in;
     buf_unmap_out_t out;
     const struct hg_info *info;
-    double start;
+    double start, end;
 
     FUNC_ENTER(NULL);
 
@@ -3310,7 +3314,9 @@ HG_TEST_RPC_CB(buf_unmap, handle)
     if (ret != SUCCEED)
         PGOTO_ERROR(HG_OTHER_ERROR, "===PDC_DATA_SERVER: HG_TEST_RPC_CB(buf_unmap, handle) - PDC_Meta_Server_buf_unmap() failed");
 #if PDC_TIMING == 1
-    server_timings->PDCbuf_obj_unmap_rpc = MPI_Wtime() - start;
+    end = MPI_Wtime();
+    server_timings->PDCbuf_obj_unmap_rpc += end - start;
+    PDC_server_timestamp_register(buf_obj_unmap_timestamps, start, end);
 #endif
 done:
     fflush(stdout);
@@ -3469,7 +3475,7 @@ HG_TEST_RPC_CB(buf_map, handle)
     region_buf_map_t *new_buf_map_ptr = NULL;
     void *data_ptr;
     size_t ndim;
-    double start;
+    double start, end;
 
     FUNC_ENTER(NULL);
 
@@ -3520,7 +3526,9 @@ HG_TEST_RPC_CB(buf_map, handle)
             PGOTO_ERROR(HG_OTHER_ERROR, "===PDC Data Server: PDC_Meta_Server_buf_map() failed");
     }
 #if PDC_TIMING == 1
-    server_timings->PDCbuf_obj_map_rpc = MPI_Wtime() - start;
+    end = MPI_Wtime();
+    server_timings->PDCbuf_obj_map_rpc += end - start;
+    PDC_server_timestamp_register(buf_obj_map_timestamps, start, end);
 #endif
 done:
     fflush(stdout);
