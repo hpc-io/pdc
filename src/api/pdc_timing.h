@@ -45,6 +45,12 @@ pdc_server_timestamp *obtain_lock_timestamps;
 pdc_server_timestamp *release_lock_timestamps;
 double base_time;
 
+int PDC_timing_init();
+int PDC_timing_report();
+int PDC_server_timing_init();
+int PDC_server_timestamp_register(pdc_server_timestamp *timestamp, double start, double end);
+int PDC_server_timing_report();
+
 #endif
 
 #endif
