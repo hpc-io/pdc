@@ -57,7 +57,7 @@
 #include "pdc_client_server_common.h"
 #include "pdc_server.h"
 #include "pdc_analysis_pkg.h"
-#include "pdc_analysis.h"
+#include "../api/pdc_analysis.h"
 
 #include "pdc_server_analysis.h"
 
