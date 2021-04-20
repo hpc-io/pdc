@@ -55,6 +55,23 @@
 
 #if PDC_TIMING == 1
 
+static int pdc_timestamp_clean(pdc_timestamp *timestamp) {
+    if (timestamp->timestamp_max_size) {
+        free(timestamp->start);
+    }
+    return 0;
+}
+
+static int timestamp_log(FILE *stream, char* header, pdc_timestamp *timestamp) {
+    size_t i;
+    fprintf(stream, "%s" ,header);
+    for ( i = 0; i < timestamp->timestamp_size; ++i ) {
+        fprintf(stream, ",%4f-%4f", timestamp->start[i], timestamp->end[i]);
+    }
+    fprintf(stream, "\n");
+}
+
+
 int PDC_timing_init() {
     memset(&timings, 0, sizeof(pdc_timing));
 }
@@ -77,7 +94,7 @@ int PDC_timing_report() {
 
 int PDC_server_timing_init() {
     server_timings = calloc(1, sizeof(pdc_server_timing));
-    buf_obj_map_timestamps = calloc(4, sizeof(pdc_server_timestamp));
+    buf_obj_map_timestamps = calloc(4, sizeof(pdc_timestamp));
     buf_obj_unmap_timestamps = buf_obj_map_timestamps + 1;
     obtain_lock_timestamps = buf_obj_map_timestamps + 2;
     release_lock_timestamps = buf_obj_map_timestamps + 3;
@@ -92,7 +109,7 @@ int PDC_server_timing_init() {
     base_time = MPI_Wtime();
 }
 
-int PDC_server_timestamp_register(pdc_server_timestamp *timestamp, double start, double end) {
+int pdc_timestamp_register(pdc_timestamp *timestamp, double start, double end) {
     double *temp;
     start -= base_time;
     end -= base_time;
@@ -114,22 +131,6 @@ int PDC_server_timestamp_register(pdc_server_timestamp *timestamp, double start,
     return 0;
 }
 
-int PDC_server_timestamp_clean(pdc_server_timestamp *timestamp) {
-    if (timestamp->timestamp_max_size) {
-        free(timestamp->start);
-    }
-    return 0;
-}
-
-int server_log(FILE *stream, char* header, pdc_server_timestamp *timestamp) {
-    size_t i;
-    fprintf(stream, "%s" ,header);
-    for ( i = 0; i < timestamp->timestamp_size; ++i ) {
-        fprintf(stream, ",%4f-%4f", timestamp->start[i], timestamp->end[i]);
-    }
-    fprintf(stream, "\n");
-}
-
 int PDC_server_timing_report() {
     pdc_server_timing max_timings;
     int rank;
@@ -147,17 +148,17 @@ int PDC_server_timing_report() {
 
     sprintf(filename, "pdc_server_log_rank_%d.csv", rank);
     stream = fopen(filename,"w");
-    server_log(stream, "buf_obj_map", buf_obj_map_timestamps);
-    server_log(stream, "buf_obj_unmap", buf_obj_unmap_timestamps);
-    server_log(stream, "obtain_lock", obtain_lock_timestamps);
-    server_log(stream, "release_lock", release_lock_timestamps);
+    timestamp_log(stream, "buf_obj_map", buf_obj_map_timestamps);
+    timestamp_log(stream, "buf_obj_unmap", buf_obj_unmap_timestamps);
+    timestamp_log(stream, "obtain_lock", obtain_lock_timestamps);
+    timestamp_log(stream, "release_lock", release_lock_timestamps);
     fclose(stream);
 
     free(server_timings);
-    PDC_server_timestamp_clean(buf_obj_map_timestamps);
-    PDC_server_timestamp_clean(buf_obj_unmap_timestamps);
-    PDC_server_timestamp_clean(obtain_lock_timestamps);
-    PDC_server_timestamp_clean(release_lock_timestamps);
+    pdc_timestamp_clean(buf_obj_map_timestamps);
+    pdc_timestamp_clean(buf_obj_unmap_timestamps);
+    pdc_timestamp_clean(obtain_lock_timestamps);
+    pdc_timestamp_clean(release_lock_timestamps);
     free(buf_obj_map_timestamps);
 }
 
@@ -2559,7 +2560,7 @@ HG_TEST_RPC_CB(region_release, handle)
 #if PDC_TIMING == 1
     end = MPI_Wtime();
     server_timings->PDCreg_release_lock_rpc += end - start;
-    PDC_server_timestamp_register(release_lock_timestamps, start, end);
+    pdc_timestamp_register(release_lock_timestamps, start, end);
 #endif
 done:
     if (error == 1) {
@@ -3383,7 +3384,7 @@ HG_TEST_RPC_CB(region_lock, handle)
 #if PDC_TIMING == 1
     end = MPI_Wtime();
     server_timings->PDCreg_obtain_lock_rpc += end - start;
-    PDC_server_timestamp_register(obtain_lock_timestamps, start, end);
+    pdc_timestamp_register(obtain_lock_timestamps, start, end);
 #endif
     FUNC_LEAVE(ret_value);
 }
@@ -3428,7 +3429,7 @@ HG_TEST_RPC_CB(buf_unmap, handle)
 #if PDC_TIMING == 1
     end = MPI_Wtime();
     server_timings->PDCbuf_obj_unmap_rpc += end - start;
-    PDC_server_timestamp_register(buf_obj_unmap_timestamps, start, end);
+    pdc_timestamp_register(buf_obj_unmap_timestamps, start, end);
 #endif
 done:
     fflush(stdout);
@@ -3640,7 +3641,7 @@ HG_TEST_RPC_CB(buf_map, handle)
 #if PDC_TIMING == 1
     end = MPI_Wtime();
     server_timings->PDCbuf_obj_map_rpc += end - start;
-    PDC_server_timestamp_register(buf_obj_map_timestamps, start, end);
+    pdc_timestamp_register(buf_obj_map_timestamps, start, end);
 #endif
 done:
     fflush(stdout);

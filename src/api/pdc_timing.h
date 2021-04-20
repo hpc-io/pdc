@@ -31,24 +31,29 @@ typedef struct pdc_server_timing {
     double PDCreg_release_lock_rpc;
 } pdc_server_timing;
 
-typedef struct pdc_server_timestamp {
+typedef struct pdc_timestamp {
     double *start;
     double *end;
     size_t timestamp_max_size;
     size_t timestamp_size;
-} pdc_server_timestamp;
+} pdc_timestamp;
 
 pdc_server_timing *server_timings;
-pdc_server_timestamp *buf_obj_map_timestamps;
-pdc_server_timestamp *buf_obj_unmap_timestamps;
-pdc_server_timestamp *obtain_lock_timestamps;
-pdc_server_timestamp *release_lock_timestamps;
+pdc_timestamp *buf_obj_map_timestamps;
+pdc_timestamp *buf_obj_unmap_timestamps;
+pdc_timestamp *obtain_lock_timestamps;
+pdc_timestamp *release_lock_timestamps;
+
+pdc_timestamp *client_buf_obj_map_timestamps;
+pdc_timestamp *client_buf_obj_unmap_timestamps;
+pdc_timestamp *client_obtain_lock_timestamps;
+pdc_timestamp *client_release_lock_timestamps;
 double base_time;
 
 int PDC_timing_init();
 int PDC_timing_report();
 int PDC_server_timing_init();
-int PDC_server_timestamp_register(pdc_server_timestamp *timestamp, double start, double end);
+int pdc_timestamp_register(pdc_timestamp *timestamp, double start, double end);
 int PDC_server_timing_report();
 
 #endif
