@@ -4,7 +4,7 @@
   + PDC programs start with PDC servers running in the background.
   + Client programs uses PDC APIs to forward requests to PDC servers.
   ## PDC Hello world
-  + https://github.com/hpc-io/pdc/blob/qiao_develop/src/tests/pdc_init.c
+  + https://github.com/hpc-io/pdc/blob/stable/src/tests/pdc_init.c
   + A PDC program starts with PDCinit and finishes with PDCclose.
   + To a simple hello world program for PDC, use the following command.
 ```
