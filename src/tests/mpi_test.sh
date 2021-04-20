@@ -20,7 +20,7 @@ rm -rf pdc_tmp
 echo "$mpi_cmd -n $n_servers ./pdc_server.exe &"
 $mpi_cmd -n $n_servers ./pdc_server.exe &
 # WAIT a bit, for 1 second
-sleep 10
+sleep 1
 # RUN the actual test
 echo "$mpi_cmd -n $n_client $test_exe $test_args"
 $mpi_cmd -n $n_client $test_exe $test_args
