@@ -1801,8 +1801,9 @@ int main(int argc, char *argv[])
         printf("==PDC_SERVER[%d]: Error with Mercury init\n", pdc_server_rank_g);
         goto done;
     }
-
+#if PDC_TIMING == 1
     PDC_server_timing_init();
+#endif
     char hostname[256];
     gethostname(hostname, 256);
     printf("Starting PDC server rank %d at host name %s\n", pdc_server_rank_g, hostname);
