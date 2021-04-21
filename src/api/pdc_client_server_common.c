@@ -110,7 +110,7 @@ int PDC_timing_report() {
     pdc_timestamp_clean(client_buf_obj_unmap_timestamps);
     pdc_timestamp_clean(client_obtain_lock_timestamps);
     pdc_timestamp_clean(client_release_lock_timestamps);
-    free(buf_obj_map_timestamps);
+    free(client_buf_obj_map_timestamps);
 
     //free(timings);
 }
