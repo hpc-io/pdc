@@ -27,6 +27,8 @@
 
 #include "pdc_public.h"
 
+#include "pdc_timing.h"
+
 /*********************/
 /* Public Prototypes */
 /*********************/
