@@ -146,7 +146,6 @@ int PDC_server_timing_report() {
     pdc_server_timing max_timings;
     int rank;
     char filename[256];
-    FILE *stream;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
