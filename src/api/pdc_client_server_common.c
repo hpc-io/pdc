@@ -108,6 +108,7 @@ int PDC_timing_report() {
     }
 
     sprintf(filename, "pdc_client_log_rank_%d.csv", rank);
+    printf("filename = %s\n", filename);
     stream = fopen(filename,"r");
     if (stream){
         fclose(stream);
