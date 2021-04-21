@@ -81,6 +81,7 @@ int PDC_timing_report() {
     pdc_timing max_timings;
     int rank;
     char filename[256];
+    FILE *stream;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -122,8 +123,7 @@ int PDC_server_timing_init() {
 
 int pdc_timestamp_register(pdc_timestamp *timestamp, double start, double end) {
     double *temp;
-    start -= base_time;
-    end -= base_time;
+
     if (timestamp->timestamp_max_size == 0) {
         timestamp->timestamp_max_size = 256;
         timestamp->start = (double*) malloc(sizeof(double) * timestamp->timestamp_max_size * 2);
