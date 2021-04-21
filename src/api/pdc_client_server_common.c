@@ -97,7 +97,7 @@ int PDC_timing_report() {
         printf("PDCreg_release_lock_rpc = %lf, wait = %lf\n", max_timings.PDCreg_release_lock_rpc, max_timings.PDCreg_release_lock_rpc_wait);
         printf("PDCbuf_obj_unmap_rpc = %lf, wait = %lf\n", max_timings.PDCbuf_obj_unmap_rpc, max_timings.PDCbuf_obj_unmap_rpc_wait);
     }
-
+/*
     sprintf(filename, "pdc_client_log_rank_%d.csv", rank);
     stream = fopen(filename,"w");
     timestamp_log(stream, "buf_obj_map", client_buf_obj_map_timestamps);
@@ -111,8 +111,7 @@ int PDC_timing_report() {
     pdc_timestamp_clean(client_obtain_lock_timestamps);
     pdc_timestamp_clean(client_release_lock_timestamps);
     free(client_buf_obj_map_timestamps);
-
-    //free(timings);
+*/
 }
 
 int PDC_server_timing_init() {
