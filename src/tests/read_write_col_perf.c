@@ -120,6 +120,10 @@ int main(int argc, char **argv) {
     // create a pdc
     pdc = PDCinit("pdc");
 
+#if PDC_TIMING == 1
+    PDC_timing_init();
+#endif
+
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if(cont_prop <= 0) {
@@ -152,9 +156,6 @@ int main(int argc, char **argv) {
     PDCprop_set_obj_app_name(obj_prop, "DataServerTest");
     PDCprop_set_obj_tags(    obj_prop, "tag0=1");
 
-#if PDC_TIMING == 1
-    PDC_timing_init();
-#endif
     for ( i = 0; i < n_objects; ++i ) {
         // create first object
         sprintf(obj_name1, "o1_%d", i);
