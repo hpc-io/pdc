@@ -2211,7 +2211,7 @@ perr_t PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct
 #if PDC_TIMING == 1
     end = MPI_Wtime();
     timings.PDCbuf_obj_unmap_rpc_wait += end - start;
-    pdc_timestamp_register(client_buf_obj_unmap_timestamps, start, end);
+    //pdc_timestamp_register(client_buf_obj_unmap_timestamps, start, end);
 #endif
     if (unmap_args.ret != 1) 
         PGOTO_ERROR(FAIL, "PDC_CLIENT: buf unmap failed...");
@@ -2343,7 +2343,7 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t
 #if PDC_TIMING == 1
     end = MPI_Wtime();
     timings.PDCbuf_obj_map_rpc_wait += end - start;
-    pdc_timestamp_register(client_buf_obj_map_timestamps, start, end);
+    //pdc_timestamp_register(client_buf_obj_map_timestamps, start, end);
 #endif
     if (map_args.ret != 1) 
         PGOTO_ERROR(FAIL,"PDC_CLIENT: buf map failed...");
@@ -2424,7 +2424,7 @@ perr_t PDC_Client_region_lock(struct _pdc_obj_info *object_info, struct pdc_regi
 #if PDC_TIMING == 1
     end = MPI_Wtime();
     timings.PDCreg_obtain_lock_rpc_wait += end - start;
-    pdc_timestamp_register(client_obtain_lock_timestamps, start, end);
+    //pdc_timestamp_register(client_obtain_lock_timestamps, start, end);
 #endif
     // Now the return value is stored in lookup_args.ret
     if (lookup_args.ret == 1) {
@@ -3067,7 +3067,7 @@ perr_t PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_r
 #if PDC_TIMING == 1
     end = MPI_Wtime();
     timings.PDCreg_release_lock_rpc_wait += end - start;
-    pdc_timestamp_register(client_release_lock_timestamps, start, end);
+    //pdc_timestamp_register(client_release_lock_timestamps, start, end);
 #endif
     // Now the return value is stored in lookup_args.ret
     if (lookup_args.ret == 1) {
