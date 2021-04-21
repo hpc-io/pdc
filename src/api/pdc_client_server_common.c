@@ -108,7 +108,14 @@ int PDC_timing_report() {
     }
 
     sprintf(filename, "pdc_client_log_rank_%d.csv", rank);
-    stream = fopen(filename,"w");
+    stream = fopen(filename,"r");
+    if (stream){
+        fclose(stream);
+        stream = fopen(filename,"a");
+    } else {
+        stream = fopen(filename,"w");
+    }
+
     timestamp_log(stream, "buf_obj_map", client_buf_obj_map_timestamps);
     timestamp_log(stream, "buf_obj_unmap", client_buf_obj_unmap_timestamps);
     timestamp_log(stream, "obtain_lock", client_obtain_lock_timestamps);
@@ -165,6 +172,7 @@ int PDC_server_timing_report() {
     pdc_server_timing max_timings;
     int rank;
     char filename[256];
+    FILE* stream;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -175,14 +183,10 @@ int PDC_server_timing_report() {
         printf("rank = %d, maximum timing among all processes, PDCbuf_obj_map_rpc = %lf, PDCreg_obtain_lock_rpc = %lf, PDCreg_release_lock_rpc = %lf, PDCbuf_obj_unmap_rpc = %lf\n", rank, max_timings.PDCbuf_obj_map_rpc, max_timings.PDCreg_obtain_lock_rpc, max_timings.PDCreg_release_lock_rpc, max_timings.PDCbuf_obj_unmap_rpc);
     }
 
+    stream = fopen(filename,"w");
+
     sprintf(filename, "pdc_server_log_rank_%d.csv", rank);
-    FILE* stream = fopen(filename,"r");
-    if (stream){
-        fclose(stream);
-        stream = fopen(filename,"a");
-    } else {
-        stream = fopen(filename,"w");
-    }
+
     stream = fopen(filename,"w");
     timestamp_log(stream, "buf_obj_map", buf_obj_map_timestamps);
     timestamp_log(stream, "buf_obj_unmap", buf_obj_unmap_timestamps);
