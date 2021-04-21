@@ -79,6 +79,15 @@ int PDC_timing_init() {
     client_buf_obj_unmap_timestamps = client_buf_obj_map_timestamps + 1;
     client_obtain_lock_timestamps = client_buf_obj_map_timestamps + 2;
     client_release_lock_timestamps = client_buf_obj_map_timestamps + 3;
+
+    client_buf_obj_map_timestamps->timestamp_size = 0;
+    client_buf_obj_map_timestamps->timestamp_max_size = 0;
+    client_buf_obj_unmap_timestamps->timestamp_size = 0;
+    client_buf_obj_unmap_timestamps->timestamp_max_size = 0;
+    client_obtain_lock_timestamps->timestamp_size = 0;
+    client_obtain_lock_timestamps->timestamp_max_size = 0;
+    client_release_lock_timestamps->timestamp_size = 0;
+    client_release_lock_timestamps->timestamp_max_size = 0;
 }
 
 
