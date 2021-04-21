@@ -74,6 +74,11 @@ static int timestamp_log(FILE *stream, char* header, pdc_timestamp *timestamp) {
 
 int PDC_timing_init() {
     memset(&timings, 0, sizeof(pdc_timing));
+
+    client_buf_obj_map_timestamps = calloc(4, sizeof(pdc_timestamp));
+    client_buf_obj_unmap_timestamps = client_buf_obj_map_timestamps + 1;
+    client_obtain_lock_timestamps = client_buf_obj_map_timestamps + 2;
+    client_release_lock_timestamps = client_buf_obj_map_timestamps + 3;
 }
 
 
@@ -95,11 +100,17 @@ int PDC_timing_report() {
 
     sprintf(filename, "pdc_client_log_rank_%d.csv", rank);
     stream = fopen(filename,"w");
-    timestamp_log(stream, "buf_obj_map", buf_obj_map_timestamps);
-    timestamp_log(stream, "buf_obj_unmap", buf_obj_unmap_timestamps);
-    timestamp_log(stream, "obtain_lock", obtain_lock_timestamps);
-    timestamp_log(stream, "release_lock", release_lock_timestamps);
+    timestamp_log(stream, "buf_obj_map", client_buf_obj_map_timestamps);
+    timestamp_log(stream, "buf_obj_unmap", client_buf_obj_unmap_timestamps);
+    timestamp_log(stream, "obtain_lock", client_obtain_lock_timestamps);
+    timestamp_log(stream, "release_lock", client_release_lock_timestamps);
     fclose(stream);
+
+    pdc_timestamp_clean(client_buf_obj_map_timestamps);
+    pdc_timestamp_clean(client_buf_obj_unmap_timestamps);
+    pdc_timestamp_clean(client_obtain_lock_timestamps);
+    pdc_timestamp_clean(client_release_lock_timestamps);
+    free(buf_obj_map_timestamps);
 
     //free(timings);
 }
