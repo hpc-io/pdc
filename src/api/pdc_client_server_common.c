@@ -118,11 +118,11 @@ int PDC_timing_report(const char* prefix) {
     sprintf(header, "buf_obj_map_%s", prefix);
     timestamp_log(stream, header, client_buf_obj_map_timestamps);
     sprintf(header, "buf_obj_unmap_%s", prefix);
-    timestamp_log(stream, "buf_obj_unmap", client_buf_obj_unmap_timestamps);
+    timestamp_log(stream, header, client_buf_obj_unmap_timestamps);
     sprintf(header, "obtain_lock_%s", prefix);
-    timestamp_log(stream, "obtain_lock", client_obtain_lock_timestamps);
+    timestamp_log(stream, header, client_obtain_lock_timestamps);
     sprintf(header, "release_lock_%s", prefix);
-    timestamp_log(stream, "release_lock", client_release_lock_timestamps);
+    timestamp_log(stream, header, client_release_lock_timestamps);
     fclose(stream);
 
     pdc_timestamp_clean(client_buf_obj_map_timestamps);
