@@ -34,6 +34,9 @@
 #include "pdc_client_connect.h"
 #include "pdc_client_server_common.h"
 #include "pdc_analysis.h"
+
+#include "pdc_timing.h"
+
 #define BUF_LEN 128
 
 
@@ -218,7 +221,7 @@ int main(int argc, char **argv) {
     }
 #if PDC_TIMING == 1
     MPI_Barrier(MPI_COMM_WORLD);
-    PDC_timing_report();
+    PDC_timing_report("write");
     PDC_timing_init();
 #endif
     for ( i = 0; i < n_objects; ++i ) {
@@ -283,7 +286,7 @@ int main(int argc, char **argv) {
         }
     }
 #if PDC_TIMING == 1
-    PDC_timing_report();
+    PDC_timing_report("read");
 #endif
     // close a container
     if(PDCcont_close(cont) < 0) {
