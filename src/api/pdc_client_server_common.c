@@ -62,7 +62,7 @@ static int pdc_timestamp_clean(pdc_timestamp *timestamp) {
     return 0;
 }
 
-static int timestamp_log(FILE *stream, char* header, pdc_timestamp *timestamp) {
+static int timestamp_log(FILE *stream, const char* header, pdc_timestamp *timestamp) {
     size_t i;
     fprintf(stream, "%s" ,header);
     for ( i = 0; i < timestamp->timestamp_size; ++i ) {
