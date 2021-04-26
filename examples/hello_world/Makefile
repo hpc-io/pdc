@@ -8,7 +8,7 @@ LIBS = -lpdc
 .c.o:
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<
 
-all: hello_world pdc_server.exe
+all: pdc_init pdc_server.exe
 
 pdc_server.exe: pdc_server.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
@@ -17,4 +17,4 @@ pdc_init: pdc_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
 
 clean:
-	rm -f *.o hello_world pdc_server.exe
+	rm -f *.o pdc_init pdc_server.exe
