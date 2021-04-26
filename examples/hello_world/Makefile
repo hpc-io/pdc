@@ -4,7 +4,7 @@ CFLAGS = -O2 -Wall -Wextra
 INCLUDES = -I. -I$(PDC_DIR)/include
 LDFLAGS = -L$(PDC_DIR)/lib
 
-LIBS = -lpdc -lmercury
+LIBS = -lpdc
 
 .c.o:
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<
