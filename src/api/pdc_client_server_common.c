@@ -178,7 +178,6 @@ int PDC_server_timing_report() {
         printf("rank = %d, maximum timing among all processes, PDCbuf_obj_map_rpc = %lf, PDCreg_obtain_lock_rpc = %lf, PDCreg_release_lock_rpc = %lf, PDCbuf_obj_unmap_rpc = %lf\n", rank, max_timings.PDCbuf_obj_map_rpc, max_timings.PDCreg_obtain_lock_rpc, max_timings.PDCreg_release_lock_rpc, max_timings.PDCbuf_obj_unmap_rpc);
     }
 
-    stream = fopen(filename,"w");
 
     sprintf(filename, "pdc_server_log_rank_%d.csv", rank);
 
