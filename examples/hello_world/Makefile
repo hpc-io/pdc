@@ -8,10 +8,7 @@ LIBS = -lpdc -lmercury
 .c.o:
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<
 
-all: pdc_init pdc_server.exe
-
-pdc_server.exe: pdc_server.o
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
+all: pdc_init
 
 pdc_init: pdc_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
