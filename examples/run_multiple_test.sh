@@ -11,7 +11,7 @@ if [ $# -lt 1 ]; then echo "missing test argument" && exit -1 ; fi
 test_args="$*"
 # if [ -x $test_exe ]; then echo "testing: $test_exe"; else echo "test: $test_exe not found or not and executable" && exit -2; fi
 # START the server (in the background)
-./pdc_server.exe &
+$PDC_DIR/bin/./pdc_server.exe &
 # WAIT a bit...
 sleep 1
 # RUN the actual test(s)

@@ -18,7 +18,7 @@ if [ -x $test_exe ]; then echo "testing: $test_exe"; else echo "test: $test_exe 
 rm -rf pdc_tmp
 # START the server (in the background)
 echo "$mpi_cmd -n $n_servers ./pdc_server.exe &"
-$mpi_cmd -n $n_servers ./pdc_server.exe &
+$mpi_cmd -n $n_servers $PDC_DIR/bin/./pdc_server.exe &
 # WAIT a bit, for 1 second
 sleep 1
 # RUN the actual test
@@ -27,5 +27,6 @@ $mpi_cmd -n $n_client $test_exe $test_args
 # Need to test the return value
 ret="$?"
 # and shutdown the SERVER before exiting
-$mpi_cmd -n 1 ./close_server
+echo $mpi_cmd -n 1 ./close_server
+$mpi_cmd -n 1 $PDC_DIR/bin/./close_server
 exit $ret
