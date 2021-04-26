@@ -139,14 +139,6 @@ int PDC_server_timing_init() {
     buf_obj_unmap_timestamps = buf_obj_map_timestamps + 1;
     obtain_lock_timestamps = buf_obj_map_timestamps + 2;
     release_lock_timestamps = buf_obj_map_timestamps + 3;
-    buf_obj_map_timestamps->timestamp_size = 0;
-    buf_obj_map_timestamps->timestamp_max_size = 0;
-    buf_obj_unmap_timestamps->timestamp_size = 0;
-    buf_obj_unmap_timestamps->timestamp_max_size = 0;
-    obtain_lock_timestamps->timestamp_size = 0;
-    obtain_lock_timestamps->timestamp_max_size = 0;
-    release_lock_timestamps->timestamp_size = 0;
-    release_lock_timestamps->timestamp_max_size = 0;
     base_time = MPI_Wtime();
 }
 
