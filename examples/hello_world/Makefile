@@ -2,7 +2,7 @@ CC = mpicc
 CFLAGS = -O2 -Wall -Wextra
 
 INCLUDES = -I. -I$(PDC_DIR)/include
-LDFLAGS = -L$(PDC_DIR)/lib -L$(MERCURY_DIR)/bin
+LDFLAGS = -L$(PDC_DIR)/lib
 
 LIBS = -lpdc -lmercury
 
