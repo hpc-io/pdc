@@ -154,10 +154,6 @@ int main(int argc, char **argv) {
     PDCprop_set_obj_app_name(obj_prop, "DataServerTest");
     PDCprop_set_obj_tags(    obj_prop, "tag0=1");
 
-#if PDC_TIMING == 1
-    PDC_timing_init();
-#endif
-
     for ( i = 0; i < n_objects; ++i ) {
         // create first object
         sprintf(obj_name1, "o1_%d_%d", rank, i);
@@ -222,7 +218,6 @@ int main(int argc, char **argv) {
 #if PDC_TIMING == 1
     MPI_Barrier(MPI_COMM_WORLD);
     PDC_timing_report("write");
-    PDC_timing_init();
 #endif
     for ( i = 0; i < n_objects; ++i ) {
         sprintf(obj_name1, "o1_%d_%d", rank, i);

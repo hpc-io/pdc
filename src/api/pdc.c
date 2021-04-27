@@ -35,6 +35,7 @@
 #include "pdc_analysis_pkg.h"
 #include "pdc_interface.h"
 #include "pdc_client_connect.h"
+#include "pdc_timing.h"
 
 pbool_t err_occurred = FALSE;
 
@@ -102,7 +103,9 @@ pdcid_t PDCinit(const char *pdc_name)
 
     // PDC Client Server connection init
     PDC_Client_init();
-
+#if PDC_TIMING == 1
+    PDC_timing_init();
+#endif
     ret_value = pdcid;
     
 done:

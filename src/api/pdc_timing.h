@@ -51,6 +51,7 @@ pdc_timestamp *client_release_lock_timestamps;
 double base_time;
 
 int PDC_timing_init();
+int PDC_timing_finalize();
 int PDC_timing_report(const char* prefix);
 int PDC_server_timing_init();
 int pdc_timestamp_register(pdc_timestamp *timestamp, double start, double end);
