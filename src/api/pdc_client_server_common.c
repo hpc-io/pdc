@@ -128,7 +128,7 @@ int PDC_timing_report(const char* prefix) {
     client_buf_obj_map_timestamps->timestamp_size = 0;
     client_buf_obj_unmap_timestamps->timestamp_size = 0;
     client_obtain_lock_timestamps->timestamp_size = 0;
-    client_brelease_lock_timestamps->timestamp_size = 0;
+    client_release_lock_timestamps->timestamp_size = 0;
 }
 
 int PDC_server_timing_init() {
