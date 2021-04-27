@@ -62,5 +62,5 @@
   + To run this example
 ```
 0. cd make
-1. run_multiple_test.sh ./vpicio ./bdcats
+1. ./run_multiple_test.sh ./vpicio ./bdcats
 ```
