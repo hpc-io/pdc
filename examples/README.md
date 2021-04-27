@@ -8,13 +8,13 @@
   + A PDC program starts with PDCinit and finishes with PDCclose.
   + To a simple hello world program for PDC, use the following command.
 ```
-0. cd $PDC_DIR/bin
+0. make pdc_init
 1. ./run_test.sh ./pdc_init
 ```
   + The script "run_test.sh" starts a server first. Then program "obj_get_data" is executed. Finally, the PDC servers are closed.
   + Alternatively, the following command can be used for multile MPI processes.
 ```
-0. cd $PDC_DIR/bin
+0. make pdc_init
 1. ./mpi_test.sh ./pdc_init mpiexec 2 4
 ```
   + The above command will start a server with 2 processes. Then it will start the application program with 4 processes. Finally, all servers are closed.
@@ -25,7 +25,7 @@
   + This example writes different size of data to two objects. It then read back the data to check whether the data is correct or not.
   + To run this example, use the following command lines.
 ```
-0. cd $PDC_DIR/bin
+0. make obj_get_data
 1. ./run_test.sh ./obj_get_data
 2. ./mpi_test.sh ./obj_get_data mpiexec 2 4
 ```
@@ -35,7 +35,7 @@
   + Generally, PDC perform I/O with the PDCbuf_obj_map, PDCreg_obtain_lock, PDCreg_release_lock, and PDCbuf_obj_unmap. The logic is similar to HDF5 dataspace and memory space. In PDC language, they are remote region and local region. The lock functions for remote regions allow PDC servers to handle concurrent requests from different clients without undefined behaviors.
   + To run thie example, use the following command lines.
 ```
-0. cd $PDC_DIR/bin
+0. make
 1. ./run_test.sh ./region_obj_map_2D
 2. ./mpi_test.sh ./region_obj_map_2D mpiexec 2 4
 3. ./run_test.sh ./region_obj_map_3D
@@ -61,6 +61,6 @@
     - BD-CATS-IO is an example for reading data written by VIPIC I/O.
   + To run this example
 ```
-0. cd $PDC_DIR/bin
+0. cd make
 1. run_multiple_test.sh ./vpicio ./bdcats
 ```
