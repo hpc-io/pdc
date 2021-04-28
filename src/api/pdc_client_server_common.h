@@ -196,6 +196,7 @@ typedef struct region_list_t {
     uint32_t client_ids[PDC_SERVER_MAX_PROC_PER_NODE];
 
     uint64_t data_size;
+    uint64_t unit_size;
     int      is_data_ready;
     char     shm_addr[ADDR_MAX];
     int      shm_fd;
@@ -358,6 +359,8 @@ typedef struct data_server_region_t {
     region_list_t *region_lock_request_head;
     // For region map
     region_map_t *region_map_head;
+    // For region storage
+    region_list_t *region_storage_head;
     // For non-mapped object analysis
     // Used primarily as a local_temp
     void *obj_data_ptr;

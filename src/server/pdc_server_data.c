@@ -190,6 +190,7 @@ perr_t PDC_Server_local_region_lock_status(PDC_mapping_info_t *mapped_region, in
         if (is_region_identical(request_region, elt) == 1) {
             *lock_status = 1;
             elt->reg_dirty_from_buf= 1;
+            /* printf("%s: set reg_dirty_from_buf \n", __func__); */
             elt->bulk_handle = mapped_region->remote_bulk_handle;
             elt->addr = mapped_region->remote_addr;
             elt->from_obj_id = mapped_region->from_obj_id;
@@ -253,6 +254,8 @@ perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out,
     region_buf_map_t *eltt;
     int error = 0;
     int found_lock = 0;
+    time_t t;
+    struct tm tm;
 
     FUNC_ENTER(NULL);
     
@@ -274,6 +277,13 @@ perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out,
     if (ndim >=3) {
         request_region->start[2]  = in->region.start_2;
         request_region->count[2]  = in->region.count_2;
+
+        /* t = time(NULL); */
+        /* tm = *localtime(&t); */
+        /* printf("%02d:%02d:%02d\n", tm.tm_hour, tm.tm_min, tm.tm_sec); */
+        /* printf("==PDC_SERVER[%d]: locking region (%llu, %llu, %llu), (%llu, %llu, %llu)\n", pdc_server_rank_g, */ 
+        /*                                                                                     request_region->start[0], request_region->start[1], request_region->start[2], */
+                                                                                            /* request_region->count[0], request_region->count[1], request_region->count[2]); */
     }
     if (ndim >=4) {
         request_region->start[3]  = in->region.start_3;
@@ -294,6 +304,7 @@ perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out,
         new_obj_reg->region_lock_head = NULL;
         new_obj_reg->region_buf_map_head = NULL;
         new_obj_reg->region_lock_request_head = NULL;
+        new_obj_reg->region_storage_head = NULL;
         DL_APPEND(dataserver_region_g, new_obj_reg);
     }
 #ifdef ENABLE_MULTITHREAD 
@@ -328,6 +339,7 @@ perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out,
         if(PDC_is_same_region_list(tmp, request_region) == 1) {
             request_region->reg_dirty_from_buf = 1;
             hg_atomic_incr32(&(request_region->buf_map_refcount));
+            /* printf("%s: set reg_dirty_from_buf and buf_map_refcount\n", __func__); */
         }
     }
     free(tmp);
@@ -345,7 +357,10 @@ perr_t PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out,
     out->ret = 1;
 
 done:
-    fflush(stdout);
+    /* t = time(NULL); */
+    /* tm = *localtime(&t); */
+    /* printf("Done locking region %02d:%02d:%02d\n", tm.tm_hour, tm.tm_min, tm.tm_sec); */
+    /* fflush(stdout); */
     if(error == 1) {
         out->ret = 0;
     }
@@ -404,6 +419,12 @@ perr_t PDC_Data_Server_region_release(region_lock_in_t *in, region_lock_out_t *o
      
     FUNC_ENTER(NULL);
     
+    /* time_t t; */
+    /* struct tm tm; */
+    /* t = time(NULL); */
+    /* tm = *localtime(&t); */
+    /* printf("start PDC_Data_Server_region_release %02d:%02d:%02d\n", tm.tm_hour, tm.tm_min, tm.tm_sec); */
+
     ndim = in->region.ndim;
 
     // Convert transferred lock region to structure
@@ -421,6 +442,11 @@ perr_t PDC_Data_Server_region_release(region_lock_in_t *in, region_lock_out_t *o
     if (ndim >=3) {
         request_region.start[2]  = in->region.start_2;
         request_region.count[2]  = in->region.count_2;
+
+        /* time_t func_time=time(NULL);    \ */
+        /* struct tm tm_time;               \ */
+        /* func_time = time(NULL);tm_time = *localtime(&func_time);\ */
+        /* printf("%02d:%02d:%02d: %s\n", tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec, __func__);\ */
     }
     if (ndim >=4) {
         request_region.start[3]  = in->region.start_3;
@@ -444,6 +470,7 @@ perr_t PDC_Data_Server_region_release(region_lock_in_t *in, region_lock_out_t *o
             DL_DELETE(obj_reg->region_lock_head, tmp1);
             free(tmp1);
             tmp1 = NULL;
+            break;
         }
     }
 #ifdef ENABLE_MULTITHREAD 
@@ -458,7 +485,10 @@ perr_t PDC_Data_Server_region_release(region_lock_in_t *in, region_lock_out_t *o
     out->ret = 1;
 
 done:
-    fflush(stdout);
+    /* t = time(NULL); */
+    /* tm = *localtime(&t); */
+    /* printf("done PDC_Data_Server_region_release %02d:%02d:%02d\n", tm.tm_hour, tm.tm_min, tm.tm_sec); */
+    /* fflush(stdout); */
 
     FUNC_LEAVE(ret_value);
 }
@@ -963,6 +993,7 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
         new_obj_reg->region_lock_head = NULL;
         new_obj_reg->region_buf_map_head = NULL;
         new_obj_reg->region_lock_request_head = NULL;
+        new_obj_reg->region_storage_head = NULL;
 
         new_obj_reg->fd = server_open_storage(storage_location, in->remote_obj_id);
         // Generate a location for data storage for data server to write
@@ -1007,8 +1038,43 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
     hg_thread_mutex_lock(&data_buf_map_mutex_g);
 #endif
     DL_FOREACH(new_obj_reg->region_buf_map_head, tmp) {
-        if(tmp->remote_obj_id == in->remote_obj_id && in->remote_region_unit.start_0 == tmp->remote_region_unit.start_0 && in->remote_region_unit.count_0 == tmp->remote_region_unit.count_0 && in->local_region.start_0 == tmp->local_region.start_0 && in->local_region.count_0 == tmp->local_region.count_0)
-            dup = 1;
+        if (in->ndim == 1) {
+            if(tmp->remote_obj_id == in->remote_obj_id && 
+               in->remote_region_unit.start_0 == tmp->remote_region_unit.start_0 && 
+               in->remote_region_unit.count_0 == tmp->remote_region_unit.count_0 && 
+               in->local_region.start_0 == tmp->local_region.start_0 && in->local_region.count_0 == tmp->local_region.count_0)
+                dup = 1;
+        }
+        else if (in->ndim == 2) {
+            if(tmp->remote_obj_id == in->remote_obj_id && 
+               in->remote_region_unit.start_0 == tmp->remote_region_unit.start_0 && 
+               in->remote_region_unit.start_1 == tmp->remote_region_unit.start_1 && 
+               in->remote_region_unit.count_0 == tmp->remote_region_unit.count_0 && 
+               in->remote_region_unit.count_1 == tmp->remote_region_unit.count_1 && 
+               in->local_region.start_0 == tmp->local_region.start_0 && 
+               in->local_region.start_1 == tmp->local_region.start_1 && 
+               in->local_region.count_0 == tmp->local_region.count_0 &&
+               in->local_region.count_1 == tmp->local_region.count_1
+              )
+                dup = 1;
+        }
+        else if (in->ndim == 3) {
+            if(tmp->remote_obj_id == in->remote_obj_id && 
+               in->remote_region_unit.start_0 == tmp->remote_region_unit.start_0 && 
+               in->remote_region_unit.start_1 == tmp->remote_region_unit.start_1 && 
+               in->remote_region_unit.start_2 == tmp->remote_region_unit.start_2 && 
+               in->remote_region_unit.count_0 == tmp->remote_region_unit.count_0 && 
+               in->remote_region_unit.count_1 == tmp->remote_region_unit.count_1 && 
+               in->remote_region_unit.count_2 == tmp->remote_region_unit.count_2 && 
+               in->local_region.start_0 == tmp->local_region.start_0 && 
+               in->local_region.start_1 == tmp->local_region.start_1 && 
+               in->local_region.start_2 == tmp->local_region.start_2 && 
+               in->local_region.count_0 == tmp->local_region.count_0 &&
+               in->local_region.count_1 == tmp->local_region.count_1 &&
+               in->local_region.count_2 == tmp->local_region.count_2
+              )
+                dup = 1;
+        }
     }
     if(dup == 0) {
         buf_map_ptr = (region_buf_map_t *)malloc(sizeof(region_buf_map_t));
@@ -1039,6 +1105,7 @@ region_buf_map_t *PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in
     DL_FOREACH(new_obj_reg->region_lock_head, elt_reg) {
         if (PDC_is_same_region_list(elt_reg, request_region) == 1) {
             hg_atomic_incr32(&(elt_reg->buf_map_refcount));
+            /* printf("%s: set buf_map_refcount\n", __func__); */
         }
     }
     ret_value = buf_map_ptr;
@@ -1326,6 +1393,12 @@ perr_t PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_p
 
     FUNC_ENTER(NULL);
 
+    /* time_t t; */
+    /* struct tm tm; */
+    /* t = time(NULL); */
+    /* tm = *localtime(&t); */
+    /* printf("start PDC_Meta_Server_buf_map %02d:%02d:%02d\n", tm.tm_hour, tm.tm_min, tm.tm_sec); */
+
     // dataserver and metadata server is on the same node
     if((uint32_t)pdc_server_rank_g == in->meta_server_id) {
         target_meta = find_metadata_by_id(in->remote_obj_id);
@@ -1395,6 +1468,11 @@ perr_t PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_p
     }
 
 done:
+
+    /* t = time(NULL); */
+    /* tm = *localtime(&t); */
+    /* printf("done PDC_Meta_Server_buf_map %02d:%02d:%02d\n", tm.tm_hour, tm.tm_min, tm.tm_sec); */
+
     if(error == 1) {
         HG_Free_input(*handle, in);
         HG_Destroy(*handle);
@@ -4270,19 +4348,55 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region
     // The location string is cached, so we utilize
     // that to reopen the file.
     if ((region->fd < 0) && region->storage_location) {
-        region->fd = open(region->storage_location, O_RDWR, 0666);
+        region->fd = open(region->storage_location, O_RDWR | O_APPEND, 0666);
     }
+
+    region_list_t *storage_region = (region_list_t*)calloc(1, sizeof(region_list_t));
+    for (int i = 0; i < region_info->ndim; i++) {
+        storage_region->start[i] = region_info->offset[i];
+        storage_region->count[i] = region_info->size[i];
+    }
+    storage_region->unit_size = unit;
+    storage_region->offset = lseek(region->fd, 0, SEEK_END);
+
+    /* time_t t; */
+    /* struct tm tm; */
+    /* t = time(NULL); */
+    /* tm = *localtime(&t); */
+    /* printf("befor write: %02d:%02d:%02d\n", tm.tm_hour, tm.tm_min, tm.tm_sec); */
+
+#ifdef ENABLE_TIMING
+    struct timeval  pdc_timer_start, pdc_timer_end;
+    double write_total_sec;
+    gettimeofday(&pdc_timer_start, 0);
+#endif
+
     if(region_info->ndim == 1)
-        write_bytes = pwrite(region->fd, buf, unit*(region_info->size[0]), (pdc_server_rank_g%nclient_per_node)*unit*region_info->size[0]);
+        write_bytes = write(region->fd, buf, unit*(region_info->size[0]));
     else if(region_info->ndim == 2)
-        write_bytes = pwrite(region->fd, buf, unit*(region_info->size[0])*(region_info->size[1]), (pdc_server_rank_g%nclient_per_node)*unit*region_info->size[0]*region_info->size[1]);
+        write_bytes = write(region->fd, buf, unit*(region_info->size[0])*(region_info->size[1]));
     else if(region_info->ndim == 3)
-        write_bytes = pwrite(region->fd, buf, unit*(region_info->size[0])*(region_info->size[1]*region_info->size[2]), (pdc_server_rank_g%nclient_per_node)*unit*region_info->size[0]*region_info->size[1]*region_info->size[2]);
+        write_bytes = write(region->fd, buf, unit*(region_info->size[0])*(region_info->size[1]*region_info->size[2]));
+
+    /* t = time(NULL); */
+    /* tm = *localtime(&t); */
+    /* printf("after write: %02d:%02d:%02d\n", tm.tm_hour, tm.tm_min, tm.tm_sec); */
 
     if(write_bytes == -1){
-        printf("==PDC_SERVER[%d]: pwrite %d failed\n", pdc_server_rank_g, region->fd);
+        printf("==PDC_SERVER[%d]: write %d failed\n", pdc_server_rank_g, region->fd);
         goto done;
     }
+
+#ifdef ENABLE_TIMING
+    gettimeofday(&pdc_timer_end, 0);
+    write_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+    printf("==PDC_SERVER[%d]: write region time: %.4f, %llu bytes\n", pdc_server_rank_g, write_total_sec, write_bytes);
+    fflush(stdout);
+#endif
+
+    // Store storage information
+    storage_region->data_size = write_bytes;
+    DL_APPEND(region->region_storage_head, storage_region);
 
 done:
     fflush(stdout);
@@ -4294,6 +4408,8 @@ perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region
     perr_t ret_value = SUCCEED;
     ssize_t read_bytes;
     data_server_region_t *region = NULL;
+    region_list_t *elt;
+    int flag = 0;
     
     FUNC_ENTER(NULL);
     
@@ -4308,12 +4424,92 @@ perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region
     if (region->fd < 0) {
         region->fd = open(region->storage_location, O_RDWR, 0666);
     }
-    if(region_info->ndim == 1)
-        read_bytes = pread(region->fd, buf, unit*(region_info->size[0]), (pdc_server_rank_g%nclient_per_node)*unit*region_info->size[0]);
-    else if(region_info->ndim == 2)
-        read_bytes = pread(region->fd, buf, unit*(region_info->size[0])*(region_info->size[1]), (pdc_server_rank_g%nclient_per_node)*unit*region_info->size[0]*region_info->size[1]);
-    else if(region_info->ndim == 3)
-        read_bytes = pread(region->fd, buf, unit*(region_info->size[0])*(region_info->size[1]*region_info->size[2]), (pdc_server_rank_g%nclient_per_node)*unit*region_info->size[0]*region_info->size[1]*region_info->size[2]);
+
+    /* time_t t; */
+    /* struct tm tm; */
+    /* t = time(NULL); */
+    /* tm = *localtime(&t); */
+    /* printf("befor pread: %02d:%02d:%02d\n", tm.tm_hour, tm.tm_min, tm.tm_sec); */
+
+
+    region_list_t *storage_region = NULL;
+    DL_FOREACH(region->region_storage_head, elt) {
+        flag = 0;
+        for (int i = 0; i < region_info->ndim; i++) {
+            if (elt->start[i]*unit > region_info->offset[i] || (elt->start[i]+elt->count[i])*unit < region_info->offset[i]+region_info->size[i]) {
+                flag = 1;
+                break;
+            }
+        }
+        if (flag == 0) {
+            storage_region = elt;
+            break;
+        }
+    }
+
+#ifdef ENABLE_TIMING
+    struct timeval  pdc_timer_start, pdc_timer_end;
+    double read_total_sec;
+    gettimeofday(&pdc_timer_start, 0);
+#endif
+
+    if (storage_region) {
+        if(region_info->ndim == 1) {
+            read_bytes = pread(region->fd, buf, unit*(region_info->size[0]), storage_region->offset+region_info->offset[0]);
+        }
+        else if(region_info->ndim == 2) {
+            void *tmp_buf = malloc(storage_region->data_size);
+            // Read entire region
+            read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
+            // Extract requested data
+            uint64_t pos = 0;
+            for (int i = region_info->offset[0]/unit; i < region_info->offset[0]/unit+region_info->size[0]; i++) {
+                memcpy(buf+pos, tmp_buf + i*storage_region->count[1]*unit+region_info->offset[1], region_info->size[1]);
+                pos += region_info->size[1];
+            }
+            free(tmp_buf);
+        }
+        else if(region_info->ndim == 3) {
+            void *tmp_buf = malloc(storage_region->data_size);
+            // Read entire region
+            read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
+            // Extract requested data
+            uint64_t pos = 0;
+            for (int i = region_info->offset[0]/unit; i < region_info->offset[0]/unit+region_info->size[0]; i++) {
+                for (int j = region_info->offset[1]/unit; j < region_info->offset[1]/unit+region_info->size[1]; j++) {
+                    memcpy(buf+pos, tmp_buf + i*storage_region->count[2]*storage_region->count[1]*unit + 
+                                    j*storage_region->count[2]*unit+region_info->offset[2], region_info->size[2]);
+                    pos += region_info->size[2];
+                }
+            }
+            free(tmp_buf);
+        }
+
+    }
+    else {
+        printf("==PDC_SERVER[%d]: %s count not find storage information, use current region info\n", pdc_server_rank_g, __func__);
+        if(region_info->ndim == 1) {
+            read_bytes = pread(region->fd, buf, unit*(region_info->size[0]), unit*region_info->offset[0]);
+        }
+        else if(region_info->ndim == 2) {
+            read_bytes = pread(region->fd, buf, unit*region_info->size[0]*region_info->size[1], 
+                               unit*region_info->offset[0]*region_info->size[1]*region_info->size[2]+unit*region_info->offset[1]);
+        }
+        else if(region_info->ndim == 3) {
+            read_bytes = pread(region->fd, buf, unit*region_info->size[0]*region_info->size[1]*region_info->size[2], 
+                               unit*region_info->offset[0]*region_info->size[1]*region_info->size[2]+unit*region_info->offset[1]*region_info->size[2]+region_info->offset[2]);
+        }
+    }
+
+#ifdef ENABLE_TIMING
+    gettimeofday(&pdc_timer_end, 0);
+    read_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+    printf("==PDC_SERVER[%d]: read region time: %.4f, %llu bytes\n", pdc_server_rank_g, read_total_sec, read_bytes);
+    fflush(stdout);
+    /* t = time(NULL); */
+    /* tm = *localtime(&t); */
+    /* printf("after pread: %02d:%02d:%02d\n", tm.tm_hour, tm.tm_min, tm.tm_sec); */
+#endif
 
     if(read_bytes == -1){
         char errmsg[256];
