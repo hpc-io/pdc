@@ -4436,7 +4436,7 @@ perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region
     DL_FOREACH(region->region_storage_head, elt) {
         flag = 0;
         for (int i = 0; i < region_info->ndim; i++) {
-            if (elt->start[i]*unit > region_info->offset[i] || (elt->start[i]+elt->count[i])*unit < region_info->offset[i]+region_info->size[i]) {
+            if (elt->start[i]> region_info->offset[i] || (elt->start[i]+elt->count[i])< region_info->offset[i]+region_info->size[i]) {
                 flag = 1;
                 break;
             }
@@ -4463,9 +4463,9 @@ perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region
             read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
             // Extract requested data
             uint64_t pos = 0;
-            for (int i = region_info->offset[0]/unit; i < region_info->offset[0]/unit+region_info->size[0]; i++) {
-                memcpy(buf+pos, tmp_buf + i*storage_region->count[1]*unit+region_info->offset[1], region_info->size[1]);
-                pos += region_info->size[1];
+            for (int i = region_info->offset[0]; i < region_info->offset[0]+region_info->size[0]; i++) {
+                memcpy(buf+pos, tmp_buf + i*storage_region->count[1]*unit+region_info->offset[1], region_info->size[1]*unit);
+                pos += region_info->size[1]*unit;
             }
             free(tmp_buf);
         }
@@ -4475,11 +4475,11 @@ perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region
             read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
             // Extract requested data
             uint64_t pos = 0;
-            for (int i = region_info->offset[0]/unit; i < region_info->offset[0]/unit+region_info->size[0]; i++) {
-                for (int j = region_info->offset[1]/unit; j < region_info->offset[1]/unit+region_info->size[1]; j++) {
+            for (int i = region_info->offset[0]; i < region_info->offset[0]+region_info->size[0]; i++) {
+                for (int j = region_info->offset[1]; j < region_info->offset[1]+region_info->size[1]; j++) {
                     memcpy(buf+pos, tmp_buf + i*storage_region->count[2]*storage_region->count[1]*unit + 
-                                    j*storage_region->count[2]*unit+region_info->offset[2], region_info->size[2]);
-                    pos += region_info->size[2];
+                                    j*storage_region->count[2]*unit+region_info->offset[2], region_info->size[2]*unit);
+                    pos += region_info->size[2]*unit;
                 }
             }
             free(tmp_buf);
