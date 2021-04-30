@@ -2189,15 +2189,26 @@ perr_t PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr, buf_unmap_register_id_g, &client_send_buf_unmap_handle);
-
+#if PDC_TIMING == 1
+    double start = MPI_Wtime(), end;
+#endif
     hg_ret = HG_Forward(client_send_buf_unmap_handle, client_send_buf_unmap_rpc_cb, &unmap_args, &in);
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_buf_unmap(): Could not start HG_Forward()");
-
+#if PDC_TIMING == 1
+    timings.PDCbuf_obj_unmap_rpc += MPI_Wtime() - start;
+#endif
     // Wait for response from server
     work_todo_g = 1;
+#if PDC_TIMING == 1
+    start = MPI_Wtime();
+#endif
     PDC_Client_check_response(&send_context_g); 
-    
+#if PDC_TIMING == 1
+    end = MPI_Wtime();
+    timings.PDCbuf_obj_unmap_rpc_wait += end - start;
+    pdc_timestamp_register(client_buf_obj_unmap_timestamps, start, end);
+#endif
     if (unmap_args.ret != 1) 
         PGOTO_ERROR(FAIL, "PDC_CLIENT: buf unmap failed...");
 
@@ -2330,15 +2341,27 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t
     hg_ret = HG_Bulk_create(hg_class, local_count, (void**)data_ptrs, (hg_size_t *)data_size, HG_BULK_READWRITE, &(in.local_bulk_handle));
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_buf_map(): Could not create local bulk data handle");
-
+#if PDC_TIMING == 1
+    double start = MPI_Wtime(), end;
+#endif
     hg_ret = HG_Forward(client_send_buf_map_handle, client_send_buf_map_rpc_cb, &map_args, &in);	
+#if PDC_TIMING == 1
+    timings.PDCbuf_obj_map_rpc += MPI_Wtime() - start;
+#endif
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_buf_map(): Could not start HG_Forward()");
 
     // Wait for response from server
     work_todo_g = 1;
+#if PDC_TIMING == 1
+    start = MPI_Wtime();
+#endif
     PDC_Client_check_response(&send_context_g);
-
+#if PDC_TIMING == 1
+    end = MPI_Wtime();
+    timings.PDCbuf_obj_map_rpc_wait += end - start;
+    pdc_timestamp_register(client_buf_obj_map_timestamps, start, end);
+#endif
     if (map_args.ret != 1) 
         PGOTO_ERROR(FAIL,"PDC_CLIENT: buf map failed...");
 
@@ -2399,15 +2422,27 @@ perr_t PDC_Client_region_lock(struct _pdc_obj_info *object_info, struct pdc_regi
 
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, region_lock_register_id_g, 
                 &region_lock_handle);
-
+#if PDC_TIMING == 1
+    double start = MPI_Wtime(), end;
+#endif
     hg_ret = HG_Forward(region_lock_handle, client_region_lock_rpc_cb, &lookup_args, &in);
+#if PDC_TIMING == 1
+    timings.PDCreg_obtain_lock_rpc += MPI_Wtime() - start;
+#endif
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_name_to_server(): Could not start HG_Forward()");
 
     // Wait for response from server
     work_todo_g = 1;
+#if PDC_TIMING == 1
+    start = MPI_Wtime();
+#endif
     PDC_Client_check_response(&send_context_g);
-
+#if PDC_TIMING == 1
+    end = MPI_Wtime();
+    timings.PDCreg_obtain_lock_rpc_wait += end - start;
+    pdc_timestamp_register(client_obtain_lock_timestamps, start, end);
+#endif
     // Now the return value is stored in lookup_args.ret
     if (lookup_args.ret == 1) {
         *status = TRUE;
@@ -3030,15 +3065,27 @@ perr_t PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_r
 
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, region_release_register_id_g, 
               &region_release_handle);
-
+#if PDC_TIMING == 1
+    double start = MPI_Wtime(), end;
+#endif
     hg_ret = HG_Forward(region_release_handle, client_region_release_rpc_cb, &lookup_args, &in);
+#if PDC_TIMING == 1
+    timings.PDCreg_release_lock_rpc += MPI_Wtime() - start;
+#endif
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_name_to_server(): Could not start HG_Forward()");
 
     // Wait for response from server
     work_todo_g = 1;
+#if PDC_TIMING == 1
+    start = MPI_Wtime();
+#endif
     PDC_Client_check_response(&send_context_g);
-
+#if PDC_TIMING == 1
+    end = MPI_Wtime();
+    timings.PDCreg_release_lock_rpc_wait += end - start;
+    pdc_timestamp_register(client_release_lock_timestamps, start, end);
+#endif
     // Now the return value is stored in lookup_args.ret
     if (lookup_args.ret == 1) {
         *status = TRUE;

@@ -31,9 +31,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include "pdc.h"
-#include "pdc_client_connect.h"
-#include "pdc_client_server_common.h"
-#define BUF_LEN 32
+#define BUF_LEN 128
 
 
 int main(int argc, char **argv) {
@@ -142,10 +140,6 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    for ( i = 0; i < BUF_LEN; ++i ) {
-        data[i] = i;
-    }
-
     ret = PDCreg_obtain_lock(obj1, reg_global, PDC_WRITE, PDC_BLOCK);
     if(ret != SUCCEED) {
         printf("PDCreg_obtain_lock failed\n");
@@ -164,8 +158,20 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    //reg = PDCregion_create(1, offset, offset_length);
-    //reg_global = PDCregion_create(1, offset, offset_length);
+    if(PDCregion_close(reg) < 0) {
+        printf("fail to close local region\n");
+        ret_value = 1;
+    } else {
+        printf("successfully local region\n");
+    }
+
+    if(PDCregion_close(reg_global) < 0) {
+        printf("fail to close global region\n");
+        ret_value = 1;
+    } else {
+        printf("successfully global region\n");
+    }
+
     reg = PDCregion_create(3, offset, offset_length);
     reg_global = PDCregion_create(3, offset, offset_length);
 

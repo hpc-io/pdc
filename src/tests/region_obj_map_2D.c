@@ -201,6 +201,20 @@ int main(int argc, char **argv) {
         }
     }
 
+    if(PDCregion_close(reg) < 0) {
+        printf("fail to close local region\n");
+        ret_value = 1;
+    } else {
+        printf("successfully local region\n");
+    }
+
+    if(PDCregion_close(reg_global) < 0) {
+        printf("fail to close global region\n");
+        ret_value = 1;
+    } else {
+        printf("successfully global region\n");
+    }
+
 
     // close object
     if(PDCobj_close(obj1) < 0) {

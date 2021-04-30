@@ -32,6 +32,8 @@ set(PROGRAMS
   obj_tags
   obj_put_data
   obj_get_data
+  read_write_perf
+  read_write_col_perf
   open_obj_round_robin
   region_obj_map_2D
   region_obj_map_3D
