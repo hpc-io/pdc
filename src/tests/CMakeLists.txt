@@ -38,10 +38,13 @@ set(PROGRAMS
   read_write_perf
   read_write_col_perf
   open_obj_round_robin
+  region_obj_map
   region_obj_map_2D
   region_obj_map_3D
+  region_obj_map_partial
+  region_obj_map_2D_partial
+  region_obj_map_3D_partial
   obj_round_robin_io
-  region_obj_map
   create_obj_scale
   close_server
   update_obj
