@@ -160,6 +160,10 @@ perr_t PDCclose(pdcid_t pdcid)
 
     FUNC_ENTER(NULL);
 
+#if PDC_TIMING == 1
+    PDC_timing_finalize();
+#endif
+
 #ifdef ENABLE_APP_CLOSE_SERVER
     PDC_Client_close_all_server();
 #endif

@@ -3,6 +3,13 @@
   + Please follow the instructions for PDC installations.
   + PDC programs start with PDC servers running in the background.
   + Client programs uses PDC APIs to forward requests to PDC servers.
+  + Scripts run_test.sh, mpi_test.sh, and run_multiple_tests.sh automatically run start and close PDC servers
+  + Usage:
+```
+./run_test.sh ./pdc_client_application arg1 arg2 .....
+./mpi_test.sh ./pdc_client_application MPIRUN_CMD number_of_servers number_of_clients arg1 arg2 ....
+./run_multiple_test.sh ./pdc_client_application_1 ./pdc_client_application_2 ......
+```
   ## PDC Hello world
   + https://github.com/hpc-io/pdc/blob/stable/src/tests/pdc_init.c
   + A PDC program starts with PDCinit and finishes with PDCclose.
