@@ -58,6 +58,9 @@
 # include <rdmacred.h>
 #endif
 
+#define PDC_CHECKPOINT_INTERVAL 200
+#define PDC_CHECKPOINT_MIN_INTERVAL_SEC 300
+
 // Global debug variable to control debug printfs
 int is_debug_g              = 0;
 int pdc_client_num_g        = 0;
@@ -1492,11 +1495,27 @@ static perr_t PDC_Server_loop(hg_context_t *hg_context)
     perr_t ret_value = SUCCEED;;
     hg_return_t hg_ret;
     unsigned int actual_count;
+    int checkpoint_interval = 1;
+    clock_t last_checkpoint_time, cur_time;
     
     FUNC_ENTER(NULL);
     
     /* Poke progress engine and check for events */
     do {
+#ifndef DISABLE_CHECKPOINT
+        checkpoint_interval++;
+        if (checkpoint_interval % PDC_CHECKPOINT_INTERVAL == 0) {
+            cur_time = clock();
+            double elapsed_time = ((double)(cur_time-last_checkpoint_time))/CLOCKS_PER_SEC;
+            // Do not checkpoint too often, has a min time interval between checkpoints
+            if (elapsed_time > PDC_CHECKPOINT_MIN_INTERVAL_SEC) {
+                PDC_Server_checkpoint();
+                last_checkpoint_time = clock();
+                checkpoint_interval = 1;
+            }
+        }
+#endif
+
         actual_count = 0;
         do {
             hg_ret = HG_Trigger(hg_context, 1024/* timeout */, 16384/* max count */, &actual_count);
@@ -1843,7 +1862,8 @@ int main(int argc, char *argv[])
 #endif
 
     // Exit from the loop, start finalize process
-#ifdef ENABLE_CHECKPOINT
+#ifndef DISABLE_CHECKPOINT
+#else
     char *tmp_env_char = getenv("PDC_DISABLE_CHECKPOINT");
     if (tmp_env_char != NULL && strcmp(tmp_env_char, "TRUE")==0) {
         if (pdc_server_rank_g == 0) printf("==PDC_SERVER[0]: checkpoint disabled!\n");

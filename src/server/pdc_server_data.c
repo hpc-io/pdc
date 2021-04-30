@@ -4371,12 +4371,21 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region
     gettimeofday(&pdc_timer_start, 0);
 #endif
 
-    if(region_info->ndim == 1)
-        write_bytes = write(region->fd, buf, unit*(region_info->size[0]));
-    else if(region_info->ndim == 2)
-        write_bytes = write(region->fd, buf, unit*(region_info->size[0])*(region_info->size[1]));
-    else if(region_info->ndim == 3)
-        write_bytes = write(region->fd, buf, unit*(region_info->size[0])*(region_info->size[1]*region_info->size[2]));
+    // Write 1GB at a time
+    uint64_t write_size, max_write_size = 1073741824;
+    if(region_info->ndim >= 1)
+        write_size = unit*region_info->size[0];
+    if(region_info->ndim >= 2)
+        write_size *= region_info->size[1];
+    if(region_info->ndim >= 3)
+        write_size *= region_info->size[2];
+
+    write_bytes = 0;
+    while (write_size > max_write_size) {
+        write_bytes += write(region->fd, buf, max_write_size);
+        write_size -= max_write_size;
+    }
+    write_bytes += write(region->fd, buf, write_size);
 
     /* t = time(NULL); */
     /* tm = *localtime(&t); */
@@ -4475,8 +4484,11 @@ perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region
             read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
             // Extract requested data
             uint64_t pos = 0;
-            for (int i = region_info->offset[0]; i < region_info->offset[0]+region_info->size[0]; i++) {
-                for (int j = region_info->offset[1]; j < region_info->offset[1]+region_info->size[1]; j++) {
+            for (uint64_t i = region_info->offset[0]; i < region_info->offset[0]+region_info->size[0]; i++) {
+                for (uint64_t j = region_info->offset[1]; j < region_info->offset[1]+region_info->size[1]; j++) {
+                    /* printf("i=%llu, j=%llu, pos=%llu, pos2=%llu, size=%llu, total size=%llu\n", i, j, pos, */ 
+                    /*         i*storage_region->count[2]*storage_region->count[1]*unit +j*storage_region->count[2]*unit+region_info->offset[2], */
+                    /*         region_info->size[2]*unit, storage_region->data_size); */
                     memcpy(buf+pos, tmp_buf + i*storage_region->count[2]*storage_region->count[1]*unit + 
                                     j*storage_region->count[2]*unit+region_info->offset[2], region_info->size[2]*unit);
                     pos += region_info->size[2]*unit;
