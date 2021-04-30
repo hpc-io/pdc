@@ -16,15 +16,18 @@ set(PROGRAMS
   write_obj
   write_obj_shared
   create_cont
+  create_cont_coll
   open_cont
   cont_life
   cont_iter
   cont_info
+  cont_del
   cont_getid
   cont_tags
   create_obj
   open_obj
   obj_info
+  obj_del
   obj_iter
   obj_life
   obj_dim
