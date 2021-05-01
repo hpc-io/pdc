@@ -2259,6 +2259,9 @@ HG_TEST_RPC_CB(region_release, handle)
     size_t *data_size_to = NULL;
     size_t type_size = 0;
     size_t dims[4] = {0,0,0,0};
+#if PDC_TIMING == 1
+    double start, end;
+#endif
     
     FUNC_ENTER(NULL);
 #if PDC_TIMING == 1
@@ -3432,6 +3435,9 @@ HG_TEST_RPC_CB(region_lock, handle)
     perr_t ret = SUCCEED;
     region_lock_in_t in;
     region_lock_out_t out;
+#if PDC_TIMING == 1
+    double start, end;
+#endif
 
     FUNC_ENTER(NULL);
 #if PDC_TIMING == 1
@@ -3464,6 +3470,9 @@ HG_TEST_RPC_CB(buf_unmap, handle)
     buf_unmap_in_t in;
     buf_unmap_out_t out;
     const struct hg_info *info;
+#if PDC_TIMING == 1
+    double start, end;
+#endif
 
     FUNC_ENTER(NULL);
 #if PDC_TIMING == 1
@@ -3652,6 +3661,9 @@ HG_TEST_RPC_CB(buf_map, handle)
     region_buf_map_t *new_buf_map_ptr = NULL;
     void *data_ptr;
     size_t ndim;
+#if PDC_TIMING == 1
+    double start, end;
+#endif
 
     FUNC_ENTER(NULL);
 #if PDC_TIMING == 1
