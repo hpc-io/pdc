@@ -142,7 +142,7 @@ int main(int argc, char **argv) {
     }
 
     for ( i = 0; i < BUF_LEN; ++i ) {
-        data[i] = -i;
+        data[i] = i;
     }
 
     ret = PDCreg_obtain_lock(obj1, reg_global, PDC_WRITE, PDC_BLOCK);
@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
 
     offset[0] = 0;
     offset_length[0] = BUF_LEN/2;
-    reg = PDCregion_create(1, local_offset, offset_length);
+    reg = PDCregion_create(1, offset, offset_length);
     offset[0] = BUF_LEN / 2;
     offset_length[0] = BUF_LEN/2;
     reg_global = PDCregion_create(1, offset, offset_length);
