@@ -128,10 +128,8 @@ int main(int argc, char **argv) {
     }
 
     offset[0] = 0;
-    offset_length[0] = BUF_LEN/2;
+    offset_length[0] = BUF_LEN;
     reg = PDCregion_create(1, offset, offset_length);
-    offset[0] = BUF_LEN/2 - 1;
-    offset_length[0] = BUF_LEN/2;
     reg_global = PDCregion_create(1, offset, offset_length);
 
     for ( i = 0; i < BUF_LEN; ++i ) {
@@ -172,7 +170,7 @@ int main(int argc, char **argv) {
     offset_length[0] = BUF_LEN/2;
     reg_global = PDCregion_create(1, offset, offset_length);
 
-    memset(data_read, 0, BUF_LEN/2);
+    memset(data_read, 0, BUF_LEN);
     ret = PDCbuf_obj_map(data_read, PDC_INT, reg, obj1, reg_global);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_map failed\n");
@@ -184,8 +182,6 @@ int main(int argc, char **argv) {
         printf("PDCreg_obtain_lock failed\n");
         ret_value = 1;
     }
-
-
 
     ret = PDCreg_release_lock(obj1, reg_global, PDC_READ);
     if(ret != SUCCEED) {
@@ -200,7 +196,7 @@ int main(int argc, char **argv) {
     }
 
     for ( i = 0; i < BUF_LEN/2; ++i ) {
-        if ( data_read[i] != i ) {
+        if ( data_read[i] != i + BUF_LEN/2 ) {
             printf("wrong value %d!=%d\n", data_read[i], i);
             ret_value = 1;
             break;
