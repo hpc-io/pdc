@@ -164,10 +164,10 @@ int main(int argc, char **argv) {
     }
 
     offset[0] = 0;
-    offset_length[0] = BUF_LEN;
+    offset_length[0] = BUF_LEN/2;
     reg = PDCregion_create(1, local_offset, offset_length);
     offset[0] = 0;
-    offset_length[0] = BUF_LEN;
+    offset_length[0] = BUF_LEN/2;
     reg_global = PDCregion_create(1, offset, offset_length);
 
     memset(data_read, 0, BUF_LEN);
