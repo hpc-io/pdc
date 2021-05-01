@@ -210,7 +210,7 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    for ( i = 0; i < BUF_LEN/4; ++i ) {
+    for ( i = 0; i < BUF_LEN/2; ++i ) {
         if ( data_read[i] != i * 2 ) {
             printf("wrong value %d!=%d\n", data_read[i], i * 2);
             ret_value = 1;
