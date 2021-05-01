@@ -184,6 +184,7 @@ int main(int argc, char **argv) {
     reg_global = PDCregion_create(ndim, offset, offset_length);
 
     memset(data_read, 0, BUF_LEN);
+/*
     ret = PDCbuf_obj_map(data_read, PDC_INT, reg, obj1, reg_global);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_map failed\n");
@@ -196,8 +197,6 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-
-
     ret = PDCreg_release_lock(obj1, reg_global, PDC_READ);
     if(ret != SUCCEED) {
         printf("PDCreg_release_lock failed\n");
@@ -209,7 +208,7 @@ int main(int argc, char **argv) {
         printf("PDCbuf_obj_unmap failed\n");
         ret_value = 1;
     }
-
+*/
     for ( i = 0; i < BUF_LEN/2; ++i ) {
         if ( data_read[i] != i * 2 ) {
             printf("wrong value %d!=%d\n", data_read[i], i * 2);
