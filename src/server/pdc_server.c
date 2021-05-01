@@ -1818,7 +1818,9 @@ int main(int argc, char *argv[])
         printf("==PDC_SERVER[%d]: Error with Mercury init\n", pdc_server_rank_g);
         goto done;
     }
-
+#if PDC_TIMING == 1
+    PDC_server_timing_init();
+#endif
     // Register Mercury RPC/bulk
     PDC_Server_mercury_register();
 
@@ -1877,6 +1879,9 @@ int main(int argc, char *argv[])
 #endif
 
 done:
+#if PDC_TIMING == 1
+    PDC_server_timing_report();
+#endif
     PDC_Server_finalize();
 #ifdef ENABLE_MPI
     MPI_Finalize();
