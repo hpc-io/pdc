@@ -173,10 +173,8 @@ int main(int argc, char **argv) {
     //reg = PDCregion_create(1, offset, offset_length);
     //reg_global = PDCregion_create(1, offset, offset_length);
     offset[0] = 0;
-    offset[1] = 0;
-    offset_length[0] = BUF_LEN/4;
-    offset_length[1] = 2;
-    reg = PDCregion_create(ndim, offset, offset_length);
+    offset_length[0] = BUF_LEN;
+    reg = PDCregion_create(1, offset, offset_length);
     offset[0] = 0;
     offset[1] = 1;
     offset_length[0] = BUF_LEN/2;
