@@ -171,6 +171,8 @@ int main(int argc, char **argv) {
     offset[0] = BUF_LEN/2 - 1;
     offset_length[0] = BUF_LEN/2;
     reg_global = PDCregion_create(1, offset, offset_length);
+
+    memset(data_read, 0, BUF_LEN/2)
     ret = PDCbuf_obj_map(data_read, PDC_INT, reg, obj1, reg_global);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_map failed\n");
@@ -197,7 +199,7 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    for ( i = 0; i < BUF_LEN; ++i ) {
+    for ( i = 0; i < BUF_LEN/2; ++i ) {
         if ( data_read[i] != i ) {
             printf("wrong value %d!=%d\n", data_read[i], i);
             ret_value = 1;
