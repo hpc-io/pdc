@@ -21,5 +21,5 @@ $test_exe $test_args
 # Need to test the return value
 ret="$?"
 # and shutdown the SERVER before exiting
-$PDC_DIR/install/bin/./close_server
+$PDC_DIR/bin/./close_server
 exit $ret
