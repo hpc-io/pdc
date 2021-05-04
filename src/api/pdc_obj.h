@@ -288,7 +288,7 @@ perr_t PDCobj_get_data(pdcid_t obj_id, void *data, uint64_t size);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCobj_del_data(pdcid_t obj_id);
+perr_t PDCobj_del(pdcid_t obj_id);
 
 /**
  * Add a tag to an object

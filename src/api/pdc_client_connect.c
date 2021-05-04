@@ -1723,7 +1723,7 @@ perr_t PDC_Client_delete_metadata_by_id(uint64_t obj_id)
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
 
-    if (lookup_args.ret != 1) 
+    if (lookup_args.ret < 0) 
         PGOTO_ERROR(FAIL, "PDC_CLIENT: delete_by_id NOT successful ...");
 
 done:
@@ -6141,7 +6141,7 @@ PDCcont_del(pdcid_t cont_id)
 
     FUNC_ENTER(NULL);
 
-    ret_value = PDCobj_del_data(cont_id);
+    ret_value = PDC_Client_del_metadata(cont_id, 1);
     if (ret_value != SUCCEED)
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error with PDC_Client_del_objects_to_container",
                 pdc_client_mpi_rank_g);
@@ -6372,16 +6372,23 @@ done:
 }
 
 perr_t  
-PDCobj_del_data(pdcid_t obj_id)
+PDC_Client_del_metadata(pdcid_t obj_id, int is_cont)
 {
     perr_t ret_value = SUCCEED;
     uint64_t meta_id;
     struct _pdc_obj_info *obj_prop;
+    struct _pdc_cont_info *cont_prop;
 
     FUNC_ENTER(NULL);
 
-    obj_prop = PDC_obj_get_info(obj_id);
-    meta_id = obj_prop->obj_info_pub->meta_id;
+    if (is_cont) {
+        cont_prop = PDC_cont_get_info(obj_id);
+        meta_id = cont_prop->cont_info_pub->meta_id;
+    }
+    else {
+        obj_prop = PDC_obj_get_info(obj_id);
+        meta_id = obj_prop->obj_info_pub->meta_id;
+    }
 
     ret_value = PDC_Client_delete_metadata_by_id(meta_id);
     if (ret_value != SUCCEED)

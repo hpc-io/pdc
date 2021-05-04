@@ -935,7 +935,29 @@ perr_t PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata
     hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
 #endif
 
-    if (metadata_hash_table_g != NULL) {
+
+    if (container_hash_table_g != NULL) {
+        pdc_cont_hash_table_entry_t *cont_entry;
+
+        // Since we only have the obj id, need to iterate the entire hash table
+        n_entry = hash_table_num_entries(container_hash_table_g);
+        hash_table_iterate(container_hash_table_g, &hash_table_iter);
+
+        while (n_entry != 0 && hash_table_iter_has_more(&hash_table_iter)) {
+            pair = hash_table_iter_next(&hash_table_iter);
+            cont_entry = pair.value;
+            if (cont_entry == NULL) 
+                continue;
+            
+            if (cont_entry->cont_id == target_obj_id) {
+                hash_table_remove(container_hash_table_g, &pair.key);
+                out->ret  = 1;
+                ret_value = SUCCEED;
+                goto done;
+            }
+        }
+    }
+    if (out->ret == -1 && metadata_hash_table_g != NULL) {
 
         // Since we only have the obj id, need to iterate the entire hash table
         pdc_hash_table_entry_head *head; 
@@ -981,6 +1003,7 @@ perr_t PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata
         goto done;
     }
 
+done:
 #ifdef ENABLE_MULTITHREAD 
     // ^ Release hash table lock
     hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
@@ -1014,7 +1037,6 @@ perr_t PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata
         hg_thread_mutex_unlock(&n_metadata_mutex_g);
 #endif
 
-done:
 #ifdef ENABLE_MULTITHREAD
     if (unlocked == 0)
         hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);

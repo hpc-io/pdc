@@ -89,11 +89,11 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    if (PDCobj_del_data(obj1) != SUCCEED) {
+    if (PDCobj_del(obj1) != SUCCEED) {
         printf("Fail to delete object @ line  %d!\n", __LINE__);
     }
 
-    if (PDCobj_del_data(obj2) != SUCCEED) {
+    if (PDCobj_del(obj2) != SUCCEED) {
         printf("Fail to delete object @ line  %d!\n", __LINE__);
     }
 

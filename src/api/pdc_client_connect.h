@@ -830,4 +830,6 @@ int PDC_get_nproc_per_node();
  */
 perr_t PDC_free_kvtag(pdc_kvtag_t **kvtag);
 
+perr_t PDC_Client_del_metadata(pdcid_t id, int is_cont);
+
 #endif /* PDC_CLIENT_CONNECT_H */
