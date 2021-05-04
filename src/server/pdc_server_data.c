@@ -4474,7 +4474,7 @@ perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region
             // Extract requested data
             uint64_t pos = 0;
             for (int i = region_info->offset[0]; i < region_info->offset[0]+region_info->size[0]; i++) {
-                memcpy(buf+pos, tmp_buf + i*storage_region->count[1]*unit+region_info->offset[1], region_info->size[1]*unit);
+                memcpy(buf+pos, tmp_buf + i*storage_region->count[1]*unit+region_info->offset[1]*unit, region_info->size[1]*unit);
                 pos += region_info->size[1]*unit;
             }
             free(tmp_buf);
@@ -4491,7 +4491,7 @@ perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region
                     /*         i*storage_region->count[2]*storage_region->count[1]*unit +j*storage_region->count[2]*unit+region_info->offset[2], */
                     /*         region_info->size[2]*unit, storage_region->data_size); */
                     memcpy(buf+pos, tmp_buf + i*storage_region->count[2]*storage_region->count[1]*unit + 
-                                    j*storage_region->count[2]*unit+region_info->offset[2], region_info->size[2]*unit);
+                                    j*storage_region->count[2]*unit+region_info->offset[2]*unit, region_info->size[2]*unit);
                     pos += region_info->size[2]*unit;
                 }
             }
