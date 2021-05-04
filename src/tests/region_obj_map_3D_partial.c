@@ -169,9 +169,9 @@ int main(int argc, char **argv) {
     offset[0] = 0;
     offset[1] = 0;
     offset[2] = 0;
-    offset_length[0] = BUF_LEN/8;
-    offset_length[1] = 1;
-    offset_length[2] = 1;
+    offset_length[0] = BUF_LEN/32;
+    offset_length[1] = 2;
+    offset_length[2] = 2;
     reg = PDCregion_create(3, offset, offset_length);
     offset[0] = BUF_LEN/8;
     offset[1] = 1;
