@@ -138,13 +138,13 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    ret = PDCreg_obtain_lock(obj1, reg, PDC_WRITE, PDC_BLOCK);
+    ret = PDCreg_obtain_lock(obj1, reg_global, PDC_WRITE, PDC_BLOCK);
     if(ret != SUCCEED) {
         printf("PDCreg_obtain_lock failed\n");
         exit(-1);
     }
 
-    ret = PDCreg_release_lock(obj1, reg, PDC_WRITE);
+    ret = PDCreg_release_lock(obj1, reg_global, PDC_WRITE);
     if(ret != SUCCEED) {
         printf("PDCreg_release_lock failed\n");
         ret_value = 1;
