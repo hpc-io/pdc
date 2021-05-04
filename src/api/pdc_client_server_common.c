@@ -131,10 +131,11 @@ int PDC_timing_report(const char* prefix) {
 
 int PDC_server_timing_init() {
     server_timings = calloc(1, sizeof(pdc_server_timing));
-    buf_obj_map_timestamps = calloc(4, sizeof(pdc_timestamp));
+    buf_obj_map_timestamps = calloc(5, sizeof(pdc_timestamp));
     buf_obj_unmap_timestamps = buf_obj_map_timestamps + 1;
     obtain_lock_timestamps = buf_obj_map_timestamps + 2;
     release_lock_timestamps = buf_obj_map_timestamps + 3;
+    release_lock_bulk_transfer_timestamps = buf_obj_map_timestamps + 4;
     base_time = MPI_Wtime();
 }
 
@@ -167,11 +168,11 @@ int PDC_server_timing_report() {
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    printf("rank = %d, PDCbuf_obj_map_rpc = %lf, PDCreg_obtain_lock_rpc = %lf, PDCreg_release_lock_rpc = %lf, PDCbuf_obj_unmap_rpc = %lf\n", rank, server_timings->PDCbuf_obj_map_rpc, server_timings->PDCreg_obtain_lock_rpc, server_timings->PDCreg_release_lock_rpc, server_timings->PDCbuf_obj_unmap_rpc);
+    printf("rank = %d, PDCbuf_obj_map_rpc = %lf, PDCreg_obtain_lock_rpc = %lf, PDCreg_release_lock_rpc = %lf, PDCbuf_obj_unmap_rpc = %lf, region_release_bulk_transfer_cb = %lf\n", rank, server_timings->PDCbuf_obj_map_rpc, server_timings->PDCreg_obtain_lock_rpc, server_timings->PDCreg_release_lock_rpc, server_timings->PDCbuf_obj_unmap_rpc, server_timings->PDCreg_release_lock_bulk_transfer_rpc);
 
     MPI_Reduce(server_timings, &max_timings, sizeof(pdc_server_timing)/sizeof(double), MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     if (rank == 0) {
-        printf("rank = %d, maximum timing among all processes, PDCbuf_obj_map_rpc = %lf, PDCreg_obtain_lock_rpc = %lf, PDCreg_release_lock_rpc = %lf, PDCbuf_obj_unmap_rpc = %lf\n", rank, max_timings.PDCbuf_obj_map_rpc, max_timings.PDCreg_obtain_lock_rpc, max_timings.PDCreg_release_lock_rpc, max_timings.PDCbuf_obj_unmap_rpc);
+        printf("rank = %d, maximum timing among all processes, PDCbuf_obj_map_rpc = %lf, PDCreg_obtain_lock_rpc = %lf, PDCreg_release_lock_rpc = %lf, PDCbuf_obj_unmap_rpc = %lf, region_release_bulk_transfer_cb = %lf\n", rank, max_timings.PDCbuf_obj_map_rpc, max_timings.PDCreg_obtain_lock_rpc, max_timings.PDCreg_release_lock_rpc, max_timings.PDCbuf_obj_unmap_rpc, max_timings.PDCreg_release_lock_bulk_transfer_rpc);
     }
 
 
@@ -182,6 +183,7 @@ int PDC_server_timing_report() {
     timestamp_log(stream, "buf_obj_unmap", buf_obj_unmap_timestamps);
     timestamp_log(stream, "obtain_lock", obtain_lock_timestamps);
     timestamp_log(stream, "release_lock", release_lock_timestamps);
+    timestamp_log(stream, "release_lock_bulk_transfer", release_lock_bulk_transfer_timestamps);
     fclose(stream);
 
     free(server_timings);
@@ -189,6 +191,7 @@ int PDC_server_timing_report() {
     pdc_timestamp_clean(buf_obj_unmap_timestamps);
     pdc_timestamp_clean(obtain_lock_timestamps);
     pdc_timestamp_clean(release_lock_timestamps);
+    pdc_timestamp_clean(release_lock_bulk_transfer_timestamps);
     free(buf_obj_map_timestamps);
 }
 
@@ -2079,7 +2082,9 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
 #endif
 
     FUNC_ENTER(NULL);
-
+#if PDC_TIMING == 1
+    double start = MPI_Wtime(), end;
+#endif
     bulk_args = (struct buf_map_release_bulk_args *)hg_cb_info->arg;
    
     if (hg_cb_info->ret == HG_CANCELED) {
@@ -2162,6 +2167,11 @@ done:
     free(bulk_args);
 #endif
 
+#if PDC_TIMING == 1
+    end = MPI_Wtime();
+    server_timings->PDCreg_release_lock_bulk_transfer_rpc += end - start;
+    pdc_timestamp_register(release_lock_bulk_transfer_timestamps, start, end);
+#endif
     FUNC_LEAVE(ret_value);
 }
 
@@ -2175,7 +2185,9 @@ obj_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     struct buf_map_release_bulk_args *bulk_args = NULL;
     
     FUNC_ENTER(NULL);
-    
+#if PDC_TIMING == 1
+    double start = MPI_Wtime(), end;
+#endif
     bulk_args = (struct buf_map_release_bulk_args *)hg_cb_info->arg;
     
     if (hg_cb_info->ret == HG_CANCELED) {
@@ -2196,7 +2208,11 @@ done:
     HG_Free_input(bulk_args->handle, &(bulk_args->in));
     HG_Destroy(bulk_args->handle);
     free(bulk_args);
-    
+#if PDC_TIMING == 1
+    end = MPI_Wtime();
+    server_timings->PDCreg_release_lock_bulk_transfer_rpc += end - start;
+    pdc_timestamp_register(release_lock_bulk_transfer_timestamps, start, end);
+#endif
     FUNC_LEAVE(ret_value);
 }
 #endif
@@ -2625,11 +2641,6 @@ HG_TEST_RPC_CB(region_release, handle)
             HG_Destroy(handle);
         }
     }
-#if PDC_TIMING == 1
-    end = MPI_Wtime();
-    server_timings->PDCreg_release_lock_rpc += end - start;
-    pdc_timestamp_register(release_lock_timestamps, start, end);
-#endif
 done:
     /* t = time(NULL); */
     /* tm = *localtime(&t); */
@@ -2640,7 +2651,11 @@ done:
         HG_Free_input(handle, &in);
         HG_Destroy(handle);
     }
-    
+#if PDC_TIMING == 1
+    end = MPI_Wtime();
+    server_timings->PDCreg_release_lock_rpc += end - start;
+    pdc_timestamp_register(release_lock_timestamps, start, end);
+#endif
     FUNC_LEAVE(ret_value);
 }
 
@@ -3499,13 +3514,13 @@ HG_TEST_RPC_CB(buf_unmap, handle)
     ret = PDC_Meta_Server_buf_unmap(&in, &handle);
     if (ret != SUCCEED)
         PGOTO_ERROR(HG_OTHER_ERROR, "===PDC_DATA_SERVER: HG_TEST_RPC_CB(buf_unmap, handle) - PDC_Meta_Server_buf_unmap() failed");
+done:
+    fflush(stdout);
 #if PDC_TIMING == 1
     end = MPI_Wtime();
     server_timings->PDCbuf_obj_unmap_rpc += end - start;
     pdc_timestamp_register(buf_obj_unmap_timestamps, start, end);
 #endif
-done:
-    fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
@@ -4421,6 +4436,7 @@ HG_TEST_RPC_CB(cont_add_del_objs_rpc, handle)
     ret_value = HG_Bulk_transfer(hg_info->context, cont_add_del_objs_bulk_cb,
                            bulk_args, HG_BULK_PULL, hg_info->addr, origin_bulk_handle, 0,
                            local_bulk_handle, 0, bulk_args->nbytes, HG_OP_ID_IGNORE);
+
     if (ret_value != HG_SUCCESS)
         PGOTO_ERROR(ret_value, "Could not read bulk data");
 
@@ -5851,6 +5867,7 @@ done:
 }
 
 perr_t PDC_get_overlap_start_count(uint32_t ndim, uint64_t *start_a, uint64_t *count_a, 
+
                                                      uint64_t *start_b, uint64_t *count_b, 
                                        uint64_t *overlap_start, uint64_t *overlap_count)
 {
