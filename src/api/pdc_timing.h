@@ -29,6 +29,7 @@ typedef struct pdc_server_timing {
     double PDCbuf_obj_unmap_rpc;
     double PDCreg_obtain_lock_rpc;
     double PDCreg_release_lock_rpc;
+    double PDCreg_release_lock_bulk_transfer_rpc;
 } pdc_server_timing;
 
 typedef struct pdc_timestamp {
@@ -43,6 +44,7 @@ pdc_timestamp *buf_obj_map_timestamps;
 pdc_timestamp *buf_obj_unmap_timestamps;
 pdc_timestamp *obtain_lock_timestamps;
 pdc_timestamp *release_lock_timestamps;
+pdc_timestamp *release_lock_bulk_transfer_timestamps;
 
 pdc_timestamp *client_buf_obj_map_timestamps;
 pdc_timestamp *client_buf_obj_unmap_timestamps;
