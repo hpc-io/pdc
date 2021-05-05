@@ -16,15 +16,18 @@ set(PROGRAMS
   write_obj
   write_obj_shared
   create_cont
+  create_cont_coll
   open_cont
   cont_life
   cont_iter
   cont_info
+  cont_del
   cont_getid
   cont_tags
   create_obj
   open_obj
   obj_info
+  obj_del
   obj_iter
   obj_life
   obj_dim
@@ -32,11 +35,16 @@ set(PROGRAMS
   obj_tags
   obj_put_data
   obj_get_data
+  read_write_perf
+  read_write_col_perf
   open_obj_round_robin
+  region_obj_map
   region_obj_map_2D
   region_obj_map_3D
+  region_obj_map_partial
+  region_obj_map_2D_partial
+  region_obj_map_3D_partial
   obj_round_robin_io
-  region_obj_map
   create_obj_scale
   close_server
   update_obj
@@ -134,7 +142,9 @@ add_test(NAME cont_iter         WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTO
 add_test(NAME cont_info         WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./cont_info )
 add_test(NAME cont_getid        WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./cont_getid )
 add_test(NAME cont_tags         WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./cont_tags )
+add_test(NAME cont_del          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./cont_del )
 add_test(NAME create_obj        WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./create_obj )
+add_test(NAME obj_del           WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_del )
 add_test(NAME open_obj          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./open_obj )
 add_test(NAME obj_iter          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_iter )
 add_test(NAME obj_life          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_life )
@@ -148,6 +158,9 @@ add_test(NAME create_region     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTO
 add_test(NAME region_obj_map    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_obj_map )
 add_test(NAME region_obj_map_2D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_obj_map_2D )
 add_test(NAME region_obj_map_3D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_obj_map_3D )
+add_test(NAME region_obj_map_partial WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_obj_map_partial )
+add_test(NAME region_obj_map_2D_partial WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_obj_map_2D_partial )
+add_test(NAME region_obj_map_3D_partial WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_obj_map_3D_partial )
 add_test(NAME write_obj_int     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./write_obj o 1 int)
 add_test(NAME write_obj_float   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./write_obj o 1 float)
 add_test(NAME write_obj_double  WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./write_obj o 1 double)
@@ -171,7 +184,9 @@ set_tests_properties(cont_iter          PROPERTIES LABELS serial )
 set_tests_properties(cont_info          PROPERTIES LABELS serial )
 set_tests_properties(cont_getid         PROPERTIES LABELS serial )
 set_tests_properties(cont_tags          PROPERTIES LABELS serial )
+set_tests_properties(cont_del           PROPERTIES LABELS serial )
 set_tests_properties(create_obj         PROPERTIES LABELS serial )
+set_tests_properties(obj_del            PROPERTIES LABELS serial )
 set_tests_properties(open_obj           PROPERTIES LABELS serial )
 set_tests_properties(obj_iter           PROPERTIES LABELS serial )
 set_tests_properties(obj_life           PROPERTIES LABELS serial )
@@ -185,6 +200,9 @@ set_tests_properties(create_region      PROPERTIES LABELS serial )
 set_tests_properties(region_obj_map     PROPERTIES LABELS serial )
 set_tests_properties(region_obj_map_2D  PROPERTIES LABELS serial )
 set_tests_properties(region_obj_map_3D  PROPERTIES LABELS serial )
+set_tests_properties(region_obj_map_partial     PROPERTIES LABELS serial )
+set_tests_properties(region_obj_map_2D_partial  PROPERTIES LABELS serial )
+set_tests_properties(region_obj_map_3D_partial  PROPERTIES LABELS serial )
 set_tests_properties(write_obj_int      PROPERTIES LABELS serial )
 set_tests_properties(write_obj_float    PROPERTIES LABELS serial )
 set_tests_properties(write_obj_double   PROPERTIES LABELS serial )
@@ -217,6 +235,7 @@ if(BUILD_MPI_TESTING)
     add_test(NAME write_obj_shared_int16 WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./write_obj_shared ${MPI_RUN_CMD} 2 2 o 1 int16)
     add_test(NAME write_obj_shared_int8 WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./write_obj_shared ${MPI_RUN_CMD} 2 2 o 1 int8)
     add_test(NAME create_obj_coll    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./create_obj_coll ${MPI_RUN_CMD} 2 2 )
+    add_test(NAME create_cont_coll    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./create_cont_coll ${MPI_RUN_CMD} 2 4 )
     add_test(NAME open_obj_round_robin    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./open_obj_round_robin ${MPI_RUN_CMD} 2 2 )
     add_test(NAME region_obj_map_2D_mpi    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_obj_map_2D ${MPI_RUN_CMD} 2 2 )
     add_test(NAME region_obj_map_3D_mpi    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_obj_map_3D ${MPI_RUN_CMD} 2 2 )

@@ -175,15 +175,13 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    ret = PDCreg_obtain_lock(obj1, reg, PDC_READ, PDC_BLOCK);
+    ret = PDCreg_obtain_lock(obj1, reg_global, PDC_READ, PDC_BLOCK);
     if(ret != SUCCEED) {
         printf("PDCreg_obtain_lock failed\n");
         ret_value = 1;
     }
 
-
-
-    ret = PDCreg_release_lock(obj1, reg, PDC_READ);
+    ret = PDCreg_release_lock(obj1, reg_global, PDC_READ);
     if(ret != SUCCEED) {
         printf("PDCreg_release_lock failed\n");
         ret_value = 1;
@@ -201,6 +199,20 @@ int main(int argc, char **argv) {
             ret_value = 1;
             break;
         }
+    }
+
+    if(PDCregion_close(reg) < 0) {
+        printf("fail to close local region\n");
+        ret_value = 1;
+    } else {
+        printf("successfully local region\n");
+    }
+
+    if(PDCregion_close(reg_global) < 0) {
+        printf("fail to close global region\n");
+        ret_value = 1;
+    } else {
+        printf("successfully global region\n");
     }
 
 

@@ -939,3 +939,13 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
+
+perr_t PDCobj_del(pdcid_t obj_id)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value = PDC_Client_del_metadata(obj_id, 0);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
