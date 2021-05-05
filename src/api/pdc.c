@@ -36,6 +36,8 @@
 #include "pdc_interface.h"
 #include "pdc_client_connect.h"
 
+#include "pdc_timing.h"
+
 pbool_t err_occurred = FALSE;
 
 perr_t PDC_class__close(struct _pdc_class *p);
