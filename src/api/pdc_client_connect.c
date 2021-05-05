@@ -59,6 +59,8 @@
 #include <math.h>
 #include <sys/time.h>
 
+#include "pdc_timing.h"
+
 int                        is_client_debug_g = 0;
 pdc_server_selection_t     pdc_server_selection_g = PDC_SERVER_DEFAULT;
 int                        pdc_client_mpi_rank_g = 0;
@@ -3878,6 +3880,7 @@ perr_t PDC_Client_write_id(pdcid_t local_obj_id, struct pdc_region_info *region,
     request.n_update = 1;
     request.n_client = 1;
     ret_value = PDC_Client_iwrite(meta, region, &request, buf);
+
     if (ret_value != SUCCEED)
         PGOTO_ERROR(FAIL, "==PDC_CLIENT: PDC_Client_write - PDC_Client_iwrite error");
 
@@ -4379,6 +4382,7 @@ done:
 perr_t PDC_Client_query_name_read_entire_obj(int nobj, char **obj_names, void ***out_buf, 
                                              uint64_t *out_buf_sizes)
 {
+
     perr_t      ret_value = SUCCEED;
     hg_return_t hg_ret = HG_SUCCESS;
     hg_handle_t rpc_handle;
