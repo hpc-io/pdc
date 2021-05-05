@@ -34,6 +34,7 @@
 #include "pdc_client_connect.h"
 #include "pdc_client_server_common.h"
 #include "pdc_analysis.h"
+#include "pdc_timing.h"
 #define BUF_LEN 128
 
 
