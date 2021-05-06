@@ -2144,9 +2144,13 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
         (remote_reg_info->offset)[2] = (bulk_args->remote_region_nounit).start_2;
         (remote_reg_info->size)[2] = (bulk_args->remote_region_nounit).count_2;
     }
- 
+#if PDC_TIMING == 1
+    end = MPI_Wtime();
+#endif
     PDC_Server_data_write_out(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf, (bulk_args->in).data_unit);
-    
+#if PDC_TIMING == 1
+    server_timings->PDCreg_release_lock_bulk_transfer_rpc += MPI_Wtime() - end;
+#endif
     // Perform lock release function
     PDC_Data_Server_region_release(&(bulk_args->in), &out);
 
@@ -2169,7 +2173,7 @@ done:
 
 #if PDC_TIMING == 1
     end = MPI_Wtime();
-    server_timings->PDCreg_release_lock_bulk_transfer_rpc += end - start;
+    //server_timings->PDCreg_release_lock_bulk_transfer_rpc += end - start;
     pdc_timestamp_register(release_lock_bulk_transfer_timestamps, start, end);
 #endif
     FUNC_LEAVE(ret_value);
