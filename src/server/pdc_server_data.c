@@ -4342,7 +4342,7 @@ int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size,
             obj_cache = obj_cache_list.pdc_obj_cache + i;
         }
     }
-    if (obj_cache == NULL) 
+    if (obj_cache == NULL) {
         if (obj_cache_list.obj_cache_max_size == 0) {
             obj_cache_list.obj_cache_max_size = 512;
             obj_cache_list.pdc_obj_cache = (pdc_obj_cache*) malloc(sizeof(pdc_obj_cache) * obj_cache_list.obj_cache_max_size);
@@ -4353,11 +4353,11 @@ int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size,
                 memcpy(temp, obj_cache_list.pdc_obj_cache, sizeof(pdc_obj_cache) * obj_cache_list.obj_cache_size);
             }
         }
-        obj_cache_list[obj_cache_list.obj_cache_size].region_obj_cache_max_size = 512;
-        obj_cache_list[obj_cache_list.obj_cache_size].region_obj_cache_size = 0;
-        obj_cache_list[obj_cache_list.obj_cache_size].region_cache = (pdc_obj_cache) malloc(sizeof(dc_obj_cache) * obj_cache_list[obj_cache_list.obj_cache_size].region_obj_cache_max_size);
+        obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].region_obj_cache_max_size = 512;
+        obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].region_obj_cache_size = 0;
+        obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].region_cache = (pdc_obj_cache) malloc(sizeof(pdc_obj_cache) * obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].region_obj_cache_max_size);
         obj_cache_list.obj_cache_size++;
-        obj_cache = obj_cache_list + obj_cache_list.obj_cache_size;
+        obj_cache = obj_cache_list.pdc_obj_cache + obj_cache_list.obj_cache_size;
     }
     if (obj_cache->region_obj_cache_max_size == 0) {
         obj_cache->region_obj_cache_max_size = 512;
