@@ -309,6 +309,22 @@ extern char   *gBinningOption;
 extern int     gen_fastbit_idx_g;
 extern int     use_fastbit_idx_g;
 
+typedef struct {
+    struct pdc_region_info *region_cache;
+    uint64_t obj_id;
+    int region_obj_cache_size;
+    int region_obj_cache_max_size;
+    int unit;
+} pdc_obj_cache;
+
+typedef struct {
+    pdc_obj_cache *pdc_obj_cache;
+    int obj_cache_size;
+    int obj_cache_max_size;
+} pdc_cache;
+
+pdc_cache obj_cache_list;
+
 /***************************************/
 /* Library-private Function Prototypes */
 /***************************************/

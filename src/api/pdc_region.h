@@ -40,6 +40,7 @@ struct pdc_region_info {
     bool                  mapping;
     int                   registered_op;
     void                 *buf;
+    size_t                unit;
 };
 
 /*********************/
