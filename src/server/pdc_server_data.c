@@ -4447,13 +4447,23 @@ int PDC_region_cache_free() {
     return 0;
 }
 
-perr_t PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
+perr_t PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
     perr_t ret_value = SUCCEED;
     ssize_t write_bytes = -1; 
     data_server_region_t *region = NULL;
 
     FUNC_ENTER(NULL);
+
+
+    // Write 1GB at a time
+    uint64_t write_size, max_write_size = 1073741824;
+    if(region_info->ndim >= 1)
+        write_size = unit*region_info->size[0];
+    if(region_info->ndim >= 2)
+        write_size *= region_info->size[1];
+    if(region_info->ndim >= 3)
+        write_size *= region_info->size[2];
 
     region = PDC_Server_get_obj_region(obj_id);
     if(region == NULL) {
@@ -4469,7 +4479,7 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region
     }
 
     region_list_t *storage_region = (region_list_t*)calloc(1, sizeof(region_list_t));
-    for (int i = 0; i < region_info->ndim; i++) {
+    for (size_t i = 0; i < region_info->ndim; i++) {
         storage_region->start[i] = region_info->offset[i];
         storage_region->count[i] = region_info->size[i];
     }
@@ -4487,15 +4497,6 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region
     double write_total_sec;
     gettimeofday(&pdc_timer_start, 0);
 #endif
-
-    // Write 1GB at a time
-    uint64_t write_size, max_write_size = 1073741824;
-    if(region_info->ndim >= 1)
-        write_size = unit*region_info->size[0];
-    if(region_info->ndim >= 2)
-        write_size *= region_info->size[1];
-    if(region_info->ndim >= 3)
-        write_size *= region_info->size[2];
 
     write_bytes = 0;
     while (write_size > max_write_size) {
@@ -4524,6 +4525,31 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region
     // Store storage information
     storage_region->data_size = write_bytes;
     DL_APPEND(region->region_storage_head, storage_region);
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    // Write 1GB at a time
+/*
+    uint64_t write_size;
+    if(region_info->ndim >= 1)
+        write_size = unit*region_info->size[0];
+    if(region_info->ndim >= 2)
+        write_size *= region_info->size[1];
+    if(region_info->ndim >= 3)
+        write_size *= region_info->size[2];
+
+    PDC_region_cache_register(obj_id, buf, write_size * unit, region_info->offset, region_info->size, region_info->ndim, unit);
+*/
+    PDC_Server_data_write_out2(obj_id, region_info, buf, unit);
 
 done:
     fflush(stdout);
@@ -4562,7 +4588,7 @@ perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region
     region_list_t *storage_region = NULL;
     DL_FOREACH(region->region_storage_head, elt) {
         flag = 0;
-        for (int i = 0; i < region_info->ndim; i++) {
+        for (size_t i = 0; i < region_info->ndim; i++) {
             if (elt->start[i]> region_info->offset[i] || (elt->start[i]+elt->count[i])< region_info->offset[i]+region_info->size[i]) {
                 flag = 1;
                 break;
