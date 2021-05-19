@@ -2144,7 +2144,7 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
         (remote_reg_info->offset)[2] = (bulk_args->remote_region_nounit).start_2;
         (remote_reg_info->size)[2] = (bulk_args->remote_region_nounit).count_2;
     }
- 
+
     PDC_Server_data_write_out(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf, (bulk_args->in).data_unit);
     
     // Perform lock release function

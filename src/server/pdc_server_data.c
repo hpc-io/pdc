@@ -4330,13 +4330,140 @@ static perr_t PDC_Server_data_io_direct(pdc_access_t io_type, uint64_t obj_id, s
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
+int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size, const uint64_t *offset, const uint64_t *size, int ndim, size_t unit) {
+    pdc_obj_cache *temp;
+    struct pdc_region_info *temp2;
+    pdc_obj_cache *obj_cache = NULL;
+    int i;
+    struct pdc_region_info *region_cache;
+
+    for ( i = 0; i < obj_cache_list.obj_cache_size; ++i ) {
+        if (obj_cache_list.pdc_obj_cache[i].obj_id == obj_id) {
+            obj_cache = obj_cache_list.pdc_obj_cache + i;
+        }
+    }
+    if (obj_cache == NULL) {
+        if (obj_cache_list.obj_cache_max_size == 0) {
+            obj_cache_list.obj_cache_max_size = 512;
+            obj_cache_list.pdc_obj_cache = (pdc_obj_cache*) malloc(sizeof(pdc_obj_cache) * obj_cache_list.obj_cache_max_size);
+        } else {
+            if (obj_cache_list.obj_cache_size == obj_cache_list.obj_cache_max_size) {
+                obj_cache_list.obj_cache_max_size *= 2;
+                temp = (pdc_obj_cache*) malloc(sizeof(pdc_obj_cache) * obj_cache_list.obj_cache_max_size);
+                memcpy(temp, obj_cache_list.pdc_obj_cache, sizeof(pdc_obj_cache) * obj_cache_list.obj_cache_size);
+            }
+        }
+        obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].region_obj_cache_max_size = 512;
+        obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].region_obj_cache_size = 0;
+        obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].region_cache = (pdc_obj_cache*) malloc(sizeof(pdc_obj_cache) * obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].region_obj_cache_max_size);
+        obj_cache_list.obj_cache_size++;
+        obj_cache = obj_cache_list.pdc_obj_cache + obj_cache_list.obj_cache_size;
+    }
+    if (obj_cache->region_obj_cache_max_size == 0) {
+        obj_cache->region_obj_cache_max_size = 512;
+        obj_cache->region_cache = (struct pdc_region_info *) malloc(sizeof(struct pdc_region_info) * obj_cache->region_obj_cache_max_size);
+    } else {
+        if (obj_cache->region_obj_cache_max_size == obj_cache->region_obj_cache_size) {
+            obj_cache->region_obj_cache_max_size *= 2;
+            temp2 = (struct pdc_region_info*) malloc(sizeof(struct pdc_region_info) * obj_cache->region_obj_cache_max_size);
+            memcpy(temp2, obj_cache->region_cache, sizeof(struct pdc_region_info) * obj_cache->region_obj_cache_size);
+        }
+    }
+    region_cache = obj_cache->region_cache + obj_cache->region_obj_cache_size;
+    region_cache->ndim = ndim;
+    region_cache->offset = (uint64_t*) malloc(sizeof(uint64_t) * ndim);
+    region_cache->size = (uint64_t*) malloc(sizeof(uint64_t) * ndim);
+    region_cache->buf = (char*) malloc(sizeof(char) * buf_size);
+    region_cache->unit = unit;
+
+    memcpy(region_cache->offset, offset, sizeof(uint64_t) * ndim);
+    memcpy(region_cache->size, size, sizeof(uint64_t) * ndim);
+    memcpy(region_cache->buf, buf, sizeof(char) * buf_size);
+
+    obj_cache->region_obj_cache_size++;
+    return 0;
+}
+
+int PDC_region_flush(uint64_t obj_id) {
+    pdc_obj_cache *obj_cache = NULL;
+    int i;
+    struct pdc_region_info *region_cache;
+
+    for ( i = 0; i < obj_cache_list.obj_cache_size; ++i ) {
+        if (obj_cache_list.pdc_obj_cache[i].obj_id == obj_id) {
+            obj_cache = obj_cache_list.pdc_obj_cache + i;
+        }
+    }
+
+    for ( i = 0; i < obj_cache->region_obj_cache_size; ++i ) {
+         region_cache = obj_cache->region_cache + i;
+         PDC_Server_data_write_out(obj_id, region_cache, region_cache->buf, region_cache->unit);
+    }
+    return 0;
+}
+
+int PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit) {
+    pdc_obj_cache *obj_cache = NULL;
+    int i, flag = 1;
+    size_t j;
+    struct pdc_region_info *region_cache = NULL;
+
+    for ( i = 0; i < obj_cache_list.obj_cache_size; ++i ) {
+        if (obj_cache_list.pdc_obj_cache[i].obj_id == obj_id) {
+            obj_cache = obj_cache_list.pdc_obj_cache + i;
+        }
+    }
+    
+    for ( i = 0; i < obj_cache->region_obj_cache_size; ++i ) {
+        flag = 1;
+        region_cache = obj_cache->region_cache + i;
+        for ( j = 0; j < region_info->ndim; ++j ) {
+            if ( region_info->offset[j] < region_cache->offset[j] || region_info->offset[j] + region_info->size[i] > region_cache->offset[j] + region_cache->size[i] ) {
+                flag = 0;
+            }
+        }
+        if (flag) {
+            break;
+        } else {
+            region_cache = NULL;
+        }
+    }
+    PDC_region_flush(obj_id);
+    PDC_Server_data_read_from(obj_id, region_info, buf, unit);
+    return 0;
+}
+
+int PDC_region_cache_free() {
+    int i, j;
+    for ( i = 0; i < obj_cache_list.obj_cache_size; ++i ) {
+        for ( j = 0; j < obj_cache_list.pdc_obj_cache[i].region_obj_cache_size; ++j ) {
+            free(obj_cache_list.pdc_obj_cache[i].region_cache[j].offset);
+            free(obj_cache_list.pdc_obj_cache[i].region_cache[j].size);
+            free(obj_cache_list.pdc_obj_cache[i].region_cache[j].buf);
+        }
+        free(obj_cache_list.pdc_obj_cache[i].region_cache);
+    }
+    free(obj_cache_list.pdc_obj_cache);
+    return 0;
+}
+
+perr_t PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
     perr_t ret_value = SUCCEED;
-    ssize_t write_bytes = -1; 
+    uint64_t write_bytes = -1; 
     data_server_region_t *region = NULL;
 
     FUNC_ENTER(NULL);
+
+
+    // Write 1GB at a time
+    uint64_t write_size, max_write_size = 1073741824;
+    if(region_info->ndim >= 1)
+        write_size = unit*region_info->size[0];
+    if(region_info->ndim >= 2)
+        write_size *= region_info->size[1];
+    if(region_info->ndim >= 3)
+        write_size *= region_info->size[2];
 
     region = PDC_Server_get_obj_region(obj_id);
     if(region == NULL) {
@@ -4352,12 +4479,13 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region
     }
 
     region_list_t *storage_region = (region_list_t*)calloc(1, sizeof(region_list_t));
-    for (int i = 0; i < region_info->ndim; i++) {
+    for (size_t i = 0; i < region_info->ndim; i++) {
         storage_region->start[i] = region_info->offset[i];
         storage_region->count[i] = region_info->size[i];
     }
     storage_region->unit_size = unit;
     storage_region->offset = lseek(region->fd, 0, SEEK_END);
+    strcpy(storage_region->storage_location, region->storage_location);
 
     /* time_t t; */
     /* struct tm tm; */
@@ -4371,18 +4499,10 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region
     gettimeofday(&pdc_timer_start, 0);
 #endif
 
-    // Write 1GB at a time
-    uint64_t write_size, max_write_size = 1073741824;
-    if(region_info->ndim >= 1)
-        write_size = unit*region_info->size[0];
-    if(region_info->ndim >= 2)
-        write_size *= region_info->size[1];
-    if(region_info->ndim >= 3)
-        write_size *= region_info->size[2];
-
     write_bytes = 0;
     while (write_size > max_write_size) {
         write_bytes += write(region->fd, buf, max_write_size);
+        buf += max_write_size;
         write_size -= max_write_size;
     }
     write_bytes += write(region->fd, buf, write_size);
@@ -4406,6 +4526,32 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region
     // Store storage information
     storage_region->data_size = write_bytes;
     DL_APPEND(region->region_storage_head, storage_region);
+
+    printf("==PDC_SERVER[%d]: write region %llu bytes\n", pdc_server_rank_g, storage_region->data_size);
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    // Write 1GB at a time
+/*
+    uint64_t write_size;
+    if(region_info->ndim >= 1)
+        write_size = unit*region_info->size[0];
+    if(region_info->ndim >= 2)
+        write_size *= region_info->size[1];
+    if(region_info->ndim >= 3)
+        write_size *= region_info->size[2];
+
+    PDC_region_cache_register(obj_id, buf, write_size * unit, region_info->offset, region_info->size, region_info->ndim, unit);
+*/
+    PDC_Server_data_write_out2(obj_id, region_info, buf, unit);
 
 done:
     fflush(stdout);
@@ -4444,7 +4590,7 @@ perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region
     region_list_t *storage_region = NULL;
     DL_FOREACH(region->region_storage_head, elt) {
         flag = 0;
-        for (int i = 0; i < region_info->ndim; i++) {
+        for (size_t i = 0; i < region_info->ndim; i++) {
             if (elt->start[i]> region_info->offset[i] || (elt->start[i]+elt->count[i])< region_info->offset[i]+region_info->size[i]) {
                 flag = 1;
                 break;
@@ -6566,6 +6712,7 @@ PDC_Server_query_evaluate_merge_opt(pdc_query_t *query, query_task_t *task, pdc_
             }
  
             // Skip non-overlap regions with the region constraint
+
             if (region_constraint && region_constraint->ndim > 0) {
                 if (PDC_is_contiguous_region_overlap(region_elt, region_constraint) != 1)
                     continue;

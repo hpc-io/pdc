@@ -148,6 +148,7 @@ double total_mem_usage_g                    = 0.0;
 pdc_data_server_io_list_t  *pdc_data_server_read_list_head_g    = NULL;
 pdc_data_server_io_list_t  *pdc_data_server_write_list_head_g   = NULL;
 update_storage_meta_list_t *pdc_update_storage_meta_list_head_g = NULL;
+extern data_server_region_t *dataserver_region_g;
 
 
 /*
@@ -1147,10 +1148,25 @@ perr_t PDC_Server_checkpoint()
                 }
             }
 
+            region_count += n_region;
             if (n_write_region != n_region) {
                 printf("==PDC_SERVER[%d]: %s - ERROR with number of regions", pdc_server_rank_g, __func__); 
                 ret_value = FAIL;
                 goto done;
+            }
+
+            // Write storage region info
+            data_server_region_t *region = NULL;
+            region = PDC_Server_get_obj_region(elt->obj_id);
+            if(region) {
+                DL_COUNT(region->region_storage_head, region_elt, n_region);
+                fwrite(&n_region, sizeof(int), 1, file);
+                DL_FOREACH(region->region_storage_head, region_elt) {
+                    fwrite(region_elt, sizeof(region_list_t), 1, file);
+                }
+            }
+            else {
+                fwrite(&n_region, sizeof(int), 1, file);
             }
 
             metadata_size++;
@@ -1315,8 +1331,8 @@ perr_t PDC_Server_restart(char *filename)
                 goto done;
             }
 
-            if (n_region == 0) 
-                continue;
+            /* if (n_region == 0) */ 
+            /*     continue; */
 
             total_region += n_region; 
 
@@ -1381,6 +1397,20 @@ perr_t PDC_Server_restart(char *filename)
 
                 DL_APPEND((metadata+i)->storage_region_list_head, region_list);
             } // For j
+
+            // read storage region info
+            fread(&n_region, sizeof(int), 1, file);
+            data_server_region_t *new_obj_reg = (data_server_region_t *)calloc(1, sizeof(struct data_server_region_t));
+            DL_APPEND(dataserver_region_g, new_obj_reg);
+            new_obj_reg->obj_id = (metadata+i)->obj_id;
+            for (j = 0; j < n_region; j++) {
+                region_list_t *new_region_list = (region_list_t*)malloc(sizeof(region_list_t));
+                fread(new_region_list, sizeof(region_list_t), 1, file);
+                DL_APPEND(new_obj_reg->region_storage_head, new_region_list);
+            }
+
+            total_region += n_region; 
+
             DL_SORT((metadata+i)->storage_region_list_head, region_cmp);
         } // For i
 
@@ -1866,7 +1896,6 @@ int main(int argc, char *argv[])
 
     // Exit from the loop, start finalize process
 #ifndef DISABLE_CHECKPOINT
-#else
     char *tmp_env_char = getenv("PDC_DISABLE_CHECKPOINT");
     if (tmp_env_char != NULL && strcmp(tmp_env_char, "TRUE")==0) {
         if (pdc_server_rank_g == 0) printf("==PDC_SERVER[0]: checkpoint disabled!\n");

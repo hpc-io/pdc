@@ -309,6 +309,7 @@ int main(int argc, char **argv) {
         }
     }
 #if PDC_TIMING == 1
+    MPI_Barrier(MPI_COMM_WORLD);
     PDC_timing_report("read");
 #endif
     // close a container
