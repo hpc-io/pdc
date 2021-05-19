@@ -4450,7 +4450,7 @@ int PDC_region_cache_free() {
 perr_t PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
     perr_t ret_value = SUCCEED;
-    ssize_t write_bytes = -1; 
+    uint64_t write_bytes = -1; 
     data_server_region_t *region = NULL;
 
     FUNC_ENTER(NULL);
@@ -4485,6 +4485,7 @@ perr_t PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *regio
     }
     storage_region->unit_size = unit;
     storage_region->offset = lseek(region->fd, 0, SEEK_END);
+    strcpy(storage_region->storage_location, region->storage_location);
 
     /* time_t t; */
     /* struct tm tm; */
@@ -4526,6 +4527,7 @@ perr_t PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *regio
     storage_region->data_size = write_bytes;
     DL_APPEND(region->region_storage_head, storage_region);
 
+    printf("==PDC_SERVER[%d]: write region %llu bytes\n", pdc_server_rank_g, storage_region->data_size);
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
