@@ -314,7 +314,6 @@ typedef struct {
     uint64_t obj_id;
     int region_obj_cache_size;
     int region_obj_cache_max_size;
-    int unit;
 } pdc_obj_cache;
 
 typedef struct {

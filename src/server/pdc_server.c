@@ -851,6 +851,10 @@ drc_access_again:
 
     n_metadata_g = 0;
 
+    // PDC cache infrastructures
+    obj_cache_list.obj_cache_size = 0;
+    obj_cache_list.obj_cache_max_size = 0;
+
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -1767,6 +1771,7 @@ static void PDC_Server_get_env()
         nclient_per_node = default_nclient_per_node;
     else
         nclient_per_node = atoi(tmp_env_char);
+
 
     // Get bb write percentage 
     tmp_env_char = getenv("PDC_BB_WRITE_PERCENT");

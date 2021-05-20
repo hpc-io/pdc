@@ -4355,6 +4355,7 @@ int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size,
         }
         obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].region_obj_cache_max_size = 512;
         obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].region_obj_cache_size = 0;
+        obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].obj_id = obj_id;
         obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].region_cache = (pdc_obj_cache*) malloc(sizeof(pdc_obj_cache) * obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].region_obj_cache_max_size);
         obj_cache_list.obj_cache_size++;
         obj_cache = obj_cache_list.pdc_obj_cache + obj_cache_list.obj_cache_size;
@@ -4437,6 +4438,7 @@ int PDC_region_cache_free() {
     int i, j;
     for ( i = 0; i < obj_cache_list.obj_cache_size; ++i ) {
         for ( j = 0; j < obj_cache_list.pdc_obj_cache[i].region_obj_cache_size; ++j ) {
+
             free(obj_cache_list.pdc_obj_cache[i].region_cache[j].offset);
             free(obj_cache_list.pdc_obj_cache[i].region_cache[j].size);
             free(obj_cache_list.pdc_obj_cache[i].region_cache[j].buf);
@@ -4540,7 +4542,7 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region
     FUNC_ENTER(NULL);
 
     // Write 1GB at a time
-/*
+
     uint64_t write_size;
     if(region_info->ndim >= 1)
         write_size = unit*region_info->size[0];
@@ -4550,7 +4552,7 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region
         write_size *= region_info->size[2];
 
     PDC_region_cache_register(obj_id, buf, write_size * unit, region_info->offset, region_info->size, region_info->ndim, unit);
-*/
+
     PDC_Server_data_write_out2(obj_id, region_info, buf, unit);
 
 done:
