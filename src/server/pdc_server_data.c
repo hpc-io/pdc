@@ -4342,7 +4342,7 @@ int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size,
             obj_cache = obj_cache_list.pdc_obj_cache + i;
         }
     }
-    printf("checkpoint 1\n");
+
     if (obj_cache == NULL) {
         if (obj_cache_list.obj_cache_max_size == 0) {
             obj_cache_list.obj_cache_max_size = 512;
@@ -4362,7 +4362,7 @@ int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size,
         obj_cache_list.obj_cache_size++;
         obj_cache = obj_cache_list.pdc_obj_cache + obj_cache_list.obj_cache_size;
     }
-    printf("checkpoint 2\n");
+
     if (obj_cache->region_obj_cache_max_size == 0) {
         obj_cache->region_obj_cache_max_size = 512;
         obj_cache->region_cache = (struct pdc_region_info *) malloc(sizeof(struct pdc_region_info) * obj_cache->region_obj_cache_max_size);
@@ -4374,20 +4374,19 @@ int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size,
             obj_cache->region_cache = temp2;
         }
     }
-    printf("checkpoint 3, region_obj_cache_size = %d\n", obj_cache->region_obj_cache_size);
+
     region_cache = obj_cache->region_cache + obj_cache->region_obj_cache_size;
     region_cache->ndim = ndim;
     region_cache->offset = (uint64_t*) malloc(sizeof(uint64_t) * ndim);
     region_cache->size = (uint64_t*) malloc(sizeof(uint64_t) * ndim);
     region_cache->buf = (char*) malloc(sizeof(char) * buf_size);
     region_cache->unit = unit;
-    printf("checkpoint 4\n");
+
     memcpy(region_cache->offset, offset, sizeof(uint64_t) * ndim);
     memcpy(region_cache->size, size, sizeof(uint64_t) * ndim);
     memcpy(region_cache->buf, buf, sizeof(char) * buf_size);
 
     obj_cache->region_obj_cache_size++;
-    printf("checkpoint 5\n");
     return 0;
 }
 
@@ -4557,7 +4556,7 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region
     if(region_info->ndim >= 3)
         write_size *= region_info->size[2];
 
-    PDC_region_cache_register(obj_id, buf, write_size * unit, region_info->offset, region_info->size, region_info->ndim, unit);
+    PDC_region_cache_register(obj_id, buf, write_size, region_info->offset, region_info->size, region_info->ndim, unit);
 
     PDC_Server_data_write_out2(obj_id, region_info, buf, unit);
 
