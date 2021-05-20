@@ -4342,6 +4342,7 @@ int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size,
             obj_cache = obj_cache_list.pdc_obj_cache + i;
         }
     }
+    printf("checkpoint 1\n");
     if (obj_cache == NULL) {
         if (obj_cache_list.obj_cache_max_size == 0) {
             obj_cache_list.obj_cache_max_size = 512;
@@ -4360,6 +4361,7 @@ int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size,
         obj_cache_list.obj_cache_size++;
         obj_cache = obj_cache_list.pdc_obj_cache + obj_cache_list.obj_cache_size;
     }
+    printf("checkpoint 2\n");
     if (obj_cache->region_obj_cache_max_size == 0) {
         obj_cache->region_obj_cache_max_size = 512;
         obj_cache->region_cache = (struct pdc_region_info *) malloc(sizeof(struct pdc_region_info) * obj_cache->region_obj_cache_max_size);
@@ -4370,6 +4372,7 @@ int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size,
             memcpy(temp2, obj_cache->region_cache, sizeof(struct pdc_region_info) * obj_cache->region_obj_cache_size);
         }
     }
+    printf("checkpoint 3\n");
     region_cache = obj_cache->region_cache + obj_cache->region_obj_cache_size;
     region_cache->ndim = ndim;
     region_cache->offset = (uint64_t*) malloc(sizeof(uint64_t) * ndim);
@@ -4382,6 +4385,7 @@ int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size,
     memcpy(region_cache->buf, buf, sizeof(char) * buf_size);
 
     obj_cache->region_obj_cache_size++;
+    printf("checkpoint 4\n");
     return 0;
 }
 
