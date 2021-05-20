@@ -55,6 +55,8 @@
 #include "pdc_server_data.h"
 #include "pdc_timing.h"
 
+#include "scr.h"
+
 #ifdef PDC_HAS_CRAY_DRC
 # include <rdmacred.h>
 #endif
@@ -1034,11 +1036,175 @@ PDC_Server_recv_shm_cb(const struct hg_cb_info *callback_info)
 hg_return_t
 PDC_Server_checkpoint_cb()
 {
-    PDC_Server_checkpoint();
+    PDC_Server_checkpoint_SCR();
 
     return HG_SUCCESS;
 }
 
+perr_t PDC_Server_checkpoint_SCR()
+{
+
+    perr_t ret_value = SUCCEED;
+    pdc_metadata_t *elt;
+    region_list_t  *region_elt;
+    pdc_kvtag_list_t *kvlist_elt;
+    pdc_hash_table_entry_head *head;
+    pdc_cont_hash_table_entry_t *cont_head;
+    int n_entry, metadata_size = 0, region_count = 0, n_region, n_write_region = 0, n_kvtag, key_len;
+    uint32_t hash_key;
+    HashTablePair pair;
+    char checkpoint_file[ADDR_MAX];
+    HashTableIterator hash_table_iter;
+    
+    FUNC_ENTER(NULL);
+
+#ifdef ENABLE_TIMING 
+    // Timing
+    struct timeval  pdc_timer_start;
+    struct timeval  pdc_timer_end;
+    double checkpoint_time;
+    gettimeofday(&pdc_timer_start, 0);
+#endif
+
+    // TODO: instead of checkpoint at app finalize time, try checkpoint with a time countdown or # of objects
+    SCR_Start_output(pdc_server_tmp_dir_g, SCR_FLAG_CHECKPOINT);
+    snprintf(checkpoint_file, ADDR_MAX, "%s%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.", pdc_server_rank_g);
+    char scr_file[SCR_MAX_FILENAME];
+    SCR_Route_file(checkpoint_file, scr_file);
+    printf("%s\n", scr_file);
+
+    if (pdc_server_rank_g == 0) {
+        printf("\n\n==PDC_SERVER[%d]: SCR checkpoint file [%s]\n",pdc_server_rank_g, checkpoint_file);
+        fflush(stdout);
+    }
+
+    //FILE *file = fopen(checkpoint_file, "w+");
+    FILE *file = fopen(scr_file, "w+");
+    if (file==NULL) {
+        printf("==PDC_SERVER[%d]: %s - Checkpoint file open error", pdc_server_rank_g, __func__); 
+        ret_value = FAIL;
+        goto done;
+    }
+
+    int valid = 1;
+    // Checkpoint containers
+    n_entry = hash_table_num_entries(container_hash_table_g);
+    fwrite(&n_entry, sizeof(int), 1, file);
+
+    hash_table_iterate(container_hash_table_g, &hash_table_iter);
+    while (n_entry != 0 && hash_table_iter_has_more(&hash_table_iter)) {
+        pair = hash_table_iter_next(&hash_table_iter);
+        cont_head = pair.value;
+
+        hash_key = PDC_get_hash_by_name(cont_head->cont_name);
+        fwrite(&hash_key, sizeof(uint32_t), 1, file);
+        fwrite(cont_head, sizeof(pdc_cont_hash_table_entry_t), 1, file);
+    }
+
+    // DHT
+    n_entry = hash_table_num_entries(metadata_hash_table_g);
+    fwrite(&n_entry, sizeof(int), 1, file);
+
+    hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
+
+    while (n_entry != 0 && hash_table_iter_has_more(&hash_table_iter)) {
+        pair = hash_table_iter_next(&hash_table_iter);
+        head = pair.value;
+
+        fwrite(&head->n_obj, sizeof(int), 1, file);
+        hash_key = PDC_get_hash_by_name(head->metadata->obj_name);
+        fwrite(&hash_key, sizeof(uint32_t), 1, file);
+
+        // Iterate every metadata structure in current entry
+        DL_FOREACH(head->metadata, elt) {
+            // Write entire metadata structure
+            fwrite(elt, sizeof(pdc_metadata_t), 1, file);
+
+            // Write kv tags
+            DL_COUNT(elt->kvtag_list_head, kvlist_elt, n_kvtag);
+            fwrite(&n_kvtag, sizeof(int), 1, file);
+            DL_FOREACH(elt->kvtag_list_head, kvlist_elt) {
+                key_len = strlen(kvlist_elt->kvtag->name) + 1;
+                fwrite(&key_len, sizeof(int), 1, file);
+                fwrite(kvlist_elt->kvtag->name, key_len, 1, file);
+                fwrite(&kvlist_elt->kvtag->size, sizeof(uint32_t), 1, file);
+                fwrite(kvlist_elt->kvtag->value, kvlist_elt->kvtag->size, 1, file);
+            }
+
+            // Write region info
+            DL_COUNT(elt->storage_region_list_head, region_elt, n_region);
+            fwrite(&n_region, sizeof(int), 1, file);
+            n_write_region = 0;
+            DL_FOREACH(elt->storage_region_list_head, region_elt) {
+                fwrite(region_elt, sizeof(region_list_t), 1, file);
+                n_write_region++;
+                int has_hist = 0;
+                if (region_elt->region_hist != NULL) 
+                    has_hist = 1;
+                fwrite(&has_hist, sizeof(int), 1, file);
+                if (has_hist == 1) {
+                    fwrite(&region_elt->region_hist->dtype, sizeof(int), 1, file);
+                    fwrite(&region_elt->region_hist->nbin, sizeof(int), 1, file);
+                    fwrite(region_elt->region_hist->range, sizeof(double), region_elt->region_hist->nbin*2, file);
+                    fwrite(region_elt->region_hist->bin, sizeof(uint64_t), region_elt->region_hist->nbin, file);
+                    fwrite(&region_elt->region_hist->incr, sizeof(double), 1, file);
+                }
+            }
+
+            region_count += n_region;
+            if (n_write_region != n_region) {
+                printf("==PDC_SERVER[%d]: %s - ERROR with number of regions", pdc_server_rank_g, __func__); 
+                ret_value = FAIL;
+                goto done;
+            }
+
+            // Write storage region info
+            data_server_region_t *region = NULL;
+            region = PDC_Server_get_obj_region(elt->obj_id);
+            if(region) {
+                DL_COUNT(region->region_storage_head, region_elt, n_region);
+                fwrite(&n_region, sizeof(int), 1, file);
+                DL_FOREACH(region->region_storage_head, region_elt) {
+                    fwrite(region_elt, sizeof(region_list_t), 1, file);
+                }
+            }
+            else {
+                fwrite(&n_region, sizeof(int), 1, file);
+            }
+
+            metadata_size++;
+            region_count += n_region;
+        }
+    }
+
+    fclose(file);
+    SCR_Complete_output(valid);
+    file = NULL;
+
+    int all_metadata_size, all_region_count;
+#ifdef ENABLE_MPI
+    MPI_Reduce(&metadata_size, &all_metadata_size, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&region_count,   &all_region_count,   1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+#else
+    all_metadata_size = metadata_size;
+    all_region_count   = region_count;
+#endif
+    if (pdc_server_rank_g == 0) {
+        printf("==PDC_SERVER: checkpointed %d objects, with %d regions \n", all_metadata_size, all_region_count);
+    }
+
+#ifdef ENABLE_TIMING 
+    // Timing
+    gettimeofday(&pdc_timer_end, 0);
+    checkpoint_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+    if (pdc_server_rank_g == 0) {
+        printf("==PDC_SERVER: total checkpoint time = %.6f\n", checkpoint_time);
+    }
+#endif
+
+done:
+    FUNC_LEAVE(ret_value);
+}
 /*
  * Checkpoint in-memory metadata to persistant storage, each server writes to one file
  *
@@ -1540,7 +1706,7 @@ static perr_t PDC_Server_loop(hg_context_t *hg_context)
             double elapsed_time = ((double)(cur_time-last_checkpoint_time))/CLOCKS_PER_SEC;
             // Do not checkpoint too often, has a min time interval between checkpoints
             if (elapsed_time > PDC_CHECKPOINT_MIN_INTERVAL_SEC) {
-                PDC_Server_checkpoint();
+                PDC_Server_checkpoint_SCR();
                 last_checkpoint_time = clock();
                 checkpoint_interval = 1;
             }
@@ -1822,6 +1988,7 @@ int main(int argc, char *argv[])
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &pdc_server_rank_g);
     MPI_Comm_size(MPI_COMM_WORLD, &pdc_server_size_g);
+    SCR_Init();
 #else
     pdc_server_rank_g = 0;
     pdc_server_size_g = 1;
@@ -1901,7 +2068,7 @@ int main(int argc, char *argv[])
         if (pdc_server_rank_g == 0) printf("==PDC_SERVER[0]: checkpoint disabled!\n");
     }
     else  
-        PDC_Server_checkpoint();
+        PDC_Server_checkpoint_SCR();
 #endif
 
 #ifdef ENABLE_TIMING 
@@ -1914,6 +2081,7 @@ done:
 #endif
     PDC_Server_finalize();
 #ifdef ENABLE_MPI
+    SCR_Finalize();
     MPI_Finalize();
 #endif
     return 0;

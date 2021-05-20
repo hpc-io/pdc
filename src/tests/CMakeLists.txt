@@ -11,6 +11,7 @@ set(PROGRAMS
   create_prop
   create_region
   create_obj_coll
+  checkpoint_server
   set_prop
   dup_prop
   write_obj

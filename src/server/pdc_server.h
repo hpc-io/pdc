@@ -130,6 +130,8 @@ perr_t PDC_Server_set_close(void);
  */
 perr_t PDC_Server_checkpoint();
 
+perr_t PDC_Server_checkpoint_SCR();
+
 /**
  * ***********
  *

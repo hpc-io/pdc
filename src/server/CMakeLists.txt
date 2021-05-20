@@ -1,4 +1,9 @@
 find_package(MERCURY REQUIRED)
+message(${CMAKE_MODULE_PATH})
+#find_package(SCR REQUIRED)
+include_directories(${SCR_DIR}/include)
+link_directories(${SCR_DIR}/lib)
+message(${SCR_DIR}/include)
 
 if(PDC_ENABLE_FASTBIT)
     add_definitions(-DENABLE_FASTBIT=1)
@@ -34,9 +39,9 @@ add_executable(pdc_server.exe
 
 if(PDC_ENABLE_FASTBIT)
     message(STATUS "Enabled fastbit")
-    target_link_libraries(pdc_server.exe mercury pdcprof -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES} ${FASTBIT_LIBRARY}/libfastbit.so)
+    target_link_libraries(pdc_server.exe mercury scr pdcprof -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES} ${FASTBIT_LIBRARY}/libfastbit.so)
 else()
-    target_link_libraries(pdc_server.exe mercury pdcprof -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES})
+    target_link_libraries(pdc_server.exe mercury scr pdcprof -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES})
 endif()
 
 

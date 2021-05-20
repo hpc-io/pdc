@@ -37,14 +37,14 @@ int main()
 
     pdc = PDCinit("pdc");
 
-    PDC_Client_close_all_server();
-
+    PDC_Client_all_server_checkpoint();
+    
     if(PDCclose(pdc) < 0)
         printf("fail to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
-
      return 0;
+
 }
