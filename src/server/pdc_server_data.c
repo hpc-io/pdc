@@ -4381,13 +4381,13 @@ int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size,
     region_cache->size = (uint64_t*) malloc(sizeof(uint64_t) * ndim);
     region_cache->buf = (char*) malloc(sizeof(char) * buf_size);
     region_cache->unit = unit;
-
+    printf("checkpoint 4\n");
     memcpy(region_cache->offset, offset, sizeof(uint64_t) * ndim);
     memcpy(region_cache->size, size, sizeof(uint64_t) * ndim);
     memcpy(region_cache->buf, buf, sizeof(char) * buf_size);
 
     obj_cache->region_obj_cache_size++;
-    printf("checkpoint 4\n");
+    printf("checkpoint 5\n");
     return 0;
 }
 
