@@ -4338,13 +4338,13 @@ int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size,
     pdc_obj_cache *obj_cache = NULL;
     int i;
     struct pdc_region_info *region_cache;
-/*
+
     for ( i = 0; i < obj_cache_list.obj_cache_size; ++i ) {
         if (obj_cache_list.pdc_obj_cache[i].obj_id == obj_id) {
             obj_cache = obj_cache_list.pdc_obj_cache + i;
         }
     }
-*/
+
     if (obj_cache == NULL) {
         if (obj_cache_list.obj_cache_max_size == 0) {
             obj_cache_list.obj_cache_max_size = 512;
@@ -4360,8 +4360,8 @@ int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size,
         obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].region_obj_cache_max_size = 0;
         obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].region_obj_cache_size = 0;
         obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].obj_id = obj_id;
-        obj_cache_list.obj_cache_size++;
         obj_cache = obj_cache_list.pdc_obj_cache + obj_cache_list.obj_cache_size;
+        obj_cache_list.obj_cache_size++;
     }
 
     if (obj_cache->region_obj_cache_max_size == 0) {
