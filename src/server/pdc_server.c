@@ -854,6 +854,7 @@ drc_access_again:
     // PDC cache infrastructures
     obj_cache_list.obj_cache_size = 0;
     obj_cache_list.obj_cache_max_size = 0;
+    hg_thread_mutex_init(&pdc_obj_cache_list_mutex);
 
 done:
     FUNC_LEAVE(ret_value);
@@ -1000,6 +1001,9 @@ perr_t PDC_Server_finalize()
     hg_thread_mutex_destroy(&addr_valid_mutex_g);
     hg_thread_mutex_destroy(&update_remote_server_addr_mutex_g);
 #endif
+
+    // PDC cache finalize
+    hg_thread_mutex_destroy(&pdc_obj_cache_list_mutex);
 
     if (pdc_server_rank_g == 0)
         PDC_Server_rm_config_file();
