@@ -324,6 +324,8 @@ typedef struct {
 
 pdc_cache obj_cache_list;
 
+hg_thread_mutex_t pdc_obj_cache_list_mutex;
+
 /***************************************/
 /* Library-private Function Prototypes */
 /***************************************/

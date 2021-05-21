@@ -4331,6 +4331,8 @@ static perr_t PDC_Server_data_io_direct(pdc_access_t io_type, uint64_t obj_id, s
 }
 
 int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size, const uint64_t *offset, const uint64_t *size, int ndim, size_t unit) {
+    hg_thread_mutex_lock(&pdc_obj_cache_list_mutex);
+
     pdc_obj_cache *temp;
     struct pdc_region_info *temp2;
     pdc_obj_cache *obj_cache = NULL;
@@ -4387,6 +4389,8 @@ int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size,
     memcpy(region_cache->buf, buf, sizeof(char) * buf_size);
 
     obj_cache->region_obj_cache_size++;
+
+    hg_thread_mutex_unlock(&pdc_obj_cache_list_mutex);
     return 0;
 }
 
