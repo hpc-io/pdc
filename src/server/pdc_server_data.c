@@ -4331,9 +4331,6 @@ static perr_t PDC_Server_data_io_direct(pdc_access_t io_type, uint64_t obj_id, s
 }
 
 int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size, const uint64_t *offset, const uint64_t *size, int ndim, size_t unit) {
-    obj_cache_list.obj_cache_size++;
-    printf("obj_cache_size = %d\n", obj_cache_list.obj_cache_size);
-/*
     hg_thread_mutex_lock(&pdc_obj_cache_list_mutex);
 
     pdc_obj_cache *temp;
@@ -4341,13 +4338,13 @@ int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size,
     pdc_obj_cache *obj_cache = NULL;
     int i;
     struct pdc_region_info *region_cache;
-
+/*
     for ( i = 0; i < obj_cache_list.obj_cache_size; ++i ) {
         if (obj_cache_list.pdc_obj_cache[i].obj_id == obj_id) {
             obj_cache = obj_cache_list.pdc_obj_cache + i;
         }
     }
-
+*/
     if (obj_cache == NULL) {
         if (obj_cache_list.obj_cache_max_size == 0) {
             obj_cache_list.obj_cache_max_size = 512;
@@ -4369,6 +4366,7 @@ int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size,
 
     if (obj_cache->region_obj_cache_max_size == 0) {
         obj_cache->region_obj_cache_max_size = 512;
+        obj_cache->region_obj_cache_size = 0;
         obj_cache->region_cache = (struct pdc_region_info *) malloc(sizeof(struct pdc_region_info) * obj_cache->region_obj_cache_max_size);
     } else {
         if (obj_cache->region_obj_cache_max_size == obj_cache->region_obj_cache_size) {
@@ -4394,7 +4392,7 @@ int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size,
     obj_cache->region_obj_cache_size++;
 
     hg_thread_mutex_unlock(&pdc_obj_cache_list_mutex);
-*/
+
     return 0;
 }
 
