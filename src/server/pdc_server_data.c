@@ -4357,10 +4357,9 @@ int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size,
                 obj_cache_list.pdc_obj_cache = temp;
             }
         }
-        obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].region_obj_cache_max_size = 512;
+        obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].region_obj_cache_max_size = 0;
         obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].region_obj_cache_size = 0;
         obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].obj_id = obj_id;
-        obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].region_cache = (pdc_obj_cache*) malloc(sizeof(pdc_obj_cache) * obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].region_obj_cache_max_size);
         obj_cache_list.obj_cache_size++;
         obj_cache = obj_cache_list.pdc_obj_cache + obj_cache_list.obj_cache_size;
     }
@@ -4377,6 +4376,7 @@ int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size,
         }
     }
 
+    printf("checkpoint region_obj_cache_size = %d\n", obj_cache->region_obj_cache_size);
     region_cache = obj_cache->region_cache + obj_cache->region_obj_cache_size;
     region_cache->ndim = ndim;
     region_cache->offset = (uint64_t*) malloc(sizeof(uint64_t) * ndim);
