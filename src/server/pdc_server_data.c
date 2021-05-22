@@ -4550,7 +4550,7 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region
     if(region_info->ndim >= 3)
         write_size *= region_info->size[2];
 
-    PDC_region_cache_register(obj_id, buf, write_size, region_info->offset, region_info->size, region_info->ndim, unit);
+    //PDC_region_cache_register(obj_id, buf, write_size, region_info->offset, region_info->size, region_info->ndim, unit);
 
     PDC_Server_data_write_out2(obj_id, region_info, buf, unit);
 

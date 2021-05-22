@@ -159,13 +159,17 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
+    if(PDCregion_close(reg_global) < 0) {
+        printf("fail to close global region\n");
+        ret_value = 1;
+    } else {
+        printf("successfully closed global region\n");
+    }
+
     offset[0] = BUF_LEN/2;
     offset_length[0] = BUF_LEN/2;
     reg_global = PDCregion_create(1, offset, offset_length);
 
-    for ( i = 0; i < BUF_LEN; ++i ) {
-        data[i] = i;
-    }
     ret = PDCbuf_obj_map(data, PDC_INT, reg, obj1, reg_global);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_map failed\n");
@@ -193,9 +197,14 @@ int main(int argc, char **argv) {
         printf("fail to close local region\n");
         ret_value = 1;
     } else {
-        printf("successfully local region\n");
+        printf("successfully closed local region\n");
     }
-
+    if(PDCregion_close(reg_global) < 0) {
+        printf("fail to close global region\n");
+        ret_value = 1;
+    } else {
+        printf("successfully closed global region\n");
+    }
 
     offset[0] = 0;
     offset_length[0] = BUF_LEN/2;
@@ -249,7 +258,7 @@ int main(int argc, char **argv) {
         printf("fail to close global region\n");
         ret_value = 1;
     } else {
-        printf("successfully global region\n");
+        printf("successfully closed global region\n");
     }
 
 
