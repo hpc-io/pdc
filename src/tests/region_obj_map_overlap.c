@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
     }
 
     offset[0] = 0;
-    offset_length[0] = BUF_LEN;
+    offset_length[0] = BUF_LEN/2;
     reg = PDCregion_create(1, offset, offset_length);
     reg_global = PDCregion_create(1, offset, offset_length);
 
@@ -159,6 +159,36 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
+    offset[0] = BUF_LEN/2;
+    offset_length[0] = BUF_LEN/2;
+    reg_global = PDCregion_create(1, offset, offset_length);
+
+    for ( i = 0; i < BUF_LEN; ++i ) {
+        data[i] = i;
+    }
+    ret = PDCbuf_obj_map(data, PDC_INT, reg, obj1, reg_global);
+    if(ret != SUCCEED) {
+        printf("PDCbuf_obj_map failed\n");
+        ret_value = 1;
+    }
+
+    ret = PDCreg_obtain_lock(obj1, reg_global, PDC_WRITE, PDC_BLOCK);
+    if(ret != SUCCEED) {
+        printf("PDCreg_obtain_lock failed\n");
+        exit(-1);
+    }
+
+    ret = PDCreg_release_lock(obj1, reg_global, PDC_WRITE);
+    if(ret != SUCCEED) {
+        printf("PDCreg_release_lock failed\n");
+        ret_value = 1;
+    }
+
+    ret = PDCbuf_obj_unmap(obj1, reg_global);
+    if(ret != SUCCEED) {
+        printf("PDCbuf_obj_unmap failed\n");
+        ret_value = 1;
+    }
     if(PDCregion_close(reg) < 0) {
         printf("fail to close local region\n");
         ret_value = 1;
@@ -166,10 +196,11 @@ int main(int argc, char **argv) {
         printf("successfully local region\n");
     }
 
+
     offset[0] = 0;
     offset_length[0] = BUF_LEN/2;
     reg = PDCregion_create(1, offset, offset_length);
-    offset[0] = BUF_LEN / 2;
+    offset[0] = BUF_LEN / 4;
     offset_length[0] = BUF_LEN/2;
     reg_global = PDCregion_create(1, offset, offset_length);
 
@@ -200,8 +231,8 @@ int main(int argc, char **argv) {
     }
 
     for ( i = 0; i < BUF_LEN/2; ++i ) {
-        if ( data_read[i] != i + BUF_LEN/2 ) {
-            printf("wrong value %d!=%d\n", data_read[i], i + BUF_LEN/2);
+        if ( data_read[i] != i + BUF_LEN/4 ) {
+            printf("wrong value %d!=%d\n", data_read[i], i + BUF_LEN/4);
             ret_value = 1;
             break;
         }

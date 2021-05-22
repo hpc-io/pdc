@@ -164,6 +164,13 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
+    if(PDCregion_close(reg) < 0) {
+        printf("fail to close local region\n");
+        ret_value = 1;
+    } else {
+        printf("successfully local region\n");
+    }
+
     //reg = PDCregion_create(1, offset, offset_length);
     //reg_global = PDCregion_create(1, offset, offset_length);
     offset[0] = 0;
