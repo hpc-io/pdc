@@ -205,7 +205,7 @@ int main(int argc, char **argv) {
     } else {
         printf("successfully closed global region\n");
     }
-
+/*
     offset[0] = 0;
     offset_length[0] = BUF_LEN/2;
     reg = PDCregion_create(1, offset, offset_length);
@@ -260,7 +260,7 @@ int main(int argc, char **argv) {
     } else {
         printf("successfully closed global region\n");
     }
-
+*/
 
     // close object
     if(PDCobj_close(obj1) < 0) {
