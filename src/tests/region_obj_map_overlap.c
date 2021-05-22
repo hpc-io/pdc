@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
     int rank = 0, size = 1, i;
     int ret_value = 0;
 
-    uint64_t offset[3], offset_length[3], local_offset[1];
+    uint64_t offset[3], offset_length[3];
     uint64_t dims[1];
     local_offset[0] = 0;
     offset[0] = 0;
@@ -137,33 +137,33 @@ int main(int argc, char **argv) {
     }
     ret = PDCbuf_obj_map(data, PDC_INT, reg, obj1, reg_global);
     if(ret != SUCCEED) {
-        printf("PDCbuf_obj_map failed\n");
+        printf("PDCbuf_obj_map failed @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
 
     ret = PDCreg_obtain_lock(obj1, reg_global, PDC_WRITE, PDC_BLOCK);
     if(ret != SUCCEED) {
-        printf("PDCreg_obtain_lock failed\n");
+        printf("PDCreg_obtain_lock failed @ line  %d!\n", __LINE__);
         exit(-1);
     }
 
     ret = PDCreg_release_lock(obj1, reg_global, PDC_WRITE);
     if(ret != SUCCEED) {
-        printf("PDCreg_release_lock failed\n");
+        printf("PDCreg_release_lock failed @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
 
     ret = PDCbuf_obj_unmap(obj1, reg_global);
     if(ret != SUCCEED) {
-        printf("PDCbuf_obj_unmap failed\n");
+        printf("PDCbuf_obj_unmap failed @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
 
     if(PDCregion_close(reg_global) < 0) {
-        printf("fail to close global region\n");
+        printf("fail to close global region @ line  %d!\n", __LINE__);
         ret_value = 1;
     } else {
-        printf("successfully closed global region\n");
+        printf("successfully closed global region @ line  %d!\n", __LINE__);
     }
 
     offset[0] = BUF_LEN/2;
@@ -172,38 +172,38 @@ int main(int argc, char **argv) {
 
     ret = PDCbuf_obj_map(data, PDC_INT, reg, obj1, reg_global);
     if(ret != SUCCEED) {
-        printf("PDCbuf_obj_map failed\n");
+        printf("PDCbuf_obj_map failed @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
 
     ret = PDCreg_obtain_lock(obj1, reg_global, PDC_WRITE, PDC_BLOCK);
     if(ret != SUCCEED) {
-        printf("PDCreg_obtain_lock failed\n");
+        printf("PDCreg_obtain_lock failed @ line  %d!\n", __LINE__);
         exit(-1);
     }
 
     ret = PDCreg_release_lock(obj1, reg_global, PDC_WRITE);
     if(ret != SUCCEED) {
-        printf("PDCreg_release_lock failed\n");
+        printf("PDCreg_release_lock failed @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
 
     ret = PDCbuf_obj_unmap(obj1, reg_global);
     if(ret != SUCCEED) {
-        printf("PDCbuf_obj_unmap failed\n");
+        printf("PDCbuf_obj_unmap failed @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
     if(PDCregion_close(reg) < 0) {
-        printf("fail to close local region\n");
+        printf("fail to close local region @ line  %d!\n", __LINE__);
         ret_value = 1;
     } else {
-        printf("successfully closed local region\n");
+        printf("successfully closed local region @ line  %d!\n", __LINE__);
     }
     if(PDCregion_close(reg_global) < 0) {
-        printf("fail to close global region\n");
+        printf("fail to close global region @ line  %d!\n", __LINE__);
         ret_value = 1;
     } else {
-        printf("successfully closed global region\n");
+        printf("successfully closed global region @ line  %d!\n", __LINE__);
     }
 
     offset[0] = 0;
@@ -217,25 +217,25 @@ int main(int argc, char **argv) {
 
     ret = PDCbuf_obj_map(data_read, PDC_INT, reg, obj1, reg_global);
     if(ret != SUCCEED) {
-        printf("PDCbuf_obj_map failed\n");
+        printf("PDCbuf_obj_map failed @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
 
     ret = PDCreg_obtain_lock(obj1, reg_global, PDC_READ, PDC_BLOCK);
     if(ret != SUCCEED) {
-        printf("PDCreg_obtain_lock failed\n");
+        printf("PDCreg_obtain_lock failed @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
 
     ret = PDCreg_release_lock(obj1, reg_global, PDC_READ);
     if(ret != SUCCEED) {
-        printf("PDCreg_release_lock failed\n");
+        printf("PDCreg_release_lock failed @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
 
     ret = PDCbuf_obj_unmap(obj1, reg_global);
     if(ret != SUCCEED) {
-        printf("PDCbuf_obj_unmap failed\n");
+        printf("PDCbuf_obj_unmap failed @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
 
@@ -248,57 +248,57 @@ int main(int argc, char **argv) {
     }
 
     if(PDCregion_close(reg) < 0) {
-        printf("fail to close local region\n");
+        printf("fail to close local region @ line  %d!\n", __LINE__);
         ret_value = 1;
     } else {
-        printf("successfully local region\n");
+        printf("successfully local region @ line  %d!\n", __LINE__);
     }
 
     if(PDCregion_close(reg_global) < 0) {
-        printf("fail to close global region\n");
+        printf("fail to close global region @ line  %d!\n", __LINE__);
         ret_value = 1;
     } else {
-        printf("successfully closed global region\n");
+        printf("successfully closed global region @ line  %d!\n", __LINE__);
     }
     printf("checkpoint 1\n");
 
     // close object
     if(PDCobj_close(obj1) < 0) {
-        printf("fail to close object o1\n");
+        printf("fail to close object o1 @ line  %d!\n", __LINE__);
         ret_value = 1;
     } else {
-        printf("successfully close object o1\n");
+        printf("successfully close object o1 @ line  %d!\n", __LINE__);
     }
     if(PDCobj_close(obj2) < 0) {
-        printf("fail to close object o2\n");
+        printf("fail to close object o2 @ line  %d!\n", __LINE__);
         ret_value = 1;
     } else {
-        printf("successfully close object o2\n");
+        printf("successfully close object o2 @ line  %d!\n", __LINE__);
     }
     // close a container
     if(PDCcont_close(cont) < 0) {
-        printf("fail to close container c1\n");
+        printf("fail to close container c1 @ line  %d!\n", __LINE__);
         ret_value = 1;
     } else {
-        printf("successfully close container c1\n");
+        printf("successfully close container c1 @ line  %d!\n", __LINE__);
     }
     // close a object property
     if(PDCprop_close(obj_prop) < 0) {
         printf("Fail to close property @ line %d\n", __LINE__);
         ret_value = 1;
     } else {
-        printf("successfully close object property\n");
+        printf("successfully close object property @ line  %d!\n", __LINE__);
     }
     // close a container property
     if(PDCprop_close(cont_prop) < 0) {
         printf("Fail to close property @ line %d\n", __LINE__);
         ret_value = 1;
     } else {
-        printf("successfully close container property\n");
+        printf("successfully close container property @ line  %d!\n", __LINE__);
     }
     // close pdc
     if(PDCclose(pdc) < 0) {
-        printf("fail to close PDC\n");
+        printf("fail to close PDC @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
 #ifdef ENABLE_MPI
