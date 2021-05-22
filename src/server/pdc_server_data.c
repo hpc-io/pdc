@@ -4377,7 +4377,7 @@ int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size,
         }
     }
 
-    printf("checkpoint region_obj_cache_size = %d\n", obj_cache->region_obj_cache_size);
+    /* printf("checkpoint region_obj_cache_size = %d\n", obj_cache->region_obj_cache_size); */
     region_cache = obj_cache->region_cache + obj_cache->region_obj_cache_size;
     region_cache->ndim = ndim;
     region_cache->offset = (uint64_t*) malloc(sizeof(uint64_t) * ndim);
@@ -4484,11 +4484,8 @@ perr_t PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *regio
         goto done;
     }
 
-    // Was opened previously and closed.
-    // The location string is cached, so we utilize
-    // that to reopen the file.
-    if ((region->fd < 0) && region->storage_location) {
-        region->fd = open(region->storage_location, O_RDWR | O_APPEND, 0666);
+    if ((region->fd <= 0) && region->storage_location) {
+        region->fd = open(region->storage_location, O_RDWR, 0666);
     }
 
     region_list_t *storage_region = (region_list_t*)calloc(1, sizeof(region_list_t));
@@ -4496,15 +4493,10 @@ perr_t PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *regio
         storage_region->start[i] = region_info->offset[i];
         storage_region->count[i] = region_info->size[i];
     }
+    storage_region->ndim = region_info->ndim;
     storage_region->unit_size = unit;
     storage_region->offset = lseek(region->fd, 0, SEEK_END);
     strcpy(storage_region->storage_location, region->storage_location);
-
-    /* time_t t; */
-    /* struct tm tm; */
-    /* t = time(NULL); */
-    /* tm = *localtime(&t); */
-    /* printf("befor write: %02d:%02d:%02d\n", tm.tm_hour, tm.tm_min, tm.tm_sec); */
 
 #ifdef ENABLE_TIMING
     struct timeval  pdc_timer_start, pdc_timer_end;
@@ -4519,10 +4511,6 @@ perr_t PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *regio
         write_size -= max_write_size;
     }
     write_bytes += write(region->fd, buf, write_size);
-
-    /* t = time(NULL); */
-    /* tm = *localtime(&t); */
-    /* printf("after write: %02d:%02d:%02d\n", tm.tm_hour, tm.tm_min, tm.tm_sec); */
 
     if(write_bytes == -1){
         printf("==PDC_SERVER[%d]: write %d failed\n", pdc_server_rank_g, region->fd);
@@ -4540,7 +4528,7 @@ perr_t PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *regio
     storage_region->data_size = write_bytes;
     DL_APPEND(region->region_storage_head, storage_region);
 
-    printf("==PDC_SERVER[%d]: write region %llu bytes\n", pdc_server_rank_g, storage_region->data_size);
+    /* printf("==PDC_SERVER[%d]: write region %llu bytes\n", pdc_server_rank_g, storage_region->data_size); */
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -4574,10 +4562,11 @@ done:
 perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
     perr_t ret_value = SUCCEED;
-    ssize_t read_bytes;
+    ssize_t read_bytes = 0, total_read_bytes = 0, request_bytes = unit, my_read_bytes;
     data_server_region_t *region = NULL;
     region_list_t *elt;
     int flag = 0;
+    uint64_t i, j, pos, overlap_start[DIM_MAX] = {0}, overlap_count[DIM_MAX] = {0}, overlap_start_local[DIM_MAX] = {0};
     
     FUNC_ENTER(NULL);
     
@@ -4589,30 +4578,16 @@ perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region
     // Was opened previously and closed.
     // The location string is cached, so we utilize
     // that to reopen the file.
-    if (region->fd < 0) {
+    if (region->fd <= 0) {
         region->fd = open(region->storage_location, O_RDWR, 0666);
     }
 
-    /* time_t t; */
-    /* struct tm tm; */
-    /* t = time(NULL); */
-    /* tm = *localtime(&t); */
-    /* printf("befor pread: %02d:%02d:%02d\n", tm.tm_hour, tm.tm_min, tm.tm_sec); */
-
-
-    region_list_t *storage_region = NULL;
-    DL_FOREACH(region->region_storage_head, elt) {
-        flag = 0;
-        for (size_t i = 0; i < region_info->ndim; i++) {
-            if (elt->start[i]> region_info->offset[i] || (elt->start[i]+elt->count[i])< region_info->offset[i]+region_info->size[i]) {
-                flag = 1;
-                break;
-            }
-        }
-        if (flag == 0) {
-            storage_region = elt;
-            break;
-        }
+    region_list_t request_region;
+    request_region.ndim = region_info->ndim;
+    for (i = 0; i < region_info->ndim; i++) {
+        request_region.start[i] = region_info->offset[i];
+        request_region.count[i] = region_info->size[i];
+        request_bytes *= region_info->size[i];
     }
 
 #ifdef ENABLE_TIMING
@@ -4621,74 +4596,93 @@ perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region
     gettimeofday(&pdc_timer_start, 0);
 #endif
 
-    if (storage_region) {
-        if(region_info->ndim == 1) {
-            /* printf("storage offset %llu, region offset %llu\n", storage_region->offset, region_info->offset[0]*unit); */
-            read_bytes = pread(region->fd, buf, unit*(region_info->size[0]), storage_region->offset+region_info->offset[0]*unit);
-        }
-        else if(region_info->ndim == 2) {
-            void *tmp_buf = malloc(storage_region->data_size);
-            // Read entire region
-            read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
-            // Extract requested data
-            uint64_t pos = 0;
-            for (int i = region_info->offset[0]; i < region_info->offset[0]+region_info->size[0]; i++) {
-                memcpy(buf+pos, tmp_buf + i*storage_region->count[1]*unit+region_info->offset[1]*unit, region_info->size[1]*unit);
-                pos += region_info->size[1]*unit;
+    region_list_t *storage_region = NULL;
+    DL_FOREACH(region->region_storage_head, elt) {
+        flag = 0;
+
+        if (PDC_is_contiguous_region_overlap(elt, &request_region) == 1) {
+            storage_region = elt;
+            flag = 1;
+
+            // Get the actual start and count of region in storage
+            if (PDC_get_overlap_start_count(region_info->ndim, request_region.start, request_region.count, elt->start, elt->count,
+                                            overlap_start, overlap_count) != SUCCEED ) {
+                printf("==PDC_SERVER[%d]: PDC_get_overlap_start_count FAILED!\n", pdc_server_rank_g);
+                ret_value = FAIL;
+                goto done;
             }
-            free(tmp_buf);
-        }
-        else if(region_info->ndim == 3) {
-            void *tmp_buf = malloc(storage_region->data_size);
-            // Read entire region
-            read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
-            // Extract requested data
-            uint64_t pos = 0;
-            for (uint64_t i = region_info->offset[0]; i < region_info->offset[0]+region_info->size[0]; i++) {
-                for (uint64_t j = region_info->offset[1]; j < region_info->offset[1]+region_info->size[1]; j++) {
-                    /* printf("i=%llu, j=%llu, pos=%llu, pos2=%llu, size=%llu, total size=%llu\n", i, j, pos, */ 
-                    /*         i*storage_region->count[2]*storage_region->count[1]*unit +j*storage_region->count[2]*unit+region_info->offset[2], */
-                    /*         region_info->size[2]*unit, storage_region->data_size); */
-                    memcpy(buf+pos, tmp_buf + i*storage_region->count[2]*storage_region->count[1]*unit + 
-                                    j*storage_region->count[2]*unit+region_info->offset[2]*unit, region_info->size[2]*unit);
-                    pos += region_info->size[2]*unit;
+
+            // local (relative) region start
+            for (i = 0; i < region_info->ndim; i++)
+                overlap_start_local[i] = overlap_start[i] % elt->count[i];
+
+            if(region_info->ndim == 1) {
+                my_read_bytes = overlap_count[0]*unit;
+                read_bytes = pread(region->fd, buf+(region_info->offset[0]-overlap_start[0])*unit, overlap_count[0]*unit, storage_region->offset+overlap_start_local[0]*unit);
+                /* printf("storage offset %llu, region offset %llu, read %d bytes\n", storage_region->offset, overlap_count[0]*unit, read_bytes); */
+            }
+            else if(region_info->ndim == 2) {
+                my_read_bytes = storage_region->data_size;
+                void *tmp_buf = malloc(storage_region->data_size);
+                // Read entire region
+                read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
+                // Extract requested data
+                pos = ((region_info->offset[0]-overlap_start[0])*storage_region->count[1] + 
+                       region_info->offset[1]-overlap_start[1]) * unit;
+                for (i = overlap_start_local[0]; i < overlap_start_local[0] + overlap_count[0]; i++) {
+                    memcpy(buf+pos, tmp_buf + i*storage_region->count[1]*unit + overlap_start_local[1]*unit, overlap_count[1]*unit);
+                    pos += region_info->size[1]*unit;
                 }
+                free(tmp_buf);
             }
-            free(tmp_buf);
-        }
+            else if(region_info->ndim == 3) {
+                my_read_bytes = storage_region->data_size;
+                void *tmp_buf = malloc(storage_region->data_size);
+                // Read entire region
+                read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
+                // Extract requested data
+                pos = ((region_info->offset[0]-overlap_start[0]) * storage_region->count[1] * storage_region->count[2] + 
+                       (region_info->offset[1]-overlap_start[1]) * storage_region->count[2]) + 
+                       (region_info->offset[2]-overlap_start[2]) * unit;
 
-    }
-    else {
-        printf("==PDC_SERVER[%d]: %s count not find storage information, use current region info\n", pdc_server_rank_g, __func__);
-        if(region_info->ndim == 1) {
-            read_bytes = pread(region->fd, buf, unit*(region_info->size[0]), unit*region_info->offset[0]);
-        }
-        else if(region_info->ndim == 2) {
-            read_bytes = pread(region->fd, buf, unit*region_info->size[0]*region_info->size[1], 
-                               unit*region_info->offset[0]*region_info->size[1]*region_info->size[2]+unit*region_info->offset[1]);
-        }
-        else if(region_info->ndim == 3) {
-            read_bytes = pread(region->fd, buf, unit*region_info->size[0]*region_info->size[1]*region_info->size[2], 
-                               unit*region_info->offset[0]*region_info->size[1]*region_info->size[2]+unit*region_info->offset[1]*region_info->size[2]+region_info->offset[2]);
-        }
-    }
+                for (i = overlap_start_local[0]; i < overlap_start_local[0] + overlap_count[0]; i++) {
+                    for (j = overlap_start_local[1]; j < overlap_start_local[1] + overlap_count[1]; j++) {
+                        /* printf("i=%llu, j=%llu, pos=%llu, pos2=%llu, size=%llu, total size=%llu\n", i, j, pos, */ 
+                        /*         i*storage_region->count[2]*storage_region->count[1]*unit +j*storage_region->count[2]*unit+region_info->offset[2], */
+                        /*         region_info->size[2]*unit, storage_region->data_size); */
+                        memcpy(buf+pos, tmp_buf + i*storage_region->count[2]*storage_region->count[1]*unit + 
+                                        j*storage_region->count[2]*unit + overlap_start_local[2]*unit, overlap_count[2]*unit);
+                        pos += region_info->size[2]*unit;
+                    }
+                }
+                free(tmp_buf);
+            }
 
+            if(read_bytes == -1){
+                char errmsg[256];
+                //printf("==PDC_SERVER[%d]: pread %d failed (%d)\n", pdc_server_rank_g, region->fd, strerror_r(errno, errmsg, sizeof(errmsg)));
+                goto done;
+            }
+            total_read_bytes += read_bytes;
+            
+        } // End is overlap
+
+        if (total_read_bytes >= request_bytes)
+            break;
+    } // End DL_FOREACH storage region list
+
+    if (total_read_bytes < request_bytes) {
+        printf("==PDC_SERVER[%d]: read less bytes than expected %llu / %llu\n", pdc_server_rank_g, total_read_bytes, request_bytes);
+        ret_value = -1;
+    }
 #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer_end, 0);
     read_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
     printf("==PDC_SERVER[%d]: read region time: %.4f, %llu bytes\n", pdc_server_rank_g, read_total_sec, read_bytes);
     fflush(stdout);
-    /* t = time(NULL); */
-    /* tm = *localtime(&t); */
-    /* printf("after pread: %02d:%02d:%02d\n", tm.tm_hour, tm.tm_min, tm.tm_sec); */
 #endif
 
-    if(read_bytes == -1){
-        char errmsg[256];
-        //printf("==PDC_SERVER[%d]: pread %d failed (%d)\n", pdc_server_rank_g, region->fd, strerror_r(errno, errmsg, sizeof(errmsg)));
-        goto done;
-    }
-    
+
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
