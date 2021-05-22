@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if(cont_prop > 0) {
-        printf("Create a container property\n");
+        printf("Create a container property @ line  %d!\n", __LINE__);
     } else {
         printf("Fail to create container property @ line  %d!\n", __LINE__);
         ret_value = 1;
@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
     sprintf(cont_name, "c%d", rank);
     cont = PDCcont_create(cont_name, cont_prop);
     if(cont > 0) {
-        printf("Create a container c1\n");
+        printf("Create a container c1 @ line  %d!\n", __LINE__);
     } else {
         printf("Fail to create container @ line  %d!\n", __LINE__);
         ret_value = 1;
@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if(obj_prop > 0) {
-        printf("Create an object property\n");
+        printf("Create an object property @ line  %d!\n", __LINE__);
     } else {
         printf("Fail to create object property @ line  %d!\n", __LINE__);
         ret_value = 1;
@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
     sprintf(obj_name1, "o1_%d", rank);
     obj1 = PDCobj_create(cont, obj_name1, obj_prop);
     if(obj1 > 0) {
-        printf("Create an object o1\n");
+        printf("Create an object o1 @ line  %d!\n", __LINE__);
     } else {
         printf("Fail to create object @ line  %d!\n", __LINE__);
         ret_value = 1;
@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
     sprintf(obj_name2, "o2_%d", rank);
     obj2 = PDCobj_create(cont, obj_name2, obj_prop);
     if(obj2 > 0) {
-        printf("Create an object o2\n");
+        printf("Create an object o2 @ line  %d!\n", __LINE__);
     } else {
         printf("Fail to create object @ line  %d!\n", __LINE__);
         ret_value = 1;
@@ -209,7 +209,7 @@ int main(int argc, char **argv) {
     offset[0] = 0;
     offset_length[0] = BUF_LEN/2;
     reg = PDCregion_create(1, offset, offset_length);
-    offset[0] = BUF_LEN / 4;
+    offset[0] = 0;
     offset_length[0] = BUF_LEN/2;
     reg_global = PDCregion_create(1, offset, offset_length);
 
@@ -240,8 +240,8 @@ int main(int argc, char **argv) {
     }
 
     for ( i = 0; i < BUF_LEN/2; ++i ) {
-        if ( data_read[i] != i + BUF_LEN/4 ) {
-            printf("wrong value %d!=%d\n", data_read[i], i + BUF_LEN/4);
+        if ( data_read[i] != i) {
+            printf("wrong value %d!=%d\n", data_read[i], i);
             ret_value = 1;
             break;
         }
