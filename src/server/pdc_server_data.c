@@ -4333,7 +4333,7 @@ static perr_t PDC_Server_data_io_direct(pdc_access_t io_type, uint64_t obj_id, s
 int PDC_region_cache_copy(char *target_buf, const char* source_buf, const uint64_t *offset, const uint64_t *size, const uint64_t *offset2, const uint64_t *size2, int ndim, size_t unit) {
     int i, j;
     uint64_t *local_offset = (uint64_t*) malloc(sizeof(uint64_t) * ndim);
-    memcpy(local_offset, offset2, sizeof(uint64_t) * ndim));
+    memcpy(local_offset, offset2, sizeof(uint64_t) * ndim);
     for ( i = 0; i < ndim; ++i ) {
         local_offset[i] -= offset[i];
     }
