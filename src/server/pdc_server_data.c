@@ -4330,6 +4330,31 @@ static perr_t PDC_Server_data_io_direct(pdc_access_t io_type, uint64_t obj_id, s
     FUNC_LEAVE(ret_value);
 }
 
+int PDC_region_cache_copy(char *target_buf, const char* source_buf, const uint64_t *offset, const uint64_t *size, const uint64_t *offset2, const uint64_t *size2, int ndim, size_t unit) {
+    int i, j;
+    uint64_t *local_offset = (uint64_t*) malloc(sizeof(uint64_t) * ndim);
+    memcpy(local_offset, offset2, sizeof(uint64_t * ndim);
+    for ( i = 0; i < ndim; ++i ) {
+        local_offset[i] -= offset[i];
+    }
+    if (ndim == 1) {
+        memcpy(target_buf, source_buf + local_offset[0] * unit, unit * size2[0]);
+    } else if (ndim == 2) {
+        for ( i = 0; i < size2[0]; ++i ) {
+            memcpy(target_buf, source_buf + (local_offset[1] + (local_offset[0] + i) * size[1]) * unit, unit * size2[1]);
+            target_buf += size2[1];
+        }
+    } else if (ndim ==3) {
+        for ( i = 0; i < size2[0]; ++i ) {
+            for ( j = 0; j < size2[1]; ++j ) {
+                memcpy(target_buf, source_buf + (local_offset[0] * size[1] * size[2] + local_offset1[1] * size[2] + local_offset[2]) * unit, unit * size2[1]);
+                target_buf += size2[1];
+            }
+        }
+    }
+    free(local_offset);
+}
+
 int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size, const uint64_t *offset, const uint64_t *size, int ndim, size_t unit) {
     hg_thread_mutex_lock(&pdc_obj_cache_list_mutex);
 
@@ -4559,7 +4584,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
+perr_t PDC_Server_data_read_from2(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
     perr_t ret_value = SUCCEED;
     ssize_t read_bytes = 0, total_read_bytes = 0, request_bytes = unit, my_read_bytes;
@@ -4683,6 +4708,16 @@ perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region
 #endif
 
 
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
+{
+    perr_t ret_value = SUCCEED;
+    FUNC_ENTER(NULL);
+    PDC_Server_data_read_from2(obj_id, region_info, buf, unit);
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
