@@ -4421,55 +4421,6 @@ int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size,
     return 0;
 }
 
-int PDC_region_flush(uint64_t obj_id) {
-    pdc_obj_cache *obj_cache = NULL;
-    int i;
-    struct pdc_region_info *region_cache;
-
-    for ( i = 0; i < obj_cache_list.obj_cache_size; ++i ) {
-        if (obj_cache_list.pdc_obj_cache[i].obj_id == obj_id) {
-            obj_cache = obj_cache_list.pdc_obj_cache + i;
-        }
-    }
-
-    for ( i = 0; i < obj_cache->region_obj_cache_size; ++i ) {
-         region_cache = obj_cache->region_cache + i;
-         PDC_Server_data_write_out(obj_id, region_cache, region_cache->buf, region_cache->unit);
-    }
-    return 0;
-}
-
-int PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit) {
-    pdc_obj_cache *obj_cache = NULL;
-    int i, flag = 1;
-    size_t j;
-    struct pdc_region_info *region_cache = NULL;
-
-    for ( i = 0; i < obj_cache_list.obj_cache_size; ++i ) {
-        if (obj_cache_list.pdc_obj_cache[i].obj_id == obj_id) {
-            obj_cache = obj_cache_list.pdc_obj_cache + i;
-        }
-    }
-    
-    for ( i = 0; i < obj_cache->region_obj_cache_size; ++i ) {
-        flag = 1;
-        region_cache = obj_cache->region_cache + i;
-        for ( j = 0; j < region_info->ndim; ++j ) {
-            if ( region_info->offset[j] < region_cache->offset[j] || region_info->offset[j] + region_info->size[i] > region_cache->offset[j] + region_cache->size[i] ) {
-                flag = 0;
-            }
-        }
-        if (flag) {
-            break;
-        } else {
-            region_cache = NULL;
-        }
-    }
-    PDC_region_flush(obj_id);
-    PDC_Server_data_read_from(obj_id, region_info, buf, unit);
-    return 0;
-}
-
 int PDC_region_cache_free() {
     int i, j;
     for ( i = 0; i < obj_cache_list.obj_cache_size; ++i ) {
@@ -4577,7 +4528,7 @@ perr_t PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region
 
     PDC_region_cache_register(obj_id, buf, write_size, region_info->offset, region_info->size, region_info->ndim, unit);
 
-    PDC_Server_data_write_out2(obj_id, region_info, buf, unit);
+    //PDC_Server_data_write_out2(obj_id, region_info, buf, unit);
 
 done:
     fflush(stdout);
@@ -4713,14 +4664,65 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+int PDC_region_flush(uint64_t obj_id) {
+    pdc_obj_cache *obj_cache = NULL;
+    int i;
+    struct pdc_region_info *region_cache;
+
+    for ( i = 0; i < obj_cache_list.obj_cache_size; ++i ) {
+        if (obj_cache_list.pdc_obj_cache[i].obj_id == obj_id) {
+            obj_cache = obj_cache_list.pdc_obj_cache + i;
+        }
+    }
+
+    for ( i = 0; i < obj_cache->region_obj_cache_size; ++i ) {
+         region_cache = obj_cache->region_cache + i;
+         PDC_Server_data_write_out2(obj_id, region_cache, region_cache->buf, region_cache->unit);
+    }
+    return 0;
+}
+
 perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
     perr_t ret_value = SUCCEED;
     FUNC_ENTER(NULL);
-    PDC_Server_data_read_from2(obj_id, region_info, buf, unit);
+    //PDC_Server_data_read_from2(obj_id, region_info, buf, unit);
+
+    PDC_region_fetch(obj_id, region_info, buf, unit)
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
+}
+
+int PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit) {
+    pdc_obj_cache *obj_cache = NULL;
+    int i, flag = 1;
+    size_t j;
+    struct pdc_region_info *region_cache = NULL;
+
+    for ( i = 0; i < obj_cache_list.obj_cache_size; ++i ) {
+        if (obj_cache_list.pdc_obj_cache[i].obj_id == obj_id) {
+            obj_cache = obj_cache_list.pdc_obj_cache + i;
+        }
+    }
+    
+    for ( i = 0; i < obj_cache->region_obj_cache_size; ++i ) {
+        flag = 1;
+        region_cache = obj_cache->region_cache + i;
+        for ( j = 0; j < region_info->ndim; ++j ) {
+            if ( region_info->offset[j] < region_cache->offset[j] || region_info->offset[j] + region_info->size[i] > region_cache->offset[j] + region_cache->size[i] ) {
+                flag = 0;
+            }
+        }
+        if (flag) {
+            break;
+        } else {
+            region_cache = NULL;
+        }
+    }
+    PDC_region_flush(obj_id);
+    PDC_Server_data_read_from2(obj_id, region_info, buf, unit);
+    return 0;
 }
 
 perr_t PDC_Server_data_write_direct(uint64_t obj_id, struct pdc_region_info *region_info, void *buf)
