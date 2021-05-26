@@ -4688,7 +4688,7 @@ perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region
     FUNC_ENTER(NULL);
     //PDC_Server_data_read_from2(obj_id, region_info, buf, unit);
 
-    PDC_region_fetch(obj_id, region_info, buf, unit)
+    PDC_region_fetch(obj_id, region_info, buf, unit);
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
