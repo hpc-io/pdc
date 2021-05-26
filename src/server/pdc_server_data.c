@@ -4347,7 +4347,7 @@ int PDC_region_cache_copy(char *target_buf, const char* source_buf, const uint64
     } else if (ndim ==3) {
         for ( i = 0; i < size2[0]; ++i ) {
             for ( j = 0; j < size2[1]; ++j ) {
-                memcpy(target_buf, source_buf + (local_offset[0] * size[1] * size[2] + local_offset1[1] * size[2] + local_offset[2]) * unit, unit * size2[1]);
+                memcpy(target_buf, source_buf + (local_offset[0] * size[1] * size[2] + local_offset[1] * size[2] + local_offset[2]) * unit, unit * size2[1]);
                 target_buf += size2[1];
             }
         }
