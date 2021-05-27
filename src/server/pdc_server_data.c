@@ -4331,7 +4331,7 @@ static perr_t PDC_Server_data_io_direct(pdc_access_t io_type, uint64_t obj_id, s
 }
 
 int PDC_region_cache_copy(char *target_buf, const char* source_buf, const uint64_t *offset, const uint64_t *size, const uint64_t *offset2, const uint64_t *size2, int ndim, size_t unit) {
-    int i, j;
+    uint64_t i, j;
     uint64_t *local_offset = (uint64_t*) malloc(sizeof(uint64_t) * ndim);
     memcpy(local_offset, offset2, sizeof(uint64_t) * ndim);
     for ( i = 0; i < ndim; ++i ) {
@@ -4712,7 +4712,7 @@ int PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void 
         flag = 1;
         region_cache = obj_cache->region_cache + i;
         for ( j = 0; j < region_info->ndim; ++j ) {
-            if ( region_info->offset[j] < region_cache->offset[j] || region_info->offset[j] + region_info->size[i] > region_cache->offset[j] + region_cache->size[i] ) {
+            if ( region_info->offset[j] < region_cache->offset[j] || region_info->offset[j] + region_info->size[j] > region_cache->offset[j] + region_cache->size[j] ) {
                 flag = 0;
             }
         }
