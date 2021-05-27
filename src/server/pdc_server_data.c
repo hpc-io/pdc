@@ -4415,7 +4415,7 @@ int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size,
     memcpy(region_cache->offset, offset, sizeof(uint64_t) * ndim);
     memcpy(region_cache->size, size, sizeof(uint64_t) * ndim);
     memcpy(region_cache->buf, buf, sizeof(char) * buf_size);
-    printf("created cache region at offset %llu, size %llu, unit = %ld, ndim = %ld\n", offset[0], buf_size, unit, ndim);
+    printf("created cache region at offset %llu, size %llu, unit = %ld, ndim = %ld, obj_id = %llu\n", offset[0], buf_size, unit, ndim, (long long unsigned) obj_cache.obj_id);
 
     obj_cache->region_obj_cache_size++;
 
@@ -4708,24 +4708,27 @@ int PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void 
             obj_cache = obj_cache_list.pdc_obj_cache + i;
         }
     }
-    
-    for ( i = 0; i < obj_cache->region_obj_cache_size; ++i ) {
-        flag = 1;
-        region_cache = obj_cache->region_cache + i;
-        for ( j = 0; j < region_info->ndim; ++j ) {
-            if ( region_info->offset[j] < region_cache->offset[j] || region_info->offset[j] + region_info->size[j] > region_cache->offset[j] + region_cache->size[j] ) {
-                flag = 0;
+    if (obj_cache !=NULL) {
+        printf("region fetch for obj id %llu\n", obj_cache->obj_id);
+        for ( i = 0; i < obj_cache->region_obj_cache_size; ++i ) {
+            flag = 1;
+            region_cache = obj_cache->region_cache + i;
+            for ( j = 0; j < region_info->ndim; ++j ) {
+                if ( region_info->offset[j] < region_cache->offset[j] || region_info->offset[j] + region_info->size[j] > region_cache->offset[j] + region_cache->size[j] ) {
+                    flag = 0;
+                }
+            }
+            if (flag) {
+                break;
+            } else {
+                region_cache = NULL;
             }
         }
-        if (flag) {
-            break;
-        } else {
-            region_cache = NULL;
+        if ( region_cache != NULL ) {
+            PDC_region_cache_copy(region_info->buf, region_cache->buf, region_cache->offset, region_cache->size, region_info->offset, region_info->size, region_cache->ndim, unit);
         }
-    }
-    if ( region_cache != NULL ) {
-        //PDC_region_cache_copy(region_info->buf, region_cache->buf, region_cache->offset, region_cache->size, region_info->offset, region_info->size, region_cache->ndim, unit);
-    } else {
+    } 
+    if (region_cache == NULL) {
         PDC_region_flush(obj_id);
         PDC_Server_data_read_from2(obj_id, region_info, buf, unit);
     }
