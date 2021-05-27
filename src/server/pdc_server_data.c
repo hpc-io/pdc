@@ -4338,6 +4338,7 @@ int PDC_region_cache_copy(char *target_buf, const char* source_buf, const uint64
         local_offset[i] -= offset[i];
     }
     if (ndim == 1) {
+        printf("checkpoint dimension = 1, local_offset = %llu, unit = %ld, size2 = %llu\n", local_offset[0], unit, size2[0]);
         memcpy(target_buf, source_buf + local_offset[0] * unit, unit * size2[0]);
     } else if (ndim == 2) {
         for ( i = 0; i < size2[0]; ++i ) {
@@ -4348,7 +4349,7 @@ int PDC_region_cache_copy(char *target_buf, const char* source_buf, const uint64
         for ( i = 0; i < size2[0]; ++i ) {
             for ( j = 0; j < size2[1]; ++j ) {
                 memcpy(target_buf, source_buf + (local_offset[0] * size[1] * size[2] + local_offset[1] * size[2] + local_offset[2]) * unit, unit * size2[2]);
-                target_buf += size2[1] * unit;
+                target_buf += size2[2] * unit;
             }
         }
     }
