@@ -4725,7 +4725,7 @@ int PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void 
             }
         }
         if ( region_cache != NULL ) {
-            PDC_region_cache_copy(region_info->buf, region_cache->buf, region_cache->offset, region_cache->size, region_info->offset, region_info->size, region_cache->ndim, unit);
+            PDC_region_cache_copy(buf, region_cache->buf, region_cache->offset, region_cache->size, region_info->offset, region_info->size, region_cache->ndim, unit);
         }
     } 
     if (region_cache == NULL) {
