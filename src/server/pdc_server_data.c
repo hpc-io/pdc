@@ -4348,7 +4348,7 @@ int PDC_region_cache_copy(char *target_buf, const char* source_buf, const uint64
     } else if (ndim ==3) {
         for ( i = 0; i < size2[0]; ++i ) {
             for ( j = 0; j < size2[1]; ++j ) {
-                memcpy(target_buf, source_buf + (local_offset[0] * size[1] * size[2] + local_offset[1] * size[2] + local_offset[2]) * unit, unit * size2[2]);
+                memcpy(target_buf, source_buf + ((local_offset[0] + i) * size[1] * size[2] + (local_offset[1]+j) * size[2] + local_offset[2]) * unit, unit * size2[2]);
                 target_buf += size2[2] * unit;
             }
         }
@@ -4724,8 +4724,10 @@ int PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void 
                 region_cache = NULL;
             }
         }
-        if ( region_cache != NULL ) {
+        if ( region_cache != NULL && unit == region_cache->unit ) {
             PDC_region_cache_copy(buf, region_cache->buf, region_cache->offset, region_cache->size, region_info->offset, region_info->size, region_cache->ndim, unit);
+        } else {
+            region_cache = NULL;
         }
     } 
     if (region_cache == NULL) {
