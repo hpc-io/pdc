@@ -856,7 +856,7 @@ drc_access_again:
     obj_cache_list.obj_cache_max_size = 0;
     pdc_recycle_close_flag = 0;
     hg_thread_mutex_init(&pdc_obj_cache_list_mutex);
-    pthread_mutex_init(&pdc_cache_mutex, NULL)
+    pthread_mutex_init(&pdc_cache_mutex, NULL);
     pthread_create(&pdc_recycle_thread, NULL, &PDC_region_cache_clock_cycle, NULL);
 
 done:
