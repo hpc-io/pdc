@@ -854,7 +854,10 @@ drc_access_again:
     // PDC cache infrastructures
     obj_cache_list.obj_cache_size = 0;
     obj_cache_list.obj_cache_max_size = 0;
+    pdc_recycle_close_flag = 0;
     hg_thread_mutex_init(&pdc_obj_cache_list_mutex);
+    pthread_mutex_init(&pdc_cache_mutex, NULL)
+    pthread_create(&pdc_recycle_thread, NULL, &PDC_region_cache_clock_cycle, NULL);
 
 done:
     FUNC_LEAVE(ret_value);
@@ -1003,6 +1006,13 @@ perr_t PDC_Server_finalize()
 #endif
 
     // PDC cache finalize
+    pthread_mutex_lock(&pdc_cache_mutex);
+    pdc_recycle_close_flag = 1;
+    pthread_mutex_unlock(&pdc_cache_mutex);
+    pthread_join(pdc_recycle_thread, NULL);
+    pthread_mutex_destroy(&pdc_cache_mutex);
+
+    PDC_region_cache_flush_all();
     hg_thread_mutex_destroy(&pdc_obj_cache_list_mutex);
 
     if (pdc_server_rank_g == 0)

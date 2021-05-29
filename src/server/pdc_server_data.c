@@ -4419,6 +4419,8 @@ int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size,
 
     obj_cache->region_obj_cache_size++;
 
+    gettimeofday(&(obj_cache->timestamp), NULL);
+
     hg_thread_mutex_unlock(&pdc_obj_cache_list_mutex);
 
     return 0;
@@ -4667,7 +4669,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-int PDC_region_flush(uint64_t obj_id) {
+int PDC_region_cache_flush(uint64_t obj_id) {
     pdc_obj_cache *obj_cache = NULL;
     int i;
     struct pdc_region_info *region_cache;
@@ -4681,8 +4683,47 @@ int PDC_region_flush(uint64_t obj_id) {
     for ( i = 0; i < obj_cache->region_obj_cache_size; ++i ) {
          region_cache = obj_cache->region_cache + i;
          PDC_Server_data_write_out2(obj_id, region_cache, region_cache->buf, region_cache->unit);
+         free(region_cache->offset);
+         free(region_cache->size);
+         free(region_cache->buf);
     }
+    obj_cache->region_obj_cache_size = 0;
+    gettimeofday(&(obj_cache->timestamp), NULL);
+
     return 0;
+}
+
+int PDC_region_cache_flush_all() {
+    hg_thread_mutex_lock(&pdc_obj_cache_list_mutex);
+    int i;
+    for ( i = 0; i < obj_cache_list.obj_cache_size; ++i ) {
+        PDC_region_cache_flush(obj_cache_list.pdc_obj_cache[i].obj_id);
+    }
+    hg_thread_mutex_unlock(&pdc_obj_cache_list_mutex);
+    return 0;
+}
+
+
+
+void *PDC_region_cache_clock_cycle( void *ptr ) {
+    pdc_cache *obj_cache;
+    int i;
+    struct timeval current_time;
+    while (1) {
+        pthread_mutex_lock(&pdc_cache_mutex);
+        if (!pdc_recycle_close_flag) {
+            hg_thread_mutex_lock(&pdc_obj_cache_list_mutex);
+            for ( i = 0; i < obj_cache_size; ++i ) {
+                obj_cache = obj_cache_list.pdc_obj_cache + i;
+                if ( current_time.tv_sec - obj_cache->timestamp.tv_sec > 10 ) {
+                    PDC_region_cache_flush(obj_cache->obj_id);
+                }
+            }
+            hg_thread_mutex_unlock(&pdc_obj_cache_list_mutex);
+        }
+        pthread_mutex_unlock(&pdc_cache_mutex);
+        sleep(10);
+    }
 }
 
 perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
@@ -4698,6 +4739,7 @@ done:
 }
 
 int PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit) {
+    hg_thread_mutex_lock(&pdc_obj_cache_list_mutex);
     pdc_obj_cache *obj_cache = NULL;
     int i, flag = 1;
     size_t j;
@@ -4731,9 +4773,10 @@ int PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void 
         }
     } 
     if (region_cache == NULL) {
-        PDC_region_flush(obj_id);
+        PDC_region_cache_flush(obj_id);
         PDC_Server_data_read_from2(obj_id, region_info, buf, unit);
     }
+    hg_thread_mutex_unlock(&pdc_obj_cache_list_mutex);
     return 0;
 }
 
