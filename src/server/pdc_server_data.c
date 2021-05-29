@@ -4720,6 +4720,9 @@ void *PDC_region_cache_clock_cycle( void *ptr ) {
                 }
             }
             hg_thread_mutex_unlock(&pdc_obj_cache_list_mutex);
+        } else {
+            pthread_mutex_unlock(&pdc_cache_mutex);
+            break;
         }
         pthread_mutex_unlock(&pdc_cache_mutex);
         sleep(10);

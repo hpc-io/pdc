@@ -1009,7 +1009,9 @@ perr_t PDC_Server_finalize()
     pthread_mutex_lock(&pdc_cache_mutex);
     pdc_recycle_close_flag = 1;
     pthread_mutex_unlock(&pdc_cache_mutex);
+    printf("before pthread join\n");
     pthread_join(pdc_recycle_thread, NULL);
+    printf("after pthread join\n");
     pthread_mutex_destroy(&pdc_cache_mutex);
 
     PDC_region_cache_flush_all();
