@@ -4706,7 +4706,7 @@ int PDC_region_cache_flush_all() {
 
 
 void *PDC_region_cache_clock_cycle( void *ptr ) {
-    pdc_cache *obj_cache;
+    pdc_obj_cache *obj_cache;
     int i;
     struct timeval current_time;
     while (1) {
