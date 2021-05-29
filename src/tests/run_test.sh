@@ -22,4 +22,5 @@ $test_exe $test_args
 ret="$?"
 # and shutdown the SERVER before exiting
 ./close_server
+sleep 2
 exit $ret

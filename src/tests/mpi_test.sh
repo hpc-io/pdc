@@ -28,4 +28,5 @@ $mpi_cmd -n $n_client $test_exe $test_args
 ret="$?"
 # and shutdown the SERVER before exiting
 $mpi_cmd -n 1 ./close_server
+sleep 2
 exit $ret

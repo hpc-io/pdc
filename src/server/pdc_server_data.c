@@ -4725,7 +4725,7 @@ void *PDC_region_cache_clock_cycle( void *ptr ) {
             break;
         }
         pthread_mutex_unlock(&pdc_cache_mutex);
-        sleep(10);
+        sleep(0.7);
     }
 }
 
