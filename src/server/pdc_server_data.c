@@ -4713,7 +4713,7 @@ void *PDC_region_cache_clock_cycle( void *ptr ) {
         pthread_mutex_lock(&pdc_cache_mutex);
         if (!pdc_recycle_close_flag) {
             hg_thread_mutex_lock(&pdc_obj_cache_list_mutex);
-            for ( i = 0; i < obj_cache_size; ++i ) {
+            for ( i = 0; i < obj_cache_list.obj_cache_size; ++i ) {
                 obj_cache = obj_cache_list.pdc_obj_cache + i;
                 if ( current_time.tv_sec - obj_cache->timestamp.tv_sec > 10 ) {
                     PDC_region_cache_flush(obj_cache->obj_id);
