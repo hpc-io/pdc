@@ -311,6 +311,10 @@ extern char   *gBinningOption;
 extern int     gen_fastbit_idx_g;
 extern int     use_fastbit_idx_g;
 
+
+#undef PDC_SERVER_CACHE
+
+#ifdef PDC_SERVER_CACHE
 typedef struct {
     struct timeval timestamp;
     struct pdc_region_info *region_cache;
@@ -325,6 +329,10 @@ typedef struct {
     int obj_cache_max_size;
 } pdc_cache;
 
+#define PDC_REGION_CONTAINED 0x1111
+#define PDC_REGION_PARTIAL_OVERLAP 0x1112
+#define PDC_REGION_NO_OVERLAP 0x1113
+
 pdc_cache obj_cache_list;
 
 hg_thread_mutex_t pdc_obj_cache_list_mutex;
@@ -336,6 +344,7 @@ int PDC_region_flush(uint64_t obj_id);
 int PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit);
 int PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size, const uint64_t *offset, const uint64_t *size, int ndim, size_t unit);
 void *PDC_region_cache_clock_cycle( void *ptr );
+#endif
 
 /***************************************/
 /* Library-private Function Prototypes */
