@@ -2263,13 +2263,13 @@ HG_TEST_RPC_CB(region_release, handle)
     hg_size_t   size, size2;
     void       *data_buf;
     struct pdc_region_info *server_region;
-    region_list_t *elt, *request_region, *tmp;
+    region_list_t *elt, *request_region, *tmp, *elt_tmp;
     struct region_lock_update_bulk_args *lock_update_bulk_args = NULL;
     struct buf_map_release_bulk_args *buf_map_bulk_args = NULL, *obj_map_bulk_args = NULL;
     hg_bulk_t lock_local_bulk_handle = HG_BULK_NULL;
     hg_bulk_t remote_bulk_handle = HG_BULK_NULL;
     struct pdc_region_info *remote_reg_info;
-    region_buf_map_t *eltt, *eltt2;
+    region_buf_map_t *eltt, *eltt2, *eltt_tmp;
     hg_uint32_t k, m, remote_count;
     void **data_ptrs_to = NULL;
     size_t *data_size_to = NULL;
@@ -2302,7 +2302,7 @@ HG_TEST_RPC_CB(region_release, handle)
 #ifdef ENABLE_MULTITHREAD
         hg_thread_mutex_lock(&lock_list_mutex_g);
 #endif
-        DL_FOREACH(target_obj->region_lock_head, elt) {
+        DL_FOREACH_SAFE(target_obj->region_lock_head, elt, elt_tmp) {
             if (PDC_is_same_region_list(request_region, elt) == 1 && elt->reg_dirty_from_buf == 1 && hg_atomic_get32(&(elt->buf_map_refcount)) == 0) {
                 dirty_reg = 1;
                 size = HG_Bulk_get_size(elt->bulk_handle);
@@ -2343,7 +2343,7 @@ HG_TEST_RPC_CB(region_release, handle)
             if (PDC_is_same_region_list(request_region, elt) == 1 && elt->reg_dirty_from_buf == 1 && hg_atomic_get32(&(elt->buf_map_refcount)) > 0) {
                 dirty_reg = 1;
                 tmp = (region_list_t *)malloc(sizeof(region_list_t));
-                DL_FOREACH(target_obj->region_buf_map_head, eltt2) {
+                DL_FOREACH_SAFE(target_obj->region_buf_map_head, eltt2, eltt_tmp) {
                     PDC_region_transfer_t_to_list_t(&(eltt2->remote_region_unit), tmp);
                     if (PDC_is_same_region_list(tmp, request_region) == 1) {
                         // get remote object memory addr

@@ -4636,7 +4636,7 @@ perr_t PDC_Server_data_read_from2(uint64_t obj_id, struct pdc_region_info *regio
 
             if(region_info->ndim == 1) {
                 my_read_bytes = overlap_count[0]*unit;
-                read_bytes = pread(region->fd, buf+(region_info->offset[0]-overlap_start[0])*unit, overlap_count[0]*unit, storage_region->offset+overlap_start_local[0]*unit);
+                read_bytes = pread(region->fd, buf+(region_info->offset[0]-overlap_start_local[0])*unit, overlap_count[0]*unit, storage_region->offset+overlap_start_local[0]*unit);
                 /* printf("storage offset %llu, region offset %llu, read %d bytes\n", storage_region->offset, overlap_count[0]*unit, read_bytes); */
             }
             else if(region_info->ndim == 2) {
@@ -4955,7 +4955,7 @@ perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region
 
             if(region_info->ndim == 1) {
                 my_read_bytes = overlap_count[0]*unit;
-                read_bytes = pread(region->fd, buf+(region_info->offset[0]-overlap_start[0])*unit, overlap_count[0]*unit, storage_region->offset+overlap_start_local[0]*unit);
+                read_bytes = pread(region->fd, buf+(region_info->offset[0]-overlap_start_local[0])*unit, overlap_count[0]*unit, storage_region->offset+overlap_start_local[0]*unit);
                 /* printf("storage offset %llu, region offset %llu, read %d bytes\n", storage_region->offset, overlap_count[0]*unit, read_bytes); */
             }
             else if(region_info->ndim == 2) {
