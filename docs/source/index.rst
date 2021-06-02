@@ -4,12 +4,15 @@
    contain the root `toctree` directive.
    Test - Kenneth
 
-Welcome to PDC's documentation!
+Proactive Data Containers (PDC)
 ===============================
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: User Guide
+
+   overview
+   installation
 
 
 
