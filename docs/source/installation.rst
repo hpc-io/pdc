@@ -6,7 +6,10 @@ The following instructions are for installing PDC on Linux and Cray machines. GC
 
 Current PDC tests have been verified with MPICH. To install MPICH, follow the documentation in https://www.mpich.org/static/downloads/3.4.1/mpich-3.4.1-installguide.pdf
 
-PDC also depends on libfabric and Mercury. We provide detailed instructions for installing libfabric, Mercury, and PDC below. Make sure to record the environmental variables (lines that contains the "export" commands). They are needed for running PDC and to use the libraries again.
+PDC also depends on libfabric and Mercury. We provide detailed instructions for installing libfabric, Mercury, and PDC below. 
+
+.. attention:: 
+	Make sure to record the environmental variables (lines that contains the "export" commands). They are needed for running PDC and to use the libraries again.
 
 ---------------------------
 Install libfabric
@@ -30,7 +33,8 @@ Install libfabric
 Install Mercury
 ---------------------------
 
-Make sure the ctest passes. PDC may not work without passing all the tests of Mercury.
+.. attention:: 
+	Make sure the ctest passes. PDC may not work without passing all the tests of Mercury.
 
 Step 2 in the following is not required. It is a stable commit that has been used to test when these these instructions were written. One may skip it to use the current master branch of Mercury.
 
