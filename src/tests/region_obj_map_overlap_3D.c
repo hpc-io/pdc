@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
     int ret_value = 0;
 
     uint64_t offset[3], offset_length[3];
-    uint64_t dims[2];
+    uint64_t dims[3];
 
     offset[0] = 0;
     offset[1] = 2;
@@ -59,7 +59,8 @@ int main(int argc, char **argv) {
     int *data_read = (int*)malloc(sizeof(int)*BUF_LEN);
     int *obj_data = (int *)calloc(BUF_LEN, sizeof(int));
     dims[0] = BUF_LEN/4;
-    dims[1] = 4;
+    dims[1] = 2;
+    dims[2] = 2;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -102,7 +103,7 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
     PDCprop_set_obj_buf(obj_prop, obj_data);
-    PDCprop_set_obj_dims(obj_prop, 2, dims);
+    PDCprop_set_obj_dims(obj_prop, 3, dims);
     PDCprop_set_obj_user_id( obj_prop, getuid());
     PDCprop_set_obj_time_step( obj_prop, 0);
     PDCprop_set_obj_app_name(obj_prop, "DataServerTest");
@@ -131,9 +132,11 @@ int main(int argc, char **argv) {
     offset[0] = 0;
     offset_length[0] = BUF_LEN/8;
     offset[1] = 0;
-    offset_length[1] = 4;
-    reg = PDCregion_create(2, offset, offset_length);
-    reg_global = PDCregion_create(2, offset, offset_length);
+    offset_length[1] = 2;
+    offset[2] = 0;
+    offset_length[2] = 2;
+    reg = PDCregion_create(3, offset, offset_length);
+    reg_global = PDCregion_create(3, offset, offset_length);
 
     for ( i = 0; i < BUF_LEN; ++i ) {
         data[i] = i;
@@ -172,8 +175,10 @@ int main(int argc, char **argv) {
     offset[0] = BUF_LEN/8;
     offset_length[0] = BUF_LEN/8;
     offset[1] = 0;
-    offset_length[1] = 4;
-    reg_global = PDCregion_create(2, offset, offset_length);
+    offset_length[1] = 2;
+    offset[2] = 0;
+    offset_length[2] = 2;
+    reg_global = PDCregion_create(3, offset, offset_length);
 
     ret = PDCbuf_obj_map(data+BUF_LEN/2, PDC_INT, reg, obj1, reg_global);
     if(ret != SUCCEED) {
@@ -214,13 +219,17 @@ int main(int argc, char **argv) {
     offset[0] = 0;
     offset_length[0] = BUF_LEN/8;
     offset[1] = 0;
-    offset_length[1] = 4;
+    offset_length[1] = 2;
+    offset[2] = 0;
+    offset_length[2] = 2;
     reg = PDCregion_create(2, offset, offset_length);
     offset[0] = BUF_LEN/16;
     offset_length[0] = BUF_LEN/8;
     offset[1] = 0;
-    offset_length[1] = 4;
-    reg_global = PDCregion_create(2, offset, offset_length);
+    offset_length[1] = 2;
+    offset[2] = 0;
+    offset_length[2] = 2;
+    reg_global = PDCregion_create(3, offset, offset_length);
 
     memset(data_read, 0, BUF_LEN);
 
