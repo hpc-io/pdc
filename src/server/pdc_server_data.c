@@ -4580,7 +4580,7 @@ done:
 perr_t PDC_Server_data_read_from2(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
     perr_t ret_value = SUCCEED;
-    ssize_t read_bytes = 0, total_read_bytes = 0, request_bytes = unit, my_read_bytes;
+    ssize_t read_bytes = 0, total_read_bytes = 0, request_bytes = unit, my_read_bytes = 0;
     data_server_region_t *region = NULL;
     region_list_t *elt;
     int flag = 0;
