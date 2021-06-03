@@ -1903,7 +1903,7 @@ done:
 }
 
 // Only let one process per node to do the actual query, then broadcast to all others
-perr_t PDC_Client_query_metadata_name_timestep_agg(const char *obj_name, int time_step, pdc_metadata_t **out)
+perr_t PDC_Client_query_metadata_name_timestep_agg_same_node(const char *obj_name, int time_step, pdc_metadata_t **out)
 {
     perr_t ret_value = SUCCEED;
     
@@ -1921,6 +1921,34 @@ perr_t PDC_Client_query_metadata_name_timestep_agg(const char *obj_name, int tim
         *out = (pdc_metadata_t*)calloc(1, sizeof(pdc_metadata_t));
 
     MPI_Bcast(*out, sizeof(pdc_metadata_t), MPI_CHAR, 0, PDC_SAME_NODE_COMM_g);
+
+#else
+    ret_value = PDC_Client_query_metadata_name_timestep(obj_name, time_step, out);
+#endif
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_Client_query_metadata_name_timestep_agg(const char *obj_name, int time_step, pdc_metadata_t **out)
+{
+    perr_t ret_value = SUCCEED;
+    
+    FUNC_ENTER(NULL);
+
+#ifdef ENABLE_MPI
+    if (pdc_client_mpi_rank_g == 0) {
+        ret_value = PDC_Client_query_metadata_name_timestep(obj_name, time_step, out);
+        if (ret_value != SUCCEED || NULL == *out) {
+            *out = (pdc_metadata_t*)calloc(1, sizeof(pdc_metadata_t));
+            PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: - ERROR with query [%s]", pdc_client_mpi_rank_g, obj_name);
+        }
+    }
+    else    
+        *out = (pdc_metadata_t*)calloc(1, sizeof(pdc_metadata_t));
+
+    MPI_Bcast(*out, sizeof(pdc_metadata_t), MPI_CHAR, 0, PDC_CLIENT_COMM_WORLD_g);
 
 #else
     ret_value = PDC_Client_query_metadata_name_timestep(obj_name, time_step, out);

@@ -384,7 +384,8 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc)
+static pdcid_t 
+PDCobj_open_common(const char *obj_name, pdcid_t pdc, int is_col)
 {
     pdcid_t ret_value = 0;
     perr_t ret = SUCCEED;
@@ -427,7 +428,11 @@ pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc)
         PGOTO_ERROR(0, "cannot allocate ret_value->pdc");
     
     // contact metadata server
-    ret = PDC_Client_query_metadata_name_timestep(obj_name, 0, &out);
+    if (is_col == 0)
+        ret = PDC_Client_query_metadata_name_timestep(obj_name, 0, &out);
+    else
+        ret = PDC_Client_query_metadata_name_timestep_agg(obj_name, 0, &out);
+
     if (ret == FAIL)
         PGOTO_ERROR(0, "query object failed");
         
@@ -478,6 +483,26 @@ pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc)
 
 done:
     fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} 
+
+pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc)
+{
+    pdcid_t ret_value;
+    FUNC_ENTER(NULL);
+
+    ret_value = PDCobj_open_common(obj_name, pdc, 0);
+   
+    FUNC_LEAVE(ret_value);
+} 
+
+pdcid_t PDCobj_open_col(const char *obj_name, pdcid_t pdc)
+{
+    pdcid_t ret_value;
+    FUNC_ENTER(NULL);
+
+    ret_value = PDCobj_open_common(obj_name, pdc, 1);
+   
     FUNC_LEAVE(ret_value);
 } 
 

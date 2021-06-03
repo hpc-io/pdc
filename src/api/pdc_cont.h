@@ -75,6 +75,16 @@ pdcid_t PDCcont_create_col(const char *cont_name, pdcid_t cont_prop_id);
 pdcid_t PDCcont_open(const char *cont_name, pdcid_t pdc_id);
 
 /**
+ * Open a container collectively
+ *
+ * \param cont_name [IN]        Name of the container
+ * \param pdc_id [IN]           ID of pdc
+ *
+ * \return Container id on success/Zero on failure
+ */
+pdcid_t PDCcont_open_col(const char *cont_name, pdcid_t pdc_id);
+
+/**
  * Close a container
  *
  * \param cont_id [IN]          Container id, returned by

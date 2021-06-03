@@ -71,6 +71,16 @@ pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_
 pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc_id);
 
 /**
+ * Open an object within a container collectively
+ *
+ * \param pdc_id [IN]           ID of pdc
+ * \param obj_name [IN]         Name of the object
+ *
+ * \return Object id on success/Zero on failure
+ */
+pdcid_t PDCobj_open_col(const char *obj_name, pdcid_t pdc_id);
+
+/**
  * Close an object
  *
  * \param obj_id [IN]           ID of the object

@@ -262,6 +262,26 @@ pdcid_t PDCcont_open(const char *cont_name, pdcid_t pdc)
 
     FUNC_ENTER(NULL);
     
+    ret = PDC_Client_query_container_name(cont_name, &cont_meta_id);
+    if (ret == FAIL)
+        PGOTO_ERROR(0, "query container name failed");
+    cont_id = PDC_cont_create_local(pdc, cont_name, cont_meta_id);
+    ret_value = cont_id;
+    
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+} 
+
+pdcid_t PDCcont_open_col(const char *cont_name, pdcid_t pdc)
+{
+    pdcid_t ret_value = 0;
+    perr_t ret;
+    pdcid_t cont_id;
+    pdcid_t cont_meta_id;
+
+    FUNC_ENTER(NULL);
+    
     ret = PDC_Client_query_container_name_col(cont_name, &cont_meta_id);
     if (ret == FAIL)
         PGOTO_ERROR(0, "query container name failed");
