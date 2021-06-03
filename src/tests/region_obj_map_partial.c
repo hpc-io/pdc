@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
     int rank = 0, size = 1, i;
     int ret_value = 0;
 
-    uint64_t offset[3], offset_length[3], local_offset[1];
+    uint64_t offset[3], offset_length[3];
     uint64_t dims[1];
     local_offset[0] = 0;
     offset[0] = 0;

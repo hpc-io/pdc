@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
     int ret_value = 0;
 
     uint64_t offset[3], offset_length[3];
-    uint64_t dims[1];
+    uint64_t dims[2];
 
     offset[0] = 0;
     offset[1] = 2;
@@ -58,7 +58,8 @@ int main(int argc, char **argv) {
     int *data = (int*)malloc(sizeof(int)*BUF_LEN);
     int *data_read = (int*)malloc(sizeof(int)*BUF_LEN);
     int *obj_data = (int *)calloc(BUF_LEN, sizeof(int));
-    dims[0] = BUF_LEN;
+    dims[0] = BUF_LEN/4;
+    dims[1] = 4;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
