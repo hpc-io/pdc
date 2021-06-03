@@ -4635,33 +4635,32 @@ perr_t PDC_Server_data_read_from2(uint64_t obj_id, struct pdc_region_info *regio
                 overlap_start_local[i] = overlap_start[i] % elt->count[i];
 
             if(region_info->ndim == 1) {
-                my_read_bytes = overlap_count[0]*unit;
                 read_bytes = pread(region->fd, buf+(region_info->offset[0]-overlap_start_local[0])*unit, overlap_count[0]*unit, storage_region->offset+overlap_start_local[0]*unit);
+                my_read_bytes = overlap_count[0]*unit;
                 /* printf("storage offset %llu, region offset %llu, read %d bytes\n", storage_region->offset, overlap_count[0]*unit, read_bytes); */
             }
             else if(region_info->ndim == 2) {
-                my_read_bytes = storage_region->data_size;
                 void *tmp_buf = malloc(storage_region->data_size);
                 // Read entire region
                 read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
                 // Extract requested data
-                pos = ((region_info->offset[0]-overlap_start[0])*storage_region->count[1] + 
-                       region_info->offset[1]-overlap_start[1]) * unit;
+                pos = ((overlap_start[0]-region_info->offset[0])*storage_region->count[1] + 
+                        overlap_start[1]-region_info->offset[1]) * unit;
                 for (i = overlap_start_local[0]; i < overlap_start_local[0] + overlap_count[0]; i++) {
                     memcpy(buf+pos, tmp_buf + i*storage_region->count[1]*unit + overlap_start_local[1]*unit, overlap_count[1]*unit);
                     pos += region_info->size[1]*unit;
+                    my_read_bytes += overlap_count[1]*unit;
                 }
                 free(tmp_buf);
             }
             else if(region_info->ndim == 3) {
-                my_read_bytes = storage_region->data_size;
                 void *tmp_buf = malloc(storage_region->data_size);
                 // Read entire region
                 read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
                 // Extract requested data
-                pos = ((region_info->offset[0]-overlap_start[0]) * storage_region->count[1] * storage_region->count[2] + 
-                       (region_info->offset[1]-overlap_start[1]) * storage_region->count[2]) + 
-                       (region_info->offset[2]-overlap_start[2]) * unit;
+                pos = ((overlap_start[0]-region_info->offset[0]) * storage_region->count[1] * storage_region->count[2] + 
+                       (overlap_start[1]-region_info->offset[1]) * storage_region->count[2] + 
+                       (overlap_start[2]-region_info->offset[2])) * unit;
 
                 for (i = overlap_start_local[0]; i < overlap_start_local[0] + overlap_count[0]; i++) {
                     for (j = overlap_start_local[1]; j < overlap_start_local[1] + overlap_count[1]; j++) {
@@ -4671,6 +4670,7 @@ perr_t PDC_Server_data_read_from2(uint64_t obj_id, struct pdc_region_info *regio
                         memcpy(buf+pos, tmp_buf + i*storage_region->count[2]*storage_region->count[1]*unit + 
                                         j*storage_region->count[2]*unit + overlap_start_local[2]*unit, overlap_count[2]*unit);
                         pos += region_info->size[2]*unit;
+                        my_read_bytes += overlap_count[2]*unit;
                     }
                 }
                 free(tmp_buf);
@@ -4681,7 +4681,7 @@ perr_t PDC_Server_data_read_from2(uint64_t obj_id, struct pdc_region_info *regio
                 //printf("==PDC_SERVER[%d]: pread %d failed (%d)\n", pdc_server_rank_g, region->fd, strerror_r(errno, errmsg, sizeof(errmsg)));
                 goto done;
             }
-            total_read_bytes += read_bytes;
+            total_read_bytes += my_read_bytes;
             
         } // End is overlap
 
@@ -4899,7 +4899,7 @@ done:
 perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
     perr_t ret_value = SUCCEED;
-    ssize_t read_bytes = 0, total_read_bytes = 0, request_bytes = unit, my_read_bytes;
+    ssize_t read_bytes = 0, total_read_bytes = 0, request_bytes = unit, my_read_bytes = 0;
     data_server_region_t *region = NULL;
     region_list_t *elt;
     int flag = 0;
@@ -4954,33 +4954,32 @@ perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region
                 overlap_start_local[i] = overlap_start[i] % elt->count[i];
 
             if(region_info->ndim == 1) {
-                my_read_bytes = overlap_count[0]*unit;
                 read_bytes = pread(region->fd, buf+(region_info->offset[0]-overlap_start_local[0])*unit, overlap_count[0]*unit, storage_region->offset+overlap_start_local[0]*unit);
+                my_read_bytes = overlap_count[0]*unit;
                 /* printf("storage offset %llu, region offset %llu, read %d bytes\n", storage_region->offset, overlap_count[0]*unit, read_bytes); */
             }
             else if(region_info->ndim == 2) {
-                my_read_bytes = storage_region->data_size;
                 void *tmp_buf = malloc(storage_region->data_size);
                 // Read entire region
                 read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
                 // Extract requested data
-                pos = ((region_info->offset[0]-overlap_start[0])*storage_region->count[1] + 
-                       region_info->offset[1]-overlap_start[1]) * unit;
+                pos = ((overlap_start[0]-region_info->offset[0])*storage_region->count[1] + 
+                        overlap_start[1]-region_info->offset[1]) * unit;
                 for (i = overlap_start_local[0]; i < overlap_start_local[0] + overlap_count[0]; i++) {
                     memcpy(buf+pos, tmp_buf + i*storage_region->count[1]*unit + overlap_start_local[1]*unit, overlap_count[1]*unit);
                     pos += region_info->size[1]*unit;
+                    my_read_bytes += overlap_count[1]*unit;
                 }
                 free(tmp_buf);
             }
             else if(region_info->ndim == 3) {
-                my_read_bytes = storage_region->data_size;
                 void *tmp_buf = malloc(storage_region->data_size);
                 // Read entire region
                 read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
                 // Extract requested data
-                pos = ((region_info->offset[0]-overlap_start[0]) * storage_region->count[1] * storage_region->count[2] + 
-                       (region_info->offset[1]-overlap_start[1]) * storage_region->count[2]) + 
-                       (region_info->offset[2]-overlap_start[2]) * unit;
+                pos = ((overlap_start[0]-region_info->offset[0]) * storage_region->count[1] * storage_region->count[2] + 
+                       (overlap_start[1]-region_info->offset[1]) * storage_region->count[2] + 
+                       (overlap_start[2]-region_info->offset[2])) * unit;
 
                 for (i = overlap_start_local[0]; i < overlap_start_local[0] + overlap_count[0]; i++) {
                     for (j = overlap_start_local[1]; j < overlap_start_local[1] + overlap_count[1]; j++) {
@@ -4990,6 +4989,7 @@ perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region
                         memcpy(buf+pos, tmp_buf + i*storage_region->count[2]*storage_region->count[1]*unit + 
                                         j*storage_region->count[2]*unit + overlap_start_local[2]*unit, overlap_count[2]*unit);
                         pos += region_info->size[2]*unit;
+                        my_read_bytes += overlap_count[2]*unit;
                     }
                 }
                 free(tmp_buf);
@@ -5000,7 +5000,7 @@ perr_t PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region
                 //printf("==PDC_SERVER[%d]: pread %d failed (%d)\n", pdc_server_rank_g, region->fd, strerror_r(errno, errmsg, sizeof(errmsg)));
                 goto done;
             }
-            total_read_bytes += read_bytes;
+            total_read_bytes += my_read_bytes;
             
         } // End is overlap
 
