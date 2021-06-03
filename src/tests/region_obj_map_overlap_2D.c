@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
     PDCprop_set_obj_buf(obj_prop, obj_data);
-    PDCprop_set_obj_dims(obj_prop, 1, dims);
+    PDCprop_set_obj_dims(obj_prop, 2, dims);
     PDCprop_set_obj_user_id( obj_prop, getuid());
     PDCprop_set_obj_time_step( obj_prop, 0);
     PDCprop_set_obj_app_name(obj_prop, "DataServerTest");
@@ -128,9 +128,11 @@ int main(int argc, char **argv) {
     }
 
     offset[0] = 0;
-    offset_length[0] = BUF_LEN/2;
-    reg = PDCregion_create(1, offset, offset_length);
-    reg_global = PDCregion_create(1, offset, offset_length);
+    offset_length[0] = BUF_LEN/8;
+    offset[1] = 0;
+    offset_length[1] = 4;
+    reg = PDCregion_create(2, offset, offset_length);
+    reg_global = PDCregion_create(2, offset, offset_length);
 
     for ( i = 0; i < BUF_LEN; ++i ) {
         data[i] = i;
@@ -166,11 +168,13 @@ int main(int argc, char **argv) {
         printf("successfully closed global region @ line  %d!\n", __LINE__);
     }
 
-    offset[0] = BUF_LEN/2;
-    offset_length[0] = BUF_LEN/2;
-    reg_global = PDCregion_create(1, offset, offset_length);
+    offset[0] = BUF_LEN/8;
+    offset_length[0] = BUF_LEN/8;
+    offset[1] = 0;
+    offset_length[] = 4;
+    reg_global = PDCregion_create(2, offset, offset_length);
 
-    ret = PDCbuf_obj_map(data+offset[0], PDC_INT, reg, obj1, reg_global);
+    ret = PDCbuf_obj_map(data+BUF_LEN/2, PDC_INT, reg, obj1, reg_global);
     if(ret != SUCCEED) {
         printf("PDCbuf_obj_map failed @ line  %d!\n", __LINE__);
         ret_value = 1;
@@ -207,11 +211,15 @@ int main(int argc, char **argv) {
     }
 
     offset[0] = 0;
-    offset_length[0] = BUF_LEN/2;
-    reg = PDCregion_create(1, offset, offset_length);
-    offset[0] = BUF_LEN/4;
-    offset_length[0] = BUF_LEN/2;
-    reg_global = PDCregion_create(1, offset, offset_length);
+    offset_length[0] = BUF_LEN/8;
+    offset[1] = 0;
+    offset_length[1] = 4;
+    reg = PDCregion_create(2, offset, offset_length);
+    offset[0] = BUF_LEN/16;
+    offset_length[0] = BUF_LEN/8;
+    offset[1] = 0;
+    offset_length[1] = 4;
+    reg_global = PDCregion_create(2, offset, offset_length);
 
     memset(data_read, 0, BUF_LEN);
 
@@ -239,9 +247,9 @@ int main(int argc, char **argv) {
         ret_value = 1;
     }
 
-    for ( i = 0; i < BUF_LEN/2; ++i ) {
-        if ( data_read[i] != i + BUF_LEN/4) {
-            printf("wrong value %d!=%d\n", data_read[i], i + BUF_LEN/4);
+    for ( i = 0; i < BUF_LEN/4; ++i ) {
+        if ( data_read[i] != i + BUF_LEN/8) {
+            printf("wrong value %d!=%d\n", data_read[i], i + BUF_LEN/8);
             ret_value = 1;
             break;
         }
