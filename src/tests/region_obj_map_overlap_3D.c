@@ -222,7 +222,7 @@ int main(int argc, char **argv) {
     offset_length[1] = 2;
     offset[2] = 0;
     offset_length[2] = 2;
-    reg = PDCregion_create(2, offset, offset_length);
+    reg = PDCregion_create(3, offset, offset_length);
     offset[0] = BUF_LEN/16;
     offset_length[0] = BUF_LEN/8;
     offset[1] = 0;
