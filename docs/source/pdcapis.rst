@@ -222,5 +222,6 @@ Developers notes
 			};
 
 	* Object
-		* Object property See object property (Add object property link) file:///Users/kenneth/Documents/Berkeley%20Lab/pdc/docs/build/html/pdcapis.html#object-property
-		* Object structure (pdc_obj_pkg.h and pdc_obj.h) See Object structure (add object structure link)
+
+		* Object property See `Object Property   <file:///Users/kenneth/Documents/Berkeley%20Lab/pdc/docs/build/html/pdcapis.html#object-property>`_
+		* Object structure (pdc_obj_pkg.h and pdc_obj.h) See `Object Structure   <file:///Users/kenneth/Documents/Berkeley%20Lab/pdc/docs/build/html/pdcapis.html#object-structure>`_
