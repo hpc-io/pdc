@@ -1,19 +1,19 @@
 /*
- * Copyright Notice for 
+ * Copyright Notice for
  * Proactive Data Containers (PDC) Software Library and Utilities
  * -----------------------------------------------------------------------------
 
  *** Copyright Notice ***
- 
+
  * Proactive Data Containers (PDC) Copyright (c) 2017, The Regents of the
  * University of California, through Lawrence Berkeley National Laboratory,
  * UChicago Argonne, LLC, operator of Argonne National Laboratory, and The HDF
  * Group (subject to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
- 
+
  * If you have questions about your rights to use or distribute this software,
  * please contact Berkeley Lab's Innovation & Partnerships Office at  IPO@lbl.gov.
- 
+
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such, the
  * U.S. Government has been granted for itself and others acting on its behalf a
@@ -29,11 +29,11 @@
 #include "pdc_linkedlist.h"
 #include "pdc_id_pkg.h"
 
-#define PDC_INVALID_ID         (-1)
+#define PDC_INVALID_ID (-1)
 
 #define PDCID_IS_LIB_TYPE(type) (type > 0 && type < PDC_NTYPES)
-#define PDC_MUTEX_LOCK(this) hg_thread_mutex_lock(&(this).lock)
-#define PDC_MUTEX_UNLOCK(this) hg_thread_mutex_unlock(&(this).lock)
+#define PDC_MUTEX_LOCK(this)    hg_thread_mutex_lock(&(this).lock)
+#define PDC_MUTEX_UNLOCK(this)  hg_thread_mutex_unlock(&(this).lock)
 
 /****************************/
 /* Library Private Typedefs */
@@ -45,17 +45,17 @@
  * can be removed from the ID type. If the function returns negative
  * (failure) then the object will remain in the ID type.
  */
-typedef perr_t (*PDC_free_t)(void*);
+typedef perr_t (*PDC_free_t)(void *);
 
 typedef enum {
-    PDC_BADID        = -1,  /* invalid Type                                */
-    PDC_CLASS        = 1,   /* type ID for PDC                             */
-    PDC_CONT_PROP    = 2,   /* type ID for container property              */
-    PDC_OBJ_PROP     = 3,   /* type ID for object property                 */
-    PDC_CONT         = 4,   /* type ID for container                       */
-    PDC_OBJ          = 5,   /* type ID for object                          */
-    PDC_REGION       = 6,   /* type ID for region                          */
-    PDC_NTYPES       = 7    /* number of library types, MUST BE LAST!      */
+    PDC_BADID     = -1, /* invalid Type                                */
+    PDC_CLASS     = 1,  /* type ID for PDC                             */
+    PDC_CONT_PROP = 2,  /* type ID for container property              */
+    PDC_OBJ_PROP  = 3,  /* type ID for object property                 */
+    PDC_CONT      = 4,  /* type ID for container                       */
+    PDC_OBJ       = 5,  /* type ID for object                          */
+    PDC_REGION    = 6,  /* type ID for region                          */
+    PDC_NTYPES    = 7   /* number of library types, MUST BE LAST!      */
 } PDC_type_t;
 
 /***************************/
@@ -63,13 +63,13 @@ typedef enum {
 /***************************/
 /* ID type structure used */
 struct PDC_id_type {
-    PDC_free_t                  free_func;         /* Free function for object's of this type    */
-    PDC_type_t                  type_id;           /* Class ID for the type                      */
-//    const                     PDCID_class_t *cls;/* Pointer to ID class                        */
-    unsigned                    init_count;        /* # of times this type has been initialized  */
-    unsigned                    id_count;          /* Current number of IDs held                 */
-    pdcid_t                     nextid;            /* ID to use for the next atom                */
-    PDC_LIST_HEAD(_pdc_id_info)  ids;               /* Head of list of IDs                        */
+    PDC_free_t free_func; /* Free function for object's of this type    */
+    PDC_type_t type_id;   /* Class ID for the type                      */
+    //    const                     PDCID_class_t *cls;/* Pointer to ID class                        */
+    unsigned init_count;             /* # of times this type has been initialized  */
+    unsigned id_count;               /* Current number of IDs held                 */
+    pdcid_t  nextid;                 /* ID to use for the next atom                */
+    PDC_LIST_HEAD(_pdc_id_info) ids; /* Head of list of IDs                        */
 };
 
 struct pdc_id_list {

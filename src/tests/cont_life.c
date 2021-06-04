@@ -1,19 +1,19 @@
 /*
- * Copyright Notice for 
+ * Copyright Notice for
  * Proactive Data Containers (PDC) Software Library and Utilities
  * -----------------------------------------------------------------------------
 
  *** Copyright Notice ***
- 
+
  * Proactive Data Containers (PDC) Copyright (c) 2017, The Regents of the
  * University of California, through Lawrence Berkeley National Laboratory,
  * UChicago Argonne, LLC, operator of Argonne National Laboratory, and The HDF
  * Group (subject to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
- 
+
  * If you have questions about your rights to use or distribute this software,
  * please contact Berkeley Lab's Innovation & Partnerships Office at  IPO@lbl.gov.
- 
+
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such, the
  * U.S. Government has been granted for itself and others acting on its behalf a
@@ -27,12 +27,13 @@
 #include <string.h>
 #include "pdc.h"
 
-int main(int argc, char **argv) 
+int
+main(int argc, char **argv)
 {
-    pdcid_t pdc, create_prop, cont;
+    pdcid_t                pdc, create_prop, cont;
     struct _pdc_cont_prop *prop;
-    int rank = 0, size = 1;
-    int ret_value = 0;
+    int                    rank = 0, size = 1;
+    int                    ret_value = 0;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -45,54 +46,57 @@ int main(int argc, char **argv)
 
     // create a container property
     create_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
-    if(create_prop > 0) {
+    if (create_prop > 0) {
         printf("Create a container property\n");
-    } else {
+    }
+    else {
         printf("Fail to create container property @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
     // print default container lifetime (persistent)
     prop = PDCcont_prop_get_info(create_prop);
-    
+
     // create a container
     cont = PDCcont_create("c1", create_prop);
-    if(cont > 0) {
+    if (cont > 0) {
         printf("Create a container, c1\n");
-    } else {
+    }
+    else {
         printf("Fail to create container @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
     // set container lifetime to transient
     PDCprop_set_cont_lifetime(create_prop, PDC_TRANSIENT);
     prop = PDCcont_prop_get_info(create_prop);
-    
+
     // set container lifetime to persistent
     PDCcont_persist(cont);
     prop = PDCcont_prop_get_info(create_prop);
 
     // close a container
-    if(PDCcont_close(cont) < 0) {
+    if (PDCcont_close(cont) < 0) {
         printf("fail to close container c1\n");
         ret_value = 1;
-    } else {
+    }
+    else {
         printf("successfully close container c1\n");
     }
     // close a container property
-    if(PDCprop_close(create_prop) < 0) {
+    if (PDCprop_close(create_prop) < 0) {
         printf("Fail to close property @ line %d\n", __LINE__);
         ret_value = 1;
-    } else {
+    }
+    else {
         printf("successfully close container property\n");
     }
     // close pdc
-    if(PDCclose(pdc) < 0) {
+    if (PDCclose(pdc) < 0) {
         printf("fail to close PDC\n");
         ret_value = 1;
     }
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
-    
+
     return ret_value;
 }
-

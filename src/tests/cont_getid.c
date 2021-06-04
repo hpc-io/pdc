@@ -1,19 +1,19 @@
 /*
- * Copyright Notice for 
+ * Copyright Notice for
  * Proactive Data Containers (PDC) Software Library and Utilities
  * -----------------------------------------------------------------------------
 
  *** Copyright Notice ***
- 
+
  * Proactive Data Containers (PDC) Copyright (c) 2017, The Regents of the
  * University of California, through Lawrence Berkeley National Laboratory,
  * UChicago Argonne, LLC, operator of Argonne National Laboratory, and The HDF
  * Group (subject to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
- 
+
  * If you have questions about your rights to use or distribute this software,
  * please contact Berkeley Lab's Innovation & Partnerships Office at  IPO@lbl.gov.
- 
+
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such, the
  * U.S. Government has been granted for itself and others acting on its behalf a
@@ -29,11 +29,12 @@
 #include <getopt.h>
 #include "pdc.h"
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
-    int rank = 0, size = 1;
+    int     rank = 0, size = 1;
     pdcid_t pdc_id, cont_prop, cont_id, cont_id2, cont_id3;
-    int ret_value = 0;
+    int     ret_value = 0;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -46,13 +47,13 @@ int main(int argc, char **argv)
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
-    if(cont_prop <= 0) {
+    if (cont_prop <= 0) {
         printf("Fail to create container property @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
     // create a container
     cont_id = PDCcont_create_col("c1", cont_prop);
-    if(cont_id <= 0) {
+    if (cont_id <= 0) {
         printf("Fail to create container @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
@@ -61,7 +62,7 @@ int main(int argc, char **argv)
 #endif
 
     cont_id2 = PDCcont_open("c1", pdc_id);
-    if(cont_id2 == 0) {
+    if (cont_id2 == 0) {
         printf("Fail to open container @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
@@ -70,32 +71,31 @@ int main(int argc, char **argv)
 #endif
 
     cont_id3 = PDCcont_get_id("c1", pdc_id);
-    if(PDCcont_close(cont_id3) < 0) {
+    if (PDCcont_close(cont_id3) < 0) {
         printf("fail to close container cont_id3\n");
         ret_value = 1;
     }
     // close a container
-    if(PDCcont_close(cont_id) < 0) {
+    if (PDCcont_close(cont_id) < 0) {
         printf("fail to close container cont_id1\n");
         ret_value = 1;
     }
-    if(PDCcont_close(cont_id2) < 0) {
+    if (PDCcont_close(cont_id2) < 0) {
         printf("fail to close container cont_id2\n");
         ret_value = 1;
     }
     // close a container property
-    if(PDCprop_close(cont_prop) < 0) {
+    if (PDCprop_close(cont_prop) < 0) {
         printf("Fail to close property @ line %d\n", __LINE__);
         ret_value = 1;
     }
-    if(PDCclose(pdc_id) < 0) {
+    if (PDCclose(pdc_id) < 0) {
         printf("fail to close PDC\n");
         ret_value = 1;
     }
 #ifdef ENABLE_MPI
-     MPI_Finalize();
+    MPI_Finalize();
 #endif
 
-     return ret_value;
+    return ret_value;
 }
-
