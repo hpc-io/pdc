@@ -12,10 +12,16 @@ Proactive Data Containers (PDC)
    :caption: User Guide
 
    overview
+   definitions
+   assumptions
    installation
-   hellopdc
-   pdcapis
-   examples
+   hellopdcexample
+   running
+   api
+   hdf5vol
+   performance
+   inflightanalysis
+   futurework
 
 
 

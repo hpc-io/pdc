@@ -1,6 +1,6 @@
-================
-PDC Installation
-================
+================================
+Installation
+================================
 
 The following instructions are for installing PDC on Linux and Cray machines. GCC version 7 or newer and a version of MPI are needed to install PDC.
 
