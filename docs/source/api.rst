@@ -178,6 +178,111 @@ PDC container APIs
 PDC object APIs
 ---------------------------
 
+* pdcid_t PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id)
+	* Input:
+		* cont_id: Container ID, returned from PDCcont_create.
+		* obj_name: Name of objects to be created
+		* obj_prop_id: Property ID to be inherited from.
+	* Output:
+		* Local object ID
+	* Create a PDC object.
+	* For developers: see pdc_obj.c. This process need to send the name of the object to be created to the servers. Then it will receive an object ID. The object structure will inherit attributes from its container and input object properties.
+
+* PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, int rank_id, MPI_Comm comm)
+	* Input:
+		* cont_id: Container ID, returned from PDCcont_create.
+		* obj_name: Name of objects to be created
+		* rank_id: Which rank ID the object is placed to
+		* comm: MPI communicator for the rank_id
+	* Output:
+		* Local object ID
+	* Create a PDC object at the rank_id in the communicator comm. This function is a colllective operation.
+	* For developers: see pdc_mpi.c. If rank_id equals local process rank, then a local object is created. Otherwise we create a global object. The object metadata ID is broadcasted to all processes if a global object is created using MPI_Bcast.
+
+* pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc)
+	* Input:
+		* obj_name: Name of objects to be created
+		* pdc: PDC class ID, returned from PDCInit
+	* Output:
+		* Local object ID
+	* Open a PDC ID created previously by name.
+	* For developers: see pdc_obj.c. Need to communicate with servers for metadata of the object.
+
+* perr_t PDCobj_close(pdcid_t obj_id)
+	* Input:
+		* obj_id: Local object ID to be closed.
+	* Output:
+		* error code, SUCCEED or FAIL.
+	* Close an object. Must do this after open an object.
+	* For developers: see pdc_obj.c. Dereference an object by reducing its reference counter.
+
+* struct pdc_obj_info *PDCobj_get_info(pdcid_t obj)
+	* Input:
+		* obj_name: Local object ID
+	* Output:
+		*object information see object information (insert link to object information)
+	* Get a pointer to a structure that describes the object metadata.
+	* For developers: see pdc_obj.c. Pull out local object metadata by ID.
+
+* pdcid_t PDCobj_put_data(const char *obj_name, void *data, uint64_t size, pdcid_t cont_id)
+	* Input:
+		* obj_name: Name of object
+		* data: Pointer to data memory
+		* size: Size of data
+		* cont_id: Container ID of this object
+	* Output:
+		* Local object ID created locally with the input name
+	* Write data to an object.
+	* For developers: see pdc_client_connect.c. Nedd to send RPCs to servers for this request. (TODO: change return value to perr_t)
+
+* perr_t PDCobj_get_data(pdcid_t obj_id, void *data, uint64_t size)
+	* Input:
+		* obj_id: Local object ID
+		* size: Size of data
+	* Output:
+		* data: Pointer to data to be filled
+		* error code, SUCCEED or FAIL.
+	* Read data from an object.
+	* For developers: see pdc_client_connect.c. Use PDC_obj_get_info to retrieve name. Then forward name to servers to fulfill requests.
+
+* perr_t PDCobj_del_data(pdcid_t obj_id)
+	* Input:
+		* obj_id: Local object ID
+	* Output:
+		* error code, SUCCEED or FAIL.
+	* Delete data from an object.
+	* For developers: see pdc_client_connect.c. Use PDC_obj_get_info to retrieve name. Then forward name to servers to fulfill requests.
+
+* perr_t PDCobj_put_tag(pdcid_t obj_id, char *tag_name, void *tag_value, psize_t value_size)
+	* Input:
+		* obj_id: Local object ID
+		* tag_name: Name of the tag to be entered
+		* tag_value: Value of the tag
+		* value_size: Number of bytes for the tag_value
+	* Output:
+		* error code, SUCCEED or FAIL.
+	* Set the tag value for a tag
+	* For developers: see pdc_client_connect.c. Need to use PDC_add_kvtag to submit RPCs to the servers for metadata update.
+
+* perr_t PDCobj_get_tag(pdcid_t obj_id, char *tag_name, void **tag_value, psize_t *value_size)
+	* Input:
+		* obj_id: Local object ID
+		* tag_name: Name of the tag to be entered
+	* Output:
+		* tag_value: Value of the tag
+		* value_size: Number of bytes for the tag_value
+		* error code, SUCCEED or FAIL.
+	* Get the tag value for a tag
+	* For developers: see pdc_client_connect.c. Need to use PDC_get_kvtag to submit RPCs to the servers for metadata update.
+
+* perr_t PDCobj_del_tag(pdcid_t obj_id, char *tag_name)
+	* Input:
+		* obj_id: Local object ID
+		* tag_name: Name of the tag to be entered
+	* Output:
+		* error code, SUCCEED or FAIL.
+	* Delete a tag.
+	* For developers: see pdc_client_connect.c. Need to use PDCtag_delete to submit RPCs to the servers for metadata update.
 
 ---------------------------
 PDC region APIs
