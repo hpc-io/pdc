@@ -193,6 +193,118 @@ PDC property APIs
 PDC query APIs
 ---------------------------
 
+* pdc_query_t *PDCquery_create(pdcid_t obj_id, pdc_query_op_t op, pdc_var_type_t type, void *value)
+	* Input:
+		* obj_id: local PDC object ID
+		* op: one of the followings, see PDC query operators (Insert PDC query operators link)
+		* type: one of PDC basic types, see PDC basic types (Insert PDC basic types link)
+		* value: constraint value
+	* Output:
+		* a new query structure, see PDC query structure (PDC query structure link)
+	* Create a PDC query.
+	* For developers, see pdc_query.c. The constraint field of the new query structure is filled with the input arguments. Need to search for the metadata ID using object ID.
+
+* void PDCquery_free(pdc_query_t *query)
+	* Input:
+		* query: PDC query from PDCquery_create
+	* Free a query structure.
+	* For developers, see pdc_client_server_common.c.
+
+* void PDCquery_free_all(pdc_query_t *root)
+	* Input:
+		* root: root of queries to be freed
+	* Output:
+		* error code, SUCCEED or FAIL.
+	* Free all queries from a root.
+	* For developers, see pdc_client_server_common.c. Recursively free left and right branches.
+
+* pdc_query_t *PDCquery_and(pdc_query_t *q1, pdc_query_t *q2)
+	* Input:
+		* q1: First query
+		* q2: Second query
+	* Output:
+		* A new query after and operator.
+	* Perform the and operator on the two PDC queries.
+	* For developers, see pdc_query.c
+
+* pdc_query_t *PDCquery_or(pdc_query_t *q1, pdc_query_t *q2)
+	* Input:
+		* q1: First query
+		* q2: Second query
+	* Output:
+		* A new query after or operator.
+	* Perform the or operator on the two PDC queries.
+	* For developers, see pdc_query.c
+
+* perr_t PDCquery_sel_region(pdc_query_t *query, struct pdc_region_info *obj_region)
+	* Input:
+		* query: Query to select the region
+		* obj_region: An object region
+	* Output:
+		* error code, SUCCEED or FAIL.
+	* Select a region for a PDC query.
+	* For developers, see pdc_query.c. Set the region pointer of the query structure to the obj_region pointer.
+
+* perr_t PDCquery_get_selection(pdc_query_t *query, pdc_selection_t *sel)
+	* Input:
+		* query: Query to get the selection
+	* Output:
+		* sel: PDC selection defined as the following. This selection describes the query shape, see PDC selection structure (Insert link to PDC selection structure)
+		* error code, SUCCEED or FAIL.
+	* Get the selection information of a PDC query.
+	* For developers, see pdc_query.c and PDC_send_data_query in pdc_client_connect.c. Copy the selection structure received from servers to the sel pointer.
+
+* perr_t PDCquery_get_nhits(pdc_query_t *query, uint64_t *n)
+	* Input:
+		* query: Query to calculate the number of hits
+	* Output:
+		* n: number of hits
+		* error code, SUCCEED or FAIL.
+	* Get the number of hits for a PDC query
+	* For developers, see pdc_query.c and PDC_send_data_query in pdc_client_connect.c. Copy the selection structure received from servers to the sel pointer.
+
+* perr_t PDCquery_get_data(pdcid_t obj_id, pdc_selection_t *sel, void *obj_data)
+	* Input:
+		* obj_id: The object for query
+		* sel: Selection of the query, query_id is inside it.
+	* Output:
+		* obj_data: Pointer to the data memory filled with query data.
+	* Retrieve data from a PDC query for an object.
+	* For developers, see pdc_query.c and PDC_Client_get_sel_data in pdc_client_connect.c.
+
+* perr_t PDCquery_get_histogram(pdcid_t obj_id)
+	* Input:
+		* obj_id: The object for query
+	* Output:
+		* error code, SUCCEED or FAIL.
+	* Retrieve histogram from a query for a PDC object.
+	* For developers, see pdc_query.c. This is a local operation that does not really do anything.
+
+* void PDCselection_free(pdc_selection_t *sel)
+	* Input:
+		* sel: Pointer to the selection to be freed.
+	* Output:
+		* None
+	* Free a selection structure.
+	* For developers, see pdc_client_connect.c. Free the coordinates.
+
+* void PDCquery_print(pdc_query_t *query)
+	* Input:
+		* query: the query to be printed
+	* Output:
+		* None
+	* Print the details of a PDC query structure.	
+	* For developers, see pdc_client_server_common.c.
+
+* void PDCselection_print(pdc_selection_t *sel)
+	* Input:
+		* sel: the PDC selection to be printed
+	* Output:
+		* None
+	* Print the details of a PDC selection structure.	
+	* For developers, see pdc_client_server_common.c.
+
+
 
 ---------------------------
 PDC hist APIs
