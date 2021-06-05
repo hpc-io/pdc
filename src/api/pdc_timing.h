@@ -1,7 +1,7 @@
 #ifndef PDC_TIMING_H
 #define PDC_TIMING_H
 
-#define PDC_TIMING 0
+#define PDC_TIMING 1
 #if PDC_TIMING == 1
 
 #include <mpi.h>
