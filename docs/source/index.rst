@@ -17,23 +17,26 @@ More information and publications of PDC is available at https://sdm.lbl.gov/pdc
    :maxdepth: 2
    :caption: Getting Started
 
-   overview
+   getting_started
    definitions
    assumptions
-   installation
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Overview
+   
+   introduction
+   hdf5vol
+   performance
 
 .. toctree::
    :maxdepth: 2
    :caption: Resources
-   
+
    hellopdcexample
-   running
    api
-   hdf5vol
-   performance
    inflightanalysis
    futurework
-
 
 
 Indices and tables
