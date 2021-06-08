@@ -431,3 +431,21 @@ if(NOT PDC_EXTERNALLY_CONFIGURED)
   set(CPACK_SOURCE_STRIP_FILES "")
   include(CPack)
 endif()
+
+add_custom_target(format
+    COMMAND find
+    ${PDC_SOURCE_DIR}/api
+    ${PDC_SOURCE_DIR}/server
+    ${PDC_SOURCE_DIR}/tests
+    -type f
+    (
+    -name "*.c"
+    -o
+    -name "*.h"
+    )
+    -print0
+  | xargs -0 clang-format -i -style=file && echo "... done"
+  COMMENT "clang-format all source codes"
+  VERBATIM 
+)
+
