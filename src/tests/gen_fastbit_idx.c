@@ -9,16 +9,17 @@
 #include "pdc.h"
 #include "pdc_client_connect.h"
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
-    uint64_t nhits;
-    char* var_name;
-    pdc_query_t *qpreload_x;
+    uint64_t        nhits;
+    char *          var_name;
+    pdc_query_t *   qpreload_x;
     pdc_metadata_t *meta;
-    pdcid_t pdc, id;
-    float preload_value = -2000000000.0;
+    pdcid_t         pdc, id;
+    float           preload_value = -2000000000.0;
 
-    if(argc < 2) {
+    if (argc < 2) {
         printf("Please enter var name as input!\n");
         fflush(stdout);
     }
@@ -41,8 +42,8 @@ int main(int argc, char **argv)
     PDCquery_free_all(qpreload_x);
 
 done:
-    if(PDCclose(pdc) < 0)
-       printf("fail to close PDC\n");
+    if (PDCclose(pdc) < 0)
+        printf("fail to close PDC\n");
 
-     return 0;
+    return 0;
 }

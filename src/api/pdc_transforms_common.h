@@ -41,80 +41,80 @@ hg_id_t PDC_transform_ftn_register(hg_class_t *hg_class);
 /************************************/
 /* Define transform_ftn_in_t */
 typedef struct transform_ftn_in_t {
-    hg_const_string_t           ftn_name;
-    hg_const_string_t           loadpath;
-    pdcid_t                     object_id;
-    pdcid_t                     region_id;
-    int32_t                     client_index;
-    int32_t                     operation_type; /* When, e.g. during mapping */
-    int32_t                     start_state;
-    int32_t                     next_state;
-    int8_t                      op_type;
-    int8_t                      when;
+    hg_const_string_t ftn_name;
+    hg_const_string_t loadpath;
+    pdcid_t           object_id;
+    pdcid_t           region_id;
+    int32_t           client_index;
+    int32_t           operation_type; /* When, e.g. during mapping */
+    int32_t           start_state;
+    int32_t           next_state;
+    int8_t            op_type;
+    int8_t            when;
 } transform_ftn_in_t;
 
 /* Define transform_ftn_out_t */
 typedef struct transform_ftn_out_t {
-    pdcid_t                     object_id;
-    pdcid_t                     region_id;
-    int32_t                     client_index;
-    int32_t                     ret;
+    pdcid_t object_id;
+    pdcid_t region_id;
+    int32_t client_index;
+    int32_t ret;
 } transform_ftn_out_t;
 
 /* Define hg_proc_transform_ftn_in_t */
 static HG_INLINE hg_return_t
 hg_proc_transform_ftn_in_t(hg_proc_t proc, void *data)
 {
-    hg_return_t ret;
-    transform_ftn_in_t *struct_data = (transform_ftn_in_t*) data;
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->ftn_name);
+    hg_return_t         ret;
+    transform_ftn_in_t *struct_data = (transform_ftn_in_t *)data;
+    ret                             = hg_proc_hg_const_string_t(proc, &struct_data->ftn_name);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_hg_const_string_t(proc, &struct_data->loadpath);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->object_id);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->region_id);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->client_index);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->operation_type);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->start_state);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->next_state);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int8_t(proc, &struct_data->op_type);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int8_t(proc, &struct_data->when);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
 
@@ -125,26 +125,26 @@ hg_proc_transform_ftn_in_t(hg_proc_t proc, void *data)
 static HG_INLINE hg_return_t
 hg_proc_transform_ftn_out_t(hg_proc_t proc, void *data)
 {
-    hg_return_t ret;
-    transform_ftn_out_t *struct_data = (transform_ftn_out_t *) data;
-    ret = hg_proc_uint64_t(proc, &struct_data->object_id);
+    hg_return_t          ret;
+    transform_ftn_out_t *struct_data = (transform_ftn_out_t *)data;
+    ret                              = hg_proc_uint64_t(proc, &struct_data->object_id);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->region_id);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->client_index);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     return ret;

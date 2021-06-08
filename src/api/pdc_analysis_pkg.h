@@ -1,19 +1,19 @@
 /*
- * Copyright Notice for 
+ * Copyright Notice for
  * Proactive Data Containers (PDC) Software Library and Utilities
  * -----------------------------------------------------------------------------
 
  *** Copyright Notice ***
- 
+
  * Proactive Data Containers (PDC) Copyright (c) 2017, The Regents of the
  * University of California, through Lawrence Berkeley National Laboratory,
  * UChicago Argonne, LLC, operator of Argonne National Laboratory, and The HDF
  * Group (subject to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
- 
+
  * If you have questions about your rights to use or distribute this software,
  * please contact Berkeley Lab's Innovation & Partnerships Office at  IPO@lbl.gov.
- 
+
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such, the
  * U.S. Government has been granted for itself and others acting on its behalf a
@@ -32,10 +32,10 @@
 /*****************************/
 /* Library-private Variables */
 /*****************************/
-hg_id_t                           analysis_ftn_register_id_g;
-hg_id_t                           transform_ftn_register_id_g;
-hg_id_t                           object_data_iterator_register_id_g;
-hg_atomic_int32_t                 registered_analysis_ftn_count_g;
+hg_id_t           analysis_ftn_register_id_g;
+hg_id_t           transform_ftn_register_id_g;
+hg_id_t           object_data_iterator_register_id_g;
+hg_atomic_int32_t registered_analysis_ftn_count_g;
 
 extern struct _pdc_region_analysis_ftn_info **pdc_region_analysis_registry;
 

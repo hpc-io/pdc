@@ -1,19 +1,19 @@
 /*
- * Copyright Notice for 
+ * Copyright Notice for
  * Proactive Data Containers (PDC) Software Library and Utilities
  * -----------------------------------------------------------------------------
 
  *** Copyright Notice ***
- 
+
  * Proactive Data Containers (PDC) Copyright (c) 2017, The Regents of the
  * University of California, through Lawrence Berkeley National Laboratory,
  * UChicago Argonne, LLC, operator of Argonne National Laboratory, and The HDF
  * Group (subject to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
- 
+
  * If you have questions about your rights to use or distribute this software,
  * please contact Berkeley Lab's Innovation & Partnerships Office at  IPO@lbl.gov.
- 
+
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such, the
  * U.S. Government has been granted for itself and others acting on its behalf a
@@ -35,41 +35,42 @@
 #include "pdc_client_server_common.h"
 #include "pdc_client_connect.h"
 
-#define NUM_VAR         8
-#define NUM_FLOAT_VAR   6
-#define NUM_INT_VAR     2
-#define NDIM            1
-#define NPARTICLES      8388608
-#define XDIM            64
-#define YDIM            64
-#define ZDIM            64
+#define NUM_VAR       8
+#define NUM_FLOAT_VAR 6
+#define NUM_INT_VAR   2
+#define NDIM          1
+#define NPARTICLES    8388608
+#define XDIM          64
+#define YDIM          64
+#define ZDIM          64
 
-
-float uniform_random_number()
+float
+uniform_random_number()
 {
-    return (((float)rand())/((float)(RAND_MAX)));
+    return (((float)rand()) / ((float)(RAND_MAX)));
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
-    int rank = 0, size = 1;
-    perr_t ret;
-    pdcid_t pdc_id, cont_prop, cont_id;
-    uint64_t nparticles = NPARTICLES, j;
-    int write_var = NUM_VAR, i;
-    char *obj_names[] = {"x", "y", "z", "px", "py", "pz", "id1", "id2"};
+    int      rank = 0, size = 1;
+    perr_t   ret;
+    pdcid_t  pdc_id, cont_prop, cont_id;
+    uint64_t nparticles  = NPARTICLES, j;
+    int      write_var   = NUM_VAR, i;
+    char *   obj_names[] = {"x", "y", "z", "px", "py", "pz", "id1", "id2"};
     uint64_t float_bytes, int_bytes;
-    
-    pdcid_t         obj_ids[NUM_VAR];
-    struct pdc_region_info obj_regions[NUM_VAR];
-    pdc_metadata_t *obj_metas[NUM_VAR];
-    pdcid_t         obj_prop_float, obj_prop_int;
 
-    struct timeval  pdc_timer_start;
-    struct timeval  pdc_timer_end;
-    double write_time = 0.0, total_size = 0.0;
-    uint64_t myoffset[NDIM], mysize[NDIM];
-    void *mydata[NUM_VAR];
+    pdcid_t                obj_ids[NUM_VAR];
+    struct pdc_region_info obj_regions[NUM_VAR];
+    pdc_metadata_t *       obj_metas[NUM_VAR];
+    pdcid_t                obj_prop_float, obj_prop_int;
+
+    struct timeval pdc_timer_start;
+    struct timeval pdc_timer_end;
+    double         write_time = 0.0, total_size = 0.0;
+    uint64_t       myoffset[NDIM], mysize[NDIM];
+    void *         mydata[NUM_VAR];
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -80,37 +81,37 @@ int main(int argc, char **argv)
     fflush(stdout);
 #endif
 
-    if (argc > 1) 
+    if (argc > 1)
         write_var = atoi(argv[1]);
 
-    if (write_var < 0 || write_var > 8) 
+    if (write_var < 0 || write_var > 8)
         write_var = NUM_VAR;
- 
-    if (argc == 3) 
+
+    if (argc == 3)
         nparticles = (uint64_t)atoll(argv[2]);
 
-    float_bytes  = nparticles * sizeof(float);
-    int_bytes    = nparticles * sizeof(int);
+    float_bytes = nparticles * sizeof(float);
+    int_bytes   = nparticles * sizeof(int);
 
-    uint64_t float_dims[NDIM] = {float_bytes*size};
-    uint64_t int_dims[NDIM] = {int_bytes*size};
+    uint64_t float_dims[NDIM] = {float_bytes * size};
+    uint64_t int_dims[NDIM]   = {int_bytes * size};
 
-    if (rank == 0) 
+    if (rank == 0)
         printf("creating %d variables each with %" PRIu64 " particles \n", write_var, nparticles);
 
     // Float vars are first in the array follow by int vars
-    for (i = 0; i < NUM_FLOAT_VAR; i++) 
-        mydata[i] = (void*)malloc(float_bytes);
+    for (i = 0; i < NUM_FLOAT_VAR; i++)
+        mydata[i] = (void *)malloc(float_bytes);
 
-    for (; i < NUM_VAR; i++) 
-        mydata[i] = (void*)malloc(int_bytes);
+    for (; i < NUM_VAR; i++)
+        mydata[i] = (void *)malloc(int_bytes);
 
     pdc_id    = PDCinit("pdc");
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
-    if(cont_prop <= 0)
+    if (cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
-    cont_id   = PDCcont_create("VPIC_cont", cont_prop);
-    if(cont_id <= 0)
+    cont_id = PDCcont_create("VPIC_cont", cont_prop);
+    if (cont_id <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
     // create object property for float and int
@@ -120,46 +121,46 @@ int main(int argc, char **argv)
     PDCprop_set_obj_dims(obj_prop_float, 1, float_dims);
     PDCprop_set_obj_type(obj_prop_float, PDC_FLOAT);
     PDCprop_set_obj_time_step(obj_prop_float, 0);
-    PDCprop_set_obj_user_id( obj_prop_float, getuid());
+    PDCprop_set_obj_user_id(obj_prop_float, getuid());
     PDCprop_set_obj_app_name(obj_prop_float, "VPICIO");
-    PDCprop_set_obj_tags(    obj_prop_float, "tag0=1");
+    PDCprop_set_obj_tags(obj_prop_float, "tag0=1");
 
     PDCprop_set_obj_dims(obj_prop_int, 1, int_dims);
     PDCprop_set_obj_type(obj_prop_int, PDC_INT);
     PDCprop_set_obj_time_step(obj_prop_int, 0);
-    PDCprop_set_obj_user_id( obj_prop_int, getuid());
+    PDCprop_set_obj_user_id(obj_prop_int, getuid());
     PDCprop_set_obj_app_name(obj_prop_int, "VPICIO");
-    PDCprop_set_obj_tags(    obj_prop_int, "tag0=1");
+    PDCprop_set_obj_tags(obj_prop_int, "tag0=1");
 
     // Create obj and region one by one
     for (i = 0; i < NUM_FLOAT_VAR; i++) {
         if (rank == 0) {
             obj_ids[i] = PDCobj_create(cont_id, obj_names[i], obj_prop_float);
-            if (obj_ids[i]<= 0) {    
+            if (obj_ids[i] <= 0) {
                 printf("Error getting an object %s from server, exit...\n", obj_names[i]);
                 goto done;
             }
         }
-        myoffset[0] = rank * float_bytes;
-        mysize[0]   = float_bytes;
-        obj_regions[i].ndim      = NDIM;
-        obj_regions[i].offset    = myoffset;
-        obj_regions[i].size      = mysize;
+        myoffset[0]           = rank * float_bytes;
+        mysize[0]             = float_bytes;
+        obj_regions[i].ndim   = NDIM;
+        obj_regions[i].offset = myoffset;
+        obj_regions[i].size   = mysize;
     }
     // Continue to create the int vars id1 and id2
     for (; i < NUM_VAR; i++) {
         if (rank == 0) {
             obj_ids[i] = PDCobj_create(cont_id, obj_names[i], obj_prop_int);
-            if (obj_ids[i]<= 0) {    
+            if (obj_ids[i] <= 0) {
                 printf("Error getting an object %s from server, exit...\n", obj_names[i]);
                 goto done;
             }
         }
-        myoffset[0] = rank * int_bytes;
-        mysize[0]   = int_bytes;
-        obj_regions[i].ndim      = NDIM;
-        obj_regions[i].offset    = myoffset;
-        obj_regions[i].size      = mysize;
+        myoffset[0]           = rank * int_bytes;
+        mysize[0]             = int_bytes;
+        obj_regions[i].ndim   = NDIM;
+        obj_regions[i].offset = myoffset;
+        obj_regions[i].size   = mysize;
     }
 
 #ifdef ENABLE_MPI
@@ -179,17 +180,17 @@ int main(int argc, char **argv)
     }
 
     for (j = 0; j < nparticles; j++) {
-        ((float*)mydata[0])[j] = j * 0.001 + rank * nparticles;           // x
-        ((float*)mydata[1])[j] = uniform_random_number();                 // y
-        ((float*)mydata[2])[j] = (j*1.0/nparticles) * ZDIM;               // z
-        ((float*)mydata[3])[j] = uniform_random_number() * XDIM;          // px
-        ((float*)mydata[4])[j] = uniform_random_number() * YDIM;          // py
-        ((float*)mydata[5])[j] = (j*2.0/nparticles) * ZDIM;               // pz
-        ((int*)mydata[6])[j]   = j+rank*nparticles;                       // id1
-        ((int*)mydata[7])[j]   = j;                                       // id2
+        ((float *)mydata[0])[j] = j * 0.001 + rank * nparticles;  // x
+        ((float *)mydata[1])[j] = uniform_random_number();        // y
+        ((float *)mydata[2])[j] = (j * 1.0 / nparticles) * ZDIM;  // z
+        ((float *)mydata[3])[j] = uniform_random_number() * XDIM; // px
+        ((float *)mydata[4])[j] = uniform_random_number() * YDIM; // py
+        ((float *)mydata[5])[j] = (j * 2.0 / nparticles) * ZDIM;  // pz
+        ((int *)mydata[6])[j]   = j + rank * nparticles;          // id1
+        ((int *)mydata[7])[j]   = j;                              // id2
     }
 
-    if (rank == 0) 
+    if (rank == 0)
         printf("Write out %d variables\n", write_var);
 
 #ifdef ENABLE_MPI
@@ -212,33 +213,31 @@ int main(int argc, char **argv)
 
     gettimeofday(&pdc_timer_end, 0);
     write_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-    total_size = nparticles * 4.0 * write_var * size / 1048576.0; 
-    if (rank == 0) { 
+    total_size = nparticles * 4.0 * write_var * size / 1048576.0;
+    if (rank == 0) {
         printf("Write %f MB data with %d ranks\nTotal write time: %.2f\n", total_size, size, write_time);
         fflush(stdout);
     }
 
-
 done:
-    if(PDCprop_close(obj_prop_float) < 0)
+    if (PDCprop_close(obj_prop_float) < 0)
         printf("Fail to close float obj property \n");
 
-    if(PDCprop_close(obj_prop_int) < 0)
+    if (PDCprop_close(obj_prop_int) < 0)
         printf("Fail to close int obj property \n");
 
-    if(PDCcont_close(cont_id) < 0)
+    if (PDCcont_close(cont_id) < 0)
         printf("Fail to close container\n");
 
-    if(PDCprop_close(cont_prop) < 0)
+    if (PDCprop_close(cont_prop) < 0)
         printf("Fail to close container property\n");
 
-    if(PDCclose(pdc_id) < 0)
-       printf("Fail to close PDC\n");
+    if (PDCclose(pdc_id) < 0)
+        printf("Fail to close PDC\n");
 
 #ifdef ENABLE_MPI
-     MPI_Finalize();
+    MPI_Finalize();
 #endif
 
-     return 0;
+    return 0;
 }
-

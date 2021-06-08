@@ -1,19 +1,19 @@
 /*
- * Copyright Notice for 
+ * Copyright Notice for
  * Proactive Data Containers (PDC) Software Library and Utilities
  * -----------------------------------------------------------------------------
 
  *** Copyright Notice ***
- 
+
  * Proactive Data Containers (PDC) Copyright (c) 2017, The Regents of the
  * University of California, through Lawrence Berkeley National Laboratory,
  * UChicago Argonne, LLC, operator of Argonne National Laboratory, and The HDF
  * Group (subject to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
- 
+
  * If you have questions about your rights to use or distribute this software,
  * please contact Berkeley Lab's Innovation & Partnerships Office at  IPO@lbl.gov.
- 
+
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such, the
  * U.S. Government has been granted for itself and others acting on its behalf a
@@ -35,11 +35,11 @@ struct pdc_region_info {
     pdcid_t               local_id;
     struct _pdc_obj_info *obj;
     size_t                ndim;
-    uint64_t             *offset;
-    uint64_t             *size;
+    uint64_t *            offset;
+    uint64_t *            size;
     bool                  mapping;
     int                   registered_op;
-    void                 *buf;
+    void *                buf;
     size_t                unit;
 };
 
@@ -84,7 +84,8 @@ void PDCregion_free(struct pdc_region_info *region);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCbuf_obj_map(void *buf, pdc_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg);
+perr_t PDCbuf_obj_map(void *buf, pdc_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj,
+                      pdcid_t remote_reg);
 
 /**
  * Get region information
@@ -116,7 +117,8 @@ perr_t PDCbuf_obj_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCreg_obtain_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type, pdc_lock_mode_t lock_mode);
+perr_t PDCreg_obtain_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type,
+                          pdc_lock_mode_t lock_mode);
 
 /**
  * Release the region lock
