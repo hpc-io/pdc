@@ -1,19 +1,19 @@
 /*
- * Copyright Notice for 
+ * Copyright Notice for
  * Proactive Data Containers (PDC) Software Library and Utilities
  * -----------------------------------------------------------------------------
 
  *** Copyright Notice ***
- 
+
  * Proactive Data Containers (PDC) Copyright (c) 2017, The Regents of the
  * University of California, through Lawrence Berkeley National Laboratory,
  * UChicago Argonne, LLC, operator of Argonne National Laboratory, and The HDF
  * Group (subject to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
- 
+
  * If you have questions about your rights to use or distribute this software,
  * please contact Berkeley Lab's Innovation & Partnerships Office at  IPO@lbl.gov.
- 
+
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such, the
  * U.S. Government has been granted for itself and others acting on its behalf a
@@ -33,9 +33,9 @@ typedef struct _pdc_id_info cont_handle;
 /* Library Public Struct */
 /**************************/
 struct pdc_cont_info {
-    char                   *name;
-    pdcid_t                 local_id;
-    uint64_t                meta_id;
+    char *   name;
+    pdcid_t  local_id;
+    uint64_t meta_id;
 };
 
 /*********************/
@@ -73,6 +73,16 @@ pdcid_t PDCcont_create_col(const char *cont_name, pdcid_t cont_prop_id);
  * \return Container id on success/Zero on failure
  */
 pdcid_t PDCcont_open(const char *cont_name, pdcid_t pdc_id);
+
+/**
+ * Open a container collectively
+ *
+ * \param cont_name [IN]        Name of the container
+ * \param pdc_id [IN]           ID of pdc
+ *
+ * \return Container id on success/Zero on failure
+ */
+pdcid_t PDCcont_open_col(const char *cont_name, pdcid_t pdc_id);
 
 /**
  * Close a container
@@ -160,7 +170,7 @@ cont_handle *PDCcont_iter_next(cont_handle *chandle);
  *
  * \return Pointer to a PDC_cont_info struct/NULL on failure
  */
-struct pdc_cont_info * PDCcont_iter_get_info(cont_handle *chandle);
+struct pdc_cont_info *PDCcont_iter_get_info(cont_handle *chandle);
 
 /**
  * ************

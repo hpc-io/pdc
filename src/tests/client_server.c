@@ -1,19 +1,19 @@
 /*
- * Copyright Notice for 
+ * Copyright Notice for
  * Proactive Data Containers (PDC) Software Library and Utilities
  * -----------------------------------------------------------------------------
 
  *** Copyright Notice ***
- 
+
  * Proactive Data Containers (PDC) Copyright (c) 2017, The Regents of the
  * University of California, through Lawrence Berkeley National Laboratory,
  * UChicago Argonne, LLC, operator of Argonne National Laboratory, and The HDF
  * Group (subject to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
- 
+
  * If you have questions about your rights to use or distribute this software,
  * please contact Berkeley Lab's Innovation & Partnerships Office at  IPO@lbl.gov.
- 
+
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such, the
  * U.S. Government has been granted for itself and others acting on its behalf a
@@ -37,12 +37,13 @@
 #define MAX_SERVER_NUM 1024
 
 static hg_id_t gen_obj_id_client_id_g;
-static int work_todo_g = 0;
+static int     work_todo_g = 0;
 
-int PDC_Client_read_server_addr_from_file(char target_addr_string[MAX_SERVER_NUM][PATH_MAX])
+int
+PDC_Client_read_server_addr_from_file(char target_addr_string[MAX_SERVER_NUM][PATH_MAX])
 {
-    int i = 0;
-    char  *p;
+    int   i = 0;
+    char *p;
     FILE *na_config = NULL;
 
     na_config = fopen(pdc_server_cfg_name, "r");
@@ -54,14 +55,14 @@ int PDC_Client_read_server_addr_from_file(char target_addr_string[MAX_SERVER_NUM
     fgets(tmp, PATH_MAX, na_config);
     while (fgets(target_addr_string[i], PATH_MAX, na_config)) {
         p = strrchr(target_addr_string[i], '\n');
-        if (p != NULL) *p = '\0';
-        /* printf("%s", target_addr_string[i]); */ 
+        if (p != NULL)
+            *p = '\0';
+        /* printf("%s", target_addr_string[i]); */
         i++;
     }
     fclose(na_config);
     return i;
 }
-
 
 /* This routine gets executed after a call to HG_Trigger and
  * the RPC has completed */
@@ -69,8 +70,8 @@ static hg_return_t
 client_rpc_cb(const struct hg_cb_info *callback_info)
 {
     /* printf("Entering client_rpc_cb()"); */
-    struct client_lookup_args *client_lookup_args = (struct client_lookup_args*) callback_info->arg;
-    hg_handle_t handle = callback_info->info.forward.handle;
+    struct client_lookup_args *client_lookup_args = (struct client_lookup_args *)callback_info->arg;
+    hg_handle_t                handle             = callback_info->info.forward.handle;
 
     /* Get output from server*/
     gen_obj_id_out_t output;
@@ -90,16 +91,17 @@ client_lookup_cb(const struct hg_cb_info *callback_info)
     /* printf("Entering client_lookup_cb()"); */
     hg_return_t hg_ret;
 
-    struct client_lookup_args *client_lookup_args = (struct client_lookup_args *) callback_info->arg;
-    client_lookup_args->hg_target_addr = callback_info->info.lookup.addr;
+    struct client_lookup_args *client_lookup_args = (struct client_lookup_args *)callback_info->arg;
+    client_lookup_args->hg_target_addr            = callback_info->info.lookup.addr;
 
     /* Create HG handle bound to target */
     hg_handle_t handle;
-    HG_Create(client_lookup_args->hg_context, client_lookup_args->hg_target_addr, gen_obj_id_client_id_g, &handle);
+    HG_Create(client_lookup_args->hg_context, client_lookup_args->hg_target_addr, gen_obj_id_client_id_g,
+              &handle);
 
     /* Fill input structure */
     gen_obj_id_in_t in;
-    in.obj_name= client_lookup_args->obj_name;
+    in.obj_name = client_lookup_args->obj_name;
 
     /* printf("Sending input to target\n"); */
     hg_ret = HG_Forward(handle, client_rpc_cb, client_lookup_args, &in);
@@ -110,12 +112,14 @@ client_lookup_cb(const struct hg_cb_info *callback_info)
     return HG_SUCCESS;
 }
 
-int PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int port)
+int
+PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int port)
 {
     char na_info_string[PATH_MAX];
     sprintf(na_info_string, "cci+tcp://%d", port);
     if (!na_info_string) {
-        fprintf(stderr, HG_PORT_NAME " environment variable must be set, e.g.:\nMERCURY_PORT_NAME=\"cci+tcp://22222\"\n");
+        fprintf(stderr, HG_PORT_NAME
+                " environment variable must be set, e.g.:\nMERCURY_PORT_NAME=\"cci+tcp://22222\"\n");
         exit(0);
     }
     /* printf("NA: %s\n", na_info_string); */
@@ -137,7 +141,8 @@ int PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, in
     return 0;
 }
 
-void PDC_Client_check_response(hg_context_t **hg_context)
+void
+PDC_Client_check_response(hg_context_t **hg_context)
 {
     hg_return_t hg_ret;
     do {
@@ -148,7 +153,8 @@ void PDC_Client_check_response(hg_context_t **hg_context)
 
         /* printf("actual_count=%d\n",actual_count); */
         /* Do not try to make progress anymore if we're done */
-        if (work_todo_g <= 0)  break; 
+        if (work_todo_g <= 0)
+            break;
 
         hg_ret = HG_Progress(*hg_context, HG_MAX_IDLE_TIME);
     } while (hg_ret == HG_SUCCESS);
@@ -156,19 +162,23 @@ void PDC_Client_check_response(hg_context_t **hg_context)
     return;
 }
 
-hg_return_t send_name_recv_id(struct client_lookup_args* client_lookup_args, char *target_addr_string)
+hg_return_t
+send_name_recv_id(struct client_lookup_args *client_lookup_args, char *target_addr_string)
 {
-    hg_return_t  hg_ret = 0;
-    // This function takes a user callback. HG_Progress() and HG_Trigger() need to be called in this case 
-    // and the resulting address can be retrieved when the user callback is executed. 
-    // Connection to the target may occur at this time, though that behavior is left upon the NA plugin implementation.
-    hg_ret = HG_Addr_lookup(client_lookup_args->hg_context, client_lookup_cb, client_lookup_args, target_addr_string, HG_OP_ID_IGNORE);
+    hg_return_t hg_ret = 0;
+    // This function takes a user callback. HG_Progress() and HG_Trigger() need to be called in this case
+    // and the resulting address can be retrieved when the user callback is executed.
+    // Connection to the target may occur at this time, though that behavior is left upon the NA plugin
+    // implementation.
+    hg_ret = HG_Addr_lookup(client_lookup_args->hg_context, client_lookup_cb, client_lookup_args,
+                            target_addr_string, HG_OP_ID_IGNORE);
     /* printf("HG_Addr_lookup() ret=%d\n", hg_ret); */
 
     return hg_ret;
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
     int rank, size;
 #ifdef ENABLE_MPI
@@ -180,18 +190,18 @@ int main(int argc, char **argv)
     size = 1;
 #endif
 
-    hg_class_t   *hg_class = NULL;
+    hg_class_t *  hg_class   = NULL;
     hg_context_t *hg_context = NULL;
-    hg_return_t  hg_ret = 0;
+    hg_return_t   hg_ret     = 0;
 
     // Get server address string
     char target_addr_string[MAX_SERVER_NUM][PATH_MAX];
-    int i, n_server;
-    int port = rank + 8000;
-    n_server = PDC_Client_read_server_addr_from_file(target_addr_string);
+    int  i, n_server;
+    int  port = rank + 8000;
+    n_server  = PDC_Client_read_server_addr_from_file(target_addr_string);
 
     hg_time_t start_time, end_time, elapsed_time;
-    double elapsed_time_double;
+    double    elapsed_time_double;
 
     // Init Mercury network connection
     PDC_Client_mercury_init(&hg_class, &hg_context, port);
@@ -201,12 +211,13 @@ int main(int argc, char **argv)
     }
 
     // Obj name and ID
-    char **test_obj_names = (char**)malloc(sizeof(char*) * n_server);
-    for (i = 0; i < n_server; i++) 
-        test_obj_names[i] = (char*)malloc(sizeof(char) * 128);
+    char **test_obj_names = (char **)malloc(sizeof(char *) * n_server);
+    for (i = 0; i < n_server; i++)
+        test_obj_names[i] = (char *)malloc(sizeof(char) * 128);
 
     work_todo_g = 0;
-    struct client_lookup_args *client_lookup_args = (struct client_lookup_args *)malloc(sizeof(struct client_lookup_args) * n_server);
+    struct client_lookup_args *client_lookup_args =
+        (struct client_lookup_args *)malloc(sizeof(struct client_lookup_args) * n_server);
 
     hg_time_get_current(&start_time);
     for (i = 0; i < n_server; i++) {
@@ -224,7 +235,7 @@ int main(int argc, char **argv)
     PDC_Client_check_response(&hg_context);
 
     hg_time_get_current(&end_time);
-    elapsed_time = hg_time_subtract(end_time, start_time);
+    elapsed_time        = hg_time_subtract(end_time, start_time);
     elapsed_time_double = hg_time_to_double(elapsed_time);
     printf("Total elapsed time for PDC server connection: %.6fs\n", elapsed_time_double);
 
@@ -245,4 +256,3 @@ int main(int argc, char **argv)
 #endif
     return 0;
 }
-

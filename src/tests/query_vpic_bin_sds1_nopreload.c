@@ -9,20 +9,21 @@
 #include "pdc.h"
 #include "pdc_client_connect.h"
 
-int main(void)
+int
+main(void)
 {
     pdc_metadata_t *x_meta, *y_meta, *energy_meta;
-    pdcid_t pdc, x_id, y_id, energy_id;
-    pdc_query_t *ql, *q2_lo, *q2_hi, *q2, *q12, *q3_lo, *q3_hi, *q3, *q;
+    pdcid_t         pdc, x_id, y_id, energy_id;
+    pdc_query_t *   ql, *q2_lo, *q2_hi, *q2, *q12, *q3_lo, *q3_hi, *q3, *q;
     pdc_selection_t sel;
-    double get_sel_time, get_data_time;
-    float *energy_data = NULL, *x_data = NULL, *y_data = NULL;
-    float energy_lo0 = 3.0;
-    float x_lo = 300, x_hi = 310;
-    float y_lo = 140, y_hi = 150;
-    
-    struct timeval  pdc_timer_start;
-    struct timeval  pdc_timer_end;
+    double          get_sel_time, get_data_time;
+    float *         energy_data = NULL, *x_data = NULL, *y_data = NULL;
+    float           energy_lo0 = 3.0;
+    float           x_lo = 300, x_hi = 310;
+    float           y_lo = 140, y_hi = 150;
+
+    struct timeval pdc_timer_start;
+    struct timeval pdc_timer_end;
 
     pdc = PDCinit("pdc");
 
@@ -33,7 +34,7 @@ int main(void)
         goto done;
     }
     x_id = x_meta->obj_id;
-    
+
     PDC_Client_query_metadata_name_timestep("y", 0, &y_meta);
     if (y_meta == NULL || y_meta->obj_id == 0) {
         printf("Error with y metadata!\n");
@@ -59,12 +60,12 @@ int main(void)
 
     q3_lo = PDCquery_create(y_id, PDC_GT, PDC_FLOAT, &y_lo);
     q3_hi = PDCquery_create(y_id, PDC_LT, PDC_FLOAT, &y_hi);
-    
-    q3    = PDCquery_and(q3_lo, q3_hi);
+
+    q3 = PDCquery_and(q3_lo, q3_hi);
 
     q = PDCquery_and(q3, q12);
-    printf("Query: Energy > %.1f && %.1f < X < %.1f && %.1f < Y < %.1f\n", 
-            energy_lo0, x_lo, x_hi, y_lo, y_hi);
+    printf("Query: Energy > %.1f && %.1f < X < %.1f && %.1f < Y < %.1f\n", energy_lo0, x_lo, x_hi, y_lo,
+           y_hi);
 
     // Get selection
     gettimeofday(&pdc_timer_start, 0);
@@ -81,9 +82,9 @@ int main(void)
     printf("Get selection time: %.4f\n", get_sel_time);
 
     if (sel.nhits > 0) {
-        energy_data = (float*)calloc(sel.nhits, sizeof(float));
-        x_data      = (float*)calloc(sel.nhits, sizeof(float));
-        y_data      = (float*)calloc(sel.nhits, sizeof(float));
+        energy_data = (float *)calloc(sel.nhits, sizeof(float));
+        x_data      = (float *)calloc(sel.nhits, sizeof(float));
+        y_data      = (float *)calloc(sel.nhits, sizeof(float));
 
         // Get data
         gettimeofday(&pdc_timer_start, 0);
@@ -100,15 +101,18 @@ int main(void)
     }
 
     PDCselection_free(&sel);
-    if(energy_data) free(energy_data);
-    if(y_data)      free(y_data);
-    if(x_data)      free(x_data);
+    if (energy_data)
+        free(energy_data);
+    if (y_data)
+        free(y_data);
+    if (x_data)
+        free(x_data);
 
     PDCquery_free_all(q);
 
 done:
-    if(PDCclose(pdc) < 0)
-       printf("fail to close PDC\n");
+    if (PDCclose(pdc) < 0)
+        printf("fail to close PDC\n");
 
-     return 0;
+    return 0;
 }

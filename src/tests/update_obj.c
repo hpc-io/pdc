@@ -1,19 +1,19 @@
 /*
- * Copyright Notice for 
+ * Copyright Notice for
  * Proactive Data Containers (PDC) Software Library and Utilities
  * -----------------------------------------------------------------------------
 
  *** Copyright Notice ***
- 
+
  * Proactive Data Containers (PDC) Copyright (c) 2017, The Regents of the
  * University of California, through Lawrence Berkeley National Laboratory,
  * UChicago Argonne, LLC, operator of Argonne National Laboratory, and The HDF
  * Group (subject to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
- 
+
  * If you have questions about your rights to use or distribute this software,
  * please contact Berkeley Lab's Innovation & Partnerships Office at  IPO@lbl.gov.
- 
+
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such, the
  * U.S. Government has been granted for itself and others acting on its behalf a
@@ -32,34 +32,38 @@
 #include "pdc_client_connect.h"
 #include "pdc_client_server_common.h"
 
-void print_usage() {
+void
+print_usage()
+{
     printf("Usage: srun -n ./update_obj -r num_of_obj_per_rank\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
-    int rank = 0, size = 1;
-    int count = -1;
-    int i;
-    pdcid_t pdc, cont_prop, cont, obj_prop;
-    struct timeval  ht_total_start;
-    struct timeval  ht_total_end;
-    long long ht_total_elapsed;
-    double ht_total_sec;
-    int use_name = -1;
-    char *env_str, *tmp_dir;
+    int            rank = 0, size = 1;
+    int            count = -1;
+    int            i;
+    pdcid_t        pdc, cont_prop, cont, obj_prop;
+    struct timeval ht_total_start;
+    struct timeval ht_total_end;
+    long long      ht_total_elapsed;
+    double         ht_total_sec;
+    int            use_name = -1;
+    char *         env_str, *tmp_dir;
     pdc_metadata_t new;
-    char **obj_names;
-    int  *obj_ts;
-    char filename[128], pdc_server_tmp_dir_g[128];
-    int n_entry;
-    pdc_metadata_t entry;
-    uint32_t *hash_key;
-    int j, read_count = 0, tmp_count;
+    char **         obj_names;
+    int *           obj_ts;
+    char            filename[128], pdc_server_tmp_dir_g[128];
+    int             n_entry;
+    pdc_metadata_t  entry;
+    uint32_t *      hash_key;
+    int             j, read_count = 0, tmp_count;
     pdc_metadata_t *res = NULL;
-    int progress_factor;
-    FILE *file;
-    char name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name", "INVALID!", "INVALID!", "Four Obj Names"};
+    int             progress_factor;
+    FILE *          file;
+    char            name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name",
+                             "INVALID!",         "INVALID!", "Four Obj Names"};
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -67,23 +71,22 @@ int main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    while ((i = getopt (argc, argv, "r:")) != EOF)
-        switch (i)
-        {
-         case 'r':
-           count = atoi(optarg);
-           break;
-         case '?':
-           if (optopt == 'r')
-             fprintf (stderr, "Option -%c requires an argument.\n", optopt);
-           else if (isprint (optopt))
-             fprintf (stderr, "Unknown option `-%c'.\n", optopt);
-           else
-             fprintf (stderr, "Unknown option character `\\x%x'.\n", optopt);
-           return 1;
-         default:
-           print_usage();
-           exit(-1);
+    while ((i = getopt(argc, argv, "r:")) != EOF)
+        switch (i) {
+            case 'r':
+                count = atoi(optarg);
+                break;
+            case '?':
+                if (optopt == 'r')
+                    fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+                else if (isprint(optopt))
+                    fprintf(stderr, "Unknown option `-%c'.\n", optopt);
+                else
+                    fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
+                return 1;
+            default:
+                print_usage();
+                exit(-1);
         }
 
     if (count == -1) {
@@ -93,7 +96,7 @@ int main(int argc, char **argv)
 
     count /= size;
 
-    if (rank == 0) 
+    if (rank == 0)
         printf("Update/Delete %d objects per MPI rank\n", count);
     fflush(stdout);
 
@@ -102,17 +105,17 @@ int main(int argc, char **argv)
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
-    if(cont_prop <= 0)
+    if (cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     // create a container
     cont = PDCcont_create("c1", cont_prop);
-    if(cont <= 0)
+    if (cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
-    if(obj_prop <= 0)
+    if (obj_prop <= 0)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
 
     env_str = getenv("PDC_OBJ_NAME");
@@ -124,18 +127,18 @@ int main(int argc, char **argv)
     strcpy(new.app_name, "updated_app_name");
     strcpy(new.data_location, "updated_obj_data_location");
     strcpy(new.tags, "updated_tags");
-    srand(rank+1);
+    srand(rank + 1);
 
     if (rank == 0) {
-        printf("Using %s\n", name_mode[use_name+1]);
+        printf("Using %s\n", name_mode[use_name + 1]);
     }
 
-    obj_names = (char**)malloc(count * sizeof(char*));
-    obj_ts    = (int*)  malloc(count * sizeof(int)  );
+    obj_names = (char **)malloc(count * sizeof(char *));
+    obj_ts    = (int *)malloc(count * sizeof(int));
     for (i = 0; i < count; i++) {
-        obj_names[i] = (char*)malloc(128*sizeof(char));
+        obj_names[i] = (char *)malloc(128 * sizeof(char));
     }
-    
+
     // Set up tmp dir
     tmp_dir = getenv("PDC_TMPDIR");
     if (tmp_dir == NULL)
@@ -146,7 +149,10 @@ int main(int argc, char **argv)
     sprintf(filename, "%s/metadata_checkpoint.%d", pdc_server_tmp_dir_g, rank);
 
     file = fopen(filename, "r");
-    if (file==NULL) {fputs("Checkpoint file not available\n", stderr); return -1;}
+    if (file == NULL) {
+        fputs("Checkpoint file not available\n", stderr);
+        return -1;
+    }
 
     fread(&n_entry, sizeof(int), 1, file);
 
@@ -156,19 +162,19 @@ int main(int argc, char **argv)
         hash_key = (uint32_t *)malloc(sizeof(uint32_t));
         fread(hash_key, sizeof(uint32_t), 1, file);
 
-         // read each metadata
-         for (j = 0; j < tmp_count; j++) {
-              if (read_count >= count) {
-                  n_entry = 0;
-                  break;
-              }
-             fread(&entry, sizeof(pdc_metadata_t), 1, file);
-             sprintf(obj_names[read_count], "%s", entry.obj_name);
-             obj_ts[read_count] = entry.time_step;
-             read_count++;
-         }
-         n_entry--;
-     }
+        // read each metadata
+        for (j = 0; j < tmp_count; j++) {
+            if (read_count >= count) {
+                n_entry = 0;
+                break;
+            }
+            fread(&entry, sizeof(pdc_metadata_t), 1, file);
+            sprintf(obj_names[read_count], "%s", entry.obj_name);
+            obj_ts[read_count] = entry.time_step;
+            read_count++;
+        }
+        n_entry--;
+    }
 
     fclose(file);
 
@@ -191,10 +197,11 @@ int main(int argc, char **argv)
         if (rank == 0) {
             // Print progress
             progress_factor = count < 20 ? 1 : 20;
-            if (rank == 0 && i > 0 && i % (count/progress_factor) == 0) {
+            if (rank == 0 && i > 0 && i % (count / progress_factor) == 0) {
                 gettimeofday(&ht_total_end, 0);
-                ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
-                ht_total_sec        = ht_total_elapsed / 1000000.0;
+                ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL +
+                                   ht_total_end.tv_usec - ht_total_start.tv_usec;
+                ht_total_sec = ht_total_elapsed / 1000000.0;
 
                 printf("updated %10d ... %.2f\n", i * size, ht_total_sec);
                 fflush(stdout);
@@ -206,27 +213,28 @@ int main(int argc, char **argv)
 #endif
 
     gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed    = (ht_total_end.tv_sec-ht_total_start.tv_sec)*1000000LL + ht_total_end.tv_usec-ht_total_start.tv_usec;
-    ht_total_sec        = ht_total_elapsed / 1000000.0;
-    if (rank == 0) { 
+    ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL + ht_total_end.tv_usec -
+                       ht_total_start.tv_usec;
+    ht_total_sec = ht_total_elapsed / 1000000.0;
+    if (rank == 0) {
         printf("Time to update %d obj/rank with %d ranks: %.6f\n\n\n", count, size, ht_total_sec);
         fflush(stdout);
     }
 
     // close a container
-    if(PDCcont_close(cont) < 0)
+    if (PDCcont_close(cont) < 0)
         printf("fail to close container c1\n");
 
     // close a container property
-    if(PDCprop_close(cont_prop) < 0)
+    if (PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
 
-    if(PDCclose(pdc) < 0)
-       printf("fail to close PDC\n");
+    if (PDCclose(pdc) < 0)
+        printf("fail to close PDC\n");
 
 #ifdef ENABLE_MPI
-     MPI_Finalize();
+    MPI_Finalize();
 #endif
 
-     return 0;
+    return 0;
 }

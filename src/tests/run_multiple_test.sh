@@ -20,6 +20,5 @@ do
     echo "testing: $test_exe"
     $test_exe
 done
-
 # and shutdown the SERVER before exiting
 ./close_server

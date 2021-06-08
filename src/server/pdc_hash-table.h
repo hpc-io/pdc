@@ -84,9 +84,9 @@ typedef void *HashTableValue;
  * used as @ref HashTableIterator next result.
  */
 
-typedef struct _HashTablePair{
-	HashTableKey key;
-	HashTableValue value;
+typedef struct _HashTablePair {
+    HashTableKey   key;
+    HashTableValue value;
 } HashTablePair;
 
 /**
@@ -94,16 +94,16 @@ typedef struct _HashTablePair{
  */
 
 struct _HashTableIterator {
-	HashTable *hash_table;
-	HashTableEntry *next_entry;
-	unsigned int next_chain;
+    HashTable *     hash_table;
+    HashTableEntry *next_entry;
+    unsigned int    next_chain;
 };
 
 /**
  * A null @ref HashTableValue.
  */
 
-#define HASH_TABLE_NULL ((void *) 0)
+#define HASH_TABLE_NULL ((void *)0)
 
 /**
  * Hash function used to generate hash values for keys used in a hash
@@ -150,8 +150,7 @@ typedef void (*HashTableValueFreeFunc)(HashTableValue value);
  *                             table.
  */
 
-HashTable *hash_table_new(HashTableHashFunc hash_func,
-                          HashTableEqualFunc equal_func);
+HashTable *hash_table_new(HashTableHashFunc hash_func, HashTableEqualFunc equal_func);
 
 /**
  * Destroy a hash table.
@@ -170,8 +169,7 @@ void hash_table_free(HashTable *hash_table);
  * @param value_free_func      Function used to free values.
  */
 
-void hash_table_register_free_functions(HashTable *hash_table,
-                                        HashTableKeyFreeFunc key_free_func,
+void hash_table_register_free_functions(HashTable *hash_table, HashTableKeyFreeFunc key_free_func,
                                         HashTableValueFreeFunc value_free_func);
 
 /**
@@ -186,9 +184,7 @@ void hash_table_register_free_functions(HashTable *hash_table,
  *                             memory for the new entry.
  */
 
-int hash_table_insert(HashTable *hash_table,
-                      HashTableKey key,
-                      HashTableValue value);
+int hash_table_insert(HashTable *hash_table, HashTableKey key, HashTableValue value);
 
 /**
  * Look up a value in a hash table by key.
@@ -199,8 +195,7 @@ int hash_table_insert(HashTable *hash_table,
  *                            is no value with that key in the hash table.
  */
 
-HashTableValue hash_table_lookup(HashTable *hash_table,
-                                 HashTableKey key);
+HashTableValue hash_table_lookup(HashTable *hash_table, HashTableKey key);
 
 /**
  * Remove a value from a hash table.
@@ -266,4 +261,3 @@ HashTablePair hash_table_iter_next(HashTableIterator *iterator);
 #endif
 
 #endif /* #ifndef ALGORITHM_HASH_TABLE_H */
-

@@ -1,19 +1,19 @@
 /*
- * Copyright Notice for 
+ * Copyright Notice for
  * Proactive Data Containers (PDC) Software Library and Utilities
  * -----------------------------------------------------------------------------
 
  *** Copyright Notice ***
- 
+
  * Proactive Data Containers (PDC) Copyright (c) 2017, The Regents of the
  * University of California, through Lawrence Berkeley National Laboratory,
  * UChicago Argonne, LLC, operator of Argonne National Laboratory, and The HDF
  * Group (subject to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
- 
+
  * If you have questions about your rights to use or distribute this software,
  * please contact Berkeley Lab's Innovation & Partnerships Office at  IPO@lbl.gov.
- 
+
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such, the
  * U.S. Government has been granted for itself and others acting on its behalf a
@@ -30,23 +30,23 @@
 #include <dlfcn.h>
 
 #define PDC_REGION_ALL (pdcid_t)(-1)
-#define PDC_ITER_NULL (pdcid_t)(0)
+#define PDC_ITER_NULL  (pdcid_t)(0)
 
-extern int pdc_server_num_g;
-extern int pdc_client_mpi_rank_g;
+extern int                      pdc_server_num_g;
+extern int                      pdc_client_mpi_rank_g;
 extern struct _pdc_server_info *pdc_server_info_g;
 
 struct _pdc_region_analysis_ftn_info {
-    int meta_index;
-    int n_args;
+    int      meta_index;
+    int      n_args;
     pdcid_t *object_id;
     pdcid_t *region_id;
     int (*ftnPtr)();
-    int readyCount;
-    int client_id;
-    int ftn_lastResult;
+    int                      readyCount;
+    int                      client_id;
+    int                      ftn_lastResult;
     _pdc_analysis_language_t lang;
-    void *data;
+    void *                   data;
 };
 
 /*
@@ -84,31 +84,31 @@ struct _pdc_region_analysis_ftn_info {
  */
 
 struct _pdc_iterator_info {
-    void   *srcStart;                /**** Constant that points to the data buffer  */
-    void   *srcNext;                 /**** Updated data pointer for each iteration  */
-    void   *copy_region;             /* Normally unused (see special cases)         */
-    size_t  sliceCount;              /**** Total # of slices to return              */
-    size_t  sliceNext;               /* Current count that we are going to return   */
-    size_t  sliceResetCount;         /* For 3d, when to recalculate 'srcNext'       */
-    size_t  elementsPerSlice;        /* # of elements in a slice the data           */
-    size_t  slicePerBlock;           /* # of slices to be returned to the user      */
-    size_t  elementsPerPlane;        /* rows * columns                              */
-    size_t  elementsPerBlock;        /* Total elements in a block (return value?) */
-    size_t  skipCount;               /* Offset from the start of a new plane  (Used to initialize srcNext) */
-    size_t  element_size;            /* Byte length of a single object element      */
-    size_t  srcBlockCount;           /* Current count of 2d blocks                  */
-    size_t  contigBlockSize;         /* Number of elements in each slice (bytes) (Used to move to the next Block) */
+    void *  srcStart;         /**** Constant that points to the data buffer  */
+    void *  srcNext;          /**** Updated data pointer for each iteration  */
+    void *  copy_region;      /* Normally unused (see special cases)         */
+    size_t  sliceCount;       /**** Total # of slices to return              */
+    size_t  sliceNext;        /* Current count that we are going to return   */
+    size_t  sliceResetCount;  /* For 3d, when to recalculate 'srcNext'       */
+    size_t  elementsPerSlice; /* # of elements in a slice the data           */
+    size_t  slicePerBlock;    /* # of slices to be returned to the user      */
+    size_t  elementsPerPlane; /* rows * columns                              */
+    size_t  elementsPerBlock; /* Total elements in a block (return value?) */
+    size_t  skipCount;        /* Offset from the start of a new plane  (Used to initialize srcNext) */
+    size_t  element_size;     /* Byte length of a single object element      */
+    size_t  srcBlockCount;    /* Current count of 2d blocks                  */
+    size_t  contigBlockSize;  /* Number of elements in each slice (bytes) (Used to move to the next Block) */
     size_t  totalElements;
-    size_t  dims[4];                 /* [ planes, rows,columns]                     */
-    size_t *srcDims;                 /* Values passed into create_iterator          */
-    size_t  ndim;                    /* number of values in srcDims                 */
-    size_t  startOffset;	         /* Used to initialize the srcNext field      */
-    pdc_var_type_t pdc_datatype;
+    size_t  dims[4];     /* [ planes, rows,columns]                     */
+    size_t *srcDims;     /* Values passed into create_iterator          */
+    size_t  ndim;        /* number of values in srcDims                 */
+    size_t  startOffset; /* Used to initialize the srcNext field      */
+    pdc_var_type_t    pdc_datatype;
     _pdc_major_type_t storage_order; /* Copied from the object storage order        */
-    pdcid_t objectId;                /* Reference object ID                         */
-    pdcid_t reg_id;                  /* Reference region ID                         */
-    pdcid_t local_id;                /* Our local reference id                      */
-    pdcid_t meta_id;                 /* The server registration id                  */
+    pdcid_t           objectId;      /* Reference object ID                         */
+    pdcid_t           reg_id;        /* Reference region ID                         */
+    pdcid_t           local_id;      /* Our local reference id                      */
+    pdcid_t           meta_id;       /* The server registration id                  */
 };
 
 /* struct used to carry state of overall RPC operation across callbacks
@@ -117,54 +117,54 @@ struct _pdc_iterator_info {
 struct _pdc_my_rpc_state {
     hg_int64_t  value;
     hg_size_t   size;
-    void       *buffer;
+    void *      buffer;
     hg_bulk_t   bulk_handle;
     hg_handle_t handle;
 };
 
 struct _pdc_iterator_cbs_t {
     size_t (*getSliceCount)(pdcid_t);
-    size_t  (*getNextBlock)(pdcid_t , void **, size_t *);
+    size_t (*getNextBlock)(pdcid_t, void **, size_t *);
 };
 
 // Analysis
-#define CACHE_SIZE                8192
-extern struct _pdc_iterator_info * PDC_Block_iterator_cache;
-extern _pdc_loci_t                   execution_locus;
+#define CACHE_SIZE 8192
+extern struct _pdc_iterator_info *PDC_Block_iterator_cache;
+extern _pdc_loci_t                execution_locus;
 
 typedef struct analysis_ftn_in_t {
-    hg_const_string_t           ftn_name;
-    hg_const_string_t           loadpath;
-    pdcid_t                     local_obj_id;
-    pdcid_t                     iter_in;
-    pdcid_t                     iter_out;
+    hg_const_string_t ftn_name;
+    hg_const_string_t loadpath;
+    pdcid_t           local_obj_id;
+    pdcid_t           iter_in;
+    pdcid_t           iter_out;
 } analysis_ftn_in_t;
 
 typedef struct analysis_ftn_out_t {
-    uint64_t                    remote_ftn_id;
+    uint64_t remote_ftn_id;
 } analysis_ftn_out_t;
 
 typedef struct obj_data_iterator_in_t {
-    pdcid_t                     client_iter_id;
-    pdcid_t                     object_id;
-    pdcid_t                     reg_id;
-    uint64_t                    sliceCount;
-    uint64_t                    sliceNext;
-    uint64_t                    sliceResetCount;
-    uint64_t                    elementsPerSlice;
-    uint64_t                    slicePerBlock;
-    uint64_t                    elementsPerPlane;
-    uint64_t                    elementsPerBlock;
-    uint64_t                    skipCount;
-    uint64_t                    element_size;
-    uint64_t                    srcBlockCount;
-    uint64_t                    contigBlockSize;
-    uint64_t                    totalElements;
-    uint64_t                    ndim;
-    uint64_t                    dims_0;
-    uint64_t                    dims_1;
-    uint64_t                    dims_2;
-    uint64_t                    dims_3;
+    pdcid_t  client_iter_id;
+    pdcid_t  object_id;
+    pdcid_t  reg_id;
+    uint64_t sliceCount;
+    uint64_t sliceNext;
+    uint64_t sliceResetCount;
+    uint64_t elementsPerSlice;
+    uint64_t slicePerBlock;
+    uint64_t elementsPerPlane;
+    uint64_t elementsPerBlock;
+    uint64_t skipCount;
+    uint64_t element_size;
+    uint64_t srcBlockCount;
+    uint64_t contigBlockSize;
+    uint64_t totalElements;
+    uint64_t ndim;
+    uint64_t dims_0;
+    uint64_t dims_1;
+    uint64_t dims_2;
+    uint64_t dims_3;
     /*
      * The datatype isn't strictly needed but it can be nice
      * to have if we eventually provide a default 'fill value'.
@@ -180,13 +180,13 @@ typedef struct obj_data_iterator_in_t {
      * +---//---+---------------+---------------+
      * 31     16 15            8 7             0
      */
-    int                         storageinfo;
-    int                         server_id;
+    int storageinfo;
+    int server_id;
 } obj_data_iterator_in_t;
 
 typedef struct obj_data_iterator_out_t {
-    uint64_t                    server_iter_id;
-    uint64_t                    client_iter_id;
+    uint64_t server_iter_id;
+    uint64_t client_iter_id;
     /*
      * If the container/region utilized by this iterator
      * doesn't exist on the server, then it provides a temporary
@@ -194,38 +194,38 @@ typedef struct obj_data_iterator_out_t {
      * If not temporary is created, then the 'server_region_id' is
      * set to -1;
      */
-    uint64_t                    server_region_id;
-    int32_t                     ret;
+    uint64_t server_region_id;
+    int32_t  ret;
 } obj_data_iterator_out_t;
 
 static HG_INLINE hg_return_t
 hg_proc_analysis_ftn_in_t(hg_proc_t proc, void *data)
 {
-    hg_return_t ret;
-    analysis_ftn_in_t *struct_data = (analysis_ftn_in_t*) data;
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->ftn_name);
+    hg_return_t        ret;
+    analysis_ftn_in_t *struct_data = (analysis_ftn_in_t *)data;
+    ret                            = hg_proc_hg_const_string_t(proc, &struct_data->ftn_name);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_hg_const_string_t(proc, &struct_data->loadpath);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->local_obj_id);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->iter_in);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->iter_out);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     return ret;
@@ -234,116 +234,116 @@ hg_proc_analysis_ftn_in_t(hg_proc_t proc, void *data)
 static HG_INLINE hg_return_t
 hg_proc_obj_data_iterator_in_t(hg_proc_t proc, void *data)
 {
-    hg_return_t ret;
-    obj_data_iterator_in_t *struct_data = (obj_data_iterator_in_t*) data;
-    ret = hg_proc_uint64_t(proc, &struct_data->client_iter_id);
+    hg_return_t             ret;
+    obj_data_iterator_in_t *struct_data = (obj_data_iterator_in_t *)data;
+    ret                                 = hg_proc_uint64_t(proc, &struct_data->client_iter_id);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->object_id);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->reg_id);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->sliceCount);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->sliceNext);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->sliceResetCount);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->elementsPerSlice);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->slicePerBlock);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->elementsPerPlane);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->elementsPerBlock);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->skipCount);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->element_size);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->srcBlockCount);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->contigBlockSize);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->totalElements);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->ndim);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->dims_0);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->dims_1);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->dims_2);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->dims_3);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->storageinfo);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->server_id);
     if (ret != HG_SUCCESS) {
-        //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     return ret;
@@ -352,12 +352,12 @@ hg_proc_obj_data_iterator_in_t(hg_proc_t proc, void *data)
 static HG_INLINE hg_return_t
 hg_proc_analysis_ftn_out_t(hg_proc_t proc, void *data)
 {
-    hg_return_t ret;
-    analysis_ftn_out_t *struct_data = (analysis_ftn_out_t *) data;
+    hg_return_t         ret;
+    analysis_ftn_out_t *struct_data = (analysis_ftn_out_t *)data;
 
     ret = hg_proc_uint64_t(proc, &struct_data->remote_ftn_id);
     if (ret != HG_SUCCESS) {
-	    //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     return ret;
@@ -366,27 +366,27 @@ hg_proc_analysis_ftn_out_t(hg_proc_t proc, void *data)
 static HG_INLINE hg_return_t
 hg_proc_obj_data_iterator_out_t(hg_proc_t proc, void *data)
 {
-    hg_return_t ret;
-    obj_data_iterator_out_t *struct_data = (obj_data_iterator_out_t *) data;
+    hg_return_t              ret;
+    obj_data_iterator_out_t *struct_data = (obj_data_iterator_out_t *)data;
 
     ret = hg_proc_uint64_t(proc, &struct_data->server_iter_id);
     if (ret != HG_SUCCESS) {
-	    //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->client_iter_id);
     if (ret != HG_SUCCESS) {
-	    //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->server_region_id);
     if (ret != HG_SUCCESS) {
-	    //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
-	    //HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     return ret;
@@ -418,8 +418,9 @@ perr_t PDC_Client_send_iter_recv_id(pdcid_t iter_id, pdcid_t *meta_id);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_register_obj_analysis(struct _pdc_region_analysis_ftn_info *thisFtn, const char *func, const char *loadpath,
-                                        pdcid_t in_local, pdcid_t out_local, pdcid_t in_meta, pdcid_t out_meta);
+perr_t PDC_Client_register_obj_analysis(struct _pdc_region_analysis_ftn_info *thisFtn, const char *func,
+                                        const char *loadpath, pdcid_t in_local, pdcid_t out_local,
+                                        pdcid_t in_meta, pdcid_t out_meta);
 
 /**
  * ******
@@ -438,9 +439,8 @@ perr_t PDC_Client_register_obj_analysis(struct _pdc_region_analysis_ftn_info *th
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_Client_register_region_transform(const char *func, const char *loadpath,
-                                            pdcid_t src_region_id ATTRIBUTE(unused),
-                                            pdcid_t dest_region_id,
-                                            pdcid_t obj_id,
-                                            int start_state, int next_state, int op_type, int when, int client_index);
+                                            pdcid_t src_region_id ATTRIBUTE(unused), pdcid_t dest_region_id,
+                                            pdcid_t obj_id, int start_state, int next_state, int op_type,
+                                            int when, int client_index);
 
 #endif /* PDC_OBJ_ANALYSIS_H */
