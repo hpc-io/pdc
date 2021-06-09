@@ -8,6 +8,9 @@ PDC API, data types, and developer notes are available in `docs/readme.md   <htt
 
 More information and publications of PDC is available at https://sdm.lbl.gov/pdc
 
+---------------------------
+Dependencies
+---------------------------
 
 The following instructions are for installing PDC on Linux and Cray machines. GCC version 7 or newer and a version of MPI are needed to install PDC.
 
@@ -17,10 +20,6 @@ PDC also depends on libfabric and Mercury. We provide detailed instructions for 
 
 .. attention:: 
 	Make sure to record the environmental variables (lines that contains the "export" commands). They are needed for running PDC and to use the libraries again.
-
----------------------------
-Dependencies
----------------------------
 
 Install libfabric
 ---------------------------
