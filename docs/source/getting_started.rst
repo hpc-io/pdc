@@ -1,6 +1,21 @@
 ================================
-PDC Installation
+Getting Started
 ================================
+
+Proactive Data Containers (PDC) software provides an object-centric API and a runtime system with a set of data object management services. These services allow placing data in the memory and storage hierarchy, performing data movement asynchronously, and providing scalable metadata operations to find data objects. PDC revolutionizes how data is stored and accessed by using object-centric abstractions to represent data that moves in the high-performance computing (HPC) memory and storage subsystems. PDC manages extensive metadata to describe data objects to find desired data efficiently as well as to store information in the data objects.
+
+PDC API, data types, and developer notes are available in `docs/readme.md   <https://github.com/hpc-io/pdc/blob/kenneth_develop/docs/readme.md>`_
+
+More information and publications of PDC is available at https://sdm.lbl.gov/pdc
+
+The following dependencies will need to be installed:
+
+* libfabric
+* Mercury
+
+---------------------------
+Dependencies
+---------------------------
 
 The following instructions are for installing PDC on Linux and Cray machines. GCC version 7 or newer and a version of MPI are needed to install PDC.
 
@@ -11,7 +26,6 @@ PDC also depends on libfabric and Mercury. We provide detailed instructions for 
 .. attention:: 
 	Make sure to record the environmental variables (lines that contains the "export" commands). They are needed for running PDC and to use the libraries again.
 
----------------------------
 Install libfabric
 ---------------------------
 
@@ -29,7 +43,7 @@ Install libfabric
 	$ export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$LD_LIBRARY_PATH"
 	$ export PATH="$LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$PATH"
 
----------------------------
+
 Install Mercury
 ---------------------------
 
@@ -55,6 +69,9 @@ Step 2 in the following is not required. It is a stable commit that has been use
 	$ export PATH="$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH"
 
 ---------------------------
+Installation
+---------------------------
+
 Install PDC
 ---------------------------
 
@@ -73,7 +90,6 @@ One can replace mpicc to other available MPI compilers. For example, on Cori, cc
 	$ make -j8
 	$ ctest
 
----------------------------
 Environmental Variables
 ---------------------------
 
@@ -104,7 +120,6 @@ We provide a convenient function (mpi_text.sh) to start MPI tests. One needs to 
 
 This is test will start 2 processes for PDC servers. The client program ./pdc_init will start 4 processes. Similarly, one can run any of the client examples in ctest. These source code will provide some knowledge of how to use PDC. For more reference, one may check the documentation folder in this repository.
 
----------------------------
 PDC on Cori
 ---------------------------
 
@@ -129,3 +144,4 @@ Run 64 client processes that concurrently create 1000 objects in total:
 .. code-block:: Bash
 
 	$ srun -N 4 -n 64 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 ./bin/create_obj_scale -r 1000
+
