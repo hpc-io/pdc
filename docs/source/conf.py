@@ -53,8 +53,8 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-# html_static_path = ['/Users/kenneth/Documents/Berkeley_Lab/pdc/docs/_static']
 html_logo = "_static/pdc_logo.png"
+# html_static_path = ['/Users/kenneth/Documents/Berkeley_Lab/pdc/docs/_static']
 # html_logo = "/Users/kenneth/Documents/Berkeley_Lab/pdc/docs/_static/pdc_logo.png"
 
 def setup(app):

@@ -13,6 +13,10 @@ PDC API, data types, and developer notes are available in `docs/readme.md   <htt
 
 More information and publications of PDC is available at https://sdm.lbl.gov/pdc
 
+If you use PDC in your research, please use the following citation:
+
+Byna, Suren, Dong, Bin, Tang, Houjun, Koziol, Quincey, Mu, Jingqing, Soumagne, Jerome, Vishwanath, Venkat, Warren, Richard, and Tessier, François. Proactive Data Containers (PDC) v0.1. Computer Software. https://github.com/hpc-io/pdc. USDOE. 11 May. 2017. Web. doi:10.11578/dc.20210325.1.
+
 .. toctree::
    :maxdepth: 2
    :caption: Getting Started

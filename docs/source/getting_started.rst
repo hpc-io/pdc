@@ -8,6 +8,11 @@ PDC API, data types, and developer notes are available in `docs/readme.md   <htt
 
 More information and publications of PDC is available at https://sdm.lbl.gov/pdc
 
+The following dependencies will need to be installed:
+
+* libfabric
+* Mercury
+
 ---------------------------
 Dependencies
 ---------------------------
