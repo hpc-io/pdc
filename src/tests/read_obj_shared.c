@@ -270,7 +270,8 @@ main(int argc, char **argv)
     for (i = 0; i < (int)my_data_size; i++) {
         for (j = 0; j < (int)type_size; ++j) {
             if (mydata[i * type_size + j] != (char)i) {
-                printf("Wrong value detected %d != %d at @ line  %d!\n", mydata[i * type_size + j], i, __LINE__);
+                printf("Wrong value detected %d != %d at @ line  %d!\n", mydata[i * type_size + j], i,
+                       __LINE__);
                 ret_value = 1;
                 i         = my_data_size;
                 break;
