@@ -246,86 +246,86 @@ main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
     PDC_timing_report("write");
 #endif
-/*
-    for (i = 0; i < n_objects; ++i) {
-        sprintf(obj_name1, "o1_%d", i);
-        obj1 = PDCobj_open(obj_name1, pdc);
-        if (obj1 <= 0) {
-            printf("Fail to open object @ line  %d!\n", __LINE__);
-            ret_value = 1;
+    /*
+        for (i = 0; i < n_objects; ++i) {
+            sprintf(obj_name1, "o1_%d", i);
+            obj1 = PDCobj_open(obj_name1, pdc);
+            if (obj1 <= 0) {
+                printf("Fail to open object @ line  %d!\n", __LINE__);
+                ret_value = 1;
+            }
+
+            reg        = PDCregion_create(ndim, local_offset, offset_length);
+            reg_global = PDCregion_create(ndim, offset, offset_length);
+
+            memset(data, 0, sizeof(int) * data_size);
+            MPI_Barrier(MPI_COMM_WORLD);
+    #ifdef ENABLE_MPI
+            start = MPI_Wtime();
+    #endif
+            ret = PDCbuf_obj_map(data_read, PDC_INT, reg, obj1, reg_global);
+    #ifdef ENABLE_MPI
+            read_buf_map_time += MPI_Wtime() - start;
+    #endif
+            if (ret != SUCCEED) {
+                printf("PDCbuf_obj_map failed @ line %d\n", __LINE__);
+                ret_value = 1;
+            }
+    #ifdef ENABLE_MPI
+            start = MPI_Wtime();
+    #endif
+            ret = PDCreg_obtain_lock(obj1, reg_global, PDC_READ, PDC_BLOCK);
+    #ifdef ENABLE_MPI
+            read_lock_time += MPI_Wtime() - start;
+    #endif
+            if (ret != SUCCEED) {
+                printf("PDCreg_obtain_lock failed @ line %d\n", __LINE__);
+                ret_value = 1;
+            }
+    #ifdef ENABLE_MPI
+            start = MPI_Wtime();
+    #endif
+            ret = PDCreg_release_lock(obj1, reg_global, PDC_READ);
+    #ifdef ENABLE_MPI
+            read_release_time += MPI_Wtime() - start;
+    #endif
+            if (ret != SUCCEED) {
+                printf("PDCreg_release_lock failed @ line %d\n", __LINE__);
+                ret_value = 1;
+            }
+    #ifdef ENABLE_MPI
+            start = MPI_Wtime();
+    #endif
+            ret = PDCbuf_obj_unmap(obj1, reg_global);
+    #ifdef ENABLE_MPI
+            read_unbuf_map_time += MPI_Wtime() - start;
+    #endif
+            if (ret != SUCCEED) {
+                printf("PDCbuf_obj_unmap failed @ line %d\n", __LINE__);
+                ret_value = 1;
+            }
+
+            if (PDCregion_close(reg) < 0) {
+                printf("fail to close local region @ line %d\n", __LINE__);
+                ret_value = 1;
+            }
+
+            if (PDCregion_close(reg_global) < 0) {
+                printf("fail to close global region @ line %d\n", __LINE__);
+                ret_value = 1;
+            }
+
+            if (PDCobj_close(obj1) < 0) {
+                printf("fail to close object o1 @ line %d\n", __LINE__);
+                ret_value = 1;
+            }
         }
-
-        reg        = PDCregion_create(ndim, local_offset, offset_length);
-        reg_global = PDCregion_create(ndim, offset, offset_length);
-
-        memset(data, 0, sizeof(int) * data_size);
+        printf("rank %d completed read\n", rank);
+    #if PDC_TIMING == 1
         MPI_Barrier(MPI_COMM_WORLD);
-#ifdef ENABLE_MPI
-        start = MPI_Wtime();
-#endif
-        ret = PDCbuf_obj_map(data_read, PDC_INT, reg, obj1, reg_global);
-#ifdef ENABLE_MPI
-        read_buf_map_time += MPI_Wtime() - start;
-#endif
-        if (ret != SUCCEED) {
-            printf("PDCbuf_obj_map failed @ line %d\n", __LINE__);
-            ret_value = 1;
-        }
-#ifdef ENABLE_MPI
-        start = MPI_Wtime();
-#endif
-        ret = PDCreg_obtain_lock(obj1, reg_global, PDC_READ, PDC_BLOCK);
-#ifdef ENABLE_MPI
-        read_lock_time += MPI_Wtime() - start;
-#endif
-        if (ret != SUCCEED) {
-            printf("PDCreg_obtain_lock failed @ line %d\n", __LINE__);
-            ret_value = 1;
-        }
-#ifdef ENABLE_MPI
-        start = MPI_Wtime();
-#endif
-        ret = PDCreg_release_lock(obj1, reg_global, PDC_READ);
-#ifdef ENABLE_MPI
-        read_release_time += MPI_Wtime() - start;
-#endif
-        if (ret != SUCCEED) {
-            printf("PDCreg_release_lock failed @ line %d\n", __LINE__);
-            ret_value = 1;
-        }
-#ifdef ENABLE_MPI
-        start = MPI_Wtime();
-#endif
-        ret = PDCbuf_obj_unmap(obj1, reg_global);
-#ifdef ENABLE_MPI
-        read_unbuf_map_time += MPI_Wtime() - start;
-#endif
-        if (ret != SUCCEED) {
-            printf("PDCbuf_obj_unmap failed @ line %d\n", __LINE__);
-            ret_value = 1;
-        }
-
-        if (PDCregion_close(reg) < 0) {
-            printf("fail to close local region @ line %d\n", __LINE__);
-            ret_value = 1;
-        }
-
-        if (PDCregion_close(reg_global) < 0) {
-            printf("fail to close global region @ line %d\n", __LINE__);
-            ret_value = 1;
-        }
-
-        if (PDCobj_close(obj1) < 0) {
-            printf("fail to close object o1 @ line %d\n", __LINE__);
-            ret_value = 1;
-        }
-    }
-    printf("rank %d completed read\n", rank);
-#if PDC_TIMING == 1
-    MPI_Barrier(MPI_COMM_WORLD);
-    PDC_timing_report("read");
-#endif
-*/
+        PDC_timing_report("read");
+    #endif
+    */
     // close a container
     if (PDCcont_close(cont) < 0) {
         printf("fail to close container c1 @ line %d\n", __LINE__);
