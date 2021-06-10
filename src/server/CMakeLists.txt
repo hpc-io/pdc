@@ -2,7 +2,7 @@ find_package(MERCURY REQUIRED)
 message(${CMAKE_MODULE_PATH})
 #find_package(SCR REQUIRED)
 include_directories(${SCR_DIR}/include)
-link_directories(${SCR_DIR}/lib)
+link_directories(${SCR_DIR}/lib64)
 message(${SCR_DIR}/include)
 
 if(PDC_ENABLE_FASTBIT)
