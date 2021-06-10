@@ -9,19 +9,20 @@
 #include "pdc.h"
 #include "pdc_client_connect.h"
 
-int main(void)
+int
+main(void)
 {
-    uint64_t i;
+    uint64_t        i;
     pdc_metadata_t *energy_meta;
-    pdcid_t pdc, energy_id;
+    pdcid_t         pdc, energy_id;
 
     // Construct query constraints
-    float energy_lo0 = 3.75, energy_hi0 = 4.0;
-    pdc_query_t *q0l, *q0h, *q;
+    float           energy_lo0 = 3.75, energy_hi0 = 4.0;
+    pdc_query_t *   q0l, *q0h, *q;
     pdc_selection_t sel;
-    
-    struct timeval  pdc_timer_start;
-    struct timeval  pdc_timer_end;
+
+    struct timeval pdc_timer_start;
+    struct timeval pdc_timer_end;
 
     pdc = PDCinit("pdc");
 
@@ -34,7 +35,7 @@ int main(void)
 
     q0l = PDCquery_create(energy_id, PDC_GTE, PDC_FLOAT, &energy_lo0);
     q0h = PDCquery_create(energy_id, PDC_LTE, PDC_FLOAT, &energy_hi0);
-    q  = PDCquery_and(q0l, q0h);
+    q   = PDCquery_and(q0l, q0h);
 
     // Get selection
     gettimeofday(&pdc_timer_start, 0);
@@ -46,14 +47,14 @@ int main(void)
     printf("Get selection time: %.4f\n", get_sel_time);
 
     printf("  Query results:\n");
-    if (sel.nhits < 500) 
+    if (sel.nhits < 500)
         PDCselection_print_all(&sel);
     else
         PDCselection_print(&sel);
 
     float *energy_data;
-    if (sel.nhits > 0) 
-        energy_data = (float*)calloc(sel.nhits, sizeof(float));
+    if (sel.nhits > 0)
+        energy_data = (float *)calloc(sel.nhits, sizeof(float));
 
     // Get data
     gettimeofday(&pdc_timer_start, 0);
@@ -76,8 +77,8 @@ int main(void)
     PDCselection_free(&sel);
 
 done:
-    if(PDCclose(pdc) < 0)
-       printf("fail to close PDC\n");
+    if (PDCclose(pdc) < 0)
+        printf("fail to close PDC\n");
 
-     return 0;
+    return 0;
 }

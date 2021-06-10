@@ -1,19 +1,19 @@
 /*
- * Copyright Notice for 
+ * Copyright Notice for
  * Proactive Data Containers (PDC) Software Library and Utilities
  * -----------------------------------------------------------------------------
 
  *** Copyright Notice ***
- 
+
  * Proactive Data Containers (PDC) Copyright (c) 2017, The Regents of the
  * University of California, through Lawrence Berkeley National Laboratory,
  * UChicago Argonne, LLC, operator of Argonne National Laboratory, and The HDF
  * Group (subject to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
- 
+
  * If you have questions about your rights to use or distribute this software,
  * please contact Berkeley Lab's Innovation & Partnerships Office at  IPO@lbl.gov.
- 
+
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such, the
  * U.S. Government has been granted for itself and others acting on its behalf a
@@ -42,14 +42,14 @@
 #include "pdc_server_data.h"
 
 #ifdef ENABLE_MPI
-    #include "mpi.h"
+#include "mpi.h"
 #endif
 
 #ifdef ENABLE_FASTBIT
-    #include "iapi.h"
+#include "iapi.h"
 #endif
 
-#ifdef ENABLE_MULTITHREAD 
+#ifdef ENABLE_MULTITHREAD
 // Mercury multithread
 #include "mercury_thread.h"
 #include "mercury_thread_pool.h"
@@ -84,16 +84,16 @@ hg_thread_mutex_t pdc_server_task_mutex_g;
 hg_thread_mutex_t pdc_server_task_mutex_g;
 #endif
 
-extern int      n_bloom_total_g           ;
-extern int      n_bloom_maybe_g           ;
-extern double   server_bloom_check_time_g ;
+extern int      n_bloom_total_g;
+extern int      n_bloom_maybe_g;
+extern double   server_bloom_check_time_g;
 extern double   server_bloom_insert_time_g;
-extern double   server_insert_time_g      ;
-extern double   server_delete_time_g      ;
-extern double   server_update_time_g      ;
-extern double   server_hash_insert_time_g ;
-extern double   server_bloom_init_time_g  ;
-extern uint32_t n_metadata_g              ;
+extern double   server_insert_time_g;
+extern double   server_delete_time_g;
+extern double   server_update_time_g;
+extern double   server_hash_insert_time_g;
+extern double   server_bloom_init_time_g;
+extern uint32_t n_metadata_g;
 
 /***************************************/
 /* Library-private Function Prototypes */
@@ -192,4 +192,3 @@ hg_return_t PDC_Server_checkpoint_cb();
 hg_return_t PDC_Server_recv_shm_cb(const struct hg_cb_info *callback_info);
 
 #endif /* PDC_SERVER_H */
-

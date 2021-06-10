@@ -1,19 +1,19 @@
 /*
- * Copyright Notice for 
+ * Copyright Notice for
  * Proactive Data Containers (PDC) Software Library and Utilities
  * -----------------------------------------------------------------------------
 
  *** Copyright Notice ***
- 
+
  * Proactive Data Containers (PDC) Copyright (c) 2017, The Regents of the
  * University of California, through Lawrence Berkeley National Laboratory,
  * UChicago Argonne, LLC, operator of Argonne National Laboratory, and The HDF
  * Group (subject to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
- 
+
  * If you have questions about your rights to use or distribute this software,
  * please contact Berkeley Lab's Innovation & Partnerships Office at  IPO@lbl.gov.
- 
+
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such, the
  * U.S. Government has been granted for itself and others acting on its behalf a
@@ -31,27 +31,24 @@
 /* Public Structs */
 /*******************/
 struct pdc_obj_prop {
-    pdcid_t           obj_prop_id;
-    size_t            ndim;
-    uint64_t         *dims;
-    pdc_var_type_t    type;
+    pdcid_t        obj_prop_id;
+    size_t         ndim;
+    uint64_t *     dims;
+    pdc_var_type_t type;
 };
 
 /*******************/
 /* Public Typedefs */
 /*******************/
-typedef enum {
-    PDC_CONT_CREATE = 0,
-    PDC_OBJ_CREATE
-} pdc_prop_type_t;
+typedef enum { PDC_CONT_CREATE = 0, PDC_OBJ_CREATE } pdc_prop_type_t;
 
 /*********************/
 /* Public Prototypes */
 /*********************/
 /**
- * Create PDC property 
+ * Create PDC property
  *
- * \param type [IN]             PDC property creation type (enum type), 
+ * \param type [IN]             PDC property creation type (enum type),
  *                              PDC_CONT_CREATE or PDC_OBJ_CREATE
  * \param id [IN]               ID of the PDC
  *
@@ -69,10 +66,10 @@ pdcid_t PDCprop_create(pdc_prop_type_t type, pdcid_t pdc_id);
 perr_t PDCprop_close(pdcid_t id);
 
 /**
- * Quickly create object property from an existing object property 
+ * Quickly create object property from an existing object property
  * Share the same property with the existing one other than data_loc, data type, buf, which are data related
  *
- * \param type [IN]             PDC property creation type (enum type), 
+ * \param type [IN]             PDC property creation type (enum type),
  *                              PDC_CONT_CREATE or PDC_OBJ_CREATE
  * \param id [IN]               ID of the PDC
  *
