@@ -89,12 +89,13 @@ main(int argc, char **argv)
         offset_length[0] = data_size_array[0];
         data_size        = data_size_array[0];
     }
+    dims[0]              = offset_length[0] * nprocs;
     if (ndim == 2) {
         local_offset[1]    = 0;
         offset[1]          = 0;
         data_size_array[1] = atoi(argv[3]);
         offset_length[1]   = data_size_array[1] * 1048576;
-        data_size *= data_size_array[1] * 1048576;
+        data_size         *= data_size_array[1] * 1048576;
     }
     else if (ndim == 3) {
         local_offset[1]    = 0;
@@ -112,8 +113,6 @@ main(int argc, char **argv)
     int *data      = (int *)malloc(sizeof(int) * data_size);
     int *data_read = (int *)malloc(sizeof(int) * data_size);
     int *obj_data  = (int *)calloc(data_size, sizeof(int));
-
-    memcpy(dims, offset_length, sizeof(uint64_t) * ndim);
 
     if (rank == 0) {
         printf("number of dimensions in this test is %d\n", ndim);
