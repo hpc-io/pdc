@@ -89,13 +89,13 @@ main(int argc, char **argv)
         offset_length[0] = data_size_array[0];
         data_size        = data_size_array[0];
     }
-    dims[0]              = offset_length[0] * nprocs;
+    dims[0] = offset_length[0] * nprocs;
     if (ndim == 2) {
         local_offset[1]    = 0;
         offset[1]          = 0;
         data_size_array[1] = atoi(argv[3]);
         offset_length[1]   = data_size_array[1] * 1048576;
-        data_size         *= data_size_array[1] * 1048576;
+        data_size *= data_size_array[1] * 1048576;
     }
     else if (ndim == 3) {
         local_offset[1]    = 0;
