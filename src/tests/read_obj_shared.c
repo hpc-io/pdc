@@ -272,6 +272,8 @@ main(int argc, char **argv)
             if ( mydata[i * type_size + j] != i ) {
                 printf("Wrong value detected at @ line  %d!\n", __LINE__);
                 ret_value = 1;
+                i = my_data_size;
+                break;
             }
         }
     }
