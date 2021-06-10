@@ -226,7 +226,7 @@ main(int argc, char **argv)
         fflush(stdout);
     }
 
-// Now we start the read part for the object just written
+    // Now we start the read part for the object just written
     offset[0]       = rank * my_data_size;
     local_offset[0] = 0;
     mysize[0]       = my_data_size;
@@ -269,7 +269,7 @@ main(int argc, char **argv)
 
     for (i = 0; i < (int)my_data_size; i++) {
         for (j = 0; j < (int)type_size; ++j) {
-            if ( mydata[i * type_size + j] != i ) {
+            if (mydata[i * type_size + j] != i) {
                 printf("Wrong value detected at @ line  %d!\n", __LINE__);
                 ret_value = 1;
                 i = my_data_size;
