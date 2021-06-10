@@ -47,6 +47,7 @@ set(PROGRAMS
   region_obj_map_overlap
   region_obj_map_overlap_2D
   region_obj_map_overlap_3D
+  read_obj_shared
   obj_round_robin_io
   create_obj_scale
   close_server
