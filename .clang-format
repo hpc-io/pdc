@@ -20,7 +20,6 @@ BreakBeforeBraces: Stroustrup
 BreakAfterJavaFieldAnnotations: true
 BreakStringLiterals: true
 ColumnLimit:     110    # Update $max_trace_macro_line_len in bin/trace also
-ForEachMacros: ['ALL_MEMBERS', 'UNIQUE_MEMBERS']
 IncludeCategories:
   - Regex:           '^"(llvm|llvm-c|clang|clang-c)/'
     Priority:        3
@@ -44,8 +43,8 @@ IndentGotoLabels: false
 #llvm11: IndentExternBlock: AfterExternBlock
 IndentWidth:     4
 #llvm11: InsertTrailingCommas: None
-MacroBlockBegin: "^BEGIN_FUNC"
-MacroBlockEnd: "^END_FUNC"
+# MacroBlockBegin: "^BEGIN_FUNC"
+# MacroBlockEnd: "^END_FUNC"
 ObjCBlockIndentWidth: 4
 #llvm11: ObjCBreakBeforeNestedBlockParam: true
 ReflowComments:  true
