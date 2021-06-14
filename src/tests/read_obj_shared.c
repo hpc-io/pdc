@@ -120,8 +120,9 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     // create a container
-    sprintf(cont_name, "c%d", rank);
-    cont = PDCcont_create(cont_name, cont_prop);
+    /* sprintf(cont_name, "c%d", rank); */
+    sprintf(cont_name, "c");
+    cont = PDCcont_create_col(cont_name, cont_prop);
     if (cont <= 0) {
         printf("Fail to create container @ line  %d!\n", __LINE__);
         ret_value = 1;

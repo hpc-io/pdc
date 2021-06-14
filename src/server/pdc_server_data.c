@@ -622,7 +622,10 @@ PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
             hg_thread_mutex_unlock(&(elt->bulk_args->work_mutex)); // per bulk_args
 #endif
             if (ret == HG_UTIL_SUCCESS) {
-                free(elt->remote_data_ptr);
+                if (elt->remote_data_ptr) {
+                    free(elt->remote_data_ptr);
+                    elt->remote_data_ptr = NULL;
+                }
                 HG_Addr_free(info->hg_class, elt->local_addr);
                 HG_Bulk_free(elt->local_bulk_handle);
 #ifdef ENABLE_MULTITHREAD
@@ -707,7 +710,10 @@ PDC_Data_Server_check_unmap()
                 if (ret == HG_UTIL_SUCCESS) {
                     completed                      = 1;
                     elt->bulk_args->work_completed = 0;
-                    free(elt->remote_data_ptr);
+                    if (elt->remote_data_ptr) {
+                        free(elt->remote_data_ptr);
+                        elt->remote_data_ptr = NULL;
+                    }
                     HG_Addr_free(elt1->info->hg_class, elt->local_addr);
                     HG_Bulk_free(elt->local_bulk_handle);
                     hg_thread_mutex_destroy(&(elt->bulk_args->work_mutex));
@@ -5163,9 +5169,9 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                 overlap_start_local[i] = overlap_start[i] % elt->count[i];
 
             if (region_info->ndim == 1) {
-                read_bytes =
-                    pread(region->fd, buf + (region_info->offset[0] - overlap_start_local[0]) * unit,
-                          overlap_count[0] * unit, storage_region->offset + overlap_start_local[0] * unit);
+                pos = (overlap_start[0] - region_info->offset[0]) * unit;
+                read_bytes = pread(region->fd, buf + pos, overlap_count[0] * unit,
+                                   storage_region->offset + overlap_start_local[0] * unit);
                 my_read_bytes = overlap_count[0] * unit;
                 /* printf("storage offset %llu, region offset %llu, read %d bytes\n", storage_region->offset,
                  * overlap_count[0]*unit, read_bytes); */
