@@ -259,46 +259,46 @@ main(int argc, char **argv)
 
         memset(data, 0, sizeof(int) * data_size);
         MPI_Barrier(MPI_COMM_WORLD);
-    #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
         start = MPI_Wtime();
-    #endif
+#endif
         ret = PDCbuf_obj_map(data_read, PDC_INT, reg, obj1, reg_global);
-    #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
         read_buf_map_time += MPI_Wtime() - start;
-    #endif
+#endif
         if (ret != SUCCEED) {
             printf("PDCbuf_obj_map failed @ line %d\n", __LINE__);
             ret_value = 1;
         }
-    #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
         start = MPI_Wtime();
-    #endif
+#endif
         ret = PDCreg_obtain_lock(obj1, reg_global, PDC_READ, PDC_BLOCK);
-    #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
         read_lock_time += MPI_Wtime() - start;
-    #endif
+#endif
         if (ret != SUCCEED) {
             printf("PDCreg_obtain_lock failed @ line %d\n", __LINE__);
             ret_value = 1;
         }
-    #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
         start = MPI_Wtime();
-    #endif
+#endif
         ret = PDCreg_release_lock(obj1, reg_global, PDC_READ);
-    #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
         read_release_time += MPI_Wtime() - start;
-    #endif
+#endif
         if (ret != SUCCEED) {
             printf("PDCreg_release_lock failed @ line %d\n", __LINE__);
             ret_value = 1;
         }
-    #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
         start = MPI_Wtime();
-    #endif
+#endif
         ret = PDCbuf_obj_unmap(obj1, reg_global);
-    #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
         read_unbuf_map_time += MPI_Wtime() - start;
-    #endif
+#endif
         if (ret != SUCCEED) {
             printf("PDCbuf_obj_unmap failed @ line %d\n", __LINE__);
             ret_value = 1;
@@ -320,10 +320,10 @@ main(int argc, char **argv)
         }
     }
     printf("rank %d completed read\n", rank);
-    #if PDC_TIMING == 1
+#if PDC_TIMING == 1
     MPI_Barrier(MPI_COMM_WORLD);
     PDC_timing_report("read");
-    #endif
+#endif
     // close a container
     if (PDCcont_close(cont) < 0) {
         printf("fail to close container c1 @ line %d\n", __LINE__);
