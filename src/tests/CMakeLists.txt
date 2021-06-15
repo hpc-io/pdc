@@ -290,7 +290,6 @@ if(BUILD_MPI_TESTING)
     add_test(NAME create_region_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./create_region ${MPI_RUN_CMD} 2 4 )
     add_test(NAME write_obj_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./write_obj ${MPI_RUN_CMD} 2 4 o 1 int)
 
-    set_tests_properties(vpicio_bdcats      PROPERTIES LABELS parallel )
     set_tests_properties(write_obj_shared_int PROPERTIES LABELS parallel )
     set_tests_properties(write_obj_shared_float  PROPERTIES LABELS parallel )
     set_tests_properties(write_obj_shared_double  PROPERTIES LABELS parallel )
