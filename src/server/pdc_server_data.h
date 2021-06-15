@@ -310,7 +310,7 @@ extern char *  gBinningOption;
 extern int     gen_fastbit_idx_g;
 extern int     use_fastbit_idx_g;
 
-#undef PDC_SERVER_CACHE
+#define PDC_SERVER_CACHE
 
 #ifdef PDC_SERVER_CACHE
 typedef struct {
@@ -676,6 +676,7 @@ perr_t PDC_Server_update_region_storage_meta_bulk_with_cb(bulk_xfer_data_t *bulk
 /**
  * **********
  *
+
  * \param callback_info [IN]    Mercury callback info
  *
  * \return HG_SUCCESS or corresponding HG error code
