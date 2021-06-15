@@ -3427,7 +3427,6 @@ PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bulk_xfer_
             ret_value = FAIL;
             goto done;
         }
-
     }
     else {
         // obj_id and target_id only need to be init when the first data is added (when obj_id==0)
@@ -4497,7 +4496,7 @@ PDC_check_region_relation(const uint64_t *offset, const uint64_t *size, const ui
     }
     flag = 1;
     for (i = 0; i < ndim; ++i) {
-        if (offset2[i] + size2[i] <= offset[i] || offset2[i] => offset[i] + size[i]) {
+        if (offset2[i] + size2[i] <= offset[i] || offset2[i] = > offset[i] + size[i]) {
             flag = 0;
         }
     }
