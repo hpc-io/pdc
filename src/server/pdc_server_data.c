@@ -4481,8 +4481,8 @@ PDC_Server_data_io_direct(pdc_access_t io_type, uint64_t obj_id, struct pdc_regi
 
 #ifdef PDC_SERVER_CACHE
 int
-PDC_check_region_relation(const uint64_t *offset, const uint64_t *size, const uint64_t *offset2,
-                          const uint64_t *size2, int ndim)
+PDC_check_region_relation(uint64_t *offset, uint64_t *size, uint64_t *offset2,
+                          uint64_t *size2, int ndim)
 {
     int i;
     int flag;
