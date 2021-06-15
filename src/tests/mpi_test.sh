@@ -32,5 +32,6 @@ $mpi_cmd -n $n_client $extra_cmd $test_exe $test_args
 # Need to test the return value
 ret="$?"
 # and shutdown the SERVER before exiting
-$mpi_cmd -n 1 ./close_server
+echo "Close server"
+$mpi_cmd -n 1 $extra_cmd ./close_server
 exit $ret
