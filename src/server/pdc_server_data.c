@@ -3427,6 +3427,7 @@ PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bulk_xfer_
             ret_value = FAIL;
             goto done;
         }
+
     }
     else {
         // obj_id and target_id only need to be init when the first data is added (when obj_id==0)
@@ -4069,6 +4070,7 @@ done:
  * Read with POSIX within one file, based on the region list
  * after the server has accumulated requests from all node local clients
  *
+
  * \param  region_list_head[IN]       Region info of IO request
  *
  * \return Non-negative on success/Negative on failure
@@ -4495,7 +4497,7 @@ PDC_check_region_relation(const uint64_t *offset, const uint64_t *size, const ui
     }
     flag = 1;
     for (i = 0; i < ndim; ++i) {
-        if (offset2[i] + size2[i] <= offset[i] || offset2[i] = > offset[i] + size[i]) {
+        if (offset2[i] + size2[i] <= offset[i] || offset2[i] => offset[i] + size[i]) {
             flag = 0;
         }
     }
@@ -6747,6 +6749,7 @@ void
 PDC_gen_fastbit_idx_name(char *out, char *prefix, uint64_t obj_id, int timestep, int ndim, uint64_t *start,
                          uint64_t *count)
 {
+
     if (ndim == 1) {
         sprintf(out, "%s-%" PRIu64 "-%d-%" PRIu64 "-%" PRIu64 "", prefix, obj_id, timestep, start[0],
                 count[0]);
