@@ -11,11 +11,11 @@
 
 #define FORCE_INLINE inline static
 
-#if defined(__GNUC__) && __GNUC__ >= 7
-#define FALL_THROUGH __attribute__((fallthrough))
-#else
+/* #if defined(__GNUC__) && __GNUC__ >= 7 */
+/* #define FALL_THROUGH __attribute__((fallthrough)) */
+/* #else */
 #define FALL_THROUGH ((void)0)
-#endif /* __GNUC__ >= 7 */
+/* #endif /1* __GNUC__ >= 7 *1/ */
 
 FORCE_INLINE uint64_t
 rotl64(uint64_t x, int8_t r)

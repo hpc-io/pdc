@@ -622,7 +622,10 @@ PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
             hg_thread_mutex_unlock(&(elt->bulk_args->work_mutex)); // per bulk_args
 #endif
             if (ret == HG_UTIL_SUCCESS) {
-                free(elt->remote_data_ptr);
+                if (elt->remote_data_ptr) {
+                    free(elt->remote_data_ptr);
+                    elt->remote_data_ptr = NULL;
+                }
                 HG_Addr_free(info->hg_class, elt->local_addr);
                 HG_Bulk_free(elt->local_bulk_handle);
 #ifdef ENABLE_MULTITHREAD
@@ -707,7 +710,10 @@ PDC_Data_Server_check_unmap()
                 if (ret == HG_UTIL_SUCCESS) {
                     completed                      = 1;
                     elt->bulk_args->work_completed = 0;
-                    free(elt->remote_data_ptr);
+                    if (elt->remote_data_ptr) {
+                        free(elt->remote_data_ptr);
+                        elt->remote_data_ptr = NULL;
+                    }
                     HG_Addr_free(elt1->info->hg_class, elt->local_addr);
                     HG_Bulk_free(elt->local_bulk_handle);
                     hg_thread_mutex_destroy(&(elt->bulk_args->work_mutex));
@@ -4063,6 +4069,7 @@ done:
  * Read with POSIX within one file, based on the region list
  * after the server has accumulated requests from all node local clients
  *
+
  * \param  region_list_head[IN]       Region info of IO request
  *
  * \return Non-negative on success/Negative on failure
@@ -4473,8 +4480,7 @@ PDC_Server_data_io_direct(pdc_access_t io_type, uint64_t obj_id, struct pdc_regi
 
 #ifdef PDC_SERVER_CACHE
 int
-PDC_check_region_relation(const uint64_t *offset, const uint64_t *size, const uint64_t *offset2,
-                          const uint64_t *size2, int ndim)
+PDC_check_region_relation(uint64_t *offset, uint64_t *size, uint64_t *offset2, uint64_t *size2, int ndim)
 {
     int i;
     int flag;
@@ -4489,7 +4495,7 @@ PDC_check_region_relation(const uint64_t *offset, const uint64_t *size, const ui
     }
     flag = 1;
     for (i = 0; i < ndim; ++i) {
-        if (offset2[i] + size2[i] <= offset[i] || offset2[i] = > offset[i] + size[i]) {
+        if (offset2[i] + size2[i] <= offset[i] || offset2[i] >= offset[i] + size[i]) {
             flag = 0;
         }
     }
@@ -5163,9 +5169,15 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                 overlap_start_local[i] = overlap_start[i] % elt->count[i];
 
             if (region_info->ndim == 1) {
-                read_bytes =
-                    pread(region->fd, buf + (region_info->offset[0] - overlap_start_local[0]) * unit,
-                          overlap_count[0] * unit, storage_region->offset + overlap_start_local[0] * unit);
+                pos = (overlap_start[0] - region_info->offset[0]) * unit;
+                if (pos > request_bytes) {
+                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %llu / %llu!\n",
+                           pdc_server_rank_g, pos, request_bytes);
+                    ret_value = -1;
+                    goto done;
+                }
+                read_bytes = pread(region->fd, buf + pos, overlap_count[0] * unit,
+                                   storage_region->offset + overlap_start_local[0] * unit);
                 my_read_bytes = overlap_count[0] * unit;
                 /* printf("storage offset %llu, region offset %llu, read %d bytes\n", storage_region->offset,
                  * overlap_count[0]*unit, read_bytes); */
@@ -5178,11 +5190,24 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                 pos = ((overlap_start[0] - region_info->offset[0]) * storage_region->count[1] +
                        overlap_start[1] - region_info->offset[1]) *
                       unit;
+                if (pos > request_bytes) {
+                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %llu / %llu!\n",
+                           pdc_server_rank_g, pos, request_bytes);
+                    ret_value = -1;
+                    goto done;
+                }
+
                 for (i = overlap_start_local[0]; i < overlap_start_local[0] + overlap_count[0]; i++) {
                     memcpy(buf + pos,
                            tmp_buf + i * storage_region->count[1] * unit + overlap_start_local[1] * unit,
                            overlap_count[1] * unit);
                     pos += region_info->size[1] * unit;
+                    if (pos > request_bytes) {
+                        printf("==PDC_SERVER[%d]: Error with buf pos calculation %llu / %llu!\n",
+                               pdc_server_rank_g, pos, request_bytes);
+                        ret_value = -1;
+                        goto done;
+                    }
                     my_read_bytes += overlap_count[1] * unit;
                 }
                 free(tmp_buf);
@@ -5197,6 +5222,12 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                        (overlap_start[1] - region_info->offset[1]) * storage_region->count[2] +
                        (overlap_start[2] - region_info->offset[2])) *
                       unit;
+                if (pos > request_bytes) {
+                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %llu / %llu!\n",
+                           pdc_server_rank_g, pos, request_bytes);
+                    ret_value = -1;
+                    goto done;
+                }
 
                 for (i = overlap_start_local[0]; i < overlap_start_local[0] + overlap_count[0]; i++) {
                     for (j = overlap_start_local[1]; j < overlap_start_local[1] + overlap_count[1]; j++) {
@@ -5210,6 +5241,12 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                                    j * storage_region->count[2] * unit + overlap_start_local[2] * unit,
                                overlap_count[2] * unit);
                         pos += region_info->size[2] * unit;
+                        if (pos > request_bytes) {
+                            printf("==PDC_SERVER[%d]: Error with buf pos calculation %llu / %llu!\n",
+                                   pdc_server_rank_g, pos, request_bytes);
+                            ret_value = -1;
+                            goto done;
+                        }
                         my_read_bytes += overlap_count[2] * unit;
                     }
                 }
@@ -6710,6 +6747,7 @@ void
 PDC_gen_fastbit_idx_name(char *out, char *prefix, uint64_t obj_id, int timestep, int ndim, uint64_t *start,
                          uint64_t *count)
 {
+
     if (ndim == 1) {
         sprintf(out, "%s-%" PRIu64 "-%d-%" PRIu64 "-%" PRIu64 "", prefix, obj_id, timestep, start[0],
                 count[0]);
