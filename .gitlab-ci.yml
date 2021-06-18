@@ -19,7 +19,7 @@ build:
       - cd src && mkdir build && cd build
       - cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=cc -DCMAKE_C_FLAGS=-dynamic -DMPI_RUN_CMD=srun
       - make -j
-      - echo "Run tests"
+      - echo "Run Parallel Tests"
       - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
-      - echo $LD_LIBRARY_PATH
-      - ctest
+      # - echo $LD_LIBRARY_PATH
+      - ctest -L parallel
