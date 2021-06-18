@@ -22,13 +22,4 @@ build:
       - echo "Run tests"
       - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
       - echo $LD_LIBRARY_PATH
-      # - echo $HOSTNAME
-      - echo "Serial Run"
-      - srun -n 1 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 ./bin/pdc_server.exe &
-      - srun -n 1 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 ./bin/create_obj_scale -r 10
-      - srun -n 1 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 ./bin/close_server      
-      - echo "Parallel Run"
-      - srun -n 1 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 ./bin/pdc_server.exe &
-      - srun -n 2 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 ./bin/create_obj_scale -r 10
-      - srun -n 1 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 ./bin/close_server
-      # - ctest
+      - ctest
