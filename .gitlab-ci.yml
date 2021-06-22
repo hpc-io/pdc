@@ -1,7 +1,7 @@
 # This is a global variable
 variables:
-    LIBFABRIC_DIR: "/global/cfs/cdirs/m1248/pdc/libfabric/install"
-    MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc/mercury/install"
+    LIBFABRIC_DIR: "/global/cfs/cdirs/m1248/pdc/libfabric-1.12.1/install"
+    MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc/mercury-2.0.0/install"
     
 stages:
     - build
