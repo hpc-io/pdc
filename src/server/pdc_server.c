@@ -824,8 +824,10 @@ drc_access_again:
         printf("==PDC_SERVER[%d]: without multi-thread!\n", pdc_server_rank_g);
 #endif
 
+#ifdef PDC_SERVER_CACHE
     if (pdc_server_rank_g == 0)
         printf("==PDC_SERVER[%d]: Read cache enabled!\n", pdc_server_rank_g);
+#endif
 
     // TODO: support restart with different number of servers than previous run
     char checkpoint_file[ADDR_MAX];
