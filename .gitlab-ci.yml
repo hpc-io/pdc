@@ -1,7 +1,7 @@
 # This is a global variable
 variables:
-    LIBFABRIC_DIR: "/global/cfs/cdirs/m1248/pdc/libfabric/install"
-    MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc/mercury/install"
+    LIBFABRIC_DIR: "/global/cfs/cdirs/m1248/pdc/libfabric-1.12.1/install"
+    MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc/mercury-2.0.0/install"
     
 stages:
     - build
@@ -20,7 +20,7 @@ build:
       # - pwd
       - module list
       - cd src && mkdir build && cd build
-      - cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=cc -DCMAKE_C_FLAGS=-dynamic -DMPI_RUN_CMD=srun
+      - cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=cc -DCMAKE_C_FLAGS=-dynamic -DMPI_RUN_CMD=srun -DPDC_ENABLE_LUSTRE=ON -DPDC_DISABLE_CHECKPOINT=ON
       - make -j
       # - echo "Run Serial Tests"
       # - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"

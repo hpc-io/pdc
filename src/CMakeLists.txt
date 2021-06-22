@@ -261,9 +261,9 @@ endif()
 #-----------------------------------------------------------------------------
 # CHECKPOINT option
 #-----------------------------------------------------------------------------
-option(PDC_ENABLE_CHECKPOINT "Enable checkpointing." OFF)
-if(PDC_ENABLE_CHECKPOINT)
-  set(ENABLE_CHECKPOINT 1)
+option(PDC_DISABLE_CHECKPOINT "Disable checkpointing." OFF)
+if(PDC_DISABLE_CHECKPOINT)
+  set(DISABLE_CHECKPOINT 1)
 endif()
 
 #-----------------------------------------------------------------------------
@@ -308,10 +308,16 @@ endif()
 #-----------------------------------------------------------------------------
 # CACHE option
 #-----------------------------------------------------------------------------
-option(PDC_ENABLE_CACHE "Enable data caching." OFF)
-if(PDC_ENABLE_CACHE)
-  set(ENABLE_CACHE 1)
+option(PDC_SERVER_CACHE "Enable server data caching with pthread." OFF)
+if(PDC_SERVER_CACHE)
+    set(PDC_SERVER_CACHE 1)
 endif()
+
+# Not used
+# option(PDC_ENABLE_CACHE "Enable data caching." OFF)
+# if(PDC_ENABLE_CACHE)
+#   set(ENABLE_CACHE 1)
+# endif()
 
 #-----------------------------------------------------------------------------
 # ATTRIBUTE option
