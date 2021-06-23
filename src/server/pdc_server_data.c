@@ -4799,7 +4799,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
         }
     }
     flag = 1;
-#if 1==2
+#if 1 == 2
     if (pdc_obj_cache != NULL) {
         // If we have region that is contained inside a cached region, we can directly modify the cache region
         // data.
