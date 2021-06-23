@@ -4494,7 +4494,7 @@ PDC_check_region_relation(uint64_t *offset, uint64_t *size, uint64_t *offset2, u
     int flag;
     flag = 1;
     for (i = 0; i < ndim; ++i) {
-        if (offset2[i] < offset[i] || offset2[i] + size2[i] < offset[i] + size[i]) {
+        if (offset2[i] > offset[i] || offset2[i] + size2[i] < offset[i] + size[i]) {
             flag = 0;
         }
     }
@@ -4502,7 +4502,7 @@ PDC_check_region_relation(uint64_t *offset, uint64_t *size, uint64_t *offset2, u
         return PDC_REGION_CONTAINED;
     }
     for (i = 0; i < ndim; ++i) {
-        if (offset[i] < offset2[i] || offset[i] + size[i] < offset2[i] + size2[i]) {
+        if (offset[i] > offset2[i] || offset[i] + size[i] < offset2[i] + size2[i]) {
             flag = 0;
         }
     }
