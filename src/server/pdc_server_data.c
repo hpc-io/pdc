@@ -4800,7 +4800,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
         }
     }
     flag = 1;
-
+#if 1==2
     if (pdc_obj_cache != NULL) {
         // If we have region that is contained inside a cached region, we can directly modify the cache region
         // data.
@@ -4818,7 +4818,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
             }
         }
     }
-
+#endif
     if (flag) {
         PDC_region_cache_register(obj_id, buf, write_size, region_info->offset, region_info->size,
                                   region_info->ndim, unit);
