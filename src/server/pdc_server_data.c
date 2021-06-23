@@ -3427,9 +3427,6 @@ PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bulk_xfer_
             ret_value = FAIL;
             goto done;
         }
-
-
-
     }
     else {
         // obj_id and target_id only need to be init when the first data is added (when obj_id==0)
@@ -4486,8 +4483,9 @@ PDC_Server_data_io_direct(pdc_access_t io_type, uint64_t obj_id, struct pdc_regi
 #ifdef PDC_SERVER_CACHE
 
 /*
- * Check if the first region is contained inside the second region or the second region is contained inside the first region or they have overlapping relation.
-*/
+ * Check if the first region is contained inside the second region or the second region is contained inside
+ * the first region or they have overlapping relation.
+ */
 int
 PDC_check_region_relation(uint64_t *offset, uint64_t *size, uint64_t *offset2, uint64_t *size2, int ndim)
 {
@@ -4527,15 +4525,16 @@ PDC_check_region_relation(uint64_t *offset, uint64_t *size, uint64_t *offset2, u
 
 /*
  * Copy data from one buffer to another defined by region views.
- * offset/length is the region associated with the buf. offset2/length2 is the region associated with the buf2.
- * The region defined by offset/length has to contain the region defined by offset2/length2.
- * direction defines whether copy to the cache region or copy from the cache region, 0 means from source buffer to target buffer. 1 means the other way round.
+ * offset/length is the region associated with the buf. offset2/length2 is the region associated with the
+ * buf2. The region defined by offset/length has to contain the region defined by offset2/length2. direction
+ * defines whether copy to the cache region or copy from the cache region, 0 means from source buffer to
+ * target buffer. 1 means the other way round.
  */
 int
 PDC_region_cache_copy(char *buf, char *buf2, const uint64_t *offset, const uint64_t *size,
                       const uint64_t *offset2, const uint64_t *size2, int ndim, size_t unit, int direction)
 {
-    char *src, *dst;
+    char *    src, *dst;
     uint64_t  i, j;
     uint64_t *local_offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
     memcpy(local_offset, offset2, sizeof(uint64_t) * ndim);
@@ -4547,7 +4546,8 @@ PDC_region_cache_copy(char *buf, char *buf2, const uint64_t *offset, const uint6
         if (direction) {
             src = buf2;
             dst = buf + local_offset[0] * unit;
-        } else {
+        }
+        else {
             dst = buf2;
             src = buf + local_offset[0] * unit;
         }
@@ -4559,7 +4559,8 @@ PDC_region_cache_copy(char *buf, char *buf2, const uint64_t *offset, const uint6
             if (direction) {
                 src = buf2;
                 dst = buf + (local_offset[1] + (local_offset[0] + i) * size[1]) * unit;
-            } else {
+            }
+            else {
                 dst = buf2;
                 src = buf + (local_offset[1] + (local_offset[0] + i) * size[1]) * unit;
             }
@@ -4572,14 +4573,15 @@ PDC_region_cache_copy(char *buf, char *buf2, const uint64_t *offset, const uint6
             for (j = 0; j < size2[1]; ++j) {
                 if (direction) {
                     src = buf2;
-                    dst = buf + ((local_offset[0] + i) * size[1] * size[2] +
-                                     (local_offset[1] + j) * size[2] + local_offset[2]) *
-                                        unit;
-                } else {
+                    dst = buf + ((local_offset[0] + i) * size[1] * size[2] + (local_offset[1] + j) * size[2] +
+                                 local_offset[2]) *
+                                    unit;
+                }
+                else {
                     dst = buf2;
-                    src = buf + ((local_offset[0] + i) * size[1] * size[2] +
-                                     (local_offset[1] + j) * size[2] + local_offset[2]) *
-                                        unit;
+                    src = buf + ((local_offset[0] + i) * size[1] * size[2] + (local_offset[1] + j) * size[2] +
+                                 local_offset[2]) *
+                                    unit;
                 }
                 memcpy(dst, src, unit * size2[2]);
                 buf2 += size2[2] * unit;
@@ -4772,7 +4774,7 @@ done:
 perr_t
 PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
-    int i, flag;
+    int            i, flag;
     pdc_obj_cache *pdc_obj_cache;
 
     perr_t ret_value = SUCCEED;
@@ -4791,18 +4793,23 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 
     pdc_obj_cache = NULL;
     // Look up for the object in the cache list
-    for ( i = 0; i < obj_cache_list.region_obj_cache_size; ++i ) {
-        if ( obj_cache_list.pdc_obj_cache[i].obj_id == obj_id ) {
+    for (i = 0; i < obj_cache_list.region_obj_cache_size; ++i) {
+        if (obj_cache_list.pdc_obj_cache[i].obj_id == obj_id) {
             pdc_obj_cache = obj_cache_list.pdc_obj_cache + i;
         }
     }
     flag = 1;
-    if (pdc_obj_cache != NULL ) {
-        // If we have region that is contained inside a cached region, we can directly modify the cache region data.
-        for ( i = 0; i < pdc_obj_cache->region_obj_cache_size; ++i ) {
-            if (PDC_check_region_relation(region_info->offset, region_info->size, pdc_obj_cache[i].region_cache->offset, pdc_obj_cache[i].region_cache->size, region_info->ndim) == PDC_REGION_CONTAINED) {
-                PDC_region_cache_copy(pdc_obj_cache[i].region_cache->buf, buf, pdc_obj_cache[i].region_cache->offset, pdc_obj_cache[i].region_cache->size,
-                      region_info->offset, region_info->size, region_info->ndim, unit, 1);
+    if (pdc_obj_cache != NULL) {
+        // If we have region that is contained inside a cached region, we can directly modify the cache region
+        // data.
+        for (i = 0; i < pdc_obj_cache->region_obj_cache_size; ++i) {
+            if (PDC_check_region_relation(
+                    region_info->offset, region_info->size, pdc_obj_cache[i].region_cache->offset,
+                    pdc_obj_cache[i].region_cache->size, region_info->ndim) == PDC_REGION_CONTAINED) {
+                PDC_region_cache_copy(pdc_obj_cache[i].region_cache->buf, buf,
+                                      pdc_obj_cache[i].region_cache->offset,
+                                      pdc_obj_cache[i].region_cache->size, region_info->offset,
+                                      region_info->size, region_info->ndim, unit, 1);
                 flag = 0;
                 break;
             }
@@ -5045,8 +5052,9 @@ done:
 }
 
 /*
- * This function search for an object cache by ID, then copy data from the region to buf if the request region is fully contained inside the cache region.
-*/
+ * This function search for an object cache by ID, then copy data from the region to buf if the request region
+ * is fully contained inside the cache region.
+ */
 int
 PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
@@ -5062,7 +5070,7 @@ PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf
         }
     }
     if (obj_cache != NULL) {
-        //printf("region fetch for obj id %llu\n", obj_cache->obj_id);
+        // printf("region fetch for obj id %llu\n", obj_cache->obj_id);
 
         // Check if the input region is contained inside any cache region.
         for (i = 0; i < obj_cache->region_obj_cache_size; ++i) {
