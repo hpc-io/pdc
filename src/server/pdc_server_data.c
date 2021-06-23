@@ -3427,6 +3427,7 @@ PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bulk_xfer_
             ret_value = FAIL;
             goto done;
         }
+
     }
     else {
         // obj_id and target_id only need to be init when the first data is added (when obj_id==0)
@@ -4793,7 +4794,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 
     pdc_obj_cache = NULL;
     // Look up for the object in the cache list
-    for (i = 0; i < obj_cache_list.region_obj_cache_size; ++i) {
+    for (i = 0; i < obj_cache_list.obj_cache_size; ++i) {
         if (obj_cache_list.pdc_obj_cache[i].obj_id == obj_id) {
             pdc_obj_cache = obj_cache_list.pdc_obj_cache + i;
         }
