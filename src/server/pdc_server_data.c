@@ -3427,7 +3427,6 @@ PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bulk_xfer_
             ret_value = FAIL;
             goto done;
         }
-
     }
     else {
         // obj_id and target_id only need to be init when the first data is added (when obj_id==0)
@@ -4801,22 +4800,22 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     }
     flag = 1;
 
-        if (pdc_obj_cache != NULL) {
-            // If we have region that is contained inside a cached region, we can directly modify the cache region
-            // data.
-            for (i = 0; i < pdc_obj_cache->region_obj_cache_size; ++i) {
-                if (PDC_check_region_relation(
-                        region_info->offset, region_info->size, pdc_obj_cache[i].region_cache->offset,
-                        pdc_obj_cache[i].region_cache->size, region_info->ndim) == PDC_REGION_CONTAINED) {
-                    PDC_region_cache_copy(pdc_obj_cache[i].region_cache->buf, buf,
-                                          pdc_obj_cache[i].region_cache->offset,
-                                          pdc_obj_cache[i].region_cache->size, region_info->offset,
-                                          region_info->size, region_info->ndim, unit, 1);
-                    flag = 0;
-                    break;
-                }
+    if (pdc_obj_cache != NULL) {
+        // If we have region that is contained inside a cached region, we can directly modify the cache region
+        // data.
+        for (i = 0; i < pdc_obj_cache->region_obj_cache_size; ++i) {
+            if (PDC_check_region_relation(
+                    region_info->offset, region_info->size, pdc_obj_cache[i].region_cache->offset,
+                    pdc_obj_cache[i].region_cache->size, region_info->ndim) == PDC_REGION_CONTAINED) {
+                PDC_region_cache_copy(pdc_obj_cache[i].region_cache->buf, buf,
+                                      pdc_obj_cache[i].region_cache->offset,
+                                      pdc_obj_cache[i].region_cache->size, region_info->offset,
+                                      region_info->size, region_info->ndim, unit, 1);
+                flag = 0;
+                break;
             }
         }
+    }
 
     if (flag) {
         PDC_region_cache_register(obj_id, buf, write_size, region_info->offset, region_info->size,
