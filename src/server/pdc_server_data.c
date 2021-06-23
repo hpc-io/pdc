@@ -3427,7 +3427,6 @@ PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bulk_xfer_
             ret_value = FAIL;
             goto done;
         }
-
     }
     else {
         // obj_id and target_id only need to be init when the first data is added (when obj_id==0)
@@ -5513,7 +5512,7 @@ PDC_Server_get_all_storage_meta_with_one_name(storage_meta_query_one_name_args_t
         in.obj_name  = args->name;
         in.origin_id = pdc_server_rank_g;
 
-        in.task_id   = PDC_add_task_to_list(&pdc_server_s2s_task_head_g, args->cb, args->cb_args,
+        in.task_id = PDC_add_task_to_list(&pdc_server_s2s_task_head_g, args->cb, args->cb_args,
                                           &pdc_server_task_id_g, &pdc_server_task_mutex_g);
 
         hg_ret = HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr,
@@ -9297,7 +9296,6 @@ PDC_Server_send_query_obj_read_to_all_server(query_task_t *task, uint64_t obj_id
     int                   i;
     get_sel_data_rpc_in_t in;
     hg_handle_t           handle;
-
 
     in.obj_id   = obj_id;
     in.query_id = task->query_id;
