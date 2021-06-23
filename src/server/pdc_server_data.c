@@ -4667,7 +4667,7 @@ PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size, con
     memcpy(region_cache->offset, offset, sizeof(uint64_t) * ndim);
     memcpy(region_cache->size, size, sizeof(uint64_t) * ndim);
     memcpy(region_cache->buf, buf, sizeof(char) * buf_size);
-    //printf("created cache region at offset %llu, buf size %llu, unit = %ld, ndim = %ld, obj_id = %llu\n",
+    // printf("created cache region at offset %llu, buf size %llu, unit = %ld, ndim = %ld, obj_id = %llu\n",
     //       offset[0], buf_size, unit, ndim, (long long unsigned)obj_cache->obj_id);
 
     obj_cache->region_obj_cache_size++;
