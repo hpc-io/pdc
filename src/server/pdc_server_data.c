@@ -3427,6 +3427,7 @@ PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bulk_xfer_
             ret_value = FAIL;
             goto done;
         }
+
     }
     else {
         // obj_id and target_id only need to be init when the first data is added (when obj_id==0)
@@ -4808,15 +4809,17 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                                           pdc_obj_cache[i].region_cache->offset,
                                           pdc_obj_cache[i].region_cache->size,
                                           pdc_obj_cache[i].region_cache->ndim) == PDC_REGION_CONTAINED) {
-                printf("confirmed region %llu+%llu is contained in %llu+%llu\n", region_info->offset,
-                       region_info->size, pdc_obj_cache[i].region_cache->offset,
-                       pdc_obj_cache[i].region_cache->size);
+#if 1==2
+                printf("confirmed region %llu+%llu is contained in %llu+%llu\n", region_info->offset[0],
+                       region_info->size[0], pdc_obj_cache[i].region_cache->offset[0],
+                       pdc_obj_cache[i].region_cache->size[0]);
                 PDC_region_cache_copy(pdc_obj_cache[i].region_cache->buf, buf,
                                       pdc_obj_cache[i].region_cache->offset,
                                       pdc_obj_cache[i].region_cache->size, region_info->offset,
                                       region_info->size, pdc_obj_cache[i].region_cache->ndim, unit, 1);
                 flag = 0;
                 break;
+#endif
             }
         }
     }
