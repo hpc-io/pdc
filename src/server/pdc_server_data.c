@@ -3427,6 +3427,9 @@ PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bulk_xfer_
             ret_value = FAIL;
             goto done;
         }
+
+
+
     }
     else {
         // obj_id and target_id only need to be init when the first data is added (when obj_id==0)
@@ -4068,7 +4071,9 @@ done:
 /*
  * Read with POSIX within one file, based on the region list
  * after the server has accumulated requests from all node local clients
+
  *
+
 
  * \param  region_list_head[IN]       Region info of IO request
  *
@@ -4479,6 +4484,10 @@ PDC_Server_data_io_direct(pdc_access_t io_type, uint64_t obj_id, struct pdc_regi
 }
 
 #ifdef PDC_SERVER_CACHE
+
+/*
+ * Check if the first region is contained inside the second region or the second region is contained inside the first region or they have overlapping relation.
+*/
 int
 PDC_check_region_relation(uint64_t *offset, uint64_t *size, uint64_t *offset2, uint64_t *size2, int ndim)
 {
@@ -4486,12 +4495,20 @@ PDC_check_region_relation(uint64_t *offset, uint64_t *size, uint64_t *offset2, u
     int flag;
     flag = 1;
     for (i = 0; i < ndim; ++i) {
-        if (offset2[i] < offset[i] || offset2[i] + size2[i] > offset[i] + size[i]) {
+        if (offset2[i] < offset[i] || offset2[i] + size2[i] < offset[i] + size[i]) {
             flag = 0;
         }
     }
     if (flag) {
         return PDC_REGION_CONTAINED;
+    }
+    for (i = 0; i < ndim; ++i) {
+        if (offset[i] < offset2[i] || offset[i] + size[i] < offset2[i] + size2[i]) {
+            flag = 0;
+        }
+    }
+    if (flag) {
+        return PDC_REGION_CONTAINED_BY;
     }
     flag = 1;
     for (i = 0; i < ndim; ++i) {
@@ -4509,14 +4526,16 @@ PDC_check_region_relation(uint64_t *offset, uint64_t *size, uint64_t *offset2, u
 }
 
 /*
- * Copy cache data to target_buf.
- * This function assumes that the I/O request is within the cache region. We copy the cache buffer to user
- * buffer by computing region offsets.
+ * Copy data from one buffer to another defined by region views.
+ * offset/length is the region associated with the buf. offset2/length2 is the region associated with the buf2.
+ * The region defined by offset/length has to contain the region defined by offset2/length2.
+ * direction defines whether copy to the cache region or copy from the cache region, 0 means from source buffer to target buffer. 1 means the other way round.
  */
 int
-PDC_region_cache_copy(char *target_buf, const char *source_buf, const uint64_t *offset, const uint64_t *size,
-                      const uint64_t *offset2, const uint64_t *size2, int ndim, size_t unit)
+PDC_region_cache_copy(char *buf, char *buf2, const uint64_t *offset, const uint64_t *size,
+                      const uint64_t *offset2, const uint64_t *size2, int ndim, size_t unit, int direction)
 {
+    char *src, *dst;
     uint64_t  i, j;
     uint64_t *local_offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
     memcpy(local_offset, offset2, sizeof(uint64_t) * ndim);
@@ -4525,24 +4544,45 @@ PDC_region_cache_copy(char *target_buf, const char *source_buf, const uint64_t *
         local_offset[i] -= offset[i];
     }
     if (ndim == 1) {
-        memcpy(target_buf, source_buf + local_offset[0] * unit, unit * size2[0]);
+        if (direction) {
+            src = buf2;
+            dst = buf + local_offset[0] * unit;
+        } else {
+            dst = buf2;
+            src = buf + local_offset[0] * unit;
+        }
+
+        memcpy(dst, src, unit * size2[0]);
     }
     else if (ndim == 2) {
         for (i = 0; i < size2[0]; ++i) {
-            memcpy(target_buf, source_buf + (local_offset[1] + (local_offset[0] + i) * size[1]) * unit,
-                   unit * size2[1]);
-            target_buf += size2[1] * unit;
+            if (direction) {
+                src = buf2;
+                dst = buf + (local_offset[1] + (local_offset[0] + i) * size[1]) * unit;
+            } else {
+                dst = buf2;
+                src = buf + (local_offset[1] + (local_offset[0] + i) * size[1]) * unit;
+            }
+            memcpy(dst, src, unit * size2[1]);
+            buf2 += size2[1] * unit;
         }
     }
     else if (ndim == 3) {
         for (i = 0; i < size2[0]; ++i) {
             for (j = 0; j < size2[1]; ++j) {
-                memcpy(target_buf,
-                       source_buf + ((local_offset[0] + i) * size[1] * size[2] +
+                if (direction) {
+                    src = buf2;
+                    dst = buf + ((local_offset[0] + i) * size[1] * size[2] +
                                      (local_offset[1] + j) * size[2] + local_offset[2]) *
-                                        unit,
-                       unit * size2[2]);
-                target_buf += size2[2] * unit;
+                                        unit;
+                } else {
+                    dst = buf2;
+                    src = buf + ((local_offset[0] + i) * size[1] * size[2] +
+                                     (local_offset[1] + j) * size[2] + local_offset[2]) *
+                                        unit;
+                }
+                memcpy(dst, src, unit * size2[2]);
+                buf2 += size2[2] * unit;
             }
         }
     }
@@ -4732,6 +4772,9 @@ done:
 perr_t
 PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
+    int i, flag;
+    pdc_obj_cache *pdc_obj_cache;
+
     perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
@@ -4746,9 +4789,29 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     if (region_info->ndim >= 3)
         write_size *= region_info->size[2];
 
-    PDC_region_cache_register(obj_id, buf, write_size, region_info->offset, region_info->size,
-                              region_info->ndim, unit);
-
+    pdc_obj_cache = NULL;
+    // Look up for the object in the cache list
+    for ( i = 0; i < obj_cache_list.region_obj_cache_size; ++i ) {
+        if ( obj_cache_list.pdc_obj_cache[i].obj_id == obj_id ) {
+            pdc_obj_cache = obj_cache_list.pdc_obj_cache + i;
+        }
+    }
+    flag = 1;
+    if (pdc_obj_cache != NULL ) {
+        // If we have region that is contained inside a cached region, we can directly modify the cache region data.
+        for ( i = 0; i < pdc_obj_cache->region_obj_cache_size; ++i ) {
+            if (PDC_check_region_relation(region_info->offset, region_info->size, pdc_obj_cache[i].region_cache->offset, pdc_obj_cache[i].region_cache->size, region_info->ndim) == PDC_REGION_CONTAINED) {
+                PDC_region_cache_copy(pdc_obj_cache[i].region_cache->buf, buf, pdc_obj_cache[i].region_cache->offset, pdc_obj_cache[i].region_cache->size,
+                      region_info->offset, region_info->size, region_info->ndim, unit, 1);
+                flag = 0;
+                break;
+            }
+        }
+    }
+    if (flag) {
+        PDC_region_cache_register(obj_id, buf, write_size, region_info->offset, region_info->size,
+                                  region_info->ndim, unit);
+    }
     // PDC_Server_data_write_out2(obj_id, region_info, buf, unit);
 
 done:
@@ -4981,6 +5044,9 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+/*
+ * This function search for an object cache by ID, then copy data from the region to buf if the request region is fully contained inside the cache region.
+*/
 int
 PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
@@ -4996,7 +5062,9 @@ PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf
         }
     }
     if (obj_cache != NULL) {
-        printf("region fetch for obj id %llu\n", obj_cache->obj_id);
+        //printf("region fetch for obj id %llu\n", obj_cache->obj_id);
+
+        // Check if the input region is contained inside any cache region.
         for (i = 0; i < obj_cache->region_obj_cache_size; ++i) {
             flag         = 1;
             region_cache = obj_cache->region_cache + i;
@@ -5016,7 +5084,7 @@ PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf
         }
         if (region_cache != NULL && unit == region_cache->unit) {
             PDC_region_cache_copy(buf, region_cache->buf, region_cache->offset, region_cache->size,
-                                  region_info->offset, region_info->size, region_cache->ndim, unit);
+                                  region_info->offset, region_info->size, region_cache->ndim, unit, 0);
         }
         else {
             region_cache = NULL;
@@ -8150,6 +8218,7 @@ PDC_Server_read_coords(const struct hg_cb_info *callback_info)
         unit_size           = PDC_get_var_type_size(constraint->type);
         my_size             = task->my_nread_coords * unit_size;
         task->my_data       = malloc(my_size);
+
         if (NULL == task->my_data) {
             printf("==PDC_SERVER[%d]: %s - error allocating %" PRIu64 " bytes for data read!\n",
                    pdc_server_rank_g, __func__, task->my_nread_coords * unit_size);
