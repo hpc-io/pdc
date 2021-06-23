@@ -4667,8 +4667,8 @@ PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size, con
     memcpy(region_cache->offset, offset, sizeof(uint64_t) * ndim);
     memcpy(region_cache->size, size, sizeof(uint64_t) * ndim);
     memcpy(region_cache->buf, buf, sizeof(char) * buf_size);
-    printf("created cache region at offset %llu, buf size %llu, unit = %ld, ndim = %ld, obj_id = %llu\n",
-           offset[0], buf_size, unit, ndim, (long long unsigned)obj_cache->obj_id);
+    //printf("created cache region at offset %llu, buf size %llu, unit = %ld, ndim = %ld, obj_id = %llu\n",
+    //       offset[0], buf_size, unit, ndim, (long long unsigned)obj_cache->obj_id);
 
     obj_cache->region_obj_cache_size++;
 
@@ -4805,21 +4805,15 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
         // data.
         for (i = 0; i < pdc_obj_cache->region_obj_cache_size; ++i) {
             if (PDC_check_region_relation(region_info->offset, region_info->size,
-                                          pdc_obj_cache[i].region_cache->offset,
-                                          pdc_obj_cache[i].region_cache->size,
-                                          pdc_obj_cache[i].region_cache->ndim) == PDC_REGION_CONTAINED) {
-                printf("checkpoint\n");
-#if 1 == 2
-                printf("confirmed region %llu+%llu is contained in %llu+%llu\n", region_info->offset[0],
-                       region_info->size[0], pdc_obj_cache[i].region_cache->offset[0],
-                       pdc_obj_cache[i].region_cache->size[0]);
-                PDC_region_cache_copy(pdc_obj_cache[i].region_cache->buf, buf,
-                                      pdc_obj_cache[i].region_cache->offset,
-                                      pdc_obj_cache[i].region_cache->size, region_info->offset,
-                                      region_info->size, pdc_obj_cache[i].region_cache->ndim, unit, 1);
+                                          pdc_obj_cache->region_cache[i].offset,
+                                          pdc_obj_cache->region_cache[i].size,
+                                          pdc_obj_cache->region_cache[i].ndim) == PDC_REGION_CONTAINED) {
+                PDC_region_cache_copy(pdc_obj_cache->region_cache[i].buf, buf,
+                                      pdc_obj_cache->region_cache[i].offset,
+                                      pdc_obj_cache->region_cache[i].size, region_info->offset,
+                                      region_info->size, pdc_obj_cache->region_cache[i].ndim, unit, 1);
                 flag = 0;
                 break;
-#endif
             }
         }
     }
