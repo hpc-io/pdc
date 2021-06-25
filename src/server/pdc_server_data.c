@@ -3427,6 +3427,7 @@ PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bulk_xfer_
             ret_value = FAIL;
             goto done;
         }
+
     }
     else {
         // obj_id and target_id only need to be init when the first data is added (when obj_id==0)
@@ -4068,6 +4069,7 @@ done:
 /*
  * Read with POSIX within one file, based on the region list
  * after the server has accumulated requests from all node local clients
+
 
 
 
@@ -4776,30 +4778,30 @@ PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size, con
     struct pdc_region_info *region_cache;
 
     for (i = 0; i < obj_cache_list.obj_cache_size; ++i) {
-        if (obj_cache_list.pdc_obj_cache[i].obj_id == obj_id) {
-            obj_cache = obj_cache_list.pdc_obj_cache + i;
+        if (obj_cache_list.obj_cache[i].obj_id == obj_id) {
+            obj_cache = obj_cache_list.obj_cache + i;
         }
     }
 
     if (obj_cache == NULL) {
         if (obj_cache_list.obj_cache_max_size == 0) {
             obj_cache_list.obj_cache_max_size = 512;
-            obj_cache_list.pdc_obj_cache =
+            obj_cache_list.obj_cache =
                 (pdc_obj_cache *)malloc(sizeof(pdc_obj_cache) * obj_cache_list.obj_cache_max_size);
         }
         else {
             if (obj_cache_list.obj_cache_size == obj_cache_list.obj_cache_max_size) {
                 obj_cache_list.obj_cache_max_size *= 2;
-                temp = (pdc_obj_cache *)malloc(sizeof(pdc_obj_cache) * obj_cache_list.obj_cache_max_size);
-                memcpy(temp, obj_cache_list.pdc_obj_cache,
+                temp = (pdc_obj_cache *)malloc(sizeof(obj_cache) * obj_cache_list.obj_cache_max_size);
+                memcpy(temp, obj_cache_list.obj_cache,
                        sizeof(pdc_obj_cache) * obj_cache_list.obj_cache_size);
-                obj_cache_list.pdc_obj_cache = temp;
+                obj_cache_list.obj_cache = temp;
             }
         }
-        obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].region_obj_cache_max_size = 0;
-        obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].region_obj_cache_size     = 0;
-        obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].obj_id                    = obj_id;
-        obj_cache = obj_cache_list.pdc_obj_cache + obj_cache_list.obj_cache_size;
+        obj_cache_list.obj_cache[obj_cache_list.obj_cache_size].region_obj_cache_max_size = 0;
+        obj_cache_list.obj_cache[obj_cache_list.obj_cache_size].region_obj_cache_size     = 0;
+        obj_cache_list.obj_cache[obj_cache_list.obj_cache_size].obj_id                    = obj_id;
+        obj_cache = obj_cache_list.obj_cache + obj_cache_list.obj_cache_size;
         obj_cache_list.obj_cache_size++;
     }
 
@@ -4848,15 +4850,15 @@ PDC_region_cache_free()
 {
     int i, j;
     for (i = 0; i < obj_cache_list.obj_cache_size; ++i) {
-        for (j = 0; j < obj_cache_list.pdc_obj_cache[i].region_obj_cache_size; ++j) {
+        for (j = 0; j < obj_cache_list.obj_cache[i].region_obj_cache_size; ++j) {
 
-            free(obj_cache_list.pdc_obj_cache[i].region_cache[j].offset);
-            free(obj_cache_list.pdc_obj_cache[i].region_cache[j].size);
-            free(obj_cache_list.pdc_obj_cache[i].region_cache[j].buf);
+            free(obj_cache_list.obj_cache[i].region_cache[j].offset);
+            free(obj_cache_list.obj_cache[i].region_cache[j].size);
+            free(obj_cache_list.obj_cache[i].region_cache[j].buf);
         }
-        free(obj_cache_list.pdc_obj_cache[i].region_cache);
+        free(obj_cache_list.obj_cache[i].region_cache);
     }
-    free(obj_cache_list.pdc_obj_cache);
+    free(obj_cache_list.obj_cache);
     return 0;
 }
 
@@ -4958,8 +4960,8 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     pdc_obj_cache = NULL;
     // Look up for the object in the cache list
     for (i = 0; i < obj_cache_list.obj_cache_size; ++i) {
-        if (obj_cache_list.pdc_obj_cache[i].obj_id == obj_id) {
-            pdc_obj_cache = obj_cache_list.pdc_obj_cache + i;
+        if (obj_cache_list.obj_cache[i].obj_id == obj_id) {
+            pdc_obj_cache = obj_cache_list.obj_cache + i;
         }
     }
     flag = 1;
@@ -5148,8 +5150,8 @@ PDC_region_cache_flush(uint64_t obj_id)
     struct pdc_region_info *region_cache;
 
     for (i = 0; i < obj_cache_list.obj_cache_size; ++i) {
-        if (obj_cache_list.pdc_obj_cache[i].obj_id == obj_id) {
-            obj_cache = obj_cache_list.pdc_obj_cache + i;
+        if (obj_cache_list.obj_cache[i].obj_id == obj_id) {
+            obj_cache = obj_cache_list.obj_cache + i;
         }
     }
 
@@ -5172,7 +5174,7 @@ PDC_region_cache_flush_all()
     hg_thread_mutex_lock(&pdc_obj_cache_list_mutex);
     int i;
     for (i = 0; i < obj_cache_list.obj_cache_size; ++i) {
-        PDC_region_cache_flush(obj_cache_list.pdc_obj_cache[i].obj_id);
+        PDC_region_cache_flush(obj_cache_list.obj_cache[i].obj_id);
     }
     hg_thread_mutex_unlock(&pdc_obj_cache_list_mutex);
     return 0;
@@ -5189,7 +5191,7 @@ PDC_region_cache_clock_cycle(void *ptr)
         if (!pdc_recycle_close_flag) {
             hg_thread_mutex_lock(&pdc_obj_cache_list_mutex);
             for (i = 0; i < obj_cache_list.obj_cache_size; ++i) {
-                obj_cache = obj_cache_list.pdc_obj_cache + i;
+                obj_cache = obj_cache_list.obj_cache + i;
                 if (current_time.tv_sec - obj_cache->timestamp.tv_sec > 10) {
                     PDC_region_cache_flush(obj_cache->obj_id);
                 }
@@ -5232,8 +5234,8 @@ PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf
     struct pdc_region_info *region_cache = NULL;
 
     for (i = 0; i < obj_cache_list.obj_cache_size; ++i) {
-        if (obj_cache_list.pdc_obj_cache[i].obj_id == obj_id) {
-            obj_cache = obj_cache_list.pdc_obj_cache + i;
+        if (obj_cache_list.obj_cache[i].obj_id == obj_id) {
+            obj_cache = obj_cache_list.obj_cache + i;
         }
     }
     if (obj_cache != NULL) {
@@ -8072,6 +8074,7 @@ PDC_recv_nhits(const struct hg_cb_info *callback_info)
         printf("==PDC_SERVER[%d]: %s - Invalid task ID!\n", pdc_server_rank_g, __func__);
         task_elt = query_task_list_head_g;
     }
+
 
     // When received all results from the working servers, send the aggregated result back to client
     if (task_elt && task_elt->n_recv >= task_elt->n_sent_server)
