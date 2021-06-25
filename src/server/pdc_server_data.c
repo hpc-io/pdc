@@ -3427,6 +3427,7 @@ PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bulk_xfer_
             ret_value = FAIL;
             goto done;
         }
+
     }
     else {
         // obj_id and target_id only need to be init when the first data is added (when obj_id==0)
@@ -4070,6 +4071,7 @@ done:
  * after the server has accumulated requests from all node local clients
 
 
+
  *
 
 
@@ -4556,8 +4558,8 @@ PDC_region_merge(const char *buf, const char *buf2, const uint64_t *offset, cons
     *size_merged   = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
     for (i = 0; i < ndim; ++i) {
         if (i != connect_flag) {
-            offset_merged[i] = offset[i];
-            size_merged[i]   = size[i];
+            offset_merged[0][i] = offset[i];
+            size_merged[0][i]   = size[i];
         }
     }
     // Work out how many elements in the connecting dimension have to be overwritten.
@@ -4569,25 +4571,25 @@ PDC_region_merge(const char *buf, const char *buf2, const uint64_t *offset, cons
     }
     // Workout the final offset of the region in the connecting dimension
     if (offset[connect_flag] > offset2[connect_flag]) {
-        offset_merged[connect_flag] = offset2[connect_flag];
+        offset_merged[0][connect_flag] = offset2[connect_flag];
     }
     else {
-        offset_merged[connect_flag] = offset[connect_flag];
+        offset_merged[0][connect_flag] = offset[connect_flag];
     }
     // Workout the final length of the region in the connecting dimension
     if (offset[connect_flag] + size[connect_flag] > offset2[connect_flag] + size2[connect_flag]) {
-        size_merged[connect_flag] = offset[connect_flag] + size[connect_flag] - offset_merged[connect_flag];
+        size_merged[0][connect_flag] = offset[0][connect_flag] + size[0][connect_flag] - offset_merged[0][connect_flag];
     }
     else {
-        size_merged[connect_flag] = offset2[connect_flag] + size2[connect_flag] - offset_merged[connect_flag];
+        size_merged[0][connect_flag] = offset2[0][connect_flag] + size2[0][connect_flag] - offset_merged[0][connect_flag];
     }
     // Start merging memory buffers. The second region will overwrite the first region data if there are
     // overlaps. This implementation will split three different dimensions in multiple branches. It would be
     // more elegant to write the code in terms of recursion, but I do not want to introduce unnecessary bugs
     // as we are only dealing with a few cases here.
-    tmp_buf_size = size_merged[0];
+    tmp_buf_size = size_merged[0][0];
     for (i = 1; i < ndim; ++i) {
-        tmp_buf_size *= size_merged[i];
+        tmp_buf_size *= size_merged[0][i];
     }
 
     if (ndim == 1) {
@@ -4668,11 +4670,11 @@ PDC_region_merge(const char *buf, const char *buf2, const uint64_t *offset, cons
             if (offset[2] < offset2[2]) {
                 memcpy(buf_merged, buf, size[0] * size[1] * (size[2] - overlaps) * unit);
                 memcpy(buf_merged + size[0] * size[1] * (size[2] - overlaps) * unit, buf2,
-                       size2[0] * size2[1] * size3[2] * unit);
+                       size2[0] * size2[1] * size2[2] * unit);
             }
             else {
                 memcpy(buf_merged, buf2, size2[0] * size2[1] * size2[2] * unit);
-                memcpy(buf_merged, buf + size[0] * size[1] overlaps * unit,
+                memcpy(buf_merged, buf + size[0] * size[1] * (size[2] - overlaps) * unit,
                        size[0] * size[1] * (size[2] - overlaps) * unit);
             }
         }
@@ -6098,6 +6100,7 @@ PDC_Server_free_query_task(query_task_t *task)
 
     if (task->coords)
         free(task->coords);
+
 
     for (i = 0; i < task->n_read_data_region; i++) {
         if (task->data_arr && task->data_arr[i])
@@ -9248,6 +9251,7 @@ done:
     if (has_more == 0) {
         // Process query
         PDC_Server_do_query(task_elt);
+
 
         // Send the result to manager
         PDC_Server_send_query_result_to_manager(task_elt);
