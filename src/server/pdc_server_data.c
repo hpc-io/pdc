@@ -3427,7 +3427,6 @@ PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bulk_xfer_
             ret_value = FAIL;
             goto done;
         }
-
     }
     else {
         // obj_id and target_id only need to be init when the first data is added (when obj_id==0)
@@ -4793,8 +4792,7 @@ PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size, con
             if (obj_cache_list.obj_cache_size == obj_cache_list.obj_cache_max_size) {
                 obj_cache_list.obj_cache_max_size *= 2;
                 temp = (pdc_obj_cache *)malloc(sizeof(obj_cache) * obj_cache_list.obj_cache_max_size);
-                memcpy(temp, obj_cache_list.obj_cache,
-                       sizeof(pdc_obj_cache) * obj_cache_list.obj_cache_size);
+                memcpy(temp, obj_cache_list.obj_cache, sizeof(pdc_obj_cache) * obj_cache_list.obj_cache_size);
                 obj_cache_list.obj_cache = temp;
             }
         }
@@ -8074,7 +8072,6 @@ PDC_recv_nhits(const struct hg_cb_info *callback_info)
         printf("==PDC_SERVER[%d]: %s - Invalid task ID!\n", pdc_server_rank_g, __func__);
         task_elt = query_task_list_head_g;
     }
-
 
     // When received all results from the working servers, send the aggregated result back to client
     if (task_elt && task_elt->n_recv >= task_elt->n_sent_server)
