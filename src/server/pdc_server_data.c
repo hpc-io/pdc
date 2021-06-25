@@ -3427,7 +3427,6 @@ PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bulk_xfer_
             ret_value = FAIL;
             goto done;
         }
-
     }
     else {
         // obj_id and target_id only need to be init when the first data is added (when obj_id==0)
@@ -4596,7 +4595,7 @@ PDC_region_merge(const char *buf, const char *buf2, const uint64_t *offset, cons
     for (i = 1; i < ndim; ++i) {
         tmp_buf_size *= size_merged[0][i];
     }
-    buf_merged = (char*) malloc(sizeof(char) * tmp_buf_size);
+    buf_merged      = (char *)malloc(sizeof(char) * tmp_buf_size);
     *buf_merged_ptr = buf_merged;
     if (ndim == 1) {
         if (offset[0] < offset2[0]) {
@@ -4657,7 +4656,7 @@ PDC_region_merge(const char *buf, const char *buf2, const uint64_t *offset, cons
         }
         else if (connect_flag == 1) {
             // Note size[2] must equal to size2[2] after the previous checking.
-            for (i = 0; i < (int) size[2]; ++i) {
+            for (i = 0; i < (int)size[2]; ++i) {
                 if (offset[1] < offset2[1]) {
                     memcpy(buf_merged, buf, size[0] * (size[1] - overlaps) * unit);
                     memcpy(buf_merged + size[0] * (size[1] - overlaps) * unit, buf2,
@@ -4704,7 +4703,7 @@ PDC_region_cache_copy(char *buf, char *buf2, const uint64_t *offset, const uint6
     uint64_t *local_offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
     memcpy(local_offset, offset2, sizeof(uint64_t) * ndim);
     /* Rescale I/O request to cache region offsets. */
-    for (i = 0; i < (uint64_t) ndim; ++i) {
+    for (i = 0; i < (uint64_t)ndim; ++i) {
         local_offset[i] -= offset[i];
     }
     if (ndim == 1) {
