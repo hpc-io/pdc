@@ -3427,6 +3427,7 @@ PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bulk_xfer_
             ret_value = FAIL;
             goto done;
         }
+
     }
     else {
         // obj_id and target_id only need to be init when the first data is added (when obj_id==0)
@@ -4073,6 +4074,7 @@ done:
 
 
 
+
  *
 
 
@@ -4551,7 +4553,7 @@ PDC_region_merge(const char *buf, const char *buf2, const uint64_t *offset, cons
             }
         }
     }
-    if (connect_flag = -1) {
+    if (connect_flag == -1) {
         connect_flag = 0;
     }
     // If we reach here, then the two regions can be merged into one.
@@ -4594,7 +4596,8 @@ PDC_region_merge(const char *buf, const char *buf2, const uint64_t *offset, cons
     for (i = 1; i < ndim; ++i) {
         tmp_buf_size *= size_merged[0][i];
     }
-
+    buf_merged = (char*) malloc(sizeof(char) * tmp_buf_size);
+    *buf_merged_ptr = buf_merged;
     if (ndim == 1) {
         if (offset[0] < offset2[0]) {
             memcpy(buf_merged, buf, unit * (size[0] - overlaps));
@@ -4654,7 +4657,7 @@ PDC_region_merge(const char *buf, const char *buf2, const uint64_t *offset, cons
         }
         else if (connect_flag == 1) {
             // Note size[2] must equal to size2[2] after the previous checking.
-            for (i = 0; i < size[2]; ++i) {
+            for (i = 0; i < (int) size[2]; ++i) {
                 if (offset[1] < offset2[1]) {
                     memcpy(buf_merged, buf, size[0] * (size[1] - overlaps) * unit);
                     memcpy(buf_merged + size[0] * (size[1] - overlaps) * unit, buf2,
@@ -4701,7 +4704,7 @@ PDC_region_cache_copy(char *buf, char *buf2, const uint64_t *offset, const uint6
     uint64_t *local_offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
     memcpy(local_offset, offset2, sizeof(uint64_t) * ndim);
     /* Rescale I/O request to cache region offsets. */
-    for (i = 0; i < ndim; ++i) {
+    for (i = 0; i < (uint64_t) ndim; ++i) {
         local_offset[i] -= offset[i];
     }
     if (ndim == 1) {
@@ -4868,7 +4871,7 @@ PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *region_info,
     FUNC_ENTER(NULL);
 
     // Write 1GB at a time
-    uint64_t write_size, max_write_size = 1073741824;
+    uint64_t write_size = 1, max_write_size = 1073741824;
     if (region_info->ndim >= 1)
         write_size = unit * region_info->size[0];
     if (region_info->ndim >= 2)
@@ -6101,6 +6104,7 @@ PDC_Server_free_query_task(query_task_t *task)
 {
     int i;
     if (NULL != task->query)
+
         PDCquery_free_all(task->query);
 
     if (task->coords)
