@@ -3427,6 +3427,7 @@ PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bulk_xfer_
             ret_value = FAIL;
             goto done;
         }
+
     }
     else {
         // obj_id and target_id only need to be init when the first data is added (when obj_id==0)
@@ -4072,6 +4073,7 @@ done:
 
 
 
+
  *
 
 
@@ -4607,7 +4609,7 @@ PDC_region_merge(const char *buf, const char *buf2, const uint64_t *offset, cons
     else if (ndim == 2) {
         if (connect_flag == 0) {
             // Note size[1] must equal to size2[1] after the previous checking.
-            for (i = 0; i < size[1]; ++i) {
+            for (i = 0; i < (int) size[1]; ++i) {
                 if (offset[0] < offset2[0]) {
                     memcpy(buf_merged, buf, unit * (size[0] - overlaps));
                     memcpy(buf_merged + unit * (size[0] - overlaps), buf2, unit * size2[0]);
@@ -4635,8 +4637,8 @@ PDC_region_merge(const char *buf, const char *buf2, const uint64_t *offset, cons
         if (connect_flag == 0) {
             // Note size[1] must equal to size2[1] after the previous checking, similarly for size[2] and
             // size2[2]
-            for (i = 0; i < size[2]; ++i) {
-                for (j = 0; j < size[1]; ++j) {
+            for (i = 0; i < (int) size[2]; ++i) {
+                for (j = 0; j < (int) size[1]; ++j) {
                     if (offset[0] < offset2[0]) {
                         memcpy(buf_merged, buf, unit * (size[0] - overlaps));
                         memcpy(buf_merged + unit * (size[0] - overlaps), buf2, unit * size2[0]);
@@ -5287,6 +5289,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
         write_size = unit * region_info->size[0];
     if (region_info->ndim >= 2)
         write_size *= region_info->size[1];
+
     if (region_info->ndim >= 3)
         write_size *= region_info->size[2];
 
@@ -7166,6 +7169,7 @@ PDC_load_fastbit_index(char *idx_name, uint64_t obj_id, FastBitDataType dtype, i
     char *user_specified_data_path = getenv("PDC_DATA_LOC");
     if (user_specified_data_path != NULL)
         data_path = user_specified_data_path;
+
     else {
         data_path = getenv("SCRATCH");
         if (data_path == NULL)
