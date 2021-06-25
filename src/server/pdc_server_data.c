@@ -3427,6 +3427,7 @@ PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bulk_xfer_
             ret_value = FAIL;
             goto done;
         }
+
     }
     else {
         // obj_id and target_id only need to be init when the first data is added (when obj_id==0)
@@ -4071,6 +4072,7 @@ done:
 
 
 
+
  *
 
 
@@ -4578,11 +4580,11 @@ PDC_region_merge(const char *buf, const char *buf2, const uint64_t *offset, cons
     // Workout the final length of the region in the connecting dimension
     if (offset[connect_flag] + size[connect_flag] > offset2[connect_flag] + size2[connect_flag]) {
         size_merged[0][connect_flag] =
-            offset[0][connect_flag] + size[0][connect_flag] - offset_merged[0][connect_flag];
+            offset[connect_flag] + size[connect_flag] - offset_merged[0][connect_flag];
     }
     else {
         size_merged[0][connect_flag] =
-            offset2[0][connect_flag] + size2[0][connect_flag] - offset_merged[0][connect_flag];
+            offset2[connect_flag] + size2[connect_flag] - offset_merged[0][connect_flag];
     }
     // Start merging memory buffers. The second region will overwrite the first region data if there are
     // overlaps. This implementation will split three different dimensions in multiple branches. It would be
@@ -4664,6 +4666,7 @@ PDC_region_merge(const char *buf, const char *buf2, const uint64_t *offset, cons
                     memcpy(buf_merged, buf + size[0] * overlaps * unit,
                            size[0] * (size[1] - overlaps) * unit);
                     buf_merged += size2[0] * (size2[1] + size[1] - overlaps) * unit;
+
                 }
             }
         }
@@ -5694,6 +5697,7 @@ done:
  * \param  in[IN]               input with type accumulate_storage_meta_t
  *
  * \return Non-negative on success/Negative on failure
+
  */
 static perr_t
 PDC_Server_accumulate_storage_meta_then_read(storage_meta_query_one_name_args_t *in)
