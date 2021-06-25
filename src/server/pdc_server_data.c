@@ -3427,7 +3427,6 @@ PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bulk_xfer_
             ret_value = FAIL;
             goto done;
         }
-
     }
     else {
         // obj_id and target_id only need to be init when the first data is added (when obj_id==0)
@@ -4578,10 +4577,12 @@ PDC_region_merge(const char *buf, const char *buf2, const uint64_t *offset, cons
     }
     // Workout the final length of the region in the connecting dimension
     if (offset[connect_flag] + size[connect_flag] > offset2[connect_flag] + size2[connect_flag]) {
-        size_merged[0][connect_flag] = offset[0][connect_flag] + size[0][connect_flag] - offset_merged[0][connect_flag];
+        size_merged[0][connect_flag] =
+            offset[0][connect_flag] + size[0][connect_flag] - offset_merged[0][connect_flag];
     }
     else {
-        size_merged[0][connect_flag] = offset2[0][connect_flag] + size2[0][connect_flag] - offset_merged[0][connect_flag];
+        size_merged[0][connect_flag] =
+            offset2[0][connect_flag] + size2[0][connect_flag] - offset_merged[0][connect_flag];
     }
     // Start merging memory buffers. The second region will overwrite the first region data if there are
     // overlaps. This implementation will split three different dimensions in multiple branches. It would be
@@ -6100,7 +6101,6 @@ PDC_Server_free_query_task(query_task_t *task)
 
     if (task->coords)
         free(task->coords);
-
 
     for (i = 0; i < task->n_read_data_region; i++) {
         if (task->data_arr && task->data_arr[i])
@@ -9251,7 +9251,6 @@ done:
     if (has_more == 0) {
         // Process query
         PDC_Server_do_query(task_elt);
-
 
         // Send the result to manager
         PDC_Server_send_query_result_to_manager(task_elt);
