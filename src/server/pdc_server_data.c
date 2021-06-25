@@ -3427,6 +3427,7 @@ PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bulk_xfer_
             ret_value = FAIL;
             goto done;
         }
+
     }
     else {
         // obj_id and target_id only need to be init when the first data is added (when obj_id==0)
@@ -4792,7 +4793,8 @@ PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size, con
             if (obj_cache_list.obj_cache_size == obj_cache_list.obj_cache_max_size) {
                 obj_cache_list.obj_cache_max_size *= 2;
                 temp = (pdc_obj_cache *)malloc(sizeof(obj_cache) * obj_cache_list.obj_cache_max_size);
-                memcpy(temp, obj_cache_list.obj_cache, sizeof(pdc_obj_cache) * obj_cache_list.obj_cache_size);
+                memcpy(temp, obj_cache_list.obj_cache,
+                       sizeof(pdc_obj_cache) * obj_cache_list.obj_cache_size);
                 obj_cache_list.obj_cache = temp;
             }
         }
@@ -5000,7 +5002,7 @@ PDC_Server_data_read_from2(uint64_t obj_id, struct pdc_region_info *region_info,
     ssize_t               read_bytes = 0, total_read_bytes = 0, request_bytes = unit, my_read_bytes = 0;
     data_server_region_t *region = NULL;
     region_list_t *       elt;
-    int                   flag = 0;
+    //int                   flag = 0;
     uint64_t              i, j, pos, overlap_start[DIM_MAX] = {0}, overlap_count[DIM_MAX] = {0},
                         overlap_start_local[DIM_MAX] = {0};
 
@@ -5035,11 +5037,11 @@ PDC_Server_data_read_from2(uint64_t obj_id, struct pdc_region_info *region_info,
     region_list_t *storage_region = NULL;
     DL_FOREACH(region->region_storage_head, elt)
     {
-        flag = 0;
+        //flag = 0;
 
         if (PDC_is_contiguous_region_overlap(elt, &request_region) == 1) {
             storage_region = elt;
-            flag           = 1;
+            //flag           = 1;
 
             // Get the actual start and count of region in storage
             if (PDC_get_overlap_start_count(region_info->ndim, request_region.start, request_region.count,
@@ -5109,7 +5111,7 @@ PDC_Server_data_read_from2(uint64_t obj_id, struct pdc_region_info *region_info,
             }
 
             if (read_bytes == -1) {
-                char errmsg[256];
+                //char errmsg[256];
                 // printf("==PDC_SERVER[%d]: pread %d failed (%d)\n", pdc_server_rank_g, region->fd,
                 // strerror_r(errno, errmsg, sizeof(errmsg)));
                 goto done;
@@ -5123,7 +5125,7 @@ PDC_Server_data_read_from2(uint64_t obj_id, struct pdc_region_info *region_info,
     } // End DL_FOREACH storage region list
 
     if (total_read_bytes < request_bytes) {
-        printf("==PDC_SERVER[%d]: read less bytes than expected %llu / %llu\n", pdc_server_rank_g,
+        printf("==PDC_SERVER[%d]: read less bytes than expected %lu / %lu\n", pdc_server_rank_g,
                total_read_bytes, request_bytes);
         ret_value = -1;
     }
@@ -5213,7 +5215,7 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
     // PDC_Server_data_read_from2(obj_id, region_info, buf, unit);
 
     PDC_region_fetch(obj_id, region_info, buf, unit);
-done:
+//done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
@@ -8072,6 +8074,7 @@ PDC_recv_nhits(const struct hg_cb_info *callback_info)
         printf("==PDC_SERVER[%d]: %s - Invalid task ID!\n", pdc_server_rank_g, __func__);
         task_elt = query_task_list_head_g;
     }
+
 
     // When received all results from the working servers, send the aggregated result back to client
     if (task_elt && task_elt->n_recv >= task_elt->n_sent_server)
