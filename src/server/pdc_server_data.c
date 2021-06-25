@@ -4912,12 +4912,12 @@ PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *region_info,
         write_size -= max_write_size;
     }
     write_bytes += write(region->fd, buf, write_size);
-
+/*
     if (write_bytes == -1) {
         printf("==PDC_SERVER[%d]: write %d failed\n", pdc_server_rank_g, region->fd);
         goto done;
     }
-
+*/
 #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer_end, 0);
     write_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
