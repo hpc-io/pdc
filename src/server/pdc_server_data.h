@@ -322,7 +322,7 @@ typedef struct {
 } pdc_obj_cache;
 
 typedef struct {
-    pdc_obj_cache *pdc_obj_cache;
+    pdc_obj_cache *obj_cache;
     int            obj_cache_size;
     int            obj_cache_max_size;
 } pdc_cache;
