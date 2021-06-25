@@ -3427,7 +3427,6 @@ PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bulk_xfer_
             ret_value = FAIL;
             goto done;
         }
-
     }
     else {
         // obj_id and target_id only need to be init when the first data is added (when obj_id==0)
@@ -4971,13 +4970,11 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
         // data.
         for (i = 0; i < obj_cache->region_obj_cache_size; ++i) {
             if (PDC_check_region_relation(region_info->offset, region_info->size,
-                                          obj_cache->region_cache[i].offset,
-                                          obj_cache->region_cache[i].size,
+                                          obj_cache->region_cache[i].offset, obj_cache->region_cache[i].size,
                                           obj_cache->region_cache[i].ndim) == PDC_REGION_CONTAINED) {
-                PDC_region_cache_copy(obj_cache->region_cache[i].buf, buf,
-                                      obj_cache->region_cache[i].offset,
-                                      obj_cache->region_cache[i].size, region_info->offset,
-                                      region_info->size, obj_cache->region_cache[i].ndim, unit, 1);
+                PDC_region_cache_copy(obj_cache->region_cache[i].buf, buf, obj_cache->region_cache[i].offset,
+                                      obj_cache->region_cache[i].size, region_info->offset, region_info->size,
+                                      obj_cache->region_cache[i].ndim, unit, 1);
                 flag = 0;
                 break;
             }
@@ -4990,7 +4987,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     }
     // PDC_Server_data_write_out2(obj_id, region_info, buf, unit);
 
-//done:
+    // done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
