@@ -3427,6 +3427,7 @@ PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bulk_xfer_
             ret_value = FAIL;
             goto done;
         }
+
     }
     else {
         // obj_id and target_id only need to be init when the first data is added (when obj_id==0)
@@ -4068,6 +4069,7 @@ done:
 /*
  * Read with POSIX within one file, based on the region list
  * after the server has accumulated requests from all node local clients
+
 
 
 
@@ -4939,7 +4941,7 @@ perr_t
 PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
     int            i, flag;
-    pdc_obj_cache *pdc_obj_cache;
+    pdc_obj_cache *obj_cache;
 
     perr_t ret_value = SUCCEED;
 
@@ -4955,27 +4957,27 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     if (region_info->ndim >= 3)
         write_size *= region_info->size[2];
 
-    pdc_obj_cache = NULL;
+    obj_cache = NULL;
     // Look up for the object in the cache list
     for (i = 0; i < obj_cache_list.obj_cache_size; ++i) {
         if (obj_cache_list.obj_cache[i].obj_id == obj_id) {
-            pdc_obj_cache = obj_cache_list.obj_cache + i;
+            obj_cache = obj_cache_list.obj_cache + i;
         }
     }
     flag = 1;
 
-    if (pdc_obj_cache != NULL) {
+    if (obj_cache != NULL) {
         // If we have region that is contained inside a cached region, we can directly modify the cache region
         // data.
-        for (i = 0; i < pdc_obj_cache->region_obj_cache_size; ++i) {
+        for (i = 0; i < obj_cache->region_obj_cache_size; ++i) {
             if (PDC_check_region_relation(region_info->offset, region_info->size,
-                                          pdc_obj_cache->region_cache[i].offset,
-                                          pdc_obj_cache->region_cache[i].size,
-                                          pdc_obj_cache->region_cache[i].ndim) == PDC_REGION_CONTAINED) {
-                PDC_region_cache_copy(pdc_obj_cache->region_cache[i].buf, buf,
-                                      pdc_obj_cache->region_cache[i].offset,
-                                      pdc_obj_cache->region_cache[i].size, region_info->offset,
-                                      region_info->size, pdc_obj_cache->region_cache[i].ndim, unit, 1);
+                                          obj_cache->region_cache[i].offset,
+                                          obj_cache->region_cache[i].size,
+                                          obj_cache->region_cache[i].ndim) == PDC_REGION_CONTAINED) {
+                PDC_region_cache_copy(obj_cache->region_cache[i].buf, buf,
+                                      obj_cache->region_cache[i].offset,
+                                      obj_cache->region_cache[i].size, region_info->offset,
+                                      region_info->size, obj_cache->region_cache[i].ndim, unit, 1);
                 flag = 0;
                 break;
             }
@@ -4988,7 +4990,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     }
     // PDC_Server_data_write_out2(obj_id, region_info, buf, unit);
 
-done:
+//done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
