@@ -327,10 +327,12 @@ typedef struct {
     int            obj_cache_max_size;
 } pdc_cache;
 
-#define PDC_REGION_CONTAINED       0x1111
-#define PDC_REGION_CONTAINED_BY    0x1114
-#define PDC_REGION_PARTIAL_OVERLAP 0x1112
-#define PDC_REGION_NO_OVERLAP      0x1113
+#define PDC_REGION_CONTAINED       0
+#define PDC_REGION_CONTAINED_BY    1
+#define PDC_REGION_PARTIAL_OVERLAP 2
+#define PDC_REGION_NO_OVERLAP      3
+#define PDC_MERGE_FAILED           4
+#define PDC_MERGE_SUCCESS          5
 
 pdc_cache obj_cache_list;
 
