@@ -1603,7 +1603,7 @@ done:
 
 // Callback function for  HG_Forward()
 // Gets executed after a call to HG_Trigger and the RPC has completed
-/*
+
 static hg_return_t
 metadata_update_rpc_cb(const struct hg_cb_info *callback_info)
 {
@@ -1633,7 +1633,7 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
-*/
+
 
 perr_t
 PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
@@ -6287,6 +6287,7 @@ PDCcont_get(pdcid_t cont_id ATTRIBUTE(unused), char **cont_name ATTRIBUTE(unused
     perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
+
 
     // TODO
     /* ret_value = PDC_Client_query_container_name(char *cont_name, pdc_metadata_t **out); */
