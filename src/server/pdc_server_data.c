@@ -1395,7 +1395,6 @@ PDC_Server_buf_map_lookup_server_id(int remote_server_id, struct transfer_buf_ma
     hg_handle_t                          handle;
     int                                  error = 0;
 
-
     FUNC_ENTER(NULL);
 
     handle      = transfer_args->handle;
@@ -5087,7 +5086,6 @@ PDC_Server_data_read_from2(uint64_t obj_id, struct pdc_region_info *region_info,
             }
             else if (region_info->ndim == 3) {
                 void *tmp_buf = malloc(storage_region->data_size);
-
 
                 // Read entire region
                 read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
