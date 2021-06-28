@@ -4549,7 +4549,7 @@ pdc_region_merge_buf_copy(const uint64_t *offset, const uint64_t *size, const ui
     }
 
     if (offset[connect_flag] < offset2[connect_flag]) {
-        if (offset[connect_flag + ] + size[connect_flag] > offset2[connect_flag] + size2[connect_flag]) {
+        if (offset[connect_flag] + size[connect_flag] > offset2[connect_flag] + size2[connect_flag]) {
             memcpy(*buf_merged, buf, unit * (offset2[connect_flag] - offset[connect_flag]));
             *buf_merged += unit * (offset2[connect_flag] - offset[connect_flag]);
             memcpy(*buf_merged, buf2, unit * size2[connect_flag]);
