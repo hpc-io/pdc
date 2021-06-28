@@ -30,8 +30,8 @@
 int
 main(int argc, char **argv)
 {
-    pdcid_t              pdc, cont_prop, cont, obj1;
-    struct PDC_obj_prop *op;
+    pdcid_t              pdc, cont_prop, cont/*, obj1*/;
+    //struct PDC_obj_prop *op;
     int                  rank = 0, size = 1;
 
 #ifdef ENABLE_MPI
