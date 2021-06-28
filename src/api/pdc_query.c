@@ -324,7 +324,7 @@ PDCquery_get_histogram(pdcid_t obj_id)
     */
     FUNC_ENTER(NULL);
     if ( PDC_find_id(obj_id) == NULL ) {
-        ret_value = FAILED;
+        ret_value = 1;
     }
     /*
         if (PDC_find_id(obj_id) != NULL) {
