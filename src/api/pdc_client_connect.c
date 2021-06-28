@@ -5472,7 +5472,7 @@ PDC_Client_query_name_read_entire_obj_client_agg(int my_nobj, char **my_obj_name
         ret_value = PDC_Client_query_multi_storage_info(ntotal_obj, all_names, &all_storage_meta);
 
         // Copy the result to the result array for scatter
-        //res_storage_meta_1d = (region_storage_meta_t *)calloc(sizeof(region_storage_meta_t), ntotal_obj);
+        // res_storage_meta_1d = (region_storage_meta_t *)calloc(sizeof(region_storage_meta_t), ntotal_obj);
         res_storage_meta_1d = (region_storage_meta_t *)malloc(sizeof(region_storage_meta_t) * ntotal_obj);
         for (i = 0; i < ntotal_obj; i++)
             memcpy(&res_storage_meta_1d[i], all_storage_meta[i], sizeof(region_storage_meta_t));
