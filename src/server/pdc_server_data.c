@@ -1801,6 +1801,7 @@ done:
  *
  * \return Non-negative on success/Negative on failure
  */
+/*
 static hg_return_t
 PDC_Server_notify_io_complete_cb(const struct hg_cb_info *callback_info)
 {
@@ -1811,7 +1812,7 @@ PDC_Server_notify_io_complete_cb(const struct hg_cb_info *callback_info)
     server_lookup_args_t *lookup_args = (server_lookup_args_t *)callback_info->arg;
     hg_handle_t           handle      = callback_info->info.forward.handle;
 
-    /* Get output from server*/
+    // Get output from server
     notify_io_complete_out_t output;
 
     ret_value = HG_Get_output(handle, &output);
@@ -1829,7 +1830,7 @@ done:
     HG_Free_output(handle, &output);
     FUNC_LEAVE(ret_value);
 }
-
+*/
 /*
  * Callback function for IO complete notification send to client
  *
@@ -5900,6 +5901,7 @@ PDC_Server_storage_meta_name_query_bulk_respond(const struct hg_cb_info *callbac
 
     ret_value = PDC_Server_get_local_storage_meta_with_one_name(query_args);
     if (ret_value != SUCCEED) {
+
         printf("==PDC_SERVER[%d]: %s - get local storage location ERROR!\n", pdc_server_rank_g, __func__);
         goto done;
     }
@@ -7526,8 +7528,9 @@ PDC_Server_query_evaluate_merge_opt(pdc_query_t *query, query_task_t *task, pdc_
 
     // Check if there is a range query that we can combine the evaluation
     if (query->constraint->is_range == 1) {
-        switch (query->constraint->type) {
             /*
+        switch (query->constraint->type) {
+
                         case PDC_FLOAT:
                             flo = *((float *)&query->constraint->value);
                             fhi = *((float *)&query->constraint->value2);
