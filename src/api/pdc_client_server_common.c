@@ -2150,6 +2150,7 @@ done:
 }
 */
 // enter this function, transfer is done, data is pushed to buffer
+/*
 static hg_return_t
 obj_map_region_release_bulk_transfer_thread_cb(const struct hg_cb_info *hg_cb_info)
 {
@@ -2192,6 +2193,8 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
+*/
+
 /*
 static HG_THREAD_RETURN_TYPE
 pdc_region_read_from_progress(void *arg)
@@ -3781,7 +3784,7 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
     struct pdc_region_info *                       remote_reg_info;
     region_buf_map_t *                             eltt, *eltt2;
 
-    hg_uint32_t k, remote_count;
+    hg_uint32_t k, remote_count = 0;
     void **     data_ptrs_to = NULL;
     size_t *    data_size_to = NULL;
     size_t      type_size    = 0;
@@ -5034,7 +5037,7 @@ PDC_find_in_path(char *workingDir, char *application)
 
 done:
     fflush(stdout);
-    FUNC_LEAVE(NULL);
+    FUNC_LEAVE(ret_value);
 }
 
 // Update container with objects
