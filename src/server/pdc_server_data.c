@@ -3427,7 +3427,6 @@ PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bulk_xfer_
             ret_value = FAIL;
             goto done;
         }
-
     }
     else {
         // obj_id and target_id only need to be init when the first data is added (when obj_id==0)
@@ -8095,7 +8094,6 @@ PDC_Server_send_coords_to_client(query_task_t *task)
     hg_size_t     buf_sizes;
     void *        buf;
     int           client_id;
-
 
     FUNC_ENTER(NULL);
 
