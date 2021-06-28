@@ -3634,9 +3634,9 @@ PDC_Server_update_region_storage_meta_bulk_with_cb(bulk_xfer_data_t *          b
     hg_return_t hg_ret;
     perr_t      ret_value = SUCCEED;
 
-    uint32_t                                server_id = 0;
-    hg_handle_t                             rpc_handle;
-    hg_bulk_t                               bulk_handle;
+    uint32_t    server_id = 0;
+    hg_handle_t rpc_handle;
+    hg_bulk_t   bulk_handle;
 
     bulk_rpc_in_t                           bulk_rpc_in;
     update_region_storage_meta_bulk_args_t *cb_args;
