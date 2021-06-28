@@ -323,7 +323,7 @@ PDCquery_get_histogram(pdcid_t obj_id)
         uint64_t              meta_id = 0;
     */
     FUNC_ENTER(NULL);
-    if ( obj_id == NULL ) {
+    if (obj_id == NULL) {
         ret_value = FAILED;
     }
     /*
