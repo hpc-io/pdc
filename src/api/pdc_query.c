@@ -323,6 +323,9 @@ PDCquery_get_histogram(pdcid_t obj_id)
         uint64_t              meta_id = 0;
     */
     FUNC_ENTER(NULL);
+    if ( PDC_find_id(obj_id) == NULL ) {
+        ret_value = FAILED;
+    }
     /*
         if (PDC_find_id(obj_id) != NULL) {
             obj_prop = PDC_obj_get_info(obj_id);
