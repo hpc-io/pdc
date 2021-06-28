@@ -31,12 +31,12 @@
 int
 main(int argc, char **argv)
 {
-    pdcid_t              pdc, cont_prop, cont, obj_prop, obj1;
-    int                  rank = 0, size = 1;
-    uint64_t             d[3] = {10, 20, 30};
-    //struct pdc_obj_prop *op;
-    int                  ret_value = 0;
-    char                 cont_name[128], obj_name1[128];
+    pdcid_t  pdc, cont_prop, cont, obj_prop, obj1;
+    int      rank = 0, size = 1;
+    uint64_t d[3] = {10, 20, 30};
+    // struct pdc_obj_prop *op;
+    int  ret_value = 0;
+    char cont_name[128], obj_name1[128];
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -76,7 +76,7 @@ main(int argc, char **argv)
     }
     // set object dimension
     PDCprop_set_obj_dims(obj_prop, 3, d);
-    //op = PDCobj_prop_get_info(obj_prop);
+    // op = PDCobj_prop_get_info(obj_prop);
     PDCobj_prop_get_info(obj_prop);
 
     // create object
