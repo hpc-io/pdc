@@ -30,10 +30,10 @@
 int
 main(int argc, char **argv)
 {
-    pdcid_t                pdc, create_prop, cont;
-    //struct _pdc_cont_prop *prop;
-    int                    rank = 0, size = 1;
-    int                    ret_value = 0;
+    pdcid_t pdc, create_prop, cont;
+    // struct _pdc_cont_prop *prop;
+    int rank = 0, size = 1;
+    int ret_value = 0;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -54,7 +54,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     // print default container lifetime (persistent)
-    //prop = PDCcont_prop_get_info(create_prop);
+    // prop = PDCcont_prop_get_info(create_prop);
     PDCcont_prop_get_info(create_prop);
 
     // create a container
@@ -68,12 +68,12 @@ main(int argc, char **argv)
     }
     // set container lifetime to transient
     PDCprop_set_cont_lifetime(create_prop, PDC_TRANSIENT);
-    //prop = PDCcont_prop_get_info(create_prop);
+    // prop = PDCcont_prop_get_info(create_prop);
     PDCcont_prop_get_info(create_prop);
 
     // set container lifetime to persistent
     PDCcont_persist(cont);
-    //prop = PDCcont_prop_get_info(create_prop);
+    // prop = PDCcont_prop_get_info(create_prop);
     PDCcont_prop_get_info(create_prop);
 
     // close a container

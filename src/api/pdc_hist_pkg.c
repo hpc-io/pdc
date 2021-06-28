@@ -161,7 +161,7 @@ done:
 #define MACRO_HIST_INCR_ALL(TYPE, hist, n, _data)                                                            \
     ({                                                                                                       \
         uint64_t i;                                                                                          \
-        int      lo, mid = 0, hi;                                                                                \
+        int      lo, mid = 0, hi;                                                                            \
         TYPE *   ldata = (TYPE *)(_data);                                                                    \
         if ((hist)->incr > 0) {                                                                              \
             for (i = 0; i < (n); i++) {                                                                      \
