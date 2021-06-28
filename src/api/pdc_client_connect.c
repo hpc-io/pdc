@@ -1635,7 +1635,7 @@ done:
 }
 */
 
-/*
+
 perr_t
 PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
 {
@@ -1725,7 +1725,7 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
-*/
+
 perr_t
 PDC_Client_delete_metadata_by_id(uint64_t obj_id)
 {
