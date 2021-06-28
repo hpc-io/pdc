@@ -449,7 +449,7 @@ PDC_Server_lookup_server_id(int remote_server_id)
         goto done;
     }
 
-    hg_ret = HG_Trigger(hg_context_g, 1024 /* timeout */, 4096 /* max count */, &actual_count);
+    hg_ret = HG_Trigger(hg_context_g, 0/* timeout */, 1/* max count */, &actual_count);
 
 done:
     fflush(stdout);
@@ -576,7 +576,7 @@ PDC_Server_lookup_client(uint32_t client_id)
         goto done;
     }
 
-    hg_ret = HG_Trigger(hg_context_g, 1024 /* timeout */, 4096 /* max count */, &actual_count);
+    hg_ret = HG_Trigger(hg_context_g, 0/* timeout */, 1/* max count */, &actual_count);
 
 done:
     fflush(stdout);
@@ -1610,7 +1610,7 @@ PDC_Server_multithread_loop(hg_context_t *context)
         if (hg_atomic_get32(&close_server_g))
             break;
 
-        ret = HG_Trigger(context, 1024, 32767, NULL);
+        ret = HG_Trigger(context, 0, 1, NULL);
     } while (ret == HG_SUCCESS || ret == HG_TIMEOUT);
 
     hg_thread_join(progress_thread);
@@ -1658,7 +1658,7 @@ PDC_Server_loop(hg_context_t *hg_context)
 
         actual_count = 0;
         do {
-            hg_ret = HG_Trigger(hg_context, 1024 /* timeout */, 16384 /* max count */, &actual_count);
+            hg_ret = HG_Trigger(hg_context, 0/* timeout */, 1/* max count */, &actual_count);
         } while ((hg_ret == HG_SUCCESS) && actual_count);
 
         /* Do not try to make progress anymore if we're done */
