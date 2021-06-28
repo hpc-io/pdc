@@ -113,7 +113,7 @@ PDC_Server_set_lustre_stripe(const char *path, int stripe_count, int stripe_size
             break;
         }
     }
-    snprintf(cmd, TAG_MAX_LEN, "lfs setstripe -S %dM -c %d -i %d %s", stripe_size_MB, stripe_count, index,
+    snprintf(cmd, TAG_LEN_MAX, "lfs setstripe -S %dM -c %d -i %d %s", stripe_size_MB, stripe_count, index,
              tmp);
 
     if (system(cmd) < 0) {
@@ -1394,6 +1394,7 @@ PDC_Server_buf_map_lookup_server_id(int remote_server_id, struct transfer_buf_ma
     struct buf_map_server_lookup_args_t *lookup_args;
     hg_handle_t                          handle;
     int                                  error = 0;
+
 
     FUNC_ENTER(NULL);
 
@@ -5086,6 +5087,7 @@ PDC_Server_data_read_from2(uint64_t obj_id, struct pdc_region_info *region_info,
             }
             else if (region_info->ndim == 3) {
                 void *tmp_buf = malloc(storage_region->data_size);
+
                 // Read entire region
                 read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
                 // Extract requested data
