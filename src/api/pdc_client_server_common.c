@@ -2257,7 +2257,7 @@ transform_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_inf
     char *                                          buf;
     int                                             ndim;
     int                                             transform_id;
-    int                                             type_extent = 0;
+    int                                             type_extent        = 0;
     int                                             use_transform_size = 0;
     size_t                                          unit               = 1;
     int64_t                                         transform_size, expected_size;
@@ -3359,8 +3359,6 @@ region_read_transform_release(region_transform_and_lock_in_t *in, hg_handle_t ha
                     }
                     else
                         data_size_to[0] = (eltt2->remote_region_unit).count_0;
-
-
 
                     hg_ret =
                         HG_Bulk_create(hg_info->hg_class, remote_count, data_ptrs_to,
@@ -4991,13 +4989,13 @@ char *
 PDC_find_in_path(char *workingDir, char *application)
 {
     struct stat fileStat;
-    char*       ret_value = NULL;
-    char *      pathVar = getenv("PATH");
-    char        colon   = ':';
+    char *      ret_value = NULL;
+    char *      pathVar   = getenv("PATH");
+    char        colon     = ':';
 
-    char        checkPath[PATH_MAX];
-    char *      next = strchr(pathVar, colon);
-    int         offset;
+    char  checkPath[PATH_MAX];
+    char *next = strchr(pathVar, colon);
+    int   offset;
 
     FUNC_ENTER(NULL);
 
@@ -6657,7 +6655,7 @@ PDC_create_shm_segment_ind(uint64_t size, char *shm_addr, void **buf)
 
     /* configure the size of the shared memory segment */
     if (ftruncate(shm_fd, size) != 0) {
-        PGOTO_ERROR(FAIL, "== Truncate memory failed");    
+        PGOTO_ERROR(FAIL, "== Truncate memory failed");
     }
 
     /* map the shared memory segment to the address space of the process */
