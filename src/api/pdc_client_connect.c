@@ -1603,6 +1603,7 @@ done:
 
 // Callback function for  HG_Forward()
 // Gets executed after a call to HG_Trigger and the RPC has completed
+/*
 static hg_return_t
 metadata_update_rpc_cb(const struct hg_cb_info *callback_info)
 {
@@ -1616,7 +1617,7 @@ metadata_update_rpc_cb(const struct hg_cb_info *callback_info)
     client_lookup_args = (struct _pdc_client_lookup_args *)callback_info->arg;
     handle             = callback_info->info.forward.handle;
 
-    /* Get output from server*/
+    // Get output from server
     ret_value = HG_Get_output(handle, &output);
     if (ret_value != HG_SUCCESS) {
         client_lookup_args->ret = -1;
@@ -1632,6 +1633,8 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
+*/
+
 /*
 perr_t
 PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
@@ -2761,6 +2764,7 @@ done:
 }
 */
 
+/*
 // This function supports transforms which are to occur
 // post-READ (mapping operations) on the client.
 static perr_t
@@ -2837,7 +2841,7 @@ pdc_region_release_with_client_transform(struct _pdc_obj_info *  object_info,
     transform_args.type_extent      = type_extent;
     transform_args.region_info      = region_info;
 
-    /* Create a bulk handle for the temp buffer used by the transform */
+    // Create a bulk handle for the temp buffer used by the transform
     hg_ret = HG_Bulk_create(hg_class, 1, (void **)data_ptrs, (hg_size_t *)data_size, HG_BULK_READWRITE,
                             &(in.local_bulk_handle));
 
@@ -2952,7 +2956,9 @@ update_metadata(struct _pdc_obj_info *object_info, pdc_var_type_t data_type, siz
 
     FUNC_LEAVE_VOID;
 }
+*/
 
+/*
 static size_t
 get_transform_size(struct _pdc_transform_state *transform_state)
 {
@@ -2971,7 +2977,7 @@ get_transform_size(struct _pdc_transform_state *transform_state)
 
     FUNC_LEAVE(ret_value);
 }
-/*
+
 static hg_return_t
 maybe_run_transform(struct _pdc_obj_info *object_info, struct pdc_region_info *region_info,
                     pdc_access_t access_type, pdc_var_type_t data_type, int *readyState, int *transform_index,

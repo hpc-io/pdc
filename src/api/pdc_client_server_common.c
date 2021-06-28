@@ -312,7 +312,7 @@ hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data)
                 struct_data->constraints =
                     malloc(struct_data->n_constraints * sizeof(pdc_query_constraint_t));
                 // HG_FALLTHROUGH();
-
+                /* FALLTHRU */
             case HG_ENCODE:
                 ret = hg_proc_raw(proc, struct_data->combine_ops, struct_data->n_combine_ops * sizeof(int));
                 ret = hg_proc_raw(proc, struct_data->constraints,
@@ -499,6 +499,7 @@ PDC_msleep(unsigned long milisec)
 
 uint32_t
 PDC_get_hash_by_name(const char *name)
+
 {
     uint32_t ret_value = 0;
 
@@ -3106,7 +3107,7 @@ HG_TEST_RPC_CB(region_release, handle)
                 {
                     PDC_region_transfer_t_to_list_t(&(eltt->remote_region_unit), tmp);
                     if (PDC_is_same_region_list(tmp, request_region) == 1) {
-                        type_size = eltt->remote_unit;
+                        //type_size = eltt->remote_unit;
                         // get remote object memory addr
                         data_buf = PDC_Server_get_region_buf_ptr(in.obj_id, in.region);
                         if (in.region.ndim == 1) {
@@ -4984,6 +4985,7 @@ char *
 PDC_find_in_path(char *workingDir, char *application)
 {
     struct stat fileStat;
+    int         ret_value = 0;
     char *      pathVar = getenv("PATH");
     char        colon   = ':';
     char        checkPath[PATH_MAX];
@@ -5024,7 +5026,7 @@ PDC_find_in_path(char *workingDir, char *application)
 
 done:
     fflush(stdout);
-    FUNC_LEAVE(NULL);
+    FUNC_LEAVE(ret_value);
 }
 
 // Update container with objects
