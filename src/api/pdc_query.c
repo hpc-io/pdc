@@ -325,10 +325,10 @@ PDCquery_get_histogram(pdcid_t obj_id)
 
     if (PDC_find_id(obj_id) != NULL) {
         obj_prop = PDC_obj_get_info(obj_id);
-        meta_id  = obj_prop->obj_info_pub->meta_id;
+        //meta_id  = obj_prop->obj_info_pub->meta_id;
     }
-    else
-        meta_id = obj_id;
+    //else
+    //    meta_id = obj_id;
 
     FUNC_LEAVE(ret_value);
 }
