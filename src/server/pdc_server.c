@@ -832,8 +832,8 @@ drc_access_again:
     // TODO: support restart with different number of servers than previous run
     char checkpoint_file[ADDR_MAX];
     if (is_restart_g == 1) {
-        snprintf(checkpoint_file, ADDR_MAX * 2 + sizeof(int), "%s%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.",
-                 pdc_server_rank_g);
+        snprintf(checkpoint_file, ADDR_MAX * 2 + sizeof(int), "%s%s%d", pdc_server_tmp_dir_g,
+                 "metadata_checkpoint.", pdc_server_rank_g);
 
         ret_value = PDC_Server_restart(checkpoint_file);
         if (ret_value != SUCCEED) {
@@ -1116,8 +1116,8 @@ PDC_Server_checkpoint()
 #endif
 
     // TODO: instead of checkpoint at app finalize time, try checkpoint with a time countdown or # of objects
-    snprintf(checkpoint_file, ADDR_MAX * 2 + sizeof(int), "%s%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.",
-             pdc_server_rank_g);
+    snprintf(checkpoint_file, ADDR_MAX * 2 + sizeof(int), "%s%s%d", pdc_server_tmp_dir_g,
+             "metadata_checkpoint.", pdc_server_rank_g);
     if (pdc_server_rank_g == 0) {
         printf("\n\n==PDC_SERVER[%d]: Checkpoint file [%s]\n", pdc_server_rank_g, checkpoint_file);
         fflush(stdout);
