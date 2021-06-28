@@ -2092,7 +2092,7 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
-
+/*
 static HG_THREAD_RETURN_TYPE
 pdc_region_write_out_progress(void *arg)
 {
@@ -2148,7 +2148,7 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
-
+*/
 // enter this function, transfer is done, data is pushed to buffer
 static hg_return_t
 obj_map_region_release_bulk_transfer_thread_cb(const struct hg_cb_info *hg_cb_info)
@@ -2192,7 +2192,7 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
-
+/*
 static HG_THREAD_RETURN_TYPE
 pdc_region_read_from_progress(void *arg)
 {
@@ -2210,7 +2210,7 @@ pdc_region_read_from_progress(void *arg)
     PDC_Server_data_read_from(bulk_args->remote_obj_id, bulk_args->remote_reg_info, bulk_args->data_buf,
                               (bulk_args->in).data_unit);
 
-    /* Push bulk data */
+    // Push bulk data
     size = HG_Bulk_get_size(bulk_args->local_bulk_handle);
     if (size != HG_Bulk_get_size(bulk_args->remote_bulk_handle)) {
         error = 1;
@@ -2242,7 +2242,7 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
-
+*/
 // enter this function, transfer is done, data is in data server
 static hg_return_t
 transform_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
@@ -2254,7 +2254,7 @@ transform_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_inf
     char *                                          buf;
     int                                             ndim;
     int                                             transform_id;
-    int                                             type_extent;
+    int                                             type_extent = 0;
     int                                             use_transform_size = 0;
     size_t                                          unit               = 1;
     int64_t                                         transform_size, expected_size;
@@ -3357,6 +3357,8 @@ region_read_transform_release(region_transform_and_lock_in_t *in, hg_handle_t ha
                     else
                         data_size_to[0] = (eltt2->remote_region_unit).count_0;
 
+
+
                     hg_ret =
                         HG_Bulk_create(hg_info->hg_class, remote_count, data_ptrs_to,
                                        (hg_size_t *)data_size_to, HG_BULK_READWRITE, &remote_bulk_handle);
@@ -3610,7 +3612,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     struct buf_map_release_bulk_args *buf_map_bulk_args  = NULL;
     hg_bulk_t                         remote_bulk_handle = HG_BULK_NULL;
     region_buf_map_t *                eltt;
-    hg_uint32_t                       k, remote_count;
+    hg_uint32_t                       k, remote_count = 0;
     void **                           data_ptrs_to = NULL;
     size_t *                          data_size_to = NULL;
     size_t                            type_size    = 0;
@@ -4985,7 +4987,7 @@ char *
 PDC_find_in_path(char *workingDir, char *application)
 {
     struct stat fileStat;
-    int         ret_value = 0;
+    char*       ret_value = NULL;
     char *      pathVar = getenv("PATH");
     char        colon   = ':';
     char        checkPath[PATH_MAX];
@@ -5014,10 +5016,14 @@ PDC_find_in_path(char *workingDir, char *application)
             *foundPath = 0;
             // Change directory (pushd) to the where we find the application
             if (chdir(checkPath) == 0) {
-                getcwd(checkPath, sizeof(checkPath));
+                if (getcwd(checkPath, sizeof(checkPath)) == NULL) {
+                    printf("Path is too large\n");
+                }
                 offset = strlen(checkPath);
                 // Change back (popd) to where we started
-                chdir(workingDir);
+                if (chdir(workingDir) != 0) {
+                    printf("Check dir failed\n");
+                }
                 sprintf(&checkPath[offset], "/%s", appName);
                 PGOTO_DONE(strdup(checkPath));
             }
@@ -5026,7 +5032,7 @@ PDC_find_in_path(char *workingDir, char *application)
 
 done:
     fflush(stdout);
-    FUNC_LEAVE(ret_value);
+    FUNC_LEAVE(NULL);
 }
 
 // Update container with objects
@@ -6645,7 +6651,9 @@ PDC_create_shm_segment_ind(uint64_t size, char *shm_addr, void **buf)
         PGOTO_ERROR(FAIL, "== Shared memory create failed");
 
     /* configure the size of the shared memory segment */
-    ftruncate(shm_fd, size);
+    if (ftruncate(shm_fd, size) != 0) {
+        PGOTO_ERROR(FAIL, "== Truncate memory failed");    
+    }
 
     /* map the shared memory segment to the address space of the process */
     *buf = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
@@ -6690,7 +6698,9 @@ PDC_create_shm_segment(region_list_t *region)
     }
 
     /* configure the size of the shared memory segment */
-    ftruncate(region->shm_fd, region->data_size);
+    if (ftruncate(region->shm_fd, region->data_size) != 0) {
+        PGOTO_ERROR(FAIL, "== Truncate memory failed");
+    }
 
     /* map the shared memory segment to the address space of the process */
     region->buf = mmap(0, region->data_size, PROT_READ | PROT_WRITE, MAP_SHARED, region->shm_fd, 0);

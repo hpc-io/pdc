@@ -605,7 +605,7 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
-
+/*
 static hg_return_t
 client_region_release_with_transform_cb(const struct hg_cb_info *callback_info)
 {
@@ -629,7 +629,7 @@ client_region_release_with_transform_cb(const struct hg_cb_info *callback_info)
 
     transform_args->size = size;
 
-    /* Get output from server*/
+    // Get output from server
     ret_value = HG_Get_output(handle, &output);
     if (ret_value != HG_SUCCESS)
         PGOTO_ERROR(ret_value, "==PDC_CLIENT: client_region_release_rpc_cb - HG_Get_output error!");
@@ -643,7 +643,7 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
-
+*/
 // Bulk
 // Callback after bulk transfer is received by client
 static hg_return_t
@@ -2565,7 +2565,7 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
-
+/*
 static perr_t
 pdc_region_release_with_server_transform(struct _pdc_obj_info *  object_info,
                                          struct pdc_region_info *region_info, pdc_access_t access_type,
@@ -2626,7 +2626,7 @@ pdc_region_release_with_server_transform(struct _pdc_obj_info *  object_info,
     if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
-    /* Create a bulk handle for the temp buffer used by the transform */
+    // Create a bulk handle for the temp buffer used by the transform
     hg_ret = HG_Bulk_create(hg_class, 1, (void **)data_ptrs, (hg_size_t *)data_size, HG_BULK_READWRITE,
                             &(in.local_bulk_handle));
     if (hg_ret != HG_SUCCESS)
@@ -2672,7 +2672,7 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
-/*
+
 static perr_t
 pdc_region_release_with_server_analysis(struct _pdc_obj_info *  object_info,
                                         struct pdc_region_info *region_info, pdc_access_t access_type,

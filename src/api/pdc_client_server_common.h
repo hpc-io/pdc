@@ -1039,6 +1039,7 @@ hg_proc_pdc_kvtag_t(hg_proc_t proc, void *data)
             case HG_DECODE:
                 struct_data->value = malloc(struct_data->size);
                 /* HG_FALLTHROUGH(); */
+                /* FALLTHRU */
             case HG_ENCODE:
                 ret = hg_proc_raw(proc, struct_data->value, struct_data->size);
                 break;
@@ -2585,7 +2586,7 @@ hg_proc_pdc_histogram_t(hg_proc_t proc, void *data)
                 struct_data->range = malloc(struct_data->nbin * sizeof(double) * 2);
                 struct_data->bin   = malloc(struct_data->nbin * sizeof(uint64_t));
                 /* HG_FALLTHROUGH(); */
-
+                /* FALLTHRU */
             case HG_ENCODE:
                 ret = hg_proc_raw(proc, struct_data->range, struct_data->nbin * sizeof(double) * 2);
                 ret = hg_proc_raw(proc, struct_data->bin, struct_data->nbin * sizeof(uint64_t));
@@ -2595,6 +2596,7 @@ hg_proc_pdc_histogram_t(hg_proc_t proc, void *data)
                     free(struct_data->range);
                 if (struct_data->bin)
                     free(struct_data->bin);
+                /* FALLTHRU */
             default:
                 break;
         }
@@ -3723,6 +3725,7 @@ int PDC_region_list_seq_id_cmp(region_list_t *a, region_list_t *b);
  * Add a callback function and its parameters to a task list
  *
  * \param target_list [IN]      Target task list
+
  * \param cb [IN]               Callback function pointer
  * \param cb_args [IN]          Callback function parameters
  * \param curr_task_id [IN]     Global task sequence id
