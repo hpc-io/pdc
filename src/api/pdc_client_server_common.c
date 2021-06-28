@@ -239,6 +239,93 @@ hg_thread_pool_t *hg_test_thread_pool_fs_g = NULL;
 uint64_t pdc_id_seq_g = PDC_SERVER_ID_INTERVEL;
 // actual value for each server is set by PDC_Server_init()
 
+
+hg_return_t
+hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data)
+{
+    hg_return_t       ret;
+    pdc_query_xfer_t *struct_data = (pdc_query_xfer_t *)data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->query_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->client_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->get_op);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->manager);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->n_unique_obj);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->query_op);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->next_server_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->prev_server_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->n_constraints);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->n_combine_ops);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->region);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    if (struct_data->n_constraints > 0) {
+        switch (hg_proc_get_op(proc)) {
+            case HG_DECODE:
+                struct_data->combine_ops = malloc(struct_data->n_combine_ops * sizeof(int));
+                struct_data->constraints =
+                    malloc(struct_data->n_constraints * sizeof(pdc_query_constraint_t));
+                // HG_FALLTHROUGH();
+
+            case HG_ENCODE:
+                ret = hg_proc_raw(proc, struct_data->combine_ops, struct_data->n_combine_ops * sizeof(int));
+                ret = hg_proc_raw(proc, struct_data->constraints,
+                                  struct_data->n_constraints * sizeof(pdc_query_constraint_t));
+                break;
+            case HG_FREE:
+                // free(struct_data->combine_ops); // Something is wrong with these 2 free
+                // free(struct_data->constraints);
+            default:
+                break;
+        }
+    }
+
+    return ret;
+}
+
+
 static hg_return_t
 hg_proc_send_shm_in_t(hg_proc_t proc, void *data)
 {
@@ -1363,6 +1450,7 @@ PDC_Server_set_close()
 {
     return SUCCEED;
 }
+
 hg_return_t
 PDC_Server_checkpoint_cb(const struct hg_cb_info *callback_info ATTRIBUTE(unused))
 {
