@@ -3427,6 +3427,7 @@ PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bulk_xfer_
             ret_value = FAIL;
             goto done;
         }
+
     }
     else {
         // obj_id and target_id only need to be init when the first data is added (when obj_id==0)
@@ -4076,6 +4077,7 @@ done:
 
 
 
+
  *
 
 
@@ -4530,13 +4532,56 @@ PDC_check_region_relation(uint64_t *offset, uint64_t *size, uint64_t *offset2, u
     return 0;
 }
 
+/*
+ * A function used by PDC_region_merge.
+ * This function copies contiguous memory buffer from buf and buf2 to buf_merged using region views.
+*/
+static int pdc_region_merge_buf_copy(const uint64_t *offset, const uint64_t *size, const uint64_t *offset2, const uint64_t *size, char *buf, char* buf2, char **buf_merged, int unit, int connect_flag) {
+    uint64_t overlaps;
+    int i;
+    for ( i = 0; i < connect_flag; ++i ) {
+        unit *= size[i];
+    }
+
+    if (offset[connect_flag] < offset2[connect_flag]) {
+        if (offset[connect_flag+] + size[connect_flag] > offset2[connect_flag] + size2[connect_flag] ) {
+            memcpy(*buf_merged, buf, unit * (offset2[connect_flag] - offset[connect_flag]) );
+            *buf_merged += unit * (offset2[connect_flag] - offset[connect_flag]);
+            memcpy(*buf_merged, buf2, unit * size2[connect_flag]);
+            *buf_merged += unit * size2[connect_flag];
+            memcpy(*buf_merged, buf2, unit * (offset[connect_flag] + size[connect_flag] - (offset2[connect_flag] + size2[connect_flag])) );
+            *buf_merged += unit * (offset[connect_flag] + size[connect_flag] - (offset2[connect_flag] + size2[connect_flag]));
+        } else {
+            memcpy(*buf_merged, buf, unit * (offset2[connect_flag] - offset[connect_flag]) );
+            *buf_merged += unit * (offset2[connect_flag] - offset[connect_flag]);
+            memcpy(*buf_merged, buf2, unit * size2[connect_flag]);
+            *buf_merged += unit * size2[connect_flag];
+        }
+    }
+    else {
+        if (offset[connect_flag] + size[connect_flag] > offset2[connect_flag] + size2[connect_flag] ) {
+            memcpy(*buf_merged, buf2, unit * size2[connect_flag]);
+            *buf_merged += unit * size2[connect_flag];
+            overlaps = offset2[connect_flag] + size2[connect_flag] - offset[connect_flag];
+            memcpy(*buf_merged, buf + overlaps * unit, unit * (size[connect_flag] - overlaps) );
+            *buf_merged += unit * (size[connect_flag] - overlaps);
+        } else {
+            memcpy(*buf_merged, buf2, unit * size2[connect_flag] );
+            *buf_merged += unit * size2[connect_flag];
+        }
+    }
+    return 0;
+}
+/*
+ * This function merges two regions. The two regions must have the same offset/size in all dimensions but one. The dimension that is not the same must not have gaps between the two regions.
+*/
 int
 PDC_region_merge(const char *buf, const char *buf2, const uint64_t *offset, const uint64_t *size,
                  const uint64_t *offset2, const uint64_t *size2, char **buf_merged_ptr,
                  uint64_t **offset_merged, uint64_t **size_merged, int ndim, int unit)
 {
     int      connect_flag, i, j;
-    uint64_t overlaps, tmp_buf_size;
+    uint64_t tmp_buf_size;
     char *   buf_merged;
     connect_flag = -1;
     // Detect if two regions are connected. This means one dimension is fully connected and all other
@@ -4566,13 +4611,7 @@ PDC_region_merge(const char *buf, const char *buf2, const uint64_t *offset, cons
             size_merged[0][i]   = size[i];
         }
     }
-    // Work out how many elements in the connecting dimension have to be overwritten.
-    if (offset[connect_flag] + size[connect_flag] > offset2[connect_flag]) {
-        overlaps = offset[connect_flag] + size[connect_flag] - offset2[connect_flag];
-    }
-    else {
-        overlaps = offset2[connect_flag] + size2[connect_flag] - offset[connect_flag];
-    }
+
     // Workout the final offset of the region in the connecting dimension
     if (offset[connect_flag] > offset2[connect_flag]) {
         offset_merged[0][connect_flag] = offset2[connect_flag];
@@ -4600,40 +4639,17 @@ PDC_region_merge(const char *buf, const char *buf2, const uint64_t *offset, cons
     buf_merged      = (char *)malloc(sizeof(char) * tmp_buf_size);
     *buf_merged_ptr = buf_merged;
     if (ndim == 1) {
-        if (offset[0] < offset2[0]) {
-            memcpy(buf_merged, buf, unit * (size[0] - overlaps));
-            memcpy(buf_merged + unit * (size[0] - overlaps), buf2, unit * size2[0]);
-        }
-        else {
-            memcpy(buf_merged, buf2, unit * size2[0]);
-            memcpy(buf_merged + unit * size2[0], buf + unit * overlaps, unit * (size[0] - overlaps));
-        }
+        pdc_region_merge_buf_copy(offset, size, offset2, size, buf, buf2, &buf_merged, unit, connect_flag);
     }
     else if (ndim == 2) {
         if (connect_flag == 0) {
             // Note size[1] must equal to size2[1] after the previous checking.
             for (i = 0; i < (int)size[1]; ++i) {
-                if (offset[0] < offset2[0]) {
-                    memcpy(buf_merged, buf, unit * (size[0] - overlaps));
-                    memcpy(buf_merged + unit * (size[0] - overlaps), buf2, unit * size2[0]);
-                    buf_merged += (size[0] + size2[0] - overlaps) * unit;
-                }
-                else {
-                    memcpy(buf_merged, buf2, unit * size2[0]);
-                    memcpy(buf_merged + unit * size2[0], buf + overlaps * unit, unit * (size[0] - overlaps));
-                    buf_merged += (size[0] + size2[0] - overlaps) * unit;
-                }
+                pdc_region_merge_buf_copy(offset, size, offset2, size, buf, buf2, &buf_merged, unit, connect_flag);
             }
         }
         else {
-            if (offset[1] < offset2[1]) {
-                memcpy(buf_merged, buf, size[0] * (size[1] - overlaps) * unit);
-                memcpy(buf_merged + size[0] * (size[1] - overlaps) * unit, buf2, size2[0] * size2[1] * unit);
-            }
-            else {
-                memcpy(buf_merged, buf2, size2[0] * size2[1] * unit);
-                memcpy(buf_merged, buf + size[0] * overlaps * unit, size[0] * (size[1] - overlaps) * unit);
-            }
+            pdc_region_merge_buf_copy(offset, size, offset2, size, buf, buf2, &buf_merged, unit, connect_flag);
         }
     }
     else if (ndim == 3) {
@@ -4642,48 +4658,18 @@ PDC_region_merge(const char *buf, const char *buf2, const uint64_t *offset, cons
             // size2[2]
             for (i = 0; i < (int)size[2]; ++i) {
                 for (j = 0; j < (int)size[1]; ++j) {
-                    if (offset[0] < offset2[0]) {
-                        memcpy(buf_merged, buf, unit * (size[0] - overlaps));
-                        memcpy(buf_merged + unit * (size[0] - overlaps), buf2, unit * size2[0]);
-                        buf_merged += (size[0] + size2[0] - overlaps) * unit;
-                    }
-                    else {
-                        memcpy(buf_merged, buf2, unit * size2[0]);
-                        memcpy(buf_merged + unit * size2[0], buf + overlaps * unit,
-                               unit * (size[0] - overlaps));
-                        buf_merged += (size[0] + size2[0] - overlaps) * unit;
-                    }
+                    pdc_region_merge_buf_copy(offset, size, offset2, size, buf, buf2, &buf_merged, unit, connect_flag);
                 }
             }
         }
         else if (connect_flag == 1) {
             // Note size[2] must equal to size2[2] after the previous checking.
             for (i = 0; i < (int)size[2]; ++i) {
-                if (offset[1] < offset2[1]) {
-                    memcpy(buf_merged, buf, size[0] * (size[1] - overlaps) * unit);
-                    memcpy(buf_merged + size[0] * (size[1] - overlaps) * unit, buf2,
-                           size2[0] * size2[1] * unit);
-                    buf_merged += size2[0] * (size2[1] + size[1] - overlaps) * unit;
-                }
-                else {
-                    memcpy(buf_merged, buf2, size2[0] * size2[1] * unit);
-                    memcpy(buf_merged, buf + size[0] * overlaps * unit,
-                           size[0] * (size[1] - overlaps) * unit);
-                    buf_merged += size2[0] * (size2[1] + size[1] - overlaps) * unit;
-                }
+                pdc_region_merge_buf_copy(offset, size, offset2, size, buf, buf2, &buf_merged, unit, connect_flag);
             }
         }
         else if (connect_flag == 2) {
-            if (offset[2] < offset2[2]) {
-                memcpy(buf_merged, buf, size[0] * size[1] * (size[2] - overlaps) * unit);
-                memcpy(buf_merged + size[0] * size[1] * (size[2] - overlaps) * unit, buf2,
-                       size2[0] * size2[1] * size2[2] * unit);
-            }
-            else {
-                memcpy(buf_merged, buf2, size2[0] * size2[1] * size2[2] * unit);
-                memcpy(buf_merged, buf + size[0] * size[1] * (size[2] - overlaps) * unit,
-                       size[0] * size[1] * (size[2] - overlaps) * unit);
-            }
+            pdc_region_merge_buf_copy(offset, size, offset2, size, buf, buf2, &buf_merged, unit, connect_flag);
         }
     }
     return PDC_MERGE_SUCCESS;
@@ -6358,6 +6344,7 @@ PDC_constraint_get_nhits_from_hist(pdc_query_constraint_t *constraint, pdc_histo
         case PDC_INT64:
             value  = (double)(*((int64_t*)&constraint->value));
             value2 = (double)(*((int64_t*)&constraint->value2));
+
             break;
         case PDC_UINT64:
             value  = (double)(*((uint64_t*)&constraint->value));
