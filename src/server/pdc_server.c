@@ -449,7 +449,7 @@ PDC_Server_lookup_server_id(int remote_server_id)
         goto done;
     }
 
-    hg_ret = HG_Trigger(hg_context_g, 0/* timeout */, 1/* max count */, &actual_count);
+    hg_ret = HG_Trigger(hg_context_g, 0 /* timeout */, 1 /* max count */, &actual_count);
 
 done:
     fflush(stdout);
