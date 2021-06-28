@@ -3883,7 +3883,7 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
 
                         obj_map_bulk_args = (struct buf_map_analysis_and_release_bulk_args *)malloc(
                             sizeof(struct buf_map_analysis_and_release_bulk_args));
-                        memset(obj_map_bulk_args, 0, sizeof(struct buf_map_release_bulk_args));
+                        memset(obj_map_bulk_args, 0, sizeof(struct buf_map_analysis_and_release_bulk_args));
                         obj_map_bulk_args->handle             = handle;
                         obj_map_bulk_args->data_buf           = data_buf;
                         obj_map_bulk_args->in                 = in.analysis;
@@ -4057,7 +4057,7 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
                             PGOTO_ERROR(HG_OTHER_ERROR, "HG_TEST_RPC_CB(region_release, handle): "
                                                         "buf_map_bulk_args memory allocation failed");
 
-                        memset(buf_map_bulk_args, 0, sizeof(struct buf_map_release_bulk_args));
+                        memset(buf_map_bulk_args, 0, sizeof(struct buf_map_analysis_and_release_bulk_args));
                         buf_map_bulk_args->handle             = handle;
                         buf_map_bulk_args->data_buf           = data_buf;
                         buf_map_bulk_args->in                 = in.analysis;
@@ -5572,6 +5572,7 @@ PDC_add_task_to_list(pdc_task_list_t **target_list, perr_t (*cb)(), void *cb_arg
 
     FUNC_ENTER(NULL);
 
+
     if (target_list == NULL)
         PGOTO_ERROR(-1, "== NULL input!");
 
@@ -6330,6 +6331,7 @@ HG_TEST_THREAD_CB(send_read_sel_obj_id_rpc)
 #define PDC_FUNC_DECLARE_REGISTER(x)                                                                         \
     hg_id_t PDC_##x##_register(hg_class_t *hg_class)                                                         \
     {                                                                                                        \
+
         hg_id_t ret_value;                                                                                   \
         FUNC_ENTER(NULL);                                                                                    \
         ret_value = MERCURY_REGISTER(hg_class, #x, x##_in_t, x##_out_t, x##_cb);                             \
