@@ -262,8 +262,8 @@ PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out, hg_han
     region_buf_map_t *    eltt;
     int                   error      = 0;
     int                   found_lock = 0;
-    time_t                t;
-    struct tm             tm;
+    //time_t                t;
+    //struct tm             tm;
 
     FUNC_ENTER(NULL);
 
@@ -3427,6 +3427,7 @@ PDC_Server_add_region_storage_meta_to_bulk_buf(region_list_t *region, bulk_xfer_
             ret_value = FAIL;
             goto done;
         }
+
     }
     else {
         // obj_id and target_id only need to be init when the first data is added (when obj_id==0)
@@ -4068,6 +4069,7 @@ done:
 /*
  * Read with POSIX within one file, based on the region list
  * after the server has accumulated requests from all node local clients
+
 
 
 
@@ -4950,7 +4952,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 
     // Write 1GB at a time
 
-    uint64_t write_size;
+    uint64_t write_size = 0;
     if (region_info->ndim >= 1)
         write_size = unit * region_info->size[0];
     if (region_info->ndim >= 2)
@@ -5185,6 +5187,9 @@ PDC_region_cache_clock_cycle(void *ptr)
     pdc_obj_cache *obj_cache;
     int            i;
     struct timeval current_time;
+    if ( ptr == NULL ) {
+        i = 0;
+    }
     while (1) {
         pthread_mutex_lock(&pdc_cache_mutex);
         if (!pdc_recycle_close_flag) {
@@ -6271,7 +6276,7 @@ PDC_region_has_hits_from_hist(pdc_query_constraint_t *constraint, pdc_histogram_
         printf("==PDC_SERVER[%d]: %s -  NULL input!\n", pdc_server_rank_g, __func__);
         return -1;
     }
-
+/*
     switch (constraint->type) {
         case PDC_FLOAT:
             value  = (double)(*((float *)&constraint->value));
@@ -6296,6 +6301,36 @@ PDC_region_has_hits_from_hist(pdc_query_constraint_t *constraint, pdc_histogram_
         case PDC_UINT64:
             value  = (double)(*((uint64_t *)&constraint->value));
             value2 = (double)(*((uint64_t *)&constraint->value2));
+            break;
+        default:
+            printf("==PDC_SERVER[%d]: %s - error with operator type!\n", pdc_server_rank_g, __func__);
+            return -1;
+    }
+*/
+    switch (constraint->type) {
+        case PDC_FLOAT:
+            value  = (double)constraint->value;
+            value2 = (double)constraint->value2;
+            break;
+        case PDC_DOUBLE:
+            value  = (double)constraint->value;
+            value2 = (double)constraint->value2;
+            break;
+        case PDC_INT:
+            value  = (double)constraint->value;
+            value2 = (double)constraint->value2;
+            break;
+        case PDC_UINT:
+            value  = (double)constraint->value;
+            value2 = (double)constraint->value2;
+            break;
+        case PDC_INT64:
+            value  = (double)constraint->value;
+            value2 = (double)constraint->value2;
+            break;
+        case PDC_UINT64:
+            value  = (double)constraint->value;
+            value2 = (double)constraint->value2;
             break;
         default:
             printf("==PDC_SERVER[%d]: %s - error with operator type!\n", pdc_server_rank_g, __func__);
@@ -7417,14 +7452,14 @@ PDC_Server_query_evaluate_merge_opt(pdc_query_t *query, query_task_t *task, pdc_
     pdc_selection_t *sel = query->sel;
     uint64_t         nelem;
     size_t           i, j, unit_size;
-    pdc_query_op_t   op, lop, rop;
-    float            flo, fhi;
-    double           dlo, dhi;
-    int              ilo, ihi, ndim, count = 0;
-    uint32_t         ulo, uhi;
-    int64_t          i64lo, i64hi;
-    uint64_t         ui64lo, ui64hi;
-    void *           value, *buf;
+    pdc_query_op_t   op = PDC_QUERY_OR, lop = PDC_QUERY_OR, rop = PDC_QUERY_OR;
+    float            flo = .0, fhi = .0;
+    double           dlo = .0, dhi = .0;
+    int              ilo = 0, ihi = 0, ndim, count = 0;
+    uint32_t         ulo = 0, uhi = 0;
+    int64_t          i64lo = 0, i64hi = 0;
+    uint64_t         ui64lo = 0, ui64hi = 0;
+    void *           value = NULL, *buf = NULL;
     int              n_eval_region = 0, can_skip, region_iter = 0;
 
     printf("==PDC_SERVER[%d]: %s - start query evaluation!\n", pdc_server_rank_g, __func__);
@@ -7493,6 +7528,7 @@ PDC_Server_query_evaluate_merge_opt(pdc_query_t *query, query_task_t *task, pdc_
     // Check if there is a range query that we can combine the evaluation
     if (query->constraint->is_range == 1) {
         switch (query->constraint->type) {
+/*
             case PDC_FLOAT:
                 flo = *((float *)&query->constraint->value);
                 fhi = *((float *)&query->constraint->value2);
@@ -7516,6 +7552,37 @@ PDC_Server_query_evaluate_merge_opt(pdc_query_t *query, query_task_t *task, pdc_
             case PDC_UINT64:
                 ui64lo = *((uint64_t *)&query->constraint->value);
                 ui64hi = *((uint64_t *)&query->constraint->value2);
+                break;
+            default:
+                printf("==PDC_SERVER[%d]: %s - error with operator type!\n", pdc_server_rank_g, __func__);
+                ret_value = FAIL;
+                goto done;
+        } // End switch
+*/
+        switch (query->constraint->type) {
+            case PDC_FLOAT:
+                flo = (float)query->constraint->value;
+                fhi = (float)query->constraint->value2;
+                break;
+            case PDC_DOUBLE:
+                dlo = (double)query->constraint->value;
+                dhi = (double)query->constraint->value2;
+                break;
+            case PDC_INT:
+                ilo = (int)query->constraint->value;
+                ihi = (int)query->constraint->value2;
+                break;
+            case PDC_UINT:
+                ulo = (uint32_t)query->constraint->value;
+                uhi = (uint32_t)query->constraint->value2;
+                break;
+            case PDC_INT64:
+                i64lo = (int64_t)query->constraint->value;
+                i64hi = (int64_t)query->constraint->value2;
+                break;
+            case PDC_UINT64:
+                ui64lo = (uint64_t)query->constraint->value;
+                ui64hi = (uint64_t)query->constraint->value2;
                 break;
             default:
                 printf("==PDC_SERVER[%d]: %s - error with operator type!\n", pdc_server_rank_g, __func__);
@@ -8455,7 +8522,7 @@ PDC_recv_read_coords(const struct hg_cb_info *callback_info)
     hg_return_t         ret               = HG_SUCCESS;
     hg_bulk_t           local_bulk_handle = callback_info->info.bulk.local_handle;
     struct bulk_args_t *bulk_args         = (struct bulk_args_t *)callback_info->arg;
-    query_task_t *      task_elt;
+    query_task_t *      task_elt = NULL;
     uint64_t            nhits, obj_id;
     uint32_t            ndim;
     int                 query_id, origin;
@@ -8959,9 +9026,9 @@ void
 PDC_Server_distribute_query_storage_info(query_task_t *task, uint64_t obj_id, int *obj_idx, uint64_t *obj_ids,
                                          int op)
 {
-    pdc_metadata_t *meta;
+    pdc_metadata_t *meta = NULL;
     int             i, server_id, count, avg_count, nsent, nsent_server;
-    region_list_t * elt, *new_region;
+    region_list_t * elt, *new_region = NULL;
     void *          region_bulk_buf;
     uint64_t        buf_alloc = 0, buf_off = 0;
     bulk_rpc_in_t   header;
@@ -9100,14 +9167,14 @@ PDC_recv_query_metadata_bulk(const struct hg_cb_info *callback_info)
     hg_bulk_t               local_bulk_handle = callback_info->info.bulk.local_handle;
     struct bulk_args_t *    bulk_args         = (struct bulk_args_t *)callback_info->arg;
     void *                  buf;
-    region_list_t *         regions;
+    region_list_t *         regions = NULL;
     int                     i, nregion, *loc_len_ptr, *has_hist_ptr, found_task;
-    uint64_t                buf_off, *offset_ptr, *size_ptr;
-    char *                  loc_ptr;
-    region_info_transfer_t *region_info_ptr;
-    pdc_histogram_t *       hist_ptr;
-    query_task_t *          task_elt;
-    pdc_query_t *           query;
+    uint64_t                buf_off, *offset_ptr = NULL, *size_ptr = NULL;
+    char *                  loc_ptr = NULL;
+    region_info_transfer_t *region_info_ptr = NULL;
+    pdc_histogram_t *       hist_ptr = NULL;
+    query_task_t *          task_elt = NULL;
+    pdc_query_t *           query = NULL;
 
     pdc_int_ret_t out;
     out.ret = 1;
