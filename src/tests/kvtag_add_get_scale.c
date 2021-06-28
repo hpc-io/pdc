@@ -73,7 +73,6 @@ main(int argc, char *argv[])
     int           proc_num, my_rank, i, v;
     char          obj_name[128];
     double        stime, total_time;
-    char          tag[128];
     pdc_kvtag_t   kvtag;
     pdc_kvtag_t **values;
     size_t        value_size;

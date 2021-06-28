@@ -154,13 +154,19 @@ main(int argc, char **argv)
         return -1;
     }
 
-    fread(&n_entry, sizeof(int), 1, file);
+    if ( fread(&n_entry, sizeof(int), 1, file) == 0 ){
+        printf("read failed\n");
+    }
 
     while (n_entry > 0) {
-        fread(&tmp_count, sizeof(int), 1, file);
+        if (fread(&tmp_count, sizeof(int), 1, file) == 0) {
+            printf("read failed\n");
+        }
 
         hash_key = (uint32_t *)malloc(sizeof(uint32_t));
-        fread(hash_key, sizeof(uint32_t), 1, file);
+        if (fread(hash_key, sizeof(uint32_t), 1, file) == 0) {
+            printf("read failed\n");
+        }
 
         // read each metadata
         for (j = 0; j < tmp_count; j++) {
@@ -168,7 +174,9 @@ main(int argc, char **argv)
                 n_entry = 0;
                 break;
             }
-            fread(&entry, sizeof(pdc_metadata_t), 1, file);
+            if (fread(&entry, sizeof(pdc_metadata_t), 1, file) == 0 ) {
+                printf("read failed\n");
+            }
             sprintf(obj_names[read_count], "%s", entry.obj_name);
             obj_ts[read_count] = entry.time_step;
             read_count++;

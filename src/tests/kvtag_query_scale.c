@@ -179,7 +179,6 @@ main(int argc, char *argv[])
         fflush(stdout);
     }
 
-done:
     // close a container
     if (PDCcont_close(cont) < 0)
         printf("fail to close container c1\n");
@@ -201,7 +200,7 @@ done:
     // close pdc
     if (PDCclose(pdc) < 0)
         printf("fail to close PDC\n");
-
+done:
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif

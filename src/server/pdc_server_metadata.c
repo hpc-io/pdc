@@ -240,7 +240,7 @@ static inline void
 combine_obj_info_to_string(pdc_metadata_t *metadata, char *output)
 {
     FUNC_ENTER(NULL);
-    snprintf(output, TAG_LEN_MAX, "%s%d", metadata->obj_name, metadata->time_step);
+    snprintf(output, TAG_LEN_MAX, "%s %d", metadata->obj_name, metadata->time_step);
 }
 
 /*
