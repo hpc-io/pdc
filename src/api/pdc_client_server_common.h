@@ -2985,6 +2985,7 @@ hg_proc_storage_meta_name_query_in_t(hg_proc_t proc, void *data)
 }
 
 /* Define hg_proc_pdc_query_xfer_t */
+/*
 static hg_return_t
 hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data)
 {
@@ -3052,7 +3053,7 @@ hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data)
                 struct_data->combine_ops = malloc(struct_data->n_combine_ops * sizeof(int));
                 struct_data->constraints =
                     malloc(struct_data->n_constraints * sizeof(pdc_query_constraint_t));
-                /* HG_FALLTHROUGH(); */
+                // HG_FALLTHROUGH();
 
             case HG_ENCODE:
                 ret = hg_proc_raw(proc, struct_data->combine_ops, struct_data->n_combine_ops * sizeof(int));
@@ -3060,8 +3061,8 @@ hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data)
                                   struct_data->n_constraints * sizeof(pdc_query_constraint_t));
                 break;
             case HG_FREE:
-                /* free(struct_data->combine_ops); // Something is wrong with these 2 free */
-                /* free(struct_data->constraints); */
+                // free(struct_data->combine_ops); // Something is wrong with these 2 free
+                // free(struct_data->constraints);
             default:
                 break;
         }
@@ -3069,6 +3070,7 @@ hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data)
 
     return ret;
 }
+*/
 
 /* Define hg_proc_get_sel_data_rpc_in_t */
 static HG_INLINE hg_return_t

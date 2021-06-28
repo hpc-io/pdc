@@ -3637,6 +3637,7 @@ PDC_Server_update_region_storage_meta_bulk_with_cb(bulk_xfer_data_t *          b
     uint32_t                                server_id = 0;
     hg_handle_t                             rpc_handle;
     hg_bulk_t                               bulk_handle;
+
     bulk_rpc_in_t                           bulk_rpc_in;
     update_region_storage_meta_bulk_args_t *cb_args;
 
@@ -5209,6 +5210,7 @@ PDC_region_cache_clock_cycle(void *ptr)
         pthread_mutex_unlock(&pdc_cache_mutex);
         sleep(0.75);
     }
+    return 0;
 }
 
 perr_t
