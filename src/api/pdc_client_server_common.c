@@ -2815,11 +2815,11 @@ HG_TEST_RPC_CB(region_release, handle)
     hg_bulk_t                            remote_bulk_handle     = HG_BULK_NULL;
     struct pdc_region_info *             remote_reg_info;
     region_buf_map_t *                   eltt, *eltt2, *eltt_tmp;
-    hg_uint32_t                          /*k, m, */remote_count;
+    hg_uint32_t /*k, m, */               remote_count;
     void **                              data_ptrs_to = NULL;
     size_t *                             data_size_to = NULL;
-    //size_t                               type_size    = 0;
-    //size_t                               dims[4]      = {0, 0, 0, 0};
+    // size_t                               type_size    = 0;
+    // size_t                               dims[4]      = {0, 0, 0, 0};
 #if PDC_TIMING == 1
     double start, end;
 #endif
@@ -6844,42 +6844,40 @@ print_query(pdc_query_t *query)
     if (query->left == NULL && query->right == NULL) {
 
         printf(" (%" PRIu64 " %s", query->constraint->obj_id, pdcquery_op_char_g[query->constraint->op]);
-/*
-        if (query->constraint->is_range == 1) {
-            if (query->constraint->type == PDC_FLOAT)
-                printf(" %.6f %s %.6f) ", *((float *)&query->constraint->value),
-                       pdcquery_op_char_g[query->constraint->op2], *((float *)&query->constraint->value2));
-            else if (query->constraint->type == PDC_DOUBLE)
-                printf(" %.6f %s %.6f) ", *((double *)&query->constraint->value),
-                       pdcquery_op_char_g[query->constraint->op2], *((double *)&query->constraint->value2));
-            else if (query->constraint->type == PDC_INT)
-                printf(" %d %s %d) ", *((int *)&query->constraint->value),
-                       pdcquery_op_char_g[query->constraint->op2], *((int *)&query->constraint->value2));
-            else if (query->constraint->type == PDC_UINT)
-                printf(" %u %s %u) ", *((unsigned *)&query->constraint->value),
-                       pdcquery_op_char_g[query->constraint->op2], *((unsigned *)&query->constraint->value2));
-            else if (query->constraint->type == PDC_INT64)
-                printf(" %" PRId64 " %s %" PRId64 ")", *((int64_t *)&query->constraint->value),
-                       pdcquery_op_char_g[query->constraint->op2], *((int64_t *)&query->constraint->value2));
-            else if (query->constraint->type == PDC_UINT64)
-                printf(" %" PRId64 " %s %" PRId64 ") ", *((uint64_t *)&query->constraint->value),
-                       pdcquery_op_char_g[query->constraint->op2], *((uint64_t *)&query->constraint->value2));
-        }
-        else {
-            if (query->constraint->type == PDC_FLOAT)
-                printf(" %.6f) ", *((float *)&query->constraint->value));
-            else if (query->constraint->type == PDC_DOUBLE)
-                printf(" %.6f) ", *((double *)&query->constraint->value));
-            else if (query->constraint->type == PDC_INT)
-                printf(" %d) ", *((int *)&query->constraint->value));
-            else if (query->constraint->type == PDC_UINT)
-                printf(" %u) ", *((unsigned *)&query->constraint->value));
-            else if (query->constraint->type == PDC_INT64)
-                printf(" %" PRId64 ")", *((int64_t *)&query->constraint->value));
-            else if (query->constraint->type == PDC_UINT64)
-                printf(" %" PRIu64 ") ", *((uint64_t *)&query->constraint->value));
-        }
-*/
+        /*
+                if (query->constraint->is_range == 1) {
+                    if (query->constraint->type == PDC_FLOAT)
+                        printf(" %.6f %s %.6f) ", *((float *)&query->constraint->value),
+                               pdcquery_op_char_g[query->constraint->op2], *((float
+           *)&query->constraint->value2)); else if (query->constraint->type == PDC_DOUBLE) printf(" %.6f %s
+           %.6f) ", *((double *)&query->constraint->value), pdcquery_op_char_g[query->constraint->op2],
+           *((double *)&query->constraint->value2)); else if (query->constraint->type == PDC_INT) printf(" %d
+           %s %d) ", *((int *)&query->constraint->value), pdcquery_op_char_g[query->constraint->op2], *((int
+           *)&query->constraint->value2)); else if (query->constraint->type == PDC_UINT) printf(" %u %s %u) ",
+           *((unsigned *)&query->constraint->value), pdcquery_op_char_g[query->constraint->op2], *((unsigned
+           *)&query->constraint->value2)); else if (query->constraint->type == PDC_INT64) printf(" %" PRId64 "
+           %s %" PRId64 ")", *((int64_t *)&query->constraint->value),
+                               pdcquery_op_char_g[query->constraint->op2], *((int64_t
+           *)&query->constraint->value2)); else if (query->constraint->type == PDC_UINT64) printf(" %" PRId64
+           " %s %" PRId64 ") ", *((uint64_t *)&query->constraint->value),
+                               pdcquery_op_char_g[query->constraint->op2], *((uint64_t
+           *)&query->constraint->value2));
+                }
+                else {
+                    if (query->constraint->type == PDC_FLOAT)
+                        printf(" %.6f) ", *((float *)&query->constraint->value));
+                    else if (query->constraint->type == PDC_DOUBLE)
+                        printf(" %.6f) ", *((double *)&query->constraint->value));
+                    else if (query->constraint->type == PDC_INT)
+                        printf(" %d) ", *((int *)&query->constraint->value));
+                    else if (query->constraint->type == PDC_UINT)
+                        printf(" %u) ", *((unsigned *)&query->constraint->value));
+                    else if (query->constraint->type == PDC_INT64)
+                        printf(" %" PRId64 ")", *((int64_t *)&query->constraint->value));
+                    else if (query->constraint->type == PDC_UINT64)
+                        printf(" %" PRIu64 ") ", *((uint64_t *)&query->constraint->value));
+                }
+        */
         if (query->constraint->is_range == 1) {
             if (query->constraint->type == PDC_FLOAT)
                 printf(" %.6f %s %.6f) ", (float)query->constraint->value,

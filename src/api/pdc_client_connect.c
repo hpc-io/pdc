@@ -2990,7 +2990,7 @@ maybe_run_transform(struct _pdc_obj_info *object_info, struct pdc_region_info *r
     // functions are registered.  To fix this, after each
     // transform, we should restart the scan loop to choose
     // a "next" transform if there is one...
-     
+
     FUNC_ENTER(NULL);
 
     if (access_type == PDC_WRITE) {
@@ -3086,22 +3086,22 @@ PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_region_i
 {
     perr_t ret_value = SUCCEED;
     // int readyState = 0, currentState;
-    hg_return_t                    hg_ret;
-    uint32_t                       server_id, meta_server_id;
-    region_lock_in_t               in;
-    //size_t                         type_extent;
+    hg_return_t      hg_ret;
+    uint32_t         server_id, meta_server_id;
+    region_lock_in_t in;
+    // size_t                         type_extent;
     struct _pdc_client_lookup_args lookup_args;
     hg_handle_t                    region_release_handle = HG_HANDLE_NULL;
     // void *transform_result = NULL;
     // size_t transform_size = 0;
-    //struct _pdc_region_transform_ftn_info **registry = NULL;
+    // struct _pdc_region_transform_ftn_info **registry = NULL;
     // int transform_index;
     // int k, registered_count;
     // struct _pdc_region_analysis_ftn_info **analysis_registry;
 
     FUNC_ENTER(NULL);
 
-    //type_extent = object_info->obj_pt->type_extent;
+    // type_extent = object_info->obj_pt->type_extent;
     /*
         if (region_info->registered_op & PDC_TRANSFORM) {
             transform_index = -1;
@@ -3743,8 +3743,8 @@ PDC_Client_data_server_write(struct pdc_request *request)
     // Calculate region size
     for (i = 0; i < region->ndim; i++) {
         region_size *= region->size[i];
-        if (region_size == 0)s
-            PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: size[%d]=0", pdc_client_mpi_rank_g, i);
+        if (region_size == 0)
+            s PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: size[%d]=0", pdc_client_mpi_rank_g, i);
     }
 
     // Create shared memory
