@@ -357,7 +357,7 @@ pdc_histogram_t *
 PDC_merge_hist(int n, pdc_histogram_t **hists)
 {
     pdc_histogram_t *ret_value = NULL;
-    int              i, j, incr_max_idx = 0, hi, lo, mid;
+    int              i, j, incr_max_idx = 0, hi, lo, mid = 0;
     double           tot_min, tot_max, incr_max;
     pdc_histogram_t *res;
 
