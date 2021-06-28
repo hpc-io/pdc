@@ -54,7 +54,7 @@ main(int argc, char **argv)
     pdc_metadata_t new;
     char **         obj_names;
     int *           obj_ts;
-    char            filename[128], pdc_server_tmp_dir_g[128];
+    char            filename[1024], pdc_server_tmp_dir_g[128];
     int             n_entry;
     pdc_metadata_t  entry;
     uint32_t *      hash_key;

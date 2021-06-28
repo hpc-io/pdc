@@ -57,7 +57,7 @@ main(int argc, char **argv)
     int *           obj_ts;
     char            name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name",
                              "INVALID!",         "INVALID!", "Four Obj Names"};
-    char            filename[128], pdc_server_tmp_dir_g[128];
+    char            filename[1024], pdc_server_tmp_dir_g[128];
     int             n_entry;
     char *          tmp_dir;
     pdc_metadata_t  entry;

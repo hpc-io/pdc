@@ -55,7 +55,7 @@ hg_thread_mutex_t meta_obj_map_mutex_g;
 #endif
 
 #define PAGE_SIZE                    4096
-#define ADDR_MAX                     256
+#define ADDR_MAX                     2048
 #define DIM_MAX                      4
 #define TAG_LEN_MAX                  2048
 #define PDC_SERVER_ID_INTERVEL       1000000
@@ -2150,6 +2150,7 @@ hg_proc_bulk_rpc_in_t(hg_proc_t proc, void *data)
 
     if (struct_data->cnt > 0) {
         ret = hg_proc_hg_bulk_t(proc, &struct_data->bulk_handle);
+
         if (ret != HG_SUCCESS) {
             // HG_LOG_ERROR("Proc error");
             return ret;
