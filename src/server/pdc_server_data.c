@@ -1395,6 +1395,7 @@ PDC_Server_buf_map_lookup_server_id(int remote_server_id, struct transfer_buf_ma
     hg_handle_t                          handle;
     int                                  error = 0;
 
+
     FUNC_ENTER(NULL);
 
     handle      = transfer_args->handle;
@@ -5087,6 +5088,7 @@ PDC_Server_data_read_from2(uint64_t obj_id, struct pdc_region_info *region_info,
             else if (region_info->ndim == 3) {
                 void *tmp_buf = malloc(storage_region->data_size);
 
+
                 // Read entire region
                 read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
                 // Extract requested data
@@ -5197,6 +5199,7 @@ PDC_region_cache_clock_cycle(void *ptr)
         pthread_mutex_lock(&pdc_cache_mutex);
         if (!pdc_recycle_close_flag) {
             hg_thread_mutex_lock(&pdc_obj_cache_list_mutex);
+            gettimeofday(&current_time, NULL);
             for (i = 0; i < obj_cache_list.obj_cache_size; ++i) {
                 obj_cache = obj_cache_list.obj_cache + i;
                 if (current_time.tv_sec - obj_cache->timestamp.tv_sec > 10) {
