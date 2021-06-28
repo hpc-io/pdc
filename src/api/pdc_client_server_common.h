@@ -2986,8 +2986,7 @@ hg_proc_storage_meta_name_query_in_t(hg_proc_t proc, void *data)
 
 /* Define hg_proc_pdc_query_xfer_t */
 
-hg_return_t
-hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data);
+hg_return_t hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data);
 
 /* Define hg_proc_get_sel_data_rpc_in_t */
 static HG_INLINE hg_return_t

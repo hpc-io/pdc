@@ -239,7 +239,6 @@ hg_thread_pool_t *hg_test_thread_pool_fs_g = NULL;
 uint64_t pdc_id_seq_g = PDC_SERVER_ID_INTERVEL;
 // actual value for each server is set by PDC_Server_init()
 
-
 hg_return_t
 hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data)
 {
@@ -324,7 +323,6 @@ hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data)
 
     return ret;
 }
-
 
 static hg_return_t
 hg_proc_send_shm_in_t(hg_proc_t proc, void *data)
