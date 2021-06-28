@@ -1446,10 +1446,12 @@ PDC_Server_restart(char *filename)
                     region_list->region_hist->bin =
                         (uint64_t *)malloc(sizeof(uint64_t) * region_list->region_hist->nbin);
 
-                    if (fread(region_list->region_hist->range, sizeof(double), region_list->region_hist->nbin * 2, file) != 1) {
+                    if (fread(region_list->region_hist->range, sizeof(double),
+                              region_list->region_hist->nbin * 2, file) != 1) {
                         printf("Read failed for region_list->region_hist->range\n");
                     }
-                    if (fread(region_list->region_hist->bin, sizeof(uint64_t), region_list->region_hist->nbin, file) != 1) {
+                    if (fread(region_list->region_hist->bin, sizeof(uint64_t), region_list->region_hist->nbin,
+                              file) != 1) {
                         printf("Read failed for region_list->region_hist->bin\n");
                     }
                     if (fread(&region_list->region_hist->incr, sizeof(double), 1, file) != 1) {
