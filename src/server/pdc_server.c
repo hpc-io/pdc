@@ -1634,7 +1634,7 @@ PDC_Server_loop(hg_context_t *hg_context)
     ;
     hg_return_t  hg_ret;
     unsigned int actual_count;
-    int          checkpoint_interval = 1;
+    int          checkpoint_interval  = 1;
     clock_t      last_checkpoint_time = 0, cur_time;
 
     FUNC_ENTER(NULL);
