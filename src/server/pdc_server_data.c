@@ -1395,7 +1395,6 @@ PDC_Server_buf_map_lookup_server_id(int remote_server_id, struct transfer_buf_ma
     hg_handle_t                          handle;
     int                                  error = 0;
 
-
     FUNC_ENTER(NULL);
 
     handle      = transfer_args->handle;
