@@ -154,7 +154,7 @@ main(int argc, char **argv)
         return -1;
     }
 
-    if ( fread(&n_entry, sizeof(int), 1, file) == 0 ){
+    if (fread(&n_entry, sizeof(int), 1, file) == 0) {
         printf("read failed\n");
     }
 
@@ -174,7 +174,7 @@ main(int argc, char **argv)
                 n_entry = 0;
                 break;
             }
-            if (fread(&entry, sizeof(pdc_metadata_t), 1, file) == 0 ) {
+            if (fread(&entry, sizeof(pdc_metadata_t), 1, file) == 0) {
                 printf("read failed\n");
             }
             sprintf(obj_names[read_count], "%s", entry.obj_name);
