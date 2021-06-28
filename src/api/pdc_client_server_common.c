@@ -71,6 +71,7 @@ timestamp_log(FILE *stream, const char *header, pdc_timestamp *timestamp)
         fprintf(stream, ",%4f-%4f", timestamp->start[i], timestamp->end[i]);
     }
     fprintf(stream, "\n");
+    return 0;
 }
 
 int
@@ -82,6 +83,7 @@ PDC_timing_init()
     client_buf_obj_unmap_timestamps = client_buf_obj_map_timestamps + 1;
     client_obtain_lock_timestamps   = client_buf_obj_map_timestamps + 2;
     client_release_lock_timestamps  = client_buf_obj_map_timestamps + 3;
+    return 0;
 }
 
 int
@@ -141,6 +143,7 @@ PDC_timing_report(const char *prefix)
     client_buf_obj_unmap_timestamps->timestamp_size = 0;
     client_obtain_lock_timestamps->timestamp_size   = 0;
     client_release_lock_timestamps->timestamp_size  = 0;
+    return 0;
 }
 
 int
@@ -153,6 +156,7 @@ PDC_server_timing_init()
     release_lock_timestamps               = buf_obj_map_timestamps + 3;
     release_lock_bulk_transfer_timestamps = buf_obj_map_timestamps + 4;
     base_time                             = MPI_Wtime();
+    return 0;
 }
 
 int
@@ -224,6 +228,7 @@ PDC_server_timing_report()
     pdc_timestamp_clean(release_lock_timestamps);
     pdc_timestamp_clean(release_lock_bulk_transfer_timestamps);
     free(buf_obj_map_timestamps);
+    return 0;
 }
 
 #endif
@@ -822,6 +827,7 @@ PDC_print_region_list(region_list_t *a)
 
 done:
     fflush(stdout);
+
     FUNC_LEAVE_VOID;
 }
 
@@ -2809,11 +2815,11 @@ HG_TEST_RPC_CB(region_release, handle)
     hg_bulk_t                            remote_bulk_handle     = HG_BULK_NULL;
     struct pdc_region_info *             remote_reg_info;
     region_buf_map_t *                   eltt, *eltt2, *eltt_tmp;
-    hg_uint32_t                          k, m, remote_count;
+    hg_uint32_t                          /*k, m, */remote_count;
     void **                              data_ptrs_to = NULL;
     size_t *                             data_size_to = NULL;
-    size_t                               type_size    = 0;
-    size_t                               dims[4]      = {0, 0, 0, 0};
+    //size_t                               type_size    = 0;
+    //size_t                               dims[4]      = {0, 0, 0, 0};
 #if PDC_TIMING == 1
     double start, end;
 #endif
@@ -3043,7 +3049,7 @@ HG_TEST_RPC_CB(region_release, handle)
                         size2 = HG_Bulk_get_size(remote_bulk_handle);
                         if (size != size2) {
                             error = 1;
-                            printf("==PDC_SERVER: local size %llu, remote %llu\n", size, size2);
+                            printf("==PDC_SERVER: local size %lu, remote %lu\n", size, size2);
                             PGOTO_ERROR(HG_OTHER_ERROR, "===PDC SERVER: HG_TEST_RPC_CB(region_release, "
                                                         "handle) local and remote bulk size does not match");
                         }
@@ -3212,7 +3218,7 @@ HG_TEST_RPC_CB(region_release, handle)
                         size2 = HG_Bulk_get_size(remote_bulk_handle);
                         if (size != size2) {
                             error = 1;
-                            printf("==PDC_SERVER: local size %llu, remote %llu\n", size, size2);
+                            printf("==PDC_SERVER: local size %lu, remote %lu\n", size, size2);
                             /* PGOTO_ERROR(HG_OTHER_ERROR, "===PDC SERVER: HG_TEST_RPC_CB(region_release,
                              * handle) local and remote bulk size does not match"); */
                         }
@@ -4655,7 +4661,7 @@ HG_TEST_RPC_CB(bulk_rpc, handle)
     bulk_args->nbytes = HG_Bulk_get_size(origin_bulk_handle);
     bulk_args->cnt    = cnt;
 
-    printf("==PDC_SERVER: bulk_rpc_cb, nbytes %llu\n", bulk_args->nbytes);
+    printf("==PDC_SERVER: bulk_rpc_cb, nbytes %lu\n", bulk_args->nbytes);
 
     /* Create a new block handle to read the data */
     HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *)&bulk_args->nbytes, HG_BULK_READWRITE,
@@ -4977,7 +4983,6 @@ remove_relative_dirs(char *workingDir, char *application)
 char *
 PDC_find_in_path(char *workingDir, char *application)
 {
-    char *      ret_value = NULL;
     struct stat fileStat;
     char *      pathVar = getenv("PATH");
     char        colon   = ':';
@@ -6053,7 +6058,7 @@ HG_TEST_RPC_CB(send_shm_bulk_rpc, handle)
     bulk_args->nbytes  = HG_Bulk_get_size(origin_bulk_handle);
     bulk_args->cnt     = cnt;
 
-    printf("==PDC_SERVER: send_bulk_rpc_cb, nbytes %llu\n", bulk_args->nbytes);
+    printf("==PDC_SERVER: send_bulk_rpc_cb, nbytes %lu\n", bulk_args->nbytes);
 
     /* Create a new bulk handle to read the data */
     HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *)&bulk_args->nbytes, HG_BULK_READWRITE,
@@ -6839,7 +6844,7 @@ print_query(pdc_query_t *query)
     if (query->left == NULL && query->right == NULL) {
 
         printf(" (%" PRIu64 " %s", query->constraint->obj_id, pdcquery_op_char_g[query->constraint->op]);
-
+/*
         if (query->constraint->is_range == 1) {
             if (query->constraint->type == PDC_FLOAT)
                 printf(" %.6f %s %.6f) ", *((float *)&query->constraint->value),
@@ -6873,6 +6878,41 @@ print_query(pdc_query_t *query)
                 printf(" %" PRId64 ")", *((int64_t *)&query->constraint->value));
             else if (query->constraint->type == PDC_UINT64)
                 printf(" %" PRIu64 ") ", *((uint64_t *)&query->constraint->value));
+        }
+*/
+        if (query->constraint->is_range == 1) {
+            if (query->constraint->type == PDC_FLOAT)
+                printf(" %.6f %s %.6f) ", (float)query->constraint->value,
+                       pdcquery_op_char_g[query->constraint->op2], (float)query->constraint->value2);
+            else if (query->constraint->type == PDC_DOUBLE)
+                printf(" %.6f %s %.6f) ", (double)query->constraint->value,
+                       pdcquery_op_char_g[query->constraint->op2], (double)query->constraint->value2);
+            else if (query->constraint->type == PDC_INT)
+                printf(" %d %s %d) ", (int)query->constraint->value,
+                       pdcquery_op_char_g[query->constraint->op2], (int)query->constraint->value2);
+            else if (query->constraint->type == PDC_UINT)
+                printf(" %u %s %u) ", (unsigned)query->constraint->value,
+                       pdcquery_op_char_g[query->constraint->op2], (unsigned)query->constraint->value2);
+            else if (query->constraint->type == PDC_INT64)
+                printf(" %" PRId64 " %s %" PRId64 ")", (int64_t)query->constraint->value,
+                       pdcquery_op_char_g[query->constraint->op2], (int64_t)query->constraint->value2);
+            else if (query->constraint->type == PDC_UINT64)
+                printf(" %" PRId64 " %s %" PRId64 ") ", (uint64_t)query->constraint->value,
+                       pdcquery_op_char_g[query->constraint->op2], (uint64_t)query->constraint->value2);
+        }
+        else {
+            if (query->constraint->type == PDC_FLOAT)
+                printf(" %.6f) ", (float)query->constraint->value);
+            else if (query->constraint->type == PDC_DOUBLE)
+                printf(" %.6f) ", (double)query->constraint->value);
+            else if (query->constraint->type == PDC_INT)
+                printf(" %d) ", (int)query->constraint->value);
+            else if (query->constraint->type == PDC_UINT)
+                printf(" %u) ", (unsigned)query->constraint->value);
+            else if (query->constraint->type == PDC_INT64)
+                printf(" %" PRId64 ")", (int64_t)query->constraint->value);
+            else if (query->constraint->type == PDC_UINT64)
+                printf(" %" PRIu64 ") ", (uint64_t)query->constraint->value);
         }
         PGOTO_DONE_VOID;
     }

@@ -263,7 +263,9 @@ PDC_Client_read_server_addr_from_file()
             PGOTO_ERROR(FAIL, "Could not open config file from default location: %s", config_fname);
 
         // Get the first line as $pdc_server_num_g
-        fgets(n_server_string, PATH_MAX, na_config);
+        if (fgets(n_server_string, PATH_MAX, na_config) == NULL) {
+            PGOTO_ERROR(FAIL, "Get first line failed\n");
+        }
         pdc_server_num_g = atoi(n_server_string);
     }
 
@@ -282,7 +284,9 @@ PDC_Client_read_server_addr_from_file()
     i = 0;
     while (i < pdc_server_num_g) {
         if (pdc_client_mpi_rank_g == 0) {
-            fgets(pdc_server_info_g[i].addr_string, ADDR_MAX, na_config);
+            if (fgets(pdc_server_info_g[i].addr_string, ADDR_MAX, na_config) == NULL) {
+                PGOTO_ERROR(FAIL, "Get first line failed\n");
+            }
             p = strrchr(pdc_server_info_g[i].addr_string, '\n');
             if (p != NULL)
                 *p = '\0';
@@ -1628,7 +1632,7 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
-
+/*
 perr_t
 PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
 {
@@ -1718,7 +1722,7 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
-
+*/
 perr_t
 PDC_Client_delete_metadata_by_id(uint64_t obj_id)
 {
@@ -2665,7 +2669,7 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
-
+/*
 static perr_t
 pdc_region_release_with_server_analysis(struct _pdc_obj_info *  object_info,
                                         struct pdc_region_info *region_info, pdc_access_t access_type,
@@ -2755,6 +2759,7 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
+*/
 
 // This function supports transforms which are to occur
 // post-READ (mapping operations) on the client.
@@ -2966,7 +2971,7 @@ get_transform_size(struct _pdc_transform_state *transform_state)
 
     FUNC_LEAVE(ret_value);
 }
-
+/*
 static hg_return_t
 maybe_run_transform(struct _pdc_obj_info *object_info, struct pdc_region_info *region_info,
                     pdc_access_t access_type, pdc_var_type_t data_type, int *readyState, int *transform_index,
@@ -2979,13 +2984,13 @@ maybe_run_transform(struct _pdc_obj_info *object_info, struct pdc_region_info *r
     struct _pdc_region_transform_ftn_info **registry  = NULL;
     int                                     k, type_size, registered_count = PDC_get_transforms(&registry);
 
-    /* FIXME: In theory, the transforms will be enabled ONLY
-     * when the identified readyState value is reached.
-     * For now we are relying on the ordering in which
-     * functions are registered.  To fix this, after each
-     * transform, we should restart the scan loop to choose
-     * a "next" transform if there is one...
-     */
+    // FIXME: In theory, the transforms will be enabled ONLY
+    // when the identified readyState value is reached.
+    // For now we are relying on the ordering in which
+    // functions are registered.  To fix this, after each
+    // transform, we should restart the scan loop to choose
+    // a "next" transform if there is one...
+     
     FUNC_ENTER(NULL);
 
     if (access_type == PDC_WRITE) {
@@ -3003,7 +3008,7 @@ maybe_run_transform(struct _pdc_obj_info *object_info, struct pdc_region_info *r
                 *transform_index = k;
             }
         }
-        /* Check next for SERVER (post-data-xfer) transforms */
+        //Check next for SERVER (post-data-xfer) transforms
         for (k = 0; k < registered_count; k++) {
             if ((registry[k]->dest_region == region_info) && (registry[k]->op_type == PDC_DATA_MAP) &&
                 (registry[k]->when == DATA_IN) && (registry[k]->readyState == *readyState)) {
@@ -3022,21 +3027,21 @@ maybe_run_transform(struct _pdc_obj_info *object_info, struct pdc_region_info *r
 
         type_size = PDC_get_var_type_size(registry[*transform_index]->type);
 
-        /* Client side transform only */
+        //Client side transform only
         if ((client_transform_size > 0) && (server_transform_size == 0)) {
             *transform_size = client_transform_size;
             ret_value       = pdc_region_release_with_server_transform(
                 object_info, region_info, access_type, data_type, type_size, *readyState, NULL,
                 client_transform_size, *transform_result, &status);
         }
-        /* Client and Server side transforms */
+        //Client and Server side transforms
         else if ((client_transform_size > 0) && (server_transform_size > 0)) {
             *transform_size = server_transform_size;
             ret_value       = pdc_region_release_with_server_transform(
                 object_info, region_info, access_type, data_type, type_size, *readyState,
                 registry[*transform_index], client_transform_size, *transform_result, &status);
         }
-        /* Server side transform only */
+        //Server side transform only
         else if (server_transform_size > 0) {
             *transform_size = server_transform_size;
             ret_value       = pdc_region_release_with_server_transform(
@@ -3046,13 +3051,13 @@ maybe_run_transform(struct _pdc_obj_info *object_info, struct pdc_region_info *r
     }
     else if (access_type == PDC_READ) {
         for (k = 0; k < registered_count; k++) {
-            /* Check for SERVER (pre-data-xfer) transforms */
+            // Check for SERVER (pre-data-xfer) transforms
             if ((registry[k]->op_type == PDC_DATA_MAP) && (registry[k]->when == DATA_OUT) &&
                 (registry[k]->readyState == *readyState))
                 puts("Server READ transform identified");
         }
         for (k = 0; k < registered_count; k++) {
-            /* Check for CLIENT (post-data-xfer) transforms */
+            //Check for CLIENT (post-data-xfer) transforms
             if ((registry[k]->dest_region == region_info) && (registry[k]->op_type == PDC_DATA_MAP) &&
                 (registry[k]->when == DATA_IN) && (registry[k]->readyState == *readyState)) {
 
@@ -3073,6 +3078,7 @@ maybe_run_transform(struct _pdc_obj_info *object_info, struct pdc_region_info *r
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
+*/
 
 perr_t
 PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_region_info *region_info,
@@ -3083,19 +3089,19 @@ PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_region_i
     hg_return_t                    hg_ret;
     uint32_t                       server_id, meta_server_id;
     region_lock_in_t               in;
-    size_t                         type_extent;
+    //size_t                         type_extent;
     struct _pdc_client_lookup_args lookup_args;
     hg_handle_t                    region_release_handle = HG_HANDLE_NULL;
     // void *transform_result = NULL;
     // size_t transform_size = 0;
-    struct _pdc_region_transform_ftn_info **registry = NULL;
+    //struct _pdc_region_transform_ftn_info **registry = NULL;
     // int transform_index;
     // int k, registered_count;
     // struct _pdc_region_analysis_ftn_info **analysis_registry;
 
     FUNC_ENTER(NULL);
 
-    type_extent = object_info->obj_pt->type_extent;
+    //type_extent = object_info->obj_pt->type_extent;
     /*
         if (region_info->registered_op & PDC_TRANSFORM) {
             transform_index = -1;
@@ -3737,7 +3743,7 @@ PDC_Client_data_server_write(struct pdc_request *request)
     // Calculate region size
     for (i = 0; i < region->ndim; i++) {
         region_size *= region->size[i];
-        if (region_size == 0)
+        if (region_size == 0)s
             PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: size[%d]=0", pdc_client_mpi_rank_g, i);
     }
 
@@ -3753,7 +3759,9 @@ PDC_Client_data_server_write(struct pdc_request *request)
         PGOTO_ERROR(FAIL, "==PDC_CLIENT: Shared memory creation with shm_open failed");
 
     /* configure the size of the shared memory segment */
-    ftruncate(request->shm_fd, region_size);
+    if (ftruncate(request->shm_fd, region_size) != 0) {
+        PGOTO_ERROR(FAIL, "==PDC_CLIENT: Memory truncate failed");
+    }
     request->shm_size = region_size;
 
     /* map the shared memory segment to the address space of the process */

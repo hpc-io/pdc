@@ -1001,6 +1001,6 @@ PDCobj_del(pdcid_t obj_id)
 
     perr_t ret_value = PDC_Client_del_metadata(obj_id, 0);
 
-done:
+//done:
     FUNC_LEAVE(ret_value);
 }
