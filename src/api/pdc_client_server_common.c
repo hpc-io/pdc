@@ -3107,7 +3107,7 @@ HG_TEST_RPC_CB(region_release, handle)
                 {
                     PDC_region_transfer_t_to_list_t(&(eltt->remote_region_unit), tmp);
                     if (PDC_is_same_region_list(tmp, request_region) == 1) {
-                        //type_size = eltt->remote_unit;
+                        // type_size = eltt->remote_unit;
                         // get remote object memory addr
                         data_buf = PDC_Server_get_region_buf_ptr(in.obj_id, in.region);
                         if (in.region.ndim == 1) {
@@ -4351,6 +4351,7 @@ done:
 }
 
 /* static hg_return_t */
+
 // buf_map_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(buf_map, handle)
 {
@@ -4990,6 +4991,7 @@ PDC_find_in_path(char *workingDir, char *application)
     char*       ret_value = NULL;
     char *      pathVar = getenv("PATH");
     char        colon   = ':';
+
     char        checkPath[PATH_MAX];
     char *      next = strchr(pathVar, colon);
     int         offset;
