@@ -335,7 +335,7 @@ PDC_Server_write_addr_to_file(char **addr_strings, int n)
     FUNC_ENTER(NULL);
 
     // write to file
-    snprintf(config_fname, ADDR_MAX, "%s%s", pdc_server_tmp_dir_g, pdc_server_cfg_name_g);
+    snprintf(config_fname, ADDR_MAX * 2, "%s%s", pdc_server_tmp_dir_g, pdc_server_cfg_name_g);
     FILE *na_config = fopen(config_fname, "w+");
     if (!na_config) {
         fprintf(stderr, "Could not open config file from: %s\n", config_fname);
@@ -366,7 +366,7 @@ PDC_Server_rm_config_file()
 
     FUNC_ENTER(NULL);
 
-    snprintf(config_fname, ADDR_MAX, "%s%s", pdc_server_tmp_dir_g, pdc_server_cfg_name_g);
+    snprintf(config_fname, ADDR_MAX * 2, "%s%s", pdc_server_tmp_dir_g, pdc_server_cfg_name_g);
 
     if (remove(config_fname) != 0) {
         printf("==PDC_SERVER[%d]: Unable to delete the config file[%s]", pdc_server_rank_g, config_fname);
@@ -692,7 +692,7 @@ PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context)
     }
     memset(hostname, 0, 1024);
     gethostname(hostname, 1023);
-    snprintf(na_info_string, ADDR_MAX, "%s://%s:%d", hg_transport, hostname, port);
+    snprintf(na_info_string, ADDR_MAX * 2 + sizeof(int) + 4, "%s://%s:%d", hg_transport, hostname, port);
     if (pdc_server_rank_g == 0)
         printf("==PDC_SERVER[%d]: using %.7s\n", pdc_server_rank_g, na_info_string);
 
@@ -832,7 +832,7 @@ drc_access_again:
     // TODO: support restart with different number of servers than previous run
     char checkpoint_file[ADDR_MAX];
     if (is_restart_g == 1) {
-        snprintf(checkpoint_file, ADDR_MAX, "%s%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.",
+        snprintf(checkpoint_file, ADDR_MAX * 2 + sizeof(int), "%s%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.",
                  pdc_server_rank_g);
 
         ret_value = PDC_Server_restart(checkpoint_file);
@@ -1116,7 +1116,7 @@ PDC_Server_checkpoint()
 #endif
 
     // TODO: instead of checkpoint at app finalize time, try checkpoint with a time countdown or # of objects
-    snprintf(checkpoint_file, ADDR_MAX, "%s%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.",
+    snprintf(checkpoint_file, ADDR_MAX * 2 + sizeof(int), "%s%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.",
              pdc_server_rank_g);
     if (pdc_server_rank_g == 0) {
         printf("\n\n==PDC_SERVER[%d]: Checkpoint file [%s]\n", pdc_server_rank_g, checkpoint_file);

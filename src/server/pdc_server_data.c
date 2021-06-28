@@ -113,7 +113,7 @@ PDC_Server_set_lustre_stripe(const char *path, int stripe_count, int stripe_size
             break;
         }
     }
-    snprintf(cmd, ADDR_MAX, "lfs setstripe -S %dM -c %d -i %d %s", stripe_size_MB, stripe_count, index, tmp);
+    snprintf(cmd, TAG_MAX_LEN, "lfs setstripe -S %dM -c %d -i %d %s", stripe_size_MB, stripe_count, index, tmp);
 
     if (system(cmd) < 0) {
         printf("==PDC_SERVER: Fail to set Lustre stripe parameters [%s]\n", tmp);
