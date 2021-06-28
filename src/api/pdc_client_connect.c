@@ -3744,7 +3744,7 @@ PDC_Client_data_server_write(struct pdc_request *request)
     for (i = 0; i < region->ndim; i++) {
         region_size *= region->size[i];
         if (region_size == 0)
-            s PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: size[%d]=0", pdc_client_mpi_rank_g, i);
+            PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: size[%d]=0", pdc_client_mpi_rank_g, i);
     }
 
     // Create shared memory
