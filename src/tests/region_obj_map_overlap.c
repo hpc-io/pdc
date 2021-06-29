@@ -260,7 +260,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     else {
-        printf("successfully local region @ line  %d!\n", __LINE__);
+        printf("successfully closed local region @ line  %d!\n", __LINE__);
     }
 
     if (PDCregion_close(reg_global) < 0) {
@@ -277,7 +277,7 @@ main(int argc, char **argv)
     reg              = PDCregion_create(1, offset, offset_length);
     reg_global       = PDCregion_create(1, offset, offset_length);
 
-    for (i = 0; i < BUF_LEN/4; ++i) {
+    for (i = 0; i < BUF_LEN / 4; ++i) {
         data[i] = i + BUF_LEN;
     }
     ret = PDCbuf_obj_map(data, PDC_INT, reg, obj1, reg_global);
@@ -309,7 +309,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     else {
-        printf("successfully local region @ line  %d!\n", __LINE__);
+        printf("successfully closed local region @ line  %d!\n", __LINE__);
     }
 
     if (PDCregion_close(reg_global) < 0) {
@@ -357,7 +357,7 @@ main(int argc, char **argv)
         if (data_read[i] != i + BUF_LEN) {
             printf("wrong value %d!=%d  @ line %d!\n", data_read[i], i + BUF_LEN, __LINE__);
             ret_value = 1;
-            break;
+            //break;
         }
     }
 
@@ -374,7 +374,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     else {
-        printf("successfully local region @ line  %d!\n", __LINE__);
+        printf("successfully closed local region @ line  %d!\n", __LINE__);
     }
 
     if (PDCregion_close(reg_global) < 0) {
