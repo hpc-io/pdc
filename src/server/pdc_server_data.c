@@ -5258,7 +5258,7 @@ PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf
     int                     flag      = 1;
     size_t                  j;
     pdc_region_cache        *region_cache_iter;
-    struct pdc_region_info *region_cache = NULL;
+    struct pdc_region_info *region_cache_info = NULL;
 
     obj_cache_iter = obj_cache_list;
     while (obj_cache_iter != NULL) {
@@ -5275,11 +5275,11 @@ PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf
         region_cache_iter = obj_cache->region_cache;
         while (region_cache_iter != NULL) {
             flag         = 1;
-            region_cache = region_cache_iter;
+            region_cache_info = region_cache_iter->region_cache_info;
             for (j = 0; j < region_info->ndim; ++j) {
-                if (region_info->offset[j] < region_cache->offset[j] ||
+                if (region_info->offset[j] < region_cache_info->offset[j] ||
                     region_info->offset[j] + region_info->size[j] >
-                        region_cache->offset[j] + region_cache->size[j]) {
+                        region_cache_info->offset[j] + region_cache_info->size[j]) {
                     flag = 0;
                 }
             }
