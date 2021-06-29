@@ -1395,6 +1395,7 @@ PDC_Server_buf_map_lookup_server_id(int remote_server_id, struct transfer_buf_ma
     hg_handle_t                          handle;
     int                                  error = 0;
 
+
     FUNC_ENTER(NULL);
 
     handle      = transfer_args->handle;
@@ -3005,6 +3006,7 @@ PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
             goto done;
         }
         PDC_region_list_t_deep_cp(&(io_info->region), new_region);
+
 
         DL_APPEND(io_list_target->region_list_head, new_region);
         if (is_debug_g == 1) {
@@ -4785,10 +4787,7 @@ PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size, con
 {
     hg_thread_mutex_lock(&pdc_obj_cache_list_mutex);
 
-    pdc_obj_cache *         temp;
-    struct pdc_region_info *temp2;
     pdc_obj_cache *         obj_cache_iter, *obj_cache = NULL;
-    int                     i;
     struct pdc_region_info *region_cache_info;
     obj_cache_iter = obj_cache_list;
     while (obj_cache_iter != NULL) {
@@ -4849,7 +4848,7 @@ int
 PDC_region_cache_free()
 {
     pdc_obj_cache *   obj_cache_iter, *obj_temp;
-    pdc_region_cache *region_cache_iter *region_temp;
+    pdc_region_cache *region_cache_iter, *region_temp;
     obj_cache_iter = obj_cache_list;
     while (obj_cache_iter != NULL) {
         region_cache_iter = obj_cache_iter->region_cache;
@@ -5161,7 +5160,8 @@ PDC_region_cache_flush(uint64_t obj_id)
         }
         obj_cache_iter = obj_cache_iter->next;
     }
-    region_cache_iter = obj_cache->region_cache while (region_cache_iter)
+    region_cache_iter = obj_cache->region_cache;
+    while (region_cache_iter != NULL)
     {
         region_cache_info = region_cache_iter->region_cache_info;
         PDC_Server_data_write_out2(obj_id, region_cache_info, region_cache_info->buf,
@@ -5311,6 +5311,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     perr_t ret_value = SUCCEED;
     uint64_t write_bytes = -1;
     data_server_region_t *region = NULL;
+
 
     FUNC_ENTER(NULL);
 
