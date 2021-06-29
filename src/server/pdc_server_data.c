@@ -4945,6 +4945,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 {
     int            i, flag;
     pdc_obj_cache *obj_cache, *obj_cache_iter;
+    pdc_region_cache *region_cache_inter;
 
     perr_t ret_value = SUCCEED;
 
@@ -4974,16 +4975,18 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     if (obj_cache != NULL) {
         // If we have region that is contained inside a cached region, we can directly modify the cache region
         // data.
-        for (i = 0; i < obj_cache->region_obj_cache_size; ++i) {
+        region_cache_inter = obj_cache->region_cache;
+        while (region_cache_inter != NULL) {
             if (PDC_check_region_relation(region_info->offset, region_info->size,
-                                          obj_cache->region_cache[i].offset, obj_cache->region_cache[i].size,
-                                          obj_cache->region_cache[i].ndim) == PDC_REGION_CONTAINED) {
-                PDC_region_cache_copy(obj_cache->region_cache[i].buf, buf, obj_cache->region_cache[i].offset,
-                                      obj_cache->region_cache[i].size, region_info->offset, region_info->size,
-                                      obj_cache->region_cache[i].ndim, unit, 1);
+                                          region_cache_inter->region_cache_info->offset, region_cache_inter->region_cache_info->size,
+                                          region_cache_inter->region_cache_info->ndim) == PDC_REGION_CONTAINED) {
+                PDC_region_cache_copy(region_cache_inter->region_cache_info->buf, buf, region_cache_inter->region_cache_info->offset,
+                                      region_cache_inter->region_cache_info->size, region_info->offset, region_info->size,
+                                      region_cache_inter->region_cache_info->ndim, unit, 1);
                 flag = 0;
                 break;
             }
+            region_cache_inter = region_cache_inter->next;
         }
     }
 
