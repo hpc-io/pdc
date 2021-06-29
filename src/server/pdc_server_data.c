@@ -5259,7 +5259,6 @@ PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf
     size_t                  j;
     pdc_region_cache        *region_cache_iter;
     struct pdc_region_info *region_cache_info = NULL;
-
     obj_cache_iter = obj_cache_list;
     while (obj_cache_iter != NULL) {
         if (obj_cache_iter->obj_id == obj_id) {
@@ -7184,6 +7183,7 @@ PDC_bmreader(void *ctx, uint64_t start, uint64_t count, uint32_t *buf)
         buf[j] = bms[j];
     }
 
+
     return 0;
 }
 
@@ -7824,7 +7824,6 @@ PDC_Server_query_evaluate_merge_opt(pdc_query_t *query, query_task_t *task, pdc_
                         MACRO_QUERY_RANGE_EVALUATE_SCAN_OPT(uint32_t, nelem, buf, lop, ulo, rop, uhi, sel,
                                                             region_elt, unit_size, region_constraint,
                                                             combine_op);
-
                     }
                     else {
                         MACRO_QUERY_EVALUATE_SCAN_OPT(uint32_t, nelem, buf, op, value, sel, region_elt,
