@@ -249,7 +249,7 @@ main(int argc, char **argv)
 
     for (i = 0; i < BUF_LEN / 2; ++i) {
         if (data_read[i] != i + BUF_LEN / 4) {
-            printf("wrong value %d!=%d\n  @ line  %d!", data_read[i], i + BUF_LEN / 4, __LINE__);
+            printf("wrong value %d!=%d @ line %d!\n", data_read[i], i + BUF_LEN / 4, __LINE__);
             ret_value = 1;
             break;
         }
@@ -277,7 +277,7 @@ main(int argc, char **argv)
     reg              = PDCregion_create(1, offset, offset_length);
     reg_global       = PDCregion_create(1, offset, offset_length);
 
-    for (i = 0; i < BUF_LEN; ++i) {
+    for (i = 0; i < BUF_LEN/4; ++i) {
         data[i] = i + BUF_LEN;
     }
     ret = PDCbuf_obj_map(data, PDC_INT, reg, obj1, reg_global);
@@ -355,7 +355,7 @@ main(int argc, char **argv)
 
     for (i = 0; i < BUF_LEN / 4; ++i) {
         if (data_read[i] != i + BUF_LEN) {
-            printf("wrong value %d!=%d\n  @ line  %d!", data_read[i], i + BUF_LEN, __LINE__);
+            printf("wrong value %d!=%d  @ line %d!\n", data_read[i], i + BUF_LEN, __LINE__);
             ret_value = 1;
             break;
         }
@@ -363,7 +363,7 @@ main(int argc, char **argv)
 
     for (i = BUF_LEN / 4; i < BUF_LEN; ++i) {
         if (data_read[i] != i) {
-            printf("wrong value %d!=%d\n  @ line  %d!", data_read[i], i, __LINE__);
+            printf("wrong value %d!=%d\n  @ line %d!\n", data_read[i], i, __LINE__);
             ret_value = 1;
             break;
         }
