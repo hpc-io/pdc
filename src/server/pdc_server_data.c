@@ -4941,8 +4941,8 @@ done:
 perr_t
 PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
-    int            i, flag;
-    pdc_obj_cache *obj_cache, *obj_cache_iter;
+    int               i, flag;
+    pdc_obj_cache *   obj_cache, *obj_cache_iter;
     pdc_region_cache *region_cache_inter;
 
     perr_t ret_value = SUCCEED;
@@ -4975,12 +4975,15 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
         // data.
         region_cache_inter = obj_cache->region_cache;
         while (region_cache_inter != NULL) {
-            if (PDC_check_region_relation(region_info->offset, region_info->size,
-                                          region_cache_inter->region_cache_info->offset, region_cache_inter->region_cache_info->size,
-                                          region_cache_inter->region_cache_info->ndim) == PDC_REGION_CONTAINED) {
-                PDC_region_cache_copy(region_cache_inter->region_cache_info->buf, buf, region_cache_inter->region_cache_info->offset,
-                                      region_cache_inter->region_cache_info->size, region_info->offset, region_info->size,
-                                      region_cache_inter->region_cache_info->ndim, unit, 1);
+            if (PDC_check_region_relation(
+                    region_info->offset, region_info->size, region_cache_inter->region_cache_info->offset,
+                    region_cache_inter->region_cache_info->size,
+                    region_cache_inter->region_cache_info->ndim) == PDC_REGION_CONTAINED) {
+                PDC_region_cache_copy(region_cache_inter->region_cache_info->buf, buf,
+                                      region_cache_inter->region_cache_info->offset,
+                                      region_cache_inter->region_cache_info->size, region_info->offset,
+                                      region_info->size, region_cache_inter->region_cache_info->ndim, unit,
+                                      1);
                 flag = 0;
                 break;
             }
