@@ -1395,7 +1395,6 @@ PDC_Server_buf_map_lookup_server_id(int remote_server_id, struct transfer_buf_ma
     hg_handle_t                          handle;
     int                                  error = 0;
 
-
     FUNC_ENTER(NULL);
 
     handle      = transfer_args->handle;
@@ -3006,7 +3005,6 @@ PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
             goto done;
         }
         PDC_region_list_t_deep_cp(&(io_info->region), new_region);
-
 
         DL_APPEND(io_list_target->region_list_head, new_region);
         if (is_debug_g == 1) {
@@ -5257,9 +5255,9 @@ PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf
     pdc_obj_cache *         obj_cache = NULL, *obj_cache_iter;
     int                     flag      = 1;
     size_t                  j;
-    pdc_region_cache        *region_cache_iter;
+    pdc_region_cache *      region_cache_iter;
     struct pdc_region_info *region_cache_info = NULL;
-    obj_cache_iter = obj_cache_list;
+    obj_cache_iter                            = obj_cache_list;
     while (obj_cache_iter != NULL) {
         if (obj_cache_iter->obj_id == obj_id) {
             obj_cache      = obj_cache_iter;
@@ -5273,7 +5271,7 @@ PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf
         // Check if the input region is contained inside any cache region.
         region_cache_iter = obj_cache->region_cache;
         while (region_cache_iter != NULL) {
-            flag         = 1;
+            flag              = 1;
             region_cache_info = region_cache_iter->region_cache_info;
             for (j = 0; j < region_info->ndim; ++j) {
                 if (region_info->offset[j] < region_cache_info->offset[j] ||
@@ -7182,7 +7180,6 @@ PDC_bmreader(void *ctx, uint64_t start, uint64_t count, uint32_t *buf)
     for (j = 0; j < count; ++j) {
         buf[j] = bms[j];
     }
-
 
     return 0;
 }
