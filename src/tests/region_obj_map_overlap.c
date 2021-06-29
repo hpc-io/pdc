@@ -270,7 +270,8 @@ main(int argc, char **argv)
     else {
         printf("successfully closed global region @ line  %d!\n", __LINE__);
     }
-// Write the same object again. This time we test writing a region contained in the previously written one.
+    // Write the same object again. This time we test writing a region contained in the previously written
+    // one.
     offset[0]        = 0;
     offset_length[0] = BUF_LEN / 4;
     reg              = PDCregion_create(1, offset, offset_length);
@@ -310,7 +311,7 @@ main(int argc, char **argv)
     else {
         printf("successfully closed global region @ line  %d!\n", __LINE__);
     }
-// Read the whole object for checking purpose
+    // Read the whole object for checking purpose
     offset[0]        = 0;
     offset_length[0] = BUF_LEN;
     reg              = PDCregion_create(1, offset, offset_length);
@@ -344,7 +345,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 
-    for (i = 0; i < BUF_LEN/4 ; ++i) {
+    for (i = 0; i < BUF_LEN / 4; ++i) {
         if (data_read[i] != i + BUF_LEN) {
             printf("wrong value %d!=%d\n", data_read[i], i + BUF_LEN / 4);
             ret_value = 1;
@@ -352,7 +353,7 @@ main(int argc, char **argv)
         }
     }
 
-    for (i = BUF_LEN/4; i < BUF_LEN ; ++i) {
+    for (i = BUF_LEN / 4; i < BUF_LEN; ++i) {
         if (data_read[i] != i) {
             printf("wrong value %d!=%d\n", data_read[i], i + BUF_LEN / 4);
             ret_value = 1;
