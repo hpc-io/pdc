@@ -319,7 +319,7 @@ typedef struct pdc_region_cache {
 } pdc_region_cache;
 
 typedef struct pdc_obj_cache {
-    struct pdc_obj_cache *obj_cache;
+    struct pdc_obj_cache *next;
     uint64_t              obj_id;
     pdc_region_cache *    region_cache;
     pdc_region_cache *    region_cache_end;
