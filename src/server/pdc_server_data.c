@@ -4609,7 +4609,8 @@ PDC_region_merge(const char *buf, const char *buf2, const uint64_t *offset, cons
         }
         // If we pass the previous condition, this dimension is connected between these two regions.
         if (offset[i] != offset2[i] || size[i] != size2[i]) {
-            // Passing the above condition means this dimension can the connecting but not fully cotained relation.
+            // Passing the above condition means this dimension can the connecting but not fully cotained
+            // relation.
             if (connect_flag == -1) {
                 // Set connect_flag to be the current dimension (non longer -1)
                 connect_flag = i;
@@ -4790,7 +4791,7 @@ PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size, con
     int                     i;
     struct pdc_region_info *region_cache_info;
     obj_cache_iter = obj_cache_list;
-    while (obj_cache_iter!=NULL) {
+    while (obj_cache_iter != NULL) {
         if (obj_cache_iter->obj_id == obj_id) {
             obj_cache = obj_cache_iter;
             break;
@@ -4799,30 +4800,31 @@ PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size, con
     }
 
     if (obj_cache == NULL) {
-        obj_cache_list_end->next = (pdc_obj_cache *) malloc(sizeof(pdc_obj_cache));
-        obj_cache_list_end = obj_cache_list_end->next;
+        obj_cache_list_end->next = (pdc_obj_cache *)malloc(sizeof(pdc_obj_cache));
+        obj_cache_list_end       = obj_cache_list_end->next;
         obj_cache_list_end->next = NULL;
 
-        obj_cache_list_end->obj_id = obj_id;
-        obj_cache_list_end->region_cache = NULL;
+        obj_cache_list_end->obj_id           = obj_id;
+        obj_cache_list_end->region_cache     = NULL;
         obj_cache_list_end->region_cache_end = NULL;
 
         obj_cache = obj_cache_list_end;
     }
 
     if (obj_cache->region_cache == NULL) {
-        obj_cache->region_cache = (pdc_region_cache*) malloc(sizeof(pdc_region_cache));
-        obj_cache->region_cache_end = obj_cache->region_cache;
+        obj_cache->region_cache           = (pdc_region_cache *)malloc(sizeof(pdc_region_cache));
+        obj_cache->region_cache_end       = obj_cache->region_cache;
         obj_cache->region_cache_end->next = NULL;
     }
     else {
-        obj_cache->region_cache_end->next = (pdc_region_cache*) malloc(sizeof(pdc_region_cache));
-        obj_cache->region_cache_end = obj_cache->region_cache_end->next;
+        obj_cache->region_cache_end->next = (pdc_region_cache *)malloc(sizeof(pdc_region_cache));
+        obj_cache->region_cache_end       = obj_cache->region_cache_end->next;
         obj_cache->region_cache_end->next = NULL;
     }
 
     /* printf("checkpoint region_obj_cache_size = %d\n", obj_cache->region_obj_cache_size); */
-    obj_cache->region_cache_end->region_cache_info = (struct pdc_region_info *) malloc(sizeof(struct pdc_region_info));
+    obj_cache->region_cache_end->region_cache_info =
+        (struct pdc_region_info *)malloc(sizeof(struct pdc_region_info));
     region_cache_info         = obj_cache->region_cache_end->region_cache_info;
     region_cache_info->ndim   = ndim;
     region_cache_info->offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
@@ -4846,18 +4848,18 @@ PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size, con
 int
 PDC_region_cache_free()
 {
-    pdc_obj_cache *         obj_cache_iter, *obj_temp;
+    pdc_obj_cache *   obj_cache_iter, *obj_temp;
     pdc_region_cache *region_cache_iter *region_temp;
     obj_cache_iter = obj_cache_list;
-    while (obj_cache_iter!=NULL) {
+    while (obj_cache_iter != NULL) {
         region_cache_iter = obj_cache_iter->region_cache;
-        while (region_cache_iter!=NULL) {
+        while (region_cache_iter != NULL) {
             free(region_cache_iter->region_cache_info);
-            region_temp = region_cache_iter;
+            region_temp       = region_cache_iter;
             region_cache_iter = region_cache_iter->next;
             free(region_temp);
         }
-        obj_temp = obj_cache_iter;
+        obj_temp       = obj_cache_iter;
         obj_cache_iter = obj_cache_iter->next;
         free(obj_temp);
     }
@@ -4962,9 +4964,9 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     obj_cache = NULL;
     // Look up for the object in the cache list
     obj_cache_iter = obj_cache_list;
-    while(obj_cache_iter == NULL) {
+    while (obj_cache_iter == NULL) {
         if (obj_cache_iter->obj_id == obj_id) {
-            obj_cache = obj_cache_iter;
+            obj_cache      = obj_cache_iter;
             obj_cache_iter = obj_cache_iter->next;
         }
     }
@@ -5153,16 +5155,17 @@ PDC_region_cache_flush(uint64_t obj_id)
     struct pdc_region_info *region_cache;
 
     obj_cache_iter = obj_cache_list;
-    while(obj_cache_iter != NULL) {
+    while (obj_cache_iter != NULL) {
         if (obj_cache_iter->obj_id == obj_id) {
             obj_cache = obj_cache_iter;
         }
         obj_cache_iter = obj_cache_iter->next;
     }
-    region_cache_iter = obj_cache->region_cache
-    while (region_cache_iter) {
+    region_cache_iter = obj_cache->region_cache while (region_cache_iter)
+    {
         region_cache_info = region_cache_iter->region_cache_info;
-        PDC_Server_data_write_out2(obj_id, region_cache_info, region_cache_info->buf, region_cache_info->unit);
+        PDC_Server_data_write_out2(obj_id, region_cache_info, region_cache_info->buf,
+                                   region_cache_info->unit);
         free(region_cache_info->offset);
         free(region_cache_info->size);
         free(region_cache_info->buf);
@@ -5180,11 +5183,11 @@ PDC_region_cache_flush(uint64_t obj_id)
 int
 PDC_region_cache_flush_all()
 {
-    pdc_obj_cache *         obj_cache_iter, *obj_cache_temp;
+    pdc_obj_cache *obj_cache_iter, *obj_cache_temp;
     hg_thread_mutex_lock(&pdc_obj_cache_list_mutex);
 
     obj_cache_iter = obj_cache_list;
-    while(obj_cache_iter != NULL) {
+    while (obj_cache_iter != NULL) {
         PDC_region_cache_flush(obj_cache_iter->obj_id);
         obj_cache_temp = obj_cache_iter;
         obj_cache_iter = obj_cache_iter->next;
@@ -5249,14 +5252,14 @@ PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf
 {
     hg_thread_mutex_lock(&pdc_obj_cache_list_mutex);
     pdc_obj_cache *         obj_cache = NULL, *obj_cache_iter;
-    int                     flag = 1;
+    int                     flag      = 1;
     size_t                  j;
     struct pdc_region_info *region_cache = NULL, *region_cache_iter;
 
     obj_cache_iter = obj_cache_list;
-    while(obj_cache_iter != NULL) {
+    while (obj_cache_iter != NULL) {
         if (obj_cache_iter->obj_id == obj_id) {
-            obj_cache = obj_cache_iter;
+            obj_cache      = obj_cache_iter;
             obj_cache_iter = obj_cache_iter->next;
         }
     }
@@ -8083,8 +8086,8 @@ done:
 static perr_t
 PDC_Server_send_nhits_to_client(query_task_t *task)
 {
-    perr_t       ret_value = SUCCEED;
-    hg_return_t  hg_ret;
+    perr_t      ret_value = SUCCEED;
+    hg_return_t hg_ret;
 
     send_nhits_t in;
     hg_handle_t  handle;
@@ -8327,7 +8330,6 @@ PDC_Server_send_coords_to_server(query_task_t *task)
         ret_value = FAIL;
         goto done;
     }
-
 
 done:
     HG_Destroy(handle);

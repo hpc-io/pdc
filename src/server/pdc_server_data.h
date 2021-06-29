@@ -313,17 +313,17 @@ extern int     use_fastbit_idx_g;
 #define PDC_SERVER_CACHE
 
 #ifdef PDC_SERVER_CACHE
-typedef struct pdc_region_cache{
-    struct pdc_region_info *region_cache_info;
+typedef struct pdc_region_cache {
+    struct pdc_region_info * region_cache_info;
     struct pdc_region_cache *next;
 } pdc_region_cache;
 
-typedef struct pdc_obj_cache{
+typedef struct pdc_obj_cache {
     struct pdc_obj_cache *obj_cache;
-    uint64_t                obj_id;
-    pdc_region_cache *region_cache;
-    pdc_region_cache *region_cache_end;
-    struct timeval          timestamp;
+    uint64_t              obj_id;
+    pdc_region_cache *    region_cache;
+    pdc_region_cache *    region_cache_end;
+    struct timeval        timestamp;
 } pdc_obj_cache;
 
 #define PDC_REGION_CONTAINED       0
