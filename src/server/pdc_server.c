@@ -868,13 +868,13 @@ drc_access_again:
 
     // PDC cache infrastructures
 #ifdef PDC_SERVER_CACHE
-    obj_cache_list     = (pdc_obj_cache*) malloc(sizeof(pdc_obj_cache));
-    obj_cache_list_end = obj_cache_list;
-    obj_cache_list->next = NULL;
-    obj_cache_list->region_cache = NULL;
+    obj_cache_list                   = (pdc_obj_cache *)malloc(sizeof(pdc_obj_cache));
+    obj_cache_list_end               = obj_cache_list;
+    obj_cache_list->next             = NULL;
+    obj_cache_list->region_cache     = NULL;
     obj_cache_list->region_cache_end = NULL;
 
-    pdc_recycle_close_flag            = 0;
+    pdc_recycle_close_flag = 0;
     hg_thread_mutex_init(&pdc_obj_cache_list_mutex);
     pthread_mutex_init(&pdc_cache_mutex, NULL);
     pthread_create(&pdc_recycle_thread, NULL, &PDC_region_cache_clock_cycle, NULL);
