@@ -277,7 +277,7 @@ main(int argc, char **argv)
     reg              = PDCregion_create(1, offset, offset_length);
     reg_global       = PDCregion_create(1, offset, offset_length);
 
-    for (i = 0; i < BUF_LEN/4; ++i) {
+    for (i = 0; i < BUF_LEN / 4; ++i) {
         data[i] = i + BUF_LEN;
     }
     ret = PDCbuf_obj_map(data, PDC_INT, reg, obj1, reg_global);
