@@ -1395,6 +1395,7 @@ PDC_Server_buf_map_lookup_server_id(int remote_server_id, struct transfer_buf_ma
     hg_handle_t                          handle;
     int                                  error = 0;
 
+
     FUNC_ENTER(NULL);
 
     handle      = transfer_args->handle;
@@ -3005,6 +3006,7 @@ PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
             goto done;
         }
         PDC_region_list_t_deep_cp(&(io_info->region), new_region);
+
 
         DL_APPEND(io_list_target->region_list_head, new_region);
         if (is_debug_g == 1) {
@@ -5285,7 +5287,7 @@ PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf
                 break;
             }
             else {
-                region_cache = NULL;
+                region_cache_info = NULL;
             }
         }
         if (region_cache != NULL && unit == region_cache->unit) {
@@ -5293,10 +5295,10 @@ PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf
                                   region_info->offset, region_info->size, region_cache->ndim, unit, 0);
         }
         else {
-            region_cache = NULL;
+            region_cache_info = NULL;
         }
     }
-    if (region_cache == NULL) {
+    if (region_cache_info == NULL) {
         PDC_region_cache_flush(obj_id);
         PDC_Server_data_read_from2(obj_id, region_info, buf, unit);
     }
