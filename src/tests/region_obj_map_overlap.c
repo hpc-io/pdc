@@ -360,15 +360,15 @@ main(int argc, char **argv)
             // break;
         }
     }
-/*
-    for (i = BUF_LEN / 4; i < BUF_LEN; ++i) {
-        if (data_read[i] != i) {
-            printf("wrong value %d!=%d\n  @ line %d!\n", data_read[i], i, __LINE__);
-            ret_value = 1;
-            break;
+    /*
+        for (i = BUF_LEN / 4; i < BUF_LEN; ++i) {
+            if (data_read[i] != i) {
+                printf("wrong value %d!=%d\n  @ line %d!\n", data_read[i], i, __LINE__);
+                ret_value = 1;
+                break;
+            }
         }
-    }
-*/
+    */
     if (PDCregion_close(reg) < 0) {
         printf("fail to close local region @ line  %d!\n", __LINE__);
         ret_value = 1;
