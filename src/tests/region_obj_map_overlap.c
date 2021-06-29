@@ -353,14 +353,14 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 
-    for (i = 0; i < BUF_LEN / 4; ++i) {
+    for (i = 0; i < BUF_LEN; ++i) {
         if (data_read[i] != i + BUF_LEN) {
             printf("wrong value %d!=%d  @ line %d!\n", data_read[i], i + BUF_LEN, __LINE__);
             ret_value = 1;
             // break;
         }
     }
-
+/*
     for (i = BUF_LEN / 4; i < BUF_LEN; ++i) {
         if (data_read[i] != i) {
             printf("wrong value %d!=%d\n  @ line %d!\n", data_read[i], i, __LINE__);
@@ -368,7 +368,7 @@ main(int argc, char **argv)
             break;
         }
     }
-
+*/
     if (PDCregion_close(reg) < 0) {
         printf("fail to close local region @ line  %d!\n", __LINE__);
         ret_value = 1;
