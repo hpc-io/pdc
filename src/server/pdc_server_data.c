@@ -5290,9 +5290,9 @@ PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf
                 region_cache_info = NULL;
             }
         }
-        if (region_cache != NULL && unit == region_cache->unit) {
-            PDC_region_cache_copy(region_cache->buf, buf, region_cache->offset, region_cache->size,
-                                  region_info->offset, region_info->size, region_cache->ndim, unit, 0);
+        if (region_cache_info != NULL && unit == region_cache_info->unit) {
+            PDC_region_cache_copy(region_cache_info->buf, buf, region_cache_info->offset, region_cache_info->size,
+                                  region_info->offset, region_info->size, region_cache_info->ndim, unit, 0);
         }
         else {
             region_cache_info = NULL;
