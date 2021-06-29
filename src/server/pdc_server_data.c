@@ -1395,7 +1395,6 @@ PDC_Server_buf_map_lookup_server_id(int remote_server_id, struct transfer_buf_ma
     hg_handle_t                          handle;
     int                                  error = 0;
 
-
     FUNC_ENTER(NULL);
 
     handle      = transfer_args->handle;
@@ -3006,7 +3005,6 @@ PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
             goto done;
         }
         PDC_region_list_t_deep_cp(&(io_info->region), new_region);
-
 
         DL_APPEND(io_list_target->region_list_head, new_region);
         if (is_debug_g == 1) {
@@ -5257,7 +5255,7 @@ PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf
     pdc_obj_cache *         obj_cache = NULL, *obj_cache_iter;
     int                     flag      = 1;
     size_t                  j;
-    pdc_region_cache        *region_cache_iter;
+    pdc_region_cache *      region_cache_iter;
     struct pdc_region_info *region_cache = NULL;
 
     obj_cache_iter = obj_cache_list;
@@ -7824,7 +7822,6 @@ PDC_Server_query_evaluate_merge_opt(pdc_query_t *query, query_task_t *task, pdc_
                         MACRO_QUERY_RANGE_EVALUATE_SCAN_OPT(uint32_t, nelem, buf, lop, ulo, rop, uhi, sel,
                                                             region_elt, unit_size, region_constraint,
                                                             combine_op);
-
                     }
                     else {
                         MACRO_QUERY_EVALUATE_SCAN_OPT(uint32_t, nelem, buf, op, value, sel, region_elt,
