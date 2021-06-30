@@ -279,7 +279,7 @@ main(int argc, char **argv)
     else {
         printf("successfully closed global region @ line  %d!\n", __LINE__);
     }
-// Partial write for a region that has been written before
+    // Partial write for a region that has been written before
     offset[0]        = 0;
     offset_length[0] = BUF_LEN / 8;
     offset[1]        = 0;
@@ -291,7 +291,7 @@ main(int argc, char **argv)
     offset_length[1] = 4;
     reg_global       = PDCregion_create(2, offset, offset_length);
 
-    for (i = 0; i < BUF_LEN/2; ++i) {
+    for (i = 0; i < BUF_LEN / 2; ++i) {
         data[i] = i + BUF_LEN;
     }
 
@@ -337,12 +337,12 @@ main(int argc, char **argv)
     offset_length[0] = BUF_LEN / 8;
     offset[1]        = 0;
     offset_length[1] = 4;
-    reg_global              = PDCregion_create(2, offset, offset_length);
+    reg_global       = PDCregion_create(2, offset, offset_length);
     offset[0]        = 0;
     offset_length[0] = BUF_LEN / 8;
     offset[1]        = 0;
     offset_length[1] = 4;
-    reg       = PDCregion_create(2, offset, offset_length);
+    reg              = PDCregion_create(2, offset, offset_length);
 
     memset(data_read, 0, BUF_LEN);
 
@@ -372,7 +372,8 @@ main(int argc, char **argv)
 
     for (i = 0; i < BUF_LEN / 2; ++i) {
         if (data_read[i] != i + BUF_LEN + BUF_LEN / 8) {
-            printf("i = %d, wrong value %d!=%d @ line  %d!\n", i, data_read[i], i + BUF_LEN + BUF_LEN / 8, __LINE__);
+            printf("i = %d, wrong value %d!=%d @ line  %d!\n", i, data_read[i], i + BUF_LEN + BUF_LEN / 8,
+                   __LINE__);
             ret_value = 1;
             break;
         }
