@@ -358,7 +358,7 @@ main(int argc, char **argv)
 
     for (i = 0; i < BUF_LEN/2; ++i) {
         if (data_read[i] != i + BUF_LEN/8 + BUF_LEN) {
-            printf("wrong value %d!=%d  @ line %d!\n", data_read[i + BUF_LEN/4], i + BUF_LEN/8 + BUF_LEN, __LINE__);
+            printf("wrong value %d!=%d  @ line %d!\n", data_read[i], i + BUF_LEN/8 + BUF_LEN, __LINE__);
             ret_value = 1;
             // break;
         }

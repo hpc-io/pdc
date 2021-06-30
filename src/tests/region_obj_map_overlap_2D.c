@@ -374,8 +374,23 @@ main(int argc, char **argv)
         if (data_read[i] != i + BUF_LEN + BUF_LEN / 8) {
             printf("i = %d, wrong value %d!=%d @ line  %d!\n", i, data_read[i], i + BUF_LEN + BUF_LEN / 8, __LINE__);
             ret_value = 1;
-            break;
+            //break;
         }
+    }
+
+    if (PDCregion_close(reg) < 0) {
+        printf("fail to close local region @ line  %d!\n", __LINE__);
+        ret_value = 1;
+    }
+    else {
+        printf("successfully closed local region @ line  %d!\n", __LINE__);
+    }
+    if (PDCregion_close(reg_global) < 0) {
+        printf("fail to close global region @ line  %d!\n", __LINE__);
+        ret_value = 1;
+    }
+    else {
+        printf("successfully closed global region @ line  %d!\n", __LINE__);
     }
 
     // close object
