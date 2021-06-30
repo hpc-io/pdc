@@ -270,6 +270,7 @@ main(int argc, char **argv)
     else {
         printf("successfully closed global region @ line  %d!\n", __LINE__);
     }
+
     // Write the same object again. This time we test writing a region contained in the previously written
     // one.
     offset[0]        = 0;
