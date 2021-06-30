@@ -375,7 +375,7 @@ main(int argc, char **argv)
             printf("i = %d, wrong value %d!=%d @ line  %d!\n", i, data_read[i], i + BUF_LEN + BUF_LEN / 8,
                    __LINE__);
             ret_value = 1;
-            //break;
+            // break;
         }
     }
 
