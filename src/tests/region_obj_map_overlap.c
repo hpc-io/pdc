@@ -274,14 +274,16 @@ main(int argc, char **argv)
     // Write the same object again. This time we test writing a region contained in the previously written
     // one.
     offset[0]        = 0;
-    offset_length[0] = BUF_LEN;
+    offset_length[0] = BUF_LEN/2;
     reg              = PDCregion_create(1, offset, offset_length);
+    offset[0]        = BUF_LEN/8;
+    offset_length[0] = BUF_LEN/2;
     reg_global       = PDCregion_create(1, offset, offset_length);
 
-    for (i = 0; i < BUF_LEN; ++i) {
+    for (i = 0; i < BUF_LEN/2; ++i) {
         data[i] = i + BUF_LEN;
     }
-    ret = PDCbuf_obj_map(data, PDC_INT, reg, obj1, reg_global);
+    ret = PDCbuf_obj_map(data + BUF_LEN/8, PDC_INT, reg, obj1, reg_global);
     if (ret != SUCCEED) {
         printf("PDCbuf_obj_map failed @ line  %d!\n", __LINE__);
         ret_value = 1;
@@ -321,16 +323,16 @@ main(int argc, char **argv)
         printf("successfully closed global region @ line  %d!\n", __LINE__);
     }
     // Read the whole object for checking purpose
+    offset[0]        = BUF_LEN/8;
+    offset_length[0] = BUF_LEN/2;
+    reg_global              = PDCregion_create(1, offset, offset_length);
     offset[0]        = 0;
-    offset_length[0] = BUF_LEN;
-    reg              = PDCregion_create(1, offset, offset_length);
-    offset[0]        = 0;
-    offset_length[0] = BUF_LEN;
-    reg_global       = PDCregion_create(1, offset, offset_length);
+    offset_length[0] = BUF_LEN/2;
+    reg       = PDCregion_create(1, offset, offset_length);
 
     memset(data_read, 0, BUF_LEN);
 
-    ret = PDCbuf_obj_map(data_read, PDC_INT, reg, obj1, reg_global);
+    ret = PDCbuf_obj_map(data_read + BUF_LEN/8, PDC_INT, reg, obj1, reg_global);
     if (ret != SUCCEED) {
         printf("PDCbuf_obj_map failed @ line  %d!\n", __LINE__);
         ret_value = 1;
@@ -354,22 +356,13 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 
-    for (i = 0; i < BUF_LEN; ++i) {
-        if (data_read[i] != i + BUF_LEN) {
-            printf("wrong value %d!=%d  @ line %d!\n", data_read[i], i + BUF_LEN, __LINE__);
+    for (i = 0; i < BUF_LEN/2; ++i) {
+        if (data_read[i] != i + BUF_LEN/8 + BUF_LEN) {
+            printf("wrong value %d!=%d  @ line %d!\n", data_read[i + BUF_LEN/4], i + BUF_LEN/8 + BUF_LEN, __LINE__);
             ret_value = 1;
             // break;
         }
     }
-    /*
-        for (i = BUF_LEN / 4; i < BUF_LEN; ++i) {
-            if (data_read[i] != i) {
-                printf("wrong value %d!=%d\n  @ line %d!\n", data_read[i], i, __LINE__);
-                ret_value = 1;
-                break;
-            }
-        }
-    */
     if (PDCregion_close(reg) < 0) {
         printf("fail to close local region @ line  %d!\n", __LINE__);
         ret_value = 1;
