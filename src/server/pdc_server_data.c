@@ -4539,20 +4539,25 @@ PDC_check_region_relation(uint64_t *offset, uint64_t *size, uint64_t *offset2, u
 }
 
 /*
- * This function assumes two regions have overlaping relations. We create a new region for the overlaping part.
+ * This function assumes two regions have overlaping relations. We create a new region for the overlaping
+ * part.
  */
-int extract_overlaping_region(const uint64_t *offset, const uint64_t *size, const uint64_t *offset2, const uint64_t *size2, int ndim, uint64_t **offset_merged, uint64_t **size_merged) {
+int
+extract_overlaping_region(const uint64_t *offset, const uint64_t *size, const uint64_t *offset2,
+                          const uint64_t *size2, int ndim, uint64_t **offset_merged, uint64_t **size_merged)
+{
     int i;
-    *offset_merged = (uint64_t*) malloc(sizeof(uint64_t) * ndim);
-    *size_merged = (uint64_t*) malloc(sizeof(uint64_t) * ndim);
-    for ( i = 0; i < ndim; ++i ){
-        if ( offset2[i] > offset[i] ) {
+    *offset_merged = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
+    *size_merged   = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
+    for (i = 0; i < ndim; ++i) {
+        if (offset2[i] > offset[i]) {
             offset_merged[0][i] = offset2[i];
-	    size_merged[0][i] = offset[i] + size[i] - offset2[i];
-        } else {
+            size_merged[0][i]   = offset[i] + size[i] - offset2[i];
+        }
+        else {
             offset_merged[0][i] = offset[i];
-	    size_merged[0][i] = offset2[i] + size2[i] - offset[i];
-	}
+            size_merged[0][i]   = offset2[i] + size2[i] - offset[i];
+        }
     }
 }
 
