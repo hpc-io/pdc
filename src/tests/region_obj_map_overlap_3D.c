@@ -391,7 +391,7 @@ main(int argc, char **argv)
         if (data_read[i] != i + BUF_LEN / 8 + BUF_LEN) {
             printf("i = %d, wrong value %d!=%d\n", i, data_read[i], i + BUF_LEN / 8 + BUF_LEN);
             ret_value = 1;
-            // break;
+            break;
         }
     }
 
