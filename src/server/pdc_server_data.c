@@ -4495,6 +4495,44 @@ PDC_Server_data_io_direct(pdc_access_t io_type, uint64_t obj_id, struct pdc_regi
     FUNC_LEAVE(ret_value);
 }
 
+static perr_t
+PDC_Server_posix_write(int fd, void* buf, uint64_t write_size)
+{
+    // Write 1GB at a time
+    uint64_t write_bytes = 0, max_write_size = 1073741824;
+    perr_t ret_value = SUCCEED;
+    ssize_t ret;
+
+    FUNC_ENTER(NULL);
+
+    while (write_size > max_write_size) {
+        ret = write(fd, buf, max_write_size);
+        if (ret < 0 || ret != max_write_size) {
+            printf("==PDC_SERVER[%d]: write %d failed\n", pdc_server_rank_g, fd);
+            ret_value = FAIL;
+            goto done;
+        }
+        write_bytes += ret;
+        buf += max_write_size;
+        write_size -= max_write_size;
+    }
+    ret = write(fd, buf, write_size);
+    if (ret < 0 || ret != write_size) {
+        printf("==PDC_SERVER[%d]: write %d failed\n", pdc_server_rank_g, fd);
+        ret_value = FAIL;
+        goto done;
+    }
+    write_bytes += ret;
+
+    if (write_bytes != write_size) {
+        printf("==PDC_SERVER[%d]: write %d failed, not all data written %llu/%llu\n", 
+                pdc_server_rank_g, fd, write_bytes, write_size);
+        ret_value = FAIL;
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
 #ifdef PDC_SERVER_CACHE
 
 /*
@@ -4906,7 +4944,7 @@ PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *region_info,
     FUNC_ENTER(NULL);
 
     // Write 1GB at a time
-    uint64_t write_size = 1, max_write_size = 1073741824;
+    uint64_t write_size = 1;
     if (region_info->ndim >= 1)
         write_size = unit * region_info->size[0];
     if (region_info->ndim >= 2)
@@ -4940,19 +4978,13 @@ PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *region_info,
     gettimeofday(&pdc_timer_start, 0);
 #endif
 
-    write_bytes = 0;
-    while (write_size > max_write_size) {
-        write_bytes += write(region->fd, buf, max_write_size);
-        buf += max_write_size;
-        write_size -= max_write_size;
-    }
-    write_bytes += write(region->fd, buf, write_size);
-/*
-    if (write_bytes == -1) {
-        printf("==PDC_SERVER[%d]: write %d failed\n", pdc_server_rank_g, region->fd);
+    ret_value = PDC_Server_posix_write(region->fd, buf, write_size);
+    if (ret_value != SUCCEED) {
+        printf("==PDC_SERVER[%d]: PDC_Server_posix_write FAILED!\n", pdc_server_rank_g);
+        ret_value = FAIL;
         goto done;
     }
-*/
+
 #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer_end, 0);
     write_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
@@ -5339,18 +5371,20 @@ PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf
 }
 
 #else
-
+// No PDC_SERVER_CACHE
 perr_t
 PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
     perr_t ret_value = SUCCEED;
     uint64_t write_bytes = -1;
     data_server_region_t *region = NULL;
+    region_list_t *overlap_region = NULL;
+    int is_overlap = 0;
+    uint64_t i, j, pos, overlap_start[DIM_MAX] = {0}, overlap_count[DIM_MAX] = {0}, overlap_start_local[DIM_MAX] = {0};
 
     FUNC_ENTER(NULL);
 
-    // Write 1GB at a time
-    uint64_t write_size, max_write_size = 1073741824;
+    uint64_t write_size;
     if (region_info->ndim >= 1)
         write_size = unit * region_info->size[0];
     if (region_info->ndim >= 2)
@@ -5369,15 +5403,14 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
         region->fd = open(region->storage_location, O_RDWR, 0666);
     }
 
-    region_list_t *storage_region = (region_list_t *)calloc(1, sizeof(region_list_t));
+    region_list_t *request_region = (region_list_t *)calloc(1, sizeof(region_list_t));
     for (size_t i = 0; i < region_info->ndim; i++) {
-        storage_region->start[i] = region_info->offset[i];
-        storage_region->count[i] = region_info->size[i];
+        request_region->start[i] = region_info->offset[i];
+        request_region->count[i] = region_info->size[i];
     }
-    storage_region->ndim = region_info->ndim;
-    storage_region->unit_size = unit;
-    storage_region->offset = lseek(region->fd, 0, SEEK_END);
-    strcpy(storage_region->storage_location, region->storage_location);
+    request_region->ndim = region_info->ndim;
+    request_region->unit_size = unit;
+    strcpy(request_region->storage_location, region->storage_location);
 
 #ifdef ENABLE_TIMING
     struct timeval pdc_timer_start, pdc_timer_end;
@@ -5385,19 +5418,141 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     gettimeofday(&pdc_timer_start, 0);
 #endif
 
-    write_bytes = 0;
-    while (write_size > max_write_size) {
-        write_bytes += write(region->fd, buf, max_write_size);
-        buf += max_write_size;
-        write_size -= max_write_size;
+    // Detect overwrite
+    region_list_t *elt;
+    DL_FOREACH(region->region_storage_head, elt) {
+        if (PDC_is_contiguous_region_overlap(elt, request_region) == 1) {
+            if (is_overlap == 1) {
+                printf("==PDC_SERVER[%d]: multiple overlap regions detected %d!\n", pdc_server_rank_g, is_overlap);
+                continue;
+            }
+            is_overlap++;
+            overlap_region = elt;
+
+            // Get the actual start and count of region in storage
+            if (PDC_get_overlap_start_count(region_info->ndim, request_region->start, request_region->count,
+                                            overlap_region->start, overlap_region->count, overlap_start,
+                                            overlap_count) != SUCCEED) {
+                printf("==PDC_SERVER[%d]: PDC_get_overlap_start_count FAILED!\n", pdc_server_rank_g);
+                ret_value = FAIL;
+                goto done;
+            }
+
+            // local (relative) region start
+            for (i = 0; i < region_info->ndim; i++)
+                overlap_start_local[i] = overlap_start[i] % overlap_region->count[i];
+
+            if (region_info->ndim == 1) {
+                // 1D can overwrite data in region directly
+                pos = (overlap_start[0] - region_info->offset[0]) * unit;
+                if (pos > write_size) {
+                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
+                           pos, write_size);
+                    ret_value = -1;
+                    goto done;
+                }
+
+                lseek(region->fd, overlap_region->offset + pos, SEEK_SET);
+                ret_value = PDC_Server_posix_write(region->fd, buf, write_size);
+                if (ret_value != SUCCEED) {
+                    printf("==PDC_SERVER[%d]: PDC_Server_posix_write FAILED!\n", pdc_server_rank_g);
+                    ret_value = FAIL;
+                    goto done;
+                }
+                free(request_region);
+                // No need to update metadata
+            }
+            else if (region_info->ndim == 2) {
+                // 2D/3D: generally it's a good idea to read entire region, overwrite overlap part, 
+                // and write back to avoid fragmented writes.
+                void *tmp_buf = malloc(overlap_region->data_size);
+
+                pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset);
+
+                // Overlap start position
+                pos = ((overlap_start[0] - region_info->offset[0]) * overlap_region->count[1] +
+                       overlap_start[1] - region_info->offset[1]) * unit;
+                if (pos > overlap_region->data_size) {
+                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
+                           pos, overlap_region->data_size);
+                    ret_value = -1;
+                    goto done;
+                }
+
+                for (i = overlap_start_local[0]; i < overlap_start_local[0] + overlap_count[0]; i++) {
+                    memcpy(tmp_buf + i * overlap_region->count[1] * unit + overlap_start_local[1] * unit,
+                           buf + pos, overlap_count[1] * unit);
+                    pos += region_info->size[1] * unit;
+                    if (pos > overlap_region->data_size) {
+                        printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n",
+                               pdc_server_rank_g, pos, overlap_region->data_size);
+                        ret_value = -1;
+                        goto done;
+                    }
+                }
+                pwrite(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset);
+                free(tmp_buf);
+                // No need to update metadata
+            } // End 2D
+            else if (region_info->ndim == 3) {
+                void *tmp_buf = malloc(overlap_region->data_size);
+                // Read entire region
+                pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset);
+
+                pos = ((overlap_start[0] - region_info->offset[0]) * overlap_region->count[1] *
+                        overlap_region->count[2] +
+                       (overlap_start[1] - region_info->offset[1]) * overlap_region->count[2] +
+                       (overlap_start[2] - region_info->offset[2])) * unit;
+                if (pos > overlap_region->data_size) {
+                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
+                           pos, overlap_region->data_size);
+                    ret_value = -1;
+                    goto done;
+                }
+
+                for (i = overlap_start_local[0]; i < overlap_start_local[0] + overlap_count[0]; i++) {
+                    for (j = overlap_start_local[1]; j < overlap_start_local[1] + overlap_count[1]; j++) {
+                        /* printf("i=%llu, j=%llu, pos=%llu, pos2=%llu, size=%llu, total size=%llu\n", i, j,
+                         * pos, */
+                        /*         i*overlap_region->count[2]*overlap_region->count[1]*unit
+                         * +j*overlap_region->count[2]*unit+region_info->offset[2], */
+                        /*         region_info->size[2]*unit, overlap_region->data_size); */
+                        memcpy(tmp_buf + i * overlap_region->count[2] * overlap_region->count[1] * unit +
+                               j * overlap_region->count[2] * unit + overlap_start_local[2] * unit,
+                               buf + pos, overlap_count[2] * unit);
+
+                        pos += region_info->size[2] * unit;
+                        if (pos > overlap_region->data_size) {
+                            printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n",
+                                   pdc_server_rank_g, pos, overlap_region->data_size);
+                            ret_value = -1;
+                            goto done;
+                        }
+                    }
+                }
+                pwrite(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset);
+                free(tmp_buf);
+                // No need to update metadata
+            } // End 3D
+        } // End is overlap
+
+    } // End DL_FOREACH storage region list
+
+    if (is_overlap == 0) {
+        request_region->offset = lseek(region->fd, 0, SEEK_END);
+
+        ret_value = PDC_Server_posix_write(region->fd, buf, write_size);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_SERVER[%d]: PDC_Server_posix_write FAILED!\n", pdc_server_rank_g);
+            ret_value = FAIL;
+            goto done;
+        }
+
+        // Store storage information
+        request_region->data_size = write_bytes;
+        DL_APPEND(region->region_storage_head, request_region);
     }
-    write_bytes += write(region->fd, buf, write_size);
-/*
-    if (write_bytes == -1) {
-        printf("==PDC_SERVER[%d]: write %d failed\n", pdc_server_rank_g, region->fd);
-        goto done;
-    }
-*/
+
 #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer_end, 0);
     write_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
@@ -5406,16 +5561,13 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     fflush(stdout);
 #endif
 
-    // Store storage information
-    storage_region->data_size = write_bytes;
-    DL_APPEND(region->region_storage_head, storage_region);
-
-    /* printf("==PDC_SERVER[%d]: write region %llu bytes\n", pdc_server_rank_g, storage_region->data_size); */
+    /* printf("==PDC_SERVER[%d]: write region %llu bytes\n", pdc_server_rank_g, request_region->data_size); */
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
+// No PDC_SERVER_CACHE
 perr_t
 PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
@@ -5599,7 +5751,7 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
-#endif
+#endif // End else PDC_SERVER_CACHE
 
 perr_t
 PDC_Server_data_write_direct(uint64_t obj_id, struct pdc_region_info *region_info, void *buf)
