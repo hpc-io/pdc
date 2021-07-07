@@ -4496,12 +4496,12 @@ PDC_Server_data_io_direct(pdc_access_t io_type, uint64_t obj_id, struct pdc_regi
 }
 
 static perr_t
-PDC_Server_posix_write(int fd, void* buf, uint64_t write_size)
+PDC_Server_posix_write(int fd, void *buf, uint64_t write_size)
 {
     // Write 1GB at a time
     uint64_t write_bytes = 0, max_write_size = 1073741824;
-    perr_t ret_value = SUCCEED;
-    ssize_t ret;
+    perr_t   ret_value = SUCCEED;
+    ssize_t  ret;
 
     FUNC_ENTER(NULL);
 
@@ -4525,8 +4525,8 @@ PDC_Server_posix_write(int fd, void* buf, uint64_t write_size)
     write_bytes += ret;
 
     if (write_bytes != write_size) {
-        printf("==PDC_SERVER[%d]: write %d failed, not all data written %llu/%llu\n", 
-                pdc_server_rank_g, fd, write_bytes, write_size);
+        printf("==PDC_SERVER[%d]: write %d failed, not all data written %llu/%llu\n", pdc_server_rank_g, fd,
+               write_bytes, write_size);
         ret_value = FAIL;
     }
 
@@ -5380,7 +5380,8 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     data_server_region_t *region = NULL;
     region_list_t *overlap_region = NULL;
     int is_overlap = 0;
-    uint64_t i, j, pos, overlap_start[DIM_MAX] = {0}, overlap_count[DIM_MAX] = {0}, overlap_start_local[DIM_MAX] = {0};
+    uint64_t i, j, pos, overlap_start[DIM_MAX] = {0}, overlap_count[DIM_MAX] = {0},
+                        overlap_start_local[DIM_MAX] = {0};
 
     FUNC_ENTER(NULL);
 
@@ -5420,10 +5421,12 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 
     // Detect overwrite
     region_list_t *elt;
-    DL_FOREACH(region->region_storage_head, elt) {
+    DL_FOREACH(region->region_storage_head, elt)
+    {
         if (PDC_is_contiguous_region_overlap(elt, request_region) == 1) {
             if (is_overlap == 1) {
-                printf("==PDC_SERVER[%d]: multiple overlap regions detected %d!\n", pdc_server_rank_g, is_overlap);
+                printf("==PDC_SERVER[%d]: multiple overlap regions detected %d!\n", pdc_server_rank_g,
+                       is_overlap);
                 continue;
             }
             is_overlap++;
@@ -5463,7 +5466,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                 // No need to update metadata
             }
             else if (region_info->ndim == 2) {
-                // 2D/3D: generally it's a good idea to read entire region, overwrite overlap part, 
+                // 2D/3D: generally it's a good idea to read entire region, overwrite overlap part,
                 // and write back to avoid fragmented writes.
                 void *tmp_buf = malloc(overlap_region->data_size);
 
@@ -5471,7 +5474,8 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 
                 // Overlap start position
                 pos = ((overlap_start[0] - region_info->offset[0]) * overlap_region->count[1] +
-                       overlap_start[1] - region_info->offset[1]) * unit;
+                       overlap_start[1] - region_info->offset[1]) *
+                      unit;
                 if (pos > overlap_region->data_size) {
                     printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
                            pos, overlap_region->data_size);
@@ -5500,9 +5504,10 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                 pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset);
 
                 pos = ((overlap_start[0] - region_info->offset[0]) * overlap_region->count[1] *
-                        overlap_region->count[2] +
+                           overlap_region->count[2] +
                        (overlap_start[1] - region_info->offset[1]) * overlap_region->count[2] +
-                       (overlap_start[2] - region_info->offset[2])) * unit;
+                       (overlap_start[2] - region_info->offset[2])) *
+                      unit;
                 if (pos > overlap_region->data_size) {
                     printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
                            pos, overlap_region->data_size);
@@ -5518,7 +5523,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                          * +j*overlap_region->count[2]*unit+region_info->offset[2], */
                         /*         region_info->size[2]*unit, overlap_region->data_size); */
                         memcpy(tmp_buf + i * overlap_region->count[2] * overlap_region->count[1] * unit +
-                               j * overlap_region->count[2] * unit + overlap_start_local[2] * unit,
+                                   j * overlap_region->count[2] * unit + overlap_start_local[2] * unit,
                                buf + pos, overlap_count[2] * unit);
 
                         pos += region_info->size[2] * unit;
@@ -5534,7 +5539,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                 free(tmp_buf);
                 // No need to update metadata
             } // End 3D
-        } // End is overlap
+        }     // End is overlap
 
     } // End DL_FOREACH storage region list
 
