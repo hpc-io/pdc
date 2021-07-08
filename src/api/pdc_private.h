@@ -170,10 +170,16 @@ extern pbool_t err_occurred;
 #else
 #define FUNC_ENTER(X)                                                                                        \
     do {                                                                                                     \
+        time_t now;                                                                                          \
+        time(&now);                                                                                          \
+        fprintf(stderr, "%ld enter %s\n", now, __func__);                                             \
     } while (0)
 
 #define FUNC_LEAVE(ret_value)                                                                                \
     do {                                                                                                     \
+        time_t now;                                                                                          \
+        time(&now);                                                                                          \
+        fprintf(stderr, "%ld leave %s\n", now, __func__);                                             \
         return (ret_value);                                                                                  \
     } while (0)
 
