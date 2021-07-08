@@ -5449,14 +5449,13 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                     goto done;
                 }
 
-                lseek(region->fd, overlap_region->offset + pos, SEEK_SET);
-                ret_value = PDC_Server_posix_write(region->fd, buf, write_size);
+                lseek(region->fd, overlap_region->offset + overlap_start_local[0] * unit, SEEK_SET);
+                ret_value = PDC_Server_posix_write(region->fd, buf + pos, write_size);
                 if (ret_value != SUCCEED) {
                     printf("==PDC_SERVER[%d]: PDC_Server_posix_write FAILED!\n", pdc_server_rank_g);
                     ret_value = FAIL;
                     goto done;
                 }
-                free(request_region);
                 // No need to update metadata
             }
             else if (region_info->ndim == 2) {
@@ -5551,6 +5550,8 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
         request_region->data_size = write_size;
         DL_APPEND(region->region_storage_head, request_region);
     }
+    else
+        free(request_region);
 
 #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer_end, 0);

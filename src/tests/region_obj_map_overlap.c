@@ -280,7 +280,7 @@ main(int argc, char **argv)
     offset_length[0] = BUF_LEN / 2;
     reg_global       = PDCregion_create(1, offset, offset_length);
 
-    for (i = 0; i < BUF_LEN / 2; ++i) {
+    for (i = 0; i < BUF_LEN; ++i) {
         data[i] = i + BUF_LEN;
     }
     ret = PDCbuf_obj_map(data + BUF_LEN / 8, PDC_INT, reg, obj1, reg_global);
@@ -332,7 +332,7 @@ main(int argc, char **argv)
 
     memset(data_read, 0, BUF_LEN);
 
-    ret = PDCbuf_obj_map(data_read + BUF_LEN / 8, PDC_INT, reg, obj1, reg_global);
+    ret = PDCbuf_obj_map(data_read, PDC_INT, reg, obj1, reg_global);
     if (ret != SUCCEED) {
         printf("PDCbuf_obj_map failed @ line  %d!\n", __LINE__);
         ret_value = 1;
