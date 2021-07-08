@@ -20,7 +20,7 @@ cd ..
 git clone --recursive https://github.com/mercury-hpc/mercury.git
 cd mercury
 # 2.0.1 version
-git checkout cabb837
+# git checkout cabb837
 mkdir build && cd build
 cmake ../  -DCMAKE_C_COMPILER=gcc -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DNA_USE_OFI=ON -DNA_USE_SM=OFF
 make -j2 && sudo make install
