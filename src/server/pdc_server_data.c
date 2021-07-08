@@ -5376,7 +5376,6 @@ perr_t
 PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
     perr_t ret_value = SUCCEED;
-    uint64_t write_bytes = -1;
     data_server_region_t *region = NULL;
     region_list_t *overlap_region = NULL;
     int is_overlap = 0;
@@ -5424,11 +5423,6 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     DL_FOREACH(region->region_storage_head, elt)
     {
         if (PDC_is_contiguous_region_overlap(elt, request_region) == 1) {
-            if (is_overlap == 1) {
-                printf("==PDC_SERVER[%d]: multiple overlap regions detected %d!\n", pdc_server_rank_g,
-                       is_overlap);
-                continue;
-            }
             is_overlap++;
             overlap_region = elt;
 
@@ -5554,7 +5548,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
         }
 
         // Store storage information
-        request_region->data_size = write_bytes;
+        request_region->data_size = write_size;
         DL_APPEND(region->region_storage_head, request_region);
     }
 
@@ -5562,7 +5556,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     gettimeofday(&pdc_timer_end, 0);
     write_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
     printf("==PDC_SERVER[%d]: write region time: %.4f, %llu bytes\n", pdc_server_rank_g, write_total_sec,
-           write_bytes);
+           write_size);
     fflush(stdout);
 #endif
 
@@ -5570,7 +5564,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
-}
+} // End PDC_Server_data_write_out
 
 // No PDC_SERVER_CACHE
 perr_t
