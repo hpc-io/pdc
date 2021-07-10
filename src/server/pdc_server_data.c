@@ -1395,7 +1395,6 @@ PDC_Server_buf_map_lookup_server_id(int remote_server_id, struct transfer_buf_ma
     hg_handle_t                          handle;
     int                                  error = 0;
 
-
     FUNC_ENTER(NULL);
 
     handle      = transfer_args->handle;
@@ -3006,7 +3005,6 @@ PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
             goto done;
         }
         PDC_region_list_t_deep_cp(&(io_info->region), new_region);
-
 
         DL_APPEND(io_list_target->region_list_head, new_region);
         if (is_debug_g == 1) {
@@ -4939,11 +4937,11 @@ PDC_region_cache_free()
 perr_t
 PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
-    perr_t ret_value = SUCCEED;
-    data_server_region_t *region = NULL;
-    region_list_t *overlap_region = NULL;
-    int is_overlap = 0;
-    uint64_t i, j, pos, overlap_start[DIM_MAX] = {0}, overlap_count[DIM_MAX] = {0},
+    perr_t                ret_value      = SUCCEED;
+    data_server_region_t *region         = NULL;
+    region_list_t *       overlap_region = NULL;
+    int                   is_overlap     = 0;
+    uint64_t              i, j, pos, overlap_start[DIM_MAX] = {0}, overlap_count[DIM_MAX] = {0},
                         overlap_start_local[DIM_MAX] = {0};
 
     FUNC_ENTER(NULL);
@@ -4972,13 +4970,13 @@ PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *region_info,
         request_region->start[i] = region_info->offset[i];
         request_region->count[i] = region_info->size[i];
     }
-    request_region->ndim = region_info->ndim;
+    request_region->ndim      = region_info->ndim;
     request_region->unit_size = unit;
     strcpy(request_region->storage_location, region->storage_location);
 
 #ifdef ENABLE_TIMING
     struct timeval pdc_timer_start, pdc_timer_end;
-    double write_total_sec;
+    double         write_total_sec;
     gettimeofday(&pdc_timer_start, 0);
 #endif
 
@@ -5197,10 +5195,10 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 perr_t
 PDC_Server_data_read_from2(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
-    perr_t ret_value = SUCCEED;
+    perr_t                       ret_value        = SUCCEED;
     ssize_t /*read_bytes = 0, */ total_read_bytes = 0, request_bytes = unit, my_read_bytes = 0;
-    data_server_region_t *region = NULL;
-    region_list_t *elt;
+    data_server_region_t *       region = NULL;
+    region_list_t *              elt;
     // int flag = 0;
     uint64_t i, j, pos, overlap_start[DIM_MAX] = {0}, overlap_count[DIM_MAX] = {0},
                         overlap_start_local[DIM_MAX] = {0};
@@ -5229,7 +5227,7 @@ PDC_Server_data_read_from2(uint64_t obj_id, struct pdc_region_info *region_info,
 
 #ifdef ENABLE_TIMING
     struct timeval pdc_timer_start, pdc_timer_end;
-    double read_total_sec;
+    double         read_total_sec;
     gettimeofday(&pdc_timer_start, 0);
 #endif
 
