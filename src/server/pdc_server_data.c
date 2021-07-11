@@ -5160,7 +5160,6 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
         obj_cache_iter = obj_cache_iter->next;
     }
     flag = 1;
-
     if (obj_cache != NULL) {
         // If we have region that is contained inside a cached region, we can directly modify the cache region
         // data.
@@ -5180,12 +5179,11 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
             region_cache_iter = region_cache_iter->next;
         }
     }
-
     if (flag) {
         PDC_region_cache_register(obj_id, buf, write_size, region_info->offset, region_info->size,
                                   region_info->ndim, unit);
     }
-    // PDC_Server_data_write_out2(obj_id, region_info, buf, unit);
+    //PDC_Server_data_write_out2(obj_id, region_info, buf, unit);
 
     // done:
     fflush(stdout);
@@ -5392,8 +5390,12 @@ PDC_region_cache_flush(uint64_t obj_id)
     while (obj_cache_iter != NULL) {
         if (obj_cache_iter->obj_id == obj_id) {
             obj_cache = obj_cache_iter;
+	    break;
         }
         obj_cache_iter = obj_cache_iter->next;
+    }
+    if (obj_cache == NULL) {
+        printf("server error: flushing object that does not exist\n");
     }
     region_cache_iter = obj_cache->region_cache;
     while (region_cache_iter != NULL) {
@@ -5408,8 +5410,8 @@ PDC_region_cache_flush(uint64_t obj_id)
         region_cache_iter = region_cache_iter->next;
         free(region_cache_temp);
     }
+    obj_cache->region_cache = NULL;
     gettimeofday(&(obj_cache->timestamp), NULL);
-
     return 0;
 }
 
@@ -5468,7 +5470,7 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 {
     perr_t ret_value = SUCCEED;
     FUNC_ENTER(NULL);
-    // PDC_Server_data_read_from2(obj_id, region_info, buf, unit);
+    //PDC_Server_data_read_from2(obj_id, region_info, buf, unit);
 
     PDC_region_fetch(obj_id, region_info, buf, unit);
     // done:
@@ -5496,7 +5498,6 @@ PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf
         }
         obj_cache_iter = obj_cache_iter->next;
     }
-
     if (obj_cache != NULL) {
         // printf("region fetch for obj id %llu\n", obj_cache->obj_id);
 

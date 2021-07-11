@@ -310,7 +310,7 @@ extern char *  gBinningOption;
 extern int     gen_fastbit_idx_g;
 extern int     use_fastbit_idx_g;
 
-#undef PDC_SERVER_CACHE
+#define PDC_SERVER_CACHE
 
 #ifdef PDC_SERVER_CACHE
 typedef struct pdc_region_cache {
