@@ -1395,7 +1395,6 @@ PDC_Server_buf_map_lookup_server_id(int remote_server_id, struct transfer_buf_ma
     hg_handle_t                          handle;
     int                                  error = 0;
 
-
     FUNC_ENTER(NULL);
 
     handle      = transfer_args->handle;
@@ -3006,7 +3005,6 @@ PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
             goto done;
         }
         PDC_region_list_t_deep_cp(&(io_info->region), new_region);
-
 
         DL_APPEND(io_list_target->region_list_head, new_region);
         if (is_debug_g == 1) {
@@ -5278,7 +5276,7 @@ PDC_Server_data_read_from2(uint64_t obj_id, struct pdc_region_info *region_info,
                 //                   storage_region->offset + overlap_start_local[0] * unit);
                 if (pread(region->fd, buf + pos, overlap_count[0] * unit,
                           storage_region->offset + overlap_start_local[0] * unit) !=
-                    (ssize_t) (overlap_count[0] * unit)) {
+                    (ssize_t)(overlap_count[0] * unit)) {
                     printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
                 }
                 my_read_bytes = overlap_count[0] * unit;
