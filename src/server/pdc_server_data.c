@@ -1395,6 +1395,7 @@ PDC_Server_buf_map_lookup_server_id(int remote_server_id, struct transfer_buf_ma
     hg_handle_t                          handle;
     int                                  error = 0;
 
+
     FUNC_ENTER(NULL);
 
     handle      = transfer_args->handle;
@@ -3005,6 +3006,7 @@ PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
             goto done;
         }
         PDC_region_list_t_deep_cp(&(io_info->region), new_region);
+
 
         DL_APPEND(io_list_target->region_list_head, new_region);
         if (is_debug_g == 1) {
@@ -5065,7 +5067,7 @@ PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *region_info,
                 // Read entire region
                 if (pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
                     (ssize_t)overlap_region->data_size) {
-                    printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n");
+                    printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
                 }
 
                 pos = ((overlap_start[0] - region_info->offset[0]) * overlap_region->count[1] *
@@ -5276,7 +5278,7 @@ PDC_Server_data_read_from2(uint64_t obj_id, struct pdc_region_info *region_info,
                 //                   storage_region->offset + overlap_start_local[0] * unit);
                 if (pread(region->fd, buf + pos, overlap_count[0] * unit,
                           storage_region->offset + overlap_start_local[0] * unit) !=
-                    (ssize_t)overlap_count[0] * unit) {
+                    (ssize_t) (overlap_count[0] * unit)) {
                     printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
                 }
                 my_read_bytes = overlap_count[0] * unit;
@@ -6009,6 +6011,7 @@ done:
 }
 
 perr_t
+
 PDC_Server_get_local_storage_meta_with_one_name(storage_meta_query_one_name_args_t *args)
 {
     perr_t          ret_value  = SUCCEED;
@@ -6892,6 +6895,7 @@ PDC_constraint_get_nhits_from_hist(pdc_query_constraint_t *constraint, pdc_histo
     for (i = lidx/2; i <= ridx/2; i++) {
         (*max_hits) += region_hist->bin[i];
         if (region_hist->range[i*2] >= value && region_hist->range[i*2+1] <= value2) {
+
             (*min_hits) += region_hist->bin[i];
         }
     }
@@ -9555,6 +9559,7 @@ PDC_Server_distribute_query_storage_info(query_task_t *task, uint64_t obj_id, in
 
                 if (server_id != pdc_server_rank_g) {
                     PDC_send_query_metadata_bulk(&header, region_bulk_buf, buf_off, server_id);
+
                     // new buf for another server
                     buf_off         = 0;
                     region_bulk_buf = calloc(buf_alloc, 1);
