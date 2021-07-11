@@ -1395,7 +1395,6 @@ PDC_Server_buf_map_lookup_server_id(int remote_server_id, struct transfer_buf_ma
     hg_handle_t                          handle;
     int                                  error = 0;
 
-
     FUNC_ENTER(NULL);
 
     handle      = transfer_args->handle;
@@ -3006,7 +3005,6 @@ PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
             goto done;
         }
         PDC_region_list_t_deep_cp(&(io_info->region), new_region);
-
 
         DL_APPEND(io_list_target->region_list_head, new_region);
         if (is_debug_g == 1) {
@@ -5028,7 +5026,8 @@ PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *region_info,
                 // and write back to avoid fragmented writes.
                 void *tmp_buf = malloc(overlap_region->data_size);
 
-                if ( pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) != overlap_region->data_size ) {
+                if (pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
+                    overlap_region->data_size) {
                     printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n");
                 }
 
@@ -5054,7 +5053,8 @@ PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *region_info,
                         goto done;
                     }
                 }
-                if (pwrite(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) != overlap_region->data_size) {
+                if (pwrite(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
+                    overlap_region->data_size) {
                     printf("==PDC_SERVER[%d]: Failed to write enough bytes\n");
                 }
                 free(tmp_buf);
@@ -5063,7 +5063,8 @@ PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *region_info,
             else if (region_info->ndim == 3) {
                 void *tmp_buf = malloc(overlap_region->data_size);
                 // Read entire region
-                if (pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) != overlap_region->data_size ) {
+                if (pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
+                    overlap_region->data_size) {
                     printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n");
                 }
 
@@ -5099,7 +5100,8 @@ PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *region_info,
                         }
                     }
                 }
-                if ( pwrite(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) != overlap_region->data_size ) {
+                if (pwrite(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
+                    overlap_region->data_size) {
                     printf("==PDC_SERVER[%d]: Failed to write enough bytes\n");
                 }
                 free(tmp_buf);
@@ -5273,7 +5275,8 @@ PDC_Server_data_read_from2(uint64_t obj_id, struct pdc_region_info *region_info,
                 // read_bytes = pread(region->fd, buf + pos, overlap_count[0] * unit,
                 //                   storage_region->offset + overlap_start_local[0] * unit);
                 if (pread(region->fd, buf + pos, overlap_count[0] * unit,
-                      storage_region->offset + overlap_start_local[0] * unit) != overlap_count[0] * unit) {
+                          storage_region->offset + overlap_start_local[0] * unit) !=
+                    overlap_count[0] * unit) {
                     printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n");
                 }
                 my_read_bytes = overlap_count[0] * unit;
@@ -5285,7 +5288,8 @@ PDC_Server_data_read_from2(uint64_t obj_id, struct pdc_region_info *region_info,
                 void *tmp_buf = malloc(storage_region->data_size);
                 // Read entire region
                 // read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
-                if (pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset) != storage_region->data_size) {
+                if (pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset) !=
+                    storage_region->data_size) {
                     printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n");
                 }
                 // Extract requested data
@@ -5318,7 +5322,8 @@ PDC_Server_data_read_from2(uint64_t obj_id, struct pdc_region_info *region_info,
                 void *tmp_buf = malloc(storage_region->data_size);
                 // Read entire region
                 // read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
-                if (pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset) != storage_region->data_size ) {
+                if (pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset) !=
+                    storage_region->data_size) {
                     printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n");
                 }
                 // Extract requested data
@@ -5560,11 +5565,11 @@ PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf
 perr_t
 PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
-    perr_t                ret_value      = SUCCEED;
-    data_server_region_t *region         = NULL;
-    region_list_t *       overlap_region = NULL;
-    int                   is_overlap     = 0;
-    uint64_t              i, j, pos, overlap_start[DIM_MAX] = {0}, overlap_count[DIM_MAX] = {0},
+    perr_t ret_value = SUCCEED;
+    data_server_region_t *region = NULL;
+    region_list_t *overlap_region = NULL;
+    int is_overlap = 0;
+    uint64_t i, j, pos, overlap_start[DIM_MAX] = {0}, overlap_count[DIM_MAX] = {0},
                         overlap_start_local[DIM_MAX] = {0};
 
     FUNC_ENTER(NULL);
@@ -5593,13 +5598,13 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
         request_region->start[i] = region_info->offset[i];
         request_region->count[i] = region_info->size[i];
     }
-    request_region->ndim      = region_info->ndim;
+    request_region->ndim = region_info->ndim;
     request_region->unit_size = unit;
     strcpy(request_region->storage_location, region->storage_location);
 
 #ifdef ENABLE_TIMING
     struct timeval pdc_timer_start, pdc_timer_end;
-    double         write_total_sec;
+    double write_total_sec;
     gettimeofday(&pdc_timer_start, 0);
 #endif
 
@@ -5648,7 +5653,8 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                 // and write back to avoid fragmented writes.
                 void *tmp_buf = malloc(overlap_region->data_size);
 
-                if ( pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) != overlap_region->data_size ) {
+                if (pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
+                    overlap_region->data_size) {
                     printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n");
                 }
 
@@ -5674,7 +5680,8 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                         goto done;
                     }
                 }
-                if (pwrite(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) != overlap_region->data_size) {
+                if (pwrite(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
+                    overlap_region->data_size) {
                     printf("==PDC_SERVER[%d]: Failed to write enough bytes\n");
                 }
                 free(tmp_buf);
@@ -5683,7 +5690,8 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
             else if (region_info->ndim == 3) {
                 void *tmp_buf = malloc(overlap_region->data_size);
                 // Read entire region
-                if (pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) != overlap_region->data_size ) {
+                if (pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
+                    overlap_region->data_size) {
                     printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n");
                 }
 
@@ -5719,7 +5727,8 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                         }
                     }
                 }
-                if ( pwrite(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) != overlap_region->data_size ) {
+                if (pwrite(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
+                    overlap_region->data_size) {
                     printf("==PDC_SERVER[%d]: Failed to write enough bytes\n");
                 }
                 free(tmp_buf);
@@ -5764,10 +5773,10 @@ done:
 perr_t
 PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
-    perr_t                       ret_value        = SUCCEED;
+    perr_t ret_value = SUCCEED;
     ssize_t /*read_bytes = 0, */ total_read_bytes = 0, request_bytes = unit, my_read_bytes = 0;
-    data_server_region_t *       region = NULL;
-    region_list_t *              elt;
+    data_server_region_t *region = NULL;
+    region_list_t *elt;
     // int flag = 0;
     uint64_t i, j, pos, overlap_start[DIM_MAX] = {0}, overlap_count[DIM_MAX] = {0},
                         overlap_start_local[DIM_MAX] = {0};
@@ -5796,7 +5805,7 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 
 #ifdef ENABLE_TIMING
     struct timeval pdc_timer_start, pdc_timer_end;
-    double         read_total_sec;
+    double read_total_sec;
     gettimeofday(&pdc_timer_start, 0);
 #endif
 
@@ -5833,7 +5842,8 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                 // read_bytes = pread(region->fd, buf + pos, overlap_count[0] * unit,
                 //                   storage_region->offset + overlap_start_local[0] * unit);
                 if (pread(region->fd, buf + pos, overlap_count[0] * unit,
-                      storage_region->offset + overlap_start_local[0] * unit) != overlap_count[0] * unit) {
+                          storage_region->offset + overlap_start_local[0] * unit) !=
+                    overlap_count[0] * unit) {
                     printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n");
                 }
                 my_read_bytes = overlap_count[0] * unit;
@@ -5845,7 +5855,8 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                 void *tmp_buf = malloc(storage_region->data_size);
                 // Read entire region
                 // read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
-                if (pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset) != storage_region->data_size) {
+                if (pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset) !=
+                    storage_region->data_size) {
                     printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n");
                 }
                 // Extract requested data
@@ -5878,7 +5889,8 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                 void *tmp_buf = malloc(storage_region->data_size);
                 // Read entire region
                 // read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
-                if (pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset) != storage_region->data_size ) {
+                if (pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset) !=
+                    storage_region->data_size) {
                     printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n");
                 }
                 // Extract requested data
