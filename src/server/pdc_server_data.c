@@ -5183,7 +5183,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
         PDC_region_cache_register(obj_id, buf, write_size, region_info->offset, region_info->size,
                                   region_info->ndim, unit);
     }
-    //PDC_Server_data_write_out2(obj_id, region_info, buf, unit);
+    // PDC_Server_data_write_out2(obj_id, region_info, buf, unit);
 
     // done:
     fflush(stdout);
@@ -5390,7 +5390,7 @@ PDC_region_cache_flush(uint64_t obj_id)
     while (obj_cache_iter != NULL) {
         if (obj_cache_iter->obj_id == obj_id) {
             obj_cache = obj_cache_iter;
-	    break;
+            break;
         }
         obj_cache_iter = obj_cache_iter->next;
     }
@@ -5470,7 +5470,7 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 {
     perr_t ret_value = SUCCEED;
     FUNC_ENTER(NULL);
-    //PDC_Server_data_read_from2(obj_id, region_info, buf, unit);
+    // PDC_Server_data_read_from2(obj_id, region_info, buf, unit);
 
     PDC_region_fetch(obj_id, region_info, buf, unit);
     // done:
