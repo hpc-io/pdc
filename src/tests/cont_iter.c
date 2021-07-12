@@ -85,7 +85,7 @@ main(int argc, char **argv)
     ch = PDCcont_iter_start(pdc);
 
     while (!PDCcont_iter_null(ch)) {
-        struct pdc_cont_info *info = PDCcont_iter_get_info(ch);
+        PDCcont_iter_get_info(ch);
         printf("container property id is ");
 
         ch = PDCcont_iter_next(ch);
