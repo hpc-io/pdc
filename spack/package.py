@@ -1,10 +1,17 @@
+# Copyright 2013-2021 Lawrence Livermore National Security, LLC and other
+# Spack Project Developers. See the top-level COPYRIGHT file for details.
+#
+# SPDX-License-Identifier: (Apache-2.0 OR MIT)
+
 from spack import *
 
 
 class Pdc(CMakePackage):
-    """Proactive Data Containers (PDC) software provides an object-centric API and a runtime system with a set of 
-       data object management services. These services allow placing data in the memory and storage hierarchy, 
-       performing data movement asynchronously, and providing scalable metadata operations to find data objects."""
+    """Proactive Data Containers (PDC) software provides an object-centric
+    API and a runtime system with a set of data object management services.
+    These services allow placing data in the memory and storage hierarchy,
+    performing data movement asynchronously, and providing scalable
+    metadata operations to find data objects."""
 
     homepage = "https://pdc.readthedocs.io/en/latest/"
     url      = "https://github.com/hpc-io/pdc/archive/refs/tags/0.1.tar.gz"
