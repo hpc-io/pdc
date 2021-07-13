@@ -420,6 +420,13 @@ install(
     ${PDC_INSTALL_DATA_DIR}/cmake/pdc
 )
 
+install(
+  DIRECTORY
+    ${PDC_BINARY_DIR}/bin
+  DESTINATION
+    ${PDC_INSTALL_DATA_DIR}/test
+)
+
 #-----------------------------------------------------------------------------
 # CPack
 #-----------------------------------------------------------------------------
