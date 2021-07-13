@@ -37,6 +37,9 @@
 #include <math.h>
 #include <sys/shm.h>
 #include <sys/mman.h>
+#include <rados/librados.h>
+
+
 
 #include "pdc_config.h"
 
@@ -53,6 +56,18 @@
 #include "pdc_server_metadata.h"
 #include "pdc_server.h"
 #include "pdc_hist_pkg.h"
+
+
+//Global Variables for Ceph
+rados_t cluster;
+rados_ioctx_t io;
+const char *poolname;
+
+
+
+
+
+
 
 // Global object region info list in local data server
 data_server_region_t *      dataserver_region_g     = NULL;
@@ -5035,6 +5050,8 @@ PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf
 perr_t
 PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
+    //Ceph Write function here
+	
     perr_t ret_value = SUCCEED;
     uint64_t write_bytes = -1;
     data_server_region_t *region = NULL;
@@ -5075,8 +5092,31 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     double write_total_sec;
     gettimeofday(&pdc_timer_start, 0);
 #endif
+	int retu;
+	int batch = 0;
+	const char *object_name="object";
+	const char name[100];
+	long long int maxx_write_size = 1024*1024*128;
+	printf("%lld:This is the write Size\n",write_size);
+	while (write_size > maxx_write_size) {
+	printf("inside while loop\n");
+		sprintf(name, "%llu_%d", obj_id, batch);
+		printf("%s\n",buf);
+		retu = rados_write(io,name, buf, maxx_write_size,0);
+		if(retu<0){printf("Error writing in the object  name\n");
+		}else{
+		printf("Object written Successfully\n");}
+		buf += maxx_write_size;
+		write_size -= maxx_write_size;
+		batch++;
+	}
+	sprintf(name, "%llu_%d", obj_id, batch);
+	retu = rados_write(io, name, buf,write_size,0);
+	if(retu<0){printf("Error Writing in the Object name\n");}else{
+	printf("DAta is stored %d\n",retu);}
 
-    write_bytes = 0;
+
+	write_bytes = 0;
     while (write_size > max_write_size) {
         write_bytes += write(region->fd, buf, max_write_size);
         buf += max_write_size;
@@ -5110,6 +5150,7 @@ done:
 perr_t
 PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
+    //Ceph read here
     perr_t ret_value = SUCCEED;
     ssize_t read_bytes = 0, total_read_bytes = 0, request_bytes = unit, my_read_bytes = 0;
     data_server_region_t *region = NULL;
@@ -5117,11 +5158,44 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
     int flag = 0;
     uint64_t i, j, pos, overlap_start[DIM_MAX] = {0}, overlap_count[DIM_MAX] = {0},
                         overlap_start_local[DIM_MAX] = {0};
-
-    FUNC_ENTER(NULL);
+	int retu;
+    	int batch = 0;
+//	const char *object_name="object";
+	const char name[100];
+	long long int maxx_write_size = 1024*1024*128;
+	size_t psize;
+//	printf("%lld:This is the write Size\n",write_size);
+	sprintf(name, "%llu_%d", obj_id, batch);
+	retu = rados_stat(io,name,&psize,NULL);
+	if(retu<0){printf("Error in getting size of object");}else{
+	printf("Size of object is : %d\n",psize);}
+	
+	retu = rados_read(io,name,buf,psize,0);
+	if(retu<0){printf("Error Reading in the Object name\n");}else{
+	printf("DAta is stored which is: \n");}
+	
+	buf += maxx_write_size;
+       	write_size -= maxx_write_size;
+        batch++;
+	
+	while (1) {
+	printf("inside while loop\n");
+		sprintf(name, "%llu_%d", obj_id, batch);
+		//printf("%s\n",buf);
+	
+		retu = rados_read(io,name,buf,maxx_write_size,0);
+		if(retu<0){printf("Error Reading in the object  name\n");
+		}else{
+		printf("Object Read Successfully,its data is : %s\n",read_buf);}
+		buf += maxx_write_size;
+		write_size -= maxx_write_size;
+		batch++;
+	}
+	for(i=0;i<20;i++){
+	printf("%d\t",((int*)buf)[i]);}
+	 FUNC_ENTER(NULL);
 
     region = PDC_Server_get_obj_region(obj_id);
-    if (region == NULL) {
         printf("cannot locate file handle\n");
         goto done;
     }
