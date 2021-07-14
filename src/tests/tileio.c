@@ -24,14 +24,8 @@ int g_x_tiles, g_y_tiles;
 int g_x_ept, g_y_ept;
 
 
-
-double uniform_random_number()
-{
-    return (((double)rand())/((double)(RAND_MAX)));
-}
-
 void print_usage() {
-    printf("Usage: srun -n ./vpicio #particles\n");
+    printf("Usage: srun -n ./tilio #x_tils #y_tiles #num_elements_x #num_elements_y\n");
 }
 
 pdcid_t create_pdc_object(pdcid_t pdc_id, pdcid_t cont_id, const char* obj_name, pdcid_t *obj_prop) {
