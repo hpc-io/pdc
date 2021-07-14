@@ -25,7 +25,8 @@ int g_x_ept, g_y_ept;
 
 
 void print_usage() {
-    printf("Usage: srun -n ./tilio #x_tils #y_tiles #num_elements_x #num_elements_y\n");
+    printf("Usage: srun -N #nodes -n #procs ./tilio #x_tils #y_tiles #num_elements_x #num_elements_y\n");
+    printf("\tnote: #procs should equal to x_tiles*y_tiles\n");
 }
 
 pdcid_t create_pdc_object(pdcid_t pdc_id, pdcid_t cont_id, const char* obj_name, pdcid_t *obj_prop) {
@@ -50,11 +51,16 @@ pdcid_t create_pdc_object(pdcid_t pdc_id, pdcid_t cont_id, const char* obj_name,
 }
 
 
-void init(char** argv)
+void init(int argc, char** argv)
 {
 
     MPI_Comm_size(MPI_COMM_WORLD, &g_mpi_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &g_mpi_rank);
+
+    if(g_mpi_rank == 0 && argc != 5) {
+        print_usage();
+        exit(1);
+    }
 
     if(g_mpi_rank == 0) {
         g_x_tiles = atoi(argv[1]);
@@ -82,7 +88,7 @@ void init(char** argv)
 int main(int argc, char **argv)
 {
     MPI_Init(&argc, &argv);
-    init(argv);
+    init(argc, argv);
 
     perr_t ret;
     pdcid_t pdc_id, cont_prop, cont_id;
@@ -133,7 +139,7 @@ int main(int argc, char **argv)
     t1 = MPI_Wtime();
     int i;
     for(i = 0; i < g_x_ept*g_y_ept; i++) {
-        local_buffer[i]  = uniform_random_number() * 99;
+        local_buffer[i]  = i;
     }
     MPI_Barrier(MPI_COMM_WORLD);
     t2 = MPI_Wtime();
@@ -164,6 +170,7 @@ int main(int argc, char **argv)
     PDCprop_close(cont_prop);
     PDCclose(pdc_id);
 
+    MPI_Comm_free(&g_mpi_comm);
     MPI_Finalize();
 
     return 0;
