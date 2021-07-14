@@ -82,7 +82,7 @@ void init(char** argv)
 
     MPI_Comm_rank(g_mpi_comm, &g_mpi_rank);
     MPI_Cart_coords(g_mpi_comm, g_mpi_rank, NUM_DIMS, g_coords);
-    printf("my 2d rank: %d, coords: (%d, %d)\n", g_mpi_rank, g_coords[0], g_coords[1]);
+    //printf("my 2d rank: %d, coords: (%d, %d)\n", g_mpi_rank, g_coords[0], g_coords[1]);
 }
 
 int main(int argc, char **argv)
