@@ -23,8 +23,8 @@ build:
       - make -j
       - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
       - echo $LD_LIBRARY_PATH
-      - echo "Run Serial Tests"
-      - ctest -L serial
+      # - echo "Run Serial Tests"
+      # - ctest -L serial
       - echo "Run Parallel Tests"
       - ctest -L parallel
 
