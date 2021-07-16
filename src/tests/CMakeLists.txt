@@ -47,6 +47,7 @@ set(PROGRAMS
   region_obj_map_overlap
   region_obj_map_overlap_2D
   region_obj_map_overlap_3D
+  region_obj_map_merge
   read_obj_shared
   obj_round_robin_io
   create_obj_scale
@@ -168,6 +169,7 @@ add_test(NAME region_obj_map_3D_partial WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT
 add_test(NAME region_obj_map_overlap WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_obj_map_overlap )
 add_test(NAME region_obj_map_overlap_2D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_obj_map_overlap_2D )
 add_test(NAME region_obj_map_overlap_3D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_obj_map_overlap_3D )
+add_test(NAME region_obj_map_merge WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_obj_map_merge )
 add_test(NAME write_obj_int     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./write_obj o 1 int)
 add_test(NAME write_obj_float   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./write_obj o 1 float)
 add_test(NAME write_obj_double  WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./write_obj o 1 double)
