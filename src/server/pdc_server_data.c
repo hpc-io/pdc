@@ -5125,10 +5125,10 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 	//retu = rados_stat(io,name,&psize,NULL);
 	sprintf(b_size,"%d",batch);
 	sprintf(name, "%llu_batch", obj_id);
-
-	retu = rados_setxattr(io,name,"batch",b_size,sizeof(b_size));
+	printf("Size of batch object : %d\n",strlen(b_size));
+	retu = rados_setxattr(io,name,"batch",&batch,sizeof(int));
 	if(retu<0){printf("Error Setting in the Extended attribute\n");}else{
-	printf("Extended Attribute set for %llu_batch :with batch no.  %s \n",obj_id,b_size);}
+	printf("Extended Attribute set for %llu_batch :with batch no.  %d \n",obj_id,batch);}
 
 
 /*
@@ -5206,35 +5206,36 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 	sprintf(name, "%llu_%d", obj_id, batch);
 	retu = rados_stat(io,name,&psize,NULL);
 	if(retu<0){printf("Error in getting size of object");}else{
-	printf("Size of object %llu_%d is  : %d\n",obj_id,batch,psize);}
-
-	void* buffer = buf;
-	retu = rados_read(io,name,buf,psize,0);
+	printf("Size of object %llu_%din read function  is  : %d\n",obj_id,batch,psize);}
+	char* buf_ptr = (char*) buf;
+//	void* buffer = buf;
+	retu = rados_read(io,name,buf_ptr,psize,0);
 	if(retu<0){printf("Error Reading in the Object name\n");}else{
 	printf("DAta is Read from first object \n");}
 
-	buf += maxx_write_size;
+	buf_ptr += maxx_write_size;
         batch++;
 
 	sprintf(name,"%llu_batch", obj_id);
-	char batch_val[4];
-	retu = rados_getxattr(io, name,"batch",batch_val,4);
-        if(retu<0){printf("Error Getting in the batch_no.\n");}else{
-        printf(" No. of Batches by read function : %s\n",batch_val);}
-
+//	char batch_val[100];
 	int b_val;
-	b_val = atoi(batch_val);
-	printf("No. of batche sin int form : %d\n",b_val);
+	printf("Batch object name is :%s\n",name);
+	retu = rados_getxattr(io, name,"batch",&b_val,sizeof(int));
+        if(retu<0){printf("Error Getting in the batch_no.\n");}else{
+        printf(" No. of Batches by read function : %d\n",b_val);}
+
+//	b_val = atoi(batch_val);
+//	printf("No. of batches in int form : %d\n",b_val);
 	for(i=1;i<=b_val;i++) {
-	printf("For object with batch no. %d\n",b_val);
+	printf("For object with batch no. %d\n",i);
 		sprintf(name, "%llu_%d", obj_id, i);
-		retu = rados_read(io,name,buf,maxx_write_size,0);
+		retu = rados_read(io,name,buf_ptr,maxx_write_size,0);
 		if(retu<0){printf("Error Reading in the object  name\n");
 		}
-		buf += maxx_write_size;
+		buf_ptr += maxx_write_size;
 	}
 
-	for(i=26214350;i<=26214400;i++){
+	for(i=26214350;i<26214400;i++){
 	printf("%d\t",((int*)buf)[i]);}
 
 
