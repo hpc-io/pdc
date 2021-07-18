@@ -5092,38 +5092,43 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     double write_total_sec;
     gettimeofday(&pdc_timer_start, 0);
 #endif
-	int retu;
+	int retu,i;
+/*	 retu = rados_write_full(io,"test_data",buf,134217728);
+                if(retu<0){printf("Error writing in the object  name for: \n");
+                }else{
+                printf("Object written Successfully named \n");}
+*/
 	int batch = 0;
-//	const char *object_name="object";
 	const char name[100];
-	long long int maxx_write_size = 1024*1024*100;
+	long long int maxx_write_size = 10485760;
 	printf("%lld:This is the write Size\n",write_size);
 	while (write_size > maxx_write_size) {
-	printf("inside while loop\n");
-		sprintf(name, "%llu_%d", obj_id, batch);
+	printf("Loop running %d time\n",batch);
+		sprintf(name,"%llu_%d", obj_id, batch);
 		printf("%s\n",name);
-		retu = rados_write(io,name, buf,maxx_write_size,0);
-		if(retu<0){printf("Error writing in the object  name\n");
+		retu = rados_write_full(io,name,buf,maxx_write_size);
+		if(retu<0){printf("Error writing in the object  name for: %s\n",name);
 		}else{
-		printf("Object written Successfully\n");}
+		printf("Object written Successfully named %s\n",name);}
 		buf += maxx_write_size;
 		write_size -= maxx_write_size;
 		batch++;
+		printf("For object with batch : %d write_size is :%d\n",batch,write_size);
 	}
 	sprintf(name, "%llu_%d", obj_id, batch);
-	retu = rados_write(io, name, buf,write_size,0);
-	if(retu<0){printf("Error Writing in the Object name\n");}else{
-	printf("DAta is stored %d\n",retu);}
+	retu = rados_write_full(io, name, buf,write_size);
+	if(retu<0){printf("Error Writing in the last Object name\n");}else{
+	printf("DAta is stored for last object %s\n",name);}
 
 	char b_size[100];
-//size_t psize;
-//retu = rados_stat(io,name,&psize,NULL);
+	//size_t psize;
+	//retu = rados_stat(io,name,&psize,NULL);
 	sprintf(b_size,"%d",batch);
-	sprintf(name, "%llu__0", obj_id);
+	sprintf(name, "%llu_batch", obj_id);
 
 	retu = rados_setxattr(io,name,"batch",b_size,sizeof(b_size));
 	if(retu<0){printf("Error Setting in the Extended attribute\n");}else{
-	printf("Extended Attribute set for object: %s \n",b_size);}
+	printf("Extended Attribute set for %llu_batch :with batch no.  %s \n",obj_id,b_size);}
 
 
 /*
@@ -5188,55 +5193,50 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
     int flag = 0;
     uint64_t i, j, pos, overlap_start[DIM_MAX] = {0}, overlap_count[DIM_MAX] = {0},
                         overlap_start_local[DIM_MAX] = {0};
+
 	int retu;
+/*	retu = rados_read(io,"test_data",buf,134217728,0);
+        if(retu<0){printf("Error Reading in the Object name\n");}else{
+        printf("DAta is Read from object \n");}
+*/
     	int batch = 0;
-//	const char *object_name="object";
-	const char name[100];
-	long long int maxx_write_size = 1024*1024*100;
+	char name[100];
+	long long int maxx_write_size = 10485760;
 	size_t psize;
-//	printf("%lld:This is the write Size\n",write_size);
 	sprintf(name, "%llu_%d", obj_id, batch);
 	retu = rados_stat(io,name,&psize,NULL);
 	if(retu<0){printf("Error in getting size of object");}else{
-	printf("Size of object is : %d\n",psize);}
-	
+	printf("Size of object %llu_%d is  : %d\n",obj_id,batch,psize);}
+
 	void* buffer = buf;
 	retu = rados_read(io,name,buf,psize,0);
 	if(retu<0){printf("Error Reading in the Object name\n");}else{
-	printf("DAta is stored which is: \n");}
+	printf("DAta is Read from first object \n");}
 
 	buf += maxx_write_size;
-//       	write_size -= maxx_write_size;
         batch++;
-	
-	 char batch_val[100];
 
-
-	retu = rados_getxattr(io, name,"batch",batch_val,100);
-        if(retu<0){printf("Error Getting in the batch_no. for last object\n");}else{
+	sprintf(name,"%llu_batch", obj_id);
+	char batch_val[4];
+	retu = rados_getxattr(io, name,"batch",batch_val,4);
+        if(retu<0){printf("Error Getting in the batch_no.\n");}else{
         printf(" No. of Batches by read function : %s\n",batch_val);}
-	
+
 	int b_val;
 	b_val = atoi(batch_val);
-	printf("%d\n",b_val);
+	printf("No. of batche sin int form : %d\n",b_val);
 	for(i=1;i<=b_val;i++) {
-	printf("inside while loop\n");
+	printf("For object with batch no. %d\n",b_val);
 		sprintf(name, "%llu_%d", obj_id, i);
-		//printf("%s\n",buf);
-	
 		retu = rados_read(io,name,buf,maxx_write_size,0);
 		if(retu<0){printf("Error Reading in the object  name\n");
 		}
-	//	printf("Object Read Successfully,its data is : %s\n",read_buf);}
 		buf += maxx_write_size;
-	//	write_size -= maxx_write_size;
-		batch++;
 	}
 
-	for(i=0;i<20;i++){
-	printf("%d\t",((int*)buffer)[i]);}
+	for(i=26214350;i<=26214400;i++){
+	printf("%d\t",((int*)buf)[i]);}
 
-	
 
 	 FUNC_ENTER(NULL);
 
