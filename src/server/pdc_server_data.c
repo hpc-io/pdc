@@ -5051,7 +5051,7 @@ perr_t
 PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
     //Ceph Write function here
-	
+
     perr_t ret_value = SUCCEED;
     uint64_t write_bytes = -1;
     data_server_region_t *region = NULL;
@@ -5094,15 +5094,15 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 #endif
 	int retu;
 	int batch = 0;
-	const char *object_name="object";
+//	const char *object_name="object";
 	const char name[100];
-	long long int maxx_write_size = 1024*1024*128;
+	long long int maxx_write_size = 1024*1024*100;
 	printf("%lld:This is the write Size\n",write_size);
 	while (write_size > maxx_write_size) {
 	printf("inside while loop\n");
 		sprintf(name, "%llu_%d", obj_id, batch);
-		printf("%s\n",buf);
-		retu = rados_write(io,name, buf, maxx_write_size,0);
+		printf("%s\n",name);
+		retu = rados_write(io,name, buf,maxx_write_size,0);
 		if(retu<0){printf("Error writing in the object  name\n");
 		}else{
 		printf("Object written Successfully\n");}
@@ -5114,6 +5114,36 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 	retu = rados_write(io, name, buf,write_size,0);
 	if(retu<0){printf("Error Writing in the Object name\n");}else{
 	printf("DAta is stored %d\n",retu);}
+
+	char b_size[100];
+//size_t psize;
+//retu = rados_stat(io,name,&psize,NULL);
+	sprintf(b_size,"%d",batch);
+	sprintf(name, "%llu__0", obj_id);
+
+	retu = rados_setxattr(io,name,"batch",b_size,sizeof(b_size));
+	if(retu<0){printf("Error Setting in the Extended attribute\n");}else{
+	printf("Extended Attribute set for object: %s \n",b_size);}
+
+
+/*
+	sprintf(b, "%d",batch);
+	retu = rados_write(io,"batches",b,sizeof(b),0);
+	if(retu<0){printf("Error Storing in the number of objects\n");}else{
+        printf("No. of objects created are :  %s\n",b);}
+
+
+	char batch_no[50];
+	sprintf(batch_no,"%d",batch);
+	retu = rados_setxattr(io,name,"batch",batch_no,50);
+	if(retu<0){printf("Error Setting in the batch_no. for last object\n");}else{
+        printf("batch is stored, No. of Batches %s\n",batch_no);}
+
+	char batch_val[50];
+	retu = rados_getxattr(io, name,"batch",batch_val,50);
+	if(retu<0){printf("Error Getting in the batch_no. for last object\n");}else{
+        printf(" No. of Batches by read function : %s\n",batch_val);}
+*/
 
 
 	write_bytes = 0;
@@ -5162,7 +5192,7 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
     	int batch = 0;
 //	const char *object_name="object";
 	const char name[100];
-	long long int maxx_write_size = 1024*1024*128;
+	long long int maxx_write_size = 1024*1024*100;
 	size_t psize;
 //	printf("%lld:This is the write Size\n",write_size);
 	sprintf(name, "%llu_%d", obj_id, batch);
@@ -5170,35 +5200,53 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 	if(retu<0){printf("Error in getting size of object");}else{
 	printf("Size of object is : %d\n",psize);}
 	
+	void* buffer = buf;
 	retu = rados_read(io,name,buf,psize,0);
 	if(retu<0){printf("Error Reading in the Object name\n");}else{
 	printf("DAta is stored which is: \n");}
-	
+
 	buf += maxx_write_size;
-       	write_size -= maxx_write_size;
+//       	write_size -= maxx_write_size;
         batch++;
 	
-	while (1) {
+	 char batch_val[100];
+
+
+	retu = rados_getxattr(io, name,"batch",batch_val,100);
+        if(retu<0){printf("Error Getting in the batch_no. for last object\n");}else{
+        printf(" No. of Batches by read function : %s\n",batch_val);}
+	
+	int b_val;
+	b_val = atoi(batch_val);
+	printf("%d\n",b_val);
+	for(i=1;i<=b_val;i++) {
 	printf("inside while loop\n");
-		sprintf(name, "%llu_%d", obj_id, batch);
+		sprintf(name, "%llu_%d", obj_id, i);
 		//printf("%s\n",buf);
 	
 		retu = rados_read(io,name,buf,maxx_write_size,0);
 		if(retu<0){printf("Error Reading in the object  name\n");
-		}else{
-		printf("Object Read Successfully,its data is : %s\n",read_buf);}
+		}
+	//	printf("Object Read Successfully,its data is : %s\n",read_buf);}
 		buf += maxx_write_size;
-		write_size -= maxx_write_size;
+	//	write_size -= maxx_write_size;
 		batch++;
 	}
+
 	for(i=0;i<20;i++){
-	printf("%d\t",((int*)buf)[i]);}
+	printf("%d\t",((int*)buffer)[i]);}
+
+	
+
 	 FUNC_ENTER(NULL);
 
     region = PDC_Server_get_obj_region(obj_id);
+    if (region == NULL) {
         printf("cannot locate file handle\n");
         goto done;
     }
+
+
     // Was opened previously and closed.
     // The location string is cached, so we utilize
     // that to reopen the file.
