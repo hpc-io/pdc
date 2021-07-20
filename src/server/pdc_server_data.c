@@ -5092,7 +5092,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     double write_total_sec;
     gettimeofday(&pdc_timer_start, 0);
 #endif
-	int retu,i;
+	int retu;
 /*	 retu = rados_write_full(io,"test_data",buf,134217728);
                 if(retu<0){printf("Error writing in the object  name for: \n");
                 }else{
@@ -5100,7 +5100,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 */
 	int batch = 0;
 	const char name[100];
-	long long int maxx_write_size = 10485760;
+	long long int maxx_write_size = 94371840;
 	printf("%lld:This is the write Size\n",write_size);
 	while (write_size > maxx_write_size) {
 	printf("Loop running %d time\n",batch);
@@ -5201,7 +5201,7 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 */
     	int batch = 0;
 	char name[100];
-	long long int maxx_write_size = 10485760;
+	long long int maxx_write_size = 94371840;
 	size_t psize;
 	sprintf(name, "%llu_%d", obj_id, batch);
 	retu = rados_stat(io,name,&psize,NULL);
@@ -5234,8 +5234,12 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 		}
 		buf_ptr += maxx_write_size;
 	}
+	printf("Starting data in buf\n");
+	for(i=0;i<=10;i++){
+        printf("%d\t",((int*)buf)[i]);}
+	printf("Ending data in buf\n");
 
-	for(i=26214350;i<26214400;i++){
+	for(i=262143990;i<262144000;i++){
 	printf("%d\t",((int*)buf)[i]);}
 
 
