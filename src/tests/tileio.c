@@ -12,7 +12,6 @@
 
 #define NUM_DIMS 2
 
-
 MPI_Comm g_mpi_comm;
 int      g_mpi_rank, g_mpi_size;
 int      g_coords[2]; // my coordinates in 2D cartesian topology
