@@ -5150,7 +5150,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
         printf(" No. of Batches by read function : %s\n",batch_val);}
 */
 
-
+/*
 	write_bytes = 0;
     while (write_size > max_write_size) {
         write_bytes += write(region->fd, buf, max_write_size);
@@ -5163,7 +5163,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
         printf("==PDC_SERVER[%d]: write %d failed\n", pdc_server_rank_g, region->fd);
         goto done;
     }
-
+*/
 #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer_end, 0);
     write_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
@@ -5245,6 +5245,7 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 
 	 FUNC_ENTER(NULL);
 
+/*
     region = PDC_Server_get_obj_region(obj_id);
     if (region == NULL) {
         printf("cannot locate file handle\n");
@@ -5308,7 +5309,9 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                 my_read_bytes = overlap_count[0] * unit;
                 /* printf("storage offset %llu, region offset %llu, read %d bytes\n", storage_region->offset,
                  * overlap_count[0]*unit, read_bytes); */
-            }
+//
+  
+/*          }
             else if (region_info->ndim == 2) {
                 void *tmp_buf = malloc(storage_region->data_size);
                 // Read entire region
@@ -5363,7 +5366,8 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                         /*         i*storage_region->count[2]*storage_region->count[1]*unit
                          * +j*storage_region->count[2]*unit+region_info->offset[2], */
                         /*         region_info->size[2]*unit, storage_region->data_size); */
-                        memcpy(buf + pos,
+//  
+ /*                     memcpy(buf + pos,
                                tmp_buf + i * storage_region->count[2] * storage_region->count[1] * unit +
                                    j * storage_region->count[2] * unit + overlap_start_local[2] * unit,
                                overlap_count[2] * unit);
@@ -5399,6 +5403,8 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                total_read_bytes, request_bytes);
         ret_value = -1;
     }
+*/
+
 #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer_end, 0);
     read_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
