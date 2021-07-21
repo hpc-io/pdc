@@ -11,8 +11,7 @@
 #include <unistd.h>
 
 #define NUM_DIMS 2
-#define NUM_VARS 9
-static int NUM_PARTICLES = (1 * 1024 * 1024);
+
 
 MPI_Comm g_mpi_comm;
 int      g_mpi_rank, g_mpi_size;
