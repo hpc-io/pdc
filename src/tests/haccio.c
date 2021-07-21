@@ -24,7 +24,7 @@ uniform_random_number()
 void
 print_usage()
 {
-    printf("Usage: srun -n ./vpicio #particles\n");
+    printf("Usage: srun -n #procs ./haccio #particles (in 10e6)\n");
 }
 
 pdcid_t
