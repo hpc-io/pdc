@@ -2607,50 +2607,25 @@ PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
     char *k[1];
     char *v[1];
  // int batch = 0;
-//	void *v[1];   
+  //	void *v[1];   
  const char name[100];
     sprintf(name,"%llu_0", obj_id);
 	printf("1]Object name : %s\n",name);
 	const char *keys[] = {in->kvtag.name};
-	const char *vals[] = {(char*)&in->kvtag.value};
+//	const char *vals[] = {(char*)(in->kvtag.value};
+	 const char  *vals[] = {in->kvtag.value};
 	size_t key_lens[] = {strlen(in->kvtag.name)+1};
 	size_t val_lens[] = {in->kvtag.size};
 //Write Operation
     rados_write_op_t wr = rados_create_write_op();
 	printf("2]Rados Write operation created : wr for object : %s \n",name);
     rados_write_op_create(wr, LIBRADOS_CREATE_IDEMPOTENT, NULL);
-    rados_write_op_omap_set2(wr, keys, vals, key_lens, val_lens, 1);
+    rados_write_op_omap_set2(wr, keys,vals, key_lens, val_lens, 1);
     retu = rados_write_op_operate(wr, io,name,NULL, 0);
     if (retu != 0) {
 	printf("Write operation failed\n");
     }else{printf("3]Set kv pair done for object: %s \n",name);}
     rados_release_write_op(wr);
-
-//Read Operation
-rados_read_op_t rd = rados_create_read_op();
- printf("4]Rados Read operation created : rd for object : %s \n",name);
- rados_read_op_omap_get_vals2(rd, "", "", 1024, &iter, NULL, &rval);
-retu = rados_read_op_operate(rd, io,name, 0);
-    if (retu != 0) {
-	printf("Error operating on object\n");
-       // fprintf(stderr, "rados_read_op_operate failed. oid=%s\n", oid);
-       // failed = 1;
-    }  else if (rval != 0) {
-      //  fprintf(stderr, "rval !=0. rval=%d\n", rval);
-        //failed = 1;
-	printf("rval!=0\n");
-        rados_omap_get_end(iter);
-    } else {
-        while (1) {
-            rados_omap_get_next2(iter, k, v,key_lens, val_lens);
-            if (k == NULL || *k == NULL) {
-            	 printf("K is NULL and loop breaks after storing.\n");  
-		 break;
-                       }
-        printf("5]object : %s , K: %s  V: %d\n ",name,k[0], *((int*)(v[0])) );
-        }
-    rados_omap_get_end(iter);
-    }
 
 
 
@@ -2735,6 +2710,68 @@ PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
     hash_key = in->hash_value;
     obj_id   = in->obj_id;
 
+//Read Operation
+
+ int rval;
+    int retu=0;
+    rados_omap_iter_t iter;
+    char *k[1];
+    char *v[1];
+	char *value;
+ // int batch = 0;
+  //    void *v[1];   
+ char name[100];
+   sprintf(name,"%llu_0", obj_id);
+    //    printf("1]Object name : %s\n",name);
+      const char *keys[] = {in->key};
+	size_t value_lens;
+    //  const char *vals[] = {(char*)(in->kvtag.value};
+        const char  *vals[] = {value};
+        size_t key_lens[] = {strlen(in->key)+1};
+        size_t val_lens[] = {&value_lens};
+//Write Operation
+//    rados_write_op_t wr = rados_create_write_op();
+
+
+
+
+rados_read_op_t rd = rados_create_read_op();
+ printf("4]Rados Read operation created : rd for object : %s \n",name);
+ rados_read_op_omap_get_vals2(rd, "", "", 1024, &iter, NULL, &rval);
+retu = rados_read_op_operate(rd, io,name, 0);
+    if (retu != 0) {
+	printf("Error operating on object\n");
+       // fprintf(stderr, "rados_read_op_operate failed. oid=%s\n", oid);
+       // failed = 1;
+    }  else if (rval != 0) {
+      //  fprintf(stderr, "rval !=0. rval=%d\n", rval);
+        //failed = 1;
+	printf("rval!=0\n");
+        rados_omap_get_end(iter);
+    } else {
+        while (1) {
+            rados_omap_get_next2(iter, k, v,key_lens, val_lens);
+            if (k == NULL || *k == NULL) {
+            	 printf("K is NULL and loop breaks after storing.\n");  
+		 break;
+                       }
+        printf("5]object : %s , K: %s  V: %d\n ",name,k[0], *((int*)(v[0])) );
+//	 printf("5]object : %s , K: %s  V:%lf \n ",name,k[0],*((double*)(v[0]) ) );
+        }
+    rados_omap_get_end(iter);
+    }
+	out->kvtag.name  = in->key;
+        out->kvtag.size  = value_lens;
+        out->kvtag.value = value;
+        out->ret         = 1;
+
+
+
+
+
+
+
+/*
 #ifdef ENABLE_MULTITHREAD
     // Obtain lock for hash table
     unlocked = 0;
@@ -2778,6 +2815,7 @@ PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
     unlocked = 1;
 #endif
 
+*/
 #ifdef ENABLE_TIMING
     // Timing
     gettimeofday(&pdc_timer_end, 0);
