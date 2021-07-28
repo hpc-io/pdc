@@ -70,12 +70,13 @@ init(int argc, char **argv)
         g_x_ept   = atoi(argv[3]);
         g_y_ept   = atoi(argv[4]);
     }
-    assert(g_x_tiles * g_y_tiles == g_mpi_size);
 
     MPI_Bcast(&g_x_tiles, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&g_y_tiles, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&g_x_ept, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&g_y_ept, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    assert((g_x_tiles*g_y_tiles) == g_mpi_size);
 
     // Create a 2D Cartesian topology accorindg to x-y tiles
     int dims[2]    = {g_x_tiles, g_y_tiles};
