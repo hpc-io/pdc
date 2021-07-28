@@ -37,8 +37,10 @@
 #include <math.h>
 #include <sys/shm.h>
 #include <sys/mman.h>
-#include <rados/librados.h>
 
+#ifdef ENABLE_RADOS
+#include <rados/librados.h>
+#endif
 
 
 #include "pdc_config.h"
@@ -58,11 +60,12 @@
 #include "pdc_hist_pkg.h"
 
 
+#ifdef ENABLE_RADOS
 //Global Variables for Ceph
 rados_t cluster;
 rados_ioctx_t io;
 const char *poolname;
-
+#endif
 
 
 
@@ -5092,12 +5095,10 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     double write_total_sec;
     gettimeofday(&pdc_timer_start, 0);
 #endif
+
+
+#ifdef ENABLE_RADOS
 	int retu;
-/*	 retu = rados_write_full(io,"test_data",buf,134217728);
-                if(retu<0){printf("Error writing in the object  name for: \n");
-                }else{
-                printf("Object written Successfully named \n");}
-*/
 	int batch = 0;
 	const char name[100];
 	long long int maxx_write_size = 94371840;
@@ -5130,25 +5131,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 	if(retu<0){printf("Error Setting in the Extended attribute\n");}else{
 	printf("Extended Attribute set for %llu_batch :with batch no.  %d \n",obj_id,batch);}
 
-
-/*
-	sprintf(b, "%d",batch);
-	retu = rados_write(io,"batches",b,sizeof(b),0);
-	if(retu<0){printf("Error Storing in the number of objects\n");}else{
-        printf("No. of objects created are :  %s\n",b);}
-
-
-	char batch_no[50];
-	sprintf(batch_no,"%d",batch);
-	retu = rados_setxattr(io,name,"batch",batch_no,50);
-	if(retu<0){printf("Error Setting in the batch_no. for last object\n");}else{
-        printf("batch is stored, No. of Batches %s\n",batch_no);}
-
-	char batch_val[50];
-	retu = rados_getxattr(io, name,"batch",batch_val,50);
-	if(retu<0){printf("Error Getting in the batch_no. for last object\n");}else{
-        printf(" No. of Batches by read function : %s\n",batch_val);}
-*/
+#endif
 
 /*
 	write_bytes = 0;
@@ -5164,6 +5147,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
         goto done;
     }
 */
+
 #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer_end, 0);
     write_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
@@ -5194,11 +5178,9 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
     uint64_t i, j, pos, overlap_start[DIM_MAX] = {0}, overlap_count[DIM_MAX] = {0},
                         overlap_start_local[DIM_MAX] = {0};
 
+
+#ifdef ENABLE_RADOS
 	int retu;
-/*	retu = rados_read(io,"test_data",buf,134217728,0);
-        if(retu<0){printf("Error Reading in the Object name\n");}else{
-        printf("DAta is Read from object \n");}
-*/
     	int batch = 0;
 	char name[100];
 	long long int maxx_write_size = 94371840;
@@ -5208,7 +5190,6 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 	if(retu<0){printf("Error in getting size of object");}else{
 	printf("Size of object %llu_%din read function  is  : %d\n",obj_id,batch,psize);}
 	char* buf_ptr = (char*) buf;
-//	void* buffer = buf;
 	retu = rados_read(io,name,buf_ptr,psize,0);
 	if(retu<0){printf("Error Reading in the Object name\n");}else{
 	printf("DAta is Read from first object \n");}
@@ -5217,15 +5198,13 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
         batch++;
 
 	sprintf(name,"%llu_batch", obj_id);
-//	char batch_val[100];
 	int b_val;
 	printf("Batch object name is :%s\n",name);
 	retu = rados_getxattr(io, name,"batch",&b_val,sizeof(int));
         if(retu<0){printf("Error Getting in the batch_no.\n");}else{
         printf(" No. of Batches by read function : %d\n",b_val);}
 
-//	b_val = atoi(batch_val);
-//	printf("No. of batches in int form : %d\n",b_val);
+
 	for(i=1;i<=b_val;i++) {
 	printf("For object with batch no. %d\n",i);
 		sprintf(name, "%llu_%d", obj_id, i);
@@ -5233,15 +5212,15 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 		if(retu<0){printf("Error Reading in the object  name\n");
 		}
 		buf_ptr += maxx_write_size;
-	}
+	        }
 	printf("Starting data in buf\n");
 	for(i=0;i<=10;i++){
-        printf("%d\t",((int*)buf)[i]);}
+        printf("%d\t",((int*)buf)[i]); }
 	printf("Ending data in buf\n");
 
 	for(i=262143990;i<262144000;i++){
-	printf("%d\t",((int*)buf)[i]);}
-
+	printf("%d\t",((int*)buf)[i]); }
+#endif
 
 	 FUNC_ENTER(NULL);
 
@@ -5309,8 +5288,8 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                 my_read_bytes = overlap_count[0] * unit;
                 /* printf("storage offset %llu, region offset %llu, read %d bytes\n", storage_region->offset,
                  * overlap_count[0]*unit, read_bytes); */
-//
-  
+
+
 /*          }
             else if (region_info->ndim == 2) {
                 void *tmp_buf = malloc(storage_region->data_size);
