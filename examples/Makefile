@@ -9,7 +9,7 @@ LIBS = -lpdc
 .c.o:
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<
 
-all: region_obj_map_2D region_obj_map_3D pdc_init obj_get_data bdcats vpicio
+all: region_obj_map_2D region_obj_map_3D pdc_init obj_get_data bdcats vpicio haccio tileio
 
 region_obj_map_2D: region_obj_map_2D.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
@@ -27,6 +27,12 @@ bdcats: bdcats.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
 
 vpicio: vpicio.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
+
+haccio: haccio.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
+
+tileio: tileio.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
 
 clean:
