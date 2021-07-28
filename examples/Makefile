@@ -36,4 +36,4 @@ tileio: tileio.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
 
 clean:
-	rm -f *.o region_obj_map_2D region_obj_map_3D pdc_init obj_get_data vpicio bdcats
+	rm -f *.o region_obj_map_2D region_obj_map_3D pdc_init obj_get_data vpicio bdcats haccio tileio
