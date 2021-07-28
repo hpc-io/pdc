@@ -20,9 +20,9 @@ zz   | float  | 4 bytes
 vx   | float  | 4 bytes
 vy   | float  | 4 bytes
 vz   | float  | 4 bytes
-phi  | float | 4 bytes
-pid  | int64 | 8 bytes
-mask | int16 | 2 bytes
+phi  | float  | 4 bytes
+pid  | int64  | 8 bytes
+mask | int16  | 2 bytes
  * ------------------
  */
 
