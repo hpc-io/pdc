@@ -26,11 +26,11 @@ mask | int16  | 2 bytes
  * ------------------
  */
 
-static char* VAR_NAMES[NUM_VARS] = {"xx", "yy", "zz", "vx", "vy", "vz", "phi", "phd", "mask"};
-static pdc_var_type_t VAR_TYPES[NUM_VARS] = {PDC_FLOAT, PDC_FLOAT, PDC_FLOAT, PDC_FLOAT, PDC_FLOAT, PDC_FLOAT, PDC_FLOAT, PDC_INT64, PDC_INT16};
-static int NUM_PARTICLES = (1 * 1024 * 1024);
-void* buffers[NUM_VARS];
-
+static char *         VAR_NAMES[NUM_VARS] = {"xx", "yy", "zz", "vx", "vy", "vz", "phi", "phd", "mask"};
+static pdc_var_type_t VAR_TYPES[NUM_VARS] = {PDC_FLOAT, PDC_FLOAT, PDC_FLOAT, PDC_FLOAT, PDC_FLOAT,
+                                             PDC_FLOAT, PDC_FLOAT, PDC_INT64, PDC_INT16};
+static int            NUM_PARTICLES       = (1 * 1024 * 1024);
+void *                buffers[NUM_VARS];
 
 MPI_Comm comm;
 
@@ -51,7 +51,7 @@ allocate_buffers()
 {
     int i;
     // xx, yy, zz, vx, vy, vz, phi
-    for(i = 0; i < 7; i++) {
+    for (i = 0; i < 7; i++) {
         buffers[i] = malloc(NUM_PARTICLES * sizeof(float));
     }
     // phd
@@ -61,7 +61,8 @@ allocate_buffers()
 }
 
 pdcid_t
-create_pdc_object(pdcid_t pdc_id, pdcid_t cont_id, const char *obj_name, pdc_var_type_t type, pdcid_t *obj_prop)
+create_pdc_object(pdcid_t pdc_id, pdcid_t cont_id, const char *obj_name, pdc_var_type_t type,
+                  pdcid_t *obj_prop)
 {
     // Create and set the object property
     *obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
@@ -102,12 +103,11 @@ main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
     MPI_Comm_dup(MPI_COMM_WORLD, &comm);
 
-    if(mpi_rank == 0) {
+    if (mpi_rank == 0) {
         NUM_PARTICLES = atoi(argv[1]);
         printf("particles: %d\n", NUM_PARTICLES);
     }
     MPI_Bcast(&NUM_PARTICLES, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
 
     allocate_buffers();
 
@@ -147,19 +147,19 @@ main(int argc, char **argv)
         printf("accquire time: %.2fs\n", t2 - t1);
 
     // Actual I/O
-    float*   float_var;     // xx, yy, zz, vx, vy ,vz, phi
-    int64_t* int64_var;     // phd
-    int16_t* int16_var;     // mask
+    float *  float_var; // xx, yy, zz, vx, vy ,vz, phi
+    int64_t *int64_var; // phd
+    int16_t *int16_var; // mask
     t1 = MPI_Wtime();
     for (k = 0; k < 7; k++) {
-        float_var = (float*) buffers[k];
+        float_var = (float *)buffers[k];
         for (i = 0; i < NUM_PARTICLES; i++)
             float_var[i] = uniform_random_number() * 99;
     }
-    int64_var = (int64_t*) buffers[7];
+    int64_var = (int64_t *)buffers[7];
     for (i = 0; i < NUM_PARTICLES; i++)
         int64_var[i] = uniform_random_number() * 99;
-    int16_var = (int16_t*) buffers[8];
+    int16_var = (int16_t *)buffers[8];
     for (i = 0; i < NUM_PARTICLES; i++)
         int16_var[i] = uniform_random_number() * 99;
 
