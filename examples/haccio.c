@@ -102,9 +102,12 @@ main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
     MPI_Comm_dup(MPI_COMM_WORLD, &comm);
 
-    NUM_PARTICLES = atoi(argv[1]) * 1000000; // M as unit
-    if(mpi_rank == 0)
+    if(mpi_rank == 0) {
+        NUM_PARTICLES = atoi(argv[1]);
         printf("particles: %d\n", NUM_PARTICLES);
+    }
+    MPI_Bcast(&NUM_PARTICLES, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
 
     allocate_buffers();
 
