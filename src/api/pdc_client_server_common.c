@@ -53,27 +53,26 @@
 #include "pdc_timing.h"
 #if PDC_TIMING == 1
 
-//SKIM include sqlite3 library
+// SKIM include sqlite3 library
 #include <sqlite3.h>
 
 typedef struct new_region_info_t {
     // uint64_t *obj_id;
-    uint64_t obj_id;
-    uint64_t narr;
-    size_t ndim;
-    size_t unit;
-    uint64_t *start_0, *start_1, *start_2, *start_3;
-    uint64_t *count_0, *count_1, *count_2, *count_3;
+    uint64_t            obj_id;
+    uint64_t            narr;
+    size_t              ndim;
+    size_t              unit;
+    uint64_t *          start_0, *start_1, *start_2, *start_3;
+    uint64_t *          count_0, *count_1, *count_2, *count_3;
     unsigned long long *offset;
-    char* newfilename;
-    struct timeval *timestamp;
-    unsigned long long total_size;
+    char *              newfilename;
+    struct timeval *    timestamp;
+    unsigned long long  total_size;
 } new_region_info_t;
 
 void prefetch_obj(int op, sqlite3 *db, int num_regs, int ndim);
 
-void write_new_file_and_info(struct new_region_info_t* reg, void* new_buf);
-
+void write_new_file_and_info(struct new_region_info_t *reg, void *new_buf);
 
 static int
 pdc_timestamp_clean(pdc_timestamp *timestamp)
@@ -2820,30 +2819,30 @@ region_release_update_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     FUNC_LEAVE(hg_ret);
 }
 
-//skim
-int global_timestamp = 0;
-int target_timestamp = 0;
-struct timeval* global_ts = NULL;
-struct timeval* target_ts = NULL;
-void* void_all_buf = NULL;
-void* warm_buf = NULL;
-void *temp_buf = NULL;
-int first_req = 1;
-int num_arrays; // 8?
-struct new_region_info_t* new_region_info = NULL;
-int found_fd;
-int req_idx = 0;
-char* existing_new_path = NULL;
-sqlite3 *db;
-double dbOpenTime = 0;
-double dbCloseTime = 0;
-double proposedWarmOpenTime = 0;
-double proposedPreadTime = 0;
-int proposedPreadCount = 0;
-double proposedMemcpyTime = 0;
-int proposedMemcpyCount = 0;
-double bulkTransferTime = 0;
-int bulkCount = 0;
+// skim
+int                       global_timestamp = 0;
+int                       target_timestamp = 0;
+struct timeval *          global_ts        = NULL;
+struct timeval *          target_ts        = NULL;
+void *                    void_all_buf     = NULL;
+void *                    warm_buf         = NULL;
+void *                    temp_buf         = NULL;
+int                       first_req        = 1;
+int                       num_arrays; // 8?
+struct new_region_info_t *new_region_info = NULL;
+int                       found_fd;
+int                       req_idx           = 0;
+char *                    existing_new_path = NULL;
+sqlite3 *                 db;
+double                    dbOpenTime           = 0;
+double                    dbCloseTime          = 0;
+double                    proposedWarmOpenTime = 0;
+double                    proposedPreadTime    = 0;
+int                       proposedPreadCount   = 0;
+double                    proposedMemcpyTime   = 0;
+int                       proposedMemcpyCount  = 0;
+double                    bulkTransferTime     = 0;
+int                       bulkCount            = 0;
 
 // region_release_cb()
 HG_TEST_RPC_CB(region_release, handle)
@@ -3093,13 +3092,19 @@ HG_TEST_RPC_CB(region_release, handle)
                         /* printf("start PDC_Server_data_read_from: %02d:%02d:%02d\n", tm.tm_hour, tm.tm_min,
                          * tm.tm_sec); */
 
-                        //skim
+                        // skim
                         char hostname[100];
                         gethostname(hostname, 100);
 
-                        uint64_t read_unit_size_ndim_1 = (obj_map_bulk_args->remote_region_nounit).count_0*in.data_unit;
-                        uint64_t read_unit_size_ndim_2 = (obj_map_bulk_args->remote_region_nounit).count_0*(obj_map_bulk_args->remote_region_nounit).count_1*in.data_unit;
-                        uint64_t read_unit_size_ndim_3 = (obj_map_bulk_args->remote_region_nounit).count_0*(obj_map_bulk_args->remote_region_nounit).count_1*(obj_map_bulk_args->remote_region_nounit).count_2*in.data_unit;
+                        uint64_t read_unit_size_ndim_1 =
+                            (obj_map_bulk_args->remote_region_nounit).count_0 * in.data_unit;
+                        uint64_t read_unit_size_ndim_2 = (obj_map_bulk_args->remote_region_nounit).count_0 *
+                                                         (obj_map_bulk_args->remote_region_nounit).count_1 *
+                                                         in.data_unit;
+                        uint64_t read_unit_size_ndim_3 = (obj_map_bulk_args->remote_region_nounit).count_0 *
+                                                         (obj_map_bulk_args->remote_region_nounit).count_1 *
+                                                         (obj_map_bulk_args->remote_region_nounit).count_2 *
+                                                         in.data_unit;
                         uint64_t offset_0;
                         uint64_t offset_1;
                         uint64_t offset_2;
@@ -3112,104 +3117,158 @@ HG_TEST_RPC_CB(region_release, handle)
                         uint64_t count_2 = (obj_map_bulk_args->remote_region_nounit).count_2;
 
                         struct timeval t1, t2;
-                        double elapsedTime; 
+                        double         elapsedTime;
 
                         char *zErrMsg = 0;
-                        int rc;
+                        int   rc;
 
                         struct sqlite3_stmt *stmt;
-                        const char **pzTail;
-                        char selectSql[500];
-                        char updateSql[500];
-                        char insertSql[500];
+                        const char **        pzTail;
+                        char                 selectSql[500];
+                        char                 updateSql[500];
+                        char                 insertSql[500];
 
-                        data_server_region_t* curr_obj = PDC_Server_get_obj_region(in.obj_id);
-                        region_buf_map_t* temp_buf_map;
+                        data_server_region_t *curr_obj = PDC_Server_get_obj_region(in.obj_id);
+                        region_buf_map_t *    temp_buf_map;
                         // int region_idx = 0;
                         int temp_timestamp_sec;
                         int temp_timestamp_usec;
 
-			            if(first_req) {
+                        if (first_req) {
                             gettimeofday(&t1, NULL);
-                            if (db == NULL) db = Create_DB("MAP_INFO", hostname);
+                            if (db == NULL)
+                                db = Create_DB("MAP_INFO", hostname);
                             gettimeofday(&t2, NULL);
                             elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0;
                             elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;
                             dbOpenTime += elapsedTime / 1000;
                             printf("%s DBopen %f\n", hostname, elapsedTime / 1000);
-                            printf("%s DBOpen count %d, total %f\n", hostname, req_idx+1, dbOpenTime);
+                            printf("%s DBOpen count %d, total %f\n", hostname, req_idx + 1, dbOpenTime);
 
                             gettimeofday(&t1, NULL);
 
                             if (remote_reg_info->ndim == 1) {
-                                sprintf(selectSql, "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND newObjFilePath IS NOT NULL AND ObjectID == %d AND ndim == %d AND start_x <= %"PRIu64" AND (start_x + count_x) >= %"PRIu64";", 
-                                    in.obj_id, remote_reg_info->ndim, start_0, (count_0 + start_0)); //removed target_meta->appname
-
-                            }			
+                                sprintf(
+                                    selectSql,
+                                    "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND newObjFilePath IS "
+                                    "NOT NULL AND ObjectID == %d AND ndim == %d AND start_x <= %" PRIu64
+                                    " AND (start_x + count_x) >= %" PRIu64 ";",
+                                    in.obj_id, remote_reg_info->ndim, start_0,
+                                    (count_0 + start_0)); // removed target_meta->appname
+                            }
                             else if (remote_reg_info->ndim == 2) {
-                                sprintf(selectSql, "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND newObjFilePath IS NOT NULL AND ObjectID == %d AND ndim == %d AND start_x <= %"PRIu64" AND start_y <= %"PRIu64" AND (start_x + count_x) >= %"PRIu64" AND (start_y + count_y) >= %"PRIu64";", 
-                                    in.obj_id, remote_reg_info->ndim, start_0, start_1, (count_0 + start_0), (count_1 + start_1));
+                                sprintf(
+                                    selectSql,
+                                    "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND newObjFilePath IS "
+                                    "NOT NULL AND ObjectID == %d AND ndim == %d AND start_x <= %" PRIu64
+                                    " AND start_y <= %" PRIu64 " AND (start_x + count_x) >= %" PRIu64
+                                    " AND (start_y + count_y) >= %" PRIu64 ";",
+                                    in.obj_id, remote_reg_info->ndim, start_0, start_1, (count_0 + start_0),
+                                    (count_1 + start_1));
                             }
                             else if (remote_reg_info->ndim == 3) {
-                                sprintf(selectSql, "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND newObjFilePath IS NOT NULL AND ObjectID == %d AND ndim == %d AND start_x <= %"PRIu64" AND start_y <= %"PRIu64" AND start_z <= %"PRIu64" AND (start_x + count_x) >= %"PRIu64" AND (start_y + count_y) >= %"PRIu64" AND (start_z + count_z) >= %"PRIu64";", 
-                                    in.obj_id, remote_reg_info->ndim, start_0, start_1, start_2, (count_0 + start_0), (count_1 + start_1), (count_2 + start_2));
+                                sprintf(
+                                    selectSql,
+                                    "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND newObjFilePath IS "
+                                    "NOT NULL AND ObjectID == %d AND ndim == %d AND start_x <= %" PRIu64
+                                    " AND start_y <= %" PRIu64 " AND start_z <= %" PRIu64
+                                    " AND (start_x + count_x) >= %" PRIu64
+                                    " AND (start_y + count_y) >= %" PRIu64
+                                    " AND (start_z + count_z) >= %" PRIu64 ";",
+                                    in.obj_id, remote_reg_info->ndim, start_0, start_1, start_2,
+                                    (count_0 + start_0), (count_1 + start_1), (count_2 + start_2));
                             }
 
                             rc = sqlite3_prepare_v2(db, (const char *)&selectSql, 500, &stmt, pzTail);
                             uint64_t min_bytes;
-                            int cnt = 0;
+                            int      cnt = 0;
 
-                            while(sqlite3_step( stmt ) == SQLITE_ROW) {
-                                // printf("DK: in first_req, row is found so trying to find that satisfies all region requests %s\n", hostname);
+                            while (sqlite3_step(stmt) == SQLITE_ROW) {
+                                // printf("DK: in first_req, row is found so trying to find that satisfies all
+                                // region requests %s\n", hostname);
                                 struct sqlite3_stmt *temp_stmt;
-                                int flag = 1;
-                                int min_flag = 0;
-                                uint64_t temp_bytes_sum = 0;
+                                int                  flag           = 1;
+                                int                  min_flag       = 0;
+                                uint64_t             temp_bytes_sum = 0;
 
-                                temp_timestamp_sec = sqlite3_column_int(stmt, 0);
+                                temp_timestamp_sec  = sqlite3_column_int(stmt, 0);
                                 temp_timestamp_usec = sqlite3_column_int(stmt, 1);
 
-                                DL_FOREACH(curr_obj->region_buf_map_head, temp_buf_map) {
+                                DL_FOREACH(curr_obj->region_buf_map_head, temp_buf_map)
+                                {
                                     if (remote_reg_info->ndim == 1) {
-                                        sprintf(selectSql, "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND newObjFilePath IS NOT NULL AND TimeStampSec == %d AND TimeStampUsec == %d AND ObjectID == %d AND ndim == %d AND start_x <= %"PRIu64" AND (start_x + count_x) >= %"PRIu64";", 
-                                            temp_timestamp_sec, temp_timestamp_usec, in.obj_id, remote_reg_info->ndim, start_0, (count_0 + start_0)); //removed target_meta added PRIu64
-                                    }			
+                                        sprintf(selectSql,
+                                                "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND "
+                                                "newObjFilePath IS NOT NULL AND TimeStampSec == %d AND "
+                                                "TimeStampUsec == %d AND ObjectID == %d AND ndim == %d AND "
+                                                "start_x <= %" PRIu64 " AND (start_x + count_x) >= %" PRIu64
+                                                ";",
+                                                temp_timestamp_sec, temp_timestamp_usec, in.obj_id,
+                                                remote_reg_info->ndim, start_0,
+                                                (count_0 + start_0)); // removed target_meta added PRIu64
+                                    }
                                     else if (remote_reg_info->ndim == 2) {
-                                        sprintf(selectSql, "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND newObjFilePath IS NOT NULL AND TimeStampSec == %d AND TimeStampUsec == %d AND ObjectID == %d AND ndim == %d AND start_x <= %"PRIu64" AND start_y <= %"PRIu64" AND (start_x + count_x) >= %"PRIu64" AND (start_y + count_y) >= %"PRIu64";", 
-                                            temp_timestamp_sec, temp_timestamp_usec, in.obj_id, remote_reg_info->ndim, start_0, start_1, (count_0 + start_0), (count_1 + start_1));
+                                        sprintf(selectSql,
+                                                "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND "
+                                                "newObjFilePath IS NOT NULL AND TimeStampSec == %d AND "
+                                                "TimeStampUsec == %d AND ObjectID == %d AND ndim == %d AND "
+                                                "start_x <= %" PRIu64 " AND start_y <= %" PRIu64
+                                                " AND (start_x + count_x) >= %" PRIu64
+                                                " AND (start_y + count_y) >= %" PRIu64 ";",
+                                                temp_timestamp_sec, temp_timestamp_usec, in.obj_id,
+                                                remote_reg_info->ndim, start_0, start_1, (count_0 + start_0),
+                                                (count_1 + start_1));
                                     }
                                     else if (remote_reg_info->ndim == 3) {
-                                        sprintf(selectSql, "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND newObjFilePath IS NOT NULL AND TimeStampSec == %d AND TimeStampUsec == %d AND ObjectID == %d AND ndim == %d AND start_x <= %"PRIu64" AND start_y <= %"PRIu64" AND start_z <= %"PRIu64" AND (start_x + count_x) >= %"PRIu64" AND (start_y + count_y) >= %"PRIu64" AND (start_z + count_z) >= %"PRIu64";", 
-                                            temp_timestamp_sec, temp_timestamp_usec, in.obj_id, remote_reg_info->ndim, start_0, start_1, start_2, (count_0 + start_0), (count_1 + start_1), (count_2 + start_2));
+                                        sprintf(
+                                            selectSql,
+                                            "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND "
+                                            "newObjFilePath IS NOT NULL AND TimeStampSec == %d AND "
+                                            "TimeStampUsec == %d AND ObjectID == %d AND ndim == %d AND "
+                                            "start_x <= %" PRIu64 " AND start_y <= %" PRIu64
+                                            " AND start_z <= %" PRIu64 " AND (start_x + count_x) >= %" PRIu64
+                                            " AND (start_y + count_y) >= %" PRIu64
+                                            " AND (start_z + count_z) >= %" PRIu64 ";",
+                                            temp_timestamp_sec, temp_timestamp_usec, in.obj_id,
+                                            remote_reg_info->ndim, start_0, start_1, start_2,
+                                            (count_0 + start_0), (count_1 + start_1), (count_2 + start_2));
                                     }
-                                    rc = sqlite3_prepare_v2(db, (const char *)&selectSql, 500, &temp_stmt, pzTail);
-                                    if( sqlite3_step( temp_stmt ) != SQLITE_ROW ) {
+                                    rc = sqlite3_prepare_v2(db, (const char *)&selectSql, 500, &temp_stmt,
+                                                            pzTail);
+                                    if (sqlite3_step(temp_stmt) != SQLITE_ROW) {
                                         // break;
                                         flag = 0;
                                     }
                                     temp_bytes_sum += sqlite3_column_int(temp_stmt, 18);
-                                    // if (flag != 0) printf("SKIM: corresponding row has timestamp %d, start_x %d, count_x %d\n", temp_timestamp, (temp_buf_map->remote_region_nounit).start_0, (temp_buf_map->remote_region_nounit).count_0);
+                                    // if (flag != 0) printf("SKIM: corresponding row has timestamp %d,
+                                    // start_x %d, count_x %d\n", temp_timestamp,
+                                    // (temp_buf_map->remote_region_nounit).start_0,
+                                    // (temp_buf_map->remote_region_nounit).count_0);
                                 }
-                                if(cnt == 0) min_bytes = temp_bytes_sum;
+                                if (cnt == 0)
+                                    min_bytes = temp_bytes_sum;
 
                                 if (temp_bytes_sum <= min_bytes) {
                                     min_bytes = temp_bytes_sum;
-                                    min_flag = 1;
+                                    min_flag  = 1;
                                     // printf("SKIM: min bytes total found  %s\n", hostname);
-                                } else {
+                                }
+                                else {
                                     min_flag = 0;
                                 }
 
-                                if(flag == 1 && min_flag == 1) {
+                                if (flag == 1 && min_flag == 1) {
                                     free(existing_new_path);
-                                    existing_new_path = malloc(256*sizeof(char));
-                                    snprintf(existing_new_path, 256, "%s", (char*)sqlite3_column_text(stmt, 21));
+                                    existing_new_path = malloc(256 * sizeof(char));
+                                    snprintf(existing_new_path, 256, "%s",
+                                             (char *)sqlite3_column_text(stmt, 21));
                                     free(target_ts);
-                                    target_ts = malloc(sizeof(struct timeval));
-                                    target_ts->tv_sec = temp_timestamp_sec;
+                                    target_ts          = malloc(sizeof(struct timeval));
+                                    target_ts->tv_sec  = temp_timestamp_sec;
                                     target_ts->tv_usec = temp_timestamp_usec;
                                     // printf("SKIM: new path and timestamp (%d) set\n", target_timestamp);
-                                    // if (target_ts != NULL) printf("SKIM: new path and timestamp (%d.%d) set  %s\n", target_ts->tv_sec, target_ts->tv_usec, hostname);
+                                    // if (target_ts != NULL) printf("SKIM: new path and timestamp (%d.%d) set
+                                    // %s\n", target_ts->tv_sec, target_ts->tv_usec, hostname);
                                     //     fflush(stdout);
                                 }
 
@@ -3219,18 +3278,20 @@ HG_TEST_RPC_CB(region_release, handle)
                             elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0;
                             elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;
                             printf("%s dbSearchLayout %f\n", hostname, elapsedTime / 1000);
-			            }
+                        }
 
-			            if (first_req && existing_new_path == NULL) {
+                        if (first_req && existing_new_path == NULL) {
 
                             first_req = 0; //
                             gettimeofday(&t1, NULL);
 
                             new_region_info = malloc(sizeof(struct new_region_info_t));
-                            new_region_info->narr = num_arrays; //finalized in buf_map part
-                            new_region_info->ndim = remote_reg_info->ndim; //known value for dimension of reading application on server 
-                            new_region_info->obj_id = in.obj_id; // only one object for multiple regions
-                            new_region_info->offset = malloc(new_region_info->narr * sizeof(unsigned long));
+                            new_region_info->narr = num_arrays; // finalized in buf_map part
+                            new_region_info->ndim =
+                                remote_reg_info
+                                    ->ndim; // known value for dimension of reading application on server
+                            new_region_info->obj_id  = in.obj_id; // only one object for multiple regions
+                            new_region_info->offset  = malloc(new_region_info->narr * sizeof(unsigned long));
                             new_region_info->start_0 = malloc(new_region_info->narr * sizeof(uint64_t));
                             new_region_info->count_0 = malloc(new_region_info->narr * sizeof(uint64_t));
                             new_region_info->start_1 = malloc(new_region_info->narr * sizeof(uint64_t));
@@ -3240,11 +3301,11 @@ HG_TEST_RPC_CB(region_release, handle)
                             new_region_info->newfilename = malloc(256 * sizeof(char));
                             // new_region_info->timestamp = global_timestamp;
                             new_region_info->timestamp = global_ts;
-                            new_region_info->unit = in.data_unit;
+                            new_region_info->unit      = in.data_unit;
 
-                            int region_idx = 0;
+                            int                region_idx   = 0;
                             unsigned long long all_buf_size = 0;
-                            unsigned long long max_offset = 0;
+                            unsigned long long max_offset   = 0;
 
                             gettimeofday(&t2, NULL);
                             elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0;
@@ -3252,30 +3313,53 @@ HG_TEST_RPC_CB(region_release, handle)
                             printf("%s structCreate %f\n", hostname, elapsedTime / 1000);
 
                             gettimeofday(&t1, NULL);
-                            DL_FOREACH(curr_obj->region_buf_map_head, temp_buf_map) {
+                            DL_FOREACH(curr_obj->region_buf_map_head, temp_buf_map)
+                            {
                                 if (region_idx < num_arrays) {
                                     if (remote_reg_info->ndim == 1) {
-                                        // printf("DK: Reg %d: start %"PRIu64" count %"PRIu64"  %s\n", region_idx, (temp_buf_map->remote_region_nounit).start_0, (temp_buf_map->remote_region_nounit).count_0, hostname);
+                                        // printf("DK: Reg %d: start %"PRIu64" count %"PRIu64"  %s\n",
+                                        // region_idx, (temp_buf_map->remote_region_nounit).start_0,
+                                        // (temp_buf_map->remote_region_nounit).count_0, hostname);
                                         // fflush(stdout);
-                                        all_buf_size += (temp_buf_map->remote_region_nounit).count_0 * in.data_unit;
-                                    }			
+                                        all_buf_size +=
+                                            (temp_buf_map->remote_region_nounit).count_0 * in.data_unit;
+                                    }
                                     else if (remote_reg_info->ndim == 2) {
-                                        all_buf_size += (temp_buf_map->remote_region_nounit).count_0 * (temp_buf_map->remote_region_nounit).count_1 * in.data_unit;
+                                        all_buf_size += (temp_buf_map->remote_region_nounit).count_0 *
+                                                        (temp_buf_map->remote_region_nounit).count_1 *
+                                                        in.data_unit;
                                     }
                                     else if (remote_reg_info->ndim == 3) {
-                                        // printf("DK: Reg %d: start_0 %"PRIu64" start_1 %"PRIu64" start_2 %"PRIu64" count_0 %"PRIu64" count_1 %"PRIu64" count_2 %"PRIu64" %s\n", region_idx, (temp_buf_map->remote_region_nounit).start_0, (temp_buf_map->remote_region_nounit).start_1, (temp_buf_map->remote_region_nounit).start_2, (temp_buf_map->remote_region_nounit).count_0, (temp_buf_map->remote_region_nounit).count_1, (temp_buf_map->remote_region_nounit).count_2, hostname);
+                                        // printf("DK: Reg %d: start_0 %"PRIu64" start_1 %"PRIu64" start_2
+                                        // %"PRIu64" count_0 %"PRIu64" count_1 %"PRIu64" count_2 %"PRIu64"
+                                        // %s\n", region_idx, (temp_buf_map->remote_region_nounit).start_0,
+                                        // (temp_buf_map->remote_region_nounit).start_1,
+                                        // (temp_buf_map->remote_region_nounit).start_2,
+                                        // (temp_buf_map->remote_region_nounit).count_0,
+                                        // (temp_buf_map->remote_region_nounit).count_1,
+                                        // (temp_buf_map->remote_region_nounit).count_2, hostname);
                                         // fflush(stdout);
-                                        all_buf_size += (temp_buf_map->remote_region_nounit).count_0 * (temp_buf_map->remote_region_nounit).count_1 * (temp_buf_map->remote_region_nounit).count_2 * in.data_unit;
+                                        all_buf_size += (temp_buf_map->remote_region_nounit).count_0 *
+                                                        (temp_buf_map->remote_region_nounit).count_1 *
+                                                        (temp_buf_map->remote_region_nounit).count_2 *
+                                                        in.data_unit;
                                     }
 
-                                    new_region_info->start_0[region_idx] = (temp_buf_map->remote_region_nounit).start_0; // start_0
-                                    new_region_info->start_1[region_idx] = (temp_buf_map->remote_region_nounit).start_1; // start_1
-                                    new_region_info->start_2[region_idx] = (temp_buf_map->remote_region_nounit).start_2; // start_2
-                                    new_region_info->count_0[region_idx] = (temp_buf_map->remote_region_nounit).count_0; // count_0
-                                    new_region_info->count_1[region_idx] = (temp_buf_map->remote_region_nounit).count_1; // count_1
-                                    new_region_info->count_2[region_idx] = (temp_buf_map->remote_region_nounit).count_2; // count_2
-                                    // printf("region info traverse %dth start is %zu\n", region_idx, (temp_buf_map->remote_region_nounit).start_0);
-                                    // printf("region info traversed by reg start %zu\n", start_0);
+                                    new_region_info->start_0[region_idx] =
+                                        (temp_buf_map->remote_region_nounit).start_0; // start_0
+                                    new_region_info->start_1[region_idx] =
+                                        (temp_buf_map->remote_region_nounit).start_1; // start_1
+                                    new_region_info->start_2[region_idx] =
+                                        (temp_buf_map->remote_region_nounit).start_2; // start_2
+                                    new_region_info->count_0[region_idx] =
+                                        (temp_buf_map->remote_region_nounit).count_0; // count_0
+                                    new_region_info->count_1[region_idx] =
+                                        (temp_buf_map->remote_region_nounit).count_1; // count_1
+                                    new_region_info->count_2[region_idx] =
+                                        (temp_buf_map->remote_region_nounit).count_2; // count_2
+                                    // printf("region info traverse %dth start is %zu\n", region_idx,
+                                    // (temp_buf_map->remote_region_nounit).start_0); printf("region info
+                                    // traversed by reg start %zu\n", start_0);
                                 }
                                 region_idx++;
                             }
@@ -3287,38 +3371,43 @@ HG_TEST_RPC_CB(region_release, handle)
                             new_region_info->total_size = all_buf_size;
 
                             unsigned long long all_cur_offset = 0;
-                            void *temp_buf = NULL;
+                            void *             temp_buf       = NULL;
 
-                            void_all_buf = (void *)calloc(1, new_region_info->total_size); 
+                            void_all_buf = (void *)calloc(1, new_region_info->total_size);
 
-                            if(remote_reg_info->ndim == 1) {
+                            if (remote_reg_info->ndim == 1) {
                                 if (new_region_info->total_size > 2048000000) {
                                     temp_buf = (void *)calloc(1, 4096000000);
                                     for (int i = 0; i < 2; i++) {
-                                        (remote_reg_info->size)[0] = 512000000;
+                                        (remote_reg_info->size)[0]   = 512000000;
                                         (remote_reg_info->offset)[0] = i * 512000000;
-                                        PDC_Server_data_read_from(in.obj_id, remote_reg_info, temp_buf, in.data_unit);
+                                        PDC_Server_data_read_from(in.obj_id, remote_reg_info, temp_buf,
+                                                                  in.data_unit);
                                     }
-                                } else {
+                                }
+                                else {
                                     temp_buf = (void *)calloc(1, new_region_info->total_size);
-                                    (remote_reg_info->size)[0] = 512000000;
+                                    (remote_reg_info->size)[0]   = 512000000;
                                     (remote_reg_info->offset)[0] = 0;
-                                    PDC_Server_data_read_from(in.obj_id, remote_reg_info, temp_buf, in.data_unit);
+                                    PDC_Server_data_read_from(in.obj_id, remote_reg_info, temp_buf,
+                                                              in.data_unit);
                                 }
                             }
 
-                            if(remote_reg_info->ndim == 3) {
+                            if (remote_reg_info->ndim == 3) {
                                 data_server_region_t *tmp_region = NULL;
-                                tmp_region = PDC_Server_get_obj_region(in.obj_id);
-                                ssize_t rb = 0;
-                                char temp[256];
-                                snprintf(temp, 256, "/global/cscratch1/sd/sgkim/pdc_data/52000000/server%d/s000%d.bin", 0, 0);
+                                tmp_region                       = PDC_Server_get_obj_region(in.obj_id);
+                                ssize_t rb                       = 0;
+                                char    temp[256];
+                                snprintf(temp, 256,
+                                         "/global/cscratch1/sd/sgkim/pdc_data/52000000/server%d/s000%d.bin",
+                                         0, 0);
                                 tmp_region->storage_location = temp;
                                 printf("%s: temp %s\n", hostname, temp);
 
                                 gettimeofday(&t1, NULL);
                                 // if (tmp_region->fd < 0) {
-                                    tmp_region->fd = open(tmp_region->storage_location, O_RDWR, 0666);
+                                tmp_region->fd = open(tmp_region->storage_location, O_RDWR, 0666);
                                 // }
                                 gettimeofday(&t2, NULL);
                                 elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0;
@@ -3327,11 +3416,11 @@ HG_TEST_RPC_CB(region_release, handle)
 
                                 gettimeofday(&t1, NULL);
                                 // if (new_region_info->total_size > 2048000000) {
-                                    temp_buf = (void *)calloc(1, 4000000000);
-                                    for (int i = 0; i < 2; i++) {
-                                        rb = pread(tmp_region->fd, temp_buf, 2000000000, 0);
-                                        rb += pread(tmp_region->fd, temp_buf, 2000000000, 2000000000);
-                                    }
+                                temp_buf = (void *)calloc(1, 4000000000);
+                                for (int i = 0; i < 2; i++) {
+                                    rb = pread(tmp_region->fd, temp_buf, 2000000000, 0);
+                                    rb += pread(tmp_region->fd, temp_buf, 2000000000, 2000000000);
+                                }
                                 // } else {
                                 //     temp_buf = (void *)calloc(1, new_region_info->total_size);
                                 //     rb = pread(region->fd, temp_buf, new_region_info->total_size, 0);
@@ -3343,51 +3432,63 @@ HG_TEST_RPC_CB(region_release, handle)
                             }
 
                             for (int i = 0; i < num_arrays; i++) { // here rel change here (# proc / # Node)
-                                new_region_info->offset[i] = all_cur_offset; //not sure, size
-                                // new_region_info->offset[i] = new_region_info->start_0[i] * new_region_info->count_0[i] * new_region_info->count_1[i] * new_region_info->count_2[i] * in.data_unit;
-                                // new_region_info->offset[i] = in.data_unit * new_region_info->start_0[i]; //not sure, size
+                                new_region_info->offset[i] = all_cur_offset; // not sure, size
+                                // new_region_info->offset[i] = new_region_info->start_0[i] *
+                                // new_region_info->count_0[i] * new_region_info->count_1[i] *
+                                // new_region_info->count_2[i] * in.data_unit; new_region_info->offset[i] =
+                                // in.data_unit * new_region_info->start_0[i]; //not sure, size
 
-                                if(remote_reg_info->ndim == 1) {
+                                if (remote_reg_info->ndim == 1) {
                                     gettimeofday(&t1, NULL);
-                                    memcpy(void_all_buf + all_cur_offset, temp_buf + new_region_info->start_0[i]*in.data_unit, new_region_info->count_0[i]*in.data_unit);
+                                    memcpy(void_all_buf + all_cur_offset,
+                                           temp_buf + new_region_info->start_0[i] * in.data_unit,
+                                           new_region_info->count_0[i] * in.data_unit);
                                     gettimeofday(&t2, NULL);
-                                    all_cur_offset += new_region_info->count_0[i]*in.data_unit;
+                                    all_cur_offset += new_region_info->count_0[i] * in.data_unit;
                                     elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0;
                                     elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;
                                     proposedMemcpyTime += elapsedTime / 1000;
                                     proposedMemcpyCount += 1;
-                                    printf("%s memcpy count %d, total %f\n", hostname, proposedMemcpyCount, proposedMemcpyTime);
+                                    printf("%s memcpy count %d, total %f\n", hostname, proposedMemcpyCount,
+                                           proposedMemcpyTime);
                                     printf("%s memcpy %f\n", hostname, elapsedTime / 1000);
                                 }
-                                else if(remote_reg_info->ndim == 2) {
+                                else if (remote_reg_info->ndim == 2) {
                                     // int temp_cur_offset = 0;
                                     // gettimeofday(&t1, NULL);
-                                    // for (int dim2 = new_region_info->start_1[i]; dim2 < new_region_info->start_1[i] + new_region_info->count_1[i]; dim2++) {
+                                    // for (int dim2 = new_region_info->start_1[i]; dim2 <
+                                    // new_region_info->start_1[i] + new_region_info->count_1[i]; dim2++) {
                                     //     offset_1 = dim2 * (remote_reg_info->size)[0]; // dim numparticle
                                     //     offset_0 = new_region_info->start_0[i];
                                     //     temp_cur_offset = (offset_1 + offset_0) * in.data_unit;
-                                    //     // printf("temp_buf offset is %d and (%d < %d)?\n", temp_cur_offset, temp_cur_offset, all_buf_size);
-                                    //     memcpy(void_all_buf + all_cur_offset, temp_buf + temp_cur_offset, new_region_info->count_0[i]*in.data_unit);
-                                    //     all_cur_offset += new_region_info->count_0[i]*in.data_unit;
+                                    //     // printf("temp_buf offset is %d and (%d < %d)?\n",
+                                    //     temp_cur_offset, temp_cur_offset, all_buf_size);
+                                    //     memcpy(void_all_buf + all_cur_offset, temp_buf + temp_cur_offset,
+                                    //     new_region_info->count_0[i]*in.data_unit); all_cur_offset +=
+                                    //     new_region_info->count_0[i]*in.data_unit;
                                     // }
                                     // gettimeofday(&t2, NULL);
                                     // elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0;
                                     // elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;
-                                    // printf("SKIM: memcpy to all buf by region idx %d for %dth region : %f sec\n", req_idx, i+1, elapsedTime / 1000);
-                                    // fflush(stdout);
+                                    // printf("SKIM: memcpy to all buf by region idx %d for %dth region : %f
+                                    // sec\n", req_idx, i+1, elapsedTime / 1000); fflush(stdout);
                                 }
-                                else if (remote_reg_info->ndim == 3) { 
+                                else if (remote_reg_info->ndim == 3) {
                                     int temp_cur_offset = 0;
                                     gettimeofday(&t1, NULL);
-                                    for(int dim3 = 0; dim3 < new_region_info->count_2[i]; dim3++) {
-                                        offset_2 = dim3 * (remote_reg_info->size)[1] * (remote_reg_info->size)[0]; // dim
+                                    for (int dim3 = 0; dim3 < new_region_info->count_2[i]; dim3++) {
+                                        offset_2 = dim3 * (remote_reg_info->size)[1] *
+                                                   (remote_reg_info->size)[0]; // dim
                                         for (int dim2 = 0; dim2 < new_region_info->count_1[i]; dim2++) {
                                             offset_1 = dim2 * (remote_reg_info->size)[0]; // dim numparticles
                                             offset_0 = new_region_info->start_0[i];
-                                            // temp_cur_offset = (offset_2 + offset_1 + offset_0) * in.data_unit;
-                                            temp_cur_offset = new_region_info->offset[i] + (offset_2 + offset_1 + offset_0) * in.data_unit;
-                                            memcpy(void_all_buf + all_cur_offset, temp_buf + temp_cur_offset, new_region_info->count_0[i]*in.data_unit);
-                                            all_cur_offset += new_region_info->count_0[i]*in.data_unit;
+                                            // temp_cur_offset = (offset_2 + offset_1 + offset_0) *
+                                            // in.data_unit;
+                                            temp_cur_offset = new_region_info->offset[i] +
+                                                              (offset_2 + offset_1 + offset_0) * in.data_unit;
+                                            memcpy(void_all_buf + all_cur_offset, temp_buf + temp_cur_offset,
+                                                   new_region_info->count_0[i] * in.data_unit);
+                                            all_cur_offset += new_region_info->count_0[i] * in.data_unit;
                                         }
                                     }
                                     gettimeofday(&t2, NULL);
@@ -3395,7 +3496,8 @@ HG_TEST_RPC_CB(region_release, handle)
                                     elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;
                                     proposedMemcpyTime += elapsedTime / 1000;
                                     proposedMemcpyCount += 1;
-                                    printf("%s memcpy count %d, total %f\n", hostname, proposedMemcpyCount, proposedMemcpyTime);
+                                    printf("%s memcpy count %d, total %f\n", hostname, proposedMemcpyCount,
+                                           proposedMemcpyTime);
                                     printf("%s memcpy %f\n", hostname, elapsedTime / 1000);
                                 }
                             }
@@ -3407,21 +3509,64 @@ HG_TEST_RPC_CB(region_release, handle)
                             printf("%s fwrite() %f\n", hostname, elapsedTime / 1000);
 
                             gettimeofday(&t1, NULL);
-                            for(int i = 0; i < num_arrays; i++) {
+                            for (int i = 0; i < num_arrays; i++) {
                                 if (remote_reg_info->ndim == 1) {
-                                    sprintf(updateSql, "UPDATE Objects SET newObjFilePath = '%s', offset = %"PRIu64", totalNumRegs = '%d', totalBytes = %"PRIu64" WHERE ProgName == 'VPICIO' AND TimeStampSec == %d AND TimeStampUsec == %d AND ObjectID == %d AND ndim == %d AND start_x == %"PRIu64" AND count_x == %"PRIu64";",
-                                        new_region_info->newfilename, new_region_info->offset[i], num_arrays, new_region_info->total_size, new_region_info->timestamp->tv_sec, new_region_info->timestamp->tv_usec, in.obj_id, remote_reg_info->ndim, new_region_info->start_0[i], new_region_info->count_0[i]);
-                                }	//removed target_meta, added PRIu64
+                                    sprintf(
+                                        updateSql,
+                                        "UPDATE Objects SET newObjFilePath = '%s', offset = %" PRIu64
+                                        ", totalNumRegs = '%d', totalBytes = %" PRIu64
+                                        " WHERE ProgName == 'VPICIO' AND TimeStampSec == %d AND "
+                                        "TimeStampUsec == %d AND ObjectID == %d AND ndim == %d AND start_x "
+                                        "== %" PRIu64 " AND count_x == %" PRIu64 ";",
+                                        new_region_info->newfilename, new_region_info->offset[i], num_arrays,
+                                        new_region_info->total_size, new_region_info->timestamp->tv_sec,
+                                        new_region_info->timestamp->tv_usec, in.obj_id, remote_reg_info->ndim,
+                                        new_region_info->start_0[i], new_region_info->count_0[i]);
+                                } // removed target_meta, added PRIu64
                                 else if (remote_reg_info->ndim == 2) {
-                                    sprintf(updateSql, "UPDATE Objects SET newObjFilePath = '%s', offset = %"PRIu64", totalNumRegs = '%d', totalBytes = %"PRIu64" WHERE ProgName == 'VPICIO' AND TimeStampSec == %d AND TimeStampUsec == %d AND ObjectID == %d AND ndim == %d AND start_x == %"PRIu64" AND start_y == %"PRIu64" AND count_x == %"PRIu64" AND count_y == %"PRIu64";",
-                                        new_region_info->newfilename, new_region_info->offset[i], num_arrays, new_region_info->total_size, new_region_info->timestamp->tv_sec, new_region_info->timestamp->tv_usec, in.obj_id, remote_reg_info->ndim, new_region_info->start_0[i], new_region_info->start_1[i], new_region_info->count_0[i], new_region_info->count_1[i]);                                   
+                                    sprintf(
+                                        updateSql,
+                                        "UPDATE Objects SET newObjFilePath = '%s', offset = %" PRIu64
+                                        ", totalNumRegs = '%d', totalBytes = %" PRIu64
+                                        " WHERE ProgName == 'VPICIO' AND TimeStampSec == %d AND "
+                                        "TimeStampUsec == %d AND ObjectID == %d AND ndim == %d AND start_x "
+                                        "== %" PRIu64 " AND start_y == %" PRIu64 " AND count_x == %" PRIu64
+                                        " AND count_y == %" PRIu64 ";",
+                                        new_region_info->newfilename, new_region_info->offset[i], num_arrays,
+                                        new_region_info->total_size, new_region_info->timestamp->tv_sec,
+                                        new_region_info->timestamp->tv_usec, in.obj_id, remote_reg_info->ndim,
+                                        new_region_info->start_0[i], new_region_info->start_1[i],
+                                        new_region_info->count_0[i], new_region_info->count_1[i]);
                                 }
                                 else if (remote_reg_info->ndim == 3) {
-                                    // sprintf(updateSql, "UPDATE Objects SET newObjFilePath = '%s', offset = %"PRIu64" WHERE ProgName == 'VPICIO' AND TimeStampSec == %d AND TimeStampUsec == %d AND ObjectID == %d AND ndim == %d AND start_x == %"PRIu64" AND start_y == %"PRIu64" AND start_z == %"PRIu64" AND count_x == %"PRIu64" AND count_y == %"PRIu64" AND count_z == %"PRIu64";",
-                                    //     new_region_info->newfilename, new_region_info->offset[i], new_region_info->timestamp->tv_sec, new_region_info->timestamp->tv_usec, in.obj_id, remote_reg_info->ndim, new_region_info->start_0[i], new_region_info->start_1[i], new_region_info->start_2[i], new_region_info->count_0[i], new_region_info->count_1[i], new_region_info->count_2[i]);                                                                   
-                                    sprintf(updateSql, "UPDATE Objects SET newObjFilePath = '%s', offset = %"PRIu64", totalNumRegs = '%d', totalBytes = %"PRIu64" WHERE ProgName == 'VPICIO' AND TimeStampSec == %d AND TimeStampUsec == %d AND ObjectID == %d AND ndim == %d AND start_x == %"PRIu64" AND start_y == %"PRIu64" AND start_z == %"PRIu64" AND count_x == %"PRIu64" AND count_y == %"PRIu64" AND count_z == %"PRIu64";",
-                                        new_region_info->newfilename, new_region_info->offset[i], num_arrays, new_region_info->total_size, new_region_info->timestamp->tv_sec, new_region_info->timestamp->tv_usec, in.obj_id, remote_reg_info->ndim, new_region_info->start_0[i], new_region_info->start_1[i], new_region_info->start_2[i], new_region_info->count_0[i], new_region_info->count_1[i], new_region_info->count_2[i]);                                                                   
-                                }                    
+                                    // sprintf(updateSql, "UPDATE Objects SET newObjFilePath = '%s', offset =
+                                    // %"PRIu64" WHERE ProgName == 'VPICIO' AND TimeStampSec == %d AND
+                                    // TimeStampUsec == %d AND ObjectID == %d AND ndim == %d AND start_x ==
+                                    // %"PRIu64" AND start_y == %"PRIu64" AND start_z == %"PRIu64" AND count_x
+                                    // == %"PRIu64" AND count_y == %"PRIu64" AND count_z == %"PRIu64";",
+                                    //     new_region_info->newfilename, new_region_info->offset[i],
+                                    //     new_region_info->timestamp->tv_sec,
+                                    //     new_region_info->timestamp->tv_usec, in.obj_id,
+                                    //     remote_reg_info->ndim, new_region_info->start_0[i],
+                                    //     new_region_info->start_1[i], new_region_info->start_2[i],
+                                    //     new_region_info->count_0[i], new_region_info->count_1[i],
+                                    //     new_region_info->count_2[i]);
+                                    sprintf(
+                                        updateSql,
+                                        "UPDATE Objects SET newObjFilePath = '%s', offset = %" PRIu64
+                                        ", totalNumRegs = '%d', totalBytes = %" PRIu64
+                                        " WHERE ProgName == 'VPICIO' AND TimeStampSec == %d AND "
+                                        "TimeStampUsec == %d AND ObjectID == %d AND ndim == %d AND start_x "
+                                        "== %" PRIu64 " AND start_y == %" PRIu64 " AND start_z == %" PRIu64
+                                        " AND count_x == %" PRIu64 " AND count_y == %" PRIu64
+                                        " AND count_z == %" PRIu64 ";",
+                                        new_region_info->newfilename, new_region_info->offset[i], num_arrays,
+                                        new_region_info->total_size, new_region_info->timestamp->tv_sec,
+                                        new_region_info->timestamp->tv_usec, in.obj_id, remote_reg_info->ndim,
+                                        new_region_info->start_0[i], new_region_info->start_1[i],
+                                        new_region_info->start_2[i], new_region_info->count_0[i],
+                                        new_region_info->count_1[i], new_region_info->count_2[i]);
+                                }
                                 rc = sqlite3_exec(db, (const char *)&updateSql, callback, 0, &zErrMsg);
                             }
                             gettimeofday(&t2, NULL);
@@ -3429,12 +3574,13 @@ HG_TEST_RPC_CB(region_release, handle)
                             elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;
                             printf("%s DBupdate %f\n", hostname, elapsedTime / 1000);
 
-                            ssize_t read_bytes = 0;
+                            ssize_t  read_bytes = 0;
                             uint64_t target_offset;
 
                             if (remote_reg_info->ndim == 1) {
                                 obj_map_bulk_args->data_buf = void_all_buf;
-                            } else if (remote_reg_info->ndim == 3) {
+                            }
+                            else if (remote_reg_info->ndim == 3) {
                                 obj_map_bulk_args->data_buf = void_all_buf;
                             }
 
@@ -3445,19 +3591,21 @@ HG_TEST_RPC_CB(region_release, handle)
                             elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;
                             dbCloseTime += elapsedTime / 1000;
                             printf("%s closedb() %f\n", hostname, elapsedTime / 1000);
-                            printf("%s closedb count %d, total %f\n", hostname, req_idx+1, dbCloseTime);
-
+                            printf("%s closedb count %d, total %f\n", hostname, req_idx + 1, dbCloseTime);
                         }
                         else if (!first_req && existing_new_path == NULL) {
-                            printf("SKIM remote region offset is %d\n", (obj_map_bulk_args->remote_region_nounit).start_0);
-                            obj_map_bulk_args->data_buf = void_all_buf + ((obj_map_bulk_args->remote_region_nounit).start_0 * read_unit_size_ndim_3);
+                            printf("SKIM remote region offset is %d\n",
+                                   (obj_map_bulk_args->remote_region_nounit).start_0);
+                            obj_map_bulk_args->data_buf =
+                                void_all_buf +
+                                ((obj_map_bulk_args->remote_region_nounit).start_0 * read_unit_size_ndim_3);
                         }
 
-                        if(existing_new_path != NULL) {
+                        if (existing_new_path != NULL) {
                             printf("SKIM: PATH AND TIMESTAMP FOUND!! (must be 2+ execution)  %s\n", hostname);
 
                             // fflush(stdout);
-                            if(first_req) {
+                            if (first_req) {
                                 gettimeofday(&t1, NULL);
                                 found_fd = open(existing_new_path, O_RDONLY);
                                 gettimeofday(&t2, NULL);
@@ -3465,8 +3613,10 @@ HG_TEST_RPC_CB(region_release, handle)
                                 elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;
                                 printf("%s open() %f\n", hostname, elapsedTime / 1000);
 
-                                if (remote_reg_info->ndim == 1) warm_buf = (void *)calloc(1, 4096000000);
-                                else if (remote_reg_info->ndim == 3) warm_buf = (void *)calloc(1, 4000000000);
+                                if (remote_reg_info->ndim == 1)
+                                    warm_buf = (void *)calloc(1, 4096000000);
+                                else if (remote_reg_info->ndim == 3)
+                                    warm_buf = (void *)calloc(1, 4000000000);
                                 gettimeofday(&t1, NULL);
                                 if (remote_reg_info->ndim == 1) {
                                     pread(found_fd, warm_buf, 2048000000, 0);
@@ -3487,35 +3637,53 @@ HG_TEST_RPC_CB(region_release, handle)
                             ssize_t read_bytes = 0;
 
                             gettimeofday(&t1, NULL);
-                            if(remote_reg_info->ndim == 1) {
-                                sprintf(selectSql, "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND TimeStampSec == %d AND TimeStampUsec == %d AND ObjectID == %d AND ndim == %d AND start_x == %"PRIu64" AND count_x == %"PRIu64";", 
-                                    target_ts->tv_sec, target_ts->tv_usec, in.obj_id, remote_reg_info->ndim, start_0, count_0);
-                            } //removed target_meta added PRIu64
+                            if (remote_reg_info->ndim == 1) {
+                                sprintf(selectSql,
+                                        "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND TimeStampSec "
+                                        "== %d AND TimeStampUsec == %d AND ObjectID == %d AND ndim == %d AND "
+                                        "start_x == %" PRIu64 " AND count_x == %" PRIu64 ";",
+                                        target_ts->tv_sec, target_ts->tv_usec, in.obj_id,
+                                        remote_reg_info->ndim, start_0, count_0);
+                            } // removed target_meta added PRIu64
                             else if (remote_reg_info->ndim == 2) {
-                                sprintf(selectSql, "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND TimeStampSec == %d AND TimeStampUsec == %d AND ObjectID == %d AND ndim == %d AND start_x == %"PRIu64" AND start_y == %"PRIu64" AND count_x == %"PRIu64" AND count_y == %"PRIu64";", 
-                                    target_ts->tv_sec, target_ts->tv_usec, in.obj_id, remote_reg_info->ndim, start_0, start_1, count_0, count_1);
+                                sprintf(selectSql,
+                                        "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND TimeStampSec "
+                                        "== %d AND TimeStampUsec == %d AND ObjectID == %d AND ndim == %d AND "
+                                        "start_x == %" PRIu64 " AND start_y == %" PRIu64
+                                        " AND count_x == %" PRIu64 " AND count_y == %" PRIu64 ";",
+                                        target_ts->tv_sec, target_ts->tv_usec, in.obj_id,
+                                        remote_reg_info->ndim, start_0, start_1, count_0, count_1);
                             }
                             else if (remote_reg_info->ndim == 3) {
-                                sprintf(selectSql, "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND TimeStampSec == %d AND TimeStampUsec == %d AND ObjectID == %d AND ndim == %d AND start_x == %"PRIu64" AND start_y == %"PRIu64" AND start_z == %"PRIu64" AND count_x == %"PRIu64" AND count_y == %"PRIu64" AND count_z == %"PRIu64";", 
-                                    target_ts->tv_sec, target_ts->tv_usec, in.obj_id, remote_reg_info->ndim, start_0, start_1, start_2, count_0, count_1, count_2);
+                                sprintf(selectSql,
+                                        "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND TimeStampSec "
+                                        "== %d AND TimeStampUsec == %d AND ObjectID == %d AND ndim == %d AND "
+                                        "start_x == %" PRIu64 " AND start_y == %" PRIu64
+                                        " AND start_z == %" PRIu64 " AND count_x == %" PRIu64
+                                        " AND count_y == %" PRIu64 " AND count_z == %" PRIu64 ";",
+                                        target_ts->tv_sec, target_ts->tv_usec, in.obj_id,
+                                        remote_reg_info->ndim, start_0, start_1, start_2, count_0, count_1,
+                                        count_2);
                             }
                             rc = sqlite3_prepare_v2(db, (const char *)&selectSql, 500, &stmt, pzTail);
 
-                            if (sqlite3_step( stmt ) == SQLITE_ROW) target_offset = sqlite3_column_int64(stmt, 16);
+                            if (sqlite3_step(stmt) == SQLITE_ROW)
+                                target_offset = sqlite3_column_int64(stmt, 16);
                             gettimeofday(&t2, NULL);
                             elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0;
                             elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;
                             proposedPreadTime += elapsedTime / 1000;
                             proposedPreadCount += 1;
                             printf("%s dbSearch() %f\n", hostname, elapsedTime / 1000);
-                            printf("%s dbSearch count %d, total %f\n", hostname, proposedPreadCount, proposedPreadTime);
+                            printf("%s dbSearch count %d, total %f\n", hostname, proposedPreadCount,
+                                   proposedPreadTime);
 
                             obj_map_bulk_args->data_buf = warm_buf + target_offset;
 
                             first_req = 0;
 
                             if (req_idx == num_arrays - 1) {
-                                //prefetch_obj(0, db, num_arrays, in.data_unit);
+                                // prefetch_obj(0, db, num_arrays, in.data_unit);
                                 gettimeofday(&t1, NULL);
                                 sqlite3_close(db);
                                 gettimeofday(&t2, NULL);
@@ -3523,24 +3691,23 @@ HG_TEST_RPC_CB(region_release, handle)
                                 elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;
                                 dbCloseTime += elapsedTime / 1000;
                                 printf("%s closedb() %f\n", hostname, elapsedTime / 1000);
-                                printf("%s closedb count %d, total %f\n", hostname, req_idx+1, dbCloseTime);
+                                printf("%s closedb count %d, total %f\n", hostname, req_idx + 1, dbCloseTime);
                             }
-
                         }
-			            //dk change it back for possible error catch
+                        // dk change it back for possible error catch
                         if (remote_reg_info->ndim >= 1) {
                             (remote_reg_info->offset)[0] = (obj_map_bulk_args->remote_region_nounit).start_0;
-                            (remote_reg_info->size)[0] = (obj_map_bulk_args->remote_region_nounit).count_0;
+                            (remote_reg_info->size)[0]   = (obj_map_bulk_args->remote_region_nounit).count_0;
                         }
                         if (remote_reg_info->ndim >= 2) {
                             (remote_reg_info->offset)[1] = (obj_map_bulk_args->remote_region_nounit).start_1;
-                            (remote_reg_info->size)[1] = (obj_map_bulk_args->remote_region_nounit).count_1;
+                            (remote_reg_info->size)[1]   = (obj_map_bulk_args->remote_region_nounit).count_1;
                         }
                         if (remote_reg_info->ndim >= 3) {
                             (remote_reg_info->offset)[2] = (obj_map_bulk_args->remote_region_nounit).start_2;
-                            (remote_reg_info->size)[2] = (obj_map_bulk_args->remote_region_nounit).count_2;
+                            (remote_reg_info->size)[2]   = (obj_map_bulk_args->remote_region_nounit).count_2;
                         }
-//
+                        //
 
                         size  = HG_Bulk_get_size(eltt2->local_bulk_handle);
                         size2 = HG_Bulk_get_size(remote_bulk_handle);
@@ -3564,8 +3731,8 @@ HG_TEST_RPC_CB(region_release, handle)
                         printf("%s bulkTransfer %f\n", hostname, elapsedTime / 1000);
                         printf("%s bulkTransfer count %d, total %f\n", hostname, bulkCount, bulkTransferTime);
 
-                        //dkdk
-                        if (req_idx+1 == num_arrays) {
+                        // dkdk
+                        if (req_idx + 1 == num_arrays) {
                             db = Create_DB("MAP_INFO", hostname);
                             prefetch_obj(1, db, num_arrays, 3);
                         }
@@ -3782,31 +3949,33 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-void prefetch_obj(int op, sqlite3 *db, int num_regs, int ndim) {
-	printf("DK: entering prefetch_obj\n");
-	fflush(stdout);
+void
+prefetch_obj(int op, sqlite3 *db, int num_regs, int ndim)
+{
+    printf("DK: entering prefetch_obj\n");
+    fflush(stdout);
     if (op == 0) {
         return;
     }
 
     struct timeval t1, t2;
-    double elapsedTime; 
-    char hostname[100];
+    double         elapsedTime;
+    char           hostname[100];
     gethostname(hostname, 100);
 
-    char *zErrMsg = 0;
-    int rc;
-    int rc2;
+    char *               zErrMsg = 0;
+    int                  rc;
+    int                  rc2;
     struct sqlite3_stmt *stmt;
-    const char **pzTail;
-    const char **pzTail2;
+    const char **        pzTail;
+    const char **        pzTail2;
 
     int *regsStart_x;
     int *regsStart_y;
     int *regsStart_z;
-    int count_x;
-    int count_y;
-    int count_z;
+    int  count_x;
+    int  count_y;
+    int  count_z;
 
     char selectSql[500];
     char selectSubSql[500];
@@ -3817,42 +3986,46 @@ void prefetch_obj(int op, sqlite3 *db, int num_regs, int ndim) {
     uint64_t dim_y;
     uint64_t dim_z;
 
-    int numReg = -1;
-    int objId;
+    int      numReg = -1;
+    int      objId;
     uint64_t totalBytes;
     uint64_t sizeReg;
-    int unit;
-    int typeOfReg; // 1 -> full plane
-    int timestampSec;
-    int timestamUsec;
+    int      unit;
+    int      typeOfReg; // 1 -> full plane
+    int      timestampSec;
+    int      timestamUsec;
 
-    sprintf(selectSql, "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND newObjFilePath IS NOT NULL AND ndim == %d", ndim);
+    sprintf(selectSql,
+            "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND newObjFilePath IS NOT NULL AND ndim == %d",
+            ndim);
     rc = sqlite3_prepare_v2(db, (const char *)&selectSql, 500, &stmt, pzTail);
-	if (rc == SQLITE_OK) printf("rc is ok sql worked\n");
+    if (rc == SQLITE_OK)
+        printf("rc is ok sql worked\n");
 
-    int cnt_select = 0;
-    int cnt = 0;
+    int cnt_select   = 0;
+    int cnt          = 0;
     int patternFound = 0;
 
-    if (sqlite3_step( stmt ) == SQLITE_ROW) { // select returns one or more rows
-            printf("DK: check 1\n");
-            fflush(stdout);
+    if (sqlite3_step(stmt) == SQLITE_ROW) { // select returns one or more rows
+        printf("DK: check 1\n");
+        fflush(stdout);
 
-        if (cnt == 0 && cnt_select == 0 && patternFound == 0) { // only do it first time for checking first platterned read
+        if (cnt == 0 && cnt_select == 0 &&
+            patternFound == 0) { // only do it first time for checking first platterned read
             struct sqlite3_stmt *temp_stmt;
             timestampSec = sqlite3_column_int(stmt, 0);
             timestamUsec = sqlite3_column_int(stmt, 1);
-            numReg = sqlite3_column_int(stmt, 19);
-            dim_x = sqlite3_column_int(stmt, 13);
-            dim_y = sqlite3_column_int(stmt, 14);
-            dim_z = sqlite3_column_int(stmt, 15);
-            totalBytes = sqlite3_column_int(stmt, 20);
-            sizeReg = sqlite3_column_int(stmt, 18);
-            objId = sqlite3_column_int(stmt, 5);
-            unit = sqlite3_column_int(stmt, 17);
-            count_x = sqlite3_column_int(stmt, 10);
-            count_y = sqlite3_column_int(stmt, 11);
-            count_z = sqlite3_column_int(stmt, 12);
+            numReg       = sqlite3_column_int(stmt, 19);
+            dim_x        = sqlite3_column_int(stmt, 13);
+            dim_y        = sqlite3_column_int(stmt, 14);
+            dim_z        = sqlite3_column_int(stmt, 15);
+            totalBytes   = sqlite3_column_int(stmt, 20);
+            sizeReg      = sqlite3_column_int(stmt, 18);
+            objId        = sqlite3_column_int(stmt, 5);
+            unit         = sqlite3_column_int(stmt, 17);
+            count_x      = sqlite3_column_int(stmt, 10);
+            count_y      = sqlite3_column_int(stmt, 11);
+            count_z      = sqlite3_column_int(stmt, 12);
 
             if (ndim == 3) {
                 regsStart_x = malloc(numReg * sizeof(int));
@@ -3860,12 +4033,15 @@ void prefetch_obj(int op, sqlite3 *db, int num_regs, int ndim) {
                 regsStart_z = malloc(numReg * sizeof(int));
             }
 
-            sprintf(selectSubSql, "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND TimeStampSec == %d AND TimeStampUsec == %d AND newObjFilePath IS NOT NULL AND ndim == %d", timestampSec, timestamUsec, ndim);
+            sprintf(selectSubSql,
+                    "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND TimeStampSec == %d AND "
+                    "TimeStampUsec == %d AND newObjFilePath IS NOT NULL AND ndim == %d",
+                    timestampSec, timestamUsec, ndim);
             rc2 = sqlite3_prepare_v2(db, (const char *)&selectSubSql, 500, &temp_stmt, pzTail2);
             printf("DK: check 3\n");
             fflush(stdout);
 
-            while(sqlite3_step( temp_stmt ) == SQLITE_ROW) {
+            while (sqlite3_step(temp_stmt) == SQLITE_ROW) {
                 printf("DK: check 4-while\n");
                 fflush(stdout);
                 if (ndim == 3 && cnt < numReg) {
@@ -3876,21 +4052,24 @@ void prefetch_obj(int op, sqlite3 *db, int num_regs, int ndim) {
 
                 cnt++;
             }
-            cnt = 0;// reset count
+            cnt          = 0; // reset count
             patternFound = 1;
         }
 
     } // end of if (finding first patterned read)
 
-    //find second patterned read that matches the one that is found previous
-    sprintf(selectSql, "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND totalNumRegs == %d AND sizeReg == %"PRIu64" AND (TimeStampSec != %d OR TimeStampUsec != %d) AND newObjFilePath IS NOT NULL AND ndim == %d", numReg, sizeReg, timestampSec, timestamUsec, ndim);
+    // find second patterned read that matches the one that is found previous
+    sprintf(selectSql,
+            "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND totalNumRegs == %d AND sizeReg == %" PRIu64
+            " AND (TimeStampSec != %d OR TimeStampUsec != %d) AND newObjFilePath IS NOT NULL AND ndim == %d",
+            numReg, sizeReg, timestampSec, timestamUsec, ndim);
     rc = sqlite3_prepare_v2(db, (const char *)&selectSql, 500, &stmt, pzTail);
     printf("DK: check 5\n");
     fflush(stdout);
 
     int match = 0;
-    cnt = 0;
-    while (sqlite3_step( stmt ) == SQLITE_ROW) { // select returns one or more rows
+    cnt       = 0;
+    while (sqlite3_step(stmt) == SQLITE_ROW) { // select returns one or more rows
         printf("DK: check 6-while\n");
         fflush(stdout);
         if (ndim == 3) {
@@ -3900,56 +4079,59 @@ void prefetch_obj(int op, sqlite3 *db, int num_regs, int ndim) {
 
             if (tmp_offset_x == regsStart_x[cnt] + 1) {
                 match = 1;
-            } else {
+            }
+            else {
                 match = 0;
             }
-
         }
     }
 
-    if(match) {
+    if (match) {
         if (ndim == 3) {
             uint64_t totalObjSize = dim_x * dim_y * dim_z;
             uint64_t remainingObj = totalObjSize - (totalBytes * 2);
-            int offset_term = 2;
-            int num_new = remainingObj / totalBytes;
+            int      offset_term  = 2;
+            int      num_new      = remainingObj / totalBytes;
 
             for (int i = 0; i < num_new; i++) {
                 new_region_info_t *prefetch_reg_info;
-                struct timeval *prefetch_ts = NULL;
-                prefetch_ts = malloc(sizeof(struct timeval));
+                struct timeval *   prefetch_ts = NULL;
+                prefetch_ts                    = malloc(sizeof(struct timeval));
                 gettimeofday(prefetch_ts, NULL);
 
-                prefetch_reg_info = malloc(sizeof(struct new_region_info_t));
+                prefetch_reg_info              = malloc(sizeof(struct new_region_info_t));
                 prefetch_reg_info->newfilename = malloc(256 * sizeof(char));
-                prefetch_reg_info->timestamp = prefetch_ts;
-                prefetch_reg_info->total_size = totalBytes;
-                prefetch_reg_info->unit = unit;
+                prefetch_reg_info->timestamp   = prefetch_ts;
+                prefetch_reg_info->total_size  = totalBytes;
+                prefetch_reg_info->unit        = unit;
 
-                char new_file_dir_loc[100];
-                char* data_path = getenv("SCRATCH");
-                snprintf(new_file_dir_loc, 100, "%s/pdc_data/pdc_auto", data_path); //new file directory name
-                snprintf(prefetch_reg_info->newfilename, 256, "%s/new_region%d_%d.bin", new_file_dir_loc, prefetch_reg_info->timestamp->tv_sec, prefetch_reg_info->timestamp->tv_usec);
+                char  new_file_dir_loc[100];
+                char *data_path = getenv("SCRATCH");
+                snprintf(new_file_dir_loc, 100, "%s/pdc_data/pdc_auto", data_path); // new file directory name
+                snprintf(prefetch_reg_info->newfilename, 256, "%s/new_region%d_%d.bin", new_file_dir_loc,
+                         prefetch_reg_info->timestamp->tv_sec, prefetch_reg_info->timestamp->tv_usec);
 
-                void* to_be_written = (void *)calloc(1, totalBytes);
-                void* orig_file = (void *)calloc(1, 4000000000);
-                double pmt = 0;
-                int pmc = 0;
+                void * to_be_written = (void *)calloc(1, totalBytes);
+                void * orig_file     = (void *)calloc(1, 4000000000);
+                double pmt           = 0;
+                int    pmc           = 0;
                 for (int j = 0; j < numReg; j++) {
                     gettimeofday(&t1, NULL);
                     // uint64_t all_buf_offset = regsStart_x[j] * sizeReg;
-                    uint64_t all_buf_offset = j * sizeReg;
+                    uint64_t all_buf_offset  = j * sizeReg;
                     uint64_t temp_cur_offset = 0;
-                    //skipping placing data in order
-                    for(int dim3 = 0; dim3 < count_z; dim3++) {
+                    // skipping placing data in order
+                    for (int dim3 = 0; dim3 < count_z; dim3++) {
                         offset_2 = dim3 * count_x * count_y; // dim
                         for (int dim2 = 0; dim2 < count_y; dim2++) {
-                            offset_1 = dim2 * count_x; // dim numparticles
-                            offset_0 = 0;
+                            offset_1        = dim2 * count_x; // dim numparticles
+                            offset_0        = 0;
                             temp_cur_offset = (j * sizeReg) + (offset_2 + offset_1 + offset_0) * in.data_unit;
-                            // memcpy(to_be_written + all_cur_offset, temp_buf + temp_cur_offset, new_region_info->count_0[i]*in.data_unit);
-                            memcpy(to_be_written + all_cur_offset, orig_file, new_region_info->count_0[i]*in.data_unit);
-                            all_cur_offset += new_region_info->count_0[i]*in.data_unit;
+                            // memcpy(to_be_written + all_cur_offset, temp_buf + temp_cur_offset,
+                            // new_region_info->count_0[i]*in.data_unit);
+                            memcpy(to_be_written + all_cur_offset, orig_file,
+                                   new_region_info->count_0[i] * in.data_unit);
+                            all_cur_offset += new_region_info->count_0[i] * in.data_unit;
                         }
                     }
                     gettimeofday(&t2, NULL);
@@ -3960,8 +4142,17 @@ void prefetch_obj(int op, sqlite3 *db, int num_regs, int ndim) {
                     printf("%s prefetch %dth memcpy count %d, total %f\n", hostname, i, pmc, pmt);
                     printf("%s prefetch %d th memcpy %f\n", hostname, i, elapsedTime / 1000);
 
-                    sprintf(insertSql, "INSERT INTO Objects (TimeStampSec, TimeStampUsec, Date, IOType, ProgName, ObjectID, ndim, start_x, start_y, start_z, count_x, count_y, count_z, dim_x, dim_y, dim_z, offset, unit, sizeReg, totalNumRegs, totalBytes, newObjFilePath) VALUES (%d, %d, DATETIME('now'), 'READ', 'VPICIO', %d, %d, %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %d, %"PRIu64", %d, %"PRIu64", %s);", 
-                        prefetch_ts->tv_sec, prefetch_ts->tv_usec, objId, ndim, regsStart_x[j], regsStart_y[j], regsStart_z[j], count_x, count_y, count_z, dim_x, dim_y, dim_z, all_buf_offset, unit, count_x * count_y * count_z * unit, numReg, totalBytes, prefetch_reg_info->newfilename);
+                    sprintf(insertSql,
+                            "INSERT INTO Objects (TimeStampSec, TimeStampUsec, Date, IOType, ProgName, "
+                            "ObjectID, ndim, start_x, start_y, start_z, count_x, count_y, count_z, dim_x, "
+                            "dim_y, dim_z, offset, unit, sizeReg, totalNumRegs, totalBytes, newObjFilePath) "
+                            "VALUES (%d, %d, DATETIME('now'), 'READ', 'VPICIO', %d, %d, %" PRIu64 ", %" PRIu64
+                            ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64
+                            ", %" PRIu64 ", %" PRIu64 ", %d, %" PRIu64 ", %d, %" PRIu64 ", %s);",
+                            prefetch_ts->tv_sec, prefetch_ts->tv_usec, objId, ndim, regsStart_x[j],
+                            regsStart_y[j], regsStart_z[j], count_x, count_y, count_z, dim_x, dim_y, dim_z,
+                            all_buf_offset, unit, count_x * count_y * count_z * unit, numReg, totalBytes,
+                            prefetch_reg_info->newfilename);
 
                     rc = sqlite3_exec(db, (const char *)&insertSql, callback, 0, &zErrMsg);
                 }
@@ -3977,23 +4168,25 @@ void prefetch_obj(int op, sqlite3 *db, int num_regs, int ndim) {
             }
         } // end of ndim 3
     }
-
 }
 
 void
-write_new_file_and_info(struct new_region_info_t* reg, void* new_buf) {
+write_new_file_and_info(struct new_region_info_t *reg, void *new_buf)
+{
     FILE *new_fp;
-    int fd;
-    char new_file_dir_loc[100];
-    char* data_path = getenv("SCRATCH");
+    int   fd;
+    char  new_file_dir_loc[100];
+    char *data_path = getenv("SCRATCH");
 
-    snprintf(new_file_dir_loc, 100, "%s/pdc_data/pdc_auto", data_path); //new file directory name
+    snprintf(new_file_dir_loc, 100, "%s/pdc_data/pdc_auto", data_path); // new file directory name
     mkdir(new_file_dir_loc, S_IRWXU | S_IRWXG);
-    snprintf(reg->newfilename, 256, "%s/new_region%d_%d.bin", new_file_dir_loc, reg->timestamp->tv_sec, reg->timestamp->tv_usec);
+    snprintf(reg->newfilename, 256, "%s/new_region%d_%d.bin", new_file_dir_loc, reg->timestamp->tv_sec,
+             reg->timestamp->tv_usec);
 
-    //write new file to correct file location
+    // write new file to correct file location
     new_fp = fopen(reg->newfilename, "w");
-    if(new_fp == NULL) printf("SKIM: new filpointer is null\n");
+    if (new_fp == NULL)
+        printf("SKIM: new filpointer is null\n");
     printf("fwrite amoutn %zu\n", reg->total_size);
 
     fwrite(new_buf, reg->unit, (reg->total_size / reg->unit), new_fp);
@@ -5081,7 +5274,7 @@ done:
 }
 
 /* static hg_return_t */
-//skim
+// skim
 uint64_t dim_x;
 uint64_t dim_y;
 uint64_t dim_z;
@@ -5158,7 +5351,7 @@ HG_TEST_RPC_CB(buf_map, handle)
     pdc_timestamp_register(buf_obj_map_timestamps, start, end);
 #endif
 
-    //skim
+    // skim
     if (global_ts == NULL) {
         global_ts = malloc(sizeof(struct timeval));
         gettimeofday(global_ts, NULL);
@@ -5168,45 +5361,73 @@ HG_TEST_RPC_CB(buf_map, handle)
     gethostname(hostname, 100);
     pdc_metadata_t *target_meta;
 
-    if (db == NULL) db = Create_DB("MAP_INFO", hostname);
+    if (db == NULL)
+        db = Create_DB("MAP_INFO", hostname);
 
     if (ndim >= 1 && dim_x == 0) {
         target_meta = PDC_Server_get_obj_metadata(new_buf_map_ptr->remote_obj_id);
-        dim_x = target_meta->dims[0];
+        dim_x       = target_meta->dims[0];
     }
     if (ndim >= 2 && dim_y == 0) {
         target_meta = PDC_Server_get_obj_metadata(new_buf_map_ptr->remote_obj_id);
-        dim_y = target_meta->dims[1];
+        dim_y       = target_meta->dims[1];
     }
     if (ndim >= 3 && dim_z == 0) {
         target_meta = PDC_Server_get_obj_metadata(new_buf_map_ptr->remote_obj_id);
-        dim_z = target_meta->dims[2];
+        dim_z       = target_meta->dims[2];
     }
 
     char *zErrMsg = 0;
-    int rc;
-    char insertSql[500];
-    char selectSql[500];
+    int   rc;
+    char  insertSql[500];
+    char  selectSql[500];
 
     // gettimeofday(&t1, NULL);
     if (new_buf_map_ptr->remote_ndim == 1) {
-        sprintf(insertSql, "INSERT INTO Objects (TimeStampSec, TimeStampUsec, Date, IOType, ProgName, ObjectID, ndim, start_x, start_y, start_z, count_x, count_y, count_z, dim_x, dim_y, dim_z, offset, unit, sizeReg, totalNumRegs, totalBytes, newObjFilePath) " \
-            "VALUES (%d, %d, DATETIME('now'), 'READ', 'VPICIO', %d, %d, %"PRIu64", '-1', '-1', %"PRIu64", '-1', '-1', , %"PRIu64", '-1', '-1' '0', %d, %"PRIu64", '-1', '0', NULL);", 
-            global_ts->tv_sec, global_ts->tv_usec, new_buf_map_ptr->remote_obj_id, new_buf_map_ptr->remote_ndim, in.remote_region_nounit.start_0, in.remote_region_nounit.count_0, dim_x, in.remote_unit, in.remote_region_nounit.count_0 * in.remote_unit );
+        sprintf(insertSql,
+                "INSERT INTO Objects (TimeStampSec, TimeStampUsec, Date, IOType, ProgName, ObjectID, ndim, "
+                "start_x, start_y, start_z, count_x, count_y, count_z, dim_x, dim_y, dim_z, offset, unit, "
+                "sizeReg, totalNumRegs, totalBytes, newObjFilePath) "
+                "VALUES (%d, %d, DATETIME('now'), 'READ', 'VPICIO', %d, %d, %" PRIu64 ", '-1', '-1', %" PRIu64
+                ", '-1', '-1', , %" PRIu64 ", '-1', '-1' '0', %d, %" PRIu64 ", '-1', '0', NULL);",
+                global_ts->tv_sec, global_ts->tv_usec, new_buf_map_ptr->remote_obj_id,
+                new_buf_map_ptr->remote_ndim, in.remote_region_nounit.start_0,
+                in.remote_region_nounit.count_0, dim_x, in.remote_unit,
+                in.remote_region_nounit.count_0 * in.remote_unit);
 
         rc = sqlite3_exec(db, (const char *)&insertSql, callback, 0, &zErrMsg);
     }
     else if (new_buf_map_ptr->remote_ndim == 2) {
-        sprintf(insertSql, "INSERT INTO Objects (TimeStampSec, TimeStampUsec, Date, IOType, ProgName, ObjectID, ndim, start_x, start_y, start_z, count_x, count_y, count_z, dim_x, dim_y, dim_z, offset, unit, sizeReg, totalNumRegs, totalBytes, newObjFilePath) " \
-            "VALUES (%d, %d, DATETIME('now'), 'READ', 'VPICIO', %d, %d, %"PRIu64", %"PRIu64", '-1', %"PRIu64", %"PRIu64", '-1', %"PRIu64", %"PRIu64", '-1', '0', %d, %"PRIu64", '-1', '0', NULL);", 
-            global_ts->tv_sec, global_ts->tv_usec, new_buf_map_ptr->remote_obj_id, new_buf_map_ptr->remote_ndim, in.remote_region_nounit.start_0, in.remote_region_nounit.start_1, in.remote_region_nounit.count_0, in.remote_region_nounit.count_1, dim_x, dim_y, in.remote_unit, in.remote_region_nounit.count_0 * in.remote_region_nounit.count_1 * in.remote_unit );
+        sprintf(insertSql,
+                "INSERT INTO Objects (TimeStampSec, TimeStampUsec, Date, IOType, ProgName, ObjectID, ndim, "
+                "start_x, start_y, start_z, count_x, count_y, count_z, dim_x, dim_y, dim_z, offset, unit, "
+                "sizeReg, totalNumRegs, totalBytes, newObjFilePath) "
+                "VALUES (%d, %d, DATETIME('now'), 'READ', 'VPICIO', %d, %d, %" PRIu64 ", %" PRIu64
+                ", '-1', %" PRIu64 ", %" PRIu64 ", '-1', %" PRIu64 ", %" PRIu64 ", '-1', '0', %d, %" PRIu64
+                ", '-1', '0', NULL);",
+                global_ts->tv_sec, global_ts->tv_usec, new_buf_map_ptr->remote_obj_id,
+                new_buf_map_ptr->remote_ndim, in.remote_region_nounit.start_0,
+                in.remote_region_nounit.start_1, in.remote_region_nounit.count_0,
+                in.remote_region_nounit.count_1, dim_x, dim_y, in.remote_unit,
+                in.remote_region_nounit.count_0 * in.remote_region_nounit.count_1 * in.remote_unit);
 
         rc = sqlite3_exec(db, (const char *)&insertSql, callback, 0, &zErrMsg);
     }
-    else if (new_buf_map_ptr->remote_ndim == 3){
-        sprintf(insertSql, "INSERT INTO Objects (TimeStampSec, TimeStampUsec, Date, IOType, ProgName, ObjectID, ndim, start_x, start_y, start_z, count_x, count_y, count_z, dim_x, dim_y, dim_z, offset, unit, sizeReg, totalNumRegs, totalBytes, newObjFilePath) " \
-            "VALUES (%d, %d, DATETIME('now'), 'READ', 'VPICIO', %d, %d, %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", '0', %d, %"PRIu64", '-1', '0', NULL);", 
-            global_ts->tv_sec, global_ts->tv_usec, new_buf_map_ptr->remote_obj_id, new_buf_map_ptr->remote_ndim, in.remote_region_nounit.start_0, in.remote_region_nounit.start_1, in.remote_region_nounit.start_2, in.remote_region_nounit.count_0, in.remote_region_nounit.count_1, in.remote_region_nounit.count_2, dim_x, dim_y, dim_z, in.remote_unit, in.remote_region_nounit.count_0 * in.remote_region_nounit.count_1 * in.remote_region_nounit.count_2 * in.remote_unit );
+    else if (new_buf_map_ptr->remote_ndim == 3) {
+        sprintf(insertSql,
+                "INSERT INTO Objects (TimeStampSec, TimeStampUsec, Date, IOType, ProgName, ObjectID, ndim, "
+                "start_x, start_y, start_z, count_x, count_y, count_z, dim_x, dim_y, dim_z, offset, unit, "
+                "sizeReg, totalNumRegs, totalBytes, newObjFilePath) "
+                "VALUES (%d, %d, DATETIME('now'), 'READ', 'VPICIO', %d, %d, %" PRIu64 ", %" PRIu64
+                ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64
+                ", '0', %d, %" PRIu64 ", '-1', '0', NULL);",
+                global_ts->tv_sec, global_ts->tv_usec, new_buf_map_ptr->remote_obj_id,
+                new_buf_map_ptr->remote_ndim, in.remote_region_nounit.start_0,
+                in.remote_region_nounit.start_1, in.remote_region_nounit.start_2,
+                in.remote_region_nounit.count_0, in.remote_region_nounit.count_1,
+                in.remote_region_nounit.count_2, dim_x, dim_y, dim_z, in.remote_unit,
+                in.remote_region_nounit.count_0 * in.remote_region_nounit.count_1 *
+                    in.remote_region_nounit.count_2 * in.remote_unit);
 
         rc = sqlite3_exec(db, (const char *)&insertSql, callback, 0, &zErrMsg);
     }
@@ -5215,15 +5436,16 @@ HG_TEST_RPC_CB(buf_map, handle)
     // elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;
     // printf("SKIM: MAP DB INSERT region infos: %f sec  %s\n", elapsedTime / 1000, hostname);
 
-    if( rc != SQLITE_OK ){
+    if (rc != SQLITE_OK) {
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
-    } else {
-    //   fprintf(stdout, "Information inserted successfully\n");
+    }
+    else {
+        //   fprintf(stdout, "Information inserted successfully\n");
     }
 
     num_arrays++;
-//
+    //
 
 done:
     fflush(stdout);
