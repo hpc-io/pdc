@@ -11,7 +11,26 @@
 
 #define NUM_DIMS 1
 #define NUM_VARS 9
-static int NUM_PARTICLES = (1 * 1024 * 1024);
+
+/* 9 variables
+ * ------------------
+xx   | float  | 4 bytes
+yy   | float  | 4 bytes
+zz   | float  | 4 bytes
+vx   | float  | 4 bytes
+vy   | float  | 4 bytes
+vz   | float  | 4 bytes
+phi  | float  | 4 bytes
+pid  | int64  | 8 bytes
+mask | int16  | 2 bytes
+ * ------------------
+ */
+
+static char *         VAR_NAMES[NUM_VARS] = {"xx", "yy", "zz", "vx", "vy", "vz", "phi", "phd", "mask"};
+static pdc_var_type_t VAR_TYPES[NUM_VARS] = {PDC_FLOAT, PDC_FLOAT, PDC_FLOAT, PDC_FLOAT, PDC_FLOAT,
+                                             PDC_FLOAT, PDC_FLOAT, PDC_INT64, PDC_INT16};
+static int            NUM_PARTICLES       = (1 * 1024 * 1024);
+void *                buffers[NUM_VARS];
 
 MPI_Comm comm;
 
@@ -24,11 +43,26 @@ uniform_random_number()
 void
 print_usage()
 {
-    printf("Usage: srun -n ./vpicio #particles\n");
+    printf("Usage: srun -n #procs ./haccio #particles (in 10e6)\n");
+}
+
+void
+allocate_buffers()
+{
+    int i;
+    // xx, yy, zz, vx, vy, vz, phi
+    for (i = 0; i < 7; i++) {
+        buffers[i] = malloc(NUM_PARTICLES * sizeof(float));
+    }
+    // phd
+    buffers[7] = malloc(NUM_PARTICLES * sizeof(int64_t));
+    // mask
+    buffers[8] = malloc(NUM_PARTICLES * sizeof(int16_t));
 }
 
 pdcid_t
-create_pdc_object(pdcid_t pdc_id, pdcid_t cont_id, const char *obj_name, pdcid_t *obj_prop)
+create_pdc_object(pdcid_t pdc_id, pdcid_t cont_id, const char *obj_name, pdc_var_type_t type,
+                  pdcid_t *obj_prop)
 {
     // Create and set the object property
     *obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
@@ -36,7 +70,7 @@ create_pdc_object(pdcid_t pdc_id, pdcid_t cont_id, const char *obj_name, pdcid_t
     uint64_t dims[1];
     dims[0] = NUM_PARTICLES;
     PDCprop_set_obj_dims(*obj_prop, 1, dims);
-    PDCprop_set_obj_type(*obj_prop, PDC_FLOAT);
+    PDCprop_set_obj_type(*obj_prop, type);
     PDCprop_set_obj_time_step(*obj_prop, 0);
     PDCprop_set_obj_user_id(*obj_prop, getuid());
     PDCprop_set_obj_app_name(*obj_prop, "VPICIO");
@@ -69,8 +103,13 @@ main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
     MPI_Comm_dup(MPI_COMM_WORLD, &comm);
 
-    NUM_PARTICLES = atoi(argv[1]) * 1000000; // M as unit
-    printf("particles: %d\n", NUM_PARTICLES);
+    if (mpi_rank == 0) {
+        NUM_PARTICLES = atoi(argv[1]);
+        printf("particles: %d\n", NUM_PARTICLES);
+    }
+    MPI_Bcast(&NUM_PARTICLES, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    allocate_buffers();
 
     // create a pdc
     pdc_id = PDCinit("pdc");
@@ -81,22 +120,17 @@ main(int argc, char **argv)
     // create a container
     cont_id = PDCcont_create_col("c1", cont_prop);
 
-    float *  buffers[NUM_VARS];
     uint64_t offset = 0, offset_remote = mpi_rank * NUM_PARTICLES, mysize = NUM_PARTICLES;
 
     for (i = 0; i < NUM_VARS; i++) {
-        char obj_name[10];
-        sprintf(obj_name, "obj_%d", i);
         // Craete object
-        obj_ids[i] = create_pdc_object(pdc_id, cont_id, obj_name, &obj_props[i]);
+        obj_ids[i] = create_pdc_object(pdc_id, cont_id, VAR_NAMES[i], VAR_TYPES[i], &obj_props[i]);
 
         // Create region
         region_ids[i]        = PDCregion_create(NUM_DIMS, &offset, &mysize);
         region_remote_ids[i] = PDCregion_create(NUM_DIMS, &offset_remote, &mysize);
 
-        // Map local memory
-        buffers[i] = (float *)malloc(NUM_PARTICLES * sizeof(float));
-        PDCbuf_obj_map(buffers[i], PDC_FLOAT, region_ids[i], obj_ids[i], region_remote_ids[i]);
+        PDCbuf_obj_map(buffers[i], VAR_TYPES[i], region_ids[i], obj_ids[i], region_remote_ids[i]);
     }
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -113,11 +147,22 @@ main(int argc, char **argv)
         printf("accquire time: %.2fs\n", t2 - t1);
 
     // Actual I/O
+    float *  float_var; // xx, yy, zz, vx, vy ,vz, phi
+    int64_t *int64_var; // phd
+    int16_t *int16_var; // mask
     t1 = MPI_Wtime();
-    for (k = 0; k < NUM_VARS; k++) {
+    for (k = 0; k < 7; k++) {
+        float_var = (float *)buffers[k];
         for (i = 0; i < NUM_PARTICLES; i++)
-            buffers[k][i] = uniform_random_number() * 99;
+            float_var[i] = uniform_random_number() * 99;
     }
+    int64_var = (int64_t *)buffers[7];
+    for (i = 0; i < NUM_PARTICLES; i++)
+        int64_var[i] = uniform_random_number() * 99;
+    int16_var = (int16_t *)buffers[8];
+    for (i = 0; i < NUM_PARTICLES; i++)
+        int16_var[i] = uniform_random_number() * 99;
+
     MPI_Barrier(MPI_COMM_WORLD);
     t2 = MPI_Wtime();
     if (mpi_rank == 0)
