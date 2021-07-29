@@ -18,6 +18,24 @@ PDC also depends on libfabric and Mercury. We provide detailed instructions for 
 .. attention:: 
 	Make sure to record the environmental variables (lines that contains the "export" commands). They are needed for running PDC and to use the libraries again.
 
+
+++++++++++++++++++++++++++++++++++
+Installing PDC with Spack
+++++++++++++++++++++++++++++++++++
+
+Spack is a package manager for supercomputers, Linux, and macOS.
+Installing spack can be found at this url: https://spack.io
+
+.. code-block:: Bash
+	
+	$ git clone https://github.com/spack/spack.git
+	$ cd spack/bin
+	$ ./spack install pdc
+
+++++++++++++++++++++++++++++++++++
+Installing PDC from source
+++++++++++++++++++++++++++++++++++
+
 ---------------------------
 Dependencies
 ---------------------------
@@ -140,4 +158,9 @@ Run 64 client processes that concurrently create 1000 objects in total:
 .. code-block:: Bash
 
 	$ srun -N 4 -n 64 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 ./bin/create_obj_scale -r 1000
+
+
+
+
+
 
