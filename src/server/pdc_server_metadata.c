@@ -2725,15 +2725,14 @@ PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
     rados_omap_iter_t iter;
     char *k[1];
     char *v[1];
-    char *value;   
+    char *value;
     char name[100];
+    size_t value_lens;
     sprintf(name,"%llu_0", obj_id);
     const char *keys[] = {in->key};
-    size_t value_lens;
     const char  *vals[] = {value};
     size_t key_lens[] = {strlen(in->key)+1};
     size_t val_lens[] = {&value_lens};
-
 
     rados_read_op_t rd = rados_create_read_op();
     printf("4]Rados Read operation created : rd for object : %s \n",name);
@@ -2753,20 +2752,16 @@ PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
             printf("5]object : %s , K: %s  V: %d\n ",name,k[0], *((int*)(v[0])) );
                   }
     rados_omap_get_end(iter);
+    printf("Successfully Closed the iterator :iter\n");
     }
 
 	out->kvtag.name  = in->key;
         out->kvtag.size  = value_lens;
         out->kvtag.value = value;
         out->ret         = 1;
-
 #endif
 
 
-
-
-
-/*
 #ifdef ENABLE_MULTITHREAD
     // Obtain lock for hash table
     unlocked = 0;
@@ -2810,7 +2805,7 @@ PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
     unlocked = 1;
 #endif
 
-*/
+
 #ifdef ENABLE_TIMING
     // Timing
     gettimeofday(&pdc_timer_end, 0);

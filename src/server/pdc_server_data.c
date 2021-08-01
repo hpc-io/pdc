@@ -5192,7 +5192,7 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 	char* buf_ptr = (char*) buf;
 	retu = rados_read(io,name,buf_ptr,psize,0);
 	if(retu<0){printf("Error Reading in the Object name\n");}else{
-	printf("DAta is Read from first object \n");}
+	printf("DAta is Read from first object named : %s \n",name);}
 
 	buf_ptr += maxx_write_size;
         batch++;
@@ -5209,17 +5209,19 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 	printf("For object with batch no. %d\n",i);
 		sprintf(name, "%llu_%d", obj_id, i);
 		retu = rados_read(io,name,buf_ptr,maxx_write_size,0);
-		if(retu<0){printf("Error Reading in the object  name\n");
+		if(retu<0){printf("Error Reading in the object_batch%d\n",i);
 		}
 		buf_ptr += maxx_write_size;
 	        }
 	printf("Starting data in buf\n");
 	for(i=0;i<=10;i++){
         printf("%d\t",((int*)buf)[i]); }
-	printf("Ending data in buf\n");
 
+
+	printf("Ending data in buf\n");
 	for(i=262143990;i<262144000;i++){
 	printf("%d\t",((int*)buf)[i]); }
+
 #endif
 
 	 FUNC_ENTER(NULL);
