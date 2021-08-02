@@ -356,7 +356,9 @@ PDC_get_argv0_()
             fclose(shellcmd);
         }
         if (_argv0[0] != '/') {
-            getcwd(currentDir, sizeof(currentDir));
+            if (getcwd(currentDir, sizeof(currentDir)) == NULL) {
+                PGOTO_ERROR(NULL, "Very long path name detected.");
+            }
             next = PDC_find_in_path(currentDir, _argv0);
             if (next == NULL)
                 PGOTO_ERROR(NULL, "WARNING: Unable to locate application (%s) in user $PATH", _argv0);

@@ -60,7 +60,6 @@ main(int argc, char **argv)
 {
     int      rank = 0, size = 1;
     int      count = -1;
-    char     c;
     int      i;
     pdcid_t  pdc, cont_prop, cont, obj_prop;
     uint64_t dims[3]  = {100, 200, 700};

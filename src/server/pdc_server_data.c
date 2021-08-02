@@ -103,7 +103,7 @@ PDC_Server_set_lustre_stripe(const char *path, int stripe_count, int stripe_size
     size_t len;
     int    i, index;
     char   tmp[ADDR_MAX];
-    char   cmd[ADDR_MAX];
+    char   cmd[TAG_LEN_MAX];
 
     FUNC_ENTER(NULL);
 
@@ -131,7 +131,8 @@ PDC_Server_set_lustre_stripe(const char *path, int stripe_count, int stripe_size
             break;
         }
     }
-    snprintf(cmd, ADDR_MAX, "lfs setstripe -S %dM -c %d -i %d %s", stripe_size_MB, stripe_count, index, tmp);
+    snprintf(cmd, TAG_LEN_MAX, "lfs setstripe -S %dM -c %d -i %d %s", stripe_size_MB, stripe_count, index,
+             tmp);
 
     if (system(cmd) < 0) {
         printf("==PDC_SERVER: Fail to set Lustre stripe parameters [%s]\n", tmp);
@@ -280,8 +281,8 @@ PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out, hg_han
     region_buf_map_t *    eltt;
     int                   error      = 0;
     int                   found_lock = 0;
-    time_t                t;
-    struct tm             tm;
+    // time_t                t;
+    // struct tm             tm;
 
     FUNC_ENTER(NULL);
 
@@ -1819,6 +1820,7 @@ done:
  *
  * \return Non-negative on success/Negative on failure
  */
+/*
 static hg_return_t
 PDC_Server_notify_io_complete_cb(const struct hg_cb_info *callback_info)
 {
@@ -1829,7 +1831,7 @@ PDC_Server_notify_io_complete_cb(const struct hg_cb_info *callback_info)
     server_lookup_args_t *lookup_args = (server_lookup_args_t *)callback_info->arg;
     hg_handle_t           handle      = callback_info->info.forward.handle;
 
-    /* Get output from server*/
+    // Get output from server
     notify_io_complete_out_t output;
 
     ret_value = HG_Get_output(handle, &output);
@@ -1847,7 +1849,7 @@ done:
     HG_Free_output(handle, &output);
     FUNC_LEAVE(ret_value);
 }
-
+*/
 /*
  * Callback function for IO complete notification send to client
  *
@@ -3021,6 +3023,7 @@ PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
             goto done;
         }
         PDC_region_list_t_deep_cp(&(io_info->region), new_region);
+
         DL_APPEND(io_list_target->region_list_head, new_region);
         if (is_debug_g == 1) {
             DL_COUNT(io_list_target->region_list_head, region_elt, count);
@@ -3651,9 +3654,10 @@ PDC_Server_update_region_storage_meta_bulk_with_cb(bulk_xfer_data_t *          b
     hg_return_t hg_ret;
     perr_t      ret_value = SUCCEED;
 
-    uint32_t                                server_id = 0;
-    hg_handle_t                             rpc_handle;
-    hg_bulk_t                               bulk_handle;
+    uint32_t    server_id = 0;
+    hg_handle_t rpc_handle;
+    hg_bulk_t   bulk_handle;
+
     bulk_rpc_in_t                           bulk_rpc_in;
     update_region_storage_meta_bulk_args_t *cb_args;
 
@@ -4086,7 +4090,20 @@ done:
 /*
  * Read with POSIX within one file, based on the region list
  * after the server has accumulated requests from all node local clients
+
+
+
+
+
+
+
+
+
+
+
+
  *
+
 
  * \param  region_list_head[IN]       Region info of IO request
  *
@@ -4496,606 +4513,16 @@ PDC_Server_data_io_direct(pdc_access_t io_type, uint64_t obj_id, struct pdc_regi
     FUNC_LEAVE(ret_value);
 }
 
-#ifdef PDC_SERVER_CACHE
-int
-PDC_check_region_relation(uint64_t *offset, uint64_t *size, uint64_t *offset2, uint64_t *size2, int ndim)
+static perr_t
+PDC_Server_posix_write(uint64_t obj_id, void *buf, uint64_t write_size)
 {
-    int i;
-    int flag;
-    flag = 1;
-    for (i = 0; i < ndim; ++i) {
-        if (offset2[i] < offset[i] || offset2[i] + size2[i] > offset[i] + size[i]) {
-            flag = 0;
-        }
-    }
-    if (flag) {
-        return PDC_REGION_CONTAINED;
-    }
-    flag = 1;
-    for (i = 0; i < ndim; ++i) {
-        if (offset2[i] + size2[i] <= offset[i] || offset2[i] >= offset[i] + size[i]) {
-            flag = 0;
-        }
-    }
-    if (flag) {
-        return PDC_REGION_PARTIAL_OVERLAP;
-    }
-    else {
-        return PDC_REGION_NO_OVERLAP;
-    }
-    return 0;
-}
-
-/*
- * Copy cache data to target_buf.
- * This function assumes that the I/O request is within the cache region. We copy the cache buffer to user
- * buffer by computing region offsets.
- */
-int
-PDC_region_cache_copy(char *target_buf, const char *source_buf, const uint64_t *offset, const uint64_t *size,
-                      const uint64_t *offset2, const uint64_t *size2, int ndim, size_t unit)
-{
-    uint64_t  i, j;
-    uint64_t *local_offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
-    memcpy(local_offset, offset2, sizeof(uint64_t) * ndim);
-    /* Rescale I/O request to cache region offsets. */
-    for (i = 0; i < ndim; ++i) {
-        local_offset[i] -= offset[i];
-    }
-    if (ndim == 1) {
-        memcpy(target_buf, source_buf + local_offset[0] * unit, unit * size2[0]);
-    }
-    else if (ndim == 2) {
-        for (i = 0; i < size2[0]; ++i) {
-            memcpy(target_buf, source_buf + (local_offset[1] + (local_offset[0] + i) * size[1]) * unit,
-                   unit * size2[1]);
-            target_buf += size2[1] * unit;
-        }
-    }
-    else if (ndim == 3) {
-        for (i = 0; i < size2[0]; ++i) {
-            for (j = 0; j < size2[1]; ++j) {
-                memcpy(target_buf,
-                       source_buf + ((local_offset[0] + i) * size[1] * size[2] +
-                                     (local_offset[1] + j) * size[2] + local_offset[2]) *
-                                        unit,
-                       unit * size2[2]);
-                target_buf += size2[2] * unit;
-            }
-        }
-    }
-    free(local_offset);
-    return 0;
-}
-
-/*
- * This function cache metadata and data for a region write operation.
- * We store 1 object per element in the end of an array. Per object, there is a array of regions. The new
- * region is appended to the end of the region array after object searching by ID. This will result linear
- * search complexity for subregion search.
- */
-
-int
-PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size, const uint64_t *offset,
-                          const uint64_t *size, int ndim, size_t unit)
-{
-    hg_thread_mutex_lock(&pdc_obj_cache_list_mutex);
-
-    pdc_obj_cache *         temp;
-    struct pdc_region_info *temp2;
-    pdc_obj_cache *         obj_cache = NULL;
-    int                     i;
-    struct pdc_region_info *region_cache;
-
-    for (i = 0; i < obj_cache_list.obj_cache_size; ++i) {
-        if (obj_cache_list.pdc_obj_cache[i].obj_id == obj_id) {
-            obj_cache = obj_cache_list.pdc_obj_cache + i;
-        }
-    }
-
-    if (obj_cache == NULL) {
-        if (obj_cache_list.obj_cache_max_size == 0) {
-            obj_cache_list.obj_cache_max_size = 512;
-            obj_cache_list.pdc_obj_cache =
-                (pdc_obj_cache *)malloc(sizeof(pdc_obj_cache) * obj_cache_list.obj_cache_max_size);
-        }
-        else {
-            if (obj_cache_list.obj_cache_size == obj_cache_list.obj_cache_max_size) {
-                obj_cache_list.obj_cache_max_size *= 2;
-                temp = (pdc_obj_cache *)malloc(sizeof(pdc_obj_cache) * obj_cache_list.obj_cache_max_size);
-                memcpy(temp, obj_cache_list.pdc_obj_cache,
-                       sizeof(pdc_obj_cache) * obj_cache_list.obj_cache_size);
-                obj_cache_list.pdc_obj_cache = temp;
-            }
-        }
-        obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].region_obj_cache_max_size = 0;
-        obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].region_obj_cache_size     = 0;
-        obj_cache_list.pdc_obj_cache[obj_cache_list.obj_cache_size].obj_id                    = obj_id;
-        obj_cache = obj_cache_list.pdc_obj_cache + obj_cache_list.obj_cache_size;
-        obj_cache_list.obj_cache_size++;
-    }
-
-    if (obj_cache->region_obj_cache_max_size == 0) {
-        obj_cache->region_obj_cache_max_size = 512;
-        obj_cache->region_obj_cache_size     = 0;
-        obj_cache->region_cache = (struct pdc_region_info *)malloc(sizeof(struct pdc_region_info) *
-                                                                   obj_cache->region_obj_cache_max_size);
-    }
-    else {
-        if (obj_cache->region_obj_cache_max_size == obj_cache->region_obj_cache_size) {
-            obj_cache->region_obj_cache_max_size *= 2;
-            temp2 = (struct pdc_region_info *)malloc(sizeof(struct pdc_region_info) *
-                                                     obj_cache->region_obj_cache_max_size);
-            memcpy(temp2, obj_cache->region_cache,
-                   sizeof(struct pdc_region_info) * obj_cache->region_obj_cache_size);
-            obj_cache->region_cache = temp2;
-        }
-    }
-
-    /* printf("checkpoint region_obj_cache_size = %d\n", obj_cache->region_obj_cache_size); */
-    region_cache         = obj_cache->region_cache + obj_cache->region_obj_cache_size;
-    region_cache->ndim   = ndim;
-    region_cache->offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
-    region_cache->size   = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
-    region_cache->buf    = (char *)malloc(sizeof(char) * buf_size);
-    region_cache->unit   = unit;
-
-    memcpy(region_cache->offset, offset, sizeof(uint64_t) * ndim);
-    memcpy(region_cache->size, size, sizeof(uint64_t) * ndim);
-    memcpy(region_cache->buf, buf, sizeof(char) * buf_size);
-    printf("created cache region at offset %llu, size %llu, unit = %ld, ndim = %ld, obj_id = %llu\n",
-           offset[0], buf_size, unit, ndim, (long long unsigned)obj_cache->obj_id);
-
-    obj_cache->region_obj_cache_size++;
-
-    gettimeofday(&(obj_cache->timestamp), NULL);
-
-    hg_thread_mutex_unlock(&pdc_obj_cache_list_mutex);
-
-    return 0;
-}
-
-int
-PDC_region_cache_free()
-{
-    int i, j;
-    for (i = 0; i < obj_cache_list.obj_cache_size; ++i) {
-        for (j = 0; j < obj_cache_list.pdc_obj_cache[i].region_obj_cache_size; ++j) {
-
-            free(obj_cache_list.pdc_obj_cache[i].region_cache[j].offset);
-            free(obj_cache_list.pdc_obj_cache[i].region_cache[j].size);
-            free(obj_cache_list.pdc_obj_cache[i].region_cache[j].buf);
-        }
-        free(obj_cache_list.pdc_obj_cache[i].region_cache);
-    }
-    free(obj_cache_list.pdc_obj_cache);
-    return 0;
-}
-
-perr_t
-PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
-{
-    perr_t                ret_value   = SUCCEED;
-    uint64_t              write_bytes = -1;
-    data_server_region_t *region      = NULL;
-
-    FUNC_ENTER(NULL);
-
     // Write 1GB at a time
-    uint64_t write_size, max_write_size = 1073741824;
-    if (region_info->ndim >= 1)
-        write_size = unit * region_info->size[0];
-    if (region_info->ndim >= 2)
-        write_size *= region_info->size[1];
-    if (region_info->ndim >= 3)
-        write_size *= region_info->size[2];
-
-    region = PDC_Server_get_obj_region(obj_id);
-    if (region == NULL) {
-        printf("cannot locate file handle\n");
-        goto done;
-    }
-
-    if ((region->fd <= 0) && region->storage_location) {
-        region->fd = open(region->storage_location, O_RDWR, 0666);
-    }
-
-    region_list_t *storage_region = (region_list_t *)calloc(1, sizeof(region_list_t));
-    for (size_t i = 0; i < region_info->ndim; i++) {
-        storage_region->start[i] = region_info->offset[i];
-        storage_region->count[i] = region_info->size[i];
-    }
-    storage_region->ndim      = region_info->ndim;
-    storage_region->unit_size = unit;
-    storage_region->offset    = lseek(region->fd, 0, SEEK_END);
-    strcpy(storage_region->storage_location, region->storage_location);
-
-#ifdef ENABLE_TIMING
-    struct timeval pdc_timer_start, pdc_timer_end;
-    double         write_total_sec;
-    gettimeofday(&pdc_timer_start, 0);
-#endif
-
-    write_bytes = 0;
-    while (write_size > max_write_size) {
-        write_bytes += write(region->fd, buf, max_write_size);
-        buf += max_write_size;
-        write_size -= max_write_size;
-    }
-    write_bytes += write(region->fd, buf, write_size);
-
-    if (write_bytes == -1) {
-        printf("==PDC_SERVER[%d]: write %d failed\n", pdc_server_rank_g, region->fd);
-        goto done;
-    }
-
-#ifdef ENABLE_TIMING
-    gettimeofday(&pdc_timer_end, 0);
-    write_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-    printf("==PDC_SERVER[%d]: write region time: %.4f, %llu bytes\n", pdc_server_rank_g, write_total_sec,
-           write_bytes);
-    fflush(stdout);
-#endif
-
-    // Store storage information
-    storage_region->data_size = write_bytes;
-    DL_APPEND(region->region_storage_head, storage_region);
-
-    /* printf("==PDC_SERVER[%d]: write region %llu bytes\n", pdc_server_rank_g, storage_region->data_size); */
-done:
-    fflush(stdout);
-    FUNC_LEAVE(ret_value);
-}
-
-perr_t
-PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
-{
-    perr_t ret_value = SUCCEED;
+    //Ceph_write here
+    uint64_t write_bytes = 0, max_write_size = 1073741824;
+    perr_t   ret_value = SUCCEED;
+    ssize_t  ret;
 
     FUNC_ENTER(NULL);
-
-    // Write 1GB at a time
-
-    uint64_t write_size;
-    if (region_info->ndim >= 1)
-        write_size = unit * region_info->size[0];
-    if (region_info->ndim >= 2)
-        write_size *= region_info->size[1];
-    if (region_info->ndim >= 3)
-        write_size *= region_info->size[2];
-
-    PDC_region_cache_register(obj_id, buf, write_size, region_info->offset, region_info->size,
-                              region_info->ndim, unit);
-
-    // PDC_Server_data_write_out2(obj_id, region_info, buf, unit);
-
-done:
-    fflush(stdout);
-    FUNC_LEAVE(ret_value);
-}
-
-perr_t
-PDC_Server_data_read_from2(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
-{
-    perr_t                ret_value  = SUCCEED;
-    ssize_t               read_bytes = 0, total_read_bytes = 0, request_bytes = unit, my_read_bytes = 0;
-    data_server_region_t *region = NULL;
-    region_list_t *       elt;
-    int                   flag = 0;
-    uint64_t              i, j, pos, overlap_start[DIM_MAX] = {0}, overlap_count[DIM_MAX] = {0},
-                        overlap_start_local[DIM_MAX] = {0};
-
-    FUNC_ENTER(NULL);
-
-    region = PDC_Server_get_obj_region(obj_id);
-    if (region == NULL) {
-        printf("cannot locate file handle\n");
-        goto done;
-    }
-    // Was opened previously and closed.
-    // The location string is cached, so we utilize
-    // that to reopen the file.
-    if (region->fd <= 0) {
-        region->fd = open(region->storage_location, O_RDWR, 0666);
-    }
-
-    region_list_t request_region;
-    request_region.ndim = region_info->ndim;
-    for (i = 0; i < region_info->ndim; i++) {
-        request_region.start[i] = region_info->offset[i];
-        request_region.count[i] = region_info->size[i];
-        request_bytes *= region_info->size[i];
-    }
-
-#ifdef ENABLE_TIMING
-    struct timeval pdc_timer_start, pdc_timer_end;
-    double         read_total_sec;
-    gettimeofday(&pdc_timer_start, 0);
-#endif
-
-    region_list_t *storage_region = NULL;
-    DL_FOREACH(region->region_storage_head, elt)
-    {
-        flag = 0;
-
-        if (PDC_is_contiguous_region_overlap(elt, &request_region) == 1) {
-            storage_region = elt;
-            flag           = 1;
-
-            // Get the actual start and count of region in storage
-            if (PDC_get_overlap_start_count(region_info->ndim, request_region.start, request_region.count,
-                                            elt->start, elt->count, overlap_start,
-                                            overlap_count) != SUCCEED) {
-                printf("==PDC_SERVER[%d]: PDC_get_overlap_start_count FAILED!\n", pdc_server_rank_g);
-                ret_value = FAIL;
-                goto done;
-            }
-
-            // local (relative) region start
-            for (i = 0; i < region_info->ndim; i++)
-                overlap_start_local[i] = overlap_start[i] % elt->count[i];
-
-            if (region_info->ndim == 1) {
-                read_bytes =
-                    pread(region->fd, buf + (region_info->offset[0] - overlap_start_local[0]) * unit,
-                          overlap_count[0] * unit, storage_region->offset + overlap_start_local[0] * unit);
-                my_read_bytes = overlap_count[0] * unit;
-                /* printf("storage offset %llu, region offset %llu, read %d bytes\n", storage_region->offset,
-                 * overlap_count[0]*unit, read_bytes); */
-            }
-            else if (region_info->ndim == 2) {
-                void *tmp_buf = malloc(storage_region->data_size);
-                // Read entire region
-                read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
-                // Extract requested data
-                pos = ((overlap_start[0] - region_info->offset[0]) * storage_region->count[1] +
-                       overlap_start[1] - region_info->offset[1]) *
-                      unit;
-                for (i = overlap_start_local[0]; i < overlap_start_local[0] + overlap_count[0]; i++) {
-                    memcpy(buf + pos,
-                           tmp_buf + i * storage_region->count[1] * unit + overlap_start_local[1] * unit,
-                           overlap_count[1] * unit);
-                    pos += region_info->size[1] * unit;
-                    my_read_bytes += overlap_count[1] * unit;
-                }
-                free(tmp_buf);
-            }
-            else if (region_info->ndim == 3) {
-                void *tmp_buf = malloc(storage_region->data_size);
-                // Read entire region
-                read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
-                // Extract requested data
-                pos = ((overlap_start[0] - region_info->offset[0]) * storage_region->count[1] *
-                           storage_region->count[2] +
-                       (overlap_start[1] - region_info->offset[1]) * storage_region->count[2] +
-                       (overlap_start[2] - region_info->offset[2])) *
-                      unit;
-
-                for (i = overlap_start_local[0]; i < overlap_start_local[0] + overlap_count[0]; i++) {
-                    for (j = overlap_start_local[1]; j < overlap_start_local[1] + overlap_count[1]; j++) {
-                        /* printf("i=%llu, j=%llu, pos=%llu, pos2=%llu, size=%llu, total size=%llu\n", i, j,
-                         * pos, */
-                        /*         i*storage_region->count[2]*storage_region->count[1]*unit
-                         * +j*storage_region->count[2]*unit+region_info->offset[2], */
-                        /*         region_info->size[2]*unit, storage_region->data_size); */
-                        memcpy(buf + pos,
-                               tmp_buf + i * storage_region->count[2] * storage_region->count[1] * unit +
-                                   j * storage_region->count[2] * unit + overlap_start_local[2] * unit,
-                               overlap_count[2] * unit);
-                        pos += region_info->size[2] * unit;
-                        my_read_bytes += overlap_count[2] * unit;
-                    }
-                }
-                free(tmp_buf);
-            }
-
-            if (read_bytes == -1) {
-                char errmsg[256];
-                // printf("==PDC_SERVER[%d]: pread %d failed (%d)\n", pdc_server_rank_g, region->fd,
-                // strerror_r(errno, errmsg, sizeof(errmsg)));
-                goto done;
-            }
-            total_read_bytes += my_read_bytes;
-
-        } // End is overlap
-
-        if (total_read_bytes >= request_bytes)
-            break;
-    } // End DL_FOREACH storage region list
-
-    if (total_read_bytes < request_bytes) {
-        printf("==PDC_SERVER[%d]: read less bytes than expected %llu / %llu\n", pdc_server_rank_g,
-               total_read_bytes, request_bytes);
-        ret_value = -1;
-    }
-#ifdef ENABLE_TIMING
-    gettimeofday(&pdc_timer_end, 0);
-    read_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-    printf("==PDC_SERVER[%d]: read region time: %.4f, %llu bytes\n", pdc_server_rank_g, read_total_sec,
-           read_bytes);
-    fflush(stdout);
-#endif
-
-done:
-    fflush(stdout);
-    FUNC_LEAVE(ret_value);
-}
-
-int
-PDC_region_cache_flush(uint64_t obj_id)
-{
-    pdc_obj_cache *         obj_cache = NULL;
-    int                     i;
-    struct pdc_region_info *region_cache;
-
-    for (i = 0; i < obj_cache_list.obj_cache_size; ++i) {
-        if (obj_cache_list.pdc_obj_cache[i].obj_id == obj_id) {
-            obj_cache = obj_cache_list.pdc_obj_cache + i;
-        }
-    }
-
-    for (i = 0; i < obj_cache->region_obj_cache_size; ++i) {
-        region_cache = obj_cache->region_cache + i;
-        PDC_Server_data_write_out2(obj_id, region_cache, region_cache->buf, region_cache->unit);
-        free(region_cache->offset);
-        free(region_cache->size);
-        free(region_cache->buf);
-    }
-    obj_cache->region_obj_cache_size = 0;
-    gettimeofday(&(obj_cache->timestamp), NULL);
-
-    return 0;
-}
-
-int
-PDC_region_cache_flush_all()
-{
-    hg_thread_mutex_lock(&pdc_obj_cache_list_mutex);
-    int i;
-    for (i = 0; i < obj_cache_list.obj_cache_size; ++i) {
-        PDC_region_cache_flush(obj_cache_list.pdc_obj_cache[i].obj_id);
-    }
-    hg_thread_mutex_unlock(&pdc_obj_cache_list_mutex);
-    return 0;
-}
-
-void *
-PDC_region_cache_clock_cycle(void *ptr)
-{
-    pdc_obj_cache *obj_cache;
-    int            i;
-    struct timeval current_time;
-    while (1) {
-        pthread_mutex_lock(&pdc_cache_mutex);
-        if (!pdc_recycle_close_flag) {
-            hg_thread_mutex_lock(&pdc_obj_cache_list_mutex);
-            for (i = 0; i < obj_cache_list.obj_cache_size; ++i) {
-                obj_cache = obj_cache_list.pdc_obj_cache + i;
-                if (current_time.tv_sec - obj_cache->timestamp.tv_sec > 10) {
-                    PDC_region_cache_flush(obj_cache->obj_id);
-                }
-            }
-            hg_thread_mutex_unlock(&pdc_obj_cache_list_mutex);
-        }
-        else {
-            pthread_mutex_unlock(&pdc_cache_mutex);
-            break;
-        }
-        pthread_mutex_unlock(&pdc_cache_mutex);
-        sleep(0.75);
-    }
-}
-
-perr_t
-PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
-{
-    perr_t ret_value = SUCCEED;
-    FUNC_ENTER(NULL);
-    // PDC_Server_data_read_from2(obj_id, region_info, buf, unit);
-
-    PDC_region_fetch(obj_id, region_info, buf, unit);
-done:
-    fflush(stdout);
-    FUNC_LEAVE(ret_value);
-}
-
-int
-PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
-{
-    hg_thread_mutex_lock(&pdc_obj_cache_list_mutex);
-    pdc_obj_cache *         obj_cache = NULL;
-    int                     i, flag = 1;
-    size_t                  j;
-    struct pdc_region_info *region_cache = NULL;
-
-    for (i = 0; i < obj_cache_list.obj_cache_size; ++i) {
-        if (obj_cache_list.pdc_obj_cache[i].obj_id == obj_id) {
-            obj_cache = obj_cache_list.pdc_obj_cache + i;
-        }
-    }
-    if (obj_cache != NULL) {
-        printf("region fetch for obj id %llu\n", obj_cache->obj_id);
-        for (i = 0; i < obj_cache->region_obj_cache_size; ++i) {
-            flag         = 1;
-            region_cache = obj_cache->region_cache + i;
-            for (j = 0; j < region_info->ndim; ++j) {
-                if (region_info->offset[j] < region_cache->offset[j] ||
-                    region_info->offset[j] + region_info->size[j] >
-                        region_cache->offset[j] + region_cache->size[j]) {
-                    flag = 0;
-                }
-            }
-            if (flag) {
-                break;
-            }
-            else {
-                region_cache = NULL;
-            }
-        }
-        if (region_cache != NULL && unit == region_cache->unit) {
-            PDC_region_cache_copy(buf, region_cache->buf, region_cache->offset, region_cache->size,
-                                  region_info->offset, region_info->size, region_cache->ndim, unit);
-        }
-        else {
-            region_cache = NULL;
-        }
-    }
-    if (region_cache == NULL) {
-        PDC_region_cache_flush(obj_id);
-        PDC_Server_data_read_from2(obj_id, region_info, buf, unit);
-    }
-    hg_thread_mutex_unlock(&pdc_obj_cache_list_mutex);
-    return 0;
-}
-
-#else
-
-perr_t
-PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
-{
-    //Ceph Write function here
-
-    perr_t ret_value = SUCCEED;
-    uint64_t write_bytes = -1;
-    data_server_region_t *region = NULL;
-
-    FUNC_ENTER(NULL);
-
-    // Write 1GB at a time
-    uint64_t write_size, max_write_size = 1073741824;
-    if (region_info->ndim >= 1)
-        write_size = unit * region_info->size[0];
-    if (region_info->ndim >= 2)
-        write_size *= region_info->size[1];
-    if (region_info->ndim >= 3)
-        write_size *= region_info->size[2];
-
-    region = PDC_Server_get_obj_region(obj_id);
-    if (region == NULL) {
-        printf("cannot locate file handle\n");
-        goto done;
-    }
-
-    if ((region->fd <= 0) && region->storage_location) {
-        region->fd = open(region->storage_location, O_RDWR, 0666);
-    }
-
-    region_list_t *storage_region = (region_list_t *)calloc(1, sizeof(region_list_t));
-    for (size_t i = 0; i < region_info->ndim; i++) {
-        storage_region->start[i] = region_info->offset[i];
-        storage_region->count[i] = region_info->size[i];
-    }
-    storage_region->ndim = region_info->ndim;
-    storage_region->unit_size = unit;
-    storage_region->offset = lseek(region->fd, 0, SEEK_END);
-    strcpy(storage_region->storage_location, region->storage_location);
-
-#ifdef ENABLE_TIMING
-    struct timeval pdc_timer_start, pdc_timer_end;
-    double write_total_sec;
-    gettimeofday(&pdc_timer_start, 0);
-#endif
-
 
 #ifdef ENABLE_RADOS
 	int retu;
@@ -5132,8 +4559,1152 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 	printf("Extended Attribute set for %llu_batch :with batch no.  %d \n",obj_id,batch);}
 
 #endif
+/*
+
+    while (write_size > max_write_size) {
+        ret = write(fd, buf, max_write_size);
+        if (ret < 0 || ret != (ssize_t)max_write_size) {
+            printf("==PDC_SERVER[%d]: write %d failed\n", pdc_server_rank_g, fd);
+            ret_value = FAIL;
+            goto done;
+        }
+        write_bytes += ret;
+        buf += max_write_size;
+        write_size -= max_write_size;
+    }
+    ret = write(fd, buf, write_size);
+    if (ret < 0 || ret != (ssize_t)write_size) {
+        printf("==PDC_SERVER[%d]: write %d failed\n", pdc_server_rank_g, fd);
+        ret_value = FAIL;
+        goto done;
+    }
+    write_bytes += ret;
+
+    if (write_bytes != write_size) {
+        printf("==PDC_SERVER[%d]: write %d failed, not all data written %lu/%lu\n", pdc_server_rank_g, fd,
+               write_bytes, write_size);
+        ret_value = FAIL;
+    }
+*/
+done:
+    FUNC_LEAVE(ret_value);
+}
+#ifdef PDC_SERVER_CACHE
 
 /*
+ * Check if the first region is contained inside the second region or the second region is contained inside
+ * the first region or they have overlapping relation.
+ */
+int
+PDC_check_region_relation(uint64_t *offset, uint64_t *size, uint64_t *offset2, uint64_t *size2, int ndim)
+{
+    int i;
+    int flag;
+    flag = 1;
+    for (i = 0; i < ndim; ++i) {
+        if (offset2[i] > offset[i] || offset2[i] + size2[i] < offset[i] + size[i]) {
+            flag = 0;
+        }
+    }
+    if (flag) {
+        return PDC_REGION_CONTAINED;
+    }
+    for (i = 0; i < ndim; ++i) {
+        if (offset[i] > offset2[i] || offset[i] + size[i] < offset2[i] + size2[i]) {
+            flag = 0;
+        }
+    }
+    if (flag) {
+        return PDC_REGION_CONTAINED_BY;
+    }
+    flag = 1;
+    for (i = 0; i < ndim; ++i) {
+        if (offset2[i] + size2[i] <= offset[i] || offset2[i] >= offset[i] + size[i]) {
+            flag = 0;
+        }
+    }
+    if (flag) {
+        return PDC_REGION_PARTIAL_OVERLAP;
+    }
+    else {
+        return PDC_REGION_NO_OVERLAP;
+    }
+    return 0;
+}
+
+/*
+ * This function assumes two regions have overlaping relations. We create a new region for the overlaping
+ * part.
+ */
+int
+extract_overlaping_region(const uint64_t *offset, const uint64_t *size, const uint64_t *offset2,
+                          const uint64_t *size2, int ndim, uint64_t **offset_merged, uint64_t **size_merged)
+{
+    int i;
+    *offset_merged = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
+    *size_merged   = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
+    for (i = 0; i < ndim; ++i) {
+        if (offset2[i] > offset[i]) {
+            offset_merged[0][i] = offset2[i];
+            size_merged[0][i]   = offset[i] + size[i] - offset2[i];
+        }
+        else {
+            offset_merged[0][i] = offset[i];
+            size_merged[0][i]   = offset2[i] + size2[i] - offset[i];
+        }
+    }
+    return 0;
+}
+
+/*
+ * A function used by PDC_region_merge.
+ * This function copies contiguous memory buffer from buf and buf2 to buf_merged using region views.
+ */
+static int
+pdc_region_merge_buf_copy(const uint64_t *offset, const uint64_t *size, const uint64_t *offset2,
+                          const uint64_t *size2, const char *buf, const char *buf2, char **buf_merged,
+                          int unit, int connect_flag)
+{
+    uint64_t overlaps;
+    int      i;
+    for (i = 0; i < connect_flag; ++i) {
+        unit *= size[i];
+    }
+
+    if (offset[connect_flag] < offset2[connect_flag]) {
+        if (offset[connect_flag] + size[connect_flag] > offset2[connect_flag] + size2[connect_flag]) {
+            memcpy(*buf_merged, buf, unit * (offset2[connect_flag] - offset[connect_flag]));
+            *buf_merged += unit * (offset2[connect_flag] - offset[connect_flag]);
+            memcpy(*buf_merged, buf2, unit * size2[connect_flag]);
+            *buf_merged += unit * size2[connect_flag];
+            memcpy(*buf_merged, buf2,
+                   unit * (offset[connect_flag] + size[connect_flag] -
+                           (offset2[connect_flag] + size2[connect_flag])));
+            *buf_merged += unit * (offset[connect_flag] + size[connect_flag] -
+                                   (offset2[connect_flag] + size2[connect_flag]));
+        }
+        else {
+            memcpy(*buf_merged, buf, unit * (offset2[connect_flag] - offset[connect_flag]));
+            *buf_merged += unit * (offset2[connect_flag] - offset[connect_flag]);
+            memcpy(*buf_merged, buf2, unit * size2[connect_flag]);
+            *buf_merged += unit * size2[connect_flag];
+        }
+    }
+    else {
+        if (offset[connect_flag] + size[connect_flag] > offset2[connect_flag] + size2[connect_flag]) {
+            memcpy(*buf_merged, buf2, unit * size2[connect_flag]);
+            *buf_merged += unit * size2[connect_flag];
+            overlaps = offset2[connect_flag] + size2[connect_flag] - offset[connect_flag];
+            memcpy(*buf_merged, buf + overlaps * unit, unit * (size[connect_flag] - overlaps));
+            *buf_merged += unit * (size[connect_flag] - overlaps);
+        }
+        else {
+            memcpy(*buf_merged, buf2, unit * size2[connect_flag]);
+            *buf_merged += unit * size2[connect_flag];
+        }
+    }
+    return 0;
+}
+/*
+ * This function merges two regions. The two regions must have the same offset/size in all dimensions but one.
+ * The dimension that is not the same must not have gaps between the two regions.
+ */
+int
+PDC_region_merge(const char *buf, const char *buf2, const uint64_t *offset, const uint64_t *size,
+                 const uint64_t *offset2, const uint64_t *size2, char **buf_merged_ptr,
+                 uint64_t **offset_merged, uint64_t **size_merged, int ndim, int unit)
+{
+    int      connect_flag, i, j;
+    uint64_t tmp_buf_size;
+    char *   buf_merged;
+    connect_flag = -1;
+    // Detect if two regions are connected. This means one dimension is fully connected and all other
+    // dimensions are identical.
+    for (i = 0; i < ndim; ++i) {
+        // A dimension is detached, immediately return with failure
+        if (offset[i] > offset2[i] + size2[i] || offset2[i] > offset[i] + size[i]) {
+            return PDC_MERGE_FAILED;
+        }
+        // If we pass the previous condition, this dimension is connected between these two regions.
+        if (offset[i] != offset2[i] || size[i] != size2[i]) {
+            // Passing the above condition means this dimension can the connecting but not fully cotained
+            // relation.
+            if (connect_flag == -1) {
+                // Set connect_flag to be the current dimension (non longer -1)
+                connect_flag = i;
+            }
+            else {
+                // We have seen such a dimension before, immediately return with failure.
+                return PDC_MERGE_FAILED;
+            }
+        }
+    }
+    // If connect_flag is not set, we set it to the last dimension by default.
+    if (connect_flag == -1) {
+        connect_flag = ndim - 1;
+    }
+    // If we reach here, then the two regions can be merged into one.
+    *offset_merged = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
+    *size_merged   = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
+    for (i = 0; i < ndim; ++i) {
+        if (i != connect_flag) {
+            offset_merged[0][i] = offset[i];
+            size_merged[0][i]   = size[i];
+        }
+    }
+
+    // Workout the final offset of the region in the connecting dimension
+    if (offset[connect_flag] > offset2[connect_flag]) {
+        offset_merged[0][connect_flag] = offset2[connect_flag];
+    }
+    else {
+        offset_merged[0][connect_flag] = offset[connect_flag];
+    }
+    // Workout the final length of the region in the connecting dimension
+    if (offset[connect_flag] + size[connect_flag] > offset2[connect_flag] + size2[connect_flag]) {
+        size_merged[0][connect_flag] =
+            offset[connect_flag] + size[connect_flag] - offset_merged[0][connect_flag];
+    }
+    else {
+        size_merged[0][connect_flag] =
+            offset2[connect_flag] + size2[connect_flag] - offset_merged[0][connect_flag];
+    }
+    // Start merging memory buffers. The second region will overwrite the first region data if there are
+    // overlaps. This implementation will split three different dimensions in multiple branches. It would be
+    // more elegant to write the code in terms of recursion, but I do not want to introduce unnecessary bugs
+    // as we are only dealing with a few cases here.
+    tmp_buf_size = size_merged[0][0];
+    for (i = 1; i < ndim; ++i) {
+        tmp_buf_size *= size_merged[0][i];
+    }
+    buf_merged      = (char *)malloc(sizeof(char) * tmp_buf_size);
+    *buf_merged_ptr = buf_merged;
+    if (ndim == 1) {
+        pdc_region_merge_buf_copy(offset, size, offset2, size2, buf, buf2, &buf_merged, unit, connect_flag);
+    }
+    else if (ndim == 2) {
+        if (connect_flag == 0) {
+            // Note size[1] must equal to size2[1] after the previous checking.
+            for (i = 0; i < (int)size[1]; ++i) {
+                pdc_region_merge_buf_copy(offset, size, offset2, size2, buf, buf2, &buf_merged, unit,
+                                          connect_flag);
+            }
+        }
+        else {
+            pdc_region_merge_buf_copy(offset, size, offset2, size2, buf, buf2, &buf_merged, unit,
+                                      connect_flag);
+        }
+    }
+    else if (ndim == 3) {
+        if (connect_flag == 0) {
+            // Note size[1] must equal to size2[1] after the previous checking, similarly for size[2] and
+            // size2[2]
+            for (i = 0; i < (int)size[2]; ++i) {
+                for (j = 0; j < (int)size[1]; ++j) {
+                    pdc_region_merge_buf_copy(offset, size, offset2, size2, buf, buf2, &buf_merged, unit,
+                                              connect_flag);
+                }
+            }
+        }
+        else if (connect_flag == 1) {
+            // Note size[2] must equal to size2[2] after the previous checking.
+            for (i = 0; i < (int)size[2]; ++i) {
+                pdc_region_merge_buf_copy(offset, size, offset2, size2, buf, buf2, &buf_merged, unit,
+                                          connect_flag);
+            }
+        }
+        else if (connect_flag == 2) {
+            pdc_region_merge_buf_copy(offset, size, offset2, size2, buf, buf2, &buf_merged, unit,
+                                      connect_flag);
+        }
+    }
+    return PDC_MERGE_SUCCESS;
+}
+
+/*
+ * Copy data from one buffer to another defined by region views.
+ * offset/length is the region associated with the buf. offset2/length2 is the region associated with the
+ * buf2. The region defined by offset/length has to contain the region defined by offset2/length2. direction
+ * defines whether copy to the cache region or copy from the cache region, 0 means from source buffer to
+ * target buffer. 1 means the other way round.
+ */
+int
+PDC_region_cache_copy(char *buf, char *buf2, const uint64_t *offset, const uint64_t *size,
+                      const uint64_t *offset2, const uint64_t *size2, int ndim, size_t unit, int direction)
+{
+    char *    src, *dst;
+    uint64_t  i, j;
+    uint64_t *local_offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
+    memcpy(local_offset, offset2, sizeof(uint64_t) * ndim);
+    /* Rescale I/O request to cache region offsets. */
+    for (i = 0; i < (uint64_t)ndim; ++i) {
+        local_offset[i] -= offset[i];
+    }
+    if (ndim == 1) {
+        if (direction) {
+            src = buf2;
+            dst = buf + local_offset[0] * unit;
+        }
+        else {
+            dst = buf2;
+            src = buf + local_offset[0] * unit;
+        }
+
+        memcpy(dst, src, unit * size2[0]);
+    }
+    else if (ndim == 2) {
+        for (i = 0; i < size2[0]; ++i) {
+            if (direction) {
+                src = buf2;
+                dst = buf + (local_offset[1] + (local_offset[0] + i) * size[1]) * unit;
+            }
+            else {
+                dst = buf2;
+                src = buf + (local_offset[1] + (local_offset[0] + i) * size[1]) * unit;
+            }
+            memcpy(dst, src, unit * size2[1]);
+            buf2 += size2[1] * unit;
+        }
+    }
+    else if (ndim == 3) {
+        for (i = 0; i < size2[0]; ++i) {
+            for (j = 0; j < size2[1]; ++j) {
+                if (direction) {
+                    src = buf2;
+                    dst = buf + ((local_offset[0] + i) * size[1] * size[2] + (local_offset[1] + j) * size[2] +
+                                 local_offset[2]) *
+                                    unit;
+                }
+                else {
+                    dst = buf2;
+                    src = buf + ((local_offset[0] + i) * size[1] * size[2] + (local_offset[1] + j) * size[2] +
+                                 local_offset[2]) *
+                                    unit;
+                }
+                memcpy(dst, src, unit * size2[2]);
+                buf2 += size2[2] * unit;
+            }
+        }
+    }
+    free(local_offset);
+    return 0;
+}
+
+/*
+ * This function cache metadata and data for a region write operation.
+ * We store 1 object per element in the end of an array. Per object, there is a array of regions. The new
+ * region is appended to the end of the region array after object searching by ID. This will result linear
+ * search complexity for subregion search.
+ */
+
+int
+PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size, const uint64_t *offset,
+                          const uint64_t *size, int ndim, size_t unit)
+{
+    hg_thread_mutex_lock(&pdc_obj_cache_list_mutex);
+
+    pdc_obj_cache *         obj_cache_iter, *obj_cache = NULL;
+    struct pdc_region_info *region_cache_info;
+    obj_cache_iter = obj_cache_list;
+    while (obj_cache_iter != NULL) {
+        if (obj_cache_iter->obj_id == obj_id) {
+            obj_cache = obj_cache_iter;
+            break;
+        }
+        obj_cache_iter = obj_cache_iter->next;
+    }
+
+    if (obj_cache == NULL) {
+        if (obj_cache_list != NULL) {
+            obj_cache_list_end->next = (pdc_obj_cache *)malloc(sizeof(pdc_obj_cache));
+            obj_cache_list_end       = obj_cache_list_end->next;
+            obj_cache_list_end->next = NULL;
+
+            obj_cache_list_end->obj_id           = obj_id;
+            obj_cache_list_end->region_cache     = NULL;
+            obj_cache_list_end->region_cache_end = NULL;
+        }
+        else {
+            obj_cache_list     = (pdc_obj_cache *)malloc(sizeof(pdc_obj_cache));
+            obj_cache_list_end = obj_cache_list;
+
+            obj_cache_list_end->obj_id           = obj_id;
+            obj_cache_list_end->region_cache     = NULL;
+            obj_cache_list_end->region_cache_end = NULL;
+            obj_cache_list_end->next             = NULL;
+        }
+        obj_cache = obj_cache_list_end;
+    }
+
+    if (obj_cache->region_cache == NULL) {
+        obj_cache->region_cache           = (pdc_region_cache *)malloc(sizeof(pdc_region_cache));
+        obj_cache->region_cache_end       = obj_cache->region_cache;
+        obj_cache->region_cache_end->next = NULL;
+    }
+    else {
+        obj_cache->region_cache_end->next = (pdc_region_cache *)malloc(sizeof(pdc_region_cache));
+        obj_cache->region_cache_end       = obj_cache->region_cache_end->next;
+        obj_cache->region_cache_end->next = NULL;
+    }
+
+    /* printf("checkpoint region_obj_cache_size = %d\n", obj_cache->region_obj_cache_size); */
+    obj_cache->region_cache_end->region_cache_info =
+        (struct pdc_region_info *)malloc(sizeof(struct pdc_region_info));
+    region_cache_info         = obj_cache->region_cache_end->region_cache_info;
+    region_cache_info->ndim   = ndim;
+    region_cache_info->offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
+    region_cache_info->size   = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
+    region_cache_info->buf    = (char *)malloc(sizeof(char) * buf_size);
+    region_cache_info->unit   = unit;
+
+    memcpy(region_cache_info->offset, offset, sizeof(uint64_t) * ndim);
+    memcpy(region_cache_info->size, size, sizeof(uint64_t) * ndim);
+    memcpy(region_cache_info->buf, buf, sizeof(char) * buf_size);
+    // printf("created cache region at offset %llu, buf size %llu, unit = %ld, ndim = %ld, obj_id = %llu\n",
+    //       offset[0], buf_size, unit, ndim, (long long unsigned)obj_cache->obj_id);
+
+    gettimeofday(&(obj_cache->timestamp), NULL);
+
+    hg_thread_mutex_unlock(&pdc_obj_cache_list_mutex);
+
+    return 0;
+}
+
+int
+PDC_region_cache_free()
+{
+    pdc_obj_cache *   obj_cache_iter, *obj_temp;
+    pdc_region_cache *region_cache_iter, *region_temp;
+    obj_cache_iter = obj_cache_list;
+    while (obj_cache_iter != NULL) {
+        region_cache_iter = obj_cache_iter->region_cache;
+        while (region_cache_iter != NULL) {
+            free(region_cache_iter->region_cache_info);
+            region_temp       = region_cache_iter;
+            region_cache_iter = region_cache_iter->next;
+            free(region_temp);
+        }
+        obj_temp       = obj_cache_iter;
+        obj_cache_iter = obj_cache_iter->next;
+        free(obj_temp);
+    }
+    return 0;
+}
+
+perr_t
+PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
+{
+    perr_t                ret_value      = SUCCEED;
+    data_server_region_t *region         = NULL;
+    region_list_t *       overlap_region = NULL;
+    int                   is_overlap     = 0;
+    uint64_t              i, j, pos, overlap_start[DIM_MAX] = {0}, overlap_count[DIM_MAX] = {0},
+                        overlap_start_local[DIM_MAX] = {0};
+
+    FUNC_ENTER(NULL);
+
+    uint64_t write_size;
+    if (region_info->ndim >= 1)
+        write_size = unit * region_info->size[0];
+    if (region_info->ndim >= 2)
+        write_size *= region_info->size[1];
+
+    if (region_info->ndim >= 3)
+        write_size *= region_info->size[2];
+
+    region = PDC_Server_get_obj_region(obj_id);
+    if (region == NULL) {
+        printf("cannot locate file handle\n");
+        goto done;
+    }
+
+    if ((region->fd <= 0) && region->storage_location) {
+        region->fd = open(region->storage_location, O_RDWR, 0666);
+    }
+
+    region_list_t *request_region = (region_list_t *)calloc(1, sizeof(region_list_t));
+    for (i = 0; i < region_info->ndim; i++) {
+        request_region->start[i] = region_info->offset[i];
+        request_region->count[i] = region_info->size[i];
+    }
+    request_region->ndim      = region_info->ndim;
+    request_region->unit_size = unit;
+    strcpy(request_region->storage_location, region->storage_location);
+
+#ifdef ENABLE_TIMING
+    struct timeval pdc_timer_start, pdc_timer_end;
+    double         write_total_sec;
+    gettimeofday(&pdc_timer_start, 0);
+#endif
+
+    // Detect overwrite
+    region_list_t *elt;
+    DL_FOREACH(region->region_storage_head, elt)
+    {
+        if (PDC_is_contiguous_region_overlap(elt, request_region) == 1) {
+            is_overlap++;
+            overlap_region = elt;
+
+            // Get the actual start and count of region in storage
+            if (PDC_get_overlap_start_count(region_info->ndim, request_region->start, request_region->count,
+                                            overlap_region->start, overlap_region->count, overlap_start,
+                                            overlap_count) != SUCCEED) {
+                printf("==PDC_SERVER[%d]: PDC_get_overlap_start_count FAILED!\n", pdc_server_rank_g);
+                ret_value = FAIL;
+                goto done;
+            }
+
+            // local (relative) region start
+            for (i = 0; i < region_info->ndim; i++)
+                overlap_start_local[i] = overlap_start[i] % overlap_region->count[i];
+
+            if (region_info->ndim == 1) {
+                // 1D can overwrite data in region directly
+                pos = (overlap_start[0] - region_info->offset[0]) * unit;
+                if (pos > write_size) {
+                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
+                           pos, write_size);
+                    ret_value = -1;
+                    goto done;
+                }
+
+                lseek(region->fd, overlap_region->offset + overlap_start_local[0] * unit, SEEK_SET);
+                ret_value = PDC_Server_posix_write(region->fd, buf + pos, write_size);
+                if (ret_value != SUCCEED) {
+                    printf("==PDC_SERVER[%d]: PDC_Server_posix_write FAILED!\n", pdc_server_rank_g);
+                    ret_value = FAIL;
+                    goto done;
+                }
+                // No need to update metadata
+            }
+            else if (region_info->ndim == 2) {
+                // 2D/3D: generally it's a good idea to read entire region, overwrite overlap part,
+                // and write back to avoid fragmented writes.
+                void *tmp_buf = malloc(overlap_region->data_size);
+
+                if (pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
+                    (ssize_t)overlap_region->data_size) {
+                    printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
+                }
+
+                // Overlap start position
+                pos = ((overlap_start[0] - region_info->offset[0]) * overlap_region->count[1] +
+                       overlap_start[1] - region_info->offset[1]) *
+                      unit;
+                if (pos > overlap_region->data_size) {
+                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
+                           pos, overlap_region->data_size);
+                    ret_value = -1;
+                    goto done;
+                }
+
+                for (i = overlap_start_local[0]; i < overlap_start_local[0] + overlap_count[0]; i++) {
+                    memcpy(tmp_buf + i * overlap_region->count[1] * unit + overlap_start_local[1] * unit,
+                           buf + pos, overlap_count[1] * unit);
+                    pos += region_info->size[1] * unit;
+                    if (pos > overlap_region->data_size) {
+                        printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n",
+                               pdc_server_rank_g, pos, overlap_region->data_size);
+                        ret_value = -1;
+                        goto done;
+                    }
+                }
+                if (pwrite(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
+                    (ssize_t)overlap_region->data_size) {
+                    printf("==PDC_SERVER[%d]: Failed to write enough bytes\n", pdc_server_rank_g);
+                }
+                free(tmp_buf);
+                // No need to update metadata
+            } // End 2D
+            else if (region_info->ndim == 3) {
+                void *tmp_buf = malloc(overlap_region->data_size);
+                // Read entire region
+                if (pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
+                    (ssize_t)overlap_region->data_size) {
+                    printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
+                }
+
+                pos = ((overlap_start[0] - region_info->offset[0]) * overlap_region->count[1] *
+                           overlap_region->count[2] +
+                       (overlap_start[1] - region_info->offset[1]) * overlap_region->count[2] +
+                       (overlap_start[2] - region_info->offset[2])) *
+                      unit;
+                if (pos > overlap_region->data_size) {
+                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
+                           pos, overlap_region->data_size);
+                    ret_value = -1;
+                    goto done;
+                }
+
+                for (i = overlap_start_local[0]; i < overlap_start_local[0] + overlap_count[0]; i++) {
+                    for (j = overlap_start_local[1]; j < overlap_start_local[1] + overlap_count[1]; j++) {
+                        /* printf("i=%llu, j=%llu, pos=%llu, pos2=%llu, size=%llu, total size=%llu\n", i, j,
+                         * pos, */
+                        /*         i*overlap_region->count[2]*overlap_region->count[1]*unit
+                         * +j*overlap_region->count[2]*unit+region_info->offset[2], */
+                        /*         region_info->size[2]*unit, overlap_region->data_size); */
+                        memcpy(tmp_buf + i * overlap_region->count[2] * overlap_region->count[1] * unit +
+                                   j * overlap_region->count[2] * unit + overlap_start_local[2] * unit,
+                               buf + pos, overlap_count[2] * unit);
+
+                        pos += region_info->size[2] * unit;
+                        if (pos > overlap_region->data_size) {
+                            printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n",
+                                   pdc_server_rank_g, pos, overlap_region->data_size);
+                            ret_value = -1;
+                            goto done;
+                        }
+                    }
+                }
+                if (pwrite(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
+                    (ssize_t)overlap_region->data_size) {
+                    printf("==PDC_SERVER[%d]: Failed to write enough bytes\n", pdc_server_rank_g);
+                }
+                free(tmp_buf);
+                // No need to update metadata
+            } // End 3D
+        }     // End is overlap
+
+    } // End DL_FOREACH storage region list
+
+    if (is_overlap == 0) {
+        request_region->offset = lseek(region->fd, 0, SEEK_END);
+
+        ret_value = PDC_Server_posix_write(region->fd, buf, write_size);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_SERVER[%d]: PDC_Server_posix_write FAILED!\n", pdc_server_rank_g);
+            ret_value = FAIL;
+            goto done;
+        }
+
+        // Store storage information
+        request_region->data_size = write_size;
+        DL_APPEND(region->region_storage_head, request_region);
+    }
+    else
+        free(request_region);
+
+#ifdef ENABLE_TIMING
+    gettimeofday(&pdc_timer_end, 0);
+    write_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+    printf("==PDC_SERVER[%d]: write region time: %.4f, %llu bytes\n", pdc_server_rank_g, write_total_sec,
+           write_size);
+    fflush(stdout);
+#endif
+
+    /* printf("==PDC_SERVER[%d]: write region %llu bytes\n", pdc_server_rank_g, request_region->data_size); */
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
+{
+    int               flag;
+    pdc_obj_cache *   obj_cache, *obj_cache_iter;
+    pdc_region_cache *region_cache_iter;
+
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    // Write 1GB at a time
+
+    uint64_t write_size = 0;
+    if (region_info->ndim >= 1)
+        write_size = unit * region_info->size[0];
+    if (region_info->ndim >= 2)
+        write_size *= region_info->size[1];
+    if (region_info->ndim >= 3)
+        write_size *= region_info->size[2];
+
+    obj_cache = NULL;
+    // Look up for the object in the cache list
+    obj_cache_iter = obj_cache_list;
+    while (obj_cache_iter != NULL) {
+        if (obj_cache_iter->obj_id == obj_id) {
+            obj_cache = obj_cache_iter;
+        }
+        obj_cache_iter = obj_cache_iter->next;
+    }
+    flag = 1;
+    if (obj_cache != NULL) {
+        // If we have region that is contained inside a cached region, we can directly modify the cache region
+        // data.
+        region_cache_iter = obj_cache->region_cache;
+        while (region_cache_iter != NULL) {
+            if (PDC_check_region_relation(
+                    region_info->offset, region_info->size, region_cache_iter->region_cache_info->offset,
+                    region_cache_iter->region_cache_info->size,
+                    region_cache_iter->region_cache_info->ndim) == PDC_REGION_CONTAINED) {
+                PDC_region_cache_copy(region_cache_iter->region_cache_info->buf, buf,
+                                      region_cache_iter->region_cache_info->offset,
+                                      region_cache_iter->region_cache_info->size, region_info->offset,
+                                      region_info->size, region_cache_iter->region_cache_info->ndim, unit, 1);
+                flag = 0;
+                break;
+            }
+            region_cache_iter = region_cache_iter->next;
+        }
+    }
+    if (flag) {
+        PDC_region_cache_register(obj_id, buf, write_size, region_info->offset, region_info->size,
+                                  region_info->ndim, unit);
+    }
+    // PDC_Server_data_write_out2(obj_id, region_info, buf, unit);
+
+    // done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDC_Server_data_read_from2(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
+{
+    perr_t                       ret_value        = SUCCEED;
+    ssize_t /*read_bytes = 0, */ total_read_bytes = 0, request_bytes = unit, my_read_bytes = 0;
+    data_server_region_t *       region = NULL;
+    region_list_t *              elt;
+    // int flag = 0;
+    uint64_t i, j, pos, overlap_start[DIM_MAX] = {0}, overlap_count[DIM_MAX] = {0},
+                        overlap_start_local[DIM_MAX] = {0};
+
+    FUNC_ENTER(NULL);
+
+    region = PDC_Server_get_obj_region(obj_id);
+    if (region == NULL) {
+        printf("cannot locate file handle\n");
+        goto done;
+    }
+    // Was opened previously and closed.
+    // The location string is cached, so we utilize
+    // that to reopen the file.
+    if (region->fd <= 0) {
+        region->fd = open(region->storage_location, O_RDWR, 0666);
+    }
+
+    region_list_t request_region;
+    request_region.ndim = region_info->ndim;
+    for (i = 0; i < region_info->ndim; i++) {
+        request_region.start[i] = region_info->offset[i];
+        request_region.count[i] = region_info->size[i];
+        request_bytes *= region_info->size[i];
+    }
+
+#ifdef ENABLE_TIMING
+    struct timeval pdc_timer_start, pdc_timer_end;
+    double         read_total_sec;
+    gettimeofday(&pdc_timer_start, 0);
+#endif
+
+    region_list_t *storage_region = NULL;
+    DL_FOREACH(region->region_storage_head, elt)
+    {
+        // flag = 0;
+
+        if (PDC_is_contiguous_region_overlap(elt, &request_region) == 1) {
+            storage_region = elt;
+            // flag = 1;
+
+            // Get the actual start and count of region in storage
+            if (PDC_get_overlap_start_count(region_info->ndim, request_region.start, request_region.count,
+                                            elt->start, elt->count, overlap_start,
+                                            overlap_count) != SUCCEED) {
+                printf("==PDC_SERVER[%d]: PDC_get_overlap_start_count FAILED!\n", pdc_server_rank_g);
+                ret_value = FAIL;
+                goto done;
+            }
+
+            // local (relative) region start
+            for (i = 0; i < region_info->ndim; i++)
+                overlap_start_local[i] = overlap_start[i] % elt->count[i];
+
+            if (region_info->ndim == 1) {
+                pos = (overlap_start[0] - region_info->offset[0]) * unit;
+                if (pos > (uint64_t)request_bytes) {
+                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
+                           pos, request_bytes);
+                    ret_value = -1;
+                    goto done;
+                }
+                // read_bytes = pread(region->fd, buf + pos, overlap_count[0] * unit,
+                //                   storage_region->offset + overlap_start_local[0] * unit);
+                if (pread(region->fd, buf + pos, overlap_count[0] * unit,
+                          storage_region->offset + overlap_start_local[0] * unit) !=
+                    (ssize_t)(overlap_count[0] * unit)) {
+                    printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
+                }
+                my_read_bytes = overlap_count[0] * unit;
+                /* printf("storage offset %llu, region offset %llu, read %d bytes\n", storage_region->offset,
+
+                 * overlap_count[0]*unit, read_bytes); */
+            }
+            else if (region_info->ndim == 2) {
+                void *tmp_buf = malloc(storage_region->data_size);
+                // Read entire region
+                // read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
+                if (pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset) !=
+                    (ssize_t)storage_region->data_size) {
+                    printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
+                }
+                // Extract requested data
+                pos = ((overlap_start[0] - region_info->offset[0]) * storage_region->count[1] +
+                       overlap_start[1] - region_info->offset[1]) *
+                      unit;
+                if (pos > (uint64_t)request_bytes) {
+                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
+                           pos, request_bytes);
+                    ret_value = -1;
+                    goto done;
+                }
+
+                for (i = overlap_start_local[0]; i < overlap_start_local[0] + overlap_count[0]; i++) {
+                    memcpy(buf + pos,
+                           tmp_buf + i * storage_region->count[1] * unit + overlap_start_local[1] * unit,
+                           overlap_count[1] * unit);
+                    pos += region_info->size[1] * unit;
+                    if (pos > (uint64_t)request_bytes) {
+                        printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n",
+                               pdc_server_rank_g, pos, request_bytes);
+                        ret_value = -1;
+                        goto done;
+                    }
+                    my_read_bytes += overlap_count[1] * unit;
+                }
+                free(tmp_buf);
+            }
+            else if (region_info->ndim == 3) {
+                void *tmp_buf = malloc(storage_region->data_size);
+                // Read entire region
+                // read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
+                if (pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset) !=
+                    (ssize_t)storage_region->data_size) {
+                    printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
+                }
+                // Extract requested data
+                pos = ((overlap_start[0] - region_info->offset[0]) * storage_region->count[1] *
+                           storage_region->count[2] +
+                       (overlap_start[1] - region_info->offset[1]) * storage_region->count[2] +
+                       (overlap_start[2] - region_info->offset[2])) *
+                      unit;
+                if (pos > (uint64_t)request_bytes) {
+                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
+                           pos, request_bytes);
+                    ret_value = -1;
+                    goto done;
+                }
+
+                for (i = overlap_start_local[0]; i < overlap_start_local[0] + overlap_count[0]; i++) {
+                    for (j = overlap_start_local[1]; j < overlap_start_local[1] + overlap_count[1]; j++) {
+                        /* printf("i=%llu, j=%llu, pos=%llu, pos2=%llu, size=%llu, total size=%llu\n", i, j,
+                         * pos, */
+                        /*         i*storage_region->count[2]*storage_region->count[1]*unit
+
+                         * +j*storage_region->count[2]*unit+region_info->offset[2], */
+                        /*         region_info->size[2]*unit, storage_region->data_size); */
+                        memcpy(buf + pos,
+                               tmp_buf + i * storage_region->count[2] * storage_region->count[1] * unit +
+                                   j * storage_region->count[2] * unit + overlap_start_local[2] * unit,
+                               overlap_count[2] * unit);
+                        pos += region_info->size[2] * unit;
+                        if (pos > (uint64_t)request_bytes) {
+                            printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n",
+                                   pdc_server_rank_g, pos, request_bytes);
+                            ret_value = -1;
+                            goto done;
+                        }
+                        my_read_bytes += overlap_count[2] * unit;
+                    }
+                }
+                free(tmp_buf);
+            }
+            /*
+
+                        if (read_bytes == -1) {
+
+                            char errmsg[256];
+                            // printf("==PDC_SERVER[%d]: pread %d failed (%d)\n", pdc_server_rank_g,
+               region->fd,
+                            // strerror_r(errno, errmsg, sizeof(errmsg)));
+                            goto done;
+
+                        }
+            */
+            total_read_bytes += my_read_bytes;
+
+        } // End is overlap
+
+        if (total_read_bytes >= request_bytes)
+            break;
+    } // End DL_FOREACH storage region list
+
+    if (total_read_bytes < request_bytes) {
+        printf("==PDC_SERVER[%d]: read less bytes than expected %lu / %ld\n", pdc_server_rank_g,
+               total_read_bytes, request_bytes);
+        ret_value = -1;
+    }
+#ifdef ENABLE_TIMING
+    gettimeofday(&pdc_timer_end, 0);
+    read_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+    printf("==PDC_SERVER[%d]: read region time: %.4f, %llu bytes\n", pdc_server_rank_g, read_total_sec,
+           read_bytes);
+    fflush(stdout);
+#endif
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+int
+PDC_region_cache_flush(uint64_t obj_id)
+{
+    pdc_obj_cache *         obj_cache = NULL, *obj_cache_iter;
+    pdc_region_cache *      region_cache_iter, *region_cache_temp;
+    struct pdc_region_info *region_cache_info;
+
+    obj_cache_iter = obj_cache_list;
+    while (obj_cache_iter != NULL) {
+        if (obj_cache_iter->obj_id == obj_id) {
+            obj_cache = obj_cache_iter;
+            break;
+        }
+        obj_cache_iter = obj_cache_iter->next;
+    }
+    if (obj_cache == NULL) {
+        printf("server error: flushing object that does not exist\n");
+    }
+    region_cache_iter = obj_cache->region_cache;
+    while (region_cache_iter != NULL) {
+        region_cache_info = region_cache_iter->region_cache_info;
+        PDC_Server_data_write_out2(obj_id, region_cache_info, region_cache_info->buf,
+                                   region_cache_info->unit);
+        free(region_cache_info->offset);
+        free(region_cache_info->size);
+        free(region_cache_info->buf);
+        free(region_cache_info);
+        region_cache_temp = region_cache_iter;
+        region_cache_iter = region_cache_iter->next;
+        free(region_cache_temp);
+    }
+    obj_cache->region_cache = NULL;
+    gettimeofday(&(obj_cache->timestamp), NULL);
+    return 0;
+}
+
+int
+PDC_region_cache_flush_all()
+{
+    pdc_obj_cache *obj_cache_iter, *obj_cache_temp;
+    hg_thread_mutex_lock(&pdc_obj_cache_list_mutex);
+
+    obj_cache_iter = obj_cache_list;
+    while (obj_cache_iter != NULL) {
+        PDC_region_cache_flush(obj_cache_iter->obj_id);
+        obj_cache_temp = obj_cache_iter;
+        obj_cache_iter = obj_cache_iter->next;
+        free(obj_cache_temp);
+    }
+    hg_thread_mutex_unlock(&pdc_obj_cache_list_mutex);
+    return 0;
+}
+
+void *
+PDC_region_cache_clock_cycle(void *ptr)
+{
+    pdc_obj_cache *obj_cache, *obj_cache_iter;
+    struct timeval current_time;
+    if (ptr == NULL) {
+        obj_cache_iter = NULL;
+    }
+    while (1) {
+        pthread_mutex_lock(&pdc_cache_mutex);
+        if (!pdc_recycle_close_flag) {
+            hg_thread_mutex_lock(&pdc_obj_cache_list_mutex);
+            gettimeofday(&current_time, NULL);
+            obj_cache_iter = obj_cache_list;
+            while (obj_cache_iter != NULL) {
+                obj_cache = obj_cache_iter;
+                if (current_time.tv_sec - obj_cache->timestamp.tv_sec > 10) {
+                    PDC_region_cache_flush(obj_cache->obj_id);
+                }
+                obj_cache_iter = obj_cache_iter->next;
+            }
+            hg_thread_mutex_unlock(&pdc_obj_cache_list_mutex);
+        }
+        else {
+            pthread_mutex_unlock(&pdc_cache_mutex);
+            break;
+        }
+        pthread_mutex_unlock(&pdc_cache_mutex);
+        sleep(0.75);
+    }
+    return 0;
+}
+
+perr_t
+PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
+{
+    perr_t ret_value = SUCCEED;
+    FUNC_ENTER(NULL);
+    // PDC_Server_data_read_from2(obj_id, region_info, buf, unit);
+
+    PDC_region_fetch(obj_id, region_info, buf, unit);
+    // done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+/*
+ * This function search for an object cache by ID, then copy data from the region to buf if the request region
+ * is fully contained inside the cache region.
+ */
+int
+PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
+{
+    hg_thread_mutex_lock(&pdc_obj_cache_list_mutex);
+    pdc_obj_cache *         obj_cache = NULL, *obj_cache_iter;
+    int                     flag      = 1;
+    size_t                  j;
+    pdc_region_cache *      region_cache_iter;
+    struct pdc_region_info *region_cache_info = NULL;
+    obj_cache_iter                            = obj_cache_list;
+    while (obj_cache_iter != NULL) {
+        if (obj_cache_iter->obj_id == obj_id) {
+            obj_cache = obj_cache_iter;
+        }
+        obj_cache_iter = obj_cache_iter->next;
+    }
+    if (obj_cache != NULL) {
+        // printf("region fetch for obj id %llu\n", obj_cache->obj_id);
+
+        // Check if the input region is contained inside any cache region.
+        region_cache_iter = obj_cache->region_cache;
+        while (region_cache_iter != NULL) {
+            flag              = 1;
+            region_cache_info = region_cache_iter->region_cache_info;
+            for (j = 0; j < region_info->ndim; ++j) {
+                if (region_info->offset[j] < region_cache_info->offset[j] ||
+                    region_info->offset[j] + region_info->size[j] >
+                        region_cache_info->offset[j] + region_cache_info->size[j]) {
+                    flag = 0;
+                }
+            }
+            region_cache_iter = region_cache_iter->next;
+            if (flag) {
+                break;
+            }
+            else {
+                region_cache_info = NULL;
+            }
+        }
+        if (region_cache_info != NULL && unit == region_cache_info->unit) {
+            PDC_region_cache_copy(region_cache_info->buf, buf, region_cache_info->offset,
+                                  region_cache_info->size, region_info->offset, region_info->size,
+                                  region_cache_info->ndim, unit, 0);
+        }
+        else {
+            region_cache_info = NULL;
+        }
+    }
+    if (region_cache_info == NULL) {
+        PDC_region_cache_flush(obj_id);
+        PDC_Server_data_read_from2(obj_id, region_info, buf, unit);
+    }
+    hg_thread_mutex_unlock(&pdc_obj_cache_list_mutex);
+    return 0;
+}
+
+#else
+// No PDC_SERVER_CACHE
+perr_t
+PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
+{
+    //Ceph Write function here
+
+    perr_t ret_value = SUCCEED;
+    data_server_region_t *region = NULL;
+    region_list_t *overlap_region = NULL;
+    int is_overlap = 0;
+    uint64_t i, j, pos, overlap_start[DIM_MAX] = {0}, overlap_count[DIM_MAX] = {0},
+                        overlap_start_local[DIM_MAX] = {0};
+
+    FUNC_ENTER(NULL);
+
+    uint64_t write_size;
+    if (region_info->ndim >= 1)
+        write_size = unit * region_info->size[0];
+    if (region_info->ndim >= 2)
+        write_size *= region_info->size[1];
+
+    if (region_info->ndim >= 3)
+        write_size *= region_info->size[2];
+
+    region = PDC_Server_get_obj_region(obj_id);
+    if (region == NULL) {
+        printf("cannot locate file handle\n");
+        goto done;
+    }
+
+    if ((region->fd <= 0) && region->storage_location) {
+        region->fd = open(region->storage_location, O_RDWR, 0666);
+    }
+
+    region_list_t *request_region = (region_list_t *)calloc(1, sizeof(region_list_t));
+    for (i = 0; i < region_info->ndim; i++) {
+        request_region->start[i] = region_info->offset[i];
+        request_region->count[i] = region_info->size[i];
+    }
+    request_region->ndim = region_info->ndim;
+    request_region->unit_size = unit;
+    strcpy(request_region->storage_location, region->storage_location);
+
+#ifdef ENABLE_TIMING
+    struct timeval pdc_timer_start, pdc_timer_end;
+    double write_total_sec;
+    gettimeofday(&pdc_timer_start, 0);
+#endif
+
+//<<<<<<< HEAD
+/*
+#ifdef ENABLE_RADOS
+	int retu;
+	int batch = 0;
+	const char name[100];
+	long long int maxx_write_size = 94371840;
+	printf("%lld:This is the write Size\n",write_size);
+	while (write_size > maxx_write_size) {
+	printf("Loop running %d time\n",batch);
+		sprintf(name,"%llu_%d", obj_id, batch);
+		printf("%s\n",name);
+		retu = rados_write_full(io,name,buf,maxx_write_size);
+		if(retu<0){printf("Error writing in the object  name for: %s\n",name);
+		}else{
+		printf("Object written Successfully named %s\n",name);}
+		buf += maxx_write_size;
+		write_size -= maxx_write_size;
+		batch++;
+		printf("For object with batch : %d write_size is :%d\n",batch,write_size);
+	}
+	sprintf(name, "%llu_%d", obj_id, batch);
+	retu = rados_write_full(io, name, buf,write_size);
+	if(retu<0){printf("Error Writing in the last Object name\n");}else{
+	printf("DAta is stored for last object %s\n",name);}
+
+	char b_size[100];
+	//size_t psize;
+	//retu = rados_stat(io,name,&psize,NULL);
+	sprintf(b_size,"%d",batch);
+	sprintf(name, "%llu_batch", obj_id);
+	printf("Size of batch object : %d\n",strlen(b_size));
+	retu = rados_setxattr(io,name,"batch",&batch,sizeof(int));
+	if(retu<0){printf("Error Setting in the Extended attribute\n");}else{
+	printf("Extended Attribute set for %llu_batch :with batch no.  %d \n",obj_id,batch);}
+
+#endif
+
+*/
 	write_bytes = 0;
     while (write_size > max_write_size) {
         write_bytes += write(region->fd, buf, max_write_size);
@@ -5141,44 +5712,262 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
         write_size -= max_write_size;
     }
     write_bytes += write(region->fd, buf, write_size);
+//=======
+    // Detect overwrite
+    region_list_t *elt;
+    DL_FOREACH(region->region_storage_head, elt)
+    {
+        if (PDC_is_contiguous_region_overlap(elt, request_region) == 1) {
+            is_overlap++;
+            overlap_region = elt;
+//>>>>>>> upstream/stable
 
-    if (write_bytes == -1) {
-        printf("==PDC_SERVER[%d]: write %d failed\n", pdc_server_rank_g, region->fd);
-        goto done;
+            // Get the actual start and count of region in storage
+            if (PDC_get_overlap_start_count(region_info->ndim, request_region->start, request_region->count,
+                                            overlap_region->start, overlap_region->count, overlap_start,
+                                            overlap_count) != SUCCEED) {
+                printf("==PDC_SERVER[%d]: PDC_get_overlap_start_count FAILED!\n", pdc_server_rank_g);
+                ret_value = FAIL;
+                goto done;
+            }
+
+            // local (relative) region start
+            for (i = 0; i < region_info->ndim; i++)
+                overlap_start_local[i] = overlap_start[i] % overlap_region->count[i];
+
+            if (region_info->ndim == 1) {
+                // 1D can overwrite data in region directly
+                pos = (overlap_start[0] - region_info->offset[0]) * unit;
+                if (pos > write_size) {
+                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
+                           pos, write_size);
+                    ret_value = -1;
+                    goto done;
+                }
+
+                lseek(region->fd, overlap_region->offset + overlap_start_local[0] * unit, SEEK_SET);
+
+		//Ceph_write
+		#ifdef ENABLE_RADOS
+		int retu;
+		int batch = 0;
+		const char name[100];
+		long long int maxx_write_size = 94371840;
+		printf("%lld:This is the write Size\n",write_size);
+		while (write_size > maxx_write_size) {
+		printf("Loop running %d time\n",batch);
+			sprintf(name,"%llu_%d", obj_id, batch);
+			printf("%s\n",name);
+			retu = rados_write_full(io,name,buf,maxx_write_size);
+			if(retu<0){printf("Error writing in the object  name for: %s\n",name);
+			}else{
+			printf("Object written Successfully named %s\n",name);}
+			buf += maxx_write_size;
+			write_size -= maxx_write_size;
+			batch++;
+			printf("For object with batch : %d write_size is :%d\n",batch,write_size);
+		}
+		sprintf(name, "%llu_%d", obj_id, batch);
+		retu = rados_write_full(io, name, buf,write_size);
+		if(retu<0){printf("Error Writing in the last Object name\n");}else{
+		printf("DAta is stored for last object %s\n",name);}
+
+		char b_size[100];
+		//size_t psize;
+		//retu = rados_stat(io,name,&psize,NULL);
+		sprintf(b_size,"%d",batch);
+		sprintf(name, "%llu_batch", obj_id);
+		printf("Size of batch object : %d\n",strlen(b_size));
+		retu = rados_setxattr(io,name,"batch",&batch,sizeof(int));
+		if(retu<0){printf("Error Setting in the Extended attribute\n");}else{
+		printf("Extended Attribute set for %llu_batch :with batch no.  %d \n",obj_id,batch);}
+
+	        #endif
+                ret_value = PDC_Server_posix_write(region->fd, buf + pos, write_size);
+                if (ret_value != SUCCEED) {
+                    printf("==PDC_SERVER[%d]: PDC_Server_posix_write FAILED!\n", pdc_server_rank_g);
+                    ret_value = FAIL;
+                    goto done;
+                }
+                // No need to update metadata
+            }
+            else if (region_info->ndim == 2) {
+                // 2D/3D: generally it's a good idea to read entire region, overwrite overlap part,
+                // and write back to avoid fragmented writes.
+                void *tmp_buf = malloc(overlap_region->data_size);
+
+                if (pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
+                    (ssize_t)overlap_region->data_size) {
+                    printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
+                }
+
+                // Overlap start position
+                pos = ((overlap_start[0] - region_info->offset[0]) * overlap_region->count[1] +
+                       overlap_start[1] - region_info->offset[1]) *
+                      unit;
+                if (pos > overlap_region->data_size) {
+                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
+                           pos, overlap_region->data_size);
+                    ret_value = -1;
+                    goto done;
+                }
+
+                for (i = overlap_start_local[0]; i < overlap_start_local[0] + overlap_count[0]; i++) {
+                    memcpy(tmp_buf + i * overlap_region->count[1] * unit + overlap_start_local[1] * unit,
+                           buf + pos, overlap_count[1] * unit);
+                    pos += region_info->size[1] * unit;
+                    if (pos > overlap_region->data_size) {
+                        printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n",
+                               pdc_server_rank_g, pos, overlap_region->data_size);
+                        ret_value = -1;
+                        goto done;
+                    }
+                }
+                if (pwrite(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
+                    (ssize_t)overlap_region->data_size) {
+                    printf("==PDC_SERVER[%d]: Failed to write enough bytes\n", pdc_server_rank_g);
+                }
+                free(tmp_buf);
+                // No need to update metadata
+            } // End 2D
+            else if (region_info->ndim == 3) {
+                void *tmp_buf = malloc(overlap_region->data_size);
+                // Read entire region
+                if (pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
+                    (ssize_t)overlap_region->data_size) {
+                    printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
+                }
+//read rados tmp_buf
+
+                pos = ((overlap_start[0] - region_info->offset[0]) * overlap_region->count[1] *
+                           overlap_region->count[2] +
+                       (overlap_start[1] - region_info->offset[1]) * overlap_region->count[2] +
+                       (overlap_start[2] - region_info->offset[2])) *
+                      unit;
+                if (pos > overlap_region->data_size) {
+                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
+                           pos, overlap_region->data_size);
+                    ret_value = -1;
+                    goto done;
+                }
+
+                for (i = overlap_start_local[0]; i < overlap_start_local[0] + overlap_count[0]; i++) {
+                    for (j = overlap_start_local[1]; j < overlap_start_local[1] + overlap_count[1]; j++) {
+                        /* printf("i=%llu, j=%llu, pos=%llu, pos2=%llu, size=%llu, total size=%llu\n", i, j,
+                         * pos, */
+                        /*         i*overlap_region->count[2]*overlap_region->count[1]*unit
+                         * +j*overlap_region->count[2]*unit+region_info->offset[2], */
+                        /*         region_info->size[2]*unit, overlap_region->data_size);*/ 
+                        memcpy(tmp_buf + i * overlap_region->count[2] * overlap_region->count[1] * unit +
+                                   j * overlap_region->count[2] * unit + overlap_start_local[2] * unit,
+                               buf + pos, overlap_count[2] * unit);
+
+                        pos += region_info->size[2] * unit;
+                        if (pos > overlap_region->data_size) {
+                            printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n",
+                                   pdc_server_rank_g, pos, overlap_region->data_size);
+                            ret_value = -1;
+                            goto done;
+                        }
+                    }
+                }
+//rados_write tmp_buf
+                if (pwrite(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
+                    (ssize_t)overlap_region->data_size) {
+                    printf("==PDC_SERVER[%d]: Failed to write enough bytes\n", pdc_server_rank_g);
+                }
+                free(tmp_buf);
+                // No need to update metadata
+            } // End 3D
+        }     // End is overlap
+
+    } // End DL_FOREACH storage region list
+
+    if (is_overlap == 0) {
+        request_region->offset = lseek(region->fd, 0, SEEK_END);
+	//Ceph Write here
+	#ifdef ENABLE_RADOS
+	int retu;
+	int batch = 0;
+	const char name[100];
+	long long int maxx_write_size = 94371840;
+	printf("%lld:This is the write Size\n",write_size);
+	while (write_size > maxx_write_size) {
+	printf("Loop running %d time\n",batch);
+		sprintf(name,"%llu_%d", obj_id, batch);
+		printf("%s\n",name);
+		retu = rados_write_full(io,name,buf,maxx_write_size);
+		if(retu<0){printf("Error writing in the object  name for: %s\n",name);
+		}else{
+		printf("Object written Successfully named %s\n",name);}
+		buf += maxx_write_size;
+		write_size -= maxx_write_size;
+		batch++;
+		printf("For object with batch : %d write_size is :%d\n",batch,write_size);
+	}
+	sprintf(name, "%llu_%d", obj_id, batch);
+	retu = rados_write_full(io, name, buf,write_size);
+	if(retu<0){printf("Error Writing in the last Object name\n");}else{
+	printf("DAta is stored for last object %s\n",name);}
+
+	char b_size[100];
+	//size_t psize;
+	//retu = rados_stat(io,name,&psize,NULL);
+	sprintf(b_size,"%d",batch);
+	sprintf(name, "%llu_batch", obj_id);
+	printf("Size of batch object : %d\n",strlen(b_size));
+	retu = rados_setxattr(io,name,"batch",&batch,sizeof(int));
+	if(retu<0){printf("Error Setting in the Extended attribute\n");}else{
+	printf("Extended Attribute set for %llu_batch :with batch no.  %d \n",obj_id,batch);}
+
+	#endif
+
+        ret_value = PDC_Server_posix_write(region->fd, buf, write_size);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_SERVER[%d]: PDC_Server_posix_write FAILED!\n", pdc_server_rank_g);
+            ret_value = FAIL;
+            goto done;
+        }
+
+        // Store storage information
+        request_region->data_size = write_size;
+        DL_APPEND(region->region_storage_head, request_region);
     }
-*/
+/*<<<<<<< HEAD
 
+=======
+    else
+        free(request_region);
+//>>>>>>> upstream/stable
+*/
 #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer_end, 0);
     write_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
     printf("==PDC_SERVER[%d]: write region time: %.4f, %llu bytes\n", pdc_server_rank_g, write_total_sec,
-           write_bytes);
+           write_size);
     fflush(stdout);
 #endif
 
-    // Store storage information
-    storage_region->data_size = write_bytes;
-    DL_APPEND(region->region_storage_head, storage_region);
-
-    /* printf("==PDC_SERVER[%d]: write region %llu bytes\n", pdc_server_rank_g, storage_region->data_size); */
+    /* printf("==PDC_SERVER[%d]: write region %llu bytes\n", pdc_server_rank_g, request_region->data_size); */
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
-}
+} // End PDC_Server_data_write_out
 
+// No PDC_SERVER_CACHE
 perr_t
 PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
     //Ceph read here
     perr_t ret_value = SUCCEED;
-    ssize_t read_bytes = 0, total_read_bytes = 0, request_bytes = unit, my_read_bytes = 0;
+    ssize_t /*read_bytes = 0, */ total_read_bytes = 0, request_bytes = unit, my_read_bytes = 0;
     data_server_region_t *region = NULL;
     region_list_t *elt;
-    int flag = 0;
+    // int flag = 0;
     uint64_t i, j, pos, overlap_start[DIM_MAX] = {0}, overlap_count[DIM_MAX] = {0},
                         overlap_start_local[DIM_MAX] = {0};
 
-
+/*
 #ifdef ENABLE_RADOS
 	int retu;
     	int batch = 0;
@@ -5223,10 +6012,10 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 //	printf("%d\t",((int*)buf)[i]); }
 
 #endif
-
+*/
 	 FUNC_ENTER(NULL);
 
-/*
+
     region = PDC_Server_get_obj_region(obj_id);
     if (region == NULL) {
         printf("cannot locate file handle\n");
@@ -5258,11 +6047,11 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
     region_list_t *storage_region = NULL;
     DL_FOREACH(region->region_storage_head, elt)
     {
-        flag = 0;
+        // flag = 0;
 
         if (PDC_is_contiguous_region_overlap(elt, &request_region) == 1) {
             storage_region = elt;
-            flag = 1;
+            // flag = 1;
 
             // Get the actual start and count of region in storage
             if (PDC_get_overlap_start_count(region_info->ndim, request_region.start, request_region.count,
@@ -5279,31 +6068,87 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 
             if (region_info->ndim == 1) {
                 pos = (overlap_start[0] - region_info->offset[0]) * unit;
-                if (pos > request_bytes) {
-                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %llu / %llu!\n",
-                           pdc_server_rank_g, pos, request_bytes);
+                if (pos > (uint64_t)request_bytes) {
+                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
+                           pos, request_bytes);
                     ret_value = -1;
                     goto done;
                 }
-                read_bytes = pread(region->fd, buf + pos, overlap_count[0] * unit,
-                                   storage_region->offset + overlap_start_local[0] * unit);
+                // read_bytes = pread(region->fd, buf + pos, overlap_count[0] * unit,
+                //                   storage_region->offset + overlap_start_local[0] * unit);
+		//Ceph read here
+		#ifdef ENABLE_RADOS
+		int retu;
+	    	int batch = 0;
+		char name[100];
+		long long int maxx_write_size = 94371840;
+		size_t psize;
+		sprintf(name, "%llu_%d", obj_id, batch);
+		retu = rados_stat(io,name,&psize,NULL);
+		if(retu<0){printf("Error in getting size of object");}else{
+		printf("Size of object %llu_%din read function  is  : %d\n",obj_id,batch,psize);}
+		char* buf_ptr = (char*) buf;
+		retu = rados_read(io,name,buf_ptr,psize,0);
+		if(retu<0){printf("Error Reading in the Object name\n");}else{
+		printf("DAta is Read from first object named : %s \n",name);}
+
+		buf_ptr += maxx_write_size;
+	        batch++;
+
+		sprintf(name,"%llu_batch", obj_id);
+		int b_val;
+		printf("Batch object name is :%s\n",name);
+		retu = rados_getxattr(io, name,"batch",&b_val,sizeof(int));
+	        if(retu<0){printf("Error Getting in the batch_no.\n");}else{
+	        printf(" No. of Batches by read function : %d\n",b_val);}
+
+
+		for(i=1;i<=b_val;i++) {
+		printf("For object with batch no. %d\n",i);
+			sprintf(name, "%llu_%d", obj_id, i);
+			retu = rados_read(io,name,buf_ptr,maxx_write_size,0);
+			if(retu<0){printf("Error Reading in the object_batch%d\n",i);
+			}
+			buf_ptr += maxx_write_size;
+		        }
+		printf("Starting data in buf\n");
+		for(i=0;i<=10;i++){
+	        printf("%d\t",((int*)buf)[i]); }
+
+
+	//	printf("Ending data in buf\n");
+	//	for(i=262143990;i<262144000;i++){
+	//	printf("%d\t",((int*)buf)[i]); }
+
+		#endif
+
+                if (pread(region->fd, buf + pos, overlap_count[0] * unit,
+                          storage_region->offset + overlap_start_local[0] * unit) !=
+                    (ssize_t)(overlap_count[0] * unit)) {
+                    printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
+                }
                 my_read_bytes = overlap_count[0] * unit;
                 /* printf("storage offset %llu, region offset %llu, read %d bytes\n", storage_region->offset,
+
                  * overlap_count[0]*unit, read_bytes); */
 
 
-/*          }
+          }
             else if (region_info->ndim == 2) {
                 void *tmp_buf = malloc(storage_region->data_size);
                 // Read entire region
-                read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
+                // read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
+                if (pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset) !=
+                    (ssize_t)storage_region->data_size) {
+                    printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
+                }
                 // Extract requested data
                 pos = ((overlap_start[0] - region_info->offset[0]) * storage_region->count[1] +
                        overlap_start[1] - region_info->offset[1]) *
                       unit;
-                if (pos > request_bytes) {
-                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %llu / %llu!\n",
-                           pdc_server_rank_g, pos, request_bytes);
+                if (pos > (uint64_t)request_bytes) {
+                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
+                           pos, request_bytes);
                     ret_value = -1;
                     goto done;
                 }
@@ -5313,8 +6158,8 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                            tmp_buf + i * storage_region->count[1] * unit + overlap_start_local[1] * unit,
                            overlap_count[1] * unit);
                     pos += region_info->size[1] * unit;
-                    if (pos > request_bytes) {
-                        printf("==PDC_SERVER[%d]: Error with buf pos calculation %llu / %llu!\n",
+                    if (pos > (uint64_t)request_bytes) {
+                        printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n",
                                pdc_server_rank_g, pos, request_bytes);
                         ret_value = -1;
                         goto done;
@@ -5326,16 +6171,20 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
             else if (region_info->ndim == 3) {
                 void *tmp_buf = malloc(storage_region->data_size);
                 // Read entire region
-                read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
+                // read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
+                if (pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset) !=
+                    (ssize_t)storage_region->data_size) {
+                    printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
+                }
                 // Extract requested data
                 pos = ((overlap_start[0] - region_info->offset[0]) * storage_region->count[1] *
                            storage_region->count[2] +
                        (overlap_start[1] - region_info->offset[1]) * storage_region->count[2] +
                        (overlap_start[2] - region_info->offset[2])) *
                       unit;
-                if (pos > request_bytes) {
-                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %llu / %llu!\n",
-                           pdc_server_rank_g, pos, request_bytes);
+                if (pos > (uint64_t)request_bytes) {
+                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
+                           pos, request_bytes);
                     ret_value = -1;
                     goto done;
                 }
@@ -5343,18 +6192,20 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                 for (i = overlap_start_local[0]; i < overlap_start_local[0] + overlap_count[0]; i++) {
                     for (j = overlap_start_local[1]; j < overlap_start_local[1] + overlap_count[1]; j++) {
                         /* printf("i=%llu, j=%llu, pos=%llu, pos2=%llu, size=%llu, total size=%llu\n", i, j,
+
                          * pos, */
                         /*         i*storage_region->count[2]*storage_region->count[1]*unit
+
                          * +j*storage_region->count[2]*unit+region_info->offset[2], */
                         /*         region_info->size[2]*unit, storage_region->data_size); */
 //  
- /*                     memcpy(buf + pos,
+                   memcpy(buf + pos,
                                tmp_buf + i * storage_region->count[2] * storage_region->count[1] * unit +
                                    j * storage_region->count[2] * unit + overlap_start_local[2] * unit,
                                overlap_count[2] * unit);
                         pos += region_info->size[2] * unit;
-                        if (pos > request_bytes) {
-                            printf("==PDC_SERVER[%d]: Error with buf pos calculation %llu / %llu!\n",
+                        if (pos > (uint64_t)request_bytes) {
+                            printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n",
                                    pdc_server_rank_g, pos, request_bytes);
                             ret_value = -1;
                             goto done;
@@ -5364,13 +6215,18 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                 }
                 free(tmp_buf);
             }
+            
 
-            if (read_bytes == -1) {
-                char errmsg[256];
-                // printf("==PDC_SERVER[%d]: pread %d failed (%d)\n", pdc_server_rank_g, region->fd,
-                // strerror_r(errno, errmsg, sizeof(errmsg)));
-                goto done;
-            }
+                        if (read_bytes == -1) {
+
+                            char errmsg[256];
+                            // printf("==PDC_SERVER[%d]: pread %d failed (%d)\n", pdc_server_rank_g,
+               region->fd,
+                            // strerror_r(errno, errmsg, sizeof(errmsg)));
+                            goto done;
+
+                        }
+            
             total_read_bytes += my_read_bytes;
 
         } // End is overlap
@@ -5380,11 +6236,11 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
     } // End DL_FOREACH storage region list
 
     if (total_read_bytes < request_bytes) {
-        printf("==PDC_SERVER[%d]: read less bytes than expected %llu / %llu\n", pdc_server_rank_g,
+        printf("==PDC_SERVER[%d]: read less bytes than expected %lu / %ld\n", pdc_server_rank_g,
                total_read_bytes, request_bytes);
         ret_value = -1;
     }
-*/
+
 
 #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer_end, 0);
@@ -5398,7 +6254,7 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
-#endif
+#endif // End else PDC_SERVER_CACHE
 
 perr_t
 PDC_Server_data_write_direct(uint64_t obj_id, struct pdc_region_info *region_info, void *buf)
@@ -5439,6 +6295,7 @@ done:
 }
 
 perr_t
+
 PDC_Server_get_local_storage_meta_with_one_name(storage_meta_query_one_name_args_t *args)
 {
     perr_t          ret_value  = SUCCEED;
@@ -5540,7 +6397,8 @@ PDC_Server_get_all_storage_meta_with_one_name(storage_meta_query_one_name_args_t
         // request we know which task that bulk data is needed
         in.obj_name  = args->name;
         in.origin_id = pdc_server_rank_g;
-        in.task_id   = PDC_add_task_to_list(&pdc_server_s2s_task_head_g, args->cb, args->cb_args,
+
+        in.task_id = PDC_add_task_to_list(&pdc_server_s2s_task_head_g, args->cb, args->cb_args,
                                           &pdc_server_task_id_g, &pdc_server_task_mutex_g);
 
         hg_ret = HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr,
@@ -5568,6 +6426,7 @@ done:
  * \param  in[IN]               input with type accumulate_storage_meta_t
  *
  * \return Non-negative on success/Negative on failure
+
  */
 static perr_t
 PDC_Server_accumulate_storage_meta_then_read(storage_meta_query_one_name_args_t *in)
@@ -5763,6 +6622,7 @@ PDC_Server_storage_meta_name_query_bulk_respond(const struct hg_cb_info *callbac
 
     ret_value = PDC_Server_get_local_storage_meta_with_one_name(query_args);
     if (ret_value != SUCCEED) {
+
         printf("==PDC_SERVER[%d]: %s - get local storage location ERROR!\n", pdc_server_rank_g, __func__);
         goto done;
     }
@@ -5971,6 +6831,7 @@ PDC_Server_free_query_task(query_task_t *task)
 {
     int i;
     if (NULL != task->query)
+
         PDCquery_free_all(task->query);
 
     if (task->coords)
@@ -6137,31 +6998,61 @@ PDC_region_has_hits_from_hist(pdc_query_constraint_t *constraint, pdc_histogram_
         printf("==PDC_SERVER[%d]: %s -  NULL input!\n", pdc_server_rank_g, __func__);
         return -1;
     }
-
+    /*
+        switch (constraint->type) {
+            case PDC_FLOAT:
+                value  = (double)(*((float *)&constraint->value));
+                value2 = (double)(*((float *)&constraint->value2));
+                break;
+            case PDC_DOUBLE:
+                value  = (double)(*((double *)&constraint->value));
+                value2 = (double)(*((double *)&constraint->value2));
+                break;
+            case PDC_INT:
+                value  = (double)(*((int *)&constraint->value));
+                value2 = (double)(*((int *)&constraint->value2));
+                break;
+            case PDC_UINT:
+                value  = (double)(*((uint32_t *)&constraint->value));
+                value2 = (double)(*((uint32_t *)&constraint->value2));
+                break;
+            case PDC_INT64:
+                value  = (double)(*((int64_t *)&constraint->value));
+                value2 = (double)(*((int64_t *)&constraint->value2));
+                break;
+            case PDC_UINT64:
+                value  = (double)(*((uint64_t *)&constraint->value));
+                value2 = (double)(*((uint64_t *)&constraint->value2));
+                break;
+            default:
+                printf("==PDC_SERVER[%d]: %s - error with operator type!\n", pdc_server_rank_g, __func__);
+                return -1;
+        }
+    */
     switch (constraint->type) {
         case PDC_FLOAT:
-            value  = (double)(*((float *)&constraint->value));
-            value2 = (double)(*((float *)&constraint->value2));
+            value  = (double)constraint->value;
+            value2 = (double)constraint->value2;
             break;
         case PDC_DOUBLE:
-            value  = (double)(*((double *)&constraint->value));
-            value2 = (double)(*((double *)&constraint->value2));
+            value  = (double)constraint->value;
+            value2 = (double)constraint->value2;
             break;
         case PDC_INT:
-            value  = (double)(*((int *)&constraint->value));
-            value2 = (double)(*((int *)&constraint->value2));
+            value  = (double)constraint->value;
+            value2 = (double)constraint->value2;
             break;
         case PDC_UINT:
-            value  = (double)(*((uint32_t *)&constraint->value));
-            value2 = (double)(*((uint32_t *)&constraint->value2));
+            value  = (double)constraint->value;
+            value2 = (double)constraint->value2;
             break;
         case PDC_INT64:
-            value  = (double)(*((int64_t *)&constraint->value));
-            value2 = (double)(*((int64_t *)&constraint->value2));
+            value  = (double)constraint->value;
+            value2 = (double)constraint->value2;
             break;
         case PDC_UINT64:
-            value  = (double)(*((uint64_t *)&constraint->value));
-            value2 = (double)(*((uint64_t *)&constraint->value2));
+            value  = (double)constraint->value;
+            value2 = (double)constraint->value2;
             break;
         default:
             printf("==PDC_SERVER[%d]: %s - error with operator type!\n", pdc_server_rank_g, __func__);
@@ -6202,6 +7093,7 @@ PDC_constraint_get_nhits_from_hist(pdc_query_constraint_t *constraint, pdc_histo
 
     if (constraint == NULL || region_hist == NULL || min_hits == NULL || max_hits == NULL) {
         printf("==PDC_SERVER[%d]: %s -  NULL input!\n", pdc_server_rank_g, __func__);
+
         goto done;
     }
 
@@ -6225,6 +7117,7 @@ PDC_constraint_get_nhits_from_hist(pdc_query_constraint_t *constraint, pdc_histo
         case PDC_INT64:
             value  = (double)(*((int64_t*)&constraint->value));
             value2 = (double)(*((int64_t*)&constraint->value2));
+
             break;
         case PDC_UINT64:
             value  = (double)(*((uint64_t*)&constraint->value));
@@ -6286,6 +7179,7 @@ PDC_constraint_get_nhits_from_hist(pdc_query_constraint_t *constraint, pdc_histo
     for (i = lidx/2; i <= ridx/2; i++) {
         (*max_hits) += region_hist->bin[i];
         if (region_hist->range[i*2] >= value && region_hist->range[i*2+1] <= value2) {
+
             (*min_hits) += region_hist->bin[i];
         }
     }
@@ -7037,6 +7931,7 @@ PDC_load_fastbit_index(char *idx_name, uint64_t obj_id, FastBitDataType dtype, i
     char *user_specified_data_path = getenv("PDC_DATA_LOC");
     if (user_specified_data_path != NULL)
         data_path = user_specified_data_path;
+
     else {
         data_path = getenv("SCRATCH");
         if (data_path == NULL)
@@ -7280,14 +8175,14 @@ PDC_Server_query_evaluate_merge_opt(pdc_query_t *query, query_task_t *task, pdc_
     pdc_selection_t *sel = query->sel;
     uint64_t         nelem;
     size_t           i, j, unit_size;
-    pdc_query_op_t   op, lop, rop;
-    float            flo, fhi;
-    double           dlo, dhi;
-    int              ilo, ihi, ndim, count = 0;
-    uint32_t         ulo, uhi;
-    int64_t          i64lo, i64hi;
-    uint64_t         ui64lo, ui64hi;
-    void *           value, *buf;
+    pdc_query_op_t   op = PDC_QUERY_OR, lop = PDC_QUERY_OR, rop = PDC_QUERY_OR;
+    float            flo = .0, fhi = .0;
+    double           dlo = .0, dhi = .0;
+    int              ilo = 0, ihi = 0, ndim, count = 0;
+    uint32_t         ulo = 0, uhi = 0;
+    int64_t          i64lo = 0, i64hi = 0;
+    uint64_t         ui64lo = 0, ui64hi = 0;
+    void *           value = NULL, *buf = NULL;
     int              n_eval_region = 0, can_skip, region_iter = 0;
 
     printf("==PDC_SERVER[%d]: %s - start query evaluation!\n", pdc_server_rank_g, __func__);
@@ -7355,30 +8250,61 @@ PDC_Server_query_evaluate_merge_opt(pdc_query_t *query, query_task_t *task, pdc_
 
     // Check if there is a range query that we can combine the evaluation
     if (query->constraint->is_range == 1) {
+        /*
+    switch (query->constraint->type) {
+
+                    case PDC_FLOAT:
+                        flo = *((float *)&query->constraint->value);
+                        fhi = *((float *)&query->constraint->value2);
+                        break;
+                    case PDC_DOUBLE:
+                        dlo = *((double *)&query->constraint->value);
+                        dhi = *((double *)&query->constraint->value2);
+                        break;
+                    case PDC_INT:
+                        ilo = *((int *)&query->constraint->value);
+                        ihi = *((int *)&query->constraint->value2);
+                        break;
+                    case PDC_UINT:
+                        ulo = *((uint32_t *)&query->constraint->value);
+                        uhi = *((uint32_t *)&query->constraint->value2);
+                        break;
+                    case PDC_INT64:
+                        i64lo = *((int64_t *)&query->constraint->value);
+                        i64hi = *((int64_t *)&query->constraint->value2);
+                        break;
+                    case PDC_UINT64:
+                        ui64lo = *((uint64_t *)&query->constraint->value);
+                        ui64hi = *((uint64_t *)&query->constraint->value2);
+                        break;
+                    default:
+                        printf("==PDC_SERVER[%d]: %s - error with operator type!\n", pdc_server_rank_g,
+           __func__); ret_value = FAIL; goto done; } // End switch
+        */
         switch (query->constraint->type) {
             case PDC_FLOAT:
-                flo = *((float *)&query->constraint->value);
-                fhi = *((float *)&query->constraint->value2);
+                flo = (float)query->constraint->value;
+                fhi = (float)query->constraint->value2;
                 break;
             case PDC_DOUBLE:
-                dlo = *((double *)&query->constraint->value);
-                dhi = *((double *)&query->constraint->value2);
+                dlo = (double)query->constraint->value;
+                dhi = (double)query->constraint->value2;
                 break;
             case PDC_INT:
-                ilo = *((int *)&query->constraint->value);
-                ihi = *((int *)&query->constraint->value2);
+                ilo = (int)query->constraint->value;
+                ihi = (int)query->constraint->value2;
                 break;
             case PDC_UINT:
-                ulo = *((uint32_t *)&query->constraint->value);
-                uhi = *((uint32_t *)&query->constraint->value2);
+                ulo = (uint32_t)query->constraint->value;
+                uhi = (uint32_t)query->constraint->value2;
                 break;
             case PDC_INT64:
-                i64lo = *((int64_t *)&query->constraint->value);
-                i64hi = *((int64_t *)&query->constraint->value2);
+                i64lo = (int64_t)query->constraint->value;
+                i64hi = (int64_t)query->constraint->value2;
                 break;
             case PDC_UINT64:
-                ui64lo = *((uint64_t *)&query->constraint->value);
-                ui64hi = *((uint64_t *)&query->constraint->value2);
+                ui64lo = (uint64_t)query->constraint->value;
+                ui64hi = (uint64_t)query->constraint->value2;
                 break;
             default:
                 printf("==PDC_SERVER[%d]: %s - error with operator type!\n", pdc_server_rank_g, __func__);
@@ -7415,6 +8341,7 @@ PDC_Server_query_evaluate_merge_opt(pdc_query_t *query, query_task_t *task, pdc_
             }
 
             // Skip non-overlap regions with the region constraint
+
             if (region_constraint && region_constraint->ndim > 0) {
                 if (PDC_is_contiguous_region_overlap(region_elt, region_constraint) != 1)
                     continue;
@@ -7858,8 +8785,9 @@ done:
 static perr_t
 PDC_Server_send_nhits_to_client(query_task_t *task)
 {
-    perr_t       ret_value = SUCCEED;
-    hg_return_t  hg_ret;
+    perr_t      ret_value = SUCCEED;
+    hg_return_t hg_ret;
+
     send_nhits_t in;
     hg_handle_t  handle;
     int          client_id;
@@ -7901,6 +8829,7 @@ PDC_Server_send_nhits_to_client(query_task_t *task)
 
     printf("==PDC_SERVER[%d]: %s - sending %" PRIu64 " nhits to client!\n", pdc_server_rank_g, __func__,
            in.nhits);
+
     fflush(stdout);
 
     hg_ret = HG_Forward(handle, PDC_check_int_ret_cb, NULL, &in);
@@ -8264,6 +9193,7 @@ PDC_Server_read_coords(const struct hg_cb_info *callback_info)
         unit_size           = PDC_get_var_type_size(constraint->type);
         my_size             = task->my_nread_coords * unit_size;
         task->my_data       = malloc(my_size);
+
         if (NULL == task->my_data) {
             printf("==PDC_SERVER[%d]: %s - error allocating %" PRIu64 " bytes for data read!\n",
                    pdc_server_rank_g, __func__, task->my_nread_coords * unit_size);
@@ -8296,7 +9226,8 @@ PDC_Server_read_coords(const struct hg_cb_info *callback_info)
                                 task->query_id, task->client_seq_id);
     }
     else {
-        // Requested object is not part of query, need to find their storage data and then read from storage
+        // Requested object is not part of query, need to find their storage data and then read from
+        // storage
 
         printf("==PDC_SERVER[%d]: %s - Requested object is not here, need to find its storage data!\n",
                pdc_server_rank_g, __func__);
@@ -8316,7 +9247,7 @@ PDC_recv_read_coords(const struct hg_cb_info *callback_info)
     hg_return_t         ret               = HG_SUCCESS;
     hg_bulk_t           local_bulk_handle = callback_info->info.bulk.local_handle;
     struct bulk_args_t *bulk_args         = (struct bulk_args_t *)callback_info->arg;
-    query_task_t *      task_elt;
+    query_task_t *      task_elt          = NULL;
     uint64_t            nhits, obj_id;
     uint32_t            ndim;
     int                 query_id, origin;
@@ -8403,7 +9334,8 @@ PDC_recv_coords(const struct hg_cb_info *callback_info)
     uint64_t            nhits = 0, total_hits;
     size_t              ndim, unit_size;
     int                 i, query_id, origin, found_task;
-    void *              buf;
+
+    void *buf;
 
     pdc_int_ret_t out;
     out.ret = 1;
@@ -8819,9 +9751,9 @@ void
 PDC_Server_distribute_query_storage_info(query_task_t *task, uint64_t obj_id, int *obj_idx, uint64_t *obj_ids,
                                          int op)
 {
-    pdc_metadata_t *meta;
+    pdc_metadata_t *meta = NULL;
     int             i, server_id, count, avg_count, nsent, nsent_server;
-    region_list_t * elt, *new_region;
+    region_list_t * elt, *new_region = NULL;
     void *          region_bulk_buf;
     uint64_t        buf_alloc = 0, buf_off = 0;
     bulk_rpc_in_t   header;
@@ -8911,6 +9843,7 @@ PDC_Server_distribute_query_storage_info(query_task_t *task, uint64_t obj_id, in
 
                 if (server_id != pdc_server_rank_g) {
                     PDC_send_query_metadata_bulk(&header, region_bulk_buf, buf_off, server_id);
+
                     // new buf for another server
                     buf_off         = 0;
                     region_bulk_buf = calloc(buf_alloc, 1);
@@ -8921,6 +9854,7 @@ PDC_Server_distribute_query_storage_info(query_task_t *task, uint64_t obj_id, in
                 }
 
                 nsent_server = 0;
+
                 server_id++;
                 server_id %= pdc_server_size_g;
             }
@@ -8960,14 +9894,14 @@ PDC_recv_query_metadata_bulk(const struct hg_cb_info *callback_info)
     hg_bulk_t               local_bulk_handle = callback_info->info.bulk.local_handle;
     struct bulk_args_t *    bulk_args         = (struct bulk_args_t *)callback_info->arg;
     void *                  buf;
-    region_list_t *         regions;
+    region_list_t *         regions = NULL;
     int                     i, nregion, *loc_len_ptr, *has_hist_ptr, found_task;
-    uint64_t                buf_off, *offset_ptr, *size_ptr;
-    char *                  loc_ptr;
-    region_info_transfer_t *region_info_ptr;
-    pdc_histogram_t *       hist_ptr;
-    query_task_t *          task_elt;
-    pdc_query_t *           query;
+    uint64_t                buf_off, *offset_ptr = NULL, *size_ptr = NULL;
+    char *                  loc_ptr         = NULL;
+    region_info_transfer_t *region_info_ptr = NULL;
+    pdc_histogram_t *       hist_ptr        = NULL;
+    query_task_t *          task_elt        = NULL;
+    pdc_query_t *           query           = NULL;
 
     pdc_int_ret_t out;
     out.ret = 1;
@@ -9274,7 +10208,8 @@ PDC_Server_send_read_coords_to_server(int server_id, uint64_t *coord, uint64_t n
     buf       = coord;
     buf_sizes = ncoords * ndim * sizeof(uint64_t);
     hg_ret    = HG_Bulk_create(hg_class_g, 1, &buf, &buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
-    /* printf("==PDC_SERVER[%d]: %s - created bulk handle %p!\n", pdc_server_rank_g, __func__, bulk_handle);
+    /* printf("==PDC_SERVER[%d]: %s - created bulk handle %p!\n", pdc_server_rank_g, __func__,
+     * bulk_handle);
      */
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr, "Could not create bulk data handle\n");

@@ -104,5 +104,27 @@ VPIC-IO and BD-CATS-IO
 	cd make
 	./run_multiple_test.sh ./vpicio ./bdcats
 
+---------------------------
+HACC-IO
+---------------------------
 
 
+* The purpose of this benchmark is to evaluate the performance of the I/O system for the Hardware Accelerated Cosmology Code (HACC) simulation. The HACC framework uses N-body techniques to simulate the formation of structure in collisionless fluids under the influence of gravity in an expanding universe.
+* Each MPI rank writes 9 variables (with different data types) per particle for a total of 38 bytes.
+
+.. code-block:: Bash
+
+	./mpi_test.sh ./haccio mpiexec 1 num-procs num-particles
+	
+
+---------------------------
+Tile-IO
+---------------------------
+
+* In Tile-IO, esach MPI rank writes one tile of a desen 2D data grid. The number of tiles in each dimension and the number of particles hold by each tile can be set through the command line arguments.
+* The total data size is: (is x-tiles * y-tiles) * (x-elements-per-tile * y-elements-per-tile).
+* Currently, the number of processes should be equal to (x-tiles * y-tiles). i.e., one tile per MPI rank. We plan to lift this restriction later and support overlap between tiles.
+
+.. code-block:: Bash
+
+	./mpi_test.sh ./tileio mpiexec num-servers num-procs x-tiles y-tiles x-elements-per-tile y-elements-per-tile

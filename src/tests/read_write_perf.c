@@ -177,8 +177,8 @@ main(int argc, char **argv)
         reg_global = PDCregion_create(ndim, offset, offset_length);
 
         memset(data, (char)i, sizeof(int) * data_size);
-        MPI_Barrier(MPI_COMM_WORLD);
 #ifdef ENABLE_MPI
+        MPI_Barrier(MPI_COMM_WORLD);
         start = MPI_Wtime();
         ret   = PDCbuf_obj_map(data, PDC_INT, reg, obj1, reg_global);
         write_buf_map_time += MPI_Wtime() - start;
@@ -245,8 +245,8 @@ main(int argc, char **argv)
         reg_global = PDCregion_create(ndim, offset, offset_length);
 
         memset(data, 0, sizeof(int) * data_size);
-        MPI_Barrier(MPI_COMM_WORLD);
 #ifdef ENABLE_MPI
+        MPI_Barrier(MPI_COMM_WORLD);
         start = MPI_Wtime();
         ret   = PDCbuf_obj_map(data_read, PDC_INT, reg, obj1, reg_global);
         read_buf_map_time += MPI_Wtime() - start;

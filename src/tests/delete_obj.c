@@ -68,7 +68,7 @@ main(int argc, char **argv)
     char *   env_str;
     char     name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name",
                              "INVALID!",         "INVALID!", "Four Obj Names"};
-    char     obj_name[32];
+    char     obj_name[1024];
     perr_t   ret;
 
 #ifdef ENABLE_MPI

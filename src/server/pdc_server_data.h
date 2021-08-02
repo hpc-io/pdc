@@ -310,26 +310,30 @@ extern char *  gBinningOption;
 extern int     gen_fastbit_idx_g;
 extern int     use_fastbit_idx_g;
 
+#define PDC_SERVER_CACHE
+
 #ifdef PDC_SERVER_CACHE
-typedef struct {
-    struct timeval          timestamp;
-    struct pdc_region_info *region_cache;
-    uint64_t                obj_id;
-    int                     region_obj_cache_size;
-    int                     region_obj_cache_max_size;
+typedef struct pdc_region_cache {
+    struct pdc_region_info * region_cache_info;
+    struct pdc_region_cache *next;
+} pdc_region_cache;
+
+typedef struct pdc_obj_cache {
+    struct pdc_obj_cache *next;
+    uint64_t              obj_id;
+    pdc_region_cache *    region_cache;
+    pdc_region_cache *    region_cache_end;
+    struct timeval        timestamp;
 } pdc_obj_cache;
 
-typedef struct {
-    pdc_obj_cache *pdc_obj_cache;
-    int            obj_cache_size;
-    int            obj_cache_max_size;
-} pdc_cache;
+#define PDC_REGION_CONTAINED       0
+#define PDC_REGION_CONTAINED_BY    1
+#define PDC_REGION_PARTIAL_OVERLAP 2
+#define PDC_REGION_NO_OVERLAP      3
+#define PDC_MERGE_FAILED           4
+#define PDC_MERGE_SUCCESS          5
 
-#define PDC_REGION_CONTAINED       0x1111
-#define PDC_REGION_PARTIAL_OVERLAP 0x1112
-#define PDC_REGION_NO_OVERLAP      0x1113
-
-pdc_cache obj_cache_list;
+pdc_obj_cache *obj_cache_list, *obj_cache_list_end;
 
 hg_thread_mutex_t pdc_obj_cache_list_mutex;
 pthread_t         pdc_recycle_thread;

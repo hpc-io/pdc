@@ -100,21 +100,27 @@ MurmurHash3_x64_128(const void *key, const int len, const uint32_t seed, void *o
         case 15:
             k2 ^= ((uint64_t)tail[14]) << 48;
             FALL_THROUGH;
+            /* FALLTHRU */
         case 14:
             k2 ^= ((uint64_t)tail[13]) << 40;
             FALL_THROUGH;
+            /* FALLTHRU */
         case 13:
             k2 ^= ((uint64_t)tail[12]) << 32;
             FALL_THROUGH;
+            /* FALLTHRU */
         case 12:
             k2 ^= ((uint64_t)tail[11]) << 24;
             FALL_THROUGH;
+            /* FALLTHRU */
         case 11:
             k2 ^= ((uint64_t)tail[10]) << 16;
             FALL_THROUGH;
+            /* FALLTHRU */
         case 10:
             k2 ^= ((uint64_t)tail[9]) << 8;
             FALL_THROUGH;
+            /* FALLTHRU */
         case 9:
             k2 ^= ((uint64_t)tail[8]) << 0;
             k2 *= c2;
@@ -122,27 +128,35 @@ MurmurHash3_x64_128(const void *key, const int len, const uint32_t seed, void *o
             k2 *= c1;
             h2 ^= k2;
             FALL_THROUGH;
+            /* FALLTHRU */
         case 8:
             k1 ^= ((uint64_t)tail[7]) << 56;
             FALL_THROUGH;
+            /* FALLTHRU */
         case 7:
             k1 ^= ((uint64_t)tail[6]) << 48;
             FALL_THROUGH;
+            /* FALLTHRU */
         case 6:
             k1 ^= ((uint64_t)tail[5]) << 40;
             FALL_THROUGH;
+            /* FALLTHRU */
         case 5:
             k1 ^= ((uint64_t)tail[4]) << 32;
             FALL_THROUGH;
+            /* FALLTHRU */
         case 4:
             k1 ^= ((uint64_t)tail[3]) << 24;
             FALL_THROUGH;
+            /* FALLTHRU */
         case 3:
             k1 ^= ((uint64_t)tail[2]) << 16;
             FALL_THROUGH;
+            /* FALLTHRU */
         case 2:
             k1 ^= ((uint64_t)tail[1]) << 8;
             FALL_THROUGH;
+            /* FALLTHRU */
         case 1:
             k1 ^= ((uint64_t)tail[0]) << 0;
             k1 *= c1;
@@ -150,6 +164,7 @@ MurmurHash3_x64_128(const void *key, const int len, const uint32_t seed, void *o
             k1 *= c2;
             h1 ^= k1;
             FALL_THROUGH;
+            /* FALLTHRU */
     }
 
     //----------

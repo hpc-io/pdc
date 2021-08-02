@@ -24,8 +24,16 @@ jobs:
         working-directory: ./src
         run: |
           mkdir build && cd build
-          cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=mpicc
+          cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DPDC_ENABLE_MPI=ON -DCMAKE_C_COMPILER=mpicc
           make -j2
+
+      # - name: Debug test PDC
+      #   working-directory: ./src/build/bin
+      #   run: |
+      #     mpirun -n 1 ./pdc_server.exe &
+      #     sleep 1
+      #     mpirun -n 1 ./pdc_init
+      #     mpirun -n 1 ./close_server
 
       - name: Test PDC
         working-directory: ./src/build
