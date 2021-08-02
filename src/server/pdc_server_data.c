@@ -5783,12 +5783,12 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 		printf("Extended Attribute set for %llu_batch :with batch no.  %d \n",obj_id,batch);}
 
 	        #endif
-                ret_value = PDC_Server_posix_write(region->fd, buf + pos, write_size);
+/*                ret_value = PDC_Server_posix_write(region->fd, buf + pos, write_size);
                 if (ret_value != SUCCEED) {
                     printf("==PDC_SERVER[%d]: PDC_Server_posix_write FAILED!\n", pdc_server_rank_g);
                     ret_value = FAIL;
                     goto done;
-                }
+                }*/
                 // No need to update metadata
             }
             else if (region_info->ndim == 2) {
@@ -5922,13 +5922,13 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 
 	#endif
 
-        ret_value = PDC_Server_posix_write(region->fd, buf, write_size);
+/*        ret_value = PDC_Server_posix_write(region->fd, buf, write_size);
         if (ret_value != SUCCEED) {
             printf("==PDC_SERVER[%d]: PDC_Server_posix_write FAILED!\n", pdc_server_rank_g);
             ret_value = FAIL;
             goto done;
         }
-
+*/
         // Store storage information
         request_region->data_size = write_size;
         DL_APPEND(region->region_storage_head, request_region);
@@ -6122,11 +6122,11 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 
 		#endif
 
-                if (pread(region->fd, buf + pos, overlap_count[0] * unit,
+  /*              if (pread(region->fd, buf + pos, overlap_count[0] * unit,
                           storage_region->offset + overlap_start_local[0] * unit) !=
                     (ssize_t)(overlap_count[0] * unit)) {
                     printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
-                }
+    */            }
                 my_read_bytes = overlap_count[0] * unit;
                 /* printf("storage offset %llu, region offset %llu, read %d bytes\n", storage_region->offset,
 
