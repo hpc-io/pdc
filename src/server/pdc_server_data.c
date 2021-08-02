@@ -5218,9 +5218,9 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
         printf("%d\t",((int*)buf)[i]); }
 
 
-	printf("Ending data in buf\n");
-	for(i=262143990;i<262144000;i++){
-	printf("%d\t",((int*)buf)[i]); }
+//	printf("Ending data in buf\n");
+//	for(i=262143990;i<262144000;i++){
+//	printf("%d\t",((int*)buf)[i]); }
 
 #endif
 
