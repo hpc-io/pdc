@@ -4514,6 +4514,7 @@ PDC_Server_data_io_direct(pdc_access_t io_type, uint64_t obj_id, struct pdc_regi
 }
 
 #ifdef ENABLE_RADOS
+printf("Enabled_inside\n");
 //Ceph Write function
 static perr_t
 PDC_Server_rados_write(uint64_t obj_id, void *buf, uint64_t write_size)
@@ -4523,7 +4524,7 @@ PDC_Server_rados_write(uint64_t obj_id, void *buf, uint64_t write_size)
     uint64_t write_bytes = 0, max_write_size = 1073741824;
     perr_t   ret_value = SUCCEED;
     ssize_t  ret;
-
+printf("Inside rados write\n");
     FUNC_ENTER(NULL);
 	int retu;
 	int batch = 0;
@@ -4561,6 +4562,7 @@ PDC_Server_rados_write(uint64_t obj_id, void *buf, uint64_t write_size)
 	done:
     FUNC_LEAVE(ret_value);
 }
+printf("Enabled_came_outside\n");
 
 #endif
 
@@ -5768,7 +5770,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 
 		ret_value = PDC_Server_rados_write(obj_id, buf + pos, write_size);
                 if (ret_value != SUCCEED) {
-                    printf("==PDC_SERVER[%d]: PDC_Server_posix_write FAILED!\n", pdc_server_rank_g);
+                    printf("==PDC_SERVER[%d]: PDC_Server_rados_write FAILED!\n", pdc_server_rank_g);
                     ret_value = FAIL;
                     goto done;
                 }
@@ -5913,7 +5915,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 
     if (is_overlap == 0) {
         request_region->offset = lseek(region->fd, 0, SEEK_END);
-
+	printf("overlap ==0 \n");
 	 ret_value = PDC_Server_rados_write(obj_id, buf, write_size);
         if (ret_value != SUCCEED) {
             printf("==PDC_SERVER[%d]: PDC_Server_rados_write FAILED!\n", pdc_server_rank_g);
