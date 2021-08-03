@@ -4513,18 +4513,18 @@ PDC_Server_data_io_direct(pdc_access_t io_type, uint64_t obj_id, struct pdc_regi
     FUNC_LEAVE(ret_value);
 }
 
+#ifdef ENABLE_RADOS
+//Ceph Write function
 static perr_t
-PDC_Server_posix_write(uint64_t obj_id, void *buf, uint64_t write_size)
+PDC_Server_rados_write(uint64_t obj_id, void *buf, uint64_t write_size)
 {
-    // Write 1GB at a time
+ // Write 1GB at a time
     //Ceph_write here
     uint64_t write_bytes = 0, max_write_size = 1073741824;
     perr_t   ret_value = SUCCEED;
     ssize_t  ret;
 
     FUNC_ENTER(NULL);
-
-#ifdef ENABLE_RADOS
 	int retu;
 	int batch = 0;
 	const char name[100];
@@ -4558,8 +4558,24 @@ PDC_Server_posix_write(uint64_t obj_id, void *buf, uint64_t write_size)
 	if(retu<0){printf("Error Setting in the Extended attribute\n");}else{
 	printf("Extended Attribute set for %llu_batch :with batch no.  %d \n",obj_id,batch);}
 
+	done:
+    FUNC_LEAVE(ret_value);
+}
+
 #endif
-/*
+
+
+static perr_t
+PDC_Server_posix_write(int fd, void *buf, uint64_t write_size)
+{
+    // Write 1GB at a time
+    uint64_t write_bytes = 0, max_write_size = 1073741824;
+    perr_t   ret_value = SUCCEED;
+    ssize_t  ret;
+
+    FUNC_ENTER(NULL);
+
+
 
     while (write_size > max_write_size) {
         ret = write(fd, buf, max_write_size);
@@ -4585,10 +4601,11 @@ PDC_Server_posix_write(uint64_t obj_id, void *buf, uint64_t write_size)
                write_bytes, write_size);
         ret_value = FAIL;
     }
-*/
+
 done:
     FUNC_LEAVE(ret_value);
 }
+
 #ifdef PDC_SERVER_CACHE
 
 /*
@@ -5621,7 +5638,7 @@ PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf
 perr_t
 PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
-    //Ceph Write function here
+    //Ceph Write function Called  here
 
     perr_t ret_value = SUCCEED;
     data_server_region_t *region = NULL;
@@ -5749,13 +5766,19 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 
                 lseek(region->fd, overlap_region->offset + overlap_start_local[0] * unit, SEEK_SET);
 
-
-                ret_value = PDC_Server_posix_write(region->fd, buf + pos, write_size);
+		ret_value = PDC_Server_rados_write(obj_id, buf + pos, write_size);
                 if (ret_value != SUCCEED) {
                     printf("==PDC_SERVER[%d]: PDC_Server_posix_write FAILED!\n", pdc_server_rank_g);
                     ret_value = FAIL;
                     goto done;
                 }
+
+              /*  ret_value = PDC_Server_posix_write(region->fd, buf + pos, write_size);
+                if (ret_value != SUCCEED) {
+                    printf("==PDC_SERVER[%d]: PDC_Server_posix_write FAILED!\n", pdc_server_rank_g);
+                    ret_value = FAIL;
+                    goto done;
+                }*/
                 // No need to update metadata
             }
             else if (region_info->ndim == 2) {
@@ -5790,8 +5813,8 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                         goto done;
                     }
                 }
-		//ceph write on tmp_buf
-		#ifdef ENABLE_RADOS
+		//ceph write on tmp_buf _needs to be changed
+	/*	#ifdef ENABLE_RADOS
 		int retu;
 		int batch = 0;
 		const char name[100];
@@ -5827,7 +5850,8 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 		printf("Extended Attribute set for %llu_batch :with batch no.  %d \n",obj_id,batch);}
 
 		#endif
-                if (pwrite(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
+*/
+		if (pwrite(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
                     (ssize_t)overlap_region->data_size) {
                     printf("==PDC_SERVER[%d]: Failed to write enough bytes\n", pdc_server_rank_g);
                 }
@@ -5889,15 +5913,22 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 
     if (is_overlap == 0) {
         request_region->offset = lseek(region->fd, 0, SEEK_END);
-	
 
-        ret_value = PDC_Server_posix_write(region->fd, buf, write_size);
+	 ret_value = PDC_Server_rados_write(obj_id, buf, write_size);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_SERVER[%d]: PDC_Server_rados_write FAILED!\n", pdc_server_rank_g);
+            ret_value = FAIL;
+            goto done;
+        }
+
+
+/*        ret_value = PDC_Server_posix_write(region->fd, buf, write_size);
         if (ret_value != SUCCEED) {
             printf("==PDC_SERVER[%d]: PDC_Server_posix_write FAILED!\n", pdc_server_rank_g);
             ret_value = FAIL;
             goto done;
         }
-
+*/
         // Store storage information
         request_region->data_size = write_size;
         DL_APPEND(region->region_storage_head, request_region);
