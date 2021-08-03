@@ -5667,12 +5667,13 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 #endif
 
 //<<<<<<< HEAD
-/*
+
 #ifdef ENABLE_RADOS
 	int retu;
 	int batch = 0;
 	const char name[100];
 	long long int maxx_write_size = 94371840;
+	printf("Write Function_called here:1\n");
 	printf("%lld:This is the write Size\n",write_size);
 	while (write_size > maxx_write_size) {
 	printf("Loop running %d time\n",batch);
@@ -5690,7 +5691,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 	sprintf(name, "%llu_%d", obj_id, batch);
 	retu = rados_write_full(io, name, buf,write_size);
 	if(retu<0){printf("Error Writing in the last Object name\n");}else{
-	printf("DAta is stored for last object %s\n",name);}
+	printf("DAta is stored for last object or only first object %s\n",name);}
 
 	char b_size[100];
 	//size_t psize;
@@ -5704,14 +5705,15 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 
 #endif
 
-*/
-	write_bytes = 0;
+
+/*	write_bytes = 0;
     while (write_size > max_write_size) {
         write_bytes += write(region->fd, buf, max_write_size);
         buf += max_write_size;
         write_size -= max_write_size;
     }
     write_bytes += write(region->fd, buf, write_size);
+*/
 //=======
     // Detect overwrite
     region_list_t *elt;
