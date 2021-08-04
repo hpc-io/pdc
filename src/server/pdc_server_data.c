@@ -5151,6 +5151,9 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     int               flag;
     pdc_obj_cache *   obj_cache, *obj_cache_iter;
     pdc_region_cache *region_cache_iter;
+    char *buf_merged;
+    uint64_t *offset_merged, size_merged;
+    int merge_status;
 
     perr_t ret_value = SUCCEED;
 
@@ -5192,6 +5195,16 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                 flag = 0;
                 break;
             }
+/*
+ else {
+                merge_status = PDC_region_merge(buf, region_cache_iter->region_cache_info->buf, region_info->offset, region_info->size,
+                     region_cache_iter->region_cache_info->offset, region_cache_iter->region_cache_info->size, &buf_merged,
+                     &offset_merged, &size_merged, ndim, unit);
+                if ( merge_status == PDC_MERGE_SUCCESS ) {
+                
+                }
+            }
+*/
             region_cache_iter = region_cache_iter->next;
         }
     }
@@ -5453,6 +5466,7 @@ PDC_region_cache_flush_all()
         obj_cache_iter = obj_cache_iter->next;
         free(obj_cache_temp);
     }
+    obj_cache_list = NULL;
     hg_thread_mutex_unlock(&pdc_obj_cache_list_mutex);
     return 0;
 }
@@ -7698,6 +7712,7 @@ PDC_load_fastbit_index(char *idx_name, uint64_t obj_id, FastBitDataType dtype, i
     fseek(fp, 0, SEEK_SET);
     fread(*offsets, no, sizeof(int64_t), fp);
     fclose(fp);
+
 
     fastbit_iapi_register_array_index_only(idx_name, dtype, dims, ndim, *keys, nk, *offsets, no, *bms,
                                            PDC_bmreader);
