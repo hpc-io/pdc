@@ -4603,6 +4603,7 @@ extract_overlaping_region(const uint64_t *offset, const uint64_t *size, const ui
 /*
  * A function used by PDC_region_merge.
  * This function copies contiguous memory buffer from buf and buf2 to buf_merged using region views.
+ * If two regions overlap with each other, region 2 override the contents occupied by region 1.
  */
 static int
 pdc_region_merge_buf_copy(const uint64_t *offset, const uint64_t *size, const uint64_t *offset2,
@@ -4614,13 +4615,15 @@ pdc_region_merge_buf_copy(const uint64_t *offset, const uint64_t *size, const ui
     for (i = 0; i < connect_flag; ++i) {
         unit *= size[i];
     }
-
     if (offset[connect_flag] < offset2[connect_flag]) {
         if (offset[connect_flag] + size[connect_flag] > offset2[connect_flag] + size2[connect_flag]) {
+            // Copy data for region 1 that does not overlap with region 2
             memcpy(*buf_merged, buf, unit * (offset2[connect_flag] - offset[connect_flag]));
             *buf_merged += unit * (offset2[connect_flag] - offset[connect_flag]);
+            // Copy data for region 2 that does not overlap with region 1.
             memcpy(*buf_merged, buf2, unit * size2[connect_flag]);
             *buf_merged += unit * size2[connect_flag];
+            // Copy overlaping region with region 2 data
             memcpy(*buf_merged, buf2,
                    unit * (offset[connect_flag] + size[connect_flag] -
                            (offset2[connect_flag] + size2[connect_flag])));
