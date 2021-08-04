@@ -4513,59 +4513,6 @@ PDC_Server_data_io_direct(pdc_access_t io_type, uint64_t obj_id, struct pdc_regi
     FUNC_LEAVE(ret_value);
 }
 
-#ifdef ENABLE_RADOS
-printf("Enabled_inside\n");
-//Ceph Write function
-static perr_t
-PDC_Server_rados_write(uint64_t obj_id, void *buf, uint64_t write_size)
-{
- // Write 1GB at a time
-    //Ceph_write here
-    uint64_t write_bytes = 0, max_write_size = 1073741824;
-    perr_t   ret_value = SUCCEED;
-    ssize_t  ret;
-printf("Inside rados write\n");
-    FUNC_ENTER(NULL);
-	int retu;
-	int batch = 0;
-	const char name[100];
-	long long int maxx_write_size = 94371840;
-	printf("%lld:This is the write Size\n",write_size);
-	while (write_size > maxx_write_size) {
-	printf("Loop running %d time\n",batch);
-		sprintf(name,"%llu_%d", obj_id, batch);
-		printf("%s\n",name);
-		retu = rados_write_full(io,name,buf,maxx_write_size);
-		if(retu<0){printf("Error writing in the object  name for: %s\n",name);
-		}else{
-		printf("Object written Successfully named %s\n",name);}
-		buf += maxx_write_size;
-		write_size -= maxx_write_size;
-		batch++;
-		printf("For object with batch : %d write_size is :%d\n",batch,write_size);
-	}
-	sprintf(name, "%llu_%d", obj_id, batch);
-	retu = rados_write_full(io, name, buf,write_size);
-	if(retu<0){printf("Error Writing in the last Object name\n");}else{
-	printf("DAta is stored for last object %s\n",name);}
-
-	char b_size[100];
-	//size_t psize;
-	//retu = rados_stat(io,name,&psize,NULL);
-	sprintf(b_size,"%d",batch);
-	sprintf(name, "%llu_batch", obj_id);
-	printf("Size of batch object : %d\n",strlen(b_size));
-	retu = rados_setxattr(io,name,"batch",&batch,sizeof(int));
-	if(retu<0){printf("Error Setting in the Extended attribute\n");}else{
-	printf("Extended Attribute set for %llu_batch :with batch no.  %d \n",obj_id,batch);}
-
-	done:
-    FUNC_LEAVE(ret_value);
-}
-printf("Enabled_came_outside\n");
-
-#endif
-
 
 static perr_t
 PDC_Server_posix_write(int fd, void *buf, uint64_t write_size)
@@ -5637,6 +5584,57 @@ PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf
 
 #else
 // No PDC_SERVER_CACHE
+
+#ifdef ENABLE_RADOS
+//Ceph Write function
+int
+PDC_Server_rados_write(uint64_t obj_id, void *buf, uint64_t write_size)
+{
+ // Write 1GB at a time
+    //Ceph_write here
+  //  uint64_t write_bytes = 0, max_write_size = 1073741824;
+//    perr_t   ret_value = SUCCEED;
+//    ssize_t  ret;
+//printf("Inside rados write\n");
+  //  FUNC_ENTER(NULL);
+	int retu;
+	int batch = 0;
+	const char name[100];
+	long long int maxx_write_size = 94371840;
+	printf("%lld:This is the write Size\n",write_size);
+	while (write_size > maxx_write_size) {
+	printf("Loop running %d time\n",batch);
+		sprintf(name,"%llu_%d", obj_id, batch);
+		printf("%s\n",name);
+		retu = rados_write_full(io,name,buf,maxx_write_size);
+		if(retu<0){printf("Error writing in the object  name for: %s\n",name);
+		}else{
+		printf("Object written Successfully named %s\n",name);}
+		buf += maxx_write_size;
+		write_size -= maxx_write_size;
+		batch++;
+		printf("For object with batch : %d write_size is :%d\n",batch,write_size);
+	}
+	sprintf(name, "%llu_%d", obj_id, batch);
+	retu = rados_write_full(io, name, buf,write_size);
+	if(retu<0){printf("Error Writing in the last Object name\n");}else{
+	printf("DAta is stored for last object %s\n",name);}
+
+	char b_size[100];
+	//size_t psize;
+	//retu = rados_stat(io,name,&psize,NULL);
+	sprintf(b_size,"%d",batch);
+	sprintf(name, "%llu_batch", obj_id);
+	printf("Size of batch object : %d\n",strlen(b_size));
+	retu = rados_setxattr(io,name,"batch",&batch,sizeof(int));
+	if(retu<0){printf("Error Setting in the Extended attribute\n");}else{
+	printf("Extended Attribute set for %llu_batch :with batch no.  %d \n",obj_id,batch);}
+
+	return 0;
+}
+#endif
+
+
 perr_t
 PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
@@ -5683,6 +5681,15 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     struct timeval pdc_timer_start, pdc_timer_end;
     double write_total_sec;
     gettimeofday(&pdc_timer_start, 0);
+#endif
+
+#ifdef ENABLE_RADOS
+         ret_value = PDC_Server_rados_write(obj_id, buf, write_size);
+            if (ret_value != 0) {
+            printf("==PDC_SERVER[%d]: PDC_Server_rados_write FAILED!\n", pdc_server_rank_g);
+            ret_value = FAIL;
+            goto done;
+        }
 #endif
 
 //<<<<<<< HEAD
@@ -5767,13 +5774,14 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                 }
 
                 lseek(region->fd, overlap_region->offset + overlap_start_local[0] * unit, SEEK_SET);
-
+		#ifdef ENABLE_RADOS
 		ret_value = PDC_Server_rados_write(obj_id, buf + pos, write_size);
-                if (ret_value != SUCCEED) {
+                if (ret_value != 0) {
                     printf("==PDC_SERVER[%d]: PDC_Server_rados_write FAILED!\n", pdc_server_rank_g);
                     ret_value = FAIL;
                     goto done;
                 }
+		#endif
 
               /*  ret_value = PDC_Server_posix_write(region->fd, buf + pos, write_size);
                 if (ret_value != SUCCEED) {
@@ -5916,12 +5924,14 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     if (is_overlap == 0) {
         request_region->offset = lseek(region->fd, 0, SEEK_END);
 	printf("overlap ==0 \n");
+	#ifdef ENABLE_RADOS
 	 ret_value = PDC_Server_rados_write(obj_id, buf, write_size);
-        if (ret_value != SUCCEED) {
+            if (ret_value != 0) {
             printf("==PDC_SERVER[%d]: PDC_Server_rados_write FAILED!\n", pdc_server_rank_g);
             ret_value = FAIL;
             goto done;
         }
+	#endif
 
 
 /*        ret_value = PDC_Server_posix_write(region->fd, buf, write_size);
