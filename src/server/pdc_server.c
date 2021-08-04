@@ -1970,7 +1970,7 @@ main(int argc, char *argv[])
         fprintf(stderr, "rados_connect failed\n");
         goto done;
     }else{
-	printf("Cluster is connected");}
+	printf("Rados_Cluster is connected\n");}
     retu = rados_ioctx_create(cluster, poolname, &io);
     if (retu != 0) {
         fprintf(stderr, "rados_ioctx_create failed\n");
