@@ -5418,23 +5418,10 @@ done:
 }
 
 int
-PDC_region_cache_flush(uint64_t obj_id)
+PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache)
 {
-    pdc_obj_cache *         obj_cache = NULL, *obj_cache_iter;
     pdc_region_cache *      region_cache_iter, *region_cache_temp;
     struct pdc_region_info *region_cache_info;
-
-    obj_cache_iter = obj_cache_list;
-    while (obj_cache_iter != NULL) {
-        if (obj_cache_iter->obj_id == obj_id) {
-            obj_cache = obj_cache_iter;
-            break;
-        }
-        obj_cache_iter = obj_cache_iter->next;
-    }
-    if (obj_cache == NULL) {
-        printf("server error: flushing object that does not exist\n");
-    }
     region_cache_iter = obj_cache->region_cache;
     while (region_cache_iter != NULL) {
         region_cache_info = region_cache_iter->region_cache_info;
@@ -5454,6 +5441,27 @@ PDC_region_cache_flush(uint64_t obj_id)
 }
 
 int
+PDC_region_cache_flush(uint64_t obj_id)
+{
+    pdc_obj_cache *         obj_cache = NULL, *obj_cache_iter;
+
+    obj_cache_iter = obj_cache_list;
+    while (obj_cache_iter != NULL) {
+        if (obj_cache_iter->obj_id == obj_id) {
+            obj_cache = obj_cache_iter;
+            break;
+        }
+        obj_cache_iter = obj_cache_iter->next;
+    }
+    if (obj_cache == NULL) {
+        //printf("server error: flushing object that does not exist\n");
+        return 1;
+    }
+    PDC_region_cache_flush_by_pointer(obj_id, obj_cache);
+    return 0;
+}
+
+int
 PDC_region_cache_flush_all()
 {
     pdc_obj_cache *obj_cache_iter, *obj_cache_temp;
@@ -5461,7 +5469,7 @@ PDC_region_cache_flush_all()
 
     obj_cache_iter = obj_cache_list;
     while (obj_cache_iter != NULL) {
-        PDC_region_cache_flush(obj_cache_iter->obj_id);
+        PDC_region_cache_flush_by_pointer(obj_cache_iter->obj_id, obj_cache_iter);
         obj_cache_temp = obj_cache_iter;
         obj_cache_iter = obj_cache_iter->next;
         free(obj_cache_temp);
@@ -5488,7 +5496,7 @@ PDC_region_cache_clock_cycle(void *ptr)
             while (obj_cache_iter != NULL) {
                 obj_cache = obj_cache_iter;
                 if (current_time.tv_sec - obj_cache->timestamp.tv_sec > 10) {
-                    PDC_region_cache_flush(obj_cache->obj_id);
+                    PDC_region_cache_flush_by_pointer(obj_cache->obj_id, obj_cache);
                 }
                 obj_cache_iter = obj_cache_iter->next;
             }
@@ -5570,7 +5578,9 @@ PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf
         }
     }
     if (region_cache_info == NULL) {
-        PDC_region_cache_flush(obj_id);
+        if (obj_cache != NULL) {
+            PDC_region_cache_flush_by_pointer(obj_id, obj_cache);
+        }
         PDC_Server_data_read_from2(obj_id, region_info, buf, unit);
     }
     hg_thread_mutex_unlock(&pdc_obj_cache_list_mutex);
