@@ -13,6 +13,23 @@ The following dependencies will need to be installed:
 * libfabric
 * Mercury
 
+++++++++++++++++++++++++++++++++++
+Installing PDC with Spack
+++++++++++++++++++++++++++++++++++
+
+Spack is a package manager for supercomputers, Linux, and macOS.
+Installing spack can be found at this url: https://spack.io
+
+.. code-block:: Bash
+	
+	$ git clone https://github.com/spack/spack.git
+	$ cd spack/bin
+	$ ./spack install pdc
+
+++++++++++++++++++++++++++++++++++
+Installing PDC from source
+++++++++++++++++++++++++++++++++++
+
 ---------------------------
 Dependencies
 ---------------------------
