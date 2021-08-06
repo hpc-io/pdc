@@ -71,6 +71,7 @@ timestamp_log(FILE *stream, const char *header, pdc_timestamp *timestamp)
         fprintf(stream, ",%4f-%4f", timestamp->start[i], timestamp->end[i]);
     }
     fprintf(stream, "\n");
+    return 0;
 }
 
 int
@@ -82,6 +83,7 @@ PDC_timing_init()
     client_buf_obj_unmap_timestamps = client_buf_obj_map_timestamps + 1;
     client_obtain_lock_timestamps   = client_buf_obj_map_timestamps + 2;
     client_release_lock_timestamps  = client_buf_obj_map_timestamps + 3;
+    return 0;
 }
 
 int
@@ -141,6 +143,7 @@ PDC_timing_report(const char *prefix)
     client_buf_obj_unmap_timestamps->timestamp_size = 0;
     client_obtain_lock_timestamps->timestamp_size   = 0;
     client_release_lock_timestamps->timestamp_size  = 0;
+    return 0;
 }
 
 int
@@ -153,6 +156,7 @@ PDC_server_timing_init()
     release_lock_timestamps               = buf_obj_map_timestamps + 3;
     release_lock_bulk_transfer_timestamps = buf_obj_map_timestamps + 4;
     base_time                             = MPI_Wtime();
+    return 0;
 }
 
 int
@@ -224,6 +228,7 @@ PDC_server_timing_report()
     pdc_timestamp_clean(release_lock_timestamps);
     pdc_timestamp_clean(release_lock_bulk_transfer_timestamps);
     free(buf_obj_map_timestamps);
+    return 0;
 }
 
 #endif
@@ -238,6 +243,91 @@ hg_thread_pool_t *hg_test_thread_pool_fs_g = NULL;
 
 uint64_t pdc_id_seq_g = PDC_SERVER_ID_INTERVEL;
 // actual value for each server is set by PDC_Server_init()
+
+hg_return_t
+hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data)
+{
+    hg_return_t       ret;
+    pdc_query_xfer_t *struct_data = (pdc_query_xfer_t *)data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->query_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->client_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->get_op);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->manager);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->n_unique_obj);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->query_op);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->next_server_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->prev_server_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->n_constraints);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->n_combine_ops);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->region);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    if (struct_data->n_constraints > 0) {
+        switch (hg_proc_get_op(proc)) {
+            case HG_DECODE:
+                struct_data->combine_ops = malloc(struct_data->n_combine_ops * sizeof(int));
+                struct_data->constraints =
+                    malloc(struct_data->n_constraints * sizeof(pdc_query_constraint_t));
+                // HG_FALLTHROUGH();
+                /* FALLTHRU */
+            case HG_ENCODE:
+                ret = hg_proc_raw(proc, struct_data->combine_ops, struct_data->n_combine_ops * sizeof(int));
+                ret = hg_proc_raw(proc, struct_data->constraints,
+                                  struct_data->n_constraints * sizeof(pdc_query_constraint_t));
+                break;
+            case HG_FREE:
+                // free(struct_data->combine_ops); // Something is wrong with these 2 free
+                // free(struct_data->constraints);
+            default:
+                break;
+        }
+    }
+
+    return ret;
+}
 
 static hg_return_t
 hg_proc_send_shm_in_t(hg_proc_t proc, void *data)
@@ -409,6 +499,7 @@ PDC_msleep(unsigned long milisec)
 
 uint32_t
 PDC_get_hash_by_name(const char *name)
+
 {
     uint32_t ret_value = 0;
 
@@ -737,6 +828,7 @@ PDC_print_region_list(region_list_t *a)
 
 done:
     fflush(stdout);
+
     FUNC_LEAVE_VOID;
 }
 
@@ -1363,6 +1455,7 @@ PDC_Server_set_close()
 {
     return SUCCEED;
 }
+
 hg_return_t
 PDC_Server_checkpoint_cb(const struct hg_cb_info *callback_info ATTRIBUTE(unused))
 {
@@ -1999,7 +2092,7 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
-
+/*
 static HG_THREAD_RETURN_TYPE
 pdc_region_write_out_progress(void *arg)
 {
@@ -2055,8 +2148,9 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
-
+*/
 // enter this function, transfer is done, data is pushed to buffer
+/*
 static hg_return_t
 obj_map_region_release_bulk_transfer_thread_cb(const struct hg_cb_info *hg_cb_info)
 {
@@ -2099,7 +2193,9 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
+*/
 
+/*
 static HG_THREAD_RETURN_TYPE
 pdc_region_read_from_progress(void *arg)
 {
@@ -2117,7 +2213,7 @@ pdc_region_read_from_progress(void *arg)
     PDC_Server_data_read_from(bulk_args->remote_obj_id, bulk_args->remote_reg_info, bulk_args->data_buf,
                               (bulk_args->in).data_unit);
 
-    /* Push bulk data */
+    // Push bulk data
     size = HG_Bulk_get_size(bulk_args->local_bulk_handle);
     if (size != HG_Bulk_get_size(bulk_args->remote_bulk_handle)) {
         error = 1;
@@ -2149,7 +2245,7 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
-
+*/
 // enter this function, transfer is done, data is in data server
 static hg_return_t
 transform_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
@@ -2161,7 +2257,7 @@ transform_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_inf
     char *                                          buf;
     int                                             ndim;
     int                                             transform_id;
-    int                                             type_extent;
+    int                                             type_extent        = 0;
     int                                             use_transform_size = 0;
     size_t                                          unit               = 1;
     int64_t                                         transform_size, expected_size;
@@ -2723,11 +2819,11 @@ HG_TEST_RPC_CB(region_release, handle)
     hg_bulk_t                            remote_bulk_handle     = HG_BULK_NULL;
     struct pdc_region_info *             remote_reg_info;
     region_buf_map_t *                   eltt, *eltt2, *eltt_tmp;
-    hg_uint32_t                          k, m, remote_count;
+    hg_uint32_t /*k, m, */               remote_count;
     void **                              data_ptrs_to = NULL;
     size_t *                             data_size_to = NULL;
-    size_t                               type_size    = 0;
-    size_t                               dims[4]      = {0, 0, 0, 0};
+    // size_t                               type_size    = 0;
+    // size_t                               dims[4]      = {0, 0, 0, 0};
 #if PDC_TIMING == 1
     double start, end;
 #endif
@@ -2957,7 +3053,7 @@ HG_TEST_RPC_CB(region_release, handle)
                         size2 = HG_Bulk_get_size(remote_bulk_handle);
                         if (size != size2) {
                             error = 1;
-                            printf("==PDC_SERVER: local size %llu, remote %llu\n", size, size2);
+                            printf("==PDC_SERVER: local size %lu, remote %lu\n", size, size2);
                             PGOTO_ERROR(HG_OTHER_ERROR, "===PDC SERVER: HG_TEST_RPC_CB(region_release, "
                                                         "handle) local and remote bulk size does not match");
                         }
@@ -3014,7 +3110,7 @@ HG_TEST_RPC_CB(region_release, handle)
                 {
                     PDC_region_transfer_t_to_list_t(&(eltt->remote_region_unit), tmp);
                     if (PDC_is_same_region_list(tmp, request_region) == 1) {
-                        type_size = eltt->remote_unit;
+                        // type_size = eltt->remote_unit;
                         // get remote object memory addr
                         data_buf = PDC_Server_get_region_buf_ptr(in.obj_id, in.region);
                         if (in.region.ndim == 1) {
@@ -3126,7 +3222,7 @@ HG_TEST_RPC_CB(region_release, handle)
                         size2 = HG_Bulk_get_size(remote_bulk_handle);
                         if (size != size2) {
                             error = 1;
-                            printf("==PDC_SERVER: local size %llu, remote %llu\n", size, size2);
+                            printf("==PDC_SERVER: local size %lu, remote %lu\n", size, size2);
                             /* PGOTO_ERROR(HG_OTHER_ERROR, "===PDC SERVER: HG_TEST_RPC_CB(region_release,
                              * handle) local and remote bulk size does not match"); */
                         }
@@ -3517,7 +3613,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     struct buf_map_release_bulk_args *buf_map_bulk_args  = NULL;
     hg_bulk_t                         remote_bulk_handle = HG_BULK_NULL;
     region_buf_map_t *                eltt;
-    hg_uint32_t                       k, remote_count;
+    hg_uint32_t                       k, remote_count = 0;
     void **                           data_ptrs_to = NULL;
     size_t *                          data_size_to = NULL;
     size_t                            type_size    = 0;
@@ -3686,7 +3782,7 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
     struct pdc_region_info *                       remote_reg_info;
     region_buf_map_t *                             eltt, *eltt2;
 
-    hg_uint32_t k, remote_count;
+    hg_uint32_t k, remote_count = 0;
     void **     data_ptrs_to = NULL;
     size_t *    data_size_to = NULL;
     size_t      type_size    = 0;
@@ -3787,7 +3883,8 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
 
                         obj_map_bulk_args = (struct buf_map_analysis_and_release_bulk_args *)malloc(
                             sizeof(struct buf_map_analysis_and_release_bulk_args));
-                        memset(obj_map_bulk_args, 0, sizeof(struct buf_map_release_bulk_args));
+                        // memset(obj_map_bulk_args, 0, sizeof(struct buf_map_release_bulk_args));
+                        memset(obj_map_bulk_args, 0, sizeof(struct buf_map_analysis_and_release_bulk_args));
                         obj_map_bulk_args->handle             = handle;
                         obj_map_bulk_args->data_buf           = data_buf;
                         obj_map_bulk_args->in                 = in.analysis;
@@ -3961,7 +4058,8 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
                             PGOTO_ERROR(HG_OTHER_ERROR, "HG_TEST_RPC_CB(region_release, handle): "
                                                         "buf_map_bulk_args memory allocation failed");
 
-                        memset(buf_map_bulk_args, 0, sizeof(struct buf_map_release_bulk_args));
+                        // memset(buf_map_bulk_args, 0, sizeof(struct buf_map_release_bulk_args));
+                        memset(buf_map_bulk_args, 0, sizeof(struct buf_map_analysis_and_release_bulk_args));
                         buf_map_bulk_args->handle             = handle;
                         buf_map_bulk_args->data_buf           = data_buf;
                         buf_map_bulk_args->in                 = in.analysis;
@@ -4256,6 +4354,7 @@ done:
 }
 
 /* static hg_return_t */
+
 // buf_map_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(buf_map, handle)
 {
@@ -4569,7 +4668,7 @@ HG_TEST_RPC_CB(bulk_rpc, handle)
     bulk_args->nbytes = HG_Bulk_get_size(origin_bulk_handle);
     bulk_args->cnt    = cnt;
 
-    printf("==PDC_SERVER: bulk_rpc_cb, nbytes %llu\n", bulk_args->nbytes);
+    printf("==PDC_SERVER: bulk_rpc_cb, nbytes %lu\n", bulk_args->nbytes);
 
     /* Create a new block handle to read the data */
     HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *)&bulk_args->nbytes, HG_BULK_READWRITE,
@@ -4891,13 +4990,14 @@ remove_relative_dirs(char *workingDir, char *application)
 char *
 PDC_find_in_path(char *workingDir, char *application)
 {
-    char *      ret_value = NULL;
     struct stat fileStat;
-    char *      pathVar = getenv("PATH");
-    char        colon   = ':';
-    char        checkPath[PATH_MAX];
-    char *      next = strchr(pathVar, colon);
-    int         offset;
+    char *      ret_value = NULL;
+    char *      pathVar   = getenv("PATH");
+    char        colon     = ':';
+
+    char  checkPath[PATH_MAX];
+    char *next = strchr(pathVar, colon);
+    int   offset;
 
     FUNC_ENTER(NULL);
 
@@ -4921,10 +5021,14 @@ PDC_find_in_path(char *workingDir, char *application)
             *foundPath = 0;
             // Change directory (pushd) to the where we find the application
             if (chdir(checkPath) == 0) {
-                getcwd(checkPath, sizeof(checkPath));
+                if (getcwd(checkPath, sizeof(checkPath)) == NULL) {
+                    printf("Path is too large\n");
+                }
                 offset = strlen(checkPath);
                 // Change back (popd) to where we started
-                chdir(workingDir);
+                if (chdir(workingDir) != 0) {
+                    printf("Check dir failed\n");
+                }
                 sprintf(&checkPath[offset], "/%s", appName);
                 PGOTO_DONE(strdup(checkPath));
             }
@@ -4933,7 +5037,7 @@ PDC_find_in_path(char *workingDir, char *application)
 
 done:
     fflush(stdout);
-    FUNC_LEAVE(NULL);
+    FUNC_LEAVE(ret_value);
 }
 
 // Update container with objects
@@ -5967,7 +6071,7 @@ HG_TEST_RPC_CB(send_shm_bulk_rpc, handle)
     bulk_args->nbytes  = HG_Bulk_get_size(origin_bulk_handle);
     bulk_args->cnt     = cnt;
 
-    printf("==PDC_SERVER: send_bulk_rpc_cb, nbytes %llu\n", bulk_args->nbytes);
+    printf("==PDC_SERVER: send_bulk_rpc_cb, nbytes %lu\n", bulk_args->nbytes);
 
     /* Create a new bulk handle to read the data */
     HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *)&bulk_args->nbytes, HG_BULK_READWRITE,
@@ -6552,7 +6656,9 @@ PDC_create_shm_segment_ind(uint64_t size, char *shm_addr, void **buf)
         PGOTO_ERROR(FAIL, "== Shared memory create failed");
 
     /* configure the size of the shared memory segment */
-    ftruncate(shm_fd, size);
+    if (ftruncate(shm_fd, size) != 0) {
+        PGOTO_ERROR(FAIL, "== Truncate memory failed");
+    }
 
     /* map the shared memory segment to the address space of the process */
     *buf = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
@@ -6597,7 +6703,9 @@ PDC_create_shm_segment(region_list_t *region)
     }
 
     /* configure the size of the shared memory segment */
-    ftruncate(region->shm_fd, region->data_size);
+    if (ftruncate(region->shm_fd, region->data_size) != 0) {
+        PGOTO_ERROR(FAIL, "== Truncate memory failed");
+    }
 
     /* map the shared memory segment to the address space of the process */
     region->buf = mmap(0, region->data_size, PROT_READ | PROT_WRITE, MAP_SHARED, region->shm_fd, 0);
@@ -6753,40 +6861,73 @@ print_query(pdc_query_t *query)
     if (query->left == NULL && query->right == NULL) {
 
         printf(" (%" PRIu64 " %s", query->constraint->obj_id, pdcquery_op_char_g[query->constraint->op]);
-
+        /*
+                if (query->constraint->is_range == 1) {
+                    if (query->constraint->type == PDC_FLOAT)
+                        printf(" %.6f %s %.6f) ", *((float *)&query->constraint->value),
+                               pdcquery_op_char_g[query->constraint->op2], *((float
+           *)&query->constraint->value2)); else if (query->constraint->type == PDC_DOUBLE) printf(" %.6f %s
+           %.6f) ", *((double *)&query->constraint->value), pdcquery_op_char_g[query->constraint->op2],
+           *((double *)&query->constraint->value2)); else if (query->constraint->type == PDC_INT) printf(" %d
+           %s %d) ", *((int *)&query->constraint->value), pdcquery_op_char_g[query->constraint->op2], *((int
+           *)&query->constraint->value2)); else if (query->constraint->type == PDC_UINT) printf(" %u %s %u) ",
+           *((unsigned *)&query->constraint->value), pdcquery_op_char_g[query->constraint->op2], *((unsigned
+           *)&query->constraint->value2)); else if (query->constraint->type == PDC_INT64) printf(" %" PRId64 "
+           %s %" PRId64 ")", *((int64_t *)&query->constraint->value),
+                               pdcquery_op_char_g[query->constraint->op2], *((int64_t
+           *)&query->constraint->value2)); else if (query->constraint->type == PDC_UINT64) printf(" %" PRId64
+           " %s %" PRId64 ") ", *((uint64_t *)&query->constraint->value),
+                               pdcquery_op_char_g[query->constraint->op2], *((uint64_t
+           *)&query->constraint->value2));
+                }
+                else {
+                    if (query->constraint->type == PDC_FLOAT)
+                        printf(" %.6f) ", *((float *)&query->constraint->value));
+                    else if (query->constraint->type == PDC_DOUBLE)
+                        printf(" %.6f) ", *((double *)&query->constraint->value));
+                    else if (query->constraint->type == PDC_INT)
+                        printf(" %d) ", *((int *)&query->constraint->value));
+                    else if (query->constraint->type == PDC_UINT)
+                        printf(" %u) ", *((unsigned *)&query->constraint->value));
+                    else if (query->constraint->type == PDC_INT64)
+                        printf(" %" PRId64 ")", *((int64_t *)&query->constraint->value));
+                    else if (query->constraint->type == PDC_UINT64)
+                        printf(" %" PRIu64 ") ", *((uint64_t *)&query->constraint->value));
+                }
+        */
         if (query->constraint->is_range == 1) {
             if (query->constraint->type == PDC_FLOAT)
-                printf(" %.6f %s %.6f) ", *((float *)&query->constraint->value),
-                       pdcquery_op_char_g[query->constraint->op2], *((float *)&query->constraint->value2));
+                printf(" %.6f %s %.6f) ", (float)query->constraint->value,
+                       pdcquery_op_char_g[query->constraint->op2], (float)query->constraint->value2);
             else if (query->constraint->type == PDC_DOUBLE)
-                printf(" %.6f %s %.6f) ", *((double *)&query->constraint->value),
-                       pdcquery_op_char_g[query->constraint->op2], *((double *)&query->constraint->value2));
+                printf(" %.6f %s %.6f) ", (double)query->constraint->value,
+                       pdcquery_op_char_g[query->constraint->op2], (double)query->constraint->value2);
             else if (query->constraint->type == PDC_INT)
-                printf(" %d %s %d) ", *((int *)&query->constraint->value),
-                       pdcquery_op_char_g[query->constraint->op2], *((int *)&query->constraint->value2));
+                printf(" %d %s %d) ", (int)query->constraint->value,
+                       pdcquery_op_char_g[query->constraint->op2], (int)query->constraint->value2);
             else if (query->constraint->type == PDC_UINT)
-                printf(" %u %s %u) ", *((unsigned *)&query->constraint->value),
-                       pdcquery_op_char_g[query->constraint->op2], *((unsigned *)&query->constraint->value2));
+                printf(" %u %s %u) ", (unsigned)query->constraint->value,
+                       pdcquery_op_char_g[query->constraint->op2], (unsigned)query->constraint->value2);
             else if (query->constraint->type == PDC_INT64)
-                printf(" %" PRId64 " %s %" PRId64 ")", *((int64_t *)&query->constraint->value),
-                       pdcquery_op_char_g[query->constraint->op2], *((int64_t *)&query->constraint->value2));
+                printf(" %" PRId64 " %s %" PRId64 ")", (int64_t)query->constraint->value,
+                       pdcquery_op_char_g[query->constraint->op2], (int64_t)query->constraint->value2);
             else if (query->constraint->type == PDC_UINT64)
-                printf(" %" PRId64 " %s %" PRId64 ") ", *((uint64_t *)&query->constraint->value),
-                       pdcquery_op_char_g[query->constraint->op2], *((uint64_t *)&query->constraint->value2));
+                printf(" %" PRId64 " %s %" PRId64 ") ", (uint64_t)query->constraint->value,
+                       pdcquery_op_char_g[query->constraint->op2], (uint64_t)query->constraint->value2);
         }
         else {
             if (query->constraint->type == PDC_FLOAT)
-                printf(" %.6f) ", *((float *)&query->constraint->value));
+                printf(" %.6f) ", (float)query->constraint->value);
             else if (query->constraint->type == PDC_DOUBLE)
-                printf(" %.6f) ", *((double *)&query->constraint->value));
+                printf(" %.6f) ", (double)query->constraint->value);
             else if (query->constraint->type == PDC_INT)
-                printf(" %d) ", *((int *)&query->constraint->value));
+                printf(" %d) ", (int)query->constraint->value);
             else if (query->constraint->type == PDC_UINT)
-                printf(" %u) ", *((unsigned *)&query->constraint->value));
+                printf(" %u) ", (unsigned)query->constraint->value);
             else if (query->constraint->type == PDC_INT64)
-                printf(" %" PRId64 ")", *((int64_t *)&query->constraint->value));
+                printf(" %" PRId64 ")", (int64_t)query->constraint->value);
             else if (query->constraint->type == PDC_UINT64)
-                printf(" %" PRIu64 ") ", *((uint64_t *)&query->constraint->value));
+                printf(" %" PRIu64 ") ", (uint64_t)query->constraint->value);
         }
         PGOTO_DONE_VOID;
     }

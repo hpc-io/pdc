@@ -111,41 +111,83 @@ PDCquery_and(pdc_query_t *q1, pdc_query_t *q2)
                   (q2->constraint->op == PDC_LT || q2->constraint->op == PDC_LTE))) {
                 break;
             }
-
+            /*
+                        switch (q1->constraint->type) {
+                            case PDC_FLOAT:
+                                flo = *((float *)&q1->constraint->value);
+                                fhi = *((float *)&q2->constraint->value);
+                                if (flo <= fhi)
+                                    can_combine = 1;
+                                break;
+                            case PDC_DOUBLE:
+                                dlo = *((double *)&q1->constraint->value);
+                                dhi = *((double *)&q2->constraint->value);
+                                if (dlo <= dhi)
+                                    can_combine = 1;
+                                break;
+                            case PDC_INT:
+                                ilo = *((int *)&q1->constraint->value);
+                                ihi = *((int *)&q2->constraint->value);
+                                if (ilo <= ihi)
+                                    can_combine = 1;
+                                break;
+                            case PDC_UINT:
+                                ulo = *((uint32_t *)&q1->constraint->value);
+                                uhi = *((uint32_t *)&q2->constraint->value);
+                                if (ulo <= uhi)
+                                    can_combine = 1;
+                                break;
+                            case PDC_INT64:
+                                i64lo = *((int64_t *)&q1->constraint->value);
+                                i64hi = *((int64_t *)&q2->constraint->value);
+                                if (i64lo <= i64hi)
+                                    can_combine = 1;
+                                break;
+                            case PDC_UINT64:
+                                ui64lo = *((uint64_t *)&q1->constraint->value);
+                                ui64hi = *((uint64_t *)&q2->constraint->value);
+                                if (ui64lo <= ui64hi)
+                                    can_combine = 1;
+                                break;
+                            default:
+                                PGOTO_ERROR(NULL, "== error with operator type!");
+                                break;
+                        } // End switch
+            */
             switch (q1->constraint->type) {
                 case PDC_FLOAT:
-                    flo = *((float *)&q1->constraint->value);
-                    fhi = *((float *)&q2->constraint->value);
+                    flo = (float)q1->constraint->value;
+                    fhi = (float)q2->constraint->value;
                     if (flo <= fhi)
                         can_combine = 1;
                     break;
                 case PDC_DOUBLE:
-                    dlo = *((double *)&q1->constraint->value);
-                    dhi = *((double *)&q2->constraint->value);
+                    dlo = (double)q1->constraint->value;
+                    dhi = (double)q2->constraint->value;
                     if (dlo <= dhi)
                         can_combine = 1;
                     break;
                 case PDC_INT:
-                    ilo = *((int *)&q1->constraint->value);
-                    ihi = *((int *)&q2->constraint->value);
+                    ilo = (int)q1->constraint->value;
+                    ihi = (int)q2->constraint->value;
                     if (ilo <= ihi)
                         can_combine = 1;
                     break;
                 case PDC_UINT:
-                    ulo = *((uint32_t *)&q1->constraint->value);
-                    uhi = *((uint32_t *)&q2->constraint->value);
+                    ulo = (uint32_t)q1->constraint->value;
+                    uhi = (uint32_t)q2->constraint->value;
                     if (ulo <= uhi)
                         can_combine = 1;
                     break;
                 case PDC_INT64:
-                    i64lo = *((int64_t *)&q1->constraint->value);
-                    i64hi = *((int64_t *)&q2->constraint->value);
+                    i64lo = (int64_t)q1->constraint->value;
+                    i64hi = (int64_t)q2->constraint->value;
                     if (i64lo <= i64hi)
                         can_combine = 1;
                     break;
                 case PDC_UINT64:
-                    ui64lo = *((uint64_t *)&q1->constraint->value);
-                    ui64hi = *((uint64_t *)&q2->constraint->value);
+                    ui64lo = (uint64_t)q1->constraint->value;
+                    ui64hi = (uint64_t)q2->constraint->value;
                     if (ui64lo <= ui64hi)
                         can_combine = 1;
                     break;
@@ -153,7 +195,6 @@ PDCquery_and(pdc_query_t *q1, pdc_query_t *q2)
                     PGOTO_ERROR(NULL, "== error with operator type!");
                     break;
             } // End switch
-
             break;
         }
     }
@@ -276,18 +317,22 @@ done:
 perr_t
 PDCquery_get_histogram(pdcid_t obj_id)
 {
-    perr_t                ret_value = SUCCEED;
-    struct _pdc_obj_info *obj_prop;
-    uint64_t              meta_id = 0;
-
+    perr_t ret_value = SUCCEED;
+    /*
+        struct _pdc_obj_info *obj_prop;
+        uint64_t              meta_id = 0;
+    */
     FUNC_ENTER(NULL);
-
-    if (PDC_find_id(obj_id) != NULL) {
-        obj_prop = PDC_obj_get_info(obj_id);
-        meta_id  = obj_prop->obj_info_pub->meta_id;
+    if (PDC_find_id(obj_id) == NULL) {
+        ret_value = 1;
     }
-    else
-        meta_id = obj_id;
-
+    /*
+        if (PDC_find_id(obj_id) != NULL) {
+            obj_prop = PDC_obj_get_info(obj_id);
+            meta_id  = obj_prop->obj_info_pub->meta_id;
+        }
+        else
+            meta_id = obj_id;
+    */
     FUNC_LEAVE(ret_value);
 }

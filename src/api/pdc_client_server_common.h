@@ -55,7 +55,7 @@ hg_thread_mutex_t meta_obj_map_mutex_g;
 #endif
 
 #define PAGE_SIZE                    4096
-#define ADDR_MAX                     256
+#define ADDR_MAX                     512
 #define DIM_MAX                      4
 #define TAG_LEN_MAX                  2048
 #define PDC_SERVER_ID_INTERVEL       1000000
@@ -1039,6 +1039,7 @@ hg_proc_pdc_kvtag_t(hg_proc_t proc, void *data)
             case HG_DECODE:
                 struct_data->value = malloc(struct_data->size);
                 /* HG_FALLTHROUGH(); */
+                /* FALLTHRU */
             case HG_ENCODE:
                 ret = hg_proc_raw(proc, struct_data->value, struct_data->size);
                 break;
@@ -2149,6 +2150,7 @@ hg_proc_bulk_rpc_in_t(hg_proc_t proc, void *data)
 
     if (struct_data->cnt > 0) {
         ret = hg_proc_hg_bulk_t(proc, &struct_data->bulk_handle);
+
         if (ret != HG_SUCCESS) {
             // HG_LOG_ERROR("Proc error");
             return ret;
@@ -2585,7 +2587,7 @@ hg_proc_pdc_histogram_t(hg_proc_t proc, void *data)
                 struct_data->range = malloc(struct_data->nbin * sizeof(double) * 2);
                 struct_data->bin   = malloc(struct_data->nbin * sizeof(uint64_t));
                 /* HG_FALLTHROUGH(); */
-
+                /* FALLTHRU */
             case HG_ENCODE:
                 ret = hg_proc_raw(proc, struct_data->range, struct_data->nbin * sizeof(double) * 2);
                 ret = hg_proc_raw(proc, struct_data->bin, struct_data->nbin * sizeof(uint64_t));
@@ -2595,6 +2597,7 @@ hg_proc_pdc_histogram_t(hg_proc_t proc, void *data)
                     free(struct_data->range);
                 if (struct_data->bin)
                     free(struct_data->bin);
+                /* FALLTHRU */
             default:
                 break;
         }
@@ -2985,90 +2988,8 @@ hg_proc_storage_meta_name_query_in_t(hg_proc_t proc, void *data)
 }
 
 /* Define hg_proc_pdc_query_xfer_t */
-static hg_return_t
-hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data)
-{
-    hg_return_t       ret;
-    pdc_query_xfer_t *struct_data = (pdc_query_xfer_t *)data;
 
-    ret = hg_proc_int32_t(proc, &struct_data->query_id);
-    if (ret != HG_SUCCESS) {
-        // HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_int32_t(proc, &struct_data->client_id);
-    if (ret != HG_SUCCESS) {
-        // HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_int32_t(proc, &struct_data->get_op);
-    if (ret != HG_SUCCESS) {
-        // HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_int32_t(proc, &struct_data->manager);
-    if (ret != HG_SUCCESS) {
-        // HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_int32_t(proc, &struct_data->n_unique_obj);
-    if (ret != HG_SUCCESS) {
-        // HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_int32_t(proc, &struct_data->query_op);
-    if (ret != HG_SUCCESS) {
-        // HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_int32_t(proc, &struct_data->next_server_id);
-    if (ret != HG_SUCCESS) {
-        // HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_int32_t(proc, &struct_data->prev_server_id);
-    if (ret != HG_SUCCESS) {
-        // HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_int32_t(proc, &struct_data->n_constraints);
-    if (ret != HG_SUCCESS) {
-        // HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_int32_t(proc, &struct_data->n_combine_ops);
-    if (ret != HG_SUCCESS) {
-        // HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_region_info_transfer_t(proc, &struct_data->region);
-    if (ret != HG_SUCCESS) {
-        // HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    if (struct_data->n_constraints > 0) {
-        switch (hg_proc_get_op(proc)) {
-            case HG_DECODE:
-                struct_data->combine_ops = malloc(struct_data->n_combine_ops * sizeof(int));
-                struct_data->constraints =
-                    malloc(struct_data->n_constraints * sizeof(pdc_query_constraint_t));
-                /* HG_FALLTHROUGH(); */
-
-            case HG_ENCODE:
-                ret = hg_proc_raw(proc, struct_data->combine_ops, struct_data->n_combine_ops * sizeof(int));
-                ret = hg_proc_raw(proc, struct_data->constraints,
-                                  struct_data->n_constraints * sizeof(pdc_query_constraint_t));
-                break;
-            case HG_FREE:
-                /* free(struct_data->combine_ops); // Something is wrong with these 2 free */
-                /* free(struct_data->constraints); */
-            default:
-                break;
-        }
-    }
-
-    return ret;
-}
+hg_return_t hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data);
 
 /* Define hg_proc_get_sel_data_rpc_in_t */
 static HG_INLINE hg_return_t
@@ -3805,6 +3726,7 @@ int PDC_region_list_seq_id_cmp(region_list_t *a, region_list_t *b);
  * Add a callback function and its parameters to a task list
  *
  * \param target_list [IN]      Target task list
+
  * \param cb [IN]               Callback function pointer
  * \param cb_args [IN]          Callback function parameters
  * \param curr_task_id [IN]     Global task sequence id
