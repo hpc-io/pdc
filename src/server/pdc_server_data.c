@@ -5743,6 +5743,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 
             if (region_info->ndim == 1) {
                 // 1D can overwrite data in region directly
+
                 pos = (overlap_start[0] - region_info->offset[0]) * unit;
                 if (pos > write_size) {
                     printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
@@ -5751,19 +5752,34 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                     goto done;
                 }
 
-                lseek(region->fd, overlap_region->offset + overlap_start_local[0] * unit, SEEK_SET);
+
+		//rados overwrite code
+		void *tmp_buf = malloc(overlap_region->data_size);
                 #ifdef ENABLE_RADOS
-		retu = PDC_Server_rados_write(obj_id,buf + pos, write_size);
+		retu = PDC_Server_rados_read(obj_id,tmp_buf);
+                if (retu < 0) {
+                printf("==PDC_SERVER[]: PDC_Server_rados_read FAILED inside for Ndim=1 with overlap inside write!\n"); }else{
+                printf("Rados_read_operation finished for ndim = 1 with overlap inside write function\n");}
+		#endif
+		//rados copying the data from overlapped
+		memcpy(tmp_buf + overlap_start_local[0]*unit, buf + pos, overlap_count[0] * unit);
+		#ifdef ENABLE_RADOS
+		retu = PDC_Server_rados_write(obj_id,tmp_buf, write_size);
                 if (retu < 0) {
                     printf("==PDC_SERVER[]: PDC_Server_rados_write FAILED for ndim =1 overlap condition!\n");}else{
 		    printf("Rados has Finished writing objects with overlapping condition for ndim =1\n");}
 		#endif
+		 free(tmp_buf);
+
+                lseek(region->fd, overlap_region->offset + overlap_start_local[0] * unit, SEEK_SET);
+
 		ret_value = PDC_Server_posix_write(region->fd, buf + pos, write_size);
                 if (ret_value != SUCCEED) {
                     printf("==PDC_SERVER[%d]: PDC_Server_posix_write FAILED!\n", pdc_server_rank_g);
                     ret_value = FAIL;
                     goto done;
                 }
+
                 // No need to update metadata
             }
             else if (region_info->ndim == 2) {
