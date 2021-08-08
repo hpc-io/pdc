@@ -5443,7 +5443,7 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache)
 int
 PDC_region_cache_flush(uint64_t obj_id)
 {
-    pdc_obj_cache *         obj_cache = NULL, *obj_cache_iter;
+    pdc_obj_cache *obj_cache = NULL, *obj_cache_iter;
 
     obj_cache_iter = obj_cache_list;
     while (obj_cache_iter != NULL) {
@@ -5454,7 +5454,7 @@ PDC_region_cache_flush(uint64_t obj_id)
         obj_cache_iter = obj_cache_iter->next;
     }
     if (obj_cache == NULL) {
-        //printf("server error: flushing object that does not exist\n");
+        // printf("server error: flushing object that does not exist\n");
         return 1;
     }
     PDC_region_cache_flush_by_pointer(obj_id, obj_cache);
