@@ -3192,7 +3192,7 @@ PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_region_i
     end = MPI_Wtime();
     if (access_type == PDC_READ) {
         timings.PDCreg_release_lock_read_rpc_wait += end - start;
-        pdc_timestamp_register(client_release_lock_readtimestamps, start, end);
+        pdc_timestamp_register(client_release_lock_read_timestamps, start, end);
     }
     else {
         timings.PDCreg_release_lock_write_rpc_wait += end - start;
