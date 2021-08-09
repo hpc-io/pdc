@@ -26,12 +26,12 @@ typedef struct pdc_timing {
 pdc_timing timings;
 
 typedef struct pdc_server_timing {
-    double             PDCbuf_obj_map_rpc;
-    double             PDCbuf_obj_unmap_rpc;
-    double             PDCreg_obtain_lock_rpc;
-    double             PDCreg_release_lock_write_rpc;
-    double             PDCreg_release_lock_read_rpc;
-    double             PDCreg_release_lock_bulk_transfer_rpc;
+    double PDCbuf_obj_map_rpc;
+    double PDCbuf_obj_unmap_rpc;
+    double PDCreg_obtain_lock_rpc;
+    double PDCreg_release_lock_write_rpc;
+    double PDCreg_release_lock_read_rpc;
+    double PDCreg_release_lock_bulk_transfer_rpc;
 } pdc_server_timing;
 
 typedef struct pdc_timestamp {
