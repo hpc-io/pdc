@@ -46,7 +46,8 @@ pdc_timestamp *                             buf_obj_map_timestamps;
 pdc_timestamp *                             buf_obj_unmap_timestamps;
 pdc_timestamp *                             obtain_lock_timestamps;
 pdc_timestamp *                             release_lock_write_timestamps;
-pdc_timestamp *release_lock_read_timestamps pdc_timestamp *release_lock_bulk_transfer_timestamps;
+pdc_timestamp *release_lock_read_timestamps;
+pdc_timestamp *release_lock_bulk_transfer_timestamps;
 
 pdc_timestamp *client_buf_obj_map_timestamps;
 pdc_timestamp *client_buf_obj_unmap_timestamps;
