@@ -3172,7 +3172,11 @@ PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_region_i
 #endif
     hg_ret = HG_Forward(region_release_handle, client_region_release_rpc_cb, &lookup_args, &in);
 #if PDC_TIMING == 1
-    timings.PDCreg_release_lock_rpc += MPI_Wtime() - start;
+    if (access_type == PDC_READ) {
+        timings.PDCreg_release_lock_read_rpc += MPI_Wtime() - start;
+    } else {
+        timings.PDCreg_release_lock_write_rpc += MPI_Wtime() - start;
+    }
 #endif
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_name_to_server(): Could not start HG_Forward()");
@@ -3185,8 +3189,13 @@ PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_region_i
     PDC_Client_check_response(&send_context_g);
 #if PDC_TIMING == 1
     end = MPI_Wtime();
-    timings.PDCreg_release_lock_rpc_wait += end - start;
-    pdc_timestamp_register(client_release_lock_timestamps, start, end);
+    if (access_type == PDC_READ) {
+        timings.PDCreg_release_lock_read_rpc_wait += end - start;
+        pdc_timestamp_register(client_release_lock_readtimestamps, start, end);
+    } else {
+        timings.PDCreg_release_lock_write_rpc_wait += end - start;
+        pdc_timestamp_register(client_release_lock_write_timestamps, start, end);
+    }
 #endif
     // Now the return value is stored in lookup_args.ret
     if (lookup_args.ret == 1) {
@@ -3572,6 +3581,7 @@ PDC_Client_close_shm(struct pdc_request *req)
     /*     PGOTO_ERROR(FAIL, "==PDC_CLIENT: Error removing %s", req->shm_addr); */
 
 done:
+
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);

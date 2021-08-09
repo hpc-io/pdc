@@ -13,12 +13,14 @@ typedef struct pdc_timing {
     double PDCbuf_obj_map_rpc;
     double PDCbuf_obj_unmap_rpc;
     double PDCreg_obtain_lock_rpc;
-    double PDCreg_release_lock_rpc;
+    double PDCreg_release_lock_write_rpc;
+    double PDCreg_release_lock_read_rpc;
 
     double PDCbuf_obj_map_rpc_wait;
     double PDCbuf_obj_unmap_rpc_wait;
     double PDCreg_obtain_lock_rpc_wait;
-    double PDCreg_release_lock_rpc_wait;
+    double PDCreg_release_lock_write_rpc_wait;
+    double PDCreg_release_lock_read_rpc_wait;
 } pdc_timing;
 
 pdc_timing timings;
@@ -27,7 +29,8 @@ typedef struct pdc_server_timing {
     double PDCbuf_obj_map_rpc;
     double PDCbuf_obj_unmap_rpc;
     double PDCreg_obtain_lock_rpc;
-    double PDCreg_release_lock_rpc;
+    double PDCreg_release_lock_write_rpc;
+    double PDCreg_release_lock_read_rpc;
     double PDCreg_release_lock_bulk_transfer_rpc;
 } pdc_server_timing;
 
@@ -42,13 +45,15 @@ pdc_server_timing *server_timings;
 pdc_timestamp *    buf_obj_map_timestamps;
 pdc_timestamp *    buf_obj_unmap_timestamps;
 pdc_timestamp *    obtain_lock_timestamps;
-pdc_timestamp *    release_lock_timestamps;
+pdc_timestamp *    release_lock_write_timestamps;
+pdc_timestamp *    release_lock_read_timestamps
 pdc_timestamp *    release_lock_bulk_transfer_timestamps;
 
 pdc_timestamp *client_buf_obj_map_timestamps;
 pdc_timestamp *client_buf_obj_unmap_timestamps;
 pdc_timestamp *client_obtain_lock_timestamps;
-pdc_timestamp *client_release_lock_timestamps;
+pdc_timestamp *client_release_lock_write_timestamps;
+pdc_timestamp *client_release_lock_read_timestamps;
 double         base_time;
 
 int PDC_timing_init();
