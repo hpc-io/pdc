@@ -237,7 +237,8 @@ PDC_server_timing_report()
     pdc_timestamp_clean(buf_obj_map_timestamps);
     pdc_timestamp_clean(buf_obj_unmap_timestamps);
     pdc_timestamp_clean(obtain_lock_timestamps);
-    pdc_timestamp_clean(release_lock_timestamps);
+    pdc_timestamp_clean(release_lock_write_timestamps);
+    pdc_timestamp_clean(release_lock_read_timestamps);
     pdc_timestamp_clean(release_lock_bulk_transfer_timestamps);
     free(buf_obj_map_timestamps);
     return 0;
