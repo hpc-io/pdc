@@ -3174,7 +3174,8 @@ PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_region_i
 #if PDC_TIMING == 1
     if (access_type == PDC_READ) {
         timings.PDCreg_release_lock_read_rpc += MPI_Wtime() - start;
-    } else {
+    }
+    else {
         timings.PDCreg_release_lock_write_rpc += MPI_Wtime() - start;
     }
 #endif
@@ -3192,7 +3193,8 @@ PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_region_i
     if (access_type == PDC_READ) {
         timings.PDCreg_release_lock_read_rpc_wait += end - start;
         pdc_timestamp_register(client_release_lock_readtimestamps, start, end);
-    } else {
+    }
+    else {
         timings.PDCreg_release_lock_write_rpc_wait += end - start;
         pdc_timestamp_register(client_release_lock_write_timestamps, start, end);
     }
@@ -3581,7 +3583,6 @@ PDC_Client_close_shm(struct pdc_request *req)
     /*     PGOTO_ERROR(FAIL, "==PDC_CLIENT: Error removing %s", req->shm_addr); */
 
 done:
-
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);

@@ -157,8 +157,8 @@ PDC_server_timing_init()
     buf_obj_map_timestamps                = calloc(6, sizeof(pdc_timestamp));
     buf_obj_unmap_timestamps              = buf_obj_map_timestamps + 1;
     obtain_lock_timestamps                = buf_obj_map_timestamps + 2;
-    release_lock_write_timestamps               = buf_obj_map_timestamps + 3;
-    release_lock_read_timestamps               = buf_obj_map_timestamps + 4;
+    release_lock_write_timestamps         = buf_obj_map_timestamps + 3;
+    release_lock_read_timestamps          = buf_obj_map_timestamps + 4;
     release_lock_bulk_transfer_timestamps = buf_obj_map_timestamps + 5;
     base_time                             = MPI_Wtime();
     return 0;
@@ -199,21 +199,24 @@ PDC_server_timing_report()
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    printf("rank = %d, PDCbuf_obj_map_rpc = %lf, PDCreg_obtain_lock_rpc = %lf, PDCreg_release_lock_write_rpc = "
-           "%lf, PDCreg_release_lock_read_rpc = %lf, PDCbuf_obj_unmap_rpc = %lf, region_release_bulk_transfer_cb = %lf\n",
-           rank, server_timings->PDCbuf_obj_map_rpc, server_timings->PDCreg_obtain_lock_rpc,
-           server_timings->PDCreg_release_lock_write_rpc, server_timings->PDCreg_release_lock_read_rpc, server_timings->PDCbuf_obj_unmap_rpc,
-           server_timings->PDCreg_release_lock_bulk_transfer_rpc);
+    printf(
+        "rank = %d, PDCbuf_obj_map_rpc = %lf, PDCreg_obtain_lock_rpc = %lf, PDCreg_release_lock_write_rpc = "
+        "%lf, PDCreg_release_lock_read_rpc = %lf, PDCbuf_obj_unmap_rpc = %lf, "
+        "region_release_bulk_transfer_cb = %lf\n",
+        rank, server_timings->PDCbuf_obj_map_rpc, server_timings->PDCreg_obtain_lock_rpc,
+        server_timings->PDCreg_release_lock_write_rpc, server_timings->PDCreg_release_lock_read_rpc,
+        server_timings->PDCbuf_obj_unmap_rpc, server_timings->PDCreg_release_lock_bulk_transfer_rpc);
 
     MPI_Reduce(server_timings, &max_timings, sizeof(pdc_server_timing) / sizeof(double), MPI_DOUBLE, MPI_MAX,
                0, MPI_COMM_WORLD);
     if (rank == 0) {
         printf("rank = %d, maximum timing among all processes, PDCbuf_obj_map_rpc = %lf, "
-               "PDCreg_obtain_lock_rpc = %lf, PDCreg_release_lock_write_rpc = %lf, PDCreg_release_lock_read_rpc = %lf, PDCbuf_obj_unmap_rpc = %lf, "
+               "PDCreg_obtain_lock_rpc = %lf, PDCreg_release_lock_write_rpc = %lf, "
+               "PDCreg_release_lock_read_rpc = %lf, PDCbuf_obj_unmap_rpc = %lf, "
                "region_release_bulk_transfer_cb = %lf\n",
                rank, max_timings.PDCbuf_obj_map_rpc, max_timings.PDCreg_obtain_lock_rpc,
-               max_timings.PDCreg_release_lock_write_rpc, max_timings.PDCreg_release_lock_read_rpc, max_timings.PDCbuf_obj_unmap_rpc,
-               max_timings.PDCreg_release_lock_bulk_transfer_rpc);
+               max_timings.PDCreg_release_lock_write_rpc, max_timings.PDCreg_release_lock_read_rpc,
+               max_timings.PDCbuf_obj_unmap_rpc, max_timings.PDCreg_release_lock_bulk_transfer_rpc);
     }
 
     sprintf(filename, "pdc_server_log_rank_%d.csv", rank);
@@ -3276,7 +3279,8 @@ done:
     if (in.access_type == PDC_READ) {
         server_timings->PDCreg_release_lock_read_rpc += end - start;
         pdc_timestamp_register(release_lock_read_timestamps, start, end);
-    } else {
+    }
+    else {
         server_timings->PDCreg_release_lock_write_rpc += end - start;
         pdc_timestamp_register(release_lock_write_timestamps, start, end);
     }
