@@ -79,10 +79,10 @@ PDC_timing_init()
 {
     memset(&timings, 0, sizeof(pdc_timing));
 
-    client_buf_obj_map_timestamps   = calloc(5, sizeof(pdc_timestamp));
-    client_buf_obj_unmap_timestamps = client_buf_obj_map_timestamps + 1;
-    client_obtain_lock_timestamps   = client_buf_obj_map_timestamps + 2;
-    client_release_lock_write_timestamps  = client_buf_obj_map_timestamps + 3;
+    client_buf_obj_map_timestamps        = calloc(5, sizeof(pdc_timestamp));
+    client_buf_obj_unmap_timestamps      = client_buf_obj_map_timestamps + 1;
+    client_obtain_lock_timestamps        = client_buf_obj_map_timestamps + 2;
+    client_release_lock_write_timestamps = client_buf_obj_map_timestamps + 3;
     client_release_lock_read_timestamps  = client_buf_obj_map_timestamps + 4;
     return 0;
 }
@@ -145,10 +145,10 @@ PDC_timing_report(const char *prefix)
     timestamp_log(stream, header, client_release_lock_read_timestamps);
     fclose(stream);
 
-    client_buf_obj_map_timestamps->timestamp_size   = 0;
-    client_buf_obj_unmap_timestamps->timestamp_size = 0;
-    client_obtain_lock_timestamps->timestamp_size   = 0;
-    client_release_lock_write_timestamps->timestamp_size  = 0;
+    client_buf_obj_map_timestamps->timestamp_size        = 0;
+    client_buf_obj_unmap_timestamps->timestamp_size      = 0;
+    client_obtain_lock_timestamps->timestamp_size        = 0;
+    client_release_lock_write_timestamps->timestamp_size = 0;
     client_release_lock_read_timestamps->timestamp_size  = 0;
     return 0;
 }
@@ -2786,7 +2786,6 @@ region_release_update_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     struct region_lock_update_bulk_args *bulk_args = NULL;
 
     FUNC_ENTER(NULL);
-
 
     bulk_args = (struct region_lock_update_bulk_args *)hg_cb_info->arg;
     handle    = bulk_args->handle;
