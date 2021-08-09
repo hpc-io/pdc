@@ -3943,6 +3943,7 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
                         hg_thread_pool_post(hg_test_thread_pool_fs_g, &(obj_map_bulk_args->work));
 
                         out.ret = 1;
+
                         HG_Respond(handle, NULL, NULL, &out);
 #else
                         PDC_Server_data_read_from(obj_map_bulk_args->remote_obj_id, remote_reg_info, data_buf,
