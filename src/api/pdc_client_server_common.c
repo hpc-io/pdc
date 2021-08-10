@@ -233,6 +233,18 @@ PDC_server_timing_report()
     timestamp_log(stream, "release_lock_bulk_transfer", release_lock_bulk_transfer_timestamps);
     fclose(stream);
 
+    sprintf(filename, "pdc_server_timings_%d.csv", rank);
+    stream = fopen(filename, "w");
+    fprintf(stream, "PDCbuf_obj_map_rpc,"
+               "PDCreg_obtain_lock_rpc,PDCreg_release_lock_write_rpc,"
+               "PDCreg_release_lock_read_rpc,PDCbuf_obj_unmap_rpc,"
+               "region_release_bulk_transfer_cb\n");
+    fprintf(stream, "%lf,%lf,%lf,%lf,%lf\n", max_timings.PDCbuf_obj_map_rpc, max_timings.PDCreg_obtain_lock_rpc,
+               max_timings.PDCreg_release_lock_write_rpc, max_timings.PDCreg_release_lock_read_rpc,
+               max_timings.PDCbuf_obj_unmap_rpc, max_timings.PDCreg_release_lock_bulk_transfer_rpc);
+    fclose(stream);
+
+
     free(server_timings);
     pdc_timestamp_clean(buf_obj_map_timestamps);
     pdc_timestamp_clean(buf_obj_unmap_timestamps);
@@ -3943,6 +3955,7 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
                         hg_thread_pool_post(hg_test_thread_pool_fs_g, &(obj_map_bulk_args->work));
 
                         out.ret = 1;
+
 
                         HG_Respond(handle, NULL, NULL, &out);
 #else
