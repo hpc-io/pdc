@@ -50,7 +50,7 @@
 #include <sys/shm.h>
 #include <sys/mman.h>
 
-//SKIM include sqlite3 library
+// SKIM include sqlite3 library
 #include <sqlite3.h>
 
 typedef struct new_region_info_t {
@@ -68,11 +68,11 @@ typedef struct new_region_info_t {
 } new_region_info_t;
 
 void prefetch_obj(int op, sqlite3 *db, int num_regs, int ndim);
-void write_new_file_and_info(struct new_region_info_t* reg, void* new_buf);
+void write_new_file_and_info(struct new_region_info_t *reg, void *new_buf);
 
 #include "pdc_timing.h"
 #if PDC_TIMING == 1
-	
+
 static int
 pdc_timestamp_clean(pdc_timestamp *timestamp)
 {
@@ -2818,32 +2818,38 @@ region_release_update_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     FUNC_LEAVE(hg_ret);
 }
 
-static int callback(void *NotUsed, int argc, char **argv, char **azColName) {
-   int i;
-   for(i = 0; i<argc; i++) {
-      printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
-   }
-   printf("\n");
-   return 0;
+static int
+callback(void *NotUsed, int argc, char **argv, char **azColName)
+{
+    int i;
+    for (i = 0; i < argc; i++) {
+        printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+    }
+    printf("\n");
+    return 0;
 }
 
-static int callback_find_overlap(void *NotUsed, int argc, char **argv, char **azColName) {
-   int i;
-   for(i = 0; i<argc; i++) {
-      printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
-   }
-   printf("\n");
-   return 0;
+static int
+callback_find_overlap(void *NotUsed, int argc, char **argv, char **azColName)
+{
+    int i;
+    for (i = 0; i < argc; i++) {
+        printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+    }
+    printf("\n");
+    return 0;
 }
 
-//HERE db
-sqlite3* Create_DB(char * progName, char* hn){
+// HERE db
+sqlite3 *
+Create_DB(char *progName, char *hn)
+{
     // sqlite3_config(SQLITE_CONFIG_MULTITHREAD, SQLITE_CONFIG_MUTEX);
-   //SKIM Open Database
+    // SKIM Open Database
     sqlite3 *db;
-    char *zErrMsg = 0;
-    int rc;
-    char dbName[100];
+    char *   zErrMsg = 0;
+    int      rc;
+    char     dbName[100];
     sprintf(dbName, "/global/homes/s/sgkim/pdc/sqlite_temp/%s_%s.db", progName, hn);
     rc = sqlite3_open(dbName, &db);
     sqlite3_exec(db, "PRAGMA journal_mode = OFF;", 0, 0, 0);
@@ -2852,74 +2858,76 @@ sqlite3* Create_DB(char * progName, char* hn){
     sqlite3_exec(db, "PRAGMA TEMP_STORE = memory;", 0, 0, 0);
     sqlite3_exec(db, "PRAGMA CACHE_SIZE = 10000;", 0, 0, 0);
 
-    if( rc ) {
-       fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
-       return(0);
-    } else {
-    //    fprintf(stderr, "Opened database successfully  %s\n", hn);
+    if (rc) {
+        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+        return (0);
+    }
+    else {
+        //    fprintf(stderr, "Opened database successfully  %s\n", hn);
     }
 
-    //Create Database
+    // Create Database
     char *sql;
-    sql = "CREATE TABLE Objects("  \
-        "TimeStampSec INT ,"\
-        "TimeStampUsec INT ,"\
-        "Date TEXT ,"\
-        "IOType TEXT ,"\
-        "ProgName DATETIME ,"\
-        "ObjectID INT," \
-        "ndim            INT     NOT NULL," \
-        "start_x     INT," \
-        "start_y     INT," \
-        "start_z     INT," \
-        "count_x     INT," \
-        "count_y     INT," \
-        "count_z     INT," \
-        "dim_x       INT," \
-        "dim_y       INT," \
-        "dim_z       INT," \
-        "offset         BIGINT UNSIGNED,"\
-        "unit         INT,"\
-        "sizeReg         INT,"\
-        "totalNumRegs         INT,"\
-        "totalBytes         BIGINT UNSIGNED,"\
-        "newObjFilePath         TEXT);";
+    sql = "CREATE TABLE Objects("
+          "TimeStampSec INT ,"
+          "TimeStampUsec INT ,"
+          "Date TEXT ,"
+          "IOType TEXT ,"
+          "ProgName DATETIME ,"
+          "ObjectID INT,"
+          "ndim            INT     NOT NULL,"
+          "start_x     INT,"
+          "start_y     INT,"
+          "start_z     INT,"
+          "count_x     INT,"
+          "count_y     INT,"
+          "count_z     INT,"
+          "dim_x       INT,"
+          "dim_y       INT,"
+          "dim_z       INT,"
+          "offset         BIGINT UNSIGNED,"
+          "unit         INT,"
+          "sizeReg         INT,"
+          "totalNumRegs         INT,"
+          "totalBytes         BIGINT UNSIGNED,"
+          "newObjFilePath         TEXT);";
 
-   rc = sqlite3_exec(db, sql, callback, 0, &zErrMsg);
-   if( rc != SQLITE_OK ){
-       //fprintf(stderr, "SQL error: %s\n", zErrMsg);
-       sqlite3_free(zErrMsg);
-   } else {
-    //   fprintf(stdout, "Table created successfully\n");
-   }
+    rc = sqlite3_exec(db, sql, callback, 0, &zErrMsg);
+    if (rc != SQLITE_OK) {
+        // fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+    }
+    else {
+        //   fprintf(stdout, "Table created successfully\n");
+    }
 
-    return db; 
+    return db;
 }
 
-//skim here rel dkdk
-int global_timestamp = 0;
-int target_timestamp = 0;
-struct timeval* global_ts = NULL;
-struct timeval* target_ts = NULL;
-void* void_all_buf = NULL;
-void* warm_buf = NULL;
-void *temp_buf = NULL;
-int first_req = 1;
-int num_arrays; // 8?
-struct new_region_info_t* new_region_info = NULL;
-int found_fd;
-int req_idx = 0;
-char* existing_new_path = NULL;
-sqlite3 *db;
-double dbOpenTime = 0;
-double dbCloseTime = 0;
-double proposedWarmOpenTime = 0;
-double proposedPreadTime = 0;
-int proposedPreadCount = 0;
-double proposedMemcpyTime = 0;
-int proposedMemcpyCount = 0;
-double bulkTransferTime = 0;
-int bulkCount = 0;
+// skim here rel dkdk
+int                       global_timestamp = 0;
+int                       target_timestamp = 0;
+struct timeval *          global_ts        = NULL;
+struct timeval *          target_ts        = NULL;
+void *                    void_all_buf     = NULL;
+void *                    warm_buf         = NULL;
+void *                    temp_buf         = NULL;
+int                       first_req        = 1;
+int                       num_arrays; // 8?
+struct new_region_info_t *new_region_info = NULL;
+int                       found_fd;
+int                       req_idx           = 0;
+char *                    existing_new_path = NULL;
+sqlite3 *                 db;
+double                    dbOpenTime           = 0;
+double                    dbCloseTime          = 0;
+double                    proposedWarmOpenTime = 0;
+double                    proposedPreadTime    = 0;
+int                       proposedPreadCount   = 0;
+double                    proposedMemcpyTime   = 0;
+int                       proposedMemcpyCount  = 0;
+double                    bulkTransferTime     = 0;
+int                       bulkCount            = 0;
 // region_release_cb()
 HG_TEST_RPC_CB(region_release, handle)
 {
@@ -2947,9 +2955,9 @@ HG_TEST_RPC_CB(region_release, handle)
     // size_t                               type_size    = 0;
     // size_t                               dims[4]      = {0, 0, 0, 0};
 
-    //profiling
+    // profiling
     struct timeval et1, et2;
-    double et;
+    double         et;
 
 #if PDC_TIMING == 1
     double start, end;
@@ -3179,9 +3187,15 @@ HG_TEST_RPC_CB(region_release, handle)
                         printf("DK: 1\n");
                         fflush(stdout);
 
-                        uint64_t read_unit_size_ndim_1 = (obj_map_bulk_args->remote_region_nounit).count_0*in.data_unit;
-                        uint64_t read_unit_size_ndim_2 = (obj_map_bulk_args->remote_region_nounit).count_0*(obj_map_bulk_args->remote_region_nounit).count_1*in.data_unit;
-                        uint64_t read_unit_size_ndim_3 = (obj_map_bulk_args->remote_region_nounit).count_0*(obj_map_bulk_args->remote_region_nounit).count_1*(obj_map_bulk_args->remote_region_nounit).count_2*in.data_unit;
+                        uint64_t read_unit_size_ndim_1 =
+                            (obj_map_bulk_args->remote_region_nounit).count_0 * in.data_unit;
+                        uint64_t read_unit_size_ndim_2 = (obj_map_bulk_args->remote_region_nounit).count_0 *
+                                                         (obj_map_bulk_args->remote_region_nounit).count_1 *
+                                                         in.data_unit;
+                        uint64_t read_unit_size_ndim_3 = (obj_map_bulk_args->remote_region_nounit).count_0 *
+                                                         (obj_map_bulk_args->remote_region_nounit).count_1 *
+                                                         (obj_map_bulk_args->remote_region_nounit).count_2 *
+                                                         in.data_unit;
                         uint64_t offset_0;
                         uint64_t offset_1;
                         uint64_t offset_2;
@@ -3205,13 +3219,13 @@ HG_TEST_RPC_CB(region_release, handle)
                         char                 updateSql[500];
                         char                 insertSql[500];
 
-                        data_server_region_t* curr_obj = PDC_Server_get_obj_region(in.obj_id);
-                        region_buf_map_t* temp_buf_map;
+                        data_server_region_t *curr_obj = PDC_Server_get_obj_region(in.obj_id);
+                        region_buf_map_t *    temp_buf_map;
 
                         int temp_timestamp_sec;
                         int temp_timestamp_usec;
 
-                        if(first_req) {
+                        if (first_req) {
                             printf("DK: 2\n");
                             fflush(stdout);
                             gettimeofday(&t1, NULL);
@@ -3262,9 +3276,10 @@ HG_TEST_RPC_CB(region_release, handle)
                             }
                             rc = sqlite3_prepare_v2(db, (const char *)&selectSql, 500, &stmt, pzTail);
                             uint64_t min_bytes;
-                            int cnt = 0;
-                            while(sqlite3_step( stmt ) == SQLITE_ROW) {
-                                // printf("DK: in first_req, row is found so trying to find that satisfies all region requests %s\n", hostname);
+                            int      cnt = 0;
+                            while (sqlite3_step(stmt) == SQLITE_ROW) {
+                                // printf("DK: in first_req, row is found so trying to find that satisfies all
+                                // region requests %s\n", hostname);
                                 struct sqlite3_stmt *temp_stmt;
                                 int                  flag           = 1;
                                 int                  min_flag       = 0;
@@ -3273,9 +3288,11 @@ HG_TEST_RPC_CB(region_release, handle)
                                 temp_timestamp_sec  = sqlite3_column_int(stmt, 0);
                                 temp_timestamp_usec = sqlite3_column_int(stmt, 1);
 
-                                // printf("SKIM: found row's timstamp is %d.%d  %s\n", temp_timestamp_sec, temp_timestamp_usec, hostname);
+                                // printf("SKIM: found row's timstamp is %d.%d  %s\n", temp_timestamp_sec,
+                                // temp_timestamp_usec, hostname);
 
-                                DL_FOREACH(curr_obj->region_buf_map_head, temp_buf_map) {
+                                DL_FOREACH(curr_obj->region_buf_map_head, temp_buf_map)
+                                {
                                     if (remote_reg_info->ndim == 1) {
                                         sprintf(selectSql,
                                                 "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND "
@@ -3362,9 +3379,9 @@ HG_TEST_RPC_CB(region_release, handle)
                             printf("%s dbSearchLayout %f\n", hostname, elapsedTime / 1000);
 
                             // printf("SKIM: found new file path is %s %s\n", existing_new_path, hostname);
-                            // if (target_ts != NULL) printf("SKIM: found timestamp for new file is %d.%d  %s\n", target_ts->tv_sec, target_ts->tv_usec, hostname);
-                            // fflush(stdout);
-			            }
+                            // if (target_ts != NULL) printf("SKIM: found timestamp for new file is %d.%d
+                            // %s\n", target_ts->tv_sec, target_ts->tv_usec, hostname); fflush(stdout);
+                        }
                         printf("DK: 2-*\n");
                         fflush(stdout);
 
@@ -3377,7 +3394,7 @@ HG_TEST_RPC_CB(region_release, handle)
                             first_req = 0; //
                             gettimeofday(&t1, NULL);
 
-                            new_region_info = malloc(sizeof(struct new_region_info_t));
+                            new_region_info       = malloc(sizeof(struct new_region_info_t));
                             new_region_info->narr = num_arrays; // finalized in buf_map part
                             new_region_info->ndim =
                                 remote_reg_info
@@ -3529,10 +3546,12 @@ HG_TEST_RPC_CB(region_release, handle)
                             fflush(stdout);
 
                             for (int i = 0; i < num_arrays; i++) { // here rel change here (# proc / # Node)
-                                new_region_info->offset[i] = all_cur_offset; //not sure, size
-                                // new_region_info->offset[i] = new_region_info->start_0[i] * new_region_info->count_0[i] * new_region_info->count_1[i] * new_region_info->count_2[i] * in.data_unit;
-                                // new_region_info->offset[i] = in.data_unit * new_region_info->start_0[i]; //not sure, size
-                                if(remote_reg_info->ndim == 1) {
+                                new_region_info->offset[i] = all_cur_offset; // not sure, size
+                                // new_region_info->offset[i] = new_region_info->start_0[i] *
+                                // new_region_info->count_0[i] * new_region_info->count_1[i] *
+                                // new_region_info->count_2[i] * in.data_unit; new_region_info->offset[i] =
+                                // in.data_unit * new_region_info->start_0[i]; //not sure, size
+                                if (remote_reg_info->ndim == 1) {
                                     gettimeofday(&t1, NULL);
                                     memcpy(void_all_buf + all_cur_offset,
                                            temp_buf + new_region_info->start_0[i] * in.data_unit,
@@ -3570,18 +3589,23 @@ HG_TEST_RPC_CB(region_release, handle)
                                 else if (remote_reg_info->ndim == 3) {
                                     int temp_cur_offset = 0;
                                     gettimeofday(&t1, NULL);
-                                    // for(int dim3 = new_region_info->start_2[i]; dim3 < new_region_info->start_2[i] + new_region_info->count_2[i]; dim3++) {
-                                    //     offset_2 = dim3 * (remote_reg_info->size)[1] * (remote_reg_info->size)[0]; // dim
-                                    //     for (int dim2 = new_region_info->start_1[i]; dim2 < new_region_info->start_1[i] + new_region_info->count_1[i]; dim2++) {
-                                    //         offset_1 = dim2 * (remote_reg_info->size)[0]; // dim numparticles
-                                    //         offset_0 = new_region_info->start_0[i];
-                                    //         temp_cur_offset = (offset_2 + offset_1 + offset_0) * in.data_unit;
-                                    //         memcpy(void_all_buf + all_cur_offset, temp_buf + temp_cur_offset, new_region_info->count_0[i]*in.data_unit);
+                                    // for(int dim3 = new_region_info->start_2[i]; dim3 <
+                                    // new_region_info->start_2[i] + new_region_info->count_2[i]; dim3++) {
+                                    //     offset_2 = dim3 * (remote_reg_info->size)[1] *
+                                    //     (remote_reg_info->size)[0]; // dim for (int dim2 =
+                                    //     new_region_info->start_1[i]; dim2 < new_region_info->start_1[i] +
+                                    //     new_region_info->count_1[i]; dim2++) {
+                                    //         offset_1 = dim2 * (remote_reg_info->size)[0]; // dim
+                                    //         numparticles offset_0 = new_region_info->start_0[i];
+                                    //         temp_cur_offset = (offset_2 + offset_1 + offset_0) *
+                                    //         in.data_unit; memcpy(void_all_buf + all_cur_offset, temp_buf +
+                                    //         temp_cur_offset, new_region_info->count_0[i]*in.data_unit);
                                     //         all_cur_offset += new_region_info->count_0[i]*in.data_unit;
                                     //     }
                                     // }
-                                    for(int dim3 = 0; dim3 < new_region_info->count_2[i]; dim3++) {
-                                        offset_2 = dim3 * (remote_reg_info->size)[1] * (remote_reg_info->size)[0]; // dim
+                                    for (int dim3 = 0; dim3 < new_region_info->count_2[i]; dim3++) {
+                                        offset_2 = dim3 * (remote_reg_info->size)[1] *
+                                                   (remote_reg_info->size)[0]; // dim
                                         for (int dim2 = 0; dim2 < new_region_info->count_1[i]; dim2++) {
                                             offset_1 = dim2 * (remote_reg_info->size)[0]; // dim numparticles
                                             offset_0 = new_region_info->start_0[i];
@@ -3684,13 +3708,22 @@ HG_TEST_RPC_CB(region_release, handle)
                             uint64_t target_offset;
 
                             if (remote_reg_info->ndim == 1) {
-                                // obj_map_bulk_args->data_buf = temp_buf + ((obj_map_bulk_args->remote_region_nounit).start_0 * in.data_unit);
-                                // obj_map_bulk_args->data_buf = void_all_buf + ((obj_map_bulk_args->remote_region_nounit).start_0 * in.data_unit);
+                                // obj_map_bulk_args->data_buf = temp_buf +
+                                // ((obj_map_bulk_args->remote_region_nounit).start_0 * in.data_unit);
+                                // obj_map_bulk_args->data_buf = void_all_buf +
+                                // ((obj_map_bulk_args->remote_region_nounit).start_0 * in.data_unit);
                                 obj_map_bulk_args->data_buf = void_all_buf;
-                            } else if (remote_reg_info->ndim == 3) {
-                                // obj_map_bulk_args->data_buf = temp_buf + ((obj_map_bulk_args->remote_region_nounit).start_0 * (obj_map_bulk_args->remote_region_nounit).start_1 * (obj_map_bulk_args->remote_region_nounit).start_2 * in.data_unit);
+                            }
+                            else if (remote_reg_info->ndim == 3) {
+                                // obj_map_bulk_args->data_buf = temp_buf +
+                                // ((obj_map_bulk_args->remote_region_nounit).start_0 *
+                                // (obj_map_bulk_args->remote_region_nounit).start_1 *
+                                // (obj_map_bulk_args->remote_region_nounit).start_2 * in.data_unit);
                                 // obj_map_bulk_args->data_buf = temp_buf + (new_region_info->offset[0]);
-                                // obj_map_bulk_args->data_buf = void_all_buf + ((obj_map_bulk_args->remote_region_nounit).start_0 * (obj_map_bulk_args->remote_region_nounit).start_1 * (obj_map_bulk_args->remote_region_nounit).start_2 * in.data_unit);
+                                // obj_map_bulk_args->data_buf = void_all_buf +
+                                // ((obj_map_bulk_args->remote_region_nounit).start_0 *
+                                // (obj_map_bulk_args->remote_region_nounit).start_1 *
+                                // (obj_map_bulk_args->remote_region_nounit).start_2 * in.data_unit);
                                 obj_map_bulk_args->data_buf = void_all_buf;
                             }
                             gettimeofday(&t1, NULL);
@@ -3700,14 +3733,17 @@ HG_TEST_RPC_CB(region_release, handle)
                             elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;
                             dbCloseTime += elapsedTime / 1000;
                             printf("%s closedb() %f\n", hostname, elapsedTime / 1000);
-                            printf("%s closedb count %d, total %f\n", hostname, req_idx+1, dbCloseTime);
+                            printf("%s closedb count %d, total %f\n", hostname, req_idx + 1, dbCloseTime);
                         }
                         else if (!first_req && existing_new_path == NULL) {
                             ssize_t read_bytes = 0;
-                            printf("SKIM remote region offset is %d\n", (obj_map_bulk_args->remote_region_nounit).start_0);
-                            obj_map_bulk_args->data_buf = void_all_buf + ((obj_map_bulk_args->remote_region_nounit).start_0 * read_unit_size_ndim_3);
+                            printf("SKIM remote region offset is %d\n",
+                                   (obj_map_bulk_args->remote_region_nounit).start_0);
+                            obj_map_bulk_args->data_buf =
+                                void_all_buf +
+                                ((obj_map_bulk_args->remote_region_nounit).start_0 * read_unit_size_ndim_3);
                         }
-                        if(existing_new_path != NULL) {
+                        if (existing_new_path != NULL) {
                             printf("SKIM: PATH AND TIMESTAMP FOUND!! (must be 2+ execution)  %s\n", hostname);
 
                             // fflush(stdout);
@@ -3740,7 +3776,7 @@ HG_TEST_RPC_CB(region_release, handle)
                             }
 
                             uint64_t target_offset;
-                            ssize_t read_bytes = 0;
+                            ssize_t  read_bytes = 0;
 
                             gettimeofday(&t1, NULL);
                             if (remote_reg_info->ndim == 1) {
@@ -3785,7 +3821,7 @@ HG_TEST_RPC_CB(region_release, handle)
                                    proposedPreadTime);
 
                             obj_map_bulk_args->data_buf = warm_buf + target_offset;
-                            first_req = 0;
+                            first_req                   = 0;
 
                             if (req_idx == num_arrays - 1) {
                                 // prefetch_obj(0, db, num_arrays, in.data_unit);
@@ -3812,7 +3848,8 @@ HG_TEST_RPC_CB(region_release, handle)
                             (remote_reg_info->size)[2]   = (obj_map_bulk_args->remote_region_nounit).count_2;
                         }
 
-                        // PDC_Server_data_read_from(obj_map_bulk_args->remote_obj_id, remote_reg_info, data_buf, in.data_unit);
+                        // PDC_Server_data_read_from(obj_map_bulk_args->remote_obj_id, remote_reg_info,
+                        // data_buf, in.data_unit);
 
                         size  = HG_Bulk_get_size(eltt2->local_bulk_handle);
                         size2 = HG_Bulk_get_size(remote_bulk_handle);
@@ -3841,10 +3878,10 @@ HG_TEST_RPC_CB(region_release, handle)
                             PGOTO_ERROR(hg_ret, "===PDC SERVER: HG_TEST_RPC_CB(region_release, handle) obj "
                                                 "map Could not write bulk data");
                         }
-                        //dkdk
-                        if (req_idx+1 == num_arrays) {
+                        // dkdk
+                        if (req_idx + 1 == num_arrays) {
                             db = Create_DB("MAP_INFO", hostname);
-                            //prefetch_obj(1, db, num_arrays, 3);
+                            // prefetch_obj(1, db, num_arrays, 3);
                         }
                         req_idx++;
 
@@ -4054,8 +4091,10 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-//here rel
-void prefetch_obj(int op, sqlite3 *db, int num_regs, int ndim) {
+// here rel
+void
+prefetch_obj(int op, sqlite3 *db, int num_regs, int ndim)
+{
     if (op == 0) {
         return;
     }
@@ -4092,13 +4131,15 @@ void prefetch_obj(int op, sqlite3 *db, int num_regs, int ndim) {
     int      objId;
     uint64_t totalBytes;
     uint64_t sizeReg;
-    int unit;
-    int typeOfReg; // 1 -> full plane
-    int timestampSec;
-    int timestamUsec;
+    int      unit;
+    int      typeOfReg; // 1 -> full plane
+    int      timestampSec;
+    int      timestamUsec;
 
-    //select to see reg infos
-    sprintf(selectSql, "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND newObjFilePath IS NOT NULL AND ndim == %d", ndim);
+    // select to see reg infos
+    sprintf(selectSql,
+            "SELECT * FROM Objects WHERE ProgName == 'VPICIO' AND newObjFilePath IS NOT NULL AND ndim == %d",
+            ndim);
     rc = sqlite3_prepare_v2(db, (const char *)&selectSql, 500, &stmt, pzTail);
     if (rc == SQLITE_OK)
         printf("rc is ok sql worked\n");
@@ -4107,7 +4148,7 @@ void prefetch_obj(int op, sqlite3 *db, int num_regs, int ndim) {
     int cnt          = 0;
     int patternFound = 0;
 
-    if (sqlite3_step( stmt ) == SQLITE_ROW) { // select returns one or more rows
+    if (sqlite3_step(stmt) == SQLITE_ROW) { // select returns one or more rows
 
         if (cnt == 0 && cnt_select == 0 &&
             patternFound == 0) { // only do it first time for checking first platterned read
@@ -4138,7 +4179,7 @@ void prefetch_obj(int op, sqlite3 *db, int num_regs, int ndim) {
                     timestampSec, timestamUsec, ndim);
             rc2 = sqlite3_prepare_v2(db, (const char *)&selectSubSql, 500, &temp_stmt, pzTail2);
 
-            while(sqlite3_step( temp_stmt ) == SQLITE_ROW) {
+            while (sqlite3_step(temp_stmt) == SQLITE_ROW) {
                 if (ndim == 3 && cnt < numReg) {
                     regsStart_x[cnt] = sqlite3_column_int(temp_stmt, 7);
                     regsStart_y[cnt] = sqlite3_column_int(temp_stmt, 8);
@@ -4160,14 +4201,15 @@ void prefetch_obj(int op, sqlite3 *db, int num_regs, int ndim) {
     rc = sqlite3_prepare_v2(db, (const char *)&selectSql, 500, &stmt, pzTail);
 
     int match = 0;
-    cnt = 0;
-    while (sqlite3_step( stmt ) == SQLITE_ROW) { // select returns one or more rows
+    cnt       = 0;
+    while (sqlite3_step(stmt) == SQLITE_ROW) { // select returns one or more rows
         if (ndim == 1) {
             int tmp_offset_x = sqlite3_column_int(stmt, 7);
 
             if (tmp_offset_x == regsStart_x[cnt] + count_x) {
                 match = 1;
-            } else {
+            }
+            else {
                 match = 0;
             }
         }
@@ -4177,7 +4219,8 @@ void prefetch_obj(int op, sqlite3 *db, int num_regs, int ndim) {
 
             if (tmp_offset_x == regsStart_x[cnt] + 16) {
                 match = 1;
-            } else {
+            }
+            else {
                 match = 0;
             }
         }
@@ -4195,49 +4238,50 @@ void prefetch_obj(int op, sqlite3 *db, int num_regs, int ndim) {
         }
     }
 
-    if(match) {
+    if (match) {
         uint64_t totalObjSize;
         uint64_t remainingObj;
-        int offset_term;
-        int num_new;
+        int      offset_term;
+        int      num_new;
         if (ndim == 1) {
             totalObjSize = dim_x;
             remainingObj = totalObjSize - (totalBytes * 2);
-            num_new = remainingObj / totalBytes;
+            num_new      = remainingObj / totalBytes;
         }
         else if (ndim == 2) {
             totalObjSize = dim_x * dim_y;
             remainingObj = totalObjSize - (totalBytes * 2);
-            num_new = remainingObj / totalBytes;
+            num_new      = remainingObj / totalBytes;
         }
         else if (ndim == 3) {
             totalObjSize = dim_x * dim_y * dim_z;
             remainingObj = totalObjSize - (totalBytes * 2);
-            num_new = remainingObj / totalBytes;
+            num_new      = remainingObj / totalBytes;
         }
         //
         for (int i = 0; i < num_new; i++) {
             new_region_info_t *prefetch_reg_info;
-            struct timeval *prefetch_ts = NULL;
-            prefetch_ts = malloc(sizeof(struct timeval));
+            struct timeval *   prefetch_ts = NULL;
+            prefetch_ts                    = malloc(sizeof(struct timeval));
             gettimeofday(prefetch_ts, NULL);
 
-            prefetch_reg_info = malloc(sizeof(struct new_region_info_t));
+            prefetch_reg_info              = malloc(sizeof(struct new_region_info_t));
             prefetch_reg_info->newfilename = malloc(256 * sizeof(char));
-            prefetch_reg_info->timestamp = prefetch_ts;
-            prefetch_reg_info->total_size = totalBytes;
-            prefetch_reg_info->unit = unit;
+            prefetch_reg_info->timestamp   = prefetch_ts;
+            prefetch_reg_info->total_size  = totalBytes;
+            prefetch_reg_info->unit        = unit;
 
-            char new_file_dir_loc[100];
-            char* data_path = getenv("SCRATCH");
-            snprintf(new_file_dir_loc, 100, "%s/pdc_data/pdc_auto", data_path); //new file directory name
-            snprintf(prefetch_reg_info->newfilename, 256, "%s/new_region%d_%d.bin", new_file_dir_loc, prefetch_reg_info->timestamp->tv_sec, prefetch_reg_info->timestamp->tv_usec);
+            char  new_file_dir_loc[100];
+            char *data_path = getenv("SCRATCH");
+            snprintf(new_file_dir_loc, 100, "%s/pdc_data/pdc_auto", data_path); // new file directory name
+            snprintf(prefetch_reg_info->newfilename, 256, "%s/new_region%d_%d.bin", new_file_dir_loc,
+                     prefetch_reg_info->timestamp->tv_sec, prefetch_reg_info->timestamp->tv_usec);
 
-            void* to_be_written = (void *)calloc(1, totalBytes);
+            void *to_be_written = (void *)calloc(1, totalBytes);
             // void* orig_file = (void *)calloc(1, 4096000000);
-            void* orig_file = (void *)calloc(1, 4000000000);
-            double pmt = 0;
-            int pmc = 0;
+            void *   orig_file      = (void *)calloc(1, 4000000000);
+            double   pmt            = 0;
+            int      pmc            = 0;
             uint64_t all_cur_offset = 0;
             for (int j = 0; j < numReg; j++) {
                 gettimeofday(&t1, NULL);
@@ -4254,34 +4298,38 @@ void prefetch_obj(int op, sqlite3 *db, int num_regs, int ndim) {
                 // uint64_t all_buf_offset = regsStart_x[j] * sizeReg;
                 // uint64_t all_buf_offset = regsStart_x[j] + 18 * sizeReg;
                 // uint64_t all_buf_offset = regsStart_x[j] + 21 * sizeReg;
-                uint64_t all_buf_offset = j * sizeReg;
+                uint64_t all_buf_offset  = j * sizeReg;
                 uint64_t temp_cur_offset = 0;
-                //skipping placing data in order
+                // skipping placing data in order
                 if (ndim == 1) {
-                    memcpy(to_be_written + all_cur_offset, orig_file + /*+ all_buf_offset*/ temp_cur_offset, count_x*unit);
-                    all_cur_offset += count_x*unit;
+                    memcpy(to_be_written + all_cur_offset, orig_file + /*+ all_buf_offset*/ temp_cur_offset,
+                           count_x * unit);
+                    all_cur_offset += count_x * unit;
                 }
                 else if (ndim == 2) {
                     for (int dim2 = 0; dim2 < count_y; dim2++) {
-                        offset_1 = dim2 * count_x; // dim numparticle
-                        offset_0 = 0;
+                        offset_1        = dim2 * count_x; // dim numparticle
+                        offset_0        = 0;
                         temp_cur_offset = (j * sizeReg) + (offset_1 + offset_0) * unit;
-                        memcpy(to_be_written + all_cur_offset, orig_file + /*+ all_buf_offset*/ temp_cur_offset, count_x*unit);
-                        all_cur_offset += count_x*unit;
+                        memcpy(to_be_written + all_cur_offset,
+                               orig_file + /*+ all_buf_offset*/ temp_cur_offset, count_x * unit);
+                        all_cur_offset += count_x * unit;
                     }
                 }
                 else if (ndim == 3) {
-                    for(int dim3 = 0; dim3 < count_z; dim3++) {
+                    for (int dim3 = 0; dim3 < count_z; dim3++) {
                         offset_2 = dim3 * count_x * count_y; // dim
                         for (int dim2 = 0; dim2 < count_y; dim2++) {
-                            offset_1 = dim2 * count_x; // dim numparticles
-                            offset_0 = 0;
+                            offset_1        = dim2 * count_x; // dim numparticles
+                            offset_0        = 0;
                             temp_cur_offset = (j * sizeReg) + (offset_2 + offset_1 + offset_0) * unit;
-                            // memcpy(to_be_written + all_cur_offset, temp_buf + temp_cur_offset, new_region_info->count_0[i]*in.data_unit);
-                            memcpy(to_be_written + all_cur_offset, orig_file /*+ all_buf_offset*/ + temp_cur_offset, count_x*unit);
-                            all_cur_offset += count_x[i]*unit;
+                            // memcpy(to_be_written + all_cur_offset, temp_buf + temp_cur_offset,
+                            // new_region_info->count_0[i]*in.data_unit);
+                            memcpy(to_be_written + all_cur_offset,
+                                   orig_file /*+ all_buf_offset*/ + temp_cur_offset, count_x * unit);
+                            all_cur_offset += count_x[i] * unit;
                         }
-                    }                    
+                    }
                 }
                 gettimeofday(&t2, NULL);
                 elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0;
@@ -4291,10 +4339,27 @@ void prefetch_obj(int op, sqlite3 *db, int num_regs, int ndim) {
                 printf("%s prefetch %dth memcpy count %d, total %f\n", hostname, i, pmc, pmt);
                 printf("%s prefetch %d th memcpy %f\n", hostname, i, elapsedTime / 1000);
 
-                // sprintf(insertSql, "INSERT INTO Objects (TimeStampSec, TimeStampUsec, Date, IOType, ProgName, ObjectID, ndim, start_x, start_y, start_z, count_x, count_y, count_z, dim_x, dim_y, dim_z, offset, unit, sizeReg, totalNumRegs, totalBytes, newObjFilePath) VALUES (%d, %d, DATETIME('now'), 'READ', 'VPICIO', %d, %d, %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %d, %"PRIu64", %d, %"PRIu64", %s);", 
-                //     prefetch_ts->tv_sec, prefetch_ts->tv_usec, objId, ndim, regsStart_x[j], regsStart_y[j], regsStart_z[j], count_x, count_y, count_z, dim_x, dim_y, dim_z, all_cur_offset, unit, count_x * count_y * count_z * unit, numReg, totalBytes, prefetch_reg_info->newfilename);
-                sprintf(insertSql, "INSERT INTO Objects (TimeStampSec, TimeStampUsec, Date, IOType, ProgName, ObjectID, ndim, start_x, start_y, start_z, count_x, count_y, count_z, dim_x, dim_y, dim_z, offset, unit, sizeReg, totalNumRegs, totalBytes, newObjFilePath) VALUES (%d, %d, DATETIME('now'), 'READ', 'VPICIO', %d, %d, %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %d, %"PRIu64", %d, %"PRIu64", %s);", 
-                    prefetch_ts->tv_sec, prefetch_ts->tv_usec, objId, ndim, regsStartNew_x[j], regsStartNew_y[j], regsStartNew_z[j], count_x, count_y, count_z, dim_x, dim_y, dim_z, all_cur_offset, unit, count_x * count_y * count_z * unit, numReg, totalBytes, prefetch_reg_info->newfilename);
+                // sprintf(insertSql, "INSERT INTO Objects (TimeStampSec, TimeStampUsec, Date, IOType,
+                // ProgName, ObjectID, ndim, start_x, start_y, start_z, count_x, count_y, count_z, dim_x,
+                // dim_y, dim_z, offset, unit, sizeReg, totalNumRegs, totalBytes, newObjFilePath) VALUES (%d,
+                // %d, DATETIME('now'), 'READ', 'VPICIO', %d, %d, %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64",
+                // %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %d, %"PRIu64", %d,
+                // %"PRIu64", %s);",
+                //     prefetch_ts->tv_sec, prefetch_ts->tv_usec, objId, ndim, regsStart_x[j], regsStart_y[j],
+                //     regsStart_z[j], count_x, count_y, count_z, dim_x, dim_y, dim_z, all_cur_offset, unit,
+                //     count_x * count_y * count_z * unit, numReg, totalBytes,
+                //     prefetch_reg_info->newfilename);
+                sprintf(insertSql,
+                        "INSERT INTO Objects (TimeStampSec, TimeStampUsec, Date, IOType, ProgName, ObjectID, "
+                        "ndim, start_x, start_y, start_z, count_x, count_y, count_z, dim_x, dim_y, dim_z, "
+                        "offset, unit, sizeReg, totalNumRegs, totalBytes, newObjFilePath) VALUES (%d, %d, "
+                        "DATETIME('now'), 'READ', 'VPICIO', %d, %d, %" PRIu64 ", %" PRIu64 ", %" PRIu64
+                        ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64
+                        ", %" PRIu64 ", %d, %" PRIu64 ", %d, %" PRIu64 ", %s);",
+                        prefetch_ts->tv_sec, prefetch_ts->tv_usec, objId, ndim, regsStartNew_x[j],
+                        regsStartNew_y[j], regsStartNew_z[j], count_x, count_y, count_z, dim_x, dim_y, dim_z,
+                        all_cur_offset, unit, count_x * count_y * count_z * unit, numReg, totalBytes,
+                        prefetch_reg_info->newfilename);
 
                 rc = sqlite3_exec(db, (const char *)&insertSql, callback, 0, &zErrMsg);
             }
@@ -4312,18 +4377,20 @@ void prefetch_obj(int op, sqlite3 *db, int num_regs, int ndim) {
 }
 
 void
-write_new_file_and_info(struct new_region_info_t* reg, void* new_buf) {
+write_new_file_and_info(struct new_region_info_t *reg, void *new_buf)
+{
     // FILE *info_fp;
     FILE *new_fp;
     int   fd;
     char  new_file_dir_loc[100];
     char *data_path = getenv("SCRATCH");
 
-    snprintf(new_file_dir_loc, 100, "%s/pdc_data/pdc_auto", data_path); //new file directory name
+    snprintf(new_file_dir_loc, 100, "%s/pdc_data/pdc_auto", data_path); // new file directory name
 
     mkdir(new_file_dir_loc, S_IRWXU | S_IRWXG);
 
-    snprintf(reg->newfilename, 256, "%s/new_region%d_%d.bin", new_file_dir_loc, reg->timestamp->tv_sec, reg->timestamp->tv_usec);
+    snprintf(reg->newfilename, 256, "%s/new_region%d_%d.bin", new_file_dir_loc, reg->timestamp->tv_sec,
+             reg->timestamp->tv_usec);
 
     // write new file to correct file location
     new_fp = fopen(reg->newfilename, "w");
@@ -5416,7 +5483,7 @@ done:
 }
 
 /* static hg_return_t */
-//here buf
+// here buf
 uint64_t dim_x;
 uint64_t dim_y;
 uint64_t dim_z;
@@ -5498,10 +5565,11 @@ HG_TEST_RPC_CB(buf_map, handle)
     pdc_metadata_t *target_meta;
 
     struct timeval t1, t2;
-    double elapsedTime;
+    double         elapsedTime;
 
     gettimeofday(&t1, NULL);
-    if (db == NULL) db = Create_DB("MAP_INFO", hostname);
+    if (db == NULL)
+        db = Create_DB("MAP_INFO", hostname);
 
     if (ndim >= 1 && dim_x == 0) {
         target_meta = PDC_Server_get_obj_metadata(new_buf_map_ptr->remote_obj_id);
@@ -5517,9 +5585,9 @@ HG_TEST_RPC_CB(buf_map, handle)
     }
 
     char *zErrMsg = 0;
-    int rc;
-    char insertSql[500];
-    char selectSql[500];
+    int   rc;
+    char  insertSql[500];
+    char  selectSql[500];
     printf("%s DK: buf\n", hostname);
     fflush(stdout);
 
@@ -5573,7 +5641,7 @@ HG_TEST_RPC_CB(buf_map, handle)
     }
     printf("DK: buf2\n");
     fflush(stdout);
-    if( rc != SQLITE_OK ){
+    if (rc != SQLITE_OK) {
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
     }
