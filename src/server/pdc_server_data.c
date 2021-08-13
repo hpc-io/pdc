@@ -40,6 +40,7 @@
 
 #ifdef ENABLE_RADOS
 #include <rados/librados.h>
+#define maxx_write_size 94371840
 #endif
 
 
@@ -5578,17 +5579,61 @@ PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf
 #ifdef ENABLE_RADOS
 //Ceph Write function
 int
-PDC_Server_rados_write(uint64_t obj_id, void *buf, uint64_t write_size)
+PDC_Server_rados_write(uint64_t obj_id, void *buf, uint64_t write_size,int ndim,uint64_t *offset,uint64_t *size)
 {
-  //  uint64_t write_bytes = 0;
+	int i,j;
 	int retu=0;
 	int batch = 0;
 	const char name[100];
-	long long int maxx_write_size = 94371840;
-	printf("%lld:This is the write Size and obj id is : %lld\n",write_size,obj_id);
+	int reg_id = 0;
+	int flag = 0 ;
+	printf("%lld:This is the Total  write Size and obj id is : %lld\n",write_size,obj_id);
+	printf("offset value : %llu\n",offset[0]);
+
+
+
+
+	sprintf(name, "%llu_meta", obj_id);
+
+	retu = rados_getxattr(io, name,"reg_id",&reg_id,sizeof(int));
+        if(retu<0){
+	printf("region_id if not there will use default region : %d\n ",reg_id);
+	}else{
+        printf(" Total regions are  : %d read from object %s\n",reg_id,name);}
+
+	uint64_t  off[DIM_MAX];
+	uint64_t  sizee[DIM_MAX];
+
+
+	for(i =0;i<=reg_id;i++){
+	flag = 0;
+	retu = rados_getxattr(io, name,"offset",off,ndim*sizeof(uint64_t));
+        if(retu<0){printf("Error Getting in the offset for reg_id : %d  inside loop for : %d from object :%s \n",reg_id,i,name);
+        }
+/*	else{
+        printf(" off  by getxattr  is  : %llu\n",off);}
+*/
+	retu = rados_getxattr(io, name,"size",sizee,ndim*sizeof(uint64_t));
+        if(retu<0){printf("Error Getting in the sizee for reg_id :%d inside loop : %d from object :%s\n",reg_id,i,name);
+        }
+/*	else{
+        printf(" sizee  by getxattr is  : %llu\n",sizee);}
+*/
+
+	for(j=0;j<ndim;j++){
+	if(off[j]!=offset[j] || sizee[j]!= size[j]){
+		flag =1;
+	break;}
+			   }
+	}
+
+	if(flag !=0){
+	reg_id ++;}
+
+
 	while (write_size > maxx_write_size) {
 	printf("Loop running %d time\n",batch);
-		sprintf(name,"%llu_%d", obj_id, batch);
+		sprintf(name,"%llu_%d_%d", obj_id,reg_id, batch);
 		printf("%s\n",name);
 		retu = rados_write_full(io,name,buf,maxx_write_size);
 		if(retu<0){printf("Error writing in the object  name for: %s\n",name);
@@ -5599,27 +5644,59 @@ PDC_Server_rados_write(uint64_t obj_id, void *buf, uint64_t write_size)
 		batch++;
 		printf("For object with batch : %d write_size is :%d\n",batch,write_size);
 	}
-	sprintf(name, "%llu_%d", obj_id, batch);
-	retu = rados_write_full(io, name, buf,write_size);
+
+	sprintf(name, "%llu_%d_%d", obj_id,reg_id,batch);
+	retu = rados_write(io, name, buf,write_size,0);
 	if(retu<0){printf("Error Writing in the last Object name\n");}else{
 	printf("DAta is stored for last object %s\n",name);}
 
+	sprintf(name, "%llu_meta", obj_id);
+
+	retu = rados_setxattr(io,name,"offset",offset,ndim*sizeof(uint64_t));
+        if(retu<0){printf("Error Setting in the Extended attribute offset\n");}
+/*	else{
+        printf("Extended Attribute of offset  set for object  %s :   %llu \n",name,offset);}
+*/
+
+
+
+	retu = rados_setxattr(io,name,"size",size,ndim*sizeof(uint64_t));
+        if(retu<0){printf("Error Setting in the Extended attribute size\n");}
+/*	else{
+        printf("Extended Attribute of size  set for object  %s :  %llu \n",name,size);}
+
+*/
+//	Batch
 	char b_size[100];
 	//size_t psize;
 	//retu = rados_stat(io,name,&psize,NULL);
 	sprintf(b_size,"%d",batch);
-	sprintf(name, "%llu_batch", obj_id);
+//	sprintf(name, "%llu_%llu_batch", obj_id,reg_id);
 	printf("Size of batch object : %d\n",strlen(b_size));
 	retu = rados_setxattr(io,name,"batch",&batch,sizeof(int));
-	if(retu<0){printf("Error Setting in the Extended attribute\n");}else{
-	printf("Extended Attribute set for %llu_batch :with batch no.  %d \n",obj_id,batch);}
+	if(retu<0){printf("Error Setting in the Extended attribute\n");}
+/*	else{
+	printf("Extended Attribute set for object  %s :with total  batches  :  %d \n",name,batch);}
+*/
+//	Ndim as extended Attribute:
+	retu = rados_setxattr(io,name,"ndim",&ndim,sizeof(int));
+        if(retu<0){printf("Error Setting in the Extended attribute of ndim\n");}
+/*	else{
+        printf("Extended Attribute ndim  set for obejct  %s :  %d  \n",name,ndim);}
+*/
+//	Total No. of regions
+	retu = rados_setxattr(io,name,"reg_id",&reg_id,sizeof(int));
+        if(retu<0){printf("Error Setting in the Extended attribute for region_id\n");}else{
+        printf("Last region set from here for %s :with max_region_id :  %d \n",name,reg_id);}
 
-	int i;
-	 printf("Starting data in buf Upto 10 Values in rados_write\n");
-         for(i=0;i<=10;i++){
+
+
+/*
+	 printf("Starting data in buf Upto 10 Values in rados_write_function\n");
+         for(i=0;i<=70;i++){
          printf("%d\t",((int*)buf)[i]); }
-
-
+/	printf("\n");
+*/
 	return retu;
 }
 #endif
@@ -5633,12 +5710,21 @@ PDC_Server_rados_read(uint64_t obj_id, void *buf)
 		int i;
                 int batch = 0;
                 char name[100];
-                long long int maxx_write_size = 94371840;
+		int reg_id = 0;
                 size_t psize;
-                sprintf(name, "%llu_%d", obj_id, batch);
+
+//reg_id get back
+		sprintf(name, "%llu_meta",obj_id);
+		retu = rados_getxattr(io, name,"reg_id",&reg_id,sizeof(int));
+                if(retu<0){printf("Error Getting in the reg_id in rados_read.\n");}else{
+                printf(" reg_id by rados_read is  : %d\n",reg_id);}
+
+
+//First object
+                sprintf(name, "%llu_0_%d", obj_id, batch);
                 retu = rados_stat(io,name,&psize,NULL);
                 if(retu<0){printf("Error in getting size of first object");}else{
-                printf("Size of object %llu_%din read function  is  : %d \n",obj_id,batch,psize);}
+                printf("Size of object %s in read function  is  : %d \n",name,psize);}
                 char* buf_ptr = (char*) buf;
                 retu = rados_read(io,name,buf_ptr,psize,0);
                 if(retu<0){printf("Error Reading in the Object name\n");}else{
@@ -5647,30 +5733,35 @@ PDC_Server_rados_read(uint64_t obj_id, void *buf)
                 buf_ptr += maxx_write_size;
                 batch++;
 
-                sprintf(name,"%llu_batch", obj_id);
+                sprintf(name,"%llu_meta", obj_id);
                 int b_val;
                 printf("Batch object name is :%s\n",name);
                 retu = rados_getxattr(io, name,"batch",&b_val,sizeof(int));
                 if(retu<0){printf("Error Getting in the batch_no.\n");}else{
                 printf(" No. of Batches by read functions are  : %d\n",b_val);}
 
+	/*	int ndim;
+		retu = rados_getxattr(io, name,"ndim",&ndim,sizeof(int));
+                if(retu<0){printf("Error Getting in the ndim_no.\n");}else{
+                printf(" NDIM  by read function is  : %d\n",ndim);}
+
+*/
+
 		if(b_val>0){
                 for(i=1;i<=b_val;i++) {
                 printf("For object with batch no. %d\n",i);
-                        sprintf(name, "%llu_%d", obj_id, i);
+                        sprintf(name, "%llu_%d_%d", obj_id,reg_id, i);
                         retu = rados_read(io,name,buf_ptr,maxx_write_size,0);
                         if(retu<0){printf("Error Reading in the object_with_batch: %d\n",i);
                         }else{printf("Inside read loop_object read : %d\n",i);}
                         buf_ptr += maxx_write_size;
                         }
 		}
-		printf("Starting data in buf Upto 10 Values in rados_read\n");
-                for(i=0;i<=10;i++){
-                printf("%d\t",((int*)buf)[i]); }
 
-        //      printf("Ending data in buf\n");
-        //      for(i=262143990;i<262144000;i++){
-        //      printf("%d\t",((int*)buf)[i]); }
+	/*	printf(" data read_back in buf Upto 10 Values got back by rados_read_function\n");
+                for(i=0;i<=64;i++){
+                printf("%d\t",((int*)buf)[i]); }
+	*/
 
 	return retu;
 }
@@ -5770,7 +5861,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 		//rados copying the data from overlapped
 		memcpy(tmp_buf + overlap_start_local[0]*unit, buf + pos, overlap_count[0] * unit);
 
-		retu = PDC_Server_rados_write(obj_id,tmp_buf,overlap_region->data_size);
+		retu = PDC_Server_rados_write(obj_id,tmp_buf,overlap_region->data_size,region_info->ndim,region_info->offset,region_info->size);
                 if (retu < 0) {
                     printf("==PDC_SERVER[]: PDC_Server_rados_write FAILED for ndim =1 overlap condition!\n");}else{
 		    printf("Rados has Finished writing objects with overlapping condition for ndim =1\n");}
@@ -5835,7 +5926,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 
 		#ifdef ENABLE_RADOS
 		// For over writing Replaced write_size by overlap_region->data_size
-                retu = PDC_Server_rados_write(obj_id, tmp_buf, overlap_region->data_size);
+                retu = PDC_Server_rados_write(obj_id, tmp_buf, overlap_region->data_size,region_info->ndim,region_info->offset,region_info->size);
                 if (retu < 0) {
                     printf("==PDC_SERVER[]: PDC_Server_rados_write FAILED for ndim = 2 with overlap!\n");
                 }else{
@@ -5908,7 +5999,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                 }
 		#ifdef ENABLE_RADOS
 		//For over lapping Replaced write_size by overlap_region->data_size
-                retu = PDC_Server_rados_write(obj_id,tmp_buf,overlap_region->data_size);
+                retu = PDC_Server_rados_write(obj_id,tmp_buf,overlap_region->data_size,region_info->ndim,region_info->offset,region_info->size);
                 if (retu < 0) {
                     printf("==PDC_SERVER[]: PDC_Server_rados_write FAILED with overlapping for ndim =3!\n");
                 }else{
@@ -5930,11 +6021,19 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     if (is_overlap == 0) {
 
 	#ifdef ENABLE_RADOS
-	retu = PDC_Server_rados_write(obj_id, buf, write_size);
+	retu = PDC_Server_rados_write(obj_id, buf, write_size,region_info->ndim,region_info->offset,region_info->size);
         if (retu < 0) {
         printf("==PDC_SERVER[]: PDC_Server_rados_write FAILED without overlapping!\n");
+
         }else{
-	printf("Rados_written finished without overlapping condition exiting write\n");}
+	printf("Rados_written finished without overlapping condition exiting write\n");
+	}
+/*
+	 printf("data in buf[0] in overlap==0 condition to be written : %d \n",((int*)buf)[0]);
+	printf("ndim = : %d\n",region_info->ndim);
+	printf("region->fd = : %d\n",region->fd);
+	 printf("region_info->offset[0] := : %d\n",region_info->offset[0]);
+*/
 
 	#else
 	//Posix Calls here
@@ -6057,8 +6156,13 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 		 #ifdef ENABLE_RADOS
 	         retu = PDC_Server_rados_read(obj_id,tmp_buf);
 	         if (retu < 0) {
-	         printf("==PDC_SERVER[]: PDC_Server_rados_read FAILED for ndim = 1 inside read function!\n"); }else{
+	         printf("==PDC_SERVER[]: PDC_Server_rados_read FAILED for ndim = 1 inside read function!\n");
+		 }else{
 	         printf("Rados_read_operation finished for ndim = 1 inside read function \n");}
+
+		 printf(" data in tmp_buf Upto 10 Values in final_read call before memcpy : \n");
+                for(i=0;i<=10;i++){
+                printf("%d\t",((int*)tmp_buf)[i]); }
 
 	         #else
 		//Posix Call here
@@ -6070,10 +6174,16 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 
 		#endif
 
-		memcpy(buf + pos ,tmp_buf + overlap_start_local[0]*unit, overlap_count[0] * unit);
+
+
+		memcpy(buf+pos,tmp_buf+ overlap_start_local[0]*unit, overlap_count[0] * unit);
+
+		printf("overlap_start_local[0] : %d , pos : %d , buf[0] : %d,buf[pos]: %d\n",overlap_start_local[0],pos,((int*)buf)[0],((int*)buf)[pos]);
+
+
 		my_read_bytes = overlap_count[0] * unit;
 		 free(tmp_buf);
-		printf("Final values in pdc_read\n");
+		printf("Final values in pdc_read after memcpy\n");
 		for(i=0;i<=10;i++){
                 printf("%d\t",((int*)buf)[i]); }
 		printf("\n");
