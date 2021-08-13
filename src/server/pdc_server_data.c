@@ -5586,14 +5586,16 @@ PDC_Server_rados_write(uint64_t obj_id, void *buf, uint64_t write_size, int ndim
     const char name[100];
     int reg_id = 0;
     int flag = 0;
+    int flag_1 = 0;
     printf("%lld:This is the Total  write Size and obj id is : %lld\n", write_size, obj_id);
     printf("offset value : %llu\n", offset[0]);
 
-    sprintf(name, "%llu_meta", obj_id);
+    sprintf(name, "%llu_%d_0", obj_id,reg_id);
 
     retu = rados_getxattr(io, name, "reg_id", &reg_id, sizeof(int));
     if (retu < 0) {
         printf("region_id if not there will use default region : %d\n ", reg_id);
+	flag_1 = 1;
     }
     else {
         printf(" Total regions are  : %d read from object %s\n", reg_id, name);
@@ -5603,7 +5605,10 @@ PDC_Server_rados_write(uint64_t obj_id, void *buf, uint64_t write_size, int ndim
     uint64_t sizee[DIM_MAX];
 
     for (i = 0; i <= reg_id; i++) {
-        flag = 0;
+        if(flag_1 == 0){
+
+	sprintf(name, "%llu_%d_0", obj_id,reg_id);
+
         retu = rados_getxattr(io, name, "offset", off, ndim * sizeof(uint64_t));
         if (retu < 0) {
             printf("Error Getting in the offset for reg_id : %d  inside loop for : %d from object :%s \n",
@@ -5627,6 +5632,7 @@ PDC_Server_rados_write(uint64_t obj_id, void *buf, uint64_t write_size, int ndim
                 break;
             }
         }
+	}
     }
 
     if (flag != 0) {
@@ -5659,7 +5665,7 @@ PDC_Server_rados_write(uint64_t obj_id, void *buf, uint64_t write_size, int ndim
         printf("DAta is stored for last object %s\n", name);
     }
 
-    sprintf(name, "%llu_meta", obj_id);
+    sprintf(name, "%llu_%d_0", obj_id,reg_id);
 
     retu = rados_setxattr(io, name, "offset", offset, ndim * sizeof(uint64_t));
     if (retu < 0) {
@@ -5731,7 +5737,7 @@ PDC_Server_rados_read(uint64_t obj_id, void *buf, uint64_t *offset, uint64_t *si
     size_t psize;
 
     // reg_id get back
-    sprintf(name, "%llu_meta", obj_id);
+    sprintf(name, "%llu_%d_0", obj_id,reg_id);
     retu = rados_getxattr(io, name, "reg_id", &reg_id, sizeof(int));
     if (retu < 0) {
         printf("Error Getting in the reg_id in rados_read.\n");
@@ -5761,7 +5767,7 @@ PDC_Server_rados_read(uint64_t obj_id, void *buf, uint64_t *offset, uint64_t *si
     buf_ptr += maxx_write_size;
     batch++;
 
-    sprintf(name, "%llu_meta", obj_id);
+    sprintf(name, "%llu_%d_0", obj_id,reg_id);
     int b_val;
     printf("Batch object name is :%s\n", name);
     retu = rados_getxattr(io, name, "batch", &b_val, sizeof(int));
