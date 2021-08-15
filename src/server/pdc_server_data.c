@@ -61,6 +61,9 @@
 
 #ifdef ENABLE_RADOS
 // Global Variables for Ceph
+int flap =0;
+int o_flap = 0;
+int r_flap = 0;
 rados_t       cluster;
 rados_ioctx_t io;
 const char *  poolname;
@@ -5590,7 +5593,7 @@ PDC_Server_rados_write(uint64_t obj_id, void *buf, uint64_t write_size, int ndim
     printf("%lld:This is the Total  write Size and obj id is : %lld\n", write_size, obj_id);
     printf("offset value : %llu\n", offset[0]);
 
-    sprintf(name, "%llu_%d_0", obj_id, reg_id);
+    sprintf(name, "%llu_0_0", obj_id);
 
     retu = rados_getxattr(io, name, "reg_id", &reg_id, sizeof(int));
     if (retu < 0) {
@@ -5662,7 +5665,7 @@ PDC_Server_rados_write(uint64_t obj_id, void *buf, uint64_t write_size, int ndim
         printf("Error Writing in the last Object name\n");
     }
     else {
-        printf("DAta is stored for last object %s\n", name);
+        printf("DAta is stored for last object %s with region id :%d\n", name,reg_id);
     }
 
     sprintf(name, "%llu_%d_0", obj_id, reg_id);
@@ -5706,6 +5709,7 @@ PDC_Server_rados_write(uint64_t obj_id, void *buf, uint64_t write_size, int ndim
             printf("Extended Attribute ndim  set for obejct  %s :  %d  \n",name,ndim);}
     */
     //	Total No. of regions
+    sprintf(name, "%llu_0_0", obj_id);
     retu = rados_setxattr(io, name, "reg_id", &reg_id, sizeof(int));
     if (retu < 0) {
         printf("Error Setting in the Extended attribute for region_id\n");
@@ -5714,12 +5718,12 @@ PDC_Server_rados_write(uint64_t obj_id, void *buf, uint64_t write_size, int ndim
         printf("Last region set from here for %s :with max_region_id :  %d \n", name, reg_id);
     }
 
-    /*
+
              printf("Starting data in buf Upto 10 Values in rados_write_function\n");
-             for(i=0;i<=70;i++){
+             for(i=0;i<=64;i++){
              printf("%d\t",((int*)buf)[i]); }
-    /	printf("\n");
-    */
+    	printf("\n");
+
     return retu;
 }
 #endif
@@ -5727,17 +5731,17 @@ PDC_Server_rados_write(uint64_t obj_id, void *buf, uint64_t write_size, int ndim
 #ifdef ENABLE_RADOS
 // Ceph Read function
 int
-PDC_Server_rados_read(uint64_t obj_id, void *buf, uint64_t *offset, uint64_t *size)
+PDC_Server_rados_read(uint64_t obj_id, void *buf, uint64_t *offset, uint64_t *size,int flap)
 {
     int retu = 0;
     int i;
     int batch = 0;
     char name[100];
-    int reg_id = 0;
+    int reg_id ;
     size_t psize;
 
-    /*    // reg_id get back
-        sprintf(name, "%llu_%d_0", obj_id,reg_id);
+    //    Last  reg_id get back
+        sprintf(name, "%llu_0_0", obj_id);
         retu = rados_getxattr(io, name, "reg_id", &reg_id, sizeof(int));
         if (retu < 0) {
             printf("Error Getting in the reg_id in rados_read.\n");
@@ -5745,9 +5749,11 @@ PDC_Server_rados_read(uint64_t obj_id, void *buf, uint64_t *offset, uint64_t *si
         else {
             printf(" reg_id by rados_read is  : %d\n", reg_id);
         }
-    */
+if(o_flap != 1){
+reg_id = flap;}
+
     // First object
-    sprintf(name, "%llu_0_%d", obj_id, batch);
+    sprintf(name, "%llu_%d_%d", obj_id,reg_id, batch);
     retu = rados_stat(io, name, &psize, NULL);
     if (retu < 0) {
         printf("Error in getting size of first object");
@@ -5800,10 +5806,11 @@ PDC_Server_rados_read(uint64_t obj_id, void *buf, uint64_t *offset, uint64_t *si
         }
     }
 
-    /*	printf(" data read_back in buf Upto 10 Values got back by rados_read_function\n");
+/*
+    	printf(" data read_back in buf Upto 10 Values got back by rados_read_function\n");
             for(i=0;i<=64;i++){
             printf("%d\t",((int*)buf)[i]); }
-    */
+*/
 
     return retu;
 }
@@ -5892,8 +5899,8 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 #ifdef ENABLE_RADOS
                 // rados overlap code
                 void *tmp_buf = malloc(overlap_region->data_size);
-
-                retu = PDC_Server_rados_read(obj_id, tmp_buf, elt->start, elt->count);
+		o_flap  = 1;
+                retu = PDC_Server_rados_read(obj_id, tmp_buf, elt->start, elt->count,o_flap);
                 if (retu < 0) {
                     printf("==PDC_SERVER[]: PDC_Server_rados_read FAILED inside for Ndim=1 with overlap "
                            "inside write!\n");
@@ -5904,6 +5911,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 
                 // rados copying the data from overlapped
                 memcpy(tmp_buf + overlap_start_local[0] * unit, buf + pos, overlap_count[0] * unit);
+		printf("Overwriting Conditions :offset : %d , size: %d\n",region_info->offset, region_info->size);
 
                 retu = PDC_Server_rados_write(obj_id, tmp_buf, overlap_region->data_size, region_info->ndim,
                                               region_info->offset, region_info->size);
@@ -5936,7 +5944,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                 void *tmp_buf = malloc(overlap_region->data_size);
 
 #ifdef ENABLE_RADOS
-                retu = PDC_Server_rados_read(obj_id, tmp_buf, elt->start, elt->count);
+                retu = PDC_Server_rados_read(obj_id, tmp_buf, elt->start, elt->count,flap);
                 if (retu < 0) {
                     printf("==PDC_SERVER[]: PDC_Server_rados_read FAILED inside for Ndim=2 with overlap "
                            "inside write!\n");
@@ -6005,7 +6013,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                 }
 
 #ifdef ENABLE_RADOS
-                retu = PDC_Server_rados_read(obj_id, tmp_buf, elt->start, elt->count);
+                retu = PDC_Server_rados_read(obj_id, tmp_buf, elt->start, elt->count,flap);
                 if (retu < 0) {
                     printf("==PDC_SERVER[]: PDC_Server_rados_read FAILED inside for Ndim=3 with overlap "
                            "inside write!\n");
@@ -6212,13 +6220,14 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                 // Rados temporary Buffer created here
                 void *tmp_buf = malloc(storage_region->data_size);
 #ifdef ENABLE_RADOS
-                retu = PDC_Server_rados_read(obj_id, tmp_buf, elt->start, elt->count);
+                retu = PDC_Server_rados_read(obj_id, tmp_buf,elt->start, elt->count,r_flap);
                 if (retu < 0) {
                     printf(
                         "==PDC_SERVER[]: PDC_Server_rados_read FAILED for ndim = 1 inside read function!\n");
                 }
                 else {
                     printf("Rados_read_operation finished for ndim = 1 inside read function \n");
+		    r_flap ++;
                 }
 
                 printf(" data in tmp_buf Upto 10 Values in final_read call before memcpy : \n");
@@ -6235,11 +6244,12 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                 }
 
 #endif
+		printf("overlap_start_local[0] : %d , pos : %d , buf[0] : %d,buf[pos]: %d,region_info->offset[0] : %d\n",
+                       overlap_start_local[0], pos, ((int *)buf)[0], ((int *)buf)[pos],region_info->offset[0]);
 
+		
                 memcpy(buf + pos, tmp_buf + overlap_start_local[0] * unit, overlap_count[0] * unit);
 
-                printf("overlap_start_local[0] : %d , pos : %d , buf[0] : %d,buf[pos]: %d\n",
-                       overlap_start_local[0], pos, ((int *)buf)[0], ((int *)buf)[pos]);
 
                 my_read_bytes = overlap_count[0] * unit;
                 free(tmp_buf);
@@ -6255,7 +6265,7 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                 // read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
 
 #ifdef ENABLE_RADOS
-                retu = PDC_Server_rados_read(obj_id, tmp_buf, elt->start, elt->count);
+                retu = PDC_Server_rados_read(obj_id, tmp_buf, elt->start, elt->count,flap);
                 if (retu < 0) {
                     printf("==PDC_SERVER[]: PDC_Server_rados_read FAILED for ndim =2 inside read!\n");
                 }
@@ -6302,7 +6312,7 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                 // read_bytes = pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset);
 
 #ifdef ENABLE_RADOS
-                retu = PDC_Server_rados_read(obj_id, tmp_buf, elt->start, elt->count);
+                retu = PDC_Server_rados_read(obj_id, tmp_buf, elt->start, elt->count,flap);
                 if (retu < 0) {
                     printf("==PDC_SERVER[]: PDC_Server_rados_read FAILED for ndim =3 inside read!\n");
                 }
