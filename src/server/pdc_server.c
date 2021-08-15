@@ -1923,13 +1923,11 @@ PDC_Server_get_env()
     }
 }
 #ifdef ENABLE_RADOS
-//Ceph global Variables
-   	rados_t cluster;
-	rados_ioctx_t io;
-	const char *poolname = "data";
+// Ceph global Variables
+rados_t       cluster;
+rados_ioctx_t io;
+const char *  poolname = "data";
 #endif
-
-
 
 /*
  * Main function of PDC server
@@ -1944,7 +1942,6 @@ main(int argc, char *argv[])
 {
     int    port;
     perr_t ret;
-
 
 #ifdef ENABLE_RADOS
     int retu;
@@ -1963,20 +1960,23 @@ main(int argc, char *argv[])
         goto done;
     }
 
-
     retu = rados_connect(cluster);
     if (retu != 0) {
         failed = 1;
         fprintf(stderr, "rados_connect failed\n");
         goto done;
-    }else{
-	printf("Rados_Cluster is connected\n");}
+    }
+    else {
+        printf("Rados_Cluster is connected\n");
+    }
     retu = rados_ioctx_create(cluster, poolname, &io);
     if (retu != 0) {
         fprintf(stderr, "rados_ioctx_create failed\n");
         return 1;
-    }else{
-	printf("Cluster ioctx made\n");}
+    }
+    else {
+        printf("Cluster ioctx made\n");
+    }
 
 #endif
 
