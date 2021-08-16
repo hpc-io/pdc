@@ -56,7 +56,7 @@
 static int
 pdc_timestamp_clean(pdc_timestamp *timestamp)
 {
-    if (timestamp->timestamp_max_size) {
+    if (timestamp->timestamp_size) {
         free(timestamp->start);
     }
     return 0;
@@ -178,6 +178,7 @@ pdc_timestamp_register(pdc_timestamp *timestamp, double start, double end)
         timestamp->timestamp_max_size = 256;
         timestamp->start              = (double *)malloc(sizeof(double) * timestamp->timestamp_max_size * 2);
         timestamp->end                = timestamp->start + timestamp->timestamp_max_size;
+        timestamp->timestamp_size     = 0;
     }
     else if (timestamp->timestamp_size == timestamp->timestamp_max_size) {
         temp = (double *)malloc(sizeof(double) * timestamp->timestamp_max_size * 4);
@@ -190,7 +191,7 @@ pdc_timestamp_register(pdc_timestamp *timestamp, double start, double end)
     }
     timestamp->start[timestamp->timestamp_size] = start;
     timestamp->end[timestamp->timestamp_size]   = end;
-    timestamp->timestamp_size += 1;
+    timestamp->timestamp_size++;
     return 0;
 }
 
