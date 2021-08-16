@@ -106,9 +106,11 @@ PDC_timing_report(const char *prefix)
     int        rank;
     char       filename[256], header[256];
     FILE *     stream;
+    char hostname[HOST_NAME_MAX];
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
+    gethostname(hostname, HOST_NAME_MAX);
+    printf("client process rank %d, hostname = %s\n", rank, hostname);
     MPI_Reduce(&timings, &max_timings, sizeof(pdc_timing) / sizeof(double), MPI_DOUBLE, MPI_MAX, 0,
                MPI_COMM_WORLD);
     if (rank == 0) {
@@ -199,14 +201,15 @@ PDC_server_timing_report()
     int               rank;
     char              filename[256];
     FILE *            stream;
+    char hostname[HOST_NAME_MAX];
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
+    gethostname(hostname, HOST_NAME_MAX);
     printf(
-        "rank = %d, PDCbuf_obj_map_rpc = %lf, PDCreg_obtain_lock_rpc = %lf, PDCreg_release_lock_write_rpc = "
+        "rank = %d, hostname = %s, PDCbuf_obj_map_rpc = %lf, PDCreg_obtain_lock_rpc = %lf, PDCreg_release_lock_write_rpc = "
         "%lf, PDCreg_release_lock_read_rpc = %lf, PDCbuf_obj_unmap_rpc = %lf, "
         "region_release_bulk_transfer_cb = %lf\n",
-        rank, server_timings->PDCbuf_obj_map_rpc, server_timings->PDCreg_obtain_lock_rpc,
+        rank, hostname, server_timings->PDCbuf_obj_map_rpc, server_timings->PDCreg_obtain_lock_rpc,
         server_timings->PDCreg_release_lock_write_rpc, server_timings->PDCreg_release_lock_read_rpc,
         server_timings->PDCbuf_obj_unmap_rpc, server_timings->PDCreg_release_lock_bulk_transfer_rpc);
 
@@ -449,6 +452,7 @@ PDC_get_var_type_size(pdc_var_type_t dtype)
     switch (dtype) {
         case PDC_INT:
             PGOTO_DONE(VAR_SIZE_INT);
+
             break;
         case PDC_FLOAT:
             PGOTO_DONE(VAR_SIZE_FLOAT);

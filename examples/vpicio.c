@@ -114,6 +114,7 @@ main(int argc, char **argv)
 
     // create a pdc
     pdc_id = PDCinit("pdc");
+    PDC_timing_init();
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
@@ -643,6 +644,8 @@ main(int argc, char **argv)
     free(pz);
     free(id1);
     free(id2);
+    PDC_timing_report("vpicio_");
+    PDC_timing_finalize();
 
 #ifdef ENABLE_MPI
     MPI_Finalize();
