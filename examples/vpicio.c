@@ -629,6 +629,7 @@ main(int argc, char **argv)
         printf("Fail to close property @ line %d\n", __LINE__);
         return 1;
     }
+    PDC_timing_report("vpicio_");
     if (PDCclose(pdc_id) < 0) {
         printf("fail to close PDC\n");
         return 1;
@@ -644,7 +645,6 @@ main(int argc, char **argv)
     free(pz);
     free(id1);
     free(id2);
-    PDC_timing_report("vpicio_");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();
