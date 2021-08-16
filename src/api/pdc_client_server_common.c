@@ -106,7 +106,7 @@ PDC_timing_report(const char *prefix)
     int        rank;
     char       filename[256], header[256];
     FILE *     stream;
-    char hostname[HOST_NAME_MAX];
+    char       hostname[HOST_NAME_MAX];
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     gethostname(hostname, HOST_NAME_MAX);
@@ -201,17 +201,17 @@ PDC_server_timing_report()
     int               rank;
     char              filename[256];
     FILE *            stream;
-    char hostname[HOST_NAME_MAX];
+    char              hostname[HOST_NAME_MAX];
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     gethostname(hostname, HOST_NAME_MAX);
-    printf(
-        "rank = %d, hostname = %s, PDCbuf_obj_map_rpc = %lf, PDCreg_obtain_lock_rpc = %lf, PDCreg_release_lock_write_rpc = "
-        "%lf, PDCreg_release_lock_read_rpc = %lf, PDCbuf_obj_unmap_rpc = %lf, "
-        "region_release_bulk_transfer_cb = %lf\n",
-        rank, hostname, server_timings->PDCbuf_obj_map_rpc, server_timings->PDCreg_obtain_lock_rpc,
-        server_timings->PDCreg_release_lock_write_rpc, server_timings->PDCreg_release_lock_read_rpc,
-        server_timings->PDCbuf_obj_unmap_rpc, server_timings->PDCreg_release_lock_bulk_transfer_rpc);
+    printf("rank = %d, hostname = %s, PDCbuf_obj_map_rpc = %lf, PDCreg_obtain_lock_rpc = %lf, "
+           "PDCreg_release_lock_write_rpc = "
+           "%lf, PDCreg_release_lock_read_rpc = %lf, PDCbuf_obj_unmap_rpc = %lf, "
+           "region_release_bulk_transfer_cb = %lf\n",
+           rank, hostname, server_timings->PDCbuf_obj_map_rpc, server_timings->PDCreg_obtain_lock_rpc,
+           server_timings->PDCreg_release_lock_write_rpc, server_timings->PDCreg_release_lock_read_rpc,
+           server_timings->PDCbuf_obj_unmap_rpc, server_timings->PDCreg_release_lock_bulk_transfer_rpc);
 
     MPI_Reduce(server_timings, &max_timings, sizeof(pdc_server_timing) / sizeof(double), MPI_DOUBLE, MPI_MAX,
                0, MPI_COMM_WORLD);
@@ -239,14 +239,14 @@ PDC_server_timing_report()
     sprintf(filename, "pdc_server_timings_%d.csv", rank);
     stream = fopen(filename, "w");
     fprintf(stream, "PDCbuf_obj_map_rpc,"
-               "PDCreg_obtain_lock_rpc,PDCreg_release_lock_write_rpc,"
-               "PDCreg_release_lock_read_rpc,PDCbuf_obj_unmap_rpc,"
-               "region_release_bulk_transfer_cb\n");
-    fprintf(stream, "%lf,%lf,%lf,%lf,%lf,%lf\n", max_timings.PDCbuf_obj_map_rpc, max_timings.PDCreg_obtain_lock_rpc,
-               max_timings.PDCreg_release_lock_write_rpc, max_timings.PDCreg_release_lock_read_rpc,
-               max_timings.PDCbuf_obj_unmap_rpc, max_timings.PDCreg_release_lock_bulk_transfer_rpc);
+                    "PDCreg_obtain_lock_rpc,PDCreg_release_lock_write_rpc,"
+                    "PDCreg_release_lock_read_rpc,PDCbuf_obj_unmap_rpc,"
+                    "region_release_bulk_transfer_cb\n");
+    fprintf(stream, "%lf,%lf,%lf,%lf,%lf,%lf\n", max_timings.PDCbuf_obj_map_rpc,
+            max_timings.PDCreg_obtain_lock_rpc, max_timings.PDCreg_release_lock_write_rpc,
+            max_timings.PDCreg_release_lock_read_rpc, max_timings.PDCbuf_obj_unmap_rpc,
+            max_timings.PDCreg_release_lock_bulk_transfer_rpc);
     fclose(stream);
-
 
     free(server_timings);
     pdc_timestamp_clean(buf_obj_map_timestamps);
@@ -3959,7 +3959,6 @@ HG_TEST_RPC_CB(region_analysis_release, handle)
                         hg_thread_pool_post(hg_test_thread_pool_fs_g, &(obj_map_bulk_args->work));
 
                         out.ret = 1;
-
 
                         HG_Respond(handle, NULL, NULL, &out);
 #else
