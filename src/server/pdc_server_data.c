@@ -5604,27 +5604,28 @@ PDC_Server_rados_write(uint64_t obj_id, void *buf, uint64_t write_size, int ndim
     uint64_t off[DIM_MAX];
     uint64_t sizee[DIM_MAX];
 
+
     for (i = 0; i <= reg_id; i++) {
         if (flag_1 == 0) {
 
-            sprintf(name, "%llu_%d_0", obj_id, reg_id);
+            sprintf(name, "%llu_%d_0", obj_id, i);
 
-            retu = rados_getxattr(io, name, "offset", off, ndim * sizeof(uint64_t));
+            retu = rados_getxattr(io, name, "offset",off, ndim * sizeof(uint64_t));
             if (retu < 0) {
                 printf("Error Getting in the offset for reg_id : %d  inside loop for : %d from object :%s \n",
                        reg_id, i, name);
             }
-            /*	else{
-                    printf(" off  by getxattr  is  : %llu\n",off);}
-            */
-            retu = rados_getxattr(io, name, "size", sizee, ndim * sizeof(uint64_t));
+            	else{
+                    printf("# off  by getxattr  is  : %llu for region : %d\n",off,i);}
+
+            retu = rados_getxattr(io, name, "size",sizee, ndim * sizeof(uint64_t));
             if (retu < 0) {
                 printf("Error Getting in the sizee for reg_id :%d inside loop : %d from object :%s\n", reg_id,
                        i, name);
             }
-            /*	else{
-                    printf(" sizee  by getxattr is  : %llu\n",sizee);}
-            */
+            	else{
+                    printf("# sizee  by getxattr is  : %llu for region : %d\n",sizee,i);}
+
 
             for (j = 0; j < ndim; j++) {
                 if (off[j] != offset[j] || sizee[j] != size[j]) {
@@ -5667,22 +5668,21 @@ PDC_Server_rados_write(uint64_t obj_id, void *buf, uint64_t write_size, int ndim
 
     sprintf(name, "%llu_%d_0", obj_id, reg_id);
 
-    retu = rados_setxattr(io, name, "offset", offset, ndim * sizeof(uint64_t));
+    retu = rados_setxattr(io, name, "offset",offset, ndim * sizeof(uint64_t));
     if (retu < 0) {
         printf("Error Setting in the Extended attribute offset\n");
     }
-    /*	else{
-            printf("Extended Attribute of offset  set for object  %s :   %llu \n",name,offset);}
-    */
+    	else{
+            printf("**Extended Attribute of offset  set for object  %s :   %llu \n",name,offset);}
 
-    retu = rados_setxattr(io, name, "size", size, ndim * sizeof(uint64_t));
+    retu = rados_setxattr(io, name, "size",size, ndim * sizeof(uint64_t));
     if (retu < 0) {
         printf("Error Setting in the Extended attribute size\n");
     }
-    /*	else{
-            printf("Extended Attribute of size  set for object  %s :  %llu \n",name,size);}
+    	else{
+            printf("**Extended Attribute of size  set for object  %s :  %llu \n",name,size);}
 
-    */
+    
     //	Batch
     char b_size[100];
     // size_t psize;
@@ -5698,6 +5698,7 @@ PDC_Server_rados_write(uint64_t obj_id, void *buf, uint64_t write_size, int ndim
             printf("Extended Attribute set for object  %s :with total  batches  :  %d \n",name,batch);}
     */
     //	Ndim as extended Attribute:
+    sprintf(name, "%llu_0_0", obj_id);
     retu = rados_setxattr(io, name, "ndim", &ndim, sizeof(int));
     if (retu < 0) {
         printf("Error Setting in the Extended attribute of ndim\n");
@@ -5706,7 +5707,6 @@ PDC_Server_rados_write(uint64_t obj_id, void *buf, uint64_t write_size, int ndim
             printf("Extended Attribute ndim  set for obejct  %s :  %d  \n",name,ndim);}
     */
     //	Total No. of regions
-    sprintf(name, "%llu_0_0", obj_id);
     retu = rados_setxattr(io, name, "reg_id", &reg_id, sizeof(int));
     if (retu < 0) {
         printf("Error Setting in the Extended attribute for region_id\n");
@@ -5731,12 +5731,11 @@ int
 PDC_Server_rados_read(uint64_t obj_id, void *buf, uint64_t *offset, uint64_t *size)
 {
     int retu = 0;
-    int i, j;
+    int i=0, j=0;
     int batch = 0;
     char name[100];
     int reg_id;
     size_t psize;
-    int flag_1 = 0;
     int flag = 0;
     int a_reg;
     //    Last  reg_id get back
@@ -5746,16 +5745,14 @@ PDC_Server_rados_read(uint64_t obj_id, void *buf, uint64_t *offset, uint64_t *si
         printf("Error Getting in the reg_id in rados_read.\n");
     }
     else {
-        printf(" reg_id by rados_read is  : %d\n", reg_id);
+        printf("1]Total  reg_id's  by rados_read are  : %d\n", reg_id);
     }
 
-    /*    if (o_flap != 1) {
-            reg_id = flap;
-        }
-    */
+
 
     uint64_t off[DIM_MAX];
     uint64_t sizee[DIM_MAX];
+
 
     int ndim;
     retu = rados_getxattr(io, name, "ndim", &ndim, sizeof(int));
@@ -5763,44 +5760,47 @@ PDC_Server_rados_read(uint64_t obj_id, void *buf, uint64_t *offset, uint64_t *si
         printf("Error Getting in the ndim_no.\n");
     }
     else {
-        printf(" NDIM  by read function is  : %d\n", ndim);
+        printf("2] NDIM  by read function is  : %d\n", ndim);
     }
 
     for (i = 0; i <= reg_id; i++) {
 
-        sprintf(name, "%llu_%d_0", obj_id, reg_id);
+        sprintf(name, "%llu_%d_0", obj_id, i);
 
-        retu = rados_getxattr(io, name, "offset", off, ndim * sizeof(uint64_t));
+        retu = rados_getxattr(io, name, "offset",off, ndim * sizeof(uint64_t));
         if (retu < 0) {
             printf("Error Getting in the offset for reg_id : %d  inside loop for : %d from object :%s \n",
                    reg_id, i, name);
         }
-        /*  else{
-                printf(" off  by getxattr  is  : %llu\n",off);}
-        */
-        retu = rados_getxattr(io, name, "size", sizee, ndim * sizeof(uint64_t));
+          else{
+                printf("3] off  by getxattr  is  : %llu for region :%d\n",off,i);}
+        
+        retu = rados_getxattr(io, name, "size",sizee, ndim * sizeof(uint64_t));
         if (retu < 0) {
             printf("Error Getting in the sizee for reg_id :%d inside loop : %d from object :%s\n", reg_id, i,
                    name);
         }
-        /*  else{
-                printf(" sizee  by getxattr is  : %llu\n",sizee);}
-        */
+          else{
+                printf("4] sizee  by getxattr is  : %llu for reg_id :%d\n",sizee,i);}
+        
         flag = 0;
         for (j = 0; j < ndim; j++) {
-            if (off[j] == offset[j] || sizee[j] == size[j]) {
+            if (off[j] != offset[j] && sizee[j] != size[j]) {
                 flag = 1;
-		a_reg = i;
-                break;
-            }
+		printf("5a]Flag = 1\n");
+               //break
+            }else{
+	printf("5b]Flag = 0 remained\n");
+	a_reg = i;}
         }
 
     }
 
     if (flag == 0) {
-             printf("No regionFound \n");
-
-        }
+		reg_id = a_reg;
+             printf("6a]region_found = %d \n",a_reg);
+        }else{
+printf("6b]No Region Found ");}
 
     // First object
     sprintf(name, "%llu_%d_%d", obj_id, reg_id, batch);
@@ -6142,6 +6142,12 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
             printf("==PDC_SERVER[]: PDC_Server_rados_write FAILED without overlapping!\n");
         }
         else {
+
+		printf("##region offset coming from pdc : % llu\n",region_info->offset);
+		  printf("##region size  coming from pdc : % llu\n",region_info->size);
+
+
+
             printf("Rados_written finished without overlapping condition exiting write\n");
         }
         /*
