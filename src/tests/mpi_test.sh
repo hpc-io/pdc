@@ -2,7 +2,6 @@
 # This version of the test runner doesn't attempt to run any parallel tests.
 # We assume too, that if the library build has enabled MPI, that LD_LIBRARY_PATH is
 # defined and points to the MPI libraries used by the linker (e.g. -L<path -lmpi)
-
 extra_cmd=""
 if [[ "$HOSTNAME" == "cori"* || "$HOSTNAME" == "nid"* ]]; then
     extra_cmd="--mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap "
@@ -26,6 +25,7 @@ echo "$mpi_cmd -n $n_servers $extra_cmd ./pdc_server.exe &"
 $mpi_cmd -n $n_servers $extra_cmd ./pdc_server.exe &
 # WAIT a bit, for 1 second
 sleep 1
+
 # RUN the actual test
 echo "$mpi_cmd -n $n_client $extra_cmd $test_exe $test_args"
 $mpi_cmd -n $n_client $extra_cmd $test_exe $test_args
@@ -35,4 +35,6 @@ ret="$?"
 echo "Close server"
 echo "$mpi_cmd -n 1 $extra_cmd ./close_server"
 $mpi_cmd -n 1 $extra_cmd ./close_server
+
+rados purge data --yes-i-really-really-mean-it
 exit $ret

@@ -17,6 +17,7 @@ shift
 # copy the remaining test input arguments (if any)
 if [ -x $test_exe ]; then echo "testing: $test_exe"; else echo "test: $test_exe not found or not and executable" && exit -2; fi
 rm -rf pdc_tmp
+
 # START the server (in the background)
 $run_cmd ./pdc_server.exe &
 # WAIT a bit...
@@ -28,4 +29,5 @@ $run_cmd $test_exe $test_args
 ret="$?"
 # and shutdown the SERVER before exiting
 $run_cmd ./close_server
+rados purge data --yes-i-really-really-mean-it
 exit $ret

@@ -3,6 +3,7 @@
 # We assume too, that if the library build has enabled MPI, that LD_LIBRARY_PATH is
 # defined and points to the MPI libraries used by the linker (e.g. -L<path -lmpi)
 
+
 # Cori CI needs srun even for serial tests
 run_cmd=""
 if [[ "$HOSTNAME" == "cori"* || "$HOSTNAME" == "nid"* ]]; then
@@ -20,7 +21,11 @@ test_args="$*"
 $run_cmd ./pdc_server.exe &
 # WAIT a bit...
 sleep 1
+
+
 # RUN the actual test(s)
+
+
 for test_exe in $test_args
 do
     echo "testing: $test_exe"
@@ -28,3 +33,5 @@ do
 done
 # and shutdown the SERVER before exiting
 $run_cmd ./close_server
+rados purge data --yes-i-really-really-mean-it
+
