@@ -2570,7 +2570,36 @@ PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
     hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
 #endif
 
-    lookup_value = hash_table_lookup(metadata_hash_table_g, &hash_key);
+#ifdef ENABLE_RADOS
+    int               rval;
+    int               retu = 0;
+    rados_omap_iter_t iter;
+    char *            k[1];
+    char *            v[1];
+    const char        name[100];
+    sprintf(name, "%llu_0", obj_id);
+//    printf("1]Object name : %s\n", name);
+    const char *keys[]     = {in->kvtag.name};
+    const char *vals[]     = {in->kvtag.value};
+    size_t      key_lens[] = {strlen(in->kvtag.name) + 1};
+    size_t      val_lens[] = {in->kvtag.size};
+
+    // Write Operation
+    rados_write_op_t wr = rados_create_write_op();
+//    printf("2]Rados Write operation created : wr for object : %s \n", name);
+    rados_write_op_create(wr, LIBRADOS_CREATE_IDEMPOTENT, NULL);
+    rados_write_op_omap_set2(wr, keys, vals, key_lens, val_lens, 1);
+    retu = rados_write_op_operate(wr, io, name, NULL, 0);
+    if (retu != 0) {
+        printf("Write operation failed\n");
+    }
+/*    else {
+        printf("3]Set kv pair done for object: %s \n", name);
+    }
+*/    rados_release_write_op(wr);
+#else
+
+ lookup_value = hash_table_lookup(metadata_hash_table_g, &hash_key);
     if (lookup_value != NULL) {
         pdc_metadata_t *target;
         target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
@@ -2598,33 +2627,6 @@ PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
         }
     }
 
-#ifdef ENABLE_RADOS
-    int               rval;
-    int               retu = 0;
-    rados_omap_iter_t iter;
-    char *            k[1];
-    char *            v[1];
-    const char        name[100];
-    sprintf(name, "%llu_0", obj_id);
-    printf("1]Object name : %s\n", name);
-    const char *keys[]     = {in->kvtag.name};
-    const char *vals[]     = {in->kvtag.value};
-    size_t      key_lens[] = {strlen(in->kvtag.name) + 1};
-    size_t      val_lens[] = {in->kvtag.size};
-
-    // Write Operation
-    rados_write_op_t wr = rados_create_write_op();
-    printf("2]Rados Write operation created : wr for object : %s \n", name);
-    rados_write_op_create(wr, LIBRADOS_CREATE_IDEMPOTENT, NULL);
-    rados_write_op_omap_set2(wr, keys, vals, key_lens, val_lens, 1);
-    retu = rados_write_op_operate(wr, io, name, NULL, 0);
-    if (retu != 0) {
-        printf("Write operation failed\n");
-    }
-    else {
-        printf("3]Set kv pair done for object: %s \n", name);
-    }
-    rados_release_write_op(wr);
 #endif
 
 #ifdef ENABLE_MULTITHREAD
@@ -2686,7 +2688,7 @@ PDC_get_kvtag_value_from_list(pdc_kvtag_list_t **list_head, char *key, metadata_
 perr_t
 PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
 {
-    // Ceph Metadata Read
+    // Ceph Metadata Read function here
     perr_t   ret_value = SUCCEED;
     uint32_t hash_key;
     uint64_t obj_id;
@@ -2708,6 +2710,22 @@ PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
     hash_key = in->hash_value;
     obj_id   = in->obj_id;
 
+
+#ifdef ENABLE_MULTITHREAD
+    // Obtain lock for hash table
+    unlocked = 0;
+    hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
+#endif
+
+    
+
+
+
+
+
+
+
+
 #ifdef ENABLE_RADOS
     // Read Operation
 
@@ -2726,7 +2744,7 @@ PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
     size_t      val_lens[] = {&value_lens};
 
     rados_read_op_t rd = rados_create_read_op();
-    printf("4]Rados Read operation created : rd for object : %s \n", name);
+//    printf("4]Rados Read operation created : rd for object : %s \n", name);
     rados_read_op_omap_get_vals2(rd, "", "", 1024, &iter, NULL, &rval);
     retu = rados_read_op_operate(rd, io, name, 0);
     if (retu != 0) {
@@ -2740,28 +2758,22 @@ PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
         while (1) {
             rados_omap_get_next2(iter, k, v, key_lens, val_lens);
             if (k == NULL || *k == NULL) {
-                printf("K is NULL and loop breaks after storing.\n");
+      //          printf("K is NULL and loop breaks after storing.\n");
                 break;
             }
-            printf("5]object : %s , K: %s  V: %d\n ", name, k[0], *((int *)(v[0])));
+     //       printf("5]object : %s , K: %s  V: %d\n ", name, k[0], *((int *)(v[0])));
         }
         rados_omap_get_end(iter);
-        printf("Successfully Closed the iterator :iter\n");
+    //    printf("Successfully Closed the iterator :iter\n");
     }
 
     out->kvtag.name  = in->key;
     out->kvtag.size  = value_lens;
     out->kvtag.value = value;
     out->ret         = 1;
-#endif
+#else
 
-#ifdef ENABLE_MULTITHREAD
-    // Obtain lock for hash table
-    unlocked = 0;
-    hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
-#endif
-
-    lookup_value = hash_table_lookup(metadata_hash_table_g, &hash_key);
+lookup_value = hash_table_lookup(metadata_hash_table_g, &hash_key);
     if (lookup_value != NULL) {
         pdc_metadata_t *target;
         target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
@@ -2791,6 +2803,7 @@ PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
         printf("==PDC_SERVER[%d]: %s - error \n", pdc_server_rank_g, __func__);
         goto done;
     }
+#endif
 
 #ifdef ENABLE_MULTITHREAD
     // ^ Release hash table lock

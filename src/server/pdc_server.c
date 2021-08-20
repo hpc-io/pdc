@@ -1966,18 +1966,19 @@ main(int argc, char *argv[])
         fprintf(stderr, "rados_connect failed\n");
         goto done;
     }
-    else {
+
+/*    else {
         printf("Rados_Cluster is connected\n");
     }
-    retu = rados_ioctx_create(cluster, poolname, &io);
+ */   retu = rados_ioctx_create(cluster, poolname, &io);
     if (retu != 0) {
         fprintf(stderr, "rados_ioctx_create failed\n");
         return 1;
     }
-    else {
+/*    else {
         printf("Cluster ioctx made\n");
     }
-
+*/
 #endif
 
 #ifdef ENABLE_MPI
