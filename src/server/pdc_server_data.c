@@ -59,11 +59,11 @@
 #include "pdc_server.h"
 #include "pdc_hist_pkg.h"
 
+
 #ifdef ENABLE_RADOS
 // Global Variables for Ceph
 rados_t       cluster;
 rados_ioctx_t io;
-// poolname = 'data';
 #endif
 
 // Global object region info list in local data server
