@@ -6349,9 +6349,10 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 
                * overlap_count[0]*unit, read_bytes); */
 
-                void *tmp_buf = malloc(storage_region->data_size);
+              
 #ifdef ENABLE_RADOS
-                retu = PDC_Server_rados_read(obj_id, tmp_buf, elt->start, elt->count);
+               void *tmp_buf = malloc(storage_region->data_size);
+		retu = PDC_Server_rados_read(obj_id, tmp_buf, elt->start, elt->count);
                 if (retu < 0) {
                     printf("==PDC_SERVER[]: PDC_Server_rados_read FAILED for ndim = 1 inside read "
                            "function!\n");
@@ -6365,6 +6366,18 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                    \n"); for (i = 0; i <= 63; i++) { printf("%d\t", ((int *)tmp_buf)[i]);
                               }
               */
+
+		  memcpy(buf + pos, tmp_buf + overlap_start_local[0] * unit, overlap_count[0] * unit);
+
+ /*              printf("Final values in pdc_read after memcpy\n");
+                for (i = 0; i <= 63; i++) {
+                    printf("%d\t", ((int *)buf)[i]);
+                }
+                printf("\n");
+    */
+		 free(tmp_buf);
+
+
 #else
                 // Posix Call here
                 if (pread(region->fd, buf + pos, overlap_count[0] * unit,
@@ -6379,16 +6392,9 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                                   overlap_start_local[0], pos, ((int *)buf)[0], ((int *)buf)[pos],
                                   region_info->offset[0]);
            */
-                memcpy(buf + pos, tmp_buf + overlap_start_local[0] * unit, overlap_count[0] * unit);
+              my_read_bytes = overlap_count[0] * unit;
 
-                my_read_bytes = overlap_count[0] * unit;
-                free(tmp_buf);
-  /*              printf("Final values in pdc_read after memcpy\n");
-                for (i = 0; i <= 63; i++) {
-                    printf("%d\t", ((int *)buf)[i]);
-                }
-                printf("\n");
-    */        }
+            }
   else if (region_info->ndim == 2) {
       void *tmp_buf = malloc(storage_region->data_size);
       // Read entire region
