@@ -45,6 +45,8 @@ int main(int argc, char **argv) {
     pdc = PDCinit("pdc");
     printf("create a new pdc\n");
 
+    MPI_Barrier(MPI_COMM_WORLD);
+
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if(cont_prop > 0) {
@@ -70,38 +72,57 @@ int main(int argc, char **argv) {
         printf("Fail to create object property @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
-    // create first object
-    sprintf(obj_name1, "o1_%d", rank);
-    obj1 = PDCobj_create(cont, obj_name1, obj_prop);
-    if(obj1 > 0) {
-        printf("Create an object o1\n");
-    } else {
-        printf("Fail to create object @ line  %d!\n", __LINE__);
-        ret_value = 1;
+
+    for(int i = 0; i < 2; i++){
+        // create first object
+        sprintf(obj_name1, "o%d_%d", i, rank);
+        obj1 = PDCobj_create(cont, obj_name1, obj_prop);
+        if(obj1 > 0) {
+            printf("Create an object %s\n", obj_name1);
+        } else {
+            printf("Fail to create object @ line  %d!\n", __LINE__);
+            ret_value = 1;
+        }
+        // // close first object
+        // if(PDCobj_close(obj1) < 0) {
+        //     printf("fail to close object %s\n", obj_name1);
+        //     ret_value = 1;
+        // } else {
+        //     printf("successfully close object o1\n");
+        // }
     }
-    // create second object
-    sprintf(obj_name2, "o2_%d", rank);
-    obj2 = PDCobj_create(cont, obj_name2, obj_prop);
-    if(obj2 > 0) {
-        printf("Create an object o2\n");
-    } else {
-        printf("Fail to create object @ line  %d!\n", __LINE__);
-        ret_value = 1;
-    }
-    // close first object
-    if(PDCobj_close(obj1) < 0) {
-        printf("fail to close object o1\n");
-        ret_value = 1;
-    } else {
-        printf("successfully close object o1\n");
-    }
-    // close second object
-    if(PDCobj_close(obj2) < 0) {
-        printf("fail to close object o2\n");
-        ret_value = 1;
-    } else {
-        printf("successfully close object o2\n");
-    }
+    // // create first object
+    // sprintf(obj_name1, "o1_%d", rank);
+    // obj1 = PDCobj_create(cont, obj_name1, obj_prop);
+    // if(obj1 > 0) {
+    //     printf("Create an object o1\n");
+    // } else {
+    //     printf("Fail to create object @ line  %d!\n", __LINE__);
+    //     ret_value = 1;
+    // }
+    // // create second object
+    // sprintf(obj_name2, "o2_%d", rank);
+    // obj2 = PDCobj_create(cont, obj_name2, obj_prop);
+    // if(obj2 > 0) {
+    //     printf("Create an object o2\n");
+    // } else {
+    //     printf("Fail to create object @ line  %d!\n", __LINE__);
+    //     ret_value = 1;
+    // }
+    // // close first object
+    // if(PDCobj_close(obj1) < 0) {
+    //     printf("fail to close object o1\n");
+    //     ret_value = 1;
+    // } else {
+    //     printf("successfully close object o1\n");
+    // }
+    // // close second object
+    // if(PDCobj_close(obj2) < 0) {
+    //     printf("fail to close object o2\n");
+    //     ret_value = 1;
+    // } else {
+    //     printf("successfully close object o2\n");
+    // }
     // close a container
     if(PDCcont_close(cont) < 0) {
         printf("fail to close container c1\n");

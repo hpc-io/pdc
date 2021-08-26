@@ -3,7 +3,7 @@ message(${CMAKE_MODULE_PATH})
 #find_package(SCR REQUIRED)
 include_directories(${SCR_DIR}/include)
 link_directories(${SCR_DIR}/lib)
-message(${SCR_DIR}/include)
+message(${SCR_DIR}/lib)
 
 if(PDC_ENABLE_FASTBIT)
     add_definitions(-DENABLE_FASTBIT=1)

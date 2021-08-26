@@ -1036,7 +1036,7 @@ PDC_Server_recv_shm_cb(const struct hg_cb_info *callback_info)
 hg_return_t
 PDC_Server_checkpoint_cb()
 {
-    PDC_Server_checkpoint_SCR();
+    PDC_Server_checkpoint();
 
     return HG_SUCCESS;
 }
@@ -1058,13 +1058,13 @@ perr_t PDC_Server_checkpoint_SCR()
     
     FUNC_ENTER(NULL);
 
-#ifdef ENABLE_TIMING 
+// #ifdef ENABLE_TIMING 
     // Timing
     struct timeval  pdc_timer_start;
     struct timeval  pdc_timer_end;
     double checkpoint_time;
     gettimeofday(&pdc_timer_start, 0);
-#endif
+// #endif
 
     // TODO: instead of checkpoint at app finalize time, try checkpoint with a time countdown or # of objects
     SCR_Start_output(pdc_server_tmp_dir_g, SCR_FLAG_CHECKPOINT);
@@ -1181,26 +1181,26 @@ perr_t PDC_Server_checkpoint_SCR()
     SCR_Complete_output(valid);
     file = NULL;
 
-    int all_metadata_size, all_region_count;
-#ifdef ENABLE_MPI
-    MPI_Reduce(&metadata_size, &all_metadata_size, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&region_count,   &all_region_count,   1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-#else
-    all_metadata_size = metadata_size;
-    all_region_count   = region_count;
-#endif
-    if (pdc_server_rank_g == 0) {
-        printf("==PDC_SERVER: checkpointed %d objects, with %d regions \n", all_metadata_size, all_region_count);
-    }
+//     int all_metadata_size, all_region_count;
+// #ifdef ENABLE_MPI
+//     MPI_Reduce(&metadata_size, &all_metadata_size, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+//     MPI_Reduce(&region_count,   &all_region_count,   1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+// #else
+//     all_metadata_size = metadata_size;
+//     all_region_count   = region_count;
+// #endif
+//     if (pdc_server_rank_g == 0) {
+//         printf("==PDC_SERVER: checkpointed %d objects, with %d regions \n", all_metadata_size, all_region_count);
+//     }
 
-#ifdef ENABLE_TIMING 
+// #ifdef ENABLE_TIMING 
     // Timing
     gettimeofday(&pdc_timer_end, 0);
     checkpoint_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
     if (pdc_server_rank_g == 0) {
         printf("==PDC_SERVER: total checkpoint time = %.6f\n", checkpoint_time);
     }
-#endif
+// #endif
 
 done:
     FUNC_LEAVE(ret_value);
@@ -1228,13 +1228,13 @@ perr_t PDC_Server_checkpoint()
     
     FUNC_ENTER(NULL);
 
-#ifdef ENABLE_TIMING 
+//#ifdef ENABLE_TIMING 
     // Timing
     struct timeval  pdc_timer_start;
     struct timeval  pdc_timer_end;
     double checkpoint_time;
     gettimeofday(&pdc_timer_start, 0);
-#endif
+//#endif
 
     // TODO: instead of checkpoint at app finalize time, try checkpoint with a time countdown or # of objects
     snprintf(checkpoint_file, ADDR_MAX, "%s%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.", pdc_server_rank_g);
@@ -1343,26 +1343,28 @@ perr_t PDC_Server_checkpoint()
     fclose(file);
     file = NULL;
 
-    int all_metadata_size, all_region_count;
-#ifdef ENABLE_MPI
-    MPI_Reduce(&metadata_size, &all_metadata_size, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&region_count,   &all_region_count,   1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-#else
-    all_metadata_size = metadata_size;
-    all_region_count   = region_count;
-#endif
-    if (pdc_server_rank_g == 0) {
-        printf("==PDC_SERVER: checkpointed %d objects, with %d regions \n", all_metadata_size, all_region_count);
-    }
+    MPI_Barrier(MPI_COMM_WORLD);
 
-#ifdef ENABLE_TIMING 
+//     int all_metadata_size, all_region_count;
+// #ifdef ENABLE_MPI
+//     MPI_Reduce(&metadata_size, &all_metadata_size, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+//     MPI_Reduce(&region_count,   &all_region_count,   1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+// #else
+//     all_metadata_size = metadata_size;
+//     all_region_count   = region_count;
+// #endif
+//     if (pdc_server_rank_g == 0) {
+//         printf("==PDC_SERVER: checkpointed %d objects, with %d regions \n", all_metadata_size, all_region_count);
+//     }
+
+//#ifdef ENABLE_TIMING 
     // Timing
     gettimeofday(&pdc_timer_end, 0);
     checkpoint_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
     if (pdc_server_rank_g == 0) {
         printf("==PDC_SERVER: total checkpoint time = %.6f\n", checkpoint_time);
     }
-#endif
+//#endif
 
 done:
     FUNC_LEAVE(ret_value);
@@ -1706,7 +1708,7 @@ static perr_t PDC_Server_loop(hg_context_t *hg_context)
             double elapsed_time = ((double)(cur_time-last_checkpoint_time))/CLOCKS_PER_SEC;
             // Do not checkpoint too often, has a min time interval between checkpoints
             if (elapsed_time > PDC_CHECKPOINT_MIN_INTERVAL_SEC) {
-                PDC_Server_checkpoint_SCR();
+                PDC_Server_checkpoint();
                 last_checkpoint_time = clock();
                 checkpoint_interval = 1;
             }
