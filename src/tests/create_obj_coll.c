@@ -70,7 +70,9 @@ int main(int argc, char **argv) {
     }
     // create first object
     sprintf(obj_name1, "o1");
+    #ifdef ENABLE_MPI
     obj1 = PDCobj_create_mpi(cont, obj_name1, obj_prop, 0, MPI_COMM_WORLD);
+    #endif
     if(obj1 > 0) {
         printf("Rank %d Create an object o1\n", rank);
     } else {
@@ -80,7 +82,9 @@ int main(int argc, char **argv) {
     printf("checkpoint 1 rank %d\n", rank);
     // create second object
     sprintf(obj_name2, "o2");
+    #ifdef ENABLE_MPI
     obj2 = PDCobj_create_mpi(cont, obj_name2, obj_prop, 0, MPI_COMM_WORLD);
+    #endif
     if(obj2 > 0) {
         printf("Rank %d Create an object o2\n", rank);
     } else {

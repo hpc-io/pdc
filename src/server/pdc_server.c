@@ -821,9 +821,22 @@ drc_access_again:
     // TODO: support restart with different number of servers than previous run 
     char checkpoint_file[ADDR_MAX];
     if (is_restart_g == 1) {
-        snprintf(checkpoint_file, ADDR_MAX, "%s%s%d", pdc_server_tmp_dir_g, "metadata_checkpoint.", pdc_server_rank_g);
+        int have_restart = 0;
+        char checkpoint_dir[SCR_MAX_FILENAME];
+        SCR_Have_restart(&have_restart, checkpoint_dir);
+        SCR_Start_restart(checkpoint_dir);
+        char checkpoint_file[256];
+        // sprintf(checkpoint_file, "%s/rank_%d.ckpt",
+        //         checkpoint_dir, pdc_server_rank_g
+        // );
+        printf("%s\n", checkpoint_dir);
+        snprintf(checkpoint_file, ADDR_MAX, "%s%s%d", checkpoint_dir, "metadata_checkpoint.", pdc_server_rank_g);
+        char scr_file[SCR_MAX_FILENAME];
+        SCR_Route_file(checkpoint_file, scr_file);
 
-        ret_value = PDC_Server_restart(checkpoint_file);
+        ret_value = PDC_Server_restart(scr_file);
+        int valid = 1 - ret_value;
+        SCR_Complete_restart(valid);
         if (ret_value != SUCCEED) {
             printf("==PDC_SERVER[%d]: error with PDC_Server_restart\n", pdc_server_rank_g);
             goto done;
