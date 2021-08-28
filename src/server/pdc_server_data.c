@@ -59,7 +59,6 @@
 #include "pdc_server.h"
 #include "pdc_hist_pkg.h"
 
-
 #ifdef ENABLE_RADOS
 // Global Variables for Ceph
 rados_t       cluster;
@@ -6349,10 +6348,9 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 
                * overlap_count[0]*unit, read_bytes); */
 
-              
 #ifdef ENABLE_RADOS
-               void *tmp_buf = malloc(storage_region->data_size);
-		retu = PDC_Server_rados_read(obj_id, tmp_buf, elt->start, elt->count);
+                void *tmp_buf = malloc(storage_region->data_size);
+                retu = PDC_Server_rados_read(obj_id, tmp_buf, elt->start, elt->count);
                 if (retu < 0) {
                     printf("==PDC_SERVER[]: PDC_Server_rados_read FAILED for ndim = 1 inside read "
                            "function!\n");
@@ -6367,16 +6365,15 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                               }
               */
 
-		  memcpy(buf + pos, tmp_buf + overlap_start_local[0] * unit, overlap_count[0] * unit);
+                memcpy(buf + pos, tmp_buf + overlap_start_local[0] * unit, overlap_count[0] * unit);
 
- /*              printf("Final values in pdc_read after memcpy\n");
-                for (i = 0; i <= 63; i++) {
-                    printf("%d\t", ((int *)buf)[i]);
-                }
-                printf("\n");
-    */
-		 free(tmp_buf);
-
+                /*              printf("Final values in pdc_read after memcpy\n");
+                               for (i = 0; i <= 63; i++) {
+                                   printf("%d\t", ((int *)buf)[i]);
+                               }
+                               printf("\n");
+                   */
+                free(tmp_buf);
 
 #else
                 // Posix Call here
@@ -6392,79 +6389,79 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                                   overlap_start_local[0], pos, ((int *)buf)[0], ((int *)buf)[pos],
                                   region_info->offset[0]);
            */
-              my_read_bytes = overlap_count[0] * unit;
-
+                my_read_bytes = overlap_count[0] * unit;
             }
-  else if (region_info->ndim == 2) {
-      void *tmp_buf = malloc(storage_region->data_size);
-      // Read entire region
-      // read_bytes = pread(region->fd, tmp_buf, storage_region->data_size,
-      // storage_region->offset);
+            else if (region_info->ndim == 2) {
+                void *tmp_buf = malloc(storage_region->data_size);
+                // Read entire region
+                // read_bytes = pread(region->fd, tmp_buf, storage_region->data_size,
+                // storage_region->offset);
 
 #ifdef ENABLE_RADOS
-      retu = PDC_Server_rados_read(obj_id, tmp_buf, elt->start, elt->count);
-      if (retu < 0) {
-          printf("==PDC_SERVER[]: PDC_Server_rados_read FAILED for ndim =2 inside read!\n");
-      }
-      /*               else {
+                retu = PDC_Server_rados_read(obj_id, tmp_buf, elt->start, elt->count);
+                if (retu < 0) {
+                    printf("==PDC_SERVER[]: PDC_Server_rados_read FAILED for ndim =2 inside read!\n");
+                }
+                /*               else {
 
-                         printf("Rados_read_operation finished for ndim =2 inside read\n");
-                     }
-     */
+                                   printf("Rados_read_operation finished for ndim =2 inside read\n");
+                               }
+               */
 #else
-      if (pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset) !=
-          (ssize_t)storage_region->data_size) {
-          printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
-      }
+                if (pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset) !=
+                    (ssize_t)storage_region->data_size) {
+                    printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
+                }
 #endif
 
-      // Extract requested data
-      pos = ((overlap_start[0] - region_info->offset[0]) * storage_region->count[1] + overlap_start[1] -
-             region_info->offset[1]) *
-            unit;
-      if (pos > (uint64_t)request_bytes) {
-          printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g, pos,
-                 request_bytes);
-          ret_value = -1;
-          goto done;
-      }
+                // Extract requested data
+                pos = ((overlap_start[0] - region_info->offset[0]) * storage_region->count[1] +
+                       overlap_start[1] - region_info->offset[1]) *
+                      unit;
+                if (pos > (uint64_t)request_bytes) {
+                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
+                           pos, request_bytes);
+                    ret_value = -1;
+                    goto done;
+                }
 
-      for (i = overlap_start_local[0]; i < overlap_start_local[0] + overlap_count[0]; i++) {
-          memcpy(buf + pos, tmp_buf + i * storage_region->count[1] * unit + overlap_start_local[1] * unit,
-                 overlap_count[1] * unit);
-          pos += region_info->size[1] * unit;
-          if (pos > (uint64_t)request_bytes) {
-              printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g, pos,
-                     request_bytes);
-              ret_value = -1;
-              goto done;
-          }
-          my_read_bytes += overlap_count[1] * unit;
-      }
-      free(tmp_buf);
-  }
-  else if (region_info->ndim == 3) {
-      void *tmp_buf = malloc(storage_region->data_size);
-      // Read entire region
-      // read_bytes = pread(region->fd, tmp_buf, storage_region->data_size,
-      // storage_region->offset);
+                for (i = overlap_start_local[0]; i < overlap_start_local[0] + overlap_count[0]; i++) {
+                    memcpy(buf + pos,
+                           tmp_buf + i * storage_region->count[1] * unit + overlap_start_local[1] * unit,
+                           overlap_count[1] * unit);
+                    pos += region_info->size[1] * unit;
+                    if (pos > (uint64_t)request_bytes) {
+                        printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n",
+                               pdc_server_rank_g, pos, request_bytes);
+                        ret_value = -1;
+                        goto done;
+                    }
+                    my_read_bytes += overlap_count[1] * unit;
+                }
+                free(tmp_buf);
+            }
+            else if (region_info->ndim == 3) {
+                void *tmp_buf = malloc(storage_region->data_size);
+                // Read entire region
+                // read_bytes = pread(region->fd, tmp_buf, storage_region->data_size,
+                // storage_region->offset);
 
 #ifdef ENABLE_RADOS
-      retu = PDC_Server_rados_read(obj_id, tmp_buf, elt->start, elt->count);
-      if (retu < 0) {
-          printf("==PDC_SERVER[]: PDC_Server_rados_read FAILED for ndim =3 inside read!\n");
-      }
+                retu = PDC_Server_rados_read(obj_id, tmp_buf, elt->start, elt->count);
+                if (retu < 0) {
+                    printf("==PDC_SERVER[]: PDC_Server_rados_read FAILED for ndim =3 inside read!\n");
+                }
 /*                else {
 
                     printf("Rados_read_operation finished for ndim = 3 inside read function\n");
                 }
 */
 #else
-      // Posix call here
-      if (pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset) !=
-          (ssize_t)storage_region->data_size) {
-          printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
-      }
+                // Posix call here
+                if (pread(region->fd, tmp_buf, storage_region->data_size, storage_region->offset) !=
+                    (ssize_t)storage_region->data_size) {
+                    printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
+                }
 
 #endif
                 // Extract requested data

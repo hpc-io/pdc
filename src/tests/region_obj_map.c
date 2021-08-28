@@ -144,9 +144,9 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 
-        for (i = 0; i < BUF_LEN; ++i) {
-            data[i] = -i;
-        }
+    for (i = 0; i < BUF_LEN; ++i) {
+        data[i] = -i;
+    }
 
     ret = PDCreg_obtain_lock(obj1, reg_global, PDC_WRITE, PDC_BLOCK);
     if (ret != SUCCEED) {
