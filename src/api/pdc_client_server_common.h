@@ -80,9 +80,9 @@ extern uint64_t          pdc_id_seq_g;
 extern int               pdc_server_rank_g;
 extern hg_atomic_int32_t close_server_g;
 
-typedef struct pdc_map_mutex_list{
-    pthread_mutex_t pdc_map_mutex;
-    pdcid_t id;
+typedef struct pdc_map_mutex_list {
+    pthread_mutex_t            pdc_map_mutex;
+    pdcid_t                    id;
     struct pdc_map_mutex_list *next;
 } pdc_map_mutex_list;
 pdc_map_mutex_list *pdc_map_mutexes;

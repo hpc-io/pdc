@@ -1029,7 +1029,7 @@ PDC_Server_finalize()
     hg_thread_mutex_destroy(&addr_valid_mutex_g);
     hg_thread_mutex_destroy(&update_remote_server_addr_mutex_g);
 #endif
-    
+
     while (pdc_map_mutexes != NULL) {
         pthread_mutex_destroy(&(pdc_map_mutexes->pdc_map_mutex));
         pdc_map_mutexes = pdc_map_mutexes->next;
