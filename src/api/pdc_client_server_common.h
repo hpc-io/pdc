@@ -80,6 +80,8 @@ extern uint64_t          pdc_id_seq_g;
 extern int               pdc_server_rank_g;
 extern hg_atomic_int32_t close_server_g;
 
+pthread_mutex_t   pdc_map_mutex;
+
 #define PDC_LOCK_OP_OBTAIN  0
 #define PDC_LOCK_OP_RELEASE 1
 
