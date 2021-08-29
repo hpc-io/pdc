@@ -4427,7 +4427,7 @@ HG_TEST_RPC_CB(buf_map, handle)
     HG_Get_input(handle, &in);
 
     pdc_map_mutex_list *temp = pdc_map_mutexes;
-    int flag = 0;
+    int                 flag = 0;
     while (temp != NULL) {
         if (temp->id == in.remote_obj_id) {
             pthread_mutex_lock(&(temp->pdc_map_mutex));
@@ -4436,17 +4436,18 @@ HG_TEST_RPC_CB(buf_map, handle)
         }
         temp = temp->next;
     }
-    if ( flag == 0 ) {
+    if (flag == 0) {
         temp = pdc_map_mutexes;
-        if ( temp == NULL ) { 
-            pdc_map_mutexes = (pdc_map_mutex_list*) malloc(sizeof(pdc_map_mutex_list));
+        if (temp == NULL) {
+            pdc_map_mutexes       = (pdc_map_mutex_list *)malloc(sizeof(pdc_map_mutex_list));
             pdc_map_mutexes->next = NULL;
             pdc_map_mutexes->id   = in.remote_obj_id;
-        } else {
+        }
+        else {
             while (temp->next != NULL) {
                 temp = temp->next;
             }
-            temp->next = (pdc_map_mutex_list*) malloc(sizeof(pdc_map_mutex_list));
+            temp->next       = (pdc_map_mutex_list *)malloc(sizeof(pdc_map_mutex_list));
             temp->next->next = NULL;
             temp->next->id   = in.remote_obj_id;
         }
