@@ -4472,6 +4472,8 @@ HG_TEST_RPC_CB(buf_map, handle)
 
     printf("trying to lock %p\n", target_mutex);
     pthread_mutex_lock(target_mutex);
+    printf("trying to unlock %p\n", target_mutex);
+    pthread_mutex_unlock(target_mutex);
 
     // Use region dimension to allocate memory, rather than object dimension (different from client side)
     ndim = in.remote_region_unit.ndim;
@@ -4522,8 +4524,6 @@ HG_TEST_RPC_CB(buf_map, handle)
     server_timings->PDCbuf_obj_map_rpc += end - start;
     pdc_timestamp_register(buf_obj_map_timestamps, start, end);
 #endif
-
-    pthread_mutex_unlock(target_mutex);
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
