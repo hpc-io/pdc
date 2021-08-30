@@ -4249,7 +4249,7 @@ HG_TEST_RPC_CB(buf_unmap, handle)
     pthread_mutex_unlock(&pdc_map_list_mutex);
 
     printf("trying to unlock %p\n", target_mutex);
-    pthread_mutex_unlock(target_mutex);
+    // pthread_mutex_unlock(target_mutex);
 done:
     fflush(stdout);
 #if PDC_TIMING == 1
@@ -4522,6 +4522,8 @@ HG_TEST_RPC_CB(buf_map, handle)
     server_timings->PDCbuf_obj_map_rpc += end - start;
     pdc_timestamp_register(buf_obj_map_timestamps, start, end);
 #endif
+
+    pthread_mutex_unlock(target_mutex);
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
