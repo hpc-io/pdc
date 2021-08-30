@@ -4234,10 +4234,10 @@ HG_TEST_RPC_CB(buf_unmap, handle)
             HG_OTHER_ERROR,
             "===PDC_DATA_SERVER: HG_TEST_RPC_CB(buf_unmap, handle) - PDC_Meta_Server_buf_unmap() failed");
     // pthread_mutex_unlock(&pdc_map_mutex);
-    pdc_map_mutex_list *temp = pdc_map_mutexes;
     pthread_mutex_t *target_mutex = NULL;
 
     pthread_mutex_lock(&pdc_map_list_mutex);
+    pdc_map_mutex_list *temp = pdc_map_mutexes;
     while (temp != NULL) {
         if (temp->id == in.remote_obj_id) {
             //pthread_mutex_unlock(&(temp->pdc_map_mutex));
@@ -4432,11 +4432,11 @@ HG_TEST_RPC_CB(buf_map, handle)
     // Decode input
     HG_Get_input(handle, &in);
 
-    pdc_map_mutex_list *temp = pdc_map_mutexes;
     int                 flag = 0;
     pthread_mutex_t *target_mutex = NULL;
 
     pthread_mutex_lock(&pdc_map_list_mutex);
+    pdc_map_mutex_list *temp = pdc_map_mutexes;
     while (temp != NULL) {
         if (temp->id == in.remote_obj_id) {
             //pthread_mutex_lock(&(temp->pdc_map_mutex));
