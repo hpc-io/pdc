@@ -4468,7 +4468,7 @@ HG_TEST_RPC_CB(buf_map, handle)
             target_mutex = &(temp->next->pdc_map_mutex);
         }
     }
-    // pthread_mutex_unlock(&pdc_map_list_mutex);
+    pthread_mutex_unlock(&pdc_map_list_mutex);
 
     printf("trying to lock %p\n", target_mutex);
     pthread_mutex_lock(target_mutex);
