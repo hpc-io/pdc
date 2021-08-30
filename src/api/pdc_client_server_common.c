@@ -4432,7 +4432,7 @@ HG_TEST_RPC_CB(buf_map, handle)
     // Decode input
     HG_Get_input(handle, &in);
 
-    int                 flag = 0;
+    int              flag         = 0;
     pthread_mutex_t *target_mutex = NULL;
 
     pthread_mutex_lock(&pdc_map_list_mutex);
