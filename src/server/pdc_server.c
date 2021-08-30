@@ -34,6 +34,9 @@
 #include <fcntl.h>
 #include <inttypes.h>
 #include <math.h>
+#ifdef ENABLE_RADOS
+#include <rados/librados.h>
+#endif
 
 #include <sys/shm.h>
 #include <sys/mman.h>
@@ -1919,6 +1922,12 @@ PDC_Server_get_env()
                pdc_server_rank_g, pdc_server_tmp_dir_g, pdc_nost_per_file_g, write_to_bb_percentage_g);
     }
 }
+#ifdef ENABLE_RADOS
+// Ceph global Variables
+rados_t       cluster;
+rados_ioctx_t io;
+const char *  poolname = "data";
+#endif
 
 /*
  * Main function of PDC server
@@ -1933,6 +1942,45 @@ main(int argc, char *argv[])
 {
     int    port;
     perr_t ret;
+
+#ifdef ENABLE_RADOS
+    int retu;
+    int failed = 0;
+
+    retu = rados_create(&cluster, NULL);
+    if (retu != 0) {
+        failed = 1;
+        fprintf(stderr, "rados_create failed\n");
+        goto done;
+    }
+    retu = rados_conf_read_file(cluster, NULL);
+    if (retu != 0) {
+        failed = 1;
+        fprintf(stderr, "rados_conf_read_file failed\n");
+        goto done;
+    }
+
+    retu = rados_connect(cluster);
+    if (retu != 0) {
+        failed = 1;
+        fprintf(stderr, "rados_connect failed\n");
+        goto done;
+    }
+
+    /*    else {
+            printf("Rados_Cluster is connected\n");
+        }
+     */
+    retu = rados_ioctx_create(cluster, poolname, &io);
+    if (retu != 0) {
+        fprintf(stderr, "rados_ioctx_create failed\n");
+        return 1;
+    }
+/*    else {
+        printf("Cluster ioctx made\n");
+    }
+*/
+#endif
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);

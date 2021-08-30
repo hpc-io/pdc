@@ -33,13 +33,13 @@
 int
 main()
 {
-    pdcid_t      pdc, cont_prop, cont, obj_prop1, obj_prop2, obj1, obj2;
-    pdc_kvtag_t  kvtag1, kvtag2, kvtag3;
-    char *       v1 = "value1";
-    int          v2 = 2;
-    double       v3 = 3.45;
-    pdc_kvtag_t *value1, *value2, *value3;
-    psize_t      value_size;
+    pdcid_t     pdc, cont_prop, cont, obj_prop1, obj_prop2, obj1, obj2;
+    pdc_kvtag_t kvtag1, kvtag2, kvtag3;
+    char *      v1 = "value1";
+    int         v2 = 2;
+    double      v3 = 3.45;
+    void *      value1, *value2, *value3;
+    psize_t     value_size;
 
     // create a pdc
     pdc = PDCinit("pdc");
@@ -113,26 +113,25 @@ main()
     else
         printf("successfully added a kvtag to o1\n");
 
-    if (PDCobj_get_tag(obj1, kvtag1.name, (void *)&value1, (void *)&value_size) < 0)
+    if (PDCobj_get_tag(obj1, kvtag1.name, &value1, (void *)&value_size) < 0)
         printf("fail to get a kvtag from o1\n");
     else
-        printf("successfully retrieved a kvtag [%s] = [%s] from o1\n", value1->name, (char *)value1->value);
+        printf("successfully retrieved a kvtag [%s] = [%s] from o1\n", kvtag1.name, (char *)value1);
 
-    if (PDCobj_get_tag(obj2, kvtag2.name, (void *)&value2, (void *)&value_size) < 0)
+    if (PDCobj_get_tag(obj2, kvtag2.name, &value2, (void *)&value_size) < 0)
         printf("fail to get a kvtag from o2\n");
     else
-        printf("successfully retrieved a kvtag [%s] = [%d] from o2\n", value2->name, *(int *)value2->value);
+        printf("successfully retrieved a kvtag [%s] = [%d] from o2\n", kvtag2.name, *(int *)value2);
 
-    if (PDCobj_get_tag(obj2, kvtag3.name, (void *)&value3, (void *)&value_size) < 0)
+    if (PDCobj_get_tag(obj2, kvtag3.name, &value3, (void *)&value_size) < 0)
         printf("fail to get a kvtag from o2\n");
     else
-        printf("successfully retrieved a kvtag [%s] = [%f] from o2\n", value3->name,
-               *(double *)value3->value);
+        printf("successfully retrieved a kvtag [%s] = [%f] from o2\n", kvtag3.name, *(double *)value3);
 
     if (PDCtag_delete(obj1, kvtag1.name) < 0)
         printf("fail to delete a kvtag from o1\n");
     else
-        printf("successfully deleted a kvtag [%s] from o1\n", value1->name);
+        printf("successfully deleted a kvtag [%s] from o1\n", kvtag1.name);
 
     v1           = "New Value After Delete";
     kvtag1.value = (void *)v1;
@@ -142,16 +141,16 @@ main()
     else
         printf("successfully added a kvtag to o1\n");
 
-    PDC_free_kvtag(&value1);
+    free(value1);
 
-    if (PDCobj_get_tag(obj1, kvtag1.name, (void *)&value1, (void *)&value_size) < 0)
+    if (PDCobj_get_tag(obj1, kvtag1.name, &value1, (void *)&value_size) < 0)
         printf("fail to get a kvtag from o1\n");
     else
-        printf("successfully retrieved a kvtag [%s] = [%s] from o1\n", value1->name, (char *)value1->value);
+        printf("successfully retrieved a kvtag [%s] = [%s] from o1\n", kvtag1.name, (char *)value1);
 
-    PDC_free_kvtag(&value1);
-    PDC_free_kvtag(&value2);
-    PDC_free_kvtag(&value3);
+    free(value1);
+    free(value2);
+    free(value3);
 
     // close first object
     if (PDCobj_close(obj1) < 0)
