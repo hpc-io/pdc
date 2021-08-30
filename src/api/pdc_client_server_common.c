@@ -4233,7 +4233,7 @@ HG_TEST_RPC_CB(buf_unmap, handle)
         PGOTO_ERROR(
             HG_OTHER_ERROR,
             "===PDC_DATA_SERVER: HG_TEST_RPC_CB(buf_unmap, handle) - PDC_Meta_Server_buf_unmap() failed");
-    pthread_mutex_unlock(&pdc_map_mutex);
+    // pthread_mutex_unlock(&pdc_map_mutex);
     pthread_mutex_t *target_mutex = NULL;
 
     pthread_mutex_lock(&pdc_map_list_mutex);
@@ -4249,7 +4249,7 @@ HG_TEST_RPC_CB(buf_unmap, handle)
     pthread_mutex_unlock(&pdc_map_list_mutex);
 
     printf("trying to unlock %p\n", target_mutex);
-    // pthread_mutex_unlock(target_mutex);
+    pthread_mutex_unlock(target_mutex);
 done:
     fflush(stdout);
 #if PDC_TIMING == 1
@@ -4468,7 +4468,7 @@ HG_TEST_RPC_CB(buf_map, handle)
             target_mutex = &(temp->next->pdc_map_mutex);
         }
     }
-    pthread_mutex_unlock(&pdc_map_list_mutex);
+    // pthread_mutex_unlock(&pdc_map_list_mutex);
 
     printf("trying to lock %p\n", target_mutex);
     pthread_mutex_lock(target_mutex);
