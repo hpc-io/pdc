@@ -86,6 +86,7 @@ typedef struct pdc_map_mutex_list {
     struct pdc_map_mutex_list *next;
 } pdc_map_mutex_list;
 pdc_map_mutex_list *pdc_map_mutexes;
+pthread_mutex_t pdc_map_list_mutex;
 
 #define PDC_LOCK_OP_OBTAIN  0
 #define PDC_LOCK_OP_RELEASE 1

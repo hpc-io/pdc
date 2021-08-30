@@ -629,7 +629,9 @@ main(int argc, char **argv)
         printf("Fail to close property @ line %d\n", __LINE__);
         return 1;
     }
+#if PDC_TIMING==1
     PDC_timing_report("vpicio_");
+#endif
     if (PDCclose(pdc_id) < 0) {
         printf("fail to close PDC\n");
         return 1;

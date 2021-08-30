@@ -4235,13 +4235,19 @@ HG_TEST_RPC_CB(buf_unmap, handle)
             "===PDC_DATA_SERVER: HG_TEST_RPC_CB(buf_unmap, handle) - PDC_Meta_Server_buf_unmap() failed");
     // pthread_mutex_unlock(&pdc_map_mutex);
     pdc_map_mutex_list *temp = pdc_map_mutexes;
+    pthread_mutex_t *target_mutex = NULL;
+
+    pthread_mutex_lock(&pdc_map_list_mutex);
     while (temp != NULL) {
         if (temp->id == in.remote_obj_id) {
-            pthread_mutex_unlock(&(temp->pdc_map_mutex));
+            //pthread_mutex_unlock(&(temp->pdc_map_mutex));
+            target_mutex = &(temp->pdc_map_mutex);
             break;
         }
         temp = temp->next;
     }
+    pthread_mutex_unlock(&pdc_map_list_mutex);
+    pthread_mutex_unlock(target_mutex);
 done:
     fflush(stdout);
 #if PDC_TIMING == 1
@@ -4428,9 +4434,13 @@ HG_TEST_RPC_CB(buf_map, handle)
 
     pdc_map_mutex_list *temp = pdc_map_mutexes;
     int                 flag = 0;
+    pthread_mutex_t *target_mutex = NULL;
+
+    pthread_mutex_lock(&pdc_map_list_mutex);
     while (temp != NULL) {
         if (temp->id == in.remote_obj_id) {
-            pthread_mutex_lock(&(temp->pdc_map_mutex));
+            //pthread_mutex_lock(&(temp->pdc_map_mutex));
+            target_mutex = &(temp->pdc_map_mutex);
             flag = 1;
             break;
         }
@@ -4442,6 +4452,8 @@ HG_TEST_RPC_CB(buf_map, handle)
             pdc_map_mutexes       = (pdc_map_mutex_list *)malloc(sizeof(pdc_map_mutex_list));
             pdc_map_mutexes->next = NULL;
             pdc_map_mutexes->id   = in.remote_obj_id;
+            pthread_mutex_init(&(pdc_map_mutexes->pdc_map_mutex), NULL);
+            target_mutex = &(pdc_map_mutexes->pdc_map_mutex);
         }
         else {
             while (temp->next != NULL) {
@@ -4450,8 +4462,12 @@ HG_TEST_RPC_CB(buf_map, handle)
             temp->next       = (pdc_map_mutex_list *)malloc(sizeof(pdc_map_mutex_list));
             temp->next->next = NULL;
             temp->next->id   = in.remote_obj_id;
+            pthread_mutex_init(&(temp->next->pdc_map_mutex), NULL);
+            target_mutex = &(temp->next->pdc_map_mutex);
         }
     }
+    pthread_mutex_unlock(&pdc_map_list_mutex);
+    pthread_mutex_lock(target_mutex);
 
     // Use region dimension to allocate memory, rather than object dimension (different from client side)
     ndim = in.remote_region_unit.ndim;
@@ -4794,6 +4810,7 @@ HG_TEST_RPC_CB(data_server_read, handle)
     io_info->region.access_type   = io_info->io_type;
     io_info->region.meta          = &(io_info->meta);
     io_info->region.client_ids[0] = in.client_id;
+
 
     out.ret = 1;
     HG_Respond(handle, PDC_Server_data_io_via_shm, io_info, &out);
