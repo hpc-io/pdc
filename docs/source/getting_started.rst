@@ -142,7 +142,7 @@ PDC on Cori
 
 Installation on Cori is not very different from a regular linux machine. Simply replacing all gcc/mpicc with the default cc compiler on Cori would work. Add options -DCMAKE_C_FLAGS="-dynamic" to the cmake line of PDC. Add -DCMAKE_C_FLAGS="-dynamic" -DCMAKE_CXX_FLAGS="-dynamic" at the end of the cmake line for mercury as well. Finally, "-DMPI_RUN_CMD=srun" is needed for ctest command later. In some instances and on some systems, unload darshan before installation may be needed.
 
-For job allocation on Cori it is recommended to add "--gres=craynetwork:2" to the command:
+For job allocation on Cori it is recommended to add "--gres=craynetwork:2" to the command, add "--overlap" to run PDC server in shared node.
 
 .. code-block:: Bash
 
@@ -154,11 +154,11 @@ Run 4 server processes, each on one node in background:
 
 .. code-block:: Bash
 
-	$ srun -N 4 -n  4 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 ./bin/pdc_server.exe &
+	$ srun -N 4 -n  4 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap ./bin/pdc_server.exe &
 
 Run 64 client processes that concurrently create 1000 objects in total:
 
 .. code-block:: Bash
 
-	$ srun -N 4 -n 64 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 ./bin/create_obj_scale -r 1000
+	$ srun -N 4 -n 64 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap ./bin/create_obj_scale -r 1000
 
