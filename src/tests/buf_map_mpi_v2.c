@@ -104,7 +104,11 @@ main(int argc, char **argv)
 
     obj2 = PDCobj_open("obj-var-xx", pdc_id);
     if (obj2 == 0) {
+#ifdef ENABLE_MPI
         obj2 = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop2, 0, comm);
+#else
+        obj2 = PDCobj_create(cont_id, "obj-var-xx", obj_prop2);
+#endif
         if (obj2 == 0) {
             printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
             exit(-1);
