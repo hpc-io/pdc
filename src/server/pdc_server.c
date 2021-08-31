@@ -81,6 +81,7 @@ char **                   all_addr_strings_g        = NULL;
 int                       is_all_client_connected_g = 0;
 int                       is_hash_table_init_g      = 0;
 int                       lustre_stripe_size_mb_g   = 16;
+int                       lustre_total_ost_g        = 0;
 
 hg_id_t get_remote_metadata_register_id_g;
 hg_id_t buf_map_server_register_id_g;
@@ -1868,16 +1869,8 @@ PDC_Server_get_env()
 
     snprintf(pdc_server_tmp_dir_g, ADDR_MAX, "%s/", tmp_env_char);
 
-    // Get number of OST per file
-    tmp_env_char = getenv("PDC_NOST_PER_FILE");
-    if (tmp_env_char != NULL) {
-        pdc_nost_per_file_g = atoi(tmp_env_char);
-        // Make sure it is a sane value
-        if (pdc_nost_per_file_g < 1 || pdc_nost_per_file_g > 248) {
-            pdc_nost_per_file_g = 1;
-        }
-    }
-
+    lustre_total_ost_g = 1;
+#ifdef ENABLE_LUSTRE
     tmp_env_char = getenv("PDC_LUSTRE_STRIPE_SIZE");
     if (tmp_env_char != NULL) {
         lustre_stripe_size_mb_g = atoi(tmp_env_char);
@@ -1886,6 +1879,24 @@ PDC_Server_get_env()
             lustre_stripe_size_mb_g = 16;
         }
     }
+
+    lustre_total_ost_g = PDC_LUSTRE_TOTAL_OST;
+    if (lustre_total_ost_g < 1) {
+        lustre_total_ost_g = 1;
+    }
+#endif
+
+    // Get number of OST per file
+    pdc_nost_per_file_g = lustre_total_ost_g;
+    tmp_env_char = getenv("PDC_NOST_PER_FILE");
+    if (tmp_env_char != NULL) {
+        pdc_nost_per_file_g = atoi(tmp_env_char);
+        // Make sure it is a sane value
+        if (pdc_nost_per_file_g < 1 || pdc_nost_per_file_g > lustre_total_ost_g) {
+            pdc_nost_per_file_g = 1;
+        }
+    }
+
     // Get number of clients per node
     tmp_env_char = (getenv("NCLIENT"));
     if (tmp_env_char == NULL)
@@ -1924,8 +1935,9 @@ PDC_Server_get_env()
         use_fastbit_idx_g = 1;
 
     if (pdc_server_rank_g == 0) {
-        printf("\n==PDC_SERVER[%d]: using [%s] as tmp dir. %d OSTs per data file, %d%% to BB\n",
-               pdc_server_rank_g, pdc_server_tmp_dir_g, pdc_nost_per_file_g, write_to_bb_percentage_g);
+        printf("\n==PDC_SERVER[%d]: using [%s] as tmp dir, %d OSTs, %d OSTs per data file, %d%% to BB\n",
+               pdc_server_rank_g, pdc_server_tmp_dir_g, lustre_total_ost_g, pdc_nost_per_file_g, 
+               write_to_bb_percentage_g);
     }
 }
 

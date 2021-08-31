@@ -90,8 +90,8 @@ PDC_Server_set_lustre_stripe(const char *path, int stripe_count, int stripe_size
     FUNC_ENTER(NULL);
 
     // Make sure stripe count is sane
-    if (stripe_count > 248 / pdc_server_size_g)
-        stripe_count = 248 / pdc_server_size_g;
+    if (stripe_count > lustre_total_ost_g / pdc_server_size_g)
+        stripe_count = lustre_total_ost_g / pdc_server_size_g;
 
     if (stripe_count < 1)
         stripe_count = 1;
@@ -102,7 +102,7 @@ PDC_Server_set_lustre_stripe(const char *path, int stripe_count, int stripe_size
     if (stripe_size_MB <= 0)
         stripe_size_MB = 1;
 
-    index = (pdc_server_rank_g * stripe_count) % 248;
+    index = (pdc_server_rank_g * stripe_count) % lustre_total_ost_g;
 
     snprintf(tmp, sizeof(tmp), "%s", path);
 
@@ -1001,7 +1001,7 @@ server_open_storage(char *storage_location, pdcid_t obj_id)
 
 #ifdef ENABLE_LUSTRE
     if (pdc_nost_per_file_g != 1)
-        stripe_count = 248 / pdc_server_size_g;
+        stripe_count = lustre_total_ost_g / pdc_server_size_g;
     else
         stripe_count = pdc_nost_per_file_g;
     stripe_size = 16; // MB
@@ -1064,7 +1064,7 @@ PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in_t *in, region_lis
 
 #ifdef ENABLE_LUSTRE
         if (pdc_nost_per_file_g != 1)
-            stripe_count = 248 / pdc_server_size_g;
+            stripe_count = lustre_total_ost_g / pdc_server_size_g;
         else
             stripe_count = pdc_nost_per_file_g;
         stripe_size = lustre_stripe_size_mb_g;
@@ -4306,18 +4306,14 @@ PDC_Server_posix_one_file_io(region_list_t *region_list_head)
 #ifdef ENABLE_LUSTRE
                 // Set Lustre stripe only if this is Lustre
                 // NOTE: this only applies to NERSC Lustre on Cori and Edison
-                if (strstr(region_elt->storage_location, "/global/cscratch") != NULL ||
-                    strstr(region_elt->storage_location, "/scratch1/scratchdirs") != NULL ||
-                    strstr(region_elt->storage_location, "/scratch2/scratchdirs") != NULL) {
 
-                    // When env var PDC_NOST_PER_FILE is not set
-                    if (pdc_nost_per_file_g != 1)
-                        stripe_count = 248 / pdc_server_size_g;
-                    else
-                        stripe_count = pdc_nost_per_file_g;
-                    stripe_size = lustre_stripe_size_mb_g; // MB
-                    PDC_Server_set_lustre_stripe(region_elt->storage_location, stripe_count, stripe_size);
-                }
+                // When env var PDC_NOST_PER_FILE is not set
+                if (pdc_nost_per_file_g != 1)
+                    stripe_count = lustre_total_ost_g / pdc_server_size_g;
+                else
+                    stripe_count = pdc_nost_per_file_g;
+                stripe_size = lustre_stripe_size_mb_g; // MB
+                PDC_Server_set_lustre_stripe(region_elt->storage_location, stripe_count, stripe_size);
 #endif
 
                 // Close previous file
@@ -4474,7 +4470,7 @@ PDC_Server_data_io_direct(pdc_access_t io_type, uint64_t obj_id, struct pdc_regi
     PDC_mkdir(io_region->storage_location);
 
 #ifdef ENABLE_LUSTRE
-    stripe_count = 248 / pdc_server_size_g;
+    stripe_count = lustre_total_ost_g / pdc_server_size_g;
     stripe_size  = lustre_stripe_size_mb_g; // MB
     PDC_Server_set_lustre_stripe(io_region->storage_location, stripe_count, stripe_size);
 
@@ -5408,7 +5404,7 @@ PDC_Server_data_read_from2(uint64_t obj_id, struct pdc_region_info *region_info,
     gettimeofday(&pdc_timer_end, 0);
     read_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
     printf("==PDC_SERVER[%d]: read region time: %.4f, %llu bytes\n", pdc_server_rank_g, read_total_sec,
-           read_bytes);
+           total_read_bytes);
     fflush(stdout);
 #endif
 
