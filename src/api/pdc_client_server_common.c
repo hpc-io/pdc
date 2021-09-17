@@ -4417,7 +4417,7 @@ HG_TEST_RPC_CB(buf_map, handle)
     // Decode input
     HG_Get_input(handle, &in);
 
-    int              flag         = 0;
+    int flag = 0;
     // Use region dimension to allocate memory, rather than object dimension (different from client side)
     ndim = in.remote_region_unit.ndim;
     // allocate memory for the object by region size
