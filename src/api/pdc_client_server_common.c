@@ -4233,23 +4233,7 @@ HG_TEST_RPC_CB(buf_unmap, handle)
         PGOTO_ERROR(
             HG_OTHER_ERROR,
             "===PDC_DATA_SERVER: HG_TEST_RPC_CB(buf_unmap, handle) - PDC_Meta_Server_buf_unmap() failed");
-    // pthread_mutex_unlock(&pdc_map_mutex);
-    pthread_mutex_t *target_mutex = NULL;
 
-    pthread_mutex_lock(&pdc_map_list_mutex);
-    pdc_map_mutex_list *temp = pdc_map_mutexes;
-    while (temp != NULL) {
-        if (temp->id == in.remote_obj_id) {
-            // pthread_mutex_unlock(&(temp->pdc_map_mutex));
-            target_mutex = &(temp->pdc_map_mutex);
-            break;
-        }
-        temp = temp->next;
-    }
-    pthread_mutex_unlock(&pdc_map_list_mutex);
-
-    printf("trying to unlock %p\n", target_mutex);
-    // pthread_mutex_unlock(target_mutex);
 done:
     fflush(stdout);
 #if PDC_TIMING == 1
@@ -4426,7 +4410,6 @@ HG_TEST_RPC_CB(buf_map, handle)
 #endif
 
     FUNC_ENTER(NULL);
-    // pthread_mutex_lock(&pdc_map_mutex);
 
 #if PDC_TIMING == 1
     start = MPI_Wtime();
@@ -4435,46 +4418,6 @@ HG_TEST_RPC_CB(buf_map, handle)
     HG_Get_input(handle, &in);
 
     int              flag         = 0;
-    pthread_mutex_t *target_mutex = NULL;
-
-    pthread_mutex_lock(&pdc_map_list_mutex);
-    pdc_map_mutex_list *temp = pdc_map_mutexes;
-    while (temp != NULL) {
-        if (temp->id == in.remote_obj_id) {
-            // pthread_mutex_lock(&(temp->pdc_map_mutex));
-            target_mutex = &(temp->pdc_map_mutex);
-            flag         = 1;
-            break;
-        }
-        temp = temp->next;
-    }
-    if (flag == 0) {
-        temp = pdc_map_mutexes;
-        if (temp == NULL) {
-            pdc_map_mutexes       = (pdc_map_mutex_list *)malloc(sizeof(pdc_map_mutex_list));
-            pdc_map_mutexes->next = NULL;
-            pdc_map_mutexes->id   = in.remote_obj_id;
-            pthread_mutex_init(&(pdc_map_mutexes->pdc_map_mutex), NULL);
-            target_mutex = &(pdc_map_mutexes->pdc_map_mutex);
-        }
-        else {
-            while (temp->next != NULL) {
-                temp = temp->next;
-            }
-            temp->next       = (pdc_map_mutex_list *)malloc(sizeof(pdc_map_mutex_list));
-            temp->next->next = NULL;
-            temp->next->id   = in.remote_obj_id;
-            pthread_mutex_init(&(temp->next->pdc_map_mutex), NULL);
-            target_mutex = &(temp->next->pdc_map_mutex);
-        }
-    }
-    pthread_mutex_unlock(&pdc_map_list_mutex);
-
-    printf("trying to lock %p\n", target_mutex);
-    pthread_mutex_lock(target_mutex);
-    printf("trying to unlock %p\n", target_mutex);
-    pthread_mutex_unlock(target_mutex);
-
     // Use region dimension to allocate memory, rather than object dimension (different from client side)
     ndim = in.remote_region_unit.ndim;
     // allocate memory for the object by region size

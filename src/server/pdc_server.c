@@ -874,8 +874,6 @@ drc_access_again:
     pthread_mutex_init(&pdc_cache_mutex, NULL);
     pthread_create(&pdc_recycle_thread, NULL, &PDC_region_cache_clock_cycle, NULL);
 #endif
-    pdc_map_mutexes = NULL;
-    pthread_mutex_init(&pdc_map_list_mutex, NULL);
 
 done:
     FUNC_LEAVE(ret_value);
@@ -1032,13 +1030,6 @@ PDC_Server_finalize()
     hg_thread_mutex_destroy(&addr_valid_mutex_g);
     hg_thread_mutex_destroy(&update_remote_server_addr_mutex_g);
 #endif
-    pthread_mutex_lock(&pdc_map_list_mutex);
-    while (pdc_map_mutexes != NULL) {
-        pthread_mutex_destroy(&(pdc_map_mutexes->pdc_map_mutex));
-        pdc_map_mutexes = pdc_map_mutexes->next;
-    }
-    pthread_mutex_unlock(&pdc_map_list_mutex);
-    pthread_mutex_destroy(&pdc_map_list_mutex);
     // PDC cache finalize
 #ifdef PDC_SERVER_CACHE
     pthread_mutex_lock(&pdc_cache_mutex);
