@@ -243,10 +243,10 @@ PDC_server_timing_report()
                     "PDCreg_obtain_lock_rpc,PDCreg_release_lock_write_rpc,"
                     "PDCreg_release_lock_read_rpc,PDCbuf_obj_unmap_rpc,"
                     "region_release_bulk_transfer_cb\n");
-    fprintf(stream, "%lf,%lf,%lf,%lf,%lf,%lf\n", max_timings.PDCbuf_obj_map_rpc,
-            max_timings.PDCreg_obtain_lock_rpc, max_timings.PDCreg_release_lock_write_rpc,
-            max_timings.PDCreg_release_lock_read_rpc, max_timings.PDCbuf_obj_unmap_rpc,
-            max_timings.PDCreg_release_lock_bulk_transfer_rpc);
+    fprintf(stream, "%lf,%lf,%lf,%lf,%lf,%lf\n", server_timings.PDCbuf_obj_map_rpc,
+            server_timings.PDCreg_obtain_lock_rpc, server_timings.PDCreg_release_lock_write_rpc,
+            server_timings.PDCreg_release_lock_read_rpc, server_timings.PDCbuf_obj_unmap_rpc,
+            server_timings.PDCreg_release_lock_bulk_transfer_rpc);
     fclose(stream);
 
     free(server_timings);
