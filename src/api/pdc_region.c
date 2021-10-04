@@ -152,8 +152,11 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDCreg_transfer_init(void *buf, pdc_var_type_t memtype, pdcid_t local_reg, pdcid_t remote_reg, pdcid_t *transfer_request) {
-    pdcid_t                 ret_value = 0;
+perr_t
+PDCreg_transfer_init(void *buf, pdc_var_type_t memtype, pdcid_t local_reg, pdcid_t remote_reg,
+                     pdcid_t *transfer_request)
+{
+    pdcid_t ret_value = 0;
     FUNC_ENTER(NULL);
 
 done:
