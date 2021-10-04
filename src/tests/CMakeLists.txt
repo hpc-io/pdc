@@ -76,6 +76,7 @@ set(PROGRAMS
   kvtag_query_scale
   obj_transformation
   query_data
+  region_transfer
   #query_vpic_create_data
   #query_vpic
   #query_vpic_multi
@@ -160,6 +161,7 @@ add_test(NAME obj_info          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTO
 add_test(NAME obj_put_data      WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_put_data )
 add_test(NAME obj_get_data      WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_get_data )
 add_test(NAME create_region     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./create_region )
+add_test(NAME region_transfer    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer )
 add_test(NAME region_obj_map    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_obj_map )
 add_test(NAME region_obj_map_2D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_obj_map_2D )
 add_test(NAME region_obj_map_3D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_obj_map_3D )
@@ -206,6 +208,7 @@ set_tests_properties(obj_info           PROPERTIES LABELS serial )
 set_tests_properties(obj_put_data       PROPERTIES LABELS serial )
 set_tests_properties(obj_get_data       PROPERTIES LABELS serial )
 set_tests_properties(create_region      PROPERTIES LABELS serial )
+set_tests_properties(region_transfer     PROPERTIES LABELS serial )
 set_tests_properties(region_obj_map     PROPERTIES LABELS serial )
 set_tests_properties(region_obj_map_2D  PROPERTIES LABELS serial )
 set_tests_properties(region_obj_map_3D  PROPERTIES LABELS serial )
@@ -258,6 +261,7 @@ if(BUILD_MPI_TESTING)
     add_test(NAME create_obj_coll    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./create_obj_coll ${MPI_RUN_CMD} 2 4 )
     add_test(NAME create_cont_coll    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./create_cont_coll ${MPI_RUN_CMD} 2 4 )
     add_test(NAME open_obj_round_robin    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./open_obj_round_robin ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME region_transfer WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer ${MPI_RUN_CMD} 2 4 )
     add_test(NAME region_obj_map_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_obj_map ${MPI_RUN_CMD} 2 4 )
     add_test(NAME region_obj_map_2D_mpi    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_obj_map_2D ${MPI_RUN_CMD} 2 4 )
     add_test(NAME region_obj_map_3D_mpi    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_obj_map_3D ${MPI_RUN_CMD} 2 4 )

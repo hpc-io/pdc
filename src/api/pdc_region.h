@@ -90,8 +90,7 @@ perr_t PDCregion_close(pdcid_t region_id);
  */
 void PDCregion_free(struct pdc_region_info *region);
 
-perr_t PDCreg_transfer_init(void *buf, pdc_var_type_t memtype, pdcid_t local_reg, pdcid_t remote_reg,
-                            pdcid_t *transfer_request);
+pdcid_t PDCreg_transfer_init(void *buf, pdc_access_t access_type, pdcid_t local_reg, pdcid_t remote_reg);
 /**
  * Start a region transfer from local region to remote region for an object on buf.
  *
@@ -103,9 +102,11 @@ perr_t PDCreg_transfer_init(void *buf, pdc_var_type_t memtype, pdcid_t local_reg
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCreg_transfer(pdc_transfer_request *transfer_request);
+perr_t PDCreg_transfer(pdcid_t reg_transfer);
 
-perr_t PDCreg_transfer_status();
+perr_t PDCreg_transfer_status(pdcid_t reg_transfer);
+
+perr_t PDCreg_transfer_wait(pdcid_t reg_transfer);
 /**
  * Map an application buffer to an object
  *

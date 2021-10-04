@@ -152,11 +152,37 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t
-PDCreg_transfer_init(void *buf, pdc_var_type_t memtype, pdcid_t local_reg, pdcid_t remote_reg,
-                     pdcid_t *transfer_request)
+pdcid_t
+PDCreg_transfer_init(void *buf, pdc_access_t access_type, pdcid_t local_reg, pdcid_t remote_reg)
 {
     pdcid_t ret_value = 0;
+    FUNC_ENTER(NULL);
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDCreg_transfer(pdcid_t reg_transfer) {
+    perr_t ret_value = 0;
+    FUNC_ENTER(NULL);
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDCreg_transfer_status(pdcid_t reg_transfer) {
+    perr_t ret_value = 0;
+    FUNC_ENTER(NULL);
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDCreg_transfer_wait(pdcid_t reg_transfer) {
+    perr_t ret_value = 0;
     FUNC_ENTER(NULL);
 
 done:
