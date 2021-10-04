@@ -163,7 +163,9 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDCreg_transfer(pdcid_t reg_transfer) {
+perr_t
+PDCreg_transfer(pdcid_t reg_transfer)
+{
     perr_t ret_value = 0;
     FUNC_ENTER(NULL);
 
@@ -172,7 +174,9 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDCreg_transfer_status(pdcid_t reg_transfer) {
+perr_t
+PDCreg_transfer_status(pdcid_t reg_transfer)
+{
     perr_t ret_value = 0;
     FUNC_ENTER(NULL);
 
@@ -181,7 +185,9 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t PDCreg_transfer_wait(pdcid_t reg_transfer) {
+perr_t
+PDCreg_transfer_wait(pdcid_t reg_transfer)
+{
     perr_t ret_value = 0;
     FUNC_ENTER(NULL);
 

@@ -162,16 +162,16 @@ main(int argc, char **argv)
     reg        = PDCregion_create(1, local_offset, offset_length);
     reg_global = PDCregion_create(1, offset, offset_length);
 
-// Check if data written previously has been correctly read.
-/*
-    for (i = 0; i < BUF_LEN; ++i) {
-        if (data_read[i] != i) {
-            printf("wrong value %d!=%d\n", data_read[i], i);
-            ret_value = 1;
-            break;
+    // Check if data written previously has been correctly read.
+    /*
+        for (i = 0; i < BUF_LEN; ++i) {
+            if (data_read[i] != i) {
+                printf("wrong value %d!=%d\n", data_read[i], i);
+                ret_value = 1;
+                break;
+            }
         }
-    }
-*/
+    */
     if (PDCregion_close(reg) < 0) {
         printf("fail to close local region\n");
         ret_value = 1;
