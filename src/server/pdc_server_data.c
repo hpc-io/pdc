@@ -5147,9 +5147,9 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     int               flag;
     pdc_obj_cache *   obj_cache, *obj_cache_iter;
     pdc_region_cache *region_cache_iter;
-    char *            buf_merged;
-    uint64_t *        offset_merged, size_merged;
-    int               merge_status;
+    //char *            buf_merged;
+    //uint64_t *        offset_merged, size_merged;
+    //int               merge_status;
 
     perr_t ret_value = SUCCEED;
 
@@ -6647,6 +6647,7 @@ done:
     if (fp_read)
         fclose(fp_read);
     return ret_value;
+
 }
 
 static perr_t
@@ -7697,6 +7698,7 @@ PDC_load_fastbit_index(char *idx_name, uint64_t obj_id, FastBitDataType dtype, i
         printf("==PDC_SERVER[%d]: %s - ERROR opening file [%s]!\n", pdc_server_rank_g, __func__, out_name);
         return -1;
     }
+
     fseek(fp, 0, SEEK_END);
     size  = ftell(fp);
     nk    = size / sizeof(double);
