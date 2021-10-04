@@ -43,6 +43,23 @@ struct pdc_region_info {
     size_t                unit;
 };
 
+typedef struct pdc_transfer_request {
+    struct _pdc_obj_info *obj;
+
+    pdcid_t local_region_ndim;
+    pdcid_t *local_region_offset;
+    pdcid_t *local_region_size;
+
+    pdcid_t remote_region_ndim;
+    pdcid_t *remote_region_offset;
+    pdcid_t *remote_region_size;
+
+    pdc_var_type_t data_type;
+    pdc_access_t access_type;
+
+    char *buf;
+} pdc_transfer_request;
+
 /*********************/
 /* Public Prototypes */
 /*********************/
@@ -73,6 +90,22 @@ perr_t PDCregion_close(pdcid_t region_id);
  */
 void PDCregion_free(struct pdc_region_info *region);
 
+
+perr_t PDCreg_transfer_init(void *buf, pdc_var_type_t memtype, pdcid_t local_reg, pdcid_t remote_reg, pdcid_t *transfer_request);
+/**
+ * Start a region transfer from local region to remote region for an object on buf.
+ *
+ * \param buf [IN]              Start point of an application buffer
+ * \param obj_id [IN]           ID of the target object
+ * \param data_type [IN]        Data type of data in memory
+ * \param local_reg  [IN]       ID of the source region
+ * \param remote_reg [IN]       ID of the target region
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCreg_transfer(pdc_transfer_request *transfer_request);
+
+perr_t PDCreg_transfer_status();
 /**
  * Map an application buffer to an object
  *

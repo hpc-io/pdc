@@ -55,7 +55,8 @@ typedef enum {
     PDC_CONT      = 4,  /* type ID for container                       */
     PDC_OBJ       = 5,  /* type ID for object                          */
     PDC_REGION    = 6,  /* type ID for region                          */
-    PDC_NTYPES    = 7   /* number of library types, MUST BE LAST!      */
+    PDC_TRANSFER_REQUEST    = 7,  /* type ID for transfer                          */
+    PDC_NTYPES    = 8   /* number of library types, MUST BE LAST!      */
 } PDC_type_t;
 
 /***************************/

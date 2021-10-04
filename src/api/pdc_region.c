@@ -41,6 +41,7 @@
 #include "pdc_analysis_pkg.h"
 
 static perr_t pdc_region_close(struct pdc_region_info *op);
+static perr_t pdc_reg_transfer_request_close();
 
 perr_t
 PDC_region_init()
@@ -51,6 +52,22 @@ PDC_region_init()
 
     /* Initialize the atom group for the region IDs */
     if (PDC_register_type(PDC_REGION, (PDC_free_t)pdc_region_close) < 0)
+        PGOTO_ERROR(FAIL, "unable to initialize region interface");
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDC_reg_transfer_init()
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    /* Initialize the atom group for the region IDs */
+    if (PDC_register_type(PDC_TRANSFER_REQUEST, (PDC_free_t)pdc_reg_transfer_request_close) < 0)
         PGOTO_ERROR(FAIL, "unable to initialize region interface");
 
 done:
@@ -95,6 +112,16 @@ pdc_region_close(struct pdc_region_info *op)
 }
 
 perr_t
+pdc_reg_transfer_request_close()
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
 PDCregion_close(pdcid_t region_id)
 {
     perr_t ret_value = SUCCEED;
@@ -119,6 +146,14 @@ PDC_region_end()
 
     if (PDC_destroy_type(PDC_REGION) < 0)
         PGOTO_ERROR(FAIL, "unable to destroy region interface");
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDCreg_transfer_init(void *buf, pdc_var_type_t memtype, pdcid_t local_reg, pdcid_t remote_reg, pdcid_t *transfer_request) {
+    FUNC_ENTER(NULL);
 
 done:
     fflush(stdout);

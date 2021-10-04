@@ -34,7 +34,7 @@
  * type). This is the only number that must be changed since all other bit
  * field sizes and masks are calculated from TYPE_BITS.
  */
-#define TYPE_BITS         7
+#define TYPE_BITS         8
 #define TYPE_MASK         (((pdcid_t)1 << TYPE_BITS) - 1)
 #define PDC_MAX_NUM_TYPES TYPE_MASK
 /*
