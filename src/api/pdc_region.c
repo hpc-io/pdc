@@ -41,7 +41,7 @@
 #include "pdc_analysis_pkg.h"
 
 static perr_t pdc_region_close(struct pdc_region_info *op);
-static perr_t pdc_reg_transfer_request_close();
+static perr_t pdc_transfer_request_close();
 
 perr_t
 PDC_region_init()
@@ -60,14 +60,14 @@ done:
 }
 
 perr_t
-PDC_reg_transfer_init()
+PDC_transfer_request_init()
 {
     perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
 
     /* Initialize the atom group for the region IDs */
-    if (PDC_register_type(PDC_TRANSFER_REQUEST, (PDC_free_t)pdc_reg_transfer_request_close) < 0)
+    if (PDC_register_type(PDC_TRANSFER_REQUEST, (PDC_free_t)pdc_transfer_request_close) < 0)
         PGOTO_ERROR(FAIL, "unable to initialize region interface");
 
 done:
@@ -112,7 +112,7 @@ pdc_region_close(struct pdc_region_info *op)
 }
 
 perr_t
-pdc_reg_transfer_request_close()
+pdc_transfer_request_close()
 {
     perr_t ret_value = SUCCEED;
 
@@ -153,18 +153,23 @@ done:
 }
 
 pdcid_t
-PDCreg_transfer_init(void *buf, pdc_access_t access_type, pdcid_t local_reg, pdcid_t remote_reg)
+PDCtransfer_request_create(void *buf, pdc_access_t access_type, pdcid_t local_reg, pdcid_t remote_reg)
 {
     pdcid_t ret_value = 0;
-    FUNC_ENTER(NULL);
+    pdc_transfer_request *p;
 
+    FUNC_ENTER(NULL);
+    
+    //p = PDC_MALLOC(pdc_transfer_request);
+
+    //ret_value = PDC_id_register(PDC_TRANSFER_REQUEST, p);
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
 perr_t
-PDCreg_transfer(pdcid_t reg_transfer)
+PDCtransfer_request(pdcid_t transfer_request)
 {
     perr_t ret_value = 0;
     FUNC_ENTER(NULL);
@@ -175,7 +180,7 @@ done:
 }
 
 perr_t
-PDCreg_transfer_status(pdcid_t reg_transfer)
+PDCtransfer_request_status(pdcid_t transfer_request)
 {
     perr_t ret_value = 0;
     FUNC_ENTER(NULL);
@@ -186,7 +191,7 @@ done:
 }
 
 perr_t
-PDCreg_transfer_wait(pdcid_t reg_transfer)
+PDCtransfer_request_wait(pdcid_t transfer_request)
 {
     perr_t ret_value = 0;
     FUNC_ENTER(NULL);

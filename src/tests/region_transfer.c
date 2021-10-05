@@ -42,7 +42,7 @@ main(int argc, char **argv)
     perr_t  ret;
     pdcid_t obj1, obj2;
     char    cont_name[128], obj_name1[128], obj_name2[128];
-    pdcid_t reg_transfer;
+    pdcid_t transfer_request;
 
     int rank = 0, size = 1, i;
     int ret_value = 0;
@@ -139,9 +139,9 @@ main(int argc, char **argv)
     for (i = 0; i < BUF_LEN; ++i) {
         data[i] = i;
     }
-    reg_transfer = PDCreg_transfer_init(data, PDC_WRITE, reg, reg_global);
-    PDCreg_transfer(reg_transfer);
-    PDCreg_transfer_wait(reg_transfer);
+    transfer_request = PDCreg_transfer_create(data, PDC_WRITE, reg, reg_global);
+    PDCreg_transfer(transfer_request);
+    PDCreg_transfer_wait(transfer_request);
 
     if (PDCregion_close(reg) < 0) {
         printf("fail to close local region\n");

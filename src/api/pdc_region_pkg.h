@@ -52,7 +52,7 @@ perr_t PDC_region_init();
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_reg_transfer_init();
+perr_t PDC_transfer_request_init();
 
 /**
  * PDC region finalize
