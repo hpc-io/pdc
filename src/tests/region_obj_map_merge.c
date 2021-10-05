@@ -310,6 +310,9 @@ main(int argc, char **argv)
     else {
         printf("successfully close container property @ line  %d!\n", __LINE__);
     }
+    free(data);
+    free(data_read);
+    free(obj_data);
     // close pdc
     if (PDCclose(pdc) < 0) {
         printf("fail to close PDC @ line  %d!\n", __LINE__);
