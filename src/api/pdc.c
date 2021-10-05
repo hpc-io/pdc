@@ -104,7 +104,7 @@ PDCinit(const char *pdc_name)
         PGOTO_ERROR(FAIL, "PDC object init error");
     if (PDC_region_init() < 0)
         PGOTO_ERROR(FAIL, "PDC region init error");
-    if (PDC_reg_transfer_init() < 0)
+    if (PDC_transfer_request_init() < 0)
         PGOTO_ERROR(FAIL, "PDC region transfer init error");
 
     // PDC Client Server connection init
