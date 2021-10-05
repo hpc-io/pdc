@@ -139,9 +139,9 @@ main(int argc, char **argv)
     for (i = 0; i < BUF_LEN; ++i) {
         data[i] = i;
     }
-    transfer_request = PDCreg_transfer_create(data, PDC_WRITE, reg, reg_global);
-    PDCreg_transfer(transfer_request);
-    PDCreg_transfer_wait(transfer_request);
+    transfer_request = PDCtransfer_request_create(data, PDC_WRITE, reg, reg_global);
+    PDCtransfer_request(transfer_request);
+    PDCtransfer_request_wait(transfer_request);
 
     if (PDCregion_close(reg) < 0) {
         printf("fail to close local region\n");
