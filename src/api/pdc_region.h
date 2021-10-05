@@ -90,7 +90,8 @@ perr_t PDCregion_close(pdcid_t region_id);
  */
 void PDCregion_free(struct pdc_region_info *region);
 
-pdcid_t PDCtransfer_request_create(void *buf, pdc_access_t access_type, pdcid_t local_reg, pdcid_t remote_reg);
+pdcid_t PDCtransfer_request_create(void *buf, pdc_access_t access_type, pdcid_t local_reg,
+                                   pdcid_t remote_reg);
 /**
  * Start a region transfer from local region to remote region for an object on buf.
  *

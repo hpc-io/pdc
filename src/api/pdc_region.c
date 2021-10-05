@@ -155,14 +155,14 @@ done:
 pdcid_t
 PDCtransfer_request_create(void *buf, pdc_access_t access_type, pdcid_t local_reg, pdcid_t remote_reg)
 {
-    pdcid_t ret_value = 0;
+    pdcid_t               ret_value = 0;
     pdc_transfer_request *p;
 
     FUNC_ENTER(NULL);
-    
-    //p = PDC_MALLOC(pdc_transfer_request);
 
-    //ret_value = PDC_id_register(PDC_TRANSFER_REQUEST, p);
+    // p = PDC_MALLOC(pdc_transfer_request);
+
+    // ret_value = PDC_id_register(PDC_TRANSFER_REQUEST, p);
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
