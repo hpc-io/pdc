@@ -160,16 +160,16 @@ PDCtransfer_request_create(void *buf, pdc_access_t access_type, pdcid_t local_re
 
     FUNC_ENTER(NULL);
 
-    // p = PDC_MALLOC(pdc_transfer_request);
+    p = PDC_MALLOC(pdc_transfer_request);
 
-    // ret_value = PDC_id_register(PDC_TRANSFER_REQUEST, p);
+    ret_value = PDC_id_register(PDC_TRANSFER_REQUEST, p);
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
 perr_t
-PDCtransfer_request(pdcid_t transfer_request)
+PDCtransfer_request(pdcid_t transfer_request_id)
 {
     perr_t ret_value = 0;
     FUNC_ENTER(NULL);
@@ -180,7 +180,7 @@ done:
 }
 
 perr_t
-PDCtransfer_request_status(pdcid_t transfer_request)
+PDCtransfer_request_status(pdcid_t transfer_request_id)
 {
     perr_t ret_value = 0;
     FUNC_ENTER(NULL);
@@ -191,11 +191,14 @@ done:
 }
 
 perr_t
-PDCtransfer_request_wait(pdcid_t transfer_request)
+PDCtransfer_request_wait(pdcid_t transfer_request_id)
 {
     perr_t ret_value = 0;
     FUNC_ENTER(NULL);
 
+    /* When the reference count reaches zero the resources are freed */
+    if (PDC_dec_ref(transfer_request_id) < 0)
+        PGOTO_ERROR(FAIL, "PDC transfer request: problem of freeing id");
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);

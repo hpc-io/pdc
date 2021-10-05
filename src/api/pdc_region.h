@@ -103,11 +103,11 @@ pdcid_t PDCtransfer_request_create(void *buf, pdc_access_t access_type, pdcid_t 
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCtransfer_request(pdcid_t transfer_request);
+perr_t PDCtransfer_request(pdcid_t transfer_request_id);
 
-perr_t PDCtransfer_request_status(pdcid_t transfer_request);
+perr_t PDCtransfer_request_status(pdcid_t transfer_request_id);
 
-perr_t PDCtransfer_request_wait(pdcid_t transfer_request);
+perr_t PDCtransfer_request_wait(pdcid_t transfer_request_id);
 /**
  * Map an application buffer to an object
  *
