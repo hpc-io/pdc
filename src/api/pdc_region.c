@@ -184,15 +184,15 @@ PDCtransfer_request_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, 
     p->access_type = access_type;
     p->buf         = buf;
 
-    p->local_region_ndim = reg1->ndim;
-    p->local_region_offset = (uint64_t*) malloc(sizeof(uint64_t) * reg1->ndim);
-    p->local_region_size = (uint64_t*) malloc(sizeof(uint64_t) * reg1->ndim);
+    p->local_region_ndim   = reg1->ndim;
+    p->local_region_offset = (uint64_t *)malloc(sizeof(uint64_t) * reg1->ndim);
+    p->local_region_size   = (uint64_t *)malloc(sizeof(uint64_t) * reg1->ndim);
     memcpy(p->local_region_offset, reg1->offset, sizeof(uint64_t) * reg1->ndim);
     memcpy(p->local_region_size, reg1->size, sizeof(uint64_t) * reg1->ndim);
 
-    p->remote_region_ndim = reg2->ndim;
-    p->remote_region_offset = (uint64_t*) malloc(sizeof(uint64_t) * reg2->ndim);
-    p->remote_region_size = (uint64_t*) malloc(sizeof(uint64_t) * reg2->ndim);
+    p->remote_region_ndim   = reg2->ndim;
+    p->remote_region_offset = (uint64_t *)malloc(sizeof(uint64_t) * reg2->ndim);
+    p->remote_region_size   = (uint64_t *)malloc(sizeof(uint64_t) * reg2->ndim);
     memcpy(p->remote_region_offset, reg2->offset, sizeof(uint64_t) * reg2->ndim);
     memcpy(p->remote_region_size, reg2->size, sizeof(uint64_t) * reg2->ndim);
 
