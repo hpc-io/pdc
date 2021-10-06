@@ -230,7 +230,7 @@ PDCtransfer_request(pdcid_t transfer_request_id)
 
     FUNC_ENTER(NULL);
 
-    transfer_request = PDC_find_id(local_reg);
+    transfer_request = PDC_find_id(transfer_request_id);
 
 done:
     fflush(stdout);
