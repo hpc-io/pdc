@@ -293,7 +293,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-
 perr_t
 PDCbuf_obj_map(void *buf, pdc_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj,
                pdcid_t remote_reg)
