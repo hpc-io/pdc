@@ -44,9 +44,9 @@ struct pdc_region_info {
 };
 
 typedef struct pdc_transfer_request {
-    pdcid_t obj_id;
-    pdc_access_t   access_type;
-    char *buf;
+    pdcid_t      obj_id;
+    pdc_access_t access_type;
+    char *       buf;
 
     pdcid_t  local_region_ndim;
     pdcid_t *local_region_offset;
