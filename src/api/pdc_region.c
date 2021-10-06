@@ -185,14 +185,14 @@ PDCtransfer_request_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, 
     p->buf         = buf;
 
     p->local_region_ndim   = reg1->ndim;
-    p->local_region_offset = (uint64_t *)malloc(sizeof(uint64_t) * reg1->ndim);
-    p->local_region_size   = (uint64_t *)malloc(sizeof(uint64_t) * reg1->ndim);
+    p->local_region_offset = (uint64_t *)malloc(4 * sizeof(uint64_t) * reg1->ndim);
+    p->local_region_size   = p->local_region_offset + reg1->ndim;
     memcpy(p->local_region_offset, reg1->offset, sizeof(uint64_t) * reg1->ndim);
     memcpy(p->local_region_size, reg1->size, sizeof(uint64_t) * reg1->ndim);
 
     p->remote_region_ndim   = reg2->ndim;
-    p->remote_region_offset = (uint64_t *)malloc(sizeof(uint64_t) * reg2->ndim);
-    p->remote_region_size   = (uint64_t *)malloc(sizeof(uint64_t) * reg2->ndim);
+    p->remote_region_offset = p->local_region_offset + 2 * reg1->ndim;
+    p->remote_region_size   = p->local_region_offset + 2 * reg1->ndim + reg2->ndim;
     memcpy(p->remote_region_offset, reg2->offset, sizeof(uint64_t) * reg2->ndim);
     memcpy(p->remote_region_size, reg2->size, sizeof(uint64_t) * reg2->ndim);
 
@@ -212,6 +212,8 @@ PDCtransfer_request_delete(pdcid_t transfer_request_id)
 
     transferinfo     = PDC_find_id(transfer_request_id);
     transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
+
+    free(transfer_request->local_region_offset);
     free(transfer_request);
 
     /* When the reference count reaches zero the resources are freed */
@@ -290,6 +292,7 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
+
 
 perr_t
 PDCbuf_obj_map(void *buf, pdc_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj,
