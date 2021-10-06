@@ -2167,7 +2167,6 @@ hg_proc_bulk_rpc_in_t(hg_proc_t proc, void *data)
     if (struct_data->cnt > 0) {
         ret = hg_proc_hg_bulk_t(proc, &struct_data->bulk_handle);
 
-
         if (ret != HG_SUCCESS) {
             // HG_LOG_ERROR("Proc error");
             return ret;

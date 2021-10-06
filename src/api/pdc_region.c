@@ -233,7 +233,7 @@ PDCtransfer_request(pdcid_t transfer_request_id)
 
     FUNC_ENTER(NULL);
 
-    transferinfo = PDC_find_id(transfer_request_id);
+    transferinfo     = PDC_find_id(transfer_request_id);
     transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
 
 done:
