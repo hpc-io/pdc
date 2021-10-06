@@ -153,16 +153,69 @@ done:
 }
 
 pdcid_t
-PDCtransfer_request_create(void *buf, pdc_access_t access_type, pdcid_t local_reg, pdcid_t remote_reg)
+PDCtransfer_request_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, pdcid_t local_reg, pdcid_t remote_reg)
 {
     pdcid_t               ret_value = 0;
+    struct _pdc_id_info * objinfo2;
+    struct _pdc_obj_info *obj2;
     pdc_transfer_request *p;
+    struct _pdc_id_info *   reginfo1, *reginfo2;
+    struct pdc_region_info *reg1, *reg2;
+    pdc_var_type_t          remote_type;
+    pdcid_t               remote_meta_id;
 
     FUNC_ENTER(NULL);
+    reginfo1 = PDC_find_id(local_reg);
+    reg1     = (struct pdc_region_info *)(reginfo1->obj_ptr);
+
+    reginfo2 = PDC_find_id(remote_reg);
+    reg2     = (struct pdc_region_info *)(reginfo2->obj_ptr);
+
+    objinfo2 = PDC_find_id(obj_id);
+    if (objinfo2 == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate remote object ID");
+    obj2           = (struct _pdc_obj_info *)(objinfo2->obj_ptr);
+    remote_meta_id = obj2->obj_info_pub->meta_id;
+    remote_type    = obj2->obj_pt->obj_prop_pub->type;
 
     p = PDC_MALLOC(pdc_transfer_request);
+    p->obj_id = obj_id;
+    p->access_type = access_type;
+    p->buf = buf;
+
+    p->local_region_ndim = reg1->ndim;
+    p->local_region_offset = PDC_MALLOC(sizeof(uint64_t) * reg1->ndim);
+    p->local_region_size = PDC_MALLOC(sizeof(uint64_t) * reg1->ndim);
+    memcpy(p->local_region_offset, reg1->offset, sizeof(uint64_t) * reg1->ndim);
+    memcpy(p->local_region_size, reg1->size, sizeof(uint64_t) * reg1->ndim);
+
+    p->remote_region_ndim = reg2->ndim;
+    p->remote_region_offset = PDC_MALLOC(sizeof(uint64_t) * reg2->ndim);
+    p->remote_region_size = PDC_MALLOC(sizeof(uint64_t) * reg2->ndim);
+    memcpy(p->remote_region_offset, reg2->offset, sizeof(uint64_t) * reg2->ndim);
+    memcpy(p->remote_region_size, reg2->size, sizeof(uint64_t) * reg2->ndim);
 
     ret_value = PDC_id_register(PDC_TRANSFER_REQUEST, p);
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDCtransfer_request_delete(pdcid_t transfer_request_id)
+{
+    struct _pdc_id_info * transferinfo;
+    pdc_transfer_request *transfer_request;
+    perr_t ret_value = 0;
+    FUNC_ENTER(NULL);
+
+    transferinfo = PDC_find_id(transfer_request_id);
+    transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
+    PDC_FREE(transfer_request);
+
+    /* When the reference count reaches zero the resources are freed */
+    if (PDC_dec_ref(transfer_request_id) < 0)
+        PGOTO_ERROR(FAIL, "PDC transfer request: problem of freeing id");
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -172,8 +225,12 @@ perr_t
 PDCtransfer_request(pdcid_t transfer_request_id)
 {
     perr_t ret_value = 0;
+    pdc_transfer_request *transfer_request;
+
     FUNC_ENTER(NULL);
 
+    transfer_request = PDC_find_id(local_reg);
+    
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -196,9 +253,6 @@ PDCtransfer_request_wait(pdcid_t transfer_request_id)
     perr_t ret_value = 0;
     FUNC_ENTER(NULL);
 
-    /* When the reference count reaches zero the resources are freed */
-    if (PDC_dec_ref(transfer_request_id) < 0)
-        PGOTO_ERROR(FAIL, "PDC transfer request: problem of freeing id");
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
