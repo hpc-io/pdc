@@ -228,11 +228,13 @@ perr_t
 PDCtransfer_request(pdcid_t transfer_request_id)
 {
     perr_t                ret_value = 0;
+    struct _pdc_id_info * transferinfo;
     pdc_transfer_request *transfer_request;
 
     FUNC_ENTER(NULL);
 
-    transfer_request = PDC_find_id(transfer_request_id);
+    transferinfo = PDC_find_id(transfer_request_id);
+    transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
 
 done:
     fflush(stdout);

@@ -718,6 +718,22 @@ typedef struct {
     pdc_metadata_transfer_t ret;
 } get_remote_metadata_out_t;
 
+/* Define transfer_request_in_t */
+typedef struct {
+    uint32_t               meta_server_id;
+    uint64_t               local_reg_id;
+    uint64_t               remote_obj_id;
+    pdc_var_type_t         mem_type;
+    size_t                 ndim;
+    size_t                 remote_unit;
+    hg_bulk_t              local_bulk_handle;
+    region_info_transfer_t remote_region;
+} transfer_request_in_t;
+/* Define transfer_request_out_t */
+typedef struct {
+    int32_t ret;
+} transfer_request_out_t;
+
 /* Define buf_map_in_t */
 typedef struct {
     uint32_t               meta_server_id;
@@ -2150,6 +2166,7 @@ hg_proc_bulk_rpc_in_t(hg_proc_t proc, void *data)
 
     if (struct_data->cnt > 0) {
         ret = hg_proc_hg_bulk_t(proc, &struct_data->bulk_handle);
+
 
         if (ret != HG_SUCCESS) {
             // HG_LOG_ERROR("Proc error");

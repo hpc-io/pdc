@@ -2307,6 +2307,87 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+static perr_t pack_region_metadata(uint64_t *offset, uint64_t *size, size_t unit, region_info_transfer_t *transfer) {
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+    transfer->ndim = ndim;
+
+    if (ndim >= 1)
+        transfer->start_0 = unit * offset[0];
+    else
+        transfer->start_0 = 0;
+
+    if (ndim >= 2)
+        transfer->start_1 = unit * offset[1];
+    else
+        transfer->start_1 = 0;
+
+    if (ndim >= 3)
+        transfer->start_2 = unit * offset[2];
+    else
+        transfer->start_2 = 0;
+
+    if (ndim >= 4)
+        transfer->start_3 = unit * offset[3];
+    else
+        transfer->start_3 = 0;
+
+    if (ndim >= 1)
+        transfer->count_0 = unit * size[0];
+    else
+        transfer->count_0 = 0;
+
+    if (ndim >= 2)
+        transfer->count_1 = unit * size[1];
+    else
+        transfer->count_1 = 0;
+
+    if (ndim >= 3)
+        transfer->count_2 = unit * size[2];
+    else
+        transfer->count_2 = 0;
+
+    if (ndim >= 4)
+        transfer->count_3 = unit * size[3];
+    else
+        transfer->count_3 = 0;
+
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t PDC_Client_transfer_request(pdc_transfer_request* transfer_request) {
+    perr_t                   ret_value = SUCCEED;
+    hg_return_t              hg_ret    = HG_SUCCESS;
+    buf_map_in_t             in;
+    hg_class_t *             hg_class;
+    uint32_t                 data_server_id, meta_server_id;
+    size_t                   unit;
+
+    FUNC_ENTER(NULL);
+
+    in.mem_type    = transfer_request->mem_type;
+    in.ndim          = transfer_request->remote_ndim;
+
+    // Compute metadata server id
+    meta_server_id    = PDC_get_server_by_obj_id(obj_id, pdc_server_num_g);
+    in.meta_server_id = meta_server_id;
+
+    // Compute data server id
+    data_server_id = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
+
+    debug_server_id_count[data_server_id]++;
+
+    hg_class = HG_Context_get_class(send_context_g);
+
+    unit = PDC_get_var_type_size(transfer_request->mem_type);
+    pack_region_metadata(transfer_request->offset, transfer_request->size, unit, &(in.remote_region_unit));
+
+
+    FUNC_LEAVE(ret_value);
+}
+
 perr_t
 PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t ndim, uint64_t *local_dims,
                    uint64_t *local_offset, pdc_var_type_t local_type, void *local_data,
@@ -6279,6 +6360,7 @@ done:
 }
 
 pdcid_t
+
 PDCcont_get_id(const char *cont_name, pdcid_t pdc_id)
 {
     pdcid_t  cont_id;
