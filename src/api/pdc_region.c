@@ -178,7 +178,7 @@ PDCtransfer_request_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, 
     remote_meta_id = obj2->obj_info_pub->meta_id;
 
     p              = PDC_MALLOC(pdc_transfer_request);
-    p->mem_type = obj2->obj_pt->obj_prop_pub->type;
+    p->mem_type    = obj2->obj_pt->obj_prop_pub->type;
     p->obj_id      = obj_id;
     p->access_type = access_type;
     p->buf         = buf;
