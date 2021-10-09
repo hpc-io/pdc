@@ -2308,7 +2308,8 @@ done:
 }
 
 static perr_t
-pack_region_metadata(int ndim, uint64_t *offset, uint64_t *size, size_t unit, region_info_transfer_t *transfer)
+pack_region_metadata(int ndim, uint64_t *offset, uint64_t *size, size_t unit,
+                     region_info_transfer_t *transfer)
 {
     perr_t ret_value = SUCCEED;
 
