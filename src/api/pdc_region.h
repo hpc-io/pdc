@@ -48,11 +48,11 @@ typedef struct pdc_transfer_request {
     pdc_access_t access_type;
     char *       buf;
 
-    pdcid_t  local_region_ndim;
+    int local_region_ndim;
     pdcid_t *local_region_offset;
     pdcid_t *local_region_size;
 
-    pdcid_t  remote_region_ndim;
+    int remote_region_ndim;
     pdcid_t *remote_region_offset;
     pdcid_t *remote_region_size;
 } pdc_transfer_request;

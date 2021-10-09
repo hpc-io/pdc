@@ -2360,7 +2360,7 @@ pack_region_metadata(uint64_t *offset, uint64_t *size, size_t unit, region_info_
 }
 
 perr_t
-PDC_Client_transfer_request(pdc_transfer_request *transfer_request)
+PDC_Client_transfer_request(int local_region_ndim, pdcid_t *local_region_offset, pdcid_t *local_region_size, int remote_region_ndim, pdcid_t *remote_region_offset, pdcid_t *remote_region_size, pdc_var_type_t mem_type, pdc_access_t access_type)
 {
     perr_t       ret_value = SUCCEED;
     hg_return_t  hg_ret    = HG_SUCCESS;
@@ -2371,8 +2371,8 @@ PDC_Client_transfer_request(pdc_transfer_request *transfer_request)
 
     FUNC_ENTER(NULL);
 
-    in.mem_type = transfer_request->mem_type;
-    in.ndim     = transfer_request->remote_ndim;
+    in.mem_type = mem_type;
+    in.ndim     = remote_ndim;
 
     // Compute metadata server id
     meta_server_id    = PDC_get_server_by_obj_id(obj_id, pdc_server_num_g);
@@ -2385,8 +2385,9 @@ PDC_Client_transfer_request(pdc_transfer_request *transfer_request)
 
     hg_class = HG_Context_get_class(send_context_g);
 
-    unit = PDC_get_var_type_size(transfer_request->mem_type);
-    pack_region_metadata(transfer_request->offset, transfer_request->size, unit, &(in.remote_region_unit));
+    unit = PDC_get_var_type_size(mem_type);
+    in.remote_region_unit = unit;
+    pack_region_metadata(remote_offset, remote_size, unit, &(in.remote_region_unit));
 
     FUNC_LEAVE(ret_value);
 }
@@ -4079,6 +4080,7 @@ PDC_Client_write_id(pdcid_t local_obj_id, struct pdc_region_info *region, void *
 {
     struct pdc_request    request;
     struct _pdc_id_info * info;
+
     struct _pdc_obj_info *object;
     pdc_metadata_t *      meta;
     perr_t                ret_value = SUCCEED;

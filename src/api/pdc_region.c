@@ -236,6 +236,8 @@ PDCtransfer_request(pdcid_t transfer_request_id)
     transferinfo     = PDC_find_id(transfer_request_id);
     transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
 
+    ret_value = PDC_Client_transfer_request(transfer_request->local_region_ndim, transfer_request->local_region_offset, transfer_request->local_region_size, transfer_request->remote_region_ndim, transfer_request->remote_region_offset, transfer_request->remote_region_size, transfer_request->mem_type, transfer_request->access_type);
+
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
