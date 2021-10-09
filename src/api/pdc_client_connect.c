@@ -2360,13 +2360,13 @@ pack_region_metadata(uint64_t *offset, uint64_t *size, size_t unit, region_info_
 }
 
 perr_t
-PDC_Client_transfer_request(int local_region_ndim, pdcid_t *local_region_offset, pdcid_t *local_region_size,
-                            int remote_region_ndim, pdcid_t *remote_region_offset,
-                            pdcid_t *remote_region_size, pdc_var_type_t mem_type, pdc_access_t access_type)
+PDC_Client_transfer_request(pdcid_t obj_id, int local_ndim, pdcid_t *local_offset, pdcid_t *local_size,
+                            int remote_ndim, pdcid_t *remote_offset,
+                            pdcid_t *remote_size, pdc_var_type_t mem_type, pdc_access_t access_type)
 {
     perr_t       ret_value = SUCCEED;
     hg_return_t  hg_ret    = HG_SUCCESS;
-    buf_map_in_t in;
+    transfer_request_in_t in;
     hg_class_t * hg_class;
     uint32_t     data_server_id, meta_server_id;
     size_t       unit;
@@ -2388,8 +2388,8 @@ PDC_Client_transfer_request(int local_region_ndim, pdcid_t *local_region_offset,
     hg_class = HG_Context_get_class(send_context_g);
 
     unit                  = PDC_get_var_type_size(mem_type);
-    in.remote_region_unit = unit;
-    pack_region_metadata(remote_offset, remote_size, unit, &(in.remote_region_unit));
+    in.remote_unit = unit;
+    pack_region_metadata(remote_offset, remote_size, unit, &(in.remote_unit));
 
     FUNC_LEAVE(ret_value);
 }

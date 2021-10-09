@@ -721,8 +721,6 @@ typedef struct {
 /* Define transfer_request_in_t */
 typedef struct {
     uint32_t               meta_server_id;
-    uint64_t               local_reg_id;
-    uint64_t               remote_obj_id;
     pdc_var_type_t         mem_type;
     size_t                 ndim;
     size_t                 remote_unit;
@@ -2147,6 +2145,7 @@ hg_proc_bulk_rpc_in_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->origin);
+
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
