@@ -137,7 +137,10 @@ perr_t PDC_Client_read_server_addr_from_file();
 perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj_create_prop,
                                     pdcid_t *meta_id);
 
-perr_t PDC_Client_transfer_request(pdc_transfer_request *transfer_request);
+perr_t
+PDC_Client_transfer_request(int local_region_ndim, pdcid_t *local_region_offset, pdcid_t *local_region_size,
+                            int remote_region_ndim, pdcid_t *remote_region_offset,
+                            pdcid_t *remote_region_size, pdc_var_type_t mem_type, pdc_access_t access_type);
 
 /**
  * Apply a map from buffer to an object
