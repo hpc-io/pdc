@@ -246,7 +246,7 @@ PDCtransfer_request(pdcid_t transfer_request_id)
         transfer_request->obj_id, transfer_request->local_region_ndim, transfer_request->local_region_offset,
         transfer_request->local_region_size, transfer_request->remote_region_ndim,
         transfer_request->remote_region_offset, transfer_request->remote_region_size,
-        obj_info->obj_pt->objobj_prop_pub->type, transfer_request->access_type);
+        obj_info->obj_pt->obj_prop_pub->type, transfer_request->access_type);
 
 done:
     fflush(stdout);
