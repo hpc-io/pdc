@@ -2308,13 +2308,11 @@ done:
 }
 
 static perr_t
-pack_region_metadata(uint64_t *offset, uint64_t *size, size_t unit, region_info_transfer_t *transfer)
+pack_region_metadata(int ndim, uint64_t *offset, uint64_t *size, size_t unit, region_info_transfer_t *transfer)
 {
     perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
-    transfer->ndim = ndim;
-
     if (ndim >= 1)
         transfer->start_0 = unit * offset[0];
     else
@@ -2389,7 +2387,7 @@ PDC_Client_transfer_request(pdcid_t obj_id, int local_ndim, pdcid_t *local_offse
 
     unit                  = PDC_get_var_type_size(mem_type);
     in.remote_unit = unit;
-    pack_region_metadata(remote_offset, remote_size, unit, &(in.remote_unit));
+    pack_region_metadata(remote_ndim, remote_offset, remote_size, unit, &(in.remote_unit));
 
     FUNC_LEAVE(ret_value);
 }
