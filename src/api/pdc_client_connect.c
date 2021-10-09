@@ -2360,7 +2360,9 @@ pack_region_metadata(uint64_t *offset, uint64_t *size, size_t unit, region_info_
 }
 
 perr_t
-PDC_Client_transfer_request(int local_region_ndim, pdcid_t *local_region_offset, pdcid_t *local_region_size, int remote_region_ndim, pdcid_t *remote_region_offset, pdcid_t *remote_region_size, pdc_var_type_t mem_type, pdc_access_t access_type)
+PDC_Client_transfer_request(int local_region_ndim, pdcid_t *local_region_offset, pdcid_t *local_region_size,
+                            int remote_region_ndim, pdcid_t *remote_region_offset,
+                            pdcid_t *remote_region_size, pdc_var_type_t mem_type, pdc_access_t access_type)
 {
     perr_t       ret_value = SUCCEED;
     hg_return_t  hg_ret    = HG_SUCCESS;
@@ -2385,7 +2387,7 @@ PDC_Client_transfer_request(int local_region_ndim, pdcid_t *local_region_offset,
 
     hg_class = HG_Context_get_class(send_context_g);
 
-    unit = PDC_get_var_type_size(mem_type);
+    unit                  = PDC_get_var_type_size(mem_type);
     in.remote_region_unit = unit;
     pack_region_metadata(remote_offset, remote_size, unit, &(in.remote_region_unit));
 
@@ -4078,8 +4080,8 @@ done:
 perr_t
 PDC_Client_write_id(pdcid_t local_obj_id, struct pdc_region_info *region, void *buf)
 {
-    struct pdc_request    request;
-    struct _pdc_id_info * info;
+    struct pdc_request   request;
+    struct _pdc_id_info *info;
 
     struct _pdc_obj_info *object;
     pdc_metadata_t *      meta;
