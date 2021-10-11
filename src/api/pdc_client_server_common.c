@@ -3662,7 +3662,6 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
-
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4395,7 +4394,8 @@ done:
 
 /* static hg_return_t */
 
-HG_TEST_RPC_CB(transfer_request, handle) {
+HG_TEST_RPC_CB(transfer_request, handle)
+{
     hg_return_t           ret_value = HG_SUCCESS;
     perr_t                ret;
     buf_map_in_t          in;
