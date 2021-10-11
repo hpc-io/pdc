@@ -1665,6 +1665,7 @@ done:
     work_todo_g--;
     HG_Free_output(handle, &output);
 
+
     FUNC_LEAVE(ret_value);
 }
 
@@ -2453,7 +2454,7 @@ PDC_Client_transfer_request(pdcid_t obj_id, int local_ndim, pdcid_t *local_offse
 
 done:
     fflush(stdout);
-    // HG_Destroy(client_send_transfer_request_handle);
+    HG_Destroy(client_send_transfer_request_handle);
 
     FUNC_LEAVE(ret_value);
 }
@@ -4310,6 +4311,7 @@ PDC_Client_add_del_objects_to_container_cb(const struct hg_cb_info *callback_inf
 done:
     fflush(stdout);
     work_todo_g--;
+
 
     FUNC_LEAVE(ret_value);
 }

@@ -1800,6 +1800,7 @@ PDC_Server_mercury_register()
     PDC_send_shm_bulk_rpc_register(hg_class_g);
 
     // Mapping
+    PDC_transfer_request_register(hg_class_g);
     PDC_buf_map_register(hg_class_g);
     PDC_buf_unmap_register(hg_class_g);
 
