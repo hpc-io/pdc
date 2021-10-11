@@ -2425,7 +2425,7 @@ PDC_Client_transfer_request(pdcid_t obj_id, int local_ndim, pdcid_t *local_offse
     unit           = PDC_get_var_type_size(mem_type);
     in.remote_unit = unit;
     pack_region_metadata(remote_ndim, remote_offset, remote_size, unit, &(in.remote_region));
-#if 1==2
+#if 1 == 2
     if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
@@ -2453,7 +2453,7 @@ PDC_Client_transfer_request(pdcid_t obj_id, int local_ndim, pdcid_t *local_offse
 #endif
 done:
     fflush(stdout);
-    //HG_Destroy(client_send_transfer_request_handle);
+    // HG_Destroy(client_send_transfer_request_handle);
 
     FUNC_LEAVE(ret_value);
 }
