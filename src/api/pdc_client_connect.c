@@ -314,10 +314,10 @@ done:
 static hg_return_t
 client_send_transfer_request_rpc_cb(const struct hg_cb_info *callback_info)
 {
-    hg_return_t                        ret_value = HG_SUCCESS;
-    hg_handle_t                        handle;
-    struct _pdc_transfer_request_args *region_unmap_args;
-    buf_unmap_out_t                    output;
+    hg_return_t               ret_value = HG_SUCCESS;
+    hg_handle_t               handle;
+    struct _pdc_transfer_request_args *region_transfer_args;
+    buf_unmap_out_t           output;
 
     FUNC_ENTER(NULL);
 
@@ -2105,6 +2105,7 @@ PDC_Client_create_cont_id(const char *cont_name, pdcid_t cont_create_prop ATTRIB
 
     *cont_id  = lookup_args.obj_id;
     ret_value = SUCCEED;
+
 
 done:
     fflush(stdout);
@@ -5606,6 +5607,7 @@ PDC_Client_query_name_read_entire_obj_client_agg(int my_nobj, char **my_obj_name
     ntotal_obj = 0;
     if (pdc_client_same_node_rank_g == 0) {
         for (i = 0; i < pdc_client_same_node_size_g; i++) {
+
             ntotal_obj += total_obj[i];
             recvcounts[i] = total_obj[i] * max_name_len;
             if (i == 0)
