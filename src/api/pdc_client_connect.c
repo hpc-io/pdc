@@ -1665,7 +1665,6 @@ done:
     work_todo_g--;
     HG_Free_output(handle, &output);
 
-
     FUNC_LEAVE(ret_value);
 }
 
@@ -4311,7 +4310,6 @@ PDC_Client_add_del_objects_to_container_cb(const struct hg_cb_info *callback_inf
 done:
     fflush(stdout);
     work_todo_g--;
-
 
     FUNC_LEAVE(ret_value);
 }
