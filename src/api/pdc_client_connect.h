@@ -84,6 +84,10 @@ struct _pdc_container_query_args {
     uint64_t cont_id;
 };
 
+struct _pdc_transfer_request_args {
+    int32_t ret;
+};
+
 struct _pdc_buf_map_args {
     int32_t ret;
 };

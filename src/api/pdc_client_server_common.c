@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4393,6 +4394,21 @@ done:
 }
 
 /* static hg_return_t */
+
+HG_TEST_RPC_CB(transfer_request, handle) {
+    hg_return_t           ret_value = HG_SUCCESS;
+    perr_t                ret;
+    buf_map_in_t          in;
+    buf_map_out_t         out;
+    const struct hg_info *info;
+    FUNC_ENTER(NULL);
+    HG_Get_input(handle, &in);
+    printf("entered transfer request call back at server side\n");
+    out.ret = 0;
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
 
 // buf_map_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(buf_map, handle)
@@ -6410,6 +6426,7 @@ PDC_FUNC_DECLARE_REGISTER(metadata_update)
 PDC_FUNC_DECLARE_REGISTER(metadata_delete_by_id)
 PDC_FUNC_DECLARE_REGISTER(metadata_delete)
 PDC_FUNC_DECLARE_REGISTER(close_server)
+PDC_FUNC_DECLARE_REGISTER(transfer_request)
 PDC_FUNC_DECLARE_REGISTER(buf_map)
 PDC_FUNC_DECLARE_REGISTER(get_remote_metadata)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(buf_map_server, buf_map_in_t, buf_map_out_t)

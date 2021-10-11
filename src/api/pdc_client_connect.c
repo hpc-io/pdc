@@ -2369,6 +2369,8 @@ PDC_Client_transfer_request(pdcid_t obj_id, int local_ndim, pdcid_t *local_offse
     hg_class_t *          hg_class;
     uint32_t              data_server_id, meta_server_id;
     size_t                unit;
+    hg_handle_t              client_send_transfer_request_handle;
+    struct _pdc_transfer_request_args map_args;
 
     FUNC_ENTER(NULL);
 
@@ -2389,6 +2391,34 @@ PDC_Client_transfer_request(pdcid_t obj_id, int local_ndim, pdcid_t *local_offse
     unit           = PDC_get_var_type_size(mem_type);
     in.remote_unit = unit;
     pack_region_metadata(remote_ndim, remote_offset, remote_size, unit, &(in.remote_unit));
+
+    if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
+        PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
+
+    HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr, buf_map_register_id_g,
+              &client_send_transfer_request_handle);
+
+    // Create bulk handle and release in PDC_Data_Server_buf_unmap()
+/*
+    hg_ret = HG_Bulk_create(hg_class, local_count, (void **)data_ptrs, (hg_size_t *)data_size,
+                            HG_BULK_READWRITE, &(in.local_bulk_handle));
+*/
+    if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(FAIL, "PDC_Client_buf_map(): Could not create local bulk data handle");
+
+    hg_ret = HG_Forward(client_send_transfer_request_handle, client_send_buf_map_rpc_cb, &map_args, &in);
+
+    if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(FAIL, "PDC_Client_send_buf_map(): Could not start HG_Forward()");
+
+    PDC_Client_check_response(&send_context_g);
+
+    if (map_args.ret != 1)
+        PGOTO_ERROR(FAIL, "PDC_CLIENT: buf map failed...");
+
+done:
+    fflush(stdout);
+    HG_Destroy(client_send_transfer_request_handle);
 
     FUNC_LEAVE(ret_value);
 }
@@ -5822,6 +5852,7 @@ PDC_Client_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint64_t *re
                     buf_serialize_offset = buf_offset + i * req_count[0] + j * req_count[0] * req_count[1];
                     if (is_client_debug_g == 1) {
                         printf("Read to buf offset: %" PRIu64 "\n", buf_serialize_offset);
+
                     }
 
                     read_bytes = fread(buf + buf_serialize_offset, 1, overlap_count[0], fp);
