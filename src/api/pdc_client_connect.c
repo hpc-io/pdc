@@ -1665,6 +1665,7 @@ done:
     work_todo_g--;
     HG_Free_output(handle, &output);
 
+
     FUNC_LEAVE(ret_value);
 }
 
@@ -2428,10 +2429,10 @@ PDC_Client_transfer_request(pdcid_t obj_id, int local_ndim, pdcid_t *local_offse
 
     if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
-    printf("obj ID = %u\n, data_server_id = %u", (unsigned)obj_id, (unsigned)data_server_id);
+
     HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr, transfer_request_register_id_g,
               &client_send_transfer_request_handle);
-
+    printf("obj ID = %u, data_server_id = %u\n", (unsigned)obj_id, (unsigned)data_server_id);
     // Create bulk handle and release in PDC_Data_Server_buf_unmap()
     /*
         hg_ret = HG_Bulk_create(hg_class, local_count, (void **)data_ptrs, (hg_size_t *)data_size,
@@ -4304,6 +4305,7 @@ PDC_Client_add_del_objects_to_container_cb(const struct hg_cb_info *callback_inf
     ret_value = HG_Bulk_free(cb_args->bulk_handle);
     if (ret_value != HG_SUCCESS)
         PGOTO_ERROR(ret_value, "Could not free bulk data handle");
+
 
     HG_Destroy(cb_args->rpc_handle);
 
