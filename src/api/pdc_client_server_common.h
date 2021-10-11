@@ -2299,6 +2299,61 @@ hg_proc_buf_map_out_t(hg_proc_t proc, void *data)
     return ret;
 }
 
+static HG_INLINE hg_return_t
+hg_proc_transfer_request_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t     ret;
+    transfer_request_in_t *struct_data = (transfer_request_in_t *)data;
+
+    ret = hg_proc_uint32_t(proc, &struct_data->meta_server_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint8_t(proc, &struct_data->mem_type);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_size_t(proc, &struct_data->ndim);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_size_t(proc, &struct_data->remote_unit);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_bulk_t(proc, &struct_data->local_bulk_handle);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->local_region);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+/* Define hg_proc_transfer_request_out_t */
+static HG_INLINE hg_return_t
+hg_proc_transfer_request_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t      ret;
+    transfer_request_out_t *struct_data = (transfer_request_out_t *)data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+
 /* Define hg_proc_buf_unmap_in_t */
 static HG_INLINE hg_return_t
 hg_proc_buf_unmap_in_t(hg_proc_t proc, void *data)
@@ -3333,6 +3388,7 @@ hg_id_t PDC_metadata_add_kvtag_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_del_kvtag_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_get_kvtag_register(hg_class_t *hg_class);
 
+hg_id_t PDC_transfer_request_register(hg_class_t *hg_class);
 hg_id_t PDC_buf_map_register(hg_class_t *hg_class);
 hg_id_t PDC_buf_unmap_register(hg_class_t *hg_class);
 hg_id_t PDC_region_lock_register(hg_class_t *hg_class);
