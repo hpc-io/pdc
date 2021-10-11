@@ -314,15 +314,15 @@ done:
 static hg_return_t
 client_send_transfer_request_rpc_cb(const struct hg_cb_info *callback_info)
 {
-    hg_return_t               ret_value = HG_SUCCESS;
-    hg_handle_t               handle;
+    hg_return_t                        ret_value = HG_SUCCESS;
+    hg_handle_t                        handle;
     struct _pdc_transfer_request_args *region_unmap_args;
-    buf_unmap_out_t           output;
+    buf_unmap_out_t                    output;
 
     FUNC_ENTER(NULL);
 
     region_transfer_args = (struct _pdc_transfer_request_args *)callback_info->arg;
-    handle            = callback_info->info.forward.handle;
+    handle               = callback_info->info.forward.handle;
 
     ret_value = HG_Get_output(handle, &output);
     if (ret_value != HG_SUCCESS) {
@@ -922,9 +922,9 @@ drc_access_again:
     send_region_storage_meta_shm_bulk_rpc_register_id_g = PDC_send_shm_bulk_rpc_register(*hg_class);
 
     // Map
-    transfer_request_register_id_g   = PDC_transfer_request_register(*hg_class);
-    buf_map_register_id_g   = PDC_buf_map_register(*hg_class);
-    buf_unmap_register_id_g = PDC_buf_unmap_register(*hg_class);
+    transfer_request_register_id_g = PDC_transfer_request_register(*hg_class);
+    buf_map_register_id_g          = PDC_buf_map_register(*hg_class);
+    buf_unmap_register_id_g        = PDC_buf_unmap_register(*hg_class);
 
     // Analysis and Transforms
     analysis_ftn_register_id_g         = PDC_analysis_ftn_register(*hg_class);
@@ -2440,7 +2440,8 @@ PDC_Client_transfer_request(pdcid_t obj_id, int local_ndim, pdcid_t *local_offse
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_transfer_request(): Could not create local bulk data handle");
 
-    hg_ret = HG_Forward(client_send_transfer_request_handle, client_send_transfer_request_rpc_cb, &map_args, &in);
+    hg_ret =
+        HG_Forward(client_send_transfer_request_handle, client_send_transfer_request_rpc_cb, &map_args, &in);
 
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_transfer_request(): Could not start HG_Forward()");
