@@ -2315,12 +2315,12 @@ hg_proc_transfer_request_in_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_size_t(proc, &struct_data->ndim);
+    ret = hg_proc_hg_size_t(proc, &struct_data->ndim);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_size_t(proc, &struct_data->remote_unit);
+    ret = hg_proc_hg_size_t(proc, &struct_data->remote_unit);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
