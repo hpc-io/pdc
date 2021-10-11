@@ -1665,6 +1665,7 @@ done:
     work_todo_g--;
     HG_Free_output(handle, &output);
 
+
     FUNC_LEAVE(ret_value);
 }
 
@@ -2404,7 +2405,7 @@ PDC_Client_transfer_request(pdcid_t obj_id, int local_ndim, pdcid_t *local_offse
     uint32_t                          data_server_id, meta_server_id;
     size_t                            unit;
     hg_handle_t                       client_send_transfer_request_handle;
-    struct _pdc_transfer_request_args map_args;
+    struct _pdc_transfer_request_args transfer_args;
 
     FUNC_ENTER(NULL);
 
@@ -2425,7 +2426,7 @@ PDC_Client_transfer_request(pdcid_t obj_id, int local_ndim, pdcid_t *local_offse
     unit           = PDC_get_var_type_size(mem_type);
     in.remote_unit = unit;
     pack_region_metadata(remote_ndim, remote_offset, remote_size, unit, &(in.remote_region));
-#if 1==2
+
     if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
@@ -2441,16 +2442,16 @@ PDC_Client_transfer_request(pdcid_t obj_id, int local_ndim, pdcid_t *local_offse
         PGOTO_ERROR(FAIL, "PDC_Client_transfer_request(): Could not create local bulk data handle");
 
     hg_ret =
-        HG_Forward(client_send_transfer_request_handle, client_send_transfer_request_rpc_cb, &map_args, &in);
+        HG_Forward(client_send_transfer_request_handle, client_send_transfer_request_rpc_cb, &transfer_args, &in);
 
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_transfer_request(): Could not start HG_Forward()");
 
     PDC_Client_check_response(&send_context_g);
 
-    if (map_args.ret != 1)
+    if (transfer_args.ret != 1)
         PGOTO_ERROR(FAIL, "PDC_CLIENT: buf map failed...");
-#endif
+
 done:
     fflush(stdout);
     //HG_Destroy(client_send_transfer_request_handle);
@@ -3817,6 +3818,7 @@ PDC_Client_data_server_write_check(struct pdc_request *request, int *status)
 
     *status = lookup_args.ret;
     if (lookup_args.ret != 1) {
+
         ret_value = SUCCEED;
         if (is_client_debug_g == 1)
             PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: IO request not done by server yet", pdc_client_mpi_rank_g);

@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4398,8 +4399,8 @@ HG_TEST_RPC_CB(transfer_request, handle)
 {
     hg_return_t           ret_value = HG_SUCCESS;
     perr_t                ret;
-    buf_map_in_t          in;
-    buf_map_out_t         out;
+    transfer_request_in_t          in;
+    transfer_request_out_t         out;
     const struct hg_info *info;
     FUNC_ENTER(NULL);
     HG_Get_input(handle, &in);
@@ -5081,6 +5082,7 @@ PDC_find_in_path(char *workingDir, char *application)
                 if (getcwd(checkPath, sizeof(checkPath)) == NULL) {
                     printf("Path is too large\n");
                 }
+
                 offset = strlen(checkPath);
                 // Change back (popd) to where we started
                 if (chdir(workingDir) != 0) {
