@@ -314,10 +314,10 @@ done:
 static hg_return_t
 client_send_transfer_request_rpc_cb(const struct hg_cb_info *callback_info)
 {
-    hg_return_t               ret_value = HG_SUCCESS;
-    hg_handle_t               handle;
+    hg_return_t                        ret_value = HG_SUCCESS;
+    hg_handle_t                        handle;
     struct _pdc_transfer_request_args *region_transfer_args;
-    buf_unmap_out_t           output;
+    buf_unmap_out_t                    output;
 
     FUNC_ENTER(NULL);
 
@@ -2105,7 +2105,6 @@ PDC_Client_create_cont_id(const char *cont_name, pdcid_t cont_create_prop ATTRIB
 
     *cont_id  = lookup_args.obj_id;
     ret_value = SUCCEED;
-
 
 done:
     fflush(stdout);
