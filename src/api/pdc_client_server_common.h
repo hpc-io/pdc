@@ -2330,7 +2330,7 @@ hg_proc_transfer_request_in_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_region_info_transfer_t(proc, &struct_data->local_region);
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->remote_region);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
