@@ -1666,6 +1666,7 @@ done:
     HG_Free_output(handle, &output);
 
 
+
     FUNC_LEAVE(ret_value);
 }
 
@@ -2454,7 +2455,7 @@ PDC_Client_transfer_request(pdcid_t obj_id, int local_ndim, pdcid_t *local_offse
 
 done:
     fflush(stdout);
-    //HG_Destroy(client_send_transfer_request_handle);
+    // HG_Destroy(client_send_transfer_request_handle);
 
     FUNC_LEAVE(ret_value);
 }
@@ -5418,6 +5419,7 @@ PDC_Client_query_multi_storage_info(int nobj, char **obj_names, region_storage_m
             PGOTO_ERROR(FAIL, "Could not create bulk data handle");
 
         requests[server_id]              = (struct pdc_request *)calloc(1, sizeof(struct pdc_request));
+
         requests[server_id]->server_id   = server_id;
         requests[server_id]->access_type = PDC_READ;
         requests[server_id]->n_buf_arr   = n_obj_name_by_server[server_id];
