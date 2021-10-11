@@ -1665,8 +1665,6 @@ done:
     work_todo_g--;
     HG_Free_output(handle, &output);
 
-
-
     FUNC_LEAVE(ret_value);
 }
 
@@ -2442,8 +2440,8 @@ PDC_Client_transfer_request(pdcid_t obj_id, int local_ndim, pdcid_t *local_offse
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_transfer_request(): Could not create local bulk data handle");
 
-    hg_ret =
-        HG_Forward(client_send_transfer_request_handle, client_send_transfer_request_rpc_cb, &transfer_args, &in);
+    hg_ret = HG_Forward(client_send_transfer_request_handle, client_send_transfer_request_rpc_cb,
+                        &transfer_args, &in);
 
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_transfer_request(): Could not start HG_Forward()");
@@ -5418,7 +5416,7 @@ PDC_Client_query_multi_storage_info(int nobj, char **obj_names, region_storage_m
         if (hg_ret != HG_SUCCESS)
             PGOTO_ERROR(FAIL, "Could not create bulk data handle");
 
-        requests[server_id]              = (struct pdc_request *)calloc(1, sizeof(struct pdc_request));
+        requests[server_id] = (struct pdc_request *)calloc(1, sizeof(struct pdc_request));
 
         requests[server_id]->server_id   = server_id;
         requests[server_id]->access_type = PDC_READ;

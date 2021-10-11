@@ -3662,7 +3662,6 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
-
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4397,11 +4396,11 @@ done:
 
 HG_TEST_RPC_CB(transfer_request, handle)
 {
-    hg_return_t           ret_value = HG_SUCCESS;
-    perr_t                ret;
-    transfer_request_in_t          in;
-    transfer_request_out_t         out;
-    const struct hg_info *info;
+    hg_return_t            ret_value = HG_SUCCESS;
+    perr_t                 ret;
+    transfer_request_in_t  in;
+    transfer_request_out_t out;
+    const struct hg_info * info;
     FUNC_ENTER(NULL);
     HG_Get_input(handle, &in);
     printf("entered transfer request call back at server side\n");
