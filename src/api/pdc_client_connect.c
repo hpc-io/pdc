@@ -1665,7 +1665,6 @@ done:
     work_todo_g--;
     HG_Free_output(handle, &output);
 
-
     FUNC_LEAVE(ret_value);
 }
 
@@ -4305,7 +4304,6 @@ PDC_Client_add_del_objects_to_container_cb(const struct hg_cb_info *callback_inf
     ret_value = HG_Bulk_free(cb_args->bulk_handle);
     if (ret_value != HG_SUCCESS)
         PGOTO_ERROR(ret_value, "Could not free bulk data handle");
-
 
     HG_Destroy(cb_args->rpc_handle);
 
