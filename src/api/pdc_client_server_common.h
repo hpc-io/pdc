@@ -2302,7 +2302,7 @@ hg_proc_buf_map_out_t(hg_proc_t proc, void *data)
 static HG_INLINE hg_return_t
 hg_proc_transfer_request_in_t(hg_proc_t proc, void *data)
 {
-    hg_return_t     ret;
+    hg_return_t            ret;
     transfer_request_in_t *struct_data = (transfer_request_in_t *)data;
 
     ret = hg_proc_uint32_t(proc, &struct_data->meta_server_id);
@@ -2342,7 +2342,7 @@ hg_proc_transfer_request_in_t(hg_proc_t proc, void *data)
 static HG_INLINE hg_return_t
 hg_proc_transfer_request_out_t(hg_proc_t proc, void *data)
 {
-    hg_return_t      ret;
+    hg_return_t             ret;
     transfer_request_out_t *struct_data = (transfer_request_out_t *)data;
 
     ret = hg_proc_int32_t(proc, &struct_data->ret);
@@ -2352,7 +2352,6 @@ hg_proc_transfer_request_out_t(hg_proc_t proc, void *data)
     }
     return ret;
 }
-
 
 /* Define hg_proc_buf_unmap_in_t */
 static HG_INLINE hg_return_t
