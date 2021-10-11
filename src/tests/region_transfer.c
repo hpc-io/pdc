@@ -140,6 +140,8 @@ main(int argc, char **argv)
         data[i] = i;
     }
     transfer_request = PDCtransfer_request_create(data, PDC_WRITE, obj1, reg, reg_global);
+    printf("obj ID in application %u\n", (unsigned) obj1);
+
     PDCtransfer_request(transfer_request);
     PDCtransfer_request_wait(transfer_request);
 
