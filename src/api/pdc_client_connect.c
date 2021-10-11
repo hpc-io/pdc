@@ -2390,7 +2390,7 @@ PDC_Client_transfer_request(pdcid_t obj_id, int local_ndim, pdcid_t *local_offse
 
     unit           = PDC_get_var_type_size(mem_type);
     in.remote_unit = unit;
-    pack_region_metadata(remote_ndim, remote_offset, remote_size, unit, &(in.remote_unit));
+    pack_region_metadata(remote_ndim, remote_offset, remote_size, unit, &(in.remote_region));
 
     if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
@@ -6568,6 +6568,7 @@ PDCobj_put_data(const char *obj_name, void *data, uint64_t size, pdcid_t cont_id
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, info->cont_pt->pdc->local_id);
     PDCprop_set_obj_type(obj_prop, PDC_CHAR);
     PDCprop_set_obj_dims(obj_prop, 1, &size);
+
     PDCprop_set_obj_user_id(obj_prop, getuid());
     PDCprop_set_obj_time_step(obj_prop, 0);
 
