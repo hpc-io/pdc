@@ -1665,8 +1665,6 @@ done:
     work_todo_g--;
     HG_Free_output(handle, &output);
 
-
-
     FUNC_LEAVE(ret_value);
 }
 
@@ -1878,6 +1876,7 @@ PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t **out)
     FUNC_ENTER(NULL);
 
     metadata_query_handle = (hg_handle_t *)malloc(sizeof(hg_handle_t) * pdc_server_num_g);
+
 
     // Fill input structure
     in.obj_name   = obj_name;
@@ -4312,7 +4311,6 @@ PDC_Client_add_del_objects_to_container_cb(const struct hg_cb_info *callback_inf
 done:
     fflush(stdout);
     work_todo_g--;
-
 
     FUNC_LEAVE(ret_value);
 }
