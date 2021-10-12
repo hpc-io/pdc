@@ -317,7 +317,7 @@ client_send_transfer_request_rpc_cb(const struct hg_cb_info *callback_info)
     hg_return_t                        ret_value = HG_SUCCESS;
     hg_handle_t                        handle;
     struct _pdc_transfer_request_args *region_transfer_args;
-    transfer_request_out_t                    output;
+    transfer_request_out_t             output;
 
     FUNC_ENTER(NULL);
 
