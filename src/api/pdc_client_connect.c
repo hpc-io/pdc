@@ -763,6 +763,8 @@ PDC_Client_check_bulk(hg_context_t *hg_context)
 }
 
 #ifdef PDC_HAS_CRAY_DRC
+
+
 /* Convert value to string */
 #define DRC_ERROR_STRING_MACRO(def, value, string)                                                           \
     if (value == def)                                                                                        \
@@ -2434,9 +2436,9 @@ PDC_Client_transfer_request(pdcid_t obj_id, int local_ndim, pdcid_t *local_offse
     /*
         hg_ret = HG_Bulk_create(hg_class, local_count, (void **)data_ptrs, (hg_size_t *)data_size,
                                 HG_BULK_READWRITE, &(in.local_bulk_handle));
+        if (hg_ret != HG_SUCCESS)
+            PGOTO_ERROR(FAIL, "PDC_Client_transfer_request(): Could not create local bulk data handle");
     */
-    if (hg_ret != HG_SUCCESS)
-        PGOTO_ERROR(FAIL, "PDC_Client_transfer_request(): Could not create local bulk data handle");
 
     hg_ret = HG_Forward(client_send_transfer_request_handle, client_send_transfer_request_rpc_cb,
                         &transfer_args, &in);
@@ -2759,6 +2761,7 @@ pdc_region_release_with_server_transform(struct _pdc_obj_info *  object_info,
     in.transform_state     = transform_state;
     in.transform_data_size = client_transform_size;
     in.client_data_ptr     = (uint64_t)client_transform_result;
+
 
     data_ptrs  = (void **)malloc(sizeof(void *));
     data_size  = (size_t *)malloc(sizeof(size_t));
@@ -4539,6 +4542,7 @@ PDC_Client_query_container_name(const char *cont_name, uint64_t *cont_meta_id)
 
     hg_ret = HG_Forward(container_query_handle, container_query_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS)
+
         PGOTO_ERROR(FAIL,
                     "==PDC_CLIENT[%d] - PDC_Client_query_container_with_name(): Could not start HG_Forward()",
                     pdc_client_mpi_rank_g);
@@ -5026,6 +5030,7 @@ static perr_t
 PDC_add_storage_meta_to_io_list(pdc_data_server_io_list_t **list, region_storage_meta_t *storage_meta,
                                 void *buf)
 {
+
     pdc_data_server_io_list_t *io_list_elt, *io_list_target = NULL;
     region_list_t *            new_region;
     int                        j;
