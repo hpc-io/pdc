@@ -317,7 +317,7 @@ client_send_transfer_request_rpc_cb(const struct hg_cb_info *callback_info)
     hg_return_t                        ret_value = HG_SUCCESS;
     hg_handle_t                        handle;
     struct _pdc_transfer_request_args *region_transfer_args;
-    buf_unmap_out_t                    output;
+    transfer_request_out_t                    output;
 
     FUNC_ENTER(NULL);
 
@@ -328,9 +328,7 @@ client_send_transfer_request_rpc_cb(const struct hg_cb_info *callback_info)
     if (ret_value != HG_SUCCESS) {
         printf("PDC_CLIENT[%d]: client_send_transfer_request_rpc_cb error with HG_Get_output\n",
                pdc_client_mpi_rank_g);
-        fflush(stdout);
         region_transfer_args->ret = -1;
-        PGOTO_DONE(ret_value);
     }
 
     region_transfer_args->ret = output.ret;
@@ -2445,7 +2443,7 @@ PDC_Client_transfer_request(pdcid_t obj_id, int local_ndim, pdcid_t *local_offse
     printf("obj ID = %u, data_server_id = %u\n", (unsigned)obj_id, (unsigned)data_server_id);
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_transfer_request(): Could not start HG_Forward()");
-
+    work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
 
     if (transfer_args.ret != 1)
