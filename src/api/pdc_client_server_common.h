@@ -2304,7 +2304,6 @@ hg_proc_transfer_request_in_t(hg_proc_t proc, void *data)
 {
     hg_return_t            ret;
     transfer_request_in_t *struct_data = (transfer_request_in_t *)data;
-    printf("checkpoint---------------\n");
     ret = hg_proc_uint32_t(proc, &struct_data->meta_server_id);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
@@ -2335,6 +2334,7 @@ hg_proc_transfer_request_in_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
+    printf("checkpoint---------------\n");
     return ret;
 }
 
