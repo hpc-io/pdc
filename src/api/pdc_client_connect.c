@@ -764,7 +764,6 @@ PDC_Client_check_bulk(hg_context_t *hg_context)
 
 #ifdef PDC_HAS_CRAY_DRC
 
-
 /* Convert value to string */
 #define DRC_ERROR_STRING_MACRO(def, value, string)                                                           \
     if (value == def)                                                                                        \
@@ -6564,7 +6563,6 @@ PDCcont_get_tag(pdcid_t cont_id, char *tag_name, void **tag_value, psize_t *valu
     pdc_kvtag_t *kvtag     = NULL;
 
     FUNC_ENTER(NULL);
-
 
     ret_value = PDC_get_kvtag(cont_id, tag_name, &kvtag, 1);
     if (ret_value != SUCCEED)
