@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4405,7 +4406,7 @@ HG_TEST_RPC_CB(transfer_request, handle)
 
     printf("entered transfer request call back at server side\n");
     HG_Get_input(handle, &in);
-    out.ret = 0;
+    out.ret = 1;
 
     info = HG_Get_info(handle);
     HG_Respond(handle, NULL, NULL, &out);
