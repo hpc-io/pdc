@@ -2305,36 +2305,42 @@ hg_proc_transfer_request_in_t(hg_proc_t proc, void *data)
     hg_return_t            ret;
     transfer_request_in_t *struct_data = (transfer_request_in_t *)data;
     ret = hg_proc_uint32_t(proc, &struct_data->meta_server_id);
+    printf("checkpoint1---------------\n");
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
+    printf("checkpoint2---------------\n");
     ret = hg_proc_uint8_t(proc, &struct_data->mem_type);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
+    printf("checkpoint3---------------\n");
     ret = hg_proc_hg_size_t(proc, &struct_data->ndim);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
+    printf("checkpoint4---------------\n");
     ret = hg_proc_hg_size_t(proc, &struct_data->remote_unit);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
+    printf("checkpoint5---------------\n");
     ret = hg_proc_hg_bulk_t(proc, &struct_data->local_bulk_handle);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
+    printf("checkpoint6---------------\n");
     ret = hg_proc_region_info_transfer_t(proc, &struct_data->remote_region);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
-    printf("checkpoint---------------\n");
+    printf("checkpoint7---------------\n");
     return ret;
 }
 
