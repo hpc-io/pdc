@@ -4402,6 +4402,8 @@ transfer_request_bulk_transfer_cb(const struct hg_cb_info *info)
     FUNC_ENTER(NULL);
     out.ret = 1;
 
+    printf("entering transfer bulk callback\n");
+
     ret = HG_Respond(local_bulk_args->handle, NULL, NULL, &out);
 
     HG_Bulk_free(local_bulk_args->bulk_handle);
@@ -4416,7 +4418,6 @@ transfer_request_bulk_transfer_cb(const struct hg_cb_info *info)
 HG_TEST_RPC_CB(transfer_request, handle)
 {
     hg_return_t                              ret_value = HG_SUCCESS;
-    perr_t                                   ret;
     transfer_request_in_t                    in;
     struct transfer_request_local_bulk_args *local_bulk_args;
     size_t                                   total_mem_size;
@@ -4453,7 +4454,7 @@ HG_TEST_RPC_CB(transfer_request, handle)
                      HG_OP_ID_IGNORE);
 
     HG_Free_input(handle, &in);
-
+    printf("server transfer request callback done\n");
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
