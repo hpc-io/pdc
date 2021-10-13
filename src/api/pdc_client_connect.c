@@ -764,7 +764,6 @@ PDC_Client_check_bulk(hg_context_t *hg_context)
 
 #ifdef PDC_HAS_CRAY_DRC
 
-
 /* Convert value to string */
 #define DRC_ERROR_STRING_MACRO(def, value, string)                                                           \
     if (value == def)                                                                                        \
@@ -2395,13 +2394,13 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, pdcid_t *
 
     FUNC_ENTER(NULL);
 
-    if ( !(access_type == PDC_WRITE || access_type == PDC_READ) ) {
+    if (!(access_type == PDC_WRITE || access_type == PDC_READ)) {
         ret_value = FAIL;
         printf("Invalid PDC type in function PDC_Client_transfer_request @ %d\n", __LINE__);
         goto done;
     }
     in.access_type = access_type;
-    in.mem_type = mem_type;
+    in.mem_type    = mem_type;
 
     // Compute metadata server id
     meta_server_id    = PDC_get_server_by_obj_id(obj_id, pdc_server_num_g);
@@ -2426,7 +2425,8 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, pdcid_t *
            (unsigned)data_server_id, total_data_size);
 
     if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
-        PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d", pdc_client_mpi_rank_g, __LINE__);
+        PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
+                    pdc_client_mpi_rank_g, __LINE__);
 
     HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr, transfer_request_register_id_g,
               &client_send_transfer_request_handle);
@@ -2436,13 +2436,16 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, pdcid_t *
                             &(in.local_bulk_handle));
 
     if (hg_ret != HG_SUCCESS)
-        PGOTO_ERROR(FAIL, "PDC_Client_transfer_request(): Could not create local bulk data handle @ line %d\n", __LINE__);
+        PGOTO_ERROR(FAIL,
+                    "PDC_Client_transfer_request(): Could not create local bulk data handle @ line %d\n",
+                    __LINE__);
 
     hg_ret = HG_Forward(client_send_transfer_request_handle, client_send_transfer_request_rpc_cb,
                         &transfer_args, &in);
 
     if (hg_ret != HG_SUCCESS)
-        PGOTO_ERROR(FAIL, "PDC_Client_send_transfer_request(): Could not start HG_Forward() @ line %d\n", __LINE__);
+        PGOTO_ERROR(FAIL, "PDC_Client_send_transfer_request(): Could not start HG_Forward() @ line %d\n",
+                    __LINE__);
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
 
