@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4431,7 +4432,7 @@ HG_TEST_RPC_CB(transfer_request, handle)
     info = HG_Get_info(handle);
     stt  = HG_Registered_data(info->hg_class, info->id);
 
-    total_mem_size = in.remote_unit;
+    total_mem_size = 1;
     if (in.remote_region.ndim >= 1) {
         total_mem_size *= in.remote_region.count_0;
     }
@@ -4454,7 +4455,7 @@ HG_TEST_RPC_CB(transfer_request, handle)
 
     HG_Free_input(handle, &in);
     printf("server transfer request callback done\n");
-done:
+
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
@@ -6487,6 +6488,7 @@ PDC_FUNC_DECLARE_REGISTER(region_lock)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(region_release, region_lock_in_t, region_lock_out_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(transform_region_release, region_transform_and_lock_in_t, region_lock_out_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(region_transform_release, region_transform_and_lock_in_t, region_lock_out_t)
+
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(region_analysis_release, region_analysis_and_lock_in_t, region_lock_out_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(query_partial, metadata_query_transfer_in_t, metadata_query_transfer_out_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(query_kvtag, pdc_kvtag_t, metadata_query_transfer_out_t)

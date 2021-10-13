@@ -764,6 +764,7 @@ PDC_Client_check_bulk(hg_context_t *hg_context)
 
 #ifdef PDC_HAS_CRAY_DRC
 
+
 /* Convert value to string */
 #define DRC_ERROR_STRING_MACRO(def, value, string)                                                           \
     if (value == def)                                                                                        \
@@ -2347,46 +2348,27 @@ pack_region_metadata(int ndim, uint64_t *offset, uint64_t *size, size_t unit,
     perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
-    if (ndim >= 1)
+    if (ndim >= 1) {
         transfer->start_0 = unit * offset[0];
-    else
-        transfer->start_0 = 0;
-
-    if (ndim >= 2)
-        transfer->start_1 = unit * offset[1];
-    else
-        transfer->start_1 = 0;
-
-    if (ndim >= 3)
-        transfer->start_2 = unit * offset[2];
-    else
-        transfer->start_2 = 0;
-
-    if (ndim >= 4)
-        transfer->start_3 = unit * offset[3];
-    else
-        transfer->start_3 = 0;
-
-    if (ndim >= 1)
         transfer->count_0 = unit * size[0];
-    else
+    } else {
+        transfer->start_0 = 0;
         transfer->count_0 = 0;
-
-    if (ndim >= 2)
+    }
+    if (ndim >= 2) {
         transfer->count_1 = unit * size[1];
-    else
+        transfer->start_1 = unit * offset[1];
+    } else {
+        transfer->start_1 = 0;
         transfer->count_1 = 0;
-
-    if (ndim >= 3)
+    }
+    if (ndim >= 3) {
         transfer->count_2 = unit * size[2];
-    else
+        transfer->start_2 = unit * offset[2];
+    } else {
+        transfer->start_2 = 0;
         transfer->count_2 = 0;
-
-    if (ndim >= 4)
-        transfer->count_3 = unit * size[3];
-    else
-        transfer->count_3 = 0;
-
+    }
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
