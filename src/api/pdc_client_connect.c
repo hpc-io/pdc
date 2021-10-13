@@ -764,6 +764,7 @@ PDC_Client_check_bulk(hg_context_t *hg_context)
 
 #ifdef PDC_HAS_CRAY_DRC
 
+
 /* Convert value to string */
 #define DRC_ERROR_STRING_MACRO(def, value, string)                                                           \
     if (value == def)                                                                                        \
@@ -2415,7 +2416,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, pdcid_t *
 
     in.remote_unit = unit;
     pack_region_metadata(remote_ndim, remote_offset, remote_size, unit, &(in.remote_region));
-    printf("obj ID = %u, data_server_id = %u\n", (unsigned)obj_id, (unsigned)data_server_id);
+    printf("obj ID = %u, data_server_id = %u, total_mem_size = %zu\n", (unsigned)obj_id, (unsigned)data_server_id, total_data_size);
 
     if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
@@ -5612,6 +5613,7 @@ PDC_Client_query_name_read_entire_obj_client_agg(int my_nobj, char **my_obj_name
                 displs[i] = displs[i - 1] + recvcounts[i - 1];
         }
     }
+
 
     if (pdc_client_same_node_rank_g == 0) {
         all_names    = (char **)calloc(sizeof(char *), ntotal_obj);

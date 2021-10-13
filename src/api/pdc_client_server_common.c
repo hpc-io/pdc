@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4425,7 +4426,6 @@ HG_TEST_RPC_CB(transfer_request, handle)
 
     FUNC_ENTER(NULL);
 
-    printf("entered transfer request call back at server side\n");
     HG_Get_input(handle, &in);
 
     info = HG_Get_info(handle);
@@ -4447,7 +4447,7 @@ HG_TEST_RPC_CB(transfer_request, handle)
     local_bulk_args->total_mem_size = total_mem_size;
     local_bulk_args->data_buf       = malloc(total_mem_size);
     local_bulk_args->in             = in;
-
+    printf("entered transfer request call back at server side %zu\n", total_mem_size);
     HG_Bulk_transfer(stt->hg_context, transfer_request_bulk_transfer_cb, local_bulk_args, HG_BULK_PULL,
                      info->addr, in.local_bulk_handle, 0, local_bulk_args->bulk_handle, 0, total_mem_size,
                      HG_OP_ID_IGNORE);
