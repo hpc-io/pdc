@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4398,6 +4399,7 @@ transfer_request_bulk_transfer_cb(const struct hg_cb_info *info)
     struct transfer_request_local_bulk_args *local_bulk_args = info->arg;
     hg_return_t                              ret;
     transfer_request_out_t                   out;
+    FUNC_ENTER(NULL);
     out.ret = 1;
 
     ret = HG_Respond(local_bulk_args->handle, NULL, NULL, &out);
@@ -4405,6 +4407,8 @@ transfer_request_bulk_transfer_cb(const struct hg_cb_info *info)
     HG_Bulk_free(local_bulk_args->bulk_handle);
     HG_Destroy(local_bulk_args->handle);
     free(local_bulk_args->data_buf);
+
+    FUNC_LEAVE(ret);
 }
 
 /* static hg_return_t */
@@ -4414,7 +4418,6 @@ HG_TEST_RPC_CB(transfer_request, handle)
     hg_return_t                              ret_value = HG_SUCCESS;
     perr_t                                   ret;
     transfer_request_in_t                    in;
-    const struct hg_info *                   info;
     struct transfer_request_local_bulk_args *local_bulk_args;
     size_t                                   total_mem_size;
     const struct hg_info *                   info;
@@ -6695,6 +6698,7 @@ done:
 }
 
 perr_t
+
 PDC_get_overlap_start_count(uint32_t ndim, uint64_t *start_a, uint64_t *count_a,
 
                             uint64_t *start_b, uint64_t *count_b, uint64_t *overlap_start,
