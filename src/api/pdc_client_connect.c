@@ -764,6 +764,7 @@ PDC_Client_check_bulk(hg_context_t *hg_context)
 
 #ifdef PDC_HAS_CRAY_DRC
 
+
 /* Convert value to string */
 #define DRC_ERROR_STRING_MACRO(def, value, string)                                                           \
     if (value == def)                                                                                        \
@@ -2403,7 +2404,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, pdcid_t *
     uint32_t                          data_server_id, meta_server_id;
     size_t                            unit;
     hg_size_t                         total_data_size;
-    size_t                            i;
+    int                               i;
     hg_handle_t                       client_send_transfer_request_handle;
     struct _pdc_transfer_request_args transfer_args;
 
