@@ -141,9 +141,9 @@ perr_t PDC_Client_read_server_addr_from_file();
 perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj_create_prop,
                                     pdcid_t *meta_id);
 
-perr_t PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, pdcid_t *local_offset, pdcid_t *local_size,
-                                   int remote_ndim, pdcid_t *remote_offset, pdcid_t *remote_size,
-                                   pdc_var_type_t mem_type, pdc_access_t access_type);
+perr_t PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, pdcid_t *local_offset,
+                                   pdcid_t *local_size, int remote_ndim, pdcid_t *remote_offset,
+                                   pdcid_t *remote_size, pdc_var_type_t mem_type, pdc_access_t access_type);
 
 /**
  * Apply a map from buffer to an object
