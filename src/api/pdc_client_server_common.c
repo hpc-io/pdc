@@ -4451,6 +4451,7 @@ HG_TEST_RPC_CB(transfer_request, handle)
            "%" PRIu64 ", count 1 = %" PRIu64 ", count2 = %" PRIu64 "\n",
            total_mem_size, in.remote_region.ndim, in.remote_region.count_0, in.remote_region.count_1,
            in.remote_region.count_2);
+    printf("checkpoint 0\n");
     ret_value =
         HG_Bulk_create(stt->hg_class, 1, &(local_bulk_args->data_buf), &(local_bulk_args->total_mem_size),
                        HG_BULK_READWRITE, &(local_bulk_args->bulk_handle));
