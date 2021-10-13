@@ -4393,7 +4393,7 @@ done:
 }
 
 hg_return_t
-transfer_request_bulk_transfer_cb(const struct hg_cb_info *info)
+transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
 {
     struct transfer_request_local_bulk_args *local_bulk_args = info->arg;
     hg_return_t                              ret;
@@ -4401,7 +4401,27 @@ transfer_request_bulk_transfer_cb(const struct hg_cb_info *info)
     FUNC_ENTER(NULL);
     out.ret = 1;
 
-    printf("entering transfer bulk callback\n");
+    //printf("entering transfer bulk callback\n");
+
+    ret = HG_Respond(local_bulk_args->handle, NULL, NULL, &out);
+
+    HG_Bulk_free(local_bulk_args->bulk_handle);
+    HG_Destroy(local_bulk_args->handle);
+    free(local_bulk_args->data_buf);
+
+    FUNC_LEAVE(ret);
+}
+
+hg_return_t
+transfer_request_bulk_transfer_read_cb(const struct hg_cb_info *info)
+{
+    struct transfer_request_local_bulk_args *local_bulk_args = info->arg;
+    hg_return_t                              ret;
+    transfer_request_out_t                   out;
+    FUNC_ENTER(NULL);
+    out.ret = 1;
+
+    //printf("entering transfer bulk callback\n");
 
     ret = HG_Respond(local_bulk_args->handle, NULL, NULL, &out);
 
@@ -4448,26 +4468,42 @@ HG_TEST_RPC_CB(transfer_request, handle)
            "%" PRIu64 ", count 1 = %" PRIu64 ", count2 = %" PRIu64 "\n",
            total_mem_size, in.remote_region.ndim, in.remote_region.count_0, in.remote_region.count_1,
            in.remote_region.count_2);
-    printf("checkpoint 0\n");
-    ret_value =
-        HG_Bulk_create(info->hg_class, 1, &(local_bulk_args->data_buf), &(local_bulk_args->total_mem_size),
-                       HG_BULK_READWRITE, &(local_bulk_args->bulk_handle));
-    if (ret_value != HG_SUCCESS) {
-        printf("Error at HG_TEST_RPC_CB(transfer_request, handle): @ line %d ", __LINE__);
+
+    if ( in.access_type == PDC_WRITE ) {
+        ret_value =
+            HG_Bulk_create(info->hg_class, 1, &(local_bulk_args->data_buf), &(local_bulk_args->total_mem_size),
+                           HG_BULK_READWRITE, &(local_bulk_args->bulk_handle));
+        if (ret_value != HG_SUCCESS) {
+            printf("Error at HG_TEST_RPC_CB(transfer_request, handle): @ line %d ", __LINE__);
+        }
+
+        // This is the actual data transfer. When transfer is finished, we are heading our way to the function
+        // transfer_request_bulk_transfer_cb.
+        ret_value = HG_Bulk_transfer(info->context, transfer_request_bulk_transfer_write_cb, local_bulk_args,
+                                     HG_BULK_PULL, info->addr, in.local_bulk_handle, 0,
+                                     local_bulk_args->bulk_handle, 0, total_mem_size, HG_OP_ID_IGNORE);
+    } else {
+        // in.access_type == PDC_READ
+        printf("Server transfer request at read branch\n");
+        ret_value =
+            HG_Bulk_create(info->hg_class, 1, &(local_bulk_args->data_buf), &(local_bulk_args->total_mem_size),
+                           HG_BULK_READWRITE, &(local_bulk_args->bulk_handle));
+        if (ret_value != HG_SUCCESS) {
+            printf("Error at HG_TEST_RPC_CB(transfer_request, handle): @ line %d ", __LINE__);
+        }
+
+        // This is the actual data transfer. When transfer is finished, we are heading our way to the function
+        // transfer_request_bulk_transfer_cb.
+        ret_value = HG_Bulk_transfer(info->context, transfer_request_bulk_transfer_read_cb, local_bulk_args,
+                                     HG_BULK_PUSH, info->addr, in.local_bulk_handle, 0,
+                                     local_bulk_args->bulk_handle, 0, total_mem_size, HG_OP_ID_IGNORE);
+
     }
-    printf("checkpoint 1\n");
-    // This is the actual data transfer. When transfer is finished, we are heading our way to the function
-    // transfer_request_bulk_transfer_cb.
-    ret_value = HG_Bulk_transfer(info->context, transfer_request_bulk_transfer_cb, local_bulk_args,
-                                 HG_BULK_PULL, info->addr, in.local_bulk_handle, 0,
-                                 local_bulk_args->bulk_handle, 0, total_mem_size, HG_OP_ID_IGNORE);
-    printf("checkpoint 2\n");
     if (ret_value != HG_SUCCESS) {
         printf("Error at HG_TEST_RPC_CB(transfer_request, handle): @ line %d ", __LINE__);
     }
 
     HG_Free_input(handle, &in);
-    printf("server transfer request callback done\n");
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);

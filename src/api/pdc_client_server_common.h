@@ -720,6 +720,7 @@ typedef struct {
 
 /* Define transfer_request_in_t */
 typedef struct {
+    uint8_t                access_type;
     uint32_t               meta_server_id;
     pdc_var_type_t         mem_type;
     size_t                 remote_unit;
@@ -2304,7 +2305,11 @@ hg_proc_transfer_request_in_t(hg_proc_t proc, void *data)
     hg_return_t            ret;
     transfer_request_in_t *struct_data = (transfer_request_in_t *)data;
 
-    ret = hg_proc_uint32_t(proc, &struct_data->meta_server_id);
+    ret = hg_proc_uint8_t(proc, &struct_data->access_type);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
 
     ret = hg_proc_uint32_t(proc, &struct_data->meta_server_id);
     if (ret != HG_SUCCESS) {
