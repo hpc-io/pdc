@@ -4457,12 +4457,13 @@ HG_TEST_RPC_CB(transfer_request, handle)
     if ( ret_value != HG_SUCCESS ) {
         printf("Error at HG_TEST_RPC_CB(transfer_request, handle): @ line %d ",  __LINE__);
     }
-
+    printf("checkpoint 1\n");
     // This is the actual data transfer. When transfer is finished, we are heading our way to the function
     // transfer_request_bulk_transfer_cb.
     ret_value = HG_Bulk_transfer(stt->hg_context, transfer_request_bulk_transfer_cb, local_bulk_args, HG_BULK_PULL,
                      info->addr, in.local_bulk_handle, 0, local_bulk_args->bulk_handle, 0, total_mem_size,
                      HG_OP_ID_IGNORE);
+    printf("checkpoint 2\n");
     if ( ret_value != HG_SUCCESS ) {
         printf("Error at HG_TEST_RPC_CB(transfer_request, handle): @ line %d ",  __LINE__);
     }
