@@ -165,6 +165,14 @@ main(int argc, char **argv)
     reg        = PDCregion_create(1, local_offset, offset_length);
     reg_global = PDCregion_create(1, offset, offset_length);
 
+
+    transfer_request = PDCtransfer_request_create(data, PDC_READ, obj1, reg, reg_global);
+
+    PDCtransfer_request(transfer_request);
+    PDCtransfer_request_wait(transfer_request);
+
+    PDCtransfer_request_delete(transfer_request);
+
     // Check if data written previously has been correctly read.
     /*
         for (i = 0; i < BUF_LEN; ++i) {

@@ -329,6 +329,7 @@ client_send_transfer_request_rpc_cb(const struct hg_cb_info *callback_info)
         printf("PDC_CLIENT[%d]: client_send_transfer_request_rpc_cb error with HG_Get_output\n",
                pdc_client_mpi_rank_g);
         region_transfer_args->ret = -1;
+        goto done;
     }
 
     region_transfer_args->ret = output.ret;
@@ -763,6 +764,7 @@ PDC_Client_check_bulk(hg_context_t *hg_context)
 }
 
 #ifdef PDC_HAS_CRAY_DRC
+
 
 /* Convert value to string */
 #define DRC_ERROR_STRING_MACRO(def, value, string)                                                           \
@@ -6550,6 +6552,7 @@ PDCcont_put_tag(pdcid_t cont_id, char *tag_name, void *tag_value, psize_t value_
 
     ret_value = PDC_add_kvtag(cont_id, &kvtag, 1);
     if (ret_value != SUCCEED)
+
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Error with PDCcont_put_tag", pdc_client_mpi_rank_g);
 
 done:
