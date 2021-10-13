@@ -764,6 +764,7 @@ PDC_Client_check_bulk(hg_context_t *hg_context)
 
 #ifdef PDC_HAS_CRAY_DRC
 
+
 /* Convert value to string */
 #define DRC_ERROR_STRING_MACRO(def, value, string)                                                           \
     if (value == def)                                                                                        \
@@ -2392,7 +2393,7 @@ pack_region_metadata(int ndim, uint64_t *offset, uint64_t *size, size_t unit,
 }
 
 perr_t
-PDC_Client_transfer_request(pdcid_t obj_id, int local_ndim, pdcid_t *local_offset, pdcid_t *local_size,
+PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, pdcid_t *local_offset, pdcid_t *local_size,
                             int remote_ndim, pdcid_t *remote_offset, pdcid_t *remote_size,
                             pdc_var_type_t mem_type, pdc_access_t access_type)
 {
@@ -4544,6 +4545,7 @@ PDC_Client_query_container_name(const char *cont_name, uint64_t *cont_meta_id)
 
     // Fill input structure
     in.cont_name  = cont_name;
+
     in.hash_value = hash_name_value;
 
     hg_ret = HG_Forward(container_query_handle, container_query_rpc_cb, &lookup_args, &in);
@@ -4795,6 +4797,7 @@ PDC_Client_complete_read_request(int nbuf, struct pdc_request *req)
                    __func__, req->shm_addr_arr[i]);
             continue;
         }
+
 
         /* map the shared memory segment to the address space of the process */
         req->shm_base_arr[i] = mmap(0, (req->shm_size_arr)[i], PROT_READ, MAP_SHARED, req->shm_fd_arr[i], 0);
