@@ -148,6 +148,11 @@ typedef enum {
 typedef struct pdc_metadata_t pdc_metadata_t;
 typedef struct region_list_t  region_list_t;
 
+typedef struct {
+    hg_class_t*     hg_class;
+    hg_context_t*   hg_context;
+} server_state;
+
 typedef struct pdc_kvtag_list_t {
     pdc_kvtag_t *kvtag;
 
@@ -2327,14 +2332,11 @@ hg_proc_transfer_request_in_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
-    /*
-        printf("checkpoint5---------------\n");
-        ret = hg_proc_hg_bulk_t(proc, &struct_data->local_bulk_handle);
-        if (ret != HG_SUCCESS) {
-            // HG_LOG_ERROR("Proc error");
-            return ret;
-        }
-    */
+    ret = hg_proc_hg_bulk_t(proc, &struct_data->local_bulk_handle);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
     ret = hg_proc_region_info_transfer_t(proc, &struct_data->remote_region);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
@@ -3303,6 +3305,14 @@ struct region_lock_update_bulk_args {
     int32_t                 remote_client_id;
     void *                  data_buf;
     struct pdc_region_info *server_region;
+};
+
+struct transfer_request_local_bulk_args {
+    hg_handle_t             handle;
+    hg_bulk_t               bulk_handle;
+    transfer_request_in_t   in;
+    void *                  data_buf;
+    size_t                  total_mem_size;
 };
 
 struct region_update_bulk_args {

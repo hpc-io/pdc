@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4392,6 +4393,19 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+hg_return_t transfer_request_bulk_transfer_cb(const struct hg_cb_info *info) {
+    struct transfer_request_local_bulk_args *local_bulk_args = info->arg;
+    hg_return_t ret;
+    transfer_request_out_t out;
+    out.ret = 1;
+
+    ret = HG_Respond(local_bulk_args->handle, NULL, NULL, &out);
+
+    HG_Bulk_free(local_bulk_args->bulk_handle);
+    HG_Destroy(local_bulk_args->handle);
+    free(local_bulk_args->data_buf);
+}
+
 /* static hg_return_t */
 // transfer_request_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(transfer_request, handle)
@@ -4399,18 +4413,42 @@ HG_TEST_RPC_CB(transfer_request, handle)
     hg_return_t            ret_value = HG_SUCCESS;
     perr_t                 ret;
     transfer_request_in_t  in;
-    transfer_request_out_t out;
     const struct hg_info * info;
+    struct transfer_request_local_bulk_args *local_bulk_args;
+    size_t total_mem_size;
+    const struct hg_info* info;
+    server_state* stt;
+
     FUNC_ENTER(NULL);
 
     printf("entered transfer request call back at server side\n");
     HG_Get_input(handle, &in);
-    out.ret = 1;
 
     info = HG_Get_info(handle);
-    HG_Respond(handle, NULL, NULL, &out);
+    stt = HG_Registered_data(info->hg_class, info->id);
+
+    total_mem_size = in.remote_unit;
+    if ( in.remote_region.ndim >=1 ) {
+        total_mem_size *= in.remote_region.count_0;
+    }
+    if ( in.remote_region.ndim >=2 ) {
+        total_mem_size *= in.remote_region.count_1;
+    }
+    if ( in.remote_region.ndim >=3 ) {
+        total_mem_size *= in.remote_region.count_2;
+    }
+    local_bulk_args = (struct transfer_request_local_bulk_args*) malloc(sizeof(struct transfer_request_local_bulk_args));
+    local_bulk_args->handle = handle;
+    local_bulk_args->total_mem_size = total_mem_size;
+    local_bulk_args->data_buf = malloc(total_mem_size);
+    local_bulk_args->in = in;
+
+    HG_Bulk_transfer(stt->hg_context, transfer_request_bulk_transfer_cb,
+            local_bulk_args, HG_BULK_PULL, info->addr, in.local_bulk_handle, 0,
+            local_bulk_args->bulk_handle, 0, total_mem_size, HG_OP_ID_IGNORE);
+
     HG_Free_input(handle, &in);
-    HG_Destroy(handle);
+
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -4519,6 +4557,7 @@ HG_TEST_RPC_CB(query_partial, handle)
     out.ret = -1;
 
     n_meta_ptr = (uint32_t *)malloc(sizeof(uint32_t));
+
 
     PDC_Server_get_partial_query_result(&in, n_meta_ptr, &buf_ptrs);
 
