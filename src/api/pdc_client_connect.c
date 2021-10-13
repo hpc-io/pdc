@@ -764,7 +764,6 @@ PDC_Client_check_bulk(hg_context_t *hg_context)
 
 #ifdef PDC_HAS_CRAY_DRC
 
-
 /* Convert value to string */
 #define DRC_ERROR_STRING_MACRO(def, value, string)                                                           \
     if (value == def)                                                                                        \
@@ -2424,9 +2423,9 @@ PDC_Client_transfer_request(pdcid_t obj_id, int local_ndim, pdcid_t *local_offse
 
     hg_class = HG_Context_get_class(send_context_g);
 
-    unit           = PDC_get_var_type_size(mem_type);
+    unit            = PDC_get_var_type_size(mem_type);
     total_data_size = unit;
-    for ( i = 0; i < remote_ndim; ++i ) {
+    for (i = 0; i < remote_ndim; ++i) {
         total_data_size *= remote_size[i];
     }
 
@@ -2441,8 +2440,8 @@ PDC_Client_transfer_request(pdcid_t obj_id, int local_ndim, pdcid_t *local_offse
               &client_send_transfer_request_handle);
 
     // Create bulk handle
-    hg_ret = HG_Bulk_create(hg_class, 1, (void**) &buf, (hg_size_t *) &total_data_size,
-                            HG_BULK_READ_ONLY, &(in.local_bulk_handle));
+    hg_ret = HG_Bulk_create(hg_class, 1, (void **)&buf, (hg_size_t *)&total_data_size, HG_BULK_READ_ONLY,
+                            &(in.local_bulk_handle));
 
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_transfer_request(): Could not create local bulk data handle");
@@ -5031,7 +5030,6 @@ PDC_get_storage_meta_from_io_list(pdc_data_server_io_list_t **list, region_stora
     // TODO: currently assumes 1 region per object
 
     FUNC_LEAVE(ret_value);
-
 }
 
 static perr_t
