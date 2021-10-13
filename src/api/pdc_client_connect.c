@@ -764,6 +764,7 @@ PDC_Client_check_bulk(hg_context_t *hg_context)
 
 #ifdef PDC_HAS_CRAY_DRC
 
+
 /* Convert value to string */
 #define DRC_ERROR_STRING_MACRO(def, value, string)                                                           \
     if (value == def)                                                                                        \
@@ -2347,6 +2348,7 @@ pack_region_metadata(int ndim, uint64_t *offset, uint64_t *size, size_t unit,
     perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
+    transfer->ndim = ndim;
     if (ndim >= 1) {
         transfer->start_0 = unit * offset[0];
         transfer->count_0 = unit * size[0];
@@ -2394,7 +2396,6 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, pdcid_t *
     FUNC_ENTER(NULL);
 
     in.mem_type = mem_type;
-    in.ndim     = remote_ndim;
 
     // Compute metadata server id
     meta_server_id    = PDC_get_server_by_obj_id(obj_id, pdc_server_num_g);
