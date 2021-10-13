@@ -148,11 +148,6 @@ typedef enum {
 typedef struct pdc_metadata_t pdc_metadata_t;
 typedef struct region_list_t  region_list_t;
 
-typedef struct {
-    hg_class_t *  hg_class;
-    hg_context_t *hg_context;
-} server_state;
-
 typedef struct pdc_kvtag_list_t {
     pdc_kvtag_t *kvtag;
 
