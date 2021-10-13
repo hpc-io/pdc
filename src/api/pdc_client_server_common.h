@@ -727,7 +727,6 @@ typedef struct {
 typedef struct {
     uint32_t               meta_server_id;
     pdc_var_type_t         mem_type;
-    size_t                 ndim;
     size_t                 remote_unit;
     hg_bulk_t              local_bulk_handle;
     region_info_transfer_t remote_region;
@@ -2318,11 +2317,6 @@ hg_proc_transfer_request_in_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_uint8_t(proc, &struct_data->mem_type);
-    if (ret != HG_SUCCESS) {
-        // HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-    ret = hg_proc_hg_size_t(proc, &struct_data->ndim);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
