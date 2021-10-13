@@ -3662,7 +3662,6 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
-
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -7174,7 +7173,6 @@ PDCquery_free_all(pdc_query_t *root)
         root->sel->coords_alloc = 0;
         root->sel->coords       = NULL;
     }
-
 
     if (root->left == NULL && root->right == NULL) {
         if (root->constraint) {
