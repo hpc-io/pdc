@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4427,7 +4428,6 @@ HG_TEST_RPC_CB(transfer_request, handle)
     HG_Get_input(handle, &in);
 
     info = HG_Get_info(handle);
-    stt  = HG_Registered_data(info->hg_class, info->id);
 
     total_mem_size = 1;
     if (in.remote_region.ndim >= 1) {
