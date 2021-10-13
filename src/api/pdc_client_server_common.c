@@ -3663,7 +3663,6 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     /* Get info from handle */
 
 
-
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4452,10 +4451,11 @@ HG_TEST_RPC_CB(transfer_request, handle)
            "%" PRIu64 ", count 1 = %" PRIu64 ", count2 = %" PRIu64 "\n",
            total_mem_size, in.remote_region.ndim, in.remote_region.count_0, in.remote_region.count_1,
            in.remote_region.count_2);
-    ret_value = HG_Bulk_create(stt->hg_class, 1, &(local_bulk_args->data_buf), &(local_bulk_args->total_mem_size),
-                   HG_BULK_READWRITE, &(local_bulk_args->bulk_handle));
-    if ( ret_value != HG_SUCCESS ) {
-        printf("Error at HG_TEST_RPC_CB(transfer_request, handle): @ line %d ",  __LINE__);
+    ret_value =
+        HG_Bulk_create(stt->hg_class, 1, &(local_bulk_args->data_buf), &(local_bulk_args->total_mem_size),
+                       HG_BULK_READWRITE, &(local_bulk_args->bulk_handle));
+    if (ret_value != HG_SUCCESS) {
+        printf("Error at HG_TEST_RPC_CB(transfer_request, handle): @ line %d ", __LINE__);
     }
     printf("checkpoint 1\n");
     // This is the actual data transfer. When transfer is finished, we are heading our way to the function
