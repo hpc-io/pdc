@@ -2472,7 +2472,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, uint64_t 
     }
 
     in.remote_unit = unit;
-    in.obj_id = obj_id;
+    in.obj_id      = obj_id;
     pack_region_metadata(remote_ndim, remote_offset, remote_size, unit, &(in.remote_region));
 
     pack_region_buffer(buf, &new_buf, total_data_size, local_ndim, local_offset, local_size, unit);
