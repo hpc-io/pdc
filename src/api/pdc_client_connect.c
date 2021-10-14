@@ -1668,6 +1668,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+
 perr_t
 PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
 {
@@ -2377,10 +2378,48 @@ pack_region_metadata(int ndim, uint64_t *offset, uint64_t *size, size_t unit,
     FUNC_LEAVE(ret_value);
 }
 
+static perr_t pack_region_buffer(char *buf, char **new_buf, size_t total_data_size, int local_ndim, uint64_t *local_offset,
+                            uint64_t *local_size, size_t unit) {
+    uint64_t i;
+    perr_t ret_value = SUCCEED;
+    FUNC_ENTER(NULL);
+    if (local_ndim == 1) {
+        *new_buf = buf + local_offset[0] * unit;
+    } else if (local_ndim == 2) {
+        *new_buf = (char*) malloc(sizeof(char) * total_data_size);
+        for ( i = 0; i < local_size[0]; ++i ) {
+            memcpy(new_buf[0], buf + (local_offset[0] * local_size[1] + local_offset[1] ) * unit, sizeof(char) * local_size[1] * unit);
+            new_buf[0] += local_size[1] * unit;
+        }
+    } else if (local_ndim == 3) {
+        *new_buf = (char*) malloc(sizeof(char) * total_data_size);
+        for ( i = 0; i < local_size[0] * local_size[1]; ++i ) {
+            memcpy(new_buf[0], buf + (local_offset[0] * local_size[1] * local_size[2] + local_offset[1] * local_size[2] + local_offset[2] ) * unit, sizeof(char) * local_size[2] * unit);
+            new_buf[0] += local_size[2] * unit;
+        }
+    } else {
+        ret_value = FAIL;
+    }
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+static perr_t release_region_buffer(char *new_buf) {
+    perr_t ret_value = SUCCEED;
+    FUNC_ENTER(NULL);
+
+    if (local_ndim > 1) {
+        free(new_buf);
+    }
+
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
 perr_t
-PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, pdcid_t *local_offset,
-                            pdcid_t *local_size, int remote_ndim, pdcid_t *remote_offset,
-                            pdcid_t *remote_size, pdc_var_type_t mem_type, pdc_access_t access_type)
+PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, uint64_t *local_offset,
+                            uint64_t *local_size, int remote_ndim, uint64_t *remote_offset,
+                            uint64_t *remote_size, pdc_var_type_t mem_type, pdc_access_t access_type)
 {
     perr_t                            ret_value = SUCCEED;
     hg_return_t                       hg_ret    = HG_SUCCESS;
@@ -2392,6 +2431,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, pdcid_t *
     int                               i;
     hg_handle_t                       client_send_transfer_request_handle;
     struct _pdc_transfer_request_args transfer_args;
+    char*                             new_buf;
 
     FUNC_ENTER(NULL);
 
@@ -2401,7 +2441,6 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, pdcid_t *
         goto done;
     }
     in.access_type = access_type;
-    in.mem_type    = mem_type;
 
     // Compute metadata server id
     meta_server_id    = PDC_get_server_by_obj_id(obj_id, pdc_server_num_g);
@@ -2415,6 +2454,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, pdcid_t *
     hg_class = HG_Context_get_class(send_context_g);
 
     unit            = PDC_get_var_type_size(mem_type);
+
     total_data_size = unit;
     for (i = 0; i < remote_ndim; ++i) {
         total_data_size *= remote_size[i];
@@ -2422,6 +2462,9 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, pdcid_t *
 
     in.remote_unit = unit;
     pack_region_metadata(remote_ndim, remote_offset, remote_size, unit, &(in.remote_region));
+
+    pack_region_buffer(buf, &new_buf, total_data_size, local_ndim, local_offset,
+                            local_size, unit);
     printf("obj ID = %u, data_server_id = %u, total_mem_size = %zu\n", (unsigned)obj_id,
            (unsigned)data_server_id, total_data_size);
 
@@ -2449,6 +2492,8 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, pdcid_t *
                     __LINE__);
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
+
+    release_region_buffer(new_buf);
 
     if (transfer_args.ret != 1)
         PGOTO_ERROR(FAIL, "PDC_CLIENT: transfer request failed... @ line %d\n", __LINE__);

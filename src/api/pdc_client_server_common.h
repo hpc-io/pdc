@@ -722,7 +722,6 @@ typedef struct {
 typedef struct {
     uint8_t                access_type;
     uint32_t               meta_server_id;
-    pdc_var_type_t         mem_type;
     size_t                 remote_unit;
     hg_bulk_t              local_bulk_handle;
     region_info_transfer_t remote_region;
