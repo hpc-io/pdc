@@ -261,7 +261,6 @@ PDCtransfer_request_wait(pdcid_t transfer_request_id)
     perr_t ret_value = 0;
     FUNC_ENTER(NULL);
 
-
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
