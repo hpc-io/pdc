@@ -4407,8 +4407,6 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
     // printf("entering transfer bulk callback\n");
 
     remote_reg_info = (struct pdc_region_info *)malloc(sizeof(struct pdc_region_info));
-    if (remote_reg_info == NULL)
-        PGOTO_ERROR(HG_OTHER_ERROR, "remote_reg_info memory allocation failed\n");
 
     remote_reg_info->ndim   = (local_bulk_args->in.remote_region).ndim;
     remote_reg_info->offset = (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
