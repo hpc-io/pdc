@@ -2414,7 +2414,7 @@ pack_region_buffer(char *buf, char **new_buf, size_t total_data_size, int local_
 }
 
 static perr_t
-release_region_buffer(char *new_buf)
+release_region_buffer(char *new_buf, int local_ndim)
 {
     perr_t ret_value = SUCCEED;
     FUNC_ENTER(NULL);
@@ -2503,7 +2503,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, uint64_t 
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
 
-    release_region_buffer(new_buf);
+    release_region_buffer(new_buf, local_ndim);
 
     if (transfer_args.ret != 1)
         PGOTO_ERROR(FAIL, "PDC_CLIENT: transfer request failed... @ line %d\n", __LINE__);
