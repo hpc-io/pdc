@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4409,24 +4410,24 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
     if (remote_reg_info == NULL)
         PGOTO_ERROR(HG_OTHER_ERROR, "remote_reg_info memory allocation failed\n");
 
-    remote_reg_info->ndim   = (bulk_args->remote_region_nounit).ndim;
+    remote_reg_info->ndim   = (local_bulk_args->in.remote_region).ndim;
     remote_reg_info->offset = (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
     remote_reg_info->size   = (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
     if (remote_reg_info->ndim >= 1) {
-        (remote_reg_info->offset)[0] = (local_bulk_args->in.remote_region).start_0 / local_bulk_args->in.unit;
-        (remote_reg_info->size)[0]   = (local_bulk_args->in.remote_region).count_0 / local_bulk_args->in.unit;
+        (remote_reg_info->offset)[0] = (local_bulk_args->in.remote_region).start_0 / local_bulk_args->in.remote_unit;
+        (remote_reg_info->size)[0]   = (local_bulk_args->in.remote_region).count_0 / local_bulk_args->in.remote_unit;
     }
     if (remote_reg_info->ndim >= 2) {
-        (remote_reg_info->offset)[1] = (local_bulk_args->in.remote_region).start_1 / local_bulk_args->in.unit;
-        (remote_reg_info->size)[1]   = (local_bulk_args->in.remote_region).count_1 / local_bulk_args->in.unit;
+        (remote_reg_info->offset)[1] = (local_bulk_args->in.remote_region).start_1 / local_bulk_args->in.remote_unit;
+        (remote_reg_info->size)[1]   = (local_bulk_args->in.remote_region).count_1 / local_bulk_args->in.remote_unit;
     }
     if (remote_reg_info->ndim >= 3) {
-        (remote_reg_info->offset)[2] = (local_bulk_args->in.remote_region).start_2 / local_bulk_args->in.unit;
-        (remote_reg_info->size)[2]   = (local_bulk_args->in.remote_region).count_2 / local_bulk_args->in.unit;
+        (remote_reg_info->offset)[2] = (local_bulk_args->in.remote_region).start_2 / local_bulk_args->in.remote_unit;
+        (remote_reg_info->size)[2]   = (local_bulk_args->in.remote_region).count_2 / local_bulk_args->in.remote_unit;
     }
 
     PDC_Server_data_write_out(local_bulk_args->in.obj_id, remote_reg_info, (void *)local_bulk_args->data_buf,
-                              local_bulk_args->in.unit);
+                              local_bulk_args->in.remote_unit);
 
     ret = HG_Respond(local_bulk_args->handle, NULL, NULL, &out);
 
@@ -6914,6 +6915,7 @@ PDC_kvtag_dup(pdc_kvtag_t *from, pdc_kvtag_t **to)
     (*to)        = (pdc_kvtag_t *)calloc(1, sizeof(pdc_kvtag_t));
     (*to)->name  = (char *)malloc(strlen(from->name) + 1);
     (*to)->size  = from->size;
+
     (*to)->value = (void *)malloc(from->size);
     memcpy((void *)(*to)->name, (void *)from->name, strlen(from->name) + 1);
     memcpy((void *)(*to)->value, (void *)from->value, from->size);
