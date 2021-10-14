@@ -146,7 +146,6 @@ PDC_region_end()
 
     if (PDC_destroy_type(PDC_REGION) < 0)
         PGOTO_ERROR(FAIL, "unable to destroy region interface");
-
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -196,7 +195,7 @@ PDCtransfer_request_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, 
     memcpy(p->remote_region_size, reg2->size, sizeof(uint64_t) * reg2->ndim);
 
     ret_value = PDC_id_register(PDC_TRANSFER_REQUEST, p);
-done:
+
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
@@ -241,7 +240,7 @@ PDCtransfer_request(pdcid_t transfer_request_id)
         transfer_request->remote_region_ndim, transfer_request->remote_region_offset,
         transfer_request->remote_region_size, transfer_request->mem_type, transfer_request->access_type);
 
-done:
+
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
@@ -252,7 +251,7 @@ PDCtransfer_request_status(pdcid_t transfer_request_id)
     perr_t ret_value = 0;
     FUNC_ENTER(NULL);
 
-done:
+
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
