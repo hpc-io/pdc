@@ -2315,11 +2315,6 @@ hg_proc_transfer_request_in_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_uint8_t(proc, &struct_data->mem_type);
-    if (ret != HG_SUCCESS) {
-        // HG_LOG_ERROR("Proc error");
-        return ret;
-    }
     ret = hg_proc_hg_size_t(proc, &struct_data->remote_unit);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
