@@ -2442,7 +2442,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, uint64_t 
     int                               i;
     hg_handle_t                       client_send_transfer_request_handle;
     struct _pdc_transfer_request_args transfer_args;
-    char *                            new_buf;
+    char *                            new_buf = NULL;
 
     FUNC_ENTER(NULL);
 

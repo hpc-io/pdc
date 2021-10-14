@@ -196,6 +196,7 @@ PDCtransfer_request_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, 
 
     ret_value = PDC_id_register(PDC_TRANSFER_REQUEST, p);
 
+done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
@@ -262,7 +263,7 @@ PDCtransfer_request_wait(pdcid_t transfer_request_id)
     perr_t ret_value = 0;
     FUNC_ENTER(NULL);
 
-done:
+
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
