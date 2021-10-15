@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4448,6 +4449,7 @@ transfer_request_bulk_transfer_read_cb(const struct hg_cb_info *info)
     hg_return_t                              ret;
     transfer_request_out_t                   out;
     FUNC_ENTER(NULL);
+
     out.ret = 1;
 
     // printf("entering transfer bulk callback\n");
@@ -4470,6 +4472,7 @@ HG_TEST_RPC_CB(transfer_request, handle)
     struct transfer_request_local_bulk_args *local_bulk_args;
     size_t                                   total_mem_size;
     const struct hg_info *                   info;
+    struct pdc_region_info *                 remote_reg_info;
 
     FUNC_ENTER(NULL);
 
@@ -4512,6 +4515,32 @@ HG_TEST_RPC_CB(transfer_request, handle)
     else {
         // in.access_type == PDC_READ
         printf("Server transfer request at read branch\n");
+
+        remote_reg_info = (struct pdc_region_info *)malloc(sizeof(struct pdc_region_info));
+
+        remote_reg_info->ndim   = (local_bulk_args->in.remote_region).ndim;
+        remote_reg_info->offset = (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
+        remote_reg_info->size   = (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
+        if (remote_reg_info->ndim >= 1) {
+            (remote_reg_info->offset)[0] =
+                (local_bulk_args->in.remote_region).start_0 / local_bulk_args->in.remote_unit;
+            (remote_reg_info->size)[0] =
+                (local_bulk_args->in.remote_region).count_0 / local_bulk_args->in.remote_unit;
+        }
+        if (remote_reg_info->ndim >= 2) {
+            (remote_reg_info->offset)[1] =
+                (local_bulk_args->in.remote_region).start_1 / local_bulk_args->in.remote_unit;
+            (remote_reg_info->size)[1] =
+                (local_bulk_args->in.remote_region).count_1 / local_bulk_args->in.remote_unit;
+        }
+        if (remote_reg_info->ndim >= 3) {
+            (remote_reg_info->offset)[2] =
+                (local_bulk_args->in.remote_region).start_2 / local_bulk_args->in.remote_unit;
+            (remote_reg_info->size)[2] =
+                (local_bulk_args->in.remote_region).count_2 / local_bulk_args->in.remote_unit;
+        }
+        PDC_Server_data_read_from(local_bulk_args->in.obj_id, remote_reg_info, local_bulk_args->data_buf, local_bulk_args->in.remote_unit);
+
         ret_value = HG_Bulk_create(info->hg_class, 1, &(local_bulk_args->data_buf),
                                    &(local_bulk_args->total_mem_size), HG_BULK_READWRITE,
                                    &(local_bulk_args->bulk_handle));
