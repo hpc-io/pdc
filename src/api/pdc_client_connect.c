@@ -2421,6 +2421,7 @@ static perr_t
 release_region_buffer(char *buf, char **new_buf, size_t total_data_size, int local_ndim,
                       uint64_t *local_offset, uint64_t *local_size, size_t unit, pdc_access_t access_type)
 {
+    uint64_t i;
     perr_t ret_value = SUCCEED;
     FUNC_ENTER(NULL);
 
