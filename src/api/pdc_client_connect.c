@@ -2379,7 +2379,7 @@ pack_region_metadata(int ndim, uint64_t *offset, uint64_t *size, size_t unit,
 
 static perr_t
 pack_region_buffer(char *buf, char **new_buf, size_t total_data_size, int local_ndim, uint64_t *local_offset,
-                   uint64_t *local_size, size_t unit)
+                   uint64_t *local_size, size_t unit, pdc_access_t access_type)
 {
     uint64_t i;
     perr_t   ret_value = SUCCEED;
@@ -2389,21 +2389,25 @@ pack_region_buffer(char *buf, char **new_buf, size_t total_data_size, int local_
     }
     else if (local_ndim == 2) {
         *new_buf = (char *)malloc(sizeof(char) * total_data_size);
-        for (i = 0; i < local_size[0]; ++i) {
-            memcpy(new_buf[0], buf + (local_offset[0] * local_size[1] + local_offset[1]) * unit,
-                   sizeof(char) * local_size[1] * unit);
-            new_buf[0] += local_size[1] * unit;
+        if ( access_type == PDC_WRITE ) {
+            for (i = 0; i < local_size[0]; ++i) {
+                memcpy(new_buf[0], buf + (local_offset[0] * local_size[1] + local_offset[1]) * unit,
+                       sizeof(char) * local_size[1] * unit);
+                new_buf[0] += local_size[1] * unit;
+            }
         }
     }
     else if (local_ndim == 3) {
         *new_buf = (char *)malloc(sizeof(char) * total_data_size);
-        for (i = 0; i < local_size[0] * local_size[1]; ++i) {
-            memcpy(new_buf[0],
-                   buf + (local_offset[0] * local_size[1] * local_size[2] + local_offset[1] * local_size[2] +
-                          local_offset[2]) *
-                             unit,
-                   sizeof(char) * local_size[2] * unit);
-            new_buf[0] += local_size[2] * unit;
+        if ( access_type == PDC_WRITE ) {
+            for (i = 0; i < local_size[0] * local_size[1]; ++i) {
+                memcpy(new_buf[0],
+                       buf + (local_offset[0] * local_size[1] * local_size[2] + local_offset[1] * local_size[2] +
+                              local_offset[2]) *
+                                 unit,
+                       sizeof(char) * local_size[2] * unit);
+                new_buf[0] += local_size[2] * unit;
+            }
         }
     }
     else {
@@ -2414,13 +2418,41 @@ pack_region_buffer(char *buf, char **new_buf, size_t total_data_size, int local_
 }
 
 static perr_t
-release_region_buffer(char *new_buf, int local_ndim)
+release_region_buffer(char *buf, char **new_buf, size_t total_data_size, int local_ndim, uint64_t *local_offset,
+                   uint64_t *local_size, size_t unit, pdc_access_t access_type)
 {
     perr_t ret_value = SUCCEED;
     FUNC_ENTER(NULL);
 
-    if (local_ndim == 2 || local_ndim == 3) {
+    if (local_ndim == 1) {
+        if ( access_type == PDC_READ ) {
+            memcpy(buf, new_buf, total_data_size);
+        }
+    }
+    else if (local_ndim == 2) {
+        if ( access_type == PDC_READ ) {
+            for (i = 0; i < local_size[0]; ++i) {
+                memcpy(buf + (local_offset[0] * local_size[1] + local_offset[1]) * unit, new_buf,
+                       sizeof(char) * local_size[1] * unit);
+                new_buf[0] += local_size[1] * unit;
+            }
+        }
         free(new_buf);
+    }
+    else if (local_ndim == 3) {
+        if ( access_type == PDC_READ ) {
+            for (i = 0; i < local_size[0] * local_size[1]; ++i) {
+                memcpy( buf + (local_offset[0] * local_size[1] * local_size[2] + local_offset[1] * local_size[2] +
+                              local_offset[2]) *
+                                 unit, new_buf[0],
+                       sizeof(char) * local_size[2] * unit);
+                new_buf[0] += local_size[2] * unit;
+            }
+        }
+        free(new_buf);
+    }
+    else {
+        ret_value = FAIL;
     }
 
     fflush(stdout);
@@ -2487,7 +2519,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, uint64_t 
               &client_send_transfer_request_handle);
 
     // Create bulk handle
-    hg_ret = HG_Bulk_create(hg_class, 1, (void **)&buf, (hg_size_t *)&total_data_size, HG_BULK_READWRITE,
+    hg_ret = HG_Bulk_create(hg_class, 1, (void **)&new_buf, (hg_size_t *)&total_data_size, HG_BULK_READWRITE,
                             &(in.local_bulk_handle));
 
     if (hg_ret != HG_SUCCESS)
@@ -6826,6 +6858,7 @@ PDCobj_get_tag(pdcid_t obj_id, char *tag_name, void **tag_value, psize_t *value_
     ret_value = PDC_get_kvtag(obj_id, tag_name, &kvtag, 0);
     if (ret_value != SUCCEED)
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Error with PDC_get_kvtag", pdc_client_mpi_rank_g);
+
 
     *tag_value  = kvtag->value;
     *value_size = kvtag->size;
