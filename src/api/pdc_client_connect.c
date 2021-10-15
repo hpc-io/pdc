@@ -2507,7 +2507,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, uint64_t 
     in.obj_id      = obj_id;
     pack_region_metadata(remote_ndim, remote_offset, remote_size, unit, &(in.remote_region));
 
-    pack_region_buffer(buf, &new_buf, total_data_size, local_ndim, local_offset, local_size, unit);
+    pack_region_buffer(buf, &new_buf, total_data_size, local_ndim, local_offset, local_size, unit, access_type);
     printf("obj ID = %u, data_server_id = %u, total_mem_size = %zu\n", (unsigned)obj_id,
            (unsigned)data_server_id, total_data_size);
 
@@ -2536,7 +2536,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, uint64_t 
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
 
-    release_region_buffer(new_buf, local_ndim);
+    release_region_buffer(buf, &new_buf, total_data_size, local_ndim, local_offset, local_size, unit, access_type);
 
     if (transfer_args.ret != 1)
         PGOTO_ERROR(FAIL, "PDC_CLIENT: transfer request failed... @ line %d\n", __LINE__);
@@ -6515,6 +6515,7 @@ PDCcont_put(const char *cont_name, pdcid_t pdc)
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
 
 #ifdef ENABLE_MPI
+
     ret_value = PDC_Client_create_cont_id_mpi(cont_name, cont_prop, &cont_id);
 #else
     ret_value = PDC_Client_create_cont_id(cont_name, cont_prop, &cont_id);
