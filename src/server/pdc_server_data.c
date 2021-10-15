@@ -5664,7 +5664,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 
                 lseek(region->fd, overlap_region->offset + overlap_start_local[0] * unit, SEEK_SET);
                 ret_value = PDC_Server_posix_write(region->fd, buf + pos, write_size);
-                printf("posix write for position %d with write size %u\n", (int)pos, (unsigned) write_size);
+                printf("posix write for position %d with write size %u\n", (int)pos, (unsigned)write_size);
                 if (ret_value != SUCCEED) {
                     printf("==PDC_SERVER[%d]: PDC_Server_posix_write FAILED!\n", pdc_server_rank_g);
                     ret_value = FAIL;
@@ -5764,7 +5764,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 
     if (is_overlap == 0) {
         request_region->offset = lseek(region->fd, 0, SEEK_END);
-        printf("posix write for position %d with write size %u\n", 0, (unsigned) write_size);
+        printf("posix write for position %d with write size %u\n", 0, (unsigned)write_size);
         ret_value = PDC_Server_posix_write(region->fd, buf, write_size);
         if (ret_value != SUCCEED) {
             printf("==PDC_SERVER[%d]: PDC_Server_posix_write FAILED!\n", pdc_server_rank_g);
