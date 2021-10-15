@@ -2389,7 +2389,7 @@ pack_region_buffer(char *buf, char **new_buf, size_t total_data_size, int local_
     }
     else if (local_ndim == 2) {
         *new_buf = (char *)malloc(sizeof(char) * total_data_size);
-        if ( access_type == PDC_WRITE ) {
+        if (access_type == PDC_WRITE) {
             for (i = 0; i < local_size[0]; ++i) {
                 memcpy(new_buf[0], buf + (local_offset[0] * local_size[1] + local_offset[1]) * unit,
                        sizeof(char) * local_size[1] * unit);
@@ -2399,11 +2399,11 @@ pack_region_buffer(char *buf, char **new_buf, size_t total_data_size, int local_
     }
     else if (local_ndim == 3) {
         *new_buf = (char *)malloc(sizeof(char) * total_data_size);
-        if ( access_type == PDC_WRITE ) {
+        if (access_type == PDC_WRITE) {
             for (i = 0; i < local_size[0] * local_size[1]; ++i) {
                 memcpy(new_buf[0],
-                       buf + (local_offset[0] * local_size[1] * local_size[2] + local_offset[1] * local_size[2] +
-                              local_offset[2]) *
+                       buf + (local_offset[0] * local_size[1] * local_size[2] +
+                              local_offset[1] * local_size[2] + local_offset[2]) *
                                  unit,
                        sizeof(char) * local_size[2] * unit);
                 new_buf[0] += local_size[2] * unit;
@@ -2418,19 +2418,19 @@ pack_region_buffer(char *buf, char **new_buf, size_t total_data_size, int local_
 }
 
 static perr_t
-release_region_buffer(char *buf, char **new_buf, size_t total_data_size, int local_ndim, uint64_t *local_offset,
-                   uint64_t *local_size, size_t unit, pdc_access_t access_type)
+release_region_buffer(char *buf, char **new_buf, size_t total_data_size, int local_ndim,
+                      uint64_t *local_offset, uint64_t *local_size, size_t unit, pdc_access_t access_type)
 {
     perr_t ret_value = SUCCEED;
     FUNC_ENTER(NULL);
 
     if (local_ndim == 1) {
-        if ( access_type == PDC_READ ) {
+        if (access_type == PDC_READ) {
             memcpy(buf, new_buf, total_data_size);
         }
     }
     else if (local_ndim == 2) {
-        if ( access_type == PDC_READ ) {
+        if (access_type == PDC_READ) {
             for (i = 0; i < local_size[0]; ++i) {
                 memcpy(buf + (local_offset[0] * local_size[1] + local_offset[1]) * unit, new_buf,
                        sizeof(char) * local_size[1] * unit);
@@ -2440,12 +2440,12 @@ release_region_buffer(char *buf, char **new_buf, size_t total_data_size, int loc
         free(new_buf);
     }
     else if (local_ndim == 3) {
-        if ( access_type == PDC_READ ) {
+        if (access_type == PDC_READ) {
             for (i = 0; i < local_size[0] * local_size[1]; ++i) {
-                memcpy( buf + (local_offset[0] * local_size[1] * local_size[2] + local_offset[1] * local_size[2] +
-                              local_offset[2]) *
-                                 unit, new_buf[0],
-                       sizeof(char) * local_size[2] * unit);
+                memcpy(buf + (local_offset[0] * local_size[1] * local_size[2] +
+                              local_offset[1] * local_size[2] + local_offset[2]) *
+                                 unit,
+                       new_buf[0], sizeof(char) * local_size[2] * unit);
                 new_buf[0] += local_size[2] * unit;
             }
         }
@@ -6858,7 +6858,6 @@ PDCobj_get_tag(pdcid_t obj_id, char *tag_name, void **tag_value, psize_t *value_
     ret_value = PDC_get_kvtag(obj_id, tag_name, &kvtag, 0);
     if (ret_value != SUCCEED)
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Error with PDC_get_kvtag", pdc_client_mpi_rank_g);
-
 
     *tag_value  = kvtag->value;
     *value_size = kvtag->size;
