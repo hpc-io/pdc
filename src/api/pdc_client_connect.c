@@ -2425,12 +2425,7 @@ release_region_buffer(char *buf, char **new_buf, size_t total_data_size, int loc
     perr_t ret_value = SUCCEED;
     FUNC_ENTER(NULL);
 
-    if (local_ndim == 1) {
-        if (access_type == PDC_READ) {
-            memcpy(buf, new_buf, total_data_size);
-        }
-    }
-    else if (local_ndim == 2) {
+    if (local_ndim == 2) {
         if (access_type == PDC_READ) {
             for (i = 0; i < local_size[0]; ++i) {
                 memcpy(buf + (local_offset[0] * local_size[1] + local_offset[1]) * unit, new_buf,
@@ -2452,7 +2447,7 @@ release_region_buffer(char *buf, char **new_buf, size_t total_data_size, int loc
         }
         free(new_buf);
     }
-    else {
+    else if (local_ndim != 1) {
         ret_value = FAIL;
     }
 
