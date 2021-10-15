@@ -2507,7 +2507,8 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, uint64_t 
     in.obj_id      = obj_id;
     pack_region_metadata(remote_ndim, remote_offset, remote_size, unit, &(in.remote_region));
 
-    pack_region_buffer(buf, &new_buf, total_data_size, local_ndim, local_offset, local_size, unit, access_type);
+    pack_region_buffer(buf, &new_buf, total_data_size, local_ndim, local_offset, local_size, unit,
+                       access_type);
     printf("obj ID = %u, data_server_id = %u, total_mem_size = %zu\n", (unsigned)obj_id,
            (unsigned)data_server_id, total_data_size);
 
@@ -2536,7 +2537,8 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, uint64_t 
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
 
-    release_region_buffer(buf, &new_buf, total_data_size, local_ndim, local_offset, local_size, unit, access_type);
+    release_region_buffer(buf, &new_buf, total_data_size, local_ndim, local_offset, local_size, unit,
+                          access_type);
 
     if (transfer_args.ret != 1)
         PGOTO_ERROR(FAIL, "PDC_CLIENT: transfer request failed... @ line %d\n", __LINE__);
