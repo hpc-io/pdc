@@ -3662,7 +3662,6 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
-
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4539,7 +4538,8 @@ HG_TEST_RPC_CB(transfer_request, handle)
             (remote_reg_info->size)[2] =
                 (local_bulk_args->in.remote_region).count_2 / local_bulk_args->in.remote_unit;
         }
-        PDC_Server_data_read_from(local_bulk_args->in.obj_id, remote_reg_info, local_bulk_args->data_buf, local_bulk_args->in.remote_unit);
+        PDC_Server_data_read_from(local_bulk_args->in.obj_id, remote_reg_info, local_bulk_args->data_buf,
+                                  local_bulk_args->in.remote_unit);
 
         ret_value = HG_Bulk_create(info->hg_class, 1, &(local_bulk_args->data_buf),
                                    &(local_bulk_args->total_mem_size), HG_BULK_READWRITE,
