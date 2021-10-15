@@ -2418,7 +2418,7 @@ pack_region_buffer(char *buf, char **new_buf, size_t total_data_size, int local_
 }
 
 static perr_t
-release_region_buffer(char *buf, char *new_buf, size_t total_data_size, int local_ndim,
+release_region_buffer(char *buf, char *new_buf, int local_ndim,
                       uint64_t *local_offset, uint64_t *local_size, size_t unit, pdc_access_t access_type)
 {
     uint64_t i;
@@ -2533,7 +2533,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, uint64_t 
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
 
-    release_region_buffer(buf, new_buf, total_data_size, local_ndim, local_offset, local_size, unit,
+    release_region_buffer(buf, new_buf, local_ndim, local_offset, local_size, unit,
                           access_type);
 
     if (transfer_args.ret != 1)
