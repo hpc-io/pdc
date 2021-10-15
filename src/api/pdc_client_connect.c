@@ -2430,7 +2430,7 @@ release_region_buffer(char *buf, char *new_buf, size_t total_data_size, int loca
             for (i = 0; i < local_size[0]; ++i) {
                 memcpy(buf + (local_offset[0] * local_size[1] + local_offset[1]) * unit, new_buf,
                        sizeof(char) * local_size[1] * unit);
-                new_buf[0] += local_size[1] * unit;
+                new_buf += local_size[1] * unit;
             }
         }
         free(new_buf);
@@ -2441,8 +2441,8 @@ release_region_buffer(char *buf, char *new_buf, size_t total_data_size, int loca
                 memcpy(buf + (local_offset[0] * local_size[1] * local_size[2] +
                               local_offset[1] * local_size[2] + local_offset[2]) *
                                  unit,
-                       new_buf[0], sizeof(char) * local_size[2] * unit);
-                new_buf[0] += local_size[2] * unit;
+                       new_buf, sizeof(char) * local_size[2] * unit);
+                new_buf += local_size[2] * unit;
             }
         }
         free(new_buf);
