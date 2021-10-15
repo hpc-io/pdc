@@ -2422,7 +2422,7 @@ release_region_buffer(char *buf, char **new_buf, size_t total_data_size, int loc
                       uint64_t *local_offset, uint64_t *local_size, size_t unit, pdc_access_t access_type)
 {
     uint64_t i;
-    perr_t ret_value = SUCCEED;
+    perr_t   ret_value = SUCCEED;
     FUNC_ENTER(NULL);
 
     if (local_ndim == 1) {
