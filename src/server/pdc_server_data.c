@@ -1017,7 +1017,7 @@ server_open_storage(char *storage_location, pdcid_t obj_id)
  * This is a light-weighted buf map. We are creating the file descriptor for writing an object.
  * data_server_region_t is used here for storage_location and fd only.
  * Write and read functions will use these information
-*/
+ */
 
 /*
 perr_t register_data_server_region (pdcid_t obj_id) {
@@ -1060,15 +1060,16 @@ perr_t register_data_server_region (pdcid_t obj_id) {
 }
 */
 
-perr_t unregister_data_server_region (pdcid_t obj_id) {
+perr_t
+unregister_data_server_region(pdcid_t obj_id)
+{
     data_server_region_t *new_obj_reg = NULL;
 
     new_obj_reg = PDC_Server_get_obj_region(in->remote_obj_id);
 
     if (new_obj_reg == NULL) {
-        DL_FOREACH(region->region_storage_head, elt) {
-
-
+        DL_FOREACH(region->region_storage_head, elt)
+        {
         }
         free(new_obj_reg->storage_location);
         close(new_obj_reg->fd);
@@ -5647,27 +5648,30 @@ PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf
 
 #else
 perr_t
-PDC_Server_transfer_request_write_out(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims, struct pdc_region_info *region_info, void *buf, size_t unit) {
-    int                   fd;
-    char *                data_path                = NULL;
-    char *                user_specified_data_path = NULL;
-    char                  storage_location[ADDR_MAX];
+PDC_Server_transfer_request_write_out(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims,
+                                      struct pdc_region_info *region_info, void *buf, size_t unit)
+{
+    int fd;
+    char *data_path = NULL;
+    char *user_specified_data_path = NULL;
+    char storage_location[ADDR_MAX];
 
     user_specified_data_path = getenv("PDC_DATA_LOC");
     if (user_specified_data_path != NULL) {
         data_path = user_specified_data_path;
-    } else {
+    }
+    else {
         data_path = getenv("SCRATCH");
         if (data_path == NULL)
             data_path = ".";
     }
     // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
-    snprintf(storage_location, ADDR_MAX, "%.200s/pdc_data/%" PRIu64 "/server%d/s%04d.bin", data_path,
-             obj_id, pdc_server_rank_g, pdc_server_rank_g);
+    snprintf(storage_location, ADDR_MAX, "%.200s/pdc_data/%" PRIu64 "/server%d/s%04d.bin", data_path, obj_id,
+             pdc_server_rank_g, pdc_server_rank_g);
     PDC_mkdir(storage_location);
 
     fd = open(storage_location, O_RDWR | O_CREAT, 0666);
-    if ( pdc_region_info->ndim == 1 ) {
+    if (pdc_region_info->ndim == 1) {
         lseek(fd, pdc_region_info->offset[0] + pdc_region_info->size[0] * unit, SEEK_SET);
         write(fd, buf, unit * region_info->size[0]);
     }
@@ -5675,27 +5679,30 @@ PDC_Server_transfer_request_write_out(uint64_t obj_id, int obj_ndim, uint64_t *o
 }
 
 perr_t
-PDC_Server_transfer_request_read_from(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims, struct pdc_region_info *region_info, void *buf, size_t unit) {
-    int                   fd;
-    char *                data_path                = NULL;
-    char *                user_specified_data_path = NULL;
-    char                  storage_location[ADDR_MAX];
+PDC_Server_transfer_request_read_from(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims,
+                                      struct pdc_region_info *region_info, void *buf, size_t unit)
+{
+    int fd;
+    char *data_path = NULL;
+    char *user_specified_data_path = NULL;
+    char storage_location[ADDR_MAX];
 
     user_specified_data_path = getenv("PDC_DATA_LOC");
     if (user_specified_data_path != NULL) {
         data_path = user_specified_data_path;
-    } else {
+    }
+    else {
         data_path = getenv("SCRATCH");
         if (data_path == NULL)
             data_path = ".";
     }
     // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
-    snprintf(storage_location, ADDR_MAX, "%.200s/pdc_data/%" PRIu64 "/server%d/s%04d.bin", data_path,
-             obj_id, pdc_server_rank_g, pdc_server_rank_g);
+    snprintf(storage_location, ADDR_MAX, "%.200s/pdc_data/%" PRIu64 "/server%d/s%04d.bin", data_path, obj_id,
+             pdc_server_rank_g, pdc_server_rank_g);
     PDC_mkdir(storage_location);
 
     fd = open(storage_location, O_RDWR | O_CREAT, 0666);
-    if ( pdc_region_info->ndim == 1 ) {
+    if (pdc_region_info->ndim == 1) {
         lseek(fd, pdc_region_info->offset[0] + pdc_region_info->size[0] * unit, SEEK_SET);
         read(fd, buf, unit * region_info->size[0]);
     }
@@ -5877,7 +5884,6 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                 // No need to update metadata
             } // End 3D
         }     // End is overlap
-
 
     } // End DL_FOREACH storage region list
 

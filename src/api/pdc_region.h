@@ -49,15 +49,15 @@ typedef struct pdc_transfer_request {
     pdc_var_type_t mem_type;
     char *         buf;
 
-    int      local_region_ndim;
+    int       local_region_ndim;
     uint64_t *local_region_offset;
     uint64_t *local_region_size;
 
-    int      remote_region_ndim;
+    int       remote_region_ndim;
     uint64_t *remote_region_offset;
     uint64_t *remote_region_size;
 
-    int      obj_ndim;
+    int       obj_ndim;
     uint64_t *obj_dims;
 } pdc_transfer_request;
 

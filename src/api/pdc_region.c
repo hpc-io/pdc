@@ -183,8 +183,9 @@ PDCtransfer_request_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, 
     p->buf         = buf;
 
     p->local_region_ndim   = reg1->ndim;
-    p->local_region_offset = (uint64_t *)malloc(sizeof(uint64_t) * (reg1->ndim * 2 + reg2->ndim * 2 + obj2->obj_pt->obj_prop_pub->ndim));
-    p->local_region_size   = p->local_region_offset + reg1->ndim;
+    p->local_region_offset = (uint64_t *)malloc(
+        sizeof(uint64_t) * (reg1->ndim * 2 + reg2->ndim * 2 + obj2->obj_pt->obj_prop_pub->ndim));
+    p->local_region_size = p->local_region_offset + reg1->ndim;
     memcpy(p->local_region_offset, reg1->offset, sizeof(uint64_t) * reg1->ndim);
     memcpy(p->local_region_size, reg1->size, sizeof(uint64_t) * reg1->ndim);
 
@@ -194,8 +195,8 @@ PDCtransfer_request_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, 
     memcpy(p->remote_region_offset, reg2->offset, sizeof(uint64_t) * reg2->ndim);
     memcpy(p->remote_region_size, reg2->size, sizeof(uint64_t) * reg2->ndim);
 
-    p->obj_ndim          = obj2->obj_pt->obj_prop_pub->ndim;
-    p->obj_dims          = p->local_region_offset + 2 * reg1->ndim + 2 * reg2->ndim;
+    p->obj_ndim = obj2->obj_pt->obj_prop_pub->ndim;
+    p->obj_dims = p->local_region_offset + 2 * reg1->ndim + 2 * reg2->ndim;
     memcpy(p->obj_dims, obj2->obj_pt->obj_prop_pub->dims, sizeof(uint64_t) * p->obj_ndim);
 
     ret_value = PDC_id_register(PDC_TRANSFER_REQUEST, p);
