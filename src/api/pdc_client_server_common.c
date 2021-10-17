@@ -3662,7 +3662,6 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
-
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -6881,7 +6880,6 @@ PDC_create_shm_segment_ind(uint64_t size, char *shm_addr, void **buf)
         if (shm_fd != -1)
             break;
         retry++;
-
     }
 
     if (shm_fd == -1)
