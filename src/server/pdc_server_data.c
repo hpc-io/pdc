@@ -5091,6 +5091,7 @@ PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *region_info,
                 if (pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
                     (ssize_t)overlap_region->data_size) {
                     printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
+
                 }
 
                 // Overlap start position
@@ -5673,7 +5674,9 @@ PDC_Server_transfer_request_write_out(uint64_t obj_id, int obj_ndim, uint64_t *o
     fd = open(storage_location, O_RDWR | O_CREAT, 0666);
     if (region_info->ndim == 1) {
         lseek(fd, region_info->offset[0] + region_info->size[0] * unit, SEEK_SET);
-        write(fd, buf, unit * region_info->size[0]);
+        if ( write(fd, buf, unit * region_info->size[0]) != unit * region_info->size[0] ) {
+            printf("server POSIX write failed\n");
+        }
     }
     close(fd);
     return SUCCEED;
@@ -5705,7 +5708,9 @@ PDC_Server_transfer_request_read_from(uint64_t obj_id, int obj_ndim, uint64_t *o
     fd = open(storage_location, O_RDWR | O_CREAT, 0666);
     if (region_info->ndim == 1) {
         lseek(fd, region_info->offset[0] + region_info->size[0] * unit, SEEK_SET);
-        read(fd, buf, unit * region_info->size[0]);
+        if ( read(fd, buf, unit * region_info->size[0]) != region_info->size[0] ) {
+            printf("server POSIX read failed\n");
+        }
     }
     close(fd);
     return SUCCEED;
