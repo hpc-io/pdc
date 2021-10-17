@@ -7489,7 +7489,6 @@ compare_coords_3d(const void *a, const void *b)
         _ndim          = (_region)->ndim;                                                                    \
         istart         = (_sel)->nhits * _ndim;                                                              \
         if (_ndim > 3) {                                                                                     \
-
             printf("==PDC_SERVER[%d]: %s - dimension > 3 not supported!\n", pdc_server_rank_g, __func__);    \
             ret_value = FAIL;                                                                                \
             goto done;                                                                                       \
