@@ -347,13 +347,6 @@ int   PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_siz
                                 const uint64_t *size, int ndim, size_t unit);
 void *PDC_region_cache_clock_cycle(void *ptr);
 #endif
-
-perr_t PDC_Server_transfer_request_write_out(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims,
-                                             struct pdc_region_info *region_info, void *buf, size_t unit);
-
-perr_t PDC_Server_transfer_request_read_from(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims,
-                                             struct pdc_region_info *region_info, void *buf, size_t unit);
-
 /***************************************/
 /* Library-private Function Prototypes */
 /***************************************/
@@ -485,6 +478,11 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info);
  * \return HG_SUCCESS or corresponding HG error code
  */
 hg_return_t PDC_Server_count_write_check_update_storage_meta_cb(const struct hg_cb_info *callback_info);
+
+
+
+perr_t PDC_Server_transfer_request_write_out(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims, struct pdc_region_info *region_info, void *buf, size_t unit);
+perr_t PDC_Server_transfer_request_read_from(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims, struct pdc_region_info *region_info, void *buf, size_t unit);
 
 /**
  * Write data out to desired storage
