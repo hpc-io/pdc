@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4435,7 +4436,6 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
     printf("Server transfer request at write branch, index 1 value = %d\n",
            *((int *)(local_bulk_args->data_buf + sizeof(int))));
 
-    register_data_server_region(local_bulk_args->in.obj_id);
     /*
         PDC_Server_data_write_out(local_bulk_args->in.obj_id, remote_reg_info, (void
        *)local_bulk_args->data_buf, local_bulk_args->in.remote_unit);
@@ -4980,6 +4980,7 @@ HG_TEST_RPC_CB(data_server_write, handle)
 
     PDC_metadata_init(&io_info->meta);
     PDC_transfer_t_to_metadata_t(&(in.meta), &(io_info->meta));
+
 
     PDC_init_region_list(&(io_info->region));
     PDC_region_transfer_t_to_list_t(&(in.region), &(io_info->region));
