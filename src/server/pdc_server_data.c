@@ -5674,7 +5674,7 @@ PDC_Server_transfer_request_write_out(uint64_t obj_id, int obj_ndim, uint64_t *o
     fd = open(storage_location, O_RDWR | O_CREAT, 0666);
     if (region_info->ndim == 1) {
         lseek(fd, region_info->offset[0] + region_info->size[0] * unit, SEEK_SET);
-        if ( write(fd, buf, unit * region_info->size[0]) != unit * region_info->size[0] ) {
+        if ( write(fd, buf, unit * region_info->size[0]) != (ssize_t) (unit * region_info->size[0]) ) {
             printf("server POSIX write failed\n");
         }
     }
@@ -5708,7 +5708,7 @@ PDC_Server_transfer_request_read_from(uint64_t obj_id, int obj_ndim, uint64_t *o
     fd = open(storage_location, O_RDWR | O_CREAT, 0666);
     if (region_info->ndim == 1) {
         lseek(fd, region_info->offset[0] + region_info->size[0] * unit, SEEK_SET);
-        if ( read(fd, buf, unit * region_info->size[0]) != region_info->size[0] ) {
+        if ( read(fd, buf, unit * region_info->size[0]) != (ssize_t) (region_info->size[0] * unit) ) {
             printf("server POSIX read failed\n");
         }
     }
