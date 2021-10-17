@@ -1013,6 +1013,68 @@ server_open_storage(char *storage_location, pdcid_t obj_id)
 #endif
     return open(storage_location, O_RDWR | O_CREAT, 0666);
 }
+/*
+ * This is a light-weighted buf map. We are creating the file descriptor for writing an object.
+ * data_server_region_t is used here for storage_location and fd only.
+ * Write and read functions will use these information
+*/
+
+/*
+perr_t register_data_server_region (pdcid_t obj_id) {
+    data_server_region_t *new_obj_reg = NULL;
+
+    new_obj_reg = PDC_Server_get_obj_region(in->remote_obj_id);
+    if (new_obj_reg == NULL) {
+        new_obj_reg = (data_server_region_t *)malloc(sizeof(struct data_server_region_t));
+
+        new_obj_reg->obj_id                   = in->remote_obj_id;
+        new_obj_reg->region_lock_head         = NULL;
+        new_obj_reg->region_buf_map_head      = NULL;
+        new_obj_reg->region_lock_request_head = NULL;
+        new_obj_reg->region_storage_head      = NULL;
+
+        // Generate a location for data storage for data server to write
+        user_specified_data_path = getenv("PDC_DATA_LOC");
+        if (user_specified_data_path != NULL)
+            data_path = user_specified_data_path;
+        else {
+            data_path = getenv("SCRATCH");
+            if (data_path == NULL)
+                data_path = ".";
+        }
+        // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
+        snprintf(storage_location, ADDR_MAX, "%.200s/pdc_data/%" PRIu64 "/server%d/s%04d.bin", data_path,
+                 in->remote_obj_id, pdc_server_rank_g, pdc_server_rank_g);
+        PDC_mkdir(storage_location);
+
+        new_obj_reg->fd = open(storage_location, O_RDWR | O_CREAT, 0666);
+        if (new_obj_reg->fd == -1) {
+            printf("==PDC_SERVER[%d]: open %s failed\n", pdc_server_rank_g, storage_location);
+            goto done;
+        }
+
+        new_obj_reg->storage_location = strdup(storage_location);
+        DL_APPEND(dataserver_region_g, new_obj_reg);
+    }
+    return SUCCESS;
+}
+*/
+
+perr_t unregister_data_server_region (pdcid_t obj_id) {
+    data_server_region_t *new_obj_reg = NULL;
+
+    new_obj_reg = PDC_Server_get_obj_region(in->remote_obj_id);
+
+    if (new_obj_reg == NULL) {
+        DL_FOREACH(region->region_storage_head, elt) {
+
+
+        }
+        free(new_obj_reg->storage_location);
+        close(new_obj_reg->fd);
+    }
+    return SUCCESS;
+}
 
 region_buf_map_t *
 PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in_t *in, region_list_t *request_region,
@@ -5584,6 +5646,62 @@ PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf
 }
 
 #else
+perr_t
+PDC_Server_transfer_request_write_out(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims, struct pdc_region_info *region_info, void *buf, size_t unit) {
+    int                   fd;
+    char *                data_path                = NULL;
+    char *                user_specified_data_path = NULL;
+    char                  storage_location[ADDR_MAX];
+
+    user_specified_data_path = getenv("PDC_DATA_LOC");
+    if (user_specified_data_path != NULL) {
+        data_path = user_specified_data_path;
+    } else {
+        data_path = getenv("SCRATCH");
+        if (data_path == NULL)
+            data_path = ".";
+    }
+    // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
+    snprintf(storage_location, ADDR_MAX, "%.200s/pdc_data/%" PRIu64 "/server%d/s%04d.bin", data_path,
+             obj_id, pdc_server_rank_g, pdc_server_rank_g);
+    PDC_mkdir(storage_location);
+
+    fd = open(storage_location, O_RDWR | O_CREAT, 0666);
+    if ( pdc_region_info->ndim == 1 ) {
+        lseek(fd, pdc_region_info->offset[0] + pdc_region_info->size[0] * unit, SEEK_SET);
+        write(fd, buf, unit * region_info->size[0]);
+    }
+    close(new_obj_reg->fd);
+}
+
+perr_t
+PDC_Server_transfer_request_read_from(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims, struct pdc_region_info *region_info, void *buf, size_t unit) {
+    int                   fd;
+    char *                data_path                = NULL;
+    char *                user_specified_data_path = NULL;
+    char                  storage_location[ADDR_MAX];
+
+    user_specified_data_path = getenv("PDC_DATA_LOC");
+    if (user_specified_data_path != NULL) {
+        data_path = user_specified_data_path;
+    } else {
+        data_path = getenv("SCRATCH");
+        if (data_path == NULL)
+            data_path = ".";
+    }
+    // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
+    snprintf(storage_location, ADDR_MAX, "%.200s/pdc_data/%" PRIu64 "/server%d/s%04d.bin", data_path,
+             obj_id, pdc_server_rank_g, pdc_server_rank_g);
+    PDC_mkdir(storage_location);
+
+    fd = open(storage_location, O_RDWR | O_CREAT, 0666);
+    if ( pdc_region_info->ndim == 1 ) {
+        lseek(fd, pdc_region_info->offset[0] + pdc_region_info->size[0] * unit, SEEK_SET);
+        read(fd, buf, unit * region_info->size[0]);
+    }
+    close(new_obj_reg->fd);
+}
+
 // No PDC_SERVER_CACHE
 perr_t
 PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
@@ -5759,6 +5877,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                 // No need to update metadata
             } // End 3D
         }     // End is overlap
+
 
     } // End DL_FOREACH storage region list
 

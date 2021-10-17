@@ -50,12 +50,15 @@ typedef struct pdc_transfer_request {
     char *         buf;
 
     int      local_region_ndim;
-    pdcid_t *local_region_offset;
-    pdcid_t *local_region_size;
+    uint64_t *local_region_offset;
+    uint64_t *local_region_size;
 
     int      remote_region_ndim;
-    pdcid_t *remote_region_offset;
-    pdcid_t *remote_region_size;
+    uint64_t *remote_region_offset;
+    uint64_t *remote_region_size;
+
+    int      obj_ndim;
+    uint64_t *obj_dims;
 } pdc_transfer_request;
 
 /*********************/

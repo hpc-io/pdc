@@ -720,12 +720,16 @@ typedef struct {
 
 /* Define transfer_request_in_t */
 typedef struct {
-    uint64_t               obj_id;
-    uint8_t                access_type;
-    uint32_t               meta_server_id;
-    size_t                 remote_unit;
     hg_bulk_t              local_bulk_handle;
     region_info_transfer_t remote_region;
+    uint64_t               obj_id;
+    uint64_t               obj_dim0;
+    uint64_t               obj_dim1;
+    uint64_t               obj_dim2;
+    size_t                 remote_unit;
+    int32_t                obj_ndim;
+    uint32_t               meta_server_id;
+    uint8_t                access_type;
 } transfer_request_in_t;
 /* Define transfer_request_out_t */
 typedef struct {
@@ -2306,6 +2310,26 @@ hg_proc_transfer_request_in_t(hg_proc_t proc, void *data)
     transfer_request_in_t *struct_data = (transfer_request_in_t *)data;
 
     ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_dim0);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_dim1);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_dim2);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->ndim);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;

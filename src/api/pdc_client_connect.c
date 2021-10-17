@@ -2456,7 +2456,7 @@ release_region_buffer(char *buf, char *new_buf, int local_ndim, uint64_t *local_
 }
 
 perr_t
-PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, uint64_t *local_offset,
+PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *obj_dims, int local_ndim, uint64_t *local_offset,
                             uint64_t *local_size, int remote_ndim, uint64_t *remote_offset,
                             uint64_t *remote_size, pdc_var_type_t mem_type, pdc_access_t access_type)
 {

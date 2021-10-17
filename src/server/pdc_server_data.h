@@ -348,6 +348,12 @@ int   PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_siz
 void *PDC_region_cache_clock_cycle(void *ptr);
 #endif
 
+perr_t
+PDC_Server_transfer_request_write_out(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims, struct pdc_region_info *region_info, void *buf, size_t unit);
+
+perr_t
+PDC_Server_transfer_request_read_from(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims, struct pdc_region_info *region_info, void *buf, size_t unit);
+
 /***************************************/
 /* Library-private Function Prototypes */
 /***************************************/
@@ -453,6 +459,7 @@ data_server_region_t *PDC_Server_get_obj_region(pdcid_t obj_id);
  */
 void *PDC_Server_maybe_allocate_region_buf_ptr(pdcid_t obj_id, region_info_transfer_t region,
                                                size_t type_size);
+
 
 /**
  * Server retrieves data pointer of the region

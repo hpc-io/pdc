@@ -141,7 +141,7 @@ perr_t PDC_Client_read_server_addr_from_file();
 perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj_create_prop,
                                     pdcid_t *meta_id);
 
-perr_t PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int local_ndim, uint64_t *local_offset,
+perr_t PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *obj_dims, int local_ndim, uint64_t *local_offset,
                                    uint64_t *local_size, int remote_ndim, uint64_t *remote_offset,
                                    uint64_t *remote_size, pdc_var_type_t mem_type, pdc_access_t access_type);
 
@@ -453,6 +453,7 @@ perr_t PDC_Client_query_container_name_col(const char *cont_name, uint64_t *cont
  * Async request send to server to read a region and put it in users buffer
  *
  * \param meta [IN]             Metadata object pointer to the operating object
+
  * \param region [IN]           Region within the object to be read
  * \param request [IN]          Request structure to store the IO information
  * \param buf [IN]              User's buffer to store data
@@ -715,6 +716,7 @@ perr_t PDC_Client_delete_metadata_by_id(uint64_t obj_id);
 perr_t PDC_Client_close_all_server();
 
 /**
+
  * Client request server to check IO status of a previous IO request
  *
  * \param request [IN]          IO request to data server
