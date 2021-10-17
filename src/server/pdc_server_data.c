@@ -5672,11 +5672,11 @@ PDC_Server_transfer_request_write_out(uint64_t obj_id, int obj_ndim, uint64_t *o
     PDC_mkdir(storage_location);
 
     fd = open(storage_location, O_RDWR | O_CREAT, 0666);
-    if (pdc_region_info->ndim == 1) {
-        lseek(fd, pdc_region_info->offset[0] + pdc_region_info->size[0] * unit, SEEK_SET);
+    if (region_info->ndim == 1) {
+        lseek(fd, region_info->offset[0] + region_info->size[0] * unit, SEEK_SET);
         write(fd, buf, unit * region_info->size[0]);
     }
-    close(new_obj_reg->fd);
+    close(fd);
 }
 
 perr_t
@@ -5703,11 +5703,11 @@ PDC_Server_transfer_request_read_from(uint64_t obj_id, int obj_ndim, uint64_t *o
     PDC_mkdir(storage_location);
 
     fd = open(storage_location, O_RDWR | O_CREAT, 0666);
-    if (pdc_region_info->ndim == 1) {
-        lseek(fd, pdc_region_info->offset[0] + pdc_region_info->size[0] * unit, SEEK_SET);
+    if (region_info->ndim == 1) {
+        lseek(fd, region_info->offset[0] + region_info->size[0] * unit, SEEK_SET);
         read(fd, buf, unit * region_info->size[0]);
     }
-    close(new_obj_reg->fd);
+    close(fd);
 }
 
 // No PDC_SERVER_CACHE
