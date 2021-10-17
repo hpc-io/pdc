@@ -1055,6 +1055,7 @@ hg_proc_pdc_kvtag_t(hg_proc_t proc, void *data)
     if (struct_data->size) {
         switch (hg_proc_get_op(proc)) {
             case HG_DECODE:
+
                 struct_data->value = malloc(struct_data->size);
                 /* HG_FALLTHROUGH(); */
                 /* FALLTHRU */
@@ -2329,7 +2330,7 @@ hg_proc_transfer_request_in_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_int32_t(proc, &struct_data->ndim);
+    ret = hg_proc_int32_t(proc, &struct_data->obj_ndim);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
@@ -2963,6 +2964,7 @@ hg_proc_cont_add_tags_rpc_in_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_hg_string_t(proc, &struct_data->tags);
+
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
