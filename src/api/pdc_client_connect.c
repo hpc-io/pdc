@@ -2503,13 +2503,13 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *o
     in.remote_unit = unit;
     in.obj_id      = obj_id;
     in.obj_ndim    = obj_ndim;
-    if ( in.obj_ndim >= 1 ) {
+    if (in.obj_ndim >= 1) {
         in.obj_dim0 = obj_dims[0];
     }
-    if ( in.obj_ndim >= 2 ) {
+    if (in.obj_ndim >= 2) {
         in.obj_dim1 = obj_dims[1];
     }
-    if ( in.obj_ndim >= 1 ) {
+    if (in.obj_ndim >= 1) {
         in.obj_dim2 = obj_dims[2];
     }
     pack_region_metadata(remote_ndim, remote_offset, remote_size, unit, &(in.remote_region));

@@ -5091,7 +5091,6 @@ PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *region_info,
                 if (pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
                     (ssize_t)overlap_region->data_size) {
                     printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
-
                 }
 
                 // Overlap start position
