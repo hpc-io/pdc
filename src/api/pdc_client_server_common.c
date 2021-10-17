@@ -3662,7 +3662,6 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
-
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4980,7 +4979,6 @@ HG_TEST_RPC_CB(data_server_write, handle)
 
     PDC_metadata_init(&io_info->meta);
     PDC_transfer_t_to_metadata_t(&(in.meta), &(io_info->meta));
-
 
     PDC_init_region_list(&(io_info->region));
     PDC_region_transfer_t_to_list_t(&(in.region), &(io_info->region));
