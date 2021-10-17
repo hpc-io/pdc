@@ -1058,7 +1058,7 @@ perr_t register_data_server_region (pdcid_t obj_id) {
     }
     return SUCCESS;
 }
-*/
+
 
 perr_t
 unregister_data_server_region(pdcid_t obj_id)
@@ -1076,7 +1076,7 @@ unregister_data_server_region(pdcid_t obj_id)
     }
     return SUCCESS;
 }
-
+*/
 region_buf_map_t *
 PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in_t *in, region_list_t *request_region,
                         void *data_ptr)
@@ -5091,6 +5091,7 @@ PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *region_info,
                 if (pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
                     (ssize_t)overlap_region->data_size) {
                     printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
+
                 }
 
                 // Overlap start position
