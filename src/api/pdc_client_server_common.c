@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4399,7 +4400,6 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
     hg_return_t                              ret;
     transfer_request_out_t                   out;
     struct pdc_region_info *                 remote_reg_info;
-    data_server_region_t *                   new_obj_reg = NULL;
     uint64_t                                 obj_dims[3];
 
     FUNC_ENTER(NULL);
@@ -6881,6 +6881,7 @@ PDC_create_shm_segment_ind(uint64_t size, char *shm_addr, void **buf)
         if (shm_fd != -1)
             break;
         retry++;
+
     }
 
     if (shm_fd == -1)
