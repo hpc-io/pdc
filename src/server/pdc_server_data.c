@@ -6406,6 +6406,7 @@ PDC_Server_query_read_names(query_read_names_args_t *query_read_args)
         query_read_args->cnt, sizeof(storage_meta_query_one_name_args_t *));
 
     // Now we need to retrieve their storage metadata, some can be found in local metadata server,
+
     // others are stored on remote metadata servers
     for (i = 0; i < query_read_args->cnt; i++) {
         // query_name_args is the struct to store all storage metadata of each request obj (obj_name)
