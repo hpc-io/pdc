@@ -3662,8 +3662,6 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
-
-
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4394,7 +4392,9 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-int get_server_rank() {
+int
+get_server_rank()
+{
 #ifdef ENABLE_MPI
     int result;
     MPI_Comm_rank(MPI_COMM_WORLD, &result);
@@ -4409,11 +4409,11 @@ PDC_Server_transfer_request_write_out(uint64_t obj_id, int obj_ndim, uint64_t *o
                                       struct pdc_region_info *region_info, void *buf, size_t unit)
 {
     perr_t ret_value = SUCCEED;
-    int fd;
-    char *data_path = NULL;
-    char *user_specified_data_path = NULL;
-    char storage_location[ADDR_MAX];
-    int server_rank = get_server_rank();
+    int    fd;
+    char * data_path                = NULL;
+    char * user_specified_data_path = NULL;
+    char   storage_location[ADDR_MAX];
+    int    server_rank = get_server_rank();
 
     FUNC_ENTER(NULL);
     user_specified_data_path = getenv("PDC_DATA_LOC");
@@ -4447,11 +4447,11 @@ PDC_Server_transfer_request_read_from(uint64_t obj_id, int obj_ndim, uint64_t *o
                                       struct pdc_region_info *region_info, void *buf, size_t unit)
 {
     perr_t ret_value = SUCCEED;
-    int fd;
-    char *data_path = NULL;
-    char *user_specified_data_path = NULL;
-    char storage_location[ADDR_MAX];
-    int server_rank = get_server_rank();
+    int    fd;
+    char * data_path                = NULL;
+    char * user_specified_data_path = NULL;
+    char   storage_location[ADDR_MAX];
+    int    server_rank = get_server_rank();
 
     FUNC_ENTER(NULL);
 
@@ -4548,7 +4548,6 @@ transfer_request_bulk_transfer_read_cb(const struct hg_cb_info *info)
     hg_return_t                              ret;
     transfer_request_out_t                   out;
     FUNC_ENTER(NULL);
-
 
     out.ret = 1;
 
@@ -6509,7 +6508,6 @@ HG_TEST_RPC_CB(get_sel_data_rpc, handle)
 
     out.ret   = 1;
     ret_value = HG_Respond(handle, PDC_Server_recv_get_sel_data, in_cp, &out);
-
 
     ret_value = HG_Free_input(handle, &in);
     ret_value = HG_Destroy(handle);
