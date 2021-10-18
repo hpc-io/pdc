@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4432,7 +4433,7 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims
 
     FUNC_ENTER(NULL);
 
-    if (obj_ndim != region_info->ndim) {
+    if (obj_ndim != (int) region_info->ndim) {
         printf("Server I/O error: Obj dim does not match obj dim\n");
         goto done;
     }
@@ -4541,23 +4542,23 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
     remote_reg_info->size   = (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
     if (remote_reg_info->ndim >= 1) {
         (remote_reg_info->offset)[0] =
-            (local_bulk_args->in.remote_region).start_0 / local_bulk_args->in.remote_unit;
+            (local_bulk_args->in.remote_region).start_0;
         (remote_reg_info->size)[0] =
-            (local_bulk_args->in.remote_region).count_0 / local_bulk_args->in.remote_unit;
+            (local_bulk_args->in.remote_region).count_0;
         obj_dims[0] = local_bulk_args->in.obj_dim0;
     }
     if (remote_reg_info->ndim >= 2) {
         (remote_reg_info->offset)[1] =
-            (local_bulk_args->in.remote_region).start_1 / local_bulk_args->in.remote_unit;
+            (local_bulk_args->in.remote_region).start_1;
         (remote_reg_info->size)[1] =
-            (local_bulk_args->in.remote_region).count_1 / local_bulk_args->in.remote_unit;
+            (local_bulk_args->in.remote_region).count_1;
         obj_dims[1] = local_bulk_args->in.obj_dim1;
     }
     if (remote_reg_info->ndim >= 3) {
         (remote_reg_info->offset)[2] =
-            (local_bulk_args->in.remote_region).start_2 / local_bulk_args->in.remote_unit;
+            (local_bulk_args->in.remote_region).start_2;
         (remote_reg_info->size)[2] =
-            (local_bulk_args->in.remote_region).count_2 / local_bulk_args->in.remote_unit;
+            (local_bulk_args->in.remote_region).count_2;
         obj_dims[2] = local_bulk_args->in.obj_dim2;
     }
     printf("Server transfer request at write branch, index 1 value = %d\n",
@@ -4619,7 +4620,7 @@ HG_TEST_RPC_CB(transfer_request, handle)
 
     info = HG_Get_info(handle);
 
-    total_mem_size = 1;
+    total_mem_size = in.remote_unit;
     if (in.remote_region.ndim >= 1) {
         total_mem_size *= in.remote_region.count_0;
     }
@@ -4659,18 +4660,18 @@ HG_TEST_RPC_CB(transfer_request, handle)
         remote_reg_info->offset = (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
         remote_reg_info->size   = (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
         if (remote_reg_info->ndim >= 1) {
-            (remote_reg_info->offset)[0] = (in.remote_region).start_0 / in.remote_unit;
-            (remote_reg_info->size)[0]   = (in.remote_region).count_0 / in.remote_unit;
+            (remote_reg_info->offset)[0] = (in.remote_region).start_0;
+            (remote_reg_info->size)[0]   = (in.remote_region).count_0;
             obj_dims[0]                  = in.obj_dim0;
         }
         if (remote_reg_info->ndim >= 2) {
-            (remote_reg_info->offset)[1] = (in.remote_region).start_1 / in.remote_unit;
-            (remote_reg_info->size)[1]   = (in.remote_region).count_1 / in.remote_unit;
+            (remote_reg_info->offset)[1] = (in.remote_region).start_1;
+            (remote_reg_info->size)[1]   = (in.remote_region).count_1;
             obj_dims[0]                  = in.obj_dim0;
         }
         if (remote_reg_info->ndim >= 3) {
-            (remote_reg_info->offset)[2] = (in.remote_region).start_2 / in.remote_unit;
-            (remote_reg_info->size)[2]   = (in.remote_region).count_2 / in.remote_unit;
+            (remote_reg_info->offset)[2] = (in.remote_region).start_2;
+            (remote_reg_info->size)[2]   = (in.remote_region).count_2;
             obj_dims[0]                  = in.obj_dim0;
         }
         PDC_Server_transfer_request_io(in.obj_id, in.obj_ndim, obj_dims, remote_reg_info,

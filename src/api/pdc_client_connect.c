@@ -2342,32 +2342,31 @@ done:
 }
 
 static perr_t
-pack_region_metadata(int ndim, uint64_t *offset, uint64_t *size, size_t unit,
-                     region_info_transfer_t *transfer)
+pack_region_metadata(int ndim, uint64_t *offset, uint64_t *size, region_info_transfer_t *transfer)
 {
     perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
     transfer->ndim = ndim;
     if (ndim >= 1) {
-        transfer->start_0 = unit * offset[0];
-        transfer->count_0 = unit * size[0];
+        transfer->start_0 = offset[0];
+        transfer->count_0 = size[0];
     }
     else {
         transfer->start_0 = 0;
         transfer->count_0 = 0;
     }
     if (ndim >= 2) {
-        transfer->count_1 = unit * size[1];
-        transfer->start_1 = unit * offset[1];
+        transfer->count_1 = size[1];
+        transfer->start_1 = offset[1];
     }
     else {
         transfer->start_1 = 0;
         transfer->count_1 = 0;
     }
     if (ndim >= 3) {
-        transfer->count_2 = unit * size[2];
-        transfer->start_2 = unit * offset[2];
+        transfer->count_2 = size[2];
+        transfer->start_2 = offset[2];
     }
     else {
         transfer->start_2 = 0;
@@ -2516,7 +2515,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *o
     if (in.obj_ndim >= 1) {
         in.obj_dim2 = obj_dims[2];
     }
-    pack_region_metadata(remote_ndim, remote_offset, remote_size, unit, &(in.remote_region));
+    pack_region_metadata(remote_ndim, remote_offset, remote_size, &(in.remote_region));
 
     pack_region_buffer(buf, &new_buf, total_data_size, local_ndim, local_offset, local_size, unit,
                        access_type);
@@ -3577,6 +3576,7 @@ PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *callback_info)
 #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer_end, 0);
     memcpy_time_g += PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+
 #endif
 
     /* remove the mapped shared memory segment from the address space of the process */
