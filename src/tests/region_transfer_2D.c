@@ -49,12 +49,12 @@ main(int argc, char **argv)
 
     uint64_t offset[3], offset_length[3], local_offset[1];
     uint64_t dims[2];
-    local_offset[0]  = 0;
+    local_offset[0] = 0;
 
     int *data      = (int *)malloc(sizeof(int) * BUF_LEN);
     int *data_read = (int *)malloc(sizeof(int) * BUF_LEN);
     int *obj_data  = (int *)calloc(BUF_LEN, sizeof(int));
-    dims[0]        = BUF_LEN/4;
+    dims[0]        = BUF_LEN / 4;
     dims[1]        = 4;
 
 #ifdef ENABLE_MPI
@@ -133,7 +133,7 @@ main(int argc, char **argv)
     reg        = PDCregion_create(1, offset, offset_length);
     offset[0]  = 0;
     offset[1]  = 0;
-    size[0]    = BUF_LEN/4;
+    size[0]    = BUF_LEN / 4;
     size[1]    = 4;
     reg_global = PDCregion_create(2, offset, offset_length);
 
@@ -168,7 +168,7 @@ main(int argc, char **argv)
     reg        = PDCregion_create(1, offset, offset_length);
     offset[0]  = 0;
     offset[1]  = 0;
-    size[0]    = BUF_LEN/4;
+    size[0]    = BUF_LEN / 4;
     size[1]    = 4;
     reg_global = PDCregion_create(2, offset, offset_length);
 

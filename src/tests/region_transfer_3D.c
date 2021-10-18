@@ -49,12 +49,12 @@ main(int argc, char **argv)
 
     uint64_t offset[3], offset_length[3], local_offset[1];
     uint64_t dims[3];
-    local_offset[0]  = 0;
+    local_offset[0] = 0;
 
     int *data      = (int *)malloc(sizeof(int) * BUF_LEN);
     int *data_read = (int *)malloc(sizeof(int) * BUF_LEN);
     int *obj_data  = (int *)calloc(BUF_LEN, sizeof(int));
-    dims[0]        = BUF_LEN/16;
+    dims[0]        = BUF_LEN / 16;
     dims[1]        = 4;
     dims[1]        = 4;
 
@@ -135,7 +135,7 @@ main(int argc, char **argv)
     offset[0]  = 0;
     offset[1]  = 0;
     offset[2]  = 0;
-    size[0]    = BUF_LEN/4;
+    size[0]    = BUF_LEN / 4;
     size[1]    = 4;
     size[2]    = 4;
     reg_global = PDCregion_create(2, offset, offset_length);
@@ -172,7 +172,7 @@ main(int argc, char **argv)
     offset[0]  = 0;
     offset[1]  = 0;
     offset[2]  = 0;
-    size[0]    = BUF_LEN/4;
+    size[0]    = BUF_LEN / 4;
     size[1]    = 4;
     size[2]    = 4;
     reg_global = PDCregion_create(2, offset, offset_length);
