@@ -3662,7 +3662,6 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
-
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -5201,7 +5200,6 @@ HG_TEST_RPC_CB(update_region_loc, handle)
     input_region->offset = in.offset;
 
     if (in.has_hist == 1) {
-
 
         input_region->region_hist = (pdc_histogram_t *)calloc(1, sizeof(pdc_histogram_t));
         PDC_copy_hist(input_region->region_hist, &in.hist);
