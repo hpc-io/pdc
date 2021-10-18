@@ -3662,7 +3662,6 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
-
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4397,10 +4396,10 @@ perr_t
 PDC_Server_transfer_request_write_out(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims,
                                       struct pdc_region_info *region_info, void *buf, size_t unit)
 {
-    int fd;
-    char *data_path = NULL;
+    int   fd;
+    char *data_path                = NULL;
     char *user_specified_data_path = NULL;
-    char storage_location[ADDR_MAX];
+    char  storage_location[ADDR_MAX];
 
     user_specified_data_path = getenv("PDC_DATA_LOC");
     if (user_specified_data_path != NULL) {
@@ -4431,10 +4430,10 @@ perr_t
 PDC_Server_transfer_request_read_from(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims,
                                       struct pdc_region_info *region_info, void *buf, size_t unit)
 {
-    int fd;
-    char *data_path = NULL;
+    int   fd;
+    char *data_path                = NULL;
     char *user_specified_data_path = NULL;
-    char storage_location[ADDR_MAX];
+    char  storage_location[ADDR_MAX];
 
     user_specified_data_path = getenv("PDC_DATA_LOC");
     if (user_specified_data_path != NULL) {

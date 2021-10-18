@@ -480,11 +480,9 @@ hg_return_t PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info);
 hg_return_t PDC_Server_count_write_check_update_storage_meta_cb(const struct hg_cb_info *callback_info);
 
 perr_t PDC_Server_transfer_request_write_out(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims,
-                                                    struct pdc_region_info *region_info, void *buf,
-                                                    size_t unit);
+                                             struct pdc_region_info *region_info, void *buf, size_t unit);
 perr_t PDC_Server_transfer_request_read_from(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims,
-                                                    struct pdc_region_info *region_info, void *buf,
-                                                    size_t unit);
+                                             struct pdc_region_info *region_info, void *buf, size_t unit);
 
 /**
  * Write data out to desired storage
