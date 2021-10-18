@@ -3662,6 +3662,8 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4392,15 +4394,26 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+int get_server_rank() {
+#ifdef ENABLE_MPI
+    int result;
+    MPI_Comm_rank(MPI_COMM_WORLD, &result);
+    return result;
+#else
+    return 0;
+#endif
+}
+
 perr_t
 PDC_Server_transfer_request_write_out(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims,
                                       struct pdc_region_info *region_info, void *buf, size_t unit)
 {
     perr_t ret_value = SUCCEED;
-    int    fd;
-    char * data_path                = NULL;
-    char * user_specified_data_path = NULL;
-    char   storage_location[ADDR_MAX];
+    int fd;
+    char *data_path = NULL;
+    char *user_specified_data_path = NULL;
+    char storage_location[ADDR_MAX];
+    int server_rank = get_server_rank();
 
     FUNC_ENTER(NULL);
     user_specified_data_path = getenv("PDC_DATA_LOC");
@@ -4414,7 +4427,7 @@ PDC_Server_transfer_request_write_out(uint64_t obj_id, int obj_ndim, uint64_t *o
     }
     // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
     snprintf(storage_location, ADDR_MAX, "%.200s/pdc_data/%" PRIu64 "/server%d/s%04d.bin", data_path, obj_id,
-             0, 0);
+             server_rank, server_rank);
     PDC_mkdir(storage_location);
 
     fd = open(storage_location, O_RDWR | O_CREAT, 0666);
@@ -4434,10 +4447,11 @@ PDC_Server_transfer_request_read_from(uint64_t obj_id, int obj_ndim, uint64_t *o
                                       struct pdc_region_info *region_info, void *buf, size_t unit)
 {
     perr_t ret_value = SUCCEED;
-    int    fd;
-    char * data_path                = NULL;
-    char * user_specified_data_path = NULL;
-    char   storage_location[ADDR_MAX];
+    int fd;
+    char *data_path = NULL;
+    char *user_specified_data_path = NULL;
+    char storage_location[ADDR_MAX];
+    int server_rank = get_server_rank();
 
     FUNC_ENTER(NULL);
 
@@ -4452,7 +4466,7 @@ PDC_Server_transfer_request_read_from(uint64_t obj_id, int obj_ndim, uint64_t *o
     }
     // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
     snprintf(storage_location, ADDR_MAX, "%.200s/pdc_data/%" PRIu64 "/server%d/s%04d.bin", data_path, obj_id,
-             0, 0);
+             server_rank, server_rank);
     PDC_mkdir(storage_location);
 
     fd = open(storage_location, O_RDWR | O_CREAT, 0666);
@@ -4534,6 +4548,7 @@ transfer_request_bulk_transfer_read_cb(const struct hg_cb_info *info)
     hg_return_t                              ret;
     transfer_request_out_t                   out;
     FUNC_ENTER(NULL);
+
 
     out.ret = 1;
 
@@ -6009,6 +6024,7 @@ PDC_del_task_from_list_id(pdc_task_list_t **target_list, int id, hg_thread_mutex
     DL_DELETE(*target_list, tmp);
 
 #ifdef ENABLE_MULTITHREAD
+
     hg_thread_mutex_unlock(mutex);
 #endif
     free(tmp);
@@ -6493,6 +6509,7 @@ HG_TEST_RPC_CB(get_sel_data_rpc, handle)
 
     out.ret   = 1;
     ret_value = HG_Respond(handle, PDC_Server_recv_get_sel_data, in_cp, &out);
+
 
     ret_value = HG_Free_input(handle, &in);
     ret_value = HG_Destroy(handle);
