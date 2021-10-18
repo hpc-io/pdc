@@ -5091,8 +5091,6 @@ PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *region_info,
                 if (pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
                     (ssize_t)overlap_region->data_size) {
                     printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
-
-
                 }
 
                 // Overlap start position
@@ -5655,10 +5653,10 @@ PDC_Server_transfer_request_write_out(uint64_t obj_id, int obj_ndim, uint64_t *o
                                       struct pdc_region_info *region_info, void *buf, size_t unit)
 {
     perr_t ret_value = SUCCEED;
-    int   fd;
-    char *data_path                = NULL;
+    int fd;
+    char *data_path = NULL;
     char *user_specified_data_path = NULL;
-    char  storage_location[ADDR_MAX];
+    char storage_location[ADDR_MAX];
 
     FUNC_ENTER(NULL);
     user_specified_data_path = getenv("PDC_DATA_LOC");
@@ -5692,10 +5690,10 @@ PDC_Server_transfer_request_read_from(uint64_t obj_id, int obj_ndim, uint64_t *o
                                       struct pdc_region_info *region_info, void *buf, size_t unit)
 {
     perr_t ret_value = SUCCEED;
-    int   fd;
-    char *data_path                = NULL;
+    int fd;
+    char *data_path = NULL;
     char *user_specified_data_path = NULL;
-    char  storage_location[ADDR_MAX];
+    char storage_location[ADDR_MAX];
 
     FUNC_ENTER(NULL);
 
