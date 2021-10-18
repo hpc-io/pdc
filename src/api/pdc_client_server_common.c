@@ -3662,7 +3662,6 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
-
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4405,17 +4404,17 @@ get_server_rank()
 #endif
 }
 
-#define PDC_POSIX_IO(fd, buf, io_size, is_write)                                                            \
-        if (is_write) { \
-            if (write(fd, buf, io_size) != io_size) { \
-                printf("server POSIX write failed\n"); \
-            } \
-        } \
-        else { \
-            if (read(fd, buf, io_size) != io_size) { \
-                printf("server POSIX read failed\n"); \
-            } \
-        }
+#define PDC_POSIX_IO(fd, buf, io_size, is_write)                                                             \
+    if (is_write) {                                                                                          \
+        if (write(fd, buf, io_size) != io_size) {                                                            \
+            printf("server POSIX write failed\n");                                                           \
+        }                                                                                                    \
+    }                                                                                                        \
+    else {                                                                                                   \
+        if (read(fd, buf, io_size) != io_size) {                                                             \
+            printf("server POSIX read failed\n");                                                            \
+        }                                                                                                    \
+    }
 
 perr_t
 PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims,
