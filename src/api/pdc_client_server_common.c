@@ -4439,8 +4439,15 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims
     if (region_info->ndim == 1) {
         lseek(fd, region_info->offset[0] * unit, SEEK_SET);
         io_size = region_info->size[0] * unit;
-        if (write(fd, buf, io_size) != io_size) {
-            printf("server POSIX write failed\n");
+        if (is_write) {
+            if (write(fd, buf, io_size) != io_size) {
+                printf("server POSIX write failed\n");
+            }
+        }
+        else {
+            if (read(fd, buf, io_size) != io_size) {
+                printf("server POSIX read failed\n");
+            }
         }
     }
     else if (region_info->ndim == 2) {
