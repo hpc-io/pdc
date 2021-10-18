@@ -2383,6 +2383,8 @@ pack_region_buffer(char *buf, char **new_buf, size_t total_data_size, int local_
 {
     uint64_t i;
     perr_t   ret_value = SUCCEED;
+    char *ptr;
+
     FUNC_ENTER(NULL);
     if (local_ndim == 1) {
         *new_buf = buf + local_offset[0] * unit;
@@ -2390,23 +2392,25 @@ pack_region_buffer(char *buf, char **new_buf, size_t total_data_size, int local_
     else if (local_ndim == 2) {
         *new_buf = (char *)malloc(sizeof(char) * total_data_size);
         if (access_type == PDC_WRITE) {
+            ptr = *new_buf;
             for (i = 0; i < local_size[0]; ++i) {
-                memcpy(new_buf[0], buf + (local_offset[0] * local_size[1] + local_offset[1]) * unit,
+                memcpy(ptr, buf + (local_offset[0] * local_size[1] + local_offset[1]) * unit,
                        sizeof(char) * local_size[1] * unit);
-                new_buf[0] += local_size[1] * unit;
+                ptr += local_size[1] * unit;
             }
         }
     }
     else if (local_ndim == 3) {
         *new_buf = (char *)malloc(sizeof(char) * total_data_size);
         if (access_type == PDC_WRITE) {
+            ptr = *new_buf;
             for (i = 0; i < local_size[0] * local_size[1]; ++i) {
-                memcpy(new_buf[0],
+                memcpy(ptr,
                        buf + (local_offset[0] * local_size[1] * local_size[2] +
                               local_offset[1] * local_size[2] + local_offset[2]) *
                                  unit,
                        sizeof(char) * local_size[2] * unit);
-                new_buf[0] += local_size[2] * unit;
+                ptr += local_size[2] * unit;
             }
         }
     }
