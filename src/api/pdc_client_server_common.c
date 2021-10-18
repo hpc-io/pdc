@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4405,7 +4406,7 @@ get_server_rank()
 }
 
 perr_t
-PDC_Server_transfer_request_write_out(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims,
+PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims,
                                       struct pdc_region_info *region_info, void *buf, size_t unit,
                                       int is_write)
 {
@@ -4595,9 +4596,9 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
         PDC_Server_data_write_out(local_bulk_args->in.obj_id, remote_reg_info, (void
        *)local_bulk_args->data_buf, local_bulk_args->in.remote_unit);
     */
-    PDC_Server_transfer_request_write_out(local_bulk_args->in.obj_id, local_bulk_args->in.obj_ndim, obj_dims,
+    PDC_Server_transfer_request_io(local_bulk_args->in.obj_id, local_bulk_args->in.obj_ndim, obj_dims,
                                           remote_reg_info, (void *)local_bulk_args->data_buf,
-                                          local_bulk_args->in.remote_unit);
+                                          local_bulk_args->in.remote_unit, 1);
     ret = HG_Respond(local_bulk_args->handle, NULL, NULL, &out);
 
     HG_Bulk_free(local_bulk_args->bulk_handle);
@@ -4701,8 +4702,8 @@ HG_TEST_RPC_CB(transfer_request, handle)
             (remote_reg_info->size)[2]   = (in.remote_region).count_2 / in.remote_unit;
             obj_dims[0]                  = in.obj_dim0;
         }
-        PDC_Server_transfer_request_read_from(in.obj_id, in.obj_ndim, obj_dims, remote_reg_info,
-                                              (void *)local_bulk_args->data_buf, in.remote_unit);
+        PDC_Server_transfer_request_io(in.obj_id, in.obj_ndim, obj_dims, remote_reg_info,
+                                              (void *)local_bulk_args->data_buf, in.remote_unit, 0);
         printf("Server transfer request at read branch index 1 value is %d\n",
                *((int *)(local_bulk_args->data_buf + sizeof(int))));
 
@@ -4953,6 +4954,7 @@ done:
  */
 
 static hg_return_t
+
 update_storage_meta_bulk_cb(const struct hg_cb_info *hg_cb_info)
 {
     hg_return_t         ret_value         = HG_SUCCESS;
