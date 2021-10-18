@@ -5092,6 +5092,7 @@ PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *region_info,
                     (ssize_t)overlap_region->data_size) {
                     printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
 
+
                 }
 
                 // Overlap start position
@@ -5682,6 +5683,7 @@ PDC_Server_transfer_request_write_out(uint64_t obj_id, int obj_ndim, uint64_t *o
         }
     }
     close(fd);
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
@@ -5719,6 +5721,7 @@ PDC_Server_transfer_request_read_from(uint64_t obj_id, int obj_ndim, uint64_t *o
         }
     }
     close(fd);
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
