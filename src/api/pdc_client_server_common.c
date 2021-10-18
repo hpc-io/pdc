@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4412,7 +4413,7 @@ PDC_Server_transfer_request_write_out(uint64_t obj_id, int obj_ndim, uint64_t *o
     }
     // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
     snprintf(storage_location, ADDR_MAX, "%.200s/pdc_data/%" PRIu64 "/server%d/s%04d.bin", data_path, obj_id,
-             pdc_server_rank_g, pdc_server_rank_g);
+             0, 0);
     PDC_mkdir(storage_location);
 
     fd = open(storage_location, O_RDWR | O_CREAT, 0666);
