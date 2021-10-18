@@ -47,9 +47,8 @@ main(int argc, char **argv)
     int rank = 0, size = 1, i;
     int ret_value = 0;
 
-    uint64_t offset[3], offset_length[3], local_offset[1];
+    uint64_t offset[3], offset_length[3];
     uint64_t dims[3];
-    local_offset[0] = 0;
 
     int *data      = (int *)malloc(sizeof(int) * BUF_LEN);
     int *data_read = (int *)malloc(sizeof(int) * BUF_LEN);
@@ -130,14 +129,14 @@ main(int argc, char **argv)
     }
 
     offset[0]  = 0;
-    size[0]    = BUF_LEN;
+    offset_length[0]    = BUF_LEN;
     reg        = PDCregion_create(1, offset, offset_length);
     offset[0]  = 0;
     offset[1]  = 0;
     offset[2]  = 0;
-    size[0]    = BUF_LEN / 4;
-    size[1]    = 4;
-    size[2]    = 4;
+    offset_length[0]    = BUF_LEN / 4;
+    offset_length[1]    = 4;
+    offset_length[2]    = 4;
     reg_global = PDCregion_create(2, offset, offset_length);
 
     for (i = 0; i < BUF_LEN; ++i) {
@@ -167,14 +166,14 @@ main(int argc, char **argv)
     }
 
     offset[0]  = 0;
-    size[0]    = BUF_LEN;
+    offset_length[0]    = BUF_LEN;
     reg        = PDCregion_create(1, offset, offset_length);
     offset[0]  = 0;
     offset[1]  = 0;
     offset[2]  = 0;
-    size[0]    = BUF_LEN / 4;
-    size[1]    = 4;
-    size[2]    = 4;
+    offset_length[0]    = BUF_LEN / 4;
+    offset_length[1]    = 4;
+    offset_length[2]    = 4;
     reg_global = PDCregion_create(2, offset, offset_length);
 
     transfer_request = PDCtransfer_request_create(data_read, PDC_READ, obj1, reg, reg_global);
