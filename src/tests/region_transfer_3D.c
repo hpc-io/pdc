@@ -128,16 +128,16 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 
-    offset[0]  = 0;
-    offset_length[0]    = BUF_LEN;
-    reg        = PDCregion_create(1, offset, offset_length);
-    offset[0]  = 0;
-    offset[1]  = 0;
-    offset[2]  = 0;
-    offset_length[0]    = BUF_LEN / 4;
-    offset_length[1]    = 4;
-    offset_length[2]    = 4;
-    reg_global = PDCregion_create(2, offset, offset_length);
+    offset[0]        = 0;
+    offset_length[0] = BUF_LEN;
+    reg              = PDCregion_create(1, offset, offset_length);
+    offset[0]        = 0;
+    offset[1]        = 0;
+    offset[2]        = 0;
+    offset_length[0] = BUF_LEN / 4;
+    offset_length[1] = 4;
+    offset_length[2] = 4;
+    reg_global       = PDCregion_create(2, offset, offset_length);
 
     for (i = 0; i < BUF_LEN; ++i) {
         data[i] = i;
@@ -165,16 +165,16 @@ main(int argc, char **argv)
         printf("successfully closed global region\n");
     }
 
-    offset[0]  = 0;
-    offset_length[0]    = BUF_LEN;
-    reg        = PDCregion_create(1, offset, offset_length);
-    offset[0]  = 0;
-    offset[1]  = 0;
-    offset[2]  = 0;
-    offset_length[0]    = BUF_LEN / 4;
-    offset_length[1]    = 4;
-    offset_length[2]    = 4;
-    reg_global = PDCregion_create(2, offset, offset_length);
+    offset[0]        = 0;
+    offset_length[0] = BUF_LEN;
+    reg              = PDCregion_create(1, offset, offset_length);
+    offset[0]        = 0;
+    offset[1]        = 0;
+    offset[2]        = 0;
+    offset_length[0] = BUF_LEN / 4;
+    offset_length[1] = 4;
+    offset_length[2] = 4;
+    reg_global       = PDCregion_create(2, offset, offset_length);
 
     transfer_request = PDCtransfer_request_create(data_read, PDC_READ, obj1, reg, reg_global);
 
