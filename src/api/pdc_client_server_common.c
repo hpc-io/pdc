@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4391,6 +4392,11 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
+
+perr_t PDC_Server_transfer_request_write_out(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims,
+                                             struct pdc_region_info *region_info, void *buf, size_t unit);
+perr_t PDC_Server_transfer_request_read_from(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims,
+                                             struct pdc_region_info *region_info, void *buf, size_t unit);
 
 hg_return_t
 transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
