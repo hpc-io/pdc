@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4480,6 +4481,7 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims
         // Check we can directly write the contiguous chunk to the file
         if (region_info->offset[1] == 0 && region_info->size[1] == obj_dims[1] &&
             region_info->offset[2] == 0 && region_info->size[2] == obj_dims[2]) {
+            printf("checkpoint 1\n");
             lseek(fd, region_info->offset[0] * region_info->size[1] * region_info->size[2] * unit, SEEK_SET);
             io_size = region_info->size[0] * region_info->size[1] * region_info->size[2] * unit;
             PDC_POSIX_IO(fd, buf, io_size, is_write);
@@ -5199,6 +5201,7 @@ HG_TEST_RPC_CB(update_region_loc, handle)
     input_region->offset = in.offset;
 
     if (in.has_hist == 1) {
+
         input_region->region_hist = (pdc_histogram_t *)calloc(1, sizeof(pdc_histogram_t));
         PDC_copy_hist(input_region->region_hist, &in.hist);
     }
@@ -6682,6 +6685,7 @@ HG_TEST_THREAD_CB(send_read_sel_obj_id_rpc)
     {                                                                                                        \
         hg_id_t ret_value;                                                                                   \
         FUNC_ENTER(NULL);                                                                                    \
+
         ret_value = MERCURY_REGISTER(hg_class, #x, x##_in_t, x##_out_t, x##_cb);                             \
         FUNC_LEAVE(ret_value);                                                                               \
         return ret_value;                                                                                    \
