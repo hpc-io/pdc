@@ -5091,6 +5091,7 @@ PDC_Server_data_write_out2(uint64_t obj_id, struct pdc_region_info *region_info,
                 if (pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
                     (ssize_t)overlap_region->data_size) {
                     printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
+
                 }
 
                 // Overlap start position
@@ -5647,74 +5648,6 @@ PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf
 }
 
 #else
-perr_t
-PDC_Server_transfer_request_write_out(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims,
-                                      struct pdc_region_info *region_info, void *buf, size_t unit)
-{
-    int fd;
-    char *data_path = NULL;
-    char *user_specified_data_path = NULL;
-    char storage_location[ADDR_MAX];
-
-    user_specified_data_path = getenv("PDC_DATA_LOC");
-    if (user_specified_data_path != NULL) {
-        data_path = user_specified_data_path;
-    }
-    else {
-        data_path = getenv("SCRATCH");
-        if (data_path == NULL)
-            data_path = ".";
-    }
-    // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
-    snprintf(storage_location, ADDR_MAX, "%.200s/pdc_data/%" PRIu64 "/server%d/s%04d.bin", data_path, obj_id,
-             pdc_server_rank_g, pdc_server_rank_g);
-    PDC_mkdir(storage_location);
-
-    fd = open(storage_location, O_RDWR | O_CREAT, 0666);
-    if (region_info->ndim == 1) {
-        lseek(fd, region_info->offset[0] + region_info->size[0] * unit, SEEK_SET);
-        if (write(fd, buf, unit * region_info->size[0]) != (ssize_t)(unit * region_info->size[0])) {
-            printf("server POSIX write failed\n");
-        }
-    }
-    close(fd);
-    return SUCCEED;
-}
-
-perr_t
-PDC_Server_transfer_request_read_from(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims,
-                                      struct pdc_region_info *region_info, void *buf, size_t unit)
-{
-    int fd;
-    char *data_path = NULL;
-    char *user_specified_data_path = NULL;
-    char storage_location[ADDR_MAX];
-
-    user_specified_data_path = getenv("PDC_DATA_LOC");
-    if (user_specified_data_path != NULL) {
-        data_path = user_specified_data_path;
-    }
-    else {
-        data_path = getenv("SCRATCH");
-        if (data_path == NULL)
-            data_path = ".";
-    }
-    // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
-    snprintf(storage_location, ADDR_MAX, "%.200s/pdc_data/%" PRIu64 "/server%d/s%04d.bin", data_path, obj_id,
-             pdc_server_rank_g, pdc_server_rank_g);
-    PDC_mkdir(storage_location);
-
-    fd = open(storage_location, O_RDWR | O_CREAT, 0666);
-    if (region_info->ndim == 1) {
-        lseek(fd, region_info->offset[0] + region_info->size[0] * unit, SEEK_SET);
-        if (read(fd, buf, unit * region_info->size[0]) != (ssize_t)(region_info->size[0] * unit)) {
-            printf("server POSIX read failed\n");
-        }
-    }
-    close(fd);
-    return SUCCEED;
-}
-
 // No PDC_SERVER_CACHE
 perr_t
 PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
