@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4431,6 +4432,12 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims
     int server_rank = get_server_rank();
 
     FUNC_ENTER(NULL);
+
+    if ( obj_ndim != region_info->ndim ) {
+        printf("Server I/O error: Obj dim does not match obj dim\n");
+        goto done;
+    }
+
     user_specified_data_path = getenv("PDC_DATA_LOC");
     if (user_specified_data_path != NULL) {
         data_path = user_specified_data_path;
@@ -4508,6 +4515,8 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims
         }
     }
     close(fd);
+
+done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
@@ -6441,6 +6450,7 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
+
 
 /* send_data_query_rpc_cb(hg_handle_t handle) */
 HG_TEST_RPC_CB(send_data_query_rpc, handle)
