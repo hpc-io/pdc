@@ -2383,7 +2383,7 @@ pack_region_buffer(char *buf, char **new_buf, size_t total_data_size, int local_
 {
     uint64_t i;
     perr_t   ret_value = SUCCEED;
-    char *ptr;
+    char *   ptr;
 
     FUNC_ENTER(NULL);
     if (local_ndim == 1) {
