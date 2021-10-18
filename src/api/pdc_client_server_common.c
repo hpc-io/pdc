@@ -3662,7 +3662,6 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
-
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4407,17 +4406,18 @@ get_server_rank()
 
 perr_t
 PDC_Server_transfer_request_write_out(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims,
-                                      struct pdc_region_info *region_info, void *buf, size_t unit, int is_write)
+                                      struct pdc_region_info *region_info, void *buf, size_t unit,
+                                      int is_write)
 {
-    perr_t ret_value = SUCCEED;
-    int    fd;
-    char * data_path                = NULL;
-    char * user_specified_data_path = NULL;
-    char   storage_location[ADDR_MAX];
-    ssize_t io_size;
+    perr_t   ret_value = SUCCEED;
+    int      fd;
+    char *   data_path                = NULL;
+    char *   user_specified_data_path = NULL;
+    char     storage_location[ADDR_MAX];
+    ssize_t  io_size;
     uint64_t i, j;
 
-    int    server_rank = get_server_rank();
+    int server_rank = get_server_rank();
 
     FUNC_ENTER(NULL);
     user_specified_data_path = getenv("PDC_DATA_LOC");
@@ -4441,7 +4441,8 @@ PDC_Server_transfer_request_write_out(uint64_t obj_id, int obj_ndim, uint64_t *o
         if (write(fd, buf, io_size) != io_size) {
             printf("server POSIX write failed\n");
         }
-    } else if (region_info->ndim == 2) {
+    }
+    else if (region_info->ndim == 2) {
         // Check we can directly write the contiguous chunk to the file
         if (region_info->offset[1] == 0 && region_info->size[1] == obj_dims[1]) {
             lseek(fd, region_info->offset[0] * region_info->size[1] * unit, SEEK_SET);
@@ -4450,21 +4451,26 @@ PDC_Server_transfer_request_write_out(uint64_t obj_id, int obj_ndim, uint64_t *o
                 if (write(fd, buf, io_size) != io_size) {
                     printf("server POSIX write failed\n");
                 }
-            } else {
+            }
+            else {
                 if (read(fd, buf, io_size) != io_size) {
                     printf("server POSIX read failed\n");
                 }
             }
-        } else {
+        }
+        else {
             // We have to write line by line
-            for ( i = 0; i < region_info->size[0]; ++i ) {
-                lseek(fd, ( (i + region_info->offset[0]) * region_info->size[1] + region_info->offset[1]) * unit, SEEK_SET);
+            for (i = 0; i < region_info->size[0]; ++i) {
+                lseek(fd,
+                      ((i + region_info->offset[0]) * region_info->size[1] + region_info->offset[1]) * unit,
+                      SEEK_SET);
                 io_size = region_info->size[1] * unit;
                 if (is_write) {
                     if (write(fd, buf, io_size) != io_size) {
                         printf("server POSIX write failed\n");
                     }
-                } else {
+                }
+                else {
                     if (read(fd, buf, io_size) != io_size) {
                         printf("server POSIX read failed\n");
                     }
@@ -4472,47 +4478,62 @@ PDC_Server_transfer_request_write_out(uint64_t obj_id, int obj_ndim, uint64_t *o
                 buf += io_size;
             }
         }
-    } else if (region_info->ndim == 3) {
+    }
+    else if (region_info->ndim == 3) {
         // Check we can directly write the contiguous chunk to the file
-        if (region_info->offset[1] == 0 && region_info->size[1] == obj_dims[1] && region_info->offset[2] == 0 && region_info->size[2] == obj_dims[2]) {
+        if (region_info->offset[1] == 0 && region_info->size[1] == obj_dims[1] &&
+            region_info->offset[2] == 0 && region_info->size[2] == obj_dims[2]) {
             lseek(fd, region_info->offset[0] * region_info->size[1] * region_info->size[2] * unit, SEEK_SET);
             io_size = region_info->size[0] * region_info->size[1] * region_info->size[2] * unit;
             if (is_write) {
                 if (write(fd, buf, io_size) != io_size) {
                     printf("server POSIX write failed\n");
                 }
-            } else {
+            }
+            else {
                 if (read(fd, buf, io_size) != io_size) {
                     printf("server POSIX read failed\n");
                 }
             }
-        } else if (region_info->offset[2] == 0 && region_info->size[2] == obj_dims[2]) {
+        }
+        else if (region_info->offset[2] == 0 && region_info->size[2] == obj_dims[2]) {
             // We have to write plane by plane
-            for ( i = 0; i < region_info->size[0]; ++i ) {
-                lseek(fd, ( (i + region_info->offset[0]) * region_info->size[1] * region_info->size[2]  + region_info->offset[1] * region_info->size[2]) * unit, SEEK_SET);
+            for (i = 0; i < region_info->size[0]; ++i) {
+                lseek(fd,
+                      ((i + region_info->offset[0]) * region_info->size[1] * region_info->size[2] +
+                       region_info->offset[1] * region_info->size[2]) *
+                          unit,
+                      SEEK_SET);
                 io_size = region_info->size[1] * region_info->size[2] * unit;
                 if (is_write) {
                     if (write(fd, buf, io_size) != io_size) {
                         printf("server POSIX write failed\n");
                     }
-                } else {
+                }
+                else {
                     if (read(fd, buf, io_size) != io_size) {
                         printf("server POSIX read failed\n");
                     }
                 }
                 buf += io_size;
             }
-        } else {
+        }
+        else {
             // We have to write line by line
-            for ( i = 0; i < region_info->size[0]; ++i ) {
-                for ( j = 0; j < region_info->size[1]; ++ j ) {
-                    lseek(fd, ( (region_info->offset[0] + i) * region_info->size[1] * region_info->size[2]  + (region_info->offset[1] + j) * region_info->size[2] + region_info->offset[2]) * unit, SEEK_SET);
+            for (i = 0; i < region_info->size[0]; ++i) {
+                for (j = 0; j < region_info->size[1]; ++j) {
+                    lseek(fd,
+                          ((region_info->offset[0] + i) * region_info->size[1] * region_info->size[2] +
+                           (region_info->offset[1] + j) * region_info->size[2] + region_info->offset[2]) *
+                              unit,
+                          SEEK_SET);
                     io_size = region_info->size[2] * unit;
                     if (is_write) {
                         if (write(fd, buf, io_size) != io_size) {
                             printf("server POSIX write failed\n");
                         }
-                    } else {
+                    }
+                    else {
                         if (read(fd, buf, io_size) != io_size) {
                             printf("server POSIX read failed\n");
                         }
