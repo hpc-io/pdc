@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4404,6 +4405,18 @@ get_server_rank()
 #endif
 }
 
+#define PDC_POSIX_IO(fd, buf, io_size, is_write)                                                            \
+        if (is_write) { \
+            if (write(fd, buf, io_size) != io_size) { \
+                printf("server POSIX write failed\n"); \
+            } \
+        } \
+        else { \
+            if (read(fd, buf, io_size) != io_size) { \
+                printf("server POSIX read failed\n"); \
+            } \
+        }
+
 perr_t
 PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims,
                                struct pdc_region_info *region_info, void *buf, size_t unit, int is_write)
@@ -4437,32 +4450,14 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims
     if (region_info->ndim == 1) {
         lseek(fd, region_info->offset[0] * unit, SEEK_SET);
         io_size = region_info->size[0] * unit;
-        if (is_write) {
-            if (write(fd, buf, io_size) != io_size) {
-                printf("server POSIX write failed\n");
-            }
-        }
-        else {
-            if (read(fd, buf, io_size) != io_size) {
-                printf("server POSIX read failed\n");
-            }
-        }
+        PDC_POSIX_IO(fd, buf, io_size, is_write);
     }
     else if (region_info->ndim == 2) {
         // Check we can directly write the contiguous chunk to the file
         if (region_info->offset[1] == 0 && region_info->size[1] == obj_dims[1]) {
             lseek(fd, region_info->offset[0] * region_info->size[1] * unit, SEEK_SET);
             io_size = region_info->size[0] * region_info->size[1] * unit;
-            if (is_write) {
-                if (write(fd, buf, io_size) != io_size) {
-                    printf("server POSIX write failed\n");
-                }
-            }
-            else {
-                if (read(fd, buf, io_size) != io_size) {
-                    printf("server POSIX read failed\n");
-                }
-            }
+            PDC_POSIX_IO(fd, buf, io_size, is_write);
         }
         else {
             // We have to write line by line
@@ -4471,16 +4466,7 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims
                       ((i + region_info->offset[0]) * region_info->size[1] + region_info->offset[1]) * unit,
                       SEEK_SET);
                 io_size = region_info->size[1] * unit;
-                if (is_write) {
-                    if (write(fd, buf, io_size) != io_size) {
-                        printf("server POSIX write failed\n");
-                    }
-                }
-                else {
-                    if (read(fd, buf, io_size) != io_size) {
-                        printf("server POSIX read failed\n");
-                    }
-                }
+                PDC_POSIX_IO(fd, buf, io_size, is_write);
                 buf += io_size;
             }
         }
@@ -4491,16 +4477,7 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims
             region_info->offset[2] == 0 && region_info->size[2] == obj_dims[2]) {
             lseek(fd, region_info->offset[0] * region_info->size[1] * region_info->size[2] * unit, SEEK_SET);
             io_size = region_info->size[0] * region_info->size[1] * region_info->size[2] * unit;
-            if (is_write) {
-                if (write(fd, buf, io_size) != io_size) {
-                    printf("server POSIX write failed\n");
-                }
-            }
-            else {
-                if (read(fd, buf, io_size) != io_size) {
-                    printf("server POSIX read failed\n");
-                }
-            }
+            PDC_POSIX_IO(fd, buf, io_size, is_write);
         }
         else if (region_info->offset[2] == 0 && region_info->size[2] == obj_dims[2]) {
             // We have to write plane by plane
@@ -4511,16 +4488,7 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims
                           unit,
                       SEEK_SET);
                 io_size = region_info->size[1] * region_info->size[2] * unit;
-                if (is_write) {
-                    if (write(fd, buf, io_size) != io_size) {
-                        printf("server POSIX write failed\n");
-                    }
-                }
-                else {
-                    if (read(fd, buf, io_size) != io_size) {
-                        printf("server POSIX read failed\n");
-                    }
-                }
+                PDC_POSIX_IO(fd, buf, io_size, is_write);
                 buf += io_size;
             }
         }
@@ -4534,16 +4502,7 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims
                               unit,
                           SEEK_SET);
                     io_size = region_info->size[2] * unit;
-                    if (is_write) {
-                        if (write(fd, buf, io_size) != io_size) {
-                            printf("server POSIX write failed\n");
-                        }
-                    }
-                    else {
-                        if (read(fd, buf, io_size) != io_size) {
-                            printf("server POSIX read failed\n");
-                        }
-                    }
+                    PDC_POSIX_IO(fd, buf, io_size, is_write);
                     buf += io_size;
                 }
             }
