@@ -3662,7 +3662,6 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
-
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4547,7 +4546,7 @@ HG_TEST_RPC_CB(transfer_request, handle)
             obj_dims[0]                  = in.obj_dim0;
         }
         PDC_Server_transfer_request_read_from(in.obj_id, in.obj_ndim, obj_dims, remote_reg_info,
-                                                      (void *)local_bulk_args->data_buf, in.remote_unit);
+                                              (void *)local_bulk_args->data_buf, in.remote_unit);
         printf("Server transfer request at read branch index 1 value is %d\n",
                *((int *)(local_bulk_args->data_buf + sizeof(int))));
 
