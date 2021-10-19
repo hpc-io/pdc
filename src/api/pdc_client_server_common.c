@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4636,8 +4637,8 @@ HG_TEST_RPC_CB(transfer_request, handle)
     local_bulk_args->data_buf       = malloc(total_mem_size);
     local_bulk_args->in             = in;
 
-    printf("checkpoint 3, obj dims [%" PRIu64 ", %" PRIu64 ", %" PRIu64 "]\n", obj_dims[0], obj_dims[1],
-           obj_dims[2]);
+    printf("server check obj dims [%" PRIu64 ", %" PRIu64 ", %" PRIu64 "]\n", in.obj_dims0, in.obj_dims1,
+           in.obj_dims2);
 
     if (in.access_type == PDC_WRITE) {
         ret_value = HG_Bulk_create(info->hg_class, 1, &(local_bulk_args->data_buf),
