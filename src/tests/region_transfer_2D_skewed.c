@@ -126,7 +126,7 @@ main(int argc, char **argv)
         printf("Fail to create object @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
-// Testing first object
+    // Testing first object
     offset[0]        = 0;
     offset[1]        = 0;
     offset_length[0] = BUF_LEN / 128;
@@ -205,7 +205,7 @@ main(int argc, char **argv)
     else {
         printf("successfully closed global region\n");
     }
-// Testing second object
+    // Testing second object
     offset[0]        = BUF_LEN / 64;
     offset[1]        = 16;
     offset_length[0] = BUF_LEN / 64;
@@ -263,8 +263,8 @@ main(int argc, char **argv)
 
     // Check if data written previously has been correctly read.
     for (i = 0; i < BUF_LEN / 4; ++i) {
-        if (data_read[i] != (BUF_LEN / 2 + 16) + ( i / 16 ) * 32 + i % 16 ) {
-            printf("wrong value %d!=%d\n", data_read[i], (BUF_LEN / 2 + 16) + ( i / 16 ) * 32 + i % 16);
+        if (data_read[i] != (BUF_LEN / 2 + 16) + (i / 16) * 32 + i % 16) {
+            printf("wrong value %d!=%d\n", data_read[i], (BUF_LEN / 2 + 16) + (i / 16) * 32 + i % 16);
             ret_value = 1;
             break;
         }
