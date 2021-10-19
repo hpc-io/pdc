@@ -55,7 +55,7 @@ main(int argc, char **argv)
     int *obj_data  = (int *)calloc(BUF_LEN, sizeof(int));
     dims[0]        = BUF_LEN / 16;
     dims[1]        = 4;
-    dims[1]        = 4;
+    dims[2]        = 4;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
