@@ -49,7 +49,6 @@ main(int argc, char **argv)
 
     uint64_t offset[1], offset_length[1];
     uint64_t dims[1];
-    local_offset[0] = 0;
 
     int *data      = (int *)malloc(sizeof(int) * BUF_LEN);
     int *data_read = (int *)malloc(sizeof(int) * BUF_LEN);
