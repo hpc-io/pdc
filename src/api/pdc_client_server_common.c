@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4486,6 +4487,7 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims
             PDC_POSIX_IO(fd, buf, io_size, is_write);
         }
         else if (region_info->offset[2] == 0 && region_info->size[2] == obj_dims[2]) {
+            printf("checkpoint 2\n");
             // We have to write plane by plane
             for (i = 0; i < region_info->size[0]; ++i) {
                 lseek(fd,
@@ -4499,6 +4501,7 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims
             }
         }
         else {
+            printf("checkpoint 3\n");
             // We have to write line by line
             for (i = 0; i < region_info->size[0]; ++i) {
                 for (j = 0; j < region_info->size[1]; ++j) {
@@ -7113,6 +7116,7 @@ int
 PDC_query_get_nnode(pdc_query_t *query)
 {
     int ret_value = 0;
+
 
     FUNC_ENTER(NULL);
 
