@@ -2547,6 +2547,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *o
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
 
+    printf("PDC_Client_transfer_request() checkpoint @ line %d\n", __LINE__);
     release_region_buffer(buf, new_buf, local_ndim, local_offset, local_size, unit, access_type);
 
     if (transfer_args.ret != 1)
@@ -5450,6 +5451,7 @@ PDC_Client_query_multi_storage_info(int nobj, char **obj_names, region_storage_m
     perr_t                   ret_value = SUCCEED;
     hg_return_t              hg_ret    = HG_SUCCESS;
     hg_handle_t              rpc_handle;
+
     hg_bulk_t                bulk_handle;
     uint32_t                 server_id;
     uint64_t *               buf_sizes = NULL, total_size;
