@@ -4590,7 +4590,7 @@ transfer_request_bulk_transfer_read_cb(const struct hg_cb_info *info)
 
     out.ret = 1;
 
-    // printf("entering transfer bulk callback\n");
+    printf("entering server read transfer bulk callback\n");
 
     ret = HG_Respond(local_bulk_args->handle, NULL, NULL, &out);
 
