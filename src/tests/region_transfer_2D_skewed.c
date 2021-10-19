@@ -246,7 +246,7 @@ main(int argc, char **argv)
 
     offset[0]        = 0;
     offset[1]        = 0;
-    offset_length[0] = BUF_LEN / 64;
+    offset_length[0] = BUF_LEN / 128;
     offset_length[1] = 32;
     reg              = PDCregion_create(2, offset, offset_length);
     offset[0]        = BUF_LEN / 64;
