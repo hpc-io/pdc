@@ -5247,7 +5247,6 @@ PDC_Client_cp_data_to_local_server(int nobj, region_storage_meta_t **all_storage
     int                    i, *total_obj = NULL, ntotal_obj = nobj, *recvcounts = NULL, *displs = NULL;
     region_storage_meta_t *all_region_storage_meta_1d = NULL, *my_region_storage_meta_1d = NULL;
 
-
     FUNC_ENTER(NULL);
 
     for (i = 0; i < nobj; i++) {
