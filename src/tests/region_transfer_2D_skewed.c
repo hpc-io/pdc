@@ -244,10 +244,10 @@ main(int argc, char **argv)
         printf("successfully closed global region\n");
     }
 
-    offset[0]        = BUF_LEN / 64;
-    offset[1]        = 16;
+    offset[0]        = 0;
+    offset[1]        = 0;
     offset_length[0] = BUF_LEN / 64;
-    offset_length[1] = 16;
+    offset_length[1] = 32;
     reg              = PDCregion_create(1, offset, offset_length);
     offset[0]        = BUF_LEN / 64;
     offset[1]        = 16;
