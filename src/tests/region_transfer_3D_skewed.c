@@ -194,8 +194,8 @@ main(int argc, char **argv)
     // Check if data written previously has been correctly read.
     for (i = 0; i < BUF_LEN / 8; ++i) {
         value = BUF_LEN / 2 + offset[1] * dims[2] + offset[2] +
-                i / (offset_length[1] * offset_length[2]) * dims[1] * dims[2] +
-                (i % (offset_length[1] * offset_length[2])) / offset_length[2] * dims[2] +
+                (i / (offset_length[1] * offset_length[2])) * dims[1] * dims[2] +
+                ((i % (offset_length[1] * offset_length[2])) / offset_length[2]) * dims[2] +
                 i % offset_length[2];
         if (data_read[value] != i) {
             printf("wrong value %d!=%d, value = %d\n", data_read[value], i, (int) value);
