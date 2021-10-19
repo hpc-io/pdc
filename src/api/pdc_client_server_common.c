@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4669,12 +4670,12 @@ HG_TEST_RPC_CB(transfer_request, handle)
         if (remote_reg_info->ndim >= 2) {
             (remote_reg_info->offset)[1] = (in.remote_region).start_1;
             (remote_reg_info->size)[1]   = (in.remote_region).count_1;
-            obj_dims[0]                  = in.obj_dim0;
+            obj_dims[1]                  = in.obj_dim1;
         }
         if (remote_reg_info->ndim >= 3) {
             (remote_reg_info->offset)[2] = (in.remote_region).start_2;
             (remote_reg_info->size)[2]   = (in.remote_region).count_2;
-            obj_dims[0]                  = in.obj_dim0;
+            obj_dims[2]                  = in.obj_dim2;
         }
         PDC_Server_transfer_request_io(in.obj_id, in.obj_ndim, obj_dims, remote_reg_info,
                                        (void *)local_bulk_args->data_buf, in.remote_unit, 0);
