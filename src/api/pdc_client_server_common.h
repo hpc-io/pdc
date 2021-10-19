@@ -2308,7 +2308,7 @@ hg_proc_transfer_request_in_t(hg_proc_t proc, void *data)
 {
     hg_return_t            ret;
     transfer_request_in_t *struct_data = (transfer_request_in_t *)data;
-    ret = hg_proc_hg_bulk_t(proc, &struct_data->local_bulk_handle);
+    ret                                = hg_proc_hg_bulk_t(proc, &struct_data->local_bulk_handle);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;

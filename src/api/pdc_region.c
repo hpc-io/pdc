@@ -162,7 +162,7 @@ PDCtransfer_request_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, 
     struct _pdc_id_info *   reginfo1, *reginfo2;
     struct pdc_region_info *reg1, *reg2;
     pdcid_t                 remote_meta_id;
-    uint64_t *ptr;
+    uint64_t *              ptr;
 
     FUNC_ENTER(NULL);
     reginfo1 = PDC_find_id(local_reg);
@@ -198,7 +198,7 @@ PDCtransfer_request_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, 
     memcpy(p->remote_region_offset, reg2->offset, sizeof(uint64_t) * reg2->ndim);
     ptr += reg2->ndim;
 
-    p->remote_region_size   = ptr;
+    p->remote_region_size = ptr;
     memcpy(p->remote_region_size, reg2->size, sizeof(uint64_t) * reg2->ndim);
     ptr += reg2->ndim;
 
@@ -206,8 +206,8 @@ PDCtransfer_request_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, 
     p->obj_dims = ptr;
     memcpy(p->obj_dims, obj2->obj_pt->obj_prop_pub->dims, sizeof(uint64_t) * p->obj_ndim);
 
-    printf("transfer request create check obj ndim %d, dims [%" PRIu64 ", %" PRIu64 ", %" PRIu64 "]\n", (int)p->obj_ndim,
-           p->obj_dims[0], p->obj_dims[1], p->obj_dims[2]);
+    printf("transfer request create check obj ndim %d, dims [%" PRIu64 ", %" PRIu64 ", %" PRIu64 "]\n",
+           (int)p->obj_ndim, p->obj_dims[0], p->obj_dims[1], p->obj_dims[2]);
 
     ret_value = PDC_id_register(PDC_TRANSFER_REQUEST, p);
 
