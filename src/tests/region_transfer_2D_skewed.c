@@ -174,11 +174,8 @@ main(int argc, char **argv)
     offset_length[0] = BUF_LEN / 64;
     offset_length[1] = 16;
     reg_global       = PDCregion_create(2, offset, offset_length);
-    printf("checkpoint %d\n", __LINE__);
     transfer_request = PDCtransfer_request_create(data_read, PDC_READ, obj1, reg, reg_global);
-    printf("checkpoint %d\n", __LINE__);
     PDCtransfer_request(transfer_request);
-    printf("checkpoint %d\n", __LINE__);
     PDCtransfer_request_wait(transfer_request);
 
     PDCtransfer_request_delete(transfer_request);
