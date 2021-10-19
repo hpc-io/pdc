@@ -2760,6 +2760,7 @@ PDC_Client_region_lock(struct _pdc_obj_info *object_info, struct pdc_region_info
 
     // Fill input structure
     in.obj_id       = object_info->obj_info_pub->meta_id;
+
     in.access_type  = access_type;
     in.mapping      = region_info->mapping;
     in.local_reg_id = region_info->local_id;
