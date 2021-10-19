@@ -2512,7 +2512,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *o
     if (in.obj_ndim >= 2) {
         in.obj_dim1 = obj_dims[1];
     }
-    if (in.obj_ndim >= 1) {
+    if (in.obj_ndim >= 3) {
         in.obj_dim2 = obj_dims[2];
     }
     pack_region_metadata(remote_ndim, remote_offset, remote_size, &(in.remote_region));

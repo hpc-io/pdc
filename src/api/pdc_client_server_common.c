@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4636,7 +4637,7 @@ HG_TEST_RPC_CB(transfer_request, handle)
     local_bulk_args->data_buf       = malloc(total_mem_size);
     local_bulk_args->in             = in;
 
-    printf("server check obj dims [%" PRIu64 ", %" PRIu64 ", %" PRIu64 "]\n", in.obj_dim0, in.obj_dim1,
+    printf("server check obj ndim %d, dims [%" PRIu64 ", %" PRIu64 ", %" PRIu64 "]\n", (int) in.obj_ndim, in.obj_dim0, in.obj_dim1,
            in.obj_dim2);
 
     if (in.access_type == PDC_WRITE) {
