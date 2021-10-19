@@ -129,13 +129,13 @@ main(int argc, char **argv)
     // Testing first object
     offset[0]        = 0;
     offset[1]        = 0;
-    offset_length[0] = BUF_LEN / 128;
-    offset_length[1] = 32;
+    offset_length[0] = dims[0] / 4;
+    offset_length[1] = dims[1];
     reg              = PDCregion_create(2, offset, offset_length);
-    offset[0]        = BUF_LEN / 64;
-    offset[1]        = 16;
-    offset_length[0] = BUF_LEN / 64;
-    offset_length[1] = 16;
+    offset[0]        = dims[0] / 2;
+    offset[1]        = dims[1] / 2;
+    offset_length[0] = dims[0] / 2;
+    offset_length[1] = dims[1] / 2;
     reg_global       = PDCregion_create(2, offset, offset_length);
 
     for (i = 0; i < BUF_LEN; ++i) {
@@ -166,13 +166,13 @@ main(int argc, char **argv)
 
     offset[0]        = 0;
     offset[1]        = 0;
-    offset_length[0] = BUF_LEN / 128;
-    offset_length[1] = 32;
+    offset_length[0] = dims[0] / 4;
+    offset_length[1] = dims[1];
     reg              = PDCregion_create(2, offset, offset_length);
-    offset[0]        = BUF_LEN / 64;
-    offset[1]        = 16;
-    offset_length[0] = BUF_LEN / 64;
-    offset_length[1] = 16;
+    offset[0]        = dims[0] / 2;
+    offset[1]        = dims[1] / 2;
+    offset_length[0] = dims[0] / 2;
+    offset_length[1] = dims[1] / 2;
     reg_global       = PDCregion_create(2, offset, offset_length);
     transfer_request = PDCtransfer_request_create(data_read, PDC_READ, obj1, reg, reg_global);
     PDCtransfer_request(transfer_request);
@@ -205,15 +205,15 @@ main(int argc, char **argv)
     }
     // Testing second object
     memset(data_read, 0, sizeof(int) * BUF_LEN);
-    offset[0]        = BUF_LEN / 64;
-    offset[1]        = 16;
-    offset_length[0] = BUF_LEN / 64;
-    offset_length[1] = 16;
+    offset[0]        = dims[0] / 2;
+    offset[1]        = dims[1] / 2;
+    offset_length[0] = dims[0] / 2;
+    offset_length[1] = dims[1] / 2;
     reg              = PDCregion_create(2, offset, offset_length);
-    offset[0]        = BUF_LEN / 64;
-    offset[1]        = 16;
-    offset_length[0] = BUF_LEN / 64;
-    offset_length[1] = 16;
+    offset[0]        = dims[0] / 2;
+    offset[1]        = dims[1] / 2;
+    offset_length[0] = dims[0] / 2;
+    offset_length[1] = dims[0] / 2;
     reg_global       = PDCregion_create(2, offset, offset_length);
 
     for (i = 0; i < BUF_LEN; ++i) {
@@ -244,13 +244,13 @@ main(int argc, char **argv)
 
     offset[0]        = 0;
     offset[1]        = 0;
-    offset_length[0] = BUF_LEN / 128;
-    offset_length[1] = 32;
+    offset_length[0] = dims[0] / 4;
+    offset_length[1] = dims[1];
     reg              = PDCregion_create(2, offset, offset_length);
-    offset[0]        = BUF_LEN / 64;
-    offset[1]        = 16;
-    offset_length[0] = BUF_LEN / 64;
-    offset_length[1] = 16;
+    offset[0]        = dims[0] / 2;
+    offset[1]        = dims[1] / 2;
+    offset_length[0] = dims[0] / 2;
+    offset_length[1] = dims[1] / 2;
     reg_global       = PDCregion_create(2, offset, offset_length);
 
     transfer_request = PDCtransfer_request_create(data_read, PDC_READ, obj2, reg, reg_global);
@@ -262,7 +262,7 @@ main(int argc, char **argv)
 
     // Check if data written previously has been correctly read.
     for (i = 0; i < BUF_LEN / 4; ++i) {
-        if (data_read[i] != (BUF_LEN / 2 + 16) + (i / 16) * 32 + i % 16) {
+        if ( data_read[i] != (BUF_LEN / 2 + offset_length[1]) + (i / offset_length[1]) * dims[1] + i % offset_length[1] ) {
             printf("wrong value %d!=%d @ line %d\n", data_read[i],
                    (BUF_LEN / 2 + 16) + (i / 16) * 32 + i % 16, __LINE__);
             ret_value = 1;
