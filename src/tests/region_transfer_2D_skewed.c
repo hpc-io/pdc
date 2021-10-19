@@ -44,7 +44,7 @@ main(int argc, char **argv)
     char    cont_name[128], obj_name1[128], obj_name2[128];
     pdcid_t transfer_request;
 
-    int rank = 0, size = 1, i;
+    int rank = 0, size = 1, i, value;
     int ret_value = 0;
 
     uint64_t offset[3], offset_length[3];
@@ -262,10 +262,10 @@ main(int argc, char **argv)
 
     // Check if data written previously has been correctly read.
     for (i = 0; i < BUF_LEN / 4; ++i) {
-        if (data_read[i] !=
-            (BUF_LEN / 2 + offset_length[1]) + (i / offset_length[1]) * dims[1] + i % offset_length[1]) {
+        value = (BUF_LEN / 2 + offset_length[1]) + (i / offset_length[1]) * dims[1] + i % offset_length[1];
+        if (data_read[i] != (int) value) {
             printf("wrong value %d!=%d @ line %d\n", data_read[i],
-                   (BUF_LEN / 2 + 16) + (i / 16) * 32 + i % 16, __LINE__);
+                   (int) value, __LINE__);
             ret_value = 1;
             break;
         }
