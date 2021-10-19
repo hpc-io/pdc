@@ -160,7 +160,7 @@ main(int argc, char **argv)
         printf("successfully closed global region\n");
     }
 
-    offset[0]        = BUF_LEN / 2 - 1;
+    offset[0]        = BUF_LEN / 2;
     offset_length[0] = BUF_LEN / 2;
     reg              = PDCregion_create(1, local_offset, offset_length);
     offset[0]        = BUF_LEN / 4;
@@ -177,7 +177,7 @@ main(int argc, char **argv)
     // Check if data written previously has been correctly read.
     for (i = 0; i < BUF_LEN / 2; ++i) {
         if (data_read[i + BUF_LEN / 2] != i + 1) {
-            printf("wrong value %d!=%d\n", data_read[i], i);
+            printf("wrong value %d!=%d\n", data_read[i + BUF_LEN / 2], i + 1);
             ret_value = 1;
             break;
         }
