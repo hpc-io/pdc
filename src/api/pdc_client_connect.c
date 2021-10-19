@@ -5448,9 +5448,9 @@ PDC_Client_read_with_storage_meta(int nobj, region_storage_meta_t **all_storage_
 perr_t
 PDC_Client_query_multi_storage_info(int nobj, char **obj_names, region_storage_meta_t ***all_storage_meta)
 {
-    perr_t                   ret_value = SUCCEED;
-    hg_return_t              hg_ret    = HG_SUCCESS;
-    hg_handle_t              rpc_handle;
+    perr_t      ret_value = SUCCEED;
+    hg_return_t hg_ret    = HG_SUCCESS;
+    hg_handle_t rpc_handle;
 
     hg_bulk_t                bulk_handle;
     uint32_t                 server_id;
