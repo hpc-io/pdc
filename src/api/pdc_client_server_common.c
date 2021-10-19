@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4500,7 +4501,7 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims
             }
         }
         else {
-            printf("checkpoint 3\n");
+            printf("checkpoint 3, obj offset []\n");
             // We have to write line by line
             for (i = 0; i < region_info->size[0]; ++i) {
                 for (j = 0; j < region_info->size[1]; ++j) {
