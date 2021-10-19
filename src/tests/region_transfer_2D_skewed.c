@@ -178,6 +178,7 @@ main(int argc, char **argv)
     transfer_request = PDCtransfer_request_create(data_read, PDC_READ, obj1, reg, reg_global);
     printf("checkpoint %d\n", __LINE__);
     PDCtransfer_request(transfer_request);
+    printf("checkpoint %d\n", __LINE__);
     PDCtransfer_request_wait(transfer_request);
 
     PDCtransfer_request_delete(transfer_request);
