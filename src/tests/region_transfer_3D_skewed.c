@@ -129,15 +129,15 @@ main(int argc, char **argv)
     }
     //  Testing the first object
     offset[0]        = 0;
-    offset[0]        = 0;
-    offset[0]        = 0;
+    offset[1]        = 0;
+    offset[2]        = 0;
     offset_length[0] = dims[0] / 8;
-    offset_length[0] = dims[1];
-    offset_length[0] = dims[1];
+    offset_length[1] = dims[1];
+    offset_length[2] = dims[2];
     reg              = PDCregion_create(3, offset, offset_length);
     offset[0]        = dims[0] / 2;
     offset[1]        = dims[1] / 2;
-    offset[2]        = dims[1] / 2;
+    offset[2]        = dims[2] / 2;
     offset_length[0] = dims[0] / 2;
     offset_length[1] = dims[1] / 2;
     offset_length[2] = dims[2] / 2;
@@ -171,10 +171,10 @@ main(int argc, char **argv)
 
     offset[0]        = dims[0] / 2;
     offset[1]        = dims[1] / 2;
-    offset[2]        = dims[1] / 2;
+    offset[2]        = dims[2] / 2;
     offset_length[0] = dims[0] / 2;
-    offset_length[0] = dims[1] / 2;
-    offset_length[0] = dims[1] / 2;
+    offset_length[1] = dims[1] / 2;
+    offset_length[2] = dims[2] / 2;
     reg              = PDCregion_create(3, offset, offset_length);
     offset[0]        = dims[0] / 2;
     offset[1]        = dims[1] / 2;
