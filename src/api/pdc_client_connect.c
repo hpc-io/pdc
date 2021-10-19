@@ -2759,7 +2759,7 @@ PDC_Client_region_lock(struct _pdc_obj_info *object_info, struct pdc_region_info
     debug_server_id_count[server_id]++;
 
     // Fill input structure
-    in.obj_id       = object_info->obj_info_pub->meta_id;
+    in.obj_id = object_info->obj_info_pub->meta_id;
 
     in.access_type  = access_type;
     in.mapping      = region_info->mapping;
