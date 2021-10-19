@@ -262,7 +262,8 @@ main(int argc, char **argv)
 
     // Check if data written previously has been correctly read.
     for (i = 0; i < BUF_LEN / 4; ++i) {
-        if ( data_read[i] != (BUF_LEN / 2 + offset_length[1]) + (i / offset_length[1]) * dims[1] + i % offset_length[1] ) {
+        if (data_read[i] !=
+            (BUF_LEN / 2 + offset_length[1]) + (i / offset_length[1]) * dims[1] + i % offset_length[1]) {
             printf("wrong value %d!=%d @ line %d\n", data_read[i],
                    (BUF_LEN / 2 + 16) + (i / 16) * 32 + i % 16, __LINE__);
             ret_value = 1;
