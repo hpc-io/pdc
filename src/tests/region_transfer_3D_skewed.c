@@ -178,7 +178,7 @@ main(int argc, char **argv)
     reg              = PDCregion_create(3, offset, offset_length);
     offset[0]        = dims[0] / 2;
     offset[1]        = dims[1] / 2;
-    offset[2]        = dims[1] / 2;
+    offset[2]        = dims[2] / 2;
     offset_length[0] = dims[0] / 2;
     offset_length[1] = dims[1] / 2;
     offset_length[2] = dims[2] / 2;
