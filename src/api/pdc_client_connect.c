@@ -2393,8 +2393,7 @@ pack_region_buffer(char *buf, char **new_buf, size_t total_data_size, int local_
         if (access_type == PDC_WRITE) {
             ptr = *new_buf;
             for (i = 0; i < local_size[0]; ++i) {
-                memcpy(ptr, buf + (i * local_size[1] + local_offset[1]) * unit,
-                       local_size[1] * unit);
+                memcpy(ptr, buf + (i * local_size[1] + local_offset[1]) * unit, local_size[1] * unit);
                 ptr += local_size[1] * unit;
             }
         }
@@ -2405,7 +2404,7 @@ pack_region_buffer(char *buf, char **new_buf, size_t total_data_size, int local_
             ptr = *new_buf;
             for (i = 0; i < local_size[0] * local_size[1]; ++i) {
                 memcpy(ptr,
-                       buf + ( ( i / (local_size[2] * local_size[1]) ) * local_size[2] * local_size[1] +
+                       buf + ((i / (local_size[2] * local_size[1])) * local_size[2] * local_size[1] +
                               (i % local_size[1]) * local_size[2] + local_offset[2]) *
                                  unit,
                        local_size[2] * unit);
