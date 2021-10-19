@@ -2425,7 +2425,7 @@ static perr_t
 release_region_buffer(char *buf, char *new_buf, uint64_t *obj_dims, int local_ndim, uint64_t *local_offset,
                       uint64_t *local_size, size_t unit, pdc_access_t access_type)
 {
-    uint64_t i;
+    uint64_t i, j;
     perr_t   ret_value = SUCCEED;
     char *   ptr;
     FUNC_ENTER(NULL);
@@ -5246,6 +5246,7 @@ PDC_Client_cp_data_to_local_server(int nobj, region_storage_meta_t **all_storage
     char                   shm_addr[ADDR_MAX];
     int                    i, *total_obj = NULL, ntotal_obj = nobj, *recvcounts = NULL, *displs = NULL;
     region_storage_meta_t *all_region_storage_meta_1d = NULL, *my_region_storage_meta_1d = NULL;
+
 
     FUNC_ENTER(NULL);
 
