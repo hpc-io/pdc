@@ -2393,6 +2393,7 @@ pack_region_buffer(char *buf, char **new_buf, size_t total_data_size, int local_
         if (access_type == PDC_WRITE) {
             ptr = *new_buf;
             for (i = 0; i < local_size[0]; ++i) {
+                printf("copy from position %llu\n", (long long unsigned)((local_offset[0] * local_size[1] + local_offset[1]) * unit));
                 memcpy(ptr, buf + (local_offset[0] * local_size[1] + local_offset[1]) * unit,
                        sizeof(char) * local_size[1] * unit);
                 ptr += local_size[1] * unit;
