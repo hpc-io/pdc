@@ -2426,7 +2426,7 @@ release_region_buffer(char *buf, char *new_buf, int local_ndim, uint64_t *local_
 {
     uint64_t i;
     perr_t   ret_value = SUCCEED;
-    char *ptr;
+    char *   ptr;
     FUNC_ENTER(NULL);
 
     if (local_ndim == 2) {
