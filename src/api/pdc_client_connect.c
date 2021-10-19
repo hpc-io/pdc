@@ -2377,8 +2377,8 @@ pack_region_metadata(int ndim, uint64_t *offset, uint64_t *size, region_info_tra
 }
 
 static perr_t
-pack_region_buffer(char *buf, char **new_buf, uint64_t *obj_dims, size_t total_data_size, int local_ndim, uint64_t *local_offset,
-                   uint64_t *local_size, size_t unit, pdc_access_t access_type)
+pack_region_buffer(char *buf, char **new_buf, uint64_t *obj_dims, size_t total_data_size, int local_ndim,
+                   uint64_t *local_offset, uint64_t *local_size, size_t unit, pdc_access_t access_type)
 {
     uint64_t i, j;
     perr_t   ret_value = SUCCEED;
@@ -2404,8 +2404,11 @@ pack_region_buffer(char *buf, char **new_buf, uint64_t *obj_dims, size_t total_d
         if (access_type == PDC_WRITE) {
             ptr = *new_buf;
             for (i = 0; i < local_size[0]; ++i) {
-                for ( j = 0; j < local_size[1]; ++j ) {
-                    memcpy(ptr, buf + (local_offset[0] + i) * obj_dims[1] * obj_dims[2] + (local_offset[1] + j) * obj_dims[2] + local_offset[2], local_size[2] * unit );
+                for (j = 0; j < local_size[1]; ++j) {
+                    memcpy(ptr,
+                           buf + (local_offset[0] + i) * obj_dims[1] * obj_dims[2] +
+                               (local_offset[1] + j) * obj_dims[2] + local_offset[2],
+                           local_size[2] * unit);
                     ptr += local_size[2] * unit;
                 }
             }
@@ -2419,7 +2422,8 @@ pack_region_buffer(char *buf, char **new_buf, uint64_t *obj_dims, size_t total_d
 }
 
 static perr_t
-release_region_buffer(char *buf, char *new_buf, uint64_t *obj_dims, int local_ndim, uint64_t *local_offset, uint64_t *local_size, size_t unit, pdc_access_t access_type)
+release_region_buffer(char *buf, char *new_buf, uint64_t *obj_dims, int local_ndim, uint64_t *local_offset,
+                      uint64_t *local_size, size_t unit, pdc_access_t access_type)
 {
     uint64_t i;
     perr_t   ret_value = SUCCEED;
@@ -2441,8 +2445,10 @@ release_region_buffer(char *buf, char *new_buf, uint64_t *obj_dims, int local_nd
         if (access_type == PDC_READ) {
             ptr = new_buf;
             for (i = 0; i < local_size[0]; ++i) {
-                for ( j = 0; j < local_size[1]; ++j ) {
-                    memcpy(buf + (local_offset[0] + i) * obj_dims[1] * obj_dims[2] + (local_offset[1] + j) * obj_dims[2] + local_offset[2], ptr, local_size[2] * unit );
+                for (j = 0; j < local_size[1]; ++j) {
+                    memcpy(buf + (local_offset[0] + i) * obj_dims[1] * obj_dims[2] +
+                               (local_offset[1] + j) * obj_dims[2] + local_offset[2],
+                           ptr, local_size[2] * unit);
                     ptr += local_size[2] * unit;
                 }
             }
@@ -6038,7 +6044,6 @@ PDC_Client_query_name_read_entire_obj_client_agg_cache_iter(int my_nobj, char **
         PDC_Client_query_name_read_entire_obj_client_agg(my_nobj, my_obj_names, out_buf, out_buf_sizes);
 
     FUNC_LEAVE(ret_value);
-
 }
 
 static perr_t
