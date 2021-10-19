@@ -49,7 +49,7 @@ main(int argc, char **argv)
 
     uint64_t offset[1], offset_length[1], local_offset[1];
     uint64_t dims[1];
-    local_offset[0]  = 0;
+    local_offset[0] = 0;
 
     int *data      = (int *)malloc(sizeof(int) * BUF_LEN);
     int *data_read = (int *)malloc(sizeof(int) * BUF_LEN);
@@ -128,11 +128,11 @@ main(int argc, char **argv)
     }
 
     offset[0]        = 1;
-    offset_length[0] = BUF_LEN/2;
-    reg        = PDCregion_create(1, offset, offset_length);
-    offset[0]        = BUF_LEN/4;
-    offset_length[0] = BUF_LEN/2;
-    reg_global = PDCregion_create(1, offset, offset_length);
+    offset_length[0] = BUF_LEN / 2;
+    reg              = PDCregion_create(1, offset, offset_length);
+    offset[0]        = BUF_LEN / 4;
+    offset_length[0] = BUF_LEN / 2;
+    reg_global       = PDCregion_create(1, offset, offset_length);
 
     for (i = 0; i < BUF_LEN; ++i) {
         data[i] = i;
@@ -160,12 +160,12 @@ main(int argc, char **argv)
         printf("successfully closed global region\n");
     }
 
-    offset[0]        = BUF_LEN/2 - 1;
-    offset_length[0] = BUF_LEN/2;
-    reg        = PDCregion_create(1, local_offset, offset_length);
-    offset[0]        = BUF_LEN/4;
-    offset_length[0] = BUF_LEN/2;
-    reg_global = PDCregion_create(1, offset, offset_length);
+    offset[0]        = BUF_LEN / 2 - 1;
+    offset_length[0] = BUF_LEN / 2;
+    reg              = PDCregion_create(1, local_offset, offset_length);
+    offset[0]        = BUF_LEN / 4;
+    offset_length[0] = BUF_LEN / 2;
+    reg_global       = PDCregion_create(1, offset, offset_length);
 
     transfer_request = PDCtransfer_request_create(data_read, PDC_READ, obj1, reg, reg_global);
 
@@ -175,8 +175,8 @@ main(int argc, char **argv)
     PDCtransfer_request_delete(transfer_request);
 
     // Check if data written previously has been correctly read.
-    for (i = 0; i < BUF_LEN/2; ++i) {
-        if (data_read[i + BUF_LEN/2] != i + 1) {
+    for (i = 0; i < BUF_LEN / 2; ++i) {
+        if (data_read[i + BUF_LEN / 2] != i + 1) {
             printf("wrong value %d!=%d\n", data_read[i], i);
             ret_value = 1;
             break;
