@@ -42,6 +42,7 @@ main(int argc, char **argv)
     perr_t  ret;
     pdcid_t obj1, obj2;
     char    cont_name[128], obj_name1[128], obj_name2[128];
+    pdcid_t transfer_request;
 
     int rank = 0, size = 1, i;
     int ret_value = 0;
@@ -140,29 +141,13 @@ main(int argc, char **argv)
     for (i = 0; i < BUF_LEN; ++i) {
         data[i] = i;
     }
-    ret = PDCbuf_obj_map(data, PDC_INT, reg, obj1, reg_global);
-    if (ret != SUCCEED) {
-        printf("PDCbuf_obj_map failed @ line  %d!\n", __LINE__);
-        ret_value = 1;
-    }
 
-    ret = PDCreg_obtain_lock(obj1, reg_global, PDC_WRITE, PDC_BLOCK);
-    if (ret != SUCCEED) {
-        printf("PDCreg_obtain_lock failed @ line  %d!\n", __LINE__);
-        exit(-1);
-    }
+    transfer_request = PDCregion_transfer_create(data, PDC_WRITE, obj1, reg, reg_global);
 
-    ret = PDCreg_release_lock(obj1, reg_global, PDC_WRITE);
-    if (ret != SUCCEED) {
-        printf("PDCreg_release_lock failed @ line  %d!\n", __LINE__);
-        ret_value = 1;
-    }
+    PDCregion_transfer_start(transfer_request);
+    PDCregion_transfer_wait(transfer_request);
 
-    ret = PDCbuf_obj_unmap(obj1, reg_global);
-    if (ret != SUCCEED) {
-        printf("PDCbuf_obj_unmap failed @ line  %d!\n", __LINE__);
-        ret_value = 1;
-    }
+    PDCregion_transfer_close(transfer_request);
 
     if (PDCregion_close(reg_global) < 0) {
         printf("fail to close global region @ line  %d!\n", __LINE__);
@@ -223,29 +208,12 @@ main(int argc, char **argv)
 
     memset(data_read, 0, BUF_LEN);
 
-    ret = PDCbuf_obj_map(data_read, PDC_INT, reg, obj1, reg_global);
-    if (ret != SUCCEED) {
-        printf("PDCbuf_obj_map failed @ line  %d!\n", __LINE__);
-        ret_value = 1;
-    }
+    transfer_request = PDCregion_transfer_create(data_read, PDC_READ, obj1, reg, reg_global);
 
-    ret = PDCreg_obtain_lock(obj1, reg_global, PDC_READ, PDC_BLOCK);
-    if (ret != SUCCEED) {
-        printf("PDCreg_obtain_lock failed @ line  %d!\n", __LINE__);
-        ret_value = 1;
-    }
+    PDCregion_transfer_start(transfer_request);
+    PDCregion_transfer_wait(transfer_request);
 
-    ret = PDCreg_release_lock(obj1, reg_global, PDC_READ);
-    if (ret != SUCCEED) {
-        printf("PDCreg_release_lock failed @ line  %d!\n", __LINE__);
-        ret_value = 1;
-    }
-
-    ret = PDCbuf_obj_unmap(obj1, reg_global);
-    if (ret != SUCCEED) {
-        printf("PDCbuf_obj_unmap failed @ line  %d!\n", __LINE__);
-        ret_value = 1;
-    }
+    PDCregion_transfer_close(transfer_request);
 
     for (i = 0; i < BUF_LEN; ++i) {
         if (data_read[i] != i) {
