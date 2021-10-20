@@ -198,7 +198,7 @@ main(int argc, char **argv)
                 ((i % (offset_length[1] * offset_length[2])) / offset_length[2]) * dims[2] +
                 i % offset_length[2];
         if (data_read[value] != i) {
-            printf("wrong value %d!=%d, value = %d @ line %d\n", data_read[value], (int)value, __LINE__);
+            printf("wrong value %d!=%d, value = %d @ line %d\n", data_read[value], i, (int)value, __LINE__);
             ret_value = 1;
             break;
         }
