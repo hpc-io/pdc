@@ -260,7 +260,7 @@ main(int argc, char **argv)
     free(obj_data);
     // close pdc
     if (PDCclose(pdc) < 0) {
-        printf("fail to close PDC\n", __LINE__);
+        printf("fail to close PDC @ line %d\n", __LINE__);
         ret_value = 1;
     }
 #ifdef ENABLE_MPI
