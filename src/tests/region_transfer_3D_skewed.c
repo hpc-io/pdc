@@ -283,7 +283,7 @@ main(int argc, char **argv)
     for (i = 0; i < BUF_LEN / 4; ++i) {
         value = offset[0] * dims[1] * dims[2] + offset[1] * dims[2] + (i / (offset_length[1] * dims[2])) * offset_length[1] * dims[2] + i % dims[2];
         if (data_read[i] != (int)value) {
-            printf("wrong value %d!=%d, value = %d\n", data_read[value], i, (int)value);
+            printf("wrong value %d!=%d, value = %d @ %d\n", data_read[value], i, (int)value, __LINE__);
             ret_value = 1;
             break;
         }
