@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4467,9 +4468,10 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims
             PDC_POSIX_IO(fd, buf, io_size, is_write);
         }
         else {
+            printf("server I/O checkpoint 2D 2\n");
             // We have to write line by line
             for (i = 0; i < region_info->size[0]; ++i) {
-                printf("server I/O checkpoint 2D 2\n");
+                printf("lseek to %lld\n", (long long int) ((i + region_info->offset[0]) * region_info->size[1] + region_info->offset[1]));
                 lseek(fd,
                       ((i + region_info->offset[0]) * region_info->size[1] + region_info->offset[1]) * unit,
                       SEEK_SET);
