@@ -250,7 +250,7 @@ main(int argc, char **argv)
         data[i] = i + BUF_LEN;
     }
 
-    transfer_request = PDCregion_transfer_create(data + BUF_LEN/8, PDC_WRITE, obj1, reg, reg_global);
+    transfer_request = PDCregion_transfer_create(data + BUF_LEN / 8, PDC_WRITE, obj1, reg, reg_global);
 
     PDCregion_transfer_start(transfer_request);
     PDCregion_transfer_wait(transfer_request);
