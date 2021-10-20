@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4453,6 +4454,7 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims
 
     fd = open(storage_location, O_RDWR | O_CREAT, 0666);
     if (region_info->ndim == 1) {
+        printf("server I/O checkpoint 1D\n");
         lseek(fd, region_info->offset[0] * unit, SEEK_SET);
         io_size = region_info->size[0] * unit;
         PDC_POSIX_IO(fd, buf, io_size, is_write);
@@ -4460,6 +4462,7 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims
     else if (region_info->ndim == 2) {
         // Check we can directly write the contiguous chunk to the file
         if (region_info->offset[1] == 0 && region_info->size[1] == obj_dims[1]) {
+            printf("server I/O checkpoint 2D 1\n");
             lseek(fd, region_info->offset[0] * region_info->size[1] * unit, SEEK_SET);
             io_size = region_info->size[0] * region_info->size[1] * unit;
             PDC_POSIX_IO(fd, buf, io_size, is_write);
@@ -4467,6 +4470,7 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims
         else {
             // We have to write line by line
             for (i = 0; i < region_info->size[0]; ++i) {
+                printf("server I/O checkpoint 2D 2\n");
                 lseek(fd,
                       ((i + region_info->offset[0]) * region_info->size[1] + region_info->offset[1]) * unit,
                       SEEK_SET);
@@ -4482,11 +4486,11 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims
             region_info->offset[2] == 0 && region_info->size[2] == obj_dims[2]) {
             lseek(fd, region_info->offset[0] * region_info->size[1] * region_info->size[2] * unit, SEEK_SET);
             io_size = region_info->size[0] * region_info->size[1] * region_info->size[2] * unit;
-            printf("checkpoint 1\n");
+            printf("server I/O checkpoint 3D 1\n");
             PDC_POSIX_IO(fd, buf, io_size, is_write);
         }
         else if (region_info->offset[2] == 0 && region_info->size[2] == obj_dims[2]) {
-            printf("checkpoint 2\n");
+            printf("server I/O checkpoint 3D 2\n");
             // We have to write plane by plane
             for (i = 0; i < region_info->size[0]; ++i) {
                 lseek(fd,
@@ -4500,7 +4504,7 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims
             }
         }
         else {
-            printf("checkpoint 3, obj dims [%" PRIu64 ", %" PRIu64 ", %" PRIu64 "], region [%" PRIu64
+            printf("server I/O checkpoint 3D 3, obj dims [%" PRIu64 ", %" PRIu64 ", %" PRIu64 "], region [%" PRIu64
                    ", %" PRIu64 ", %" PRIu64 "] size [%" PRIu64 ", %" PRIu64 ", %" PRIu64 "]\n",
                    obj_dims[0], obj_dims[1], obj_dims[2], region_info->offset[0], region_info->offset[1],
                    region_info->offset[2], region_info->size[0], region_info->size[1], region_info->size[2]);
@@ -6835,6 +6839,7 @@ is_overlap_2D(uint64_t xmin1, uint64_t xmax1, uint64_t ymin1, uint64_t ymax1, ui
  * \param  zmax2[IN]        End   offset (z-axis) of second box
  *
  * \return 1 if they overlap/-1 otherwise
+
  */
 static int
 is_overlap_3D(uint64_t xmin1, uint64_t xmax1, uint64_t ymin1, uint64_t ymax1, uint64_t zmin1, uint64_t zmax1,
