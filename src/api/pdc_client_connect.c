@@ -2528,8 +2528,9 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *o
 
     pack_region_buffer(buf, &new_buf, obj_dims, total_data_size, local_ndim, local_offset, local_size, unit,
                        access_type);
-    printf("obj ID = %u, data_server_id = %u, total_mem_size = %zu local_offset[0] = %llu @ line %d\n", (unsigned)obj_id,
-           (unsigned)data_server_id, total_data_size, (long long unsigned)local_offset[0], __LINE__);
+    printf("obj ID = %u, data_server_id = %u, total_mem_size = %zu local_offset[0] = %llu @ line %d\n",
+           (unsigned)obj_id, (unsigned)data_server_id, total_data_size, (long long unsigned)local_offset[0],
+           __LINE__);
 
     if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
@@ -6044,7 +6045,6 @@ PDC_Client_query_name_read_entire_obj_client_agg_cache_iter(int my_nobj, char **
 {
     perr_t ret_value   = SUCCEED;
     cache_percentage_g = cache_percentage;
-
 
     FUNC_ENTER(NULL);
 
