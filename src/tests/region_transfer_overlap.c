@@ -161,7 +161,7 @@ main(int argc, char **argv)
     offset_length[0] = BUF_LEN / 2;
     reg_global       = PDCregion_create(1, offset, offset_length);
 
-    transfer_request = PDCregion_transfer_create(data_read + offset[0], PDC_WRITE, obj1, reg, reg_global);
+    transfer_request = PDCregion_transfer_create(data + offset[0], PDC_WRITE, obj1, reg, reg_global);
 
     PDCregion_transfer_start(transfer_request);
     PDCregion_transfer_wait(transfer_request);
