@@ -146,12 +146,12 @@ main(int argc, char **argv)
     for (i = 0; i < BUF_LEN; ++i) {
         data[i] = i;
     }
-    transfer_request = PDCtransfer_request_create(data, PDC_WRITE, obj1, reg, reg_global);
+    transfer_request = PDCregion_transfer_create(data, PDC_WRITE, obj1, reg, reg_global);
 
-    PDCtransfer_request(transfer_request);
-    PDCtransfer_request_wait(transfer_request);
+    PDCregion_transfer_start(transfer_request);
+    PDCregion_transfer_wait(transfer_request);
 
-    PDCtransfer_request_delete(transfer_request);
+    PDCregion_transfer_close(transfer_request);
 
     if (PDCregion_close(reg) < 0) {
         printf("fail to close local region @ %d\n", __LINE__);
@@ -184,12 +184,12 @@ main(int argc, char **argv)
     offset_length[2] = dims[2] / 2;
     reg_global       = PDCregion_create(3, offset, offset_length);
 
-    transfer_request = PDCtransfer_request_create(data_read, PDC_READ, obj1, reg, reg_global);
+    transfer_request = PDCregion_transfer_create(data_read, PDC_READ, obj1, reg, reg_global);
 
-    PDCtransfer_request(transfer_request);
-    PDCtransfer_request_wait(transfer_request);
+    PDCregion_transfer_start(transfer_request);
+    PDCregion_transfer_wait(transfer_request);
 
-    PDCtransfer_request_delete(transfer_request);
+    PDCregion_transfer_close(transfer_request);
 
     // Check if data written previously has been correctly read.
     for (i = 0; i < BUF_LEN / 8; ++i) {
@@ -238,12 +238,12 @@ main(int argc, char **argv)
     for (i = 0; i < BUF_LEN; ++i) {
         data[i] = i;
     }
-    transfer_request = PDCtransfer_request_create(data, PDC_WRITE, obj2, reg, reg_global);
+    transfer_request = PDCregion_transfer_create(data, PDC_WRITE, obj2, reg, reg_global);
 
-    PDCtransfer_request(transfer_request);
-    PDCtransfer_request_wait(transfer_request);
+    PDCregion_transfer_start(transfer_request);
+    PDCregion_transfer_wait(transfer_request);
 
-    PDCtransfer_request_delete(transfer_request);
+    PDCregion_transfer_close(transfer_request);
 
     if (PDCregion_close(reg) < 0) {
         printf("fail to close local region @ %d\n", __LINE__);
@@ -272,12 +272,12 @@ main(int argc, char **argv)
     offset_length[2] = dims[2];
     reg_global       = PDCregion_create(3, offset, offset_length);
 
-    transfer_request = PDCtransfer_request_create(data_read, PDC_READ, obj2, reg, reg_global);
+    transfer_request = PDCregion_transfer_create(data_read, PDC_READ, obj2, reg, reg_global);
 
-    PDCtransfer_request(transfer_request);
-    PDCtransfer_request_wait(transfer_request);
+    PDCregion_transfer_start(transfer_request);
+    PDCregion_transfer_wait(transfer_request);
 
-    PDCtransfer_request_delete(transfer_request);
+    PDCregion_transfer_close(transfer_request);
 
     // Check if data written previously has been correctly read.
     for (i = 0; i < BUF_LEN / 4; ++i) {

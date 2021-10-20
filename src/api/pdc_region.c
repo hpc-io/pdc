@@ -152,7 +152,7 @@ done:
 }
 
 pdcid_t
-PDCtransfer_request_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, pdcid_t local_reg,
+PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, pdcid_t local_reg,
                            pdcid_t remote_reg)
 {
     pdcid_t                 ret_value = 0;
@@ -217,7 +217,7 @@ done:
 }
 
 perr_t
-PDCtransfer_request_delete(pdcid_t transfer_request_id)
+PDCregion_transfer_close(pdcid_t transfer_request_id)
 {
     struct _pdc_id_info * transferinfo;
     pdc_transfer_request *transfer_request;
@@ -239,7 +239,7 @@ done:
 }
 
 perr_t
-PDCtransfer_request(pdcid_t transfer_request_id)
+PDCregion_transfer_start(pdcid_t transfer_request_id)
 {
     perr_t                ret_value = 0;
     struct _pdc_id_info * transferinfo;
@@ -262,7 +262,7 @@ PDCtransfer_request(pdcid_t transfer_request_id)
 }
 
 perr_t
-PDCtransfer_request_status(pdcid_t transfer_request_id)
+PDCregion_transfer_status(pdcid_t transfer_request_id)
 {
     perr_t ret_value = 0;
     FUNC_ENTER(NULL);
@@ -272,7 +272,7 @@ PDCtransfer_request_status(pdcid_t transfer_request_id)
 }
 
 perr_t
-PDCtransfer_request_wait(pdcid_t transfer_request_id)
+PDCregion_transfer_wait(pdcid_t transfer_request_id)
 {
     perr_t ret_value = 0;
     FUNC_ENTER(NULL);

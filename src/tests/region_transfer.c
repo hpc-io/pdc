@@ -139,85 +139,85 @@ main(int argc, char **argv)
     for (i = 0; i < BUF_LEN; ++i) {
         data[i] = i;
     }
-    transfer_request = PDCtransfer_request_create(data, PDC_WRITE, obj1, reg, reg_global);
+    transfer_request = PDCregion_transfer_create(data, PDC_WRITE, obj1, reg, reg_global);
 
-    PDCtransfer_request(transfer_request);
-    PDCtransfer_request_wait(transfer_request);
+    PDCregion_transfer_start(transfer_request);
+    PDCregion_transfer_wait(transfer_request);
 
-    PDCtransfer_request_delete(transfer_request);
+    PDCregion_transfer_close(transfer_request);
 
     if (PDCregion_close(reg) < 0) {
-        printf("fail to close local region\n");
+        printf("fail to close local region @ line %d\n", __LINE__);
         ret_value = 1;
     }
     else {
-        printf("successfully closed local region\n");
+        printf("successfully closed local region @ line %d\n", __LINE__);
     }
 
     if (PDCregion_close(reg_global) < 0) {
-        printf("fail to close global region\n");
+        printf("fail to close global region @ line %d\n", __LINE__);
         ret_value = 1;
     }
     else {
-        printf("successfully closed global region\n");
+        printf("successfully closed global region @ line %d\n", __LINE__);
     }
 
     reg        = PDCregion_create(1, local_offset, offset_length);
     reg_global = PDCregion_create(1, offset, offset_length);
 
-    transfer_request = PDCtransfer_request_create(data_read, PDC_READ, obj1, reg, reg_global);
+    transfer_request = PDCregion_transfer_create(data_read, PDC_READ, obj1, reg, reg_global);
 
-    PDCtransfer_request(transfer_request);
-    PDCtransfer_request_wait(transfer_request);
+    PDCregion_transfer_start(transfer_request);
+    PDCregion_transfer_wait(transfer_request);
 
-    PDCtransfer_request_delete(transfer_request);
+    PDCregion_transfer_close(transfer_request);
 
     // Check if data written previously has been correctly read.
     for (i = 0; i < BUF_LEN; ++i) {
         if (data_read[i] != i) {
-            printf("wrong value %d!=%d\n", data_read[i], i);
+            printf("wrong value %d!=%d @ line %d\n", data_read[i], i, __LINE__);
             ret_value = 1;
             break;
         }
     }
     if (PDCregion_close(reg) < 0) {
-        printf("fail to close local region\n");
+        printf("fail to close local region @ line %d\n", __LINE__);
         ret_value = 1;
     }
     else {
-        printf("successfully local region\n");
+        printf("successfully local region @ line %d\n", __LINE__);
     }
 
     if (PDCregion_close(reg_global) < 0) {
-        printf("fail to close global region\n");
+        printf("fail to close global region @ line %d\n", __LINE__);
         ret_value = 1;
     }
     else {
-        printf("successfully closed global region\n");
+        printf("successfully closed global region @ line %d\n", __LINE__);
     }
 
     // close object
     if (PDCobj_close(obj1) < 0) {
-        printf("fail to close object o1\n");
+        printf("fail to close object o1 @ line %d\n", __LINE__);
         ret_value = 1;
     }
     else {
-        printf("successfully close object o1\n");
+        printf("successfully close object o1 @ line %d\n", __LINE__);
     }
     if (PDCobj_close(obj2) < 0) {
-        printf("fail to close object o2\n");
+        printf("fail to close object o2 @ line %d\n", __LINE__);
         ret_value = 1;
     }
     else {
-        printf("successfully close object o2\n");
+        printf("successfully close object o2 @ line %d\n", __LINE__);
     }
     // close a container
     if (PDCcont_close(cont) < 0) {
-        printf("fail to close container c1\n");
+        printf("fail to close container c1 @ line %d\n", __LINE__);
         ret_value = 1;
     }
     else {
-        printf("successfully close container c1\n");
+        printf("successfully close container c1 @ line %d\n", __LINE__);
     }
     // close a object property
     if (PDCprop_close(obj_prop) < 0) {
@@ -225,7 +225,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     else {
-        printf("successfully close object property\n");
+        printf("successfully close object property @ line %d\n", __LINE__);
     }
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
@@ -233,14 +233,14 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     else {
-        printf("successfully close container property\n");
+        printf("successfully close container property @ line %d\n", __LINE__);
     }
     free(data);
     free(data_read);
     free(obj_data);
     // close pdc
     if (PDCclose(pdc) < 0) {
-        printf("fail to close PDC\n");
+        printf("fail to close PDC @ line %d\n", __LINE__);
         ret_value = 1;
     }
 #ifdef ENABLE_MPI
