@@ -2556,6 +2556,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *o
 
     printf("PDC_Client_transfer_request() checkpoint, first value is %d @ line %d\n",
            ((int)new_buf)[0], __LINE__);
+
     release_region_buffer(buf, new_buf, obj_dims, local_ndim, local_offset, local_size, unit, access_type);
 
     if (transfer_args.ret != 1)
@@ -2573,11 +2574,11 @@ PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t ndim, 
                    pdc_var_type_t remote_type, struct pdc_region_info *local_region,
                    struct pdc_region_info *remote_region)
 {
-    perr_t                   ret_value = SUCCEED;
-    hg_return_t              hg_ret    = HG_SUCCESS;
-    buf_map_in_t             in;
-    uint32_t                 data_server_id, meta_server_id;
-    hg_class_t *             hg_class;
+    perr_t       ret_value = SUCCEED;
+    hg_return_t  hg_ret    = HG_SUCCESS;
+    buf_map_in_t in;
+    uint32_t     data_server_id, meta_server_id;
+    hg_class_t * hg_class;
 
     hg_uint32_t              i, j;
     hg_uint32_t              local_count;
