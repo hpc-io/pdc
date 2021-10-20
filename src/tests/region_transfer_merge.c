@@ -161,29 +161,13 @@ main(int argc, char **argv)
     offset_length[0] = BUF_LEN / 2;
     reg_global       = PDCregion_create(1, offset, offset_length);
 
-    ret = PDCbuf_obj_map(data + offset[0], PDC_INT, reg, obj1, reg_global);
-    if (ret != SUCCEED) {
-        printf("PDCbuf_obj_map failed @ line  %d!\n", __LINE__);
-        ret_value = 1;
-    }
+    transfer_request = PDCregion_transfer_create(data + offset[0], PDC_WRITE, obj1, reg, reg_global);
 
-    ret = PDCreg_obtain_lock(obj1, reg_global, PDC_WRITE, PDC_BLOCK);
-    if (ret != SUCCEED) {
-        printf("PDCreg_obtain_lock failed @ line  %d!\n", __LINE__);
-        exit(-1);
-    }
+    PDCregion_transfer_start(transfer_request);
+    PDCregion_transfer_wait(transfer_request);
 
-    ret = PDCreg_release_lock(obj1, reg_global, PDC_WRITE);
-    if (ret != SUCCEED) {
-        printf("PDCreg_release_lock failed @ line  %d!\n", __LINE__);
-        ret_value = 1;
-    }
+    PDCregion_transfer_close(transfer_request);
 
-    ret = PDCbuf_obj_unmap(obj1, reg_global);
-    if (ret != SUCCEED) {
-        printf("PDCbuf_obj_unmap failed @ line  %d!\n", __LINE__);
-        ret_value = 1;
-    }
     if (PDCregion_close(reg) < 0) {
         printf("fail to close local region @ line  %d!\n", __LINE__);
         ret_value = 1;
