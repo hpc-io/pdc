@@ -2386,6 +2386,7 @@ pack_region_buffer(char *buf, char **new_buf, uint64_t *obj_dims, size_t total_d
 
     FUNC_ENTER(NULL);
     if (local_ndim == 1) {
+        printf("checkpoint at local copy ndim == 1 local_offset[0] = %lld @ line %d\n", (long long int) local_offset[0],__LINE__);
         *new_buf = buf + local_offset[0] * unit;
     }
     else if (local_ndim == 2) {
