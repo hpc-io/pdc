@@ -2555,7 +2555,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *o
     PDC_Client_check_response(&send_context_g);
 
     printf("PDC_Client_transfer_request() checkpoint, first value is %d @ line %d\n",
-           (int)new_buf[sizeof(int)], __LINE__);
+           (int)new_buf[0], __LINE__);
     release_region_buffer(buf, new_buf, obj_dims, local_ndim, local_offset, local_size, unit, access_type);
 
     if (transfer_args.ret != 1)
@@ -2578,6 +2578,7 @@ PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t ndim, 
     buf_map_in_t             in;
     uint32_t                 data_server_id, meta_server_id;
     hg_class_t *             hg_class;
+
     hg_uint32_t              i, j;
     hg_uint32_t              local_count;
     void **                  data_ptrs = NULL;
