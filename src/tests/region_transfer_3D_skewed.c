@@ -219,6 +219,91 @@ main(int argc, char **argv)
         printf("successfully closed global region\n");
     }
 
+    //  Testing the second object
+    offset[0]        = dims[0] / 2;
+    offset[1]        = dims[1] / 2;
+    offset[2]        = 0;
+    offset_length[0] = dims[0] / 2;
+    offset_length[1] = dims[1] / 2;
+    offset_length[2] = dims[2];
+    reg              = PDCregion_create(3, offset, offset_length);
+    offset[0]        = dims[0] / 2;
+    offset[1]        = dims[1] / 2;
+    offset[2]        = 0;
+    offset_length[0] = dims[0] / 2;
+    offset_length[1] = dims[1] / 2;
+    offset_length[2] = dims[2];
+    reg_global       = PDCregion_create(3, offset, offset_length);
+
+    for (i = 0; i < BUF_LEN; ++i) {
+        data[i] = i;
+    }
+    transfer_request = PDCtransfer_request_create(data, PDC_WRITE, obj2, reg, reg_global);
+
+    PDCtransfer_request(transfer_request);
+    PDCtransfer_request_wait(transfer_request);
+
+    PDCtransfer_request_delete(transfer_request);
+
+    if (PDCregion_close(reg) < 0) {
+        printf("fail to close local region\n");
+        ret_value = 1;
+    }
+    else {
+        printf("successfully closed local region\n");
+    }
+
+    if (PDCregion_close(reg_global) < 0) {
+        printf("fail to close global region\n");
+        ret_value = 1;
+    }
+    else {
+        printf("successfully closed global region\n");
+    }
+
+    offset[0]        = 0;
+    offset_length[0] = BUF_LEN / 4;
+    reg              = PDCregion_create(1, offset, offset_length);
+    offset[0]        = dims[0] / 2;
+    offset[1]        = dims[1] / 2;
+    offset[2]        = 0;
+    offset_length[0] = dims[0] / 2;
+    offset_length[1] = dims[1] / 2;
+    offset_length[2] = dims[2];
+    reg_global       = PDCregion_create(3, offset, offset_length);
+
+    transfer_request = PDCtransfer_request_create(data_read, PDC_READ, obj2, reg, reg_global);
+
+    PDCtransfer_request(transfer_request);
+    PDCtransfer_request_wait(transfer_request);
+
+    PDCtransfer_request_delete(transfer_request);
+
+    // Check if data written previously has been correctly read.
+    for (i = 0; i < BUF_LEN / 4; ++i) {
+        value = offset[0] * dims[1] * dims[2] + offset[1] * dims[2] + (i / (offset_length[1] * dims[2])) * offset_length[1] * dims[2] + i % dims[2];
+        if (data_read[i] != (int)value) {
+            printf("wrong value %d!=%d, value = %d\n", data_read[value], i, (int)value);
+            ret_value = 1;
+            break;
+        }
+    }
+    if (PDCregion_close(reg) < 0) {
+        printf("fail to close local region\n");
+        ret_value = 1;
+    }
+    else {
+        printf("successfully local region\n");
+    }
+
+    if (PDCregion_close(reg_global) < 0) {
+        printf("fail to close global region\n");
+        ret_value = 1;
+    }
+    else {
+        printf("successfully closed global region\n");
+    }
+
     // close object
     if (PDCobj_close(obj1) < 0) {
         printf("fail to close object o1\n");
