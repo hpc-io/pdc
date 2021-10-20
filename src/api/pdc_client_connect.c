@@ -2554,7 +2554,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *o
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
 
-    printf("PDC_Client_transfer_request() checkpoint, first value is %d @ line %d\n", ((int *)new_buf)[0],
+    printf("PDC_Client_transfer_request() checkpoint, first value is %d @ line %d\n", ((int *)buf)[0],
            __LINE__);
 
     release_region_buffer(buf, new_buf, obj_dims, local_ndim, local_offset, local_size, unit, access_type);
@@ -4536,6 +4536,7 @@ PDC_Client_del_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdcid_t lo
     cont_meta_id = ((struct _pdc_cont_info *)(id_info->obj_ptr))->cont_info_pub->meta_id;
 
     ret_value = PDC_Client_add_del_objects_to_container(nobj, obj_ids, cont_meta_id, DEL_OBJ);
+
 
     FUNC_LEAVE(ret_value);
 }
