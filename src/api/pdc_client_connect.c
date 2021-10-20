@@ -4538,7 +4538,6 @@ PDC_Client_del_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdcid_t lo
 
     ret_value = PDC_Client_add_del_objects_to_container(nobj, obj_ids, cont_meta_id, DEL_OBJ);
 
-
     FUNC_LEAVE(ret_value);
 }
 
