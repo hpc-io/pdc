@@ -153,7 +153,7 @@ done:
 
 pdcid_t
 PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, pdcid_t local_reg,
-                           pdcid_t remote_reg)
+                          pdcid_t remote_reg)
 {
     pdcid_t                 ret_value = 0;
     struct _pdc_id_info *   objinfo2;
