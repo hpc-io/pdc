@@ -2415,7 +2415,7 @@ hg_proc_transfer_request_status_in_t(hg_proc_t proc, void *data)
 {
     hg_return_t                   ret;
     transfer_request_status_in_t *struct_data = (transfer_request_status_in_t *)data;
-    ret = hg_proc_uint64_t(proc, &struct_data->transfer_request_id);
+    ret                                       = hg_proc_uint64_t(proc, &struct_data->transfer_request_id);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
