@@ -270,7 +270,7 @@ PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *co
     perr_t ret_value = SUCCEED;
     FUNC_ENTER(NULL);
 
-    ret_value = PDC_Client_transfer_request(transfer_request_id, completed);
+    ret_value = PDC_Client_transfer_request_status(transfer_request_id, completed);
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -283,7 +283,7 @@ PDCregion_transfer_wait(pdcid_t transfer_request_id)
     pdc_transfer_status_t completed;
     FUNC_ENTER(NULL);
 
-    ret_value = PDC_Client_transfer_request(transfer_request_id, &completed);
+    ret_value = PDC_Client_transfer_request_wait(transfer_request_id, &completed);
     if (completed != PDC_TRANSFER_STATUS_COMPLETE) {
         printf("PDCregion_transfer_wait wrong return value from server @ line %d\n", __LINE__);
         ret_value = FAIL;
