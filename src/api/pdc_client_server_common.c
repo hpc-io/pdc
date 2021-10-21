@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4444,7 +4445,6 @@ PDC_commit_request(uint64_t transfer_request_id)
 
     pthread_mutex_unlock(&transfer_request_status_mutex);
 
-done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
@@ -4680,14 +4680,13 @@ HG_TEST_RPC_CB(transfer_request_status, handle)
     hg_return_t                   ret_value = HG_SUCCESS;
     transfer_request_status_in_t  in;
     transfer_request_status_out_t out;
-    const struct hg_info *        info;
+
     FUNC_ENTER(NULL);
     HG_Get_input(handle, &in);
-    info = HG_Get_info(handle);
 
     out.status = PDC_check_request(in.transfer_request_id);
     out.ret    = 1;
-    ret        = HG_Respond(handle, NULL, NULL, &out);
+    ret_value        = HG_Respond(handle, NULL, NULL, &out);
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
@@ -4703,10 +4702,9 @@ HG_TEST_RPC_CB(transfer_request_wait, handle)
     transfer_request_status_in_t  in;
     transfer_request_status_out_t out;
     pdc_transfer_status_t         status;
-    const struct hg_info *        info;
+
     FUNC_ENTER(NULL);
     HG_Get_input(handle, &in);
-    info = HG_Get_info(handle);
 
     while (1) {
         status = PDC_check_request(in.transfer_request_id);
@@ -4827,7 +4825,7 @@ HG_TEST_RPC_CB(transfer_request, handle)
         printf("Error at HG_TEST_RPC_CB(transfer_request, handle): @ line %d ", __LINE__);
     }
     out.ret = 1;
-    ret     = HG_Respond(handle, NULL, NULL, &out);
+    ret_value     = HG_Respond(handle, NULL, NULL, &out);
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
@@ -6238,6 +6236,7 @@ HG_TEST_RPC_CB(server_checkpoint_rpc, handle)
     out.ret   = 1;
     ret_value = HG_Respond(handle, PDC_Server_checkpoint_cb, &in, &out);
 
+
     ret_value = HG_Free_input(handle, &in);
     ret_value = HG_Destroy(handle);
 
@@ -6860,9 +6859,9 @@ PDC_FUNC_DECLARE_REGISTER(metadata_delete_by_id)
 PDC_FUNC_DECLARE_REGISTER(metadata_delete)
 PDC_FUNC_DECLARE_REGISTER(close_server)
 PDC_FUNC_DECLARE_REGISTER(transfer_request)
-PDC_FUNC_DECLARE_REGISTER(transfer_request_status, transfer_request_status_in_t,
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(transfer_request_status, transfer_request_status_in_t,
                           transfer_request_status_out_t)
-PDC_FUNC_DECLARE_REGISTER(transfer_request_wait, transfer_request_status_in_t, transfer_request_status_out_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(transfer_request_wait, transfer_request_status_in_t, transfer_request_status_out_t)
 PDC_FUNC_DECLARE_REGISTER(buf_map)
 PDC_FUNC_DECLARE_REGISTER(get_remote_metadata)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(buf_map_server, buf_map_in_t, buf_map_out_t)
