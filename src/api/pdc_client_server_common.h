@@ -736,7 +736,7 @@ typedef struct {
 
 /* Define transfer_request_status_in_t */
 typedef struct {
-    uint64_t transfer_request_id;
+    uint64_t transfer_request_status_id;
 } transfer_request_status_in_t;
 /* Define transfer_request_status_out_t */
 typedef struct {
@@ -2692,6 +2692,7 @@ hg_proc_region_storage_meta_t(hg_proc_t proc, void *data)
     region_storage_meta_t *struct_data = (region_storage_meta_t *)data;
 
     ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
+
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
