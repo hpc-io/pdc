@@ -128,16 +128,20 @@ struct _pdc_iterator_info *PDC_Block_iterator_cache;
 /* Library Private Typedefs */
 /****************************/
 
-typedef enum { PDC_TRANSFER_STATUS_COMPLETE = 0, PDC_TRANSFER_STATUS_PENDING = 1, PDC_TRANSFER_STATUS_NOT_FOUND = 2 } pdc_transfer_status_t;
+typedef enum {
+    PDC_TRANSFER_STATUS_COMPLETE  = 0,
+    PDC_TRANSFER_STATUS_PENDING   = 1,
+    PDC_TRANSFER_STATUS_NOT_FOUND = 2
+} pdc_transfer_status_t;
 
 typedef struct pdc_transfer_request_status {
-    uint64_t transfer_request_id;
-    int status;
+    uint64_t                            transfer_request_id;
+    int                                 status;
     struct pdc_transfer_request_status *next;
 } pdc_transfer_request_status;
 
 pdc_transfer_request_status *transfer_request_status_list;
-pthread_mutex_t   transfer_request_status_mutex;
+pthread_mutex_t              transfer_request_status_mutex;
 
 typedef enum { PDC_POSIX = 0, PDC_DAOS = 1 } _pdc_io_plugin_t;
 
@@ -730,10 +734,9 @@ typedef struct {
     pdc_metadata_transfer_t ret;
 } get_remote_metadata_out_t;
 
-
 /* Define transfer_request_status_in_t */
 typedef struct {
-    uint64_t               transfer_request_id;
+    uint64_t transfer_request_id;
 } transfer_request_status_in_t;
 /* Define transfer_request_status_out_t */
 typedef struct {
@@ -2410,7 +2413,7 @@ hg_proc_transfer_request_out_t(hg_proc_t proc, void *data)
 static HG_INLINE hg_return_t
 hg_proc_transfer_request_status_in_t(hg_proc_t proc, void *data)
 {
-    hg_return_t            ret;
+    hg_return_t                   ret;
     transfer_request_status_in_t *struct_data = (transfer_request_status_in_t *)data;
     ret = hg_proc_uint64_t(proc, &struct_data->transfer_request_status_id);
     if (ret != HG_SUCCESS) {
@@ -2424,7 +2427,7 @@ hg_proc_transfer_request_status_in_t(hg_proc_t proc, void *data)
 static HG_INLINE hg_return_t
 hg_proc_transfer_request_status_out_t(hg_proc_t proc, void *data)
 {
-    hg_return_t             ret;
+    hg_return_t                    ret;
     transfer_request_status_out_t *struct_data = (transfer_request_status_out_t *)data;
 
     ret = hg_proc_int32_t(proc, &struct_data->status);
@@ -3296,7 +3299,7 @@ struct bulk_args_t {
     uint64_t *       obj_ids;
     int              client_seq_id;
 
-    int       query_id;
+    int query_id;
 
     uint32_t  ndim;
     uint64_t *coords;

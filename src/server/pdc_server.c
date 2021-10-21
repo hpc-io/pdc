@@ -2040,7 +2040,6 @@ main(int argc, char *argv[])
         PDC_Server_checkpoint();
 #endif
 
-
 #ifdef ENABLE_TIMING
     PDC_print_IO_stats();
 #endif

@@ -347,8 +347,8 @@ done:
 static hg_return_t
 client_send_transfer_request_status_rpc_cb(const struct hg_cb_info *callback_info)
 {
-    hg_return_t                        ret_value = HG_SUCCESS;
-    hg_handle_t                        handle;
+    hg_return_t                               ret_value = HG_SUCCESS;
+    hg_handle_t                               handle;
     struct _pdc_transfer_request_status_args *region_transfer_args;
     transfer_request_status_out_t             output;
 
@@ -365,7 +365,7 @@ client_send_transfer_request_status_rpc_cb(const struct hg_cb_info *callback_inf
         goto done;
     }
 
-    region_transfer_args->ret = output.ret;
+    region_transfer_args->ret    = output.ret;
     region_transfer_args->status = output.status;
 
 done:
@@ -956,11 +956,11 @@ drc_access_again:
     send_region_storage_meta_shm_bulk_rpc_register_id_g = PDC_send_shm_bulk_rpc_register(*hg_class);
 
     // Map
-    transfer_request_register_id_g = PDC_transfer_request_register(*hg_class);
+    transfer_request_register_id_g        = PDC_transfer_request_register(*hg_class);
     transfer_request_status_register_id_g = PDC_transfer_request_status_register(*hg_class);
-    transfer_request_wait_register_id_g = PDC_transfer_request_wait_register(*hg_class);
-    buf_map_register_id_g          = PDC_buf_map_register(*hg_class);
-    buf_unmap_register_id_g        = PDC_buf_unmap_register(*hg_class);
+    transfer_request_wait_register_id_g   = PDC_transfer_request_wait_register(*hg_class);
+    buf_map_register_id_g                 = PDC_buf_map_register(*hg_class);
+    buf_unmap_register_id_g               = PDC_buf_unmap_register(*hg_class);
 
     // Analysis and Transforms
     analysis_ftn_register_id_g         = PDC_analysis_ftn_register(*hg_class);
@@ -2504,10 +2504,10 @@ release_region_buffer(char *buf, char *new_buf, uint64_t *obj_dims, int local_nd
 }
 
 perr_t
-PDC_Client_transfer_request(pdcid_t transfer_request_id, void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *obj_dims, int local_ndim,
-                            uint64_t *local_offset, uint64_t *local_size, int remote_ndim,
-                            uint64_t *remote_offset, uint64_t *remote_size, pdc_var_type_t mem_type,
-                            pdc_access_t access_type)
+PDC_Client_transfer_request(pdcid_t transfer_request_id, void *buf, pdcid_t obj_id, int obj_ndim,
+                            uint64_t *obj_dims, int local_ndim, uint64_t *local_offset, uint64_t *local_size,
+                            int remote_ndim, uint64_t *remote_offset, uint64_t *remote_size,
+                            pdc_var_type_t mem_type, pdc_access_t access_type)
 {
     perr_t                            ret_value = SUCCEED;
     hg_return_t                       hg_ret    = HG_SUCCESS;
@@ -2548,9 +2548,9 @@ PDC_Client_transfer_request(pdcid_t transfer_request_id, void *buf, pdcid_t obj_
         total_data_size *= remote_size[i];
     }
 
-    in.remote_unit = unit;
-    in.obj_id      = obj_id;
-    in.obj_ndim    = obj_ndim;
+    in.remote_unit         = unit;
+    in.obj_id              = obj_id;
+    in.obj_ndim            = obj_ndim;
     in.transfer_request_id = transfer_request_id;
     if (in.obj_ndim >= 1) {
         in.obj_dim0 = obj_dims[0];
@@ -2609,13 +2609,14 @@ done:
 }
 
 perr_t
-PDC_Client_transfer_request_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed) {
-    perr_t                            ret_value = SUCCEED;
-    hg_class_t *                      hg_class;
-    hg_return_t                       hg_ret    = HG_SUCCESS;
+PDC_Client_transfer_request_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed)
+{
+    perr_t                                   ret_value = SUCCEED;
+    hg_class_t *                             hg_class;
+    hg_return_t                              hg_ret = HG_SUCCESS;
     transfer_request_status_in_t             in;
-    uint32_t                          data_server_id;
-    hg_handle_t                       client_send_transfer_request_status_handle;
+    uint32_t                                 data_server_id;
+    hg_handle_t                              client_send_transfer_request_status_handle;
     struct _pdc_transfer_request_status_args transfer_args;
 
     FUNC_ENTER(NULL);
@@ -2635,8 +2636,8 @@ PDC_Client_transfer_request_status(pdcid_t transfer_request_id, pdc_transfer_sta
                     "PDC_Client_transfer_request(): Could not create local bulk data handle @ line %d\n",
                     __LINE__);
 
-    hg_ret = HG_Forward(client_send_transfer_request_status_handle, client_send_transfer_request_status_rpc_cb,
-                        &transfer_args, &in);
+    hg_ret = HG_Forward(client_send_transfer_request_status_handle,
+                        client_send_transfer_request_status_rpc_cb, &transfer_args, &in);
 
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_transfer_request(): Could not start HG_Forward() @ line %d\n",
@@ -2658,13 +2659,14 @@ done:
 }
 
 perr_t
-PDC_Client_transfer_request_wait(pdcid_t transfer_request_id) {
-    perr_t                            ret_value = SUCCEED;
-    hg_class_t *                      hg_class;
-    hg_return_t                       hg_ret    = HG_SUCCESS;
+PDC_Client_transfer_request_wait(pdcid_t transfer_request_id)
+{
+    perr_t                                   ret_value = SUCCEED;
+    hg_class_t *                             hg_class;
+    hg_return_t                              hg_ret = HG_SUCCESS;
     transfer_request_status_in_t             in;
-    uint32_t                          data_server_id;
-    hg_handle_t                       client_send_transfer_request_wait_handle;
+    uint32_t                                 data_server_id;
+    hg_handle_t                              client_send_transfer_request_wait_handle;
     struct _pdc_transfer_request_status_args transfer_args;
 
     FUNC_ENTER(NULL);
@@ -2705,7 +2707,6 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
-
 
 perr_t
 PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t ndim, uint64_t *local_dims,

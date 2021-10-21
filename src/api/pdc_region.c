@@ -253,8 +253,8 @@ PDCregion_transfer_start(pdcid_t transfer_request_id)
     transferinfo     = PDC_find_id(transfer_request_id);
     transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
 
-    ret_value = PDC_Client_transfer_request( transfer_request_id,
-        transfer_request->buf, transfer_request->obj_id, transfer_request->obj_ndim,
+    ret_value = PDC_Client_transfer_request(
+        transfer_request_id, transfer_request->buf, transfer_request->obj_id, transfer_request->obj_ndim,
         transfer_request->obj_dims, transfer_request->local_region_ndim,
         transfer_request->local_region_offset, transfer_request->local_region_size,
         transfer_request->remote_region_ndim, transfer_request->remote_region_offset,
@@ -270,7 +270,7 @@ PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *co
     perr_t ret_value = SUCCEED;
     FUNC_ENTER(NULL);
 
-    ret_value = PDC_Client_transfer_request( transfer_request_id, completed);
+    ret_value = PDC_Client_transfer_request(transfer_request_id, completed);
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -279,11 +279,11 @@ PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *co
 perr_t
 PDCregion_transfer_wait(pdcid_t transfer_request_id)
 {
-    perr_t ret_value = SUCCEED;
+    perr_t                ret_value = SUCCEED;
     pdc_transfer_status_t completed;
     FUNC_ENTER(NULL);
 
-    ret_value = PDC_Client_transfer_request( transfer_request_id, &completed);
+    ret_value = PDC_Client_transfer_request(transfer_request_id, &completed);
     if (completed != PDC_TRANSFER_STATUS_COMPLETE) {
         printf("PDCregion_transfer_wait wrong return value from server @ line %d\n", __LINE__);
         ret_value = FAIL;
@@ -296,7 +296,7 @@ PDCregion_transfer_wait(pdcid_t transfer_request_id)
 pdcid_t
 PDCregion_create(psize_t ndims, uint64_t *offset, uint64_t *size)
 {
-    perr_t                 ret_value = 0;
+    perr_t                  ret_value = 0;
     struct pdc_region_info *p         = NULL;
     pdcid_t                 new_id;
     size_t                  i = 0;
