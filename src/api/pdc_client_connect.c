@@ -505,7 +505,6 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
-
 }
 
 perr_t
@@ -1427,7 +1426,6 @@ PDC_Client_query_tag(const char *tags, int *n_res, pdc_metadata_t ***out)
     in.time_step_to   = -1;
     in.ndim           = 0;
     in.tags           = tags;
-
 
     *out   = NULL;
     *n_res = 0;
@@ -2615,7 +2613,7 @@ perr_t
 PDC_Client_transfer_request_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed)
 {
     perr_t                                   ret_value = SUCCEED;
-    hg_return_t                              hg_ret = HG_SUCCESS;
+    hg_return_t                              hg_ret    = HG_SUCCESS;
     transfer_request_status_in_t             in;
     uint32_t                                 data_server_id;
     hg_handle_t                              client_send_transfer_request_status_handle;
@@ -2661,7 +2659,7 @@ perr_t
 PDC_Client_transfer_request_wait(pdcid_t transfer_request_id)
 {
     perr_t                                   ret_value = SUCCEED;
-    hg_return_t                              hg_ret = HG_SUCCESS;
+    hg_return_t                              hg_ret    = HG_SUCCESS;
     transfer_request_status_in_t             in;
     uint32_t                                 data_server_id;
     hg_handle_t                              client_send_transfer_request_wait_handle;
