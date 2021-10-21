@@ -3662,7 +3662,6 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
-
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4686,7 +4685,7 @@ HG_TEST_RPC_CB(transfer_request_status, handle)
 
     out.status = PDC_check_request(in.transfer_request_id);
     out.ret    = 1;
-    ret_value        = HG_Respond(handle, NULL, NULL, &out);
+    ret_value  = HG_Respond(handle, NULL, NULL, &out);
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
@@ -4824,8 +4823,8 @@ HG_TEST_RPC_CB(transfer_request, handle)
     if (ret_value != HG_SUCCESS) {
         printf("Error at HG_TEST_RPC_CB(transfer_request, handle): @ line %d ", __LINE__);
     }
-    out.ret = 1;
-    ret_value     = HG_Respond(handle, NULL, NULL, &out);
+    out.ret   = 1;
+    ret_value = HG_Respond(handle, NULL, NULL, &out);
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
@@ -6236,7 +6235,6 @@ HG_TEST_RPC_CB(server_checkpoint_rpc, handle)
     out.ret   = 1;
     ret_value = HG_Respond(handle, PDC_Server_checkpoint_cb, &in, &out);
 
-
     ret_value = HG_Free_input(handle, &in);
     ret_value = HG_Destroy(handle);
 
@@ -6860,8 +6858,9 @@ PDC_FUNC_DECLARE_REGISTER(metadata_delete)
 PDC_FUNC_DECLARE_REGISTER(close_server)
 PDC_FUNC_DECLARE_REGISTER(transfer_request)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(transfer_request_status, transfer_request_status_in_t,
-                          transfer_request_status_out_t)
-PDC_FUNC_DECLARE_REGISTER_IN_OUT(transfer_request_wait, transfer_request_status_in_t, transfer_request_status_out_t)
+                                 transfer_request_status_out_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(transfer_request_wait, transfer_request_status_in_t,
+                                 transfer_request_status_out_t)
 PDC_FUNC_DECLARE_REGISTER(buf_map)
 PDC_FUNC_DECLARE_REGISTER(get_remote_metadata)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(buf_map_server, buf_map_in_t, buf_map_out_t)
