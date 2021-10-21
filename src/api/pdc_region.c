@@ -279,7 +279,7 @@ PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *co
 perr_t
 PDCregion_transfer_wait(pdcid_t transfer_request_id)
 {
-    perr_t                ret_value = SUCCEED;
+    perr_t ret_value = SUCCEED;
     FUNC_ENTER(NULL);
 
     ret_value = PDC_Client_transfer_request_wait(transfer_request_id);
