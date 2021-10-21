@@ -4416,6 +4416,75 @@ get_server_rank()
         }                                                                                                    \
     }
 
+static perr_t PDC_commit_request (uint64_t transfer_request_id) {
+    pdc_transfer_request_status *ptr;
+    perr_t   ret_value = SUCCEED;
+    FUNC_ENTER(NULL);
+
+    pthread_mutex_lock(&transfer_request_status_mutex);
+    if (transfer_request_status_list == NULL) {
+        transfer_request_status_list = (pdc_transfer_request_status*) malloc(sizeof(pdc_transfer_request_status));
+        transfer_request_status_list->status = PDC_TRANSFER_STATUS_PENDING;
+        transfer_request_status_list->transfer_request_id = transfer_request_id;
+        transfer_request_status_list->next = NULL;
+    } else {
+        ptr = transfer_request_status_list;
+        while (ptr->next != NULL) {
+            ptr = ptr->next;
+        }
+        ptr->next = (pdc_transfer_request_status*) malloc(sizeof(pdc_transfer_request_status));
+        ptr->next->status = PDC_TRANSFER_STATUS_PENDING;
+        ptr->next->transfer_request_id = transfer_request_id;
+        ptr->next->next = NULL;
+    }
+
+    pthread_mutex_unlock(&transfer_request_status_mutex);
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+static perr_t PDC_finish_request (uint64_t transfer_request_id) {
+    pdc_transfer_request_status *ptr;
+    perr_t   ret_value = SUCCEED;
+    FUNC_ENTER(NULL);
+
+    pthread_mutex_lock(&transfer_request_status_mutex);
+    ptr = transfer_request_status_list;
+    while (ptr != NULL) {
+        if (ptr->transfer_request_id == transfer_request_id) {
+            ptr->status = PDC_TRANSFER_STATUS_COMPLETE;
+            goto done;
+        }
+        ptr = ptr->next;
+    }
+    pthread_mutex_unlock(&transfer_request_status_mutex);
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+static pdc_transfer_status_t PDC_check_request (uint64_t transfer_request_id) {
+    pdc_transfer_request_status *ptr;
+    pdc_transfer_status_t ret_value = PDC_TRANSFER_STATUS_NOT_FOUND;
+    FUNC_ENTER(NULL);
+
+    pthread_mutex_lock(&transfer_request_status_mutex);
+    ptr = transfer_request_status_list;
+    while (ptr != NULL) {
+        if (ptr->transfer_request_id == transfer_request_id) {
+            ret_value = ptr->transfer_request_id;
+            goto done;
+        }
+        ptr = ptr->next;
+    }
+    pthread_mutex_unlock(&transfer_request_status_mutex);
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
 perr_t
 PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims,
                                struct pdc_region_info *region_info, void *buf, size_t unit, int is_write)
@@ -4535,13 +4604,11 @@ hg_return_t
 transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
 {
     struct transfer_request_local_bulk_args *local_bulk_args = info->arg;
-    hg_return_t                              ret;
-    transfer_request_out_t                   out;
+    hg_return_t                              ret = HG_SUCCESS;
     struct pdc_region_info *                 remote_reg_info;
     uint64_t                                 obj_dims[3];
 
     FUNC_ENTER(NULL);
-    out.ret = 1;
 
     // printf("entering transfer bulk callback\n");
 
@@ -4575,12 +4642,10 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
     PDC_Server_transfer_request_io(local_bulk_args->in.obj_id, local_bulk_args->in.obj_ndim, obj_dims,
                                    remote_reg_info, (void *)local_bulk_args->data_buf,
                                    local_bulk_args->in.remote_unit, 1);
-    ret = HG_Respond(local_bulk_args->handle, NULL, NULL, &out);
-
-    HG_Bulk_free(local_bulk_args->bulk_handle);
-    HG_Destroy(local_bulk_args->handle);
     free(local_bulk_args->data_buf);
     free(remote_reg_info);
+
+    HG_Bulk_free(local_bulk_args->bulk_handle);
 
     FUNC_LEAVE(ret);
 }
@@ -4590,21 +4655,70 @@ transfer_request_bulk_transfer_read_cb(const struct hg_cb_info *info)
 {
     struct transfer_request_local_bulk_args *local_bulk_args = info->arg;
     hg_return_t                              ret;
-    transfer_request_out_t                   out;
     FUNC_ENTER(NULL);
 
-    out.ret = 1;
-
     printf("entering server read transfer bulk callback\n");
-
-    ret = HG_Respond(local_bulk_args->handle, NULL, NULL, &out);
+    ret = HG_SUCCESS;
 
     HG_Bulk_free(local_bulk_args->bulk_handle);
-    HG_Destroy(local_bulk_args->handle);
-    free(local_bulk_args->data_buf);
 
     FUNC_LEAVE(ret);
 }
+
+/* static hg_return_t */
+// transfer_request_status_cb(hg_handle_t handle)
+HG_TEST_RPC_CB(transfer_request_status, handle) {
+    hg_return_t                              ret_value = HG_SUCCESS;
+    transfer_request_status_in_t                    in;
+    transfer_request_status_out_t                   out;
+    const struct hg_info *                   info;
+    FUNC_ENTER(NULL);
+    HG_Get_input(handle, &in);
+    info = HG_Get_info(handle);
+
+    out.status = PDC_check_request (in.transfer_request_id);
+    out.ret    = 1;
+    ret = HG_Respond(handle, NULL, NULL, &out);
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+/* static hg_return_t */
+// transfer_request_wait_cb(hg_handle_t handle)
+HG_TEST_RPC_CB(transfer_request_wait, handle) {
+    hg_return_t                              ret_value = HG_SUCCESS;
+    transfer_request_status_in_t                    in;
+    transfer_request_status_out_t                   out;
+    pdc_transfer_status_t status;
+    const struct hg_info *                   info;
+    FUNC_ENTER(NULL);
+    HG_Get_input(handle, &in);
+    info = HG_Get_info(handle);
+
+    while (1) {
+        status = PDC_check_request (in.transfer_request_id);
+        if (status == PDC_TRANSFER_STATUS_PENDING) {
+            sleep(.1);
+        } else {
+            out.status = PDC_TRANSFER_STATUS_COMPLETE;
+            break;
+        }
+    }
+    out.ret    = 1;
+
+    ret_value = HG_Respond(handle, NULL, NULL, &out);
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
 
 /* static hg_return_t */
 // transfer_request_cb(hg_handle_t handle)
@@ -4612,6 +4726,7 @@ HG_TEST_RPC_CB(transfer_request, handle)
 {
     hg_return_t                              ret_value = HG_SUCCESS;
     transfer_request_in_t                    in;
+    transfer_request_out_t                   out;
     struct transfer_request_local_bulk_args *local_bulk_args;
     size_t                                   total_mem_size;
     const struct hg_info *                   info;
@@ -4703,8 +4818,11 @@ HG_TEST_RPC_CB(transfer_request, handle)
     if (ret_value != HG_SUCCESS) {
         printf("Error at HG_TEST_RPC_CB(transfer_request, handle): @ line %d ", __LINE__);
     }
-
+    out.ret = 1;
+    ret = HG_Respond(handle, NULL, NULL, &out);
     HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -6679,6 +6797,8 @@ HG_TEST_THREAD_CB(server_lookup_remote_server)
 HG_TEST_THREAD_CB(bulk_rpc)
 HG_TEST_THREAD_CB(buf_map)
 HG_TEST_THREAD_CB(transfer_request)
+HG_TEST_THREAD_CB(transfer_request_status)
+HG_TEST_THREAD_CB(transfer_request_wait)
 HG_TEST_THREAD_CB(get_remote_metadata)
 HG_TEST_THREAD_CB(buf_map_server)
 HG_TEST_THREAD_CB(buf_unmap_server)
@@ -6733,6 +6853,8 @@ PDC_FUNC_DECLARE_REGISTER(metadata_delete_by_id)
 PDC_FUNC_DECLARE_REGISTER(metadata_delete)
 PDC_FUNC_DECLARE_REGISTER(close_server)
 PDC_FUNC_DECLARE_REGISTER(transfer_request)
+PDC_FUNC_DECLARE_REGISTER(transfer_request_status, transfer_request_status_in_t, transfer_request_status_out_t)
+PDC_FUNC_DECLARE_REGISTER(transfer_request_wait, transfer_request_status_in_t, transfer_request_status_out_t)
 PDC_FUNC_DECLARE_REGISTER(buf_map)
 PDC_FUNC_DECLARE_REGISTER(get_remote_metadata)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(buf_map_server, buf_map_in_t, buf_map_out_t)

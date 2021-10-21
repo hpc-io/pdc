@@ -88,6 +88,11 @@ struct _pdc_transfer_request_args {
     int32_t ret;
 };
 
+struct _pdc_transfer_request_status_args {
+    int32_t status;
+    int32_t ret;
+};
+
 struct _pdc_buf_map_args {
     int32_t ret;
 };
@@ -141,10 +146,13 @@ perr_t PDC_Client_read_server_addr_from_file();
 perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj_create_prop,
                                     pdcid_t *meta_id);
 
-perr_t PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *obj_dims,
+perr_t PDC_Client_transfer_request(pdcid_t transfer_request_id, void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *obj_dims,
                                    int local_ndim, uint64_t *local_offset, uint64_t *local_size,
                                    int remote_ndim, uint64_t *remote_offset, uint64_t *remote_size,
                                    pdc_var_type_t mem_type, pdc_access_t access_type);
+
+perr_t PDC_Client_transfer_request_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed);
+perr_t PDC_Client_transfer_request_wait(pdcid_t transfer_request_id);
 
 /**
  * Apply a map from buffer to an object

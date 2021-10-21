@@ -132,6 +132,8 @@ static int        bulk_todo_g = 0;
 hg_atomic_int32_t bulk_transfer_done_g;
 
 static hg_id_t transfer_request_register_id_g;
+static hg_id_t transfer_request_status_register_id_g;
+static hg_id_t transfer_request_wait_register_id_g;
 static hg_id_t buf_map_register_id_g;
 static hg_id_t buf_unmap_register_id_g;
 
@@ -333,6 +335,38 @@ client_send_transfer_request_rpc_cb(const struct hg_cb_info *callback_info)
     }
 
     region_transfer_args->ret = output.ret;
+
+done:
+    fflush(stdout);
+    work_todo_g--;
+    HG_Free_output(handle, &output);
+
+    FUNC_LEAVE(ret_value);
+}
+
+static hg_return_t
+client_send_transfer_request_status_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t                        ret_value = HG_SUCCESS;
+    hg_handle_t                        handle;
+    struct _pdc_transfer_request_status_args *region_transfer_args;
+    transfer_request_status_out_t             output;
+
+    FUNC_ENTER(NULL);
+
+    region_transfer_args = (struct _pdc_transfer_request_status_args *)callback_info->arg;
+    handle               = callback_info->info.forward.handle;
+
+    ret_value = HG_Get_output(handle, &output);
+    if (ret_value != HG_SUCCESS) {
+        printf("PDC_CLIENT[%d]: client_send_transfer_request_status_rpc_cb error with HG_Get_output\n",
+               pdc_client_mpi_rank_g);
+        region_transfer_args->ret = -1;
+        goto done;
+    }
+
+    region_transfer_args->ret = output.ret;
+    region_transfer_args->status = output.status;
 
 done:
     fflush(stdout);
@@ -923,6 +957,8 @@ drc_access_again:
 
     // Map
     transfer_request_register_id_g = PDC_transfer_request_register(*hg_class);
+    transfer_request_status_register_id_g = PDC_transfer_request_status_register(*hg_class);
+    transfer_request_wait_register_id_g = PDC_transfer_request_wait_register(*hg_class);
     buf_map_register_id_g          = PDC_buf_map_register(*hg_class);
     buf_unmap_register_id_g        = PDC_buf_unmap_register(*hg_class);
 
@@ -2468,7 +2504,7 @@ release_region_buffer(char *buf, char *new_buf, uint64_t *obj_dims, int local_nd
 }
 
 perr_t
-PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *obj_dims, int local_ndim,
+PDC_Client_transfer_request(pdcid_t transfer_request_id, void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *obj_dims, int local_ndim,
                             uint64_t *local_offset, uint64_t *local_size, int remote_ndim,
                             uint64_t *remote_offset, uint64_t *remote_size, pdc_var_type_t mem_type,
                             pdc_access_t access_type)
@@ -2515,6 +2551,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *o
     in.remote_unit = unit;
     in.obj_id      = obj_id;
     in.obj_ndim    = obj_ndim;
+    in.transfer_request_id = transfer_request_id;
     if (in.obj_ndim >= 1) {
         in.obj_dim0 = obj_dims[0];
     }
@@ -2570,6 +2607,105 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
+
+perr_t
+PDC_Client_transfer_request_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed) {
+    perr_t                            ret_value = SUCCEED;
+    hg_class_t *                      hg_class;
+    hg_return_t                       hg_ret    = HG_SUCCESS;
+    transfer_request_status_in_t             in;
+    uint32_t                          data_server_id;
+    hg_handle_t                       client_send_transfer_request_status_handle;
+    struct _pdc_transfer_request_status_args transfer_args;
+
+    FUNC_ENTER(NULL);
+    hg_class = HG_Context_get_class(send_context_g);
+
+    data_server_id = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
+
+    if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
+        PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
+                    pdc_client_mpi_rank_g, __LINE__);
+
+    HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr, transfer_request_status_register_id_g,
+              &client_send_transfer_request_status_handle);
+
+    if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(FAIL,
+                    "PDC_Client_transfer_request(): Could not create local bulk data handle @ line %d\n",
+                    __LINE__);
+
+    hg_ret = HG_Forward(client_send_transfer_request_status_handle, client_send_transfer_request_status_rpc_cb,
+                        &transfer_args, &in);
+
+    if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(FAIL, "PDC_Client_send_transfer_request(): Could not start HG_Forward() @ line %d\n",
+                    __LINE__);
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+    printf("PDC_Client_transfer_request_status() checkpoint, first value is %d @ line %d\n", ((int *)buf)[0],
+           __LINE__);
+
+    if (transfer_args.ret != 1)
+        PGOTO_ERROR(FAIL, "PDC_CLIENT: transfer request failed... @ line %d\n", __LINE__);
+
+    HG_Destroy(client_send_transfer_request_status_handle);
+    *completed = transfer_args.status;
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDC_Client_transfer_request_wait(pdcid_t transfer_request_id) {
+    perr_t                            ret_value = SUCCEED;
+    hg_class_t *                      hg_class;
+    hg_return_t                       hg_ret    = HG_SUCCESS;
+    transfer_request_status_in_t             in;
+    uint32_t                          data_server_id;
+    hg_handle_t                       client_send_transfer_request_wait_handle;
+    struct _pdc_transfer_request_status_args transfer_args;
+
+    FUNC_ENTER(NULL);
+    hg_class = HG_Context_get_class(send_context_g);
+
+    data_server_id = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
+
+    if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
+        PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
+                    pdc_client_mpi_rank_g, __LINE__);
+
+    HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr, transfer_request_wait_register_id_g,
+              &client_send_transfer_request_wait_handle);
+
+    if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(FAIL,
+                    "PDC_Client_transfer_request(): Could not create local bulk data handle @ line %d\n",
+                    __LINE__);
+
+    hg_ret = HG_Forward(client_send_transfer_request_wait_handle, client_send_transfer_request_wait_rpc_cb,
+                        &transfer_args, &in);
+
+    if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(FAIL, "PDC_Client_send_transfer_request(): Could not start HG_Forward() @ line %d\n",
+                    __LINE__);
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+    printf("PDC_Client_transfer_request_wait() checkpoint, first value is %d @ line %d\n", ((int *)buf)[0],
+           __LINE__);
+
+    if (transfer_args.ret != 1)
+        PGOTO_ERROR(FAIL, "PDC_CLIENT: transfer request failed... @ line %d\n", __LINE__);
+
+    HG_Destroy(client_send_transfer_request_wait_handle);
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
 
 perr_t
 PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t ndim, uint64_t *local_dims,

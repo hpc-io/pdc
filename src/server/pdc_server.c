@@ -867,6 +867,8 @@ drc_access_again:
     n_metadata_g = 0;
 
     // PDC cache infrastructures
+    transfer_request_status_list = NULL;
+    pthread_mutex_init(&transfer_request_status_mutex, NULL);
 #ifdef PDC_SERVER_CACHE
 
     pdc_recycle_close_flag = 0;
@@ -1031,6 +1033,8 @@ PDC_Server_finalize()
     hg_thread_mutex_destroy(&update_remote_server_addr_mutex_g);
 #endif
     // PDC cache finalize
+
+    pthread_mutex_destroy(&transfer_request_status_mutex);
 #ifdef PDC_SERVER_CACHE
     pthread_mutex_lock(&pdc_cache_mutex);
     pdc_recycle_close_flag = 1;
@@ -2035,6 +2039,7 @@ main(int argc, char *argv[])
     else
         PDC_Server_checkpoint();
 #endif
+
 
 #ifdef ENABLE_TIMING
     PDC_print_IO_stats();
