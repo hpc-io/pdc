@@ -505,6 +505,7 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
+
 }
 
 perr_t
@@ -1427,6 +1428,7 @@ PDC_Client_query_tag(const char *tags, int *n_res, pdc_metadata_t ***out)
     in.ndim           = 0;
     in.tags           = tags;
 
+
     *out   = NULL;
     *n_res = 0;
 
@@ -2348,6 +2350,7 @@ PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct pdc_re
     HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr, buf_unmap_register_id_g,
               &client_send_buf_unmap_handle);
 #if PDC_TIMING == 1
+
     double start = MPI_Wtime(), end;
 #endif
     hg_ret = HG_Forward(client_send_buf_unmap_handle, client_send_buf_unmap_rpc_cb, &unmap_args, &in);
@@ -2612,7 +2615,6 @@ perr_t
 PDC_Client_transfer_request_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed)
 {
     perr_t                                   ret_value = SUCCEED;
-    hg_class_t *                             hg_class;
     hg_return_t                              hg_ret = HG_SUCCESS;
     transfer_request_status_in_t             in;
     uint32_t                                 data_server_id;
@@ -2620,10 +2622,10 @@ PDC_Client_transfer_request_status(pdcid_t transfer_request_id, pdc_transfer_sta
     struct _pdc_transfer_request_status_args transfer_args;
 
     FUNC_ENTER(NULL);
-    hg_class = HG_Context_get_class(send_context_g);
 
     data_server_id = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
 
+    in.transfer_request_id = transfer_request_id;
     if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
                     pdc_client_mpi_rank_g, __LINE__);
@@ -2645,9 +2647,6 @@ PDC_Client_transfer_request_status(pdcid_t transfer_request_id, pdc_transfer_sta
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
 
-    printf("PDC_Client_transfer_request_status() checkpoint, first value is %d @ line %d\n", ((int *)buf)[0],
-           __LINE__);
-
     if (transfer_args.ret != 1)
         PGOTO_ERROR(FAIL, "PDC_CLIENT: transfer request failed... @ line %d\n", __LINE__);
 
@@ -2662,7 +2661,6 @@ perr_t
 PDC_Client_transfer_request_wait(pdcid_t transfer_request_id)
 {
     perr_t                                   ret_value = SUCCEED;
-    hg_class_t *                             hg_class;
     hg_return_t                              hg_ret = HG_SUCCESS;
     transfer_request_status_in_t             in;
     uint32_t                                 data_server_id;
@@ -2670,10 +2668,10 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id)
     struct _pdc_transfer_request_status_args transfer_args;
 
     FUNC_ENTER(NULL);
-    hg_class = HG_Context_get_class(send_context_g);
 
     data_server_id = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
 
+    in.transfer_request_id = transfer_request_id;
     if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
                     pdc_client_mpi_rank_g, __LINE__);
@@ -2686,7 +2684,7 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id)
                     "PDC_Client_transfer_request(): Could not create local bulk data handle @ line %d\n",
                     __LINE__);
 
-    hg_ret = HG_Forward(client_send_transfer_request_wait_handle, client_send_transfer_request_wait_rpc_cb,
+    hg_ret = HG_Forward(client_send_transfer_request_wait_handle, client_send_transfer_request_status_rpc_cb,
                         &transfer_args, &in);
 
     if (hg_ret != HG_SUCCESS)
@@ -2694,9 +2692,6 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id)
                     __LINE__);
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
-
-    printf("PDC_Client_transfer_request_wait() checkpoint, first value is %d @ line %d\n", ((int *)buf)[0],
-           __LINE__);
 
     if (transfer_args.ret != 1)
         PGOTO_ERROR(FAIL, "PDC_CLIENT: transfer request failed... @ line %d\n", __LINE__);
