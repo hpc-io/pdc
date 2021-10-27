@@ -3662,7 +3662,6 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
-
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4687,7 +4686,7 @@ HG_TEST_RPC_CB(transfer_request_status, handle)
     FUNC_ENTER(NULL);
     HG_Get_input(handle, &in);
 
-    printf("entering the status function at server side @ line %d\n",__LINE__);
+    printf("entering the status function at server side @ line %d\n", __LINE__);
     out.status = PDC_check_request(in.transfer_request_id);
     out.ret    = 1;
     ret_value  = HG_Respond(handle, NULL, NULL, &out);
@@ -4709,7 +4708,7 @@ HG_TEST_RPC_CB(transfer_request_wait, handle)
 
     FUNC_ENTER(NULL);
     HG_Get_input(handle, &in);
-    printf("entering the wait function at server side @ line %d\n",__LINE__);
+    printf("entering the wait function at server side @ line %d\n", __LINE__);
     while (1) {
         status = PDC_check_request(in.transfer_request_id);
         if (status == PDC_TRANSFER_STATUS_PENDING) {
@@ -6465,8 +6464,8 @@ HG_TEST_RPC_CB(send_client_storage_meta_rpc, handle)
     cnt                = in_struct.cnt;
     origin_bulk_handle = in_struct.bulk_handle;
 
-    bulk_args->nbytes  = HG_Bulk_get_size(origin_bulk_handle);
-    bulk_args->cnt     = cnt;
+    bulk_args->nbytes = HG_Bulk_get_size(origin_bulk_handle);
+    bulk_args->cnt    = cnt;
 
     /* Create a new bulk handle to read the data */
     HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *)&bulk_args->nbytes, HG_BULK_READWRITE,
