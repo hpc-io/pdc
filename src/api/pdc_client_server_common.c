@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4649,6 +4650,8 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
     PDC_Server_transfer_request_io(local_bulk_args->in.obj_id, local_bulk_args->in.obj_ndim, obj_dims,
                                    remote_reg_info, (void *)local_bulk_args->data_buf,
                                    local_bulk_args->in.remote_unit, 1);
+
+    PDC_finish_request(local_bulk_args->in.transfer_request_id);
     free(local_bulk_args->data_buf);
     free(remote_reg_info);
 
@@ -4665,6 +4668,7 @@ transfer_request_bulk_transfer_read_cb(const struct hg_cb_info *info)
     FUNC_ENTER(NULL);
 
     printf("entering server read transfer bulk callback\n");
+    PDC_finish_request(local_bulk_args->in.transfer_request_id);
     ret = HG_SUCCESS;
 
     HG_Bulk_free(local_bulk_args->bulk_handle);
@@ -4683,6 +4687,7 @@ HG_TEST_RPC_CB(transfer_request_status, handle)
     FUNC_ENTER(NULL);
     HG_Get_input(handle, &in);
 
+    printf("entering the status function at server side @ line %d\n",__LINE__);
     out.status = PDC_check_request(in.transfer_request_id);
     out.ret    = 1;
     ret_value  = HG_Respond(handle, NULL, NULL, &out);
@@ -4704,7 +4709,7 @@ HG_TEST_RPC_CB(transfer_request_wait, handle)
 
     FUNC_ENTER(NULL);
     HG_Get_input(handle, &in);
-
+    printf("entering the wait function at server side @ line %d\n",__LINE__);
     while (1) {
         status = PDC_check_request(in.transfer_request_id);
         if (status == PDC_TRANSFER_STATUS_PENDING) {
@@ -4823,6 +4828,8 @@ HG_TEST_RPC_CB(transfer_request, handle)
     if (ret_value != HG_SUCCESS) {
         printf("Error at HG_TEST_RPC_CB(transfer_request, handle): @ line %d ", __LINE__);
     }
+
+    PDC_commit_request(in.transfer_request_id);
     out.ret   = 1;
     ret_value = HG_Respond(handle, NULL, NULL, &out);
     HG_Free_input(handle, &in);
@@ -6457,6 +6464,7 @@ HG_TEST_RPC_CB(send_client_storage_meta_rpc, handle)
     /* Get parameters */
     cnt                = in_struct.cnt;
     origin_bulk_handle = in_struct.bulk_handle;
+
     bulk_args->nbytes  = HG_Bulk_get_size(origin_bulk_handle);
     bulk_args->cnt     = cnt;
 
