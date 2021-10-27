@@ -166,10 +166,11 @@ main(int argc, char **argv)
     reg_global = PDCregion_create(1, offset, offset_length);
 
     transfer_request = PDCregion_transfer_create(data_read, PDC_READ, obj1, reg, reg_global);
-
+    printf("checkpoint @ line %d\n", __LINE__);
     PDCregion_transfer_start(transfer_request);
+    printf("checkpoint @ line %d\n", __LINE__);
     PDCregion_transfer_wait(transfer_request);
-
+    printf("checkpoint @ line %d\n", __LINE__);
     PDCregion_transfer_close(transfer_request);
 
     // Check if data written previously has been correctly read.
