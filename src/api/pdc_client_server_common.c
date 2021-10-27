@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4767,6 +4768,7 @@ HG_TEST_RPC_CB(transfer_request, handle)
 
     printf("server check obj ndim %d, dims [%" PRIu64 ", %" PRIu64 ", %" PRIu64 "]\n", (int)in.obj_ndim,
            in.obj_dim0, in.obj_dim1, in.obj_dim2);
+    PDC_commit_request(in.transfer_request_id);
 
     if (in.access_type == PDC_WRITE) {
         ret_value = HG_Bulk_create(info->hg_class, 1, &(local_bulk_args->data_buf),
@@ -4828,7 +4830,6 @@ HG_TEST_RPC_CB(transfer_request, handle)
         printf("Error at HG_TEST_RPC_CB(transfer_request, handle): @ line %d ", __LINE__);
     }
 
-    PDC_commit_request(in.transfer_request_id);
     out.ret   = 1;
     ret_value = HG_Respond(handle, NULL, NULL, &out);
     HG_Free_input(handle, &in);
@@ -6452,6 +6453,7 @@ HG_TEST_RPC_CB(send_client_storage_meta_rpc, handle)
 
     /* Get info from handle */
     hg_info = HG_Get_info(handle);
+
 
     /* Get input parameters and data */
     ret_value = HG_Get_input(handle, &in_struct);
