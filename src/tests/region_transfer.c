@@ -135,8 +135,8 @@ main(int argc, char **argv)
 
     offset[0]        = 0;
     offset_length[0] = BUF_LEN;
-    reg        = PDCregion_create(1, offset, offset_length);
-    reg_global = PDCregion_create(1, offset, offset_length);
+    reg              = PDCregion_create(1, offset, offset_length);
+    reg_global       = PDCregion_create(1, offset, offset_length);
 
     for (i = 0; i < BUF_LEN; ++i) {
         data[i] = i;
