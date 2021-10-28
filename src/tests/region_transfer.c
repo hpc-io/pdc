@@ -143,7 +143,7 @@ main(int argc, char **argv)
         printf("Fail to create region @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
-    reg_global       = PDCregion_create(1, offset, offset_length);
+    reg_global = PDCregion_create(1, offset, offset_length);
     if (reg_global > 0) {
         printf("Create an region o1\n");
     }
