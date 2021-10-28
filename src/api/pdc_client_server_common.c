@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4460,7 +4461,7 @@ PDC_finish_request(uint64_t transfer_request_id)
     while (ptr != NULL) {
         if (ptr->transfer_request_id == transfer_request_id) {
             ptr->status = PDC_TRANSFER_STATUS_COMPLETE;
-            goto done;
+            break;
         }
         ptr = ptr->next;
     }

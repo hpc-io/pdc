@@ -2354,6 +2354,7 @@ PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct pdc_re
     size_t                   unit;
     uint32_t                 data_server_id, meta_server_id;
     struct _pdc_buf_map_args unmap_args;
+
     hg_handle_t              client_send_buf_unmap_handle;
 
     FUNC_ENTER(NULL);
@@ -2607,7 +2608,7 @@ PDC_Client_transfer_request(pdcid_t transfer_request_id, void *buf, pdcid_t obj_
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
                     pdc_client_mpi_rank_g, __LINE__);
 
-    HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr, transfer_request_register_id_g,
+    hg_ret = HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr, transfer_request_register_id_g,
               &client_send_transfer_request_handle);
 
     // Create bulk handle
@@ -2661,7 +2662,7 @@ PDC_Client_transfer_request_status(pdcid_t transfer_request_id, pdc_transfer_sta
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
                     pdc_client_mpi_rank_g, __LINE__);
 
-    HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr, transfer_request_status_register_id_g,
+    hg_ret = HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr, transfer_request_status_register_id_g,
               &client_send_transfer_request_status_handle);
 
     if (hg_ret != HG_SUCCESS)
@@ -2708,7 +2709,7 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
                     pdc_client_mpi_rank_g, __LINE__);
 
-    HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr, transfer_request_wait_register_id_g,
+    hg_ret = HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr, transfer_request_wait_register_id_g,
               &client_send_transfer_request_wait_handle);
 
     if (hg_ret != HG_SUCCESS)
@@ -3176,6 +3177,7 @@ pdc_region_release_with_server_analysis(struct _pdc_obj_info *  object_info,
 
     // Now the return value is stored in lookup_args.ret
     if (lookup_args.ret == 1) {
+
         *status   = TRUE;
         ret_value = SUCCEED;
     }
@@ -3389,6 +3391,7 @@ update_metadata(struct _pdc_obj_info *object_info, pdc_var_type_t data_type, siz
 
 /*
 static size_t
+
 get_transform_size(struct _pdc_transform_state *transform_state)
 {
     size_t ret_value = 0;
@@ -4024,6 +4027,7 @@ static hg_return_t
 data_server_write_check_rpc_cb(const struct hg_cb_info *callback_info)
 {
     hg_return_t                     ret_value = HG_SUCCESS;
+
     struct _pdc_client_lookup_args *client_lookup_args;
     hg_handle_t                     handle;
 
@@ -4744,6 +4748,7 @@ PDC_Client_add_tags_to_container(pdcid_t cont_id, char *tags)
         PGOTO_ERROR(FAIL, "Could not create handle");
 
     add_tag_rpc_in.cont_id = cont_meta_id;
+
     add_tag_rpc_in.tags    = tags;
 
     /* Forward call to remote addr */
