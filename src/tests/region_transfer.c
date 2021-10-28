@@ -136,8 +136,21 @@ main(int argc, char **argv)
     offset[0]        = 0;
     offset_length[0] = BUF_LEN;
     reg              = PDCregion_create(1, offset, offset_length);
+    if (reg > 0) {
+        printf("Create an region o1\n");
+    }
+    else {
+        printf("Fail to create region @ line  %d!\n", __LINE__);
+        ret_value = 1;
+    }
     reg_global       = PDCregion_create(1, offset, offset_length);
-
+    if (reg_global > 0) {
+        printf("Create an region o1\n");
+    }
+    else {
+        printf("Fail to create region @ line  %d!\n", __LINE__);
+        ret_value = 1;
+    }
     for (i = 0; i < BUF_LEN; ++i) {
         data[i] = i;
     }
