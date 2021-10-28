@@ -3662,7 +3662,6 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
-
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4702,10 +4701,10 @@ HG_TEST_RPC_CB(transfer_request_status, handle)
 // transfer_request_wait_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(transfer_request_wait, handle)
 {
-    hg_return_t                   ret_value = HG_SUCCESS;
+    hg_return_t                 ret_value = HG_SUCCESS;
     transfer_request_wait_in_t  in;
     transfer_request_wait_out_t out;
-    pdc_transfer_status_t         status;
+    pdc_transfer_status_t       status;
 
     FUNC_ENTER(NULL);
     HG_Get_input(handle, &in);
