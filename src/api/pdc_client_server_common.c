@@ -4482,8 +4482,8 @@ PDC_check_request(uint64_t transfer_request_id)
     ptr = transfer_request_status_list;
     while (ptr != NULL) {
         if (ptr->transfer_request_id == transfer_request_id) {
-            ret_value = ptr->transfer_request_id;
-            goto done;
+            ret_value = ptr->status;
+            break;
         }
         ptr = ptr->next;
     }
