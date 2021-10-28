@@ -391,8 +391,8 @@ client_send_transfer_request_wait_rpc_cb(const struct hg_cb_info *callback_info)
 
     ret_value = HG_Get_output(handle, &output);
     if (ret_value != HG_SUCCESS) {
-        printf("PDC_CLIENT[%d]: client_send_transfer_request_wait_rpc_cb error with HG_Get_output\n",
-               pdc_client_mpi_rank_g);
+        printf("PDC_CLIENT[%d]: client_send_transfer_request_wait_rpc_cb error with HG_Get_output @ line %d\n",
+               pdc_client_mpi_rank_g, __LINE__);
         region_transfer_args->ret = -1;
         goto done;
     }
@@ -4251,6 +4251,7 @@ PDC_Client_data_server_write(struct pdc_request *request)
                        &data_server_write_handle);
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "==Could not HG_Create()");
+
 
     hg_ret = HG_Forward(data_server_write_handle, data_server_write_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
