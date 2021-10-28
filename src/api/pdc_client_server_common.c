@@ -3662,7 +3662,6 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
-
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -6453,7 +6452,6 @@ HG_TEST_RPC_CB(send_client_storage_meta_rpc, handle)
 
     /* Get info from handle */
     hg_info = HG_Get_info(handle);
-
 
     /* Get input parameters and data */
     ret_value = HG_Get_input(handle, &in_struct);
