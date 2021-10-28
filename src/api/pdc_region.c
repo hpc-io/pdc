@@ -168,7 +168,7 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
     printf("PDCregion_transfer_create checkpoint @ line %d\n", __LINE__);
     reginfo1 = PDC_find_id(local_reg);
     printf("PDCregion_transfer_create checkpoint @ line %d\n", __LINE__);
-    reg1     = (struct pdc_region_info *)(reginfo1->obj_ptr);
+    reg1 = (struct pdc_region_info *)(reginfo1->obj_ptr);
     printf("PDCregion_transfer_create checkpoint @ line %d\n", __LINE__);
     reginfo2 = PDC_find_id(remote_reg);
     reg2     = (struct pdc_region_info *)(reginfo2->obj_ptr);
