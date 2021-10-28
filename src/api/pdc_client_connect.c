@@ -2703,6 +2703,7 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id)
     FUNC_ENTER(NULL);
 
     data_server_id = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
+    debug_server_id_count[data_server_id]++;
 
     in.transfer_request_id = transfer_request_id;
     if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
