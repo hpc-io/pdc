@@ -163,18 +163,12 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
     struct pdc_region_info *reg1, *reg2;
     pdcid_t                 remote_meta_id;
     uint64_t *              ptr;
-    printf("PDCregion_transfer_create checkpoint @ line %d\n", __LINE__);
     FUNC_ENTER(NULL);
-    printf("PDCregion_transfer_create checkpoint @ line %d\n", __LINE__);
     reginfo1 = PDC_find_id(local_reg);
-    printf("PDCregion_transfer_create checkpoint @ line %d\n", __LINE__);
     reg1 = (struct pdc_region_info *)(reginfo1->obj_ptr);
-    printf("PDCregion_transfer_create checkpoint @ line %d\n", __LINE__);
     reginfo2 = PDC_find_id(remote_reg);
     reg2     = (struct pdc_region_info *)(reginfo2->obj_ptr);
-    printf("PDCregion_transfer_create checkpoint @ line %d\n", __LINE__);
     objinfo2 = PDC_find_id(obj_id);
-    printf("PDCregion_transfer_create checkpoint @ line %d\n", __LINE__);
     if (objinfo2 == NULL)
         PGOTO_ERROR(FAIL, "cannot locate remote object ID");
     obj2           = (struct _pdc_obj_info *)(objinfo2->obj_ptr);
