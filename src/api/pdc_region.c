@@ -179,7 +179,7 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
     p->obj_id      = obj_id;
     p->access_type = access_type;
     p->buf         = buf;
-    printf("PDCregion_transfer_create checkpoint @ line %d\n", __LINE__);
+
     p->local_region_ndim   = reg1->ndim;
     p->local_region_offset = (uint64_t *)malloc(
         sizeof(uint64_t) * (reg1->ndim * 2 + reg2->ndim * 2 + obj2->obj_pt->obj_prop_pub->ndim));
@@ -189,16 +189,16 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
     p->local_region_size = ptr;
     memcpy(p->local_region_size, reg1->size, sizeof(uint64_t) * reg1->ndim);
     ptr += reg1->ndim;
-    printf("PDCregion_transfer_create checkpoint @ line %d\n", __LINE__);
+
     p->remote_region_ndim   = reg2->ndim;
     p->remote_region_offset = ptr;
     memcpy(p->remote_region_offset, reg2->offset, sizeof(uint64_t) * reg2->ndim);
     ptr += reg2->ndim;
-    printf("PDCregion_transfer_create checkpoint @ line %d\n", __LINE__);
+
     p->remote_region_size = ptr;
     memcpy(p->remote_region_size, reg2->size, sizeof(uint64_t) * reg2->ndim);
     ptr += reg2->ndim;
-    printf("PDCregion_transfer_create checkpoint @ line %d\n", __LINE__);
+
     p->obj_ndim = obj2->obj_pt->obj_prop_pub->ndim;
     p->obj_dims = ptr;
     memcpy(p->obj_dims, obj2->obj_pt->obj_prop_pub->dims, sizeof(uint64_t) * p->obj_ndim);
