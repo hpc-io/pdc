@@ -136,7 +136,7 @@ typedef enum {
 
 typedef struct pdc_transfer_request_status {
     uint64_t                            transfer_request_id;
-    int                                 status;
+    uint32_t                            status;
     struct pdc_transfer_request_status *next;
 } pdc_transfer_request_status;
 
@@ -740,9 +740,19 @@ typedef struct {
 } transfer_request_status_in_t;
 /* Define transfer_request_status_out_t */
 typedef struct {
-    int32_t status;
+    uint32_t status;
     int32_t ret;
 } transfer_request_status_out_t;
+
+/* Define transfer_request_wait_in_t */
+typedef struct {
+    uint64_t transfer_request_id;
+} transfer_request_wait_in_t;
+/* Define transfer_request_wait_out_t */
+typedef struct {
+    uint32_t status;
+    int32_t ret;
+} transfer_request_wait_out_t;
 
 /* Define transfer_request_in_t */
 typedef struct {
@@ -2430,7 +2440,42 @@ hg_proc_transfer_request_status_out_t(hg_proc_t proc, void *data)
     hg_return_t                    ret;
     transfer_request_status_out_t *struct_data = (transfer_request_status_out_t *)data;
 
-    ret = hg_proc_int32_t(proc, &struct_data->status);
+    ret = hg_proc_uint32_t(proc, &struct_data->status);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+/* Define hg_proc_transfer_request_wait_in_t */
+static HG_INLINE hg_return_t
+hg_proc_transfer_request_wait_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t                   ret;
+    transfer_request_wait_in_t *struct_data = (transfer_request_wait_in_t *)data;
+    ret                                       = hg_proc_uint64_t(proc, &struct_data->transfer_request_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+/* Define hg_proc_transfer_request_wait_out_t */
+static HG_INLINE hg_return_t
+hg_proc_transfer_request_wait_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t                    ret;
+    transfer_request_wait_out_t *struct_data = (transfer_request_wait_out_t *)data;
+
+    ret = hg_proc_uint32_t(proc, &struct_data->status);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;

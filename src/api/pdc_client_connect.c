@@ -376,6 +376,38 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+static hg_return_t
+client_send_transfer_request_wait_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t                               ret_value = HG_SUCCESS;
+    hg_handle_t                               handle;
+    struct _pdc_transfer_request_wait_args *region_transfer_args;
+    transfer_request_wait_out_t             output;
+
+    FUNC_ENTER(NULL);
+
+    region_transfer_args = (struct _pdc_transfer_request_wait_args *)callback_info->arg;
+    handle               = callback_info->info.forward.handle;
+
+    ret_value = HG_Get_output(handle, &output);
+    if (ret_value != HG_SUCCESS) {
+        printf("PDC_CLIENT[%d]: client_send_transfer_request_wait_rpc_cb error with HG_Get_output\n",
+               pdc_client_mpi_rank_g);
+        region_transfer_args->ret = -1;
+        goto done;
+    }
+
+    region_transfer_args->ret    = output.ret;
+    region_transfer_args->status = output.status;
+
+done:
+    fflush(stdout);
+    work_todo_g--;
+    HG_Free_output(handle, &output);
+
+    FUNC_LEAVE(ret_value);
+}
+
 // Callback function for  HG_Forward()
 // Gets executed after a call to HG_Trigger and the RPC has completed
 static hg_return_t
@@ -505,6 +537,7 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
+
 }
 
 perr_t
@@ -1426,6 +1459,7 @@ PDC_Client_query_tag(const char *tags, int *n_res, pdc_metadata_t ***out)
     in.time_step_to   = -1;
     in.ndim           = 0;
     in.tags           = tags;
+
 
     *out   = NULL;
     *n_res = 0;
@@ -2349,6 +2383,7 @@ PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct pdc_re
               &client_send_buf_unmap_handle);
 #if PDC_TIMING == 1
 
+
     double start = MPI_Wtime(), end;
 #endif
     hg_ret = HG_Forward(client_send_buf_unmap_handle, client_send_buf_unmap_rpc_cb, &unmap_args, &in);
@@ -2660,10 +2695,10 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id)
 {
     perr_t                                   ret_value = SUCCEED;
     hg_return_t                              hg_ret    = HG_SUCCESS;
-    transfer_request_status_in_t             in;
+    transfer_request_wait_in_t             in;
     uint32_t                                 data_server_id;
     hg_handle_t                              client_send_transfer_request_wait_handle;
-    struct _pdc_transfer_request_status_args transfer_args;
+    struct _pdc_transfer_request_wait_args transfer_args;
 
     FUNC_ENTER(NULL);
 
@@ -2682,7 +2717,7 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id)
                     "PDC_Client_transfer_request(): Could not create local bulk data handle @ line %d\n",
                     __LINE__);
 
-    hg_ret = HG_Forward(client_send_transfer_request_wait_handle, client_send_transfer_request_status_rpc_cb,
+    hg_ret = HG_Forward(client_send_transfer_request_wait_handle, client_send_transfer_request_wait_rpc_cb,
                         &transfer_args, &in);
 
     if (hg_ret != HG_SUCCESS)
