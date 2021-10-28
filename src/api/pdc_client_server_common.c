@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4702,8 +4703,8 @@ HG_TEST_RPC_CB(transfer_request_status, handle)
 HG_TEST_RPC_CB(transfer_request_wait, handle)
 {
     hg_return_t                   ret_value = HG_SUCCESS;
-    transfer_request_status_in_t  in;
-    transfer_request_status_out_t out;
+    transfer_request_wait_in_t  in;
+    transfer_request_wait_out_t out;
     pdc_transfer_status_t         status;
 
     FUNC_ENTER(NULL);
@@ -5925,6 +5926,7 @@ HG_TEST_RPC_CB(get_storage_meta_name_query_bulk_result_rpc, handle)
     bulk_args = (struct bulk_args_t *)malloc(sizeof(struct bulk_args_t));
 
     /* Keep handle to pass to callback */
+
     bulk_args->handle = handle;
 
     /* Get info from handle */
