@@ -294,7 +294,7 @@ PDCregion_transfer_wait(pdcid_t transfer_request_id)
 pdcid_t
 PDCregion_create(psize_t ndims, uint64_t *offset, uint64_t *size)
 {
-    pdcid_t                  ret_value = 0;
+    pdcid_t                 ret_value = 0;
     struct pdc_region_info *p         = NULL;
     pdcid_t                 new_id;
     size_t                  i = 0;
