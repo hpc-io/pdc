@@ -90,12 +90,12 @@ struct _pdc_transfer_request_args {
 
 struct _pdc_transfer_request_status_args {
     uint32_t status;
-    int32_t ret;
+    int32_t  ret;
 };
 
 struct _pdc_transfer_request_wait_args {
     uint32_t status;
-    int32_t ret;
+    int32_t  ret;
 };
 
 struct _pdc_buf_map_args {
