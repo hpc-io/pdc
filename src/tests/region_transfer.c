@@ -139,13 +139,15 @@ main(int argc, char **argv)
     for (i = 0; i < BUF_LEN; ++i) {
         data[i] = i;
     }
+    printf("checkpoint @ line %d\n", __LINE__);
     transfer_request = PDCregion_transfer_create(data, PDC_WRITE, obj1, reg, reg_global);
-
+    printf("checkpoint @ line %d\n", __LINE__);
     PDCregion_transfer_start(transfer_request);
+    printf("checkpoint @ line %d\n", __LINE__);
     PDCregion_transfer_wait(transfer_request);
-
+    printf("checkpoint @ line %d\n", __LINE__);
     PDCregion_transfer_close(transfer_request);
-
+    printf("checkpoint @ line %d\n", __LINE__);
     if (PDCregion_close(reg) < 0) {
         printf("fail to close local region @ line %d\n", __LINE__);
         ret_value = 1;
@@ -164,13 +166,13 @@ main(int argc, char **argv)
 
     reg        = PDCregion_create(1, local_offset, offset_length);
     reg_global = PDCregion_create(1, offset, offset_length);
-    printf("checkpoint @ line %d\n", __LINE__);
+
     transfer_request = PDCregion_transfer_create(data_read, PDC_READ, obj1, reg, reg_global);
-    printf("checkpoint @ line %d\n", __LINE__);
+
     PDCregion_transfer_start(transfer_request);
-    printf("checkpoint @ line %d\n", __LINE__);
+
     PDCregion_transfer_wait(transfer_request);
-    printf("checkpoint @ line %d\n", __LINE__);
+
     PDCregion_transfer_close(transfer_request);
 
     // Check if data written previously has been correctly read.
