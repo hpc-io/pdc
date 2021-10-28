@@ -2487,7 +2487,7 @@ hg_proc_transfer_request_wait_out_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
-    printf("Output argument: transfer_request_wait finishes @ line %d\n",__LINE__);
+    printf("Output argument: transfer_request_wait finishes @ line %d\n", __LINE__);
     return ret;
 }
 
