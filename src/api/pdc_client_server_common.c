@@ -3662,6 +3662,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4465,7 +4466,7 @@ PDC_finish_request(uint64_t transfer_request_id)
         ptr = ptr->next;
     }
     pthread_mutex_unlock(&transfer_request_status_mutex);
-done:
+
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
@@ -4487,7 +4488,7 @@ PDC_check_request(uint64_t transfer_request_id)
         ptr = ptr->next;
     }
     pthread_mutex_unlock(&transfer_request_status_mutex);
-done:
+
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
@@ -7083,6 +7084,7 @@ PDC_is_contiguous_start_count_overlap(uint32_t ndim, uint64_t *a_start, uint64_t
     else if (ndim == 2)
         ret_value = is_overlap_2D(xmin1, xmax1, ymin1, ymax1, xmin2, xmax2, ymin2, ymax2);
     else if (ndim == 3)
+
         ret_value =
             is_overlap_3D(xmin1, xmax1, ymin1, ymax1, zmin1, zmax1, xmin2, xmax2, ymin2, ymax2, zmin2, zmax2);
 
