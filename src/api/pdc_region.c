@@ -163,7 +163,7 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
     struct pdc_region_info *reg1, *reg2;
     pdcid_t                 remote_meta_id;
     uint64_t *              ptr;
-
+    printf("PDCregion_transfer_create checkpoint @ line %d\n", __LINE__);
     FUNC_ENTER(NULL);
     printf("PDCregion_transfer_create checkpoint @ line %d\n", __LINE__);
     reginfo1 = PDC_find_id(local_reg);
