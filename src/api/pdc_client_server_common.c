@@ -3662,7 +3662,6 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
-
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4709,7 +4708,9 @@ HG_TEST_RPC_CB(transfer_request_wait, handle)
 
     FUNC_ENTER(NULL);
     HG_Get_input(handle, &in);
-    printf("HG_TEST_RPC_CB(transfer_request_wait, handle): entering the wait function at server side @ line %d\n", __LINE__);
+    printf("HG_TEST_RPC_CB(transfer_request_wait, handle): entering the wait function at server side @ line "
+           "%d\n",
+           __LINE__);
     while (1) {
         status = PDC_check_request(in.transfer_request_id);
         if (status == PDC_TRANSFER_STATUS_PENDING) {
@@ -7569,7 +7570,6 @@ PDCquery_free_all(pdc_query_t *root)
 
     PDCquery_free_all(root->left);
     PDCquery_free_all(root->right);
-
 
     free(root);
 
