@@ -2410,7 +2410,7 @@ hg_proc_transfer_request_out_t(hg_proc_t proc, void *data)
 {
     hg_return_t             ret;
     transfer_request_out_t *struct_data = (transfer_request_out_t *)data;
-    //printf("Output argument: transfer_request for ret @ line %d\n", __LINE__);
+    // printf("Output argument: transfer_request for ret @ line %d\n", __LINE__);
     ret = hg_proc_int32_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
@@ -2460,7 +2460,7 @@ hg_proc_transfer_request_wait_in_t(hg_proc_t proc, void *data)
 {
     hg_return_t                 ret;
     transfer_request_wait_in_t *struct_data = (transfer_request_wait_in_t *)data;
-    //printf("Input argument: transfer_request_wait for transfer_request_id @ line %d\n", __LINE__);
+    // printf("Input argument: transfer_request_wait for transfer_request_id @ line %d\n", __LINE__);
     ret = hg_proc_uint64_t(proc, &struct_data->transfer_request_id);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
@@ -2475,19 +2475,19 @@ hg_proc_transfer_request_wait_out_t(hg_proc_t proc, void *data)
 {
     hg_return_t                  ret;
     transfer_request_wait_out_t *struct_data = (transfer_request_wait_out_t *)data;
-    //printf("Output argument: transfer_request_wait for status @ line %d\n", __LINE__);
+    // printf("Output argument: transfer_request_wait for status @ line %d\n", __LINE__);
     ret = hg_proc_uint32_t(proc, &struct_data->status);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
-    //printf("Output argument: transfer_request_wait for ret @ line %d\n", __LINE__);
+    // printf("Output argument: transfer_request_wait for ret @ line %d\n", __LINE__);
     ret = hg_proc_int32_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
-    //printf("Output argument: transfer_request_wait finishes @ line %d\n", __LINE__);
+    // printf("Output argument: transfer_request_wait finishes @ line %d\n", __LINE__);
     return ret;
 }
 
