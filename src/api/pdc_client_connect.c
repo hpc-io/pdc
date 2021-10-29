@@ -2355,6 +2355,7 @@ PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct pdc_re
     uint32_t                 data_server_id, meta_server_id;
     struct _pdc_buf_map_args unmap_args;
 
+
     hg_handle_t client_send_buf_unmap_handle;
 
     FUNC_ENTER(NULL);
@@ -7045,6 +7046,7 @@ PDCobj_put_tag(pdcid_t obj_id, char *tag_name, void *tag_value, psize_t value_si
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
+
 }
 
 perr_t
