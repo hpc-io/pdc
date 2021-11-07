@@ -1,6 +1,5 @@
 #ifndef PDC_REGION_CACHE_H
 #define PDC_REGION_CACHE_H
-#include "pdc_server_common.h"
 #include "pdc_client_server_common.h"
 #include "pdc_query.h"
 #include <sys/time.h>
