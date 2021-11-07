@@ -708,3 +708,5 @@ PDC_region_fetch(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims, struct
     return 0;
 }
 #endif
+
+#endif
