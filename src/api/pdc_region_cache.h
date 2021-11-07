@@ -10,7 +10,6 @@
 
 #ifdef PDC_SERVER_CACHE
 
-
 typedef struct pdc_region_cache {
     struct pdc_region_info * region_cache_info;
     struct pdc_region_cache *next;
@@ -19,8 +18,8 @@ typedef struct pdc_region_cache {
 typedef struct pdc_obj_cache {
     struct pdc_obj_cache *next;
     uint64_t              obj_id;
-    int ndim;
-    uint64_t* dims;
+    int                   ndim;
+    uint64_t *            dims;
     pdc_region_cache *    region_cache;
     pdc_region_cache *    region_cache_end;
     struct timeval        timestamp;
@@ -42,15 +41,18 @@ int               pdc_recycle_close_flag;
 
 int   PDC_region_cache_flush_all();
 int   PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit);
-int   PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims, const char *buf, size_t buf_size, const uint64_t *offset,
-                                const uint64_t *size, int ndim, size_t unit);
+int   PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims, const char *buf,
+                                size_t buf_size, const uint64_t *offset, const uint64_t *size, int ndim,
+                                size_t unit);
 void *PDC_region_cache_clock_cycle(void *ptr);
 
 perr_t PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims,
-                               struct pdc_region_info *region_info, void *buf, size_t unit, int is_write);
-perr_t PDC_transfer_request_data_read_from(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims, struct pdc_region_info *region_info, void *buf, size_t unit);
-perr_t PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims, struct pdc_region_info *region_info, void *buf, size_t unit);
-
+                                      struct pdc_region_info *region_info, void *buf, size_t unit,
+                                      int is_write);
+perr_t PDC_transfer_request_data_read_from(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims,
+                                           struct pdc_region_info *region_info, void *buf, size_t unit);
+perr_t PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims,
+                                           struct pdc_region_info *region_info, void *buf, size_t unit);
 
 /*
  * Check if the first region is contained inside the second region or the second region is contained inside
@@ -362,8 +364,9 @@ PDC_region_cache_copy(char *buf, char *buf2, const uint64_t *offset, const uint6
  */
 
 int
-PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims, const char *buf, size_t buf_size, const uint64_t *offset,
-                          const uint64_t *size, int ndim, size_t unit)
+PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims, const char *buf,
+                          size_t buf_size, const uint64_t *offset, const uint64_t *size, int ndim,
+                          size_t unit)
 {
     hg_thread_mutex_lock(&pdc_obj_cache_list_mutex);
 
@@ -398,7 +401,7 @@ PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dim
             obj_cache_list_end->next             = NULL;
         }
         obj_cache_list_end->ndim = obj_ndim;
-        obj_cache_list_end->dims = (uint64_t*) malloc(sizeof(uint64_t) * ndim);
+        obj_cache_list_end->dims = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
         memcpy(obj_cache_list_end->dims, obj_dims, sizeof(uint64_t) * ndim);
         obj_cache = obj_cache_list_end;
     }
@@ -459,7 +462,8 @@ PDC_region_cache_free()
 }
 
 perr_t
-PDC_transfer_request_data_write_out(uint64_t obj_id,int obj_ndim, const uint64_t *obj_dims, struct pdc_region_info *region_info, void *buf, size_t unit)
+PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims,
+                                    struct pdc_region_info *region_info, void *buf, size_t unit)
 {
     int               flag;
     pdc_obj_cache *   obj_cache, *obj_cache_iter;
@@ -522,8 +526,8 @@ PDC_transfer_request_data_write_out(uint64_t obj_id,int obj_ndim, const uint64_t
         }
     }
     if (flag) {
-        PDC_region_cache_register(obj_id, obj_ndim, obj_dims, buf, write_size, region_info->offset, region_info->size,
-                                  region_info->ndim, unit);
+        PDC_region_cache_register(obj_id, obj_ndim, obj_dims, buf, write_size, region_info->offset,
+                                  region_info->size, region_info->ndim, unit);
     }
     // PDC_Server_data_write_out2(obj_id, region_info, buf, unit);
 
@@ -540,8 +544,8 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache)
     region_cache_iter = obj_cache->region_cache;
     while (region_cache_iter != NULL) {
         region_cache_info = region_cache_iter->region_cache_info;
-        PDC_Server_transfer_request_io(obj_id, obj_cache->ndim, obj_cache->dims,
-                               region_cache_info, region_cache_info->buf, region_cache_info->unit, 1);
+        PDC_Server_transfer_request_io(obj_id, obj_cache->ndim, obj_cache->dims, region_cache_info,
+                                       region_cache_info->buf, region_cache_info->unit, 1);
         free(region_cache_info->offset);
         free(region_cache_info->size);
         free(region_cache_info->buf);
@@ -628,7 +632,8 @@ PDC_region_cache_clock_cycle(void *ptr)
 }
 
 perr_t
-PDC_transfer_request_data_read_from(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims, struct pdc_region_info *region_info, void *buf, size_t unit)
+PDC_transfer_request_data_read_from(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims,
+                                    struct pdc_region_info *region_info, void *buf, size_t unit)
 {
     perr_t ret_value = SUCCEED;
     FUNC_ENTER(NULL);
@@ -645,7 +650,8 @@ PDC_transfer_request_data_read_from(uint64_t obj_id, int obj_ndim, const uint64_
  * is fully contained inside the cache region.
  */
 int
-PDC_region_fetch(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims, struct pdc_region_info *region_info, void *buf, size_t unit)
+PDC_region_fetch(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims, struct pdc_region_info *region_info,
+                 void *buf, size_t unit)
 {
     hg_thread_mutex_lock(&pdc_obj_cache_list_mutex);
     pdc_obj_cache *         obj_cache = NULL, *obj_cache_iter;
@@ -696,8 +702,7 @@ PDC_region_fetch(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims, struct
         if (obj_cache != NULL) {
             PDC_region_cache_flush_by_pointer(obj_id, obj_cache);
         }
-        PDC_Server_transfer_request_io(obj_id, obj_ndim, obj_dims,
-                               region_info, buf, unit, 0);
+        PDC_Server_transfer_request_io(obj_id, obj_ndim, obj_dims, region_info, buf, unit, 0);
     }
     hg_thread_mutex_unlock(&pdc_obj_cache_list_mutex);
     return 0;
