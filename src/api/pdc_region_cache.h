@@ -39,7 +39,8 @@ pthread_mutex_t   pdc_cache_mutex;
 int               pdc_recycle_close_flag;
 
 int   PDC_region_cache_flush_all();
-int   PDC_region_fetch(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims, struct pdc_region_info *region_info, void *buf, size_t unit);
+int   PDC_region_fetch(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims,
+                       struct pdc_region_info *region_info, void *buf, size_t unit);
 int   PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims, const char *buf,
                                 size_t buf_size, const uint64_t *offset, const uint64_t *size, int ndim,
                                 size_t unit);
