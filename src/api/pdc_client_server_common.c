@@ -50,6 +50,7 @@
 #include <sys/shm.h>
 #include <sys/mman.h>
 
+#include "pdc_region_cache.h"
 #include "pdc_timing.h"
 #if PDC_TIMING == 1
 
@@ -3662,6 +3663,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     HG_Get_input(handle, &in);
     /* Get info from handle */
 
+
     hg_info = HG_Get_info(handle);
 
     if (in.access_type == PDC_READ)
@@ -4646,10 +4648,13 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
         PDC_Server_data_write_out(local_bulk_args->in.obj_id, remote_reg_info, (void
        *)local_bulk_args->data_buf, local_bulk_args->in.remote_unit);
     */
+#ifdef PDC_SERVER_CACHE
     PDC_Server_transfer_request_io(local_bulk_args->in.obj_id, local_bulk_args->in.obj_ndim, obj_dims,
                                    remote_reg_info, (void *)local_bulk_args->data_buf,
                                    local_bulk_args->in.remote_unit, 1);
-
+#else
+    PDC_transfer_request_data_write_out(local_bulk_args->in.obj_id, local_bulk_args->in.obj_ndim, obj_dims, remote_reg_info, (void *)local_bulk_args->data_buf, local_bulk_args->in.remote_unit);
+#endif
     PDC_finish_request(local_bulk_args->in.transfer_request_id);
     free(local_bulk_args->data_buf);
     free(remote_reg_info);
@@ -4808,8 +4813,12 @@ HG_TEST_RPC_CB(transfer_request, handle)
             (remote_reg_info->size)[2]   = (in.remote_region).count_2;
             obj_dims[2]                  = in.obj_dim2;
         }
+#ifdef PDC_SERVER_CACHE
+        PDC_transfer_request_data_read_from(in.obj_id, in.obj_ndim, obj_dims, remote_reg_info, (void *)local_bulk_args->data_buf, in.remote_unit);
+#else
         PDC_Server_transfer_request_io(in.obj_id, in.obj_ndim, obj_dims, remote_reg_info,
                                        (void *)local_bulk_args->data_buf, in.remote_unit, 0);
+#endif
         printf("Server transfer request at read branch index 1 value is %d\n",
                *((int *)(local_bulk_args->data_buf + sizeof(int))));
 
@@ -5696,6 +5705,7 @@ query_read_obj_name_bulk_cb(const struct hg_cb_info *hg_cb_info)
         query_read_names_args->is_select_all = 1;
         query_read_names_args->obj_names     = (char **)calloc(sizeof(char *), bulk_args->cnt);
         query_read_names_args->obj_names_1d  = (char *)calloc(sizeof(char), bulk_args->nbytes);
+
 
         HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, (void **)&tmp_buf, NULL,
                        NULL);
@@ -7582,6 +7592,7 @@ done:
 void
 PDC_query_xfer_free(pdc_query_xfer_t *query_xfer)
 {
+
     FUNC_ENTER(NULL);
 
     if (NULL != query_xfer) {
