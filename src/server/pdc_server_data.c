@@ -253,6 +253,29 @@ PDC_Server_get_obj_region(pdcid_t obj_id)
 }
 
 perr_t
+PDC_Server_register_obj_region(pdcid_t obj_id) {
+    perr_t         ret_value = SUCCEED;
+    data_server_region_t *new_obj_reg;
+
+    FUNC_ENTER(NULL);
+    new_obj_reg = PDC_Server_get_obj_region(obj_id);
+    if (new_obj_reg == NULL) {
+        new_obj_reg = (data_server_region_t *)malloc(sizeof(struct data_server_region_t));
+        if (new_obj_reg == NULL) {
+            ret_value = FAIL;
+            PGOTO_ERROR(FAIL, "PDC_SERVER: PDC_Server_register_obj_region() allocates new object failed");
+        }
+        new_obj_reg->obj_id                   = obj_id;
+        new_obj_reg->region_lock_head         = NULL;
+        new_obj_reg->region_buf_map_head      = NULL;
+        new_obj_reg->region_lock_request_head = NULL;
+        new_obj_reg->region_storage_head      = NULL;
+        DL_APPEND(dataserver_region_g, new_obj_reg);
+    }
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
 PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out, hg_handle_t *handle)
 {
     perr_t                ret_value = SUCCEED;
@@ -4869,6 +4892,7 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                 if (pos > (uint64_t)request_bytes) {
                     printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
                            pos, request_bytes);
+
                     ret_value = -1;
                     goto done;
                 }
@@ -8362,6 +8386,7 @@ add_storage_region_to_buf(void **in_buf, uint64_t *buf_alloc, uint64_t *buf_off,
         double *range = (double *)(buf + *buf_off);
         tmp_size      = region->region_hist->nbin * 2 * sizeof(double);
         memcpy(range, region->region_hist->range, tmp_size);
+
         (*buf_off) += tmp_size;
 
         uint64_t *bin = (uint64_t *)(buf + *buf_off);

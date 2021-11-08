@@ -406,6 +406,14 @@ perr_t PDC_Server_regions_io(region_list_t *region_list_head, _pdc_io_plugin_t p
  * \return Region struct/NULL on failure
  */
 data_server_region_t *PDC_Server_get_obj_region(pdcid_t obj_id);
+/**
+ * Server register region struct by object ID, if not existing.
+ *
+ * \param obj_id [IN]           Object ID
+ *
+ * \return Region struct/NULL on failure
+ */
+perr_t PDC_Server_register_obj_region(pdcid_t obj_id);
 
 /**
  * ***********

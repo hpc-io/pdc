@@ -52,6 +52,8 @@
 
 #include "pdc_region_cache.h"
 #include "pdc_timing.h"
+
+int io_by_region_g = 1;
 #if PDC_TIMING == 1
 
 static int
@@ -1912,6 +1914,7 @@ HG_TEST_RPC_CB(metadata_delete_by_id, handle)
 // metadata_delete_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(metadata_delete, handle)
 {
+
 
     hg_return_t           ret_value = HG_SUCCESS;
     metadata_delete_in_t  in;
@@ -4510,6 +4513,16 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
     int server_rank = get_server_rank();
 
     FUNC_ENTER(NULL);
+
+    if (io_by_region_g) {
+        PDC_Server_register_obj_region(obj_id);
+        if (is_write) {
+            PDC_Server_data_write_out(obj_id, region_info, buf, unit);
+        } else {
+            PDC_Server_data_read_from(obj_id, region_info, buf, unit);
+        }
+        goto done;
+    }
 
     if (obj_ndim != (int)region_info->ndim) {
         printf("Server I/O error: Obj dim does not match obj dim\n");
