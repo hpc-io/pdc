@@ -1,9 +1,6 @@
 #ifndef PDC_REGION_CACHE_H
 #define PDC_REGION_CACHE_H
 #include "pdc_client_server_common.h"
-#include "pdc_query.h"
-#include <sys/time.h>
-#include <pthread.h>
 
 #define PDC_SERVER_CACHE
 
@@ -53,7 +50,6 @@ perr_t PDC_transfer_request_data_read_from(uint64_t obj_id, int obj_ndim, const 
                                            struct pdc_region_info *region_info, void *buf, size_t unit);
 perr_t PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims,
                                            struct pdc_region_info *region_info, void *buf, size_t unit);
-
 
 #endif
 
