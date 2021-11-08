@@ -257,8 +257,8 @@ PDC_Server_register_obj_region(pdcid_t obj_id)
 {
     perr_t                ret_value = SUCCEED;
     data_server_region_t *new_obj_reg;
-    char *user_specified_data_path, *data_path;
-    char storage_location[ADDR_MAX];
+    char *                user_specified_data_path, *data_path;
+    char                  storage_location[ADDR_MAX];
 
     FUNC_ENTER(NULL);
     new_obj_reg = PDC_Server_get_obj_region(obj_id);
@@ -282,7 +282,7 @@ PDC_Server_register_obj_region(pdcid_t obj_id)
                 data_path = ".";
         }
 
-        //new_obj_reg->fd = server_open_storage(storage_location, in->remote_obj_id);
+        // new_obj_reg->fd = server_open_storage(storage_location, in->remote_obj_id);
         // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
         snprintf(storage_location, ADDR_MAX, "%.200s/pdc_data/%" PRIu64 "/server%d/s%04d.bin", data_path,
                  obj_id, pdc_server_rank_g, pdc_server_rank_g);
