@@ -4676,8 +4676,6 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     if (region_info->ndim >= 3)
         write_size *= region_info->size[2];
     printf("pdc_data_server: checkpoint @line %d\n", __LINE__);
-    PDC_Server_register_obj_region(obj_id);
-    printf("pdc_data_server: checkpoint @line %d\n", __LINE__);
     region = PDC_Server_get_obj_region(obj_id);
     if (region == NULL) {
         printf("cannot locate file handle\n");
