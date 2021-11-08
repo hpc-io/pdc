@@ -2199,6 +2199,7 @@ obj_map_region_release_bulk_transfer_thread_cb(const struct hg_cb_info *hg_cb_in
     FUNC_ENTER(NULL);
 
 
+
     bulk_args = (struct buf_map_release_bulk_args *)hg_cb_info->arg;
 
     if (hg_cb_info->ret == HG_CANCELED) {
@@ -4314,6 +4315,7 @@ HG_TEST_RPC_CB(buf_unmap_server, handle)
     }
     out.ret = 1;
 #ifdef ENABLE_MULTITHREAD
+
     hg_thread_mutex_lock(&meta_buf_map_mutex_g);
 #endif
     DL_FOREACH_SAFE(target_obj->region_buf_map_head, elt, tmp)
@@ -4550,6 +4552,7 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
 
     fd = open(storage_location, O_RDWR | O_CREAT, 0666);
     if (region_info->ndim == 1) {
+
         printf("server I/O checkpoint 1D\n");
         lseek(fd, region_info->offset[0] * unit, SEEK_SET);
         io_size = region_info->size[0] * unit;
