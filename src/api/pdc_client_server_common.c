@@ -2198,6 +2198,7 @@ obj_map_region_release_bulk_transfer_thread_cb(const struct hg_cb_info *hg_cb_in
 
     FUNC_ENTER(NULL);
 
+
     bulk_args = (struct buf_map_release_bulk_args *)hg_cb_info->arg;
 
     if (hg_cb_info->ret == HG_CANCELED) {
