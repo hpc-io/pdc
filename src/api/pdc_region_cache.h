@@ -37,10 +37,10 @@ typedef struct pdc_obj_cache {
 
 pdc_obj_cache *obj_cache_list, *obj_cache_list_end;
 
-pthread_mutex_t   pdc_obj_cache_list_mutex;
-pthread_t         pdc_recycle_thread;
-pthread_mutex_t   pdc_cache_mutex;
-int               pdc_recycle_close_flag;
+pthread_mutex_t pdc_obj_cache_list_mutex;
+pthread_t       pdc_recycle_thread;
+pthread_mutex_t pdc_cache_mutex;
+int             pdc_recycle_close_flag;
 
 int   PDC_region_cache_flush_all();
 int   PDC_region_fetch(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims,
