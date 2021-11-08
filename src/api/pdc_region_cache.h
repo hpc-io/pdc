@@ -1,5 +1,10 @@
 #ifndef PDC_REGION_CACHE_H
 #define PDC_REGION_CACHE_H
+
+#include <sys/time.h>
+#include <time.h>
+#include <sys/time.h>
+#include <unistd.h>
 #include "pdc_region.h"
 #include "pdc_client_server_common.h"
 

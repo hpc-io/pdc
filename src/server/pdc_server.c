@@ -54,7 +54,7 @@
 #include "pdc_server_metadata.h"
 #include "pdc_server_data.h"
 #include "pdc_timing.h"
-#include "../api/pdc_region_cache.h"
+#include "pdc_region_cache.h"
 
 #ifdef PDC_HAS_CRAY_DRC
 #include <rdmacred.h>
@@ -1643,6 +1643,7 @@ PDC_Server_loop(hg_context_t *hg_context)
     clock_t      last_checkpoint_time = 0, cur_time;
 
     FUNC_ENTER(NULL);
+
 
     /* Poke progress engine and check for events */
     do {
