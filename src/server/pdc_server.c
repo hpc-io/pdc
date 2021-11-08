@@ -54,6 +54,7 @@
 #include "pdc_server_metadata.h"
 #include "pdc_server_data.h"
 #include "pdc_timing.h"
+#include "pdc_region_cache.h"
 
 #ifdef PDC_HAS_CRAY_DRC
 #include <rdmacred.h>
