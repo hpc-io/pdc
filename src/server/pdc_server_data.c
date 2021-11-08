@@ -4649,7 +4649,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     if ((region->fd <= 0) && region->storage_location) {
         region->fd = open(region->storage_location, O_RDWR, 0666);
     }
-    printf("pdc_data_server: checkpoint @line %d\n", __LINE__);
+    printf("pdc_data_server: checkpoint @line %d, region dim = %d\n", __LINE__, region_info->ndim);
     region_list_t *request_region = (region_list_t *)calloc(1, sizeof(region_list_t));
     for (i = 0; i < region_info->ndim; i++) {
         request_region->start[i] = region_info->offset[i];
