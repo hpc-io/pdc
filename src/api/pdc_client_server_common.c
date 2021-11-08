@@ -1912,6 +1912,7 @@ HG_TEST_RPC_CB(metadata_delete_by_id, handle)
 // metadata_delete_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(metadata_delete, handle)
 {
+
     hg_return_t           ret_value = HG_SUCCESS;
     metadata_delete_in_t  in;
     metadata_delete_out_t out;
@@ -3193,6 +3194,7 @@ HG_TEST_RPC_CB(region_release, handle)
                         /*     data_ptrs_to[0] = data_buf +
                          * type_size*(dims[2]*dims[1]*(eltt->remote_region_nounit).start_0 +
                          * dims[2]*(eltt->remote_region_nounit).start_1 +
+
                          * (eltt->remote_region_nounit).start_2); */
                         /*     data_size_to[0] = (eltt->remote_region_unit).count_2; */
                         /*     for (k=0; k<(eltt->remote_region_nounit).count_0-1; k++) { */
@@ -4494,7 +4496,7 @@ PDC_check_request(uint64_t transfer_request_id)
 }
 
 perr_t
-PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, uint64_t *obj_dims,
+PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims,
                                struct pdc_region_info *region_info, void *buf, size_t unit, int is_write)
 {
     perr_t   ret_value = SUCCEED;
