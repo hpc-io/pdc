@@ -257,6 +257,8 @@ PDC_Server_register_obj_region(pdcid_t obj_id)
 {
     perr_t                ret_value = SUCCEED;
     data_server_region_t *new_obj_reg;
+    char *user_specified_data_path, *data_path;
+    char storage_location[ADDR_MAX];
 
     FUNC_ENTER(NULL);
     new_obj_reg = PDC_Server_get_obj_region(obj_id);
@@ -270,6 +272,41 @@ PDC_Server_register_obj_region(pdcid_t obj_id)
         new_obj_reg->region_buf_map_head      = NULL;
         new_obj_reg->region_lock_request_head = NULL;
         new_obj_reg->region_storage_head      = NULL;
+
+        user_specified_data_path = getenv("PDC_DATA_LOC");
+        if (user_specified_data_path != NULL)
+            data_path = user_specified_data_path;
+        else {
+            data_path = getenv("SCRATCH");
+            if (data_path == NULL)
+                data_path = ".";
+        }
+
+        //new_obj_reg->fd = server_open_storage(storage_location, in->remote_obj_id);
+        // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
+        snprintf(storage_location, ADDR_MAX, "%.200s/pdc_data/%" PRIu64 "/server%d/s%04d.bin", data_path,
+                 obj_id, pdc_server_rank_g, pdc_server_rank_g);
+        PDC_mkdir(storage_location);
+
+#ifdef ENABLE_LUSTRE
+        if (pdc_nost_per_file_g != 1)
+            stripe_count = lustre_total_ost_g / pdc_server_size_g;
+        else
+            stripe_count = pdc_nost_per_file_g;
+        stripe_size = lustre_stripe_size_mb_g;
+        PDC_Server_set_lustre_stripe(storage_location, stripe_count, stripe_size);
+
+        if (is_debug_g == 1 && pdc_server_rank_g == 0) {
+            printf("storage_location is %s\n", storage_location);
+        }
+#endif
+        printf("storage_location is %s @ line %d\n", storage_location, __LINE__);
+        new_obj_reg->fd = open(storage_location, O_RDWR | O_CREAT, 0666);
+        if (new_obj_reg->fd == -1) {
+            printf("==PDC_SERVER[%d]: open %s failed\n", pdc_server_rank_g, storage_location);
+            goto done;
+        }
+        new_obj_reg->storage_location = strdup(storage_location);
         DL_APPEND(dataserver_region_g, new_obj_reg);
     }
     FUNC_LEAVE(ret_value);
