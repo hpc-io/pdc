@@ -309,6 +309,7 @@ PDC_Server_register_obj_region(pdcid_t obj_id)
         new_obj_reg->storage_location = strdup(storage_location);
         DL_APPEND(dataserver_region_g, new_obj_reg);
     }
+done:
     FUNC_LEAVE(ret_value);
 } // End PDC_Server_register_obj_region
 
