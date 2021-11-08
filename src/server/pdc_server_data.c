@@ -264,7 +264,6 @@ PDC_Server_register_obj_region(pdcid_t obj_id)
         new_obj_reg = (data_server_region_t *)malloc(sizeof(struct data_server_region_t));
         if (new_obj_reg == NULL) {
             ret_value = FAIL;
-            PGOTO_ERROR(FAIL, "PDC_SERVER: PDC_Server_register_obj_region() allocates new object failed");
         }
         new_obj_reg->obj_id                   = obj_id;
         new_obj_reg->region_lock_head         = NULL;
