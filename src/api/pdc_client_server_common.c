@@ -1507,7 +1507,7 @@ PDC_Server_get_obj_region(pdcid_t obj_id ATTRIBUTE(unused))
 }
 perr_t
 PDC_Server_register_obj_region(pdcid_t obj_id) {
-    return NULL;
+    return 0;
 }
 region_buf_map_t *
 PDC_Data_Server_buf_map(const struct hg_info *info ATTRIBUTE(unused), buf_map_in_t *in ATTRIBUTE(unused),
