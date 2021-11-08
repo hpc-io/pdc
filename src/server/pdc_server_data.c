@@ -4637,19 +4637,19 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 
     if (region_info->ndim >= 3)
         write_size *= region_info->size[2];
-
+    printf("pdc_data_server: checkpoint @line %d\n", __LINE__);
     PDC_Server_register_obj_region(obj_id);
-
+    printf("pdc_data_server: checkpoint @line %d\n", __LINE__);
     region = PDC_Server_get_obj_region(obj_id);
     if (region == NULL) {
         printf("cannot locate file handle\n");
         goto done;
     }
-
+    printf("pdc_data_server: checkpoint @line %d\n", __LINE__);
     if ((region->fd <= 0) && region->storage_location) {
         region->fd = open(region->storage_location, O_RDWR, 0666);
     }
-
+    printf("pdc_data_server: checkpoint @line %d\n", __LINE__);
     region_list_t *request_region = (region_list_t *)calloc(1, sizeof(region_list_t));
     for (i = 0; i < region_info->ndim; i++) {
         request_region->start[i] = region_info->offset[i];
@@ -4658,7 +4658,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     request_region->ndim      = region_info->ndim;
     request_region->unit_size = unit;
     strcpy(request_region->storage_location, region->storage_location);
-
+    printf("pdc_data_server: checkpoint @line %d\n", __LINE__);
 #ifdef ENABLE_TIMING
     struct timeval pdc_timer_start, pdc_timer_end;
     double         write_total_sec;

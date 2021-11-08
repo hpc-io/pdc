@@ -4514,14 +4514,13 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
     FUNC_ENTER(NULL);
 
     if (io_by_region_g) {
-        printf("checkpoint @line %d\n", __LINE__);
+        printf("client_server_common: checkpoint @line %d\n", __LINE__);
         if (is_write) {
             PDC_Server_data_write_out(obj_id, region_info, buf, unit);
         }
         else {
             PDC_Server_data_read_from(obj_id, region_info, buf, unit);
         }
-        printf("checkpoint @line %d\n", __LINE__);
         goto done;
     }
     if (obj_ndim != (int)region_info->ndim) {
