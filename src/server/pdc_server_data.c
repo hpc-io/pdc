@@ -273,7 +273,7 @@ PDC_Server_register_obj_region(pdcid_t obj_id)
         DL_APPEND(dataserver_region_g, new_obj_reg);
     }
     FUNC_LEAVE(ret_value);
-}
+} // End PDC_Server_register_obj_region
 
 perr_t
 PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out, hg_handle_t *handle)
