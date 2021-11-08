@@ -526,6 +526,7 @@ PDC_Server_lookup_client_cb(const struct hg_cb_info *callback_info)
     if (client_id >= (uint32_t)pdc_client_num_g) {
         printf("==PDC_SERVER[%d]: invalid input client id %d\n", pdc_server_rank_g, client_id);
         goto done;
+
     }
     pdc_client_info_g[client_id].addr       = callback_info->info.lookup.addr;
     pdc_client_info_g[client_id].addr_valid = 1;
@@ -873,7 +874,7 @@ drc_access_again:
 #ifdef PDC_SERVER_CACHE
 
     pdc_recycle_close_flag = 0;
-    hg_thread_mutex_init(&pdc_obj_cache_list_mutex);
+    pthread_mutex_init(&pdc_obj_cache_list_mutex);
     pthread_mutex_init(&pdc_cache_mutex, NULL);
     pthread_create(&pdc_recycle_thread, NULL, &PDC_region_cache_clock_cycle, NULL);
 #endif
@@ -1044,7 +1045,7 @@ PDC_Server_finalize()
     pthread_mutex_destroy(&pdc_cache_mutex);
 
     PDC_region_cache_flush_all();
-    hg_thread_mutex_destroy(&pdc_obj_cache_list_mutex);
+    pthread_mutex_destroy(&pdc_obj_cache_list_mutex);
 #endif
     if (pdc_server_rank_g == 0)
         PDC_Server_rm_config_file();
@@ -1428,6 +1429,7 @@ PDC_Server_restart(char *filename)
                 if (fread(region_list, sizeof(region_list_t), 1, file) != 1) {
                     printf("Read failed for region_list\n");
                 }
+
 
                 int has_hist = 0;
                 if (fread(&has_hist, sizeof(int), 1, file) != 1) {

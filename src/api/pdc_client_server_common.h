@@ -4132,4 +4132,8 @@ void PDC_query_xfer_free(pdc_query_xfer_t *query_xfer);
  */
 hg_return_t PDC_Client_recv_nhits(const struct hg_cb_info *callback_info);
 
+perr_t
+PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims,
+                               struct pdc_region_info *region_info, void *buf, size_t unit, int is_write)
+
 #endif /* PDC_CLIENT_SERVER_COMMON_H */

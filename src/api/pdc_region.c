@@ -161,7 +161,6 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
     pdc_transfer_request *  p;
     struct _pdc_id_info *   reginfo1, *reginfo2;
     struct pdc_region_info *reg1, *reg2;
-    pdcid_t                 remote_meta_id;
     uint64_t *              ptr;
     FUNC_ENTER(NULL);
     reginfo1 = PDC_find_id(local_reg);
