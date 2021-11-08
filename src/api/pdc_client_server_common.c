@@ -1506,7 +1506,8 @@ PDC_Server_get_obj_region(pdcid_t obj_id ATTRIBUTE(unused))
     return NULL;
 }
 perr_t
-PDC_Server_register_obj_region(pdcid_t obj_id ATTRIBUTE(unused)) {
+PDC_Server_register_obj_region(pdcid_t obj_id ATTRIBUTE(unused))
+{
     return 0;
 }
 region_buf_map_t *
