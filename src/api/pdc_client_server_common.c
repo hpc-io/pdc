@@ -1915,7 +1915,6 @@ HG_TEST_RPC_CB(metadata_delete_by_id, handle)
 HG_TEST_RPC_CB(metadata_delete, handle)
 {
 
-
     hg_return_t           ret_value = HG_SUCCESS;
     metadata_delete_in_t  in;
     metadata_delete_out_t out;
@@ -4518,7 +4517,8 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
         PDC_Server_register_obj_region(obj_id);
         if (is_write) {
             PDC_Server_data_write_out(obj_id, region_info, buf, unit);
-        } else {
+        }
+        else {
             PDC_Server_data_read_from(obj_id, region_info, buf, unit);
         }
         goto done;

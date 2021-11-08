@@ -253,8 +253,9 @@ PDC_Server_get_obj_region(pdcid_t obj_id)
 }
 
 perr_t
-PDC_Server_register_obj_region(pdcid_t obj_id) {
-    perr_t         ret_value = SUCCEED;
+PDC_Server_register_obj_region(pdcid_t obj_id)
+{
+    perr_t                ret_value = SUCCEED;
     data_server_region_t *new_obj_reg;
 
     FUNC_ENTER(NULL);
