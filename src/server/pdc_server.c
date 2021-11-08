@@ -1644,7 +1644,6 @@ PDC_Server_loop(hg_context_t *hg_context)
 
     FUNC_ENTER(NULL);
 
-
     /* Poke progress engine and check for events */
     do {
 #ifndef DISABLE_CHECKPOINT
