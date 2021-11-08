@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include "pdc_region.h"
 #include "pdc_client_server_common.h"
+#include <pthread.h>
 
 #define PDC_SERVER_CACHE
 
