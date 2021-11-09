@@ -1865,6 +1865,8 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+
+
 perr_t
 PDC_Server_notify_region_update_to_client(uint64_t obj_id, uint64_t reg_id, int32_t client_id)
 {
@@ -3656,6 +3658,7 @@ PDC_Server_update_region_storage_meta_bulk_local(update_region_storage_meta_bulk
         bulk_ptr = (update_region_storage_meta_bulk_t *)(bulk_ptrs[i]);
 
         // Create a new region for each and copy the data from bulk data
+
         new_region = (region_list_t *)calloc(1, sizeof(region_list_t));
         PDC_region_transfer_t_to_list_t(&bulk_ptr->region_transfer, new_region);
         new_region->data_size = PDC_get_region_size(new_region);
@@ -4786,7 +4789,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 
                 lseek(region->fd, overlap_region->offset + overlap_start_local[0] * unit, SEEK_SET);
                 ret_value = PDC_Server_posix_write(region->fd, buf + pos, write_size);
-                printf("posix write for position %d with write size %u\n", (int)pos, (unsigned)write_size);
+                //printf("posix write for position %d with write size %u\n", (int)pos, (unsigned)write_size);
                 if (ret_value != SUCCEED) {
                     printf("==PDC_SERVER[%d]: PDC_Server_posix_write FAILED!\n", pdc_server_rank_g);
                     ret_value = FAIL;
@@ -4878,6 +4881,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                     printf("==PDC_SERVER[%d]: Failed to write enough bytes\n", pdc_server_rank_g);
                 }
                 free(tmp_buf);
+
                 // No need to update metadata
             } // End 3D
         }     // End is overlap
@@ -4886,7 +4890,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 
     if (is_overlap == 0) {
         request_region->offset = lseek(region->fd, 0, SEEK_END);
-        printf("posix write for position %d with write size %u\n", 0, (unsigned)write_size);
+        //printf("posix write for position %d with write size %u\n", 0, (unsigned)write_size);
         ret_value = PDC_Server_posix_write(region->fd, buf, write_size);
         if (ret_value != SUCCEED) {
             printf("==PDC_SERVER[%d]: PDC_Server_posix_write FAILED!\n", pdc_server_rank_g);
@@ -4978,9 +4982,11 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 
             if (region_info->ndim == 1) {
                 pos = (overlap_start[0] - region_info->offset[0]) * unit;
+/*
                 printf("overlap_start[0] = %" PRIu64 ", region_info->offset[0] = %" PRIu64
                        ", elt->count[0] = %" PRIu64 ", overlap_start_local[0] = %" PRIu64 "\n",
                        overlap_start[0], region_info->offset[0], elt->count[0], overlap_start_local[0]);
+*/
                 if (pos > (uint64_t)request_bytes) {
                     printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
                            pos, request_bytes);
@@ -7611,6 +7617,7 @@ PDC_Server_send_nhits_to_server(query_task_t *task)
     }
 
     if (pdc_remote_server_info_g == NULL) {
+
         fprintf(stderr, "==PDC_SERVER[%d]: %s - pdc_remote_server_info_g is NULL\n", pdc_server_rank_g,
                 __func__);
         ret_value = FAIL;

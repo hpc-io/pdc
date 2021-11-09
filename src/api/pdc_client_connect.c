@@ -2355,6 +2355,7 @@ PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct pdc_re
     uint32_t                 data_server_id, meta_server_id;
     struct _pdc_buf_map_args unmap_args;
 
+
     hg_handle_t client_send_buf_unmap_handle;
 
     FUNC_ENTER(NULL);
@@ -2457,8 +2458,10 @@ pack_region_buffer(char *buf, char **new_buf, uint64_t *obj_dims, size_t total_d
 
     FUNC_ENTER(NULL);
     if (local_ndim == 1) {
+/*
         printf("checkpoint at local copy ndim == 1 local_offset[0] = %lld @ line %d\n",
                (long long int)local_offset[0], __LINE__);
+*/
         *new_buf = buf + local_offset[0] * unit;
     }
     else if (local_ndim == 2) {
@@ -5241,6 +5244,7 @@ PDC_Client_attach_metadata_to_local_obj(const char *obj_name, uint64_t obj_id, u
     if (NULL != obj_info->obj_pt->tags)
         strcpy(((pdc_metadata_t *)obj_info->metadata)->tags, obj_info->obj_pt->tags);
     if (NULL != obj_info->obj_pt->data_loc)
+
         strcpy(((pdc_metadata_t *)obj_info->metadata)->data_location, obj_info->obj_pt->data_loc);
     ((pdc_metadata_t *)obj_info->metadata)->ndim = obj_info->obj_pt->obj_prop_pub->ndim;
     if (NULL != obj_info->obj_pt->obj_prop_pub->dims)
