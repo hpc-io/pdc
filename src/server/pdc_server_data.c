@@ -264,9 +264,6 @@ PDC_Server_clear_obj_region()
     if (dataserver_region_g != NULL) {
         DL_FOREACH(dataserver_region_g, elt)
         {
-        new_obj_reg->region_lock_head         = NULL;
-        new_obj_reg->region_buf_map_head      = NULL;
-        new_obj_reg->region_lock_request_head = NULL;
             DL_FOREACH_SAFE(elt->region_storage_head, elt2, tmp)
             {
                 DL_DELETE(elt->region_storage_head, elt2);
