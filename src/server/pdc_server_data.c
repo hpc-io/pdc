@@ -324,7 +324,7 @@ PDC_Server_unregister_obj_region(pdcid_t obj_id)
         close(new_obj_reg->fd);
         new_obj_reg->fd = -1;
     }
-done:
+
     FUNC_LEAVE(ret_value);
 } // End PDC_Server_unregister_obj_region
 
@@ -964,6 +964,8 @@ server_send_buf_unmap_rpc_cb(const struct hg_cb_info *callback_info)
     tranx_args->ret = output.ret;
 
 done:
+
+
 
     HG_Free_input(tranx_args->handle, &(tranx_args->in));
     HG_Destroy(tranx_args->handle);
@@ -4932,15 +4934,13 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                 ret_value = FAIL;
                 goto done;
             }
-
             // local (relative) region start
             for (i = 0; i < region_info->ndim; i++)
                 overlap_start_local[i] = overlap_start[i] % elt->count[i];
 
             if (region_info->ndim == 1) {
                 pos = (overlap_start[0] - region_info->offset[0]) * unit;
-                printf("overlap_start[0] = %" PRIu64 ", region_info->offset[0] = %" PRIu64 "\n",
-                       overlap_start[0], region_info->offset[0]);
+                printf("overlap_start[0] = %" PRIu64 ", region_info->offset[0] = %" PRIu64 ", overlap_start_local[0] = %" PRIu64 "\n", overlap_start[0], region_info->offset[0], region_info->overlap_start_local[0]);
                 if (pos > (uint64_t)request_bytes) {
                     printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
                            pos, request_bytes);
@@ -5916,6 +5916,7 @@ PDC_constraint_get_nhits_from_hist(pdc_query_constraint_t *constraint, pdc_histo
 
     if (constraint == NULL || region_hist == NULL || min_hits == NULL || max_hits == NULL) {
         printf("==PDC_SERVER[%d]: %s -  NULL input!\n", pdc_server_rank_g, __func__);
+
 
         goto done;
     }
