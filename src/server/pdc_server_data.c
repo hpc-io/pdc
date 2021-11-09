@@ -965,8 +965,6 @@ server_send_buf_unmap_rpc_cb(const struct hg_cb_info *callback_info)
 
 done:
 
-
-
     HG_Free_input(tranx_args->handle, &(tranx_args->in));
     HG_Destroy(tranx_args->handle);
     HG_Free_output(handle, &output);
