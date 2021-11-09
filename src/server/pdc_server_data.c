@@ -4939,7 +4939,7 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
             if (region_info->ndim == 1) {
                 pos = (overlap_start[0] - region_info->offset[0]) * unit;
                 printf("overlap_start[0] = %" PRIu64 ", region_info->offset[0] = %" PRIu64
-                       ", elt->count[0] = %" PRIu64 ",overlap_start_local[0] = %" PRIu64 "\n",
+                       ", elt->count[0] = %" PRIu64 ", overlap_start_local[0] = %" PRIu64 "\n",
                        overlap_start[0], region_info->offset[0], elt->count[0], overlap_start_local[0]);
                 if (pos > (uint64_t)request_bytes) {
                     printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
@@ -4950,10 +4950,10 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                 }
                 // read_bytes = pread(region->fd, buf + pos, overlap_count[0] * unit,
                 //                   storage_region->offset + overlap_start_local[0] * unit);
-                if (pread(region->fd, buf + pos, overlap_count[0] * unit,
-                          storage_region->offset + overlap_start_local[0] * unit) !=
+                if ( (my_read_bytes = pread(region->fd, buf + pos, overlap_count[0] * unit,
+                          storage_region->offset + overlap_start_local[0] * unit)) !=
                     (ssize_t)(overlap_count[0] * unit)) {
-                    printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
+                    printf("==PDC_SERVER[%d]: pread failed to read enough bytes, expected = %" PRIu64 ", actual = %zu\n", pdc_server_rank_g, overlap_count[0] * unit, (size_t)my_read_bytes);
                 }
                 my_read_bytes = overlap_count[0] * unit;
                 /* printf("storage offset %llu, region offset %llu, read %d bytes\n", storage_region->offset,
