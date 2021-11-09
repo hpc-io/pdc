@@ -1398,7 +1398,7 @@ PDC_Server_maybe_allocate_region_buf_ptr(pdcid_t obj_id, region_info_transfer_t 
     }
     /* We don't currently have a buffer to receive data */
     if (ret_value == NULL) {
-        size_t            i;
+        size_t i;
 
         size_t            region_size = region.count_0;
         region_buf_map_t *buf_map_ptr = NULL;
