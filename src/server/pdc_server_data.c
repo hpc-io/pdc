@@ -1394,6 +1394,7 @@ PDC_Server_maybe_allocate_region_buf_ptr(pdcid_t obj_id, region_info_transfer_t 
         if (is_region_transfer_t_identical(&region, &(tmp->remote_region_unit)) == 1) {
             ret_value = tmp->remote_data_ptr;
             break;
+
         }
     }
     /* We don't currently have a buffer to receive data */
@@ -7619,7 +7620,6 @@ PDC_Server_send_nhits_to_server(query_task_t *task)
             goto done;
         }
     }
-
 
     hg_ret =
         HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, send_nhits_register_id_g, &handle);
