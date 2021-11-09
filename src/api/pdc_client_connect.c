@@ -2355,7 +2355,6 @@ PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct pdc_re
     uint32_t                 data_server_id, meta_server_id;
     struct _pdc_buf_map_args unmap_args;
 
-
     hg_handle_t client_send_buf_unmap_handle;
 
     FUNC_ENTER(NULL);
@@ -2601,11 +2600,12 @@ PDC_Client_transfer_request(pdcid_t transfer_request_id, void *buf, pdcid_t obj_
 
     pack_region_buffer(buf, &new_buf, obj_dims, total_data_size, local_ndim, local_offset, local_size, unit,
                        access_type);
-/*
-    printf("obj ID = %u, data_server_id = %u, total_mem_size = %zu local_offset[0] = %llu @ line %d\n",
-           (unsigned)obj_id, (unsigned)data_server_id, total_data_size, (long long unsigned)local_offset[0],
-           __LINE__);
-*/
+    /*
+        printf("obj ID = %u, data_server_id = %u, total_mem_size = %zu local_offset[0] = %llu @ line %d\n",
+               (unsigned)obj_id, (unsigned)data_server_id, total_data_size, (long long
+       unsigned)local_offset[0],
+               __LINE__);
+    */
     if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
                     pdc_client_mpi_rank_g, __LINE__);
@@ -2630,10 +2630,10 @@ PDC_Client_transfer_request(pdcid_t transfer_request_id, void *buf, pdcid_t obj_
                     __LINE__);
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
-/*
-    printf("PDC_Client_transfer_request() checkpoint, first value is %d @ line %d\n", ((int *)buf)[0],
-           __LINE__);
-*/
+    /*
+        printf("PDC_Client_transfer_request() checkpoint, first value is %d @ line %d\n", ((int *)buf)[0],
+               __LINE__);
+    */
     release_region_buffer(buf, new_buf, obj_dims, local_ndim, local_offset, local_size, unit, access_type);
 
     if (transfer_args.ret != 1)
@@ -7047,7 +7047,6 @@ PDCobj_put_tag(pdcid_t obj_id, char *tag_name, void *tag_value, psize_t value_si
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
-
 }
 
 perr_t
