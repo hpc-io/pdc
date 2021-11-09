@@ -161,7 +161,7 @@ main(int argc, char **argv)
 
     PDCregion_transfer_start(transfer_request);
 
-    while(1) {
+    while (1) {
         PDCregion_transfer_status(transfer_request, &completed);
         if (completed != PDC_TRANSFER_STATUS_PENDING) {
             break;
@@ -192,7 +192,7 @@ main(int argc, char **argv)
 
     PDCregion_transfer_start(transfer_request);
 
-    while(1) {
+    while (1) {
         PDCregion_transfer_status(transfer_request, &completed);
         if (completed != PDC_TRANSFER_STATUS_PENDING) {
             break;
