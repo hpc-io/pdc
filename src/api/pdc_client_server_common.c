@@ -1510,6 +1510,11 @@ PDC_Server_register_obj_region(pdcid_t obj_id ATTRIBUTE(unused))
 {
     return 0;
 }
+perr_t
+PDC_Server_unregister_obj_region(pdcid_t obj_id ATTRIBUTE(unused))
+{
+    return 0;
+}
 region_buf_map_t *
 PDC_Data_Server_buf_map(const struct hg_info *info ATTRIBUTE(unused), buf_map_in_t *in ATTRIBUTE(unused),
                         region_list_t *request_region ATTRIBUTE(unused), void *data_ptr ATTRIBUTE(unused))
@@ -2392,6 +2397,7 @@ transform_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_inf
                 dims                    = (uint64_t *)&transform_size;
                 ndim                    = 1;
             }
+
             else {
                 /* Prepare for the transform */
                 dims = (uint64_t *)calloc(ndim, sizeof(uint64_t));
@@ -4522,7 +4528,6 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
     FUNC_ENTER(NULL);
 
     if (io_by_region_g) {
-        printf("client_server_common: checkpoint @line %d\n", __LINE__);
         PDC_Server_register_obj_region(obj_id);
         if (is_write) {
             PDC_Server_data_write_out(obj_id, region_info, buf, unit);
@@ -4530,6 +4535,7 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
         else {
             PDC_Server_data_read_from(obj_id, region_info, buf, unit);
         }
+        PDC_Server_unregister_obj_region(obj_id);
         goto done;
     }
     if (obj_ndim != (int)region_info->ndim) {

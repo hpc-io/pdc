@@ -414,6 +414,14 @@ data_server_region_t *PDC_Server_get_obj_region(pdcid_t obj_id);
  * \return Region struct/NULL on failure
  */
 perr_t PDC_Server_register_obj_region(pdcid_t obj_id);
+/**
+ * Server unregister region struct by object ID, if not existing.
+ *
+ * \param obj_id [IN]           Object ID
+ *
+ * \return Region struct/NULL on failure
+ */
+perr_t PDC_Server_unregister_obj_region(pdcid_t obj_id);
 
 /**
  * ***********

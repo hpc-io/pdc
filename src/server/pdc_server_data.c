@@ -300,7 +300,6 @@ PDC_Server_register_obj_region(pdcid_t obj_id)
             printf("storage_location is %s\n", storage_location);
         }
 #endif
-        printf("storage_location is %s @ line %d\n", storage_location, __LINE__);
         new_obj_reg->fd = open(storage_location, O_RDWR | O_CREAT, 0666);
         if (new_obj_reg->fd == -1) {
             printf("==PDC_SERVER[%d]: open %s failed\n", pdc_server_rank_g, storage_location);
@@ -312,6 +311,21 @@ PDC_Server_register_obj_region(pdcid_t obj_id)
 done:
     FUNC_LEAVE(ret_value);
 } // End PDC_Server_register_obj_region
+
+perr_t
+PDC_Server_unregister_obj_region(pdcid_t obj_id) {
+    data_server_region_t *new_obj_reg;
+    perr_t                ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+    new_obj_reg = PDC_Server_get_obj_region(obj_id);
+    if (new_obj_reg == NULL) {
+        close(new_obj_reg->fd);
+        new_obj_reg->fd = -1;
+    }
+done:
+    FUNC_LEAVE(ret_value);
+} // End PDC_Server_unregister_obj_region
 
 perr_t
 PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out, hg_handle_t *handle)
@@ -949,6 +963,7 @@ server_send_buf_unmap_rpc_cb(const struct hg_cb_info *callback_info)
     tranx_args->ret = output.ret;
 
 done:
+
     HG_Free_input(tranx_args->handle, &(tranx_args->in));
     HG_Destroy(tranx_args->handle);
     HG_Free_output(handle, &output);
@@ -4675,17 +4690,14 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 
     if (region_info->ndim >= 3)
         write_size *= region_info->size[2];
-    printf("pdc_data_server: checkpoint @line %d\n", __LINE__);
     region = PDC_Server_get_obj_region(obj_id);
     if (region == NULL) {
         printf("cannot locate file handle\n");
         goto done;
     }
-    printf("pdc_data_server: checkpoint @line %d\n", __LINE__);
     if ((region->fd <= 0) && region->storage_location) {
         region->fd = open(region->storage_location, O_RDWR, 0666);
     }
-    printf("pdc_data_server: checkpoint @line %d, region dim = %d\n", __LINE__, region_info->ndim);
     region_list_t *request_region = (region_list_t *)calloc(1, sizeof(region_list_t));
     for (i = 0; i < region_info->ndim; i++) {
         request_region->start[i] = region_info->offset[i];
@@ -4694,7 +4706,6 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     request_region->ndim      = region_info->ndim;
     request_region->unit_size = unit;
     strcpy(request_region->storage_location, region->storage_location);
-    printf("pdc_data_server: checkpoint @line %d\n", __LINE__);
 #ifdef ENABLE_TIMING
     struct timeval pdc_timer_start, pdc_timer_end;
     double         write_total_sec;
@@ -4927,6 +4938,7 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 
             if (region_info->ndim == 1) {
                 pos = (overlap_start[0] - region_info->offset[0]) * unit;
+                printf("overlap_start[0] = %" PRIu64 ", region_info->offset[0] = %" PRIu64 "\n", overlap_start[0], region_info->offset[0]);
                 if (pos > (uint64_t)request_bytes) {
                     printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
                            pos, request_bytes);
