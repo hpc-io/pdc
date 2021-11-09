@@ -495,7 +495,6 @@ PDC_Server_release_lock_request(uint64_t obj_id, struct pdc_region_info *region)
     PDC_init_region_list(request_region);
     PDC_region_info_to_list_t(region, request_region);
 
-
     new_obj_reg = PDC_Server_get_obj_region(obj_id);
     if (new_obj_reg == NULL) {
         PGOTO_ERROR(FAIL, "===PDC Server: cannot locate data_server_region_t strcut for object ID");
