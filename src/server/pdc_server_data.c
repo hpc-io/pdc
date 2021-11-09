@@ -965,8 +965,6 @@ server_send_buf_unmap_rpc_cb(const struct hg_cb_info *callback_info)
 
 done:
 
-
-
     HG_Free_input(tranx_args->handle, &(tranx_args->in));
     HG_Destroy(tranx_args->handle);
     HG_Free_output(handle, &output);
@@ -4940,7 +4938,9 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 
             if (region_info->ndim == 1) {
                 pos = (overlap_start[0] - region_info->offset[0]) * unit;
-                printf("overlap_start[0] = %" PRIu64 ", region_info->offset[0] = %" PRIu64 ", overlap_start_local[0] = %" PRIu64 "\n", overlap_start[0], region_info->offset[0], region_info->overlap_start_local[0]);
+                printf("overlap_start[0] = %" PRIu64 ", region_info->offset[0] = %" PRIu64
+                       ", overlap_start_local[0] = %" PRIu64 "\n",
+                       overlap_start[0], region_info->offset[0], region_info->overlap_start_local[0]);
                 if (pos > (uint64_t)request_bytes) {
                     printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
                            pos, request_bytes);
