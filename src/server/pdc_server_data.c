@@ -258,7 +258,7 @@ PDC_Server_clear_obj_region()
     perr_t                ret_value = SUCCEED;
     data_server_region_t *elt;
     region_list_t *       elt2, *tmp;
-    region_buf_map_t *elt_buf_map, *tmp_buf_map;
+    region_buf_map_t *    elt_buf_map, *tmp_buf_map;
 
     FUNC_ENTER(NULL);
     if (dataserver_region_g != NULL) {
@@ -8595,6 +8595,7 @@ PDC_send_query_metadata_bulk(bulk_rpc_in_t *in, void *buf, uint64_t buf_sizes, i
 done:
     if (handle)
         HG_Destroy(handle);
+
     FUNC_LEAVE(ret_value);
 }
 
