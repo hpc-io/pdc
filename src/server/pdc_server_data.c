@@ -258,15 +258,15 @@ PDC_Server_clear_obj_region()
     perr_t                ret_value = SUCCEED;
     data_server_region_t *elt;
     region_list_t *       elt2, *tmp;
-    region_buf_map_t *elt_buf_map, *tmp_buf_map;
+    region_buf_map_t *    elt_buf_map, *tmp_buf_map;
 
     FUNC_ENTER(NULL);
     if (dataserver_region_g != NULL) {
         DL_FOREACH(dataserver_region_g, elt)
         {
-        new_obj_reg->region_lock_head         = NULL;
-        new_obj_reg->region_buf_map_head      = NULL;
-        new_obj_reg->region_lock_request_head = NULL;
+            new_obj_reg->region_lock_head         = NULL;
+            new_obj_reg->region_buf_map_head      = NULL;
+            new_obj_reg->region_lock_request_head = NULL;
             DL_FOREACH_SAFE(elt->region_storage_head, elt2, tmp)
             {
                 DL_DELETE(elt->region_storage_head, elt2);
