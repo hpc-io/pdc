@@ -260,7 +260,7 @@ PDC_Server_clear_obj_region()
     region_list_t *       elt2, *tmp2;
 
     FUNC_ENTER(NULL);
-    if (dataserver_region_g != NULL) {
+    if (0&&dataserver_region_g != NULL) {
         DL_FOREACH_SAFE(dataserver_region_g, elt, tmp)
         {
             DL_FOREACH_SAFE(elt->region_storage_head, elt2, tmp2)
@@ -3653,6 +3653,7 @@ PDC_Server_update_region_storage_meta_bulk_local(update_region_storage_meta_bulk
         target_meta = find_metadata_by_id(obj_id);
         if (target_meta == NULL) {
             printf("==PDC_SERVER[%d]: %s - FAIL to get storage metadata\n", pdc_server_rank_g, __func__);
+
             ret_value = FAIL;
             goto done;
         }
@@ -7618,6 +7619,7 @@ PDC_Server_send_nhits_to_server(query_task_t *task)
             goto done;
         }
     }
+
 
     hg_ret =
         HG_Create(hg_context_g, pdc_remote_server_info_g[server_id].addr, send_nhits_register_id_g, &handle);
