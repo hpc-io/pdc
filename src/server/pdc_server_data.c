@@ -258,15 +258,37 @@ PDC_Server_clear_obj_region()
     perr_t                ret_value = SUCCEED;
     data_server_region_t *elt;
     region_list_t *       elt2, *tmp;
+    region_buf_map_t *elt_buf_map, *tmp_buf_map;
+
     FUNC_ENTER(NULL);
     if (dataserver_region_g != NULL) {
         DL_FOREACH(dataserver_region_g, elt)
         {
+        new_obj_reg->region_lock_head         = NULL;
+        new_obj_reg->region_buf_map_head      = NULL;
+        new_obj_reg->region_lock_request_head = NULL;
             DL_FOREACH_SAFE(elt->region_storage_head, elt2, tmp)
             {
+                DL_DELETE(elt->region_storage_head, elt2);
                 free(elt2->storage_location);
                 free(elt2);
             }
+            DL_FOREACH_SAFE(elt->region_buf_map_head, elt_buf_map, tmp_buf_map)
+            {
+                DL_DELETE(elt->region_buf_map_head, elt_buf_map);
+                free(elt_buf_map);
+            }
+            DL_FOREACH_SAFE(elt->region_lock_head, elt2, tmp)
+            {
+                DL_DELETE(elt->region_lock_head, elt2);
+                free(elt2);
+            }
+            DL_FOREACH_SAFE(elt->region_lock_request_head, elt2, tmp)
+            {
+                DL_DELETE(elt->region_lock_request_head, elt2);
+                free(elt2);
+            }
+            free(elt);
         }
     }
     FUNC_LEAVE(ret_value);
@@ -2795,6 +2817,7 @@ PDC_Server_get_storage_location_of_region_mpi(region_list_t *regions_head)
                 printf("==PDC_SERVER[%d]: %s - found %d storage locations than PDC_MAX_OVERLAP_REGION_NUM!\n",
                        pdc_server_rank_g, __func__, overlap_cnt);
                 overlap_cnt = PDC_MAX_OVERLAP_REGION_NUM;
+
                 fflush(stdout);
             }
 
