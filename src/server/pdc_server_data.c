@@ -260,7 +260,7 @@ PDC_Server_clear_obj_region()
     region_list_t *       elt2, *tmp2;
 
     FUNC_ENTER(NULL);
-    if (0&&dataserver_region_g != NULL) {
+    if (dataserver_region_g != NULL) {
         DL_FOREACH_SAFE(dataserver_region_g, elt, tmp)
         {
             DL_FOREACH_SAFE(elt->region_storage_head, elt2, tmp2)
@@ -269,7 +269,7 @@ PDC_Server_clear_obj_region()
                 free(elt2->storage_location);
                 free(elt2);
             }
-            free(elt);
+            //free(elt);
         }
     }
     FUNC_LEAVE(ret_value);
