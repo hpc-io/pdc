@@ -253,6 +253,24 @@ PDC_Server_get_obj_region(pdcid_t obj_id)
 }
 
 perr_t
+PDC_Server_clear_obj_region() {
+    perr_t                ret_value = SUCCEED;
+    data_server_region_t *elt;
+    region_list_t *elt2, *tmp;
+    FUNC_ENTER(NULL);
+    if (dataserver_region_g != NULL) {
+        DL_FOREACH(dataserver_region_g, elt)
+        {
+            DL_FOREACH_SAFE(elt->region_storage_head, elt2, tmp) {
+                free(elt2->storage_location);
+                free(elt2);
+            }
+        }
+    }
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
 PDC_Server_register_obj_region(pdcid_t obj_id)
 {
     perr_t                ret_value = SUCCEED;
@@ -282,7 +300,7 @@ PDC_Server_register_obj_region(pdcid_t obj_id)
                 data_path = ".";
         }
 
-        // new_obj_reg->fd = server_open_storage(storage_location, in->remote_obj_id);
+        // new_obj_reg->fd = server_open_storage(storage_location, obj_id);
         // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
         snprintf(storage_location, ADDR_MAX, "%.200s/pdc_data/%" PRIu64 "/server%d/s%04d.bin", data_path,
                  obj_id, pdc_server_rank_g, pdc_server_rank_g);
