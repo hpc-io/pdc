@@ -4559,8 +4559,7 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
 
     fd = open(storage_location, O_RDWR | O_CREAT, 0666);
     if (region_info->ndim == 1) {
-
-        printf("server I/O checkpoint 1D\n");
+        //printf("server I/O checkpoint 1D\n");
         lseek(fd, region_info->offset[0] * unit, SEEK_SET);
         io_size = region_info->size[0] * unit;
         PDC_POSIX_IO(fd, buf, io_size, is_write);
@@ -4568,17 +4567,19 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
     else if (region_info->ndim == 2) {
         // Check we can directly write the contiguous chunk to the file
         if (region_info->offset[1] == 0 && region_info->size[1] == obj_dims[1]) {
-            printf("server I/O checkpoint 2D 1\n");
+            //printf("server I/O checkpoint 2D 1\n");
             lseek(fd, region_info->offset[0] * obj_dims[1] * unit, SEEK_SET);
             io_size = region_info->size[0] * obj_dims[1] * unit;
             PDC_POSIX_IO(fd, buf, io_size, is_write);
         }
         else {
-            printf("server I/O checkpoint 2D 2\n");
+            //printf("server I/O checkpoint 2D 2\n");
             // We have to write line by line
             for (i = 0; i < region_info->size[0]; ++i) {
+/*
                 printf("lseek to %lld\n",
                        (long long int)((i + region_info->offset[0]) * obj_dims[1] + region_info->offset[1]));
+*/
                 lseek(fd, ((i + region_info->offset[0]) * obj_dims[1] + region_info->offset[1]) * unit,
                       SEEK_SET);
                 io_size = region_info->size[1] * unit;
@@ -4593,11 +4594,11 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
             region_info->offset[2] == 0 && region_info->size[2] == obj_dims[2]) {
             lseek(fd, region_info->offset[0] * region_info->size[1] * region_info->size[2] * unit, SEEK_SET);
             io_size = region_info->size[0] * region_info->size[1] * region_info->size[2] * unit;
-            printf("server I/O checkpoint 3D 1\n");
+            //printf("server I/O checkpoint 3D 1\n");
             PDC_POSIX_IO(fd, buf, io_size, is_write);
         }
         else if (region_info->offset[2] == 0 && region_info->size[2] == obj_dims[2]) {
-            printf("server I/O checkpoint 3D 2\n");
+            //printf("server I/O checkpoint 3D 2\n");
             // We have to write plane by plane
             for (i = 0; i < region_info->size[0]; ++i) {
                 lseek(fd,
@@ -4611,11 +4612,13 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
             }
         }
         else {
+/*
             printf("server I/O checkpoint 3D 3, obj dims [%" PRIu64 ", %" PRIu64 ", %" PRIu64
                    "], region [%" PRIu64 ", %" PRIu64 ", %" PRIu64 "] size [%" PRIu64 ", %" PRIu64
                    ", %" PRIu64 "]\n",
                    obj_dims[0], obj_dims[1], obj_dims[2], region_info->offset[0], region_info->offset[1],
                    region_info->offset[2], region_info->size[0], region_info->size[1], region_info->size[2]);
+*/
             // We have to write line by line
             for (i = 0; i < region_info->size[0]; ++i) {
                 for (j = 0; j < region_info->size[1]; ++j) {
@@ -4670,13 +4673,10 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
         (remote_reg_info->size)[2]   = (local_bulk_args->in.remote_region).count_2;
         obj_dims[2]                  = (local_bulk_args->in).obj_dim2;
     }
+/*
     printf("Server transfer request at write branch, index 1 value = %d\n",
            *((int *)(local_bulk_args->data_buf + sizeof(int))));
-
-    /*
-        PDC_Server_data_write_out(local_bulk_args->in.obj_id, remote_reg_info, (void
-       *)local_bulk_args->data_buf, local_bulk_args->in.remote_unit);
-    */
+*/
 #ifdef PDC_SERVER_CACHE
     PDC_Server_transfer_request_io(local_bulk_args->in.obj_id, local_bulk_args->in.obj_ndim, obj_dims,
                                    remote_reg_info, (void *)local_bulk_args->data_buf,
@@ -4702,7 +4702,7 @@ transfer_request_bulk_transfer_read_cb(const struct hg_cb_info *info)
     hg_return_t                              ret;
     FUNC_ENTER(NULL);
 
-    printf("entering server read transfer bulk callback\n");
+    //printf("entering server read transfer bulk callback\n");
     PDC_finish_request(local_bulk_args->in.transfer_request_id);
     ret = HG_SUCCESS;
 
@@ -4722,7 +4722,7 @@ HG_TEST_RPC_CB(transfer_request_status, handle)
     FUNC_ENTER(NULL);
     HG_Get_input(handle, &in);
 
-    printf("entering the status function at server side @ line %d\n", __LINE__);
+    //printf("entering the status function at server side @ line %d\n", __LINE__);
     out.status = PDC_check_request(in.transfer_request_id);
     out.ret    = 1;
     ret_value  = HG_Respond(handle, NULL, NULL, &out);
@@ -4744,9 +4744,11 @@ HG_TEST_RPC_CB(transfer_request_wait, handle)
 
     FUNC_ENTER(NULL);
     HG_Get_input(handle, &in);
+/*
     printf("HG_TEST_RPC_CB(transfer_request_wait, handle): entering the wait function at server side @ line "
            "%d\n",
            __LINE__);
+*/
     while (1) {
         status = PDC_check_request(in.transfer_request_id);
         if (status == PDC_TRANSFER_STATUS_PENDING) {
@@ -4802,11 +4804,12 @@ HG_TEST_RPC_CB(transfer_request, handle)
     local_bulk_args->total_mem_size = total_mem_size;
     local_bulk_args->data_buf       = malloc(total_mem_size);
     local_bulk_args->in             = in;
-
+/*
     printf("server check obj ndim %d, dims [%" PRIu64 ", %" PRIu64 ", %" PRIu64 "]\n", (int)in.obj_ndim,
            in.obj_dim0, in.obj_dim1, in.obj_dim2);
+*/
     PDC_commit_request(in.transfer_request_id);
-    printf("HG_TEST_RPC_CB(transfer_request, handle) checkpoint @ line %d\n", __LINE__);
+    //printf("HG_TEST_RPC_CB(transfer_request, handle) checkpoint @ line %d\n", __LINE__);
     if (in.access_type == PDC_WRITE) {
         ret_value = HG_Bulk_create(info->hg_class, 1, &(local_bulk_args->data_buf),
                                    &(local_bulk_args->total_mem_size), HG_BULK_READWRITE,
@@ -4851,9 +4854,10 @@ HG_TEST_RPC_CB(transfer_request, handle)
         PDC_Server_transfer_request_io(in.obj_id, in.obj_ndim, obj_dims, remote_reg_info,
                                        (void *)local_bulk_args->data_buf, in.remote_unit, 0);
 #endif
+/*
         printf("Server transfer request at read branch index 1 value is %d\n",
                *((int *)(local_bulk_args->data_buf + sizeof(int))));
-
+*/
         ret_value = HG_Bulk_create(info->hg_class, 1, &(local_bulk_args->data_buf),
                                    &(local_bulk_args->total_mem_size), HG_BULK_READWRITE,
                                    &(local_bulk_args->bulk_handle));

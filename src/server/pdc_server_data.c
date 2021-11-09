@@ -266,23 +266,23 @@ PDC_Server_clear_obj_region()
         {
             DL_FOREACH_SAFE(elt->region_storage_head, elt2, tmp)
             {
-                DL_DELETE(elt->region_storage_head, elt2);
+                //DL_DELETE(elt->region_storage_head, elt2);
                 free(elt2->storage_location);
                 free(elt2);
             }
             DL_FOREACH_SAFE(elt->region_buf_map_head, elt_buf_map, tmp_buf_map)
             {
-                DL_DELETE(elt->region_buf_map_head, elt_buf_map);
+                //DL_DELETE(elt->region_buf_map_head, elt_buf_map);
                 free(elt_buf_map);
             }
             DL_FOREACH_SAFE(elt->region_lock_head, elt2, tmp)
             {
-                DL_DELETE(elt->region_lock_head, elt2);
+                //DL_DELETE(elt->region_lock_head, elt2);
                 free(elt2);
             }
             DL_FOREACH_SAFE(elt->region_lock_request_head, elt2, tmp)
             {
-                DL_DELETE(elt->region_lock_request_head, elt2);
+                //DL_DELETE(elt->region_lock_request_head, elt2);
                 free(elt2);
             }
             free(elt);
