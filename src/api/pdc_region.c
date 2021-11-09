@@ -201,13 +201,13 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
     p->obj_ndim = obj2->obj_pt->obj_prop_pub->ndim;
     p->obj_dims = ptr;
     memcpy(p->obj_dims, obj2->obj_pt->obj_prop_pub->dims, sizeof(uint64_t) * p->obj_ndim);
-/*
-    printf("transfer request create check obj ndim %d, dims [%lld, %lld, %lld], local_offset[0] = %lld, "
-           "reg1->offset[0] = %lld\n",
-           (int)p->obj_ndim, (long long int)p->obj_dims[0], (long long int)p->obj_dims[1],
-           (long long int)p->obj_dims[2], (long long int)p->local_region_offset[0],
-           (long long int)reg1->offset[0]);
-*/
+    /*
+        printf("transfer request create check obj ndim %d, dims [%lld, %lld, %lld], local_offset[0] = %lld, "
+               "reg1->offset[0] = %lld\n",
+               (int)p->obj_ndim, (long long int)p->obj_dims[0], (long long int)p->obj_dims[1],
+               (long long int)p->obj_dims[2], (long long int)p->local_region_offset[0],
+               (long long int)reg1->offset[0]);
+    */
     ret_value = PDC_id_register(PDC_TRANSFER_REQUEST, p);
 
 done:
