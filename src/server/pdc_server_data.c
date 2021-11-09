@@ -269,7 +269,7 @@ PDC_Server_clear_obj_region()
                 free(elt2->storage_location);
                 free(elt2);
             }
-            //free(elt);
+            // free(elt);
         }
     }
     FUNC_LEAVE(ret_value);
@@ -1394,7 +1394,6 @@ PDC_Server_maybe_allocate_region_buf_ptr(pdcid_t obj_id, region_info_transfer_t 
         if (is_region_transfer_t_identical(&region, &(tmp->remote_region_unit)) == 1) {
             ret_value = tmp->remote_data_ptr;
             break;
-
         }
     }
     /* We don't currently have a buffer to receive data */
