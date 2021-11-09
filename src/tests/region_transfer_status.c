@@ -47,7 +47,7 @@ main(int argc, char **argv)
     int rank = 0, size = 1, i;
     int ret_value = 0;
 
-    pdc_transfer_status_t *completed;
+    pdc_transfer_status_t completed;
 
     uint64_t offset[3], offset_length[3], local_offset[1];
     uint64_t dims[1];
