@@ -258,7 +258,6 @@ PDC_Server_clear_obj_region()
     perr_t                ret_value = SUCCEED;
     data_server_region_t *elt;
     region_list_t *       elt2, *tmp;
-    region_buf_map_t *    elt_buf_map, *tmp_buf_map;
 
     FUNC_ENTER(NULL);
     if (dataserver_region_g != NULL) {
@@ -268,21 +267,6 @@ PDC_Server_clear_obj_region()
             {
                 // DL_DELETE(elt->region_storage_head, elt2);
                 free(elt2->storage_location);
-                free(elt2);
-            }
-            DL_FOREACH_SAFE(elt->region_buf_map_head, elt_buf_map, tmp_buf_map)
-            {
-                // DL_DELETE(elt->region_buf_map_head, elt_buf_map);
-                free(elt_buf_map);
-            }
-            DL_FOREACH_SAFE(elt->region_lock_head, elt2, tmp)
-            {
-                // DL_DELETE(elt->region_lock_head, elt2);
-                free(elt2);
-            }
-            DL_FOREACH_SAFE(elt->region_lock_request_head, elt2, tmp)
-            {
-                // DL_DELETE(elt->region_lock_request_head, elt2);
                 free(elt2);
             }
             free(elt);
@@ -1415,6 +1399,7 @@ PDC_Server_maybe_allocate_region_buf_ptr(pdcid_t obj_id, region_info_transfer_t 
     /* We don't currently have a buffer to receive data */
     if (ret_value == NULL) {
         size_t            i;
+
         size_t            region_size = region.count_0;
         region_buf_map_t *buf_map_ptr = NULL;
         for (i = 1; i < region.ndim; i++) {
@@ -2802,6 +2787,7 @@ PDC_Server_get_storage_location_of_region_mpi(region_list_t *regions_head)
             }
             memset(&req_region, 0, sizeof(region_list_t));
             PDC_region_transfer_t_to_list_t(&all_requests[i], &req_region);
+
             ret_value = PDC_Server_get_local_storage_location_of_region(region_meta->obj_id, &req_region,
                                                                         &overlap_cnt, overlap_regions_2d);
             if (ret_value != SUCCEED) {
@@ -5938,6 +5924,7 @@ PDC_region_has_hits_from_hist(pdc_query_constraint_t *constraint, pdc_histogram_
     }
     else {
         // one sided
+
         if (lop == PDC_LT || lop == PDC_LTE) {
             if (value < region_hist->range[0])
                 return 0;
