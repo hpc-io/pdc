@@ -16,6 +16,7 @@
     - [Object structure](#object-structure)
     - [Region info](#region-info)
     - [Access type](#access-type)
+    - [Transfer request status](#transfer-request-status)
     - [Query operators](#query-operators)
     - [Query structures](#query-structures)
     - [Selection structure](#selection-structure)
@@ -307,6 +308,46 @@
       + error code, SUCCESS or FAIL.
     - Release the lock to access a region in an object. PDC_READ data is available after this lock release.
     - For developers: see pdc_region.c.
+  + pdcid_t PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, pdcid_t local_reg, pdcid_t remote_reg)
+    - Input:
+      + buf: The data buffer to be transferred.
+      + access_type: Data type to be transferred.
+      + obj_id: Local object id the region attached to.
+      + local_reg: Region ID describing the shape of buf.
+      + remote_reg: Region ID describing the shape of file domain stored at server.
+    - Output:
+      + Region ransfer request ID generated.
+    - Wrap necessary componenets for a region transfer request into a PDC ID to be referred later.
+    - For developers: see pdc_region.c. This function only contains local memory operations.
+  + perr_t PDCregion_transfer_close(pdcid_t transfer_request_id)
+    - Input:
+      + transfer_request_id: Region transfer request ID referred to
+    - Output:
+      + SUCCEED or FAIL
+    - Clearn up function corresponds to PDCregion_transfer_create. transfer_request_id is no longer valid.
+    - For developers: see pdc_region.c. This function only contains local memory operations.
+  + perr_t PDCregion_transfer_start(pdcid_t transfer_request_id)
+    - Input:
+      + transfer_request_id: Region transfer request ID referred to
+    - Output:
+      + Region ID
+    - Start a region transfer from local region to remote region for an object on buf. By the end of this function, neither data transfer nor I/O are guaranteed be finished.
+    - For developers: see pdc_region.c. Bulk transfer and RPC are set up. The server side will immediately return upon receiving argument payload, ignoring completion of data transfers.
+  + perr_t PDCregion_transfer_wait(pdcid_t transfer_request_id)
+    - Input:
+      + transfer_request_id: Region transfer request ID referred to
+    - Output:
+      + Region ID
+    - Block until the region transfer process is finished for the input region transfer request. By the end of this function, data buffer passed by the buf argument in function PDCregion_transfer_create can be reused. In addition, data consistency at server side is guaranteed for future region transfer request operations.
+    - For developers: see pdc_region.c. One RPC is used. There will be an infinite loop checking for the completion of essential operations at the server side. Once all operations are done, the server will return the RPC to the client.
+  + perr_t PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed);
+    - Input:
+      + transfer_request_id: Region transfer request ID referred to
+    - Output:
+      + completed: [Transfer request status](#transfer-request-status)
+      + SUCCEED or FAIL
+    - Check for the completion of a region transfer request. PDC_TRANSFER_STATUS_COMPLETE is equivalent to the result of PDCregion_transfer_wait. PDC_TRANSFER_STATUS_PENDING refers to the case that the region transfer request is not completed. PDC_TRANSFER_STATUS_NOT_FOUND refers to the case either the request is invalid or the request completion has been checked by either this function or PDCregion_transfer_wait previously.
+    - For developers: see pdc_region.c. One RPC is used. The server immediately returns the status of the region transfer request.
 ## PDC property APIs
   + pdcid_t PDCprop_create(pdc_prop_type_t type, pdcid_t pdcid)
     - Input:
@@ -712,6 +753,14 @@
   ```
   typedef enum { PDC_NA=0, PDC_READ=1, PDC_WRITE=2 }
   ```
+  ## Transfer request status
+  ```
+  typedef enum {
+    PDC_TRANSFER_STATUS_COMPLETE  = 0,
+    PDC_TRANSFER_STATUS_PENDING   = 1,
+    PDC_TRANSFER_STATUS_NOT_FOUND = 2 
+  }
+  ```
   ## Query operators
   ```
   typedef enum { 
@@ -770,7 +819,6 @@
       struct PDC_id_type {
           PDC_free_t                  free_func;         /* Free function for object's of this type    */
           PDC_type_t                  type_id;           /* Class ID for the type                      */
-      //    const                     PDCID_class_t *cls;/* Pointer to ID class                        */
           unsigned                    init_count;        /* # of times this type has been initialized  */
           unsigned                    id_count;          /* Current number of IDs held                 */
           pdcid_t                     nextid;            /* ID to use for the next atom                */
@@ -801,16 +849,17 @@
       * This function maintains a linked list. Entries of the linked list is going to be the pointers to the objects. Every time we create an object ID for object using some magics. Then the linked list entry is going to be put to the beginning of the linked list.
       * type: One of the followings
       ```
-      typedef enum {
-        PDC_BADID        = -1,  /* invalid Type                                */
-        PDC_CLASS        = 1,   /* type ID for PDC                             */
-        PDC_CONT_PROP    = 2,   /* type ID for container property              */
-        PDC_OBJ_PROP     = 3,   /* type ID for object property                 */
-        PDC_CONT         = 4,   /* type ID for container                       */
-        PDC_OBJ          = 5,   /* type ID for object                          */
-        PDC_REGION       = 6,   /* type ID for region                          */
-        PDC_NTYPES       = 7    /* number of library types, MUST BE LAST!      */
-      } PDC_type_t;
+        typedef enum {
+            PDC_BADID            = -1, /* invalid Type                                */
+            PDC_CLASS            = 1,  /* type ID for PDC                             */
+            PDC_CONT_PROP        = 2,  /* type ID for container property              */
+            PDC_OBJ_PROP         = 3,  /* type ID for object property                 */
+            PDC_CONT             = 4,  /* type ID for container                       */
+            PDC_OBJ              = 5,  /* type ID for object                          */
+            PDC_REGION           = 6,  /* type ID for region                          */
+            PDC_TRANSFER_REQUEST = 7,  /* type ID for region transfer                          */
+            PDC_NTYPES           = 8   /* number of library types, MUST BE LAST!      */
+        } PDC_type_t;
       ```
       * Object: Pointer to the class instance created ( bad naming, not necessarily a PDC object).
     - struct _pdc_id_info *PDC_find_id(pdcid_t idid);
