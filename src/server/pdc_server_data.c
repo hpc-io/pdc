@@ -253,15 +253,17 @@ PDC_Server_get_obj_region(pdcid_t obj_id)
 }
 
 perr_t
-PDC_Server_clear_obj_region() {
+PDC_Server_clear_obj_region()
+{
     perr_t                ret_value = SUCCEED;
     data_server_region_t *elt;
-    region_list_t *elt2, *tmp;
+    region_list_t *       elt2, *tmp;
     FUNC_ENTER(NULL);
     if (dataserver_region_g != NULL) {
         DL_FOREACH(dataserver_region_g, elt)
         {
-            DL_FOREACH_SAFE(elt->region_storage_head, elt2, tmp) {
+            DL_FOREACH_SAFE(elt->region_storage_head, elt2, tmp)
+            {
                 free(elt2->storage_location);
                 free(elt2);
             }
