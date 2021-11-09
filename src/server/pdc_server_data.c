@@ -313,7 +313,8 @@ done:
 } // End PDC_Server_register_obj_region
 
 perr_t
-PDC_Server_unregister_obj_region(pdcid_t obj_id) {
+PDC_Server_unregister_obj_region(pdcid_t obj_id)
+{
     data_server_region_t *new_obj_reg;
     perr_t                ret_value = SUCCEED;
 
@@ -4938,7 +4939,8 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 
             if (region_info->ndim == 1) {
                 pos = (overlap_start[0] - region_info->offset[0]) * unit;
-                printf("overlap_start[0] = %" PRIu64 ", region_info->offset[0] = %" PRIu64 "\n", overlap_start[0], region_info->offset[0]);
+                printf("overlap_start[0] = %" PRIu64 ", region_info->offset[0] = %" PRIu64 "\n",
+                       overlap_start[0], region_info->offset[0]);
                 if (pos > (uint64_t)request_bytes) {
                     printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
                            pos, request_bytes);
