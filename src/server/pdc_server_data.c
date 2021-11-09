@@ -266,10 +266,10 @@ PDC_Server_clear_obj_region()
             DL_FOREACH_SAFE(elt->region_storage_head, elt2, tmp2)
             {
                 // DL_DELETE(elt->region_storage_head, elt2);
-                free(elt2->storage_location);
                 free(elt2);
             }
-            // free(elt);
+            free(elt->storage_location);
+            free(elt);
         }
     }
     FUNC_LEAVE(ret_value);
@@ -494,6 +494,7 @@ PDC_Server_release_lock_request(uint64_t obj_id, struct pdc_region_info *region)
     request_region = (region_list_t *)malloc(sizeof(region_list_t));
     PDC_init_region_list(request_region);
     PDC_region_info_to_list_t(region, request_region);
+
 
     new_obj_reg = PDC_Server_get_obj_region(obj_id);
     if (new_obj_reg == NULL) {
@@ -2613,6 +2614,7 @@ PDC_Server_update_storage_meta(int *n_updated)
 
         if (ret_value != SUCCEED) {
             printf("==PDC_SERVER[%d]: %s - update storage info FAILED!", pdc_server_rank_g, __func__);
+
             goto done;
         }
     }
