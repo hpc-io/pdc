@@ -4938,9 +4938,7 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 
             if (region_info->ndim == 1) {
                 pos = (overlap_start[0] - region_info->offset[0]) * unit;
-                printf("overlap_start[0] = %" PRIu64 ", region_info->offset[0] = %" PRIu64
-                       ", overlap_start_local[0] = %" PRIu64 "\n",
-                       overlap_start[0], region_info->offset[0], overlap_start_local[0]);
+                printf("overlap_start[0] = %" PRIu64 ", region_info->offset[0] = %" PRIu64 ", elt->count[0] = %" PRIu64 ",overlap_start_local[0] = %" PRIu64 "\n", overlap_start[0], region_info->offset[0], elt->count[0], overlap_start_local[0]);
                 if (pos > (uint64_t)request_bytes) {
                     printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
                            pos, request_bytes);
@@ -8601,6 +8599,7 @@ PDC_Server_distribute_query_storage_info(query_task_t *task, uint64_t obj_id, in
         DL_COUNT(meta->storage_region_list_head, elt, count);
         if (task->n_sent_server == 0) {
             if (count >= pdc_server_size_g)
+
                 task->n_sent_server = pdc_server_size_g - 1; // Exclude manager
             else
                 task->n_sent_server = count;
