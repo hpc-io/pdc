@@ -263,7 +263,7 @@ PDCregion_transfer_start(pdcid_t transfer_request_id)
 perr_t
 PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed)
 {
-    perr_t ret_value = SUCCEED;
+    perr_t                ret_value = SUCCEED;
     struct _pdc_id_info * transferinfo;
     pdc_transfer_request *transfer_request;
 
@@ -271,7 +271,7 @@ PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *co
 
     transferinfo     = PDC_find_id(transfer_request_id);
     transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
-    ret_value = PDC_Client_transfer_request_status(transfer_request->metadata_id, completed);
+    ret_value        = PDC_Client_transfer_request_status(transfer_request->metadata_id, completed);
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -280,7 +280,7 @@ PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *co
 perr_t
 PDCregion_transfer_wait(pdcid_t transfer_request_id)
 {
-    perr_t ret_value = SUCCEED;
+    perr_t                ret_value = SUCCEED;
     struct _pdc_id_info * transferinfo;
     pdc_transfer_request *transfer_request;
 

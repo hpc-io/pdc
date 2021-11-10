@@ -2355,7 +2355,6 @@ PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct pdc_re
     uint32_t                 data_server_id, meta_server_id;
     struct _pdc_buf_map_args unmap_args;
 
-
     hg_handle_t client_send_buf_unmap_handle;
 
     FUNC_ENTER(NULL);
@@ -2542,10 +2541,10 @@ release_region_buffer(char *buf, char *new_buf, uint64_t *obj_dims, int local_nd
 }
 
 perr_t
-PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim,
-                            uint64_t *obj_dims, int local_ndim, uint64_t *local_offset, uint64_t *local_size,
-                            int remote_ndim, uint64_t *remote_offset, uint64_t *remote_size,
-                            pdc_var_type_t mem_type, pdc_access_t access_type, pdcid_t *metadata_id)
+PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *obj_dims, int local_ndim,
+                            uint64_t *local_offset, uint64_t *local_size, int remote_ndim,
+                            uint64_t *remote_offset, uint64_t *remote_size, pdc_var_type_t mem_type,
+                            pdc_access_t access_type, pdcid_t *metadata_id)
 {
     perr_t                            ret_value = SUCCEED;
     hg_return_t                       hg_ret    = HG_SUCCESS;
@@ -2586,9 +2585,9 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim,
         total_data_size *= remote_size[i];
     }
 
-    in.remote_unit         = unit;
-    in.obj_id              = obj_id;
-    in.obj_ndim            = obj_ndim;
+    in.remote_unit = unit;
+    in.obj_id      = obj_id;
+    in.obj_ndim    = obj_ndim;
     if (in.obj_ndim >= 1) {
         in.obj_dim0 = obj_dims[0];
     }

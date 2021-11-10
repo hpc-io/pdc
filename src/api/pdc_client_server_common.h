@@ -144,7 +144,7 @@ pdc_transfer_request_status *transfer_request_status_list;
 pdc_transfer_request_status *transfer_request_status_list_end;
 pthread_mutex_t              transfer_request_status_mutex;
 pthread_mutex_t              transfer_request_id_mutex;
-uint64_t transfer_request_id_g;
+uint64_t                     transfer_request_id_g;
 
 typedef enum { PDC_POSIX = 0, PDC_DAOS = 1 } _pdc_io_plugin_t;
 
@@ -773,7 +773,7 @@ typedef struct {
 /* Define transfer_request_out_t */
 typedef struct {
     uint64_t metadata_id;
-    int32_t ret;
+    int32_t  ret;
 } transfer_request_out_t;
 
 /* Define buf_map_in_t */
@@ -3448,7 +3448,7 @@ struct transfer_request_local_bulk_args {
     hg_handle_t           handle;
     hg_bulk_t             bulk_handle;
     transfer_request_in_t in;
-    uint64_t transfer_request_id;
+    uint64_t              transfer_request_id;
     void *                data_buf;
     size_t                total_mem_size;
 };

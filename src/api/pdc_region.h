@@ -46,7 +46,7 @@ struct pdc_region_info {
 
 typedef struct pdc_transfer_request {
     pdcid_t        obj_id;
-    uint64_t        metadata_id;
+    uint64_t       metadata_id;
     pdc_access_t   access_type;
     pdc_var_type_t mem_type;
     char *         buf;
