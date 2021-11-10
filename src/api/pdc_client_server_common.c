@@ -4453,16 +4453,15 @@ PDC_commit_request(uint64_t transfer_request_id)
         transfer_request_status_list->status              = PDC_TRANSFER_STATUS_PENDING;
         transfer_request_status_list->transfer_request_id = transfer_request_id;
         transfer_request_status_list->next                = NULL;
+        transfer_request_status_list_end = transfer_request_status_list;
     }
     else {
-        ptr = transfer_request_status_list;
-        while (ptr->next != NULL) {
-            ptr = ptr->next;
-        }
+        ptr = transfer_request_status_list_end;
         ptr->next         = (pdc_transfer_request_status *)malloc(sizeof(pdc_transfer_request_status));
         ptr->next->status = PDC_TRANSFER_STATUS_PENDING;
         ptr->next->transfer_request_id = transfer_request_id;
         ptr->next->next                = NULL;
+        transfer_request_status_list_end = ptr->next;
     }
 
     pthread_mutex_unlock(&transfer_request_status_mutex);
@@ -4519,11 +4518,21 @@ PDC_check_request(uint64_t transfer_request_id)
             ret_value = ptr->status;
             if (ret_value == PDC_TRANSFER_STATUS_COMPLETE) {
                 if (tmp != NULL) {
+                    /* Case for removing the any nodes but the first one. */
                     tmp->next = ptr->next;
+                    /* Free pointer is the last list node, so we set the end to the previous one. */
+                    if ( prt->next == NULL ) {
+                        transfer_request_status_list_end = tmp;
+                    }
                     free(ptr);
                 } else {
+                    /* Case for removing the first node. */
                     free(transfer_request_status_list);
                     transfer_request_status_list = ptr->next;
+                    /* Free pointer is the last list node, so nothing is left in the list. */
+                    if ( transfer_request_status_list == NULL) {
+                       transfer_request_status_list_end = NULL;
+                    }
                 }
             }
             break;
@@ -4537,6 +4546,29 @@ PDC_check_request(uint64_t transfer_request_id)
     FUNC_LEAVE(ret_value);
 }
 
+/*
+ * Generate a remote transfer request ID in a very fast way.
+ * What happen if we have one request pending and call the register 2^64 times? This could result a repetitive transfer request ID generated.
+ * TODO: Scan the entire transfer list and search for repetitive nodes.
+ * Thread-safe function.
+*/
+
+static pdcid_t
+PDC_transfer_request_id_register() {
+    pdcid_t ret_value;
+
+    FUNC_ENTER(NULL);
+    pthread_mutex_lock(&transfer_request_id_mutex);
+
+    ret_value = transfer_request_id_g;
+    transfer_request_id_g++;
+
+    pthread_mutex_unlock(&transfer_request_id_mutex);
+
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+
+}
 
 /*
  * Core I/O functions for region transfer request.
@@ -4719,7 +4751,7 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
                                         remote_reg_info, (void *)local_bulk_args->data_buf,
                                         local_bulk_args->in.remote_unit);
 #endif
-    PDC_finish_request(local_bulk_args->in.transfer_request_id);
+    PDC_finish_request(local_bulk_args->transfer_request_id);
     free(local_bulk_args->data_buf);
     free(remote_reg_info);
 
@@ -4736,7 +4768,7 @@ transfer_request_bulk_transfer_read_cb(const struct hg_cb_info *info)
     FUNC_ENTER(NULL);
 
     // printf("entering server read transfer bulk callback\n");
-    PDC_finish_request(local_bulk_args->in.transfer_request_id);
+    PDC_finish_request(local_bulk_args->transfer_request_id);
     ret = HG_SUCCESS;
 
     HG_Bulk_free(local_bulk_args->bulk_handle);
@@ -4815,6 +4847,7 @@ HG_TEST_RPC_CB(transfer_request, handle)
     const struct hg_info *                   info;
     struct pdc_region_info *                 remote_reg_info;
     uint64_t                                 obj_dims[3];
+    uint64_t transfer_request_id;
 
     FUNC_ENTER(NULL);
 
@@ -4832,17 +4865,20 @@ HG_TEST_RPC_CB(transfer_request, handle)
     if (in.remote_region.ndim >= 3) {
         total_mem_size *= in.remote_region.count_2;
     }
+    transfer_request_id = PDC_transfer_request_id_register();
+    PDC_commit_request(transfer_request_id);
+
     local_bulk_args =
         (struct transfer_request_local_bulk_args *)malloc(sizeof(struct transfer_request_local_bulk_args));
     local_bulk_args->handle         = handle;
     local_bulk_args->total_mem_size = total_mem_size;
     local_bulk_args->data_buf       = malloc(total_mem_size);
     local_bulk_args->in             = in;
+    local_bulk_args->transfer_request_id             = transfer_request_id;
     /*
         printf("server check obj ndim %d, dims [%" PRIu64 ", %" PRIu64 ", %" PRIu64 "]\n", (int)in.obj_ndim,
                in.obj_dim0, in.obj_dim1, in.obj_dim2);
     */
-    PDC_commit_request(in.transfer_request_id);
     // printf("HG_TEST_RPC_CB(transfer_request, handle) checkpoint @ line %d\n", __LINE__);
     if (in.access_type == PDC_WRITE) {
         ret_value = HG_Bulk_create(info->hg_class, 1, &(local_bulk_args->data_buf),

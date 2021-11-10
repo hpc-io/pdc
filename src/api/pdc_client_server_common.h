@@ -141,7 +141,10 @@ typedef struct pdc_transfer_request_status {
 } pdc_transfer_request_status;
 
 pdc_transfer_request_status *transfer_request_status_list;
+pdc_transfer_request_status *transfer_request_status_list_end;
 pthread_mutex_t              transfer_request_status_mutex;
+pthread_mutex_t              transfer_request_id_mutex;
+uint64_t transfer_request_id_g;
 
 typedef enum { PDC_POSIX = 0, PDC_DAOS = 1 } _pdc_io_plugin_t;
 
@@ -758,7 +761,6 @@ typedef struct {
 typedef struct {
     hg_bulk_t              local_bulk_handle;
     region_info_transfer_t remote_region;
-    uint64_t               transfer_request_id;
     uint64_t               obj_id;
     uint64_t               obj_dim0;
     uint64_t               obj_dim1;
@@ -770,6 +772,7 @@ typedef struct {
 } transfer_request_in_t;
 /* Define transfer_request_out_t */
 typedef struct {
+    uint64_t metadata_id;
     int32_t ret;
 } transfer_request_out_t;
 
@@ -2356,11 +2359,6 @@ hg_proc_transfer_request_in_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_uint64_t(proc, &struct_data->transfer_request_id);
-    if (ret != HG_SUCCESS) {
-        // HG_LOG_ERROR("Proc error");
-        return ret;
-    }
     ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
@@ -2411,6 +2409,11 @@ hg_proc_transfer_request_out_t(hg_proc_t proc, void *data)
     hg_return_t             ret;
     transfer_request_out_t *struct_data = (transfer_request_out_t *)data;
     // printf("Output argument: transfer_request for ret @ line %d\n", __LINE__);
+    ret = hg_proc_uint64_t(proc, &struct_data->metadata_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
     ret = hg_proc_int32_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
@@ -3445,6 +3448,7 @@ struct transfer_request_local_bulk_args {
     hg_handle_t           handle;
     hg_bulk_t             bulk_handle;
     transfer_request_in_t in;
+    uint64_t transfer_request_id;
     void *                data_buf;
     size_t                total_mem_size;
 };

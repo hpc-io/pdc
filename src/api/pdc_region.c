@@ -250,11 +250,11 @@ PDCregion_transfer_start(pdcid_t transfer_request_id)
     transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
 
     ret_value = PDC_Client_transfer_request(
-        transfer_request_id, transfer_request->buf, transfer_request->obj_id, transfer_request->obj_ndim,
+        transfer_request->buf, transfer_request->obj_id, transfer_request->obj_ndim,
         transfer_request->obj_dims, transfer_request->local_region_ndim,
         transfer_request->local_region_offset, transfer_request->local_region_size,
         transfer_request->remote_region_ndim, transfer_request->remote_region_offset,
-        transfer_request->remote_region_size, transfer_request->mem_type, transfer_request->access_type);
+        transfer_request->remote_region_size, transfer_request->mem_type, &(transfer_request->metadata_id));
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -264,9 +264,14 @@ perr_t
 PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed)
 {
     perr_t ret_value = SUCCEED;
+    struct _pdc_id_info * transferinfo;
+    pdc_transfer_request *transfer_request;
+
     FUNC_ENTER(NULL);
 
-    ret_value = PDC_Client_transfer_request_status(transfer_request_id, completed);
+    transferinfo     = PDC_find_id(transfer_request_id);
+    transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
+    ret_value = PDC_Client_transfer_request_status(transfer_request->metadata_id, completed);
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -276,9 +281,15 @@ perr_t
 PDCregion_transfer_wait(pdcid_t transfer_request_id)
 {
     perr_t ret_value = SUCCEED;
+    struct _pdc_id_info * transferinfo;
+    pdc_transfer_request *transfer_request;
+
     FUNC_ENTER(NULL);
 
-    ret_value = PDC_Client_transfer_request_wait(transfer_request_id);
+    transferinfo     = PDC_find_id(transfer_request_id);
+    transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
+
+    ret_value = PDC_Client_transfer_request_wait(transfer_request->metadata_id);
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);

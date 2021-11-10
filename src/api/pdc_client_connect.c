@@ -335,7 +335,7 @@ client_send_transfer_request_rpc_cb(const struct hg_cb_info *callback_info)
     }
 
     region_transfer_args->ret = output.ret;
-
+    region_transfer_args->ret = output.metadata_id;
 done:
     fflush(stdout);
     work_todo_g--;
@@ -2355,6 +2355,7 @@ PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct pdc_re
     uint32_t                 data_server_id, meta_server_id;
     struct _pdc_buf_map_args unmap_args;
 
+
     hg_handle_t client_send_buf_unmap_handle;
 
     FUNC_ENTER(NULL);
@@ -2541,10 +2542,10 @@ release_region_buffer(char *buf, char *new_buf, uint64_t *obj_dims, int local_nd
 }
 
 perr_t
-PDC_Client_transfer_request(pdcid_t transfer_request_id, void *buf, pdcid_t obj_id, int obj_ndim,
+PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim,
                             uint64_t *obj_dims, int local_ndim, uint64_t *local_offset, uint64_t *local_size,
                             int remote_ndim, uint64_t *remote_offset, uint64_t *remote_size,
-                            pdc_var_type_t mem_type, pdc_access_t access_type)
+                            pdc_var_type_t mem_type, pdc_access_t access_type, pdcid_t *metadata_id)
 {
     perr_t                            ret_value = SUCCEED;
     hg_return_t                       hg_ret    = HG_SUCCESS;
@@ -2588,7 +2589,6 @@ PDC_Client_transfer_request(pdcid_t transfer_request_id, void *buf, pdcid_t obj_
     in.remote_unit         = unit;
     in.obj_id              = obj_id;
     in.obj_ndim            = obj_ndim;
-    in.transfer_request_id = transfer_request_id;
     if (in.obj_ndim >= 1) {
         in.obj_dim0 = obj_dims[0];
     }
@@ -2637,7 +2637,7 @@ PDC_Client_transfer_request(pdcid_t transfer_request_id, void *buf, pdcid_t obj_
                __LINE__);
     */
     release_region_buffer(buf, new_buf, obj_dims, local_ndim, local_offset, local_size, unit, access_type);
-
+    *metadata_id = transfer_args.metadata_id;
     if (transfer_args.ret != 1)
         PGOTO_ERROR(FAIL, "PDC_CLIENT: transfer request failed... @ line %d\n", __LINE__);
 
