@@ -335,7 +335,7 @@ client_send_transfer_request_rpc_cb(const struct hg_cb_info *callback_info)
     }
 
     region_transfer_args->ret = output.ret;
-    region_transfer_args->ret = output.metadata_id;
+    region_transfer_args->metadata_id = output.metadata_id;
 done:
     fflush(stdout);
     work_todo_g--;
