@@ -157,12 +157,21 @@ main(int argc, char **argv)
 
     transfer_request = PDCregion_transfer_create(data, PDC_WRITE, obj1, reg, reg_global);
 
-    PDCregion_transfer_start(transfer_request);
-
-    PDCregion_transfer_wait(transfer_request);
-
-    PDCregion_transfer_close(transfer_request);
-
+    ret = PDCregion_transfer_start(transfer_request);
+    if (ret != SUCCEED) {
+        printf("Fail to region transfer start @ line %d\n", __LINE__);
+        ret_value = 1;
+    } 
+    ret = PDCregion_transfer_wait(transfer_request);
+    if (ret != SUCCEED) {
+        printf("Fail to region transfer wait @ line %d\n", __LINE__);
+        ret_value = 1;
+    } 
+    ret = PDCregion_transfer_close(transfer_request);
+    if (ret != SUCCEED) {
+        printf("Fail to region transfer close @ line %d\n", __LINE__);
+        ret_value = 1;
+    } 
     if (PDCregion_close(reg) < 0) {
         printf("fail to close local region @ line %d\n", __LINE__);
         ret_value = 1;
@@ -184,12 +193,21 @@ main(int argc, char **argv)
 
     transfer_request = PDCregion_transfer_create(data_read, PDC_READ, obj1, reg, reg_global);
 
-    PDCregion_transfer_start(transfer_request);
-
-    PDCregion_transfer_wait(transfer_request);
-
-    PDCregion_transfer_close(transfer_request);
-
+    ret = PDCregion_transfer_start(transfer_request);
+    if (ret != SUCCEED) {
+        printf("Fail to region transfer start @ line %d\n", __LINE__);
+        ret_value = 1;
+    } 
+    ret = PDCregion_transfer_wait(transfer_request);
+    if (ret != SUCCEED) {
+        printf("Fail to region transfer wait @ line %d\n", __LINE__);
+        ret_value = 1;
+    } 
+    ret = PDCregion_transfer_close(transfer_request);
+    if (ret != SUCCEED) {
+        printf("Fail to region transfer close @ line %d\n", __LINE__);
+        ret_value = 1;
+    } 
     // Check if data written previously has been correctly read.
     for (i = 0; i < BUF_LEN; ++i) {
         if (data_read[i] != i) {
