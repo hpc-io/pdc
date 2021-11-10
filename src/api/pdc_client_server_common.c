@@ -4520,7 +4520,7 @@ PDC_check_request(uint64_t transfer_request_id)
                     /* Case for removing the any nodes but the first one. */
                     tmp->next = ptr->next;
                     /* Free pointer is the last list node, so we set the end to the previous one. */
-                    if (prt->next == NULL) {
+                    if (ptr->next == NULL) {
                         transfer_request_status_list_end = tmp;
                     }
                     free(ptr);
