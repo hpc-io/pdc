@@ -4865,8 +4865,8 @@ HG_TEST_RPC_CB(transfer_request, handle)
     if (in.remote_region.ndim >= 3) {
         total_mem_size *= in.remote_region.count_2;
     }
-    out.transfer_request_id = PDC_transfer_request_id_register();
-    PDC_commit_request(out.transfer_request_id);
+    out.metadata_id = PDC_transfer_request_id_register();
+    PDC_commit_request(out.metadata_id);
 
     local_bulk_args =
         (struct transfer_request_local_bulk_args *)malloc(sizeof(struct transfer_request_local_bulk_args));
@@ -4874,7 +4874,7 @@ HG_TEST_RPC_CB(transfer_request, handle)
     local_bulk_args->total_mem_size      = total_mem_size;
     local_bulk_args->data_buf            = malloc(total_mem_size);
     local_bulk_args->in                  = in;
-    local_bulk_args->transfer_request_id = out.transfer_request_id;
+    local_bulk_args->transfer_request_id = out.metadata_id;
     /*
         printf("server check obj ndim %d, dims [%" PRIu64 ", %" PRIu64 ", %" PRIu64 "]\n", (int)in.obj_ndim,
                in.obj_dim0, in.obj_dim1, in.obj_dim2);
