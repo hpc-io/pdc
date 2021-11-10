@@ -155,7 +155,7 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdci
 perr_t PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *obj_dims,
                                    int local_ndim, uint64_t *local_offset, uint64_t *local_size,
                                    int remote_ndim, uint64_t *remote_offset, uint64_t *remote_size,
-                                   pdc_var_type_t mem_type, pdc_access_t access_type, pdcid_t *metadata_id);
+                                   pdc_var_type_t mem_type, pdc_access_t access_type, uint64_t *metadata_id);
 
 perr_t PDC_Client_transfer_request_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed);
 perr_t PDC_Client_transfer_request_wait(pdcid_t transfer_request_id);

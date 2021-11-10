@@ -254,7 +254,7 @@ PDCregion_transfer_start(pdcid_t transfer_request_id)
         transfer_request->obj_dims, transfer_request->local_region_ndim,
         transfer_request->local_region_offset, transfer_request->local_region_size,
         transfer_request->remote_region_ndim, transfer_request->remote_region_offset,
-        transfer_request->remote_region_size, transfer_request->mem_type, &(transfer_request->metadata_id));
+        transfer_request->remote_region_size, transfer_request->mem_type, transfer_request->access_type, &(transfer_request->metadata_id));
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);
