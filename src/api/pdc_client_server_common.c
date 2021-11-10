@@ -4947,7 +4947,6 @@ HG_TEST_RPC_CB(transfer_request, handle)
     }
 
     out.ret                 = 1;
-    out.transfer_request_id = transfer_request_id;
     ret_value               = HG_Respond(handle, NULL, NULL, &out);
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
