@@ -4438,7 +4438,7 @@ get_server_rank()
 /*
  * Create a new linked list node for a region transfer request and append it to the end of the linked list.
  * Thread-safe function.
-*/
+ */
 static perr_t
 PDC_commit_request(uint64_t transfer_request_id)
 {
@@ -4475,7 +4475,7 @@ PDC_commit_request(uint64_t transfer_request_id)
  * Search a linked list for a transfer request.
  * Set the entry status to PDC_TRANSFER_STATUS_COMPLETE.
  * Thread-safe function.
-*/
+ */
 static perr_t
 PDC_finish_request(uint64_t transfer_request_id)
 {
@@ -4498,13 +4498,12 @@ PDC_finish_request(uint64_t transfer_request_id)
     FUNC_LEAVE(ret_value);
 }
 
-
 /*
  * Search a linked list for a region transfer request.
  * Remove the linked list node and free its memory.
  * Return the status of the region transfer request.
  * Thread-safe function.
-*/
+ */
 static pdc_transfer_status_t
 PDC_check_request(uint64_t transfer_request_id)
 {
@@ -4521,7 +4520,8 @@ PDC_check_request(uint64_t transfer_request_id)
                 if (tmp != NULL) {
                     tmp->next = ptr->next;
                     free(ptr);
-                } else {
+                }
+                else {
                     free(transfer_request_status_list);
                     transfer_request_status_list = ptr->next;
                 }
@@ -4537,11 +4537,10 @@ PDC_check_request(uint64_t transfer_request_id)
     FUNC_LEAVE(ret_value);
 }
 
-
 /*
  * Core I/O functions for region transfer request.
  * Nonzero io_by_region_g will trigger region by region storage. Otherwise file flatten strategy is used
-*/
+ */
 perr_t
 PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims,
                                struct pdc_region_info *region_info, void *buf, size_t unit, int is_write)
