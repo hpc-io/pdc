@@ -4946,8 +4946,8 @@ HG_TEST_RPC_CB(transfer_request, handle)
         printf("Error at HG_TEST_RPC_CB(transfer_request, handle): @ line %d ", __LINE__);
     }
 
-    out.ret                 = 1;
-    ret_value               = HG_Respond(handle, NULL, NULL, &out);
+    out.ret   = 1;
+    ret_value = HG_Respond(handle, NULL, NULL, &out);
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
