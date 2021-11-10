@@ -85,7 +85,7 @@ struct _pdc_container_query_args {
 };
 
 struct _pdc_transfer_request_args {
-    pcdid_t metadata_id;
+    uint64_t metadata_id;
     int32_t ret;
 };
 
