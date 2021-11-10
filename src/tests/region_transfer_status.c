@@ -158,7 +158,9 @@ main(int argc, char **argv)
     }
 
     transfer_request = PDCregion_transfer_create(data, PDC_WRITE, obj1, reg, reg_global);
-    if (completed != PDC_TRANSFER_STATUS_NOT_FOUND) {
+
+    PDCregion_transfer_status(transfer_request, &completed);
+    if ( completed != PDC_TRANSFER_STATUS_NOT_FOUND ) {
         printf("Wrong transfer request status @ line %d\n", __LINE__);
         ret_value = 1;
     }
