@@ -40,8 +40,8 @@ main(int argc, char **argv)
 {
     pdcid_t pdc, cont_prop, cont, obj_prop, reg, reg_global;
     perr_t  ret;
-    pdcid_t obj1, obj2;
-    char    cont_name[128], obj_name1[128], obj_name2[128];
+    pdcid_t obj1, obj2, obj3;
+    char    cont_name[128], obj_name1[128], obj_name2[128], obj_name3[128];
     pdcid_t transfer_request;
 
     int rank = 0, size = 1, i;
@@ -57,8 +57,6 @@ main(int argc, char **argv)
     offset_length[2] = 5;
 
     int *data      = (int *)malloc(sizeof(int) * BUF_LEN);
-    int *data_read = (int *)malloc(sizeof(int) * BUF_LEN);
-    int *obj_data  = (int *)calloc(BUF_LEN, sizeof(int));
     dims[0]        = BUF_LEN;
 
 #ifdef ENABLE_MPI
@@ -104,7 +102,6 @@ main(int argc, char **argv)
         printf("Fail to set obj type @ line %d\n", __LINE__);
         ret_value = 1;
     }
-    PDCprop_set_obj_buf(obj_prop, obj_data);
     PDCprop_set_obj_dims(obj_prop, 1, dims);
     PDCprop_set_obj_user_id(obj_prop, getuid());
     PDCprop_set_obj_time_step(obj_prop, 0);
@@ -126,6 +123,16 @@ main(int argc, char **argv)
     obj2 = PDCobj_create(cont, obj_name2, obj_prop);
     if (obj2 > 0) {
         printf("Create an object o2\n");
+    }
+    else {
+        printf("Fail to create object @ line  %d!\n", __LINE__);
+        ret_value = 1;
+    }
+    // create third object
+    sprintf(obj_name3, "o3_%d", rank);
+    obj3 = PDCobj_create(cont, obj_name3, obj_prop);
+    if (obj3 > 0) {
+        printf("Create an object o3\n");
     }
     else {
         printf("Fail to create object @ line  %d!\n", __LINE__);
@@ -187,6 +194,180 @@ main(int argc, char **argv)
         printf("successfully closed global region @ line %d\n", __LINE__);
     }
 
+
+    offset[0]        = 0;
+    offset_length[0] = BUF_LEN;
+    reg              = PDCregion_create(1, offset, offset_length);
+    if (reg > 0) {
+        printf("Create an region o1\n");
+    }
+    else {
+        printf("Fail to create region @ line  %d!\n", __LINE__);
+        ret_value = 1;
+    }
+    reg_global = PDCregion_create(1, offset, offset_length);
+    if (reg_global > 0) {
+        printf("Create an region o1\n");
+    }
+    else {
+        printf("Fail to create region @ line  %d!\n", __LINE__);
+        ret_value = 1;
+    }
+    for (i = 0; i < BUF_LEN; ++i) {
+        data[i] = i;
+    }
+
+    transfer_request = PDCregion_transfer_create(data, PDC_WRITE, obj1, reg, reg_global);
+
+    ret = PDCregion_transfer_start(transfer_request);
+    if (ret != SUCCEED) {
+        printf("Fail to region transfer start @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    ret = PDCregion_transfer_wait(transfer_request);
+    if (ret != SUCCEED) {
+        printf("Fail to region transfer wait @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    ret = PDCregion_transfer_close(transfer_request);
+    if (ret != SUCCEED) {
+        printf("Fail to region transfer close @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    if (PDCregion_close(reg) < 0) {
+        printf("fail to close local region @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    else {
+        printf("successfully closed local region @ line %d\n", __LINE__);
+    }
+
+    if (PDCregion_close(reg_global) < 0) {
+        printf("fail to close global region @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    else {
+        printf("successfully closed global region @ line %d\n", __LINE__);
+    }
+// Write the second object
+    offset[0]        = 0;
+    offset_length[0] = BUF_LEN/4;
+    offset[1]        = 0;
+    offset_length[1] = 4;
+    reg              = PDCregion_create(2, offset, offset_length);
+    if (reg > 0) {
+        printf("Create an region o1\n");
+    }
+    else {
+        printf("Fail to create region @ line  %d!\n", __LINE__);
+        ret_value = 1;
+    }
+    reg_global = PDCregion_create(2, offset, offset_length);
+    if (reg_global > 0) {
+        printf("Create an region o1\n");
+    }
+    else {
+        printf("Fail to create region @ line  %d!\n", __LINE__);
+        ret_value = 1;
+    }
+    for (i = 0; i < BUF_LEN; ++i) {
+        data[i] = i;
+    }
+
+    transfer_request = PDCregion_transfer_create(data, PDC_WRITE, obj2, reg, reg_global);
+
+    ret = PDCregion_transfer_start(transfer_request);
+    if (ret != SUCCEED) {
+        printf("Fail to region transfer start @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    ret = PDCregion_transfer_wait(transfer_request);
+    if (ret != SUCCEED) {
+        printf("Fail to region transfer wait @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    ret = PDCregion_transfer_close(transfer_request);
+    if (ret != SUCCEED) {
+        printf("Fail to region transfer close @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    if (PDCregion_close(reg) < 0) {
+        printf("fail to close local region @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    else {
+        printf("successfully closed local region @ line %d\n", __LINE__);
+    }
+
+    if (PDCregion_close(reg_global) < 0) {
+        printf("fail to close global region @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    else {
+        printf("successfully closed global region @ line %d\n", __LINE__);
+    }
+
+
+// Write the third object
+    offset[0]        = 0;
+    offset_length[0] = BUF_LEN/4;
+    offset[1]        = 0;
+    offset_length[1] = 2;
+    offset[2]        = 0;
+    offset_length[2] = 2;
+    reg              = PDCregion_create(3, offset, offset_length);
+    if (reg > 0) {
+        printf("Create an region o1\n");
+    }
+    else {
+        printf("Fail to create region @ line  %d!\n", __LINE__);
+        ret_value = 1;
+    }
+    reg_global = PDCregion_create(3, offset, offset_length);
+    if (reg_global > 0) {
+        printf("Create an region o1\n");
+    }
+    else {
+        printf("Fail to create region @ line  %d!\n", __LINE__);
+        ret_value = 1;
+    }
+    for (i = 0; i < BUF_LEN; ++i) {
+        data[i] = i;
+    }
+
+    transfer_request = PDCregion_transfer_create(data, PDC_WRITE, obj3, reg, reg_global);
+
+    ret = PDCregion_transfer_start(transfer_request);
+    if (ret != SUCCEED) {
+        printf("Fail to region transfer start @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    ret = PDCregion_transfer_wait(transfer_request);
+    if (ret != SUCCEED) {
+        printf("Fail to region transfer wait @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    ret = PDCregion_transfer_close(transfer_request);
+    if (ret != SUCCEED) {
+        printf("Fail to region transfer close @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    if (PDCregion_close(reg) < 0) {
+        printf("fail to close local region @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    else {
+        printf("successfully closed local region @ line %d\n", __LINE__);
+    }
+
+    if (PDCregion_close(reg_global) < 0) {
+        printf("fail to close global region @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    else {
+        printf("successfully closed global region @ line %d\n", __LINE__);
+    }
+
     // close object
     if (PDCobj_close(obj1) < 0) {
         printf("fail to close object o1 @ line %d\n", __LINE__);
@@ -197,6 +378,13 @@ main(int argc, char **argv)
     }
     if (PDCobj_close(obj2) < 0) {
         printf("fail to close object o2 @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    else {
+        printf("successfully close object o2 @ line %d\n", __LINE__);
+    }
+    if (PDCobj_close(obj3) < 0) {
+        printf("fail to close object o3 @ line %d\n", __LINE__);
         ret_value = 1;
     }
     else {
@@ -227,8 +415,6 @@ main(int argc, char **argv)
         printf("successfully close container property @ line %d\n", __LINE__);
     }
     free(data);
-    free(data_read);
-    free(obj_data);
     // close pdc
     if (PDCclose(pdc) < 0) {
         printf("fail to close PDC @ line %d\n", __LINE__);
