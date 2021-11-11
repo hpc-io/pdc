@@ -80,6 +80,8 @@ set(PROGRAMS
   region_transfer_2D_skewed
   region_transfer_3D
   region_transfer_3D_skewed
+  region_transfer_write_only
+  region_transfer_read_only
   #query_vpic_create_data
   #query_vpic
   #query_vpic_multi
@@ -188,6 +190,7 @@ add_test(NAME write_obj_uint64  WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTO
 add_test(NAME write_obj_int16   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./write_obj o 1 int16)
 add_test(NAME write_obj_int8    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./write_obj o 1 int8)
 add_test(NAME query_data        WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./query_data o 1)
+add_test(NAME region_transfer_write_read     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./region_transfer_write_only ./region_transfer_read_only)
 add_test(NAME vpicio_bdcats     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio ./bdcats)
 
 set_tests_properties(pdc_init           PROPERTIES LABELS serial )
@@ -238,6 +241,7 @@ set_tests_properties(write_obj_int16    PROPERTIES LABELS serial )
 set_tests_properties(write_obj_int8     PROPERTIES LABELS serial )
 set_tests_properties(query_data         PROPERTIES LABELS serial )
 set_tests_properties(vpicio_bdcats      PROPERTIES LABELS serial )
+set_tests_properties(region_transfer_write_read      PROPERTIES LABELS serial )
 #add_test(NAME vpicio_query_vpic WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio ./query_vpic )
 #add_test(NAME vpicio_query_vpic_multi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio ./query_vpic_multi )
 #add_test(NAME vpicio_query_vpic_multi_preload WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio ./query_vpic_multi_preload )
