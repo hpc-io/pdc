@@ -157,7 +157,7 @@ main(int argc, char **argv)
         printf("Fail to region transfer close @ line %d\n", __LINE__);
         ret_value = 1;
     }
-// Read the second object
+    // Read the second object
     offset[0]        = 0;
     offset_length[0] = BUF_LEN / 4;
     offset[1]        = 0;
@@ -220,7 +220,7 @@ main(int argc, char **argv)
         printf("successfully closed global region @ line %d\n", __LINE__);
     }
 
-// Read the third object
+    // Read the third object
     offset[0]        = 0;
     offset_length[0] = BUF_LEN / 4;
     offset[1]        = 0;
