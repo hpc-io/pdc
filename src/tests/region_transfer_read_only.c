@@ -263,23 +263,6 @@ main(int argc, char **argv)
     else {
         printf("successfully closed global region @ line %d\n", __LINE__);
     }
-
-    if (PDCregion_close(reg) < 0) {
-        printf("fail to close local region @ line %d\n", __LINE__);
-        ret_value = 1;
-    }
-    else {
-        printf("successfully local region @ line %d\n", __LINE__);
-    }
-
-    if (PDCregion_close(reg_global) < 0) {
-        printf("fail to close global region @ line %d\n", __LINE__);
-        ret_value = 1;
-    }
-    else {
-        printf("successfully closed global region @ line %d\n", __LINE__);
-    }
-
     // close object
     if (PDCobj_close(obj1) < 0) {
         printf("fail to close object o1 @ line %d\n", __LINE__);
