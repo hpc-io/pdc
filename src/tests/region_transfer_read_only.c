@@ -41,7 +41,7 @@ main(int argc, char **argv)
     pdcid_t pdc, cont_prop, cont, obj_prop, reg, reg_global;
     perr_t  ret;
     pdcid_t obj1, obj2, obj3;
-    char    cont_name[128], obj_name1[128], obj_name2[128];
+    char    cont_name[128], obj_name1[128], obj_name2[128], obj_name3[128];
     pdcid_t transfer_request;
 
     int rank = 0, size = 1, i;
@@ -123,6 +123,16 @@ main(int argc, char **argv)
     obj2 = PDCobj_create(cont, obj_name2, obj_prop);
     if (obj2 > 0) {
         printf("Create an object o2\n");
+    }
+    else {
+        printf("Fail to create object @ line  %d!\n", __LINE__);
+        ret_value = 1;
+    }
+    // create third object
+    sprintf(obj_name3, "o3_%d", rank);
+    obj3 = PDCobj_create(cont, obj_name3, obj_prop);
+    if (obj3 > 0) {
+        printf("Create an object o3\n");
     }
     else {
         printf("Fail to create object @ line  %d!\n", __LINE__);
