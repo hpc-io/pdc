@@ -157,7 +157,7 @@ main(int argc, char **argv)
         printf("Fail to region transfer close @ line %d\n", __LINE__);
         ret_value = 1;
     }
-// Write the second object
+// Read the second object
     offset[0]        = 0;
     offset_length[0] = BUF_LEN/4;
     offset[1]        = 0;
@@ -182,7 +182,7 @@ main(int argc, char **argv)
         data[i] = i;
     }
 
-    transfer_request = PDCregion_transfer_create(data, PDC_WRITE, obj2, reg, reg_global);
+    transfer_request = PDCregion_transfer_create(data_read, PDC_READ, obj2, reg, reg_global);
 
     ret = PDCregion_transfer_start(transfer_request);
     if (ret != SUCCEED) {
@@ -224,7 +224,7 @@ main(int argc, char **argv)
     }
 
 
-// Write the third object
+// Read the third object
     offset[0]        = 0;
     offset_length[0] = BUF_LEN/4;
     offset[1]        = 0;
@@ -251,7 +251,7 @@ main(int argc, char **argv)
         data[i] = i;
     }
 
-    transfer_request = PDCregion_transfer_create(data, PDC_WRITE, obj3, reg, reg_global);
+    transfer_request = PDCregion_transfer_create(data_read, PDC_READ, obj3, reg, reg_global);
 
     ret = PDCregion_transfer_start(transfer_request);
     if (ret != SUCCEED) {
@@ -323,6 +323,13 @@ main(int argc, char **argv)
     }
     else {
         printf("successfully close object o2 @ line %d\n", __LINE__);
+    }
+    if (PDCobj_close(obj3) < 0) {
+        printf("fail to close object o3 @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    else {
+        printf("successfully close object o3 @ line %d\n", __LINE__);
     }
     // close a container
     if (PDCcont_close(cont) < 0) {
