@@ -82,6 +82,7 @@ set(PROGRAMS
   region_transfer_3D_skewed
   region_transfer_write_only
   region_transfer_read_only
+  region_transfer_write_read
   #query_vpic_create_data
   #query_vpic
   #query_vpic_multi
@@ -181,6 +182,7 @@ add_test(NAME region_transfer_overlap WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_D
 add_test(NAME region_transfer_overlap_2D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_overlap_2D )
 add_test(NAME region_transfer_overlap_3D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_overlap_3D )
 add_test(NAME region_transfer_merge WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_merge )
+add_test(NAME region_transfer_write_read WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_write_read )
 add_test(NAME write_obj_int     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./write_obj o 1 int)
 add_test(NAME write_obj_float   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./write_obj o 1 float)
 add_test(NAME write_obj_double  WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./write_obj o 1 double)
@@ -231,6 +233,7 @@ set_tests_properties(region_transfer_3D_partial  PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_overlap     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_overlap_2D     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_overlap_3D     PROPERTIES LABELS serial )
+set_tests_properties(region_transfer_write_read     PROPERTIES LABELS serial )
 set_tests_properties(write_obj_int      PROPERTIES LABELS serial )
 set_tests_properties(write_obj_float    PROPERTIES LABELS serial )
 set_tests_properties(write_obj_double   PROPERTIES LABELS serial )
@@ -288,6 +291,7 @@ if(BUILD_MPI_TESTING)
     add_test(NAME region_transfer_overlap_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_overlap ${MPI_RUN_CMD} 2 4 )
     add_test(NAME region_transfer_overlap_2D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_overlap_2D ${MPI_RUN_CMD} 2 4 )
     add_test(NAME region_transfer_overlap_3D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_overlap_3D ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME region_transfer_write_read_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_overlap_3D ${MPI_RUN_CMD} 2 4 )
     add_test(NAME obj_round_robin_io    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_round_robin_io ${MPI_RUN_CMD} 2 2 int )
     add_test(NAME pdc_init_mpi    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./pdc_init ${MPI_RUN_CMD} 2 4 )
     add_test(NAME create_prop_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./create_prop ${MPI_RUN_CMD} 2 4 )
@@ -347,6 +351,7 @@ if(BUILD_MPI_TESTING)
     set_tests_properties(region_transfer_skewed_mpi     PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_2D_skewed_mpi     PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_3D_skewed_mpi     PROPERTIES LABELS parallel )
+    set_tests_properties(region_transfer_write_read     PROPERTIES LABELS parallel )
     set_tests_properties(obj_round_robin_io     PROPERTIES LABELS parallel )
     set_tests_properties(pdc_init_mpi     PROPERTIES LABELS parallel )
     set_tests_properties(create_prop_mpi  PROPERTIES LABELS parallel )

@@ -171,6 +171,7 @@ main(int argc, char **argv)
         if (completed == PDC_TRANSFER_STATUS_COMPLETE) {
             break;
         }
+        sleep(0.2);
     }
     PDCregion_transfer_status(transfer_request, &completed);
     if (completed != PDC_TRANSFER_STATUS_NOT_FOUND) {
