@@ -102,13 +102,14 @@ main(int argc, char **argv)
         printf("Fail to set obj type @ line %d\n", __LINE__);
         ret_value = 1;
     }
-    PDCprop_set_obj_dims(obj_prop, 1, dims);
     PDCprop_set_obj_user_id(obj_prop, getuid());
     PDCprop_set_obj_time_step(obj_prop, 0);
     PDCprop_set_obj_app_name(obj_prop, "DataServerTest");
     PDCprop_set_obj_tags(obj_prop, "tag0=1");
 
     // create first object
+    dims[0] = BUF_LEN;
+    PDCprop_set_obj_dims(obj_prop, 1, dims);
     sprintf(obj_name1, "o1_%d", rank);
     obj1 = PDCobj_create(cont, obj_name1, obj_prop);
     if (obj1 > 0) {
@@ -119,6 +120,8 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     // create second object
+    dims[0] = BUF_LEN / 2;
+    dims[1] = 2;
     PDCprop_set_obj_dims(obj_prop, 2, dims);
     sprintf(obj_name2, "o2_%d", rank);
     obj2 = PDCobj_create(cont, obj_name2, obj_prop);
@@ -130,6 +133,9 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     // create third object
+    dims[0] = BUF_LEN / 4;
+    dims[1] = 2;
+    dims[2] = 2;
     PDCprop_set_obj_dims(obj_prop, 3, dims);
     sprintf(obj_name3, "o3_%d", rank);
     obj3 = PDCobj_create(cont, obj_name3, obj_prop);
