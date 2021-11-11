@@ -56,8 +56,8 @@ main(int argc, char **argv)
     offset_length[1] = 3;
     offset_length[2] = 5;
 
-    int *data      = (int *)malloc(sizeof(int) * BUF_LEN);
-    dims[0]        = BUF_LEN;
+    int *data = (int *)malloc(sizeof(int) * BUF_LEN);
+    dims[0]   = BUF_LEN;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -194,7 +194,6 @@ main(int argc, char **argv)
         printf("successfully closed global region @ line %d\n", __LINE__);
     }
 
-
     offset[0]        = 0;
     offset_length[0] = BUF_LEN;
     reg              = PDCregion_create(1, offset, offset_length);
@@ -249,9 +248,9 @@ main(int argc, char **argv)
     else {
         printf("successfully closed global region @ line %d\n", __LINE__);
     }
-// Write the second object
+    // Write the second object
     offset[0]        = 0;
-    offset_length[0] = BUF_LEN/4;
+    offset_length[0] = BUF_LEN / 4;
     offset[1]        = 0;
     offset_length[1] = 4;
     reg              = PDCregion_create(2, offset, offset_length);
@@ -307,10 +306,9 @@ main(int argc, char **argv)
         printf("successfully closed global region @ line %d\n", __LINE__);
     }
 
-
-// Write the third object
+    // Write the third object
     offset[0]        = 0;
-    offset_length[0] = BUF_LEN/4;
+    offset_length[0] = BUF_LEN / 4;
     offset[1]        = 0;
     offset_length[1] = 2;
     offset[2]        = 0;
