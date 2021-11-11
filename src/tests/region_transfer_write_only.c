@@ -262,7 +262,7 @@ main(int argc, char **argv)
     offset[1]        = 0;
     offset_length[1] = 4;
 
-    reg              = PDCregion_create(2, offset, offset_length);
+    reg = PDCregion_create(2, offset, offset_length);
     if (reg > 0) {
         printf("Create an region o1\n");
     }
