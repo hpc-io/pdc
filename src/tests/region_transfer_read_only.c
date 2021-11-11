@@ -157,9 +157,9 @@ main(int argc, char **argv)
         printf("Fail to region transfer close @ line %d\n", __LINE__);
         ret_value = 1;
     }
-// Write the second object
+    // Write the second object
     offset[0]        = 0;
-    offset_length[0] = BUF_LEN/4;
+    offset_length[0] = BUF_LEN / 4;
     offset[1]        = 0;
     offset_length[1] = 4;
     reg              = PDCregion_create(2, offset, offset_length);
@@ -223,10 +223,9 @@ main(int argc, char **argv)
         printf("successfully closed global region @ line %d\n", __LINE__);
     }
 
-
-// Write the third object
+    // Write the third object
     offset[0]        = 0;
-    offset_length[0] = BUF_LEN/4;
+    offset_length[0] = BUF_LEN / 4;
     offset[1]        = 0;
     offset_length[1] = 2;
     offset[2]        = 0;
@@ -291,7 +290,6 @@ main(int argc, char **argv)
     else {
         printf("successfully closed global region @ line %d\n", __LINE__);
     }
-
 
     if (PDCregion_close(reg) < 0) {
         printf("fail to close local region @ line %d\n", __LINE__);
