@@ -56,9 +56,9 @@ main(int argc, char **argv)
     offset_length[1] = 3;
     offset_length[2] = 5;
 
-    int *data = (int *)malloc(sizeof(int) * BUF_LEN);
+    int *data      = (int *)malloc(sizeof(int) * BUF_LEN);
     int *data_read = (int *)malloc(sizeof(int) * BUF_LEN);
-    dims[0]   = BUF_LEN;
+    dims[0]        = BUF_LEN;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -423,7 +423,6 @@ main(int argc, char **argv)
         printf("successfully close container property @ line %d\n", __LINE__);
     }
     free(data);
-
 
     // create first object
     sprintf(obj_name1, "o1_%d", rank);
