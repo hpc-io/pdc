@@ -47,9 +47,8 @@ main(int argc, char **argv)
     int rank = 0, size = 1, i;
     int ret_value = 0;
 
-    uint64_t offset[3], offset_length[3], local_offset[1];
+    uint64_t offset[3], offset_length[3];
     uint64_t dims[1];
-    local_offset[0]  = 0;
     offset[0]        = 0;
     offset[1]        = 2;
     offset[2]        = 5;
@@ -133,7 +132,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 
-    reg        = PDCregion_create(1, local_offset, offset_length);
+    reg        = PDCregion_create(1, offset, offset_length);
     reg_global = PDCregion_create(1, offset, offset_length);
 
     transfer_request = PDCregion_transfer_create(data_read, PDC_READ, obj1, reg, reg_global);
