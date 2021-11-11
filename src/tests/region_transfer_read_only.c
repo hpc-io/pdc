@@ -178,10 +178,7 @@ main(int argc, char **argv)
         printf("Fail to create region @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
-    for (i = 0; i < BUF_LEN; ++i) {
-        data[i] = i;
-    }
-
+    memset(data_read, 0, BUF_LEN);
     transfer_request = PDCregion_transfer_create(data_read, PDC_READ, obj2, reg, reg_global);
 
     ret = PDCregion_transfer_start(transfer_request);
@@ -246,10 +243,7 @@ main(int argc, char **argv)
         printf("Fail to create region @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
-    for (i = 0; i < BUF_LEN; ++i) {
-        data[i] = i;
-    }
-
+    memset(data_read, 0, BUF_LEN);
     transfer_request = PDCregion_transfer_create(data_read, PDC_READ, obj3, reg, reg_global);
 
     ret = PDCregion_transfer_start(transfer_request);
