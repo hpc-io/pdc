@@ -38,7 +38,7 @@
 int
 main(int argc, char **argv)
 {
-    pdcid_t pdc, cont_prop, cont, obj_prop, reg, reg_global;
+    pdcid_t pdc, cont, reg, reg_global;
     perr_t  ret;
     pdcid_t obj1, obj2, obj3;
     char    cont_name[128], obj_name1[128], obj_name2[128], obj_name3[128];
@@ -48,7 +48,6 @@ main(int argc, char **argv)
     int ret_value = 0;
 
     uint64_t offset[3], offset_length[3];
-    uint64_t dims[1];
     offset[0]        = 0;
     offset[1]        = 2;
     offset[2]        = 5;
@@ -57,7 +56,6 @@ main(int argc, char **argv)
     offset_length[2] = 5;
 
     int *data_read = (int *)malloc(sizeof(int) * BUF_LEN);
-    dims[0]        = BUF_LEN;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -68,18 +66,9 @@ main(int argc, char **argv)
     pdc = PDCinit("pdc");
     printf("create a new pdc\n");
 
-    // create a container property
-    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
-    if (cont_prop > 0) {
-        printf("Create a container property\n");
-    }
-    else {
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
-        ret_value = 1;
-    }
     // create a container
     sprintf(cont_name, "c%d", rank);
-    cont = PDCcont_create(cont_name, cont_prop);
+    cont = PDCcont_open(cont_name, pdc);
     if (cont > 0) {
         printf("Create a container c1\n");
     }
@@ -87,30 +76,10 @@ main(int argc, char **argv)
         printf("Fail to create container @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
-    // create an object property
-    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
-    if (obj_prop > 0) {
-        printf("Create an object property\n");
-    }
-    else {
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
-        ret_value = 1;
-    }
-
-    ret = PDCprop_set_obj_type(obj_prop, PDC_INT);
-    if (ret != SUCCEED) {
-        printf("Fail to set obj type @ line %d\n", __LINE__);
-        ret_value = 1;
-    }
-    PDCprop_set_obj_dims(obj_prop, 1, dims);
-    PDCprop_set_obj_user_id(obj_prop, getuid());
-    PDCprop_set_obj_time_step(obj_prop, 0);
-    PDCprop_set_obj_app_name(obj_prop, "DataServerTest");
-    PDCprop_set_obj_tags(obj_prop, "tag0=1");
 
     // create first object
     sprintf(obj_name1, "o1_%d", rank);
-    obj1 = PDCobj_create(cont, obj_name1, obj_prop);
+    obj1 = PDCobj_open(obj_name1, pdc);
     if (obj1 > 0) {
         printf("Create an object o1\n");
     }
@@ -120,7 +89,7 @@ main(int argc, char **argv)
     }
     // create second object
     sprintf(obj_name2, "o2_%d", rank);
-    obj2 = PDCobj_create(cont, obj_name2, obj_prop);
+    obj2 = PDCobj_open(obj_name2, pdc);
     if (obj2 > 0) {
         printf("Create an object o2\n");
     }
@@ -130,7 +99,7 @@ main(int argc, char **argv)
     }
     // create third object
     sprintf(obj_name3, "o3_%d", rank);
-    obj3 = PDCobj_create(cont, obj_name3, obj_prop);
+    obj3 = PDCobj_open(obj_name3, pdc);
     if (obj3 > 0) {
         printf("Create an object o3\n");
     }
@@ -340,22 +309,6 @@ main(int argc, char **argv)
     }
     else {
         printf("successfully close container c1 @ line %d\n", __LINE__);
-    }
-    // close a object property
-    if (PDCprop_close(obj_prop) < 0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
-        ret_value = 1;
-    }
-    else {
-        printf("successfully close object property @ line %d\n", __LINE__);
-    }
-    // close a container property
-    if (PDCprop_close(cont_prop) < 0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
-        ret_value = 1;
-    }
-    else {
-        printf("successfully close container property @ line %d\n", __LINE__);
     }
     free(data_read);
     // close pdc
