@@ -106,6 +106,7 @@ set(SCRIPTS
   run_test.sh
   mpi_test.sh
   run_multiple_test.sh
+  run_checkpoint_restart_test.sh
   )
 
 foreach(script ${SCRIPTS})
@@ -190,7 +191,7 @@ add_test(NAME write_obj_uint64  WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTO
 add_test(NAME write_obj_int16   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./write_obj o 1 int16)
 add_test(NAME write_obj_int8    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./write_obj o 1 int8)
 add_test(NAME query_data        WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./query_data o 1)
-add_test(NAME region_transfer_write_read     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./region_transfer_write_only ./region_transfer_read_only)
+add_test(NAME region_transfer_write_read     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_checkpoint_restart_test.sh ./region_transfer_write_only ./region_transfer_read_only)
 add_test(NAME vpicio_bdcats     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio ./bdcats)
 
 set_tests_properties(pdc_init           PROPERTIES LABELS serial )

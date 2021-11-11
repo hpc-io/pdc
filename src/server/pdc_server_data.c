@@ -312,6 +312,7 @@ PDC_Server_register_obj_region(pdcid_t obj_id)
         PDC_mkdir(storage_location);
 
 #ifdef ENABLE_LUSTRE
+        int stripe_count, stripe_size;
         if (pdc_nost_per_file_g != 1)
             stripe_count = lustre_total_ost_g / pdc_server_size_g;
         else
@@ -5104,7 +5105,7 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
     gettimeofday(&pdc_timer_end, 0);
     read_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
     printf("==PDC_SERVER[%d]: read region time: %.4f, %llu bytes\n", pdc_server_rank_g, read_total_sec,
-           read_bytes);
+           total_read_bytes);
     fflush(stdout);
 #endif
 
