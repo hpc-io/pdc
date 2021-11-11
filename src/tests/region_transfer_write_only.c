@@ -119,6 +119,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     // create second object
+    PDCprop_set_obj_dims(obj_prop, 2, dims);
     sprintf(obj_name2, "o2_%d", rank);
     obj2 = PDCobj_create(cont, obj_name2, obj_prop);
     if (obj2 > 0) {
@@ -129,6 +130,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     // create third object
+    PDCprop_set_obj_dims(obj_prop, 3, dims);
     sprintf(obj_name3, "o3_%d", rank);
     obj3 = PDCobj_create(cont, obj_name3, obj_prop);
     if (obj3 > 0) {
@@ -253,6 +255,7 @@ main(int argc, char **argv)
     offset_length[0] = BUF_LEN / 4;
     offset[1]        = 0;
     offset_length[1] = 4;
+
     reg              = PDCregion_create(2, offset, offset_length);
     if (reg > 0) {
         printf("Create an region o1\n");
