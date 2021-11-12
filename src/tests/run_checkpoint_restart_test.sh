@@ -15,6 +15,7 @@ if [ $# -lt 1 ]; then echo "missing test argument" && exit -1 ; fi
 # shift
 # copy the remaining test input arguments (if any)
 test_args="$*"
+rm -rf pdc_data pdc_tmp
 # if [ -x $test_exe ]; then echo "testing: $test_exe"; else echo "test: $test_exe not found or not and executable" && exit -2; fi
 # RUN the actual test(s)
 restart=" "
@@ -26,7 +27,9 @@ do
     sleep 1
     echo "testing: $test_exe"
     $run_cmd $test_exe
+    ret="$?"
     # and shutdown the SERVER before exiting
     $run_cmd ./close_server
     restart="restart"
 done
+exit $ret

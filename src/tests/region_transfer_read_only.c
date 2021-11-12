@@ -48,12 +48,6 @@ main(int argc, char **argv)
     int ret_value = 0;
 
     uint64_t offset[3], offset_length[3];
-    offset[0]        = 0;
-    offset[1]        = 2;
-    offset[2]        = 5;
-    offset_length[0] = BUF_LEN;
-    offset_length[1] = 3;
-    offset_length[2] = 5;
 
     int *data_read = (int *)malloc(sizeof(int) * BUF_LEN);
 
@@ -108,6 +102,9 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 
+
+    offset[0]        = 0;
+    offset_length[0] = BUF_LEN;
     reg        = PDCregion_create(1, offset, offset_length);
     reg_global = PDCregion_create(1, offset, offset_length);
 
@@ -136,6 +133,22 @@ main(int argc, char **argv)
         printf("Fail to region transfer close @ line %d\n", __LINE__);
         ret_value = 1;
     }
+    if (PDCregion_close(reg) < 0) {
+        printf("fail to close local region @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    else {
+        printf("successfully closed local region @ line %d\n", __LINE__);
+    }
+
+    if (PDCregion_close(reg_global) < 0) {
+        printf("fail to close global region @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    else {
+        printf("successfully closed global region @ line %d\n", __LINE__);
+    }
+
     // Read the second object
     offset[0]        = 0;
     offset_length[0] = BUF_LEN / 4;

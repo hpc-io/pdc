@@ -334,10 +334,9 @@ PDC_Server_register_obj_region(pdcid_t obj_id)
     }
     else {
         if (new_obj_reg->fd == -1) {
-            new_obj_reg->fd = open(storage_location, O_RDWR | O_CREAT, 0666);
+            new_obj_reg->fd = open(new_obj_reg->storage_location, O_RDWR | O_CREAT, 0666);
         }
     }
-    printf("Server Open file %s\n", new_obj_reg->storage_location);
 done:
     FUNC_LEAVE(ret_value);
 } // End PDC_Server_register_obj_region
@@ -351,7 +350,6 @@ PDC_Server_unregister_obj_region(pdcid_t obj_id)
     FUNC_ENTER(NULL);
     new_obj_reg = PDC_Server_get_obj_region(obj_id);
     if (new_obj_reg != NULL) {
-        printf("Server Close file %s\n", new_obj_reg->storage_location);
         close(new_obj_reg->fd);
         new_obj_reg->fd = -1;
     }
@@ -4896,9 +4894,9 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
         request_region->data_size = write_size;
         DL_APPEND(region->region_storage_head, request_region);
     }
-    else
+    else {
         free(request_region);
-
+    }
 #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer_end, 0);
     write_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
@@ -4994,8 +4992,8 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                          pread(region->fd, buf + pos, overlap_count[0] * unit,
                                storage_region->offset + (overlap_start[0] - elt->start[0]) * unit)) !=
                     (ssize_t)(overlap_count[0] * unit)) {
-                    printf("storage_region->offset = %" PRIu64 ",  overlap_start[0] = %" PRIu64
-                           ", elt->start[0] = %" PRIu64 ", unit = %zu\n",
+                    printf("addr(storage_region) = %p, storage_region->offset = %" PRIu64 ",  overlap_start[0] = %" PRIu64
+                           ", elt->start[0] = %" PRIu64 ", unit = %zu\n", storage_region,
                            storage_region->offset, overlap_start[0], elt->start[0], unit);
                     printf("==PDC_SERVER[%d]: pread failed to read enough bytes from offset %" PRIu64
                            ", expected = %" PRIu64 ", actual = %zu\n",
@@ -5917,6 +5915,7 @@ PDC_region_has_hits_from_hist(pdc_query_constraint_t *constraint, pdc_histogram_
             value  = (double)constraint->value;
             value2 = (double)constraint->value2;
             break;
+
         case PDC_INT64:
             value  = (double)constraint->value;
             value2 = (double)constraint->value2;

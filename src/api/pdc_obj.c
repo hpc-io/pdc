@@ -642,6 +642,9 @@ PDCprop_set_obj_app_name(pdcid_t obj_prop, char *app_name)
     info = PDC_find_id(obj_prop);
     if (info == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
+    if (((struct _pdc_obj_prop *)(info->obj_ptr))->app_name != NULL) {
+        free(((struct _pdc_obj_prop *)(info->obj_ptr))->app_name);
+    }
     ((struct _pdc_obj_prop *)(info->obj_ptr))->app_name = strdup(app_name);
 
 done:
@@ -678,6 +681,9 @@ PDCprop_set_obj_data_loc(pdcid_t obj_prop, char *loc)
     info = PDC_find_id(obj_prop);
     if (info == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
+    if ( ((struct _pdc_obj_prop *)(info->obj_ptr))->data_loc != NULL ) {
+        free(((struct _pdc_obj_prop *)(info->obj_ptr))->data_loc);
+    }
     ((struct _pdc_obj_prop *)(info->obj_ptr))->data_loc = strdup(loc);
 
 done:
@@ -696,6 +702,9 @@ PDCprop_set_obj_tags(pdcid_t obj_prop, char *tags)
     info = PDC_find_id(obj_prop);
     if (info == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
+    if ( ((struct _pdc_obj_prop *)(info->obj_ptr))->tags != NULL ) {
+        free(((struct _pdc_obj_prop *)(info->obj_ptr))->tags);
+    }
     ((struct _pdc_obj_prop *)(info->obj_ptr))->tags = strdup(tags);
 
 done:
@@ -709,7 +718,6 @@ PDCprop_set_obj_dims(pdcid_t obj_prop, PDC_int_t ndim, uint64_t *dims)
     perr_t                ret_value = SUCCEED;
     struct _pdc_id_info * info;
     struct _pdc_obj_prop *prop;
-    int                   i = 0;
 
     FUNC_ENTER(NULL);
 
@@ -717,11 +725,14 @@ PDCprop_set_obj_dims(pdcid_t obj_prop, PDC_int_t ndim, uint64_t *dims)
     if (info == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
     prop                     = (struct _pdc_obj_prop *)(info->obj_ptr);
-    prop->obj_prop_pub->ndim = ndim;
-    prop->obj_prop_pub->dims = (uint64_t *)malloc(ndim * sizeof(uint64_t));
-
-    for (i = 0; i < ndim; i++)
-        (prop->obj_prop_pub->dims)[i] = dims[i];
+    if (ndim > (PDC_int_t) prop->obj_prop_pub->ndim) {
+        if ( prop->obj_prop_pub->ndim > 0 ) {
+            free(prop->obj_prop_pub->dims);
+        }
+        prop->obj_prop_pub->dims = (uint64_t *)malloc(ndim * sizeof(uint64_t));
+        prop->obj_prop_pub->ndim = ndim;
+    }
+    memcpy(prop->obj_prop_pub->dims, dims, ndim * sizeof(uint64_t));
 
 done:
     fflush(stdout);

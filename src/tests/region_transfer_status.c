@@ -170,6 +170,10 @@ main(int argc, char **argv)
         PDCregion_transfer_status(transfer_request, &completed);
         if (completed == PDC_TRANSFER_STATUS_COMPLETE) {
             break;
+        } else if (completed == PDC_TRANSFER_STATUS_NOT_FOUND) {
+            printf("transfer request status not found @ line %d\n", __LINE__);
+            ret_value = 1;
+            break;
         }
         sleep(0.2);
     }
@@ -208,7 +212,12 @@ main(int argc, char **argv)
         PDCregion_transfer_status(transfer_request, &completed);
         if (completed != PDC_TRANSFER_STATUS_PENDING) {
             break;
+        } else if (completed == PDC_TRANSFER_STATUS_NOT_FOUND) {
+            printf("transfer request status not found @ line %d\n", __LINE__);
+            ret_value = 1;
+            break;
         }
+        sleep(0.2);
     }
 
     PDCregion_transfer_close(transfer_request);
