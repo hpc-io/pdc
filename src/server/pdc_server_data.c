@@ -4997,7 +4997,7 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                     printf("==PDC_SERVER[%d]: pread failed to read enough bytes from offset %" PRIu64
                            ", expected = %" PRIu64
                            ", actual = %zu\n",
-                           pdc_server_rank_g, storage_region->offset + (overlap_start[0] - elt->start[0]) * unit), overlap_count[0] * unit, (size_t)my_read_bytes);
+                           pdc_server_rank_g, storage_region->offset + (overlap_start[0] - elt->start[0]) * unit, overlap_count[0] * unit, (size_t)my_read_bytes);
                 }
                 my_read_bytes = overlap_count[0] * unit;
                 /* printf("storage offset %llu, region offset %llu, read %d bytes\n", storage_region->offset,
