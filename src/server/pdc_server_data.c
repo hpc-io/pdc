@@ -332,7 +332,7 @@ PDC_Server_register_obj_region(pdcid_t obj_id)
         new_obj_reg->storage_location = strdup(storage_location);
         DL_APPEND(dataserver_region_g, new_obj_reg);
     } else {
-        if (new_obj_region->fd < 0) {
+        if (new_obj_reg->fd < 0) {
             new_obj_reg->fd = open(new_obj_reg->storage_location, O_RDWR | O_CREAT, 0666);
             if (new_obj_reg->fd == -1) {
                 printf("==PDC_SERVER[%d]: open %s failed\n", pdc_server_rank_g, storage_location);
@@ -354,10 +354,10 @@ PDC_Server_unregister_obj_region(pdcid_t obj_id)
     FUNC_ENTER(NULL);
     new_obj_reg = PDC_Server_get_obj_region(obj_id);
     if (new_obj_reg != NULL) {
+        printf("Server Closing file %s\n", new_obj_reg->storage_location);
         close(new_obj_reg->fd);
         new_obj_reg->fd = -1;
     }
-    printf("Server Closing file %s\n", new_obj_reg->storage_location);
 
     FUNC_LEAVE(ret_value);
 } // End PDC_Server_unregister_obj_region
@@ -6582,6 +6582,7 @@ compare_coords_3d(const void *a, const void *b)
                 else if ((_lo_op) == PDC_GT && (_hi_op) == PDC_LTE) {                                        \
                     if (edata[iii] > (_lo) && edata[iii] <= (_hi))                                           \
                         is_good = 1;                                                                         \
+
                 }                                                                                            \
                 else if ((_lo_op) == PDC_GTE && (_hi_op) == PDC_LTE) {                                       \
                     if (edata[iii] >= (_lo) && edata[iii] <= (_hi))                                          \
