@@ -331,7 +331,8 @@ PDC_Server_register_obj_region(pdcid_t obj_id)
         }
         new_obj_reg->storage_location = strdup(storage_location);
         DL_APPEND(dataserver_region_g, new_obj_reg);
-    } else {
+    }
+    else {
         if (new_obj_reg->fd < 0) {
             new_obj_reg->fd = open(new_obj_reg->storage_location, O_RDWR | O_CREAT, 0666);
             if (new_obj_reg->fd == -1) {
@@ -8136,8 +8137,8 @@ PDC_recv_read_coords(const struct hg_cb_info *callback_info)
         goto done;
     }
     else {
-        nhits    = bulk_args->cnt;
-        ndim     = bulk_args->ndim;
+        nhits = bulk_args->cnt;
+        ndim  = bulk_args->ndim;
 
         query_id = bulk_args->query_id;
         origin   = bulk_args->origin;
