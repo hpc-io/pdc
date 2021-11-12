@@ -331,8 +331,7 @@ PDC_Server_register_obj_region(pdcid_t obj_id)
         }
         new_obj_reg->storage_location = strdup(storage_location);
         DL_APPEND(dataserver_region_g, new_obj_reg);
-    }
-    else {
+    } else {
         if (new_obj_reg->fd < 0) {
             new_obj_reg->fd = open(new_obj_reg->storage_location, O_RDWR | O_CREAT, 0666);
             if (new_obj_reg->fd == -1) {
@@ -355,10 +354,10 @@ PDC_Server_unregister_obj_region(pdcid_t obj_id)
     FUNC_ENTER(NULL);
     new_obj_reg = PDC_Server_get_obj_region(obj_id);
     if (new_obj_reg != NULL) {
-        printf("Server Closing file %s\n", new_obj_reg->storage_location);
         close(new_obj_reg->fd);
         new_obj_reg->fd = -1;
     }
+    printf("Server Closing file %s\n", new_obj_reg->storage_location);
 
     FUNC_LEAVE(ret_value);
 } // End PDC_Server_unregister_obj_region
@@ -6582,44 +6581,45 @@ compare_coords_3d(const void *a, const void *b)
                 }                                                                                            \
                 else if ((_lo_op) == PDC_GT && (_hi_op) == PDC_LTE) {                                        \
                     if (edata[iii] > (_lo) && edata[iii] <= (_hi))                                           \
-                        is_good = 1;
-}
-else if ((_lo_op) == PDC_GTE && (_hi_op) == PDC_LTE)
-{
-    if (edata[iii] >= (_lo) && edata[iii] <= (_hi))
-        is_good = 1;
-}
-else
-{
-    printf("==PDC_SERVER[%d]: %s - error with range op! \n", pdc_server_rank_g, __func__);
-    ret_value = FAIL;
-    goto done;
-}
-if (is_good != 1) { /* Invalidate the coord by setting it to max value */
-    (_sel)->coords[idx * (_ndim)] = ULLONG_MAX;
-    has_dup++;
-}
-} /* Now get rid of the invalidated elements */
-iii = jjj = 0;
-if (has_dup > 0) {
-    for (idx = 0; idx < (_sel)->nhits; idx++) {
-        while ((_sel)->coords[idx * (_ndim)] == ULLONG_MAX && idx < (_sel)->nhits) {
-            iii++;
-            idx++;
-        }
-        if (idx != jjj && idx < (_sel)->nhits) {
-            memcpy(&(_sel)->coords[jjj * (_ndim)], &(_sel)->coords[idx * (_ndim)],
-                   (_ndim) * sizeof(uint64_t));
-        }
-        jjj++;
-    }
-    if (iii > (_sel)->nhits)
-        printf("==PDC_SERVER[%d]: ERROR! invalidated more elements than total\n", pdc_server_rank_g);
-    else
-        ((_sel)->nhits) -= iii;
-}
-}
-})
+                        is_good = 1;                                                                         \
+                }                                                                                            \
+                else if ((_lo_op) == PDC_GTE && (_hi_op) == PDC_LTE) {                                       \
+                    if (edata[iii] >= (_lo) && edata[iii] <= (_hi))                                          \
+                        is_good = 1;                                                                         \
+                }                                                                                            \
+                else {                                                                                       \
+                    printf("==PDC_SERVER[%d]: %s - error with range op! \n", pdc_server_rank_g, __func__);   \
+                    ret_value = FAIL;                                                                        \
+                    goto done;                                                                               \
+                }                                                                                            \
+                if (is_good != 1) {                                                                          \
+                    /* Invalidate the coord by setting it to max value */                                    \
+                    (_sel)->coords[idx * (_ndim)] = ULLONG_MAX;                                              \
+                    has_dup++;                                                                               \
+                }                                                                                            \
+            }                                                                                                \
+            /* Now get rid of the invalidated elements */                                                    \
+            iii = jjj = 0;                                                                                   \
+            if (has_dup > 0) {                                                                               \
+                for (idx = 0; idx < (_sel)->nhits; idx++) {                                                  \
+                    while ((_sel)->coords[idx * (_ndim)] == ULLONG_MAX && idx < (_sel)->nhits) {             \
+                        iii++;                                                                               \
+                        idx++;                                                                               \
+                    }                                                                                        \
+                    if (idx != jjj && idx < (_sel)->nhits) {                                                 \
+                        memcpy(&(_sel)->coords[jjj * (_ndim)], &(_sel)->coords[idx * (_ndim)],               \
+                               (_ndim) * sizeof(uint64_t));                                                  \
+                    }                                                                                        \
+                    jjj++;                                                                                   \
+                }                                                                                            \
+                if (iii > (_sel)->nhits)                                                                     \
+                    printf("==PDC_SERVER[%d]: ERROR! invalidated more elements than total\n",                \
+                           pdc_server_rank_g);                                                               \
+                else                                                                                         \
+                    ((_sel)->nhits) -= iii;                                                                  \
+            }                                                                                                \
+        }                                                                                                    \
+    })
 
 #ifdef ENABLE_FASTBIT
 void
@@ -8136,8 +8136,8 @@ PDC_recv_read_coords(const struct hg_cb_info *callback_info)
         goto done;
     }
     else {
-        nhits = bulk_args->cnt;
-        ndim  = bulk_args->ndim;
+        nhits    = bulk_args->cnt;
+        ndim     = bulk_args->ndim;
 
         query_id = bulk_args->query_id;
         origin   = bulk_args->origin;
