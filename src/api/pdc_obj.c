@@ -681,7 +681,7 @@ PDCprop_set_obj_data_loc(pdcid_t obj_prop, char *loc)
     info = PDC_find_id(obj_prop);
     if (info == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
-    if ( ((struct _pdc_obj_prop *)(info->obj_ptr))->data_loc != NULL ) {
+    if (((struct _pdc_obj_prop *)(info->obj_ptr))->data_loc != NULL) {
         free(((struct _pdc_obj_prop *)(info->obj_ptr))->data_loc);
     }
     ((struct _pdc_obj_prop *)(info->obj_ptr))->data_loc = strdup(loc);
@@ -702,7 +702,7 @@ PDCprop_set_obj_tags(pdcid_t obj_prop, char *tags)
     info = PDC_find_id(obj_prop);
     if (info == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
-    if ( ((struct _pdc_obj_prop *)(info->obj_ptr))->tags != NULL ) {
+    if (((struct _pdc_obj_prop *)(info->obj_ptr))->tags != NULL) {
         free(((struct _pdc_obj_prop *)(info->obj_ptr))->tags);
     }
     ((struct _pdc_obj_prop *)(info->obj_ptr))->tags = strdup(tags);
@@ -724,9 +724,9 @@ PDCprop_set_obj_dims(pdcid_t obj_prop, PDC_int_t ndim, uint64_t *dims)
     info = PDC_find_id(obj_prop);
     if (info == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
-    prop                     = (struct _pdc_obj_prop *)(info->obj_ptr);
-    if (ndim > (PDC_int_t) prop->obj_prop_pub->ndim) {
-        if ( prop->obj_prop_pub->ndim > 0 ) {
+    prop = (struct _pdc_obj_prop *)(info->obj_ptr);
+    if (ndim > (PDC_int_t)prop->obj_prop_pub->ndim) {
+        if (prop->obj_prop_pub->ndim > 0) {
             free(prop->obj_prop_pub->dims);
         }
         prop->obj_prop_pub->dims = (uint64_t *)malloc(ndim * sizeof(uint64_t));
