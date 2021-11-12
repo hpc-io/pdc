@@ -6970,6 +6970,7 @@ PDC_query_fastbit_idx(region_list_t *region, pdc_query_constraint_t *constraint,
     if (bms)
         free(bms);
     if (keys)
+
         free(keys);
     if (offsets)
         free(offsets);
@@ -8126,8 +8127,8 @@ PDC_recv_read_coords(const struct hg_cb_info *callback_info)
         goto done;
     }
     else {
-        nhits    = bulk_args->cnt;
-        ndim     = bulk_args->ndim;
+        nhits = bulk_args->cnt;
+        ndim  = bulk_args->ndim;
 
         query_id = bulk_args->query_id;
         origin   = bulk_args->origin;
