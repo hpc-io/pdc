@@ -344,7 +344,7 @@ PDC_Server_unregister_obj_region(pdcid_t obj_id)
 
     FUNC_ENTER(NULL);
     new_obj_reg = PDC_Server_get_obj_region(obj_id);
-    if (new_obj_reg == NULL) {
+    if (new_obj_reg != NULL) {
         close(new_obj_reg->fd);
         new_obj_reg->fd = -1;
     }
@@ -8128,6 +8128,7 @@ PDC_recv_read_coords(const struct hg_cb_info *callback_info)
     else {
         nhits    = bulk_args->cnt;
         ndim     = bulk_args->ndim;
+
         query_id = bulk_args->query_id;
         origin   = bulk_args->origin;
         obj_id   = bulk_args->obj_id;

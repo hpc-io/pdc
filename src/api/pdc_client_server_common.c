@@ -4744,13 +4744,13 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
            *((int *)(local_bulk_args->data_buf + sizeof(int))));
 */
 #ifdef PDC_SERVER_CACHE
-    PDC_Server_transfer_request_io(local_bulk_args->in.obj_id, local_bulk_args->in.obj_ndim, obj_dims,
-                                   remote_reg_info, (void *)local_bulk_args->data_buf,
-                                   local_bulk_args->in.remote_unit, 1);
-#else
     PDC_transfer_request_data_write_out(local_bulk_args->in.obj_id, local_bulk_args->in.obj_ndim, obj_dims,
                                         remote_reg_info, (void *)local_bulk_args->data_buf,
                                         local_bulk_args->in.remote_unit);
+#else
+    PDC_Server_transfer_request_io(local_bulk_args->in.obj_id, local_bulk_args->in.obj_ndim, obj_dims,
+                                   remote_reg_info, (void *)local_bulk_args->data_buf,
+                                   local_bulk_args->in.remote_unit, 1);
 #endif
     PDC_finish_request(local_bulk_args->transfer_request_id);
     free(local_bulk_args->data_buf);
