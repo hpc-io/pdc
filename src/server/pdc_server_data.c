@@ -331,7 +331,12 @@ PDC_Server_register_obj_region(pdcid_t obj_id)
         }
         new_obj_reg->storage_location = strdup(storage_location);
         DL_APPEND(dataserver_region_g, new_obj_reg);
+    } else {
+        if (new_obj_reg->fd == -1) {
+            new_obj_reg->fd = open(storage_location, O_RDWR | O_CREAT, 0666);
+        }
     }
+    printf("Server Open file %s\n", new_obj_reg->storage_location);
 done:
     FUNC_LEAVE(ret_value);
 } // End PDC_Server_register_obj_region
@@ -345,6 +350,7 @@ PDC_Server_unregister_obj_region(pdcid_t obj_id)
     FUNC_ENTER(NULL);
     new_obj_reg = PDC_Server_get_obj_region(obj_id);
     if (new_obj_reg != NULL) {
+        printf("Server Close file %s\n", new_obj_reg->storage_location);
         close(new_obj_reg->fd);
         new_obj_reg->fd = -1;
     }
