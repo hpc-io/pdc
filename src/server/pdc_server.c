@@ -526,6 +526,9 @@ PDC_Server_lookup_client_cb(const struct hg_cb_info *callback_info)
     if (client_id >= (uint32_t)pdc_client_num_g) {
         printf("==PDC_SERVER[%d]: invalid input client id %d\n", pdc_server_rank_g, client_id);
         goto done;
+
+
+
     }
     pdc_client_info_g[client_id].addr       = callback_info->info.lookup.addr;
     pdc_client_info_g[client_id].addr_valid = 1;
@@ -779,6 +782,7 @@ drc_access_again:
         all_addr_strings_g[i]                   = &all_addr_strings_1d_g[i * ADDR_MAX];
         pdc_remote_server_info_g[i].addr_string = &all_addr_strings_1d_g[i * ADDR_MAX];
     }
+
 #else
     strcpy(all_addr_strings_1d_g, self_addr_string);
     all_addr_strings_g[0] = all_addr_strings_1d_g;
@@ -1035,21 +1039,9 @@ PDC_Server_finalize()
     hg_thread_mutex_destroy(&addr_valid_mutex_g);
     hg_thread_mutex_destroy(&update_remote_server_addr_mutex_g);
 #endif
-    // PDC cache finalize
-
+    PDC_Server_clear_obj_region();
     pthread_mutex_destroy(&transfer_request_status_mutex);
     pthread_mutex_destroy(&transfer_request_id_mutex);
-#ifdef PDC_SERVER_CACHE
-    pthread_mutex_lock(&pdc_cache_mutex);
-    pdc_recycle_close_flag = 1;
-    pthread_mutex_unlock(&pdc_cache_mutex);
-    pthread_join(pdc_recycle_thread, NULL);
-    pthread_mutex_destroy(&pdc_cache_mutex);
-
-    PDC_region_cache_flush_all();
-    pthread_mutex_destroy(&pdc_obj_cache_list_mutex);
-#endif
-    PDC_Server_clear_obj_region();
 
     if (pdc_server_rank_g == 0)
         PDC_Server_rm_config_file();
@@ -1512,6 +1504,8 @@ PDC_Server_restart(char *filename)
             }
             data_server_region_t *new_obj_reg =
                 (data_server_region_t *)calloc(1, sizeof(struct data_server_region_t));
+            new_obj_reg->fd = -1;
+            new_obj_reg->storage_location = (char*) malloc(sizeof(char) * ADDR_MAX);
             DL_APPEND(dataserver_region_g, new_obj_reg);
             new_obj_reg->obj_id = (metadata + i)->obj_id;
             for (j = 0; j < n_region; j++) {
@@ -2038,6 +2032,17 @@ main(int argc, char *argv[])
 #endif
 
     // Exit from the loop, start finalize process
+    // PDC cache finalize, has to be done here in case of checkpoint for region data earlier.
+#ifdef PDC_SERVER_CACHE
+    pthread_mutex_lock(&pdc_cache_mutex);
+    pdc_recycle_close_flag = 1;
+    pthread_mutex_unlock(&pdc_cache_mutex);
+    pthread_join(pdc_recycle_thread, NULL);
+    pthread_mutex_destroy(&pdc_cache_mutex);
+    PDC_region_cache_flush_all();
+    pthread_mutex_destroy(&pdc_obj_cache_list_mutex);
+#endif
+
 #ifndef DISABLE_CHECKPOINT
     char *tmp_env_char = getenv("PDC_DISABLE_CHECKPOINT");
     if (tmp_env_char != NULL && strcmp(tmp_env_char, "TRUE") == 0) {

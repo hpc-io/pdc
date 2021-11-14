@@ -78,6 +78,48 @@ char     pdc_cache_file_path_g[ADDR_MAX];
 query_task_t *          query_task_list_head_g      = NULL;
 cache_storage_region_t *cache_storage_region_head_g = NULL;
 
+static int fill_storage_path(char *storage_location, pdcid_t obj_id) {
+#ifdef ENABLE_LUSTRE
+    int stripe_count, stripe_size;
+#endif
+    // Generate a location for data storage for data server to write
+    char *data_path                = NULL;
+    char *user_specified_data_path = getenv("PDC_DATA_LOC");
+
+    if (user_specified_data_path != NULL)
+        data_path = user_specified_data_path;
+    else {
+        data_path = getenv("SCRATCH");
+        if (data_path == NULL)
+            data_path = ".";
+    }
+    // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
+    snprintf(storage_location, ADDR_MAX, "%s/pdc_data/%" PRIu64 "/server%d/s%04d.bin", data_path, obj_id,
+             pdc_server_rank_g, pdc_server_rank_g);
+    PDC_mkdir(storage_location);
+
+#ifdef ENABLE_LUSTRE
+    if (pdc_nost_per_file_g != 1)
+        stripe_count = lustre_total_ost_g / pdc_server_size_g;
+    else
+        stripe_count = pdc_nost_per_file_g;
+    stripe_size = 16; // MB
+    PDC_Server_set_lustre_stripe(storage_location, stripe_count, stripe_size);
+
+    if (is_debug_g == 1 && pdc_server_rank_g == 0) {
+        printf("storage_location is %s\n", storage_location);
+    }
+#endif
+    return 0;
+}
+
+static int
+server_open_storage(char *storage_location, pdcid_t obj_id)
+{
+    fill_storage_path(storage_location, obj_id);
+    return open(storage_location, O_RDWR | O_CREAT, 0666);
+}
+
 perr_t
 PDC_Server_set_lustre_stripe(const char *path, int stripe_count, int stripe_size_MB)
 {
@@ -280,8 +322,6 @@ PDC_Server_register_obj_region(pdcid_t obj_id)
 {
     perr_t                ret_value = SUCCEED;
     data_server_region_t *new_obj_reg;
-    char *                user_specified_data_path, *data_path;
-    char                  storage_location[ADDR_MAX];
 
     FUNC_ENTER(NULL);
     new_obj_reg = PDC_Server_get_obj_region(obj_id);
@@ -295,46 +335,24 @@ PDC_Server_register_obj_region(pdcid_t obj_id)
         new_obj_reg->region_buf_map_head      = NULL;
         new_obj_reg->region_lock_request_head = NULL;
         new_obj_reg->region_storage_head      = NULL;
+        new_obj_reg->storage_location         = (char*) malloc(sizeof(char) * ADDR_MAX);
 
-        user_specified_data_path = getenv("PDC_DATA_LOC");
-        if (user_specified_data_path != NULL)
-            data_path = user_specified_data_path;
-        else {
-            data_path = getenv("SCRATCH");
-            if (data_path == NULL)
-                data_path = ".";
-        }
 
-        // new_obj_reg->fd = server_open_storage(storage_location, obj_id);
-        // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
-        snprintf(storage_location, ADDR_MAX, "%.200s/pdc_data/%" PRIu64 "/server%d/s%04d.bin", data_path,
-                 obj_id, pdc_server_rank_g, pdc_server_rank_g);
-        PDC_mkdir(storage_location);
-
-#ifdef ENABLE_LUSTRE
-        int stripe_count, stripe_size;
-        if (pdc_nost_per_file_g != 1)
-            stripe_count = lustre_total_ost_g / pdc_server_size_g;
-        else
-            stripe_count = pdc_nost_per_file_g;
-        stripe_size = lustre_stripe_size_mb_g;
-        PDC_Server_set_lustre_stripe(storage_location, stripe_count, stripe_size);
-
-        if (is_debug_g == 1 && pdc_server_rank_g == 0) {
-            printf("storage_location is %s\n", storage_location);
-        }
-#endif
-        new_obj_reg->fd = open(storage_location, O_RDWR | O_CREAT, 0666);
-        if (new_obj_reg->fd == -1) {
-            printf("==PDC_SERVER[%d]: open %s failed\n", pdc_server_rank_g, storage_location);
+        new_obj_reg->fd = server_open_storage(new_obj_reg->storage_location, obj_id);
+        if ( new_obj_reg->fd < 0 ) {
             goto done;
         }
-        new_obj_reg->storage_location = strdup(storage_location);
         DL_APPEND(dataserver_region_g, new_obj_reg);
     }
     else {
         if (new_obj_reg->fd == -1) {
+            fill_storage_path(new_obj_reg->storage_location, obj_id);
+        }
+        if (new_obj_reg->fd < 0) {
             new_obj_reg->fd = open(new_obj_reg->storage_location, O_RDWR | O_CREAT, 0666);
+            if ( new_obj_reg->fd < 0 ) {
+                goto done;
+            }
         }
     }
 done:
@@ -351,7 +369,7 @@ PDC_Server_unregister_obj_region(pdcid_t obj_id)
     new_obj_reg = PDC_Server_get_obj_region(obj_id);
     if (new_obj_reg != NULL) {
         close(new_obj_reg->fd);
-        new_obj_reg->fd = -1;
+        new_obj_reg->fd = -2;
     }
 
     FUNC_LEAVE(ret_value);
@@ -744,6 +762,7 @@ PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
             }
 #ifndef ENABLE_WAIT_DATA
             // timeout, append the global list for unmap
+
             else {
                 data_server_region_unmap_t *region = NULL;
                 region = (data_server_region_unmap_t *)malloc(sizeof(struct data_server_region_unmap_t));
@@ -1082,43 +1101,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-static int
-server_open_storage(char *storage_location, pdcid_t obj_id)
-{
-
-#ifdef ENABLE_LUSTRE
-    int stripe_count, stripe_size;
-#endif
-    // Generate a location for data storage for data server to write
-    char *data_path                = NULL;
-    char *user_specified_data_path = getenv("PDC_DATA_LOC");
-
-    if (user_specified_data_path != NULL)
-        data_path = user_specified_data_path;
-    else {
-        data_path = getenv("SCRATCH");
-        if (data_path == NULL)
-            data_path = ".";
-    }
-    // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
-    snprintf(storage_location, ADDR_MAX, "%s/pdc_data/%" PRIu64 "/server%d/s%04d.bin", data_path, obj_id,
-             pdc_server_rank_g, pdc_server_rank_g);
-    PDC_mkdir(storage_location);
-
-#ifdef ENABLE_LUSTRE
-    if (pdc_nost_per_file_g != 1)
-        stripe_count = lustre_total_ost_g / pdc_server_size_g;
-    else
-        stripe_count = pdc_nost_per_file_g;
-    stripe_size = 16; // MB
-    PDC_Server_set_lustre_stripe(storage_location, stripe_count, stripe_size);
-
-    if (is_debug_g == 1 && pdc_server_rank_g == 0) {
-        printf("storage_location is %s\n", storage_location);
-    }
-#endif
-    return open(storage_location, O_RDWR | O_CREAT, 0666);
-}
 /*
  * This is a light-weighted buf map. We are creating the file descriptor for writing an object.
  * data_server_region_t is used here for storage_location and fd only.
@@ -2105,6 +2087,7 @@ done:
         free(args->buf_sizes);
         free(args->buf_ptrs);
         free(args);
+
     }
 
     HG_Free_output(handle, &output);
@@ -4955,7 +4938,6 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
     DL_FOREACH(region->region_storage_head, elt)
     {
         // flag = 0;
-
         if (PDC_is_contiguous_region_overlap(elt, &request_region) == 1) {
             storage_region = elt;
             // flag = 1;
@@ -4992,9 +4974,9 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                          pread(region->fd, buf + pos, overlap_count[0] * unit,
                                storage_region->offset + (overlap_start[0] - elt->start[0]) * unit)) !=
                     (ssize_t)(overlap_count[0] * unit)) {
-                    printf("addr(storage_region) = %p, storage_region->offset = %" PRIu64
+                    printf("fd = %d, addr(storage_region) = %p, storage_region->offset = %" PRIu64
                            ",  overlap_start[0] = %" PRIu64 ", elt->start[0] = %" PRIu64 ", unit = %zu\n",
-                           storage_region, storage_region->offset, overlap_start[0], elt->start[0], unit);
+                           (int) region->fd, storage_region, storage_region->offset, overlap_start[0], elt->start[0], unit);
                     printf("==PDC_SERVER[%d]: pread failed to read enough bytes from offset %" PRIu64
                            ", expected = %" PRIu64 ", actual = %zu\n",
                            pdc_server_rank_g,
@@ -5002,9 +4984,6 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                            overlap_count[0] * unit, (size_t)my_read_bytes);
                 }
                 my_read_bytes = overlap_count[0] * unit;
-                /* printf("storage offset %llu, region offset %llu, read %d bytes\n", storage_region->offset,
-
-                 * overlap_count[0]*unit, read_bytes); */
             }
             else if (region_info->ndim == 2) {
                 void *tmp_buf = malloc(storage_region->data_size);
@@ -7579,6 +7558,7 @@ attach_sel_to_query(pdc_query_t *query, void *sel)
 
 perr_t
 attach_local_storage_region_to_query(pdc_query_t *query)
+
 {
     pdc_metadata_t *meta;
 
@@ -9269,6 +9249,7 @@ PDC_Server_recv_get_sel_data(const struct hg_cb_info *callback_info)
     query_task_t *         task_elt, *task = NULL;
     pdc_metadata_t *       meta;
     struct hg_cb_info      fake_callback_info;
+
 
     DL_FOREACH(query_task_list_head_g, task_elt)
     {

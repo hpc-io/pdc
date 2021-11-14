@@ -114,8 +114,8 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     // create second object
-    dims[0] = BUF_LEN / 2;
-    dims[1] = 2;
+    dims[0] = BUF_LEN / 4;
+    dims[1] = 4;
     PDCprop_set_obj_dims(obj_prop, 2, dims);
     sprintf(obj_name2, "o2_%d", rank);
     obj2 = PDCobj_create(cont, obj_name2, obj_prop);

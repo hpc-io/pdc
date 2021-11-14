@@ -59,7 +59,6 @@ main(int argc, char **argv)
 
     int *data      = (int *)malloc(sizeof(int) * BUF_LEN);
     int *data_read = (int *)malloc(sizeof(int) * BUF_LEN);
-    int *obj_data  = (int *)calloc(BUF_LEN, sizeof(int));
     dims[0]        = BUF_LEN;
 
 #ifdef ENABLE_MPI
@@ -105,7 +104,6 @@ main(int argc, char **argv)
         printf("Fail to set obj type @ line %d\n", __LINE__);
         ret_value = 1;
     }
-    PDCprop_set_obj_buf(obj_prop, obj_data);
     PDCprop_set_obj_dims(obj_prop, 1, dims);
     PDCprop_set_obj_user_id(obj_prop, getuid());
     PDCprop_set_obj_time_step(obj_prop, 0);
@@ -339,7 +337,6 @@ main(int argc, char **argv)
     }
     free(data);
     free(data_read);
-    free(obj_data);
     // close pdc
     if (PDCclose(pdc) < 0) {
         printf("fail to close PDC @ line  %d!\n", __LINE__);

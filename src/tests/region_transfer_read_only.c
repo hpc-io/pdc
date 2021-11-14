@@ -64,7 +64,7 @@ main(int argc, char **argv)
     sprintf(cont_name, "c%d", rank);
     cont = PDCcont_open(cont_name, pdc);
     if (cont > 0) {
-        printf("Create a container c1\n");
+        printf("Open a container c1\n");
     }
     else {
         printf("Fail to create container @ line  %d!\n", __LINE__);
@@ -75,7 +75,7 @@ main(int argc, char **argv)
     sprintf(obj_name1, "o1_%d", rank);
     obj1 = PDCobj_open(obj_name1, pdc);
     if (obj1 > 0) {
-        printf("Create an object o1\n");
+        printf("Open an object o1\n");
     }
     else {
         printf("Fail to create object @ line  %d!\n", __LINE__);
@@ -85,7 +85,7 @@ main(int argc, char **argv)
     sprintf(obj_name2, "o2_%d", rank);
     obj2 = PDCobj_open(obj_name2, pdc);
     if (obj2 > 0) {
-        printf("Create an object o2\n");
+        printf("Open an object o2\n");
     }
     else {
         printf("Fail to create object @ line  %d!\n", __LINE__);
@@ -95,7 +95,7 @@ main(int argc, char **argv)
     sprintf(obj_name3, "o3_%d", rank);
     obj3 = PDCobj_open(obj_name3, pdc);
     if (obj3 > 0) {
-        printf("Create an object o3\n");
+        printf("Open an object o3\n");
     }
     else {
         printf("Fail to create object @ line  %d!\n", __LINE__);

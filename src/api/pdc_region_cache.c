@@ -475,6 +475,10 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
     if (flag) {
         PDC_region_cache_register(obj_id, obj_ndim, obj_dims, buf, write_size, region_info->offset,
                                   region_info->size, region_info->ndim, unit);
+/*
+        PDC_Server_transfer_request_io(obj_id, obj_ndim, obj_dims, region_info,
+                                       buf, unit, 1);
+*/
     }
     // PDC_Server_data_write_out2(obj_id, region_info, buf, unit);
 
