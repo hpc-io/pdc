@@ -59,17 +59,18 @@ done:
 pdcid_t
 PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id)
 {
+#if 0
     uint64_t               meta_id;
-    pdcid_t                ret_value = 0;
     struct _pdc_cont_info *cont_info;
     struct _pdc_obj_prop * obj_prop;
     struct _pdc_obj_info * p       = NULL;
     struct _pdc_id_info *  id_info = NULL;
     perr_t                 ret;
     size_t                 i;
-
+#endif
+    pdcid_t                ret_value = 0;
     FUNC_ENTER(NULL);
-
+#if 0
     p = PDC_MALLOC(struct _pdc_obj_info);
     if (!p)
         PGOTO_ERROR(0, "PDC object memory allocation failed");
@@ -168,7 +169,8 @@ PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id)
     // PDC_Client_attach_metadata_to_local_obj((char *)obj_name, p->meta_id, p->cont->meta_id, p);
 
     ret_value = p->obj_info_pub->local_id;
-
+#endif
+    ret_value = PDC_obj_create(cont_id, obj_name, obj_prop_id, PDC_OBJ_GLOBAL);
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);

@@ -156,12 +156,6 @@ main(int argc, char **argv)
     }
 
     transfer_request = PDCregion_transfer_create(data, PDC_WRITE, obj1, reg, reg_global);
-    PDCregion_transfer_status(transfer_request, &completed);
-    if (completed != PDC_TRANSFER_STATUS_NOT_FOUND) {
-        printf("Wrong transfer request status @ line %d\n", __LINE__);
-        ret_value = 1;
-    }
-
     PDCregion_transfer_start(transfer_request);
 
     while (1) {
@@ -178,7 +172,7 @@ main(int argc, char **argv)
     }
     PDCregion_transfer_status(transfer_request, &completed);
     if (completed != PDC_TRANSFER_STATUS_NOT_FOUND) {
-        printf("Wrong transfer request status @ line %d\n", __LINE__);
+        printf("transfer request status wrong value @ line %d\n", __LINE__);
         ret_value = 1;
     }
 
@@ -218,6 +212,12 @@ main(int argc, char **argv)
             break;
         }
         sleep(0.2);
+    }
+
+    PDCregion_transfer_status(transfer_request, &completed);
+    if (completed != PDC_TRANSFER_STATUS_NOT_FOUND) {
+        printf("transfer request status wrong value @ line %d\n", __LINE__);
+        ret_value = 1;
     }
 
     PDCregion_transfer_close(transfer_request);

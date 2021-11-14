@@ -48,6 +48,8 @@ main(int argc, char **argv)
     pdc_var_type_t var_type  = PDC_UNKNOWN;
     size_t         type_size = 1;
 
+    pdcid_t transfer_request;
+
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -136,11 +138,9 @@ main(int argc, char **argv)
     my_data_size = size_B / size;
     printf("my_data_size at rank %d is %llu\n", rank, (long long unsigned)my_data_size);
 
-    obj_data = (char *)malloc(my_data_size * type_size);
     mydata   = (char *)malloc(my_data_size * type_size);
 
     PDCprop_set_obj_type(obj_prop, var_type);
-    PDCprop_set_obj_buf(obj_prop, obj_data);
     PDCprop_set_obj_dims(obj_prop, 1, dims);
     PDCprop_set_obj_user_id(obj_prop, getuid());
     PDCprop_set_obj_time_step(obj_prop, 0);
@@ -173,32 +173,32 @@ main(int argc, char **argv)
             mydata[i * type_size + j] = i;
         }
     }
-    ret = PDCbuf_obj_map(mydata, var_type, local_region, global_obj, global_region);
-    if (ret != SUCCEED) {
-        printf("PDCbuf_obj_map failed\n");
+    transfer_request = PDCregion_transfer_create(mydata, PDC_WRITE, global_obj, local_region, global_region);
+    if (transfer_request == 0) {
+        printf("PDCregion_transfer_create failed\n");
         ret_value = 1;
     }
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     gettimeofday(&pdc_timer_start, 0);
-    ret = PDCreg_obtain_lock(global_obj, global_region, PDC_WRITE, PDC_BLOCK);
+    ret = PDCregion_transfer_start(transfer_request);
     if (ret != SUCCEED) {
-        printf("Failed to obtain lock for region\n");
+        printf("Failed to region_transfer_start for region\n");
         ret_value = 1;
         goto done;
     }
 
-    ret = PDCreg_release_lock(global_obj, global_region, PDC_WRITE);
+    ret = PDCregion_transfer_wait(transfer_request);
     if (ret != SUCCEED) {
-        printf("Failed to release lock for region\n");
+        printf("Failed to region_transfer_wait for region\n");
         ret_value = 1;
         goto done;
     }
 
-    ret = PDCbuf_obj_unmap(global_obj, global_region);
+    ret = PDCregion_transfer_close(transfer_request);
     if (ret != SUCCEED) {
-        printf("PDCbuf_obj_unmap failed\n");
+        printf("PDCregion_transfer_close failed\n");
         ret_value = 1;
     }
 
@@ -239,7 +239,6 @@ done:
         printf("fail to close PDC\n");
         ret_value = 1;
     }
-    free(obj_data);
     free(mydata);
     free(offset);
     free(local_offset);

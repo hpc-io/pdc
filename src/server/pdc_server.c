@@ -526,6 +526,7 @@ PDC_Server_lookup_client_cb(const struct hg_cb_info *callback_info)
     if (client_id >= (uint32_t)pdc_client_num_g) {
         printf("==PDC_SERVER[%d]: invalid input client id %d\n", pdc_server_rank_g, client_id);
         goto done;
+
     }
     pdc_client_info_g[client_id].addr       = callback_info->info.lookup.addr;
     pdc_client_info_g[client_id].addr_valid = 1;
@@ -872,7 +873,7 @@ drc_access_again:
     transfer_request_status_list = NULL;
     pthread_mutex_init(&transfer_request_status_mutex, NULL);
     pthread_mutex_init(&transfer_request_id_mutex, NULL);
-    transfer_request_id_g = 0;
+    transfer_request_id_g = 1;
 #ifdef PDC_SERVER_CACHE
 
     pdc_recycle_close_flag = 0;
