@@ -78,7 +78,9 @@ char     pdc_cache_file_path_g[ADDR_MAX];
 query_task_t *          query_task_list_head_g      = NULL;
 cache_storage_region_t *cache_storage_region_head_g = NULL;
 
-static int fill_storage_path(char *storage_location, pdcid_t obj_id) {
+static int
+fill_storage_path(char *storage_location, pdcid_t obj_id)
+{
 #ifdef ENABLE_LUSTRE
     int stripe_count, stripe_size;
 #endif
@@ -335,11 +337,10 @@ PDC_Server_register_obj_region(pdcid_t obj_id)
         new_obj_reg->region_buf_map_head      = NULL;
         new_obj_reg->region_lock_request_head = NULL;
         new_obj_reg->region_storage_head      = NULL;
-        new_obj_reg->storage_location         = (char*) malloc(sizeof(char) * ADDR_MAX);
-
+        new_obj_reg->storage_location         = (char *)malloc(sizeof(char) * ADDR_MAX);
 
         new_obj_reg->fd = server_open_storage(new_obj_reg->storage_location, obj_id);
-        if ( new_obj_reg->fd < 0 ) {
+        if (new_obj_reg->fd < 0) {
             goto done;
         }
         DL_APPEND(dataserver_region_g, new_obj_reg);
@@ -350,7 +351,7 @@ PDC_Server_register_obj_region(pdcid_t obj_id)
         }
         if (new_obj_reg->fd < 0) {
             new_obj_reg->fd = open(new_obj_reg->storage_location, O_RDWR | O_CREAT, 0666);
-            if ( new_obj_reg->fd < 0 ) {
+            if (new_obj_reg->fd < 0) {
                 goto done;
             }
         }
@@ -2087,7 +2088,6 @@ done:
         free(args->buf_sizes);
         free(args->buf_ptrs);
         free(args);
-
     }
 
     HG_Free_output(handle, &output);
@@ -4976,7 +4976,8 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                     (ssize_t)(overlap_count[0] * unit)) {
                     printf("fd = %d, addr(storage_region) = %p, storage_region->offset = %" PRIu64
                            ",  overlap_start[0] = %" PRIu64 ", elt->start[0] = %" PRIu64 ", unit = %zu\n",
-                           (int) region->fd, storage_region, storage_region->offset, overlap_start[0], elt->start[0], unit);
+                           (int)region->fd, storage_region, storage_region->offset, overlap_start[0],
+                           elt->start[0], unit);
                     printf("==PDC_SERVER[%d]: pread failed to read enough bytes from offset %" PRIu64
                            ", expected = %" PRIu64 ", actual = %zu\n",
                            pdc_server_rank_g,
@@ -9249,7 +9250,6 @@ PDC_Server_recv_get_sel_data(const struct hg_cb_info *callback_info)
     query_task_t *         task_elt, *task = NULL;
     pdc_metadata_t *       meta;
     struct hg_cb_info      fake_callback_info;
-
 
     DL_FOREACH(query_task_list_head_g, task_elt)
     {

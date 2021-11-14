@@ -58,7 +58,7 @@ main(int argc, char **argv)
     offset_length[2] = 5;
 
     int *data      = (int *)malloc(sizeof(int) * BUF_LEN);
-    int *data_read      = (int *)malloc(sizeof(int) * BUF_LEN);
+    int *data_read = (int *)malloc(sizeof(int) * BUF_LEN);
     dims[0]        = BUF_LEN / 4;
     dims[1]        = 4;
 

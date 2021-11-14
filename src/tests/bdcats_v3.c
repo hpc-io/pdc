@@ -69,7 +69,8 @@ main(int argc, char **argv)
     uint64_t *     offset_remote;
     uint64_t *     mysize;
 
-    pdcid_t transfer_request_x, transfer_request_y, transfer_request_z, transfer_request_px, transfer_request_py, transfer_request_pz, transfer_request_id1, transfer_request_id2;
+    pdcid_t transfer_request_x, transfer_request_y, transfer_request_z, transfer_request_px,
+        transfer_request_py, transfer_request_pz, transfer_request_id1, transfer_request_id2;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);

@@ -178,10 +178,10 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
     p->obj_id      = obj2->obj_info_pub->meta_id;
     p->access_type = access_type;
     p->buf         = buf;
-/*
-    printf("creating a request from obj %s metadata id = %llu, access_type = %d\n", obj2->obj_info_pub->name,
-           (long long unsigned)obj2->obj_info_pub->meta_id, access_type);
-*/
+    /*
+        printf("creating a request from obj %s metadata id = %llu, access_type = %d\n",
+       obj2->obj_info_pub->name, (long long unsigned)obj2->obj_info_pub->meta_id, access_type);
+    */
     p->local_region_ndim   = reg1->ndim;
     p->local_region_offset = (uint64_t *)malloc(
         sizeof(uint64_t) * (reg1->ndim * 2 + reg2->ndim * 2 + obj2->obj_pt->obj_prop_pub->ndim));

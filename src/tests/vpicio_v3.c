@@ -80,7 +80,8 @@ main(int argc, char **argv)
     uint64_t *     offset_remote;
     uint64_t *     mysize;
 
-    pdcid_t transfer_request_x, transfer_request_y, transfer_request_z, transfer_request_px, transfer_request_py, transfer_request_pz, transfer_request_id1, transfer_request_id2;
+    pdcid_t transfer_request_x, transfer_request_y, transfer_request_z, transfer_request_px,
+        transfer_request_py, transfer_request_pz, transfer_request_id1, transfer_request_id2;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -228,7 +229,6 @@ main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     gettimeofday(&ht_total_start, 0);
-
 
     transfer_request_x = PDCregion_transfer_create(&x[0], PDC_WRITE, obj_xx, region_x, region_xx);
     if (transfer_request_x == 0) {
