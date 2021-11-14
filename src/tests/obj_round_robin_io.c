@@ -106,9 +106,9 @@ main(int argc, char **argv)
         my_data_size *= dims[i];
     }
 
-    mydata   = (char *)malloc(my_data_size * type_size);
+    mydata = (char *)malloc(my_data_size * type_size);
 
-    offset    = (uint64_t *)malloc(sizeof(uint64_t)*ndim);
+    offset    = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
     mysize    = (uint64_t *)malloc(sizeof(uint64_t));
     offset[0] = 0;
     offset[1] = 0;
@@ -149,7 +149,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 
-    ret     = PDCprop_set_obj_dims(obj_prop, ndim, dims);
+    ret = PDCprop_set_obj_dims(obj_prop, ndim, dims);
     if (ret != SUCCEED) {
         printf("Fail to set obj time step @ line %d\n", __LINE__);
         ret_value = 1;
@@ -341,8 +341,8 @@ main(int argc, char **argv)
 
         for (j = 0; j < (int)(my_data_size * type_size); ++j) {
             if (data_read[j] != (char)(j + target_rank * 5 + 3)) {
-                printf("rank %d, i = %d, j = %d, wrong value %d!=%d %d\n",
-                       rank, i, j, data_read[j], (char)(j + target_rank * 5 + 3), __LINE__);
+                printf("rank %d, i = %d, j = %d, wrong value %d!=%d %d\n", rank, i, j, data_read[j],
+                       (char)(j + target_rank * 5 + 3), __LINE__);
                 ret_value = 1;
                 break;
             }

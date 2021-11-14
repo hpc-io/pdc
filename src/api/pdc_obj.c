@@ -68,7 +68,7 @@ PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id)
     perr_t                 ret;
     size_t                 i;
 #endif
-    pdcid_t                ret_value = 0;
+    pdcid_t ret_value = 0;
     FUNC_ENTER(NULL);
 #if 0
     p = PDC_MALLOC(struct _pdc_obj_info);

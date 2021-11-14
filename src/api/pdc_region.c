@@ -209,13 +209,12 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
 
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-/*
-        printf("rank = %d transfer request create check obj ndim %d, dims [%lld, %lld, %lld], local_offset[0] = %lld, "
-               "reg1->offset[0] = %lld\n", rank,
-               (int)p->obj_ndim, (long long int)p->obj_dims[0], (long long int)p->obj_dims[1],
-               (long long int)p->obj_dims[2], (long long int)p->local_region_offset[0],
-               (long long int)reg1->offset[0]);
-*/
+    /*
+            printf("rank = %d transfer request create check obj ndim %d, dims [%lld, %lld, %lld],
+       local_offset[0] = %lld, " "reg1->offset[0] = %lld\n", rank, (int)p->obj_ndim, (long long
+       int)p->obj_dims[0], (long long int)p->obj_dims[1], (long long int)p->obj_dims[2], (long long
+       int)p->local_region_offset[0], (long long int)reg1->offset[0]);
+    */
     ret_value = PDC_id_register(PDC_TRANSFER_REQUEST, p);
 
 done:
@@ -256,7 +255,7 @@ PDCregion_transfer_start(pdcid_t transfer_request_id)
 
     transferinfo     = PDC_find_id(transfer_request_id);
     transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
-    if ( transfer_request->metadata_id == 0 ) {
+    if (transfer_request->metadata_id == 0) {
         ret_value = PDC_Client_transfer_request(
             transfer_request->buf, transfer_request->obj_id, transfer_request->obj_ndim,
             transfer_request->obj_dims, transfer_request->local_region_ndim,
@@ -264,8 +263,10 @@ PDCregion_transfer_start(pdcid_t transfer_request_id)
             transfer_request->remote_region_ndim, transfer_request->remote_region_offset,
             transfer_request->remote_region_size, transfer_request->mem_type, transfer_request->access_type,
             &(transfer_request->metadata_id));
-    } else {
-        printf("PDC Client PDCregion_transfer_start attempt to start existing transfer request @ line %d\n", __LINE__);
+    }
+    else {
+        printf("PDC Client PDCregion_transfer_start attempt to start existing transfer request @ line %d\n",
+               __LINE__);
         ret_value = FAIL;
     }
     fflush(stdout);
@@ -283,12 +284,13 @@ PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *co
 
     transferinfo     = PDC_find_id(transfer_request_id);
     transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
-    if ( transfer_request->metadata_id != 0 ) {
-        ret_value        = PDC_Client_transfer_request_status(transfer_request->metadata_id, completed);
+    if (transfer_request->metadata_id != 0) {
+        ret_value = PDC_Client_transfer_request_status(transfer_request->metadata_id, completed);
         if (*completed != PDC_TRANSFER_STATUS_PENDING) {
             transfer_request->metadata_id = 0;
         }
-    } else {
+    }
+    else {
         *completed = PDC_TRANSFER_STATUS_NOT_FOUND;
     }
     fflush(stdout);
@@ -306,11 +308,14 @@ PDCregion_transfer_wait(pdcid_t transfer_request_id)
 
     transferinfo     = PDC_find_id(transfer_request_id);
     transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
-    if ( transfer_request->metadata_id != 0 ) {
-        ret_value = PDC_Client_transfer_request_wait(transfer_request->metadata_id);
+    if (transfer_request->metadata_id != 0) {
+        ret_value                     = PDC_Client_transfer_request_wait(transfer_request->metadata_id);
         transfer_request->metadata_id = 0;
-    } else {
-        printf("PDC Client PDCregion_transfer_status attempt to check status for inactive transfer request @ line %d\n", __LINE__);
+    }
+    else {
+        printf("PDC Client PDCregion_transfer_status attempt to check status for inactive transfer request @ "
+               "line %d\n",
+               __LINE__);
         ret_value = FAIL;
     }
     fflush(stdout);

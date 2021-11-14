@@ -6895,7 +6895,7 @@ PDCobj_put_data(const char *obj_name, void *data, uint64_t size, pdcid_t cont_id
     // pdc_metadata_t *meta;
     struct _pdc_cont_info *info    = NULL;
     struct _pdc_id_info *  id_info = NULL;
-    pdcid_t transfer_request;
+    pdcid_t                transfer_request;
 
     FUNC_ENTER(NULL);
 
@@ -6919,25 +6919,25 @@ PDCobj_put_data(const char *obj_name, void *data, uint64_t size, pdcid_t cont_id
 
     transfer_request = PDCregion_transfer_create(data, PDC_WRITE, obj_id, obj_region, obj_region);
     if (transfer_request == 0) {
-        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with region transfer create for obj [%s]", pdc_client_mpi_rank_g,
-                    obj_name);
+        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with region transfer create for obj [%s]",
+                    pdc_client_mpi_rank_g, obj_name);
     }
 
     ret = PDCregion_transfer_start(transfer_request);
     if (ret != SUCCEED) {
-        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with region transfer start for obj [%s]", pdc_client_mpi_rank_g,
-                    obj_name);
+        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with region transfer start for obj [%s]",
+                    pdc_client_mpi_rank_g, obj_name);
     }
     ret = PDCregion_transfer_wait(transfer_request);
     if (ret != SUCCEED) {
-        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with region transfer wait for obj [%s]", pdc_client_mpi_rank_g,
-                    obj_name);
+        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with region transfer wait for obj [%s]",
+                    pdc_client_mpi_rank_g, obj_name);
     }
 
     ret = PDCregion_transfer_close(transfer_request);
     if (ret != SUCCEED) {
-        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with region transfer close for obj [%s]", pdc_client_mpi_rank_g,
-                    obj_name);
+        PGOTO_ERROR(0, "==PDC_CLIENT[%d]: Error with region transfer close for obj [%s]",
+                    pdc_client_mpi_rank_g, obj_name);
     }
 
     ret = PDCregion_close(obj_region);
@@ -6964,9 +6964,9 @@ PDCobj_get_data(pdcid_t obj_id, void *data, uint64_t size)
     perr_t   ret_value = SUCCEED;
     uint64_t offset    = 0;
     pdcid_t  reg;
-    pdcid_t transfer_request;
+    pdcid_t  transfer_request;
 
-    reg        = PDCregion_create(1, &offset, &size);
+    reg              = PDCregion_create(1, &offset, &size);
     transfer_request = PDCregion_transfer_create(data, PDC_READ, obj_id, reg, reg);
     if (transfer_request == 0) {
         goto done;
@@ -7294,7 +7294,6 @@ PDC_recv_coords(const struct hg_cb_info *callback_info)
         if (result_elt == NULL)
             PGOTO_ERROR(HG_OTHER_ERROR, "==PDC_CLIENT[%d]: Invalid task ID!", pdc_client_mpi_rank_g);
     } // End else
-
 
 done:
     work_todo_g--;

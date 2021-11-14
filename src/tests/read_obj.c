@@ -138,7 +138,7 @@ main(int argc, char **argv)
     my_data_size = size_B / size;
     printf("my_data_size at rank %d is %llu\n", rank, (long long unsigned)my_data_size);
 
-    mydata   = (char *)malloc(my_data_size * type_size);
+    mydata = (char *)malloc(my_data_size * type_size);
 
     PDCprop_set_obj_type(obj_prop, var_type);
     PDCprop_set_obj_dims(obj_prop, 1, dims);
@@ -234,7 +234,6 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 
-
     ret = PDCregion_transfer_close(transfer_request);
     if (ret != SUCCEED) {
         printf("PDCregion_transfer_close failed @ line %d\n", __LINE__);
@@ -263,7 +262,6 @@ main(int argc, char **argv)
         printf("Time to process read data with %d ranks: %.6f\n", size, write_time);
         fflush(stdout);
     }
-
 
     free(offset);
     free(local_offset);

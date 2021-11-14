@@ -139,7 +139,7 @@ main(int argc, char **argv)
     my_data_size = size_B / size;
     printf("my_data_size at rank %d is %llu\n", rank, (long long unsigned)my_data_size);
 
-    mydata   = (char *)malloc(my_data_size * type_size);
+    mydata = (char *)malloc(my_data_size * type_size);
 
     PDCprop_set_obj_type(obj_prop, var_type);
     PDCprop_set_obj_dims(obj_prop, 1, dims);
@@ -288,7 +288,6 @@ main(int argc, char **argv)
         printf("fail to close global region\n");
         ret_value = 1;
     }
-
 
     if (PDCcont_close(cont) < 0) {
         printf("fail to close container\n");
