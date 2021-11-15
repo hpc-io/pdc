@@ -171,7 +171,7 @@ PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id)
     ret_value = p->obj_info_pub->local_id;
 #endif
     ret_value = PDC_obj_create(cont_id, obj_name, obj_prop_id, PDC_OBJ_GLOBAL);
-//done:
+    // done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
