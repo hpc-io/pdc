@@ -27,7 +27,6 @@
 
 #include "pdc_public.h"
 #include "pdc_obj.h"
-#include "pdc_client_server_common.h"
 
 /**************************/
 /* Library Public Struct */
