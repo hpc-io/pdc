@@ -31,11 +31,11 @@ Make sure to record the environmental variables (lines that contains the "export
 # Install Mercury
 Make sure the ctest passes. PDC may not work without passing all the tests of Mercury.
 
-Step 2 in the following is not required. It is a stable commit that has been used to test when these these instructions were written. One may skip it to use the current master branch of Mercury.
+Step 2 in the following is not required. It is a stable commit that has been used to test when these these instructions were written (mercury-2.0.1 release commit). One may skip it to use the current master branch of Mercury.
 ```
 0. git clone https://github.com/mercury-hpc/mercury.git
 1. cd mercury
-2. git checkout e741051fbe6347087171f33119d57c48cb438438
+2. git checkout cabb83758f9e07842dc34b0443d0873301fbdf91
 3. git submodule update --init
 4. export MERCURY_DIR=$(pwd)/install
 5. mkdir install
