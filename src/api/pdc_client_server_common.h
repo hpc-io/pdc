@@ -128,12 +128,6 @@ struct _pdc_iterator_info *PDC_Block_iterator_cache;
 /* Library Private Typedefs */
 /****************************/
 
-typedef enum {
-    PDC_TRANSFER_STATUS_COMPLETE  = 0,
-    PDC_TRANSFER_STATUS_PENDING   = 1,
-    PDC_TRANSFER_STATUS_NOT_FOUND = 2
-} pdc_transfer_status_t;
-
 typedef struct pdc_transfer_request_status {
     uint64_t                            transfer_request_id;
     uint32_t                            status;
@@ -768,6 +762,7 @@ typedef struct {
     size_t                 remote_unit;
     int32_t                obj_ndim;
     uint32_t               meta_server_id;
+
     uint8_t                access_type;
 } transfer_request_in_t;
 /* Define transfer_request_out_t */

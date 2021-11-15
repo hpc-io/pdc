@@ -62,6 +62,12 @@ typedef struct pdc_transfer_request {
     uint64_t *obj_dims;
 } pdc_transfer_request;
 
+typedef struct pdc_transfer_request_status {
+    uint64_t                            transfer_request_id;
+    uint32_t                            status;
+    struct pdc_transfer_request_status *next;
+} pdc_transfer_request_status;
+
 /*********************/
 /* Public Prototypes */
 /*********************/
