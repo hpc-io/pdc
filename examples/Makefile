@@ -29,5 +29,11 @@ bdcats: bdcats.o
 vpicio: vpicio.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
 
+haccio: haccio.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
+
+tileio: tileio.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
+
 clean:
 	rm -f *.o region_transfer_2D region_transfer_3D pdc_init obj_get_data vpicio bdcats

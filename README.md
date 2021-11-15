@@ -103,12 +103,12 @@ And to launch the PDC server and the client, add "--gres=craynetwork:1" before t
 
 * Run 4 server processes, each on one node in background:
 ```sh
-srun -N 4 -n  4 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 ./bin/pdc_server.exe &
+srun -N 4 -n  4 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap ./bin/pdc_server.exe &
 ```
 
 * Run 64 client processes that concurrently create 1000 objects in total:
 ```sh
-srun -N 4 -n 64 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 ./bin/create_obj_scale -r 1000
+srun -N 4 -n 64 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap ./bin/create_obj_scale -r 1000
 ```
 
 
