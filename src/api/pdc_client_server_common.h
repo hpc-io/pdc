@@ -30,7 +30,6 @@
 #include "pdc_prop_pkg.h"
 #include "pdc_analysis_and_transforms_common.h"
 #include "pdc_query.h"
-#include "pdc_region.h"
 
 #include "mercury_macros.h"
 #include "mercury_proc_string.h"
@@ -1584,6 +1583,7 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->t_dims3);
+
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
@@ -3975,6 +3975,7 @@ perr_t PDC_del_task_from_list(pdc_task_list_t **target_list, pdc_task_list_t *de
  *
  * \param target_list [IN]      Target task list
  * \param id [IN]               Task ID
+
  * \param mutex [IN]            Mutex
  *
  * \return Task list
