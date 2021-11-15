@@ -31,6 +31,7 @@
 #include "mercury.h"
 #include "mercury_proc_string.h"
 #include "mercury_request.h"
+#include "pdc_region.h"
 
 extern int                      pdc_server_num_g;
 extern int                      pdc_client_mpi_rank_g;
@@ -711,6 +712,7 @@ perr_t PDC_Client_all_server_checkpoint();
  * \param obj_delete_prop [IN]  ID of the associated property
  *
  * \return Non-negative on success/Negative on failure
+
  */
 perr_t PDC_Client_delete_metadata(char *delete_name, pdcid_t obj_delete_prop);
 
