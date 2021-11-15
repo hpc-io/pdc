@@ -30,6 +30,7 @@
 #include "pdc_prop_pkg.h"
 #include "pdc_analysis_and_transforms_common.h"
 #include "pdc_query.h"
+#include "pdc_region.h"
 
 #include "mercury_macros.h"
 #include "mercury_proc_string.h"
@@ -2147,6 +2148,7 @@ hg_proc_close_server_out_t(hg_proc_t proc, void *data)
 }
 
 /* Define hg_proc_bulk_rpc_in_t */
+
 static HG_INLINE hg_return_t
 hg_proc_bulk_rpc_in_t(hg_proc_t proc, void *data)
 {
