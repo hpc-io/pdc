@@ -61,6 +61,8 @@ ctest contains both sequential and MPI tests for the PDC settings. These can be 
 7. cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_FLAGS="-dynamic" -DCMAKE_C_COMPILER=mpicc
 8. make -j8
 9. ctest
+10. export LD_LIBRARY_PATH="$PDC_DIR/lib:$LD_LIBRARY_PATH"
+11. export PATH="$PDC_DIR/include:$PDC_DIR/lib:$PATH"
 ```
 
 # Environmental variables
@@ -73,7 +75,7 @@ export PDC_DIR="where/you/installed/your/pdc"
 export MERCURY_DIR="where/you/installed/your/mercury"
 export LIBFABRIC_DIR="where/you/installed/your/libfabric"
 export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
-export PATH="$LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH"
+export PATH="$PDC_DIR/include:$PDC_DIR/lib:LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH"
 ```
 One can also manage the path with Spack, which is a lot more easier to load and unload these libraries.
 ## Running PDC
@@ -91,7 +93,7 @@ cd $PDC_DIR/bin
 This is test will start 2 processes for PDC servers. The client program ./pdc_init will start 4 processes. Similarly, one can run any of the client examples in ctest.
 These source code will provide some knowledge of how to use PDC. For more reference, one may check the documentation folder in this repository.
 # PDC on Cori.
-Installation on Cori is not very different from a regular linux machine. Simply replacing all gcc/mpicc with the default cc compiler on Cori would work. Add options -DCMAKE_C_FLAGS="-dynamic" to the cmake line of PDC. Add -DCMAKE_C_FLAGS="-dynamic" -DCMAKE_CXX_FLAGS="-dynamic" at the end of the cmake line for mercury as well. Finally, "-DMPI_RUN_CMD=srun" is needed for ctest command later. In some instances and on some systems, unload darshan before installation may be needed.
+Installation on Cori is not very different from a regular linux machine. Simply replacing all gcc/mpicc with the default cc compiler on Cori would work. "-DMPI_RUN_CMD=srun" is needed for ctest command later. In some instances and on some systems, unload darshan before installation may be needed.
 
 For job allocation on Cori it is recommended to add "--gres=craynetwork:2" to the command:
 ```sh
