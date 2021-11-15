@@ -62,11 +62,11 @@ typedef struct pdc_transfer_request {
     uint64_t *obj_dims;
 } pdc_transfer_request;
 
-typedef struct pdc_transfer_request_status {
-    uint64_t                            transfer_request_id;
-    uint32_t                            status;
-    struct pdc_transfer_request_status *next;
-} pdc_transfer_request_status;
+typedef enum {
+    PDC_TRANSFER_STATUS_COMPLETE  = 0,
+    PDC_TRANSFER_STATUS_PENDING   = 1,
+    PDC_TRANSFER_STATUS_NOT_FOUND = 2
+} pdc_transfer_status_t;
 
 /*********************/
 /* Public Prototypes */
