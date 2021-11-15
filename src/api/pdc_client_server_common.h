@@ -764,7 +764,7 @@ typedef struct {
     int32_t                obj_ndim;
     uint32_t               meta_server_id;
 
-    uint8_t                access_type;
+    uint8_t access_type;
 } transfer_request_in_t;
 /* Define transfer_request_out_t */
 typedef struct {
