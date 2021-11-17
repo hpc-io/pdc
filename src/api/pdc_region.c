@@ -39,8 +39,10 @@
 #include "pdc_transforms_pkg.h"
 #include "pdc_client_connect.h"
 #include "pdc_analysis_pkg.h"
+#include <mpi.h>
 
 static perr_t pdc_region_close(struct pdc_region_info *op);
+static perr_t pdc_transfer_request_close();
 
 perr_t
 PDC_region_init()
@@ -51,6 +53,22 @@ PDC_region_init()
 
     /* Initialize the atom group for the region IDs */
     if (PDC_register_type(PDC_REGION, (PDC_free_t)pdc_region_close) < 0)
+        PGOTO_ERROR(FAIL, "unable to initialize region interface");
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDC_transfer_request_init()
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    /* Initialize the atom group for the region IDs */
+    if (PDC_register_type(PDC_TRANSFER_REQUEST, (PDC_free_t)pdc_transfer_request_close) < 0)
         PGOTO_ERROR(FAIL, "unable to initialize region interface");
 
 done:
@@ -95,6 +113,16 @@ pdc_region_close(struct pdc_region_info *op)
 }
 
 perr_t
+pdc_transfer_request_close()
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
 PDCregion_close(pdcid_t region_id)
 {
     perr_t ret_value = SUCCEED;
@@ -119,8 +147,177 @@ PDC_region_end()
 
     if (PDC_destroy_type(PDC_REGION) < 0)
         PGOTO_ERROR(FAIL, "unable to destroy region interface");
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+pdcid_t
+PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, pdcid_t local_reg,
+                          pdcid_t remote_reg)
+{
+    pdcid_t                 ret_value = SUCCEED;
+    struct _pdc_id_info *   objinfo2;
+    struct _pdc_obj_info *  obj2;
+    pdc_transfer_request *  p;
+    struct _pdc_id_info *   reginfo1, *reginfo2;
+    struct pdc_region_info *reg1, *reg2;
+    uint64_t *              ptr;
+    FUNC_ENTER(NULL);
+    reginfo1 = PDC_find_id(local_reg);
+    reg1     = (struct pdc_region_info *)(reginfo1->obj_ptr);
+    reginfo2 = PDC_find_id(remote_reg);
+    reg2     = (struct pdc_region_info *)(reginfo2->obj_ptr);
+    objinfo2 = PDC_find_id(obj_id);
+    if (objinfo2 == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate remote object ID");
+    obj2 = (struct _pdc_obj_info *)(objinfo2->obj_ptr);
+    // remote_meta_id = obj2->obj_info_pub->meta_id;
+
+    p              = PDC_MALLOC(pdc_transfer_request);
+    p->mem_type    = obj2->obj_pt->obj_prop_pub->type;
+    p->obj_id      = obj2->obj_info_pub->meta_id;
+    p->access_type = access_type;
+    p->buf         = buf;
+    p->metadata_id = 0;
+    /*
+        printf("creating a request from obj %s metadata id = %llu, access_type = %d\n",
+       obj2->obj_info_pub->name, (long long unsigned)obj2->obj_info_pub->meta_id, access_type);
+    */
+    p->local_region_ndim   = reg1->ndim;
+    p->local_region_offset = (uint64_t *)malloc(
+        sizeof(uint64_t) * (reg1->ndim * 2 + reg2->ndim * 2 + obj2->obj_pt->obj_prop_pub->ndim));
+    ptr = p->local_region_offset;
+    memcpy(p->local_region_offset, reg1->offset, sizeof(uint64_t) * reg1->ndim);
+    ptr += reg1->ndim;
+    p->local_region_size = ptr;
+    memcpy(p->local_region_size, reg1->size, sizeof(uint64_t) * reg1->ndim);
+    ptr += reg1->ndim;
+
+    p->remote_region_ndim   = reg2->ndim;
+    p->remote_region_offset = ptr;
+    memcpy(p->remote_region_offset, reg2->offset, sizeof(uint64_t) * reg2->ndim);
+    ptr += reg2->ndim;
+
+    p->remote_region_size = ptr;
+    memcpy(p->remote_region_size, reg2->size, sizeof(uint64_t) * reg2->ndim);
+    ptr += reg2->ndim;
+
+    p->obj_ndim = obj2->obj_pt->obj_prop_pub->ndim;
+    p->obj_dims = ptr;
+    memcpy(p->obj_dims, obj2->obj_pt->obj_prop_pub->dims, sizeof(uint64_t) * p->obj_ndim);
+
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    /*
+            printf("rank = %d transfer request create check obj ndim %d, dims [%lld, %lld, %lld],
+       local_offset[0] = %lld, " "reg1->offset[0] = %lld\n", rank, (int)p->obj_ndim, (long long
+       int)p->obj_dims[0], (long long int)p->obj_dims[1], (long long int)p->obj_dims[2], (long long
+       int)p->local_region_offset[0], (long long int)reg1->offset[0]);
+    */
+    ret_value = PDC_id_register(PDC_TRANSFER_REQUEST, p);
 
 done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDCregion_transfer_close(pdcid_t transfer_request_id)
+{
+    struct _pdc_id_info * transferinfo;
+    pdc_transfer_request *transfer_request;
+    perr_t                ret_value = SUCCEED;
+    FUNC_ENTER(NULL);
+
+    transferinfo     = PDC_find_id(transfer_request_id);
+    transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
+
+    free(transfer_request->local_region_offset);
+    free(transfer_request);
+
+    /* When the reference count reaches zero the resources are freed */
+    if (PDC_dec_ref(transfer_request_id) < 0)
+        PGOTO_ERROR(FAIL, "PDC transfer request: problem of freeing id");
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDCregion_transfer_start(pdcid_t transfer_request_id)
+{
+    perr_t                ret_value = SUCCEED;
+    struct _pdc_id_info * transferinfo;
+    pdc_transfer_request *transfer_request;
+
+    FUNC_ENTER(NULL);
+
+    transferinfo     = PDC_find_id(transfer_request_id);
+    transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
+    if (transfer_request->metadata_id == 0) {
+        ret_value = PDC_Client_transfer_request(
+            transfer_request->buf, transfer_request->obj_id, transfer_request->obj_ndim,
+            transfer_request->obj_dims, transfer_request->local_region_ndim,
+            transfer_request->local_region_offset, transfer_request->local_region_size,
+            transfer_request->remote_region_ndim, transfer_request->remote_region_offset,
+            transfer_request->remote_region_size, transfer_request->mem_type, transfer_request->access_type,
+            &(transfer_request->metadata_id));
+    }
+    else {
+        printf("PDC Client PDCregion_transfer_start attempt to start existing transfer request @ line %d\n",
+               __LINE__);
+        ret_value = FAIL;
+    }
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed)
+{
+    perr_t                ret_value = SUCCEED;
+    struct _pdc_id_info * transferinfo;
+    pdc_transfer_request *transfer_request;
+
+    FUNC_ENTER(NULL);
+
+    transferinfo     = PDC_find_id(transfer_request_id);
+    transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
+    if (transfer_request->metadata_id != 0) {
+        ret_value = PDC_Client_transfer_request_status(transfer_request->metadata_id, completed);
+        if (*completed != PDC_TRANSFER_STATUS_PENDING) {
+            transfer_request->metadata_id = 0;
+        }
+    }
+    else {
+        *completed = PDC_TRANSFER_STATUS_NOT_FOUND;
+    }
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDCregion_transfer_wait(pdcid_t transfer_request_id)
+{
+    perr_t                ret_value = SUCCEED;
+    struct _pdc_id_info * transferinfo;
+    pdc_transfer_request *transfer_request;
+
+    FUNC_ENTER(NULL);
+
+    transferinfo     = PDC_find_id(transfer_request_id);
+    transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
+    if (transfer_request->metadata_id != 0) {
+        ret_value                     = PDC_Client_transfer_request_wait(transfer_request->metadata_id);
+        transfer_request->metadata_id = 0;
+    }
+    else {
+        printf("PDC Client PDCregion_transfer_status attempt to check status for inactive transfer request @ "
+               "line %d\n",
+               __LINE__);
+        ret_value = FAIL;
+    }
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }

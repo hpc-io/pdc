@@ -17,12 +17,14 @@ include_directories(
 )
 
 add_definitions( -DIS_PDC_SERVER=1 )
+add_definitions( -DPDC_LUSTRE_TOTAL_OST=${PDC_LUSTRE_TOTAL_OST} )
 
 add_executable(pdc_server.exe 
                pdc_server.c
                pdc_server_data.c
                pdc_server_metadata.c
                pdc_server_analysis.c
+               ../api/pdc_region_cache.c
                ../api/pdc_client_server_common.c
                ../api/pdc_analysis_common.c
                ../api/pdc_transforms_common.c

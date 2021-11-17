@@ -31,6 +31,7 @@
 #include "mercury.h"
 #include "mercury_proc_string.h"
 #include "mercury_request.h"
+#include "pdc_region.h"
 
 extern int                      pdc_server_num_g;
 extern int                      pdc_client_mpi_rank_g;
@@ -82,6 +83,21 @@ struct _pdc_metadata_query_args {
 
 struct _pdc_container_query_args {
     uint64_t cont_id;
+};
+
+struct _pdc_transfer_request_args {
+    uint64_t metadata_id;
+    int32_t  ret;
+};
+
+struct _pdc_transfer_request_status_args {
+    uint32_t status;
+    int32_t  ret;
+};
+
+struct _pdc_transfer_request_wait_args {
+    uint32_t status;
+    int32_t  ret;
 };
 
 struct _pdc_buf_map_args {
@@ -136,6 +152,14 @@ perr_t PDC_Client_read_server_addr_from_file();
  */
 perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj_create_prop,
                                     pdcid_t *meta_id);
+
+perr_t PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *obj_dims,
+                                   int local_ndim, uint64_t *local_offset, uint64_t *local_size,
+                                   int remote_ndim, uint64_t *remote_offset, uint64_t *remote_size,
+                                   pdc_var_type_t mem_type, pdc_access_t access_type, uint64_t *metadata_id);
+
+perr_t PDC_Client_transfer_request_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed);
+perr_t PDC_Client_transfer_request_wait(pdcid_t transfer_request_id);
 
 /**
  * Apply a map from buffer to an object
@@ -445,6 +469,7 @@ perr_t PDC_Client_query_container_name_col(const char *cont_name, uint64_t *cont
  * Async request send to server to read a region and put it in users buffer
  *
  * \param meta [IN]             Metadata object pointer to the operating object
+
  * \param region [IN]           Region within the object to be read
  * \param request [IN]          Request structure to store the IO information
  * \param buf [IN]              User's buffer to store data
@@ -687,6 +712,7 @@ perr_t PDC_Client_all_server_checkpoint();
  * \param obj_delete_prop [IN]  ID of the associated property
  *
  * \return Non-negative on success/Negative on failure
+
  */
 perr_t PDC_Client_delete_metadata(char *delete_name, pdcid_t obj_delete_prop);
 
@@ -707,6 +733,7 @@ perr_t PDC_Client_delete_metadata_by_id(uint64_t obj_id);
 perr_t PDC_Client_close_all_server();
 
 /**
+
  * Client request server to check IO status of a previous IO request
  *
  * \param request [IN]          IO request to data server

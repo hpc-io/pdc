@@ -54,6 +54,7 @@
 #include "pdc_server_metadata.h"
 #include "pdc_server_data.h"
 #include "pdc_timing.h"
+#include "pdc_region_cache.h"
 
 #ifdef PDC_HAS_CRAY_DRC
 #include <rdmacred.h>
@@ -81,6 +82,7 @@ char **                   all_addr_strings_g        = NULL;
 int                       is_all_client_connected_g = 0;
 int                       is_hash_table_init_g      = 0;
 int                       lustre_stripe_size_mb_g   = 16;
+int                       lustre_total_ost_g        = 0;
 
 hg_id_t get_remote_metadata_register_id_g;
 hg_id_t buf_map_server_register_id_g;
@@ -777,6 +779,7 @@ drc_access_again:
         all_addr_strings_g[i]                   = &all_addr_strings_1d_g[i * ADDR_MAX];
         pdc_remote_server_info_g[i].addr_string = &all_addr_strings_1d_g[i * ADDR_MAX];
     }
+
 #else
     strcpy(all_addr_strings_1d_g, self_addr_string);
     all_addr_strings_g[0] = all_addr_strings_1d_g;
@@ -865,14 +868,19 @@ drc_access_again:
 
     n_metadata_g = 0;
 
-    // PDC cache infrastructures
+    // PDC transfer_request infrastructures
+    transfer_request_status_list = NULL;
+    pthread_mutex_init(&transfer_request_status_mutex, NULL);
+    pthread_mutex_init(&transfer_request_id_mutex, NULL);
+    transfer_request_id_g = 1;
 #ifdef PDC_SERVER_CACHE
 
     pdc_recycle_close_flag = 0;
-    hg_thread_mutex_init(&pdc_obj_cache_list_mutex);
+    pthread_mutex_init(&pdc_obj_cache_list_mutex, NULL);
     pthread_mutex_init(&pdc_cache_mutex, NULL);
     pthread_create(&pdc_recycle_thread, NULL, &PDC_region_cache_clock_cycle, NULL);
 #endif
+
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -1028,18 +1036,10 @@ PDC_Server_finalize()
     hg_thread_mutex_destroy(&addr_valid_mutex_g);
     hg_thread_mutex_destroy(&update_remote_server_addr_mutex_g);
 #endif
+    PDC_Server_clear_obj_region();
+    pthread_mutex_destroy(&transfer_request_status_mutex);
+    pthread_mutex_destroy(&transfer_request_id_mutex);
 
-    // PDC cache finalize
-#ifdef PDC_SERVER_CACHE
-    pthread_mutex_lock(&pdc_cache_mutex);
-    pdc_recycle_close_flag = 1;
-    pthread_mutex_unlock(&pdc_cache_mutex);
-    pthread_join(pdc_recycle_thread, NULL);
-    pthread_mutex_destroy(&pdc_cache_mutex);
-
-    PDC_region_cache_flush_all();
-    hg_thread_mutex_destroy(&pdc_obj_cache_list_mutex);
-#endif
     if (pdc_server_rank_g == 0)
         PDC_Server_rm_config_file();
 
@@ -1501,6 +1501,8 @@ PDC_Server_restart(char *filename)
             }
             data_server_region_t *new_obj_reg =
                 (data_server_region_t *)calloc(1, sizeof(struct data_server_region_t));
+            new_obj_reg->fd               = -1;
+            new_obj_reg->storage_location = (char *)malloc(sizeof(char) * ADDR_MAX);
             DL_APPEND(dataserver_region_g, new_obj_reg);
             new_obj_reg->obj_id = (metadata + i)->obj_id;
             for (j = 0; j < n_region; j++) {
@@ -1799,6 +1801,9 @@ PDC_Server_mercury_register()
     PDC_send_shm_bulk_rpc_register(hg_class_g);
 
     // Mapping
+    PDC_transfer_request_register(hg_class_g);
+    PDC_transfer_request_wait_register(hg_class_g);
+    PDC_transfer_request_status_register(hg_class_g);
     PDC_buf_map_register(hg_class_g);
     PDC_buf_unmap_register(hg_class_g);
 
@@ -1859,16 +1864,8 @@ PDC_Server_get_env()
 
     snprintf(pdc_server_tmp_dir_g, ADDR_MAX, "%s/", tmp_env_char);
 
-    // Get number of OST per file
-    tmp_env_char = getenv("PDC_NOST_PER_FILE");
-    if (tmp_env_char != NULL) {
-        pdc_nost_per_file_g = atoi(tmp_env_char);
-        // Make sure it is a sane value
-        if (pdc_nost_per_file_g < 1 || pdc_nost_per_file_g > 248) {
-            pdc_nost_per_file_g = 1;
-        }
-    }
-
+    lustre_total_ost_g = 1;
+#ifdef ENABLE_LUSTRE
     tmp_env_char = getenv("PDC_LUSTRE_STRIPE_SIZE");
     if (tmp_env_char != NULL) {
         lustre_stripe_size_mb_g = atoi(tmp_env_char);
@@ -1877,6 +1874,24 @@ PDC_Server_get_env()
             lustre_stripe_size_mb_g = 16;
         }
     }
+
+    lustre_total_ost_g = PDC_LUSTRE_TOTAL_OST;
+    if (lustre_total_ost_g < 1) {
+        lustre_total_ost_g = 1;
+    }
+#endif
+
+    // Get number of OST per file
+    pdc_nost_per_file_g = lustre_total_ost_g;
+    tmp_env_char        = getenv("PDC_NOST_PER_FILE");
+    if (tmp_env_char != NULL) {
+        pdc_nost_per_file_g = atoi(tmp_env_char);
+        // Make sure it is a sane value
+        if (pdc_nost_per_file_g < 1 || pdc_nost_per_file_g > lustre_total_ost_g) {
+            pdc_nost_per_file_g = 1;
+        }
+    }
+
     // Get number of clients per node
     tmp_env_char = (getenv("NCLIENT"));
     if (tmp_env_char == NULL)
@@ -1915,8 +1930,9 @@ PDC_Server_get_env()
         use_fastbit_idx_g = 1;
 
     if (pdc_server_rank_g == 0) {
-        printf("\n==PDC_SERVER[%d]: using [%s] as tmp dir. %d OSTs per data file, %d%% to BB\n",
-               pdc_server_rank_g, pdc_server_tmp_dir_g, pdc_nost_per_file_g, write_to_bb_percentage_g);
+        printf("\n==PDC_SERVER[%d]: using [%s] as tmp dir, %d OSTs, %d OSTs per data file, %d%% to BB\n",
+               pdc_server_rank_g, pdc_server_tmp_dir_g, lustre_total_ost_g, pdc_nost_per_file_g,
+               write_to_bb_percentage_g);
     }
 }
 
@@ -2013,6 +2029,17 @@ main(int argc, char *argv[])
 #endif
 
     // Exit from the loop, start finalize process
+    // PDC cache finalize, has to be done here in case of checkpoint for region data earlier.
+#ifdef PDC_SERVER_CACHE
+    pthread_mutex_lock(&pdc_cache_mutex);
+    pdc_recycle_close_flag = 1;
+    pthread_mutex_unlock(&pdc_cache_mutex);
+    pthread_join(pdc_recycle_thread, NULL);
+    pthread_mutex_destroy(&pdc_cache_mutex);
+    PDC_region_cache_flush_all();
+    pthread_mutex_destroy(&pdc_obj_cache_list_mutex);
+#endif
+
 #ifndef DISABLE_CHECKPOINT
     char *tmp_env_char = getenv("PDC_DISABLE_CHECKPOINT");
     if (tmp_env_char != NULL && strcmp(tmp_env_char, "TRUE") == 0) {

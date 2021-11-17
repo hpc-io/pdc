@@ -37,7 +37,7 @@ main(int argc, char **argv)
     char    cont_name[128], obj_name1[128], obj_name2[128];
     // struct pdc_obj_info *obj1_info, *obj2_info;
 
-    size_t   ndim = 3;
+    size_t   ndim;
     uint64_t dims[3];
 
     uint64_t *offset;
@@ -48,9 +48,10 @@ main(int argc, char **argv)
 
     uint64_t my_data_size;
 
-    char *obj_data, *mydata, *data_read;
+    char *mydata, *data_read;
 
     pdcid_t local_region, global_region;
+    pdcid_t transfer_request;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -95,6 +96,8 @@ main(int argc, char **argv)
         type_size = sizeof(int8_t);
     }
 
+    ndim = atoi(argv[2]);
+
     dims[0]      = rank * 2 + 16;
     dims[1]      = rank * 3 + 16;
     dims[2]      = rank * 5 + 16;
@@ -103,12 +106,13 @@ main(int argc, char **argv)
         my_data_size *= dims[i];
     }
 
-    mydata   = (char *)malloc(my_data_size * type_size);
-    obj_data = (char *)malloc(my_data_size * type_size);
+    mydata = (char *)malloc(my_data_size * type_size);
 
-    offset    = (uint64_t *)malloc(sizeof(uint64_t));
+    offset    = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
     mysize    = (uint64_t *)malloc(sizeof(uint64_t));
     offset[0] = 0;
+    offset[1] = 0;
+    offset[2] = 0;
     mysize[0] = my_data_size;
 
     // create a pdc
@@ -144,8 +148,8 @@ main(int argc, char **argv)
         printf("Rank %d Fail to create object property @ line  %d!\n", rank, __LINE__);
         ret_value = 1;
     }
-    dims[0] = my_data_size;
-    ret     = PDCprop_set_obj_dims(obj_prop, 1, dims);
+
+    ret = PDCprop_set_obj_dims(obj_prop, ndim, dims);
     if (ret != SUCCEED) {
         printf("Fail to set obj time step @ line %d\n", __LINE__);
         ret_value = 1;
@@ -155,16 +159,11 @@ main(int argc, char **argv)
         printf("Fail to set obj time step @ line %d\n", __LINE__);
         ret_value = 1;
     }
-    ret = PDCprop_set_obj_buf(obj_prop, obj_data);
-    if (ret != SUCCEED) {
-        printf("Fail to set obj data @ line %d\n", __LINE__);
-        ret_value = 1;
-    }
 
     // create first object
     sprintf(obj_name1, "o1_%d", rank);
     local_region  = PDCregion_create(1, offset, mysize);
-    global_region = PDCregion_create(1, offset, mysize);
+    global_region = PDCregion_create(ndim, offset, dims);
 
     obj1 = PDCobj_create(cont, obj_name1, obj_prop);
     if (obj1 > 0) {
@@ -179,24 +178,26 @@ main(int argc, char **argv)
             mydata[i * type_size + j] = (char)(i * type_size + j + rank);
         }
     }
-    ret = PDCbuf_obj_map(mydata, var_type, local_region, obj1, global_region);
-    if (ret != SUCCEED) {
-        printf("PDCbuf_obj_map failed\n");
+    transfer_request = PDCregion_transfer_create(mydata, PDC_WRITE, obj1, local_region, global_region);
+    if (transfer_request == 0) {
+        printf("PDCregion_transfer_create failed @ line %d\n", __LINE__);
         ret_value = 1;
     }
-    ret = PDCreg_obtain_lock(obj1, global_region, PDC_WRITE, PDC_BLOCK);
+    ret = PDCregion_transfer_start(transfer_request);
     if (ret != SUCCEED) {
-        printf("Failed to obtain lock for region\n");
+        printf("Failed to region_transfer_start for region @ line %d\n", __LINE__);
         ret_value = 1;
     }
-    ret = PDCreg_release_lock(obj1, global_region, PDC_WRITE);
+
+    ret = PDCregion_transfer_wait(transfer_request);
     if (ret != SUCCEED) {
-        printf("Failed to release lock for region\n");
+        printf("Failed to region_transfer_wait for region @ line %d\n", __LINE__);
         ret_value = 1;
     }
-    ret = PDCbuf_obj_unmap(obj1, global_region);
+
+    ret = PDCregion_transfer_close(transfer_request);
     if (ret != SUCCEED) {
-        printf("PDCbuf_obj_unmap failed\n");
+        printf("PDCregion_transfer_close failed @ line %d\n", __LINE__);
         ret_value = 1;
     }
 
@@ -215,7 +216,7 @@ main(int argc, char **argv)
     obj2 = PDCobj_create(cont, obj_name2, obj_prop);
 
     local_region  = PDCregion_create(1, offset, mysize);
-    global_region = PDCregion_create(1, offset, mysize);
+    global_region = PDCregion_create(ndim, offset, dims);
     if (obj2 > 0) {
         printf("Rank %d Create an object %s\n", rank, obj_name2);
     }
@@ -228,24 +229,26 @@ main(int argc, char **argv)
             mydata[i * type_size + j] = (char)(i * type_size + j + rank * 5 + 3);
         }
     }
-    ret = PDCbuf_obj_map(mydata, var_type, local_region, obj2, global_region);
-    if (ret != SUCCEED) {
-        printf("PDCbuf_obj_map failed %d\n", __LINE__);
+    transfer_request = PDCregion_transfer_create(mydata, PDC_WRITE, obj2, local_region, global_region);
+    if (transfer_request == 0) {
+        printf("PDCregion_transfer_create failed @ line %d\n", __LINE__);
         ret_value = 1;
     }
-    ret = PDCreg_obtain_lock(obj2, global_region, PDC_WRITE, PDC_BLOCK);
+    ret = PDCregion_transfer_start(transfer_request);
     if (ret != SUCCEED) {
-        printf("Failed to obtain lock for region %d\n", __LINE__);
+        printf("Failed to region_transfer_start for region @ line %d\n", __LINE__);
         ret_value = 1;
     }
-    ret = PDCreg_release_lock(obj2, global_region, PDC_WRITE);
+
+    ret = PDCregion_transfer_wait(transfer_request);
     if (ret != SUCCEED) {
-        printf("Failed to release lock for region %d\n", __LINE__);
+        printf("Failed to region_transfer_wait for region @ line %d\n", __LINE__);
         ret_value = 1;
     }
-    ret = PDCbuf_obj_unmap(obj2, global_region);
+
+    ret = PDCregion_transfer_close(transfer_request);
     if (ret != SUCCEED) {
-        printf("PDCbuf_obj_unmap failed %d\n", __LINE__);
+        printf("PDCregion_transfer_close failed @ line %d\n", __LINE__);
         ret_value = 1;
     }
 
@@ -306,40 +309,40 @@ main(int argc, char **argv)
         for (j = 0; j < (int)ndim; ++j) {
             my_data_size *= dims[j];
         }
-        offset[0]     = 0;
+
         mysize[0]     = my_data_size;
         local_region  = PDCregion_create(1, offset, mysize);
-        global_region = PDCregion_create(1, offset, mysize);
+        global_region = PDCregion_create(ndim, offset, dims);
         data_read     = (char *)malloc(my_data_size * type_size);
 
-        ret = PDCbuf_obj_map(data_read, var_type, local_region, obj2, global_region);
-        if (ret != SUCCEED) {
-            printf("PDCbuf_obj_map for read obj2 failed %d\n", __LINE__);
+        transfer_request = PDCregion_transfer_create(data_read, PDC_READ, obj2, local_region, global_region);
+        if (transfer_request == 0) {
+            printf("PDCregion_transfer_create for read obj2 failed %d\n", __LINE__);
             ret_value = 1;
         }
 
-        ret = PDCreg_obtain_lock(obj2, global_region, PDC_READ, PDC_BLOCK);
+        ret = PDCregion_transfer_start(transfer_request);
         if (ret != SUCCEED) {
-            printf("PDCreg_obtain_lock failed %d\n", __LINE__);
+            printf("Failed to region_transfer_start for region @ line %d\n", __LINE__);
             ret_value = 1;
         }
 
-        ret = PDCreg_release_lock(obj2, global_region, PDC_READ);
+        ret = PDCregion_transfer_wait(transfer_request);
         if (ret != SUCCEED) {
-            printf("PDCreg_release_lock failed %d\n", __LINE__);
+            printf("Failed to region_transfer_wait for region @ line %d\n", __LINE__);
             ret_value = 1;
         }
 
-        ret = PDCbuf_obj_unmap(obj2, global_region);
+        ret = PDCregion_transfer_close(transfer_request);
         if (ret != SUCCEED) {
-            printf("PDCbuf_obj_unmap failed %d\n", __LINE__);
+            printf("PDCregion_transfer_close failed @ line %d\n", __LINE__);
             ret_value = 1;
         }
 
         for (j = 0; j < (int)(my_data_size * type_size); ++j) {
             if (data_read[j] != (char)(j + target_rank * 5 + 3)) {
-                printf("----------------------------------rank %d, i = %d, j = %d, wrong value %d!=%d %d\n",
-                       rank, i, j, data_read[j], (char)(j + target_rank * 5 + 3), __LINE__);
+                printf("rank %d, i = %d, j = %d, wrong value %d!=%d %d\n", rank, i, j, data_read[j],
+                       (char)(j + target_rank * 5 + 3), __LINE__);
                 ret_value = 1;
                 break;
             }
@@ -371,9 +374,6 @@ main(int argc, char **argv)
         else {
             printf("Rank %d successfully close object %s\n", rank, obj_name2);
         }
-#ifdef ENABLE_MPI
-        MPI_Barrier(MPI_COMM_WORLD);
-#endif
     }
 
     // close a container
@@ -407,7 +407,6 @@ main(int argc, char **argv)
     }
 
     free(mydata);
-    free(obj_data);
     free(offset);
     free(mysize);
 #ifdef ENABLE_MPI

@@ -15,6 +15,7 @@ if [ $# -lt 1 ]; then echo "missing test argument" && exit -1 ; fi
 # shift
 # copy the remaining test input arguments (if any)
 test_args="$*"
+rm -rf pdc_tmp pdc_data
 # if [ -x $test_exe ]; then echo "testing: $test_exe"; else echo "test: $test_exe not found or not and executable" && exit -2; fi
 # START the server (in the background)
 $run_cmd ./pdc_server.exe &
@@ -25,6 +26,8 @@ for test_exe in $test_args
 do
     echo "testing: $test_exe"
     $run_cmd $test_exe
+    ret="$?"
 done
 # and shutdown the SERVER before exiting
 $run_cmd ./close_server
+exit $ret

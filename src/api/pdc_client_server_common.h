@@ -127,6 +127,19 @@ struct _pdc_iterator_info *PDC_Block_iterator_cache;
 /****************************/
 /* Library Private Typedefs */
 /****************************/
+
+typedef struct pdc_transfer_request_status {
+    uint64_t                            transfer_request_id;
+    uint32_t                            status;
+    struct pdc_transfer_request_status *next;
+} pdc_transfer_request_status;
+
+pdc_transfer_request_status *transfer_request_status_list;
+pdc_transfer_request_status *transfer_request_status_list_end;
+pthread_mutex_t              transfer_request_status_mutex;
+pthread_mutex_t              transfer_request_id_mutex;
+uint64_t                     transfer_request_id_g;
+
 typedef enum { PDC_POSIX = 0, PDC_DAOS = 1 } _pdc_io_plugin_t;
 
 typedef enum { PDC_NONE = 0, PDC_LUSTRE = 1, PDC_BB = 2, PDC_MEM = 3 } _pdc_data_loc_t;
@@ -718,6 +731,46 @@ typedef struct {
     pdc_metadata_transfer_t ret;
 } get_remote_metadata_out_t;
 
+/* Define transfer_request_status_in_t */
+typedef struct {
+    uint64_t transfer_request_id;
+} transfer_request_status_in_t;
+/* Define transfer_request_status_out_t */
+typedef struct {
+    uint32_t status;
+    int32_t  ret;
+} transfer_request_status_out_t;
+
+/* Define transfer_request_wait_in_t */
+typedef struct {
+    uint64_t transfer_request_id;
+} transfer_request_wait_in_t;
+/* Define transfer_request_wait_out_t */
+typedef struct {
+    uint32_t status;
+    int32_t  ret;
+} transfer_request_wait_out_t;
+
+/* Define transfer_request_in_t */
+typedef struct {
+    hg_bulk_t              local_bulk_handle;
+    region_info_transfer_t remote_region;
+    uint64_t               obj_id;
+    uint64_t               obj_dim0;
+    uint64_t               obj_dim1;
+    uint64_t               obj_dim2;
+    size_t                 remote_unit;
+    int32_t                obj_ndim;
+    uint32_t               meta_server_id;
+
+    uint8_t access_type;
+} transfer_request_in_t;
+/* Define transfer_request_out_t */
+typedef struct {
+    uint64_t metadata_id;
+    int32_t  ret;
+} transfer_request_out_t;
+
 /* Define buf_map_in_t */
 typedef struct {
     uint32_t               meta_server_id;
@@ -1037,6 +1090,7 @@ hg_proc_pdc_kvtag_t(hg_proc_t proc, void *data)
     if (struct_data->size) {
         switch (hg_proc_get_op(proc)) {
             case HG_DECODE:
+
                 struct_data->value = malloc(struct_data->size);
                 /* HG_FALLTHROUGH(); */
                 /* FALLTHRU */
@@ -1529,6 +1583,7 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->t_dims3);
+
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
@@ -2093,6 +2148,7 @@ hg_proc_close_server_out_t(hg_proc_t proc, void *data)
 }
 
 /* Define hg_proc_bulk_rpc_in_t */
+
 static HG_INLINE hg_return_t
 hg_proc_bulk_rpc_in_t(hg_proc_t proc, void *data)
 {
@@ -2131,6 +2187,7 @@ hg_proc_bulk_rpc_in_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->origin);
+
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
@@ -2281,6 +2338,156 @@ hg_proc_buf_map_out_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_transfer_request_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t            ret;
+    transfer_request_in_t *struct_data = (transfer_request_in_t *)data;
+    ret                                = hg_proc_hg_bulk_t(proc, &struct_data->local_bulk_handle);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_region_info_transfer_t(proc, &struct_data->remote_region);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_dim0);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_dim1);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_dim2);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_size_t(proc, &struct_data->remote_unit);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->obj_ndim);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint32_t(proc, &struct_data->meta_server_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint8_t(proc, &struct_data->access_type);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+/* Define hg_proc_transfer_request_out_t */
+static HG_INLINE hg_return_t
+hg_proc_transfer_request_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t             ret;
+    transfer_request_out_t *struct_data = (transfer_request_out_t *)data;
+    // printf("Output argument: transfer_request for ret @ line %d\n", __LINE__);
+    ret = hg_proc_uint64_t(proc, &struct_data->metadata_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+/* Define hg_proc_transfer_request_status_in_t */
+static HG_INLINE hg_return_t
+hg_proc_transfer_request_status_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t                   ret;
+    transfer_request_status_in_t *struct_data = (transfer_request_status_in_t *)data;
+    ret                                       = hg_proc_uint64_t(proc, &struct_data->transfer_request_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+/* Define hg_proc_transfer_request_status_out_t */
+static HG_INLINE hg_return_t
+hg_proc_transfer_request_status_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t                    ret;
+    transfer_request_status_out_t *struct_data = (transfer_request_status_out_t *)data;
+
+    ret = hg_proc_uint32_t(proc, &struct_data->status);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+/* Define hg_proc_transfer_request_wait_in_t */
+static HG_INLINE hg_return_t
+hg_proc_transfer_request_wait_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t                 ret;
+    transfer_request_wait_in_t *struct_data = (transfer_request_wait_in_t *)data;
+    // printf("Input argument: transfer_request_wait for transfer_request_id @ line %d\n", __LINE__);
+    ret = hg_proc_uint64_t(proc, &struct_data->transfer_request_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+/* Define hg_proc_transfer_request_wait_out_t */
+static HG_INLINE hg_return_t
+hg_proc_transfer_request_wait_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t                  ret;
+    transfer_request_wait_out_t *struct_data = (transfer_request_wait_out_t *)data;
+    // printf("Output argument: transfer_request_wait for status @ line %d\n", __LINE__);
+    ret = hg_proc_uint32_t(proc, &struct_data->status);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    // printf("Output argument: transfer_request_wait for ret @ line %d\n", __LINE__);
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    // printf("Output argument: transfer_request_wait finishes @ line %d\n", __LINE__);
     return ret;
 }
 
@@ -2532,6 +2739,7 @@ hg_proc_region_storage_meta_t(hg_proc_t proc, void *data)
     region_storage_meta_t *struct_data = (region_storage_meta_t *)data;
 
     ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
+
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
@@ -2870,6 +3078,7 @@ hg_proc_cont_add_tags_rpc_in_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_hg_string_t(proc, &struct_data->tags);
+
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
@@ -3138,7 +3347,8 @@ struct bulk_args_t {
     uint64_t *       obj_ids;
     int              client_seq_id;
 
-    int       query_id;
+    int query_id;
+
     uint32_t  ndim;
     uint64_t *coords;
     uint64_t  total;
@@ -3231,6 +3441,15 @@ struct region_lock_update_bulk_args {
     struct pdc_region_info *server_region;
 };
 
+struct transfer_request_local_bulk_args {
+    hg_handle_t           handle;
+    hg_bulk_t             bulk_handle;
+    transfer_request_in_t in;
+    uint64_t              transfer_request_id;
+    void *                data_buf;
+    size_t                total_mem_size;
+};
+
 struct region_update_bulk_args {
     hg_atomic_int32_t      refcount; // to track how many unlocked mapped region for data transfer
     hg_handle_t            handle;
@@ -3318,6 +3537,9 @@ hg_id_t PDC_metadata_add_kvtag_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_del_kvtag_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_get_kvtag_register(hg_class_t *hg_class);
 
+hg_id_t PDC_transfer_request_register(hg_class_t *hg_class);
+hg_id_t PDC_transfer_request_status_register(hg_class_t *hg_class);
+hg_id_t PDC_transfer_request_wait_register(hg_class_t *hg_class);
 hg_id_t PDC_buf_map_register(hg_class_t *hg_class);
 hg_id_t PDC_buf_unmap_register(hg_class_t *hg_class);
 hg_id_t PDC_region_lock_register(hg_class_t *hg_class);
@@ -3598,6 +3820,7 @@ perr_t PDC_region_list_t_to_transfer(region_list_t *region, region_info_transfer
  * \param transfer [OUT]        Converted region type
  *
  * \return Non-negative on success/Negative on failure
+
  */
 perr_t PDC_region_info_t_to_transfer(struct pdc_region_info *region, region_info_transfer_t *transfer);
 
@@ -3752,6 +3975,7 @@ perr_t PDC_del_task_from_list(pdc_task_list_t **target_list, pdc_task_list_t *de
  *
  * \param target_list [IN]      Target task list
  * \param id [IN]               Task ID
+
  * \param mutex [IN]            Mutex
  *
  * \return Task list
@@ -3909,5 +4133,9 @@ void PDC_query_xfer_free(pdc_query_xfer_t *query_xfer);
  * \return HG_SUCCESS or corresponding HG error code
  */
 hg_return_t PDC_Client_recv_nhits(const struct hg_cb_info *callback_info);
+
+perr_t PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims,
+                                      struct pdc_region_info *region_info, void *buf, size_t unit,
+                                      int is_write);
 
 #endif /* PDC_CLIENT_SERVER_COMMON_H */

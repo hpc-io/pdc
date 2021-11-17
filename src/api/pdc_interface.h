@@ -48,14 +48,15 @@
 typedef perr_t (*PDC_free_t)(void *);
 
 typedef enum {
-    PDC_BADID     = -1, /* invalid Type                                */
-    PDC_CLASS     = 1,  /* type ID for PDC                             */
-    PDC_CONT_PROP = 2,  /* type ID for container property              */
-    PDC_OBJ_PROP  = 3,  /* type ID for object property                 */
-    PDC_CONT      = 4,  /* type ID for container                       */
-    PDC_OBJ       = 5,  /* type ID for object                          */
-    PDC_REGION    = 6,  /* type ID for region                          */
-    PDC_NTYPES    = 7   /* number of library types, MUST BE LAST!      */
+    PDC_BADID            = -1, /* invalid Type                                */
+    PDC_CLASS            = 1,  /* type ID for PDC                             */
+    PDC_CONT_PROP        = 2,  /* type ID for container property              */
+    PDC_OBJ_PROP         = 3,  /* type ID for object property                 */
+    PDC_CONT             = 4,  /* type ID for container                       */
+    PDC_OBJ              = 5,  /* type ID for object                          */
+    PDC_REGION           = 6,  /* type ID for region                          */
+    PDC_TRANSFER_REQUEST = 7,  /* type ID for region transfer                          */
+    PDC_NTYPES           = 8   /* number of library types, MUST BE LAST!      */
 } PDC_type_t;
 
 /***************************/

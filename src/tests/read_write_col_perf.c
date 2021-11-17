@@ -34,7 +34,9 @@
 #include "pdc_client_connect.h"
 #include "pdc_client_server_common.h"
 #include "pdc_analysis.h"
+
 #include "pdc_timing.h"
+
 #define BUF_LEN 128
 
 int
@@ -49,11 +51,12 @@ main(int argc, char **argv)
 
     uint64_t offset[3], offset_length[3], local_offset[3], dims[3];
     int      data_size, data_size_array[3], n_objects;
-#ifdef ENABLE_MPI
-    double start, write_buf_map_time = 0, write_lock_time = 0, write_release_time = 0,
-                  write_unbuf_map_time = 0, read_buf_map_time = 0, read_lock_time = 0, read_release_time = 0,
-                  read_unbuf_map_time = 0;
-#endif
+
+    double start, write_reg_transfer_start_time = 0, write_reg_transfer_wait_time = 0,
+                  read_reg_transfer_start_time = 0, read_reg_transfer_wait_time = 0;
+
+    pdcid_t transfer_request;
+
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -95,7 +98,7 @@ main(int argc, char **argv)
         offset[1]          = 0;
         data_size_array[1] = atoi(argv[3]);
         offset_length[1]   = data_size_array[1] * 1048576;
-        data_size *= data_size_array[1] * 1048576;
+        data_size *= offset_length[1];
         dims[1] = offset_length[1];
     }
     else if (ndim == 3) {
@@ -108,25 +111,26 @@ main(int argc, char **argv)
         offset[2]          = 0;
         data_size_array[2] = atoi(argv[4]);
         offset_length[2]   = data_size_array[2] * 1048576;
-        data_size *= (data_size_array[1] * data_size_array[2] * 1048576);
+        data_size *= offset_length[2] * offset_length[1];
 
         dims[1] = offset_length[1];
         dims[2] = offset_length[2];
     }
-    n_objects      = atoi(argv[1]);
-    int *data      = (int *)malloc(sizeof(int) * data_size);
-    int *data_read = (int *)malloc(sizeof(int) * data_size);
-    int *obj_data  = (int *)calloc(data_size, sizeof(int));
+    n_objects = atoi(argv[1]);
+    int *data = (int *)malloc(sizeof(int) * data_size);
 
+    char hostname[256];
+    gethostname(hostname, 256);
+    printf("Client program read_write_perf Rank %d at hostname %s\n", rank, hostname);
     if (rank == 0) {
         printf("number of dimensions in this test is %d\n", ndim);
         printf("data size = %llu\n", (long long unsigned)data_size);
-        printf("first dim has size %d\n", data_size_array[0]);
+        printf("first dim has size %" PRIu64 "\n", dims[0]);
         if (ndim >= 2) {
-            printf("second dim has size %d\n", data_size_array[1]);
+            printf("second dim has size %" PRIu64 "\n", dims[1]);
         }
         if (ndim == 3) {
-            printf("third dim has size %d\n", data_size_array[2]);
+            printf("third dim has size %" PRIu64 "\n", dims[2]);
         }
     }
 
@@ -158,7 +162,6 @@ main(int argc, char **argv)
         printf("Fail to set obj type @ line %d\n", __LINE__);
         ret_value = 1;
     }
-    PDCprop_set_obj_buf(obj_prop, obj_data);
     PDCprop_set_obj_dims(obj_prop, ndim, dims);
     PDCprop_set_obj_user_id(obj_prop, getuid());
     PDCprop_set_obj_time_step(obj_prop, 0);
@@ -168,62 +171,50 @@ main(int argc, char **argv)
     for (i = 0; i < n_objects; ++i) {
         // create first object
         sprintf(obj_name1, "o1_%d", i);
-
-        // obj1 = PDCobj_create(cont, obj_name1, obj_prop);
-        obj1 = PDCobj_create_mpi(cont, obj_name1, obj_prop, 0, MPI_COMM_WORLD);
+        /*
+        #ifdef ENABLE_MPI
+                obj1 = PDCobj_create_mpi(cont, obj_name1, obj_prop, 0, MPI_COMM_WORLD);
+        #else
+                obj1 = PDCobj_create(cont, obj_name1, obj_prop);
+        #endif
+        */
+        obj1 = PDCobj_create(cont, obj_name1, obj_prop);
 
         if (obj1 <= 0) {
             printf("Fail to create object @ line  %d!\n", __LINE__);
             ret_value = 1;
         }
-
         reg        = PDCregion_create(ndim, local_offset, offset_length);
         reg_global = PDCregion_create(ndim, offset, offset_length);
 
         memset(data, (char)i, sizeof(int) * data_size);
-        MPI_Barrier(MPI_COMM_WORLD);
-#ifdef ENABLE_MPI
-        start = MPI_Wtime();
-#endif
-        ret = PDCbuf_obj_map(data, PDC_INT, reg, obj1, reg_global);
-#ifdef ENABLE_MPI
-        write_buf_map_time += MPI_Wtime() - start;
-#endif
-        if (ret != SUCCEED) {
-            printf("PDCbuf_obj_map failed @ line %d\n", __LINE__);
+
+        transfer_request = PDCregion_transfer_create(data, PDC_WRITE, obj1, reg, reg_global);
+        if (transfer_request == 0) {
+            printf("PDCregion_transfer_create failed @ line %d\n", __LINE__);
             ret_value = 1;
         }
-#ifdef ENABLE_MPI
+
         start = MPI_Wtime();
-#endif
-        ret = PDCreg_obtain_lock(obj1, reg_global, PDC_WRITE, PDC_BLOCK);
-#ifdef ENABLE_MPI
-        write_lock_time += MPI_Wtime() - start;
-#endif
+        ret   = PDCregion_transfer_start(transfer_request);
+        write_reg_transfer_start_time += MPI_Wtime() - start;
         if (ret != SUCCEED) {
-            printf("PDCreg_obtain_lock failed @ line %d\n", __LINE__);
-            exit(-1);
-        }
-#ifdef ENABLE_MPI
-        start = MPI_Wtime();
-#endif
-        ret = PDCreg_release_lock(obj1, reg_global, PDC_WRITE);
-#ifdef ENABLE_MPI
-        write_release_time += MPI_Wtime() - start;
-#endif
-        if (ret != SUCCEED) {
-            printf("PDCreg_release_lock failed @ line %d\n", __LINE__);
+            printf("PDCregion_transfer_start failed @ line %d\n", __LINE__);
             ret_value = 1;
         }
-#ifdef ENABLE_MPI
+
         start = MPI_Wtime();
-#endif
-        ret = PDCbuf_obj_unmap(obj1, reg_global);
-#ifdef ENABLE_MPI
-        write_unbuf_map_time += MPI_Wtime() - start;
-#endif
+        ret   = PDCregion_transfer_wait(transfer_request);
+        write_reg_transfer_wait_time += MPI_Wtime() - start;
         if (ret != SUCCEED) {
-            printf("PDCbuf_obj_unmap failed @ line %d\n", __LINE__);
+            printf("PDCregion_transfer_wait failed @ line %d\n", __LINE__);
+            ret_value = 1;
+        }
+
+        ret = PDCregion_transfer_close(transfer_request);
+
+        if (ret != SUCCEED) {
+            printf("PDCregion_transfer_close failed @ line %d\n", __LINE__);
             ret_value = 1;
         }
 
@@ -258,47 +249,39 @@ main(int argc, char **argv)
         reg_global = PDCregion_create(ndim, offset, offset_length);
 
         memset(data, 0, sizeof(int) * data_size);
-        MPI_Barrier(MPI_COMM_WORLD);
-#ifdef ENABLE_MPI
-        start = MPI_Wtime();
-#endif
-        ret = PDCbuf_obj_map(data_read, PDC_INT, reg, obj1, reg_global);
-#ifdef ENABLE_MPI
-        read_buf_map_time += MPI_Wtime() - start;
-#endif
-        if (ret != SUCCEED) {
-            printf("PDCbuf_obj_map failed @ line %d\n", __LINE__);
+
+        transfer_request = PDCregion_transfer_create(data, PDC_READ, obj1, reg, reg_global);
+
+        if (transfer_request == 0) {
+            printf("PDCregion_transfer_create failed @ line %d\n", __LINE__);
             ret_value = 1;
         }
-#ifdef ENABLE_MPI
+
         start = MPI_Wtime();
-#endif
-        ret = PDCreg_obtain_lock(obj1, reg_global, PDC_READ, PDC_BLOCK);
-#ifdef ENABLE_MPI
-        read_lock_time += MPI_Wtime() - start;
-#endif
+        ret   = PDCregion_transfer_start(transfer_request);
+        read_reg_transfer_start_time += MPI_Wtime() - start;
+
         if (ret != SUCCEED) {
-            printf("PDCreg_obtain_lock failed @ line %d\n", __LINE__);
+            printf("PDCregion_transfer_start failed @ line %d\n", __LINE__);
+            exit(-1);
+        }
+
+        start = MPI_Wtime();
+        ret   = PDCregion_transfer_wait(transfer_request);
+        read_reg_transfer_wait_time += MPI_Wtime() - start;
+
+        if (ret != SUCCEED) {
+            printf("PDCregion_transfer_wait failed @ line %d\n", __LINE__);
             ret_value = 1;
         }
-#ifdef ENABLE_MPI
-        start = MPI_Wtime();
-#endif
-        ret = PDCreg_release_lock(obj1, reg_global, PDC_READ);
-#ifdef ENABLE_MPI
-        read_release_time += MPI_Wtime() - start;
-#endif
+
+        ret = PDCregion_transfer_close(transfer_request);
+
         if (ret != SUCCEED) {
-            printf("PDCreg_release_lock failed @ line %d\n", __LINE__);
+            printf("PDCregion_transfer_close failed @ line %d\n", __LINE__);
             ret_value = 1;
         }
-#ifdef ENABLE_MPI
-        start = MPI_Wtime();
-#endif
-        ret = PDCbuf_obj_unmap(obj1, reg_global);
-#ifdef ENABLE_MPI
-        read_unbuf_map_time += MPI_Wtime() - start;
-#endif
+
         if (ret != SUCCEED) {
             printf("PDCbuf_obj_unmap failed @ line %d\n", __LINE__);
             ret_value = 1;
@@ -319,9 +302,7 @@ main(int argc, char **argv)
             ret_value = 1;
         }
     }
-    printf("rank %d completed read\n", rank);
 #if PDC_TIMING == 1
-    MPI_Barrier(MPI_COMM_WORLD);
     PDC_timing_report("read");
 #endif
     // close a container
@@ -345,51 +326,31 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 #ifdef ENABLE_MPI
-    MPI_Reduce(&write_buf_map_time, &start, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    write_buf_map_time = start;
+    MPI_Reduce(&write_reg_transfer_start_time, &start, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    write_reg_transfer_start_time = start;
     if (!rank) {
-        printf("write buf map obj time: %lf\n", write_buf_map_time);
-    }
-    MPI_Reduce(&write_lock_time, &start, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    write_lock_time = start;
-    if (!rank) {
-        printf("write lock obtain time: %lf\n", write_lock_time);
+        printf("write transfer start time: %lf\n", write_reg_transfer_start_time);
     }
 
-    MPI_Reduce(&write_release_time, &start, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    write_release_time = start;
+    MPI_Reduce(&write_reg_transfer_wait_time, &start, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    write_reg_transfer_wait_time = start;
     if (!rank) {
-        printf("write lock release time: %lf\n", write_release_time);
+        printf("write transfer wait time: %lf\n", write_reg_transfer_wait_time);
     }
 
-    MPI_Reduce(&write_unbuf_map_time, &start, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    write_unbuf_map_time = start;
+    MPI_Reduce(&read_reg_transfer_start_time, &start, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    read_reg_transfer_start_time = start;
     if (!rank) {
-        printf("write buf unmap obj time: %lf\n", write_unbuf_map_time);
+        printf("read transfer start time: %lf\n", read_reg_transfer_start_time);
     }
 
-    MPI_Reduce(&read_buf_map_time, &start, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    read_buf_map_time = start;
+    MPI_Reduce(&read_reg_transfer_wait_time, &start, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    read_reg_transfer_wait_time = start;
     if (!rank) {
-        printf("read buf map obj time: %lf\n", read_buf_map_time);
-    }
-    MPI_Reduce(&read_lock_time, &start, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    read_lock_time = start;
-    if (!rank) {
-        printf("read lock obtain time: %lf\n", read_lock_time);
+        printf("read region transfer wait time: %lf\n", read_reg_transfer_wait_time);
     }
 
-    MPI_Reduce(&read_release_time, &start, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    read_release_time = start;
-    if (!rank) {
-        printf("read lock release time: %lf\n", read_release_time);
-    }
-
-    MPI_Reduce(&read_unbuf_map_time, &start, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    read_unbuf_map_time = start;
-    if (!rank) {
-        printf("read buf unmap obj time: %lf\n", read_unbuf_map_time);
-    }
+    free(data);
 #endif
 #ifdef ENABLE_MPI
     MPI_Finalize();

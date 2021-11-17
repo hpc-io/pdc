@@ -43,6 +43,31 @@ struct pdc_region_info {
     size_t                unit;
 };
 
+typedef struct pdc_transfer_request {
+    pdcid_t        obj_id;
+    uint64_t       metadata_id;
+    pdc_access_t   access_type;
+    pdc_var_type_t mem_type;
+    char *         buf;
+
+    int       local_region_ndim;
+    uint64_t *local_region_offset;
+    uint64_t *local_region_size;
+
+    int       remote_region_ndim;
+    uint64_t *remote_region_offset;
+    uint64_t *remote_region_size;
+
+    int       obj_ndim;
+    uint64_t *obj_dims;
+} pdc_transfer_request;
+
+typedef enum {
+    PDC_TRANSFER_STATUS_COMPLETE  = 0,
+    PDC_TRANSFER_STATUS_PENDING   = 1,
+    PDC_TRANSFER_STATUS_NOT_FOUND = 2
+} pdc_transfer_status_t;
+
 /*********************/
 /* Public Prototypes */
 /*********************/
@@ -73,6 +98,26 @@ perr_t PDCregion_close(pdcid_t region_id);
  */
 void PDCregion_free(struct pdc_region_info *region);
 
+pdcid_t PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, pdcid_t local_reg,
+                                  pdcid_t remote_reg);
+/**
+ * Start a region transfer from local region to remote region for an object on buf.
+ *
+ * \param buf [IN]              Start point of an application buffer
+ * \param obj_id [IN]           ID of the target object
+ * \param data_type [IN]        Data type of data in memory
+ * \param local_reg  [IN]       ID of the source region
+ * \param remote_reg [IN]       ID of the target region
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCregion_transfer_start(pdcid_t transfer_request_id);
+
+perr_t PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed);
+
+perr_t PDCregion_transfer_wait(pdcid_t transfer_request_id);
+
+perr_t PDCregion_transfer_close(pdcid_t transfer_request_id);
 /**
  * Map an application buffer to an object
  *

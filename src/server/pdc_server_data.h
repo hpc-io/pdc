@@ -288,6 +288,7 @@ extern pdc_client_info_t *         pdc_client_info_g;
 extern int                         pdc_client_num_g;
 extern double                      total_mem_usage_g;
 extern int                         lustre_stripe_size_mb_g;
+extern int                         lustre_total_ost_g;
 
 extern hg_id_t get_remote_metadata_register_id_g;
 extern hg_id_t buf_map_server_register_id_g;
@@ -309,43 +310,6 @@ extern hg_id_t send_bulk_rpc_register_id_g;
 extern char *  gBinningOption;
 extern int     gen_fastbit_idx_g;
 extern int     use_fastbit_idx_g;
-
-#define PDC_SERVER_CACHE
-
-#ifdef PDC_SERVER_CACHE
-typedef struct pdc_region_cache {
-    struct pdc_region_info * region_cache_info;
-    struct pdc_region_cache *next;
-} pdc_region_cache;
-
-typedef struct pdc_obj_cache {
-    struct pdc_obj_cache *next;
-    uint64_t              obj_id;
-    pdc_region_cache *    region_cache;
-    pdc_region_cache *    region_cache_end;
-    struct timeval        timestamp;
-} pdc_obj_cache;
-
-#define PDC_REGION_CONTAINED       0
-#define PDC_REGION_CONTAINED_BY    1
-#define PDC_REGION_PARTIAL_OVERLAP 2
-#define PDC_REGION_NO_OVERLAP      3
-#define PDC_MERGE_FAILED           4
-#define PDC_MERGE_SUCCESS          5
-
-pdc_obj_cache *obj_cache_list, *obj_cache_list_end;
-
-hg_thread_mutex_t pdc_obj_cache_list_mutex;
-pthread_t         pdc_recycle_thread;
-pthread_mutex_t   pdc_cache_mutex;
-int               pdc_recycle_close_flag;
-
-int   PDC_region_cache_flush_all();
-int   PDC_region_fetch(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit);
-int   PDC_region_cache_register(uint64_t obj_id, const char *buf, size_t buf_size, const uint64_t *offset,
-                                const uint64_t *size, int ndim, size_t unit);
-void *PDC_region_cache_clock_cycle(void *ptr);
-#endif
 
 /***************************************/
 /* Library-private Function Prototypes */
@@ -442,6 +406,27 @@ perr_t PDC_Server_regions_io(region_list_t *region_list_head, _pdc_io_plugin_t p
  * \return Region struct/NULL on failure
  */
 data_server_region_t *PDC_Server_get_obj_region(pdcid_t obj_id);
+/**
+ * Server register region struct by object ID, if not existing.
+ *
+ * \param obj_id [IN]           Object ID
+ *
+ * \return SUCCEED/FAIL
+ */
+perr_t PDC_Server_register_obj_region(pdcid_t obj_id);
+/**
+ * Server unregister region struct by object ID, if not existing.
+ *
+ * \param obj_id [IN]           Object ID
+ *
+ * \return SUCCEED/FAIL
+ */
+perr_t PDC_Server_unregister_obj_region(pdcid_t obj_id);
+/**
+ * Server clean up all region struct.
+ * \return SUCCEED/FAIL
+ */
+perr_t PDC_Server_clear_obj_region();
 
 /**
  * ***********

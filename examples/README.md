@@ -37,16 +37,16 @@
 2. ./mpi_test.sh ./obj_get_data mpiexec 2 4
 ```
   ## I-O with region mapping.
-  + The simple I/O can only handles 1D data that is contiguous. PDC supports data dimension up to 3. Simple I/O functions PDCobj_put_data and PDCobj_get_data are wrappers for object create, region mapping, I/O, and object close. The examples in this section breakdowns the wrappers, which allows more flexibility.
-  + Check region_obj_map_2D.c and region_obj_map_3D.c for how to write 2D and 3D data.
-  + Generally, PDC perform I/O with the PDCbuf_obj_map, PDCreg_obtain_lock, PDCreg_release_lock, and PDCbuf_obj_unmap. The logic is similar to HDF5 dataspace and memory space. In PDC language, they are remote region and local region. The lock functions for remote regions allow PDC servers to handle concurrent requests from different clients without undefined behaviors.
+  + The simple I/O can only handles 1D data that is contiguous. PDC supports data dimension up to 3. Simple I/O functions PDCobj_put_data and PDCobj_get_data are wrappers 1-dimensional object I/O poperations. The examples in this section breakdowns the wrappers, which allows more flexibility.
+  + Check region_transfer_2D.c and region_transfer_3D.c for how to write 2D and 3D data.
+  + Generally, PDC perform I/O with the PDCregion_transfer_create, PDCregion_transfer_start, PDCregion_transfer_wait, and PDCregion_transfer_close. The logic is similar to HDF5 dataspace and memory space. In PDC language, they are remote region and local region. The lock functions for remote regions allow PDC servers to handle concurrent requests from different clients without undefined behaviors.
   + To run thie example, use the following command lines.
 ```
 0. make
-1. ./run_test.sh ./region_obj_map_2D
-2. ./mpi_test.sh ./region_obj_map_2D mpiexec 2 4
-3. ./run_test.sh ./region_obj_map_3D
-4. ./mpi_test.sh ./region_obj_map_3D mpiexec 2 4
+1. ./run_test.sh ./region_transfer_2D
+2. ./mpi_test.sh ./region_transfer_2D mpiexec 2 4
+3. ./run_test.sh ./region_transfer_3D
+4. ./mpi_test.sh ./region_transfer_3D mpiexec 2 4
 ```
   ## VPIC-IO and BD-CATS-IO
   + VPIC is a particle simulation code developed at Los Alamos National Laboratory (LANL). 
@@ -66,8 +66,9 @@
   + BD-CATS-IO: 
     - bdcats.c
     - BD-CATS-IO is an example for reading data written by VIPIC I/O.
-  + To run this example
+  + To run this example, use the following commands. Step 1 is refers to the case that read is run right after write applications. In step 2, PDC server is closed after vpicio. The server is restarted before calling bdcats.
 ```
 0. cd make
 1. ./run_multiple_test.sh ./vpicio ./bdcats
+2. ./run_checkpoint_restart_test.sh ./vpicio ./bdcats
 ```

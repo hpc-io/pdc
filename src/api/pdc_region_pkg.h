@@ -47,6 +47,12 @@ struct region_map_list {
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_region_init();
+/**
+ * PDC region transfer instance initialization
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_transfer_request_init();
 
 /**
  * PDC region finalize

@@ -20,7 +20,7 @@ shift
 echo "Input arguments are the followings"
 echo $test_args
 if [ -x $test_exe ]; then echo "testing: $test_exe"; else echo "test: $test_exe not found or not and executable" && exit -2; fi
-rm -rf pdc_tmp
+rm -rf pdc_tmp pdc_data
 # START the server (in the background)
 echo "$mpi_cmd -n $n_servers $extra_cmd ./pdc_server.exe &"
 $mpi_cmd -n $n_servers $extra_cmd ./pdc_server.exe &
