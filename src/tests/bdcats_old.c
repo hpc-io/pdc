@@ -174,6 +174,11 @@ main(int argc, char **argv)
 #endif
     gettimeofday(&ht_total_start, 0);
 
+#if PDC_TIMING == 1
+    MPI_Barrier(MPI_COMM_WORLD);
+    PDC_timing_init();
+#endif
+
     ret = PDCbuf_obj_map(&x[0], PDC_FLOAT, region_x, obj_xx, region_xx);
     if (ret < 0)
         printf("Array x PDCbuf_obj_map failed\n");
@@ -206,9 +211,6 @@ main(int argc, char **argv)
     if (ret < 0)
         printf("Array id2 PDCbuf_obj_map failed\n");
 
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
     gettimeofday(&ht_total_end, 0);
     ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL + ht_total_end.tv_usec -
                        ht_total_start.tv_usec;
@@ -218,9 +220,6 @@ main(int argc, char **argv)
         fflush(stdout);
     }
 
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
     gettimeofday(&ht_total_start, 0);
 
     ret = PDCreg_obtain_lock(obj_xx, region_xx, PDC_READ, PDC_NOBLOCK);
@@ -255,9 +254,6 @@ main(int argc, char **argv)
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_id22\n");
 
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
     gettimeofday(&ht_total_end, 0);
     ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL + ht_total_end.tv_usec -
                        ht_total_start.tv_usec;
@@ -267,9 +263,6 @@ main(int argc, char **argv)
         fflush(stdout);
     }
 
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
     gettimeofday(&ht_total_start, 0);
 
     ret = PDCreg_release_lock(obj_xx, region_xx, PDC_READ);
@@ -304,9 +297,6 @@ main(int argc, char **argv)
     if (ret != SUCCEED)
         printf("Failed to release lock for region_id22\n");
 
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
     gettimeofday(&ht_total_end, 0);
     ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL + ht_total_end.tv_usec -
                        ht_total_start.tv_usec;
@@ -315,10 +305,6 @@ main(int argc, char **argv)
         printf("Time to relese lock with %d ranks: %.6f\n", size, ht_total_sec);
         fflush(stdout);
     }
-
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
 
     ret = PDCbuf_obj_unmap(obj_xx, region_xx);
     if (ret != SUCCEED)
@@ -352,8 +338,8 @@ main(int argc, char **argv)
     if (ret != SUCCEED)
         printf("region id22 unmap failed\n");
 
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
+#if PDC_TIMING == 1
+    PDC_timing_report("read");
 #endif
     gettimeofday(&ht_total_end, 0);
     ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL + ht_total_end.tv_usec -
@@ -455,6 +441,9 @@ main(int argc, char **argv)
     free(offset_remote);
     free(mysize);
 
+#if PDC_TIMING == 1
+    PDC_timing_finalize();
+#endif
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif

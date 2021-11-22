@@ -177,6 +177,10 @@ main(int argc, char **argv)
 #endif
     gettimeofday(&ht_total_start, 0);
 
+#if PDC_TIMING == 1
+    MPI_Barrier(MPI_COMM_WORLD);
+    PDC_timing_init();
+#endif
     transfer_request_x = PDCregion_transfer_create(&x[0], PDC_READ, obj_xx, region_x, region_xx);
     if (transfer_request_x == 0) {
         printf("Array x transfer request creation failed\n");
@@ -218,9 +222,6 @@ main(int argc, char **argv)
         return 1;
     }
 
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
     gettimeofday(&ht_total_end, 0);
     ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL + ht_total_end.tv_usec -
                        ht_total_start.tv_usec;
@@ -230,9 +231,6 @@ main(int argc, char **argv)
         fflush(stdout);
     }
 
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
     gettimeofday(&ht_total_start, 0);
 
     ret = PDCregion_transfer_start(transfer_request_x);
@@ -276,9 +274,6 @@ main(int argc, char **argv)
         return 1;
     }
 
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
     gettimeofday(&ht_total_end, 0);
     ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL + ht_total_end.tv_usec -
                        ht_total_start.tv_usec;
@@ -288,9 +283,6 @@ main(int argc, char **argv)
         fflush(stdout);
     }
 
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
     gettimeofday(&ht_total_start, 0);
 
     ret = PDCregion_transfer_wait(transfer_request_x);
@@ -334,9 +326,6 @@ main(int argc, char **argv)
         return 1;
     }
 
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
     gettimeofday(&ht_total_end, 0);
     ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL + ht_total_end.tv_usec -
                        ht_total_start.tv_usec;
@@ -345,10 +334,6 @@ main(int argc, char **argv)
         printf("Time to relese lock with %d ranks: %.6f\n", size, ht_total_sec);
         fflush(stdout);
     }
-
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
 
     ret = PDCregion_transfer_close(transfer_request_x);
     if (ret != SUCCEED) {
@@ -390,10 +375,10 @@ main(int argc, char **argv)
         printf("region id22 transfer close failed\n");
         return 1;
     }
-
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
+#if PDC_TIMING == 1
+    PDC_timing_report("read");
 #endif
+
     gettimeofday(&ht_total_end, 0);
     ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL + ht_total_end.tv_usec -
                        ht_total_start.tv_usec;
@@ -493,6 +478,10 @@ main(int argc, char **argv)
     free(offset);
     free(offset_remote);
     free(mysize);
+
+#if PDC_TIMING == 1
+    PDC_timing_finalize();
+#endif
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

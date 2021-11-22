@@ -32,6 +32,7 @@
 #include <math.h>
 #include <inttypes.h>
 #include "pdc.h"
+#include "pdc_timing.h"
 
 #define NPARTICLES 8388608
 
@@ -229,6 +230,11 @@ main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     gettimeofday(&ht_total_start, 0);
+
+#if PDC_TIMING == 1
+    MPI_Barrier(MPI_COMM_WORLD);
+    PDC_timing_init();
+#endif
 
     transfer_request_x = PDCregion_transfer_create(&x[0], PDC_WRITE, obj_xx, region_x, region_xx);
     if (transfer_request_x == 0) {
@@ -451,6 +457,10 @@ main(int argc, char **argv)
         printf("region id22 transfer close failed\n");
         return 1;
     }
+#if PDC_TIMING == 1
+    PDC_timing_report("write");
+#endif
+
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -609,7 +619,9 @@ main(int argc, char **argv)
     free(pz);
     free(id1);
     free(id2);
-
+#if PDC_TIMING ==1
+    PDC_timing_finalize();
+#endif
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
