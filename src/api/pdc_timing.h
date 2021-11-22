@@ -47,7 +47,6 @@ typedef struct pdc_server_timing {
     double PDCreg_release_lock_read_rpc;
     double PDCreg_release_lock_bulk_transfer_rpc;
 
-
     double PDCreg_transfer_request_start_write_rpc;
     double PDCreg_transfer_request_start_read_rpc;
 
@@ -74,12 +73,12 @@ pdc_timestamp *    release_lock_write_timestamps;
 pdc_timestamp *    release_lock_read_timestamps;
 pdc_timestamp *    release_lock_bulk_transfer_timestamps;
 
-pdc_timestamp *    transfer_request_start_write_timestamps;
-pdc_timestamp *    transfer_request_start_read_timestamps;
-pdc_timestamp *    transfer_request_wait_write_timestamps;
-pdc_timestamp *    transfer_request_wait_read_timestamps;
-pdc_timestamp *    transfer_request_wait_write_bulk_timestamps;
-pdc_timestamp *    transfer_request_wait_read_bulk_timestamps;
+pdc_timestamp *transfer_request_start_write_timestamps;
+pdc_timestamp *transfer_request_start_read_timestamps;
+pdc_timestamp *transfer_request_wait_write_timestamps;
+pdc_timestamp *transfer_request_wait_read_timestamps;
+pdc_timestamp *transfer_request_wait_write_bulk_timestamps;
+pdc_timestamp *transfer_request_wait_read_bulk_timestamps;
 
 pdc_timestamp *client_buf_obj_map_timestamps;
 pdc_timestamp *client_buf_obj_unmap_timestamps;

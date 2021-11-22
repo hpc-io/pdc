@@ -2359,7 +2359,7 @@ PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct pdc_re
 
     FUNC_ENTER(NULL);
 #if PDC_TIMING == 1
-    double start = MPI_Wtime(), end;
+    double start          = MPI_Wtime(), end;
     double function_start = start;
 #endif
     // Fill input structure
@@ -2560,7 +2560,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *o
 
     FUNC_ENTER(NULL);
 #if PDC_TIMING == 1
-    double start = MPI_Wtime(), end;
+    double start          = MPI_Wtime(), end;
     double function_start = start;
 #endif
     if (!(access_type == PDC_WRITE || access_type == PDC_READ)) {
@@ -2631,7 +2631,8 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *o
 #if PDC_TIMING == 1
     if (access_type == PDC_READ) {
         timings.PDCtransfer_request_start_read_rpc += MPI_Wtime() - start;
-    } else {
+    }
+    else {
         timings.PDCtransfer_request_start_write_rpc += MPI_Wtime() - start;
     }
     start = MPI_Wtime();
@@ -2647,7 +2648,8 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *o
     if (access_type == PDC_READ) {
         timings.PDCtransfer_request_start_read_rpc_wait += end - start;
         pdc_timestamp_register(client_transfer_request_start_read_timestamps, function_start, end);
-    } else {
+    }
+    else {
         timings.PDCtransfer_request_start_write_rpc_wait += end - start;
         pdc_timestamp_register(client_transfer_request_start_write_timestamps, function_start, end);
     }
@@ -2725,14 +2727,14 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, int access_type)
 
     FUNC_ENTER(NULL);
 #if PDC_TIMING == 1
-    double start = MPI_Wtime(), end;
+    double start          = MPI_Wtime(), end;
     double function_start = start;
 #endif
     data_server_id = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
     debug_server_id_count[data_server_id]++;
 
     in.transfer_request_id = transfer_request_id;
-    in.access_type = access_type;
+    in.access_type         = access_type;
     if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
                     pdc_client_mpi_rank_g, __LINE__);
@@ -2752,7 +2754,8 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, int access_type)
     end = MPI_Wtime();
     if (access_type == PDC_READ) {
         timings.PDCtransfer_request_wait_read_rpc += end - start;
-    } else {
+    }
+    else {
         timings.PDCtransfer_request_wait_write_rpc += end - start;
     }
     start = MPI_Wtime();
@@ -2769,7 +2772,8 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, int access_type)
     if (access_type == PDC_READ) {
         timings.PDCtransfer_request_wait_read_rpc_wait += end - start;
         pdc_timestamp_register(client_transfer_request_wait_read_timestamps, function_start, end);
-    } else {
+    }
+    else {
         timings.PDCtransfer_request_wait_write_rpc_wait += end - start;
         pdc_timestamp_register(client_transfer_request_wait_write_timestamps, function_start, end);
     }
@@ -2807,7 +2811,7 @@ PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t ndim, 
 
     FUNC_ENTER(NULL);
 #if PDC_TIMING == 1
-    double start = MPI_Wtime(), end;
+    double start          = MPI_Wtime(), end;
     double function_start = start;
 #endif
 
@@ -2970,7 +2974,7 @@ PDC_Client_region_lock(struct _pdc_obj_info *object_info, struct pdc_region_info
 
     FUNC_ENTER(NULL);
 #if PDC_TIMING == 1
-    double start = MPI_Wtime(), end;
+    double start          = MPI_Wtime(), end;
     double function_start = start;
 #endif
     // Compute local data server id
@@ -3016,7 +3020,8 @@ PDC_Client_region_lock(struct _pdc_obj_info *object_info, struct pdc_region_info
 #if PDC_TIMING == 1
     if (access_type == PDC_READ) {
         timings.PDCreg_obtain_lock_read_rpc += MPI_Wtime() - start;
-    } else {
+    }
+    else {
         timings.PDCreg_obtain_lock_write_rpc += MPI_Wtime() - start;
     }
 #endif
@@ -3034,7 +3039,8 @@ PDC_Client_region_lock(struct _pdc_obj_info *object_info, struct pdc_region_info
     if (access_type == PDC_READ) {
         timings.PDCreg_obtain_lock_read_rpc_wait += end - start;
         pdc_timestamp_register(client_obtain_lock_read_timestamps, function_start, end);
-    } else {
+    }
+    else {
         timings.PDCreg_obtain_lock_write_rpc_wait += end - start;
         pdc_timestamp_register(client_obtain_lock_write_timestamps, function_start, end);
     }
@@ -3600,7 +3606,7 @@ PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_region_i
 
     FUNC_ENTER(NULL);
 #if PDC_TIMING == 1
-    double start = MPI_Wtime(), end;
+    double start          = MPI_Wtime(), end;
     double function_start = start;
 #endif
     // type_extent = object_info->obj_pt->type_extent;
@@ -5018,7 +5024,6 @@ PDC_find_request_from_list_by_seq_id(struct pdc_request **list_head, int seq_id)
     DL_FOREACH(*list_head, elt)
     if (elt->seq_id == seq_id)
         ret_value = elt;
-
 
 done:
     fflush(stdout);

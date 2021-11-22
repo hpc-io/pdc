@@ -3458,9 +3458,9 @@ struct transfer_request_local_bulk_args {
     uint64_t              transfer_request_id;
     void *                data_buf;
     size_t                total_mem_size;
-    #if PDC_TIMING == 1
+#if PDC_TIMING == 1
     double start_time;
-    #endif
+#endif
 };
 
 struct region_update_bulk_args {
