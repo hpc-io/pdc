@@ -309,7 +309,7 @@ PDCregion_transfer_wait(pdcid_t transfer_request_id)
     transferinfo     = PDC_find_id(transfer_request_id);
     transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
     if (transfer_request->metadata_id != 0) {
-        ret_value                     = PDC_Client_transfer_request_wait(transfer_request->metadata_id);
+        ret_value                     = PDC_Client_transfer_request_wait(transfer_request->metadata_id, transfer_request->access_type);
         transfer_request->metadata_id = 0;
     }
     else {

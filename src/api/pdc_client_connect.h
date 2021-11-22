@@ -159,7 +159,7 @@ perr_t PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint
                                    pdc_var_type_t mem_type, pdc_access_t access_type, uint64_t *metadata_id);
 
 perr_t PDC_Client_transfer_request_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed);
-perr_t PDC_Client_transfer_request_wait(pdcid_t transfer_request_id);
+perr_t PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, int access_type);
 
 /**
  * Apply a map from buffer to an object
