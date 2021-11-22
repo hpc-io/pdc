@@ -37,4 +37,4 @@ read_write_col_perf: read_write_col_perf.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
 
 clean:
-	rm -f *.o region_transfer_2D region_transfer_3D pdc_init obj_get_data vpicio bdcats vpicio_old bdcats_old
+	rm -f *.o region_transfer_2D region_transfer_3D pdc_init obj_get_data vpicio bdcats vpicio_old bdcats_old read_write_perf read_write_col_perf
