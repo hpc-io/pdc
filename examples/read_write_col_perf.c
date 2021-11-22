@@ -357,7 +357,7 @@ main(int argc, char **argv)
     free(data);
 #endif
 
-#if PDC_TIMING ==1
+#if PDC_TIMING == 1
     PDC_timing_finalize();
 #endif
 #ifdef ENABLE_MPI
