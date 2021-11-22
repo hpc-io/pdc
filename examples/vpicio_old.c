@@ -227,10 +227,6 @@ main(int argc, char **argv)
 #endif
     gettimeofday(&ht_total_start, 0);
 
-#if PDC_TIMING == 1
-    MPI_Barrier(MPI_COMM_WORLD);
-    PDC_timing_init();
-#endif
     ret = PDCbuf_obj_map(&x[0], PDC_FLOAT, region_x, obj_xx, region_xx);
     if (ret < 0) {
         printf("Array x PDCbuf_obj_map failed\n");
@@ -595,9 +591,6 @@ main(int argc, char **argv)
     free(id1);
     free(id2);
 
-#if PDC_TIMING == 1
-    PDC_timing_finalize();
-#endif
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif

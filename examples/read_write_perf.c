@@ -160,11 +160,9 @@ main(int argc, char **argv)
     PDCprop_set_obj_app_name(obj_prop, "DataServerTest");
     PDCprop_set_obj_tags(obj_prop, "tag0=1");
 
-#if PDC_TIMING == 1
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
-    PDC_timing_init();
 #endif
-
     for (i = 0; i < n_objects; ++i) {
         // create first object
         sprintf(obj_name1, "o1_%d_%d", rank, i);
@@ -343,10 +341,6 @@ main(int argc, char **argv)
     }
 
     free(data);
-#endif
-
-#if PDC_TIMING == 1
-    PDC_timing_finalize();
 #endif
 
 #ifdef ENABLE_MPI

@@ -177,10 +177,6 @@ main(int argc, char **argv)
 #endif
     gettimeofday(&ht_total_start, 0);
 
-#if PDC_TIMING == 1
-    MPI_Barrier(MPI_COMM_WORLD);
-    PDC_timing_init();
-#endif
     transfer_request_x = PDCregion_transfer_create(&x[0], PDC_READ, obj_xx, region_x, region_xx);
     if (transfer_request_x == 0) {
         printf("Array x transfer request creation failed\n");
@@ -478,10 +474,6 @@ main(int argc, char **argv)
     free(offset);
     free(offset_remote);
     free(mysize);
-
-#if PDC_TIMING == 1
-    PDC_timing_finalize();
-#endif
 
 #ifdef ENABLE_MPI
     MPI_Finalize();
