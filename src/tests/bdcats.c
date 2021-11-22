@@ -32,6 +32,7 @@
 #include <math.h>
 #include <inttypes.h>
 #include "pdc.h"
+#include "pdc_timing.h"
 
 #define NPARTICLES 8388608
 

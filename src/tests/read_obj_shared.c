@@ -7,8 +7,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include "pdc.h"
-#include "pdc_client_connect.h"
-#include "pdc_client_server_common.h"
+#include "pdc_timing.h"
 
 void
 print_usage()
@@ -262,6 +261,7 @@ main(int argc, char **argv)
         printf("Fail to region transfer close @ line %d\n", __LINE__);
         ret_value = 1;
     }
+
 
     for (i = 0; i < (int)my_data_size; i++) {
         for (j = 0; j < (int)type_size; ++j) {
