@@ -262,7 +262,6 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 
-
     for (i = 0; i < (int)my_data_size; i++) {
         for (j = 0; j < (int)type_size; ++j) {
             if (mydata[i * type_size + j] != (char)i) {
