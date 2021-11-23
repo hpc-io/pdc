@@ -1273,7 +1273,6 @@ PDC_metadata_t_to_transfer_t(pdc_metadata_t *meta, pdc_metadata_transfer_t *tran
     if (NULL == meta || NULL == transfer)
         PGOTO_ERROR(FAIL, "PDC_metadata_t_to_transfer_t(): NULL input!");
 
-
     transfer->user_id         = meta->user_id;
     transfer->app_name        = meta->app_name;
     transfer->obj_name        = meta->obj_name;
