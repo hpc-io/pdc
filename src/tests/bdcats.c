@@ -184,7 +184,7 @@ main(int argc, char **argv)
         printf("Array y transfer request creation failed\n");
         return 1;
     }
-    transfer_request_z = PDCregion_transfer_create(&z[0], PDC_READ, obj_zz, region_z, region_z);
+    transfer_request_z = PDCregion_transfer_create(&z[0], PDC_READ, obj_zz, region_z, region_zz);
     if (transfer_request_z == 0) {
         printf("Array z transfer request creation failed\n");
         return 1;
