@@ -211,15 +211,15 @@ PDC_timing_report(const char *prefix)
 int
 PDC_server_timing_init()
 {
-    server_timings                        = calloc(1, sizeof(pdc_server_timing));
-    buf_obj_map_timestamps                = calloc(14, sizeof(pdc_timestamp));
-    buf_obj_unmap_timestamps              = buf_obj_map_timestamps + 1;
-    obtain_lock_write_timestamps          = buf_obj_map_timestamps + 2;
-    obtain_lock_read_timestamps           = buf_obj_map_timestamps + 3;
-    release_lock_write_timestamps         = buf_obj_map_timestamps + 4;
-    release_lock_read_timestamps          = buf_obj_map_timestamps + 5;
+    server_timings                              = calloc(1, sizeof(pdc_server_timing));
+    buf_obj_map_timestamps                      = calloc(14, sizeof(pdc_timestamp));
+    buf_obj_unmap_timestamps                    = buf_obj_map_timestamps + 1;
+    obtain_lock_write_timestamps                = buf_obj_map_timestamps + 2;
+    obtain_lock_read_timestamps                 = buf_obj_map_timestamps + 3;
+    release_lock_write_timestamps               = buf_obj_map_timestamps + 4;
+    release_lock_read_timestamps                = buf_obj_map_timestamps + 5;
     release_lock_bulk_transfer_write_timestamps = buf_obj_map_timestamps + 6;
-    release_lock_bulk_transfer_read_timestamps = buf_obj_map_timestamps + 7;
+    release_lock_bulk_transfer_read_timestamps  = buf_obj_map_timestamps + 7;
 
     transfer_request_start_write_timestamps     = buf_obj_map_timestamps + 8;
     transfer_request_start_read_timestamps      = buf_obj_map_timestamps + 9;
@@ -3149,9 +3149,9 @@ HG_TEST_RPC_CB(region_release, handle)
                         obj_map_bulk_args->remote_bulk_handle   = remote_bulk_handle;
                         obj_map_bulk_args->local_bulk_handle    = eltt2->local_bulk_handle;
                         obj_map_bulk_args->local_addr           = eltt2->local_addr;
-                        #if PDC_TIMING == 1
-                        obj_map_bulk_args->start_time           = MPI_Wtime();
-                        #endif
+#if PDC_TIMING == 1
+                        obj_map_bulk_args->start_time = MPI_Wtime();
+#endif
                         remote_reg_info->ndim = (obj_map_bulk_args->remote_region_unit).ndim;
                         remote_reg_info->offset =
                             (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
@@ -3354,9 +3354,9 @@ HG_TEST_RPC_CB(region_release, handle)
                         buf_map_bulk_args->remote_region_nounit = eltt->remote_region_nounit;
                         buf_map_bulk_args->remote_client_id     = eltt->remote_client_id;
                         buf_map_bulk_args->remote_bulk_handle   = remote_bulk_handle;
-                        #if PDC_TIMING == 1
-                        buf_map_bulk_args->start_time           = MPI_Wtime();
-                        #endif
+#if PDC_TIMING == 1
+                        buf_map_bulk_args->start_time = MPI_Wtime();
+#endif
 #ifdef ENABLE_MULTITHREAD
                         hg_thread_mutex_init(&(buf_map_bulk_args->work_mutex));
                         hg_thread_cond_init(&(buf_map_bulk_args->work_cond));
