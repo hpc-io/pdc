@@ -320,7 +320,7 @@ PDC_server_timing_report()
             "region_release_bulk_transfer_cb, PDCregion_transfer_start_write, PDCregion_transfer_wait_write, "
             "PDCregion_transfer_wait_cb_write, PDCregion_transfer_start_read, PDCregion_transfer_wait_read, "
             "PDCregion_transfer_wait_cb_read\n");
-    fprintf(stream, "%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n",
+    fprintf(stream, "%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n",
             server_timings->PDCbuf_obj_map_rpc, server_timings->PDCreg_obtain_lock_write_rpc,
             server_timings->PDCreg_obtain_lock_read_rpc, server_timings->PDCreg_release_lock_write_rpc,
             server_timings->PDCreg_release_lock_read_rpc, server_timings->PDCbuf_obj_unmap_rpc,
@@ -1272,6 +1272,7 @@ PDC_metadata_t_to_transfer_t(pdc_metadata_t *meta, pdc_metadata_transfer_t *tran
 
     if (NULL == meta || NULL == transfer)
         PGOTO_ERROR(FAIL, "PDC_metadata_t_to_transfer_t(): NULL input!");
+
 
     transfer->user_id         = meta->user_id;
     transfer->app_name        = meta->app_name;
