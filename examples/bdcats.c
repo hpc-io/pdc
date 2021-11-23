@@ -58,14 +58,14 @@ main(int argc, char **argv)
     pdcid_t region_xx, region_yy, region_zz, region_pxx, region_pyy, region_pzz, region_id11, region_id22;
     perr_t  ret;
 
-    float *        x, *y, *z;
-    float *        px, *py, *pz;
-    int *          id1, *id2;
-    uint64_t       numparticles;
-    int            ndim = 1;
-    uint64_t *     offset;
-    uint64_t *     offset_remote;
-    uint64_t *     mysize;
+    float *   x, *y, *z;
+    float *   px, *py, *pz;
+    int *     id1, *id2;
+    uint64_t  numparticles;
+    int       ndim = 1;
+    uint64_t *offset;
+    uint64_t *offset_remote;
+    uint64_t *mysize;
 
     pdcid_t transfer_request_x, transfer_request_y, transfer_request_z, transfer_request_px,
         transfer_request_py, transfer_request_pz, transfer_request_id1, transfer_request_id2;
@@ -214,7 +214,6 @@ main(int argc, char **argv)
         printf("Array id2 transfer request creation failed\n");
         return 1;
     }
-
 
     ret = PDCregion_transfer_start(transfer_request_x);
     if (ret != SUCCEED) {

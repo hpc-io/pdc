@@ -64,18 +64,18 @@ main(int argc, char **argv)
 #else
     int comm = 1;
 #endif
-    float *        x, *y, *z;
-    float *        px, *py, *pz;
-    int *          id1, *id2;
-    int            x_dim = 64;
-    int            y_dim = 64;
-    int            z_dim = 64;
-    uint64_t       numparticles, i;
-    uint64_t       dims[1];
-    int            ndim = 1;
-    uint64_t *     offset;
-    uint64_t *     offset_remote;
-    uint64_t *     mysize;
+    float *   x, *y, *z;
+    float *   px, *py, *pz;
+    int *     id1, *id2;
+    int       x_dim = 64;
+    int       y_dim = 64;
+    int       z_dim = 64;
+    uint64_t  numparticles, i;
+    uint64_t  dims[1];
+    int       ndim = 1;
+    uint64_t *offset;
+    uint64_t *offset_remote;
+    uint64_t *mysize;
 
     pdcid_t transfer_request_x, transfer_request_y, transfer_request_z, transfer_request_px,
         transfer_request_py, transfer_request_pz, transfer_request_id1, transfer_request_id2;

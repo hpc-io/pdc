@@ -51,20 +51,20 @@ print_usage()
 int
 main(int argc, char **argv)
 {
-    int     rank = 0, size = 1;
-    pdcid_t pdc_id, cont_id;
-    pdcid_t obj_xx, obj_yy, obj_zz, obj_pxx, obj_pyy, obj_pzz, obj_id11, obj_id22;
-    pdcid_t region_x, region_y, region_z, region_px, region_py, region_pz, region_id1, region_id2;
-    pdcid_t region_xx, region_yy, region_zz, region_pxx, region_pyy, region_pzz, region_id11, region_id22;
-    perr_t  ret;
-    float *        x, *y, *z;
-    float *        px, *py, *pz;
-    int *          id1, *id2;
-    uint64_t       numparticles;
-    int            ndim = 1;
-    uint64_t *     offset;
-    uint64_t *     offset_remote;
-    uint64_t *     mysize;
+    int       rank = 0, size = 1;
+    pdcid_t   pdc_id, cont_id;
+    pdcid_t   obj_xx, obj_yy, obj_zz, obj_pxx, obj_pyy, obj_pzz, obj_id11, obj_id22;
+    pdcid_t   region_x, region_y, region_z, region_px, region_py, region_pz, region_id1, region_id2;
+    pdcid_t   region_xx, region_yy, region_zz, region_pxx, region_pyy, region_pzz, region_id11, region_id22;
+    perr_t    ret;
+    float *   x, *y, *z;
+    float *   px, *py, *pz;
+    int *     id1, *id2;
+    uint64_t  numparticles;
+    int       ndim = 1;
+    uint64_t *offset;
+    uint64_t *offset_remote;
+    uint64_t *mysize;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
