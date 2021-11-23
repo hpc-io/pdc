@@ -28,10 +28,10 @@ main(int argc, char **argv)
 #else
     int comm = 1;
 #endif
-    double         write_time = 0.0;
-    pdcid_t        global_obj = 0;
-    pdcid_t        local_region, global_region;
-    pdcid_t        pdc, cont_prop, cont, obj_prop;
+    double  write_time = 0.0;
+    pdcid_t global_obj = 0;
+    pdcid_t local_region, global_region;
+    pdcid_t pdc, cont_prop, cont, obj_prop;
 
     uint64_t *offset, *local_offset;
     uint64_t *mysize;
