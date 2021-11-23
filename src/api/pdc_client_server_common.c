@@ -212,20 +212,21 @@ int
 PDC_server_timing_init()
 {
     server_timings                        = calloc(1, sizeof(pdc_server_timing));
-    buf_obj_map_timestamps                = calloc(13, sizeof(pdc_timestamp));
+    buf_obj_map_timestamps                = calloc(14, sizeof(pdc_timestamp));
     buf_obj_unmap_timestamps              = buf_obj_map_timestamps + 1;
     obtain_lock_write_timestamps          = buf_obj_map_timestamps + 2;
     obtain_lock_read_timestamps           = buf_obj_map_timestamps + 3;
     release_lock_write_timestamps         = buf_obj_map_timestamps + 4;
     release_lock_read_timestamps          = buf_obj_map_timestamps + 5;
-    release_lock_bulk_transfer_timestamps = buf_obj_map_timestamps + 6;
+    release_lock_bulk_transfer_write_timestamps = buf_obj_map_timestamps + 6;
+    release_lock_bulk_transfer_read_timestamps = buf_obj_map_timestamps + 7;
 
-    transfer_request_start_write_timestamps     = buf_obj_map_timestamps + 7;
-    transfer_request_start_read_timestamps      = buf_obj_map_timestamps + 8;
-    transfer_request_wait_write_timestamps      = buf_obj_map_timestamps + 9;
-    transfer_request_wait_read_timestamps       = buf_obj_map_timestamps + 10;
-    transfer_request_wait_write_bulk_timestamps = buf_obj_map_timestamps + 11;
-    transfer_request_wait_read_bulk_timestamps  = buf_obj_map_timestamps + 12;
+    transfer_request_start_write_timestamps     = buf_obj_map_timestamps + 8;
+    transfer_request_start_read_timestamps      = buf_obj_map_timestamps + 9;
+    transfer_request_wait_write_timestamps      = buf_obj_map_timestamps + 10;
+    transfer_request_wait_read_timestamps       = buf_obj_map_timestamps + 11;
+    transfer_request_wait_write_bulk_timestamps = buf_obj_map_timestamps + 12;
+    transfer_request_wait_read_bulk_timestamps  = buf_obj_map_timestamps + 13;
 
     base_time = MPI_Wtime();
     return 0;
@@ -299,7 +300,8 @@ PDC_server_timing_report()
     timestamp_log(stream, "obtain_lock_read", obtain_lock_read_timestamps);
     timestamp_log(stream, "release_lock_write", release_lock_write_timestamps);
     timestamp_log(stream, "release_lock_read", release_lock_read_timestamps);
-    timestamp_log(stream, "release_lock_bulk_transfer", release_lock_bulk_transfer_timestamps);
+    timestamp_log(stream, "release_lock_bulk_transfer_write", release_lock_bulk_transfer_write_timestamps);
+    timestamp_log(stream, "release_lock_bulk_transfer_read", release_lock_bulk_transfer_read_timestamps);
 
     timestamp_log(stream, "transfer_request_start_write", transfer_request_start_write_timestamps);
     timestamp_log(stream, "transfer_request_wait_write", transfer_request_wait_write_timestamps);
@@ -322,7 +324,8 @@ PDC_server_timing_report()
             server_timings->PDCbuf_obj_map_rpc, server_timings->PDCreg_obtain_lock_write_rpc,
             server_timings->PDCreg_obtain_lock_read_rpc, server_timings->PDCreg_release_lock_write_rpc,
             server_timings->PDCreg_release_lock_read_rpc, server_timings->PDCbuf_obj_unmap_rpc,
-            server_timings->PDCreg_release_lock_bulk_transfer_rpc,
+            server_timings->PDCreg_release_lock_bulk_transfer_write_rpc,
+            server_timings->PDCreg_release_lock_bulk_transfer_read_rpc,
             server_timings->PDCreg_transfer_request_start_write_rpc,
             server_timings->PDCreg_transfer_request_wait_write_rpc,
             server_timings->PDCreg_transfer_request_wait_write_bulk_rpc,
@@ -338,7 +341,8 @@ PDC_server_timing_report()
     pdc_timestamp_clean(obtain_lock_read_timestamps);
     pdc_timestamp_clean(release_lock_write_timestamps);
     pdc_timestamp_clean(release_lock_read_timestamps);
-    pdc_timestamp_clean(release_lock_bulk_transfer_timestamps);
+    pdc_timestamp_clean(release_lock_bulk_transfer_write_timestamps);
+    pdc_timestamp_clean(release_lock_bulk_transfer_read_timestamps);
 
     pdc_timestamp_clean(transfer_request_start_write_timestamps);
     pdc_timestamp_clean(transfer_request_start_read_timestamps);
@@ -2867,7 +2871,7 @@ obj_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
 
     FUNC_ENTER(NULL);
 #if PDC_TIMING == 1
-    double start = MPI_Wtime(), end;
+    double end;
 #endif
     bulk_args = (struct buf_map_release_bulk_args *)hg_cb_info->arg;
 
@@ -2892,8 +2896,8 @@ done:
     free(bulk_args);
 #if PDC_TIMING == 1
     end = MPI_Wtime();
-    server_timings->PDCreg_release_lock_bulk_transfer_rpc += end - start;
-    pdc_timestamp_register(release_lock_bulk_transfer_timestamps, start, end);
+    server_timings->PDCreg_release_lock_bulk_transfer_rpc += end - start_time;
+    pdc_timestamp_register(release_lock_bulk_transfer_timestamps, bulk_args->start_time, end);
 #endif
     FUNC_LEAVE(ret_value);
 }
@@ -3145,7 +3149,9 @@ HG_TEST_RPC_CB(region_release, handle)
                         obj_map_bulk_args->remote_bulk_handle   = remote_bulk_handle;
                         obj_map_bulk_args->local_bulk_handle    = eltt2->local_bulk_handle;
                         obj_map_bulk_args->local_addr           = eltt2->local_addr;
-
+                        #if PDC_TIMING == 1
+                        obj_map_bulk_args->start_time           = MPI_Wtime();
+                        #endif
                         remote_reg_info->ndim = (obj_map_bulk_args->remote_region_unit).ndim;
                         remote_reg_info->offset =
                             (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
@@ -3348,6 +3354,9 @@ HG_TEST_RPC_CB(region_release, handle)
                         buf_map_bulk_args->remote_region_nounit = eltt->remote_region_nounit;
                         buf_map_bulk_args->remote_client_id     = eltt->remote_client_id;
                         buf_map_bulk_args->remote_bulk_handle   = remote_bulk_handle;
+                        #if PDC_TIMING == 1
+                        buf_map_bulk_args->start_time           = MPI_Wtime();
+                        #endif
 #ifdef ENABLE_MULTITHREAD
                         hg_thread_mutex_init(&(buf_map_bulk_args->work_mutex));
                         hg_thread_cond_init(&(buf_map_bulk_args->work_cond));
