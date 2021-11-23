@@ -1273,6 +1273,7 @@ PDC_metadata_t_to_transfer_t(pdc_metadata_t *meta, pdc_metadata_transfer_t *tran
     if (NULL == meta || NULL == transfer)
         PGOTO_ERROR(FAIL, "PDC_metadata_t_to_transfer_t(): NULL input!");
 
+
     transfer->user_id         = meta->user_id;
     transfer->app_name        = meta->app_name;
     transfer->obj_name        = meta->obj_name;
@@ -2854,8 +2855,8 @@ done:
 
 #if PDC_TIMING == 1
     end = MPI_Wtime();
-    server_timings->PDCreg_release_lock_bulk_transfer_rpc += end - bulk_args->start_time;
-    pdc_timestamp_register(release_lock_bulk_transfer_timestamps, bulk_args->start_time, end);
+    server_timings->PDCreg_release_lock_bulk_transfer_write_rpc += end - bulk_args->start_time;
+    pdc_timestamp_register(release_lock_bulk_transfer_write_timestamps, bulk_args->start_time, end);
 #endif
     FUNC_LEAVE(ret_value);
 }
@@ -2896,8 +2897,8 @@ done:
     free(bulk_args);
 #if PDC_TIMING == 1
     end = MPI_Wtime();
-    server_timings->PDCreg_release_lock_bulk_transfer_rpc += end - start_time;
-    pdc_timestamp_register(release_lock_bulk_transfer_timestamps, bulk_args->start_time, end);
+    server_timings->PDCreg_release_lock_bulk_transfer_read_rpc += end - start_time;
+    pdc_timestamp_register(release_lock_bulk_transfer_read_timestamps, bulk_args->start_time, end);
 #endif
     FUNC_LEAVE(ret_value);
 }
