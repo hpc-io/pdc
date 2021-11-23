@@ -4915,7 +4915,7 @@ HG_TEST_RPC_CB(transfer_request_wait, handle)
 
     FUNC_ENTER(NULL);
 #if PDC_TIMING == 1
-    double start          = MPI_Wtime(), end;
+    double start = MPI_Wtime(), end;
 #endif
 
     HG_Get_input(handle, &in);
@@ -4972,7 +4972,7 @@ HG_TEST_RPC_CB(transfer_request, handle)
 
     FUNC_ENTER(NULL);
 #if PDC_TIMING == 1
-    double start          = MPI_Wtime(), end;
+    double start = MPI_Wtime(), end;
 #endif
     HG_Get_input(handle, &in);
 
