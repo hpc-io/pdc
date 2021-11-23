@@ -2897,7 +2897,7 @@ done:
     free(bulk_args);
 #if PDC_TIMING == 1
     end = MPI_Wtime();
-    server_timings->PDCreg_release_lock_bulk_transfer_read_rpc += end - start_time;
+    server_timings->PDCreg_release_lock_bulk_transfer_read_rpc += end - bulk_args->start_time;
     pdc_timestamp_register(release_lock_bulk_transfer_read_timestamps, bulk_args->start_time, end);
 #endif
     FUNC_LEAVE(ret_value);
