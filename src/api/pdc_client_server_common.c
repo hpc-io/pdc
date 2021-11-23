@@ -4916,7 +4916,6 @@ HG_TEST_RPC_CB(transfer_request_wait, handle)
     FUNC_ENTER(NULL);
 #if PDC_TIMING == 1
     double start          = MPI_Wtime(), end;
-    double function_start = start;
 #endif
 
     HG_Get_input(handle, &in);
@@ -4946,11 +4945,11 @@ HG_TEST_RPC_CB(transfer_request_wait, handle)
     end = MPI_Wtime();
     if (in.access_type == PDC_READ) {
         server_timings->PDCreg_transfer_request_wait_read_rpc += end - start;
-        pdc_timestamp_register(transfer_request_wait_read_timestamps, function_start, end);
+        pdc_timestamp_register(transfer_request_wait_read_timestamps, start, end);
     }
     else {
         server_timings->PDCreg_transfer_request_wait_write_rpc += end - start;
-        pdc_timestamp_register(transfer_request_wait_write_timestamps, function_start, end);
+        pdc_timestamp_register(transfer_request_wait_write_timestamps, start, end);
     }
 #endif
 
@@ -4974,7 +4973,6 @@ HG_TEST_RPC_CB(transfer_request, handle)
     FUNC_ENTER(NULL);
 #if PDC_TIMING == 1
     double start          = MPI_Wtime(), end;
-    double function_start = start;
 #endif
     HG_Get_input(handle, &in);
 
@@ -5083,11 +5081,11 @@ HG_TEST_RPC_CB(transfer_request, handle)
     end = MPI_Wtime();
     if (in.access_type == PDC_READ) {
         server_timings->PDCreg_transfer_request_start_read_rpc += end - start;
-        pdc_timestamp_register(transfer_request_start_read_timestamps, function_start, end);
+        pdc_timestamp_register(transfer_request_start_read_timestamps, start, end);
     }
     else {
         server_timings->PDCreg_transfer_request_start_write_rpc += end - start;
-        pdc_timestamp_register(transfer_request_start_write_timestamps, function_start, end);
+        pdc_timestamp_register(transfer_request_start_write_timestamps, start, end);
     }
 #endif
 
