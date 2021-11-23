@@ -64,10 +64,6 @@ main(int argc, char **argv)
 #else
     int comm = 1;
 #endif
-    struct timeval ht_total_start;
-    struct timeval ht_total_end;
-    long long      ht_total_elapsed;
-    double         ht_total_sec;
     float *        x, *y, *z;
     float *        px, *py, *pz;
     int *          id1, *id2;
@@ -229,7 +225,6 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-    gettimeofday(&ht_total_start, 0);
 
     transfer_request_x = PDCregion_transfer_create(&x[0], PDC_WRITE, obj_xx, region_x, region_xx);
     if (transfer_request_x == 0) {
@@ -271,22 +266,6 @@ main(int argc, char **argv)
         printf("Array id2 transfer request creation failed\n");
         return 1;
     }
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL + ht_total_end.tv_usec -
-                       ht_total_start.tv_usec;
-    ht_total_sec = ht_total_elapsed / 1000000.0;
-    if (rank == 0) {
-        printf("Time to map with %d ranks: %.6f\n", size, ht_total_sec);
-        fflush(stdout);
-    }
-
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-    gettimeofday(&ht_total_start, 0);
 
     ret = PDCregion_transfer_start(transfer_request_x);
     if (ret != SUCCEED) {
@@ -328,17 +307,6 @@ main(int argc, char **argv)
         printf("Failed to start transfer for region_id22\n");
         return 1;
     }
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL + ht_total_end.tv_usec -
-                       ht_total_start.tv_usec;
-    ht_total_sec = ht_total_elapsed / 1000000.0;
-    if (rank == 0) {
-        printf("Time to start region transfers with %d ranks: %.6f\n", size, ht_total_sec);
-        fflush(stdout);
-    }
 
     for (i = 0; i < numparticles; i++) {
         id1[i] = i;
@@ -350,11 +318,6 @@ main(int argc, char **argv)
         py[i]  = uniform_random_number() * y_dim;
         pz[i]  = ((float)id2[i] / numparticles) * z_dim;
     }
-
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-    gettimeofday(&ht_total_start, 0);
 
     ret = PDCregion_transfer_wait(transfer_request_x);
     if (ret != SUCCEED) {
@@ -396,21 +359,6 @@ main(int argc, char **argv)
         printf("Failed to transfer wait for region_id22\n");
         return 1;
     }
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL + ht_total_end.tv_usec -
-                       ht_total_start.tv_usec;
-    ht_total_sec = ht_total_elapsed / 1000000.0;
-    if (rank == 0) {
-        printf("Time to update data with %d ranks: %.6f\n", size, ht_total_sec);
-        fflush(stdout);
-    }
-
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
 
     ret = PDCregion_transfer_close(transfer_request_x);
     if (ret != SUCCEED) {

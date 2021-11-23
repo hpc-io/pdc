@@ -57,10 +57,7 @@ main(int argc, char **argv)
     pdcid_t region_x, region_y, region_z, region_px, region_py, region_pz, region_id1, region_id2;
     pdcid_t region_xx, region_yy, region_zz, region_pxx, region_pyy, region_pzz, region_id11, region_id22;
     perr_t  ret;
-    struct timeval ht_total_start;
-    struct timeval ht_total_end;
-    long long      ht_total_elapsed;
-    double         ht_total_sec;
+
     float *        x, *y, *z;
     float *        px, *py, *pz;
     int *          id1, *id2;
@@ -176,7 +173,6 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-    gettimeofday(&ht_total_start, 0);
 
     transfer_request_x = PDCregion_transfer_create(&x[0], PDC_READ, obj_xx, region_x, region_xx);
     if (transfer_request_x == 0) {
@@ -219,16 +215,6 @@ main(int argc, char **argv)
         return 1;
     }
 
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL + ht_total_end.tv_usec -
-                       ht_total_start.tv_usec;
-    ht_total_sec = ht_total_elapsed / 1000000.0;
-    if (rank == 0) {
-        printf("Time to map with %d ranks: %.6f\n", size, ht_total_sec);
-        fflush(stdout);
-    }
-
-    gettimeofday(&ht_total_start, 0);
 
     ret = PDCregion_transfer_start(transfer_request_x);
     if (ret != SUCCEED) {
@@ -271,17 +257,6 @@ main(int argc, char **argv)
         return 1;
     }
 
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL + ht_total_end.tv_usec -
-                       ht_total_start.tv_usec;
-    ht_total_sec = ht_total_elapsed / 1000000.0;
-    if (rank == 0) {
-        printf("Time to lock with %d ranks: %.6f\n", size, ht_total_sec);
-        fflush(stdout);
-    }
-
-    gettimeofday(&ht_total_start, 0);
-
     ret = PDCregion_transfer_wait(transfer_request_x);
     if (ret != SUCCEED) {
         printf("Failed to transfer wait for region_xx\n");
@@ -321,15 +296,6 @@ main(int argc, char **argv)
     if (ret != SUCCEED) {
         printf("Failed to transfer wait for region_id22\n");
         return 1;
-    }
-
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL + ht_total_end.tv_usec -
-                       ht_total_start.tv_usec;
-    ht_total_sec = ht_total_elapsed / 1000000.0;
-    if (rank == 0) {
-        printf("Time to relese lock with %d ranks: %.6f\n", size, ht_total_sec);
-        fflush(stdout);
     }
 
     ret = PDCregion_transfer_close(transfer_request_x);
@@ -375,15 +341,6 @@ main(int argc, char **argv)
 #if PDC_TIMING == 1
     PDC_timing_report("read");
 #endif
-
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL + ht_total_end.tv_usec -
-                       ht_total_start.tv_usec;
-    ht_total_sec = ht_total_elapsed / 1000000.0;
-    if (rank == 0) {
-        printf("Time to read data with %d ranks: %.6f\n", size, ht_total_sec);
-        fflush(stdout);
-    }
 
     if (PDCobj_close(obj_xx) < 0)
         printf("fail to close obj_xx\n");

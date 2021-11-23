@@ -64,10 +64,6 @@ main(int argc, char **argv)
 #else
     int comm = 1;
 #endif
-    struct timeval ht_total_start;
-    struct timeval ht_total_end;
-    long long      ht_total_elapsed;
-    double         ht_total_sec;
     float *        x, *y, *z;
     float *        px, *py, *pz;
     int *          id1, *id2;
@@ -226,7 +222,6 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-    gettimeofday(&ht_total_start, 0);
 
     ret = PDCbuf_obj_map(&x[0], PDC_FLOAT, region_x, obj_xx, region_xx);
     if (ret < 0) {
@@ -269,17 +264,6 @@ main(int argc, char **argv)
         return 1;
     }
 
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL + ht_total_end.tv_usec -
-                       ht_total_start.tv_usec;
-    ht_total_sec = ht_total_elapsed / 1000000.0;
-    if (rank == 0) {
-        printf("Time to map with %d ranks: %.6f\n", size, ht_total_sec);
-        fflush(stdout);
-    }
-
-    gettimeofday(&ht_total_start, 0);
-
     ret = PDCreg_obtain_lock(obj_xx, region_xx, PDC_WRITE, PDC_NOBLOCK);
     if (ret != SUCCEED) {
         printf("Failed to obtain lock for region_xx\n");
@@ -321,15 +305,6 @@ main(int argc, char **argv)
         return 1;
     }
 
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL + ht_total_end.tv_usec -
-                       ht_total_start.tv_usec;
-    ht_total_sec = ht_total_elapsed / 1000000.0;
-    if (rank == 0) {
-        printf("Time to lock with %d ranks: %.6f\n", size, ht_total_sec);
-        fflush(stdout);
-    }
-
     for (i = 0; i < numparticles; i++) {
         id1[i] = i;
         id2[i] = i * 2;
@@ -340,8 +315,6 @@ main(int argc, char **argv)
         py[i]  = uniform_random_number() * y_dim;
         pz[i]  = ((float)id2[i] / numparticles) * z_dim;
     }
-
-    gettimeofday(&ht_total_start, 0);
 
     ret = PDCreg_release_lock(obj_xx, region_xx, PDC_WRITE);
     if (ret != SUCCEED) {
@@ -382,15 +355,6 @@ main(int argc, char **argv)
     if (ret != SUCCEED) {
         printf("Failed to release lock for region_id22\n");
         return 1;
-    }
-
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL + ht_total_end.tv_usec -
-                       ht_total_start.tv_usec;
-    ht_total_sec = ht_total_elapsed / 1000000.0;
-    if (rank == 0) {
-        printf("Time to update data with %d ranks: %.6f\n", size, ht_total_sec);
-        fflush(stdout);
     }
 
     ret = PDCbuf_obj_unmap(obj_xx, region_xx);

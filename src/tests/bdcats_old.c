@@ -57,10 +57,6 @@ main(int argc, char **argv)
     pdcid_t region_x, region_y, region_z, region_px, region_py, region_pz, region_id1, region_id2;
     pdcid_t region_xx, region_yy, region_zz, region_pxx, region_pyy, region_pzz, region_id11, region_id22;
     perr_t  ret;
-    struct timeval ht_total_start;
-    struct timeval ht_total_end;
-    long long      ht_total_elapsed;
-    double         ht_total_sec;
     float *        x, *y, *z;
     float *        px, *py, *pz;
     int *          id1, *id2;
@@ -173,7 +169,6 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-    gettimeofday(&ht_total_start, 0);
 
     ret = PDCbuf_obj_map(&x[0], PDC_FLOAT, region_x, obj_xx, region_xx);
     if (ret < 0)
@@ -207,17 +202,6 @@ main(int argc, char **argv)
     if (ret < 0)
         printf("Array id2 PDCbuf_obj_map failed\n");
 
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL + ht_total_end.tv_usec -
-                       ht_total_start.tv_usec;
-    ht_total_sec = ht_total_elapsed / 1000000.0;
-    if (rank == 0) {
-        printf("Time to map with %d ranks: %.6f\n", size, ht_total_sec);
-        fflush(stdout);
-    }
-
-    gettimeofday(&ht_total_start, 0);
-
     ret = PDCreg_obtain_lock(obj_xx, region_xx, PDC_READ, PDC_NOBLOCK);
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_xx\n");
@@ -250,17 +234,6 @@ main(int argc, char **argv)
     if (ret != SUCCEED)
         printf("Failed to obtain lock for region_id22\n");
 
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL + ht_total_end.tv_usec -
-                       ht_total_start.tv_usec;
-    ht_total_sec = ht_total_elapsed / 1000000.0;
-    if (rank == 0) {
-        printf("Time to lock with %d ranks: %.6f\n", size, ht_total_sec);
-        fflush(stdout);
-    }
-
-    gettimeofday(&ht_total_start, 0);
-
     ret = PDCreg_release_lock(obj_xx, region_xx, PDC_READ);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_xx\n");
@@ -292,15 +265,6 @@ main(int argc, char **argv)
     ret = PDCreg_release_lock(obj_id22, region_id22, PDC_READ);
     if (ret != SUCCEED)
         printf("Failed to release lock for region_id22\n");
-
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL + ht_total_end.tv_usec -
-                       ht_total_start.tv_usec;
-    ht_total_sec = ht_total_elapsed / 1000000.0;
-    if (rank == 0) {
-        printf("Time to relese lock with %d ranks: %.6f\n", size, ht_total_sec);
-        fflush(stdout);
-    }
 
     ret = PDCbuf_obj_unmap(obj_xx, region_xx);
     if (ret != SUCCEED)
@@ -337,14 +301,6 @@ main(int argc, char **argv)
 #if PDC_TIMING == 1
     PDC_timing_report("read");
 #endif
-    gettimeofday(&ht_total_end, 0);
-    ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL + ht_total_end.tv_usec -
-                       ht_total_start.tv_usec;
-    ht_total_sec = ht_total_elapsed / 1000000.0;
-    if (rank == 0) {
-        printf("Time to read data with %d ranks: %.6f\n", size, ht_total_sec);
-        fflush(stdout);
-    }
 
     if (PDCobj_close(obj_xx) < 0)
         printf("fail to close obj_xx\n");
