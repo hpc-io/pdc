@@ -313,13 +313,7 @@ PDC_server_timing_report()
 
     sprintf(filename, "pdc_server_timings_%d.csv", rank);
     stream = fopen(filename, "w");
-    fprintf(stream,
-            "PDCbuf_obj_map_rpc,"
-            "PDCreg_obtain_lock_write_rpc,PDCreg_obtain_lock_read_rpc,PDCreg_release_lock_write_rpc,"
-            "PDCreg_release_lock_read_rpc,PDCbuf_obj_unmap_rpc,"
-            "region_release_bulk_transfer_cb, PDCregion_transfer_start_write, PDCregion_transfer_wait_write, "
-            "PDCregion_transfer_wait_cb_write, PDCregion_transfer_start_read, PDCregion_transfer_wait_read, "
-            "PDCregion_transfer_wait_cb_read\n");
+    fprintf(stream, "PDCbuf_obj_map_rpc,PDCreg_obtain_lock_write_rpc,PDCreg_obtain_lock_read_rpc,PDCreg_release_lock_write_rpc, PDCreg_release_lock_read_rpc,PDCbuf_obj_unmap_rpc,PDCreg_release_lock_bulk_transfer_write_rpc,PDCreg_release_lock_bulk_transfer_read_rpc,PDCregion_transfer_start_write, PDCregion_transfer_wait_write, PDCregion_transfer_wait_cb_write, PDCregion_transfer_start_read, PDCregion_transfer_wait_read, PDCregion_transfer_wait_cb_read\n");
     fprintf(stream, "%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n",
             server_timings->PDCbuf_obj_map_rpc, server_timings->PDCreg_obtain_lock_write_rpc,
             server_timings->PDCreg_obtain_lock_read_rpc, server_timings->PDCreg_release_lock_write_rpc,
@@ -958,6 +952,7 @@ done:
 
 uint64_t
 PDC_get_region_size(region_list_t *a)
+
 {
     uint64_t ret_value = 0;
     uint64_t size      = 1;
