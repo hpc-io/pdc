@@ -79,9 +79,8 @@ timestamp_log(FILE *stream, const char *header, pdc_timestamp *timestamp)
 int
 PDC_timing_init()
 {
-    char       hostname[HOST_NAME_MAX];
-    int        rank;
-
+    char hostname[HOST_NAME_MAX];
+    int  rank;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     gethostname(hostname, HOST_NAME_MAX);
@@ -218,8 +217,8 @@ PDC_timing_report(const char *prefix)
 int
 PDC_server_timing_init()
 {
-    char              hostname[HOST_NAME_MAX];
-    int               rank;
+    char hostname[HOST_NAME_MAX];
+    int  rank;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     gethostname(hostname, HOST_NAME_MAX);
