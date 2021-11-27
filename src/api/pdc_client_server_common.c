@@ -125,7 +125,9 @@ PDC_timing_report(const char *prefix)
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     gethostname(hostname, HOST_NAME_MAX);
-    printf("client process rank %d, hostname = %s\n", rank, hostname);
+    if (!(rank % 32)) {
+        printf("client process rank %d, hostname = %s\n", rank, hostname);
+    }
     MPI_Reduce(&timings, &max_timings, sizeof(pdc_timing) / sizeof(double), MPI_DOUBLE, MPI_MAX, 0,
                MPI_COMM_WORLD);
     if (rank == 0) {
@@ -269,6 +271,8 @@ PDC_server_timing_report()
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     gethostname(hostname, HOST_NAME_MAX);
+
+    printf("server process rank %d, hostname = %s\n", rank, hostname);
     /*
         printf("rank = %d, hostname = %s, PDCbuf_obj_map_rpc = %lf, PDCreg_obtain_lock_rpc = %lf, "
                "PDCreg_release_lock_write_rpc = "
@@ -2833,6 +2837,12 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     PDC_Server_release_lock_request(bulk_args->remote_obj_id, remote_reg_info);
 #endif
 
+#if PDC_TIMING == 1
+    end = MPI_Wtime();
+    server_timings->PDCreg_release_lock_bulk_transfer_write_rpc += end - bulk_args->start_time;
+    pdc_timestamp_register(release_lock_bulk_transfer_write_timestamps, bulk_args->start_time, end);
+#endif
+
 done:
     fflush(stdout);
 
@@ -2847,11 +2857,6 @@ done:
     free(bulk_args);
 #endif
 
-#if PDC_TIMING == 1
-    end = MPI_Wtime();
-    server_timings->PDCreg_release_lock_bulk_transfer_write_rpc += end - bulk_args->start_time;
-    pdc_timestamp_register(release_lock_bulk_transfer_write_timestamps, bulk_args->start_time, end);
-#endif
     FUNC_LEAVE(ret_value);
 }
 
@@ -2883,17 +2888,19 @@ obj_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     PDC_Data_Server_region_release(&(bulk_args->in), &out);
     HG_Respond(bulk_args->handle, NULL, NULL, &out);
 
+#if PDC_TIMING == 1
+    end = MPI_Wtime();
+    server_timings->PDCreg_release_lock_bulk_transfer_read_rpc += end - bulk_args->start_time;
+    pdc_timestamp_register(release_lock_bulk_transfer_read_timestamps, bulk_args->start_time, end);
+#endif
+
 done:
     fflush(stdout);
     free(bulk_args->remote_reg_info);
     HG_Free_input(bulk_args->handle, &(bulk_args->in));
     HG_Destroy(bulk_args->handle);
     free(bulk_args);
-#if PDC_TIMING == 1
-    end = MPI_Wtime();
-    server_timings->PDCreg_release_lock_bulk_transfer_read_rpc += end - bulk_args->start_time;
-    pdc_timestamp_register(release_lock_bulk_transfer_read_timestamps, bulk_args->start_time, end);
-#endif
+
     FUNC_LEAVE(ret_value);
 }
 #endif
