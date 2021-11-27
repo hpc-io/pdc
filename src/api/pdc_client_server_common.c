@@ -79,6 +79,15 @@ timestamp_log(FILE *stream, const char *header, pdc_timestamp *timestamp)
 int
 PDC_timing_init()
 {
+    char       hostname[HOST_NAME_MAX];
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    gethostname(hostname, HOST_NAME_MAX);
+    if (!(rank % 32)) {
+        printf("client process rank %d, hostname = %s\n", rank, hostname);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+
     memset(&timings, 0, sizeof(pdc_timing));
 
     client_buf_obj_map_timestamps        = calloc(10, sizeof(pdc_timestamp));
@@ -121,13 +130,7 @@ PDC_timing_report(const char *prefix)
     int        rank;
     char       filename[256], header[256];
     FILE *     stream;
-    char       hostname[HOST_NAME_MAX];
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    gethostname(hostname, HOST_NAME_MAX);
-    if (!(rank % 32)) {
-        printf("client process rank %d, hostname = %s\n", rank, hostname);
-    }
     MPI_Reduce(&timings, &max_timings, sizeof(pdc_timing) / sizeof(double), MPI_DOUBLE, MPI_MAX, 0,
                MPI_COMM_WORLD);
     if (rank == 0) {
@@ -213,6 +216,23 @@ PDC_timing_report(const char *prefix)
 int
 PDC_server_timing_init()
 {
+    char              hostname[HOST_NAME_MAX];
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    gethostname(hostname, HOST_NAME_MAX);
+
+    printf("server process rank %d, hostname = %s\n", rank, hostname);
+    /*
+        printf("rank = %d, hostname = %s, PDCbuf_obj_map_rpc = %lf, PDCreg_obtain_lock_rpc = %lf, "
+               "PDCreg_release_lock_write_rpc = "
+               "%lf, PDCreg_release_lock_read_rpc = %lf, PDCbuf_obj_unmap_rpc = %lf, "
+               "region_release_bulk_transfer_cb = %lf\n",
+               rank, hostname, server_timings->PDCbuf_obj_map_rpc, server_timings->PDCreg_obtain_lock_rpc,
+               server_timings->PDCreg_release_lock_write_rpc, server_timings->PDCreg_release_lock_read_rpc,
+               server_timings->PDCbuf_obj_unmap_rpc, server_timings->PDCreg_release_lock_bulk_transfer_rpc);
+    */
+    MPI_Barrier(MPI_COMM_WORLD);
+
     server_timings                              = calloc(1, sizeof(pdc_server_timing));
     buf_obj_map_timestamps                      = calloc(14, sizeof(pdc_timestamp));
     buf_obj_unmap_timestamps                    = buf_obj_map_timestamps + 1;
@@ -267,21 +287,7 @@ PDC_server_timing_report()
     int               rank;
     char              filename[256];
     FILE *            stream;
-    char              hostname[HOST_NAME_MAX];
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    gethostname(hostname, HOST_NAME_MAX);
-
-    printf("server process rank %d, hostname = %s\n", rank, hostname);
-    /*
-        printf("rank = %d, hostname = %s, PDCbuf_obj_map_rpc = %lf, PDCreg_obtain_lock_rpc = %lf, "
-               "PDCreg_release_lock_write_rpc = "
-               "%lf, PDCreg_release_lock_read_rpc = %lf, PDCbuf_obj_unmap_rpc = %lf, "
-               "region_release_bulk_transfer_cb = %lf\n",
-               rank, hostname, server_timings->PDCbuf_obj_map_rpc, server_timings->PDCreg_obtain_lock_rpc,
-               server_timings->PDCreg_release_lock_write_rpc, server_timings->PDCreg_release_lock_read_rpc,
-               server_timings->PDCbuf_obj_unmap_rpc, server_timings->PDCreg_release_lock_bulk_transfer_rpc);
-    */
     MPI_Reduce(server_timings, &max_timings, sizeof(pdc_server_timing) / sizeof(double), MPI_DOUBLE, MPI_MAX,
                0, MPI_COMM_WORLD);
     /*
@@ -6086,6 +6092,7 @@ PDC_check_int_ret_cb(const struct hg_cb_info *callback_info)
     pdc_int_ret_t output;
 
     FUNC_ENTER(NULL);
+
 
     hg_handle_t handle = callback_info->info.forward.handle;
 
