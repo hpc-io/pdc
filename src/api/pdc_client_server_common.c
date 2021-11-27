@@ -132,6 +132,8 @@ PDC_timing_report(const char *prefix)
     char       filename[256], header[256];
     FILE *     stream;
 
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
     MPI_Reduce(&timings, &max_timings, sizeof(pdc_timing) / sizeof(double), MPI_DOUBLE, MPI_MAX, 0,
                MPI_COMM_WORLD);
     if (rank == 0) {
@@ -289,6 +291,8 @@ PDC_server_timing_report()
     int               rank;
     char              filename[256];
     FILE *            stream;
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     MPI_Reduce(server_timings, &max_timings, sizeof(pdc_server_timing) / sizeof(double), MPI_DOUBLE, MPI_MAX,
                0, MPI_COMM_WORLD);
@@ -1776,6 +1780,7 @@ PDC_Client_query_read_complete(char *shm_addrs ATTRIBUTE(unused), int size ATTRI
                                int n_shm ATTRIBUTE(unused), int seq_id ATTRIBUTE(unused))
 {
     return SUCCEED;
+
 }
 hg_return_t
 PDC_Client_recv_bulk_storage_meta_cb(const struct hg_cb_info *callback_info ATTRIBUTE(unused))
