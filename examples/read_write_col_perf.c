@@ -119,7 +119,6 @@ main(int argc, char **argv)
 
     char hostname[256];
     gethostname(hostname, 256);
-    printf("Client program read_write_perf Rank %d at hostname %s\n", rank, hostname);
     if (rank == 0) {
         printf("number of dimensions in this test is %d\n", ndim);
         printf("data size = %llu\n", (long long unsigned)data_size);
@@ -231,7 +230,6 @@ main(int argc, char **argv)
             ret_value = 1;
         }
     }
-    printf("rank %d completed write\n", rank);
 #if PDC_TIMING == 1
     PDC_timing_report("write");
 #endif

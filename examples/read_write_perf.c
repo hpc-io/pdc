@@ -113,7 +113,6 @@ main(int argc, char **argv)
 #endif
     char hostname[256];
     gethostname(hostname, 256);
-    printf("Client program read_write_perf Rank %d at hostname %s\n", rank, hostname);
     if (rank == 0) {
         printf("number of dimensions in this test is %d\n", ndim);
         printf("data size = %llu\n", (long long unsigned)data_size);
@@ -226,7 +225,6 @@ main(int argc, char **argv)
 #if PDC_TIMING == 1
     PDC_timing_report("write");
 #endif
-    printf("start to time read performance\n");
     for (i = 0; i < n_objects; ++i) {
         sprintf(obj_name1, "o1_%d_%d", rank, i);
         obj1 = PDCobj_open(obj_name1, pdc);
