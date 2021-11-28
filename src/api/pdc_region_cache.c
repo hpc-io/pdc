@@ -315,8 +315,6 @@ PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dim
                           size_t buf_size, const uint64_t *offset, const uint64_t *size, int ndim,
                           size_t unit)
 {
-    pthread_mutex_lock(&pdc_obj_cache_list_mutex);
-
     pdc_obj_cache *         obj_cache_iter, *obj_cache = NULL;
     struct pdc_region_info *region_cache_info;
     obj_cache_iter = obj_cache_list;
@@ -382,8 +380,6 @@ PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dim
 
     gettimeofday(&(obj_cache->timestamp), NULL);
 
-    pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
-
     return 0;
 }
 
@@ -433,6 +429,7 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
     if (region_info->ndim >= 3)
         write_size *= region_info->size[2];
 
+    pthread_mutex_lock(&pdc_obj_cache_list_mutex);
     obj_cache = NULL;
     // Look up for the object in the cache list
     obj_cache_iter = obj_cache_list;
@@ -480,6 +477,8 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
                                                buf, unit, 1);
         */
     }
+    pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
+
     // PDC_Server_data_write_out2(obj_id, region_info, buf, unit);
 
     // done:
@@ -589,8 +588,9 @@ PDC_transfer_request_data_read_from(uint64_t obj_id, int obj_ndim, const uint64_
     perr_t ret_value = SUCCEED;
     FUNC_ENTER(NULL);
     // PDC_Server_data_read_from2(obj_id, region_info, buf, unit);
-
+    pthread_mutex_lock(&pdc_obj_cache_list_mutex);
     PDC_region_fetch(obj_id, obj_ndim, obj_dims, region_info, buf, unit);
+    pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
     // done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -604,7 +604,6 @@ int
 PDC_region_fetch(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims, struct pdc_region_info *region_info,
                  void *buf, size_t unit)
 {
-    pthread_mutex_lock(&pdc_obj_cache_list_mutex);
     pdc_obj_cache *         obj_cache = NULL, *obj_cache_iter;
     int                     flag      = 1;
     size_t                  j;
@@ -655,7 +654,6 @@ PDC_region_fetch(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims, struct
         }
         PDC_Server_transfer_request_io(obj_id, obj_ndim, obj_dims, region_info, buf, unit, 0);
     }
-    pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
     return 0;
 }
 #endif

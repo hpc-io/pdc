@@ -45,7 +45,7 @@ uniform_random_number()
 void
 print_usage()
 {
-    printf("Usage: srun -n ./vpicio #particles\n");
+    printf("Usage: srun -n ./bdcats #particles\n");
 }
 
 int
