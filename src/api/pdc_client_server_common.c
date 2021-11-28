@@ -1780,7 +1780,6 @@ PDC_Client_query_read_complete(char *shm_addrs ATTRIBUTE(unused), int size ATTRI
                                int n_shm ATTRIBUTE(unused), int seq_id ATTRIBUTE(unused))
 {
     return SUCCEED;
-
 }
 hg_return_t
 PDC_Client_recv_bulk_storage_meta_cb(const struct hg_cb_info *callback_info ATTRIBUTE(unused))
