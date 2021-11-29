@@ -539,6 +539,7 @@ PDC_region_cache_flush_all()
     obj_cache_iter = obj_cache_list;
     while (obj_cache_iter != NULL) {
         PDC_region_cache_flush_by_pointer(obj_cache_iter->obj_id, obj_cache_iter);
+        free(obj_cache_iter->dims);
         obj_cache_temp = obj_cache_iter;
         obj_cache_iter = obj_cache_iter->next;
         free(obj_cache_temp);
@@ -576,7 +577,7 @@ PDC_region_cache_clock_cycle(void *ptr)
             break;
         }
         pthread_mutex_unlock(&pdc_cache_mutex);
-        sleep(0.75);
+        sleep(1);
     }
     return 0;
 }

@@ -526,6 +526,7 @@ PDC_Server_lookup_client_cb(const struct hg_cb_info *callback_info)
     if (client_id >= (uint32_t)pdc_client_num_g) {
         printf("==PDC_SERVER[%d]: invalid input client id %d\n", pdc_server_rank_g, client_id);
         goto done;
+
     }
     pdc_client_info_g[client_id].addr       = callback_info->info.lookup.addr;
     pdc_client_info_g[client_id].addr_valid = 1;
@@ -2035,9 +2036,9 @@ main(int argc, char *argv[])
     pdc_recycle_close_flag = 1;
     pthread_mutex_unlock(&pdc_cache_mutex);
     pthread_join(pdc_recycle_thread, NULL);
-    pthread_mutex_destroy(&pdc_cache_mutex);
     PDC_region_cache_flush_all();
     pthread_mutex_destroy(&pdc_obj_cache_list_mutex);
+    pthread_mutex_destroy(&pdc_cache_mutex);
 #endif
 
 #ifndef DISABLE_CHECKPOINT
