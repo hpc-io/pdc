@@ -296,17 +296,15 @@ PDC_server_timing_report()
 
     MPI_Reduce(server_timings, &max_timings, sizeof(pdc_server_timing) / sizeof(double), MPI_DOUBLE, MPI_MAX,
                0, MPI_COMM_WORLD);
-    /*
-        if (rank == 0) {
-            printf("rank = %d, maximum timing among all processes, PDCbuf_obj_map_rpc = %lf, "
-                   "PDCreg_obtain_lock_rpc = %lf, PDCreg_release_lock_write_rpc = %lf, "
-                   "PDCreg_release_lock_read_rpc = %lf, PDCbuf_obj_unmap_rpc = %lf, "
+    if (rank == 0) {
+            printf("rank = %d, maximum timing among all processes\nPDCbuf_obj_map_rpc = %lf\n"
+                   "PDCreg_obtain_lock_rpc = %lf, PDCreg_release_lock_write_rpc = %lf\n"
+                   "PDCreg_release_lock_read_rpc = %lf, PDCbuf_obj_unmap_rpc = %lf\n"
                    "region_release_bulk_transfer_cb = %lf\n",
                    rank, max_timings.PDCbuf_obj_map_rpc, max_timings.PDCreg_obtain_lock_rpc,
                    max_timings.PDCreg_release_lock_write_rpc, max_timings.PDCreg_release_lock_read_rpc,
                    max_timings.PDCbuf_obj_unmap_rpc, max_timings.PDCreg_release_lock_bulk_transfer_rpc);
         }
-    */
     sprintf(filename, "pdc_server_log_rank_%d.csv", rank);
 
     stream = fopen(filename, "w");
