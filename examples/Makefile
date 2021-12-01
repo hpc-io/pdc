@@ -2,19 +2,19 @@ CC = mpicc
 CFLAGS = -O2 -Wall -Wextra
 
 INCLUDES = -I. -I$(PDC_DIR)/include
-LDFLAGS = -L$(PDC_DIR)/lib
+LDFLAGS = -Wl,-rpath,$(PDC_DIR)/lib -L$(PDC_DIR)/lib
 
 LIBS = -lpdc
 
 .c.o:
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<
 
-all: region_transfer_2D region_transfer_3D pdc_init obj_get_data bdcats vpicio
+all: region_obj_map_2D region_obj_map_3D pdc_init obj_get_data bdcats vpicio haccio haccio_v2 tileio tileio_v2
 
-region_transfer_2D: region_transfer_2D.o
+region_obj_map_2D: region_obj_map_2D.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
 
-region_transfer_3D: region_transfer_3D.o
+region_obj_map_3D: region_obj_map_3D.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
 
 obj_get_data: obj_get_data.o
@@ -32,8 +32,14 @@ vpicio: vpicio.o
 haccio: haccio.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
 
+haccio_v2: haccio_v2.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
+
 tileio: tileio.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
 
+tileio_v2: tileio_v2.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
+
 clean:
-	rm -f *.o region_transfer_2D region_transfer_3D pdc_init obj_get_data vpicio bdcats
+	rm -f *.o region_obj_map_2D region_obj_map_3D pdc_init obj_get_data vpicio bdcats haccio tileio

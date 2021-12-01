@@ -79,8 +79,8 @@ init(int argc, char **argv)
     assert((g_x_tiles * g_y_tiles) == g_mpi_size);
 
     // Create a 2D Cartesian topology accorindg to x-y tiles
-    int dims[2]    = {g_x_tiles, g_y_tiles};
-    int periods[2] = {1, 1};
+    int dims[NUM_DIMS]    = {g_x_tiles, g_y_tiles};
+    int periods[NUM_DIMS] = {1, 1};
     MPI_Cart_create(MPI_COMM_WORLD, NUM_DIMS, dims, periods, 1, &g_mpi_comm);
 
     MPI_Comm_rank(g_mpi_comm, &g_mpi_rank);
@@ -98,81 +98,66 @@ main(int argc, char **argv)
     pdcid_t pdc_id, cont_prop, cont_id;
     pdcid_t obj_id, obj_prop;
     pdcid_t local_region_id, global_region_id;
+    pdcid_t transfer_id;
 
-    double * local_buffer   = (double *)malloc(g_x_ept * g_y_ept * sizeof(double));
-    uint64_t dims[NUM_DIMS] = {g_x_ept, g_y_ept};
-    uint64_t local_offsets[NUM_DIMS], global_offsets[NUM_DIMS];
-    local_offsets[0]  = 0;
-    local_offsets[1]  = 0;
-    global_offsets[0] = g_coords[0] * g_x_ept;
-    global_offsets[1] = g_coords[1] * g_y_ept;
+    double *local_buffer = (double *)malloc(g_x_ept * g_y_ept * sizeof(double));
 
-    // Create PDC
-    pdc_id = PDCinit("pdc");
+    uint64_t local_length[1]          = {g_x_ept * g_y_ept};
+    uint64_t local_offsets[1]         = {0};
+    uint64_t global_length[NUM_DIMS]  = {g_x_ept, g_y_ept};
+    uint64_t global_offsets[NUM_DIMS] = {g_coords[0] * g_x_ept, g_coords[1] * g_y_ept};
 
-    // Create containter
+    // Init PDC
+    pdc_id    = PDCinit("pdc");
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
     cont_id   = PDCcont_create_col("c1", cont_prop);
-
-    // Craete object (and its prop)
-    obj_id = create_pdc_object(pdc_id, cont_id, "tile_io_obj", &obj_prop);
+    obj_id    = create_pdc_object(pdc_id, cont_id, "tile_io_obj", &obj_prop);
 
     // Create region
-    local_region_id  = PDCregion_create(NUM_DIMS, local_offsets, dims);
-    global_region_id = PDCregion_create(NUM_DIMS, global_offsets, dims);
-
-    // Map local memory
-    PDCbuf_obj_map(local_buffer, PDC_DOUBLE, local_region_id, obj_id, global_region_id);
-
+    local_region_id  = PDCregion_create(1, local_offsets, local_length);
+    global_region_id = PDCregion_create(NUM_DIMS, global_offsets, global_length);
     MPI_Barrier(MPI_COMM_WORLD);
 
-    double time_total, time_acquire_lock, time_io, time_release_lock;
+    double time_total, time_create, time_start, time_wait;
     time_total = MPI_Wtime();
 
-    // Accquire the lock
-    time_acquire_lock = MPI_Wtime();
-    ret               = PDCreg_obtain_lock(obj_id, global_region_id, PDC_WRITE, PDC_NOBLOCK);
+    // Create transfer request
+    time_create = MPI_Wtime();
+    transfer_id =
+        PDCregion_transfer_create(local_buffer, PDC_WRITE, obj_id, local_region_id, global_region_id);
     MPI_Barrier(MPI_COMM_WORLD);
-    time_acquire_lock = MPI_Wtime() - time_acquire_lock;
+    time_create = MPI_Wtime() - time_create;
 
-    // Actual I/O
-    time_io = MPI_Wtime();
-    int i;
-    for (i = 0; i < g_x_ept * g_y_ept; i++) {
-        local_buffer[i] = i;
-    }
+    // Start the transfer
+    time_start = MPI_Wtime();
+    PDCregion_transfer_start(transfer_id);
     MPI_Barrier(MPI_COMM_WORLD);
-    time_io = MPI_Wtime() - time_io;
+    time_start = MPI_Wtime() - time_start;
 
-    // Release lock
-    time_release_lock = MPI_Wtime();
-    PDCreg_release_lock(obj_id, global_region_id, PDC_WRITE);
+    // Wait for transfer to finish
+    time_wait = MPI_Wtime();
+    PDCregion_transfer_wait(transfer_id);
     MPI_Barrier(MPI_COMM_WORLD);
-    time_release_lock = MPI_Wtime() - time_release_lock;
-
-    // Unmap object
-    ret = PDCbuf_obj_unmap(obj_id, global_region_id);
+    time_wait  = MPI_Wtime() - time_wait;
+    time_total = MPI_Wtime() - time_total;
+    PDCregion_transfer_close(transfer_id);
 
     // TODO delete before close ?
     PDCobj_close(obj_id);
     PDCprop_close(obj_prop);
-
-    MPI_Barrier(MPI_COMM_WORLD);
-    time_total = MPI_Wtime() - time_total;
-
     PDCregion_close(local_region_id);
     PDCregion_close(global_region_id);
-    free(local_buffer);
-
     PDCcont_close(cont_id);
     PDCprop_close(cont_prop);
     PDCclose(pdc_id);
+    free(local_buffer);
 
     if (g_mpi_rank == 0) {
         double bandwidth =
             g_x_tiles * g_y_tiles * g_x_ept * g_y_ept / 1024.0 / 1024.0 * sizeof(double) / time_total;
-        printf("Bandwidth: %.2fMB/s, total time: %.4f, lock: %.4f, io: %.4f, release: %.4f\n", bandwidth,
-               time_total, time_acquire_lock, time_io, time_release_lock);
+        printf("Bandwidth: %.2fMB/s, total time: %.4f, transfer create: %.4f, transfer start: %.4f, "
+               "transfert wait: %.4f\n",
+               bandwidth, time_total, time_create, time_start, time_wait);
     }
 
     MPI_Comm_free(&g_mpi_comm);
