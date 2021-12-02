@@ -324,14 +324,22 @@ PDC_server_timing_report()
     fprintf(stream, "PDCreg_release_lock_write_rpc, %lf\n", server_timings->PDCreg_obtain_lock_write_rpc);
     fprintf(stream, "PDCreg_release_lock_read_rpc, %lf\n", server_timings->PDCreg_release_lock_read_rpc);
     fprintf(stream, "PDCbuf_obj_unmap_rpc, %lf\n", server_timings->PDCbuf_obj_unmap_rpc);
-    fprintf(stream, "PDCreg_release_lock_bulk_transfer_write_rpc, %lf\n", server_timings->PDCreg_release_lock_bulk_transfer_write_rpc);
-    fprintf(stream, "PDCreg_release_lock_bulk_transfer_read_rpc, %lf\n", server_timings->PDCreg_release_lock_bulk_transfer_read_rpc);
-    fprintf(stream, "PDCregion_transfer_start_write_rpc, %lf\n", server_timings->PDCreg_transfer_request_start_write_rpc);
-    fprintf(stream, "PDCregion_transfer_wait_write_rpc, %lf\n", server_timings->PDCreg_transfer_request_wait_write_rpc);
-    fprintf(stream, "PDCregion_transfer_wait_write_bulk_rpc, %lf\n", server_timings->PDCreg_transfer_request_wait_write_bulk_rpc);
-    fprintf(stream, "PDCregion_transfer_start_read_rpc, %lf\n", server_timings->PDCreg_transfer_request_start_read_rpc);
-    fprintf(stream, "PDCregion_transfer_wait_read_rpc, %lf\n", server_timings->PDCreg_transfer_request_wait_read_rpc);
-    fprintf(stream, "PDCregion_transfer_wait_read_bulk_rpc, %lf\n", server_timings->PDCreg_transfer_request_wait_read_bulk_rpc);
+    fprintf(stream, "PDCreg_release_lock_bulk_transfer_write_rpc, %lf\n",
+            server_timings->PDCreg_release_lock_bulk_transfer_write_rpc);
+    fprintf(stream, "PDCreg_release_lock_bulk_transfer_read_rpc, %lf\n",
+            server_timings->PDCreg_release_lock_bulk_transfer_read_rpc);
+    fprintf(stream, "PDCregion_transfer_start_write_rpc, %lf\n",
+            server_timings->PDCreg_transfer_request_start_write_rpc);
+    fprintf(stream, "PDCregion_transfer_wait_write_rpc, %lf\n",
+            server_timings->PDCreg_transfer_request_wait_write_rpc);
+    fprintf(stream, "PDCregion_transfer_wait_write_bulk_rpc, %lf\n",
+            server_timings->PDCreg_transfer_request_wait_write_bulk_rpc);
+    fprintf(stream, "PDCregion_transfer_start_read_rpc, %lf\n",
+            server_timings->PDCreg_transfer_request_start_read_rpc);
+    fprintf(stream, "PDCregion_transfer_wait_read_rpc, %lf\n",
+            server_timings->PDCreg_transfer_request_wait_read_rpc);
+    fprintf(stream, "PDCregion_transfer_wait_read_bulk_rpc, %lf\n",
+            server_timings->PDCreg_transfer_request_wait_read_bulk_rpc);
 
     fprintf(stream, "PDCdata_server_write_out, %lf\n", server_timings->PDCdata_server_write_out);
     fprintf(stream, "PDCdata_server_read_from, %lf\n", server_timings->PDCdata_server_read_from);
@@ -3827,7 +3835,6 @@ HG_TEST_RPC_CB(region_transform_release, handle)
                             *data_size_to = (eltt->remote_region_unit).count_0;
                         }
 
-
                         else if (in.region.ndim == 2) {
                             dims[1]         = (eltt->remote_region_unit).count_1 / type_size;
                             remote_count    = (eltt->remote_region_nounit).count_0;
@@ -5612,7 +5619,6 @@ HG_TEST_RPC_CB(update_region_loc, handle)
 
     // Decode input
     HG_Get_input(handle, &in);
-
 
     region_list_t *input_region = (region_list_t *)malloc(sizeof(region_list_t));
     PDC_region_transfer_t_to_list_t(&in.region, input_region);
