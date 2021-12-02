@@ -318,25 +318,27 @@ PDC_server_timing_report()
 
     sprintf(filename, "pdc_server_timings_%d.csv", rank);
     stream = fopen(filename, "w");
-    fprintf(stream,
-            "PDCbuf_obj_map_rpc,PDCreg_obtain_lock_write_rpc,PDCreg_obtain_lock_read_rpc,PDCreg_release_lock_"
-            "write_rpc, "
-            "PDCreg_release_lock_read_rpc,PDCbuf_obj_unmap_rpc,PDCreg_release_lock_bulk_transfer_write_rpc,"
-            "PDCreg_release_lock_bulk_transfer_read_rpc,PDCregion_transfer_start_write, "
-            "PDCregion_transfer_wait_write, PDCregion_transfer_wait_cb_write, PDCregion_transfer_start_read, "
-            "PDCregion_transfer_wait_read, PDCregion_transfer_wait_cb_read\n");
-    fprintf(stream, "%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n",
-            server_timings->PDCbuf_obj_map_rpc, server_timings->PDCreg_obtain_lock_write_rpc,
-            server_timings->PDCreg_obtain_lock_read_rpc, server_timings->PDCreg_release_lock_write_rpc,
-            server_timings->PDCreg_release_lock_read_rpc, server_timings->PDCbuf_obj_unmap_rpc,
-            server_timings->PDCreg_release_lock_bulk_transfer_write_rpc,
-            server_timings->PDCreg_release_lock_bulk_transfer_read_rpc,
-            server_timings->PDCreg_transfer_request_start_write_rpc,
-            server_timings->PDCreg_transfer_request_wait_write_rpc,
-            server_timings->PDCreg_transfer_request_wait_write_bulk_rpc,
-            server_timings->PDCreg_transfer_request_start_read_rpc,
-            server_timings->PDCreg_transfer_request_wait_read_rpc,
-            server_timings->PDCreg_transfer_request_wait_read_bulk_rpc);
+    fprintf(stream, "PDCbuf_obj_map_rpc, %lf\n", server_timings->PDCbuf_obj_map_rpc);
+    fprintf(stream, "PDCreg_obtain_lock_write_rpc, %lf\n", server_timings->PDCreg_obtain_lock_write_rpc);
+    fprintf(stream, "PDCreg_obtain_lock_read_rpc, %lf\n", server_timings->PDCreg_obtain_lock_read_rpc);
+    fprintf(stream, "PDCreg_release_lock_write_rpc, %lf\n", server_timings->PDCreg_obtain_lock_write_rpc);
+    fprintf(stream, "PDCreg_release_lock_read_rpc, %lf\n", server_timings->PDCreg_release_lock_read_rpc);
+    fprintf(stream, "PDCbuf_obj_unmap_rpc, %lf\n", server_timings->PDCbuf_obj_unmap_rpc);
+    fprintf(stream, "PDCreg_release_lock_bulk_transfer_write_rpc, %lf\n", server_timings->PDCreg_release_lock_bulk_transfer_write_rpc);
+    fprintf(stream, "PDCreg_release_lock_bulk_transfer_read_rpc, %lf\n", server_timings->PDCreg_release_lock_bulk_transfer_read_rpc);
+    fprintf(stream, "PDCregion_transfer_start_write_rpc, %lf\n", server_timings->PDCreg_transfer_request_start_write_rpc);
+    fprintf(stream, "PDCregion_transfer_wait_write_rpc, %lf\n", server_timings->PDCreg_transfer_request_wait_write_rpc);
+    fprintf(stream, "PDCregion_transfer_wait_write_bulk_rpc, %lf\n", server_timings->PDCreg_transfer_request_wait_write_bulk_rpc);
+    fprintf(stream, "PDCregion_transfer_start_read_rpc, %lf\n", server_timings->PDCreg_transfer_request_start_read_rpc);
+    fprintf(stream, "PDCregion_transfer_wait_read_rpc, %lf\n", server_timings->PDCreg_transfer_request_wait_read_rpc);
+    fprintf(stream, "PDCregion_transfer_wait_read_bulk_rpc, %lf\n", server_timings->PDCreg_transfer_request_wait_read_bulk_rpc);
+
+    fprintf(stream, "PDCdata_server_write_out, %lf\n", server_timings->PDCdata_server_write_out);
+    fprintf(stream, "PDCdata_server_read_from, %lf\n", server_timings->PDCdata_server_read_from);
+    fprintf(stream, "PDCcache_write, %lf\n", server_timings->PDCcache_write);
+    fprintf(stream, "PDCcache_read, %lf\n", server_timings->PDCcache_read);
+    fprintf(stream, "PDCdata_server_write_posix, %lf\n", server_timings->PDCdata_server_write_posix);
+    fprintf(stream, "PDCdata_server_read_posix, %lf\n", server_timings->PDCdata_server_read_posix);
     fclose(stream);
 
     free(server_timings);
@@ -1780,6 +1782,7 @@ PDC_Client_recv_bulk_storage_meta(process_bulk_storage_meta_args_t *process_args
 {
     return HG_SUCCESS;
 }
+
 hg_return_t
 PDC_recv_read_coords_data(const struct hg_cb_info *callback_info ATTRIBUTE(unused))
 {
@@ -3823,6 +3826,8 @@ HG_TEST_RPC_CB(region_transform_release, handle)
                             *data_ptrs_to = data_buf;
                             *data_size_to = (eltt->remote_region_unit).count_0;
                         }
+
+
                         else if (in.region.ndim == 2) {
                             dims[1]         = (eltt->remote_region_unit).count_1 / type_size;
                             remote_count    = (eltt->remote_region_nounit).count_0;
@@ -4946,7 +4951,7 @@ HG_TEST_RPC_CB(transfer_request_wait, handle)
     while (1) {
         status = PDC_check_request(in.transfer_request_id);
         if (status == PDC_TRANSFER_STATUS_PENDING) {
-            sleep(.1);
+            sleep(0.5);
         }
         else {
             out.status = PDC_TRANSFER_STATUS_COMPLETE;
@@ -5608,6 +5613,7 @@ HG_TEST_RPC_CB(update_region_loc, handle)
     // Decode input
     HG_Get_input(handle, &in);
 
+
     region_list_t *input_region = (region_list_t *)malloc(sizeof(region_list_t));
     PDC_region_transfer_t_to_list_t(&in.region, input_region);
     strcpy(input_region->storage_location, in.storage_location);
@@ -6107,6 +6113,7 @@ done:
 static hg_return_t
 get_storage_meta_bulk_cb(const struct hg_cb_info *hg_cb_info)
 {
+
     hg_return_t ret_value = HG_SUCCESS;
     // Server executes after received request from client
     struct bulk_args_t *    bulk_args         = (struct bulk_args_t *)hg_cb_info->arg;
@@ -6334,6 +6341,7 @@ PDC_add_task_to_list(pdc_task_list_t **target_list, perr_t (*cb)(), void *cb_arg
 
 #ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_t *mutex = _mutex;
+
 #endif
 
     FUNC_ENTER(NULL);
@@ -7093,6 +7101,7 @@ HG_TEST_THREAD_CB(query_read_obj_name_client_rpc)
 HG_TEST_THREAD_CB(send_client_storage_meta_rpc)
 HG_TEST_THREAD_CB(send_shm_bulk_rpc)
 HG_TEST_THREAD_CB(send_data_query_rpc)
+
 HG_TEST_THREAD_CB(send_nhits)
 HG_TEST_THREAD_CB(send_bulk_rpc)
 HG_TEST_THREAD_CB(get_sel_data_rpc)
