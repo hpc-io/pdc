@@ -551,7 +551,6 @@ PDC_region_cache_flush_all()
     obj_cache_iter = obj_cache_list;
     while (obj_cache_iter != NULL) {
         PDC_region_cache_flush_by_pointer(obj_cache_iter->obj_id, obj_cache_iter);
-        free(obj_cache_iter->dims);
         obj_cache_temp = obj_cache_iter;
         obj_cache_iter = obj_cache_iter->next;
         if (obj_cache_temp->ndim) {
