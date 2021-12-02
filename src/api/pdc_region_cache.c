@@ -318,7 +318,7 @@ PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dim
 {
     pdc_obj_cache *         obj_cache_iter, *obj_cache = NULL;
     struct pdc_region_info *region_cache_info;
-    if ( obj_ndim != ndim ) {
+    if (obj_ndim != ndim) {
         printf("PDC_region_cache_register reports obj_ndim != ndim, %d != %d\n", obj_ndim, ndim);
     }
 
@@ -351,7 +351,7 @@ PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dim
             obj_cache_list_end->next             = NULL;
         }
         obj_cache_list_end->ndim = obj_ndim;
-        if ( obj_ndim ) {
+        if (obj_ndim) {
             obj_cache_list_end->dims = (uint64_t *)malloc(sizeof(uint64_t) * obj_ndim);
             memcpy(obj_cache_list_end->dims, obj_dims, sizeof(uint64_t) * obj_ndim);
         }
@@ -554,7 +554,7 @@ PDC_region_cache_flush_all()
         free(obj_cache_iter->dims);
         obj_cache_temp = obj_cache_iter;
         obj_cache_iter = obj_cache_iter->next;
-        if ( obj_cache_temp->obj_ndim ) {
+        if (obj_cache_temp->obj_ndim) {
             free(obj_cache_temp->obj_dims);
         }
         free(obj_cache_temp);

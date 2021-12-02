@@ -2853,8 +2853,8 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     PDC_Server_data_write_out(bulk_args->remote_obj_id, remote_reg_info, bulk_args->data_buf,
                               (bulk_args->in).data_unit);
 #else
-    PDC_Server_transfer_request_io(bulk_args->remote_obj_id, 0, NULL, remote_reg_info,
-                                            bulk_args->data_buf, (bulk_args->in).data_unit, 1);
+    PDC_Server_transfer_request_io(bulk_args->remote_obj_id, 0, NULL, remote_reg_info, bulk_args->data_buf,
+                                   (bulk_args->in).data_unit, 1);
 #endif
 
     // Perform lock release function
@@ -3218,11 +3218,11 @@ HG_TEST_RPC_CB(region_release, handle)
                                                   in.data_unit);
 */
 #ifdef PDC_SERVER_CACHE
-                        PDC_transfer_request_data_read_from(obj_map_bulk_args->remote_obj_id, 0, NULL, remote_reg_info,
-                                            data_buf, in.data_unit);
+                        PDC_transfer_request_data_read_from(obj_map_bulk_args->remote_obj_id, 0, NULL,
+                                                            remote_reg_info, data_buf, in.data_unit);
 #else
-                        PDC_Server_transfer_request_io(obj_map_bulk_args->remote_obj_id, 0, NULL, remote_reg_info,
-                                            data_buf, in.data_unit, 0);
+                        PDC_Server_transfer_request_io(obj_map_bulk_args->remote_obj_id, 0, NULL,
+                                                       remote_reg_info, data_buf, in.data_unit, 0);
 #endif
                         size  = HG_Bulk_get_size(eltt2->local_bulk_handle);
                         size2 = HG_Bulk_get_size(remote_bulk_handle);
