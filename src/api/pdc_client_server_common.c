@@ -4916,7 +4916,7 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
 
 #if PDC_TIMING == 1
     end = MPI_Wtime();
-    PDCreg_transfer_request_inner_write_bulk_rpc += end - start;
+    server_timings->PDCreg_transfer_request_inner_write_bulk_rpc += end - start;
     pdc_timestamp_register(transfer_request_inner_write_bulk_timestamps, start, end);
 #endif
 
@@ -4944,7 +4944,7 @@ transfer_request_bulk_transfer_read_cb(const struct hg_cb_info *info)
 
 #if PDC_TIMING == 1
     end = MPI_Wtime();
-    PDCreg_transfer_request_inner_read_bulk_rpc += end - start;
+    server_timings->PDCreg_transfer_request_inner_read_bulk_rpc += end - start;
     pdc_timestamp_register(transfer_request_inner_read_bulk_timestamps, start, end);
 #endif
 
