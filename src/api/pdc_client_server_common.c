@@ -237,16 +237,16 @@ PDC_server_timing_init()
     */
     MPI_Barrier(MPI_COMM_WORLD);
 
-    server_timings                              = calloc(1, sizeof(pdc_server_timing));
-    pdc_timestamp *ptr                          = calloc(18, sizeof(pdc_timestamp));
-    buf_obj_map_timestamps                      = ptr++;
-    buf_obj_unmap_timestamps                    = ptr++;
-    obtain_lock_write_timestamps                = ptr++;
-    obtain_lock_read_timestamps                 = ptr++;
-    release_lock_write_timestamps               = ptr++;
-    release_lock_read_timestamps                = ptr++;
-    release_lock_bulk_transfer_write_timestamps = ptr++;
-    release_lock_bulk_transfer_read_timestamps  = ptr++;
+    server_timings                                    = calloc(1, sizeof(pdc_server_timing));
+    pdc_timestamp *ptr                                = calloc(18, sizeof(pdc_timestamp));
+    buf_obj_map_timestamps                            = ptr++;
+    buf_obj_unmap_timestamps                          = ptr++;
+    obtain_lock_write_timestamps                      = ptr++;
+    obtain_lock_read_timestamps                       = ptr++;
+    release_lock_write_timestamps                     = ptr++;
+    release_lock_read_timestamps                      = ptr++;
+    release_lock_bulk_transfer_write_timestamps       = ptr++;
+    release_lock_bulk_transfer_read_timestamps        = ptr++;
     release_lock_bulk_transfer_inner_write_timestamps = ptr++;
     release_lock_bulk_transfer_inner_read_timestamps  = ptr++;
 
@@ -553,7 +553,6 @@ PDC_get_local_server_id(int my_rank, int n_client_per_server, int n_server)
     FUNC_ENTER(NULL);
 
     ret_value = (my_rank / n_client_per_server) % n_server;
-
 
     FUNC_LEAVE(ret_value);
 }
