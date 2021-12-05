@@ -526,6 +526,7 @@ PDC_get_elapsed_time_double(struct timeval *tstart, struct timeval *tend)
         (double)(((tend->tv_sec - tstart->tv_sec) * 1000000LL + tend->tv_usec - tstart->tv_usec) / 1000000.0);
 
     FUNC_LEAVE(ret_value);
+
 }
 
 perr_t
@@ -864,6 +865,7 @@ done:
 }
 
 // currently assumes both region are of same object, so only compare ndim, start, and count.
+
 int
 PDC_is_same_region_list(region_list_t *a, region_list_t *b)
 {
