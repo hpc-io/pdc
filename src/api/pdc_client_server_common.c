@@ -1763,6 +1763,7 @@ PDC_Server_query_read_names_cb(const struct hg_cb_info *callback_info ATTRIBUTE(
     return SUCCEED;
 }
 hg_return_t
+
 PDC_Server_query_read_names_clinet_cb(const struct hg_cb_info *callback_info ATTRIBUTE(unused))
 {
     return SUCCEED;
@@ -2821,6 +2822,7 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
 #endif
 
     FUNC_ENTER(NULL);
+    bulk_args = (struct buf_map_release_bulk_args *)hg_cb_info->arg;
 #if PDC_TIMING == 1
     double end, start;
 
@@ -2830,7 +2832,6 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
 
     start = MPI_Wtime();
 #endif
-    bulk_args = (struct buf_map_release_bulk_args *)hg_cb_info->arg;
 
     if (hg_cb_info->ret == HG_CANCELED) {
         out.ret = 0;
@@ -2945,6 +2946,8 @@ obj_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     struct buf_map_release_bulk_args *bulk_args = NULL;
 
     FUNC_ENTER(NULL);
+    bulk_args = (struct buf_map_release_bulk_args *)hg_cb_info->arg;
+
 #if PDC_TIMING == 1
     double end, start;
 
@@ -2954,7 +2957,6 @@ obj_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
 
     start = MPI_Wtime();
 #endif
-    bulk_args = (struct buf_map_release_bulk_args *)hg_cb_info->arg;
 
     if (hg_cb_info->ret == HG_CANCELED) {
         out.ret = 0;
