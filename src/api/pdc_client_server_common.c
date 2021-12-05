@@ -239,6 +239,7 @@ PDC_server_timing_init()
 
     server_timings                              = calloc(1, sizeof(pdc_server_timing));
     pdc_timestamp *ptr                          = calloc(18, sizeof(pdc_timestamp));
+    buf_obj_map_timestamps                      = ptr++;
     buf_obj_unmap_timestamps                    = ptr++;
     obtain_lock_write_timestamps                = ptr++;
     obtain_lock_read_timestamps                 = ptr++;
