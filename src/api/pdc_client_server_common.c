@@ -312,19 +312,19 @@ PDC_server_timing_report()
     timestamp_log(stream, "release_lock_read", release_lock_read_timestamps);
     timestamp_log(stream, "release_lock_bulk_transfer_write", release_lock_bulk_transfer_write_timestamps);
     timestamp_log(stream, "release_lock_bulk_transfer_read", release_lock_bulk_transfer_read_timestamps);
-    timestamp_log(stream, "release_lock_bulk_transfer_inner_write", release_lock_bulk_transfer_inner_write_timestamps);
-    timestamp_log(stream, "release_lock_bulk_transfer_inner_read", release_lock_bulk_transfer_inner_read_timestamps);
+    timestamp_log(stream, "release_lock_bulk_transfer_inner_write",
+                  release_lock_bulk_transfer_inner_write_timestamps);
+    timestamp_log(stream, "release_lock_bulk_transfer_inner_read",
+                  release_lock_bulk_transfer_inner_read_timestamps);
 
     timestamp_log(stream, "transfer_request_start_write", transfer_request_start_write_timestamps);
     timestamp_log(stream, "transfer_request_wait_write", transfer_request_wait_write_timestamps);
     timestamp_log(stream, "transfer_request_wait_write_bulk", transfer_request_wait_write_bulk_timestamps);
-    timestamp_log(stream, "transfer_request_inner_write_bulk",
-                  transfer_request_inner_write_bulk_timestamps);
+    timestamp_log(stream, "transfer_request_inner_write_bulk", transfer_request_inner_write_bulk_timestamps);
     timestamp_log(stream, "transfer_request_start_read", transfer_request_start_read_timestamps);
     timestamp_log(stream, "transfer_request_wait_read", transfer_request_wait_read_timestamps);
     timestamp_log(stream, "transfer_request_wait_read_bulk", transfer_request_wait_read_bulk_timestamps);
-    timestamp_log(stream, "transfer_request_inner_read_bulk",
-                  transfer_request_inner_read_bulk_timestamps);
+    timestamp_log(stream, "transfer_request_inner_read_bulk", transfer_request_inner_read_bulk_timestamps);
     fclose(stream);
 
     sprintf(filename, "pdc_server_timings_%d.csv", rank);
@@ -553,6 +553,7 @@ PDC_get_local_server_id(int my_rank, int n_client_per_server, int n_server)
     FUNC_ENTER(NULL);
 
     ret_value = (my_rank / n_client_per_server) % n_server;
+
 
     FUNC_LEAVE(ret_value);
 }
@@ -2032,6 +2033,7 @@ HG_TEST_RPC_CB(metadata_query, handle)
 // metadata_delete_by_id_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(metadata_delete_by_id, handle)
 {
+
     hg_return_t                 ret_value = HG_SUCCESS;
     metadata_delete_by_id_in_t  in;
     metadata_delete_by_id_out_t out;
