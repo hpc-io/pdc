@@ -526,7 +526,6 @@ PDC_get_elapsed_time_double(struct timeval *tstart, struct timeval *tend)
         (double)(((tend->tv_sec - tstart->tv_sec) * 1000000LL + tend->tv_usec - tstart->tv_usec) / 1000000.0);
 
     FUNC_LEAVE(ret_value);
-
 }
 
 perr_t
