@@ -213,7 +213,7 @@ def pdc_log_analysis(path):
     return interval_time_logs, time_logs
 
 def wrap_io_data(interval_time_logs, time_logs):
-    return np.mean([time_logs[i]['PDCreg_release_lock_bulk_transfer_inner_write_rpc'] for i in range(0, len(time_logs))])
+    return np.mean([time_logs[i]['PDCreg_release_lock_bulk_transfer_inner_write_rpc'] + time_logs[i]['PDCregion_transfer_request_inner_write_bulk_rpc'] for i in range(0, len(time_logs))])
 
 def wrap_comm_data(interval_time_logs, time_logs):
     return np.mean([interval_time_logs[i]['transfer_request_wait_write_bulk'] + interval_time_logs[i]['release_lock_bulk_transfer_write'] for i in range(0, len(interval_time_logs))])
@@ -259,7 +259,7 @@ def main():
 
     plt.xticks(x_labels, ('shared_bm', 'shared_tr', 'dedicated_bm', 'dedicated_tr'))
 
-    plt.savefig('{0}'.format("server_breakdown.pdf"))
+    plt.savefig('{0}'.format("server_breakdown_cache.pdf"))
 
     plt.close()
 
