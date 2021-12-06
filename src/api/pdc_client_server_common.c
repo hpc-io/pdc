@@ -350,7 +350,7 @@ PDC_server_timing_report()
     fprintf(stream, "PDCbuf_obj_map_rpc, %lf\n", server_timings->PDCbuf_obj_map_rpc);
     fprintf(stream, "PDCreg_obtain_lock_write_rpc, %lf\n", server_timings->PDCreg_obtain_lock_write_rpc);
     fprintf(stream, "PDCreg_obtain_lock_read_rpc, %lf\n", server_timings->PDCreg_obtain_lock_read_rpc);
-    fprintf(stream, "PDCreg_release_lock_write_rpc, %lf\n", server_timings->PDCreg_obtain_lock_write_rpc);
+    fprintf(stream, "PDCreg_release_lock_write_rpc, %lf\n", server_timings->PDCreg_release_lock_write_rpc);
     fprintf(stream, "PDCreg_release_lock_read_rpc, %lf\n", server_timings->PDCreg_release_lock_read_rpc);
     fprintf(stream, "PDCbuf_obj_unmap_rpc, %lf\n", server_timings->PDCbuf_obj_unmap_rpc);
     fprintf(stream, "PDCreg_release_lock_bulk_transfer_write_rpc, %lf\n",
@@ -1763,6 +1763,7 @@ PDC_Server_query_read_names_cb(const struct hg_cb_info *callback_info ATTRIBUTE(
     return SUCCEED;
 }
 hg_return_t
+
 
 PDC_Server_query_read_names_clinet_cb(const struct hg_cb_info *callback_info ATTRIBUTE(unused))
 {
@@ -4469,6 +4470,7 @@ HG_TEST_RPC_CB(get_remote_metadata, handle)
     get_remote_metadata_out_t out;
     pdc_metadata_t *          meta;
 
+
     FUNC_ENTER(NULL);
 
     // Decode input
@@ -4788,7 +4790,7 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
 
     FUNC_ENTER(NULL);
 
-    if (io_by_region_g) {
+    if (io_by_region_g || obj_ndim == 0) {
         PDC_Server_register_obj_region(obj_id);
         if (is_write) {
             PDC_Server_data_write_out(obj_id, region_info, buf, unit);
@@ -7992,6 +7994,7 @@ PDCselection_print(pdc_selection_t *sel)
 
     if (sel->nhits > 10) {
         for (i = 0; i < 10; i++)
+
             printf(" ,%" PRIu64 "", sel->coords[i]);
         printf(" , ... ");
         for (i = sel->nhits - 10; i < sel->nhits; i++)

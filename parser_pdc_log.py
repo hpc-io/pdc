@@ -184,6 +184,7 @@ def plot_all(server_intervals, client_intervals):
     plt.close()
 
 def pdc_log_analysis(path):
+    print('====== Start analyzing path {0} ======'.format(path))
     filenames = next(walk(path), (None, None, []))[2]
     time_logs = []
     interval_logs = []
@@ -212,7 +213,7 @@ def pdc_log_analysis(path):
     return interval_time_logs, time_logs
 
 def wrap_io_data(interval_time_logs, time_logs):
-    return np.mean([time_logs[i]['PDCdata_server_write_out'] for i in range(0, len(time_logs))])
+    return np.mean([time_logs[i]['PDCreg_release_lock_bulk_transfer_inner_write_rpc'] for i in range(0, len(time_logs))])
 
 def wrap_comm_data(interval_time_logs, time_logs):
     return np.mean([interval_time_logs[i]['transfer_request_wait_write_bulk'] + interval_time_logs[i]['release_lock_bulk_transfer_write'] for i in range(0, len(interval_time_logs))])
@@ -222,18 +223,18 @@ def wrap_other_data(interval_time_logs, time_logs):
 
 def main():
     if len(sys.argv) == 2:
-        path = sys.argv[1]
-        if path[len(path) - 1] == '/':
-            path = path[0:(len(path) - 1)]
-        pdc_log_analysis(path)
-        return 0
-    path = "shared_mode/vpic_old_results"
+        base_path = sys.argv[1]
+        if base_path[len(base_path) - 1] != '/':
+            base_path = '{0}/'.format(base_path)
+    else:
+        base_path = ''
+    path = "{0}shared_mode/vpic_old_results".format(base_path)
     shared_old_interval_logs, shared_old_time_logs = pdc_log_analysis(path)
-    path = "shared_mode/vpic_results"
+    path = "{0}shared_mode/vpic_results".format(base_path)
     shared_interval_logs, shared_time_logs = pdc_log_analysis(path)
-    path = "dedicated_mode/vpic_old_results"
+    path = "{0}dedicated_mode/vpic_old_results".format(base_path)
     dedicated_old_interval_logs, dedicated_old_time_logs = pdc_log_analysis(path)
-    path = "dedicated_mode/vpic_results"
+    path = "{0}dedicated_mode/vpic_results".format(base_path)
     dedicated_interval_logs, dedicated_time_logs = pdc_log_analysis(path)
 
     all_interval_logs = [shared_old_interval_logs, shared_interval_logs, dedicated_old_interval_logs, dedicated_interval_logs]
