@@ -1764,7 +1764,6 @@ PDC_Server_query_read_names_cb(const struct hg_cb_info *callback_info ATTRIBUTE(
 }
 hg_return_t
 
-
 PDC_Server_query_read_names_clinet_cb(const struct hg_cb_info *callback_info ATTRIBUTE(unused))
 {
     return SUCCEED;
@@ -4469,7 +4468,6 @@ HG_TEST_RPC_CB(get_remote_metadata, handle)
     get_remote_metadata_in_t  in;
     get_remote_metadata_out_t out;
     pdc_metadata_t *          meta;
-
 
     FUNC_ENTER(NULL);
 
