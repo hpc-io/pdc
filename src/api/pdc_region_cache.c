@@ -318,7 +318,7 @@ PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dim
 {
     pdc_obj_cache *         obj_cache_iter, *obj_cache = NULL;
     struct pdc_region_info *region_cache_info;
-    if (obj_ndim != ndim) {
+    if (obj_ndim != ndim && obj_ndim > 0) {
         printf("PDC_region_cache_register reports obj_ndim != ndim, %d != %d\n", obj_ndim, ndim);
     }
 
