@@ -2900,9 +2900,8 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
                               (bulk_args->in).data_unit);
 */
 #ifdef PDC_SERVER_CACHE
-    PDC_transfer_request_data_write_out(bulk_args->remote_obj_id, 0, NULL,
-                                        remote_reg_info, (void *) bulk_args->data_buf,
-                                        (bulk_args->in).data_unit);
+    PDC_transfer_request_data_write_out(bulk_args->remote_obj_id, 0, NULL, remote_reg_info,
+                                        (void *)bulk_args->data_buf, (bulk_args->in).data_unit);
 #else
     PDC_Server_transfer_request_io(bulk_args->remote_obj_id, 0, NULL, remote_reg_info, bulk_args->data_buf,
                                    (bulk_args->in).data_unit, 1);
