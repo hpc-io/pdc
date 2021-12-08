@@ -2463,11 +2463,13 @@ hg_proc_transfer_request_wait_in_t(hg_proc_t proc, void *data)
     hg_return_t                 ret;
     transfer_request_wait_in_t *struct_data = (transfer_request_wait_in_t *)data;
     // printf("Input argument: transfer_request_wait for transfer_request_id @ line %d\n", __LINE__);
+
     ret = hg_proc_int32_t(proc, &struct_data->access_type);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
+
     ret = hg_proc_uint64_t(proc, &struct_data->transfer_request_id);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
@@ -3458,9 +3460,11 @@ struct transfer_request_local_bulk_args {
     uint64_t              transfer_request_id;
     void *                data_buf;
     size_t                total_mem_size;
+
 #if PDC_TIMING == 1
     double start_time;
 #endif
+
 };
 
 struct region_update_bulk_args {

@@ -2035,9 +2035,11 @@ main(int argc, char *argv[])
     pdc_recycle_close_flag = 1;
     pthread_mutex_unlock(&pdc_cache_mutex);
     pthread_join(pdc_recycle_thread, NULL);
+
     PDC_region_cache_flush_all();
     pthread_mutex_destroy(&pdc_obj_cache_list_mutex);
     pthread_mutex_destroy(&pdc_cache_mutex);
+
 #endif
 
 #ifndef DISABLE_CHECKPOINT

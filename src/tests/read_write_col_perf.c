@@ -119,6 +119,7 @@ main(int argc, char **argv)
 
     char hostname[256];
     gethostname(hostname, 256);
+  
     if (rank == 0) {
         printf("number of dimensions in this test is %d\n", ndim);
         printf("data size = %llu\n", (long long unsigned)data_size);
@@ -172,12 +173,12 @@ main(int argc, char **argv)
     for (i = 0; i < n_objects; ++i) {
         // create first object
         sprintf(obj_name1, "o1_%d", i);
+
 #ifdef ENABLE_MPI
         obj1 = PDCobj_create_mpi(cont, obj_name1, obj_prop, 0, MPI_COMM_WORLD);
 #else
         obj1 = PDCobj_create(cont, obj_name1, obj_prop);
 #endif
-
         if (obj1 <= 0) {
             printf("Fail to create object @ line  %d!\n", __LINE__);
             ret_value = 1;
@@ -345,7 +346,6 @@ main(int argc, char **argv)
     if (!rank) {
         printf("read region transfer wait time: %lf\n", read_reg_transfer_wait_time);
     }
-
     free(data);
 #endif
 

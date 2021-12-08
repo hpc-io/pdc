@@ -102,6 +102,7 @@ PDC_timing_init()
     client_transfer_request_start_read_timestamps  = client_buf_obj_map_timestamps + 7;
     client_transfer_request_wait_write_timestamps  = client_buf_obj_map_timestamps + 8;
     client_transfer_request_wait_read_timestamps   = client_buf_obj_map_timestamps + 9;
+
     return 0;
 }
 
@@ -110,6 +111,7 @@ PDC_timing_finalize()
 {
     pdc_timestamp_clean(client_buf_obj_map_timestamps);
     pdc_timestamp_clean(client_buf_obj_unmap_timestamps);
+
     pdc_timestamp_clean(client_obtain_lock_write_timestamps);
     pdc_timestamp_clean(client_obtain_lock_read_timestamps);
     pdc_timestamp_clean(client_release_lock_write_timestamps);
@@ -131,9 +133,11 @@ PDC_timing_report(const char *prefix)
     int        rank;
     char       filename[256], header[256];
     FILE *     stream;
+    char       hostname[HOST_NAME_MAX];
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
+    gethostname(hostname, HOST_NAME_MAX);
+    printf("client process rank %d, hostname = %s\n", rank, hostname);
     MPI_Reduce(&timings, &max_timings, sizeof(pdc_timing) / sizeof(double), MPI_DOUBLE, MPI_MAX, 0,
                MPI_COMM_WORLD);
     if (rank == 0) {
@@ -143,6 +147,7 @@ PDC_timing_report(const char *prefix)
                max_timings.PDCreg_obtain_lock_write_rpc_wait);
         printf("PDCreg_obtain_lock_read_rpc = %lf, wait = %lf\n", max_timings.PDCreg_obtain_lock_read_rpc,
                max_timings.PDCreg_obtain_lock_read_rpc_wait);
+
         printf("PDCreg_release_lock_write_rpc = %lf, wait = %lf\n", max_timings.PDCreg_release_lock_write_rpc,
                max_timings.PDCreg_release_lock_write_rpc_wait);
         printf("PDCreg_release_lock_read_rpc = %lf, wait = %lf\n", max_timings.PDCreg_release_lock_read_rpc,
@@ -177,10 +182,12 @@ PDC_timing_report(const char *prefix)
     timestamp_log(stream, header, client_buf_obj_map_timestamps);
     sprintf(header, "buf_obj_unmap_%s", prefix);
     timestamp_log(stream, header, client_buf_obj_unmap_timestamps);
+
     sprintf(header, "obtain_lock_write_%s", prefix);
     timestamp_log(stream, header, client_obtain_lock_write_timestamps);
     sprintf(header, "obtain_lock_read_%s", prefix);
     timestamp_log(stream, header, client_obtain_lock_read_timestamps);
+
     sprintf(header, "release_lock_write_%s", prefix);
     timestamp_log(stream, header, client_release_lock_write_timestamps);
     sprintf(header, "release_lock_read_%s", prefix);
@@ -198,10 +205,12 @@ PDC_timing_report(const char *prefix)
     sprintf(header, "transfer_request_wait_read_%s", prefix);
     timestamp_log(stream, header, client_transfer_request_wait_read_timestamps);
 
+
     fclose(stream);
 
     client_buf_obj_map_timestamps->timestamp_size        = 0;
     client_buf_obj_unmap_timestamps->timestamp_size      = 0;
+
     client_obtain_lock_write_timestamps->timestamp_size  = 0;
     client_obtain_lock_read_timestamps->timestamp_size   = 0;
     client_release_lock_write_timestamps->timestamp_size = 0;
@@ -213,6 +222,7 @@ PDC_timing_report(const char *prefix)
     client_transfer_request_wait_read_timestamps->timestamp_size   = 0;
 
     memset(&timings, 0, sizeof(timings));
+
     return 0;
 }
 
@@ -314,16 +324,18 @@ PDC_server_timing_report()
     int               rank;
     char              filename[256];
     FILE *            stream;
+    char              hostname[HOST_NAME_MAX];
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
     MPI_Reduce(server_timings, &max_timings, sizeof(pdc_server_timing) / sizeof(double), MPI_DOUBLE, MPI_MAX,
                0, MPI_COMM_WORLD);
+
     sprintf(filename, "pdc_server_log_rank_%d.csv", rank);
 
     stream = fopen(filename, "w");
     timestamp_log(stream, "buf_obj_map", buf_obj_map_timestamps);
     timestamp_log(stream, "buf_obj_unmap", buf_obj_unmap_timestamps);
+
     timestamp_log(stream, "obtain_lock_write", obtain_lock_write_timestamps);
     timestamp_log(stream, "obtain_lock_read", obtain_lock_read_timestamps);
     timestamp_log(stream, "release_lock_write", release_lock_write_timestamps);
@@ -384,11 +396,25 @@ PDC_server_timing_report()
     fprintf(stream, "PDCcache_read, %lf\n", server_timings->PDCcache_read);
     fprintf(stream, "PDCdata_server_write_posix, %lf\n", server_timings->PDCdata_server_write_posix);
     fprintf(stream, "PDCdata_server_read_posix, %lf\n", server_timings->PDCdata_server_read_posix);
+
+    fclose(stream);
+
+    sprintf(filename, "pdc_server_timings_%d.csv", rank);
+    stream = fopen(filename, "w");
+    fprintf(stream, "PDCbuf_obj_map_rpc,"
+                    "PDCreg_obtain_lock_rpc,PDCreg_release_lock_write_rpc,"
+                    "PDCreg_release_lock_read_rpc,PDCbuf_obj_unmap_rpc,"
+                    "region_release_bulk_transfer_cb\n");
+    fprintf(stream, "%lf,%lf,%lf,%lf,%lf,%lf\n", server_timings.PDCbuf_obj_map_rpc,
+            server_timings.PDCreg_obtain_lock_rpc, server_timings.PDCreg_release_lock_write_rpc,
+            server_timings.PDCreg_release_lock_read_rpc, server_timings.PDCbuf_obj_unmap_rpc,
+            server_timings.PDCreg_release_lock_bulk_transfer_rpc);
     fclose(stream);
 
     free(server_timings);
     pdc_timestamp_clean(buf_obj_map_timestamps);
     pdc_timestamp_clean(buf_obj_unmap_timestamps);
+
     pdc_timestamp_clean(obtain_lock_write_timestamps);
     pdc_timestamp_clean(obtain_lock_read_timestamps);
     pdc_timestamp_clean(release_lock_write_timestamps);
@@ -406,6 +432,7 @@ PDC_server_timing_report()
     pdc_timestamp_clean(transfer_request_wait_read_bulk_timestamps);
     pdc_timestamp_clean(transfer_request_inner_write_bulk_timestamps);
     pdc_timestamp_clean(transfer_request_inner_read_bulk_timestamps);
+
     free(buf_obj_map_timestamps);
     return 0;
 }
@@ -4788,6 +4815,7 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
 
     FUNC_ENTER(NULL);
 
+
     if (io_by_region_g || obj_ndim == 0) {
         PDC_Server_register_obj_region(obj_id);
         if (is_write) {
@@ -4913,12 +4941,14 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
     uint64_t                                 obj_dims[3];
 
     FUNC_ENTER(NULL);
+
 #if PDC_TIMING == 1
     double end = MPI_Wtime(), start;
     server_timings->PDCreg_transfer_request_wait_write_bulk_rpc += end - local_bulk_args->start_time;
     pdc_timestamp_register(transfer_request_wait_write_bulk_timestamps, local_bulk_args->start_time, end);
     start = MPI_Wtime();
 #endif
+
     // printf("entering transfer bulk callback\n");
 
     remote_reg_info = (struct pdc_region_info *)malloc(sizeof(struct pdc_region_info));
@@ -4975,6 +5005,7 @@ transfer_request_bulk_transfer_read_cb(const struct hg_cb_info *info)
     struct transfer_request_local_bulk_args *local_bulk_args = info->arg;
     hg_return_t                              ret;
     FUNC_ENTER(NULL);
+  
 #if PDC_TIMING == 1
     double end = MPI_Wtime(), start;
     server_timings->PDCreg_transfer_request_wait_read_bulk_rpc += end - local_bulk_args->start_time;
@@ -4993,7 +5024,6 @@ transfer_request_bulk_transfer_read_cb(const struct hg_cb_info *info)
     server_timings->PDCreg_transfer_request_inner_read_bulk_rpc += end - start;
     pdc_timestamp_register(transfer_request_inner_read_bulk_timestamps, start, end);
 #endif
-
     FUNC_LEAVE(ret);
 }
 
@@ -5073,6 +5103,7 @@ HG_TEST_RPC_CB(transfer_request_wait, handle)
 }
 
 /* static hg_return_t */
+
 // transfer_request_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(transfer_request, handle)
 {
@@ -5086,9 +5117,11 @@ HG_TEST_RPC_CB(transfer_request, handle)
     uint64_t                                 obj_dims[3];
 
     FUNC_ENTER(NULL);
+
 #if PDC_TIMING == 1
     double start = MPI_Wtime(), end;
 #endif
+
     HG_Get_input(handle, &in);
 
     info = HG_Get_info(handle);

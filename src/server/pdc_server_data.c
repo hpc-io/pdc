@@ -4704,6 +4704,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 #if PDC_TIMING == 1
     double start = MPI_Wtime(), start_posix;
 #endif
+
     uint64_t write_size;
     if (region_info->ndim >= 1)
         write_size = unit * region_info->size[0];
@@ -5009,11 +5010,13 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                     ret_value = -1;
                     goto done;
                 }
+
 // read_bytes = pread(region->fd, buf + pos, overlap_count[0] * unit,
 //                   storage_region->offset + overlap_start_local[0] * unit);
 #if PDC_TIMING == 1
                 start_posix = MPI_Wtime();
 #endif
+
                 if ((my_read_bytes =
                          pread(region->fd, buf + pos, overlap_count[0] * unit,
                                storage_region->offset + (overlap_start[0] - elt->start[0]) * unit)) !=

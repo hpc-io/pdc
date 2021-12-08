@@ -13,13 +13,16 @@
 typedef struct pdc_timing {
     double PDCbuf_obj_map_rpc;
     double PDCbuf_obj_unmap_rpc;
+
     double PDCreg_obtain_lock_write_rpc;
     double PDCreg_obtain_lock_read_rpc;
+
     double PDCreg_release_lock_write_rpc;
     double PDCreg_release_lock_read_rpc;
 
     double PDCbuf_obj_map_rpc_wait;
     double PDCbuf_obj_unmap_rpc_wait;
+
     double PDCreg_obtain_lock_write_rpc_wait;
     double PDCreg_obtain_lock_read_rpc_wait;
     double PDCreg_release_lock_write_rpc_wait;
@@ -34,6 +37,7 @@ typedef struct pdc_timing {
     double PDCtransfer_request_start_read_rpc_wait;
     double PDCtransfer_request_wait_write_rpc_wait;
     double PDCtransfer_request_wait_read_rpc_wait;
+
 } pdc_timing;
 
 pdc_timing timings;
@@ -41,6 +45,7 @@ pdc_timing timings;
 typedef struct pdc_server_timing {
     double PDCbuf_obj_map_rpc;
     double PDCbuf_obj_unmap_rpc;
+
     double PDCreg_obtain_lock_write_rpc;
     double PDCreg_obtain_lock_read_rpc;
     double PDCreg_release_lock_write_rpc;
@@ -67,6 +72,7 @@ typedef struct pdc_server_timing {
     double PDCcache_read;
     double PDCdata_server_write_posix;
     double PDCdata_server_read_posix;
+
 } pdc_server_timing;
 
 typedef struct pdc_timestamp {
@@ -79,6 +85,7 @@ typedef struct pdc_timestamp {
 pdc_server_timing *server_timings;
 pdc_timestamp *    buf_obj_map_timestamps;
 pdc_timestamp *    buf_obj_unmap_timestamps;
+
 pdc_timestamp *    obtain_lock_write_timestamps;
 pdc_timestamp *    obtain_lock_read_timestamps;
 pdc_timestamp *    release_lock_write_timestamps;

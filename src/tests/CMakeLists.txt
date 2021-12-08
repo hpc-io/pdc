@@ -182,6 +182,7 @@ add_test(NAME read_obj_int16   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTOR
 add_test(NAME read_obj_int8    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./read_obj o 1 int8)
 add_test(NAME query_data        WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./query_data o 1)
 #add_test(NAME region_transfer_write_read2     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_checkpoint_restart_test.sh ./region_transfer_write_only ./region_transfer_read_only)
+
 #add_test(NAME vpicio_bdcats     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio_old ./bdcats_old)
 add_test(NAME vpicio_bdcats_transfer_request     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio ./bdcats)
 

@@ -2384,7 +2384,6 @@ PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct pdc_re
 
     HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr, buf_unmap_register_id_g,
               &client_send_buf_unmap_handle);
-
     hg_ret = HG_Forward(client_send_buf_unmap_handle, client_send_buf_unmap_rpc_cb, &unmap_args, &in);
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_buf_unmap(): Could not start HG_Forward()");
@@ -2628,6 +2627,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *o
 
     hg_ret = HG_Forward(client_send_transfer_request_handle, client_send_transfer_request_rpc_cb,
                         &transfer_args, &in);
+
 #if PDC_TIMING == 1
     if (access_type == PDC_READ) {
         timings.PDCtransfer_request_start_read_rpc += MPI_Wtime() - start;
@@ -2637,11 +2637,11 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *o
     }
     start = MPI_Wtime();
 #endif
+
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_transfer_request(): Could not start HG_Forward() @ line %d\n",
                     __LINE__);
     work_todo_g = 1;
-    PDC_Client_check_response(&send_context_g);
 
 #if PDC_TIMING == 1
     end = MPI_Wtime();
@@ -2654,6 +2654,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *o
         pdc_timestamp_register(client_transfer_request_start_write_timestamps, function_start, end);
     }
 #endif
+
     /*
         printf("PDC_Client_transfer_request() checkpoint, first value is %d @ line %d\n", ((int *)buf)[0],
                __LINE__);
@@ -2717,6 +2718,7 @@ done:
 
 perr_t
 PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, int access_type)
+
 {
     perr_t                                 ret_value = SUCCEED;
     hg_return_t                            hg_ret    = HG_SUCCESS;
@@ -2730,11 +2732,13 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, int access_type)
     double start          = MPI_Wtime(), end;
     double function_start = start;
 #endif
+
     data_server_id = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
     debug_server_id_count[data_server_id]++;
 
     in.transfer_request_id = transfer_request_id;
     in.access_type         = access_type;
+
     if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
                     pdc_client_mpi_rank_g, __LINE__);
@@ -2749,7 +2753,6 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, int access_type)
 
     hg_ret = HG_Forward(client_send_transfer_request_wait_handle, client_send_transfer_request_wait_rpc_cb,
                         &transfer_args, &in);
-
 #if PDC_TIMING == 1
     end = MPI_Wtime();
     if (access_type == PDC_READ) {
@@ -3680,7 +3683,9 @@ PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_region_i
     else {
         timings.PDCreg_release_lock_write_rpc += MPI_Wtime() - start;
     }
+
     start = MPI_Wtime();
+
 #endif
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_name_to_server(): Could not start HG_Forward()");

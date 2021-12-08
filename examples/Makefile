@@ -9,10 +9,12 @@ LIBS = -lpdc
 .c.o:
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<
 
+
 all: region_transfer_2D region_transfer_3D pdc_init obj_get_data bdcats vpicio bdcats_old vpicio_old read_write_perf read_write_col_perf
 
 region_transfer_2D: region_transfer_2D.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
+
 region_transfer_3D: region_transfer_3D.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
 obj_get_data: obj_get_data.o
