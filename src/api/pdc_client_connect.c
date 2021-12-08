@@ -2642,6 +2642,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *o
         PGOTO_ERROR(FAIL, "PDC_Client_send_transfer_request(): Could not start HG_Forward() @ line %d\n",
                     __LINE__);
     work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
 
 #if PDC_TIMING == 1
     end = MPI_Wtime();

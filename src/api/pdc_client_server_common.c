@@ -398,18 +398,6 @@ PDC_server_timing_report()
 
     fclose(stream);
 
-    sprintf(filename, "pdc_server_timings_%d.csv", rank);
-    stream = fopen(filename, "w");
-    fprintf(stream, "PDCbuf_obj_map_rpc,"
-                    "PDCreg_obtain_lock_rpc,PDCreg_release_lock_write_rpc,"
-                    "PDCreg_release_lock_read_rpc,PDCbuf_obj_unmap_rpc,"
-                    "region_release_bulk_transfer_cb\n");
-    fprintf(stream, "%lf,%lf,%lf,%lf,%lf,%lf\n", server_timings.PDCbuf_obj_map_rpc,
-            server_timings.PDCreg_obtain_lock_rpc, server_timings.PDCreg_release_lock_write_rpc,
-            server_timings.PDCreg_release_lock_read_rpc, server_timings.PDCbuf_obj_unmap_rpc,
-            server_timings.PDCreg_release_lock_bulk_transfer_rpc);
-    fclose(stream);
-
     free(server_timings);
     pdc_timestamp_clean(buf_obj_map_timestamps);
     pdc_timestamp_clean(buf_obj_unmap_timestamps);
@@ -3249,6 +3237,7 @@ HG_TEST_RPC_CB(region_release, handle)
                             sizeof(struct buf_map_release_bulk_args));
                         memset(obj_map_bulk_args, 0, sizeof(struct buf_map_release_bulk_args));
                         obj_map_bulk_args->handle               = handle;
+
                         obj_map_bulk_args->data_buf             = data_buf;
                         obj_map_bulk_args->in                   = in;
                         obj_map_bulk_args->remote_obj_id        = eltt2->remote_obj_id;
@@ -3826,6 +3815,7 @@ HG_TEST_RPC_CB(transform_region_release, handle)
                                              HG_BULK_PULL,                                  /* OP */
                                              hg_info->addr,                                 /* Origin addr */
                                              in.local_bulk_handle, 0, /* Origin handle and offset */
+
                                              remote_bulk_handle, 0,   /* Local handle and offset */
                                              size, HG_OP_ID_IGNORE);  /*  */
                         if (hg_ret != HG_SUCCESS) {

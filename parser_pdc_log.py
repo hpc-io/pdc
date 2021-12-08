@@ -246,15 +246,21 @@ def main():
     x_labels = np.arange(n_bars)
     io_bar = [wrap_io_data(all_interval_logs[i], all_time_logs[i]) for i in range(0, n_bars)]
     p_io_bar = plt.bar(x_labels, io_bar, width)
+    print("I/O bar")
+    print(io_bar)
 
     comm_bar = [wrap_comm_data(all_interval_logs[i], all_time_logs[i]) for i in range(0, n_bars)]
     p_comm_bar = plt.bar(x_labels, comm_bar, width, bottom=io_bar)
+    print("Comm bar")
+    print(comm_bar)
 
     other_bar = [wrap_other_data(all_interval_logs[i], all_time_logs[i]) for i in range(0, n_bars)]
     p_other_bar = plt.bar(x_labels, other_bar, width, bottom=[comm_bar[i]+io_bar[i] for i in range(0, n_bars)])
+    print("Other bar")
+    print(other_bar)
 
     plt.ylabel('Timing/sec')
-    plt.title('Server Breakdown Timing')
+    plt.title('Server Breakdown Timing With Cache')
     plt.legend((p_io_bar[0], p_comm_bar[0], p_other_bar[0]), ('I/O', 'Comm', 'Other'))
 
     plt.xticks(x_labels, ('shared_bm', 'shared_tr', 'dedicated_bm', 'dedicated_tr'))
