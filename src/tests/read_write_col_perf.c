@@ -119,7 +119,7 @@ main(int argc, char **argv)
 
     char hostname[256];
     gethostname(hostname, 256);
-  
+
     if (rank == 0) {
         printf("number of dimensions in this test is %d\n", ndim);
         printf("data size = %llu\n", (long long unsigned)data_size);

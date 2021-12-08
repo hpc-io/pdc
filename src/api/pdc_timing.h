@@ -86,14 +86,14 @@ pdc_server_timing *server_timings;
 pdc_timestamp *    buf_obj_map_timestamps;
 pdc_timestamp *    buf_obj_unmap_timestamps;
 
-pdc_timestamp *    obtain_lock_write_timestamps;
-pdc_timestamp *    obtain_lock_read_timestamps;
-pdc_timestamp *    release_lock_write_timestamps;
-pdc_timestamp *    release_lock_read_timestamps;
-pdc_timestamp *    release_lock_bulk_transfer_write_timestamps;
-pdc_timestamp *    release_lock_bulk_transfer_inner_write_timestamps;
-pdc_timestamp *    release_lock_bulk_transfer_read_timestamps;
-pdc_timestamp *    release_lock_bulk_transfer_inner_read_timestamps;
+pdc_timestamp *obtain_lock_write_timestamps;
+pdc_timestamp *obtain_lock_read_timestamps;
+pdc_timestamp *release_lock_write_timestamps;
+pdc_timestamp *release_lock_read_timestamps;
+pdc_timestamp *release_lock_bulk_transfer_write_timestamps;
+pdc_timestamp *release_lock_bulk_transfer_inner_write_timestamps;
+pdc_timestamp *release_lock_bulk_transfer_read_timestamps;
+pdc_timestamp *release_lock_bulk_transfer_inner_read_timestamps;
 
 pdc_timestamp *transfer_request_start_write_timestamps;
 pdc_timestamp *transfer_request_start_read_timestamps;

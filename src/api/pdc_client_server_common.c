@@ -205,11 +205,10 @@ PDC_timing_report(const char *prefix)
     sprintf(header, "transfer_request_wait_read_%s", prefix);
     timestamp_log(stream, header, client_transfer_request_wait_read_timestamps);
 
-
     fclose(stream);
 
-    client_buf_obj_map_timestamps->timestamp_size        = 0;
-    client_buf_obj_unmap_timestamps->timestamp_size      = 0;
+    client_buf_obj_map_timestamps->timestamp_size   = 0;
+    client_buf_obj_unmap_timestamps->timestamp_size = 0;
 
     client_obtain_lock_write_timestamps->timestamp_size  = 0;
     client_obtain_lock_read_timestamps->timestamp_size   = 0;
@@ -4815,7 +4814,6 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
 
     FUNC_ENTER(NULL);
 
-
     if (io_by_region_g || obj_ndim == 0) {
         PDC_Server_register_obj_region(obj_id);
         if (is_write) {
@@ -5005,7 +5003,7 @@ transfer_request_bulk_transfer_read_cb(const struct hg_cb_info *info)
     struct transfer_request_local_bulk_args *local_bulk_args = info->arg;
     hg_return_t                              ret;
     FUNC_ENTER(NULL);
-  
+
 #if PDC_TIMING == 1
     double end = MPI_Wtime(), start;
     server_timings->PDCreg_transfer_request_wait_read_bulk_rpc += end - local_bulk_args->start_time;

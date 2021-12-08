@@ -3464,7 +3464,6 @@ struct transfer_request_local_bulk_args {
 #if PDC_TIMING == 1
     double start_time;
 #endif
-
 };
 
 struct region_update_bulk_args {

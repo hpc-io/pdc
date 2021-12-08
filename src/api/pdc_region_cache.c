@@ -386,7 +386,7 @@ PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dim
     //       offset[0], buf_size, unit, ndim, (long long unsigned)obj_cache->obj_id);
 
     gettimeofday(&(obj_cache->timestamp), NULL);
-  
+
     return 0;
 }
 
@@ -440,7 +440,7 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
         write_size *= region_info->size[2];
 
     pthread_mutex_lock(&pdc_obj_cache_list_mutex);
-  
+
     obj_cache = NULL;
     // Look up for the object in the cache list
     obj_cache_iter = obj_cache_list;
@@ -494,7 +494,7 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
 #if PDC_TIMING == 1
     server_timings->PDCcache_write += MPI_Wtime() - start;
 #endif
-  
+
     // done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
