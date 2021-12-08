@@ -225,7 +225,6 @@ main(int argc, char **argv)
 #if PDC_TIMING == 1
     PDC_timing_report("write");
 #endif
-    printf("start to time read performance\n");
     for (i = 0; i < n_objects; ++i) {
         sprintf(obj_name1, "o1_%d_%d", rank, i);
         obj1 = PDCobj_open(obj_name1, pdc);

@@ -7,8 +7,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include "pdc.h"
-#include "pdc_client_connect.h"
-#include "pdc_client_server_common.h"
+#include "pdc_timing.h"
 
 void
 print_usage()
@@ -29,12 +28,9 @@ main(int argc, char **argv)
 #else
     int comm = 1;
 #endif
-    struct timeval pdc_timer_start;
-    struct timeval pdc_timer_end;
-    double         write_time = 0.0;
-    pdcid_t        global_obj = 0;
-    pdcid_t        local_region, global_region;
-    pdcid_t        pdc, cont_prop, cont, obj_prop;
+    pdcid_t global_obj = 0;
+    pdcid_t local_region, global_region;
+    pdcid_t pdc, cont_prop, cont, obj_prop;
 
     uint64_t *offset, *local_offset;
     uint64_t *mysize;
@@ -182,7 +178,6 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-    gettimeofday(&pdc_timer_start, 0);
 
     ret = PDCregion_transfer_start(transfer_request);
     if (ret != SUCCEED) {
@@ -217,13 +212,6 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-    gettimeofday(&pdc_timer_end, 0);
-    write_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-
-    if (rank == 0) {
-        printf("Time to lock and release data with %d ranks: %.6f\n", size, write_time);
-        fflush(stdout);
-    }
 
     // Now we start the read part for the object just written
     offset[0]       = rank * my_data_size;
@@ -245,7 +233,6 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-    gettimeofday(&pdc_timer_start, 0);
     ret = PDCregion_transfer_start(transfer_request);
     if (ret != SUCCEED) {
         printf("Failed to PDCregion_transfer_start @ line  %d!\n", __LINE__);
@@ -264,6 +251,7 @@ main(int argc, char **argv)
     }
 
     for (i = 0; i < (int)my_data_size; i++) {
+
         for (j = 0; j < (int)type_size; ++j) {
             if (mydata[i * type_size + j] != (char)i) {
                 printf("Wrong value detected %d != %d at @ line  %d!\n", mydata[i * type_size + j], i,

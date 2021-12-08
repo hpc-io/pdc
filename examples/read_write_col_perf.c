@@ -55,6 +55,12 @@ main(int argc, char **argv)
 
     pdcid_t transfer_request;
 
+#ifdef ENABLE_MPI
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+#endif
+
     data_size_array[0] = 0;
     data_size_array[1] = 0;
     data_size_array[2] = 0;
@@ -73,22 +79,25 @@ main(int argc, char **argv)
     }
 
     local_offset[0]    = 0;
-    offset[0]          = 0;
     data_size_array[0] = atoi(argv[2]);
     if (ndim == 1) {
+        offset[0]        = rank * data_size_array[0] * 1048576;
         offset_length[0] = data_size_array[0] * 1048576;
         data_size        = data_size_array[0] * 1048576;
     }
     else {
+        offset[0]        = rank * data_size_array[0];
         offset_length[0] = data_size_array[0];
         data_size        = data_size_array[0];
     }
+    dims[0] = offset_length[0] * size;
     if (ndim == 2) {
         local_offset[1]    = 0;
         offset[1]          = 0;
         data_size_array[1] = atoi(argv[3]);
         offset_length[1]   = data_size_array[1] * 1048576;
-        data_size *= data_size_array[1] * 1048576;
+        data_size *= offset_length[1];
+        dims[1] = offset_length[1];
     }
     else if (ndim == 3) {
         local_offset[1]    = 0;
@@ -100,28 +109,25 @@ main(int argc, char **argv)
         offset[2]          = 0;
         data_size_array[2] = atoi(argv[4]);
         offset_length[2]   = data_size_array[2] * 1048576;
-        data_size *= (data_size_array[1] * data_size_array[2] * 1048576);
+        data_size *= offset_length[2] * offset_length[1];
+
+        dims[1] = offset_length[1];
+        dims[2] = offset_length[2];
     }
     n_objects = atoi(argv[1]);
     int *data = (int *)malloc(sizeof(int) * data_size);
 
-    memcpy(dims, offset_length, sizeof(uint64_t) * ndim);
-#ifdef ENABLE_MPI
-    MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-#endif
     char hostname[256];
     gethostname(hostname, 256);
     if (rank == 0) {
         printf("number of dimensions in this test is %d\n", ndim);
         printf("data size = %llu\n", (long long unsigned)data_size);
-        printf("first dim has size %d\n", data_size_array[0]);
+        printf("first dim has size %" PRIu64 "\n", dims[0]);
         if (ndim >= 2) {
-            printf("second dim has size %d\n", data_size_array[1]);
+            printf("second dim has size %" PRIu64 "\n", dims[1]);
         }
         if (ndim == 3) {
-            printf("third dim has size %d\n", data_size_array[2]);
+            printf("third dim has size %" PRIu64 "\n", dims[2]);
         }
     }
 
@@ -162,22 +168,26 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
+
     for (i = 0; i < n_objects; ++i) {
         // create first object
-        sprintf(obj_name1, "o1_%d_%d", rank, i);
+        sprintf(obj_name1, "o1_%d", i);
+#ifdef ENABLE_MPI
+        obj1 = PDCobj_create_mpi(cont, obj_name1, obj_prop, 0, MPI_COMM_WORLD);
+#else
         obj1 = PDCobj_create(cont, obj_name1, obj_prop);
+#endif
+
         if (obj1 <= 0) {
             printf("Fail to create object @ line  %d!\n", __LINE__);
             ret_value = 1;
         }
-
-        reg        = PDCregion_create(ndim, offset, offset_length);
+        reg        = PDCregion_create(ndim, local_offset, offset_length);
         reg_global = PDCregion_create(ndim, offset, offset_length);
 
         memset(data, (char)i, sizeof(int) * data_size);
 
         transfer_request = PDCregion_transfer_create(data, PDC_WRITE, obj1, reg, reg_global);
-
         if (transfer_request == 0) {
             printf("PDCregion_transfer_create failed @ line %d\n", __LINE__);
             ret_value = 1;
@@ -186,7 +196,6 @@ main(int argc, char **argv)
         start = MPI_Wtime();
         ret   = PDCregion_transfer_start(transfer_request);
         write_reg_transfer_start_time += MPI_Wtime() - start;
-
         if (ret != SUCCEED) {
             printf("PDCregion_transfer_start failed @ line %d\n", __LINE__);
             ret_value = 1;
@@ -195,7 +204,6 @@ main(int argc, char **argv)
         start = MPI_Wtime();
         ret   = PDCregion_transfer_wait(transfer_request);
         write_reg_transfer_wait_time += MPI_Wtime() - start;
-
         if (ret != SUCCEED) {
             printf("PDCregion_transfer_wait failed @ line %d\n", __LINE__);
             ret_value = 1;
@@ -225,9 +233,8 @@ main(int argc, char **argv)
 #if PDC_TIMING == 1
     PDC_timing_report("write");
 #endif
-    printf("start to time read performance\n");
     for (i = 0; i < n_objects; ++i) {
-        sprintf(obj_name1, "o1_%d_%d", rank, i);
+        sprintf(obj_name1, "o1_%d", i);
         obj1 = PDCobj_open(obj_name1, pdc);
         if (obj1 <= 0) {
             printf("Fail to open object @ line  %d!\n", __LINE__);
