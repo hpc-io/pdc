@@ -3236,7 +3236,7 @@ HG_TEST_RPC_CB(region_release, handle)
                         obj_map_bulk_args = (struct buf_map_release_bulk_args *)malloc(
                             sizeof(struct buf_map_release_bulk_args));
                         memset(obj_map_bulk_args, 0, sizeof(struct buf_map_release_bulk_args));
-                        obj_map_bulk_args->handle               = handle;
+                        obj_map_bulk_args->handle = handle;
 
                         obj_map_bulk_args->data_buf             = data_buf;
                         obj_map_bulk_args->in                   = in;
@@ -3816,8 +3816,8 @@ HG_TEST_RPC_CB(transform_region_release, handle)
                                              hg_info->addr,                                 /* Origin addr */
                                              in.local_bulk_handle, 0, /* Origin handle and offset */
 
-                                             remote_bulk_handle, 0,   /* Local handle and offset */
-                                             size, HG_OP_ID_IGNORE);  /*  */
+                                             remote_bulk_handle, 0,  /* Local handle and offset */
+                                             size, HG_OP_ID_IGNORE); /*  */
                         if (hg_ret != HG_SUCCESS) {
                             error = 1;
                             PGOTO_ERROR(HG_OTHER_ERROR, "===PDC SERVER: HG_TEST_RPC_CB(region_release, "
