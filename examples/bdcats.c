@@ -70,9 +70,6 @@ main(int argc, char **argv)
     pdcid_t transfer_request_x, transfer_request_y, transfer_request_z, transfer_request_px,
         transfer_request_py, transfer_request_pz, transfer_request_id1, transfer_request_id2;
 
-    pdcid_t transfer_request_x, transfer_request_y, transfer_request_z, transfer_request_px,
-        transfer_request_py, transfer_request_pz, transfer_request_id1, transfer_request_id2;
-
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
