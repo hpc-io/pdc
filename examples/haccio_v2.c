@@ -43,7 +43,7 @@ uniform_random_number()
 void
 print_usage()
 {
-    printf("Usage: srun -n #procs ./haccio #particles (in 10e6)\n");
+    printf("Usage: srun -n #procs ./haccio #particles\n");
 }
 
 void
@@ -94,6 +94,7 @@ main(int argc, char **argv)
 
     pdcid_t obj_ids[NUM_VARS], obj_props[NUM_VARS];
     pdcid_t region_ids[NUM_VARS], region_remote_ids[NUM_VARS];
+    pdcid_t transfer_ids[NUM_VARS];
 
     perr_t ret;
 
@@ -129,58 +130,42 @@ main(int argc, char **argv)
         region_ids[i]        = PDCregion_create(NUM_DIMS, &offset, &mysize);
         region_remote_ids[i] = PDCregion_create(NUM_DIMS, &offset_remote, &mysize);
 
-        PDCbuf_obj_map(buffers[i], VAR_TYPES[i], region_ids[i], obj_ids[i], region_remote_ids[i]);
+        // TODO need this?
+        // PDCbuf_obj_map(buffers[i], VAR_TYPES[i], region_ids[i], obj_ids[i], region_remote_ids[i]);
     }
     MPI_Barrier(MPI_COMM_WORLD);
 
-    double time_total, time_lock, time_io, time_release;
+    double time_total, time_create, time_start, time_wait;
 
     time_total = MPI_Wtime();
 
-    // Accquire the lock
-    time_lock = MPI_Wtime();
+    // Create transfer request
+    time_create = MPI_Wtime();
     for (i = 0; i < NUM_VARS; i++) {
-        ret = PDCreg_obtain_lock(obj_ids[i], region_remote_ids[i], PDC_WRITE, PDC_NOBLOCK);
+        transfer_ids[i] =
+            PDCregion_transfer_create(buffers[i], PDC_WRITE, obj_ids[i], region_ids[i], region_remote_ids[i]);
     }
     MPI_Barrier(MPI_COMM_WORLD);
-    time_lock = MPI_Wtime() - time_lock;
+    time_create = MPI_Wtime() - time_create;
 
-    // Actual I/O
-    time_io = MPI_Wtime();
-    /*
-    float *  float_var; // xx, yy, zz, vx, vy ,vz, phi
-    int64_t *int64_var; // phd
-    int16_t *int16_var; // mask
-    for (k = 0; k < 7; k++) {
-        float_var = (float *)buffers[k];
-        for (i = 0; i < NUM_PARTICLES; i++)
-            float_var[i] = uniform_random_number() * 99;
-    }
-    int64_var = (int64_t *)buffers[7];
-    for (i = 0; i < NUM_PARTICLES; i++)
-        int64_var[i] = uniform_random_number() * 99;
-    int16_var = (int16_t *)buffers[8];
-    for (i = 0; i < NUM_PARTICLES; i++)
-        int16_var[i] = uniform_random_number() * 99;
-    MPI_Barrier(MPI_COMM_WORLD);
-    */
-    time_io = MPI_Wtime() - time_io;
-
-    // Release lock
-    time_release = MPI_Wtime();
+    // Start transfers
+    time_start = MPI_Wtime();
     for (i = 0; i < NUM_VARS; i++)
-        ret = PDCreg_release_lock(obj_ids[i], region_remote_ids[i], PDC_WRITE);
+        PDCregion_transfer_start(transfer_ids[i]);
     MPI_Barrier(MPI_COMM_WORLD);
-    time_release = MPI_Wtime() - time_release;
+    time_start = MPI_Wtime() - time_start;
 
-    // Unmap objects
+    // Wait for transfers to finish
+    time_wait = MPI_Wtime();
     for (i = 0; i < NUM_VARS; i++)
-        ret = PDCbuf_obj_unmap(obj_ids[i], region_remote_ids[i]);
+        PDCregion_transfer_wait(transfer_ids[i]);
     MPI_Barrier(MPI_COMM_WORLD);
+    time_wait  = MPI_Wtime() - time_wait;
     time_total = MPI_Wtime() - time_total;
 
     for (i = 0; i < NUM_VARS; i++) {
         // TODO delete before close ?
+        PDCregion_transfer_close(transfer_ids[i]);
         PDCobj_close(obj_ids[i]);
         PDCprop_close(obj_props[i]);
         PDCregion_close(region_ids[i]);
@@ -195,8 +180,9 @@ main(int argc, char **argv)
     if (mpi_rank == 0) {
         double per_particle = sizeof(float) * 7 + sizeof(int64_t) + sizeof(int16_t);
         double bandwidth    = per_particle * NUM_PARTICLES * mpi_size / 1024.0 / 1024.0 / time_total;
-        printf("Bandwidth: %.2fMB/s, total time: %.4f, lock: %.4f, io: %.4f, release: %.4f\n", bandwidth,
-               time_total, time_lock, time_io, time_release);
+        printf("Bandwidth: %.2fMB/s, total time: %.4f, create transfer: %.4f, start transfer: %.4f, wait "
+               "transfer: %.4f\n",
+               bandwidth, time_total, time_create, time_start, time_wait);
     }
     MPI_Finalize();
 
