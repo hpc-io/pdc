@@ -36,6 +36,7 @@
 #include "mercury_list.h"
 #include "mercury_config.h"
 #include "mercury_thread_pool.h"
+#include "pdc_timing.h"
 
 #ifdef ENABLE_MULTITHREAD
 #include "mercury_thread_pool.h"
@@ -744,6 +745,7 @@ typedef struct {
 /* Define transfer_request_wait_in_t */
 typedef struct {
     uint64_t transfer_request_id;
+    int32_t  access_type;
 } transfer_request_wait_in_t;
 /* Define transfer_request_wait_out_t */
 typedef struct {
@@ -2461,6 +2463,13 @@ hg_proc_transfer_request_wait_in_t(hg_proc_t proc, void *data)
     hg_return_t                 ret;
     transfer_request_wait_in_t *struct_data = (transfer_request_wait_in_t *)data;
     // printf("Input argument: transfer_request_wait for transfer_request_id @ line %d\n", __LINE__);
+
+    ret = hg_proc_int32_t(proc, &struct_data->access_type);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
     ret = hg_proc_uint64_t(proc, &struct_data->transfer_request_id);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
@@ -3358,6 +3367,9 @@ struct bulk_args_t {
 };
 
 struct buf_map_release_bulk_args {
+#if PDC_TIMING == 1
+    double start_time;
+#endif
     hg_handle_t             handle;
     void *                  data_buf;
     pdcid_t                 remote_obj_id; /* target of object id */
@@ -3448,6 +3460,10 @@ struct transfer_request_local_bulk_args {
     uint64_t              transfer_request_id;
     void *                data_buf;
     size_t                total_mem_size;
+
+#if PDC_TIMING == 1
+    double start_time;
+#endif
 };
 
 struct region_update_bulk_args {

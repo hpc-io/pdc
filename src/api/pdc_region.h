@@ -27,6 +27,7 @@
 
 #include "pdc_public.h"
 #include "pdc_obj.h"
+#include "pdc_timing.h"
 
 /**************************/
 /* Library Public Struct */
