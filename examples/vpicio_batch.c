@@ -76,14 +76,15 @@ main(int argc, char **argv)
     uint64_t *offset;
     uint64_t *offset_remote;
     uint64_t *mysize;
-    unsigned sleep_time = 5;
+    unsigned  sleep_time = 5;
 
     pdcid_t *transfer_request_x, *transfer_request_y, *transfer_request_z, *transfer_request_px,
         *transfer_request_py, *transfer_request_pz, *transfer_request_id1, *transfer_request_id2;
 
     uint64_t timestamps = 10;
 
-    double start, end, transfer_start = .0, transfer_wait = .0, transfer_create = .0, transfer_close = .0, max_time;
+    double start, end, transfer_start = .0, transfer_wait = .0, transfer_create = .0, transfer_close = .0,
+                       max_time;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -94,10 +95,10 @@ main(int argc, char **argv)
 
     numparticles = NPARTICLES;
 
-    if (argc >=2) {
-        sleep_time = (unsigned) atoi(argv[1]);
+    if (argc >= 2) {
+        sleep_time = (unsigned)atoi(argv[1]);
     }
-    if (argc >=3) {
+    if (argc >= 3) {
         timestamps = atoll(argv[2]);
     }
     if (argc >= 4) {
@@ -208,11 +209,11 @@ main(int argc, char **argv)
         exit(-1);
     }
 
-    offset           = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
-    offset_remote    = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
-    mysize           = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
-    offset[0]        = 0;
-    mysize[0]        = numparticles;
+    offset        = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
+    offset_remote = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
+    mysize        = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
+    offset[0]     = 0;
+    mysize[0]     = numparticles;
 
     // create a region
     region_x   = PDCregion_create(ndim, offset, mysize);
@@ -224,29 +225,29 @@ main(int argc, char **argv)
     region_id1 = PDCregion_create(ndim, offset, mysize);
     region_id2 = PDCregion_create(ndim, offset, mysize);
 
-    transfer_request_x = (pdcid_t *) malloc(sizeof(pdcid_t) * timestamps);
-    transfer_request_y = (pdcid_t *) malloc(sizeof(pdcid_t) * timestamps);
-    transfer_request_z = (pdcid_t *) malloc(sizeof(pdcid_t) * timestamps);
-    transfer_request_px = (pdcid_t *) malloc(sizeof(pdcid_t) * timestamps);
-    transfer_request_py = (pdcid_t *) malloc(sizeof(pdcid_t) * timestamps);
-    transfer_request_pz = (pdcid_t *) malloc(sizeof(pdcid_t) * timestamps);
-    transfer_request_id1 = (pdcid_t *) malloc(sizeof(pdcid_t) * timestamps);
-    transfer_request_id2 = (pdcid_t *) malloc(sizeof(pdcid_t) * timestamps);
+    transfer_request_x   = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
+    transfer_request_y   = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
+    transfer_request_z   = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
+    transfer_request_px  = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
+    transfer_request_py  = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
+    transfer_request_pz  = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
+    transfer_request_id1 = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
+    transfer_request_id2 = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-    for ( i = 0; i < timestamps; ++i ) {
+    for (i = 0; i < timestamps; ++i) {
 
         offset_remote[0] = rank * numparticles * timestamps;
-        region_xx   = PDCregion_create(ndim, offset_remote, mysize);
-        region_yy   = PDCregion_create(ndim, offset_remote, mysize);
-        region_zz   = PDCregion_create(ndim, offset_remote, mysize);
-        region_pxx  = PDCregion_create(ndim, offset_remote, mysize);
-        region_pyy  = PDCregion_create(ndim, offset_remote, mysize);
-        region_pzz  = PDCregion_create(ndim, offset_remote, mysize);
-        region_id11 = PDCregion_create(ndim, offset_remote, mysize);
-        region_id22 = PDCregion_create(ndim, offset_remote, mysize);
+        region_xx        = PDCregion_create(ndim, offset_remote, mysize);
+        region_yy        = PDCregion_create(ndim, offset_remote, mysize);
+        region_zz        = PDCregion_create(ndim, offset_remote, mysize);
+        region_pxx       = PDCregion_create(ndim, offset_remote, mysize);
+        region_pyy       = PDCregion_create(ndim, offset_remote, mysize);
+        region_pzz       = PDCregion_create(ndim, offset_remote, mysize);
+        region_id11      = PDCregion_create(ndim, offset_remote, mysize);
+        region_id22      = PDCregion_create(ndim, offset_remote, mysize);
 
 #ifdef ENABLE_MPI
         start = MPI_Wtime();
@@ -281,12 +282,14 @@ main(int argc, char **argv)
             printf("Array pz transfer request creation failed\n");
             return 1;
         }
-        transfer_request_id1[i] = PDCregion_transfer_create(&id1[0], PDC_WRITE, obj_id11, region_id1, region_id11);
+        transfer_request_id1[i] =
+            PDCregion_transfer_create(&id1[0], PDC_WRITE, obj_id11, region_id1, region_id11);
         if (transfer_request_id1[i] == 0) {
             printf("Array id1 transfer request creation failed\n");
             return 1;
         }
-        transfer_request_id2[i] = PDCregion_transfer_create(&id2[0], PDC_WRITE, obj_id22, region_id2, region_id22);
+        transfer_request_id2[i] =
+            PDCregion_transfer_create(&id2[0], PDC_WRITE, obj_id22, region_id2, region_id22);
         if (transfer_request_id2[i] == 0) {
             printf("Array id2 transfer request creation failed\n");
             return 1;
@@ -481,7 +484,6 @@ main(int argc, char **argv)
             return 1;
         }
     }
-
 
 #if PDC_TIMING == 1
     PDC_timing_report("write");
