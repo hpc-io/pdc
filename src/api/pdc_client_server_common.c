@@ -137,7 +137,7 @@ PDC_timing_report(const char *prefix)
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     gethostname(hostname, HOST_NAME_MAX);
-    if (rank % 32) {
+    if (!(rank % 32)) {
         printf("client process rank %d, hostname = %s\n", rank, hostname);
     }
     MPI_Reduce(&timings, &max_timings, sizeof(pdc_timing) / sizeof(double), MPI_DOUBLE, MPI_MAX, 0,
