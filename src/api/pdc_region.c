@@ -207,9 +207,9 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
     p->obj_dims = ptr;
     memcpy(p->obj_dims, obj2->obj_pt->obj_prop_pub->dims, sizeof(uint64_t) * p->obj_ndim);
 
+    /*
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    /*
             printf("rank = %d transfer request create check obj ndim %d, dims [%lld, %lld, %lld],
        local_offset[0] = %lld, " "reg1->offset[0] = %lld\n", rank, (int)p->obj_ndim, (long long
        int)p->obj_dims[0], (long long int)p->obj_dims[1], (long long int)p->obj_dims[2], (long long
