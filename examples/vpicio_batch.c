@@ -51,14 +51,14 @@ print_usage()
 int
 main(int argc, char **argv)
 {
-    int      rank = 0, size = 1;
-    pdcid_t  pdc_id, cont_prop, cont_id;
-    pdcid_t obj_prop_xx, obj_prop_yy, obj_prop_zz, obj_prop_pxx, obj_prop_pyy, obj_prop_pzz,
-        obj_prop_id11, obj_prop_id22;
+    int     rank = 0, size = 1;
+    pdcid_t pdc_id, cont_prop, cont_id;
+    pdcid_t obj_prop_xx, obj_prop_yy, obj_prop_zz, obj_prop_pxx, obj_prop_pyy, obj_prop_pzz, obj_prop_id11,
+        obj_prop_id22;
     pdcid_t *obj_xx, *obj_yy, *obj_zz, *obj_pxx, *obj_pyy, *obj_pzz, *obj_id11, *obj_id22;
-    pdcid_t region_x, region_y, region_z, region_px, region_py, region_pz, region_id1, region_id2;
-    pdcid_t region_xx, region_yy, region_zz, region_pxx, region_pyy, region_pzz, region_id11, region_id22;
-    perr_t  ret;
+    pdcid_t  region_x, region_y, region_z, region_px, region_py, region_pz, region_id1, region_id2;
+    pdcid_t  region_xx, region_yy, region_zz, region_pxx, region_pyy, region_pzz, region_id11, region_id22;
+    perr_t   ret;
 #ifdef ENABLE_MPI
     MPI_Comm comm;
 #else
