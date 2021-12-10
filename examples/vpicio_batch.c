@@ -501,40 +501,6 @@ main(int argc, char **argv)
             printf("fail to close region region_id22\n");
             return 1;
         }
-    }
-
-    free(transfer_request_x);
-    free(transfer_request_y);
-    free(transfer_request_z);
-    free(transfer_request_px);
-    free(transfer_request_py);
-    free(transfer_request_pz);
-    free(transfer_request_id1);
-    free(transfer_request_id2);
-
-#if PDC_TIMING == 1
-    PDC_timing_report("write");
-#endif
-
-#ifdef ENABLE_MPI
-    MPI_Reduce(&transfer_create, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    if (!rank) {
-        printf("transfer create: %lf\n", max_time);
-    }
-    MPI_Reduce(&transfer_start, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    if (!rank) {
-        printf("transfer start: %lf\n", max_time);
-    }
-    MPI_Reduce(&transfer_wait, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    if (!rank) {
-        printf("transfer wait: %lf\n", max_time);
-    }
-    MPI_Reduce(&transfer_close, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    if (!rank) {
-        printf("transfer close: %lf\n", max_time);
-    }
-#endif
-    for (i = 0; i < timestamps; ++i) {
         if (PDCobj_close(obj_xx[i]) < 0) {
             printf("fail to close obj_xx\n");
             return 1;
@@ -568,6 +534,39 @@ main(int argc, char **argv)
             return 1;
         }
     }
+
+    free(transfer_request_x);
+    free(transfer_request_y);
+    free(transfer_request_z);
+    free(transfer_request_px);
+    free(transfer_request_py);
+    free(transfer_request_pz);
+    free(transfer_request_id1);
+    free(transfer_request_id2);
+
+#if PDC_TIMING == 1
+    PDC_timing_report("write");
+#endif
+
+#ifdef ENABLE_MPI
+    MPI_Reduce(&transfer_create, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    if (!rank) {
+        printf("transfer create: %lf\n", max_time);
+    }
+    MPI_Reduce(&transfer_start, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    if (!rank) {
+        printf("transfer start: %lf\n", max_time);
+    }
+    MPI_Reduce(&transfer_wait, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    if (!rank) {
+        printf("transfer wait: %lf\n", max_time);
+    }
+    MPI_Reduce(&transfer_close, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    if (!rank) {
+        printf("transfer close: %lf\n", max_time);
+    }
+#endif
+
     free(obj_xx);
     free(obj_yy);
     free(obj_zz);
