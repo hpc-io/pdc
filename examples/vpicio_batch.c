@@ -205,49 +205,49 @@ main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     for (i = 0; i < timestamps; ++i) {
-        sprintf(obj_name, "obj-var-xx %d", i);
+        sprintf(obj_name, "obj-var-xx %" PRIu64 "", i);
         obj_xx[i] = PDCobj_create_mpi(cont_id, obj_name, obj_prop_xx, 0, comm);
         if (obj_xx[i] == 0) {
             printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
             exit(-1);
         }
-        sprintf(obj_name, "obj-var-yy %d", i);
+        sprintf(obj_name, "obj-var-yy %" PRIu64 "", i);
         obj_yy[i] = PDCobj_create_mpi(cont_id, obj_name, obj_prop_yy, 0, comm);
         if (obj_yy[i] == 0) {
             printf("Error getting an object id of %s from server, exit...\n", "obj-var-yy");
             exit(-1);
         }
-        sprintf(obj_name, "obj-var-zz %d", i);
+        sprintf(obj_name, "obj-var-zz %" PRIu64 "", i);
         obj_zz[i] = PDCobj_create_mpi(cont_id, obj_name, obj_prop_zz, 0, comm);
         if (obj_zz[i] == 0) {
             printf("Error getting an object id of %s from server, exit...\n", "obj-var-zz");
             exit(-1);
         }
-        sprintf(obj_name, "obj-var-pxx %d", i);
+        sprintf(obj_name, "obj-var-pxx %" PRIu64 "", i);
         obj_pxx[i] = PDCobj_create_mpi(cont_id, obj_name, obj_prop_pxx, 0, comm);
         if (obj_pxx[i] == 0) {
             printf("Error getting an object id of %s from server, exit...\n", "obj-var-pxx");
             exit(-1);
         }
-        sprintf(obj_name, "obj-var-pyy %d", i);
+        sprintf(obj_name, "obj-var-pyy %" PRIu64 "", i);
         obj_pyy[i] = PDCobj_create_mpi(cont_id, obj_name, obj_prop_pyy, 0, comm);
         if (obj_pyy[i] == 0) {
             printf("Error getting an object id of %s from server, exit...\n", "obj-var-pyy");
             exit(-1);
         }
-        sprintf(obj_name, "obj-var-pzz %d", i);
+        sprintf(obj_name, "obj-var-pzz %" PRIu64 "", i);
         obj_pzz[i] = PDCobj_create_mpi(cont_id, obj_name, obj_prop_pzz, 0, comm);
         if (obj_pzz[i] == 0) {
             printf("Error getting an object id of %s from server, exit...\n", "obj-var-pzz");
             exit(-1);
         }
-        sprintf(obj_name, "id11 %d", i);
+        sprintf(obj_name, "id11 %" PRIu64 "", i);
         obj_id11[i] = PDCobj_create_mpi(cont_id, obj_name, obj_prop_id11, 0, comm);
         if (obj_id11[i] == 0) {
             printf("Error getting an object id of %s from server, exit...\n", "obj_id11");
             exit(-1);
         }
-        sprintf(obj_name, "id22 %d", i);
+        sprintf(obj_name, "id22 %" PRIu64 "", i);
         obj_id22[i] = PDCobj_create_mpi(cont_id, obj_name, obj_prop_id22, 0, comm);
         if (obj_id22[i] == 0) {
             printf("Error getting an object id of %s from server, exit...\n", "obj_id22");
