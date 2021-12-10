@@ -5115,10 +5115,11 @@ HG_TEST_RPC_CB(transfer_request_wait, handle)
 #endif
 
     HG_Get_input(handle, &in);
-/*
-    printf("HG_TEST_RPC_CB(transfer_request_wait, handle): entering the wait function at server side @ %d\n",
-           __LINE__);
-*/
+    /*
+        printf("HG_TEST_RPC_CB(transfer_request_wait, handle): entering the wait function at server side @
+       %d\n",
+               __LINE__);
+    */
     pthread_mutex_lock(&transfer_request_status_mutex);
     status = PDC_check_request(in.transfer_request_id);
     if (status == PDC_TRANSFER_STATUS_PENDING) {
