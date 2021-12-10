@@ -485,6 +485,15 @@ main(int argc, char **argv)
         }
     }
 
+    free(transfer_request_x);
+    free(transfer_request_y);
+    free(transfer_request_z);
+    free(transfer_request_px);
+    free(transfer_request_py);
+    free(transfer_request_pz);
+    free(transfer_request_id1);
+    free(transfer_request_id2);
+
 #if PDC_TIMING == 1
     PDC_timing_report("write");
 #endif
