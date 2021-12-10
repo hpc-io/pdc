@@ -2543,7 +2543,7 @@ perr_t
 PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *obj_dims, int local_ndim,
                             uint64_t *local_offset, uint64_t *local_size, int remote_ndim,
                             uint64_t *remote_offset, uint64_t *remote_size, pdc_var_type_t mem_type,
-                            pdc_access_t access_type, pdcid_t *metadata_id)
+                            pdc_access_t access_type, pdcid_t *metadata_id, char **new_buf_ptr)
 {
     perr_t                            ret_value = SUCCEED;
     hg_return_t                       hg_ret    = HG_SUCCESS;
@@ -2660,8 +2660,9 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *o
         printf("PDC_Client_transfer_request() checkpoint, first value is %d @ line %d\n", ((int *)buf)[0],
                __LINE__);
     */
-    release_region_buffer(buf, new_buf, obj_dims, local_ndim, local_offset, local_size, unit, access_type);
     *metadata_id = transfer_args.metadata_id;
+
+    *new_buf_ptr = new_buf;
     if (transfer_args.ret != 1)
         PGOTO_ERROR(FAIL, "PDC_CLIENT: transfer request failed... @ line %d\n", __LINE__);
 
@@ -2672,7 +2673,7 @@ done:
 }
 
 perr_t
-PDC_Client_transfer_request_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed)
+PDC_Client_transfer_request_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed, char *buf, char *new_buf, uint64_t *obj_dims, int local_ndim, uint64_t *local_offset, uint64_t *local_size, pdc_var_type_t mem_type, pdc_access_t access_type)
 {
     perr_t                                   ret_value = SUCCEED;
     hg_return_t                              hg_ret    = HG_SUCCESS;
@@ -2680,12 +2681,14 @@ PDC_Client_transfer_request_status(pdcid_t transfer_request_id, pdc_transfer_sta
     uint32_t                                 data_server_id;
     hg_handle_t                              client_send_transfer_request_status_handle;
     struct _pdc_transfer_request_status_args transfer_args;
+    size_t unit;
 
     FUNC_ENTER(NULL);
 
     data_server_id = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
 
     in.transfer_request_id = transfer_request_id;
+    unit = PDC_get_var_type_size(mem_type);
     if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
                     pdc_client_mpi_rank_g, __LINE__);
@@ -2706,6 +2709,9 @@ PDC_Client_transfer_request_status(pdcid_t transfer_request_id, pdc_transfer_sta
                     __LINE__);
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
+    if ( transfer_args.status == PDC_TRANSFER_STATUS_COMPLETE ) {
+        release_region_buffer(buf, new_buf, obj_dims, local_ndim, local_offset, local_size, unit, access_type);
+    }
 
     if (transfer_args.ret != 1)
         PGOTO_ERROR(FAIL, "PDC_CLIENT: transfer request failed... @ line %d\n", __LINE__);
@@ -2718,7 +2724,7 @@ done:
 }
 
 perr_t
-PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, int access_type)
+PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, int access_type, char *buf, char *new_buf, uint64_t *obj_dims, int local_ndim, uint64_t *local_offset, uint64_t *local_size, pdc_var_type_t mem_type)
 
 {
     perr_t                                 ret_value = SUCCEED;
@@ -2727,6 +2733,7 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, int access_type)
     uint32_t                               data_server_id;
     hg_handle_t                            client_send_transfer_request_wait_handle;
     struct _pdc_transfer_request_wait_args transfer_args;
+    size_t unit;
 
     FUNC_ENTER(NULL);
 #if PDC_TIMING == 1
@@ -2739,6 +2746,7 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, int access_type)
 
     in.transfer_request_id = transfer_request_id;
     in.access_type         = access_type;
+    unit = PDC_get_var_type_size(mem_type);
 
     if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
@@ -2770,7 +2778,9 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, int access_type)
                     __LINE__);
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
-
+    if ( transfer_args.status == PDC_TRANSFER_STATUS_COMPLETE ) {
+        release_region_buffer(buf, new_buf, obj_dims, local_ndim, local_offset, local_size, unit, access_type);
+    }
 #if PDC_TIMING == 1
     end = MPI_Wtime();
     if (access_type == PDC_READ) {

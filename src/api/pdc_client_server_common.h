@@ -130,8 +130,10 @@ struct _pdc_iterator_info *PDC_Block_iterator_cache;
 /****************************/
 
 typedef struct pdc_transfer_request_status {
+    hg_handle_t             handle;
     uint64_t                            transfer_request_id;
     uint32_t                            status;
+    int set_handle;
     struct pdc_transfer_request_status *next;
 } pdc_transfer_request_status;
 
@@ -3982,6 +3984,7 @@ int PDC_add_task_to_list(pdc_task_list_t **target_list, perr_t (*cb)(), void *cb
  * \param del [IN]              Task to delete
  * \param mutex [IN]            Mutex
  *
+
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_del_task_from_list(pdc_task_list_t **target_list, pdc_task_list_t *del, void *mutex);
