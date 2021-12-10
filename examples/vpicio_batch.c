@@ -525,7 +525,7 @@ main(int argc, char **argv)
         printf("transfer close: %lf\n", max_time);
     }
 #endif
-    for (i = 0; i < timstamps; ++i) {
+    for (i = 0; i < timestamps; ++i) {
         if (PDCobj_close(obj_xx[i]) < 0) {
             printf("fail to close obj_xx\n");
             return 1;
