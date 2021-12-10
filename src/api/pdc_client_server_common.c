@@ -202,6 +202,7 @@ PDC_timing_report(const char *prefix)
     timestamp_log(stream, header, client_transfer_request_start_read_timestamps);
 
     sprintf(header, "transfer_request_wait_write_%s", prefix);
+
     timestamp_log(stream, header, client_transfer_request_wait_write_timestamps);
 
     sprintf(header, "transfer_request_wait_read_%s", prefix);
@@ -3834,6 +3835,7 @@ HG_TEST_RPC_CB(transform_region_release, handle)
 #ifdef ENABLE_MULTITHREAD
         hg_thread_mutex_unlock(&lock_list_mutex_g);
 #endif
+
         free(request_region);
 
         if (dirty_reg == 0) {
@@ -5026,11 +5028,9 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
                                    local_bulk_args->in.remote_unit, 1);
 #endif
 
-    printf("entering server write transfer bulk callback\n");
     pthread_mutex_lock(&transfer_request_status_mutex);
     PDC_finish_request(local_bulk_args->transfer_request_id);
     pthread_mutex_unlock(&transfer_request_status_mutex);
-    printf("exiting server read transfer bulk callback\n");
     free(local_bulk_args->data_buf);
     free(remote_reg_info);
 
@@ -5059,11 +5059,10 @@ transfer_request_bulk_transfer_read_cb(const struct hg_cb_info *info)
     start = MPI_Wtime();
 #endif
 
-    printf("entering server read transfer bulk callback\n");
     pthread_mutex_lock(&transfer_request_status_mutex);
     PDC_finish_request(local_bulk_args->transfer_request_id);
     pthread_mutex_unlock(&transfer_request_status_mutex);
-    printf("exiting server read transfer bulk callback\n");
+
     ret = HG_SUCCESS;
 
     HG_Bulk_free(local_bulk_args->bulk_handle);
