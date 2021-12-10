@@ -285,7 +285,11 @@ PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *co
     transferinfo     = PDC_find_id(transfer_request_id);
     transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
     if (transfer_request->metadata_id != 0) {
-        ret_value = PDC_Client_transfer_request_status(transfer_request->metadata_id, completed, transfer_request->buf, transfer_request->new_buf, transfer_request->obj_dims, transfer_request->local_region_ndim, transfer_request->local_region_offset, transfer_request->local_region_size, transfer_request->mem_type, transfer_request->access_type);
+        ret_value = PDC_Client_transfer_request_status(
+            transfer_request->metadata_id, completed, transfer_request->buf, transfer_request->new_buf,
+            transfer_request->obj_dims, transfer_request->local_region_ndim,
+            transfer_request->local_region_offset, transfer_request->local_region_size,
+            transfer_request->mem_type, transfer_request->access_type);
         if (*completed != PDC_TRANSFER_STATUS_PENDING) {
             transfer_request->metadata_id = 0;
         }
@@ -309,8 +313,11 @@ PDCregion_transfer_wait(pdcid_t transfer_request_id)
     transferinfo     = PDC_find_id(transfer_request_id);
     transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
     if (transfer_request->metadata_id != 0) {
-        ret_value =
-            PDC_Client_transfer_request_wait(transfer_request->metadata_id, transfer_request->access_type, transfer_request->buf, transfer_request->new_buf, transfer_request->obj_dims, transfer_request->local_region_ndim, transfer_request->local_region_offset, transfer_request->local_region_size, transfer_request->mem_type);
+        ret_value = PDC_Client_transfer_request_wait(
+            transfer_request->metadata_id, transfer_request->access_type, transfer_request->buf,
+            transfer_request->new_buf, transfer_request->obj_dims, transfer_request->local_region_ndim,
+            transfer_request->local_region_offset, transfer_request->local_region_size,
+            transfer_request->mem_type);
         transfer_request->metadata_id = 0;
     }
     else {

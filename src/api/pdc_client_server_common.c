@@ -4666,15 +4666,15 @@ PDC_commit_request(uint64_t transfer_request_id)
         transfer_request_status_list =
             (pdc_transfer_request_status *)malloc(sizeof(pdc_transfer_request_status));
         transfer_request_status_list->status              = PDC_TRANSFER_STATUS_PENDING;
-        transfer_request_status_list->set_handle              = 0;
+        transfer_request_status_list->set_handle          = 0;
         transfer_request_status_list->transfer_request_id = transfer_request_id;
         transfer_request_status_list->next                = NULL;
         transfer_request_status_list_end                  = transfer_request_status_list;
     }
     else {
-        ptr               = transfer_request_status_list_end;
-        ptr->next         = (pdc_transfer_request_status *)malloc(sizeof(pdc_transfer_request_status));
-        ptr->next->status = PDC_TRANSFER_STATUS_PENDING;
+        ptr                   = transfer_request_status_list_end;
+        ptr->next             = (pdc_transfer_request_status *)malloc(sizeof(pdc_transfer_request_status));
+        ptr->next->status     = PDC_TRANSFER_STATUS_PENDING;
         ptr->next->set_handle = 0;
         ptr->next->transfer_request_id   = transfer_request_id;
         ptr->next->next                  = NULL;
@@ -4695,7 +4695,7 @@ PDC_finish_request(uint64_t transfer_request_id)
 {
     pdc_transfer_request_status *ptr, *tmp = NULL;
     perr_t                       ret_value = SUCCEED;
-    transfer_request_wait_out_t out;
+    transfer_request_wait_out_t  out;
 
     FUNC_ENTER(NULL);
 
@@ -4704,7 +4704,8 @@ PDC_finish_request(uint64_t transfer_request_id)
         if (ptr->transfer_request_id == transfer_request_id) {
             ptr->status = PDC_TRANSFER_STATUS_COMPLETE;
             if (ptr->set_handle) {
-                /* Wait request is going to be returned, so we are not expecting any further checks for the current request. Immediately eject the current transfer request out of the list.*/
+                /* Wait request is going to be returned, so we are not expecting any further checks for the
+                 * current request. Immediately eject the current transfer request out of the list.*/
                 out.ret    = 1;
                 out.status = PDC_TRANSFER_STATUS_COMPLETE;
                 ret_value  = HG_Respond(ptr->handle, NULL, NULL, &out);
@@ -4787,8 +4788,8 @@ PDC_check_request(uint64_t transfer_request_id)
 
 /*
  * Search a linked list for a region transfer request.
- * Bind an RPC handle to the transfer request, so the RPC can be returned when the PDC_finish_request function is called.
- * Thread-safe function, lock required ahead of time.
+ * Bind an RPC handle to the transfer request, so the RPC can be returned when the PDC_finish_request function
+ * is called. Thread-safe function, lock required ahead of time.
  */
 static pdc_transfer_status_t
 PDC_try_finish_request(uint64_t transfer_request_id, hg_handle_t handle)
@@ -4800,7 +4801,7 @@ PDC_try_finish_request(uint64_t transfer_request_id, hg_handle_t handle)
     ptr = transfer_request_status_list;
     while (ptr != NULL) {
         if (ptr->transfer_request_id == transfer_request_id) {
-            ptr->handle = handle;
+            ptr->handle     = handle;
             ptr->set_handle = 1;
             break;
         }
@@ -5090,14 +5091,14 @@ HG_TEST_RPC_CB(transfer_request_status, handle)
     pthread_mutex_lock(&transfer_request_status_mutex);
     out.status = PDC_check_request(in.transfer_request_id);
     pthread_mutex_unlock(&transfer_request_status_mutex);
-    out.ret    = 1;
-    ret_value  = HG_Respond(handle, NULL, NULL, &out);
+    out.ret   = 1;
+    ret_value = HG_Respond(handle, NULL, NULL, &out);
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);
-} 
+}
 
 /* static hg_return_t */
 // transfer_request_wait_cb(hg_handle_t handle)
@@ -5107,7 +5108,7 @@ HG_TEST_RPC_CB(transfer_request_wait, handle)
     transfer_request_wait_in_t  in;
     transfer_request_wait_out_t out;
     pdc_transfer_status_t       status;
-    int fast_return = 0;
+    int                         fast_return = 0;
 
     FUNC_ENTER(NULL);
 #if PDC_TIMING == 1
@@ -5115,18 +5116,19 @@ HG_TEST_RPC_CB(transfer_request_wait, handle)
 #endif
 
     HG_Get_input(handle, &in);
-        printf("HG_TEST_RPC_CB(transfer_request_wait, handle): entering the wait function at server side @ %d\n",
-               __LINE__);
+    printf("HG_TEST_RPC_CB(transfer_request_wait, handle): entering the wait function at server side @ %d\n",
+           __LINE__);
     pthread_mutex_lock(&transfer_request_status_mutex);
     status = PDC_check_request(in.transfer_request_id);
     if (status == PDC_TRANSFER_STATUS_PENDING) {
         PDC_try_finish_request(in.transfer_request_id, handle);
-    } else {
+    }
+    else {
         fast_return = 1;
     }
     pthread_mutex_unlock(&transfer_request_status_mutex);
-        printf("HG_TEST_RPC_CB(transfer_request_wait, handle): exiting the wait function at server side @ %d\n",
-               __LINE__);
+    printf("HG_TEST_RPC_CB(transfer_request_wait, handle): exiting the wait function at server side @ %d\n",
+           __LINE__);
 
     if (fast_return) {
         out.ret    = 1;

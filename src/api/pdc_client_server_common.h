@@ -130,10 +130,10 @@ struct _pdc_iterator_info *PDC_Block_iterator_cache;
 /****************************/
 
 typedef struct pdc_transfer_request_status {
-    hg_handle_t             handle;
+    hg_handle_t                         handle;
     uint64_t                            transfer_request_id;
     uint32_t                            status;
-    int set_handle;
+    int                                 set_handle;
     struct pdc_transfer_request_status *next;
 } pdc_transfer_request_status;
 

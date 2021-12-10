@@ -51,7 +51,7 @@ typedef struct pdc_transfer_request {
     pdc_var_type_t mem_type;
     char *         buf;
     /* Used internally for 2D and 3D data */
-    char *         new_buf;
+    char *new_buf;
 
     int       local_region_ndim;
     uint64_t *local_region_offset;
