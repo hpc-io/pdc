@@ -53,8 +53,8 @@ main(int argc, char **argv)
 {
     int     rank = 0, size = 1;
     pdcid_t pdc_id, cont_prop, cont_id;
-    pdcid_t obj_prop_xx, obj_prop_yy, obj_prop_zz, obj_prop_pxx, obj_prop_pyy, obj_prop_pzz, obj_prop_id11,
-        obj_prop_id22;
+    pdcid_t *obj_prop_xx, *obj_prop_yy, *obj_prop_zz, *obj_prop_pxx, *obj_prop_pyy, *obj_prop_pzz, *obj_prop_id11,
+        *obj_prop_id22;
     pdcid_t obj_xx, obj_yy, obj_zz, obj_pxx, obj_pyy, obj_pzz, obj_id11, obj_id22;
     pdcid_t region_x, region_y, region_z, region_px, region_py, region_pz, region_id1, region_id2;
     pdcid_t region_xx, region_yy, region_zz, region_pxx, region_pyy, region_pzz, region_id11, region_id22;
@@ -166,48 +166,14 @@ main(int argc, char **argv)
     obj_prop_id22 = PDCprop_obj_dup(obj_prop_xx);
     PDCprop_set_obj_type(obj_prop_id22, PDC_INT);
 
-    obj_xx = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop_xx, 0, comm);
-    if (obj_xx == 0) {
-        printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
-        exit(-1);
-    }
-
-    obj_yy = PDCobj_create_mpi(cont_id, "obj-var-yy", obj_prop_yy, 0, comm);
-    if (obj_yy == 0) {
-        printf("Error getting an object id of %s from server, exit...\n", "obj-var-yy");
-        exit(-1);
-    }
-    obj_zz = PDCobj_create_mpi(cont_id, "obj-var-zz", obj_prop_zz, 0, comm);
-    if (obj_zz == 0) {
-        printf("Error getting an object id of %s from server, exit...\n", "obj-var-zz");
-        exit(-1);
-    }
-    obj_pxx = PDCobj_create_mpi(cont_id, "obj-var-pxx", obj_prop_pxx, 0, comm);
-    if (obj_pxx == 0) {
-        printf("Error getting an object id of %s from server, exit...\n", "obj-var-pxx");
-        exit(-1);
-    }
-    obj_pyy = PDCobj_create_mpi(cont_id, "obj-var-pyy", obj_prop_pyy, 0, comm);
-    if (obj_pyy == 0) {
-        printf("Error getting an object id of %s from server, exit...\n", "obj-var-pyy");
-        exit(-1);
-    }
-    obj_pzz = PDCobj_create_mpi(cont_id, "obj-var-pzz", obj_prop_pzz, 0, comm);
-    if (obj_pzz == 0) {
-        printf("Error getting an object id of %s from server, exit...\n", "obj-var-pzz");
-        exit(-1);
-    }
-
-    obj_id11 = PDCobj_create_mpi(cont_id, "id11", obj_prop_id11, 0, comm);
-    if (obj_id11 == 0) {
-        printf("Error getting an object id of %s from server, exit...\n", "obj_id11");
-        exit(-1);
-    }
-    obj_id22 = PDCobj_create_mpi(cont_id, "id22", obj_prop_id22, 0, comm);
-    if (obj_id22 == 0) {
-        printf("Error getting an object id of %s from server, exit...\n", "obj_id22");
-        exit(-1);
-    }
+    obj_xx = (pdcid_t*) malloc(sizeof(pdcid_t) * timestamps);
+    obj_yy = (pdcid_t*) malloc(sizeof(pdcid_t) * timestamps);
+    obj_zz = (pdcid_t*) malloc(sizeof(pdcid_t) * timestamps);
+    obj_pxx = (pdcid_t*) malloc(sizeof(pdcid_t) * timestamps);
+    obj_pyy = (pdcid_t*) malloc(sizeof(pdcid_t) * timestamps);
+    obj_pzz = (pdcid_t*) malloc(sizeof(pdcid_t) * timestamps);
+    obj_id11 = (pdcid_t*) malloc(sizeof(pdcid_t) * timestamps);
+    obj_id22 = (pdcid_t*) malloc(sizeof(pdcid_t) * timestamps);
 
     offset        = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
     offset_remote = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
@@ -238,6 +204,47 @@ main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     for (i = 0; i < timestamps; ++i) {
+        obj_xx[i] = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop_xx, 0, comm);
+        if (obj_xx[i] == 0) {
+            printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
+            exit(-1);
+        }
+        obj_yy[i] = PDCobj_create_mpi(cont_id, "obj-var-yy", obj_prop_yy, 0, comm);
+        if (obj_yy[i] == 0) {
+            printf("Error getting an object id of %s from server, exit...\n", "obj-var-yy");
+            exit(-1);
+        }
+        obj_zz[i] = PDCobj_create_mpi(cont_id, "obj-var-zz", obj_prop_zz, 0, comm);
+        if (obj_zz[i] == 0) {
+            printf("Error getting an object id of %s from server, exit...\n", "obj-var-zz");
+            exit(-1);
+        }
+        obj_pxx[i] = PDCobj_create_mpi(cont_id, "obj-var-pxx", obj_prop_pxx, 0, comm);
+        if (obj_pxx[i] == 0) {
+            printf("Error getting an object id of %s from server, exit...\n", "obj-var-pxx");
+            exit(-1);
+        }
+        obj_pyy[i] = PDCobj_create_mpi(cont_id, "obj-var-pyy", obj_prop_pyy, 0, comm);
+        if (obj_pyy[i] == 0) {
+            printf("Error getting an object id of %s from server, exit...\n", "obj-var-pyy");
+            exit(-1);
+        }
+        obj_pzz[i] = PDCobj_create_mpi(cont_id, "obj-var-pzz", obj_prop_pzz, 0, comm);
+        if (obj_pzz[i] == 0) {
+            printf("Error getting an object id of %s from server, exit...\n", "obj-var-pzz");
+            exit(-1);
+        }
+        obj_id11[i] = PDCobj_create_mpi(cont_id, "id11", obj_prop_id11, 0, comm);
+        if (obj_id11[i] == 0) {
+            printf("Error getting an object id of %s from server, exit...\n", "obj_id11");
+            exit(-1);
+        }
+        obj_id22[i] = PDCobj_create_mpi(cont_id, "id22", obj_prop_id22, 0, comm);
+        if (obj_id22[i] == 0) {
+            printf("Error getting an object id of %s from server, exit...\n", "obj_id22");
+            exit(-1);
+        }
+
 
         offset_remote[0] = rank * numparticles * timestamps;
         region_xx        = PDCregion_create(ndim, offset_remote, mysize);
@@ -252,44 +259,44 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         start = MPI_Wtime();
 #endif
-        transfer_request_x[i] = PDCregion_transfer_create(&x[0], PDC_WRITE, obj_xx, region_x, region_xx);
+        transfer_request_x[i] = PDCregion_transfer_create(&x[0], PDC_WRITE, obj_xx[i], region_x, region_xx);
         if (transfer_request_x[i] == 0) {
             printf("Array x transfer request creation failed\n");
             return 1;
         }
-        transfer_request_y[i] = PDCregion_transfer_create(&y[0], PDC_WRITE, obj_yy, region_y, region_yy);
+        transfer_request_y[i] = PDCregion_transfer_create(&y[0], PDC_WRITE, obj_yy[i], region_y, region_yy);
         if (transfer_request_y[i] == 0) {
             printf("Array y transfer request creation failed\n");
             return 1;
         }
-        transfer_request_z[i] = PDCregion_transfer_create(&z[0], PDC_WRITE, obj_zz, region_z, region_zz);
+        transfer_request_z[i] = PDCregion_transfer_create(&z[0], PDC_WRITE, obj_zz[i], region_z, region_zz);
         if (transfer_request_z[i] == 0) {
             printf("Array z transfer request creation failed\n");
             return 1;
         }
-        transfer_request_px[i] = PDCregion_transfer_create(&px[0], PDC_WRITE, obj_pxx, region_px, region_pxx);
+        transfer_request_px[i] = PDCregion_transfer_create(&px[0], PDC_WRITE, obj_pxx[i], region_px, region_pxx);
         if (transfer_request_px[i] == 0) {
             printf("Array px transfer request creation failed\n");
             return 1;
         }
-        transfer_request_py[i] = PDCregion_transfer_create(&py[0], PDC_WRITE, obj_pyy, region_py, region_pyy);
+        transfer_request_py[i] = PDCregion_transfer_create(&py[0], PDC_WRITE, obj_pyy[i], region_py, region_pyy);
         if (transfer_request_py[i] == 0) {
             printf("Array py transfer request creation failed\n");
             return 1;
         }
-        transfer_request_pz[i] = PDCregion_transfer_create(&pz[0], PDC_WRITE, obj_pzz, region_pz, region_pzz);
+        transfer_request_pz[i] = PDCregion_transfer_create(&pz[0], PDC_WRITE, obj_pzz[i], region_pz, region_pzz);
         if (transfer_request_pz[i] == 0) {
             printf("Array pz transfer request creation failed\n");
             return 1;
         }
         transfer_request_id1[i] =
-            PDCregion_transfer_create(&id1[0], PDC_WRITE, obj_id11, region_id1, region_id11);
+            PDCregion_transfer_create(&id1[0], PDC_WRITE, obj_id11[i], region_id1, region_id11);
         if (transfer_request_id1[i] == 0) {
             printf("Array id1 transfer request creation failed\n");
             return 1;
         }
         transfer_request_id2[i] =
-            PDCregion_transfer_create(&id2[0], PDC_WRITE, obj_id22, region_id2, region_id22);
+            PDCregion_transfer_create(&id2[0], PDC_WRITE, obj_id22[i], region_id2, region_id22);
         if (transfer_request_id2[i] == 0) {
             printf("Array id2 transfer request creation failed\n");
             return 1;
@@ -516,40 +523,49 @@ main(int argc, char **argv)
         printf("transfer close: %lf\n", max_time);
     }
 #endif
+    for ( i = 0; i < timstamps; ++i ) {
+        if (PDCobj_close(obj_xx[i]) < 0) {
+            printf("fail to close obj_xx\n");
+            return 1;
+        }
+        if (PDCobj_close(obj_yy[i]) < 0) {
+            printf("fail to close object obj_yy\n");
+            return 1;
+        }
+        if (PDCobj_close(obj_zz[i]) < 0) {
+            printf("fail to close object obj_zz\n");
+            return 1;
+        }
+        if (PDCobj_close(obj_pxx[i]) < 0) {
+            printf("fail to close object obj_pxx\n");
+            return 1;
+        }
+        if (PDCobj_close(obj_pyy[i]) < 0) {
+            printf("fail to close object obj_pyy\n");
+            return 1;
+        }
+        if (PDCobj_close(obj_pzz[i]) < 0) {
+            printf("fail to close object obj_pzz\n");
+            return 1;
+        }
+        if (PDCobj_close(obj_id11[i]) < 0) {
+            printf("fail to close object obj_id11\n");
+            return 1;
+        }
+        if (PDCobj_close(obj_id22[i]) < 0) {
+            printf("fail to close object obj_id22\n");
+            return 1;
+        }
+    }
+    free(obj_xx);
+    free(obj_yy);
+    free(obj_zz);
+    free(obj_pxx);
+    free(obj_pyy);
+    free(obj_pzz);
+    free(obj_id11);
+    free(obj_id22);
 
-    if (PDCobj_close(obj_xx) < 0) {
-        printf("fail to close obj_xx\n");
-        return 1;
-    }
-
-    if (PDCobj_close(obj_yy) < 0) {
-        printf("fail to close object obj_yy\n");
-        return 1;
-    }
-    if (PDCobj_close(obj_zz) < 0) {
-        printf("fail to close object obj_zz\n");
-        return 1;
-    }
-    if (PDCobj_close(obj_pxx) < 0) {
-        printf("fail to close object obj_pxx\n");
-        return 1;
-    }
-    if (PDCobj_close(obj_pyy) < 0) {
-        printf("fail to close object obj_pyy\n");
-        return 1;
-    }
-    if (PDCobj_close(obj_pzz) < 0) {
-        printf("fail to close object obj_pzz\n");
-        return 1;
-    }
-    if (PDCobj_close(obj_id11) < 0) {
-        printf("fail to close object obj_id11\n");
-        return 1;
-    }
-    if (PDCobj_close(obj_id22) < 0) {
-        printf("fail to close object obj_id22\n");
-        return 1;
-    }
     if (PDCprop_close(obj_prop_xx) < 0) {
         printf("Fail to close obj property obj_prop_xx\n");
         return 1;
