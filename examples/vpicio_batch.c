@@ -51,10 +51,10 @@ print_usage()
 int
 main(int argc, char **argv)
 {
-    int     rank = 0, size = 1;
-    pdcid_t pdc_id, cont_prop, cont_id;
-    pdcid_t *obj_prop_xx, *obj_prop_yy, *obj_prop_zz, *obj_prop_pxx, *obj_prop_pyy, *obj_prop_pzz, *obj_prop_id11,
-        *obj_prop_id22;
+    int      rank = 0, size = 1;
+    pdcid_t  pdc_id, cont_prop, cont_id;
+    pdcid_t *obj_prop_xx, *obj_prop_yy, *obj_prop_zz, *obj_prop_pxx, *obj_prop_pyy, *obj_prop_pzz,
+        *obj_prop_id11, *obj_prop_id22;
     pdcid_t obj_xx, obj_yy, obj_zz, obj_pxx, obj_pyy, obj_pzz, obj_id11, obj_id22;
     pdcid_t region_x, region_y, region_z, region_px, region_py, region_pz, region_id1, region_id2;
     pdcid_t region_xx, region_yy, region_zz, region_pxx, region_pyy, region_pzz, region_id11, region_id22;
@@ -166,14 +166,14 @@ main(int argc, char **argv)
     obj_prop_id22 = PDCprop_obj_dup(obj_prop_xx);
     PDCprop_set_obj_type(obj_prop_id22, PDC_INT);
 
-    obj_xx = (pdcid_t*) malloc(sizeof(pdcid_t) * timestamps);
-    obj_yy = (pdcid_t*) malloc(sizeof(pdcid_t) * timestamps);
-    obj_zz = (pdcid_t*) malloc(sizeof(pdcid_t) * timestamps);
-    obj_pxx = (pdcid_t*) malloc(sizeof(pdcid_t) * timestamps);
-    obj_pyy = (pdcid_t*) malloc(sizeof(pdcid_t) * timestamps);
-    obj_pzz = (pdcid_t*) malloc(sizeof(pdcid_t) * timestamps);
-    obj_id11 = (pdcid_t*) malloc(sizeof(pdcid_t) * timestamps);
-    obj_id22 = (pdcid_t*) malloc(sizeof(pdcid_t) * timestamps);
+    obj_xx   = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
+    obj_yy   = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
+    obj_zz   = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
+    obj_pxx  = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
+    obj_pyy  = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
+    obj_pzz  = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
+    obj_id11 = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
+    obj_id22 = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
 
     offset        = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
     offset_remote = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
@@ -245,7 +245,6 @@ main(int argc, char **argv)
             exit(-1);
         }
 
-
         offset_remote[0] = rank * numparticles * timestamps;
         region_xx        = PDCregion_create(ndim, offset_remote, mysize);
         region_yy        = PDCregion_create(ndim, offset_remote, mysize);
@@ -274,17 +273,20 @@ main(int argc, char **argv)
             printf("Array z transfer request creation failed\n");
             return 1;
         }
-        transfer_request_px[i] = PDCregion_transfer_create(&px[0], PDC_WRITE, obj_pxx[i], region_px, region_pxx);
+        transfer_request_px[i] =
+            PDCregion_transfer_create(&px[0], PDC_WRITE, obj_pxx[i], region_px, region_pxx);
         if (transfer_request_px[i] == 0) {
             printf("Array px transfer request creation failed\n");
             return 1;
         }
-        transfer_request_py[i] = PDCregion_transfer_create(&py[0], PDC_WRITE, obj_pyy[i], region_py, region_pyy);
+        transfer_request_py[i] =
+            PDCregion_transfer_create(&py[0], PDC_WRITE, obj_pyy[i], region_py, region_pyy);
         if (transfer_request_py[i] == 0) {
             printf("Array py transfer request creation failed\n");
             return 1;
         }
-        transfer_request_pz[i] = PDCregion_transfer_create(&pz[0], PDC_WRITE, obj_pzz[i], region_pz, region_pzz);
+        transfer_request_pz[i] =
+            PDCregion_transfer_create(&pz[0], PDC_WRITE, obj_pzz[i], region_pz, region_pzz);
         if (transfer_request_pz[i] == 0) {
             printf("Array pz transfer request creation failed\n");
             return 1;
@@ -523,7 +525,7 @@ main(int argc, char **argv)
         printf("transfer close: %lf\n", max_time);
     }
 #endif
-    for ( i = 0; i < timstamps; ++i ) {
+    for (i = 0; i < timstamps; ++i) {
         if (PDCobj_close(obj_xx[i]) < 0) {
             printf("fail to close obj_xx\n");
             return 1;
