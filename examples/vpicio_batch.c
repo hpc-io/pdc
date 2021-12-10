@@ -64,7 +64,7 @@ main(int argc, char **argv)
 #else
     int comm = 1;
 #endif
-    char obj_name[128];
+    char      obj_name[128];
     float *   x, *y, *z;
     float *   px, *py, *pz;
     int *     id1, *id2;
