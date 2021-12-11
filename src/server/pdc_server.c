@@ -638,7 +638,7 @@ PDC_Server_set_close(void)
         else
             PDC_Server_checkpoint();
 #endif
-        /* Barrier is needed here to make sure all servers have checkpointed data. */
+            /* Barrier is needed here to make sure all servers have checkpointed data. */
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
 #endif
