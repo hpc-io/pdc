@@ -526,6 +526,7 @@ PDC_Server_lookup_client_cb(const struct hg_cb_info *callback_info)
     if (client_id >= (uint32_t)pdc_client_num_g) {
         printf("==PDC_SERVER[%d]: invalid input client id %d\n", pdc_server_rank_g, client_id);
         goto done;
+
     }
     pdc_client_info_g[client_id].addr       = callback_info->info.lookup.addr;
     pdc_client_info_g[client_id].addr_valid = 1;
@@ -608,8 +609,37 @@ perr_t
 PDC_Server_set_close(void)
 {
     perr_t ret_value = SUCCEED;
+    close_server_out_t close_out;
 
     while (hg_atomic_get32(&close_server_g) == 0) {
+        // Exit from the loop, start finalize process
+        // PDC cache finalize, has to be done here in case of checkpoint for region data earlier.
+#ifdef PDC_SERVER_CACHE
+        pthread_mutex_lock(&pdc_cache_mutex);
+        pdc_recycle_close_flag = 1;
+        pthread_mutex_unlock(&pdc_cache_mutex);
+        pthread_join(pdc_recycle_thread, NULL);
+
+        PDC_region_cache_flush_all();
+        pthread_mutex_destroy(&pdc_obj_cache_list_mutex);
+        pthread_mutex_destroy(&pdc_cache_mutex);
+#endif
+
+#ifndef DISABLE_CHECKPOINT
+        char *tmp_env_char = getenv("PDC_DISABLE_CHECKPOINT");
+        if (tmp_env_char != NULL && strcmp(tmp_env_char, "TRUE") == 0) {
+            if (pdc_server_rank_g == 0)
+                printf("==PDC_SERVER[0]: checkpoint disabled!\n");
+        }
+        else
+            PDC_Server_checkpoint();
+#endif
+
+        /* The client that calls the server close is now ready to exit.
+         * Cache write back and checkpointing are all finished at this point. */
+        close_out.ret = 88;
+        HG_Respond(close_all_server_handle_g, NULL, NULL, &close_out);
+        HG_Destroy(close_all_server_handle_g);
         hg_atomic_set32(&close_server_g, 1);
     }
 
@@ -2026,30 +2056,6 @@ main(int argc, char *argv[])
     PDC_Server_multithread_loop(hg_context_g);
 #else
     PDC_Server_loop(hg_context_g);
-#endif
-
-    // Exit from the loop, start finalize process
-    // PDC cache finalize, has to be done here in case of checkpoint for region data earlier.
-#ifdef PDC_SERVER_CACHE
-    pthread_mutex_lock(&pdc_cache_mutex);
-    pdc_recycle_close_flag = 1;
-    pthread_mutex_unlock(&pdc_cache_mutex);
-    pthread_join(pdc_recycle_thread, NULL);
-
-    PDC_region_cache_flush_all();
-    pthread_mutex_destroy(&pdc_obj_cache_list_mutex);
-    pthread_mutex_destroy(&pdc_cache_mutex);
-
-#endif
-
-#ifndef DISABLE_CHECKPOINT
-    char *tmp_env_char = getenv("PDC_DISABLE_CHECKPOINT");
-    if (tmp_env_char != NULL && strcmp(tmp_env_char, "TRUE") == 0) {
-        if (pdc_server_rank_g == 0)
-            printf("==PDC_SERVER[0]: checkpoint disabled!\n");
-    }
-    else
-        PDC_Server_checkpoint();
 #endif
 
 #ifdef ENABLE_TIMING

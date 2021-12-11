@@ -142,6 +142,7 @@ pdc_transfer_request_status *transfer_request_status_list_end;
 pthread_mutex_t              transfer_request_status_mutex;
 pthread_mutex_t              transfer_request_id_mutex;
 uint64_t                     transfer_request_id_g;
+hg_handle_t                  close_all_server_handle_g;
 
 typedef enum { PDC_POSIX = 0, PDC_DAOS = 1 } _pdc_io_plugin_t;
 
