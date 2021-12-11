@@ -108,7 +108,8 @@ main(int argc, char **argv)
             printf("Writing %" PRIu64 " number of particles with %d clients.\n", numparticles, size);
     }
     if (!rank) {
-        printf("sleep time = %u, timestamps = %" PRIu64 ", numparticles = %" PRIu64 "\n", sleep_time, timestamps, numparticles);
+        printf("sleep time = %u, timestamps = %" PRIu64 ", numparticles = %" PRIu64 "\n", sleep_time,
+               timestamps, numparticles);
     }
     dims[0] = numparticles * timestamps * size;
 
