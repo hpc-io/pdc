@@ -203,7 +203,6 @@ PDC_timing_report(const char *prefix)
 
     sprintf(header, "transfer_request_wait_write_%s", prefix);
 
-
     timestamp_log(stream, header, client_transfer_request_wait_write_timestamps);
 
     sprintf(header, "transfer_request_wait_read_%s", prefix);
@@ -949,7 +948,6 @@ PDC_is_same_region_transfer(region_info_transfer_t *a, region_info_transfer_t *b
             PGOTO_DONE(-1);
 
     if (a->ndim >= 3)
-
 
         if (a->start_2 != b->start_2 || a->count_2 != b->count_2)
             PGOTO_DONE(-1);
@@ -2291,14 +2289,14 @@ HG_TEST_RPC_CB(close_server, handle)
 {
     hg_return_t       ret_value = HG_SUCCESS;
     close_server_in_t in;
-    //close_server_out_t out;
+    // close_server_out_t out;
 
     FUNC_ENTER(NULL);
 
     HG_Get_input(handle, &in);
 
     close_all_server_handle_g = handle;
-    //printf("set server handle to my handle\n");
+    // printf("set server handle to my handle\n");
     PDC_Server_set_close();
 
     HG_Free_input(handle, &in);

@@ -316,26 +316,25 @@ done:
 static hg_return_t
 client_send_close_all_server_rpc_cb(const struct hg_cb_info *callback_info)
 {
-    hg_return_t                        ret_value = HG_SUCCESS;
-    hg_handle_t                        handle;
-    close_server_out_t                 output;
-    int                               *rpc_return;
+    hg_return_t        ret_value = HG_SUCCESS;
+    hg_handle_t        handle;
+    close_server_out_t output;
+    int *              rpc_return;
 
     FUNC_ENTER(NULL);
 
-    handle               = callback_info->info.forward.handle;
+    handle     = callback_info->info.forward.handle;
     rpc_return = (int *)callback_info->arg;
 
-    ret_value = HG_Get_output(handle, &output);
+    ret_value   = HG_Get_output(handle, &output);
     *rpc_return = output.ret;
     if (ret_value != HG_SUCCESS || output.ret != 88) {
-        printf("PDC_CLIENT[%d]: close_all_server_rpc_cb error with HG_Get_output\n",
-               pdc_client_mpi_rank_g);
+        printf("PDC_CLIENT[%d]: close_all_server_rpc_cb error with HG_Get_output\n", pdc_client_mpi_rank_g);
         goto done;
     }
 
 done:
-    //printf("client close RPC is finished here, return value = %d\n", output.ret);
+    // printf("client close RPC is finished here, return value = %d\n", output.ret);
     fflush(stdout);
     work_todo_g--;
     HG_Free_output(handle, &output);
@@ -985,7 +984,7 @@ drc_access_again:
     gen_obj_register_id_g             = PDC_gen_obj_id_register(*hg_class);
     gen_cont_register_id_g            = PDC_gen_cont_id_register(*hg_class);
     close_server_register_id_g        = PDC_close_server_register(*hg_class);
-    //HG_Registered_disable_response(*hg_class, close_server_register_id_g, HG_TRUE);
+    // HG_Registered_disable_response(*hg_class, close_server_register_id_g, HG_TRUE);
 
     metadata_query_register_id_g           = PDC_metadata_query_register(*hg_class);
     container_query_register_id_g          = PDC_container_query_register(*hg_class);
@@ -2359,7 +2358,7 @@ PDC_Client_close_all_server()
 
             // Fill input structure
             in.client_id = 0;
-            hg_ret       = HG_Forward(close_server_handle, client_send_close_all_server_rpc_cb, &rpc_return, &in);
+            hg_ret = HG_Forward(close_server_handle, client_send_close_all_server_rpc_cb, &rpc_return, &in);
             if (hg_ret != HG_SUCCESS)
                 PGOTO_ERROR(FAIL, "PDC_Client_close_all_server(): Could not start HG_Forward()");
 
