@@ -45,7 +45,7 @@ uniform_random_number()
 void
 print_usage()
 {
-    printf("Usage: srun -n ./vpicio #particles\n");
+    printf("Usage: srun -n ./vpicio sleep_time timestamps #particles\n");
 }
 
 int
@@ -107,7 +107,9 @@ main(int argc, char **argv)
         if (rank == 0)
             printf("Writing %" PRIu64 " number of particles with %d clients.\n", numparticles, size);
     }
-
+    if (!rank) {
+        printf("sleep time = %u, timestamps = %" PRIu64 ", numparticles = %" PRIu64 "\n", sleep_time, timestamps, numparticles);
+    }
     dims[0] = numparticles * timestamps * size;
 
     x = (float *)malloc(numparticles * sizeof(float));
