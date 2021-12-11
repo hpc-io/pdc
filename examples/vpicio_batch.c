@@ -556,25 +556,25 @@ main(int argc, char **argv)
     MPI_Reduce(&transfer_create, &avg_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&transfer_create, &min_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
     if (!rank) {
-        printf("transfer create: %lf - %lf - %lf\n", min_time, avg_time/size, max_time);
+        printf("transfer create: %lf - %lf - %lf\n", min_time, avg_time / size, max_time);
     }
     MPI_Reduce(&transfer_start, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     MPI_Reduce(&transfer_start, &avg_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&transfer_start, &min_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
     if (!rank) {
-        printf("transfer start: %lf - %lf - %lf\n", min_time, avg_time/size, max_time);
+        printf("transfer start: %lf - %lf - %lf\n", min_time, avg_time / size, max_time);
     }
     MPI_Reduce(&transfer_wait, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     MPI_Reduce(&transfer_wait, &avg_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&transfer_wait, &min_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
     if (!rank) {
-        printf("transfer wait: %lf - %lf - %lf\n", min_time, avg_time/size, max_time);
+        printf("transfer wait: %lf - %lf - %lf\n", min_time, avg_time / size, max_time);
     }
     MPI_Reduce(&transfer_close, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     MPI_Reduce(&transfer_close, &avg_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&transfer_close, &min_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
     if (!rank) {
-        printf("transfer close: %lf - %lf - %lf\n", min_time, avg_time/size, max_time);
+        printf("transfer close: %lf - %lf - %lf\n", min_time, avg_time / size, max_time);
     }
 #endif
 
