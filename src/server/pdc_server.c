@@ -623,6 +623,11 @@ PDC_Server_set_close(void)
         pthread_mutex_destroy(&pdc_obj_cache_list_mutex);
         pthread_mutex_destroy(&pdc_cache_mutex);
 #endif
+        if (pdc_server_rank_g) {
+            close_out.ret = 88;
+            HG_Respond(close_all_server_handle_g, NULL, NULL, &close_out);
+            HG_Destroy(close_all_server_handle_g);
+        }
 
 #ifndef DISABLE_CHECKPOINT
         char *tmp_env_char = getenv("PDC_DISABLE_CHECKPOINT");
@@ -633,12 +638,17 @@ PDC_Server_set_close(void)
         else
             PDC_Server_checkpoint();
 #endif
-
+        /* Barrier is needed here to make sure all servers have checkpointed data. */
+#ifdef ENABLE_MPI
+        MPI_Barrier(MPI_COMM_WORLD);
+#endif
         /* The client that calls the server close is now ready to exit.
          * Cache write back and checkpointing are all finished at this point. */
-        close_out.ret = 88;
-        HG_Respond(close_all_server_handle_g, NULL, NULL, &close_out);
-        HG_Destroy(close_all_server_handle_g);
+        if (!pdc_server_rank_g) {
+            close_out.ret = 88;
+            HG_Respond(close_all_server_handle_g, NULL, NULL, &close_out);
+            HG_Destroy(close_all_server_handle_g);
+        }
         hg_atomic_set32(&close_server_g, 1);
     }
 

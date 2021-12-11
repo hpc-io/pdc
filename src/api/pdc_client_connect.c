@@ -2347,8 +2347,7 @@ PDC_Client_close_all_server()
 
     if (pdc_client_mpi_rank_g == 0) {
         for (i = 0; i < (uint32_t)pdc_server_num_g; i++) {
-            server_id = i;
-
+            server_id = pdc_server_num_g - 1 - i;
             if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
                 PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server",
                             pdc_client_mpi_rank_g);
