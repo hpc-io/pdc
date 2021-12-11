@@ -203,6 +203,7 @@ PDC_timing_report(const char *prefix)
 
     sprintf(header, "transfer_request_wait_write_%s", prefix);
 
+
     timestamp_log(stream, header, client_transfer_request_wait_write_timestamps);
 
     sprintf(header, "transfer_request_wait_read_%s", prefix);
@@ -948,6 +949,7 @@ PDC_is_same_region_transfer(region_info_transfer_t *a, region_info_transfer_t *b
             PGOTO_DONE(-1);
 
     if (a->ndim >= 3)
+
 
         if (a->start_2 != b->start_2 || a->count_2 != b->count_2)
             PGOTO_DONE(-1);
@@ -4725,9 +4727,10 @@ PDC_finish_request(uint64_t transfer_request_id)
                     free(ptr);
                 }
                 else {
-                    /* Case for removing the first node. */
-                    free(transfer_request_status_list);
-                    transfer_request_status_list = ptr->next;
+                    /* Case for removing the first node, i.e ptr == transfer_request_status_list*/
+                    tmp = transfer_request_status_list;
+                    transfer_request_status_list = transfer_request_status_list->next;
+                    free(tmp);
                     /* Free pointer is the last list node, so nothing is left in the list. */
                     if (transfer_request_status_list == NULL) {
                         transfer_request_status_list_end = NULL;
@@ -4772,9 +4775,10 @@ PDC_check_request(uint64_t transfer_request_id)
                     free(ptr);
                 }
                 else {
-                    /* Case for removing the first node. */
-                    free(transfer_request_status_list);
-                    transfer_request_status_list = ptr->next;
+                    /* Case for removing the first node, i.e ptr == transfer_request_status_list*/
+                    tmp = transfer_request_status_list;
+                    transfer_request_status_list = transfer_request_status_list->next;
+                    free(tmp);
                     /* Free pointer is the last list node, so nothing is left in the list. */
                     if (transfer_request_status_list == NULL) {
                         transfer_request_status_list_end = NULL;
@@ -5564,6 +5568,7 @@ update_storage_meta_bulk_cb(const struct hg_cb_info *hg_cb_info)
         obj_id_ptr = (uint64_t *)buf[0];
         if (*obj_id_ptr <= 0)
             PGOTO_ERROR(HG_OTHER_ERROR, "==PDC_SERVER[ ]: error with bulk access, obj id invalid!");
+
 
         if (PDC_Server_update_region_storage_meta_bulk_local((update_region_storage_meta_bulk_t **)buf,
                                                              cnt) == SUCCEED) {
