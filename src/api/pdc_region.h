@@ -50,6 +50,8 @@ typedef struct pdc_transfer_request {
     pdc_access_t   access_type;
     pdc_var_type_t mem_type;
     char *         buf;
+    /* Used internally for 2D and 3D data */
+    char *new_buf;
 
     int       local_region_ndim;
     uint64_t *local_region_offset;
@@ -61,6 +63,7 @@ typedef struct pdc_transfer_request {
 
     int       obj_ndim;
     uint64_t *obj_dims;
+
 } pdc_transfer_request;
 
 typedef enum {

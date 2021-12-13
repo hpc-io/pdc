@@ -202,6 +202,7 @@ PDC_timing_report(const char *prefix)
     timestamp_log(stream, header, client_transfer_request_start_read_timestamps);
 
     sprintf(header, "transfer_request_wait_write_%s", prefix);
+
     timestamp_log(stream, header, client_transfer_request_wait_write_timestamps);
 
     sprintf(header, "transfer_request_wait_read_%s", prefix);
@@ -947,6 +948,7 @@ PDC_is_same_region_transfer(region_info_transfer_t *a, region_info_transfer_t *b
             PGOTO_DONE(-1);
 
     if (a->ndim >= 3)
+
         if (a->start_2 != b->start_2 || a->count_2 != b->count_2)
             PGOTO_DONE(-1);
 
@@ -2287,16 +2289,18 @@ HG_TEST_RPC_CB(close_server, handle)
 {
     hg_return_t       ret_value = HG_SUCCESS;
     close_server_in_t in;
-    /* close_server_out_t out; */
+    // close_server_out_t out;
 
     FUNC_ENTER(NULL);
 
     HG_Get_input(handle, &in);
 
+    close_all_server_handle_g = handle;
+    // printf("set server handle to my handle\n");
     PDC_Server_set_close();
 
     HG_Free_input(handle, &in);
-    ret_value = HG_Destroy(handle);
+
     if (ret_value != HG_SUCCESS)
         PGOTO_ERROR(ret_value, "==PDC_SERVER[x]: Error with HG_Destroy");
 
@@ -3834,6 +3838,7 @@ HG_TEST_RPC_CB(transform_region_release, handle)
 #ifdef ENABLE_MULTITHREAD
         hg_thread_mutex_unlock(&lock_list_mutex_g);
 #endif
+
         free(request_region);
 
         if (dirty_reg == 0) {
@@ -4653,7 +4658,7 @@ get_server_rank()
 
 /*
  * Create a new linked list node for a region transfer request and append it to the end of the linked list.
- * Thread-safe function.
+ * Thread-safe function, lock required ahead of time.
  */
 static perr_t
 PDC_commit_request(uint64_t transfer_request_id)
@@ -4662,25 +4667,24 @@ PDC_commit_request(uint64_t transfer_request_id)
     perr_t                       ret_value = SUCCEED;
     FUNC_ENTER(NULL);
 
-    pthread_mutex_lock(&transfer_request_status_mutex);
     if (transfer_request_status_list == NULL) {
         transfer_request_status_list =
             (pdc_transfer_request_status *)malloc(sizeof(pdc_transfer_request_status));
         transfer_request_status_list->status              = PDC_TRANSFER_STATUS_PENDING;
+        transfer_request_status_list->set_handle          = 0;
         transfer_request_status_list->transfer_request_id = transfer_request_id;
         transfer_request_status_list->next                = NULL;
         transfer_request_status_list_end                  = transfer_request_status_list;
     }
     else {
-        ptr               = transfer_request_status_list_end;
-        ptr->next         = (pdc_transfer_request_status *)malloc(sizeof(pdc_transfer_request_status));
-        ptr->next->status = PDC_TRANSFER_STATUS_PENDING;
+        ptr                   = transfer_request_status_list_end;
+        ptr->next             = (pdc_transfer_request_status *)malloc(sizeof(pdc_transfer_request_status));
+        ptr->next->status     = PDC_TRANSFER_STATUS_PENDING;
+        ptr->next->set_handle = 0;
         ptr->next->transfer_request_id   = transfer_request_id;
         ptr->next->next                  = NULL;
         transfer_request_status_list_end = ptr->next;
     }
-
-    pthread_mutex_unlock(&transfer_request_status_mutex);
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -4689,25 +4693,53 @@ PDC_commit_request(uint64_t transfer_request_id)
 /*
  * Search a linked list for a transfer request.
  * Set the entry status to PDC_TRANSFER_STATUS_COMPLETE.
- * Thread-safe function.
+ * Thread-safe function, lock required ahead of time.
  */
 static perr_t
 PDC_finish_request(uint64_t transfer_request_id)
 {
-    pdc_transfer_request_status *ptr;
+    pdc_transfer_request_status *ptr, *tmp = NULL;
     perr_t                       ret_value = SUCCEED;
+    transfer_request_wait_out_t  out;
+
     FUNC_ENTER(NULL);
 
-    pthread_mutex_lock(&transfer_request_status_mutex);
     ptr = transfer_request_status_list;
     while (ptr != NULL) {
         if (ptr->transfer_request_id == transfer_request_id) {
             ptr->status = PDC_TRANSFER_STATUS_COMPLETE;
-            break;
+            if (ptr->set_handle) {
+                /* Wait request is going to be returned, so we are not expecting any further checks for the
+                 * current request. Immediately eject the current transfer request out of the list.*/
+                out.ret    = 1;
+                out.status = PDC_TRANSFER_STATUS_COMPLETE;
+                ret_value  = HG_Respond(ptr->handle, NULL, NULL, &out);
+                HG_Destroy(ptr->handle);
+                if (tmp != NULL) {
+                    /* Case for removing the any nodes but the first one. */
+                    tmp->next = ptr->next;
+                    /* Free pointer is the last list node, so we set the end to the previous one. */
+                    if (ptr->next == NULL) {
+                        transfer_request_status_list_end = tmp;
+                    }
+                    free(ptr);
+                }
+                else {
+                    /* Case for removing the first node, i.e ptr == transfer_request_status_list*/
+                    tmp                          = transfer_request_status_list;
+                    transfer_request_status_list = transfer_request_status_list->next;
+                    free(tmp);
+                    /* Free pointer is the last list node, so nothing is left in the list. */
+                    if (transfer_request_status_list == NULL) {
+                        transfer_request_status_list_end = NULL;
+                    }
+                }
+                break;
+            }
         }
+        tmp = ptr;
         ptr = ptr->next;
     }
-    pthread_mutex_unlock(&transfer_request_status_mutex);
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -4717,7 +4749,7 @@ PDC_finish_request(uint64_t transfer_request_id)
  * Search a linked list for a region transfer request.
  * Remove the linked list node and free its memory.
  * Return the status of the region transfer request.
- * Thread-safe function.
+ * Thread-safe function, lock required ahead of time.
  */
 static pdc_transfer_status_t
 PDC_check_request(uint64_t transfer_request_id)
@@ -4726,7 +4758,6 @@ PDC_check_request(uint64_t transfer_request_id)
     pdc_transfer_status_t        ret_value = PDC_TRANSFER_STATUS_NOT_FOUND;
     FUNC_ENTER(NULL);
 
-    pthread_mutex_lock(&transfer_request_status_mutex);
     ptr = transfer_request_status_list;
     while (ptr != NULL) {
         if (ptr->transfer_request_id == transfer_request_id) {
@@ -4742,9 +4773,10 @@ PDC_check_request(uint64_t transfer_request_id)
                     free(ptr);
                 }
                 else {
-                    /* Case for removing the first node. */
-                    free(transfer_request_status_list);
-                    transfer_request_status_list = ptr->next;
+                    /* Case for removing the first node, i.e ptr == transfer_request_status_list*/
+                    tmp                          = transfer_request_status_list;
+                    transfer_request_status_list = transfer_request_status_list->next;
+                    free(tmp);
                     /* Free pointer is the last list node, so nothing is left in the list. */
                     if (transfer_request_status_list == NULL) {
                         transfer_request_status_list_end = NULL;
@@ -4756,7 +4788,32 @@ PDC_check_request(uint64_t transfer_request_id)
         tmp = ptr;
         ptr = ptr->next;
     }
-    pthread_mutex_unlock(&transfer_request_status_mutex);
+
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+/*
+ * Search a linked list for a region transfer request.
+ * Bind an RPC handle to the transfer request, so the RPC can be returned when the PDC_finish_request function
+ * is called. Thread-safe function, lock required ahead of time.
+ */
+static pdc_transfer_status_t
+PDC_try_finish_request(uint64_t transfer_request_id, hg_handle_t handle)
+{
+    pdc_transfer_request_status *ptr;
+    pdc_transfer_status_t        ret_value = PDC_TRANSFER_STATUS_NOT_FOUND;
+    FUNC_ENTER(NULL);
+
+    ptr = transfer_request_status_list;
+    while (ptr != NULL) {
+        if (ptr->transfer_request_id == transfer_request_id) {
+            ptr->handle     = handle;
+            ptr->set_handle = 1;
+            break;
+        }
+        ptr = ptr->next;
+    }
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -4975,7 +5032,10 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
                                    remote_reg_info, (void *)local_bulk_args->data_buf,
                                    local_bulk_args->in.remote_unit, 1);
 #endif
+
+    pthread_mutex_lock(&transfer_request_status_mutex);
     PDC_finish_request(local_bulk_args->transfer_request_id);
+    pthread_mutex_unlock(&transfer_request_status_mutex);
     free(local_bulk_args->data_buf);
     free(remote_reg_info);
 
@@ -5004,8 +5064,10 @@ transfer_request_bulk_transfer_read_cb(const struct hg_cb_info *info)
     start = MPI_Wtime();
 #endif
 
-    // printf("entering server read transfer bulk callback\n");
+    pthread_mutex_lock(&transfer_request_status_mutex);
     PDC_finish_request(local_bulk_args->transfer_request_id);
+    pthread_mutex_unlock(&transfer_request_status_mutex);
+
     ret = HG_SUCCESS;
 
     HG_Bulk_free(local_bulk_args->bulk_handle);
@@ -5030,9 +5092,11 @@ HG_TEST_RPC_CB(transfer_request_status, handle)
     HG_Get_input(handle, &in);
 
     // printf("entering the status function at server side @ line %d\n", __LINE__);
+    pthread_mutex_lock(&transfer_request_status_mutex);
     out.status = PDC_check_request(in.transfer_request_id);
-    out.ret    = 1;
-    ret_value  = HG_Respond(handle, NULL, NULL, &out);
+    pthread_mutex_unlock(&transfer_request_status_mutex);
+    out.ret   = 1;
+    ret_value = HG_Respond(handle, NULL, NULL, &out);
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
@@ -5048,6 +5112,7 @@ HG_TEST_RPC_CB(transfer_request_wait, handle)
     transfer_request_wait_in_t  in;
     transfer_request_wait_out_t out;
     pdc_transfer_status_t       status;
+    int                         fast_return = 0;
 
     FUNC_ENTER(NULL);
 #if PDC_TIMING == 1
@@ -5057,25 +5122,33 @@ HG_TEST_RPC_CB(transfer_request_wait, handle)
     HG_Get_input(handle, &in);
     /*
         printf("HG_TEST_RPC_CB(transfer_request_wait, handle): entering the wait function at server side @
-       line "
-               "%d\n",
+       %d\n",
                __LINE__);
     */
-    while (1) {
-        status = PDC_check_request(in.transfer_request_id);
-        if (status == PDC_TRANSFER_STATUS_PENDING) {
-            sleep(0.5);
-        }
-        else {
-            out.status = PDC_TRANSFER_STATUS_COMPLETE;
-            break;
-        }
+    pthread_mutex_lock(&transfer_request_status_mutex);
+    status = PDC_check_request(in.transfer_request_id);
+    if (status == PDC_TRANSFER_STATUS_PENDING) {
+        PDC_try_finish_request(in.transfer_request_id, handle);
     }
-    out.ret    = 1;
-    out.status = PDC_TRANSFER_STATUS_COMPLETE;
-    ret_value  = HG_Respond(handle, NULL, NULL, &out);
-    HG_Free_input(handle, &in);
-    HG_Destroy(handle);
+    else {
+        fast_return = 1;
+    }
+    pthread_mutex_unlock(&transfer_request_status_mutex);
+    /*
+        printf("HG_TEST_RPC_CB(transfer_request_wait, handle): exiting the wait function at server side @
+       %d\n",
+               __LINE__);
+    */
+    if (fast_return) {
+        out.ret    = 1;
+        out.status = status;
+        ret_value  = HG_Respond(handle, NULL, NULL, &out);
+        HG_Free_input(handle, &in);
+        HG_Destroy(handle);
+    }
+    else {
+        HG_Free_input(handle, &in);
+    }
 
 #if PDC_TIMING == 1
     end = MPI_Wtime();
@@ -5128,7 +5201,9 @@ HG_TEST_RPC_CB(transfer_request, handle)
         total_mem_size *= in.remote_region.count_2;
     }
     out.metadata_id = PDC_transfer_request_id_register();
+    pthread_mutex_lock(&transfer_request_status_mutex);
     PDC_commit_request(out.metadata_id);
+    pthread_mutex_unlock(&transfer_request_status_mutex);
 
     local_bulk_args =
         (struct transfer_request_local_bulk_args *)malloc(sizeof(struct transfer_request_local_bulk_args));
@@ -5145,6 +5220,8 @@ HG_TEST_RPC_CB(transfer_request, handle)
                in.obj_dim0, in.obj_dim1, in.obj_dim2);
     */
     // printf("HG_TEST_RPC_CB(transfer_request, handle) checkpoint @ line %d\n", __LINE__);
+    out.ret   = 1;
+    ret_value = HG_Respond(handle, NULL, NULL, &out);
     if (in.access_type == PDC_WRITE) {
         ret_value = HG_Bulk_create(info->hg_class, 1, &(local_bulk_args->data_buf),
                                    &(local_bulk_args->total_mem_size), HG_BULK_READWRITE,
@@ -5211,8 +5288,6 @@ HG_TEST_RPC_CB(transfer_request, handle)
         printf("Error at HG_TEST_RPC_CB(transfer_request, handle): @ line %d ", __LINE__);
     }
 
-    out.ret   = 1;
-    ret_value = HG_Respond(handle, NULL, NULL, &out);
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 

@@ -32,16 +32,20 @@
 #include "pdc_client_connect.h"
 
 int
-main()
+main(int argc, char *argv[])
 {
     pdcid_t pdc;
-
+#ifdef ENABLE_MPI
+    MPI_Init(&argc, &argv);
+#endif
     pdc = PDCinit("pdc");
 
     PDC_Client_close_all_server();
 
     if (PDCclose(pdc) < 0)
         printf("fail to close PDC\n");
-
+#ifdef ENABLE_MPI
+    MPI_Finalize();
+#endif
     return 0;
 }
