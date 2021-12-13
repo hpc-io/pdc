@@ -546,7 +546,6 @@ main(int argc, char **argv)
     free(transfer_request_pz);
     free(transfer_request_id1);
     free(transfer_request_id2);
-
 #if PDC_TIMING == 1
     PDC_timing_report("write");
 #endif
@@ -586,7 +585,6 @@ main(int argc, char **argv)
     free(obj_pzz);
     free(obj_id11);
     free(obj_id22);
-
     if (PDCprop_close(obj_prop_xx) < 0) {
         printf("Fail to close obj property obj_prop_xx\n");
         return 1;
