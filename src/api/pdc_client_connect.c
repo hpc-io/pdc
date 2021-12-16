@@ -2391,7 +2391,7 @@ PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct pdc_re
     hg_handle_t client_send_buf_unmap_handle;
 
     FUNC_ENTER(NULL);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     double start          = MPI_Wtime(), end;
     double function_start = start;
 #endif
@@ -2420,16 +2420,16 @@ PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct pdc_re
     hg_ret = HG_Forward(client_send_buf_unmap_handle, client_send_buf_unmap_rpc_cb, &unmap_args, &in);
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_buf_unmap(): Could not start HG_Forward()");
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     timings.PDCbuf_obj_unmap_rpc += MPI_Wtime() - start;
 #endif
     // Wait for response from server
     work_todo_g = 1;
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     start = MPI_Wtime();
 #endif
     PDC_Client_check_response(&send_context_g);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     end = MPI_Wtime();
     timings.PDCbuf_obj_unmap_rpc_wait += end - start;
     pdc_timestamp_register(client_buf_obj_unmap_timestamps, function_start, end);
@@ -2591,7 +2591,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *o
     char *                            new_buf = NULL;
 
     FUNC_ENTER(NULL);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     double start          = MPI_Wtime(), end;
     double function_start = start;
 #endif
@@ -2661,7 +2661,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *o
     hg_ret = HG_Forward(client_send_transfer_request_handle, client_send_transfer_request_rpc_cb,
                         &transfer_args, &in);
 
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     if (access_type == PDC_READ) {
         timings.PDCtransfer_request_start_read_rpc += MPI_Wtime() - start;
     }
@@ -2677,7 +2677,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *o
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
 
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     end = MPI_Wtime();
     if (access_type == PDC_READ) {
         timings.PDCtransfer_request_start_read_rpc_wait += end - start;
@@ -2774,7 +2774,7 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, int access_type, c
     size_t                                 unit;
 
     FUNC_ENTER(NULL);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     double start          = MPI_Wtime(), end;
     double function_start = start;
 #endif
@@ -2800,7 +2800,7 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, int access_type, c
 
     hg_ret = HG_Forward(client_send_transfer_request_wait_handle, client_send_transfer_request_wait_rpc_cb,
                         &transfer_args, &in);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     end = MPI_Wtime();
     if (access_type == PDC_READ) {
         timings.PDCtransfer_request_wait_read_rpc += end - start;
@@ -2820,7 +2820,7 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, int access_type, c
         release_region_buffer(buf, new_buf, obj_dims, local_ndim, local_offset, local_size, unit,
                               access_type);
     }
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     end = MPI_Wtime();
     if (access_type == PDC_READ) {
         timings.PDCtransfer_request_wait_read_rpc_wait += end - start;
@@ -2863,7 +2863,7 @@ PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t ndim, 
     hg_handle_t              client_send_buf_map_handle;
 
     FUNC_ENTER(NULL);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     double start          = MPI_Wtime(), end;
     double function_start = start;
 #endif
@@ -2984,7 +2984,7 @@ PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t ndim, 
         PGOTO_ERROR(FAIL, "PDC_Client_buf_map(): Could not create local bulk data handle");
 
     hg_ret = HG_Forward(client_send_buf_map_handle, client_send_buf_map_rpc_cb, &map_args, &in);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     timings.PDCbuf_obj_map_rpc += MPI_Wtime() - start;
 #endif
     if (hg_ret != HG_SUCCESS)
@@ -2992,11 +2992,11 @@ PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t ndim, 
 
     // Wait for response from server
     work_todo_g = 1;
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     start = MPI_Wtime();
 #endif
     PDC_Client_check_response(&send_context_g);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     end = MPI_Wtime();
     timings.PDCbuf_obj_map_rpc_wait += end - start;
     pdc_timestamp_register(client_buf_obj_map_timestamps, function_start, end);
@@ -3026,7 +3026,7 @@ PDC_Client_region_lock(struct _pdc_obj_info *object_info, struct pdc_region_info
     hg_handle_t                  region_lock_handle;
 
     FUNC_ENTER(NULL);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     double start          = MPI_Wtime(), end;
     double function_start = start;
 #endif
@@ -3070,7 +3070,7 @@ PDC_Client_region_lock(struct _pdc_obj_info *object_info, struct pdc_region_info
               &region_lock_handle);
 
     hg_ret = HG_Forward(region_lock_handle, client_region_lock_rpc_cb, &lookup_args, &in);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     if (access_type == PDC_READ) {
         timings.PDCreg_obtain_lock_read_rpc += MPI_Wtime() - start;
     }
@@ -3083,11 +3083,11 @@ PDC_Client_region_lock(struct _pdc_obj_info *object_info, struct pdc_region_info
 
     // Wait for response from server
     work_todo_g = 1;
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     start = MPI_Wtime();
 #endif
     PDC_Client_check_response(&send_context_g);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     end = MPI_Wtime();
     if (access_type == PDC_READ) {
         timings.PDCreg_obtain_lock_read_rpc_wait += end - start;
@@ -3658,7 +3658,7 @@ PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_region_i
     // struct _pdc_region_analysis_ftn_info **analysis_registry;
 
     FUNC_ENTER(NULL);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     double start          = MPI_Wtime(), end;
     double function_start = start;
 #endif
@@ -3726,7 +3726,7 @@ PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_region_i
               &region_release_handle);
 
     hg_ret = HG_Forward(region_release_handle, client_region_release_rpc_cb, &lookup_args, &in);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     if (access_type == PDC_READ) {
         timings.PDCreg_release_lock_read_rpc += MPI_Wtime() - start;
     }
@@ -3743,7 +3743,7 @@ PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_region_i
     // Wait for response from server
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     end = MPI_Wtime();
     if (access_type == PDC_READ) {
         timings.PDCreg_release_lock_read_rpc_wait += end - start;

@@ -231,7 +231,7 @@ main(int argc, char **argv)
             ret_value = 1;
         }
     }
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     PDC_timing_report("write");
 #endif
     for (i = 0; i < n_objects; ++i) {
@@ -299,7 +299,7 @@ main(int argc, char **argv)
             ret_value = 1;
         }
     }
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     PDC_timing_report("read");
 #endif
     // close a container

@@ -425,7 +425,7 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
     perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     double start = MPI_Wtime();
 #endif
 
@@ -491,7 +491,7 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
     pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
 
     // PDC_Server_data_write_out2(obj_id, region_info, buf, unit);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     server_timings->PDCcache_write += MPI_Wtime() - start;
 #endif
 
@@ -605,7 +605,7 @@ PDC_transfer_request_data_read_from(uint64_t obj_id, int obj_ndim, const uint64_
 {
     perr_t ret_value = SUCCEED;
     FUNC_ENTER(NULL);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     double start = MPI_Wtime();
 #endif
     // PDC_Server_data_read_from2(obj_id, region_info, buf, unit);
@@ -613,7 +613,7 @@ PDC_transfer_request_data_read_from(uint64_t obj_id, int obj_ndim, const uint64_
     PDC_region_fetch(obj_id, obj_ndim, obj_dims, region_info, buf, unit);
     pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
 
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     server_timings->PDCcache_read += MPI_Wtime() - start;
 #endif
     // done:

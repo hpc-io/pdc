@@ -53,7 +53,7 @@
 #include "pdc_region_cache.h"
 
 int io_by_region_g = 1;
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
 
 static int
 pdc_timestamp_clean(pdc_timestamp *timestamp)
@@ -2843,7 +2843,7 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
 
     FUNC_ENTER(NULL);
     bulk_args = (struct buf_map_release_bulk_args *)hg_cb_info->arg;
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     double end, start;
 
     end = MPI_Wtime();
@@ -2933,7 +2933,7 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     PDC_Server_release_lock_request(bulk_args->remote_obj_id, remote_reg_info);
 #endif
 
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     end = MPI_Wtime();
     server_timings->PDCreg_release_lock_bulk_transfer_inner_write_rpc += end - start;
     pdc_timestamp_register(release_lock_bulk_transfer_inner_write_timestamps, start, end);
@@ -2968,7 +2968,7 @@ obj_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     FUNC_ENTER(NULL);
     bulk_args = (struct buf_map_release_bulk_args *)hg_cb_info->arg;
 
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     double end, start;
 
     end = MPI_Wtime();
@@ -2991,7 +2991,7 @@ obj_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     PDC_Data_Server_region_release(&(bulk_args->in), &out);
     HG_Respond(bulk_args->handle, NULL, NULL, &out);
 
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     end = MPI_Wtime();
     server_timings->PDCreg_release_lock_bulk_transfer_inner_read_rpc += end - start;
     pdc_timestamp_register(release_lock_bulk_transfer_inner_read_timestamps, start, end);
@@ -3067,12 +3067,12 @@ HG_TEST_RPC_CB(region_release, handle)
     size_t *                             data_size_to = NULL;
     // size_t                               type_size    = 0;
     // size_t                               dims[4]      = {0, 0, 0, 0};
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     double start, end;
 #endif
 
     FUNC_ENTER(NULL);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     start = MPI_Wtime();
 #endif
     // Decode input
@@ -3255,7 +3255,7 @@ HG_TEST_RPC_CB(region_release, handle)
                         obj_map_bulk_args->remote_bulk_handle   = remote_bulk_handle;
                         obj_map_bulk_args->local_bulk_handle    = eltt2->local_bulk_handle;
                         obj_map_bulk_args->local_addr           = eltt2->local_addr;
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
                         obj_map_bulk_args->start_time = MPI_Wtime();
 #endif
                         remote_reg_info->ndim = (obj_map_bulk_args->remote_region_unit).ndim;
@@ -3468,7 +3468,7 @@ HG_TEST_RPC_CB(region_release, handle)
                         buf_map_bulk_args->remote_region_nounit = eltt->remote_region_nounit;
                         buf_map_bulk_args->remote_client_id     = eltt->remote_client_id;
                         buf_map_bulk_args->remote_bulk_handle   = remote_bulk_handle;
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
                         buf_map_bulk_args->start_time = MPI_Wtime();
 #endif
 #ifdef ENABLE_MULTITHREAD
@@ -3523,7 +3523,7 @@ done:
         HG_Free_input(handle, &in);
         HG_Destroy(handle);
     }
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     end = MPI_Wtime();
     if (in.access_type == PDC_READ) {
         server_timings->PDCreg_release_lock_read_rpc += end - start;
@@ -4399,12 +4399,12 @@ HG_TEST_RPC_CB(region_lock, handle)
     perr_t            ret       = SUCCEED;
     region_lock_in_t  in;
     region_lock_out_t out;
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     double start, end;
 #endif
 
     FUNC_ENTER(NULL);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     start = MPI_Wtime();
 #endif
     HG_Get_input(handle, &in);
@@ -4417,7 +4417,7 @@ HG_TEST_RPC_CB(region_lock, handle)
         HG_Respond(handle, NULL, NULL, &out);
         HG_Destroy(handle);
     }
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     end = MPI_Wtime();
     if (in.access_type == PDC_READ) {
         server_timings->PDCreg_obtain_lock_read_rpc += end - start;
@@ -4440,12 +4440,12 @@ HG_TEST_RPC_CB(buf_unmap, handle)
     buf_unmap_in_t        in;
     buf_unmap_out_t       out;
     const struct hg_info *info;
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     double start, end;
 #endif
 
     FUNC_ENTER(NULL);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     start = MPI_Wtime();
 #endif
     // Decode input
@@ -4476,7 +4476,7 @@ HG_TEST_RPC_CB(buf_unmap, handle)
 
 done:
     fflush(stdout);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     end = MPI_Wtime();
     server_timings->PDCbuf_obj_unmap_rpc += end - start;
     pdc_timestamp_register(buf_obj_unmap_timestamps, start, end);
@@ -4990,7 +4990,7 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
 
     FUNC_ENTER(NULL);
 
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     double end = MPI_Wtime(), start;
     server_timings->PDCreg_transfer_request_wait_write_bulk_rpc += end - local_bulk_args->start_time;
     pdc_timestamp_register(transfer_request_wait_write_bulk_timestamps, local_bulk_args->start_time, end);
@@ -5041,7 +5041,7 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
 
     HG_Bulk_free(local_bulk_args->bulk_handle);
 
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     end = MPI_Wtime();
     server_timings->PDCreg_transfer_request_inner_write_bulk_rpc += end - start;
     pdc_timestamp_register(transfer_request_inner_write_bulk_timestamps, start, end);
@@ -5057,7 +5057,7 @@ transfer_request_bulk_transfer_read_cb(const struct hg_cb_info *info)
     hg_return_t                              ret;
     FUNC_ENTER(NULL);
 
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     double end = MPI_Wtime(), start;
     server_timings->PDCreg_transfer_request_wait_read_bulk_rpc += end - local_bulk_args->start_time;
     pdc_timestamp_register(transfer_request_wait_read_bulk_timestamps, local_bulk_args->start_time, end);
@@ -5072,7 +5072,7 @@ transfer_request_bulk_transfer_read_cb(const struct hg_cb_info *info)
 
     HG_Bulk_free(local_bulk_args->bulk_handle);
 
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     end = MPI_Wtime();
     server_timings->PDCreg_transfer_request_inner_read_bulk_rpc += end - start;
     pdc_timestamp_register(transfer_request_inner_read_bulk_timestamps, start, end);
@@ -5115,7 +5115,7 @@ HG_TEST_RPC_CB(transfer_request_wait, handle)
     int                         fast_return = 0;
 
     FUNC_ENTER(NULL);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     double start = MPI_Wtime(), end;
 #endif
 
@@ -5150,7 +5150,7 @@ HG_TEST_RPC_CB(transfer_request_wait, handle)
         HG_Free_input(handle, &in);
     }
 
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     end = MPI_Wtime();
     if (in.access_type == PDC_READ) {
         server_timings->PDCreg_transfer_request_wait_read_rpc += end - start;
@@ -5182,7 +5182,7 @@ HG_TEST_RPC_CB(transfer_request, handle)
 
     FUNC_ENTER(NULL);
 
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     double start = MPI_Wtime(), end;
 #endif
 
@@ -5212,7 +5212,7 @@ HG_TEST_RPC_CB(transfer_request, handle)
     local_bulk_args->data_buf            = malloc(total_mem_size);
     local_bulk_args->in                  = in;
     local_bulk_args->transfer_request_id = out.metadata_id;
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     local_bulk_args->start_time = MPI_Wtime();
 #endif
     /*
@@ -5291,7 +5291,7 @@ HG_TEST_RPC_CB(transfer_request, handle)
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     end = MPI_Wtime();
     if (in.access_type == PDC_READ) {
         server_timings->PDCreg_transfer_request_start_read_rpc += end - start;
@@ -5319,13 +5319,13 @@ HG_TEST_RPC_CB(buf_map, handle)
     region_buf_map_t *    new_buf_map_ptr = NULL;
     void *                data_ptr;
     size_t                ndim;
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     double start, end;
 #endif
 
     FUNC_ENTER(NULL);
 
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     start = MPI_Wtime();
 #endif
     // Decode input
@@ -5376,7 +5376,7 @@ HG_TEST_RPC_CB(buf_map, handle)
         if (ret != SUCCEED)
             PGOTO_ERROR(HG_OTHER_ERROR, "===PDC Data Server: PDC_Meta_Server_buf_map() failed");
     }
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     end = MPI_Wtime();
     server_timings->PDCbuf_obj_map_rpc += end - start;
     pdc_timestamp_register(buf_obj_map_timestamps, start, end);
