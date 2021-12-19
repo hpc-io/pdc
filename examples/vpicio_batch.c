@@ -204,9 +204,6 @@ main(int argc, char **argv)
     transfer_request_id1 = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
     transfer_request_id2 = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
 
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
     for (i = 0; i < timestamps; ++i) {
         sprintf(obj_name, "obj-var-xx %" PRIu64 "", i);
         obj_xx[i] = PDCobj_create_mpi(cont_id, obj_name, obj_prop_xx, 0, comm);
@@ -256,6 +253,13 @@ main(int argc, char **argv)
             printf("Error getting an object id of %s from server, exit...\n", "obj_id22");
             exit(-1);
         }
+    }
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
+    for (i = 0; i < timestamps; ++i) {
 
         offset_remote[0] = rank * numparticles * timestamps;
         region_xx        = PDCregion_create(ndim, offset_remote, mysize);
