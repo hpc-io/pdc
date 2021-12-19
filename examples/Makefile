@@ -11,9 +11,13 @@ LIBS = -lpdc
 
 all: region_transfer_2D region_transfer_3D pdc_init obj_get_data bdcats vpicio vpicio_batch bdcats_old vpicio_old read_write_perf read_write_col_perf haccio haccio_v2 tileio tileio_v2
 
+
+region_transfer_2D: region_transfer_2D.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
+region_transfer_3D: region_transfer_3D.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
 region_obj_map_2D: region_obj_map_2D.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
-
 region_obj_map_3D: region_obj_map_3D.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
 obj_get_data: obj_get_data.o
