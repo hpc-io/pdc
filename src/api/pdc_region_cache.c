@@ -577,6 +577,7 @@ PDC_region_cache_clock_cycle(void *ptr)
     while (1) {
         pthread_mutex_lock(&pdc_cache_mutex);
         if (!pdc_recycle_close_flag) {
+/*
             pthread_mutex_lock(&pdc_obj_cache_list_mutex);
             gettimeofday(&current_time, NULL);
             obj_cache_iter = obj_cache_list;
@@ -588,6 +589,7 @@ PDC_region_cache_clock_cycle(void *ptr)
                 obj_cache_iter = obj_cache_iter->next;
             }
             pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
+*/
         }
         else {
             pthread_mutex_unlock(&pdc_cache_mutex);
