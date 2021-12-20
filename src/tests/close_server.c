@@ -39,8 +39,8 @@ main(int argc, char *argv[])
     double start = MPI_Wtime();
     int    rank;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
     pdc = PDCinit("pdc");
 
