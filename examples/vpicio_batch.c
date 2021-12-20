@@ -261,7 +261,7 @@ main(int argc, char **argv)
 
     for (i = 0; i < timestamps; ++i) {
 
-        offset_remote[0] = rank * numparticles * timestamps;
+        offset_remote[0] = rank * numparticles;
         region_xx        = PDCregion_create(ndim, offset_remote, mysize);
         region_yy        = PDCregion_create(ndim, offset_remote, mysize);
         region_zz        = PDCregion_create(ndim, offset_remote, mysize);
