@@ -342,6 +342,7 @@ main(int argc, char **argv)
             printf("Failed to start transfer for region_xx\n");
             return 1;
         }
+#if 0
         ret = PDCregion_transfer_start(transfer_request_y[i]);
         if (ret != SUCCEED) {
             printf("Failed to start transfer for region_yy\n");
@@ -377,6 +378,7 @@ main(int argc, char **argv)
             printf("Failed to start transfer for region_id22\n");
             return 1;
         }
+#endif
 #ifdef ENABLE_MPI
         transfer_start += MPI_Wtime() - start;
 #endif
@@ -391,6 +393,7 @@ main(int argc, char **argv)
             printf("Failed to transfer wait for region_xx\n");
             return 1;
         }
+#if 0
         ret = PDCregion_transfer_wait(transfer_request_y[i]);
         if (ret != SUCCEED) {
             printf("Failed to transfer wait for region_yy\n");
@@ -426,6 +429,7 @@ main(int argc, char **argv)
             printf("Failed to transfer wait for region_id22\n");
             return 1;
         }
+#endif
 #ifdef ENABLE_MPI
         end = MPI_Wtime();
         transfer_wait += end - start;
