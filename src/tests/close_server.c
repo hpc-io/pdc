@@ -37,7 +37,7 @@ main(int argc, char *argv[])
     pdcid_t pdc;
 #ifdef ENABLE_MPI
     double start = MPI_Wtime();
-    int rank;
+    int    rank;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Init(&argc, &argv);
@@ -48,7 +48,7 @@ main(int argc, char *argv[])
 
     if (PDCclose(pdc) < 0)
         printf("fail to close PDC\n");
-    
+
 #ifdef ENABLE_MPI
     if (!rank) {
         printf("total close time = %lf\n", MPI_Wtime() - start);
