@@ -36,11 +36,12 @@ main(int argc, char *argv[])
 {
     pdcid_t pdc;
 #ifdef ENABLE_MPI
-    double start = MPI_Wtime();
     int    rank;
-
+    double start;
     MPI_Init(&argc, &argv);
+
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    start = MPI_Wtime();
 #endif
     pdc = PDCinit("pdc");
 
