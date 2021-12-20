@@ -508,6 +508,13 @@ main(int argc, char **argv)
             printf("fail to close region region_id22\n");
             return 1;
         }
+    }
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
+    for (i = 0; i < timestamps; ++i) {
         if (PDCobj_close(obj_xx[i]) < 0) {
             printf("fail to close obj_xx\n");
             return 1;
