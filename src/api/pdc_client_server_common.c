@@ -232,8 +232,8 @@ PDC_timing_report(const char *prefix)
     client_transfer_request_wait_write_timestamps->timestamp_size  = 0;
     client_transfer_request_wait_read_timestamps->timestamp_size   = 0;
 
-    client_create_cont_timestamps->timestamp_size  = 0;
-    client_create_obj_timestamps->timestamp_size   = 0;
+    client_create_cont_timestamps->timestamp_size = 0;
+    client_create_obj_timestamps->timestamp_size  = 0;
 
     memset(&timings, 0, sizeof(timings));
 

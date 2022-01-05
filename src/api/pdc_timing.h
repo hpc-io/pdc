@@ -125,7 +125,7 @@ pdc_timestamp *client_transfer_request_wait_read_timestamps;
 pdc_timestamp *client_create_cont_timestamps;
 pdc_timestamp *client_create_obj_timestamps;
 
-double         base_time;
+double base_time;
 
 int PDC_timing_init();
 int PDC_timing_finalize();
