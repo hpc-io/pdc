@@ -68,11 +68,17 @@ static int
 timestamp_log(FILE *stream, const char *header, pdc_timestamp *timestamp)
 {
     size_t i;
+    double total = 0.0;
     fprintf(stream, "%s", header);
     for (i = 0; i < timestamp->timestamp_size; ++i) {
         fprintf(stream, ",%4f-%4f", timestamp->start[i], timestamp->end[i]);
+        total += timestamp->end[i] - timestamp->start[i];
     }
     fprintf(stream, "\n");
+
+    if (i > 0)
+        fprintf(stream, "%s_total, %f\n", header, total);
+    
     return 0;
 }
 
@@ -138,7 +144,9 @@ PDC_timing_report(const char *prefix)
     char       filename[256], header[256];
     FILE *     stream;
     char       hostname[HOST_NAME_MAX];
+    time_t     now;
 
+    time(&now);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     gethostname(hostname, HOST_NAME_MAX);
     if (!(rank % 32)) {
@@ -184,6 +192,9 @@ PDC_timing_report(const char *prefix)
     else {
         stream = fopen(filename, "w");
     }
+
+    fprintf(stream, "%s", ctime(&now));
+
     sprintf(header, "buf_obj_map_%s", prefix);
     timestamp_log(stream, header, client_buf_obj_map_timestamps);
     sprintf(header, "buf_obj_unmap_%s", prefix);
@@ -217,6 +228,7 @@ PDC_timing_report(const char *prefix)
     sprintf(header, "create_obj");
     timestamp_log(stream, header, client_create_obj_timestamps);
 
+    fprintf(stream, "\n");
     fclose(stream);
 
     client_buf_obj_map_timestamps->timestamp_size   = 0;
@@ -341,6 +353,9 @@ PDC_server_timing_report()
     char              filename[256];
     FILE *            stream;
     char              hostname[HOST_NAME_MAX];
+    time_t            now;
+
+    time(&now);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Reduce(server_timings, &max_timings, sizeof(pdc_server_timing) / sizeof(double), MPI_DOUBLE, MPI_MAX,
@@ -349,6 +364,8 @@ PDC_server_timing_report()
     sprintf(filename, "pdc_server_log_rank_%d.csv", rank);
 
     stream = fopen(filename, "w");
+
+    fprintf(stream, "%s", ctime(&now));
     timestamp_log(stream, "buf_obj_map", buf_obj_map_timestamps);
     timestamp_log(stream, "buf_obj_unmap", buf_obj_unmap_timestamps);
 
@@ -377,6 +394,7 @@ PDC_server_timing_report()
 
     sprintf(filename, "pdc_server_timings_%d.csv", rank);
     stream = fopen(filename, "w");
+    fprintf(stream, "%s", ctime(&now));
     fprintf(stream, "PDCbuf_obj_map_rpc, %lf\n", server_timings->PDCbuf_obj_map_rpc);
     fprintf(stream, "PDCreg_obtain_lock_write_rpc, %lf\n", server_timings->PDCreg_obtain_lock_write_rpc);
     fprintf(stream, "PDCreg_obtain_lock_read_rpc, %lf\n", server_timings->PDCreg_obtain_lock_read_rpc);
