@@ -78,7 +78,7 @@ timestamp_log(FILE *stream, const char *header, pdc_timestamp *timestamp)
 
     if (i > 0)
         fprintf(stream, "%s_total, %f\n", header, total);
-    
+
     return 0;
 }
 
