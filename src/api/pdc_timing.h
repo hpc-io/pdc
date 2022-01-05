@@ -38,6 +38,9 @@ typedef struct pdc_timing {
     double PDCtransfer_request_wait_write_rpc_wait;
     double PDCtransfer_request_wait_read_rpc_wait;
 
+    double PDCclient_obj_create_rpc;
+    double PDCclient_cont_create_rpc;
+
 } pdc_timing;
 
 pdc_timing timings;
@@ -72,6 +75,9 @@ typedef struct pdc_server_timing {
     double PDCcache_read;
     double PDCdata_server_write_posix;
     double PDCdata_server_read_posix;
+
+    double PDCserver_obj_create_rpc;
+    double PDCserver_cont_create_rpc;
 
 } pdc_server_timing;
 
@@ -115,6 +121,10 @@ pdc_timestamp *client_transfer_request_start_write_timestamps;
 pdc_timestamp *client_transfer_request_start_read_timestamps;
 pdc_timestamp *client_transfer_request_wait_write_timestamps;
 pdc_timestamp *client_transfer_request_wait_read_timestamps;
+
+pdc_timestamp *client_create_cont_timestamps;
+pdc_timestamp *client_create_obj_timestamps;
+
 double         base_time;
 
 int PDC_timing_init();

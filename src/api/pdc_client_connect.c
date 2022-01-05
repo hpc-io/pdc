@@ -2164,6 +2164,11 @@ PDC_Client_create_cont_id(const char *cont_name, pdcid_t cont_create_prop ATTRIB
 
     FUNC_ENTER(NULL);
 
+#ifdef PDC_TIMING
+    double start          = MPI_Wtime(), end;
+    double function_start = start;
+#endif
+
     if (cont_name == NULL)
         PGOTO_ERROR(FAIL, "Cannot create container with empty name");
 
@@ -2203,6 +2208,12 @@ PDC_Client_create_cont_id(const char *cont_name, pdcid_t cont_create_prop ATTRIB
 
     *cont_id  = lookup_args.obj_id;
     ret_value = SUCCEED;
+
+#ifdef PDC_TIMING
+    end = MPI_Wtime();
+    timings.PDCclient_cont_create_rpc += end - start;
+    pdc_timestamp_register(client_create_cont_timestamps, function_start, end);
+#endif
 
 done:
     fflush(stdout);
@@ -2244,6 +2255,11 @@ PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj
     hg_handle_t                    rpc_handle;
 
     FUNC_ENTER(NULL);
+
+#ifdef PDC_TIMING
+    double start          = MPI_Wtime(), end;
+    double function_start = start;
+#endif
 
     create_prop = PDC_obj_prop_get_info(obj_create_prop);
 
@@ -2322,6 +2338,12 @@ PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj
 
     *meta_id  = lookup_args.obj_id;
     ret_value = SUCCEED;
+
+#ifdef PDC_TIMING
+    end = MPI_Wtime();
+    timings.PDCclient_obj_create_rpc += end - start;
+    pdc_timestamp_register(client_create_obj_timestamps, function_start, end);
+#endif
 
 done:
     fflush(stdout);
