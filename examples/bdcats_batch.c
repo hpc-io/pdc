@@ -51,8 +51,8 @@ print_usage()
 int
 main(int argc, char **argv)
 {
-    int     rank = 0, size = 1;
-    pdcid_t pdc_id;
+    int      rank = 0, size = 1;
+    pdcid_t  pdc_id;
     pdcid_t *obj_xx, *obj_yy, *obj_zz, *obj_pxx, *obj_pyy, *obj_pzz, *obj_id11, *obj_id22;
     pdcid_t  region_x, region_y, region_z, region_px, region_py, region_pz, region_id1, region_id2;
     pdcid_t  region_xx, region_yy, region_zz, region_pxx, region_pyy, region_pzz, region_id11, region_id22;
