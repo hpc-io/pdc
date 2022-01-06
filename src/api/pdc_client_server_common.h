@@ -3370,7 +3370,7 @@ struct bulk_args_t {
 };
 
 struct buf_map_release_bulk_args {
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     double start_time;
 #endif
     hg_handle_t             handle;
@@ -3464,7 +3464,7 @@ struct transfer_request_local_bulk_args {
     void *                data_buf;
     size_t                total_mem_size;
 
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     double start_time;
 #endif
 };

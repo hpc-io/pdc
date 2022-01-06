@@ -90,13 +90,6 @@ def rescale_time(all_intervals, base):
         for i in range(0, len(all_intervals[k])):
             all_intervals[k][i] -= base
 
-
-def plot_interval(all_intervals, index, key_name):
-    y = [index, index]
-    for interval in all_intervals:
-        plt.plot(interval, y, color = 'r')
-    index += 1
-
 def check_interval_overlap(interval1, interval2):
     return not (interval1[0] > interval2[1] or interval2[0] > interval1[1])
 
@@ -172,14 +165,29 @@ def read_clients(n_clients, base, path):
         rescale_time(result[i], base)
     return result
 
+def plot_interval(all_intervals, index, key_name):
+    y = [index, index]
+    if key_name == 'transfer_request_start_write' or key_name == 'transfer_request_start_write_write':
+        color = 'red'
+    if key_name == 'transfer_request_wait_write' or key_name == 'transfer_request_wait_write_write':
+        color = 'yellow'
+    if key_name == 'transfer_request_wait_write_bulk':
+        color = 'green'
+        return 0
+    if key_name == 'transfer_request_inner_write_bulk':
+        color = 'black'
+    for interval in all_intervals:
+        plt.plot(interval, y, color = color)
+
 def plot_all(server_intervals, client_intervals):
     plt.figure()
     plt.xlabel('time/sec')
-    for k in server_intervals:
-        plot_interval(server_intervals[k], 2, k)
+    for i in range(len(server_intervals)):
+        for interval in server_intervals[i]:
+            plot_interval(server_intervals[i][interval], 0, interval)
     for i in range(0, len(client_intervals)):
-        for k in client_intervals[i]:
-            plot_interval(client_intervals[i][k], 3 + i, k)
+        for interval in client_intervals[i]:
+            plot_interval(client_intervals[i][interval], 1 + i, interval)
     plt.savefig('{0}'.format("test_figure.pdf"))
     plt.close()
 
@@ -221,13 +229,8 @@ def wrap_comm_data(interval_time_logs, time_logs):
 def wrap_other_data(interval_time_logs, time_logs):
     return np.mean([time_logs[i]['PDCregion_transfer_start_write_rpc'] + time_logs[i]['PDCregion_transfer_wait_write_rpc'] + time_logs[i]['PDCreg_release_lock_write_rpc'] + time_logs[i]['PDCreg_obtain_lock_write_rpc'] for i in range(0, len(time_logs))] )
 
-def main():
-    if len(sys.argv) == 2:
-        base_path = sys.argv[1]
-        if base_path[len(base_path) - 1] != '/':
-            base_path = '{0}/'.format(base_path)
-    else:
-        base_path = ''
+
+def compare_old_new_results(base_path, path):
     path = "{0}shared_mode/vpic_old_results".format(base_path)
     shared_old_interval_logs, shared_old_time_logs = pdc_log_analysis(path)
     path = "{0}shared_mode/vpic_results".format(base_path)
@@ -260,15 +263,42 @@ def main():
     print(other_bar)
 
     plt.ylabel('Timing/sec')
-    plt.title('Server Breakdown Timing With Cache')
+    plt.title('Server Breakdown Timing Without Cache')
     plt.legend((p_io_bar[0], p_comm_bar[0], p_other_bar[0]), ('I/O', 'Comm', 'Other'))
 
     plt.xticks(x_labels, ('shared_bm', 'shared_tr', 'dedicated_bm', 'dedicated_tr'))
 
-    plt.savefig('{0}'.format("server_breakdown_cache.pdf"))
+    plt.savefig('{0}'.format("server_breakdown_no_cache.pdf"))
 
     plt.close()
 
+def analyze_single_log(path):
+    filenames = next(walk(path), (None, None, []))[2]
+    time_logs = []
+    interval_logs = []
+    for filename in filenames:
+        if 'pdc_server_timings' in filename:
+            full_filename = '{0}/{1}'.format(path, filename)
+            time_logs.append(read_timing_file(full_filename))
+        elif 'pdc_server_log_rank' in filename:
+            full_filename = '{0}/{1}'.format(path, filename)
+            interval_logs.append(read_log_file(full_filename))
+    print(len(interval_logs))
+    base = np.min([np.min([server_intervals[x][0] for x in server_intervals if len(server_intervals[x]) > 0]) for server_intervals in interval_logs])
+    for server_intervals in interval_logs:
+        rescale_time(server_intervals, base)
+    client_intervals = read_clients(31, base, path)
+    plot_all(interval_logs, client_intervals)
+
+def main():
+    if len(sys.argv) == 2:
+        base_path = sys.argv[1]
+        if base_path[len(base_path) - 1] != '/':
+            base_path = '{0}/'.format(base_path)
+    else:
+        base_path = ''
+    #compare_old_new_results(base_path, path)
+    analyze_single_log(base_path)
 
 if __name__== "__main__":
     main()

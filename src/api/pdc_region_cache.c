@@ -425,7 +425,7 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
     perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     double start = MPI_Wtime();
 #endif
 
@@ -491,7 +491,7 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
     pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
 
     // PDC_Server_data_write_out2(obj_id, region_info, buf, unit);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     server_timings->PDCcache_write += MPI_Wtime() - start;
 #endif
 
@@ -577,17 +577,19 @@ PDC_region_cache_clock_cycle(void *ptr)
     while (1) {
         pthread_mutex_lock(&pdc_cache_mutex);
         if (!pdc_recycle_close_flag) {
-            pthread_mutex_lock(&pdc_obj_cache_list_mutex);
-            gettimeofday(&current_time, NULL);
-            obj_cache_iter = obj_cache_list;
-            while (obj_cache_iter != NULL) {
-                obj_cache = obj_cache_iter;
-                if (current_time.tv_sec - obj_cache->timestamp.tv_sec > 10) {
-                    PDC_region_cache_flush_by_pointer(obj_cache->obj_id, obj_cache);
-                }
-                obj_cache_iter = obj_cache_iter->next;
-            }
-            pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
+            /*
+                        pthread_mutex_lock(&pdc_obj_cache_list_mutex);
+                        gettimeofday(&current_time, NULL);
+                        obj_cache_iter = obj_cache_list;
+                        while (obj_cache_iter != NULL) {
+                            obj_cache = obj_cache_iter;
+                            if (current_time.tv_sec - obj_cache->timestamp.tv_sec > 10) {
+                                PDC_region_cache_flush_by_pointer(obj_cache->obj_id, obj_cache);
+                            }
+                            obj_cache_iter = obj_cache_iter->next;
+                        }
+                        pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
+            */
         }
         else {
             pthread_mutex_unlock(&pdc_cache_mutex);
@@ -605,7 +607,7 @@ PDC_transfer_request_data_read_from(uint64_t obj_id, int obj_ndim, const uint64_
 {
     perr_t ret_value = SUCCEED;
     FUNC_ENTER(NULL);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     double start = MPI_Wtime();
 #endif
     // PDC_Server_data_read_from2(obj_id, region_info, buf, unit);
@@ -613,7 +615,7 @@ PDC_transfer_request_data_read_from(uint64_t obj_id, int obj_ndim, const uint64_
     PDC_region_fetch(obj_id, obj_ndim, obj_dims, region_info, buf, unit);
     pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
 
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     server_timings->PDCcache_read += MPI_Wtime() - start;
 #endif
     // done:

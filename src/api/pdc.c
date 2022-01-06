@@ -109,7 +109,7 @@ PDCinit(const char *pdc_name)
 
     // PDC Client Server connection init
     PDC_Client_init();
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     PDC_timing_init();
 #endif
     ret_value = pdcid;
@@ -125,7 +125,7 @@ PDC_class__close(struct _pdc_class *p)
     perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     PDC_timing_finalize();
 #endif
 

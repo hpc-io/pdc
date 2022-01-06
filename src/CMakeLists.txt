@@ -256,7 +256,7 @@ endif()
 #-----------------------------------------------------------------------------
 option(PDC_ENABLE_TIMING "Enable timing." OFF)
 if(PDC_ENABLE_TIMING)
-  set(ENABLE_TIMING 1)
+  set(PDC_TIMING 1)
 endif()
 
 #-----------------------------------------------------------------------------

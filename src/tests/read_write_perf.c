@@ -222,7 +222,7 @@ main(int argc, char **argv)
             ret_value = 1;
         }
     }
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     PDC_timing_report("write");
 #endif
     printf("start to time read performance\n");
@@ -291,7 +291,7 @@ main(int argc, char **argv)
             ret_value = 1;
         }
     }
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     PDC_timing_report("read");
 #endif
     // close a container

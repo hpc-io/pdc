@@ -267,6 +267,17 @@ main(int argc, char **argv)
         return 1;
     }
 
+    for (i = 0; i < numparticles; i++) {
+        id1[i] = i;
+        id2[i] = i * 2;
+        x[i]   = uniform_random_number() * x_dim;
+        y[i]   = uniform_random_number() * y_dim;
+        z[i]   = ((float)id1[i] / numparticles) * z_dim;
+        px[i]  = uniform_random_number() * x_dim;
+        py[i]  = uniform_random_number() * y_dim;
+        pz[i]  = ((float)id2[i] / numparticles) * z_dim;
+    }
+
     ret = PDCregion_transfer_start(transfer_request_x);
     if (ret != SUCCEED) {
         printf("Failed to start transfer for region_xx\n");
@@ -306,17 +317,6 @@ main(int argc, char **argv)
     if (ret != SUCCEED) {
         printf("Failed to start transfer for region_id22\n");
         return 1;
-    }
-
-    for (i = 0; i < numparticles; i++) {
-        id1[i] = i;
-        id2[i] = i * 2;
-        x[i]   = uniform_random_number() * x_dim;
-        y[i]   = uniform_random_number() * y_dim;
-        z[i]   = ((float)id1[i] / numparticles) * z_dim;
-        px[i]  = uniform_random_number() * x_dim;
-        py[i]  = uniform_random_number() * y_dim;
-        pz[i]  = ((float)id2[i] / numparticles) * z_dim;
     }
 
     ret = PDCregion_transfer_wait(transfer_request_x);
@@ -400,7 +400,7 @@ main(int argc, char **argv)
         printf("region id22 transfer close failed\n");
         return 1;
     }
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     PDC_timing_report("write");
 #endif
 
