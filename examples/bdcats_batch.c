@@ -332,7 +332,6 @@ main(int argc, char **argv)
             printf("Failed to start transfer for region_id22\n");
             return 1;
         }
-#endif
 #ifdef ENABLE_MPI
         transfer_start += MPI_Wtime() - start;
 #endif
@@ -382,7 +381,6 @@ main(int argc, char **argv)
             printf("Failed to transfer wait for region_id22\n");
             return 1;
         }
-#endif
 #ifdef ENABLE_MPI
         end = MPI_Wtime();
         transfer_wait += end - start;
