@@ -70,7 +70,6 @@ main(int argc, char **argv)
     int       y_dim = 64;
     int       z_dim = 64;
     uint64_t  numparticles, i, j;
-    uint64_t  dims[1];
     int       ndim = 1;
     uint64_t *offset;
     uint64_t *offset_remote;
@@ -109,7 +108,6 @@ main(int argc, char **argv)
         printf("sleep time = %u, timestamps = %" PRIu64 ", numparticles = %" PRIu64 "\n", sleep_time,
                timestamps, numparticles);
     }
-    dims[0] = numparticles * timestamps * size;
 
     x = (float *)malloc(numparticles * sizeof(float));
     y = (float *)malloc(numparticles * sizeof(float));
