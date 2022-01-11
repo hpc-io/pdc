@@ -2,27 +2,6 @@
 #include <blosc.h>
 #include <stdint.h>
 
-/*
- * >> pdc_public.h
- *
- *  typedef enum {
- *      PDC_UNKNOWN      = -1,
- *      PDC_INT          = 0,
- *      PDC_FLOAT        = 1,
- *      PDC_DOUBLE       = 2,
- *      PDC_STRING       = 3,
- *      PDC_COMPOUND     = 4,
- *      PDC_ENUM         = 5,
- *      PDC_ARRAY        = 6,
- *      PDC_UINT         = 7,
- *      PDC_INT64        = 8,
- *      PDC_UINT64       = 9,
- *      PDC_INT16        = 10,
- *      PDC_INT8         = 11,
- *      NCLASSES         = 12
- *  } PDC_var_type_t;
- */
-
 static int
 _int_to_float(int *dataIn, float *dataOut, size_t elements)
 {
@@ -410,8 +389,8 @@ _double_to_int8(double *dataIn, int16_t *dataOut, size_t elements)
  */
 
 size_t
-pdc_convert_datatype(void *dataIn, PDC_var_type_t srcType, int ndim, uint64_t *dims, void **dataOut,
-                     PDC_var_type_t destType)
+pdc_convert_datatype(void *dataIn, pdc_var_type_t srcType, int ndim, uint64_t *dims, void **dataOut,
+                     pdc_var_type_t destType)
 {
     int    d;
     size_t elements = dims[0];
@@ -557,8 +536,8 @@ pdc_convert_datatype(void *dataIn, PDC_var_type_t srcType, int ndim, uint64_t *d
 }
 
 int
-pdc_transform_increment(void *dataIn, PDC_var_type_t srcType, int ndim, uint64_t *dims, void **dataOut,
-                        PDC_var_type_t destType)
+pdc_transform_increment(void *dataIn, pdc_var_type_t srcType, int ndim, uint64_t *dims, void **dataOut,
+                        pdc_var_type_t destType)
 {
     int     i;
     int64_t nval, nbytes;
@@ -613,8 +592,8 @@ pdc_transform_increment(void *dataIn, PDC_var_type_t srcType, int ndim, uint64_t
  *  https://github.com/Blosc/c-blosc/blob/master/blosc/blosc.h
  */
 size_t
-pdc_transform_compress(void *dataIn, PDC_var_type_t srcType, int ndim, uint64_t *dims, void **dataOut,
-                       PDC_var_type_t destType)
+pdc_transform_compress(void *dataIn, pdc_var_type_t srcType, int ndim, uint64_t *dims, void **dataOut,
+                       pdc_var_type_t destType)
 {
     int     clevel    = 9;
     int     doshuffle = BLOSC_BITSHUFFLE;
@@ -657,8 +636,8 @@ pdc_transform_compress(void *dataIn, PDC_var_type_t srcType, int ndim, uint64_t 
 }
 
 size_t
-pdc_transform_decompress(void *dataIn, PDC_var_type_t srcType, int ndim, uint64_t *dims, void **dataOut,
-                         PDC_var_type_t destType)
+pdc_transform_decompress(void *dataIn, pdc_var_type_t srcType, int ndim, uint64_t *dims, void **dataOut,
+                         pdc_var_type_t destType)
 {
     int    i;
     size_t typesize, destsize, dsize;

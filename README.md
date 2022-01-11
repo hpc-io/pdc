@@ -47,6 +47,18 @@ Step 2 in the following is not required. It is a stable commit that has been use
 11. export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
 12. export PATH="$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH"
 ```
+# Install Blosc
+0. wget https://github.com/Blosc/c-blosc/archive/refs/tags/v1.21.1.tar.gz
+1. tar xvzf v1.21.1.tar.gz
+2. cd c-blosc-1.21.1
+3. export BLOSC_DIR=$(pwd)/install
+4. mkdir install
+5. cd install
+6. cmake -DCMAKE_INSTALL_PREFIX=$BLOSC_DIR ..
+7. make
+8. make install
+9. export LD_LIBRARY_PATH="$BLOSC_DIR/lib:$LD_LIBRARY_PATH"
+
 # Install PDC
 One can replace mpicc to other available MPI compilers. For example, on Cori, cc can be used to replace mpicc.
 ctest contains both sequential and MPI tests for the PDC settings. These can be used to perform regression tests.

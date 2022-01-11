@@ -2,7 +2,7 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
   ${PDC_INCLUDES_BUILD_TIME}
-  $ENV{HOME}/Sandbox/c-blosc/blosc
+  $ENV{BLOSC_DIR}/include
   $ENV{HOME}/include
 )
 
@@ -59,7 +59,7 @@ set(PROGRAMS
 #  kvtag_add_get_scale
 #  kvtag_query
 #  kvtag_query_scale
-#  obj_transformation
+  obj_transformation
   query_data
   region_transfer
   region_transfer_status
@@ -117,9 +117,9 @@ FIND_LIBRARY(HDF5_LIBRARY NAMES hdf5_debug PATHS $ENV{HOME}/lib)
 #  1. compression/depression functions
 #  2. datatype conversion
 # *******************************************
-OPTION(GEN_TRANSFORM_LIB "Create a transform library" OFF)
+OPTION(GEN_TRANSFORM_LIB "Create a transform library" ON)
 if(GEN_TRANSFORM_LIB)
-  FIND_LIBRARY(BLOSC_LIBRARY blosc $ENV{HOME}/Sandbox/c-blosc/build/blosc)
+  FIND_LIBRARY(BLOSC_LIBRARY blosc $ENV{BLOSC_DIR}/lib)
   set(PDC_TRANSFORMS_SRCS pdc_transforms_lib.c)
   add_library(pdctransforms  ${PDC_TRANSFORMS_SRCS})
   target_link_libraries(pdctransforms pdc ${BLOSC_LIBRARY})
