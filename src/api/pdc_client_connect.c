@@ -96,8 +96,8 @@ double read_bb_size_g = 0.0;
 
 static int           mercury_has_init_g = 0;
 static hg_class_t *  send_class_g       = NULL;
-static hg_context_t *send_context_g     = NULL;
-static int           work_todo_g        = 0;
+hg_context_t *send_context_g     = NULL;
+int           work_todo_g        = 0;
 int                  query_id_g         = 0;
 
 static hg_id_t client_test_connect_register_id_g;
@@ -733,7 +733,7 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
-/*
+
 static hg_return_t
 client_region_release_with_transform_cb(const struct hg_cb_info *callback_info)
 {
@@ -771,7 +771,7 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
-*/
+
 // Bulk
 // Callback after bulk transfer is received by client
 static hg_return_t
@@ -3136,7 +3136,7 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
-/*
+
 static perr_t
 pdc_region_release_with_server_transform(struct _pdc_obj_info *  object_info,
                                          struct pdc_region_info *region_info, pdc_access_t access_type,
@@ -3335,9 +3335,7 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
-*/
 
-/*
 // This function supports transforms which are to occur
 // post-READ (mapping operations) on the client.
 static perr_t
@@ -3529,9 +3527,7 @@ update_metadata(struct _pdc_obj_info *object_info, pdc_var_type_t data_type, siz
 
     FUNC_LEAVE_VOID;
 }
-*/
 
-/*
 static size_t
 
 get_transform_size(struct _pdc_transform_state *transform_state)
@@ -3658,34 +3654,33 @@ maybe_run_transform(struct _pdc_obj_info *object_info, struct pdc_region_info *r
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
-*/
 
 perr_t
 PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_region_info *region_info,
                           pdc_access_t access_type, pdc_var_type_t data_type, pbool_t *status)
 {
     perr_t ret_value = SUCCEED;
-    // int readyState = 0, currentState;
+    int readyState = 0, currentState;
     hg_return_t      hg_ret;
     uint32_t         server_id, meta_server_id;
     region_lock_in_t in;
-    // size_t                         type_extent;
+    size_t                         type_extent;
     struct _pdc_client_lookup_args lookup_args;
     hg_handle_t                    region_release_handle = HG_HANDLE_NULL;
-    // void *transform_result = NULL;
-    // size_t transform_size = 0;
-    // struct _pdc_region_transform_ftn_info **registry = NULL;
-    // int transform_index;
-    // int k, registered_count;
-    // struct _pdc_region_analysis_ftn_info **analysis_registry;
+    void *transform_result = NULL;
+    size_t transform_size = 0;
+    struct _pdc_region_transform_ftn_info **registry = NULL;
+    int transform_index;
+    int k, registered_count;
+    struct _pdc_region_analysis_ftn_info **analysis_registry;
 
     FUNC_ENTER(NULL);
 #ifdef PDC_TIMING
     double start          = MPI_Wtime(), end;
     double function_start = start;
 #endif
-    // type_extent = object_info->obj_pt->type_extent;
-    /*
+    type_extent = object_info->obj_pt->type_extent;
+
         if (region_info->registered_op & PDC_TRANSFORM) {
             transform_index = -1;
             PDC_get_transforms(&registry);
@@ -3711,7 +3706,7 @@ PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_region_i
                 }
             }
         }
-    */
+
     // Compute data server and metadata server ids.
     if (pdc_server_selection_g != PDC_SERVER_DEFAULT) {
         server_id      = object_info->obj_info_pub->server_id;

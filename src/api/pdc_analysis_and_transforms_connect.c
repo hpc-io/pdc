@@ -27,8 +27,8 @@
 #include "pdc_analysis_pkg.h"
 #include "pdc_transforms_common.h"
 
-static hg_context_t *send_context_g = NULL;
-static int           work_todo_g    = 0;
+extern hg_context_t *send_context_g;
+extern int           work_todo_g;
 
 /* Forward References:: */
 // Analysis and Transformations
