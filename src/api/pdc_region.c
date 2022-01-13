@@ -245,6 +245,20 @@ done:
 }
 
 perr_t
+PDCregion_transfer_start_all(pdcid_t *transfer_request_id, size_t size)
+{
+    perr_t                ret_value = SUCCEED;
+    size_t i;
+    FUNC_ENTER(NULL);
+
+    for ( i = 0; i < size; ++i ) {
+        PDCregion_transfer_start(transfer_request_id[i]);
+    }
+
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
 PDCregion_transfer_start(pdcid_t transfer_request_id)
 {
     perr_t                ret_value = SUCCEED;
@@ -297,6 +311,21 @@ PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *co
     else {
         *completed = PDC_TRANSFER_STATUS_NOT_FOUND;
     }
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, size_t size) {
+    perr_t                ret_value = SUCCEED;
+    size_t i;
+
+    FUNC_ENTER(NULL);
+
+    for ( i = 0; i < size; ++i ) {
+        PDCregion_transfer_wait(transfer_request_id[i]);
+    }
+
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
