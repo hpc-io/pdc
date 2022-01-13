@@ -569,27 +569,25 @@ PDC_region_cache_flush_all()
 void *
 PDC_region_cache_clock_cycle(void *ptr)
 {
-    //    pdc_obj_cache *obj_cache, *obj_cache_iter;
-    //    struct timeval current_time;
+    pdc_obj_cache *obj_cache, *obj_cache_iter;
+    struct timeval current_time;
     if (ptr == NULL) {
         obj_cache_iter = NULL;
     }
     while (1) {
         pthread_mutex_lock(&pdc_cache_mutex);
         if (!pdc_recycle_close_flag) {
-            /*
-                        pthread_mutex_lock(&pdc_obj_cache_list_mutex);
-                        gettimeofday(&current_time, NULL);
-                        obj_cache_iter = obj_cache_list;
-                        while (obj_cache_iter != NULL) {
-                            obj_cache = obj_cache_iter;
-                            if (current_time.tv_sec - obj_cache->timestamp.tv_sec > 10) {
-                                PDC_region_cache_flush_by_pointer(obj_cache->obj_id, obj_cache);
-                            }
-                            obj_cache_iter = obj_cache_iter->next;
-                        }
-                        pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
-            */
+            pthread_mutex_lock(&pdc_obj_cache_list_mutex);
+            gettimeofday(&current_time, NULL);
+            obj_cache_iter = obj_cache_list;
+            while (obj_cache_iter != NULL) {
+                obj_cache = obj_cache_iter;
+                if (current_time.tv_sec - obj_cache->timestamp.tv_sec > 10) {
+                    PDC_region_cache_flush_by_pointer(obj_cache->obj_id, obj_cache);
+                }
+                obj_cache_iter = obj_cache_iter->next;
+            }
+            pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
         }
         else {
             pthread_mutex_unlock(&pdc_cache_mutex);
