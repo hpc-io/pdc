@@ -352,8 +352,8 @@ PDC_server_timing_report()
     int               rank;
     char              filename[256];
     FILE *            stream;
-//    char              hostname[HOST_NAME_MAX];
-    time_t            now;
+    //    char              hostname[HOST_NAME_MAX];
+    time_t now;
 
     time(&now);
 
