@@ -569,8 +569,8 @@ PDC_region_cache_flush_all()
 void *
 PDC_region_cache_clock_cycle(void *ptr)
 {
-    pdc_obj_cache *obj_cache, *obj_cache_iter;
-    struct timeval current_time;
+//    pdc_obj_cache *obj_cache, *obj_cache_iter;
+//    struct timeval current_time;
     if (ptr == NULL) {
         obj_cache_iter = NULL;
     }
