@@ -582,7 +582,7 @@ PDC_region_cache_clock_cycle(void *ptr)
             obj_cache_iter = obj_cache_list;
             while (obj_cache_iter != NULL) {
                 obj_cache = obj_cache_iter;
-                if (current_time.tv_sec - obj_cache->timestamp.tv_sec > 10) {
+                if (current_time.tv_sec - obj_cache->timestamp.tv_sec > 120) {
                     PDC_region_cache_flush_by_pointer(obj_cache->obj_id, obj_cache);
                 }
                 obj_cache_iter = obj_cache_iter->next;
