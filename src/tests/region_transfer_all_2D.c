@@ -206,8 +206,7 @@ main(int argc, char **argv)
 
     for (i = 0; i < OBJ_NUM; ++i) {
         memset(data_read[i], 0, sizeof(int) * BUF_LEN);
-        transfer_request[i] =
-            PDCregion_transfer_create(data_read[i], PDC_READ, obj[i], reg, reg_global);
+        transfer_request[i] = PDCregion_transfer_create(data_read[i], PDC_READ, obj[i], reg, reg_global);
     }
     ret = PDCregion_transfer_start_all(transfer_request, OBJ_NUM);
     if (ret != SUCCEED) {
