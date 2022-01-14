@@ -47,24 +47,29 @@ main(int argc, char **argv)
     int rank = 0, size = 1, i, j;
     int ret_value = 0;
 
-    uint64_t offset[3], offset_length[3];
+    uint64_t offset[1], offset_length[1];
     uint64_t dims[1];
-    offset[0]        = 0;
-    offset[1]        = 2;
-    offset[2]        = 5;
-    offset_length[0] = BUF_LEN;
-    offset_length[1] = 3;
-    offset_length[2] = 5;
 
-    int *data      = (int *)malloc(sizeof(int) * BUF_LEN);
-    int *data_read = (int *)malloc(sizeof(int) * BUF_LEN);
-    dims[0]        = BUF_LEN;
+    int **data, **data_read;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
+
+    data      = (int **)malloc(sizeof(int*) * OBJ_NUM);
+    data_read = (int **)malloc(sizeof(int*) * OBJ_NUM);
+    data[0] = (int*) malloc(sizeof(int) * BUF_LEN * OBJ_NUM);
+    data_read[0] = (int*) malloc(sizeof(int) * BUF_LEN * OBJ_NUM);
+
+    for ( i = 1; i < OBJ_NUM; ++i ) {
+        data[i] = data[i - 1] + BUF_LEN;
+        data_read[i] = data_read[i - 1] + BUF_LEN;
+    }
+
+    dims[0]        = BUF_LEN;
+
     // create a pdc
     pdc = PDCinit("pdc");
     printf("create a new pdc\n");
@@ -133,10 +138,12 @@ main(int argc, char **argv)
         printf("Fail to create region @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
-    for (i = 0; i < BUF_LEN; ++i) {
-        data[i] = i;
-    }
 
+    for ( j = 0; j < OBJ_NUM; ++j ) {
+        for (i = 0; i < BUF_LEN; ++i) {
+            data[j][i] = i;
+        }
+    }
     transfer_request = (pdcid_t *)malloc(sizeof(pdcid_t) * OBJ_NUM * REQ_SIZE);
 
     // Place a transfer request for every objects
@@ -153,7 +160,7 @@ main(int argc, char **argv)
                 ret_value = 1;
             }
             transfer_request[i * REQ_SIZE + j] = PDCregion_transfer_create(
-                data + (BUF_LEN / REQ_SIZE) * j, PDC_WRITE, obj[i], reg, reg_global);
+                data[i] + j * BUF_LEN / REQ_SIZE, PDC_WRITE, obj[i], reg, reg_global);
             if (PDCregion_close(reg_global) < 0) {
                 printf("fail to close global region @ line %d\n", __LINE__);
                 ret_value = 1;
@@ -196,6 +203,7 @@ main(int argc, char **argv)
     reg              = PDCregion_create(1, offset, offset_length);
 
     for (i = 0; i < OBJ_NUM; ++i) {
+        memset(data_read[i], 0, sizeof(int) * BUF_LEN);
         for (j = 0; j < REQ_SIZE; ++j) {
             offset[0]        = j * (BUF_LEN / REQ_SIZE);
             offset_length[0] = BUF_LEN / REQ_SIZE;
@@ -208,7 +216,7 @@ main(int argc, char **argv)
                 ret_value = 1;
             }
             transfer_request[i * REQ_SIZE + j] = PDCregion_transfer_create(
-                data_read + (BUF_LEN / REQ_SIZE) * j, PDC_READ, obj[i], reg, reg_global);
+                data_read[i] + j * BUF_LEN /REQ_SIZE, PDC_READ, obj[i], reg, reg_global);
             if (PDCregion_close(reg_global) < 0) {
                 printf("fail to close global region @ line %d\n", __LINE__);
                 ret_value = 1;
@@ -238,14 +246,15 @@ main(int argc, char **argv)
         }
     }
     // Check if data written previously has been correctly read.
-    for (i = 0; i < BUF_LEN; ++i) {
-        if (data_read[i] != i) {
-            printf("wrong value %d!=%d @ line %d\n", data_read[i], i, __LINE__);
-            ret_value = 1;
-            break;
+    for ( j = 0; j < OBJ_NUM; ++j ) {
+        for (i = 0; i < BUF_LEN; ++i) {
+            if (data_read[j][i] != i) {
+                printf("wrong value %d!=%d @ line %d\n", data_read[j][i], i, __LINE__);
+                ret_value = 1;
+                break;
+            }
         }
     }
-
     if (PDCregion_close(reg) < 0) {
         printf("fail to close local region @ line %d\n", __LINE__);
         ret_value = 1;
