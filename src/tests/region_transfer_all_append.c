@@ -58,17 +58,17 @@ main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    data      = (int **)malloc(sizeof(int*) * OBJ_NUM);
-    data_read = (int **)malloc(sizeof(int*) * OBJ_NUM);
-    data[0] = (int*) malloc(sizeof(int) * BUF_LEN * OBJ_NUM);
-    data_read[0] = (int*) malloc(sizeof(int) * BUF_LEN * OBJ_NUM);
+    data         = (int **)malloc(sizeof(int *) * OBJ_NUM);
+    data_read    = (int **)malloc(sizeof(int *) * OBJ_NUM);
+    data[0]      = (int *)malloc(sizeof(int) * BUF_LEN * OBJ_NUM);
+    data_read[0] = (int *)malloc(sizeof(int) * BUF_LEN * OBJ_NUM);
 
-    for ( i = 1; i < OBJ_NUM; ++i ) {
-        data[i] = data[i - 1] + BUF_LEN;
+    for (i = 1; i < OBJ_NUM; ++i) {
+        data[i]      = data[i - 1] + BUF_LEN;
         data_read[i] = data_read[i - 1] + BUF_LEN;
     }
 
-    dims[0]        = BUF_LEN;
+    dims[0] = BUF_LEN;
 
     // create a pdc
     pdc = PDCinit("pdc");
@@ -139,7 +139,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 
-    for ( j = 0; j < OBJ_NUM; ++j ) {
+    for (j = 0; j < OBJ_NUM; ++j) {
         for (i = 0; i < BUF_LEN; ++i) {
             data[j][i] = i;
         }
@@ -216,7 +216,7 @@ main(int argc, char **argv)
                 ret_value = 1;
             }
             transfer_request[i * REQ_SIZE + j] = PDCregion_transfer_create(
-                data_read[i] + j * BUF_LEN /REQ_SIZE, PDC_READ, obj[i], reg, reg_global);
+                data_read[i] + j * BUF_LEN / REQ_SIZE, PDC_READ, obj[i], reg, reg_global);
             if (PDCregion_close(reg_global) < 0) {
                 printf("fail to close global region @ line %d\n", __LINE__);
                 ret_value = 1;
@@ -246,7 +246,7 @@ main(int argc, char **argv)
         }
     }
     // Check if data written previously has been correctly read.
-    for ( j = 0; j < OBJ_NUM; ++j ) {
+    for (j = 0; j < OBJ_NUM; ++j) {
         for (i = 0; i < BUF_LEN; ++i) {
             if (data_read[j][i] != i) {
                 printf("wrong value %d!=%d @ line %d\n", data_read[j][i], i, __LINE__);

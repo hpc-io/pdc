@@ -43,8 +43,8 @@ main(int argc, char **argv)
     char     cont_name[128], obj_name[128];
     pdcid_t *transfer_request;
 
-    int rank = 0, size = 1, i ,j;
-    int ret_value = 0;
+    int   rank = 0, size = 1, i, j;
+    int   ret_value = 0;
     int **data, **data_read;
 
     uint64_t offset[2], offset_length[2];
@@ -56,18 +56,18 @@ main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    data      = (int **)malloc(sizeof(int*) * OBJ_NUM);
-    data_read = (int **)malloc(sizeof(int*) * OBJ_NUM);
-    data[0] = (int*) malloc(sizeof(int) * BUF_LEN * OBJ_NUM);
-    data_read[0] = (int*) malloc(sizeof(int) * BUF_LEN * OBJ_NUM);
+    data         = (int **)malloc(sizeof(int *) * OBJ_NUM);
+    data_read    = (int **)malloc(sizeof(int *) * OBJ_NUM);
+    data[0]      = (int *)malloc(sizeof(int) * BUF_LEN * OBJ_NUM);
+    data_read[0] = (int *)malloc(sizeof(int) * BUF_LEN * OBJ_NUM);
 
-    for ( i = 1; i < OBJ_NUM; ++i ) {
-        data[i] = data[i - 1] + BUF_LEN;
+    for (i = 1; i < OBJ_NUM; ++i) {
+        data[i]      = data[i - 1] + BUF_LEN;
         data_read[i] = data_read[i - 1] + BUF_LEN;
     }
 
-    dims[0]        = BUF_LEN / 4;
-    dims[1]        = 4;
+    dims[0] = BUF_LEN / 4;
+    dims[1] = 4;
 
     // create a pdc
     pdc = PDCinit("pdc");
@@ -150,7 +150,7 @@ main(int argc, char **argv)
         printf("Fail to create region @ line  %d!\n", __LINE__);
         ret_value = 1;
     }
-    for ( j = 0; j < OBJ_NUM; ++j ) {
+    for (j = 0; j < OBJ_NUM; ++j) {
         for (i = 0; i < BUF_LEN; ++i) {
             data[j][i] = i;
         }
@@ -205,8 +205,8 @@ main(int argc, char **argv)
     reg_global       = PDCregion_create(2, offset, offset_length);
 
     for (i = 0; i < OBJ_NUM; ++i) {
-        memset(data_read[i], 0, sizeof(int) * BUF_LEN)
-        transfer_request[i] = PDCregion_transfer_create(data_read[i], PDC_READ, obj[i], reg, reg_global);
+        memset(data_read[i], 0, sizeof(int) * BUF_LEN) transfer_request[i] =
+            PDCregion_transfer_create(data_read[i], PDC_READ, obj[i], reg, reg_global);
     }
     ret = PDCregion_transfer_start_all(transfer_request, OBJ_NUM);
     if (ret != SUCCEED) {
@@ -226,7 +226,7 @@ main(int argc, char **argv)
         }
     }
     // Check if data written previously has been correctly read.
-    for ( j = 0; j < OBJ_NUM; ++j ) {
+    for (j = 0; j < OBJ_NUM; ++j) {
         for (i = 0; i < BUF_LEN; ++i) {
             if (data_read[j][i] != i) {
                 printf("wrong value %d!=%d @ line %d\n", data_read[j][i], i, __LINE__);
