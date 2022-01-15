@@ -48,7 +48,7 @@ Step 2 in the following is not required. It is a stable commit that has been use
 12. export PATH="$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH"
 ```
 # Install PDC
-One can replace mpicc to other available MPI compilers. For example, on Cori, cc can be used to replace mpicc.
+One can replace mpicc to other available MPI compilers. -DCMAKE_C_FLAGS="-dynamic" is sometimes required for Cori. For example, on Cori, cc can be used to replace mpicc.
 ctest contains both sequential and MPI tests for the PDC settings. These can be used to perform regression tests.
 ```
 0. git clone https://github.com/hpc-io/pdc.git
