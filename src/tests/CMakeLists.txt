@@ -75,6 +75,8 @@ set(PROGRAMS
   region_transfer_all_2D
   region_transfer_all_3D
   region_transfer_all_append
+  region_transfer_all_append_2D
+  region_transfer_all_append_3D
   #query_vpic_create_data
   #query_vpic
   #query_vpic_multi
@@ -179,6 +181,8 @@ add_test(NAME region_transfer_all    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DI
 add_test(NAME region_transfer_all_2D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_2D )
 add_test(NAME region_transfer_all_3D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_3D )
 add_test(NAME region_transfer_all_append    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_append )
+add_test(NAME region_transfer_all_append_2D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_append_2D )
+add_test(NAME region_transfer_all_append_3D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_append_3D )
 add_test(NAME read_obj_int     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./read_obj o 1 int)
 add_test(NAME read_obj_float   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./read_obj o 1 float)
 add_test(NAME read_obj_double  WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./read_obj o 1 double)
@@ -236,6 +240,8 @@ set_tests_properties(region_transfer_all     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_all_2D     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_all_3D     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_all_append     PROPERTIES LABELS serial )
+set_tests_properties(region_transfer_all_append_2D     PROPERTIES LABELS serial )
+set_tests_properties(region_transfer_all_append_3D     PROPERTIES LABELS serial )
 set_tests_properties(read_obj_int      PROPERTIES LABELS serial )
 set_tests_properties(read_obj_float    PROPERTIES LABELS serial )
 set_tests_properties(read_obj_double   PROPERTIES LABELS serial )
@@ -289,6 +295,8 @@ if(BUILD_MPI_TESTING)
     add_test(NAME region_transfer_all_2D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_2D ${MPI_RUN_CMD} 2 4 )
     add_test(NAME region_transfer_all_3D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_3D ${MPI_RUN_CMD} 2 4 )
     add_test(NAME region_transfer_all_append_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME region_transfer_all_append_2D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append_2D ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME region_transfer_all_append_3D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append_3D ${MPI_RUN_CMD} 2 4 )
     add_test(NAME obj_round_robin_io_1D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_round_robin_io ${MPI_RUN_CMD} 2 2 int 1 )
     add_test(NAME obj_round_robin_io_2D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_round_robin_io ${MPI_RUN_CMD} 2 2 int 2 )
     add_test(NAME obj_round_robin_io_3D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_round_robin_io ${MPI_RUN_CMD} 2 2 int 3 )
@@ -343,6 +351,8 @@ if(BUILD_MPI_TESTING)
     set_tests_properties(region_transfer_all_2D_mpi     PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_all_3D_mpi     PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_all_append_mpi     PROPERTIES LABELS parallel )
+    set_tests_properties(region_transfer_all_append_2D_mpi     PROPERTIES LABELS parallel )
+    set_tests_properties(region_transfer_all_append_3D_mpi     PROPERTIES LABELS parallel )
     set_tests_properties(obj_round_robin_io_1D     PROPERTIES LABELS parallel )
     set_tests_properties(obj_round_robin_io_2D     PROPERTIES LABELS parallel )
     set_tests_properties(obj_round_robin_io_3D     PROPERTIES LABELS parallel )

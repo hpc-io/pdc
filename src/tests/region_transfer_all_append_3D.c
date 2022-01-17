@@ -31,8 +31,12 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include "pdc.h"
-#define BUF_LEN  1024
+#define DIM0 34
+#define DIM1 13
+#define DIM2 24
+#define BUF_LEN  (DIM0*DIM1*DIM2)
 #define OBJ_NUM  10
+// DIM2 must divide REQ_SIZE
 #define REQ_SIZE 8
 
 int
@@ -44,11 +48,11 @@ main(int argc, char **argv)
     char     cont_name[128], obj_name[128];
     pdcid_t *transfer_request;
 
-    int rank = 0, size = 1, i, j;
+    int rank = 0, size = 1, i, j, x, y, z, s, b;
     int ret_value = 0;
 
-    uint64_t offset[1], offset_length[1];
-    uint64_t dims[1];
+    uint64_t offset[3], offset_length[3];
+    uint64_t dims[3];
 
     int **data, **data_read;
 
@@ -68,7 +72,9 @@ main(int argc, char **argv)
         data_read[i] = data_read[i - 1] + BUF_LEN;
     }
 
-    dims[0] = BUF_LEN;
+    dims[0] = DIM0;
+    dims[1] = DIM1;
+    dims[2] = DIM2;
 
     // create a pdc
     pdc = PDCinit("pdc");
@@ -108,7 +114,7 @@ main(int argc, char **argv)
         printf("Fail to set obj type @ line %d\n", __LINE__);
         ret_value = 1;
     }
-    PDCprop_set_obj_dims(obj_prop, 1, dims);
+    PDCprop_set_obj_dims(obj_prop, 3, dims);
     PDCprop_set_obj_user_id(obj_prop, getuid());
     PDCprop_set_obj_time_step(obj_prop, 0);
     PDCprop_set_obj_app_name(obj_prop, "DataServerTest");
@@ -149,9 +155,13 @@ main(int argc, char **argv)
     // Place a transfer request for every objects
     for (i = 0; i < OBJ_NUM; ++i) {
         for (j = 0; j < REQ_SIZE; ++j) {
-            offset[0]        = j * (BUF_LEN / REQ_SIZE);
-            offset_length[0] = BUF_LEN / REQ_SIZE;
-            reg_global       = PDCregion_create(1, offset, offset_length);
+            offset[0]        = 0;
+            offset_length[0] = DIM0;
+            offset[1]        = 0;
+            offset_length[1] = DIM1;
+            offset[2]        = j * DIM2 / REQ_SIZE;
+            offset_length[2] = DIM2 / REQ_SIZE;
+            reg_global       = PDCregion_create(3, offset, offset_length);
             if (reg_global > 0) {
                 printf("Create global region\n");
             }
@@ -205,9 +215,13 @@ main(int argc, char **argv)
     for (i = 0; i < OBJ_NUM; ++i) {
         memset(data_read[i], 0, sizeof(int) * BUF_LEN);
         for (j = 0; j < REQ_SIZE; ++j) {
-            offset[0]        = j * (BUF_LEN / REQ_SIZE);
-            offset_length[0] = BUF_LEN / REQ_SIZE;
-            reg_global       = PDCregion_create(1, offset, offset_length);
+            offset[0]        = 0;
+            offset_length[0] = DIM0;
+            offset[1]        = 0;
+            offset_length[1] = DIM1;
+            offset[2]        = j * DIM2 / REQ_SIZE;
+            offset_length[2] = DIM2 / REQ_SIZE;
+            reg_global       = PDCregion_create(3, offset, offset_length);
             if (reg_global > 0) {
                 printf("Create global region\n");
             }
@@ -256,10 +270,24 @@ main(int argc, char **argv)
             }
         }
     }
+    if (PDCregion_close(reg) < 0) {
+        printf("fail to close local region @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    else {
+        printf("successfully local region @ line %d\n", __LINE__);
+    }
 
     offset[0]        = 0;
     offset_length[0] = BUF_LEN;
-    reg_global       = PDCregion_create(1, offset, offset_length);
+    reg              = PDCregion_create(1, offset, offset_length);
+    offset[0]        = 0;
+    offset_length[0] = DIM0;
+    offset[1]        = 0;
+    offset_length[1] = DIM1;
+    offset[2]        = 0;
+    offset_length[2] = DIM2;
+    reg_global       = PDCregion_create(3, offset, offset_length);
     if (reg_global > 0) {
         printf("Create global region\n");
     }
@@ -273,6 +301,15 @@ main(int argc, char **argv)
         transfer_request[i] = PDCregion_transfer_create(
             data_read[i], PDC_READ, obj[i], reg, reg_global);
     }
+
+    if (PDCregion_close(reg) < 0) {
+        printf("fail to close local region @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    else {
+        printf("successfully closed local region @ line %d\n", __LINE__);
+    }
+
     if (PDCregion_close(reg_global) < 0) {
         printf("fail to close global region @ line %d\n", __LINE__);
         ret_value = 1;
@@ -298,24 +335,22 @@ main(int argc, char **argv)
             ret_value = 1;
         }
     }
+
     // Check if data written previously has been correctly read.
     for (j = 0; j < OBJ_NUM; ++j) {
         for (i = 0; i < BUF_LEN; ++i) {
-            if (data_read[j][i] != i) {
-                printf("wrong value %d!=%d @ line %d\n", data_read[j][i], i, __LINE__);
+            x = i % DIM2;
+            y = (i % (DIM1*DIM2)) / DIM2;
+            z = i / (DIM1*DIM2);
+            s = DIM2 / REQ_SIZE;
+            b = s * DIM0 * DIM1;
+            //printf("%d and %d, i = %d\n", data_read[j][i], (x/s) * b + y * s + x % s, i);
+            if ( data_read[j][i] != (x/s) * b + z * s * DIM1 + y * s + x % s ) {
+                printf("wrong value %d!=%d @ line %d\n", data_read[j][i], (x/s) * b + z * s * DIM1 + y * s + x % s, __LINE__);
                 ret_value = 1;
                 break;
             }
         }
-    }
-
-
-    if (PDCregion_close(reg) < 0) {
-        printf("fail to close local region @ line %d\n", __LINE__);
-        ret_value = 1;
-    }
-    else {
-        printf("successfully local region @ line %d\n", __LINE__);
     }
 
     // close object
