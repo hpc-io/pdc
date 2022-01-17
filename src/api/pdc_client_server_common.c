@@ -5306,27 +5306,29 @@ HG_TEST_RPC_CB(transfer_request, handle)
         PDC_Server_transfer_request_io(in.obj_id, in.obj_ndim, obj_dims, remote_reg_info,
                                        (void *)local_bulk_args->data_buf, in.remote_unit, 0);
 #endif
-/*
-        printf("ndim = %d\n", in.obj_ndim);
-        if (in.obj_ndim == 2) {
-            printf("offset[0] = %" PRIu64 ", length[0] = %" PRIu64 ", offset[1] = %" PRIu64 ", length[1] = %" PRIu64 "\n", (remote_reg_info->offset)[0], (remote_reg_info->size)[0], (remote_reg_info->offset)[1], (remote_reg_info->size)[1]);
-        }
-        uint64_t total_data_size = (remote_reg_info->size)[0];
-        if (remote_reg_info->ndim >= 2) {
-            total_data_size *= (remote_reg_info->size)[1];
-        }
-        if (remote_reg_info->ndim >= 3) {
-            total_data_size *= (remote_reg_info->size)[2];
-        }
-        int *int_ptr = local_bulk_args->data_buf;
-        uint64_t i;
-         printf("Read data print out\n");
-        for ( i = 0; i < total_data_size; ++i ) {
-            printf("%d ", int_ptr[i]);
-        }
-        printf("\n");
-        printf("--------------------\n");
-*/
+        /*
+                printf("ndim = %d\n", in.obj_ndim);
+                if (in.obj_ndim == 2) {
+                    printf("offset[0] = %" PRIu64 ", length[0] = %" PRIu64 ", offset[1] = %" PRIu64 ",
+           length[1] = %" PRIu64 "\n", (remote_reg_info->offset)[0], (remote_reg_info->size)[0],
+           (remote_reg_info->offset)[1], (remote_reg_info->size)[1]);
+                }
+                uint64_t total_data_size = (remote_reg_info->size)[0];
+                if (remote_reg_info->ndim >= 2) {
+                    total_data_size *= (remote_reg_info->size)[1];
+                }
+                if (remote_reg_info->ndim >= 3) {
+                    total_data_size *= (remote_reg_info->size)[2];
+                }
+                int *int_ptr = local_bulk_args->data_buf;
+                uint64_t i;
+                 printf("Read data print out\n");
+                for ( i = 0; i < total_data_size; ++i ) {
+                    printf("%d ", int_ptr[i]);
+                }
+                printf("\n");
+                printf("--------------------\n");
+        */
         /*
                 printf("Server transfer request at read branch index 1 value is %d\n",
                        *((int *)(local_bulk_args->data_buf + sizeof(int))));

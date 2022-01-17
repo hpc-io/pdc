@@ -230,7 +230,6 @@ main(int argc, char **argv)
     if (ret != SUCCEED) {
         printf("Fail to region transfer start @ line %d\n", __LINE__);
         ret_value = 1;
-
     }
     ret = PDCregion_transfer_wait_all(transfer_request, OBJ_NUM * REQ_SIZE);
     if (ret != SUCCEED) {
@@ -270,8 +269,7 @@ main(int argc, char **argv)
 
     for (i = 0; i < OBJ_NUM; ++i) {
         memset(data_read[i], 0, sizeof(int) * BUF_LEN);
-        transfer_request[i] = PDCregion_transfer_create(
-            data_read[i], PDC_READ, obj[i], reg, reg_global);
+        transfer_request[i] = PDCregion_transfer_create(data_read[i], PDC_READ, obj[i], reg, reg_global);
     }
     if (PDCregion_close(reg_global) < 0) {
         printf("fail to close global region @ line %d\n", __LINE__);
@@ -308,7 +306,6 @@ main(int argc, char **argv)
             }
         }
     }
-
 
     if (PDCregion_close(reg) < 0) {
         printf("fail to close local region @ line %d\n", __LINE__);

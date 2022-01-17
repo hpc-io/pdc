@@ -31,11 +31,11 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include "pdc.h"
-#define DIM0 34
-#define DIM1 13
-#define DIM2 24
-#define BUF_LEN  (DIM0*DIM1*DIM2)
-#define OBJ_NUM  10
+#define DIM0    34
+#define DIM1    13
+#define DIM2    24
+#define BUF_LEN (DIM0 * DIM1 * DIM2)
+#define OBJ_NUM 10
 // DIM2 must divide REQ_SIZE
 #define REQ_SIZE 8
 
@@ -244,7 +244,6 @@ main(int argc, char **argv)
     if (ret != SUCCEED) {
         printf("Fail to region transfer start @ line %d\n", __LINE__);
         ret_value = 1;
-
     }
     ret = PDCregion_transfer_wait_all(transfer_request, OBJ_NUM * REQ_SIZE);
     if (ret != SUCCEED) {
@@ -298,8 +297,7 @@ main(int argc, char **argv)
 
     for (i = 0; i < OBJ_NUM; ++i) {
         memset(data_read[i], 0, sizeof(int) * BUF_LEN);
-        transfer_request[i] = PDCregion_transfer_create(
-            data_read[i], PDC_READ, obj[i], reg, reg_global);
+        transfer_request[i] = PDCregion_transfer_create(data_read[i], PDC_READ, obj[i], reg, reg_global);
     }
 
     if (PDCregion_close(reg) < 0) {
@@ -340,13 +338,14 @@ main(int argc, char **argv)
     for (j = 0; j < OBJ_NUM; ++j) {
         for (i = 0; i < BUF_LEN; ++i) {
             x = i % DIM2;
-            y = (i % (DIM1*DIM2)) / DIM2;
-            z = i / (DIM1*DIM2);
+            y = (i % (DIM1 * DIM2)) / DIM2;
+            z = i / (DIM1 * DIM2);
             s = DIM2 / REQ_SIZE;
             b = s * DIM0 * DIM1;
-            //printf("%d and %d, i = %d\n", data_read[j][i], (x/s) * b + y * s + x % s, i);
-            if ( data_read[j][i] != (x/s) * b + z * s * DIM1 + y * s + x % s ) {
-                printf("wrong value %d!=%d @ line %d\n", data_read[j][i], (x/s) * b + z * s * DIM1 + y * s + x % s, __LINE__);
+            // printf("%d and %d, i = %d\n", data_read[j][i], (x/s) * b + y * s + x % s, i);
+            if (data_read[j][i] != (x / s) * b + z * s * DIM1 + y * s + x % s) {
+                printf("wrong value %d!=%d @ line %d\n", data_read[j][i],
+                       (x / s) * b + z * s * DIM1 + y * s + x % s, __LINE__);
                 ret_value = 1;
                 break;
             }
