@@ -157,7 +157,8 @@ perr_t PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint
                                    int local_ndim, uint64_t *local_offset, uint64_t *local_size,
                                    int remote_ndim, uint64_t *remote_offset, uint64_t *remote_size,
                                    pdc_var_type_t mem_type, pdc_access_t access_type, uint64_t *metadata_id,
-                                   char **new_buf);
+                                   char **new_buf,
+                                   pdcid_t objid, pdcid_t regid);
 
 perr_t PDC_Client_transfer_request_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed,
                                           char *buf, char *new_buf, uint64_t *obj_dims, int local_ndim,

@@ -770,6 +770,29 @@ typedef struct {
 
     uint8_t access_type;
 } transfer_request_in_t;
+
+/* Define transfer_request_in_t */
+typedef struct {
+    hg_bulk_t              local_bulk_handle;
+    region_info_transfer_t remote_region;
+    uint64_t               obj_id;
+    uint64_t               obj_dim0;
+    uint64_t               obj_dim1;
+    uint64_t               obj_dim2;
+    size_t                 remote_unit;
+    int32_t                obj_ndim;
+    uint32_t               meta_server_id;
+
+    uint8_t access_type;
+
+    /* The following are unique to the transform portion of the lock */
+    uint8_t   dest_type;
+    int32_t   transform_id;
+    int32_t   transform_state;
+    int64_t   transform_data_size;
+    uint64_t  client_data_ptr;
+} transfer_request_and_transform_in_t;
+
 /* Define transfer_request_out_t */
 typedef struct {
     uint64_t metadata_id;

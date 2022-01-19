@@ -64,6 +64,11 @@ typedef struct pdc_transfer_request {
     int       obj_ndim;
     uint64_t *obj_dims;
 
+    // TODO: ADDED BY JOHN
+    pdcid_t               objid;
+    pdcid_t               regid;
+    ///////////////////////////
+
 } pdc_transfer_request;
 
 typedef enum {
