@@ -85,7 +85,7 @@ init(int argc, char **argv)
 
     MPI_Comm_rank(g_mpi_comm, &g_mpi_rank);
     MPI_Cart_coords(g_mpi_comm, g_mpi_rank, NUM_DIMS, g_coords);
-    // printf("my 2d rank: %d, coords: (%d, %d)\n", g_mpi_rank, g_coords[0], g_coords[1]);
+    //printf("my 2d rank: %d, coords: (%d, %d)\n", g_mpi_rank, g_coords[0], g_coords[1]);
 }
 
 int
@@ -100,12 +100,17 @@ main(int argc, char **argv)
     pdcid_t local_region_id, global_region_id;
     pdcid_t transfer_id;
 
-    double *local_buffer = (double *)malloc(g_x_ept * g_y_ept * sizeof(double));
+    //double * local_buffer = (double *)malloc(g_x_ept * g_y_ept * sizeof(double));
+    double ** local_buffer = (double**)malloc(g_x_ept * sizeof(double*));
+    int i;
+    for(i = 0; i < g_x_ept; i++)
+        local_buffer[i] = malloc(sizeof(double) * g_y_ept);
 
-    uint64_t local_length[1]          = {g_x_ept * g_y_ept};
-    uint64_t local_offsets[1]         = {0};
-    uint64_t global_length[NUM_DIMS]  = {g_x_ept, g_y_ept};
-    uint64_t global_offsets[NUM_DIMS] = {g_coords[0] * g_x_ept, g_coords[1] * g_y_ept};
+    uint64_t local_length[1]            = {g_x_ept * g_y_ept};
+    //uint64_t local_length[NUM_DIMS]     = {g_x_ept, g_y_ept};
+    uint64_t local_offsets[1]           = {0};
+    uint64_t global_length[NUM_DIMS]    = {g_x_ept, g_y_ept};
+    uint64_t global_offsets[NUM_DIMS]   = {g_coords[0]*g_x_ept, g_coords[1]*g_y_ept};
 
     // Init PDC
     pdc_id    = PDCinit("pdc");
@@ -123,8 +128,7 @@ main(int argc, char **argv)
 
     // Create transfer request
     time_create = MPI_Wtime();
-    transfer_id =
-        PDCregion_transfer_create(local_buffer, PDC_WRITE, obj_id, local_region_id, global_region_id);
+    transfer_id = PDCregion_transfer_create(local_buffer, PDC_WRITE, obj_id, local_region_id, global_region_id);
     MPI_Barrier(MPI_COMM_WORLD);
     time_create = MPI_Wtime() - time_create;
 
@@ -138,9 +142,13 @@ main(int argc, char **argv)
     time_wait = MPI_Wtime();
     PDCregion_transfer_wait(transfer_id);
     MPI_Barrier(MPI_COMM_WORLD);
-    time_wait  = MPI_Wtime() - time_wait;
+    time_wait = MPI_Wtime() - time_wait;
     time_total = MPI_Wtime() - time_total;
     PDCregion_transfer_close(transfer_id);
+
+#if PDC_TIMING == 1
+    PDC_timing_report("write");
+#endif
 
     // TODO delete before close ?
     PDCobj_close(obj_id);
@@ -153,12 +161,11 @@ main(int argc, char **argv)
     free(local_buffer);
 
     if (g_mpi_rank == 0) {
-        double bandwidth =
-            g_x_tiles * g_y_tiles * g_x_ept * g_y_ept / 1024.0 / 1024.0 * sizeof(double) / time_total;
-        printf("Bandwidth: %.2fMB/s, total time: %.4f, transfer create: %.4f, transfer start: %.4f, "
-               "transfert wait: %.4f\n",
-               bandwidth, time_total, time_create, time_start, time_wait);
+        double bandwidth = g_x_ept * g_y_ept / 1024.0/1024.0 * g_x_tiles * g_y_tiles * sizeof(double) / time_total;
+        printf("Bandwidth: %.2fMB/s, total time: %.4f, transfer create: %.4f, transfer start: %.4f, transfert wait: %.4f\n",
+                bandwidth, time_total, time_create, time_start, time_wait);
     }
+
 
     MPI_Comm_free(&g_mpi_comm);
     MPI_Finalize();

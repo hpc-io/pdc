@@ -179,6 +179,7 @@ main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
     time_total = MPI_Wtime() - time_total;
 
+
     for (i = 0; i < NUM_VARS; i++) {
         // TODO delete before close ?
         PDCobj_close(obj_ids[i]);
@@ -188,15 +189,20 @@ main(int argc, char **argv)
         free(buffers[i]);
     }
 
+#if PDC_TIMING == 1
+    PDC_timing_report("write");
+#endif
+
+
     PDCcont_close(cont_id);
     PDCprop_close(cont_prop);
     PDCclose(pdc_id);
 
     if (mpi_rank == 0) {
-        double per_particle = sizeof(float) * 7 + sizeof(int64_t) + sizeof(int16_t);
-        double bandwidth    = per_particle * NUM_PARTICLES * mpi_size / 1024.0 / 1024.0 / time_total;
-        printf("Bandwidth: %.2fMB/s, total time: %.4f, lock: %.4f, io: %.4f, release: %.4f\n", bandwidth,
-               time_total, time_lock, time_io, time_release);
+        double per_particle = sizeof(float)*7+sizeof(int64_t)+sizeof(int16_t);
+        double bandwidth = per_particle*NUM_PARTICLES/1024.0/1024.0/time_total*mpi_size;
+        printf("Bandwidth: %.2fMB/s, total time: %.4f, lock: %.4f, io: %.4f, release: %.4f\n",
+                bandwidth, time_total, time_lock, time_io, time_release);
     }
     MPI_Finalize();
 

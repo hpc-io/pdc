@@ -131,7 +131,7 @@ main(int argc, char **argv)
         region_remote_ids[i] = PDCregion_create(NUM_DIMS, &offset_remote, &mysize);
 
         // TODO need this?
-        // PDCbuf_obj_map(buffers[i], VAR_TYPES[i], region_ids[i], obj_ids[i], region_remote_ids[i]);
+        //PDCbuf_obj_map(buffers[i], VAR_TYPES[i], region_ids[i], obj_ids[i], region_remote_ids[i]);
     }
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -142,8 +142,7 @@ main(int argc, char **argv)
     // Create transfer request
     time_create = MPI_Wtime();
     for (i = 0; i < NUM_VARS; i++) {
-        transfer_ids[i] =
-            PDCregion_transfer_create(buffers[i], PDC_WRITE, obj_ids[i], region_ids[i], region_remote_ids[i]);
+        transfer_ids[i] = PDCregion_transfer_create(buffers[i], PDC_WRITE, obj_ids[i], region_ids[i], region_remote_ids[i]);
     }
     MPI_Barrier(MPI_COMM_WORLD);
     time_create = MPI_Wtime() - time_create;
@@ -160,7 +159,7 @@ main(int argc, char **argv)
     for (i = 0; i < NUM_VARS; i++)
         PDCregion_transfer_wait(transfer_ids[i]);
     MPI_Barrier(MPI_COMM_WORLD);
-    time_wait  = MPI_Wtime() - time_wait;
+    time_wait = MPI_Wtime() - time_wait;
     time_total = MPI_Wtime() - time_total;
 
     for (i = 0; i < NUM_VARS; i++) {
@@ -173,16 +172,20 @@ main(int argc, char **argv)
         free(buffers[i]);
     }
 
+#if PDC_TIMING == 1
+    PDC_timing_report("write");
+#endif
+
+
     PDCcont_close(cont_id);
     PDCprop_close(cont_prop);
     PDCclose(pdc_id);
 
     if (mpi_rank == 0) {
-        double per_particle = sizeof(float) * 7 + sizeof(int64_t) + sizeof(int16_t);
-        double bandwidth    = per_particle * NUM_PARTICLES * mpi_size / 1024.0 / 1024.0 / time_total;
-        printf("Bandwidth: %.2fMB/s, total time: %.4f, create transfer: %.4f, start transfer: %.4f, wait "
-               "transfer: %.4f\n",
-               bandwidth, time_total, time_create, time_start, time_wait);
+        double per_particle = sizeof(float)*7+sizeof(int64_t)+sizeof(int16_t);
+        double bandwidth = per_particle*NUM_PARTICLES/1024.0/1024.0/time_total*mpi_size;
+        printf("Bandwidth: %.2fMB/s, total time: %.4f, create transfer: %.4f, start transfer: %.4f, wait transfer: %.4f\n",
+                bandwidth, time_total, time_create, time_start, time_wait);
     }
     MPI_Finalize();
 
