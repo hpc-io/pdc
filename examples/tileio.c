@@ -85,7 +85,7 @@ init(int argc, char **argv)
 
     MPI_Comm_rank(g_mpi_comm, &g_mpi_rank);
     MPI_Cart_coords(g_mpi_comm, g_mpi_rank, NUM_DIMS, g_coords);
-    //printf("my 2d rank: %d, coords: (%d, %d)\n", g_mpi_rank, g_coords[0], g_coords[1]);
+    // printf("my 2d rank: %d, coords: (%d, %d)\n", g_mpi_rank, g_coords[0], g_coords[1]);
 }
 
 int
@@ -131,7 +131,7 @@ main(int argc, char **argv)
 
     // Accquire the lock
     time_acquire_lock = MPI_Wtime();
-    ret = PDCreg_obtain_lock(obj_id, global_region_id, PDC_WRITE, PDC_NOBLOCK);
+    ret               = PDCreg_obtain_lock(obj_id, global_region_id, PDC_WRITE, PDC_NOBLOCK);
     MPI_Barrier(MPI_COMM_WORLD);
     time_acquire_lock = MPI_Wtime() - time_acquire_lock;
 
@@ -174,13 +174,12 @@ main(int argc, char **argv)
     PDCprop_close(cont_prop);
     PDCclose(pdc_id);
 
-
     if (g_mpi_rank == 0) {
-        double bandwidth = g_x_tiles * g_y_tiles * g_x_ept * g_y_ept / 1024.0/1024.0 * sizeof(double) / time_total;
-        printf("Bandwidth: %.2fMB/s, total time: %.4f, lock: %.4f, io: %.4f, release: %.4f\n",
-                bandwidth, time_total, time_acquire_lock, time_io, time_release_lock);
+        double bandwidth =
+            g_x_tiles * g_y_tiles * g_x_ept * g_y_ept / 1024.0 / 1024.0 * sizeof(double) / time_total;
+        printf("Bandwidth: %.2fMB/s, total time: %.4f, lock: %.4f, io: %.4f, release: %.4f\n", bandwidth,
+               time_total, time_acquire_lock, time_io, time_release_lock);
     }
-
 
     MPI_Comm_free(&g_mpi_comm);
     MPI_Finalize();
