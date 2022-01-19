@@ -222,10 +222,10 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
     // TODO JOHN: For analysis and/or transforms, we only identify the target region as being mapped.
     // if (ret_value == SUCCEED) {
     {
-      PDC_check_transform(PDC_DATA_MAP, reg2);
-      // TODO JOHN: not exactly sure why we need to do this..
-      PDC_inc_ref(obj_id);
-      PDC_inc_ref(remote_reg);
+        PDC_check_transform(PDC_DATA_MAP, reg2);
+        // TODO JOHN: not exactly sure why we need to do this..
+        PDC_inc_ref(obj_id);
+        PDC_inc_ref(remote_reg);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -275,7 +275,8 @@ PDCregion_transfer_start(pdcid_t transfer_request_id)
             transfer_request->local_region_offset, transfer_request->local_region_size,
             transfer_request->remote_region_ndim, transfer_request->remote_region_offset,
             transfer_request->remote_region_size, transfer_request->mem_type, transfer_request->access_type,
-            &(transfer_request->metadata_id), &(transfer_request->new_buf), transfer_request->objid, transfer_request->regid);
+            &(transfer_request->metadata_id), &(transfer_request->new_buf), transfer_request->objid,
+            transfer_request->regid);
     }
     else {
         printf("PDC Client PDCregion_transfer_start attempt to start existing transfer request @ line %d\n",

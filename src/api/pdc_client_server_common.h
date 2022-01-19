@@ -786,11 +786,11 @@ typedef struct {
     uint8_t access_type;
 
     /* The following are unique to the transform portion of the lock */
-    uint8_t   dest_type;
-    int32_t   transform_id;
-    int32_t   transform_state;
-    int64_t   transform_data_size;
-    uint64_t  client_data_ptr;
+    uint8_t  dest_type;
+    int32_t  transform_id;
+    int32_t  transform_state;
+    int64_t  transform_data_size;
+    uint64_t client_data_ptr;
 } transfer_request_and_transform_in_t;
 
 /* Define transfer_request_out_t */
