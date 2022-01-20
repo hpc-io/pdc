@@ -4760,8 +4760,8 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                 // 1D can overwrite data in region directly
                 pos = (overlap_start[0] - region_info->offset[0]) * unit;
                 if (pos > write_size) {
-                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
-                           pos, write_size);
+                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld! @ line %d\n",
+                           pdc_server_rank_g, pos, write_size, __LINE__);
                     ret_value = -1;
                     goto done;
                 }
@@ -4801,8 +4801,8 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                        overlap_start[1] - region_info->offset[1]) *
                       unit;
                 if (pos > overlap_region->data_size) {
-                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
-                           pos, overlap_region->data_size);
+                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld! @ line %d\n",
+                           pdc_server_rank_g, pos, overlap_region->data_size, __LINE__);
                     ret_value = -1;
                     goto done;
                 }
@@ -4812,8 +4812,8 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                            buf + pos, overlap_count[1] * unit);
                     pos += region_info->size[1] * unit;
                     if (pos > overlap_region->data_size) {
-                        printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n",
-                               pdc_server_rank_g, pos, overlap_region->data_size);
+                        printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld! @ line %d\n",
+                               pdc_server_rank_g, pos, overlap_region->data_size, __LINE__);
                         ret_value = -1;
                         goto done;
                     }
@@ -4850,8 +4850,8 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                        (overlap_start[2] - region_info->offset[2])) *
                       unit;
                 if (pos > overlap_region->data_size) {
-                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
-                           pos, overlap_region->data_size);
+                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld! @ line %d\n",
+                           pdc_server_rank_g, pos, overlap_region->data_size, __LINE__);
                     ret_value = -1;
                     goto done;
                 }
@@ -4869,8 +4869,8 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 
                         pos += region_info->size[2] * unit;
                         if (pos > overlap_region->data_size) {
-                            printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n",
-                                   pdc_server_rank_g, pos, overlap_region->data_size);
+                            printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld! @ line %d\n",
+                                   pdc_server_rank_g, pos, overlap_region->data_size, __LINE__);
                             ret_value = -1;
                             goto done;
                         }
@@ -5004,8 +5004,8 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                    "\n", overlap_start[0], region_info->offset[0], elt->count[0], overlap_start_local[0]);
                 */
                 if (pos > (uint64_t)request_bytes) {
-                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n", pdc_server_rank_g,
-                           pos, request_bytes);
+                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld! @ line %d\n",
+                           pdc_server_rank_g, pos, request_bytes, __LINE__);
 
                     ret_value = -1;
                     goto done;
@@ -5060,18 +5060,18 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                     ret_value = -1;
                     goto done;
                 }
-
+                my_read_bytes = 0;
                 for (i = overlap_start_local[0]; i < overlap_start_local[0] + overlap_count[0]; i++) {
                     memcpy(buf + pos,
                            tmp_buf + i * storage_region->count[1] * unit + overlap_start_local[1] * unit,
                            overlap_count[1] * unit);
-                    pos += region_info->size[1] * unit;
                     if (pos > (uint64_t)request_bytes) {
-                        printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n",
-                               pdc_server_rank_g, pos, request_bytes);
+                        printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld! @ line %d\n",
+                               pdc_server_rank_g, pos, request_bytes, __LINE__);
                         ret_value = -1;
                         goto done;
                     }
+                    pos += region_info->size[1] * unit;
                     my_read_bytes += overlap_count[1] * unit;
                 }
                 free(tmp_buf);
@@ -5103,7 +5103,7 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                     ret_value = -1;
                     goto done;
                 }
-
+                my_read_bytes = 0;
                 for (i = overlap_start_local[0]; i < overlap_start_local[0] + overlap_count[0]; i++) {
                     for (j = overlap_start_local[1]; j < overlap_start_local[1] + overlap_count[1]; j++) {
                         /* printf("i=%llu, j=%llu, pos=%llu, pos2=%llu, size=%llu, total size=%llu\n", i, j,
@@ -5117,13 +5117,13 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                                tmp_buf + i * storage_region->count[2] * storage_region->count[1] * unit +
                                    j * storage_region->count[2] * unit + overlap_start_local[2] * unit,
                                overlap_count[2] * unit);
-                        pos += region_info->size[2] * unit;
                         if (pos > (uint64_t)request_bytes) {
                             printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld!\n",
                                    pdc_server_rank_g, pos, request_bytes);
                             ret_value = -1;
                             goto done;
                         }
+                        pos += region_info->size[2] * unit;
                         my_read_bytes += overlap_count[2] * unit;
                     }
                 }
@@ -5144,7 +5144,6 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
             total_read_bytes += my_read_bytes;
 
         } // End is overlap
-
         if (total_read_bytes >= request_bytes)
             break;
     } // End DL_FOREACH storage region list

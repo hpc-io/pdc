@@ -117,9 +117,13 @@ pdcid_t PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t o
  */
 perr_t PDCregion_transfer_start(pdcid_t transfer_request_id);
 
+perr_t PDCregion_transfer_start_all(pdcid_t *transfer_request_id, size_t size);
+
 perr_t PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed);
 
 perr_t PDCregion_transfer_wait(pdcid_t transfer_request_id);
+
+perr_t PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, size_t size);
 
 perr_t PDCregion_transfer_close(pdcid_t transfer_request_id);
 /**
