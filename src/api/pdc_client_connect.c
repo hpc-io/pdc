@@ -1146,7 +1146,7 @@ PDC_Client_init()
     MPI_Comm_size(PDC_SAME_NODE_COMM_g, &pdc_client_same_node_size_g);
 
     pdc_nclient_per_server_g = pdc_client_same_node_size_g;
-#else
+#endif
     // Get the number of clients per server(node) through environment variable
     tmp_dir = getenv("PDC_NCLIENT_PER_SERVER");
     if (tmp_dir == NULL)
@@ -1156,7 +1156,6 @@ PDC_Client_init()
 
     if (pdc_nclient_per_server_g <= 0)
         pdc_nclient_per_server_g = 1;
-#endif
 
     PDC_set_execution_locus(CLIENT_MEMORY);
 
