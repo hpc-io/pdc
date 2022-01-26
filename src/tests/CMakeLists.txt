@@ -6,6 +6,10 @@ include_directories(
   $ENV{HOME}/include
 )
 
+if(PDC_ENABLE_TIMING)
+    add_definitions(-DPDC_TIMING=1)
+endif()
+
 set(PROGRAMS
   pdc_init
 #  create_prop
