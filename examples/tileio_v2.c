@@ -100,9 +100,14 @@ main(int argc, char **argv)
     pdcid_t local_region_id, global_region_id;
     pdcid_t transfer_id;
 
-    double *local_buffer = (double *)malloc(g_x_ept * g_y_ept * sizeof(double));
+    // double * local_buffer = (double *)malloc(g_x_ept * g_y_ept * sizeof(double));
+    double **local_buffer = (double **)malloc(g_x_ept * sizeof(double *));
+    int      i;
+    for (i = 0; i < g_x_ept; i++)
+        local_buffer[i] = malloc(sizeof(double) * g_y_ept);
 
-    uint64_t local_length[1]          = {g_x_ept * g_y_ept};
+    uint64_t local_length[1] = {g_x_ept * g_y_ept};
+    // uint64_t local_length[NUM_DIMS]     = {g_x_ept, g_y_ept};
     uint64_t local_offsets[1]         = {0};
     uint64_t global_length[NUM_DIMS]  = {g_x_ept, g_y_ept};
     uint64_t global_offsets[NUM_DIMS] = {g_coords[0] * g_x_ept, g_coords[1] * g_y_ept};
@@ -142,6 +147,10 @@ main(int argc, char **argv)
     time_total = MPI_Wtime() - time_total;
     PDCregion_transfer_close(transfer_id);
 
+#if PDC_TIMING == 1
+    PDC_timing_report("write");
+#endif
+
     // TODO delete before close ?
     PDCobj_close(obj_id);
     PDCprop_close(obj_prop);
@@ -154,7 +163,7 @@ main(int argc, char **argv)
 
     if (g_mpi_rank == 0) {
         double bandwidth =
-            g_x_tiles * g_y_tiles * g_x_ept * g_y_ept / 1024.0 / 1024.0 * sizeof(double) / time_total;
+            g_x_ept * g_y_ept / 1024.0 / 1024.0 * g_x_tiles * g_y_tiles * sizeof(double) / time_total;
         printf("Bandwidth: %.2fMB/s, total time: %.4f, transfer create: %.4f, transfer start: %.4f, "
                "transfert wait: %.4f\n",
                bandwidth, time_total, time_create, time_start, time_wait);

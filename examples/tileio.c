@@ -137,11 +137,13 @@ main(int argc, char **argv)
 
     // Actual I/O
     time_io = MPI_Wtime();
+    /*
     int i;
     for (i = 0; i < g_x_ept * g_y_ept; i++) {
         local_buffer[i] = i;
     }
     MPI_Barrier(MPI_COMM_WORLD);
+    */
     time_io = MPI_Wtime() - time_io;
 
     // Release lock
@@ -163,6 +165,10 @@ main(int argc, char **argv)
     PDCregion_close(local_region_id);
     PDCregion_close(global_region_id);
     free(local_buffer);
+
+#if PDC_TIMING == 1
+    PDC_timing_report("write");
+#endif
 
     PDCcont_close(cont_id);
     PDCprop_close(cont_prop);
