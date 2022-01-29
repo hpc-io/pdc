@@ -185,6 +185,7 @@ PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_
     struct _pdc_cont_info *cont_info = NULL;
     struct _pdc_obj_prop * obj_prop;
     uint64_t               meta_id;
+    uint32_t               data_server_id;
     size_t                 i;
     perr_t                 ret = SUCCEED;
 
@@ -204,6 +205,7 @@ PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_
         id_info = PDC_find_id(cont_id);
         /* struct _pdc_cont_info field */
         cont_info = (struct _pdc_cont_info *)(id_info->obj_ptr);
+
         p->cont   = PDC_CALLOC(struct _pdc_cont_info);
         if (!p->cont)
             PGOTO_ERROR(0, "PDC object container memory allocation failed");
@@ -284,12 +286,12 @@ PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_
     p->obj_info_pub->server_id = 0;
     if (location == PDC_OBJ_GLOBAL) {
         ret = PDC_Client_send_name_recv_id(obj_name, p->cont->cont_info_pub->meta_id, obj_prop_id,
-                                           &(p->obj_info_pub->meta_id));
+                                           &(p->obj_info_pub->meta_id), &data_server_id);
         if (ret == FAIL)
             PGOTO_ERROR(0, "Unable to create object on server!");
     }
 
-    PDC_Client_attach_metadata_to_local_obj(obj_name, p->obj_info_pub->meta_id, meta_id, p);
+    PDC_Client_attach_metadata_to_local_obj(obj_name, p->obj_info_pub->meta_id, meta_id, data_server_id, p);
 
     p->obj_info_pub->obj_pt = PDC_CALLOC(struct pdc_obj_prop);
     if (!p->obj_info_pub->obj_pt)

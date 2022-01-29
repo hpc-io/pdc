@@ -263,6 +263,8 @@ typedef struct pdc_metadata_transfer_t {
 
     const char *tags;
     const char *data_location;
+    // preferred data server ID
+    uint32_t data_server_id;
 
     // The following support state changes to objects
     // as a result of a transform.
@@ -399,6 +401,7 @@ typedef struct pdc_metadata_t {
     uint64_t       cont_id;
     time_t         create_time;
     time_t         last_modified_time;
+    uint32_t       data_server_id;
 
     char              tags[TAG_LEN_MAX];
     pdc_kvtag_list_t *kvtag_list_head;
@@ -770,11 +773,29 @@ typedef struct {
 
     uint8_t access_type;
 } transfer_request_in_t;
+
 /* Define transfer_request_out_t */
 typedef struct {
     uint64_t metadata_id;
     int32_t  ret;
 } transfer_request_out_t;
+
+/* Define transfer_request_all_in_t */
+typedef struct transfer_request_all_in_t {
+    hg_bulk_t              local_bulk_handle;
+    hg_bulk_t              local_bulk_handle2;
+    uint64_t               transfer_request_id;
+    uint64_t               total_buf_size;
+    int32_t                n_objs;
+    uint32_t               meta_server_id;
+    uint8_t access_type;
+} transfer_request_all_in_t;
+
+/* Define transfer_request_all_out_t */
+typedef struct transfer_request_all_out_t {
+    uint64_t metadata_id;
+    int32_t  ret;
+} transfer_request_all_out_t;
 
 /* Define buf_map_in_t */
 typedef struct {
@@ -1551,6 +1572,11 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc tags error");
         return ret;
     }
+    ret = hg_proc_uint32_t(proc, &struct_data->data_server_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc data_server_id error");
+        return ret;
+    }
     // Added to support transforms
     ret = hg_proc_int32_t(proc, &struct_data->current_state);
     if (ret != HG_SUCCESS) {
@@ -1843,6 +1869,7 @@ hg_proc_metadata_query_in_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
+
     return ret;
 }
 
@@ -2456,6 +2483,72 @@ hg_proc_transfer_request_status_out_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
+    return ret;
+}
+
+/* Define hg_proc_transfer_request_all_in_t */
+static HG_INLINE hg_return_t
+hg_proc_transfer_request_all_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t                 ret;
+    transfer_request_all_in_t *struct_data = (transfer_request_all_in_t *)data;
+    ret                                = hg_proc_hg_bulk_t(proc, &struct_data->local_bulk_handle);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret                                = hg_proc_hg_bulk_t(proc, &struct_data->local_bulk_handle2);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->transfer_request_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->total_buf_size);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->n_objs);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint32_t(proc, &struct_data->meta_server_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint8_t(proc, &struct_data->access_type);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+/* Define hg_proc_transfer_request_all_out_t */
+static HG_INLINE hg_return_t
+hg_proc_transfer_request_all_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t                  ret;
+    transfer_request_all_out_t *struct_data = (transfer_request_all_out_t *)data;
+    // printf("Output argument: transfer_request_all for status @ line %d\n", __LINE__);
+    ret = hg_proc_uint64_t(proc, &struct_data->metadata_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    // printf("Output argument: transfer_request_all for ret @ line %d\n", __LINE__);
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    // printf("Output argument: transfer_request_all finishes @ line %d\n", __LINE__);
     return ret;
 }
 
@@ -3456,6 +3549,42 @@ struct region_lock_update_bulk_args {
     struct pdc_region_info *server_region;
 };
 
+typedef struct transfer_request_all_data {
+    uint64_t **obj_dims;
+    uint64_t **remote_offset;
+    uint64_t **remote_length;
+    pdcid_t *obj_id;
+    int *obj_ndim;
+    size_t *unit;
+    int *remote_ndim;
+    char **data_buf;
+    int n_objs;
+} transfer_request_all_data;
+
+struct transfer_request_all_local_bulk_args {
+    hg_handle_t           handle;
+    hg_bulk_t             bulk_handle;
+    transfer_request_all_in_t in;
+    uint64_t*              transfer_request_id;
+    void *                data_buf;
+    size_t                total_mem_size;
+#ifdef PDC_TIMING
+    double start_time;
+#endif
+};
+
+struct transfer_request_all_local_bulk_args2 {
+    //hg_handle_t           handle;
+    transfer_request_all_data request_data;
+    hg_bulk_t             bulk_handle;
+    uint64_t*              transfer_request_id;
+    void *                data_buf;
+#ifdef PDC_TIMING
+    double start_time;
+#endif
+};
+
+
 struct transfer_request_local_bulk_args {
     hg_handle_t           handle;
     hg_bulk_t             bulk_handle;
@@ -3557,6 +3686,7 @@ hg_id_t PDC_metadata_del_kvtag_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_get_kvtag_register(hg_class_t *hg_class);
 
 hg_id_t PDC_transfer_request_register(hg_class_t *hg_class);
+hg_id_t PDC_transfer_request_all_register(hg_class_t *hg_class);
 hg_id_t PDC_transfer_request_status_register(hg_class_t *hg_class);
 hg_id_t PDC_transfer_request_wait_register(hg_class_t *hg_class);
 hg_id_t PDC_buf_map_register(hg_class_t *hg_class);

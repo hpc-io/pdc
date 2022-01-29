@@ -75,6 +75,7 @@ set(PROGRAMS
   region_transfer_write_only
   region_transfer_read_only
   region_transfer_write_read
+  region_transfer_all_test
   region_transfer_all
   region_transfer_all_2D
   region_transfer_all_3D

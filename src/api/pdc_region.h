@@ -46,12 +46,15 @@ struct pdc_region_info {
 
 typedef struct pdc_transfer_request {
     pdcid_t        obj_id;
+    uint32_t        data_server_id;
     uint64_t       metadata_id;
     pdc_access_t   access_type;
     pdc_var_type_t mem_type;
     char *         buf;
     /* Used internally for 2D and 3D data */
+    char *read_bulk_buf;
     char *new_buf;
+    int *new_buf_ref;
 
     int       local_region_ndim;
     uint64_t *local_region_offset;
@@ -117,13 +120,13 @@ pdcid_t PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t o
  */
 perr_t PDCregion_transfer_start(pdcid_t transfer_request_id);
 
-perr_t PDCregion_transfer_start_all(pdcid_t *transfer_request_id, size_t size);
+perr_t PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size);
 
 perr_t PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed);
 
 perr_t PDCregion_transfer_wait(pdcid_t transfer_request_id);
 
-perr_t PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, size_t size);
+perr_t PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size);
 
 perr_t PDCregion_transfer_close(pdcid_t transfer_request_id);
 /**

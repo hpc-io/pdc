@@ -1234,6 +1234,7 @@ PDC_insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     metadata->cont_id   = in->data.cont_id;
     metadata->data_type = in->data_type;
     metadata->user_id   = in->data.user_id;
+    metadata->data_server_id   = in->data.data_server_id;
     metadata->time_step = in->data.time_step;
     metadata->ndim      = in->data.ndim;
     metadata->dims[0]   = in->data.dims0;

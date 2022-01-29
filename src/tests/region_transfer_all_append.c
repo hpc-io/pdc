@@ -31,8 +31,8 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include "pdc.h"
-#define BUF_LEN  1024
-#define OBJ_NUM  10
+#define BUF_LEN  64
+#define OBJ_NUM  2
 #define REQ_SIZE 8
 
 int
@@ -230,6 +230,7 @@ main(int argc, char **argv)
     if (ret != SUCCEED) {
         printf("Fail to region transfer start @ line %d\n", __LINE__);
         ret_value = 1;
+
     }
     ret = PDCregion_transfer_wait_all(transfer_request, OBJ_NUM * REQ_SIZE);
     if (ret != SUCCEED) {
@@ -255,6 +256,18 @@ main(int argc, char **argv)
             }
         }
     }
+
+    if (reg > 0) {
+        printf("Create local region\n");
+    }
+    else {
+        printf("Fail to create region @ line  %d!\n", __LINE__);
+        ret_value = 1;
+    }
+
+    offset[0]        = 0;
+    offset_length[0] = BUF_LEN;
+    reg              = PDCregion_create(1, offset, offset_length);
 
     offset[0]        = 0;
     offset_length[0] = BUF_LEN;
