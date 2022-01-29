@@ -46,7 +46,7 @@ struct pdc_region_info {
 
 typedef struct pdc_transfer_request {
     pdcid_t        obj_id;
-    uint32_t        data_server_id;
+    uint32_t       data_server_id;
     uint64_t       metadata_id;
     pdc_access_t   access_type;
     pdc_var_type_t mem_type;
@@ -54,7 +54,7 @@ typedef struct pdc_transfer_request {
     /* Used internally for 2D and 3D data */
     char *read_bulk_buf;
     char *new_buf;
-    int *new_buf_ref;
+    int * new_buf_ref;
 
     int       local_region_ndim;
     uint64_t *local_region_offset;

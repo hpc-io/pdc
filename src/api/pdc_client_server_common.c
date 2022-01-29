@@ -1430,17 +1430,17 @@ PDC_transfer_t_to_metadata_t(pdc_metadata_transfer_t *transfer, pdc_metadata_t *
     if (NULL == meta || NULL == transfer)
         PGOTO_ERROR(FAIL, "PDC_transfer_t_to_metadata_t(): NULL input!");
 
-    meta->user_id   = transfer->user_id;
-    meta->data_type = transfer->data_type;
-    meta->obj_id    = transfer->obj_id;
-    meta->cont_id   = transfer->cont_id;
+    meta->user_id        = transfer->user_id;
+    meta->data_type      = transfer->data_type;
+    meta->obj_id         = transfer->obj_id;
+    meta->cont_id        = transfer->cont_id;
     meta->data_server_id = transfer->data_server_id;
-    meta->time_step = transfer->time_step;
-    meta->ndim      = transfer->ndim;
-    meta->dims[0]   = transfer->dims0;
-    meta->dims[1]   = transfer->dims1;
-    meta->dims[2]   = transfer->dims2;
-    meta->dims[3]   = transfer->dims3;
+    meta->time_step      = transfer->time_step;
+    meta->ndim           = transfer->ndim;
+    meta->dims[0]        = transfer->dims0;
+    meta->dims[1]        = transfer->dims1;
+    meta->dims[2]        = transfer->dims2;
+    meta->dims[3]        = transfer->dims3;
 
     strcpy(meta->app_name, transfer->app_name);
     strcpy(meta->obj_name, transfer->obj_name);
@@ -2090,16 +2090,16 @@ HG_TEST_RPC_CB(metadata_query, handle)
         PDC_metadata_t_to_transfer_t(query_result, &out.ret);
     }
     else {
-        out.ret.user_id       = -1;
-        out.ret.data_type     = -1;
-        out.ret.obj_id        = 0;
-        out.ret.cont_id       = 0;
-        out.ret.data_server_id       = 0;
-        out.ret.time_step     = -1;
-        out.ret.obj_name      = "N/A";
-        out.ret.app_name      = "N/A";
-        out.ret.tags          = "N/A";
-        out.ret.data_location = "N/A";
+        out.ret.user_id        = -1;
+        out.ret.data_type      = -1;
+        out.ret.obj_id         = 0;
+        out.ret.cont_id        = 0;
+        out.ret.data_server_id = 0;
+        out.ret.time_step      = -1;
+        out.ret.obj_name       = "N/A";
+        out.ret.app_name       = "N/A";
+        out.ret.tags           = "N/A";
+        out.ret.data_location  = "N/A";
     }
 
     HG_Respond(handle, NULL, NULL, &out);
@@ -5021,7 +5021,9 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-static int clean_write_bulk_data(transfer_request_all_data *request_data) {
+static int
+clean_write_bulk_data(transfer_request_all_data *request_data)
+{
     free(request_data->obj_id);
     free(request_data->obj_ndim);
     free(request_data->remote_ndim);
@@ -5031,13 +5033,15 @@ static int clean_write_bulk_data(transfer_request_all_data *request_data) {
     return 0;
 }
 
-static int print_bulk_data(transfer_request_all_data *request_data) {
-    int i, j;
+static int
+print_bulk_data(transfer_request_all_data *request_data)
+{
+    int      i, j;
     uint64_t data_size;
     printf("total number of objects: %d\n", request_data->n_objs);
-    for ( i = 0; i < request_data->n_objs; ++i ) {
+    for (i = 0; i < request_data->n_objs; ++i) {
         data_size = request_data->remote_length[i][0] * request_data->unit[i];
-        for ( j = 1; j < request_data->remote_ndim[i]; ++j ) {
+        for (j = 1; j < request_data->remote_ndim[i]; ++j) {
             data_size *= request_data->remote_length[i][j];
         }
 
@@ -5048,22 +5052,24 @@ static int print_bulk_data(transfer_request_all_data *request_data) {
     return 0;
 }
 
-static int parse_bulk_data(void* buf, transfer_request_all_data *request_data, pdc_access_t access_type) {
-    char *ptr = (char*) buf;
-    int i, j;
+static int
+parse_bulk_data(void *buf, transfer_request_all_data *request_data, pdc_access_t access_type)
+{
+    char *   ptr = (char *)buf;
+    int      i, j;
     uint64_t data_size;
 
     // preallocate arrays of size number of objects
-    request_data->n_objs = *((int*)ptr);
+    request_data->n_objs = *((int *)ptr);
     ptr += sizeof(int);
-    request_data->obj_id = (pdcid_t*) malloc(sizeof(pdcid_t) * request_data->n_objs);
-    request_data->obj_ndim = (int*) malloc(sizeof(int) * request_data->n_objs);
-    request_data->remote_ndim = (int*) malloc(sizeof(int) * request_data->n_objs);
-    request_data->remote_offset = (uint64_t**) malloc(sizeof(uint64_t*) * request_data->n_objs * 3);
+    request_data->obj_id        = (pdcid_t *)malloc(sizeof(pdcid_t) * request_data->n_objs);
+    request_data->obj_ndim      = (int *)malloc(sizeof(int) * request_data->n_objs);
+    request_data->remote_ndim   = (int *)malloc(sizeof(int) * request_data->n_objs);
+    request_data->remote_offset = (uint64_t **)malloc(sizeof(uint64_t *) * request_data->n_objs * 3);
     request_data->remote_length = request_data->remote_offset + request_data->n_objs;
-    request_data->obj_dims = request_data->remote_length + request_data->n_objs;
-    request_data->unit = (size_t*) malloc(sizeof(size_t) * request_data->n_objs);
-    request_data->data_buf = (char**) malloc(sizeof(char*) * request_data->n_objs);
+    request_data->obj_dims      = request_data->remote_length + request_data->n_objs;
+    request_data->unit          = (size_t *)malloc(sizeof(size_t) * request_data->n_objs);
+    request_data->data_buf      = (char **)malloc(sizeof(char *) * request_data->n_objs);
 
     /*
      * The following times n_objs (one set per object).
@@ -5071,15 +5077,15 @@ static int parse_bulk_data(void* buf, transfer_request_all_data *request_data, p
      *     obj_ndim: sizeof(int)
      *     remote remote_ndim: sizeof(int)
      *     unit: sizeof(size_t)
-    */
-    for ( i = 0; i < request_data->n_objs; ++i ) {
-        request_data->obj_id[i] = *((pdcid_t*) ptr);
+     */
+    for (i = 0; i < request_data->n_objs; ++i) {
+        request_data->obj_id[i] = *((pdcid_t *)ptr);
         ptr += sizeof(pdcid_t);
-        request_data->obj_ndim[i] = *((int*) ptr);
+        request_data->obj_ndim[i] = *((int *)ptr);
         ptr += sizeof(int);
-        request_data->remote_ndim[i] = *((int*) ptr);
+        request_data->remote_ndim[i] = *((int *)ptr);
         ptr += sizeof(int);
-        request_data->unit[i] = *((pdcid_t*) ptr);
+        request_data->unit[i] = *((pdcid_t *)ptr);
         ptr += sizeof(size_t);
     }
     /*
@@ -5088,20 +5094,20 @@ static int parse_bulk_data(void* buf, transfer_request_all_data *request_data, p
      *     remote region length: size(uint64_t) * region_ndim
      *     obj_dims: size(uint64_t) * remote_ndim
      *     buf: computed from region length (summed up)
-    */
-    for ( i = 0; i < request_data->n_objs; ++i ) {
-        request_data->remote_offset[i] = (uint64_t*) ptr;
+     */
+    for (i = 0; i < request_data->n_objs; ++i) {
+        request_data->remote_offset[i] = (uint64_t *)ptr;
         ptr += request_data->remote_ndim[i] * sizeof(uint64_t);
-        request_data->remote_length[i] = (uint64_t*) ptr;
+        request_data->remote_length[i] = (uint64_t *)ptr;
         ptr += request_data->remote_ndim[i] * sizeof(uint64_t);
-        request_data->obj_dims[i] = (uint64_t*) ptr;
+        request_data->obj_dims[i] = (uint64_t *)ptr;
         ptr += request_data->obj_ndim[i] * sizeof(uint64_t);
-        if ( access_type == PDC_WRITE ) {
+        if (access_type == PDC_WRITE) {
             data_size = request_data->remote_length[i][0] * request_data->unit[i];
-            for ( j = 1; j < request_data->remote_ndim[i]; ++j ) {
+            for (j = 1; j < request_data->remote_ndim[i]; ++j) {
                 data_size *= request_data->remote_length[i][j];
             }
-            request_data->data_buf[i] = (char*) ptr;
+            request_data->data_buf[i] = (char *)ptr;
             ptr += data_size;
         }
     }
@@ -5112,13 +5118,13 @@ static int parse_bulk_data(void* buf, transfer_request_all_data *request_data, p
 hg_return_t
 transfer_request_all_bulk_transfer_read_cb2(const struct hg_cb_info *info)
 {
-    hg_return_t                              ret             = HG_SUCCESS;
+    hg_return_t                                   ret              = HG_SUCCESS;
     struct transfer_request_all_local_bulk_args2 *local_bulk_args2 = info->arg;
-    int i;
+    int                                           i;
     FUNC_ENTER(NULL);
-    //printf("entering transfer_request_all_bulk_transfer_read_cb2\n");
+    // printf("entering transfer_request_all_bulk_transfer_read_cb2\n");
     pthread_mutex_lock(&transfer_request_status_mutex);
-    for ( i = 0; i < local_bulk_args2->request_data.n_objs; ++i ) {
+    for (i = 0; i < local_bulk_args2->request_data.n_objs; ++i) {
         PDC_finish_request(local_bulk_args2->transfer_request_id[i]);
     }
     pthread_mutex_unlock(&transfer_request_status_mutex);
@@ -5127,7 +5133,7 @@ transfer_request_all_bulk_transfer_read_cb2(const struct hg_cb_info *info)
     free(local_bulk_args2->transfer_request_id);
     HG_Bulk_free(local_bulk_args2->bulk_handle);
     free(local_bulk_args2);
-    //printf("finishing transfer_request_all_bulk_transfer_read_cb2\n");
+    // printf("finishing transfer_request_all_bulk_transfer_read_cb2\n");
     FUNC_LEAVE(ret);
 }
 
@@ -5135,72 +5141,79 @@ hg_return_t
 transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info)
 {
     struct transfer_request_all_local_bulk_args2 *local_bulk_args2;
-    struct transfer_request_all_local_bulk_args *local_bulk_args = info->arg;
-    const struct hg_info *                   handle_info;
-    transfer_request_all_data request_data;
-    hg_return_t                              ret             = HG_SUCCESS;
-    struct pdc_region_info *                 remote_reg_info;
-    int i, j;
-    uint64_t total_mem_size, mem_size;
-    char *ptr;
+    struct transfer_request_all_local_bulk_args * local_bulk_args = info->arg;
+    const struct hg_info *                        handle_info;
+    transfer_request_all_data                     request_data;
+    hg_return_t                                   ret = HG_SUCCESS;
+    struct pdc_region_info *                      remote_reg_info;
+    int                                           i, j;
+    uint64_t                                      total_mem_size, mem_size;
+    char *                                        ptr;
 
     FUNC_ENTER(NULL);
-    //printf("entering transfer_request_all_bulk_transfer_read_cb\n");
+    // printf("entering transfer_request_all_bulk_transfer_read_cb\n");
     handle_info = HG_Get_info(local_bulk_args->handle);
     parse_bulk_data(local_bulk_args->data_buf, &request_data, PDC_READ);
-    //print_bulk_data(&request_data);
-
+    // print_bulk_data(&request_data);
 
     remote_reg_info = (struct pdc_region_info *)malloc(sizeof(struct pdc_region_info));
-    total_mem_size = 0;
-    for ( i = 0; i < request_data.n_objs; ++i ) {
+    total_mem_size  = 0;
+    for (i = 0; i < request_data.n_objs; ++i) {
         mem_size = request_data.unit[i];
-        for ( j = 0; j < request_data.remote_ndim[i]; ++j ) {
+        for (j = 0; j < request_data.remote_ndim[i]; ++j) {
             mem_size *= request_data.remote_length[i][j];
         }
         total_mem_size += mem_size;
     }
 
-    local_bulk_args2 =
-        (struct transfer_request_all_local_bulk_args2 *)malloc(sizeof(struct transfer_request_all_local_bulk_args2));
-    local_bulk_args2->data_buf = (char*) malloc(total_mem_size);
-    ptr = local_bulk_args2->data_buf;
-    for ( i = 0; i < request_data.n_objs; ++i ) {
+    local_bulk_args2 = (struct transfer_request_all_local_bulk_args2 *)malloc(
+        sizeof(struct transfer_request_all_local_bulk_args2));
+    local_bulk_args2->data_buf = (char *)malloc(total_mem_size);
+    ptr                        = local_bulk_args2->data_buf;
+    for (i = 0; i < request_data.n_objs; ++i) {
         remote_reg_info->ndim   = request_data.remote_ndim[i];
         remote_reg_info->offset = request_data.remote_offset[i];
-        remote_reg_info->size = request_data.remote_length[i];
+        remote_reg_info->size   = request_data.remote_length[i];
 
         mem_size = request_data.unit[i];
-        for ( j = 0; j < request_data.remote_ndim[i]; ++j ) {
+        for (j = 0; j < request_data.remote_ndim[i]; ++j) {
             mem_size *= request_data.remote_length[i][j];
         }
 
 #ifdef PDC_SERVER_CACHE
-        PDC_transfer_request_data_read_from(request_data.obj_id[i], request_data.obj_ndim[i], request_data.obj_dims[i], remote_reg_info, (void *)ptr, request_data.unit[i]);
+        PDC_transfer_request_data_read_from(request_data.obj_id[i], request_data.obj_ndim[i],
+                                            request_data.obj_dims[i], remote_reg_info, (void *)ptr,
+                                            request_data.unit[i]);
 #else
-        PDC_Server_transfer_request_io(request_data.obj_id[i], request_data.obj_ndim[i], request_data.obj_dims[i], remote_reg_info, (void *)ptr, request_data.unit[i], 0);
+        PDC_Server_transfer_request_io(request_data.obj_id[i], request_data.obj_ndim[i],
+                                       request_data.obj_dims[i], remote_reg_info, (void *)ptr,
+                                       request_data.unit[i], 0);
 #endif
         ptr += mem_size;
     }
 
-    //local_bulk_args2->handle              = handle;
+    // local_bulk_args2->handle              = handle;
     local_bulk_args2->transfer_request_id = local_bulk_args->transfer_request_id;
-    local_bulk_args2->request_data      = request_data;
+    local_bulk_args2->request_data        = request_data;
 
-    ret = HG_Bulk_create(handle_info->hg_class, 1, &(local_bulk_args2->data_buf),
-                               &total_mem_size, HG_BULK_READWRITE,
-                               &(local_bulk_args2->bulk_handle));
+    ret = HG_Bulk_create(handle_info->hg_class, 1, &(local_bulk_args2->data_buf), &total_mem_size,
+                         HG_BULK_READWRITE, &(local_bulk_args2->bulk_handle));
     if (ret != HG_SUCCESS) {
-        printf("Error at transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info): @ line %d \n", __LINE__);
+        printf("Error at transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info): @ line "
+               "%d \n",
+               __LINE__);
     }
 
     // This is the actual data transfer. When transfer is finished, we are heading our way to the function
     // transfer_request_bulk_transfer_cb.
-    ret = HG_Bulk_transfer(handle_info->context, transfer_request_all_bulk_transfer_read_cb2, local_bulk_args2,
-                                 HG_BULK_PUSH, handle_info->addr, local_bulk_args->in.local_bulk_handle2, 0,
-                                 local_bulk_args2->bulk_handle, 0, total_mem_size, HG_OP_ID_IGNORE);
+    ret =
+        HG_Bulk_transfer(handle_info->context, transfer_request_all_bulk_transfer_read_cb2, local_bulk_args2,
+                         HG_BULK_PUSH, handle_info->addr, local_bulk_args->in.local_bulk_handle2, 0,
+                         local_bulk_args2->bulk_handle, 0, total_mem_size, HG_OP_ID_IGNORE);
     if (ret != HG_SUCCESS) {
-        printf("Error at transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info): @ line %d \n", __LINE__);
+        printf("Error at transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info): @ line "
+               "%d \n",
+               __LINE__);
     }
     // pointers in request_data are freed in the next call back function
     free(local_bulk_args->data_buf);
@@ -5218,31 +5231,31 @@ hg_return_t
 transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
 {
     struct transfer_request_all_local_bulk_args *local_bulk_args = info->arg;
-    transfer_request_all_data request_data;
-    hg_return_t                              ret             = HG_SUCCESS;
-    struct pdc_region_info *                 remote_reg_info;
-    int i;
+    transfer_request_all_data                    request_data;
+    hg_return_t                                  ret = HG_SUCCESS;
+    struct pdc_region_info *                     remote_reg_info;
+    int                                          i;
 
     FUNC_ENTER(NULL);
-    //printf("entering transfer_request_all_bulk_transfer_write_cb\n");
+    // printf("entering transfer_request_all_bulk_transfer_write_cb\n");
     remote_reg_info = (struct pdc_region_info *)malloc(sizeof(struct pdc_region_info));
 
     parse_bulk_data(local_bulk_args->data_buf, &request_data, PDC_WRITE);
-    //print_bulk_data(&request_data);
+    // print_bulk_data(&request_data);
 
     pthread_mutex_lock(&transfer_request_status_mutex);
-    for ( i = 0; i < request_data.n_objs; ++i ) {
+    for (i = 0; i < request_data.n_objs; ++i) {
         remote_reg_info->ndim   = request_data.remote_ndim[i];
         remote_reg_info->offset = request_data.remote_offset[i];
-        remote_reg_info->size = request_data.remote_length[i];
+        remote_reg_info->size   = request_data.remote_length[i];
 #ifdef PDC_SERVER_CACHE
-        PDC_transfer_request_data_write_out(request_data.obj_id[i], request_data.obj_ndim[i], request_data.obj_dims[i],
-                                            remote_reg_info, (void *)request_data.data_buf[i],
-                                            request_data.unit[i]);
+        PDC_transfer_request_data_write_out(request_data.obj_id[i], request_data.obj_ndim[i],
+                                            request_data.obj_dims[i], remote_reg_info,
+                                            (void *)request_data.data_buf[i], request_data.unit[i]);
 #else
-        PDC_Server_transfer_request_io(request_data.obj_id[i], request_data.obj_ndim[i], request_data.obj_dims[i],
-                                       remote_reg_info, (void *)request_data.data_buf[i],
-                                       request_data.unit[i], 1);
+        PDC_Server_transfer_request_io(request_data.obj_id[i], request_data.obj_ndim[i],
+                                       request_data.obj_dims[i], remote_reg_info,
+                                       (void *)request_data.data_buf[i], request_data.unit[i], 1);
 #endif
 
         PDC_finish_request(local_bulk_args->transfer_request_id[i]);
@@ -5449,71 +5462,74 @@ HG_TEST_RPC_CB(transfer_request_wait, handle)
 HG_TEST_RPC_CB(transfer_request_all, handle)
 {
     struct transfer_request_all_local_bulk_args *local_bulk_args;
-    size_t total_mem_size;
-    const struct hg_info *                   info;
-    transfer_request_all_in_t  in;
-    transfer_request_all_out_t out;
-    hg_return_t                 ret_value = HG_SUCCESS;
-    int i;
+    size_t                                       total_mem_size;
+    const struct hg_info *                       info;
+    transfer_request_all_in_t                    in;
+    transfer_request_all_out_t                   out;
+    hg_return_t                                  ret_value = HG_SUCCESS;
+    int                                          i;
     FUNC_ENTER(NULL);
 
     HG_Get_input(handle, &in);
 
     info = HG_Get_info(handle);
 
-    total_mem_size = in.total_buf_size;
-    local_bulk_args =
-        (struct transfer_request_all_local_bulk_args *)malloc(sizeof(struct transfer_request_all_local_bulk_args));
+    total_mem_size  = in.total_buf_size;
+    local_bulk_args = (struct transfer_request_all_local_bulk_args *)malloc(
+        sizeof(struct transfer_request_all_local_bulk_args));
 
     // Read will return to client in the first call back (after metadata for region request is received)
     if (in.access_type == PDC_READ) {
-        local_bulk_args->handle              = handle;
+        local_bulk_args->handle = handle;
     }
     local_bulk_args->total_mem_size      = total_mem_size;
     local_bulk_args->data_buf            = malloc(total_mem_size);
     local_bulk_args->in                  = in;
-    local_bulk_args->transfer_request_id = (uint64_t*) malloc(sizeof(uint64_t) * in.n_objs);
+    local_bulk_args->transfer_request_id = (uint64_t *)malloc(sizeof(uint64_t) * in.n_objs);
 
     pthread_mutex_lock(&transfer_request_id_mutex);
-    for ( i = 0; i < in.n_objs; ++i) {
+    for (i = 0; i < in.n_objs; ++i) {
         local_bulk_args->transfer_request_id[i] = PDC_transfer_request_id_register();
     }
     pthread_mutex_unlock(&transfer_request_id_mutex);
 
     pthread_mutex_lock(&transfer_request_status_mutex);
     // Metadata ID is in ascending order. We only need to return the first value, the client knows the size.
-    for ( i = 0; i < in.n_objs; ++i) {
+    for (i = 0; i < in.n_objs; ++i) {
         PDC_commit_request(local_bulk_args->transfer_request_id[i]);
     }
     out.metadata_id = local_bulk_args->transfer_request_id[0];
     pthread_mutex_unlock(&transfer_request_status_mutex);
-    if ( in.access_type == PDC_WRITE ) {
-        // Write operation receives everything in the callback, so we can free the handle and respond to user here.
+    if (in.access_type == PDC_WRITE) {
+        // Write operation receives everything in the callback, so we can free the handle and respond to user
+        // here.
         ret_value = HG_Bulk_create(info->hg_class, 1, &(local_bulk_args->data_buf),
                                    &(local_bulk_args->total_mem_size), HG_BULK_READWRITE,
                                    &(local_bulk_args->bulk_handle));
-        ret_value = HG_Bulk_transfer(info->context, transfer_request_all_bulk_transfer_write_cb, local_bulk_args,
-                                     HG_BULK_PULL, info->addr, in.local_bulk_handle, 0,
+        ret_value = HG_Bulk_transfer(info->context, transfer_request_all_bulk_transfer_write_cb,
+                                     local_bulk_args, HG_BULK_PULL, info->addr, in.local_bulk_handle, 0,
                                      local_bulk_args->bulk_handle, 0, total_mem_size, HG_OP_ID_IGNORE);
-    } else {
-        // Read operation has to receive region metadata first. There will be another bulk transfer triggered in the callback.
+    }
+    else {
+        // Read operation has to receive region metadata first. There will be another bulk transfer triggered
+        // in the callback.
         ret_value = HG_Bulk_create(info->hg_class, 1, &(local_bulk_args->data_buf),
                                    &(local_bulk_args->total_mem_size), HG_BULK_READWRITE,
                                    &(local_bulk_args->bulk_handle));
-        ret_value = HG_Bulk_transfer(info->context, transfer_request_all_bulk_transfer_read_cb, local_bulk_args,
-                                     HG_BULK_PULL, info->addr, in.local_bulk_handle, 0,
+        ret_value = HG_Bulk_transfer(info->context, transfer_request_all_bulk_transfer_read_cb,
+                                     local_bulk_args, HG_BULK_PULL, info->addr, in.local_bulk_handle, 0,
                                      local_bulk_args->bulk_handle, 0, total_mem_size, HG_OP_ID_IGNORE);
     }
 
-    out.ret    = 1;
-    ret_value  = HG_Respond(handle, NULL, NULL, &out);
-    if ( in.access_type == PDC_WRITE ) {
+    out.ret   = 1;
+    ret_value = HG_Respond(handle, NULL, NULL, &out);
+    if (in.access_type == PDC_WRITE) {
         HG_Free_input(handle, &in);
         HG_Destroy(handle);
     }
 
     fflush(stdout);
-    FUNC_LEAVE(ret_value);         
+    FUNC_LEAVE(ret_value);
 }
 
 /* static hg_return_t */
@@ -6681,12 +6697,12 @@ get_storage_meta_bulk_cb(const struct hg_cb_info *hg_cb_info)
 
     hg_return_t ret_value = HG_SUCCESS;
     // Server executes after received request from client
-    struct bulk_args_t *    bulk_args         = (struct bulk_args_t *)hg_cb_info->arg;
-    hg_bulk_t               local_bulk_handle = hg_cb_info->info.bulk.local_handle;
-    int                     i, task_id, n_regions;
-    int *                   int_ptr;
-    char *                  char_ptr, *file_path;
-    uint64_t *              uint64_ptr, offset;
+    struct bulk_args_t *bulk_args         = (struct bulk_args_t *)hg_cb_info->arg;
+    hg_bulk_t           local_bulk_handle = hg_cb_info->info.bulk.local_handle;
+    int                 i, task_id, n_regions;
+    int *               int_ptr;
+    char *              char_ptr, *file_path;
+    uint64_t *          uint64_ptr, offset;
 
     void *                  buf;
     region_info_transfer_t *region_info_ptr;

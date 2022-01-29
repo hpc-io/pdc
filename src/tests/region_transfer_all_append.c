@@ -230,7 +230,6 @@ main(int argc, char **argv)
     if (ret != SUCCEED) {
         printf("Fail to region transfer start @ line %d\n", __LINE__);
         ret_value = 1;
-
     }
     ret = PDCregion_transfer_wait_all(transfer_request, OBJ_NUM * REQ_SIZE);
     if (ret != SUCCEED) {

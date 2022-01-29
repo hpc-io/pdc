@@ -206,7 +206,7 @@ PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_
         /* struct _pdc_cont_info field */
         cont_info = (struct _pdc_cont_info *)(id_info->obj_ptr);
 
-        p->cont   = PDC_CALLOC(struct _pdc_cont_info);
+        p->cont = PDC_CALLOC(struct _pdc_cont_info);
         if (!p->cont)
             PGOTO_ERROR(0, "PDC object container memory allocation failed");
         memcpy(p->cont, cont_info, sizeof(struct _pdc_cont_info));

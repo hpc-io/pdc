@@ -782,13 +782,13 @@ typedef struct {
 
 /* Define transfer_request_all_in_t */
 typedef struct transfer_request_all_in_t {
-    hg_bulk_t              local_bulk_handle;
-    hg_bulk_t              local_bulk_handle2;
-    uint64_t               transfer_request_id;
-    uint64_t               total_buf_size;
-    int32_t                n_objs;
-    uint32_t               meta_server_id;
-    uint8_t access_type;
+    hg_bulk_t local_bulk_handle;
+    hg_bulk_t local_bulk_handle2;
+    uint64_t  transfer_request_id;
+    uint64_t  total_buf_size;
+    int32_t   n_objs;
+    uint32_t  meta_server_id;
+    uint8_t   access_type;
 } transfer_request_all_in_t;
 
 /* Define transfer_request_all_out_t */
@@ -2490,14 +2490,14 @@ hg_proc_transfer_request_status_out_t(hg_proc_t proc, void *data)
 static HG_INLINE hg_return_t
 hg_proc_transfer_request_all_in_t(hg_proc_t proc, void *data)
 {
-    hg_return_t                 ret;
+    hg_return_t                ret;
     transfer_request_all_in_t *struct_data = (transfer_request_all_in_t *)data;
-    ret                                = hg_proc_hg_bulk_t(proc, &struct_data->local_bulk_handle);
+    ret                                    = hg_proc_hg_bulk_t(proc, &struct_data->local_bulk_handle);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret                                = hg_proc_hg_bulk_t(proc, &struct_data->local_bulk_handle2);
+    ret = hg_proc_hg_bulk_t(proc, &struct_data->local_bulk_handle2);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
@@ -2534,7 +2534,7 @@ hg_proc_transfer_request_all_in_t(hg_proc_t proc, void *data)
 static HG_INLINE hg_return_t
 hg_proc_transfer_request_all_out_t(hg_proc_t proc, void *data)
 {
-    hg_return_t                  ret;
+    hg_return_t                 ret;
     transfer_request_all_out_t *struct_data = (transfer_request_all_out_t *)data;
     // printf("Output argument: transfer_request_all for status @ line %d\n", __LINE__);
     ret = hg_proc_uint64_t(proc, &struct_data->metadata_id);
@@ -3553,37 +3553,36 @@ typedef struct transfer_request_all_data {
     uint64_t **obj_dims;
     uint64_t **remote_offset;
     uint64_t **remote_length;
-    pdcid_t *obj_id;
-    int *obj_ndim;
-    size_t *unit;
-    int *remote_ndim;
-    char **data_buf;
-    int n_objs;
+    pdcid_t *  obj_id;
+    int *      obj_ndim;
+    size_t *   unit;
+    int *      remote_ndim;
+    char **    data_buf;
+    int        n_objs;
 } transfer_request_all_data;
 
 struct transfer_request_all_local_bulk_args {
-    hg_handle_t           handle;
-    hg_bulk_t             bulk_handle;
+    hg_handle_t               handle;
+    hg_bulk_t                 bulk_handle;
     transfer_request_all_in_t in;
-    uint64_t*              transfer_request_id;
-    void *                data_buf;
-    size_t                total_mem_size;
+    uint64_t *                transfer_request_id;
+    void *                    data_buf;
+    size_t                    total_mem_size;
 #ifdef PDC_TIMING
     double start_time;
 #endif
 };
 
 struct transfer_request_all_local_bulk_args2 {
-    //hg_handle_t           handle;
+    // hg_handle_t           handle;
     transfer_request_all_data request_data;
-    hg_bulk_t             bulk_handle;
-    uint64_t*              transfer_request_id;
-    void *                data_buf;
+    hg_bulk_t                 bulk_handle;
+    uint64_t *                transfer_request_id;
+    void *                    data_buf;
 #ifdef PDC_TIMING
     double start_time;
 #endif
 };
-
 
 struct transfer_request_local_bulk_args {
     hg_handle_t           handle;

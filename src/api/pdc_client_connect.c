@@ -346,10 +346,10 @@ done:
 static hg_return_t
 client_send_transfer_request_all_rpc_cb(const struct hg_cb_info *callback_info)
 {
-    hg_return_t                        ret_value = HG_SUCCESS;
-    hg_handle_t                        handle;
+    hg_return_t                            ret_value = HG_SUCCESS;
+    hg_handle_t                            handle;
     struct _pdc_transfer_request_all_args *region_transfer_args;
-    transfer_request_all_out_t         output;
+    transfer_request_all_out_t             output;
 
     FUNC_ENTER(NULL);
 
@@ -2102,7 +2102,8 @@ PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_step, pdc
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
     *out = lookup_args.data;
-    //printf("rank = %d, PDC_Client_query_metadata_name_timestep = %u\n", pdc_client_mpi_rank_g, out[0]->data_server_id);
+    // printf("rank = %d, PDC_Client_query_metadata_name_timestep = %u\n", pdc_client_mpi_rank_g,
+    // out[0]->data_server_id);
 done:
     fflush(stdout);
     HG_Destroy(metadata_query_handle);
@@ -2300,14 +2301,15 @@ PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj
 
     // Fill input structure
     memset(&in, 0, sizeof(in));
-    in.data.obj_name  = obj_name;
-    in.data.cont_id   = cont_id;
-    in.data.time_step = create_prop->time_step;
-    in.data.user_id   = create_prop->user_id;
-    in.data_type      = create_prop->obj_prop_pub->type;
+    in.data.obj_name       = obj_name;
+    in.data.cont_id        = cont_id;
+    in.data.time_step      = create_prop->time_step;
+    in.data.user_id        = create_prop->user_id;
+    in.data_type           = create_prop->obj_prop_pub->type;
     in.data.data_server_id = PDC_CLIENT_DATA_SERVER();
-    *data_server_id   = in.data.data_server_id;
-    //printf("rank = %d, PDC_Client_send_name_recv_id data_server_id = %u\n", pdc_client_mpi_rank_g, in.data.data_server_id);
+    *data_server_id        = in.data.data_server_id;
+    // printf("rank = %d, PDC_Client_send_name_recv_id data_server_id = %u\n", pdc_client_mpi_rank_g,
+    // in.data.data_server_id);
 
     if ((in.data.ndim = create_prop->obj_prop_pub->ndim) > 0) {
         if (in.data.ndim >= 1)
@@ -2536,8 +2538,10 @@ pack_region_metadata(int ndim, uint64_t *offset, uint64_t *size, region_info_tra
     FUNC_LEAVE(ret_value);
 }
 
-static perr_t pack_region_buffer_copy(char *buf, char *target_buf, uint64_t *obj_dims, int local_ndim,
-                   uint64_t *local_offset, uint64_t *local_size, size_t unit, pdc_access_t access_type) {
+static perr_t
+pack_region_buffer_copy(char *buf, char *target_buf, uint64_t *obj_dims, int local_ndim,
+                        uint64_t *local_offset, uint64_t *local_size, size_t unit, pdc_access_t access_type)
+{
     uint64_t i, j;
     perr_t   ret_value = SUCCEED;
     char *   ptr;
@@ -2548,7 +2552,7 @@ static perr_t pack_region_buffer_copy(char *buf, char *target_buf, uint64_t *obj
                 printf("checkpoint at local copy ndim == 1 local_offset[0] = %lld @ line %d\n",
                        (long long int)local_offset[0], __LINE__);
         */
-        memcpy( target_buf ,buf + local_offset[0] * unit, unit * local_size[0]);
+        memcpy(target_buf, buf + local_offset[0] * unit, unit * local_size[0]);
     }
     else if (local_ndim == 2) {
         if (access_type == PDC_WRITE) {
@@ -2583,8 +2587,9 @@ static perr_t pack_region_buffer_copy(char *buf, char *target_buf, uint64_t *obj
 }
 
 static perr_t
-release_region_buffer_copy(char *buf, char *new_buf, uint64_t *obj_dims, int local_ndim, uint64_t *local_offset,
-                      uint64_t *local_size, size_t unit, pdc_access_t access_type)
+release_region_buffer_copy(char *buf, char *new_buf, uint64_t *obj_dims, int local_ndim,
+                           uint64_t *local_offset, uint64_t *local_size, size_t unit,
+                           pdc_access_t access_type)
 {
     uint64_t i, j;
     perr_t   ret_value = SUCCEED;
@@ -2625,12 +2630,13 @@ release_region_buffer_copy(char *buf, char *new_buf, uint64_t *obj_dims, int loc
 
 static perr_t
 pack_region_buffer(char *buf, char **new_buf, uint64_t *obj_dims, size_t total_data_size, int local_ndim,
-                   uint64_t *local_offset, uint64_t *local_size, size_t unit, pdc_access_t access_type, int** new_buf_ref_ptr, char **read_bulk_buf_ptr)
+                   uint64_t *local_offset, uint64_t *local_size, size_t unit, pdc_access_t access_type,
+                   int **new_buf_ref_ptr, char **read_bulk_buf_ptr)
 {
     uint64_t i, j;
     perr_t   ret_value = SUCCEED;
     char *   ptr;
-    int* new_buf_ref;
+    int *    new_buf_ref;
 
     FUNC_ENTER(NULL);
 
@@ -2639,16 +2645,16 @@ pack_region_buffer(char *buf, char **new_buf, uint64_t *obj_dims, size_t total_d
                 printf("checkpoint at local copy ndim == 1 local_offset[0] = %lld @ line %d\n",
                        (long long int)local_offset[0], __LINE__);
         */
-        *new_buf = buf + local_offset[0] * unit;
-        new_buf_ref = (int*) malloc(sizeof(int));
+        *new_buf         = buf + local_offset[0] * unit;
+        new_buf_ref      = (int *)malloc(sizeof(int));
         *new_buf_ref_ptr = new_buf_ref;
-        *new_buf_ref = 0;
+        *new_buf_ref     = 0;
     }
     else if (local_ndim == 2) {
-        new_buf_ref = (int*) malloc(sizeof(int));
+        new_buf_ref      = (int *)malloc(sizeof(int));
         *new_buf_ref_ptr = new_buf_ref;
-        *new_buf = (char *)malloc(sizeof(char) * total_data_size);
-        new_buf_ref[0] = 1;
+        *new_buf         = (char *)malloc(sizeof(char) * total_data_size);
+        new_buf_ref[0]   = 1;
         if (access_type == PDC_WRITE) {
             ptr = *new_buf;
             for (i = 0; i < local_size[0]; ++i) {
@@ -2659,10 +2665,10 @@ pack_region_buffer(char *buf, char **new_buf, uint64_t *obj_dims, size_t total_d
         }
     }
     else if (local_ndim == 3) {
-        new_buf_ref = (int*) malloc(sizeof(int));
+        new_buf_ref      = (int *)malloc(sizeof(int));
         *new_buf_ref_ptr = new_buf_ref;
-        *new_buf = (char *)malloc(sizeof(char) * total_data_size);
-        new_buf_ref[0] = 1;
+        *new_buf         = (char *)malloc(sizeof(char) * total_data_size);
+        new_buf_ref[0]   = 1;
         if (access_type == PDC_WRITE) {
             ptr = *new_buf;
             for (i = 0; i < local_size[0]; ++i) {
@@ -2680,7 +2686,7 @@ pack_region_buffer(char *buf, char **new_buf, uint64_t *obj_dims, size_t total_d
     else {
         ret_value = FAIL;
     }
-    if ( access_type == PDC_READ ) {
+    if (access_type == PDC_READ) {
         *read_bulk_buf_ptr = *new_buf;
     }
 
@@ -2690,7 +2696,8 @@ pack_region_buffer(char *buf, char **new_buf, uint64_t *obj_dims, size_t total_d
 
 static perr_t
 release_region_buffer(char *buf, char *new_buf, uint64_t *obj_dims, int local_ndim, uint64_t *local_offset,
-                      uint64_t *local_size, size_t unit, pdc_access_t access_type, int* new_buf_ref, char *read_bulk_buf)
+                      uint64_t *local_size, size_t unit, pdc_access_t access_type, int *new_buf_ref,
+                      char *read_bulk_buf)
 {
     uint64_t i, j;
     perr_t   ret_value = SUCCEED;
@@ -2706,9 +2713,9 @@ release_region_buffer(char *buf, char *new_buf, uint64_t *obj_dims, int local_nd
                 ptr += local_size[1] * unit;
             }
         }
-        if ( new_buf_ref[0] ) {
+        if (new_buf_ref[0]) {
             new_buf_ref[0]--;
-            if ( new_buf_ref[0] == 0 ) {
+            if (new_buf_ref[0] == 0) {
                 free(new_buf);
                 free(new_buf_ref);
             }
@@ -2727,26 +2734,28 @@ release_region_buffer(char *buf, char *new_buf, uint64_t *obj_dims, int local_nd
                 }
             }
         }
-        if ( new_buf_ref[0] ) {
+        if (new_buf_ref[0]) {
             new_buf_ref[0]--;
-            if ( new_buf_ref[0] == 0 ) {
+            if (new_buf_ref[0] == 0) {
                 free(new_buf);
                 free(new_buf_ref);
             }
         }
     }
     else if (local_ndim == 1) {
-        if ( new_buf_ref[0] ) {
-            // Entering this block means that the read buffer is generated from an aggregated start_all call. Proceed to one dimensional memory copy in this case.
+        if (new_buf_ref[0]) {
+            // Entering this block means that the read buffer is generated from an aggregated start_all call.
+            // Proceed to one dimensional memory copy in this case.
             if (access_type == PDC_READ) {
                 memcpy(buf + local_offset[0] * unit, read_bulk_buf, local_size[0] * unit);
             }
             new_buf_ref[0]--;
-            if ( new_buf_ref[0] == 0 ) {
+            if (new_buf_ref[0] == 0) {
                 free(new_buf);
                 free(new_buf_ref);
             }
-        } else {
+        }
+        else {
             free(new_buf_ref);
         }
     }
@@ -2758,11 +2767,18 @@ release_region_buffer(char *buf, char *new_buf, uint64_t *obj_dims, int local_nd
     FUNC_LEAVE(ret_value);
 }
 
-static perr_t PDC_Client_pack_all_requests(int n_objs, void **buf, pdcid_t *obj_id, int *obj_ndim, uint64_t **obj_dims, int *local_ndim, uint64_t **local_offset, uint64_t **local_size, int *remote_ndim, uint64_t **remote_offset, uint64_t **remote_size, pdc_var_type_t *mem_type, pdc_access_t access_type, char** bulk_buf_ptr, size_t *total_buf_size_ptr, char **new_buf, int *new_buf_ref, char** read_bulk_buf, size_t *read_bulk_size_ptr) {
-    perr_t                            ret_value = SUCCEED;
-    char *bulk_buf, *ptr, *ptr2 = NULL;
+static perr_t
+PDC_Client_pack_all_requests(int n_objs, void **buf, pdcid_t *obj_id, int *obj_ndim, uint64_t **obj_dims,
+                             int *local_ndim, uint64_t **local_offset, uint64_t **local_size,
+                             int *remote_ndim, uint64_t **remote_offset, uint64_t **remote_size,
+                             pdc_var_type_t *mem_type, pdc_access_t access_type, char **bulk_buf_ptr,
+                             size_t *total_buf_size_ptr, char **new_buf, int *new_buf_ref,
+                             char **read_bulk_buf, size_t *read_bulk_size_ptr)
+{
+    perr_t ret_value = SUCCEED;
+    char * bulk_buf, *ptr, *ptr2 = NULL;
     size_t total_buf_size, obj_data_size, total_obj_data_size, unit, data_size, metadata_size;
-    int i, j;
+    int    i, j;
 
     FUNC_ENTER(NULL);
     *new_buf_ref = n_objs;
@@ -2776,8 +2792,8 @@ static perr_t PDC_Client_pack_all_requests(int n_objs, void **buf, pdcid_t *obj_
      *     obj_ndim: sizeof(int)
      *     remote remote_ndim: sizeof(int)
      *     unit: sizeof(size_t)
-    */
-    metadata_size = sizeof(int) + n_objs * ( sizeof(pdcid_t) + sizeof(int) * 2 + sizeof(size_t) );
+     */
+    metadata_size = sizeof(int) + n_objs * (sizeof(pdcid_t) + sizeof(int) * 2 + sizeof(size_t));
 
     // Data size, including region offsets/length pairs and actual data for I/O.
     /*
@@ -2786,59 +2802,63 @@ static perr_t PDC_Client_pack_all_requests(int n_objs, void **buf, pdcid_t *obj_
      *     remote region length: size(uint64_t) * remote_ndim
      *     obj_dims: size(uint64_t) * remote_ndim
      *     buf: computed from region length (summed up)
-    */
-    data_size = 0;
+     */
+    data_size           = 0;
     total_obj_data_size = 0;
-    for ( i = 0; i < n_objs; ++i ) {
+    for (i = 0; i < n_objs; ++i) {
         obj_data_size = remote_size[i][0] * PDC_get_var_type_size(mem_type[i]);
-        for ( j = 1; j < remote_ndim[i]; ++j ) {
+        for (j = 1; j < remote_ndim[i]; ++j) {
             obj_data_size *= remote_size[i][j];
         }
         if (access_type == PDC_WRITE) {
             data_size += sizeof(uint64_t) * remote_ndim[i] * 3 + obj_data_size;
-        } else {
+        }
+        else {
             total_obj_data_size += obj_data_size;
             data_size += sizeof(uint64_t) * remote_ndim[i] * 3;
         }
     }
     if (access_type == PDC_WRITE) {
         total_buf_size = metadata_size + data_size;
-    } else {
-        if ( metadata_size + data_size < total_obj_data_size ) {
+    }
+    else {
+        if (metadata_size + data_size < total_obj_data_size) {
             total_buf_size = total_obj_data_size;
-        } else {
+        }
+        else {
             total_buf_size = metadata_size + data_size;
         }
     }
-    bulk_buf = (char*) malloc(total_buf_size);
+    bulk_buf      = (char *)malloc(total_buf_size);
     *bulk_buf_ptr = bulk_buf;
-    ptr = bulk_buf;
-    if ( access_type == PDC_READ ) {
+    ptr           = bulk_buf;
+    if (access_type == PDC_READ) {
         ptr2 = bulk_buf;
     }
     // Pack metadata
-#define MEMCPY_INC(a,b) {                  \
-    memcpy(ptr, a, b);                     \
-    ptr += b;                              \
-}
+#define MEMCPY_INC(a, b)                                                                                     \
+    {                                                                                                        \
+        memcpy(ptr, a, b);                                                                                   \
+        ptr += b;                                                                                            \
+    }
     MEMCPY_INC(&n_objs, sizeof(int));
-    for ( i = 0; i < n_objs; ++i ) {
+    for (i = 0; i < n_objs; ++i) {
         unit = PDC_get_var_type_size(mem_type[i]);
         MEMCPY_INC(obj_id + i, sizeof(pdcid_t));
         MEMCPY_INC(obj_ndim + i, sizeof(int));
         MEMCPY_INC(remote_ndim + i, sizeof(int));
         MEMCPY_INC(&unit, sizeof(size_t));
     }
-    if ( access_type == PDC_READ ) {
+    if (access_type == PDC_READ) {
         *read_bulk_size_ptr = 0;
     }
-    for ( i = 0; i < n_objs; ++i ) {
-        unit = PDC_get_var_type_size(mem_type[i]);
+    for (i = 0; i < n_objs; ++i) {
+        unit          = PDC_get_var_type_size(mem_type[i]);
         obj_data_size = remote_size[i][0] * unit;
-        for ( j = 1; j < remote_ndim[i]; ++j ) {
+        for (j = 1; j < remote_ndim[i]; ++j) {
             obj_data_size *= remote_size[i][j];
         }
-        if ( access_type == PDC_READ ) {
+        if (access_type == PDC_READ) {
             *read_bulk_size_ptr += obj_data_size;
             read_bulk_buf[i] = ptr2;
             ptr2 += obj_data_size;
@@ -2848,8 +2868,8 @@ static perr_t PDC_Client_pack_all_requests(int n_objs, void **buf, pdcid_t *obj_
         MEMCPY_INC(obj_dims[i], sizeof(uint64_t) * obj_ndim[i]);
         if (access_type == PDC_WRITE) {
             // Write will pack from local region to ptr according to buf.
-            pack_region_buffer_copy(buf[i], ptr, obj_dims[i], local_ndim[i],
-                   local_offset[i], local_size[i], unit, access_type);
+            pack_region_buffer_copy(buf[i], ptr, obj_dims[i], local_ndim[i], local_offset[i], local_size[i],
+                                    unit, access_type);
             ptr += obj_data_size;
         }
         new_buf[i] = bulk_buf;
@@ -2860,10 +2880,11 @@ static perr_t PDC_Client_pack_all_requests(int n_objs, void **buf, pdcid_t *obj_
 }
 
 perr_t
-PDC_Client_transfer_request_all(int n_objs, void **buf, uint32_t data_server_id, pdcid_t *obj_id, int *obj_ndim, uint64_t **obj_dims, int *local_ndim,
-                            uint64_t **local_offset, uint64_t **local_size, int *remote_ndim,
-                            uint64_t **remote_offset, uint64_t **remote_size, pdc_var_type_t *mem_type,
-                            pdc_access_t access_type, pdcid_t *metadata_id, char** read_bulk_buf, char **new_buf, int *new_buf_ref)
+PDC_Client_transfer_request_all(int n_objs, void **buf, uint32_t data_server_id, pdcid_t *obj_id,
+                                int *obj_ndim, uint64_t **obj_dims, int *local_ndim, uint64_t **local_offset,
+                                uint64_t **local_size, int *remote_ndim, uint64_t **remote_offset,
+                                uint64_t **remote_size, pdc_var_type_t *mem_type, pdc_access_t access_type,
+                                pdcid_t *metadata_id, char **read_bulk_buf, char **new_buf, int *new_buf_ref)
 {
     perr_t                            ret_value = SUCCEED;
     hg_return_t                       hg_ret    = HG_SUCCESS;
@@ -2882,10 +2903,13 @@ PDC_Client_transfer_request_all(int n_objs, void **buf, uint32_t data_server_id,
         ret_value = FAIL;
         printf("Invalid PDC type in function PDC_Client_transfer_request_all @ %d\n", __LINE__);
         goto done;
-    }   
-    in.n_objs = n_objs;
+    }
+    in.n_objs      = n_objs;
     in.access_type = access_type;
-    PDC_Client_pack_all_requests(n_objs, buf, obj_id, obj_ndim, obj_dims, local_ndim, local_offset, local_size, remote_ndim, remote_offset, remote_size, mem_type, access_type, &bulk_buf, &(in.total_buf_size), new_buf, new_buf_ref, read_bulk_buf, &read_bulk_size);
+    PDC_Client_pack_all_requests(n_objs, buf, obj_id, obj_ndim, obj_dims, local_ndim, local_offset,
+                                 local_size, remote_ndim, remote_offset, remote_size, mem_type, access_type,
+                                 &bulk_buf, &(in.total_buf_size), new_buf, new_buf_ref, read_bulk_buf,
+                                 &read_bulk_size);
 
     // Compute metadata server id
     meta_server_id    = PDC_get_server_by_obj_id(obj_id[0], pdc_server_num_g);
@@ -2899,20 +2923,20 @@ PDC_Client_transfer_request_all(int n_objs, void **buf, uint32_t data_server_id,
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
                     pdc_client_mpi_rank_g, __LINE__);
 
-    hg_ret = HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr, transfer_request_all_register_id_g,
-                       &client_send_transfer_request_all_handle);
+    hg_ret = HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr,
+                       transfer_request_all_register_id_g, &client_send_transfer_request_all_handle);
 
     // Create bulk handles
     // For sending metadata
-    hg_ret = HG_Bulk_create(hg_class, 1, (void **)&bulk_buf, (hg_size_t *)&(in.total_buf_size), HG_BULK_READWRITE,
-                            &(in.local_bulk_handle));
+    hg_ret = HG_Bulk_create(hg_class, 1, (void **)&bulk_buf, (hg_size_t *)&(in.total_buf_size),
+                            HG_BULK_READWRITE, &(in.local_bulk_handle));
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL,
                     "PDC_Client_transfer_request(): Could not create local bulk data handle @ line %d\n",
                     __LINE__);
     // For receiving data
-    hg_ret = HG_Bulk_create(hg_class, 1, (void **)&bulk_buf, (hg_size_t *)&(read_bulk_size), HG_BULK_READWRITE,
-                            &(in.local_bulk_handle2));
+    hg_ret = HG_Bulk_create(hg_class, 1, (void **)&bulk_buf, (hg_size_t *)&(read_bulk_size),
+                            HG_BULK_READWRITE, &(in.local_bulk_handle2));
 
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL,
@@ -2933,7 +2957,7 @@ PDC_Client_transfer_request_all(int n_objs, void **buf, uint32_t data_server_id,
 
                __LINE__);
     */
-    for ( i = 0; i < n_objs; ++i ) {
+    for (i = 0; i < n_objs; ++i) {
         metadata_id[i] = transfer_args.metadata_id + i;
     }
     if (transfer_args.ret != 1)
@@ -2946,10 +2970,11 @@ done:
 }
 
 perr_t
-PDC_Client_transfer_request(void *buf, pdcid_t obj_id, uint32_t data_server_id, int obj_ndim, uint64_t *obj_dims, int local_ndim,
-                            uint64_t *local_offset, uint64_t *local_size, int remote_ndim,
-                            uint64_t *remote_offset, uint64_t *remote_size, pdc_var_type_t mem_type,
-                            pdc_access_t access_type, pdcid_t *metadata_id, char** read_bulk_buf_ptr, char **new_buf_ptr, int** new_buf_ref_ptr)
+PDC_Client_transfer_request(void *buf, pdcid_t obj_id, uint32_t data_server_id, int obj_ndim,
+                            uint64_t *obj_dims, int local_ndim, uint64_t *local_offset, uint64_t *local_size,
+                            int remote_ndim, uint64_t *remote_offset, uint64_t *remote_size,
+                            pdc_var_type_t mem_type, pdc_access_t access_type, pdcid_t *metadata_id,
+                            char **read_bulk_buf_ptr, char **new_buf_ptr, int **new_buf_ref_ptr)
 {
     perr_t                            ret_value = SUCCEED;
     hg_return_t                       hg_ret    = HG_SUCCESS;
@@ -2974,7 +2999,8 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, uint32_t data_server_id, 
         goto done;
     }
 
-    //printf("rank = %d, PDC_Client_transfer_request_start data_server_id = %u\n", pdc_client_mpi_rank_g, data_server_id);
+    // printf("rank = %d, PDC_Client_transfer_request_start data_server_id = %u\n", pdc_client_mpi_rank_g,
+    // data_server_id);
     in.access_type = access_type;
 
     // Compute metadata server id
@@ -3078,9 +3104,11 @@ done:
 }
 
 perr_t
-PDC_Client_transfer_request_status(pdcid_t transfer_request_id, uint32_t data_server_id, pdc_transfer_status_t *completed, char *buf,
-                                   char *new_buf, uint64_t *obj_dims, int local_ndim, uint64_t *local_offset,
-                                   uint64_t *local_size, pdc_var_type_t mem_type, pdc_access_t access_type, char* read_bulk_buf, int* new_buf_ref)
+PDC_Client_transfer_request_status(pdcid_t transfer_request_id, uint32_t data_server_id,
+                                   pdc_transfer_status_t *completed, char *buf, char *new_buf,
+                                   uint64_t *obj_dims, int local_ndim, uint64_t *local_offset,
+                                   uint64_t *local_size, pdc_var_type_t mem_type, pdc_access_t access_type,
+                                   char *read_bulk_buf, int *new_buf_ref)
 {
     perr_t                                   ret_value = SUCCEED;
     hg_return_t                              hg_ret    = HG_SUCCESS;
@@ -3114,8 +3142,8 @@ PDC_Client_transfer_request_status(pdcid_t transfer_request_id, uint32_t data_se
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
     if (transfer_args.status == PDC_TRANSFER_STATUS_COMPLETE) {
-        release_region_buffer(buf, new_buf, obj_dims, local_ndim, local_offset, local_size, unit,
-                              access_type, new_buf_ref, read_bulk_buf);
+        release_region_buffer(buf, new_buf, obj_dims, local_ndim, local_offset, local_size, unit, access_type,
+                              new_buf_ref, read_bulk_buf);
     }
 
     if (transfer_args.ret != 1)
@@ -3129,9 +3157,10 @@ done:
 }
 
 perr_t
-PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_server_id, int access_type, char *buf, char *new_buf,
-                                 uint64_t *obj_dims, int local_ndim, uint64_t *local_offset,
-                                 uint64_t *local_size, pdc_var_type_t mem_type, char* read_bulk_buf, int *new_buf_ref)
+PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_server_id, int access_type,
+                                 char *buf, char *new_buf, uint64_t *obj_dims, int local_ndim,
+                                 uint64_t *local_offset, uint64_t *local_size, pdc_var_type_t mem_type,
+                                 char *read_bulk_buf, int *new_buf_ref)
 
 {
     perr_t                                 ret_value = SUCCEED;
@@ -3147,7 +3176,8 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_serv
     double function_start = start;
 #endif
 
-    //printf("rank = %d, PDC_Client_transfer_request_wait data_server_id = %u\n", pdc_client_mpi_rank_g, data_server_id);
+    // printf("rank = %d, PDC_Client_transfer_request_wait data_server_id = %u\n", pdc_client_mpi_rank_g,
+    // data_server_id);
 
     debug_server_id_count[data_server_id]++;
 
@@ -3186,8 +3216,8 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_serv
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
     if (transfer_args.status == PDC_TRANSFER_STATUS_COMPLETE) {
-        release_region_buffer(buf, new_buf, obj_dims, local_ndim, local_offset, local_size, unit,
-                              access_type, new_buf_ref, read_bulk_buf);
+        release_region_buffer(buf, new_buf, obj_dims, local_ndim, local_offset, local_size, unit, access_type,
+                              new_buf_ref, read_bulk_buf);
     }
 #ifdef PDC_TIMING
     end = MPI_Wtime();
@@ -4660,7 +4690,7 @@ PDC_Client_data_server_write(struct pdc_request *request)
     struct pdc_region_info *       region;
     void *                         buf;
 
-    int                            rnd;
+    int rnd;
 #ifdef ENABLE_TIMING
     struct timeval pdc_timer_start;
     struct timeval pdc_timer_end;
@@ -4844,7 +4874,6 @@ PDC_wait(struct pdc_request *request, unsigned long max_wait_ms, unsigned long c
     perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
-
 
     ret_value = PDC_Client_wait(request, max_wait_ms, check_interval_ms);
 
@@ -5713,8 +5742,8 @@ done:
 }
 
 perr_t
-PDC_Client_attach_metadata_to_local_obj(const char *obj_name, uint64_t obj_id, uint64_t cont_id, uint32_t data_server_id,
-                                        struct _pdc_obj_info *obj_info)
+PDC_Client_attach_metadata_to_local_obj(const char *obj_name, uint64_t obj_id, uint64_t cont_id,
+                                        uint32_t data_server_id, struct _pdc_obj_info *obj_info)
 {
     perr_t ret_value = SUCCEED;
 
@@ -5726,10 +5755,10 @@ PDC_Client_attach_metadata_to_local_obj(const char *obj_name, uint64_t obj_id, u
         strcpy(((pdc_metadata_t *)obj_info->metadata)->app_name, obj_info->obj_pt->app_name);
     if (NULL != obj_name)
         strcpy(((pdc_metadata_t *)obj_info->metadata)->obj_name, obj_name);
-    ((pdc_metadata_t *)obj_info->metadata)->time_step = obj_info->obj_pt->time_step;
-    ((pdc_metadata_t *)obj_info->metadata)->obj_id    = obj_id;
-    ((pdc_metadata_t *)obj_info->metadata)->cont_id   = cont_id;
-    ((pdc_metadata_t *)obj_info->metadata)->data_server_id   = data_server_id;
+    ((pdc_metadata_t *)obj_info->metadata)->time_step      = obj_info->obj_pt->time_step;
+    ((pdc_metadata_t *)obj_info->metadata)->obj_id         = obj_id;
+    ((pdc_metadata_t *)obj_info->metadata)->cont_id        = cont_id;
+    ((pdc_metadata_t *)obj_info->metadata)->data_server_id = data_server_id;
     if (NULL != obj_info->obj_pt->tags)
         strcpy(((pdc_metadata_t *)obj_info->metadata)->tags, obj_info->obj_pt->tags);
     if (NULL != obj_info->obj_pt->data_loc)
