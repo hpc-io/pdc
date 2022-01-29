@@ -43,6 +43,10 @@ configure_file(
   ${CMAKE_CURRENT_BINARY_DIR}/pdc_config.h
 )
 
+if(PDC_ENABLE_TIMING)
+    add_definitions(-DPDC_TIMING=1)
+endif()
+
 #------------------------------------------------------------------------------
 # Set sources
 #------------------------------------------------------------------------------
