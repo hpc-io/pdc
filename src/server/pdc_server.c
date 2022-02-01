@@ -1842,6 +1842,7 @@ PDC_Server_mercury_register()
     // Mapping
     PDC_transfer_request_register(hg_class_g);
     PDC_transfer_request_all_register(hg_class_g);
+    PDC_transfer_request_wait_all_register(hg_class_g);
     PDC_transfer_request_wait_register(hg_class_g);
     PDC_transfer_request_status_register(hg_class_g);
     PDC_buf_map_register(hg_class_g);

@@ -67,6 +67,7 @@ typedef struct pdc_transfer_request {
     int       obj_ndim;
     uint64_t *obj_dims;
 
+    struct _pdc_obj_info *  obj_pointer;
 } pdc_transfer_request;
 
 typedef enum {

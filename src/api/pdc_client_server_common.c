@@ -3851,6 +3851,7 @@ HG_TEST_RPC_CB(transform_region_release, handle)
                         buf_map_bulk_args->remote_client_id   = eltt->remote_client_id;
                         buf_map_bulk_args->remote_bulk_handle = remote_bulk_handle;
 #ifdef ENABLE_MULTITHREAD
+
                         hg_thread_mutex_init(&(buf_map_bulk_args->work_mutex));
                         hg_thread_cond_init(&(buf_map_bulk_args->work_cond));
 #endif
@@ -4715,7 +4716,8 @@ PDC_commit_request(uint64_t transfer_request_id)
         transfer_request_status_list =
             (pdc_transfer_request_status *)malloc(sizeof(pdc_transfer_request_status));
         transfer_request_status_list->status              = PDC_TRANSFER_STATUS_PENDING;
-        transfer_request_status_list->set_handle          = 0;
+        transfer_request_status_list->handle_ref          = NULL;
+        transfer_request_status_list->out_type            = -1;
         transfer_request_status_list->transfer_request_id = transfer_request_id;
         transfer_request_status_list->next                = NULL;
         transfer_request_status_list_end                  = transfer_request_status_list;
@@ -4724,7 +4726,8 @@ PDC_commit_request(uint64_t transfer_request_id)
         ptr                   = transfer_request_status_list_end;
         ptr->next             = (pdc_transfer_request_status *)malloc(sizeof(pdc_transfer_request_status));
         ptr->next->status     = PDC_TRANSFER_STATUS_PENDING;
-        ptr->next->set_handle = 0;
+        ptr->next->handle_ref          = NULL;
+        ptr->next->out_type            = -1;
         ptr->next->transfer_request_id   = transfer_request_id;
         ptr->next->next                  = NULL;
         transfer_request_status_list_end = ptr->next;
@@ -4745,6 +4748,7 @@ PDC_finish_request(uint64_t transfer_request_id)
     pdc_transfer_request_status *ptr, *tmp = NULL;
     perr_t                       ret_value = SUCCEED;
     transfer_request_wait_out_t  out;
+    transfer_request_wait_all_out_t  out_all;
 
     FUNC_ENTER(NULL);
 
@@ -4752,13 +4756,24 @@ PDC_finish_request(uint64_t transfer_request_id)
     while (ptr != NULL) {
         if (ptr->transfer_request_id == transfer_request_id) {
             ptr->status = PDC_TRANSFER_STATUS_COMPLETE;
-            if (ptr->set_handle) {
+            if (ptr->handle_ref != NULL) {
                 /* Wait request is going to be returned, so we are not expecting any further checks for the
                  * current request. Immediately eject the current transfer request out of the list.*/
-                out.ret    = 1;
-                out.status = PDC_TRANSFER_STATUS_COMPLETE;
-                ret_value  = HG_Respond(ptr->handle, NULL, NULL, &out);
-                HG_Destroy(ptr->handle);
+                ptr->handle_ref[0]--;
+                if (!ptr->handle_ref[0]) {
+                    if ( ptr->out_type == -1 ) {
+                        printf("PDC SERVER PDC_finish_request out type unset error %d\n", __LINE__);
+                    }
+                    if ( ptr->out_type ) {
+                        out_all.ret    = 1;
+                        ret_value  = HG_Respond(ptr->handle, NULL, NULL, &out_all);
+                    } else {
+                        out.ret    = 1;
+                        ret_value  = HG_Respond(ptr->handle, NULL, NULL, &out);
+                    }
+                    HG_Destroy(ptr->handle);
+                    free(ptr->handle_ref);
+                }
                 if (tmp != NULL) {
                     /* Case for removing the any nodes but the first one. */
                     tmp->next = ptr->next;
@@ -4806,6 +4821,10 @@ PDC_check_request(uint64_t transfer_request_id)
     while (ptr != NULL) {
         if (ptr->transfer_request_id == transfer_request_id) {
             ret_value = ptr->status;
+            if (ptr->handle_ref != NULL) {
+                ret_value = PDC_TRANSFER_STATUS_COMPLETE;
+                return ret_value;
+            }
             if (ret_value == PDC_TRANSFER_STATUS_COMPLETE) {
                 if (tmp != NULL) {
                     /* Case for removing the any nodes but the first one. */
@@ -4843,7 +4862,7 @@ PDC_check_request(uint64_t transfer_request_id)
  * is called. Thread-safe function, lock required ahead of time.
  */
 static pdc_transfer_status_t
-PDC_try_finish_request(uint64_t transfer_request_id, hg_handle_t handle)
+PDC_try_finish_request(uint64_t transfer_request_id, hg_handle_t handle, int* handle_ref, int out_type)
 {
     pdc_transfer_request_status *ptr;
     pdc_transfer_status_t        ret_value = PDC_TRANSFER_STATUS_NOT_FOUND;
@@ -4853,7 +4872,9 @@ PDC_try_finish_request(uint64_t transfer_request_id, hg_handle_t handle)
     while (ptr != NULL) {
         if (ptr->transfer_request_id == transfer_request_id) {
             ptr->handle     = handle;
-            ptr->set_handle = 1;
+            ptr->out_type = out_type;
+            ptr->handle_ref = handle_ref;
+            handle_ref[0]++;
             break;
         }
         ptr = ptr->next;
@@ -5032,7 +5053,7 @@ clean_write_bulk_data(transfer_request_all_data *request_data)
     free(request_data->data_buf);
     return 0;
 }
-
+/*
 static int
 print_bulk_data(transfer_request_all_data *request_data)
 {
@@ -5051,7 +5072,7 @@ print_bulk_data(transfer_request_all_data *request_data)
     }
     return 0;
 }
-
+*/
 static int
 parse_bulk_data(void *buf, transfer_request_all_data *request_data, pdc_access_t access_type)
 {
@@ -5060,12 +5081,10 @@ parse_bulk_data(void *buf, transfer_request_all_data *request_data, pdc_access_t
     uint64_t data_size;
 
     // preallocate arrays of size number of objects
-    request_data->n_objs = *((int *)ptr);
-    ptr += sizeof(int);
-    request_data->obj_id        = (pdcid_t *)malloc(sizeof(pdcid_t) * request_data->n_objs);
-    request_data->obj_ndim      = (int *)malloc(sizeof(int) * request_data->n_objs);
-    request_data->remote_ndim   = (int *)malloc(sizeof(int) * request_data->n_objs);
-    request_data->remote_offset = (uint64_t **)malloc(sizeof(uint64_t *) * request_data->n_objs * 3);
+    request_data->obj_id = (pdcid_t*) malloc(sizeof(pdcid_t) * request_data->n_objs);
+    request_data->obj_ndim = (int*) malloc(sizeof(int) * request_data->n_objs);
+    request_data->remote_ndim = (int*) malloc(sizeof(int) * request_data->n_objs);
+    request_data->remote_offset = (uint64_t**) malloc(sizeof(uint64_t*) * request_data->n_objs * 3);
     request_data->remote_length = request_data->remote_offset + request_data->n_objs;
     request_data->obj_dims      = request_data->remote_length + request_data->n_objs;
     request_data->unit          = (size_t *)malloc(sizeof(size_t) * request_data->n_objs);
@@ -5132,6 +5151,7 @@ transfer_request_all_bulk_transfer_read_cb2(const struct hg_cb_info *info)
     free(local_bulk_args2->data_buf);
     free(local_bulk_args2->transfer_request_id);
     HG_Bulk_free(local_bulk_args2->bulk_handle);
+    HG_Destroy(local_bulk_args2->handle);
     free(local_bulk_args2);
     // printf("finishing transfer_request_all_bulk_transfer_read_cb2\n");
     FUNC_LEAVE(ret);
@@ -5153,6 +5173,7 @@ transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info)
     FUNC_ENTER(NULL);
     // printf("entering transfer_request_all_bulk_transfer_read_cb\n");
     handle_info = HG_Get_info(local_bulk_args->handle);
+    request_data.n_objs = local_bulk_args->in.n_objs;
     parse_bulk_data(local_bulk_args->data_buf, &request_data, PDC_READ);
     // print_bulk_data(&request_data);
 
@@ -5192,7 +5213,7 @@ transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info)
         ptr += mem_size;
     }
 
-    // local_bulk_args2->handle              = handle;
+    local_bulk_args2->handle              = local_bulk_args->handle;
     local_bulk_args2->transfer_request_id = local_bulk_args->transfer_request_id;
     local_bulk_args2->request_data        = request_data;
 
@@ -5208,7 +5229,7 @@ transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info)
     // transfer_request_bulk_transfer_cb.
     ret =
         HG_Bulk_transfer(handle_info->context, transfer_request_all_bulk_transfer_read_cb2, local_bulk_args2,
-                         HG_BULK_PUSH, handle_info->addr, local_bulk_args->in.local_bulk_handle2, 0,
+                         HG_BULK_PUSH, handle_info->addr, local_bulk_args->in.local_bulk_handle, 0,
                          local_bulk_args2->bulk_handle, 0, total_mem_size, HG_OP_ID_IGNORE);
     if (ret != HG_SUCCESS) {
         printf("Error at transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info): @ line "
@@ -5222,7 +5243,8 @@ transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info)
     HG_Bulk_free(local_bulk_args->bulk_handle);
 
     HG_Free_input(local_bulk_args->handle, &(local_bulk_args->in));
-    HG_Destroy(local_bulk_args->handle);
+
+    free(local_bulk_args);
 
     FUNC_LEAVE(ret);
 }
@@ -5239,7 +5261,7 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
     FUNC_ENTER(NULL);
     // printf("entering transfer_request_all_bulk_transfer_write_cb\n");
     remote_reg_info = (struct pdc_region_info *)malloc(sizeof(struct pdc_region_info));
-
+    request_data.n_objs = local_bulk_args->in.n_objs;
     parse_bulk_data(local_bulk_args->data_buf, &request_data, PDC_WRITE);
     // print_bulk_data(&request_data);
 
@@ -5268,6 +5290,68 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
     free(remote_reg_info);
 
     HG_Bulk_free(local_bulk_args->bulk_handle);
+
+    HG_Free_input(local_bulk_args->handle, &(local_bulk_args->in));
+    HG_Destroy(local_bulk_args->handle);
+
+    free(local_bulk_args);
+
+    FUNC_LEAVE(ret);
+}
+
+hg_return_t
+transfer_request_wait_all_bulk_transfer_cb(const struct hg_cb_info *info)
+{
+    struct transfer_request_wait_all_local_bulk_args *local_bulk_args = info->arg;
+    transfer_request_wait_all_out_t out;
+    pdcid_t transfer_request_id;
+    hg_return_t                              ret             = HG_SUCCESS;
+    int i, fast_return;
+    char *ptr;
+    int *handle_ref;
+    pdc_transfer_status_t       status;
+
+    FUNC_ENTER(NULL);
+    //printf("entering transfer_request_all_bulk_transfer_write_cb\n");
+    // free is in PDC_finish_request
+    fast_return = 1;
+    handle_ref = (int*) calloc(1, sizeof(int));
+    pthread_mutex_lock(&transfer_request_status_mutex);
+    ptr = local_bulk_args->data_buf;
+    for ( i = 0; i < local_bulk_args->in.n_objs; ++i ) {
+        transfer_request_id = *((pdcid_t*) ptr);
+        ptr += sizeof(pdcid_t);
+        status = PDC_check_request(transfer_request_id);
+        if (status == PDC_TRANSFER_STATUS_PENDING) {
+            PDC_try_finish_request(transfer_request_id, local_bulk_args->handle, handle_ref, 1);
+        } 
+        if (status != PDC_TRANSFER_STATUS_COMPLETE) {
+            fast_return = 0;
+        }
+    }
+    pthread_mutex_unlock(&transfer_request_status_mutex);
+    /*
+
+        printf("HG_TEST_RPC_CB(transfer_request_wait, handle): exiting the wait function at server side @
+       %d\n",
+               __LINE__);
+    */
+    if (fast_return) {
+        free(handle_ref);
+        out.ret    = 1;
+        ret  = HG_Respond(local_bulk_args->handle, NULL, NULL, &out);
+        HG_Free_input(local_bulk_args->handle, &(local_bulk_args->in));
+        HG_Destroy(local_bulk_args->handle);
+    } else {
+        HG_Free_input(local_bulk_args->handle, &(local_bulk_args->in));
+    }
+
+    free(local_bulk_args->data_buf);
+
+    HG_Bulk_free(local_bulk_args->bulk_handle);
+
+    free(local_bulk_args);
+
     FUNC_LEAVE(ret);
 }
 
@@ -5404,6 +5488,7 @@ HG_TEST_RPC_CB(transfer_request_wait, handle)
     transfer_request_wait_out_t out;
     pdc_transfer_status_t       status;
     int                         fast_return = 0;
+    int                         *handle_ref;
 
     FUNC_ENTER(NULL);
 #ifdef PDC_TIMING
@@ -5419,7 +5504,8 @@ HG_TEST_RPC_CB(transfer_request_wait, handle)
     pthread_mutex_lock(&transfer_request_status_mutex);
     status = PDC_check_request(in.transfer_request_id);
     if (status == PDC_TRANSFER_STATUS_PENDING) {
-        PDC_try_finish_request(in.transfer_request_id, handle);
+        handle_ref = (int*) calloc(1, sizeof(int));
+        PDC_try_finish_request(in.transfer_request_id, handle, handle_ref, 0);
     }
     else {
         fast_return = 1;
@@ -5432,7 +5518,6 @@ HG_TEST_RPC_CB(transfer_request_wait, handle)
     */
     if (fast_return) {
         out.ret    = 1;
-        out.status = status;
         ret_value  = HG_Respond(handle, NULL, NULL, &out);
         HG_Free_input(handle, &in);
         HG_Destroy(handle);
@@ -5458,32 +5543,59 @@ HG_TEST_RPC_CB(transfer_request_wait, handle)
 }
 
 /* static hg_return_t */
-// transfer_request_all_cb(hg_handle_t handle)
-HG_TEST_RPC_CB(transfer_request_all, handle)
+// transfer_request_wait_all_cb(hg_handle_t handle)
+HG_TEST_RPC_CB(transfer_request_wait_all, handle)
 {
-    struct transfer_request_all_local_bulk_args *local_bulk_args;
-    size_t                                       total_mem_size;
-    const struct hg_info *                       info;
-    transfer_request_all_in_t                    in;
-    transfer_request_all_out_t                   out;
-    hg_return_t                                  ret_value = HG_SUCCESS;
-    int                                          i;
+    struct transfer_request_wait_all_local_bulk_args *local_bulk_args;
+    const struct hg_info *                   info;
+    transfer_request_wait_all_in_t  in;
+    hg_return_t                 ret_value = HG_SUCCESS;
     FUNC_ENTER(NULL);
 
     HG_Get_input(handle, &in);
 
     info = HG_Get_info(handle);
 
-    total_mem_size  = in.total_buf_size;
-    local_bulk_args = (struct transfer_request_all_local_bulk_args *)malloc(
-        sizeof(struct transfer_request_all_local_bulk_args));
+    local_bulk_args =
+        (struct transfer_request_wait_all_local_bulk_args *)malloc(sizeof(struct transfer_request_wait_all_local_bulk_args));
+
+    local_bulk_args->handle              = handle;
+    local_bulk_args->data_buf            = malloc(in.total_buf_size);
+    local_bulk_args->in                  = in;
+    // Process this request after we receive all request ID.
+    ret_value = HG_Bulk_create(info->hg_class, 1, &(local_bulk_args->data_buf),
+                               &(local_bulk_args->in.total_buf_size), HG_BULK_READWRITE,
+                               &(local_bulk_args->bulk_handle));
+    ret_value = HG_Bulk_transfer(info->context, transfer_request_wait_all_bulk_transfer_cb, local_bulk_args,
+                                 HG_BULK_PULL, info->addr, in.local_bulk_handle, 0,
+                                 local_bulk_args->bulk_handle, 0, local_bulk_args->in.total_buf_size, HG_OP_ID_IGNORE);
+
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);         
+}
+
+/* static hg_return_t */
+// transfer_request_all_cb(hg_handle_t handle)
+HG_TEST_RPC_CB(transfer_request_all, handle)
+{
+    struct transfer_request_all_local_bulk_args *local_bulk_args;
+    const struct hg_info *                   info;
+    transfer_request_all_in_t  in;
+    transfer_request_all_out_t out;
+    hg_return_t                 ret_value = HG_SUCCESS;
+    int i;
+
+    FUNC_ENTER(NULL);
+
+    HG_Get_input(handle, &in);
+
+    info = HG_Get_info(handle);
+    local_bulk_args =
+        (struct transfer_request_all_local_bulk_args *)malloc(sizeof(struct transfer_request_all_local_bulk_args));
 
     // Read will return to client in the first call back (after metadata for region request is received)
-    if (in.access_type == PDC_READ) {
-        local_bulk_args->handle = handle;
-    }
-    local_bulk_args->total_mem_size      = total_mem_size;
-    local_bulk_args->data_buf            = malloc(total_mem_size);
+    local_bulk_args->handle = handle;
+    local_bulk_args->data_buf            = malloc(in.total_buf_size);
     local_bulk_args->in                  = in;
     local_bulk_args->transfer_request_id = (uint64_t *)malloc(sizeof(uint64_t) * in.n_objs);
 
@@ -5500,33 +5612,28 @@ HG_TEST_RPC_CB(transfer_request_all, handle)
     }
     out.metadata_id = local_bulk_args->transfer_request_id[0];
     pthread_mutex_unlock(&transfer_request_status_mutex);
+
     if (in.access_type == PDC_WRITE) {
         // Write operation receives everything in the callback, so we can free the handle and respond to user
         // here.
         ret_value = HG_Bulk_create(info->hg_class, 1, &(local_bulk_args->data_buf),
-                                   &(local_bulk_args->total_mem_size), HG_BULK_READWRITE,
+                                   &(local_bulk_args->in.total_buf_size), HG_BULK_READWRITE,
                                    &(local_bulk_args->bulk_handle));
-        ret_value = HG_Bulk_transfer(info->context, transfer_request_all_bulk_transfer_write_cb,
-                                     local_bulk_args, HG_BULK_PULL, info->addr, in.local_bulk_handle, 0,
-                                     local_bulk_args->bulk_handle, 0, total_mem_size, HG_OP_ID_IGNORE);
-    }
-    else {
-        // Read operation has to receive region metadata first. There will be another bulk transfer triggered
-        // in the callback.
+        ret_value = HG_Bulk_transfer(info->context, transfer_request_all_bulk_transfer_write_cb, local_bulk_args,
+                                     HG_BULK_PULL, info->addr, in.local_bulk_handle, 0,
+                                     local_bulk_args->bulk_handle, 0, local_bulk_args->in.total_buf_size, HG_OP_ID_IGNORE);
+    } else {
+        // Read operation has to receive region metadata first. There will be another bulk transfer triggered in the callback.
         ret_value = HG_Bulk_create(info->hg_class, 1, &(local_bulk_args->data_buf),
-                                   &(local_bulk_args->total_mem_size), HG_BULK_READWRITE,
+                                   &(local_bulk_args->in.total_buf_size), HG_BULK_READWRITE,
                                    &(local_bulk_args->bulk_handle));
-        ret_value = HG_Bulk_transfer(info->context, transfer_request_all_bulk_transfer_read_cb,
-                                     local_bulk_args, HG_BULK_PULL, info->addr, in.local_bulk_handle, 0,
-                                     local_bulk_args->bulk_handle, 0, total_mem_size, HG_OP_ID_IGNORE);
+        ret_value = HG_Bulk_transfer(info->context, transfer_request_all_bulk_transfer_read_cb, local_bulk_args,
+                                     HG_BULK_PULL, info->addr, in.local_bulk_handle, 0,
+                                     local_bulk_args->bulk_handle, 0, local_bulk_args->in.total_buf_size, HG_OP_ID_IGNORE);
     }
 
-    out.ret   = 1;
-    ret_value = HG_Respond(handle, NULL, NULL, &out);
-    if (in.access_type == PDC_WRITE) {
-        HG_Free_input(handle, &in);
-        HG_Destroy(handle);
-    }
+    out.ret    = 1;
+    ret_value  = HG_Respond(handle, NULL, NULL, &out);
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -7675,6 +7782,7 @@ HG_TEST_THREAD_CB(buf_map)
 HG_TEST_THREAD_CB(transfer_request)
 HG_TEST_THREAD_CB(transfer_request_all)
 HG_TEST_THREAD_CB(transfer_request_status)
+HG_TEST_THREAD_CB(transfer_request_wait_all)
 HG_TEST_THREAD_CB(transfer_request_wait)
 HG_TEST_THREAD_CB(get_remote_metadata)
 HG_TEST_THREAD_CB(buf_map_server)
@@ -7733,6 +7841,7 @@ PDC_FUNC_DECLARE_REGISTER(close_server)
 PDC_FUNC_DECLARE_REGISTER(transfer_request)
 PDC_FUNC_DECLARE_REGISTER(transfer_request_all)
 PDC_FUNC_DECLARE_REGISTER(transfer_request_wait)
+PDC_FUNC_DECLARE_REGISTER(transfer_request_wait_all)
 PDC_FUNC_DECLARE_REGISTER(transfer_request_status)
 PDC_FUNC_DECLARE_REGISTER(buf_map)
 PDC_FUNC_DECLARE_REGISTER(get_remote_metadata)
@@ -8373,6 +8482,7 @@ PDC_serialize_query(pdc_query_t *query)
     ret_value = query_xfer;
 
 done:
+
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
