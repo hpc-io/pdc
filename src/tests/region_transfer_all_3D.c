@@ -51,7 +51,7 @@ main(int argc, char **argv)
     uint64_t dims[3];
 
     int start_method = 1;
-    int wait_method = 1;
+    int wait_method  = 1;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -59,10 +59,10 @@ main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    if ( argc >= 2 ) {
+    if (argc >= 2) {
         start_method = atoi(argv[0]);
     }
-    if ( argc >= 3 ) {
+    if (argc >= 3) {
         wait_method = atoi(argv[1]);
     }
 
@@ -181,8 +181,9 @@ main(int argc, char **argv)
             printf("Fail to region transfer start @ line %d\n", __LINE__);
             ret_value = 1;
         }
-    } else {
-        for ( i = 0; i < OBJ_NUM; ++i ) {
+    }
+    else {
+        for (i = 0; i < OBJ_NUM; ++i) {
             ret = PDCregion_transfer_start(transfer_request[i]);
             if (ret != SUCCEED) {
                 printf("Fail to region transfer start @ line %d\n", __LINE__);
@@ -196,15 +197,16 @@ main(int argc, char **argv)
             printf("Fail to region transfer wait @ line %d\n", __LINE__);
             ret_value = 1;
         }
-    } else if (wait_method == 0) {
-        for ( i = 0; i < OBJ_NUM; i+=2 ) {
+    }
+    else if (wait_method == 0) {
+        for (i = 0; i < OBJ_NUM; i += 2) {
             ret = PDCregion_transfer_wait(transfer_request[i]);
             if (ret != SUCCEED) {
                 printf("Fail to region transfer wait @ line %d\n", __LINE__);
                 ret_value = 1;
             }
         }
-        for ( i = 1; i < OBJ_NUM; i+=2 ) {
+        for (i = 1; i < OBJ_NUM; i += 2) {
             ret = PDCregion_transfer_wait(transfer_request[i]);
             if (ret != SUCCEED) {
                 printf("Fail to region transfer wait @ line %d\n", __LINE__);
@@ -256,8 +258,9 @@ main(int argc, char **argv)
             printf("Fail to region transfer start @ line %d\n", __LINE__);
             ret_value = 1;
         }
-    } else {
-        for ( i = 0; i < OBJ_NUM; ++i ) {
+    }
+    else {
+        for (i = 0; i < OBJ_NUM; ++i) {
             ret = PDCregion_transfer_start(transfer_request[i]);
             if (ret != SUCCEED) {
                 printf("Fail to region transfer start @ line %d\n", __LINE__);
@@ -271,15 +274,16 @@ main(int argc, char **argv)
             printf("Fail to region transfer wait @ line %d\n", __LINE__);
             ret_value = 1;
         }
-    } else if (wait_method == 0) {
-        for ( i = 0; i < OBJ_NUM; i+=2 ) {
+    }
+    else if (wait_method == 0) {
+        for (i = 0; i < OBJ_NUM; i += 2) {
             ret = PDCregion_transfer_wait(transfer_request[i]);
             if (ret != SUCCEED) {
                 printf("Fail to region transfer wait @ line %d\n", __LINE__);
                 ret_value = 1;
             }
         }
-        for ( i = 1; i < OBJ_NUM; i+=2 ) {
+        for (i = 1; i < OBJ_NUM; i += 2) {
             ret = PDCregion_transfer_wait(transfer_request[i]);
             if (ret != SUCCEED) {
                 printf("Fail to region transfer wait @ line %d\n", __LINE__);

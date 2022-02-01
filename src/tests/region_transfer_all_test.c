@@ -261,7 +261,8 @@ main(int argc, char **argv)
     if (PDCclose(pdc) < 0) {
         printf("fail to close PDC @ line %d\n", __LINE__);
         ret_value = 1;
-    } else {
+    }
+    else {
         printf("successfully close PDC @ line %d\n", __LINE__);
     }
 #ifdef ENABLE_MPI

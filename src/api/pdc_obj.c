@@ -276,7 +276,7 @@ PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_
     if (obj_prop->tags)
         p->obj_pt->tags = strdup(obj_prop->tags);
     p->local_transfer_request_head = NULL;
-    p->local_transfer_request_end = NULL;
+    p->local_transfer_request_end  = NULL;
     p->local_transfer_request_size = 0;
     /* struct pdc_obj_info field */
     p->obj_info_pub = PDC_MALLOC(struct pdc_obj_info);
@@ -336,26 +336,26 @@ done:
 perr_t
 PDC_obj_close(struct _pdc_obj_info *op)
 {
-    perr_t ret_value = SUCCEED;
-    pdcid_t *transfer_request_id;
+    perr_t                      ret_value = SUCCEED;
+    pdcid_t *                   transfer_request_id;
     pdc_local_transfer_request *temp, *previous;
-    int i;
+    int                         i;
 
     FUNC_ENTER(NULL);
 
-    if( op->local_transfer_request_size ) {
-        transfer_request_id = (pdcid_t *) malloc(sizeof(pdcid_t) * op->local_transfer_request_size);
-        temp = op->local_transfer_request_head;
-        i = 0;
-        while( temp != NULL ) {
+    if (op->local_transfer_request_size) {
+        transfer_request_id = (pdcid_t *)malloc(sizeof(pdcid_t) * op->local_transfer_request_size);
+        temp                = op->local_transfer_request_head;
+        i                   = 0;
+        while (temp != NULL) {
             transfer_request_id[i] = temp->local_id;
-            previous = temp;
-            temp = temp->next;
+            previous               = temp;
+            temp                   = temp->next;
             free(previous);
             ++i;
         }
         PDCregion_transfer_wait_all(transfer_request_id, op->local_transfer_request_size);
-        for ( i = 0; i < op->local_transfer_request_size; ++i ) {
+        for (i = 0; i < op->local_transfer_request_size; ++i) {
             PDCregion_transfer_close(transfer_request_id[i]);
         }
         free(transfer_request_id);
@@ -499,9 +499,9 @@ PDCobj_open_common(const char *obj_name, pdcid_t pdc, int is_col)
         for (i = 0; i < out->current_state.ndim; i++)
             p->obj_pt->transform_prop.dims[i] = out->current_state.dims[i];
     }
-    p->metadata = out;
+    p->metadata                    = out;
     p->local_transfer_request_head = NULL;
-    p->local_transfer_request_end = NULL;
+    p->local_transfer_request_end  = NULL;
     p->local_transfer_request_size = 0;
     /* struct pdc_obj_info field */
     /* 'obj_name' is a char array */

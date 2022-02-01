@@ -52,7 +52,7 @@ main(int argc, char **argv)
 
     char **mydata, **data_read;
 
-    pdcid_t local_region, global_region;
+    pdcid_t  local_region, global_region;
     pdcid_t *transfer_request;
 
 #ifdef ENABLE_MPI
@@ -108,7 +108,7 @@ main(int argc, char **argv)
         my_data_size *= dims[i];
     }
 
-    mydata    = (char **) malloc(size * WRITE_REQ_SIZE);
+    mydata    = (char **)malloc(size * WRITE_REQ_SIZE);
     mydata[0] = (char *)malloc(my_data_size * type_size);
     mydata[1] = mydata[0] + my_data_size * type_size;
 
@@ -187,7 +187,7 @@ main(int argc, char **argv)
             mydata[1][i * type_size + j] = (char)(i * type_size + j + rank * 5 + 3);
         }
     }
-    transfer_request = (pdcid_t*) malloc(sizeof(pdcid_t) * size * 2);
+    transfer_request = (pdcid_t *)malloc(sizeof(pdcid_t) * size * 2);
 
     transfer_request[0] = PDCregion_transfer_create(mydata[0], PDC_WRITE, obj1, local_region, global_region);
     if (transfer_request[0] == 0) {
@@ -277,9 +277,9 @@ main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-    data_read = (char**) malloc(sizeof(char*) * (size - 1) * 2);
-    obj1_list = (pdcid_t*) malloc(sizeof(pdcid_t) * (size - 1) * 2);
-    obj2_list = (pdcid_t*) malloc(sizeof(pdcid_t) * (size - 1) * 2);
+    data_read = (char **)malloc(sizeof(char *) * (size - 1) * 2);
+    obj1_list = (pdcid_t *)malloc(sizeof(pdcid_t) * (size - 1) * 2);
+    obj2_list = (pdcid_t *)malloc(sizeof(pdcid_t) * (size - 1) * 2);
 
     for (i = 1; i < size; ++i) {
         target_rank = (rank + i) % size;
@@ -301,12 +301,13 @@ main(int argc, char **argv)
             my_data_size *= dims[j];
         }
 
-        mysize[0]     = my_data_size;
-        local_region  = PDCregion_create(1, offset, mysize);
-        global_region = PDCregion_create(ndim, offset, dims);
-        data_read[(i - 1)]     = (char *)malloc(my_data_size * type_size);
+        mysize[0]          = my_data_size;
+        local_region       = PDCregion_create(1, offset, mysize);
+        global_region      = PDCregion_create(ndim, offset, dims);
+        data_read[(i - 1)] = (char *)malloc(my_data_size * type_size);
 
-        transfer_request[(i - 1)] = PDCregion_transfer_create(data_read[(i - 1)], PDC_READ, obj2, local_region, global_region);
+        transfer_request[(i - 1)] =
+            PDCregion_transfer_create(data_read[(i - 1)], PDC_READ, obj2, local_region, global_region);
         if (transfer_request[(i - 1)] == 0) {
             printf("PDCregion_transfer_create for read obj2 failed %d\n", __LINE__);
             ret_value = 1;
@@ -332,12 +333,13 @@ main(int argc, char **argv)
             printf("Rank %d Open object %s\n", rank, obj_name2);
         }
 
-        mysize[0]     = my_data_size;
-        local_region  = PDCregion_create(1, offset, mysize);
-        global_region = PDCregion_create(ndim, offset, dims);
-        data_read[(i - 1) + size - 1]     = (char *)malloc(my_data_size * type_size);
+        mysize[0]                     = my_data_size;
+        local_region                  = PDCregion_create(1, offset, mysize);
+        global_region                 = PDCregion_create(ndim, offset, dims);
+        data_read[(i - 1) + size - 1] = (char *)malloc(my_data_size * type_size);
 
-        transfer_request[(i - 1) + size - 1] = PDCregion_transfer_create(data_read[(i - 1) + size - 1], PDC_READ, obj2, local_region, global_region);
+        transfer_request[(i - 1) + size - 1] = PDCregion_transfer_create(
+            data_read[(i - 1) + size - 1], PDC_READ, obj2, local_region, global_region);
         if (transfer_request[(i - 1) + size - 1] == 0) {
             printf("PDCregion_transfer_create for read obj2 failed %d\n", __LINE__);
             ret_value = 1;
@@ -352,7 +354,6 @@ main(int argc, char **argv)
             printf("fail to close global region %d\n", __LINE__);
             ret_value = 1;
         }
-
     }
 
     ret = PDCregion_transfer_start_all(transfer_request, (size - 1) * 2);
@@ -369,7 +370,7 @@ main(int argc, char **argv)
 
     for (i = 1; i < size; ++i) {
         target_rank = (rank + i) % size;
-        ret = PDCregion_transfer_close(transfer_request[(i - 1)]);
+        ret         = PDCregion_transfer_close(transfer_request[(i - 1)]);
         if (ret != SUCCEED) {
             printf("PDCregion_transfer_close failed @ line %d\n", __LINE__);
             ret_value = 1;
@@ -392,8 +393,8 @@ main(int argc, char **argv)
 
         for (j = 0; j < (int)(my_data_size * type_size); ++j) {
             if (data_read[(i - 1) + size - 1][j] != (char)(j + target_rank * 5 + 3)) {
-                printf("rank %d, i = %d, j = %d, wrong value %d!=%d %d\n", rank, i, j, data_read[(i - 1) + size - 1][j],
-                       (char)(j + target_rank * 5 + 3), __LINE__);
+                printf("rank %d, i = %d, j = %d, wrong value %d!=%d %d\n", rank, i, j,
+                       data_read[(i - 1) + size - 1][j], (char)(j + target_rank * 5 + 3), __LINE__);
                 ret_value = 1;
                 break;
             }
