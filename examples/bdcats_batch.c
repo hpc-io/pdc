@@ -35,6 +35,7 @@
 #include "pdc_timing.h"
 
 #define NPARTICLES 8388608
+#define N_OBJS 8
 
 double
 uniform_random_number()
@@ -77,7 +78,7 @@ main(int argc, char **argv)
     unsigned  sleep_time = 0;
 
     pdcid_t *transfer_request_x, *transfer_request_y, *transfer_request_z, *transfer_request_px,
-        *transfer_request_py, *transfer_request_pz, *transfer_request_id1, *transfer_request_id2;
+        *transfer_request_py, *transfer_request_pz, *transfer_request_id1, *transfer_request_id2,  *ptr, *temp_requests;
 
     uint64_t timestamps = 10;
 
@@ -148,14 +149,23 @@ main(int argc, char **argv)
     region_id1 = PDCregion_create(ndim, offset, mysize);
     region_id2 = PDCregion_create(ndim, offset, mysize);
 
-    transfer_request_x   = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
-    transfer_request_y   = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
-    transfer_request_z   = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
-    transfer_request_px  = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
-    transfer_request_py  = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
-    transfer_request_pz  = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
-    transfer_request_id1 = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
-    transfer_request_id2 = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
+    transfer_request_x   = (pdcid_t *)malloc(sizeof(pdcid_t) * (timestamps + 1) * N_OBJS);
+    ptr = transfer_request_x + N_OBJS;
+    transfer_request_y   = ptr;
+    ptr += N_OBJS;
+    transfer_request_z   = ptr;
+    ptr += N_OBJS;
+    transfer_request_px  = ptr;
+    ptr += N_OBJS;
+    transfer_request_py  = ptr;
+    ptr += N_OBJS;
+    transfer_request_pz  = ptr;
+    ptr += N_OBJS;
+    transfer_request_id1 = ptr;
+    ptr += N_OBJS;
+    transfer_request_id2 = ptr;
+    ptr += N_OBJS;
+    temp_requests = ptr;
 
     for (i = 0; i < timestamps; ++i) {
         sprintf(obj_name, "obj-var-xx %" PRIu64 "", i);
@@ -276,6 +286,48 @@ main(int argc, char **argv)
         transfer_create += MPI_Wtime() - start;
 #endif
 
+        if (PDCregion_close(region_xx) < 0) {
+            printf("fail to close region region_xx\n");
+            return 1;
+        }
+        if (PDCregion_close(region_yy) < 0) {
+            printf("fail to close region region_yy\n");
+            return 1;
+        }
+        if (PDCregion_close(region_zz) < 0) {
+            printf("fail to close region region_zz\n");
+            return 1;
+        }
+        if (PDCregion_close(region_pxx) < 0) {
+            printf("fail to close region region_pxx\n");
+            return 1;
+        }
+        if (PDCregion_close(region_pyy) < 0) {
+            printf("fail to close region region_pyy\n");
+            return 1;
+        }
+        if (PDCregion_close(region_pzz) < 0) {
+            printf("fail to close region region_pzz\n");
+            return 1;
+        }
+        if (PDCobj_close(region_id11) < 0) {
+            printf("fail to close region region_id11\n");
+            return 1;
+        }
+        if (PDCobj_close(region_id22) < 0) {
+            printf("fail to close region region_id22\n");
+            return 1;
+        }
+
+        temp_requests[0] = transfer_request_x[i];
+        temp_requests[1] = transfer_request_y[i];
+        temp_requests[2] = transfer_request_z[i];
+        temp_requests[3] = transfer_request_px[i];
+        temp_requests[4] = transfer_request_py[i];
+        temp_requests[5] = transfer_request_pz[i];
+        temp_requests[6] = transfer_request_id1[i];
+        temp_requests[7] = transfer_request_id2[i];
+
         for (j = 0; j < numparticles; j++) {
             id1[j] = j;
             id2[j] = j * 2;
@@ -290,44 +342,9 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         start = MPI_Wtime();
 #endif
-        ret = PDCregion_transfer_start(transfer_request_x[i]);
+        ret = PDCregion_transfer_start_all(temp_requests, 8);
         if (ret != SUCCEED) {
-            printf("Failed to start transfer for region_xx\n");
-            return 1;
-        }
-        ret = PDCregion_transfer_start(transfer_request_y[i]);
-        if (ret != SUCCEED) {
-            printf("Failed to start transfer for region_yy\n");
-            return 1;
-        }
-        ret = PDCregion_transfer_start(transfer_request_z[i]);
-        if (ret != SUCCEED) {
-            printf("Failed to start transfer for region_zz\n");
-            return 1;
-        }
-        ret = PDCregion_transfer_start(transfer_request_px[i]);
-        if (ret != SUCCEED) {
-            printf("Failed to start transfer for region_pxx\n");
-            return 1;
-        }
-        ret = PDCregion_transfer_start(transfer_request_py[i]);
-        if (ret != SUCCEED) {
-            printf("Failed to start transfer for region_pyy\n");
-            return 1;
-        }
-        ret = PDCregion_transfer_start(transfer_request_pz[i]);
-        if (ret != SUCCEED) {
-            printf("Failed to start transfer for region_pzz\n");
-            return 1;
-        }
-        ret = PDCregion_transfer_start(transfer_request_id1[i]);
-        if (ret != SUCCEED) {
-            printf("Failed to start transfer for region_id11\n");
-            return 1;
-        }
-        ret = PDCregion_transfer_start(transfer_request_id2[i]);
-        if (ret != SUCCEED) {
-            printf("Failed to start transfer for region_id22\n");
+            printf("Failed to start transfer for all regions\n");
             return 1;
         }
 #ifdef ENABLE_MPI
@@ -339,44 +356,9 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         start = MPI_Wtime();
 #endif
-        ret = PDCregion_transfer_wait(transfer_request_x[i]);
+        ret = PDCregion_transfer_wait_all(temp_requests, 8);
         if (ret != SUCCEED) {
-            printf("Failed to transfer wait for region_xx\n");
-            return 1;
-        }
-        ret = PDCregion_transfer_wait(transfer_request_y[i]);
-        if (ret != SUCCEED) {
-            printf("Failed to transfer wait for region_yy\n");
-            return 1;
-        }
-        ret = PDCregion_transfer_wait(transfer_request_z[i]);
-        if (ret != SUCCEED) {
-            printf("Failed to transfer wait for region_zz\n");
-            return 1;
-        }
-        ret = PDCregion_transfer_wait(transfer_request_px[i]);
-        if (ret != SUCCEED) {
-            printf("Failed to transfer wait for region_pxx\n");
-            return 1;
-        }
-        ret = PDCregion_transfer_wait(transfer_request_py[i]);
-        if (ret != SUCCEED) {
-            printf("Failed to transfer wait for region_pyy\n");
-            return 1;
-        }
-        ret = PDCregion_transfer_wait(transfer_request_pz[i]);
-        if (ret != SUCCEED) {
-            printf("Failed to transfer wait for region_pzz\n");
-            return 1;
-        }
-        ret = PDCregion_transfer_wait(transfer_request_id1[i]);
-        if (ret != SUCCEED) {
-            printf("Failed to transfer wait for region_id11\n");
-            return 1;
-        }
-        ret = PDCregion_transfer_wait(transfer_request_id2[i]);
-        if (ret != SUCCEED) {
-            printf("Failed to transfer wait for region_id22\n");
+            printf("Failed to wait transfer for all regions\n");
             return 1;
         }
 #ifdef ENABLE_MPI
@@ -428,39 +410,6 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         transfer_close += MPI_Wtime() - start;
 #endif
-
-        if (PDCregion_close(region_xx) < 0) {
-            printf("fail to close region region_xx\n");
-            return 1;
-        }
-        if (PDCregion_close(region_yy) < 0) {
-            printf("fail to close region region_yy\n");
-            return 1;
-        }
-        if (PDCregion_close(region_zz) < 0) {
-            printf("fail to close region region_zz\n");
-            return 1;
-        }
-        if (PDCregion_close(region_pxx) < 0) {
-            printf("fail to close region region_pxx\n");
-            return 1;
-        }
-        if (PDCregion_close(region_pyy) < 0) {
-            printf("fail to close region region_pyy\n");
-            return 1;
-        }
-        if (PDCregion_close(region_pzz) < 0) {
-            printf("fail to close region region_pzz\n");
-            return 1;
-        }
-        if (PDCobj_close(region_id11) < 0) {
-            printf("fail to close region region_id11\n");
-            return 1;
-        }
-        if (PDCobj_close(region_id22) < 0) {
-            printf("fail to close region region_id22\n");
-            return 1;
-        }
     }
 
 #ifdef ENABLE_MPI
@@ -503,15 +452,8 @@ main(int argc, char **argv)
     }
 
     free(transfer_request_x);
-    free(transfer_request_y);
-    free(transfer_request_z);
-    free(transfer_request_px);
-    free(transfer_request_py);
-    free(transfer_request_pz);
-    free(transfer_request_id1);
-    free(transfer_request_id2);
-#if PDC_TIMING == 1
-    PDC_timing_report("write");
+#ifdef PDC_TIMING
+    PDC_timing_report("read");
 #endif
 
 #ifdef ENABLE_MPI

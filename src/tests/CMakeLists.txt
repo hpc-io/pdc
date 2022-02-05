@@ -78,6 +78,7 @@ set(PROGRAMS
   region_transfer_all_append
   region_transfer_all_append_2D
   region_transfer_all_append_3D
+  region_transfer_all_split_wait
   #query_vpic_create_data
   #query_vpic
   #query_vpic_multi
@@ -202,6 +203,7 @@ add_test(NAME region_transfer_all4_3D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPU
 add_test(NAME region_transfer_all_append4    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_append 0 2)
 add_test(NAME region_transfer_all_append4_2D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_append_2D 0 2)
 add_test(NAME region_transfer_all_append4_3D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_append_3D 0 2)
+add_test(NAME region_transfer_all_split_wait    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_split_wait )
 add_test(NAME read_obj_int     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./read_obj o 1 int)
 add_test(NAME read_obj_float   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./read_obj o 1 float)
 add_test(NAME read_obj_double  WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./read_obj o 1 double)
@@ -279,6 +281,7 @@ set_tests_properties(region_transfer_all4_3D     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_all_append4     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_all_append4_2D     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_all_append4_3D     PROPERTIES LABELS serial )
+set_tests_properties(region_transfer_all_split_wait     PROPERTIES LABELS serial )
 set_tests_properties(read_obj_int      PROPERTIES LABELS serial )
 set_tests_properties(read_obj_float    PROPERTIES LABELS serial )
 set_tests_properties(read_obj_double   PROPERTIES LABELS serial )
@@ -352,6 +355,7 @@ if(BUILD_MPI_TESTING)
     add_test(NAME region_transfer_all_append4_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append ${MPI_RUN_CMD} 2 4 0 2)
     add_test(NAME region_transfer_all_append4_2D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append_2D ${MPI_RUN_CMD} 2 4 0 2)
     add_test(NAME region_transfer_all_append4_3D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append_3D ${MPI_RUN_CMD} 2 4 0 2)
+    add_test(NAME region_transfer_all_split_wait_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_split_wait ${MPI_RUN_CMD} 2 4 )
     add_test(NAME obj_round_robin_io_1D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_round_robin_io ${MPI_RUN_CMD} 2 2 int 1 )
     add_test(NAME obj_round_robin_io_2D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_round_robin_io ${MPI_RUN_CMD} 2 2 int 2 )
     add_test(NAME obj_round_robin_io_3D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_round_robin_io ${MPI_RUN_CMD} 2 2 int 3 )
@@ -429,6 +433,7 @@ if(BUILD_MPI_TESTING)
     set_tests_properties(region_transfer_all_append4_mpi     PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_all_append4_2D_mpi     PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_all_append4_3D_mpi     PROPERTIES LABELS parallel )
+    set_tests_properties(region_transfer_all_split_wait_mpi     PROPERTIES LABELS parallel )
     set_tests_properties(obj_round_robin_io_1D     PROPERTIES LABELS parallel )
     set_tests_properties(obj_round_robin_io_2D     PROPERTIES LABELS parallel )
     set_tests_properties(obj_round_robin_io_3D     PROPERTIES LABELS parallel )

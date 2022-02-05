@@ -2883,7 +2883,10 @@ PDC_Client_transfer_request_all(int n_objs, void **buf, uint32_t data_server_id,
     hg_size_t                             read_bulk_size, bulk_size;
 
     FUNC_ENTER(NULL);
-
+#ifdef PDC_TIMING
+    double start          = MPI_Wtime(), end;
+    double function_start = start;
+#endif
     if (!(access_type == PDC_WRITE || access_type == PDC_READ)) {
         ret_value = FAIL;
         printf("Invalid PDC type in function PDC_Client_transfer_request_all @ %d\n", __LINE__);
@@ -2937,6 +2940,15 @@ PDC_Client_transfer_request_all(int n_objs, void **buf, uint32_t data_server_id,
     */
     hg_ret = HG_Forward(client_send_transfer_request_all_handle, client_send_transfer_request_all_rpc_cb,
                         &transfer_args, &in);
+#ifdef PDC_TIMING
+    if (access_type == PDC_READ) {
+        timings.PDCtransfer_request_start_all_read_rpc += MPI_Wtime() - start;
+    }
+    else {
+        timings.PDCtransfer_request_start_all_write_rpc += MPI_Wtime() - start;
+    }
+    start = MPI_Wtime();
+#endif
 
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_transfer_request_all(): Could not start HG_Forward() @ line %d\n",
@@ -2944,9 +2956,19 @@ PDC_Client_transfer_request_all(int n_objs, void **buf, uint32_t data_server_id,
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
 
+#ifdef PDC_TIMING
+    end = MPI_Wtime();
+    if (access_type == PDC_READ) {
+        timings.PDCtransfer_request_start_all_read_rpc_wait += end - start;
+        pdc_timestamp_register(client_transfer_request_start_all_read_timestamps, function_start, end);
+    }
+    else {
+        timings.PDCtransfer_request_start_all_write_rpc_wait += end - start;
+        pdc_timestamp_register(client_transfer_request_start_all_write_timestamps, function_start, end);
+    }
+#endif
     /*
         printf("PDC_Client_transfer_request() checkpoint, first value is %d @ line %d\n", ((int *)buf)[0],
-
                __LINE__);
     */
     for (i = 0; i < n_objs; ++i) {
@@ -2978,7 +3000,10 @@ PDC_Client_transfer_request_wait_all(int n_objs, pdcid_t *transfer_request_id, u
     size_t                                     unit;
 
     FUNC_ENTER(NULL);
-
+#ifdef PDC_TIMING
+    double start          = MPI_Wtime(), end;
+    double function_start = start;
+#endif
     for (i = 0; i < n_objs; ++i) {
         if (!(access_type[i] == PDC_WRITE || access_type[i] == PDC_READ)) {
             ret_value = FAIL;
@@ -2998,7 +3023,6 @@ PDC_Client_transfer_request_wait_all(int n_objs, pdcid_t *transfer_request_id, u
     if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
                     pdc_client_mpi_rank_g, __LINE__);
-
     hg_ret =
         HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr,
                   transfer_request_wait_all_register_id_g, &client_send_transfer_request_wait_all_handle);
@@ -3016,6 +3040,10 @@ PDC_Client_transfer_request_wait_all(int n_objs, pdcid_t *transfer_request_id, u
     hg_ret = HG_Forward(client_send_transfer_request_wait_all_handle,
                         client_send_transfer_request_wait_all_rpc_cb, &transfer_args, &in);
 
+#ifdef PDC_TIMING
+    timings.PDCtransfer_request_wait_all_rpc += MPI_Wtime() - start;
+    start = MPI_Wtime();
+#endif
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL,
                     "PDC_Client_send_transfer_request_wait_all(): Could not start HG_Forward() @ line %d\n",
@@ -3039,6 +3067,13 @@ PDC_Client_transfer_request_wait_all(int n_objs, pdcid_t *transfer_request_id, u
     }
 
     HG_Destroy(client_send_transfer_request_wait_all_handle);
+
+#ifdef PDC_TIMING
+    end = MPI_Wtime();
+    timings.PDCtransfer_request_wait_all_rpc_wait += end - start;
+    pdc_timestamp_register(client_transfer_request_wait_all_timestamps, function_start, end);
+#endif
+
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -3250,9 +3285,6 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_serv
     double start          = MPI_Wtime(), end;
     double function_start = start;
 #endif
-
-    printf("rank = %d, PDC_Client_transfer_request_wait data_server_id = %u, transfer id = %lu\n",
-           pdc_client_mpi_rank_g, data_server_id, transfer_request_id);
 
     debug_server_id_count[data_server_id]++;
 
@@ -4591,6 +4623,7 @@ done:
 perr_t
 PDC_Client_close_shm(struct pdc_request *req)
 {
+
     perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
@@ -6409,6 +6442,7 @@ PDC_get_io_stats_mpi(double read_time, double query_time, int nfopen)
 }
 #endif
 
+
 perr_t
 PDC_Client_query_name_read_entire_obj_client(int nobj, char **obj_names, void ***out_buf,
                                              uint64_t *out_buf_sizes)
@@ -7613,6 +7647,7 @@ PDC_Client_del_metadata(pdcid_t obj_id, int is_cont)
     if (ret_value != SUCCEED)
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Error with PDC_Client_delete_metadata_by_id",
                     pdc_client_mpi_rank_g);
+
 
 done:
     fflush(stdout);

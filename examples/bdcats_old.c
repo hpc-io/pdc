@@ -298,7 +298,7 @@ main(int argc, char **argv)
     if (ret != SUCCEED)
         printf("region id22 unmap failed\n");
 
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     PDC_timing_report("read");
 #endif
 

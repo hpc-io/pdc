@@ -338,7 +338,7 @@ main(int argc, char **argv)
         printf("region id22 transfer close failed\n");
         return 1;
     }
-#if PDC_TIMING == 1
+#ifdef PDC_TIMING
     PDC_timing_report("read");
 #endif
 
