@@ -94,7 +94,7 @@ main(int argc, char **argv)
     MPI_Init(&argc, &argv);
     init(argc, argv);
 
-    //perr_t  ret;
+    // perr_t  ret;
     pdcid_t pdc_id, cont_prop, cont_id;
     pdcid_t obj_id, obj_prop;
     pdcid_t local_region_id, global_region_id;

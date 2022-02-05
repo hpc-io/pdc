@@ -35,7 +35,7 @@
 #include "pdc_timing.h"
 
 #define NPARTICLES 8388608
-#define N_OBJS 8
+#define N_OBJS     8
 
 double
 uniform_random_number()
@@ -78,7 +78,8 @@ main(int argc, char **argv)
     unsigned  sleep_time = 0;
 
     pdcid_t *transfer_request_x, *transfer_request_y, *transfer_request_z, *transfer_request_px,
-        *transfer_request_py, *transfer_request_pz, *transfer_request_id1, *transfer_request_id2,  *ptr, *temp_requests;
+        *transfer_request_py, *transfer_request_pz, *transfer_request_id1, *transfer_request_id2, *ptr,
+        *temp_requests;
 
     uint64_t timestamps = 10;
 
@@ -149,17 +150,17 @@ main(int argc, char **argv)
     region_id1 = PDCregion_create(ndim, offset, mysize);
     region_id2 = PDCregion_create(ndim, offset, mysize);
 
-    transfer_request_x   = (pdcid_t *)malloc(sizeof(pdcid_t) * (timestamps + 1) * N_OBJS);
-    ptr = transfer_request_x + N_OBJS;
-    transfer_request_y   = ptr;
+    transfer_request_x = (pdcid_t *)malloc(sizeof(pdcid_t) * (timestamps + 1) * N_OBJS);
+    ptr                = transfer_request_x + N_OBJS;
+    transfer_request_y = ptr;
     ptr += N_OBJS;
-    transfer_request_z   = ptr;
+    transfer_request_z = ptr;
     ptr += N_OBJS;
-    transfer_request_px  = ptr;
+    transfer_request_px = ptr;
     ptr += N_OBJS;
-    transfer_request_py  = ptr;
+    transfer_request_py = ptr;
     ptr += N_OBJS;
-    transfer_request_pz  = ptr;
+    transfer_request_pz = ptr;
     ptr += N_OBJS;
     transfer_request_id1 = ptr;
     ptr += N_OBJS;

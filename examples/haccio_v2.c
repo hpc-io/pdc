@@ -96,7 +96,7 @@ main(int argc, char **argv)
     pdcid_t region_ids[NUM_VARS], region_remote_ids[NUM_VARS];
     pdcid_t transfer_ids[NUM_VARS];
 
-    //perr_t ret;
+    // perr_t ret;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);

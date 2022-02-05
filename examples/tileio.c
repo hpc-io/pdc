@@ -132,7 +132,7 @@ main(int argc, char **argv)
     // Accquire the lock
     time_acquire_lock = MPI_Wtime();
     ret               = PDCreg_obtain_lock(obj_id, global_region_id, PDC_WRITE, PDC_NOBLOCK);
-    if ( ret != SUCCEED ) {
+    if (ret != SUCCEED) {
         printf("Fail to obtain lock @ line  %d!\n", __LINE__);
     }
     MPI_Barrier(MPI_COMM_WORLD);
@@ -151,8 +151,8 @@ main(int argc, char **argv)
 
     // Release lock
     time_release_lock = MPI_Wtime();
-    ret = PDCreg_release_lock(obj_id, global_region_id, PDC_WRITE);
-    if ( ret != SUCCEED ) {
+    ret               = PDCreg_release_lock(obj_id, global_region_id, PDC_WRITE);
+    if (ret != SUCCEED) {
         printf("Fail to release lock @ line  %d!\n", __LINE__);
     }
     MPI_Barrier(MPI_COMM_WORLD);
@@ -160,7 +160,7 @@ main(int argc, char **argv)
 
     // Unmap object
     ret = PDCbuf_obj_unmap(obj_id, global_region_id);
-    if ( ret != SUCCEED ) {
+    if (ret != SUCCEED) {
         printf("Fail to unmap @ line  %d!\n", __LINE__);
     }
     // TODO delete before close ?

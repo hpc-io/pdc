@@ -6442,7 +6442,6 @@ PDC_get_io_stats_mpi(double read_time, double query_time, int nfopen)
 }
 #endif
 
-
 perr_t
 PDC_Client_query_name_read_entire_obj_client(int nobj, char **obj_names, void ***out_buf,
                                              uint64_t *out_buf_sizes)
@@ -7647,7 +7646,6 @@ PDC_Client_del_metadata(pdcid_t obj_id, int is_cont)
     if (ret_value != SUCCEED)
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Error with PDC_Client_delete_metadata_by_id",
                     pdc_client_mpi_rank_g);
-
 
 done:
     fflush(stdout);
