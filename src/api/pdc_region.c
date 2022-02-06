@@ -260,8 +260,6 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
     p->buf            = buf;
     p->metadata_id    = 0;
     p->data_server_id = ((pdc_metadata_t *)obj2->metadata)->data_server_id;
-    // printf("rank = %d, PDCregion_transfer_create data_server_id = %u\n", pdc_client_mpi_rank_g,
-    // p->data_server_id);
     /*
         printf("creating a request from obj %s metadata id = %llu, access_type = %d\n",
        obj2->obj_info_pub->name, (long long unsigned)obj2->obj_info_pub->meta_id, access_type);
