@@ -429,7 +429,6 @@ PDC_server_timing_report()
     timestamp_log(stream, "buf_obj_map", buf_obj_map_timestamps);
     timestamp_log(stream, "buf_obj_unmap", buf_obj_unmap_timestamps);
 
-
     timestamp_log(stream, "obtain_lock_write", obtain_lock_write_timestamps);
     timestamp_log(stream, "obtain_lock_read", obtain_lock_read_timestamps);
     timestamp_log(stream, "release_lock_write", release_lock_write_timestamps);
@@ -2025,9 +2024,10 @@ HG_TEST_RPC_CB(gen_obj_id, handle)
 
     int server_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
-/*
-    printf("server rank %llu generated object with data server ID %u, obj_id = %llu\n", (long long unsigned) server_rank, (unsigned)in.data.data_server_id, (long long unsigned) out.obj_id);
-*/
+    /*
+        printf("server rank %llu generated object with data server ID %u, obj_id = %llu\n", (long long
+       unsigned) server_rank, (unsigned)in.data.data_server_id, (long long unsigned) out.obj_id);
+    */
     HG_Respond(handle, NULL, NULL, &out);
 
     HG_Free_input(handle, &in);

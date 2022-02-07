@@ -526,7 +526,6 @@ PDC_Server_lookup_client_cb(const struct hg_cb_info *callback_info)
     if (client_id >= (uint32_t)pdc_client_num_g) {
         printf("==PDC_SERVER[%d]: invalid input client id %d\n", pdc_server_rank_g, client_id);
         goto done;
-
     }
     pdc_client_info_g[client_id].addr       = callback_info->info.lookup.addr;
     pdc_client_info_g[client_id].addr_valid = 1;
@@ -1138,8 +1137,8 @@ PDC_Server_checkpoint()
     pdc_kvtag_list_t *           kvlist_elt;
     pdc_hash_table_entry_head *  head;
     pdc_cont_hash_table_entry_t *cont_head;
-    int      n_entry, metadata_size = 0, region_count = 0, n_region, n_objs, n_write_region = 0, n_kvtag, key_len;
-    uint32_t hash_key;
+    int n_entry, metadata_size = 0, region_count = 0, n_region, n_objs, n_write_region = 0, n_kvtag, key_len;
+    uint32_t          hash_key;
     HashTablePair     pair;
     char              checkpoint_file[ADDR_MAX];
     HashTableIterator hash_table_iter;
@@ -1264,7 +1263,7 @@ PDC_Server_checkpoint()
             region_count += n_region;
         }
     }
-// Note data server region are managed by data server instead of metadata server
+    // Note data server region are managed by data server instead of metadata server
     data_server_region_t *region = NULL;
     DL_COUNT(dataserver_region_g, region, n_objs);
     fwrite(&n_objs, sizeof(int), 1, file);
@@ -1326,8 +1325,8 @@ perr_t
 PDC_Server_restart(char *filename)
 {
     perr_t ret_value = SUCCEED;
-    int    n_entry, count, i, j, nobj = 0, all_nobj = 0, all_n_region, n_region, n_objs, total_region = 0, n_kvtag,
-                              key_len;
+    int    n_entry, count, i, j, nobj = 0, all_nobj = 0, all_n_region, n_region, n_objs, total_region = 0,
+                              n_kvtag, key_len;
     int                          n_cont, all_cont;
     pdc_metadata_t *             metadata, *elt;
     region_list_t *              region_list;
@@ -1595,8 +1594,9 @@ PDC_Server_restart(char *filename)
         printf("Read failed for n_objs\n");
     }
 
-    for ( i = 0; i < n_objs; ++i ) {
-        data_server_region_t *new_obj_reg = (data_server_region_t *)calloc(1, sizeof(struct data_server_region_t));
+    for (i = 0; i < n_objs; ++i) {
+        data_server_region_t *new_obj_reg =
+            (data_server_region_t *)calloc(1, sizeof(struct data_server_region_t));
         new_obj_reg->fd               = -1;
         new_obj_reg->storage_location = (char *)malloc(sizeof(char) * ADDR_MAX);
         if (fread(&new_obj_reg->obj_id, sizeof(uint64_t), 1, file) != 1) {
