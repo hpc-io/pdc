@@ -151,21 +151,21 @@ main(int argc, char **argv)
     region_id2 = PDCregion_create(ndim, offset, mysize);
 
     transfer_request_x = (pdcid_t *)malloc(sizeof(pdcid_t) * (timestamps + 1) * N_OBJS);
-    ptr                = transfer_request_x + N_OBJS;
+    ptr                = transfer_request_x + timestamps;
     transfer_request_y = ptr;
-    ptr += N_OBJS;
+    ptr += timestamps;
     transfer_request_z = ptr;
-    ptr += N_OBJS;
+    ptr += timestamps;
     transfer_request_px = ptr;
-    ptr += N_OBJS;
+    ptr += timestamps;
     transfer_request_py = ptr;
-    ptr += N_OBJS;
+    ptr += timestamps;
     transfer_request_pz = ptr;
-    ptr += N_OBJS;
+    ptr += timestamps;
     transfer_request_id1 = ptr;
-    ptr += N_OBJS;
+    ptr += timestamps;
     transfer_request_id2 = ptr;
-    ptr += N_OBJS;
+    ptr += timestamps;
     temp_requests = ptr;
 
     for (i = 0; i < timestamps; ++i) {
