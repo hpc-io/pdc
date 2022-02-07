@@ -1189,6 +1189,7 @@ PDC_Client_init()
     MPI_Comm_dup(MPI_COMM_WORLD, &PDC_CLIENT_COMM_WORLD_g);
     MPI_Comm_rank(PDC_CLIENT_COMM_WORLD_g, &pdc_client_mpi_rank_g);
     MPI_Comm_size(PDC_CLIENT_COMM_WORLD_g, &pdc_client_mpi_size_g);
+    //printf("my client rank = %d, client communicator size = %d\n", pdc_client_mpi_rank_g, pdc_client_mpi_size_g);
 #endif
 
     if (pdc_client_mpi_rank_g == 0)
@@ -2338,8 +2339,7 @@ PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj
     in.data_type           = create_prop->obj_prop_pub->type;
     in.data.data_server_id = PDC_CLIENT_DATA_SERVER();
     *data_server_id        = in.data.data_server_id;
-    // printf("rank = %d, PDC_Client_send_name_recv_id data_server_id = %u\n", pdc_client_mpi_rank_g,
-    // in.data.data_server_id);
+    //printf("pdc_client_mpi_rank_g = %d, pdc_nclient_per_server_g = %d, pdc_server_num_g = %d, data_server_id = %u\n", (int)pdc_client_mpi_rank_g, (int)pdc_nclient_per_server_g, (int)pdc_server_num_g, (unsigned)in.data.data_server_id);
 
     if ((in.data.ndim = create_prop->obj_prop_pub->ndim) > 0) {
         if (in.data.ndim >= 1)

@@ -526,6 +526,7 @@ PDC_Server_lookup_client_cb(const struct hg_cb_info *callback_info)
     if (client_id >= (uint32_t)pdc_client_num_g) {
         printf("==PDC_SERVER[%d]: invalid input client id %d\n", pdc_server_rank_g, client_id);
         goto done;
+
     }
     pdc_client_info_g[client_id].addr       = callback_info->info.lookup.addr;
     pdc_client_info_g[client_id].addr_valid = 1;
@@ -1137,7 +1138,7 @@ PDC_Server_checkpoint()
     pdc_kvtag_list_t *           kvlist_elt;
     pdc_hash_table_entry_head *  head;
     pdc_cont_hash_table_entry_t *cont_head;
-    int      n_entry, metadata_size = 0, region_count = 0, n_region, n_write_region = 0, n_kvtag, key_len;
+    int      n_entry, metadata_size = 0, region_count = 0, n_region, n_objs, n_write_region = 0, n_kvtag, key_len;
     uint32_t hash_key;
     HashTablePair     pair;
     char              checkpoint_file[ADDR_MAX];
@@ -1243,7 +1244,7 @@ PDC_Server_checkpoint()
                 ret_value = FAIL;
                 goto done;
             }
-
+#if 0
             // Write storage region info
             data_server_region_t *region = NULL;
             region                       = PDC_Server_get_obj_region(elt->obj_id);
@@ -1258,9 +1259,23 @@ PDC_Server_checkpoint()
             else {
                 fwrite(&n_region, sizeof(int), 1, file);
             }
-
+#endif
             metadata_size++;
             region_count += n_region;
+        }
+    }
+// Note data server region are managed by data server instead of metadata server
+    data_server_region_t *region = NULL;
+    DL_COUNT(dataserver_region_g, region, n_objs);
+    fwrite(&n_objs, sizeof(int), 1, file);
+    DL_FOREACH(dataserver_region_g, region)
+    {
+        fwrite(&region->obj_id, sizeof(uint64_t), 1, file);
+        DL_COUNT(region->region_storage_head, region_elt, n_region);
+        fwrite(&n_region, sizeof(int), 1, file);
+        DL_FOREACH(region->region_storage_head, region_elt)
+        {
+            fwrite(region_elt, sizeof(region_list_t), 1, file);
         }
     }
 
@@ -1311,7 +1326,7 @@ perr_t
 PDC_Server_restart(char *filename)
 {
     perr_t ret_value = SUCCEED;
-    int    n_entry, count, i, j, nobj = 0, all_nobj = 0, all_n_region, n_region, total_region = 0, n_kvtag,
+    int    n_entry, count, i, j, nobj = 0, all_nobj = 0, all_n_region, n_region, n_objs, total_region = 0, n_kvtag,
                               key_len;
     int                          n_cont, all_cont;
     pdc_metadata_t *             metadata, *elt;
@@ -1533,7 +1548,7 @@ PDC_Server_restart(char *filename)
 
                 DL_APPEND((metadata + i)->storage_region_list_head, region_list);
             } // For j
-
+#if 0
             // read storage region info
             if (fread(&n_region, sizeof(int), 1, file) != 1) {
                 printf("Read failed for n_region\n");
@@ -1551,7 +1566,7 @@ PDC_Server_restart(char *filename)
                 }
                 DL_APPEND(new_obj_reg->region_storage_head, new_region_list);
             }
-
+#endif
             total_region += n_region;
 
             DL_SORT((metadata + i)->storage_region_list_head, region_cmp);
@@ -1574,6 +1589,30 @@ PDC_Server_restart(char *filename)
             }
         }
         n_entry--;
+    }
+
+    if (fread(&n_objs, sizeof(int), 1, file) != 1) {
+        printf("Read failed for n_objs\n");
+    }
+
+    for ( i = 0; i < n_objs; ++i ) {
+        data_server_region_t *new_obj_reg = (data_server_region_t *)calloc(1, sizeof(struct data_server_region_t));
+        new_obj_reg->fd               = -1;
+        new_obj_reg->storage_location = (char *)malloc(sizeof(char) * ADDR_MAX);
+        if (fread(&new_obj_reg->obj_id, sizeof(uint64_t), 1, file) != 1) {
+            printf("Read failed for obj_id\n");
+        }
+        if (fread(&n_region, sizeof(int), 1, file) != 1) {
+            printf("Read failed for n_region\n");
+        }
+        DL_APPEND(dataserver_region_g, new_obj_reg);
+        for (j = 0; j < n_region; j++) {
+            region_list_t *new_region_list = (region_list_t *)malloc(sizeof(region_list_t));
+            if (fread(new_region_list, sizeof(region_list_t), 1, file) != 1) {
+                printf("Read failed for new_region_list\n");
+            }
+            DL_APPEND(new_obj_reg->region_storage_head, new_region_list);
+        }
     }
 
     fclose(file);

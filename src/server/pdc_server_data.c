@@ -4977,6 +4977,7 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 #endif
 
     region_list_t *storage_region = NULL;
+
     DL_FOREACH(region->region_storage_head, elt)
     {
         // flag = 0;
@@ -4998,11 +4999,11 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 
             if (region_info->ndim == 1) {
                 pos = (overlap_start[0] - region_info->offset[0]) * unit;
-                /*
+/*
                                 printf("overlap_start[0] = %" PRIu64 ", region_info->offset[0] = %" PRIu64
                                        ", elt->count[0] = %" PRIu64 ", overlap_start_local[0] = %" PRIu64
                    "\n", overlap_start[0], region_info->offset[0], elt->count[0], overlap_start_local[0]);
-                */
+*/
                 if (pos > (uint64_t)request_bytes) {
                     printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld! @ line %d\n",
                            pdc_server_rank_g, pos, request_bytes, __LINE__);
@@ -5016,7 +5017,6 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 #ifdef PDC_TIMING
                 start_posix = MPI_Wtime();
 #endif
-
                 if ((my_read_bytes =
                          pread(region->fd, buf + pos, overlap_count[0] * unit,
                                storage_region->offset + (overlap_start[0] - elt->start[0]) * unit)) !=
@@ -6990,6 +6990,7 @@ PDC_query_fastbit_idx(region_list_t *region, pdc_query_constraint_t *constraint,
             printf("==PDC_SERVER[%d]: %s - error with operator type!\n", pdc_server_rank_g, __func__);
             ret_value = FAIL;
             goto done;
+
     } // End switch
 
     if (constraint->op == PDC_GT)

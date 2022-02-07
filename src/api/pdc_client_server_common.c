@@ -421,7 +421,6 @@ PDC_server_timing_report()
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Reduce(server_timings, &max_timings, sizeof(pdc_server_timing) / sizeof(double), MPI_DOUBLE, MPI_MAX,
                0, MPI_COMM_WORLD);
-    printf("checkpoint @ line %d\n", __LINE__);
     sprintf(filename, "pdc_server_log_rank_%d.csv", rank);
 
     stream = fopen(filename, "w");
@@ -429,6 +428,7 @@ PDC_server_timing_report()
     fprintf(stream, "%s", ctime(&now));
     timestamp_log(stream, "buf_obj_map", buf_obj_map_timestamps);
     timestamp_log(stream, "buf_obj_unmap", buf_obj_unmap_timestamps);
+
 
     timestamp_log(stream, "obtain_lock_write", obtain_lock_write_timestamps);
     timestamp_log(stream, "obtain_lock_read", obtain_lock_read_timestamps);
@@ -2023,6 +2023,11 @@ HG_TEST_RPC_CB(gen_obj_id, handle)
     // Insert to hash table
     ret_value = PDC_insert_metadata_to_hash_table(&in, &out);
 
+    int server_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
+/*
+    printf("server rank %llu generated object with data server ID %u, obj_id = %llu\n", (long long unsigned) server_rank, (unsigned)in.data.data_server_id, (long long unsigned) out.obj_id);
+*/
     HG_Respond(handle, NULL, NULL, &out);
 
     HG_Free_input(handle, &in);
@@ -2196,7 +2201,6 @@ HG_TEST_RPC_CB(metadata_query, handle)
         out.ret.tags           = "N/A";
         out.ret.data_location  = "N/A";
     }
-
     HG_Respond(handle, NULL, NULL, &out);
 
     HG_Free_input(handle, &in);
@@ -5720,6 +5724,7 @@ HG_TEST_RPC_CB(transfer_request_wait_all, handle)
     ret_value =
         HG_Bulk_transfer(info->context, transfer_request_wait_all_bulk_transfer_cb, local_bulk_args,
                          HG_BULK_PULL, info->addr, in.local_bulk_handle, 0, local_bulk_args->bulk_handle, 0,
+
                          local_bulk_args->in.total_buf_size, HG_OP_ID_IGNORE);
 
     fflush(stdout);

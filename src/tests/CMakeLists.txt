@@ -24,8 +24,9 @@ set(PROGRAMS
   cont_del
   cont_getid
   cont_tags
-#  create_obj
+  create_obj
   open_obj
+  open_existing_obj
   obj_info
   obj_del
   obj_iter
