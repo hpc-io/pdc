@@ -4039,6 +4039,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
 
     hg_info = HG_Get_info(handle);
 
+
     if (in.access_type == PDC_READ)
         PGOTO_ERROR(HG_OTHER_ERROR, "release %" PRId64 " access_type==READ NOT SUPPORTED YET!", in.obj_id);
 
@@ -4799,6 +4800,26 @@ get_server_rank()
             printf("server POSIX read failed\n");                                                            \
         }                                                                                                    \
     }
+
+/*
+ * Region overlapping detection.
+ * Input: Two regions.
+ * Output: Null if not overlapping. Otherwise return the overlapping part.
+*/
+static perr_t PDC_region_overlap_detect(int ndim, uint64_t *offset1, uint64_t *size1, uint64_t *offset2, uint64_t *size2, uint64_t **output_offset, uint64_t **output_size) {
+    int i, overlap;
+    // First we check if two regions overlaps with each other. If any of the dimensions do not overlap, then we are done.
+    overlap = 1;
+    for ( i = 0; i < ndim; ++i ) {
+        // First case checking offset1 >= offset2, offset1 < offset2 + szie2
+        // Second case checking offset2 >= offset2, offset2 < offset1 + size1
+        if ( (offset2[i] + size2[i] < offset1[i] || offset1[i] < offset2[i]) && (offset1[i] + size1[i] < offset2[i] || offset2[i] > offset1[i]) ) {
+            overlap = 0;
+        }
+    }
+    *output_offset = NULL;
+    *output_size = NULL;
+}
 
 /*
  * Create a new linked list node for a region transfer request and append it to the end of the linked list.

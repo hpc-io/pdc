@@ -213,7 +213,7 @@ perr_t PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t da
 perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t ndim, uint64_t *local_dims,
                           uint64_t *local_offset, pdc_var_type_t local_type, void *local_data,
                           pdc_var_type_t remote_type, struct pdc_region_info *local_region,
-                          struct pdc_region_info *remote_region);
+                          struct pdc_region_info *remote_region, struct _pdc_obj_info *object_info);
 
 /**
  * Client request for buffer to object unmap
@@ -226,7 +226,7 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct pdc_region_info *reginfo,
-                            pdc_var_type_t data_type);
+                            pdc_var_type_t data_type, struct _pdc_obj_info *object_info);
 
 /**
  * Request of PDC client to get region lock
@@ -239,7 +239,7 @@ perr_t PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_region_lock(struct _pdc_obj_info *object_info, struct pdc_region_info *region_info,
+perr_t PDC_Client_region_lock(pdcid_t remote_obj_id, struct _pdc_obj_info *object_info, struct pdc_region_info *region_info,
                               pdc_access_t access_type, pdc_lock_mode_t lock_mode, pdc_var_type_t data_type,
                               pbool_t *obtained);
 
@@ -253,7 +253,7 @@ perr_t PDC_Client_region_lock(struct _pdc_obj_info *object_info, struct pdc_regi
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_region_info *region_info,
+perr_t PDC_Client_region_release(pdcid_t remote_obj_id, struct _pdc_obj_info *object_info, struct pdc_region_info *region_info,
                                  pdc_access_t access_type, pdc_var_type_t data_type, pbool_t *released);
 
 /**
@@ -657,6 +657,7 @@ hg_return_t PDC_recv_read_coords_data(const struct hg_cb_info *callback_info);
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_obj_prop_free(struct _pdc_obj_prop *cp);
+
 
 /**
  * ********

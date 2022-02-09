@@ -2471,7 +2471,7 @@ done:
 
 perr_t
 PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct pdc_region_info *reginfo,
-                     pdc_var_type_t data_type)
+                     pdc_var_type_t data_type, struct _pdc_obj_info *object_info)
 {
     perr_t                   ret_value = SUCCEED;
     hg_return_t              hg_ret    = HG_SUCCESS;
@@ -2495,11 +2495,9 @@ PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct pdc_re
     PDC_region_info_t_to_transfer_unit(reginfo, &(in.remote_region), unit);
 
     // Compute metadata server id
-    meta_server_id    = PDC_get_server_by_obj_id(remote_obj_id, pdc_server_num_g);
+    data_server_id      = ((pdc_metadata_t *)object_info->metadata)->data_server_id;
+    meta_server_id = PDC_get_server_by_obj_id(remote_obj_id, pdc_server_num_g);
     in.meta_server_id = meta_server_id;
-
-    // Compute local data server id
-    data_server_id = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[data_server_id]++;
@@ -3353,7 +3351,7 @@ perr_t
 PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t ndim, uint64_t *local_dims,
                    uint64_t *local_offset, pdc_var_type_t local_type, void *local_data,
                    pdc_var_type_t remote_type, struct pdc_region_info *local_region,
-                   struct pdc_region_info *remote_region)
+                   struct pdc_region_info *remote_region, struct _pdc_obj_info *object_info)
 {
     perr_t       ret_value = SUCCEED;
     hg_return_t  hg_ret    = HG_SUCCESS;
@@ -3382,11 +3380,10 @@ PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t ndim, 
     in.ndim          = ndim;
 
     // Compute metadata server id
-    meta_server_id    = PDC_get_server_by_obj_id(remote_obj_id, pdc_server_num_g);
-    in.meta_server_id = meta_server_id;
+    data_server_id      = ((pdc_metadata_t *)object_info->metadata)->data_server_id;
+    meta_server_id = PDC_get_server_by_obj_id(remote_obj_id, pdc_server_num_g);
 
-    // Compute data server id
-    data_server_id = (pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g;
+    in.meta_server_id = meta_server_id;
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[data_server_id]++;
@@ -3521,7 +3518,7 @@ done:
 }
 
 perr_t
-PDC_Client_region_lock(struct _pdc_obj_info *object_info, struct pdc_region_info *region_info,
+PDC_Client_region_lock(pdcid_t remote_obj_id, struct _pdc_obj_info *object_info, struct pdc_region_info *region_info,
                        pdc_access_t access_type, pdc_lock_mode_t lock_mode, pdc_var_type_t data_type,
                        pbool_t *status)
 {
@@ -3537,17 +3534,8 @@ PDC_Client_region_lock(struct _pdc_obj_info *object_info, struct pdc_region_info
     double start          = MPI_Wtime(), end;
     double function_start = start;
 #endif
-    // Compute local data server id
-    if (pdc_server_selection_g != PDC_SERVER_DEFAULT) {
-        server_id      = object_info->obj_info_pub->server_id;
-        meta_server_id = server_id;
-    }
-    else {
-        // Compute metadata server id
-        meta_server_id = PDC_get_server_by_obj_id(object_info->obj_info_pub->meta_id, pdc_server_num_g);
-        // Compute local data server id
-        server_id = PDC_CLIENT_DATA_SERVER();
-    }
+    server_id      = ((pdc_metadata_t *)object_info->metadata)->data_server_id;
+    meta_server_id = PDC_get_server_by_obj_id(remote_obj_id, pdc_server_num_g);
     // Compute local data server id
     in.meta_server_id = meta_server_id;
     in.lock_mode      = lock_mode;
@@ -3584,6 +3572,7 @@ PDC_Client_region_lock(struct _pdc_obj_info *object_info, struct pdc_region_info
     else {
         timings.PDCreg_obtain_lock_write_rpc += MPI_Wtime() - start;
     }
+
 #endif
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_name_to_server(): Could not start HG_Forward()");
@@ -4146,7 +4135,7 @@ maybe_run_transform(struct _pdc_obj_info *object_info, struct pdc_region_info *r
 */
 
 perr_t
-PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_region_info *region_info,
+PDC_Client_region_release(pdcid_t remote_obj_id, struct _pdc_obj_info *object_info, struct pdc_region_info *region_info,
                           pdc_access_t access_type, pdc_var_type_t data_type, pbool_t *status)
 {
     perr_t ret_value = SUCCEED;
@@ -4198,16 +4187,8 @@ PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_region_i
         }
     */
     // Compute data server and metadata server ids.
-    if (pdc_server_selection_g != PDC_SERVER_DEFAULT) {
-        server_id      = object_info->obj_info_pub->server_id;
-        meta_server_id = server_id;
-    }
-    else {
-        // Compute metadata server id
-        meta_server_id = PDC_get_server_by_obj_id(object_info->obj_info_pub->meta_id, pdc_server_num_g);
-        // Compute local data server id
-        server_id = PDC_CLIENT_DATA_SERVER();
-    }
+    server_id      = ((pdc_metadata_t *)object_info->metadata)->data_server_id;
+    meta_server_id = PDC_get_server_by_obj_id(remote_obj_id, pdc_server_num_g);
     in.meta_server_id = meta_server_id;
 
     // Debug statistics for counting number of messages sent to each server.
