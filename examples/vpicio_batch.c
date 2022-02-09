@@ -78,8 +78,8 @@ main(int argc, char **argv)
     uint64_t *offset;
     uint64_t *offset_remote;
     uint64_t *mysize;
-    unsigned  sleep_time = 0;
-    int test_method = 2;
+    unsigned  sleep_time  = 0;
+    int       test_method = 2;
 
     pdcid_t *transfer_request_x, *transfer_request_y, *transfer_request_z, *transfer_request_px,
         *transfer_request_py, *transfer_request_pz, *transfer_request_id1, *transfer_request_id2, *ptr,
@@ -113,10 +113,10 @@ main(int argc, char **argv)
     if (argc >= 5) {
         test_method = atoi(argv[4]);
     }
-    
+
     if (!rank) {
-        printf("sleep time = %u, timestamps = %" PRIu64 ", numparticles = %" PRIu64 ", test_method = %d\n", sleep_time,
-               timestamps, numparticles, test_method);
+        printf("sleep time = %u, timestamps = %" PRIu64 ", numparticles = %" PRIu64 ", test_method = %d\n",
+               sleep_time, timestamps, numparticles, test_method);
     }
     dims[0] = numparticles * timestamps * size;
 
@@ -290,18 +290,21 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         start = MPI_Wtime();
 #endif
-        if ( test_method ) {
-            transfer_request_x[i] = PDCregion_transfer_create(&x[0], PDC_WRITE, obj_xx[i], region_x, region_xx);
+        if (test_method) {
+            transfer_request_x[i] =
+                PDCregion_transfer_create(&x[0], PDC_WRITE, obj_xx[i], region_x, region_xx);
             if (transfer_request_x[i] == 0) {
                 printf("Array x transfer request creation failed\n");
                 return 1;
             }
-            transfer_request_y[i] = PDCregion_transfer_create(&y[0], PDC_WRITE, obj_yy[i], region_y, region_yy);
+            transfer_request_y[i] =
+                PDCregion_transfer_create(&y[0], PDC_WRITE, obj_yy[i], region_y, region_yy);
             if (transfer_request_y[i] == 0) {
                 printf("Array y transfer request creation failed\n");
                 return 1;
             }
-            transfer_request_z[i] = PDCregion_transfer_create(&z[0], PDC_WRITE, obj_zz[i], region_z, region_zz);
+            transfer_request_z[i] =
+                PDCregion_transfer_create(&z[0], PDC_WRITE, obj_zz[i], region_z, region_zz);
             if (transfer_request_z[i] == 0) {
                 printf("Array z transfer request creation failed\n");
                 return 1;
@@ -336,7 +339,8 @@ main(int argc, char **argv)
                 printf("Array id2 transfer request creation failed\n");
                 return 1;
             }
-        } else {
+        }
+        else {
             ret = PDCbuf_obj_map(&x[0], PDC_FLOAT, region_x, obj_xx[i], region_xx);
             if (ret < 0)
                 printf("Array x PDCbuf_obj_map failed\n");
@@ -387,7 +391,7 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         start = MPI_Wtime();
 #endif
-        if ( test_method ) {
+        if (test_method) {
             temp_requests[0] = transfer_request_x[i];
             temp_requests[1] = transfer_request_y[i];
             temp_requests[2] = transfer_request_z[i];
@@ -397,17 +401,19 @@ main(int argc, char **argv)
             temp_requests[6] = transfer_request_id1[i];
             temp_requests[7] = transfer_request_id2[i];
         }
-        if ( test_method == 2 ) {
+        if (test_method == 2) {
             ret = PDCregion_transfer_start_all(temp_requests, 8);
             if (ret != SUCCEED) {
                 printf("Failed to start transfer for all regions\n");
                 return 1;
             }
-        } else if ( test_method == 1 ) {
-            for ( j = 0; j < 8; ++j ) {
+        }
+        else if (test_method == 1) {
+            for (j = 0; j < 8; ++j) {
                 ret = PDCregion_transfer_start(temp_requests[j]);
             }
-        } else {
+        }
+        else {
             ret = PDCreg_obtain_lock(obj_xx[i], region_xx, PDC_WRITE, PDC_NOBLOCK);
             if (ret != SUCCEED)
                 printf("Failed to obtain lock for region_xx\n");
@@ -442,17 +448,19 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         start = MPI_Wtime();
 #endif
-        if ( test_method == 2 ) {
+        if (test_method == 2) {
             ret = PDCregion_transfer_wait_all(temp_requests, 8);
             if (ret != SUCCEED) {
                 printf("Failed to start transfer for all regions\n");
                 return 1;
             }
-        } else if ( test_method == 1 ) {
-            for ( j = 0; j < 8; ++j ) {
+        }
+        else if (test_method == 1) {
+            for (j = 0; j < 8; ++j) {
                 ret = PDCregion_transfer_wait(temp_requests[j]);
             }
-        } else {
+        }
+        else {
             ret = PDCreg_release_lock(obj_xx[i], region_xx, PDC_WRITE);
             if (ret != SUCCEED)
                 printf("Failed to release lock for region_xx\n");
@@ -483,7 +491,7 @@ main(int argc, char **argv)
         transfer_wait += end - start;
         start = end;
 #endif
-        if ( test_method ) {
+        if (test_method) {
             ret = PDCregion_transfer_close(transfer_request_x[i]);
             if (ret != SUCCEED) {
                 printf("region xx transfer close failed\n");
@@ -524,7 +532,8 @@ main(int argc, char **argv)
                 printf("region id22 transfer close failed\n");
                 return 1;
             }
-        } else {
+        }
+        else {
             ret = PDCbuf_obj_unmap(obj_xx[i], region_xx);
             if (ret != SUCCEED)
                 printf("region xx unmap failed\n");
@@ -592,7 +601,6 @@ main(int argc, char **argv)
             printf("fail to close region region_id22\n");
             return 1;
         }
-
     }
 
 #ifdef ENABLE_MPI
