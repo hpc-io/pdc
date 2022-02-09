@@ -901,7 +901,8 @@ PDCbuf_obj_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id)
         PGOTO_ERROR(FAIL, "cannot locate region ID");
     reginfo = (struct pdc_region_info *)(info1->obj_ptr);
 
-    ret_value = PDC_Client_buf_unmap(object1->obj_info_pub->meta_id, remote_reg_id, reginfo, data_type, object1);
+    ret_value =
+        PDC_Client_buf_unmap(object1->obj_info_pub->meta_id, remote_reg_id, reginfo, data_type, object1);
 
     if (ret_value == SUCCEED) {
         PDC_dec_ref(remote_obj_id);
@@ -928,14 +929,14 @@ PDCreg_obtain_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type, pdc
     info1 = PDC_find_id(obj_id);
     if (info1 == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object ID");
-    object_info   = (struct _pdc_obj_info *)(info1->obj_ptr);
-    //object_info = PDC_obj_get_info(obj_id);
+    object_info = (struct _pdc_obj_info *)(info1->obj_ptr);
+    // object_info = PDC_obj_get_info(obj_id);
     data_type   = object_info->obj_pt->obj_prop_pub->type;
     region_info = PDCregion_get_info(reg_id);
-    ret_value =
-        PDC_Client_region_lock(object_info->obj_info_pub->meta_id, object_info, region_info, access_type, lock_mode, data_type, &obtained);
+    ret_value   = PDC_Client_region_lock(object_info->obj_info_pub->meta_id, object_info, region_info,
+                                       access_type, lock_mode, data_type, &obtained);
 
-    //PDC_free_obj_info(object_info);
+    // PDC_free_obj_info(object_info);
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -955,14 +956,15 @@ PDCreg_release_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type)
     info1 = PDC_find_id(obj_id);
     if (info1 == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object ID");
-    object_info   = (struct _pdc_obj_info *)(info1->obj_ptr);
-    //object_info = PDC_obj_get_info(obj_id);
+    object_info = (struct _pdc_obj_info *)(info1->obj_ptr);
+    // object_info = PDC_obj_get_info(obj_id);
     data_type   = object_info->obj_pt->obj_prop_pub->type;
     region_info = PDCregion_get_info(reg_id);
 
-    ret_value = PDC_Client_region_release(object_info->obj_info_pub->meta_id, object_info, region_info, access_type, data_type, &released);
+    ret_value = PDC_Client_region_release(object_info->obj_info_pub->meta_id, object_info, region_info,
+                                          access_type, data_type, &released);
 
-    //PDC_free_obj_info(object_info);
+    // PDC_free_obj_info(object_info);
 done:
     FUNC_LEAVE(ret_value);
 }

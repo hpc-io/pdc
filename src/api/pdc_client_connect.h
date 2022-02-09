@@ -239,9 +239,9 @@ perr_t PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_region_lock(pdcid_t remote_obj_id, struct _pdc_obj_info *object_info, struct pdc_region_info *region_info,
-                              pdc_access_t access_type, pdc_lock_mode_t lock_mode, pdc_var_type_t data_type,
-                              pbool_t *obtained);
+perr_t PDC_Client_region_lock(pdcid_t remote_obj_id, struct _pdc_obj_info *object_info,
+                              struct pdc_region_info *region_info, pdc_access_t access_type,
+                              pdc_lock_mode_t lock_mode, pdc_var_type_t data_type, pbool_t *obtained);
 
 /**
  * Request of PDC client to get region release
@@ -253,8 +253,9 @@ perr_t PDC_Client_region_lock(pdcid_t remote_obj_id, struct _pdc_obj_info *objec
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_region_release(pdcid_t remote_obj_id, struct _pdc_obj_info *object_info, struct pdc_region_info *region_info,
-                                 pdc_access_t access_type, pdc_var_type_t data_type, pbool_t *released);
+perr_t PDC_Client_region_release(pdcid_t remote_obj_id, struct _pdc_obj_info *object_info,
+                                 struct pdc_region_info *region_info, pdc_access_t access_type,
+                                 pdc_var_type_t data_type, pbool_t *released);
 
 /**
  * PDC client initialization
@@ -657,7 +658,6 @@ hg_return_t PDC_recv_read_coords_data(const struct hg_cb_info *callback_info);
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_obj_prop_free(struct _pdc_obj_prop *cp);
-
 
 /**
  * ********
