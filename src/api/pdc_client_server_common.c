@@ -4040,6 +4040,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     hg_info = HG_Get_info(handle);
 
 
+
     if (in.access_type == PDC_READ)
         PGOTO_ERROR(HG_OTHER_ERROR, "release %" PRId64 " access_type==READ NOT SUPPORTED YET!", in.obj_id);
 
@@ -4807,6 +4808,9 @@ get_server_rank()
  * Output: Null if not overlapping. Otherwise return the overlapping part.
 */
 static perr_t PDC_region_overlap_detect(int ndim, uint64_t *offset1, uint64_t *size1, uint64_t *offset2, uint64_t *size2, uint64_t **output_offset, uint64_t **output_size) {
+
+    perr_t                       ret_value = SUCCEED;
+    FUNC_ENTER(NULL);
     int i, overlap;
     // First we check if two regions overlaps with each other. If any of the dimensions do not overlap, then we are done.
     overlap = 1;
@@ -4819,6 +4823,9 @@ static perr_t PDC_region_overlap_detect(int ndim, uint64_t *offset1, uint64_t *s
     }
     *output_offset = NULL;
     *output_size = NULL;
+
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
 }
 
 /*
@@ -7624,6 +7631,7 @@ HG_TEST_RPC_CB(send_client_storage_meta_rpc, handle)
     bulk_args->handle = handle;
 
     /* Get info from handle */
+
     hg_info = HG_Get_info(handle);
 
     /* Get input parameters and data */
