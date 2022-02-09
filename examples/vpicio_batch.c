@@ -88,7 +88,7 @@ main(int argc, char **argv)
     uint64_t timestamps = 10;
 
     double start, end, transfer_start = .0, transfer_wait = .0, transfer_create = .0, transfer_close = .0,
-                       max_time, min_time, avg_time;
+                       max_time, min_time, avg_time, total_time, start_total_time;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -273,8 +273,8 @@ main(int argc, char **argv)
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
+    start_total_time = MPI_Wtime();
 #endif
-
     for (i = 0; i < timestamps; ++i) {
 
         offset_remote[0] = rank * numparticles;
@@ -604,6 +604,7 @@ main(int argc, char **argv)
     }
 
 #ifdef ENABLE_MPI
+    total_time = MPI_Wtime() - start_total_time;
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
@@ -671,6 +672,12 @@ main(int argc, char **argv)
     MPI_Reduce(&transfer_close, &min_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
     if (!rank) {
         printf("transfer close: %lf - %lf - %lf\n", min_time, avg_time / size, max_time);
+    }
+    MPI_Reduce(&total_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&total_time, &avg_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&total_time, &min_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    if (!rank) {
+        printf("total: %lf - %lf - %lf\n", min_time, avg_time / size, max_time);
     }
 #endif
     free(obj_xx);
