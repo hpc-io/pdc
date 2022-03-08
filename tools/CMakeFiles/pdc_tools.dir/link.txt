@@ -1,0 +1,1 @@
+/opt/cray/pe/craype/2.6.2/bin/cc -dynamic CMakeFiles/pdc_tools.dir/pdc_tools.c.o -o pdc_tools  -lpdc 
