@@ -26,6 +26,7 @@
 #define PDC_PROP_H
 
 #include "pdc_public.h"
+#include "pdc_obj.h"
 
 /*******************/
 /* Public Structs */
@@ -35,6 +36,7 @@ struct pdc_obj_prop {
     size_t         ndim;
     uint64_t *     dims;
     pdc_var_type_t type;
+    pdc_region_partition_t region_partition;
 };
 
 /*******************/

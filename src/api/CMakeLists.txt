@@ -67,6 +67,7 @@ set(PDC_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_query.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_region.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_region_cache.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_region_transfer.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transform.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transforms_common.c
   )

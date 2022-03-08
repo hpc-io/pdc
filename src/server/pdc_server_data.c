@@ -5020,6 +5020,7 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 #ifdef PDC_TIMING
                 start_posix = MPI_Wtime();
 #endif
+                printf("reading %lu bytes\n", overlap_count[0] * unit);
                 if ((my_read_bytes =
                          pread(region->fd, buf + pos, overlap_count[0] * unit,
                                storage_region->offset + (overlap_start[0] - elt->start[0]) * unit)) !=

@@ -90,6 +90,35 @@ struct _pdc_transfer_request_args {
     int32_t  ret;
 };
 
+// We pack all arguments for a start_all call to the same data server in a single structure, so we do not need to many arguments to a function.
+typedef struct pdc_transfer_request_start_all_pkg {
+    // One pkg, one data server
+    int data_server_id;
+    // Transfer request (for fast accessing obj metadata information)
+    pdc_transfer_request *transfer_request;
+    // Offset/length pair (remote)
+    int remote_ndim;
+    uint64_t *remote_offset;
+    uint64_t *remote_size;
+    uint64_t unit;
+    // Data buffer. This data buffer is contiguous according to the remote region. We assume this is after transformation of local regions
+    char *buf;
+    struct pdc_transfer_request_start_all_pkg *next;
+} pdc_transfer_request_start_all_pkg;
+
+// We pack all arguments for a wait_all call to the same data server in a single structure, so we do not need to many arguments to a function.
+typedef struct pdc_transfer_request_wait_all_pkg {
+    // Metadata_ID for waited.
+    uint64_t metadata_id;
+    // One pkg, one data server
+    int data_server_id;
+    // Record the index of the metadata_id in the current transfer_request
+    int index;
+    // Pointer to the transfer request
+    pdc_transfer_request *transfer_request;
+    struct pdc_transfer_request_wait_all_pkg *next;
+} pdc_transfer_request_wait_all_pkg;
+
 struct _pdc_transfer_request_all_args {
     uint64_t metadata_id;
     int32_t  ret;
@@ -163,36 +192,20 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdci
                                     pdcid_t *meta_id, uint32_t *data_server_id);
 
 perr_t PDC_Client_transfer_request(void *buf, pdcid_t obj_id, uint32_t data_server_id, int obj_ndim,
-                                   uint64_t *obj_dims, int local_ndim, uint64_t *local_offset,
-                                   uint64_t *local_size, int remote_ndim, uint64_t *remote_offset,
-                                   uint64_t *remote_size, pdc_var_type_t mem_type, pdc_access_t access_type,
-                                   uint64_t *metadata_id, char **read_bulk_buf_ptr, char **new_buf_ptr,
-                                   int **new_buf_ref_ptr);
+                            uint64_t *obj_dims, int remote_ndim, uint64_t *remote_offset, uint64_t *remote_size,
+                            size_t unit, pdc_access_t access_type, pdcid_t *metadata_id);
 
-perr_t PDC_Client_transfer_request_all(int n_objs, void **buf, uint32_t data_server_id, pdcid_t *obj_id,
-                                       int *obj_ndim, uint64_t **obj_dims, int *local_ndim,
-                                       uint64_t **local_offset, uint64_t **local_size, int *remote_ndim,
-                                       uint64_t **remote_offset, uint64_t **remote_size,
-                                       pdc_var_type_t *mem_type, pdc_access_t access_type,
-                                       pdcid_t *metadata_id, char **read_bulk_buf, char **new_buf,
-                                       int *new_buf_ref);
+int
+PDC_Client_get_var_type_size(pdc_var_type_t dtype);
 
-perr_t PDC_Client_transfer_request_status(pdcid_t transfer_request_id, uint32_t data_server_id,
-                                          pdc_transfer_status_t *completed, char *buf, char *new_buf,
-                                          uint64_t *obj_dims, int local_ndim, uint64_t *local_offset,
-                                          uint64_t *local_size, pdc_var_type_t mem_type,
-                                          pdc_access_t access_type, char *read_bulk_buf, int *new_buf_ref);
+perr_t
+PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t data_server_id, char *bulk_buf, hg_size_t bulk_size, uint64_t *metadata_id);
 
-perr_t PDC_Client_transfer_request_wait_all(int n_objs, pdcid_t *transfer_request_id, uint32_t data_server_id,
-                                            pdc_access_t *access_type, char **buf, char **new_buf,
-                                            uint64_t **obj_dims, int *local_ndim, uint64_t **local_offset,
-                                            uint64_t **local_size, pdc_var_type_t *mem_type,
-                                            char **read_bulk_buf, int **new_buf_ref);
+perr_t PDC_Client_transfer_request_status(pdcid_t transfer_request_id, uint32_t data_server_id, pdc_transfer_status_t *completed);
 
-perr_t PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_server_id, int access_type,
-                                        char *buf, char *new_buf, uint64_t *obj_dims, int local_ndim,
-                                        uint64_t *local_offset, uint64_t *local_size, pdc_var_type_t mem_type,
-                                        char *read_bulk_buf, int *new_buf_ref);
+perr_t PDC_Client_transfer_request_wait_all(int n_objs, pdcid_t *transfer_request_id, uint32_t data_server_id);
+
+perr_t PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_server_id, int access_type);
 
 /**
  * Apply a map from buffer to an object

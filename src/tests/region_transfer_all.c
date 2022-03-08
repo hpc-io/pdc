@@ -31,8 +31,8 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include "pdc.h"
-#define BUF_LEN 4096
-#define OBJ_NUM 10
+#define BUF_LEN 256
+#define OBJ_NUM 2
 
 int
 main(int argc, char **argv)
@@ -58,12 +58,14 @@ main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
     if (argc >= 2) {
-        start_method = atoi(argv[0]);
+        start_method = atoi(argv[1]);
     }
     if (argc >= 3) {
-        wait_method = atoi(argv[1]);
+        wait_method = atoi(argv[2]);
     }
-
+    if ( !rank ) {
+        printf("start_method = %d, wait_method = %d\n", start_method, wait_method);
+    }
     data         = (int **)malloc(sizeof(int *) * OBJ_NUM);
     data_read    = (int **)malloc(sizeof(int *) * OBJ_NUM);
     data[0]      = (int *)malloc(sizeof(int) * BUF_LEN * OBJ_NUM);
@@ -123,6 +125,16 @@ main(int argc, char **argv)
     // create many objects
     obj = (pdcid_t *)malloc(sizeof(pdcid_t) * OBJ_NUM);
     for (i = 0; i < OBJ_NUM; ++i) {
+        if ( i % 2 ) {
+            ret = PDCprop_set_obj_type(obj_prop, PDC_REGION_STATIC);
+        } else {
+            ret = PDCprop_set_obj_type(obj_prop, PDC_OBJ_STATIC);
+        }
+        if (ret != SUCCEED) {
+            printf("Fail to set obj type @ line %d\n", __LINE__);
+            ret_value = 1;
+        }
+
         sprintf(obj_name, "o%d_%d", i, rank);
         obj[i] = PDCobj_create(cont, obj_name, obj_prop);
         if (obj[i] > 0) {

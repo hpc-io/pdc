@@ -412,6 +412,7 @@ PDC_obj_end()
 
     FUNC_ENTER(NULL);
 
+
     if (PDC_destroy_type(PDC_OBJ) < 0)
         PGOTO_ERROR(FAIL, "unable to destroy object interface");
 
@@ -782,6 +783,26 @@ PDCprop_set_obj_type(pdcid_t obj_prop, pdc_var_type_t type)
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
     prop                     = (struct _pdc_obj_prop *)(info->obj_ptr);
     prop->obj_prop_pub->type = type;
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDCprop_set_obj_transfer_type(pdcid_t obj_prop, pdc_region_partition_t region_partition)
+{
+    perr_t                ret_value = SUCCEED;
+    struct _pdc_id_info * info;
+    struct _pdc_obj_prop *prop;
+
+    FUNC_ENTER(NULL);
+
+    info = PDC_find_id(obj_prop);
+    if (info == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object property ID");
+    prop                     = (struct _pdc_obj_prop *)(info->obj_ptr);
+    prop->obj_prop_pub->region_partition = region_partition;
 
 done:
     fflush(stdout);

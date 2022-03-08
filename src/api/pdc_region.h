@@ -44,29 +44,56 @@ struct pdc_region_info {
     size_t                unit;
 };
 
+// pdc region transfer class. Contains essential information for performing non-blocking PDC client I/O perations.
 typedef struct pdc_transfer_request {
     pdcid_t        obj_id;
-    uint32_t       data_server_id;
-    uint64_t       metadata_id;
+    // Data server ID for sending data to, used by object static only.
+    int       data_server_id;
+    // List of metadata. For dynamic object partitioning strategy, the metadata_id are owned by obj_servers correspondingly. For static object partitioning, this ID is managed by the server with data_server_id.
+    uint64_t*      metadata_id;
+    // PDC_READ or PDC_WRITE
     pdc_access_t   access_type;
+    // Determine unit size.
     pdc_var_type_t mem_type;
+    size_t unit;
+    // User data buffer
     char *         buf;
     /* Used internally for 2D and 3D data */
-    char *read_bulk_buf;
-    char *new_buf;
-    int * new_buf_ref;
+    // Contiguous buffers for read, undefined for PDC_WRITE. Static region mapping has >= 1 number of read_bulk_buf. Other mappings have size of 1.
+    char  **read_bulk_buf;
+    // Simple counter, initialized to be zero.
+    int read_bulk_buf_index;
+    // buffer used for bulk transfer in mercury
+    char  *new_buf;
+    // For each of the contig buffer sent to a server, we have a bulk buffer.
+    char  **bulk_buf;
+    // Reference counter for bulk_buf, if 0, we free it. 
+    int   **bulk_buf_ref;
+    pdc_region_partition_t region_partition;
 
+    // Dynamic object partitioning (static region partitioning and dynamic region partitioning)
+    int n_obj_servers;
+    int *obj_servers;
+    // Used by static region partitioning, these variables are regions that overlap the static regions of data servers.
+    uint64_t **output_offsets;
+    uint64_t **sub_offsets;
+    uint64_t **output_sizes;
+    // Used only when access_type == PDC_WRITE, otherwise it should be NULL.
+    char **output_buf;
+
+    // Local region
     int       local_region_ndim;
     uint64_t *local_region_offset;
     uint64_t *local_region_size;
-
+    // Remote region
     int       remote_region_ndim;
     uint64_t *remote_region_offset;
     uint64_t *remote_region_size;
-
+    uint64_t total_data_size;
+    // Object dimensions
     int       obj_ndim;
     uint64_t *obj_dims;
-
+    // Pointer to object info, can be useful sometimes. We do not want to go through PDC ID list many times.
     struct _pdc_obj_info *obj_pointer;
 } pdc_transfer_request;
 

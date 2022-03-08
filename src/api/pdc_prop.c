@@ -94,6 +94,7 @@ PDCprop_create(pdc_prop_type_t type, pdcid_t pdcid)
         q->obj_prop_pub->ndim        = 0;
         q->obj_prop_pub->dims        = NULL;
         q->obj_prop_pub->type        = PDC_UNKNOWN;
+        q->obj_prop_pub->region_partition        = PDC_REGION_STATIC;
         q->data_loc                  = NULL;
         q->app_name                  = NULL;
         q->time_step                 = 0;
@@ -248,6 +249,7 @@ pdc_prop_obj_close(struct _pdc_obj_prop *cp)
     free(cp->tags);
     free(cp->data_loc);
     cp = PDC_FREE(struct _pdc_obj_prop, cp);
+
 
     FUNC_LEAVE(ret_value);
 }

@@ -60,10 +60,10 @@ main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    if (argc >= 2) {
+    if (argc >= 1) {
         start_method = atoi(argv[0]);
     }
-    if (argc >= 3) {
+    if (argc >= 2) {
         wait_method = atoi(argv[1]);
     }
 
@@ -126,6 +126,11 @@ main(int argc, char **argv)
     // create many objects
     obj = (pdcid_t *)malloc(sizeof(pdcid_t) * OBJ_NUM);
     for (i = 0; i < OBJ_NUM; ++i) {
+        if ( i % 2 ) {
+            ret = PDCprop_set_obj_type(obj_prop, PDC_REGION_STATIC);
+        } else {
+            ret = PDCprop_set_obj_type(obj_prop, PDC_OBJ_STATIC);
+        }
         sprintf(obj_name, "o%d_%d", i, rank);
         obj[i] = PDCobj_create(cont, obj_name, obj_prop);
         if (obj[i] > 0) {

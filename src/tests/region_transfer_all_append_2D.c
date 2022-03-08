@@ -63,10 +63,10 @@ main(int argc, char **argv)
 #endif
 
     if (argc >= 2) {
-        start_method = atoi(argv[0]);
+        start_method = atoi(argv[1]);
     }
     if (argc >= 3) {
-        wait_method = atoi(argv[1]);
+        wait_method = atoi(argv[2]);
     }
 
     data         = (int **)malloc(sizeof(int *) * OBJ_NUM);
@@ -129,6 +129,11 @@ main(int argc, char **argv)
     // create many objects
     obj = (pdcid_t *)malloc(sizeof(pdcid_t) * OBJ_NUM);
     for (i = 0; i < OBJ_NUM; ++i) {
+        if ( i % 2 ) {
+            ret = PDCprop_set_obj_type(obj_prop, PDC_REGION_STATIC);
+        } else {
+            ret = PDCprop_set_obj_type(obj_prop, PDC_OBJ_STATIC);
+        }
         sprintf(obj_name, "o%d_%d", i, rank);
         obj[i] = PDCobj_create(cont, obj_name, obj_prop);
         if (obj[i] > 0) {

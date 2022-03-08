@@ -1492,6 +1492,7 @@ PDC_metadata_t_to_transfer_t(pdc_metadata_t *meta, pdc_metadata_transfer_t *tran
     transfer->obj_id          = meta->obj_id;
     transfer->cont_id         = meta->cont_id;
     transfer->data_server_id  = meta->data_server_id;
+    transfer->region_partition  = meta->region_partition;
     transfer->ndim            = meta->ndim;
     transfer->dims0           = meta->dims[0];
     transfer->dims1           = meta->dims[1];
@@ -1529,6 +1530,7 @@ PDC_transfer_t_to_metadata_t(pdc_metadata_transfer_t *transfer, pdc_metadata_t *
     meta->obj_id         = transfer->obj_id;
     meta->cont_id        = transfer->cont_id;
     meta->data_server_id = transfer->data_server_id;
+    meta->region_partition = transfer->region_partition;
     meta->time_step      = transfer->time_step;
     meta->ndim           = transfer->ndim;
     meta->dims[0]        = transfer->dims0;
@@ -4039,6 +4041,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
 
     hg_info = HG_Get_info(handle);
 
+
     if (in.access_type == PDC_READ)
         PGOTO_ERROR(HG_OTHER_ERROR, "release %" PRId64 " access_type==READ NOT SUPPORTED YET!", in.obj_id);
 
@@ -4805,7 +4808,7 @@ get_server_rank()
  * Input: Two regions.
  * Output: Null if not overlapping. Otherwise return the overlapping part.
  */
-static perr_t
+perr_t
 PDC_region_overlap_detect(int ndim, uint64_t *offset1, uint64_t *size1, uint64_t *offset2, uint64_t *size2,
                           uint64_t **output_offset, uint64_t **output_size)
 {
@@ -4819,14 +4822,30 @@ PDC_region_overlap_detect(int ndim, uint64_t *offset1, uint64_t *size1, uint64_t
     for (i = 0; i < ndim; ++i) {
         // First case checking offset1 >= offset2, offset1 < offset2 + szie2
         // Second case checking offset2 >= offset2, offset2 < offset1 + size1
-        if ((offset2[i] + size2[i] < offset1[i] || offset1[i] < offset2[i]) &&
-            (offset1[i] + size1[i] < offset2[i] || offset2[i] > offset1[i])) {
+        if ((offset2[i] + size2[i] <= offset1[i] || offset1[i] < offset2[i]) &&
+            (offset1[i] + size1[i] <= offset2[i] || offset2[i] > offset1[i])) {
             overlap = 0;
         }
     }
-    *output_offset = NULL;
-    *output_size   = NULL;
+    if ( !overlap ) {
+        *output_offset = NULL;
+        *output_size   = NULL;
+        goto done;
+    }
+    // Overlapping exist.
+    *output_offset = (uint64_t*) malloc(sizeof(uint64_t) * ndim);
+    *output_size = (uint64_t*) malloc(sizeof(uint64_t) * ndim);
+    for ( i = 0; i < ndim; ++i ) {
+        if ( offset1[i] > offset2[i] ) {
+            output_offset[0][i] = offset2[i];
+            output_size[0][i] = ( (offset2[i] + size2[i] < offset1[i] + size1[i]) ? (offset1[i] + size1[i]) : (offset2[i] + size2[i]) ) - offset2[i];
+        } else {
+            output_offset[0][i] = offset1[i];
+            output_size[0][i] = ( (offset1[i] + size1[i] < offset2[i] + size2[i]) ? (offset2[i] + size2[i]) : (offset1[i] + size1[i]) ) - offset1[i];
+        }
+    }
 
+done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
@@ -5359,6 +5378,14 @@ transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info)
                                        request_data.obj_dims[i], remote_reg_info, (void *)ptr,
                                        request_data.unit[i], 0);
 #endif
+/*
+        printf("server read array:");
+        uint64_t k;
+        for ( k = 0; k < remote_reg_info->size[0]; ++k ) {
+            printf("%d,", *(int*)(ptr + sizeof(int) * k));
+        }
+        printf("\n");
+*/
         ptr += mem_size;
     }
 
@@ -5446,7 +5473,14 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
                                        request_data.obj_dims[i], remote_reg_info,
                                        (void *)request_data.data_buf[i], request_data.unit[i], 1);
 #endif
-
+/*
+        uint64_t j;
+        printf("write array:");
+        for ( j = 0; j < remote_reg_info->size[0]; ++j ) {
+            printf("%d,", *(int*)(request_data.data_buf[i] + sizeof(int) * j));
+        }
+        printf("\n");
+*/
         PDC_finish_request(local_bulk_args->transfer_request_id[i]);
     }
     pthread_mutex_unlock(&transfer_request_status_mutex);

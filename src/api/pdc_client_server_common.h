@@ -266,6 +266,7 @@ typedef struct pdc_metadata_transfer_t {
     const char *data_location;
     // preferred data server ID
     uint32_t data_server_id;
+    uint8_t  region_partition;
 
     // The following support state changes to objects
     // as a result of a transform.
@@ -403,6 +404,7 @@ typedef struct pdc_metadata_t {
     time_t         create_time;
     time_t         last_modified_time;
     uint32_t       data_server_id;
+    uint8_t        region_partition;
 
     char              tags[TAG_LEN_MAX];
     pdc_kvtag_list_t *kvtag_list_head;
@@ -1321,6 +1323,7 @@ hg_proc_region_transform_and_lock_in_t(hg_proc_t proc, void *data)
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
+
     }
     ret = hg_proc_int32_t(proc, &struct_data->transform_id);
     if (ret != HG_SUCCESS) {
@@ -1585,6 +1588,11 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
     ret = hg_proc_uint32_t(proc, &struct_data->data_server_id);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc data_server_id error");
+        return ret;
+    }
+    ret = hg_proc_uint8_t(proc, &struct_data->region_partition);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc region_partition error");
         return ret;
     }
     // Added to support transforms
