@@ -2346,8 +2346,9 @@ PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj
     in.data_type             = create_prop->obj_prop_pub->type;
     in.data.data_server_id   = PDC_CLIENT_DATA_SERVER();
     in.data.region_partition = create_prop->obj_prop_pub->region_partition;
-    //printf("prepare for sending region partition %d with obj name %s\n", (int)in.data.region_partition, obj_name);
-    *data_server_id          = in.data.data_server_id;
+    // printf("prepare for sending region partition %d with obj name %s\n", (int)in.data.region_partition,
+    // obj_name);
+    *data_server_id = in.data.data_server_id;
     // printf("pdc_client_mpi_rank_g = %d, pdc_nclient_per_server_g = %d, pdc_server_num_g = %d,
     // data_server_id = %u\n", (int)pdc_client_mpi_rank_g, (int)pdc_nclient_per_server_g,
     // (int)pdc_server_num_g, (unsigned)in.data.data_server_id);

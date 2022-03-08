@@ -72,7 +72,7 @@ typedef struct pdc_transfer_request {
     pdc_region_partition_t region_partition;
 
     // Dynamic object partitioning (static region partitioning and dynamic region partitioning)
-    int  n_obj_servers;
+    int       n_obj_servers;
     uint32_t *obj_servers;
     // Used by static region partitioning, these variables are regions that overlap the static regions of data
     // servers.
@@ -129,7 +129,6 @@ typedef struct pdc_transfer_request_wait_all_pkg {
     pdc_transfer_request *                    transfer_request;
     struct pdc_transfer_request_wait_all_pkg *next;
 } pdc_transfer_request_wait_all_pkg;
-
 
 pdcid_t
 PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, pdcid_t local_reg,
@@ -489,7 +488,7 @@ static_region_partition(char *buf, int ndim, uint64_t unit, pdc_access_t access_
         *output_offsets  = (uint64_t **)realloc(*output_offsets, sizeof(uint64_t *) * n_data_servers[0]);
         *output_sizes    = (uint64_t **)realloc(*output_sizes, sizeof(uint64_t *) * n_data_servers[0]);
 
-        *sub_offsets     = (uint64_t **)realloc(*sub_offsets, sizeof(uint64_t *) * n_data_servers[0]);
+        *sub_offsets = (uint64_t **)realloc(*sub_offsets, sizeof(uint64_t *) * n_data_servers[0]);
         if (set_output_buf) {
             *output_buf = (char **)realloc(*output_buf, sizeof(char *) * n_data_servers[0]);
         }
@@ -504,9 +503,11 @@ sort_by_data_server_start_all(const void *elem1, const void *elem2)
 {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"
-    if ( (*(pdc_transfer_request_start_all_pkg **)elem1)->data_server_id > (*(pdc_transfer_request_start_all_pkg **)elem2)->data_server_id)
+    if ((*(pdc_transfer_request_start_all_pkg **)elem1)->data_server_id >
+        (*(pdc_transfer_request_start_all_pkg **)elem2)->data_server_id)
         return 1;
-    if ( (*(pdc_transfer_request_start_all_pkg **)elem1)->data_server_id < (*(pdc_transfer_request_start_all_pkg **)elem2)->data_server_id)
+    if ((*(pdc_transfer_request_start_all_pkg **)elem1)->data_server_id <
+        (*(pdc_transfer_request_start_all_pkg **)elem2)->data_server_id)
         return -1;
     return 0;
 #pragma GCC diagnostic pop
@@ -517,9 +518,11 @@ sort_by_data_server_wait_all(const void *elem1, const void *elem2)
 {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"
-    if ( (*(pdc_transfer_request_wait_all_pkg **)elem1)->data_server_id > (*(pdc_transfer_request_wait_all_pkg **)elem2)->data_server_id)
+    if ((*(pdc_transfer_request_wait_all_pkg **)elem1)->data_server_id >
+        (*(pdc_transfer_request_wait_all_pkg **)elem2)->data_server_id)
         return 1;
-    if ( (*(pdc_transfer_request_wait_all_pkg **)elem1)->data_server_id < (*(pdc_transfer_request_wait_all_pkg **)elem2)->data_server_id)
+    if ((*(pdc_transfer_request_wait_all_pkg **)elem1)->data_server_id <
+        (*(pdc_transfer_request_wait_all_pkg **)elem2)->data_server_id)
         return -1;
     return 0;
 #pragma GCC diagnostic pop
