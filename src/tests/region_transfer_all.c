@@ -63,7 +63,7 @@ main(int argc, char **argv)
     if (argc >= 3) {
         wait_method = atoi(argv[2]);
     }
-    if ( !rank ) {
+    if (!rank) {
         printf("start_method = %d, wait_method = %d\n", start_method, wait_method);
     }
     data         = (int **)malloc(sizeof(int *) * OBJ_NUM);
@@ -125,9 +125,10 @@ main(int argc, char **argv)
     // create many objects
     obj = (pdcid_t *)malloc(sizeof(pdcid_t) * OBJ_NUM);
     for (i = 0; i < OBJ_NUM; ++i) {
-        if ( i % 2 ) {
+        if (i % 2) {
             ret = PDCprop_set_obj_type(obj_prop, PDC_REGION_STATIC);
-        } else {
+        }
+        else {
             ret = PDCprop_set_obj_type(obj_prop, PDC_OBJ_STATIC);
         }
         if (ret != SUCCEED) {

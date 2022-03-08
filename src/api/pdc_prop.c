@@ -91,20 +91,20 @@ PDCprop_create(pdc_prop_type_t type, pdcid_t pdcid)
         q->obj_prop_pub = PDC_MALLOC(struct pdc_obj_prop);
         if (!q->obj_prop_pub)
             PGOTO_ERROR(0, "PDC object pub property memory allocation failed");
-        q->obj_prop_pub->ndim        = 0;
-        q->obj_prop_pub->dims        = NULL;
-        q->obj_prop_pub->type        = PDC_UNKNOWN;
-        q->obj_prop_pub->region_partition        = PDC_REGION_STATIC;
-        q->data_loc                  = NULL;
-        q->app_name                  = NULL;
-        q->time_step                 = 0;
-        q->tags                      = NULL;
-        q->buf                       = NULL;
-        new_id_o                     = PDC_id_register(PDC_OBJ_PROP, q);
-        q->obj_prop_pub->obj_prop_id = new_id_o;
-        id_info                      = PDC_find_id(pdcid);
-        pdc_class                    = (struct _pdc_class *)(id_info->obj_ptr);
-        q->pdc                       = PDC_CALLOC(struct _pdc_class);
+        q->obj_prop_pub->ndim             = 0;
+        q->obj_prop_pub->dims             = NULL;
+        q->obj_prop_pub->type             = PDC_UNKNOWN;
+        q->obj_prop_pub->region_partition = PDC_REGION_STATIC;
+        q->data_loc                       = NULL;
+        q->app_name                       = NULL;
+        q->time_step                      = 0;
+        q->tags                           = NULL;
+        q->buf                            = NULL;
+        new_id_o                          = PDC_id_register(PDC_OBJ_PROP, q);
+        q->obj_prop_pub->obj_prop_id      = new_id_o;
+        id_info                           = PDC_find_id(pdcid);
+        pdc_class                         = (struct _pdc_class *)(id_info->obj_ptr);
+        q->pdc                            = PDC_CALLOC(struct _pdc_class);
         if (q->pdc == NULL)
             PGOTO_ERROR(0, "PDC class allocation failed");
         if (pdc_class->name)
@@ -249,7 +249,6 @@ pdc_prop_obj_close(struct _pdc_obj_prop *cp)
     free(cp->tags);
     free(cp->data_loc);
     cp = PDC_FREE(struct _pdc_obj_prop, cp);
-
 
     FUNC_LEAVE(ret_value);
 }

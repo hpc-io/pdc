@@ -1323,7 +1323,6 @@ hg_proc_region_transform_and_lock_in_t(hg_proc_t proc, void *data)
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
-
     }
     ret = hg_proc_int32_t(proc, &struct_data->transform_id);
     if (ret != HG_SUCCESS) {

@@ -1484,31 +1484,31 @@ PDC_metadata_t_to_transfer_t(pdc_metadata_t *meta, pdc_metadata_transfer_t *tran
     if (NULL == meta || NULL == transfer)
         PGOTO_ERROR(FAIL, "PDC_metadata_t_to_transfer_t(): NULL input!");
 
-    transfer->user_id         = meta->user_id;
-    transfer->app_name        = meta->app_name;
-    transfer->obj_name        = meta->obj_name;
-    transfer->time_step       = meta->time_step;
-    transfer->data_type       = meta->data_type;
-    transfer->obj_id          = meta->obj_id;
-    transfer->cont_id         = meta->cont_id;
-    transfer->data_server_id  = meta->data_server_id;
-    transfer->region_partition  = meta->region_partition;
-    transfer->ndim            = meta->ndim;
-    transfer->dims0           = meta->dims[0];
-    transfer->dims1           = meta->dims[1];
-    transfer->dims2           = meta->dims[2];
-    transfer->dims3           = meta->dims[3];
-    transfer->tags            = meta->tags;
-    transfer->data_location   = meta->data_location;
-    transfer->current_state   = meta->transform_state;
-    transfer->t_storage_order = meta->current_state.storage_order;
-    transfer->t_dtype         = meta->current_state.dtype;
-    transfer->t_ndim          = meta->current_state.ndim;
-    transfer->t_dims0         = meta->current_state.dims[0];
-    transfer->t_dims1         = meta->current_state.dims[1];
-    transfer->t_dims2         = meta->current_state.dims[2];
-    transfer->t_dims3         = meta->current_state.dims[3];
-    transfer->t_meta_index    = meta->current_state.meta_index;
+    transfer->user_id          = meta->user_id;
+    transfer->app_name         = meta->app_name;
+    transfer->obj_name         = meta->obj_name;
+    transfer->time_step        = meta->time_step;
+    transfer->data_type        = meta->data_type;
+    transfer->obj_id           = meta->obj_id;
+    transfer->cont_id          = meta->cont_id;
+    transfer->data_server_id   = meta->data_server_id;
+    transfer->region_partition = meta->region_partition;
+    transfer->ndim             = meta->ndim;
+    transfer->dims0            = meta->dims[0];
+    transfer->dims1            = meta->dims[1];
+    transfer->dims2            = meta->dims[2];
+    transfer->dims3            = meta->dims[3];
+    transfer->tags             = meta->tags;
+    transfer->data_location    = meta->data_location;
+    transfer->current_state    = meta->transform_state;
+    transfer->t_storage_order  = meta->current_state.storage_order;
+    transfer->t_dtype          = meta->current_state.dtype;
+    transfer->t_ndim           = meta->current_state.ndim;
+    transfer->t_dims0          = meta->current_state.dims[0];
+    transfer->t_dims1          = meta->current_state.dims[1];
+    transfer->t_dims2          = meta->current_state.dims[2];
+    transfer->t_dims3          = meta->current_state.dims[3];
+    transfer->t_meta_index     = meta->current_state.meta_index;
 
 done:
     fflush(stdout);
@@ -1525,18 +1525,18 @@ PDC_transfer_t_to_metadata_t(pdc_metadata_transfer_t *transfer, pdc_metadata_t *
     if (NULL == meta || NULL == transfer)
         PGOTO_ERROR(FAIL, "PDC_transfer_t_to_metadata_t(): NULL input!");
 
-    meta->user_id        = transfer->user_id;
-    meta->data_type      = transfer->data_type;
-    meta->obj_id         = transfer->obj_id;
-    meta->cont_id        = transfer->cont_id;
-    meta->data_server_id = transfer->data_server_id;
+    meta->user_id          = transfer->user_id;
+    meta->data_type        = transfer->data_type;
+    meta->obj_id           = transfer->obj_id;
+    meta->cont_id          = transfer->cont_id;
+    meta->data_server_id   = transfer->data_server_id;
     meta->region_partition = transfer->region_partition;
-    meta->time_step      = transfer->time_step;
-    meta->ndim           = transfer->ndim;
-    meta->dims[0]        = transfer->dims0;
-    meta->dims[1]        = transfer->dims1;
-    meta->dims[2]        = transfer->dims2;
-    meta->dims[3]        = transfer->dims3;
+    meta->time_step        = transfer->time_step;
+    meta->ndim             = transfer->ndim;
+    meta->dims[0]          = transfer->dims0;
+    meta->dims[1]          = transfer->dims1;
+    meta->dims[2]          = transfer->dims2;
+    meta->dims[3]          = transfer->dims3;
 
     strcpy(meta->app_name, transfer->app_name);
     strcpy(meta->obj_name, transfer->obj_name);
@@ -4041,7 +4041,6 @@ HG_TEST_RPC_CB(region_transform_release, handle)
 
     hg_info = HG_Get_info(handle);
 
-
     if (in.access_type == PDC_READ)
         PGOTO_ERROR(HG_OTHER_ERROR, "release %" PRId64 " access_type==READ NOT SUPPORTED YET!", in.obj_id);
 
@@ -4827,21 +4826,26 @@ PDC_region_overlap_detect(int ndim, uint64_t *offset1, uint64_t *size1, uint64_t
             overlap = 0;
         }
     }
-    if ( !overlap ) {
+    if (!overlap) {
         *output_offset = NULL;
         *output_size   = NULL;
         goto done;
     }
     // Overlapping exist.
-    *output_offset = (uint64_t*) malloc(sizeof(uint64_t) * ndim);
-    *output_size = (uint64_t*) malloc(sizeof(uint64_t) * ndim);
-    for ( i = 0; i < ndim; ++i ) {
-        if ( offset1[i] > offset2[i] ) {
+    *output_offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
+    *output_size   = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
+    for (i = 0; i < ndim; ++i) {
+        if (offset1[i] > offset2[i]) {
             output_offset[0][i] = offset2[i];
-            output_size[0][i] = ( (offset2[i] + size2[i] < offset1[i] + size1[i]) ? (offset1[i] + size1[i]) : (offset2[i] + size2[i]) ) - offset2[i];
-        } else {
+            output_size[0][i]   = ((offset2[i] + size2[i] < offset1[i] + size1[i]) ? (offset1[i] + size1[i])
+                                                                                 : (offset2[i] + size2[i])) -
+                                offset2[i];
+        }
+        else {
             output_offset[0][i] = offset1[i];
-            output_size[0][i] = ( (offset1[i] + size1[i] < offset2[i] + size2[i]) ? (offset2[i] + size2[i]) : (offset1[i] + size1[i]) ) - offset1[i];
+            output_size[0][i]   = ((offset1[i] + size1[i] < offset2[i] + size2[i]) ? (offset2[i] + size2[i])
+                                                                                 : (offset1[i] + size1[i])) -
+                                offset1[i];
         }
     }
 
@@ -5378,14 +5382,14 @@ transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info)
                                        request_data.obj_dims[i], remote_reg_info, (void *)ptr,
                                        request_data.unit[i], 0);
 #endif
-/*
-        printf("server read array:");
-        uint64_t k;
-        for ( k = 0; k < remote_reg_info->size[0]; ++k ) {
-            printf("%d,", *(int*)(ptr + sizeof(int) * k));
-        }
-        printf("\n");
-*/
+        /*
+                printf("server read array:");
+                uint64_t k;
+                for ( k = 0; k < remote_reg_info->size[0]; ++k ) {
+                    printf("%d,", *(int*)(ptr + sizeof(int) * k));
+                }
+                printf("\n");
+        */
         ptr += mem_size;
     }
 
@@ -5473,14 +5477,14 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
                                        request_data.obj_dims[i], remote_reg_info,
                                        (void *)request_data.data_buf[i], request_data.unit[i], 1);
 #endif
-/*
-        uint64_t j;
-        printf("write array:");
-        for ( j = 0; j < remote_reg_info->size[0]; ++j ) {
-            printf("%d,", *(int*)(request_data.data_buf[i] + sizeof(int) * j));
-        }
-        printf("\n");
-*/
+        /*
+                uint64_t j;
+                printf("write array:");
+                for ( j = 0; j < remote_reg_info->size[0]; ++j ) {
+                    printf("%d,", *(int*)(request_data.data_buf[i] + sizeof(int) * j));
+                }
+                printf("\n");
+        */
         PDC_finish_request(local_bulk_args->transfer_request_id[i]);
     }
     pthread_mutex_unlock(&transfer_request_status_mutex);

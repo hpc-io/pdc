@@ -171,7 +171,9 @@ get_server_id_by_obj_id(uint64_t obj_id)
     return (uint32_t)((obj_id / PDC_SERVER_ID_INTERVEL - 1) % pdc_server_num_g);
 }
 
-int PDC_Client_get_var_type_size(pdc_var_type_t dtype) {
+int
+PDC_Client_get_var_type_size(pdc_var_type_t dtype)
+{
     return PDC_get_var_type_size(dtype);
 }
 
@@ -251,9 +253,6 @@ PDC_Client_read_server_addr_from_file()
 
     if (pdc_client_mpi_rank_g == 0) {
         sprintf(config_fname, "%s/%s", pdc_client_tmp_dir_g, pdc_server_cfg_name_g);
-
-
-
 
         for (i = 0; i < max_tries; i++) {
             if (access(config_fname, F_OK) != -1) {
@@ -2340,14 +2339,14 @@ PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj
 
     // Fill input structure
     memset(&in, 0, sizeof(in));
-    in.data.obj_name       = obj_name;
-    in.data.cont_id        = cont_id;
-    in.data.time_step      = create_prop->time_step;
-    in.data.user_id        = create_prop->user_id;
-    in.data_type           = create_prop->obj_prop_pub->type;
-    in.data.data_server_id = PDC_CLIENT_DATA_SERVER();
+    in.data.obj_name         = obj_name;
+    in.data.cont_id          = cont_id;
+    in.data.time_step        = create_prop->time_step;
+    in.data.user_id          = create_prop->user_id;
+    in.data_type             = create_prop->obj_prop_pub->type;
+    in.data.data_server_id   = PDC_CLIENT_DATA_SERVER();
     in.data.region_partition = create_prop->obj_prop_pub->region_partition;
-    *data_server_id        = in.data.data_server_id;
+    *data_server_id          = in.data.data_server_id;
     // printf("pdc_client_mpi_rank_g = %d, pdc_nclient_per_server_g = %d, pdc_server_num_g = %d,
     // data_server_id = %u\n", (int)pdc_client_mpi_rank_g, (int)pdc_nclient_per_server_g,
     // (int)pdc_server_num_g, (unsigned)in.data.data_server_id);
@@ -2578,7 +2577,8 @@ pack_region_metadata(int ndim, uint64_t *offset, uint64_t *size, region_info_tra
 }
 
 perr_t
-PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t data_server_id, char *bulk_buf, hg_size_t bulk_size, uint64_t *metadata_id)
+PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t data_server_id, char *bulk_buf,
+                                hg_size_t bulk_size, uint64_t *metadata_id)
 {
     perr_t                                ret_value = SUCCEED;
     hg_return_t                           hg_ret    = HG_SUCCESS;
@@ -2598,8 +2598,8 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
         printf("Invalid PDC type in function PDC_Client_transfer_request_all @ %d\n", __LINE__);
         goto done;
     }
-    in.n_objs      = n_objs;
-    in.access_type = access_type;
+    in.n_objs         = n_objs;
+    in.access_type    = access_type;
     in.total_buf_size = bulk_size;
 
     // Compute metadata server id
@@ -2748,8 +2748,9 @@ done:
 
 perr_t
 PDC_Client_transfer_request(void *buf, pdcid_t obj_id, uint32_t data_server_id, int obj_ndim,
-                            uint64_t *obj_dims, int remote_ndim, uint64_t *remote_offset, uint64_t *remote_size,
-                            size_t unit, pdc_access_t access_type, pdcid_t *metadata_id)
+                            uint64_t *obj_dims, int remote_ndim, uint64_t *remote_offset,
+                            uint64_t *remote_size, size_t unit, pdc_access_t access_type,
+                            pdcid_t *metadata_id)
 {
     perr_t                            ret_value = SUCCEED;
     hg_return_t                       hg_ret    = HG_SUCCESS;
@@ -2821,7 +2822,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, uint32_t data_server_id, 
                     __LINE__);
 
     hg_ret = HG_Forward(client_send_transfer_request_handle, client_send_transfer_request_rpc_cb,
-                            &transfer_args, &in);
+                        &transfer_args, &in);
 
 #ifdef PDC_TIMING
     if (access_type == PDC_READ) {
@@ -2862,7 +2863,8 @@ done:
 }
 
 perr_t
-PDC_Client_transfer_request_status(pdcid_t transfer_request_id, uint32_t data_server_id, pdc_transfer_status_t *completed)
+PDC_Client_transfer_request_status(pdcid_t transfer_request_id, uint32_t data_server_id,
+                                   pdc_transfer_status_t *completed)
 {
     perr_t                                   ret_value = SUCCEED;
     hg_return_t                              hg_ret    = HG_SUCCESS;
@@ -4161,7 +4163,6 @@ done:
     work_todo_g--;
     HG_Free_output(handle, &output);
 
-
     FUNC_LEAVE(ret_value);
 }
 
@@ -4891,7 +4892,6 @@ PDC_Client_add_del_objects_to_container(int nobj, uint64_t *obj_ids, uint64_t co
 
     cb_args.bulk_handle = bulk_handle;
     cb_args.rpc_handle  = rpc_handle;
-
 
     /* Forward call to remote addr */
     hg_ret = HG_Forward(rpc_handle, PDC_Client_add_del_objects_to_container_cb, &cb_args, &bulk_rpc_in);
