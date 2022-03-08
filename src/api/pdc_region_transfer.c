@@ -41,6 +41,96 @@
 #include "pdc_analysis_pkg.h"
 #include <mpi.h>
 
+// pdc region transfer class. Contains essential information for performing non-blocking PDC client I/O
+// perations.
+typedef struct pdc_transfer_request {
+    pdcid_t obj_id;
+    // Data server ID for sending data to, used by object static only.
+    uint32_t data_server_id;
+    // List of metadata. For dynamic object partitioning strategy, the metadata_id are owned by obj_servers
+    // correspondingly. For static object partitioning, this ID is managed by the server with data_server_id.
+    uint64_t *metadata_id;
+    // PDC_READ or PDC_WRITE
+    pdc_access_t access_type;
+    // Determine unit size.
+    pdc_var_type_t mem_type;
+    size_t         unit;
+    // User data buffer
+    char *buf;
+    /* Used internally for 2D and 3D data */
+    // Contiguous buffers for read, undefined for PDC_WRITE. Static region mapping has >= 1 number of
+    // read_bulk_buf. Other mappings have size of 1.
+    char **read_bulk_buf;
+    // Simple counter, initialized to be zero.
+    int read_bulk_buf_index;
+    // buffer used for bulk transfer in mercury
+    char *new_buf;
+    // For each of the contig buffer sent to a server, we have a bulk buffer.
+    char **bulk_buf;
+    // Reference counter for bulk_buf, if 0, we free it.
+    int **                 bulk_buf_ref;
+    pdc_region_partition_t region_partition;
+
+    // Dynamic object partitioning (static region partitioning and dynamic region partitioning)
+    int  n_obj_servers;
+    uint32_t *obj_servers;
+    // Used by static region partitioning, these variables are regions that overlap the static regions of data
+    // servers.
+    uint64_t **output_offsets;
+    uint64_t **sub_offsets;
+    uint64_t **output_sizes;
+    // Used only when access_type == PDC_WRITE, otherwise it should be NULL.
+    char **output_buf;
+
+    // Local region
+    int       local_region_ndim;
+    uint64_t *local_region_offset;
+    uint64_t *local_region_size;
+    // Remote region
+    int       remote_region_ndim;
+    uint64_t *remote_region_offset;
+    uint64_t *remote_region_size;
+    uint64_t  total_data_size;
+    // Object dimensions
+    int       obj_ndim;
+    uint64_t *obj_dims;
+    // Pointer to object info, can be useful sometimes. We do not want to go through PDC ID list many times.
+    struct _pdc_obj_info *obj_pointer;
+} pdc_transfer_request;
+
+// We pack all arguments for a start_all call to the same data server in a single structure, so we do not need
+// to many arguments to a function.
+typedef struct pdc_transfer_request_start_all_pkg {
+    // One pkg, one data server
+    uint32_t data_server_id;
+    // Transfer request (for fast accessing obj metadata information)
+    pdc_transfer_request *transfer_request;
+    // Offset/length pair (remote)
+    int       remote_ndim;
+    uint64_t *remote_offset;
+    uint64_t *remote_size;
+    uint64_t  unit;
+    // Data buffer. This data buffer is contiguous according to the remote region. We assume this is after
+    // transformation of local regions
+    char *                                     buf;
+    struct pdc_transfer_request_start_all_pkg *next;
+} pdc_transfer_request_start_all_pkg;
+
+// We pack all arguments for a wait_all call to the same data server in a single structure, so we do not need
+// to many arguments to a function.
+typedef struct pdc_transfer_request_wait_all_pkg {
+    // Metadata_ID for waited.
+    uint64_t metadata_id;
+    // One pkg, one data server
+    uint32_t data_server_id;
+    // Record the index of the metadata_id in the current transfer_request
+    int index;
+    // Pointer to the transfer request
+    pdc_transfer_request *                    transfer_request;
+    struct pdc_transfer_request_wait_all_pkg *next;
+} pdc_transfer_request_wait_all_pkg;
+
+
 pdcid_t
 PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, pdcid_t local_reg,
                           pdcid_t remote_reg)
@@ -79,7 +169,7 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
     p->bulk_buf            = NULL;
     p->bulk_buf_ref        = NULL;
     p->output_buf          = NULL;
-    p->region_partition    = PDC_REGION_STATIC;
+    p->region_partition    = ((pdc_metadata_t *)obj2->metadata)->region_partition;
     p->data_server_id      = ((pdc_metadata_t *)obj2->metadata)->data_server_id;
     p->unit                = PDC_get_var_type_size(p->mem_type);
     unit                   = p->unit;
@@ -286,7 +376,7 @@ memcpy_subregion(int ndim, uint64_t unit, pdc_access_t access_type, char *buf, u
 static perr_t
 static_region_partition(char *buf, int ndim, uint64_t unit, pdc_access_t access_type, uint64_t *obj_dims,
                         uint64_t *offset, uint64_t *size, int set_output_buf, int *n_data_servers,
-                        int **data_server_ids, uint64_t ***sub_offsets, uint64_t ***output_offsets,
+                        uint32_t **data_server_ids, uint64_t ***sub_offsets, uint64_t ***output_offsets,
                         uint64_t ***output_sizes, char ***output_buf)
 {
     perr_t   ret_value = SUCCEED;
@@ -316,7 +406,7 @@ static_region_partition(char *buf, int ndim, uint64_t unit, pdc_access_t access_
     s = obj_dims[split_dim] / pdc_server_num_g;
     x = pdc_server_num_g - obj_dims[split_dim] % pdc_server_num_g;
 
-    *data_server_ids = (int *)malloc(sizeof(int) * pdc_server_num_g);
+    *data_server_ids = (uint32_t *)malloc(sizeof(uint32_t) * pdc_server_num_g);
 
     *output_offsets = (uint64_t **)malloc(sizeof(uint64_t *) * pdc_server_num_g);
     *output_sizes   = (uint64_t **)malloc(sizeof(uint64_t *) * pdc_server_num_g);
@@ -395,9 +485,10 @@ static_region_partition(char *buf, int ndim, uint64_t unit, pdc_access_t access_
         }
     }
     if (*n_data_servers != pdc_server_num_g) {
-        *data_server_ids = (int *)realloc(*data_server_ids, sizeof(int) * n_data_servers[0]);
+        *data_server_ids = (uint32_t *)realloc(*data_server_ids, sizeof(uint32_t) * n_data_servers[0]);
         *output_offsets  = (uint64_t **)realloc(*output_offsets, sizeof(uint64_t *) * n_data_servers[0]);
         *output_sizes    = (uint64_t **)realloc(*output_sizes, sizeof(uint64_t *) * n_data_servers[0]);
+
         *sub_offsets     = (uint64_t **)realloc(*sub_offsets, sizeof(uint64_t *) * n_data_servers[0]);
         if (set_output_buf) {
             *output_buf = (char **)realloc(*output_buf, sizeof(char *) * n_data_servers[0]);
@@ -411,25 +502,27 @@ static_region_partition(char *buf, int ndim, uint64_t unit, pdc_access_t access_
 static int
 sort_by_data_server_start_all(const void *elem1, const void *elem2)
 {
-    const pdc_transfer_request_start_all_pkg *f = *(const pdc_transfer_request_start_all_pkg **)elem1;
-    const pdc_transfer_request_start_all_pkg *s = *(const pdc_transfer_request_start_all_pkg **)elem2;
-    if (f->data_server_id > s->data_server_id)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+    if ( (*(pdc_transfer_request_start_all_pkg **)elem1)->data_server_id > (*(pdc_transfer_request_start_all_pkg **)elem2)->data_server_id)
         return 1;
-    if (f->data_server_id < s->data_server_id)
+    if ( (*(pdc_transfer_request_start_all_pkg **)elem1)->data_server_id < (*(pdc_transfer_request_start_all_pkg **)elem2)->data_server_id)
         return -1;
     return 0;
+#pragma GCC diagnostic pop
 }
 
 static int
 sort_by_data_server_wait_all(const void *elem1, const void *elem2)
 {
-    const pdc_transfer_request_wait_all_pkg *f = *(const pdc_transfer_request_wait_all_pkg **)elem1;
-    const pdc_transfer_request_wait_all_pkg *s = *(const pdc_transfer_request_wait_all_pkg **)elem2;
-    if (f->data_server_id > s->data_server_id)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+    if ( (*(pdc_transfer_request_wait_all_pkg **)elem1)->data_server_id > (*(pdc_transfer_request_wait_all_pkg **)elem2)->data_server_id)
         return 1;
-    if (f->data_server_id < s->data_server_id)
+    if ( (*(pdc_transfer_request_wait_all_pkg **)elem1)->data_server_id < (*(pdc_transfer_request_wait_all_pkg **)elem2)->data_server_id)
         return -1;
     return 0;
+#pragma GCC diagnostic pop
 }
 
 static perr_t

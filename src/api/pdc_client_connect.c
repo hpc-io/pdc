@@ -2346,6 +2346,7 @@ PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj
     in.data_type             = create_prop->obj_prop_pub->type;
     in.data.data_server_id   = PDC_CLIENT_DATA_SERVER();
     in.data.region_partition = create_prop->obj_prop_pub->region_partition;
+    //printf("prepare for sending region partition %d with obj name %s\n", (int)in.data.region_partition, obj_name);
     *data_server_id          = in.data.data_server_id;
     // printf("pdc_client_mpi_rank_g = %d, pdc_nclient_per_server_g = %d, pdc_server_num_g = %d,
     // data_server_id = %u\n", (int)pdc_client_mpi_rank_g, (int)pdc_nclient_per_server_g,
@@ -5466,7 +5467,7 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
-
+/*
 perr_t
 PDC_Client_attach_metadata_to_local_obj(const char *obj_name, uint64_t obj_id, uint64_t cont_id,
                                         uint32_t data_server_id, struct _pdc_obj_info *obj_info)
@@ -5497,7 +5498,7 @@ PDC_Client_attach_metadata_to_local_obj(const char *obj_name, uint64_t obj_id, u
 
     FUNC_LEAVE(ret_value);
 }
-
+*/
 perr_t
 PDC_Client_send_client_shm_info(uint32_t server_id, char *shm_addr, uint64_t size)
 {

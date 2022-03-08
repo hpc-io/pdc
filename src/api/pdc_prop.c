@@ -160,6 +160,7 @@ PDCprop_obj_dup(pdcid_t prop_id)
     q->obj_prop_pub->ndim        = info->obj_prop_pub->ndim;
     q->obj_prop_pub->dims        = (uint64_t *)malloc(info->obj_prop_pub->ndim * sizeof(uint64_t));
     q->obj_prop_pub->type        = PDC_UNKNOWN;
+    q->obj_prop_pub->region_partition = info->obj_prop_pub->region_partition;
     for (i = 0; i < info->obj_prop_pub->ndim; i++)
         (q->obj_prop_pub->dims)[i] = (info->obj_prop_pub->dims)[i];
 
