@@ -91,6 +91,7 @@ main(int argc, char **argv)
 
     double start, end, transfer_start = .0, transfer_wait = .0, transfer_create = .0, transfer_close = .0,
                        max_time, min_time, avg_time, total_time, start_total_time;
+    int temp;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -116,7 +117,23 @@ main(int argc, char **argv)
         test_method = atoi(argv[4]);
     }
     if (argc >= 6) {
-        region_partition = atoi(argv[5]);
+        temp = atoi(argv[5]);
+        switch(temp) {
+            case 0:{ 
+                    region_partition = PDC_OBJ_STATIC;
+                    break;
+                }
+            case 1:{ 
+                    region_partition = PDC_REGION_STATIC;
+                    break;
+                }
+            case 2:{ 
+                    region_partition = PDC_REGION_DYNAMIC;
+                    break;
+                }
+            default: {
+            }
+        }
     }
 
     if (!rank) {
