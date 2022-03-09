@@ -118,19 +118,19 @@ main(int argc, char **argv)
     }
     if (argc >= 6) {
         temp = atoi(argv[5]);
-        switch(temp) {
-            case 0:{ 
-                    region_partition = PDC_OBJ_STATIC;
-                    break;
-                }
-            case 1:{ 
-                    region_partition = PDC_REGION_STATIC;
-                    break;
-                }
-            case 2:{ 
-                    region_partition = PDC_REGION_DYNAMIC;
-                    break;
-                }
+        switch (temp) {
+            case 0: {
+                region_partition = PDC_OBJ_STATIC;
+                break;
+            }
+            case 1: {
+                region_partition = PDC_REGION_STATIC;
+                break;
+            }
+            case 2: {
+                region_partition = PDC_REGION_DYNAMIC;
+                break;
+            }
             default: {
             }
         }
