@@ -120,7 +120,8 @@ main(int argc, char **argv)
     }
 
     if (!rank) {
-        printf("sleep time = %u, timestamps = %" PRIu64 ", numparticles = %" PRIu64 ", test_method = %d, region_ partition = %d\n",
+        printf("sleep time = %u, timestamps = %" PRIu64 ", numparticles = %" PRIu64
+               ", test_method = %d, region_ partition = %d\n",
                sleep_time, timestamps, numparticles, test_method, (int)region_partition);
     }
     dims[0] = numparticles * timestamps * size;
