@@ -60,7 +60,7 @@ main(int argc, char **argv)
     pdcid_t  region_x, region_y, region_z, region_px, region_py, region_pz, region_id1, region_id2;
     pdcid_t  region_xx, region_yy, region_zz, region_pxx, region_pyy, region_pzz, region_id11, region_id22;
     perr_t   ret;
-    int region_partition = PDC_REGION_STATIC;
+    int      region_partition = PDC_REGION_STATIC;
 
 #ifdef ENABLE_MPI
     MPI_Comm comm;
@@ -178,7 +178,6 @@ main(int argc, char **argv)
         default: {
         }
     }
-
 
     obj_prop_yy = PDCprop_obj_dup(obj_prop_xx);
     PDCprop_set_obj_type(obj_prop_yy, PDC_FLOAT);
