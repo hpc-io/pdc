@@ -54,7 +54,6 @@
 
 int io_by_region_g = 1;
 
-
 #ifdef ENABLE_MULTITHREAD
 hg_thread_mutex_t insert_metadata_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
 
@@ -1924,10 +1923,10 @@ HG_TEST_RPC_CB(metadata_update, handle)
 // flush_obj_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(flush_obj, handle)
 {
-    hg_return_t       ret_value = HG_SUCCESS;
-    flush_obj_in_t in;
+    hg_return_t     ret_value = HG_SUCCESS;
+    flush_obj_in_t  in;
     flush_obj_out_t out;
-    uint64_t obj_id;
+    uint64_t        obj_id;
 
     FUNC_ENTER(NULL);
 

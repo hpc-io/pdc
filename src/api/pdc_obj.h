@@ -81,7 +81,6 @@ pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc_id);
  */
 pdcid_t PDCobj_open_col(const char *obj_name, pdcid_t pdc_id);
 
-
 /**
 
  * Force write-back of the object from its cache.

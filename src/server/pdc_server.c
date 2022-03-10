@@ -526,8 +526,6 @@ PDC_Server_lookup_client_cb(const struct hg_cb_info *callback_info)
     if (client_id >= (uint32_t)pdc_client_num_g) {
         printf("==PDC_SERVER[%d]: invalid input client id %d\n", pdc_server_rank_g, client_id);
         goto done;
-
-
     }
     pdc_client_info_g[client_id].addr       = callback_info->info.lookup.addr;
     pdc_client_info_g[client_id].addr_valid = 1;
@@ -655,7 +653,7 @@ PDC_Server_set_close(void)
         server_timings->PDCserver_checkpoint += MPI_Wtime() - start;
 #endif
 #endif
-            /* Barrier is needed here to make sure all servers have checkpointed data. */
+        /* Barrier is needed here to make sure all servers have checkpointed data. */
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
 #endif

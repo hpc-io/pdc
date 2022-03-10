@@ -22,7 +22,6 @@
 #include <sys/mman.h>
 #include <limits.h>
 
-
 typedef struct pdc_timing {
     double PDCbuf_obj_map_rpc;
     double PDCbuf_obj_unmap_rpc;
