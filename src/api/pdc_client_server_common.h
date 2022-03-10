@@ -1338,7 +1338,6 @@ hg_proc_region_transform_and_lock_in_t(hg_proc_t proc, void *data)
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
 
-
         return ret;
     }
     ret = hg_proc_uint8_t(proc, &struct_data->dest_type);
@@ -2192,7 +2191,7 @@ hg_proc_notify_region_update_out_t(hg_proc_t proc, void *data)
 static HG_INLINE hg_return_t
 hg_proc_flush_obj_all_in_t(hg_proc_t proc, void *data)
 {
-    hg_return_t     ret;
+    hg_return_t         ret;
     flush_obj_all_in_t *struct_data = (flush_obj_all_in_t *)data;
 
     ret = hg_proc_uint8_t(proc, &struct_data->tag);
@@ -2207,7 +2206,7 @@ hg_proc_flush_obj_all_in_t(hg_proc_t proc, void *data)
 static HG_INLINE hg_return_t
 hg_proc_flush_obj_all_out_t(hg_proc_t proc, void *data)
 {
-    hg_return_t      ret;
+    hg_return_t          ret;
     flush_obj_all_out_t *struct_data = (flush_obj_all_out_t *)data;
 
     ret = hg_proc_int32_t(proc, &struct_data->ret);

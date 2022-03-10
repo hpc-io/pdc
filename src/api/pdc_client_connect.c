@@ -326,10 +326,10 @@ done:
 static hg_return_t
 client_send_flush_obj_all_rpc_cb(const struct hg_cb_info *callback_info)
 {
-    hg_return_t     ret_value = HG_SUCCESS;
-    hg_handle_t     handle;
+    hg_return_t         ret_value = HG_SUCCESS;
+    hg_handle_t         handle;
     flush_obj_all_out_t output;
-    int *           rpc_return;
+    int *               rpc_return;
 
     FUNC_ENTER(NULL);
 
@@ -536,7 +536,7 @@ done:
 static hg_return_t
 client_send_transfer_request_wait_rpc_cb(const struct hg_cb_info *callback_info)
 {
-    hg_return_t                             ret_value = HG_SUCCESS;
+    hg_return_t ret_value = HG_SUCCESS;
 
     hg_handle_t                             handle;
     struct _pdc_transfer_request_wait_args *region_transfer_args;
@@ -1113,7 +1113,7 @@ drc_access_again:
     gen_cont_register_id_g            = PDC_gen_cont_id_register(*hg_class);
     close_server_register_id_g        = PDC_close_server_register(*hg_class);
     flush_obj_register_id_g           = PDC_flush_obj_register(*hg_class);
-    flush_obj_all_register_id_g           = PDC_flush_obj_all_register(*hg_class);
+    flush_obj_all_register_id_g       = PDC_flush_obj_all_register(*hg_class);
     // HG_Registered_disable_response(*hg_class, close_server_register_id_g, HG_TRUE);
 
     metadata_query_register_id_g           = PDC_metadata_query_register(*hg_class);
@@ -2684,13 +2684,13 @@ done:
 perr_t
 PDC_Client_flush_obj_all()
 {
-    perr_t         ret_value = SUCCEED;
-    hg_return_t    hg_ret    = HG_SUCCESS;
-    uint32_t       server_id = 0;
-    uint32_t       i;
+    perr_t             ret_value = SUCCEED;
+    hg_return_t        hg_ret    = HG_SUCCESS;
+    uint32_t           server_id = 0;
+    uint32_t           i;
     flush_obj_all_in_t in;
-    hg_handle_t    flush_obj_all_handle;
-    int            rpc_return;
+    hg_handle_t        flush_obj_all_handle;
+    int                rpc_return;
 
     FUNC_ENTER(NULL);
     for (i = 0; i < (uint32_t)pdc_server_num_g; i++) {
@@ -2703,7 +2703,7 @@ PDC_Client_flush_obj_all()
 
         // Fill input structure
         in.tag = 44;
-        hg_ret    = HG_Forward(flush_obj_all_handle, client_send_flush_obj_all_rpc_cb, &rpc_return, &in);
+        hg_ret = HG_Forward(flush_obj_all_handle, client_send_flush_obj_all_rpc_cb, &rpc_return, &in);
         if (hg_ret != HG_SUCCESS)
             PGOTO_ERROR(FAIL, "PDC_Client_flush_obj_all(): Could not start HG_Forward()");
 

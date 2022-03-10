@@ -607,7 +607,6 @@ PDC_print_storage_region_list(region_list_t *a)
         printf("  %5" PRIu64 "    %5" PRIu64 "\n", a->start[i], a->count[i]);
     }
 
-
     printf("    path: %s\n", a->storage_location);
     printf(" buf_map: %d\n", a->buf_map_refcount);
     printf("   dirty: %d\n", a->reg_dirty_from_buf);
@@ -1925,7 +1924,7 @@ HG_TEST_RPC_CB(metadata_update, handle)
 // flush_obj_all_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(flush_obj_all, handle)
 {
-    hg_return_t     ret_value = HG_SUCCESS;
+    hg_return_t         ret_value = HG_SUCCESS;
     flush_obj_all_in_t  in;
     flush_obj_all_out_t out;
 
@@ -1934,7 +1933,7 @@ HG_TEST_RPC_CB(flush_obj_all, handle)
     HG_Get_input(handle, &in);
 
     if (in.tag != 44) {
-        PGOTO_ERROR(ret_value, "==PDC_SERVER[x]: Error with input tag");        
+        PGOTO_ERROR(ret_value, "==PDC_SERVER[x]: Error with input tag");
     }
 
     ret_value = HG_Free_input(handle, &in);
@@ -6063,7 +6062,7 @@ HG_TEST_RPC_CB(data_server_read_check, handle)
     out.shm_addr = read_out->shm_addr;
     if (out.ret == 1 && read_out->is_cache_to_bb == 1) {
         // cache to bb with callback
-        out.ret   = 111; // tell client to close the shm region, as we will write it to BB
+        out.ret = 111; // tell client to close the shm region, as we will write it to BB
 
         ret_value = HG_Respond(handle, PDC_cache_region_to_bb_cb, read_out, &out);
     }
@@ -7351,7 +7350,6 @@ HG_TEST_RPC_CB(send_shm_bulk_rpc, handle)
     /* Create a new bulk handle to read the data */
     HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *)&bulk_args->nbytes, HG_BULK_READWRITE,
                    &local_bulk_handle);
-
 
     /* Pull bulk data */
     ret_value =
