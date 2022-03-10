@@ -37,6 +37,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include "pdc_region_cache.h"
 
 static perr_t PDC_obj_close(struct _pdc_obj_info *op);
 
@@ -442,8 +443,9 @@ PDCobj_flush_start(pdcid_t obj_id)
     perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
+#ifdef PDC_SERVER_CACHE
     PDC_Client_flush_obj(obj_id);
-
+#endif
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
@@ -454,8 +456,9 @@ PDCobj_flush_all_start()
     perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
+#ifdef PDC_SERVER_CACHE
     PDC_Client_flush_obj_all();
-
+#endif
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
