@@ -298,6 +298,7 @@ main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
     start_total_time = MPI_Wtime();
 #endif
+
     for (i = 0; i < timestamps; ++i) {
 
         offset_remote[0] = rank * numparticles;
@@ -399,7 +400,6 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         transfer_create += MPI_Wtime() - start;
 #endif
-
         for (j = 0; j < numparticles; j++) {
             id1[j] = j;
             id2[j] = j * 2;
@@ -512,6 +512,9 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         end = MPI_Wtime();
         transfer_wait += end - start;
+#endif
+        PDCobj_flush_all();
+#ifdef ENABLE_MPI
         start = end;
 #endif
         if (test_method) {

@@ -449,6 +449,18 @@ PDCobj_flush(pdcid_t obj_id)
 }
 
 perr_t
+PDCobj_flush_all()
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+    PDC_Client_flush_obj_all();
+
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
 PDCobj_close(pdcid_t obj_id)
 {
     perr_t ret_value = SUCCEED;

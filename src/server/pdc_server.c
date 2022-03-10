@@ -526,6 +526,7 @@ PDC_Server_lookup_client_cb(const struct hg_cb_info *callback_info)
     if (client_id >= (uint32_t)pdc_client_num_g) {
         printf("==PDC_SERVER[%d]: invalid input client id %d\n", pdc_server_rank_g, client_id);
         goto done;
+
     }
     pdc_client_info_g[client_id].addr       = callback_info->info.lookup.addr;
     pdc_client_info_g[client_id].addr_valid = 1;
@@ -1878,6 +1879,8 @@ PDC_Server_mercury_register()
     PDC_client_test_connect_register(hg_class_g);
     PDC_gen_obj_id_register(hg_class_g);
     PDC_close_server_register(hg_class_g);
+    PDC_flush_obj_register(hg_class_g);
+    PDC_flush_obj_all_register(hg_class_g);
     PDC_metadata_query_register(hg_class_g);
     PDC_container_query_register(hg_class_g);
     PDC_metadata_delete_register(hg_class_g);

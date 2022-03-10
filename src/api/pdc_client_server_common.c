@@ -606,6 +606,8 @@ PDC_print_storage_region_list(region_list_t *a)
     for (i = 0; i < a->ndim; i++) {
         printf("  %5" PRIu64 "    %5" PRIu64 "\n", a->start[i], a->count[i]);
     }
+
+
     printf("    path: %s\n", a->storage_location);
     printf(" buf_map: %d\n", a->buf_map_refcount);
     printf("   dirty: %d\n", a->reg_dirty_from_buf);
@@ -1916,6 +1918,40 @@ HG_TEST_RPC_CB(metadata_update, handle)
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
+    FUNC_LEAVE(ret_value);
+}
+
+/* static hg_return_t */
+// flush_obj_all_cb(hg_handle_t handle)
+HG_TEST_RPC_CB(flush_obj_all, handle)
+{
+    hg_return_t     ret_value = HG_SUCCESS;
+    flush_obj_all_in_t  in;
+    flush_obj_all_out_t out;
+
+    FUNC_ENTER(NULL);
+
+    HG_Get_input(handle, &in);
+
+    if (in.tag != 44) {
+        PGOTO_ERROR(ret_value, "==PDC_SERVER[x]: Error with input tag");        
+    }
+
+    ret_value = HG_Free_input(handle, &in);
+
+    if (ret_value != HG_SUCCESS)
+        PGOTO_ERROR(ret_value, "==PDC_SERVER[x]: Error with HG_Destroy");
+
+    out.ret = 1;
+    HG_Respond(handle, NULL, NULL, &out);
+    HG_Destroy(handle);
+
+#ifdef PDC_SERVER_CACHE
+    PDC_region_cache_flush_all();
+#endif
+
+done:
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
@@ -6028,6 +6064,7 @@ HG_TEST_RPC_CB(data_server_read_check, handle)
     if (out.ret == 1 && read_out->is_cache_to_bb == 1) {
         // cache to bb with callback
         out.ret   = 111; // tell client to close the shm region, as we will write it to BB
+
         ret_value = HG_Respond(handle, PDC_cache_region_to_bb_cb, read_out, &out);
     }
     else {
@@ -7315,6 +7352,7 @@ HG_TEST_RPC_CB(send_shm_bulk_rpc, handle)
     HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *)&bulk_args->nbytes, HG_BULK_READWRITE,
                    &local_bulk_handle);
 
+
     /* Pull bulk data */
     ret_value =
         HG_Bulk_transfer(hg_info->context, server_recv_shm_bulk_cb, bulk_args, HG_BULK_PULL, hg_info->addr,
@@ -7535,6 +7573,7 @@ HG_TEST_THREAD_CB(notify_io_complete)
 HG_TEST_THREAD_CB(notify_region_update)
 HG_TEST_THREAD_CB(close_server)
 HG_TEST_THREAD_CB(flush_obj)
+HG_TEST_THREAD_CB(flush_obj_all)
 HG_TEST_THREAD_CB(region_lock)
 HG_TEST_THREAD_CB(query_partial)
 HG_TEST_THREAD_CB(query_kvtag)
@@ -7616,6 +7655,7 @@ PDC_FUNC_DECLARE_REGISTER(metadata_delete_by_id)
 PDC_FUNC_DECLARE_REGISTER(metadata_delete)
 PDC_FUNC_DECLARE_REGISTER(close_server)
 PDC_FUNC_DECLARE_REGISTER(flush_obj)
+PDC_FUNC_DECLARE_REGISTER(flush_obj_all)
 PDC_FUNC_DECLARE_REGISTER(transfer_request)
 PDC_FUNC_DECLARE_REGISTER(transfer_request_all)
 PDC_FUNC_DECLARE_REGISTER(transfer_request_wait)

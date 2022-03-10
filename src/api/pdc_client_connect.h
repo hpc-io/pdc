@@ -761,6 +761,13 @@ perr_t PDC_Client_close_all_server();
 perr_t PDC_Client_flush_obj(uint64_t obj_id);
 
 /**
+ * Request from PDC client to flush all objects
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_flush_obj_all();
+
+/**
 
  * Client request server to check IO status of a previous IO request
  *

@@ -105,6 +105,7 @@ static hg_id_t gen_obj_register_id_g;
 static hg_id_t gen_cont_register_id_g;
 static hg_id_t close_server_register_id_g;
 static hg_id_t flush_obj_register_id_g;
+static hg_id_t flush_obj_all_register_id_g;
 static hg_id_t metadata_query_register_id_g;
 static hg_id_t container_query_register_id_g;
 static hg_id_t metadata_delete_register_id_g;
@@ -323,6 +324,35 @@ done:
 }
 
 static hg_return_t
+client_send_flush_obj_all_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t     ret_value = HG_SUCCESS;
+    hg_handle_t     handle;
+    flush_obj_all_out_t output;
+    int *           rpc_return;
+
+    FUNC_ENTER(NULL);
+
+    handle     = callback_info->info.forward.handle;
+    rpc_return = (int *)callback_info->arg;
+
+    ret_value   = HG_Get_output(handle, &output);
+    *rpc_return = output.ret;
+    if (ret_value != HG_SUCCESS) {
+        printf("PDC_CLIENT[%d]: flush_obj_all_rpc_cb error with HG_Get_output\n", pdc_client_mpi_rank_g);
+        goto done;
+    }
+
+done:
+    // printf("client close RPC is finished here, return value = %d\n", output.ret);
+    fflush(stdout);
+    work_todo_g--;
+    HG_Free_output(handle, &output);
+
+    FUNC_LEAVE(ret_value);
+}
+
+static hg_return_t
 client_send_flush_obj_rpc_cb(const struct hg_cb_info *callback_info)
 {
     hg_return_t     ret_value = HG_SUCCESS;
@@ -507,6 +537,7 @@ static hg_return_t
 client_send_transfer_request_wait_rpc_cb(const struct hg_cb_info *callback_info)
 {
     hg_return_t                             ret_value = HG_SUCCESS;
+
     hg_handle_t                             handle;
     struct _pdc_transfer_request_wait_args *region_transfer_args;
     transfer_request_wait_out_t             output;
@@ -1082,6 +1113,7 @@ drc_access_again:
     gen_cont_register_id_g            = PDC_gen_cont_id_register(*hg_class);
     close_server_register_id_g        = PDC_close_server_register(*hg_class);
     flush_obj_register_id_g           = PDC_flush_obj_register(*hg_class);
+    flush_obj_all_register_id_g           = PDC_flush_obj_all_register(*hg_class);
     // HG_Registered_disable_response(*hg_class, close_server_register_id_g, HG_TRUE);
 
     metadata_query_register_id_g           = PDC_metadata_query_register(*hg_class);
@@ -2643,6 +2675,46 @@ PDC_Client_flush_obj(uint64_t obj_id)
         hg_ret = HG_Destroy(flush_obj_handle);
         if (hg_ret != HG_SUCCESS)
             PGOTO_ERROR(FAIL, "PDC_Client_flush_obj(): Could not destroy handle");
+    }
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDC_Client_flush_obj_all()
+{
+    perr_t         ret_value = SUCCEED;
+    hg_return_t    hg_ret    = HG_SUCCESS;
+    uint32_t       server_id = 0;
+    uint32_t       i;
+    flush_obj_all_in_t in;
+    hg_handle_t    flush_obj_all_handle;
+    int            rpc_return;
+
+    FUNC_ENTER(NULL);
+    for (i = 0; i < (uint32_t)pdc_server_num_g; i++) {
+        server_id = pdc_server_num_g - 1 - i;
+        if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+            PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
+
+        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, flush_obj_all_register_id_g,
+                  &flush_obj_all_handle);
+
+        // Fill input structure
+        in.tag = 44;
+        hg_ret    = HG_Forward(flush_obj_all_handle, client_send_flush_obj_all_rpc_cb, &rpc_return, &in);
+        if (hg_ret != HG_SUCCESS)
+            PGOTO_ERROR(FAIL, "PDC_Client_flush_obj_all(): Could not start HG_Forward()");
+
+        // Wait for response from server
+
+        work_todo_g = 1;
+        PDC_Client_check_response(&send_context_g);
+
+        hg_ret = HG_Destroy(flush_obj_all_handle);
+        if (hg_ret != HG_SUCCESS)
+            PGOTO_ERROR(FAIL, "PDC_Client_flush_obj_all(): Could not destroy handle");
     }
 done:
     fflush(stdout);
@@ -6499,6 +6571,7 @@ PDC_Client_read_overlap_regions(uint32_t ndim, uint64_t *req_start, uint64_t *re
 
                 fseek(fp, storage_offset + j * storage_count[0] * storage_count[1], SEEK_SET);
                 for (i = 0; i < overlap_count[1]; i++) {
+
                     // Move to next row's begining position
                     if (i != 0)
                         fseek(fp, storage_count[0] - overlap_count[0], SEEK_CUR);
