@@ -754,6 +754,13 @@ perr_t PDC_Client_delete_metadata_by_id(uint64_t obj_id);
 perr_t PDC_Client_close_all_server();
 
 /**
+ * Request from PDC client to flush an obj
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_flush_obj(uint64_t obj_id);
+
+/**
 
  * Client request server to check IO status of a previous IO request
  *

@@ -22,7 +22,8 @@ if(PDC_ENABLE_TIMING)
     add_definitions(-DPDC_TIMING=1)
 endif()
 
-add_executable(pdc_server.exe 
+add_executable(pdc_server.exe
+               ../api/pdc_timing.c
                pdc_server.c
                pdc_server_data.c
                pdc_server_metadata.c

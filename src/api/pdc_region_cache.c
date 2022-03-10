@@ -505,6 +505,9 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache)
 {
     pdc_region_cache *      region_cache_iter, *region_cache_temp;
     struct pdc_region_info *region_cache_info;
+#ifdef PDC_TIMING
+    double start = MPI_Wtime();
+#endif
     region_cache_iter = obj_cache->region_cache;
     while (region_cache_iter != NULL) {
         region_cache_info = region_cache_iter->region_cache_info;
@@ -520,6 +523,9 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache)
     }
     obj_cache->region_cache = NULL;
     gettimeofday(&(obj_cache->timestamp), NULL);
+#ifdef PDC_TIMING
+    server_timings->PDCcache_flush += MPI_Wtime() - start;
+#endif
     return 0;
 }
 

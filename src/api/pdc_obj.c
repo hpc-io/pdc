@@ -436,6 +436,16 @@ PDC_obj_close(struct _pdc_obj_info *op)
     FUNC_LEAVE(ret_value);
 }
 
+perr_t PDCobj_flush(pdcid_t obj_id) {
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+    PDC_Client_flush_obj(obj_id);
+
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
 perr_t
 PDCobj_close(pdcid_t obj_id)
 {

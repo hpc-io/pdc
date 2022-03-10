@@ -81,6 +81,19 @@ pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc_id);
  */
 pdcid_t PDCobj_open_col(const char *obj_name, pdcid_t pdc_id);
 
+
+/**
+
+ * Force write-back of the object from its cache.
+ * Only useful when server cache is enabled.
+ *
+ * \param obj_id [IN]           ID of the object
+ *
+ * \return Non-negative on success/Negative on failure
+
+ */
+perr_t PDCobj_flush(pdcid_t obj_id);
+
 /**
  * Close an object
  *

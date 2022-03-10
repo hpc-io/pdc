@@ -8,7 +8,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <sys/time.h>
 #include <unistd.h>
+#include <sys/syscall.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <ctype.h>
+#include <fcntl.h>
+#include <inttypes.h>
+#include <math.h>
+#include <sys/shm.h>
+#include <sys/mman.h>
+#include <limits.h>
+
 
 typedef struct pdc_timing {
     double PDCbuf_obj_map_rpc;
@@ -88,12 +101,17 @@ typedef struct pdc_server_timing {
     double PDCdata_server_read_from;
     double PDCcache_write;
     double PDCcache_read;
+    double PDCcache_flush;
+    double PDCcache_clean;
     double PDCdata_server_write_posix;
     double PDCdata_server_read_posix;
 
     double PDCserver_obj_create_rpc;
     double PDCserver_cont_create_rpc;
 
+    double PDCserver_restart;
+    double PDCserver_checkpoint;
+    double PDCserver_start_total;
 } pdc_server_timing;
 
 typedef struct pdc_timestamp {

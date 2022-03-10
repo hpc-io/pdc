@@ -526,6 +526,8 @@ PDC_Server_lookup_client_cb(const struct hg_cb_info *callback_info)
     if (client_id >= (uint32_t)pdc_client_num_g) {
         printf("==PDC_SERVER[%d]: invalid input client id %d\n", pdc_server_rank_g, client_id);
         goto done;
+
+
     }
     pdc_client_info_g[client_id].addr       = callback_info->info.lookup.addr;
     pdc_client_info_g[client_id].addr_valid = 1;
@@ -609,11 +611,17 @@ PDC_Server_set_close(void)
 {
     perr_t             ret_value = SUCCEED;
     close_server_out_t close_out;
+#ifdef PDC_TIMING
+    double start;
+#endif
 
     while (hg_atomic_get32(&close_server_g) == 0) {
         // Exit from the loop, start finalize process
         // PDC cache finalize, has to be done here in case of checkpoint for region data earlier.
 #ifdef PDC_SERVER_CACHE
+#ifdef PDC_TIMING
+        start = MPI_Wtime();
+#endif
         pthread_mutex_lock(&pdc_cache_mutex);
         pdc_recycle_close_flag = 1;
         pthread_mutex_unlock(&pdc_cache_mutex);
@@ -622,6 +630,9 @@ PDC_Server_set_close(void)
         PDC_region_cache_flush_all();
         pthread_mutex_destroy(&pdc_obj_cache_list_mutex);
         pthread_mutex_destroy(&pdc_cache_mutex);
+#ifdef PDC_TIMING
+        server_timings->PDCcache_clean += MPI_Wtime() - start;
+#endif
 #endif
         if (pdc_server_rank_g) {
             close_out.ret = 88;
@@ -630,6 +641,9 @@ PDC_Server_set_close(void)
         }
 
 #ifndef DISABLE_CHECKPOINT
+#ifdef PDC_TIMING
+        start = MPI_Wtime();
+#endif
         char *tmp_env_char = getenv("PDC_DISABLE_CHECKPOINT");
         if (tmp_env_char != NULL && strcmp(tmp_env_char, "TRUE") == 0) {
             if (pdc_server_rank_g == 0)
@@ -637,6 +651,9 @@ PDC_Server_set_close(void)
         }
         else
             PDC_Server_checkpoint();
+#ifdef PDC_TIMING
+        server_timings->PDCserver_checkpoint += MPI_Wtime() - start;
+#endif
 #endif
             /* Barrier is needed here to make sure all servers have checkpointed data. */
 #ifdef ENABLE_MPI
@@ -1334,6 +1351,9 @@ PDC_Server_restart(char *filename)
     pdc_cont_hash_table_entry_t *cont_entry;
     uint32_t *                   hash_key;
     unsigned                     idx;
+#ifdef PDC_TIMING
+    double start = MPI_Wtime();
+#endif
 
     FUNC_ENTER(NULL);
 
@@ -1633,6 +1653,10 @@ PDC_Server_restart(char *filename)
     }
 
 done:
+#ifdef PDC_TIMING
+    server_timings->PDCserver_restart += MPI_Wtime() - start;
+#endif
+
     fflush(stdout);
 
     FUNC_LEAVE(ret_value);
@@ -2046,6 +2070,10 @@ main(int argc, char *argv[])
     gettimeofday(&start, 0);
 #endif
 
+#ifdef PDC_TIMING
+    double start = MPI_Wtime();
+#endif
+
     if (argc > 1)
         if (strcmp(argv[1], "restart") == 0)
             is_restart_g = 1;
@@ -2086,7 +2114,9 @@ main(int argc, char *argv[])
     if (pdc_server_rank_g == 0)
         if (PDC_Server_write_addr_to_file(all_addr_strings_g, pdc_server_size_g) != SUCCEED)
             printf("==PDC_SERVER[%d]: Error with write config file\n", pdc_server_rank_g);
-
+#ifdef PDC_TIMING
+    server_timings->PDCserver_start_total += MPI_Wtime() - start;
+#endif
 #ifdef ENABLE_TIMING
     // Timing
     gettimeofday(&end, 0);

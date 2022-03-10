@@ -721,6 +721,16 @@ typedef struct {
     int32_t ret;
 } notify_region_update_out_t;
 
+/* Define flush_obj_in_t */
+typedef struct {
+    uint64_t obj_id;
+} flush_obj_in_t;
+
+/* Define flush_obj_out_t */
+typedef struct {
+    int32_t ret;
+} flush_obj_out_t;
+
 /* Define close_server_in_t */
 typedef struct {
     uint32_t client_id;
@@ -1317,12 +1327,14 @@ hg_proc_region_transform_and_lock_in_t(hg_proc_t proc, void *data)
     ret = hg_proc_uint8_t(proc, &struct_data->lock_mode);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
+
         return ret;
     }
     ret = hg_proc_uint8_t(proc, &struct_data->dest_type);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
+
     }
     ret = hg_proc_int32_t(proc, &struct_data->transform_id);
     if (ret != HG_SUCCESS) {
@@ -2157,6 +2169,36 @@ hg_proc_notify_region_update_out_t(hg_proc_t proc, void *data)
 {
     hg_return_t                 ret;
     notify_region_update_out_t *struct_data = (notify_region_update_out_t *)data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+/* Define hg_proc_flush_obj_in_t */
+static HG_INLINE hg_return_t
+hg_proc_flush_obj_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t        ret;
+    flush_obj_in_t *struct_data = (flush_obj_in_t *)data;
+
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+/* Define hg_proc_flush_obj_out_t */
+static HG_INLINE hg_return_t
+hg_proc_flush_obj_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t         ret;
+    flush_obj_out_t *struct_data = (flush_obj_out_t *)data;
 
     ret = hg_proc_int32_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
@@ -3725,6 +3767,7 @@ hg_id_t PDC_client_test_connect_register(hg_class_t *hg_class);
 hg_id_t PDC_get_remote_metadata_register(hg_class_t *hg_class_g);
 hg_id_t PDC_server_lookup_client_register(hg_class_t *hg_class);
 hg_id_t PDC_close_server_register(hg_class_t *hg_class);
+hg_id_t PDC_flush_obj_register(hg_class_t *hg_class);
 
 hg_id_t PDC_metadata_query_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_delete_register(hg_class_t *hg_class);
