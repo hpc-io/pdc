@@ -607,6 +607,7 @@ PDC_print_storage_region_list(region_list_t *a)
         printf("  %5" PRIu64 "    %5" PRIu64 "\n", a->start[i], a->count[i]);
     }
 
+
     printf("    path: %s\n", a->storage_location);
     printf(" buf_map: %d\n", a->buf_map_refcount);
     printf("   dirty: %d\n", a->reg_dirty_from_buf);
@@ -1979,7 +1980,9 @@ HG_TEST_RPC_CB(flush_obj, handle)
     HG_Destroy(handle);
 
 #ifdef PDC_SERVER_CACHE
+    pthread_mutex_lock(&pdc_obj_cache_list_mutex);
     PDC_region_cache_flush(obj_id);
+    pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
 #endif
 
 done:

@@ -84,6 +84,7 @@ pdcid_t PDCobj_open_col(const char *obj_name, pdcid_t pdc_id);
 /**
 
  * Force write-back of the object from its cache.
+ * This function does not guarantee the finish of flushing.
  * Only useful when server cache is enabled.
  *
  * \param obj_id [IN]           ID of the object
@@ -91,12 +92,13 @@ pdcid_t PDCobj_open_col(const char *obj_name, pdcid_t pdc_id);
  * \return Non-negative on success/Negative on failure
 
  */
-perr_t PDCobj_flush(pdcid_t obj_id);
+perr_t PDCobj_flush_start(pdcid_t obj_id);
 
 /**
 
 
  * Force write-back of all objects from its cache.
+ * This function does not guarantee the finish of flushing.
  * Only useful when server cache is enabled.
  *
 
@@ -105,7 +107,7 @@ perr_t PDCobj_flush(pdcid_t obj_id);
  * \return Non-negative on success/Negative on failure
 
  */
-perr_t PDCobj_flush_all();
+perr_t PDCobj_flush_all_start();
 
 /**
  * Close an object

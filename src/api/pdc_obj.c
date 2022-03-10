@@ -437,7 +437,7 @@ PDC_obj_close(struct _pdc_obj_info *op)
 }
 
 perr_t
-PDCobj_flush(pdcid_t obj_id)
+PDCobj_flush_start(pdcid_t obj_id)
 {
     perr_t ret_value = SUCCEED;
 
@@ -449,7 +449,7 @@ PDCobj_flush(pdcid_t obj_id)
 }
 
 perr_t
-PDCobj_flush_all()
+PDCobj_flush_all_start()
 {
     perr_t ret_value = SUCCEED;
 

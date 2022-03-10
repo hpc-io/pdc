@@ -468,7 +468,7 @@ main(int argc, char **argv)
         start = MPI_Wtime();
 #endif
         if (i) {
-            PDCobj_flush_all();
+            PDCobj_flush_all_start();
         }
 #ifdef ENABLE_MPI
         flush_all += MPI_Wtime() - start;
