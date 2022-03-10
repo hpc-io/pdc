@@ -89,7 +89,7 @@ main(int argc, char **argv)
 
     uint64_t timestamps = 10;
 
-    double start, end, transfer_start = .0, transfer_wait = .0, transfer_create = .0, transfer_close = .0,
+    double start, end, transfer_start = .0, transfer_wait = .0, transfer_create = .0, transfer_close = .0, flush_all = .0,
                        max_time, min_time, avg_time, total_time, start_total_time;
     int temp;
 
@@ -465,6 +465,16 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         transfer_start += MPI_Wtime() - start;
 #endif
+
+#ifdef ENABLE_MPI
+        start = MPI_Wtime();
+#endif
+        if ( i ) {
+            PDCobj_flush_all();
+        }
+#ifdef ENABLE_MPI
+        flush_all += MPI_Wtime() - start;
+#endif
         if (sleep_time) {
             sleep(sleep_time);
         }
@@ -512,9 +522,6 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         end = MPI_Wtime();
         transfer_wait += end - start;
-#endif
-        PDCobj_flush_all();
-#ifdef ENABLE_MPI
         start = end;
 #endif
         if (test_method) {
@@ -698,6 +705,12 @@ main(int argc, char **argv)
     MPI_Reduce(&transfer_close, &min_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
     if (!rank) {
         printf("transfer close: %lf - %lf - %lf\n", min_time, avg_time / size, max_time);
+    }
+    MPI_Reduce(&flush_all, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&flush_all, &avg_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&flush_all, &min_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    if (!rank) {
+        printf("flush all: %lf - %lf - %lf\n", min_time, avg_time / size, max_time);
     }
     MPI_Reduce(&total_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     MPI_Reduce(&total_time, &avg_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
