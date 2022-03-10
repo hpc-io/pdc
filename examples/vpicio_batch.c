@@ -91,8 +91,6 @@ main(int argc, char **argv)
 
     double start, end, transfer_start = .0, transfer_wait = .0, transfer_create = .0, transfer_close = .0,
                        flush_all = .0, max_time, min_time, avg_time, total_time, start_total_time;
-    int temp;
-
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
