@@ -640,7 +640,7 @@ main(int argc, char **argv)
 
 #ifdef ENABLE_MPI
     total_time = MPI_Wtime() - start_total_time;
-    //MPI_Barrier(MPI_COMM_WORLD);
+    // MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
     for (i = 0; i < timestamps; ++i) {
