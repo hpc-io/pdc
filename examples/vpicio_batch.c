@@ -82,8 +82,8 @@ main(int argc, char **argv)
     uint64_t *mysize;
     unsigned  sleep_time  = 0;
     int       test_method = 2;
-    int       do_flush = 0;
-    pdcid_t *transfer_request_x, *transfer_request_y, *transfer_request_z, *transfer_request_px,
+    int       do_flush    = 0;
+    pdcid_t * transfer_request_x, *transfer_request_y, *transfer_request_z, *transfer_request_px,
         *transfer_request_py, *transfer_request_pz, *transfer_request_id1, *transfer_request_id2, *ptr,
         *temp_requests;
 
