@@ -82,7 +82,7 @@ main(int argc, char **argv)
     uint64_t *mysize;
     unsigned  sleep_time  = 0;
     int       test_method = 2;
-
+    int       do_flush = 0;
     pdcid_t *transfer_request_x, *transfer_request_y, *transfer_request_z, *transfer_request_px,
         *transfer_request_py, *transfer_request_pz, *transfer_request_id1, *transfer_request_id2, *ptr,
         *temp_requests;
@@ -116,6 +116,10 @@ main(int argc, char **argv)
     }
     if (argc >= 6) {
         region_partition = atoi(argv[5]);
+    }
+
+    if (argc >= 7) {
+        do_flush = atoi(argv[6]);
     }
 
     if (!rank) {
@@ -467,7 +471,7 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         start = MPI_Wtime();
 #endif
-        if (i) {
+        if (i && do_flush) {
             PDCobj_flush_all_start();
         }
 #ifdef ENABLE_MPI
