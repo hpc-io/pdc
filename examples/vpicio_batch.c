@@ -127,7 +127,7 @@ main(int argc, char **argv)
                ", test_method = %d, region_ partition = %d\n",
                sleep_time, timestamps, numparticles, test_method, (int)region_partition);
     }
-    dims[0] = numparticles * timestamps * size;
+    dims[0] = numparticles * size;
 
     x = (float *)malloc(numparticles * sizeof(float));
     y = (float *)malloc(numparticles * sizeof(float));
