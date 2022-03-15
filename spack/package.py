@@ -25,7 +25,7 @@ class Pdc(CMakePackage):
     version('develop', branch='develop')
 
     conflicts('%clang')
-    depends_on('libfabric')
+    depends_on('libfabric@1.11.2')
     depends_on('mercury')
     depends_on('mpi')
 
