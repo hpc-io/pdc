@@ -432,6 +432,7 @@ install(
   FILES
     ${PDC_BINARY_DIR}/bin/pdc_server.exe
     ${PDC_BINARY_DIR}/bin/close_server
+  PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
   DESTINATION
     ${CMAKE_INSTALL_PREFIX}/bin
 )

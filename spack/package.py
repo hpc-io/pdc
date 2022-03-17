@@ -1,4 +1,4 @@
-# Copyright 2013-2021 Lawrence Livermore National Security, LLC and other
+# Copyright 2013-2022 Lawrence Livermore National Security, LLC and other
 # Spack Project Developers. See the top-level COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -14,11 +14,15 @@ class Pdc(CMakePackage):
     metadata operations to find data objects."""
 
     homepage = "https://pdc.readthedocs.io/en/latest/"
-    url      = "https://github.com/hpc-io/pdc/archive/refs/tags/0.1.tar.gz"
+    git      = "https://github.com/hpc-io/pdc.git"
 
     maintainers = ['houjun', 'sbyna']
 
-    version('0.1', sha256='24787806a30cd1cda1fed17220a62e768bdba5de56877f2ea7126279ff2a4f69')
+    version('0.2', tag='0.2')
+    version('0.1', tag='0.1')
+    
+    version('stable', branch='stable')
+    version('develop', branch='develop')
 
     conflicts('%clang')
     depends_on('libfabric@1.11.2')
