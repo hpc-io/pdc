@@ -90,9 +90,18 @@ struct _pdc_transfer_request_args {
     int32_t  ret;
 };
 
+struct _pdc_transfer_request_all_args {
+    uint64_t metadata_id;
+    int32_t  ret;
+};
+
 struct _pdc_transfer_request_status_args {
     uint32_t status;
     int32_t  ret;
+};
+
+struct _pdc_transfer_request_wait_all_args {
+    int32_t ret;
 };
 
 struct _pdc_transfer_request_wait_args {
@@ -151,22 +160,33 @@ perr_t PDC_Client_read_server_addr_from_file();
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj_create_prop,
-                                    pdcid_t *meta_id);
+                                    pdcid_t *meta_id, uint32_t *data_server_id);
 
-perr_t PDC_Client_transfer_request(void *buf, pdcid_t obj_id, int obj_ndim, uint64_t *obj_dims,
-                                   int local_ndim, uint64_t *local_offset, uint64_t *local_size,
-                                   int remote_ndim, uint64_t *remote_offset, uint64_t *remote_size,
-                                   pdc_var_type_t mem_type, pdc_access_t access_type, uint64_t *metadata_id,
-                                   char **new_buf, pdcid_t objid, pdcid_t regid);
+perr_t PDC_Client_transfer_request(void *buf, pdcid_t obj_id, uint32_t data_server_id, int obj_ndim,
+                                   uint64_t *obj_dims, int remote_ndim, uint64_t *remote_offset,
+                                   uint64_t *remote_size, size_t unit, pdc_access_t access_type,
+                                   pdcid_t *metadata_id);
 
-perr_t PDC_Client_transfer_request_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed,
-                                          char *buf, char *new_buf, uint64_t *obj_dims, int local_ndim,
-                                          uint64_t *local_offset, uint64_t *local_size,
-                                          pdc_var_type_t mem_type, pdc_access_t access_type);
-perr_t PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, int access_type, char *buf,
-                                        char *new_buf, uint64_t *obj_dims, int local_ndim,
-                                        uint64_t *local_offset, uint64_t *local_size,
-                                        pdc_var_type_t mem_type);
+perr_t PDC_Client_transfer_request2(void *buf, pdcid_t obj_id, uint32_t data_server_id, int obj_ndim, 
+                                   uint64_t *obj_dims, int local_ndim,
+                                   uint64_t *local_offset, uint64_t *local_size, int remote_ndim,
+                                   uint64_t *remote_offset, uint64_t *remote_size, pdc_var_type_t mem_type,
+                                   size_t unit, pdc_access_t access_type, pdcid_t *metadata_id,
+                                   char **new_buf_ptr, pdcid_t objid, pdcid_t regid);
+
+int PDC_Client_get_var_type_size(pdc_var_type_t dtype);
+
+perr_t PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t data_server_id,
+                                       char *bulk_buf, hg_size_t bulk_size, uint64_t *metadata_id);
+
+perr_t PDC_Client_transfer_request_status(pdcid_t transfer_request_id, uint32_t data_server_id,
+                                          pdc_transfer_status_t *completed);
+
+perr_t PDC_Client_transfer_request_wait_all(int n_objs, pdcid_t *transfer_request_id,
+                                            uint32_t data_server_id);
+
+perr_t PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_server_id,
+                                        int access_type);
 
 /**
  * Apply a map from buffer to an object
@@ -187,7 +207,7 @@ perr_t PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, int access_
 perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t ndim, uint64_t *local_dims,
                           uint64_t *local_offset, pdc_var_type_t local_type, void *local_data,
                           pdc_var_type_t remote_type, struct pdc_region_info *local_region,
-                          struct pdc_region_info *remote_region);
+                          struct pdc_region_info *remote_region, struct _pdc_obj_info *object_info);
 
 /**
  * Client request for buffer to object unmap
@@ -200,7 +220,7 @@ perr_t PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct pdc_region_info *reginfo,
-                            pdc_var_type_t data_type);
+                            pdc_var_type_t data_type, struct _pdc_obj_info *object_info);
 
 /**
  * Request of PDC client to get region lock
@@ -213,9 +233,9 @@ perr_t PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_region_lock(struct _pdc_obj_info *object_info, struct pdc_region_info *region_info,
-                              pdc_access_t access_type, pdc_lock_mode_t lock_mode, pdc_var_type_t data_type,
-                              pbool_t *obtained);
+perr_t PDC_Client_region_lock(pdcid_t remote_obj_id, struct _pdc_obj_info *object_info,
+                              struct pdc_region_info *region_info, pdc_access_t access_type,
+                              pdc_lock_mode_t lock_mode, pdc_var_type_t data_type, pbool_t *obtained);
 
 /**
  * Request of PDC client to get region release
@@ -227,8 +247,9 @@ perr_t PDC_Client_region_lock(struct _pdc_obj_info *object_info, struct pdc_regi
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_region_release(struct _pdc_obj_info *object_info, struct pdc_region_info *region_info,
-                                 pdc_access_t access_type, pdc_var_type_t data_type, pbool_t *released);
+perr_t PDC_Client_region_release(pdcid_t remote_obj_id, struct _pdc_obj_info *object_info,
+                                 struct pdc_region_info *region_info, pdc_access_t access_type,
+                                 pdc_var_type_t data_type, pbool_t *released);
 
 /**
  * PDC client initialization
@@ -260,10 +281,10 @@ perr_t PDC_Client_data_direct_init();
  * \param obj_info[IN]          Object property
  *
  * \return Non-negative on success/Negative on failure
- */
-perr_t PDC_Client_attach_metadata_to_local_obj(const char *obj_name, uint64_t obj_id, uint64_t cont_id,
-                                               struct _pdc_obj_info *obj_info);
 
+perr_t PDC_Client_attach_metadata_to_local_obj(const char *obj_name, uint64_t obj_id, uint64_t cont_id,
+                                               uint32_t data_server_id, struct _pdc_obj_info *obj_info);
+ */
 /**
  * ****************
  *
@@ -738,6 +759,20 @@ perr_t PDC_Client_delete_metadata_by_id(uint64_t obj_id);
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_Client_close_all_server();
+
+/**
+ * Request from PDC client to flush an obj
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_flush_obj(uint64_t obj_id);
+
+/**
+ * Request from PDC client to flush all objects
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_flush_obj_all();
 
 /**
 

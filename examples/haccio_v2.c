@@ -88,7 +88,7 @@ int
 main(int argc, char **argv)
 {
     int mpi_rank, mpi_size;
-    int i, k;
+    int i;
 
     pdcid_t pdc_id, cont_prop, cont_id;
 
@@ -96,7 +96,7 @@ main(int argc, char **argv)
     pdcid_t region_ids[NUM_VARS], region_remote_ids[NUM_VARS];
     pdcid_t transfer_ids[NUM_VARS];
 
-    perr_t ret;
+    // perr_t ret;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
@@ -173,13 +173,17 @@ main(int argc, char **argv)
         free(buffers[i]);
     }
 
+#ifdef PDC_TIMING
+    PDC_timing_report("write");
+#endif
+
     PDCcont_close(cont_id);
     PDCprop_close(cont_prop);
     PDCclose(pdc_id);
 
     if (mpi_rank == 0) {
         double per_particle = sizeof(float) * 7 + sizeof(int64_t) + sizeof(int16_t);
-        double bandwidth    = per_particle * NUM_PARTICLES * mpi_size / 1024.0 / 1024.0 / time_total;
+        double bandwidth    = per_particle * NUM_PARTICLES / 1024.0 / 1024.0 / time_total * mpi_size;
         printf("Bandwidth: %.2fMB/s, total time: %.4f, create transfer: %.4f, start transfer: %.4f, wait "
                "transfer: %.4f\n",
                bandwidth, time_total, time_create, time_start, time_wait);

@@ -37,6 +37,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include "pdc_region_cache.h"
 
 static perr_t PDC_obj_close(struct _pdc_obj_info *op);
 
@@ -176,6 +177,51 @@ PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id)
     FUNC_LEAVE(ret_value);
 }
 
+/**
+ * Copy the metadata to local object property, internal function
+ *
+ * \param obj_name[IN]          Object name
+ * \param obj_id[IN]            Object ID (global, obtained from metadata server)
+ * \param cont_id[IN]           Container id (global, obtained from metadata server)
+ * \param dataserver_id[IN]     Data server id (global, obtained from metadata server)
+ * \param region_partition[IN]  region_partition for the object
+ * \param obj_info[IN]          Object property
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+static perr_t
+PDC_Client_attach_metadata_to_local_obj(const char *obj_name, uint64_t obj_id, uint64_t cont_id,
+                                        uint32_t data_server_id, pdc_region_partition_t region_partition,
+                                        struct _pdc_obj_info *obj_info)
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    obj_info->metadata                              = (pdc_metadata_t *)calloc(1, sizeof(pdc_metadata_t));
+    ((pdc_metadata_t *)obj_info->metadata)->user_id = obj_info->obj_pt->user_id;
+    if (NULL != obj_info->obj_pt->app_name)
+        strcpy(((pdc_metadata_t *)obj_info->metadata)->app_name, obj_info->obj_pt->app_name);
+    if (NULL != obj_name)
+        strcpy(((pdc_metadata_t *)obj_info->metadata)->obj_name, obj_name);
+    ((pdc_metadata_t *)obj_info->metadata)->time_step        = obj_info->obj_pt->time_step;
+    ((pdc_metadata_t *)obj_info->metadata)->obj_id           = obj_id;
+    ((pdc_metadata_t *)obj_info->metadata)->cont_id          = cont_id;
+    ((pdc_metadata_t *)obj_info->metadata)->data_server_id   = data_server_id;
+    ((pdc_metadata_t *)obj_info->metadata)->region_partition = region_partition;
+    if (NULL != obj_info->obj_pt->tags)
+        strcpy(((pdc_metadata_t *)obj_info->metadata)->tags, obj_info->obj_pt->tags);
+    if (NULL != obj_info->obj_pt->data_loc)
+
+        strcpy(((pdc_metadata_t *)obj_info->metadata)->data_location, obj_info->obj_pt->data_loc);
+    ((pdc_metadata_t *)obj_info->metadata)->ndim = obj_info->obj_pt->obj_prop_pub->ndim;
+    if (NULL != obj_info->obj_pt->obj_prop_pub->dims)
+        memcpy(((pdc_metadata_t *)obj_info->metadata)->dims, obj_info->obj_pt->obj_prop_pub->dims,
+               sizeof(uint64_t) * obj_info->obj_pt->obj_prop_pub->ndim);
+
+    FUNC_LEAVE(ret_value);
+}
+
 pdcid_t
 PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_obj_location_t location)
 {
@@ -185,6 +231,7 @@ PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_
     struct _pdc_cont_info *cont_info = NULL;
     struct _pdc_obj_prop * obj_prop;
     uint64_t               meta_id;
+    uint32_t               data_server_id;
     size_t                 i;
     perr_t                 ret = SUCCEED;
 
@@ -204,7 +251,8 @@ PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_
         id_info = PDC_find_id(cont_id);
         /* struct _pdc_cont_info field */
         cont_info = (struct _pdc_cont_info *)(id_info->obj_ptr);
-        p->cont   = PDC_CALLOC(struct _pdc_cont_info);
+
+        p->cont = PDC_CALLOC(struct _pdc_cont_info);
         if (!p->cont)
             PGOTO_ERROR(0, "PDC object container memory allocation failed");
         memcpy(p->cont, cont_info, sizeof(struct _pdc_cont_info));
@@ -266,14 +314,17 @@ PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_
         PGOTO_ERROR(0, "cannot allocate ret_value->dims");
     for (i = 0; i < obj_prop->obj_prop_pub->ndim; i++)
         p->obj_pt->obj_prop_pub->dims[i] = obj_prop->obj_prop_pub->dims[i];
-    p->obj_pt->obj_prop_pub->type = obj_prop->obj_prop_pub->type;
+    p->obj_pt->obj_prop_pub->type             = obj_prop->obj_prop_pub->type;
+    p->obj_pt->obj_prop_pub->region_partition = obj_prop->obj_prop_pub->region_partition;
     if (obj_prop->app_name)
         p->obj_pt->app_name = strdup(obj_prop->app_name);
     if (obj_prop->data_loc)
         p->obj_pt->data_loc = strdup(obj_prop->data_loc);
     if (obj_prop->tags)
         p->obj_pt->tags = strdup(obj_prop->tags);
-
+    p->local_transfer_request_head = NULL;
+    p->local_transfer_request_end  = NULL;
+    p->local_transfer_request_size = 0;
     /* struct pdc_obj_info field */
     p->obj_info_pub = PDC_MALLOC(struct pdc_obj_info);
     if (!p->obj_info_pub)
@@ -284,12 +335,13 @@ PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_
     p->obj_info_pub->server_id = 0;
     if (location == PDC_OBJ_GLOBAL) {
         ret = PDC_Client_send_name_recv_id(obj_name, p->cont->cont_info_pub->meta_id, obj_prop_id,
-                                           &(p->obj_info_pub->meta_id));
+                                           &(p->obj_info_pub->meta_id), &data_server_id);
         if (ret == FAIL)
             PGOTO_ERROR(0, "Unable to create object on server!");
     }
 
-    PDC_Client_attach_metadata_to_local_obj(obj_name, p->obj_info_pub->meta_id, meta_id, p);
+    PDC_Client_attach_metadata_to_local_obj(obj_name, p->obj_info_pub->meta_id, meta_id, data_server_id,
+                                            p->obj_pt->obj_prop_pub->region_partition, p);
 
     p->obj_info_pub->obj_pt = PDC_CALLOC(struct pdc_obj_prop);
     if (!p->obj_info_pub->obj_pt)
@@ -332,9 +384,30 @@ done:
 perr_t
 PDC_obj_close(struct _pdc_obj_info *op)
 {
-    perr_t ret_value = SUCCEED;
+    perr_t                      ret_value = SUCCEED;
+    pdcid_t *                   transfer_request_id;
+    pdc_local_transfer_request *temp, *previous;
+    int                         i;
 
     FUNC_ENTER(NULL);
+
+    if (op->local_transfer_request_size) {
+        transfer_request_id = (pdcid_t *)malloc(sizeof(pdcid_t) * op->local_transfer_request_size);
+        temp                = op->local_transfer_request_head;
+        i                   = 0;
+        while (temp != NULL) {
+            transfer_request_id[i] = temp->local_id;
+            previous               = temp;
+            temp                   = temp->next;
+            free(previous);
+            ++i;
+        }
+        PDCregion_transfer_wait_all(transfer_request_id, op->local_transfer_request_size);
+        for (i = 0; i < op->local_transfer_request_size; ++i) {
+            PDCregion_transfer_close(transfer_request_id[i]);
+        }
+        free(transfer_request_id);
+    }
 
     free((void *)(op->obj_info_pub->name));
     free(op->cont->cont_info_pub->name);
@@ -361,6 +434,32 @@ PDC_obj_close(struct _pdc_obj_info *op)
 
     op = PDC_FREE(struct _pdc_obj_info, op);
 
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDCobj_flush_start(pdcid_t obj_id)
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+#ifdef PDC_SERVER_CACHE
+    PDC_Client_flush_obj(obj_id);
+#endif
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDCobj_flush_all_start()
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+#ifdef PDC_SERVER_CACHE
+    PDC_Client_flush_obj_all();
+#endif
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
@@ -461,9 +560,10 @@ PDCobj_open_common(const char *obj_name, pdcid_t pdc, int is_col)
     /* 'app_name' is a char array */
     if (strlen(out->app_name) > 0)
         p->obj_pt->app_name = strdup(out->app_name);
-    p->obj_pt->obj_prop_pub->type = out->data_type;
-    p->obj_pt->time_step          = out->time_step;
-    p->obj_pt->user_id            = out->user_id;
+    p->obj_pt->obj_prop_pub->type             = out->data_type;
+    p->obj_pt->obj_prop_pub->region_partition = out->region_partition;
+    p->obj_pt->time_step                      = out->time_step;
+    p->obj_pt->user_id                        = out->user_id;
 
     if (out->transform_state > 0) {
         p->obj_pt->locus                        = SERVER_MEMORY;
@@ -476,6 +576,12 @@ PDCobj_open_common(const char *obj_name, pdcid_t pdc, int is_col)
     }
     p->metadata = out;
 
+    // printf("PDCobj_open_common: obj partition for %s is %d\n", obj_name, (int) (((pdc_metadata_t
+    // *)p->metadata)->region_partition));
+
+    p->local_transfer_request_head = NULL;
+    p->local_transfer_request_end  = NULL;
+    p->local_transfer_request_size = 0;
     /* struct pdc_obj_info field */
     /* 'obj_name' is a char array */
     if (strlen(out->obj_name) > 0)
@@ -755,6 +861,26 @@ PDCprop_set_obj_type(pdcid_t obj_prop, pdc_var_type_t type)
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
     prop                     = (struct _pdc_obj_prop *)(info->obj_ptr);
     prop->obj_prop_pub->type = type;
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDCprop_set_obj_transfer_type(pdcid_t obj_prop, pdc_region_partition_t region_partition)
+{
+    perr_t                ret_value = SUCCEED;
+    struct _pdc_id_info * info;
+    struct _pdc_obj_prop *prop;
+
+    FUNC_ENTER(NULL);
+
+    info = PDC_find_id(obj_prop);
+    if (info == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object property ID");
+    prop                                 = (struct _pdc_obj_prop *)(info->obj_ptr);
+    prop->obj_prop_pub->region_partition = region_partition;
 
 done:
     fflush(stdout);

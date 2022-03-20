@@ -43,6 +43,10 @@ configure_file(
   ${CMAKE_CURRENT_BINARY_DIR}/pdc_config.h
 )
 
+if(PDC_ENABLE_TIMING)
+    add_definitions(-DPDC_TIMING=1)
+endif()
+
 #------------------------------------------------------------------------------
 # Set sources
 #------------------------------------------------------------------------------
@@ -63,6 +67,8 @@ set(PDC_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_query.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_region.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_region_cache.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_timing.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_region_transfer.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transform.c
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transforms_common.c
   )

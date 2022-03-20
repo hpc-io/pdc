@@ -505,6 +505,9 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache)
 {
     pdc_region_cache *      region_cache_iter, *region_cache_temp;
     struct pdc_region_info *region_cache_info;
+#ifdef PDC_TIMING
+    double start = MPI_Wtime();
+#endif
     region_cache_iter = obj_cache->region_cache;
     while (region_cache_iter != NULL) {
         region_cache_info = region_cache_iter->region_cache_info;
@@ -520,6 +523,9 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache)
     }
     obj_cache->region_cache = NULL;
     gettimeofday(&(obj_cache->timestamp), NULL);
+#ifdef PDC_TIMING
+    server_timings->PDCcache_flush += MPI_Wtime() - start;
+#endif
     return 0;
 }
 
@@ -577,19 +583,17 @@ PDC_region_cache_clock_cycle(void *ptr)
     while (1) {
         pthread_mutex_lock(&pdc_cache_mutex);
         if (!pdc_recycle_close_flag) {
-            /*
-                        pthread_mutex_lock(&pdc_obj_cache_list_mutex);
-                        gettimeofday(&current_time, NULL);
-                        obj_cache_iter = obj_cache_list;
-                        while (obj_cache_iter != NULL) {
-                            obj_cache = obj_cache_iter;
-                            if (current_time.tv_sec - obj_cache->timestamp.tv_sec > 10) {
-                                PDC_region_cache_flush_by_pointer(obj_cache->obj_id, obj_cache);
-                            }
-                            obj_cache_iter = obj_cache_iter->next;
-                        }
-                        pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
-            */
+            pthread_mutex_lock(&pdc_obj_cache_list_mutex);
+            gettimeofday(&current_time, NULL);
+            obj_cache_iter = obj_cache_list;
+            while (obj_cache_iter != NULL) {
+                obj_cache = obj_cache_iter;
+                if (current_time.tv_sec - obj_cache->timestamp.tv_sec > 120) {
+                    PDC_region_cache_flush_by_pointer(obj_cache->obj_id, obj_cache);
+                }
+                obj_cache_iter = obj_cache_iter->next;
+            }
+            pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
         }
         else {
             pthread_mutex_unlock(&pdc_cache_mutex);

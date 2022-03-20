@@ -31,6 +31,7 @@
 /* Public Typedefs */
 /*******************/
 typedef enum { PDC_NA = 0, PDC_READ = 1, PDC_WRITE = 2 } pdc_access_t;
+typedef enum { PDC_OBJ_STATIC = 0, PDC_REGION_STATIC = 1, PDC_REGION_DYNAMIC = 2 } pdc_region_partition_t;
 typedef enum { PDC_BLOCK = 0, PDC_NOBLOCK = 1 } pdc_lock_mode_t;
 typedef struct _pdc_id_info obj_handle;
 
@@ -79,6 +80,34 @@ pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc_id);
  * \return Object id on success/Zero on failure
  */
 pdcid_t PDCobj_open_col(const char *obj_name, pdcid_t pdc_id);
+
+/**
+
+ * Force write-back of the object from its cache.
+ * This function does not guarantee the finish of flushing.
+ * Only useful when server cache is enabled.
+ *
+ * \param obj_id [IN]           ID of the object
+ *
+ * \return Non-negative on success/Negative on failure
+
+ */
+perr_t PDCobj_flush_start(pdcid_t obj_id);
+
+/**
+
+
+ * Force write-back of all objects from its cache.
+ * This function does not guarantee the finish of flushing.
+ * Only useful when server cache is enabled.
+ *
+
+ * \param obj_id [IN]           ID of the object
+ *
+ * \return Non-negative on success/Negative on failure
+
+ */
+perr_t PDCobj_flush_all_start();
 
 /**
  * Close an object
@@ -196,6 +225,20 @@ perr_t PDCprop_set_obj_dims(pdcid_t obj_prop, PDC_int_t ndim, uint64_t *dims);
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDCprop_set_obj_type(pdcid_t obj_prop, pdc_var_type_t type);
+
+/**
+
+ * Set object transfer partitioning
+ *
+ * \param obj_prop [IN]         ID of object property,
+ *                              returned by PDCprop_create(PDC_OBJ_CREATE)
+
+ * \param type [IN]             Object transfer partitioning method (enum type),
+ *                              i.e. PDC_OBJ_STATIC, PDC_REGION_STATIC, PDC_REGION_DYNAMIC
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCprop_set_obj_transfer_type(pdcid_t obj_prop, pdc_region_partition_t region_partition);
 
 /**
  * Set an object buffer

@@ -88,7 +88,7 @@ int
 main(int argc, char **argv)
 {
     int mpi_rank, mpi_size;
-    int i, k;
+    int i;
 
     pdcid_t pdc_id, cont_prop, cont_id;
 
@@ -141,6 +141,9 @@ main(int argc, char **argv)
     time_lock = MPI_Wtime();
     for (i = 0; i < NUM_VARS; i++) {
         ret = PDCreg_obtain_lock(obj_ids[i], region_remote_ids[i], PDC_WRITE, PDC_NOBLOCK);
+        if (ret != SUCCEED) {
+            printf("Fail to obtain lock @ line  %d!\n", __LINE__);
+        }
     }
     MPI_Barrier(MPI_COMM_WORLD);
     time_lock = MPI_Wtime() - time_lock;
@@ -168,14 +171,22 @@ main(int argc, char **argv)
 
     // Release lock
     time_release = MPI_Wtime();
-    for (i = 0; i < NUM_VARS; i++)
+    for (i = 0; i < NUM_VARS; i++) {
         ret = PDCreg_release_lock(obj_ids[i], region_remote_ids[i], PDC_WRITE);
+        if (ret != SUCCEED) {
+            printf("Fail to release lock @ line  %d!\n", __LINE__);
+        }
+    }
     MPI_Barrier(MPI_COMM_WORLD);
     time_release = MPI_Wtime() - time_release;
 
     // Unmap objects
-    for (i = 0; i < NUM_VARS; i++)
+    for (i = 0; i < NUM_VARS; i++) {
         ret = PDCbuf_obj_unmap(obj_ids[i], region_remote_ids[i]);
+        if (ret != SUCCEED) {
+            printf("Fail to unmap @ line  %d!\n", __LINE__);
+        }
+    }
     MPI_Barrier(MPI_COMM_WORLD);
     time_total = MPI_Wtime() - time_total;
 
@@ -188,13 +199,17 @@ main(int argc, char **argv)
         free(buffers[i]);
     }
 
+#ifdef PDC_TIMING
+    PDC_timing_report("write");
+#endif
+
     PDCcont_close(cont_id);
     PDCprop_close(cont_prop);
     PDCclose(pdc_id);
 
     if (mpi_rank == 0) {
         double per_particle = sizeof(float) * 7 + sizeof(int64_t) + sizeof(int16_t);
-        double bandwidth    = per_particle * NUM_PARTICLES * mpi_size / 1024.0 / 1024.0 / time_total;
+        double bandwidth    = per_particle * NUM_PARTICLES / 1024.0 / 1024.0 / time_total * mpi_size;
         printf("Bandwidth: %.2fMB/s, total time: %.4f, lock: %.4f, io: %.4f, release: %.4f\n", bandwidth,
                time_total, time_lock, time_io, time_release);
     }

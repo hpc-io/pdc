@@ -91,19 +91,20 @@ PDCprop_create(pdc_prop_type_t type, pdcid_t pdcid)
         q->obj_prop_pub = PDC_MALLOC(struct pdc_obj_prop);
         if (!q->obj_prop_pub)
             PGOTO_ERROR(0, "PDC object pub property memory allocation failed");
-        q->obj_prop_pub->ndim        = 0;
-        q->obj_prop_pub->dims        = NULL;
-        q->obj_prop_pub->type        = PDC_UNKNOWN;
-        q->data_loc                  = NULL;
-        q->app_name                  = NULL;
-        q->time_step                 = 0;
-        q->tags                      = NULL;
-        q->buf                       = NULL;
-        new_id_o                     = PDC_id_register(PDC_OBJ_PROP, q);
-        q->obj_prop_pub->obj_prop_id = new_id_o;
-        id_info                      = PDC_find_id(pdcid);
-        pdc_class                    = (struct _pdc_class *)(id_info->obj_ptr);
-        q->pdc                       = PDC_CALLOC(struct _pdc_class);
+        q->obj_prop_pub->ndim             = 0;
+        q->obj_prop_pub->dims             = NULL;
+        q->obj_prop_pub->type             = PDC_UNKNOWN;
+        q->obj_prop_pub->region_partition = PDC_REGION_STATIC;
+        q->data_loc                       = NULL;
+        q->app_name                       = NULL;
+        q->time_step                      = 0;
+        q->tags                           = NULL;
+        q->buf                            = NULL;
+        new_id_o                          = PDC_id_register(PDC_OBJ_PROP, q);
+        q->obj_prop_pub->obj_prop_id      = new_id_o;
+        id_info                           = PDC_find_id(pdcid);
+        pdc_class                         = (struct _pdc_class *)(id_info->obj_ptr);
+        q->pdc                            = PDC_CALLOC(struct _pdc_class);
         if (q->pdc == NULL)
             PGOTO_ERROR(0, "PDC class allocation failed");
         if (pdc_class->name)
@@ -154,11 +155,12 @@ PDCprop_obj_dup(pdcid_t prop_id)
     q->obj_prop_pub = PDC_MALLOC(struct pdc_obj_prop);
     if (!q->obj_prop_pub)
         PGOTO_ERROR(0, "PDC object property memory allocation failed");
-    new_id                       = PDC_id_register(PDC_OBJ_PROP, q);
-    q->obj_prop_pub->obj_prop_id = new_id;
-    q->obj_prop_pub->ndim        = info->obj_prop_pub->ndim;
-    q->obj_prop_pub->dims        = (uint64_t *)malloc(info->obj_prop_pub->ndim * sizeof(uint64_t));
-    q->obj_prop_pub->type        = PDC_UNKNOWN;
+    new_id                            = PDC_id_register(PDC_OBJ_PROP, q);
+    q->obj_prop_pub->obj_prop_id      = new_id;
+    q->obj_prop_pub->ndim             = info->obj_prop_pub->ndim;
+    q->obj_prop_pub->dims             = (uint64_t *)malloc(info->obj_prop_pub->ndim * sizeof(uint64_t));
+    q->obj_prop_pub->type             = PDC_UNKNOWN;
+    q->obj_prop_pub->region_partition = info->obj_prop_pub->region_partition;
     for (i = 0; i < info->obj_prop_pub->ndim; i++)
         (q->obj_prop_pub->dims)[i] = (info->obj_prop_pub->dims)[i];
 

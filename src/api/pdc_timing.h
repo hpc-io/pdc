@@ -1,14 +1,26 @@
 #ifndef PDC_TIMING_H
 #define PDC_TIMING_H
 
-#define PDC_TIMING 0
+#define PDC_TIMING
 #ifdef PDC_TIMING
 
 #include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <sys/time.h>
 #include <unistd.h>
+#include <sys/syscall.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <ctype.h>
+#include <fcntl.h>
+#include <inttypes.h>
+#include <math.h>
+#include <sys/shm.h>
+#include <sys/mman.h>
+#include <limits.h>
 
 typedef struct pdc_timing {
     double PDCbuf_obj_map_rpc;
@@ -38,6 +50,14 @@ typedef struct pdc_timing {
     double PDCtransfer_request_wait_write_rpc_wait;
     double PDCtransfer_request_wait_read_rpc_wait;
 
+    double PDCtransfer_request_start_all_write_rpc;
+    double PDCtransfer_request_start_all_read_rpc;
+    double PDCtransfer_request_wait_all_rpc;
+
+    double PDCtransfer_request_start_all_write_rpc_wait;
+    double PDCtransfer_request_start_all_read_rpc_wait;
+    double PDCtransfer_request_wait_all_rpc_wait;
+
     double PDCclient_obj_create_rpc;
     double PDCclient_cont_create_rpc;
 
@@ -60,25 +80,37 @@ typedef struct pdc_server_timing {
 
     double PDCreg_transfer_request_start_write_rpc;
     double PDCreg_transfer_request_start_read_rpc;
-
     double PDCreg_transfer_request_wait_write_rpc;
     double PDCreg_transfer_request_wait_read_rpc;
-
-    double PDCreg_transfer_request_wait_write_bulk_rpc;
+    double PDCreg_transfer_request_start_write_bulk_rpc;
     double PDCreg_transfer_request_inner_write_bulk_rpc;
-    double PDCreg_transfer_request_wait_read_bulk_rpc;
+    double PDCreg_transfer_request_start_read_bulk_rpc;
     double PDCreg_transfer_request_inner_read_bulk_rpc;
+
+    double PDCreg_transfer_request_start_all_write_rpc;
+    double PDCreg_transfer_request_start_all_read_rpc;
+    double PDCreg_transfer_request_start_all_write_bulk_rpc;
+    double PDCreg_transfer_request_start_all_read_bulk_rpc;
+    double PDCreg_transfer_request_inner_write_all_bulk_rpc;
+    double PDCreg_transfer_request_inner_read_all_bulk_rpc;
+    double PDCreg_transfer_request_wait_all_rpc;
+    double PDCreg_transfer_request_wait_all_bulk_rpc;
 
     double PDCdata_server_write_out;
     double PDCdata_server_read_from;
     double PDCcache_write;
     double PDCcache_read;
+    double PDCcache_flush;
+    double PDCcache_clean;
     double PDCdata_server_write_posix;
     double PDCdata_server_read_posix;
 
     double PDCserver_obj_create_rpc;
     double PDCserver_cont_create_rpc;
 
+    double PDCserver_restart;
+    double PDCserver_checkpoint;
+    double PDCserver_start_total;
 } pdc_server_timing;
 
 typedef struct pdc_timestamp {
@@ -105,10 +137,18 @@ pdc_timestamp *transfer_request_start_write_timestamps;
 pdc_timestamp *transfer_request_start_read_timestamps;
 pdc_timestamp *transfer_request_wait_write_timestamps;
 pdc_timestamp *transfer_request_wait_read_timestamps;
-pdc_timestamp *transfer_request_wait_write_bulk_timestamps;
+pdc_timestamp *transfer_request_start_write_bulk_timestamps;
 pdc_timestamp *transfer_request_inner_write_bulk_timestamps;
-pdc_timestamp *transfer_request_wait_read_bulk_timestamps;
+pdc_timestamp *transfer_request_start_read_bulk_timestamps;
 pdc_timestamp *transfer_request_inner_read_bulk_timestamps;
+
+pdc_timestamp *transfer_request_start_all_write_timestamps;
+pdc_timestamp *transfer_request_start_all_read_timestamps;
+pdc_timestamp *transfer_request_start_all_write_bulk_timestamps;
+pdc_timestamp *transfer_request_start_all_read_bulk_timestamps;
+pdc_timestamp *transfer_request_wait_all_timestamps;
+pdc_timestamp *transfer_request_inner_write_all_bulk_timestamps;
+pdc_timestamp *transfer_request_inner_read_all_bulk_timestamps;
 
 pdc_timestamp *client_buf_obj_map_timestamps;
 pdc_timestamp *client_buf_obj_unmap_timestamps;
@@ -121,6 +161,10 @@ pdc_timestamp *client_transfer_request_start_write_timestamps;
 pdc_timestamp *client_transfer_request_start_read_timestamps;
 pdc_timestamp *client_transfer_request_wait_write_timestamps;
 pdc_timestamp *client_transfer_request_wait_read_timestamps;
+
+pdc_timestamp *client_transfer_request_start_all_write_timestamps;
+pdc_timestamp *client_transfer_request_start_all_read_timestamps;
+pdc_timestamp *client_transfer_request_wait_all_timestamps;
 
 pdc_timestamp *client_create_cont_timestamps;
 pdc_timestamp *client_create_obj_timestamps;

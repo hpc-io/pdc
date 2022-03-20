@@ -18,8 +18,12 @@ include_directories(
 
 add_definitions( -DIS_PDC_SERVER=1 )
 add_definitions( -DPDC_LUSTRE_TOTAL_OST=${PDC_LUSTRE_TOTAL_OST} )
+if(PDC_ENABLE_TIMING)
+    add_definitions(-DPDC_TIMING=1)
+endif()
 
-add_executable(pdc_server.exe 
+add_executable(pdc_server.exe
+               ../api/pdc_timing.c
                pdc_server.c
                pdc_server_data.c
                pdc_server_metadata.c
