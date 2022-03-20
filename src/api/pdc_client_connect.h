@@ -167,12 +167,12 @@ perr_t PDC_Client_transfer_request(void *buf, pdcid_t obj_id, uint32_t data_serv
                                    uint64_t *remote_size, size_t unit, pdc_access_t access_type,
                                    pdcid_t *metadata_id);
 
-perr_t PDC_Client_transfer_request2(void *buf, pdcid_t obj_id, uint32_t data_server_id, int obj_ndim, 
-                                   uint64_t *obj_dims, int local_ndim,
-                                   uint64_t *local_offset, uint64_t *local_size, int remote_ndim,
-                                   uint64_t *remote_offset, uint64_t *remote_size, pdc_var_type_t mem_type,
-                                   size_t unit, pdc_access_t access_type, pdcid_t *metadata_id,
-                                   char **new_buf_ptr, pdcid_t objid, pdcid_t regid);
+perr_t PDC_Client_transfer_request2(void *buf, pdcid_t obj_id, uint32_t data_server_id, int obj_ndim,
+                                    uint64_t *obj_dims, int local_ndim, uint64_t *local_offset,
+                                    uint64_t *local_size, int remote_ndim, uint64_t *remote_offset,
+                                    uint64_t *remote_size, pdc_var_type_t mem_type, size_t unit,
+                                    pdc_access_t access_type, pdcid_t *metadata_id, char **new_buf_ptr,
+                                    pdcid_t objid, pdcid_t regid);
 
 int PDC_Client_get_var_type_size(pdc_var_type_t dtype);
 
