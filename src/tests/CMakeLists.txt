@@ -1,9 +1,20 @@
+# *******************************************
+# Add the HDF5 library for pdc-neon
+# *******************************************
+# find_package(HDF5 NO_MODULE NAMES hdf5 COMPONENTS C shared REQUIRED)
+find_package(HDF5 NO_MODULE NAMES hdf5 COMPONENTS C shared REQUIRED PATHS $ENV{HDF5_DIR})
+message(STATUS "HDF5_FOUND: ${HDF5_FOUND}")
+message(STATUS "HDF5_VERSION: ${HDF5_VERSION}")
+message(STATUS "HDF5_INCLUDE_DIR: ${HDF5_INCLUDE_DIR}")
+message(STATUS "HDF5_LIBRARIES: ${HDF5_LIBRARIES}")
+
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
   ${PDC_INCLUDES_BUILD_TIME}
   $ENV{BLOSC_DIR}/include
   $ENV{HOME}/include
+  ${HDF5_INCLUDE_DIR}
 )
 
 set(PROGRAMS
@@ -61,8 +72,14 @@ set(PROGRAMS
 #  kvtag_add_get_scale
 #  kvtag_query
 #  kvtag_query_scale
+  neon-read3d
+  s3d-read3d
+  openmsi-read3d
+  nyx-read3d
   obj_transformation
   obj_transformation_old
+  obj_type_transform
+  vpicio_v2
   query_data
   region_transfer
   region_transfer_status
@@ -133,6 +150,12 @@ if(GEN_TRANSFORM_LIB)
   set(PDC_TRANSFORMS_SRCS pdc_transforms_lib.c)
   add_library(pdctransforms  ${PDC_TRANSFORMS_SRCS})
   target_link_libraries(pdctransforms pdc ${BLOSC_LIBRARY})
+  # target_link_libraries(neon-read3d HDF5::HDF5)
+  # target_link_libraries(neon-read3d ${HDF5_LIBRARIES})
+  target_link_libraries(neon-read3d hdf5-shared)
+  target_link_libraries(s3d-read3d hdf5-shared)
+  target_link_libraries(openmsi-read3d hdf5-shared)
+  target_link_libraries(nyx-read3d hdf5-shared)
 endif()
 
 # *******************************************
