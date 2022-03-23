@@ -58,7 +58,7 @@ hg_thread_mutex_t meta_obj_map_mutex_g;
 #ifndef HOST_NAME_MAX
 #if defined(__APPLE__)
 #define HOST_NAME_MAX 255
-#else 
+#else
 #define HOST_NAME_MAX 64
 #endif /* __APPLE__ */
 #endif /* HOST_NAME_MAX */
