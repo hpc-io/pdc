@@ -899,8 +899,8 @@ PDCprop_set_obj_consistency_semantics(pdcid_t obj_prop, pdc_consistency_t consis
     info = PDC_find_id(obj_prop);
     if (info == NULL)
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
-    prop                                 = (struct _pdc_obj_prop *)(info->obj_ptr);
-    prop->obj_prop_pub->consistency      = consistency;
+    prop                            = (struct _pdc_obj_prop *)(info->obj_ptr);
+    prop->obj_prop_pub->consistency = consistency;
 
 done:
     fflush(stdout);
