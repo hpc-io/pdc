@@ -72,7 +72,7 @@ typedef struct pdc_transfer_request {
     pdc_region_partition_t region_partition;
 
     // Consistency semantics required by user
-    pdc_consistency_t      consistency;
+    pdc_consistency_t consistency;
 
     // Dynamic object partitioning (static region partitioning and dynamic region partitioning)
     int       n_obj_servers;
