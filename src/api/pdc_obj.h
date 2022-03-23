@@ -248,6 +248,20 @@ perr_t PDCprop_set_obj_type(pdcid_t obj_prop, pdc_var_type_t type);
 perr_t PDCprop_set_obj_transfer_type(pdcid_t obj_prop, pdc_region_partition_t region_partition);
 
 /**
+
+ * Set object consistency semantics
+ *
+ * \param obj_prop [IN]         ID of object property,
+ *                              returned by PDCprop_create(PDC_OBJ_CREATE)
+
+ * \param consistency [IN]      Consistency semantics required
+ *                              e.g., PDC_CONSISTENCY_DEFAULT, PDC_CONSISTENCY_POSIX, etc
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCprop_set_obj_consistency_semantics(pdcid_t obj_prop, pdc_consistency_t consistency);
+
+/**
  * Set an object buffer
  *
  * \param obj_prop [IN]         ID of object property,

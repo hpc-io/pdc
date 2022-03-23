@@ -888,6 +888,26 @@ done:
 }
 
 perr_t
+PDCprop_set_obj_consistency_semantics(pdcid_t obj_prop, pdc_consistency_t consistency)
+{
+    perr_t                ret_value = SUCCEED;
+    struct _pdc_id_info * info;
+    struct _pdc_obj_prop *prop;
+
+    FUNC_ENTER(NULL);
+
+    info = PDC_find_id(obj_prop);
+    if (info == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object property ID");
+    prop                                 = (struct _pdc_obj_prop *)(info->obj_ptr);
+    prop->obj_prop_pub->consistency      = consistency;
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
 PDCprop_set_obj_buf(pdcid_t obj_prop, void *buf)
 {
     perr_t                ret_value = SUCCEED;
