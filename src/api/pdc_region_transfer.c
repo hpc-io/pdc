@@ -71,6 +71,9 @@ typedef struct pdc_transfer_request {
     int **                 bulk_buf_ref;
     pdc_region_partition_t region_partition;
 
+    // Consistency semantics required by user
+    pdc_consistency_t      consistency;
+
     // Dynamic object partitioning (static region partitioning and dynamic region partitioning)
     int       n_obj_servers;
     uint32_t *obj_servers;
@@ -170,6 +173,7 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
     p->output_buf          = NULL;
     p->region_partition    = ((pdc_metadata_t *)obj2->metadata)->region_partition;
     p->data_server_id      = ((pdc_metadata_t *)obj2->metadata)->data_server_id;
+    p->consistency         = obj2->obj_pt->obj_prop_pub->consistency;
     p->unit                = PDC_get_var_type_size(p->mem_type);
     unit                   = p->unit;
     /*
@@ -1037,7 +1041,7 @@ static int sorted_array_unions(const int **array, const int *input_size, int n_a
         if (!temp_n_arrays) {
             break;
         }
-        // Now we figure out the minimum element of the remaining lists and append it to the end of output array        
+        // Now we figure out the minimum element of the remaining lists and append it to the end of output array
         min = -1;
         for ( i = 0; i < n_arrays; ++i ) {
             if ( size[i] == input_size[i] ) {
