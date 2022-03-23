@@ -102,7 +102,7 @@ struct _pdc_transfer_request_metadata_query_args {
 };
 
 struct _pdc_transfer_request_metadata_query2_args {
-    int32_t  ret;
+    int32_t ret;
 };
 
 struct _pdc_transfer_request_status_args {
@@ -182,9 +182,12 @@ int PDC_Client_get_var_type_size(pdc_var_type_t dtype);
 perr_t PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t data_server_id,
                                        char *bulk_buf, hg_size_t bulk_size, uint64_t *metadata_id);
 
-perr_t PDC_Client_transfer_request_metadata_query(char* buf, uint64_t total_buf_size, int n_objs, uint32_t metadata_server_id, uint8_t is_write, uint64_t *output_buf_size, uint64_t *query_id);
+perr_t PDC_Client_transfer_request_metadata_query(char *buf, uint64_t total_buf_size, int n_objs,
+                                                  uint32_t metadata_server_id, uint8_t is_write,
+                                                  uint64_t *output_buf_size, uint64_t *query_id);
 
-perr_t PDC_Client_transfer_request_metadata_query2(char* buf, uint64_t total_buf_size, uint64_t query_id, uint32_t metadata_server_id);
+perr_t PDC_Client_transfer_request_metadata_query2(char *buf, uint64_t total_buf_size, uint64_t query_id,
+                                                   uint32_t metadata_server_id);
 
 perr_t PDC_Client_transfer_request_status(pdcid_t transfer_request_id, uint32_t data_server_id,
                                           pdc_transfer_status_t *completed);
@@ -410,7 +413,8 @@ perr_t PDC_Client_query_tag(const char *tags, int *n_res, pdc_metadata_t ***out)
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_step, pdc_metadata_t **out, uint32_t *metadata_server_id);
+perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_step, pdc_metadata_t **out,
+                                               uint32_t *metadata_server_id);
 
 /**
  * PDC client query metadata from server for a certain time step
@@ -421,7 +425,8 @@ perr_t PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_st
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_query_metadata_name_timestep_agg(const char *obj_name, int time_step, pdc_metadata_t **out, uint32_t *metadata_server_id);
+perr_t PDC_Client_query_metadata_name_timestep_agg(const char *obj_name, int time_step, pdc_metadata_t **out,
+                                                   uint32_t *metadata_server_id);
 
 /**
  * Listing all objects on the client

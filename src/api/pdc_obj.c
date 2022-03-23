@@ -196,8 +196,6 @@ PDC_Client_attach_metadata_to_local_obj(const char *obj_name, uint64_t obj_id, u
 {
     perr_t ret_value = SUCCEED;
 
-
-
     FUNC_ENTER(NULL);
 
     obj_info->metadata                              = (pdc_metadata_t *)calloc(1, sizeof(pdc_metadata_t));
@@ -342,7 +340,7 @@ PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_
             PGOTO_ERROR(0, "Unable to create object on server!");
     }
 
-    p->obj_info_pub->metadata_server_id = (pdcid_t) metadata_server_id;
+    p->obj_info_pub->metadata_server_id = (pdcid_t)metadata_server_id;
 
     PDC_Client_attach_metadata_to_local_obj(obj_name, p->obj_info_pub->meta_id, meta_id, data_server_id,
                                             p->obj_pt->obj_prop_pub->region_partition, p);
@@ -507,7 +505,7 @@ PDCobj_open_common(const char *obj_name, pdcid_t pdc, int is_col)
     pdc_metadata_t *      out       = NULL;
     pdcid_t               obj_prop;
     size_t                i;
-    uint32_t metadata_server_id;
+    uint32_t              metadata_server_id;
 
     FUNC_ENTER(NULL);
 
@@ -591,8 +589,8 @@ PDCobj_open_common(const char *obj_name, pdcid_t pdc, int is_col)
     /* 'obj_name' is a char array */
     if (strlen(out->obj_name) > 0)
         p->obj_info_pub->name = strdup(out->obj_name);
-    p->obj_info_pub->meta_id  = out->obj_id;
-    p->obj_info_pub->local_id = PDC_id_register(PDC_OBJ, p);
+    p->obj_info_pub->meta_id            = out->obj_id;
+    p->obj_info_pub->local_id           = PDC_id_register(PDC_OBJ, p);
     p->obj_info_pub->metadata_server_id = metadata_server_id;
 
     memcpy(p->obj_info_pub->obj_pt, p->obj_pt->obj_prop_pub, sizeof(struct pdc_obj_prop));

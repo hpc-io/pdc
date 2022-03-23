@@ -40,7 +40,7 @@ main(int argc, char **argv)
     struct timeval ht_total_end;
     long long      ht_total_elapsed;
     double         ht_total_sec;
-    uint32_t metadata_server_id;
+    uint32_t       metadata_server_id;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);

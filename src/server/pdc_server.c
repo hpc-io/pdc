@@ -527,8 +527,6 @@ PDC_Server_lookup_client_cb(const struct hg_cb_info *callback_info)
     if (client_id >= (uint32_t)pdc_client_num_g) {
         printf("==PDC_SERVER[%d]: invalid input client id %d\n", pdc_server_rank_g, client_id);
         goto done;
-
-
     }
     pdc_client_info_g[client_id].addr       = callback_info->info.lookup.addr;
     pdc_client_info_g[client_id].addr_valid = 1;
@@ -1161,8 +1159,8 @@ PDC_Server_checkpoint()
     HashTablePair     pair;
     char              checkpoint_file[ADDR_MAX];
     HashTableIterator hash_table_iter;
-    char* checkpoint;
-    uint64_t checkpoint_size;
+    char *            checkpoint;
+    uint64_t          checkpoint_size;
 
     FUNC_ENTER(NULL);
 
@@ -1359,8 +1357,8 @@ PDC_Server_restart(char *filename)
     pdc_cont_hash_table_entry_t *cont_entry;
     uint32_t *                   hash_key;
     unsigned                     idx;
-    uint64_t checkpoint_size;
-    char *checkpoint_buf;
+    uint64_t                     checkpoint_size;
+    char *                       checkpoint_buf;
 #ifdef PDC_TIMING
     double start = MPI_Wtime();
 #endif
@@ -1630,7 +1628,7 @@ PDC_Server_restart(char *filename)
         printf("Read failed for checkpoint size\n");
     }
     printf("checkpoint size for metadata query = %lu\n", checkpoint_size);
-    checkpoint_buf = (char*) malloc(checkpoint_size);
+    checkpoint_buf = (char *)malloc(checkpoint_size);
     if (fread(checkpoint_buf, checkpoint_size, 1, file) != 1) {
         printf("Read failed for checkpoint buf\n");
     }
@@ -1991,10 +1989,11 @@ PDC_Server_get_env()
     }
 #endif
     // Get data sieving flag
-    tmp_env_char        = getenv("PDC_DATA_SIEVING");
-    if ( tmp_env_char != NULL ) {
+    tmp_env_char = getenv("PDC_DATA_SIEVING");
+    if (tmp_env_char != NULL) {
         data_sieving_g = atoi(tmp_env_char);
-    } else {
+    }
+    else {
         data_sieving_g = 0;
     }
 

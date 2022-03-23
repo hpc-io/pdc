@@ -563,8 +563,8 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 
-    offset[0] = 0;
-    offset[1] = 0;
+    offset[0]        = 0;
+    offset[1]        = 0;
     offset_length[0] = DIM0;
     offset_length[1] = DIM1;
     reg_global       = PDCregion_create(2, offset, offset_length);
@@ -686,8 +686,8 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 
-    offset[0] = 0;
-    offset[1] = 0;
+    offset[0]        = 0;
+    offset[1]        = 0;
     offset_length[0] = DIM0;
     offset_length[1] = DIM1;
     reg_global       = PDCregion_create(2, offset, offset_length);

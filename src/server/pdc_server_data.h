@@ -415,7 +415,8 @@ data_server_region_t *PDC_Server_get_obj_region(pdcid_t obj_id);
  *
  * \return SUCCEED/FAIL
  */
-perr_t PDC_Server_register_obj_region_by_pointer(data_server_region_t **new_obj_reg, pdcid_t obj_id, int close_flag);
+perr_t PDC_Server_register_obj_region_by_pointer(data_server_region_t **new_obj_reg, pdcid_t obj_id,
+                                                 int close_flag);
 perr_t PDC_Server_register_obj_region(pdcid_t obj_id);
 /**
  * Server unregister region struct by object ID, if not existing.

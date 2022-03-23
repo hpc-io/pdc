@@ -76,7 +76,8 @@ main(int argc, char **argv)
         data[i]      = data[i - 1] + BUF_LEN;
         data_read[i] = data_read[i - 1] + BUF_LEN;
     }
-    printf("testing region_transfer_all_append, start_method = %d, wait_method = %d\n", start_method, wait_method);
+    printf("testing region_transfer_all_append, start_method = %d, wait_method = %d\n", start_method,
+           wait_method);
 
     dims[0] = BUF_LEN;
 
@@ -526,7 +527,6 @@ main(int argc, char **argv)
         }
     }
 
-
     for (j = 0; j < OBJ_NUM; ++j) {
         for (i = 0; i < BUF_LEN; ++i) {
             data[j][i] = i + 84441111 * j + 3;
@@ -544,7 +544,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 
-    reg_global       = PDCregion_create(1, offset, offset_length);
+    reg_global = PDCregion_create(1, offset, offset_length);
     if (reg_global > 0) {
         printf("Create global region\n");
     }
@@ -663,7 +663,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 
-    reg_global       = PDCregion_create(1, offset, offset_length);
+    reg_global = PDCregion_create(1, offset, offset_length);
     if (reg_global > 0) {
         printf("Create global region\n");
     }
@@ -767,8 +767,6 @@ main(int argc, char **argv)
             }
         }
     }
-
-
 
     // close a container
     if (PDCcont_close(cont) < 0) {
