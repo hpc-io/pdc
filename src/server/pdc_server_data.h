@@ -27,6 +27,7 @@
 
 #include "pdc_server_common.h"
 #include "pdc_client_server_common.h"
+#include "pdc_region.h"
 #include "pdc_query.h"
 #include <sys/time.h>
 #include <pthread.h>
@@ -38,6 +39,7 @@
 #define PDC_MAX_OVERLAP_REGION_NUM 8 // max number of regions for PDC_Server_get_storage_location_of_region()
 #define PDC_BULK_XFER_INIT_NALLOC  128
 
+int data_sieving_g;
 /***************************/
 /* Library Private Structs */
 /***************************/
@@ -413,6 +415,7 @@ data_server_region_t *PDC_Server_get_obj_region(pdcid_t obj_id);
  *
  * \return SUCCEED/FAIL
  */
+perr_t PDC_Server_register_obj_region_by_pointer(data_server_region_t **new_obj_reg, pdcid_t obj_id, int close_flag);
 perr_t PDC_Server_register_obj_region(pdcid_t obj_id);
 /**
  * Server unregister region struct by object ID, if not existing.
@@ -421,6 +424,7 @@ perr_t PDC_Server_register_obj_region(pdcid_t obj_id);
  *
  * \return SUCCEED/FAIL
  */
+perr_t PDC_Server_unregister_obj_region_by_pointer(data_server_region_t *new_obj_reg, int close_flag);
 perr_t PDC_Server_unregister_obj_region(pdcid_t obj_id);
 /**
  * Server clean up all region struct.

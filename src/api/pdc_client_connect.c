@@ -135,6 +135,8 @@ hg_atomic_int32_t bulk_transfer_done_g;
 
 static hg_id_t transfer_request_register_id_g;
 static hg_id_t transfer_request_all_register_id_g;
+static hg_id_t transfer_request_metadata_query_register_id_g;
+static hg_id_t transfer_request_metadata_query2_register_id_g;
 static hg_id_t transfer_request_wait_all_register_id_g;
 static hg_id_t transfer_request_status_register_id_g;
 static hg_id_t transfer_request_wait_register_id_g;
@@ -403,6 +405,67 @@ client_send_close_all_server_rpc_cb(const struct hg_cb_info *callback_info)
 
 done:
     // printf("client close RPC is finished here, return value = %d\n", output.ret);
+    fflush(stdout);
+    work_todo_g--;
+    HG_Free_output(handle, &output);
+
+    FUNC_LEAVE(ret_value);
+}
+
+static hg_return_t
+client_send_transfer_request_metadata_query_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t                            ret_value = HG_SUCCESS;
+    hg_handle_t                            handle;
+    struct _pdc_transfer_request_metadata_query_args *region_transfer_args;
+    transfer_request_metadata_query_out_t             output;
+
+    FUNC_ENTER(NULL);
+
+    region_transfer_args = (struct _pdc_transfer_request_metadata_query_args *)callback_info->arg;
+    handle               = callback_info->info.forward.handle;
+
+    ret_value = HG_Get_output(handle, &output);
+    if (ret_value != HG_SUCCESS) {
+        printf("PDC_CLIENT[%d]: client_send_transfer_request_metadata_query_rpc_cb error with HG_Get_output\n",
+               pdc_client_mpi_rank_g);
+        region_transfer_args->ret = -1;
+        goto done;
+    }
+    region_transfer_args->query_id         = output.query_id;
+    region_transfer_args->total_buf_size         = output.total_buf_size;
+    region_transfer_args->ret         = output.ret;
+done:
+    fflush(stdout);
+    work_todo_g--;
+    HG_Free_output(handle, &output);
+
+    FUNC_LEAVE(ret_value);
+}
+
+static hg_return_t
+
+client_send_transfer_request_metadata_query2_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t                            ret_value = HG_SUCCESS;
+    hg_handle_t                            handle;
+    struct _pdc_transfer_request_metadata_query2_args *region_transfer_args;
+    transfer_request_metadata_query2_out_t             output;
+
+    FUNC_ENTER(NULL);
+
+    region_transfer_args = (struct _pdc_transfer_request_metadata_query2_args *)callback_info->arg;
+    handle               = callback_info->info.forward.handle;
+
+    ret_value = HG_Get_output(handle, &output);
+    if (ret_value != HG_SUCCESS) {
+        printf("PDC_CLIENT[%d]: client_send_transfer_request_metadata_query2_rpc_cb error with HG_Get_output\n",
+               pdc_client_mpi_rank_g);
+        region_transfer_args->ret = -1;
+        goto done;
+    }
+    region_transfer_args->ret         = output.ret;
+done:
     fflush(stdout);
     work_todo_g--;
     HG_Free_output(handle, &output);
@@ -1150,6 +1213,8 @@ drc_access_again:
     // Map
     transfer_request_register_id_g          = PDC_transfer_request_register(*hg_class);
     transfer_request_all_register_id_g      = PDC_transfer_request_all_register(*hg_class);
+    transfer_request_metadata_query_register_id_g      = PDC_transfer_request_metadata_query_register(*hg_class);
+    transfer_request_metadata_query2_register_id_g      = PDC_transfer_request_metadata_query2_register(*hg_class);
     transfer_request_status_register_id_g   = PDC_transfer_request_status_register(*hg_class);
     transfer_request_wait_all_register_id_g = PDC_transfer_request_wait_all_register(*hg_class);
     transfer_request_wait_register_id_g     = PDC_transfer_request_wait_register(*hg_class);
@@ -2157,7 +2222,7 @@ done:
 }
 
 perr_t
-PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_step, pdc_metadata_t **out)
+PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_step, pdc_metadata_t **out, uint32_t *metadata_server_id)
 {
     perr_t                          ret_value = SUCCEED;
     hg_return_t                     hg_ret    = 0;
@@ -2173,6 +2238,8 @@ PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_step, pdc
     hash_name_value = PDC_get_hash_by_name(obj_name);
     server_id       = (hash_name_value + time_step);
     server_id %= pdc_server_num_g;
+
+    *metadata_server_id = server_id;
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
@@ -2215,7 +2282,7 @@ done:
 // Only let one process per node to do the actual query, then broadcast to all others
 perr_t
 PDC_Client_query_metadata_name_timestep_agg_same_node(const char *obj_name, int time_step,
-                                                      pdc_metadata_t **out)
+                                                      pdc_metadata_t **out, uint32_t *metadata_id)
 {
     perr_t ret_value = SUCCEED;
 
@@ -2223,7 +2290,7 @@ PDC_Client_query_metadata_name_timestep_agg_same_node(const char *obj_name, int 
 
 #ifdef ENABLE_MPI
     if (pdc_client_same_node_rank_g == 0) {
-        ret_value = PDC_Client_query_metadata_name_timestep(obj_name, time_step, out);
+        ret_value = PDC_Client_query_metadata_name_timestep(obj_name, time_step, out, metadata_id);
         if (ret_value != SUCCEED || NULL == *out) {
             *out = (pdc_metadata_t *)calloc(1, sizeof(pdc_metadata_t));
             PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: - ERROR with query [%s]", pdc_client_mpi_rank_g, obj_name);
@@ -2235,7 +2302,7 @@ PDC_Client_query_metadata_name_timestep_agg_same_node(const char *obj_name, int 
     MPI_Bcast(*out, sizeof(pdc_metadata_t), MPI_CHAR, 0, PDC_SAME_NODE_COMM_g);
 
 #else
-    ret_value = PDC_Client_query_metadata_name_timestep(obj_name, time_step, out);
+    ret_value = PDC_Client_query_metadata_name_timestep(obj_name, time_step, out, metadata_id);
 #endif
 
 done:
@@ -2244,7 +2311,7 @@ done:
 }
 
 perr_t
-PDC_Client_query_metadata_name_timestep_agg(const char *obj_name, int time_step, pdc_metadata_t **out)
+PDC_Client_query_metadata_name_timestep_agg(const char *obj_name, int time_step, pdc_metadata_t **out, uint32_t *metadata_server_id)
 {
     perr_t ret_value = SUCCEED;
 
@@ -2252,7 +2319,7 @@ PDC_Client_query_metadata_name_timestep_agg(const char *obj_name, int time_step,
 
 #ifdef ENABLE_MPI
     if (pdc_client_mpi_rank_g == 0) {
-        ret_value = PDC_Client_query_metadata_name_timestep(obj_name, time_step, out);
+        ret_value = PDC_Client_query_metadata_name_timestep(obj_name, time_step, out, metadata_server_id);
         if (ret_value != SUCCEED || NULL == *out) {
             *out = (pdc_metadata_t *)calloc(1, sizeof(pdc_metadata_t));
             PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: - ERROR with query [%s]", pdc_client_mpi_rank_g, obj_name);
@@ -2263,24 +2330,13 @@ PDC_Client_query_metadata_name_timestep_agg(const char *obj_name, int time_step,
 
     MPI_Bcast(*out, sizeof(pdc_metadata_t), MPI_CHAR, 0, PDC_CLIENT_COMM_WORLD_g);
 
+    MPI_Bcast(metadata_server_id, 1, MPI_UINT32_T, 0, PDC_CLIENT_COMM_WORLD_g);
 #else
     ret_value = PDC_Client_query_metadata_name_timestep(obj_name, time_step, out);
 #endif
 
 done:
     fflush(stdout);
-    FUNC_LEAVE(ret_value);
-}
-
-perr_t
-PDC_query_name_timestep_agg(const char *obj_name, int time_step, void **out)
-{
-    perr_t ret_value = SUCCEED;
-
-    FUNC_ENTER(NULL);
-
-    ret_value = PDC_Client_query_metadata_name_timestep_agg(obj_name, time_step, (pdc_metadata_t **)out);
-
     FUNC_LEAVE(ret_value);
 }
 
@@ -2377,7 +2433,7 @@ PDC_Client_create_cont_id_mpi(const char *cont_name, pdcid_t cont_create_prop, p
 // Send a name to server and receive an obj id
 perr_t
 PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj_create_prop,
-                             pdcid_t *meta_id, uint32_t *data_server_id)
+                             pdcid_t *meta_id, uint32_t *data_server_id, uint32_t *metadata_server_id)
 {
     perr_t                         ret_value = SUCCEED;
     hg_return_t                    hg_ret;
@@ -2448,6 +2504,8 @@ PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj
     // Compute server id
     server_id = (hash_name_value + in.data.time_step);
     server_id %= pdc_server_num_g;
+
+    *metadata_server_id = server_id;
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
@@ -2809,6 +2867,145 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
         PGOTO_ERROR(FAIL, "PDC_CLIENT: transfer request failed... @ line %d\n", __LINE__);
 
     HG_Destroy(client_send_transfer_request_all_handle);
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDC_Client_transfer_request_metadata_query2(char* buf, uint64_t total_buf_size, uint64_t query_id, uint32_t metadata_server_id)
+{
+    perr_t                                     ret_value = SUCCEED;
+    hg_return_t                                hg_ret    = HG_SUCCESS;
+    transfer_request_metadata_query2_in_t             in;
+    hg_class_t *                               hg_class;
+    hg_handle_t                                client_send_transfer_request_metadata_query2_handle;
+    struct _pdc_transfer_request_metadata_query2_args transfer_args;
+
+    FUNC_ENTER(NULL);
+#ifdef PDC_TIMING
+    double start          = MPI_Wtime(), end;
+    double function_start = start;
+#endif
+    in.query_id         = query_id;
+    in.total_buf_size         = total_buf_size;
+
+    // Compute metadata server id
+    //fprintf(stderr, "PDC_Client_transfer_request_metadata_query2: metdata_id = %u, total_buf_size = %lu\n", metadata_server_id, total_buf_size);
+    debug_server_id_count[metadata_server_id]++;
+
+    hg_class = HG_Context_get_class(send_context_g);
+
+    if (PDC_Client_try_lookup_server(metadata_server_id) != SUCCEED)
+        PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
+                    pdc_client_mpi_rank_g, __LINE__);
+    hg_ret =
+        HG_Create(send_context_g, pdc_server_info_g[metadata_server_id].addr,
+                  transfer_request_metadata_query2_register_id_g, &client_send_transfer_request_metadata_query2_handle);
+
+    // Create bulk handles
+    // For sending metadata
+    hg_ret = HG_Bulk_create(hg_class, 1, (void **)&buf, (hg_size_t *)&(in.total_buf_size),
+                            HG_BULK_READWRITE, &(in.local_bulk_handle));
+    if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(
+            FAIL,
+            "PDC_Client_transfer_request_metadata_query2(): Could not create local bulk data handle @ line %d\n",
+            __LINE__);
+
+    hg_ret = HG_Forward(client_send_transfer_request_metadata_query2_handle,
+                        client_send_transfer_request_metadata_query2_rpc_cb, &transfer_args, &in);
+
+    if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(FAIL,
+                    "PDC_Client_send_transfer_request_metadata_query2(): Could not start HG_Forward() @ line %d\n",
+                    __LINE__);
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+
+    if (transfer_args.ret != 1)
+        PGOTO_ERROR(FAIL, "PDC_CLIENT: transfer_request_metadata_query2 failed... @ line %d\n", __LINE__);
+
+    HG_Destroy(client_send_transfer_request_metadata_query2_handle);
+
+#ifdef PDC_TIMING
+    end = MPI_Wtime();
+    timings.PDCtransfer_request_metadata_query_rpc += end - start;
+    pdc_timestamp_register(client_transfer_request_metadata_query_timestamps, function_start, end);
+#endif
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDC_Client_transfer_request_metadata_query(char* buf, uint64_t total_buf_size, int n_objs, uint32_t metadata_server_id, uint8_t is_write, uint64_t *output_buf_size, uint64_t *query_id)
+{
+    perr_t                                     ret_value = SUCCEED;
+    hg_return_t                                hg_ret    = HG_SUCCESS;
+    transfer_request_metadata_query_in_t             in;
+    hg_class_t *                               hg_class;
+    hg_handle_t                                client_send_transfer_request_metadata_query_handle;
+    struct _pdc_transfer_request_metadata_query_args transfer_args;
+
+    FUNC_ENTER(NULL);
+#ifdef PDC_TIMING
+    double start          = MPI_Wtime(), end;
+    double function_start = start;
+#endif
+    in.n_objs         = n_objs;
+    in.total_buf_size = total_buf_size;
+    in.is_write = is_write;
+
+    // Compute metadata server id
+
+    debug_server_id_count[metadata_server_id]++;
+
+    hg_class = HG_Context_get_class(send_context_g);
+
+    if (PDC_Client_try_lookup_server(metadata_server_id) != SUCCEED)
+        PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
+                    pdc_client_mpi_rank_g, __LINE__);
+    hg_ret =
+        HG_Create(send_context_g, pdc_server_info_g[metadata_server_id].addr,
+                  transfer_request_metadata_query_register_id_g, &client_send_transfer_request_metadata_query_handle);
+
+    // Create bulk handles
+    // For sending metadata
+    hg_ret = HG_Bulk_create(hg_class, 1, (void **)&buf, (hg_size_t *)&(in.total_buf_size),
+                            HG_BULK_READWRITE, &(in.local_bulk_handle));
+    if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(
+            FAIL,
+            "PDC_Client_transfer_request_metadata_query(): Could not create local bulk data handle @ line %d\n",
+            __LINE__);
+
+    hg_ret = HG_Forward(client_send_transfer_request_metadata_query_handle,
+                        client_send_transfer_request_metadata_query_rpc_cb, &transfer_args, &in);
+
+    if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(FAIL,
+                    "PDC_Client_send_transfer_request_metadata_query(): Could not start HG_Forward() @ line %d\n",
+                    __LINE__);
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+    if (transfer_args.ret != 1)
+        PGOTO_ERROR(FAIL, "PDC_CLIENT: transfer_request_metadata_query failed... @ line %d\n", __LINE__);
+
+    *output_buf_size = transfer_args.total_buf_size;
+    *query_id = transfer_args.query_id;
+
+    HG_Destroy(client_send_transfer_request_metadata_query_handle);
+
+#ifdef PDC_TIMING
+    end = MPI_Wtime();
+    timings.PDCtransfer_request_metadata_query_rpc += end - start;
+    pdc_timestamp_register(client_transfer_request_metadata_query_timestamps, function_start, end);
+#endif
+
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -3839,6 +4036,7 @@ maybe_run_transform(struct _pdc_obj_info *object_info, struct pdc_region_info *r
                 *readyState      = registry[k]->nextState;
                 *transform_index = k;
             }
+
         }
         //Check next for SERVER (post-data-xfer) transforms
         for (k = 0; k < registered_count; k++) {
@@ -4990,6 +5188,7 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
+
 
 // Add/delete a number of objects to one container
 perr_t

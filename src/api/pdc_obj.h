@@ -43,6 +43,7 @@ struct pdc_obj_info {
     pdcid_t              meta_id;
     pdcid_t              local_id;
     int                  server_id;
+    pdcid_t              metadata_server_id;
     struct pdc_obj_prop *obj_pt;
 };
 

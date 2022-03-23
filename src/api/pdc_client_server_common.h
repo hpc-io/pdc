@@ -37,6 +37,7 @@
 #include "mercury_config.h"
 #include "mercury_thread_pool.h"
 #include "pdc_timing.h"
+#include "pdc_region_transfer_metadata_query.h"
 
 #ifdef ENABLE_MULTITHREAD
 #include "mercury_thread_pool.h"
@@ -369,6 +370,7 @@ typedef struct pdc_data_server_io_list_t {
 typedef struct data_server_region_t {
     uint64_t obj_id;
     int      fd; // file handle
+    int      close_flag;
 
     // For region lock list
     region_list_t *region_lock_head;
@@ -837,6 +839,35 @@ typedef struct transfer_request_all_out_t {
     int32_t  ret;
 } transfer_request_all_out_t;
 
+/* Define transfer_request_metadata_query_in_t */
+typedef struct transfer_request_metadata_query_in_t {
+    hg_bulk_t local_bulk_handle;
+    // hg_bulk_t              local_bulk_handle2;
+    uint64_t total_buf_size;
+    int32_t  n_objs;
+    uint8_t is_write;
+} transfer_request_metadata_query_in_t;
+
+/* Define transfer_request_metadata_query_out_t */
+typedef struct transfer_request_metadata_query_out_t {
+    uint64_t query_id;
+    uint64_t total_buf_size;
+    int32_t  ret;
+} transfer_request_metadata_query_out_t;
+
+/* Define transfer_request_metadata_query2_in_t */
+typedef struct transfer_request_metadata_query2_in_t {
+    hg_bulk_t local_bulk_handle;
+    uint64_t total_buf_size;
+    uint64_t query_id;
+} transfer_request_metadata_query2_in_t;
+
+/* Define transfer_request_metadata_query2_out_t */
+typedef struct transfer_request_metadata_query2_out_t {
+    int32_t  ret;
+} transfer_request_metadata_query2_out_t;
+
+
 /* Define buf_map_in_t */
 typedef struct {
     uint32_t               meta_server_id;
@@ -1045,6 +1076,7 @@ typedef struct {
 /* Define cont_add_del_objs_rpc_out_t */
 typedef struct {
     hg_uint32_t ret;
+
 } cont_add_del_objs_rpc_out_t;
 
 /* Define cont_add_tags_rpc_in_t */
@@ -1583,7 +1615,9 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
+
     ret = hg_proc_uint64_t(proc, &struct_data->dims0);
+
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
@@ -1841,6 +1875,7 @@ hg_proc_metadata_delete_by_id_in_t(hg_proc_t proc, void *data)
 /* Define hg_proc_metadata_delete_by_id_out_t */
 static HG_INLINE hg_return_t
 hg_proc_metadata_delete_by_id_out_t(hg_proc_t proc, void *data)
+
 {
     hg_return_t                  ret;
     metadata_delete_by_id_out_t *struct_data = (metadata_delete_by_id_out_t *)data;
@@ -2642,13 +2677,6 @@ hg_proc_transfer_request_all_in_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
-#if 0
-    ret                                = hg_proc_hg_bulk_t(proc, &struct_data->local_bulk_handle2);
-    if (ret != HG_SUCCESS) {
-        // HG_LOG_ERROR("Proc error");
-        return ret;
-    }
-#endif
     ret = hg_proc_uint64_t(proc, &struct_data->total_buf_size);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
@@ -2686,6 +2714,101 @@ hg_proc_transfer_request_all_out_t(hg_proc_t proc, void *data)
         return ret;
     }
     // printf("Output argument: transfer_request_all finishes @ line %d\n", __LINE__);
+    return ret;
+}
+
+/* Define hg_proc_transfer_request_metadata_query_in_t */
+static HG_INLINE hg_return_t
+hg_proc_transfer_request_metadata_query_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t                ret;
+    transfer_request_metadata_query_in_t *struct_data = (transfer_request_metadata_query_in_t *)data;
+    ret                                    = hg_proc_hg_bulk_t(proc, &struct_data->local_bulk_handle);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->total_buf_size);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->n_objs);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint8_t(proc, &struct_data->is_write);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+/* Define hg_proc_transfer_request_metadata_query_out_t */
+static HG_INLINE hg_return_t
+hg_proc_transfer_request_metadata_query_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t                 ret;
+    transfer_request_metadata_query_out_t *struct_data = (transfer_request_metadata_query_out_t *)data;
+
+    ret = hg_proc_uint64_t(proc, &struct_data->query_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_uint64_t(proc, &struct_data->total_buf_size);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+/* Define hg_proc_transfer_request_metadata_query2_in_t */
+static HG_INLINE hg_return_t
+hg_proc_transfer_request_metadata_query2_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t                ret;
+    transfer_request_metadata_query2_in_t *struct_data = (transfer_request_metadata_query2_in_t *)data;
+    ret                                    = hg_proc_hg_bulk_t(proc, &struct_data->local_bulk_handle);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->total_buf_size);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->query_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+/* Define hg_proc_transfer_request_metadata_query2_out_t */
+static HG_INLINE hg_return_t
+hg_proc_transfer_request_metadata_query2_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t                 ret;
+    transfer_request_metadata_query2_out_t *struct_data = (transfer_request_metadata_query2_out_t *)data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
     return ret;
 }
 
@@ -3724,6 +3847,25 @@ struct transfer_request_all_local_bulk_args2 {
 #endif
 };
 
+struct transfer_request_metadata_query_local_bulk_args {
+    hg_handle_t           handle;
+    hg_bulk_t             bulk_handle;
+    transfer_request_metadata_query_in_t in;
+    void *                data_buf;
+#ifdef PDC_TIMING
+    double start_time;
+#endif
+};
+
+struct transfer_request_metadata_query2_local_bulk_args {
+    hg_handle_t           handle;
+    hg_bulk_t             bulk_handle;
+    void *                data_buf;
+#ifdef PDC_TIMING
+    double start_time;
+#endif
+};
+
 struct transfer_request_local_bulk_args {
     hg_handle_t           handle;
     hg_bulk_t             bulk_handle;
@@ -3828,6 +3970,8 @@ hg_id_t PDC_metadata_get_kvtag_register(hg_class_t *hg_class);
 
 hg_id_t PDC_transfer_request_register(hg_class_t *hg_class);
 hg_id_t PDC_transfer_request_all_register(hg_class_t *hg_class);
+hg_id_t PDC_transfer_request_metadata_query_register(hg_class_t *hg_class);
+hg_id_t PDC_transfer_request_metadata_query2_register(hg_class_t *hg_class);
 hg_id_t PDC_transfer_request_status_register(hg_class_t *hg_class);
 hg_id_t PDC_transfer_request_wait_all_register(hg_class_t *hg_class);
 hg_id_t PDC_transfer_request_wait_register(hg_class_t *hg_class);

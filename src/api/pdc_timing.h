@@ -66,6 +66,8 @@ typedef struct pdc_timing {
     double PDCtransfer_request_start_all_read_rpc_wait;
     double PDCtransfer_request_wait_all_rpc_wait;
 
+    double PDCtransfer_request_metadata_query_rpc;
+
     double PDCclient_obj_create_rpc;
     double PDCclient_cont_create_rpc;
 
@@ -176,6 +178,8 @@ pdc_timestamp *client_transfer_request_wait_all_timestamps;
 
 pdc_timestamp *client_create_cont_timestamps;
 pdc_timestamp *client_create_obj_timestamps;
+
+pdc_timestamp *client_transfer_request_metadata_query_timestamps;
 
 double base_time;
 

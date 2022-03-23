@@ -45,7 +45,7 @@ PDC_timing_init()
 
     memset(&timings, 0, sizeof(pdc_timing));
 
-    client_buf_obj_map_timestamps   = calloc(15, sizeof(pdc_timestamp));
+    client_buf_obj_map_timestamps   = calloc(16, sizeof(pdc_timestamp));
     ptr                             = client_buf_obj_map_timestamps + 1;
     client_buf_obj_unmap_timestamps = ptr;
     ptr++;
@@ -77,6 +77,9 @@ PDC_timing_init()
     client_create_cont_timestamps = ptr;
     ptr++;
     client_create_obj_timestamps = ptr;
+
+    ptr++;
+    client_transfer_request_metadata_query_timestamps = ptr;
 
     return 0;
 }

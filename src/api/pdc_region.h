@@ -53,6 +53,26 @@ typedef enum {
 /*********************/
 /* Public Prototypes */
 /*********************/
+
+/**
+ * Region utility functions.
+ */
+int check_overlap(int ndim, uint64_t *offset1, uint64_t *size1, uint64_t *offset2, uint64_t *size2);
+
+int
+PDC_region_overlap_detect(int ndim, uint64_t *offset1, uint64_t *size1, uint64_t *offset2, uint64_t *size2,
+                          uint64_t **output_offset, uint64_t **output_size);
+
+int
+memcpy_subregion(int ndim, uint64_t unit, pdc_access_t access_type, char *buf, uint64_t *size, char *sub_buf,
+                 uint64_t *sub_offset, uint64_t *sub_size);
+
+int
+memcpy_overlap_subregion(int ndim, uint64_t unit, char *buf, uint64_t *offset, uint64_t *size, char *buf2,
+                 uint64_t *offset2, uint64_t *size2, uint64_t *overlap_offset, uint64_t *overlap_size);
+
+int detect_region_contained(uint64_t *offset, uint64_t *size, uint64_t *offset2, uint64_t *size2, int ndim);
+
 /**
  * Create a region
  *

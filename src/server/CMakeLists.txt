@@ -29,6 +29,8 @@ add_executable(pdc_server.exe
                pdc_server_metadata.c
                pdc_server_analysis.c
                ../api/pdc_region_cache.c
+               ../api/pdc_region_utils.c
+               ../api/pdc_region_transfer_metadata_query.c
                ../api/pdc_client_server_common.c
                ../api/pdc_analysis_common.c
                ../api/pdc_transforms_common.c
