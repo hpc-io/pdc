@@ -9118,7 +9118,6 @@ PDC_send_query_metadata_bulk(bulk_rpc_in_t *in, void *buf, uint64_t buf_sizes, i
         goto done;
     }
 
-
     if (pdc_remote_server_info_g == NULL) {
         fprintf(stderr, "==PDC_SERVER[%d]: %s - pdc_server_info_g is NULL\n", pdc_server_rank_g, __func__);
         ret_value = FAIL;
