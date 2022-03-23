@@ -55,6 +55,14 @@ hg_thread_mutex_t meta_buf_map_mutex_g;
 hg_thread_mutex_t meta_obj_map_mutex_g;
 #endif
 
+#ifndef HOST_NAME_MAX
+#if defined(__APPLE__)
+#define HOST_NAME_MAX 255
+#else 
+#define HOST_NAME_MAX 64
+#endif /* __APPLE__ */
+#endif /* HOST_NAME_MAX */
+
 #define PAGE_SIZE                    4096
 #define ADDR_MAX                     512
 #define DIM_MAX                      4
