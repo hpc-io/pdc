@@ -238,6 +238,14 @@ PDCregion_transfer_close(pdcid_t transfer_request_id)
     if (transfer_request->metadata_id == NULL) {
         goto done;
     }
+
+    // Check for consistency
+    pdc_consistency_t consistency = transfer_request->consistency;
+    if(consistency == PDC_CONSISTENCY_POSIX || consistency == PDC_CONSISTENCY_COMMIT ||
+            consistency == PDC_CONSISTENCY_SESSION) {
+        PDCregion_transfer_wait(transfer_request_id);
+    }
+
     free(transfer_request->local_region_offset);
     free(transfer_request->metadata_id);
     free(transfer_request);
@@ -982,6 +990,8 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
 {
     perr_t                               ret_value  = SUCCEED;
     int                                  write_size = 0, read_size = 0;
+    struct _pdc_id_info*                 transferinfo;
+    pdc_transfer_request*                transfer_request;
     pdc_transfer_request_start_all_pkg **write_transfer_requests = NULL, **read_transfer_requests = NULL;
 
     FUNC_ENTER(NULL);
@@ -999,6 +1009,15 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
         fprintf(stderr, "checkpoint %d\n", __LINE__);
         MPI_Barrier(MPI_COMM_WORLD);
     */
+
+    // For POSIX consistency, we block here until the data is received by the server
+    transferinfo     = PDC_find_id(transfer_request_id[0]);
+    transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
+    if(transfer_request->consistency == PDC_CONSISTENCY_POSIX) {
+        PDCregion_transfer_wait_all(transfer_request_id, size);
+    }
+
+
     // Clean up memory
     finish_start_all_requests(write_transfer_requests, read_transfer_requests, write_size, read_size);
     /*
@@ -1148,6 +1167,12 @@ PDCregion_transfer_start(pdcid_t transfer_request_id)
             transfer_request->remote_region_offset, transfer_request->remote_region_size, unit,
             transfer_request->access_type, transfer_request->metadata_id);
     }
+
+    // For POSIX consistency, we block here until the data is received by the server
+    if(transfer_request->consistency == PDC_CONSISTENCY_POSIX) {
+        PDCregion_transfer_wait(transfer_request_id);
+    }
+
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
