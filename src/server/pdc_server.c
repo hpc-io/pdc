@@ -55,6 +55,7 @@
 #include "pdc_server_data.h"
 #include "pdc_timing.h"
 #include "pdc_region_cache.h"
+#include "pdc_region_transfer_metadata_query.h"
 
 #ifdef PDC_HAS_CRAY_DRC
 #include <rdmacred.h>
@@ -900,6 +901,7 @@ drc_access_again:
     }
     else {
         // We are starting a brand new server
+        transfer_request_metadata_query_init(pdc_server_size_g, NULL);
         if (is_hash_table_init_g != 1) {
             // Hash table init
             ret_value = PDC_Server_init_hash_table();
@@ -1157,6 +1159,8 @@ PDC_Server_checkpoint()
     HashTablePair     pair;
     char              checkpoint_file[ADDR_MAX];
     HashTableIterator hash_table_iter;
+    char *            checkpoint;
+    uint64_t          checkpoint_size;
 
     FUNC_ENTER(NULL);
 
@@ -1293,6 +1297,10 @@ PDC_Server_checkpoint()
         }
     }
 
+    transfer_request_metadata_query_checkpoint(&checkpoint, &checkpoint_size);
+    fwrite(&checkpoint_size, sizeof(uint64_t), 1, file);
+    fwrite(checkpoint, checkpoint_size, 1, file);
+
     fclose(file);
     file = NULL;
 
@@ -1349,6 +1357,8 @@ PDC_Server_restart(char *filename)
     pdc_cont_hash_table_entry_t *cont_entry;
     uint32_t *                   hash_key;
     unsigned                     idx;
+    uint64_t                     checkpoint_size;
+    char *                       checkpoint_buf;
 #ifdef PDC_TIMING
     double start = MPI_Wtime();
 #endif
@@ -1565,25 +1575,6 @@ PDC_Server_restart(char *filename)
 
                 DL_APPEND((metadata + i)->storage_region_list_head, region_list);
             } // For j
-#if 0
-            // read storage region info
-            if (fread(&n_region, sizeof(int), 1, file) != 1) {
-                printf("Read failed for n_region\n");
-            }
-            data_server_region_t *new_obj_reg =
-                (data_server_region_t *)calloc(1, sizeof(struct data_server_region_t));
-            new_obj_reg->fd               = -1;
-            new_obj_reg->storage_location = (char *)malloc(sizeof(char) * ADDR_MAX);
-            DL_APPEND(dataserver_region_g, new_obj_reg);
-            new_obj_reg->obj_id = (metadata + i)->obj_id;
-            for (j = 0; j < n_region; j++) {
-                region_list_t *new_region_list = (region_list_t *)malloc(sizeof(region_list_t));
-                if (fread(new_region_list, sizeof(region_list_t), 1, file) != 1) {
-                    printf("Read failed for new_region_list\n");
-                }
-                DL_APPEND(new_obj_reg->region_storage_head, new_region_list);
-            }
-#endif
             total_region += n_region;
 
             DL_SORT((metadata + i)->storage_region_list_head, region_cmp);
@@ -1632,6 +1623,17 @@ PDC_Server_restart(char *filename)
             DL_APPEND(new_obj_reg->region_storage_head, new_region_list);
         }
     }
+
+    if (fread(&checkpoint_size, sizeof(uint64_t), 1, file) != 1) {
+        printf("Read failed for checkpoint size\n");
+    }
+    printf("checkpoint size for metadata query = %lu\n", checkpoint_size);
+    checkpoint_buf = (char *)malloc(checkpoint_size);
+    if (fread(checkpoint_buf, checkpoint_size, 1, file) != 1) {
+        printf("Read failed for checkpoint buf\n");
+    }
+    transfer_request_metadata_query_init(pdc_server_size_g, checkpoint_buf);
+    free(checkpoint_buf);
 
     fclose(file);
     file = NULL;
@@ -1905,6 +1907,8 @@ PDC_Server_mercury_register()
     // Mapping
     PDC_transfer_request_register(hg_class_g);
     PDC_transfer_request_all_register(hg_class_g);
+    PDC_transfer_request_metadata_query_register(hg_class_g);
+    PDC_transfer_request_metadata_query2_register(hg_class_g);
     PDC_transfer_request_wait_all_register(hg_class_g);
     PDC_transfer_request_wait_register(hg_class_g);
     PDC_transfer_request_status_register(hg_class_g);
@@ -1984,6 +1988,14 @@ PDC_Server_get_env()
         lustre_total_ost_g = 1;
     }
 #endif
+    // Get data sieving flag
+    tmp_env_char = getenv("PDC_DATA_SIEVING");
+    if (tmp_env_char != NULL) {
+        data_sieving_g = atoi(tmp_env_char);
+    }
+    else {
+        data_sieving_g = 0;
+    }
 
     // Get number of OST per file
     pdc_nost_per_file_g = lustre_total_ost_g;

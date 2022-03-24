@@ -47,6 +47,8 @@ typedef struct pdc_transfer_request {
     pdcid_t obj_id;
     // Data server ID for sending data to, used by object static only.
     uint32_t data_server_id;
+    // Metadata server ID for sending data to, used by region_dynamic only.
+    uint32_t metadata_server_id;
     // List of metadata. For dynamic object partitioning strategy, the metadata_id are owned by obj_servers
     // correspondingly. For static object partitioning, this ID is managed by the server with data_server_id.
     uint64_t *metadata_id;
@@ -61,8 +63,8 @@ typedef struct pdc_transfer_request {
     // Contiguous buffers for read, undefined for PDC_WRITE. Static region mapping has >= 1 number of
     // read_bulk_buf. Other mappings have size of 1.
     char **read_bulk_buf;
-    // Simple counter, initialized to be zero.
-    int read_bulk_buf_index;
+    // Simple counter for internal implementation usage, initialized to be zero.
+    int bulk_buf_index;
     // buffer used for bulk transfer in mercury
     char *new_buf;
     // For each of the contig buffer sent to a server, we have a bulk buffer.
@@ -109,10 +111,8 @@ typedef struct pdc_transfer_request_start_all_pkg {
     // Transfer request (for fast accessing obj metadata information)
     pdc_transfer_request *transfer_request;
     // Offset/length pair (remote)
-    int       remote_ndim;
     uint64_t *remote_offset;
     uint64_t *remote_size;
-    uint64_t  unit;
     // Data buffer. This data buffer is contiguous according to the remote region. We assume this is after
     // transformation of local regions
     char *                                     buf;
@@ -132,6 +132,51 @@ typedef struct pdc_transfer_request_wait_all_pkg {
     pdc_transfer_request *                    transfer_request;
     struct pdc_transfer_request_wait_all_pkg *next;
 } pdc_transfer_request_wait_all_pkg;
+
+static int
+sort_by_data_server_start_all(const void *elem1, const void *elem2)
+{
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+    if ((*(pdc_transfer_request_start_all_pkg **)elem1)->data_server_id >
+        (*(pdc_transfer_request_start_all_pkg **)elem2)->data_server_id)
+        return 1;
+    if ((*(pdc_transfer_request_start_all_pkg **)elem1)->data_server_id <
+        (*(pdc_transfer_request_start_all_pkg **)elem2)->data_server_id)
+        return -1;
+    return 0;
+#pragma GCC diagnostic pop
+}
+
+static int
+sort_by_metadata_server_start_all(const void *elem1, const void *elem2)
+{
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+    if ((*(pdc_transfer_request_start_all_pkg **)elem1)->transfer_request->metadata_id >
+        (*(pdc_transfer_request_start_all_pkg **)elem2)->transfer_request->metadata_id)
+        return 1;
+    if ((*(pdc_transfer_request_start_all_pkg **)elem1)->transfer_request->metadata_id <
+        (*(pdc_transfer_request_start_all_pkg **)elem2)->transfer_request->metadata_id)
+        return -1;
+    return 0;
+#pragma GCC diagnostic pop
+}
+
+static int
+sort_by_data_server_wait_all(const void *elem1, const void *elem2)
+{
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+    if ((*(pdc_transfer_request_wait_all_pkg **)elem1)->data_server_id >
+        (*(pdc_transfer_request_wait_all_pkg **)elem2)->data_server_id)
+        return 1;
+    if ((*(pdc_transfer_request_wait_all_pkg **)elem1)->data_server_id <
+        (*(pdc_transfer_request_wait_all_pkg **)elem2)->data_server_id)
+        return -1;
+    return 0;
+#pragma GCC diagnostic pop
+}
 
 pdcid_t
 PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, pdcid_t local_reg,
@@ -158,24 +203,27 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
     obj2 = (struct _pdc_obj_info *)(objinfo2->obj_ptr);
     // remote_meta_id = obj2->obj_info_pub->meta_id;
 
-    p                      = PDC_MALLOC(pdc_transfer_request);
-    p->obj_pointer         = obj2;
-    p->mem_type            = obj2->obj_pt->obj_prop_pub->type;
-    p->obj_id              = obj2->obj_info_pub->meta_id;
-    p->access_type         = access_type;
-    p->buf                 = buf;
-    p->read_bulk_buf_index = 0;
-    p->metadata_id         = NULL;
-    p->read_bulk_buf       = NULL;
-    p->new_buf             = NULL;
-    p->bulk_buf            = NULL;
-    p->bulk_buf_ref        = NULL;
-    p->output_buf          = NULL;
-    p->region_partition    = ((pdc_metadata_t *)obj2->metadata)->region_partition;
-    p->data_server_id      = ((pdc_metadata_t *)obj2->metadata)->data_server_id;
-    p->consistency         = obj2->obj_pt->obj_prop_pub->consistency;
-    p->unit                = PDC_get_var_type_size(p->mem_type);
-    unit                   = p->unit;
+    p                 = PDC_MALLOC(pdc_transfer_request);
+    p->obj_pointer    = obj2;
+    p->mem_type       = obj2->obj_pt->obj_prop_pub->type;
+    p->obj_id         = obj2->obj_info_pub->meta_id;
+    p->access_type    = access_type;
+    p->buf            = buf;
+    p->bulk_buf_index = 0;
+    p->metadata_id    = NULL;
+    p->read_bulk_buf  = NULL;
+    p->new_buf        = NULL;
+    p->bulk_buf       = NULL;
+    p->bulk_buf_ref   = NULL;
+    p->output_buf     = NULL;
+    // p->region_partition    = ((pdc_metadata_t *)obj2->metadata)->region_partition;
+    p->region_partition   = PDC_OBJ_STATIC;
+    p->data_server_id     = ((pdc_metadata_t *)obj2->metadata)->data_server_id;
+    p->metadata_server_id = obj2->obj_info_pub->metadata_server_id;
+    p->unit               = PDC_get_var_type_size(p->mem_type);
+    p->consistency        = obj2->obj_pt->obj_prop_pub->consistency;
+    unit                  = p->unit;
+
     /*
         printf("creating a request from obj %s metadata id = %llu, access_type = %d\n",
        obj2->obj_info_pub->name, (long long unsigned)obj2->obj_info_pub->meta_id, access_type);
@@ -317,68 +365,6 @@ remove_local_transfer_request(struct _pdc_obj_info *p, pdcid_t transfer_request_
 }
 
 /*
- * For PDC_WRITE, we copy from buf to subregion. Otherwise we reverse copy.
- */
-static perr_t
-memcpy_subregion(int ndim, uint64_t unit, pdc_access_t access_type, char *buf, uint64_t *size, char *sub_buf,
-                 uint64_t *sub_offset, uint64_t *sub_size)
-{
-    uint64_t i, j;
-    char *   ptr, *target_buf, *src_buf;
-    perr_t   ret_value = SUCCEED;
-
-    FUNC_ENTER(NULL);
-    if (ndim == 1) {
-        target_buf = sub_buf;
-        src_buf    = buf + sub_offset[0] * unit;
-        if (access_type == PDC_WRITE) {
-            memcpy(target_buf, src_buf, unit * sub_size[0]);
-        }
-        else {
-            memcpy(src_buf, target_buf, unit * sub_size[0]);
-        }
-    }
-    else if (ndim == 2) {
-        ptr = sub_buf;
-        for (i = 0; i < sub_size[0]; ++i) {
-            target_buf = ptr;
-            src_buf    = buf + ((sub_offset[0] + i) * size[1] + sub_offset[1]) * unit;
-            if (access_type == PDC_WRITE) {
-                memcpy(target_buf, src_buf, sub_size[1] * unit);
-            }
-            else {
-                memcpy(src_buf, target_buf, sub_size[1] * unit);
-            }
-            ptr += sub_size[1] * unit;
-        }
-    }
-    else if (ndim == 3) {
-        ptr = sub_buf;
-        for (i = 0; i < sub_size[0]; ++i) {
-            for (j = 0; j < sub_size[1]; ++j) {
-                target_buf = ptr;
-                src_buf    = buf + ((sub_offset[0] + i) * size[1] * size[2] + (sub_offset[1] + j) * size[2] +
-                                 sub_offset[2]) *
-                                    unit;
-                if (access_type == PDC_WRITE) {
-                    memcpy(target_buf, src_buf, sub_size[2] * unit);
-                }
-                else {
-                    memcpy(src_buf, target_buf, sub_size[2] * unit);
-                }
-                ptr += sub_size[2] * unit;
-            }
-        }
-    }
-    else {
-        ret_value = FAIL;
-    }
-
-    fflush(stdout);
-    FUNC_LEAVE(ret_value);
-}
-
-/*
  * Input: Ojbect dimensions + a region
  * Output: Data servers that the region will access with a static region partition. As well as overlapping
  * regions.
@@ -449,9 +435,9 @@ static_region_partition(char *buf, int ndim, uint64_t unit, pdc_access_t access_
             // record data server ID
             data_server_ids[0][*n_data_servers] = i;
             // The overlapping region is allocated here.
-            output_offsets[0][*n_data_servers] = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
-            output_sizes[0][*n_data_servers]   = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
-            sub_offsets[0][*n_data_servers]    = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
+            output_offsets[0][*n_data_servers] = (uint64_t *)malloc(sizeof(uint64_t) * ndim * 3);
+            output_sizes[0][*n_data_servers]   = output_offsets[0][*n_data_servers] + ndim;
+            sub_offsets[0][*n_data_servers]    = output_offsets[0][*n_data_servers] + ndim * 2;
             region_size                        = unit;
             for (j = 0; j < ndim; ++j) {
                 // Compute the offsets. suboffsets are relative positions towards the input region, so we can
@@ -510,36 +496,6 @@ static_region_partition(char *buf, int ndim, uint64_t unit, pdc_access_t access_
     FUNC_LEAVE(ret_value);
 }
 
-static int
-sort_by_data_server_start_all(const void *elem1, const void *elem2)
-{
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
-    if ((*(pdc_transfer_request_start_all_pkg **)elem1)->data_server_id >
-        (*(pdc_transfer_request_start_all_pkg **)elem2)->data_server_id)
-        return 1;
-    if ((*(pdc_transfer_request_start_all_pkg **)elem1)->data_server_id <
-        (*(pdc_transfer_request_start_all_pkg **)elem2)->data_server_id)
-        return -1;
-    return 0;
-#pragma GCC diagnostic pop
-}
-
-static int
-sort_by_data_server_wait_all(const void *elem1, const void *elem2)
-{
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
-    if ((*(pdc_transfer_request_wait_all_pkg **)elem1)->data_server_id >
-        (*(pdc_transfer_request_wait_all_pkg **)elem2)->data_server_id)
-        return 1;
-    if ((*(pdc_transfer_request_wait_all_pkg **)elem1)->data_server_id <
-        (*(pdc_transfer_request_wait_all_pkg **)elem2)->data_server_id)
-        return -1;
-    return 0;
-#pragma GCC diagnostic pop
-}
-
 static perr_t
 pack_region_buffer(char *buf, uint64_t *obj_dims, size_t total_data_size, int local_ndim,
                    uint64_t *local_offset, uint64_t *local_size, size_t unit, pdc_access_t access_type,
@@ -593,6 +549,305 @@ pack_region_buffer(char *buf, uint64_t *obj_dims, size_t total_data_size, int lo
     FUNC_LEAVE(ret_value);
 }
 
+static perr_t
+set_obj_server_bufs(pdc_transfer_request *transfer_request)
+{
+    perr_t ret_value = SUCCEED;
+    FUNC_ENTER(NULL);
+
+    transfer_request->bulk_buf     = (char **)malloc(sizeof(char *) * transfer_request->n_obj_servers);
+    transfer_request->bulk_buf_ref = (int **)malloc(sizeof(int *) * transfer_request->n_obj_servers);
+    transfer_request->metadata_id  = (uint64_t *)malloc(sizeof(uint64_t) * transfer_request->n_obj_servers);
+    // read_bulk_buf is filled later when the bulk transfer is packed.
+    if (transfer_request->access_type == PDC_READ) {
+        transfer_request->read_bulk_buf = (char **)malloc(sizeof(char *) * transfer_request->n_obj_servers);
+    }
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+static perr_t
+pack_region_metadata_query(pdc_transfer_request_start_all_pkg **transfer_request, int size, char **buf_ptr,
+                           uint64_t *total_buf_size_ptr)
+{
+    perr_t   ret_value = SUCCEED;
+    int      i;
+    char *   ptr;
+    uint64_t total_buf_size;
+
+    FUNC_ENTER(NULL);
+
+    total_buf_size = 0;
+    for (i = 0; i < size; ++i) {
+        // ndim + Regions + obj_id + unit
+        total_buf_size += sizeof(int) +
+                          sizeof(uint64_t) * 2 * transfer_request[i]->transfer_request->remote_region_ndim +
+                          sizeof(uint64_t) + sizeof(size_t);
+    }
+
+    *buf_ptr = (char *)malloc(total_buf_size);
+    ptr      = *buf_ptr;
+    for (i = 0; i < size; ++i) {
+        memcpy(ptr, &(transfer_request[i]->transfer_request->obj_id), sizeof(uint64_t));
+        ptr += sizeof(uint64_t);
+        memcpy(ptr, &(transfer_request[i]->transfer_request->remote_region_ndim), sizeof(int));
+        ptr += sizeof(int);
+        memcpy(ptr, &(transfer_request[i]->transfer_request->unit), sizeof(size_t));
+        ptr += sizeof(size_t);
+        memcpy(ptr, transfer_request[i]->remote_offset,
+               sizeof(uint64_t) * transfer_request[i]->transfer_request->remote_region_ndim);
+        ptr += sizeof(uint64_t) * transfer_request[i]->transfer_request->remote_region_ndim;
+        memcpy(ptr, transfer_request[i]->remote_size,
+               sizeof(uint64_t) * transfer_request[i]->transfer_request->remote_region_ndim);
+        ptr += sizeof(uint64_t) * transfer_request[i]->transfer_request->remote_region_ndim;
+    }
+
+    *total_buf_size_ptr = total_buf_size;
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+static perr_t
+unpack_region_metadata_query(char *buf, pdc_transfer_request_start_all_pkg **transfer_request_input,
+                             pdc_transfer_request_start_all_pkg **transfer_request_head_ptr,
+                             pdc_transfer_request_start_all_pkg **transfer_request_end_ptr, int *size_ptr)
+{
+    perr_t                              ret_value = SUCCEED;
+    pdc_transfer_request_start_all_pkg *transfer_request_head, *transfer_request_end;
+    pdc_transfer_request *              local_request;
+    int                                 size;
+    int                                 i, j, index;
+    int                                 counter;
+    char *                              ptr;
+    uint64_t                            region_size;
+    uint64_t *                          sub_offset;
+    FUNC_ENTER(NULL);
+
+    local_request         = NULL;
+    transfer_request_head = NULL;
+    transfer_request_end  = NULL;
+    ptr                   = buf;
+    size                  = *(int *)ptr;
+    ptr += sizeof(int);
+    printf("unpack_region_metadata_query: received %d obj partitions\n", size);
+    counter = 0;
+    index   = 0;
+    for (i = 0; i < size; ++i) {
+        if (transfer_request_head) {
+            transfer_request_end->next =
+                (pdc_transfer_request_start_all_pkg *)malloc(sizeof(pdc_transfer_request_start_all_pkg));
+            transfer_request_end = transfer_request_end->next;
+        }
+        else {
+            transfer_request_head =
+                (pdc_transfer_request_start_all_pkg *)malloc(sizeof(pdc_transfer_request_start_all_pkg));
+            transfer_request_end = transfer_request_head;
+        }
+        // Obj ID + Obj dim + region offset + region size
+        if (!counter) {
+            counter = *(int *)ptr;
+            ptr += sizeof(int);
+            local_request                = transfer_request_input[index]->transfer_request;
+            local_request->n_obj_servers = counter;
+            local_request->output_offsets =
+                (uint64_t **)malloc(sizeof(uint64_t *) * local_request->n_obj_servers);
+            local_request->output_sizes =
+                (uint64_t **)malloc(sizeof(uint64_t *) * local_request->n_obj_servers);
+            local_request->sub_offsets =
+                (uint64_t **)malloc(sizeof(uint64_t *) * local_request->n_obj_servers);
+            local_request->obj_servers = (uint32_t *)malloc(sizeof(uint32_t) * local_request->n_obj_servers);
+            set_obj_server_bufs(local_request);
+        }
+        // printf("unpack_region_metadata_query: @ line %d, i = %d, counter = %d\n", __LINE__, i, counter);
+        transfer_request_end->next             = NULL;
+        transfer_request_end->transfer_request = local_request;
+        transfer_request_end->data_server_id   = *(uint32_t *)ptr;
+        ptr += sizeof(uint32_t);
+        transfer_request_end->remote_offset =
+            (uint64_t *)malloc(sizeof(uint64_t) * local_request->remote_region_ndim * 3);
+        transfer_request_end->remote_size =
+            transfer_request_end->remote_offset + local_request->remote_region_ndim;
+        sub_offset = transfer_request_end->remote_offset + local_request->remote_region_ndim * 2;
+        memcpy(transfer_request_end->remote_offset, ptr,
+               sizeof(uint64_t) * local_request->remote_region_ndim * 2);
+        ptr += sizeof(uint64_t) * local_request->remote_region_ndim * 2;
+
+        local_request->output_offsets[local_request->n_obj_servers - counter] =
+            transfer_request_end->remote_offset;
+        local_request->output_sizes[local_request->n_obj_servers - counter] =
+            transfer_request_end->remote_size;
+        local_request->sub_offsets[local_request->n_obj_servers - counter] = sub_offset;
+        local_request->obj_servers[local_request->n_obj_servers - counter] =
+            transfer_request_end->data_server_id;
+        region_size = local_request->unit;
+        for (j = 0; j < local_request->remote_region_ndim; ++j) {
+            region_size *= transfer_request_end->remote_size[j];
+            sub_offset[j] = transfer_request_end->remote_offset[j] - local_request->remote_region_offset[j];
+        }
+        printf("unpack_region_metadata_query: @ line %d remote_region_offset = %lu, %lu, remote_region_size "
+               "= %lu, %lu, suboffset = %lu, %lu, remote_offset = %lu,%lu, remote_size = %lu,%lu\n",
+               __LINE__, (long unsigned)local_request->remote_region_offset[0],
+               (long unsigned)local_request->remote_region_offset[1],
+               (long unsigned)local_request->remote_region_size[0],
+               (long unsigned)local_request->remote_region_size[1], (long unsigned)sub_offset[0],
+               (long unsigned)sub_offset[1], (long unsigned)transfer_request_end->remote_offset[0],
+               (long unsigned)transfer_request_end->remote_offset[1],
+               (long unsigned)transfer_request_end->remote_size[0],
+               (long unsigned)transfer_request_end->remote_size[1]);
+        if (local_request->access_type == PDC_WRITE) {
+            transfer_request_end->buf = (char *)malloc(region_size);
+            memcpy_subregion(local_request->remote_region_ndim, local_request->unit,
+                             local_request->access_type, transfer_request_input[index]->buf,
+                             local_request->remote_region_size, transfer_request_end->buf, sub_offset,
+                             transfer_request_end->remote_size);
+        }
+        if (!counter) {
+            index++;
+        }
+        counter--;
+        // printf("unpack_region_metadata_query: @ line %d\n", __LINE__);
+    }
+
+    *transfer_request_head_ptr = transfer_request_head;
+    *transfer_request_end_ptr  = transfer_request_end;
+    *size_ptr += size;
+
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+static perr_t
+register_metadata(pdc_transfer_request_start_all_pkg **transfer_request_input, int input_size,
+                  uint8_t is_write, pdc_transfer_request_start_all_pkg ***transfer_request_output_ptr,
+                  int *output_size_ptr)
+{
+    perr_t                               ret_value = SUCCEED;
+    int                                  i, j, index, size, output_size, remain_size, n_objs;
+    pdc_transfer_request_start_all_pkg **transfer_requests;
+    pdc_transfer_request_start_all_pkg * transfer_request_head, *transfer_request_front_head,
+        *transfer_request_end, **transfer_request_output, *previous = NULL;
+    uint64_t total_buf_size, output_buf_size, query_id;
+    char *   buf, *output_buf;
+
+    FUNC_ENTER(NULL);
+    transfer_request_output     = NULL;
+    transfer_request_front_head = NULL;
+    transfer_requests           = (pdc_transfer_request_start_all_pkg **)malloc(
+        sizeof(pdc_transfer_request_start_all_pkg *) * input_size);
+    size = 0;
+    for (i = 0; i < input_size; ++i) {
+        if (transfer_request_input[i]->transfer_request->region_partition == PDC_REGION_DYNAMIC) {
+            transfer_requests[size] = transfer_request_input[i];
+            size++;
+        }
+    }
+    remain_size = input_size - size;
+    output_size = 0;
+
+    index = 0;
+    qsort(transfer_requests, size, sizeof(pdc_transfer_request_start_all_pkg *),
+          sort_by_metadata_server_start_all);
+    // printf("register_metadata @ line %d: input_size = %d, size = %d\n", __LINE__, input_size, size);
+    for (i = 1; i < size; ++i) {
+        // fprintf(stderr, "register_metadata: checkpoint %d, sending offset = %lu, size = %lu\n", __LINE__,
+        // transfer_request[i]->remote_offset[0], transfer_request[i]->remote_size[0]);
+        if (transfer_requests[i]->transfer_request->metadata_server_id !=
+            transfer_requests[i - 1]->transfer_request->metadata_server_id) {
+            n_objs = i - index;
+            pack_region_metadata_query(transfer_requests + index, n_objs, &buf, &total_buf_size);
+            PDC_Client_transfer_request_metadata_query(
+                buf, total_buf_size, n_objs, transfer_requests[index]->transfer_request->metadata_server_id,
+                is_write, &output_buf_size, &query_id);
+            free(buf);
+            // If it is a valid query ID, then it means regions are overlapping.
+            if (query_id) {
+                output_buf = (char *)malloc(output_buf_size);
+                PDC_Client_transfer_request_metadata_query2(
+                    output_buf, output_buf_size, query_id,
+                    transfer_requests[i]->transfer_request->metadata_server_id);
+                // fprintf(stderr, "register_metadata: checkpoint %d\n", __LINE__);
+                unpack_region_metadata_query(output_buf, transfer_requests + index, &transfer_request_head,
+                                             &transfer_request_end, &output_size);
+                // fprintf(stderr, "register_metadata: checkpoint %d\n", __LINE__);
+                free(output_buf);
+                if (transfer_request_front_head) {
+                    previous->next = transfer_request_head;
+                }
+                else {
+                    transfer_request_front_head = transfer_request_head;
+                }
+                previous = transfer_request_end;
+            }
+            index = i;
+        }
+        // printf("register_metadata @ line %d: query_id = %lu, i = %d\n", __LINE__, (long unsigned)query_id,
+        // i);
+    }
+
+    if (size) {
+        n_objs = size - index;
+        pack_region_metadata_query(transfer_requests + index, n_objs, &buf, &total_buf_size);
+        PDC_Client_transfer_request_metadata_query(
+            buf, total_buf_size, n_objs, transfer_requests[index]->transfer_request->metadata_server_id,
+            is_write, &output_buf_size, &query_id);
+        free(buf);
+        // If it is a valid query ID, then it means regions are overlapping.
+        if (query_id) {
+            output_buf = (char *)malloc(output_buf_size);
+            PDC_Client_transfer_request_metadata_query2(
+                output_buf, output_buf_size, query_id,
+                transfer_requests[i]->transfer_request->metadata_server_id);
+            // fprintf(stderr, "register_metadata: checkpoint %d\n", __LINE__);
+            unpack_region_metadata_query(output_buf, transfer_requests + index, &transfer_request_head,
+                                         &transfer_request_end, &output_size);
+            // fprintf(stderr, "register_metadata: checkpoint %d\n", __LINE__);
+            free(output_buf);
+            if (transfer_request_front_head) {
+                previous->next = transfer_request_head;
+            }
+            else {
+                transfer_request_front_head = transfer_request_head;
+            }
+            previous = transfer_request_end;
+        }
+    }
+
+    if (output_size) {
+        transfer_request_output = (pdc_transfer_request_start_all_pkg **)malloc(
+            sizeof(pdc_transfer_request_start_all_pkg *) * (output_size + remain_size));
+        transfer_request_head = transfer_request_front_head;
+        i                     = 0;
+        while (transfer_request_head) {
+            transfer_request_output[i] = transfer_request_head;
+            transfer_request_head      = transfer_request_head->next;
+            i++;
+        }
+        j = output_size;
+        for (i = 0; i < input_size; ++i) {
+            if (transfer_request_input[i]->transfer_request->region_partition == PDC_REGION_DYNAMIC) {
+                // These are replaced by newly created request pkgs.
+                free(transfer_request_input[i]);
+            }
+            else {
+                transfer_request_output[j] = transfer_request_input[i];
+                j++;
+            }
+        }
+        free(transfer_request_input);
+        *transfer_request_output_ptr = transfer_request_output;
+        *output_size_ptr             = output_size;
+    }
+    else {
+        *transfer_request_output_ptr = transfer_request_input;
+        *output_size_ptr             = input_size;
+    }
+
+    free(transfer_requests);
+
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
 /**
  * This function prepares lists of read and write requests separately for start_all function. The lists are
  * sorted in terms of data_server_id. We pack data from user buffer to contiguous buffers. Static partitioning
@@ -607,8 +862,9 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
     int                                  i, j;
     int                                  unit;
     pdc_transfer_request_start_all_pkg **write_transfer_request, **read_transfer_request, *write_request_pkgs,
-        *read_request_pkgs, *write_request_pkgs_end, *read_request_pkgs_end, *request_pkgs;
-    int                   write_size, read_size;
+        *read_request_pkgs, *write_request_pkgs_end, *read_request_pkgs_end, *request_pkgs,
+        **transfer_request_output;
+    int                   write_size, read_size, output_size;
     struct _pdc_id_info * transferinfo;
     pdc_transfer_request *transfer_request;
     int                   set_output_buf = 0;
@@ -649,16 +905,13 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
                     (pdc_transfer_request_start_all_pkg *)malloc(sizeof(pdc_transfer_request_start_all_pkg));
                 request_pkgs->transfer_request = transfer_request;
                 request_pkgs->data_server_id   = transfer_request->obj_servers[j];
-                request_pkgs->remote_ndim      = transfer_request->remote_region_ndim;
                 request_pkgs->remote_offset    = transfer_request->output_offsets[j];
                 request_pkgs->remote_size      = transfer_request->output_sizes[j];
-                request_pkgs->unit             = PDC_Client_get_var_type_size(transfer_request->mem_type);
                 // For read, we do not need the value of buf because we are not transferring data from client
                 // to server
                 if (transfer_request->access_type == PDC_WRITE) {
                     request_pkgs->buf = transfer_request->output_buf[j];
                 }
-                request_pkgs->unit = unit;
                 request_pkgs->next = NULL;
                 if (transfer_request->access_type == PDC_WRITE) {
                     write_size++;
@@ -684,20 +937,19 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
                 }
             }
         }
-        else if (transfer_request->region_partition == PDC_OBJ_STATIC) {
+        // Dynamic partitioning is handled at the end of this function by querying server.
+        else if (transfer_request->region_partition == PDC_OBJ_STATIC ||
+                 transfer_request->region_partition == PDC_REGION_DYNAMIC) {
             transfer_request->n_obj_servers = 1;
             request_pkgs =
                 (pdc_transfer_request_start_all_pkg *)malloc(sizeof(pdc_transfer_request_start_all_pkg));
             request_pkgs->transfer_request = transfer_request;
             request_pkgs->data_server_id   = transfer_request->data_server_id;
-            request_pkgs->remote_ndim      = transfer_request->remote_region_ndim;
             request_pkgs->remote_offset    = transfer_request->remote_region_offset;
             request_pkgs->remote_size      = transfer_request->remote_region_size;
-            request_pkgs->unit             = PDC_Client_get_var_type_size(transfer_request->mem_type);
             if (transfer_request->access_type == PDC_WRITE) {
                 request_pkgs->buf = transfer_request->new_buf;
             }
-            request_pkgs->unit = unit;
             request_pkgs->next = NULL;
             if (transfer_request->access_type == PDC_WRITE) {
                 write_size++;
@@ -722,14 +974,9 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
                 }
             }
         }
-        transfer_request->bulk_buf     = (char **)malloc(sizeof(char *) * transfer_request->n_obj_servers);
-        transfer_request->bulk_buf_ref = (int **)malloc(sizeof(int *) * transfer_request->n_obj_servers);
-        transfer_request->metadata_id =
-            (uint64_t *)malloc(sizeof(uint64_t) * transfer_request->n_obj_servers);
-        // read_bulk_buf is filled later when the bulk transfer is packed.
-        if (transfer_request->access_type == PDC_READ) {
-            transfer_request->read_bulk_buf =
-                (char **)malloc(sizeof(char *) * transfer_request->n_obj_servers);
+        // REGION_DYNAMIC case is allocated later, once we know the number of regions we are going to access.
+        if (transfer_request->region_partition != PDC_REGION_DYNAMIC) {
+            set_obj_server_bufs(transfer_request);
         }
     }
 
@@ -741,9 +988,14 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
             write_transfer_request[i] = request_pkgs;
             request_pkgs              = request_pkgs->next;
         }
-        qsort(write_transfer_request, write_size, sizeof(pdc_transfer_request_start_all_pkg *),
+        register_metadata(write_transfer_request, write_size, 1, &transfer_request_output, &output_size);
+        *write_transfer_request_ptr = transfer_request_output;
+        *write_size_ptr             = output_size;
+        qsort(*write_transfer_request_ptr, *write_size_ptr, sizeof(pdc_transfer_request_start_all_pkg *),
               sort_by_data_server_start_all);
-        *write_transfer_request_ptr = write_transfer_request;
+    }
+    else {
+        *write_size_ptr = 0;
     }
     if (read_size) {
         read_transfer_request = (pdc_transfer_request_start_all_pkg **)malloc(
@@ -753,12 +1005,15 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
             read_transfer_request[i] = request_pkgs;
             request_pkgs             = request_pkgs->next;
         }
-        qsort(read_transfer_request, read_size, sizeof(pdc_transfer_request_start_all_pkg *),
+        register_metadata(read_transfer_request, read_size, 0, &transfer_request_output, &output_size);
+        *read_transfer_request_ptr = transfer_request_output;
+        *read_size_ptr             = output_size;
+        qsort(*read_transfer_request_ptr, *read_size_ptr, sizeof(pdc_transfer_request_start_all_pkg *),
               sort_by_data_server_start_all);
-        *read_transfer_request_ptr = read_transfer_request;
     }
-    *write_size_ptr = write_size;
-    *read_size_ptr  = read_size;
+    else {
+        *read_size_ptr = 0;
+    }
     return 0;
 }
 
@@ -802,12 +1057,13 @@ PDC_Client_pack_all_requests(int n_objs, pdc_transfer_request_start_all_pkg **tr
     /*
      * number of objects: sizeof(int)
      * The following times n_objs (one set per object).
+     *     obj_id: remote object ID
      *     obj_ndim: sizeof(int)
      *     remote remote_ndim: sizeof(int)
      *     unit: sizeof(size_t)
      */
     metadata_size = n_objs * (sizeof(pdcid_t) + sizeof(int) * 2 + sizeof(size_t));
-
+    // printf("checkpoint @ line %d\n", __LINE__);
     // Data size, including region offsets/length pairs and actual data for I/O.
     /*
      * For each of objects
@@ -819,19 +1075,22 @@ PDC_Client_pack_all_requests(int n_objs, pdc_transfer_request_start_all_pkg **tr
     data_size           = 0;
     total_obj_data_size = 0;
     for (i = 0; i < n_objs; ++i) {
-        obj_data_size = transfer_requests[i]->remote_size[0] *
-                        PDC_Client_get_var_type_size(transfer_requests[i]->transfer_request->mem_type);
-        for (j = 1; j < transfer_requests[i]->remote_ndim; ++j) {
+        // printf("checkpoint i = %d, remote_region_size = %lu, unit = %lu @ line %d\n", i,
+        // transfer_requests[i]->remote_size[0], transfer_requests[i]->transfer_request->unit,  __LINE__);
+        obj_data_size = transfer_requests[i]->remote_size[0] * transfer_requests[i]->transfer_request->unit;
+        for (j = 1; j < transfer_requests[i]->transfer_request->remote_region_ndim; ++j) {
             obj_data_size *= transfer_requests[i]->remote_size[j];
         }
         if (access_type == PDC_WRITE) {
-            data_size += sizeof(uint64_t) * transfer_requests[i]->remote_ndim * 3 + obj_data_size;
+            data_size += sizeof(uint64_t) * transfer_requests[i]->transfer_request->remote_region_ndim * 3 +
+                         obj_data_size;
         }
         else {
             total_obj_data_size += obj_data_size;
-            data_size += sizeof(uint64_t) * transfer_requests[i]->remote_ndim * 3;
+            data_size += sizeof(uint64_t) * transfer_requests[i]->transfer_request->remote_region_ndim * 3;
         }
     }
+    // printf("checkpoint @ line %d\n", __LINE__);
     if (access_type == PDC_WRITE) {
         total_buf_size = metadata_size + data_size;
     }
@@ -843,6 +1102,8 @@ PDC_Client_pack_all_requests(int n_objs, pdc_transfer_request_start_all_pkg **tr
             total_buf_size = metadata_size + data_size;
         }
     }
+    // printf("checkpoint @ line %d, total_buf_size = %lu, metadata_size = %lu, data_size = %lu\n", __LINE__,
+    // total_buf_size, metadata_size, data_size);
     bulk_buf      = (char *)malloc(total_buf_size);
     *bulk_buf_ptr = bulk_buf;
     ptr           = bulk_buf;
@@ -853,18 +1114,21 @@ PDC_Client_pack_all_requests(int n_objs, pdc_transfer_request_start_all_pkg **tr
         memcpy(ptr, a, b);                                                                                   \
         ptr += b;                                                                                            \
     }
+    // printf("checkpoint @ line %d\n", __LINE__);
     for (i = 0; i < n_objs; ++i) {
         unit = transfer_requests[i]->transfer_request->unit;
         MEMCPY_INC(&(transfer_requests[i]->transfer_request->obj_id), sizeof(pdcid_t));
         MEMCPY_INC(&(transfer_requests[i]->transfer_request->obj_ndim), sizeof(int));
-        MEMCPY_INC(&(transfer_requests[i]->remote_ndim), sizeof(int));
+        MEMCPY_INC(&(transfer_requests[i]->transfer_request->remote_region_ndim), sizeof(int));
         MEMCPY_INC(&unit, sizeof(size_t));
     }
+
+    // printf("checkpoint @ line %d\n", __LINE__);
     for (i = 0; i < n_objs; ++i) {
         unit          = transfer_requests[i]->transfer_request->unit;
         obj_data_size = transfer_requests[i]->remote_size[0] * unit;
 
-        for (j = 1; j < transfer_requests[i]->remote_ndim; ++j) {
+        for (j = 1; j < transfer_requests[i]->transfer_request->remote_region_ndim; ++j) {
             obj_data_size *= transfer_requests[i]->remote_size[j];
         }
 
@@ -873,8 +1137,10 @@ PDC_Client_pack_all_requests(int n_objs, pdc_transfer_request_start_all_pkg **tr
             ptr2 += obj_data_size;
         }
 
-        MEMCPY_INC(transfer_requests[i]->remote_offset, sizeof(uint64_t) * transfer_requests[i]->remote_ndim);
-        MEMCPY_INC(transfer_requests[i]->remote_size, sizeof(uint64_t) * transfer_requests[i]->remote_ndim);
+        MEMCPY_INC(transfer_requests[i]->remote_offset,
+                   sizeof(uint64_t) * transfer_requests[i]->transfer_request->remote_region_ndim);
+        MEMCPY_INC(transfer_requests[i]->remote_size,
+                   sizeof(uint64_t) * transfer_requests[i]->transfer_request->remote_region_ndim);
         MEMCPY_INC(transfer_requests[i]->transfer_request->obj_dims,
                    sizeof(uint64_t) * transfer_requests[i]->transfer_request->obj_ndim);
         // Note buf is undefined for PDC_READ
@@ -904,7 +1170,7 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
     read_bulk_buf = (char **)malloc(sizeof(char *) * size);
     index         = 0;
     for (i = 1; i < size; ++i) {
-        if (i && transfer_requests[i]->data_server_id != transfer_requests[i - 1]->data_server_id) {
+        if (transfer_requests[i]->data_server_id != transfer_requests[i - 1]->data_server_id) {
             // Freed at the wait operation (inside PDC_client_connect call)
             n_objs = i - index;
             PDC_Client_pack_all_requests(n_objs, transfer_requests + index,
@@ -921,23 +1187,21 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
                 // All requests share the same bulk buffer, reference counter is also shared among all
                 // requests.
                 transfer_requests[j]
-                    ->transfer_request
-                    ->bulk_buf[transfer_requests[j]->transfer_request->read_bulk_buf_index] = bulk_buf;
+                    ->transfer_request->bulk_buf[transfer_requests[j]->transfer_request->bulk_buf_index] =
+                    bulk_buf;
                 transfer_requests[j]
-                    ->transfer_request
-                    ->bulk_buf_ref[transfer_requests[j]->transfer_request->read_bulk_buf_index] =
+                    ->transfer_request->bulk_buf_ref[transfer_requests[j]->transfer_request->bulk_buf_index] =
                     bulk_buf_ref;
                 if (transfer_requests[j]->transfer_request->access_type == PDC_READ) {
                     transfer_requests[j]
                         ->transfer_request
-                        ->read_bulk_buf[transfer_requests[j]->transfer_request->read_bulk_buf_index] =
+                        ->read_bulk_buf[transfer_requests[j]->transfer_request->bulk_buf_index] =
                         read_bulk_buf[j];
                 }
                 transfer_requests[j]
-                    ->transfer_request
-                    ->metadata_id[transfer_requests[j]->transfer_request->read_bulk_buf_index] =
+                    ->transfer_request->metadata_id[transfer_requests[j]->transfer_request->bulk_buf_index] =
                     metadata_id[j];
-                transfer_requests[j]->transfer_request->read_bulk_buf_index++;
+                transfer_requests[j]->transfer_request->bulk_buf_index++;
             }
             index = i;
         }
@@ -945,9 +1209,11 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
     if (size) {
         // Freed at the wait operation (inside PDC_client_connect call)
         n_objs = size - index;
+        // printf("checkpoint @ line %d\n", __LINE__);
         PDC_Client_pack_all_requests(n_objs, transfer_requests + index,
                                      transfer_requests[index]->transfer_request->access_type, &bulk_buf,
                                      &bulk_buf_size, read_bulk_buf + index);
+        // printf("checkpoint @ line %d\n", __LINE__);
         bulk_buf_ref    = (int *)malloc(sizeof(int));
         bulk_buf_ref[0] = n_objs;
         // printf("checkpoint @ line %d, index = %d, dataserver_id = %d, n_objs = %d\n", __LINE__, index,
@@ -961,21 +1227,21 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
             // printf("checkpoint @ line %d, j = %d, %d\n", __LINE__, j,
             // transfer_requests[j]->data_server_id);
             transfer_requests[j]
-                ->transfer_request->bulk_buf[transfer_requests[j]->transfer_request->read_bulk_buf_index] =
+                ->transfer_request->bulk_buf[transfer_requests[j]->transfer_request->bulk_buf_index] =
                 bulk_buf;
             transfer_requests[j]
-                ->transfer_request
-                ->bulk_buf_ref[transfer_requests[j]->transfer_request->read_bulk_buf_index] = bulk_buf_ref;
+                ->transfer_request->bulk_buf_ref[transfer_requests[j]->transfer_request->bulk_buf_index] =
+                bulk_buf_ref;
             if (transfer_requests[j]->transfer_request->access_type == PDC_READ) {
                 transfer_requests[j]
                     ->transfer_request
-                    ->read_bulk_buf[transfer_requests[j]->transfer_request->read_bulk_buf_index] =
+                    ->read_bulk_buf[transfer_requests[j]->transfer_request->bulk_buf_index] =
                     read_bulk_buf[j];
             }
             transfer_requests[j]
-                ->transfer_request->metadata_id[transfer_requests[j]->transfer_request->read_bulk_buf_index] =
+                ->transfer_request->metadata_id[transfer_requests[j]->transfer_request->bulk_buf_index] =
                 metadata_id[j];
-            transfer_requests[j]->transfer_request->read_bulk_buf_index++;
+            transfer_requests[j]->transfer_request->bulk_buf_index++;
         }
     }
     free(read_bulk_buf);
@@ -996,17 +1262,18 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
 
     FUNC_ENTER(NULL);
     // Split write and read requests. Handle them separately.
-    // fprintf(stderr, "checkpoint %d\n", __LINE__);
+    printf("PDCregion_transfer_start_all: checkpoint %d\n", __LINE__);
     prepare_start_all_requests(transfer_request_id, size, &write_transfer_requests, &read_transfer_requests,
                                &write_size, &read_size);
-    // fprintf(stderr, "checkpoint %d, write_size = %d, read_size = %d\n", __LINE__, write_size, read_size);
+    printf("PDCregion_transfer_start_all: checkpoint %d, write_size = %d, read_size = %d\n", __LINE__,
+           write_size, read_size);
     // Start write requests
     PDC_Client_start_all_requests(write_transfer_requests, write_size);
-    // fprintf(stderr, "checkpoint %d\n", __LINE__);
+    printf("PDCregion_transfer_start_all: checkpoint %d\n", __LINE__);
     // Start read requests
     PDC_Client_start_all_requests(read_transfer_requests, read_size);
     /*
-        fprintf(stderr, "checkpoint %d\n", __LINE__);
+        fprintf(stderr, "PDCregion_transfer_start_all: checkpoint %d\n", __LINE__);
         MPI_Barrier(MPI_COMM_WORLD);
     */
 
@@ -1020,7 +1287,7 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
     // Clean up memory
     finish_start_all_requests(write_transfer_requests, read_transfer_requests, write_size, read_size);
     /*
-        fprintf(stderr, "checkpoint %d\n", __LINE__);
+        fprintf(stderr, "PDCregion_transfer_start_all: checkpoint %d\n", __LINE__);
         MPI_Barrier(MPI_COMM_WORLD);
     */
     FUNC_LEAVE(ret_value);
@@ -1094,7 +1361,8 @@ PDCregion_transfer_start(pdcid_t transfer_request_id)
 
     FUNC_ENTER(NULL);
 
-    transferinfo     = PDC_find_id(transfer_request_id);
+    transferinfo = PDC_find_id(transfer_request_id);
+
     transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
 
     if (transfer_request->metadata_id != NULL) {
@@ -1103,6 +1371,14 @@ PDCregion_transfer_start(pdcid_t transfer_request_id)
         ret_value = FAIL;
         goto done;
     }
+    // Dynamic case is implemented within the the aggregated version. The main reason is that the target data
+    // server may not be unique, so we may end up sending multiple requests to the same data server.
+    // Aggregated method will take care of this type of operation.
+    if (transfer_request->region_partition == PDC_REGION_DYNAMIC) {
+        PDCregion_transfer_start_all(&transfer_request_id, 1);
+        goto done;
+    }
+
     attach_local_transfer_request(transfer_request->obj_pointer, transfer_request_id);
 
     // Pack local region to a contiguous memory buffer
@@ -1148,7 +1424,7 @@ PDCregion_transfer_start(pdcid_t transfer_request_id)
                 transfer_request->access_type, transfer_request->metadata_id + i);
         }
     }
-    if (transfer_request->region_partition == PDC_OBJ_STATIC) {
+    else if (transfer_request->region_partition == PDC_OBJ_STATIC) {
         // Static object partitioning means that all requests for the same object are sent to the same data
         // server.
         transfer_request->metadata_id   = (uint64_t *)malloc(sizeof(uint64_t));
@@ -1252,7 +1528,8 @@ PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *co
     if (transfer_request->metadata_id != NULL) {
         unit = transfer_request->unit;
 
-        if (transfer_request->region_partition == PDC_REGION_STATIC) {
+        if (transfer_request->region_partition == PDC_REGION_STATIC ||
+            transfer_request->region_partition == PDC_REGION_DYNAMIC) {
             for (i = 0; i < transfer_request->n_obj_servers; ++i) {
                 ret_value = PDC_Client_transfer_request_status(transfer_request->metadata_id[i],
                                                                transfer_request->obj_servers[i], completed);
@@ -1281,8 +1558,8 @@ PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *co
                     free(transfer_request->output_buf[i]);
                 }
                 free(transfer_request->output_offsets[i]);
-                free(transfer_request->output_sizes[i]);
-                free(transfer_request->sub_offsets[i]);
+                // free(transfer_request->output_sizes[i]);
+                // free(transfer_request->sub_offsets[i]);
             }
             // Copy read data from a contiguous buffer back to the user buffer using local data information.
             // printf("rank %d checkpoint %d\n", pdc_client_mpi_rank_g, __LINE__);
@@ -1292,14 +1569,14 @@ PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *co
                 transfer_request->access_type, transfer_request->n_obj_servers, transfer_request->new_buf,
                 transfer_request->bulk_buf, transfer_request->bulk_buf_ref, transfer_request->read_bulk_buf);
             free(transfer_request->output_offsets);
-            free(transfer_request->output_sizes);
-            free(transfer_request->sub_offsets);
+            // free(transfer_request->output_sizes);
+            // free(transfer_request->sub_offsets);
             if (transfer_request->output_buf) {
                 free(transfer_request->output_buf);
             }
             free(transfer_request->obj_servers);
         }
-        if (transfer_request->region_partition == PDC_OBJ_STATIC) {
+        else if (transfer_request->region_partition == PDC_OBJ_STATIC) {
             ret_value = PDC_Client_transfer_request_status(transfer_request->metadata_id[0],
                                                            transfer_request->data_server_id, completed);
             if (*completed != PDC_TRANSFER_STATUS_COMPLETE) {
@@ -1351,7 +1628,7 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
     pdc_transfer_request *transfer_request;
 
     FUNC_ENTER(NULL);
-
+    printf("entered PDCregion_transfer_wait_all @ line %d\n", __LINE__);
     total_requests        = 0;
     transfer_request_head = NULL;
     for (i = 0; i < size; ++i) {
@@ -1380,7 +1657,7 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
             if (transfer_request->region_partition == PDC_OBJ_STATIC) {
                 transfer_request_end->data_server_id = transfer_request->data_server_id;
             }
-            else if (transfer_request->region_partition == PDC_REGION_STATIC) {
+            else {
                 transfer_request_end->data_server_id = transfer_request->obj_servers[j];
             }
             transfer_request_end->metadata_id      = transfer_request->metadata_id[j];
@@ -1410,7 +1687,8 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
             PDC_Client_transfer_request_wait_all(n_objs, metadata_ids + index,
                                                  transfer_requests[index]->data_server_id);
             for (j = index; j < i; ++j) {
-                if (transfer_requests[j]->transfer_request->region_partition == PDC_REGION_STATIC) {
+                if (transfer_requests[j]->transfer_request->region_partition == PDC_REGION_STATIC ||
+                    transfer_requests[j]->transfer_request->region_partition == PDC_REGION_DYNAMIC) {
                     if (transfer_requests[j]->transfer_request->access_type == PDC_READ) {
                         // We copy the data from different data server regions to the contiguous buffer.
                         // Subregion copy uses sub_offset/size to align to the remote obj region.
@@ -1430,8 +1708,8 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
                         free(transfer_requests[j]->transfer_request->output_buf[transfer_requests[j]->index]);
                     }
                     free(transfer_requests[j]->transfer_request->output_offsets[transfer_requests[j]->index]);
-                    free(transfer_requests[j]->transfer_request->output_sizes[transfer_requests[j]->index]);
-                    free(transfer_requests[j]->transfer_request->sub_offsets[transfer_requests[j]->index]);
+                    // free(transfer_requests[j]->transfer_request->output_sizes[transfer_requests[j]->index]);
+                    // free(transfer_requests[j]->transfer_request->sub_offsets[transfer_requests[j]->index]);
                 }
             }
             index = i;
@@ -1446,7 +1724,8 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
         PDC_Client_transfer_request_wait_all(n_objs, metadata_ids + index,
                                              transfer_requests[index]->data_server_id);
         for (j = index; j < total_requests; ++j) {
-            if (transfer_requests[j]->transfer_request->region_partition == PDC_REGION_STATIC) {
+            if (transfer_requests[j]->transfer_request->region_partition == PDC_REGION_STATIC ||
+                transfer_requests[j]->transfer_request->region_partition == PDC_REGION_DYNAMIC) {
                 if (transfer_requests[j]->transfer_request->access_type == PDC_READ) {
                     // We copy the data from different data server regions to the contiguous buffer. Subregion
                     // copy uses sub_offset/size to align to the remote obj region.
@@ -1460,12 +1739,22 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
                         transfer_requests[j]->transfer_request->sub_offsets[transfer_requests[j]->index],
                         transfer_requests[j]->transfer_request->output_sizes[transfer_requests[j]->index]);
                 }
+                /*
+                                        uint64_t k;
+                                        fprintf(stderr,"print new_buf :");
+                                        for ( k = 0; k < transfer_request->local_region_size[0]; ++k ) {
+                                            fprintf(stderr,"%d,", *(int*) (transfer_request->new_buf +
+                   sizeof(int) * k));
+
+                                        }
+                                        printf("\n");
+                */
                 if (transfer_requests[j]->transfer_request->output_buf) {
                     free(transfer_requests[j]->transfer_request->output_buf[transfer_requests[j]->index]);
                 }
                 free(transfer_requests[j]->transfer_request->output_offsets[transfer_requests[j]->index]);
-                free(transfer_requests[j]->transfer_request->output_sizes[transfer_requests[j]->index]);
-                free(transfer_requests[j]->transfer_request->sub_offsets[transfer_requests[j]->index]);
+                // free(transfer_requests[j]->transfer_request->output_sizes[transfer_requests[j]->index]);
+                // free(transfer_requests[j]->transfer_request->sub_offsets[transfer_requests[j]->index]);
             }
         }
     }
@@ -1487,7 +1776,8 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
             transfer_request->access_type, transfer_request->n_obj_servers, transfer_request->new_buf,
             transfer_request->bulk_buf, transfer_request->bulk_buf_ref, transfer_request->read_bulk_buf);
 
-        if (transfer_request->region_partition == PDC_REGION_STATIC) {
+        if (transfer_request->region_partition == PDC_REGION_STATIC ||
+            transfer_request->region_partition == PDC_REGION_DYNAMIC) {
             free(transfer_request->output_offsets);
             free(transfer_request->output_sizes);
             free(transfer_request->sub_offsets);
@@ -1529,6 +1819,12 @@ PDCregion_transfer_wait(pdcid_t transfer_request_id)
     transferinfo     = PDC_find_id(transfer_request_id);
     transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
     if (transfer_request->metadata_id != NULL) {
+        // For region dynamic case, it is implemented in the aggregated version for portability.
+        if (transfer_request->region_partition == PDC_REGION_DYNAMIC) {
+            PDCregion_transfer_wait_all(&transfer_request_id, 1);
+            goto done;
+        }
+
         unit = transfer_request->unit;
 
         if (transfer_request->region_partition == PDC_REGION_STATIC) {
@@ -1556,8 +1852,8 @@ PDCregion_transfer_wait(pdcid_t transfer_request_id)
                     free(transfer_request->output_buf[i]);
                 }
                 free(transfer_request->output_offsets[i]);
-                free(transfer_request->output_sizes[i]);
-                free(transfer_request->sub_offsets[i]);
+                // free(transfer_request->output_sizes[i]);
+                // free(transfer_request->sub_offsets[i]);
             }
             // Copy read data from a contiguous buffer back to the user buffer using local data information.
             // printf("rank %d checkpoint %d\n", pdc_client_mpi_rank_g, __LINE__);
@@ -1574,7 +1870,7 @@ PDCregion_transfer_wait(pdcid_t transfer_request_id)
             }
             free(transfer_request->obj_servers);
         }
-        if (transfer_request->region_partition == PDC_OBJ_STATIC) {
+        else if (transfer_request->region_partition == PDC_OBJ_STATIC) {
             ret_value = PDC_Client_transfer_request_wait(transfer_request->metadata_id[0],
                                                          transfer_request->data_server_id,
                                                          transfer_request->access_type);
@@ -1607,6 +1903,8 @@ PDCregion_transfer_wait(pdcid_t transfer_request_id)
                __LINE__);
         ret_value = FAIL;
     }
+
+done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
