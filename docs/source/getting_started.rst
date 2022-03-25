@@ -26,6 +26,12 @@ Installing spack can be found at this url: https://spack.io
 	$ cd spack/bin
 	$ ./spack install pdc
 
+If you run into issues with ``libfabric`` on macOS and some Linux distributions, you can enable all fabrics by installing PDC using:
+
+.. code-block:: Bash
+
+	$ spack install pdc ^libfabric fabrics=sockets,tcp,udp,rxm
+
 ++++++++++++++++++++++++++++++++++
 Installing PDC from source
 ++++++++++++++++++++++++++++++++++
