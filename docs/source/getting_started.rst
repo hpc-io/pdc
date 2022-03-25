@@ -22,15 +22,15 @@ Installing spack can be found at this url: https://spack.io
 
 .. code-block:: Bash
 	
-	$ git clone https://github.com/spack/spack.git
-	$ cd spack/bin
-	$ ./spack install pdc
+	git clone https://github.com/spack/spack.git
+	cd spack/bin
+	./spack install pdc
 
 If you run into issues with ``libfabric`` on macOS and some Linux distributions, you can enable all fabrics by installing PDC using:
 
 .. code-block:: Bash
 
-	$ spack install pdc ^libfabric fabrics=sockets,tcp,udp,rxm
+	spack install pdc ^libfabric fabrics=sockets,tcp,udp,rxm
 
 ++++++++++++++++++++++++++++++++++
 Installing PDC from source
@@ -54,17 +54,17 @@ Install libfabric
 
 .. code-block:: Bash
 
-	$ wget https://github.com/ofiwg/libfabric/archive/v1.11.2.tar.gz
-	$ tar xvzf v1.11.2.tar.gz
-	$ cd libfabric-1.11.2
-	$ mkdir install
-	$ export LIBFABRIC_DIR=$(pwd)/install
-	$ ./autogen.sh
-	$ ./configure --prefix=$LIBFABRIC_DIR CC=gcc CFLAG="-O2"
-	$ make -j8
-	$ make install
-	$ export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$LD_LIBRARY_PATH"
-	$ export PATH="$LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$PATH"
+	wget https://github.com/ofiwg/libfabric/archive/v1.11.2.tar.gz
+	tar xvzf v1.11.2.tar.gz
+	cd libfabric-1.11.2
+	mkdir install
+	export LIBFABRIC_DIR=$(pwd)/install
+	./autogen.sh
+	./configure --prefix=$LIBFABRIC_DIR CC=gcc CFLAG="-O2"
+	make -j8
+	make install
+	export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$LD_LIBRARY_PATH"
+	export PATH="$LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$PATH"
 
 
 Install Mercury
@@ -77,19 +77,19 @@ Step 2 in the following is not required. It is a stable commit that has been use
 
 .. code-block:: Bash
 
-	$ git clone https://github.com/mercury-hpc/mercury.git
-	$ cd mercury
-	$ git checkout e741051fbe6347087171f33119d57c48cb438438
-	$ git submodule update --init
-	$ export MERCURY_DIR=$(pwd)/install
-	$ mkdir install
-	$ cd install
-	$ cmake ../ -DCMAKE_INSTALL_PREFIX=$MERCURY_DIR -DCMAKE_C_COMPILER=gcc -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DNA_USE_OFI=ON -DNA_USE_SM=OFF
-	$ make
-	$ make install
-	$ ctest
-	$ export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
-	$ export PATH="$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH"
+	git clone https://github.com/mercury-hpc/mercury.git
+	cd mercury
+	git checkout e741051fbe6347087171f33119d57c48cb438438
+	git submodule update --init
+	export MERCURY_DIR=$(pwd)/install
+	mkdir install
+	cd install
+	cmake ../ -DCMAKE_INSTALL_PREFIX=$MERCURY_DIR -DCMAKE_C_COMPILER=gcc -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DNA_USE_OFI=ON -DNA_USE_SM=OFF
+	make
+	make install
+	ctest
+	export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+	export PATH="$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH"
 
 ---------------------------
 Installation
@@ -102,16 +102,16 @@ One can replace mpicc to other available MPI compilers. For example, on Cori, cc
 
 .. code-block:: Bash
 
-	$ git clone https://github.com/hpc-io/pdc.git
-	$ cd pdc
-	$ git checkout stable
-	$ cd src
-	$ mkdir install
-	$ cd install
-	$ export PDC_DIR=$(pwd)
-	$ cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=mpicc
-	$ make -j8
-	$ ctest
+	git clone https://github.com/hpc-io/pdc.git
+	cd pdc
+	git checkout stable
+	cd src
+	mkdir install
+	cd install
+	export PDC_DIR=$(pwd)
+	cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=mpicc
+	make -j8
+	ctest
 
 Environmental Variables
 ---------------------------
@@ -120,11 +120,11 @@ During installation, we have set some environmental variables. These variables m
 
 .. code-block:: Bash
 
-	$ export PDC_DIR="where/you/installed/your/pdc"
-	$ export MERCURY_DIR="where/you/installed/your/mercury"
-	$ export LIBFABRIC_DIR="where/you/installed/your/libfabric"
-	$ export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
-	$ export PATH="$LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH"
+	export PDC_DIR="where/you/installed/your/pdc"
+	export MERCURY_DIR="where/you/installed/your/mercury"
+	export LIBFABRIC_DIR="where/you/installed/your/libfabric"
+	export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+	export PATH="$LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH"
 
 One can also manage the path with Spack, which is a lot more easier to load and unload these libraries.
 
@@ -138,8 +138,8 @@ We provide a convenient function (mpi_text.sh) to start MPI tests. One needs to 
 
 .. code-block:: Bash
 
-	$ cd $PDC_DIR/bin
-	$ ./mpi_test.sh ./pdc_init mpiexec 2 4
+	cd $PDC_DIR/bin
+	./mpi_test.sh ./pdc_init mpiexec 2 4
 
 This is test will start 2 processes for PDC servers. The client program ./pdc_init will start 4 processes. Similarly, one can run any of the client examples in ctest. These source code will provide some knowledge of how to use PDC. For more reference, one may check the documentation folder in this repository.
 
@@ -152,7 +152,7 @@ For job allocation on Cori it is recommended to add "--gres=craynetwork:2" to th
 
 .. code-block:: Bash
 
-	$ salloc -C haswell -N 4 -t 01:00:00 -q interactive --gres=craynetwork:2
+	salloc -C haswell -N 4 -t 01:00:00 -q interactive --gres=craynetwork:2
 
 And to launch the PDC server and the client, add "--gres=craynetwork:1" before the executables:
 
@@ -160,11 +160,11 @@ Run 4 server processes, each on one node in background:
 
 .. code-block:: Bash
 
-	$ srun -N 4 -n  4 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap ./bin/pdc_server.exe &
+	srun -N 4 -n  4 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap ./bin/pdc_server.exe &
 
 Run 64 client processes that concurrently create 1000 objects in total:
 
 .. code-block:: Bash
 
-	$ srun -N 4 -n 64 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap ./bin/create_obj_scale -r 1000
+	srun -N 4 -n 64 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap ./bin/create_obj_scale -r 1000
 
