@@ -31,7 +31,12 @@
 /* Public Typedefs */
 /*******************/
 typedef enum { PDC_NA = 0, PDC_READ = 1, PDC_WRITE = 2 } pdc_access_t;
-typedef enum { PDC_OBJ_STATIC = 0, PDC_REGION_STATIC = 1, PDC_REGION_DYNAMIC = 2, PDC_REGION_LOCAL = 3 } pdc_region_partition_t;
+typedef enum {
+    PDC_OBJ_STATIC     = 0,
+    PDC_REGION_STATIC  = 1,
+    PDC_REGION_DYNAMIC = 2,
+    PDC_REGION_LOCAL   = 3
+} pdc_region_partition_t;
 typedef enum { PDC_BLOCK = 0, PDC_NOBLOCK = 1 } pdc_lock_mode_t;
 typedef struct _pdc_id_info obj_handle;
 
