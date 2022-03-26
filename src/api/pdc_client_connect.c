@@ -2405,8 +2405,8 @@ PDC_Client_create_cont_id(const char *cont_name, pdcid_t cont_create_prop ATTRIB
 
 #ifdef PDC_TIMING
     end = MPI_Wtime();
-    timings.PDCclient_cont_create_rpc += end - start;
-    pdc_timestamp_register(client_create_cont_timestamps, function_start, end);
+    pdc_timings.PDCclient_cont_create_rpc += end - start;
+    pdc_timestamp_register(pdc_client_create_cont_timestamps, function_start, end);
 #endif
 
 done:
@@ -2545,8 +2545,8 @@ PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj
 
 #ifdef PDC_TIMING
     end = MPI_Wtime();
-    timings.PDCclient_obj_create_rpc += end - start;
-    pdc_timestamp_register(client_create_obj_timestamps, function_start, end);
+    pdc_timings.PDCclient_obj_create_rpc += end - start;
+    pdc_timestamp_register(pdc_client_create_obj_timestamps, function_start, end);
 #endif
 
 done:
@@ -2645,7 +2645,7 @@ PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct pdc_re
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_buf_unmap(): Could not start HG_Forward()");
 #ifdef PDC_TIMING
-    timings.PDCbuf_obj_unmap_rpc += MPI_Wtime() - start;
+    pdc_timings.PDCbuf_obj_unmap_rpc += MPI_Wtime() - start;
 #endif
     // Wait for response from server
     work_todo_g = 1;
@@ -2655,8 +2655,8 @@ PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct pdc_re
     PDC_Client_check_response(&send_context_g);
 #ifdef PDC_TIMING
     end = MPI_Wtime();
-    timings.PDCbuf_obj_unmap_rpc_wait += end - start;
-    pdc_timestamp_register(client_buf_obj_unmap_timestamps, function_start, end);
+    pdc_timings.PDCbuf_obj_unmap_rpc_wait += end - start;
+    pdc_timestamp_register(pdc_client_buf_obj_unmap_timestamps, function_start, end);
 #endif
     if (unmap_args.ret != 1)
         PGOTO_ERROR(FAIL, "PDC_CLIENT: buf unmap failed...");
@@ -2835,10 +2835,10 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
                         &transfer_args, &in);
 #ifdef PDC_TIMING
     if (access_type == PDC_READ) {
-        timings.PDCtransfer_request_start_all_read_rpc += MPI_Wtime() - start;
+        pdc_timings.PDCtransfer_request_start_all_read_rpc += MPI_Wtime() - start;
     }
     else {
-        timings.PDCtransfer_request_start_all_write_rpc += MPI_Wtime() - start;
+        pdc_timings.PDCtransfer_request_start_all_write_rpc += MPI_Wtime() - start;
     }
     start = MPI_Wtime();
 #endif
@@ -2852,12 +2852,12 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
 #ifdef PDC_TIMING
     end = MPI_Wtime();
     if (access_type == PDC_READ) {
-        timings.PDCtransfer_request_start_all_read_rpc_wait += end - start;
-        pdc_timestamp_register(client_transfer_request_start_all_read_timestamps, function_start, end);
+        pdc_timings.PDCtransfer_request_start_all_read_rpc_wait += end - start;
+        pdc_timestamp_register(pdc_client_transfer_request_start_all_read_timestamps, function_start, end);
     }
     else {
-        timings.PDCtransfer_request_start_all_write_rpc_wait += end - start;
-        pdc_timestamp_register(client_transfer_request_start_all_write_timestamps, function_start, end);
+        pdc_timings.PDCtransfer_request_start_all_write_rpc_wait += end - start;
+        pdc_timestamp_register(pdc_client_transfer_request_start_all_write_timestamps, function_start, end);
     }
 #endif
     /*
@@ -2937,8 +2937,8 @@ PDC_Client_transfer_request_metadata_query2(char *buf, uint64_t total_buf_size, 
 
 #ifdef PDC_TIMING
     end = MPI_Wtime();
-    timings.PDCtransfer_request_metadata_query_rpc += end - start;
-    pdc_timestamp_register(client_transfer_request_metadata_query_timestamps, function_start, end);
+    pdc_timings.PDCtransfer_request_metadata_query_rpc += end - start;
+    pdc_timestamp_register(pdc_client_transfer_request_metadata_query_timestamps, function_start, end);
 #endif
 
 done:
@@ -3011,8 +3011,8 @@ PDC_Client_transfer_request_metadata_query(char *buf, uint64_t total_buf_size, i
 
 #ifdef PDC_TIMING
     end = MPI_Wtime();
-    timings.PDCtransfer_request_metadata_query_rpc += end - start;
-    pdc_timestamp_register(client_transfer_request_metadata_query_timestamps, function_start, end);
+    pdc_timings.PDCtransfer_request_metadata_query_rpc += end - start;
+    pdc_timestamp_register(pdc_client_transfer_request_metadata_query_timestamps, function_start, end);
 #endif
 
 done:
@@ -3065,7 +3065,7 @@ PDC_Client_transfer_request_wait_all(int n_objs, pdcid_t *transfer_request_id, u
                         client_send_transfer_request_wait_all_rpc_cb, &transfer_args, &in);
 
 #ifdef PDC_TIMING
-    timings.PDCtransfer_request_wait_all_rpc += MPI_Wtime() - start;
+    pdc_timings.PDCtransfer_request_wait_all_rpc += MPI_Wtime() - start;
     start = MPI_Wtime();
 #endif
     if (hg_ret != HG_SUCCESS)
@@ -3088,8 +3088,8 @@ PDC_Client_transfer_request_wait_all(int n_objs, pdcid_t *transfer_request_id, u
 
 #ifdef PDC_TIMING
     end = MPI_Wtime();
-    timings.PDCtransfer_request_wait_all_rpc_wait += end - start;
-    pdc_timestamp_register(client_transfer_request_wait_all_timestamps, function_start, end);
+    pdc_timings.PDCtransfer_request_wait_all_rpc_wait += end - start;
+    pdc_timestamp_register(pdc_client_transfer_request_wait_all_timestamps, function_start, end);
 #endif
 
 done:
@@ -3177,10 +3177,10 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, uint32_t data_server_id, 
 
 #ifdef PDC_TIMING
     if (access_type == PDC_READ) {
-        timings.PDCtransfer_request_start_read_rpc += MPI_Wtime() - start;
+        pdc_timings.PDCtransfer_request_start_read_rpc += MPI_Wtime() - start;
     }
     else {
-        timings.PDCtransfer_request_start_write_rpc += MPI_Wtime() - start;
+        pdc_timings.PDCtransfer_request_start_write_rpc += MPI_Wtime() - start;
     }
     start = MPI_Wtime();
 #endif
@@ -3194,12 +3194,12 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, uint32_t data_server_id, 
 #ifdef PDC_TIMING
     end = MPI_Wtime();
     if (access_type == PDC_READ) {
-        timings.PDCtransfer_request_start_read_rpc_wait += end - start;
-        pdc_timestamp_register(client_transfer_request_start_read_timestamps, function_start, end);
+        pdc_timings.PDCtransfer_request_start_read_rpc_wait += end - start;
+        pdc_timestamp_register(pdc_client_transfer_request_start_read_timestamps, function_start, end);
     }
     else {
-        timings.PDCtransfer_request_start_write_rpc_wait += end - start;
-        pdc_timestamp_register(client_transfer_request_start_write_timestamps, function_start, end);
+        pdc_timings.PDCtransfer_request_start_write_rpc_wait += end - start;
+        pdc_timestamp_register(pdc_client_transfer_request_start_write_timestamps, function_start, end);
     }
 #endif
     *metadata_id = transfer_args.metadata_id;
@@ -3295,10 +3295,10 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_serv
 #ifdef PDC_TIMING
     end = MPI_Wtime();
     if (access_type == PDC_READ) {
-        timings.PDCtransfer_request_wait_read_rpc += end - start;
+        pdc_timings.PDCtransfer_request_wait_read_rpc += end - start;
     }
     else {
-        timings.PDCtransfer_request_wait_write_rpc += end - start;
+        pdc_timings.PDCtransfer_request_wait_write_rpc += end - start;
     }
     start = MPI_Wtime();
 #endif
@@ -3312,12 +3312,12 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_serv
 #ifdef PDC_TIMING
     end = MPI_Wtime();
     if (access_type == PDC_READ) {
-        timings.PDCtransfer_request_wait_read_rpc_wait += end - start;
-        pdc_timestamp_register(client_transfer_request_wait_read_timestamps, function_start, end);
+        pdc_timings.PDCtransfer_request_wait_read_rpc_wait += end - start;
+        pdc_timestamp_register(pdc_client_transfer_request_wait_read_timestamps, function_start, end);
     }
     else {
-        timings.PDCtransfer_request_wait_write_rpc_wait += end - start;
-        pdc_timestamp_register(client_transfer_request_wait_write_timestamps, function_start, end);
+        pdc_timings.PDCtransfer_request_wait_write_rpc_wait += end - start;
+        pdc_timestamp_register(pdc_client_transfer_request_wait_write_timestamps, function_start, end);
     }
 #endif
 
@@ -3473,7 +3473,7 @@ PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t ndim, 
 
     hg_ret = HG_Forward(client_send_buf_map_handle, client_send_buf_map_rpc_cb, &map_args, &in);
 #ifdef PDC_TIMING
-    timings.PDCbuf_obj_map_rpc += MPI_Wtime() - start;
+    pdc_timings.PDCbuf_obj_map_rpc += MPI_Wtime() - start;
 #endif
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_buf_map(): Could not start HG_Forward()");
@@ -3486,8 +3486,8 @@ PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t ndim, 
     PDC_Client_check_response(&send_context_g);
 #ifdef PDC_TIMING
     end = MPI_Wtime();
-    timings.PDCbuf_obj_map_rpc_wait += end - start;
-    pdc_timestamp_register(client_buf_obj_map_timestamps, function_start, end);
+    pdc_timings.PDCbuf_obj_map_rpc_wait += end - start;
+    pdc_timestamp_register(pdc_client_buf_obj_map_timestamps, function_start, end);
 #endif
     if (map_args.ret != 1)
         PGOTO_ERROR(FAIL, "PDC_CLIENT: buf map failed...");
@@ -3551,10 +3551,10 @@ PDC_Client_region_lock(pdcid_t remote_obj_id, struct _pdc_obj_info *object_info,
     hg_ret = HG_Forward(region_lock_handle, client_region_lock_rpc_cb, &lookup_args, &in);
 #ifdef PDC_TIMING
     if (access_type == PDC_READ) {
-        timings.PDCreg_obtain_lock_read_rpc += MPI_Wtime() - start;
+        pdc_timings.PDCreg_obtain_lock_read_rpc += MPI_Wtime() - start;
     }
     else {
-        timings.PDCreg_obtain_lock_write_rpc += MPI_Wtime() - start;
+        pdc_timings.PDCreg_obtain_lock_write_rpc += MPI_Wtime() - start;
     }
 
 #endif
@@ -3570,12 +3570,12 @@ PDC_Client_region_lock(pdcid_t remote_obj_id, struct _pdc_obj_info *object_info,
 #ifdef PDC_TIMING
     end = MPI_Wtime();
     if (access_type == PDC_READ) {
-        timings.PDCreg_obtain_lock_read_rpc_wait += end - start;
-        pdc_timestamp_register(client_obtain_lock_read_timestamps, function_start, end);
+        pdc_timings.PDCreg_obtain_lock_read_rpc_wait += end - start;
+        pdc_timestamp_register(pdc_client_obtain_lock_read_timestamps, function_start, end);
     }
     else {
-        timings.PDCreg_obtain_lock_write_rpc_wait += end - start;
-        pdc_timestamp_register(client_obtain_lock_write_timestamps, function_start, end);
+        pdc_timings.PDCreg_obtain_lock_write_rpc_wait += end - start;
+        pdc_timestamp_register(pdc_client_obtain_lock_write_timestamps, function_start, end);
     }
 #endif
     // Now the return value is stored in lookup_args.ret
@@ -4202,10 +4202,10 @@ PDC_Client_region_release(pdcid_t remote_obj_id, struct _pdc_obj_info *object_in
     hg_ret = HG_Forward(region_release_handle, client_region_release_rpc_cb, &lookup_args, &in);
 #ifdef PDC_TIMING
     if (access_type == PDC_READ) {
-        timings.PDCreg_release_lock_read_rpc += MPI_Wtime() - start;
+        pdc_timings.PDCreg_release_lock_read_rpc += MPI_Wtime() - start;
     }
     else {
-        timings.PDCreg_release_lock_write_rpc += MPI_Wtime() - start;
+        pdc_timings.PDCreg_release_lock_write_rpc += MPI_Wtime() - start;
     }
 
     start = MPI_Wtime();
@@ -4220,12 +4220,12 @@ PDC_Client_region_release(pdcid_t remote_obj_id, struct _pdc_obj_info *object_in
 #ifdef PDC_TIMING
     end = MPI_Wtime();
     if (access_type == PDC_READ) {
-        timings.PDCreg_release_lock_read_rpc_wait += end - start;
-        pdc_timestamp_register(client_release_lock_read_timestamps, function_start, end);
+        pdc_timings.PDCreg_release_lock_read_rpc_wait += end - start;
+        pdc_timestamp_register(pdc_client_release_lock_read_timestamps, function_start, end);
     }
     else {
-        timings.PDCreg_release_lock_write_rpc_wait += end - start;
-        pdc_timestamp_register(client_release_lock_write_timestamps, function_start, end);
+        pdc_timings.PDCreg_release_lock_write_rpc_wait += end - start;
+        pdc_timestamp_register(pdc_client_release_lock_write_timestamps, function_start, end);
     }
 #endif
     // Now the return value is stored in lookup_args.ret
