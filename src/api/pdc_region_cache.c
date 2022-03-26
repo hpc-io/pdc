@@ -492,7 +492,7 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
 
     // PDC_Server_data_write_out2(obj_id, region_info, buf, unit);
 #ifdef PDC_TIMING
-    server_timings->PDCcache_write += MPI_Wtime() - start;
+    pdc_server_timings->PDCcache_write += MPI_Wtime() - start;
 #endif
 
     // done:
@@ -524,7 +524,7 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache)
     obj_cache->region_cache = NULL;
     gettimeofday(&(obj_cache->timestamp), NULL);
 #ifdef PDC_TIMING
-    server_timings->PDCcache_flush += MPI_Wtime() - start;
+    pdc_server_timings->PDCcache_flush += MPI_Wtime() - start;
 #endif
     return 0;
 }
@@ -620,7 +620,7 @@ PDC_transfer_request_data_read_from(uint64_t obj_id, int obj_ndim, const uint64_
     pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
 
 #ifdef PDC_TIMING
-    server_timings->PDCcache_read += MPI_Wtime() - start;
+    pdc_server_timings->PDCcache_read += MPI_Wtime() - start;
 #endif
     // done:
     fflush(stdout);
