@@ -247,7 +247,7 @@ PDC_timing_report(const char *prefix)
 
     pdc_client_transfer_request_metadata_query_timestamps->timestamp_size = 0;
 
-    memset(&pdc_timings, 0, sizeof(timings));
+    memset(&pdc_timings, 0, sizeof(pdc_timings));
 
     return 0;
 }
