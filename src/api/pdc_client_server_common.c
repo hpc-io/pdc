@@ -607,7 +607,6 @@ PDC_print_storage_region_list(region_list_t *a)
         printf("  %5" PRIu64 "    %5" PRIu64 "\n", a->start[i], a->count[i]);
     }
 
-
     printf("    path: %s\n", a->storage_location);
     printf(" buf_map: %d\n", a->buf_map_refcount);
     printf("   dirty: %d\n", a->reg_dirty_from_buf);
@@ -2437,7 +2436,7 @@ analysis_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info
         struct _pdc_iterator_cbs_t iter_cbs = {PDCobj_data_getSliceCount, PDCobj_data_getNextBlock};
         int                        analysis_meta_index = bulk_args->in.analysis_meta_index;
 
-        int                        registered_count    = PDC_get_analysis_registry(&registry);
+        int registered_count = PDC_get_analysis_registry(&registry);
         if ((registered_count >= analysis_meta_index) && (registry != NULL)) {
             int (*analysis_ftn)(pdcid_t iterIn, pdcid_t iterOut, struct _pdc_iterator_cbs_t * _cbs) =
                 registry[analysis_meta_index]->ftnPtr;
@@ -4935,7 +4934,8 @@ transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info)
     // time.
     end = MPI_Wtime();
     pdc_server_timings->PDCreg_transfer_request_start_all_read_bulk_rpc += end - local_bulk_args->start_time;
-    pdc_timestamp_register(pdc_transfer_request_start_all_read_bulk_timestamps, local_bulk_args->start_time, end);
+    pdc_timestamp_register(pdc_transfer_request_start_all_read_bulk_timestamps, local_bulk_args->start_time,
+                           end);
 
     local_bulk_args2->start_time = end;
 #endif
@@ -5140,7 +5140,8 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
 #ifdef PDC_TIMING
     double end = MPI_Wtime(), start;
     pdc_server_timings->PDCreg_transfer_request_start_write_bulk_rpc += end - local_bulk_args->start_time;
-    pdc_timestamp_register(pdc_transfer_request_start_write_bulk_timestamps, local_bulk_args->start_time, end);
+    pdc_timestamp_register(pdc_transfer_request_start_write_bulk_timestamps, local_bulk_args->start_time,
+                           end);
     start = MPI_Wtime();
 #endif
 

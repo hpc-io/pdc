@@ -48,7 +48,7 @@ PDC_timing_init()
     memset(&timings, 0, sizeof(pdc_timing));
 
     pdc_client_buf_obj_map_timestamps   = calloc(16, sizeof(pdc_timestamp));
-    ptr                             = client_buf_obj_map_timestamps + 1;
+    ptr                                 = client_buf_obj_map_timestamps + 1;
     pdc_client_buf_obj_unmap_timestamps = ptr;
     ptr++;
     pdc_client_obtain_lock_write_timestamps = ptr;
@@ -245,7 +245,7 @@ PDC_timing_report(const char *prefix)
     pdc_client_create_cont_timestamps->timestamp_size = 0;
     pdc_client_create_obj_timestamps->timestamp_size  = 0;
 
-    pdc_client_transfer_request_metadata_query_timestamps->timestamp_size  = 0;
+    pdc_client_transfer_request_metadata_query_timestamps->timestamp_size = 0;
 
     memset(&timings, 0, sizeof(timings));
 
@@ -274,7 +274,7 @@ PDC_server_timing_init()
     MPI_Barrier(MPI_COMM_WORLD);
 
     pdc_server_timings         = calloc(1, sizeof(pdc_server_timing));
-    pdc_timestamp *ptr     = calloc(25, sizeof(pdc_timestamp));
+    pdc_timestamp *ptr         = calloc(25, sizeof(pdc_timestamp));
     pdc_buf_obj_map_timestamps = ptr;
     ptr++;
     pdc_buf_obj_unmap_timestamps = ptr;
@@ -388,7 +388,8 @@ PDC_server_timing_report()
     timestamp_log(stream, "obtain_lock_read", pdc_obtain_lock_read_timestamps);
     timestamp_log(stream, "release_lock_write", pdc_release_lock_write_timestamps);
     timestamp_log(stream, "release_lock_read", pdc_release_lock_read_timestamps);
-    timestamp_log(stream, "release_lock_bulk_transfer_write", pdc_release_lock_bulk_transfer_write_timestamps);
+    timestamp_log(stream, "release_lock_bulk_transfer_write",
+                  pdc_release_lock_bulk_transfer_write_timestamps);
     timestamp_log(stream, "release_lock_bulk_transfer_read", pdc_release_lock_bulk_transfer_read_timestamps);
     timestamp_log(stream, "release_lock_bulk_transfer_inner_write",
                   pdc_release_lock_bulk_transfer_inner_write_timestamps);
@@ -397,14 +398,19 @@ PDC_server_timing_report()
 
     timestamp_log(stream, "transfer_request_start_write", pdc_transfer_request_start_write_timestamps);
     timestamp_log(stream, "transfer_request_wait_write", pdc_transfer_request_wait_write_timestamps);
-    timestamp_log(stream, "transfer_request_start_write_bulk", pdc_transfer_request_start_write_bulk_timestamps);
-    timestamp_log(stream, "transfer_request_inner_write_bulk", pdc_transfer_request_inner_write_bulk_timestamps);
+    timestamp_log(stream, "transfer_request_start_write_bulk",
+                  pdc_transfer_request_start_write_bulk_timestamps);
+    timestamp_log(stream, "transfer_request_inner_write_bulk",
+                  pdc_transfer_request_inner_write_bulk_timestamps);
     timestamp_log(stream, "transfer_request_start_read", pdc_transfer_request_start_read_timestamps);
     timestamp_log(stream, "transfer_request_wait_read", pdc_transfer_request_wait_read_timestamps);
-    timestamp_log(stream, "transfer_request_start_read_bulk", pdc_transfer_request_start_read_bulk_timestamps);
-    timestamp_log(stream, "transfer_request_inner_read_bulk", pdc_transfer_request_inner_read_bulk_timestamps);
+    timestamp_log(stream, "transfer_request_start_read_bulk",
+                  pdc_transfer_request_start_read_bulk_timestamps);
+    timestamp_log(stream, "transfer_request_inner_read_bulk",
+                  pdc_transfer_request_inner_read_bulk_timestamps);
 
-    timestamp_log(stream, "transfer_request_start_all_write", pdc_transfer_request_start_all_write_timestamps);
+    timestamp_log(stream, "transfer_request_start_all_write",
+                  pdc_transfer_request_start_all_write_timestamps);
     timestamp_log(stream, "transfer_request_start_all_write_bulk",
                   pdc_transfer_request_start_all_write_bulk_timestamps);
     timestamp_log(stream, "transfer_request_start_all_read", pdc_transfer_request_start_all_read_timestamps);
@@ -426,7 +432,8 @@ PDC_server_timing_report()
     fprintf(stream, "PDCbuf_obj_map_rpc, %lf\n", pdc_server_timings->PDCbuf_obj_map_rpc);
     fprintf(stream, "PDCreg_obtain_lock_write_rpc, %lf\n", pdc_server_timings->PDCreg_obtain_lock_write_rpc);
     fprintf(stream, "PDCreg_obtain_lock_read_rpc, %lf\n", pdc_server_timings->PDCreg_obtain_lock_read_rpc);
-    fprintf(stream, "PDCreg_release_lock_write_rpc, %lf\n", pdc_server_timings->PDCreg_release_lock_write_rpc);
+    fprintf(stream, "PDCreg_release_lock_write_rpc, %lf\n",
+            pdc_server_timings->PDCreg_release_lock_write_rpc);
     fprintf(stream, "PDCreg_release_lock_read_rpc, %lf\n", pdc_server_timings->PDCreg_release_lock_read_rpc);
     fprintf(stream, "PDCbuf_obj_unmap_rpc, %lf\n", pdc_server_timings->PDCbuf_obj_unmap_rpc);
     fprintf(stream, "PDCreg_release_lock_bulk_transfer_write_rpc, %lf\n",
