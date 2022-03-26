@@ -214,7 +214,7 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
     p->bulk_buf_ref   = NULL;
     p->output_buf     = NULL;
     // p->region_partition    = ((pdc_metadata_t *)obj2->metadata)->region_partition;
-    p->region_partition   = PDC_OBJ_STATIC;
+    p->region_partition   = PDC_REGION_LOCAL;
     p->data_server_id     = ((pdc_metadata_t *)obj2->metadata)->data_server_id;
     p->metadata_server_id = obj2->obj_info_pub->metadata_server_id;
     p->unit               = PDC_get_var_type_size(p->mem_type);
