@@ -561,15 +561,16 @@ pack_region_metadata_query(pdc_transfer_request_start_all_pkg **transfer_request
     int      i;
     char *   ptr;
     uint64_t total_buf_size;
+    uint8_t region_partition;
 
     FUNC_ENTER(NULL);
 
     total_buf_size = 0;
     for (i = 0; i < size; ++i) {
-        // ndim + Regions + obj_id + unit
+        // ndim + Regions + obj_id + data_server id + data partition + unit
         total_buf_size += sizeof(int) +
                           sizeof(uint64_t) * 2 * transfer_request[i]->transfer_request->remote_region_ndim +
-                          sizeof(uint64_t) + sizeof(size_t);
+                          sizeof(uint64_t) * 2 + sizeof(uint8_t) + sizeof(size_t);
     }
 
     *buf_ptr = (char *)malloc(total_buf_size);
@@ -577,6 +578,11 @@ pack_region_metadata_query(pdc_transfer_request_start_all_pkg **transfer_request
     for (i = 0; i < size; ++i) {
         memcpy(ptr, &(transfer_request[i]->transfer_request->obj_id), sizeof(uint64_t));
         ptr += sizeof(uint64_t);
+        memcpy(ptr, &(transfer_request[i]->data_server_id), sizeof(uint64_t));
+        ptr += sizeof(uint64_t);
+        region_partition = (uint8_t) transfer_request[i]->transfer_request->region_partition;
+        memcpy(ptr, &region_partition, sizeof(uint8_t));
+        ptr += sizeof(uint8_t);        
         memcpy(ptr, &(transfer_request[i]->transfer_request->remote_region_ndim), sizeof(int));
         ptr += sizeof(int);
         memcpy(ptr, &(transfer_request[i]->transfer_request->unit), sizeof(size_t));
@@ -723,7 +729,7 @@ register_metadata(pdc_transfer_request_start_all_pkg **transfer_request_input, i
         sizeof(pdc_transfer_request_start_all_pkg *) * input_size);
     size = 0;
     for (i = 0; i < input_size; ++i) {
-        if (transfer_request_input[i]->transfer_request->region_partition == PDC_REGION_DYNAMIC) {
+        if (transfer_request_input[i]->transfer_request->region_partition == PDC_REGION_DYNAMIC || transfer_request_input[i]->transfer_request->region_partition == PDC_REGION_LOCAL) {
             transfer_requests[size] = transfer_request_input[i];
             size++;
         }
@@ -811,7 +817,7 @@ register_metadata(pdc_transfer_request_start_all_pkg **transfer_request_input, i
         }
         j = output_size;
         for (i = 0; i < input_size; ++i) {
-            if (transfer_request_input[i]->transfer_request->region_partition == PDC_REGION_DYNAMIC) {
+            if (transfer_request_input[i]->transfer_request->region_partition == PDC_REGION_DYNAMIC || transfer_request_input[i]->transfer_request->region_partition == PDC_REGION_LOCAL) {
                 // These are replaced by newly created request pkgs.
                 free(transfer_request_input[i]);
             }
@@ -926,12 +932,17 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
         }
         // Dynamic partitioning is handled at the end of this function by querying server.
         else if (transfer_request->region_partition == PDC_OBJ_STATIC ||
-                 transfer_request->region_partition == PDC_REGION_DYNAMIC) {
+                 transfer_request->region_partition == PDC_REGION_DYNAMIC ||
+                 transfer_request->region_partition == PDC_REGION_LOCAL) {
             transfer_request->n_obj_servers = 1;
             request_pkgs =
                 (pdc_transfer_request_start_all_pkg *)malloc(sizeof(pdc_transfer_request_start_all_pkg));
             request_pkgs->transfer_request = transfer_request;
-            request_pkgs->data_server_id   = transfer_request->data_server_id;
+            if ( transfer_request->region_partition == PDC_OBJ_STATIC ) {
+                request_pkgs->data_server_id   = transfer_request->data_server_id;
+            } else {
+                request_pkgs->data_server_id   = PDC_CLIENT_DATA_SERVER();
+            }
             request_pkgs->remote_offset    = transfer_request->remote_region_offset;
             request_pkgs->remote_size      = transfer_request->remote_region_size;
             if (transfer_request->access_type == PDC_WRITE) {
@@ -962,7 +973,7 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
             }
         }
         // REGION_DYNAMIC case is allocated later, once we know the number of regions we are going to access.
-        if (transfer_request->region_partition != PDC_REGION_DYNAMIC) {
+        if (transfer_request->region_partition != PDC_REGION_DYNAMIC && transfer_request->region_partition != PDC_REGION_LOCAL) {
             set_obj_server_bufs(transfer_request);
         }
     }
@@ -1351,7 +1362,7 @@ PDCregion_transfer_start(pdcid_t transfer_request_id)
     // Dynamic case is implemented within the the aggregated version. The main reason is that the target data
     // server may not be unique, so we may end up sending multiple requests to the same data server.
     // Aggregated method will take care of this type of operation.
-    if (transfer_request->region_partition == PDC_REGION_DYNAMIC) {
+    if (transfer_request->region_partition == PDC_REGION_DYNAMIC || transfer_request->region_partition == PDC_REGION_LOCAL) {
         PDCregion_transfer_start_all(&transfer_request_id, 1);
         goto done;
     }
@@ -1500,7 +1511,8 @@ PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *co
         unit = transfer_request->unit;
 
         if (transfer_request->region_partition == PDC_REGION_STATIC ||
-            transfer_request->region_partition == PDC_REGION_DYNAMIC) {
+            transfer_request->region_partition == PDC_REGION_DYNAMIC ||
+            transfer_request->region_partition == PDC_REGION_LOCAL) {
             for (i = 0; i < transfer_request->n_obj_servers; ++i) {
                 ret_value = PDC_Client_transfer_request_status(transfer_request->metadata_id[i],
                                                                transfer_request->obj_servers[i], completed);
@@ -1659,7 +1671,8 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
                                                  transfer_requests[index]->data_server_id);
             for (j = index; j < i; ++j) {
                 if (transfer_requests[j]->transfer_request->region_partition == PDC_REGION_STATIC ||
-                    transfer_requests[j]->transfer_request->region_partition == PDC_REGION_DYNAMIC) {
+                    transfer_requests[j]->transfer_request->region_partition == PDC_REGION_DYNAMIC ||
+                    transfer_requests[j]->transfer_request->region_partition == PDC_REGION_LOCAL) {
                     if (transfer_requests[j]->transfer_request->access_type == PDC_READ) {
                         // We copy the data from different data server regions to the contiguous buffer.
                         // Subregion copy uses sub_offset/size to align to the remote obj region.
@@ -1696,7 +1709,8 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
                                              transfer_requests[index]->data_server_id);
         for (j = index; j < total_requests; ++j) {
             if (transfer_requests[j]->transfer_request->region_partition == PDC_REGION_STATIC ||
-                transfer_requests[j]->transfer_request->region_partition == PDC_REGION_DYNAMIC) {
+                transfer_requests[j]->transfer_request->region_partition == PDC_REGION_DYNAMIC ||
+                transfer_requests[j]->transfer_request->region_partition == PDC_REGION_LOCAL) {
                 if (transfer_requests[j]->transfer_request->access_type == PDC_READ) {
                     // We copy the data from different data server regions to the contiguous buffer. Subregion
                     // copy uses sub_offset/size to align to the remote obj region.
@@ -1748,7 +1762,8 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
             transfer_request->bulk_buf, transfer_request->bulk_buf_ref, transfer_request->read_bulk_buf);
 
         if (transfer_request->region_partition == PDC_REGION_STATIC ||
-            transfer_request->region_partition == PDC_REGION_DYNAMIC) {
+            transfer_request->region_partition == PDC_REGION_DYNAMIC ||
+            transfer_request->region_partition == PDC_REGION_LOCAL) {
             free(transfer_request->output_offsets);
             free(transfer_request->output_sizes);
             free(transfer_request->sub_offsets);
@@ -1791,7 +1806,7 @@ PDCregion_transfer_wait(pdcid_t transfer_request_id)
     transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
     if (transfer_request->metadata_id != NULL) {
         // For region dynamic case, it is implemented in the aggregated version for portability.
-        if (transfer_request->region_partition == PDC_REGION_DYNAMIC) {
+        if (transfer_request->region_partition == PDC_REGION_DYNAMIC || transfer_request->region_partition == PDC_REGION_LOCAL) {
             PDCregion_transfer_wait_all(&transfer_request_id, 1);
             goto done;
         }
