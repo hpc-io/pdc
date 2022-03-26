@@ -149,6 +149,8 @@ struct _pdc_query_result_list {
 
 #define PDC_CLIENT_DATA_SERVER() ((pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g)
 
+uint32_t PDC_get_client_data_server();
+
 /***************************************/
 /* Library-private Function Prototypes */
 /***************************************/

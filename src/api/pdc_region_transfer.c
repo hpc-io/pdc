@@ -570,7 +570,7 @@ pack_region_metadata_query(pdc_transfer_request_start_all_pkg **transfer_request
         // ndim + Regions + obj_id + data_server id + data partition + unit
         total_buf_size += sizeof(int) +
                           sizeof(uint64_t) * 2 * transfer_request[i]->transfer_request->remote_region_ndim +
-                          sizeof(uint64_t) * 2 + sizeof(uint8_t) + sizeof(size_t);
+                          sizeof(uint64_t) + sizeof(uint32_t) + sizeof(uint8_t) + sizeof(size_t);
     }
 
     *buf_ptr = (char *)malloc(total_buf_size);
@@ -578,8 +578,8 @@ pack_region_metadata_query(pdc_transfer_request_start_all_pkg **transfer_request
     for (i = 0; i < size; ++i) {
         memcpy(ptr, &(transfer_request[i]->transfer_request->obj_id), sizeof(uint64_t));
         ptr += sizeof(uint64_t);
-        memcpy(ptr, &(transfer_request[i]->data_server_id), sizeof(uint64_t));
-        ptr += sizeof(uint64_t);
+        memcpy(ptr, &(transfer_request[i]->data_server_id), sizeof(uint32_t));
+        ptr += sizeof(uint32_t);
         region_partition = (uint8_t)transfer_request[i]->transfer_request->region_partition;
         memcpy(ptr, &region_partition, sizeof(uint8_t));
         ptr += sizeof(uint8_t);
@@ -944,7 +944,7 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
                 request_pkgs->data_server_id = transfer_request->data_server_id;
             }
             else {
-                request_pkgs->data_server_id = PDC_CLIENT_DATA_SERVER();
+                request_pkgs->data_server_id = PDC_get_client_data_server();
             }
             request_pkgs->remote_offset = transfer_request->remote_region_offset;
             request_pkgs->remote_size   = transfer_request->remote_region_size;

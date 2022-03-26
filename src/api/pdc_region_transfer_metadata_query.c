@@ -43,10 +43,10 @@ static pdc_metadata_query_buf *metadata_query_buf_end;
 
 static perr_t   transfer_request_metadata_reg_append(pdc_region_metadata_pkg *regions, int ndim,
                                                      uint64_t *reg_offset, uint64_t *reg_size, size_t unit,
-                                                     uint64_t data_server_id, uint8_t region_partition);
+                                                     uint32_t data_server_id, uint8_t region_partition);
 static uint64_t transfer_request_metadata_query_append(uint64_t obj_id, int ndim, uint64_t *reg_offset,
                                                        uint64_t *reg_size, size_t unit,
-                                                       uint64_t data_server_id, uint8_t region_partition);
+                                                       uint32_t data_server_id, uint8_t region_partition);
 static uint64_t metadata_query_buf_create(pdc_obj_region_metadata *regions, int size,
                                           uint64_t *total_buf_size_ptr);
 
@@ -379,8 +379,8 @@ transfer_request_metadata_query_parse(int32_t n_objs, char *buf, uint8_t is_writ
     for (i = 0; i < n_objs; ++i) {
         region_metadata[i].obj_id = *((uint64_t *)ptr);
         ptr += sizeof(uint64_t);
-        data_server_id = *((uint64_t *)ptr);
-        ptr += sizeof(uint64_t);
+        data_server_id = *((uint32_t *)ptr);
+        ptr += sizeof(uint32_t);
         region_partition = *((uint8_t *)ptr);
         ptr += sizeof(uint8_t);
         region_metadata[i].ndim = *((int *)ptr);
@@ -407,7 +407,7 @@ transfer_request_metadata_query_parse(int32_t n_objs, char *buf, uint8_t is_writ
 
 static perr_t
 transfer_request_metadata_reg_append(pdc_region_metadata_pkg *regions, int ndim, uint64_t *reg_offset,
-                                     uint64_t *reg_size, size_t unit, uint64_t data_server_id,
+                                     uint64_t *reg_size, size_t unit, uint32_t data_server_id,
                                      uint8_t region_partition)
 {
     hg_return_t ret_value = HG_SUCCESS;
@@ -454,7 +454,7 @@ transfer_request_metadata_reg_append(pdc_region_metadata_pkg *regions, int ndim,
 
 static uint64_t
 transfer_request_metadata_query_append(uint64_t obj_id, int ndim, uint64_t *reg_offset, uint64_t *reg_size,
-                                       size_t unit, uint64_t data_server_id, uint8_t region_partition)
+                                       size_t unit, uint32_t data_server_id, uint8_t region_partition)
 {
     pdc_obj_metadata_pkg *   temp;
     pdc_region_metadata_pkg *region_metadata;
