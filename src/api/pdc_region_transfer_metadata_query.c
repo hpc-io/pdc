@@ -42,9 +42,11 @@ static pdc_metadata_query_buf *metadata_query_buf_head;
 static pdc_metadata_query_buf *metadata_query_buf_end;
 
 static perr_t   transfer_request_metadata_reg_append(pdc_region_metadata_pkg *regions, int ndim,
-                                                     uint64_t *reg_offset, uint64_t *reg_size, size_t unit, uint64_t data_server_id, uint8_t region_partition);
+                                                     uint64_t *reg_offset, uint64_t *reg_size, size_t unit,
+                                                     uint64_t data_server_id, uint8_t region_partition);
 static uint64_t transfer_request_metadata_query_append(uint64_t obj_id, int ndim, uint64_t *reg_offset,
-                                                       uint64_t *reg_size, size_t unit, uint64_t data_server_id, uint8_t region_partition);
+                                                       uint64_t *reg_size, size_t unit,
+                                                       uint64_t data_server_id, uint8_t region_partition);
 static uint64_t metadata_query_buf_create(pdc_obj_region_metadata *regions, int size,
                                           uint64_t *total_buf_size_ptr);
 
@@ -405,7 +407,8 @@ transfer_request_metadata_query_parse(int32_t n_objs, char *buf, uint8_t is_writ
 
 static perr_t
 transfer_request_metadata_reg_append(pdc_region_metadata_pkg *regions, int ndim, uint64_t *reg_offset,
-                                     uint64_t *reg_size, size_t unit, uint64_t data_server_id, uint8_t region_partition)
+                                     uint64_t *reg_size, size_t unit, uint64_t data_server_id,
+                                     uint8_t region_partition)
 {
     hg_return_t ret_value = HG_SUCCESS;
     uint64_t    min_bytes;
@@ -422,7 +425,7 @@ transfer_request_metadata_reg_append(pdc_region_metadata_pkg *regions, int ndim,
     memcpy(regions->reg_offset, reg_offset, sizeof(uint64_t) * ndim);
     memcpy(regions->reg_size, reg_size, sizeof(uint64_t) * ndim);
 
-    if ( region_partition == PDC_REGION_DYNAMIC ) {
+    if (region_partition == PDC_REGION_DYNAMIC) {
         min_bytes        = data_server_bytes[0];
         min_bytes_server = 0;
 
@@ -434,7 +437,8 @@ transfer_request_metadata_reg_append(pdc_region_metadata_pkg *regions, int ndim,
         }
 
         regions->data_server_id = min_bytes_server;
-    } else {
+    }
+    else {
         regions->data_server_id = data_server_id;
     }
     total_reg_size = unit;
@@ -487,9 +491,9 @@ transfer_request_metadata_query_append(uint64_t obj_id, int ndim, uint64_t *reg_
     while (region_metadata) {
         if (detect_region_contained(reg_offset, reg_size, region_metadata->reg_offset,
                                     region_metadata->reg_size, ndim)) {
-            //printf("%lu, %lu, %lu ,%lu\n", reg_offset[0], reg_size[0], region_metadata->reg_offset[0],
+            // printf("%lu, %lu, %lu ,%lu\n", reg_offset[0], reg_size[0], region_metadata->reg_offset[0],
             //       region_metadata->reg_size[0]);
-            //printf("---------------transfer_request_metadata_query_append: detected repeated requests\n");
+            // printf("---------------transfer_request_metadata_query_append: detected repeated requests\n");
             FUNC_LEAVE(region_metadata->data_server_id);
         }
         region_metadata = region_metadata->next;
@@ -505,7 +509,8 @@ transfer_request_metadata_query_append(uint64_t obj_id, int ndim, uint64_t *reg_
         temp->regions     = temp_region_metadata;
         temp->regions_end = temp_region_metadata;
     }
-    transfer_request_metadata_reg_append(temp_region_metadata, ndim, reg_offset, reg_size, unit, data_server_id, region_partition);
+    transfer_request_metadata_reg_append(temp_region_metadata, ndim, reg_offset, reg_size, unit,
+                                         data_server_id, region_partition);
     // printf("transfer_request_metadata_query_append: checkpoint %d\n", __LINE__);
     fflush(stdout);
     FUNC_LEAVE(temp->regions_end->data_server_id);
