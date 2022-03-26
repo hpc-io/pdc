@@ -437,7 +437,7 @@ transfer_request_metadata_reg_append(pdc_region_metadata_pkg *regions, int ndim,
         }
 
         regions->data_server_id = min_bytes_server;
-        total_reg_size = unit;
+        total_reg_size          = unit;
         for (i = 0; i < ndim; ++i) {
             total_reg_size *= reg_size[i];
         }
