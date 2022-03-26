@@ -5001,7 +5001,8 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                                                   unit,
                                         overlap_size[2] * unit);
 #ifdef PDC_TIMING
-                                    pdc_server_timings->PDCdata_server_write_posix += MPI_Wtime() - start_posix;
+                                    pdc_server_timings->PDCdata_server_write_posix +=
+                                        MPI_Wtime() - start_posix;
 #endif
                                 }
                             }
@@ -5468,7 +5469,8 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                                                pdc_server_rank_g);
                                     }
 #ifdef PDC_TIMING
-                                    pdc_server_timings->PDCdata_server_read_posix += MPI_Wtime() - start_posix;
+                                    pdc_server_timings->PDCdata_server_read_posix +=
+                                        MPI_Wtime() - start_posix;
 #endif
                                 }
                             }
