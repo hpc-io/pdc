@@ -45,10 +45,10 @@ PDC_timing_init()
     }
     MPI_Barrier(MPI_COMM_WORLD);
 
-    memset(&timings, 0, sizeof(pdc_timing));
+    memset(&pdc_timings, 0, sizeof(pdc_timing));
 
     pdc_client_buf_obj_map_timestamps   = calloc(16, sizeof(pdc_timestamp));
-    ptr                                 = client_buf_obj_map_timestamps + 1;
+    ptr                                 = pdc_client_buf_obj_map_timestamps + 1;
     pdc_client_buf_obj_unmap_timestamps = ptr;
     ptr++;
     pdc_client_obtain_lock_write_timestamps = ptr;
@@ -247,7 +247,7 @@ PDC_timing_report(const char *prefix)
 
     pdc_client_transfer_request_metadata_query_timestamps->timestamp_size = 0;
 
-    memset(&timings, 0, sizeof(timings));
+    memset(&pdc_timings, 0, sizeof(timings));
 
     return 0;
 }
@@ -374,7 +374,7 @@ PDC_server_timing_report()
     time(&now);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Reduce(server_timings, &max_timings, sizeof(pdc_server_timing) / sizeof(double), MPI_DOUBLE, MPI_MAX,
+    MPI_Reduce(pdc_server_timings, &max_timings, sizeof(pdc_server_timing) / sizeof(double), MPI_DOUBLE, MPI_MAX,
                0, MPI_COMM_WORLD);
     sprintf(filename, "pdc_server_log_rank_%d.csv", rank);
 
@@ -525,7 +525,7 @@ PDC_server_timing_report()
     /* pdc_timestamp_clean(pdc_create_obj_timestamps); */
     /* pdc_timestamp_clean(pdc_create_cont_timestamps); */
 
-    free(buf_obj_map_timestamps);
+    free(pdc_buf_obj_map_timestamps);
     return 0;
 }
 
