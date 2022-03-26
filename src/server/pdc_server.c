@@ -630,7 +630,7 @@ PDC_Server_set_close(void)
         pthread_mutex_destroy(&pdc_obj_cache_list_mutex);
         pthread_mutex_destroy(&pdc_cache_mutex);
 #ifdef PDC_TIMING
-        server_timings->PDCcache_clean += MPI_Wtime() - start;
+        pdc_server_timings->PDCcache_clean += MPI_Wtime() - start;
 #endif
 #endif
         if (pdc_server_rank_g) {
@@ -651,7 +651,7 @@ PDC_Server_set_close(void)
         else
             PDC_Server_checkpoint();
 #ifdef PDC_TIMING
-        server_timings->PDCserver_checkpoint += MPI_Wtime() - start;
+        pdc_server_timings->PDCserver_checkpoint += MPI_Wtime() - start;
 #endif
 #endif
         /* Barrier is needed here to make sure all servers have checkpointed data. */
@@ -1654,7 +1654,7 @@ PDC_Server_restart(char *filename)
 
 done:
 #ifdef PDC_TIMING
-    server_timings->PDCserver_restart += MPI_Wtime() - start;
+    pdc_server_timings->PDCserver_restart += MPI_Wtime() - start;
 #endif
 
     fflush(stdout);
@@ -2124,7 +2124,7 @@ main(int argc, char *argv[])
         if (PDC_Server_write_addr_to_file(all_addr_strings_g, pdc_server_size_g) != SUCCEED)
             printf("==PDC_SERVER[%d]: Error with write config file\n", pdc_server_rank_g);
 #ifdef PDC_TIMING
-    server_timings->PDCserver_start_total += MPI_Wtime() - start;
+    pdc_server_timings->PDCserver_start_total += MPI_Wtime() - start;
 #endif
 #ifdef ENABLE_TIMING
     // Timing
