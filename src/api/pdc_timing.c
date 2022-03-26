@@ -374,8 +374,8 @@ PDC_server_timing_report()
     time(&now);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Reduce(pdc_server_timings, &max_timings, sizeof(pdc_server_timing) / sizeof(double), MPI_DOUBLE, MPI_MAX,
-               0, MPI_COMM_WORLD);
+    MPI_Reduce(pdc_server_timings, &max_timings, sizeof(pdc_server_timing) / sizeof(double), MPI_DOUBLE,
+               MPI_MAX, 0, MPI_COMM_WORLD);
     sprintf(filename, "pdc_server_log_rank_%d.csv", rank);
 
     stream = fopen(filename, "w");
