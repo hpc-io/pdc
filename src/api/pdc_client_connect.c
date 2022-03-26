@@ -175,7 +175,9 @@ get_server_id_by_obj_id(uint64_t obj_id)
     return (uint32_t)((obj_id / PDC_SERVER_ID_INTERVEL - 1) % pdc_server_num_g);
 }
 
-uint32_t PDC_get_client_data_server() {
+uint32_t
+PDC_get_client_data_server()
+{
     return PDC_CLIENT_DATA_SERVER();
 }
 
@@ -7413,7 +7415,6 @@ PDCcont_del_objids(pdcid_t cont_id, int nobj, pdcid_t *obj_ids)
     if (ret_value != SUCCEED)
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error with PDC_Client_del_objects_to_container",
                     pdc_client_mpi_rank_g);
-
 
 done:
     fflush(stdout);
