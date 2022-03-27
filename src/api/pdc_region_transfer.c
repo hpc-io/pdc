@@ -840,7 +840,7 @@ register_metadata(pdc_transfer_request_start_all_pkg **transfer_request_input, i
         }
         free(transfer_request_input);
         *transfer_request_output_ptr = transfer_request_output;
-        *output_size_ptr             = output_size;
+        *output_size_ptr             = j;
     }
     else {
         *transfer_request_output_ptr = transfer_request_input;
