@@ -9,7 +9,7 @@
 #endif /* __APPLE__ */
 #endif /* HOST_NAME_MAX */
 
-#define PDC_TIMING
+#undef PDC_TIMING
 #ifdef PDC_TIMING
 
 #include <mpi.h>
