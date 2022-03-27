@@ -1,4 +1,5 @@
 #include "pdc_region.h"
+#include <string.h>
 
 int
 check_overlap(int ndim, uint64_t *offset1, uint64_t *size1, uint64_t *offset2, uint64_t *size2)

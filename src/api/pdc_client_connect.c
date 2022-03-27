@@ -2902,8 +2902,7 @@ PDC_Client_transfer_request_metadata_query2(char *buf, uint64_t total_buf_size, 
     in.total_buf_size = total_buf_size;
 
     // Compute metadata server id
-    // fprintf(stderr, "PDC_Client_transfer_request_metadata_query2: metdata_id = %u, total_buf_size = %lu\n",
-    // metadata_server_id, total_buf_size);
+    //fprintf(stderr, "PDC_Client_transfer_request_metadata_query2: metdata_id = %u, total_buf_size = %lu\n", metadata_server_id, total_buf_size);
     debug_server_id_count[metadata_server_id]++;
 
     hg_class = HG_Context_get_class(send_context_g);
@@ -3006,7 +3005,6 @@ PDC_Client_transfer_request_metadata_query(char *buf, uint64_t total_buf_size, i
             __LINE__);
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
-
     if (transfer_args.ret != 1)
         PGOTO_ERROR(FAIL, "PDC_CLIENT: transfer_request_metadata_query failed... @ line %d\n", __LINE__);
 
@@ -3020,6 +3018,7 @@ PDC_Client_transfer_request_metadata_query(char *buf, uint64_t total_buf_size, i
     pdc_timings.PDCtransfer_request_metadata_query_rpc += end - start;
     pdc_timestamp_register(pdc_client_transfer_request_metadata_query_timestamps, function_start, end);
 #endif
+    //fprintf(stderr, "PDC_Client_transfer_request_metadata_query: checkpoint %d\n", __LINE__);
 
 done:
     fflush(stdout);

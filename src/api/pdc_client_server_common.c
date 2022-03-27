@@ -607,6 +607,7 @@ PDC_print_storage_region_list(region_list_t *a)
         printf("  %5" PRIu64 "    %5" PRIu64 "\n", a->start[i], a->count[i]);
     }
 
+
     printf("    path: %s\n", a->storage_location);
     printf(" buf_map: %d\n", a->buf_map_refcount);
     printf("   dirty: %d\n", a->reg_dirty_from_buf);
@@ -2435,6 +2436,7 @@ analysis_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info
         struct _pdc_region_analysis_ftn_info **registry = NULL;
         struct _pdc_iterator_cbs_t iter_cbs = {PDCobj_data_getSliceCount, PDCobj_data_getNextBlock};
         int                        analysis_meta_index = bulk_args->in.analysis_meta_index;
+
 
         int registered_count = PDC_get_analysis_registry(&registry);
         if ((registered_count >= analysis_meta_index) && (registry != NULL)) {
@@ -5451,7 +5453,9 @@ transfer_request_metadata_query_bulk_transfer_cb(const struct hg_cb_info *info)
     out.query_id =
         transfer_request_metadata_query_parse(local_bulk_args->in.n_objs, (char *)local_bulk_args->data_buf,
                                               local_bulk_args->in.is_write, &(out.total_buf_size));
+    //printf("transfer_request_metadata_query_bulk_transfer_cb: checkpoint %d\n", __LINE__);
     free(local_bulk_args->data_buf);
+    //printf("transfer_request_metadata_query_bulk_transfer_cb: checkpoint %d\n", __LINE__);
 
     out.ret = 1;
     ret     = HG_Respond(local_bulk_args->handle, NULL, NULL, &out);
@@ -5539,7 +5543,7 @@ HG_TEST_RPC_CB(transfer_request_metadata_query2, handle)
     local_bulk_args->handle = handle;
 
     // Retrieve the data buffer to be sent to client
-    // printf("transfer_request_metadata_query2: checkpoint %d, total_buf_size = %lu\n", __LINE__,
+    //printf("transfer_request_metadata_query2: checkpoint %d, total_buf_size = %lu\n", __LINE__,
     // in.total_buf_size);
     transfer_request_metadata_query_lookup_query_buf(in.query_id, (char **)&(local_bulk_args->data_buf));
     // printf("transfer_request_metadata_query2: checkpoint %d\n", __LINE__);
@@ -5996,6 +6000,7 @@ update_storage_meta_bulk_cb(const struct hg_cb_info *hg_cb_info)
             out_struct.ret = 9999;
         }
     } // end of else
+
 
 done:
     fflush(stdout);

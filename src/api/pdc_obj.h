@@ -244,7 +244,7 @@ perr_t PDCprop_set_obj_type(pdcid_t obj_prop, pdc_var_type_t type);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCprop_set_obj_transfer_type(pdcid_t obj_prop, pdc_region_partition_t region_partition);
+perr_t PDCprop_set_obj_transfer_region_type(pdcid_t obj_prop, pdc_region_partition_t region_partition);
 
 /**
  * Set an object buffer

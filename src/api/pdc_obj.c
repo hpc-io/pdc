@@ -196,6 +196,7 @@ PDC_Client_attach_metadata_to_local_obj(const char *obj_name, uint64_t obj_id, u
 {
     perr_t ret_value = SUCCEED;
 
+
     FUNC_ENTER(NULL);
 
     obj_info->metadata                              = (pdc_metadata_t *)calloc(1, sizeof(pdc_metadata_t));
@@ -872,7 +873,7 @@ done:
 }
 
 perr_t
-PDCprop_set_obj_transfer_type(pdcid_t obj_prop, pdc_region_partition_t region_partition)
+PDCprop_set_obj_transfer_region_type(pdcid_t obj_prop, pdc_region_partition_t region_partition)
 {
     perr_t                ret_value = SUCCEED;
     struct _pdc_id_info * info;
