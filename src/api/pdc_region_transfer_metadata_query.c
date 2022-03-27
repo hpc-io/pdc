@@ -397,10 +397,10 @@ transfer_request_metadata_query_parse(int32_t n_objs, char *buf, uint8_t is_writ
                                                    unit, data_server_id, region_partition);
         }
     }
-    //printf("transfer_request_metadata_query_parse: checkpoint %d\n", __LINE__);
+    // printf("transfer_request_metadata_query_parse: checkpoint %d\n", __LINE__);
     query_id = metadata_query_buf_create(region_metadata, n_objs, total_buf_size_ptr);
     free(region_metadata);
-    //printf("transfer_request_metadata_query_parse: checkpoint %d\n", __LINE__);
+    // printf("transfer_request_metadata_query_parse: checkpoint %d\n", __LINE__);
     fflush(stdout);
     FUNC_LEAVE(query_id);
 }

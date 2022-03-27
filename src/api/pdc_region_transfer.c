@@ -622,7 +622,7 @@ unpack_region_metadata_query(char *buf, pdc_transfer_request_start_all_pkg **tra
     ptr                   = buf;
     size                  = *(int *)ptr;
     ptr += sizeof(int);
-    //printf("unpack_region_metadata_query: received %d obj partitions\n", size);
+    // printf("unpack_region_metadata_query: received %d obj partitions\n", size);
     counter = 0;
     index   = 0;
     for (i = 0; i < size; ++i) {
@@ -649,7 +649,8 @@ unpack_region_metadata_query(char *buf, pdc_transfer_request_start_all_pkg **tra
             local_request->sub_offsets =
                 (uint64_t **)malloc(sizeof(uint64_t *) * local_request->n_obj_servers);
             local_request->obj_servers = (uint32_t *)malloc(sizeof(uint32_t) * local_request->n_obj_servers);
-            //printf("unpack_region_metadata_query: checkpoint %d, local_request = %llu, index = %d\n", __LINE__, (long long unsigned) local_request, index);
+            // printf("unpack_region_metadata_query: checkpoint %d, local_request = %llu, index = %d\n",
+            // __LINE__, (long long unsigned) local_request, index);
             set_obj_server_bufs(local_request);
         }
         // printf("unpack_region_metadata_query: @ line %d, i = %d, counter = %d\n", __LINE__, i, counter);
@@ -678,18 +679,19 @@ unpack_region_metadata_query(char *buf, pdc_transfer_request_start_all_pkg **tra
             region_size *= transfer_request_end->remote_size[j];
             sub_offset[j] = transfer_request_end->remote_offset[j] - local_request->remote_region_offset[j];
         }
-/*
-        printf("unpack_region_metadata_query: @ line %d remote_region_offset = %lu, %lu, remote_region_size "
-               "= %lu, %lu, suboffset = %lu, %lu, remote_offset = %lu,%lu, remote_size = %lu,%lu\n",
-               __LINE__, (long unsigned)local_request->remote_region_offset[0],
-               (long unsigned)local_request->remote_region_offset[1],
-               (long unsigned)local_request->remote_region_size[0],
-               (long unsigned)local_request->remote_region_size[1], (long unsigned)sub_offset[0],
-               (long unsigned)sub_offset[1], (long unsigned)transfer_request_end->remote_offset[0],
-               (long unsigned)transfer_request_end->remote_offset[1],
-               (long unsigned)transfer_request_end->remote_size[0],
-               (long unsigned)transfer_request_end->remote_size[1]);
-*/
+        /*
+                printf("unpack_region_metadata_query: @ line %d remote_region_offset = %lu, %lu,
+           remote_region_size "
+                       "= %lu, %lu, suboffset = %lu, %lu, remote_offset = %lu,%lu, remote_size = %lu,%lu\n",
+                       __LINE__, (long unsigned)local_request->remote_region_offset[0],
+                       (long unsigned)local_request->remote_region_offset[1],
+                       (long unsigned)local_request->remote_region_size[0],
+                       (long unsigned)local_request->remote_region_size[1], (long unsigned)sub_offset[0],
+                       (long unsigned)sub_offset[1], (long unsigned)transfer_request_end->remote_offset[0],
+                       (long unsigned)transfer_request_end->remote_offset[1],
+                       (long unsigned)transfer_request_end->remote_size[0],
+                       (long unsigned)transfer_request_end->remote_size[1]);
+        */
         if (local_request->access_type == PDC_WRITE) {
             transfer_request_end->buf = (char *)malloc(region_size);
             memcpy_subregion(local_request->remote_region_ndim, local_request->unit,
@@ -755,7 +757,7 @@ register_metadata(pdc_transfer_request_start_all_pkg **transfer_request_input, i
             PDC_Client_transfer_request_metadata_query(
                 buf, total_buf_size, n_objs, transfer_requests[index]->transfer_request->metadata_server_id,
                 is_write, &output_buf_size, &query_id);
-            //fprintf(stderr, "register_metadata: checkpoint %d\n", __LINE__);
+            // fprintf(stderr, "register_metadata: checkpoint %d\n", __LINE__);
             free(buf);
             // If it is a valid query ID, then it means regions are overlapping.
             if (query_id) {
@@ -784,25 +786,25 @@ register_metadata(pdc_transfer_request_start_all_pkg **transfer_request_input, i
 
     if (size) {
         n_objs = size - index;
-        //fprintf(stderr, "register_metadata: checkpoint %d\n", __LINE__);
+        // fprintf(stderr, "register_metadata: checkpoint %d\n", __LINE__);
         pack_region_metadata_query(transfer_requests + index, n_objs, &buf, &total_buf_size);
-        //fprintf(stderr, "register_metadata: checkpoint %d\n", __LINE__);
+        // fprintf(stderr, "register_metadata: checkpoint %d\n", __LINE__);
         PDC_Client_transfer_request_metadata_query(
             buf, total_buf_size, n_objs, transfer_requests[index]->transfer_request->metadata_server_id,
             is_write, &output_buf_size, &query_id);
-        //fprintf(stderr, "register_metadata: checkpoint %d\n", __LINE__);
+        // fprintf(stderr, "register_metadata: checkpoint %d\n", __LINE__);
         free(buf);
         // If it is a valid query ID, then it means regions are overlapping.
         if (query_id) {
             output_buf = (char *)malloc(output_buf_size);
-            //fprintf(stderr, "register_metadata: checkpoint %d\n", __LINE__);
+            // fprintf(stderr, "register_metadata: checkpoint %d\n", __LINE__);
             PDC_Client_transfer_request_metadata_query2(
                 output_buf, output_buf_size, query_id,
                 transfer_requests[index]->transfer_request->metadata_server_id);
-            //fprintf(stderr, "register_metadata: checkpoint %d\n", __LINE__);
+            // fprintf(stderr, "register_metadata: checkpoint %d\n", __LINE__);
             unpack_region_metadata_query(output_buf, transfer_requests + index, &transfer_request_head,
                                          &transfer_request_end, &output_size);
-            //fprintf(stderr, "register_metadata: output_size = %d, checkpoint %d\n", output_size, __LINE__);
+            // fprintf(stderr, "register_metadata: output_size = %d, checkpoint %d\n", output_size, __LINE__);
             free(output_buf);
             if (transfer_request_front_head) {
                 previous->next = transfer_request_head;
@@ -1270,14 +1272,14 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
 
     FUNC_ENTER(NULL);
     // Split write and read requests. Handle them separately.
-    //printf("PDCregion_transfer_start_all: checkpoint %d\n", __LINE__);
+    // printf("PDCregion_transfer_start_all: checkpoint %d\n", __LINE__);
     prepare_start_all_requests(transfer_request_id, size, &write_transfer_requests, &read_transfer_requests,
                                &write_size, &read_size);
-    //printf("PDCregion_transfer_start_all: checkpoint %d, write_size = %d, read_size = %d\n", __LINE__,
+    // printf("PDCregion_transfer_start_all: checkpoint %d, write_size = %d, read_size = %d\n", __LINE__,
     //       write_size, read_size);
     // Start write requests
     PDC_Client_start_all_requests(write_transfer_requests, write_size);
-    //printf("PDCregion_transfer_start_all: checkpoint %d\n", __LINE__);
+    // printf("PDCregion_transfer_start_all: checkpoint %d\n", __LINE__);
     // Start read requests
     PDC_Client_start_all_requests(read_transfer_requests, read_size);
     /*
@@ -1624,7 +1626,7 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
     pdc_transfer_request *transfer_request;
 
     FUNC_ENTER(NULL);
-    //printf("entered PDCregion_transfer_wait_all @ line %d\n", __LINE__);
+    // printf("entered PDCregion_transfer_wait_all @ line %d\n", __LINE__);
     total_requests        = 0;
     transfer_request_head = NULL;
     for (i = 0; i < size; ++i) {

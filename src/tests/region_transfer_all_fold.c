@@ -31,9 +31,9 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include "pdc.h"
-#define BUF_LEN  64
-#define OBJ_NUM  2
-#define SUB_BUF_LEN 8
+#define BUF_LEN          64
+#define OBJ_NUM          2
+#define SUB_BUF_LEN      8
 #define SUB_BUF_INTERVAL 1
 
 int
@@ -127,11 +127,10 @@ main(int argc, char **argv)
     index = 0;
     for (i = 0; i < OBJ_NUM; ++i) {
         for (j = 0; j + SUB_BUF_LEN < BUF_LEN; j += SUB_BUF_INTERVAL) {
-            offset[0]        = (uint64_t) j;
-            offset_length[0] = SUB_BUF_LEN;
-            reg_global       = PDCregion_create(1, offset, offset_length);
-            transfer_request[index] = PDCregion_transfer_create(
-                data[i], PDC_WRITE, obj[i], reg, reg_global);
+            offset[0]               = (uint64_t)j;
+            offset_length[0]        = SUB_BUF_LEN;
+            reg_global              = PDCregion_create(1, offset, offset_length);
+            transfer_request[index] = PDCregion_transfer_create(data[i], PDC_WRITE, obj[i], reg, reg_global);
             index++;
             PDCregion_close(reg_global);
         }
@@ -169,11 +168,10 @@ main(int argc, char **argv)
 
     offset[0]        = 0;
     offset_length[0] = BUF_LEN;
-    reg       = PDCregion_create(1, offset, offset_length);
+    reg              = PDCregion_create(1, offset, offset_length);
     reg_global       = PDCregion_create(1, offset, offset_length);
 
-    transfer_request[0] = PDCregion_transfer_create(
-        data_read[0], PDC_READ, obj[0], reg, reg_global);
+    transfer_request[0] = PDCregion_transfer_create(data_read[0], PDC_READ, obj[0], reg, reg_global);
 
     PDCregion_close(reg);
     PDCregion_close(reg_global);

@@ -127,22 +127,22 @@ main(int argc, char **argv)
     for (i = 0; i < OBJ_NUM; ++i) {
         switch (i % 4) {
             case 0: {
-            ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_REGION_STATIC);
-            break;
+                ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_REGION_STATIC);
+                break;
             }
             case 1: {
-            ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_OBJ_STATIC);
-            break;
+                ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_OBJ_STATIC);
+                break;
             }
             case 2: {
-            ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_REGION_LOCAL);
-            break;
+                ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_REGION_LOCAL);
+                break;
             }
             case 3: {
-            ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_REGION_DYNAMIC);
-            break;
+                ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_REGION_DYNAMIC);
+                break;
             }
-            default:{
+            default: {
             }
         }
         if (ret != SUCCEED) {
