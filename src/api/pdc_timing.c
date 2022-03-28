@@ -530,7 +530,7 @@ PDC_server_timing_report()
 
 #else
 int
-PDC_timing_report(const char *prefix)
+PDC_timing_report(const char *prefix ATTRIBUTE(unused))
 {
     return 0;
 }
