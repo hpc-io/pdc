@@ -382,8 +382,7 @@ transfer_request_metadata_query_parse(int32_t n_objs, char *buf, uint8_t is_writ
     FUNC_ENTER(NULL);
     pthread_mutex_lock(&metadata_query_mutex);
 
-    region_metadata =
-        (pdc_obj_region_metadata *)malloc(sizeof(pdc_obj_region_metadata) * n_objs);
+    region_metadata = (pdc_obj_region_metadata *)malloc(sizeof(pdc_obj_region_metadata) * n_objs);
 
     for (i = 0; i < n_objs; ++i) {
         region_metadata[i].obj_id = *((uint64_t *)ptr);
