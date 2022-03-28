@@ -196,6 +196,7 @@ PDC_Client_attach_metadata_to_local_obj(const char *obj_name, uint64_t obj_id, u
 {
     perr_t ret_value = SUCCEED;
 
+
     FUNC_ENTER(NULL);
 
     obj_info->metadata                              = (pdc_metadata_t *)calloc(1, sizeof(pdc_metadata_t));
@@ -467,7 +468,7 @@ PDCobj_flush_all_start()
 }
 #else
 perr_t
-PDCobj_flush_start(pdcid_t obj_id ATTRIBUTE(unused))
+PDCobj_flush_start(pdcid_t obj_id __attribute__((unused)))
 {
     perr_t ret_value = SUCCEED;
 
