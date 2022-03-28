@@ -40,6 +40,7 @@ static int                     pdc_server_size;
 static uint64_t                query_id_g;
 static pdc_metadata_query_buf *metadata_query_buf_head;
 static pdc_metadata_query_buf *metadata_query_buf_end;
+static pthread_mutex_t         metadata_query_mutex;
 
 static perr_t   transfer_request_metadata_reg_append(pdc_region_metadata_pkg *regions, int ndim,
                                                      uint64_t *reg_offset, uint64_t *reg_size, size_t unit,
@@ -67,6 +68,7 @@ transfer_request_metadata_query_init(int pdc_server_size_input, char *checkpoint
     pdc_server_size          = pdc_server_size_input;
     query_id_g               = 100000;
     ptr                      = checkpoint;
+    pthread_mutex_init(&metadata_query_mutex, NULL);
 
     if (checkpoint) {
         n_objs = *(int *)ptr;
@@ -189,6 +191,7 @@ transfer_request_metadata_query_checkpoint(char **checkpoint, uint64_t *checkpoi
         obj_temp  = obj_temp->next;
         free(obj_temp2);
     }
+    pthread_mutex_destroy(&metadata_query_mutex);
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -327,6 +330,7 @@ transfer_request_metadata_query_lookup_query_buf(uint64_t query_id, char **buf_p
     pdc_metadata_query_buf *metadata_query, *previous;
     perr_t                  ret_value = SUCCEED;
     FUNC_ENTER(NULL);
+    pthread_mutex_lock(&metadata_query_mutex);
 
     previous       = NULL;
     int i          = 0;
@@ -353,6 +357,7 @@ transfer_request_metadata_query_lookup_query_buf(uint64_t query_id, char **buf_p
     }
     *buf_ptr = NULL;
 done:
+    pthread_mutex_unlock(&metadata_query_mutex);
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
@@ -372,10 +377,14 @@ transfer_request_metadata_query_parse(int32_t n_objs, char *buf, uint8_t is_writ
     size_t                   unit;
     uint64_t                 data_server_id;
     uint8_t                  region_partition;
-    pdc_obj_region_metadata *region_metadata =
-        (pdc_obj_region_metadata *)malloc(sizeof(pdc_obj_region_metadata) * n_objs);
+    pdc_obj_region_metadata *region_metadata;
 
     FUNC_ENTER(NULL);
+    pthread_mutex_lock(&metadata_query_mutex);
+
+    region_metadata =
+        (pdc_obj_region_metadata *)malloc(sizeof(pdc_obj_region_metadata) * n_objs);
+
     for (i = 0; i < n_objs; ++i) {
         region_metadata[i].obj_id = *((uint64_t *)ptr);
         ptr += sizeof(uint64_t);
@@ -401,6 +410,8 @@ transfer_request_metadata_query_parse(int32_t n_objs, char *buf, uint8_t is_writ
     query_id = metadata_query_buf_create(region_metadata, n_objs, total_buf_size_ptr);
     free(region_metadata);
     // printf("transfer_request_metadata_query_parse: checkpoint %d\n", __LINE__);
+
+    pthread_mutex_unlock(&metadata_query_mutex);
     fflush(stdout);
     FUNC_LEAVE(query_id);
 }
