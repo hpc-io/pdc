@@ -528,4 +528,9 @@ PDC_server_timing_report()
     return 0;
 }
 
+#else
+int
+PDC_timing_report(const char *prefix) {
+    return 0;
+}
 #endif

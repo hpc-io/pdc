@@ -32,7 +32,6 @@
 #include <math.h>
 #include <inttypes.h>
 #include "pdc.h"
-#include "pdc_timing.h"
 
 #define NPARTICLES 8388608
 #define N_OBJS     8
@@ -642,7 +641,7 @@ main(int argc, char **argv)
     total_time = MPI_Wtime() - start_total_time;
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-
+    PDC_timing_report("write");
     for (i = 0; i < timestamps; ++i) {
         if (PDCobj_close(obj_xx[i]) < 0) {
             printf("fail to close obj_xx\n");
@@ -679,9 +678,6 @@ main(int argc, char **argv)
     }
 
     free(transfer_request_x);
-#ifdef PDC_TIMING
-    PDC_timing_report("write");
-#endif
 
 #ifdef ENABLE_MPI
     MPI_Reduce(&transfer_create, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
