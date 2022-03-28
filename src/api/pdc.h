@@ -40,7 +40,7 @@
 #include "pdc_analysis.h"
 #include "pdc_transform.h"
 
-int PDC_server_timing_report();
+int PDC_timing_report(const char *prefix);
 
 /*********************/
 /* Public Prototypes */
