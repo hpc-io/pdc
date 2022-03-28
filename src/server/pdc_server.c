@@ -633,11 +633,6 @@ PDC_Server_set_close(void)
         pdc_server_timings->PDCcache_clean += MPI_Wtime() - start;
 #endif
 #endif
-        if (pdc_server_rank_g) {
-            close_out.ret = 88;
-            HG_Respond(close_all_server_handle_g, NULL, NULL, &close_out);
-            HG_Destroy(close_all_server_handle_g);
-        }
 
 #ifndef DISABLE_CHECKPOINT
 #ifdef PDC_TIMING
@@ -655,19 +650,14 @@ PDC_Server_set_close(void)
 #endif
 #endif
         /* Barrier is needed here to make sure all servers have checkpointed data. */
+        close_out.ret = 88;
+        HG_Respond(close_all_server_handle_g, NULL, NULL, &close_out);
+        HG_Destroy(close_all_server_handle_g);
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
 #endif
-        /* The client that calls the server close is now ready to exit.
-         * Cache write back and checkpointing are all finished at this point. */
-        if (!pdc_server_rank_g) {
-            close_out.ret = 88;
-            HG_Respond(close_all_server_handle_g, NULL, NULL, &close_out);
-            HG_Destroy(close_all_server_handle_g);
-        }
         hg_atomic_set32(&close_server_g, 1);
     }
-
     FUNC_LEAVE(ret_value);
 }
 
@@ -1008,7 +998,6 @@ PDC_Server_finalize()
         }
         io_elt->region_list_head = NULL;
     }
-
     // Free hash table
     if (metadata_hash_table_g != NULL)
         hash_table_free(metadata_hash_table_g);

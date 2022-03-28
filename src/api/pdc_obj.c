@@ -196,6 +196,7 @@ PDC_Client_attach_metadata_to_local_obj(const char *obj_name, uint64_t obj_id, u
 {
     perr_t ret_value = SUCCEED;
 
+
     FUNC_ENTER(NULL);
 
     obj_info->metadata                              = (pdc_metadata_t *)calloc(1, sizeof(pdc_metadata_t));
@@ -439,15 +440,16 @@ PDC_obj_close(struct _pdc_obj_info *op)
     FUNC_LEAVE(ret_value);
 }
 
+#ifdef PDC_SERVER_CACHE
 perr_t
 PDCobj_flush_start(pdcid_t obj_id)
 {
     perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
-#ifdef PDC_SERVER_CACHE
+
     PDC_Client_flush_obj(obj_id);
-#endif
+
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
@@ -458,12 +460,35 @@ PDCobj_flush_all_start()
     perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
-#ifdef PDC_SERVER_CACHE
+
     PDC_Client_flush_obj_all();
-#endif
+
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
+#else
+perr_t
+PDCobj_flush_start(pdcid_t obj_id ATTRIBUTE(unused))
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDCobj_flush_all_start()
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+#endif
 
 perr_t
 PDCobj_close(pdcid_t obj_id)

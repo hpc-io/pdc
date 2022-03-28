@@ -1,8 +1,7 @@
 #include "pdc_timing.h"
 
-static double pdc_base_time;
-
 #ifdef PDC_TIMING
+static double pdc_base_time;
 
 static int
 pdc_timestamp_clean(pdc_timestamp *timestamp)

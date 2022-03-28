@@ -607,6 +607,7 @@ PDC_print_storage_region_list(region_list_t *a)
         printf("  %5" PRIu64 "    %5" PRIu64 "\n", a->start[i], a->count[i]);
     }
 
+
     printf("    path: %s\n", a->storage_location);
     printf(" buf_map: %d\n", a->buf_map_refcount);
     printf("   dirty: %d\n", a->reg_dirty_from_buf);
@@ -2012,12 +2013,11 @@ HG_TEST_RPC_CB(close_server, handle)
     FUNC_ENTER(NULL);
 
     HG_Get_input(handle, &in);
+    HG_Free_input(handle, &in);
 
     close_all_server_handle_g = handle;
-    // printf("set server handle to my handle\n");
-    PDC_Server_set_close();
 
-    HG_Free_input(handle, &in);
+    PDC_Server_set_close();
 
     if (ret_value != HG_SUCCESS)
         PGOTO_ERROR(ret_value, "==PDC_SERVER[x]: Error with HG_Destroy");
@@ -2435,6 +2435,7 @@ analysis_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info
         struct _pdc_region_analysis_ftn_info **registry = NULL;
         struct _pdc_iterator_cbs_t iter_cbs = {PDCobj_data_getSliceCount, PDCobj_data_getNextBlock};
         int                        analysis_meta_index = bulk_args->in.analysis_meta_index;
+
 
         int registered_count = PDC_get_analysis_registry(&registry);
         if ((registered_count >= analysis_meta_index) && (registry != NULL)) {

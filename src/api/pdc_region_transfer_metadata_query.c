@@ -64,8 +64,8 @@ transfer_request_metadata_query_init(int pdc_server_size_input, char *checkpoint
     metadata_server_objs_end = NULL;
     metadata_query_buf_head  = NULL;
     metadata_query_buf_end   = NULL;
-    data_server_bytes        = (uint64_t *)calloc(pdc_server_size, sizeof(uint64_t));
     pdc_server_size          = pdc_server_size_input;
+    data_server_bytes        = (uint64_t *)calloc(pdc_server_size, sizeof(uint64_t));
     query_id_g               = 100000;
     ptr                      = checkpoint;
     pthread_mutex_init(&metadata_query_mutex, NULL);
@@ -191,6 +191,8 @@ transfer_request_metadata_query_checkpoint(char **checkpoint, uint64_t *checkpoi
         obj_temp  = obj_temp->next;
         free(obj_temp2);
     }
+    metadata_server_objs = NULL;
+
     pthread_mutex_destroy(&metadata_query_mutex);
 
     fflush(stdout);
