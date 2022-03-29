@@ -109,6 +109,7 @@ set(PDC_HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_analysis.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_cont.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_timing.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_mpi.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_obj.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pdc_region_cache.h
