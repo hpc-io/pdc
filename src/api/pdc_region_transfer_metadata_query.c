@@ -54,7 +54,7 @@ static uint64_t metadata_query_buf_create(pdc_obj_region_metadata *regions, int 
 /**
  * Entry function for this class. Should be only called once at the beginning of Server init.
  * If checkpoint is not NULL, then load previously checkpointed metadata to static variables.
-*/
+ */
 perr_t
 transfer_request_metadata_query_init(int pdc_server_size_input, char *checkpoint)
 {
@@ -135,7 +135,7 @@ transfer_request_metadata_query_init(int pdc_server_size_input, char *checkpoint
 
 /**
  * Finalize function of this class. Should be called only once at the end of Server finalize.
-*/
+ */
 perr_t
 transfer_request_metadata_query_finalize()
 {
@@ -173,7 +173,7 @@ transfer_request_metadata_query_finalize()
  *        ndim (sizeof(int)) + number of regions (sizeof(int)) + obj_id (sizeof(uint64_t))
  *        for each region:
  *            data server ID (sizeof(uint32_t)) + offset/ength (sizeof(uint64_t) * ndim * 2)
-*/
+ */
 perr_t
 transfer_request_metadata_query_checkpoint(char **checkpoint, uint64_t *checkpoint_size)
 {
@@ -229,9 +229,9 @@ transfer_request_metadata_query_checkpoint(char **checkpoint, uint64_t *checkpoi
             ptr += sizeof(uint32_t);
             memcpy(ptr, &(region_temp->reg_offset), sizeof(uint64_t) * obj_temp->ndim * 2);
             ptr += sizeof(uint64_t) * obj_temp->ndim * 2;
-            region_temp  = region_temp->next;
+            region_temp = region_temp->next;
         }
-        obj_temp  = obj_temp->next;
+        obj_temp = obj_temp->next;
     }
     pthread_mutex_unlock(&metadata_query_mutex);
 
