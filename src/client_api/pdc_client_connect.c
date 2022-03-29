@@ -4674,7 +4674,6 @@ PDC_Client_data_server_write_check(struct pdc_request *request, int *status)
 
     FUNC_ENTER(NULL);
 
-
     server_id = request->server_id;
     meta      = request->metadata;
     region    = request->region;
@@ -5882,8 +5881,8 @@ PDC_Client_send_client_shm_info(uint32_t server_id, char *shm_addr, uint64_t siz
 
     in.client_id = pdc_client_mpi_rank_g;
 
-    in.shm_addr  = shm_addr;
-    in.size      = size;
+    in.shm_addr = shm_addr;
+    in.size     = size;
 
     hg_ret = HG_Forward(rpc_handle, pdc_client_check_int_ret_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS)

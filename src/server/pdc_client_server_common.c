@@ -615,7 +615,6 @@ PDC_print_storage_region_list(region_list_t *a)
         printf("  %5" PRIu64 "    %5" PRIu64 "\n", a->start[i], a->count[i]);
     }
 
-
     printf("    path: %s\n", a->storage_location);
     printf(" buf_map: %d\n", a->buf_map_refcount);
     printf("   dirty: %d\n", a->reg_dirty_from_buf);
@@ -1729,8 +1728,8 @@ HG_TEST_RPC_CB(metadata_query, handle)
 HG_TEST_RPC_CB(metadata_delete_by_id, handle)
 {
 
-    hg_return_t                 ret_value = HG_SUCCESS;
-    metadata_delete_by_id_in_t  in;
+    hg_return_t                ret_value = HG_SUCCESS;
+    metadata_delete_by_id_in_t in;
 
     metadata_delete_by_id_out_t out;
 
