@@ -979,6 +979,8 @@ PDC_Server_finalize()
 
     FUNC_ENTER(NULL);
 
+    transfer_request_metadata_query_finalize();
+
     // Debug: check duplicates
     if (is_debug_g == 1) {
         PDC_Server_metadata_duplicate_check();

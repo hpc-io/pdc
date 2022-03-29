@@ -9,8 +9,7 @@
 #endif /* __APPLE__ */
 #endif /* HOST_NAME_MAX */
 
-#undef PDC_TIMING
-#ifdef PDC_TIMING
+#define PDC_TIMING
 
 #include <mpi.h>
 #include <stdio.h>
@@ -30,6 +29,7 @@
 #include <sys/mman.h>
 #include <limits.h>
 
+#ifdef PDC_TIMING
 typedef struct pdc_timing {
     double PDCbuf_obj_map_rpc;
     double PDCbuf_obj_unmap_rpc;
@@ -160,26 +160,26 @@ pdc_timestamp *pdc_transfer_request_wait_all_timestamps;
 pdc_timestamp *pdc_transfer_request_inner_write_all_bulk_timestamps;
 pdc_timestamp *pdc_transfer_request_inner_read_all_bulk_timestamps;
 
-extern pdc_timestamp *pdc_client_buf_obj_map_timestamps;
-extern pdc_timestamp *pdc_client_buf_obj_unmap_timestamps;
-extern pdc_timestamp *pdc_client_obtain_lock_write_timestamps;
-extern pdc_timestamp *pdc_client_obtain_lock_read_timestamps;
-extern pdc_timestamp *pdc_client_release_lock_write_timestamps;
-extern pdc_timestamp *pdc_client_release_lock_read_timestamps;
+pdc_timestamp *pdc_client_buf_obj_map_timestamps;
+pdc_timestamp *pdc_client_buf_obj_unmap_timestamps;
+pdc_timestamp *pdc_client_obtain_lock_write_timestamps;
+pdc_timestamp *pdc_client_obtain_lock_read_timestamps;
+pdc_timestamp *pdc_client_release_lock_write_timestamps;
+pdc_timestamp *pdc_client_release_lock_read_timestamps;
 
-extern pdc_timestamp *pdc_client_transfer_request_start_write_timestamps;
-extern pdc_timestamp *pdc_client_transfer_request_start_read_timestamps;
-extern pdc_timestamp *pdc_client_transfer_request_wait_write_timestamps;
-extern pdc_timestamp *pdc_client_transfer_request_wait_read_timestamps;
+pdc_timestamp *pdc_client_transfer_request_start_write_timestamps;
+pdc_timestamp *pdc_client_transfer_request_start_read_timestamps;
+pdc_timestamp *pdc_client_transfer_request_wait_write_timestamps;
+pdc_timestamp *pdc_client_transfer_request_wait_read_timestamps;
 
-extern pdc_timestamp *pdc_client_transfer_request_start_all_write_timestamps;
-extern pdc_timestamp *pdc_client_transfer_request_start_all_read_timestamps;
-extern pdc_timestamp *pdc_client_transfer_request_wait_all_timestamps;
+pdc_timestamp *pdc_client_transfer_request_start_all_write_timestamps;
+pdc_timestamp *pdc_client_transfer_request_start_all_read_timestamps;
+pdc_timestamp *pdc_client_transfer_request_wait_all_timestamps;
 
-extern pdc_timestamp *pdc_client_create_cont_timestamps;
-extern pdc_timestamp *pdc_client_create_obj_timestamps;
+pdc_timestamp *pdc_client_create_cont_timestamps;
+pdc_timestamp *pdc_client_create_obj_timestamps;
 
-extern pdc_timestamp *pdc_client_transfer_request_metadata_query_timestamps;
+pdc_timestamp *pdc_client_transfer_request_metadata_query_timestamps;
 
 int PDC_timing_init();
 int PDC_timing_finalize();

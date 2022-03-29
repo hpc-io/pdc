@@ -165,15 +165,15 @@ main(int argc, char **argv)
     PDCprop_set_obj_tags(obj_prop_xx, "tag0=1");
     switch (region_partition) {
         case 0: {
-            PDCprop_set_obj_transfer_type(obj_prop_xx, PDC_OBJ_STATIC);
+            PDCprop_set_obj_transfer_region_type(obj_prop_xx, PDC_OBJ_STATIC);
             break;
         }
         case 1: {
-            PDCprop_set_obj_transfer_type(obj_prop_xx, PDC_REGION_STATIC);
+            PDCprop_set_obj_transfer_region_type(obj_prop_xx, PDC_REGION_STATIC);
             break;
         }
         case 2: {
-            PDCprop_set_obj_transfer_type(obj_prop_xx, PDC_REGION_DYNAMIC);
+            PDCprop_set_obj_transfer_region_type(obj_prop_xx, PDC_REGION_DYNAMIC);
             break;
         }
         default: {

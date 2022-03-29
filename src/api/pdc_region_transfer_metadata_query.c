@@ -51,6 +51,10 @@ static uint64_t transfer_request_metadata_query_append(uint64_t obj_id, int ndim
 static uint64_t metadata_query_buf_create(pdc_obj_region_metadata *regions, int size,
                                           uint64_t *total_buf_size_ptr);
 
+/**
+ * Entry function for this class. Should be only called once at the beginning of Server init.
+ * If checkpoint is not NULL, then load previously checkpointed metadata to static variables.
+*/
 perr_t
 transfer_request_metadata_query_init(int pdc_server_size_input, char *checkpoint)
 {
@@ -129,15 +133,58 @@ transfer_request_metadata_query_init(int pdc_server_size_input, char *checkpoint
     FUNC_LEAVE(ret_value);
 }
 
+/**
+ * Finalize function of this class. Should be called only once at the end of Server finalize.
+*/
 perr_t
-transfer_request_metadata_query_checkpoint(char **checkpoint, uint64_t *checkpoint_size)
+transfer_request_metadata_query_finalize()
 {
     hg_return_t              ret_value = HG_SUCCESS;
     pdc_obj_metadata_pkg *   obj_temp, *obj_temp2;
     pdc_region_metadata_pkg *region_temp, *region_temp2;
+    FUNC_ENTER(NULL);
+
+    obj_temp = metadata_server_objs;
+    while (obj_temp) {
+        region_temp = obj_temp->regions;
+        while (region_temp) {
+            region_temp2 = region_temp;
+            region_temp  = region_temp->next;
+            free(region_temp2->reg_offset);
+            free(region_temp2);
+        }
+        obj_temp2 = obj_temp;
+        obj_temp  = obj_temp->next;
+        free(obj_temp2);
+    }
+    metadata_server_objs = NULL;
+
+    pthread_mutex_destroy(&metadata_query_mutex);
+
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+/**
+ * Checkpoint static variables in this file into a contiguous buffer.
+ * checkpoint_size is the total number of bytes allocated.
+ * Format of checkpoint:
+ *    for each obj:
+ *        ndim (sizeof(int)) + number of regions (sizeof(int)) + obj_id (sizeof(uint64_t))
+ *        for each region:
+ *            data server ID (sizeof(uint32_t)) + offset/ength (sizeof(uint64_t) * ndim * 2)
+*/
+perr_t
+transfer_request_metadata_query_checkpoint(char **checkpoint, uint64_t *checkpoint_size)
+{
+    hg_return_t              ret_value = HG_SUCCESS;
+    pdc_obj_metadata_pkg *   obj_temp;
+    pdc_region_metadata_pkg *region_temp;
     char *                   ptr;
     int                      reg_count, obj_count;
     FUNC_ENTER(NULL);
+    pthread_mutex_lock(&metadata_query_mutex);
+
     // First value is the size of objects
     *checkpoint_size = sizeof(int);
     obj_count        = 0;
@@ -182,18 +229,11 @@ transfer_request_metadata_query_checkpoint(char **checkpoint, uint64_t *checkpoi
             ptr += sizeof(uint32_t);
             memcpy(ptr, &(region_temp->reg_offset), sizeof(uint64_t) * obj_temp->ndim * 2);
             ptr += sizeof(uint64_t) * obj_temp->ndim * 2;
-            region_temp2 = region_temp;
             region_temp  = region_temp->next;
-            free(region_temp2->reg_offset);
-            free(region_temp2);
         }
-        obj_temp2 = obj_temp;
         obj_temp  = obj_temp->next;
-        free(obj_temp2);
     }
-    metadata_server_objs = NULL;
-
-    pthread_mutex_destroy(&metadata_query_mutex);
+    pthread_mutex_unlock(&metadata_query_mutex);
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);
