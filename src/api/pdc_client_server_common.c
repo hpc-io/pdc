@@ -49,7 +49,7 @@
 #include <math.h>
 #include <sys/shm.h>
 #include <sys/mman.h>
-
+#include "pdc_timing.h"
 #include "pdc_region_cache.h"
 
 int io_by_region_g = 1;
@@ -606,6 +606,7 @@ PDC_print_storage_region_list(region_list_t *a)
     for (i = 0; i < a->ndim; i++) {
         printf("  %5" PRIu64 "    %5" PRIu64 "\n", a->start[i], a->count[i]);
     }
+
 
     printf("    path: %s\n", a->storage_location);
     printf(" buf_map: %d\n", a->buf_map_refcount);
@@ -6758,6 +6759,7 @@ get_storage_meta_bulk_cb(const struct hg_cb_info *hg_cb_info)
         HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, &buf, NULL, NULL);
 
         // buf_ptrs[0]: task_id
+
         // then for each next ptr, path, offset, region info (region_info_transfer_t)
         int_ptr = (int *)buf;
         task_id = *int_ptr;
