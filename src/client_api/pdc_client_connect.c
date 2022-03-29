@@ -31,7 +31,7 @@
 #include <rdmacred.h>
 #endif
 
-#include "../server/pdc_utlist.h"
+#include "pdc_utlist.h"
 #include "pdc_id_pkg.h"
 #include "pdc_prop_pkg.h"
 #include "pdc_obj_pkg.h"
@@ -2289,6 +2289,7 @@ done:
 }
 
 // Only let one process per node to do the actual query, then broadcast to all others
+#if 0
 perr_t
 PDC_Client_query_metadata_name_timestep_agg_same_node(const char *obj_name, int time_step,
                                                       pdc_metadata_t **out, uint32_t *metadata_id)
@@ -2318,7 +2319,7 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
-
+#endif
 perr_t
 PDC_Client_query_metadata_name_timestep_agg(const char *obj_name, int time_step, pdc_metadata_t **out,
                                             uint32_t *metadata_server_id)
@@ -2342,7 +2343,7 @@ PDC_Client_query_metadata_name_timestep_agg(const char *obj_name, int time_step,
 
     MPI_Bcast(metadata_server_id, 1, MPI_UINT32_T, 0, PDC_CLIENT_COMM_WORLD_g);
 #else
-    ret_value = PDC_Client_query_metadata_name_timestep(obj_name, time_step, out);
+    ret_value = PDC_Client_query_metadata_name_timestep(obj_name, time_step, out, metadata_server_id);
 #endif
 
 done:
@@ -4673,6 +4674,7 @@ PDC_Client_data_server_write_check(struct pdc_request *request, int *status)
 
     FUNC_ENTER(NULL);
 
+
     server_id = request->server_id;
     meta      = request->metadata;
     region    = request->region;
@@ -5879,6 +5881,7 @@ PDC_Client_send_client_shm_info(uint32_t server_id, char *shm_addr, uint64_t siz
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Could not create handle", pdc_client_mpi_rank_g);
 
     in.client_id = pdc_client_mpi_rank_g;
+
     in.shm_addr  = shm_addr;
     in.size      = size;
 

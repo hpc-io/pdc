@@ -1,7 +1,9 @@
-/* Generated file. Only edit pdc_config.h.in. */
+/* Generated file. Only edit pdc_config_sys.h.in. */
 
 #ifndef _pdc_config_H
 #define _pdc_config_H
+
+#include "pdc_config_sys.h"
 
 /* Reflects major releases of PDC */
 #define PDC_VERSION_MAJOR @PDC_VERSION_MAJOR @

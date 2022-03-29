@@ -25,7 +25,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "../server/pdc_utlist.h"
+#include "pdc_utlist.h"
 #include "pdc_config.h"
 #include "pdc_id_pkg.h"
 #include "pdc_obj.h"

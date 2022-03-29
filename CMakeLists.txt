@@ -27,7 +27,9 @@ endif()
 
 project(PDC C)
 
-include_directories(${PROJECT_BINARY_DIR})
+include_directories(
+  ${PROJECT_SOURCE_DIR}
+)
 
 #------------------------------------------------------------------------------
 # Version information
@@ -234,7 +236,7 @@ endif()
 #-----------------------------------------------------------------------------
 # MPI option
 #-----------------------------------------------------------------------------
-option(PDC_ENABLE_MPI "Enable MPI." OFF)
+option(PDC_ENABLE_MPI "Enable MPI." ON)
 if(PDC_ENABLE_MPI)
   find_package(MPI)
   if(MPI_FOUND)
@@ -354,15 +356,20 @@ check_type_size("unsigned long long" VAR_SIZE_ULLINT)
 check_type_size("int64_t" VAR_SIZE_64INT)
 check_type_size("uint64_t" VAR_SIZE_U64INT)
  
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/pdc_config.h.cmake ${PROJECT_BINARY_DIR}/pdc_config.h)
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/pdc_config_sys.h.cmake ${PROJECT_BINARY_DIR}/pdc_config_sys.h)
+
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_config.h.in
+  ${PROJECT_BINARY_DIR}/pdc_config.h
+)
 
 #---------------------- end of generating config.h ---------------------------
 
 #-----------------------------------------------------------------------------
 # Source
 #-----------------------------------------------------------------------------
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/api)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/server)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/client_api)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/server)
 
 #-----------------------------------------------------------------------------
 # Testing
@@ -372,7 +379,7 @@ option(BUILD_MPI_TESTING "Build MPI testing." OFF)
 if(NOT PDC_EXTERNALLY_CONFIGURED AND BUILD_TESTING)
   enable_testing()
   include(CTest)
-  add_subdirectory(tests)
+  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/tests)
 endif()
 
 #-----------------------------------------------------------------------------
@@ -431,6 +438,7 @@ install(
 install(
   FILES
     ${PDC_BINARY_DIR}/bin/pdc_server.exe
+
     ${PDC_BINARY_DIR}/bin/close_server
   DESTINATION
     ${CMAKE_INSTALL_PREFIX}/bin
@@ -456,9 +464,9 @@ endif()
 
 add_custom_target(format
     COMMAND find
-    ${PDC_SOURCE_DIR}/api
-    ${PDC_SOURCE_DIR}/server
-    ${PDC_SOURCE_DIR}/tests
+    ${PDC_SOURCE_DIR}/src/client_api
+    ${PDC_SOURCE_DIR}/src/server
+    ${PDC_SOURCE_DIR}/src/tests
     -type f
     (
     -name "*.c"

@@ -2,8 +2,32 @@
 # Include source and build directories
 #------------------------------------------------------------------------------
 include_directories(
-  ${CMAKE_ROOT}
+  ${PDC_INCLUDES_BUILD_TIME}
+  ${PROJECT_BINARY_DIR}
+  ${PDC_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}
+  ${PDC_SOURCE_DIR}/src/server/include
+  ${PDC_SOURCE_DIR}/src/server/dablooms
+  ${PDC_SOURCE_DIR}/src/client_api/include
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_obj/include
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_region/include
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_query/include
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_transform/include
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_analysis/include
+  ${PDC_SOURCE_DIR}/src/client_api/profiling/include
+  ${PDC_SOURCE_DIR}/src/pdc_utils/include
+  ${CMAKE_CURRENT_BINARY_DIR}
+  ${MERCURY_INCLUDE_DIR}
+  ${FASTBIT_INCLUDE_DIR}
+)
+
+install(
+  FILES
+    ${CMAKE_BINARY_DIR}/pdc_config.h
+  DESTINATION
+    ${PDC_INSTALL_INCLUDE_DIR}
+  COMPONENT
+    headers
 )
 
 #------------------------------------------------------------------------------
@@ -47,8 +71,8 @@ set(PDC_EXPORTED_LIBS pdcprof ${PDC_EXPORTED_LIBS})
 # Specify project header files to be installed
 #-----------------------------------------------------------------------------
 set(PDC_PROF_HEADERS
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_hashtab.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_stack_ops.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/pdc_hashtab.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/pdc_stack_ops.h
   )
 
 #-----------------------------------------------------------------------------

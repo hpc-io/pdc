@@ -22,7 +22,7 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#include "../server/pdc_utlist.h"
+#include "pdc_utlist.h"
 #include "pdc_config.h"
 #include "pdc_malloc.h"
 #include "pdc_id_pkg.h"
@@ -37,7 +37,6 @@
 #include <time.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "pdc_region_cache.h"
 
 static perr_t PDC_obj_close(struct _pdc_obj_info *op);
 
@@ -195,6 +194,7 @@ PDC_Client_attach_metadata_to_local_obj(const char *obj_name, uint64_t obj_id, u
                                         struct _pdc_obj_info *obj_info)
 {
     perr_t ret_value = SUCCEED;
+
 
     FUNC_ENTER(NULL);
 

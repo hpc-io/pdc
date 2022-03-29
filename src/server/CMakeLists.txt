@@ -7,11 +7,21 @@ if(PDC_ENABLE_FASTBIT)
 endif()
 
 include_directories(
-  ${PROJECT_SOURCE_DIR}
   ${PDC_INCLUDES_BUILD_TIME}
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_BINARY_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
-  ${CMAKE_CURRENT_SOURCE_DIR}/dablooms
+  ${PDC_SOURCE_DIR}/src/server/include
+  ${PDC_SOURCE_DIR}/src/server/dablooms
+  ${PDC_SOURCE_DIR}/src/client_api/include
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_obj/include
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_region/include
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_query/include
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_transform/include
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_analysis/include
+  ${PDC_SOURCE_DIR}/src/client_api/profiling/include
+  ${PDC_SOURCE_DIR}/src/pdc_utils/include
   ${MERCURY_INCLUDE_DIR}
   ${FASTBIT_INCLUDE_DIR}
 )
@@ -23,21 +33,21 @@ if(PDC_ENABLE_TIMING)
 endif()
 
 add_executable(pdc_server.exe
-               ../api/pdc_timing.c
                pdc_server.c
                pdc_server_data.c
                pdc_server_metadata.c
                pdc_server_analysis.c
-               ../api/pdc_region_cache.c
-               ../api/pdc_region_utils.c
-               ../api/pdc_region_transfer_metadata_query.c
-               ../api/pdc_client_server_common.c
-               ../api/pdc_analysis_common.c
-               ../api/pdc_transforms_common.c
+               pdc_region_transfer_metadata_query.c
+               pdc_client_server_common.c
                dablooms/pdc_dablooms.c
                dablooms/pdc_murmur.c
                pdc_hash-table.c
-               ../api/pdc_hist_pkg.c
+               pdc_region_server_cache.c
+               ${PDC_SOURCE_DIR}/src/pdc_utils/pdc_region_utils.c
+               ${PDC_SOURCE_DIR}/src/pdc_utils/pdc_timing.c
+               ${PDC_SOURCE_DIR}/src/client_api/pdc_analysis/pdc_analysis_common.c
+               ${PDC_SOURCE_DIR}/src/client_api/pdc_transform/pdc_transforms_common.c
+               ${PDC_SOURCE_DIR}/src/client_api/pdc_analysis/pdc_hist_pkg.c
 )
 
 if(PDC_ENABLE_FASTBIT)

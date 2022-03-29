@@ -31,7 +31,7 @@
 #include "mercury_atomic.h"
 
 #include "pdc_config.h"
-#include "../server/pdc_utlist.h"
+#include "pdc_utlist.h"
 #include "pdc_obj.h"
 #include "pdc_malloc.h"
 #include "pdc_prop_pkg.h"

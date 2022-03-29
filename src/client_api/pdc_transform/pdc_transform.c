@@ -34,7 +34,7 @@
 #include "pdc_transform.h"
 #include "pdc_analysis_pkg.h"
 #include "pdc_client_server_common.h"
-#include "../server/pdc_utlist.h"
+#include "pdc_utlist.h"
 #include <time.h>
 #include <stdlib.h>
 #include <unistd.h>

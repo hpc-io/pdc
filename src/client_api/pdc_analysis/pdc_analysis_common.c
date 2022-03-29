@@ -35,7 +35,7 @@
 #include "pdc_client_server_common.h"
 #include "pdc_analysis_pkg.h"
 #include "pdc_region.h"
-#include "../server/pdc_server_analysis.h"
+#include "pdc_server_analysis.h"
 
 size_t            analysis_registry_size  = 0;
 size_t            transform_registry_size = 0;

@@ -1,9 +1,28 @@
 #------------------------------------------------------------------------------
 # Include source and build directories
 #------------------------------------------------------------------------------
-include_directories(
+set( LOCAL_INCLUDE_DIR
+  ${PDC_INCLUDES_BUILD_TIME}
+  ${PROJECT_BINARY_DIR}
+  ${PDC_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
+  ${PDC_SOURCE_DIR}/src/server/include
+  ${PDC_SOURCE_DIR}/src/server/dablooms
+  ${PDC_SOURCE_DIR}/src/client_api/include
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_obj/include
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_region/include
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_query/include
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_transform/include
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_analysis/include
+  ${PDC_SOURCE_DIR}/src/client_api/profiling/include
+  ${PDC_SOURCE_DIR}/src/pdc_utils/include
+)
+
+include_directories(
+  ${LOCAL_INCLUDE_DIR}
+  ${MERCURY_INCLUDE_DIR}
+  ${FASTBIT_INCLUDE_DIR}
 )
 
 #------------------------------------------------------------------------------
@@ -38,11 +57,6 @@ else()
   set(PDC_LIBTYPE STATIC)
 endif()
 
-configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_config.h.in
-  ${CMAKE_CURRENT_BINARY_DIR}/pdc_config.h
-)
-
 if(PDC_ENABLE_TIMING)
     add_definitions(-DPDC_TIMING=1)
 endif()
@@ -51,28 +65,28 @@ endif()
 # Set sources
 #------------------------------------------------------------------------------
 set(PDC_SRCS
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_malloc.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_prop.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_cont.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_obj.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_analysis_and_transforms_connect.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_analysis_common.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_analysis.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_connect.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_client_server_common.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_hist_pkg.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_interface.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_mpi.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_query.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_region.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_region_utils.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_region_cache.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_region_transfer_metadata_query.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_timing.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_region_transfer.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transform.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transforms_common.c
+  ${PDC_SOURCE_DIR}/src/client_api/pdc.c
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_client_connect.c
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_obj/pdc_prop.c
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_obj/pdc_cont.c
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_obj/pdc_obj.c
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_analysis/pdc_analysis_and_transforms_connect.c
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_analysis/pdc_analysis_common.c
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_analysis/pdc_analysis.c
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_analysis/pdc_hist_pkg.c
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_obj/pdc_mpi.c
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_query/pdc_query.c
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_region/pdc_region.c
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_region/pdc_region_transfer.c
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_transform/pdc_transform.c
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_transform/pdc_transforms_common.c
+  ${PDC_SOURCE_DIR}/src/server/pdc_region_server_cache.c
+  ${PDC_SOURCE_DIR}/src/server/pdc_region_transfer_metadata_query.c
+  ${PDC_SOURCE_DIR}/src/server/pdc_client_server_common.c
+  ${PDC_SOURCE_DIR}/src/pdc_utils/pdc_timing.c
+  ${PDC_SOURCE_DIR}/src/pdc_utils/pdc_malloc.c
+  ${PDC_SOURCE_DIR}/src/pdc_utils/pdc_interface.c
+  ${PDC_SOURCE_DIR}/src/pdc_utils/pdc_region_utils.c
   )
 
   add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/profiling)
@@ -82,8 +96,7 @@ set(PDC_SRCS
 #------------------------------------------------------------------------------
 # PDC
 set(PDC_BUILD_INCLUDE_DEPENDENCIES
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  ${CMAKE_CURRENT_BINARY_DIR}
+  ${LOCAL_INCLUDE_DIR}
 )
 
 add_library(pdc ${PDC_SRCS})
@@ -106,21 +119,20 @@ set(PDC_EXPORTED_LIBS pdc ${PDC_EXPORTED_LIBS})
 # Specify project header files to be installed
 #-----------------------------------------------------------------------------
 set(PDC_HEADERS
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_analysis.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_cont.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_timing.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_mpi.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_obj.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_region_cache.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_region_transfer_metadata_query.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_region.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_prop.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_public.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_query.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_region.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_transform.h
-  ${CMAKE_BINARY_DIR}/pdc_config.h
+  ${PDC_SOURCE_DIR}/src/client_api/include/pdc.h
+  ${PDC_SOURCE_DIR}/src/client_api/include/pdc_public.h
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_analysis/include/pdc_analysis.h
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_obj/include/pdc_cont.h
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_utils/include/pdc_timing.h
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_obj/include/pdc_mpi.h
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_obj/include/pdc_obj.h
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_region/include/pdc_region_cache.h
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_region/include/pdc_region.h
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_obj/include/pdc_prop.h
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_query/include/pdc_query.h
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_region/include/pdc_region.h
+  ${PDC_SOURCE_DIR}/src/client_api/pdc_transform/include/pdc_transform.h
+  ${PROJECT_BINARY_DIR}/pdc_config.h
   )
 
 #-----------------------------------------------------------------------------

@@ -31,9 +31,9 @@
 #include "pdc_analysis_pkg.h"
 #include "pdc_analysis.h"
 #include "pdc_hist_pkg.h"
-#include "../server/pdc_utlist.h"
-#include "../server/pdc_server.h"
-#include "../server/pdc_server_data.h"
+#include "pdc_utlist.h"
+#include "pdc_server.h"
+#include "pdc_server_data.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,7 +50,7 @@
 #include <sys/shm.h>
 #include <sys/mman.h>
 #include "pdc_timing.h"
-#include "pdc_region_cache.h"
+#include "pdc_region_server_cache.h"
 
 int io_by_region_g = 1;
 
@@ -244,32 +244,40 @@ PDC_get_var_type_size(pdc_var_type_t dtype)
      */
     switch (dtype) {
         case PDC_INT:
-            PGOTO_DONE(VAR_SIZE_INT);
-
+            ret_value = sizeof(int);
+            goto done;
             break;
         case PDC_FLOAT:
-            PGOTO_DONE(VAR_SIZE_FLOAT);
+            ret_value = sizeof(float);
+            goto done;
             break;
         case PDC_DOUBLE:
-            PGOTO_DONE(VAR_SIZE_DOUBLE);
+            ret_value = sizeof(double);
+            goto done;
             break;
         case PDC_CHAR:
-            PGOTO_DONE(VAR_SIZE_CHAR);
+            ret_value = sizeof(char);
+            goto done;
             break;
         case PDC_INT16:
-            PGOTO_DONE(sizeof(short));
+            ret_value = sizeof(int16_t);
+            goto done;
             break;
         case PDC_INT8:
-            PGOTO_DONE(1);
+            ret_value = sizeof(int8_t);
+            goto done;
             break;
         case PDC_INT64:
-            PGOTO_DONE(VAR_SIZE_64INT);
+            ret_value = sizeof(int64_t);
+            goto done;
             break;
         case PDC_UINT64:
-            PGOTO_DONE(VAR_SIZE_U64INT);
+            ret_value = sizeof(uint64_t);
+            goto done;
             break;
         case PDC_UINT:
-            PGOTO_DONE(VAR_SIZE_UINT);
+            ret_value = sizeof(uint);
+            goto done;
             break;
         case PDC_UNKNOWN:
         default:
@@ -606,6 +614,7 @@ PDC_print_storage_region_list(region_list_t *a)
     for (i = 0; i < a->ndim; i++) {
         printf("  %5" PRIu64 "    %5" PRIu64 "\n", a->start[i], a->count[i]);
     }
+
 
     printf("    path: %s\n", a->storage_location);
     printf(" buf_map: %d\n", a->buf_map_refcount);
@@ -1722,6 +1731,7 @@ HG_TEST_RPC_CB(metadata_delete_by_id, handle)
 
     hg_return_t                 ret_value = HG_SUCCESS;
     metadata_delete_by_id_in_t  in;
+
     metadata_delete_by_id_out_t out;
 
     FUNC_ENTER(NULL);
@@ -4138,6 +4148,7 @@ HG_TEST_RPC_CB(region_lock, handle)
     }
 #ifdef PDC_TIMING
     end = MPI_Wtime();
+
     if (in.access_type == PDC_READ) {
         pdc_server_timings->PDCreg_obtain_lock_read_rpc += end - start;
         pdc_timestamp_register(pdc_obtain_lock_read_timestamps, start, end);
@@ -6262,6 +6273,7 @@ done:
 /* get_metadata_by_id_cb */
 HG_TEST_RPC_CB(get_metadata_by_id, handle)
 {
+
     hg_return_t              ret_value = HG_SUCCESS;
     get_metadata_by_id_in_t  in;
     get_metadata_by_id_out_t out;

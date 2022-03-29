@@ -2,6 +2,9 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
   ${PDC_INCLUDES_BUILD_TIME}
+  ${PROJECT_BINARY_DIR}
+  ${PDC_SOURCE_DIR}
+  ${PDC_SOURCE_DIR}/src/client_api/include
   $ENV{HOME}/Sandbox/c-blosc/blosc
   $ENV{HOME}/include
 )
