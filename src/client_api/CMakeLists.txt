@@ -124,7 +124,6 @@ set(PDC_HEADERS
   ${PDC_SOURCE_DIR}/src/client_api/include/pdc_public.h
   ${PDC_SOURCE_DIR}/src/client_api/pdc_analysis/include/pdc_analysis.h
   ${PDC_SOURCE_DIR}/src/client_api/pdc_obj/include/pdc_cont.h
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_utils/include/pdc_timing.h
   ${PDC_SOURCE_DIR}/src/client_api/pdc_obj/include/pdc_mpi.h
   ${PDC_SOURCE_DIR}/src/client_api/pdc_obj/include/pdc_obj.h
   ${PDC_SOURCE_DIR}/src/client_api/pdc_region/include/pdc_region_cache.h
@@ -133,6 +132,7 @@ set(PDC_HEADERS
   ${PDC_SOURCE_DIR}/src/client_api/pdc_query/include/pdc_query.h
   ${PDC_SOURCE_DIR}/src/client_api/pdc_region/include/pdc_region.h
   ${PDC_SOURCE_DIR}/src/client_api/pdc_transform/include/pdc_transform.h
+  ${PDC_SOURCE_DIR}/src/pdc_utils/include/pdc_timing.h
   ${PROJECT_BINARY_DIR}/pdc_config.h
   )
 
