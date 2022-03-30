@@ -3,7 +3,9 @@
 
 #ifdef PDC_SERVER_CACHE
 
-int PDC_region_server_cache_init() {
+int
+PDC_region_server_cache_init()
+{
     pdc_recycle_close_flag = 0;
     pthread_mutex_init(&pdc_obj_cache_list_mutex, NULL);
     pthread_mutex_init(&pdc_cache_mutex, NULL);
@@ -13,7 +15,9 @@ int PDC_region_server_cache_init() {
 }
 
 // PDC cache finalize, has to be done here in case of checkpoint for region data earlier.
-int PDC_region_server_cache_finalize() {
+int
+PDC_region_server_cache_finalize()
+{
 #ifdef PDC_TIMING
     double start = MPI_Wtime();
 #endif

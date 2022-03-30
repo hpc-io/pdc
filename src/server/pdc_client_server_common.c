@@ -2623,7 +2623,6 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
 
     hg_thread_pool_post(hg_test_thread_pool_fs_g, &(bulk_args->work));
 
-
 #else
     remote_reg_info = (struct pdc_region_info *)malloc(sizeof(struct pdc_region_info));
     if (remote_reg_info == NULL)
@@ -4363,7 +4362,6 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
-
 
 // buf_map_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(buf_map, handle)
