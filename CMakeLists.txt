@@ -51,16 +51,16 @@ endif()
 # Setup install and output Directories
 #------------------------------------------------------------------------------
 if(NOT PDC_INSTALL_BIN_DIR)
-  set(PDC_INSTALL_BIN_DIR ${CMAKE_INSTALL_PREFIX}/bin)
+  set(PDC_INSTALL_BIN_DIR ${PROJECT_BINARY_DIR}/bin)
 endif()
 if(NOT PDC_INSTALL_LIB_DIR)
-  set(PDC_INSTALL_LIB_DIR ${CMAKE_INSTALL_PREFIX}/lib)
+  set(PDC_INSTALL_LIB_DIR ${PROJECT_BINARY_DIR}/lib)
 endif()
 if(NOT PDC_INSTALL_INCLUDE_DIR)
-  set(PDC_INSTALL_INCLUDE_DIR ${CMAKE_INSTALL_PREFIX}/include)
+  set(PDC_INSTALL_INCLUDE_DIR ${PROJECT_BINARY_DIR}/include)
 endif()
 if(NOT PDC_INSTALL_DATA_DIR)
-  set(PDC_INSTALL_DATA_DIR ${CMAKE_INSTALL_PREFIX}/share)
+  set(PDC_INSTALL_DATA_DIR ${PROJECT_BINARY_DIR}/share)
 endif()
 
 # Setting this ensures that "make install" will leave rpaths to external
@@ -431,6 +431,7 @@ install(
 install(
   DIRECTORY
     ${PDC_BINARY_DIR}/bin
+
   DESTINATION
     ${PDC_INSTALL_DATA_DIR}/test
 )
