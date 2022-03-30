@@ -495,7 +495,10 @@ transfer_request_metadata_reg_append(pdc_region_metadata_pkg *regions, int ndim,
         }
 
         data_server_bytes[min_bytes_server] += total_reg_size;
-        printf("transfer_request_metadata_reg_append: line %d set data server ID = %lu, pdc_server_size =%d, total_reg_size = %lu, data_server_bytes = [%lu, %lu, %lu, %lu]\n", __LINE__, min_bytes_server, pdc_server_size, total_reg_size, data_server_bytes[0], data_server_bytes[1], data_server_bytes[2], data_server_bytes[3]);
+        printf("transfer_request_metadata_reg_append: line %d set data server ID = %lu, pdc_server_size =%d, "
+               "total_reg_size = %lu, data_server_bytes = [%lu, %lu, %lu, %lu]\n",
+               __LINE__, min_bytes_server, pdc_server_size, total_reg_size, data_server_bytes[0],
+               data_server_bytes[1], data_server_bytes[2], data_server_bytes[3]);
     }
     else {
         regions->data_server_id = data_server_id;
