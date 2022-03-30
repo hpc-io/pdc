@@ -131,6 +131,7 @@ set(PDC_HEADERS
   ${PDC_SOURCE_DIR}/src/client_api/pdc_query/include/pdc_query.h
   ${PDC_SOURCE_DIR}/src/client_api/pdc_region/include/pdc_region.h
   ${PDC_SOURCE_DIR}/src/client_api/pdc_transform/include/pdc_transform.h
+  ${PROJECT_BINARY_DIR}/pdc_config_sys.h
   ${PROJECT_BINARY_DIR}/pdc_config.h
   )
 
