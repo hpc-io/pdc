@@ -481,7 +481,7 @@ transfer_request_metadata_reg_append(pdc_region_metadata_pkg *regions, int ndim,
         min_bytes        = data_server_bytes[0];
         min_bytes_server = 0;
 
-        for (i = 0; i < pdc_server_size; ++i) {
+        for (i = 1; i < pdc_server_size; ++i) {
             if (min_bytes < data_server_bytes[i]) {
                 min_bytes        = data_server_bytes[i];
                 min_bytes_server = i;
