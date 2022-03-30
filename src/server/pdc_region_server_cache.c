@@ -2,6 +2,35 @@
 #include "pdc_timing.h"
 
 #ifdef PDC_SERVER_CACHE
+
+int PDC_region_server_cache_init() {
+    pdc_recycle_close_flag = 0;
+    pthread_mutex_init(&pdc_obj_cache_list_mutex, NULL);
+    pthread_mutex_init(&pdc_cache_mutex, NULL);
+    pthread_create(&pdc_recycle_thread, NULL, &PDC_region_cache_clock_cycle, NULL);
+
+    return 0;
+}
+
+// PDC cache finalize, has to be done here in case of checkpoint for region data earlier.
+int PDC_region_server_cache_finalize() {
+#ifdef PDC_TIMING
+    double start = MPI_Wtime();
+#endif
+    pthread_mutex_lock(&pdc_cache_mutex);
+    pdc_recycle_close_flag = 1;
+    pthread_mutex_unlock(&pdc_cache_mutex);
+    pthread_join(pdc_recycle_thread, NULL);
+
+    PDC_region_cache_flush_all();
+    pthread_mutex_destroy(&pdc_obj_cache_list_mutex);
+    pthread_mutex_destroy(&pdc_cache_mutex);
+#ifdef PDC_TIMING
+    pdc_server_timings->PDCcache_clean += MPI_Wtime() - start;
+#endif
+    return 0;
+}
+
 /*
  * Check if the first region is contained inside the second region or the second region is contained inside
  * the first region or they have overlapping relation.

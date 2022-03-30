@@ -39,6 +39,7 @@ add_executable(pdc_server.exe
                pdc_server_analysis.c
                pdc_region_transfer_metadata_query.c
                pdc_client_server_common.c
+               pdc_server_region_transfer.c
                dablooms/pdc_dablooms.c
                dablooms/pdc_murmur.c
                pdc_hash-table.c

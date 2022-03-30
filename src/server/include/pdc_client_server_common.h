@@ -38,6 +38,7 @@
 #include "mercury_thread_pool.h"
 #include "pdc_timing.h"
 #include "pdc_region_transfer_metadata_query.h"
+#include "pdc_server_region_transfer.h"
 
 #ifdef ENABLE_MULTITHREAD
 #include "mercury_thread_pool.h"
@@ -89,6 +90,7 @@ hg_thread_mutex_t meta_obj_map_mutex_g;
 extern uint64_t          pdc_id_seq_g;
 extern int               pdc_server_rank_g;
 extern hg_atomic_int32_t close_server_g;
+hg_handle_t                  close_all_server_handle_g;
 
 #define PDC_LOCK_OP_OBTAIN  0
 #define PDC_LOCK_OP_RELEASE 1
@@ -137,22 +139,6 @@ struct _pdc_iterator_info *PDC_Block_iterator_cache;
 /****************************/
 /* Library Private Typedefs */
 /****************************/
-
-typedef struct pdc_transfer_request_status {
-    hg_handle_t                         handle;
-    uint64_t                            transfer_request_id;
-    uint32_t                            status;
-    int *                               handle_ref;
-    int                                 out_type;
-    struct pdc_transfer_request_status *next;
-} pdc_transfer_request_status;
-
-pdc_transfer_request_status *transfer_request_status_list;
-pdc_transfer_request_status *transfer_request_status_list_end;
-pthread_mutex_t              transfer_request_status_mutex;
-pthread_mutex_t              transfer_request_id_mutex;
-uint64_t                     transfer_request_id_g;
-hg_handle_t                  close_all_server_handle_g;
 
 typedef enum { PDC_POSIX = 0, PDC_DAOS = 1 } _pdc_io_plugin_t;
 
@@ -1045,6 +1031,7 @@ typedef struct {
     uint64_t               obj_id;
     region_info_transfer_t req_region;
 } get_storage_info_in_t;
+
 
 /* Define pdc_int_send_t */
 typedef struct {
@@ -2714,6 +2701,7 @@ hg_proc_transfer_request_all_out_t(hg_proc_t proc, void *data)
     }
     // printf("Output argument: transfer_request_all finishes @ line %d\n", __LINE__);
     return ret;
+
 }
 
 /* Define hg_proc_transfer_request_metadata_query_in_t */
@@ -3811,18 +3799,6 @@ struct transfer_request_wait_all_local_bulk_args {
     double start_time;
 #endif
 };
-
-typedef struct transfer_request_all_data {
-    uint64_t **obj_dims;
-    uint64_t **remote_offset;
-    uint64_t **remote_length;
-    pdcid_t *  obj_id;
-    int *      obj_ndim;
-    size_t *   unit;
-    int *      remote_ndim;
-    char **    data_buf;
-    int        n_objs;
-} transfer_request_all_data;
 
 struct transfer_request_all_local_bulk_args {
     hg_handle_t               handle;

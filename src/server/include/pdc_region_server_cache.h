@@ -41,6 +41,8 @@ pthread_t       pdc_recycle_thread;
 pthread_mutex_t pdc_cache_mutex;
 int             pdc_recycle_close_flag;
 
+int   PDC_region_server_cache_init();
+int   PDC_region_server_cache_finalize();
 int   PDC_region_cache_flush_all();
 int   PDC_region_cache_flush(uint64_t obj_id);
 int   PDC_region_fetch(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims,
