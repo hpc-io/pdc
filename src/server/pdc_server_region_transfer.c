@@ -14,7 +14,9 @@ get_server_rank()
 #endif
 }
 
-perr_t PDC_server_transfer_request_init() {
+perr_t
+PDC_server_transfer_request_init()
+{
     FUNC_ENTER(NULL);
 
     transfer_request_status_list = NULL;
@@ -25,12 +27,13 @@ perr_t PDC_server_transfer_request_init() {
     FUNC_LEAVE(SUCCEED);
 }
 
-perr_t PDC_server_transfer_request_finalize() {
+perr_t
+PDC_server_transfer_request_finalize()
+{
     FUNC_ENTER(NULL);
 
     pthread_mutex_destroy(&transfer_request_status_mutex);
     pthread_mutex_destroy(&transfer_request_id_mutex);
-
 
     FUNC_LEAVE(SUCCEED);
 }
