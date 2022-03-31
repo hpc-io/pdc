@@ -256,8 +256,8 @@ endif()
 #-----------------------------------------------------------------------------
 # TIMING option
 #-----------------------------------------------------------------------------
-option(PDC_ENABLE_TIMING "Enable timing." OFF)
-if(PDC_ENABLE_TIMING)
+option(PDC_TIMING "Enable timing." OFF)
+if(PDC_TIMING)
   set(PDC_TIMING 1)
 endif()
 

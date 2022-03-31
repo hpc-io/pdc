@@ -7,7 +7,7 @@
 #cmakedefine ENABLE_LUSTRE 
 
 /* Define if you want to enable timing */
-#cmakedefine ENABLE_TIMING
+#cmakedefine PDC_TIMING
 
 /* Define if you want to enable checkpoint */
 #cmakedefine ENABLE_CHECKPOINT
