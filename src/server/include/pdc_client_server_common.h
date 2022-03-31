@@ -727,6 +727,22 @@ typedef struct {
     int32_t ret;
 } flush_obj_all_out_t;
 
+/* Define obj_reset_dims_in_t */
+typedef struct {
+    hg_const_string_t obj_name;
+    uint32_t          hash_value;
+    int32_t           time_step;
+    uint64_t               dim0;
+    uint64_t               dim1;
+    uint64_t               dim2;
+    int32_t                ndim;
+} obj_reset_dims_in_t;
+
+/* Define obj_reset_dims_out_t */
+typedef struct {
+    int32_t ret;
+} obj_reset_dims_out_t;
+
 /* Define flush_obj_in_t */
 typedef struct {
     uint64_t obj_id;
@@ -2245,6 +2261,66 @@ hg_proc_flush_obj_all_out_t(hg_proc_t proc, void *data)
     return ret;
 }
 
+/* Define hg_proc_obj_reset_dims_in_t */
+static HG_INLINE hg_return_t
+hg_proc_obj_reset_dims_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t         ret;
+    obj_reset_dims_in_t *struct_data = (obj_reset_dims_in_t *)data;
+
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->time_step);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint32_t(proc, &struct_data->hash_value);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->ndim);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->dims0);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->dims1);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->dims2);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+/* Define hg_proc_obj_reset_dims_out_t */
+static HG_INLINE hg_return_t
+hg_proc_obj_reset_dims_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t          ret;
+    obj_reset_dims_out_t *struct_data = (obj_reset_dims_out_t *)data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
 /* Define hg_proc_flush_obj_in_t */
 static HG_INLINE hg_return_t
 hg_proc_flush_obj_in_t(hg_proc_t proc, void *data)
@@ -3500,6 +3576,7 @@ hg_proc_container_query_in_t(hg_proc_t proc, void *data)
     return ret;
 }
 
+
 /* Define hg_proc_container_query_out_t */
 static HG_INLINE hg_return_t
 hg_proc_container_query_out_t(hg_proc_t proc, void *data)
@@ -3931,6 +4008,7 @@ hg_id_t PDC_server_lookup_client_register(hg_class_t *hg_class);
 hg_id_t PDC_close_server_register(hg_class_t *hg_class);
 hg_id_t PDC_flush_obj_register(hg_class_t *hg_class);
 hg_id_t PDC_flush_obj_all_register(hg_class_t *hg_class);
+hg_id_t PDC_obj_reset_dims_register(hg_class_t *hg_class);
 
 hg_id_t PDC_metadata_query_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_delete_register(hg_class_t *hg_class);

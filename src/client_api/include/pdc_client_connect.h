@@ -85,6 +85,10 @@ struct _pdc_container_query_args {
     uint64_t cont_id;
 };
 
+struct _pdc_obj_reset_dims_args {
+    int32_t  ret;
+};
+
 struct _pdc_transfer_request_args {
     uint64_t metadata_id;
     int32_t  ret;
@@ -787,6 +791,13 @@ perr_t PDC_Client_flush_obj(uint64_t obj_id);
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_Client_flush_obj_all();
+
+/**
+ * Request from PDC client to reset obj dimension
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_obj_reset_dims(const char *obj_name, int time_step, int ndim, uint64_t *dims, int *reset);
 
 /**
 

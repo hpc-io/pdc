@@ -31,6 +31,8 @@ perr_t PDC_server_transfer_request_init();
 
 perr_t PDC_server_transfer_request_finalize();
 
+int try_reset_dims();
+
 /*
  * Create a new linked list node for a region transfer request and append it to the end of the linked list.
  * Thread-safe function, lock required ahead of time.

@@ -265,6 +265,7 @@ PDC_get_var_type_size(pdc_var_type_t dtype)
             break;
         case PDC_INT8:
             ret_value = sizeof(int8_t);
+
             goto done;
             break;
         case PDC_INT64:
@@ -1715,6 +1716,54 @@ HG_TEST_RPC_CB(metadata_query, handle)
         out.ret.tags           = "N/A";
         out.ret.data_location  = "N/A";
     }
+    HG_Respond(handle, NULL, NULL, &out);
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
+/* static hg_return_t */
+/* obj_reset_dims_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(obj_reset_dims, handle)
+{
+    hg_return_t          ret_value = HG_SUCCESS;
+    obj_reset_dims_in_t  in;
+    obj_reset_dims_out_t out;
+    pdc_metadata_t *     query_result = NULL;
+
+    FUNC_ENTER(NULL);
+
+    // Decode input
+    HG_Get_input(handle, &in);
+
+    if ( !try_reset_dims() ) {
+        out.ret = 0;
+        goto done;
+    }
+
+    // Get the metdata_t struct.
+    PDC_Server_search_with_name_timestep(in.obj_name, in.hash_value, in.time_step, &query_result);
+
+    // Convert for transfer
+    if (query_result != NULL) {
+        out.ret = 2;
+        if (in.ndim >= 1) {
+            query_result.dims[0] = dims0;
+        }
+        if (in.ndim >= 2) {
+            query_result.dims[1] = dims1;
+        }
+        if (in.ndim == 3) {
+            query_result.dims[2] = dims2;
+        }
+    }
+    else {
+        out.ret = 1;
+    }
+
+done:
     HG_Respond(handle, NULL, NULL, &out);
 
     HG_Free_input(handle, &in);
@@ -6326,6 +6375,7 @@ HG_TEST_THREAD_CB(notify_region_update)
 HG_TEST_THREAD_CB(close_server)
 HG_TEST_THREAD_CB(flush_obj)
 HG_TEST_THREAD_CB(flush_obj_all)
+HG_TEST_THREAD_CB(obj_reset_dims)
 HG_TEST_THREAD_CB(region_lock)
 HG_TEST_THREAD_CB(query_partial)
 HG_TEST_THREAD_CB(query_kvtag)
@@ -6410,6 +6460,7 @@ PDC_FUNC_DECLARE_REGISTER(metadata_delete)
 PDC_FUNC_DECLARE_REGISTER(close_server)
 PDC_FUNC_DECLARE_REGISTER(flush_obj)
 PDC_FUNC_DECLARE_REGISTER(flush_obj_all)
+PDC_FUNC_DECLARE_REGISTER(obj_reset_dims)
 PDC_FUNC_DECLARE_REGISTER(transfer_request)
 PDC_FUNC_DECLARE_REGISTER(transfer_request_all)
 PDC_FUNC_DECLARE_REGISTER(transfer_request_metadata_query)

@@ -1852,6 +1852,7 @@ PDC_Server_mercury_register()
     PDC_close_server_register(hg_class_g);
     PDC_flush_obj_register(hg_class_g);
     PDC_flush_obj_all_register(hg_class_g);
+    PDC_obj_reset_dims_register(hg_class_g);
     PDC_metadata_query_register(hg_class_g);
     PDC_container_query_register(hg_class_g);
     PDC_metadata_delete_register(hg_class_g);

@@ -258,11 +258,24 @@ perr_t PDCprop_set_obj_transfer_region_type(pdcid_t obj_prop, pdc_region_partiti
 perr_t PDCprop_set_obj_buf(pdcid_t obj_prop, void *buf);
 
 /**
- * Retrieve the buffer of an object
+ * Reset obj dimension
  *
- * \param obj_id [IN]           ID of the object
+ * \param obj_id [IN]         ID of object,
+ * \param ndim [IN]         number of dimensions, this one must match existing record.
+ * \param dims [IN]         new dimensions to be set
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCobj_set_dims(pdcid_t obj_id, int ndim, uint64_t *dims);
+
+perr_t PDCobj_get_dims(pdcid_t obj_id, int *ndim, uint64_t **dims);
+
+/**
+ * get obj dimension
  *
- * \return Address of object buffer on success/Null on failure
+ * \param obj_id [IN]         ID of object,
+ * \param ndim [IN]         number of object dimensions
+ * \param dims [IN]         object dimensions, in a newly malloced buffer.
+ * \return Non-negative on success/Negative on failure
  */
 void **PDCobj_buf_retrieve(pdcid_t obj_id);
 

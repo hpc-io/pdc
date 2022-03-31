@@ -107,6 +107,7 @@ static hg_id_t close_server_register_id_g;
 static hg_id_t flush_obj_register_id_g;
 static hg_id_t flush_obj_all_register_id_g;
 static hg_id_t metadata_query_register_id_g;
+static hg_id_t obj_reset_dims_register_id_g;
 static hg_id_t container_query_register_id_g;
 static hg_id_t metadata_delete_register_id_g;
 static hg_id_t metadata_delete_by_id_register_id_g;
@@ -353,6 +354,36 @@ client_send_flush_obj_all_rpc_cb(const struct hg_cb_info *callback_info)
 
 done:
     // printf("client close RPC is finished here, return value = %d\n", output.ret);
+    fflush(stdout);
+    work_todo_g--;
+    HG_Free_output(handle, &output);
+
+    FUNC_LEAVE(ret_value);
+}
+
+static hg_return_t
+client_send_obj_reset_dims_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t                                       ret_value = HG_SUCCESS;
+    hg_handle_t                                       handle;
+    struct _pdc_obj_reset_dims_args *region_transfer_args;
+    obj_reset_dims_out_t             output;
+
+    FUNC_ENTER(NULL);
+
+    region_transfer_args = (struct _pdc_obj_reset_dims_args *)callback_info->arg;
+    handle               = callback_info->info.forward.handle;
+
+    ret_value = HG_Get_output(handle, &output);
+    if (ret_value != HG_SUCCESS) {
+        printf(
+            "PDC_CLIENT[%d]: client_send_obj_reset_dims_rpc_cb error with HG_Get_output\n",
+            pdc_client_mpi_rank_g);
+        region_transfer_args->ret = -1;
+        goto done;
+    }
+    region_transfer_args->ret            = output.ret;
+done:
     fflush(stdout);
     work_todo_g--;
     HG_Free_output(handle, &output);
@@ -1185,6 +1216,7 @@ drc_access_again:
     close_server_register_id_g        = PDC_close_server_register(*hg_class);
     flush_obj_register_id_g           = PDC_flush_obj_register(*hg_class);
     flush_obj_all_register_id_g       = PDC_flush_obj_all_register(*hg_class);
+    obj_reset_dims_register_id_g       = PDC_obj_reset_dims_register(*hg_class);
     // HG_Registered_disable_response(*hg_class, close_server_register_id_g, HG_TRUE);
 
     metadata_query_register_id_g           = PDC_metadata_query_register(*hg_class);
@@ -2437,6 +2469,79 @@ PDC_Client_create_cont_id_mpi(const char *cont_name, pdcid_t cont_create_prop, p
 #ifdef ENABLE_MPI
     MPI_Bcast(cont_id, 1, MPI_LONG_LONG, 0, PDC_CLIENT_COMM_WORLD_g);
 #endif
+
+    FUNC_LEAVE(ret_value);
+}
+
+
+perr_t
+PDC_Client_obj_reset_dims(const char *obj_name, int time_step, int ndim, uint64_t *dims, int *reset)
+{
+    perr_t                          ret_value = SUCCEED;
+    hg_return_t                     hg_ret    = 0;
+    uint32_t                        hash_name_value;
+    uint32_t                        server_id;
+    obj_reset_dims_in_t             in;
+    struct _pdc_obj_reset_dims_args lookup_args;
+    hg_handle_t                     obj_reset_dims_handle;
+
+    FUNC_ENTER(NULL);
+
+    // Compute server id
+    hash_name_value = PDC_get_hash_by_name(obj_name);
+    server_id       = (hash_name_value + time_step);
+    server_id %= pdc_server_num_g;
+
+    *metadata_server_id = server_id;
+
+    // Debug statistics for counting number of messages sent to each server.
+    debug_server_id_count[server_id]++;
+
+    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+        PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
+
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, obj_reset_dims_register_id_g,
+              &obj_reset_dims_handle);
+
+    // Fill input structure
+    in.obj_name   = obj_name;
+    in.hash_value = PDC_get_hash_by_name(obj_name);
+    in.time_step  = time_step;
+    in.obj_ndim    = obj_ndim;
+    if (in.ndim >= 1) {
+        in.dim0 = dims[0];
+    }
+    if (in.ndim >= 2) {
+        in.dim1 = dims[1];
+    }
+    if (in.ndim >= 3) {
+        in.dim2 = dims[2];
+    }
+
+    lookup_args.data = (pdc_metadata_t *)malloc(sizeof(pdc_metadata_t));
+    if (lookup_args.data == NULL)
+        PGOTO_ERROR(FAIL, "==PDC_CLIENT: ERROR - PDC_Client_query_metadata_with_name() "
+                          "cannnot allocate space for client_lookup_args->data");
+
+    hg_ret = HG_Forward(obj_reset_dims_handle, obj_reset_dims_rpc_cb, &lookup_args, &in);
+    if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(FAIL,
+                    "==PDC_CLIENT[%d] - PDC_Client_query_metadata_with_name(): Could not start HG_Forward()",
+                    pdc_client_mpi_rank_g);
+
+    // Wait for response from server
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+    if ( lookup_args.ret == 2 ) {
+        *reset = 1;
+    } else {
+        *reset = 0;
+    }
+    // printf("rank = %d, PDC_Client_query_metadata_name_timestep = %u\n", pdc_client_mpi_rank_g,
+    // out[0]->data_server_id);
+done:
+    fflush(stdout);
+    HG_Destroy(obj_reset_dims_handle);
 
     FUNC_LEAVE(ret_value);
 }

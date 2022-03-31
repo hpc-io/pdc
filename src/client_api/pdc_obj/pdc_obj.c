@@ -581,8 +581,8 @@ PDCobj_open_common(const char *obj_name, pdcid_t pdc, int is_col)
     p->obj_pt->obj_prop_pub->dims   = malloc(out->ndim * sizeof(uint64_t));
     if (!p->obj_pt->obj_prop_pub->dims)
         PGOTO_ERROR(0, "cannot allocate ret_value->obj_prop_pub->dims");
-    for (i = 0; i < out->ndim; i++)
-        p->obj_pt->obj_prop_pub->dims[i] = out->dims[i];
+
+    memcpy(p->obj_pt->obj_prop_pub->dims, out->dims, sizeof(uint64_t) * out->ndim);
     /* 'app_name' is a char array */
     if (strlen(out->app_name) > 0)
         p->obj_pt->app_name = strdup(out->app_name);
@@ -931,6 +931,62 @@ PDCprop_set_obj_buf(pdcid_t obj_prop, void *buf)
 
 done:
     fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDCobj_set_dims(pdcid_t obj_id, int ndim, uint64_t *dims) {
+    perr_t                ret_value = SUCCEED;
+    struct _pdc_id_info * info;
+    struct _pdc_obj_info *object;
+    int reset;
+
+    FUNC_ENTER(NULL);
+    info = PDC_find_id(obj_id);
+    if (info == NULL) {
+        fprintf(stderr, "PDCobj_set_dims: cannnot find obj id @ line %d\n", __LINE__);
+    }
+    object    = (struct _pdc_obj_info *)(info->obj_ptr);
+    if ( object->local_transfer_request_size ) {
+        // We do not allow setting obj dims while the region transfer requests are taking places.
+        ret_value = FAIL;
+        goto done;
+    }
+
+    if (ndim != ((pdc_metadata_t*)(object->metadata))->ndim) {
+        fprintf(stderr, "PDCobj_set_dims: input dimension size is wrong %d != %d @ line %d\n", ndim, ((pdc_metadata_t*)(object->metadata))->ndim, __LINE__);
+    }
+    memcpy(object->obj_pt->obj_prop_pub->dims, dims, ndim * sizeof(uint64_t));
+    memcpy( ((pdc_metadata_t*)(object->metadata))->dims, dims, ndim * sizeof(uint64_t));
+
+    PDC_Client_obj_reset_dims(object->>obj_info_pub->name, object->obj_pt->time_step, ndim, dims, &reset);
+
+    if (!reset) {
+        // Server rejects reset object dims for some reasons, so we close this operation.
+        ret_value = FAIL;
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDCobj_get_dims(pdcid_t obj_id, int *ndim, uint64_t **dims) {
+    perr_t                ret_value = SUCCEED;
+    struct _pdc_id_info * info;
+    struct _pdc_obj_info *object;
+    FUNC_ENTER(NULL);
+
+    info = PDC_find_id(obj_id);
+    if (info == NULL) {
+        fprintf(stderr, "PDCobj_set_dims: cannnot find obj id @ line %d\n", __LINE__);
+    }
+    object    = (struct _pdc_obj_info *)(info->obj_ptr);
+    *ndim = object->obj_pt->obj_prop_pub->ndim;
+    *dims = (uint64_t*) malloc(sizeof(uint64_t) * ndim[0]);
+    memcpy(*dims, object->obj_pt->obj_prop_pub->dims, sizeof(uint64_t) * ndim[0]);
+
+done:
     FUNC_LEAVE(ret_value);
 }
 

@@ -14,6 +14,10 @@ get_server_rank()
 #endif
 }
 
+int try_reset_dims() {
+    return io_by_region_g;
+}
+
 perr_t
 PDC_server_transfer_request_init()
 {
