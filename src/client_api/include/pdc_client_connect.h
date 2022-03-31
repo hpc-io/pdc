@@ -86,7 +86,7 @@ struct _pdc_container_query_args {
 };
 
 struct _pdc_obj_reset_dims_args {
-    int32_t  ret;
+    int32_t ret;
 };
 
 struct _pdc_transfer_request_args {

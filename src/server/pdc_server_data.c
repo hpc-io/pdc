@@ -4729,9 +4729,9 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     data_server_region_t *region         = NULL;
     region_list_t *       overlap_region = NULL;
     int                   is_overlap = 0, is_contained = 0;
-    uint64_t  i, j, pos;
-    uint64_t *overlap_offset, *overlap_size;
-    char *    tmp_buf;
+    uint64_t              i, j, pos;
+    uint64_t *            overlap_offset, *overlap_size;
+    char *                tmp_buf;
 
     FUNC_ENTER(NULL);
 #ifdef PDC_TIMING
@@ -5050,13 +5050,13 @@ done:
 perr_t
 PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
-    perr_t                                            ret_value     = SUCCEED;
-    ssize_t request_bytes = unit;
-    data_server_region_t *                            region        = NULL;
-    region_list_t *                                   elt;
-    uint64_t  i, j, pos;
-    uint64_t *overlap_offset, *overlap_size;
-    char *    tmp_buf;
+    perr_t                ret_value     = SUCCEED;
+    ssize_t               request_bytes = unit;
+    data_server_region_t *region        = NULL;
+    region_list_t *       elt;
+    uint64_t              i, j, pos;
+    uint64_t *            overlap_offset, *overlap_size;
+    char *                tmp_buf;
 
     FUNC_ENTER(NULL);
 #ifdef PDC_TIMING

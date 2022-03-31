@@ -364,8 +364,8 @@ done:
 static hg_return_t
 client_send_obj_reset_dims_rpc_cb(const struct hg_cb_info *callback_info)
 {
-    hg_return_t                                       ret_value = HG_SUCCESS;
-    hg_handle_t                                       handle;
+    hg_return_t                      ret_value = HG_SUCCESS;
+    hg_handle_t                      handle;
     struct _pdc_obj_reset_dims_args *region_transfer_args;
     obj_reset_dims_out_t             output;
 
@@ -376,13 +376,12 @@ client_send_obj_reset_dims_rpc_cb(const struct hg_cb_info *callback_info)
 
     ret_value = HG_Get_output(handle, &output);
     if (ret_value != HG_SUCCESS) {
-        printf(
-            "PDC_CLIENT[%d]: client_send_obj_reset_dims_rpc_cb error with HG_Get_output\n",
-            pdc_client_mpi_rank_g);
+        printf("PDC_CLIENT[%d]: client_send_obj_reset_dims_rpc_cb error with HG_Get_output\n",
+               pdc_client_mpi_rank_g);
         region_transfer_args->ret = -1;
         goto done;
     }
-    region_transfer_args->ret            = output.ret;
+    region_transfer_args->ret = output.ret;
 done:
     fflush(stdout);
     work_todo_g--;
@@ -1216,7 +1215,7 @@ drc_access_again:
     close_server_register_id_g        = PDC_close_server_register(*hg_class);
     flush_obj_register_id_g           = PDC_flush_obj_register(*hg_class);
     flush_obj_all_register_id_g       = PDC_flush_obj_all_register(*hg_class);
-    obj_reset_dims_register_id_g       = PDC_obj_reset_dims_register(*hg_class);
+    obj_reset_dims_register_id_g      = PDC_obj_reset_dims_register(*hg_class);
     // HG_Registered_disable_response(*hg_class, close_server_register_id_g, HG_TRUE);
 
     metadata_query_register_id_g           = PDC_metadata_query_register(*hg_class);
@@ -2473,7 +2472,6 @@ PDC_Client_create_cont_id_mpi(const char *cont_name, pdcid_t cont_create_prop, p
     FUNC_LEAVE(ret_value);
 }
 
-
 perr_t
 PDC_Client_obj_reset_dims(const char *obj_name, int time_step, int ndim, uint64_t *dims, int *reset)
 {
@@ -2507,7 +2505,7 @@ PDC_Client_obj_reset_dims(const char *obj_name, int time_step, int ndim, uint64_
     in.obj_name   = obj_name;
     in.hash_value = PDC_get_hash_by_name(obj_name);
     in.time_step  = time_step;
-    in.obj_ndim    = obj_ndim;
+    in.obj_ndim   = obj_ndim;
     if (in.ndim >= 1) {
         in.dim0 = dims[0];
     }
@@ -2532,9 +2530,10 @@ PDC_Client_obj_reset_dims(const char *obj_name, int time_step, int ndim, uint64_
     // Wait for response from server
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
-    if ( lookup_args.ret == 2 ) {
+    if (lookup_args.ret == 2) {
         *reset = 1;
-    } else {
+    }
+    else {
         *reset = 0;
     }
     // printf("rank = %d, PDC_Client_query_metadata_name_timestep = %u\n", pdc_client_mpi_rank_g,

@@ -732,10 +732,10 @@ typedef struct {
     hg_const_string_t obj_name;
     uint32_t          hash_value;
     int32_t           time_step;
-    uint64_t               dim0;
-    uint64_t               dim1;
-    uint64_t               dim2;
-    int32_t                ndim;
+    uint64_t          dim0;
+    uint64_t          dim1;
+    uint64_t          dim2;
+    int32_t           ndim;
 } obj_reset_dims_in_t;
 
 /* Define obj_reset_dims_out_t */
@@ -2265,7 +2265,7 @@ hg_proc_flush_obj_all_out_t(hg_proc_t proc, void *data)
 static HG_INLINE hg_return_t
 hg_proc_obj_reset_dims_in_t(hg_proc_t proc, void *data)
 {
-    hg_return_t         ret;
+    hg_return_t          ret;
     obj_reset_dims_in_t *struct_data = (obj_reset_dims_in_t *)data;
 
     ret = hg_proc_hg_const_string_t(proc, &struct_data->obj_name);
@@ -2310,7 +2310,7 @@ hg_proc_obj_reset_dims_in_t(hg_proc_t proc, void *data)
 static HG_INLINE hg_return_t
 hg_proc_obj_reset_dims_out_t(hg_proc_t proc, void *data)
 {
-    hg_return_t          ret;
+    hg_return_t           ret;
     obj_reset_dims_out_t *struct_data = (obj_reset_dims_out_t *)data;
 
     ret = hg_proc_int32_t(proc, &struct_data->ret);
@@ -3575,7 +3575,6 @@ hg_proc_container_query_in_t(hg_proc_t proc, void *data)
     }
     return ret;
 }
-
 
 /* Define hg_proc_container_query_out_t */
 static HG_INLINE hg_return_t

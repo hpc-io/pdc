@@ -1738,7 +1738,7 @@ HG_TEST_RPC_CB(obj_reset_dims, handle)
     // Decode input
     HG_Get_input(handle, &in);
 
-    if ( !try_reset_dims() ) {
+    if (!try_reset_dims()) {
         out.ret = 0;
         goto done;
     }

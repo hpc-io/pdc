@@ -14,7 +14,9 @@ get_server_rank()
 #endif
 }
 
-int try_reset_dims() {
+int
+try_reset_dims()
+{
     return io_by_region_g;
 }
 
