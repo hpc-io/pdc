@@ -32,7 +32,6 @@
 #include <math.h>
 #include <inttypes.h>
 #include "pdc.h"
-#include "pdc_timing.h"
 
 #define NPARTICLES 8388608
 #define N_OBJS     8
@@ -60,6 +59,8 @@ main(int argc, char **argv)
     pdcid_t  region_x, region_y, region_z, region_px, region_py, region_pz, region_id1, region_id2;
     pdcid_t  region_xx, region_yy, region_zz, region_pxx, region_pyy, region_pzz, region_id11, region_id22;
     perr_t   ret;
+    int      region_partition = PDC_REGION_STATIC;
+
 #ifdef ENABLE_MPI
     MPI_Comm comm;
 #else
@@ -80,16 +81,15 @@ main(int argc, char **argv)
     uint64_t *mysize;
     unsigned  sleep_time  = 0;
     int       test_method = 2;
-
-    pdcid_t *transfer_request_x, *transfer_request_y, *transfer_request_z, *transfer_request_px,
+    int       do_flush    = 0;
+    pdcid_t * transfer_request_x, *transfer_request_y, *transfer_request_z, *transfer_request_px,
         *transfer_request_py, *transfer_request_pz, *transfer_request_id1, *transfer_request_id2, *ptr,
         *temp_requests;
 
     uint64_t timestamps = 10;
 
     double start, end, transfer_start = .0, transfer_wait = .0, transfer_create = .0, transfer_close = .0,
-                       max_time, min_time, avg_time, total_time, start_total_time;
-
+                       flush_all = .0, max_time, min_time, avg_time, total_time, start_total_time;
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -113,12 +113,20 @@ main(int argc, char **argv)
     if (argc >= 5) {
         test_method = atoi(argv[4]);
     }
+    if (argc >= 6) {
+        region_partition = atoi(argv[5]);
+    }
+
+    if (argc >= 7) {
+        do_flush = atoi(argv[6]);
+    }
 
     if (!rank) {
-        printf("sleep time = %u, timestamps = %" PRIu64 ", numparticles = %" PRIu64 ", test_method = %d\n",
-               sleep_time, timestamps, numparticles, test_method);
+        printf("sleep time = %u, timestamps = %" PRIu64 ", numparticles = %" PRIu64
+               ", test_method = %d, region_ partition = %d\n",
+               sleep_time, timestamps, numparticles, test_method, (int)region_partition);
     }
-    dims[0] = numparticles * timestamps * size;
+    dims[0] = numparticles * size;
 
     x = (float *)malloc(numparticles * sizeof(float));
     y = (float *)malloc(numparticles * sizeof(float));
@@ -155,6 +163,22 @@ main(int argc, char **argv)
     PDCprop_set_obj_user_id(obj_prop_xx, getuid());
     PDCprop_set_obj_app_name(obj_prop_xx, "VPICIO");
     PDCprop_set_obj_tags(obj_prop_xx, "tag0=1");
+    switch (region_partition) {
+        case 0: {
+            PDCprop_set_obj_transfer_region_type(obj_prop_xx, PDC_OBJ_STATIC);
+            break;
+        }
+        case 1: {
+            PDCprop_set_obj_transfer_region_type(obj_prop_xx, PDC_REGION_STATIC);
+            break;
+        }
+        case 2: {
+            PDCprop_set_obj_transfer_region_type(obj_prop_xx, PDC_REGION_DYNAMIC);
+            break;
+        }
+        default: {
+        }
+    }
 
     obj_prop_yy = PDCprop_obj_dup(obj_prop_xx);
     PDCprop_set_obj_type(obj_prop_yy, PDC_FLOAT);
@@ -275,6 +299,7 @@ main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
     start_total_time = MPI_Wtime();
 #endif
+
     for (i = 0; i < timestamps; ++i) {
 
         offset_remote[0] = rank * numparticles;
@@ -376,7 +401,6 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         transfer_create += MPI_Wtime() - start;
 #endif
-
         for (j = 0; j < numparticles; j++) {
             id1[j] = j;
             id2[j] = j * 2;
@@ -441,6 +465,16 @@ main(int argc, char **argv)
         }
 #ifdef ENABLE_MPI
         transfer_start += MPI_Wtime() - start;
+#endif
+
+#ifdef ENABLE_MPI
+        start = MPI_Wtime();
+#endif
+        if (i && do_flush) {
+            PDCobj_flush_all_start();
+        }
+#ifdef ENABLE_MPI
+        flush_all += MPI_Wtime() - start;
 #endif
         if (sleep_time) {
             sleep(sleep_time);
@@ -607,7 +641,7 @@ main(int argc, char **argv)
     total_time = MPI_Wtime() - start_total_time;
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-
+    PDC_timing_report("write");
     for (i = 0; i < timestamps; ++i) {
         if (PDCobj_close(obj_xx[i]) < 0) {
             printf("fail to close obj_xx\n");
@@ -644,9 +678,6 @@ main(int argc, char **argv)
     }
 
     free(transfer_request_x);
-#ifdef PDC_TIMING
-    PDC_timing_report("write");
-#endif
 
 #ifdef ENABLE_MPI
     MPI_Reduce(&transfer_create, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
@@ -672,6 +703,12 @@ main(int argc, char **argv)
     MPI_Reduce(&transfer_close, &min_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
     if (!rank) {
         printf("transfer close: %lf - %lf - %lf\n", min_time, avg_time / size, max_time);
+    }
+    MPI_Reduce(&flush_all, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&flush_all, &avg_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&flush_all, &min_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    if (!rank) {
+        printf("flush all: %lf - %lf - %lf\n", min_time, avg_time / size, max_time);
     }
     MPI_Reduce(&total_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     MPI_Reduce(&total_time, &avg_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);

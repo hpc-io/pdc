@@ -32,7 +32,6 @@
 #include <math.h>
 #include <inttypes.h>
 #include "pdc.h"
-#include "pdc_timing.h"
 
 #define NPARTICLES 8388608
 
@@ -298,9 +297,7 @@ main(int argc, char **argv)
     if (ret != SUCCEED)
         printf("region id22 unmap failed\n");
 
-#ifdef PDC_TIMING
     PDC_timing_report("read");
-#endif
 
     if (PDCobj_close(obj_xx) < 0)
         printf("fail to close obj_xx\n");

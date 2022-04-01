@@ -32,7 +32,7 @@
 #include <sys/time.h>
 #include "pdc.h"
 #define BUF_LEN 256
-#define OBJ_NUM 10
+#define OBJ_NUM 13
 
 int
 main(int argc, char **argv)
@@ -58,10 +58,10 @@ main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
     if (argc >= 2) {
-        start_method = atoi(argv[0]);
+        start_method = atoi(argv[1]);
     }
     if (argc >= 3) {
-        wait_method = atoi(argv[1]);
+        wait_method = atoi(argv[2]);
     }
 
     data         = (int **)malloc(sizeof(int *) * OBJ_NUM);
@@ -124,6 +124,26 @@ main(int argc, char **argv)
     // create many objects
     obj = (pdcid_t *)malloc(sizeof(pdcid_t) * OBJ_NUM);
     for (i = 0; i < OBJ_NUM; ++i) {
+        switch (i % 4) {
+            case 0: {
+                ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_REGION_STATIC);
+                break;
+            }
+            case 1: {
+                ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_OBJ_STATIC);
+                break;
+            }
+            case 2: {
+                ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_REGION_LOCAL);
+                break;
+            }
+            case 3: {
+                ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_REGION_DYNAMIC);
+                break;
+            }
+            default: {
+            }
+        }
         sprintf(obj_name, "o%d_%d", i, rank);
         obj[i] = PDCobj_create(cont, obj_name, obj_prop);
         if (obj[i] > 0) {
