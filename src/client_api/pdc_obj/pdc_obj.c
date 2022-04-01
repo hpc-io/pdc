@@ -582,7 +582,11 @@ PDCobj_open_common(const char *obj_name, pdcid_t pdc, int is_col)
     if (!p->obj_pt->obj_prop_pub->dims)
         PGOTO_ERROR(0, "cannot allocate ret_value->obj_prop_pub->dims");
 
+    for (i = 0; i < out->ndim; i++)
+        p->obj_pt->obj_prop_pub->dims[i] = out->dims[i];
+/*
     memcpy(p->obj_pt->obj_prop_pub->dims, out->dims, sizeof(uint64_t) * out->ndim);
+*/
     /* 'app_name' is a char array */
     if (strlen(out->app_name) > 0)
         p->obj_pt->app_name = strdup(out->app_name);
