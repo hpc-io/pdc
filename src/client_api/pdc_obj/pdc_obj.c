@@ -954,14 +954,14 @@ PDCobj_set_dims(pdcid_t obj_id, int ndim, uint64_t *dims)
         goto done;
     }
 
-    if (ndim != ((pdc_metadata_t *)(object->metadata))->ndim) {
+    if (ndim != (int)((pdc_metadata_t *)(object->metadata))->ndim) {
         fprintf(stderr, "PDCobj_set_dims: input dimension size is wrong %d != %d @ line %d\n", ndim,
-                ((pdc_metadata_t *)(object->metadata))->ndim, __LINE__);
+                (int)object->obj_pt->obj_prop_pub->ndim, __LINE__);
     }
     memcpy(object->obj_pt->obj_prop_pub->dims, dims, ndim * sizeof(uint64_t));
     memcpy(((pdc_metadata_t *)(object->metadata))->dims, dims, ndim * sizeof(uint64_t));
 
-    PDC_Client_obj_reset_dims(object->> obj_info_pub->name, object->obj_pt->time_step, ndim, dims, &reset);
+    PDC_Client_obj_reset_dims(object->obj_info_pub->name, object->obj_pt->time_step, ndim, dims, &reset);
 
     if (!reset) {
         // Server rejects reset object dims for some reasons, so we close this operation.
@@ -989,7 +989,6 @@ PDCobj_get_dims(pdcid_t obj_id, int *ndim, uint64_t **dims)
     *dims  = (uint64_t *)malloc(sizeof(uint64_t) * ndim[0]);
     memcpy(*dims, object->obj_pt->obj_prop_pub->dims, sizeof(uint64_t) * ndim[0]);
 
-done:
     FUNC_LEAVE(ret_value);
 }
 

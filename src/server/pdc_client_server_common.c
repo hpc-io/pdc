@@ -266,6 +266,7 @@ PDC_get_var_type_size(pdc_var_type_t dtype)
         case PDC_INT8:
             ret_value = sizeof(int8_t);
 
+
             goto done;
             break;
         case PDC_INT64:
@@ -1724,6 +1725,7 @@ HG_TEST_RPC_CB(metadata_query, handle)
     FUNC_LEAVE(ret_value);
 }
 
+
 /* static hg_return_t */
 /* obj_reset_dims_cb(hg_handle_t handle) */
 HG_TEST_RPC_CB(obj_reset_dims, handle)
@@ -1750,13 +1752,13 @@ HG_TEST_RPC_CB(obj_reset_dims, handle)
     if (query_result != NULL) {
         out.ret = 2;
         if (in.ndim >= 1) {
-            query_result.dims[0] = dims0;
+            query_result->dims[0] = in.dims0;
         }
         if (in.ndim >= 2) {
-            query_result.dims[1] = dims1;
+            query_result->dims[1] = in.dims1;
         }
         if (in.ndim == 3) {
-            query_result.dims[2] = dims2;
+            query_result->dims[2] = in.dims2;
         }
     }
     else {

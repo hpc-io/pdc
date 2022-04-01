@@ -362,7 +362,7 @@ done:
 }
 
 static hg_return_t
-client_send_obj_reset_dims_rpc_cb(const struct hg_cb_info *callback_info)
+obj_reset_dims_rpc_cb(const struct hg_cb_info *callback_info)
 {
     hg_return_t                      ret_value = HG_SUCCESS;
     hg_handle_t                      handle;
@@ -376,7 +376,7 @@ client_send_obj_reset_dims_rpc_cb(const struct hg_cb_info *callback_info)
 
     ret_value = HG_Get_output(handle, &output);
     if (ret_value != HG_SUCCESS) {
-        printf("PDC_CLIENT[%d]: client_send_obj_reset_dims_rpc_cb error with HG_Get_output\n",
+        printf("PDC_CLIENT[%d]: obj_reset_dims_rpc_cb error with HG_Get_output\n",
                pdc_client_mpi_rank_g);
         region_transfer_args->ret = -1;
         goto done;
@@ -2490,8 +2490,6 @@ PDC_Client_obj_reset_dims(const char *obj_name, int time_step, int ndim, uint64_
     server_id       = (hash_name_value + time_step);
     server_id %= pdc_server_num_g;
 
-    *metadata_server_id = server_id;
-
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
@@ -2505,21 +2503,16 @@ PDC_Client_obj_reset_dims(const char *obj_name, int time_step, int ndim, uint64_
     in.obj_name   = obj_name;
     in.hash_value = PDC_get_hash_by_name(obj_name);
     in.time_step  = time_step;
-    in.obj_ndim   = obj_ndim;
+    in.ndim   = ndim;
     if (in.ndim >= 1) {
-        in.dim0 = dims[0];
+        in.dims0 = dims[0];
     }
     if (in.ndim >= 2) {
-        in.dim1 = dims[1];
+        in.dims1 = dims[1];
     }
     if (in.ndim >= 3) {
-        in.dim2 = dims[2];
+        in.dims2 = dims[2];
     }
-
-    lookup_args.data = (pdc_metadata_t *)malloc(sizeof(pdc_metadata_t));
-    if (lookup_args.data == NULL)
-        PGOTO_ERROR(FAIL, "==PDC_CLIENT: ERROR - PDC_Client_query_metadata_with_name() "
-                          "cannnot allocate space for client_lookup_args->data");
 
     hg_ret = HG_Forward(obj_reset_dims_handle, obj_reset_dims_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS)
@@ -3624,6 +3617,7 @@ PDC_Client_region_lock(pdcid_t remote_obj_id, struct _pdc_obj_info *object_info,
     struct _pdc_region_lock_args lookup_args;
     hg_handle_t                  region_lock_handle;
 
+
     FUNC_ENTER(NULL);
 #ifdef PDC_TIMING
     double start          = MPI_Wtime(), end;
@@ -3837,6 +3831,7 @@ pdc_region_release_with_server_analysis(struct _pdc_obj_info *  object_info,
     FUNC_ENTER(NULL);
 
     if (pdc_server_selection_g != PDC_SERVER_DEFAULT) {
+
         server_id      = object_info->obj_info_pub->server_id;
         meta_server_id = server_id;
     }

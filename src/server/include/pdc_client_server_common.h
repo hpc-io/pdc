@@ -732,9 +732,9 @@ typedef struct {
     hg_const_string_t obj_name;
     uint32_t          hash_value;
     int32_t           time_step;
-    uint64_t          dim0;
-    uint64_t          dim1;
-    uint64_t          dim2;
+    uint64_t          dims0;
+    uint64_t          dims1;
+    uint64_t          dims2;
     int32_t           ndim;
 } obj_reset_dims_in_t;
 
