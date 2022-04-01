@@ -376,8 +376,7 @@ obj_reset_dims_rpc_cb(const struct hg_cb_info *callback_info)
 
     ret_value = HG_Get_output(handle, &output);
     if (ret_value != HG_SUCCESS) {
-        printf("PDC_CLIENT[%d]: obj_reset_dims_rpc_cb error with HG_Get_output\n",
-               pdc_client_mpi_rank_g);
+        printf("PDC_CLIENT[%d]: obj_reset_dims_rpc_cb error with HG_Get_output\n", pdc_client_mpi_rank_g);
         region_transfer_args->ret = -1;
         goto done;
     }
@@ -2503,7 +2502,7 @@ PDC_Client_obj_reset_dims(const char *obj_name, int time_step, int ndim, uint64_
     in.obj_name   = obj_name;
     in.hash_value = PDC_get_hash_by_name(obj_name);
     in.time_step  = time_step;
-    in.ndim   = ndim;
+    in.ndim       = ndim;
     if (in.ndim >= 1) {
         in.dims0 = dims[0];
     }
@@ -3616,7 +3615,6 @@ PDC_Client_region_lock(pdcid_t remote_obj_id, struct _pdc_obj_info *object_info,
     region_lock_in_t             in;
     struct _pdc_region_lock_args lookup_args;
     hg_handle_t                  region_lock_handle;
-
 
     FUNC_ENTER(NULL);
 #ifdef PDC_TIMING
