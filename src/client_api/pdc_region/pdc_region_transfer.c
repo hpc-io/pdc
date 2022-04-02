@@ -289,12 +289,13 @@ PDCregion_transfer_close(pdcid_t transfer_request_id)
     }
 
     // Check for consistency
+/*
     pdc_consistency_t consistency = transfer_request->consistency;
     if (consistency == PDC_CONSISTENCY_POSIX || consistency == PDC_CONSISTENCY_COMMIT ||
         consistency == PDC_CONSISTENCY_SESSION) {
         PDCregion_transfer_wait(transfer_request_id);
     }
-
+*/
     free(transfer_request->local_region_offset);
     free(transfer_request->metadata_id);
     free(transfer_request);
@@ -879,7 +880,7 @@ static int
 prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
                            pdc_transfer_request_start_all_pkg ***write_transfer_request_ptr,
                            pdc_transfer_request_start_all_pkg ***read_transfer_request_ptr,
-                           int *write_size_ptr, int *read_size_ptr)
+                           int *write_size_ptr, int *read_size_ptr, pdcid_t **posix_transfer_request_id_ptr, int *posix_size_ptr)
 {
     int                                  i, j;
     int                                  unit;
@@ -895,6 +896,9 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
     read_request_pkgs  = NULL;
     write_size         = 0;
     read_size          = 0;
+    posix_size_ptr[0]  = 0;
+    *posix_transfer_request_id_ptr = (pdcid_t *) malloc(sizeof(pdcid_t) * size);
+
     for (i = 0; i < size; ++i) {
         transferinfo     = PDC_find_id(transfer_request_id[i]);
         transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
@@ -903,6 +907,10 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
                    "line %d\n",
                    __LINE__);
             return 1;
+        }
+        if (transfer_request->consistency == PDC_CONSISTENCY_POSIX) {
+            posix_transfer_request_id_ptr[0][posix_size_ptr[0]] = transfer_request;
+            posix_size_ptr[0]++;
         }
 
         attach_local_transfer_request(transfer_request->obj_pointer, transfer_request_id[i]);
@@ -1277,16 +1285,18 @@ perr_t
 PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
 {
     perr_t                               ret_value  = SUCCEED;
-    int                                  write_size = 0, read_size = 0;
+    int                                  write_size = 0, read_size = 0, posix_size = 0;
+    int i;
     struct _pdc_id_info *                transferinfo;
     pdc_transfer_request *               transfer_request;
     pdc_transfer_request_start_all_pkg **write_transfer_requests = NULL, **read_transfer_requests = NULL;
+    pdcid_t *posix_transfer_request_id;
 
     FUNC_ENTER(NULL);
     // Split write and read requests. Handle them separately.
     // printf("PDCregion_transfer_start_all: checkpoint %d\n", __LINE__);
     prepare_start_all_requests(transfer_request_id, size, &write_transfer_requests, &read_transfer_requests,
-                               &write_size, &read_size);
+                               &write_size, &read_size, &posix_transfer_request_id, &posix_size);
     /*
         printf("PDCregion_transfer_start_all: checkpoint %d, write_size = %d, read_size = %d\n", __LINE__,
                write_size, read_size);
@@ -1308,11 +1318,8 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
     */
 
     // For POSIX consistency, we block here until the data is received by the server
-    transferinfo     = PDC_find_id(transfer_request_id[0]);
-    transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
-    if (transfer_request->consistency == PDC_CONSISTENCY_POSIX) {
-        PDCregion_transfer_wait_all(transfer_request_id, size);
-    }
+    PDCregion_transfer_wait_all(posix_transfer_request_id, posix_size);
+    free(posix_transfer_request_id);
 
     // Clean up memory
     finish_start_all_requests(write_transfer_requests, read_transfer_requests, write_size, read_size);
@@ -1658,6 +1665,10 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
     pdc_transfer_request *transfer_request;
 
     FUNC_ENTER(NULL);
+    if ( !size ) {
+        goto done;
+    }
+
     // printf("entered PDCregion_transfer_wait_all @ line %d\n", __LINE__);
     total_requests        = 0;
     transfer_request_head = NULL;
