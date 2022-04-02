@@ -289,13 +289,13 @@ PDCregion_transfer_close(pdcid_t transfer_request_id)
     }
 
     // Check for consistency
-/*
-    pdc_consistency_t consistency = transfer_request->consistency;
-    if (consistency == PDC_CONSISTENCY_POSIX || consistency == PDC_CONSISTENCY_COMMIT ||
-        consistency == PDC_CONSISTENCY_SESSION) {
-        PDCregion_transfer_wait(transfer_request_id);
-    }
-*/
+    /*
+        pdc_consistency_t consistency = transfer_request->consistency;
+        if (consistency == PDC_CONSISTENCY_POSIX || consistency == PDC_CONSISTENCY_COMMIT ||
+            consistency == PDC_CONSISTENCY_SESSION) {
+            PDCregion_transfer_wait(transfer_request_id);
+        }
+    */
     free(transfer_request->local_region_offset);
     free(transfer_request->metadata_id);
     free(transfer_request);
@@ -880,7 +880,8 @@ static int
 prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
                            pdc_transfer_request_start_all_pkg ***write_transfer_request_ptr,
                            pdc_transfer_request_start_all_pkg ***read_transfer_request_ptr,
-                           int *write_size_ptr, int *read_size_ptr, pdcid_t **posix_transfer_request_id_ptr, int *posix_size_ptr)
+                           int *write_size_ptr, int *read_size_ptr, pdcid_t **posix_transfer_request_id_ptr,
+                           int *posix_size_ptr)
 {
     int                                  i, j;
     int                                  unit;
@@ -892,12 +893,12 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
     pdc_transfer_request *transfer_request;
     int                   set_output_buf = 0;
 
-    write_request_pkgs = NULL;
-    read_request_pkgs  = NULL;
-    write_size         = 0;
-    read_size          = 0;
-    posix_size_ptr[0]  = 0;
-    *posix_transfer_request_id_ptr = (pdcid_t *) malloc(sizeof(pdcid_t) * size);
+    write_request_pkgs             = NULL;
+    read_request_pkgs              = NULL;
+    write_size                     = 0;
+    read_size                      = 0;
+    posix_size_ptr[0]              = 0;
+    *posix_transfer_request_id_ptr = (pdcid_t *)malloc(sizeof(pdcid_t) * size);
 
     for (i = 0; i < size; ++i) {
         transferinfo     = PDC_find_id(transfer_request_id[i]);
@@ -1287,7 +1288,7 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
     perr_t                               ret_value  = SUCCEED;
     int                                  write_size = 0, read_size = 0, posix_size = 0;
     pdc_transfer_request_start_all_pkg **write_transfer_requests = NULL, **read_transfer_requests = NULL;
-    pdcid_t *posix_transfer_request_id;
+    pdcid_t *                            posix_transfer_request_id;
 
     FUNC_ENTER(NULL);
     // Split write and read requests. Handle them separately.
@@ -1662,7 +1663,7 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
     pdc_transfer_request *transfer_request;
 
     FUNC_ENTER(NULL);
-    if ( !size ) {
+    if (!size) {
         goto done;
     }
 
