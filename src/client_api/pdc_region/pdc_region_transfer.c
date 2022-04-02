@@ -71,6 +71,9 @@ typedef struct pdc_transfer_request {
     int **                 bulk_buf_ref;
     pdc_region_partition_t region_partition;
 
+    // Consistency semantics required by user
+    pdc_consistency_t consistency;
+
     // Dynamic object partitioning (static region partitioning and dynamic region partitioning)
     int       n_obj_servers;
     uint32_t *obj_servers;
@@ -219,7 +222,9 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
     p->data_server_id     = ((pdc_metadata_t *)obj2->metadata)->data_server_id;
     p->metadata_server_id = obj2->obj_info_pub->metadata_server_id;
     p->unit               = PDC_get_var_type_size(p->mem_type);
+    p->consistency        = obj2->obj_pt->obj_prop_pub->consistency;
     unit                  = p->unit;
+
     /*
         printf("creating a request from obj %s metadata id = %llu, access_type = %d\n",
        obj2->obj_info_pub->name, (long long unsigned)obj2->obj_info_pub->meta_id, access_type);
@@ -282,6 +287,14 @@ PDCregion_transfer_close(pdcid_t transfer_request_id)
     if (transfer_request->metadata_id == NULL) {
         goto done;
     }
+
+    // Check for consistency
+    pdc_consistency_t consistency = transfer_request->consistency;
+    if (consistency == PDC_CONSISTENCY_POSIX || consistency == PDC_CONSISTENCY_COMMIT ||
+        consistency == PDC_CONSISTENCY_SESSION) {
+        PDCregion_transfer_wait(transfer_request_id);
+    }
+
     free(transfer_request->local_region_offset);
     free(transfer_request->metadata_id);
     free(transfer_request);
@@ -1265,6 +1278,8 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
 {
     perr_t                               ret_value  = SUCCEED;
     int                                  write_size = 0, read_size = 0;
+    struct _pdc_id_info *                transferinfo;
+    pdc_transfer_request *               transfer_request;
     pdc_transfer_request_start_all_pkg **write_transfer_requests = NULL, **read_transfer_requests = NULL;
 
     FUNC_ENTER(NULL);
@@ -1291,6 +1306,14 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
         fprintf(stderr, "PDCregion_transfer_start_all: checkpoint %d\n", __LINE__);
         MPI_Barrier(MPI_COMM_WORLD);
     */
+
+    // For POSIX consistency, we block here until the data is received by the server
+    transferinfo     = PDC_find_id(transfer_request_id[0]);
+    transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
+    if (transfer_request->consistency == PDC_CONSISTENCY_POSIX) {
+        PDCregion_transfer_wait_all(transfer_request_id, size);
+    }
+
     // Clean up memory
     finish_start_all_requests(write_transfer_requests, read_transfer_requests, write_size, read_size);
     // fprintf(stderr, "PDCregion_transfer_start_all: checkpoint %d\n", __LINE__);
@@ -1331,7 +1354,7 @@ static int sorted_array_unions(const int **array, const int *input_size, int n_a
         if (!temp_n_arrays) {
             break;
         }
-        // Now we figure out the minimum element of the remaining lists and append it to the end of output array        
+        // Now we figure out the minimum element of the remaining lists and append it to the end of output array
         min = -1;
         for ( i = 0; i < n_arrays; ++i ) {
             if ( size[i] == input_size[i] ) {
@@ -1448,6 +1471,12 @@ PDCregion_transfer_start(pdcid_t transfer_request_id)
             transfer_request->remote_region_offset, transfer_request->remote_region_size, unit,
             transfer_request->access_type, transfer_request->metadata_id);
     }
+
+    // For POSIX consistency, we block here until the data is received by the server
+    if (transfer_request->consistency == PDC_CONSISTENCY_POSIX) {
+        PDCregion_transfer_wait(transfer_request_id);
+    }
+
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);

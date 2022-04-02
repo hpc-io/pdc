@@ -315,6 +315,7 @@ PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_
         p->obj_pt->obj_prop_pub->dims[i] = obj_prop->obj_prop_pub->dims[i];
     p->obj_pt->obj_prop_pub->type             = obj_prop->obj_prop_pub->type;
     p->obj_pt->obj_prop_pub->region_partition = obj_prop->obj_prop_pub->region_partition;
+    p->obj_pt->obj_prop_pub->consistency      = obj_prop->obj_prop_pub->consistency;
     if (obj_prop->app_name)
         p->obj_pt->app_name = strdup(obj_prop->app_name);
     if (obj_prop->data_loc)
@@ -912,6 +913,26 @@ PDCprop_set_obj_transfer_region_type(pdcid_t obj_prop, pdc_region_partition_t re
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
     prop                                 = (struct _pdc_obj_prop *)(info->obj_ptr);
     prop->obj_prop_pub->region_partition = region_partition;
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDCprop_set_obj_consistency_semantics(pdcid_t obj_prop, pdc_consistency_t consistency)
+{
+    perr_t                ret_value = SUCCEED;
+    struct _pdc_id_info * info;
+    struct _pdc_obj_prop *prop;
+
+    FUNC_ENTER(NULL);
+
+    info = PDC_find_id(obj_prop);
+    if (info == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate object property ID");
+    prop                            = (struct _pdc_obj_prop *)(info->obj_ptr);
+    prop->obj_prop_pub->consistency = consistency;
 
 done:
     fflush(stdout);
