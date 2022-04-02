@@ -50,7 +50,7 @@
 #include <sys/shm.h>
 #include <sys/mman.h>
 #include "pdc_timing.h"
-#include "pdc_region_server_cache.h"
+#include "pdc_server_region_cache.h"
 
 #ifdef ENABLE_MULTITHREAD
 hg_thread_mutex_t insert_metadata_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
@@ -265,6 +265,7 @@ PDC_get_var_type_size(pdc_var_type_t dtype)
             break;
         case PDC_INT8:
             ret_value = sizeof(int8_t);
+
 
             goto done;
             break;
@@ -1723,6 +1724,7 @@ HG_TEST_RPC_CB(metadata_query, handle)
 
     FUNC_LEAVE(ret_value);
 }
+
 
 /* static hg_return_t */
 /* obj_reset_dims_cb(hg_handle_t handle) */
@@ -4923,6 +4925,7 @@ HG_TEST_RPC_CB(update_region_loc, handle)
     }
 
     out.ret   = 20171031;
+
     ret_value = PDC_Server_update_local_region_storage_loc(input_region, in.obj_id, in.type);
     if (ret_value != SUCCEED) {
         out.ret = -1;

@@ -37,7 +37,7 @@
 #include "mercury_config.h"
 #include "mercury_thread_pool.h"
 #include "pdc_timing.h"
-#include "pdc_region_transfer_metadata_query.h"
+#include "pdc_server_region_transfer_metadata_query.h"
 #include "pdc_server_region_transfer.h"
 
 #ifdef ENABLE_MULTITHREAD
