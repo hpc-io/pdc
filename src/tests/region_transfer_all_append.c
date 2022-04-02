@@ -400,10 +400,10 @@ main(int argc, char **argv)
         sprintf(obj_name, "o%d_%d", i, rank);
         obj[i] = PDCobj_open(obj_name, pdc);
         if (obj[i] > 0) {
-            printf("Create an object o1\n");
+            printf("Open an object @ line  %d!\n", __LINE__);
         }
         else {
-            printf("Fail to create object @ line  %d!\n", __LINE__);
+            printf("Fail to open object @ line  %d!\n", __LINE__);
             ret_value = 1;
         }
     }

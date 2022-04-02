@@ -273,7 +273,7 @@ transfer_request_wait_all_bulk_transfer_cb(const struct hg_cb_info *info)
         transfer_request_id = *((pdcid_t *)ptr);
         ptr += sizeof(pdcid_t);
         status = PDC_check_request(transfer_request_id);
-        // printf("processing transfer_id = %llu\n", (long long unsigned)transfer_request_id);
+        //printf("processing transfer_id = %llu, pdc_server_rank = %d\n", (long long unsigned)transfer_request_id, get_server_rank());
         if (status == PDC_TRANSFER_STATUS_PENDING) {
             PDC_try_finish_request(transfer_request_id, local_bulk_args->handle, handle_ref, 1);
         }
