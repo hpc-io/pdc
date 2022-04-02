@@ -909,7 +909,7 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
             return 1;
         }
         if (transfer_request->consistency == PDC_CONSISTENCY_POSIX) {
-            posix_transfer_request_id_ptr[0][posix_size_ptr[0]] = transfer_request;
+            posix_transfer_request_id_ptr[0][posix_size_ptr[0]] = transfer_request_id[i];
             posix_size_ptr[0]++;
         }
 
@@ -1286,9 +1286,6 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
 {
     perr_t                               ret_value  = SUCCEED;
     int                                  write_size = 0, read_size = 0, posix_size = 0;
-    int i;
-    struct _pdc_id_info *                transferinfo;
-    pdc_transfer_request *               transfer_request;
     pdc_transfer_request_start_all_pkg **write_transfer_requests = NULL, **read_transfer_requests = NULL;
     pdcid_t *posix_transfer_request_id;
 
