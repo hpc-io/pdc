@@ -32,7 +32,7 @@
 #include <sys/time.h>
 #include "pdc.h"
 #define BUF_LEN 4096
-#define OBJ_NUM 4
+#define OBJ_NUM 20
 
 int
 main(int argc, char **argv)
@@ -115,11 +115,25 @@ main(int argc, char **argv)
     // create many objects
     obj = (pdcid_t *)malloc(sizeof(pdcid_t) * OBJ_NUM);
     for (i = 0; i < OBJ_NUM; ++i) {
-        if (i % 2) {
-            ret = PDCprop_set_obj_type(obj_prop, PDC_REGION_STATIC);
-        }
-        else {
-            ret = PDCprop_set_obj_type(obj_prop, PDC_OBJ_STATIC);
+        switch (i % 4) {
+            case 0: {
+                ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_REGION_STATIC);
+                break;
+            }
+            case 1: {
+                ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_OBJ_STATIC);
+                break;
+            }
+            case 2: {
+                ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_REGION_LOCAL);
+                break;
+            }
+            case 3: {
+                ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_REGION_DYNAMIC);
+                break;
+            }
+            default: {
+            }
         }
         sprintf(obj_name, "o%d_%d", i, rank);
         obj[i] = PDCobj_create(cont, obj_name, obj_prop);

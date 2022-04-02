@@ -1,9 +1,6 @@
 # ignore swp files
 *.swp
 
-# build dir
-*build*
-
 # exes
 *.exe
 

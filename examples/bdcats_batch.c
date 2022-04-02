@@ -32,7 +32,6 @@
 #include <math.h>
 #include <inttypes.h>
 #include "pdc.h"
-#include "pdc_timing.h"
 
 #define NPARTICLES 8388608
 #define N_OBJS     8
@@ -586,9 +585,6 @@ main(int argc, char **argv)
     }
 
     free(transfer_request_x);
-#ifdef PDC_TIMING
-    PDC_timing_report("read");
-#endif
 
 #ifdef ENABLE_MPI
     MPI_Reduce(&transfer_create, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
@@ -622,6 +618,7 @@ main(int argc, char **argv)
         printf("total: %lf - %lf - %lf\n", min_time, avg_time / size, max_time);
     }
 #endif
+    PDC_timing_report("read");
 
     free(obj_xx);
     free(obj_yy);
