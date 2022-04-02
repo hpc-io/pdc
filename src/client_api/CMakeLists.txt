@@ -81,6 +81,8 @@ set(PDC_SRCS
   ${PDC_SOURCE_DIR}/src/client_api/pdc_transform/pdc_transform.c
   ${PDC_SOURCE_DIR}/src/client_api/pdc_transform/pdc_transforms_common.c
   ${PDC_SOURCE_DIR}/src/server/pdc_client_server_common.c
+  ${PDC_SOURCE_DIR}/src/server/pdc_server_region_cache.c
+  ${PDC_SOURCE_DIR}/src/server/pdc_server_region_transfer_metadata_query.c
   ${PDC_SOURCE_DIR}/src/pdc_utils/pdc_timing.c
   ${PDC_SOURCE_DIR}/src/pdc_utils/pdc_malloc.c
   ${PDC_SOURCE_DIR}/src/pdc_utils/pdc_interface.c
