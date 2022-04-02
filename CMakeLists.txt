@@ -436,14 +436,13 @@ install(
     ${PDC_INSTALL_DATA_DIR}/test
 )
 
-install(
-  FILES
-    ${PDC_BINARY_DIR}/bin/pdc_server.exe
-
-    ${PDC_BINARY_DIR}/bin/close_server
-  DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/bin
-)
+#install(
+#  FILES
+#    ${PDC_BINARY_DIR}/bin/pdc_server.exe
+#    ${PDC_BINARY_DIR}/bin/close_server
+#  DESTINATION
+#    ${CMAKE_INSTALL_PREFIX}/bin
+#)
 
 #-----------------------------------------------------------------------------
 # CPack
