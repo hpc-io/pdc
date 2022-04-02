@@ -266,7 +266,6 @@ PDC_get_var_type_size(pdc_var_type_t dtype)
         case PDC_INT8:
             ret_value = sizeof(int8_t);
 
-
             goto done;
             break;
         case PDC_INT64:
@@ -1724,7 +1723,6 @@ HG_TEST_RPC_CB(metadata_query, handle)
 
     FUNC_LEAVE(ret_value);
 }
-
 
 /* static hg_return_t */
 /* obj_reset_dims_cb(hg_handle_t handle) */
@@ -4924,7 +4922,7 @@ HG_TEST_RPC_CB(update_region_loc, handle)
         PDC_copy_hist(input_region->region_hist, &in.hist);
     }
 
-    out.ret   = 20171031;
+    out.ret = 20171031;
 
     ret_value = PDC_Server_update_local_region_storage_loc(input_region, in.obj_id, in.type);
     if (ret_value != SUCCEED) {

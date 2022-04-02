@@ -477,7 +477,8 @@ transfer_request_metadata_reg_append(pdc_region_metadata_pkg *regions, int ndim,
     memcpy(regions->reg_size, reg_size, sizeof(uint64_t) * ndim);
 
     if (region_partition == PDC_REGION_DYNAMIC) {
-        //printf("transfer_request_metadata_reg_append: checkpoint @ line %d, pdc_server_size = %d, ndim = %d\n", __LINE__, pdc_server_size, ndim);
+        // printf("transfer_request_metadata_reg_append: checkpoint @ line %d, pdc_server_size = %d, ndim =
+        // %d\n", __LINE__, pdc_server_size, ndim);
         min_bytes        = data_server_bytes[0];
         min_bytes_server = 0;
 
@@ -493,7 +494,8 @@ transfer_request_metadata_reg_append(pdc_region_metadata_pkg *regions, int ndim,
             total_reg_size *= reg_size[i];
         }
         data_server_bytes[min_bytes_server] += total_reg_size;
-        //printf("transfer_request_metadata_reg_append: checkpoint @ line %d, pdc_server_size = %d, ndim = %d, data_server_id = %d\n", __LINE__, pdc_server_size, ndim, (int) regions->data_server_id);
+        // printf("transfer_request_metadata_reg_append: checkpoint @ line %d, pdc_server_size = %d, ndim =
+        // %d, data_server_id = %d\n", __LINE__, pdc_server_size, ndim, (int) regions->data_server_id);
     }
     else {
         regions->data_server_id = data_server_id;
