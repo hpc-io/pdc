@@ -61,10 +61,6 @@ if(PDC_ENABLE_TIMING)
     add_definitions(-DPDC_TIMING=1)
 endif()
 
-if(PDC_ENABLE_TIMING)
-    add_definitions(-DPDC_TIMING=1)
-endif()
-
 #------------------------------------------------------------------------------
 # Set sources
 #------------------------------------------------------------------------------

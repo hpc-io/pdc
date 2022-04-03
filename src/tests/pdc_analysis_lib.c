@@ -82,9 +82,11 @@ check_mpi_access()
         int rank;
         int size;
 
+#ifdef ENABLE_MPI
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
         MPI_Comm_size(MPI_COMM_WORLD, &size);
         printf("MPI rank is %d of %d\n", rank, size);
+#endif
     }
 
     return 0;

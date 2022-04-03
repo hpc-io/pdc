@@ -392,7 +392,6 @@ main(int argc, char **argv)
         printf("region id22 unmap failed\n");
         return 1;
     }
-
     PDC_timing_report("write");
     if (PDCobj_close(obj_xx) < 0) {
         printf("fail to close obj_xx\n");

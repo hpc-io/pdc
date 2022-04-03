@@ -197,10 +197,10 @@ PDCregion_create(psize_t ndims, uint64_t *offset, uint64_t *size)
         (p->offset)[i] = offset[i];
         (p->size)[i]   = size[i];
     }
-    new_id           = PDC_id_register(PDC_REGION, p);
-    p->local_id      = new_id;
+    new_id      = PDC_id_register(PDC_REGION, p);
+    p->local_id = new_id;
     p->registered_op = 0;
-    ret_value        = new_id;
+    ret_value   = new_id;
 
 done:
     fflush(stdout);

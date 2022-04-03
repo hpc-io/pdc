@@ -83,7 +83,6 @@ set(PROGRAMS
   obj_transformation
   obj_transformation_old
   obj_type_transform
-  vpicio_v2
   query_data
   region_transfer
   region_transfer_status

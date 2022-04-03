@@ -37,7 +37,6 @@
 #include <time.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "pdc_region_cache.h"
 
 static perr_t PDC_obj_close(struct _pdc_obj_info *op);
 
@@ -491,32 +490,6 @@ PDCobj_flush_all_start()
 #endif
 
 perr_t
-PDCobj_flush_start(pdcid_t obj_id)
-{
-    perr_t ret_value = SUCCEED;
-
-    FUNC_ENTER(NULL);
-#ifdef PDC_SERVER_CACHE
-    PDC_Client_flush_obj(obj_id);
-#endif
-    fflush(stdout);
-    FUNC_LEAVE(ret_value);
-}
-
-perr_t
-PDCobj_flush_all_start()
-{
-    perr_t ret_value = SUCCEED;
-
-    FUNC_ENTER(NULL);
-#ifdef PDC_SERVER_CACHE
-    PDC_Client_flush_obj_all();
-#endif
-    fflush(stdout);
-    FUNC_LEAVE(ret_value);
-}
-
-perr_t
 PDCobj_close(pdcid_t obj_id)
 {
     perr_t ret_value = SUCCEED;
@@ -927,11 +900,7 @@ done:
 }
 
 perr_t
-<<<<<<< HEAD:src/api/pdc_obj.c
-PDCprop_set_obj_transfer_type(pdcid_t obj_prop, pdc_region_partition_t region_partition)
-=======
 PDCprop_set_obj_transfer_region_type(pdcid_t obj_prop, pdc_region_partition_t region_partition)
->>>>>>> develop:src/client_api/pdc_obj/pdc_obj.c
 {
     perr_t                ret_value = SUCCEED;
     struct _pdc_id_info * info;
@@ -951,8 +920,6 @@ done:
 }
 
 perr_t
-<<<<<<< HEAD:src/api/pdc_obj.c
-=======
 PDCprop_set_obj_consistency_semantics(pdcid_t obj_prop, pdc_consistency_t consistency)
 {
     perr_t                ret_value = SUCCEED;
@@ -973,7 +940,6 @@ done:
 }
 
 perr_t
->>>>>>> develop:src/client_api/pdc_obj/pdc_obj.c
 PDCprop_set_obj_buf(pdcid_t obj_prop, void *buf)
 {
     perr_t                ret_value = SUCCEED;
