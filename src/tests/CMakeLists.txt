@@ -80,6 +80,9 @@ set(PROGRAMS
   s3d-read3d
   openmsi-read3d
   nyx-read3d
+  iter_create
+  obj_analysis
+  obj_analysis_old
   obj_transformation
   obj_transformation_old
   obj_type_transform

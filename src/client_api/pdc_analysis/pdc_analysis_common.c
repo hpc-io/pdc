@@ -39,6 +39,7 @@
 
 size_t            analysis_registry_size  = 0;
 size_t            transform_registry_size = 0;
+hg_atomic_int32_t registered_analysis_ftn_count_g;
 hg_atomic_int32_t registered_transform_ftn_count_g;
 int *             i_cache_freed          = NULL;
 size_t            iterator_cache_entries = CACHE_SIZE;
@@ -73,9 +74,14 @@ PDC_Server_get_ftn_reference(char *ftn ATTRIBUTE(unused))
     return NULL;
 }
 int
-PDC_get_analysis_registry(struct _pdc_region_analysis_ftn_info ***registry ATTRIBUTE(unused))
+PDC_get_analysis_registry(struct _pdc_region_analysis_ftn_info ***registry)
 {
-    return 0;
+  if(registry)
+  {
+    *registry = pdc_region_analysis_registry;
+    return hg_atomic_get32(&registered_analysis_ftn_count_g);
+  }
+  return 0;
 };
 #endif
 
@@ -173,7 +179,7 @@ pdc_analysis_registry_finalize_()
 }
 
 int
-check_analysis(pdc_obj_transform_t op_type ATTRIBUTE(unused), struct pdc_region_info *dest_region)
+PDC_check_analysis(pdc_obj_transform_t op_type ATTRIBUTE(unused), struct pdc_region_info *dest_region)
 {
     int ret_value = 0;
     int i, count;
@@ -307,7 +313,7 @@ PDC_check_transform(pdc_obj_transform_t op_type, struct pdc_region_info *dest_re
         for (i = 0; i < count; i++) {
             if ((pdc_region_transform_registry[i]->op_type == op_type) &&
                 (pdc_region_transform_registry[i]->dest_region == dest_region)) {
-                dest_region->registered_op |= PDC_TRANSFORM;
+                dest_region->registered_op |= PDC_TRANSFORM; // FIXME: jjravi, merge transform and analysis
                 PGOTO_DONE(1);
             }
         }
