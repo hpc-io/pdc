@@ -3745,7 +3745,6 @@ pdc_region_release_with_server_transform(struct _pdc_obj_info *  object_info,
     in.transform_data_size = client_transform_size;
     in.client_data_ptr     = (uint64_t)client_transform_result;
 
-
     data_ptrs  = (void **)malloc(sizeof(void *));
     data_size  = (size_t *)malloc(sizeof(size_t));
     *data_ptrs = client_transform_result;
@@ -4144,9 +4143,8 @@ maybe_run_transform(struct _pdc_obj_info *object_info, struct pdc_region_info *r
                 *readyState      = registry[k]->nextState;
                 *transform_index = k;
             }
-
         }
-        //Check next for SERVER (post-data-xfer) transforms
+        // Check next for SERVER (post-data-xfer) transforms
         for (k = 0; k < registered_count; k++) {
             if ((registry[k]->dest_region == region_info) && (registry[k]->op_type == PDC_DATA_MAP) &&
                 (registry[k]->when == DATA_IN) && (registry[k]->readyState == *readyState)) {
@@ -4165,21 +4163,21 @@ maybe_run_transform(struct _pdc_obj_info *object_info, struct pdc_region_info *r
 
         type_size = PDC_get_var_type_size(registry[*transform_index]->type);
 
-        //Client side transform only
+        // Client side transform only
         if ((client_transform_size > 0) && (server_transform_size == 0)) {
             *transform_size = client_transform_size;
             ret_value       = pdc_region_release_with_server_transform(
                 object_info, region_info, access_type, data_type, type_size, *readyState, NULL,
                 client_transform_size, *transform_result, &status);
         }
-        //Client and Server side transforms
+        // Client and Server side transforms
         else if ((client_transform_size > 0) && (server_transform_size > 0)) {
             *transform_size = server_transform_size;
             ret_value       = pdc_region_release_with_server_transform(
                 object_info, region_info, access_type, data_type, type_size, *readyState,
                 registry[*transform_index], client_transform_size, *transform_result, &status);
         }
-        //Server side transform only
+        // Server side transform only
         else if (server_transform_size > 0) {
             *transform_size = server_transform_size;
             ret_value       = pdc_region_release_with_server_transform(
@@ -4195,7 +4193,7 @@ maybe_run_transform(struct _pdc_obj_info *object_info, struct pdc_region_info *r
                 puts("Server READ transform identified");
         }
         for (k = 0; k < registered_count; k++) {
-            //Check for CLIENT (post-data-xfer) transforms
+            // Check for CLIENT (post-data-xfer) transforms
             if ((registry[k]->dest_region == region_info) && (registry[k]->op_type == PDC_DATA_MAP) &&
                 (registry[k]->when == DATA_IN) && (registry[k]->readyState == *readyState)) {
 
@@ -4222,20 +4220,20 @@ PDC_Client_region_release(pdcid_t remote_obj_id, struct _pdc_obj_info *object_in
                           struct pdc_region_info *region_info, pdc_access_t access_type,
                           pdc_var_type_t data_type, pbool_t *status)
 {
-    perr_t ret_value = SUCCEED;
-    int readyState = 0, currentState;
-    hg_return_t      hg_ret;
-    uint32_t         server_id, meta_server_id;
-    region_lock_in_t in;
-    size_t                         type_extent;
-    struct _pdc_client_lookup_args lookup_args;
-    hg_handle_t                    region_release_handle = HG_HANDLE_NULL;
-    void *transform_result = NULL;
-    size_t transform_size = 0;
-    struct _pdc_region_transform_ftn_info **registry = NULL;
-    int transform_index;
-    int k, registered_count;
-    struct _pdc_region_analysis_ftn_info **analysis_registry;
+    perr_t                                  ret_value  = SUCCEED;
+    int                                     readyState = 0, currentState;
+    hg_return_t                             hg_ret;
+    uint32_t                                server_id, meta_server_id;
+    region_lock_in_t                        in;
+    size_t                                  type_extent;
+    struct _pdc_client_lookup_args          lookup_args;
+    hg_handle_t                             region_release_handle = HG_HANDLE_NULL;
+    void *                                  transform_result      = NULL;
+    size_t                                  transform_size        = 0;
+    struct _pdc_region_transform_ftn_info **registry              = NULL;
+    int                                     transform_index;
+    int                                     k, registered_count;
+    struct _pdc_region_analysis_ftn_info ** analysis_registry;
 
     FUNC_ENTER(NULL);
 #ifdef PDC_TIMING
@@ -4243,31 +4241,32 @@ PDC_Client_region_release(pdcid_t remote_obj_id, struct _pdc_obj_info *object_in
     double function_start = start;
 #endif
     type_extent = object_info->obj_pt->type_extent;
-        if (region_info->registered_op & PDC_TRANSFORM) {
-            transform_index = -1;
-            PDC_get_transforms(&registry);
-            // Get the current data_state of this object::
-            readyState = currentState = object_info->obj_pt->data_state;
-            ret_value = maybe_run_transform(object_info, region_info, access_type, data_type,
-                            &currentState, &transform_index, &transform_result, &transform_size);
-            if ((ret_value == SUCCEED) && (readyState != currentState)) {
-                update_metadata(object_info, data_type, type_extent, currentState,
-                                transform_size, registry[transform_index]);
+    if (region_info->registered_op & PDC_TRANSFORM) {
+        transform_index = -1;
+        PDC_get_transforms(&registry);
+        // Get the current data_state of this object::
+        readyState = currentState = object_info->obj_pt->data_state;
+        ret_value = maybe_run_transform(object_info, region_info, access_type, data_type, &currentState,
+                                        &transform_index, &transform_result, &transform_size);
+        if ((ret_value == SUCCEED) && (readyState != currentState)) {
+            update_metadata(object_info, data_type, type_extent, currentState, transform_size,
+                            registry[transform_index]);
+            PGOTO_DONE(ret_value);
+        }
+    }
+    // FIXME:  What if the user has coupled a transform with an analysis function?
+    // How do we provide the transformed data into the analysis?
+    if (region_info->registered_op & PDC_ANALYSIS) {
+        registered_count = PDC_get_analysis_registry(&analysis_registry);
+        for (k = 0; k < registered_count; k++) {
+            if (analysis_registry[k]->region_id[0] == region_info->local_id) {
+                ret_value =
+                    pdc_region_release_with_server_analysis(object_info, region_info, access_type, data_type,
+                                                            type_extent, analysis_registry[k], status);
                 PGOTO_DONE(ret_value);
             }
         }
-        // FIXME:  What if the user has coupled a transform with an analysis function?
-        // How do we provide the transformed data into the analysis?
-        if (region_info->registered_op & PDC_ANALYSIS) {
-            registered_count = PDC_get_analysis_registry(&analysis_registry);
-            for (k=0; k < registered_count; k++) {
-                if (analysis_registry[k]->region_id[0] == region_info->local_id) {
-                    ret_value = pdc_region_release_with_server_analysis(object_info, region_info,
-                        access_type, data_type, type_extent, analysis_registry[k], status);
-                    PGOTO_DONE(ret_value);
-                }
-            }
-        }
+    }
 
     // Compute data server and metadata server ids.
     server_id         = ((pdc_metadata_t *)object_info->metadata)->data_server_id;
