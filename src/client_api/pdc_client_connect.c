@@ -98,7 +98,7 @@ int           mercury_has_init_g = 0;
 hg_class_t *  send_class_g       = NULL;
 hg_context_t *send_context_g     = NULL;
 int           work_todo_g        = 0;
-int                  query_id_g         = 0;
+int           query_id_g         = 0;
 
 static hg_id_t client_test_connect_register_id_g;
 static hg_id_t gen_obj_register_id_g;
