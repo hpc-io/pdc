@@ -76,12 +76,11 @@ PDC_Server_get_ftn_reference(char *ftn ATTRIBUTE(unused))
 int
 PDC_get_analysis_registry(struct _pdc_region_analysis_ftn_info ***registry)
 {
-  if(registry)
-  {
-    *registry = pdc_region_analysis_registry;
-    return hg_atomic_get32(&registered_analysis_ftn_count_g);
-  }
-  return 0;
+    if (registry) {
+        *registry = pdc_region_analysis_registry;
+        return hg_atomic_get32(&registered_analysis_ftn_count_g);
+    }
+    return 0;
 };
 #endif
 
