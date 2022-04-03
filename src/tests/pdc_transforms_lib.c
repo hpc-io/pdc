@@ -1,6 +1,8 @@
 #include "pdc.h"
 #include <blosc.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
 static int
 _int_to_float(int *dataIn, float *dataOut, size_t elements)

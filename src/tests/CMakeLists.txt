@@ -101,7 +101,7 @@ set(PROGRAMS
   region_transfer_all_append_2D
   region_transfer_all_append_3D
   region_transfer_all_split_wait
-  region_transfer_set_dims
+  # region_transfer_set_dims
   #query_vpic_create_data
   #query_vpic
   #query_vpic_multi
@@ -167,6 +167,7 @@ endif()
 # *******************************************
 set(PDC_ANALYSIS_SRCS pdc_analysis_lib.c)
 add_library(pdcanalysis ${PDC_ANALYSIS_SRCS})
+target_include_directories(pdcanalysis PUBLIC ${PDC_SOURCE_DIR}/src/api/)
 target_link_libraries(pdcanalysis pdc)
 
 add_test(NAME pdc_init          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./pdc_init )
