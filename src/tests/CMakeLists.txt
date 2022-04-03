@@ -84,6 +84,7 @@ set(PROGRAMS
   region_transfer_all_append_2D
   region_transfer_all_append_3D
   region_transfer_all_split_wait
+  region_transfer_set_dims
   #query_vpic_create_data
   #query_vpic
   #query_vpic_multi
@@ -258,6 +259,7 @@ set_tests_properties(region_transfer_3D_skewed     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_partial     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_2D_partial  PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_3D_partial  PROPERTIES LABELS serial )
+
 set_tests_properties(region_transfer_overlap     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_overlap_2D     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_overlap_3D     PROPERTIES LABELS serial )
