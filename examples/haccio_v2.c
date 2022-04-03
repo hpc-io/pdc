@@ -74,6 +74,7 @@ create_pdc_object(pdcid_t pdc_id, pdcid_t cont_id, const char *obj_name, pdc_var
     PDCprop_set_obj_time_step(*obj_prop, 0);
     PDCprop_set_obj_user_id(*obj_prop, getuid());
     PDCprop_set_obj_app_name(*obj_prop, "HACCIO");
+    PDCprop_set_obj_consistency_semantics(*obj_prop, PDC_CONSISTENCY_POSIX);
 
     pdcid_t obj_id = PDCobj_create_mpi(cont_id, obj_name, *obj_prop, 0, comm);
     if (obj_id == 0) {

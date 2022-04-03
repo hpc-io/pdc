@@ -32,7 +32,6 @@
 #include <math.h>
 #include <inttypes.h>
 #include "pdc.h"
-#include "pdc_timing.h"
 
 #define NPARTICLES 8388608
 #define N_OBJS     8
@@ -166,15 +165,15 @@ main(int argc, char **argv)
     PDCprop_set_obj_tags(obj_prop_xx, "tag0=1");
     switch (region_partition) {
         case 0: {
-            PDCprop_set_obj_transfer_type(obj_prop_xx, PDC_OBJ_STATIC);
+            PDCprop_set_obj_transfer_region_type(obj_prop_xx, PDC_OBJ_STATIC);
             break;
         }
         case 1: {
-            PDCprop_set_obj_transfer_type(obj_prop_xx, PDC_REGION_STATIC);
+            PDCprop_set_obj_transfer_region_type(obj_prop_xx, PDC_REGION_STATIC);
             break;
         }
         case 2: {
-            PDCprop_set_obj_transfer_type(obj_prop_xx, PDC_REGION_DYNAMIC);
+            PDCprop_set_obj_transfer_region_type(obj_prop_xx, PDC_REGION_DYNAMIC);
             break;
         }
         default: {
@@ -642,7 +641,7 @@ main(int argc, char **argv)
     total_time = MPI_Wtime() - start_total_time;
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-
+    PDC_timing_report("write");
     for (i = 0; i < timestamps; ++i) {
         if (PDCobj_close(obj_xx[i]) < 0) {
             printf("fail to close obj_xx\n");
@@ -679,9 +678,7 @@ main(int argc, char **argv)
     }
 
     free(transfer_request_x);
-#ifdef PDC_TIMING
-    PDC_timing_report("write");
-#endif
+
 
 #ifdef ENABLE_MPI
     MPI_Reduce(&transfer_create, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);

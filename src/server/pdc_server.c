@@ -54,7 +54,8 @@
 #include "pdc_server_metadata.h"
 #include "pdc_server_data.h"
 #include "pdc_timing.h"
-#include "pdc_region_cache.h"
+#include "pdc_server_region_cache.h"
+#include "pdc_server_region_transfer_metadata_query.h"
 
 #ifdef PDC_HAS_CRAY_DRC
 #include <rdmacred.h>
@@ -615,28 +616,9 @@ PDC_Server_set_close(void)
 
     while (hg_atomic_get32(&close_server_g) == 0) {
         // Exit from the loop, start finalize process
-        // PDC cache finalize, has to be done here in case of checkpoint for region data earlier.
 #ifdef PDC_SERVER_CACHE
-#ifdef PDC_TIMING
-        start = MPI_Wtime();
+        PDC_region_server_cache_finalize();
 #endif
-        pthread_mutex_lock(&pdc_cache_mutex);
-        pdc_recycle_close_flag = 1;
-        pthread_mutex_unlock(&pdc_cache_mutex);
-        pthread_join(pdc_recycle_thread, NULL);
-
-        PDC_region_cache_flush_all();
-        pthread_mutex_destroy(&pdc_obj_cache_list_mutex);
-        pthread_mutex_destroy(&pdc_cache_mutex);
-#ifdef PDC_TIMING
-        server_timings->PDCcache_clean += MPI_Wtime() - start;
-#endif
-#endif
-        if (pdc_server_rank_g) {
-            close_out.ret = 88;
-            HG_Respond(close_all_server_handle_g, NULL, NULL, &close_out);
-            HG_Destroy(close_all_server_handle_g);
-        }
 
 #ifndef DISABLE_CHECKPOINT
 #ifdef PDC_TIMING
@@ -650,23 +632,18 @@ PDC_Server_set_close(void)
         else
             PDC_Server_checkpoint();
 #ifdef PDC_TIMING
-        server_timings->PDCserver_checkpoint += MPI_Wtime() - start;
+        pdc_server_timings->PDCserver_checkpoint += MPI_Wtime() - start;
 #endif
 #endif
         /* Barrier is needed here to make sure all servers have checkpointed data. */
+        close_out.ret = 88;
+        HG_Respond(close_all_server_handle_g, NULL, NULL, &close_out);
+        HG_Destroy(close_all_server_handle_g);
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
 #endif
-        /* The client that calls the server close is now ready to exit.
-         * Cache write back and checkpointing are all finished at this point. */
-        if (!pdc_server_rank_g) {
-            close_out.ret = 88;
-            HG_Respond(close_all_server_handle_g, NULL, NULL, &close_out);
-            HG_Destroy(close_all_server_handle_g);
-        }
         hg_atomic_set32(&close_server_g, 1);
     }
-
     FUNC_LEAVE(ret_value);
 }
 
@@ -900,6 +877,7 @@ drc_access_again:
     }
     else {
         // We are starting a brand new server
+        transfer_request_metadata_query_init(pdc_server_size_g, NULL);
         if (is_hash_table_init_g != 1) {
             // Hash table init
             ret_value = PDC_Server_init_hash_table();
@@ -923,16 +901,9 @@ drc_access_again:
     n_metadata_g = 0;
 
     // PDC transfer_request infrastructures
-    transfer_request_status_list = NULL;
-    pthread_mutex_init(&transfer_request_status_mutex, NULL);
-    pthread_mutex_init(&transfer_request_id_mutex, NULL);
-    transfer_request_id_g = 1;
+    PDC_server_transfer_request_init();
 #ifdef PDC_SERVER_CACHE
-
-    pdc_recycle_close_flag = 0;
-    pthread_mutex_init(&pdc_obj_cache_list_mutex, NULL);
-    pthread_mutex_init(&pdc_cache_mutex, NULL);
-    pthread_create(&pdc_recycle_thread, NULL, &PDC_region_cache_clock_cycle, NULL);
+    PDC_region_server_cache_init();
 #endif
 
 done:
@@ -987,6 +958,8 @@ PDC_Server_finalize()
 
     FUNC_ENTER(NULL);
 
+    transfer_request_metadata_query_finalize();
+
     // Debug: check duplicates
     if (is_debug_g == 1) {
         PDC_Server_metadata_duplicate_check();
@@ -1006,7 +979,6 @@ PDC_Server_finalize()
         }
         io_elt->region_list_head = NULL;
     }
-
     // Free hash table
     if (metadata_hash_table_g != NULL)
         hash_table_free(metadata_hash_table_g);
@@ -1091,8 +1063,8 @@ PDC_Server_finalize()
     hg_thread_mutex_destroy(&update_remote_server_addr_mutex_g);
 #endif
     PDC_Server_clear_obj_region();
-    pthread_mutex_destroy(&transfer_request_status_mutex);
-    pthread_mutex_destroy(&transfer_request_id_mutex);
+
+    PDC_server_transfer_request_finalize();
 
     if (pdc_server_rank_g == 0)
         PDC_Server_rm_config_file();
@@ -1157,6 +1129,8 @@ PDC_Server_checkpoint()
     HashTablePair     pair;
     char              checkpoint_file[ADDR_MAX];
     HashTableIterator hash_table_iter;
+    char *            checkpoint;
+    uint64_t          checkpoint_size;
 
     FUNC_ENTER(NULL);
 
@@ -1293,6 +1267,10 @@ PDC_Server_checkpoint()
         }
     }
 
+    transfer_request_metadata_query_checkpoint(&checkpoint, &checkpoint_size);
+    fwrite(&checkpoint_size, sizeof(uint64_t), 1, file);
+    fwrite(checkpoint, checkpoint_size, 1, file);
+
     fclose(file);
     file = NULL;
 
@@ -1349,6 +1327,8 @@ PDC_Server_restart(char *filename)
     pdc_cont_hash_table_entry_t *cont_entry;
     uint32_t *                   hash_key;
     unsigned                     idx;
+    uint64_t                     checkpoint_size;
+    char *                       checkpoint_buf;
 #ifdef PDC_TIMING
     double start = MPI_Wtime();
 #endif
@@ -1565,25 +1545,6 @@ PDC_Server_restart(char *filename)
 
                 DL_APPEND((metadata + i)->storage_region_list_head, region_list);
             } // For j
-#if 0
-            // read storage region info
-            if (fread(&n_region, sizeof(int), 1, file) != 1) {
-                printf("Read failed for n_region\n");
-            }
-            data_server_region_t *new_obj_reg =
-                (data_server_region_t *)calloc(1, sizeof(struct data_server_region_t));
-            new_obj_reg->fd               = -1;
-            new_obj_reg->storage_location = (char *)malloc(sizeof(char) * ADDR_MAX);
-            DL_APPEND(dataserver_region_g, new_obj_reg);
-            new_obj_reg->obj_id = (metadata + i)->obj_id;
-            for (j = 0; j < n_region; j++) {
-                region_list_t *new_region_list = (region_list_t *)malloc(sizeof(region_list_t));
-                if (fread(new_region_list, sizeof(region_list_t), 1, file) != 1) {
-                    printf("Read failed for new_region_list\n");
-                }
-                DL_APPEND(new_obj_reg->region_storage_head, new_region_list);
-            }
-#endif
             total_region += n_region;
 
             DL_SORT((metadata + i)->storage_region_list_head, region_cmp);
@@ -1633,6 +1594,17 @@ PDC_Server_restart(char *filename)
         }
     }
 
+    if (fread(&checkpoint_size, sizeof(uint64_t), 1, file) != 1) {
+        printf("Read failed for checkpoint size\n");
+    }
+    printf("checkpoint size for metadata query = %lu\n", checkpoint_size);
+    checkpoint_buf = (char *)malloc(checkpoint_size);
+    if (fread(checkpoint_buf, checkpoint_size, 1, file) != 1) {
+        printf("Read failed for checkpoint buf\n");
+    }
+    transfer_request_metadata_query_init(pdc_server_size_g, checkpoint_buf);
+    free(checkpoint_buf);
+
     fclose(file);
     file = NULL;
 
@@ -1652,7 +1624,7 @@ PDC_Server_restart(char *filename)
 
 done:
 #ifdef PDC_TIMING
-    server_timings->PDCserver_restart += MPI_Wtime() - start;
+    pdc_server_timings->PDCserver_restart += MPI_Wtime() - start;
 #endif
 
     fflush(stdout);
@@ -1880,6 +1852,7 @@ PDC_Server_mercury_register()
     PDC_close_server_register(hg_class_g);
     PDC_flush_obj_register(hg_class_g);
     PDC_flush_obj_all_register(hg_class_g);
+    PDC_obj_reset_dims_register(hg_class_g);
     PDC_metadata_query_register(hg_class_g);
     PDC_container_query_register(hg_class_g);
     PDC_metadata_delete_register(hg_class_g);
@@ -1905,6 +1878,8 @@ PDC_Server_mercury_register()
     // Mapping
     PDC_transfer_request_register(hg_class_g);
     PDC_transfer_request_all_register(hg_class_g);
+    PDC_transfer_request_metadata_query_register(hg_class_g);
+    PDC_transfer_request_metadata_query2_register(hg_class_g);
     PDC_transfer_request_wait_all_register(hg_class_g);
     PDC_transfer_request_wait_register(hg_class_g);
     PDC_transfer_request_status_register(hg_class_g);
@@ -1984,6 +1959,14 @@ PDC_Server_get_env()
         lustre_total_ost_g = 1;
     }
 #endif
+    // Get data sieving flag
+    tmp_env_char = getenv("PDC_DATA_SIEVING");
+    if (tmp_env_char != NULL) {
+        data_sieving_g = atoi(tmp_env_char);
+    }
+    else {
+        data_sieving_g = 0;
+    }
 
     // Get number of OST per file
     pdc_nost_per_file_g = lustre_total_ost_g;
@@ -2112,7 +2095,7 @@ main(int argc, char *argv[])
         if (PDC_Server_write_addr_to_file(all_addr_strings_g, pdc_server_size_g) != SUCCEED)
             printf("==PDC_SERVER[%d]: Error with write config file\n", pdc_server_rank_g);
 #ifdef PDC_TIMING
-    server_timings->PDCserver_start_total += MPI_Wtime() - start;
+    pdc_server_timings->PDCserver_start_total += MPI_Wtime() - start;
 #endif
 #ifdef ENABLE_TIMING
     // Timing
