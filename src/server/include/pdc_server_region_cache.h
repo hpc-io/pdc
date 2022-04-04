@@ -12,21 +12,6 @@
 
 #ifdef PDC_SERVER_CACHE
 
-typedef struct pdc_region_cache {
-    struct pdc_region_info * region_cache_info;
-    struct pdc_region_cache *next;
-} pdc_region_cache;
-
-typedef struct pdc_obj_cache {
-    struct pdc_obj_cache *next;
-    uint64_t              obj_id;
-    int                   ndim;
-    uint64_t *            dims;
-    pdc_region_cache *    region_cache;
-    pdc_region_cache *    region_cache_end;
-    struct timeval        timestamp;
-} pdc_obj_cache;
-
 #define PDC_REGION_CONTAINED       0
 #define PDC_REGION_CONTAINED_BY    1
 #define PDC_REGION_PARTIAL_OVERLAP 2

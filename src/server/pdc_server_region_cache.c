@@ -3,7 +3,23 @@
 
 #ifdef PDC_SERVER_CACHE
 
-#define MAX_CACHE_SIZE 1073741824
+#define MAX_CACHE_SIZE 2147483648
+
+
+typedef struct pdc_region_cache {
+    struct pdc_region_info * region_cache_info;
+    struct pdc_region_cache *next;
+} pdc_region_cache;
+
+typedef struct pdc_obj_cache {
+    struct pdc_obj_cache *next;
+    uint64_t              obj_id;
+    int                   ndim;
+    uint64_t *            dims;
+    pdc_region_cache *    region_cache;
+    pdc_region_cache *    region_cache_end;
+    struct timeval        timestamp;
+} pdc_obj_cache;
 
 static pdc_obj_cache *obj_cache_list, *obj_cache_list_end;
 
@@ -11,15 +27,24 @@ static pthread_t       pdc_recycle_thread;
 static pthread_mutex_t pdc_cache_mutex;
 static int             pdc_recycle_close_flag;
 static size_t          total_cache_size;
+static size_t          maximum_cache_size;
 
 int
 PDC_region_server_cache_init()
 {
+    char *p;
     pdc_recycle_close_flag = 0;
     pthread_mutex_init(&pdc_obj_cache_list_mutex, NULL);
     pthread_mutex_init(&pdc_cache_mutex, NULL);
     pthread_create(&pdc_recycle_thread, NULL, &PDC_region_cache_clock_cycle, NULL);
     total_cache_size = 0;
+
+    p = getenv("HEP_IO_TYPE");
+    if ( p != NULL ) {
+        maximum_cache_size = strtoull(p);
+    } else {
+        maximum_cache_size = MAX_CACHE_SIZE;
+    }
 
     obj_cache_list     = NULL;
     obj_cache_list_end = NULL;
@@ -429,9 +454,8 @@ PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dim
     memcpy(region_cache_info->buf, buf, sizeof(char) * buf_size);
     total_cache_size += buf_size;
 
-    if (total_cache_size > MAX_CACHE_SIZE) {
+    if (total_cache_size > maximum_cache_size) {
         PDC_region_cache_flush_all();
-        total_cache_size = 0;
     }
 
     // printf("created cache region at offset %llu, buf size %llu, unit = %ld, ndim = %ld, obj_id = %llu\n",
@@ -580,6 +604,7 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache)
 {
     pdc_region_cache *      region_cache_iter, *region_cache_temp;
     struct pdc_region_info *region_cache_info;
+    uint64_t write_size = 0;
 #ifdef PDC_TIMING
     double start = MPI_Wtime();
 #endif
@@ -588,6 +613,15 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache)
         region_cache_info = region_cache_iter->region_cache_info;
         PDC_Server_transfer_request_io(obj_id, obj_cache->ndim, obj_cache->dims, region_cache_info,
                                        region_cache_info->buf, region_cache_info->unit, 1);
+        if (obj_cache->ndim >= 1)
+            write_size = unit * region_cache_info->size[0];
+        if (obj_cache->ndim >= 2)
+            write_size *= region_cache_info->size[1];
+        if (obj_cache->ndim >= 3)
+            write_size *= region_cache_info->size[2];
+
+        total_cache_size -= write_size;
+
         free(region_cache_info->offset);
         free(region_cache_info->size);
         free(region_cache_info->buf);
