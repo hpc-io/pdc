@@ -27,6 +27,7 @@ set(PROGRAMS
   cont_del
   cont_getid
   cont_tags
+  consistency_semantics
   create_obj
   open_obj
   open_existing_obj
@@ -83,6 +84,9 @@ set(PROGRAMS
   region_transfer_all_append_2D
   region_transfer_all_append_3D
   region_transfer_all_split_wait
+  region_transfer_set_dims
+  region_transfer_set_dims_2D
+  region_transfer_set_dims_3D
   #query_vpic_create_data
   #query_vpic
   #query_vpic_multi
@@ -257,6 +261,7 @@ set_tests_properties(region_transfer_3D_skewed     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_partial     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_2D_partial  PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_3D_partial  PROPERTIES LABELS serial )
+
 set_tests_properties(region_transfer_overlap     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_overlap_2D     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_overlap_3D     PROPERTIES LABELS serial )
@@ -377,6 +382,7 @@ if(BUILD_MPI_TESTING)
     add_test(NAME cont_info_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./cont_info ${MPI_RUN_CMD} 4 6 )
     add_test(NAME cont_getid_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./cont_getid ${MPI_RUN_CMD} 4 6 )
     add_test(NAME cont_tags_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./cont_tags ${MPI_RUN_CMD} 4 6 )
+    add_test(NAME consistency_semantics WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./consistency_semantics ${MPI_RUN_CMD} 2 4 )
 #    add_test(NAME create_obj_mpi  WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./create_obj ${MPI_RUN_CMD} 4 6 )
     add_test(NAME open_obj_mpi    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./open_obj ${MPI_RUN_CMD} 4 6 )
     add_test(NAME obj_iter_mpi    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_iter ${MPI_RUN_CMD} 4 6 )
@@ -399,6 +405,7 @@ if(BUILD_MPI_TESTING)
     set_tests_properties(read_obj_shared_int8  PROPERTIES LABELS parallel )
 #    set_tests_properties(create_obj_coll     PROPERTIES LABELS parallel )
 #    set_tests_properties(create_cont_coll     PROPERTIES LABELS parallel )
+    set_tests_properties(consistency_semantics PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_partial_mpi  PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_2D_partial_mpi PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_3D_partial_mpi PROPERTIES LABELS parallel )

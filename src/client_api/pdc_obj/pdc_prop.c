@@ -95,6 +95,7 @@ PDCprop_create(pdc_prop_type_t type, pdcid_t pdcid)
         q->obj_prop_pub->dims             = NULL;
         q->obj_prop_pub->type             = PDC_UNKNOWN;
         q->obj_prop_pub->region_partition = PDC_REGION_STATIC;
+        q->obj_prop_pub->consistency      = PDC_CONSISTENCY_DEFAULT;
         q->data_loc                       = NULL;
         q->app_name                       = NULL;
         q->time_step                      = 0;

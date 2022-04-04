@@ -37,6 +37,7 @@ struct pdc_obj_prop {
     uint64_t *             dims;
     pdc_var_type_t         type;
     pdc_region_partition_t region_partition;
+    pdc_consistency_t      consistency;
 };
 
 /*******************/

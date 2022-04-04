@@ -37,13 +37,13 @@ add_executable(pdc_server.exe
                pdc_server_data.c
                pdc_server_metadata.c
                pdc_server_analysis.c
-               pdc_region_transfer_metadata_query.c
+               pdc_server_region_transfer_metadata_query.c
                pdc_client_server_common.c
                pdc_server_region_transfer.c
                dablooms/pdc_dablooms.c
                dablooms/pdc_murmur.c
                pdc_hash-table.c
-               pdc_region_server_cache.c
+               pdc_server_region_cache.c
                ${PDC_SOURCE_DIR}/src/pdc_utils/pdc_region_utils.c
                ${PDC_SOURCE_DIR}/src/pdc_utils/pdc_timing.c
                ${PDC_SOURCE_DIR}/src/client_api/pdc_analysis/pdc_analysis_common.c

@@ -2,7 +2,7 @@
 #include "pdc_server_data.h"
 static int io_by_region_g = 1;
 
-static int
+int
 get_server_rank()
 {
 #ifdef ENABLE_MPI
