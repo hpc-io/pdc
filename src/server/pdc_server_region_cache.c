@@ -5,7 +5,6 @@
 
 #define MAX_CACHE_SIZE 1073741824
 
-
 static pdc_obj_cache *obj_cache_list, *obj_cache_list_end;
 
 static pthread_t       pdc_recycle_thread;
@@ -21,8 +20,8 @@ PDC_region_server_cache_init()
     pthread_mutex_init(&pdc_cache_mutex, NULL);
     pthread_create(&pdc_recycle_thread, NULL, &PDC_region_cache_clock_cycle, NULL);
     total_cache_size = 0;
-    
-    obj_cache_list = NULL;
+
+    obj_cache_list     = NULL;
     obj_cache_list_end = NULL;
     return 0;
 }
@@ -430,7 +429,7 @@ PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dim
     memcpy(region_cache_info->buf, buf, sizeof(char) * buf_size);
     total_cache_size += buf_size;
 
-    if ( total_cache_size > MAX_CACHE_SIZE ) {
+    if (total_cache_size > MAX_CACHE_SIZE) {
         PDC_region_cache_flush_all();
         total_cache_size = 0;
     }
@@ -472,7 +471,7 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
     int               flag;
     pdc_obj_cache *   obj_cache, *obj_cache_iter;
     pdc_region_cache *region_cache_iter;
-    uint64_t *            overlap_offset, *overlap_size;
+    uint64_t *        overlap_offset, *overlap_size;
     // char *            buf_merged;
     // uint64_t *        offset_merged, size_merged;
     // int               merge_status;
@@ -513,11 +512,17 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
         while (region_cache_iter != NULL) {
             flag = 0;
             PDC_region_overlap_detect(region_info->ndim, region_info->offset, region_info->size,
-                                  region_cache_iter->region_cache_info->offset, region_cache_iter->region_cache_info->size, &overlap_offset,
-                                  &overlap_size);
+                                      region_cache_iter->region_cache_info->offset,
+                                      region_cache_iter->region_cache_info->size, &overlap_offset,
+                                      &overlap_size);
             if (overlap_offset) {
-                flag = detect_region_contained(region_info->offset, region_info->size, region_cache_iter->region_cache_info->offset, region_cache_iter->region_cache_info->size, region_info->ndim);
-                memcpy_overlap_subregion(region_info->ndim, unit, buf, region_info->offset, region_info->size, region_cache_iter->region_cache_info->buf, region_cache_iter->region_cache_info->offset, region_cache_iter->region_cache_info->size, overlap_offset, overlap_size);
+                flag = detect_region_contained(region_info->offset, region_info->size,
+                                               region_cache_iter->region_cache_info->offset,
+                                               region_cache_iter->region_cache_info->size, region_info->ndim);
+                memcpy_overlap_subregion(
+                    region_info->ndim, unit, buf, region_info->offset, region_info->size,
+                    region_cache_iter->region_cache_info->buf, region_cache_iter->region_cache_info->offset,
+                    region_cache_iter->region_cache_info->size, overlap_offset, overlap_size);
                 free(overlap_offset);
                 if (flag) {
                     break;
@@ -550,7 +555,7 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
         }
     }
     if (!flag) {
-        //printf("register obj_id = %lu\n", obj_id);
+        // printf("register obj_id = %lu\n", obj_id);
         PDC_region_cache_register(obj_id, obj_ndim, obj_dims, buf, write_size, region_info->offset,
                                   region_info->size, region_info->ndim, unit);
         /*
@@ -705,14 +710,14 @@ int
 PDC_region_fetch(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims, struct pdc_region_info *region_info,
                  void *buf, size_t unit)
 {
-    pdc_obj_cache *         obj_cache = NULL, *obj_cache_iter;
-    int                     flag      = 1;
-    //size_t                  j;
-    pdc_region_cache *      region_cache_iter;
-    //struct pdc_region_info *region_cache_info = NULL;
-    uint64_t *            overlap_offset, *overlap_size;
+    pdc_obj_cache *obj_cache = NULL, *obj_cache_iter;
+    int            flag      = 1;
+    // size_t                  j;
+    pdc_region_cache *region_cache_iter;
+    // struct pdc_region_info *region_cache_info = NULL;
+    uint64_t *overlap_offset, *overlap_size;
 
-    obj_cache_iter                            = obj_cache_list;
+    obj_cache_iter = obj_cache_list;
     while (obj_cache_iter != NULL) {
         if (obj_cache_iter->obj_id == obj_id) {
             obj_cache = obj_cache_iter;
@@ -725,16 +730,26 @@ PDC_region_fetch(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims, struct
         // Check if the input region is contained inside any cache region.
         region_cache_iter = obj_cache->region_cache;
         while (region_cache_iter != NULL) {
-            flag = detect_region_contained(region_info->offset, region_info->size, region_cache_iter->region_cache_info->offset, region_cache_iter->region_cache_info->size, region_info->ndim);
+            flag = detect_region_contained(region_info->offset, region_info->size,
+                                           region_cache_iter->region_cache_info->offset,
+                                           region_cache_iter->region_cache_info->size, region_info->ndim);
             if (flag) {
-                PDC_region_overlap_detect(region_info->ndim, region_info->offset, region_info->size,region_cache_iter->region_cache_info->offset, region_cache_iter->region_cache_info->size, &overlap_offset, &overlap_size);
-                if ( overlap_offset ) {
-                    memcpy_overlap_subregion(region_info->ndim, unit, region_cache_iter->region_cache_info->buf, region_cache_iter->region_cache_info->offset, region_cache_iter->region_cache_info->size, buf, region_info->offset, region_info->size, overlap_offset, overlap_size);
-                    //printf("PDCserver_region_cache: checkpoint @ line %d\n", __LINE__);
+                PDC_region_overlap_detect(region_info->ndim, region_info->offset, region_info->size,
+                                          region_cache_iter->region_cache_info->offset,
+                                          region_cache_iter->region_cache_info->size, &overlap_offset,
+                                          &overlap_size);
+                if (overlap_offset) {
+                    memcpy_overlap_subregion(
+                        region_info->ndim, unit, region_cache_iter->region_cache_info->buf,
+                        region_cache_iter->region_cache_info->offset,
+                        region_cache_iter->region_cache_info->size, buf, region_info->offset,
+                        region_info->size, overlap_offset, overlap_size);
+                    // printf("PDCserver_region_cache: checkpoint @ line %d\n", __LINE__);
                     free(overlap_offset);
                     flag = 1;
                     break;
-                } else {
+                }
+                else {
                     flag = 0;
                 }
             }
@@ -769,7 +784,7 @@ PDC_region_fetch(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims, struct
 #endif
     }
     if (!flag) {
-        if ( obj_cache != NULL ) {
+        if (obj_cache != NULL) {
             PDC_region_cache_flush_by_pointer(obj_id, obj_cache);
         }
         PDC_Server_transfer_request_io(obj_id, obj_ndim, obj_dims, region_info, buf, unit, 0);

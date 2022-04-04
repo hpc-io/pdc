@@ -42,7 +42,7 @@ main(int argc, char **argv)
     pdcid_t *obj;
     char     cont_name[128], obj_name[128];
     pdcid_t *transfer_request;
-    int ndim = 1;
+    int      ndim = 1;
 
     int   rank = 0, size = 1, i, j;
     int   ret_value = 0;
@@ -357,14 +357,14 @@ main(int argc, char **argv)
     }
 
     dims[0] = BUF_LEN * 2;
-    ndim  = 1;
+    ndim    = 1;
     for (i = 0; i < OBJ_NUM; ++i) {
         PDCobj_set_dims(obj[i], ndim, dims);
     }
 
     for (i = 0; i < OBJ_NUM; ++i) {
         PDCobj_get_dims(obj[i], &ndim, &new_dims);
-        if ( new_dims[0] != BUF_LEN * 2 ) {
+        if (new_dims[0] != BUF_LEN * 2) {
             fprintf(stderr, "wrong dimension reported after reset for rank %d @ line %d\n", rank, __LINE__);
         }
         free(new_dims);
@@ -378,7 +378,7 @@ main(int argc, char **argv)
     reg_global       = PDCregion_create(1, offset, offset_length);
 
     for (i = 0; i < OBJ_NUM; ++i) {
-        for ( j = 0; j < BUF_LEN * 2; ++j ) {
+        for (j = 0; j < BUF_LEN * 2; ++j) {
             data[i][j] = rank * 41 + 11 * i + j * 3;
         }
         transfer_request[i] = PDCregion_transfer_create(data[i], PDC_WRITE, obj[i], reg, reg_global);
@@ -399,7 +399,6 @@ main(int argc, char **argv)
     else {
         printf("successfully closed global region @ line %d\n", __LINE__);
     }
-
 
     if (start_method) {
         ret = PDCregion_transfer_start_all(transfer_request, OBJ_NUM);
@@ -554,7 +553,8 @@ main(int argc, char **argv)
     for (j = 0; j < OBJ_NUM; ++j) {
         for (i = 0; i < BUF_LEN * 2; ++i) {
             if (data_read[j][i] != rank * 41 + j * 11 + i * 3) {
-                printf("wrong value %d!=%d @ line %d\n", data_read[j][i], rank * 41 + j * 11 + i * 3, __LINE__);
+                printf("wrong value %d!=%d @ line %d\n", data_read[j][i], rank * 41 + j * 11 + i * 3,
+                       __LINE__);
                 ret_value = 1;
                 break;
             }
@@ -576,7 +576,7 @@ main(int argc, char **argv)
 
     for (i = 0; i < OBJ_NUM; ++i) {
         PDCobj_get_dims(obj[i], &ndim, &new_dims);
-        if ( dims[0] != BUF_LEN * 2 ) {
+        if (dims[0] != BUF_LEN * 2) {
             fprintf(stderr, "wrong dimension reported after reset for rank %d @ line %d\n", rank, __LINE__);
         }
         free(new_dims);
@@ -589,7 +589,7 @@ main(int argc, char **argv)
 
     for (i = 0; i < OBJ_NUM; ++i) {
         PDCobj_get_dims(obj[i], &ndim, &new_dims);
-        if ( dims[0] != BUF_LEN/2 ) {
+        if (dims[0] != BUF_LEN / 2) {
             fprintf(stderr, "wrong dimension reported after reset for rank %d @ line %d\n", rank, __LINE__);
         }
         free(new_dims);
@@ -693,7 +693,8 @@ main(int argc, char **argv)
     for (j = 0; j < OBJ_NUM; ++j) {
         for (i = 0; i < BUF_LEN / 2; ++i) {
             if (data_read[j][i] != rank * 41 + j * 11 + i * 3) {
-                printf("wrong value %d!=%d, i = %d, j = %d @ line %d\n", data_read[j][i], rank * 41 + j * 11 + i * 3, i, j, __LINE__);
+                printf("wrong value %d!=%d, i = %d, j = %d @ line %d\n", data_read[j][i],
+                       rank * 41 + j * 11 + i * 3, i, j, __LINE__);
                 ret_value = 1;
                 break;
             }
