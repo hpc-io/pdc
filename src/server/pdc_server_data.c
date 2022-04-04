@@ -4728,11 +4728,14 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     perr_t                ret_value      = SUCCEED;
     data_server_region_t *region         = NULL;
     region_list_t *       overlap_region = NULL;
-    int                   is_overlap = 0, is_contained = 0;
+    int                   is_contained = 0;
     uint64_t              i, j, pos;
     uint64_t *            overlap_offset, *overlap_size;
     char *                tmp_buf;
-
+#if 0
+    size_t                total_write_size = 0, local_write_size;
+    int is_overlap;
+#endif
     FUNC_ENTER(NULL);
 #ifdef PDC_TIMING
     double start = MPI_Wtime(), start_posix;
@@ -4774,13 +4777,19 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                                   &overlap_size);
 
         if (overlap_offset) {
-            is_overlap = 1;
+            //is_overlap = 1;
             if (!is_contained &&
                 detect_region_contained(region_info->offset, region_info->size, overlap_region->start,
                                         overlap_region->count, region_info->ndim)) {
                 is_contained = 1;
             }
-
+#if 0
+            local_write_size = overlap_region->count[0];
+            for ( i = 1; i < (unsigned) region_info->ndim; ++i ) {
+                local_write_size *= overlap_region->count[i];
+            }
+            total_write_size += local_write_size;
+#endif
             if (region_info->ndim == 1) {
                 // 1D can overwrite data in region directly
                 pos = (overlap_offset[0] - overlap_region->start[0]) * unit;
@@ -4795,6 +4804,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 #ifdef PDC_TIMING
                 start_posix = MPI_Wtime();
 #endif
+                //printf("POSIX write from file offset %lu, region start = %lu, region size = %lu\n", overlap_region->offset, overlap_region->start[0], overlap_region->count[0]);
                 ret_value = PDC_Server_posix_write(region->fd,
                                                    buf + (overlap_offset[0] - region_info->offset[0]) * unit,
                                                    overlap_size[0] * unit);
@@ -5003,7 +5013,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
             free(overlap_offset);
         }
     }
-    if (is_overlap == 0 && is_contained == 0) {
+    if ( is_contained == 0 ) {
         request_region->offset = lseek(region->fd, 0, SEEK_END);
 // printf("posix write for position %d with write size %u\n", 0, (unsigned)write_size);
 #ifdef PDC_TIMING
@@ -5106,6 +5116,7 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 #ifdef PDC_TIMING
                 start_posix = MPI_Wtime();
 #endif
+                printf("POSIX read from file offset %lu, region start = %lu, region size = %lu\n", overlap_region->offset, overlap_region->start[0], overlap_region->count[0]);
                 if (pread(region->fd, buf + (overlap_offset[0] - region_info->offset[0]) * unit,
                           overlap_size[0] * unit,
                           overlap_region->offset + pos) != (ssize_t)(overlap_size[0] * unit)) {
@@ -7725,6 +7736,7 @@ PDC_query_visit_leaf_with_cb_arg(pdc_query_t *query, void (*func)(pdc_query_t *,
 
     PDC_query_visit_leaf_with_cb_arg(query->left, func, arg);
     PDC_query_visit_leaf_with_cb_arg(query->right, func, arg);
+
 
     if (NULL == query->left && NULL == query->right)
         func(query, arg);

@@ -150,7 +150,7 @@ memcpy_overlap_subregion(int ndim, uint64_t unit, char *buf, uint64_t *offset, u
     return 0;
 }
 
-// Check if the first region is fully contained in the second region.
+// Check if the first region is fully contained in the second region. These two regions must overlap.
 int
 detect_region_contained(uint64_t *offset, uint64_t *size, uint64_t *offset2, uint64_t *size2, int ndim)
 {

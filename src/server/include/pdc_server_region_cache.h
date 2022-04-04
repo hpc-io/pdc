@@ -34,12 +34,7 @@ typedef struct pdc_obj_cache {
 #define PDC_MERGE_FAILED           4
 #define PDC_MERGE_SUCCESS          5
 
-pdc_obj_cache *obj_cache_list, *obj_cache_list_end;
-
 pthread_mutex_t pdc_obj_cache_list_mutex;
-pthread_t       pdc_recycle_thread;
-pthread_mutex_t pdc_cache_mutex;
-int             pdc_recycle_close_flag;
 
 int   PDC_region_server_cache_init();
 int   PDC_region_server_cache_finalize();

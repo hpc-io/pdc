@@ -31,8 +31,8 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include "pdc.h"
-#define BUF_LEN 256
-#define OBJ_NUM 10
+#define BUF_LEN 64
+#define OBJ_NUM 12
 
 int
 main(int argc, char **argv)
@@ -42,6 +42,7 @@ main(int argc, char **argv)
     pdcid_t *obj;
     char     cont_name[128], obj_name[128];
     pdcid_t *transfer_request;
+    int ndim = 1;
 
     int   rank = 0, size = 1, i, j;
     int   ret_value = 0;
@@ -50,7 +51,7 @@ main(int argc, char **argv)
     int   wait_method  = 1;
 
     uint64_t offset[1], offset_length[1];
-    uint64_t dims[1];
+    uint64_t dims[1], *new_dims;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -356,15 +357,17 @@ main(int argc, char **argv)
     }
 
     dims[0] = BUF_LEN * 2;
+    ndim  = 1;
     for (i = 0; i < OBJ_NUM; ++i) {
-        PDCobj_set_dims(obj_id[i], ndim, dims);
+        PDCobj_set_dims(obj[i], ndim, dims);
     }
 
     for (i = 0; i < OBJ_NUM; ++i) {
-        PDCobj_get_dims(obj_id[i], &ndim, &dims);
-        if (dims[0] != BUF_LEN * 2) {
+        PDCobj_get_dims(obj[i], &ndim, &new_dims);
+        if ( new_dims[0] != BUF_LEN * 2 ) {
             fprintf(stderr, "wrong dimension reported after reset for rank %d @ line %d\n", rank, __LINE__);
         }
+        free(new_dims);
     }
 
     offset[0]        = 0;
@@ -375,11 +378,29 @@ main(int argc, char **argv)
     reg_global       = PDCregion_create(1, offset, offset_length);
 
     for (i = 0; i < OBJ_NUM; ++i) {
-        for (j = 0; j < BUF_LEN * 2; ++j) {
-            data[i][j] = rank * 41 + 11 * i + j;
+        for ( j = 0; j < BUF_LEN * 2; ++j ) {
+            data[i][j] = rank * 41 + 11 * i + j * 3;
         }
         transfer_request[i] = PDCregion_transfer_create(data[i], PDC_WRITE, obj[i], reg, reg_global);
     }
+
+    if (PDCregion_close(reg) < 0) {
+        printf("fail to close local region @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    else {
+        printf("successfully local region @ line %d\n", __LINE__);
+    }
+
+    if (PDCregion_close(reg_global) < 0) {
+        printf("fail to close global region @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    else {
+        printf("successfully closed global region @ line %d\n", __LINE__);
+    }
+
+
     if (start_method) {
         ret = PDCregion_transfer_start_all(transfer_request, OBJ_NUM);
         if (ret != SUCCEED) {
@@ -446,6 +467,23 @@ main(int argc, char **argv)
         memset(data_read[i], 0, BUF_LEN * 2);
         transfer_request[i] = PDCregion_transfer_create(data_read[i], PDC_READ, obj[i], reg, reg_global);
     }
+
+    if (PDCregion_close(reg) < 0) {
+        printf("fail to close local region @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    else {
+        printf("successfully local region @ line %d\n", __LINE__);
+    }
+
+    if (PDCregion_close(reg_global) < 0) {
+        printf("fail to close global region @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    else {
+        printf("successfully closed global region @ line %d\n", __LINE__);
+    }
+
     if (start_method) {
         ret = PDCregion_transfer_start_all(transfer_request, OBJ_NUM);
         if (ret != SUCCEED) {
@@ -514,9 +552,9 @@ main(int argc, char **argv)
 
     // Check if data written previously has been correctly read.
     for (j = 0; j < OBJ_NUM; ++j) {
-        for (i = 0; i < BUF_LEN; ++i) {
-            if (data_read[j][i] != rank * 41 + j * 11 + i) {
-                printf("wrong value %d!=%d @ line %d\n", data_read[j][i], i, __LINE__);
+        for (i = 0; i < BUF_LEN * 2; ++i) {
+            if (data_read[j][i] != rank * 41 + j * 11 + i * 3) {
+                printf("wrong value %d!=%d @ line %d\n", data_read[j][i], rank * 41 + j * 11 + i * 3, __LINE__);
                 ret_value = 1;
                 break;
             }
@@ -537,15 +575,24 @@ main(int argc, char **argv)
     }
 
     for (i = 0; i < OBJ_NUM; ++i) {
-        PDCobj_get_dims(obj_id[i], &ndim, &dims);
-        if (dims[0] != BUF_LEN * 2) {
+        PDCobj_get_dims(obj[i], &ndim, &new_dims);
+        if ( dims[0] != BUF_LEN * 2 ) {
             fprintf(stderr, "wrong dimension reported after reset for rank %d @ line %d\n", rank, __LINE__);
         }
+        free(new_dims);
     }
 
     dims[0] = BUF_LEN / 2;
     for (i = 0; i < OBJ_NUM; ++i) {
-        PDCobj_set_dims(obj_id[i], ndim, dims);
+        PDCobj_set_dims(obj[i], ndim, dims);
+    }
+
+    for (i = 0; i < OBJ_NUM; ++i) {
+        PDCobj_get_dims(obj[i], &ndim, &new_dims);
+        if ( dims[0] != BUF_LEN/2 ) {
+            fprintf(stderr, "wrong dimension reported after reset for rank %d @ line %d\n", rank, __LINE__);
+        }
+        free(new_dims);
     }
 
     offset[0]        = 0;
@@ -556,9 +603,26 @@ main(int argc, char **argv)
     reg_global       = PDCregion_create(1, offset, offset_length);
 
     for (i = 0; i < OBJ_NUM; ++i) {
-        memset(data_read[i], 0, BUF_LEN / 2);
+        memset(data_read[i], 0, sizeof(int) * BUF_LEN / 2);
         transfer_request[i] = PDCregion_transfer_create(data_read[i], PDC_READ, obj[i], reg, reg_global);
     }
+
+    if (PDCregion_close(reg) < 0) {
+        printf("fail to close local region @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    else {
+        printf("successfully local region @ line %d\n", __LINE__);
+    }
+
+    if (PDCregion_close(reg_global) < 0) {
+        printf("fail to close global region @ line %d\n", __LINE__);
+        ret_value = 1;
+    }
+    else {
+        printf("successfully closed global region @ line %d\n", __LINE__);
+    }
+
     if (start_method) {
         ret = PDCregion_transfer_start_all(transfer_request, OBJ_NUM);
         if (ret != SUCCEED) {
@@ -628,8 +692,8 @@ main(int argc, char **argv)
     // Check if data written previously has been correctly read.
     for (j = 0; j < OBJ_NUM; ++j) {
         for (i = 0; i < BUF_LEN / 2; ++i) {
-            if (data_read[j][i] != rank * 41 + j * 11 + i) {
-                printf("wrong value %d!=%d @ line %d\n", data_read[j][i], i, __LINE__);
+            if (data_read[j][i] != rank * 41 + j * 11 + i * 3) {
+                printf("wrong value %d!=%d, i = %d, j = %d @ line %d\n", data_read[j][i], rank * 41 + j * 11 + i * 3, i, j, __LINE__);
                 ret_value = 1;
                 break;
             }
