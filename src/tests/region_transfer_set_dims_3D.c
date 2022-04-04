@@ -35,7 +35,7 @@
 #define OBJ_NUM 12
 #define DIM0    (BUF_LEN / 32)
 #define DIM1    (8)
-#define DIM1    (4)
+#define DIM2    (4)
 
 int
 main(int argc, char **argv)
