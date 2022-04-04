@@ -576,7 +576,7 @@ main(int argc, char **argv)
 
     for (i = 0; i < OBJ_NUM; ++i) {
         PDCobj_get_dims(obj[i], &ndim, &new_dims);
-        if (dims[0] != BUF_LEN * 2) {
+        if (new_dims[0] != BUF_LEN * 2) {
             fprintf(stderr, "wrong dimension reported after reset for rank %d @ line %d\n", rank, __LINE__);
         }
         free(new_dims);
@@ -589,7 +589,7 @@ main(int argc, char **argv)
 
     for (i = 0; i < OBJ_NUM; ++i) {
         PDCobj_get_dims(obj[i], &ndim, &new_dims);
-        if (dims[0] != BUF_LEN / 2) {
+        if (new_dims[0] != BUF_LEN / 2) {
             fprintf(stderr, "wrong dimension reported after reset for rank %d @ line %d\n", rank, __LINE__);
         }
         free(new_dims);

@@ -372,7 +372,7 @@ main(int argc, char **argv)
 
     for (i = 0; i < OBJ_NUM; ++i) {
         PDCobj_get_dims(obj[i], &ndim, &new_dims);
-        if (new_dims[0] != BUF_LEN * 2) {
+        if (new_dims[0] != DIM0 * 2 || new_dims[1] != DIM1) {
             fprintf(stderr, "wrong dimension reported after reset for rank %d @ line %d\n", rank, __LINE__);
         }
         free(new_dims);
@@ -584,7 +584,7 @@ main(int argc, char **argv)
 
     for (i = 0; i < OBJ_NUM; ++i) {
         PDCobj_get_dims(obj[i], &ndim, &new_dims);
-        if (dims[0] != BUF_LEN * 2) {
+        if (new_dims[0] != DIM0 * 2 || new_dims[1] == DIM1) {
             fprintf(stderr, "wrong dimension reported after reset for rank %d @ line %d\n", rank, __LINE__);
         }
         free(new_dims);
@@ -598,7 +598,7 @@ main(int argc, char **argv)
 
     for (i = 0; i < OBJ_NUM; ++i) {
         PDCobj_get_dims(obj[i], &ndim, &new_dims);
-        if (dims[0] != BUF_LEN / 2) {
+        if (new_dims[0] != DIM0 / 2 || new_dims[1] != DIM1) {
             fprintf(stderr, "wrong dimension reported after reset for rank %d @ line %d\n", rank, __LINE__);
         }
         free(new_dims);
@@ -711,6 +711,7 @@ main(int argc, char **argv)
     }
 
     // close a container
+
     if (PDCcont_close(cont) < 0) {
         printf("fail to close container c1 @ line %d\n", __LINE__);
         ret_value = 1;
