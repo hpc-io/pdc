@@ -135,7 +135,7 @@ Examples:
 				"dims":	[8388608],
 				"time_step":	0,
 				"region_list_info":	[{
-						"storage_loc":	"/global/cscratch1/sd/houhun/pdc_data/1000006/server0/s0000.bin",
+						"storage_loc":	"/user/pdc_data/1000006/server0/s0000.bin",
 						"offset":	33554432,
 						"num_dims":	1,
 						"start":	[0],
