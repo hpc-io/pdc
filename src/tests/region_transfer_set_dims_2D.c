@@ -591,7 +591,7 @@ main(int argc, char **argv)
     }
 
     dims[0] = DIM0 / 2;
-    dims[1] = DIM1 / 2;
+    dims[1] = DIM1;
     for (i = 0; i < OBJ_NUM; ++i) {
         PDCobj_set_dims(obj[i], ndim, dims);
     }
