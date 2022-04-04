@@ -32,7 +32,6 @@
 #include <math.h>
 #include <inttypes.h>
 #include "pdc.h"
-#include "pdc_timing.h"
 
 #define NPARTICLES 8388608
 
@@ -45,7 +44,7 @@ uniform_random_number()
 void
 print_usage()
 {
-    printf("Usage: srun -n ./vpicio #particles\n");
+    printf("Usage: srun -n ./bdcats #particles\n");
 }
 
 int
@@ -179,6 +178,7 @@ main(int argc, char **argv)
         printf("Array x transfer request creation failed\n");
         return 1;
     }
+
     transfer_request_y = PDCregion_transfer_create(&y[0], PDC_READ, obj_yy, region_y, region_yy);
     if (transfer_request_y == 0) {
         printf("Array y transfer request creation failed\n");
@@ -337,9 +337,8 @@ main(int argc, char **argv)
         printf("region id22 transfer close failed\n");
         return 1;
     }
-#ifdef PDC_TIMING
+
     PDC_timing_report("read");
-#endif
 
     if (PDCobj_close(obj_xx) < 0)
         printf("fail to close obj_xx\n");

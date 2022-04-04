@@ -166,7 +166,7 @@ main(int argc, char **argv)
             ret_value = 1;
             break;
         }
-        sleep(0.2);
+        sleep(1);
     }
     PDCregion_transfer_status(transfer_request, &completed);
     if (completed != PDC_TRANSFER_STATUS_NOT_FOUND) {
@@ -209,7 +209,7 @@ main(int argc, char **argv)
             ret_value = 1;
             break;
         }
-        sleep(0.2);
+        sleep(1);
     }
 
     PDCregion_transfer_status(transfer_request, &completed);
