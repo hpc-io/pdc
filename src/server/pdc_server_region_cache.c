@@ -39,10 +39,9 @@ PDC_region_server_cache_init()
     total_cache_size = 0;
 
     p = getenv("HEP_IO_TYPE");
-    if (p != NULL) {
-        maximum_cache_size = strtoull(p);
-    }
-    else {
+    if ( p != NULL ) {
+        maximum_cache_size = atol(p);
+    } else {
         maximum_cache_size = MAX_CACHE_SIZE;
     }
 
@@ -596,7 +595,7 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache)
         PDC_Server_transfer_request_io(obj_id, obj_cache->ndim, obj_cache->dims, region_cache_info,
                                        region_cache_info->buf, region_cache_info->unit, 1);
         if (obj_cache->ndim >= 1)
-            write_size = unit * region_cache_info->size[0];
+            write_size = region_cache_info->unit * region_cache_info->size[0];
         if (obj_cache->ndim >= 2)
             write_size *= region_cache_info->size[1];
         if (obj_cache->ndim >= 3)
