@@ -33,8 +33,8 @@
 #include "pdc.h"
 #define BUF_LEN 64
 #define OBJ_NUM 12
-#define DIM0 (BUF_LEN/4)
-#define DIM1 (4)
+#define DIM0    (BUF_LEN / 4)
+#define DIM1    (4)
 
 int
 main(int argc, char **argv)
