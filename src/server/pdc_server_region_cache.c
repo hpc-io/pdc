@@ -39,9 +39,10 @@ PDC_region_server_cache_init()
     total_cache_size = 0;
 
     p = getenv("HEP_IO_TYPE");
-    if ( p != NULL ) {
+    if (p != NULL) {
         maximum_cache_size = atol(p);
-    } else {
+    }
+    else {
         maximum_cache_size = MAX_CACHE_SIZE;
     }
 
