@@ -1,3 +1,0 @@
-/global/homes/j/jluo/vol-fork/pdc/tools/CMakeFiles/rebuild_cache.dir
-/global/homes/j/jluo/vol-fork/pdc/tools/CMakeFiles/edit_cache.dir
-/global/homes/j/jluo/vol-fork/pdc/tools/CMakeFiles/pdc_tools.exe.dir

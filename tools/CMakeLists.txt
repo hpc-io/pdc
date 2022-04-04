@@ -2,16 +2,9 @@ cmake_minimum_required (VERSION 2.8.12)
 
 project(PDC_VOL C)
 
-include_directories(${PDC_EXT_INCLUDE_DEPENDENCIES})
-
-find_package(MERCURY REQUIRED)
-if(MERCURY_FOUND)
-    #message(STATUS "mercury include directory: ${MERCURY_INCLUDE_DIR}")
-  set(MERCURY_EXT_INCLUDE_DEPENDENCIES ${MERCURY_INCLUDE_DIR}
-    ${MERCURY_EXT_INCLUDE_DEPENDENCIES}
-    )
-  set(MERCURY_EXT_LIB_DEPENDENCIES mercury ${MERCURY_EXT_LIB_DEPENDENCIES})
-endif()
+include_directories(
+  ${PDC_EXT_INCLUDE_DEPENDENCIES}
+)
 
 find_package(PDC REQUIRED)
 if(PDC_FOUND)
@@ -23,12 +16,14 @@ if(PDC_FOUND)
 endif()
 
 add_definitions(-DENABLE_MPI=1)
+add_library(cjson cjson/cJSON.c)
 
 set(PROGRAMS
-  pdc_tools
+  pdc_ls
   )
 
 foreach(program ${PROGRAMS})
-  add_executable(${program}.exe ${program}.c)
-  target_link_libraries(${program}.exe ${PDC_EXT_LIB_DEPENDENCIES} )
+  add_executable(${program} ${program}.c)
+  target_link_libraries(${program} ${PDC_EXT_LIB_DEPENDENCIES})
+  target_link_libraries(${program} cjson)
 endforeach(program)
