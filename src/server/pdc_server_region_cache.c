@@ -5,7 +5,6 @@
 
 #define MAX_CACHE_SIZE 2147483648
 
-
 typedef struct pdc_region_cache {
     struct pdc_region_info * region_cache_info;
     struct pdc_region_cache *next;
@@ -40,9 +39,10 @@ PDC_region_server_cache_init()
     total_cache_size = 0;
 
     p = getenv("HEP_IO_TYPE");
-    if ( p != NULL ) {
+    if (p != NULL) {
         maximum_cache_size = strtoull(p);
-    } else {
+    }
+    else {
         maximum_cache_size = MAX_CACHE_SIZE;
     }
 
@@ -586,7 +586,7 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache)
 {
     pdc_region_cache *      region_cache_iter, *region_cache_temp;
     struct pdc_region_info *region_cache_info;
-    uint64_t write_size = 0;
+    uint64_t                write_size = 0;
 #ifdef PDC_TIMING
     double start = MPI_Wtime();
 #endif
@@ -730,7 +730,7 @@ PDC_region_fetch(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims, struct
     int            flag      = 1;
     // size_t                  j;
     pdc_region_cache *region_cache_iter;
-    uint64_t *overlap_offset, *overlap_size;
+    uint64_t *        overlap_offset, *overlap_size;
 
     obj_cache_iter = obj_cache_list;
     while (obj_cache_iter != NULL) {
