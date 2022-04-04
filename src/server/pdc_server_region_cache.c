@@ -552,19 +552,6 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
                     break;
                 }
             }
-#if 0
-            if (PDC_check_region_relation(
-                    region_info->offset, region_info->size, region_cache_iter->region_cache_info->offset,
-                    region_cache_iter->region_cache_info->size,
-                    region_cache_iter->region_cache_info->ndim) == PDC_REGION_CONTAINED) {
-                PDC_region_cache_copy(region_cache_iter->region_cache_info->buf, buf,
-                                      region_cache_iter->region_cache_info->offset,
-                                      region_cache_iter->region_cache_info->size, region_info->offset,
-                                      region_info->size, region_cache_iter->region_cache_info->ndim, unit, 1);
-                flag = 0;
-                break;
-            }
-#endif
             /*
              else {
                             merge_status = PDC_region_merge(buf, region_cache_iter->region_cache_info->buf,
@@ -579,13 +566,8 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
         }
     }
     if (!flag) {
-        // printf("register obj_id = %lu\n", obj_id);
         PDC_region_cache_register(obj_id, obj_ndim, obj_dims, buf, write_size, region_info->offset,
                                   region_info->size, region_info->ndim, unit);
-        /*
-                PDC_Server_transfer_request_io(obj_id, obj_ndim, obj_dims, region_info,
-                                               buf, unit, 1);
-        */
     }
     pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
 
@@ -748,7 +730,6 @@ PDC_region_fetch(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims, struct
     int            flag      = 1;
     // size_t                  j;
     pdc_region_cache *region_cache_iter;
-    // struct pdc_region_info *region_cache_info = NULL;
     uint64_t *overlap_offset, *overlap_size;
 
     obj_cache_iter = obj_cache_list;
@@ -787,35 +768,8 @@ PDC_region_fetch(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims, struct
                     flag = 0;
                 }
             }
-#if 0
-            flag              = 1;
-            region_cache_info = region_cache_iter->region_cache_info;
-            for (j = 0; j < region_info->ndim; ++j) {
-                if (region_info->offset[j] < region_cache_info->offset[j] ||
-                    region_info->offset[j] + region_info->size[j] >
-                        region_cache_info->offset[j] + region_cache_info->size[j]) {
-                    flag = 0;
-                }
-            }
-            if (flag) {
-                break;
-            }
-            else {
-                region_cache_info = NULL;
-            }
-#endif
             region_cache_iter = region_cache_iter->next;
         }
-#if 0
-        if (region_cache_info != NULL && unit == region_cache_info->unit) {
-            PDC_region_cache_copy(region_cache_info->buf, buf, region_cache_info->offset,
-                                  region_cache_info->size, region_info->offset, region_info->size,
-                                  region_cache_info->ndim, unit, 0);
-        }
-        else {
-            region_cache_info = NULL;
-        }
-#endif
     }
     if (!flag) {
         if (obj_cache != NULL) {
