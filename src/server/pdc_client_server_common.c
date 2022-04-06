@@ -63,7 +63,7 @@ hg_thread_pool_t *hg_test_thread_pool_fs_g = NULL;
 uint64_t pdc_id_seq_g = PDC_SERVER_ID_INTERVEL;
 // actual value for each server is set by PDC_Server_init()
 
-#include "pdc_server_region_request_handler.h"
+#include "pdc_region_server/pdc_server_region_request_handler.h"
 
 hg_return_t
 hg_proc_pdc_query_xfer_t(hg_proc_t proc, void *data)
@@ -265,6 +265,7 @@ PDC_get_var_type_size(pdc_var_type_t dtype)
             break;
         case PDC_INT8:
             ret_value = sizeof(int8_t);
+
 
             goto done;
             break;
@@ -1723,6 +1724,7 @@ HG_TEST_RPC_CB(metadata_query, handle)
 
     FUNC_LEAVE(ret_value);
 }
+
 
 /* static hg_return_t */
 /* obj_reset_dims_cb(hg_handle_t handle) */
@@ -4923,6 +4925,7 @@ HG_TEST_RPC_CB(update_region_loc, handle)
     }
 
     out.ret = 20171031;
+
 
     ret_value = PDC_Server_update_local_region_storage_loc(input_region, in.obj_id, in.type);
     if (ret_value != SUCCEED) {
