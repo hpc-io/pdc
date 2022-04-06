@@ -104,7 +104,9 @@ set(PROGRAMS
   region_transfer_all_append_2D
   region_transfer_all_append_3D
   region_transfer_all_split_wait
-  # region_transfer_set_dims
+  region_transfer_set_dims
+  region_transfer_set_dims_2D
+  region_transfer_set_dims_3D
   #query_vpic_create_data
   #query_vpic
   #query_vpic_multi

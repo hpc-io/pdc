@@ -101,13 +101,13 @@ transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info)
                                        request_data.obj_dims[i], remote_reg_info, (void *)ptr,
                                        request_data.unit[i], 0);
 #endif
-        /*
-                        fprintf(stderr, "server read array, offset = %lu, size = %lu:",
-           request_data.remote_offset[i][0], request_data.remote_length[i][0]); uint64_t k; for ( k = 0; k <
-           remote_reg_info->size[0]; ++k ) { fprintf(stderr, "%d,", *(int*)(ptr + sizeof(int) * k));
-                        }
-                        fprintf(stderr, "\n");
-        */
+#if 0
+        fprintf(stderr, "server read array, offset = %lu, size = %lu:", request_data.remote_offset[i][0], request_data.remote_length[i][0]); uint64_t k; 
+        for ( k = 0; k < remote_reg_info->size[0]; ++k ) {
+            fprintf(stderr, "%d,", *(int*)(ptr + sizeof(int) * k));
+        }
+        fprintf(stderr, "\n");
+#endif
         ptr += mem_size;
     }
 #ifndef PDC_SERVER_CACHE
@@ -208,15 +208,14 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
                                        request_data.obj_dims[i], remote_reg_info,
                                        (void *)request_data.data_buf[i], request_data.unit[i], 1);
 #endif
-        /*
-                        uint64_t j;
-                        fprintf(stderr, "server write array, offset = %lu, size = %lu:",
-           request_data.remote_offset[i][0], request_data.remote_length[i][0]); for ( j = 0; j <
-           remote_reg_info->size[0]; ++j ) { fprintf(stderr, "%d,", *(int*)(request_data.data_buf[i] +
-           sizeof(int) * j));
-                        }
-                        fprintf(stderr, "\n");
-        */
+#if 0
+        uint64_t j;
+        fprintf(stderr, "server write array, offset = %lu, size = %lu:", request_data.remote_offset[i][0], request_data.remote_length[i][0]);
+        for ( j = 0; j < remote_reg_info->size[0]; ++j ) {
+            fprintf(stderr, "%d,", *(int*)(request_data.data_buf[i] + sizeof(int) * j));
+        }
+        fprintf(stderr, "\n");
+#endif
         pthread_mutex_lock(&transfer_request_status_mutex);
         PDC_finish_request(local_bulk_args->transfer_request_id[i]);
         pthread_mutex_unlock(&transfer_request_status_mutex);
