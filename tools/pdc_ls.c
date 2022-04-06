@@ -12,6 +12,16 @@
 #include "../src/server/include/pdc_server_metadata.h"
 #include "cjson/cJSON.h"
 
+const char * avail_args[] = {
+    "-n",
+    "-i",
+    "-json",
+    "-ln",
+    "-li",
+    "s"
+};
+const int num_args = 6;
+
 typedef struct RegionNode {
     region_list_t* region_list;
     struct RegionNode* next;
@@ -61,6 +71,16 @@ void add(ArrayList *list, const char *s) {
   strcpy(list->items[list->length], s);
   list->length++;
 }
+
+int is_arg(char * arg) {
+    for (int i = 0; i < num_args; i++) {
+        if (strcmp(arg, avail_args[i]) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 
 int               pdc_server_rank_g            = 0;
 double total_mem_usage_g = 0.0;
@@ -118,8 +138,8 @@ int main(int argc, char *argv[])  {
                 new_node->next = NULL;
                 head = new_node;
                 cur_node = new_node;
+                fclose(file);
             }
-            fclose(file);
         }
         if (head == NULL) {
             printf("Unable to open/locate checkpoint file(s).\n");
@@ -191,8 +211,12 @@ void pdc_ls(FileNameNode* file_name_node, int argc, char *argv[]) {
     int list_ids = 0;
     int summary = 0;
 
-    int arg_index = 1;
+    int arg_index = 2;
     while (arg_index < argc) {
+        if (is_arg(argv[arg_index]) == 0) {
+            printf("Improperly formatted argument(s).\n");
+            return;
+        }
         if (strcmp(argv[arg_index], "-n") == 0) {
             arg_index++;
             wanted_name = argv[arg_index];
