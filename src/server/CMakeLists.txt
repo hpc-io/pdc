@@ -13,15 +13,16 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
   ${PDC_SOURCE_DIR}/src/server/include
+  ${PDC_SOURCE_DIR}/src/server/pdc_server_region/include
   ${PDC_SOURCE_DIR}/src/server/dablooms
-  ${PDC_SOURCE_DIR}/src/client_api/include
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_obj/include
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_region/include
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_query/include
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_transform/include
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_analysis/include
-  ${PDC_SOURCE_DIR}/src/client_api/profiling/include
-  ${PDC_SOURCE_DIR}/src/pdc_utils/include
+  ${PDC_SOURCE_DIR}/src/api/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_obj/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_region/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_query/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_transform/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_analysis/include
+  ${PDC_SOURCE_DIR}/src/api/profiling/include
+  ${PDC_SOURCE_DIR}/src/utils/include
   ${MERCURY_INCLUDE_DIR}
   ${FASTBIT_INCLUDE_DIR}
 )
@@ -44,11 +45,11 @@ add_executable(pdc_server.exe
                dablooms/pdc_murmur.c
                pdc_hash-table.c
                pdc_server_region_cache.c
-               ${PDC_SOURCE_DIR}/src/pdc_utils/pdc_region_utils.c
-               ${PDC_SOURCE_DIR}/src/pdc_utils/pdc_timing.c
-               ${PDC_SOURCE_DIR}/src/client_api/pdc_analysis/pdc_analysis_common.c
-               ${PDC_SOURCE_DIR}/src/client_api/pdc_transform/pdc_transforms_common.c
-               ${PDC_SOURCE_DIR}/src/client_api/pdc_analysis/pdc_hist_pkg.c
+               ${PDC_SOURCE_DIR}/src/utils/pdc_region_utils.c
+               ${PDC_SOURCE_DIR}/src/utils/pdc_timing.c
+               ${PDC_SOURCE_DIR}/src/api/pdc_analysis/pdc_analysis_common.c
+               ${PDC_SOURCE_DIR}/src/api/pdc_transform/pdc_transforms_common.c
+               ${PDC_SOURCE_DIR}/src/api/pdc_analysis/pdc_hist_pkg.c
 )
 
 if(PDC_ENABLE_FASTBIT)
