@@ -226,25 +226,29 @@ main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-// #if 0
-//     ret = PDCreg_transform_register("pdc_transform_compress", &x[0], region_x, obj_xx, region_xx, 0, INCR_STATE, DATA_OUT);
-//     ret = PDCbuf_transform_register("pdc_transform_compress", &x[0], region_x, obj_xx, region_xx, 0, INCR_STATE, DATA_OUT);
-//     ret = PDCobj_transform_register("pdc_transform_compress", &x[0], region_x, obj_xx, region_xx, 0, INCR_STATE, DATA_OUT);
-// #else
-     ret = PDCbuf_map_transform_register("pdc_transform_increment", &id1[0], region_id1, obj_id11, region_id11, 0,
-                                         INCR_STATE, DATA_OUT);
-     if (ret < 0)
-         printf("PDCobj_transform_register(1) failed\n");
+    // #if 0
+    //     ret = PDCreg_transform_register("pdc_transform_compress", &x[0], region_x, obj_xx, region_xx, 0,
+    //     INCR_STATE, DATA_OUT); ret = PDCbuf_transform_register("pdc_transform_compress", &x[0], region_x,
+    //     obj_xx, region_xx, 0, INCR_STATE, DATA_OUT); ret =
+    //     PDCobj_transform_register("pdc_transform_compress", &x[0], region_x, obj_xx, region_xx, 0,
+    //     INCR_STATE, DATA_OUT);
+    // #else
+    ret = PDCbuf_map_transform_register("pdc_transform_increment", &id1[0], region_id1, obj_id11, region_id11,
+                                        0, INCR_STATE, DATA_OUT);
+    if (ret < 0)
+        printf("PDCobj_transform_register(1) failed\n");
 
-//    ret = PDCbuf_map_transform_register("pdc_transform_compress", &id1[0], region_id1, obj_id11, region_id11, 0,
-//                                        INCR_STATE, DATA_OUT);
-//     if (ret < 0)
-//         printf("PDCobj_transform_register(1) failed\n");
-//
-//    ret = PDCbuf_map_transform_register("pdc_transform_decompress", NULL, region_id1, obj_id11, region_id11, 1,
-//                                        DECR_STATE, DATA_IN);
-//    if (ret < 0)
-//        printf("PDCobj_transform_register(2) failed\n");
+    //    ret = PDCbuf_map_transform_register("pdc_transform_compress", &id1[0], region_id1, obj_id11,
+    //    region_id11, 0,
+    //                                        INCR_STATE, DATA_OUT);
+    //     if (ret < 0)
+    //         printf("PDCobj_transform_register(1) failed\n");
+    //
+    //    ret = PDCbuf_map_transform_register("pdc_transform_decompress", NULL, region_id1, obj_id11,
+    //    region_id11, 1,
+    //                                        DECR_STATE, DATA_IN);
+    //    if (ret < 0)
+    //        printf("PDCobj_transform_register(2) failed\n");
 
     transfer_request_x = PDCregion_transfer_create(&x[0], PDC_WRITE, obj_xx, region_x, region_xx);
     if (transfer_request_x == 0) {
