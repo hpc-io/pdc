@@ -191,8 +191,8 @@ PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id)
  */
 static perr_t
 PDC_Client_attach_metadata_to_local_obj(const char *obj_name, uint64_t obj_id, uint64_t cont_id,
-                                        uint32_t data_server_id, pdc_region_partition_t region_partition, pdc_consistency_t consistency,
-                                        struct _pdc_obj_info *obj_info)
+                                        uint32_t data_server_id, pdc_region_partition_t region_partition,
+                                        pdc_consistency_t consistency, struct _pdc_obj_info *obj_info)
 {
     perr_t ret_value = SUCCEED;
 
@@ -345,7 +345,8 @@ PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_
     p->obj_info_pub->metadata_server_id = (pdcid_t)metadata_server_id;
 
     PDC_Client_attach_metadata_to_local_obj(obj_name, p->obj_info_pub->meta_id, meta_id, data_server_id,
-                                            p->obj_pt->obj_prop_pub->region_partition, p->obj_pt->obj_prop_pub->consistency, p);
+                                            p->obj_pt->obj_prop_pub->region_partition,
+                                            p->obj_pt->obj_prop_pub->consistency, p);
 
     p->obj_info_pub->obj_pt = PDC_CALLOC(struct pdc_obj_prop);
     if (!p->obj_info_pub->obj_pt)
@@ -916,7 +917,6 @@ PDCprop_set_obj_transfer_region_type(pdcid_t obj_prop, pdc_region_partition_t re
         PGOTO_ERROR(FAIL, "cannot locate object property ID");
     prop                                 = (struct _pdc_obj_prop *)(info->obj_ptr);
     prop->obj_prop_pub->region_partition = region_partition;
-
 
 done:
     fflush(stdout);

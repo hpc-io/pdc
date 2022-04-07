@@ -457,7 +457,6 @@ typedef struct query_read_names_args_t {
     char * obj_names_1d;
 } query_read_names_args_t;
 
-
 /********************************************************/
 /* Private typedefs used in client/server communication */
 /********************************************************/
