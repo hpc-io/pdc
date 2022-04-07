@@ -266,6 +266,7 @@ PDC_get_var_type_size(pdc_var_type_t dtype)
         case PDC_INT8:
             ret_value = sizeof(int8_t);
 
+
             goto done;
             break;
         case PDC_INT64:
@@ -994,6 +995,7 @@ PDC_metadata_t_to_transfer_t(pdc_metadata_t *meta, pdc_metadata_transfer_t *tran
     transfer->cont_id          = meta->cont_id;
     transfer->data_server_id   = meta->data_server_id;
     transfer->region_partition = meta->region_partition;
+    transfer->consistency      = meta->consistency;
     transfer->ndim             = meta->ndim;
     transfer->dims0            = meta->dims[0];
     transfer->dims1            = meta->dims[1];
@@ -1032,6 +1034,7 @@ PDC_transfer_t_to_metadata_t(pdc_metadata_transfer_t *transfer, pdc_metadata_t *
     meta->cont_id          = transfer->cont_id;
     meta->data_server_id   = transfer->data_server_id;
     meta->region_partition = transfer->region_partition;
+    meta->consistency      = transfer->consistency;
     meta->time_step        = transfer->time_step;
     meta->ndim             = transfer->ndim;
     meta->dims[0]          = transfer->dims0;
@@ -1723,6 +1726,7 @@ HG_TEST_RPC_CB(metadata_query, handle)
 
     FUNC_LEAVE(ret_value);
 }
+
 
 /* static hg_return_t */
 /* obj_reset_dims_cb(hg_handle_t handle) */
@@ -4923,6 +4927,7 @@ HG_TEST_RPC_CB(update_region_loc, handle)
     }
 
     out.ret = 20171031;
+
 
     ret_value = PDC_Server_update_local_region_storage_loc(input_region, in.obj_id, in.type);
     if (ret_value != SUCCEED) {

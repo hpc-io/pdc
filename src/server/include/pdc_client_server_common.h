@@ -262,6 +262,7 @@ typedef struct pdc_metadata_transfer_t {
     // preferred data server ID
     uint32_t data_server_id;
     uint8_t  region_partition;
+    uint8_t  consistency;
 
     // The following support state changes to objects
     // as a result of a transform.
@@ -401,6 +402,7 @@ typedef struct pdc_metadata_t {
     time_t         last_modified_time;
     uint32_t       data_server_id;
     uint8_t        region_partition;
+    uint8_t        consistency;
 
     char              tags[TAG_LEN_MAX];
     pdc_kvtag_list_t *kvtag_list_head;
@@ -454,6 +456,7 @@ typedef struct query_read_names_args_t {
     char **obj_names;
     char * obj_names_1d;
 } query_read_names_args_t;
+
 
 /********************************************************/
 /* Private typedefs used in client/server communication */
@@ -1656,6 +1659,11 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
     ret = hg_proc_uint8_t(proc, &struct_data->region_partition);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc region_partition error");
+        return ret;
+    }
+    ret = hg_proc_uint8_t(proc, &struct_data->consistency);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc consistency error");
         return ret;
     }
     // Added to support transforms
