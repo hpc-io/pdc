@@ -368,7 +368,7 @@ configure_file(
 #-----------------------------------------------------------------------------
 # Source
 #-----------------------------------------------------------------------------
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/client_api)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/api)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/server)
 
 #-----------------------------------------------------------------------------
@@ -464,7 +464,7 @@ endif()
 
 add_custom_target(format
     COMMAND find
-    ${PDC_SOURCE_DIR}/src/client_api
+    ${PDC_SOURCE_DIR}/src/api
     ${PDC_SOURCE_DIR}/src/server
     ${PDC_SOURCE_DIR}/src/tests
     -type f

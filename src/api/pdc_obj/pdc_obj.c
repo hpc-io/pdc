@@ -184,6 +184,7 @@ PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id)
  * \param cont_id[IN]           Container id (global, obtained from metadata server)
  * \param dataserver_id[IN]     Data server id (global, obtained from metadata server)
  * \param region_partition[IN]  region_partition for the object
+ * \param consistency[IN]       consistency for the object
  * \param obj_info[IN]          Object property
  *
  * \return Non-negative on success/Negative on failure
@@ -191,7 +192,7 @@ PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id)
 static perr_t
 PDC_Client_attach_metadata_to_local_obj(const char *obj_name, uint64_t obj_id, uint64_t cont_id,
                                         uint32_t data_server_id, pdc_region_partition_t region_partition,
-                                        struct _pdc_obj_info *obj_info)
+                                        pdc_consistency_t consistency, struct _pdc_obj_info *obj_info)
 {
     perr_t ret_value = SUCCEED;
 
@@ -208,6 +209,7 @@ PDC_Client_attach_metadata_to_local_obj(const char *obj_name, uint64_t obj_id, u
     ((pdc_metadata_t *)obj_info->metadata)->cont_id          = cont_id;
     ((pdc_metadata_t *)obj_info->metadata)->data_server_id   = data_server_id;
     ((pdc_metadata_t *)obj_info->metadata)->region_partition = region_partition;
+    ((pdc_metadata_t *)obj_info->metadata)->consistency      = consistency;
     if (NULL != obj_info->obj_pt->tags)
         strcpy(((pdc_metadata_t *)obj_info->metadata)->tags, obj_info->obj_pt->tags);
     if (NULL != obj_info->obj_pt->data_loc)
@@ -343,7 +345,8 @@ PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_
     p->obj_info_pub->metadata_server_id = (pdcid_t)metadata_server_id;
 
     PDC_Client_attach_metadata_to_local_obj(obj_name, p->obj_info_pub->meta_id, meta_id, data_server_id,
-                                            p->obj_pt->obj_prop_pub->region_partition, p);
+                                            p->obj_pt->obj_prop_pub->region_partition,
+                                            p->obj_pt->obj_prop_pub->consistency, p);
 
     p->obj_info_pub->obj_pt = PDC_CALLOC(struct pdc_obj_prop);
     if (!p->obj_info_pub->obj_pt)
@@ -593,6 +596,7 @@ PDCobj_open_common(const char *obj_name, pdcid_t pdc, int is_col)
         p->obj_pt->app_name = strdup(out->app_name);
     p->obj_pt->obj_prop_pub->type             = out->data_type;
     p->obj_pt->obj_prop_pub->region_partition = out->region_partition;
+    p->obj_pt->obj_prop_pub->consistency      = out->consistency;
     p->obj_pt->time_step                      = out->time_step;
     p->obj_pt->user_id                        = out->user_id;
 
