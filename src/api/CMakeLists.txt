@@ -10,6 +10,7 @@ set( LOCAL_INCLUDE_DIR
   ${PDC_SOURCE_DIR}/src/server/include
   ${PDC_SOURCE_DIR}/src/server/pdc_server_region
   ${PDC_SOURCE_DIR}/src/server/pdc_server_region/include
+  ${PDC_SOURCE_DIR}/src/server/pdc_server_analysis/include
   ${PDC_SOURCE_DIR}/src/server/dablooms
   ${PDC_SOURCE_DIR}/src/api/include
   ${PDC_SOURCE_DIR}/src/api/pdc_obj/include
