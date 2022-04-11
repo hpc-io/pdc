@@ -66,15 +66,14 @@ ctest contains both sequential and MPI tests for the PDC settings. These can be 
 0. git clone https://github.com/hpc-io/pdc.git
 1. cd pdc
 2. git checkout stable
-3. cd src
-4. mkdir install
-5. cd install
-6. export PDC_DIR=$(pwd)
-7. cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=mpicc
-8. make -j8
-9. ctest
-10. export LD_LIBRARY_PATH="$PDC_DIR/lib:$LD_LIBRARY_PATH"
-11. export PATH="$PDC_DIR/include:$PDC_DIR/lib:$PATH"
+3. mkdir install
+4. cd install
+5. export PDC_DIR=$(pwd)
+6. cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=mpicc
+7. make -j8
+8. ctest
+9. export LD_LIBRARY_PATH="$PDC_DIR/lib:$LD_LIBRARY_PATH"
+10. export PATH="$PDC_DIR/include:$PDC_DIR/lib:$PATH"
 ```
 
 # Environmental variables
