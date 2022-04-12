@@ -2335,6 +2335,7 @@ PDC_Client_query_metadata_name_timestep_agg_same_node(const char *obj_name, int 
             *out = (pdc_metadata_t *)calloc(1, sizeof(pdc_metadata_t));
             PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: - ERROR with query [%s]", pdc_client_mpi_rank_g, obj_name);
         }
+
     }
     else
         *out = (pdc_metadata_t *)calloc(1, sizeof(pdc_metadata_t));
@@ -2999,7 +3000,7 @@ PDC_Client_transfer_request_metadata_query2(char *buf, uint64_t total_buf_size, 
     in.total_buf_size = total_buf_size;
 
     // Compute metadata server id
-    // fprintf(stderr, "PDC_Client_transfer_request_metadata_query2: metdata_id = %u, total_buf_size = %lu\n",
+    // fprintf(stderr, "PDC_Client_transfer_request_metadata_query2[%d]: metdata_id = %u, total_buf_size = %lu\n", pdc_client_mpi_rank_g,
     // metadata_server_id, total_buf_size);
     debug_server_id_count[metadata_server_id]++;
 
