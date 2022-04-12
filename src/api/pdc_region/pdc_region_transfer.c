@@ -752,7 +752,8 @@ register_metadata(pdc_transfer_request_start_all_pkg **transfer_request_input, i
         sizeof(pdc_transfer_request_start_all_pkg *) * input_size);
     size = 0;
     for (i = 0; i < input_size; ++i) {
-        // fprintf(stderr, "register_metadata[%d]: request i = %d, metadata_server_id = %u\n", pdc_client_mpi_rank_g, i, transfer_request_input[i]->transfer_request->metadata_server_id);
+        // fprintf(stderr, "register_metadata[%d]: request i = %d, metadata_server_id = %u\n",
+        // pdc_client_mpi_rank_g, i, transfer_request_input[i]->transfer_request->metadata_server_id);
         if (transfer_request_input[i]->transfer_request->region_partition == PDC_REGION_DYNAMIC ||
             transfer_request_input[i]->transfer_request->region_partition == PDC_REGION_LOCAL) {
             transfer_requests[size] = transfer_request_input[i];
@@ -773,14 +774,18 @@ register_metadata(pdc_transfer_request_start_all_pkg **transfer_request_input, i
             transfer_requests[i - 1]->transfer_request->metadata_server_id) {
             n_objs = i - index;
             pack_region_metadata_query(transfer_requests + index, n_objs, &buf, &total_buf_size);
-            // fprintf(stderr, "register_metadata[%d]: checkpoint %d, metadata_server_id = %u, total_buf_size = %lu\n", pdc_client_mpi_rank_g, __LINE__, transfer_requests[index]->transfer_request->metadata_server_id, total_buf_size);
+            // fprintf(stderr, "register_metadata[%d]: checkpoint %d, metadata_server_id = %u, total_buf_size
+            // = %lu\n", pdc_client_mpi_rank_g, __LINE__,
+            // transfer_requests[index]->transfer_request->metadata_server_id, total_buf_size);
             PDC_Client_transfer_request_metadata_query(
                 buf, total_buf_size, n_objs, transfer_requests[index]->transfer_request->metadata_server_id,
                 is_write, &output_buf_size, &query_id);
             // fprintf(stderr, "register_metadata: checkpoint %d\n", __LINE__);
             free(buf);
             // If it is a valid query ID, then it means regions are overlapping.
-            // fprintf(stderr, "register_metadata[%d]: checkpoint %d, metadata_server_id = %u\n", pdc_client_mpi_rank_g, __LINE__, transfer_requests[index]->transfer_request->metadata_server_id);
+            // fprintf(stderr, "register_metadata[%d]: checkpoint %d, metadata_server_id = %u\n",
+            // pdc_client_mpi_rank_g, __LINE__,
+            // transfer_requests[index]->transfer_request->metadata_server_id);
             if (query_id) {
                 output_buf = (char *)malloc(output_buf_size);
                 PDC_Client_transfer_request_metadata_query2(
@@ -809,14 +814,17 @@ register_metadata(pdc_transfer_request_start_all_pkg **transfer_request_input, i
         n_objs = size - index;
         // fprintf(stderr, "register_metadata: checkpoint %d\n", __LINE__);
         pack_region_metadata_query(transfer_requests + index, n_objs, &buf, &total_buf_size);
-        // fprintf(stderr, "register_metadata[%d]: checkpoint %d, metadata_server_id = %u, total_buf_size = %lu\n", pdc_client_mpi_rank_g, __LINE__, transfer_requests[index]->transfer_request->metadata_server_id, total_buf_size);
+        // fprintf(stderr, "register_metadata[%d]: checkpoint %d, metadata_server_id = %u, total_buf_size =
+        // %lu\n", pdc_client_mpi_rank_g, __LINE__,
+        // transfer_requests[index]->transfer_request->metadata_server_id, total_buf_size);
         PDC_Client_transfer_request_metadata_query(
             buf, total_buf_size, n_objs, transfer_requests[index]->transfer_request->metadata_server_id,
             is_write, &output_buf_size, &query_id);
         // fprintf(stderr, "register_metadata: checkpoint %d\n", __LINE__);
         free(buf);
         // If it is a valid query ID, then it means regions are overlapping.
-        // fprintf(stderr, "register_metadata[%d]: checkpoint %d, metadata_server_id = %u\n", pdc_client_mpi_rank_g, __LINE__, transfer_requests[index]->transfer_request->metadata_server_id);
+        // fprintf(stderr, "register_metadata[%d]: checkpoint %d, metadata_server_id = %u\n",
+        // pdc_client_mpi_rank_g, __LINE__, transfer_requests[index]->transfer_request->metadata_server_id);
         if (query_id) {
             output_buf = (char *)malloc(output_buf_size);
             PDC_Client_transfer_request_metadata_query2(
