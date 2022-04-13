@@ -8,15 +8,18 @@ set( LOCAL_INCLUDE_DIR
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
   ${PDC_SOURCE_DIR}/src/server/include
+  ${PDC_SOURCE_DIR}/src/server/pdc_server_region
+  ${PDC_SOURCE_DIR}/src/server/pdc_server_region/include
+  ${PDC_SOURCE_DIR}/src/server/pdc_server_analysis/include
   ${PDC_SOURCE_DIR}/src/server/dablooms
-  ${PDC_SOURCE_DIR}/src/client_api/include
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_obj/include
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_region/include
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_query/include
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_transform/include
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_analysis/include
-  ${PDC_SOURCE_DIR}/src/client_api/profiling/include
-  ${PDC_SOURCE_DIR}/src/pdc_utils/include
+  ${PDC_SOURCE_DIR}/src/api/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_obj/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_region/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_query/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_transform/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_analysis/include
+  ${PDC_SOURCE_DIR}/src/api/profiling/include
+  ${PDC_SOURCE_DIR}/src/utils/include
 )
 
 include_directories(
@@ -65,29 +68,29 @@ endif()
 # Set sources
 #------------------------------------------------------------------------------
 set(PDC_SRCS
-  ${PDC_SOURCE_DIR}/src/client_api/pdc.c
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_client_connect.c
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_obj/pdc_prop.c
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_obj/pdc_cont.c
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_obj/pdc_obj.c
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_analysis/pdc_analysis_and_transforms_connect.c
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_analysis/pdc_analysis_common.c
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_analysis/pdc_analysis.c
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_analysis/pdc_hist_pkg.c
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_obj/pdc_mpi.c
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_query/pdc_query.c
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_region/pdc_region.c
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_region/pdc_region_transfer.c
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_transform/pdc_transform.c
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_transform/pdc_transforms_common.c
+  ${PDC_SOURCE_DIR}/src/api/pdc.c
+  ${PDC_SOURCE_DIR}/src/api/pdc_client_connect.c
+  ${PDC_SOURCE_DIR}/src/api/pdc_obj/pdc_prop.c
+  ${PDC_SOURCE_DIR}/src/api/pdc_obj/pdc_cont.c
+  ${PDC_SOURCE_DIR}/src/api/pdc_obj/pdc_obj.c
+  ${PDC_SOURCE_DIR}/src/api/pdc_analysis/pdc_analysis_and_transforms_connect.c
+  ${PDC_SOURCE_DIR}/src/api/pdc_analysis/pdc_analysis_common.c
+  ${PDC_SOURCE_DIR}/src/api/pdc_analysis/pdc_analysis.c
+  ${PDC_SOURCE_DIR}/src/api/pdc_analysis/pdc_hist_pkg.c
+  ${PDC_SOURCE_DIR}/src/api/pdc_obj/pdc_mpi.c
+  ${PDC_SOURCE_DIR}/src/api/pdc_query/pdc_query.c
+  ${PDC_SOURCE_DIR}/src/api/pdc_region/pdc_region.c
+  ${PDC_SOURCE_DIR}/src/api/pdc_region/pdc_region_transfer.c
+  ${PDC_SOURCE_DIR}/src/api/pdc_transform/pdc_transform.c
+  ${PDC_SOURCE_DIR}/src/api/pdc_transform/pdc_transforms_common.c
   ${PDC_SOURCE_DIR}/src/server/pdc_client_server_common.c
-  ${PDC_SOURCE_DIR}/src/server/pdc_server_region_transfer.c
-  ${PDC_SOURCE_DIR}/src/server/pdc_server_region_cache.c
-  ${PDC_SOURCE_DIR}/src/server/pdc_server_region_transfer_metadata_query.c
-  ${PDC_SOURCE_DIR}/src/pdc_utils/pdc_timing.c
-  ${PDC_SOURCE_DIR}/src/pdc_utils/pdc_malloc.c
-  ${PDC_SOURCE_DIR}/src/pdc_utils/pdc_interface.c
-  ${PDC_SOURCE_DIR}/src/pdc_utils/pdc_region_utils.c
+  ${PDC_SOURCE_DIR}/src/server/pdc_server_region/pdc_server_region_transfer.c
+  ${PDC_SOURCE_DIR}/src/server/pdc_server_region/pdc_server_region_cache.c
+  ${PDC_SOURCE_DIR}/src/server/pdc_server_region/pdc_server_region_transfer_metadata_query.c
+  ${PDC_SOURCE_DIR}/src/utils/pdc_timing.c
+  ${PDC_SOURCE_DIR}/src/utils/pdc_malloc.c
+  ${PDC_SOURCE_DIR}/src/utils/pdc_interface.c
+  ${PDC_SOURCE_DIR}/src/utils/pdc_region_utils.c
   )
 
   add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/profiling)
@@ -120,17 +123,17 @@ set(PDC_EXPORTED_LIBS pdc ${PDC_EXPORTED_LIBS})
 # Specify project header files to be installed
 #-----------------------------------------------------------------------------
 set(PDC_HEADERS
-  ${PDC_SOURCE_DIR}/src/client_api/include/pdc.h
-  ${PDC_SOURCE_DIR}/src/client_api/include/pdc_public.h
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_analysis/include/pdc_analysis.h
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_obj/include/pdc_cont.h
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_obj/include/pdc_mpi.h
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_obj/include/pdc_obj.h
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_region/include/pdc_region.h
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_obj/include/pdc_prop.h
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_query/include/pdc_query.h
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_region/include/pdc_region.h
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_transform/include/pdc_transform.h
+  ${PDC_SOURCE_DIR}/src/api/include/pdc.h
+  ${PDC_SOURCE_DIR}/src/api/include/pdc_public.h
+  ${PDC_SOURCE_DIR}/src/api/pdc_analysis/include/pdc_analysis.h
+  ${PDC_SOURCE_DIR}/src/api/pdc_obj/include/pdc_cont.h
+  ${PDC_SOURCE_DIR}/src/api/pdc_obj/include/pdc_mpi.h
+  ${PDC_SOURCE_DIR}/src/api/pdc_obj/include/pdc_obj.h
+  ${PDC_SOURCE_DIR}/src/api/pdc_region/include/pdc_region.h
+  ${PDC_SOURCE_DIR}/src/api/pdc_obj/include/pdc_prop.h
+  ${PDC_SOURCE_DIR}/src/api/pdc_query/include/pdc_query.h
+  ${PDC_SOURCE_DIR}/src/api/pdc_region/include/pdc_region.h
+  ${PDC_SOURCE_DIR}/src/api/pdc_transform/include/pdc_transform.h
   ${PROJECT_BINARY_DIR}/pdc_config_sys.h
   ${PROJECT_BINARY_DIR}/pdc_config.h
   )

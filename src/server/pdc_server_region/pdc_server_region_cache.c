@@ -3,7 +3,7 @@
 
 #ifdef PDC_SERVER_CACHE
 
-#define MAX_CACHE_SIZE 2147483648
+#define MAX_CACHE_SIZE 1610612736
 
 typedef struct pdc_region_cache {
     struct pdc_region_info * region_cache_info;
@@ -17,6 +17,7 @@ typedef struct pdc_obj_cache {
     uint64_t *            dims;
     pdc_region_cache *    region_cache;
     pdc_region_cache *    region_cache_end;
+    int                   region_cache_size;
     struct timeval        timestamp;
 } pdc_obj_cache;
 
@@ -407,18 +408,20 @@ PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dim
             obj_cache_list_end       = obj_cache_list_end->next;
             obj_cache_list_end->next = NULL;
 
-            obj_cache_list_end->obj_id           = obj_id;
-            obj_cache_list_end->region_cache     = NULL;
-            obj_cache_list_end->region_cache_end = NULL;
+            obj_cache_list_end->obj_id            = obj_id;
+            obj_cache_list_end->region_cache_size = 0;
+            obj_cache_list_end->region_cache      = NULL;
+            obj_cache_list_end->region_cache_end  = NULL;
         }
         else {
             obj_cache_list     = (pdc_obj_cache *)malloc(sizeof(pdc_obj_cache));
             obj_cache_list_end = obj_cache_list;
 
-            obj_cache_list_end->obj_id           = obj_id;
-            obj_cache_list_end->region_cache     = NULL;
-            obj_cache_list_end->region_cache_end = NULL;
-            obj_cache_list_end->next             = NULL;
+            obj_cache_list_end->obj_id            = obj_id;
+            obj_cache_list_end->region_cache_size = 0;
+            obj_cache_list_end->region_cache      = NULL;
+            obj_cache_list_end->region_cache_end  = NULL;
+            obj_cache_list_end->next              = NULL;
         }
         obj_cache_list_end->ndim = obj_ndim;
         if (obj_ndim) {
@@ -438,14 +441,15 @@ PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dim
         obj_cache->region_cache_end       = obj_cache->region_cache_end->next;
         obj_cache->region_cache_end->next = NULL;
     }
+    obj_cache->region_cache_size++;
 
     /* printf("checkpoint region_obj_cache_size = %d\n", obj_cache->region_obj_cache_size); */
     obj_cache->region_cache_end->region_cache_info =
         (struct pdc_region_info *)malloc(sizeof(struct pdc_region_info));
     region_cache_info         = obj_cache->region_cache_end->region_cache_info;
     region_cache_info->ndim   = ndim;
-    region_cache_info->offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
-    region_cache_info->size   = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
+    region_cache_info->offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim * 2);
+    region_cache_info->size   = region_cache_info->offset + ndim;
     region_cache_info->buf    = (char *)malloc(sizeof(char) * buf_size);
     region_cache_info->unit   = unit;
 
@@ -581,15 +585,159 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
     FUNC_LEAVE(ret_value);
 }
 
+static int
+merge_requests(uint64_t *start, uint64_t *end, int request_size, char **buf, uint64_t **new_start,
+               uint64_t **new_end, char ***new_buf, uint64_t unit, int *request_size_ptr)
+{
+    int      i, index;
+    int      merged_requests = 1;
+    char *   ptr;
+    size_t   total_data_size = end[0] - start[0];
+    uint64_t prev_end        = end[0];
+    for (i = 1; i < request_size; ++i) {
+        if (prev_end < start[i]) {
+            merged_requests++;
+            total_data_size += (end[i] - start[i]);
+            prev_end = end[i];
+        }
+        else {
+            if (end[i] > prev_end) {
+                total_data_size += (end[i] - prev_end);
+                prev_end = end[i];
+            }
+        }
+    }
+    *new_start = (uint64_t *)malloc(sizeof(uint64_t) * merged_requests * 2);
+    *new_end   = new_start[0] + merged_requests;
+
+    index           = 0;
+    new_start[0][0] = start[0];
+    new_end[0][0]   = end[0];
+
+    *new_buf      = (char **)malloc(merged_requests * sizeof(char *));
+    new_buf[0][0] = (char *)malloc(total_data_size * unit);
+    ptr           = new_buf[0][0];
+    memcpy(ptr, buf[0], (end[0] - start[0]) * unit);
+    ptr += (end[0] - start[0]) * unit;
+
+    for (i = 1; i < request_size; ++i) {
+        if (new_end[0][index] < start[i]) {
+            index++;
+            new_buf[0][index]   = ptr;
+            new_start[0][index] = start[i];
+            new_end[0][index]   = end[i];
+
+            memcpy(ptr, buf[i], (end[i] - start[i]) * unit);
+            ptr += (end[i] - start[i]) * unit;
+        }
+        else {
+            if (end[i] > new_end[0][index]) {
+                memcpy(ptr, buf[i] + new_end[0][index] - start[i], (end[i] - new_end[0][index]) * unit);
+                ptr += (end[i] - new_end[0][index]) * unit;
+                new_end[0][index] = end[i];
+            }
+        }
+    }
+
+    *request_size_ptr = merged_requests;
+    return 0;
+}
+
+static int
+sort_by_offset(const void *elem1, const void *elem2)
+{
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+    if ((*(struct pdc_region_info **)elem1)->offset[0] > (*(struct pdc_region_info **)elem2)->offset[0])
+        return 1;
+    if ((*(struct pdc_region_info **)elem1)->offset[0] < (*(struct pdc_region_info **)elem2)->offset[0])
+        return -1;
+    return 0;
+#pragma GCC diagnostic pop
+}
+
 int
 PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache)
 {
-    pdc_region_cache *      region_cache_iter, *region_cache_temp;
-    struct pdc_region_info *region_cache_info;
-    uint64_t                write_size = 0;
+    int                      i;
+    pdc_region_cache *       region_cache_iter, *region_cache_temp;
+    struct pdc_region_info * region_cache_info;
+    uint64_t                 write_size = 0;
+    char **                  buf, **new_buf, *buf_ptr = NULL;
+    uint64_t *               start, *end, *new_start, *new_end;
+    int                      merged_request_size = 0;
+    uint64_t                 unit;
+    struct pdc_region_info **obj_regions;
 #ifdef PDC_TIMING
-    double start = MPI_Wtime();
+    double start_time = MPI_Wtime();
 #endif
+
+    if (obj_cache->ndim == 1 && obj_cache->region_cache_size) {
+        // For 1D case, we can merge regions to minimize the number of POSIX calls.
+        start = (uint64_t *)malloc(sizeof(uint64_t) * obj_cache->region_cache_size * 2);
+        end   = start + obj_cache->region_cache_size;
+        buf   = (char **)malloc(sizeof(char *) * obj_cache->region_cache_size);
+
+        // Sort the regions based on start index
+        obj_regions       = (struct pdc_region_info **)malloc(sizeof(struct pdc_region_info *) *
+                                                        obj_cache->region_cache_size);
+        unit              = obj_cache->region_cache->region_cache_info->unit;
+        region_cache_iter = obj_cache->region_cache;
+        i                 = 0;
+        while (region_cache_iter) {
+            obj_regions[i]    = region_cache_iter->region_cache_info;
+            region_cache_iter = region_cache_iter->next;
+            i++;
+        }
+        qsort(obj_regions, obj_cache->region_cache_size, sizeof(struct pdc_region_info *), sort_by_offset);
+        for (i = 0; i < obj_cache->region_cache_size; ++i) {
+            start[i] = obj_regions[i]->offset[0];
+            end[i]   = obj_regions[i]->offset[0] + obj_regions[i]->size[0];
+            buf[i]   = obj_regions[i]->buf;
+        }
+        free(obj_regions);
+        // Merge adjacent regions
+        // printf("checkpoint @ line %d\n", __LINE__);
+        merge_requests(start, end, obj_cache->region_cache_size, buf, &new_start, &new_end, &new_buf, unit,
+                       &merged_request_size);
+        free(start);
+        free(buf);
+        // Record buffer pointer to be freed later.
+        buf_ptr = new_buf[0];
+        // Override the first merge_request_size number of cache regions with the merge regions
+        obj_cache->region_cache_size = merged_request_size;
+        region_cache_iter            = obj_cache->region_cache;
+        for (i = 0; i < merged_request_size; ++i) {
+            // printf("new_start = %lu, new_end = %lu\n", new_start[i], new_end[i]);
+            region_cache_info            = region_cache_iter->region_cache_info;
+            region_cache_info->offset[0] = new_start[i];
+            region_cache_info->size[0]   = new_end[i] - new_start[i];
+            free(region_cache_info->buf);
+            region_cache_info->buf = new_buf[i];
+            if (i == merged_request_size - 1) {
+                region_cache_temp       = region_cache_iter->next;
+                region_cache_iter->next = NULL;
+                region_cache_iter       = region_cache_temp;
+            }
+            else {
+                region_cache_iter = region_cache_iter->next;
+            }
+        }
+        free(new_start);
+        free(new_buf);
+        // Free other regions.
+        while (region_cache_iter) {
+            region_cache_info = region_cache_iter->region_cache_info;
+            free(region_cache_info->offset);
+            free(region_cache_info->buf);
+            free(region_cache_info);
+            region_cache_temp = region_cache_iter;
+            region_cache_iter = region_cache_iter->next;
+            free(region_cache_temp);
+        }
+    }
+
+    // Iterate through all cache regions and use POSIX I/O to write them back to file system.
     region_cache_iter = obj_cache->region_cache;
     while (region_cache_iter != NULL) {
         region_cache_info = region_cache_iter->region_cache_info;
@@ -603,19 +751,23 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache)
             write_size *= region_cache_info->size[2];
 
         total_cache_size -= write_size;
-
         free(region_cache_info->offset);
-        free(region_cache_info->size);
-        free(region_cache_info->buf);
+        if (obj_cache->ndim > 1) {
+            free(region_cache_info->buf);
+        }
         free(region_cache_info);
         region_cache_temp = region_cache_iter;
         region_cache_iter = region_cache_iter->next;
         free(region_cache_temp);
     }
-    obj_cache->region_cache = NULL;
+    if (merged_request_size && obj_cache->ndim == 1) {
+        free(buf_ptr);
+    }
+    obj_cache->region_cache      = NULL;
+    obj_cache->region_cache_size = 0;
     gettimeofday(&(obj_cache->timestamp), NULL);
 #ifdef PDC_TIMING
-    pdc_server_timings->PDCcache_flush += MPI_Wtime() - start;
+    pdc_server_timings->PDCcache_flush += MPI_Wtime() - start_time;
 #endif
     return 0;
 }
@@ -727,7 +879,7 @@ PDC_region_fetch(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims, struct
                  void *buf, size_t unit)
 {
     pdc_obj_cache *obj_cache = NULL, *obj_cache_iter;
-    int            flag      = 1;
+    int            flag      = 0;
     // size_t                  j;
     pdc_region_cache *region_cache_iter;
     uint64_t *        overlap_offset, *overlap_size;

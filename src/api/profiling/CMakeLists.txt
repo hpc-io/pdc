@@ -3,20 +3,21 @@
 #------------------------------------------------------------------------------
 include_directories(
   ${PDC_INCLUDES_BUILD_TIME}
+  ${PROJECT_SOURCE_DIR}
   ${PROJECT_BINARY_DIR}
-  ${PDC_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}
-  ${PDC_SOURCE_DIR}/src/server/include
-  ${PDC_SOURCE_DIR}/src/server/dablooms
-  ${PDC_SOURCE_DIR}/src/client_api/include
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_obj/include
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_region/include
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_query/include
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_transform/include
-  ${PDC_SOURCE_DIR}/src/client_api/pdc_analysis/include
-  ${PDC_SOURCE_DIR}/src/client_api/profiling/include
-  ${PDC_SOURCE_DIR}/src/pdc_utils/include
   ${CMAKE_CURRENT_BINARY_DIR}
+  ${PDC_SOURCE_DIR}/src/server/include
+  ${PDC_SOURCE_DIR}/src/server/pdc_server_region/include
+  ${PDC_SOURCE_DIR}/src/server/dablooms
+  ${PDC_SOURCE_DIR}/src/api/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_obj/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_region/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_query/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_transform/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_analysis/include
+  ${PDC_SOURCE_DIR}/src/api/profiling/include
+  ${PDC_SOURCE_DIR}/src/utils/include
   ${MERCURY_INCLUDE_DIR}
   ${FASTBIT_INCLUDE_DIR}
 )
