@@ -176,6 +176,10 @@ main(int argc, char **argv)
             PDCprop_set_obj_transfer_region_type(obj_prop_xx, PDC_REGION_DYNAMIC);
             break;
         }
+        case 3: {
+            PDCprop_set_obj_transfer_region_type(obj_prop_xx, PDC_REGION_LOCAL);
+            break;
+        }
         default: {
         }
     }
@@ -635,6 +639,7 @@ main(int argc, char **argv)
             printf("fail to close region region_id22\n");
             return 1;
         }
+        MPI_Barrier(MPI_COMM_WORLD);
     }
 
 #ifdef ENABLE_MPI
