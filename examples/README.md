@@ -68,7 +68,15 @@
     - BD-CATS-IO is an example for reading data written by VIPIC I/O.
   + To run this example, use the following commands. Step 1 is refers to the case that read is run right after write applications. In step 2, PDC server is closed after vpicio. The server is restarted before calling bdcats.
 ```
-0. cd make
+0. make
 1. ./run_multiple_test.sh ./vpicio ./bdcats
 2. ./run_checkpoint_restart_test.sh ./vpicio ./bdcats
+```
+  ## PDC and HDF5 mapping
+  + In folder C_plus_plus_example, the implementations in "multidataset_plugin.cc" illustrates an simple example for switching a HDF5 application into a PDC application. C MACRO functions are used to switch the code. In "region_transfer_1D_append.cc", there is a simple application for running the functions implemented in "multidataset_plugin.cc".
+  + This multidataset_plugin implementation is designed for wrapping HDF5 operations and call HDF5 multidataset. We demonstrate that PDC can substitute a storage structure comparable to HDF5. Therefore, it is possible to make direct comparison between these two. Currently, only write is implemented in this example.
+```
+0. cd C_plus_plus_example;make
+1. mpiexec -n 1 ./pdc_server.exe &
+2. mpiexec -n 1 ./region_transfer_1D_append
 ```

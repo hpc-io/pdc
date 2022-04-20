@@ -2,10 +2,13 @@
  * Copyright Notice for
  * Proactive Data Containers (PDC) Software Library and Utilities
  * -----------------------------------------------------------------------------
+ * Author: Qiao Kang qiaokang124@gmail.com
+ * This file is the core I/O module of the PDC region transfer at the client side.
+ * -----------------------------------------------------------------------------
 
  *** Copyright Notice ***
 
- * Proactive Data Containers (PDC) Copyright (c) 2017, The Regents of the
+ * Proactive Data Containers (PDC) Copyright (c) 2022, The Regents of the
  * University of California, through Lawrence Berkeley National Laboratory,
  * UChicago Argonne, LLC, operator of Argonne National Laboratory, and The HDF
  * Group (subject to receipt of any required approvals from the U.S. Dept. of
@@ -308,6 +311,11 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+/*
+ * This function binds a transfer request to its corresponding object, so the object is aware of any ongoing region transfer operation.
+ * Called when transfer request start is executed.
+ * Why do we do this? Sometimes users may close an object without calling transfer request wait, so it is our responsibility to wait for the request at the object's close time.
+*/
 static perr_t
 attach_local_transfer_request(struct _pdc_obj_info *p, pdcid_t transfer_request_id)
 {
@@ -332,6 +340,10 @@ attach_local_transfer_request(struct _pdc_obj_info *p, pdcid_t transfer_request_
     FUNC_LEAVE(ret_value);
 }
 
+/*
+ * This function detaches a transfer request to its corresponding object.
+ * Called when transfer request wait is executed.
+*/
 static perr_t
 remove_local_transfer_request(struct _pdc_obj_info *p, pdcid_t transfer_request_id)
 {
@@ -483,6 +495,7 @@ static_region_partition(char *buf, int ndim, uint64_t unit, pdc_access_t access_
             *n_data_servers += 1;
         }
     }
+    // Shrink memory size if necessary.
     if (*n_data_servers != pdc_server_num_g) {
         *data_server_ids = (uint32_t *)realloc(*data_server_ids, sizeof(uint32_t) * n_data_servers[0]);
         *output_offsets  = (uint64_t **)realloc(*output_offsets, sizeof(uint64_t *) * n_data_servers[0]);
@@ -497,7 +510,9 @@ static_region_partition(char *buf, int ndim, uint64_t unit, pdc_access_t access_
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
-
+/*
+ * Pack user memory buffer into a contiguous buffer based on local region shape.
+*/
 static perr_t
 pack_region_buffer(char *buf, uint64_t *obj_dims, size_t total_data_size, int local_ndim,
                    uint64_t *local_offset, uint64_t *local_size, size_t unit, pdc_access_t access_type,
@@ -1743,6 +1758,7 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
             for (j = index; j < i; ++j) {
                 metadata_ids[j] = transfer_requests[j]->metadata_id;
             }
+
             // printf("PDCregion_transfer_wait_all: checkpoint %d\n", __LINE__);
             PDC_Client_transfer_request_wait_all(n_objs, metadata_ids + index,
                                                  transfer_requests[index]->data_server_id);

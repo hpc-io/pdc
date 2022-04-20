@@ -901,24 +901,19 @@ PDC_region_fetch(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims, struct
                                            region_cache_iter->region_cache_info->offset,
                                            region_cache_iter->region_cache_info->size, region_info->ndim);
             if (flag) {
+                // flag = 1 means that the input region is fully contained in the cached region, so the return value of overlap_offset must not be NULL
                 PDC_region_overlap_detect(region_info->ndim, region_info->offset, region_info->size,
                                           region_cache_iter->region_cache_info->offset,
                                           region_cache_iter->region_cache_info->size, &overlap_offset,
                                           &overlap_size);
-                if (overlap_offset) {
-                    memcpy_overlap_subregion(
-                        region_info->ndim, unit, region_cache_iter->region_cache_info->buf,
-                        region_cache_iter->region_cache_info->offset,
-                        region_cache_iter->region_cache_info->size, buf, region_info->offset,
-                        region_info->size, overlap_offset, overlap_size);
-                    // printf("PDCserver_region_cache: checkpoint @ line %d\n", __LINE__);
+                memcpy_overlap_subregion(
+                    region_info->ndim, unit, region_cache_iter->region_cache_info->buf,
+                    region_cache_iter->region_cache_info->offset,
+                    region_cache_iter->region_cache_info->size, buf, region_info->offset,
+                    region_info->size, overlap_offset, overlap_size);
                     free(overlap_offset);
-                    flag = 1;
-                    break;
-                }
-                else {
-                    flag = 0;
-                }
+                // flag = 1 at here.
+                break;
             }
             region_cache_iter = region_cache_iter->next;
         }
