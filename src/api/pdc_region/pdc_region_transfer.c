@@ -312,10 +312,11 @@ done:
 }
 
 /*
- * This function binds a transfer request to its corresponding object, so the object is aware of any ongoing region transfer operation.
- * Called when transfer request start is executed.
- * Why do we do this? Sometimes users may close an object without calling transfer request wait, so it is our responsibility to wait for the request at the object's close time.
-*/
+ * This function binds a transfer request to its corresponding object, so the object is aware of any ongoing
+ * region transfer operation. Called when transfer request start is executed. Why do we do this? Sometimes
+ * users may close an object without calling transfer request wait, so it is our responsibility to wait for
+ * the request at the object's close time.
+ */
 static perr_t
 attach_local_transfer_request(struct _pdc_obj_info *p, pdcid_t transfer_request_id)
 {
@@ -343,7 +344,7 @@ attach_local_transfer_request(struct _pdc_obj_info *p, pdcid_t transfer_request_
 /*
  * This function detaches a transfer request to its corresponding object.
  * Called when transfer request wait is executed.
-*/
+ */
 static perr_t
 remove_local_transfer_request(struct _pdc_obj_info *p, pdcid_t transfer_request_id)
 {
@@ -512,7 +513,7 @@ static_region_partition(char *buf, int ndim, uint64_t unit, pdc_access_t access_
 }
 /*
  * Pack user memory buffer into a contiguous buffer based on local region shape.
-*/
+ */
 static perr_t
 pack_region_buffer(char *buf, uint64_t *obj_dims, size_t total_data_size, int local_ndim,
                    uint64_t *local_offset, uint64_t *local_size, size_t unit, pdc_access_t access_type,

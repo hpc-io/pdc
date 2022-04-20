@@ -21,14 +21,14 @@ extern "C" {
 #define H5_TIMING_ENABLE
 
 #ifdef H5_TIMING_ENABLE
-typedef struct H5Timer{
+typedef struct H5Timer {
     double start;
     double end;
     size_t data_size;
-    char *name;
+    char * name;
 } H5Timer;
 
-typedef struct H5TimerClass{
+typedef struct H5TimerClass {
     std::vector<H5Timer> *dataset_timers;
     std::vector<H5Timer> *dataset_sz_timers;
     std::vector<H5Timer> *dataset_read_timers;
@@ -39,8 +39,8 @@ typedef struct H5TimerClass{
     int PDCstart_time;
     int PDCwait_time;
 #else
-    int H5Dwrite_count;
-    int H5Dread_count;
+    int    H5Dwrite_count;
+    int    H5Dread_count;
     double H5Dclose_time;
     double wrap_requests_time;
     double H5Dwrite_time;
