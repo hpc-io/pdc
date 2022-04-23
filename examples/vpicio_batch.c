@@ -205,14 +205,14 @@ main(int argc, char **argv)
     obj_prop_id22 = PDCprop_obj_dup(obj_prop_xx);
     PDCprop_set_obj_type(obj_prop_id22, PDC_INT);
 
-    obj_xx   = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
-    obj_yy   = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
-    obj_zz   = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
-    obj_pxx  = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
-    obj_pyy  = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
-    obj_pzz  = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
-    obj_id11 = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
-    obj_id22 = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps);
+    obj_xx   = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps + 1);
+    obj_yy   = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps + 1);
+    obj_zz   = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps + 1);
+    obj_pxx  = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps + 1);
+    obj_pyy  = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps + 1);
+    obj_pzz  = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps + 1);
+    obj_id11 = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps + 1);
+    obj_id22 = (pdcid_t *)malloc(sizeof(pdcid_t) * timestamps + 1);
 
     offset        = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
     offset_remote = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
@@ -631,11 +631,11 @@ main(int argc, char **argv)
             printf("fail to close region region_pzz\n");
             return 1;
         }
-        if (PDCobj_close(region_id11) < 0) {
+        if (PDCregion_close(region_id11) < 0) {
             printf("fail to close region region_id11\n");
             return 1;
         }
-        if (PDCobj_close(region_id22) < 0) {
+        if (PDCregion_close(region_id22) < 0) {
             printf("fail to close region region_id22\n");
             return 1;
         }
