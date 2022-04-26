@@ -9,8 +9,6 @@
 #include "pdc_client_server_common.h"
 #include "pdc_timing.h"
 
-#define PDC_SERVER_CACHE
-
 #ifdef PDC_SERVER_CACHE
 
 #define PDC_REGION_CONTAINED       0

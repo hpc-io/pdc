@@ -9,6 +9,9 @@
 /* Define if you want to enable timing */
 #cmakedefine PDC_TIMING
 
+/* Define if you want to enable server cache */
+#cmakedefine PDC_SERVER_CACHE
+
 /* Define if you want to enable checkpoint */
 #cmakedefine PDC_ENABLE_CHECKPOINT
 
