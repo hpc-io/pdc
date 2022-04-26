@@ -896,7 +896,8 @@ Disadvantage: Reading metadata files may take some time. If multiple servers are
 The following table summarizes the communication of the three mapping methods from clients to types of PDC servers when different PDC functions are called.
 
 ## PDC metadata management implementation
-This section discusses how object metadata is implemented in the PDC production library.
+This section discusses how object metadata is implemented in the PDC production library. The following figure illustrates the flow of object metadata for different object operations. We label the 4 types of metadata in bold.
+![alt text](pdc_metadata_flow.png)
 ### Create metadata
 Metadata for an object is created by using PDC property. PDC property is created using client API “PDCprop_create(pdc_prop_type_t type, pdcid_t pdc_id)”. After a property instance is created, it is possible to set elements in this property using object property APIs. Details are in https://github.com/hpc-io/pdc/tree/stable/docs#pdc-property-apis.
 
