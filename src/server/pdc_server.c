@@ -629,9 +629,9 @@ PDC_Server_set_close(void)
             if (pdc_server_rank_g == 0) {
                 printf("==PDC_SERVER[0]: checkpoint disabled!\n");
             }
-        } else {
+        }
+        else {
             PDC_Server_checkpoint();
-
         }
 #ifdef PDC_TIMING
         pdc_server_timings->PDCserver_checkpoint += MPI_Wtime() - start;
@@ -1710,8 +1710,8 @@ PDC_Server_loop(hg_context_t *hg_context)
     hg_return_t  hg_ret;
     unsigned int actual_count;
 #ifdef PDC_ENABLE_CHECKPOINT
-    int          checkpoint_interval  = 1;
-    clock_t      last_checkpoint_time = 0, cur_time;
+    int     checkpoint_interval  = 1;
+    clock_t last_checkpoint_time = 0, cur_time;
 #endif
     FUNC_ENTER(NULL);
 
