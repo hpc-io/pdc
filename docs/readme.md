@@ -937,12 +937,16 @@ When PDC servers are closed, metadata stored by metadata servers are saved to th
 
 Implementation of server checkpoint is in the function “PDC_Server_checkpoint” and the corresponding restart is in the function “PDC_Server_restart(char *filename)”. The source file is “pdc_server.c”.  
 
-There are four categories of metadata to be checkpointed. One category is concatenated after another seamlessly. We demonstrate different categories of metadata in figures. Before each of the brackets, an integer value will indicate the number of repetition for contents in the brackets.contents after the bracket will start from the next byte after the last repetition for contents in the bracket.
+There are four categories of metadata to be checkpointed. One category is concatenated after another seamlessly. We demonstrate the first three categories of metadata in the following figures. Before each of the brackets, an integer value will indicate the number of repetition for contents in the brackets.contents after the bracket will start from the next byte after the last repetition for contents in the bracket. The last category is managed by an independent module "pdc_server_region_transfer_metadata_query.c". The content of the metadata is subject to future changes.
+
+![Alt text](container_hashtable_checkpoint.png)
+![Alt text](data_hashtable_checkpoint.png)
+![Alt text](data_server_checkpoint.png)
 
 Region metadata checkpoint is placed at the end of the server checkpoint file, right after the last byte of data server region. Function “transfer_request_metadata_query_checkpoint(char **checkpoint, uint64_t *checkpoint_size)” in file pdc_server_region_transfer_metadata_query.c handles the wrapping of region metadata.
 
 ## Region transfer request at client
-
+![Alt text](pdc_region_transfer_request_flow.png)
 This section describes how the region transfer request module in PDC works. Region transfer request module is the core of PDC I/O. From the client's point of view, some data is written to regions of objects through transfer request APIs. PDC region transfer request module arranges how data is transferred from clients to servers and how data is stored at servers.
 PDC region:
 A PDC object abstracts a multi-dimensional array. The current implementation supports up to 3D. To access a subarray of the object, the PDC region can be used. A PDC region describes the offsets and lengths to access an multi-dimensional array. Its prototype for creation is “PDCregion_create(psize_t ndims, uint64_t *offset, uint64_t *size);”. The values of the input to this create function will be copied into PDC internal memories, so it is safe to free the pointers later.
