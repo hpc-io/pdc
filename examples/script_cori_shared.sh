@@ -6,7 +6,7 @@
 #SBATCH -L SCRATCH
 #SBATCH -C knl,quad,cache
 #SBATCH -J qout
-#SBATCH -A m2621
+#SBATCH -A mxxx
 #SBATCH -o qout.%j
 #SBATCH -e qout.%j
 
