@@ -213,3 +213,8 @@ set(PDC_INCLUDES_INSTALL_TIME
   ${PDC_EXT_INCLUDE_DEPENDENCIES}
   PARENT_SCOPE
 )
+
+add_executable(close_server
+               close_server.c
+)
+target_link_libraries(close_server pdc)

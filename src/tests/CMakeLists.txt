@@ -51,7 +51,7 @@ set(PROGRAMS
   region_transfer_merge
   obj_round_robin_io
   obj_round_robin_io_all
-  close_server
+#  close_server
 #  stat_obj
   delete_obj
   vpicio

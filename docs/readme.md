@@ -50,7 +50,7 @@
         - [Server region transfer request wait](#server-region-transfer-request-wait)
       + [Server region storage](#server-region-storage)
         - [Storage by file offset](#storage-by-file-offset)
-        - [Storage by file region](#storage-by-file-region)
+        - [Storage by region](#storage-by-region)
 # PDC user APIs
   ## PDC general APIs
   + pdcid_t PDCinit(const char *pdc_name)

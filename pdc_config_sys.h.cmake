@@ -10,7 +10,7 @@
 #cmakedefine PDC_TIMING
 
 /* Define if you want to enable checkpoint */
-#cmakedefine ENABLE_CHECKPOINT
+#cmakedefine PDC_ENABLE_CHECKPOINT
 
 /* Define if you want to enable profiling */
 #cmakedefine ENABLE_PROFILING

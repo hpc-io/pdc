@@ -620,17 +620,19 @@ PDC_Server_set_close(void)
         PDC_region_server_cache_finalize();
 #endif
 
-#ifndef DISABLE_CHECKPOINT
+#ifdef PDC_ENABLE_CHECKPOINT
 #ifdef PDC_TIMING
         start = MPI_Wtime();
 #endif
         char *tmp_env_char = getenv("PDC_DISABLE_CHECKPOINT");
         if (tmp_env_char != NULL && strcmp(tmp_env_char, "TRUE") == 0) {
-            if (pdc_server_rank_g == 0)
+            if (pdc_server_rank_g == 0) {
                 printf("==PDC_SERVER[0]: checkpoint disabled!\n");
-        }
-        else
+            }
+        } else {
             PDC_Server_checkpoint();
+
+        }
 #ifdef PDC_TIMING
         pdc_server_timings->PDCserver_checkpoint += MPI_Wtime() - start;
 #endif
@@ -1707,14 +1709,15 @@ PDC_Server_loop(hg_context_t *hg_context)
     ;
     hg_return_t  hg_ret;
     unsigned int actual_count;
+#ifdef PDC_ENABLE_CHECKPOINT
     int          checkpoint_interval  = 1;
     clock_t      last_checkpoint_time = 0, cur_time;
-
+#endif
     FUNC_ENTER(NULL);
 
     /* Poke progress engine and check for events */
     do {
-#ifndef DISABLE_CHECKPOINT
+#ifdef PDC_ENABLE_CHECKPOINT
         checkpoint_interval++;
         if (checkpoint_interval % PDC_CHECKPOINT_INTERVAL == 0) {
             cur_time            = clock();
