@@ -52,18 +52,18 @@ typedef struct _pdc_id_info obj_handle;
 /*******************/
 struct pdc_obj_info {
     /* Directly coped from user argument at object creation. */
-    char                   *name;
-    /* 0 for location = PDC_OBJ_LOAL. 
+    char *name;
+    /* 0 for location = PDC_OBJ_LOAL.
      * When PDC_OBJ_GLOBAL = 1, use PDC_Client_send_name_recv_id to retrieve ID. */
-    pdcid_t                 meta_id;
+    pdcid_t meta_id;
     /* Registered using PDC_id_register */
-    pdcid_t                 local_id;
+    pdcid_t local_id;
     /* Set to 0 at creation time. */
-    int                     server_id;
+    int server_id;
     /* Metadata server for this object */
-    uint32_t             metadata_server_id;
+    uint32_t metadata_server_id;
     /* Object property. Directly copy from user argument at object creation. */
-    struct pdc_obj_prop    *obj_pt;
+    struct pdc_obj_prop *obj_pt;
 };
 
 /*********************/
