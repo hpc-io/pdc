@@ -205,8 +205,8 @@
       + comm: MPI communicator for the rank_id
     - Output: 
       + Local object ID
-    - Create a PDC object at the rank_id in the communicator comm. This function is a colllective operation.
-    - For developers: see pdc_mpi.c. If rank_id equals local process rank, then a local object is created. Otherwise we create a global object. The object metadata ID is broadcasted to all processes if a global object is created using MPI_Bcast.
+    - Create a PDC object at the rank_id in the communicator comm. Object is created based on the arguments provided by the process with rank_id. This function is a colllective operation. All MPI processes must call this function together.
+    - For developers: see pdc_mpi.c.
   + pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc)
     - Input:
       + obj_name: Name of objects to be created
@@ -214,6 +214,14 @@
     - Output: 
       + Local object ID
     - Open a PDC ID created previously by name.
+    - For developers: see pdc_obj.c. Need to communicate with servers for metadata of the object.
+  + pdcid_t PDCobj_open_col(const char *obj_name, pdcid_t pdc)
+    - Input:
+      + obj_name: Name of objects to be created, only rank 0 need to provide a value.
+      + pdc: PDC class ID, returned from PDCInit
+    - Output: 
+      + Local object ID
+    - Open a PDC ID created previously by name collectively. All MPI processes must call this function together.
     - For developers: see pdc_obj.c. Need to communicate with servers for metadata of the object.
   + perr_t PDCobj_close(pdcid_t obj_id)
     - Input:
@@ -283,6 +291,36 @@
       + error code, SUCCEED or FAIL.
     - Delete a tag.
     - For developers: see pdc_client_connect.c. Need to use PDCtag_delete to submit RPCs to the servers for metadata update.
+  + perr_t PDCobj_flush_start(pdcid_t obj_id)
+    - Input:
+      + obj_id: Local object ID
+    - Output:
+      + error code, SUCCEED or FAIL.
+    - Flush an object server cache data. This function is a dummy function if server cache is not enabled.
+    - For developers: pdc_obj.c. Start a RPC for each of the data servers to flush the input object.
+  + perr_t PDCobj_flush_start()
+    - Output:
+      + error code, SUCCEED or FAIL.
+    - Flush all objects' server cache data. This function is a dummy function if server cache is not enabled.
+    - For developers: pdc_obj.c. Start a RPC for each of the data servers to flush all objects.
+  + perr_t PDCobj_set_dims(pdcid_t obj_id, int ndim, uint64_t *dims)
+    - Input:
+      + obj_id: Local object ID
+      + ndim: Number of dimensions. (must be the same as the object dimension set previously)
+      + dims: Dimension array that has the size of ndim.
+    - Output:
+      + error code, SUCCEED or FAIL.
+    - Reset object dimension. In general, it is recommended to set an object's property before creating the object. However, this function allows users to enlarge or shrink an object's dimension. The motivation is to cover the functionality of H5Dset_extent.
+    - For developers: pdc_obj.c. Start a RPC and send the updated dimensions to metadata server. In addition, local memory is updated accordingly. There is no need to send the update for data server because every time a request submitted to the data server will include the up-to-dated object dimension information.
+  + perr_t PDCobj_get_dims(pdcid_t obj_id, int *ndim, uint64_t **dims)
+    - Input:
+      + obj_id: Local object ID
+    - Output:
+      + ndim: Number of dimensions. (must be the same as the object dimension set previously)
+      + dims: Dimension array that has the size of ndim.
+      + error code, SUCCEED or FAIL.
+    - Get object dimension dynamically. This operation allows users to query an object's dimension, in case PDCobj_set_dims is called on this object previously.
+    - For developers: pdc_obj.c. Start a RPC and retrieve object dimensions from metadata server. In addition, local memory is updated accordingly.
   ## PDC region APIs
   + pdcid_t PDCregion_create(psize_t ndims, uint64_t *offset, uint64_t *size)
     - Input:
@@ -300,7 +338,7 @@
       + None
     - Close a PDC region
     - For developers: see pdc_region.c. Free offset and size arrays.
-  + perr_t PDCbuf_obj_map(void *buf, pdc_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg)
+  + (deprecated) perr_t PDCbuf_obj_map(void *buf, pdc_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg)
     - Input:
       + buf: Memory buffer
       + local_type: one of PDC basic types, see [PDC basic types](#basic-types)
@@ -311,7 +349,7 @@
       + Region ID
     - Create a region with ndims offset/length pairs. At this stage of PDC development, the buffer has to be filled if you are performing PDC_WRITE with lock and release functions.
     - For developers: see pdc_region.c. Need to use PDC_get_kvtag to submit RPCs to the servers for metadata update.
-  + perr_t PDCbuf_obj_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id)
+  + (deprecated) perr_t PDCbuf_obj_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id)
     - Input:
       + remote_obj_id: remote object ID
       + remote_reg_id: remote region ID
@@ -319,7 +357,7 @@
       + error code, SUCCEED or FAIL.
     - Unmap a region to the user buffer. PDCbuf_obj_map must be called previously.
     - For developers: see pdc_region.c.
-  + perr_t PDCreg_obtain_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type, pdc_lock_mode_t lock_mode)
+  + (deprecated) perr_t PDCreg_obtain_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type, pdc_lock_mode_t lock_mode)
     - Input:
       + obj_id: local object ID
       + reg_id: remote region ID
@@ -329,7 +367,7 @@
       + error code, SUCCEED or FAIL.
     - Obtain the lock to access a region in an object.
     - For developers: see pdc_region.c.
-  + perr_t PDCreg_release_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type)
+  + (deprecated) perr_t PDCreg_release_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type)
     - Input:
       + obj_id: local object ID
       + reg_id: remote region ID
@@ -341,35 +379,49 @@
   + pdcid_t PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, pdcid_t local_reg, pdcid_t remote_reg)
     - Input:
       + buf: The data buffer to be transferred.
-      + access_type: Data type to be transferred.
+      + access_type: PDC_WRITE for write operation. PDC_READ for read operation.
       + obj_id: Local object id the region attached to.
-      + local_reg: Region ID describing the shape of buf.
-      + remote_reg: Region ID describing the shape of file domain stored at server.
+      + local_reg: Region ID describing the shape of buf (boundary aligns to object dimension).
+      + remote_reg: Region ID describing the region this request will access for the object at remote side.
     - Output:
       + Region ransfer request ID generated.
-    - Wrap necessary componenets for a region transfer request into a PDC ID to be referred later.
-    - For developers: see pdc_region.c. This function only contains local memory operations.
+    - Wrap necessary componenets for a region transfer request into a PDC ID to be referred later. local_reg and remote_reg are copied, so they can be closed immediately after this function.
+    - For developers: see pdc_region_transfer_request.c. This function only contains local memory operations.
   + perr_t PDCregion_transfer_close(pdcid_t transfer_request_id)
     - Input:
       + transfer_request_id: Region transfer request ID referred to
     - Output:
       + SUCCEED or FAIL
-    - Clearn up function corresponds to PDCregion_transfer_create. transfer_request_id is no longer valid.
-    - For developers: see pdc_region.c. This function only contains local memory operations.
+    - Clearn up function corresponds to PDCregion_transfer_create. transfer_request_id is no longer valid. If this request has been started and not waited, "PDCregion_transfer_wait" is automatically called inside this function.
+    - For developers: see pdc_region.c. This function only contains local memory operations, unless wait is triggered inside this function.
   + perr_t PDCregion_transfer_start(pdcid_t transfer_request_id)
     - Input:
       + transfer_request_id: Region transfer request ID referred to
     - Output:
       + Region ID
-    - Start a region transfer from local region to remote region for an object on buf. By the end of this function, neither data transfer nor I/O are guaranteed be finished.
-    - For developers: see pdc_region.c. Bulk transfer and RPC are set up. The server side will immediately return upon receiving argument payload, ignoring completion of data transfers.
+    - Start a region transfer from local region to remote region for an object on buf. By the end of this function, neither data transfer nor I/O are guaranteed be finished. It is not safe to free buf until a wait function (or close the request/object) call is made.
+    - For developers: see pdc_region_transfer_request.c. Bulk transfer and RPC are set up. The server side will immediately return upon receiving argument payload, ignoring completion of data transfers.
   + perr_t PDCregion_transfer_wait(pdcid_t transfer_request_id)
     - Input:
       + transfer_request_id: Region transfer request ID referred to
     - Output:
       + Region ID
-    - Block until the region transfer process is finished for the input region transfer request. By the end of this function, data buffer passed by the buf argument in function PDCregion_transfer_create can be reused. In addition, data consistency at server side is guaranteed for future region transfer request operations.
-    - For developers: see pdc_region.c. One RPC is used. There will be an infinite loop checking for the completion of essential operations at the server side. Once all operations are done, the server will return the RPC to the client.
+    - Block until the region transfer process is finished for the input region transfer request. By the end of this function, data buffer passed by the buf argument in function PDCregion_transfer_create can be reused or freed. In addition, data consistency at server side is guaranteed for future region transfer request operations.
+    - For developers: see pdc_region_transfer_request.c. The server returns immediately after the request is finished without delay. See developer's note [Server region transfer request RPC](#server-region-transfer-request-rpc).
+  + perr_t PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
+    - Input:
+      + transfer_request_id: Region transfer request ID referred to
+    - Output:
+      + Region ID
+    - Start multiple region transfers from local region to remote region for an object on buf. This function is equivalent to calling PDCregion_transfer_start(pdcid_t transfer_request_id) for each of the element in the array (no guarantee of orders).
+    - For developers: see pdc_region_transfer_request.c. Bulk transfer and RPC are set up. The server side will immediately return upon receiving argument payload, ignoring completion of data transfers.
+  + perr_t PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
+    - Input:
+      + transfer_request_id: Region transfer request ID referred to
+    - Output:
+      + Region ID
+    - Wait multiple region transfers. This function is equivalent to calling PDCregion_transfer_wait(pdcid_t transfer_request_id) for each of the element in the array (no guarantee of orders). Block until all the input region transfer requests are finished.
+    - For developers: see pdc_region_transfer_request.c.
   + perr_t PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed);
     - Input:
       + transfer_request_id: Region transfer request ID referred to
@@ -377,7 +429,7 @@
       + completed: [Transfer request status](#transfer-request-status)
       + SUCCEED or FAIL
     - Check for the completion of a region transfer request. PDC_TRANSFER_STATUS_COMPLETE is equivalent to the result of PDCregion_transfer_wait. PDC_TRANSFER_STATUS_PENDING refers to the case that the region transfer request is not completed. PDC_TRANSFER_STATUS_NOT_FOUND refers to the case either the request is invalid or the request completion has been checked by either this function or PDCregion_transfer_wait previously.
-    - For developers: see pdc_region.c. One RPC is used. The server immediately returns the status of the region transfer request.
+    - For developers: see pdc_region_transfer_request.c. The server returns immediately after all the requests are finished without delay. See developer's note [Server region transfer request RPC](#server-region-transfer-request-rpc).
 ## PDC property APIs
   + pdcid_t PDCprop_create(pdc_prop_type_t type, pdcid_t pdcid)
     - Input:
@@ -457,6 +509,22 @@
       + error code, SUCCEED or FAIL.
     - Set the type of an object.
     - For developers: see pdc_obj.c. Update the obj_prop_pub->type field under [object property public](#object-property-public). See developer's note for more details about this structure.
+  + PDCprop_set_obj_transfer_region_type(pdcid_t obj_prop, pdc_region_partition_t region_partition)
+    - Input:
+      + obj_prop: PDC property ID (has to be an object)
+      + type: one of PDC region transfer partition type, see [region transfer partition type](#region-transfer-partition-type)
+    - Output:
+      + error code, SUCCEED or FAIL.
+    - Set the region partition method for this object. The region transfer request operations will select implementations based on this property. See [PDC metadata management implementation](#pdc-metadata-management-implementation) for details.
+    - For developers: see pdc_obj.c.
+  + PDCprop_set_obj_consistency_semantics(pdcid_t obj_prop, pdc_consistency_t consistency)
+    - Input:
+      + obj_prop: PDC property ID (has to be an object)
+      + consistency: one of PDC object consistency, see [Object consistency semantics type](#object-consistency-semantics-type)
+    - Output:
+      + error code, SUCCEED or FAIL.
+    - Set the object consistency semantics for this object. The region transfer request operations will select implementations based on this property. PDC_CONSISTENCY_POSIX will call region_transfer_request_wait at the end of region_transfer_request_start automatically, so users do not need to explicitly call the wait function. The rest of the consistency types are not implemented yet, so they are equivalent to PDC_CONSISTENCY_DEFAULT.
+    - For developers: see pdc_obj.c.
   + perr_t PDCprop_set_obj_buf(pdcid_t obj_prop, void *buf)
     - Input:
       + obj_prop: PDC property ID (has to be an object)
@@ -628,6 +696,25 @@
     PDC_INT8         = 11,
     NCLASSES         = 12  /* this must be last                          */
   } pdc_var_type_t;
+  ```
+  ## region transfer partition type
+  ```
+  typedef enum {
+      PDC_OBJ_STATIC     = 0,
+      PDC_REGION_STATIC  = 1,
+      PDC_REGION_DYNAMIC = 2,
+      PDC_REGION_LOCAL   = 3
+  } pdc_region_partition_t;
+  ```
+  ## Object consistency semantics type
+  ```
+  typedef enum {
+      PDC_CONSISTENCY_DEFAULT  = 0,
+      PDC_CONSISTENCY_POSIX    = 1,
+      PDC_CONSISTENCY_COMMIT   = 2,
+      PDC_CONSISTENCY_SESSION  = 3,
+      PDC_CONSISTENCY_EVENTUAL = 4
+  } pdc_consistency_t;
   ```
   ## Histogram structure
   ```

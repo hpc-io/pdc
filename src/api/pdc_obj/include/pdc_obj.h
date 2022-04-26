@@ -287,7 +287,16 @@ perr_t PDCprop_set_obj_buf(pdcid_t obj_prop, void *buf);
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDCobj_set_dims(pdcid_t obj_id, int ndim, uint64_t *dims);
+/**
+ * Get obj dimension
+ *
 
+ * \param obj_id [IN]         ID of object,
+ * \param ndim [OUT]         number of dimensions, this one must match existing record.
+ * \param dims [OUT]         new dimensions to be set
+ * \return Non-negative on success/Negative on failure
+
+ */
 perr_t PDCobj_get_dims(pdcid_t obj_id, int *ndim, uint64_t **dims);
 
 /**
