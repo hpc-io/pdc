@@ -51,6 +51,7 @@
       + [Server region storage](#server-region-storage)
         - [Storage by file offset](#storage-by-file-offset)
         - [Storage by region](#storage-by-region)
+    - [Open tasks for PDC](#open-tasks-for-pdc)
 # PDC user APIs
   ## PDC general APIs
   + pdcid_t PDCinit(const char *pdc_name)
@@ -1093,3 +1094,18 @@ I/O by region is a special feature of the PDC I/O management system. Writing a r
 However, when a new region is written to an object, it is necessary to scan all the previously written regions to check for overlapping. The overlapping areas must be updated accordingly. If the new region is fully contained in any of the previously stored regions, then it is unnecessary to append it to the end of the file.
 
 I/O by region will store repeated bytes when write requests contain overlapping parts. In addition, the region update mechanism generates extra I/O operations. This is one of its disadvantages. Optimization for region search (as R trees) in the future can relieve this problem.
+
+## Open tasks for PDC
+
+### Replacing individual modules with efficient Hash table data structures
+For functionalities implemented in modules “pdc_server_region_transfer_metadata_query.c”, “pdc_server_region_cache.c”, and “pdc_server_region_transfer.c, the basic implementation for holding metadata are in form of linked list. It is frequent in these modules to search for a particular linked list node by comparing IDs.
+
+One project is to replace the search of linked list nodes with Hash table functions, so we can avoid the linear search of entries by IDs.
+
+### Fast region search mechanisms
+Currently, PDC stores regions in linked lists. This implementation is used by both “pdc_server_region_cache.c” and “pdc_server_data.c”. For example, “PDC_Server_data_write_out” in “pdc_server_data.c” checks whether an input region overlaps with all previously stored regions by functions “check_overlap” and “PDC_region_overlap_detect” implemented in “pdc_region_utils.c” using a for loop.
+
+Tree structures for managing regions can relieve the need for going through the entire list of previously stored regions. For example, KD trees can rule out regions that will fail the overlapping test easily.
+
+### Merge overlapping regions
+“PDC_Server_data_write_out” in “pdc_server_data.c” can frequently generate new regions, though these regions may have large overlapping portions. In the end, the many duplicated bytes are stored into file systems. With the help of efficient tree-based region management, it is possible to periodically merge many regions that have overlapping parts by separating the overlapping region out and splitting the rest of regions. Alternatively, it is possible to create a large region that contains a group of regions that have a lot of overlapping parts. Either way, we can reduce the number of bytes to be stored. Moreover, searching can become more efficient if regions are merged together.
