@@ -21,6 +21,7 @@
     - [Query structures](#query-structures)
     - [Selection structure](#selection-structure)
   + [Developers notes](#developer-notes)
+    - [How to implement an RPC from client to server](#how-to-implement-an-rpc-from-client-to-server)
     - [PDC Server metadata overview](#pdc-server-metadata-overview)
       + [PDC metadata structure](#pdc-metadata-structure)
       + [Metadata operations at client side](#metadata-operations-at-client-side)
@@ -885,6 +886,22 @@
   } pdc_selection_t;
   ```
 # Developers notes
+## How to implement an RPC from client to server
+Mercury is not easy to use. Do not worry, I am going to make your life easier by doing a walk-through. This section teaches you how to implement a simple RPC from client to server. The outcome is that if you call a RPC at the client side, the server should be able to get the argument you passed from the client and execute the corresponding server RPC function.
+
+A concrete example is “PDC_region_transfer_wait_all”. Mercury transfers at the client side are implemented in “pdc_client_connect.c”. The name of the function we are using is “transfer_request_wait_all”. For each of the components I mentioned in the following, replace “transfer_request_wait_all” with your own function name. I am not going to discuss how “transfer_request_wait_all” is designed in this section. This section simply tells you where the mercury components are and how they interact with each other.
+
+Firstly, in “pdc_client_connect.c”, search for “transfer_request_wait_all_register_id_g”. Make another variable by replacing “transfer_request_wait_all” with your function name. Secondly, search for “client_send_transfer_request_wait_all_rpc_cb”, do the same text copy and replacement. This function is the call back function at the client side when the RPC is finished at the server side. For most of the cases, this function simply loads the server return arguments to a structure and returns the values to the client RPC function. There are also some error checking. Then, search for “PDC_transfer_request_wait_all_register(*hg_class)”. Do text copy and replacement. Finally, in the function “PDC_Client_transfer_request_wait_all”, do text copy and replacement. This function is the entry point of the mercury RPC call. It contains argument loading, which has the variable name “in”. This RPC creates a mercury bulk transfer inside it (). “HG_Create” and “HG_Bulk_create” are not needed if your mercury transfer does not transfer variable-sized data. As you can see, “HG_Forward” has an argument “client_send_transfer_request_wait_all_rpc_cb”. The return values from the callback function are placed in “transfer_args”.
+
+In file “pdc_client_connect.h”, search for “_pdc_transfer_request_wait_all_args”, do the text copy and replacement. This structure is the structure for returning values from client call back function “client_send_transfer_request_wait_all_rpc_cb” to client RPC function “PDC_Client_transfer_request_wait_all”. For most cases, an error code is sufficient. For other cases like creating some object IDs, you need to define the structure accordingly. Do not forget to load data in “_pdc_transfer_request_wait_all_args”. Search for “PDC_Client_transfer_request_wait_all”, make sure you register your client connect entry function in the same way.
+
+In file “pdc_server.c”, search for “PDC_transfer_request_wait_all_register(hg_class_g);”, make a copy and replace the “transfer_request_wait_all” part with your own function name. (Again, your function name has to be defined and used consistently throughout all these copy and replacement)
+
+In file “pdc_client_server_common.h”, search for “typedef struct transfer_request_wait_all_in_t”, this is the structure used by a client passing its argument to the server side. You can define whatever you want that is fixed-sized inside this structure. If you have variable-sized data, it can be passed through mercury bulk transfer. The handle is “hg_bulk_t local_bulk_handle”. “typedef struct transfer_request_wait_all_out_t” is the return arguments from server to client after the server RPC is finished. Next, search for “hg_proc_transfer_request_wait_all_in_t”, this function defines how arguments are transferred through mercury. There is nothing much you can do, just follow the conventions and documentations from Mochi website to transfer these arguments. Study how the rest of RPCs’ are implemented. Similarly, “hg_proc_transfer_request_wait_all_in_t” is the other way around. Next, search for “struct transfer_request_wait_all_local_bulk_args”. This structure is useful when bulk transfer is used. The server passes its variables from the RPC call to the bulk transfer call back function using this function. Finally, search for “PDC_transfer_request_wait_all_register”. All these structures and functions should be copied and replaced text “transfer_request_wait_all” with your own function name.
+
+In file “pdc_client_server_common.c”, search for “PDC_FUNC_DECLARE_REGISTER(transfer_request_wait_all)” and “HG_TEST_THREAD_CB(transfer_request_wait_all)”, do text copy and function name replacement. “pdc_server_region_request_handler.h” is included directly in “pdc_client_server_common.c”. The server RPC of “transfer_request_wait_all” is implemented in “pdc_server_region_request_handler.h”. However, it is possible to put it directly in the “pdc_client_server_common.c”. Let us open “pdc_server_region_request_handler.h”. Search for “HG_TEST_RPC_CB(transfer_request_wait_all, handle)”. This function is the entry point for the server RPC function call. “transfer_request_wait_all_in_t” contains the arguments you loaded previously from the client side. If you want to add more arguments, go back to “pdc_client_server_common.h” and do the correct modifications. “HG_Bulk_create” and “HG_Bulk_transfer” are the mercury bulk function calls. When the bulk transfer is finished, “transfer_request_wait_all_bulk_transfer_cb” is called.
+
+After a walk-through of “transfer_request_wait_all”, you should have learned where different components of a mercury RPC should be placed and how they interact with each other. You can trace other RPC by searching their function names. If you miss things that are not optional, it is likely that the program will hang there forever or show segmentation faults.
 ## PDC Server metadata overview
 
 PDC metadata servers, a subset of PDC servers, store metadata for PDC classes such as objects and containers. PDC data server, also a subset of PDC servers (potentially overlap with PDC metadata server), manages data from users. Such management includes server local caching and I/O to the file system. Both PDC metadata and data servers have some local metadata.  In the section that describes the checkpoint for metadata, every single byte of the metadata will be discussed. 
@@ -1101,6 +1118,16 @@ I/O by region will store repeated bytes when write requests contain overlapping 
 For functionalities implemented in modules “pdc_server_region_transfer_metadata_query.c”, “pdc_server_region_cache.c”, and “pdc_server_region_transfer.c, the basic implementation for holding metadata are in form of linked list. It is frequent in these modules to search for a particular linked list node by comparing IDs.
 
 One project is to replace the search of linked list nodes with Hash table functions, so we can avoid the linear search of entries by IDs.
+
+### Restarting pdc_server.exe with different numbers of servers
+Currently, PDC checkpoint restart function has an assumption that users use the same number of server processes every time they run on the pdc_server.exe. If servers are started with a different number of processes, undefined behavior will happen. This project should allow users to restart servers with different numbers of processes from previous runs without issues. Before you carry out this implementation, can you answer the following questions?
+Have you carefully read and understood the PDC metadata checkpoint processes?
+
+How are metadata distributed to metadata servers given you have a smaller/larger number of servers?
+
+How are metadata distributed to data servers given you have a smaller/larger number of servers?
+
+For previously checkpointed files by different ranks, how are you reading them (must be a way to confirm how many these checkpoint files previously written)?
 
 ### Fast region search mechanisms
 Currently, PDC stores regions in linked lists. This implementation is used by both “pdc_server_region_cache.c” and “pdc_server_data.c”. For example, “PDC_Server_data_write_out” in “pdc_server_data.c” checks whether an input region overlaps with all previously stored regions by functions “check_overlap” and “PDC_region_overlap_detect” implemented in “pdc_region_utils.c” using a for loop.
