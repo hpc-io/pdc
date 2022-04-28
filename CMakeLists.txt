@@ -275,7 +275,7 @@ endif()
 #-----------------------------------------------------------------------------
 option(ENABLE_CHECKPOINT "Enable checkpointing." ON)
 if(ENABLE_CHECKPOINT)
-  set(ENABLE_CHECKPOINT 1)
+  set(PDC_ENABLE_CHECKPOINT 1)
 endif()
 
 #-----------------------------------------------------------------------------
