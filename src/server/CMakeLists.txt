@@ -54,11 +54,13 @@ add_executable(pdc_server.exe
                ${PDC_SOURCE_DIR}/src/api/pdc_analysis/pdc_hist_pkg.c
 )
 
+if(NOT ${PDC_INSTALL_BIN_DIR} MATCHES ${PROJECT_BINARY_DIR}/bin)
 install(
   TARGETS
     pdc_server.exe
   DESTINATION ${PDC_INSTALL_BIN_DIR}
 )
+endif()
 
 if(PDC_ENABLE_FASTBIT)
     message(STATUS "Enabled fastbit")
