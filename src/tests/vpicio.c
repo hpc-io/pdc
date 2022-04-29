@@ -32,7 +32,6 @@
 #include <math.h>
 #include <inttypes.h>
 #include "pdc.h"
-#include "pdc_timing.h"
 
 #define NPARTICLES 8388608
 
@@ -400,9 +399,8 @@ main(int argc, char **argv)
         printf("region id22 transfer close failed\n");
         return 1;
     }
-#ifdef PDC_TIMING
+
     PDC_timing_report("write");
-#endif
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
