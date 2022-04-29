@@ -119,6 +119,17 @@ pdc_set_lib_options(pdc "pdc" ${PDC_LIBTYPE})
 
 set(PDC_EXPORTED_LIBS pdc ${PDC_EXPORTED_LIBS})
 
+add_executable(close_server
+               close_server.c
+)
+target_link_libraries(close_server pdc)
+
+install(
+  TARGETS
+    close_server
+  DESTINATION ${PDC_INSTALL_BIN_DIR}
+)
+
 #-----------------------------------------------------------------------------
 # Specify project header files to be installed
 #-----------------------------------------------------------------------------
@@ -213,8 +224,3 @@ set(PDC_INCLUDES_INSTALL_TIME
   ${PDC_EXT_INCLUDE_DEPENDENCIES}
   PARENT_SCOPE
 )
-
-add_executable(close_server
-               close_server.c
-)
-target_link_libraries(close_server pdc)
