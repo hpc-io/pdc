@@ -39,7 +39,7 @@ PDC_region_server_cache_init()
     pthread_create(&pdc_recycle_thread, NULL, &PDC_region_cache_clock_cycle, NULL);
     total_cache_size = 0;
 
-    p = getenv("HEP_IO_TYPE");
+    p = getenv("PDC_SERVER_CACHE_MAX_SIZE");
     if (p != NULL) {
         maximum_cache_size = atol(p);
     }

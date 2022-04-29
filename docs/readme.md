@@ -20,7 +20,7 @@
     - [Query operators](#query-operators)
     - [Query structures](#query-structures)
     - [Selection structure](#selection-structure)
-  + [Developers notes](#developer-notes)
+  + [Developers notes](#developers-notes)
     - [How to implement an RPC from client to server](#how-to-implement-an-rpc-from-client-to-server)
     - [PDC Server metadata overview](#pdc-server-metadata-overview)
       + [PDC metadata structure](#pdc-metadata-structure)
