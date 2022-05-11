@@ -6,21 +6,28 @@
 #include <time.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include "hdf5.h"
+
+#define ENABLE_MPI 1
+
+#ifdef ENABLE_MPI
+#include "mpi.h"
+#endif
+
 
 #include "pdc.h"
 #include "pdc_client_server_common.h"
+#include "pdc_client_connect.h"
 #include "../src/server/include/pdc_server_metadata.h"
 #include "cjson/cJSON.h"
 
 const char * avail_args[] = {
-    "-n",
-    "-i",
-    "-json",
-    "-ln",
-    "-li",
-    "-s"
+    "-f"
 };
 const int num_args = 6;
+
+int rank = 0, size = 1;
+pdcid_t pdc_id_g = 0;
 
 typedef struct pdc_region_metadata_pkg {
     uint64_t *                      reg_offset;
@@ -100,6 +107,18 @@ void add(ArrayList *list, const char *s) {
   list->length++;
 }
 
+hid_t get_h5type(pdc_var_type_t pdc_type) {
+    if (pdc_type == PDC_INT) {
+        return H5T_NATIVE_INT;
+    } else if (pdc_type == PDC_FLOAT) {
+        return H5T_NATIVE_FLOAT;
+    } else if (pdc_type == PDC_CHAR) {
+        return H5T_NATIVE_CHAR;
+    } else {
+        return H5T_NATIVE_INT;
+    }
+}
+
 int is_arg(char * arg) {
     for (int i = 0; i < num_args; i++) {
         if (strcmp(arg, avail_args[i]) == 0) {
@@ -109,7 +128,6 @@ int is_arg(char * arg) {
     return 0;
 }
 
-
 int pdc_server_rank_g = 0;
 int pdc_server_size_g = 1;
 double total_mem_usage_g = 0.0;
@@ -117,6 +135,15 @@ double total_mem_usage_g = 0.0;
 static void pdc_ls(FileNameNode* file_name_node, int argc, char *argv[]);
 
 int main(int argc, char *argv[])  {
+#ifdef ENABLE_MPI
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+#endif
+
+    pdc_id_g = PDCinit("pdc");
+
+
     if (argc == 1) {
         printf("Expected directory/checkpoint file.\n");
         return 1;
@@ -177,6 +204,9 @@ int main(int argc, char *argv[])  {
             pdc_ls(head, argc, argv);
         }
     }
+#ifdef ENABLE_MPI
+    MPI_Finalize();
+#endif
 }
 
 int
@@ -304,43 +334,20 @@ pdc_obj_metadata_pkg* do_transfer_request_metadata(int pdc_server_size_input, ch
 }
 
 void pdc_ls(FileNameNode* file_name_node, int argc, char *argv[]) {
-    char *wanted_name = NULL;
-    int wanted_id = 0;
-    char *output_file_name = NULL;
-    int list_names = 0;
-    int list_ids = 0;
-    int summary = 0;
-
     int arg_index = 2;
     while (arg_index < argc) {
         if (is_arg(argv[arg_index]) == 0) {
             printf("Improperly formatted argument(s).\n");
             return;
         }
-        if (strcmp(argv[arg_index], "-n") == 0) {
+        if (strcmp(argv[arg_index], "-f") == 0) {
             arg_index++;
-            wanted_name = argv[arg_index];
-        } else if (strcmp(argv[arg_index], "-i") == 0) {
-            arg_index++;
-            wanted_id = atoi(argv[arg_index]);
-        } else if (strcmp(argv[arg_index], "-json") == 0) {
-            arg_index++;
-            output_file_name = argv[arg_index];
-        } else if (strcmp(argv[arg_index], "-ln") == 0) {
-            list_names = 1;
-        } else if (strcmp(argv[arg_index], "-li") == 0) {
-            list_ids = 1;
-        } else if (strcmp(argv[arg_index], "-s") == 0) {
-            summary = 1;
+            if (strcmp(argv[arg_index], "hdf5") != 0) {
+                printf("The specified file format is not supported.\n");
+                return;
+            }
         }
         arg_index++;
-    }
-    ArrayList *obj_names, *obj_ids;
-    if (list_names) {
-        obj_names = newList();
-    }
-    if (list_ids) {
-        obj_ids = newList();
     }
 
     char *filename;
@@ -626,188 +633,107 @@ void pdc_ls(FileNameNode* file_name_node, int argc, char *argv[]) {
         cur_file_node = cur_file_node->next;
     }
 
-    // Create JSON
-    MetadataNode *cur_m_node = metadata_head;
-    RegionNode *cur_r_node;
-    pdc_metadata_t *cur_metadata;
-    region_list_t *cur_region;
-    char* data_type;
-    int add_obj;
-    cJSON *cont_id_json = NULL;
-    cJSON *cur_obj_json = NULL;
-    cJSON *dim_arr_json = NULL;
-    cJSON *dim_ent_json = NULL;
-    cJSON *region_arr_json = NULL;
-    cJSON *region_info_json = NULL;
-    cJSON *count_arr_json = NULL;
-    cJSON *start_arr_json = NULL;
-    cJSON *output = cJSON_CreateObject();
     int prev_cont_id = -1;
-    while (cur_m_node != NULL) {
-        cur_metadata = cur_m_node->metadata_ptr;
+    MetadataNode* cur_metadata_node = metadata_head;
+    pdc_metadata_t *cur_metadata;
+    hid_t file_id;
+    fflush(stdout);
+    hid_t group_id;
+    hid_t dset_id;
+    //iterate through each node
+    while (cur_metadata_node != NULL) {
+        cur_metadata = cur_metadata_node->metadata_ptr;
+
+        // if new container id, then create new group
         if (prev_cont_id != cur_metadata->cont_id) {
-            cont_id_json = cJSON_CreateArray();
+            if (prev_cont_id != -1) {
+                H5Gclose(group_id);
+            }
             char buf[20];
-            sprintf(buf, "cont_id: %d", cur_metadata->cont_id);
-            cJSON_AddItemToObject(output, buf, cont_id_json);                
+            sprintf(buf, "%d.hdf5", cur_metadata->cont_id);
+            file_id = H5Fcreate(buf, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+            sprintf(buf, "%d", cur_metadata->cont_id);
+            group_id = H5Gcreate(file_id, buf, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
         }
-        add_obj = 1;
-        if (wanted_name && wanted_id) {
-            int matched_name = 0;
-            int matched_id = 0;
-            reti = regcomp(&regex, wanted_name, 0);
-            if (reti) {
-                if (strcmp(wanted_name, cur_metadata->obj_name) == 0) {
-                    matched_name = 1;
-                }
-            } else {
-                reti = regexec(&regex, cur_metadata->obj_name, 0, NULL, 0);
-                if (!reti) {
-                    matched_name = 1;
-                }
-            }
 
-            char buf[12];
-            sprintf(buf, "%d", wanted_id);
-            reti = regcomp(&regex, buf, 0);
-            if (reti) {
-                if (wanted_id == cur_metadata->obj_id) {
-                    matched_id = 1;
+        // create a dataset for each object
+
+        //create buffer and other needed info for region transfer
+        char buf[20];
+        sprintf(buf, "%d", cur_metadata->obj_id);
+        hid_t sid = H5Screate_simple(cur_metadata->ndim, (hsize_t*)(cur_metadata->dims), NULL);
+        hid_t data_type = get_h5type(cur_metadata->data_type);
+        dset_id = H5Dcreate(group_id, cur_metadata->obj_name, data_type, sid, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        if (dset_id < 0) {
+            char* full_path = (char *)malloc(sizeof(char) * strlen(cur_metadata->obj_name) + 1);
+            strcpy(full_path, cur_metadata->obj_name);
+
+            char *last_slash = strrchr(full_path, '/');
+            size_t length = last_slash - full_path + 1;
+            char temp[length + 1];
+            memcpy(temp, full_path, length);
+            temp[length] = '\0';
+            char only_file_name[strlen(cur_metadata->obj_name) + 1];
+            strcpy(only_file_name, last_slash + 1);
+
+            char file_name[strlen(cur_metadata->obj_name) + 1];
+            char buf[20];
+            sprintf(buf, "%d", cur_metadata->cont_id);
+            char* cur_path = (char *)malloc(sizeof(char) * strlen(cur_metadata->obj_name) + strlen(buf) + 1);
+            strcpy(cur_path, buf);
+            const char delim[2] = "/";
+            char* token;
+            token = strtok(temp, delim);
+            hid_t cur_group_id = group_id;
+            while(token != NULL) {
+                printf("%s\n", token);
+                strcat(cur_path, "/");
+                strcat(cur_path, token);
+                hid_t cur_group_id = H5Gopen(file_id, cur_path, H5P_DEFAULT);
+                if (cur_group_id < 0) {
+                    cur_group_id = H5Gcreate(file_id, cur_path, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
                 }
-            } else {
-                char buf[12];
-                sprintf(buf, "%d", cur_metadata->obj_id);
-                reti = regexec(&regex, buf, 0, NULL, 0);
-                if (!reti) {
-                    matched_id = 1;
-                }
+                token = strtok(NULL, delim);
             }
-            if (matched_name == 0 || matched_id == 0) {
-                add_obj = 0;
+            free(full_path);
+            full_path = (char *)malloc(sizeof(char) * strlen(cur_metadata->obj_name) + strlen(buf) + 1);
+            strcpy(full_path, buf);
+            strcat(full_path, cur_metadata->obj_name);
+            dset_id = H5Dcreate(file_id, full_path, data_type, sid, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+            if (dset_id < 0) {
+                printf("create dset failed\n");
             }
-        } else if (wanted_name) {
-            int matched_name = 0;
-            reti = regcomp(&regex, wanted_name, 0);
-            if (reti) {
-                if (strcmp(wanted_name, cur_metadata->obj_name) == 0) {
-                    matched_name = 1;
-                }
-            } else {
-                reti = regexec(&regex, cur_metadata->obj_name, 0, NULL, 0);
-                if (!reti) {
-                    matched_name = 1;
-                }
-            }
-            add_obj = matched_name;
-        } else if (wanted_id) {
-            int matched_id = 0;
-            char buf[12];
-            sprintf(buf, "%d", wanted_id);
-            reti = regcomp(&regex, buf, 0);
-            if (reti) {
-                if (wanted_id == cur_metadata->obj_id) {
-                    matched_id = 1;
-                }
-            } else {
-                char buf[12];
-                sprintf(buf, "%d", cur_metadata->obj_id);
-                reti = regexec(&regex, buf, 0, NULL, 0);
-                if (!reti) {
-                    matched_id = 1;
-                }
-            }
-            add_obj = matched_id;
         }
-        if (add_obj) {
-            if (list_names) {
-                add(obj_names, cur_metadata->obj_name);
-            }
-            if (list_ids) {
-                char buf[12];
-                sprintf(buf, "%d", cur_metadata->obj_id);
-                add(obj_ids, buf);
-            }
-            cur_obj_json = cJSON_CreateObject();
-            cJSON_AddNumberToObject(cur_obj_json, "obj_id", cur_metadata->obj_id);
-            cJSON_AddStringToObject(cur_obj_json, "app_name", cur_metadata->app_name);
-            cJSON_AddStringToObject(cur_obj_json, "obj_name", cur_metadata->obj_name);
-            cJSON_AddNumberToObject(cur_obj_json, "user_id", cur_metadata->user_id);
-            cJSON_AddStringToObject(cur_obj_json, "tags", cur_metadata->tags);
-            data_type = get_data_type(cur_metadata->data_type);
-            cJSON_AddStringToObject(cur_obj_json, "data_type", data_type);
-            cJSON_AddNumberToObject(cur_obj_json, "num_dims", cur_metadata->ndim);
-            int dims[cur_metadata->ndim];
-            for (int i = 0; i < (cur_metadata->ndim); i++) {
-                dims[i] = (cur_metadata->dims)[i];
-            }
-            dim_arr_json = cJSON_CreateIntArray(dims, cur_metadata->ndim);
-            cJSON_AddItemToObject(cur_obj_json, "dims", dim_arr_json);
-            cJSON_AddNumberToObject(cur_obj_json, "time_step", cur_metadata->time_step);
-
-
-            region_arr_json = cJSON_CreateArray();
-            cur_r_node = cur_m_node->region_list_head;
-            while (cur_r_node != NULL) {
-                cur_region = cur_r_node->region_list;
-                region_info_json = cJSON_CreateObject();
-                cJSON_AddStringToObject(region_info_json, "storage_loc", cur_region->storage_location);
-                cJSON_AddNumberToObject(region_info_json, "offset", cur_region->offset);
-                cJSON_AddNumberToObject(region_info_json, "num_dims", cur_region->ndim);
-                dims[cur_region->ndim];
-                for (int i = 0; i < (cur_metadata->ndim); i++) {
-                    dims[i] = (cur_region->start)[i];
-                }
-                start_arr_json = cJSON_CreateIntArray(dims, cur_region->ndim);
-                cJSON_AddItemToObject(region_info_json, "start", start_arr_json);
-                for (int i = 0; i < (cur_metadata->ndim); i++) {
-                    dims[i] = (cur_region->count)[i];
-                }
-                count_arr_json = cJSON_CreateIntArray(dims, cur_region->ndim);
-                cJSON_AddItemToObject(region_info_json, "count", count_arr_json);
-                cJSON_AddNumberToObject(region_info_json, "unit_size", cur_region->unit_size);
-                data_type = get_data_loc_type(cur_region->data_loc_type);
-                cJSON_AddStringToObject(region_info_json, "data_loc_type", data_type);
-                cJSON_AddItemToArray(region_arr_json, region_info_json);
-                cur_r_node = cur_r_node->next;
-            }
-            cJSON_AddItemToObject(cur_obj_json, "region_list_info", region_arr_json); 
-
-            
-
-            cJSON_AddItemToArray(cont_id_json, cur_obj_json);
+        int buf_size = 1;
+        for (int i = 0; i < cur_metadata->ndim; i++) {
+            buf_size *= (cur_metadata->dims)[i];
         }
+        hsize_t dtype_size = H5Tget_size(data_type);
+        void *data_buf = malloc(buf_size * dtype_size); //if data side is large, need to write in batches
+
+        uint64_t offset[10], size[10];
+        for (int i = 0; i < cur_metadata->ndim; i++) {
+            offset[i] = 0;
+            size[i] = (cur_metadata->dims)[i];
+        }
+        //size[0] *= dtype_size; 
+
+        pdcid_t local_region = PDCregion_create(cur_metadata->ndim, offset, size);
+        pdcid_t remote_region = PDCregion_create(cur_metadata->ndim, offset, size);
+        pdcid_t local_obj_id = PDCobj_open(cur_metadata->obj_name, pdc_id_g);
+        pdcid_t transfer_request = PDCregion_transfer_create(data_buf, PDC_READ, local_obj_id, local_region, remote_region);
+        PDCregion_transfer_start(transfer_request);
+        PDCregion_transfer_wait(transfer_request);
+
+        //write data from buffer into dataset
+        H5Dwrite(dset_id, data_type, H5S_ALL, H5S_ALL, H5P_DEFAULT, data_buf);
+
+        //close dataset
+        H5Dclose(dset_id);
 
         prev_cont_id = cur_metadata->cont_id;
-        cur_m_node = cur_m_node->next;
+        cur_metadata_node = cur_metadata_node->next;
     }
-
-    FILE *fp;
-    if (output_file_name) {
-        fp = fopen(output_file_name, "w");
-    } else {
-        fp = stdout;
-    }
-    if (list_names) {
-        cJSON *all_names_json = cJSON_CreateStringArray(obj_names->items, obj_names->length);
-        cJSON_AddItemToObject(output, "all_obj_names", all_names_json);  
-    }
-    if (list_ids) {
-        int id_arr[obj_ids->length];
-        for (int i = 0; i < obj_ids->length; i++) {
-            id_arr[i] = atoi(obj_ids->items[i]);
-        }
-        cJSON *all_ids_json = cJSON_CreateIntArray(id_arr, obj_ids->length);
-        cJSON_AddItemToObject(output, "all_obj_ids", all_ids_json);  
-    }
-    if (summary) {
-        char buf[100];
-        sprintf(buf, "pdc_ls found: %d containers, %d objects, %d regions", all_cont_total, all_nobj_total, all_n_region_total);
-        cJSON_AddStringToObject(output, "summary", buf);
-    }
-    if (output_file_name) {
-        fclose(fp);
-    }
-    char *json_string = cJSON_Print(output);
-    fprintf(fp, json_string);
-    fprintf(fp, "\n");
+    H5Gclose(group_id);
+    H5Fclose(file_id);
 }
