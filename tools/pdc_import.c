@@ -13,72 +13,80 @@
 #include "pdc_client_server_common.h"
 #include "pdc_client_connect.h"
 
-#define MAX_NAME 1024
-#define MAX_FILES 2500
+#define MAX_NAME         1024
+#define MAX_FILES        2500
 #define MAX_FILENAME_LEN 64
-#define MAX_TAG_SIZE 8192
+#define MAX_TAG_SIZE     8192
 
 typedef struct ArrayList {
-  int length;
-  int capacity;
-  char **items;
+    int    length;
+    int    capacity;
+    char **items;
 } ArrayList;
 
-
-ArrayList *newList(void) {
-  char **items = malloc(4 * sizeof(char *));
-  ArrayList *list = malloc(sizeof(ArrayList));
-  list->length = 0;
-  list->capacity = 4;
-  list->items = items;
-  return list;
+ArrayList *
+newList(void)
+{
+    char     **items = malloc(4 * sizeof(char *));
+    ArrayList *list  = malloc(sizeof(ArrayList));
+    list->length     = 0;
+    list->capacity   = 4;
+    list->items      = items;
+    return list;
 }
 
 // Check and expand list if needed
-void check(ArrayList *list) {
-  if (list->length >= list->capacity) {
-    list->capacity = list->capacity * 2;
-    list->items = realloc(list->items, list->capacity * sizeof(char *));
-    if (list->items == NULL) {
-      exit(1);
+void
+check(ArrayList *list)
+{
+    if (list->length >= list->capacity) {
+        list->capacity = list->capacity * 2;
+        list->items    = realloc(list->items, list->capacity * sizeof(char *));
+        if (list->items == NULL) {
+            exit(1);
+        }
     }
-  }
 }
 
-void add(ArrayList *list, const char *s) {
-  check(list);
-  list->items[list->length] = malloc(strlen(s)+1);
-  strcpy(list->items[list->length], s);
-  list->length++;
+void
+add(ArrayList *list, const char *s)
+{
+    check(list);
+    list->items[list->length] = malloc(strlen(s) + 1);
+    strcpy(list->items[list->length], s);
+    list->length++;
 }
 
 pdc_var_type_t do_dtype(hid_t, hid_t, int);
-void do_dset(hid_t did, char *name, char *app_name);
-void do_link(hid_t, char *);
-void scan_group(hid_t, int, char *);
-void do_attr(hid_t, pdcid_t);
-void scan_attrs(hid_t, pdcid_t);
-void do_plist(hid_t);
+void           do_dset(hid_t did, char *name, char *app_name);
+void           do_link(hid_t, char *);
+void           scan_group(hid_t, int, char *);
+void           do_attr(hid_t, pdcid_t);
+void           scan_attrs(hid_t, pdcid_t);
+void           do_plist(hid_t);
 
-void print_usage() {
+void
+print_usage()
+{
     printf("Usage: srun -n 2443 ./h5boss_v2_import h5boss_filenames\n");
 }
 
-int rank = 0, size = 1;
-char tags_g[MAX_TAG_SIZE];
-char *tags_ptr_g;
-char dset_name_g[TAG_LEN_MAX];
+int     rank = 0, size = 1;
+char    tags_g[MAX_TAG_SIZE];
+char   *tags_ptr_g;
+char    dset_name_g[TAG_LEN_MAX];
 hsize_t tag_size_g;
-int  ndset_g = 0;
+int     ndset_g = 0;
 /* FILE *summary_fp_g; */
-int max_tag_size_g = 0;
-pdcid_t pdc_id_g = 0, cont_prop_g = 0, cont_id_g = 0, obj_prop_g = 0;
-struct timeval  write_timer_start_g;
-struct timeval  write_timer_end_g;
+int               max_tag_size_g = 0;
+pdcid_t           pdc_id_g = 0, cont_prop_g = 0, cont_id_g = 0, obj_prop_g = 0;
+struct timeval    write_timer_start_g;
+struct timeval    write_timer_end_g;
 struct ArrayList *container_names;
-int overwrite = 0;
+int               overwrite = 0;
 
-int add_tag(char *str)
+int
+add_tag(char *str)
 {
     int str_len = 0;
     if (NULL == str || NULL == tags_ptr_g) {
@@ -91,7 +99,7 @@ int add_tag(char *str)
     }
 
     // Remove the trailing ','
-    if (*str == '}' || *str == ')' || *str == ']' ) {
+    if (*str == '}' || *str == ')' || *str == ']') {
         if (*(--tags_ptr_g) != ',') {
             tags_ptr_g++;
         }
@@ -115,19 +123,19 @@ main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    hid_t    file;
-    hid_t    grp;
-    herr_t   status;
+    hid_t  file;
+    hid_t  grp;
+    herr_t status;
 
-    int i, my_count, total_count;
-    char* filename;
-    char* app_name = "PDC_IMPORT";
-    char all_filenames[MAX_FILES][MAX_FILENAME_LEN];
-    char my_filenames[MAX_FILES][MAX_FILENAME_LEN];
-    int  send_counts[MAX_FILES];
-    int  displs[MAX_FILES];
-    int total_dset = 0;
-    container_names = newList();
+    int   i, my_count, total_count;
+    char *filename;
+    char *app_name = "PDC_IMPORT";
+    char  all_filenames[MAX_FILES][MAX_FILENAME_LEN];
+    char  my_filenames[MAX_FILES][MAX_FILENAME_LEN];
+    int   send_counts[MAX_FILES];
+    int   displs[MAX_FILES];
+    int   total_dset = 0;
+    container_names  = newList();
     /* char* summary_fname = "/global/cscratch1/sd/houhun/tag_size_summary.csv"; */
 
     /* summary_fp_g = fopen(summary_fname, "a+"); */
@@ -136,7 +144,7 @@ main(int argc, char **argv)
     pdc_id_g = PDCinit("pdc");
 
     cont_prop_g = PDCprop_create(PDC_CONT_CREATE, pdc_id_g);
-    if(cont_prop_g <= 0)
+    if (cont_prop_g <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     obj_prop_g = PDCprop_create(PDC_OBJ_CREATE, pdc_id_g);
@@ -146,11 +154,11 @@ main(int argc, char **argv)
     PDCprop_set_obj_dims(obj_prop_g, 1, float_dims);
     PDCprop_set_obj_type(obj_prop_g, PDC_FLOAT);
     PDCprop_set_obj_time_step(obj_prop_g, 0);
-    PDCprop_set_obj_user_id( obj_prop_g, getuid());
+    PDCprop_set_obj_user_id(obj_prop_g, getuid());
     PDCprop_set_obj_app_name(obj_prop_g, "H5BOSS");
 
     if (argc < 2) {
-        if (rank == 0) 
+        if (rank == 0)
             print_usage();
     }
     else {
@@ -168,8 +176,8 @@ main(int argc, char **argv)
                 while (fgets(all_filenames[i], MAX_FILENAME_LEN, filenames_fp)) {
                     /* printf("%s\n", all_filenames[i]); */
                     // Remove the trailing '\n'
-                    int len = strlen(all_filenames[i]);
-                    all_filenames[i][len-1] = 0;
+                    int len                   = strlen(all_filenames[i]);
+                    all_filenames[i][len - 1] = 0;
                     i++;
                 }
                 total_count = i;
@@ -186,11 +194,13 @@ main(int argc, char **argv)
                     if (argc == cur_arg_idx + 1) {
                         printf("No app name given, defaulting to PDC_IMPORT");
                         cur_arg_idx += 1;
-                    } else {
+                    }
+                    else {
                         app_name = argv[cur_arg_idx + 1];
                         cur_arg_idx += 2;
                     }
-                } else if (strcmp(argv[cur_arg_idx], "-o") == 0) {
+                }
+                else if (strcmp(argv[cur_arg_idx], "-o") == 0) {
                     overwrite = 1;
                     cur_arg_idx += 1;
                 }
@@ -216,29 +226,28 @@ main(int argc, char **argv)
         if (rank == size - 1) {
             my_count += total_count % size;
         }
-        send_counts[size-1] += (total_count % size * MAX_FILENAME_LEN);
+        send_counts[size - 1] += (total_count % size * MAX_FILENAME_LEN);
 
 #ifdef ENABLE_MPI
         // Distribute the data
-        MPI_Scatterv(&all_filenames[0][0], send_counts, displs, MPI_CHAR, 
-                     &my_filenames[0][0],  my_count*MAX_FILENAME_LEN, MPI_CHAR, 0, MPI_COMM_WORLD);
+        MPI_Scatterv(&all_filenames[0][0], send_counts, displs, MPI_CHAR, &my_filenames[0][0],
+                     my_count * MAX_FILENAME_LEN, MPI_CHAR, 0, MPI_COMM_WORLD);
 #else
-        memcpy(&my_filenames[0][0], &all_filenames[0][0], MAX_FILES*MAX_FILENAME_LEN);
-        
+        memcpy(&my_filenames[0][0], &all_filenames[0][0], MAX_FILES * MAX_FILENAME_LEN);
+
 #endif
 
-
         printf("Importer%2d: I will import %d files\n", rank, my_count);
-        for (i = 0; i < my_count; i++) 
+        for (i = 0; i < my_count; i++)
             printf("Importer%2d: [%s] \n", rank, my_filenames[i]);
         fflush(stdout);
-        
+
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-        struct timeval  pdc_timer_start;
-        struct timeval  pdc_timer_end;
+        struct timeval pdc_timer_start;
+        struct timeval pdc_timer_end;
         gettimeofday(&pdc_timer_start, 0);
 
         for (i = 0; i < my_count; i++) {
@@ -253,7 +262,7 @@ main(int argc, char **argv)
                 continue;
             }
 
-            grp = H5Gopen(file,"/", H5P_DEFAULT);
+            grp = H5Gopen(file, "/", H5P_DEFAULT);
             scan_group(grp, 0, app_name);
 
             status = H5Fclose(file);
@@ -267,9 +276,9 @@ main(int argc, char **argv)
             }
             /* printf("%s, %d\n", filename, max_tag_size_g); */
             /* printf("\n\n======================\nNumber of datasets: %d\n", ndset_g); */
-/* #ifdef ENABLE_MPI */
-/*             MPI_Barrier(MPI_COMM_WORLD); */
-/* #endif */
+            /* #ifdef ENABLE_MPI */
+            /*             MPI_Barrier(MPI_COMM_WORLD); */
+            /* #endif */
         }
 
 #ifdef ENABLE_MPI
@@ -306,16 +315,17 @@ done:
  */
 
 void
-scan_group(hid_t gid, int level, char *app_name) {
-    int i;
+scan_group(hid_t gid, int level, char *app_name)
+{
+    int     i;
     ssize_t len;
     hsize_t nobj;
-    herr_t err;
-    int otype;
-    hid_t grpid, typeid, dsid;
-    char group_name[MAX_NAME];
-    char memb_name[MAX_NAME];
-    int create_cont;
+    herr_t  err;
+    int     otype;
+    hid_t   grpid, typeid, dsid;
+    char    group_name[MAX_NAME];
+    char    memb_name[MAX_NAME];
+    int     create_cont;
 
     /*
      * Information about the group:
@@ -323,15 +333,14 @@ scan_group(hid_t gid, int level, char *app_name) {
      *
      *  Other info., not shown here: number of links, object id
      */
-    len = H5Iget_name (gid, group_name, MAX_NAME);
-
+    len = H5Iget_name(gid, group_name, MAX_NAME);
 
     /* printf("Group Name: %s\n",group_name); */
 
     /*
      *  process the attributes of the group, if any.
      */
-    //scan_attrs(gid);
+    // scan_attrs(gid);
 
     /*
      *  Get all the members of the groups, one at a time.
@@ -343,59 +352,57 @@ scan_group(hid_t gid, int level, char *app_name) {
          *   what type of object it is.
          */
         /* printf("  Member: #%d ",i);fflush(stdout); */
-        len = H5Gget_objname_by_idx(gid, (hsize_t)i,
-                                    memb_name, (size_t)MAX_NAME );
+        len = H5Gget_objname_by_idx(gid, (hsize_t)i, memb_name, (size_t)MAX_NAME);
         /* printf("   len=%d ",len);fflush(stdout); */
         /* printf("  Member: \"%s\" ",memb_name);fflush(stdout); */
-        otype =  H5Gget_objtype_by_idx(gid, (size_t)i );
+        otype = H5Gget_objtype_by_idx(gid, (size_t)i);
 
         /*
          * process each object according to its type
          */
-        switch(otype) {
-        case H5G_LINK:
-            /* printf(" SYM_LINK:\n"); */
-            //do_link(gid,memb_name);
-            break;
-        case H5G_GROUP:
-            /* printf(" GROUP:\n"); */
-            grpid = H5Gopen(gid,memb_name, H5P_DEFAULT);
-            scan_group(grpid, level + 1, app_name);
-            H5Gclose(grpid);
-            break;
-        case H5G_DATASET:
-            /* printf(" DATASET:\n"); */
-            //create container - check if container exists first
-            // create a container
-            create_cont = 1;
-            for (int i = 0; i < container_names->length; i++) {
-                if (strcmp(container_names->items[i], group_name) == 0) {
-                    create_cont = 0;
-                    break;
+        switch (otype) {
+            case H5G_LINK:
+                /* printf(" SYM_LINK:\n"); */
+                // do_link(gid,memb_name);
+                break;
+            case H5G_GROUP:
+                /* printf(" GROUP:\n"); */
+                grpid = H5Gopen(gid, memb_name, H5P_DEFAULT);
+                scan_group(grpid, level + 1, app_name);
+                H5Gclose(grpid);
+                break;
+            case H5G_DATASET:
+                /* printf(" DATASET:\n"); */
+                // create container - check if container exists first
+                //  create a container
+                create_cont = 1;
+                for (int i = 0; i < container_names->length; i++) {
+                    if (strcmp(container_names->items[i], group_name) == 0) {
+                        create_cont = 0;
+                        break;
+                    }
                 }
-            }
-            if (create_cont) {
-                cont_id_g = PDCcont_create(group_name, cont_prop_g);
-                if(cont_id_g <= 0)
-                    printf("Fail to create container @ line  %d!\n", __LINE__);
-                printf("Importer%2d: Created container [%s]\n", rank, group_name);
-                add(container_names, group_name);
-            }
-            dsid = H5Dopen(gid,memb_name, H5P_DEFAULT);
-            do_dset(dsid, memb_name, app_name);
-            H5Dclose(dsid);
-            break;
-        case H5G_TYPE:
-            /* printf(" DATA TYPE:\n"); */
-            typeid = H5Topen(gid,memb_name, H5P_DEFAULT);
-            do_dtype(typeid, gid, 0);
-            H5Tclose(typeid);
-            break;
-        default:
-            printf(" Unknown Object Type!\n");
-            break;
+                if (create_cont) {
+                    cont_id_g = PDCcont_create(group_name, cont_prop_g);
+                    if (cont_id_g <= 0)
+                        printf("Fail to create container @ line  %d!\n", __LINE__);
+                    printf("Importer%2d: Created container [%s]\n", rank, group_name);
+                    add(container_names, group_name);
+                }
+                dsid = H5Dopen(gid, memb_name, H5P_DEFAULT);
+                do_dset(dsid, memb_name, app_name);
+                H5Dclose(dsid);
+                break;
+            case H5G_TYPE:
+                /* printf(" DATA TYPE:\n"); */
+                typeid = H5Topen(gid, memb_name, H5P_DEFAULT);
+                do_dtype(typeid, gid, 0);
+                H5Tclose(typeid);
+                break;
+            default:
+                printf(" Unknown Object Type!\n");
+                break;
         }
-
     }
 }
 
@@ -409,19 +416,19 @@ scan_group(hid_t gid, int level, char *app_name) {
 void
 do_dset(hid_t did, char *name, char *app_name)
 {
-    hid_t tid, pid, sid, dspace;
-    hsize_t dtype_size, dset_size;
-    char ds_name[MAX_NAME];
-    char grp_name[MAX_NAME];
-    char *obj_name;
-    int name_len, i;
-    hsize_t ndim, dims[10];
-    uint64_t offset[10], size[10];
-    void *buf;
+    hid_t                  tid, pid, sid, dspace;
+    hsize_t                dtype_size, dset_size;
+    char                   ds_name[MAX_NAME];
+    char                   grp_name[MAX_NAME];
+    char                  *obj_name;
+    int                    name_len, i;
+    hsize_t                ndim, dims[10];
+    uint64_t               offset[10], size[10];
+    void                  *buf;
     struct pdc_region_info obj_region;
 
     tag_size_g = 0;
-    memset(tags_g, 0, sizeof(char)*TAG_LEN_MAX);
+    memset(tags_g, 0, sizeof(char) * TAG_LEN_MAX);
     tags_ptr_g = tags_g;
     /*
      * Information about the group:
@@ -439,7 +446,7 @@ do_dset(hid_t did, char *name, char *app_name)
     name_len = strlen(ds_name);
     for (i = name_len; i >= 0; i--) {
         if (ds_name[i] == '/') {
-            obj_name = &ds_name[i+1];
+            obj_name = &ds_name[i + 1];
             break;
         }
     }
@@ -462,25 +469,25 @@ do_dset(hid_t did, char *name, char *app_name)
     }
 
     const int cur_ndims = H5Sget_simple_extent_ndims(sid);
-    hsize_t cur_dims[cur_ndims];
+    hsize_t   cur_dims[cur_ndims];
     H5Sget_simple_extent_dims(sid, cur_dims, NULL);
 
-    PDCprop_set_obj_dims(obj_prop_g, cur_ndims, (uint64_t*)cur_dims);
+    PDCprop_set_obj_dims(obj_prop_g, cur_ndims, (uint64_t *)cur_dims);
     PDCprop_set_obj_type(obj_prop_g, cur_type);
     PDCprop_set_obj_time_step(obj_prop_g, 0);
-    PDCprop_set_obj_user_id( obj_prop_g, getuid());
+    PDCprop_set_obj_user_id(obj_prop_g, getuid());
     PDCprop_set_obj_app_name(obj_prop_g, app_name);
 
     pdcid_t obj_id = PDCobj_open(ds_name, pdc_id_g);
-    printf("overwrite: %d\n", overwrite);
     if (check > 0) {
         if (!overwrite) {
             return;
         }
-    } else {
+    }
+    else {
         obj_id = PDCobj_create(cont_id_g, ds_name, obj_prop_g);
     }
-    if (obj_id <= 0) {    
+    if (obj_id <= 0) {
         printf("Error getting an object %s from server, exit...\n", dset_name_g);
     }
 
@@ -488,14 +495,14 @@ do_dset(hid_t did, char *name, char *app_name)
 
     add_tag(",");
 
-    ndset_g ++;
+    ndset_g++;
     /* if (ndset_g > 10) { */
     /*     return; */
     /* } */
     /*
      *  process the attributes of the dataset, if any.
      */
-    //scan_attrs(did);
+    // scan_attrs(did);
 
     /*
      * Retrieve and analyse the dataset properties
@@ -512,17 +519,15 @@ do_dset(hid_t did, char *name, char *app_name)
 
     /* ... read data with H5Dread, write with H5Dwrite, etc. */
     dspace = H5Dget_space(did);
-    ndim = H5Sget_simple_extent_ndims(dspace);
+    ndim   = H5Sget_simple_extent_ndims(dspace);
     H5Sget_simple_extent_dims(dspace, dims, NULL);
     dtype_size = H5Tget_size(tid);
-    dset_size = dtype_size;
-    for (i = 0; i < ndim; i++) 
+    dset_size  = dtype_size;
+    for (i = 0; i < ndim; i++)
         dset_size *= dims[i];
-    
 
     buf = malloc(dset_size);
     H5Dread(did, tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, buf);
-
 
     /* H5Pclose(pid); */
     H5Tclose(tid);
@@ -535,36 +540,36 @@ do_dset(hid_t did, char *name, char *app_name)
     scan_attrs(did, obj_id);
 
     pdc_metadata_t *meta = NULL;
-    obj_region.ndim   = ndim;
+    obj_region.ndim      = ndim;
     for (i = 0; i < ndim; i++) {
         offset[i] = 0;
-        size[i] = dims[i];
+        size[i]   = dims[i];
     }
-    size[0] *= dtype_size; 
+    size[0] *= dtype_size;
     obj_region.offset = offset;
     obj_region.size   = size;
 
-    if (ndset_g == 1) 
+    if (ndset_g == 1)
         gettimeofday(&write_timer_start_g, 0);
-    
+
     /* PDC_Client_query_metadata_name_timestep(dset_name_g, 0, &meta); */
-    /* if (meta == NULL) */ 
+    /* if (meta == NULL) */
     /*     printf("Error with obtainig metadata, skipping PDC write\n"); */
     /* else */
     /*     PDC_Client_write(meta, &obj_region, buf); */
 
-    pdcid_t local_region = PDCregion_create(ndim, offset, size);
-    pdcid_t remote_region = PDCregion_create(ndim, offset, size);
+    pdcid_t local_region     = PDCregion_create(ndim, offset, size);
+    pdcid_t remote_region    = PDCregion_create(ndim, offset, size);
     pdcid_t transfer_request = PDCregion_transfer_create(buf, PDC_WRITE, obj_id, local_region, remote_region);
     PDCregion_transfer_start(transfer_request);
     PDCregion_transfer_wait(transfer_request);
 
-
-    //PDC_Client_write_id(obj_id, &obj_region, buf);
+    // PDC_Client_write_id(obj_id, &obj_region, buf);
     if (ndset_g % 100 == 0) {
         gettimeofday(&write_timer_end_g, 0);
         double elapsed_time = PDC_get_elapsed_time_double(&write_timer_start_g, &write_timer_end_g);
-        printf("Importer%2d: Finished written 100 objects, took %.2f, my total %d\n", rank, elapsed_time, ndset_g);
+        printf("Importer%2d: Finished written 100 objects, took %.2f, my total %d\n", rank, elapsed_time,
+               ndset_g);
         fflush(stdout);
         gettimeofday(&write_timer_start_g, 0);
     }
@@ -584,67 +589,71 @@ do_dset(hid_t did, char *name, char *app_name)
  *  Analyze a data type description
  */
 pdc_var_type_t
-do_dtype(hid_t tid, hid_t oid, int is_compound) {
+do_dtype(hid_t tid, hid_t oid, int is_compound)
+{
 
     herr_t      status;
-    int compound_nmember, i;
-    hsize_t dims[8], ndim;
-    char *mem_name;
-    char *attr_string[100], new_string[TAG_LEN_MAX], tmp_str[TAG_LEN_MAX];
-    hsize_t size, attr_len;
-    hid_t mem_type;
-    hid_t atype, aspace, naive_type;
+    int         compound_nmember, i;
+    hsize_t     dims[8], ndim;
+    char       *mem_name;
+    char       *attr_string[100], new_string[TAG_LEN_MAX], tmp_str[TAG_LEN_MAX];
+    hsize_t     size, attr_len;
+    hid_t       mem_type;
+    hid_t       atype, aspace, naive_type;
     H5T_class_t t_class, compound_class;
     t_class = H5Tget_class(tid);
-    if(t_class < 0) {
+    if (t_class < 0) {
         /* puts("   Invalid datatype.\n"); */
-    } else {
-        size = H5Tget_size (tid);
+    }
+    else {
+        size = H5Tget_size(tid);
         /* printf("    Datasize %3d, type", size); */
         /*
          * Each class has specific properties that can be
          * retrieved, e.g., size, byte order, exponent, etc.
          */
-        if(t_class == H5T_INTEGER) {
+        if (t_class == H5T_INTEGER) {
             /* puts(" 'H5T_INTEGER'."); */
             return PDC_INT;
 
             /* display size, signed, endianess, etc. */
-        } else if(t_class == H5T_FLOAT) {
+        }
+        else if (t_class == H5T_FLOAT) {
             /* puts(" 'H5T_FLOAT'."); */
             return PDC_FLOAT;
-
-        } else if(t_class == H5T_STRING) {
+        }
+        else if (t_class == H5T_STRING) {
             /* puts(" 'H5T_STRING'."); */
             return PDC_CHAR;
-
-        } else if(t_class == H5T_COMPOUND) {
+        }
+        else if (t_class == H5T_COMPOUND) {
             // For compound type, the size would be calculated by its sub-types
             printf("PDC does not support compound data type yet.\n");
             return PDC_UNKNOWN;
-
-        } else if(t_class == H5T_ARRAY) {
+        }
+        else if (t_class == H5T_ARRAY) {
             if (is_compound == 0) {
                 tag_size_g += size;
             }
             ndim = H5Tget_array_ndims(tid);
             H5Tget_array_dims2(tid, dims);
             /* printf(" 'H5T_ARRAY', ndim=%d:  ", ndim); */
-            
+
             /* printf("\n                                                "); */
             pdc_var_type_t type = do_dtype(H5Tget_super(tid), oid, 1);
             return type;
             /* display  dimensions, base type  */
-        } else if(t_class == H5T_ENUM) {
+        }
+        else if (t_class == H5T_ENUM) {
             /* puts(" 'H5T_ENUM'."); */
             return PDC_ENUM;
-        } else  {
+        }
+        else {
             printf("PDC does not support this data type yet.\n");
             return PDC_UNKNOWN;
         }
     }
 }
-
 
 /*
  *  Analyze a symbolic link
@@ -653,11 +662,12 @@ do_dtype(hid_t tid, hid_t oid, int is_compound) {
  * what it points to.
  */
 void
-do_link(hid_t gid, char *name) {
+do_link(hid_t gid, char *name)
+{
     herr_t status;
-    char target[MAX_NAME];
+    char   target[MAX_NAME];
 
-    status = H5Gget_linkval(gid, name, MAX_NAME, target  ) ;
+    status = H5Gget_linkval(gid, name, MAX_NAME, target);
     /* printf("Symlink: %s points to: %s\n", name, target); */
 }
 
@@ -666,15 +676,16 @@ do_link(hid_t gid, char *name) {
  *  This is similar to iterating through a group.
  */
 void
-scan_attrs(hid_t oid, pdcid_t obj_id) {
-    int na;
+scan_attrs(hid_t oid, pdcid_t obj_id)
+{
+    int   na;
     hid_t aid;
-    int i;
+    int   i;
 
     na = H5Aget_num_attrs(oid);
 
     for (i = 0; i < na; i++) {
-        aid =	H5Aopen_idx(oid, (unsigned int)i );
+        aid = H5Aopen_idx(oid, (unsigned int)i);
         do_attr(aid, obj_id);
         H5Aclose(aid);
     }
@@ -684,31 +695,34 @@ scan_attrs(hid_t oid, pdcid_t obj_id) {
  *  Process one attribute.
  *  This is similar to the information about a dataset.
  */
-void do_attr(hid_t aid, pdcid_t obj_id) {
-    ssize_t len;
-    hid_t atype;
-    hid_t aspace;
-    char buf[MAX_NAME] = {0};
-    char read_buf[TAG_LEN_MAX] = {0};
-    pdc_kvtag_t  kvtag1;
+void
+do_attr(hid_t aid, pdcid_t obj_id)
+{
+    ssize_t     len;
+    hid_t       atype;
+    hid_t       aspace;
+    char        buf[MAX_NAME]         = {0};
+    char        read_buf[TAG_LEN_MAX] = {0};
+    pdc_kvtag_t kvtag1;
 
     /*
      * Get the name of the attribute.
      */
-    len = H5Aget_name(aid, MAX_NAME, buf );
+    len = H5Aget_name(aid, MAX_NAME, buf);
     /* printf("    Attribute Name : %s\n",buf); */
 
     // Skip the COMMENT attribute
     if (strcmp("COMMENT", buf) == 0 || strcmp("comments", buf) == 0)
         return;
 
-    atype  = H5Aget_type(aid);
+    atype = H5Aget_type(aid);
     H5Aread(aid, atype, read_buf);
-    kvtag1.name = buf;
-    kvtag1.value = (void*)read_buf;
+    kvtag1.name  = buf;
+    kvtag1.value = (void *)read_buf;
     if (atype == H5T_STRING) {
         kvtag1.size = strlen(read_buf) + 1;
-    } else {
+    }
+    else {
         kvtag1.size = H5Tget_size(atype);
     }
     PDCobj_put_tag(obj_id, kvtag1.name, kvtag1.value, kvtag1.size);
@@ -718,7 +732,7 @@ void do_attr(hid_t aid, pdcid_t obj_id) {
      */
     aspace = H5Aget_space(aid); /* the dimensions of the attribute data */
 
-    atype  = H5Aget_type(aid);
+    atype = H5Aget_type(aid);
     do_dtype(atype, aid, 0);
 
     /*
@@ -740,21 +754,22 @@ void do_attr(hid_t aid, pdcid_t obj_id) {
  *   lists.
  */
 void
-do_plist(hid_t pid) {
-    hsize_t chunk_dims_out[2];
-    int  rank_chunk;
-    int nfilters;
-    H5Z_filter_t  filtn;
-    int i;
-    unsigned int   filt_flags, filt_conf;
-    size_t cd_nelmts;
-    unsigned int cd_values[32] ;
-    char f_name[MAX_NAME];
-    H5D_fill_time_t ft;
+do_plist(hid_t pid)
+{
+    hsize_t          chunk_dims_out[2];
+    int              rank_chunk;
+    int              nfilters;
+    H5Z_filter_t     filtn;
+    int              i;
+    unsigned int     filt_flags, filt_conf;
+    size_t           cd_nelmts;
+    unsigned int     cd_values[32];
+    char             f_name[MAX_NAME];
+    H5D_fill_time_t  ft;
     H5D_alloc_time_t at;
     H5D_fill_value_t fvstatus;
-    unsigned int szip_options_mask;
-    unsigned int szip_pixels_per_block;
+    unsigned int     szip_options_mask;
+    unsigned int     szip_pixels_per_block;
 
     /* zillions of things might be on the plist */
     /*  here are a few... */
@@ -778,41 +793,40 @@ do_plist(hid_t pid) {
      */
 
     nfilters = H5Pget_nfilters(pid);
-    for (i = 0; i < nfilters; i++)
-    {
+    for (i = 0; i < nfilters; i++) {
         /* For each filter, get
          *   filter ID
          *   filter specific parameters
          */
         cd_nelmts = 32;
-        filtn = H5Pget_filter(pid, (unsigned)i,
-                              &filt_flags, &cd_nelmts, cd_values,
-                              (size_t)MAX_NAME, f_name, &filt_conf);
+        filtn = H5Pget_filter(pid, (unsigned)i, &filt_flags, &cd_nelmts, cd_values, (size_t)MAX_NAME, f_name,
+                              &filt_conf);
         /*
          *  These are the predefined filters
          */
         switch (filtn) {
-        case H5Z_FILTER_DEFLATE:  /* AKA GZIP compression */
-            /* printf("DEFLATE level = %d\n", cd_values[0]); */
-            break;
-        case H5Z_FILTER_SHUFFLE:
-            /* printf("SHUFFLE\n"); /1* no parms *1/ */
-            break;
-        case H5Z_FILTER_FLETCHER32:
-            /* printf("FLETCHER32\n"); /1* Error Detection Code *1/ */
-            break;
-        case H5Z_FILTER_SZIP:
-            szip_options_mask=cd_values[0];;
-            szip_pixels_per_block=cd_values[1];
+            case H5Z_FILTER_DEFLATE: /* AKA GZIP compression */
+                /* printf("DEFLATE level = %d\n", cd_values[0]); */
+                break;
+            case H5Z_FILTER_SHUFFLE:
+                /* printf("SHUFFLE\n"); /1* no parms *1/ */
+                break;
+            case H5Z_FILTER_FLETCHER32:
+                /* printf("FLETCHER32\n"); /1* Error Detection Code *1/ */
+                break;
+            case H5Z_FILTER_SZIP:
+                szip_options_mask = cd_values[0];
+                ;
+                szip_pixels_per_block = cd_values[1];
 
-            /* printf("SZIP COMPRESSION: "); */
-            /* printf("PIXELS_PER_BLOCK %d\n", */
-            /* szip_pixels_per_block); */
-            /* print SZIP options mask, etc. */
-            break;
-        default:
-            /* printf("UNKNOWN_FILTER\n" ); */
-            break;
+                /* printf("SZIP COMPRESSION: "); */
+                /* printf("PIXELS_PER_BLOCK %d\n", */
+                /* szip_pixels_per_block); */
+                /* print SZIP options mask, etc. */
+                break;
+            default:
+                /* printf("UNKNOWN_FILTER\n" ); */
+                break;
         }
     }
 
@@ -826,47 +840,44 @@ do_plist(hid_t pid) {
     /* printf("ALLOC_TIME "); */
     H5Pget_alloc_time(pid, &at);
 
-    switch (at)
-    {
-    case H5D_ALLOC_TIME_EARLY:
-        /* printf("EARLY\n"); */
-        break;
-    case H5D_ALLOC_TIME_INCR:
-        /* printf("INCR\n"); */
-        break;
-    case H5D_ALLOC_TIME_LATE:
-        /* printf("LATE\n"); */
-        break;
-    default:
-        /* printf("unknown allocation policy"); */
-        break;
+    switch (at) {
+        case H5D_ALLOC_TIME_EARLY:
+            /* printf("EARLY\n"); */
+            break;
+        case H5D_ALLOC_TIME_INCR:
+            /* printf("INCR\n"); */
+            break;
+        case H5D_ALLOC_TIME_LATE:
+            /* printf("LATE\n"); */
+            break;
+        default:
+            /* printf("unknown allocation policy"); */
+            break;
     }
 
     /* printf("FILL_TIME: "); */
     H5Pget_fill_time(pid, &ft);
-    switch ( ft )
-    {
-    case H5D_FILL_TIME_ALLOC:
-        /* printf("ALLOC\n"); */
-        break;
-    case H5D_FILL_TIME_NEVER:
-        /* printf("NEVER\n"); */
-        break;
-    case H5D_FILL_TIME_IFSET:
-        /* printf("IFSET\n"); */
-        break;
-    default:
-        printf("?\n");
-        break;
+    switch (ft) {
+        case H5D_FILL_TIME_ALLOC:
+            /* printf("ALLOC\n"); */
+            break;
+        case H5D_FILL_TIME_NEVER:
+            /* printf("NEVER\n"); */
+            break;
+        case H5D_FILL_TIME_IFSET:
+            /* printf("IFSET\n"); */
+            break;
+        default:
+            printf("?\n");
+            break;
     }
-
 
     H5Pfill_value_defined(pid, &fvstatus);
 
-    if (fvstatus == H5D_FILL_VALUE_UNDEFINED)
-    {
+    if (fvstatus == H5D_FILL_VALUE_UNDEFINED) {
         /* printf("No fill value defined, will use default\n"); */
-    } else {
+    }
+    else {
         /* Read  the fill value with H5Pget_fill_value.
          * Fill value is the same data type as the dataset.
          * (details not shown)
