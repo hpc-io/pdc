@@ -4144,6 +4144,7 @@ maybe_run_transform(struct _pdc_obj_info *object_info, struct pdc_region_info *r
                 *readyState      = registry[k]->nextState;
                 *transform_index = k;
             }
+
         }
         // Check next for SERVER (post-data-xfer) transforms
         for (k = 0; k < registered_count; k++) {
