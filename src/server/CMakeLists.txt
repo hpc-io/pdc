@@ -54,6 +54,12 @@ add_executable(pdc_server.exe
                ${PDC_SOURCE_DIR}/src/api/pdc_analysis/pdc_hist_pkg.c
 )
 
+install(
+  TARGETS
+    pdc_server.exe
+  DESTINATION ${PDC_INSTALL_BIN_DIR}
+)
+
 if(PDC_ENABLE_FASTBIT)
     message(STATUS "Enabled fastbit")
     target_link_libraries(pdc_server.exe mercury pdcprof -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES} ${FASTBIT_LIBRARY}/libfastbit.so)

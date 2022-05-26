@@ -50,17 +50,20 @@ endif()
 #------------------------------------------------------------------------------
 # Setup install and output Directories
 #------------------------------------------------------------------------------
+if(NOT CMAKE_INSTALL_PREFIX)
+  set(CMAKE_INSTALL_PREFIX ${PROJECT_BINARY_DIR})
+endif()
 if(NOT PDC_INSTALL_BIN_DIR)
-  set(PDC_INSTALL_BIN_DIR ${PROJECT_BINARY_DIR}/bin)
+  set(PDC_INSTALL_BIN_DIR ${CMAKE_INSTALL_PREFIX}/bin)
 endif()
 if(NOT PDC_INSTALL_LIB_DIR)
-  set(PDC_INSTALL_LIB_DIR ${PROJECT_BINARY_DIR}/lib)
+  set(PDC_INSTALL_LIB_DIR ${CMAKE_INSTALL_PREFIX}/lib)
 endif()
 if(NOT PDC_INSTALL_INCLUDE_DIR)
-  set(PDC_INSTALL_INCLUDE_DIR ${PROJECT_BINARY_DIR}/include)
+  set(PDC_INSTALL_INCLUDE_DIR ${CMAKE_INSTALL_PREFIX}/include)
 endif()
 if(NOT PDC_INSTALL_DATA_DIR)
-  set(PDC_INSTALL_DATA_DIR ${PROJECT_BINARY_DIR}/share)
+  set(PDC_INSTALL_DATA_DIR ${CMAKE_INSTALL_PREFIX}/share)
 endif()
 
 # Setting this ensures that "make install" will leave rpaths to external
@@ -138,7 +141,7 @@ endif()
 
 if(NOT CMAKE_C_FLAGS AND CMAKE_COMPILER_IS_GNUCC)
   message(STATUS "GCC detected, setting additional flags")
-  set(CMAKE_C_FLAGS "-Wall -Wextra -Winline -Wcast-qual -std=gnu99 -Wshadow -Wimplicit-fallthrough=3" CACHE STRING "Flags used by the compiler during all build types." FORCE)
+  set(CMAKE_C_FLAGS "-Wall -Wextra -Winline -Wcast-qual -std=gnu99 -Wshadow" CACHE STRING "Flags used by the compiler during all build types." FORCE)
 endif()
 
 #-----------------------------------------------------------------------------
@@ -262,11 +265,20 @@ if(PDC_TIMING)
 endif()
 
 #-----------------------------------------------------------------------------
+# SERVER CACHE option
+#-----------------------------------------------------------------------------
+option(PDC_SERVER_CACHE "Enable timing." OFF)
+if(PDC_SERVER_CACHE)
+  set(PDC_SERVER_CACHE 1)
+endif()
+
+
+#-----------------------------------------------------------------------------
 # CHECKPOINT option
 #-----------------------------------------------------------------------------
-option(PDC_DISABLE_CHECKPOINT "Disable checkpointing." OFF)
-if(PDC_DISABLE_CHECKPOINT)
-  set(DISABLE_CHECKPOINT 1)
+option(PDC_ENABLE_CHECKPOINT "Enable checkpointing." ON)
+if(PDC_ENABLE_CHECKPOINT)
+  set(PDC_ENABLE_CHECKPOINT 1)
 endif()
 
 #-----------------------------------------------------------------------------
@@ -435,6 +447,7 @@ install(
   DESTINATION
     ${PDC_INSTALL_DATA_DIR}/test
 )
+
 
 #install(
 #  FILES

@@ -1539,12 +1539,14 @@ HG_TEST_RPC_CB(gen_obj_id, handle)
     // Insert to hash table
     ret_value = PDC_insert_metadata_to_hash_table(&in, &out);
 
+#ifdef ENABLE_MPI
     int server_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
     /*
         printf("server rank %llu generated object with data server ID %u, obj_id = %llu\n", (long long
        unsigned) server_rank, (unsigned)in.data.data_server_id, (long long unsigned) out.obj_id);
     */
+#endif
     HG_Respond(handle, NULL, NULL, &out);
 
     HG_Free_input(handle, &in);

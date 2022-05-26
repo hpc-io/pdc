@@ -39,7 +39,7 @@ PDC_region_server_cache_init()
     pthread_create(&pdc_recycle_thread, NULL, &PDC_region_cache_clock_cycle, NULL);
     total_cache_size = 0;
 
-    p = getenv("HEP_IO_TYPE");
+    p = getenv("PDC_SERVER_CACHE_MAX_SIZE");
     if (p != NULL) {
         maximum_cache_size = atol(p);
     }
@@ -901,24 +901,19 @@ PDC_region_fetch(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims, struct
                                            region_cache_iter->region_cache_info->offset,
                                            region_cache_iter->region_cache_info->size, region_info->ndim);
             if (flag) {
+                // flag = 1 means that the input region is fully contained in the cached region, so the return
+                // value of overlap_offset must not be NULL
                 PDC_region_overlap_detect(region_info->ndim, region_info->offset, region_info->size,
                                           region_cache_iter->region_cache_info->offset,
                                           region_cache_iter->region_cache_info->size, &overlap_offset,
                                           &overlap_size);
-                if (overlap_offset) {
-                    memcpy_overlap_subregion(
-                        region_info->ndim, unit, region_cache_iter->region_cache_info->buf,
-                        region_cache_iter->region_cache_info->offset,
-                        region_cache_iter->region_cache_info->size, buf, region_info->offset,
-                        region_info->size, overlap_offset, overlap_size);
-                    // printf("PDCserver_region_cache: checkpoint @ line %d\n", __LINE__);
-                    free(overlap_offset);
-                    flag = 1;
-                    break;
-                }
-                else {
-                    flag = 0;
-                }
+                memcpy_overlap_subregion(region_info->ndim, unit, region_cache_iter->region_cache_info->buf,
+                                         region_cache_iter->region_cache_info->offset,
+                                         region_cache_iter->region_cache_info->size, buf, region_info->offset,
+                                         region_info->size, overlap_offset, overlap_size);
+                free(overlap_offset);
+                // flag = 1 at here.
+                break;
             }
             region_cache_iter = region_cache_iter->next;
         }
