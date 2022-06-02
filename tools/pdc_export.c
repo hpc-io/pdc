@@ -27,8 +27,8 @@ int     rank = 0, size = 1;
 pdcid_t pdc_id_g = 0;
 
 typedef struct pdc_region_metadata_pkg {
-    uint64_t                       *reg_offset;
-    uint64_t                       *reg_size;
+    uint64_t *                      reg_offset;
+    uint64_t *                      reg_size;
     uint32_t                        data_server_id;
     struct pdc_region_metadata_pkg *next;
 } pdc_region_metadata_pkg;
@@ -36,8 +36,8 @@ typedef struct pdc_region_metadata_pkg {
 typedef struct pdc_obj_metadata_pkg {
     int                          ndim;
     uint64_t                     obj_id;
-    pdc_region_metadata_pkg     *regions;
-    pdc_region_metadata_pkg     *regions_end;
+    pdc_region_metadata_pkg *    regions;
+    pdc_region_metadata_pkg *    regions_end;
     struct pdc_obj_metadata_pkg *next;
 } pdc_obj_metadata_pkg;
 
@@ -50,24 +50,24 @@ typedef struct pdc_obj_region_metadata {
 
 typedef struct pdc_metadata_query_buf {
     uint64_t                       id;
-    char                          *buf;
+    char *                         buf;
     struct pdc_metadata_query_buf *next;
 } pdc_metadata_query_buf;
 
 typedef struct RegionNode {
-    region_list_t     *region_list;
+    region_list_t *    region_list;
     struct RegionNode *next;
 } RegionNode;
 
 typedef struct MetadataNode {
-    pdc_metadata_t       *metadata_ptr;
-    struct MetadataNode  *next;
-    RegionNode           *region_list_head;
+    pdc_metadata_t *      metadata_ptr;
+    struct MetadataNode * next;
+    RegionNode *          region_list_head;
     pdc_obj_metadata_pkg *obj_metadata_pkg;
 } MetadataNode;
 
 typedef struct FileNameNode {
-    char                *file_name;
+    char *               file_name;
     struct FileNameNode *next;
 } FileNameNode;
 
@@ -80,7 +80,7 @@ typedef struct ArrayList {
 ArrayList *
 newList(void)
 {
-    char     **items = malloc(4 * sizeof(char *));
+    char **    items = malloc(4 * sizeof(char *));
     ArrayList *list  = malloc(sizeof(ArrayList));
     list->length     = 0;
     list->capacity   = 4;
@@ -160,9 +160,9 @@ main(int argc, char *argv[])
         return 1;
     }
     else {
-        FileNameNode  *head     = NULL;
-        FileNameNode  *cur_node = NULL;
-        DIR           *d;
+        FileNameNode * head     = NULL;
+        FileNameNode * cur_node = NULL;
+        DIR *          d;
         struct dirent *dir;
         d = opendir(argv[1]);
         if (d) {
@@ -205,7 +205,7 @@ main(int argc, char *argv[])
             FILE *file = fopen(argv[1], "r");
             if (file != NULL) {
                 FileNameNode *new_node  = (FileNameNode *)malloc(sizeof(FileNameNode));
-                char         *full_path = (char *)malloc(sizeof(char) * (strlen(argv[1]) + 1));
+                char *        full_path = (char *)malloc(sizeof(char) * (strlen(argv[1]) + 1));
                 strcpy(full_path, argv[1]);
                 new_node->file_name = full_path;
                 new_node->next      = NULL;
@@ -308,12 +308,12 @@ do_transfer_request_metadata(int pdc_server_size_input, char *checkpoint)
     int   n_objs, reg_count;
     int   i, j;
 
-    pdc_obj_metadata_pkg   *metadata_server_objs     = NULL;
-    pdc_obj_metadata_pkg   *metadata_server_objs_end = NULL;
+    pdc_obj_metadata_pkg *  metadata_server_objs     = NULL;
+    pdc_obj_metadata_pkg *  metadata_server_objs_end = NULL;
     pdc_metadata_query_buf *metadata_query_buf_head  = NULL;
     pdc_metadata_query_buf *metadata_query_buf_end   = NULL;
     int                     pdc_server_size          = pdc_server_size_input;
-    uint64_t               *data_server_bytes        = (uint64_t *)calloc(pdc_server_size, sizeof(uint64_t));
+    uint64_t *              data_server_bytes        = (uint64_t *)calloc(pdc_server_size, sizeof(uint64_t));
     uint64_t                query_id_g               = 100000;
     ptr                                              = checkpoint;
 
@@ -393,9 +393,9 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
         arg_index++;
     }
 
-    char         *filename;
+    char *        filename;
     MetadataNode *metadata_head   = NULL;
-    RegionNode   *cur_region_node = NULL;
+    RegionNode *  cur_region_node = NULL;
     FileNameNode *cur_file_node   = file_name_node;
 
     int all_cont_total     = 0;
@@ -415,12 +415,12 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
         int    n_entry, count, i, j, nobj = 0, all_nobj = 0, all_n_region, n_region, n_objs, total_region = 0,
                                   n_kvtag, key_len;
         int                          n_cont, all_cont;
-        pdc_metadata_t              *metadata, *elt;
-        region_list_t               *region_list;
-        uint32_t                    *hash_key;
+        pdc_metadata_t *             metadata, *elt;
+        region_list_t *              region_list;
+        uint32_t *                   hash_key;
         unsigned                     idx;
         pdc_cont_hash_table_entry_t *cont_entry;
-        pdc_hash_table_entry_head   *entry;
+        pdc_hash_table_entry_head *  entry;
 
         FILE *file = fopen(filename, "r");
         if (file == NULL) {
@@ -637,7 +637,7 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
         }
 
         uint64_t checkpoint_size;
-        char    *checkpoint_buf;
+        char *   checkpoint_buf;
 
         if (fread(&checkpoint_size, sizeof(uint64_t), 1, file) != 1) {
             printf("Read failed for checkpoint size\n");
@@ -681,7 +681,7 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
     }
 
     int             prev_cont_id      = -1;
-    MetadataNode   *cur_metadata_node = metadata_head;
+    MetadataNode *  cur_metadata_node = metadata_head;
     pdc_metadata_t *cur_metadata;
     hid_t           file_id;
     fflush(stdout);
@@ -716,7 +716,7 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
             char *full_path = (char *)malloc(sizeof(char) * strlen(cur_metadata->obj_name) + 1);
             strcpy(full_path, cur_metadata->obj_name);
 
-            char  *last_slash = strrchr(full_path, '/');
+            char * last_slash = strrchr(full_path, '/');
             size_t length     = last_slash - full_path + 1;
             char   temp[length + 1];
             memcpy(temp, full_path, length);
@@ -730,7 +730,7 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
             char *cur_path = (char *)malloc(sizeof(char) * strlen(cur_metadata->obj_name) + strlen(buf) + 1);
             strcpy(cur_path, buf);
             const char delim[2] = "/";
-            char      *token;
+            char *     token;
             token              = strtok(temp, delim);
             hid_t cur_group_id = group_id;
             while (token != NULL) {
@@ -757,7 +757,7 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
             buf_size *= (cur_metadata->dims)[i];
         }
         hsize_t dtype_size = H5Tget_size(data_type);
-        void   *data_buf   = malloc(buf_size * dtype_size); // if data side is large, need to write in batches
+        void *  data_buf   = malloc(buf_size * dtype_size); // if data side is large, need to write in batches
 
         uint64_t offset[10], size[10];
         for (int i = 0; i < cur_metadata->ndim; i++) {

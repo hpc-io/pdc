@@ -711,8 +711,8 @@ parse_string(cJSON *const item, parse_buffer *const input_buffer)
 {
     const unsigned char *input_pointer  = buffer_at_offset(input_buffer) + 1;
     const unsigned char *input_end      = buffer_at_offset(input_buffer) + 1;
-    unsigned char       *output_pointer = NULL;
-    unsigned char       *output         = NULL;
+    unsigned char *      output_pointer = NULL;
+    unsigned char *      output         = NULL;
 
     /* not a string */
     if (buffer_at_offset(input_buffer)[0] != '\"') {
@@ -826,8 +826,8 @@ static cJSON_bool
 print_string_ptr(const unsigned char *const input, printbuffer *const output_buffer)
 {
     const unsigned char *input_pointer  = NULL;
-    unsigned char       *output         = NULL;
-    unsigned char       *output_pointer = NULL;
+    unsigned char *      output         = NULL;
+    unsigned char *      output_pointer = NULL;
     size_t               output_length  = 0;
     /* numbers of additional characters needed for escaping */
     size_t escape_characters = 0;
@@ -1007,7 +1007,7 @@ cJSON_ParseWithLengthOpts(const char *value, size_t buffer_length, const char **
                           cJSON_bool require_null_terminated)
 {
     parse_buffer buffer = {0, 0, 0, 0, {0, 0, 0}};
-    cJSON       *item   = NULL;
+    cJSON *      item   = NULL;
 
     /* reset error position */
     global_error.json     = NULL;
@@ -1092,7 +1092,7 @@ print(const cJSON *const item, cJSON_bool format, const internal_hooks *const ho
 {
     static const size_t default_buffer_size = 256;
     printbuffer         buffer[1];
-    unsigned char      *printed = NULL;
+    unsigned char *     printed = NULL;
 
     memset(buffer, 0, sizeof(buffer));
 
@@ -1416,7 +1416,7 @@ print_array(const cJSON *const item, printbuffer *const output_buffer)
 {
     unsigned char *output_pointer  = NULL;
     size_t         length          = 0;
-    cJSON         *current_element = item->child;
+    cJSON *        current_element = item->child;
 
     if (output_buffer == NULL) {
         return false;
@@ -1571,7 +1571,7 @@ print_object(const cJSON *const item, printbuffer *const output_buffer)
 {
     unsigned char *output_pointer = NULL;
     size_t         length         = 0;
-    cJSON         *current_item   = item->child;
+    cJSON *        current_item   = item->child;
 
     if (output_buffer == NULL) {
         return false;

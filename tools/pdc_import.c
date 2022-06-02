@@ -27,7 +27,7 @@ typedef struct ArrayList {
 ArrayList *
 newList(void)
 {
-    char     **items = malloc(4 * sizeof(char *));
+    char **    items = malloc(4 * sizeof(char *));
     ArrayList *list  = malloc(sizeof(ArrayList));
     list->length     = 0;
     list->capacity   = 4;
@@ -73,7 +73,7 @@ print_usage()
 
 int     rank = 0, size = 1;
 char    tags_g[MAX_TAG_SIZE];
-char   *tags_ptr_g;
+char *  tags_ptr_g;
 char    dset_name_g[TAG_LEN_MAX];
 hsize_t tag_size_g;
 int     ndset_g = 0;
@@ -420,11 +420,11 @@ do_dset(hid_t did, char *name, char *app_name)
     hsize_t                dtype_size, dset_size;
     char                   ds_name[MAX_NAME];
     char                   grp_name[MAX_NAME];
-    char                  *obj_name;
+    char *                 obj_name;
     int                    name_len, i;
     hsize_t                ndim, dims[10];
     uint64_t               offset[10], size[10];
-    void                  *buf;
+    void *                 buf;
     struct pdc_region_info obj_region;
 
     tag_size_g = 0;
@@ -595,8 +595,8 @@ do_dtype(hid_t tid, hid_t oid, int is_compound)
     herr_t      status;
     int         compound_nmember, i;
     hsize_t     dims[8], ndim;
-    char       *mem_name;
-    char       *attr_string[100], new_string[TAG_LEN_MAX], tmp_str[TAG_LEN_MAX];
+    char *      mem_name;
+    char *      attr_string[100], new_string[TAG_LEN_MAX], tmp_str[TAG_LEN_MAX];
     hsize_t     size, attr_len;
     hid_t       mem_type;
     hid_t       atype, aspace, naive_type;
