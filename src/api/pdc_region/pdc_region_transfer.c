@@ -537,7 +537,7 @@ pack_region_buffer(char *buf, uint64_t *obj_dims, size_t total_data_size, int lo
         if (access_type == PDC_WRITE) {
             ptr = *new_buf;
             for (i = 0; i < local_size[0]; ++i) {
-                memcpy(ptr, buf + ((local_offset[0] + i) * obj_dims[1] + local_offset[1]) * unit,
+                memcpy(ptr, buf + ((local_offset[0] + i) * local_size[1] + local_offset[1]) * unit,
                        local_size[1] * unit);
                 ptr += local_size[1] * unit;
             }
@@ -550,8 +550,8 @@ pack_region_buffer(char *buf, uint64_t *obj_dims, size_t total_data_size, int lo
             for (i = 0; i < local_size[0]; ++i) {
                 for (j = 0; j < local_size[1]; ++j) {
                     memcpy(ptr,
-                           buf + ((local_offset[0] + i) * obj_dims[1] * obj_dims[2] +
-                                  (local_offset[1] + j) * obj_dims[2] + local_offset[2]) *
+                           buf + ((local_offset[0] + i) * local_size[1] * local_size[2] +
+                                  (local_offset[1] + j) * local_size[2] + local_offset[2]) *
                                      unit,
                            local_size[2] * unit);
                     ptr += local_size[2] * unit;
@@ -947,6 +947,7 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
                            transfer_request->total_data_size, transfer_request->local_region_ndim,
                            transfer_request->local_region_offset, transfer_request->local_region_size, unit,
                            transfer_request->access_type, &(transfer_request->new_buf));
+
         if (transfer_request->region_partition == PDC_REGION_STATIC) {
             if (transfer_request->access_type == PDC_WRITE) {
                 set_output_buf = 1;
@@ -1451,6 +1452,7 @@ PDCregion_transfer_start(pdcid_t transfer_request_id)
                        transfer_request->local_region_ndim, transfer_request->local_region_offset,
                        transfer_request->local_region_size, unit, transfer_request->access_type,
                        &(transfer_request->new_buf));
+
     if (transfer_request->region_partition == PDC_REGION_STATIC) {
         // Identify which part of the region is going to which data server.
         static_region_partition(transfer_request->new_buf, transfer_request->remote_region_ndim, unit,
