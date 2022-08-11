@@ -48,7 +48,7 @@ set(PROGRAMS
   region_transfer_overlap_2D
   region_transfer_overlap_3D
   region_transfer_merge
-  obj_round_robin_io
+#  obj_round_robin_io
   close_server
 #  stat_obj
   delete_obj
